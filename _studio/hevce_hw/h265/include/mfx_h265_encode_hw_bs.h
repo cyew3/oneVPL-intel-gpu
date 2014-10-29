@@ -53,13 +53,18 @@ public:
     inline void GetVPS(mfxU8*& buf, mfxU32& len){buf = m_bs_vps; len = m_sz_vps;}  
     inline void GetSPS(mfxU8*& buf, mfxU32& len){buf = m_bs_sps; len = m_sz_sps;}
     inline void GetPPS(mfxU8*& buf, mfxU32& len){buf = m_bs_pps; len = m_sz_pps;}
-    void GetSSH(Task const & task, mfxU8*& buf, mfxU32& len);
+    void GetSSH(Task const & task, mfxU8*& buf, mfxU32& len, mfxU32* qpd_offset = 0);
 
     static void PackNALU (BitstreamWriter& bs, NALU  const &  nalu);
     static void PackVPS  (BitstreamWriter& bs, VPS   const &  vps);
     static void PackSPS  (BitstreamWriter& bs, SPS   const &  sps);
     static void PackPPS  (BitstreamWriter& bs, PPS   const &  pps);
-    static void PackSSH  (BitstreamWriter& bs, NALU  const &  nalu, SPS const &  sps, PPS const & pps, Slice const & slice);
+    static void PackSSH  (BitstreamWriter& bs, 
+                          NALU  const &     nalu, 
+                          SPS   const &     sps,
+                          PPS   const &     pps,
+                          Slice const &     slice,
+                          mfxU32* qpd_offset = 0);
     static void PackPTL  (BitstreamWriter& bs, LayersInfo const & ptl, mfxU16 max_sub_layers_minus1);
     static void PackSLO  (BitstreamWriter& bs, LayersInfo const & slo, mfxU16 max_sub_layers_minus1);
     static void PackSTRPS(BitstreamWriter& bs, const STRPS * h, mfxU32 num, mfxU32 idx);

@@ -26,112 +26,23 @@ MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin)
 namespace MfxHwH265Encode
 {
 
-GUID GetGUID(MfxVideoParam const & )
+GUID GetGUID(MfxVideoParam const & par)
 {
+    if (par.mfx.LowPower == MFX_CODINGOPTION_ON)
+    {
+        //if (par.mfx.FrameInfo.BitDepthLuma > 8)
+        //    return DXVA2_Intel_LowpowerEncode_HEVC_Main10;
+        return DXVA2_Intel_LowpowerEncode_HEVC_Main;
+    }
+    //
+    //if (par.mfx.FrameInfo.BitDepthLuma > 8)
+    //        return DXVA2_Intel_Encode_HEVC_Main10;
+
     return DXVA2_Intel_Encode_HEVC_Main;
 }
 
-
-void SetDefaults(
-    MfxVideoParam &          par,
-    ENCODE_CAPS_HEVC const & hwCaps)
-{
-    mfxU64 rawBits = mfxU64(par.mfx.FrameInfo.Width) * par.mfx.FrameInfo.Height * 3 / 2 * 8;
-
-    if (!par.AsyncDepth)
-        par.AsyncDepth = 1;
-
-    if (!par.mfx.CodecProfile)
-        par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
-
-    if (!par.mfx.CodecLevel)
-        par.mfx.CodecLevel = MFX_LEVEL_HEVC_51;
-
-    if (!par.mfx.TargetUsage)
-        par.mfx.TargetUsage = 4;
-
-    if (!par.mfx.NumSlice)
-        par.mfx.NumSlice = 1;
-
-    if (!par.mfx.GopOptFlag)
-        par.mfx.GopOptFlag = MFX_GOP_CLOSED;
-
-    if (!par.mfx.GopPicSize)
-        par.mfx.GopPicSize = 0xFFFF;
-
-    if (!par.mfx.GopRefDist)
-        par.mfx.GopRefDist = 3;
-
-    if (!par.NumRefLX[0])
-        par.NumRefLX[0] = MFX_MIN(2, hwCaps.MaxNum_Reference0);
-
-    if (!par.NumRefLX[1] && par.mfx.GopRefDist > 1)
-        par.NumRefLX[1] = MFX_MIN(1, hwCaps.MaxNum_Reference1);
-
-    /*if (!par.mfx.NumRefFrame)
-        par.mfx.NumRefFrame = MFX_MIN(2, hwCaps.MaxNum_Reference0) + MFX_MIN(1, hwCaps.MaxNum_Reference1);*/
-
-    if (!par.mfx.FrameInfo.FourCC)
-        par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-
-    if (!par.mfx.FrameInfo.CropW)
-        par.mfx.FrameInfo.CropW = par.mfx.FrameInfo.Width - par.mfx.FrameInfo.CropX;
-
-    if (!par.mfx.FrameInfo.CropH)
-        par.mfx.FrameInfo.CropH = par.mfx.FrameInfo.Height - par.mfx.FrameInfo.CropY;
-
-    if (!par.mfx.FrameInfo.FrameRateExtN)
-        par.mfx.FrameInfo.FrameRateExtN = 30;
-
-    if (!par.mfx.FrameInfo.FrameRateExtD)
-        par.mfx.FrameInfo.FrameRateExtD = 1;
-
-    if (!par.mfx.FrameInfo.AspectRatioW)
-        par.mfx.FrameInfo.AspectRatioW = 1;
-
-    if (!par.mfx.FrameInfo.AspectRatioH)
-        par.mfx.FrameInfo.AspectRatioH = 1;
-    
-    if (!par.mfx.FrameInfo.PicStruct)
-        par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-
-    if (!par.mfx.FrameInfo.ChromaFormat)
-        par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-
-    if (!par.mfx.FrameInfo.BitDepthLuma)
-        par.mfx.FrameInfo.BitDepthLuma = 8;
-
-    if (!par.mfx.FrameInfo.BitDepthChroma)
-        par.mfx.FrameInfo.BitDepthChroma = par.mfx.FrameInfo.BitDepthLuma;
-
-    if (!par.mfx.RateControlMethod)
-        par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
-
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
-    {
-        if (!par.mfx.QPI)
-            par.mfx.QPI = 26;
-        if (!par.mfx.QPP)
-            par.mfx.QPP = 26;
-        if (!par.mfx.QPB)
-            par.mfx.QPB = 26;
-
-        if (!par.BufferSizeInKB)
-            par.BufferSizeInKB = mfxU16(rawBits / 8000);
-    }
-    else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
-    {
-        if (!par.TargetKbps)
-            par.TargetKbps = mfxU32(rawBits * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD / 150000);
-        if (!par.MaxKbps)
-            par.MaxKbps = par.TargetKbps;
-        if (!par.BufferSizeInKB)
-            par.BufferSizeInKB = par.MaxKbps * 8 / 2;
-        if (!par.InitialDelayInKB)
-            par.InitialDelayInKB = par.BufferSizeInKB / 2;
-    }
-}
+mfxStatus CheckVideoParam(MfxVideoParam & par, ENCODE_CAPS_HEVC const & caps);
+void      SetDefaults    (MfxVideoParam & par, ENCODE_CAPS_HEVC const & hwCaps);
 
 Plugin::Plugin(bool CreateByDispatcher)
     : m_createdByDispatcher(CreateByDispatcher)
@@ -178,7 +89,7 @@ mfxStatus Plugin::GetPluginParam(mfxPluginParam *par)
 
 mfxStatus Plugin::Init(mfxVideoParam *par)
 {
-    mfxStatus sts = MFX_ERR_NONE;
+    mfxStatus sts = MFX_ERR_NONE, qsts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
 
     m_ddi.reset( CreatePlatformH265Encoder(&m_core) );
@@ -196,7 +107,8 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     
     m_vpar = *par;
 
-    //TODO: check vpar
+    qsts = Query(&m_vpar, &m_vpar);
+    MFX_CHECK(qsts >= MFX_ERR_NONE, qsts);
 
     SetDefaults(m_vpar, m_caps);
 
@@ -250,7 +162,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     Fill(m_lastTask.m_dpb[1], IDX_INVALID);
 
-    return sts;
+    return qsts;
 }
 
 mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request, mfxFrameAllocRequest * /*out*/)
@@ -344,7 +256,7 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         sts = QueryHwCaps(&m_core, GetGUID(tmp), caps);
         MFX_CHECK_STS(sts);
 
-        //TODO: check params
+        sts = CheckVideoParam(tmp, caps);
 
         tmp.SyncCalculableToVideoParam();
         *out = tmp;

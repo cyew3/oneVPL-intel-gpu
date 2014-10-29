@@ -255,6 +255,7 @@
     <ClCompile Include="h265\src\mfx_h265_encode_hw.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_bs.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_ddi.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_par.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -456,14 +456,15 @@ void HeaderPacker::PackPPS(BitstreamWriter& bs, PPS const &  pps)
 
 void HeaderPacker::PackSSH(
     BitstreamWriter& bs, 
-    NALU    const & nalu,
-    SPS     const & sps, 
-    PPS     const & pps, 
-    Slice   const & slice)
+    NALU  const &    nalu, 
+    SPS   const &    sps,
+    PPS   const &    pps,
+    Slice const &    slice,
+    mfxU32*          qpd_offset)
 {
     const mfxU8 B = 0, P = 1/*, I = 2*/;
     mfxU32 MaxCU = (1<<(sps.log2_min_luma_coding_block_size_minus3+3 + sps.log2_diff_max_min_luma_coding_block_size));
-    mfxU32 PicSizeInCtbsY = ((sps.pic_width_in_luma_samples + MaxCU - 1) / MaxCU) * ((sps.pic_height_in_luma_samples + MaxCU - 1) / MaxCU);
+    mfxU32 PicSizeInCtbsY = CeilDiv(sps.pic_width_in_luma_samples, MaxCU) * CeilDiv(sps.pic_height_in_luma_samples, MaxCU);
 
     PackNALU(bs, nalu);
 
@@ -567,6 +568,9 @@ void HeaderPacker::PackSSH(
 
             bs.PutUE(slice.five_minus_max_num_merge_cand);
         }
+
+        if (qpd_offset)
+            *qpd_offset = bs.GetOffset();
 
         bs.PutSE(slice.slice_qp_delta);
 
@@ -689,7 +693,7 @@ mfxStatus HeaderPacker::Reset(MfxVideoParam const & par)
     m_sz_ssh = sizeof(m_bs_ssh);
 
     PackVPS(rbsp, par.m_vps);
-    sts = PackRBSP(m_bs_vps, m_rbsp, m_sz_vps, (rbsp.GetOffset() + 7) / 8);
+    sts = PackRBSP(m_bs_vps, m_rbsp, m_sz_vps, CeilDiv(rbsp.GetOffset(), 8));
     assert(!sts);
     if (sts)
         return sts;
@@ -697,7 +701,7 @@ mfxStatus HeaderPacker::Reset(MfxVideoParam const & par)
     rbsp.Reset();
     
     PackSPS(rbsp, par.m_sps);
-    sts = PackRBSP(m_bs_sps, m_rbsp, m_sz_sps, (rbsp.GetOffset() + 7) / 8);
+    sts = PackRBSP(m_bs_sps, m_rbsp, m_sz_sps, CeilDiv(rbsp.GetOffset(), 8));
     assert(!sts);
     if (sts)
         return sts;
@@ -705,7 +709,7 @@ mfxStatus HeaderPacker::Reset(MfxVideoParam const & par)
     rbsp.Reset();
     
     PackPPS(rbsp, par.m_pps);
-    sts = PackRBSP(m_bs_pps, m_rbsp, m_sz_pps, (rbsp.GetOffset() + 7) / 8);
+    sts = PackRBSP(m_bs_pps, m_rbsp, m_sz_pps, CeilDiv(rbsp.GetOffset(), 8));
     assert(!sts);
 
     m_par = &par;
@@ -713,7 +717,7 @@ mfxStatus HeaderPacker::Reset(MfxVideoParam const & par)
     return sts;
 }
 
-void HeaderPacker::GetSSH(Task const & task, mfxU8*& buf, mfxU32& sizeInBytes)
+void HeaderPacker::GetSSH(Task const & task, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset)
 {
     BitstreamWriter rbsp(m_bs_ssh, sizeof(m_bs_ssh));
     NALU nalu = {0, task.m_shNUT, 0, 1};
@@ -722,10 +726,10 @@ void HeaderPacker::GetSSH(Task const & task, mfxU8*& buf, mfxU32& sizeInBytes)
 
     assert(m_par);
 
-    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, task.m_sh);
+    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, task.m_sh, qpd_offset);
 
     buf         = m_bs_ssh;
-    sizeInBytes = (rbsp.GetOffset() + 7) / 8;
+    sizeInBytes = CeilDiv(rbsp.GetOffset(), 8);
 }
 
 

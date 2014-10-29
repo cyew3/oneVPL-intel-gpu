@@ -351,9 +351,18 @@ void MfxVideoParam::SyncVideoToCalculableParam()
     mfxU32 multiplier = MFX_MAX(mfx.BRCParamMultiplier, 1);
 
     BufferSizeInKB   = mfx.BufferSizeInKB   * multiplier;
-    InitialDelayInKB = mfx.InitialDelayInKB * multiplier;
-    TargetKbps       = mfx.TargetKbps       * multiplier;
-    MaxKbps          = mfx.MaxKbps          * multiplier;
+
+    if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        InitialDelayInKB = mfx.InitialDelayInKB * multiplier;
+        TargetKbps       = mfx.TargetKbps       * multiplier;
+        MaxKbps          = mfx.MaxKbps          * multiplier;
+    } else
+    {
+        InitialDelayInKB = 0;
+        TargetKbps       = 0;
+        MaxKbps          = 0;
+    }
 
     if (mfx.NumRefFrame)
     {
@@ -381,19 +390,19 @@ void MfxVideoParam::SyncCalculableToVideoParam()
     }
 
     mfx.BRCParamMultiplier = mfxU16((maxVal32 + 0x10000) / 0x10000);
-    mfx.BufferSizeInKB     = mfxU16((BufferSizeInKB + mfx.BRCParamMultiplier - 1) / mfx.BRCParamMultiplier);
+    mfx.BufferSizeInKB     = (mfxU16)CeilDiv(BufferSizeInKB, mfx.BRCParamMultiplier);
 
     if (mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
         mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
         mfx.RateControlMethod == MFX_RATECONTROL_AVBR||
         mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
     {
-        mfx.TargetKbps = mfxU16((TargetKbps + mfx.BRCParamMultiplier - 1) / mfx.BRCParamMultiplier);
+        mfx.TargetKbps = (mfxU16)CeilDiv(TargetKbps, mfx.BRCParamMultiplier);
 
         if (mfx.RateControlMethod != MFX_RATECONTROL_AVBR)
         {
-            mfx.InitialDelayInKB = mfxU16((InitialDelayInKB + mfx.BRCParamMultiplier - 1) / mfx.BRCParamMultiplier);
-            mfx.MaxKbps          = mfxU16((MaxKbps + mfx.BRCParamMultiplier - 1)          / mfx.BRCParamMultiplier);
+            mfx.InitialDelayInKB = (mfxU16)CeilDiv(InitialDelayInKB, mfx.BRCParamMultiplier);
+            mfx.MaxKbps          = (mfxU16)CeilDiv(MaxKbps, mfx.BRCParamMultiplier);
         }
     }
 }
@@ -579,7 +588,6 @@ bool isCurrStRef(Task const & task, mfxI32 poc)
 
 void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
 {
-    bool  isIDR = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
     bool  isP   = !!(task.m_frameType & MFX_FRAMETYPE_P);
     bool  isB   = !!(task.m_frameType & MFX_FRAMETYPE_B);
 
@@ -606,7 +614,7 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
 
     assert(0 == m_sps.separate_colour_plane_flag);
 
-    if (!isIDR)
+    if (task.m_shNUT != IDR_W_RADL && task.m_shNUT != IDR_N_LP)
     {
         mfxU32 i, j;
         s.pic_order_cnt_lsb = (task.m_poc & ~(0xFFFFFFFF << (m_sps.log2_max_pic_order_cnt_lsb_minus4 + 4)));

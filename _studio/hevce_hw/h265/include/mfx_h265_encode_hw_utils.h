@@ -21,20 +21,26 @@
 
 namespace MfxHwH265Encode
 {
-    
-template<class T> inline void Fill(T & obj, int val)       { memset(&obj, val, sizeof(obj)); }
-template<class T> inline void Zero(T & obj)                { memset(&obj, 0, sizeof(obj)); }
-template<class T> inline void Zero(std::vector<T> & vec)   { memset(&vec[0], 0, sizeof(T) * vec.size()); }
-template<class T> inline void Zero(T * first, size_t cnt)  { memset(first, 0, sizeof(T) * cnt); }
+
+template<class T> inline bool Equal(T const & l, T const & r) { return memcmp(&l, &r, sizeof(T)) == 0; }
+template<class T> inline void Fill(T & obj, int val)          { memset(&obj, val, sizeof(obj)); }
+template<class T> inline void Zero(T & obj)                   { memset(&obj, 0, sizeof(obj)); }
+template<class T> inline void Zero(std::vector<T> & vec)      { memset(&vec[0], 0, sizeof(T) * vec.size()); }
+template<class T> inline void Zero(T * first, size_t cnt)     { memset(first, 0, sizeof(T) * cnt); }
 template<class T, class U> inline void Copy(T & dst, U const & src)
 {
     STATIC_ASSERT(sizeof(T) == sizeof(U), copy_objects_of_different_size);
     memcpy(&dst, &src, sizeof(dst));
 }
-template<class T> inline T Abs(T x) { return (x > 0 ? x : -x); }
-template<class T> inline T Min(T x, T y) { return MFX_MIN(x, y); }
-template<class T> inline T Max(T x, T y) { return MFX_MAX(x, y); }
+template<class T> inline T Abs  (T x)               { return (x > 0 ? x : -x); }
+template<class T> inline T Min  (T x, T y)          { return MFX_MIN(x, y); }
+template<class T> inline T Max  (T x, T y)          { return MFX_MAX(x, y); }
 template<class T> inline T Clip3(T min, T max, T x) { return Min(Max(min, x), max); }
+
+inline mfxU32 CeilLog2  (mfxU32 x)           { mfxU32 l = 0; while(x > mfxU32(1<<l)) l++; return l; }
+inline mfxU32 CeilDiv   (mfxU32 x, mfxU32 y) { return (x + y - 1) / y; }
+inline mfxU64 CeilDiv   (mfxU64 x, mfxU64 y) { return (x + y - 1) / y; }
+inline mfxU32 Ceil      (mfxF64 x)           { return (mfxU32)(.999 + x); }
 
 enum
 {
@@ -137,6 +143,8 @@ typedef struct _Task : DpbFrame
     mfxMemId m_midRaw;
     mfxMemId m_midBs;
 
+    bool m_resetBRC;
+
     mfxU32 m_stage;
 }Task;
 
@@ -213,7 +221,6 @@ private:
 
 inline bool isValid(DpbFrame const & frame) { return IDX_INVALID !=  frame.m_idxRec; }
 inline bool isDpbEnd(DpbArray const & dpb, mfxU32 idx) { return idx >= MAX_DPB_SIZE || !isValid(dpb[idx]); }
-inline mfxU32 CeilLog2(mfxU32 x) { mfxU32 l = 0; while(x > mfxU32(1<<l)) l++; return l; }
 
 mfxU8 GetFrameType(MfxVideoParam const & video, mfxU32 frameOrder);
 

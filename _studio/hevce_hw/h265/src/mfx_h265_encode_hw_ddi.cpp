@@ -203,9 +203,11 @@ void FillPpsBuffer(
     Task const & task,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps)
 {
-    pps.CurrOriginalPic.bPicEntry       = task.m_idxRaw == IDX_INVALID ? task.m_idxRec : task.m_idxRaw;
+    pps.CurrOriginalPic.Index7Bits      = 0; //no idx for raw
     pps.CurrOriginalPic.AssociatedFlag  = !!(task.m_frameType & MFX_FRAMETYPE_REF);
-    pps.CurrReconstructedPic.bPicEntry  = task.m_idxRec;
+
+    pps.CurrReconstructedPic.Index7Bits     = task.m_idxRec;
+    pps.CurrReconstructedPic.AssociatedFlag = 0;
     
     for (mfxU16 i = 0; i < 15; i ++)
     {
@@ -235,11 +237,12 @@ mfxU16 CodingTypeToSliceType(mfxU16 ct)
 
 
 void FillSliceBuffer(
-    MfxVideoParam const & /*par*/,
+    MfxVideoParam const & par,
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & sps,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice)
 {
+    mfxU32 LCUSize = (1 << (sps.log2_max_coding_block_size_minus3 + 3));
     slice.resize(1);
 
     for (mfxU16 i = 0; i < slice.size(); i ++)
@@ -250,7 +253,7 @@ void FillSliceBuffer(
         cs.slice_id = i;
 
         cs.slice_segment_address = 0;
-        cs.NumLCUsInSlice = (sps.wFrameWidthInMinCbMinus1 + 1) * (sps.wFrameHeightInMinCbMinus1 + 1);
+        cs.NumLCUsInSlice = CeilDiv(par.mfx.FrameInfo.Width, LCUSize) * CeilDiv(par.mfx.FrameInfo.Height, LCUSize);
         cs.bLastSliceOfPic = (i == slice.size() - 1);
     }
 }
@@ -378,7 +381,7 @@ void DDIHeaderPacker::Reset(MfxVideoParam const & par)
     m_packer.Reset(par);
 }
 
-ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(Task const & task, mfxU32 nut)
+void DDIHeaderPacker::NewHeader()
 {
     assert(m_buf.size());
 
@@ -386,33 +389,40 @@ ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(Task const & task, mfxU32 
         m_cur = m_buf.begin();
 
     Zero(*m_cur);
+}
+
+ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(mfxU32 nut)
+{
+    NewHeader();
 
     switch(nut)
     {
     case VPS_NUT:
         m_packer.GetVPS(m_cur->pData, m_cur->DataLength);
-        m_cur->BufferSize = m_cur->DataLength;
-        m_cur->SkipEmulationByteCount = 4;
         break;
     case SPS_NUT:
         m_packer.GetSPS(m_cur->pData, m_cur->DataLength);
-        m_cur->BufferSize = m_cur->DataLength;
-        m_cur->SkipEmulationByteCount = 4;
         break;
     case PPS_NUT:
         m_packer.GetPPS(m_cur->pData, m_cur->DataLength);
-        m_cur->BufferSize = m_cur->DataLength;
-        m_cur->SkipEmulationByteCount = 4;
         break;
     default:
-        if (nut != task.m_shNUT)
-            return 0;
-        m_packer.GetSSH(task, m_cur->pData, m_cur->DataLength);
-        m_cur->BufferSize = m_cur->DataLength;
-        m_cur->SkipEmulationByteCount = 3;
-        m_cur->DataLength *= 8;
-        break;
+        return 0;
     }
+    m_cur->BufferSize = m_cur->DataLength;
+    m_cur->SkipEmulationByteCount = 4;
+
+    return &*m_cur;
+}
+
+ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackSliceHeader(Task const & task, mfxU32* qpd_offset)
+{
+    NewHeader();
+
+    m_packer.GetSSH(task, m_cur->pData, m_cur->DataLength, qpd_offset);
+    m_cur->BufferSize = m_cur->DataLength;
+    m_cur->SkipEmulationByteCount = 3;
+    m_cur->DataLength *= 8;
 
     return &*m_cur;
 }
@@ -498,24 +508,31 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     Zero(m_capsGet);
     hr = m_auxDevice->Execute(ENCODE_ENC_CTRL_GET_ID, (void *)0, m_capsGet);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-        
+
     FillSpsBuffer(par, m_caps, m_sps);
     FillPpsBuffer(par, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
-
-    m_cu_buffer.resize(m_width * m_height * 3 / 2 + 8, 0);
-    m_cu_data.pBuffer       = m_cu_buffer.data();
-    m_cu_data.BufferSize    = m_cu_buffer.size();
-    //m_cu_data.CUDataOffset = 8;
 
     DDIHeaderPacker::Reset(par);
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::Reset(MfxVideoParam const & /*par*/)
+mfxStatus D3D9Encoder::Reset(MfxVideoParam const & par)
 {
-    assert(!"not implemented");
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC prevSPS = m_sps;
+
+    Zero(m_sps);
+    Zero(m_pps);
+    Zero(m_slice);
+
+    FillSpsBuffer(par, m_caps, m_sps);
+    FillPpsBuffer(par, m_pps);
+    FillSliceBuffer(par, m_sps, m_pps, m_slice);
+
+    DDIHeaderPacker::Reset(par);
+
+    m_sps.bResetBRC = !Equal(m_sps, prevSPS);
 
     return MFX_ERR_NONE;
 }
@@ -628,6 +645,9 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
     executeParams.pCompressedBuffers = compBufDesc;
 
     mfxU32 bitstream = task.m_idxBs;
+
+    if (!m_sps.bResetBRC)
+        m_sps.bResetBRC = task.m_resetBRC;
     
     FillPpsBuffer(task, m_pps);
     FillSliceBuffer(task, m_sps, m_pps, m_slice);
@@ -636,22 +656,21 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
     ADD_CBD(D3DDDIFMT_INTELENCODE_PPSDATA,          m_pps,      1);
     ADD_CBD(D3DDDIFMT_INTELENCODE_SLICEDATA,        m_slice[0], m_slice.size());
     ADD_CBD(D3DDDIFMT_INTELENCODE_BITSTREAMDATA,    bitstream,  1);
-    ADD_CBD(D3DDDIFMT_HEVC_BUFFER_CUDATA,           m_cu_data,  1);
 
     if (task.m_frameType & MFX_FRAMETYPE_IDR)
     {
-        pPH = PackHeader(task, VPS_NUT); assert(pPH);
+        pPH = PackHeader(VPS_NUT); assert(pPH);
         ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
     
-        pPH = PackHeader(task, SPS_NUT); assert(pPH);
+        pPH = PackHeader(SPS_NUT); assert(pPH);
         ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
     }
     
-    pPH = PackHeader(task, PPS_NUT); assert(pPH);
+    pPH = PackHeader(PPS_NUT); assert(pPH);
     ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
 
     //TODO: add multi-slice
-    pPH = PackHeader(task, task.m_shNUT); assert(pPH);
+    pPH = PackSliceHeader(task, &m_slice[0].SliceQpDeltaBitOffset); assert(pPH);
     ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA, *pPH, 1);
 
     try
@@ -673,7 +692,7 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
             else if (executeParams.pCompressedBuffers[i].CompressedBufferType == D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA)
             {
                 mfxU32 sz = m_width * m_height * 3 / 2 - fb.bitstreamSize;
-                HeaderPacker::PackRBSP(bs.Y + fb.bitstreamSize, pPH->pData, sz, (pPH->DataLength + 7) / 8);
+                HeaderPacker::PackRBSP(bs.Y + fb.bitstreamSize, pPH->pData, sz, CeilDiv(pPH->DataLength, 8));
                 fb.bitstreamSize += sz;
             }
         }
@@ -695,6 +714,8 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
     {
         return MFX_ERR_DEVICE_FAILED;
     }
+
+    m_sps.bResetBRC = 0;
 
 
     return MFX_ERR_NONE;

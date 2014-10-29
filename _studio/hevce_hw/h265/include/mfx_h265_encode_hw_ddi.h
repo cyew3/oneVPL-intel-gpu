@@ -42,8 +42,10 @@ enum
 
 typedef struct tagENCODE_CAPS_HEVC
 {
-    union {
-        struct {
+    union 
+    {
+        struct 
+        {
             UINT    CodingLimitSet              : 1;
             UINT    BitDepth8Only               : 1;
             UINT    Color420Only                : 1;
@@ -54,25 +56,25 @@ typedef struct tagENCODE_CAPS_HEVC
             UINT    NoMinorMVs                  : 1;
             UINT    RawReconRefToggle           : 1;
             UINT    NoInterlacedField           : 1;
-            UINT    TileSupport                 : 1;
             UINT    BRCReset                    : 1;
             UINT    RollingIntraRefresh         : 1;
             UINT    UserMaxFrameSizeSupport     : 1;
             UINT    FrameLevelRateCtrl          : 1;
-            UINT    SliceLevelRateByteSizeCtrl  : 1;
+            UINT    SliceByteSizeCtrl           : 1;
             UINT    VCMBitRateControl           : 1;
             UINT    ParallelBRC                 : 1;
+            UINT    TileSupport                 : 1;
             UINT                                : 12;
         };
-        UINT    CodingLimits;
+        UINT CodingLimits;
     };
 
+    //USHORT reserved;
     UINT    MaxPicWidth;
     UINT    MaxPicHeight;
     UCHAR   MaxNum_Reference0;
     UCHAR   MaxNum_Reference1;
     UCHAR   MBBRCSupport;
-    //UINT reserved;
 } ENCODE_CAPS_HEVC;
 
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
@@ -109,9 +111,9 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
             UINT    ParallelBRC         : 1;
             UINT    SliceSizeControl    : 1;
             UINT    ReservedBits        : 17;
-        } /*fields*/;
+        }/*fields*/;
         UINT    EncodeFlags;
-    } /*EncodeFlags*/;
+    }/*EncodeFlags*/;
 
     UINT    UserMaxFrameSize;
     USHORT  AVBRAccuracy;
@@ -135,9 +137,9 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
             UINT    chroma_format_idc                   : 2;    // [1]
             UINT    separate_colour_plane_flag          : 1;    // [0]
             UINT    ReservedBits                        : 21;   // [0]
-        } /*fields*/;
+        }/*fields*/;
         UINT    EncodeTools;
-    } /*EncodeTools*/;
+    }/*EncodeTools*/;
 
     UCHAR   log2_max_coding_block_size_minus3;      // [2]
     UCHAR   log2_min_coding_block_size_minus3;      // [0]
@@ -169,17 +171,16 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     {
         struct
         {
-            UINT    tiles_enabled_flag                  : 1;    // [0]
-            UINT    entropy_coding_sync_enabled_flag    : 1;    // [0]
-            UINT    sign_data_hiding_flag               : 1;    // [0]
-            UINT    constrained_intra_pred_flag         : 1;    // [0]
-            UINT    transform_skip_enabled_flag         : 1;    // [0]
-            UINT    transquant_bypass_enabled_flag      : 1;    // [0]
-            UINT    cu_qp_delta_enabled_flag            : 1;    // [0..1]
-            UINT    weighted_pred_flag                  : 1;    // [0..1]
-            UINT    weighted_bipred_flag                : 1;    // [0..1]
-            UINT    bEnableGPUWeightedPrediction        : 1;    // [0..1]
-
+            UINT    tiles_enabled_flag                      : 1;    // [0]
+            UINT    entropy_coding_sync_enabled_flag        : 1;    // [0]
+            UINT    sign_data_hiding_flag                   : 1;    // [0]
+            UINT    constrained_intra_pred_flag             : 1;    // [0]
+            UINT    transform_skip_enabled_flag             : 1;    // [0]
+            UINT    transquant_bypass_enabled_flag          : 1;    // [0]
+            UINT    cu_qp_delta_enabled_flag                : 1;    // [0..1]
+            UINT    weighted_pred_flag                      : 1;    // [0..1]
+            UINT    weighted_bipred_flag                    : 1;    // [0..1]
+            UINT    bEnableGPUWeightedPrediction            : 1;    // [0..1]
             //  loop filter flags
             UINT    loop_filter_across_slices_flag          : 1;    // [0]
             UINT    loop_filter_across_tiles_flag           : 1;    // [0]
@@ -189,15 +190,14 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
             UINT    bLastPicInStream                        : 1;
             UINT    bUseRawPicForRef                        : 1;
             UINT    bEmulationByteInsertion                 : 1;
-            UINT    bEnableRollingIntraRefresh              : 1;    // [0..1]
             UINT    BRCPrecision                            : 2;
             UINT    bScreenContent                          : 1;    // [0..1]
-            UINT    XbEnableRollingIntraRefreshX              : 2;    // [0..2] ???
+            UINT    bEnableRollingIntraRefresh              : 2;    // [0..2]
             UINT    no_output_of_prior_pics_flag            : 1;    // [0..1]
-            UINT    reservedbits                            : 7;
-        } /*fields*/;
+            UINT    reservedbits                            : 8;
+        }/*fields*/;
         UINT    PicFlags;
-    } /*PicFlags*/;
+    }/*PicFlags*/;
 
     CHAR    QpY;
     UCHAR   diff_cu_qp_delta_depth;                 // [0]
@@ -217,18 +217,17 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     UINT    StatusReportFeedbackNumber;
 
     // following parameters are for VDEnc only
-    UCHAR   slice_pic_parameter_set_id;     // [0..63]
-    UCHAR   nal_unit_type;                  // [0..63]
+    UCHAR   slice_pic_parameter_set_id; // [0..63]
+    UCHAR   nal_unit_type;              // [0..63]
 } ENCODE_SET_PICTURE_PARAMETERS_HEVC;
 
 typedef struct tagENCODE_SET_SLICE_HEADER_HEVC
 {
-    UINT                slice_segment_address;
-    UINT                NumLCUsInSlice;
-    ENCODE_PICENTRY     RefPicList[2][15];
-    UCHAR               num_ref_idx_l0_active_minus1;   // [0..14]
-    UCHAR               num_ref_idx_l1_active_minus1;   // [0..14]
-
+    UINT            slice_segment_address;
+    UINT            NumLCUsInSlice;
+    ENCODE_PICENTRY RefPicList[2][15];
+    UCHAR           num_ref_idx_l0_active_minus1;   // [0..14]
+    UCHAR           num_ref_idx_l1_active_minus1;   // [0..14]
     union
     {
         struct
@@ -244,9 +243,9 @@ typedef struct tagENCODE_SET_SLICE_HEADER_HEVC
             UINT    slice_deblocking_filter_disable_flag    : 1;
             UINT    collocated_from_l0_flag                 : 1;    // [0..1]
             UINT    reserved                                : 21;
-        } /*fields*/;
+        }/*fields*/;
         UINT    SliceFlags;
-    } /*SliceFlags*/;
+    }/*SliceFlags*/;
 
     CHAR    slice_qp_delta;
     CHAR    slice_cb_qp_offset;         // [-12..12]
@@ -261,7 +260,8 @@ typedef struct tagENCODE_SET_SLICE_HEADER_HEVC
     CHAR    delta_chroma_weight[2][15][2];
     UCHAR   MaxNumMergeCand;
     USHORT  slice_id;
-    UINT    MaxSlizeSizeInBytes;    
+    UINT    MaxSlizeSizeInBytes;
+    UINT    SliceQpDeltaBitOffset;
 } ENCODE_SET_SLICE_HEADER_HEVC;
 
 typedef struct tagENCODE_SET_QMATRIX_HEVC
@@ -387,12 +387,15 @@ public:
 
     void Reset(MfxVideoParam const & par);
 
-    ENCODE_PACKEDHEADER_DATA* PackHeader(Task const & task, mfxU32 nut);
+    ENCODE_PACKEDHEADER_DATA* PackHeader(mfxU32 nut);
+    ENCODE_PACKEDHEADER_DATA* PackSliceHeader(Task const & task, mfxU32* qpd_offset);
 
 private:
     std::vector<ENCODE_PACKEDHEADER_DATA>           m_buf;
     std::vector<ENCODE_PACKEDHEADER_DATA>::iterator m_cur;
     HeaderPacker m_packer;
+
+    void NewHeader();
 };
 
 class D3D9Encoder : public DriverEncoder, DDIHeaderPacker
@@ -456,9 +459,6 @@ private:
     ENCODE_ENC_CTRL_CAPS m_capsQuery;
     ENCODE_ENC_CTRL_CAPS m_capsGet;  
     bool                 m_infoQueried;
-
-    ENCODE_SET_CUDATA_HEVC                      m_cu_data;
-    std::vector<mfxU8>                          m_cu_buffer;
 
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC         m_sps;
     ENCODE_SET_PICTURE_PARAMETERS_HEVC          m_pps;

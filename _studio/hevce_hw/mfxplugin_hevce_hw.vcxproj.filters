@@ -8,6 +8,7 @@
       <Filter>External</Filter>
     </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_encode_hw_bs.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_par.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h265\include\mfx_h265_encode_hw.h" />
