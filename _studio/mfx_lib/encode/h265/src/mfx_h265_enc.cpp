@@ -1653,6 +1653,11 @@ void MFXVideoENCODEH265::OnEncodingQueried(Task* encoded)
 {
     Dump(m_recon_dump_file_name, &m_videoParam, encoded->m_frameRecon, m_dpb);
 
+    // pad reference frame
+    if (m_pps.tiles_enabled_flag && encoded->m_frameRecon->m_isRef) {
+        encoded->m_frameRecon->doPadding();
+    }
+
     // release encoded frame
     encoded->m_frameRecon->Release();
 
@@ -1663,11 +1668,6 @@ void MFXVideoENCODEH265::OnEncodingQueried(Task* encoded)
     // release source frame
     encoded->m_frameOrigin->Release();
     encoded->m_frameOrigin = NULL;
-
-        // pad reference frame
-    if (m_pps.tiles_enabled_flag && encoded->m_frameRecon->m_isRef) {
-        encoded->m_frameRecon->doPadding();
-    }
 
     //printf("\n encOrder = %i codedRow _after_ %i\n", encoded->m_encOrder, encoded->m_frameRecon->m_codedRow);fflush(stderr);
     m_outputQueue.remove(encoded);
