@@ -2828,7 +2828,8 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
 
     // STAGE [2]::EARLY TERMINATION IF NO EXTERNAL BS
     if(NULL == inputParam->bs) {
-        return ( inputParam->m_doStage > 1) ? MFX_TASK_DONE : MFX_TASK_WORKING;
+        // return ( inputParam->m_doStage > 1) ? MFX_TASK_DONE : MFX_TASK_WORKING;
+        return MFX_TASK_DONE;
     }
 
     // if we are here => we need output!!!
@@ -2866,7 +2867,6 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     // may be Sleep() untill != 4 here and continue to work is better strategy instead of exit
     if(inputParam->m_doStage < 4) {
         th->m_ctbFinishedEvent.Wait();
-        return MFX_TASK_WORKING;
     }
 
     // single thread - FEI (Next)
@@ -2898,7 +2898,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     Ipp32u newThreadCount = vm_interlocked_inc32( &inputParam->m_threadCount );
     OnExitHelperRoutine onExitHelper( &inputParam->m_threadCount );
     if (newThreadCount > th->m_videoParam.num_threads) {
-        return MFX_TASK_WORKING;
+        return MFX_TASK_BUSY;
     }
 
     // STAGE [5]::[multi threading]::FRAME THREADING LOOP
@@ -2949,8 +2949,10 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
             }
         }
 
-        if (failCounter >= inputParam->m_outputQueueSize)
+        if (failCounter >= inputParam->m_outputQueueSize) {
             th->m_ctbFinishedEvent.Wait();
+            failCounter = 0;
+        }
     }
 
     // STAGE [5]::OUTPUT READY. STOP Routine
@@ -2979,7 +2981,7 @@ mfxStatus MFXVideoENCODEH265::TaskCompleteProc(void *pState, void *pParam, mfxSt
         // STAGE::[Resource Release]
         {
             //UMC::AutomaticUMCMutex guard(th->m_mutex);
-
+            th->m_ctbFinishedEvent.Reset();
             th->OnEncodingQueried( codedTask ); // remove codedTask from encodeQueue (outputQueue) and clean (release) dpb.
             frameEnc->SetFree(true);
         }
