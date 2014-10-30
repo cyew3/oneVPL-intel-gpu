@@ -89,6 +89,8 @@ namespace MfxHwMpeg2Encode
         mfxStatus Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers);
         mfxStatus FillSlices(ExecuteBuffers* pExecuteBuffers);
         mfxStatus FillMiscParameterBuffer(ExecuteBuffers* pExecuteBuffers);
+        mfxStatus FillUserDataBuffer(mfxU8 *pUserData, mfxU32 userDataLen);
+        mfxStatus FillVideoSignalInfoBuffer(ExecuteBuffers* pExecuteBuffers);
         mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 func, mfxU8* pUserData, mfxU32 userDataLen);        
         mfxStatus Register (const mfxFrameAllocResponse* pResponse, D3DDDIFORMAT type);
         mfxI32    GetRecFrameIndex (mfxMemId memID);
@@ -119,6 +121,9 @@ namespace MfxHwMpeg2Encode
         VABufferID                          m_miscParamPrivateId;
         VABufferID                          m_packedUserDataParamsId;
         VABufferID                          m_packedUserDataId;
+        VABufferID                          m_packedSignalInfoParamsId;
+        VABufferID                          m_packedSignalInfoId;
+
 
         int                                 m_vbvBufSize;
         mfxU16                              m_initFrameWidth;

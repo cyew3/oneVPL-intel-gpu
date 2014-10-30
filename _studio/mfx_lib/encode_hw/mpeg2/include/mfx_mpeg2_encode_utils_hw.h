@@ -156,10 +156,10 @@ namespace MPEG2EncoderHW
 
         InputSurfaces                   m_InputSurfaces;
 
-        mfxU16                           m_InitWidth;
-        mfxU16                           m_InitHeight;
-        bool                             m_bInitialized;
-        bool                             m_bAVBR_WA;
+        mfxU16                          m_InitWidth;
+        mfxU16                          m_InitHeight;
+        bool                            m_bInitialized;
+        bool                            m_bAVBR_WA;
 
     protected:
         inline bool is_initialized ()
@@ -241,7 +241,7 @@ namespace MPEG2EncoderHW
         } 
 
 
-    };
+    }; // class ControllerBase
 
 
     class MPEG2BRC_HW

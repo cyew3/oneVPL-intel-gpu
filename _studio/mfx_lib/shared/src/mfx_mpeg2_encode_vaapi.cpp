@@ -479,6 +479,8 @@ VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
     , m_miscParamPrivateId(VA_INVALID_ID)
     , m_packedUserDataParamsId(VA_INVALID_ID)
     , m_packedUserDataId(VA_INVALID_ID)
+    , m_packedSignalInfoParamsId(VA_INVALID_ID)
+    , m_packedSignalInfoId(VA_INVALID_ID)
     , m_vbvBufSize(0)
     , m_initFrameWidth(0)
     , m_initFrameHeight(0)
@@ -1109,13 +1111,164 @@ mfxStatus VAAPIEncoder::FillMiscParameterBuffer(ExecuteBuffers* pExecuteBuffers)
     return MFX_ERR_NONE;
 }
 
-mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, mfxU8 *pUserData, mfxU32 userDataLen)
+mfxStatus VAAPIEncoder::FillUserDataBuffer(mfxU8 *pUserData, mfxU32 userDataLen)
 {
-    const mfxU32    NumCompBuffer = 10;
+    VAStatus vaSts;
+    VAEncPackedHeaderParameterBuffer packedParamsBuffer = {};
+    packedParamsBuffer.type = VAEncPackedHeaderRawData;
+    packedParamsBuffer.has_emulation_bytes = false;
+    mfxU32 correctedLength = IPP_MIN(userDataLen, UINT_MAX/8); // keep start code
+    packedParamsBuffer.bit_length = correctedLength * 8;
+
+    MFX_DESTROY_VABUFFER(m_packedUserDataParamsId, m_vaDisplay);
+    vaSts = vaCreateBuffer(m_vaDisplay,
+        m_vaContextEncode,
+        VAEncPackedHeaderParameterBufferType,
+        sizeof(packedParamsBuffer),
+        1,
+        &packedParamsBuffer,
+        &m_packedUserDataParamsId);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    MFX_DESTROY_VABUFFER(m_packedUserDataId, m_vaDisplay);
+    vaSts = vaCreateBuffer(m_vaDisplay,
+        m_vaContextEncode,
+        VAEncPackedHeaderDataBufferType,
+        correctedLength, 1, pUserData,
+        &m_packedUserDataId);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    return MFX_ERR_NONE;
+}
+
+namespace {
+
+
+    inline mfxU32 bswap(mfxU32 x)
+    {
+#ifdef _BIG_ENDIAN_
+        return x;
+#else // Little endian
+        return (mfxU32)(((x) << 24) + (((x)&0xff00) << 8) + (((x) >> 8)&0xff00) + ((x) >> 24));
+#endif
+    }
+
+    struct BitBuffer 
+    { 
+        mfxI32 bit_offset;
+        mfxI32 bytelen;
+        mfxU8  *start_pointer;
+        mfxU32 *current_pointer;
+
+
+        inline void put_bits(mfxU16 val, int nBits)
+        {
+            mfxI32 tmpcnt = bit_offset - nBits;
+            
+            if (tmpcnt < 0)
+            {
+                mfxU32 r_tmp = current_pointer[0] | (val >> (-tmpcnt));
+                current_pointer[0] = bswap(r_tmp);
+                current_pointer++;
+                current_pointer[0] = val << (32 + tmpcnt);
+                bit_offset = 32 + tmpcnt;
+            }
+            else
+            {
+                current_pointer[0] |= val << tmpcnt;
+                bit_offset = tmpcnt;
+            }
+        }
+
+        inline void put_start_code(mfxU32 scode)
+        {
+            mfxI32 off = bit_offset &~ 7;
+            mfxU32 code1 = current_pointer[0];
+            mfxU32 code2 = 0;
+            if (off > 0) code1 |= (scode) >> (32-off);
+            if (off < 32) code2 = (scode) << off;
+            current_pointer[0] = bswap(code1);
+            current_pointer++;
+            current_pointer[0] = code2;
+            bit_offset = off; 
+        }
+
+        inline void flush_bitstream()
+        {
+            if (bit_offset != 32)
+            {
+                current_pointer[0] = bswap(current_pointer[0]);
+                bit_offset &= ~7;
+            }
+        }
+    };
+       
+}
+
+
+mfxStatus VAAPIEncoder::FillVideoSignalInfoBuffer(ExecuteBuffers* pExecuteBuffers)
+{
+    mfxU8 buf[32];
+
+    BitBuffer bb = { 32, sizeof(buf), (mfxU8 *)buf, (mfxU32 *)buf};
+
+    bb.put_start_code(0x1B5L); // extension_start_code
+    bb.put_bits(2, 4);         // extension_start_code_identifier
+    
+    const mfxExtVideoSignalInfo & signalInfo = pExecuteBuffers->m_VideoSignalInfo;
+
+    // VideoFullRange; - unused
+    bb.put_bits(signalInfo.VideoFormat, 3);
+    bb.put_bits(signalInfo.ColourDescriptionPresent, 1);
+
+    if (signalInfo.ColourDescriptionPresent)
+    {
+        bb.put_bits(signalInfo.ColourPrimaries, 8);
+        bb.put_bits(signalInfo.TransferCharacteristics, 8);
+        bb.put_bits(signalInfo.MatrixCoefficients, 8);
+    }
+    
+    bb.put_bits(pExecuteBuffers->m_sps.FrameWidth, 14);  // display_horizontal_size
+    bb.put_bits(1, 1);                                   // marker_bit
+    bb.put_bits(pExecuteBuffers->m_sps.FrameHeight, 14); // display_vertical_size
+
+    bb.flush_bitstream();
 
     VAStatus vaSts;
-    //VAEncPackedHeaderParameterBuffer packed_header_param_buffer;
+    VAEncPackedHeaderParameterBuffer packedParamsBuffer = {};
+    packedParamsBuffer.type = VAEncPackedHeaderRawData;
+    packedParamsBuffer.has_emulation_bytes = false;
+    mfxU32 extBufferLength = mfxU32((mfxU8 *)bb.current_pointer - (mfxU8 *)bb.start_pointer) + (32 - bb.bit_offset + 7) / 8;
+    packedParamsBuffer.bit_length = extBufferLength * 8;
 
+    MFX_DESTROY_VABUFFER(m_packedSignalInfoParamsId, m_vaDisplay);
+    vaSts = vaCreateBuffer(m_vaDisplay,
+        m_vaContextEncode,
+        VAEncPackedHeaderParameterBufferType,
+        sizeof(packedParamsBuffer),
+        1,
+        &packedParamsBuffer,
+        &m_packedSignalInfoParamsId);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    MFX_DESTROY_VABUFFER(m_packedSignalInfoId, m_vaDisplay);
+    vaSts = vaCreateBuffer(m_vaDisplay,
+        m_vaContextEncode,
+        VAEncPackedHeaderDataBufferType,
+        extBufferLength, 1, buf,
+        &m_packedSignalInfoId);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    return MFX_ERR_NONE;
+
+}
+
+mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, mfxU8 *pUserData, mfxU32 userDataLen)
+{
+    mfxStatus mfxSts;
+    VAStatus vaSts;
+
+    const mfxU32            NumCompBuffer = 12;
     std::vector<VABufferID> configBuffers(NumCompBuffer, VA_INVALID_ID);
     
     mfxU16 buffersCount = 0;
@@ -1140,6 +1293,19 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
         if (m_spsBufferId != VA_INVALID_ID)
             configBuffers[buffersCount++] = m_spsBufferId;
 
+        // mfxExtVideoSignalInfo present - insert only with SPS
+        if (pExecuteBuffers->m_bAddDisplayExt)
+        {        
+            mfxSts = FillVideoSignalInfoBuffer(pExecuteBuffers);
+            MFX_CHECK(mfxSts == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
+
+            if (m_packedSignalInfoParamsId != VA_INVALID_ID)
+                configBuffers[buffersCount++] = m_packedSignalInfoParamsId;
+
+            if (m_packedSignalInfoId != VA_INVALID_ID)
+                configBuffers[buffersCount++] = m_packedSignalInfoId;
+        }
+
         pExecuteBuffers->m_bAddSPS = 0;
 
         if (funcId == ENCODE_ENC_PAK_ID &&  
@@ -1163,8 +1329,6 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
                 configBuffers[buffersCount++] = m_qmBufferId;
         }
     }
-
-    mfxStatus mfxSts;
 
     // TODO: fill pps only once
     Zero(m_vaPpsBuf);    
@@ -1200,29 +1364,8 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
 
     if (pUserData && userDataLen > 0)
     {
-        VAEncPackedHeaderParameterBuffer packedParamsBuffer = {};
-        packedParamsBuffer.type = VAEncPackedHeaderRawData;
-        packedParamsBuffer.has_emulation_bytes = false;
-        mfxU32 correctedLength = IPP_MIN(userDataLen, UINT_MAX/8); // keep start code
-        packedParamsBuffer.bit_length = correctedLength * 8;
-        
-        MFX_DESTROY_VABUFFER(m_packedUserDataParamsId, m_vaDisplay);
-        vaSts = vaCreateBuffer(m_vaDisplay,
-            m_vaContextEncode,
-            VAEncPackedHeaderParameterBufferType,
-            sizeof(packedParamsBuffer),
-            1,
-            &packedParamsBuffer,
-            &m_packedUserDataParamsId);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        MFX_DESTROY_VABUFFER(m_packedUserDataId, m_vaDisplay);
-        vaSts = vaCreateBuffer(m_vaDisplay,
-            m_vaContextEncode,
-            VAEncPackedHeaderDataBufferType,
-            correctedLength, 1, pUserData,
-            &m_packedUserDataId);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        mfxSts = FillUserDataBuffer(pUserData, userDataLen);
+        MFX_CHECK(mfxSts == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
 
         if (m_packedUserDataParamsId != VA_INVALID_ID)
             configBuffers[buffersCount++] = m_packedUserDataParamsId;
@@ -1431,6 +1574,9 @@ mfxStatus VAAPIEncoder::Close()
 
     MFX_DESTROY_VABUFFER(m_packedUserDataParamsId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedUserDataId, m_vaDisplay);
+
+    MFX_DESTROY_VABUFFER(m_packedSignalInfoParamsId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_packedSignalInfoId, m_vaDisplay);
 
 //    MFX_DESTROY_VABUFFER(m_packedAudHeaderBufferId, m_vaDisplay);
 //    MFX_DESTROY_VABUFFER(m_packedAudBufferId, m_vaDisplay);
@@ -1712,7 +1858,7 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
 
         MFX_CHECK(pBitstream->DataLength + pBitstream->DataOffset + bitstreamSize < pBitstream->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
 
-        IppiSize roi = {bitstreamSize, 1};
+        IppiSize roi = {(mfxI32)bitstreamSize, 1};
 
         IppStatus ret = ippStsNoErr;
 

@@ -298,6 +298,12 @@ mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, 
 
     m_bAddSPS = 1;
 
+    m_bAddDisplayExt = par->bAddDisplayExt;
+    if (m_bAddDisplayExt)
+    {
+        m_VideoSignalInfo = par->videoSignalInfo;
+    }
+
     if (funcId == ENCODE_ENC_ID)
     {
         m_sps.FrameWidth   = par->mfxVideoParams.mfx.FrameInfo.Width;

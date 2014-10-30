@@ -112,6 +112,7 @@ namespace MfxHwMpeg2Encode
             , m_nSlices(0)
             , m_nMBs(0)
             , m_bAddSPS (0)
+            , m_bAddDisplayExt(false)
             , m_bExternalCurrFrame(0)
             , m_GOPPictureSize(0)
             , m_GOPRefDist(0)
@@ -122,6 +123,7 @@ namespace MfxHwMpeg2Encode
             memset(&m_caps, 0, sizeof(m_caps));
             memset(&m_sps,  0, sizeof(m_sps));
             memset(&m_pps,  0, sizeof(m_pps));
+            memset(&m_VideoSignalInfo, 0, sizeof(m_VideoSignalInfo));
             memset(&m_quantMatrix, 0, sizeof(m_quantMatrix));
         }
 
@@ -142,20 +144,23 @@ namespace MfxHwMpeg2Encode
         ENCODE_SET_PICTURE_PARAMETERS_MPEG2     m_pps;
         ENCODE_SET_SLICE_HEADER_MPEG2*          m_pSlice;
         ENCODE_ENC_MB_DATA_MPEG2*               m_pMBs;
+        mfxExtVideoSignalInfo                   m_VideoSignalInfo;
+
 #if defined (MFX_VA_WIN)
         ENCODE_SET_PICTURE_QUANT                m_quantMatrix;
 #else
         VAIQMatrixBufferMPEG2                   m_quantMatrix;
 #endif
 
-        mfxHDL                                    m_pSurface;
-        mfxHDLPair                                m_pSurfacePair;
+        mfxHDL                                  m_pSurface;
+        mfxHDLPair                              m_pSurfacePair;
 
         DWORD                                   m_idxMb;
         DWORD                                   m_idxBs;
         DWORD                                   m_nSlices;
         DWORD                                   m_nMBs;
         DWORD                                   m_bAddSPS;
+        bool                                    m_bAddDisplayExt;
 
         mfxMemId                                m_RecFrameMemID;
         mfxMemId                                m_RefFrameMemID[2];

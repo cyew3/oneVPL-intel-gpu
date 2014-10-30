@@ -136,6 +136,7 @@ namespace MPEG2EncoderHW
         }
         return 0;
     }
+
     mfxStatus CheckExtendedBuffers (mfxVideoParam* par)
     {
         mfxU32 supported_buffers[] = {
@@ -1155,19 +1156,22 @@ namespace MPEG2EncoderHW
         }
         return sts;
     }
-    ControllerBase::ControllerBase(VideoCORE *core, bool bAVBR_WA ): 
-        m_InputSurfaces(core),
-        m_bAVBR_WA (bAVBR_WA),
-        m_pCore (core),
-        m_pGOP (0),
-        m_pWaitingList (0),
-        m_bInitialized (false),
-        m_InputFrameOrder (-1),
-        m_OutputFrameOrder(-1),
-        m_BitstreamLen (0)
+    ControllerBase::ControllerBase(VideoCORE *core, bool bAVBR_WA )
+        : m_pCore (core)
+        , m_nEncodeCalls(0)
+        , m_nFrameInGOP(0)
+        , m_pGOP(0)
+        , m_pWaitingList(0)
+        , m_InputFrameOrder(-1)
+        , m_OutputFrameOrder(-1)
+        , m_BitstreamLen (0)
+        , m_InputSurfaces(core)
+        , m_InitWidth(0)
+        , m_InitHeight(0)
+        , m_bInitialized (false)
+        , m_bAVBR_WA (bAVBR_WA)
     {
-
-        memset (&m_VideoParamsEx, 0, sizeof(mfxVideoParamEx_MPEG2)); 
+        memset (&m_VideoParamsEx, 0, sizeof(m_VideoParamsEx)); 
     }
     mfxExtCodingOptionQuantMatrix* GetExtCodingOptionsQuantMaxtrix(mfxExtBuffer** ebuffers,  mfxU32 nbuffers) 
     {
@@ -1256,6 +1260,17 @@ namespace MPEG2EncoderHW
 
             ext = &extFromSpsPps;
         }
+        
+        if (mfxExtVideoSignalInfo* pVideoSignalInfo = GetExtVideoSignalInfo(par->ExtParam, par->NumExtParam))
+        {
+            m_VideoParamsEx.videoSignalInfo = *pVideoSignalInfo;
+            m_VideoParamsEx.bAddDisplayExt = true;
+        }
+        else
+        {
+            m_VideoParamsEx.bAddDisplayExt = false;
+        }
+
         mfxExtCodingOptionQuantMatrix* pMatrix = GetExtCodingOptionsQuantMaxtrix(par->ExtParam, par->NumExtParam);
         if (pMatrix)
         {

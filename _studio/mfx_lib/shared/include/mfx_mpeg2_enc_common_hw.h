@@ -78,6 +78,9 @@
         mfxExtPAVPOption        sExtPAVPOption;
 #endif
         mfxExtCodingOptionQuantMatrix sQuantMatrix;
+
+        mfxExtVideoSignalInfo   videoSignalInfo;
+        bool                    bAddDisplayExt;
     };
 
 namespace MfxHwMpeg2Encode
