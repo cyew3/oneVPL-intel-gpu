@@ -94,7 +94,6 @@ namespace MfxHwMJpegEncode
         ID3D11VideoContext *           m_pVideoContext;
         ID3D11VideoDecoder *           m_pDecoder;
         GUID                           m_guid;
-        ID3D11VideoDecoderOutputView * m_pVDOView;
 
         mfxU32            m_width;
         mfxU32            m_height;

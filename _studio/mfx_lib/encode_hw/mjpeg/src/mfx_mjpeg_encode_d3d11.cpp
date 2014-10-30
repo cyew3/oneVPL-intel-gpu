@@ -59,7 +59,6 @@ D3D11Encoder::D3D11Encoder()
 , m_pVideoContext(0)
 , m_pDecoder(0)
 , m_infoQueried(false)
-, m_pVDOView(0)
 {
 }
 
@@ -232,25 +231,6 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
     mfxHDLPair* inputPair = static_cast<mfxHDLPair*>(surface);//aya: has to be corrected
     ID3D11Resource* pInputD3D11Res = static_cast<ID3D11Resource*>(inputPair->first);
     ExecuteBuffers* pExecuteBuffers = task.m_pDdiData;
-
-    // BeginFrame()
-    //{ ---------------------------------------------------------
-        D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC outputDesc;
-        outputDesc.DecodeProfile = m_guid;
-        outputDesc.ViewDimension = D3D11_VDOV_DIMENSION_TEXTURE2D;
-        outputDesc.Texture2D.ArraySlice = (UINT)0;
-        SAFE_RELEASE(m_pVDOView);
-
-        hr = m_pVideoDevice->CreateVideoDecoderOutputView(
-            pInputD3D11Res, 
-            &outputDesc,
-            &m_pVDOView);
-        CHECK_HRES(hr);
-        
-        hr = m_pVideoContext->DecoderBeginFrame(m_pDecoder, m_pVDOView, 0, 0);
-        CHECK_HRES(hr);
-    //}
-
     // prepare resource list
     // it contains resources in video memory that needed for the encoding operation
     mfxU32       RES_ID_BITSTREAM   = 0;          // bitstream surface takes first place in resourceList
@@ -360,9 +340,6 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
     hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
     CHECK_HRES(hr);
 
-    hr = m_pVideoContext->DecoderEndFrame(m_pDecoder);
-    CHECK_HRES(hr);
-
     return MFX_ERR_NONE;
 }
 
@@ -464,7 +441,6 @@ mfxStatus D3D11Encoder::UpdateBitstream(
 mfxStatus D3D11Encoder::Destroy()
 {
     SAFE_RELEASE(m_pDecoder);
-    SAFE_RELEASE(m_pVDOView);
 
     return MFX_ERR_NONE;
 }
