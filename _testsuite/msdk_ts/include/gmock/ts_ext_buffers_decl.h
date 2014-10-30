@@ -47,6 +47,8 @@ EXTBUF(mfxExtAVCRefLists            , MFX_EXTBUFF_AVC_REFLISTS               )
 EXTBUF(mfxExtCodingOption3          , MFX_EXTBUFF_CODING_OPTION3             )
 EXTBUF(mfxExtMBQP                   , MFX_EXTBUFF_MBQP                       )
 
+EXTBUF(mfxExtChromaLocInfo          , MFX_EXTBUFF_CHROMA_LOC_INFO            )
+
 //EXTBUF(mfxExtMVCSeqDesc             , MFX_EXTBUFF_MVC_SEQ_DESC              );
 //EXTBUF(mfxExtMVCTargetViews         , MFX_EXTBUFF_MVC_TARGET_VIEWS          );
 //EXTBUF(mfxExtJPEGQuantTables        , MFX_EXTBUFF_JPEG_QT                   );

@@ -647,3 +647,10 @@ STRUCT(mfxExtMBQP,
     FIELD_T(mfxU32      , NumQPAlloc)
     FIELD_T(mfxU8*      , QP)
 )
+
+STRUCT(mfxExtChromaLocInfo,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16      , ChromaLocInfoPresentFlag)
+    FIELD_T(mfxU16      , ChromaSampleLocTypeTopField)
+    FIELD_T(mfxU16      , ChromaSampleLocTypeBottomField)
+)
