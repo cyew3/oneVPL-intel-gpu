@@ -57,8 +57,10 @@
 //=========================================================
 // [1] choose only one arch
 
-#if defined(ANDROID) //|| defined(LINUX32) || defined(LINUX64)
-    #define MFX_TARGET_OPTIMIZATION_ATOM
+#if defined(ANDROID)
+    #ifndef __MFX_ANDROID_DEFS_H__
+        # error "mfx_android_defs.h is not included"
+    #endif
 #else
     //#define MFX_TARGET_OPTIMIZATION_SSSE3
     //#define MFX_TARGET_OPTIMIZATION_SSE4
