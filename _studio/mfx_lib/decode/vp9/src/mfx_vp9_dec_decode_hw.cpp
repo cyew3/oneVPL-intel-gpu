@@ -468,8 +468,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     if (bsReader.GetBit()) // showExistingFrame
         return MFX_ERR_UNSUPPORTED; // need to implement
 
-    VP9_FRAME_TYPE frameType = (VP9_FRAME_TYPE) bsReader.GetBit();
-    mfxU8 showFrame = (mfxU8)bsReader.GetBit();
+    m_frameInfo.showFrame = 0;
 
     if (0 == surface_work->Info.CropW)
     {
@@ -532,7 +531,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     (*surface_out)->Data.Corrupted = 0;
     (*surface_out)->Data.FrameOrder = m_frameOrder;
 
-    if(showFrame)
+    if (m_frameInfo.showFrame)
         m_frameOrder++;
 
     p_entry_point->pRoutine = &VP9DECODERoutine;
@@ -547,7 +546,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     p_entry_point->pState = routineData;
     p_entry_point->requiredNumThreads = 1;
 
-    if (showFrame)
+    if (m_frameInfo.showFrame)
         return MFX_ERR_NONE;
     return bs->DataLength ? MFX_ERR_MORE_SURFACE : MFX_ERR_MORE_DATA;
 }
