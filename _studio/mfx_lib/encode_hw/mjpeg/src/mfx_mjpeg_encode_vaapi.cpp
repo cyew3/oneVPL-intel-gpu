@@ -54,6 +54,15 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     mfxU32      height,
     bool        isTemporal)
 {
+    m_core = core;
+    VAAPIVideoCORE * hwcore = dynamic_cast<VAAPIVideoCORE *>(m_core);
+    MFX_CHECK_WITH_ASSERT(hwcore != 0, MFX_ERR_DEVICE_FAILED);
+    if(hwcore)
+    {
+        mfxStatus mfxSts = hwcore->GetVAService(&m_vaDisplay);
+        MFX_CHECK_STS(mfxSts);
+    }
+
     MFX_CHECK(m_vaDisplay, MFX_ERR_DEVICE_FAILED);
     VAStatus vaSts;
 
@@ -83,16 +92,6 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     {
         return MFX_ERR_DEVICE_FAILED;
     }
-
-    m_core = core;
-    VAAPIVideoCORE * hwcore = dynamic_cast<VAAPIVideoCORE *>(m_core);
-    MFX_CHECK_WITH_ASSERT(hwcore != 0, MFX_ERR_DEVICE_FAILED);
-    if(hwcore)
-    {
-        mfxStatus mfxSts = hwcore->GetVAService(&m_vaDisplay);
-        MFX_CHECK_STS(mfxSts);
-    }
-
     m_width  = width;
     m_height = height;
 

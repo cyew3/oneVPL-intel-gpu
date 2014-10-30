@@ -592,12 +592,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Reset(mfxVideoParam *par)
 
     par = &checked; // from now work with fixed copy of input!
 
-    if (par->mfx.FrameInfo.FrameRateExtN == 0 ||
-        par->mfx.FrameInfo.FrameRateExtD == 0)
-    {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-    }
-
     if(par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN && 
        par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && 
        par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_FIELD_TFF &&
@@ -624,9 +618,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Reset(mfxVideoParam *par)
     if(par->AsyncDepth != m_vFirstParam.AsyncDepth)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (!par->mfx.FrameInfo.FrameRateExtD || !par->mfx.FrameInfo.FrameRateExtN) 
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-    
     m_counter = 1;
 
     return sts;
