@@ -283,8 +283,27 @@ void PackerDXVA2::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supp
             notchopping = PackSliceParams(sliceInfo->GetSlice(n), sliceNum, n == sliceCount - 1);
             if (!notchopping)
             {
-                if (n == first_slice) // avoid splitting of slice
+                //dependent slices should be with first independent slice
+                for (Ipp32s i = n; i >= first_slice; i--)
+                {
+                    if (!sliceInfo->GetSlice(i)->GetSliceHeader()->dependent_slice_segment_flag)
+                        break;
+
+                    UMCVACompBuffer *headVABffr = 0;
+
+                    m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &headVABffr);
+                    size_t headerSize = m_va->IsLongSliceControl() ? sizeof(DXVA_Intel_Slice_HEVC_Long) : sizeof(DXVA_Slice_HEVC_Short);
+                    headVABffr->SetDataSize(headVABffr->GetDataSize() - headerSize); //remove one slice
+
+                    n--;
+                }
+
+                if (n <= first_slice) // avoid splitting of slice
+                {
+                    m_va->Execute(); //for free picParam and Quant buffers
                     return; 
+                }
+
                 first_slice = n;
                 break;
             }
