@@ -17,14 +17,13 @@
 #define __MFX_H265_BRC_H__
 
 #include "mfx_h265_defs.h"
+#include "mfx_h265_frame.h"
+#include "mfx_h265_set.h"
+#include "mfx_h265_enc.h"
 
 namespace H265Enc {
 
 #define BRC_CLIP(val, minval, maxval) val = Saturate(minval, maxval, val)
-
-//#define SetQuantB() \
-//    mQuantB = ((mQuantP + mQuantPrev) * 563 >> 10) + 1; \
-//    BRC_CLIP(mQuantB, 1, mQuantMax)
 
 #define SetQuantB() \
     mQuantB = ((mQuantP + mQuantPrev + 1) >> 1) + 1; \
@@ -108,17 +107,18 @@ public:
     }
 
     // Initialize with specified parameter(s)
-    mfxStatus Init(const mfxVideoParam *init, mfxU8 bitDepthLuma, mfxI32 enableRecode = 1);
+    mfxStatus Init(const mfxVideoParam *init, H265VideoParam &video, mfxI32 enableRecode = 1);
 
     mfxStatus Close();
 
-    mfxStatus Reset(mfxVideoParam *init, mfxI32 enableRecode = 1);
-    mfxStatus SetParams(const mfxVideoParam *init, mfxU8 bitDepthLuma);
+    mfxStatus Reset(mfxVideoParam *init, H265VideoParam &video, mfxI32 enableRecode = 1);
+    mfxStatus SetParams(const mfxVideoParam *init, H265VideoParam &video);
     mfxStatus GetParams(mfxVideoParam *init);
 
-    mfxBRCStatus PostPackFrame(mfxU16 picType, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0, mfxI32 poc = 0);
+    //mfxBRCStatus PostPackFrame(mfxU16 picType, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0, mfxI32 poc = 0);
+    mfxBRCStatus PostPackFrame(H265VideoParam &video, Ipp8s sliceQpY, H265Frame *pFrame, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0);
 
-    mfxI32 GetQP(mfxU16 frameType, mfxU16 chromaFormat, mfxI32* chromaQP = NULL);
+    mfxI32 GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP = NULL);
     mfxStatus SetQP(mfxI32 qp, mfxU16 frameType);
 
     mfxStatus GetInitialCPBRemovalDelay(mfxU32 *initial_cpb_removal_delay, mfxI32 recode = 0);
@@ -137,7 +137,16 @@ protected:
     mfxI32  mBitsDesiredFrame;
     mfxI64  mBitsEncodedTotal, mBitsDesiredTotal;
 
-    mfxU16  mPicType;
+    mfxU32  mPicType;
+
+    mfxI8  mBpyramidLayers[129];
+    mfxI32 mBpyramidLayersLen;
+    mfxI32 mNumLayers;
+    mfxI8  mDeltaQp[8];
+    mfxI8  mQp[8];
+    mfxI32 *mFrameSizeHist;
+    
+
 
     mfxI32  mQuantI, mQuantP, mQuantB, mQuantMax, mQuantMin, mQuantPrev, mQuantOffset, mQPprev;
     mfxI32  mRCfap, mRCqap, mRCbap, mRCq;
@@ -169,7 +178,6 @@ protected:
 
     mfxI32 mMinQp;
     mfxI32 mMaxQp;
-
 //    mfxI32 mScChFrameCnt;
 //    mfxI32 mScChLength;
 };

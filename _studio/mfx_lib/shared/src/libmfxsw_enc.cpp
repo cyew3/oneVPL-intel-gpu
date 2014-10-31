@@ -35,6 +35,10 @@ File Name: libmfxsw_enc.cpp
 #include "mfx_h264_preenc.h"
 #endif
 
+#ifdef MFX_ENABLE_H265FEI_HW
+#include "mfx_h265_enc_cm_plugin.h"
+#endif
+
 #else //MFX_VA
 
 #ifdef MFX_ENABLE_VC1_VIDEO_ENC
@@ -80,6 +84,12 @@ VideoENC *CreateENCSpecificClass(mfxVideoParam *par, VideoCORE *pCore)
 #endif //MFX_VA
         break;
 #endif // MFX_ENABLE_H264_VIDEO_ENC || MFX_ENABLE_H264_VIDEO_ENC_H
+
+#if defined (MFX_VA) && defined (MFX_ENABLE_H265FEI_HW)
+    case MFX_CODEC_HEVC:
+        pENC = (VideoENC*) new VideoENC_H265FEI(pCore, &mfxRes);
+        break;
+#endif
 
 #ifdef MFX_ENABLE_VC1_VIDEO_ENC
     case MFX_CODEC_VC1:
