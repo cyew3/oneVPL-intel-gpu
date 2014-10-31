@@ -2485,12 +2485,11 @@ mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstrea
         m_lastEncOrder = m_reorderedQueue.front()->m_encOrder;
 
         m_dpb.splice(m_dpb.end(), m_reorderedQueue, m_reorderedQueue.begin());
-        m_lookaheadQueue.push_back(m_dpb.back());
+        m_encodeQueue.push_back(m_dpb.back());
     }
 
     // general criteria to continue encoding
-    bool isGo = !m_lookaheadQueue.empty() ||
-                !m_encodeQueue.empty() ||
+    bool isGo = !m_encodeQueue.empty() ||
                 m_inputQueue.size() >= (size_t)m_videoParam.GopRefDist ||
                 !surface && !m_inputQueue.empty();
 
@@ -2511,7 +2510,7 @@ mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstrea
 
 mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
 {
-    if (m_lookaheadQueue.empty()) {
+    if (m_encodeQueue.empty()) {
         encIdx = -1;
         return MFX_ERR_MORE_DATA;
     }
@@ -2531,8 +2530,8 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
     m_frameEncoder[encIdx]->SetFree(false);
 
     // OK, start binding
-    m_encodeQueue.splice(m_encodeQueue.end(), m_lookaheadQueue, m_lookaheadQueue.begin());
-    VM_ASSERT(m_encodeQueue.size() == 1);
+    //m_encodeQueue.splice(m_encodeQueue.end(), m_lookaheadQueue, m_lookaheadQueue.begin());
+    VM_ASSERT(m_encodeQueue.size() >= 1);
 
     // lasy initialization of task
     Task* task = m_encodeQueue.front();
@@ -2741,10 +2740,10 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task *task, mfxBitstream *mfxBs, vo
                     }
 
                     // [2] re-init via BRC
-                    // lookAheadQueue -> encodeQueue -> outputQueue
-                    std::list<Task*> listQueue[] = {m_outputQueue, m_encodeQueue, m_lookaheadQueue};
+                    // encodeQueue -> outputQueue
+                    std::list<Task*> listQueue[] = {m_outputQueue, m_encodeQueue};
                     Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
-                    Ipp32s qIdxCnt = (m_videoParam.m_framesInParallel > 1) ? 3 : 1;
+                    Ipp32s qIdxCnt = (m_videoParam.m_framesInParallel > 1) ? 2 : 1;
 
                     for( Ipp32s qIdx = 0; qIdx < qIdxCnt; qIdx++) {
                         std::list<Task*> & queue = listQueue[qIdx];
@@ -2913,9 +2912,6 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
             } else if ( !th->m_encodeQueue.empty() ) {
                 TaskIter it2 = th->m_encodeQueue.begin();
                 nextTask = (*it2);
-            } else if ( !th->m_lookaheadQueue.empty() ) {
-                TaskIter it3 = th->m_lookaheadQueue.begin();
-                nextTask = (*it3);
             }
             //----
             if (nextTask)

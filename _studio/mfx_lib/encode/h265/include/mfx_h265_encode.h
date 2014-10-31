@@ -122,10 +122,10 @@ private:
     std::list<Task*> m_free;            // _global_ free task pool
     std::list<Task*> m_inputQueue;      // _global_ input task queue in _display_ order
     std::list<Task*> m_reorderedQueue;  // _global_ input task queue in _display_ order
-    std::list<Task*> m_dpb;             // _global_ pool of frames: encoded reference frames + being encoded frames
-    std::list<Task*> m_lookaheadQueue;  // _global_ queue in _encode_ order
     std::list<Task*> m_encodeQueue;     // _global_ queue in _encode_ order (contains _ptr_ to encode task)
     std::list<Task*> m_outputQueue;
+
+    std::list<Task*> m_dpb;             // _global_ pool of frames: encoded reference frames + being encoded frames
     std::list<Task*> m_actualDpb;        // reference frames for next frame to encode
     std::list<H265Frame*> m_freeFrames;  // _global_ free frames (origin/recon/reference) pool
 
