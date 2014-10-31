@@ -117,6 +117,28 @@ typedef struct _resetParams
     mfxU32 width;
     mfxU32 height;
     mfxU32 bayerType;
+
+    bool   bBlackLevel;
+    mfxU16 black_level_B;
+    mfxU16 black_level_G0;
+    mfxU16 black_level_G1;
+    mfxU16 black_level_R;
+
+    bool   bWhiteBalance;
+    mfxF64 white_balance_B;
+    mfxF64 white_balance_G0;
+    mfxF64 white_balance_G1;
+    mfxF64 white_balance_R;
+
+    bool   bCCM;
+    mfxF64 CCM[3][3];
+
+    _resetParams()
+    {
+        bBlackLevel   = false;
+        bWhiteBalance = false;
+        bCCM          = false;
+    }
 } sResetParams;
 
 struct sInputParams

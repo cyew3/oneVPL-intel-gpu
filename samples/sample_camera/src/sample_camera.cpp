@@ -38,8 +38,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-alpha alpha]                                      - write value to alpha channel of output surface \n"));
     msdk_printf(MSDK_STRING("   [-pd] / [-padding]                                  - do input surface padding \n"));
     msdk_printf(MSDK_STRING("   [-resetInterval resetInterval]                      - reset interval in frames, default 7 \n"));
-    msdk_printf(MSDK_STRING("   [-reset -i ... -o ... -f ... -w ... -h ... ]        -  params to be used after next reset.\n"));
-    msdk_printf(MSDK_STRING("       Only the 5 listed above are supported, if a param is not set here, the originally set value is used. \n"));
+    msdk_printf(MSDK_STRING("   [-reset -i ... -o ... -f ... -w ... -h ... -bbl ... -bwb ... -ccm ...]     -  params to be used after next reset.\n"));
+    msdk_printf(MSDK_STRING("       Only params listed above are supported, if a param is not set here, the originally set value is used. \n"));
     msdk_printf(MSDK_STRING("       There can be any number of resets, applied in order of appearance in the command line, \n"));
     msdk_printf(MSDK_STRING("           after resetInterval frames are processed with the current params  \n"));
     msdk_printf(MSDK_STRING("   [-sys]                                              - output to system memory\n"));
@@ -282,6 +282,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_strcopy(resPar.strDstFile, pParams->strDstFile);
             resPar.width = pParams->frameInfo[VPP_IN].nWidth;
             resPar.height = pParams->frameInfo[VPP_IN].nHeight;
+            resPar.bBlackLevel    = pParams->bBlackLevel;
+            resPar.black_level_B  = pParams->black_level_B;
+            resPar.black_level_G0 = pParams->black_level_G0;
+            resPar.black_level_G1 = pParams->black_level_G1;
+            resPar.black_level_R  = pParams->black_level_R;
             i++;
             for (;i < nArgNum; i++)
             {
@@ -296,6 +301,44 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                         resPar.bayerType     = MFX_CAM_BAYER_GRBG;
                     else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("gbrg")))
                         resPar.bayerType     = MFX_CAM_BAYER_GBRG;
+                }
+                else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bbl")))
+                {
+                    if(i + 4 >= nArgNum)
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -bbl key"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
+                    resPar.bBlackLevel = true;
+                    msdk_opt_read(strInput[++i], resPar.black_level_B);
+                    msdk_opt_read(strInput[++i], resPar.black_level_G0);
+                    msdk_opt_read(strInput[++i], resPar.black_level_G1);
+                    msdk_opt_read(strInput[++i], resPar.black_level_R);
+                }
+                else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bwb")))
+                {
+                    if(i + 4 >= nArgNum)
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -bwb key"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
+                    resPar.bWhiteBalance = true;
+                    msdk_opt_read(strInput[++i], resPar.white_balance_B);
+                    msdk_opt_read(strInput[++i], resPar.white_balance_G0);
+                    msdk_opt_read(strInput[++i], resPar.white_balance_G1);
+                    msdk_opt_read(strInput[++i], resPar.white_balance_R);
+                }
+                else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ccm")))
+                {
+                    if(i + 9 >= nArgNum)
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -ccm key."));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
+                    resPar.bCCM = true;
+                    for(int k = 0; k < 3; k++)
+                        for (int z = 0; z < 3; z++)
+                            msdk_opt_read(strInput[++i], resPar.CCM[k][z]);
                 }
                 else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-w")))
                 {
@@ -420,6 +463,20 @@ int main(int argc, char *argv[])
             pParams->frameInfo[VPP_OUT].CropW = pParams->frameInfo[VPP_OUT].nWidth;
             pParams->frameInfo[VPP_OUT].CropH = pParams->frameInfo[VPP_OUT].nHeight;
             pParams->bayerType     = Params.resetParams[resetNum].bayerType;
+            pParams->bBlackLevel   = Params.resetParams[resetNum].bBlackLevel;
+            pParams->black_level_B = Params.resetParams[resetNum].black_level_B;
+            pParams->black_level_G0= Params.resetParams[resetNum].black_level_G0;
+            pParams->black_level_G1= Params.resetParams[resetNum].black_level_G1;
+            pParams->black_level_R = Params.resetParams[resetNum].black_level_R;
+            pParams->bWhiteBalance   = Params.resetParams[resetNum].bWhiteBalance;
+            pParams->white_balance_B = Params.resetParams[resetNum].white_balance_B;
+            pParams->white_balance_G0= Params.resetParams[resetNum].white_balance_G0;
+            pParams->white_balance_G1= Params.resetParams[resetNum].white_balance_G1;
+            pParams->white_balance_R = Params.resetParams[resetNum].white_balance_R;
+            pParams->bCCM = Params.resetParams[resetNum].bCCM;
+            for (int k = 0; k < 3; k++)
+                for (int z = 0; z < 3; z++)
+                    pParams->CCM[k][z] = Params.resetParams[resetNum].CCM[k][z];
 
             //pParams->frameInfo[VPP_OUT].FourCC = MFX_FOURCC_ARGB16;
             //pParams->memTypeIn = pParams->memTypeOut = SYSTEM_MEMORY;
