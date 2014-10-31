@@ -1979,7 +1979,7 @@ template <class PixType> void PadOneLine_Bottom_v2(PixType *startLine, Ipp32s pi
 //#define _HOLD_ON_ROW_
 
 template <typename PixType>
-mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onExitEvent) 
+mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onExitEvent, UMC::Semaphore &semaphore) 
 {
     // Check Flag OnExit - on entry point check
     if ( onExitEvent && (*onExitEvent) >= 2) {
@@ -2019,6 +2019,8 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
 
     bool checkCondition = true;
 
+    bool firstIter = true;
+
     while(1) {
         mfxI32 found = 0, complete = 1;
 
@@ -2044,10 +2046,15 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
                 //return MFX_TASK_DONE;
             }
             if (!found) { // found no line to encode but there are still incomplete lines
-                return MFX_TASK_BUSY;
+                if (firstIter)
+                    return mfxStatus(100);
+                else
+                    return MFX_TASK_BUSY;
             }
 
             ctb_addr = ctb_row * pars->PicWidthInCtbs + ctb_col;
+
+            firstIter = false;
             tile_id = 0;
             if (m_pps.tiles_enabled_flag) {
                 tile_id = m_tile_ids[ctb_addr];
@@ -2231,19 +2238,28 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
                     }
                 } else {
                     // increment to signal enother encoder
-                    vm_interlocked_inc32( reinterpret_cast<volatile Ipp32u *> (&(reconstructFrame->m_codedRow)) );
+                vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *> (&(reconstructFrame->m_codedRow)));
 
-                    vm_interlocked_inc32( reinterpret_cast<volatile Ipp32u *> (&(m_row_info[ctb_row].mt_current_ctb_col)) );
+                vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *> (&(m_row_info[ctb_row].mt_current_ctb_col)));
                     vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>(&(m_row_info[ctb_row].mt_busy)), 0, 1);
                 }
 
-            } else {
+                // finished line probably have a N jobs: in N-1 frames
+                if (m_videoParam.m_framesInParallel > 1)
+                    semaphore.Signal(m_videoParam.m_framesInParallel - 1);
+                if (ctb_row != pars->PicHeightInCtbs - 1 && pars->num_threads > 1)
+                    semaphore.Signal(1); // +1 job in the line below the current line
+            }
+            else {
                 if (m_pps.tiles_enabled_flag) {
                     ctb_col++;
                     ctb_addr++;
                     checkCondition = false;
                 } else {
-                vm_interlocked_inc32( reinterpret_cast<volatile Ipp32u *> (&(m_row_info[ctb_row].mt_current_ctb_col)) );
+                vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *> (&(m_row_info[ctb_row].mt_current_ctb_col)) );
+
+                if (ctb_row != pars->PicHeightInCtbs - 1 && ctb_col > 0 && pars->num_threads > 1)
+                    semaphore.Signal(1); // +1 job in the line below the current line
 
 #ifndef _HOLD_ON_ROW_
                 vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>(&(m_row_info[ctb_row].mt_busy)), 0, 1);
@@ -2607,8 +2623,8 @@ int H265CU<PixType>::GetCalqDeltaQp(TAdapQP* sliceAQP, Ipp64f sliceLambda)
 
 #endif
 
-template mfxStatus H265FrameEncoder::EncodeThread<Ipp8u>(Ipp32s & ithread, volatile Ipp32u* onExitEvent);
-template mfxStatus H265FrameEncoder::EncodeThread<Ipp16u>(Ipp32s & ithread, volatile Ipp32u* onExitEvent);
+template mfxStatus H265FrameEncoder::EncodeThread<Ipp8u>(Ipp32s & ithread, volatile Ipp32u* onExitEvent, UMC::Semaphore &semaphore);
+template mfxStatus H265FrameEncoder::EncodeThread<Ipp16u>(Ipp32s & ithread, volatile Ipp32u* onExitEvent, UMC::Semaphore &semaphore);
 
 //} // namespace
 
