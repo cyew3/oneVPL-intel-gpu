@@ -2098,15 +2098,16 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
                 vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>(&(m_row_info[ctb_row].mt_busy)), 0, 1);
 
                 // finished line probably have a N jobs: in N-1 frames
-                semaphore.Signal(m_videoParam.m_framesInParallel - 1);
-                if (ctb_row != pars->PicHeightInCtbs - 1)
+                if (m_videoParam.m_framesInParallel > 1)
+                    semaphore.Signal(m_videoParam.m_framesInParallel - 1);
+                if (ctb_row != pars->PicHeightInCtbs - 1 && pars->num_threads > 1)
                     semaphore.Signal(1); // +1 job in the line below the current line
             }
             else {
 
                 vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *> (&(m_row_info[ctb_row].mt_current_ctb_col)) );
 
-                if (ctb_row != pars->PicHeightInCtbs - 1 && ctb_col > 0)
+                if (ctb_row != pars->PicHeightInCtbs - 1 && ctb_col > 0 && pars->num_threads > 1)
                     semaphore.Signal(1); // +1 job in the line below the current line
 
 #ifndef _HOLD_ON_ROW_

@@ -2680,17 +2680,15 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task *task, mfxBitstream *mfxBs, vo
             inputParam->m_reencode = 0;
 
             if( brcSts != MFX_BRC_OK ) {
-                //printf("\n YOU ARE HERE!!! \n");fflush(stderr);
-
                 if ((brcSts & MFX_BRC_ERR_SMALL_FRAME) && (task->m_sliceQpY < min_qp))
+                    brcSts |= MFX_BRC_NOT_ENOUGH_BUFFER;
+                if (brcSts == MFX_BRC_ERR_BIG_FRAME && task->m_sliceQpY == 51)
                     brcSts |= MFX_BRC_NOT_ENOUGH_BUFFER;
 
                 if (!(brcSts & MFX_BRC_NOT_ENOUGH_BUFFER)) {
                     bs->DataLength = dataLength0;
                     H265Bs_SetState(&frameEnc->m_bs[bs_main_id], pbs0, bitOffset0);
                     overheadBytes = overheadBytes0;
-
-                    //printf("\n REENCODE!!! \n");fflush(stderr);
 
                     // [1] wait completion of all running tasks
                     TaskIter tit = m_outputQueue.begin();
@@ -2739,7 +2737,8 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task *task, mfxBitstream *mfxBs, vo
                     vm_interlocked_cas32( &inputParam->m_reencode, 1, 0);
                     vm_interlocked_cas32( &(m_frameEncoder[task->m_encIdx]->GetEncodeTask()->m_ready), 7, 2); // signal to restart!!!
 
-                    m_semaphore.Signal(m_videoParam.num_threads - 1); // wake up all threads
+                    if (m_videoParam.num_threads > 1)
+                        m_semaphore.Signal(m_videoParam.num_threads - 1); // wake up all threads
                     return; // repack!!!
 
                 } else if (brcSts & MFX_BRC_ERR_SMALL_FRAME) {
@@ -2765,7 +2764,6 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task *task, mfxBitstream *mfxBs, vo
                     mfxBs->DataLength += (bitsize >> 3) - frameBytes;
 
                 } else {
-                    //printf("\n !!!MFX_ERR_NOT_ENOUGH_BUFFER!!! \n");fflush(stderr);
                     //return MFX_ERR_NOT_ENOUGH_BUFFER;
                 }
             }
@@ -2774,7 +2772,8 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task *task, mfxBitstream *mfxBs, vo
         // bs update on complete stage
         m_totalBits += (bs->DataLength - initialDataLength) * 8;
         vm_interlocked_cas32( &(task->m_ready), 3, 2);
-        m_semaphore.Signal(m_videoParam.num_threads - 1); // wake up all threads
+        if (m_videoParam.num_threads > 1)
+            m_semaphore.Signal(m_videoParam.num_threads - 1); // wake up all threads
     }
 }
 
@@ -2849,7 +2848,8 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
 
         th->m_core->INeedMoreThreadsInside(th);
 
-        th->m_semaphore.Signal(th->m_videoParam.num_threads - 1);
+        if (th->m_videoParam.num_threads > 1)
+            th->m_semaphore.Signal(th->m_videoParam.num_threads - 1);
     }
 
     
