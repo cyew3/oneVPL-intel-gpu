@@ -1595,7 +1595,7 @@ mfxStatus VAAPIEncoder::Execute(
                     (VABufferType)VAEncQpBufferType,
                     sizeof (VAEncQpBufferH264)*numMB, //limitation from driver, num elements should be 1
                     1,
-                    mbctrl->MB,
+                    mbqp->QP,
                     &vaFeiMBQPId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             configBuffers[buffersCount++] = vaFeiMBQPId;
@@ -1655,9 +1655,9 @@ mfxStatus VAAPIEncoder::Execute(
         //output buffer for MBCODE (Pak object cmds)
         if (mbcodeout != NULL)
         {
-            m_vaFeiMCODEOutId.resize(16);
             if (m_vaFeiMCODEOutId.size() == 0 )
             {
+                m_vaFeiMCODEOutId.resize(16);
                 for( mfxU32 ii = 0; ii < 16; ii++ )
                 {
                     vaSts = vaCreateBuffer(m_vaDisplay,
