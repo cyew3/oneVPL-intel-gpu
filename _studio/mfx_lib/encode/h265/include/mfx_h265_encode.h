@@ -14,7 +14,7 @@
 #define __MFX_H265_ENCODE_H__
 
 #include "ippdefs.h"
-#include "umc_event.h"
+#include "umc_semaphore.h"
 
 #include "mfxdefs.h"
 #include "mfxvideo.h"
@@ -115,7 +115,7 @@ private:
     Ipp32s m_miniGopCount;
     mfxU64 m_lastTimeStamp;
     Ipp32s m_lastEncOrder;
-    UMC::Event m_ctbFinishedEvent;
+    UMC::Semaphore m_semaphore;
 
 
     //  frame flow-control queues

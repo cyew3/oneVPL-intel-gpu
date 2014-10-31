@@ -12,8 +12,6 @@
 #define __MFX_H265_ENC_H__
 
 #include <list>
-//#include "umc_mutex.h"
-#include "umc_event.h"
 #include "mfx_ext_buffers.h"
 #include "mfx_h265_defs.h"
 #include "mfx_h265_ctb.h"
@@ -25,6 +23,10 @@
 #ifdef MFX_ENABLE_WATERMARK
 class Watermark;
 #endif
+
+namespace UMC {
+class Semaphore;
+}
 
 namespace H265Enc {
 
@@ -216,7 +218,7 @@ public:
     bool AllReferencesReady(Ipp32u ctb_row);
 
     template <typename PixType>
-    mfxStatus EncodeThread(Ipp32s & ithread, volatile Ipp32u* onExitEvent, UMC::Event *e = 0);
+    mfxStatus EncodeThread(Ipp32s & ithread, volatile Ipp32u* onExitEvent, UMC::Semaphore &semaphore);
 
     H265VideoParam* GetVideoParam() {return &m_videoParam;};
 

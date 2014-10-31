@@ -22,7 +22,7 @@ namespace H265Enc {
 
 ///class H265VideoParam;
 class H265Frame;
-class H265Slice;
+struct H265Slice;
 
 typedef struct _FEIFrame {
     int EncOrder;   // input frame order
