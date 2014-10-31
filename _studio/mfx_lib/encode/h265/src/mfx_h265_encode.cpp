@@ -2853,72 +2853,70 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         sts = th->AcceptFrameHelper(inputParam->ctrl, NULL, inputParam->surface, inputParam->bs);
         vm_interlocked_cas32( &inputParam->m_doStage, 2, 1);
         MFX_CHECK_STS(sts);
+        return MFX_TASK_DONE;
+
+        // STAGE [3]::[single thread]::FIND OLDEST TASK
+        stage = vm_interlocked_cas32( &inputParam->m_doStage, 3, 2);
+        if(stage == 2) {
+            
+            while( th->m_outputQueue.size() < (size_t)th->m_videoParam.m_framesInParallel && !th->m_encodeQueue.empty() ) {
+                int encIdx = 0;
+                th->AddNewOutputTask(encIdx);
+            }
+
+            TaskIter it = th->m_outputQueue.begin();
+            inputParam->completedTask     = (*it);
+            inputParam->m_outputQueueSize = th->m_outputQueue.size();
+
+#if defined (MFX_VA)
+            if (th->m_videoParam.enableCmFlag) {
+
+                th->ProcessFrameFEI(inputParam->completedTask);
+                inputParam->m_doStageFEI = 0;
+            }
+#endif
+            vm_interlocked_cas32( &inputParam->m_doStage, 4, 3);
+
+            th->m_core->INeedMoreThreadsInside(th);
+
+        if (th->m_videoParam.num_threads > 1)
+            th->m_semaphore.Signal(th->m_videoParam.num_threads - 1);
+
+            // single thread - FEI (Next)
+#if defined (MFX_VA)
+            if (th->m_videoParam.enableCmFlag) {
+                Ipp32s stageFEI = vm_interlocked_cas32( &inputParam->m_doStageFEI, 1, 0);
+                if ( stageFEI == 0 ) {
+                    //-----
+                    Task* nextTask = NULL;
+                    if ( inputParam->m_outputQueueSize > 1 ) {
+                        TaskIter it = th->m_outputQueue.begin();
+                        it++;
+                        nextTask = (*it);
+                    } else if ( !th->m_encodeQueue.empty() ) {
+                        TaskIter it2 = th->m_encodeQueue.begin();
+                        nextTask = (*it2);
+                    }
+                    //----
+                    if (nextTask)
+                        th->ProcessFrameFEI_Next(nextTask);
+                }
+            }
+#endif // MFX_VA
+        }
     }
 
     // STAGE [2]::EARLY TERMINATION IF NO EXTERNAL BS
     if(NULL == inputParam->bs) {
-        // return ( inputParam->m_doStage > 1) ? MFX_TASK_DONE : MFX_TASK_WORKING;
         return MFX_TASK_DONE;
     }
 
-    // if we are here => we need output!!!
-
-    // STAGE [3]::[single thread]::FIND OLDEST TASK
-    stage = vm_interlocked_cas32( &inputParam->m_doStage, 3, 2);
-    if(stage == 2) {
-
-        while ( (inputParam->completedTask = FindOldestOutputTask(th->m_outputQueue)) == NULL) {
-            int encIdx = 0;
-            sts = th->AddNewOutputTask(encIdx);
-        }
-
-        inputParam->m_outputQueueSize = (Ipp32u)th->m_outputQueue.size();
-
-#if defined (MFX_VA)
-        if (th->m_videoParam.enableCmFlag) {
-            
-            th->ProcessFrameFEI(inputParam->completedTask);
-            inputParam->m_doStageFEI = 0;
-        }
-#endif
-
-        vm_interlocked_cas32( &inputParam->m_doStage, 4, 3);
-
-        th->m_core->INeedMoreThreadsInside(th);
-
-        if (th->m_videoParam.num_threads > 1)
-            th->m_semaphore.Signal(th->m_videoParam.num_threads - 1);
-    }
-
-    
-    //// STAGE [4]::HELPER? TO PREVENT ISSUESS??
+    //// STAGE [4]:: threading barrier
     // not found output task yet. 
     // may be Sleep() untill != 4 here and continue to work is better strategy instead of exit
     if(inputParam->m_doStage < 4) {
         th->m_semaphore.Wait();
     }
-
-    // single thread - FEI (Next)
-#if defined (MFX_VA)
-    if (th->m_videoParam.enableCmFlag) {
-        Ipp32s stageFEI = vm_interlocked_cas32( &inputParam->m_doStageFEI, 1, 0);
-        if ( stageFEI == 0 ) {
-            //-----
-            Task* nextTask = NULL;
-            if ( inputParam->m_outputQueueSize > 1 ) {
-                TaskIter it = th->m_outputQueue.begin();
-                it++;
-                nextTask = (*it);
-            } else if ( !th->m_encodeQueue.empty() ) {
-                TaskIter it2 = th->m_encodeQueue.begin();
-                nextTask = (*it2);
-            }
-            //----
-            if (nextTask)
-                th->ProcessFrameFEI_Next(nextTask);
-        }
-    }
-#endif // MFX_VA
 
     // global thread count control
     Ipp32u newThreadCount = vm_interlocked_inc32( &inputParam->m_threadCount );
@@ -2934,11 +2932,10 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         // restart due to BRC repack
         Ipp32u stageReencode = vm_interlocked_cas32( &inputParam->completedTask->m_ready, 1, 7 );
         if (stageReencode == 1 ) {
-        //    something to do
+            //    something to do
         }
 
-        // [priority #1]: speedup submitted output tasks
-        TaskIter beg = th->m_outputQueue.begin(); // aya: protect by mutex???
+        TaskIter beg = th->m_outputQueue.begin();
         for (size_t taskIdx = 0; taskIdx < inputParam->m_outputQueueSize; taskIdx++) {
             Task* nextTask = *beg;
             if(nextTask->m_ready == 1 ) {
@@ -2957,21 +2954,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
                 }
             }
             if (taskIdx + 1 < inputParam->m_outputQueueSize) {
-                beg++;// aya: protect by mutex???
-            }
-        }
-
-        // [priority #2] - try to add new task in output queue. not run here!!!
-        if( (MFX_TASK_BUSY == sts || sts == 100) && inputParam->m_outputQueueSize < (size_t)th->m_videoParam.m_framesInParallel ) {
-
-            Ipp32u stageEnqueue = vm_interlocked_cas32( &inputParam->m_doStage, 5, 4 );
-            if(stageEnqueue == 4 && inputParam->m_outputQueueSize < (size_t)th->m_videoParam.m_framesInParallel) {
-                int encIdx = 0;
-                th->AddNewOutputTask(encIdx);
-                if( encIdx != -1 )
-                    vm_interlocked_inc32( &inputParam->m_outputQueueSize );
-
-                vm_interlocked_dec32( &inputParam->m_doStage );
+                beg++;
             }
         }
 
@@ -3006,7 +2989,6 @@ mfxStatus MFXVideoENCODEH265::TaskCompleteProc(void *pState, void *pParam, mfxSt
 
         // STAGE::[Resource Release]
         {
-            //UMC::AutomaticUMCMutex guard(th->m_mutex);
             while (th->m_semaphore.TryWait() == VM_OK); // reset semaphore
             th->OnEncodingQueried( codedTask ); // remove codedTask from encodeQueue (outputQueue) and clean (release) dpb.
             frameEnc->SetFree(true);
