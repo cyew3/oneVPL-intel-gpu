@@ -65,7 +65,7 @@ DECL_STRUCT_TRACE(mfxExtSVCRateControl);
 #endif //__MFXSVC_H__
 
 #ifdef __MFXVP8_H__
-DECL_STRUCT_TRACE(mfxExtCodingOptionVP8);
+DECL_STRUCT_TRACE(mfxExtVP8CodingOption);
 #endif //__MFXVP8_H__
 
 DECL_STRUCT_TRACE(mfxExtVPPDoNotUse);

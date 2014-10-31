@@ -193,8 +193,8 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         sts = m_BSE.SetNextFrame(0, 0, pTask->m_sFrameParams,pTask->m_frameOrder);
         MFX_CHECK_STS(sts);
 
-        mfxExtCodingOptionVP8Param * extOptVP8 = GetExtBuffer(m_video);
-        bool bInsertIVF = (extOptVP8->WriteIVFHeaders != MFX_CODINGOPTION_OFF);
+        mfxExtVP8CodingOption * pExtVP8Opt = GetExtBuffer(m_video);
+        bool bInsertIVF = (pExtVP8Opt->WriteIVFHeaders != MFX_CODINGOPTION_OFF);
         bool bInsertSH  = bInsertIVF && pTask->m_frameOrder==0 && m_bStartIVFSequence;
 
         {
@@ -265,14 +265,13 @@ mfxStatus MFX_VP8E_Plugin::Init(mfxVideoParam *par)
 
     m_pTaskManager = new MFX_VP8ENC::TaskManagerHybridPakDDI;
 
-    mfxExtCodingOptionVP8* pExtOpt    = GetExtBuffer(m_video);
+    mfxExtVP8CodingOption* pExtVP8Opt    = GetExtBuffer(m_video);
     {
         mfxExtOpaqueSurfaceAlloc   * pExtOpaque = GetExtBuffer(m_video);
-        mfxExtCodingOptionVP8Param * pVP8Par    = GetExtBuffer(m_video);
 
         MFX_CHECK(MFX_VP8ENC::CheckFrameSize(par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height),MFX_ERR_INVALID_VIDEO_PARAM);
 
-        sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&m_video, pExtOpt, pVP8Par, pExtOpaque, true ,false);
+        sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&m_video, pExtVP8Opt, pExtOpaque, true ,false);
         MFX_CHECK(sts1 >=0, sts1);
     }
     m_ddi.reset(MFX_VP8ENC::CreatePlatformVp8Encoder());
@@ -312,7 +311,7 @@ mfxStatus MFX_VP8E_Plugin::Init(mfxVideoParam *par)
     if (sts == MFX_ERR_NONE)
         reqDist.NumFrameMin = reqDist.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
     sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_SEGMENTMAP, reqSegMap, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
-    if (sts == MFX_ERR_NONE && pExtOpt->EnableMultipleSegments == MFX_CODINGOPTION_ON)
+    if (sts == MFX_ERR_NONE && pExtVP8Opt->EnableMultipleSegments == MFX_CODINGOPTION_ON)
         reqSegMap.NumFrameMin = reqSegMap.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
 
     sts = m_pTaskManager->AllocInternalResources(m_pmfxCore ,reqMB,reqDist,reqSegMap);
@@ -352,11 +351,10 @@ mfxStatus MFX_VP8E_Plugin::Reset(mfxVideoParam *par)
         MFX_VP8ENC::VP8MfxParam parAfterReset = *par;
 
         {
-            mfxExtCodingOptionVP8*       pExtOpt = GetExtBuffer(parAfterReset);
-            mfxExtCodingOptionVP8Param*  pVP8Par = GetExtBuffer(parAfterReset);
+            mfxExtVP8CodingOption*       pExtVP8Opt = GetExtBuffer(parAfterReset);
             mfxExtOpaqueSurfaceAlloc*    pExtOpaque = GetExtBuffer(parAfterReset);
 
-            sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&parAfterReset, pExtOpt, pVP8Par,pExtOpaque,true,true);
+            sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&parAfterReset, pExtVP8Opt,pExtOpaque,true,true);
             MFX_CHECK(sts1>=0, sts1);
         }
 

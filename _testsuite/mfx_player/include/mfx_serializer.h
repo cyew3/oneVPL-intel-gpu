@@ -13,6 +13,7 @@ File Name: mfxstructures.h
 #pragma once
 
 #include "mfx_ext_buffers.h"
+#include "mfxvp8.h"
 #include "mfxmvc.h"
 #include "mfxsvc.h"
 #include <sstream>
@@ -550,17 +551,17 @@ protected:
 
 
 template<>
-class MFXStructureRef <mfxExtCodingOptionVP8Param>
-    : public MFXStructureBase<mfxExtCodingOptionVP8Param>
+class MFXStructureRef <mfxExtVP8CodingOption>
+    : public MFXStructureBase<mfxExtVP8CodingOption>
 {
 public:
     MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
-        : MFXStructureBase<mfxExtCodingOptionVP8Param>((mfxExtCodingOptionVP8Param &)refStruct, flags)
+        : MFXStructureBase<mfxExtVP8CodingOption>((mfxExtVP8CodingOption &)refStruct, flags)
     {
     }
 
-    MFXStructureRef(mfxExtCodingOptionVP8Param & refStruct, int flags = 0)
-        :MFXStructureBase<mfxExtCodingOptionVP8Param>(refStruct, flags)
+    MFXStructureRef(mfxExtVP8CodingOption & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtVP8CodingOption>(refStruct, flags)
     {
     }
 

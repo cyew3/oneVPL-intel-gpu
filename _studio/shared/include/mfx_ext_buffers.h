@@ -235,27 +235,6 @@ typedef struct {
     mfxU16      reserved[52];       // 104 bytes total
 } mfxExtCodingOptionHEVC;
 
-
-#define MFX_EXTBUFF_VP8_PARAM MFX_MAKEFOURCC('B','V','P','8')
-typedef struct {
-    mfxExtBuffer Header;
-
-    mfxU8       VP8Version;
-    mfxU8       LoopFilterType;
-    mfxU8       LoopFilterLevel[4];
-    mfxU8       SharpnessLevel;
-    mfxU8       NumPartitions;
-    mfxI8       RefTypeLFDelta[4];
-    mfxI8       MBTypeLFDelta[4];
-    mfxI8       SegmentQPDelta[4];
-    mfxI8       CTQPDelta[5];
-    mfxU16      WriteIVFHeaders; /* tri-state option */
-    mfxU32      NumFramesForIVF;
-
-    mfxU8       reserved[1];
-
-} mfxExtCodingOptionVP8Param;
-
 #if defined (ADVANCED_REF)
 
 #define MFX_EXTBUFF_AVC_REFLISTS MFX_MAKEFOURCC('R','L','T','S')

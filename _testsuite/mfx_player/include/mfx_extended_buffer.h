@@ -19,6 +19,7 @@ File Name: .h
 #include "mfxmvc.h"
 #include "mfxpcp.h"
 #include "mfxsvc.h"
+#include "mfxvp8.h"
 #include "mfx_iclonebale.h"
 
  //warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized

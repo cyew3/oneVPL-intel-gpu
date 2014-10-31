@@ -79,7 +79,7 @@ File Name: .h
 #define HANDLE_VSIG_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extVideoSignalInfo, member, OPT_TYPE, description)
 #define HANDLE_CAP_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderCapability, member, OPT_TYPE, description)
 #define HANDLE_HEVC_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsHEVC, member, OPT_TYPE, description)
-#define HANDLE_VP8PARAM_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsVP8Param, member, OPT_TYPE, description)
+#define HANDLE_VP8_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP8CodingOptions, member, OPT_TYPE, description)
 #define HANDLE_ENCRESET_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderReset, member, OPT_TYPE, description)
 
 
@@ -115,7 +115,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 , m_extDumpFiles(new mfxExtDumpFiles())
 , m_extVideoSignalInfo(new mfxExtVideoSignalInfo())
 , m_extCodingOptionsHEVC(new mfxExtCodingOptionHEVC())
-, m_extCodingOptionsVP8Param(new mfxExtCodingOptionVP8Param())
+, m_extVP8CodingOptions(new mfxExtVP8CodingOption())
 , m_extEncoderRoi(new mfxExtEncoderROI())
 , m_extAvcTemporalLayers(new mfxExtAvcTemporalLayers())
 , m_extCodingOptionsSPSPPS(new mfxExtCodingOptionSPSPPS())
@@ -281,12 +281,13 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(NumTileCols,              OPT_UINT_16,    "number of tile columns (1 - default)"),
         HANDLE_HEVC_OPTION(NumTileRows,              OPT_UINT_16,    "number of tile rows (1 - default)"),
 		
-        HANDLE_VP8PARAM_OPTION(VP8Version,            OPT_UINT_8,    "0-maxU8"),
-        HANDLE_VP8PARAM_OPTION(LoopFilterType,        OPT_UINT_8,    "0-maxU8"),
-        HANDLE_VP8PARAM_OPTION(SharpnessLevel,        OPT_UINT_8,    "0-maxU8"),
-        HANDLE_VP8PARAM_OPTION(NumPartitions,         OPT_UINT_8,    "0-maxU8"),
-        HANDLE_VP8PARAM_OPTION(WriteIVFHeaders,       OPT_UINT_16,   "0-maxU16"),
-        HANDLE_VP8PARAM_OPTION(NumFramesForIVF,       OPT_UINT_32,   "0-maxU32"),
+        HANDLE_VP8_OPTION(Version,            OPT_UINT_16,   "0-maxU16"),
+        HANDLE_VP8_OPTION(EnableMultipleSegments,OPT_UINT_16,   "0-maxU32"),
+        HANDLE_VP8_OPTION(LoopFilterType,        OPT_UINT_16,   "0-maxU16"),
+        HANDLE_VP8_OPTION(SharpnessLevel,        OPT_UINT_16,   "0-maxU16"),
+        HANDLE_VP8_OPTION(NumTokenPartitions,    OPT_UINT_16,   "0-maxU16"),
+        HANDLE_VP8_OPTION(WriteIVFHeaders,       OPT_UINT_16,   "0-maxU16"),
+        HANDLE_VP8_OPTION(NumFramesForIVFHeader, OPT_UINT_32,   "0-maxU32"),
 
         // mfxExtCodingOption2
         HANDLE_EXT_OPTION2(IntRefType,             OPT_UINT_16,   ""),
@@ -1040,29 +1041,29 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             argv ++;
             for (mfxU8 i = 0; i < 4; i ++)
             {
-                MFX_PARSE_INT(m_extCodingOptionsVP8Param->LoopFilterLevel[i], argv[0]);
+                MFX_PARSE_INT(m_extVP8CodingOptions->LoopFilterLevel[i], argv[0]);
                 argv ++;
 
             }
         }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-RefTypeLFDelta"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
+        else if (m_OptProc.Check(argv[0], VM_STRING("-LoopFilterRefTypeDelta"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
             MFX_CHECK(4 + argv < argvEnd);
             argv ++;
             for (mfxU8 i = 0; i < 4; i ++)
             {
-                MFX_PARSE_INT(m_extCodingOptionsVP8Param->RefTypeLFDelta[i], argv[0]);
+                MFX_PARSE_INT(m_extVP8CodingOptions->LoopFilterRefTypeDelta[i], argv[0]);
                 argv ++;
 
             }
         }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-MBTypeLFDelta"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
+        else if (m_OptProc.Check(argv[0], VM_STRING("-LoopFilterMbModeDelta"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
             MFX_CHECK(4 + argv < argvEnd);
             argv ++;
             for (mfxU8 i = 0; i < 4; i ++)
             {
-                MFX_PARSE_INT(m_extCodingOptionsVP8Param->MBTypeLFDelta[i], argv[0]);
+                MFX_PARSE_INT(m_extVP8CodingOptions->LoopFilterMbModeDelta[i], argv[0]);
                 argv ++;
 
             }
@@ -1073,18 +1074,18 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             argv ++;
             for (mfxU8 i = 0; i < 4; i ++)
             {
-                MFX_PARSE_INT(m_extCodingOptionsVP8Param->SegmentQPDelta[i], argv[0]);
+                MFX_PARSE_INT(m_extVP8CodingOptions->SegmentQPDelta[i], argv[0]);
                 argv ++;
 
             }
         }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-CTQPDelta"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
+        else if (m_OptProc.Check(argv[0], VM_STRING("-CoeffTypeQPDelta"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
             MFX_CHECK(5 + argv < argvEnd);
             argv ++;
             for (mfxU8 i = 0; i < 5; i ++)
             {
-                MFX_PARSE_INT(m_extCodingOptionsVP8Param->CTQPDelta[i], argv[0]);
+                MFX_PARSE_INT(m_extVP8CodingOptions->CoeffTypeQPDelta[i], argv[0]);
                 argv ++;
 
             }
@@ -1495,8 +1496,8 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
     if (!m_extCodingOptionsHEVC.IsZero())
         m_components[eREN].m_extParams.push_back(m_extCodingOptionsHEVC);
 
-    if (!m_extCodingOptionsVP8Param.IsZero())
-        m_components[eREN].m_extParams.push_back(m_extCodingOptionsVP8Param);
+    if (!m_extVP8CodingOptions.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extVP8CodingOptions);
 
     if (!m_extEncoderRoi.IsZero())
         m_components[eREN].m_extParams.push_back(m_extEncoderRoi);

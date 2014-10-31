@@ -66,9 +66,7 @@ private:
     void COVP8        (tc_par& arg)
     {
         tsExtBufType<mfxVideoParam>* p = (arg.p0 == MFX_INIT) ? &m_par : m_resetPar.pPar;
-        mfxExtCodingOptionVP8& co      = *p;
-        co.EnableAutoAltRef            = arg.p1;      
-        co.TokenPartitions             = arg.p2;       
+        mfxExtVP8CodingOption& co      = *p;
         co.EnableMultipleSegments      = arg.p3;
     }
     void Size(tc_par& arg)
@@ -206,13 +204,9 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             EXPECT_EQ(m_par.mfx.FrameInfo.CropH, hdr.udc->Height);
         }
 
-        if((mfxExtCodingOptionVP8*)m_par)
+        if((mfxExtVP8CodingOption*)m_par)
         {
-            mfxExtCodingOptionVP8& co = m_par;
-            if(co.TokenPartitions)
-            {
-                EXPECT_EQ(co.TokenPartitions - 1, hdr.udc->fh.log2_nbr_of_dct_partitions);
-            }
+            mfxExtVP8CodingOption& co = m_par;
             if(co.EnableMultipleSegments)
             {
                 EXPECT_EQ(mfxU32(co.EnableMultipleSegments == MFX_CODINGOPTION_ON), hdr.udc->fh.segmentation_enabled);

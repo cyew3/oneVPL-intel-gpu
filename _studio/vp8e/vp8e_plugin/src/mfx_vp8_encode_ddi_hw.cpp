@@ -32,17 +32,17 @@ namespace MFX_VP8ENC
     mfxStatus CheckVideoParam(mfxVideoParam const & par, ENCODE_CAPS_VP8 const &caps)
     {
         mfxStatus sts = MFX_ERR_NONE;
-        mfxExtCodingOptionVP8 * opts = GetExtBuffer(par);
-        MFX_CHECK_NULL_PTR1(opts);
+        mfxExtVP8CodingOption * pExtVP8Opt = GetExtBuffer(par);
+        MFX_CHECK_NULL_PTR1(pExtVP8Opt);
 
         MFX_CHECK(par.mfx.FrameInfo.Height <= caps.MaxPicHeight, MFX_WRN_PARTIAL_ACCELERATION);
         MFX_CHECK(par.mfx.FrameInfo.Width  <= caps.MaxPicWidth,  MFX_WRN_PARTIAL_ACCELERATION);
-        if (opts->EnableMultipleSegments == MFX_CODINGOPTION_ON && !caps.SegmentationAllowed)
+        if (pExtVP8Opt->EnableMultipleSegments && !caps.SegmentationAllowed)
         {
-            opts->EnableMultipleSegments = 0;
+            pExtVP8Opt->EnableMultipleSegments = 0;
             sts =  MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;       
         }
-        return sts;    
+        return sts;
     }
 
     DriverEncoder* CreatePlatformVp8Encoder()
@@ -81,13 +81,12 @@ namespace MFX_VP8ENC
         VAEncPictureParameterBufferVP8 & pps,
         std::vector<ExtVASurface> const & reconQueue)
     {
-        mfxExtCodingOptionVP8 * opts = GetExtBuffer(par);
-        mfxExtCodingOptionVP8Param * VP8Par = GetExtBuffer(par);
-        MFX_CHECK_NULL_PTR1(opts);
+        mfxExtVP8CodingOption * pExtVP8Opt = GetExtBuffer(par);
+        MFX_CHECK_NULL_PTR1(pExtVP8Opt);
 
         Zero(pps);
 
-        pps.pic_flags.bits.version     = VP8Par->VP8Version;
+        pps.pic_flags.bits.version     = pExtVP8Opt->Version;
         pps.pic_flags.bits.color_space = 0;
 
         pps.ref_last_frame = pps.ref_gf_frame = pps.ref_arf_frame = VA_INVALID_SURFACE;
@@ -113,13 +112,13 @@ namespace MFX_VP8ENC
         }
 
         pps.pic_flags.bits.frame_type                      = (task.m_sFrameParams.bIntra) ? 0 : 1;
-        pps.pic_flags.bits.segmentation_enabled           = opts->EnableMultipleSegments;
+        pps.pic_flags.bits.segmentation_enabled           = pExtVP8Opt->EnableMultipleSegments;
 
         pps.pic_flags.bits.loop_filter_type               = task.m_sFrameParams.LFType;
-        pps.pic_flags.bits.loop_filter_adj_enable         = VP8Par->RefTypeLFDelta[0] || VP8Par->RefTypeLFDelta[1] || VP8Par->RefTypeLFDelta[2] || VP8Par->RefTypeLFDelta[3] ||
-            VP8Par->MBTypeLFDelta[0] || VP8Par->MBTypeLFDelta[1] || VP8Par->MBTypeLFDelta[2] || VP8Par->MBTypeLFDelta[3];
+        pps.pic_flags.bits.loop_filter_adj_enable         = pExtVP8Opt->LoopFilterRefTypeDelta[0] || pExtVP8Opt->LoopFilterRefTypeDelta[1] || pExtVP8Opt->LoopFilterRefTypeDelta[2] || pExtVP8Opt->LoopFilterRefTypeDelta[3] ||
+            pExtVP8Opt->LoopFilterMbModeDelta[0] || pExtVP8Opt->LoopFilterMbModeDelta[1] || pExtVP8Opt->LoopFilterMbModeDelta[2] || pExtVP8Opt->LoopFilterMbModeDelta[3];
 
-        pps.pic_flags.bits.num_token_partitions           = VP8Par->NumPartitions;
+        pps.pic_flags.bits.num_token_partitions           = pExtVP8Opt->NumTokenPartitions;
 
         if (pps.pic_flags.bits.frame_type)
         {
@@ -142,8 +141,8 @@ namespace MFX_VP8ENC
             pps.loop_filter_level[i] = task.m_sFrameParams.LFLevel[i];
             if (pps.pic_flags.bits.loop_filter_adj_enable)
             {
-                pps.ref_lf_delta[i]      = VP8Par->RefTypeLFDelta[i];
-                pps.mode_lf_delta[i]     = VP8Par->MBTypeLFDelta[i];
+                pps.ref_lf_delta[i]      = pExtVP8Opt->LoopFilterRefTypeDelta[i];
+                pps.mode_lf_delta[i]     = pExtVP8Opt->LoopFilterMbModeDelta[i];
             }
         }
 
@@ -166,17 +165,17 @@ namespace MFX_VP8ENC
     mfxStatus FillQuantBuffer(TaskHybridDDI const & task, mfxVideoParam const & par,VAQMatrixBufferVP8& quant)
     {
         MFX_CHECK(par.mfx.RateControlMethod == MFX_RATECONTROL_CQP, MFX_ERR_UNSUPPORTED);
-        mfxExtCodingOptionVP8Param * VP8Par = GetExtBuffer(par);
+        mfxExtVP8CodingOption * pExtVP8Opt = GetExtBuffer(par);
 
         for (int i = 0; i < 4; i ++)
         {
             quant.quantization_index[i] = task.m_sFrameParams.bIntra ? par.mfx.QPI:par.mfx.QPP
-            + VP8Par->SegmentQPDelta[i];
+            + pExtVP8Opt->SegmentQPDelta[i];
         }
         // delta for YDC, Y2AC, Y2DC, UAC, UDC
         for (int i = 0; i < 5; i ++)
         {
-            quant.quantization_index_delta[i] = VP8Par->CTQPDelta[i];
+            quant.quantization_index_delta[i] = pExtVP8Opt->CoeffTypeQPDelta[i];
         }
 
         return MFX_ERR_NONE;

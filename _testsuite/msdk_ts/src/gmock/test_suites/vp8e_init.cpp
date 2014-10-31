@@ -78,9 +78,7 @@ void AR(tsVideoEncoder& enc, InitPar&, mfxU32 p0, mfxU32 p1, mfxU32 p2)
 }
 void COVP8(tsVideoEncoder& enc, InitPar&, mfxU32 p0, mfxU32 p1, mfxU32 p2)
 {
-    mfxExtCodingOptionVP8& co = enc.m_par;
-    co.EnableAutoAltRef       = p0;      
-    co.TokenPartitions        = p1;       
+    mfxExtVP8CodingOption& co = enc.m_par;
     co.EnableMultipleSegments = p2;
 }
 
@@ -211,22 +209,7 @@ tc_struct test_case[] =
     {/*72*/ MFX_ERR_NONE,                     AR,  1, 1, },
     {/*73*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, AR,  1, 2, },
     {/*74*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, AR,  2, 1, },
-    {/*75*/ MFX_ERR_NONE, set_par, MFX_OFFSET(EncodedOrder), sizeof(mfxU16), 1 },
-    {/*76*/ MFX_ERR_NONE,                     COVP8,  MFX_CODINGOPTION_UNKNOWN,  MFX_TOKENPART_VP8_UNKNOWN,  MFX_CODINGOPTION_UNKNOWN, },
-    {/*77*/ MFX_ERR_NONE,                     COVP8,  MFX_CODINGOPTION_ON,       MFX_TOKENPART_VP8_UNKNOWN,  MFX_CODINGOPTION_UNKNOWN, },
-    {/*78*/ MFX_ERR_NONE,                     COVP8,  MFX_CODINGOPTION_OFF,      MFX_TOKENPART_VP8_UNKNOWN,  MFX_CODINGOPTION_UNKNOWN, },
-    {/*79*/ MFX_ERR_NONE,                     COVP8,  MFX_CODINGOPTION_ADAPTIVE, MFX_TOKENPART_VP8_UNKNOWN,  MFX_CODINGOPTION_UNKNOWN, },
-    {/*80*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, COVP8,  1,                         MFX_TOKENPART_VP8_UNKNOWN,  MFX_CODINGOPTION_UNKNOWN, },
-    {/*81*/ MFX_ERR_NONE,                     COVP8,  MFX_CODINGOPTION_UNKNOWN,  MFX_TOKENPART_VP8_1,        MFX_CODINGOPTION_UNKNOWN, },
-    {/*82*/ MFX_ERR_NONE,                     COVP8,  MFX_CODINGOPTION_UNKNOWN,  MFX_TOKENPART_VP8_2,        MFX_CODINGOPTION_UNKNOWN, },
-    {/*83*/ MFX_ERR_NONE,                     COVP8,  MFX_CODINGOPTION_UNKNOWN,  MFX_TOKENPART_VP8_4,        MFX_CODINGOPTION_UNKNOWN, },
-    {/*84*/ MFX_ERR_NONE,                     COVP8,  MFX_CODINGOPTION_UNKNOWN,  MFX_TOKENPART_VP8_8,        MFX_CODINGOPTION_UNKNOWN, },
-    {/*85*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, COVP8,  MFX_CODINGOPTION_UNKNOWN,  MFX_TOKENPART_VP8_8+1,      MFX_CODINGOPTION_UNKNOWN, },
-    {/*86*/ MFX_ERR_NONE,                     COVP8,  MFX_CODINGOPTION_UNKNOWN,  MFX_TOKENPART_VP8_UNKNOWN,  MFX_CODINGOPTION_UNKNOWN,  },
-    {/*87*/ MFX_ERR_NONE,                     COVP8,  MFX_CODINGOPTION_UNKNOWN,  MFX_TOKENPART_VP8_UNKNOWN,  MFX_CODINGOPTION_ON,       },
-    {/*88*/ MFX_ERR_NONE,                     COVP8,  MFX_CODINGOPTION_UNKNOWN,  MFX_TOKENPART_VP8_UNKNOWN,  MFX_CODINGOPTION_OFF,      },
-    {/*89*/ MFX_ERR_NONE,                     COVP8,  MFX_CODINGOPTION_UNKNOWN,  MFX_TOKENPART_VP8_UNKNOWN,  MFX_CODINGOPTION_ADAPTIVE, },
-    {/*90*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, COVP8,  MFX_CODINGOPTION_UNKNOWN,  MFX_TOKENPART_VP8_UNKNOWN,  1,                         },
+    {/*75*/ MFX_ERR_NONE, set_par, MFX_OFFSET(EncodedOrder), sizeof(mfxU16), 1 }
 };
 
 int test(unsigned int id)

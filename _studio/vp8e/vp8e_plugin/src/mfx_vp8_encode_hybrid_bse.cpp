@@ -137,44 +137,40 @@ namespace MFX_VP8ENC
 
     mfxStatus Vp8CoreBSE::InitVp8VideoParam(const mfxVideoParam &video)
     {
-        mfxExtCodingOptionVP8 *pOpt= GetExtBuffer(video);
-        mfxExtCodingOptionVP8Param *pVP8Par= GetExtBuffer(video);
-
-        //MFX_CHECK (video.mfx.RateControlMethod == MFX_RATECONTROL_CQP, MFX_ERR_UNSUPPORTED);
-        MFX_CHECK (pOpt->TokenPartitions < 2, MFX_ERR_UNSUPPORTED);
+        mfxExtVP8CodingOption *pExtVP8Opt= GetExtBuffer(video);
 
         memset(&m_Params,0,sizeof(m_Params));
 
         m_Params.SrcWidth  = video.mfx.FrameInfo.CropW!=0 ? video.mfx.FrameInfo.CropW: video.mfx.FrameInfo.Width;
         m_Params.SrcHeight = video.mfx.FrameInfo.CropH!=0 ? video.mfx.FrameInfo.CropH: video.mfx.FrameInfo.Height;
         m_Params.fSizeInMBs = ((m_Params.SrcWidth+15)>>4) * ((m_Params.SrcHeight+15)>>4);
-        m_Params.NumFramesToEncode = pVP8Par->NumFramesForIVF;
+        m_Params.NumFramesToEncode = pExtVP8Opt->NumFramesForIVFHeader;
         m_Params.FrameRateNom = video.mfx.FrameInfo.FrameRateExtN;
         m_Params.FrameRateDeNom = video.mfx.FrameInfo.FrameRateExtD;
-        m_Params.EnableSeg = (pOpt->EnableMultipleSegments==MFX_CODINGOPTION_ON)?1:0;
+        m_Params.EnableSeg = (pExtVP8Opt->EnableMultipleSegments==MFX_CODINGOPTION_ON)?1:0;
 
         m_Params.EnableSkip = 1;
-        m_Params.NumPartitions = pVP8Par->NumPartitions; 
+        m_Params.NumTokenPartitions = pExtVP8Opt->NumTokenPartitions; 
 
         for (mfxU8 i = 0; i < 4; i ++)
         {
-            m_Params.KeyFrameQP[i] = video.mfx.QPI + pVP8Par->SegmentQPDelta[i];
-            m_Params.PFrameQP[i]   = video.mfx.QPP + pVP8Par->SegmentQPDelta[i];
+            m_Params.KeyFrameQP[i] = video.mfx.QPI + pExtVP8Opt->SegmentQPDelta[i];
+            m_Params.PFrameQP[i]   = video.mfx.QPP + pExtVP8Opt->SegmentQPDelta[i];
         }
 
-        m_Params.LoopFilterType = pVP8Par->LoopFilterType;
-        m_Params.SharpnessLevel = pVP8Par->SharpnessLevel;
+        m_Params.LoopFilterType = pExtVP8Opt->LoopFilterType;
+        m_Params.SharpnessLevel = pExtVP8Opt->SharpnessLevel;
 
         for (mfxU8 i = 0; i < 4; i ++)
         {
-            m_Params.LoopFilterLevel[i] = pVP8Par->LoopFilterLevel[i];
-            m_Params.RefTypeLFDelta[i]  = pVP8Par->RefTypeLFDelta[i];
-            m_Params.MBTypeLFDelta[i]   = pVP8Par->MBTypeLFDelta[i];
+            m_Params.LoopFilterLevel[i] = pExtVP8Opt->LoopFilterLevel[i];
+            m_Params.LoopFilterRefTypeDelta[i]  = pExtVP8Opt->LoopFilterRefTypeDelta[i];
+            m_Params.LoopFilterMbModeDelta[i]   = pExtVP8Opt->LoopFilterMbModeDelta[i];
         }
 
         for (mfxU8 i = 0; i < 5; i ++)
         {
-            m_Params.CTQPDelta[i] = pVP8Par->CTQPDelta[i];
+            m_Params.CoeffTypeQPDelta[i] = pExtVP8Opt->CoeffTypeQPDelta[i];
         }
 
         return MFX_ERR_NONE;
@@ -322,17 +318,17 @@ namespace MFX_VP8ENC
         m_ctrl.ShowFrame        = 1;
         m_ctrl.HorSizeCode      = 0;
         m_ctrl.VerSizeCode      = 0;
-        m_ctrl.PartitionNumL2   = m_Params.NumPartitions;
+        m_ctrl.PartitionNumL2   = m_Params.NumTokenPartitions;
         m_ctrl.ColorSpace       = 0;
         m_ctrl.ClampType        = 0;
         m_ctrl.SegOn            = m_Params.EnableSeg;
 
         m_ctrl.qIndex = (U8)(m_ctrl.FrameType ? m_Params.PFrameQP[0] : m_Params.KeyFrameQP[0]);
-        m_ctrl.qDelta[0] = (I8)(m_Params.CTQPDelta[0]);
-        m_ctrl.qDelta[1] = (I8)(m_Params.CTQPDelta[1]);
-        m_ctrl.qDelta[2] = (I8)(m_Params.CTQPDelta[2]);
-        m_ctrl.qDelta[3] = (I8)(m_Params.CTQPDelta[3]);
-        m_ctrl.qDelta[4] = (I8)(m_Params.CTQPDelta[4]);
+        m_ctrl.qDelta[0] = (I8)(m_Params.CoeffTypeQPDelta[0]);
+        m_ctrl.qDelta[1] = (I8)(m_Params.CoeffTypeQPDelta[1]);
+        m_ctrl.qDelta[2] = (I8)(m_Params.CoeffTypeQPDelta[2]);
+        m_ctrl.qDelta[3] = (I8)(m_Params.CoeffTypeQPDelta[3]);
+        m_ctrl.qDelta[4] = (I8)(m_Params.CoeffTypeQPDelta[4]);
 
         if(!m_ctrl.FrameType) {
             for(j=0;j<VP8_NUM_OF_MB_FEATURES;j++)
@@ -366,18 +362,18 @@ namespace MFX_VP8ENC
         m_ctrl.LoopFilterLevel  = frameParams.LFLevel[0];
         m_ctrl.SharpnessLevel   = frameParams.Sharpness;
 
-        m_ctrl.LoopFilterAdjOn = ((m_Params.RefTypeLFDelta[0]|m_Params.RefTypeLFDelta[1]|m_Params.RefTypeLFDelta[2]|m_Params.RefTypeLFDelta[3]|
-            m_Params.MBTypeLFDelta[0]|m_Params.MBTypeLFDelta[1]|m_Params.MBTypeLFDelta[2]|m_Params.MBTypeLFDelta[3]) != 0);
+        m_ctrl.LoopFilterAdjOn = ((m_Params.LoopFilterRefTypeDelta[0]|m_Params.LoopFilterRefTypeDelta[1]|m_Params.LoopFilterRefTypeDelta[2]|m_Params.LoopFilterRefTypeDelta[3]|
+            m_Params.LoopFilterMbModeDelta[0]|m_Params.LoopFilterMbModeDelta[1]|m_Params.LoopFilterMbModeDelta[2]|m_Params.LoopFilterMbModeDelta[3]) != 0);
 
         if(m_ctrl.LoopFilterAdjOn)
         {
             for(i=0;i<VP8_NUM_OF_REF_FRAMES;i++) {
                 m_ctrl.refLFDeltas_pf[i] = m_ctrl.refLFDeltas[i];
-                m_ctrl.refLFDeltas[i] = (I8)(m_Params.RefTypeLFDelta[i]);
+                m_ctrl.refLFDeltas[i] = (I8)(m_Params.LoopFilterRefTypeDelta[i]);
             }
             for(i=0;i<VP8_NUM_OF_MODE_LF_DELTAS;i++) {
                 m_ctrl.modeLFDeltas_pf[i] = m_ctrl.modeLFDeltas[i];
-                m_ctrl.modeLFDeltas[i] = (I8)(m_Params.MBTypeLFDelta[i]);
+                m_ctrl.modeLFDeltas[i] = (I8)(m_Params.LoopFilterMbModeDelta[i]);
             }
         }
 
@@ -427,6 +423,7 @@ namespace MFX_VP8ENC
         CHECK(pBitstream->DataLength + pBitstream->DataOffset + IVFHeaderSize  < pBitstream->MaxLength);
 
         m_pBitstream = pBitstream;
+        printf("\n (sefremov) bIVFHeaders = %d", bIVFHeaders); fflush(0);
         if (bIVFHeaders)
         {
             pPictureHeader = pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset;

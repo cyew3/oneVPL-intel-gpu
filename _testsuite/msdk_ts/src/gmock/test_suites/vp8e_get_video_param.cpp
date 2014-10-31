@@ -86,9 +86,7 @@ private:
     void COVP8(tc_par& arg)
     {
         tsExtBufType<mfxVideoParam>* par = ((arg.p0 == MFX_IN) ? &m_par : m_GVPpar.pPar);
-        mfxExtCodingOptionVP8& co = *par;
-        co.EnableAutoAltRef       = arg.p1;      
-        co.TokenPartitions        = arg.p2;       
+        mfxExtVP8CodingOption& co = *par;
         co.EnableMultipleSegments = arg.p3;
     }
 };
@@ -110,8 +108,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                              + offsetof(mfxInfoMFX, GopPicSize), sizeof(mfxU16), 30}, {} },
     {/* 9*/ MFX_ERR_NONE, {&TestSuite::CBR}, {} },
     {/*10*/ MFX_ERR_NONE, {&TestSuite::VBR}, {} },
-    {/*11*/ MFX_ERR_NONE, {}, {&TestSuite::COVP8, MFX_GET}, },
-    {/*12*/ MFX_ERR_NONE, {&TestSuite::COVP8, MFX_IN, MFX_CODINGOPTION_ON, MFX_TOKENPART_VP8_4, MFX_CODINGOPTION_ON}, {&TestSuite::COVP8, MFX_GET}, },
+    {/*11*/ MFX_ERR_NONE, {}, {&TestSuite::COVP8, MFX_GET}, }
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -119,14 +116,14 @@ const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(Test
 
 #define _CHECK_SET(field, base, check) if(base.field) { EXPECT_EQ(base.field, check.field); } else { EXPECT_NE(0, check.field); }
 #define CHECK_SET(field) _CHECK_SET(field, m_par, par0)
-#define CHECK_EXTCO(field) _CHECK_SET(field, ((mfxExtCodingOptionVP8&)m_par), (*extco))
+#define CHECK_EXTCO(field) _CHECK_SET(field, ((mfxExtVP8CodingOption&)m_par), (*extco))
 
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     tsExtBufType<mfxVideoParam> par0;
     tc_struct tc = test_case[id];
-    mfxExtCodingOptionVP8* extco = 0;
+    mfxExtVP8CodingOption* extco = 0;
     
     if(tc.pre_init.set_par)
     {
@@ -171,7 +168,7 @@ int TestSuite::RunTest(unsigned int id)
         EXPECT_EQ(0, par0.mfx.NumRefFrame);
         EXPECT_EQ(0, par0.mfx.NumSlice);
 
-        if(m_par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+         if(m_par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
         {
             CHECK_SET(mfx.QPI);
             CHECK_SET(mfx.QPP);
@@ -186,8 +183,6 @@ int TestSuite::RunTest(unsigned int id)
         {
             CHECK_EXTCO(Header.BufferId);
             CHECK_EXTCO(Header.BufferSz);
-            CHECK_EXTCO(EnableAutoAltRef);
-            CHECK_EXTCO(TokenPartitions);
             CHECK_EXTCO(EnableMultipleSegments);
         }
     }

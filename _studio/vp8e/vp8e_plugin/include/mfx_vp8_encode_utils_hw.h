@@ -9,7 +9,6 @@
 */
 
 #include "mfx_common.h"
-#include "mfx_ext_buffers.h"
 #include "mfx_trace.h"
 #ifndef _MFX_VP8_ENCODE_UTILS_HW_H_
 #define _MFX_VP8_ENCODE_UTILS_HW_H_
@@ -200,9 +199,8 @@ namespace MFX_VP8ENC
     template<class T> struct ExtBufTypeToId {};
 
 #define BIND_EXTBUF_TYPE_TO_ID(TYPE, ID) template<> struct ExtBufTypeToId<TYPE> { enum { id = ID }; }
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionVP8,  MFX_EXTBUFF_VP8_EX_CODING_OPT            );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtOpaqueSurfaceAlloc,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionVP8Param,MFX_EXTBUFF_VP8_PARAM);
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtVP8CodingOption,MFX_EXTBUFF_VP8_CODING_OPT);
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderROI,MFX_EXTBUFF_ENCODER_ROI);
 #undef BIND_EXTBUF_TYPE_TO_ID
 
@@ -213,14 +211,14 @@ namespace MFX_VP8ENC
         extBuf.Header.BufferSz = sizeof(T);
     }
 
-    template <> inline void InitExtBufHeader<mfxExtCodingOptionVP8Param>(mfxExtCodingOptionVP8Param & extBuf)
+    template <> inline void InitExtBufHeader<mfxExtVP8CodingOption>(mfxExtVP8CodingOption & extBuf)
     {
         Zero(extBuf);
-        extBuf.Header.BufferId = ExtBufTypeToId<mfxExtCodingOptionVP8Param>::id;
-        extBuf.Header.BufferSz = sizeof(mfxExtCodingOptionVP8Param);
+        extBuf.Header.BufferId = ExtBufTypeToId<mfxExtVP8CodingOption>::id;
+        extBuf.Header.BufferSz = sizeof(mfxExtVP8CodingOption);
 
         // align with hardcoded parameters that were used before
-        extBuf.NumPartitions = 1;
+        extBuf.NumTokenPartitions = 1;
     }
 
     // temporal application of nonzero defaults to test ROI for VP8
@@ -373,13 +371,12 @@ namespace MFX_VP8ENC
 
 
     private:
-        mfxExtBuffer *              m_extParam[4];
-        mfxExtCodingOptionVP8       m_extOpt;        
+        mfxExtBuffer *              m_extParam[3];
         mfxExtOpaqueSurfaceAlloc    m_extOpaque;
-        mfxExtCodingOptionVP8Param  m_extVP8Params;
+        mfxExtVP8CodingOption       m_extVP8Opt;
         mfxExtEncoderROI            m_extROI;
     };
-    
+
 
     class ExternalFrames
     {

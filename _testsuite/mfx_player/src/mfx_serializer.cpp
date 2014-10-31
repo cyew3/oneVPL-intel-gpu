@@ -302,21 +302,22 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(NumTileRows);
 }
 
-void MFXStructureRef <mfxExtCodingOptionVP8Param>::ConstructValues() const
+void MFXStructureRef <mfxExtVP8CodingOption>::ConstructValues() const
 {
-    SERIALIZE_INT(VP8Version);
+    SERIALIZE_INT(Version);
+    SERIALIZE_INT(EnableMultipleSegments);
     SERIALIZE_INT(LoopFilterType);
     SERIALIZE_INT(SharpnessLevel);
-    SERIALIZE_INT(NumPartitions);
+    SERIALIZE_INT(NumTokenPartitions);
 
     SERIALIZE_POD_ARRAY(LoopFilterLevel, 4);
-    SERIALIZE_POD_ARRAY(RefTypeLFDelta, 4);
-    SERIALIZE_POD_ARRAY(MBTypeLFDelta, 4);
+    SERIALIZE_POD_ARRAY(LoopFilterRefTypeDelta, 4);
+    SERIALIZE_POD_ARRAY(LoopFilterMbModeDelta, 4);
     SERIALIZE_POD_ARRAY(SegmentQPDelta, 4);
-    SERIALIZE_POD_ARRAY(CTQPDelta, 5);
+    SERIALIZE_POD_ARRAY(CoeffTypeQPDelta, 5);
 
     SERIALIZE_INT(WriteIVFHeaders);
-    SERIALIZE_INT(NumFramesForIVF);
+    SERIALIZE_INT(NumFramesForIVFHeader);
 }
 
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
@@ -782,8 +783,8 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
             SerializeStruct(VM_STRING("HEVC."), *(mfxExtCodingOptionHEVC*)m_pStruct);
             break;
         }
-        case MFX_EXTBUFF_VP8_PARAM :{
-            SerializeStruct(VM_STRING("VP8PAR."), *(mfxExtCodingOptionVP8Param*)m_pStruct);
+        case MFX_EXTBUFF_VP8_CODING_OPT :{
+            SerializeStruct(VM_STRING("VP8."), *(mfxExtVP8CodingOption*)m_pStruct);
             break;
         }
         case MFX_EXTBUFF_MVC_SEQ_DESC : {

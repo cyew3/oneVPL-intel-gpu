@@ -29,8 +29,7 @@ mfxStatus CheckExtendedBuffers (mfxVideoParam* par)
     mfxU32 supported_buffers[NUM_SUPPORTED_BUFFERS] = {
             //MFX_EXTBUFF_CODING_OPTION_SPSPPS,
             MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
-            MFX_EXTBUFF_VP8_EX_CODING_OPT,
-            MFX_EXTBUFF_VP8_PARAM,
+            MFX_EXTBUFF_VP8_CODING_OPT,
             MFX_EXTBUFF_ENCODER_ROI
     };
     mfxU32 num_supported = 0;
@@ -320,35 +319,18 @@ static mfxStatus CheckMFXParameters(mfxInfoMFX*  par)
 
     return (bChanged)? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM: MFX_ERR_NONE;
 }
-static void SetSupportedExCodingParameters(mfxExtCodingOptionVP8*  par)
+static void SetSupportedExCodingParameters(mfxExtVP8CodingOption*  par)
 {
-    par->EnableAutoAltRef   = 1;        
-    par->TokenPartitions    = 1;        
     par->EnableMultipleSegments = 1; 
     memset(par->reserved,0,sizeof(par->reserved));
     //memset(par->reserved1,0,sizeof(par->reserved1));
 
 }
-static mfxStatus CheckExCodingParameters(mfxExtCodingOptionVP8*  par)
+static mfxStatus CheckExCodingParameters(mfxExtVP8CodingOption*  par)
 {
     mfxStatus   sts      = MFX_ERR_NONE;
     bool        bChanged = false;
 
-    if (par->EnableAutoAltRef > MFX_CODINGOPTION_ADAPTIVE)
-    {
-        par->EnableAutoAltRef = 0;
-        bChanged = true;    
-    }
-    /*if (par->EnableAutoGoldRef > MFX_CODINGOPTION_ADAPTIVE)
-    {
-        par->EnableAutoGoldRef = 0;
-        bChanged = true;    
-    }*/
-    if (par->TokenPartitions > MFX_TOKENPART_VP8_8)
-    {
-        par->TokenPartitions = 0;
-        bChanged = true;    
-    }
     if (par->EnableMultipleSegments > MFX_CODINGOPTION_ADAPTIVE)
     {
         par->EnableMultipleSegments = MFX_CODINGOPTION_ADAPTIVE;
@@ -509,27 +491,10 @@ static void SetDefaultMFXParameters(mfxInfoMFX*  par)
         }
     }
 }
-static void SetDefaultExCodingParameters(mfxExtCodingOptionVP8*  par, mfxExtCodingOptionVP8Param* parPlus, mfxExtEncoderROI * roi, mfxU16 tu, mfxU16 /*numTreads*/)
+static void SetDefaultExCodingParameters(mfxExtVP8CodingOption*  par, mfxExtEncoderROI * roi, mfxU16 tu, mfxU16 /*numTreads*/)
 {
     bool            bChanged = false;
-    static mfxU16   tokenPart[9] = {MFX_TOKENPART_VP8_1,MFX_TOKENPART_VP8_1,
-                                    MFX_TOKENPART_VP8_2,MFX_TOKENPART_VP8_2,
-                                    MFX_TOKENPART_VP8_4,MFX_TOKENPART_VP8_4,
-                                    MFX_TOKENPART_VP8_4,MFX_TOKENPART_VP8_4,
-                                    MFX_TOKENPART_VP8_8};
-  
-    if (par->EnableAutoAltRef == 0)
-    {
-        par->EnableAutoAltRef = (mfxU16)((tu < MFX_TARGETUSAGE_BALANCED)? MFX_CODINGOPTION_ON:MFX_CODINGOPTION_OFF);
-    }
-    /*if (par->EnableAutoGoldRef == 0)
-    {
-        par->EnableAutoGoldRef =(mfxU16)((tu < MFX_TARGETUSAGE_BALANCED)? MFX_CODINGOPTION_ON:MFX_CODINGOPTION_OFF);
-    }*/
-    if (par->TokenPartitions == 0)
-    {
-        par->TokenPartitions = 1; //tokenPart[numTreads > 8 ? 8 : numTreads]; 
-    }
+
     if (par->EnableMultipleSegments == 0)
     {
         if (roi && roi->NumROI)
@@ -539,16 +504,14 @@ static void SetDefaultExCodingParameters(mfxExtCodingOptionVP8*  par, mfxExtCodi
         bChanged = true;     
     }
 
-    if (parPlus)
-    {
-        if (parPlus->NumPartitions == 0)
-            parPlus->NumPartitions = 1;
-    }
+    if (par->NumTokenPartitions == 0)
+        par->NumTokenPartitions = 1;
+
 }
 
  mfxStatus SetSupportedParameters (mfxVideoParam* par)
  {
-     mfxExtCodingOptionVP8*     pExtOpt = 0;
+     mfxExtVP8CodingOption*     pExtVP8Opt = 0;
      mfxExtOpaqueSurfaceAlloc * pOpaqAlloc = 0;
 
      MFX_CHECK(CheckExtendedBuffers(par) == MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);  
@@ -571,12 +534,12 @@ static void SetDefaultExCodingParameters(mfxExtCodingOptionVP8*  par, mfxExtCodi
          pOpaqAlloc->In.Type = 1;    
      }
 
-     pExtOpt =(mfxExtCodingOptionVP8*)GetExtBuffer(  par->ExtParam, 
+     pExtVP8Opt =(mfxExtVP8CodingOption*)GetExtBuffer(  par->ExtParam, 
                                                      par->NumExtParam,
-                                                     MFX_EXTBUFF_VP8_EX_CODING_OPT);
-     if (pExtOpt)
+                                                     MFX_EXTBUFF_VP8_CODING_OPT);
+     if (pExtVP8Opt)
      {
-         SetSupportedExCodingParameters(pExtOpt);    
+         SetSupportedExCodingParameters(pExtVP8Opt);    
      }
      return MFX_ERR_NONE;
  }
@@ -586,7 +549,7 @@ static void SetDefaultExCodingParameters(mfxExtCodingOptionVP8*  par, mfxExtCodi
  {         
      mfxStatus sts = MFX_ERR_NONE;
 
-     mfxExtCodingOptionVP8      *pExDst     = 0, *pExSrc     = 0;
+     mfxExtVP8CodingOption      *pExtVP8OptDst     = 0, *pExtVP8OptSrc     = 0;
      mfxExtOpaqueSurfaceAlloc   *pOpaqDst   = 0, *pOpaqSrc   = 0;
      mfxExtEncoderROI           *pExtRoiDst = 0, *pExtRoiSrc = 0;
 
@@ -651,28 +614,28 @@ static void SetDefaultExCodingParameters(mfxExtCodingOptionVP8*  par, mfxExtCodi
     /*Check ext params for VP8 */
     {
         mfxStatus temp_sts = MFX_ERR_NONE;
-        pExSrc = (mfxExtCodingOptionVP8*)GetExtBuffer(parSrc->ExtParam, 
+        pExtVP8OptSrc = (mfxExtVP8CodingOption*)GetExtBuffer(parSrc->ExtParam, 
                                                       parSrc->NumExtParam,
-                                                      MFX_EXTBUFF_VP8_EX_CODING_OPT);
-        pExDst = (mfxExtCodingOptionVP8*)GetExtBuffer(parDst->ExtParam, 
+                                                      MFX_EXTBUFF_VP8_CODING_OPT);
+        pExtVP8OptDst = (mfxExtVP8CodingOption*)GetExtBuffer(parDst->ExtParam, 
                                                       parDst->NumExtParam,
-                                                      MFX_EXTBUFF_VP8_EX_CODING_OPT);
+                                                      MFX_EXTBUFF_VP8_CODING_OPT);
 
-        if (pExSrc && pExDst)
+        if (pExtVP8OptSrc && pExtVP8OptDst)
         {
-            memcpy(pExDst,pExSrc,sizeof(mfxExtCodingOptionVP8));
+            memcpy(pExtVP8OptDst,pExtVP8OptSrc,sizeof(mfxExtVP8CodingOption));
 
-            temp_sts = CheckExCodingParameters(pExDst);
+            temp_sts = CheckExCodingParameters(pExtVP8OptDst);
             if (temp_sts < 0)
                 return temp_sts;
             else if (temp_sts > 0)
                 sts = temp_sts;
         }
-        else if(pExDst)
+        else if(pExtVP8OptDst)
         {
-            mfxExtBuffer header = pExDst->Header;
-            memset(pExDst,0,sizeof(mfxExtOpaqueSurfaceAlloc));
-            pExDst->Header = header;        
+            mfxExtBuffer header = pExtVP8OptDst->Header;
+            memset(pExtVP8OptDst,0,sizeof(mfxExtOpaqueSurfaceAlloc));
+            pExtVP8OptDst->Header = header;        
         }
     }
 
@@ -709,14 +672,13 @@ mfxU16 GetDefaultAsyncDepth()
 
 mfxStatus CheckParametersAndSetDefault(mfxVideoParam*              pParamSrc,
                                        mfxVideoParam*              pParamDst,
-                                       mfxExtCodingOptionVP8*      pExCodingVP8Dst,
-                                       mfxExtCodingOptionVP8Param* pExCodingVP8ParamDst,
+                                       mfxExtVP8CodingOption*      pExtVP8OptDst,
                                        mfxExtOpaqueSurfaceAlloc*   pOpaqAllocDst,
                                        bool                        bExternalFrameAllocator,
                                        bool                        bReset)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    mfxExtCodingOptionVP8*  pExCodingVP8Src = 0;
+    mfxExtVP8CodingOption*  pExCodingVP8Src = 0;
 
     MFX_CHECK_NULL_PTR1(pParamSrc);
     MFX_CHECK(CheckExtendedBuffers(pParamSrc) == MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);  
@@ -780,14 +742,14 @@ mfxStatus CheckParametersAndSetDefault(mfxVideoParam*              pParamSrc,
     /*Check ext params for VP8 */
     {
         mfxStatus temp_sts = MFX_ERR_NONE;
-        pExCodingVP8Src =(mfxExtCodingOptionVP8*)GetExtBuffer(pParamSrc->ExtParam, 
+        pExCodingVP8Src =(mfxExtVP8CodingOption*)GetExtBuffer(pParamSrc->ExtParam, 
             pParamSrc->NumExtParam,
-            MFX_EXTBUFF_VP8_EX_CODING_OPT);
-        if (pExCodingVP8Src && pExCodingVP8Dst)
+            MFX_EXTBUFF_VP8_CODING_OPT);
+        if (pExCodingVP8Src)
         {
-            memcpy(pExCodingVP8Dst,pExCodingVP8Src,sizeof(mfxExtCodingOptionVP8));
+            memcpy(pExtVP8OptDst,pExCodingVP8Src,sizeof(mfxExtVP8CodingOption));
         }
-        temp_sts = CheckExCodingParameters(pExCodingVP8Dst);
+        temp_sts = CheckExCodingParameters(pExtVP8OptDst);
         if (temp_sts < 0)
             return temp_sts;
         else if (temp_sts > 0)
@@ -797,7 +759,7 @@ mfxStatus CheckParametersAndSetDefault(mfxVideoParam*              pParamSrc,
             pParamSrc->NumExtParam,
             MFX_EXTBUFF_ENCODER_ROI);
 
-        SetDefaultExCodingParameters(pExCodingVP8Dst,pExCodingVP8ParamDst,pExtRoi,pParamDst->mfx.TargetUsage,pParamDst->mfx.NumThread);
+        SetDefaultExCodingParameters(pExtVP8OptDst,pExtRoi,pParamDst->mfx.TargetUsage,pParamDst->mfx.NumThread);
     }
     return sts;
 }

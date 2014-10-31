@@ -70,7 +70,7 @@ namespace MFX_VP8ENC
     {
         MFX_CHECK_NULL_PTR1(par);
 
-        mfxExtCodingOptionVP8 *   optDst  = (mfxExtCodingOptionVP8*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VP8_EX_CODING_OPT); 
+        mfxExtVP8CodingOption *   pExtVP8OptDst  = (mfxExtVP8CodingOption*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VP8_CODING_OPT); 
         mfxExtOpaqueSurfaceAlloc* opaqDst = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION); 
 
         par->mfx        = parSrc->mfx;
@@ -79,18 +79,18 @@ namespace MFX_VP8ENC
         par->IOPattern  = parSrc->IOPattern;
         par->AsyncDepth = parSrc->AsyncDepth;
 
-        if (optDst) 
+        if (pExtVP8OptDst) 
         {
-            mfxExtCodingOptionVP8 * optSrc = GetExtBuffer(*parSrc);
-            if (optSrc)
+            mfxExtVP8CodingOption * pExtVP8OptSrc = GetExtBuffer(*parSrc);
+            if (pExtVP8OptSrc)
             {
-                *optDst = *optSrc;
+                *pExtVP8OptDst = *pExtVP8OptSrc;
             }
             else
             {
-                mfxExtBuffer header = optDst->Header;
-                memset(optDst,0,sizeof(mfxExtCodingOptionVP8));
-                optDst->Header = header;
+                mfxExtBuffer header = pExtVP8OptDst->Header;
+                memset(pExtVP8OptDst,0,sizeof(mfxExtVP8CodingOption));
+                pExtVP8OptDst->Header = header;
             }        
         }
         if (opaqDst)
@@ -103,7 +103,7 @@ namespace MFX_VP8ENC
             else
             {
                 mfxExtBuffer header = opaqDst->Header;
-                memset(opaqDst,0,sizeof(mfxExtCodingOptionVP8));
+                memset(opaqDst,0,sizeof(mfxExtOpaqueSurfaceAlloc));
                 opaqDst->Header = header;
             }     
         }
@@ -144,16 +144,16 @@ namespace MFX_VP8ENC
             pFrameParams->copyToGoldRef = 1; // copy every last_ref frame to gold_ref
             pFrameParams->copyToAltRef = 2; // copy every gold_ref frame to alt_ref
         }
-        mfxExtCodingOptionVP8Param *VP8Par = GetExtBuffer(*par);
-        pFrameParams->LFType  = VP8Par->LoopFilterType;
+        mfxExtVP8CodingOption *pExtVP8Opt = GetExtBuffer(*par);
+        pFrameParams->LFType  = pExtVP8Opt->LoopFilterType;
         for (mfxU8 i = 0; i < 4; i ++)
         {
             pFrameParams->LFLevel[i] = (mfxU8)ModifyLoopFilterLevelQPBased(
                 pFrameParams->bIntra ? par->mfx.QPI : par->mfx.QPP,
-                VP8Par->LoopFilterLevel[i],
+                pExtVP8Opt->LoopFilterLevel[i],
                 !pFrameParams->bIntra);
         }
-        pFrameParams->Sharpness = VP8Par->SharpnessLevel;
+        pFrameParams->Sharpness = pExtVP8Opt->SharpnessLevel;
 
         return MFX_ERR_NONE;  
     }
@@ -239,34 +239,29 @@ namespace MFX_VP8ENC
 
         Zero(m_extParam);
 
-        InitExtBufHeader(m_extOpt);
         InitExtBufHeader(m_extOpaque);
-        InitExtBufHeader(m_extVP8Params);
+        InitExtBufHeader(m_extVP8Opt);
         InitExtBufHeader(m_extROI);
-
-        if (mfxExtCodingOptionVP8 * opts = GetExtBuffer(par))
-            m_extOpt = *opts;
 
         if (mfxExtOpaqueSurfaceAlloc * opts = GetExtBuffer(par))
             m_extOpaque = *opts;
 
-        if (mfxExtCodingOptionVP8Param * opts = GetExtBuffer(par))
-            m_extVP8Params = *opts;
+        if (mfxExtVP8CodingOption * opts = GetExtBuffer(par))
+            m_extVP8Opt = *opts;
 
         if (mfxExtEncoderROI * opts = GetExtBuffer(par))
             m_extROI = *opts;
 
-        if (m_extOpt.EnableMultipleSegments == MFX_CODINGOPTION_UNKNOWN && m_extROI.NumROI)
-            m_extOpt.EnableMultipleSegments = MFX_CODINGOPTION_ON;
+        if (m_extVP8Opt.EnableMultipleSegments == MFX_CODINGOPTION_UNKNOWN && m_extROI.NumROI)
+            m_extVP8Opt.EnableMultipleSegments = MFX_CODINGOPTION_ON;
 
-        m_extParam[0]  = &m_extOpt.Header;    
-        m_extParam[1]  = &m_extOpaque.Header;
-        m_extParam[2]  = &m_extVP8Params.Header;
-        m_extParam[3]  = &m_extROI.Header;
+        m_extParam[0]  = &m_extOpaque.Header;
+        m_extParam[1]  = &m_extVP8Opt.Header;
+        m_extParam[2]  = &m_extROI.Header;
 
         ExtParam = m_extParam;
         NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
-        assert(NumExtParam == 4);
+        assert(NumExtParam == 3);
     }
 
     //---------------------------------------------------------

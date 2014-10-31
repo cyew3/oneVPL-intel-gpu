@@ -12,7 +12,6 @@
 */
 
 #include "mfx_common.h"
-#include "mfx_ext_buffers.h" 
 
 #if defined (MFX_ENABLE_VP8_VIDEO_ENCODE_HW)
  
@@ -28,8 +27,7 @@ namespace MFX_VP8ENC
     /*function for init/reset*/
     mfxStatus CheckParametersAndSetDefault( mfxVideoParam*              pParamSrc,
                                             mfxVideoParam*              pParamDst,
-                                            mfxExtCodingOptionVP8*      pExCodingVP8Dst,
-                                            mfxExtCodingOptionVP8Param* pExCodingVP8ParamDst,
+                                            mfxExtVP8CodingOption*      pExtVP8OptDst,
                                             mfxExtOpaqueSurfaceAlloc*   pOpaqAllocDst,
                                             bool                        bExternalFrameAllocator,
                                             bool                        bReset = false);

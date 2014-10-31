@@ -472,10 +472,8 @@ STRUCT(mfxExtVPPDeinterlacing,
     FIELD_T(mfxU16, Mode)
 )
 
-STRUCT(mfxExtCodingOptionVP8,
+STRUCT(mfxExtVP8CodingOption,
     FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU16, EnableAutoAltRef       )
-    FIELD_T(mfxU16, TokenPartitions        )
     FIELD_T(mfxU16, EnableMultipleSegments )
 )
 

@@ -327,7 +327,7 @@ DEF_STRUCT_TRACE(mfxExtBuffer){
         PRINT_BUF(MFX_EXTBUFF_AVC_REFLIST_CTRL          , mfxExtAVCRefListCtrl          );
         
 #ifdef __MFXVP8_H__
-        PRINT_BUF(MFX_EXTBUFF_VP8_EX_CODING_OPT         , mfxExtCodingOptionVP8         );
+        PRINT_BUF(MFX_EXTBUFF_VP8_CODING_OPT         , mfxExtVP8CodingOption         );
 #endif //__MFXVP8_H__
         default: break;
     }
@@ -1045,12 +1045,10 @@ DEF_STRUCT_TRACE(mfxExtEncoderROI){
 
 
 #ifdef __MFXVP8_H__
-DEF_STRUCT_TRACE(mfxExtCodingOptionVP8){
+DEF_STRUCT_TRACE(mfxExtVP8CodingOption){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
-        << PUT_PAR(EnableAutoAltRef)
-        << PUT_PAR(TokenPartitions)
         << PUT_PAR(EnableMultipleSegments)
         << print_param.padding << '}';
     return os;

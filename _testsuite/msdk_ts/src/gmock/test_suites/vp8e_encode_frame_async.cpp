@@ -88,9 +88,7 @@ private:
 
     void COVP8(tc_par& arg, EFApar* p)
     {
-        mfxExtCodingOptionVP8& co = m_par;
-        co.EnableAutoAltRef       = arg.p0;      
-        co.TokenPartitions        = arg.p1;       
+        mfxExtVP8CodingOption& co = m_par;
         co.EnableMultipleSegments = arg.p2;
     }
 };
@@ -120,13 +118,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*12*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_0}, {} },
     {/*13*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_1}, {} },
     {/*14*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_2}, {} },
-    {/*15*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_3}, {} },
-    {/*16*/ MFX_ERR_NONE,{&TestSuite::COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_1, MFX_CODINGOPTION_UNKNOWN}, {} },
-    {/*17*/ MFX_ERR_NONE,{&TestSuite::COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_2, MFX_CODINGOPTION_UNKNOWN}, {} },
-    {/*18*/ MFX_ERR_NONE,{&TestSuite::COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_4, MFX_CODINGOPTION_UNKNOWN}, {} },
-    {/*19*/ MFX_ERR_NONE,{&TestSuite::COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_8, MFX_CODINGOPTION_UNKNOWN}, {} },
-    {/*20*/ MFX_ERR_NONE,{&TestSuite::COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_UNKNOWN, MFX_CODINGOPTION_ON}, {} },
-    {/*21*/ MFX_ERR_NONE,{&TestSuite::COVP8, MFX_CODINGOPTION_UNKNOWN, MFX_TOKENPART_VP8_UNKNOWN, MFX_CODINGOPTION_OFF}, {} },
+    {/*15*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_3}, {} }
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -183,13 +175,9 @@ int TestSuite::RunTest(unsigned int id)
                 EXPECT_EQ(m_par.mfx.FrameInfo.Height, hdr.udc->Height);
             }
 
-            if((mfxExtCodingOptionVP8*)m_par)
+            if((mfxExtVP8CodingOption*)m_par)
             {
-                mfxExtCodingOptionVP8& co = m_par;
-                if(co.TokenPartitions)
-                {
-                    EXPECT_EQ(co.TokenPartitions - 1, hdr.udc->fh.log2_nbr_of_dct_partitions);
-                }
+                mfxExtVP8CodingOption& co = m_par;
                 if(co.EnableMultipleSegments)
                 {
                     EXPECT_EQ(mfxU32(co.EnableMultipleSegments == MFX_CODINGOPTION_ON), hdr.udc->fh.segmentation_enabled);

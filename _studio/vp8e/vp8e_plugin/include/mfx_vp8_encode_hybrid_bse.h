@@ -1107,15 +1107,15 @@ namespace MFX_VP8ENC
         U32 Version;            //
         U32 EnableSeg;          //
         U32 EnableSkip;         //
-        U32 NumPartitions;      //
+        U32 NumTokenPartitions; //
         U32 LoopFilterType;     //
         U32 SharpnessLevel;     //
         U32 KeyFrameQP[4];      // Fixed QP for K frame, all segments
         U32 PFrameQP[4];        // Fixed QP for P frame, all segments
-        I32 CTQPDelta[5];       // QP deltas for coefficient type [YDC, Y2AC Y2DC, UAC, UDC]
+        I32 CoeffTypeQPDelta[5];       // QP deltas for coefficient type [YDC, Y2AC Y2DC, UAC, UDC]
         U32 LoopFilterLevel[4]; // Loop filter level, all segments
-        I32 RefTypeLFDelta[4];  // Loop filter level delta for ref types
-        I32 MBTypeLFDelta[4];   // Look filter level delta for MB types
+        I32 LoopFilterRefTypeDelta[4];  // Loop filter level delta for ref types
+        I32 LoopFilterMbModeDelta[4];   // Look filter level delta for MB types
     };
 
     class Vp8FrameParamsEnc

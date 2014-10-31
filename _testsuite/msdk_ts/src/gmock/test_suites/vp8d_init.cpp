@@ -126,7 +126,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*46*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.AsyncDepth, 10}}},
 
     // Ext Buffers
-    {/*47*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtCodingOptionVP8        )}},
+    {/*47*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVP8CodingOption        )}},
     {/*48*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtCodingOption           )}},
     {/*49*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtCodingOptionSPSPPS     )}},
     {/*50*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDoNotUse            )}},
