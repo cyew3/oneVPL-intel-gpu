@@ -47,28 +47,29 @@ enum {
     MFX_PROFILE_VP8_2                       = 2+1,
     MFX_PROFILE_VP8_3                       = 3+1,
 };
-/*Token partitions*/
-enum {
-    MFX_TOKENPART_VP8_UNKNOWN               = 0,
-    MFX_TOKENPART_VP8_1                     = 0+1, 
-    MFX_TOKENPART_VP8_2                     = 1+1,
-    MFX_TOKENPART_VP8_4                     = 2+1,
-    MFX_TOKENPART_VP8_8                     = 3+1,
-};
 
 /* Extended Buffer Ids */
 enum {
-    MFX_EXTBUFF_VP8_EX_CODING_OPT =   MFX_MAKEFOURCC('V','P','8','E'),
+    MFX_EXTBUFF_VP8_CODING_OPT =   MFX_MAKEFOURCC('V','P','8','E'),
 };
 
 typedef struct { 
     mfxExtBuffer    Header;
-    mfxU16          EnableAutoAltRef;        /* tri-state option */
-    mfxU16          TokenPartitions;         /* see enum above   */
-    mfxU16          EnableMultipleSegments;  /* tri-state option */
-    mfxU16          reserved[9];
-} mfxExtCodingOptionVP8;
 
+    mfxU16   Version;
+    mfxU16   EnableMultipleSegments;
+    mfxU16   LoopFilterType;
+    mfxU16   LoopFilterLevel[4];
+    mfxU16   SharpnessLevel;
+    mfxU16   NumTokenPartitions;
+    mfxI16   LoopFilterRefTypeDelta[4];
+    mfxI16   LoopFilterMbModeDelta[4];
+    mfxI16   SegmentQPDelta[4];
+    mfxI16   CoeffTypeQPDelta[5];
+    mfxU16   WriteIVFHeaders;
+    mfxU32   NumFramesForIVFHeader;
+    mfxU16   reserved[223];
+} mfxExtVP8CodingOption;
 
 #ifdef __cplusplus
 } // extern "C"
