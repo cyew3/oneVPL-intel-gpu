@@ -159,6 +159,10 @@ protected:
     mfxStatus           WaitForActiveThreads();
 
     mfxVideoParam       m_mfxVideoParam;
+
+    // Width and height provided at Init
+    mfxU16              m_InitWidth;
+    mfxU16              m_InitHeight;
     CmDevicePtr         m_cmDevice;
     VideoCORE*          m_core;
     eMFXHWType          m_platform;

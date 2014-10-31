@@ -322,6 +322,7 @@ CmContext::CmContext(
     kernel_ARGB     = 0;
     kernel_FwGamma  = 0;
     kernel_FwGamma1 = 0;
+    kernel_BayerCorrection = 0;
 
     m_platform = platform;
     Setup(video, cmDevice, pCaps);
@@ -1204,6 +1205,8 @@ void CmContext::Reset(
     mfxVideoParam const & video,
     mfxCameraCaps      *pCaps)
 {
+    bool bNeedConversionToRGB = true;
+
     // Demosaic is always on, so the DM kernels must be here already
     for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++)
     {
@@ -1220,24 +1223,34 @@ void CmContext::Reset(
         m_device->DestroyKernel(kernel_FwGamma1);
     if (kernel_ARGB)
         m_device->DestroyKernel(kernel_ARGB);
+    if (kernel_BayerCorrection)
+        m_device->DestroyKernel(kernel_BayerCorrection);
 
-    kernel_ARGB = 0;
-    kernel_FwGamma = 0;
-    kernel_FwGamma1 = 0;
+    kernel_ARGB            = 0;
+    kernel_FwGamma         = 0;
+    kernel_FwGamma1        = 0;
+    kernel_BayerCorrection = 0;
 
-    if (pCaps->bForwardGammaCorrection)
+    CreateTask(CAM_PIPE_TASK_ARRAY(task_BayerCorrection, i));
+
+    if (pCaps->bForwardGammaCorrection || pCaps->bColorConversionMatrix)
         CreateTask(CAM_PIPE_TASK_ARRAY(task_FwGamma, i));
 
-    if (pCaps->bOutToARGB16 || !pCaps->bForwardGammaCorrection)
+    if (pCaps->bOutToARGB16 || ( !pCaps->bForwardGammaCorrection ) || pCaps->bColorConversionMatrix)
         CreateTask(CAM_PIPE_TASK_ARRAY(task_ARGB, i));
 
-    // TODO: change to reflect new CCM-Gamma combined kernels
-    if (pCaps->bForwardGammaCorrection)
+    if (pCaps->bBlackLevelCorrection || pCaps->bWhiteBalance || pCaps->bVignetteCorrection)
     {
+        kernel_BayerCorrection = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(BAYER_CORRECTION), NULL);
+    }
+
+    if (pCaps->bForwardGammaCorrection && !pCaps->bColorConversionMatrix)
+    {
+        // Only gamma correction needed w/o color corection
+
         if (m_video.BitDepth == 16)
         {
-            kernel_FwGamma = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
-            // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
+            kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
             kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
         }
         else
@@ -1251,14 +1264,42 @@ void CmContext::Reset(
             {
                 kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
                 kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
+
+                // This kernel does a conversion, so separate conversion is not needed.
+                bNeedConversionToRGB = false;
             }
         }
     }
+    else if (pCaps->bForwardGammaCorrection && pCaps->bColorConversionMatrix)
+    {
+        // Both gamma correction and color corection needed
+
+        if (m_video.BitDepth == 16)
+        {
+            kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA_16bits), NULL);
+            kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA_16bits), NULL);
+        }
+        else
+        {
+            kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
+            kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
+        }
+    }
+    else if (! pCaps->bForwardGammaCorrection && pCaps->bColorConversionMatrix)
+    {
+        // color corection needed w/o gamma correction
+        kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_ONLY), NULL);
+        kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_ONLY), NULL);
+    }
 
     if (pCaps->bOutToARGB16)
+    {
         kernel_ARGB = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(ARGB16), NULL);
-    else if (!pCaps->bForwardGammaCorrection || video.vpp.In.BitDepthLuma == 16)
+    }
+    else if (bNeedConversionToRGB)
+    {
         kernel_ARGB = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(ARGB8), NULL);
+    }
 
     if ((video.vpp.In.BitDepthLuma | m_video.BitDepth) > 16)
     {

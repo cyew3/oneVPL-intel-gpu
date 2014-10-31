@@ -154,12 +154,14 @@ mfxStatus MFXCamera_Plugin::PluginClose()
             mfxRes2 = mfxRes;
         m_session = 0;
     }
-    if (m_createdByDispatcher) {
-        delete this;
-    }
 
     if ( m_FrameSizeExtra.tileOffsets )
         delete [] m_FrameSizeExtra.tileOffsets;
+
+    if (m_createdByDispatcher)
+    {
+        delete this;
+    }
 
     CAMERA_DEBUG_LOG("PluginClose sts = %d \n", mfxRes2);
     return mfxRes2;
@@ -953,6 +955,8 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     }
 
     m_InputBitDepth = m_mfxVideoParam.vpp.In.BitDepthLuma;
+    m_InitWidth     = m_mfxVideoParam.vpp.In.Width;
+    m_InitHeight    = m_mfxVideoParam.vpp.In.Height;
 
     if (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
         m_Caps.OutputMemoryOperationMode = MEM_GPU;
@@ -999,18 +1003,15 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
     mfxStatus mfxSts;
 
-     WaitForActiveThreads();
+    WaitForActiveThreads();
 
-#ifdef CAMERA_DEBUG_PRINTF
-    FILE *f = fopen("CanonOut.txt", "at");
-    fprintf(f, "MFXVideoVPP_Reset \n");
-    fclose(f);
-#endif // CAMERA_DEBUG_PRINTF
+    CAMERA_DEBUG_LOG("MFXVideoVPP_Reset \n");
 
     mfxVideoParam newParam;
     memcpy_s(&newParam,sizeof(mfxVideoParam),par,sizeof(mfxVideoParam));
     newParam.ExtParam = par->ExtParam;
     mfxSts = Query(&newParam, &newParam);
+
     if(mfxSts == MFX_ERR_UNSUPPORTED)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     if (mfxSts < MFX_ERR_NONE)
@@ -1018,38 +1019,37 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
 
     if (m_mfxVideoParam.AsyncDepth != newParam.AsyncDepth)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    if (newParam.vpp.In.Width > m_mfxVideoParam.vpp.In.Width || newParam.vpp.In.Height > m_mfxVideoParam.vpp.In.Height)
+    if (newParam.vpp.In.Width > m_InitWidth || newParam.vpp.In.Height > m_InitHeight)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     if (m_mfxVideoParam.IOPattern != newParam.IOPattern)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-    //mfxCameraCaps oldCaps = m_Caps;
     CameraPipeForwardGammaParams oldGammaParams = m_GammaParams;
 
     m_Caps.ModuleConfiguration = 0; // zero all filters
     m_Caps.bDemosaic = 1;           // demosaic is always on
     ProcessExtendedBuffers(&newParam);
 
-    if (newParam.vpp.Out.FourCC == MFX_FOURCC_RGB4) {
-        //m_Caps.bOutToARGB8 = 1;
+    if (newParam.vpp.Out.FourCC == MFX_FOURCC_RGB4)
+    {
         m_Caps.bOutToARGB16 = 0;
-    } else {
-        //m_Caps.bOutToARGB8 = 0;
+    }
+    else
+    {
         m_Caps.bOutToARGB16 = 1;
     }
 
     if (m_Caps.bNoPadding)
     {
-        if (m_PaddingParams.top < MFX_CAM_MIN_REQUIRED_PADDING_TOP || m_PaddingParams.bottom < MFX_CAM_MIN_REQUIRED_PADDING_BOTTOM ||
+        if (m_PaddingParams.top  < MFX_CAM_MIN_REQUIRED_PADDING_TOP  || m_PaddingParams.bottom < MFX_CAM_MIN_REQUIRED_PADDING_BOTTOM ||
             m_PaddingParams.left < MFX_CAM_MIN_REQUIRED_PADDING_LEFT || m_PaddingParams.right < MFX_CAM_MIN_REQUIRED_PADDING_RIGHT)
             m_Caps.bNoPadding = 0; // padding provided by application is not sufficient - have to do it ourselves
     }
-    {
-        m_PaddingParams.top = MFX_CAM_DEFAULT_PADDING_TOP;
-        m_PaddingParams.bottom = MFX_CAM_DEFAULT_PADDING_BOTTOM;
-        m_PaddingParams.left = MFX_CAM_DEFAULT_PADDING_LEFT;
-        m_PaddingParams.right = MFX_CAM_DEFAULT_PADDING_RIGHT;
-    }
+
+    m_PaddingParams.top    = MFX_CAM_DEFAULT_PADDING_TOP;
+    m_PaddingParams.bottom = MFX_CAM_DEFAULT_PADDING_BOTTOM;
+    m_PaddingParams.left   = MFX_CAM_DEFAULT_PADDING_LEFT;
+    m_PaddingParams.right  = MFX_CAM_DEFAULT_PADDING_RIGHT;
 
     if (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
         m_Caps.OutputMemoryOperationMode = MEM_GPU;
@@ -1061,12 +1061,36 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
     else
         m_Caps.InputMemoryOperationMode = MEM_GPUSHARED;
 
+    if ( newParam.vpp.In.CropW * newParam.vpp.In.CropH > 0x16E3600 )
+    {
+        // TODO: make number of tiles dependent on frame size.
+        // For existing 7Kx4K 2 tiles seems to be enough.
+        m_nTiles = 2;
+    }
     CameraFrameSizeExtra frameSizeExtra;
-
-    frameSizeExtra.frameWidth64      = ((newParam.vpp.In.CropW + 31) &~ 0x1F);
-    frameSizeExtra.paddedFrameWidth  = newParam.vpp.In.CropW + m_PaddingParams.left + m_PaddingParams.right;
-    frameSizeExtra.paddedFrameHeight = newParam.vpp.In.CropH + m_PaddingParams.top + m_PaddingParams.bottom;
+    frameSizeExtra.frameWidth64      = ((newParam.vpp.In.CropW  + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
+    frameSizeExtra.paddedFrameWidth  = newParam.vpp.In.CropW  + m_PaddingParams.left + m_PaddingParams.right;
+    frameSizeExtra.paddedFrameHeight = newParam.vpp.In.CropH  + m_PaddingParams.top + m_PaddingParams.bottom;
     frameSizeExtra.vSliceWidth       = (((newParam.vpp.In.CropW / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
+    frameSizeExtra.tileNum           = m_nTiles;
+    frameSizeExtra.tileOffsets       = new CameraTileOffset[m_nTiles];
+    frameSizeExtra.TileWidth         = newParam.vpp.In.CropW;
+    frameSizeExtra.TileHeight        = ( ( newParam.vpp.In.CropH / m_nTiles ) + 31 ) &~ 0x1F;
+    frameSizeExtra.TileHeightPadded  = frameSizeExtra.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
+    frameSizeExtra.BitDepth          = newParam.vpp.In.BitDepthLuma;
+    frameSizeExtra.TileInfo          = newParam.vpp.In;
+    for (int i = 0; i < m_nTiles; i++)
+    {
+        if ( m_nTiles - 1 == i && i > 0)
+        {
+            // In case of several tiles, last tile must be aligned to the original frame bottom
+            frameSizeExtra.tileOffsets[i].TileOffset = newParam.vpp.In.CropH - frameSizeExtra.TileHeight;
+        }
+        else
+        {
+            frameSizeExtra.tileOffsets[i].TileOffset = ( newParam.vpp.In.CropH / m_nTiles ) * i;
+        }
+    }
 
     m_InputBitDepth = newParam.vpp.In.BitDepthLuma;
 
@@ -1078,7 +1102,8 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
         return mfxSts;
 
     // will need to check numPoints as well when different LUT sizes are supported
-    if (m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix) {
+    if (m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix)
+    {
         if (!m_gammaCorrectSurf)
             m_gammaCorrectSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
         if (!m_gammaPointSurf)
@@ -1087,8 +1112,10 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
         mfxU8 *pGammaPts = (mfxU8 *)m_GammaParams.gamma_lut.gammaPoints;
         mfxU8 *pGammaCor = (mfxU8 *)m_GammaParams.gamma_lut.gammaCorrect;
 
-        if (pGammaPts != (mfxU8 *)oldGammaParams.gamma_lut.gammaPoints || pGammaCor != (mfxU8 *)oldGammaParams.gamma_lut.gammaCorrect) {
-            if (!pGammaPts || !pGammaCor) {
+        if (pGammaPts != (mfxU8 *)oldGammaParams.gamma_lut.gammaPoints || pGammaCor != (mfxU8 *)oldGammaParams.gamma_lut.gammaCorrect)
+        {
+            if (!pGammaPts || !pGammaCor)
+            {
                 // gamma value is used - implement !!! kta
             }
             m_gammaCorrectSurf->WriteSurface(pGammaCor, NULL);
@@ -1098,12 +1125,7 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
 
     m_mfxVideoParam = newParam;
     m_FrameSizeExtra = frameSizeExtra;
-
-#ifdef CAMERA_DEBUG_PRINTF
-    f = fopen("CanonOut.txt", "at");
-    fprintf(f, "MFXVideoVPP_Reset end sts =  %d \n", mfxSts);
-    fclose(f);
-#endif // CAMERA_DEBUG_PRINTF
+    CAMERA_DEBUG_LOG("MFXVideoVPP_Reset end sts =  %d \n", mfxSts);
 
     return mfxSts;
 }
