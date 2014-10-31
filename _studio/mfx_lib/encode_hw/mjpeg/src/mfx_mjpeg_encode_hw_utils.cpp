@@ -172,10 +172,6 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
     m_pps.ComponentID[1] = 1;
     m_pps.ComponentID[2] = 2;
     m_pps.ComponentID[3] = 3;
-    m_pps.QuantTableSelector[0] = 0;
-    m_pps.QuantTableSelector[1] = 1;
-    m_pps.QuantTableSelector[2] = 1;
-    m_pps.QuantTableSelector[3] = 1;
     m_pps.Quality = (par->mfx.Quality > 100) ? 100 : par->mfx.Quality;
 
     mfxU32 fourCC = par->mfx.FrameInfo.FourCC;
@@ -211,16 +207,37 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
     m_scan_list[0].ComponentSelector[0] = 0;
     m_scan_list[0].ComponentSelector[1] = 1;
     m_scan_list[0].ComponentSelector[2] = 2;
-    m_scan_list[0].DcCodingTblSelector[0] = 0;
-    m_scan_list[0].DcCodingTblSelector[1] = 1;
-    m_scan_list[0].DcCodingTblSelector[2] = 1;
-    m_scan_list[0].AcCodingTblSelector[0] = 0;
-    m_scan_list[0].AcCodingTblSelector[1] = 1;
-    m_scan_list[0].AcCodingTblSelector[2] = 1;
     m_scan_list[0].FirstDCTCoeff = 0;
     m_scan_list[0].LastDCTCoeff = 0;
     m_scan_list[0].Ah = 0;
     m_scan_list[0].Al = 0;
+
+    if (fourCC == MFX_FOURCC_RGB4)
+    {
+        m_pps.QuantTableSelector[0] = 0;
+        m_pps.QuantTableSelector[1] = 0;
+        m_pps.QuantTableSelector[2] = 0;
+        m_pps.QuantTableSelector[3] = 0;
+        m_scan_list[0].DcCodingTblSelector[0] = 0;
+        m_scan_list[0].DcCodingTblSelector[1] = 0;
+        m_scan_list[0].DcCodingTblSelector[2] = 0;
+        m_scan_list[0].AcCodingTblSelector[0] = 0;
+        m_scan_list[0].AcCodingTblSelector[1] = 0;
+        m_scan_list[0].AcCodingTblSelector[2] = 0;
+    }
+    else
+    {
+        m_pps.QuantTableSelector[0] = 0;
+        m_pps.QuantTableSelector[1] = 1;
+        m_pps.QuantTableSelector[2] = 1;
+        m_pps.QuantTableSelector[3] = 1;
+        m_scan_list[0].DcCodingTblSelector[0] = 0;
+        m_scan_list[0].DcCodingTblSelector[1] = 1;
+        m_scan_list[0].DcCodingTblSelector[2] = 1;
+        m_scan_list[0].AcCodingTblSelector[0] = 0;
+        m_scan_list[0].AcCodingTblSelector[1] = 1;
+        m_scan_list[0].AcCodingTblSelector[2] = 1;
+    }
 
     // Quantization Table
     //{
@@ -396,10 +413,6 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
     m_pps.component_id[1] = 1;
     m_pps.component_id[2] = 2;
     m_pps.component_id[3] = 3;
-    m_pps.quantiser_table_selector[0] = 0;
-    m_pps.quantiser_table_selector[1] = 1;
-    m_pps.quantiser_table_selector[2] = 1;
-    m_pps.quantiser_table_selector[3] = 1;
     m_pps.quality = (par->mfx.Quality > 100) ? 100 : par->mfx.Quality;
 
     mfxU32 fourCC = par->mfx.FrameInfo.FourCC;
@@ -421,14 +434,35 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
     m_scan_list[0].restart_interval = par->mfx.RestartInterval;
     m_scan_list[0].num_components = m_pps.num_components;
     m_scan_list[0].components[0].component_selector = 0;
-    m_scan_list[0].components[0].dc_table_selector = 0;
-    m_scan_list[0].components[0].ac_table_selector = 0;
     m_scan_list[0].components[1].component_selector = 1;
-    m_scan_list[0].components[1].dc_table_selector = 1;
-    m_scan_list[0].components[1].ac_table_selector = 1;
     m_scan_list[0].components[2].component_selector = 2;
-    m_scan_list[0].components[2].dc_table_selector = 1;
-    m_scan_list[0].components[2].ac_table_selector = 1;
+
+    if (fourCC == MFX_FOURCC_RGB4)
+    {
+        m_pps.quantiser_table_selector[0] = 0;
+        m_pps.quantiser_table_selector[1] = 0;
+        m_pps.quantiser_table_selector[2] = 0;
+        m_pps.quantiser_table_selector[3] = 0;
+        m_scan_list[0].components[0].dc_table_selector = 0;
+        m_scan_list[0].components[1].dc_table_selector = 0;
+        m_scan_list[0].components[2].dc_table_selector = 0;
+        m_scan_list[0].components[0].ac_table_selector = 0;
+        m_scan_list[0].components[1].ac_table_selector = 0;
+        m_scan_list[0].components[2].ac_table_selector = 0;
+    }
+    else
+    {
+        m_pps.quantiser_table_selector[0] = 0;
+        m_pps.quantiser_table_selector[1] = 1;
+        m_pps.quantiser_table_selector[2] = 1;
+        m_pps.quantiser_table_selector[3] = 1;
+        m_scan_list[0].components[0].dc_table_selector = 0;
+        m_scan_list[0].components[1].dc_table_selector = 1;
+        m_scan_list[0].components[2].dc_table_selector = 1;
+        m_scan_list[0].components[0].ac_table_selector = 0;
+        m_scan_list[0].components[1].ac_table_selector = 1;
+        m_scan_list[0].components[2].ac_table_selector = 1;
+    }
 
     // Huffman Table
     m_dht_list.resize(1);
