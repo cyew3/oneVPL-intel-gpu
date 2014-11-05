@@ -2242,6 +2242,7 @@ mfxStatus VAAPIEncoder::Execute(
     MFX_DESTROY_VABUFFER(vaFeiFrameControlId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(vaFeiMVPredId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(vaFeiMBControlId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(vaFeiMBQPId, m_vaDisplay);
 #endif
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIEncoder::Execute(ExecuteBuffers& data, mfxU32 fieldId)
@@ -2488,13 +2489,13 @@ mfxStatus VAAPIEncoder::QueryStatus(
 
 mfxStatus VAAPIEncoder::Destroy()
 {
-    if (m_vaContextEncode)
+    if (m_vaContextEncode != VA_INVALID_ID)
     {
         vaDestroyContext(m_vaDisplay, m_vaContextEncode);
         m_vaContextEncode = VA_INVALID_ID;
     }
 
-    if (m_vaConfig)
+    if (m_vaConfig != VA_INVALID_ID)
     {
         vaDestroyConfig(m_vaDisplay, m_vaConfig);
         m_vaConfig = VA_INVALID_ID;
