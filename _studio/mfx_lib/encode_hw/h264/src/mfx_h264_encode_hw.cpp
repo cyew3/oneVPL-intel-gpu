@@ -1155,12 +1155,18 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
         m_videoInit.mfx.NumSlice           >= newPar.mfx.NumSlice               &&
         m_video.mfx.NumRefFrame            >= newPar.mfx.NumRefFrame            &&
         m_video.mfx.RateControlMethod      == newPar.mfx.RateControlMethod      &&
-        m_video.calcParam.initialDelayInKB == newPar.calcParam.initialDelayInKB &&
-        m_video.calcParam.bufferSizeInKB   == newPar.calcParam.bufferSizeInKB   &&
         m_videoInit.mfx.FrameInfo.Width    >= newPar.mfx.FrameInfo.Width        &&
         m_videoInit.mfx.FrameInfo.Height   >= newPar.mfx.FrameInfo.Height       &&
         m_video.mfx.FrameInfo.ChromaFormat == newPar.mfx.FrameInfo.ChromaFormat,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+    if (m_video.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        MFX_CHECK(
+            m_video.calcParam.initialDelayInKB == newPar.calcParam.initialDelayInKB &&
+            m_video.calcParam.bufferSizeInKB   == newPar.calcParam.bufferSizeInKB,
+            MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    }
 
     MFX_CHECK(
         IsOn(extOptOld->FieldOutput) || extOptOld->FieldOutput == extOptNew->FieldOutput,
