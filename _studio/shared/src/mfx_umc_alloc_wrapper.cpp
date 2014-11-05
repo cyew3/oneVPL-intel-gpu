@@ -586,6 +586,19 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
     if (surf->Data.Locked)
         return MFX_ERR_MORE_SURFACE;
 
+    // check input surface
+    if (surf->Info.Width < m_info.GetWidth() || surf->Info.Height < m_info.GetHeight())
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (surf->Info.BitDepthLuma && surf->Info.BitDepthLuma != m_info.GetPlaneBitDepth(0))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (surf->Info.BitDepthChroma && surf->Info.BitDepthChroma != m_info.GetPlaneBitDepth(1))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if ((surf->Info.Shift == 0) != m_isSWDecode)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
     // device checking
     {
         mfxStatus sts;

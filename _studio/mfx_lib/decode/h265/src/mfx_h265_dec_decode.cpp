@@ -901,7 +901,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_HEVC);
     if (sts != MFX_ERR_NONE)
-        return MFX_ERR_UNSUPPORTED;
+        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     sts = CheckFrameData(surface_work);
     if (sts != MFX_ERR_NONE)
