@@ -1287,6 +1287,7 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
 
     H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
     const H265SliceHeader *sliceHeader = pSlice->GetSliceHeader();
+    const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
 
     VAPictureParameterBufferHEVC* picParams = (VAPictureParameterBufferHEVC*)m_va->GetCompBuffer(VAPictureParameterBufferType);
     if (!picParams)
@@ -1347,7 +1348,7 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
     for(Ipp32s iDir = 0; iDir < 2; iDir++)
     {
         Ipp32s index = 0;
-        const H265DecoderRefPicList::ReferenceInformation* pRefPicList = pCurrentFrame->GetRefPicList(sliceNum, iDir)->m_refPicList;
+        const H265DecoderRefPicList::ReferenceInformation* pRefPicList = pCurrentFrame->GetRefPicList(pSlice->GetSliceNum(), iDir)->m_refPicList;
 
         EnumRefPicList eRefPicList = ( iDir == 1 ? REF_PIC_LIST_1 : REF_PIC_LIST_0 );
         for (Ipp32s i = 0; i < pSlice->getNumRefIdx(eRefPicList); i++)
@@ -1355,7 +1356,6 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
             const H265DecoderRefPicList::ReferenceInformation &frameInfo = pRefPicList[i];
             if (frameInfo.refFrame)
             {
-                
                 bool isFound = false;
                 for (uint8_t j = 0; j < sizeof(picParams->ReferenceFrames)/sizeof(picParams->ReferenceFrames[0]); j++)
                 {
@@ -1373,7 +1373,7 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
                 break;
         }
 
-        for(;index < sizeof(sliceParams->RefPicList)/sizeof(sliceParams->RefPicList[0]); index++)
+        for(;index < sizeof(sliceParams->RefPicList[0])/sizeof(sliceParams->RefPicList[0][0]); index++)
             sliceParams->RefPicList[iDir][index] = 0xff;
     }
 
@@ -1393,7 +1393,7 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
     sliceParams->collocated_ref_idx = (uint8_t)((sliceHeader->slice_type != I_SLICE) ?  sliceHeader->collocated_ref_idx : -1);
     sliceParams->num_ref_idx_l0_active_minus1 = (uint8_t)(pSlice->getNumRefIdx(REF_PIC_LIST_0) - 1);
     sliceParams->num_ref_idx_l1_active_minus1 = (uint8_t)(pSlice->getNumRefIdx(REF_PIC_LIST_1) - 1);
-    sliceParams->slice_qp_delta = (int8_t)sliceHeader->slice_qp_delta;
+    sliceParams->slice_qp_delta = (int8_t)(sliceHeader->SliceQP - pPicParamSet->init_qp);
     sliceParams->slice_cb_qp_offset = (int8_t)sliceHeader->slice_cb_qp_offset;
     sliceParams->slice_cr_qp_offset = (int8_t)sliceHeader->slice_cr_qp_offset;
     sliceParams->slice_beta_offset_div2 = (int8_t)(sliceHeader->slice_beta_offset >> 1);
