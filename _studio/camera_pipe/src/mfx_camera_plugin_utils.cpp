@@ -328,8 +328,8 @@ mfxStatus MFXCamera_Plugin::ReallocateInternalSurfaces(mfxVideoParam &newParam, 
     sts = m_raw16padded.ReallocCmSurfaces(m_cmDevice, request);
     MFX_CHECK_STS(sts);
 
-    request.Info.Width = (mfxU16)frameWidth64;
-    request.Info.Height = frameSizeExtra.TileHeight;
+    request.Info.Width  = (mfxU16)frameWidth64;
+    request.Info.Height = (mfxU16)frameSizeExtra.TileHeight;
     request.Info.FourCC = CM_SURFACE_FORMAT_A8;
     request.Info.Width *= sizeof(mfxU16);
     frNum = 3;

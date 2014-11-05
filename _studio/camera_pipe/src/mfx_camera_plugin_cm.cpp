@@ -899,15 +899,12 @@ void CmContext::CreateTask_SAD(CmSurface2D *redHorSurf,
         int wr_x_base = (i * sliceWidthIn8_np);// - ((i == 0)? 0 : i*2);
         int wr_y_base = 0;
 
-        int height = (int)m_video.TileHeight;
-
         CAM_PIPE_KERNEL_ARRAY(kernel_sad, i)->SetThreadCount(sliceWidthIn8_np * sliceHeightIn8_np);
 
         SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i),
                      GetIndex(redHorSurf), GetIndex(greenHorSurf),  GetIndex(blueHorSurf),
                      GetIndex(redVerSurf), GetIndex(greenVerSurf),  GetIndex(blueVerSurf),
                      xbase, ybase, wr_x_base, wr_y_base);
-        //SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), height, 10);
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), bayerPattern, 10);
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), GetIndex(redOutSurf), 11);
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), GetIndex(greenOutSurf), 12);
@@ -939,8 +936,6 @@ void CmContext::CreateTask_DecideAverage(CmSurface2D *redAvgSurf,
 
         int wr_x_base = (i * sliceWidthIn16_np);// - ((i == 0)? 0 : i*2);;
         int wr_y_base = 0;
-
-        int height = (int)m_video.TileHeight;
 
         CAM_PIPE_KERNEL_ARRAY(kernel_decide_average, i)->SetThreadCount(sliceWidthIn16_np * sliceHeightIn16_np);
 

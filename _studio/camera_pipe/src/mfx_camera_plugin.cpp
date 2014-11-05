@@ -972,7 +972,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     if (m_useSW)
     {
         //m_CameraProcessor = new CPUCameraProcessor();
-        InitCamera_CPU(&m_cmi, m_mfxVideoParam.vpp.In.CropW, m_mfxVideoParam.vpp.In.CropH, m_InputBitDepth, !m_Caps.bNoPadding, m_Caps.BayerPatternType);
+        InitCamera_CPU(&m_cmi, m_mfxVideoParam.vpp.In.Width, m_mfxVideoParam.vpp.In.Height, m_InputBitDepth, !m_Caps.bNoPadding, m_Caps.BayerPatternType);
     }
     else
     {
@@ -1156,15 +1156,51 @@ mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
          * output data in surfOut->Data.V16 (16-bit) or Data.B (8-bit)
          * params in surfIn->Info
          */
-
         UMC::AutomaticUMCMutex guard(m_guard);
 
         if (surfOut->Data.MemId)
             m_core->LockExternalFrame(surfOut->Data.MemId,  &surfOut->Data);
 
-        Demosaic_CPU(&m_cmi, surfIn->Data.Y16, surfIn->Data.Pitch);
+        // Step 1. Padding
+        // TODO: Add flipping for GB, GR bayers
+        if(m_cmi.enable_padd)
+        {
+            for (int i = 0; i < m_cmi.InHeight; i++)
+                for (int j = 0; j < m_cmi.InWidth; j++)
+                    m_cmi.cpu_Input[i*m_cmi.InWidth + j] = (short)surfIn->Data.Y16[i*(surfIn->Data.Pitch>>1) + j];
+            m_cmi.cpu_status = CPU_Padding_16bpp(m_cmi.cpu_Input, m_cmi.cpu_PaddedBayerImg, m_cmi.InWidth, m_cmi.InHeight, m_cmi.bitDepth);
+        }
+        else
+        {
+            for (int i = 0; i < m_cmi.FrameHeight; i++)
+                for (int j = 0; j < m_cmi.FrameWidth; j++)
+                    m_cmi.cpu_PaddedBayerImg[i*m_cmi.FrameWidth + j] = (short)surfIn->Data.Y16[i*(surfIn->Data.Pitch>>1)];
+        }
 
-        if (m_Caps.BayerPatternType == MFX_CAM_BAYER_BGGR || m_Caps.BayerPatternType == MFX_CAM_BAYER_GBRG)
+        // Step 2. Black level correction
+        if(m_Caps.bBlackLevelCorrection)
+        {
+            m_cmi.cpu_status = CPU_BLC(m_cmi.cpu_PaddedBayerImg, m_cmi.FrameWidth, m_cmi.FrameHeight, 
+                             m_cmi.bitDepth, m_cmi.BayerType,
+                             (short)m_BlackLevelParams.BlueLevel, (short)m_BlackLevelParams.GreenTopLevel, 
+                             (short)m_BlackLevelParams.GreenBottomLevel, (short)m_BlackLevelParams.RedLevel,
+                             false);
+        }
+
+        // Step 3. White balance
+        if(m_Caps.bWhiteBalance)
+        {
+            m_cmi.cpu_status = CPU_WB (m_cmi.cpu_PaddedBayerImg, m_cmi.FrameWidth, m_cmi.FrameHeight, 
+                                       m_cmi.bitDepth, m_cmi.BayerType,
+                                       (float)m_WBparams.BlueCorrection, (float)m_WBparams.GreenTopCorrection, 
+                                       (float)m_WBparams.GreenBottomCorrection, (float)m_WBparams.RedCorrection,
+                                       false);
+        }
+
+        // Step 4. Demosaic
+        m_cmi.cpu_status = Demosaic_CPU(&m_cmi, surfIn->Data.Y16, surfIn->Data.Pitch);
+
+        if (m_Caps.BayerPatternType == MFX_CAM_BAYER_RGGB || m_Caps.BayerPatternType == MFX_CAM_BAYER_GBRG)
         {
             /* swap R and B buffers */
             m_cmi.cpu_R_fgc_in = m_cmi.cpu_B_o;
@@ -1178,16 +1214,32 @@ mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
             m_cmi.cpu_B_fgc_in = m_cmi.cpu_B_o;
         }
 
-        FwdGammaCorr_CPU(&m_cmi, m_GammaParams.gamma_lut.gammaCorrect, m_GammaParams.gamma_lut.gammaPoints, m_GammaParams.gamma_lut.numPoints);
+        // Step 5. CMM
+        if (m_Caps.bColorConversionMatrix)
+        {
+            m_cmi.cpu_status = CPU_CCM( (unsigned short*)m_cmi.cpu_R_fgc_in, (unsigned short*)m_cmi.cpu_G_fgc_in, (unsigned short*)m_cmi.cpu_B_fgc_in, 
+                                         m_FrameSizeExtra.TileInfo.Width, m_FrameSizeExtra.TileInfo.Height, m_FrameSizeExtra.BitDepth, m_CCMParams.CCM);
+        }
+
+        // Step 6. Gamma correction
+        if (m_Caps.bForwardGammaCorrection)
+        {
+            m_cmi.cpu_status = CPU_Gamma_SKL( (unsigned short*)m_cmi.cpu_R_fgc_in, (unsigned short*)m_cmi.cpu_G_fgc_in, (unsigned short*)m_cmi.cpu_B_fgc_in, 
+                            m_FrameSizeExtra.TileInfo.Width, m_FrameSizeExtra.TileInfo.Height, m_FrameSizeExtra.BitDepth, 
+                            m_GammaParams.gamma_lut.gammaCorrect, m_GammaParams.gamma_lut.gammaPoints);
+
+        }
         if (m_mfxVideoParam.vpp.Out.FourCC == MFX_FOURCC_ARGB16)
-            ConvertARGB16_CPU(&m_cmi, surfOut->Data.V16, 1);
+            m_cmi.cpu_status = CPU_ARGB16Interleave(surfOut->Data.V16, surfOut->Info.Width, surfOut->Info.Height, surfOut->Data.Pitch, m_FrameSizeExtra.BitDepth, m_Caps.BayerPatternType,
+                                         m_cmi.cpu_R_fgc_in, m_cmi.cpu_G_fgc_in, m_cmi.cpu_B_fgc_in);
         else
-            ConvertARGB8_CPU(&m_cmi, surfOut->Data.B, 1);
+            m_cmi.cpu_status = CPU_ARGB8Interleave(surfOut->Data.B, surfOut->Info.Width, surfOut->Info.Height, surfOut->Data.Pitch, m_FrameSizeExtra.BitDepth, m_Caps.BayerPatternType,
+                                         m_cmi.cpu_R_fgc_in, m_cmi.cpu_G_fgc_in, m_cmi.cpu_B_fgc_in);
 
         if (surfOut->Data.MemId)
             m_core->UnlockExternalFrame(surfOut->Data.MemId,  &surfOut->Data);
 
-        return MFX_ERR_NONE;
+        return (mfxStatus)m_cmi.cpu_status;
     }
 
     m_core->IncreaseReference(&surfIn->Data);
