@@ -89,7 +89,8 @@ mfxStatus MFXVideoVPPResize::Reset(mfxVideoParam *par)
 
   // simple checking wo analysis
   if( ( m_errPrtctState.In.FourCC  != par->vpp.In.FourCC || m_errPrtctState.Out.FourCC != par->vpp.Out.FourCC )
-     && m_errPrtctState.In.FourCC  != MFX_FOURCC_P010 
+     && m_errPrtctState.In.FourCC  != MFX_FOURCC_P010
+     && m_errPrtctState.In.FourCC  != MFX_FOURCC_P210
      && m_errPrtctState.Out.FourCC != MFX_FOURCC_A2RGB10)
   {
       return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
@@ -246,6 +247,7 @@ mfxStatus MFXVideoVPPResize::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
     case MFX_FOURCC_YV12:
     case MFX_FOURCC_RGB4:
     case MFX_FOURCC_P010:
+    case MFX_FOURCC_P210:
     case MFX_FOURCC_A2RGB10:
       VPP_INIT_SUCCESSFUL;
       break;

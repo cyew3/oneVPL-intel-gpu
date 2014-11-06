@@ -33,6 +33,7 @@
 #include "mfx_denoise_vpp.h"
 #include "mfx_color_space_conversion_vpp.h"
 #include "mfx_resize_vpp.h"
+#include "mfx_shift_vpp.h"
 #include "mfx_range_map_vc1_vpp.h"
 #include "mfx_deinterlace_vpp.h"
 #include "mfx_video_analysis_vpp.h"
@@ -391,13 +392,44 @@ mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_RSHIFT_IN:
+            {
+                sts = MFX_ERR_NONE;
+
+                inFrameInfo.FourCC = In->FourCC;
+                inFrameInfo.Shift  = In->Shift;
+
+                outFrameInfo.FourCC = In->FourCC;
+                outFrameInfo.Shift  = 0;
+
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPShift );
+
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_LSHIFT_OUT:
+            {
+                sts = MFX_ERR_NONE;
+                inFrameInfo.FourCC = Out->FourCC;
+                inFrameInfo.Shift  = 0;
+
+                outFrameInfo.FourCC = Out->FourCC;
+                outFrameInfo.Shift  = Out->Shift;
+
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPShift );
+
+                break;
+            }
+
             case (mfxU32)MFX_EXTBUFF_VPP_CSC:
             {
                 sts = MFX_ERR_NONE;
                 /* COLOR SPACE_ CONVERSION specific */
                 outFrameInfo.FourCC = MFX_FOURCC_NV12;
 
-                if ( Out->FourCC == MFX_FOURCC_P010 || Out->FourCC == MFX_FOURCC_A2RGB10)
+                if ( Out->FourCC == MFX_FOURCC_P010 ||
+                     Out->FourCC == MFX_FOURCC_P210 ||
+                     Out->FourCC == MFX_FOURCC_A2RGB10)
                 {
                     outFrameInfo.FourCC = Out->FourCC;
                     outFrameInfo.Shift  = Out->Shift;
@@ -873,6 +905,17 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
     {
         switch( pListID[filterIndex] )
         {
+
+            case (mfxU32)MFX_EXTBUFF_VPP_RSHIFT_IN:
+            case (mfxU32)MFX_EXTBUFF_VPP_RSHIFT_OUT:
+            case (mfxU32)MFX_EXTBUFF_VPP_LSHIFT_IN:
+            case (mfxU32)MFX_EXTBUFF_VPP_LSHIFT_OUT:
+            {
+                inputFramesCount[filterIndex]  = MFXVideoVPPShift::GetInFramesCountExt();
+                outputFramesCount[filterIndex] = MFXVideoVPPShift::GetOutFramesCountExt();
+                break;
+            }
+
             case (mfxU32)MFX_EXTBUFF_VPP_DENOISE:
             {
                 inputFramesCount[filterIndex]  = MFXVideoVPPDenoise::GetInFramesCountExt();

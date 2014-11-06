@@ -322,7 +322,7 @@ mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROI
     inPitch  = inData->Pitch;
     outPitch = outData->Pitch;
 
-    if ( MFX_FOURCC_P010 == out->Info.FourCC )
+    if ( MFX_FOURCC_P010 == out->Info.FourCC || MFX_FOURCC_P210 == out->Info.FourCC )
     {
         roiSize.width <<= 1;
     }
@@ -334,6 +334,12 @@ mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROI
     if( MFX_FOURCC_NV12 == in->Info.FourCC || MFX_FOURCC_P010 == in->Info.FourCC )
     {
         roiSize.height >>= 1;
+        sts = ippiCopy_8u_C1R(inData->UV+inOffset1,   inPitch,
+                              outData->UV+outOffset1, outPitch, roiSize);
+        VPP_CHECK_IPP_STS( sts );
+    }
+    else if( MFX_FOURCC_P210 == in->Info.FourCC )
+    {
         sts = ippiCopy_8u_C1R(inData->UV+inOffset1,   inPitch,
                               outData->UV+outOffset1, outPitch, roiSize);
         VPP_CHECK_IPP_STS( sts );
@@ -796,6 +802,34 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_RSHIFT_IN:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_RSHIFT_IN");
+                OutputDebugStringA(cStr);
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_RSHIFT_OUT:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_RSHIFT_OUT");
+                OutputDebugStringA(cStr);
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_LSHIFT_IN:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_LSHIFT_IN");
+                OutputDebugStringA(cStr);
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_LSHIFT_OUT:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_LSHIFT_OUT");
+                OutputDebugStringA(cStr);
+                break;
+            }
+
             case (mfxU32)MFX_EXTBUFF_VPP_RESIZE:
             {
                  sprintf_s(cStr, sizeof(cStr), "%s \n", "RESIZE");
@@ -927,6 +961,13 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
     newList.resize( pipelineList.size() );
     mfxU32 index = 0;
 
+    // [-1] Shift is very first, since shifted content is not supported by VPP
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_RSHIFT_IN ) )
+    {
+        newList[index] = MFX_EXTBUFF_VPP_RSHIFT_IN;
+        index++;
+    }
+
     // [0] canonical order
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_CSC ) )
     {
@@ -1037,6 +1078,12 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         index++;
     }
 
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_LSHIFT_OUT ) )
+    {
+        newList[index] = MFX_EXTBUFF_VPP_LSHIFT_OUT;
+        index++;
+    }
+
     // [1] update
     for( index = 0; index < (mfxU32)pipelineList.size(); index++ )
     {
@@ -1141,29 +1188,44 @@ mfxStatus GetPipelineList(
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
-        if( MFX_FOURCC_RGB4 == par->Out.FourCC )
+        switch (par->In.FourCC)
         {
-            /* [RGB4 output format support] */
-            pipelineList.push_back(MFX_EXTBUFF_VPP_CSC_OUT_RGB4);
+        case MFX_FOURCC_P010:
+            switch (par->Out.FourCC)
+            {
+            case MFX_FOURCC_A2RGB10:
+                pipelineList.push_back(MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10);
+                break;
+            case MFX_FOURCC_NV12:
+            case MFX_FOURCC_P210:
+                pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
+                break;
+            }
+            break;
+
+        case MFX_FOURCC_NV12:
+            switch (par->Out.FourCC)
+            {
+            case MFX_FOURCC_NV16:
+            case MFX_FOURCC_P010:
+                pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
+                break;
+            case MFX_FOURCC_RGB4:
+                pipelineList.push_back(MFX_EXTBUFF_VPP_CSC_OUT_RGB4);
+                break;
+            }
+            break;
+        default:
+            switch (par->Out.FourCC)
+            {
+            case MFX_FOURCC_RGB4:
+                pipelineList.push_back(MFX_EXTBUFF_VPP_CSC_OUT_RGB4);
+                break;
+            }
+            break;
         }
 
-         if (MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_A2RGB10 == par->Out.FourCC) {
-             /* Special case for p010->a2rgb10 conversions */
-            pipelineList.push_back(MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10);
-        }
-
-      
-        if (  ( MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_NV12    == par->Out.FourCC)
-           || ( MFX_FOURCC_NV12 == par->In.FourCC && MFX_FOURCC_P010    == par->Out.FourCC)) {
-             /* Special case for p010<->nv12 conversions */
-            pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
-        }
-        else if (  ( MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_P010 == par->Out.FourCC)
-                && ( par->In.Shift && par->Out.Shift ) ) {
-             /* Yet another special case for p010<->P010 bit-shifted conversions */
-            pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
-        }
-        else if( MFX_FOURCC_NV12 != par->In.FourCC && MFX_FOURCC_P010 != par->In.FourCC)
+        if( MFX_FOURCC_NV12 != par->In.FourCC && MFX_FOURCC_P010 != par->In.FourCC)
         {
             /* [Color Space Conversion] FILTER */
             pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
@@ -1179,6 +1241,24 @@ mfxStatus GetPipelineList(
         pipelineList.push_back(MFX_EXTBUFF_VPP_RESIZE);
 
         return MFX_ERR_NONE;
+    }
+
+    /* VPP natively supports 10bit format w/o shift. If input is shifted,
+     * need get it back to normal position.
+     */
+    if ( ( MFX_FOURCC_P010 == srcFrameInfo->FourCC || MFX_FOURCC_P210 == srcFrameInfo->FourCC)
+        && srcFrameInfo->Shift )
+    {
+        pipelineList.push_back(MFX_EXTBUFF_VPP_RSHIFT_IN);
+    }
+
+    /*
+     * VPP produces 10bit data w/o shift. If output is requested to be shifted, need to do so
+     */
+    if ( ( MFX_FOURCC_P010 == dstFrameInfo->FourCC || MFX_FOURCC_P210 == dstFrameInfo->FourCC)
+        && dstFrameInfo->Shift )
+    {
+        pipelineList.push_back(MFX_EXTBUFF_VPP_LSHIFT_OUT);
     }
 
     /* [Resize] FILTER */
@@ -1394,6 +1474,7 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_RGB4:
         case MFX_FOURCC_P010:
+        case MFX_FOURCC_P210:
             break;
         case MFX_FOURCC_IMC3:
         case MFX_FOURCC_YV12:
@@ -1404,7 +1485,6 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
         case MFX_FOURCC_YUV422V:
         case MFX_FOURCC_YUV444:
         case MFX_FOURCC_NV16:
-        case MFX_FOURCC_P210:
             if (VPP_OUT == request)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
             break;

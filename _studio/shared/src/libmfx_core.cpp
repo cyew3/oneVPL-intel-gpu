@@ -1397,11 +1397,39 @@ mfxStatus CommonCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface
 
         switch (pDst->Info.FourCC)
         {
+        case MFX_FOURCC_P010:
+            roi.width <<= 1;
+
+            ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
+
+            roi.height >>= 1;
+
+            ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, pDst->Data.UV, dstPitch, roi);
+
+            break;
+
+        case MFX_FOURCC_P210:
+            roi.width <<= 1;
+
+            ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
+
+            ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, pDst->Data.UV, dstPitch, roi);
+
+            break;
+
         case MFX_FOURCC_NV12:
 
             ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
 
             roi.height >>= 1;
+
+            ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, pDst->Data.UV, dstPitch, roi);
+
+            break;
+
+        case MFX_FOURCC_NV16:
+
+            ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
 
             ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, pDst->Data.UV, dstPitch, roi);
 
