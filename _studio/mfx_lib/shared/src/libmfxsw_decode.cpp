@@ -218,7 +218,7 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             break;
 #endif
 
-#ifdef MFX_ENABLE_VP9_VIDEO_DECODE
+#if defined (MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
         case MFX_CODEC_VP9:
 #if defined(MFX_VA) && defined (MFX_ENABLE_VP9_VIDEO_DECODE_HW)
             mfxRes = VideoDECODEVP9_HW::Query(session->m_pCORE.get(), in, out);
