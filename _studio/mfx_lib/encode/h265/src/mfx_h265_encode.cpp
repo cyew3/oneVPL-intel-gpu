@@ -2852,8 +2852,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     if (0 == stage) {
         sts = th->AcceptFrameHelper(inputParam->ctrl, NULL, inputParam->surface, inputParam->bs);
         vm_interlocked_cas32( &inputParam->m_doStage, 2, 1);
-        MFX_CHECK_STS(sts);
-        return MFX_TASK_DONE;
+        MFX_CHECK_STS(sts);        
 
         // STAGE [3]::[single thread]::FIND OLDEST TASK
         stage = vm_interlocked_cas32( &inputParam->m_doStage, 3, 2);
