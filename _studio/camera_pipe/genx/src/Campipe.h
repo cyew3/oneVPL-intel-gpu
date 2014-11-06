@@ -1,14 +1,10 @@
 
 
-#define	big_pix_th   40
+//#define	big_pix_th   40
 
 #define GOOD_PIXEL_TH		 5
 #define SHIFT_MINCOST		 1
 #define AVG_COLOR_TH	   255
-
-#define BAD_TH1			   100
-#define BAD_TH2			   175
-#define BAD_TH3			    10
 
 #define Grn_imbalance_th	 1
 #define	GOOD_INTENSITY_TH   10
