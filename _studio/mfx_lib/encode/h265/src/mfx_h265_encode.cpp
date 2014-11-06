@@ -42,48 +42,48 @@ using namespace H265Enc;
 //////////////////////////////////////////////////////////////////////////
 
 #define CHECK_OPTION(input, output, corcnt) \
-  if ( input != MFX_CODINGOPTION_OFF &&     \
-      input != MFX_CODINGOPTION_ON  &&      \
-      input != MFX_CODINGOPTION_UNKNOWN ) { \
+    if ( input != MFX_CODINGOPTION_OFF &&     \
+    input != MFX_CODINGOPTION_ON  &&      \
+    input != MFX_CODINGOPTION_UNKNOWN ) { \
     output = MFX_CODINGOPTION_UNKNOWN;      \
     (corcnt) ++;                            \
-  } else output = input;
+} else output = input;
 
 #define CHECK_EXTBUF_SIZE(ebuf, errcounter) if ((ebuf).Header.BufferSz != sizeof(ebuf)) {(errcounter) = (errcounter) + 1;}
 
 
 namespace H265Enc {
 
-static const mfxU16 H265_MAXREFDIST = 16;//8;
+    static const mfxU16 H265_MAXREFDIST = 16;//8;
 
-typedef struct
-{
-    Ipp32s BufferSizeInKB;
-    Ipp32s InitialDelayInKB;
-    Ipp32s TargetKbps;
-    Ipp32s MaxKbps;
-} RcParams;
+    typedef struct
+    {
+        Ipp32s BufferSizeInKB;
+        Ipp32s InitialDelayInKB;
+        Ipp32s TargetKbps;
+        Ipp32s MaxKbps;
+    } RcParams;
 
-typedef struct
-{
-    mfxEncodeCtrl *ctrl;
-    mfxFrameSurface1 *surface;
-    mfxBitstream *bs;
+    typedef struct
+    {
+        mfxEncodeCtrl *ctrl;
+        mfxFrameSurface1 *surface;
+        mfxBitstream *bs;
 
-    // for ParallelFrames > 1
-    Ipp32u m_taskID;
-    volatile Ipp32u m_doStage;
-    Task*  completedTask;
-    volatile Ipp32u m_threadCount;
-    volatile Ipp32u m_outputQueueSize; // to avoid mutex sync with list::size();
-    volatile Ipp32u m_reencode;          // BRC repack
+        // for ParallelFrames > 1
+        Ipp32u m_taskID;
+        volatile Ipp32u m_doStage;
+        Task*  completedTask;
+        volatile Ipp32u m_threadCount;
+        volatile Ipp32u m_outputQueueSize; // to avoid mutex sync with list::size();
+        volatile Ipp32u m_reencode;          // BRC repack
 
-    // FEI
-    volatile Ipp32u m_doStageFEI;
+        // FEI
+        volatile Ipp32u m_doStageFEI;
 
-} H265EncodeTaskInputParams;
+    } H265EncodeTaskInputParams;
 
-mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC) };
+    mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC) };
 
 #define ON  MFX_CODINGOPTION_ON
 #define OFF MFX_CODINGOPTION_OFF
@@ -93,10 +93,10 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     static const mfxU16 tab_sw_##opt[] = {t1, t2, t3, t4, t5, t6, t7}
 
 #ifdef MFX_VA
-    #define TU_OPT_GACC(opt, t1, t2, t3, t4, t5, t6, t7) \
-        static const mfxU16 tab_gacc_##opt[] = {t1, t2, t3, t4, t5, t6, t7};
+#define TU_OPT_GACC(opt, t1, t2, t3, t4, t5, t6, t7) \
+    static const mfxU16 tab_gacc_##opt[] = {t1, t2, t3, t4, t5, t6, t7};
 #else //MFX_VA
-    #define TU_OPT_GACC(opt, t1, t2, t3, t4, t5, t6, t7)
+#define TU_OPT_GACC(opt, t1, t2, t3, t4, t5, t6, t7)
 #endif //MFX_VA
 
 #define TU_OPT_ALL(opt, t1, t2, t3, t4, t5, t6, t7) \
@@ -176,379 +176,379 @@ mfxExtBuffer HEVC_HEADER = { MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)
     tab_##mode##_FramesInParallel[x],\
     tab_##mode##_NumTileCols[x],\
     tab_##mode##_NumTileRows[x],\
-}
+    }
 
-// Extended bit depth
-TU_OPT_SW  (Enable10bit,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-TU_OPT_GACC(Enable10bit,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    // Extended bit depth
+    TU_OPT_SW  (Enable10bit,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_GACC(Enable10bit,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 
-// Mode decision CU/TU 
-TU_OPT_ALL (QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5);
-TU_OPT_ALL (QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2);
-TU_OPT_SW  (Log2MaxCUSize,                  6,   6,   5,   5,   5,   5,   5);
-TU_OPT_SW  (MaxCUDepth,                     4,   4,   3,   3,   3,   3,   3);
-TU_OPT_SW  (QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   2,   1,   1);
+    // Mode decision CU/TU 
+    TU_OPT_ALL (QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5);
+    TU_OPT_ALL (QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2);
+    TU_OPT_SW  (Log2MaxCUSize,                  6,   6,   5,   5,   5,   5,   5);
+    TU_OPT_SW  (MaxCUDepth,                     4,   4,   3,   3,   3,   3,   3);
+    TU_OPT_SW  (QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   2,   1,   1);
 #ifdef AMT_SETTINGS
-TU_OPT_SW  (QuadtreeTUMaxDepthInter,        3,   3,   2,   2,   2,   1,   1);
+    TU_OPT_SW  (QuadtreeTUMaxDepthInter,        3,   3,   2,   2,   2,   1,   1);
 #else
-TU_OPT_SW  (QuadtreeTUMaxDepthInter,        4,   3,   2,   2,   2,   1,   1);
+    TU_OPT_SW  (QuadtreeTUMaxDepthInter,        4,   3,   2,   2,   2,   1,   1);
 #endif
-TU_OPT_GACC(Log2MaxCUSize,                  5,   5,   5,   5,   5,   5,   5);
-TU_OPT_GACC(MaxCUDepth,                     3,   3,   3,   3,   3,   3,   3);
-TU_OPT_GACC(QuadtreeTUMaxDepthIntra,        3,   3,   2,   1,   1,   1,   1);
-TU_OPT_GACC(QuadtreeTUMaxDepthInter,        3,   3,   2,   1,   1,   1,   1);
-TU_OPT_ALL (TUSplitIntra,                   1,   1,   3,   3,   3,   3,   3);
-TU_OPT_ALL (CUSplit,                        2,   2,   2,   2,   2,   2,   2);
-TU_OPT_ALL (PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-TU_OPT_ALL (MinCUDepthAdapt,              OFF, OFF, OFF,  ON,  ON,  ON,  ON);
-TU_OPT_ALL (MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON, OFF);
+    TU_OPT_GACC(Log2MaxCUSize,                  5,   5,   5,   5,   5,   5,   5);
+    TU_OPT_GACC(MaxCUDepth,                     3,   3,   3,   3,   3,   3,   3);
+    TU_OPT_GACC(QuadtreeTUMaxDepthIntra,        3,   3,   2,   1,   1,   1,   1);
+    TU_OPT_GACC(QuadtreeTUMaxDepthInter,        3,   3,   2,   1,   1,   1,   1);
+    TU_OPT_ALL (TUSplitIntra,                   1,   1,   3,   3,   3,   3,   3);
+    TU_OPT_ALL (CUSplit,                        2,   2,   2,   2,   2,   2,   2);
+    TU_OPT_ALL (PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_ALL (MinCUDepthAdapt,              OFF, OFF, OFF,  ON,  ON,  ON,  ON);
+    TU_OPT_ALL (MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON, OFF);
 #ifdef AMT_THRESHOLDS
-TU_OPT_SW  (CUSplitThreshold,               0,   0,   0,  64, 192, 224, 256);
+    TU_OPT_SW  (CUSplitThreshold,               0,   0,   0,  64, 192, 224, 256);
 #else
-TU_OPT_SW  (CUSplitThreshold,               0,  64, 128, 192, 192, 224, 256);
+    TU_OPT_SW  (CUSplitThreshold,               0,  64, 128, 192, 192, 224, 256);
 #endif
-TU_OPT_GACC(CUSplitThreshold,               0,  64, 128, 192, 224, 224, 240);
-TU_OPT_SW  (PartModes,                      3,   2,   2,   1,   1,   1,   1);
-TU_OPT_GACC(PartModes,                      1,   1,   1,   1,   1,   1,   1);
-TU_OPT_SW  (FastSkip,                     OFF, OFF, OFF, OFF, OFF,  ON,  ON);
-TU_OPT_GACC(FastSkip,                     OFF, OFF, OFF,  ON,  ON,  ON,  ON);
-TU_OPT_ALL (FastCbfMode,                  OFF, OFF,  ON,  ON,  ON,  ON,  ON);
+    TU_OPT_GACC(CUSplitThreshold,               0,  64, 128, 192, 224, 224, 240);
+    TU_OPT_SW  (PartModes,                      3,   2,   2,   1,   1,   1,   1);
+    TU_OPT_GACC(PartModes,                      1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (FastSkip,                     OFF, OFF, OFF, OFF, OFF,  ON,  ON);
+    TU_OPT_GACC(FastSkip,                     OFF, OFF, OFF,  ON,  ON,  ON,  ON);
+    TU_OPT_ALL (FastCbfMode,                  OFF, OFF,  ON,  ON,  ON,  ON,  ON);
 
 #ifdef AMT_THRESHOLDS
-TU_OPT_SW  (SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3);
-TU_OPT_SW  (SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3);
-TU_OPT_SW  (SplitThresholdStrengthCUInter,  1,   2,   2,   3,   3,   3,   3);
+    TU_OPT_SW  (SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3);
+    TU_OPT_SW  (SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3);
+    TU_OPT_SW  (SplitThresholdStrengthCUInter,  1,   2,   2,   3,   3,   3,   3);
 #else
-TU_OPT_SW  (SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3);
-TU_OPT_SW  (SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3);
-TU_OPT_SW  (SplitThresholdStrengthCUInter,  1,   1,   1,   1,   2,   3,   3);
+    TU_OPT_SW  (SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3);
+    TU_OPT_SW  (SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3);
+    TU_OPT_SW  (SplitThresholdStrengthCUInter,  1,   1,   1,   1,   2,   3,   3);
 #endif
-TU_OPT_GACC(SplitThresholdStrengthCUIntra,  1,   1,   1,   2,   3,   3,   3);
-TU_OPT_GACC(SplitThresholdStrengthTUIntra,  1,   1,   1,   2,   3,   3,   3);
-TU_OPT_GACC(SplitThresholdStrengthCUInter,  1,   1,   1,   2,   3,   3,   3);
-TU_OPT_ALL (SplitThresholdTabIndex       ,  1,   1,   1,   2,   2,   2,   2); //Tab1 + strength 3 - fastest combination
+    TU_OPT_GACC(SplitThresholdStrengthCUIntra,  1,   1,   1,   2,   3,   3,   3);
+    TU_OPT_GACC(SplitThresholdStrengthTUIntra,  1,   1,   1,   2,   3,   3,   3);
+    TU_OPT_GACC(SplitThresholdStrengthCUInter,  1,   1,   1,   2,   3,   3,   3);
+    TU_OPT_ALL (SplitThresholdTabIndex       ,  1,   1,   1,   2,   2,   2,   2); //Tab1 + strength 3 - fastest combination
 
-//Chroma analysis
-TU_OPT_ALL (AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON);
-TU_OPT_SW  (CostChroma,                    ON,  ON,  ON,  ON, OFF, OFF, OFF);
-TU_OPT_GACC(CostChroma,                    ON,  ON,  ON,  ON, OFF, OFF, OFF);
-TU_OPT_ALL (IntraChromaRDO,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-TU_OPT_ALL (reserved,                       0,   0,   0,   0,   0,   0,   0);
+    //Chroma analysis
+    TU_OPT_ALL (AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON);
+    TU_OPT_SW  (CostChroma,                    ON,  ON,  ON,  ON, OFF, OFF, OFF);
+    TU_OPT_GACC(CostChroma,                    ON,  ON,  ON,  ON, OFF, OFF, OFF);
+    TU_OPT_ALL (IntraChromaRDO,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_ALL (reserved,                       0,   0,   0,   0,   0,   0,   0);
 
-//Filtering
-TU_OPT_SW  (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, OFF);
-TU_OPT_GACC(SAO,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
-TU_OPT_ALL (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
-TU_OPT_ALL (Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON);
+    //Filtering
+    TU_OPT_SW  (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, OFF);
+    TU_OPT_GACC(SAO,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
+    TU_OPT_ALL (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
+    TU_OPT_ALL (Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON);
 
-//Intra prediction optimization
-TU_OPT_SW  (IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice SW
-TU_OPT_GACC(IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice Gacc
-TU_OPT_SW  (IntraAngModesP,                 1,   1,   2,   2,   2,   2,   3); //P slice SW
-TU_OPT_GACC(IntraAngModesP,                 2,   2,   2,   2,   2,   2,   3); //P slice Gacc
-TU_OPT_SW  (IntraAngModesBRef,              1,   1,   2,   2,   3,   3, 100); //B Ref slice SW
-TU_OPT_GACC(IntraAngModesBRef,              3,   3,   3,   3,   3,   3, 100); //B Ref slice Gacc
-TU_OPT_SW  (IntraAngModesBnonRef,           1,   1,   2,  99,  99, 100, 100); //B non Ref slice SW
-TU_OPT_GACC(IntraAngModesBnonRef,           3,   3,   3, 100, 100, 100, 100); //B non Ref slice Gacc
+    //Intra prediction optimization
+    TU_OPT_SW  (IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice SW
+    TU_OPT_GACC(IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice Gacc
+    TU_OPT_SW  (IntraAngModesP,                 1,   1,   2,   2,   2,   2,   3); //P slice SW
+    TU_OPT_GACC(IntraAngModesP,                 2,   2,   2,   2,   2,   2,   3); //P slice Gacc
+    TU_OPT_SW  (IntraAngModesBRef,              1,   1,   2,   2,   3,   3, 100); //B Ref slice SW
+    TU_OPT_GACC(IntraAngModesBRef,              3,   3,   3,   3,   3,   3, 100); //B Ref slice Gacc
+    TU_OPT_SW  (IntraAngModesBnonRef,           1,   1,   2,  99,  99, 100, 100); //B non Ref slice SW
+    TU_OPT_GACC(IntraAngModesBnonRef,           3,   3,   3, 100, 100, 100, 100); //B non Ref slice Gacc
 
-//Quantization optimization
-TU_OPT_SW  (SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
-TU_OPT_GACC(SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
-TU_OPT_SW  (RDOQuant,                      ON,  ON,  ON,  ON, OFF, OFF, OFF);
-TU_OPT_SW  (RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF);
-TU_OPT_SW  (RDOQuantCGZ,                   ON,  ON,  ON,  ON, OFF, OFF, OFF);
-TU_OPT_GACC(RDOQuant,                      OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-TU_OPT_GACC(RDOQuantChroma,                OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-TU_OPT_GACC(RDOQuantCGZ,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-TU_OPT_ALL (DeltaQpMode,                    0,   0,   0,   0,   0,   0,   0);
+    //Quantization optimization
+    TU_OPT_SW  (SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
+    TU_OPT_GACC(SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
+    TU_OPT_SW  (RDOQuant,                      ON,  ON,  ON,  ON, OFF, OFF, OFF);
+    TU_OPT_SW  (RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF);
+    TU_OPT_SW  (RDOQuantCGZ,                   ON,  ON,  ON,  ON, OFF, OFF, OFF);
+    TU_OPT_GACC(RDOQuant,                      OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_GACC(RDOQuantChroma,                OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_GACC(RDOQuantCGZ,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_ALL (DeltaQpMode,                    0,   0,   0,   0,   0,   0,   0);
 
-//Intra RDO
-TU_OPT_SW  (IntraNumCand0_2,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand0_3,                2,   2,   2,   2,   2,   2,   2);
-TU_OPT_SW  (IntraNumCand0_4,                2,   2,   2,   2,   2,   2,   2);
-TU_OPT_SW  (IntraNumCand0_5,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand0_6,                1,   1,   1,   1,   1,   1,   1);
+    //Intra RDO
+    TU_OPT_SW  (IntraNumCand0_2,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand0_3,                2,   2,   2,   2,   2,   2,   2);
+    TU_OPT_SW  (IntraNumCand0_4,                2,   2,   2,   2,   2,   2,   2);
+    TU_OPT_SW  (IntraNumCand0_5,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand0_6,                1,   1,   1,   1,   1,   1,   1);
 #ifdef AMT_SETTINGS
-TU_OPT_SW  (IntraNumCand1_2,                6,   6,   4,   2,   2,   1,   1);
-TU_OPT_SW  (IntraNumCand1_3,                6,   6,   4,   2,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand1_4,                4,   3,   2,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand1_5,                4,   3,   2,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand1_6,                4,   3,   2,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand2_2,                3,   3,   2,   2,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand2_3,                3,   3,   2,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_2,                6,   6,   4,   2,   2,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_3,                6,   6,   4,   2,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_4,                4,   3,   2,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_5,                4,   3,   2,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_6,                4,   3,   2,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_2,                3,   3,   2,   2,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_3,                3,   3,   2,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
 #else
-TU_OPT_SW  (IntraNumCand1_2,                8,   6,   4,   2,   2,   1,   1);
-TU_OPT_SW  (IntraNumCand1_3,                8,   6,   4,   2,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand1_4,                4,   3,   2,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand1_5,                4,   3,   2,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand1_6,                4,   3,   2,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand2_2,                4,   3,   2,   2,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand2_3,                4,   3,   2,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
-TU_OPT_SW  (IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_2,                8,   6,   4,   2,   2,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_3,                8,   6,   4,   2,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_4,                4,   3,   2,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_5,                4,   3,   2,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_6,                4,   3,   2,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_2,                4,   3,   2,   2,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_3,                4,   3,   2,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
 #endif
-TU_OPT_GACC(IntraNumCand0_2,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand0_3,                2,   2,   2,   2,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand0_4,                2,   2,   2,   2,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand0_5,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand0_6,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand1_2,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand1_3,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand1_4,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand1_5,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand1_6,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand2_2,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand2_3,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand2_4,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand2_5,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(IntraNumCand2_6,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand0_2,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand0_3,                2,   2,   2,   2,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand0_4,                2,   2,   2,   2,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand0_5,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand0_6,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand1_2,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand1_3,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand1_4,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand1_5,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand1_6,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand2_2,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand2_3,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand2_4,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand2_5,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand2_6,                1,   1,   1,   1,   1,   1,   1);
 
-//GACC
-TU_OPT_SW  (EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-TU_OPT_GACC(EnableCm,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
-TU_OPT_SW  (CmIntraThreshold,               0,   0,   0,   0,   0,   0,   0);
-TU_OPT_GACC(CmIntraThreshold,             576, 576, 576, 576, 576, 576, 576);
+    //GACC
+    TU_OPT_SW  (EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_GACC(EnableCm,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
+    TU_OPT_SW  (CmIntraThreshold,               0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_GACC(CmIntraThreshold,             576, 576, 576, 576, 576, 576, 576);
 
-//Multithreading & optimizations
-TU_OPT_ALL (WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK);
-TU_OPT_ALL (ForceNumThread,                 0,   0,   0,   0,   0,   0,   0);
-TU_OPT_ALL (CpuFeature,                     0,   0,   0,   0,   0,   0,   0);
+    //Multithreading & optimizations
+    TU_OPT_ALL (WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK);
+    TU_OPT_ALL (ForceNumThread,                 0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_ALL (CpuFeature,                     0,   0,   0,   0,   0,   0,   0);
 
-//Inter prediction
-TU_OPT_ALL (TMVP,                          ON,  ON,  ON,  ON,  ON,  ON,  ON);
-TU_OPT_SW  (HadamardMe,                     2,   2,   2,   2,   2,   1,   1);
-TU_OPT_GACC(HadamardMe,                     1,   1,   1,   1,   1,   1,   1);
-TU_OPT_ALL (PatternIntPel,                  1,   1,   1,   1,   1,   1,   1);
-TU_OPT_ALL (PatternSubPel,                  3,   3,   3,   3,   4,   4,   4); //4 -dia subpel search; 3- square (see enum SUBPEL_*)
-TU_OPT_ALL (NumBiRefineIter,              999, 999, 999,   3,   2,   1,   1); //999-practically infinite iteration
-TU_OPT_ALL (FastInterp,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF); 
-TU_OPT_SW  (TryIntra,                     2,   2,   2,   2,   2,   2,   1);
-TU_OPT_GACC(TryIntra,                     1,   1,   1,   1,   1,   1,   1);
-TU_OPT_SW  (FastAMPSkipME,                2,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(FastAMPSkipME,                1,   1,   1,   1,   1,   1,   1);
-TU_OPT_SW  (FastAMPRD,                    2,   1,   1,   1,   1,   1,   1);
-TU_OPT_GACC(FastAMPRD,                    1,   1,   1,   1,   1,   1,   1);
-TU_OPT_SW  (SkipMotionPartition,          2,   2,   2,   1,   1,   1,   1);
-TU_OPT_GACC(SkipMotionPartition,          1,   1,   1,   1,   1,   1,   1);
-TU_OPT_SW  (SkipCandRD,                  ON,  ON,  ON,  OFF,  OFF, OFF, OFF);
-TU_OPT_GACC(SkipCandRD,                  OFF, OFF, OFF, OFF,  OFF, OFF, OFF);
-TU_OPT_ALL (FramesInParallel,               1,   1,   1,   1,   1,   1,   1);
-//GOP structure, reference options
-TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
-TU_OPT_GACC(GPB,                          OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-TU_OPT_ALL (BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
+    //Inter prediction
+    TU_OPT_ALL (TMVP,                          ON,  ON,  ON,  ON,  ON,  ON,  ON);
+    TU_OPT_SW  (HadamardMe,                     2,   2,   2,   2,   2,   1,   1);
+    TU_OPT_GACC(HadamardMe,                     1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_ALL (PatternIntPel,                  1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_ALL (PatternSubPel,                  3,   3,   3,   3,   4,   4,   4); //4 -dia subpel search; 3- square (see enum SUBPEL_*)
+    TU_OPT_ALL (NumBiRefineIter,              999, 999, 999,   3,   2,   1,   1); //999-practically infinite iteration
+    TU_OPT_ALL (FastInterp,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF); 
+    TU_OPT_SW  (TryIntra,                     2,   2,   2,   2,   2,   2,   1);
+    TU_OPT_GACC(TryIntra,                     1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (FastAMPSkipME,                2,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(FastAMPSkipME,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (FastAMPRD,                    2,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(FastAMPRD,                    1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (SkipMotionPartition,          2,   2,   2,   1,   1,   1,   1);
+    TU_OPT_GACC(SkipMotionPartition,          1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (SkipCandRD,                  ON,  ON,  ON,  OFF,  OFF, OFF, OFF);
+    TU_OPT_GACC(SkipCandRD,                  OFF, OFF, OFF, OFF,  OFF, OFF, OFF);
+    TU_OPT_ALL (FramesInParallel,               1,   1,   1,   1,   1,   1,   1);
+    //GOP structure, reference options
+    TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
+    TU_OPT_GACC(GPB,                          OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_ALL (BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
 
-TU_OPT_ALL (NumTileCols,                   1,   1,   1,   1,   1,   1,   1);
-TU_OPT_ALL (NumTileRows,                   1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_ALL (NumTileCols,                   1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_ALL (NumTileRows,                   1,   1,   1,   1,   1,   1,   1);
 
-Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 8, 8, 8};
+    Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 8, 8, 8};
 #ifdef AMT_SETTINGS
-Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 3, 3, 2, 2, 2};
+    Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 3, 3, 2, 2, 2};
 #else
-Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 4, 3, 3, 2, 2};
+    Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 4, 3, 3, 2, 2};
 #endif
-Ipp8u tab_tuNumRefFrame_GACC[8] = {4, 4, 4, 4, 4, 4, 4, 2};
+    Ipp8u tab_tuNumRefFrame_GACC[8] = {4, 4, 4, 4, 4, 4, 4, 2};
 
 
-mfxExtCodingOptionHEVC tab_tu[8] = {
-    TAB_TU(sw, 3), TAB_TU(sw, 0), TAB_TU(sw, 1), TAB_TU(sw, 2), TAB_TU(sw, 3), TAB_TU(sw, 4), TAB_TU(sw, 5), TAB_TU(sw, 6)
-};
+    mfxExtCodingOptionHEVC tab_tu[8] = {
+        TAB_TU(sw, 3), TAB_TU(sw, 0), TAB_TU(sw, 1), TAB_TU(sw, 2), TAB_TU(sw, 3), TAB_TU(sw, 4), TAB_TU(sw, 5), TAB_TU(sw, 6)
+    };
 
 #ifdef MFX_VA
-mfxExtCodingOptionHEVC tab_tu_gacc[8] = {
-    TAB_TU(gacc, 3), TAB_TU(gacc, 0), TAB_TU(gacc, 1), TAB_TU(gacc, 2), TAB_TU(gacc, 3), TAB_TU(gacc, 4), TAB_TU(gacc, 5), TAB_TU(gacc, 6)
-};
+    mfxExtCodingOptionHEVC tab_tu_gacc[8] = {
+        TAB_TU(gacc, 3), TAB_TU(gacc, 0), TAB_TU(gacc, 1), TAB_TU(gacc, 2), TAB_TU(gacc, 3), TAB_TU(gacc, 4), TAB_TU(gacc, 5), TAB_TU(gacc, 6)
+    };
 #endif //MFX_VA
 
 
-static const struct tab_hevcLevel {
-    // General limits
-    Ipp32s levelId;
-    Ipp32s maxLumaPs;
-    Ipp32s maxCPB[2]; // low/high tier, in 1000 bits
-    Ipp32s maxSliceSegmentsPerPicture;
-    Ipp32s maxTileRows;
-    Ipp32s maxTileCols;
-    // Main profiles limits
-    Ipp64s maxLumaSr;
-    Ipp32s maxBr[2]; // low/high tier, in 1000 bits
-    Ipp32s minCr;
-} tab_level[] = {
-    {MFX_LEVEL_HEVC_1 ,    36864, {   350,      0},  16,  1,  1,     552960, {   128,    128}, 2},
-    {MFX_LEVEL_HEVC_2 ,   122880, {  1500,      0},  16,  1,  1,    3686400, {  1500,   1500}, 2},
-    {MFX_LEVEL_HEVC_21,   245760, {  3000,      0},  20,  1,  1,    7372800, {  3000,   3000}, 2},
-    {MFX_LEVEL_HEVC_3 ,   552960, {  6000,      0},  30,  2,  2,   16588800, {  6000,   6000}, 2},
-    {MFX_LEVEL_HEVC_31,   983040, {  1000,      0},  40,  3,  3,   33177600, { 10000,  10000}, 2},
-    {MFX_LEVEL_HEVC_4 ,  2228224, { 12000,  30000},  75,  5,  5,   66846720, { 12000,  30000}, 4},
-    {MFX_LEVEL_HEVC_41,  2228224, { 20000,  50000},  75,  5,  5,  133693440, { 20000,  50000}, 4},
-    {MFX_LEVEL_HEVC_5 ,  8912896, { 25000, 100000}, 200, 11, 10,  267386880, { 25000, 100000}, 6},
-    {MFX_LEVEL_HEVC_51,  8912896, { 40000, 160000}, 200, 11, 10,  534773760, { 40000, 160000}, 8},
-    {MFX_LEVEL_HEVC_52,  8912896, { 60000, 240000}, 200, 11, 10, 1069547520, { 60000, 240000}, 8},
-    {MFX_LEVEL_HEVC_6 , 35651584, { 60000, 240000}, 600, 22, 20, 1069547520, { 60000, 240000}, 8},
-    {MFX_LEVEL_HEVC_61, 35651584, {120000, 480000}, 600, 22, 20, 2139095040, {120000, 480000}, 8},
-    {MFX_LEVEL_HEVC_62, 35651584, {240000, 800000}, 600, 22, 20, 4278190080, {240000, 800000}, 6}
-};
+    static const struct tab_hevcLevel {
+        // General limits
+        Ipp32s levelId;
+        Ipp32s maxLumaPs;
+        Ipp32s maxCPB[2]; // low/high tier, in 1000 bits
+        Ipp32s maxSliceSegmentsPerPicture;
+        Ipp32s maxTileRows;
+        Ipp32s maxTileCols;
+        // Main profiles limits
+        Ipp64s maxLumaSr;
+        Ipp32s maxBr[2]; // low/high tier, in 1000 bits
+        Ipp32s minCr;
+    } tab_level[] = {
+        {MFX_LEVEL_HEVC_1 ,    36864, {   350,      0},  16,  1,  1,     552960, {   128,    128}, 2},
+        {MFX_LEVEL_HEVC_2 ,   122880, {  1500,      0},  16,  1,  1,    3686400, {  1500,   1500}, 2},
+        {MFX_LEVEL_HEVC_21,   245760, {  3000,      0},  20,  1,  1,    7372800, {  3000,   3000}, 2},
+        {MFX_LEVEL_HEVC_3 ,   552960, {  6000,      0},  30,  2,  2,   16588800, {  6000,   6000}, 2},
+        {MFX_LEVEL_HEVC_31,   983040, {  1000,      0},  40,  3,  3,   33177600, { 10000,  10000}, 2},
+        {MFX_LEVEL_HEVC_4 ,  2228224, { 12000,  30000},  75,  5,  5,   66846720, { 12000,  30000}, 4},
+        {MFX_LEVEL_HEVC_41,  2228224, { 20000,  50000},  75,  5,  5,  133693440, { 20000,  50000}, 4},
+        {MFX_LEVEL_HEVC_5 ,  8912896, { 25000, 100000}, 200, 11, 10,  267386880, { 25000, 100000}, 6},
+        {MFX_LEVEL_HEVC_51,  8912896, { 40000, 160000}, 200, 11, 10,  534773760, { 40000, 160000}, 8},
+        {MFX_LEVEL_HEVC_52,  8912896, { 60000, 240000}, 200, 11, 10, 1069547520, { 60000, 240000}, 8},
+        {MFX_LEVEL_HEVC_6 , 35651584, { 60000, 240000}, 600, 22, 20, 1069547520, { 60000, 240000}, 8},
+        {MFX_LEVEL_HEVC_61, 35651584, {120000, 480000}, 600, 22, 20, 2139095040, {120000, 480000}, 8},
+        {MFX_LEVEL_HEVC_62, 35651584, {240000, 800000}, 600, 22, 20, 4278190080, {240000, 800000}, 6}
+    };
 
-static const int    NUM_265_LEVELS = sizeof(tab_level) / sizeof(tab_level[0]);
+    static const int    NUM_265_LEVELS = sizeof(tab_level) / sizeof(tab_level[0]);
 
-//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-static mfxStatus CheckPlatformType(VideoCORE *core)
-{
+    static mfxStatus CheckPlatformType(VideoCORE *core)
+    {
 #ifndef MFX_VA
-    if (core && core->GetPlatformType() != MFX_PLATFORM_SOFTWARE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        if (core && core->GetPlatformType() != MFX_PLATFORM_SOFTWARE)
+            return MFX_WRN_PARTIAL_ACCELERATION;
 #endif //!MFX_VA
 
-    return MFX_ERR_NONE;
-}
-
-static Ipp32s Check265Level(Ipp32s inLevelTier, const mfxVideoParam *parMfx)
-{
-    Ipp32s inLevel = inLevelTier &~ MFX_TIER_HEVC_HIGH;
-    Ipp32s inTier = inLevelTier & MFX_TIER_HEVC_HIGH;
-    Ipp32s level;
-    for (level = 0; level < NUM_265_LEVELS; level++)
-        if (tab_level[level].levelId == inLevel)
-            break;
-
-    if (level >= NUM_265_LEVELS) {
-        if (inLevelTier != MFX_LEVEL_UNKNOWN)
-            return MFX_LEVEL_UNKNOWN;
-        inLevelTier = inLevel = MFX_LEVEL_UNKNOWN;
-        inTier = 0;
-        level = 0;
+        return MFX_ERR_NONE;
     }
 
-    if (!parMfx) // just check for valid level value
-        return inLevelTier;
-
-    const mfxExtCodingOptionHEVC* opts  = (mfxExtCodingOptionHEVC*)GetExtBuffer(  parMfx->ExtParam,  parMfx->NumExtParam, MFX_EXTBUFF_HEVCENC );
-
-    for( ; level < NUM_265_LEVELS; level++) {
-        Ipp32s lumaPs = parMfx->mfx.FrameInfo.Width * parMfx->mfx.FrameInfo.Height;
-        Ipp32s bitrate = parMfx->mfx.BRCParamMultiplier ? parMfx->mfx.BRCParamMultiplier * parMfx->mfx.TargetKbps : parMfx->mfx.TargetKbps;
-        Ipp64s lumaSr = parMfx->mfx.FrameInfo.FrameRateExtD ? (Ipp64s)lumaPs * parMfx->mfx.FrameInfo.FrameRateExtN / parMfx->mfx.FrameInfo.FrameRateExtD : 0;
-        if (lumaPs > tab_level[level].maxLumaPs)
-            continue;
-        if (parMfx->mfx.FrameInfo.Width * parMfx->mfx.FrameInfo.Width > 8 * tab_level[level].maxLumaPs)
-            continue;
-        if (parMfx->mfx.FrameInfo.Height * parMfx->mfx.FrameInfo.Height > 8 * tab_level[level].maxLumaPs)
-            continue;
-        if (parMfx->mfx.NumSlice > tab_level[level].maxSliceSegmentsPerPicture)
-            continue;
-        if (parMfx->mfx.FrameInfo.FrameRateExtD && lumaSr > tab_level[level].maxLumaSr)
-            continue;
-        if (10 * bitrate > 11 * tab_level[level].maxBr[1]) // try high tier, nal
-            continue;
-        if (bitrate && lumaSr * 3 / 2 * 8 / bitrate / 1000 < tab_level[level].minCr)
-            continue; // it hardly can change the case
-
-        // MaxDpbSIze not checked
-
-
-        if (opts) {
-            if (opts->Log2MaxCUSize > 0 && tab_level[level].levelId >= MFX_LEVEL_HEVC_5 && opts->Log2MaxCUSize < 5)
-                continue;
-            if (opts->NumTileCols > tab_level[level].maxTileCols)
-                continue;
-            if (opts->NumTileRows > tab_level[level].maxTileRows)
-                continue;
-        }
-
-        Ipp32s tier = (bitrate > tab_level[level].maxBr[0]) ? MFX_TIER_HEVC_HIGH : MFX_TIER_HEVC_MAIN;
-
-        if (inLevel == tab_level[level].levelId && tier <= inTier)
-            return inLevelTier;
-        if (inLevel <= tab_level[level].levelId)
-            return tab_level[level].levelId | tier;
-    }
-    return MFX_LEVEL_UNKNOWN;
-}
-
-void SetCalcParams( RcParams* rc, const mfxVideoParam *parMfx )
-{
-    Ipp32s mult = IPP_MAX( parMfx->mfx.BRCParamMultiplier, 1);
-
-    // not all fields are vlid for all rc modes
-    rc->BufferSizeInKB = parMfx->mfx.BufferSizeInKB * mult;
-    rc->TargetKbps = parMfx->mfx.TargetKbps * mult;
-    rc->MaxKbps = parMfx->mfx.MaxKbps * mult;
-    rc->InitialDelayInKB = parMfx->mfx.InitialDelayInKB * mult;
-}
-
-void GetCalcParams( mfxVideoParam *parMfx, const RcParams* rc, Ipp32s rcMode )
-{
-    Ipp32s maxVal = rc->BufferSizeInKB;
-    if (rcMode == MFX_RATECONTROL_AVBR)
-        maxVal = IPP_MAX(rc->TargetKbps, maxVal);
-    else if (rcMode != MFX_RATECONTROL_CQP)
-        maxVal = IPP_MAX(rc->TargetKbps, IPP_MAX( IPP_MAX( rc->InitialDelayInKB, rc->MaxKbps), maxVal));
-
-    Ipp32s mult = (Ipp32u)(maxVal + 0xffff) >> 16;
-    if (mult == 0)
-        mult = 1;
-
-    parMfx->mfx.BRCParamMultiplier = (mfxU16)mult;
-    parMfx->mfx.BufferSizeInKB = (mfxU16)(rc->BufferSizeInKB / mult);
-    if (rcMode != MFX_RATECONTROL_CQP) {
-        parMfx->mfx.TargetKbps = (mfxU16)(rc->TargetKbps / mult);
-        if (rcMode != MFX_RATECONTROL_AVBR) {
-            parMfx->mfx.MaxKbps = (mfxU16)(rc->MaxKbps / mult);
-            parMfx->mfx.InitialDelayInKB = (mfxU16)(rc->InitialDelayInKB / mult);
-        }
-    }
-}
-
-
-//inline Ipp32u h265enc_ConvertBitrate(mfxU16 TargetKbps)
-//{
-//    return (TargetKbps * 1000);
-//}
-
-// check for known ExtBuffers, returns error code. or -1 if found unknown
-// zero mfxExtBuffer* are OK
-mfxStatus CheckExtBuffers_H265enc(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
-{
-
-    mfxU32 ID_list[] = { MFX_EXTBUFF_HEVCENC, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_DUMP };
-
-    mfxU32 ID_found[sizeof(ID_list)/sizeof(ID_list[0])] = {0,};
-    if (!ebuffers) return MFX_ERR_NONE;
-    for(mfxU32 i=0; i<nbuffers; i++) {
-        bool is_known = false;
-        if (!ebuffers[i]) return MFX_ERR_NULL_PTR; //continue;
-        for (mfxU32 j=0; j<sizeof(ID_list)/sizeof(ID_list[0]); j++)
-            if (ebuffers[i]->BufferId == ID_list[j]) {
-                if (ID_found[j])
-                    return MFX_ERR_UNDEFINED_BEHAVIOR;
-                is_known = true;
-                ID_found[j] = 1; // to avoid duplicated
+    static Ipp32s Check265Level(Ipp32s inLevelTier, const mfxVideoParam *parMfx)
+    {
+        Ipp32s inLevel = inLevelTier &~ MFX_TIER_HEVC_HIGH;
+        Ipp32s inTier = inLevelTier & MFX_TIER_HEVC_HIGH;
+        Ipp32s level;
+        for (level = 0; level < NUM_265_LEVELS; level++)
+            if (tab_level[level].levelId == inLevel)
                 break;
+
+        if (level >= NUM_265_LEVELS) {
+            if (inLevelTier != MFX_LEVEL_UNKNOWN)
+                return MFX_LEVEL_UNKNOWN;
+            inLevelTier = inLevel = MFX_LEVEL_UNKNOWN;
+            inTier = 0;
+            level = 0;
+        }
+
+        if (!parMfx) // just check for valid level value
+            return inLevelTier;
+
+        const mfxExtCodingOptionHEVC* opts  = (mfxExtCodingOptionHEVC*)GetExtBuffer(  parMfx->ExtParam,  parMfx->NumExtParam, MFX_EXTBUFF_HEVCENC );
+
+        for( ; level < NUM_265_LEVELS; level++) {
+            Ipp32s lumaPs = parMfx->mfx.FrameInfo.Width * parMfx->mfx.FrameInfo.Height;
+            Ipp32s bitrate = parMfx->mfx.BRCParamMultiplier ? parMfx->mfx.BRCParamMultiplier * parMfx->mfx.TargetKbps : parMfx->mfx.TargetKbps;
+            Ipp64s lumaSr = parMfx->mfx.FrameInfo.FrameRateExtD ? (Ipp64s)lumaPs * parMfx->mfx.FrameInfo.FrameRateExtN / parMfx->mfx.FrameInfo.FrameRateExtD : 0;
+            if (lumaPs > tab_level[level].maxLumaPs)
+                continue;
+            if (parMfx->mfx.FrameInfo.Width * parMfx->mfx.FrameInfo.Width > 8 * tab_level[level].maxLumaPs)
+                continue;
+            if (parMfx->mfx.FrameInfo.Height * parMfx->mfx.FrameInfo.Height > 8 * tab_level[level].maxLumaPs)
+                continue;
+            if (parMfx->mfx.NumSlice > tab_level[level].maxSliceSegmentsPerPicture)
+                continue;
+            if (parMfx->mfx.FrameInfo.FrameRateExtD && lumaSr > tab_level[level].maxLumaSr)
+                continue;
+            if (10 * bitrate > 11 * tab_level[level].maxBr[1]) // try high tier, nal
+                continue;
+            if (bitrate && lumaSr * 3 / 2 * 8 / bitrate / 1000 < tab_level[level].minCr)
+                continue; // it hardly can change the case
+
+            // MaxDpbSIze not checked
+
+
+            if (opts) {
+                if (opts->Log2MaxCUSize > 0 && tab_level[level].levelId >= MFX_LEVEL_HEVC_5 && opts->Log2MaxCUSize < 5)
+                    continue;
+                if (opts->NumTileCols > tab_level[level].maxTileCols)
+                    continue;
+                if (opts->NumTileRows > tab_level[level].maxTileRows)
+                    continue;
             }
-        if (!is_known)
-            return MFX_ERR_UNSUPPORTED;
+
+            Ipp32s tier = (bitrate > tab_level[level].maxBr[0]) ? MFX_TIER_HEVC_HIGH : MFX_TIER_HEVC_MAIN;
+
+            if (inLevel == tab_level[level].levelId && tier <= inTier)
+                return inLevelTier;
+            if (inLevel <= tab_level[level].levelId)
+                return tab_level[level].levelId | tier;
+        }
+        return MFX_LEVEL_UNKNOWN;
     }
-    return MFX_ERR_NONE;
-}
+
+    void SetCalcParams( RcParams* rc, const mfxVideoParam *parMfx )
+    {
+        Ipp32s mult = IPP_MAX( parMfx->mfx.BRCParamMultiplier, 1);
+
+        // not all fields are vlid for all rc modes
+        rc->BufferSizeInKB = parMfx->mfx.BufferSizeInKB * mult;
+        rc->TargetKbps = parMfx->mfx.TargetKbps * mult;
+        rc->MaxKbps = parMfx->mfx.MaxKbps * mult;
+        rc->InitialDelayInKB = parMfx->mfx.InitialDelayInKB * mult;
+    }
+
+    void GetCalcParams( mfxVideoParam *parMfx, const RcParams* rc, Ipp32s rcMode )
+    {
+        Ipp32s maxVal = rc->BufferSizeInKB;
+        if (rcMode == MFX_RATECONTROL_AVBR)
+            maxVal = IPP_MAX(rc->TargetKbps, maxVal);
+        else if (rcMode != MFX_RATECONTROL_CQP)
+            maxVal = IPP_MAX(rc->TargetKbps, IPP_MAX( IPP_MAX( rc->InitialDelayInKB, rc->MaxKbps), maxVal));
+
+        Ipp32s mult = (Ipp32u)(maxVal + 0xffff) >> 16;
+        if (mult == 0)
+            mult = 1;
+
+        parMfx->mfx.BRCParamMultiplier = (mfxU16)mult;
+        parMfx->mfx.BufferSizeInKB = (mfxU16)(rc->BufferSizeInKB / mult);
+        if (rcMode != MFX_RATECONTROL_CQP) {
+            parMfx->mfx.TargetKbps = (mfxU16)(rc->TargetKbps / mult);
+            if (rcMode != MFX_RATECONTROL_AVBR) {
+                parMfx->mfx.MaxKbps = (mfxU16)(rc->MaxKbps / mult);
+                parMfx->mfx.InitialDelayInKB = (mfxU16)(rc->InitialDelayInKB / mult);
+            }
+        }
+    }
+
+
+    //inline Ipp32u h265enc_ConvertBitrate(mfxU16 TargetKbps)
+    //{
+    //    return (TargetKbps * 1000);
+    //}
+
+    // check for known ExtBuffers, returns error code. or -1 if found unknown
+    // zero mfxExtBuffer* are OK
+    mfxStatus CheckExtBuffers_H265enc(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
+    {
+
+        mfxU32 ID_list[] = { MFX_EXTBUFF_HEVCENC, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_DUMP };
+
+        mfxU32 ID_found[sizeof(ID_list)/sizeof(ID_list[0])] = {0,};
+        if (!ebuffers) return MFX_ERR_NONE;
+        for(mfxU32 i=0; i<nbuffers; i++) {
+            bool is_known = false;
+            if (!ebuffers[i]) return MFX_ERR_NULL_PTR; //continue;
+            for (mfxU32 j=0; j<sizeof(ID_list)/sizeof(ID_list[0]); j++)
+                if (ebuffers[i]->BufferId == ID_list[j]) {
+                    if (ID_found[j])
+                        return MFX_ERR_UNDEFINED_BEHAVIOR;
+                    is_known = true;
+                    ID_found[j] = 1; // to avoid duplicated
+                    break;
+                }
+                if (!is_known)
+                    return MFX_ERR_UNSUPPORTED;
+        }
+        return MFX_ERR_NONE;
+    }
 
 } // namespace
 
 //////////////////////////////////////////////////////////////////////////
 
 MFXVideoENCODEH265::MFXVideoENCODEH265(VideoCORE *core, mfxStatus *stat)
-: VideoENCODE(),
-  m_core(core),
-  m_totalBits(0),
-  m_encodedFrames(0),
-  m_isInitialized(false),
-  m_useSysOpaq(false),
-  m_useVideoOpaq(false),
-  m_isOpaque(false)
+    : VideoENCODE(),
+    m_core(core),
+    m_totalBits(0),
+    m_encodedFrames(0),
+    m_isInitialized(false),
+    m_useSysOpaq(false),
+    m_useVideoOpaq(false),
+    m_isOpaque(false)
 {
     m_brc = NULL;
     m_videoParam.m_logMvCostTable = NULL;
@@ -593,7 +593,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     if (m_mfxParam.mfx.EncodedOrder) 
         return MFX_ERR_UNSUPPORTED;
 
-    
+
     if (ctrl && (ctrl->FrameType != MFX_FRAMETYPE_UNKNOWN) && ((ctrl->FrameType & 0xff) != (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR))) {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -611,7 +611,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
         m_frameCountBufferedSync --;
     }
     else if (m_frameCountSync > noahead && 
-             (mfxI32)m_frameCountBufferedSync < m_mfxParam.mfx.GopRefDist + (m_videoParam.m_framesInParallel - 1) + (lookaheadBuffering) ) {
+        (mfxI32)m_frameCountBufferedSync < m_mfxParam.mfx.GopRefDist + (m_videoParam.m_framesInParallel - 1) + (lookaheadBuffering) ) {
 
             m_frameCountBufferedSync++;
             return (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
@@ -669,14 +669,14 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     // return status for Init differs in these cases
     if (stsQuery == MFX_ERR_UNSUPPORTED &&
         (  (par_in->mfx.EncodedOrder != m_mfxParam.mfx.EncodedOrder) ||
-           (par_in->mfx.NumSlice > 0 && m_mfxParam.mfx.NumSlice == 0) ||
-           (par_in->IOPattern != 0 && m_mfxParam.IOPattern == 0) ||
-           (par_in->mfx.RateControlMethod != 0 && m_mfxParam.mfx.RateControlMethod == 0) ||
-           (par_in->mfx.FrameInfo.PicStruct != 0 && m_mfxParam.mfx.FrameInfo.PicStruct == 0) ||
-           (par_in->mfx.FrameInfo.FrameRateExtN != 0 && m_mfxParam.mfx.FrameInfo.FrameRateExtN == 0) ||
-           (par_in->mfx.FrameInfo.FrameRateExtD != 0 && m_mfxParam.mfx.FrameInfo.FrameRateExtD == 0) ||
-           (par_in->mfx.FrameInfo.FourCC != 0 && m_mfxParam.mfx.FrameInfo.FourCC == 0) ||
-           (par_in->mfx.FrameInfo.ChromaFormat != 0 && m_mfxParam.mfx.FrameInfo.ChromaFormat == 0) ) )
+        (par_in->mfx.NumSlice > 0 && m_mfxParam.mfx.NumSlice == 0) ||
+        (par_in->IOPattern != 0 && m_mfxParam.IOPattern == 0) ||
+        (par_in->mfx.RateControlMethod != 0 && m_mfxParam.mfx.RateControlMethod == 0) ||
+        (par_in->mfx.FrameInfo.PicStruct != 0 && m_mfxParam.mfx.FrameInfo.PicStruct == 0) ||
+        (par_in->mfx.FrameInfo.FrameRateExtN != 0 && m_mfxParam.mfx.FrameInfo.FrameRateExtN == 0) ||
+        (par_in->mfx.FrameInfo.FrameRateExtD != 0 && m_mfxParam.mfx.FrameInfo.FrameRateExtD == 0) ||
+        (par_in->mfx.FrameInfo.FourCC != 0 && m_mfxParam.mfx.FrameInfo.FourCC == 0) ||
+        (par_in->mfx.FrameInfo.ChromaFormat != 0 && m_mfxParam.mfx.FrameInfo.ChromaFormat == 0) ) )
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (stsQuery != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
@@ -695,11 +695,11 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         else {
             // check memory type in opaque allocation request
-//             if (!(opaqAllocReq->In.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET) && !(opaqAllocReq->In.Type  & MFX_MEMTYPE_SYSTEM_MEMORY))
-//                 return MFX_ERR_INVALID_VIDEO_PARAM;
+            //             if (!(opaqAllocReq->In.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET) && !(opaqAllocReq->In.Type  & MFX_MEMTYPE_SYSTEM_MEMORY))
+            //                 return MFX_ERR_INVALID_VIDEO_PARAM;
 
-//             if ((opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && (opaqAllocReq->In.Type  & MFX_MEMTYPE_DXVA2_DECODER_TARGET))
-//                 return MFX_ERR_INVALID_VIDEO_PARAM;
+            //             if ((opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && (opaqAllocReq->In.Type  & MFX_MEMTYPE_DXVA2_DECODER_TARGET))
+            //                 return MFX_ERR_INVALID_VIDEO_PARAM;
 
             // use opaque surfaces. Need to allocate
             m_isOpaque = true;
@@ -707,8 +707,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     }
 
     // return an error if requested opaque memory type isn't equal to native
-//     if (m_isOpaque && (opaqAllocReq->In.Type & MFX_MEMTYPE_FROM_ENCODE) && !(opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-//         return MFX_ERR_INVALID_VIDEO_PARAM;
+    //     if (m_isOpaque && (opaqAllocReq->In.Type & MFX_MEMTYPE_FROM_ENCODE) && !(opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+    //         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     //// to check if needed in hevc
     //m_allocator = new mfx_UMC_MemAllocator;
@@ -720,7 +720,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     if (m_isOpaque && opaqAllocReq->In.NumSurface < m_mfxParam.mfx.GopRefDist)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-     // Allocate Opaque frames and frame for copy from video memory (if any)
+    // Allocate Opaque frames and frame for copy from video memory (if any)
     memset(&m_auxInput, 0, sizeof(m_auxInput));
     m_useAuxInput = false;
     m_useSysOpaq = false;
@@ -739,9 +739,9 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             request.NumFrameMin =request.NumFrameSuggested = (mfxU16)opaqAllocReq->In.NumSurface;
 
             sts = m_core->AllocFrames(&request,
-                                     &m_responseAlien,
-                                     opaqAllocReq->In.Surfaces,
-                                     opaqAllocReq->In.NumSurface);
+                &m_responseAlien,
+                opaqAllocReq->In.Surfaces,
+                opaqAllocReq->In.NumSurface);
 
             if (MFX_ERR_NONE != sts &&
                 MFX_ERR_UNSUPPORTED != sts) // unsupported means that current Core couldn;t allocate the surfaces
@@ -769,9 +769,9 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             request.NumFrameMin       = opaqAllocReq->In.NumSurface;
             request.NumFrameSuggested = opaqAllocReq->In.NumSurface;
             sts = m_core->AllocFrames(&request,
-                                     &m_response,
-                                     opaqAllocReq->In.Surfaces,
-                                     opaqAllocReq->In.NumSurface);
+                &m_response,
+                opaqAllocReq->In.Surfaces,
+                opaqAllocReq->In.NumSurface);
             MFX_CHECK_STS(sts);
         }
 
@@ -1011,17 +1011,17 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     // CodecId - only HEVC;  CodecProfile CodecLevel - in the end
     // NumThread - set inside, >1 only if WPP
-//    mfxU32 asyncDepth = par->AsyncDepth ? par->AsyncDepth : m_core->GetAutoAsyncDepth();
-//    m_mfxVideoParam.mfx.NumThread = (mfxU16)asyncDepth;
-//    if (MFX_PLATFORM_SOFTWARE != MFX_Utility::GetPlatform(m_core, par_in))
-//        m_mfxVideoParam.mfx.NumThread = 1;
+    //    mfxU32 asyncDepth = par->AsyncDepth ? par->AsyncDepth : m_core->GetAutoAsyncDepth();
+    //    m_mfxVideoParam.mfx.NumThread = (mfxU16)asyncDepth;
+    //    if (MFX_PLATFORM_SOFTWARE != MFX_Utility::GetPlatform(m_core, par_in))
+    //        m_mfxVideoParam.mfx.NumThread = 1;
     m_mfxParam.mfx.NumThread = (mfxU16)vm_sys_info_get_cpu_num();
     if (m_mfxHEVCOpts.ForceNumThread > 0)
         m_mfxParam.mfx.NumThread = m_mfxHEVCOpts.ForceNumThread;
 
-/*#if defined (AS_HEVCE_PLUGIN)
+    /*#if defined (AS_HEVCE_PLUGIN)
     m_mfxVideoParam.mfx.NumThread += 1;
-#endif*/
+    #endif*/
 
     // TargetUsage - nothing to do
 
@@ -1036,7 +1036,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     }
     //if (!m_mfxVideoParam.mfx.IdrInterval) m_mfxVideoParam.mfx.IdrInterval = m_mfxVideoParam.mfx.GopPicSize * 8;
     // GopOptFlag ignore
-    
+
 
     // to be provided:
     if (!m_mfxParam.mfx.RateControlMethod)
@@ -1077,10 +1077,10 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     case MFX_FOURCC_P010:
         m_mfxParam.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN10;
         break;
-//    case MFX_FOURCC_P210:
-//    case MFX_FOURCC_NV16:
-//        m_mfxVideoParam.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN422_10;
-//        break;
+        //    case MFX_FOURCC_P210:
+        //    case MFX_FOURCC_NV16:
+        //        m_mfxVideoParam.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN422_10;
+        //        break;
     case MFX_FOURCC_NV12:
     default:
         m_mfxParam.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
@@ -1135,7 +1135,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         MFX_CHECK_STS(sts);
     }
     // 
-    
+
     m_isInitialized = true;
 
     m_semaphore.Init(0, INT_MAX);
@@ -1147,7 +1147,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 mfxStatus MFXVideoENCODEH265::Init_Internal( void )
 {
     Ipp32u memSize = 0;
-    
+
     memSize += (1 << 16);
     m_videoParam.m_logMvCostTable = (Ipp8u *)H265_Malloc(memSize);
     MFX_CHECK_STS_ALLOC(m_videoParam.m_logMvCostTable);
@@ -1158,10 +1158,10 @@ mfxStatus MFXVideoENCODEH265::Init_Internal( void )
     for (Ipp32s i = 1; i < (1 << 15); i++) {
         m_videoParam.m_logMvCostTable[(1 << 15) + i] = m_videoParam.m_logMvCostTable[(1 << 15) - i] = (Ipp8u)(log(i + 1.0f) * log2reciproc + 2);
     }
-    
+
     m_profileIndex = 0;
     m_frameOrder = 0;
-    
+
     m_frameOrderOfLastIdr = 0;       // frame order of last IDR frame (in display order)
     m_frameOrderOfLastIntra = 0;     // frame order of last I-frame (in display order)
     m_frameOrderOfLastAnchor = 0;    // frame order of last anchor (first in minigop) frame (in display order)
@@ -1184,7 +1184,7 @@ mfxStatus MFXVideoENCODEH265::Init_Internal( void )
         int refDist =  m_videoParam.GopRefDist;
         int intraPeriod = m_videoParam.GopPicSize;
         int framesToBeEncoded = 610;//for test only
-        
+
         m_preEnc.Init(NULL, m_videoParam.Width, m_videoParam.Height, 8, 8, frameRate, refDist, intraPeriod, framesToBeEncoded, m_videoParam.MaxCUSize);
 
         m_pAQP = NULL;
@@ -1235,7 +1235,7 @@ mfxStatus MFXVideoENCODEH265::Init_Internal( void )
         m_FeiCtx = NULL;
     }
 #endif // MFX_VA
-    
+
     MFX_HEVC_PP::InitDispatcher(m_videoParam.cpuFeature);
 
 #if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
@@ -1320,12 +1320,12 @@ mfxStatus MFXVideoENCODEH265::Close()
 
 #if defined (MFX_VA)
     if (m_videoParam.enableCmFlag) {
-/*
-#if defined(_WIN32) || defined(_WIN64)
+        /*
+        #if defined(_WIN32) || defined(_WIN64)
         PrintTimes();
-#endif // #if defined(_WIN32) || defined(_WIN64)
+        #endif // #if defined(_WIN32) || defined(_WIN64)
         //delete m_cmCtx;
-*/
+        */
         if (m_FeiCtx)
             delete m_FeiCtx;
 
@@ -1364,7 +1364,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     mfxVideoParam parNew = *par_in;
     mfxVideoParam& parOld = m_mfxParam;
 
-        //set unspecified parameters
+    //set unspecified parameters
     if (!parNew.AsyncDepth)             parNew.AsyncDepth           = parOld.AsyncDepth;
     //if (!parNew.IOPattern)              parNew.IOPattern            = parOld.IOPattern;
     if (!parNew.mfx.FrameInfo.FourCC)   parNew.mfx.FrameInfo.FourCC = parOld.mfx.FrameInfo.FourCC;
@@ -1392,7 +1392,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     if (!parNew.mfx.NumRefFrame)        parNew.mfx.NumRefFrame       = parOld.mfx.NumRefFrame;
 
     /*if(    parNew.mfx.CodecProfile != MFX_PROFILE_AVC_STEREO_HIGH
-        && parNew.mfx.CodecProfile != MFX_PROFILE_AVC_MULTIVIEW_HIGH)*/{
+    && parNew.mfx.CodecProfile != MFX_PROFILE_AVC_MULTIVIEW_HIGH)*/{
         mfxU16 old_multiplier = IPP_MAX(parOld.mfx.BRCParamMultiplier, 1);
         mfxU16 new_multiplier = IPP_MAX(parNew.mfx.BRCParamMultiplier, 1);
 
@@ -1539,8 +1539,8 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     //m_frameCountBufferedSync = 0;
     //m_frameCountBuffered = 0;
 
-//    sts = m_enc->Reset();
-//    MFX_CHECK_STS(sts);
+    //    sts = m_enc->Reset();
+    //    MFX_CHECK_STS(sts);
 
     return sts;
 }
@@ -1552,242 +1552,242 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
     mfxStatus st;
     MFX_CHECK_NULL_PTR1(par_out)
 
-    //First check for zero input
-    if( par_in == NULL ){ //Set ones for filed that can be configured
-        mfxVideoParam *out = par_out;
-        memset( &out->mfx, 0, sizeof( mfxInfoMFX ));
-        out->mfx.FrameInfo.FourCC = 1;
-        out->mfx.FrameInfo.Width = 1;
-        out->mfx.FrameInfo.Height = 1;
-        out->mfx.FrameInfo.CropX = 1;
-        out->mfx.FrameInfo.CropY = 1;
-        out->mfx.FrameInfo.CropW = 1;
-        out->mfx.FrameInfo.CropH = 1;
-        out->mfx.FrameInfo.FrameRateExtN = 1;
-        out->mfx.FrameInfo.FrameRateExtD = 1;
-        out->mfx.FrameInfo.AspectRatioW = 1;
-        out->mfx.FrameInfo.AspectRatioH = 1;
-        out->mfx.FrameInfo.PicStruct = 1;
-        out->mfx.FrameInfo.ChromaFormat = 1;
-        out->mfx.CodecId = MFX_CODEC_HEVC; // restore cleared mandatory
-        out->mfx.CodecLevel = 1;
-        out->mfx.CodecProfile = 1;
-        out->mfx.NumThread = 1;
-        out->mfx.TargetUsage = 1;
-        out->mfx.GopPicSize = 1;
-        out->mfx.GopRefDist = 1;
-        out->mfx.GopOptFlag = 1;
-        out->mfx.IdrInterval = 1;
-        out->mfx.RateControlMethod = 1;
-        out->mfx.InitialDelayInKB = 1;
-        out->mfx.BufferSizeInKB = 1;
-        out->mfx.TargetKbps = 1;
-        out->mfx.MaxKbps = 1;
-        out->mfx.NumSlice = 1;
-        out->mfx.NumRefFrame = 1;
-        out->mfx.EncodedOrder = 0;
-        out->AsyncDepth = 1;
-        out->IOPattern = 1;
-        out->Protected = 0;
+        //First check for zero input
+        if( par_in == NULL ){ //Set ones for filed that can be configured
+            mfxVideoParam *out = par_out;
+            memset( &out->mfx, 0, sizeof( mfxInfoMFX ));
+            out->mfx.FrameInfo.FourCC = 1;
+            out->mfx.FrameInfo.Width = 1;
+            out->mfx.FrameInfo.Height = 1;
+            out->mfx.FrameInfo.CropX = 1;
+            out->mfx.FrameInfo.CropY = 1;
+            out->mfx.FrameInfo.CropW = 1;
+            out->mfx.FrameInfo.CropH = 1;
+            out->mfx.FrameInfo.FrameRateExtN = 1;
+            out->mfx.FrameInfo.FrameRateExtD = 1;
+            out->mfx.FrameInfo.AspectRatioW = 1;
+            out->mfx.FrameInfo.AspectRatioH = 1;
+            out->mfx.FrameInfo.PicStruct = 1;
+            out->mfx.FrameInfo.ChromaFormat = 1;
+            out->mfx.CodecId = MFX_CODEC_HEVC; // restore cleared mandatory
+            out->mfx.CodecLevel = 1;
+            out->mfx.CodecProfile = 1;
+            out->mfx.NumThread = 1;
+            out->mfx.TargetUsage = 1;
+            out->mfx.GopPicSize = 1;
+            out->mfx.GopRefDist = 1;
+            out->mfx.GopOptFlag = 1;
+            out->mfx.IdrInterval = 1;
+            out->mfx.RateControlMethod = 1;
+            out->mfx.InitialDelayInKB = 1;
+            out->mfx.BufferSizeInKB = 1;
+            out->mfx.TargetKbps = 1;
+            out->mfx.MaxKbps = 1;
+            out->mfx.NumSlice = 1;
+            out->mfx.NumRefFrame = 1;
+            out->mfx.EncodedOrder = 0;
+            out->AsyncDepth = 1;
+            out->IOPattern = 1;
+            out->Protected = 0;
 
-        //Extended coding options
-        st = CheckExtBuffers_H265enc( out->ExtParam, out->NumExtParam );
-        MFX_CHECK_STS(st);
+            //Extended coding options
+            st = CheckExtBuffers_H265enc( out->ExtParam, out->NumExtParam );
+            MFX_CHECK_STS(st);
 
-        mfxExtCodingOptionHEVC* optsHEVC = (mfxExtCodingOptionHEVC*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVCENC );
-        if (optsHEVC != 0) {
-            mfxExtBuffer HeaderCopy = optsHEVC->Header;
-            memset( optsHEVC, 0, sizeof( mfxExtCodingOptionHEVC ));
-            optsHEVC->Header = HeaderCopy;
-            optsHEVC->Log2MaxCUSize = 1;
-            optsHEVC->MaxCUDepth = 1;
-            optsHEVC->QuadtreeTULog2MaxSize = 1;
-            optsHEVC->QuadtreeTULog2MinSize = 1;
-            optsHEVC->QuadtreeTUMaxDepthIntra = 1;
-            optsHEVC->QuadtreeTUMaxDepthInter = 1;
-            optsHEVC->AnalyzeChroma = 1;
-            optsHEVC->SignBitHiding = 1;
-            optsHEVC->RDOQuant = 1;
-            optsHEVC->SAO      = 1;
-            optsHEVC->SplitThresholdStrengthCUIntra = 1;
-            optsHEVC->SplitThresholdStrengthTUIntra = 1;
-            optsHEVC->SplitThresholdStrengthCUInter = 1;
-            optsHEVC->SplitThresholdTabIndex        = 1;
-            optsHEVC->IntraNumCand1_2 = 1;
-            optsHEVC->IntraNumCand1_3 = 1;
-            optsHEVC->IntraNumCand1_4 = 1;
-            optsHEVC->IntraNumCand1_5 = 1;
-            optsHEVC->IntraNumCand1_6 = 1;
-            optsHEVC->IntraNumCand2_2 = 1;
-            optsHEVC->IntraNumCand2_3 = 1;
-            optsHEVC->IntraNumCand2_4 = 1;
-            optsHEVC->IntraNumCand2_5 = 1;
-            optsHEVC->IntraNumCand2_6 = 1;
-            optsHEVC->WPP = 1;
-            optsHEVC->GPB = 1;
-            optsHEVC->PartModes = 1;
-            optsHEVC->BPyramid = 1;
-            optsHEVC->CostChroma = 1;
-            optsHEVC->IntraChromaRDO = 1;
-            optsHEVC->FastInterp = 1;
-            optsHEVC->FastSkip = 1;
-            optsHEVC->FastCbfMode = 1;
-            optsHEVC->PuDecisionSatd = 1;
-            optsHEVC->MinCUDepthAdapt = 1;
-            optsHEVC->MaxCUDepthAdapt = 1;
-            optsHEVC->CUSplitThreshold = 1;
-            optsHEVC->DeltaQpMode = 1;
-            optsHEVC->Enable10bit = 1;
-            optsHEVC->CpuFeature = 1;
-            optsHEVC->TryIntra   = 1;
-            optsHEVC->FastAMPSkipME = 1;
-            optsHEVC->FastAMPRD = 1;
-            optsHEVC->SkipMotionPartition = 1;
-            optsHEVC->SkipCandRD = 1;
-            optsHEVC->FramesInParallel = 1;
-            optsHEVC->NumTileCols = 1;
-            optsHEVC->NumTileRows = 1;
-        }
+            mfxExtCodingOptionHEVC* optsHEVC = (mfxExtCodingOptionHEVC*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVCENC );
+            if (optsHEVC != 0) {
+                mfxExtBuffer HeaderCopy = optsHEVC->Header;
+                memset( optsHEVC, 0, sizeof( mfxExtCodingOptionHEVC ));
+                optsHEVC->Header = HeaderCopy;
+                optsHEVC->Log2MaxCUSize = 1;
+                optsHEVC->MaxCUDepth = 1;
+                optsHEVC->QuadtreeTULog2MaxSize = 1;
+                optsHEVC->QuadtreeTULog2MinSize = 1;
+                optsHEVC->QuadtreeTUMaxDepthIntra = 1;
+                optsHEVC->QuadtreeTUMaxDepthInter = 1;
+                optsHEVC->AnalyzeChroma = 1;
+                optsHEVC->SignBitHiding = 1;
+                optsHEVC->RDOQuant = 1;
+                optsHEVC->SAO      = 1;
+                optsHEVC->SplitThresholdStrengthCUIntra = 1;
+                optsHEVC->SplitThresholdStrengthTUIntra = 1;
+                optsHEVC->SplitThresholdStrengthCUInter = 1;
+                optsHEVC->SplitThresholdTabIndex        = 1;
+                optsHEVC->IntraNumCand1_2 = 1;
+                optsHEVC->IntraNumCand1_3 = 1;
+                optsHEVC->IntraNumCand1_4 = 1;
+                optsHEVC->IntraNumCand1_5 = 1;
+                optsHEVC->IntraNumCand1_6 = 1;
+                optsHEVC->IntraNumCand2_2 = 1;
+                optsHEVC->IntraNumCand2_3 = 1;
+                optsHEVC->IntraNumCand2_4 = 1;
+                optsHEVC->IntraNumCand2_5 = 1;
+                optsHEVC->IntraNumCand2_6 = 1;
+                optsHEVC->WPP = 1;
+                optsHEVC->GPB = 1;
+                optsHEVC->PartModes = 1;
+                optsHEVC->BPyramid = 1;
+                optsHEVC->CostChroma = 1;
+                optsHEVC->IntraChromaRDO = 1;
+                optsHEVC->FastInterp = 1;
+                optsHEVC->FastSkip = 1;
+                optsHEVC->FastCbfMode = 1;
+                optsHEVC->PuDecisionSatd = 1;
+                optsHEVC->MinCUDepthAdapt = 1;
+                optsHEVC->MaxCUDepthAdapt = 1;
+                optsHEVC->CUSplitThreshold = 1;
+                optsHEVC->DeltaQpMode = 1;
+                optsHEVC->Enable10bit = 1;
+                optsHEVC->CpuFeature = 1;
+                optsHEVC->TryIntra   = 1;
+                optsHEVC->FastAMPSkipME = 1;
+                optsHEVC->FastAMPRD = 1;
+                optsHEVC->SkipMotionPartition = 1;
+                optsHEVC->SkipCandRD = 1;
+                optsHEVC->FramesInParallel = 1;
+                optsHEVC->NumTileCols = 1;
+                optsHEVC->NumTileRows = 1;
+            }
 
-        mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
-        if (optsDump != 0) {
-            mfxExtBuffer HeaderCopy = optsDump->Header;
-            memset( optsDump, 0, sizeof( mfxExtDumpFiles ));
-            optsDump->Header = HeaderCopy;
-            optsDump->ReconFilename[0] = 1;
-        }
-        // ignore all reserved
-    } else { //Check options for correctness
-        const mfxVideoParam * const in = par_in;
-        mfxVideoParam * const out = par_out;
+            mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
+            if (optsDump != 0) {
+                mfxExtBuffer HeaderCopy = optsDump->Header;
+                memset( optsDump, 0, sizeof( mfxExtDumpFiles ));
+                optsDump->Header = HeaderCopy;
+                optsDump->ReconFilename[0] = 1;
+            }
+            // ignore all reserved
+        } else { //Check options for correctness
+            const mfxVideoParam * const in = par_in;
+            mfxVideoParam * const out = par_out;
 
-        if ( in->mfx.CodecId != MFX_CODEC_HEVC)
-            return MFX_ERR_UNSUPPORTED;
+            if ( in->mfx.CodecId != MFX_CODEC_HEVC)
+                return MFX_ERR_UNSUPPORTED;
 
-        st = CheckExtBuffers_H265enc( in->ExtParam, in->NumExtParam );
-        MFX_CHECK_STS(st);
-        st = CheckExtBuffers_H265enc( out->ExtParam, out->NumExtParam );
-        MFX_CHECK_STS(st);
+            st = CheckExtBuffers_H265enc( in->ExtParam, in->NumExtParam );
+            MFX_CHECK_STS(st);
+            st = CheckExtBuffers_H265enc( out->ExtParam, out->NumExtParam );
+            MFX_CHECK_STS(st);
 
-        const mfxExtCodingOptionHEVC* opts_in = (mfxExtCodingOptionHEVC*)GetExtBuffer(  in->ExtParam,  in->NumExtParam, MFX_EXTBUFF_HEVCENC );
-        mfxExtCodingOptionHEVC*      opts_out = (mfxExtCodingOptionHEVC*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVCENC );
-        const mfxExtDumpFiles*    optsDump_in = (mfxExtDumpFiles*)GetExtBuffer( in->ExtParam, in->NumExtParam, MFX_EXTBUFF_DUMP );
-        mfxExtDumpFiles*         optsDump_out = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
+            const mfxExtCodingOptionHEVC* opts_in = (mfxExtCodingOptionHEVC*)GetExtBuffer(  in->ExtParam,  in->NumExtParam, MFX_EXTBUFF_HEVCENC );
+            mfxExtCodingOptionHEVC*      opts_out = (mfxExtCodingOptionHEVC*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVCENC );
+            const mfxExtDumpFiles*    optsDump_in = (mfxExtDumpFiles*)GetExtBuffer( in->ExtParam, in->NumExtParam, MFX_EXTBUFF_DUMP );
+            mfxExtDumpFiles*         optsDump_out = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
 
-        if (opts_in           ) CHECK_EXTBUF_SIZE( *opts_in,            isInvalid)
-        if (opts_out          ) CHECK_EXTBUF_SIZE( *opts_out,           isInvalid)
-        if (optsDump_in       ) CHECK_EXTBUF_SIZE( *optsDump_in,        isInvalid)
-        if (optsDump_out      ) CHECK_EXTBUF_SIZE( *optsDump_out,       isInvalid)
-        if (isInvalid)
-            return MFX_ERR_UNSUPPORTED;
+            if (opts_in           ) CHECK_EXTBUF_SIZE( *opts_in,            isInvalid)
+                if (opts_out          ) CHECK_EXTBUF_SIZE( *opts_out,           isInvalid)
+                    if (optsDump_in       ) CHECK_EXTBUF_SIZE( *optsDump_in,        isInvalid)
+                        if (optsDump_out      ) CHECK_EXTBUF_SIZE( *optsDump_out,       isInvalid)
+                            if (isInvalid)
+                                return MFX_ERR_UNSUPPORTED;
 
-        if ((opts_in==0) != (opts_out==0) ||
-            (optsDump_in==0) != (optsDump_out==0))
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            if ((opts_in==0) != (opts_out==0) ||
+                (optsDump_in==0) != (optsDump_out==0))
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-        //if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && in->mfx.FrameInfo.ChromaFormat == 0) { // because 0 == monochrome
-        //    out->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-        //    out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        //    isCorrected ++;
-        //} else
+            //if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && in->mfx.FrameInfo.ChromaFormat == 0) { // because 0 == monochrome
+            //    out->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            //    out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            //    isCorrected ++;
+            //} else
 
-        if (((in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010) && in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420) ||
-            ((in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV16 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210) && in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)) {
-            out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
-            out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
-        } else {
-            out->mfx.FrameInfo.FourCC = 0;
-            out->mfx.FrameInfo.ChromaFormat = 0;
-            isInvalid ++;
-        }
+            if (((in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010) && in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420) ||
+                ((in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV16 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210) && in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)) {
+                    out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
+                    out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
+            } else {
+                out->mfx.FrameInfo.FourCC = 0;
+                out->mfx.FrameInfo.ChromaFormat = 0;
+                isInvalid ++;
+            }
 
-        if (in->Protected != 0)
-            return MFX_ERR_UNSUPPORTED;
-        out->Protected = 0;
+            if (in->Protected != 0)
+                return MFX_ERR_UNSUPPORTED;
+            out->Protected = 0;
 
-        out->AsyncDepth = in->AsyncDepth;
+            out->AsyncDepth = in->AsyncDepth;
 
-        if ( (in->mfx.FrameInfo.Width & 15) || in->mfx.FrameInfo.Width > 8192 ) {
-            out->mfx.FrameInfo.Width = 0;
-            isInvalid ++;
-        } else out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
-        if ( (in->mfx.FrameInfo.Height & 15) || in->mfx.FrameInfo.Height > 4320 ) {
-            out->mfx.FrameInfo.Height = 0;
-            isInvalid ++;
-        } else out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
+            if ( (in->mfx.FrameInfo.Width & 15) || in->mfx.FrameInfo.Width > 8192 ) {
+                out->mfx.FrameInfo.Width = 0;
+                isInvalid ++;
+            } else out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
+            if ( (in->mfx.FrameInfo.Height & 15) || in->mfx.FrameInfo.Height > 4320 ) {
+                out->mfx.FrameInfo.Height = 0;
+                isInvalid ++;
+            } else out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
 
-        // Check crops
-        if (in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height && in->mfx.FrameInfo.Height) {
-            out->mfx.FrameInfo.CropH = 0;
-            isInvalid ++;
-        } else out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH;
-        if (in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width && in->mfx.FrameInfo.Width) {
-            out->mfx.FrameInfo.CropW = 0;
-            isInvalid ++;
-        } else  out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW;
-        if (in->mfx.FrameInfo.CropX + in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width) {
-            out->mfx.FrameInfo.CropX = 0;
-            isInvalid ++;
-        } else out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX;
-        if (in->mfx.FrameInfo.CropY + in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height) {
-            out->mfx.FrameInfo.CropY = 0;
-            isInvalid ++;
-        } else out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY;
+            // Check crops
+            if (in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height && in->mfx.FrameInfo.Height) {
+                out->mfx.FrameInfo.CropH = 0;
+                isInvalid ++;
+            } else out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH;
+            if (in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width && in->mfx.FrameInfo.Width) {
+                out->mfx.FrameInfo.CropW = 0;
+                isInvalid ++;
+            } else  out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW;
+            if (in->mfx.FrameInfo.CropX + in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width) {
+                out->mfx.FrameInfo.CropX = 0;
+                isInvalid ++;
+            } else out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX;
+            if (in->mfx.FrameInfo.CropY + in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height) {
+                out->mfx.FrameInfo.CropY = 0;
+                isInvalid ++;
+            } else out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY;
 
-        // Assume 420 checking horizontal crop to be even
-        if ((in->mfx.FrameInfo.CropX & 1) && (in->mfx.FrameInfo.CropW & 1)) {
-            if (out->mfx.FrameInfo.CropX == in->mfx.FrameInfo.CropX) // not to correct CropX forced to zero
-                out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX + 1;
-            if (out->mfx.FrameInfo.CropW) // can't decrement zero CropW
-                out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW - 1;
-            isCorrected ++;
-        } else if (in->mfx.FrameInfo.CropX & 1)
-        {
-            if (out->mfx.FrameInfo.CropX == in->mfx.FrameInfo.CropX) // not to correct CropX forced to zero
-                out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX + 1;
-            if (out->mfx.FrameInfo.CropW) // can't decrement zero CropW
-                out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW - 2;
-            isCorrected ++;
-        }
-        else if (in->mfx.FrameInfo.CropW & 1) {
-            if (out->mfx.FrameInfo.CropW) // can't decrement zero CropW
-                out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW - 1;
-            isCorrected ++;
-        }
+            // Assume 420 checking horizontal crop to be even
+            if ((in->mfx.FrameInfo.CropX & 1) && (in->mfx.FrameInfo.CropW & 1)) {
+                if (out->mfx.FrameInfo.CropX == in->mfx.FrameInfo.CropX) // not to correct CropX forced to zero
+                    out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX + 1;
+                if (out->mfx.FrameInfo.CropW) // can't decrement zero CropW
+                    out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW - 1;
+                isCorrected ++;
+            } else if (in->mfx.FrameInfo.CropX & 1)
+            {
+                if (out->mfx.FrameInfo.CropX == in->mfx.FrameInfo.CropX) // not to correct CropX forced to zero
+                    out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX + 1;
+                if (out->mfx.FrameInfo.CropW) // can't decrement zero CropW
+                    out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW - 2;
+                isCorrected ++;
+            }
+            else if (in->mfx.FrameInfo.CropW & 1) {
+                if (out->mfx.FrameInfo.CropW) // can't decrement zero CropW
+                    out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW - 1;
+                isCorrected ++;
+            }
 
-        // Assume 420 checking horizontal crop to be even
-        if ((in->mfx.FrameInfo.CropY & 1) && (in->mfx.FrameInfo.CropH & 1)) {
-            if (out->mfx.FrameInfo.CropY == in->mfx.FrameInfo.CropY) // not to correct CropY forced to zero
-                out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY + 1;
-            if (out->mfx.FrameInfo.CropH) // can't decrement zero CropH
-                out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH - 1;
-            isCorrected ++;
-        } else if (in->mfx.FrameInfo.CropY & 1)
-        {
-            if (out->mfx.FrameInfo.CropY == in->mfx.FrameInfo.CropY) // not to correct CropY forced to zero
-                out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY + 1;
-            if (out->mfx.FrameInfo.CropH) // can't decrement zero CropH
-                out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH - 2;
-            isCorrected ++;
-        }
-        else if (in->mfx.FrameInfo.CropH & 1) {
-            if (out->mfx.FrameInfo.CropH) // can't decrement zero CropH
-                out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH - 1;
-            isCorrected ++;
-        }
+            // Assume 420 checking horizontal crop to be even
+            if ((in->mfx.FrameInfo.CropY & 1) && (in->mfx.FrameInfo.CropH & 1)) {
+                if (out->mfx.FrameInfo.CropY == in->mfx.FrameInfo.CropY) // not to correct CropY forced to zero
+                    out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY + 1;
+                if (out->mfx.FrameInfo.CropH) // can't decrement zero CropH
+                    out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH - 1;
+                isCorrected ++;
+            } else if (in->mfx.FrameInfo.CropY & 1)
+            {
+                if (out->mfx.FrameInfo.CropY == in->mfx.FrameInfo.CropY) // not to correct CropY forced to zero
+                    out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY + 1;
+                if (out->mfx.FrameInfo.CropH) // can't decrement zero CropH
+                    out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH - 2;
+                isCorrected ++;
+            }
+            else if (in->mfx.FrameInfo.CropH & 1) {
+                if (out->mfx.FrameInfo.CropH) // can't decrement zero CropH
+                    out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH - 1;
+                isCorrected ++;
+            }
 
-        //Check for valid framerate
-        if (!in->mfx.FrameInfo.FrameRateExtN && in->mfx.FrameInfo.FrameRateExtD ||
-            in->mfx.FrameInfo.FrameRateExtN && !in->mfx.FrameInfo.FrameRateExtD ||
-            in->mfx.FrameInfo.FrameRateExtD && ((mfxF64)in->mfx.FrameInfo.FrameRateExtN / in->mfx.FrameInfo.FrameRateExtD) > 120) {
-            isInvalid ++;
-            out->mfx.FrameInfo.FrameRateExtN = out->mfx.FrameInfo.FrameRateExtD = 0;
-        } else {
-            out->mfx.FrameInfo.FrameRateExtN = in->mfx.FrameInfo.FrameRateExtN;
-            out->mfx.FrameInfo.FrameRateExtD = in->mfx.FrameInfo.FrameRateExtD;
-        }
+            //Check for valid framerate
+            if (!in->mfx.FrameInfo.FrameRateExtN && in->mfx.FrameInfo.FrameRateExtD ||
+                in->mfx.FrameInfo.FrameRateExtN && !in->mfx.FrameInfo.FrameRateExtD ||
+                in->mfx.FrameInfo.FrameRateExtD && ((mfxF64)in->mfx.FrameInfo.FrameRateExtN / in->mfx.FrameInfo.FrameRateExtD) > 120) {
+                    isInvalid ++;
+                    out->mfx.FrameInfo.FrameRateExtN = out->mfx.FrameInfo.FrameRateExtD = 0;
+            } else {
+                out->mfx.FrameInfo.FrameRateExtN = in->mfx.FrameInfo.FrameRateExtN;
+                out->mfx.FrameInfo.FrameRateExtD = in->mfx.FrameInfo.FrameRateExtD;
+            }
 
-        switch(in->IOPattern) {
+            switch(in->IOPattern) {
             case 0:
             case MFX_IOPATTERN_IN_SYSTEM_MEMORY:
             case MFX_IOPATTERN_IN_VIDEO_MEMORY:
@@ -1805,373 +1805,374 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                     isInvalid ++;
                     out->IOPattern = 0;
                 }
-        }
-
-        out->mfx.FrameInfo.AspectRatioW = in->mfx.FrameInfo.AspectRatioW;
-        out->mfx.FrameInfo.AspectRatioH = in->mfx.FrameInfo.AspectRatioH;
-
-        if (in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
-            in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN ) {
-            //out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-            //isCorrected ++;
-            out->mfx.FrameInfo.PicStruct = 0;
-            isInvalid ++;
-        } else out->mfx.FrameInfo.PicStruct = in->mfx.FrameInfo.PicStruct;
-
-        out->mfx.BRCParamMultiplier = in->mfx.BRCParamMultiplier;
-
-        out->mfx.CodecId = MFX_CODEC_HEVC;
-        if (in->mfx.CodecProfile != MFX_PROFILE_UNKNOWN && in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN &&
-            (in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN10)) {
-            isCorrected ++;
-            out->mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
-        } else out->mfx.CodecProfile = in->mfx.CodecProfile;
-        if (in->mfx.CodecLevel != MFX_LEVEL_UNKNOWN) {
-            mfxI32 complevel = Check265Level(in->mfx.CodecLevel, in);
-            if (complevel != in->mfx.CodecLevel) {
-                if (complevel == MFX_LEVEL_UNKNOWN)
-                    isInvalid ++;
-                else
-                    isCorrected ++;
             }
-            out->mfx.CodecLevel = (mfxU16)complevel;
-        }
-        else out->mfx.CodecLevel = MFX_LEVEL_UNKNOWN;
 
-        out->mfx.NumThread = in->mfx.NumThread;
+            out->mfx.FrameInfo.AspectRatioW = in->mfx.FrameInfo.AspectRatioW;
+            out->mfx.FrameInfo.AspectRatioH = in->mfx.FrameInfo.AspectRatioH;
+
+            if (in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
+                in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN ) {
+                    //out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+                    //isCorrected ++;
+                    out->mfx.FrameInfo.PicStruct = 0;
+                    isInvalid ++;
+            } else out->mfx.FrameInfo.PicStruct = in->mfx.FrameInfo.PicStruct;
+
+            out->mfx.BRCParamMultiplier = in->mfx.BRCParamMultiplier;
+
+            out->mfx.CodecId = MFX_CODEC_HEVC;
+            if (in->mfx.CodecProfile != MFX_PROFILE_UNKNOWN && in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN &&
+                (in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN10)) {
+                    isCorrected ++;
+                    out->mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
+            } else out->mfx.CodecProfile = in->mfx.CodecProfile;
+            if (in->mfx.CodecLevel != MFX_LEVEL_UNKNOWN) {
+                mfxI32 complevel = Check265Level(in->mfx.CodecLevel, in);
+                if (complevel != in->mfx.CodecLevel) {
+                    if (complevel == MFX_LEVEL_UNKNOWN)
+                        isInvalid ++;
+                    else
+                        isCorrected ++;
+                }
+                out->mfx.CodecLevel = (mfxU16)complevel;
+            }
+            else out->mfx.CodecLevel = MFX_LEVEL_UNKNOWN;
+
+            out->mfx.NumThread = in->mfx.NumThread;
 
         
 #ifdef MFX_VA
-        if (in->mfx.TargetUsage != MFX_TARGETUSAGE_7) {
-            out->mfx.TargetUsage = MFX_TARGETUSAGE_7;
-        }
-        else out->mfx.TargetUsage = in->mfx.TargetUsage;
+            if (in->mfx.TargetUsage != MFX_TARGETUSAGE_7) {
+                isCorrected ++;
+                out->mfx.TargetUsage = MFX_TARGETUSAGE_7;
+            }
+            else out->mfx.TargetUsage = in->mfx.TargetUsage;
 #else
-        if (in->mfx.TargetUsage > MFX_TARGETUSAGE_BEST_SPEED) {
-            isCorrected ++;
-            out->mfx.TargetUsage = MFX_TARGETUSAGE_UNKNOWN;
-        }
-        else out->mfx.TargetUsage = in->mfx.TargetUsage;
+            if (in->mfx.TargetUsage > MFX_TARGETUSAGE_BEST_SPEED) {
+                isCorrected ++;
+                out->mfx.TargetUsage = MFX_TARGETUSAGE_UNKNOWN;
+            }
+            else out->mfx.TargetUsage = in->mfx.TargetUsage;
 #endif
 
-        out->mfx.GopPicSize = in->mfx.GopPicSize;
+            out->mfx.GopPicSize = in->mfx.GopPicSize;
 
 #ifdef MFX_VA   // Gacc supports up to 8 B frames now (otherwise it exceeds surface amount)
-        if (in->mfx.GopRefDist > 8) {
-            out->mfx.GopRefDist = 8;
-            isCorrected ++;
-        }
-        else out->mfx.GopRefDist = in->mfx.GopRefDist;
+            if (in->mfx.GopRefDist > 8) {
+                out->mfx.GopRefDist = 8;
+                isCorrected ++;
+            }
+            else out->mfx.GopRefDist = in->mfx.GopRefDist;
 #else
-        if (in->mfx.GopRefDist > H265_MAXREFDIST) {
-            out->mfx.GopRefDist = H265_MAXREFDIST;
-            isCorrected ++;
-        }
-        else out->mfx.GopRefDist = in->mfx.GopRefDist;
+            if (in->mfx.GopRefDist > H265_MAXREFDIST) {
+                out->mfx.GopRefDist = H265_MAXREFDIST;
+                isCorrected ++;
+            }
+            else out->mfx.GopRefDist = in->mfx.GopRefDist;
 #endif
 
-        if (in->mfx.NumRefFrame > MAX_NUM_REF_IDX) {
-            out->mfx.NumRefFrame = MAX_NUM_REF_IDX;
-            isCorrected ++;
-        }
-        else out->mfx.NumRefFrame = in->mfx.NumRefFrame;
+            if (in->mfx.NumRefFrame > MAX_NUM_REF_IDX) {
+                out->mfx.NumRefFrame = MAX_NUM_REF_IDX;
+                isCorrected ++;
+            }
+            else out->mfx.NumRefFrame = in->mfx.NumRefFrame;
 
-        if ((in->mfx.GopOptFlag & (MFX_GOP_CLOSED | MFX_GOP_STRICT)) != in->mfx.GopOptFlag) {
-            out->mfx.GopOptFlag = 0;
-            isInvalid ++;
-        } else out->mfx.GopOptFlag = in->mfx.GopOptFlag & (MFX_GOP_CLOSED | MFX_GOP_STRICT);
+            if ((in->mfx.GopOptFlag & (MFX_GOP_CLOSED | MFX_GOP_STRICT)) != in->mfx.GopOptFlag) {
+                out->mfx.GopOptFlag = 0;
+                isInvalid ++;
+            } else out->mfx.GopOptFlag = in->mfx.GopOptFlag & (MFX_GOP_CLOSED | MFX_GOP_STRICT);
 
-        out->mfx.IdrInterval = in->mfx.IdrInterval;
+            out->mfx.IdrInterval = in->mfx.IdrInterval;
 
-        // NumSlice will be checked again after Log2MaxCUSize
-        out->mfx.NumSlice = in->mfx.NumSlice;
-        if ( in->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width /*&& opts_out && opts_out->Log2MaxCUSize*/)
-        {
-            mfxU16 rnd = (1 << 4) - 1, shft = 4;
-            if (in->mfx.NumSlice > ((out->mfx.FrameInfo.Height+rnd)>>shft) * ((out->mfx.FrameInfo.Width+rnd)>>shft) )
+            // NumSlice will be checked again after Log2MaxCUSize
+            out->mfx.NumSlice = in->mfx.NumSlice;
+            if ( in->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width /*&& opts_out && opts_out->Log2MaxCUSize*/)
             {
-                out->mfx.NumSlice = 0;
-                isInvalid ++;
-            }
-        }
-        out->mfx.NumRefFrame = in->mfx.NumRefFrame;
-
-        if (in->mfx.EncodedOrder != 0) {
-            isInvalid ++;
-        }
-        out->mfx.EncodedOrder = 0;
-
-        if (in->mfx.RateControlMethod != 0 &&
-            in->mfx.RateControlMethod != MFX_RATECONTROL_CBR && in->mfx.RateControlMethod != MFX_RATECONTROL_VBR && in->mfx.RateControlMethod != MFX_RATECONTROL_AVBR && in->mfx.RateControlMethod != MFX_RATECONTROL_CQP) {
-            out->mfx.RateControlMethod = 0;
-            isInvalid ++;
-        } else out->mfx.RateControlMethod = in->mfx.RateControlMethod;
-
-        RcParams rcParams;
-        SetCalcParams(&rcParams, in);
-
-        if (out->mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
-            out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR) {
-            if (out->mfx.FrameInfo.Width && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.FrameRateExtD && rcParams.TargetKbps) {
-                // last denominator 2000 gives about 0.75 Mbps for 1080p x 60
-                Ipp32s minBitRate = (Ipp32s)((mfxF64)out->mfx.FrameInfo.Width * out->mfx.FrameInfo.Height * 12 // size of raw image (luma + chroma 420) in bits
-                                             * out->mfx.FrameInfo.FrameRateExtN / out->mfx.FrameInfo.FrameRateExtD / 1000 / 2000);
-                if (minBitRate > rcParams.TargetKbps) {
-                    rcParams.TargetKbps = minBitRate;
-                    isCorrected ++;
-                }
-                Ipp32s AveFrameKB = rcParams.TargetKbps * out->mfx.FrameInfo.FrameRateExtD / out->mfx.FrameInfo.FrameRateExtN / 8;
-                if (rcParams.BufferSizeInKB != 0 && rcParams.BufferSizeInKB < 2 * AveFrameKB) {
-                    rcParams.BufferSizeInKB = 2 * AveFrameKB;
-                    isCorrected ++;
-                }
-                if (rcParams.InitialDelayInKB != 0 && rcParams.InitialDelayInKB < AveFrameKB) {
-                    rcParams.InitialDelayInKB = AveFrameKB;
-                    isCorrected ++;
-                }
-            }
-
-            if (rcParams.MaxKbps != 0 && rcParams.MaxKbps < rcParams.TargetKbps) {
-                rcParams.MaxKbps = rcParams.TargetKbps;
-            }
-        }
-        // check for correct QPs for const QP mode
-        else if (out->mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
-            if (in->mfx.QPI > 51) {
-                out->mfx.QPI = 0;
-                isInvalid ++;
-            } else out->mfx.QPI = in->mfx.QPI;
-            if (in->mfx.QPP > 51) {
-                out->mfx.QPP = 0;
-                isInvalid ++;
-            } else out->mfx.QPP = in->mfx.QPP;
-            if (in->mfx.QPB > 51) {
-                out->mfx.QPB = 0;
-                isInvalid ++;
-            } else out->mfx.QPB = in->mfx.QPB;
-        }
-        else {
-            out->mfx.Accuracy = in->mfx.Accuracy;
-            out->mfx.Convergence = in->mfx.Convergence;
-        }
-
-        GetCalcParams(out, &rcParams, out->mfx.RateControlMethod);
-
-        if (opts_in) {
-            if ((opts_in->Log2MaxCUSize != 0 && opts_in->Log2MaxCUSize < 4) || opts_in->Log2MaxCUSize > 6) {
-                opts_out->Log2MaxCUSize = 0;
-                isInvalid ++;
-            } else opts_out->Log2MaxCUSize = opts_in->Log2MaxCUSize;
-
-            if ( (opts_in->MaxCUDepth > 5) ||
-                 (opts_out->Log2MaxCUSize!=0 && opts_in->MaxCUDepth + 1 > opts_out->Log2MaxCUSize) ) {
-                opts_out->MaxCUDepth = 0;
-                isInvalid ++;
-            } else opts_out->MaxCUDepth = opts_in->MaxCUDepth;
-
-            if (opts_out->Log2MaxCUSize && opts_out->MaxCUDepth) {
-                int MinCUSize = 1 << (opts_out->Log2MaxCUSize - opts_out->MaxCUDepth + 1);
-                if ((out->mfx.FrameInfo.Width | out->mfx.FrameInfo.Height) & (MinCUSize-1)) {
-                    opts_out->MaxCUDepth = 0;
-                    isInvalid ++;
-                }
-            }
-
-            if ( (opts_in->QuadtreeTULog2MaxSize > 5) ||
-                 (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTULog2MaxSize > opts_out->Log2MaxCUSize) ) {
-                opts_out->QuadtreeTULog2MaxSize = 0;
-                isInvalid ++;
-            } else opts_out->QuadtreeTULog2MaxSize = opts_in->QuadtreeTULog2MaxSize;
-
-            if ( (opts_in->QuadtreeTULog2MinSize == 1) ||
-                 (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTULog2MinSize > opts_out->Log2MaxCUSize) ) {
-                opts_out->QuadtreeTULog2MinSize = 0;
-                isInvalid ++;
-            } else opts_out->QuadtreeTULog2MinSize = opts_in->QuadtreeTULog2MinSize;
-
-            if (opts_out->QuadtreeTULog2MinSize)
-                if ((out->mfx.FrameInfo.Width | out->mfx.FrameInfo.Height) & ((1<<opts_out->QuadtreeTULog2MinSize)-1)) {
-                    opts_out->QuadtreeTULog2MinSize = 0;
-                    isInvalid ++;
-                }
-
-            if ( (opts_in->QuadtreeTUMaxDepthIntra > 5) ||
-                 (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthIntra + 1 > opts_out->Log2MaxCUSize) ) {
-                opts_out->QuadtreeTUMaxDepthIntra = 0;
-                isInvalid ++;
-            } else opts_out->QuadtreeTUMaxDepthIntra = opts_in->QuadtreeTUMaxDepthIntra;
-
-            if ( (opts_in->QuadtreeTUMaxDepthInter > 5) ||
-                 (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthInter + 1 > opts_out->Log2MaxCUSize) ) {
-                opts_out->QuadtreeTUMaxDepthInter = 0;
-                isInvalid ++;
-            } else opts_out->QuadtreeTUMaxDepthInter = opts_in->QuadtreeTUMaxDepthInter;
-
-            opts_out->TryIntra = opts_in->TryIntra;
-            opts_out->CmIntraThreshold = opts_in->CmIntraThreshold;
-            opts_out->TUSplitIntra = opts_in->TUSplitIntra;
-            opts_out->CUSplit = opts_in->CUSplit;
-            opts_out->IntraAngModes = opts_in->IntraAngModes;
-            opts_out->IntraAngModesP = opts_in->IntraAngModesP;
-            opts_out->IntraAngModesBRef = opts_in->IntraAngModesBRef;
-            opts_out->IntraAngModesBnonRef = opts_in->IntraAngModesBnonRef;
-            opts_out->HadamardMe = opts_in->HadamardMe;
-            opts_out->TMVP = opts_in->TMVP;
-            opts_out->EnableCm = opts_in->EnableCm;
-            opts_out->SaoOpt = opts_in->SaoOpt;
-            opts_out->PatternIntPel = opts_in->PatternIntPel;
-            opts_out->PatternSubPel = opts_in->PatternSubPel;
-            opts_out->ForceNumThread = opts_in->ForceNumThread;
-            opts_out->NumBiRefineIter = opts_in->NumBiRefineIter;
-            opts_out->CUSplitThreshold = opts_in->CUSplitThreshold;
-            opts_out->DeltaQpMode = opts_in->DeltaQpMode;
-            opts_out->CpuFeature = opts_in->CpuFeature;
-            opts_out->FramesInParallel         = opts_in->FramesInParallel;
-
-            CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->RDOQuant, opts_out->RDOQuant, isInvalid);            /* tri-state option */
-            CHECK_OPTION(opts_in->GPB, opts_out->GPB, isInvalid);            /* tri-state option */
-            CHECK_OPTION(opts_in->SAO, opts_out->SAO, isInvalid);            /* tri-state option */
-            CHECK_OPTION(opts_in->WPP, opts_out->WPP, isInvalid);       /* tri-state option */
-            CHECK_OPTION(opts_in->BPyramid, opts_out->BPyramid, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->Deblocking, opts_out->Deblocking, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->RDOQuantChroma, opts_out->RDOQuantChroma, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->RDOQuantCGZ, opts_out->RDOQuantCGZ, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->CostChroma, opts_out->CostChroma, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->IntraChromaRDO, opts_out->IntraChromaRDO, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->FastInterp, opts_out->FastInterp, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->FastSkip, opts_out->FastSkip, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->FastCbfMode, opts_out->FastCbfMode, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->PuDecisionSatd, opts_out->PuDecisionSatd, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->MinCUDepthAdapt, opts_out->MinCUDepthAdapt, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->MaxCUDepthAdapt, opts_out->MaxCUDepthAdapt, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->Enable10bit, opts_out->Enable10bit, isInvalid);  /* tri-state option */
-            CHECK_OPTION(opts_in->SkipCandRD, opts_out->SkipCandRD, isInvalid);  /* tri-state option */
-
-            if (opts_in->PartModes > 3) {
-                opts_out->PartModes = 0;
-                isInvalid ++;
-            } else opts_out->PartModes = opts_in->PartModes;
-
-            if (opts_out->SAO == MFX_CODINGOPTION_ON && in->mfx.NumSlice > 1) { // switch off SAO for now, because of inter-slice deblocking
-                opts_out->SAO = MFX_CODINGOPTION_OFF;
-                isCorrected++;
-            }
-
-            if (opts_in->SplitThresholdStrengthCUIntra > 4) {
-                opts_out->SplitThresholdStrengthCUIntra = 0;
-                isInvalid ++;
-            } else opts_out->SplitThresholdStrengthCUIntra = opts_in->SplitThresholdStrengthCUIntra;
-
-            if (opts_in->SplitThresholdStrengthTUIntra > 4) {
-                opts_out->SplitThresholdStrengthTUIntra = 0;
-                isInvalid ++;
-            } else opts_out->SplitThresholdStrengthTUIntra = opts_in->SplitThresholdStrengthTUIntra;
-
-            if (opts_in->SplitThresholdStrengthCUInter > 4) {
-                opts_out->SplitThresholdStrengthCUInter = 0;
-                isInvalid ++;
-            } else opts_out->SplitThresholdStrengthCUInter = opts_in->SplitThresholdStrengthCUInter;
-            
-            if (opts_in->SplitThresholdTabIndex > 3) {
-                opts_out->SplitThresholdTabIndex = 0;
-                isInvalid ++;
-            } else opts_out->SplitThresholdTabIndex = opts_in->SplitThresholdTabIndex;
-
-#define CHECK_NUMCAND(field)                            \
-            if (opts_in->field > maxnum) {              \
-                opts_out->field = 0;                    \
-                isInvalid ++;                           \
-            } else opts_out->field = opts_in->field
-
-            mfxU16 maxnum = 35;
-            CHECK_NUMCAND(IntraNumCand0_2);
-            CHECK_NUMCAND(IntraNumCand0_3);
-            CHECK_NUMCAND(IntraNumCand0_4);
-            CHECK_NUMCAND(IntraNumCand0_5);
-            CHECK_NUMCAND(IntraNumCand0_6);
-            CHECK_NUMCAND(IntraNumCand1_2);
-            CHECK_NUMCAND(IntraNumCand1_3);
-            CHECK_NUMCAND(IntraNumCand1_4);
-            CHECK_NUMCAND(IntraNumCand1_5);
-            CHECK_NUMCAND(IntraNumCand1_6);
-            CHECK_NUMCAND(IntraNumCand2_2);
-            CHECK_NUMCAND(IntraNumCand2_3);
-            CHECK_NUMCAND(IntraNumCand2_4);
-            CHECK_NUMCAND(IntraNumCand2_5);
-            CHECK_NUMCAND(IntraNumCand2_6);
-
-#undef CHECK_NUMCAND
-
-            // check again Numslice using Log2MaxCUSize
-            if ( out->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width && opts_out->Log2MaxCUSize) {
-                mfxU16 rnd = (1 << opts_out->Log2MaxCUSize) - 1, shft = opts_out->Log2MaxCUSize;
-                if (out->mfx.NumSlice > ((out->mfx.FrameInfo.Height+rnd)>>shft) * ((out->mfx.FrameInfo.Width+rnd)>>shft) ) {
+                mfxU16 rnd = (1 << 4) - 1, shft = 4;
+                if (in->mfx.NumSlice > ((out->mfx.FrameInfo.Height+rnd)>>shft) * ((out->mfx.FrameInfo.Width+rnd)>>shft) )
+                {
                     out->mfx.NumSlice = 0;
                     isInvalid ++;
                 }
             }
+            out->mfx.NumRefFrame = in->mfx.NumRefFrame;
 
-            if (opts_in->NumTileCols > MAX_NUM_TILE_COLUMNS ||
-                (opts_in->NumTileCols > 1 && (out->mfx.NumSlice > 1 || opts_out->FramesInParallel > 1))) {
-                opts_out->NumTileCols = 1;
+            if (in->mfx.EncodedOrder != 0) {
                 isInvalid ++;
-            } else opts_out->NumTileCols = opts_in->NumTileCols;
+            }
+            out->mfx.EncodedOrder = 0;
 
-            if (opts_in->NumTileRows > MAX_NUM_TILE_ROWS ||
-                (opts_in->NumTileRows > 1 && (out->mfx.NumSlice > 1 || opts_out->FramesInParallel > 1))) {
-                opts_out->NumTileRows = 1;
-                isInvalid ++;
-            } else opts_out->NumTileRows = opts_in->NumTileRows;
-        } // EO mfxExtCodingOptionHEVC
+            if (in->mfx.RateControlMethod != 0 &&
+                in->mfx.RateControlMethod != MFX_RATECONTROL_CBR && in->mfx.RateControlMethod != MFX_RATECONTROL_VBR && in->mfx.RateControlMethod != MFX_RATECONTROL_AVBR && in->mfx.RateControlMethod != MFX_RATECONTROL_CQP) {
+                    out->mfx.RateControlMethod = 0;
+                    isInvalid ++;
+            } else out->mfx.RateControlMethod = in->mfx.RateControlMethod;
 
-        if (optsDump_in) {
-            vm_string_strncpy_s(optsDump_out->ReconFilename, sizeof(optsDump_out->ReconFilename), optsDump_in->ReconFilename, sizeof(optsDump_out->ReconFilename)-1);
+            RcParams rcParams;
+            SetCalcParams(&rcParams, in);
+
+            if (out->mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR) {
+                    if (out->mfx.FrameInfo.Width && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.FrameRateExtD && rcParams.TargetKbps) {
+                        // last denominator 2000 gives about 0.75 Mbps for 1080p x 60
+                        Ipp32s minBitRate = (Ipp32s)((mfxF64)out->mfx.FrameInfo.Width * out->mfx.FrameInfo.Height * 12 // size of raw image (luma + chroma 420) in bits
+                            * out->mfx.FrameInfo.FrameRateExtN / out->mfx.FrameInfo.FrameRateExtD / 1000 / 2000);
+                        if (minBitRate > rcParams.TargetKbps) {
+                            rcParams.TargetKbps = minBitRate;
+                            isCorrected ++;
+                        }
+                        Ipp32s AveFrameKB = rcParams.TargetKbps * out->mfx.FrameInfo.FrameRateExtD / out->mfx.FrameInfo.FrameRateExtN / 8;
+                        if (rcParams.BufferSizeInKB != 0 && rcParams.BufferSizeInKB < 2 * AveFrameKB) {
+                            rcParams.BufferSizeInKB = 2 * AveFrameKB;
+                            isCorrected ++;
+                        }
+                        if (rcParams.InitialDelayInKB != 0 && rcParams.InitialDelayInKB < AveFrameKB) {
+                            rcParams.InitialDelayInKB = AveFrameKB;
+                            isCorrected ++;
+                        }
+                    }
+
+                    if (rcParams.MaxKbps != 0 && rcParams.MaxKbps < rcParams.TargetKbps) {
+                        rcParams.MaxKbps = rcParams.TargetKbps;
+                    }
+            }
+            // check for correct QPs for const QP mode
+            else if (out->mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
+                if (in->mfx.QPI > 51) {
+                    out->mfx.QPI = 0;
+                    isInvalid ++;
+                } else out->mfx.QPI = in->mfx.QPI;
+                if (in->mfx.QPP > 51) {
+                    out->mfx.QPP = 0;
+                    isInvalid ++;
+                } else out->mfx.QPP = in->mfx.QPP;
+                if (in->mfx.QPB > 51) {
+                    out->mfx.QPB = 0;
+                    isInvalid ++;
+                } else out->mfx.QPB = in->mfx.QPB;
+            }
+            else {
+                out->mfx.Accuracy = in->mfx.Accuracy;
+                out->mfx.Convergence = in->mfx.Convergence;
+            }
+
+            GetCalcParams(out, &rcParams, out->mfx.RateControlMethod);
+
+            if (opts_in) {
+                if ((opts_in->Log2MaxCUSize != 0 && opts_in->Log2MaxCUSize < 4) || opts_in->Log2MaxCUSize > 6) {
+                    opts_out->Log2MaxCUSize = 0;
+                    isInvalid ++;
+                } else opts_out->Log2MaxCUSize = opts_in->Log2MaxCUSize;
+
+                if ( (opts_in->MaxCUDepth > 5) ||
+                    (opts_out->Log2MaxCUSize!=0 && opts_in->MaxCUDepth + 1 > opts_out->Log2MaxCUSize) ) {
+                        opts_out->MaxCUDepth = 0;
+                        isInvalid ++;
+                } else opts_out->MaxCUDepth = opts_in->MaxCUDepth;
+
+                if (opts_out->Log2MaxCUSize && opts_out->MaxCUDepth) {
+                    int MinCUSize = 1 << (opts_out->Log2MaxCUSize - opts_out->MaxCUDepth + 1);
+                    if ((out->mfx.FrameInfo.Width | out->mfx.FrameInfo.Height) & (MinCUSize-1)) {
+                        opts_out->MaxCUDepth = 0;
+                        isInvalid ++;
+                    }
+                }
+
+                if ( (opts_in->QuadtreeTULog2MaxSize > 5) ||
+                    (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTULog2MaxSize > opts_out->Log2MaxCUSize) ) {
+                        opts_out->QuadtreeTULog2MaxSize = 0;
+                        isInvalid ++;
+                } else opts_out->QuadtreeTULog2MaxSize = opts_in->QuadtreeTULog2MaxSize;
+
+                if ( (opts_in->QuadtreeTULog2MinSize == 1) ||
+                    (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTULog2MinSize > opts_out->Log2MaxCUSize) ) {
+                        opts_out->QuadtreeTULog2MinSize = 0;
+                        isInvalid ++;
+                } else opts_out->QuadtreeTULog2MinSize = opts_in->QuadtreeTULog2MinSize;
+
+                if (opts_out->QuadtreeTULog2MinSize)
+                    if ((out->mfx.FrameInfo.Width | out->mfx.FrameInfo.Height) & ((1<<opts_out->QuadtreeTULog2MinSize)-1)) {
+                        opts_out->QuadtreeTULog2MinSize = 0;
+                        isInvalid ++;
+                    }
+
+                    if ( (opts_in->QuadtreeTUMaxDepthIntra > 5) ||
+                        (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthIntra + 1 > opts_out->Log2MaxCUSize) ) {
+                            opts_out->QuadtreeTUMaxDepthIntra = 0;
+                            isInvalid ++;
+                    } else opts_out->QuadtreeTUMaxDepthIntra = opts_in->QuadtreeTUMaxDepthIntra;
+
+                    if ( (opts_in->QuadtreeTUMaxDepthInter > 5) ||
+                        (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthInter + 1 > opts_out->Log2MaxCUSize) ) {
+                            opts_out->QuadtreeTUMaxDepthInter = 0;
+                            isInvalid ++;
+                    } else opts_out->QuadtreeTUMaxDepthInter = opts_in->QuadtreeTUMaxDepthInter;
+
+                    opts_out->TryIntra = opts_in->TryIntra;
+                    opts_out->CmIntraThreshold = opts_in->CmIntraThreshold;
+                    opts_out->TUSplitIntra = opts_in->TUSplitIntra;
+                    opts_out->CUSplit = opts_in->CUSplit;
+                    opts_out->IntraAngModes = opts_in->IntraAngModes;
+                    opts_out->IntraAngModesP = opts_in->IntraAngModesP;
+                    opts_out->IntraAngModesBRef = opts_in->IntraAngModesBRef;
+                    opts_out->IntraAngModesBnonRef = opts_in->IntraAngModesBnonRef;
+                    opts_out->HadamardMe = opts_in->HadamardMe;
+                    opts_out->TMVP = opts_in->TMVP;
+                    opts_out->EnableCm = opts_in->EnableCm;
+                    opts_out->SaoOpt = opts_in->SaoOpt;
+                    opts_out->PatternIntPel = opts_in->PatternIntPel;
+                    opts_out->PatternSubPel = opts_in->PatternSubPel;
+                    opts_out->ForceNumThread = opts_in->ForceNumThread;
+                    opts_out->NumBiRefineIter = opts_in->NumBiRefineIter;
+                    opts_out->CUSplitThreshold = opts_in->CUSplitThreshold;
+                    opts_out->DeltaQpMode = opts_in->DeltaQpMode;
+                    opts_out->CpuFeature = opts_in->CpuFeature;
+                    opts_out->FramesInParallel         = opts_in->FramesInParallel;
+
+                    CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->RDOQuant, opts_out->RDOQuant, isInvalid);            /* tri-state option */
+                    CHECK_OPTION(opts_in->GPB, opts_out->GPB, isInvalid);            /* tri-state option */
+                    CHECK_OPTION(opts_in->SAO, opts_out->SAO, isInvalid);            /* tri-state option */
+                    CHECK_OPTION(opts_in->WPP, opts_out->WPP, isInvalid);       /* tri-state option */
+                    CHECK_OPTION(opts_in->BPyramid, opts_out->BPyramid, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->Deblocking, opts_out->Deblocking, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->RDOQuantChroma, opts_out->RDOQuantChroma, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->RDOQuantCGZ, opts_out->RDOQuantCGZ, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->CostChroma, opts_out->CostChroma, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->IntraChromaRDO, opts_out->IntraChromaRDO, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->FastInterp, opts_out->FastInterp, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->FastSkip, opts_out->FastSkip, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->FastCbfMode, opts_out->FastCbfMode, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->PuDecisionSatd, opts_out->PuDecisionSatd, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->MinCUDepthAdapt, opts_out->MinCUDepthAdapt, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->MaxCUDepthAdapt, opts_out->MaxCUDepthAdapt, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->Enable10bit, opts_out->Enable10bit, isInvalid);  /* tri-state option */
+                    CHECK_OPTION(opts_in->SkipCandRD, opts_out->SkipCandRD, isInvalid);  /* tri-state option */
+
+                    if (opts_in->PartModes > 3) {
+                        opts_out->PartModes = 0;
+                        isInvalid ++;
+                    } else opts_out->PartModes = opts_in->PartModes;
+
+                    if (opts_out->SAO == MFX_CODINGOPTION_ON && in->mfx.NumSlice > 1) { // switch off SAO for now, because of inter-slice deblocking
+                        opts_out->SAO = MFX_CODINGOPTION_OFF;
+                        isCorrected++;
+                    }
+
+                    if (opts_in->SplitThresholdStrengthCUIntra > 4) {
+                        opts_out->SplitThresholdStrengthCUIntra = 0;
+                        isInvalid ++;
+                    } else opts_out->SplitThresholdStrengthCUIntra = opts_in->SplitThresholdStrengthCUIntra;
+
+                    if (opts_in->SplitThresholdStrengthTUIntra > 4) {
+                        opts_out->SplitThresholdStrengthTUIntra = 0;
+                        isInvalid ++;
+                    } else opts_out->SplitThresholdStrengthTUIntra = opts_in->SplitThresholdStrengthTUIntra;
+
+                    if (opts_in->SplitThresholdStrengthCUInter > 4) {
+                        opts_out->SplitThresholdStrengthCUInter = 0;
+                        isInvalid ++;
+                    } else opts_out->SplitThresholdStrengthCUInter = opts_in->SplitThresholdStrengthCUInter;
+
+                    if (opts_in->SplitThresholdTabIndex > 3) {
+                        opts_out->SplitThresholdTabIndex = 0;
+                        isInvalid ++;
+                    } else opts_out->SplitThresholdTabIndex = opts_in->SplitThresholdTabIndex;
+
+#define CHECK_NUMCAND(field)                            \
+    if (opts_in->field > maxnum) {              \
+    opts_out->field = 0;                    \
+    isInvalid ++;                           \
+    } else opts_out->field = opts_in->field
+
+                    mfxU16 maxnum = 35;
+                    CHECK_NUMCAND(IntraNumCand0_2);
+                    CHECK_NUMCAND(IntraNumCand0_3);
+                    CHECK_NUMCAND(IntraNumCand0_4);
+                    CHECK_NUMCAND(IntraNumCand0_5);
+                    CHECK_NUMCAND(IntraNumCand0_6);
+                    CHECK_NUMCAND(IntraNumCand1_2);
+                    CHECK_NUMCAND(IntraNumCand1_3);
+                    CHECK_NUMCAND(IntraNumCand1_4);
+                    CHECK_NUMCAND(IntraNumCand1_5);
+                    CHECK_NUMCAND(IntraNumCand1_6);
+                    CHECK_NUMCAND(IntraNumCand2_2);
+                    CHECK_NUMCAND(IntraNumCand2_3);
+                    CHECK_NUMCAND(IntraNumCand2_4);
+                    CHECK_NUMCAND(IntraNumCand2_5);
+                    CHECK_NUMCAND(IntraNumCand2_6);
+
+#undef CHECK_NUMCAND
+
+                    // check again Numslice using Log2MaxCUSize
+                    if ( out->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width && opts_out->Log2MaxCUSize) {
+                        mfxU16 rnd = (1 << opts_out->Log2MaxCUSize) - 1, shft = opts_out->Log2MaxCUSize;
+                        if (out->mfx.NumSlice > ((out->mfx.FrameInfo.Height+rnd)>>shft) * ((out->mfx.FrameInfo.Width+rnd)>>shft) ) {
+                            out->mfx.NumSlice = 0;
+                            isInvalid ++;
+                        }
+                    }
+
+                    if (opts_in->NumTileCols > MAX_NUM_TILE_COLUMNS ||
+                        (opts_in->NumTileCols > 1 && (out->mfx.NumSlice > 1 || opts_out->FramesInParallel > 1))) {
+                            opts_out->NumTileCols = 1;
+                            isInvalid ++;
+                    } else opts_out->NumTileCols = opts_in->NumTileCols;
+
+                    if (opts_in->NumTileRows > MAX_NUM_TILE_ROWS ||
+                        (opts_in->NumTileRows > 1 && (out->mfx.NumSlice > 1 || opts_out->FramesInParallel > 1))) {
+                            opts_out->NumTileRows = 1;
+                            isInvalid ++;
+                    } else opts_out->NumTileRows = opts_in->NumTileRows;
+            } // EO mfxExtCodingOptionHEVC
+
+            if (optsDump_in) {
+                vm_string_strncpy_s(optsDump_out->ReconFilename, sizeof(optsDump_out->ReconFilename), optsDump_in->ReconFilename, sizeof(optsDump_out->ReconFilename)-1);
+            }
+
+            // reserved for any case
+            ////// Assume 420 checking vertical crop to be even for progressive PicStruct
+            ////mfxU16 cropSampleMask, correctCropTop, correctCropBottom;
+            ////if ((in->mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))  == MFX_PICSTRUCT_PROGRESSIVE)
+            ////    cropSampleMask = 1;
+            ////else
+            ////    cropSampleMask = 3;
+            ////
+            ////correctCropTop = (in->mfx.FrameInfo.CropY + cropSampleMask) & ~cropSampleMask;
+            ////correctCropBottom = (in->mfx.FrameInfo.CropY + out->mfx.FrameInfo.CropH) & ~cropSampleMask;
+            ////
+            ////if ((in->mfx.FrameInfo.CropY & cropSampleMask) || (out->mfx.FrameInfo.CropH & cropSampleMask)) {
+            ////    if (out->mfx.FrameInfo.CropY == in->mfx.FrameInfo.CropY) // not to correct CropY forced to zero
+            ////        out->mfx.FrameInfo.CropY = correctCropTop;
+            ////    if (correctCropBottom >= out->mfx.FrameInfo.CropY)
+            ////        out->mfx.FrameInfo.CropH = correctCropBottom - out->mfx.FrameInfo.CropY;
+            ////    else // CropY < cropSample
+            ////        out->mfx.FrameInfo.CropH = 0;
+            ////    isCorrected ++;
+            ////}
+
+
         }
 
-        // reserved for any case
-        ////// Assume 420 checking vertical crop to be even for progressive PicStruct
-        ////mfxU16 cropSampleMask, correctCropTop, correctCropBottom;
-        ////if ((in->mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))  == MFX_PICSTRUCT_PROGRESSIVE)
-        ////    cropSampleMask = 1;
-        ////else
-        ////    cropSampleMask = 3;
-        ////
-        ////correctCropTop = (in->mfx.FrameInfo.CropY + cropSampleMask) & ~cropSampleMask;
-        ////correctCropBottom = (in->mfx.FrameInfo.CropY + out->mfx.FrameInfo.CropH) & ~cropSampleMask;
-        ////
-        ////if ((in->mfx.FrameInfo.CropY & cropSampleMask) || (out->mfx.FrameInfo.CropH & cropSampleMask)) {
-        ////    if (out->mfx.FrameInfo.CropY == in->mfx.FrameInfo.CropY) // not to correct CropY forced to zero
-        ////        out->mfx.FrameInfo.CropY = correctCropTop;
-        ////    if (correctCropBottom >= out->mfx.FrameInfo.CropY)
-        ////        out->mfx.FrameInfo.CropH = correctCropBottom - out->mfx.FrameInfo.CropY;
-        ////    else // CropY < cropSample
-        ////        out->mfx.FrameInfo.CropH = 0;
-        ////    isCorrected ++;
-        ////}
+        if (isInvalid)
+            return MFX_ERR_UNSUPPORTED;
+        if (isCorrected)
+            return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
-
-    }
-
-    if (isInvalid)
-        return MFX_ERR_UNSUPPORTED;
-    if (isCorrected)
-        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-
-    return MFX_ERR_NONE;
+        return MFX_ERR_NONE;
 }
 
 mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     MFX_CHECK_NULL_PTR1(par)
-    MFX_CHECK_NULL_PTR1(request)
+        MFX_CHECK_NULL_PTR1(request)
 
-    // check for valid IOPattern
-    mfxU16 IOPatternIn = par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_OPAQUE_MEMORY);
+        // check for valid IOPattern
+        mfxU16 IOPatternIn = par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_OPAQUE_MEMORY);
     if ((par->IOPattern & 0xffc8) || (par->IOPattern == 0) ||
         (IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY))
-       return MFX_ERR_INVALID_VIDEO_PARAM;
+        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (par->Protected != 0)
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -2211,7 +2212,7 @@ mfxStatus MFXVideoENCODEH265::GetEncodeStat(mfxEncodeStat *stat)
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
 
     MFX_CHECK_NULL_PTR1(stat)
-    memset(stat, 0, sizeof(mfxEncodeStat));
+        memset(stat, 0, sizeof(mfxEncodeStat));
     stat->NumCachedFrame = m_frameCountBufferedSync; //(mfxU32)m_inFrames.size();
     stat->NumBit = m_totalBits;
     stat->NumFrame = m_encodedFrames;
@@ -2239,7 +2240,7 @@ mfxStatus MFXVideoENCODEH265::AcceptFrameHelper(mfxEncodeCtrl *ctrl, mfxEncodeIn
             surface->Info.FourCC != MFX_FOURCC_P010 && 
             surface->Info.FourCC != MFX_FOURCC_P210)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-        
+
         if (m_useAuxInput) { // copy from d3d to internal frame in system memory
 
             // Lock internal. FastCopy to use locked, to avoid additional lock/unlock
@@ -2247,9 +2248,9 @@ mfxStatus MFXVideoENCODEH265::AcceptFrameHelper(mfxEncodeCtrl *ctrl, mfxEncodeIn
             MFX_CHECK_STS(st);
 
             st = m_core->DoFastCopyWrapper(&m_auxInput,
-                                           MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
-                                           surface,
-                                           MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
+                MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
+                surface,
+                MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
             MFX_CHECK_STS(st);
 
             m_core->DecreaseReference(&(surface->Data)); // do it here
@@ -2273,7 +2274,7 @@ mfxStatus MFXVideoENCODEH265::AcceptFrameHelper(mfxEncodeCtrl *ctrl, mfxEncodeIn
             surface->Data.Pitch < m_mfxParam.mfx.FrameInfo.Width )
             return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    
+
 
     // [3] 
     mfxRes = AcceptFrame(surface, bs);
@@ -2368,7 +2369,7 @@ void ReorderFrames(TaskList &input, TaskList &reordered, const H265VideoParam &p
         reordered.splice(reordered.end(), input, anchor); // lone anchor frame
         return;
     }
-    
+
     // B frames present
     // process different situations:
     //   (a) B B B <end_of_stream> -> B B B    [strictGop=true ]
@@ -2430,7 +2431,7 @@ Task* FindOldestOutputTask(TaskList & encodeQueue)
         if ( (*oldest)->m_encOrder > (*begin)->m_encOrder)
             oldest = begin;
     }
-    
+
     return *oldest;
 
 } // 
@@ -2474,7 +2475,7 @@ mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstrea
         stsPreEnc;
     }
     //-----------------------------------------------------
-    
+
     // STAGE:: [REORDER]
     // prepare next frame for encoding
     if (m_reorderedQueue.empty())
@@ -2490,8 +2491,8 @@ mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstrea
 
     // general criteria to continue encoding
     bool isGo = !m_encodeQueue.empty() ||
-                m_inputQueue.size() >= (size_t)m_videoParam.GopRefDist ||
-                !surface && !m_inputQueue.empty();
+        m_inputQueue.size() >= (size_t)m_videoParam.GopRefDist ||
+        !surface && !m_inputQueue.empty();
 
     // special criterion for "instantaneous" first IDR frame
     if (!isGo && mfxBS && 1 == m_inputQueue.size() && m_inputQueue.front()->m_frameOrigin->m_isIdrPic)
@@ -2590,7 +2591,7 @@ mfxStatus MFXVideoENCODEH265::GetVideoParam(mfxVideoParam *par)
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK_NULL_PTR1(par)
 
-    par->mfx = m_mfxParam.mfx;
+        par->mfx = m_mfxParam.mfx;
     par->Protected = 0;
     par->AsyncDepth = m_mfxParam.AsyncDepth;
     par->IOPattern = m_mfxParam.IOPattern;
@@ -2857,10 +2858,10 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         if(NULL == inputParam->bs) {
             return MFX_TASK_DONE;
         }
-        
+
         stage = vm_interlocked_cas32( &inputParam->m_doStage, 3, 2);
         if(stage == 2) {
-            
+
             while( th->m_outputQueue.size() < (size_t)th->m_videoParam.m_framesInParallel && !th->m_encodeQueue.empty() ) {
                 int encIdx = 0;
                 th->AddNewOutputTask(encIdx);
@@ -2881,8 +2882,8 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
 
             th->m_core->INeedMoreThreadsInside(th);
 
-        if (th->m_videoParam.num_threads > 1)
-            th->m_semaphore.Signal(th->m_videoParam.num_threads - 1);
+            if (th->m_videoParam.num_threads > 1)
+                th->m_semaphore.Signal(th->m_videoParam.num_threads - 1);
 
             // single thread - FEI (Next)
 #if defined (MFX_VA)
@@ -2968,7 +2969,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     if (Ipp32u stageOnExit = vm_interlocked_cas32( &(inputParam->completedTask->m_ready), 4, 3) == 3) {
         return MFX_TASK_DONE;
     }
-    
+
     return MFX_TASK_DONE;
 } 
 
@@ -3035,7 +3036,7 @@ mfxFrameSurface1* MFXVideoENCODEH265::GetOriginalSurface(mfxFrameSurface1* input
         }
         return out;
     }
-    
+
     return input;
 }
 
