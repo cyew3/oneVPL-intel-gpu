@@ -90,6 +90,9 @@ vm_char* FourCC2Str( mfxU32 FourCC )
     case MFX_FOURCC_P010:
         strFourCC = VM_STRING("P010");
         break;
+    case MFX_FOURCC_P210:
+        strFourCC = VM_STRING("P210");
+        break;
     case MFX_FOURCC_A2RGB10:
         strFourCC = VM_STRING("A2RGB10");
         break;
@@ -1225,6 +1228,25 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w*2, MFX_ERR_MORE_DATA);
         }
     }
+    else if( pInfo->FourCC == MFX_FOURCC_P210 )
+    {
+        ptr = pData->Y + pInfo->CropX * 2 + pInfo->CropY * pitch;
+
+        // read luminance plane
+        for(i = 0; i < h; i++) 
+        {
+            nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w * 2, m_fSrc);
+            IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w*2, MFX_ERR_MORE_DATA);
+        }
+
+        // load UV
+        ptr = pData->UV + pInfo->CropX + (pInfo->CropY >> 1) * pitch;
+        for (i = 0; i < h; i++) 
+        {
+            nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w*2, m_fSrc);
+            IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w*2, MFX_ERR_MORE_DATA);
+        }
+    }
     else if (pInfo->FourCC == MFX_FOURCC_RGB3)
     {
         CHECK_POINTER(pData->R, MFX_ERR_NOT_INITIALIZED);
@@ -1762,6 +1784,25 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
         // write UV data
         h     >>= 1;
+        ptr  = pData->UV + (pInfo->CropX ) + (pInfo->CropY >> 1) * pitch ;
+
+        for(i = 0; i < h; i++) 
+        {
+            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w*2, m_fDst), w*2, MFX_ERR_UNDEFINED_BEHAVIOR);
+            if ( m_need_crc ) CRC32(ptr + i * pitch, w * 2);
+        }
+    }
+    else if( pInfo->FourCC == MFX_FOURCC_P210 )
+    {
+        ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
+
+        for (i = 0; i < h; i++)
+        {
+            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w * 2, m_fDst), w * 2, MFX_ERR_UNDEFINED_BEHAVIOR);
+            if ( m_need_crc ) CRC32(ptr + i * pitch, w * 2);
+        }
+
+        // write UV data
         ptr  = pData->UV + (pInfo->CropX ) + (pInfo->CropY >> 1) * pitch ;
 
         for(i = 0; i < h; i++) 

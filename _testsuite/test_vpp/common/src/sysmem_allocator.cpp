@@ -125,6 +125,12 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->V = ptr->U + 2;
         ptr->Pitch = 2 * Width2;
         break;
+    case MFX_FOURCC_P210:
+        ptr->Y16 = (mfxU16 *)ptr->B;
+        ptr->U = ptr->Y + Width2 * Height2 * 2;
+        ptr->V = ptr->U + 2;
+        ptr->Pitch = 2 * Width2;
+        break;
     default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -200,6 +206,9 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
     case MFX_FOURCC_P010: // tmp!!! kta
 //    case MFX_FOURCC_R16:
         nbytes = 3*Width2*Height2;
+        break;
+    case MFX_FOURCC_P210:
+        nbytes = 4*Width2*Height2;
         break;
 
     default:
