@@ -12,29 +12,23 @@
 #define __MFX_H265_ENC_H__
 
 #include <list>
+#include "mfx_ext_buffers.h"
 #include "mfx_h265_defs.h"
 #include "mfx_h265_ctb.h"
 #include "mfx_h265_frame.h"
-#include "mfx_h265_encode.h"
 #include "mfx_h265_paq.h"
-#define  MAX_DQP (6)
+#include "mfx_h265_sao_filter.h"
+#include "mfx_h265_brc.h"
 
 #ifdef MFX_ENABLE_WATERMARK
 class Watermark;
 #endif
 
-#if defined(MFX_VA)
-#include "mfx_h265_enc_cm.h"
-class CmContext;
-#endif
+namespace UMC {
+class Semaphore;
+}
 
 namespace H265Enc {
-
-enum ParallelRegion
-{
-    PARALLEL_REGION_MAIN,
-    PARALLEL_REGION_DEBLOCKING
-};
 
 struct H265VideoParam {
 // preset
@@ -53,6 +47,9 @@ struct H265VideoParam {
     Ipp8u  TMVPFlag;
 
     Ipp32s NumSlices;
+    Ipp32u NumTiles;
+    Ipp32u NumTileCols;
+    Ipp32u NumTileRows;
     Ipp8u  AnalyseFlags;
     Ipp32s GopPicSize;
     Ipp32s GopRefDist;
@@ -78,6 +75,7 @@ struct H265VideoParam {
     Ipp8u num_cand_2[8];
     
     Ipp8u  deblockingFlag; // Deblocking
+    Ipp8u  deblockTileBordersFlag;
     Ipp8u  SBHFlag;  // Sign Bit Hiding
     Ipp8u  RDOQFlag; // RDO Quantization
     Ipp8u  rdoqChromaFlag; // RDOQ Chroma
@@ -110,6 +108,7 @@ struct H265VideoParam {
     Ipp32s numBiRefineIter;
     Ipp32u num_threads;
     Ipp32u num_thread_structs;
+    Ipp32u num_bs_subsets;
     Ipp8u threading_by_rows;
     Ipp8u IntraChromaRDO;   // 1-turns on syntax cost for chroma in Intra
     Ipp8u FastInterp;       // 1-turns on fast filters for ME
@@ -159,11 +158,7 @@ struct H265VideoParam {
     Ipp8u UseDQP;
     Ipp32u MaxCuDQPDepth;
     Ipp32u MinCuDQPSize; 
-    int m_maxDeltaQP;
-    Ipp8s* m_lcuQps; // array for LCU QPs
-
-    //use slice QP_Y for the frame level math and m_lcuQps[ctbAddr] for the CTB level math.
-    Ipp8s m_sliceQpY; // npshosta: WTF? find better place for this
+    Ipp32s m_maxDeltaQP;
 
     Ipp32u  FrameRateExtN;
     Ipp32u  FrameRateExtD;
@@ -173,173 +168,148 @@ struct H265VideoParam {
     Ipp16u  Tier;
     Ipp16u  Level;
 
-    const H265SeqParameterSet *csps;
-    const H265PicParameterSet *cpps;
+    mfxF64 tcDuration90KHz;
+
+    // set
+    H265ProfileLevelSet* m_profile_level;
+    H265VidParameterSet* m_vps;
+
+    H265SeqParameterSet *csps;
+    H265PicParameterSet *cpps;
+
+    Ipp16u tileColStart[MAX_NUM_TILE_COLUMNS];
+    Ipp16u tileRowStart[MAX_NUM_TILE_ROWS];
+    Ipp16u tileColWidth[MAX_NUM_TILE_COLUMNS];
+    Ipp16u tileRowHeight[MAX_NUM_TILE_ROWS];
+    Ipp16u tileColWidthMax;
+    Ipp16u tileRowHeightMax;
+
+    mfxU8 reconForDump;
+
     Ipp8u *m_slice_ids;
-    costStat *m_costStat; // npshosta: find more appropriate place for this
-    H265Slice m_dqpSlice[2*MAX_DQP+1]; // npshosta: find more appropriate place for this
-#if defined(MFX_VA)
-    CmContext *m_cmCtx;
-#endif
+    Ipp8u *m_tile_ids;
+    costStat *m_costStat;
+    Ipp8u* m_logMvCostTable;
+
+    // how many frame encoders will be used
+    Ipp32s m_framesInParallel; // 0, 1 - default. means no frame threading
+    Ipp32s m_meSearchRangeY;   // = Func1 ( m_framesInParallel )
+    Ipp32s m_lagBehindRefRows; // = Func2 ( m_framesInParallel ). How many ctb rows in ref frames have to be encoded
+    };
+
+class DispatchSaoApplyFilter
+{
+public:
+    DispatchSaoApplyFilter();
+    ~DispatchSaoApplyFilter();
+
+    mfxStatus Init(int width, int maxCUWidth, int maxDepth, int bitDepth, int num);
+    void Close();
+    
+    Ipp32u m_bitDepth;
+    union {
+        SaoDecodeFilter<Ipp8u>* m_sao;
+        SaoDecodeFilter<Ipp16u>* m_sao10bit;
+    };
 };
 
 
-class H265BRC;
-
-class H265Encoder {
+class H265FrameEncoder : public State {
 
 public:
-
-#if defined(MFX_VA)
-    CmContext *m_cmCtx;
-#endif
-
-    MFXVideoENCODEH265 *mfx_video_encode_h265_ptr;
-
-    H265BsReal* m_bs;
-    H265BsFake* m_bsf;
-    Ipp8u *memBuf;
-    Ipp32s m_frameCountEncoded;
-    void *cu;
-
-    std::vector<SaoCtuParam> m_saoParam;
-
-    H265ProfileLevelSet m_profile_level;
-    H265VidParameterSet m_vps;
-    H265SeqParameterSet m_sps;
-    H265PicParameterSet m_pps;
-    H265VideoParam m_videoParam;
-
-    // local data
-    H265Slice *m_slices;
-    H265Slice *m_slicesNext;
-
-    // what is it??? it is temporary CU Data for core encoder
-    H265CUData *data_temp;
-    Ipp32u data_temp_size;
-
-    Ipp8u *m_slice_ids;
-    H265EncoderRowInfo *m_row_info;
-    costStat *m_costStat;
-
-    // input frame control counters
-    Ipp32s m_profileIndex;
-    Ipp32s m_frameOrder;
-    Ipp32s m_frameOrderOfLastIdr;       // frame order of last IDR frame (in display order)
-    Ipp32s m_frameOrderOfLastIntra;     // frame order of last I-frame (in display order)
-    Ipp32s m_frameOrderOfLastAnchor;    // frame order of last anchor (first in minigop) frame (in display order)
-    Ipp32s m_miniGopCount;
-    mfxU64 m_lastTimeStamp;
-    Ipp32s m_lastEncOrder;
+    H265FrameEncoder();
+    ~H265FrameEncoder() { Close(); };
     
-    // input frame control queues
-    std::list<Task*> m_free;             // _global_ free task pool
-    std::list<Task*> m_inputQueue_1;     // _global_ input task queue in _display_ order
-    std::list<Task*> m_reorderedQueue_1; // _global_ input task queue in _display_ order
-    std::list<Task*> m_dpb_1;            // _global_ pool of frames: encoded reference frames + being encoded frames
-    std::list<Task*> m_lookaheadQueue;   // _global_ queue in _encode_ order
-    std::list<Task*> m_encodeQueue_1;    // _global_ queue in _encode_ order (contains _ptr_ to encode task)
-    std::list<Task*> m_actualDpb;        // reference frames for next frame to encode
-    std::list<H265Frame*> m_freeFrames;  // _global_ free frames (origin/recon/reference) pool
+    mfxStatus Init(const mfxVideoParam* mfxParam, const H265VideoParam & videoParam, const mfxExtCodingOptionHEVC *optsHevc, VideoCORE *core);
+    void      Close();
 
-    H265Frame *m_pCurrentFrame;
-    H265Frame *m_pReconstructFrame;
-    H265Frame *m_pNextFrame; // for GACC
-    
-    Ipp8u *m_logMvCostTable;
+    // task based API
+    mfxStatus SetEncodeTask(Task* task);
+    Task* GetEncodeTask() { return m_task;}
+    mfxStatus GetOutputData(mfxBitstream *mfxBS, Ipp32s & overheadBytes);
 
-    volatile Ipp32u m_incRow;
-    CABAC_CONTEXT_H265 *m_context_array_wpp;
+    // frame threading
+    void FindJob(Ipp32s & found, Ipp32s & complete, Ipp32u & ctb_row, Ipp32u & ctb_col);
+    bool AllReferencesReady(Ipp32u ctb_row);
 
-    H265BRC *m_brc;
-    TAdapQP *m_pAQP;
+    template <typename PixType>
+    mfxStatus EncodeThread(Ipp32s & ithread, volatile Ipp32u* onExitEvent, UMC::Semaphore &semaphore);
 
-#if defined(MFX_ENABLE_H265_PAQ)
-    TVideoPreanalyzer m_preEnc;
-#endif
+    H265VideoParam* GetVideoParam() {return &m_videoParam;};
 
-    const vm_char *m_recon_dump_file_name;
+private:
+    // ------ SAO estimation
+    template <typename PixType>
+    void EstimateCtuSao(Ipp32s ithread, Ipp32s bs_id, Ipp32s bsf_id, Ipp32u ctb_row, Ipp32u ctb_addr, Ipp8u curr_slice);
 
-    H265Encoder() {
-        memBuf = NULL; m_bs = NULL; m_bsf = NULL;
-        data_temp = NULL;
-        m_slices = NULL;
-        m_slice_ids = NULL;
-        m_row_info = NULL;
+    template <typename PixType>
+    void PadOneReconRow(Ipp32u ctb_row);
 
-        m_pCurrentFrame = m_pNextFrame = m_pReconstructFrame = NULL;
+    // SAO Filtering
+    template <typename PixType>
+    mfxStatus ApplySaoRow(Ipp32u row);
 
-        /*m_lastTask.m_frameOrigin = NULL;
-        m_lastTask.m_frameRecon = NULL;*/
-        m_brc = NULL;
-        m_context_array_wpp = NULL;
-        m_recon_dump_file_name = NULL;
-#ifdef MFX_ENABLE_WATERMARK
-        m_watermark = NULL;
-#endif
-    }
-    ~H265Encoder() {};
-///////////////
+    template <typename PixType>
+    mfxStatus ApplySaoCtuRange(Ipp32u ctuStart, Ipp32u ctuEnd);
+
     // ------ bitstream
     mfxStatus WriteEndOfSequence(mfxBitstream *bs);
     mfxStatus WriteEndOfStream(mfxBitstream *bs);
     mfxStatus WriteFillerData(mfxBitstream *bs, mfxI32 num);
+
     void PutProfileLevel(H265BsReal *bs_, Ipp8u profile_present_flag, Ipp32s max_sub_layers);
     mfxStatus PutVPS(H265BsReal *bs_);
     mfxStatus PutSPS(H265BsReal *bs_);
     mfxStatus PutPPS(H265BsReal *bs_);
     mfxStatus PutShortTermRefPicSet(H265BsReal *bs_, const H265ShortTermRefPicSet *rps, Ipp32s idx);
     mfxStatus PutSliceHeader(H265BsReal *bs_, H265Slice *slice);
-
-    mfxStatus WriteBitstream(mfxBitstream *mfxBS, bool isFirstTime);
-    mfxStatus WriteBitstream_Internal(mfxBitstream *mfxBS, H265NALUnit& nal, Ipp32s bs_main_id, Ipp32s& overheadBytes);
-
-   // ------SPS, PPS
-    mfxStatus SetProfileLevel();
-    mfxStatus SetVPS();
-    mfxStatus SetSPS();
-    mfxStatus SetPPS();
-    mfxStatus SetSlice(H265Slice *slice, Ipp32u curr_slice, H265Frame* currentFrame);
-    void SetAllLambda(H265Slice *slice, Ipp32s qp, const H265Frame *currFrame, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
-
-    mfxStatus Init(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc, VideoCORE *core);
-    void      Close();
-    mfxStatus InitH265VideoParam(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc);    
-
-    // ------ _global_ stages of Input Frame Control
-    H265Frame *InsertInputFrame(const mfxFrameSurface1 *surface);
-    void ConfigureInputFrame(H265Frame *frame) const;
-    void PrepareToEncode(Task *task);
-    void OnEncodingSubmitted(TaskIter task);
-    void OnEncodingQueried(Task *task);
-    void UpdateDpb(Task *currTask);
-    void CleanTaskPool();
-    void CreateRefPicList(Task *task, H265ShortTermRefPicSet *rps);
-
-    // ------ Ref List Managment
-    void InitShortTermRefPicSet();
-    // ----------------------------------------------------
-
-    // ------ core encode routines
-    mfxStatus EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *bs);
-    template <typename PixType>
-    mfxStatus DeblockThread(Ipp32s ithread);
-    template <typename PixType>    
-    mfxStatus ApplySAOThread(Ipp32s ithread);
-    mfxStatus ApplySAOThread_old(Ipp32s ithread); //aya: for debug only
-    template <typename PixType>    
-    mfxStatus EncodeThread(Ipp32s ithread);
-    template <typename PixType>    
-    mfxStatus EncodeThreadByRow(Ipp32s ithread);    
-
-    mfxStatus PreEncAnalysis(mfxBitstream* mfxBS);
-    mfxStatus UpdateAllLambda(const H265Frame* frame);// current frame to encode. POC & B frame pos are needed only
+    
+    mfxStatus WriteBitstreamPayload(mfxBitstream *mfxBS, Ipp32s bs_main_id, Ipp32s& overheadBytes);
+    mfxStatus WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s bs_main_id, Ipp32s& overheadBytes, bool isVPSHeader);
+    //-----------------------------------------
+public: // aya: tmp
+    H265BsReal* m_bs;
 
 private:
+    H265BsFake* m_bsf;
+    Ipp8u *memBuf;
+    void *cu;
+
+    std::vector<SaoCtuParam> m_saoParam;
+
+    // const part of encoder
+    H265SeqParameterSet m_sps;
+    H265PicParameterSet m_pps;
+    H265VideoParam m_videoParam;
+    Ipp8u *m_logMvCostTable;
+
+    // local data
+    Task*      m_task;
+
+    H265CUData *data_temp;
+    Ipp32u data_temp_size;
+
+    Ipp8u *m_slice_ids;
+    Ipp8u *m_tile_ids;
+    costStat *m_costStat;
+
+    CABAC_CONTEXT_H265 *m_context_array_wpp;
+    
+    DispatchSaoApplyFilter m_saoApplyFilter[NUM_USED_SAO_COMPONENTS];
+
+public:
+    volatile Ipp32s m_mt_current_tile;
+    volatile Ipp32s m_mt_num_tiles_done;
+    H265EncoderRowInfo* m_row_info;
+
 #ifdef MFX_ENABLE_WATERMARK
     Watermark *m_watermark;
 #endif
 };
+
+Ipp8s GetConstQp(Task const & task, H265VideoParam const & param);
+void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, int qp, const H265Frame* currentFrame, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
+Ipp64f h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP);
 
 } // namespace
 

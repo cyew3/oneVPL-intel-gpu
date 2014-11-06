@@ -142,6 +142,11 @@
 #define MFX_ENABLE_LA_H264_VIDEO_HW
 #endif
 
+// H265 FEI plugin
+#if defined(AS_H265FEI_PLUGIN)
+#define MFX_ENABLE_H265FEI_HW
+#endif
+
 // user plugin for decoder, encoder, and vpp
 #define MFX_ENABLE_USER_DECODE
 #define MFX_ENABLE_USER_ENCODE

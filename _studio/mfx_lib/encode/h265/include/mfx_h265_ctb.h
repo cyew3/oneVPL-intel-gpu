@@ -6,6 +6,7 @@
 //        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
+#include "mfx_common.h"
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #ifndef __MFX_H265_CTB_H__
@@ -18,14 +19,15 @@
 #include "mfx_h265_sao_filter.h"
 #include "mfx_h265_tables.h"
 #include "mfx_h265_paq.h"
+#include "mfx_h265_frame.h"
+
+#if defined(MFX_VA)
+#include "mfx_h265_fei.h"
+#endif
 
 using namespace MFX_HEVC_PP;
 
 namespace H265Enc {
-
-#if defined(MFX_VA)
-    class CmContext;
-#endif
 
 //Optimization with Intelligent Content and RD Analysis (ICRA)
 #define AMT_ICRA_OPT 
@@ -55,6 +57,7 @@ namespace H265Enc {
 #define AMT_THRESHOLDS
 #define AMT_ADAPTIVE_INTRA_RD
 #endif
+struct H265VideoParam;
 
 struct H265MV
 {
@@ -187,7 +190,7 @@ static inline Ipp8u isSkipped (H265CUData *data, Ipp32u partIdx)
     return data[partIdx].flags.skippedFlag;
 }
 
-#define MAX_TOTAL_DEPTH (MAX_CU_DEPTH+4)
+//#define MAX_TOTAL_DEPTH (MAX_CU_DEPTH+4)
 
 #define CHROMA_SIZE_DIV 2 // 4 - 4:2:0 ; 2 - 4:2:2,4:2:0 ; 1 - 4:4:4,4:2:2,4:2:0
 
@@ -202,6 +205,10 @@ public:
     typedef typename GetHistogramType<PixType>::type HistType;
 
     H265VideoParam *m_par;
+
+    Ipp8s  m_sliceQpY;
+    Ipp8s* m_lcuQps;
+
     H265Frame      *m_currFrame;
     Ipp32u          m_ctbAddr;           ///< CU address in a slice
     Ipp32u          m_absIdxInLcu;      ///< absolute address in a CU. It's Z scan order
@@ -264,6 +271,8 @@ public:
     H265CUData*   m_aboveLeft;      ///< pointer of above-left CU
     H265CUData*   m_aboveRight;     ///< pointer of above-right CU
 
+    Ipp32u m_tile_border_right, m_tile_border_bottom;
+
     // merge and AMVP candidates shared between function calls for one CU depth, one part mode and all PUs (1, 2, or 4)
     MvPredInfo<5> m_mergeCand[4];
     MvPredInfo<2> m_amvpCand[4][2 * MAX_NUM_REF_IDX];
@@ -323,7 +332,7 @@ public:
     const Ipp8u *m_logMvCostTable;
     costStat *m_costStat;
 #if defined(MFX_VA)
-    CmContext *m_cmCtx;
+    mfxFEIH265Output *feiOut;
 #endif
 
     SaoEncodeFilter m_saoEncodeFilter;
@@ -392,16 +401,14 @@ public:
 
     Ipp8u GetQtRootCbf(Ipp32u idx);
 
-    void GetPuLeft(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true
+    void GetPuLeft(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true,
                    //,Ipp32s enforceDependentSliceRestriction = true
-                   //,Ipp32s enforceTileRestriction = true
-                   );
+                   Ipp32s enforceTileRestriction = true);
 
     void GetPuAbove(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true,
 //                    Ipp32s enforceDependentSliceRestriction = true, Ipp32s motionDataCompresssion = false,
-                    Ipp32s planarAtLcuBoundary = false
-//                    , Ipp32s enforceTileRestriction = true
-                    );
+                    Ipp32s planarAtLcuBoundary = false,
+                    Ipp32s enforceTileRestriction = true);
 
     bool GetTempMvPred(const H265CUData *currPb, Ipp32s xPb, Ipp32s yPb, Ipp32s nPbW, Ipp32s nPbH,
                        Ipp32s listIdx, Ipp32s refIdx, H265MV *mvLxCol);
@@ -579,6 +586,8 @@ public:
     Ipp32s CheckMergeCand(const H265MEInfo *meInfo, const MvPredInfo<5> *mergeCand,
                           Ipp32s useHadamard, Ipp32s *mergeCandIdx);
 
+    bool CheckFrameThreadingSearchRange(const H265MEInfo *meInfo, const H265MV *mv) const;
+
     void RefineBiPred(const H265MEInfo *meInfo, const Ipp8s refIdxs[2], Ipp32s curPUidx,
                       H265MV mvs[2], Ipp32s *cost, Ipp32s *mvCost);
 
@@ -740,7 +749,7 @@ public:
 
     void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
                 PixType *_y, PixType *_uv, Ipp32s _pitch_luma, Ipp32s _pitch_chroma, H265Frame *currFrame, H265BsFake *_bsf,
-                H265Slice *cslice, Ipp32s initializeDataFlag, const Ipp8u *logMvCostTable);
+                H265Slice *cslice, Ipp32s initializeDataFlag, const Ipp8u *logMvCostTable, void *feiH265Out, const Task* task);
 
 #if defined(AMT_ICRA_OPT)
     //void CalcRsCs(void);

@@ -6,6 +6,7 @@
 //        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
+#include "mfx_common.h"
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #ifndef __MFX_H265_SET_H__
