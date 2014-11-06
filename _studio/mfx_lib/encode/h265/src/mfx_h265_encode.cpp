@@ -2852,9 +2852,12 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     if (0 == stage) {
         sts = th->AcceptFrameHelper(inputParam->ctrl, NULL, inputParam->surface, inputParam->bs);
         vm_interlocked_cas32( &inputParam->m_doStage, 2, 1);
-        MFX_CHECK_STS(sts);        
+        MFX_CHECK_STS(sts);
 
-        // STAGE [3]::[single thread]::FIND OLDEST TASK
+        if(NULL == inputParam->bs) {
+            return MFX_TASK_DONE;
+        }
+        
         stage = vm_interlocked_cas32( &inputParam->m_doStage, 3, 2);
         if(stage == 2) {
             
@@ -2910,9 +2913,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         return MFX_TASK_DONE;
     }
 
-    //// STAGE [4]:: threading barrier
-    // not found output task yet. 
-    // may be Sleep() untill != 4 here and continue to work is better strategy instead of exit
+    // threading barrier: if not completed preparation stage
     if(inputParam->m_doStage < 4) {
         th->m_semaphore.Wait();
     }
