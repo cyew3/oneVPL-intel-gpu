@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\shared\src\auxiliary_device.cpp" />
+    <ClCompile Include="..\..\shared\src\cm_mem_copy.cpp" />
+    <ClCompile Include="..\..\shared\src\d3d11_decode_accelerator.cpp" />
+    <ClCompile Include="..\..\shared\src\d3d11_video_processor.cpp" />
+    <ClCompile Include="..\..\shared\src\fast_compositing_ddi.cpp" />
+    <ClCompile Include="..\..\shared\src\fast_copy.cpp" />
+    <ClCompile Include="..\..\shared\src\libmfx_allocator.cpp" />
+    <ClCompile Include="..\..\shared\src\libmfx_allocator_d3d11.cpp" />
+    <ClCompile Include="..\..\shared\src\libmfx_allocator_d3d9.cpp" />
+    <ClCompile Include="..\..\shared\src\libmfx_core.cpp" />
+    <ClCompile Include="..\..\shared\src\libmfx_core_d3d11.cpp" />
+    <ClCompile Include="..\..\shared\src\libmfx_core_d3d9.cpp" />
+    <ClCompile Include="..\..\shared\src\libmfx_core_factory.cpp" />
+    <ClCompile Include="..\..\shared\src\libmfx_core_hw.cpp" />
+    <ClCompile Include="..\..\shared\src\mfx_dxva2_device.cpp" />
+    <ClCompile Include="..\scheduler\src\mfx_scheduler_core.cpp" />
+    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_ischeduler.cpp" />
+    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_iunknown.cpp" />
+    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_task.cpp" />
+    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_task_management.cpp" />
+    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_thread.cpp" />
+    <ClCompile Include="..\shared\src\libmfxsw.cpp" />
+    <ClCompile Include="..\shared\src\libmfxsw_async.cpp" />
+    <ClCompile Include="..\shared\src\libmfxsw_enc.cpp" />
+    <ClCompile Include="..\shared\src\libmfxsw_query.cpp" />
+    <ClCompile Include="..\shared\src\libmfxsw_session.cpp" />
+    <ClCompile Include="..\shared\src\mfx_check_hardware_support.cpp" />
+    <ClCompile Include="..\shared\src\mfx_common_decode_int.cpp" />
+    <ClCompile Include="..\shared\src\mfx_common_int.cpp" />
+    <ClCompile Include="..\shared\src\mfx_enc_common.cpp" />
+    <ClCompile Include="..\shared\src\mfx_session.cpp" />
+    <ClCompile Include="..\shared\src\mfx_user_plugin.cpp" />
+    <ClCompile Include="..\vpp\src\mfx_vpp_factory.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{348EB879-A3FF-44A1-8D14-E5957A4D5E18}</ProjectGuid>
+    <RootNamespace>libmfxhw_plugin_h265fei</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Intel.Mfx.StaticLib.props" />
+    <Import Project="Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Intel.Mfx.StaticLib.props" />
+    <Import Project="Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Intel.Mfx.StaticLib.props" />
+    <Import Project="Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Intel.Mfx.StaticLib.props" />
+    <Import Project="Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetName>$(ProjectName)32</TargetName>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
+    <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)64</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(MfxBuildDir)win_$(Platform)\lib\\</OutDir>
+    <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\\</IntDir>
+    <TargetName>$(ProjectName)32_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\\</IntDir>
+    <TargetName>$(ProjectName)64_d</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>false</SDLCheck>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\..\..\mdp_msdk-api\include;.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\\shared\umc\io\umc_va\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\codec\vc1_dec\include;..\..\..\_studio\shared\umc\core\umc\include;..\scheduler\include;..\fei\include;..\fei\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>AS_H265FEI_PLUGIN;WIN32;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;_UNICODE;UNICODE;LIBMFXHW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>false</SDLCheck>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <AdditionalIncludeDirectories>..\..\..\..\include;..\..\..\include;..\fei\h265\include;..\shared\include;..\scheduler\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h265\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\h264\include;..\encode\vc1\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\io\umc_va\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\encode\h265\include;..\optimization\h265\include;%(AdditionalIncludeDirectories);..\fei\include;..\fei\h264_la;..\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;..\encode_hw\h264\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>AS_H265FEI_PLUGIN;WIN32;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;_UNICODE;UNICODE;LIBMFXHW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>
+      </SDLCheck>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <PreprocessorDefinitions>AS_H265FEI_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXHW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\..\..\mdp_msdk-api\include;.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\\shared\umc\io\umc_va\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\codec\vc1_dec\include;..\..\..\_studio\shared\umc\core\umc\include;..\scheduler\include;..\fei\include;..\fei\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>
+      </SDLCheck>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <PreprocessorDefinitions>AS_H265FEI_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXHW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\..\..\mdp_msdk-api\include;.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\\shared\umc\io\umc_va\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\codec\vc1_dec\include;..\..\..\_studio\shared\umc\core\umc\include;..\scheduler\include;..\fei\include;..\fei\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

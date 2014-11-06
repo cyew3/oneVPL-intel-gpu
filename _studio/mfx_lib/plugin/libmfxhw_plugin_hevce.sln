@@ -3,6 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfxplugin_hevce_hw", "mfxplugin_hevce_hw.vcxproj", "{141AFF1B-E73B-40FA-B9A4-219F0F364562}"
 	ProjectSection(ProjectDependencies) = postProject
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321} = {34ADEC07-FF4A-4CD0-B526-12BE7E40D321}
 		{821C734C-1927-4C6F-80F7-37088A80D9E4} = {821C734C-1927-4C6F-80F7-37088A80D9E4}
 		{0E971EE7-4430-47D9-92CD-9822BC664642} = {0E971EE7-4430-47D9-92CD-9822BC664642}
 		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4} = {811626EB-8608-4CAC-ABEE-CD99DAEC38C4}
@@ -66,6 +67,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cmrt_cross_platform", "..\cmrt_cross_platform\cmrt_cross_platform.vcxproj", "{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "umc_va_elk", "..\..\shared\umc\io\umc_va\umc_va_elk.vcxproj", "{0E971EE7-4430-47D9-92CD-9822BC664642}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h265_fei", "..\fei\h265\h265_fei.vcxproj", "{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -645,6 +648,34 @@ Global
 		{0E971EE7-4430-47D9-92CD-9822BC664642}.Release|Win32.Build.0 = release|Win32
 		{0E971EE7-4430-47D9-92CD-9822BC664642}.Release|x64.ActiveCfg = release|x64
 		{0E971EE7-4430-47D9-92CD-9822BC664642}.Release|x64.Build.0 = release|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug_HSW_Emu|Win32.ActiveCfg = Debug_Hsw_Emu|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug_HSW_Emu|Win32.Build.0 = Debug_Hsw_Emu|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug_HSW_Emu|x64.ActiveCfg = Debug_Hsw_Emu|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug_HSW_Emu|x64.Build.0 = Debug_Hsw_Emu|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug_Intel_Evaluation|Win32.ActiveCfg = Debug_Intel|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug_Intel_Evaluation|Win32.Build.0 = Debug_Intel|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug_Intel_Evaluation|x64.ActiveCfg = Debug_Intel|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug_Intel_Evaluation|x64.Build.0 = Debug_Intel|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug_Intel|Win32.ActiveCfg = Debug_Intel|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug_Intel|Win32.Build.0 = Debug_Intel|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug_Intel|x64.ActiveCfg = Debug_Intel|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug_Intel|x64.Build.0 = Debug_Intel|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug|Win32.ActiveCfg = Debug|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug|Win32.Build.0 = Debug|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug|x64.ActiveCfg = Debug|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Debug|x64.Build.0 = Debug|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Release_Intel_Evaluation|Win32.ActiveCfg = Release_Intel|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Release_Intel_Evaluation|Win32.Build.0 = Release_Intel|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Release_Intel_Evaluation|x64.ActiveCfg = Release_Intel|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Release_Intel_Evaluation|x64.Build.0 = Release_Intel|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Release_Intel|Win32.ActiveCfg = Release_Intel|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Release_Intel|Win32.Build.0 = Release_Intel|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Release_Intel|x64.ActiveCfg = Release_Intel|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Release_Intel|x64.Build.0 = Release_Intel|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Release|Win32.ActiveCfg = Release|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Release|Win32.Build.0 = Release|Win32
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Release|x64.ActiveCfg = Release|x64
+		{34ADEC07-FF4A-4CD0-B526-12BE7E40D321}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

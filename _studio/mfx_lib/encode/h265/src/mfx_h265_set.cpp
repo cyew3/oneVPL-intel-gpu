@@ -20,7 +20,7 @@ namespace H265Enc {
 #define H265Bs_PutVLCCode(bs,code) (bs)->PutVLCCode(code)
 
 
-mfxStatus H265Encoder::WriteEndOfSequence(mfxBitstream *bs)
+mfxStatus H265FrameEncoder::WriteEndOfSequence(mfxBitstream *bs)
 {
 /*   H265BsReal_8u16s rbs;
    rbs.m_pbsRBSPBase = rbs.m_base.m_pbs = 0;
@@ -30,7 +30,7 @@ mfxStatus H265Encoder::WriteEndOfSequence(mfxBitstream *bs)
    return MFX_ERR_NONE;
 }
 
-mfxStatus H265Encoder::WriteEndOfStream(mfxBitstream *bs)
+mfxStatus H265FrameEncoder::WriteEndOfStream(mfxBitstream *bs)
 {
 /*   H265BsReal_8u16s rbs;
    rbs.m_pbsRBSPBase = rbs.m_base.m_pbs = 0;
@@ -40,7 +40,7 @@ mfxStatus H265Encoder::WriteEndOfStream(mfxBitstream *bs)
    return MFX_ERR_NONE;
 }
 
-mfxStatus H265Encoder::WriteFillerData(mfxBitstream *bs, mfxI32 num)
+mfxStatus H265FrameEncoder::WriteFillerData(mfxBitstream *bs, mfxI32 num)
 {
 /*   H265BsReal_8u16s rbs;
    UMC::Status st;
@@ -145,23 +145,27 @@ overflow:
     return (size+ExtraBytes);
 }
 
-void H265Encoder::PutProfileLevel(H265BsReal *_bs, Ipp8u profile_present_flag, Ipp32s max_sub_layers)
+void H265FrameEncoder::PutProfileLevel(H265BsReal *_bs, Ipp8u profile_present_flag, Ipp32s max_sub_layers)
 {
     H265BsReal *bs = _bs;
+    H265ProfileLevelSet* param = m_videoParam.m_profile_level;
 
     if (profile_present_flag) {
-        H265Bs_PutBits(bs, m_profile_level.general_profile_space, 2);
-        H265Bs_PutBits(bs, m_profile_level.general_tier_flag, 1);
-        H265Bs_PutBits(bs, m_profile_level.general_profile_idc, 5);
+        H265Bs_PutBits(bs, param->general_profile_space, 2);
+        H265Bs_PutBits(bs, param->general_tier_flag, 1);
+        H265Bs_PutBits(bs, param->general_profile_idc, 5);
+
         for (Ipp32s i = 0; i < 32; i++)
-            H265Bs_PutBit(bs, m_profile_level.general_profile_compatibility_flag[i]);
-        H265Bs_PutBits(bs, m_profile_level.general_progressive_source_flag, 1);
-        H265Bs_PutBits(bs, m_profile_level.general_interlaced_source_flag, 1);
-        H265Bs_PutBits(bs, m_profile_level.general_non_packed_constraint_flag, 1);
-        H265Bs_PutBits(bs, m_profile_level.general_frame_only_constraint_flag, 1);
+            H265Bs_PutBit(bs, param->general_profile_compatibility_flag[i]);
+
+        H265Bs_PutBits(bs, param->general_progressive_source_flag, 1);
+        H265Bs_PutBits(bs, param->general_interlaced_source_flag, 1);
+        H265Bs_PutBits(bs, param->general_non_packed_constraint_flag, 1);
+        H265Bs_PutBits(bs, param->general_frame_only_constraint_flag, 1);
         H265Bs_PutBits(bs, 0, 22); // reserved
         H265Bs_PutBits(bs, 0, 22); // reserved
-        H265Bs_PutBits(bs, m_profile_level.general_level_idc, 8);
+        H265Bs_PutBits(bs, param->general_level_idc, 8);
+
         if (max_sub_layers > 1) {
             VM_ASSERT(0);
         }
@@ -170,10 +174,10 @@ void H265Encoder::PutProfileLevel(H265BsReal *_bs, Ipp8u profile_present_flag, I
 
 #define PUTBITS_32(code) { H265Bs_PutBits(bs, ((Ipp32u)(code)>>16), 16); H265Bs_PutBits(bs, ((code)&0xffff), 16);}
 
-mfxStatus H265Encoder::PutVPS(H265BsReal *_bs)
+mfxStatus H265FrameEncoder::PutVPS(H265BsReal *_bs)
 {
     Ipp32s i, j;
-    H265VidParameterSet *vps = &(m_vps);
+    H265VidParameterSet *vps = m_videoParam.m_vps;//&(m_vps);
     H265BsReal *bs = _bs;
 
     H265Bs_PutBits(bs, vps->vps_video_parameter_set_id, 4);
@@ -223,7 +227,7 @@ mfxStatus H265Encoder::PutVPS(H265BsReal *_bs)
     return MFX_ERR_NONE;
 }
 
-mfxStatus H265Encoder::PutSPS(H265BsReal *_bs)
+mfxStatus H265FrameEncoder::PutSPS(H265BsReal *_bs)
 {
     Ipp32s i;
     H265SeqParameterSet *sps = &(m_sps);
@@ -340,7 +344,7 @@ mfxStatus H265Encoder::PutSPS(H265BsReal *_bs)
     return MFX_ERR_NONE;
 }
 
-mfxStatus H265Encoder::PutPPS(H265BsReal *_bs)
+mfxStatus H265FrameEncoder::PutPPS(H265BsReal *_bs)
 {
     Ipp32s i;
     H265PicParameterSet *pps = &(m_pps);
@@ -410,7 +414,7 @@ mfxStatus H265Encoder::PutPPS(H265BsReal *_bs)
     return MFX_ERR_NONE;
 }
 
-mfxStatus H265Encoder::PutShortTermRefPicSet(H265BsReal *_bs, const H265ShortTermRefPicSet *rps, Ipp32s idx)
+mfxStatus H265FrameEncoder::PutShortTermRefPicSet(H265BsReal *_bs, const H265ShortTermRefPicSet *rps, Ipp32s idx)
 {
     const H265ShortTermRefPicSet *spsRps = m_sps.m_shortRefPicSet;
     Ipp32s i;
@@ -448,7 +452,7 @@ mfxStatus H265Encoder::PutShortTermRefPicSet(H265BsReal *_bs, const H265ShortTer
 }
 
 
-mfxStatus H265Encoder::PutSliceHeader(H265BsReal *_bs, H265Slice *slice)
+mfxStatus H265FrameEncoder::PutSliceHeader(H265BsReal *_bs, H265Slice *slice)
 {
     Ipp32u i;
     H265SeqParameterSet *sps = &(m_sps);
@@ -589,96 +593,124 @@ mfxStatus H265Encoder::PutSliceHeader(H265BsReal *_bs, H265Slice *slice)
     return MFX_ERR_NONE;
 }
 
-mfxStatus H265Encoder::WriteBitstream_Internal(mfxBitstream *mfxBS, H265NALUnit& nal, Ipp32s bs_main_id, Ipp32s& overheadBytes)
+
+mfxStatus H265FrameEncoder::WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s bs_main_id, Ipp32s& overheadBytes, bool isVPSHeader)
 {
-    if (m_videoParam.threading_by_rows) {
-        for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
-            H265Slice *pSlice = m_slices + curr_slice;
-            H265EncoderRowInfo *row_info;
+    H265NALUnit nal;
+    nal.nuh_layer_id = 0;
+    nal.nuh_temporal_id = 0;
 
-            row_info = &pSlice->m_row_info;
-            if (m_pps.entropy_coding_sync_enabled_flag) {
-                for (Ipp32u i = 0; i < pSlice->num_entry_point_offsets; i++) {
-                    Ipp32u offset_add = 0;
-                    Ipp8u *curPtr = m_bs[row_info->bs_id].m_base.m_pbsBase + row_info->offset;
-
-                    for (Ipp32s j = 1; j < row_info->size - 1; j++) {
-                        if (!curPtr[j - 1] && !curPtr[j] && !(curPtr[j + 1] & 0xfc)) {
-                            j++;
-                            offset_add ++;
-                        }
-                    }
-
-                    pSlice->entry_point_offset[i] = row_info->size + offset_add;
-                    row_info = m_row_info + pSlice->row_first + i + 1;
-                }
-                row_info = &pSlice->m_row_info;
-            }
-
-            m_bs[bs_main_id].Reset();
-            PutSliceHeader(&m_bs[bs_main_id], pSlice);
-            overheadBytes += H265Bs_GetBsSize(&m_bs[bs_main_id]);
-            if (m_pps.entropy_coding_sync_enabled_flag) {
-                for (Ipp32u row = pSlice->row_first; row <= pSlice->row_last; row++) {
-                    Ipp32s ithread = row_info->bs_id;
-                    small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[ithread].m_base.m_pbsBase + row_info->offset, row_info->size);
-                    m_bs[bs_main_id].m_base.m_pbs += row_info->size;
-                    row_info = m_row_info + row + 1;
-                }
-            }
-            else {
-                small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[row_info->bs_id].m_base.m_pbsBase + row_info->offset, row_info->size);
-                m_bs[bs_main_id].m_base.m_pbs += row_info->size;
-            }
-            nal.nal_unit_type = (Ipp8u)(pSlice->IdrPicFlag ? NAL_UT_CODED_SLICE_IDR :
-                (m_pCurrentFrame->m_poc >= 0 ? NAL_UT_CODED_SLICE_TRAIL_R :
-                (m_pCurrentFrame->m_isRef ? NAL_UT_CODED_SLICE_DLP : NAL_UT_CODED_SLICE_RADL_N)));
-            m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
-        }
+    if (isVPSHeader) {
+        //m_bs[bs_main_id].Reset();
+        PutVPS(&m_bs[bs_main_id]);
+        m_bs[bs_main_id].WriteTrailingBits();
+        nal.nal_unit_type = NAL_UT_VPS;
+        overheadBytes += m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
     }
-    else {
-        for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
-            H265Slice *pSlice = m_slices + curr_slice;
-            Ipp32s ctb_row = pSlice->row_first;
 
-            if (m_pps.entropy_coding_sync_enabled_flag) {
-                for (Ipp32u i = 0; i < pSlice->num_entry_point_offsets; i++) {
-                    Ipp32u offset_add = 0;
-                    Ipp8u *curPtr = m_bs[ctb_row].m_base.m_pbsBase;
-                    Ipp32s size = H265Bs_GetBsSize(&m_bs[ctb_row]);
+    if (m_task->m_frameOrigin->m_isIdrPic) {
+        //m_bs[bs_main_id].Reset();
 
-                    for (Ipp32s j = 1; j < size - 1; j++) {
-                        if (!curPtr[j - 1] && !curPtr[j] && !(curPtr[j + 1] & 0xfc)) {
-                            j++;
-                            offset_add ++;
-                        }
-                    }
+        PutSPS(&m_bs[bs_main_id]);
+        m_bs[bs_main_id].WriteTrailingBits();
+        nal.nal_unit_type = NAL_UT_SPS;
+        m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
 
-                    pSlice->entry_point_offset[i] = size + offset_add;
-                    ctb_row ++;
-                }
-            }
-            m_bs[bs_main_id].Reset();
-            PutSliceHeader(&m_bs[bs_main_id], pSlice);
-            overheadBytes += H265Bs_GetBsSize(&m_bs[bs_main_id]);
-            if (m_pps.entropy_coding_sync_enabled_flag) {
-                for (Ipp32u row = pSlice->row_first; row <= pSlice->row_last; row++) {
-                    Ipp32s size = H265Bs_GetBsSize(&m_bs[row]);
-                    small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[row].m_base.m_pbsBase, size);
-                    m_bs[bs_main_id].m_base.m_pbs += size;
-                }
-            }
-
-            nal.nal_unit_type = (Ipp8u)(pSlice->IdrPicFlag ? NAL_UT_CODED_SLICE_IDR :
-                (m_pCurrentFrame->m_poc >= 0 ? NAL_UT_CODED_SLICE_TRAIL_R :
-                (m_pCurrentFrame->m_isRef ? NAL_UT_CODED_SLICE_DLP : NAL_UT_CODED_SLICE_RADL_N)));
-
-            m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
-        }
+        PutPPS(&m_bs[bs_main_id]);
+        m_bs[bs_main_id].WriteTrailingBits();
+        nal.nal_unit_type = NAL_UT_PPS;
+        overheadBytes += m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
     }
 
     return MFX_ERR_NONE;
 }
+
+mfxStatus H265FrameEncoder::WriteBitstreamPayload(mfxBitstream *mfxBS, Ipp32s bs_main_id, Ipp32s& overheadBytes)
+{
+    H265NALUnit nal;
+    nal.nuh_layer_id = 0;
+    nal.nuh_temporal_id = 0;
+
+    //return MFX_ERR_NONE;
+
+    for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
+        H265Slice *pSlice = m_task->m_slices + curr_slice;
+
+        if (m_pps.entropy_coding_sync_enabled_flag || m_pps.tiles_enabled_flag) {
+            Ipp32s ctb_row = pSlice->row_first;
+
+            for (Ipp32u i = 0; i < pSlice->num_entry_point_offsets; i++) {
+                Ipp32u offset_add = 0;
+                Ipp32s bs_idx = m_pps.entropy_coding_sync_enabled_flag ? ctb_row++ : i;
+                Ipp8u *curPtr = m_bs[bs_idx].m_base.m_pbsBase;
+                Ipp32s size = H265Bs_GetBsSize(&m_bs[bs_idx]);
+
+                for (Ipp32s j = 1; j < size - 1; j++) {
+                    if (!curPtr[j - 1] && !curPtr[j] && !(curPtr[j + 1] & 0xfc)) {
+                        j++;
+                        offset_add ++;
+                    }
+                }
+
+                pSlice->entry_point_offset[i] = size + offset_add;
+            }
+        }
+
+        m_bs[bs_main_id].Reset();
+        PutSliceHeader(&m_bs[bs_main_id], pSlice);
+        overheadBytes += H265Bs_GetBsSize(&m_bs[bs_main_id]);
+
+        if (m_pps.entropy_coding_sync_enabled_flag) {
+            for (Ipp32u row = pSlice->row_first; row <= pSlice->row_last; row++) {
+                Ipp32s size = H265Bs_GetBsSize(&m_bs[row]);
+                small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[row].m_base.m_pbsBase, size);
+                m_bs[bs_main_id].m_base.m_pbs += size;
+            }
+        } else if (m_pps.tiles_enabled_flag) {
+            for (Ipp32u i = 0; i < pSlice->num_entry_point_offsets + 1; i++) {
+                Ipp32s size = H265Bs_GetBsSize(&m_bs[i]);
+                small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[i].m_base.m_pbsBase, size);
+                m_bs[bs_main_id].m_base.m_pbs += size;
+            }
+        } else {
+            H265EncoderRowInfo *row_info = &pSlice->m_row_info;
+            small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[row_info->bs_id].m_base.m_pbsBase + row_info->offset, row_info->size);
+            m_bs[bs_main_id].m_base.m_pbs += row_info->size;
+        }
+
+        nal.nal_unit_type = (Ipp8u)(pSlice->IdrPicFlag ? NAL_UT_CODED_SLICE_IDR :
+            (m_task->m_frameOrigin->m_poc >= 0 ? NAL_UT_CODED_SLICE_TRAIL_R :
+            (m_task->m_frameOrigin->m_isRef ? NAL_UT_CODED_SLICE_DLP : NAL_UT_CODED_SLICE_RADL_N)));
+
+        m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus H265FrameEncoder::WriteBitstream(mfxBitstream *mfxBS, H265NALUnit& nal, Ipp32s bs_main_id, Ipp32s& overheadBytes)
+
+
+mfxStatus H265FrameEncoder::GetOutputData(mfxBitstream *mfxBS, Ipp32s & overheadBytes)
+{
+    //Ipp32s overheadBytes = 0;
+    overheadBytes = 0;
+    Ipp32s bs_main_id = m_videoParam.num_bs_subsets;
+
+    m_bs[bs_main_id].Reset();
+    WriteBitstreamHeaderSet(mfxBS, bs_main_id, overheadBytes, 0 == m_task->m_encOrder); // const part should moved on top level
+    WriteBitstreamPayload(mfxBS, bs_main_id, overheadBytes);
+
+    // fill bitstream params
+    mfxBitstream* bs = mfxBS;
+    Task* codedTask = m_task;
+    bs->TimeStamp = codedTask->m_timeStamp;
+    mfxI32 dpb_output_delay = m_videoParam.m_vps->vps_max_num_reorder_pics[0] + codedTask->m_frameOrder - codedTask->m_encOrder;
+    bs->DecodeTimeStamp = mfxI64(bs->TimeStamp - m_videoParam.tcDuration90KHz * dpb_output_delay); // calculate DTS from PTS
+    bs->FrameType = (mfxU16)codedTask->m_frameType;
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus H265FrameEncoder::GetOutputData(mfxBitstream *mfxBS)
 
 } // namespace
 

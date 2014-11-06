@@ -9,6 +9,8 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../decode/h265/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode/h265/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h264_preenc )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h265/include )
 
 
 list( APPEND umc_dirs
@@ -234,6 +236,13 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h265_encode/src )
     ${prefix}/genx_h265_cmcode_bdw_isa.cpp
   )
 endforeach()
+
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h265/src )
+  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+  list( APPEND sources.plus ${srcs})
+endforeach()
+
+
 
 foreach( variant sw hw )
   if( __ARCH MATCHES intel64 )
