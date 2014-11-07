@@ -21,6 +21,8 @@
 #include "libmfx_core_interface.h"
 #include "mfx_camera_plugin_utils.h"
 #include "genx_hsw_camerapipe_isa.h"
+#include "genx_bdw_camerapipe_isa.h"
+#include "genx_skl_camerapipe_isa.h"
 
 namespace
 {
@@ -33,7 +35,7 @@ CmProgram * ReadProgram(CmDevice * device, const mfxU8 * buffer, size_t len)
     int result = CM_SUCCESS;
     CmProgram * program = 0;
 
-    if ((result = ::ReadProgramJit(device, program, buffer, (mfxU32)len)) != CM_SUCCESS)
+    if ((result = ::ReadProgram(device, program, buffer, (mfxU32)len)) != CM_SUCCESS)
         throw CmRuntimeError();
 
     return program;
@@ -1002,22 +1004,32 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
         kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(greenSurf));
         kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
     }
-    if ( ! ccm )
-    {
-        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(outSurf));
-    }
-    else
+
+    if ( ccm )
     {
         for(int k = 0; k < 3; k++)
             for(int z = 0; z < 3; z++)
                 m_ccm(k*3 + z) = (float)ccm->CCM[k][z];
         kernel_FwGamma1->SetKernelArg( i++, m_ccm.get_size_data(), m_ccm.get_addr_data());
     }
+    else if ( m_caps.bOutToARGB16 )
+    {
+        // in case of 16bit output, kernel needs ccm vector even if ccm is not enabled
+        for(int k = 0; k < 3; k++)
+            for(int z = 0; z < 3; z++)
+                m_ccm(k*3 + z) = 1.0f;
+         kernel_FwGamma1->SetKernelArg( i++, m_ccm.get_size_data(), m_ccm.get_addr_data());
+    }
+    else
+    {
+        kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(outSurf));
+    }
+
     kernel_FwGamma1->SetKernelArg(i++, sizeof(int), &threadsheight      );
     kernel_FwGamma1->SetKernelArg(i++, sizeof(int), &bitDepth           );
     kernel_FwGamma1->SetKernelArg(i++, sizeof(int), &framewidth_in_bytes);
     kernel_FwGamma1->SetKernelArg(i++, sizeof(int), &height             );
-    if ( ccm )
+    if ( ccm || m_caps.bOutToARGB16 )
     {
         kernel_FwGamma1->SetKernelArg(i++, sizeof(SurfaceIndex), LUTIndex);
     }
@@ -1080,22 +1092,30 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurf,
         kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
     }
 
-    if ( ! ccm )
-    {
-        kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &outSurfIndex     );
-    }
-    else
+    if ( ccm )
     {
         for(int k = 0; k < 3; k++)
             for(int z = 0; z < 3; z++)
                 m_ccm(k*3 + z) = (float)ccm->CCM[k][z];
         kernel_FwGamma->SetKernelArg( i++, m_ccm.get_size_data(), m_ccm.get_addr_data());
     }
+    else if ( m_caps.bOutToARGB16 )
+    {
+        // in case of 16bit output, kernel needs ccm vector even if ccm is not enabled
+        for(int k = 0; k < 3; k++)
+            for(int z = 0; z < 3; z++)
+                m_ccm(k*3 + z) = 1.0f;
+         kernel_FwGamma->SetKernelArg( i++, m_ccm.get_size_data(), m_ccm.get_addr_data());
+    }
+    else
+    {
+        kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), &outSurfIndex);
+    }
     kernel_FwGamma->SetKernelArg(i++, sizeof(int), &threadsheight      );
     kernel_FwGamma->SetKernelArg(i++, sizeof(int), &bitDepth           );
     kernel_FwGamma->SetKernelArg(i++, sizeof(int), &framewidth_in_bytes);
     kernel_FwGamma->SetKernelArg(i++, sizeof(int), &height             );
-    if ( ccm )
+    if ( ccm || m_caps.bOutToARGB16 )
     {
         kernel_FwGamma->SetKernelArg(i++, sizeof(SurfaceIndex), LUTIndex);
     }
@@ -1188,7 +1208,12 @@ void CmContext::Setup(
     if (m_device->CreateQueue(m_queue) != CM_SUCCESS)
         throw CmRuntimeError();
 
-    m_program = ReadProgram(m_device, genx_hsw_camerapipe, SizeOf(genx_hsw_camerapipe));
+    if(m_platform == MFX_HW_HSW || m_platform == MFX_HW_HSW_ULT)
+        m_program = ReadProgram(m_device, genx_hsw_camerapipe, SizeOf(genx_hsw_camerapipe));
+    else if(m_platform == MFX_HW_BDW || m_platform == MFX_HW_CHV)
+        m_program = ReadProgram(m_device, genx_bdw_camerapipe, SizeOf(genx_bdw_camerapipe));
+    //else if(m_platform == MFX_HW_SCL || m_platform == MFX_HW_BXT)
+    //    m_program = ReadProgram(m_device, genx_skl_camerapipe, SizeOf(genx_skl_camerapipe));
 
     CreateCameraKernels();
     CreateCmTasks();

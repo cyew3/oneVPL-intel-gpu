@@ -347,7 +347,7 @@ mfxStatus MFXCamera_Plugin::ReallocateInternalSurfaces(mfxVideoParam &newParam, 
     sts = m_aux8.ReallocCmSurfaces(m_cmDevice, request);
     MFX_CHECK_STS(sts);
 
-    if (m_Caps.bColorConversionMatrix)
+    if (m_Caps.bColorConversionMatrix || m_Caps.bOutToARGB16 )
     {
         if ( ! m_LUTSurf )
             m_LUTSurf = CreateBuffer(m_cmDevice, 65536 * 4);
@@ -444,8 +444,9 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
                                   m_FrameSizeExtra.TileHeightPadded,
                                   CM_SURFACE_FORMAT_A8);
 
-    if (m_Caps.bColorConversionMatrix)
+    if (m_Caps.bColorConversionMatrix || m_Caps.bOutToARGB16 )
     {
+        // in case of 16bit output kernel need LUT srface, even it's not used.
         // Why such size? Copy-paste from VPG example.
         // TODO: need to check how to calculate size properly
         m_LUTSurf = CreateBuffer(m_cmDevice, 65536 * 4);
@@ -849,7 +850,7 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
     if (m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix)
     {
         SurfaceIndex *LUTIndex = NULL;
-        if ( m_Caps.bColorConversionMatrix )
+        if ( m_Caps.bColorConversionMatrix || m_Caps.bOutToARGB16 )
         {
             m_LUTSurf->GetIndex(LUTIndex);
         }
