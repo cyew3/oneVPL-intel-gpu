@@ -592,6 +592,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
 
     ENCODE_CAPS hwCaps = {};
     mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*par);
+    mfxExtCodingOption2 *       extOpt2 = GetExtBuffer(*par);
 
     // let use dedault values if input resolution is 0x0, 1920x1088 - should cover almost all cases
     mfxU32 Width  = par->mfx.FrameInfo.Width == 0 ? 1920 : par->mfx.FrameInfo.Width;
@@ -635,6 +636,10 @@ mfxStatus ImplementationAvc::QueryIOSurf(
             ? MFX_MEMTYPE_OPAQUE_FRAME
             : MFX_MEMTYPE_EXTERNAL_FRAME;
         request->NumFrameMin = (mfxU16) AsyncRoutineEmulator(tmp).GetTotalGreediness() + tmp.AsyncDepth - 1;
+
+        if (extOpt2 && IsOn(extOpt2->UseRawRef))
+            request->NumFrameMin += tmp.mfx.NumRefFrame;
+
         // strange thing but for backward compatibility:
         //   msdk needs to tell how many surfaces application will need for reordering
         //   even if application does this reordering(!!!)
@@ -1758,17 +1763,36 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
 {
     m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_WAIT_ENCODE;
 
-    if (m_inputFrameType == MFX_IOPATTERN_IN_VIDEO_MEMORY)
-        m_core->DecreaseReference(&task->m_yuv->Data);
+    mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(m_video);
 
     int ffid = task->m_fid[0];
     ArrayDpbFrame const & iniDpb = task->m_dpb[ffid];
     ArrayDpbFrame const & finDpb = task->m_dpbPostEncoding;
+
     for (mfxU32 i = 0; i < iniDpb.Size(); i++)
+    {
         if (std::find_if(finDpb.Begin(), finDpb.End(), CompareByMidRec(iniDpb[i].m_midRec)) == finDpb.End())
+        {
             ReleaseResource(m_rec, iniDpb[i].m_midRec);
 
-    ReleaseResource(m_raw, task->m_midRaw);
+            if (IsOn(extOpt2.UseRawRef))
+            {
+                if (m_video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
+                    m_core->DecreaseReference(&iniDpb[i].m_yuvRaw->Data);
+
+                ReleaseResource(m_raw, iniDpb[i].m_midRaw);
+            }
+        }
+    }
+
+    if (IsOff(extOpt2.UseRawRef) || (task->m_reference[0] + task->m_reference[1]) == 0)
+    {
+        if (m_inputFrameType == MFX_IOPATTERN_IN_VIDEO_MEMORY)
+            m_core->DecreaseReference(&task->m_yuv->Data);
+
+        ReleaseResource(m_raw, task->m_midRaw);
+    }
+
     ReleaseResource(m_bit, task->m_midBit[0]);
     ReleaseResource(m_bit, task->m_midBit[1]);
     if ((task->m_reference[0] + task->m_reference[1]) == 0)

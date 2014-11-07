@@ -347,13 +347,15 @@ mfxStatus SetPrivateParams(
     MfxVideoParam const & par,
     VADisplay    vaDisplay,
     VAContextID  vaContextEncode,
-    VABufferID & privateParams_id)
+    VABufferID & privateParams_id,
+    mfxEncodeCtrl const * pCtrl = 0)
 {
     if (!IsSupported__VAEncMiscParameterPrivate()) return MFX_ERR_UNSUPPORTED;
 
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterPrivate *private_param;
+    mfxExtCodingOption2 const * extOpt2  = GetExtBuffer(par);
 
     if ( privateParams_id != VA_INVALID_ID)
     {
@@ -378,6 +380,15 @@ mfxStatus SetPrivateParams(
     private_param = (VAEncMiscParameterPrivate *)misc_param->data;
 
     private_param->target_usage = (unsigned int)(par.mfx.TargetUsage);
+    private_param->useRawPicForRef = extOpt2 && IsOn(extOpt2->UseRawRef);
+
+    if (pCtrl)
+    {
+        mfxExtCodingOption2 const * extOpt2rt  = GetExtBuffer(*pCtrl);
+
+        if (extOpt2rt)
+            private_param->useRawPicForRef = IsOn(extOpt2rt->UseRawRef);
+    }
 
     vaUnmapBuffer(vaDisplay, privateParams_id);
 
@@ -2094,6 +2105,11 @@ mfxStatus VAAPIEncoder::Execute(
         }
     }
 
+    if (ctrlOpt2)
+    {
+        MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetPrivateParams(m_videoParam, m_vaDisplay, 
+                                                               m_vaContextEncode, m_privateParamsId, &task.m_ctrl), MFX_ERR_DEVICE_FAILED);
+    }
     if (VA_INVALID_ID != m_privateParamsId) configBuffers[buffersCount++] = m_privateParamsId;
 
     assert(buffersCount <= configBuffers.size());

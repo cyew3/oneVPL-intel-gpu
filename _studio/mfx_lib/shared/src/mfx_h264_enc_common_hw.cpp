@@ -964,21 +964,20 @@ namespace
 mfxU32 MfxHwH264Encode::CalcNumSurfRaw(MfxVideoParam const & video)
 {
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
-    mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(video);
 
     if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
         return video.AsyncDepth + video.mfx.GopRefDist - 1 +
             IPP_MAX(1, extOpt2->LookAheadDepth) + (video.AsyncDepth - 1) +
-            (IsOn(extDdi->RefRaw) ? video.mfx.NumRefFrame : 0);
+            (IsOn(extOpt2->UseRawRef) ? video.mfx.NumRefFrame : 0);
     else
         return 0;
 }
 
 mfxU32 MfxHwH264Encode::CalcNumSurfRecon(MfxVideoParam const & video)
 {
-    mfxExtCodingOptionDDI * extDdi = GetExtBuffer(video);
+    mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
 
-    if (IsOn(extDdi->RefRaw))
+    if (IsOn(extOpt2->UseRawRef))
         return video.mfx.NumRefFrame + (video.AsyncDepth - 1) +
             (video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ? video.mfx.GopRefDist : 1);
     else
@@ -1014,10 +1013,9 @@ mfxU32 MfxHwH264Encode::CalcNumTasks(MfxVideoParam const & video)
     assert(video.mfx.GopRefDist > 0);
     assert(video.AsyncDepth > 0);
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
-    mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(video);
 
     return video.mfx.GopRefDist + (video.AsyncDepth - 1) + IPP_MAX(1, extOpt2->LookAheadDepth) +
-        (IsOn(extDdi->RefRaw) ? video.mfx.NumRefFrame : 0);
+        (IsOn(extOpt2->UseRawRef) ? video.mfx.NumRefFrame : 0);
 }
 
 mfxI64 MfxHwH264Encode::CalcDTSFromPTS(
@@ -1544,10 +1542,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
 
     if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
-        mfxExtCodingOptionDDI *    extDdi  = GetExtBuffer(par);
+        mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
         //mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(par);
 
-        mfxU32 numFrameMin = par.mfx.GopRefDist + (IsOn(extDdi->RefRaw) ? par.mfx.NumRefFrame : 0) + par.AsyncDepth - 1;
+        mfxU32 numFrameMin = par.mfx.GopRefDist + (IsOn(extOpt2->UseRawRef) ? par.mfx.NumRefFrame : 0) + par.AsyncDepth - 1;
 
         if (IsMvcProfile(par.mfx.CodecProfile))
         {
@@ -2313,6 +2311,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckTriStateOption(extOpt2->RepeatPPS))               changed = true;
     if (!CheckTriStateOption(extOpt2->FixedFrameRate))          changed = true;
     if (!CheckTriStateOption(extOpt2->DisableVUI))              changed = true;
+    if (!CheckTriStateOption(extOpt2->UseRawRef))               changed = true;
 
     if (extOpt2->BufferingPeriodSEI > MFX_BPSEI_IFRAME)
     {
@@ -3776,6 +3775,14 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(par);
     mfxExtSVCRateControl *     extRc   = GetExtBuffer(par);
     
+    if (extOpt2->UseRawRef)
+        extDdi->RefRaw = extOpt2->UseRawRef;
+    else if (!extOpt2->UseRawRef)
+        extOpt2->UseRawRef = extDdi->RefRaw;
+
+    if (extOpt2->UseRawRef == MFX_CODINGOPTION_UNKNOWN)
+        extOpt2->UseRawRef = MFX_CODINGOPTION_OFF;
+
 #if defined(LOWPOWERENCODE_AVC)
     if (IsOn(par.mfx.LowPower))
     {

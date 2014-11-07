@@ -987,6 +987,9 @@ namespace
         ref.m_refPicFlag[!fid]  = !!(task.m_type[!fid] & MFX_FRAMETYPE_REF);
         if (task.m_fieldPicFlag)
             ref.m_refPicFlag[!fid] = 0;
+
+        ref.m_midRaw = task.m_midRaw;
+        ref.m_yuvRaw = task.m_yuv;
     }
 
     bool ValidateLtrForTemporalScalability(

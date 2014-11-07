@@ -24,11 +24,66 @@
 #define VA_CODED_BUF_STATUS_BAD_BITSTREAM 0x2000
 #define VA_CODED_BUF_STATUS_TEAR_DOWN 0x4000
 
+// Private per frame encoder controls, once set they will persist for all future frames
+// until it is updated again.
 typedef struct _VAEncMiscParameterPrivate
 {
     unsigned int target_usage; // Valid values 1-7 for AVC & MPEG2.
-    unsigned int reserved[7];  // Reserved for future use.
+    union
+    {   
+        struct
+        {
+            // Use raw frames for reference instead of reconstructed frames.
+            unsigned int useRawPicForRef                    : 1;
+            // Disables skip check for ENC. 
+            unsigned int skipCheckDisable                   : 1;
+            // Indicates app will override default driver FTQ settings using FTQEnable.
+            unsigned int FTQOverride                        : 1;
+            // Enables/disables FTQ.
+            unsigned int FTQEnable                          : 1;    
+            // Indicates the app will provide the Skip Threshold LUT to use when FTQ is 
+            // enabled (FTQSkipThresholdLUT), else default driver thresholds will be used.
+            unsigned int FTQSkipThresholdLUTInput           : 1; 
+            // Indicates the app will provide the Skip Threshold LUT to use when FTQ is 
+            // disabled (NonFTQSkipThresholdLUT), else default driver thresholds will be used.
+            unsigned int NonFTQSkipThresholdLUTInput        : 1; 
+            // Indicates the app will provide the lambda LUT in lambdaValueLUT[], else default
+            // driver lambda values will be used.
+            unsigned int lambdaValueLUTInput                : 1;
+            // Control to enable the ENC mode decision algorithm to bias to fewer B Direct/Skip types.
+            // Applies only to B frames, all other frames will ignore this setting.
+            unsigned int directBiasAdjustmentEnable         : 1;
+            // Enables global motion bias.
+            unsigned int globalMotionBiasAdjustmentEnable   : 1;
+            // MV cost scaling ratio for HME predictors.  It is used when 
+            // globalMotionBiasAdjustmentEnable == 1, else it is ignored.  Values are:
+            //      0: set MV cost to be 0 for HME predictor.
+            //      1: scale MV cost to be 1/2 of the default value for HME predictor.
+            //      2: scale MV cost to be 1/4 of the default value for HME predictor.
+            //      3: scale MV cost to be 1/8 of the default value for HME predictor.
+            unsigned int HMEMVCostScalingFactor             : 2;
+
+        };
+        unsigned int encControls;
+    };
+
+    // Maps QP to skip thresholds when FTQ is enabled.  Valid range is 0-255.
+    unsigned char FTQSkipThresholdLUT[52];
+    // Maps QP to skip thresholds when FTQ is disabled.  Valid range is 0-65535.
+    unsigned short NonFTQSkipThresholdLUT[52];
+    // Maps QP to lambda values.  Valid range is 0-255.
+    unsigned char lambdaValueLUT[52];
+
+    unsigned int reserved[8];  // Reserved for future use.
+
 } VAEncMiscParameterPrivate;
+
+// Force MB's to be non skip for both ENC and PAK.  The width of the MB map
+// Surface is (width of the Picture in MB unit) * 1 byte, multiple of 64 bytes. 
+/// The height is (height of the picture in MB unit). The picture is either 
+// frame or non-interleaved top or bottom field.  If the application provides this 
+// surface, it will override the "skipCheckDisable" setting in VAEncMiscParameterPrivate.
+#define VAEncMacroblockDisableSkipMapBufferType     -7
 
 /*VAEncrytpionParameterBuffer*/
 typedef struct _VAEncryptionParameterBuffer

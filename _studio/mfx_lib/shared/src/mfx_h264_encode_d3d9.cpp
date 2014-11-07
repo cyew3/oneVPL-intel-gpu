@@ -188,6 +188,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     mfxExtPpsHeader const *       extPps = GetExtBuffer(par);
     mfxExtSpsHeader const *       extSps = GetExtBuffer(par);
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(par);
+    mfxExtCodingOption2   const & extOpt2 = GetExtBufferRef(par);
 
     pps.pic_parameter_set_id                    = extPps->picParameterSetId;
     pps.seq_parameter_set_id                    = extSps->seqParameterSetId;
@@ -195,7 +196,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     pps.InterleavedFieldBFF                     = 0;
     pps.ProgressiveField                        = 0;
     pps.NumSlice                                = mfxU8(par.mfx.NumSlice);
-    pps.bUseRawPicForRef                        = IsOn(extDdi->RefRaw);
+    pps.bUseRawPicForRef                        = IsOn(extOpt2.UseRawRef);
     pps.bDisableHeaderPacking                   = 0;
     pps.bEnableDVMEChromaIntraPrediction        = 1;
     pps.bEnableDVMEReferenceLocationDerivation  = 1;
@@ -228,6 +229,8 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     mfxU32                               fieldId,
     ENCODE_SET_PICTURE_PARAMETERS_H264 & pps)
 {
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(task.m_ctrl);
+
     pps.NumSlice                                = mfxU8(task.m_numSlice[fieldId]);
     pps.CurrOriginalPic.Index7Bits              = mfxU8(task.m_idxRecon);
     pps.CurrOriginalPic.AssociatedFlag          = mfxU8(fieldId);
@@ -252,6 +255,9 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     pps.IntraInsertionSize                      = task.m_IRState.IntraSize;
     pps.QpDeltaForInsertedIntra                 = mfxU8(task.m_IRState.IntRefQPDelta);
 //  Intra refresh }
+
+    if (extOpt2)
+        pps.bUseRawPicForRef = IsOn(extOpt2->UseRawRef);
 
     mfxU32 i = 0;
     for (; i < task.m_dpb[fieldId].Size(); i++)

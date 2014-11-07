@@ -737,6 +737,9 @@ namespace MfxHwH264Encode
         CmSurface2D *   m_cmRaw;
         CmSurface2D *   m_cmRawLa;
         CmBufferUP *    m_cmMb;
+
+        mfxMemId          m_midRaw; // for RefRaw mode
+        mfxFrameSurface1* m_yuvRaw; // for RefRaw mode
     };
 
     inline bool operator ==(DpbFrame const & l, DpbFrame const & r)
