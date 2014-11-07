@@ -6161,7 +6161,10 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
 #endif
 }
 
+
 #if defined(MFX_VA)
+
+enum { PU256x256, PU128x128, PU64x64, PU32x32, PU32x16, PU16x32, PU16x16, PU16x8, PU8x16, PU8x8, PU8x4, PU4x8, PU_MAX };
 
 /* helper function */
 /* should match fei part */
@@ -6177,30 +6180,6 @@ Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh)
         { FEI_8x4_US,     FEI_8x8, FEI_8x16_US,        -1 }, //W=8
         {         -1, FEI_16x8_US,   FEI_16x16, FEI_16x32 }, //W=16
         {         -1,          -1,   FEI_32x16, FEI_32x32 }, //W=32
-    };
-
-    return tab_lookUpPuSize[tab_wh2Idx[puw / 4 - 1]][tab_wh2Idx[puh / 4 - 1]];
-}
-
-#else
-
-enum {
-    PU256x256, PU128x128, PU64x64, PU32x32, PU32x16, PU16x32, PU16x16, PU16x8, PU8x16, PU8x8, PU8x4, PU4x8, PU_MAX
-};
-
-/* helper function */
-Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh)
-{
-    const Ipp32s MAX_PU_WIDTH = 64;
-    const Ipp32s MAX_PU_HEIGHT = 64;
-    enum { IDX4, IDX8, IDX16, IDX32, IDX_MAX };
-    static const Ipp8s tab_wh2Idx[MAX_PU_WIDTH >> 2] = { IDX4, IDX8, -1, IDX16, -1, -1, -1, IDX32, -1, -1, -1, -1, -1, -1, -1, -1 };
-    static const Ipp8s tab_lookUpPuSize[IDX_MAX][IDX_MAX] = {
-        //H=  4       8       16       32
-        {    -1,  PU4x8,      -1,      -1 }, //W=4
-        { PU8x4,  PU8x8,  PU8x16,      -1 }, //W=8
-        {    -1, PU16x8, PU16x16, PU16x32 }, //W=16
-        {    -1,     -1, PU32x16, PU32x32 }, //W=32
     };
 
     return tab_lookUpPuSize[tab_wh2Idx[puw / 4 - 1]][tab_wh2Idx[puh / 4 - 1]];
