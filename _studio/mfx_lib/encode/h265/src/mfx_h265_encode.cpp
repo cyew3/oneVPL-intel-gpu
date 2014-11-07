@@ -2834,6 +2834,63 @@ private:
     volatile Ipp32u * m_arg;
 };
 
+//single sthread only!!!
+void MFXVideoENCODEH265::PrepareToEncode(void *pParam)
+{
+    H265EncodeTaskInputParams *inputParam = (H265EncodeTaskInputParams*)pParam;
+
+    AcceptFrameHelper(inputParam->ctrl, NULL, inputParam->surface, inputParam->bs);
+    vm_interlocked_cas32( &inputParam->m_doStage, 2, 1);
+
+    if(NULL == inputParam->bs) {
+        return;
+    }
+
+    Ipp32s stage = vm_interlocked_cas32( &inputParam->m_doStage, 3, 2);
+    if(stage == 2) {
+
+        while( m_outputQueue.size() < (size_t)m_videoParam.m_framesInParallel && !m_encodeQueue.empty() ) {
+            int encIdx = 0;
+            AddNewOutputTask(encIdx);
+        }
+
+        TaskIter it = m_outputQueue.begin();
+        inputParam->m_targetTask    = (*it);
+        inputParam->m_outputQueueSize = m_outputQueue.size();
+
+#if defined (MFX_VA)
+        if (m_videoParam.enableCmFlag) {
+            ProcessFrameFEI(inputParam->m_targetTask);
+        }
+#endif
+        vm_interlocked_cas32( &inputParam->m_doStage, 4, 3);
+
+        m_core->INeedMoreThreadsInside(this);
+
+        if (m_videoParam.num_threads > 1)
+            m_semaphore.Signal(m_videoParam.num_threads - 1);
+        
+#if defined (MFX_VA)
+        if (m_videoParam.enableCmFlag) {
+            //-----
+            Task* nextTask = NULL;
+            if ( inputParam->m_outputQueueSize > 1 ) {
+                TaskIter it = m_outputQueue.begin();
+                it++;
+                nextTask = (*it);
+            } else if ( !m_encodeQueue.empty() ) {
+                TaskIter it2 = m_encodeQueue.begin();
+                nextTask = (*it2);
+            }
+            //----
+            if (nextTask)
+                ProcessFrameFEI_Next(nextTask);
+        }
+#endif // MFX_VA
+    }
+}
+
+
 //!!! THREADING - MASTER FUNCTION!!!
 mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
@@ -2848,68 +2905,13 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     H265EncodeTaskInputParams *inputParam = (H265EncodeTaskInputParams*)pParam;
     mfxStatus sts = MFX_ERR_NONE;    
 
-    // STAGE [1]::[single thread] :: ACCEPT FRAME
+    // [single thread] :: prepare to encode (accept new frame, configuration, paq etc)
     Ipp32s stage = vm_interlocked_cas32( &inputParam->m_doStage, 1, 0);
     if (0 == stage) {
-        sts = th->AcceptFrameHelper(inputParam->ctrl, NULL, inputParam->surface, inputParam->bs);
-        vm_interlocked_cas32( &inputParam->m_doStage, 2, 1);
-        MFX_CHECK_STS(sts);
-
-        if(NULL == inputParam->bs) {
-            return MFX_TASK_DONE;
-        }
-
-        stage = vm_interlocked_cas32( &inputParam->m_doStage, 3, 2);
-        if(stage == 2) {
-
-            while( th->m_outputQueue.size() < (size_t)th->m_videoParam.m_framesInParallel && !th->m_encodeQueue.empty() ) {
-                int encIdx = 0;
-                th->AddNewOutputTask(encIdx);
-            }
-
-            TaskIter it = th->m_outputQueue.begin();
-            inputParam->m_targetTask    = (*it);
-            inputParam->m_outputQueueSize = th->m_outputQueue.size();
-
-#if defined (MFX_VA)
-            if (th->m_videoParam.enableCmFlag) {
-
-                th->ProcessFrameFEI(inputParam->completedTask);
-                inputParam->m_doStageFEI = 0;
-            }
-#endif
-            vm_interlocked_cas32( &inputParam->m_doStage, 4, 3);
-
-            th->m_core->INeedMoreThreadsInside(th);
-
-            if (th->m_videoParam.num_threads > 1)
-                th->m_semaphore.Signal(th->m_videoParam.num_threads - 1);
-
-            // single thread - FEI (Next)
-#if defined (MFX_VA)
-            if (th->m_videoParam.enableCmFlag) {
-                Ipp32s stageFEI = vm_interlocked_cas32( &inputParam->m_doStageFEI, 1, 0);
-                if ( stageFEI == 0 ) {
-                    //-----
-                    Task* nextTask = NULL;
-                    if ( inputParam->m_outputQueueSize > 1 ) {
-                        TaskIter it = th->m_outputQueue.begin();
-                        it++;
-                        nextTask = (*it);
-                    } else if ( !th->m_encodeQueue.empty() ) {
-                        TaskIter it2 = th->m_encodeQueue.begin();
-                        nextTask = (*it2);
-                    }
-                    //----
-                    if (nextTask)
-                        th->ProcessFrameFEI_Next(nextTask);
-                }
-            }
-#endif // MFX_VA
-        }
+        th->PrepareToEncode(pParam);// here <m_doStage> will be switched ->2->3->4 consequentially
     }
 
-    // STAGE [2]::EARLY TERMINATION IF NO EXTERNAL BS
+    // early termination if no external bs 
     if(NULL == inputParam->bs) {
         return MFX_TASK_DONE;
     }
@@ -2926,7 +2928,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         return MFX_TASK_BUSY;
     }
 
-    // STAGE [5]::[multi threading]::FRAME THREADING LOOP
+    // [multi threading]::FRAME THREADING LOOP
     Ipp32u failCounter = 0;
     while (inputParam->m_targetTask->m_statusReport < 3 || inputParam->m_targetTask->m_statusReport == 7) {
 
@@ -2940,7 +2942,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         for (size_t taskIdx = 0; taskIdx < inputParam->m_outputQueueSize; taskIdx++) {
             Task* nextTask = *beg;
             if(nextTask->m_statusReport == 1 ) {
-                sts = th->EncSolver(nextTask, (taskIdx == 0) ? NULL : &(inputParam->m_targetTask->m_statusReport)); // taskIdx == 0 the same as nextTask == inputParam->completedTask
+                sts = th->EncSolver(nextTask, (taskIdx == 0) ? NULL : &(inputParam->m_targetTask->m_statusReport)); // taskIdx == 0 the same as nextTask == inputParam->targetTask
                 if (sts == 100) {
                     failCounter++;
                 }
@@ -2965,7 +2967,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         }
     }
 
-    // STAGE [5]::OUTPUT READY. STOP Routine
+    // extra stage on TaskCompletion. fake.
     if (Ipp32u stageOnExit = vm_interlocked_cas32( &(inputParam->m_targetTask->m_statusReport), 4, 3) == 3) {
         return MFX_TASK_DONE;
     }

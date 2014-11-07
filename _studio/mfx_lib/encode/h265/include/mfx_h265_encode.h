@@ -167,6 +167,7 @@ private:
     static mfxStatus TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
     static mfxStatus TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
 
+    void PrepareToEncode(void *pParam); // no threas safety. some preparation work (accept new input frame, configuration, fei, paq etc) in single thread mode!
     mfxStatus EncSolver(Task* task, volatile Ipp32u* onExitEvent);
     void SyncOnTaskCompletion(Task* task, mfxBitstream* mfxBs, void *pParam);
 
