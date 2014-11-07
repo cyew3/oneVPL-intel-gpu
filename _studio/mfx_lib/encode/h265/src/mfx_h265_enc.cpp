@@ -1458,7 +1458,7 @@ Ipp8u SameRps(const H265ShortTermRefPicSet *rps1, const H265ShortTermRefPicSet *
     return 1;
 }
 
-void MFXVideoENCODEH265::PrepareToEncode(Task* task)
+void MFXVideoENCODEH265::ConfigureEncodeFrame(Task* task)
 {
     if (m_brc) {
         // to provide bitexact result in case of frame-threading we set Qp here

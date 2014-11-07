@@ -73,10 +73,10 @@ namespace H265Enc {
         // for ParallelFrames > 1
         Ipp32u m_taskID;
         volatile Ipp32u m_doStage;
-        Task*  completedTask;
+        Task*           m_targetTask;      // this task (frame) has to be encoded completely. it is our expected output.
         volatile Ipp32u m_threadCount;
         volatile Ipp32u m_outputQueueSize; // to avoid mutex sync with list::size();
-        volatile Ipp32u m_reencode;          // BRC repack
+        volatile Ipp32u m_reencode;        // BRC repack
 
         // FEI
         volatile Ipp32u m_doStageFEI;
@@ -2482,7 +2482,7 @@ mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstrea
         ReorderFrames(m_inputQueue, m_reorderedQueue, m_videoParam, surface == NULL);
 
     if (!m_reorderedQueue.empty()) {
-        PrepareToEncode(m_reorderedQueue.front());
+        ConfigureEncodeFrame(m_reorderedQueue.front());
         m_lastEncOrder = m_reorderedQueue.front()->m_encOrder;
 
         m_dpb.splice(m_dpb.end(), m_reorderedQueue, m_reorderedQueue.begin());
@@ -2578,7 +2578,7 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
     MFX_CHECK_STS(sts);
     m_outputQueue.splice(m_outputQueue.end(), m_encodeQueue, m_encodeQueue.begin());
 
-    vm_interlocked_cas32( &(m_outputQueue.back()->m_ready), 1, 0);
+    vm_interlocked_cas32( &(m_outputQueue.back()->m_statusReport), 1, 0);
     //printf("\n submitted encOrder %i \n", task->m_encOrder);fflush(stderr);
 
     return MFX_ERR_NONE;
@@ -2642,7 +2642,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
 
         m_pTaskInputParams->m_taskID = m_taskID++;
         m_pTaskInputParams->m_doStage = 0;
-        m_pTaskInputParams->completedTask = NULL;
+        m_pTaskInputParams->m_targetTask = NULL;
         m_pTaskInputParams->m_threadCount = 0;
         m_pTaskInputParams->m_outputQueueSize = 0;
         m_pTaskInputParams->m_reencode = 0;
@@ -2682,17 +2682,17 @@ mfxStatus MFXVideoENCODEH265::EncSolver(Task* task, volatile Ipp32u* onExitEvent
 #endif
 #define x86_pause() _mm_pause()
 
-void MFXVideoENCODEH265::SyncOnTaskCompleted(Task *task, mfxBitstream *mfxBs, void *pParam)
+void MFXVideoENCODEH265::SyncOnTaskCompletion(Task *task, mfxBitstream *mfxBs, void *pParam)
 {
     H265EncodeTaskInputParams *inputParam = (H265EncodeTaskInputParams *)pParam;
 
-    if (vm_interlocked_cas32( &(task->m_ready), 2, 1) == 1) {
+    if (vm_interlocked_cas32( &(task->m_statusReport), 2, 1) == 1) {
+
         // only one thread should go further, others turned around here
         if (!(task->m_frameRecon->m_codedRow == (Ipp32s)m_videoParam.PicHeightInCtbs)) {
-            vm_interlocked_cas32( &(task->m_ready), 1, 2);
+            vm_interlocked_cas32( &(task->m_statusReport), 1, 2);
             return;
         }
-
 
         H265FrameEncoder *frameEnc = m_frameEncoder[task->m_encIdx];
 
@@ -2766,7 +2766,7 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task *task, mfxBitstream *mfxBs, vo
                     tit = m_outputQueue.begin();
                     for( size_t taskIdx = 0; taskIdx < m_outputQueue.size(); taskIdx++ ) { // <- issue with Size()!!!
 
-                        if( (*tit)->m_ready == 1 || taskIdx == 0 ) {
+                        if( (*tit)->m_statusReport == 1 || taskIdx == 0 ) {
                             m_frameEncoder[ (*tit)->m_encIdx ]->SetEncodeTask( (*tit) );
                         }
                         if(taskIdx + 1 < m_outputQueue.size()) 
@@ -2774,7 +2774,7 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task *task, mfxBitstream *mfxBs, vo
                     }
 
                     vm_interlocked_cas32( &inputParam->m_reencode, 1, 0);
-                    vm_interlocked_cas32( &(m_frameEncoder[task->m_encIdx]->GetEncodeTask()->m_ready), 7, 2); // signal to restart!!!
+                    vm_interlocked_cas32( &(m_frameEncoder[task->m_encIdx]->GetEncodeTask()->m_statusReport), 7, 2); // signal to restart!!!
 
                     if (m_videoParam.num_threads > 1)
                         m_semaphore.Signal(m_videoParam.num_threads - 1); // wake up all threads
@@ -2808,9 +2808,9 @@ void MFXVideoENCODEH265::SyncOnTaskCompleted(Task *task, mfxBitstream *mfxBs, vo
             }
         }
 
-        // bs update on complete stage
+        // bs update on completion stage
         m_totalBits += (bs->DataLength - initialDataLength) * 8;
-        vm_interlocked_cas32( &(task->m_ready), 3, 2);
+        vm_interlocked_cas32( &(task->m_statusReport), 3, 2);
         if (m_videoParam.num_threads > 1)
             m_semaphore.Signal(m_videoParam.num_threads - 1); // wake up all threads
     }
@@ -2868,7 +2868,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
             }
 
             TaskIter it = th->m_outputQueue.begin();
-            inputParam->completedTask     = (*it);
+            inputParam->m_targetTask    = (*it);
             inputParam->m_outputQueueSize = th->m_outputQueue.size();
 
 #if defined (MFX_VA)
@@ -2928,10 +2928,10 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
 
     // STAGE [5]::[multi threading]::FRAME THREADING LOOP
     Ipp32u failCounter = 0;
-    while (inputParam->completedTask->m_ready < 3 || inputParam->completedTask->m_ready == 7) {
+    while (inputParam->m_targetTask->m_statusReport < 3 || inputParam->m_targetTask->m_statusReport == 7) {
 
         // restart due to BRC repack
-        Ipp32u stageReencode = vm_interlocked_cas32( &inputParam->completedTask->m_ready, 1, 7 );
+        Ipp32u stageReencode = vm_interlocked_cas32( &inputParam->m_targetTask->m_statusReport, 1, 7 );
         if (stageReencode == 1 ) {
             //    something to do
         }
@@ -2939,8 +2939,8 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         TaskIter beg = th->m_outputQueue.begin();
         for (size_t taskIdx = 0; taskIdx < inputParam->m_outputQueueSize; taskIdx++) {
             Task* nextTask = *beg;
-            if(nextTask->m_ready == 1 ) {
-                sts = th->EncSolver(nextTask, (taskIdx == 0) ? NULL : &(inputParam->completedTask->m_ready)); // taskIdx == 0 the same as nextTask == inputParam->completedTask
+            if(nextTask->m_statusReport == 1 ) {
+                sts = th->EncSolver(nextTask, (taskIdx == 0) ? NULL : &(inputParam->m_targetTask->m_statusReport)); // taskIdx == 0 the same as nextTask == inputParam->completedTask
                 if (sts == 100) {
                     failCounter++;
                 }
@@ -2948,7 +2948,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
                     failCounter = 0;
                 }
                 if(taskIdx == 0 && sts == MFX_TASK_DONE) { // special case OnComplete for expectedTask
-                    th->SyncOnTaskCompleted(inputParam->completedTask, inputParam->bs, inputParam);
+                    th->SyncOnTaskCompletion(inputParam->m_targetTask, inputParam->bs, inputParam);
                 }
                 if(sts == MFX_TASK_DONE || sts == MFX_TASK_WORKING) {
                     break;
@@ -2966,7 +2966,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     }
 
     // STAGE [5]::OUTPUT READY. STOP Routine
-    if (Ipp32u stageOnExit = vm_interlocked_cas32( &(inputParam->completedTask->m_ready), 4, 3) == 3) {
+    if (Ipp32u stageOnExit = vm_interlocked_cas32( &(inputParam->m_targetTask->m_statusReport), 4, 3) == 3) {
         return MFX_TASK_DONE;
     }
 
@@ -2985,7 +2985,7 @@ mfxStatus MFXVideoENCODEH265::TaskCompleteProc(void *pState, void *pParam, mfxSt
     mfxBitstream* bs = inputParam->bs;
 
     if (bs) {
-        Task* codedTask = inputParam->completedTask;
+        Task* codedTask = inputParam->m_targetTask;
         H265FrameEncoder* frameEnc = th->m_frameEncoder[codedTask->m_encIdx];
 
         // STAGE::[Resource Release]

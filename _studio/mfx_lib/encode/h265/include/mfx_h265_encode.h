@@ -153,7 +153,7 @@ private:
     mfxStatus AcceptFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxBS);
     H265Frame *InsertInputFrame(const mfxFrameSurface1 *surface);
     void ConfigureInputFrame(H265Frame *frame) const;
-    void PrepareToEncode(Task *task);
+    void ConfigureEncodeFrame(Task *task);
     mfxStatus AddNewOutputTask(int& encIdx);// find next task and free encoder, bind them and return encIdx [-1(not found resources), or 0, ..., N-1]
     void OnEncodingQueried(Task *encoded);
     
@@ -168,7 +168,7 @@ private:
     static mfxStatus TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
 
     mfxStatus EncSolver(Task* task, volatile Ipp32u* onExitEvent);
-    void SyncOnTaskCompleted(Task* task, mfxBitstream* mfxBs, void *pParam);
+    void SyncOnTaskCompletion(Task* task, mfxBitstream* mfxBs, void *pParam);
 
     // ------- Pre Encode Analysis (lookahead / paq etc)
     mfxStatus PreEncAnalysis(void);
