@@ -928,7 +928,10 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
         m_FrameSizeExtra.tileNum           = m_nTiles;
         m_FrameSizeExtra.tileOffsets       = new CameraTileOffset[m_nTiles];
         m_FrameSizeExtra.TileWidth         = m_mfxVideoParam.vpp.In.CropW;
-        m_FrameSizeExtra.TileHeight        = ( ( m_mfxVideoParam.vpp.In.CropH / m_nTiles ) + 31 ) &~ 0x1F;
+        m_FrameSizeExtra.TileHeight        = ((( m_mfxVideoParam.vpp.In.CropH / m_nTiles ) + 1)/2)*2;
+        if ( m_nTiles > 1 )
+            m_FrameSizeExtra.TileHeight = ( m_mfxVideoParam.vpp.In.CropH / m_nTiles + 31 ) &~ 0x1F;
+        
         m_FrameSizeExtra.TileHeightPadded  =  m_FrameSizeExtra.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
         m_FrameSizeExtra.BitDepth          = m_mfxVideoParam.vpp.In.BitDepthLuma;
         m_FrameSizeExtra.TileInfo          = m_mfxVideoParam.vpp.In;
@@ -938,10 +941,11 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
             {
                 // In case of several tiles, last tile must be aligned to the original frame bottom
                 m_FrameSizeExtra.tileOffsets[i].TileOffset = m_mfxVideoParam.vpp.In.CropH - m_FrameSizeExtra.TileHeight;
+                m_FrameSizeExtra.tileOffsets[i].TileOffset = ((m_FrameSizeExtra.tileOffsets[i].TileOffset + 1)/2)*2;
             }
             else
             {
-                m_FrameSizeExtra.tileOffsets[i].TileOffset = ( m_mfxVideoParam.vpp.In.CropH / m_nTiles ) * i;
+                m_FrameSizeExtra.tileOffsets[i].TileOffset = ( m_FrameSizeExtra.TileHeight ) * i;
             }
         }
     }
@@ -952,6 +956,15 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
         m_FrameSizeExtra.paddedFrameWidth  = m_mfxVideoParam.vpp.In.Width;
         m_FrameSizeExtra.paddedFrameHeight = m_mfxVideoParam.vpp.In.Height;
         m_FrameSizeExtra.vSliceWidth       = (((m_mfxVideoParam.vpp.In.Width / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
+        m_nTiles = 1;
+        m_FrameSizeExtra.tileNum           = m_nTiles;
+        m_FrameSizeExtra.tileOffsets       = new CameraTileOffset[m_nTiles];
+        m_FrameSizeExtra.TileWidth         = m_mfxVideoParam.vpp.In.Width;
+        m_FrameSizeExtra.TileHeight        = m_mfxVideoParam.vpp.In.Height;
+        m_FrameSizeExtra.TileHeightPadded  = m_mfxVideoParam.vpp.In.Height;
+        m_FrameSizeExtra.BitDepth          = m_mfxVideoParam.vpp.In.BitDepthLuma;
+        m_FrameSizeExtra.TileInfo          = m_mfxVideoParam.vpp.In;
+        m_FrameSizeExtra.tileOffsets[0].TileOffset = 0;
     }
 
     m_InputBitDepth = m_mfxVideoParam.vpp.In.BitDepthLuma;

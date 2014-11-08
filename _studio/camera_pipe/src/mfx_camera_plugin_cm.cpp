@@ -335,9 +335,16 @@ void CmContext::CreateCameraKernels()
     int i;
     bool bNeedConversionToRGB = true;
 
-    if (!m_caps.bNoPadding)
+    if (! m_caps.bNoPadding)
     {
-        kernel_padding16bpp = CreateKernel(m_device, m_program, (CM_KERNEL_FUNCTION(Padding_16bpp)), NULL); // padding to be done
+        if ( BAYER_GRBG == m_caps.BayerPatternType || BAYER_GBRG == m_caps.BayerPatternType )
+        {
+            kernel_padding16bpp = CreateKernel(m_device, m_program, (CM_KERNEL_FUNCTION(PaddingandFlipping_16bpp)), NULL);
+        }
+        else
+        {
+            kernel_padding16bpp = CreateKernel(m_device, m_program, (CM_KERNEL_FUNCTION(Padding_16bpp)), NULL); // padding to be done
+        }
     }
 
     if (m_caps.bBlackLevelCorrection || m_caps.bWhiteBalance || m_caps.bVignetteCorrection)

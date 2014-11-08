@@ -840,13 +840,6 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
     else
         return MFX_ERR_NULL_PTR;
 
-    if (m_Caps.BayerPatternType == MFX_CAM_BAYER_BGGR || m_Caps.BayerPatternType == MFX_CAM_BAYER_GRBG)
-    {
-        CmSurface2D *tmpp = redOutSurf;
-        redOutSurf        = blueOutSurf;
-        blueOutSurf       = tmpp;
-    }
-
     if (m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix)
     {
         SurfaceIndex *LUTIndex = NULL;

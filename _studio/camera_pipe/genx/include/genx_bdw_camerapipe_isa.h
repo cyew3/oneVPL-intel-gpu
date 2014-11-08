@@ -9,5 +9,5 @@
 
 #ifndef __genx_bdw_camerapipe__
 #define __genx_bdw_camerapipe__
-extern const unsigned char genx_bdw_camerapipe[1327130];
+extern const unsigned char genx_bdw_camerapipe[1237275];
 #endif

@@ -13,7 +13,7 @@
 #include <cm.h>
 #include "Campipe.h"
 
-_GENX_ void inline 
+_GENX_ void inline
 ROWSWAP_8x8(matrix_ref<ushort, 8, 8> m)
 {
     vector<ushort, 8> tmp_pixel_row;
@@ -26,7 +26,7 @@ ROWSWAP_8x8(matrix_ref<ushort, 8, 8> m)
     }
 }
 
-_GENX_ void inline 
+_GENX_ void inline
 ROWSWAP_8x16(matrix_ref<ushort, 8, 16> m)
 {
     vector<ushort, 16> tmp_pixel_row;
@@ -39,7 +39,7 @@ ROWSWAP_8x16(matrix_ref<ushort, 8, 16> m)
     }
 }
 
-_GENX_ void inline 
+_GENX_ void inline
 ROWSWAP_16x16(matrix_ref<ushort, 16, 16> m)
 {
     vector<ushort, 16> tmp_pixel_row;
@@ -53,7 +53,7 @@ ROWSWAP_16x16(matrix_ref<ushort, 16, 16> m)
 }
 
 
-_GENX_ void inline 
+_GENX_ void inline
 ROWSWAP_12x24(matrix_ref<ushort, 12, 24> m)
 {
     vector<ushort, 24> tmp_pixel_row;
@@ -66,7 +66,7 @@ ROWSWAP_12x24(matrix_ref<ushort, 12, 24> m)
     }
 }
 
-_GENX_ void inline 
+_GENX_ void inline
 ROWSWAP_16x24(matrix_ref<ushort, 16, 24> m)
 {
     vector<ushort, 24> tmp_pixel_row;
@@ -79,7 +79,7 @@ ROWSWAP_16x24(matrix_ref<ushort, 16, 24> m)
     }
 }
 
-_GENX_ void inline 
+_GENX_ void inline
 ROWSWAP_20x32(matrix_ref<ushort, 20, 32> m)
 {
     vector<ushort, 32> tmp_pixel_row;
@@ -93,7 +93,7 @@ ROWSWAP_20x32(matrix_ref<ushort, 20, 32> m)
 }
 
 
-// For bggr/rggb un-padded input 
+// For bggr/rggb un-padded input
 const unsigned int index_ini[8] = {7,6,5,4,3,2,1,0};
 extern "C" _GENX_MAIN_ void
 Padding_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
@@ -122,7 +122,7 @@ Padding_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
                 rd_h_pos = wr_h_pos - 16;//rd_h_pos = (get_thread_origin_x() - 1) * 8 * sizeof(short);
 
             if(wr_v_pos == 0)
-                rd_v_pos = 1; //0    
+                rd_v_pos = 1; //0
             else if(wr_v_pos == (threadheight - 1) * 8)
                 rd_v_pos = (InFrameHeight - 9);//(InFrameHeight - 9);
             else
@@ -131,7 +131,7 @@ Padding_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
             // READ FROM SURFACE
             read(ibuf, rd_h_pos, rd_v_pos, rd_in_pixels);
 
-            // ROW SWAP FOR GRBG/GBRG TYPE   
+            // ROW SWAP FOR GRBG/GBRG TYPE
             vector<ushort, 8> tmp_pixel_row;
 
             // ALIGN TO LSB
@@ -141,7 +141,7 @@ Padding_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
             if( wr_h_pos == 0 | wr_h_pos == (threadwidth - 1) * 8 * sizeof(short))
             {
 #pragma unroll
-                for(int j = 0; j < 8; j++) 
+                for(int j = 0; j < 8; j++)
                 {
                     vector_ref<ushort, 8> in_row = rd_in_pixels.row(j);
                     rd_in_pixels.row(j) = in_row.iselect(index); //tmp_out.row(j) = in_row.iselect(index);
@@ -171,7 +171,7 @@ Padding_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
     }
 }
 
-// For grbg/gbrg un-padded input 
+// For grbg/gbrg un-padded input
 extern "C" _GENX_MAIN_ void
 PaddingandFlipping_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
                          int threadwidth  , int threadheight,
@@ -201,7 +201,7 @@ PaddingandFlipping_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
                 rd_h_pos = wr_h_pos - 16;//rd_h_pos = (get_thread_origin_x() - 1) * 8 * sizeof(short);
 
             if(wr_v_pos == 0)
-                rd_v_pos = 1; //0    
+                rd_v_pos = 1; //0
             else if(wr_v_pos == (threadheight - 1) * 8)
                 rd_v_pos = (InFrameHeight - 9);//(InFrameHeight - 9);
             else
@@ -210,7 +210,7 @@ PaddingandFlipping_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
             // READ FROM SURFACE
             read(ibuf, rd_h_pos, rd_v_pos, rd_in_pixels);
 
-            // ROW SWAP FOR GRBG/GBRG TYPE   
+            // ROW SWAP FOR GRBG/GBRG TYPE
             vector<ushort, 8> tmp_pixel_row;
 
             // ALIGN TO LSB
@@ -220,7 +220,7 @@ PaddingandFlipping_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
             if( wr_h_pos == 0 | wr_h_pos == (threadwidth - 1) * 8 * sizeof(short))
             {
 #pragma unroll
-                for(int j = 0; j < 8; j++) 
+                for(int j = 0; j < 8; j++)
                 {
                     vector_ref<ushort, 8> in_row = rd_in_pixels.row(j);
                     rd_in_pixels.row(j) = in_row.iselect(index); //tmp_out.row(j) = in_row.iselect(index);
@@ -256,7 +256,7 @@ PaddingandFlipping_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
     }
 }
 
-//handling 16x16  // For grbg/gbrg padded input 
+//handling 16x16  // For grbg/gbrg padded input
 extern "C" _GENX_MAIN_ void
 Flipping_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
                int threadwidth  , int threadheight,
@@ -284,15 +284,15 @@ Flipping_16bpp(SurfaceIndex ibuf, SurfaceIndex obuf,
     write(obuf, rd_h_pos, wr_v_pos+8, out.select<8,1,16,1>(8,0));
 }
 
-_GENX_ void inline 
+_GENX_ void inline
 BLC_CORRECT(matrix_ref<ushort, 16, 16> in,
             short B_amount, short Gtop_amount, short Gbot_amount, short R_amount, ushort max_input)
 {
     matrix<int, 16, 16> m, tmp;
-    m.select<8, 2, 8, 2>(0,0) = cm_add<int>(in.select<8, 2, 8, 2>(0,0), -B_amount   ); 
-    m.select<8, 2, 8, 2>(0,1) = cm_add<int>(in.select<8, 2, 8, 2>(0,1), -Gtop_amount); 
-    m.select<8, 2, 8, 2>(1,0) = cm_add<int>(in.select<8, 2, 8, 2>(1,0), -Gbot_amount); 
-    m.select<8, 2, 8, 2>(1,1) = cm_add<int>(in.select<8, 2, 8, 2>(1,1), -R_amount   ); 
+    m.select<8, 2, 8, 2>(0,0) = cm_add<int>(in.select<8, 2, 8, 2>(0,0), -B_amount   );
+    m.select<8, 2, 8, 2>(0,1) = cm_add<int>(in.select<8, 2, 8, 2>(0,1), -Gtop_amount);
+    m.select<8, 2, 8, 2>(1,0) = cm_add<int>(in.select<8, 2, 8, 2>(1,0), -Gbot_amount);
+    m.select<8, 2, 8, 2>(1,1) = cm_add<int>(in.select<8, 2, 8, 2>(1,1), -R_amount   );
 
     m.merge(0, m < 0        );
     tmp.merge(max_input, m, m > max_input);
@@ -300,26 +300,26 @@ BLC_CORRECT(matrix_ref<ushort, 16, 16> in,
     in = tmp;
 }
 
-_GENX_ void inline 
+_GENX_ void inline
 VIG_CORRECT(matrix_ref<ushort, 16, 16> m,
-            matrix_ref<ushort, 16, 16> mask, 
+            matrix_ref<ushort, 16, 16> mask,
             ushort max_input)
 {
     matrix<uint, 16, 16> tmp;
     tmp = cm_mul<uint>(m, mask);
-    
+
     tmp = cm_add <uint>(tmp, 128 );      //8;
     tmp = cm_quot<uint>(tmp, 256);       //16;
-    
+
     m.merge(max_input, tmp > max_input);
     m.merge(0,           m   < 0        );
 }
 
-_GENX_ void inline 
+_GENX_ void inline
 AWB_CORRECT(matrix_ref<ushort, 16, 16> in,
             float B_scale, float Gtop_scale, float Gbot_scale, float R_scale, ushort max_input)
 {
-    matrix<uint, 16, 16> m; 
+    matrix<uint, 16, 16> m;
     m.select<8, 2, 8, 2>(0,0) = cm_mul<uint>(in.select<8, 2, 8, 2>(0,0), B_scale    );//, SAT);
     m.select<8, 2, 8, 2>(0,1) = cm_mul<uint>(in.select<8, 2, 8, 2>(0,1), Gtop_scale);//, SAT);
     m.select<8, 2, 8, 2>(1,0) = cm_mul<uint>(in.select<8, 2, 8, 2>(1,0), Gbot_scale);//, SAT);
@@ -330,7 +330,7 @@ AWB_CORRECT(matrix_ref<ushort, 16, 16> in,
     in.merge(max_input, m > max_input);
 }
 
-extern "C" _GENX_MAIN_ 
+extern "C" _GENX_MAIN_
 void BAYER_CORRECTION(SurfaceIndex PaddedInputIndex,
                       SurfaceIndex BayerIndex,
                       SurfaceIndex MaskIndex,
@@ -344,13 +344,13 @@ void BAYER_CORRECTION(SurfaceIndex PaddedInputIndex,
     matrix<ushort, 16, 16> BayerMatrix;
     matrix<ushort, 16, 16> MaskMatrix ;
     matrix<ushort, 16, 16> OutMatrix  ;
-    
+
 
     uint h_pos = get_thread_origin_x() * 16 * sizeof(short);
     uint v_pos = get_thread_origin_y() * 16;
 
-    if(first == 0) // if not first kernel 
-    {    
+    if(first == 0) // if not first kernel
+    {
         read(BayerIndex, h_pos, v_pos  , BayerMatrix.select<8,1,16,1>(0,0));
         read(BayerIndex, h_pos, v_pos+8, BayerMatrix.select<8,1,16,1>(8,0));
     }
@@ -358,7 +358,7 @@ void BAYER_CORRECTION(SurfaceIndex PaddedInputIndex,
     {
         read(PaddedInputIndex, h_pos, v_pos  , BayerMatrix.select<8,1,16,1>(0,0));
         read(PaddedInputIndex, h_pos, v_pos+8, BayerMatrix.select<8,1,16,1>(8,0));
-        
+
         if(BayerType == GRBG || BayerType == GBRG)
         {
             ROWSWAP_16x16(BayerMatrix);
@@ -442,7 +442,7 @@ HOT_CORRECT_AND_DYN(matrix_ref<ushort, 12, 24> in,
         tmp = cm_min<ushort>(v1, v2);
         v2  = cm_max<ushort>(v1, v2);
         v1  = tmp;
-        
+
         tmp = cm_min<ushort>(v3, v4);
         v4  = cm_max<ushort>(v3, v4);
         v3  = tmp;
@@ -487,7 +487,7 @@ HOT_CORRECT_AND_DYN(matrix_ref<ushort, 12, 24> in,
 
         tmp = cm_min<ushort>(v2, v4);
         v4  = cm_max<ushort>(v2, v4);
-        v2  = tmp;                       
+        v2  = tmp;
 
         v6  = cm_max<ushort>(v2, v6);
 
@@ -496,7 +496,7 @@ HOT_CORRECT_AND_DYN(matrix_ref<ushort, 12, 24> in,
         out.row(j).merge(v4, in.select<1,1,16,1>(j+2,2), (diff_num >= ThreshNumPix));
         dyn_range.row(j) = max - min;
     }
-    
+
 }
 
 _GENX_ void inline
@@ -524,7 +524,7 @@ HOT_CORRECT(matrix_ref<ushort, 12, 24> in,
         v6.select<16,1>(0) = cm_mul<ushort>(in.select<1,1,16,1>(j+4,0), mul_amount);
         v7.select<16,1>(0) = cm_mul<ushort>(in.select<1,1,16,1>(j+4,2), mul_amount);
         v8.select<16,1>(0) = cm_mul<ushort>(in.select<1,1,16,1>(j+4,4), mul_amount);
-        
+
         diff_num  = 0;
         mask = (cm_abs<uint>(cm_add<int>(v0, -v4)) > ThreshPixelDiff);
         diff_num += mask;
@@ -554,7 +554,7 @@ HOT_CORRECT(matrix_ref<ushort, 12, 24> in,
         tmp = cm_min<ushort>(v1, v2);
         v2  = cm_max<ushort>(v1, v2);
         v1  = tmp;
-        
+
         tmp = cm_min<ushort>(v3, v4);
         v4  = cm_max<ushort>(v3, v4);
         v3  = tmp;
@@ -593,7 +593,7 @@ HOT_CORRECT(matrix_ref<ushort, 12, 24> in,
 
         tmp = cm_min<ushort>(v2, v4);
         v4  = cm_max<ushort>(v2, v4);
-        v2  = tmp;                       
+        v2  = tmp;
 
         v6  = cm_max<ushort>(v2, v6);
 
@@ -602,7 +602,7 @@ HOT_CORRECT(matrix_ref<ushort, 12, 24> in,
         //out.row(j) = v4;
         out.row(j).merge(v4, in.select<1,1,16,1>(j+2,2), (diff_num >= ThreshNumPix));
     }
-    
+
 }
 
 _GENX_ void inline
@@ -642,7 +642,7 @@ DYNRANGE(matrix_ref<ushort, 12, 24> in,
         tmp = cm_min<ushort>(v1, v2);
         v2  = cm_max<ushort>(v1, v2);
         v1  = tmp;
-        
+
         tmp = cm_min<ushort>(v3, v4);
         v4  = cm_max<ushort>(v3, v4);
         v3  = tmp;
@@ -675,10 +675,10 @@ DYNRANGE(matrix_ref<ushort, 12, 24> in,
 
         dyn_range.row(j) = max - min;
     }
-    
+
 }
 
-extern "C" _GENX_MAIN_ void 
+extern "C" _GENX_MAIN_ void
 HotPixel_DYN_SKL(SurfaceIndex InBayerIndex,
                    SurfaceIndex OutBayerIndex,
                  SurfaceIndex OutDynRangeIndex,
@@ -710,7 +710,7 @@ HotPixel_DYN_SKL(SurfaceIndex InBayerIndex,
     //////   PROCESSING  TOP  8x16   ///////////////////////
     HOT_CORRECT_AND_DYN(bayer_in, bayer_out.select<8,1,16,1>(0,0), dyn_range.select<8,1,16,1>(0,0), ThreshPixelDiff, ThreshNumPix, amount);
 
-    //////   WRITE OUT 16x16 BLOCK   /////////////////////// 
+    //////   WRITE OUT 16x16 BLOCK   ///////////////////////
     write(OutBayerIndex   , wr_h_pos, wr_v_pos, bayer_out.select<8,1,16,1>(0,0));
     write(OutDynRangeIndex, wr_h_pos, wr_v_pos, dyn_range.select<8,1,16,1>(0,0));
 
@@ -727,7 +727,7 @@ HotPixel_DYN_SKL(SurfaceIndex InBayerIndex,
 
     read(InBayerIndex, rd_h_pos   , rd_v_pos, bayer_in.select<8,1,16,1>(4,0 ));
     read(InBayerIndex, rd_h_pos+32, rd_v_pos, bayer_in.select<8,1, 8,1>(4,16));
-    
+
     if(firstflag == 1)
     {
         if(BayerType == GRBG || BayerType == GBRG)
@@ -738,13 +738,13 @@ HotPixel_DYN_SKL(SurfaceIndex InBayerIndex,
     }
     //////   PROCESSING  RIGHT 16x8  ///////////////////////
     HOT_CORRECT_AND_DYN(bayer_in, bayer_out.select<8,1,16,1>(8,0), dyn_range.select<8,1,16,1>(8,0), ThreshPixelDiff, ThreshNumPix, amount);
-    
-    //////   WRITE OUT 16x16 BLOCK   /////////////////////// 
+
+    //////   WRITE OUT 16x16 BLOCK   ///////////////////////
     write(OutBayerIndex   , wr_h_pos, wr_v_pos+8, bayer_out.select<8,1,16,1>(8,0));
     write(OutDynRangeIndex, wr_h_pos, wr_v_pos+8, dyn_range.select<8,1,16,1>(8,0));
 }
 
-extern "C" _GENX_MAIN_ void 
+extern "C" _GENX_MAIN_ void
 HotPixel_SKL(SurfaceIndex InBayerIndex,
                SurfaceIndex OutBayerIndex,
              SurfaceIndex OutDynRangeIndex,
@@ -765,7 +765,7 @@ HotPixel_SKL(SurfaceIndex InBayerIndex,
     read(InBayerIndex, rd_h_pos   , rd_v_pos   , bayer_in.select< 8,1,16,1>(0,0 ));
     read(InBayerIndex, rd_h_pos   , rd_v_pos+8 , bayer_in.select< 4,1,16,1>(8,0 ));
     read(InBayerIndex, rd_h_pos+32, rd_v_pos   , bayer_in.select<12,1, 8,1>(0,16));
-    
+
     if(firstflag == 1)
     {
         if(BayerType == GRBG || BayerType == GBRG)
@@ -778,7 +778,7 @@ HotPixel_SKL(SurfaceIndex InBayerIndex,
     //////   PROCESSING  TOP  8x16   ///////////////////////
     HOT_CORRECT(bayer_in, bayer_out.select<8,1,16,1>(0,0), ThreshPixelDiff, ThreshNumPix, amount);
 
-    //////   WRITE OUT 16x16 BLOCK   /////////////////////// 
+    //////   WRITE OUT 16x16 BLOCK   ///////////////////////
     write(OutBayerIndex   , wr_h_pos, wr_v_pos, bayer_out.select<8,1,16,1>(0,0));
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -794,7 +794,7 @@ HotPixel_SKL(SurfaceIndex InBayerIndex,
 
     read(InBayerIndex, rd_h_pos   , rd_v_pos, bayer_in.select<8,1,16,1>(4,0 ));
     read(InBayerIndex, rd_h_pos+32, rd_v_pos, bayer_in.select<8,1, 8,1>(4,16));
-    
+
     if(firstflag == 1)
     {
         if(BayerType == GRBG || BayerType == GBRG)
@@ -805,12 +805,12 @@ HotPixel_SKL(SurfaceIndex InBayerIndex,
     }
     //////   PROCESSING  RIGHT 16x8  ///////////////////////
     HOT_CORRECT(bayer_in, bayer_out.select<8,1,16,1>(8,0), ThreshPixelDiff, ThreshNumPix, amount);
-    
-    //////   WRITE OUT 16x16 BLOCK   /////////////////////// 
+
+    //////   WRITE OUT 16x16 BLOCK   ///////////////////////
     write(OutBayerIndex   , wr_h_pos, wr_v_pos+8, bayer_out.select<8,1,16,1>(8,0));
 }
 
-extern "C" _GENX_MAIN_ void 
+extern "C" _GENX_MAIN_ void
 DYNRANGE_CALC_SKL(SurfaceIndex InBayerIndex,
                     SurfaceIndex OutBayerIndex,
                   SurfaceIndex OutDynRangeIndex,
@@ -827,11 +827,11 @@ DYNRANGE_CALC_SKL(SurfaceIndex InBayerIndex,
     matrix<ushort, 16, 16> dyn_range;
 
     //////     READ_IN 12x24 BLOCK   ///////////////////////
-    
+
     read(InBayerIndex, rd_h_pos   , rd_v_pos   , bayer_in.select< 8,1,16,1>(0,0 ));
     read(InBayerIndex, rd_h_pos   , rd_v_pos+8 , bayer_in.select< 4,1,16,1>(8,0 ));
     read(InBayerIndex, rd_h_pos+32, rd_v_pos   , bayer_in.select<12,1, 8,1>(0,16));
-    
+
     if(firstflag == 1)
     {
         if(BayerType == GRBG || BayerType == GBRG)
@@ -843,12 +843,12 @@ DYNRANGE_CALC_SKL(SurfaceIndex InBayerIndex,
     //////   PROCESSING  TOP  8x16   ///////////////////////
     DYNRANGE(bayer_in, dyn_range.select<8,1,16,1>(0,0), ThreshPixelDiff, ThreshNumPix, amount);
 
-    //////   WRITE OUT 16x16 BLOCK   /////////////////////// 
+    //////   WRITE OUT 16x16 BLOCK   ///////////////////////
     write(OutDynRangeIndex, wr_h_pos, wr_v_pos, dyn_range.select<8,1,16,1>(0,0));
 
     if(firstflag == 1)
         write(OutBayerIndex, wr_h_pos, wr_v_pos, bayer_in.select<8,1,16,1>(2,2));
-        
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////     2ND 8x16 BLOCK      /////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -862,7 +862,7 @@ DYNRANGE_CALC_SKL(SurfaceIndex InBayerIndex,
 
     read(InBayerIndex, rd_h_pos   , rd_v_pos, bayer_in.select<8,1,16,1>(4,0 ));
     read(InBayerIndex, rd_h_pos+32, rd_v_pos, bayer_in.select<8,1, 8,1>(4,16));
-    
+
     if(firstflag == 1)
     {
         if(BayerType == GRBG || BayerType == GBRG)
@@ -873,10 +873,10 @@ DYNRANGE_CALC_SKL(SurfaceIndex InBayerIndex,
     }
     //////   PROCESSING  RIGHT 16x8  ///////////////////////
     DYNRANGE(bayer_in, dyn_range.select<8,1,16,1>(8,0), ThreshPixelDiff, ThreshNumPix, amount);
-    
-    //////   WRITE OUT 16x16 BLOCK   /////////////////////// 
+
+    //////   WRITE OUT 16x16 BLOCK   ///////////////////////
     write(OutDynRangeIndex, wr_h_pos, wr_v_pos+8, dyn_range.select<8,1,16,1>(8,0));
-    
+
     if(firstflag == 1)
         write(OutBayerIndex, wr_h_pos, wr_v_pos+8, bayer_in.select<8,1,16,1>(2,2));
 
@@ -922,11 +922,11 @@ DENOISE(matrix_ref<ushort, 9, 24> in,        // 36 registers
 
     vector<ushort, 24> v_in;
 
-#pragma unroll    
-    for(int j = 0; j < 5; j++) {    
 #pragma unroll
-        for(int i = 0; i < 5; i++) {    
-                
+    for(int j = 0; j < 5; j++) {
+#pragma unroll
+        for(int i = 0; i < 5; i++) {
+
             tpix  = in.select<1,1,16,1>(i*2,j*2)        ;
             diff  = cm_abs<ushort>( centerpix - tpix )  ;
             prw_v = cm_mul<ushort>( prw,   dw(i,j)) >> 2;
@@ -936,7 +936,7 @@ DENOISE(matrix_ref<ushort, 9, 24> in,        // 36 registers
             tmpw.merge(prw_v(4),           diff < comp_operand.row(3));
             tmpw.merge(prw_v(3),           diff < comp_operand.row(2));
             tmpw.merge(prw_v(2),           diff < comp_operand.row(1));
-            tmpw.merge(prw_v(1),           diff < comp_operand.row(0));        
+            tmpw.merge(prw_v(1),           diff < comp_operand.row(0));
             sum += (tpix * tmpw) >> shift_amount;
             wgt += tmpw;
         }
@@ -953,7 +953,7 @@ DENOISE(matrix_ref<ushort, 9, 24> in,        // 36 registers
 unsigned short const in_init[32] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
                                     16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
 
-extern "C" _GENX_MAIN_  
+extern "C" _GENX_MAIN_
 void BayerDenoise(SurfaceIndex inIndex,      // surface to be denoised
                   SurfaceIndex rangeIndex,   // surface of local dyn range
                   SurfaceIndex outIndex,     // output surface
@@ -961,9 +961,9 @@ void BayerDenoise(SurfaceIndex inIndex,      // surface to be denoised
                   vector<ushort, 6> prt_v,   // threashold
                   vector<ushort, 6> prw_v,   // range weights
                   ushort dn_thmax,           // 5x5BLF_RangeThrDynRMax
-                  ushort dn_thmin,           // 5x5BLF_RangeThrDynRMin      
-                  int firstflag, 
-                  int bitDepth, 
+                  ushort dn_thmin,           // 5x5BLF_RangeThrDynRMin
+                  int firstflag,
+                  int bitDepth,
                   int BayerType)
 {
     int rd_h_pos = (get_thread_origin_x() * 16 - 4) * sizeof(short);
@@ -997,11 +997,11 @@ void BayerDenoise(SurfaceIndex inIndex,      // surface to be denoised
     //////////////////////////////////////////////////////////////////////////////////////
     //////////////    1st 8x16 BLOCK  ////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////
-    
+
     read(inIndex, rd_h_pos   , rd_v_pos   , rd_in.select<8 ,1,16,1>(0 ,0 ));
     read(inIndex, rd_h_pos   , rd_v_pos+8 , rd_in.select<8 ,1,16,1>(8 ,0 ));
     read(inIndex, rd_h_pos+32, rd_v_pos   , rd_in.select<16,1,8 ,1>(0 ,16));
-    
+
     if(firstflag == 1)
     {
         if(BayerType == GRBG || BayerType == GBRG)
@@ -1011,9 +1011,9 @@ void BayerDenoise(SurfaceIndex inIndex,      // surface to be denoised
         rd_in >>= (16-bitDepth);
     }
 
-    read(rangeIndex, wr_h_pos, wr_v_pos, local_dyn_range);                            
-    thrscale = cm_min<ushort>(cm_max<ushort>(256, local_dyn_range), 2048);   //    m_RangeThrScale_Shift;    
-    thrscale = thrscale >> 7;        
+    read(rangeIndex, wr_h_pos, wr_v_pos, local_dyn_range);
+    thrscale = cm_min<ushort>(cm_max<ushort>(256, local_dyn_range), 2048);   //    m_RangeThrScale_Shift;
+    thrscale = thrscale >> 7;
 
 //#pragma unroll
     for(int i = 0; i < 8; i++)
@@ -1025,10 +1025,10 @@ void BayerDenoise(SurfaceIndex inIndex,      // surface to be denoised
     //////////////    2nd 8x16 BLOCK  ////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////
     rd_in.select<8,1,24,1>(0,0) = rd_in.select<8,1,24,1>(8,0);
-    
+
     read(inIndex, rd_h_pos   , rd_v_pos+16, rd_in.select<8 ,1,16,1>(8,0 ));
     read(inIndex, rd_h_pos+32, rd_v_pos+16, rd_in.select<8 ,1,8 ,1>(8,16));
-    
+
     if(firstflag == 1)
     {
         if(BayerType == GRBG || BayerType == GBRG)
@@ -1040,7 +1040,7 @@ void BayerDenoise(SurfaceIndex inIndex,      // surface to be denoised
 
     read(rangeIndex, wr_h_pos, wr_v_pos+8, local_dyn_range);
     thrscale = cm_min<ushort>(cm_max<ushort>(256, local_dyn_range), 2048);            // <= 2048
-    thrscale = thrscale >> 7;                            //    m_RangeThrScale_Shift;  // <= 16    
+    thrscale = thrscale >> 7;                            //    m_RangeThrScale_Shift;  // <= 16
 
 //#pragma unroll
     for(int i = 0; i < 8; i++)
@@ -1065,8 +1065,8 @@ COMP_ACC0_ACC1(matrix_ref<ushort, 8,  16> premask, matrix_ref<uchar , 12, 32> sr
 }
 #define COMPRESS_BUF 1
 extern "C" _GENX_MAIN_ void
-GOOD_PIXEL_CHECK(SurfaceIndex ibuf , 
-                 SurfaceIndex GSwap_bitshifted_buf, 
+GOOD_PIXEL_CHECK(SurfaceIndex ibuf ,
+                 SurfaceIndex GSwap_bitshifted_buf,
                  SurfaceIndex obuf0, SurfaceIndex obuf1,
                  int shift, int outframeheight,
                  int firstflag, int bitDepth, int BayerType)
@@ -1093,9 +1093,9 @@ GOOD_PIXEL_CHECK(SurfaceIndex ibuf ,
     if(firstflag == 1)
     {
         if(BayerType == GRBG || BayerType == GBRG)
-            ROWSWAP_20x32(rd_in);        
+            ROWSWAP_20x32(rd_in);
 
-        rd_in >>= (16-bitDepth);
+        rd_in >>= (unsigned short)(16-bitDepth);
         write(GSwap_bitshifted_buf, (wr_h_pos*2), write_v_pos  , rd_in.select<8,1,16,1>(2 ,2));  // center 16 rows
         write(GSwap_bitshifted_buf, (wr_h_pos*2), write_v_pos+8, rd_in.select<8,1,16,1>(10,2));  // center 16 rows
     }
@@ -1106,9 +1106,9 @@ GOOD_PIXEL_CHECK(SurfaceIndex ibuf ,
 
     ///////////   1ST 8x16 BLOCK  /////////////////////////////////////////////////////////////////////
     ///// ACCORDING TO B-SPEC: Precision: 16-bit pixels truncated to 8-bits before subtract & compares.
-    src     = (rd_in.select<12,1,32,1>(0,0) >> (short)(shift));  
+    src     = (rd_in.select<12,1,32,1>(0,0) >> (unsigned short)(shift));
     premask = (src.select<8,1,16,1>(2,2) <= GOOD_INTENSITY_TH);  // center 8 rows
-    
+
     COMP_ACC0_ACC1(premask, src, acc0, acc1, 0, 2, 0);
     COMP_ACC0_ACC1(premask, src, acc0, acc1, 2, 0, 0);
     COMP_ACC0_ACC1(premask, src, acc0, acc1, 4, 2, 0);
@@ -1116,7 +1116,7 @@ GOOD_PIXEL_CHECK(SurfaceIndex ibuf ,
 
     ///////////   2ND 8x16 BLOCK  /////////////////////////////////////////////////////////////////////
     ///// ACCORDING TO B-SPEC: Precision: 16-bit pixels truncated to 8-bits before subtract & compares.
-    src     = (rd_in.select<12,1,32,1>(8,0) >> (short)(shift));
+    src     = (rd_in.select<12,1,32,1>(8,0) >> (unsigned short)(shift));
     premask = (src.select<8,1,16,1>(2,2) <= GOOD_INTENSITY_TH);  // center 8 rows
 
     COMP_ACC0_ACC1(premask, src, acc0, acc1, 0, 2, 8);
@@ -1154,7 +1154,7 @@ extern "C" _GENX_MAIN_ void
 RESTOREG(SurfaceIndex ibufBayer,
          SurfaceIndex ibuf0, SurfaceIndex ibuf1,
          SurfaceIndex obufHOR, SurfaceIndex obufVER, SurfaceIndex obufAVG,
-         SurfaceIndex obuf, int x , int y, int wr_x, int wr_y, ushort max_intensity, 
+         SurfaceIndex obuf, int x , int y, int wr_x, int wr_y, ushort max_intensity,
          int BayerType)
 {
     matrix< uchar, 12, 16 >   src0;
@@ -1228,10 +1228,8 @@ RESTOREG(SurfaceIndex ibufBayer,
 
     /////////////  COMPUTE GREEN VERTICAL COMPONENT /////////////////////////////////
 
-    //M = (cm_abs<ushort>(cm_add<short>(srcBayer.select<8,1,8,1>(0,2), -srcBayer.select<8,1,8,1>(2,2))) < 
-    //     cm_abs<ushort>(cm_add<short>(srcBayer.select<8,1,8,1>(2,2), -srcBayer.select<8,1,8,1>(4,2))));
-    M = (cm_abs<ushort>(cm_add<int>(srcBayer.select<8,1,8,1>(0,2), -srcBayer.select<8,1,8,1>(2,2))) < 
-         cm_abs<ushort>(cm_add<int>(srcBayer.select<8,1,8,1>(2,2), -srcBayer.select<8,1,8,1>(4,2))));
+    M = (cm_abs<uint>(cm_add<int>(srcBayer.select<8,1,8,1>(0,2), -srcBayer.select<8,1,8,1>(2,2))) <
+         cm_abs<uint>(cm_add<int>(srcBayer.select<8,1,8,1>(2,2), -srcBayer.select<8,1,8,1>(4,2))));
 
     tmp0 = srcBayer.select<8,1,8,1>(2, 2) - srcBayer.select<8,1,8,1>(0, 2);
     tmp1 = srcBayer.select<8,1,8,1>(2, 2) - srcBayer.select<8,1,8,1>(4, 2);
@@ -1250,11 +1248,9 @@ RESTOREG(SurfaceIndex ibufBayer,
 
     /////////////  COMPUTE GREEN HORIZONTAL COMPONENT /////////////////////////////////
 
-    //M = (cm_abs<ushort>(cm_add<short>(srcBayer.select<8,1,8,1>(2,0), -srcBayer.select<8,1,8,1>(2,2))) < 
-    //     cm_abs<ushort>(cm_add<short>(srcBayer.select<8,1,8,1>(2,2), -srcBayer.select<8,1,8,1>(2,4))));
-    M = (cm_abs<ushort>(cm_add<int>(srcBayer.select<8,1,8,1>(2,0), -srcBayer.select<8,1,8,1>(2,2))) < 
-         cm_abs<ushort>(cm_add<int>(srcBayer.select<8,1,8,1>(2,2), -srcBayer.select<8,1,8,1>(2,4))));
-    
+    M = (cm_abs<uint>(cm_add<int>(srcBayer.select<8,1,8,1>(2,0), -srcBayer.select<8,1,8,1>(2,2))) <
+         cm_abs<uint>(cm_add<int>(srcBayer.select<8,1,8,1>(2,2), -srcBayer.select<8,1,8,1>(2,4))));
+
     tmp0 = srcBayer.select<8,1,8,1>(2, 2) - srcBayer.select<8,1,8,1>(2, 0);
     tmp1 = srcBayer.select<8,1,8,1>(2, 2) - srcBayer.select<8,1,8,1>(2, 4);
     SUM0 = tmp0 + tmp1;
@@ -1272,11 +1268,9 @@ RESTOREG(SurfaceIndex ibufBayer,
 
     /////////////  COMPUTE GREEN AVERAGE COMPONENT /////////////////////////////////
 
-    //matrix_ref<ushort, 8, 8> tmpA = tmp0.format<ushort, 8, 8>();
-    //matrix_ref<ushort, 8, 8> tmpB = tmp1.format<ushort, 8, 8>();
-    matrix_ref<uint, 8, 8> tmpA = tmp0.format<uint, 8, 8>();
-    matrix_ref<uint, 8, 8> tmpB = tmp1.format<uint, 8, 8>();
-    
+    matrix_ref<uint, 8, 8> tmpA = tmp0.format<uint, 8, 8>(); //matrix_ref<ushort, 8, 8> tmpA = tmp0.format<ushort, 8, 8>();
+    matrix_ref<uint, 8, 8> tmpB = tmp1.format<uint, 8, 8>(); //matrix_ref<ushort, 8, 8> tmpB = tmp1.format<ushort, 8, 8>();
+
     matrix<int, 8, 8> AVG_R;
     matrix_ref<int, 8, 8> AVG_G = SUM0;
     matrix_ref<int, 8, 8> TMP_S = AVG_R;
@@ -1317,13 +1311,15 @@ RESTOREG(SurfaceIndex ibufBayer,
 
 }
 
+#define D 16
+
 extern "C" _GENX_MAIN_ void
 RESTOREBandR(SurfaceIndex ibufBayer,
              SurfaceIndex ibufGHOR, SurfaceIndex ibufGVER, SurfaceIndex ibufGAVG,
              SurfaceIndex obufBHOR, SurfaceIndex obufBVER, SurfaceIndex obufBAVG,
              SurfaceIndex obufRHOR, SurfaceIndex obufRVER, SurfaceIndex obufRAVG,
              SurfaceIndex ibufAVGMASK,
-             int x , int y, int wr_x, int wr_y, ushort max_intensity, 
+             int x , int y, int wr_x, int wr_y, ushort max_intensity,
              int BayerType)
 {
     int rd_h_pos = ((get_thread_origin_x() + x) * 8 - 2) * sizeof(short);
@@ -1331,8 +1327,6 @@ RESTOREBandR(SurfaceIndex ibufBayer,
 
     int wr_h_pos = ((get_thread_origin_x() + x) * 8    ) * sizeof(short);
     int wr_v_pos = ((get_thread_origin_y() + y) * 8    ) ;
-
-
 
     ////// ADDED TO TEST ///////
     int rd_x_pos = ((get_thread_origin_x() + wr_x) * 8 - 2) * sizeof(short);
@@ -1342,17 +1336,17 @@ RESTOREBandR(SurfaceIndex ibufBayer,
     read(ibufBayer, rd_x_pos, rd_y_pos  , bayer.select<8,1,16,1>(0,0));
     read(ibufBayer, rd_x_pos, rd_y_pos+8, bayer.select<4,1,16,1>(8,0));
 
-    matrix<ushort, 8, 8> out_B, out_R; 
+    matrix<ushort, 8, 8> out_B, out_R;
     out_B.select<4,2,4,2>(0,0) = bayer .select<4,2,4,2>(2,2);
     out_R.select<4,2,4,2>(1,1) = bayer .select<4,2,4,2>(3,3);
-    
+
     matrix<int, 12, 8> BR34_c; // 12 registers
-    matrix<int, 8, 12> BR32_c; // 12 registers
+    matrix<int, 8,    D> BR32_c; // 12 registers
     matrix<int, 8,  8> BR33_c; //  8 registers
 
-    matrix_ref<ushort, 8, 12> BR32_s = BR32_c.select<4,1,12,1>(0,0).format<ushort, 8, 12>(); //matrix<ushort, 8,12> BR32_s;
-    matrix_ref<ushort, 12, 8> BR34_s = BR34_c.select<6,1,8,1>(0,0) .format<ushort, 12, 8>(); //matrix<ushort,12, 8> BR34_s;
-    matrix_ref<ushort, 8,  8> BR33_s = BR33_c.select<4,1,8,1>(0,0) .format<ushort,  8, 8>(); //matrix<ushort, 8, 8> BR33_s;
+    matrix_ref<ushort, 8,  D> BR32_s = BR32_c.select<4,1,D,1>(0,0).format<ushort, 8, D>(); //matrix<ushort, 8,12> BR32_s;
+    matrix_ref<ushort, 12, 8> BR34_s = BR34_c.select<6,1,8,1>(0,0).format<ushort,12, 8>(); //matrix<ushort,12, 8> BR34_s;
+    matrix_ref<ushort, 8,  8> BR33_s = BR33_c.select<4,1,8,1>(0,0).format<ushort, 8, 8>(); //matrix<ushort, 8, 8> BR33_s;
 
     //matrix<short, 12, 16> dBG_c, Green_c, G_c_x2;
     matrix<   int, 12, 16> dBG_c;    // 12 registers
@@ -1367,36 +1361,37 @@ RESTOREBandR(SurfaceIndex ibufBayer,
     read(ibufGHOR, rd_h_pos, rd_v_pos+8, Green_c.select<4,1,16,1>(8,0));
 
     dBG_c = bayer - Green_c;
-    //G_c_x2 = Green_c << 1;//cm_mul<int>(Green_c, 2);
-        
-    BR32_c  = cm_mul<int>(Green_c.select<8,1,12,1>(2,0), 2); //BR32_c  = G_c_x2 .select<8,1,12,1>(2,0);
-    BR32_c += dBG_c  .select<8,1,12,1>(1,0);
-    BR32_c += dBG_c  .select<8,1,12,1>(3,0);
+
+    BR32_c  = cm_mul<int>(Green_c.select<8,1,D,1>(2,0), 2);
+    BR32_c += bayer.select<8,1,D,1>(1,0);
+    BR32_c -= Green_c.select<8,1,D,1>(1,0);
+    BR32_c += bayer.select<8,1,D,1>(3,0);
+    BR32_c -= Green_c.select<8,1,D,1>(3,0);
     BR32_c >>= 1;
-    BR32_c = cm_max<int>(BR32_c, 0); 
-    BR32_s = cm_min<int>(BR32_c, max_intensity); 
+    BR32_c = cm_max<int>(BR32_c, 0);
+    BR32_s = cm_min<int>(BR32_c, max_intensity);
     out_B.select<4,2,4,2>(1,0) = BR32_s.select<4,2,4,2>(1,2);
-    out_R.select<4,2,4,2>(0,1) = BR32_s.select<4,2,4,2>(0,3); 
+    out_R.select<4,2,4,2>(0,1) = BR32_s.select<4,2,4,2>(0,3);
 
-    
-    BR34_c  = cm_mul<int>(Green_c.select<12,1,8,1>(0,2), 2); //BR34_c  = G_c_x2 .select<12,1,8,1>(0,2); 
-    BR34_c += dBG_c  .select<12,1,8,1>(0,1); 
-    BR34_c += dBG_c  .select<12,1,8,1>(0,3);
+    BR34_c  = cm_mul<int>(Green_c.select<12,1,8,1>(0,2), 2);
+    BR34_c += bayer.select<12,1,8,1>(0,1);
+    BR34_c -= Green_c.select<12,1,8,1>(0,1);
+    BR34_c += bayer.select<12,1,8,1>(0,3);
+    BR34_c -= Green_c.select<12,1,8,1>(0,3);
     BR34_c >>= 1;
-    BR34_c = cm_max<int>(BR34_c, 0); 
-    BR34_s = cm_min<int>(BR34_c, max_intensity); 
-    out_B.select<4,2,4,2>(0,1) = BR34_s.select<4,2,4,2>(2,1); 
-    out_R.select<4,2,4,2>(1,0) = BR34_s.select<4,2,4,2>(3,0); 
+    BR34_c = cm_max<int>(BR34_c, 0);
+    BR34_s = cm_min<int>(BR34_c, max_intensity);
+    out_B.select<4,2,4,2>(0,1) = BR34_s.select<4,2,4,2>(2,1);
+    out_R.select<4,2,4,2>(1,0) = BR34_s.select<4,2,4,2>(3,0);
 
-    
-    BR33_c  = cm_mul<int>(Green_c.select<8,1,8,1>(2,2), 2); //BR33_c  = G_c_x2 .select<8,1,8,1>(2,2);
+    BR33_c  = cm_mul<int>(Green_c.select<8,1,8,1>(2,2), 2);
     BR33_c += BR32_s .select<8,1,8,1>(0,1);
     BR33_c -= Green_c.select<8,1,8,1>(2,1);
     BR33_c += BR32_s .select<8,1,8,1>(0,3);
     BR33_c -= Green_c.select<8,1,8,1>(2,3);
     BR33_c >>= 1;
-    BR33_c = cm_max<int>(BR33_c, 0); 
-    BR33_s = cm_min<int>(BR33_c, max_intensity); 
+    BR33_c = cm_max<int>(BR33_c, 0);
+    BR33_s = cm_min<int>(BR33_c, max_intensity);
     out_B.select<4,2,4,2>(1,1) = BR33_s.select<4,2,4,2>(1,1);
     out_R.select<4,2,4,2>(0,0) = BR33_s.select<4,2,4,2>(0,0);
 
@@ -1411,40 +1406,43 @@ RESTOREBandR(SurfaceIndex ibufBayer,
     read(ibufGVER, rd_h_pos, rd_v_pos+8, Green_c.select<4,1,16,1>(8,0));
 
     dBG_c = bayer - Green_c;
-    //G_c_x2 = Green_c << 1;//cm_mul<int>(Green_c, 2);
-    
-    BR32_c  = cm_mul<int>(Green_c.select<8,1,12,1>(2,0), 2); //BR32_c  = G_c_x2 .select<8,1,12,1>(2,0);
-    BR32_c += dBG_c  .select<8,1,12,1>(1,0);
-    BR32_c += dBG_c  .select<8,1,12,1>(3,0);
+
+    BR32_c  = cm_mul<int>(Green_c.select<8,1,D,1>(2,0), 2);
+    BR32_c += bayer.select<8,1,D,1>(1,0);
+    BR32_c -= Green_c.select<8,1,D,1>(1,0);
+    BR32_c += bayer.select<8,1,D,1>(3,0);
+    BR32_c -= Green_c.select<8,1,D,1>(3,0);
     BR32_c >>= 1;
-    BR32_c.select<8,1,8,1>(0,2) = cm_max<int>(BR32_c.select<8,1,8,1>(0,2), 0); 
-    BR32_s = cm_min<int>(BR32_c, max_intensity); 
-    out_B.select<4,2,4,2>(1,0) = BR32_s.select<4,2,4,2>(1,2); 
-    out_R.select<4,2,4,2>(0,1) = BR32_s.select<4,2,4,2>(0,3); 
+    BR32_c.select<8,1,8,1>(0,2) = cm_max<int>(BR32_c.select<8,1,8,1>(0,2), 0);
+    BR32_s = cm_min<int>(BR32_c, max_intensity);
+    out_B.select<4,2,4,2>(1,0) = BR32_s.select<4,2,4,2>(1,2);
+    out_R.select<4,2,4,2>(0,1) = BR32_s.select<4,2,4,2>(0,3);
 
-    BR34_c  = cm_mul<int>(Green_c.select<12,1,8,1>(0,2), 2); //BR34_c  = G_c_x2 .select<12,1,8,1>(0,2);
-    BR34_c += dBG_c  .select<12,1,8,1>(0,1); 
-    BR34_c += dBG_c  .select<12,1,8,1>(0,3);
+    BR34_c  = cm_mul<int>(Green_c.select<12,1,8,1>(0,2), 2);
+    BR34_c += bayer.select<12,1,8,1>(0,1);
+    BR34_c -= Green_c.select<12,1,8,1>(0,1);
+    BR34_c += bayer.select<12,1,8,1>(0,3);
+    BR34_c -= Green_c.select<12,1,8,1>(0,3);
     BR34_c >>= 1;
-    BR34_c = cm_max<int>(BR34_c, 0); 
-    BR34_s = cm_min<int>(BR34_c, max_intensity); 
-    out_B.select<4,2,4,2>(0,1) = BR34_s.select<4,2,4,2>(2,1); 
-    out_R.select<4,2,4,2>(1,0) = BR34_s.select<4,2,4,2>(3,0); 
+    BR34_c = cm_max<int>(BR34_c, 0);
+    BR34_s = cm_min<int>(BR34_c, max_intensity);
+    out_B.select<4,2,4,2>(0,1) = BR34_s.select<4,2,4,2>(2,1);
+    out_R.select<4,2,4,2>(1,0) = BR34_s.select<4,2,4,2>(3,0);
 
-    
-    BR33_c  = cm_mul<int>(Green_c.select<8,1,8,1>(2,2), 2); //BR33_c  = G_c_x2 .select<8,1,8,1>(2,2);
+    BR33_c  = cm_mul<int>(Green_c.select<8,1,8,1>(2,2), 2);
     BR33_c += BR34_s .select<8,1,8,1>(1,0);
     BR33_c -= Green_c.select<8,1,8,1>(1,2);
     BR33_c += BR34_s .select<8,1,8,1>(3,0);
     BR33_c -= Green_c.select<8,1,8,1>(3,2);
     BR33_c >>= 1;
-    BR33_c = cm_max<int>(BR33_c, 0); 
-    BR33_s = cm_min<int>(BR33_c, max_intensity); 
+    BR33_c = cm_max<int>(BR33_c, 0);
+    BR33_s = cm_min<int>(BR33_c, max_intensity);
     out_B.select<4,2,4,2>(1,1) = BR33_s.select<4,2,4,2>(1,1);
     out_R.select<4,2,4,2>(0,0) = BR33_s.select<4,2,4,2>(0,0);
 
     write(obufBVER, wr_h_pos, wr_v_pos, out_B);
     write(obufRVER, wr_h_pos, wr_v_pos, out_R);
+
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////// AVERAGE COMPONENT //////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -1457,29 +1455,30 @@ RESTOREBandR(SurfaceIndex ibufBayer,
         read(ibufGAVG, rd_h_pos, rd_v_pos+8, Green_c.select<4,1,16,1>(8,0));
 
         dBG_c = bayer - Green_c;
-        //G_c_x2 = Green_c << 1;//cm_mul<int>(Green_c, 2);
-    
-        BR32_c  = cm_mul<int>(Green_c.select<8,1,12,1>(2,0), 2); //BR32_c  = G_c_x2.select<8,1,12,1>(2,0);
-        BR32_c += dBG_c.select< 8,1,12,1>(1,0);
-        BR32_c += dBG_c.select< 8,1,12,1>(3,0);
+
+        BR32_c  = cm_mul<int>(Green_c.select<8,1,D,1>(2,0), 2);
+        BR32_c += bayer.select< 8,1,D,1>(1,0);
+        BR32_c -= Green_c.select< 8,1,D,1>(1,0);
+        BR32_c += bayer.select< 8,1,D,1>(3,0);
+        BR32_c -= Green_c.select< 8,1,D,1>(3,0);
         BR32_c >>= 1;
-        BR32_c = cm_max<int>(BR32_c, 0); 
-        BR32_s = cm_min<int>(BR32_c, max_intensity); 
-        out_B.select<4,2,4,2>(1,0) = BR32_s.select<4,2,4,2>(1,2); 
-        out_R.select<4,2,4,2>(0,1) = BR32_s.select<4,2,4,2>(0,3); 
+        BR32_c = cm_max<int>(BR32_c, 0);
+        BR32_s = cm_min<int>(BR32_c, max_intensity);
+        out_B.select<4,2,4,2>(1,0) = BR32_s.select<4,2,4,2>(1,2);
+        out_R.select<4,2,4,2>(0,1) = BR32_s.select<4,2,4,2>(0,3);
 
-
-        BR34_c  = cm_mul<int>(Green_c.select<12,1,8,1>(0,2), 2); //BR34_c  = G_c_x2.select<12,1,8,1>(0,2);
-        BR34_c += dBG_c .select<12,1,8,1>(0,1); 
-        BR34_c += dBG_c .select<12,1,8,1>(0,3);
+        BR34_c  = cm_mul<int>(Green_c.select<12,1,8,1>(0,2), 2);
+        BR34_c += bayer.select<12,1,8,1>(0,1);
+        BR34_c -= Green_c.select<12,1,8,1>(0,1);
+        BR34_c += bayer.select<12,1,8,1>(0,3);
+        BR34_c -= Green_c.select<12,1,8,1>(0,3);
         BR34_c >>= 1;
-        BR34_c = cm_max<int>(BR34_c, 0); 
-        BR34_s = cm_min<int>(BR34_c, max_intensity); 
-        out_B.select<4,2,4,2>(0,1) = BR34_s.select<4,2,4,2>(2,1); 
+        BR34_c = cm_max<int>(BR34_c, 0);
+        BR34_s = cm_min<int>(BR34_c, max_intensity);
+        out_B.select<4,2,4,2>(0,1) = BR34_s.select<4,2,4,2>(2,1);
         out_R.select<4,2,4,2>(1,0) = BR34_s.select<4,2,4,2>(3,0);
 
-
-        BR33_c  = cm_mul<int>(Green_c.select<8,1,8,1>(2,2), 4); //BR33_c  = cm_mul<int>(G_c_x2.select<8,1,8,1>(2,2), 2);
+        BR33_c  = cm_mul<int>(Green_c.select<8,1,8,1>(2,2), 4);
         BR33_c += BR34_s .select<8,1,8,1>(1,0);
         BR33_c -= Green_c.select<8,1,8,1>(1,2);
         BR33_c += BR34_s .select<8,1,8,1>(3,0);
@@ -1489,8 +1488,8 @@ RESTOREBandR(SurfaceIndex ibufBayer,
         BR33_c += BR32_s .select<8,1,8,1>(0,3);
         BR33_c -= Green_c.select<8,1,8,1>(2,3);
         BR33_c >>= 2;
-        BR33_c = cm_max<int>(BR33_c, 0); 
-        BR33_s = cm_min<int>(BR33_c, max_intensity); 
+        BR33_c = cm_max<int>(BR33_c, 0);
+        BR33_s = cm_min<int>(BR33_c, max_intensity);
         out_B.select<4,2,4,2>(1,1) = BR33_s.select<4,2,4,2>(1,1);
         out_R.select<4,2,4,2>(0,0) = BR33_s.select<4,2,4,2>(0,0);
 
@@ -1519,10 +1518,10 @@ SAD_16(SurfaceIndex ibufRHOR, SurfaceIndex ibufGHOR, SurfaceIndex ibufBHOR,
     //////////////    PART I: COMPUTE MIN_COST_H   ////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    matrix<short, 16, 16> in, R; 
+    matrix<short, 16, 16> in, R;
     matrix<ushort, 8, 8> R_H, G_H, B_H;
-    matrix<short, 16, 16> tmp;   
-   
+    matrix<short, 16, 16> tmp;
+
     matrix<ushort, 8, 16> HDSUM_H;
     matrix<ushort, 16, 8> VDSUM_H;
 
@@ -1537,7 +1536,7 @@ SAD_16(SurfaceIndex ibufRHOR, SurfaceIndex ibufGHOR, SurfaceIndex ibufBHOR,
     G_H = in .select<8,1,8,1>(4,4);
     in >>= bitshift;                                                        // <- bitshift
     tmp -= in;                                                              //tmp  == DRG
-    
+
     HDSUM_H.select<8,1,W,1>(0,0)  = cm_abs<ushort>(cm_add<short>(tmp.select<8,1,W,1>(4,1), - tmp.select<8,1,W,1>(4,0)));
     VDSUM_H.select<W,1,8,1>(0,0)  = cm_abs<ushort>(cm_add<short>(tmp.select<W,1,8,1>(1,4), - tmp.select<W,1,8,1>(0,4)));
 
@@ -1545,25 +1544,25 @@ SAD_16(SurfaceIndex ibufRHOR, SurfaceIndex ibufGHOR, SurfaceIndex ibufBHOR,
     read(ibufBHOR, rd_h_pos - 8, rd_v_pos + 4, tmp .select<8,1,16,1>(8,0)); // tmp == B
     B_H = tmp.select<8,1,8,1>(4,4);
     tmp >>= bitshift;                                                       // <- bitshift
-    in -= tmp;                                                              //  in == DGB 
+    in -= tmp;                                                              //  in == DGB
 
     HDSUM_H.select<8,1,W,1>(0,0) += cm_abs<ushort>(cm_add<short>(in.select<8,1,W,1>(4,1), - in.select<8,1,W,1>(4,0)));
     VDSUM_H.select<W,1,8,1>(0,0) += cm_abs<ushort>(cm_add<short>(in.select<W,1,8,1>(1,4), - in.select<W,1,8,1>(0,4)));
 
     tmp -= R;                                                               // tmp == DBR
 
-    HDSUM_H.select<8,1,W,1>(0,0) += cm_abs<ushort>(cm_add<short>(tmp.select<8,1,W,1>(4,1), - tmp.select<8,1,W,1>(4,0))); 
+    HDSUM_H.select<8,1,W,1>(0,0) += cm_abs<ushort>(cm_add<short>(tmp.select<8,1,W,1>(4,1), - tmp.select<8,1,W,1>(4,0)));
     VDSUM_H.select<W,1,8,1>(0,0) += cm_abs<ushort>(cm_add<short>(tmp.select<W,1,8,1>(1,4), - tmp.select<W,1,8,1>(0,4)));
-    
-    matrix_ref<int, 8, 8> HLSAD = tmp.select<8,1,16,1>(0,0).format<int, 8, 8>();       
-    matrix_ref<int, 8, 8> HRSAD = tmp.select<8,1,16,1>(8,0).format<int, 8, 8>();       
+
+    matrix_ref<int, 8, 8> HLSAD = tmp.select<8,1,16,1>(0,0).format<int, 8, 8>();
+    matrix_ref<int, 8, 8> HRSAD = tmp.select<8,1,16,1>(8,0).format<int, 8, 8>();
 
     HLSAD  = HDSUM_H.select<8,1,8,1>(0,0);  HRSAD  = HDSUM_H.select<8,1,8,1>(0,4);
     HLSAD += HDSUM_H.select<8,1,8,1>(0,1);  HRSAD += HDSUM_H.select<8,1,8,1>(0,5);
     HLSAD += HDSUM_H.select<8,1,8,1>(0,2);  HRSAD += HDSUM_H.select<8,1,8,1>(0,6);
     HLSAD += HDSUM_H.select<8,1,8,1>(0,3);  HRSAD += HDSUM_H.select<8,1,8,1>(0,7);
 
-    matrix_ref<int, 8, 8> Min_cost_H1 = in.select<8,1,16,1>(0,0).format<int, 8, 8>();   
+    matrix_ref<int, 8, 8> Min_cost_H1 = in.select<8,1,16,1>(0,0).format<int, 8, 8>();
     Min_cost_H1 = cm_min<int>(HLSAD, HRSAD);
 
     matrix_ref<int, 8, 8> HUSAD = tmp.select<8,1,16,1>(0,0).format<int, 8, 8>();
@@ -1573,15 +1572,15 @@ SAD_16(SurfaceIndex ibufRHOR, SurfaceIndex ibufGHOR, SurfaceIndex ibufBHOR,
     HUSAD += VDSUM_H.select<8,1,8,1>(1,0);  HDSAD += VDSUM_H.select<8,1,8,1>(5,0);
     HUSAD += VDSUM_H.select<8,1,8,1>(2,0);  HDSAD += VDSUM_H.select<8,1,8,1>(6,0);
     HUSAD += VDSUM_H.select<8,1,8,1>(3,0);  HDSAD += VDSUM_H.select<8,1,8,1>(7,0);
-    
-    matrix_ref<int, 8, 8> Min_cost_H2 = in.select<8,1,16,1>(8,0).format<int, 8, 8>();   
+
+    matrix_ref<int, 8, 8> Min_cost_H2 = in.select<8,1,16,1>(8,0).format<int, 8, 8>();
     Min_cost_H2 = cm_min<int>(HUSAD, HDSAD);
-  
+
     matrix<int, 8, 8> Min_cost_H = Min_cost_H1;
     Min_cost_H  = Min_cost_H2 >> SHIFT_MINCOST;
     Min_cost_H += Min_cost_H1                  ;
 
-    
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////    PART II: COMPUTE MIN_COST_V  ////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1600,7 +1599,7 @@ SAD_16(SurfaceIndex ibufRHOR, SurfaceIndex ibufGHOR, SurfaceIndex ibufBHOR,
     G_V = in .select<8,1,8,1>(4,4);
     in >>= bitshift;                                                       // <- bitshift
     tmp = (R - in);                                                        // tmp  == DRG
-    
+
     HDSUM_V.select<8,1,W,1>(0,0)  = cm_abs<ushort>(cm_add<short>(tmp.select<8,1,W,1>(4,1), - tmp.select<8,1,W,1>(4,0)));
     VDSUM_V.select<W,1,8,1>(0,0)  = cm_abs<ushort>(cm_add<short>(tmp.select<W,1,8,1>(1,4), - tmp.select<W,1,8,1>(0,4)));
 
@@ -1608,25 +1607,25 @@ SAD_16(SurfaceIndex ibufRHOR, SurfaceIndex ibufGHOR, SurfaceIndex ibufBHOR,
     read(ibufBVER, rd_h_pos - 8, rd_v_pos + 4, tmp .select<8,1,16,1>(8,0)); // tmp == B
     B_V = tmp.select<8,1,8,1>(4,4);
     tmp >>= bitshift;                                                       //<- bitshift
-    in -= tmp;                                                              //  in == DGB 
+    in -= tmp;                                                              //  in == DGB
 
     HDSUM_V.select<8,1,W,1>(0,0) += cm_abs<ushort>(cm_add<short>(in.select<8,1,W,1>(4,1), - in.select<8,1,W,1>(4,0)));
     VDSUM_V.select<W,1,8,1>(0,0) += cm_abs<ushort>(cm_add<short>(in.select<W,1,8,1>(1,4), - in.select<W,1,8,1>(0,4)));
 
     tmp -= R;                                                                // tmp == DBR
 
-    HDSUM_V.select<8,1,W,1>(0,0) += cm_abs<ushort>(cm_add<short>(tmp.select<8,1,W,1>(4,1), - tmp.select<8,1,W,1>(4,0))); 
+    HDSUM_V.select<8,1,W,1>(0,0) += cm_abs<ushort>(cm_add<short>(tmp.select<8,1,W,1>(4,1), - tmp.select<8,1,W,1>(4,0)));
     VDSUM_V.select<W,1,8,1>(0,0) += cm_abs<ushort>(cm_add<short>(tmp.select<W,1,8,1>(1,4), - tmp.select<W,1,8,1>(0,4)));
 
-    matrix_ref<int, 8, 8> VLSAD = tmp.select<8,1,16,1>(0,0).format<int, 8, 8>();       
-    matrix_ref<int, 8, 8> VRSAD = tmp.select<8,1,16,1>(8,0).format<int, 8, 8>();       
+    matrix_ref<int, 8, 8> VLSAD = tmp.select<8,1,16,1>(0,0).format<int, 8, 8>();
+    matrix_ref<int, 8, 8> VRSAD = tmp.select<8,1,16,1>(8,0).format<int, 8, 8>();
 
     VLSAD  = HDSUM_V.select<8,1,8,1>(0,0);  VRSAD  = HDSUM_V.select<8,1,8,1>(0,4);
     VLSAD += HDSUM_V.select<8,1,8,1>(0,1);  VRSAD += HDSUM_V.select<8,1,8,1>(0,5);
     VLSAD += HDSUM_V.select<8,1,8,1>(0,2);  VRSAD += HDSUM_V.select<8,1,8,1>(0,6);
     VLSAD += HDSUM_V.select<8,1,8,1>(0,3);  VRSAD += HDSUM_V.select<8,1,8,1>(0,7);
 
-    matrix_ref<int, 8, 8> Min_cost_V2 = in.select<8,1,16,1>(0,0).format<int, 8, 8>();   
+    matrix_ref<int, 8, 8> Min_cost_V2 = in.select<8,1,16,1>(0,0).format<int, 8, 8>();
     Min_cost_V2 = cm_min<int>(VLSAD, VRSAD);
 
     matrix_ref<int, 8, 8> VUSAD = tmp.select<8,1,16,1>(0,0).format<int, 8, 8>();
@@ -1636,10 +1635,10 @@ SAD_16(SurfaceIndex ibufRHOR, SurfaceIndex ibufGHOR, SurfaceIndex ibufBHOR,
     VUSAD += VDSUM_V.select<8,1,8,1>(1,0);  VDSAD += VDSUM_V.select<8,1,8,1>(5,0);
     VUSAD += VDSUM_V.select<8,1,8,1>(2,0);  VDSAD += VDSUM_V.select<8,1,8,1>(6,0);
     VUSAD += VDSUM_V.select<8,1,8,1>(3,0);  VDSAD += VDSUM_V.select<8,1,8,1>(7,0);
-    
-    matrix_ref<int, 8, 8> Min_cost_V1 = in.select<8,1,16,1>(8,0).format<int, 8, 8>();   
+
+    matrix_ref<int, 8, 8> Min_cost_V1 = in.select<8,1,16,1>(8,0).format<int, 8, 8>();
     Min_cost_V1 = cm_min<int>(VUSAD, VDSAD);
-  
+
     matrix<int, 8, 8> Min_cost_V = Min_cost_V1;
     Min_cost_V  = Min_cost_V2 >> SHIFT_MINCOST;
     Min_cost_V += Min_cost_V1                  ;
@@ -1647,10 +1646,10 @@ SAD_16(SurfaceIndex ibufRHOR, SurfaceIndex ibufGHOR, SurfaceIndex ibufBHOR,
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////// PART III: COMPUTE FLAG(MIN_COST_H, MIN_COST_V)   ///////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
-    
+
     int wr_h_pos = ((get_thread_origin_x() + wr_x) * 8) * sizeof(short);
     int wr_v_pos = ((get_thread_origin_y() + wr_y) * 8) ;
-     
+
     matrix_ref<ushort, 8, 8> outR = tmp.select<4,1,16,1>(0,0) .format<ushort, 8, 8>();
     matrix_ref<ushort, 8, 8> outG = tmp.select<4,1,16,1>(4,0) .format<ushort, 8, 8>();
     matrix_ref<ushort, 8, 8> outB = tmp.select<4,1,16,1>(8,0) .format<ushort, 8, 8>();
@@ -1828,230 +1827,112 @@ SAD(SurfaceIndex ibufRHOR, SurfaceIndex ibufGHOR, SurfaceIndex ibufBHOR,
 const unsigned short idx_init[16] = {1,1,2,2,5,5,6,6,9,9,10,10,13,13,14,14};
 
 extern "C" _GENX_ void inline
-//HORIZONTAL_CHECK_16(matrix_ref<ushort, 13, 32> srcG, matrix_ref<ushort, 8, 16> maskH)
-HORIZONTAL_CHECK_16(matrix_ref<uchar, 13, 32> srcG, matrix_ref<ushort, 8, 16> maskH)
-{
-
-    matrix< int, 4, 16 > diff; 
-#pragma unroll
-    for(int j = 0; j < 8; j++) // j == index of output registers
-    {
-        vector<uchar, 32> rowG = srcG.row(2+j); 
-        matrix_ref<uchar, 8, 4> m_rowG = rowG.format<uchar, 8, 4>();
-        matrix<uchar, 5, 16> v;               
-
-#ifdef CMRT_EMU
-        vector<short, 16> idx(idx_init);
-        vector<ushort, 16> index;
-        v.row(0) = rowG.iselect(idx);
-#pragma unroll
-        for(int j = 0; j < 4; j++) {
-            index = idx + (j + 1);
-            v.row(j+1) = rowG.iselect(index);
-            diff.row(j) = v.row(j) - v.row(j+1);
-        }
-#else
-
-        v.select<1,1,8,2>(0,0) = m_rowG.genx_select<4,4,2,1>(0,1);
-        v.select<1,1,8,2>(0,1) = v.select<1,1,8,2>(0,0);
-
-#pragma unroll
-        for(int i = 1; i < 5; i++) {
-            v.select<1,1,8,2>(i,0) = m_rowG.genx_select<4,4,2,1>(0,i+1);
-            v.select<1,1,8,2>(i,1) = v.select<1,1,8,2>(i,0);
-
-            diff.row(i-1) = v.row(i-1) - v.row(i);
-        }
-#endif
-
-        maskH.row(j) = (cm_abs<uint>(diff.row(3)) > Grn_imbalance_th);
-        
-#pragma unroll
-        for(int i = 0; i < 3; i++) {
-            maskH.row(j) &= (cm_mul<int> (diff.row(i),diff.row(i+1)) < 0);
-            maskH.row(j) &= (cm_abs<uint>(diff.row(i)) > Grn_imbalance_th);
-        }
-    }
-}
-
-extern "C" _GENX_ void inline
-//VERTICAL_CHECK_16(matrix_ref<ushort, 13, 16> cenG, matrix_ref<ushort, 8, 16> maskV)
-VERTICAL_CHECK_16(matrix_ref<uchar, 13, 16> cenG, matrix_ref<ushort, 8, 16> maskV)
-{
-    matrix< int, 4, 16 > diff; 
-    //{0,1,4,5} row
-#pragma unroll
-    for(int j = 0; j <= 4; j+=4 ) {
-
-        diff          = (cenG.select<4,1,16,1>(1+j,0) - cenG.select<4,1,16,1>(2+j,0));
-        maskV.row(j)  = (cm_abs<ushort>(diff.row(3)) > Grn_imbalance_th);
-#pragma unroll
-        for(int i = 0; i < 3; i++) {
-            maskV.row(j) &= (cm_mul<int> (diff.row(i),diff.row(i+1)) < 0);
-            maskV.row(j) &= (cm_abs<uint>(diff.row(i)) > Grn_imbalance_th);
-        }
-        maskV.row(j+1)  = maskV.row(j); 
-    }
-    
-    //{2,3,6,7} row
-#pragma unroll
-    for(int j = 2; j <= 6; j += 4 ) {
-        diff          = (cenG.select<4,1,16,1>(  j,0) - cenG.select<4,1,16,1>(1+j,0));
-
-        maskV.row(j)  = (cm_abs<ushort>(diff.row(3)) > Grn_imbalance_th);
-
-#pragma unroll
-        for(int i = 0; i < 3; i++) {
-            maskV.row(j) &= (cm_mul<int> (diff.row(i),diff.row(i+1)) < 0);
-            maskV.row(j) &= (cm_abs< uint >(diff.row(i)) > Grn_imbalance_th);
-        }
-        maskV.row(j+1) = maskV.row(j);
-    }
-}
-
-extern "C" _GENX_ void inline
-//COLORDIFF_CHECK_16(matrix_ref<ushort, 8, 16> srcR, matrix_ref<ushort, 8, 16> srcG, matrix_ref<ushort, 8, 16> srcB,
-COLORDIFF_CHECK_16(matrix_ref<uchar, 8, 16> srcR, matrix_ref<uchar, 8, 16> srcG, matrix_ref<uchar, 8, 16> srcB,
-                   matrix_ref<ushort, 8, 16> maskC
-                   , int AdjustedAvgTH)
-{
-    matrix< ushort, 8, 16 > absv;     
-    matrix< int  , 8, 16 > difference;
-
-    difference = srcR - srcG;
-    absv = cm_abs<ushort>(difference);
-    maskC  = (absv > AdjustedAvgTH);
-
-    difference = srcG - srcB;
-    absv = cm_abs<ushort>(difference);
-    maskC |= (absv > AdjustedAvgTH);
-
-    difference = srcB - srcR;
-    absv = cm_abs<ushort>(difference);
-    maskC |= (absv > AdjustedAvgTH);
-}
-
-
-extern "C" _GENX_ void inline
-//HORIZONTAL_CHECK(matrix_ref<ushort, 13, 32> srcG, matrix_ref<ushort, 8, 16> maskH)
 HORIZONTAL_CHECK(matrix_ref<uchar, 13, 32> srcG, matrix_ref<ushort, 8, 16> maskH)
 {
-    
-    matrix< short, 4, 16 > diff; 
+    vector<uchar, 32> rowG;
+    matrix<short, 4, 16> diff;
+    vector_ref<short, 16> D0 = diff.row(0);
+    vector_ref<short, 16> D1 = diff.row(1);
+    vector_ref<short, 16> D2 = diff.row(2);
+    vector_ref<short, 16> D3 = diff.row(3);
 
 #pragma unroll
-    for(int j = 0; j < 8; j++) // j == index of output registers
+    for(int j = 0; j < 8; j++) // j is index of output register
     {
-        vector<uchar, 32> rowG = srcG.row(2+j); 
+        rowG = srcG.row(2+j);
+
         matrix_ref<uchar, 8, 4> m_rowG = rowG.format<uchar, 8, 4>();
-        matrix<uchar, 5, 16> v;               
+        D0.select<8,2>(0) = m_rowG.genx_select<4,4,2,1>(0,1) - m_rowG.genx_select<4,4,2,1>(0,2);
+        D1.select<8,2>(0) = m_rowG.genx_select<4,4,2,1>(0,2) - m_rowG.genx_select<4,4,2,1>(0,3);
+        D2.select<8,2>(0) = m_rowG.genx_select<4,4,2,1>(0,3) - m_rowG.genx_select<4,4,2,1>(0,4);
+        D3.select<8,2>(0) = m_rowG.genx_select<4,4,2,1>(0,4) - m_rowG.genx_select<4,4,2,1>(0,5);
 
-#ifdef CMRT_EMU
-        vector<short, 16> idx(idx_init);
-        vector<ushort, 16> index;
-        v.row(0) = rowG.iselect(idx);
-#pragma unroll
-        for(int j = 0; j < 4; j++) {
-            index = idx + (j + 1);
-            v.row(j+1) = rowG.iselect(index);
-            diff.row(j) = v.row(j) - v.row(j+1);
-        }
-#else
+        diff.select<2,1,8,2>(0,1) = diff.select<2,1,8,2>(0,0);  //D0.select<8,2>(1) = D0.select<8,2>(0); //D1.select<8,2>(1) = D1.select<8,2>(0);
+        diff.select<2,1,8,2>(2,1) = diff.select<2,1,8,2>(2,0);  //D2.select<8,2>(1) = D2.select<8,2>(0); //D3.select<8,2>(1) = D3.select<8,2>(0);
 
-        v.select<1,1,8,2>(0,0) = m_rowG.genx_select<4,4,2,1>(0,1);
-        v.select<1,1,8,2>(0,1) = v.select<1,1,8,2>(0,0);
-
-#pragma unroll
-        for(int i = 1; i < 5; i++) {
-            v.select<1,1,8,2>(i,0) = m_rowG.genx_select<4,4,2,1>(0,i+1);
-            v.select<1,1,8,2>(i,1) = v.select<1,1,8,2>(i,0);
-
-            diff.row(i-1) = v.row(i-1) - v.row(i);
-        }
-#endif
-
-        maskH.row(j) = (cm_abs<ushort>(diff.row(3)) > Grn_imbalance_th);
-#pragma unroll
-        for(int i = 0; i < 3; i++) {
-            maskH.row(j) &= (cm_mul<int> (diff.row(i),diff.row(i+1)) < 0);
-            maskH.row(j) &= (cm_abs<ushort>(diff.row(i)) > Grn_imbalance_th);
-        }
+        maskH.row(j)  = ( cm_abs<short>(D0) > Grn_imbalance_th);
+        maskH.row(j) &= ( cm_abs<short>(D1) > Grn_imbalance_th);
+        maskH.row(j) &= ( cm_abs<short>(D2) > Grn_imbalance_th);
+        maskH.row(j) &= ( cm_abs<short>(D3) > Grn_imbalance_th);
+        maskH.row(j) &= ( cm_mul<short>(D0, D1) < 0 );
+        maskH.row(j) &= ( cm_mul<short>(D1, D2) < 0 );
+        maskH.row(j) &= ( cm_mul<short>(D2, D3) < 0 );
     }
 }
 
 extern "C" _GENX_ void inline
-//VERTICAL_CHECK(matrix_ref<ushort, 13, 16> cenG, matrix_ref<ushort, 8, 16> maskV)
 VERTICAL_CHECK(matrix_ref<uchar, 13, 16> cenG, matrix_ref<ushort, 8, 16> maskV)
 {
-    matrix< short, 4, 16 > diff; 
-    //{0,1,4,5} row
-#pragma unroll
-    for(int j = 0; j <= 4; j+=4 ) {
+    matrix< short, 9, 16 > diff = cenG.select<9,1,16,1>(1,0) - cenG.select<9,1,16,1>(2,0);
+    vector<ushort, 16> tmp_mask;
 
-        diff          = (cenG.select<4,1,16,1>(1+j,0) - cenG.select<4,1,16,1>(2+j,0));
-        maskV.row(j)  = (cm_abs<ushort>(diff.row(3)) > Grn_imbalance_th);
-#pragma unroll
-        for(int i = 0; i < 3; i++) {
-            maskV.row(j) &= (cm_mul<int> (diff.row(i),diff.row(i+1)) < 0);
-            maskV.row(j) &= (cm_abs<ushort>(diff.row(i)) > Grn_imbalance_th);
-        }
-        maskV.row(j+1)  = maskV.row(j); 
-    }
-    
-    //{2,3,6,7} row
-#pragma unroll
-    for(int j = 2; j <= 6; j += 4 ) {
-        diff          = (cenG.select<4,1,16,1>(  j,0) - cenG.select<4,1,16,1>(1+j,0));
-        maskV.row(j)  = (cm_abs<ushort>(diff.row(3)) > Grn_imbalance_th);
+    tmp_mask      = (cm_mul< short>(diff.row(1), diff.row(2)) < 0);
+    tmp_mask     &= (cm_mul< short>(diff.row(2), diff.row(3)) < 0);
+    tmp_mask     &= (cm_abs<ushort>(diff.row(1)) > Grn_imbalance_th);
+    tmp_mask     &= (cm_abs<ushort>(diff.row(2)) > Grn_imbalance_th);
+    tmp_mask     &= (cm_abs<ushort>(diff.row(3)) > Grn_imbalance_th);
 
-#pragma unroll
-        for(int i = 0; i < 3; i++) {
-            maskV.row(j) &= (cm_mul<int> (diff.row(i),diff.row(i+1)) < 0);
-            maskV.row(j) &= (cm_abs< ushort >(diff.row(i)) > Grn_imbalance_th);
-        }
-        maskV.row(j+1) = maskV.row(j);
-    }
+    maskV.row(0)  = tmp_mask & (cm_abs<ushort>(diff.row(0)) > Grn_imbalance_th);
+    maskV.row(0) &= (cm_mul< short>(diff.row(0), diff.row(1)) < 0);
+
+    maskV.row(2)  = tmp_mask & (cm_abs<ushort>(diff.row(4)) > Grn_imbalance_th);
+    maskV.row(2) &= (cm_mul< short>(diff.row(3), diff.row(4)) < 0);
+
+    maskV.row(1)  = maskV.row(0);
+    maskV.row(3)  = maskV.row(2);
+
+    /////////////////////////////////////////////////////////////////////////////////
+
+    tmp_mask      = (cm_mul< short>(diff.row(5), diff.row(6)) < 0);
+    tmp_mask     &= (cm_mul< short>(diff.row(6), diff.row(7)) < 0);
+    tmp_mask     &= (cm_abs<ushort>(diff.row(5)) > Grn_imbalance_th);
+    tmp_mask     &= (cm_abs<ushort>(diff.row(6)) > Grn_imbalance_th);
+    tmp_mask     &= (cm_abs<ushort>(diff.row(7)) > Grn_imbalance_th);
+
+    maskV.row(4)  = tmp_mask & (cm_abs<ushort>(diff.row(4)) > Grn_imbalance_th);
+    maskV.row(4) &= (cm_mul< short>(diff.row(4), diff.row(5)) < 0);
+
+    maskV.row(6)  = tmp_mask & (cm_abs<ushort>(diff.row(8)) > Grn_imbalance_th);
+    maskV.row(6) &= (cm_mul< short>(diff.row(7), diff.row(8)) < 0);
+
+    maskV.row(5)  = maskV.row(4);
+    maskV.row(7)  = maskV.row(6);
 }
 
+/*
 extern "C" _GENX_ void inline
-//COLORDIFF_CHECK(matrix_ref<ushort, 8, 16> srcR, matrix_ref<ushort, 8, 16> srcG, matrix_ref<ushort, 8, 16> srcB,
 COLORDIFF_CHECK(matrix_ref<uchar, 8, 16> srcR, matrix_ref<uchar, 8, 16> srcG, matrix_ref<uchar, 8, 16> srcB,
-                matrix_ref<ushort, 8, 16> maskC
-                , int AdjustedAvgTH)
+                matrix_ref<ushort, 8, 16> maskC, int AdjustedAvgTH)
 {
-    matrix< ushort, 8, 16 > absv;     
-    matrix< short  , 8, 16 > difference;
+    matrix< short , 8, 16 > diff;
 
-    difference = srcR - srcG;
-    absv = cm_abs<ushort>(difference);
-    maskC  = (absv > AdjustedAvgTH);
+    diff   =  cm_add< short>(srcR, -srcG);
+    maskC  = (cm_abs<ushort>(diff) > AdjustedAvgTH);
 
-    difference = srcG - srcB;
-    absv = cm_abs<ushort>(difference);
-    maskC |= (absv > AdjustedAvgTH);
+    diff   =  cm_add< short>(srcG, -srcB);
+    maskC |= (cm_abs<ushort>(diff) > AdjustedAvgTH);
 
-    difference = srcB - srcR;  
-    absv = cm_abs<ushort>(difference);
-    maskC |= (absv > AdjustedAvgTH);
+    diff   =  cm_add< short>(srcB, -srcR);
+    maskC |= (cm_abs<ushort>(diff) > AdjustedAvgTH);
 }
-
+*/
 extern "C" _GENX_MAIN_ void
 DECIDE_AVG( SurfaceIndex ibufRAVG, SurfaceIndex ibufGAVG, SurfaceIndex ibufBAVG,
             SurfaceIndex ibufAVG_Flag,
             SurfaceIndex obufROUT, SurfaceIndex obufGOUT, SurfaceIndex obufBOUT, int wr_x, int wr_y,
             int BayerType, int bitDepth)
 {
-    matrix< ushort, 13, 32 > srcG;       
+    matrix< ushort, 13, 32 > srcG;
     matrix< ushort,  8, 16 > srcR, srcB;
 
     matrix< uchar , 13, 32 > srcG_tmp;
-    matrix< uchar ,  8, 16 > srcR_tmp, srcB_tmp; 
+    //matrix< uchar ,  8, 16 > srcR_tmp, srcB_tmp;
 
     matrix< uchar,16, 16 >   AVG_flag;
     matrix<ushort, 8, 16 >   AVG_Mask, out;
-    matrix<ushort, 8, 16 >   /*mask,*/ maskH, maskV, maskC;
+    matrix<ushort, 8, 16 >   maskH, maskV, maskC;
 
-    int bitshift = (bitDepth - 8);
+    unsigned short bitshift = (bitDepth - 8);
     int AdjustAvgTH = AVG_COLOR_TH << bitshift;
 
     int rd_h_pos = (get_thread_origin_x() * 16 + 8 - 2) * sizeof(short); // + 8 for Output is Unpadded
@@ -2071,41 +1952,33 @@ DECIDE_AVG( SurfaceIndex ibufRAVG, SurfaceIndex ibufGAVG, SurfaceIndex ibufBAVG,
     ///////////// FIRST 16x8 BLOCK  ////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
 
-    //matrix<ushort, 13, 16> cenG; 
-    matrix< uchar, 13, 16 > cenG;
-    
-
     AVG_Mask = (AVG_flag.select<8,1,16,1>(0,0) == AVG_True);
     if(AVG_Mask.any())
     {
+        srcG_tmp = (srcG >> bitshift);
+        HORIZONTAL_CHECK(srcG_tmp, maskH);
+        VERTICAL_CHECK  (srcG_tmp.select<13,1,16,1>(0,2), maskV);
+        /*
         read(ibufRAVG, rd_h_pos+4 , rd_v_pos+2, srcR);
         read(ibufBAVG, rd_h_pos+4 , rd_v_pos+2, srcB);
-            
-        srcR_tmp = (srcR >> bitshift);
-        srcG_tmp = (srcG >> bitshift);
-        srcB_tmp = (srcB >> bitshift);
-        
-        cenG = srcG.select<13,1,16,1>(0,2) >> bitshift;
-        if(bitDepth <= 14)
-        {
-            HORIZONTAL_CHECK(srcG_tmp, maskH);
-            VERTICAL_CHECK  (cenG, maskV);
-            COLORDIFF_CHECK (srcR_tmp, srcG_tmp.select<8,1,16,1>(2,2), srcB_tmp, maskC, AdjustAvgTH);
-        }
-        else
-        {
-            HORIZONTAL_CHECK_16(srcG_tmp, maskH);
-            VERTICAL_CHECK_16  (cenG, maskV);
-            COLORDIFF_CHECK_16 (srcR_tmp, srcG_tmp.select<8,1,16,1>(2,2), srcB_tmp, maskC, AdjustAvgTH);
-        }
-        maskH |= (maskV | maskC);
 
+        srcR_tmp = (srcR >> bitshift);
+        srcB_tmp = (srcB >> bitshift);
+
+        COLORDIFF_CHECK (srcR_tmp, srcG_tmp.select<8,1,16,1>(2,2), srcB_tmp, maskC, AdjustAvgTH);
+        mask |= maskC;
+        */
+        maskH |= (maskV);
         AVG_flag.select<8,1,16,1>(0,0).merge(AVG_False, maskH);
     }
 
     AVG_Mask = (AVG_flag.select<8,1,16,1>(0,0) == AVG_True);
+
     if(AVG_Mask.any())
     {
+        read(ibufRAVG, rd_h_pos+4 , rd_v_pos+2, srcR);
+        read(ibufBAVG, rd_h_pos+4 , rd_v_pos+2, srcB);
+
         read (obufROUT, wr_h_pos, wr_v_pos, out);
         out.merge(srcR, AVG_Mask);
         write(obufROUT, wr_h_pos, wr_v_pos, out);
@@ -2125,44 +1998,37 @@ DECIDE_AVG( SurfaceIndex ibufRAVG, SurfaceIndex ibufGAVG, SurfaceIndex ibufBAVG,
     wr_v_pos += 8;
     rd_v_pos += 8;
 
-    srcG.select<5,1,16,1>(0,0 ) = srcG.select<5,1,16,1>(8,0 );
-    srcG.select<5,1,16,1>(0,16) = srcG.select<5,1,16,1>(8,16);
-    read(ibufGAVG, rd_h_pos   , rd_v_pos+5 , srcG.select<8,1,16,1>(5,0 ));
-    read(ibufGAVG, rd_h_pos+32, rd_v_pos+5 , srcG.select<8,1,16,1>(5,16));
-
     if((AVG_flag.select<8,1,16,1>(8,0) == AVG_True).any())
     {
-    
+        srcG.select<5,1,16,1>(0,0 ) = srcG.select<5,1,16,1>(8,0 );
+        srcG.select<5,1,16,1>(0,16) = srcG.select<5,1,16,1>(8,16);
+        read(ibufGAVG, rd_h_pos   , rd_v_pos+5 , srcG.select<8,1,16,1>(5,0 ));
+        read(ibufGAVG, rd_h_pos+32, rd_v_pos+5 , srcG.select<8,1,16,1>(5,16));
+
+        srcG_tmp = (srcG >> bitshift);
+        HORIZONTAL_CHECK(srcG_tmp, maskH);
+        VERTICAL_CHECK  (srcG_tmp.select<13,1,16,1>(0,2), maskV);
+        /*
         read(ibufRAVG, rd_h_pos+4 , rd_v_pos+2, srcR);
         read(ibufBAVG, rd_h_pos+4 , rd_v_pos+2, srcB);
-            
+
         srcR_tmp = (srcR >> bitshift);
-        srcG_tmp = (srcG >> bitshift);
         srcB_tmp = (srcB >> bitshift);
-        
-        cenG = srcG.select<13,1,16,1>(0,2) >> bitshift;
 
-        if(bitDepth <= 14)
-        {
-            HORIZONTAL_CHECK(srcG_tmp, maskH);
-            VERTICAL_CHECK  (cenG, maskV);
-            COLORDIFF_CHECK (srcR_tmp, srcG_tmp.select<8,1,16,1>(2,2), srcB_tmp, maskC, AdjustAvgTH);
-        }
-        else
-        {
-            HORIZONTAL_CHECK_16(srcG_tmp, maskH);
-            VERTICAL_CHECK_16  (cenG, maskV);
-            COLORDIFF_CHECK_16 (srcR_tmp, srcG_tmp.select<8,1,16,1>(2,2), srcB_tmp, maskC, AdjustAvgTH);
-        }
-
-        maskH |= (maskV | maskC);
-
+        COLORDIFF_CHECK (srcR_tmp, srcG_tmp.select<8,1,16,1>(2,2), srcB_tmp, maskC, AdjustAvgTH);
+        mask |= maskC;
+        */
+        maskH |= (maskV);
         AVG_flag.select<8,1,16,1>(8,0).merge(AVG_False, maskH);
     }
 
     AVG_Mask = (AVG_flag.select<8,1,16,1>(8,0) == AVG_True);
+
     if(AVG_Mask.any())
     {
+        read(ibufRAVG, rd_h_pos+4 , rd_v_pos+2, srcR);
+        read(ibufBAVG, rd_h_pos+4 , rd_v_pos+2, srcB);
+
         read (obufROUT, wr_h_pos, wr_v_pos, out);
         out.merge(srcR, AVG_Mask);
         write(obufROUT, wr_h_pos, wr_v_pos, out);
@@ -2189,8 +2055,8 @@ DECIDE_AVG( SurfaceIndex ibufRAVG, SurfaceIndex ibufGAVG, SurfaceIndex ibufBAVG,
 const unsigned short initSeq[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 
 _GENX_ void inline
-LOAD_LUT(SurfaceIndex Correct_Index, SurfaceIndex Point_Index, 
-         int slmX, SurfaceIndex ARGBIndex, 
+LOAD_LUT(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
+         int slmX, SurfaceIndex ARGBIndex,
          int BitDepth, int enableSLM)
 {
     matrix<ushort, 4, 16> Point;   matrix_ref<ushort, 1, 64> gamma_P = Point  .format<ushort, 1, 64>();
@@ -2208,15 +2074,15 @@ LOAD_LUT(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 
     int id = cm_linear_local_id();
     int total_load_elements = (1 << BitDepth);                                   // in number of elements
-    int max_input_level = total_load_elements - 1;                                    
+    int max_input_level = total_load_elements - 1;
     int load_elements_per_thread = total_load_elements / cm_linear_local_size(); // in number of elements
         load_elements_per_thread = (load_elements_per_thread + 15) & 0xFFFFFFF0;
 
-    int loop_count = load_elements_per_thread / 16;                              // Each loop handle 16 elements   
+    int loop_count = load_elements_per_thread / 16;                              // Each loop handle 16 elements
 
     for(int k = 0; k < loop_count; k++)
-    { 
-        
+    {
+
         v_in = v_in_initial + (id * load_elements_per_thread + k * 16);
 
 
@@ -2230,11 +2096,11 @@ LOAD_LUT(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
             comp_index.merge((comp_index+shift), (comp_index-shift), mak);
         }
         index.merge(0, ((index == 1) & (v_in < gamma_P(0,1))));
-           
+
         i_plus_1.merge((NUM_CONTROL_POINTS-1), (index + 1), (index == (NUM_CONTROL_POINTS-1)));
 
-        c_i = gamma_C.iselect(index); 
-        p_i = gamma_P.iselect(index); 
+        c_i = gamma_C.iselect(index);
+        p_i = gamma_P.iselect(index);
         c_i_plus_1.merge( max_input_level,  gamma_C.iselect(i_plus_1), (index == (NUM_CONTROL_POINTS-1)));
         p_i_plus_1.merge( max_input_level,  gamma_P.iselect(i_plus_1), (index == (NUM_CONTROL_POINTS-1)));
 
@@ -2245,8 +2111,8 @@ LOAD_LUT(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
         v_o /= tmp;                              // v_o /= cm_add<int>(p_i_plus_1, -p_i, SAT);
         v_o += c_i;
 
-        vector<ushort, 16> v_out;              //vector<uint, 16> v_out;    for 3.0 compiler which doesn't support word granularity                                             
-        
+        vector<ushort, 16> v_out;              //vector<uint, 16> v_out;    for 3.0 compiler which doesn't support word granularity
+
         v_o = cm_max<uint>(0, v_o);
         v_out = cm_min<uint>(max_input_level, v_o);
 
@@ -2271,15 +2137,15 @@ GAMMA_ONLY_SLM_ARGB8_OUT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BU
     int shift_amount = bitdepth - 8;;
 
     vector<ushort, 16> v_Addr;
-    
-    vector<ushort, 16> rd_slmDataIn; 
+
+    vector<ushort, 16> rd_slmDataIn;
     //vector<uint,   16> rd_slmDataIn;   // for 3.0 compiler which doesn't support word granularity
 
     read(BUF_R, h_pos, v_pos, rd_in_R);
 #pragma unroll
     for(int i = 0; i < 8; i++)
     {
-        v_Addr = rd_in_R.row(i); 
+        v_Addr = rd_in_R.row(i);
         cm_slm_read(slmX, v_Addr, rd_slmDataIn); out.select<1,1,16,4>(i,0) = (rd_slmDataIn >> shift_amount);
     }
 
@@ -2295,7 +2161,7 @@ GAMMA_ONLY_SLM_ARGB8_OUT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BU
 #pragma unroll
     for(int i = 0; i < 8; i++)
     {
-        v_Addr = rd_in_B.row(i); 
+        v_Addr = rd_in_B.row(i);
         cm_slm_read(slmX, v_Addr, rd_slmDataIn); out.select<1,1,16,4>(i,2) = (rd_slmDataIn >> shift_amount);
     }
 
@@ -2304,7 +2170,7 @@ GAMMA_ONLY_SLM_ARGB8_OUT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BU
     {
         out.select<1,1,16,4>(i,3) = 0;
     }
-    
+
     vector<uchar, 64> tmp;
     if(BayerType == GRBG || BayerType == GBRG)
     {
@@ -2316,7 +2182,7 @@ GAMMA_ONLY_SLM_ARGB8_OUT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BU
             out.row(7-j) = tmp;
         }
     }
-    
+
     // Enable if choose to do tile processing for Gamma module
     //h_pos += (wr_x * 2);
     //v_pos += wr_y;
@@ -2331,7 +2197,7 @@ GAMMA_ONLY_SLM_ARGB8_OUT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BU
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //////   KERNEL 'GAMMA+ARGB8_INTERLEAVE' FOR CANON    //////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-extern "C" _GENX_MAIN_ void 
+extern "C" _GENX_MAIN_ void
 GAMMA_GPUV4_ARGB8_2D(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
                      //SurfaceIndex R_I_Index, SurfaceIndex G_I_Index, SurfaceIndex B_I_Index,
                      SurfaceIndex B_I_Index, SurfaceIndex G_I_Index, SurfaceIndex R_I_Index,
@@ -2340,7 +2206,7 @@ GAMMA_GPUV4_ARGB8_2D(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 {
     cm_slm_init(65536);
     uint slmX = cm_slm_alloc(65536);
-  
+
 #if 0
      //ENABLE LOOK-UP TABLE COMPUTING
     matrix<ushort, 4, 16> Correct, Point;
@@ -2359,17 +2225,17 @@ GAMMA_GPUV4_ARGB8_2D(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 
     int id = cm_linear_local_id();
     int total_load_elements = (1 << BitDepth);                                   // in number of elements
-    int max_input_level = total_load_elements - 1;                                    
+    int max_input_level = total_load_elements - 1;
     int load_elements_per_thread = total_load_elements / cm_linear_local_size(); // in number of elements
 
     load_elements_per_thread = (load_elements_per_thread + 15) & 0xFFFFFFF0;
 
-    int loop_count = load_elements_per_thread / 16;                              // Each loop handle 16 elements   
+    int loop_count = load_elements_per_thread / 16;                              // Each loop handle 16 elements
 
     vector<ushort, 16> v_in;
 
     for(int k = 0; k < loop_count; k++)
-    { 
+    {
         v_in = v_in_initial + (id * load_elements_per_thread + k * 16);
 
         index = 0;
@@ -2386,7 +2252,7 @@ GAMMA_GPUV4_ARGB8_2D(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
             comp_index.merge((comp_index+shift), (comp_index-shift), mak);
         }
         index.merge(0, ((index == 1) & (v_in < gamma_P(0,1))));
-        
+
         //vector<uint, 16> i_plus_1;
         vector<ushort, 16> c_i, p_i, c_i_plus_1, p_i_plus_1;
         i_plus_1.merge((NUM_CONTROL_POINTS-1), (index + 1), (index == (NUM_CONTROL_POINTS-1)));
@@ -2406,7 +2272,7 @@ GAMMA_GPUV4_ARGB8_2D(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
         vector<int, 16> tmp = cm_add<int>(p_i_plus_1, -p_i);
         tmp = cm_max<int>(1, tmp);
         v_o /= tmp;
-        
+
         //v_o /= cm_add<int>(p_i_plus_1, -p_i, SAT);//(p_i_plus_1 - p_i);
 
         v_o += c_i;
@@ -2431,10 +2297,10 @@ GAMMA_GPUV4_ARGB8_2D(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
     /////////////////////////////////////////////////////////////////////////////////
 #if 0
     int rd_h_pos, rd_v_pos;
-    
+
     int l_count = 1 ;//(frameheight % 128 == 0)? (frameheight / 128) : ((frameheight / 128)+1);
     for(int l = 0; l < l_count; l++)   // 17 = (frameHeight / (32(H/group)*4 groups))
-    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops 
+    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops
         for(int m = 0; m < 4; m++)
         {
                 //EACH thread in the threadgroup handle 256 byte-wide data
@@ -2442,14 +2308,14 @@ GAMMA_GPUV4_ARGB8_2D(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 #pragma unroll
                 for(int i = 0; i < 8; i++)
                 {
-                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;           
-                    GAMMA_ONLY_SLM_ARGB8_OUT(R_I_Index, G_I_Index, B_I_Index, ARGB8_Index, 
+                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;
+                    GAMMA_ONLY_SLM_ARGB8_OUT(R_I_Index, G_I_Index, B_I_Index, ARGB8_Index,
                                               rd_h_pos, rd_v_pos, slmX, BitDepth, BayerType, frameheight);
                 }
 
         }
     }
-    
+
 #else
     int framewidth = framewidth_in_bytes / 4;
     int rd_h_pos, rd_v_pos;  // position in units of bytes
@@ -2469,9 +2335,9 @@ GAMMA_GPUV4_ARGB8_2D(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
     //for(int k = 0; k < 540; k++)
     for(int k = 0; k < loop_count; k++)
     {
-         GAMMA_ONLY_SLM_ARGB8_OUT(R_I_Index, G_I_Index, B_I_Index, ARGB8_Index, 
+         GAMMA_ONLY_SLM_ARGB8_OUT(R_I_Index, G_I_Index, B_I_Index, ARGB8_Index,
                                      rd_h_pos, rd_v_pos, slmX, BitDepth, BayerType, frameheight);
-                                    
+
          // UPDAYE process position
          T_id += cm_linear_global_size();
          rd_h_pos = (T_id % threadswidth) * 16 * 2;
@@ -2492,7 +2358,7 @@ GAMMA_ONLY_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B,
     matrix<ushort, 8, 16> rd_in_G;
     matrix<ushort, 8, 16> rd_in_B;
     matrix<ushort, 8, 16> wr_out;
-    
+
     vector<ushort, 16> v_Addr;
     vector<uint,   16> rd_slmDataIn;
 
@@ -2525,7 +2391,7 @@ GAMMA_ONLY_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B,
 
 
 
-extern "C" _GENX_MAIN_ void 
+extern "C" _GENX_MAIN_ void
 GAMMA_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
            SurfaceIndex R_I_Index, SurfaceIndex G_I_Index, SurfaceIndex B_I_Index,
            vector<float, 9> ccm,
@@ -2534,14 +2400,14 @@ GAMMA_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
            SurfaceIndex LUT_Index)
 {
     ////////////////////////////////////////////////////////////////////////////////////////
-    
+
     cm_slm_init(65536);
     uint slmX = cm_slm_alloc(65536);
 
     //ENABLE LOOK-UP TABLE COMPUTING
     matrix<ushort, 4, 16> Correct, Point;
     matrix_ref<ushort, 1, 64> gamma_P = Point.format<ushort, 1, 64>();
-    
+
     read(Correct_Index, 0, 0, Correct);
     read(Point_Index  , 0, 0, Point  );
 
@@ -2553,15 +2419,15 @@ GAMMA_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 
     int id = cm_linear_local_id();
     int total_load_elements = (1 << BitDepth);                                     // in number of elements
-    int max_input_level = total_load_elements - 1;                                    
+    int max_input_level = total_load_elements - 1;
     int load_elements_per_thread = total_load_elements / cm_linear_local_size(); // in number of elements
     load_elements_per_thread = (load_elements_per_thread + 15) & 0xFFFFFFF0;
-    int loop_count = load_elements_per_thread / 16;                              // Each loop handle 16 elements   
+    int loop_count = load_elements_per_thread / 16;                              // Each loop handle 16 elements
     //int loop_count = ((load_elements_per_thread % 16) == 0)? (load_elements_per_thread / 16) : ((load_elements_per_thread / 16) + 1);
 
     vector<ushort, 16> v_in;
 
-#ifndef CM_EMU    
+#ifndef CM_EMU
     for(int k = 0; k < loop_count; k++)
     {
         v_in = v_in_initial + (id * load_elements_per_thread + k * 16);
@@ -2592,7 +2458,7 @@ GAMMA_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
             index  += (mak << i);
             comp_index.merge((comp_index+shift), (comp_index-shift), mak);
         }
-        index.merge(0, ((index == 1) & (v_in < gamma_P(0,1))));   
+        index.merge(0, ((index == 1) & (v_in < gamma_P(0,1))));
 
         vector<ushort, 16> c_i, p_i, c_i_plus_1, p_i_plus_1;
         vector<uint, 16> i_plus_1;
@@ -2605,7 +2471,7 @@ GAMMA_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
         p_i_plus_1.merge( max_input_level,  Point  .iselect(i_plus_1), (index == (NUM_CONTROL_POINTS-1)));
 
         vector<uint, 16> v_o;
-        
+
         v_o  = (c_i_plus_1 - c_i);
 #ifndef CM_EMU
         v_in = v_in_initial + (id  * load_elements_per_thread + k * 16);
@@ -2621,13 +2487,13 @@ GAMMA_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
         v_o /= tmp;
 
         v_o += c_i;
-        
+
         //vector<uint, 16> v_out;
         v_o = cm_max<uint>(0, v_o);
-        
+
         //v_out = cm_min<uint>(max_input_level, v_o);
         v_o = cm_min<uint>(max_input_level, v_o);
-        
+
         cm_slm_write(slmX, v_in, v_o);
 
     }
@@ -2643,10 +2509,10 @@ GAMMA_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
     /////////////////////////////////////////////////////////////////////////////////
 
     int rd_h_pos, rd_v_pos;
-    
+
     int l_count = (frameheight % 128 == 0)? (frameheight / 128) : ((frameheight / 128)+1);
     for(int l = 0; l < l_count; l++)   // 17 = (frameHeight / (32(H/group)*4 groups))
-    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops 
+    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops
         for(int m = 0; m < 4; m++)
         {
                 //EACH thread in the threadgroup handle 256 byte-wide data
@@ -2654,7 +2520,7 @@ GAMMA_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 #pragma unroll
                 for(int i = 0; i < 8; i++)
                 {
-                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;             
+                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;
                     GAMMA_ONLY_CORRECT(R_I_Index, G_I_Index, B_I_Index, rd_h_pos, rd_v_pos, slmX);
                 }
 
@@ -2671,7 +2537,7 @@ GAMMA_ONLY_CORRECT_16bits(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex B
     matrix<ushort, 8, 16> rd_in_G;
     matrix<ushort, 8, 16> rd_in_B;
     matrix<ushort, 8, 16> wr_out;
-    
+
     vector<uint, 16> v_addr;          // Typed uint to fit into the interface
     vector<uint, 16> rd_bufferDataIn; // in 16 bits need 'DW' scatter read
 
@@ -2704,21 +2570,21 @@ GAMMA_ONLY_CORRECT_16bits(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex B
 _GENX_ void inline
 CCM_ONLY_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B,
                  int h_pos, int v_pos, vector<float, 9> ccm, ushort max_input_level)
-{    
+{
     matrix<ushort, 8, 16> wr_out;
     matrix<ushort, 8, 16> rd_in_R, rd_in_G, rd_in_B;
 
     read(BUF_R, h_pos, v_pos, rd_in_R);
     read(BUF_G, h_pos, v_pos, rd_in_G);
     read(BUF_B, h_pos, v_pos, rd_in_B);
-    
+
     matrix<int   , 8, 16> tmp;
 
 #pragma unroll
     for(int j = 0; j < 8; j++)
     {
         tmp.row(j)  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(0)));
-        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(1))); 
+        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(1)));
         tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(2)));
         tmp.row(j)  = cm_max<int>(tmp.row(j), 0);                  //cm_max<ushort>(tmp.row(j), 0);
         wr_out.row(j)  = cm_min<int>(tmp.row(j), max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -2729,7 +2595,7 @@ CCM_ONLY_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B,
     for(int j = 0; j < 8; j++)
     {
         tmp.row(j)  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(3)));
-        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(4))); 
+        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(4)));
         tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(5)));
         tmp.row(j)  = cm_max<int>(tmp.row(j), 0);                  //cm_max<ushort>(tmp.row(j), 0);
         wr_out.row(j)  = cm_min<int>(tmp.row(j), max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -2740,7 +2606,7 @@ CCM_ONLY_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B,
     for(int j = 0; j < 8; j++)
     {
         tmp.row(j)  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(6)));
-        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(7))); 
+        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(7)));
         tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(8)));
         tmp.row(j)  = cm_max<int>(tmp.row(j), 0);                  //cm_max<ushort>(tmp.row(j), 0);
         wr_out.row(j)  = cm_min<int>(tmp.row(j), max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -2749,16 +2615,16 @@ CCM_ONLY_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B,
 }
 #else
 
-extern "C" _GENX_MAIN_ void 
+extern "C" _GENX_MAIN_ void
 CCM_ONLY_ARGB8_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B, SurfaceIndex BUF_ARGB8,
                        int BayerType, int outFrameHeight, vector<float, 9> ccm, int BitDepth)
-{    
+{
 
     matrix<uchar , 16, 64> out;                          // matrix<ushort, 8, 16> wr_out;
     matrix<ushort, 16, 16> rd_in_R, rd_in_G, rd_in_B; // matrix<ushort, 8, 16> rd_in_R, rd_in_G, rd_in_B;
 
     vector<int   , 16> tmp;
-    
+
     int rd_h_pos  = (get_thread_origin_x() * 16) * sizeof(short);
     int rd_v_pos  = (get_thread_origin_y() * 16);
 
@@ -2766,7 +2632,7 @@ CCM_ONLY_ARGB8_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_
     int wr_v_pos  = (get_thread_origin_y() * 16);
 
     int shift_amount = BitDepth - 8;
-    ushort max_input_level = (1 << BitDepth) - 1;    
+    ushort max_input_level = (1 << BitDepth) - 1;
 
     read(BUF_R, rd_h_pos, rd_v_pos  , rd_in_R.select<8,1,16,1>(0,0));
     read(BUF_R, rd_h_pos, rd_v_pos+8, rd_in_R.select<8,1,16,1>(8,0));
@@ -2778,7 +2644,7 @@ CCM_ONLY_ARGB8_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_
 #pragma unroll
     for(int j = 0; j < 16; j++) {
         tmp  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(0)));
-        tmp += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(1))); 
+        tmp += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(1)));
         tmp += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(2)));
         tmp  = cm_max<int>(tmp.row(j), 0);         //cm_max<ushort>(tmp.row(j), 0);
         tmp  = cm_min<int>(tmp, max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -2788,7 +2654,7 @@ CCM_ONLY_ARGB8_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_
 #pragma unroll
     for(int j = 0; j < 16; j++) {
         tmp  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(3)));
-        tmp += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(4))); 
+        tmp += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(4)));
         tmp += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(5)));
         tmp  = cm_max<int>(tmp.row(j), 0);         //cm_max<ushort>(tmp.row(j), 0);
         tmp  = cm_min<int>(tmp, max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -2798,13 +2664,13 @@ CCM_ONLY_ARGB8_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_
 #pragma unroll
     for(int j = 0; j < 16; j++) {
         tmp  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(6)));
-        tmp += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(7))); 
+        tmp += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(7)));
         tmp += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(8)));
         tmp  = cm_max<int>(tmp.row(j), 0);         //cm_max<ushort>(tmp.row(j), 0);
         tmp  = cm_min<int>(tmp, max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
         out.select<1,1,16,4>(j,2) = tmp >> shift_amount;
     }
-    
+
 #pragma unroll
         for(int j = 0; j < 16; j++)
             out.select<1,1,16,4>(j,3) = 0;
@@ -2826,18 +2692,18 @@ CCM_ONLY_ARGB8_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_
     write(BUF_ARGB8, wr_h_pos+32, wr_v_pos  , out.select<8,1,32,1>(0,32));
     write(BUF_ARGB8, wr_h_pos   , wr_v_pos+8, out.select<8,1,32,1>(8, 0));
     write(BUF_ARGB8, wr_h_pos+32, wr_v_pos+8, out.select<8,1,32,1>(8,32));
-}    
+}
 
 
-extern "C" _GENX_MAIN_ void 
-CCM_ONLY_ARGB16_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B, SurfaceIndex BUF_ARGB16,                        
+extern "C" _GENX_MAIN_ void
+CCM_ONLY_ARGB16_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B, SurfaceIndex BUF_ARGB16,
                         int BayerType, int outFrameHeight, vector<float, 9> ccm, int BitDepth)
-{    
+{
     matrix<ushort, 16, 64> out;                          // matrix<ushort, 8, 16> wr_out;
     matrix<ushort, 16, 16> rd_in_R, rd_in_G, rd_in_B; // matrix<ushort, 8, 16> rd_in_R, rd_in_G, rd_in_B;
 
     vector<int   , 16> tmp;
-    
+
     int rd_h_pos  = (get_thread_origin_x() * 16) * sizeof(short);
     int rd_v_pos  = (get_thread_origin_y() * 16);
 
@@ -2856,7 +2722,7 @@ CCM_ONLY_ARGB16_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF
 #pragma unroll
     for(int j = 0; j < 16; j++) {
         tmp  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(0)));
-        tmp += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(1))); 
+        tmp += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(1)));
         tmp += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(2)));
         tmp  = cm_max<int>(tmp.row(j), 0);                              //cm_max<ushort>(tmp.row(j), 0);
         out.select<1,1,16,4>(j,0) = cm_min<int>(tmp, max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -2865,7 +2731,7 @@ CCM_ONLY_ARGB16_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF
 #pragma unroll
     for(int j = 0; j < 16; j++) {
         tmp  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(3)));
-        tmp += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(4))); 
+        tmp += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(4)));
         tmp += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(5)));
         tmp  = cm_max<int>(tmp.row(j), 0);                              //cm_max<ushort>(tmp.row(j), 0);
         out.select<1,1,16,4>(j,1) = cm_min<int>(tmp, max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -2874,7 +2740,7 @@ CCM_ONLY_ARGB16_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF
 #pragma unroll
     for(int j = 0; j < 16; j++) {
         tmp  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(6)));
-        tmp += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(7))); 
+        tmp += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(7)));
         tmp += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(8)));
         tmp  = cm_max<int>(tmp.row(j), 0);                              //cm_max<ushort>(tmp.row(j), 0);
         out.select<1,1,16,4>(j,2) = cm_min<int>(tmp, max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -2906,7 +2772,7 @@ CCM_ONLY_ARGB16_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF
     write(BUF_ARGB16, wr_h_pos+32, wr_v_pos+8, out.select<8,1,16,1>(8,16));
     write(BUF_ARGB16, wr_h_pos+64, wr_v_pos+8, out.select<8,1,16,1>(8,32));
     write(BUF_ARGB16, wr_h_pos+96, wr_v_pos+8, out.select<8,1,16,1>(8,48));
-}    
+}
 
 #endif
 
@@ -2919,7 +2785,7 @@ GAMMA_CCM_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B,
     matrix<ushort, 8, 16> rd_in_G;
     matrix<ushort, 8, 16> rd_in_B;
     matrix<ushort, 8, 16> wr_out;
-    
+
     matrix<int   , 8, 16> tmp;
     vector<ushort, 16> v_Addr;
     vector<uint,   16> rd_slmDataIn;
@@ -2932,7 +2798,7 @@ GAMMA_CCM_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B,
     for(int j = 0; j < 8; j++)
     {
         tmp.row(j)  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(0)));
-        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(1))); 
+        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(1)));
         tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(2)));
         tmp.row(j)  = cm_max<int>(tmp.row(j), 0);                  //cm_max<ushort>(tmp.row(j), 0);
         wr_out.row(j)  = cm_min<int>(tmp.row(j), max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -2944,7 +2810,7 @@ GAMMA_CCM_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B,
     for(int j = 0; j < 8; j++)
     {
         tmp.row(j)  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(3)));
-        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(4))); 
+        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(4)));
         tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(5)));
         tmp.row(j)  = cm_max<int>(tmp.row(j), 0);                  //cm_max<ushort>(tmp.row(j), 0);
         wr_out.row(j)  = cm_min<int>(tmp.row(j), max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -2956,7 +2822,7 @@ GAMMA_CCM_CORRECT(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BUF_B,
     for(int j = 0; j < 8; j++)
     {
         tmp.row(j)  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(6)));
-        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(7))); 
+        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(7)));
         tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(8)));
         tmp.row(j)  = cm_max<int>(tmp.row(j), 0);                  //cm_max<ushort>(tmp.row(j), 0);
         wr_out.row(j)  = cm_min<int>(tmp.row(j), max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -2973,7 +2839,7 @@ GAMMA_CCM_CORRECT_16bits(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BU
     matrix<ushort, 8, 16> rd_in_G;
     matrix<ushort, 8, 16> rd_in_B;
     matrix<ushort, 8, 16> wr_out;
-    
+
     matrix<int   , 8, 16> tmp;
     vector<uint, 16> v_addr;         // Typed uint to fit into the interface
     vector<uint, 16> rd_bufferDataIn;// in 16 bits need 'DW' scatter read
@@ -2986,7 +2852,7 @@ GAMMA_CCM_CORRECT_16bits(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BU
     for(int j = 0; j < 8; j++)
     {
         tmp.row(j)  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(0)));
-        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(1))); 
+        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(1)));
         tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(2)));
         tmp.row(j)  = cm_max<int>(tmp.row(j), 0);                  //cm_max<ushort>(tmp.row(j), 0);
         wr_out.row(j)  = cm_min<int>(tmp.row(j), max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -2998,7 +2864,7 @@ GAMMA_CCM_CORRECT_16bits(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BU
     for(int j = 0; j < 8; j++)
     {
         tmp.row(j)  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(3)));
-        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(4))); 
+        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(4)));
         tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(5)));
         tmp.row(j)  = cm_max<int>(tmp.row(j), 0);                  //cm_max<ushort>(tmp.row(j), 0);
         wr_out.row(j)  = cm_min<int>(tmp.row(j), max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -3010,7 +2876,7 @@ GAMMA_CCM_CORRECT_16bits(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BU
     for(int j = 0; j < 8; j++)
     {
         tmp.row(j)  = cm_rndz<int>(cm_mul<float>(rd_in_R.row(j), ccm(6)));
-        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(7))); 
+        tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_G.row(j), ccm(7)));
         tmp.row(j) += cm_rndz<int>(cm_mul<float>(rd_in_B.row(j), ccm(8)));
         tmp.row(j)  = cm_max<int>(tmp.row(j), 0);                  //cm_max<ushort>(tmp.row(j), 0);
         wr_out.row(j)  = cm_min<int>(tmp.row(j), max_input_level);//cm_min<ushort>(wr_out.row(j), max_input_level);
@@ -3019,7 +2885,7 @@ GAMMA_CCM_CORRECT_16bits(SurfaceIndex BUF_R, SurfaceIndex BUF_G, SurfaceIndex BU
     write(BUF_B, h_pos, v_pos, wr_out);
 }
 
-extern "C" _GENX_MAIN_ void 
+extern "C" _GENX_MAIN_ void
 GAMMA_ONLY_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
                   SurfaceIndex R_I_Index, SurfaceIndex G_I_Index, SurfaceIndex B_I_Index,
                   vector<float, 9> ccm,
@@ -3028,7 +2894,7 @@ GAMMA_ONLY_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 {
     //cm_slm_init(65536);
     //uint slmX = cm_slm_alloc(65536);
-    
+
     //ENABLE LOOK-UP TABLE COMPUTING
     matrix<ushort, 4, 16> Correct, Point;
     matrix_ref<ushort, 1, 64> gamma_P = Point.format<ushort, 1, 64>();
@@ -3046,16 +2912,16 @@ GAMMA_ONLY_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 
     int id = cm_linear_local_id();
     int total_load_elements = (1 << BitDepth);                                     // in number of elements
-    int max_input_level = total_load_elements - 1;                                    
+    int max_input_level = total_load_elements - 1;
     int load_elements_per_thread = total_load_elements / cm_linear_local_size(); // in number of elements
-    int loop_count = load_elements_per_thread / 16;                              // Each loop handle 16 elements  
+    int loop_count = load_elements_per_thread / 16;                              // Each loop handle 16 elements
     //int loop_count = ((load_elements_per_thread % 16) == 0)? (load_elements_per_thread / 16) : ((load_elements_per_thread / 16) + 1);
     int group_id = cm_linear_group_id();
 
     vector<ushort, 16> v_in;
 
     for(int k = 0; k < loop_count; k++)
-    { 
+    {
         v_in = v_in_initial + (id * load_elements_per_thread + k * 16);
 
         index = 0;
@@ -3071,8 +2937,8 @@ GAMMA_ONLY_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
             index  += (mak << i);
             comp_index.merge((comp_index+shift), (comp_index-shift), mak);
         }
-        index.merge(0, ((index == 1) & (v_in < gamma_P(0,1))));   
-        
+        index.merge(0, ((index == 1) & (v_in < gamma_P(0,1))));
+
         //vector<uint, 16> i_plus_1;
         vector<ushort, 16> c_i, p_i, c_i_plus_1, p_i_plus_1;
         i_plus_1.merge((NUM_CONTROL_POINTS-1), (index + 1), (index == (NUM_CONTROL_POINTS-1)));
@@ -3092,13 +2958,13 @@ GAMMA_ONLY_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
         vector<ushort, 16> tmp = p_i_plus_1 -p_i;
         tmp = cm_max<ushort>(1, tmp);
         v_o /= tmp;
-       
-        
+
+
         v_o += c_i;
-        
+
         vector<uint, 16> v_out_dw;
         v_o = cm_max<uint>(0, v_o);
-        v_out_dw = cm_min<uint>(max_input_level, v_o);    
+        v_out_dw = cm_min<uint>(max_input_level, v_o);
 
         //cm_slm_write(slmX, v_in, v_out);
         int addr = group_id * 65536 * 4 + (id * loop_count + k) * 64;
@@ -3106,16 +2972,16 @@ GAMMA_ONLY_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
     }
 
     cm_barrier();
-    
+
     /////////////////////////////////////////////////////////////////////////////////
     //////////////////  LOOK-UP TABLE PREPARED   ////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////
 
     int rd_h_pos, rd_v_pos;
-    
+
     int l_count = (frameheight % 128 == 0)? (frameheight / 128) : ((frameheight / 128)+1);
     for(int l = 0; l < l_count; l++)   // 17 = (frameHeight / (32(H/group)*4 groups))
-    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops 
+    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops
         for(int m = 0; m < 4; m++)
         {
                 //EACH thread in the threadgroup handle 256 byte-wide data
@@ -3123,7 +2989,7 @@ GAMMA_ONLY_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 #pragma unroll
                 for(int i = 0; i < 8; i++)
                 {
-                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;             
+                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;
                     GAMMA_ONLY_CORRECT_16bits(R_I_Index, G_I_Index, B_I_Index, rd_h_pos, rd_v_pos, LUT_Index);
                 }
 
@@ -3133,7 +2999,7 @@ GAMMA_ONLY_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 }
 
 #if 1
-extern "C" _GENX_MAIN_ void 
+extern "C" _GENX_MAIN_ void
 CCM_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
          SurfaceIndex R_I_Index, SurfaceIndex G_I_Index, SurfaceIndex B_I_Index,
          vector<float, 9> ccm,
@@ -3148,7 +3014,7 @@ CCM_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 
     int rd_v_pos, rd_h_pos;
     for(int l = 0; l < l_count; l++)   // 17 = (frameHeight / (32(H/group)*4 groups))
-    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops 
+    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops
         for(int m = 0; m < 4; m++)
         {
                 //EACH thread in the threadgroup handle 256 byte-wide data
@@ -3156,7 +3022,7 @@ CCM_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 #pragma unroll
                 for(int i = 0; i < 8; i++)
                 {
-                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;             
+                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;
                     CCM_ONLY_CORRECT(R_I_Index, G_I_Index, B_I_Index, rd_h_pos, rd_v_pos, ccm, max_input_level);
                 }
 
@@ -3168,7 +3034,7 @@ CCM_ONLY(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 
 #endif
 
-extern "C" _GENX_MAIN_ void 
+extern "C" _GENX_MAIN_ void
 CCM_AND_GAMMA_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
                      SurfaceIndex R_I_Index, SurfaceIndex G_I_Index, SurfaceIndex B_I_Index,
                      vector<float, 9> ccm,
@@ -3181,7 +3047,7 @@ CCM_AND_GAMMA_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 
     matrix<ushort, 4, 16> Correct, Point;
     matrix_ref<ushort, 1, 64> gamma_P = Point.format<ushort, 1, 64>();
-    
+
     read(Correct_Index, 0, 0, Correct);
     read(Point_Index  , 0, 0, Point  );
 
@@ -3193,15 +3059,15 @@ CCM_AND_GAMMA_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 
     int id = cm_linear_local_id();
     int total_load_elements = (1 << BitDepth);                                     // in number of elements
-    int max_input_level = total_load_elements - 1;                                    
+    int max_input_level = total_load_elements - 1;
     int load_elements_per_thread = total_load_elements / cm_linear_local_size(); // in number of elements
-    int loop_count = load_elements_per_thread / 16;                              // Each loop handle 16 elements   
+    int loop_count = load_elements_per_thread / 16;                              // Each loop handle 16 elements
     //int loop_count = ((load_elements_per_thread % 16) == 0)? (load_elements_per_thread / 16) : ((load_elements_per_thread / 16) + 1);
     int group_id = cm_linear_group_id();
 
     vector<ushort, 16> v_Offsets(initSeq);
     v_Offsets += id * load_elements_per_thread;
-    
+
     vector<ushort, 16> v_in;
     matrix<uint, 4, 16> v_out; //64 DW (64 element)
 
@@ -3236,7 +3102,7 @@ CCM_AND_GAMMA_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
             index  += (mak << i);
             comp_index.merge((comp_index+shift), (comp_index-shift), mak);
         }
-        index.merge(0, ((index == 1) & (v_in < gamma_P(0,1))));   
+        index.merge(0, ((index == 1) & (v_in < gamma_P(0,1))));
 
         vector<ushort, 16> m_i, b_i, c_i, p_i, c_i_plus_1, p_i_plus_1;
         vector<uint, 16> i_plus_1;
@@ -3249,7 +3115,7 @@ CCM_AND_GAMMA_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
         p_i_plus_1.merge( max_input_level,  Point  .iselect(i_plus_1), (index == (NUM_CONTROL_POINTS-1)));
 
         vector<uint, 16> v_o;
-        
+
         v_o  = (c_i_plus_1 - c_i);
 #if 1   // 1 : HW MODE ;; 0 : EMU MODE
         v_in = v_in_initial + (id  * load_elements_per_thread + k * 16);
@@ -3261,13 +3127,13 @@ CCM_AND_GAMMA_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
         vector<ushort, 16> tmp = p_i_plus_1 -p_i;
         tmp = cm_max<ushort>(1, tmp);
         v_o /= tmp;
-        
+
         v_o += c_i;
 
         vector<uint, 16> v_out_dw;
         v_o = cm_max<uint>(0, v_o);
         v_out_dw = cm_min<uint>(max_input_level, v_o);
-        
+
         //cm_slm_write(slmX, v_in, v_o);
         int addr = group_id * 65536 * 4 + (id * loop_count + k) * 64;
         write(LUT_Index, addr, v_out_dw);
@@ -3285,7 +3151,7 @@ CCM_AND_GAMMA_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 
     int rd_v_pos, rd_h_pos;
     for(int l = 0; l < l_count; l++)   // 17 = (frameHeight / (32(H/group)*4 groups))
-    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops 
+    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops
         for(int m = 0; m < 4; m++)
         {
                 //EACH thread in the threadgroup handle 256 byte-wide data
@@ -3293,7 +3159,7 @@ CCM_AND_GAMMA_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 #pragma unroll
                 for(int i = 0; i < 8; i++)
                 {
-                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;             
+                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;
                     GAMMA_CCM_CORRECT_16bits(R_I_Index, G_I_Index, B_I_Index, rd_h_pos, rd_v_pos, LUT_Index, ccm, max_input);
                 }
 
@@ -3301,7 +3167,7 @@ CCM_AND_GAMMA_16bits(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
     }
 }
 
-extern "C" _GENX_MAIN_ void 
+extern "C" _GENX_MAIN_ void
 CCM_AND_GAMMA(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
               SurfaceIndex R_I_Index, SurfaceIndex G_I_Index, SurfaceIndex B_I_Index,
               vector<float, 9> ccm,
@@ -3315,7 +3181,7 @@ CCM_AND_GAMMA(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 
     matrix<ushort, 4, 16> Correct, Point;
     matrix_ref<ushort, 1, 64> gamma_P = Point.format<ushort, 1, 64>();
-    
+
     read(Correct_Index, 0, 0, Correct);
     read(Point_Index  , 0, 0, Point  );
 
@@ -3327,15 +3193,15 @@ CCM_AND_GAMMA(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 
     int id = cm_linear_local_id();
     int total_load_elements = (1 << BitDepth);                                     // in number of elements
-    int max_input_level = total_load_elements - 1;                                    
+    int max_input_level = total_load_elements - 1;
     int load_elements_per_thread = total_load_elements / cm_linear_local_size(); // in number of elements
     load_elements_per_thread = (load_elements_per_thread + 15) & 0xFFFFFFF0;
-    int loop_count = load_elements_per_thread / 16;                              // Each loop handle 16 elements   
+    int loop_count = load_elements_per_thread / 16;                              // Each loop handle 16 elements
     //int loop_count = ((load_elements_per_thread % 16) == 0)? (load_elements_per_thread / 16) : ((load_elements_per_thread / 16) + 1);
 
     vector<ushort, 16> v_Offsets(initSeq);
     v_Offsets += id * load_elements_per_thread;
-    
+
     vector<ushort, 16> v_in;
     matrix<uint, 4, 16> v_out; //64 DW (64 element)
 
@@ -3370,7 +3236,7 @@ CCM_AND_GAMMA(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
             index  += (mak << i);
             comp_index.merge((comp_index+shift), (comp_index-shift), mak);
         }
-        index.merge(0, ((index == 1) & (v_in < gamma_P(0,1))));   
+        index.merge(0, ((index == 1) & (v_in < gamma_P(0,1))));
 
         vector<ushort, 16> m_i, b_i, c_i, p_i, c_i_plus_1, p_i_plus_1;
         vector<uint, 16> i_plus_1;
@@ -3383,7 +3249,7 @@ CCM_AND_GAMMA(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
         p_i_plus_1.merge( max_input_level,  Point  .iselect(i_plus_1), (index == (NUM_CONTROL_POINTS-1)));
 
         vector<uint, 16> v_o;
-        
+
         v_o  = (c_i_plus_1 - c_i);
 #if 1   // 1 : HW MODE ;; 0 : EMU MODE
         v_in = v_in_initial + (id  * load_elements_per_thread + k * 16);
@@ -3395,7 +3261,7 @@ CCM_AND_GAMMA(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
         vector<ushort, 16> tmp = p_i_plus_1 -p_i;
         tmp = cm_max<ushort>(1, tmp);
         v_o /= tmp;
-        
+
         v_o += c_i;
 
         v_o = cm_max<uint>(0, v_o);
@@ -3415,7 +3281,7 @@ CCM_AND_GAMMA(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 
     int rd_v_pos, rd_h_pos;
     for(int l = 0; l < l_count; l++)   // 17 = (frameHeight / (32(H/group)*4 groups))
-    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops 
+    {                                   // Four Groups, jointly, one time does 128 pixel high. Need (height/128) loops
         for(int m = 0; m < 4; m++)
         {
                 //EACH thread in the threadgroup handle 256 byte-wide data
@@ -3423,7 +3289,7 @@ CCM_AND_GAMMA(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
 #pragma unroll
                 for(int i = 0; i < 8; i++)
                 {
-                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;             
+                    rd_h_pos = cm_linear_local_id() * 256 + 32 * i;
                     GAMMA_CCM_CORRECT(R_I_Index, G_I_Index, B_I_Index, rd_h_pos, rd_v_pos, slmX, ccm, max_input);
                 }
 
@@ -3431,7 +3297,7 @@ CCM_AND_GAMMA(SurfaceIndex Correct_Index, SurfaceIndex Point_Index,
     }
 }
 
-extern "C" _GENX_MAIN_  
+extern "C" _GENX_MAIN_
 void ARGB8(SurfaceIndex R_BUF, SurfaceIndex G_BUF, SurfaceIndex B_BUF,
            SurfaceIndex ARGB8,
            int BayerType, int outFrameHeight, int BitDepth)
@@ -3453,17 +3319,17 @@ void ARGB8(SurfaceIndex R_BUF, SurfaceIndex G_BUF, SurfaceIndex B_BUF,
 
     read(R_BUF, rd_h_pos, rd_v_pos  , in_R.select<8,1,16,1>(0,0));
     read(R_BUF, rd_h_pos, rd_v_pos+8, in_R.select<8,1,16,1>(8,0));
-    in_R >>= (shift_amount) ; 
+    in_R >>= (shift_amount) ;
     out.select<16,1,16,4>(0,0) = in_R;
 
     read(G_BUF, rd_h_pos, rd_v_pos  , in_G.select<8,1,16,1>(0,0));
     read(G_BUF, rd_h_pos, rd_v_pos+8, in_G.select<8,1,16,1>(8,0));
-    in_G >>= (shift_amount) ; 
+    in_G >>= (shift_amount) ;
     out.select<16,1,16,4>(0,1) = in_G;
 
     read(B_BUF, rd_h_pos, rd_v_pos  , in_B.select<8,1,16,1>(0,0));
     read(B_BUF, rd_h_pos, rd_v_pos+8, in_B.select<8,1,16,1>(8,0));
-    in_B >>= (shift_amount) ; 
+    in_B >>= (shift_amount) ;
     out.select<16,1,16,4>(0,2) = in_B;
 
 
@@ -3489,7 +3355,7 @@ void ARGB8(SurfaceIndex R_BUF, SurfaceIndex G_BUF, SurfaceIndex B_BUF,
 }
 
 
-extern "C" _GENX_MAIN_  
+extern "C" _GENX_MAIN_
 void ARGB16(SurfaceIndex R_BUF, SurfaceIndex G_BUF, SurfaceIndex B_BUF,
             SurfaceIndex ARGB16,
             int BayerType, int outFrameHeight, int BitDepth)
@@ -3558,7 +3424,7 @@ const short offset_x[BLOCK_HEIGHT][BLOCK_WIDTH] = {{0,1,2,3,4,5,6,7},{0,1,2,3,4,
                                                   ,{0,1,2,3,4,5,6,7},{0,1,2,3,4,5,6,7},{0,1,2,3,4,5,6,7},{0,1,2,3,4,5,6,7}};
 const short offset_y[BLOCK_HEIGHT][BLOCK_WIDTH] = {{0,0,0,0,0,0,0,0},{1,1,1,1,1,1,1,1},{2,2,2,2,2,2,2,2},{3,3,3,3,3,3,3,3}
                                                   ,{4,4,4,4,4,4,4,4},{5,5,5,5,5,5,5,5},{6,6,6,6,6,6,6,6},{7,7,7,7,7,7,7,7}};
-extern "C" _GENX_MAIN_ 
+extern "C" _GENX_MAIN_
 void GenVMask(SurfaceIndex MaskIndex,
               SurfaceIndex Mask4x4Index,
               int Width, int Height,  //float angle,
@@ -3566,25 +3432,25 @@ void GenVMask(SurfaceIndex MaskIndex,
 {
     short img_center_x = (short)(Width / 2);
     short img_center_y = (short)(Height / 2);
-    float max_ImgRad = cm_sqrt((float)(Width/2)*(float)(Width/2) + (float)(Height/2)*(float)(Height/2));    
-    
+    float max_ImgRad = cm_sqrt((float)(Width/2)*(float)(Width/2) + (float)(Height/2)*(float)(Height/2));
+
     //float max_ImgRad = sqrt( pow((double)Width/2, 2)+pow((double)Height/2, 2) );
     //float MAX_ANGLE = 3.14159 / (180/(angle));
 
     //double Distance;
     //double DistanceRatio;
     //matrix<float, BLOCK_HEIGHT, BLOCK_WIDTH> DistRatio;
-    //double EffectiveScale;    
+    //double EffectiveScale;
 
-    matrix<ushort, BLOCK_HEIGHT, BLOCK_WIDTH> MaskMatrix; 
+    matrix<ushort, BLOCK_HEIGHT, BLOCK_WIDTH> MaskMatrix;
     matrix<ushort, BLOCK_HEIGHT/4, BLOCK_WIDTH/4> Mask4x4Matrix;
 
-    matrix<float, BLOCK_HEIGHT, BLOCK_WIDTH> Distance, EffectScale; 
-    
+    matrix<float, BLOCK_HEIGHT, BLOCK_WIDTH> Distance, EffectScale;
+
     matrix<short, BLOCK_HEIGHT, BLOCK_WIDTH> x_cord;             //matrix<float, BLOCK_HEIGHT, BLOCK_WIDTH> x_cord;
     matrix<short, BLOCK_HEIGHT, BLOCK_WIDTH> x_offset(offset_x); //matrix<float, BLOCK_HEIGHT, BLOCK_WIDTH> x_offset(offset_x);
     matrix<short, BLOCK_HEIGHT, BLOCK_WIDTH> y_offset(offset_y); //matrix<float, BLOCK_HEIGHT, BLOCK_WIDTH> y_offset(offset_y);
-    
+
     uint h_pos = get_thread_origin_x() * BLOCK_WIDTH * sizeof(short);;
     uint v_pos = get_thread_origin_y();
 
@@ -3594,9 +3460,9 @@ void GenVMask(SurfaceIndex MaskIndex,
     for(int rowpos = 0 ; rowpos < Height ; rowpos += BLOCK_HEIGHT)
     {
         matrix<short, BLOCK_HEIGHT, BLOCK_WIDTH> y_cord; //matrix<float, BLOCK_HEIGHT, BLOCK_WIDTH> y_cord;
-        
+
         y_cord =  y_offset + (short)rowpos;
-        matrix<short, BLOCK_HEIGHT, BLOCK_WIDTH> dx = x_cord - img_center_x;        
+        matrix<short, BLOCK_HEIGHT, BLOCK_WIDTH> dx = x_cord - img_center_x;
         matrix<short, BLOCK_HEIGHT, BLOCK_WIDTH> dy = y_cord - img_center_y;
 
          Distance = dx * dx + dy * dy;
@@ -3604,7 +3470,7 @@ void GenVMask(SurfaceIndex MaskIndex,
         Distance /= max_ImgRad;
 
         if (effect == 0)
-        {        
+        {
             EffectScale = cm_cos(Distance * MAX_ANGLE);
             EffectScale = cm_pow(EffectScale ,4);
             EffectScale = EffectScale * (float)(1024.0) + (float)0.5;
@@ -3622,7 +3488,7 @@ void GenVMask(SurfaceIndex MaskIndex,
         EffectScale.merge(0, EffectScale < 0);
 
         MaskMatrix = EffectScale;
-        Mask4x4Matrix = MaskMatrix.select<BLOCK_HEIGHT/4, 4, BLOCK_WIDTH/4, 4>(0,0); 
+        Mask4x4Matrix = MaskMatrix.select<BLOCK_HEIGHT/4, 4, BLOCK_WIDTH/4, 4>(0,0);
 
         write(MaskIndex, h_pos, rowpos, MaskMatrix);
         write(Mask4x4Index, h_pos/4, rowpos/4, Mask4x4Matrix);
@@ -3642,34 +3508,34 @@ void GenUpSampledMask(SurfaceIndex Mask4x4Index,
                       int Height)  // Height of Output Mask surface
 {
      //In a single 16x16 block the modX, four_minus_modX, modY, four_minus_modY are the same
-     vector<ushort, 16> modX(modXini); 
+     vector<ushort, 16> modX(modXini);
      vector<ushort, 16> four_minus_modX(four_minus_modXini);
      vector<ushort, 16> modY;
      vector<ushort, 16> four_minus_modY;
      matrix<ushort, 16, 16> output_Matrix;
      matrix<ushort, 5, 6> data5x5;
-     
+
      uint h_pos = get_thread_origin_x();
      uint v_pos = get_thread_origin_y();
      h_pos = h_pos * BLOCKWIDTH * 4 * sizeof(short);
-     
+
      for(int rowpos = 0; rowpos < Height; rowpos += (BLOCKHEIGHT*4))    //loop over 'column' of blocks of size 16x16
      {
             //Read 5x5 data from Mask4x4Index surface
             read(Mask4x4Index, h_pos/4, rowpos/4, data5x5);
-    
+
             //Generate a4x4, b4x4, c4x4, d4x4 matrices for computing the 16x16 output matrix
             matrix<ushort, 4, 4> a4x4, b4x4, c4x4, d4x4;
             a4x4 = data5x5.select<4,1,4,1>(0,0);
             b4x4 = data5x5.select<4,1,4,1>(0,1);
             c4x4 = data5x5.select<4,1,4,1>(1,0);
             d4x4 = data5x5.select<4,1,4,1>(1,1);
-        
+
             if(h_pos == (Width - 16) * sizeof(short))
             {
                 b4x4.column(3) = b4x4.column(2);
                 d4x4.column(3) = d4x4.column(2);
-            }        
+            }
             if(rowpos == (Height - 4))
             {
                 c4x4.row(3) = c4x4.row(2);
@@ -3682,18 +3548,18 @@ void GenUpSampledMask(SurfaceIndex Mask4x4Index,
 #pragma unroll
             for(int j = 0; j < 4; j++)
             {
-                a16.select<4,1>(0) = a4x4(j,0); a16.select<4,1>(4) = a4x4(j,1); a16.select<4,1>(8) = a4x4(j,2); a16.select<4,1>(12) = a4x4(j,3);                
+                a16.select<4,1>(0) = a4x4(j,0); a16.select<4,1>(4) = a4x4(j,1); a16.select<4,1>(8) = a4x4(j,2); a16.select<4,1>(12) = a4x4(j,3);
                 b16.select<4,1>(0) = b4x4(j,0); b16.select<4,1>(4) = b4x4(j,1); b16.select<4,1>(8) = b4x4(j,2); b16.select<4,1>(12) = b4x4(j,3);
                 c16.select<4,1>(0) = c4x4(j,0); c16.select<4,1>(4) = c4x4(j,1); c16.select<4,1>(8) = c4x4(j,2); c16.select<4,1>(12) = c4x4(j,3);
                 d16.select<4,1>(0) = d4x4(j,0); d16.select<4,1>(4) = d4x4(j,1); d16.select<4,1>(8) = d4x4(j,2); d16.select<4,1>(12) = d4x4(j,3);
-        
+
                 op1 = ( a16 * (four_minus_modX) + b16 * (modX) + 2) / 4;
                 op2 = ( c16 * (four_minus_modX) + d16 * (modX) + 2) / 4;
 #pragma unroll
                 for(int i = 0; i < 4; i++)
                 {
                     modY = i;
-                    four_minus_modY = (4 - i);    
+                    four_minus_modY = (4 - i);
                     vector<ushort, 16> output_row;
                     output_row  = (four_minus_modY) * (op1);
                     output_row += (modY) * (op2) + 2;
@@ -3713,18 +3579,18 @@ void GenUpSampledMask(SurfaceIndex Mask4x4Index,
 
 
 
-const short x_init[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}; 
+const short x_init[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 
 extern "C" _GENX_MAIN_ void
 Bulge_8bits(SamplerIndex SamplerConfig,
             SurfaceIndex ibuf,         //input  surface in R8G8B8A8 FMT
             SurfaceIndex obuf,           //output surface in R8G8B8A8 FMT.
             int frame_width,
-            int frame_height, float a, float b) 
+            int frame_height, float a, float b)
 {
     int wr_hpos_pix = get_thread_origin_x() * 16;
     int wr_vpos_pix = get_thread_origin_y() * 16;   // total number of threads is (FrameWidth / 16) x (FrameHeight/16).
-                                                    // since we assign every thread to render 16x16 R8G8B8A8 pixels (64 x 16 bytes) 
+                                                    // since we assign every thread to render 16x16 R8G8B8A8 pixels (64 x 16 bytes)
     matrix<uchar, 16, 64> data_to_be_written;
     matrix<float, 4, 16> m;
     vector<short, 16> x_tmp(x_init);
@@ -3740,12 +3606,12 @@ Bulge_8bits(SamplerIndex SamplerConfig,
     x  = x_tmp + wr_hpos_pix;
     x -= x_c;
     x *= width_reciproc;
-    
+
     r_xcomponent =  cm_mul<float>(x, x);
 
 #pragma unroll
     for(int j = 0; j < 16; j++)
-    {        
+    {
         //initializing coordinate grid (with pixel units)
         y = j + wr_vpos_pix;
         y = y - y_c;//y_c - y;
@@ -3761,17 +3627,17 @@ Bulge_8bits(SamplerIndex SamplerConfig,
         r_ratio = cm_pow(r, b);
         r_ratio *= a;
 
-        r_ratio *= cm_inv(r);    
+        r_ratio *= cm_inv(r);
 
         //converting back to 'normalized' cartesian coordinate
         out_x = cm_mul<float>(x, r_ratio) + 0.5f;
         out_y = cm_mul<float>(y, r_ratio) + 0.5f;
-    
+
         sample16(m, CM_BGR_ENABLE, ibuf, SamplerConfig, out_x, out_y);
         m = cm_mul<float>(m, 255.0f);
 
         data_to_be_written.select<1,1,16,4>(j,2) = m.row(0);
-        data_to_be_written.select<1,1,16,4>(j,1) = m.row(1);  
+        data_to_be_written.select<1,1,16,4>(j,1) = m.row(1);
         data_to_be_written.select<1,1,16,4>(j,0) = m.row(2);
     }
 
@@ -3786,11 +3652,11 @@ Bulge_16bits(SamplerIndex SamplerConfig,
              SurfaceIndex ibuf,        //input  surface in R16G16B16A16 FMT
              SurfaceIndex obuf,           //output surface in R16G16B16A16 FMT.
              int frame_width,
-             int frame_height, float a, float b) 
+             int frame_height, float a, float b)
 {
     int wr_hpos_pix = get_thread_origin_x() * 16;
     int wr_vpos_pix = get_thread_origin_y() * 16;   // total number of threads is (FrameWidth / 16) x (FrameHeight/16).
-                                                    // since we assign every thread to render 16x16 R8G8B8A8 pixels (64 x 16 bytes) 
+                                                    // since we assign every thread to render 16x16 R8G8B8A8 pixels (64 x 16 bytes)
     matrix<ushort, 16, 64> data_to_be_written;      // 16bpp, thus use ushort type
     matrix<float, 4, 16> m;
     vector<short, 16> x_tmp(x_init);
@@ -3806,12 +3672,12 @@ Bulge_16bits(SamplerIndex SamplerConfig,
     x  = x_tmp + wr_hpos_pix;
     x -= x_c;
     x *= width_reciproc;
-    
+
     r_xcomponent =  cm_mul<float>(x, x);
 
 #pragma unroll
     for(int j = 0; j < 16; j++)
-    {        
+    {
         //initializing coordinate grid (with pixel units)
         y = j + wr_vpos_pix;
         y = y - y_c;//y_c - y;
@@ -3827,26 +3693,26 @@ Bulge_16bits(SamplerIndex SamplerConfig,
         r_ratio = cm_pow(r, b);
         r_ratio *= a;
 
-        r_ratio *= cm_inv(r);    
+        r_ratio *= cm_inv(r);
 
         //converting back to 'normalized' cartesian coordinate
         out_x = cm_mul<float>(x, r_ratio) + 0.5f;
         out_y = cm_mul<float>(y, r_ratio) + 0.5f;
-    
+
         sample16(m, CM_ABGR_ENABLE, ibuf, SamplerConfig, out_x, out_y);
         m = cm_mul<float>(m, 1023.0f);//255.0f);
 
         data_to_be_written.select<1,1,16,4>(j,2) = m.row(1);
-        data_to_be_written.select<1,1,16,4>(j,1) = m.row(2);  
+        data_to_be_written.select<1,1,16,4>(j,1) = m.row(2);
         data_to_be_written.select<1,1,16,4>(j,0) = m.row(3);
     }
 
     write(obuf, wr_hpos_pix*8 + 0, wr_vpos_pix  , data_to_be_written.select<8,1,16,1>(0,0 ));
     write(obuf, wr_hpos_pix*8 + 0, wr_vpos_pix+8, data_to_be_written.select<8,1,16,1>(8,0 ));
-    
+
     write(obuf, wr_hpos_pix*8 +32, wr_vpos_pix  , data_to_be_written.select<8,1,16,1>(0,16));
     write(obuf, wr_hpos_pix*8 +32, wr_vpos_pix+8, data_to_be_written.select<8,1,16,1>(8,16));
-    
+
     write(obuf, wr_hpos_pix*8 +64, wr_vpos_pix  , data_to_be_written.select<8,1,16,1>(0,32));
     write(obuf, wr_hpos_pix*8 +64, wr_vpos_pix+8, data_to_be_written.select<8,1,16,1>(8,32));
 
