@@ -771,26 +771,69 @@ IppStatus cc_P210_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   return sts;
 } // IppStatus cc_P210_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
+
+#define V_POS(ptr, shift, step, pos) ( (pos) >= 0  ? ( ptr + (shift) + (step) * (pos) )[0] : ( ptr + (shift) - (step) * (-1*pos) )[0])
+
 IppStatus cc_P010_to_P210( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo*)
 {
-  IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+    IppStatus sts = ippStsNoErr;
+    IppiSize  roiSize = {0, 0};
 
-  VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
-  VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
+    VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
+    VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
 
-  if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
-  {
-      // Copy Y plane as is
-      sts = ippiCopy_16u_C1R((const Ipp16u *)inData->Y, outData->Pitch, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
-      IPP_CHECK_STS( sts );
+    if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
+    {
+        // Copy Y plane as is
+        sts = ippiCopy_16u_C1R((const Ipp16u *)inData->Y, outData->Pitch, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
+        IPP_CHECK_STS( sts );
 
-      roiSize.height >>= 1;
-      sts = ippiCopy_16u_C1R((const Ipp16u *)inData->UV, outData->Pitch, (Ipp16u *)outData->UV, outData->Pitch * 2, roiSize);
-      IPP_CHECK_STS( sts );
-      sts = ippiCopy_16u_C1R((const Ipp16u *)inData->UV, outData->Pitch, (Ipp16u *)(outData->UV + outData->Pitch), outData->Pitch * 2, roiSize);
-      IPP_CHECK_STS( sts );
+        // Chroma is interpolated using nearest points that gives closer match with ffmpeg
+        mfxU16 *Out;
+        mfxU32 InStep  = inData->Pitch  >> 1;
+        mfxU32 OutStep = outData->Pitch >> 1;
+
+        mfxU32 InShift  = 0;
+        mfxU32 OutShift = 0;
+        mfxU32 UShift   = 0;
+        mfxU32 VShift   = 0;
+        int main   = 0;
+        int part   = 0;
+
+        for (mfxU16 j = 0; j < roiSize.height; j++)
+        {
+            InShift  = ( InStep  ) * ( j / 2 );
+            OutShift = ( OutStep ) * j;
+
+            if ( 0 == j || j == (roiSize.height -1 ))
+            {
+                // First and last lines
+                part = 0;
+            }
+            else if ( j % 2 == 0 )
+            {
+                // Odd lines
+                part = -1;
+            }
+            else
+            {
+                // Even lines
+                part = 1;
+            }
+
+            for (mfxU16 i = 0; i < roiSize.width; i+=2)
+            {
+                UShift  = InShift + i;
+                VShift  = UShift  + 1;
+                Out     = outData->U16 + OutShift  + i;
+
+                // U
+                Out[0] = CHOP10((3*V_POS(inData->U16, UShift, InStep, main) + V_POS(inData->U16, UShift, InStep, part)) >> 2);
+                // V
+                Out[1] = CHOP10((3*V_POS(inData->U16, VShift, InStep, main) + V_POS(inData->U16, VShift, InStep, part)) >> 2);
+            }
+      }
   }
   else
   {
@@ -811,24 +854,57 @@ IppStatus cc_P210_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
 
-  if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
-  {
-      // Copy Y plane as is
-      sts = ippiCopy_16u_C1R((const Ipp16u *)inData->Y, outData->Pitch, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
-      IPP_CHECK_STS( sts );
+    if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
+    {
+        // Copy Y plane as is
+        sts = ippiCopy_16u_C1R((const Ipp16u *)inData->Y, outData->Pitch, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
+        IPP_CHECK_STS( sts );
 
-      // Copy every second line of UV plane
-      roiSize.height >>= 1;
-      sts = ippiCopy_16u_C1R((const Ipp16u *)inData->UV, outData->Pitch * 2, (Ipp16u *)outData->UV, outData->Pitch, roiSize);
-      IPP_CHECK_STS( sts );
-  }
-  else
-  {
-      /* Interlaced content is not supported... yet. */
-     return ippStsErr;
-  }
+        mfxU16 *Out;
+        mfxU32 InStep  = inData->Pitch  >> 1;
+        mfxU32 OutStep = outData->Pitch >> 1;
+        mfxU32 InShift  = 0;
+        mfxU32 OutShift = 0;
+        mfxU32 UShift   = 0;
+        mfxU32 VShift   = 0;
 
-  return sts;
+        for (mfxU16 j = 0; j < roiSize.height; j+=2)
+        {
+            InShift  = ( InStep  ) * j;
+            OutShift = ( OutStep ) * (j/2);
+
+            for (mfxU16 i = 0; i < roiSize.width; i+=2)
+            {
+                UShift  = InShift + i;
+                VShift  = UShift  + 1;
+                Out     = outData->U16 + OutShift  + i;
+                if ( j == 0  )
+                {
+                    Out[0] =  V_POS(inData->U16, UShift, InStep, 0);
+                    Out[1] =  V_POS(inData->U16, VShift, InStep, 0);
+                }
+                else if ( j == ( roiSize.height - 1))
+                {
+                    Out[0] =  V_POS(inData->U16, UShift, InStep, 1);
+                    Out[1] =  V_POS(inData->U16, VShift, InStep, 1);
+                }
+                else
+                {
+                    // U
+                    Out[0] = CHOP10( ((V_POS(inData->U16, UShift, InStep,  0) + V_POS(inData->U16, UShift, InStep, 1) + 1)>>1));
+                    // V
+                    Out[1] = CHOP10( ((V_POS(inData->U16, VShift, InStep,  0) + V_POS(inData->U16, VShift, InStep, 1) + 1)>>1));
+                }
+            }
+        }
+    }
+    else
+    {
+        /* Interlaced content is not supported... yet. */
+        return ippStsErr;
+    }
+
+    return sts;
 
 } // IppStatus cc_P210_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
