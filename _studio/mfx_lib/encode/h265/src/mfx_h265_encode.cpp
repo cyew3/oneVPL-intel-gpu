@@ -600,7 +600,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     m_frameCountSync++;
 
     mfxU32 noahead = 0;//1;
-    Ipp32s lookaheadBuffering = m_videoParam.preEncMode > 0 ? 2*m_mfxParam.mfx.GopRefDist + 1 : 0;// 9 in case of 3 B frames
+    Ipp32s lookaheadBuffering = m_videoParam.preEncMode > 0 ? 1 : 0;//2*m_mfxParam.mfx.GopRefDist + 1 : 0;// 9 in case of 3 B frames
     if (m_mfxHEVCOpts.EnableCm == MFX_CODINGOPTION_ON)
         noahead = 0;
 
@@ -2470,16 +2470,18 @@ mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstrea
 
     //-----------------------------------------------------
     // aya: tmp hack!!! buffering here
-    if (m_videoParam.preEncMode) {
+    /*if (m_videoParam.preEncMode) {
         mfxStatus stsPreEnc = PreEncAnalysis();
         stsPreEnc;
-    }
+    }*/
     //-----------------------------------------------------
 
+    std::list<Task*> & inputQueue = m_videoParam.preEncMode ? m_lookaheadQueue : m_inputQueue;
     // STAGE:: [REORDER]
     // prepare next frame for encoding
-    if (m_reorderedQueue.empty())
-        ReorderFrames(m_inputQueue, m_reorderedQueue, m_videoParam, surface == NULL);
+    if (m_reorderedQueue.empty()) {
+        ReorderFrames(inputQueue, m_reorderedQueue, m_videoParam, surface == NULL);
+    }
 
     if (!m_reorderedQueue.empty()) {
         ConfigureEncodeFrame(m_reorderedQueue.front());
@@ -2490,19 +2492,20 @@ mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstrea
     }
 
     // general criteria to continue encoding
-    bool isGo = !m_encodeQueue.empty() ||
-        m_inputQueue.size() >= (size_t)m_videoParam.GopRefDist ||
-        !surface && !m_inputQueue.empty();
+    //bool isGo = !m_encodeQueue.empty() ||
+    //    inputQueue.size() >= (size_t)m_videoParam.GopRefDist ||
+    //    !surface && !inputQueue.empty();
 
     // special criterion for "instantaneous" first IDR frame
-    if (!isGo && mfxBS && 1 == m_inputQueue.size() && m_inputQueue.front()->m_frameOrigin->m_isIdrPic)
-        isGo = true;
+    /*if (!isGo && mfxBS && 1 == m_inputQueue.size() && m_inputQueue.front()->m_frameOrigin->m_isIdrPic)
+        isGo = true;*/
 
     if (!mfxBS)
-        return isGo ? MFX_ERR_NONE : MFX_ERR_MORE_DATA; // means delay
+        return MFX_ERR_NONE;
+        //return isGo ? MFX_ERR_NONE : MFX_ERR_MORE_DATA; // means delay
 
-    if (!isGo)
-        return MFX_ERR_MORE_DATA;
+    /*if (!isGo)
+        return MFX_ERR_MORE_DATA;*/
 
     return MFX_ERR_NONE;
 
@@ -2909,6 +2912,10 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     Ipp32s stage = vm_interlocked_cas32( &inputParam->m_doStage, 1, 0);
     if (0 == stage) {
         th->PrepareToEncode(pParam);// here <m_doStage> will be switched ->2->3->4 consequentially
+
+        if( th->m_videoParam.preEncMode ) {
+            th->LookAheadAnalysis();
+        }
     }
 
     // early termination if no external bs 

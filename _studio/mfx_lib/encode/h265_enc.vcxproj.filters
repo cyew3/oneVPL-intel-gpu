@@ -61,6 +61,9 @@
     <ClCompile Include="h265\src\mfx_h265_paq.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_lookahead.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h265\include\mfx_h265_brc.h">

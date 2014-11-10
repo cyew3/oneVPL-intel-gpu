@@ -82,7 +82,9 @@ namespace H265Enc {
         mfxU64 m_timeStamp;
         Ipp32u m_picCodeType;
         Ipp32s m_RPSIndex;
-        Ipp8u  m_wasLookAheadProcessed;
+        Ipp8u  m_wasLookAheadProcessed;// paq
+        //Ipp8u  m_wasLookAheadProcessed_new;// paq
+
         Ipp32s m_pyramidLayer;
         Ipp32s m_miniGopCount;
         Ipp32s m_biFramesInMiniGop;

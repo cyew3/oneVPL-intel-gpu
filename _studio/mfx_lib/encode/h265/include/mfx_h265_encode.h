@@ -121,6 +121,7 @@ private:
     //  frame flow-control queues
     std::list<Task*> m_free;            // _global_ free task pool
     std::list<Task*> m_inputQueue;      // _global_ input task queue in _display_ order
+    std::list<Task*> m_lookaheadQueue;  // _global_ input task queue in _display_ order
     std::list<Task*> m_reorderedQueue;  // _global_ input task queue in _encode_ order (ref list is _invalid_)
     std::list<Task*> m_encodeQueue;     // _global_ queue in _encode_ order (ref list _valid_)
     std::list<Task*> m_outputQueue;     // _global_ queue in _encode_ order ( submitted to encoding)
@@ -174,6 +175,9 @@ private:
     // ------- Pre Encode Analysis (lookahead / paq etc)
     mfxStatus PreEncAnalysis(void);
     mfxStatus UpdateAllLambda(Task* task);
+
+    // own me base preprocessing
+    void LookAheadAnalysis();
 
     // -------FEI
     void ProcessFrameFEI(Task* task);

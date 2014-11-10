@@ -251,6 +251,7 @@
       <PrecompiledHeader />
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -436,6 +437,7 @@
     <ClCompile Include="h265\src\mfx_h265_frame.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interpred.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_lookahead.cpp" />
     <ClCompile Include="h265\src\mfx_h265_me4paq.cpp" />
     <ClCompile Include="h265\src\mfx_h265_paq.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quant.cpp" />

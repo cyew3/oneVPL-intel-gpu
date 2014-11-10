@@ -358,6 +358,8 @@ mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam
     //if( pars->BPyramid && (8 == pars->GopRefDist || 16 == pars->GopRefDist) && (6 == pars->Log2MaxCUSize) )
         pars->preEncMode = optsHevc->DeltaQpMode;
 #endif
+    pars->preEncMode = optsHevc->DeltaQpMode;
+
     pars->TryIntra         = optsHevc->TryIntra;
     pars->FastAMPSkipME    = optsHevc->FastAMPSkipME;
     pars->FastAMPRD    = optsHevc->FastAMPRD;
@@ -2129,22 +2131,22 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
                 (PixType*)reconstructFrame->uv, reconstructFrame->pitch_luma_pix, reconstructFrame->pitch_chroma_pix, m_pCurrentFrame,
                 &m_bsf[bsf_id], m_task->m_slices + curr_slice, 1, m_logMvCostTable, feiOutPtr, m_task);
 
-            if(m_videoParam.UseDQP && m_videoParam.preEncMode) {
-                int deltaQP = -(m_task->m_sliceQpY - m_task->m_lcuQps[ctb_addr]);
-                int idxDqp = 2*abs(deltaQP)-((deltaQP<0)?1:0);
+            //if(m_videoParam.UseDQP && m_videoParam.preEncMode) {
+            //    int deltaQP = -(m_task->m_sliceQpY - m_task->m_lcuQps[ctb_addr]);
+            //    int idxDqp = 2*abs(deltaQP)-((deltaQP<0)?1:0);
 
-                H265Slice* curSlice = &(m_task->m_dqpSlice[idxDqp]);
-                cu[ithread].m_rdLambda = curSlice->rd_lambda_slice;
-                cu[ithread]. m_rdLambdaSqrt = curSlice->rd_lambda_sqrt_slice;
-                cu[ithread].m_ChromaDistWeight = curSlice->ChromaDistWeight_slice;
-                cu[ithread].m_rdLambdaInter = curSlice->rd_lambda_inter_slice;
-                cu[ithread].m_rdLambdaInterMv = curSlice->rd_lambda_inter_mv_slice;
+            //    H265Slice* curSlice = &(m_task->m_dqpSlice[idxDqp]);
+            //    cu[ithread].m_rdLambda = curSlice->rd_lambda_slice;
+            //    cu[ithread]. m_rdLambdaSqrt = curSlice->rd_lambda_sqrt_slice;
+            //    cu[ithread].m_ChromaDistWeight = curSlice->ChromaDistWeight_slice;
+            //    cu[ithread].m_rdLambdaInter = curSlice->rd_lambda_inter_slice;
+            //    cu[ithread].m_rdLambdaInterMv = curSlice->rd_lambda_inter_mv_slice;
 
-                /*if(m_videoParam.preEncMode > 1) {
-                    int calq = cu[ithread].GetCalqDeltaQp(m_pAQP, m_slices[curr_slice].rd_lambda_slice);
-                    m_task->m_lcuQps[ctb_addr] += calq;
-                }*/
-            }
+            //    /*if(m_videoParam.preEncMode > 1) {
+            //        int calq = cu[ithread].GetCalqDeltaQp(m_pAQP, m_slices[curr_slice].rd_lambda_slice);
+            //        m_task->m_lcuQps[ctb_addr] += calq;
+            //    }*/
+            //}
             
             cu[ithread].GetInitAvailablity();
 
@@ -2601,14 +2603,14 @@ int H265CU<PixType>::GetCalqDeltaQp(TAdapQP* sliceAQP, Ipp64f sliceLambda)
 
 #else
 
-mfxStatus H265Encoder::PreEncAnalysis(mfxBitstream* mfxBS)
+mfxStatus MFXVideoENCODEH265::PreEncAnalysis(void)
 {
-    mfxBS; return MFX_ERR_NONE;
+    return MFX_ERR_NONE;
 
 }
-mfxStatus H265Encoder::UpdateAllLambda(H265Frame* frame)
+mfxStatus MFXVideoENCODEH265::UpdateAllLambda(Task* task)
 {
-    frame;
+    task;
     return MFX_ERR_NONE;
 }
 
