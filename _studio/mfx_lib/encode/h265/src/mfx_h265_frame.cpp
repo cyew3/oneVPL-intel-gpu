@@ -37,8 +37,8 @@ void H265Frame::Create(H265VideoParam *par)
     Ipp32s numCtbs_parts = numCtbs << par->Log2NumPartInCU;
     //Ipp32s numCtbs_padd = (par->PicWidthInCtbs + 2) * (par->PicHeightInCtbs + 2);
 
-    //padding = par->MaxCUSize + 16;
-    padding = par->MaxCUSize + 64;
+    padding = par->MaxCUSize + 16;
+    //padding = par->MaxCUSize + 64;
 
     width = par->Width;
     height = par->Height;
@@ -178,7 +178,105 @@ void H265Frame::CopyFrame(const mfxFrameSurface1 *surface)
     (m_bdChromaFlag == 0)
         ? PadOnePix((Ipp16u *)uv, pitch_chroma_pix / 2, width / 2, height / 2)
         : PadOnePix((Ipp32u *)uv, pitch_chroma_pix / 2, width / 2, height / 2);
+
+    //if(m_videoParam.preEncMode) 
+    {
+
+    }
+
 }
+
+
+template <class PixType> void PadOneLine_v2(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s lineCount, Ipp32s padding)
+{
+    PixType *ptr = startLine;
+    Ipp32s leftPos = 0;
+    Ipp32s rightPos = width - 1;
+
+    // left/right
+    for (Ipp32s i = 0; i < lineCount; i++, ptr += pitch) {
+
+        for(Ipp32s padIdx = 1; padIdx <= padding; padIdx++) {
+            ptr[leftPos-padIdx] = ptr[leftPos];
+            ptr[rightPos+padIdx] = ptr[rightPos];
+        }
+    }
+}
+
+
+//IppStatus ippsCopy(const Ipp8u *src, Ipp8u *dst, Ipp32s len)   { return ippsCopy_8u(src, dst, len); }
+//IppStatus ippsCopy(const Ipp16u *src, Ipp16u *dst, Ipp32s len) { return ippsCopy_16s((const Ipp16s *)src, (Ipp16s *)dst, len); }
+//IppStatus ippsCopy(const Ipp32u *src, Ipp32u *dst, Ipp32s len) { return ippsCopy_32s((const Ipp32s *)src, (Ipp32s *)dst, len); }
+
+template <class PixType> void PadOneLine_Top_v2(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s padding_w, Ipp32s padding_h)
+{
+    PixType* ptr = startLine - padding_w;
+    for (Ipp32s i = 1; i <= padding_h; i++) {
+        ippsCopy(ptr, ptr - i*pitch, width + 2*padding_w);
+    }
+}
+
+
+template <class PixType> void PadOneLine_Bottom_v2(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s padding_w, Ipp32s padding_h)
+{
+    PixType* ptr = startLine - padding_w;
+
+    for (Ipp32s i = 1; i <= padding_h; i++) {
+        ippsCopy(ptr, ptr + i*pitch, width + 2*padding_w);
+    }
+}
+
+void PadOneReconRow(H265Frame* frame, Ipp32u ctb_row, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs)
+{
+    H265Frame *reconstructFrame = frame;
+
+    Ipp8u bitDepth8 = (reconstructFrame->m_bitDepthLuma == 8) ? 1 : 0;
+    Ipp32s shift_w = reconstructFrame->m_chromaFormatIdc != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
+    Ipp32s shift_h = reconstructFrame->m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
+
+    // L/R Padding
+    {
+        //luma
+        Ipp8u *startLine = reconstructFrame->y + (ctb_row)*reconstructFrame->pitch_luma_bytes*maxCuSize;
+        (bitDepth8)
+            ? PadOneLine_v2((Ipp8u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, maxCuSize, reconstructFrame->padding)
+            : PadOneLine_v2((Ipp16u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, maxCuSize, reconstructFrame->padding);
+
+        //Chroma
+        //startLine = reconstructFrame->uv + (ctb_row)*reconstructFrame->pitch_chroma_bytes* m_videoParam.MaxCUSize/2;
+        startLine = reconstructFrame->uv + (ctb_row)*reconstructFrame->pitch_chroma_bytes* (maxCuSize >> shift_h);
+        (bitDepth8) 
+            ? PadOneLine_v2((Ipp16u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, maxCuSize >> shift_h, reconstructFrame->padding >> shift_w)
+            : PadOneLine_v2((Ipp32u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, maxCuSize >> shift_h, reconstructFrame->padding >> shift_w);
+    }
+
+    //first line: top padding
+    if (ctb_row == 0) {
+        Ipp8u *startLine = reconstructFrame->y;
+        (bitDepth8)
+            ? PadOneLine_Top_v2((Ipp8u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, reconstructFrame->padding, reconstructFrame->padding)
+            : PadOneLine_Top_v2((Ipp16u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, reconstructFrame->padding, reconstructFrame->padding);
+
+        startLine = reconstructFrame->uv;
+        (bitDepth8)
+            ? PadOneLine_Top_v2((Ipp16u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h)
+            : PadOneLine_Top_v2((Ipp32u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h);
+    }
+
+    // last line: bottom padding
+    if (ctb_row == PicHeightInCtbs - 1) {
+        Ipp8u *startLine = reconstructFrame->y + (reconstructFrame->height - 1)*reconstructFrame->pitch_luma_bytes;
+        (bitDepth8)
+            ? PadOneLine_Bottom_v2((Ipp8u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, reconstructFrame->padding, reconstructFrame->padding)
+            : PadOneLine_Bottom_v2((Ipp16u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, reconstructFrame->padding, reconstructFrame->padding);
+
+        startLine = reconstructFrame->uv + ((reconstructFrame->height >> shift_h) - 1)*reconstructFrame->pitch_chroma_bytes;
+        (bitDepth8)
+            ? PadOneLine_Bottom_v2((Ipp16u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h)
+            : PadOneLine_Bottom_v2((Ipp32u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h);
+    }
+}
+
 
 static void ExpandPlane(Ipp8u elem_shift, Ipp8u *ptr, Ipp32s pitch_bytes, Ipp32s width, Ipp32s height, Ipp32s padding_w, Ipp32s padding_h) {
     Ipp8u *src = ptr;

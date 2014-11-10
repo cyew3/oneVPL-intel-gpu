@@ -45,476 +45,476 @@ namespace H265Enc {
 #define x86_pause() _mm_pause()
 
 
-//[strength][isNotI][log2w-3][2]
-Ipp32f h265_split_thresholds_cu_1[3][2][4][2] = {{{{0, 0},{6.068657e+000, 1.955850e-001},{2.794428e+001, 1.643400e-001},{4.697359e+002, 1.113505e-001},},
-{{0, 0},{8.335527e+000, 2.312656e-001},{1.282028e+001, 2.317006e-001},{3.218380e+001, 2.157863e-001},},
-},{{{0, 0},{1.412660e+001, 1.845380e-001},{1.967989e+001, 1.873910e-001},{3.617037e+002, 1.257173e-001},},
-{{0, 0},{2.319860e+001, 2.194218e-001},{2.436671e+001, 2.260317e-001},{3.785467e+001, 2.252255e-001},},
-},{{{0, 0},{1.465458e+001, 1.946118e-001},{1.725847e+001, 1.969719e-001},{3.298872e+002, 1.336427e-001},},
-{{0, 0},{3.133788e+001, 2.192709e-001},{3.292004e+001, 2.266248e-001},{3.572242e+001, 2.357623e-001},},
-},};
+    //[strength][isNotI][log2w-3][2]
+    Ipp32f h265_split_thresholds_cu_1[3][2][4][2] = {{{{0, 0},{6.068657e+000, 1.955850e-001},{2.794428e+001, 1.643400e-001},{4.697359e+002, 1.113505e-001},},
+    {{0, 0},{8.335527e+000, 2.312656e-001},{1.282028e+001, 2.317006e-001},{3.218380e+001, 2.157863e-001},},
+    },{{{0, 0},{1.412660e+001, 1.845380e-001},{1.967989e+001, 1.873910e-001},{3.617037e+002, 1.257173e-001},},
+    {{0, 0},{2.319860e+001, 2.194218e-001},{2.436671e+001, 2.260317e-001},{3.785467e+001, 2.252255e-001},},
+    },{{{0, 0},{1.465458e+001, 1.946118e-001},{1.725847e+001, 1.969719e-001},{3.298872e+002, 1.336427e-001},},
+    {{0, 0},{3.133788e+001, 2.192709e-001},{3.292004e+001, 2.266248e-001},{3.572242e+001, 2.357623e-001},},
+    },};
 
-//[strength][isNotI][log2w-3][2]
-Ipp32f h265_split_thresholds_tu_1[3][2][4][2] = {{{{9.861009e+001, 2.014005e-001},{1.472963e+000, 2.407408e-001},{7.306935e+000, 2.073082e-001},{0, 0},},
-{{1.227516e+002, 1.973595e-001},{1.617983e+000, 2.342001e-001},{6.189427e+000, 2.090359e-001},{0, 0},},
-},{{{9.861009e+001, 2.014005e-001},{1.343445e+000, 2.666583e-001},{4.266056e+000, 2.504071e-001},{0, 0},},
-{{1.227516e+002, 1.973595e-001},{2.443985e+000, 2.427829e-001},{4.778531e+000, 2.343920e-001},{0, 0},},
-},{{{9.861009e+001, 2.014005e-001},{1.530746e+000, 3.027675e-001},{1.222733e+001, 2.649870e-001},{0, 0},},
-{{1.227516e+002, 1.973595e-001},{2.158767e+000, 2.696284e-001},{3.401860e+000, 2.652995e-001},{0, 0},},
-},};
+    //[strength][isNotI][log2w-3][2]
+    Ipp32f h265_split_thresholds_tu_1[3][2][4][2] = {{{{9.861009e+001, 2.014005e-001},{1.472963e+000, 2.407408e-001},{7.306935e+000, 2.073082e-001},{0, 0},},
+    {{1.227516e+002, 1.973595e-001},{1.617983e+000, 2.342001e-001},{6.189427e+000, 2.090359e-001},{0, 0},},
+    },{{{9.861009e+001, 2.014005e-001},{1.343445e+000, 2.666583e-001},{4.266056e+000, 2.504071e-001},{0, 0},},
+    {{1.227516e+002, 1.973595e-001},{2.443985e+000, 2.427829e-001},{4.778531e+000, 2.343920e-001},{0, 0},},
+    },{{{9.861009e+001, 2.014005e-001},{1.530746e+000, 3.027675e-001},{1.222733e+001, 2.649870e-001},{0, 0},},
+    {{1.227516e+002, 1.973595e-001},{2.158767e+000, 2.696284e-001},{3.401860e+000, 2.652995e-001},{0, 0},},
+    },};
 
-//[strength][isNotI][log2w-3][2]
-Ipp32f h265_split_thresholds_cu_4[3][2][4][2] = {{{{0, 0},{4.218807e+000, 2.066010e-001},{2.560569e+001, 1.677201e-001},{0, 0},},
-{{0, 0},{4.848787e+000, 2.299086e-001},{1.198510e+001, 2.170575e-001},{0, 0},},
-},{{{0, 0},{5.227898e+000, 2.117919e-001},{1.819586e+001, 1.910210e-001},{0, 0},},
-{{0, 0},{1.098668e+001, 2.226733e-001},{2.273784e+001, 2.157968e-001},{0, 0},},
-},{{{0, 0},{4.591922e+000, 2.238883e-001},{1.480393e+001, 2.032860e-001},{0, 0},},
-{{0, 0},{1.831528e+001, 2.201327e-001},{2.999500e+001, 2.175826e-001},{0, 0},},
-},};
+    //[strength][isNotI][log2w-3][2]
+    Ipp32f h265_split_thresholds_cu_4[3][2][4][2] = {{{{0, 0},{4.218807e+000, 2.066010e-001},{2.560569e+001, 1.677201e-001},{0, 0},},
+    {{0, 0},{4.848787e+000, 2.299086e-001},{1.198510e+001, 2.170575e-001},{0, 0},},
+    },{{{0, 0},{5.227898e+000, 2.117919e-001},{1.819586e+001, 1.910210e-001},{0, 0},},
+    {{0, 0},{1.098668e+001, 2.226733e-001},{2.273784e+001, 2.157968e-001},{0, 0},},
+    },{{{0, 0},{4.591922e+000, 2.238883e-001},{1.480393e+001, 2.032860e-001},{0, 0},},
+    {{0, 0},{1.831528e+001, 2.201327e-001},{2.999500e+001, 2.175826e-001},{0, 0},},
+    },};
 
-//[strength][isNotI][log2w-3][2]
-Ipp32f h265_split_thresholds_tu_4[3][2][4][2] = {{{{1.008684e+002, 2.003675e-001},{2.278697e+000, 2.226109e-001},{1.767972e+001, 1.733893e-001},{0, 0},},
-{{1.281323e+002, 1.984014e-001},{2.906725e+000, 2.063635e-001},{1.106598e+001, 1.798757e-001},{0, 0},},
-},{{{1.008684e+002, 2.003675e-001},{2.259367e+000, 2.473857e-001},{3.871648e+001, 1.789534e-001},{0, 0},},
-{{1.281323e+002, 1.984014e-001},{4.119740e+000, 2.092187e-001},{9.931154e+000, 1.907941e-001},{0, 0},},
-},{{{1.008684e+002, 2.003675e-001},{1.161667e+000, 3.112699e-001},{5.179975e+001, 2.364036e-001},{0, 0},},
-{{1.281323e+002, 1.984014e-001},{4.326205e+000, 2.262409e-001},{2.088369e+001, 1.829562e-001},{0, 0},},
-},};
+    //[strength][isNotI][log2w-3][2]
+    Ipp32f h265_split_thresholds_tu_4[3][2][4][2] = {{{{1.008684e+002, 2.003675e-001},{2.278697e+000, 2.226109e-001},{1.767972e+001, 1.733893e-001},{0, 0},},
+    {{1.281323e+002, 1.984014e-001},{2.906725e+000, 2.063635e-001},{1.106598e+001, 1.798757e-001},{0, 0},},
+    },{{{1.008684e+002, 2.003675e-001},{2.259367e+000, 2.473857e-001},{3.871648e+001, 1.789534e-001},{0, 0},},
+    {{1.281323e+002, 1.984014e-001},{4.119740e+000, 2.092187e-001},{9.931154e+000, 1.907941e-001},{0, 0},},
+    },{{{1.008684e+002, 2.003675e-001},{1.161667e+000, 3.112699e-001},{5.179975e+001, 2.364036e-001},{0, 0},},
+    {{1.281323e+002, 1.984014e-001},{4.326205e+000, 2.262409e-001},{2.088369e+001, 1.829562e-001},{0, 0},},
+    },};
 
-//[strength][isNotI][log2w-3][2]
-Ipp32f h265_split_thresholds_cu_7[3][2][4][2] = {{{{0, 0},{0, 0},{2.868749e+001, 1.759965e-001},{0, 0},},
-{{0, 0},{0, 0},{1.203077e+001, 2.066983e-001},{0, 0},},
-},{{{0, 0},{0, 0},{2.689497e+001, 1.914970e-001},{0, 0},},
-{{0, 0},{0, 0},{1.856055e+001, 2.129173e-001},{0, 0},},
-},{{{0, 0},{0, 0},{2.268480e+001, 2.049253e-001},{0, 0},},
-{{0, 0},{0, 0},{3.414455e+001, 2.067140e-001},{0, 0},},
-},};
+    //[strength][isNotI][log2w-3][2]
+    Ipp32f h265_split_thresholds_cu_7[3][2][4][2] = {{{{0, 0},{0, 0},{2.868749e+001, 1.759965e-001},{0, 0},},
+    {{0, 0},{0, 0},{1.203077e+001, 2.066983e-001},{0, 0},},
+    },{{{0, 0},{0, 0},{2.689497e+001, 1.914970e-001},{0, 0},},
+    {{0, 0},{0, 0},{1.856055e+001, 2.129173e-001},{0, 0},},
+    },{{{0, 0},{0, 0},{2.268480e+001, 2.049253e-001},{0, 0},},
+    {{0, 0},{0, 0},{3.414455e+001, 2.067140e-001},{0, 0},},
+    },};
 
-//[strength][isNotI][log2w-3][2]
-Ipp32f h265_split_thresholds_tu_7[3][2][4][2] = {{{{7.228049e+001, 1.900956e-001},{2.365207e+000, 2.211628e-001},{4.651502e+001, 1.425675e-001},{0, 0},},
-{{0, 0},{2.456053e+000, 2.100343e-001},{7.537189e+000, 1.888014e-001},{0, 0},},
-},{{{7.228049e+001, 1.900956e-001},{1.293689e+000, 2.672417e-001},{1.633606e+001, 2.076887e-001},{0, 0},},
-{{0, 0},{1.682124e+000, 2.368017e-001},{5.516403e+000, 2.080632e-001},{0, 0},},
-},{{{7.228049e+001, 1.900956e-001},{1.479032e+000, 2.785342e-001},{8.723769e+000, 2.469559e-001},{0, 0},},
-{{0, 0},{1.943537e+000, 2.548912e-001},{1.756701e+001, 1.900659e-001},{0, 0},},
-},};
+    //[strength][isNotI][log2w-3][2]
+    Ipp32f h265_split_thresholds_tu_7[3][2][4][2] = {{{{7.228049e+001, 1.900956e-001},{2.365207e+000, 2.211628e-001},{4.651502e+001, 1.425675e-001},{0, 0},},
+    {{0, 0},{2.456053e+000, 2.100343e-001},{7.537189e+000, 1.888014e-001},{0, 0},},
+    },{{{7.228049e+001, 1.900956e-001},{1.293689e+000, 2.672417e-001},{1.633606e+001, 2.076887e-001},{0, 0},},
+    {{0, 0},{1.682124e+000, 2.368017e-001},{5.516403e+000, 2.080632e-001},{0, 0},},
+    },{{{7.228049e+001, 1.900956e-001},{1.479032e+000, 2.785342e-001},{8.723769e+000, 2.469559e-001},{0, 0},},
+    {{0, 0},{1.943537e+000, 2.548912e-001},{1.756701e+001, 1.900659e-001},{0, 0},},
+    },};
 
 
-typedef Ipp32f thres_tab[2][4][2];
+    typedef Ipp32f thres_tab[2][4][2];
 
-//static 
-Ipp64f h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP)
-{
-    thres_tab *h265_split_thresholds_tab;
+    //static 
+    Ipp64f h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP)
+    {
+        thres_tab *h265_split_thresholds_tab;
 
-    switch(tabIndex) {
-    case 1:
-        h265_split_thresholds_tab = isNotCu ? h265_split_thresholds_tu_1 : h265_split_thresholds_cu_1;
-        break;
-    default:
-    case 0:
-    case 2:
-        h265_split_thresholds_tab = isNotCu ? h265_split_thresholds_tu_4 : h265_split_thresholds_cu_4;
-        break;
-    case 3:
-        h265_split_thresholds_tab = isNotCu ? h265_split_thresholds_tu_7 : h265_split_thresholds_cu_7;
-        break;
+        switch(tabIndex) {
+        case 1:
+            h265_split_thresholds_tab = isNotCu ? h265_split_thresholds_tu_1 : h265_split_thresholds_cu_1;
+            break;
+        default:
+        case 0:
+        case 2:
+            h265_split_thresholds_tab = isNotCu ? h265_split_thresholds_tu_4 : h265_split_thresholds_cu_4;
+            break;
+        case 3:
+            h265_split_thresholds_tab = isNotCu ? h265_split_thresholds_tu_7 : h265_split_thresholds_cu_7;
+            break;
+        }
+
+        if (strength == 0)
+            return 0;
+        if (strength > 3)
+            strength = 3;
+
+        if (isNotCu) {
+            if ((log2width < 3 || log2width > 5)) {
+                //VM_ASSERT(0);
+                return 0;
+            }
+        }
+        else {
+            if ((log2width < 4 || log2width > 6)) {
+                //VM_ASSERT(0);
+                return 0;
+            }
+        }
+
+        double a = h265_split_thresholds_tab[strength - 1][isNotI][log2width - 3][0];
+        double b = h265_split_thresholds_tab[strength - 1][isNotI][log2width - 3][1];
+        return a * exp(b * QP);
     }
 
-    if (strength == 0)
+
+    static const mfxU16 tab_AspectRatio265[17][2] =
+    {
+        { 1,  1},  // unspecified
+        { 1,  1}, {12, 11}, {10, 11}, {16, 11}, {40, 33}, {24, 11}, {20, 11}, {32, 11},
+        {80, 33}, {18, 11}, {15, 11}, {64, 33}, {160,99}, { 4,  3}, { 3,  2}, { 2,  1}
+    };
+
+    static mfxU32 ConvertSARtoIDC_H265enc(mfxU32 sarw, mfxU32 sarh)
+    {
+        for (mfxU32 i = 1; i < sizeof(tab_AspectRatio265) / sizeof(tab_AspectRatio265[0]); i++)
+            if (sarw * tab_AspectRatio265[i][1] == sarh * tab_AspectRatio265[i][0])
+                return i;
         return 0;
-    if (strength > 3)
-        strength = 3;
+    }
 
-    if (isNotCu) {
-        if ((log2width < 3 || log2width > 5)) {
-            //VM_ASSERT(0);
-            return 0;
+    mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam *pars /* OUT */, const mfxExtCodingOptionHEVC *optsHevc)
+    {
+        //H265VideoParam *pars = &m_videoParam;
+        Ipp32u width = param->mfx.FrameInfo.Width;
+        Ipp32u height = param->mfx.FrameInfo.Height;
+
+        if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || param->mfx.FrameInfo.FourCC == MFX_FOURCC_P210) {
+            pars->bitDepthLuma = 10;
+            pars->bitDepthChroma = 10;
+        } else {
+            pars->bitDepthLuma = 8;
+            pars->bitDepthChroma = 8;
         }
-    }
-    else {
-        if ((log2width < 4 || log2width > 6)) {
-            //VM_ASSERT(0);
-            return 0;
+        pars->bitDepthLumaShift = pars->bitDepthLuma - 8;
+        pars->bitDepthChromaShift = pars->bitDepthChroma - 8;
+
+        if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_NV16 || param->mfx.FrameInfo.FourCC == MFX_FOURCC_P210) {
+            pars->chromaFormatIdc = MFX_CHROMAFORMAT_YUV422;
+        } else {
+            pars->chromaFormatIdc = MFX_CHROMAFORMAT_YUV420;
         }
-    }
+        pars->chroma422 = pars->chromaFormatIdc == MFX_CHROMAFORMAT_YUV422;
+        pars->chromaShiftW = pars->chromaFormatIdc != MFX_CHROMAFORMAT_YUV444;
+        pars->chromaShiftH = pars->chromaFormatIdc == MFX_CHROMAFORMAT_YUV420;
+        pars->chromaShiftWInv = 1 - pars->chromaShiftW;
+        pars->chromaShiftHInv = 1 - pars->chromaShiftH;
+        pars->chromaShift = pars->chromaShiftW + pars->chromaShiftH;
 
-    double a = h265_split_thresholds_tab[strength - 1][isNotI][log2width - 3][0];
-    double b = h265_split_thresholds_tab[strength - 1][isNotI][log2width - 3][1];
-    return a * exp(b * QP);
-}
-
-
-static const mfxU16 tab_AspectRatio265[17][2] =
-{
-    { 1,  1},  // unspecified
-    { 1,  1}, {12, 11}, {10, 11}, {16, 11}, {40, 33}, {24, 11}, {20, 11}, {32, 11},
-    {80, 33}, {18, 11}, {15, 11}, {64, 33}, {160,99}, { 4,  3}, { 3,  2}, { 2,  1}
-};
-
-static mfxU32 ConvertSARtoIDC_H265enc(mfxU32 sarw, mfxU32 sarh)
-{
-    for (mfxU32 i = 1; i < sizeof(tab_AspectRatio265) / sizeof(tab_AspectRatio265[0]); i++)
-        if (sarw * tab_AspectRatio265[i][1] == sarh * tab_AspectRatio265[i][0])
-            return i;
-    return 0;
-}
-
-mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam *pars /* OUT */, const mfxExtCodingOptionHEVC *optsHevc)
-{
-    //H265VideoParam *pars = &m_videoParam;
-    Ipp32u width = param->mfx.FrameInfo.Width;
-    Ipp32u height = param->mfx.FrameInfo.Height;
-
-    if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || param->mfx.FrameInfo.FourCC == MFX_FOURCC_P210) {
-        pars->bitDepthLuma = 10;
-        pars->bitDepthChroma = 10;
-    } else {
-        pars->bitDepthLuma = 8;
-        pars->bitDepthChroma = 8;
-    }
-    pars->bitDepthLumaShift = pars->bitDepthLuma - 8;
-    pars->bitDepthChromaShift = pars->bitDepthChroma - 8;
-
-    if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_NV16 || param->mfx.FrameInfo.FourCC == MFX_FOURCC_P210) {
-        pars->chromaFormatIdc = MFX_CHROMAFORMAT_YUV422;
-    } else {
-        pars->chromaFormatIdc = MFX_CHROMAFORMAT_YUV420;
-    }
-    pars->chroma422 = pars->chromaFormatIdc == MFX_CHROMAFORMAT_YUV422;
-    pars->chromaShiftW = pars->chromaFormatIdc != MFX_CHROMAFORMAT_YUV444;
-    pars->chromaShiftH = pars->chromaFormatIdc == MFX_CHROMAFORMAT_YUV420;
-    pars->chromaShiftWInv = 1 - pars->chromaShiftW;
-    pars->chromaShiftHInv = 1 - pars->chromaShiftH;
-    pars->chromaShift = pars->chromaShiftW + pars->chromaShiftH;
-
-    pars->SourceWidth = width;
-    pars->SourceHeight = height;
-    pars->Log2MaxCUSize = optsHevc->Log2MaxCUSize;// 6;
-    pars->MaxCUDepth = optsHevc->MaxCUDepth; // 4;
-    pars->QuadtreeTULog2MaxSize = optsHevc->QuadtreeTULog2MaxSize; // 5;
-    pars->QuadtreeTULog2MinSize = optsHevc->QuadtreeTULog2MinSize; // 2;
-    pars->QuadtreeTUMaxDepthIntra = optsHevc->QuadtreeTUMaxDepthIntra; // 4;
-    pars->QuadtreeTUMaxDepthInter = optsHevc->QuadtreeTUMaxDepthInter; // 4;
-    pars->partModes = optsHevc->PartModes;
-    pars->TMVPFlag = (optsHevc->TMVP == MFX_CODINGOPTION_ON);
-    pars->QPI = (Ipp8s)param->mfx.QPI;
-    pars->QPP = (Ipp8s)param->mfx.QPP;
-    pars->QPB = (Ipp8s)param->mfx.QPB;
+        pars->SourceWidth = width;
+        pars->SourceHeight = height;
+        pars->Log2MaxCUSize = optsHevc->Log2MaxCUSize;// 6;
+        pars->MaxCUDepth = optsHevc->MaxCUDepth; // 4;
+        pars->QuadtreeTULog2MaxSize = optsHevc->QuadtreeTULog2MaxSize; // 5;
+        pars->QuadtreeTULog2MinSize = optsHevc->QuadtreeTULog2MinSize; // 2;
+        pars->QuadtreeTUMaxDepthIntra = optsHevc->QuadtreeTUMaxDepthIntra; // 4;
+        pars->QuadtreeTUMaxDepthInter = optsHevc->QuadtreeTUMaxDepthInter; // 4;
+        pars->partModes = optsHevc->PartModes;
+        pars->TMVPFlag = (optsHevc->TMVP == MFX_CODINGOPTION_ON);
+        pars->QPI = (Ipp8s)param->mfx.QPI;
+        pars->QPP = (Ipp8s)param->mfx.QPP;
+        pars->QPB = (Ipp8s)param->mfx.QPB;
 
 #if defined (MFX_VA)
-    pars->enableCmFlag = (optsHevc->EnableCm == MFX_CODINGOPTION_ON);
+        pars->enableCmFlag = (optsHevc->EnableCm == MFX_CODINGOPTION_ON);
 #else
-    pars->enableCmFlag = 0;
+        pars->enableCmFlag = 0;
 #endif // MFX_VA
 
-    pars->NumSlices = param->mfx.NumSlice;
-    pars->NumTileCols = optsHevc->NumTileCols;
-    pars->NumTileRows = optsHevc->NumTileRows;
-    pars->m_framesInParallel = optsHevc->FramesInParallel;
+        pars->NumSlices = param->mfx.NumSlice;
+        pars->NumTileCols = optsHevc->NumTileCols;
+        pars->NumTileRows = optsHevc->NumTileRows;
+        pars->m_framesInParallel = optsHevc->FramesInParallel;
 
-    if ( pars->enableCmFlag ) {
-        pars->m_framesInParallel = 1; // gacc doesn't support frame threading mode
-    } else {
-        // TO DO: discribe feature list and priority to support high priority feature in case of incompatibility
-    }
-
-    pars->NumTiles = pars->NumTileCols * pars->NumTileRows;
-    pars->deblockTileBordersFlag = 0;
-
-    pars->GopPicSize = param->mfx.GopPicSize;
-    pars->GopRefDist = param->mfx.GopRefDist;
-    pars->IdrInterval = param->mfx.IdrInterval;
-    pars->GopClosedFlag = (param->mfx.GopOptFlag & MFX_GOP_CLOSED) != 0;
-    pars->GopStrictFlag = (param->mfx.GopOptFlag & MFX_GOP_STRICT) != 0;
-    pars->BiPyramidLayers = (optsHevc->BPyramid == MFX_CODINGOPTION_ON) ? H265_CeilLog2(pars->GopRefDist) + 1 : 1;
-    pars->longGop = (optsHevc->BPyramid == MFX_CODINGOPTION_ON && pars->GopRefDist == 16 && param->mfx.NumRefFrame == 5);
-
-    pars->NumRefToStartCodeBSlice = 1;
-    pars->TreatBAsReference = 0;
-    pars->GeneralizedPB = (optsHevc->GPB == MFX_CODINGOPTION_ON);
-
-    pars->MaxDecPicBuffering = MAX(param->mfx.NumRefFrame, pars->BiPyramidLayers);
-    pars->MaxRefIdxP[0] = param->mfx.NumRefFrame;
-    pars->MaxRefIdxP[1] = pars->GeneralizedPB ? param->mfx.NumRefFrame : 0;
-    pars->MaxRefIdxB[0] = 0;
-    pars->MaxRefIdxB[1] = 0;
-
-    if (pars->GopRefDist > 1) {
-        if (pars->longGop) {
-            pars->MaxRefIdxB[0] = 2;
-            pars->MaxRefIdxB[1] = 2;
+        if ( pars->enableCmFlag ) {
+            pars->m_framesInParallel = 1; // gacc doesn't support frame threading mode
+        } else {
+            // TO DO: discribe feature list and priority to support high priority feature in case of incompatibility
         }
-        else if (pars->BiPyramidLayers > 1) {
-            pars->MaxRefIdxB[0] = (param->mfx.NumRefFrame + 1) / 2;
-            pars->MaxRefIdxB[1] = IPP_MAX(1, (param->mfx.NumRefFrame + 0) / 2);
+
+        pars->NumTiles = pars->NumTileCols * pars->NumTileRows;
+        pars->deblockTileBordersFlag = 0;
+
+        pars->GopPicSize = param->mfx.GopPicSize;
+        pars->GopRefDist = param->mfx.GopRefDist;
+        pars->IdrInterval = param->mfx.IdrInterval;
+        pars->GopClosedFlag = (param->mfx.GopOptFlag & MFX_GOP_CLOSED) != 0;
+        pars->GopStrictFlag = (param->mfx.GopOptFlag & MFX_GOP_STRICT) != 0;
+        pars->BiPyramidLayers = (optsHevc->BPyramid == MFX_CODINGOPTION_ON) ? H265_CeilLog2(pars->GopRefDist) + 1 : 1;
+        pars->longGop = (optsHevc->BPyramid == MFX_CODINGOPTION_ON && pars->GopRefDist == 16 && param->mfx.NumRefFrame == 5);
+
+        pars->NumRefToStartCodeBSlice = 1;
+        pars->TreatBAsReference = 0;
+        pars->GeneralizedPB = (optsHevc->GPB == MFX_CODINGOPTION_ON);
+
+        pars->MaxDecPicBuffering = MAX(param->mfx.NumRefFrame, pars->BiPyramidLayers);
+        pars->MaxRefIdxP[0] = param->mfx.NumRefFrame;
+        pars->MaxRefIdxP[1] = pars->GeneralizedPB ? param->mfx.NumRefFrame : 0;
+        pars->MaxRefIdxB[0] = 0;
+        pars->MaxRefIdxB[1] = 0;
+
+        if (pars->GopRefDist > 1) {
+            if (pars->longGop) {
+                pars->MaxRefIdxB[0] = 2;
+                pars->MaxRefIdxB[1] = 2;
+            }
+            else if (pars->BiPyramidLayers > 1) {
+                pars->MaxRefIdxB[0] = (param->mfx.NumRefFrame + 1) / 2;
+                pars->MaxRefIdxB[1] = IPP_MAX(1, (param->mfx.NumRefFrame + 0) / 2);
+            }
+            else {
+                pars->MaxRefIdxB[0] = param->mfx.NumRefFrame - 1;
+                pars->MaxRefIdxB[1] = 1;
+            }
+        }
+
+        pars->PGopPicSize = (pars->GopRefDist == 1 && pars->MaxRefIdxP[0] > 1) ? PGOP_PIC_SIZE : 1;
+
+        pars->AnalyseFlags = 0;
+        if (optsHevc->AnalyzeChroma == MFX_CODINGOPTION_ON)
+            pars->AnalyseFlags |= HEVC_ANALYSE_CHROMA;
+        if (optsHevc->CostChroma == MFX_CODINGOPTION_ON)
+            pars->AnalyseFlags |= HEVC_COST_CHROMA;
+
+        pars->SplitThresholdStrengthCUIntra = (Ipp8u)optsHevc->SplitThresholdStrengthCUIntra - 1;
+        pars->SplitThresholdStrengthTUIntra = (Ipp8u)optsHevc->SplitThresholdStrengthTUIntra - 1;
+        pars->SplitThresholdStrengthCUInter = (Ipp8u)optsHevc->SplitThresholdStrengthCUInter - 1;
+        pars->SplitThresholdTabIndex        = (Ipp8u)optsHevc->SplitThresholdTabIndex;
+
+        pars->FastInterp  = (optsHevc->FastInterp == MFX_CODINGOPTION_ON);
+        pars->cpuFeature = optsHevc->CpuFeature;
+        pars->IntraChromaRDO  = (optsHevc->IntraChromaRDO == MFX_CODINGOPTION_ON);
+        pars->SBHFlag  = (optsHevc->SignBitHiding == MFX_CODINGOPTION_ON);
+        pars->RDOQFlag = (optsHevc->RDOQuant == MFX_CODINGOPTION_ON);
+        pars->rdoqChromaFlag = (optsHevc->RDOQuantChroma == MFX_CODINGOPTION_ON);
+        pars->rdoqCGZFlag = (optsHevc->RDOQuantCGZ == MFX_CODINGOPTION_ON);
+        pars->SAOFlag  = (optsHevc->SAO == MFX_CODINGOPTION_ON);
+        pars->WPPFlag  = pars->NumTiles > 1 ? 0 : ((optsHevc->WPP == MFX_CODINGOPTION_ON) || (optsHevc->WPP == MFX_CODINGOPTION_UNKNOWN && param->mfx.NumThread > 1));
+        if (pars->WPPFlag || pars->NumTiles > 1) {
+            pars->num_threads = param->mfx.NumThread;
+            if (pars->num_threads == 0)
+                pars->num_threads = vm_sys_info_get_cpu_num();
+            if (pars->num_threads < 1) {
+                pars->num_threads = 1;
+            }
+            if (pars->NumTiles > 1)
+                if (pars->num_threads > pars->NumTiles)
+                    pars->num_threads = pars->NumTiles;
         }
         else {
-            pars->MaxRefIdxB[0] = param->mfx.NumRefFrame - 1;
-            pars->MaxRefIdxB[1] = 1;
-        }
-    }
-
-    pars->PGopPicSize = (pars->GopRefDist == 1 && pars->MaxRefIdxP[0] > 1) ? PGOP_PIC_SIZE : 1;
-
-    pars->AnalyseFlags = 0;
-    if (optsHevc->AnalyzeChroma == MFX_CODINGOPTION_ON)
-        pars->AnalyseFlags |= HEVC_ANALYSE_CHROMA;
-    if (optsHevc->CostChroma == MFX_CODINGOPTION_ON)
-        pars->AnalyseFlags |= HEVC_COST_CHROMA;
-
-    pars->SplitThresholdStrengthCUIntra = (Ipp8u)optsHevc->SplitThresholdStrengthCUIntra - 1;
-    pars->SplitThresholdStrengthTUIntra = (Ipp8u)optsHevc->SplitThresholdStrengthTUIntra - 1;
-    pars->SplitThresholdStrengthCUInter = (Ipp8u)optsHevc->SplitThresholdStrengthCUInter - 1;
-    pars->SplitThresholdTabIndex        = (Ipp8u)optsHevc->SplitThresholdTabIndex;
-
-    pars->FastInterp  = (optsHevc->FastInterp == MFX_CODINGOPTION_ON);
-    pars->cpuFeature = optsHevc->CpuFeature;
-    pars->IntraChromaRDO  = (optsHevc->IntraChromaRDO == MFX_CODINGOPTION_ON);
-    pars->SBHFlag  = (optsHevc->SignBitHiding == MFX_CODINGOPTION_ON);
-    pars->RDOQFlag = (optsHevc->RDOQuant == MFX_CODINGOPTION_ON);
-    pars->rdoqChromaFlag = (optsHevc->RDOQuantChroma == MFX_CODINGOPTION_ON);
-    pars->rdoqCGZFlag = (optsHevc->RDOQuantCGZ == MFX_CODINGOPTION_ON);
-    pars->SAOFlag  = (optsHevc->SAO == MFX_CODINGOPTION_ON);
-    pars->WPPFlag  = pars->NumTiles > 1 ? 0 : ((optsHevc->WPP == MFX_CODINGOPTION_ON) || (optsHevc->WPP == MFX_CODINGOPTION_UNKNOWN && param->mfx.NumThread > 1));
-    if (pars->WPPFlag || pars->NumTiles > 1) {
-        pars->num_threads = param->mfx.NumThread;
-        if (pars->num_threads == 0)
-            pars->num_threads = vm_sys_info_get_cpu_num();
-        if (pars->num_threads < 1) {
             pars->num_threads = 1;
         }
-        if (pars->NumTiles > 1)
-            if (pars->num_threads > pars->NumTiles)
-                pars->num_threads = pars->NumTiles;
-    }
-    else {
-        pars->num_threads = 1;
-    }
 
-    for (Ipp32s i = 0; i <= 6; i++) {
-        Ipp32s w = (1 << i);
-        pars->num_cand_0[0][i] = 33;
-        pars->num_cand_0[1][i] = 33;
-        pars->num_cand_0[2][i] = 33;
-        pars->num_cand_0[3][i] = 33;
-        pars->num_cand_1[i] = w > 8 ? 4 : 8;
-        pars->num_cand_2[i] = pars->num_cand_1[i] >> 1;
-    }
-    //making a copy for future if we want to extend control for every frame type
-    //so far just a copy
-    if (optsHevc->IntraNumCand0_2) { 
-        pars->num_cand_0[0][2] = (Ipp8u)optsHevc->IntraNumCand0_2;pars->num_cand_0[1][2] = (Ipp8u)optsHevc->IntraNumCand0_2;
-        pars->num_cand_0[2][2] = (Ipp8u)optsHevc->IntraNumCand0_2;pars->num_cand_0[3][2] = (Ipp8u)optsHevc->IntraNumCand0_2;
-    }
-    if (optsHevc->IntraNumCand0_3) { 
-        pars->num_cand_0[0][3] = (Ipp8u)optsHevc->IntraNumCand0_3; pars->num_cand_0[1][3] = (Ipp8u)optsHevc->IntraNumCand0_3;
-        pars->num_cand_0[2][3] = (Ipp8u)optsHevc->IntraNumCand0_3; pars->num_cand_0[3][3] = (Ipp8u)optsHevc->IntraNumCand0_3;
-    }
-    if (optsHevc->IntraNumCand0_4) { 
-        pars->num_cand_0[0][4] = (Ipp8u)optsHevc->IntraNumCand0_4; pars->num_cand_0[1][4] = (Ipp8u)optsHevc->IntraNumCand0_4;
-        pars->num_cand_0[2][4] = (Ipp8u)optsHevc->IntraNumCand0_4; pars->num_cand_0[3][4] = (Ipp8u)optsHevc->IntraNumCand0_4;
-    }
-    if (optsHevc->IntraNumCand0_5) { 
-        pars->num_cand_0[0][5] = (Ipp8u)optsHevc->IntraNumCand0_5; pars->num_cand_0[1][5] = (Ipp8u)optsHevc->IntraNumCand0_5;
-        pars->num_cand_0[2][5] = (Ipp8u)optsHevc->IntraNumCand0_5; pars->num_cand_0[3][5] = (Ipp8u)optsHevc->IntraNumCand0_5;
-    }
-    if (optsHevc->IntraNumCand0_6) {
-        pars->num_cand_0[0][6] = (Ipp8u)optsHevc->IntraNumCand0_6; pars->num_cand_0[1][6] = (Ipp8u)optsHevc->IntraNumCand0_6;
-        pars->num_cand_0[2][6] = (Ipp8u)optsHevc->IntraNumCand0_6; pars->num_cand_0[3][6] = (Ipp8u)optsHevc->IntraNumCand0_6;
-    }
-    if (optsHevc->IntraNumCand1_2) pars->num_cand_1[2] = (Ipp8u)optsHevc->IntraNumCand1_2;
-    if (optsHevc->IntraNumCand1_3) pars->num_cand_1[3] = (Ipp8u)optsHevc->IntraNumCand1_3;
-    if (optsHevc->IntraNumCand1_4) pars->num_cand_1[4] = (Ipp8u)optsHevc->IntraNumCand1_4;
-    if (optsHevc->IntraNumCand1_5) pars->num_cand_1[5] = (Ipp8u)optsHevc->IntraNumCand1_5;
-    if (optsHevc->IntraNumCand1_6) pars->num_cand_1[6] = (Ipp8u)optsHevc->IntraNumCand1_6;
-    if (optsHevc->IntraNumCand2_2) pars->num_cand_2[2] = (Ipp8u)optsHevc->IntraNumCand2_2;
-    if (optsHevc->IntraNumCand2_3) pars->num_cand_2[3] = (Ipp8u)optsHevc->IntraNumCand2_3;
-    if (optsHevc->IntraNumCand2_4) pars->num_cand_2[4] = (Ipp8u)optsHevc->IntraNumCand2_4;
-    if (optsHevc->IntraNumCand2_5) pars->num_cand_2[5] = (Ipp8u)optsHevc->IntraNumCand2_5;
-    if (optsHevc->IntraNumCand2_6) pars->num_cand_2[6] = (Ipp8u)optsHevc->IntraNumCand2_6;
+        for (Ipp32s i = 0; i <= 6; i++) {
+            Ipp32s w = (1 << i);
+            pars->num_cand_0[0][i] = 33;
+            pars->num_cand_0[1][i] = 33;
+            pars->num_cand_0[2][i] = 33;
+            pars->num_cand_0[3][i] = 33;
+            pars->num_cand_1[i] = w > 8 ? 4 : 8;
+            pars->num_cand_2[i] = pars->num_cand_1[i] >> 1;
+        }
+        //making a copy for future if we want to extend control for every frame type
+        //so far just a copy
+        if (optsHevc->IntraNumCand0_2) { 
+            pars->num_cand_0[0][2] = (Ipp8u)optsHevc->IntraNumCand0_2;pars->num_cand_0[1][2] = (Ipp8u)optsHevc->IntraNumCand0_2;
+            pars->num_cand_0[2][2] = (Ipp8u)optsHevc->IntraNumCand0_2;pars->num_cand_0[3][2] = (Ipp8u)optsHevc->IntraNumCand0_2;
+        }
+        if (optsHevc->IntraNumCand0_3) { 
+            pars->num_cand_0[0][3] = (Ipp8u)optsHevc->IntraNumCand0_3; pars->num_cand_0[1][3] = (Ipp8u)optsHevc->IntraNumCand0_3;
+            pars->num_cand_0[2][3] = (Ipp8u)optsHevc->IntraNumCand0_3; pars->num_cand_0[3][3] = (Ipp8u)optsHevc->IntraNumCand0_3;
+        }
+        if (optsHevc->IntraNumCand0_4) { 
+            pars->num_cand_0[0][4] = (Ipp8u)optsHevc->IntraNumCand0_4; pars->num_cand_0[1][4] = (Ipp8u)optsHevc->IntraNumCand0_4;
+            pars->num_cand_0[2][4] = (Ipp8u)optsHevc->IntraNumCand0_4; pars->num_cand_0[3][4] = (Ipp8u)optsHevc->IntraNumCand0_4;
+        }
+        if (optsHevc->IntraNumCand0_5) { 
+            pars->num_cand_0[0][5] = (Ipp8u)optsHevc->IntraNumCand0_5; pars->num_cand_0[1][5] = (Ipp8u)optsHevc->IntraNumCand0_5;
+            pars->num_cand_0[2][5] = (Ipp8u)optsHevc->IntraNumCand0_5; pars->num_cand_0[3][5] = (Ipp8u)optsHevc->IntraNumCand0_5;
+        }
+        if (optsHevc->IntraNumCand0_6) {
+            pars->num_cand_0[0][6] = (Ipp8u)optsHevc->IntraNumCand0_6; pars->num_cand_0[1][6] = (Ipp8u)optsHevc->IntraNumCand0_6;
+            pars->num_cand_0[2][6] = (Ipp8u)optsHevc->IntraNumCand0_6; pars->num_cand_0[3][6] = (Ipp8u)optsHevc->IntraNumCand0_6;
+        }
+        if (optsHevc->IntraNumCand1_2) pars->num_cand_1[2] = (Ipp8u)optsHevc->IntraNumCand1_2;
+        if (optsHevc->IntraNumCand1_3) pars->num_cand_1[3] = (Ipp8u)optsHevc->IntraNumCand1_3;
+        if (optsHevc->IntraNumCand1_4) pars->num_cand_1[4] = (Ipp8u)optsHevc->IntraNumCand1_4;
+        if (optsHevc->IntraNumCand1_5) pars->num_cand_1[5] = (Ipp8u)optsHevc->IntraNumCand1_5;
+        if (optsHevc->IntraNumCand1_6) pars->num_cand_1[6] = (Ipp8u)optsHevc->IntraNumCand1_6;
+        if (optsHevc->IntraNumCand2_2) pars->num_cand_2[2] = (Ipp8u)optsHevc->IntraNumCand2_2;
+        if (optsHevc->IntraNumCand2_3) pars->num_cand_2[3] = (Ipp8u)optsHevc->IntraNumCand2_3;
+        if (optsHevc->IntraNumCand2_4) pars->num_cand_2[4] = (Ipp8u)optsHevc->IntraNumCand2_4;
+        if (optsHevc->IntraNumCand2_5) pars->num_cand_2[5] = (Ipp8u)optsHevc->IntraNumCand2_5;
+        if (optsHevc->IntraNumCand2_6) pars->num_cand_2[6] = (Ipp8u)optsHevc->IntraNumCand2_6;
 
-//kolya HM's number of intra modes to search through
+        //kolya HM's number of intra modes to search through
 #define HM_MATCH_2 0
 #if HM_MATCH_2
-    pars->num_cand_1[1] = 3; // 2x2
-    pars->num_cand_1[2] = 8; // 4x4
-    pars->num_cand_1[3] = 8; // 8x8
-    pars->num_cand_1[4] = 3; // 16x16
-    pars->num_cand_1[5] = 3; // 32x32
-    pars->num_cand_1[6] = 3; // 64x64
-    pars->num_cand_1[7] = 3; // 128x128
+        pars->num_cand_1[1] = 3; // 2x2
+        pars->num_cand_1[2] = 8; // 4x4
+        pars->num_cand_1[3] = 8; // 8x8
+        pars->num_cand_1[4] = 3; // 16x16
+        pars->num_cand_1[5] = 3; // 32x32
+        pars->num_cand_1[6] = 3; // 64x64
+        pars->num_cand_1[7] = 3; // 128x128
 #endif
 
-//#if defined (MFX_VA)
-//    pars->enableCmFlag = (optsHevc->EnableCm == MFX_CODINGOPTION_ON);
-//#else
-//    pars->enableCmFlag = 0;
-//#endif // MFX_VA
+        //#if defined (MFX_VA)
+        //    pars->enableCmFlag = (optsHevc->EnableCm == MFX_CODINGOPTION_ON);
+        //#else
+        //    pars->enableCmFlag = 0;
+        //#endif // MFX_VA
 
-    pars->preEncMode = 0;
+        pars->preEncMode = 0;
 #if defined(MFX_ENABLE_H265_PAQ)
-    // support for 64x64 && BPyramid && RefDist==8 || 16 (aka tu1 & tu2)
-    //if( pars->BPyramid && (8 == pars->GopRefDist || 16 == pars->GopRefDist) && (6 == pars->Log2MaxCUSize) )
+        // support for 64x64 && BPyramid && RefDist==8 || 16 (aka tu1 & tu2)
+        //if( pars->BPyramid && (8 == pars->GopRefDist || 16 == pars->GopRefDist) && (6 == pars->Log2MaxCUSize) )
         pars->preEncMode = optsHevc->DeltaQpMode;
 #endif
-    pars->preEncMode = optsHevc->DeltaQpMode;
+        pars->preEncMode = optsHevc->DeltaQpMode;
 
-    pars->TryIntra         = optsHevc->TryIntra;
-    pars->FastAMPSkipME    = optsHevc->FastAMPSkipME;
-    pars->FastAMPRD    = optsHevc->FastAMPRD;
-    pars->SkipMotionPartition    = optsHevc->SkipMotionPartition;
-    pars->cmIntraThreshold = optsHevc->CmIntraThreshold;
-    pars->tuSplitIntra = optsHevc->TUSplitIntra;
-    pars->cuSplit = optsHevc->CUSplit;
-    pars->intraAngModes[0] = optsHevc->IntraAngModes;
-    pars->intraAngModes[1] = optsHevc->IntraAngModesP;
-    pars->intraAngModes[2] = optsHevc->IntraAngModesBRef;
-    pars->intraAngModes[3] = optsHevc->IntraAngModesBnonRef;
-    pars->fastSkip = (optsHevc->FastSkip == MFX_CODINGOPTION_ON);
-    pars->SkipCandRD = (optsHevc->SkipCandRD == MFX_CODINGOPTION_ON);
-    pars->fastCbfMode = (optsHevc->FastCbfMode == MFX_CODINGOPTION_ON);
-    pars->hadamardMe = optsHevc->HadamardMe;
-    pars->TMVPFlag = (optsHevc->TMVP == MFX_CODINGOPTION_ON);
-    pars->deblockingFlag = (optsHevc->Deblocking == MFX_CODINGOPTION_ON);
-    pars->saoOpt = optsHevc->SaoOpt;
-    pars->patternIntPel = optsHevc->PatternIntPel;
-    pars->patternSubPel = optsHevc->PatternSubPel;
-    pars->numBiRefineIter = optsHevc->NumBiRefineIter;
-    pars->puDecisionSatd = (optsHevc->PuDecisionSatd == MFX_CODINGOPTION_ON);
-    pars->minCUDepthAdapt = (optsHevc->MinCUDepthAdapt == MFX_CODINGOPTION_ON);
-    pars->maxCUDepthAdapt = (optsHevc->MaxCUDepthAdapt == MFX_CODINGOPTION_ON);
-    pars->cuSplitThreshold = optsHevc->CUSplitThreshold;
+        pars->TryIntra         = optsHevc->TryIntra;
+        pars->FastAMPSkipME    = optsHevc->FastAMPSkipME;
+        pars->FastAMPRD    = optsHevc->FastAMPRD;
+        pars->SkipMotionPartition    = optsHevc->SkipMotionPartition;
+        pars->cmIntraThreshold = optsHevc->CmIntraThreshold;
+        pars->tuSplitIntra = optsHevc->TUSplitIntra;
+        pars->cuSplit = optsHevc->CUSplit;
+        pars->intraAngModes[0] = optsHevc->IntraAngModes;
+        pars->intraAngModes[1] = optsHevc->IntraAngModesP;
+        pars->intraAngModes[2] = optsHevc->IntraAngModesBRef;
+        pars->intraAngModes[3] = optsHevc->IntraAngModesBnonRef;
+        pars->fastSkip = (optsHevc->FastSkip == MFX_CODINGOPTION_ON);
+        pars->SkipCandRD = (optsHevc->SkipCandRD == MFX_CODINGOPTION_ON);
+        pars->fastCbfMode = (optsHevc->FastCbfMode == MFX_CODINGOPTION_ON);
+        pars->hadamardMe = optsHevc->HadamardMe;
+        pars->TMVPFlag = (optsHevc->TMVP == MFX_CODINGOPTION_ON);
+        pars->deblockingFlag = (optsHevc->Deblocking == MFX_CODINGOPTION_ON);
+        pars->saoOpt = optsHevc->SaoOpt;
+        pars->patternIntPel = optsHevc->PatternIntPel;
+        pars->patternSubPel = optsHevc->PatternSubPel;
+        pars->numBiRefineIter = optsHevc->NumBiRefineIter;
+        pars->puDecisionSatd = (optsHevc->PuDecisionSatd == MFX_CODINGOPTION_ON);
+        pars->minCUDepthAdapt = (optsHevc->MinCUDepthAdapt == MFX_CODINGOPTION_ON);
+        pars->maxCUDepthAdapt = (optsHevc->MaxCUDepthAdapt == MFX_CODINGOPTION_ON);
+        pars->cuSplitThreshold = optsHevc->CUSplitThreshold;
 
-    for (Ipp32s i = 0; i <= 6; i++) {
+        for (Ipp32s i = 0; i <= 6; i++) {
             //to make this work we need extend input user's NumCand0 for every frame type
             //so far all 4 just a copy        
-        if (INTRA_ANG_MODE_GRADIENT == pars->intraAngModes[0]) { 
-            pars->num_cand_0[0][i] = Saturate(1, 33, pars->num_cand_0[0][i]);
-            pars->num_cand_1[i] = Saturate(1, pars->num_cand_0[0][i] + 2, pars->num_cand_1[i]);//AFfix - own ang mode for every slice type now
+            if (INTRA_ANG_MODE_GRADIENT == pars->intraAngModes[0]) { 
+                pars->num_cand_0[0][i] = Saturate(1, 33, pars->num_cand_0[0][i]);
+                pars->num_cand_1[i] = Saturate(1, pars->num_cand_0[0][i] + 2, pars->num_cand_1[i]);//AFfix - own ang mode for every slice type now
+            }
+            else {
+                pars->num_cand_1[i] = Saturate(1, 35, pars->num_cand_1[i]);
+            }
+            if (INTRA_ANG_MODE_GRADIENT == pars->intraAngModes[1]) { 
+                pars->num_cand_0[1][i] = Saturate(1, 33, pars->num_cand_0[1][i]);
+            }
+            if (INTRA_ANG_MODE_GRADIENT == pars->intraAngModes[2]) { 
+                pars->num_cand_0[2][i] = Saturate(1, 33, pars->num_cand_0[2][i]);
+            }
+            if (INTRA_ANG_MODE_GRADIENT == pars->intraAngModes[3]) { 
+                pars->num_cand_0[3][i] = Saturate(1, 33, pars->num_cand_0[3][i]);
+            }
+            pars->num_cand_2[i] = Saturate(1, pars->num_cand_1[i], pars->num_cand_2[i]);
         }
-        else {
-            pars->num_cand_1[i] = Saturate(1, 35, pars->num_cand_1[i]);
-        }
-        if (INTRA_ANG_MODE_GRADIENT == pars->intraAngModes[1]) { 
-            pars->num_cand_0[1][i] = Saturate(1, 33, pars->num_cand_0[1][i]);
-        }
-        if (INTRA_ANG_MODE_GRADIENT == pars->intraAngModes[2]) { 
-            pars->num_cand_0[2][i] = Saturate(1, 33, pars->num_cand_0[2][i]);
-        }
-        if (INTRA_ANG_MODE_GRADIENT == pars->intraAngModes[3]) { 
-            pars->num_cand_0[3][i] = Saturate(1, 33, pars->num_cand_0[3][i]);
-        }
-        pars->num_cand_2[i] = Saturate(1, pars->num_cand_1[i], pars->num_cand_2[i]);
-    }
 
-    /* derived */
+        /* derived */
 
-    pars->MaxTrSize = 1 << pars->QuadtreeTULog2MaxSize;
-    pars->MaxCUSize = 1 << pars->Log2MaxCUSize;
+        pars->MaxTrSize = 1 << pars->QuadtreeTULog2MaxSize;
+        pars->MaxCUSize = 1 << pars->Log2MaxCUSize;
 
-    pars->AddCUDepth  = 0;
-    while ((pars->MaxCUSize>>pars->MaxCUDepth) >
-        (1u << ( pars->QuadtreeTULog2MinSize + pars->AddCUDepth))) {
+        pars->AddCUDepth  = 0;
+        while ((pars->MaxCUSize>>pars->MaxCUDepth) >
+            (1u << ( pars->QuadtreeTULog2MinSize + pars->AddCUDepth))) {
+                pars->AddCUDepth++;
+        }
+
+        pars->MaxCUDepth += pars->AddCUDepth;
         pars->AddCUDepth++;
-    }
 
-    pars->MaxCUDepth += pars->AddCUDepth;
-    pars->AddCUDepth++;
+        pars->MinCUSize = pars->MaxCUSize >> (pars->MaxCUDepth - pars->AddCUDepth);
+        pars->MinTUSize = pars->MaxCUSize >> pars->MaxCUDepth;
 
-    pars->MinCUSize = pars->MaxCUSize >> (pars->MaxCUDepth - pars->AddCUDepth);
-    pars->MinTUSize = pars->MaxCUSize >> pars->MaxCUDepth;
+        if (pars->MinTUSize != 1u << pars->QuadtreeTULog2MinSize)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (pars->MinTUSize != 1u << pars->QuadtreeTULog2MinSize)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        pars->CropLeft = param->mfx.FrameInfo.CropX;
+        pars->CropTop = param->mfx.FrameInfo.CropY;
+        pars->CropRight = param->mfx.FrameInfo.CropW ? param->mfx.FrameInfo.Width - param->mfx.FrameInfo.CropW - param->mfx.FrameInfo.CropX : 0;
+        pars->CropBottom = param->mfx.FrameInfo.CropH ? param->mfx.FrameInfo.Height - param->mfx.FrameInfo.CropH - param->mfx.FrameInfo.CropY : 0;
 
-    pars->CropLeft = param->mfx.FrameInfo.CropX;
-    pars->CropTop = param->mfx.FrameInfo.CropY;
-    pars->CropRight = param->mfx.FrameInfo.CropW ? param->mfx.FrameInfo.Width - param->mfx.FrameInfo.CropW - param->mfx.FrameInfo.CropX : 0;
-    pars->CropBottom = param->mfx.FrameInfo.CropH ? param->mfx.FrameInfo.Height - param->mfx.FrameInfo.CropH - param->mfx.FrameInfo.CropY : 0;
+        pars->Width = width;
+        pars->Height = height;
 
-    pars->Width = width;
-    pars->Height = height;
+        pars->Log2NumPartInCU = pars->MaxCUDepth << 1;
+        pars->NumPartInCU = 1 << pars->Log2NumPartInCU;
+        pars->NumPartInCUSize  = 1 << pars->MaxCUDepth;
 
-    pars->Log2NumPartInCU = pars->MaxCUDepth << 1;
-    pars->NumPartInCU = 1 << pars->Log2NumPartInCU;
-    pars->NumPartInCUSize  = 1 << pars->MaxCUDepth;
+        pars->PicWidthInMinCbs = pars->Width / pars->MinCUSize;
+        pars->PicHeightInMinCbs = pars->Height / pars->MinCUSize;
+        pars->PicWidthInCtbs = (pars->Width + pars->MaxCUSize - 1) / pars->MaxCUSize;
+        pars->PicHeightInCtbs = (pars->Height + pars->MaxCUSize - 1) / pars->MaxCUSize;
 
-    pars->PicWidthInMinCbs = pars->Width / pars->MinCUSize;
-    pars->PicHeightInMinCbs = pars->Height / pars->MinCUSize;
-    pars->PicWidthInCtbs = (pars->Width + pars->MaxCUSize - 1) / pars->MaxCUSize;
-    pars->PicHeightInCtbs = (pars->Height + pars->MaxCUSize - 1) / pars->MaxCUSize;
-
-    /*if (pars->num_threads > pars->PicHeightInCtbs)
+        /*if (pars->num_threads > pars->PicHeightInCtbs)
         pars->num_threads = pars->PicHeightInCtbs;
-    if (pars->num_threads > (pars->PicWidthInCtbs + 1) / 2)
+        if (pars->num_threads > (pars->PicWidthInCtbs + 1) / 2)
         pars->num_threads = (pars->PicWidthInCtbs + 1) / 2;*/
 
-    //pars->threading_by_rows = pars->WPPFlag && pars->num_threads > 1 && pars->NumSlices == 1 ? 0 : 1;
-    //pars->num_thread_structs = pars->threading_by_rows ? pars->num_threads : pars->PicHeightInCtbs;
-//pars->threading_by_rows = pars->WPPFlag && pars->num_threads > 1 && pars->NumSlices == 1 ? 0 : 1;
-    pars->threading_by_rows = 0;//pars->WPPFlag && /*pars->num_threads > 1 &&*/ pars->NumSlices == 1 ? 0 : 1;
-    pars->num_thread_structs = pars->WPPFlag ? pars->PicHeightInCtbs : pars->num_threads;
-    pars->num_bs_subsets = pars->NumTiles > 1 ? pars->NumTiles : pars->num_thread_structs;
+        //pars->threading_by_rows = pars->WPPFlag && pars->num_threads > 1 && pars->NumSlices == 1 ? 0 : 1;
+        //pars->num_thread_structs = pars->threading_by_rows ? pars->num_threads : pars->PicHeightInCtbs;
+        //pars->threading_by_rows = pars->WPPFlag && pars->num_threads > 1 && pars->NumSlices == 1 ? 0 : 1;
+        pars->threading_by_rows = 0;//pars->WPPFlag && /*pars->num_threads > 1 &&*/ pars->NumSlices == 1 ? 0 : 1;
+        pars->num_thread_structs = pars->WPPFlag ? pars->PicHeightInCtbs : pars->num_threads;
+        pars->num_bs_subsets = pars->NumTiles > 1 ? pars->NumTiles : pars->num_thread_structs;
 
-    for (Ipp32s i = 0; i < pars->MaxCUDepth; i++ )
-        pars->AMPAcc[i] = i < pars->MaxCUDepth-pars->AddCUDepth ? (pars->partModes==3) : 0;
+        for (Ipp32s i = 0; i < pars->MaxCUDepth; i++ )
+            pars->AMPAcc[i] = i < pars->MaxCUDepth-pars->AddCUDepth ? (pars->partModes==3) : 0;
 
-    // deltaQP control, main control params
-    pars->MaxCuDQPDepth = 0;
-    pars->m_maxDeltaQP = 0;
-    pars->UseDQP = 0;
-    
-    if (pars->preEncMode) {
+        // deltaQP control, main control params
         pars->MaxCuDQPDepth = 0;
         pars->m_maxDeltaQP = 0;
-        pars->UseDQP = 1;
+        pars->UseDQP = 0;
+
+        if (pars->preEncMode) {
+            pars->MaxCuDQPDepth = 0;
+            pars->m_maxDeltaQP = 0;
+            pars->UseDQP = 1;
+        }
+        if (pars->MaxCuDQPDepth > 0 || pars->m_maxDeltaQP > 0)
+            pars->UseDQP = 1;
+
+        if (pars->UseDQP)
+            pars->MinCuDQPSize = pars->MaxCUSize >> pars->MaxCuDQPDepth;
+        else
+            pars->MinCuDQPSize = pars->MaxCUSize;
+
+        pars->NumMinTUInMaxCU = pars->MaxCUSize >> pars->QuadtreeTULog2MinSize;
+        //pars->Log2MinTUSize = pars->QuadtreeTULog2MinSize;
+        //pars->MaxTotalDepth = pars->MaxCUDepth;
+
+        pars->FrameRateExtN = param->mfx.FrameInfo.FrameRateExtN;
+        pars->FrameRateExtD = param->mfx.FrameInfo.FrameRateExtD;
+        pars->AspectRatioW  = param->mfx.FrameInfo.AspectRatioW ;
+        pars->AspectRatioH  = param->mfx.FrameInfo.AspectRatioH ;
+
+        pars->Profile = param->mfx.CodecProfile;
+        pars->Tier = (param->mfx.CodecLevel & MFX_TIER_HEVC_HIGH) ? 1 : 0;
+        pars->Level = (param->mfx.CodecLevel &~ MFX_TIER_HEVC_HIGH) * 1; // mult 3 it SetProfileLevel
+
+        pars->tcDuration90KHz = (mfxF64)param->mfx.FrameInfo.FrameRateExtD / param->mfx.FrameInfo.FrameRateExtN * 90000; // calculate tick duration    
+        //pars->m_framesInParallel = optsHevc->FramesInParallel;    
+        pars->tileColWidthMax = pars->tileRowHeightMax = 0;
+        Ipp16u tileColStart = 0, tileRowStart = 0;
+
+        for (Ipp32u i = 0; i < pars->NumTileCols; i++) {
+            pars->tileColWidth[i] = ((i + 1) * pars->PicWidthInCtbs) / pars->NumTileCols -
+                (i * pars->PicWidthInCtbs / pars->NumTileCols);
+            if (pars->tileColWidthMax < pars->tileColWidth[i])
+                pars->tileColWidthMax = pars->tileColWidth[i];
+            pars->tileColStart[i] = tileColStart;
+            tileColStart += pars->tileColWidth[i];
+        }
+        for (Ipp32u i = 0; i < pars->NumTileRows; i++) {
+            pars->tileRowHeight[i] = ((i + 1) * pars->PicHeightInCtbs) / pars->NumTileRows -
+                (i * pars->PicHeightInCtbs / pars->NumTileRows);
+            if (pars->tileRowHeightMax < pars->tileRowHeight[i])
+                pars->tileRowHeightMax = pars->tileRowHeight[i];
+            pars->tileRowStart[i] = tileRowStart;
+            tileRowStart += pars->tileRowHeight[i];
+        }
+
+        return MFX_ERR_NONE;
     }
-    if (pars->MaxCuDQPDepth > 0 || pars->m_maxDeltaQP > 0)
-        pars->UseDQP = 1;
-    
-    if (pars->UseDQP)
-        pars->MinCuDQPSize = pars->MaxCUSize >> pars->MaxCuDQPDepth;
-    else
-        pars->MinCuDQPSize = pars->MaxCUSize;
-    
-    pars->NumMinTUInMaxCU = pars->MaxCUSize >> pars->QuadtreeTULog2MinSize;
-    //pars->Log2MinTUSize = pars->QuadtreeTULog2MinSize;
-    //pars->MaxTotalDepth = pars->MaxCUDepth;
-
-    pars->FrameRateExtN = param->mfx.FrameInfo.FrameRateExtN;
-    pars->FrameRateExtD = param->mfx.FrameInfo.FrameRateExtD;
-    pars->AspectRatioW  = param->mfx.FrameInfo.AspectRatioW ;
-    pars->AspectRatioH  = param->mfx.FrameInfo.AspectRatioH ;
-
-    pars->Profile = param->mfx.CodecProfile;
-    pars->Tier = (param->mfx.CodecLevel & MFX_TIER_HEVC_HIGH) ? 1 : 0;
-    pars->Level = (param->mfx.CodecLevel &~ MFX_TIER_HEVC_HIGH) * 1; // mult 3 it SetProfileLevel
-
-    pars->tcDuration90KHz = (mfxF64)param->mfx.FrameInfo.FrameRateExtD / param->mfx.FrameInfo.FrameRateExtN * 90000; // calculate tick duration    
-    //pars->m_framesInParallel = optsHevc->FramesInParallel;    
-    pars->tileColWidthMax = pars->tileRowHeightMax = 0;
-    Ipp16u tileColStart = 0, tileRowStart = 0;
-
-    for (Ipp32u i = 0; i < pars->NumTileCols; i++) {
-        pars->tileColWidth[i] = ((i + 1) * pars->PicWidthInCtbs) / pars->NumTileCols -
-            (i * pars->PicWidthInCtbs / pars->NumTileCols);
-        if (pars->tileColWidthMax < pars->tileColWidth[i])
-            pars->tileColWidthMax = pars->tileColWidth[i];
-        pars->tileColStart[i] = tileColStart;
-        tileColStart += pars->tileColWidth[i];
-    }
-    for (Ipp32u i = 0; i < pars->NumTileRows; i++) {
-        pars->tileRowHeight[i] = ((i + 1) * pars->PicHeightInCtbs) / pars->NumTileRows -
-            (i * pars->PicHeightInCtbs / pars->NumTileRows);
-        if (pars->tileRowHeightMax < pars->tileRowHeight[i])
-            pars->tileRowHeightMax = pars->tileRowHeight[i];
-        pars->tileRowStart[i] = tileRowStart;
-        tileRowStart += pars->tileRowHeight[i];
-    }
-
-    return MFX_ERR_NONE;
-}
 }
 
 
@@ -526,7 +526,7 @@ mfxStatus MFXVideoENCODEH265::SetVPS()
     vps->vps_max_layers = 1;
     vps->vps_max_sub_layers = 1;
     vps->vps_temporal_id_nesting_flag = 1;
-    
+
     vps->vps_max_dec_pic_buffering[0] = m_videoParam.MaxDecPicBuffering;
     vps->vps_max_num_reorder_pics[0] = 0;
     if (m_videoParam.GopRefDist > 1)
@@ -670,7 +670,7 @@ mfxStatus MFXVideoENCODEH265::SetPPS()
     }
 
     pps->sign_data_hiding_enabled_flag = m_videoParam.SBHFlag;
-    
+
     if (m_videoParam.UseDQP) {
         pps->cu_qp_delta_enabled_flag = 1;
         pps->diff_cu_qp_delta_depth   = m_videoParam.MaxCuDQPDepth;
@@ -720,7 +720,7 @@ mfxStatus MFXVideoENCODEH265::SetSlice(H265Slice *slice, Ipp32u curr_slice, H265
 
     slice->sliceIntraAngMode = EnumIntraAngMode((frame->m_picCodeType == MFX_FRAMETYPE_B && !frame->m_isRef)
         ? m_videoParam.intraAngModes[B_NONREF]
-        : m_videoParam.intraAngModes[SliceTypeIndex(slice->slice_type)]);
+    : m_videoParam.intraAngModes[SliceTypeIndex(slice->slice_type)]);
 
     if (frame->m_isIdrPic) {
         slice->IdrPicFlag = 1;
@@ -742,11 +742,11 @@ mfxStatus MFXVideoENCODEH265::SetSlice(H265Slice *slice, Ipp32u curr_slice, H265
 
     if (slice->slice_type == P_SLICE)
         slice->num_ref_idx_active_override_flag =
-            (slice->num_ref_idx[0] != m_pps.num_ref_idx_l0_default_active);
+        (slice->num_ref_idx[0] != m_pps.num_ref_idx_l0_default_active);
     else if (slice->slice_type == B_SLICE)
         slice->num_ref_idx_active_override_flag =
-            (slice->num_ref_idx[0] != m_pps.num_ref_idx_l0_default_active) ||
-            (slice->num_ref_idx[1] != m_pps.num_ref_idx_l1_default_active);
+        (slice->num_ref_idx[0] != m_pps.num_ref_idx_l0_default_active) ||
+        (slice->num_ref_idx[1] != m_pps.num_ref_idx_l1_default_active);
 
     slice->short_term_ref_pic_set_sps_flag = 1;
     slice->short_term_ref_pic_set_idx = frame->m_RPSIndex;
@@ -770,72 +770,72 @@ mfxStatus MFXVideoENCODEH265::SetSlice(H265Slice *slice, Ipp32u curr_slice, H265
 
 namespace H265Enc {
 
-void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp, const H265Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop)
-{
+    void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp, const H265Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop)
     {
-    slice->rd_opt_flag = 1;
-    slice->rd_lambda_slice = 1;
-    if (slice->rd_opt_flag) {
-        slice->rd_lambda_slice = pow(2.0, (qp - 12) * (1.0 / 3.0)) * (1.0 / 256.0);
-        switch (slice->slice_type) {
-        case P_SLICE:
-            if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
-                slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
-                    ? (videoParam.longGop)
-                        ? tab_rdLambdaBPyramid5LongGop[0]
+        {
+            slice->rd_opt_flag = 1;
+            slice->rd_lambda_slice = 1;
+            if (slice->rd_opt_flag) {
+                slice->rd_lambda_slice = pow(2.0, (qp - 12) * (1.0 / 3.0)) * (1.0 / 256.0);
+                switch (slice->slice_type) {
+                case P_SLICE:
+                    if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
+                        slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
+                            ? (videoParam.longGop)
+                            ? tab_rdLambdaBPyramid5LongGop[0]
                         : tab_rdLambdaBPyramid5[0]
-                    : tab_rdLambdaBPyramid4[0];
-            }
-            else {
-                Ipp32s pgopIndex = (currFrame->m_frameOrder - currFrame->m_frameOrderOfLastIntra) % videoParam.PGopPicSize;
-                slice->rd_lambda_slice *= (videoParam.PGopPicSize == 1 || pgopIndex) ? 0.4624 : 0.578;
-                if (pgopIndex)
-                    slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
-            }
-            break;
-        case B_SLICE:
-            if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
-                Ipp8u layer = currFrame->m_pyramidLayer;
-                if (videoParam.preEncMode > 1) {
-                    if (isHiCmplxGop)
-                        slice->rd_lambda_slice *= tab_rdLambdaBPyramid_HiCmplx[layer];
-                    else if (isMidCmplxGop)
-                        slice->rd_lambda_slice *= tab_rdLambdaBPyramid_MidCmplx[layer];
-                    else
-                        slice->rd_lambda_slice *= tab_rdLambdaBPyramid_LoCmplx[layer];
-                }
-                else {
-                    slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
-                        ? (videoParam.longGop)
-                            ? tab_rdLambdaBPyramid5LongGop[layer]
+                        : tab_rdLambdaBPyramid4[0];
+                    }
+                    else {
+                        Ipp32s pgopIndex = (currFrame->m_frameOrder - currFrame->m_frameOrderOfLastIntra) % videoParam.PGopPicSize;
+                        slice->rd_lambda_slice *= (videoParam.PGopPicSize == 1 || pgopIndex) ? 0.4624 : 0.578;
+                        if (pgopIndex)
+                            slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
+                    }
+                    break;
+                case B_SLICE:
+                    if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
+                        Ipp8u layer = currFrame->m_pyramidLayer;
+                        if (videoParam.preEncMode > 1) {
+                            if (isHiCmplxGop)
+                                slice->rd_lambda_slice *= tab_rdLambdaBPyramid_HiCmplx[layer];
+                            else if (isMidCmplxGop)
+                                slice->rd_lambda_slice *= tab_rdLambdaBPyramid_MidCmplx[layer];
+                            else
+                                slice->rd_lambda_slice *= tab_rdLambdaBPyramid_LoCmplx[layer];
+                        }
+                        else {
+                            slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
+                                ? (videoParam.longGop)
+                                ? tab_rdLambdaBPyramid5LongGop[layer]
                             : tab_rdLambdaBPyramid5[layer]
-                        : tab_rdLambdaBPyramid4[layer];
+                            : tab_rdLambdaBPyramid4[layer];
+                        }
+                        if (layer > 0)
+                            slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
+                    }
+                    else {
+                        slice->rd_lambda_slice *= 0.4624;
+                        slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
+                    }
+                    break;
+                case I_SLICE:
+                default:
+                    slice->rd_lambda_slice *= 0.57;
+                    if (videoParam.GopRefDist > 1)
+                        slice->rd_lambda_slice *= (1 - MIN(0.5, 0.05 * (videoParam.GopRefDist - 1)));
                 }
-                if (layer > 0)
-                    slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
             }
-            else {
-                slice->rd_lambda_slice *= 0.4624;
-                slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
-            }
-            break;
-        case I_SLICE:
-        default:
-            slice->rd_lambda_slice *= 0.57;
-            if (videoParam.GopRefDist > 1)
-                slice->rd_lambda_slice *= (1 - MIN(0.5, 0.05 * (videoParam.GopRefDist - 1)));
+
+            slice->rd_lambda_inter_slice = slice->rd_lambda_slice;
+            slice->rd_lambda_inter_mv_slice = slice->rd_lambda_inter_slice;
+
+            slice->rd_lambda_sqrt_slice = sqrt(slice->rd_lambda_slice * 256);
+            //no chroma QP offset (from PPS) is implemented yet
+            slice->ChromaDistWeight_slice = pow(2.0, (qp - h265_QPtoChromaQP[videoParam.chromaFormatIdc - 1][qp]) / 3.0);
         }
-    }
 
-    slice->rd_lambda_inter_slice = slice->rd_lambda_slice;
-    slice->rd_lambda_inter_mv_slice = slice->rd_lambda_inter_slice;
-
-    slice->rd_lambda_sqrt_slice = sqrt(slice->rd_lambda_slice * 256);
-    //no chroma QP offset (from PPS) is implemented yet
-    slice->ChromaDistWeight_slice = pow(2.0, (qp - h265_QPtoChromaQP[videoParam.chromaFormatIdc - 1][qp]) / 3.0);
-}
-
-} //
+    } //
 }
 
 static Ipp8u dpoc_neg[][16][6] = {
@@ -1077,7 +1077,7 @@ mfxStatus H265FrameEncoder::Init(const mfxVideoParam* mfxParam, const H265VideoP
 
     Ipp32u numCtbs = m_videoParam.PicWidthInCtbs*m_videoParam.PicHeightInCtbs;
     Ipp32s sizeofH265CU = (m_videoParam.bitDepthLuma > 8 ? sizeof(H265CU<Ipp16u>) : sizeof(H265CU<Ipp8u>));
-    
+
     data_temp_size = ((MAX_TOTAL_DEPTH * 2 + 2) << m_videoParam.Log2NumPartInCU);
 
     // temp buf size - todo reduce
@@ -1090,7 +1090,7 @@ mfxStatus H265FrameEncoder::Init(const mfxVideoParam* mfxParam, const H265VideoP
     else 
         streamBufSize = (m_videoParam.SourceWidth * (m_videoParam.WPPFlag ? m_videoParam.MaxCUSize : m_videoParam.SourceHeight)) * 6 / (2 + m_videoParam.chromaShift) + DATA_ALIGN;
     Ipp32u memSize = 0;
-    
+
     // m_bs
     memSize += sizeof(H265BsReal)*(m_videoParam.num_bs_subsets + 1) + DATA_ALIGN; 
     // m_bsf
@@ -1149,7 +1149,7 @@ mfxStatus H265FrameEncoder::Init(const mfxVideoParam* mfxParam, const H265VideoP
     // data_temp
     data_temp = UMC::align_pointer<H265CUData*>(ptr, DATA_ALIGN);
     ptr += sizeof(H265CUData) * data_temp_size * m_videoParam.num_thread_structs + DATA_ALIGN;
-    
+
     // m_slice_id
     m_slice_ids = ptr;
     ptr += numCtbs;
@@ -1169,7 +1169,7 @@ mfxStatus H265FrameEncoder::Init(const mfxVideoParam* mfxParam, const H265VideoP
 
     // global table
     m_logMvCostTable = videoParam.m_logMvCostTable; 
-    
+
     // m_costStat
     m_costStat = (costStat *)ptr;
     ptr += numCtbs * sizeof(costStat);
@@ -1275,41 +1275,41 @@ void H265FrameEncoder::Close()
 
 namespace H265Enc {
 
-Ipp8s GetConstQp(Task const & task, H265VideoParam const & param)
-{
-    const H265Frame *frame = task.m_frameOrigin;
-    Ipp8s sliceQpY = param.QPI;
-    switch (frame->m_picCodeType)
+    Ipp8s GetConstQp(Task const & task, H265VideoParam const & param)
     {
-    case MFX_FRAMETYPE_I:
-        return param.QPI;
-        break;
-    case MFX_FRAMETYPE_P:
-        if (param.BiPyramidLayers > 1 && param.longGop && frame->m_biFramesInMiniGop == 15)
+        const H265Frame *frame = task.m_frameOrigin;
+        Ipp8s sliceQpY = param.QPI;
+        switch (frame->m_picCodeType)
+        {
+        case MFX_FRAMETYPE_I:
+            return param.QPI;
+            break;
+        case MFX_FRAMETYPE_P:
+            if (param.BiPyramidLayers > 1 && param.longGop && frame->m_biFramesInMiniGop == 15)
+                sliceQpY = param.QPI;
+            else if (param.PGopPicSize > 1)
+                sliceQpY = param.QPP + frame->m_pyramidLayer;
+            else
+                sliceQpY = param.QPP;
+            break;
+        case MFX_FRAMETYPE_B:
+            if (param.BiPyramidLayers > 1 && param.longGop && frame->m_biFramesInMiniGop == 15)
+                sliceQpY = param.QPI + frame->m_pyramidLayer;
+            else if (param.BiPyramidLayers > 1)
+                sliceQpY = param.QPB + frame->m_pyramidLayer;
+            else
+                sliceQpY = param.QPB;
+            break;
+        default:
+            // Unsupported Picture Type
+            VM_ASSERT(0);
             sliceQpY = param.QPI;
-        else if (param.PGopPicSize > 1)
-            sliceQpY = param.QPP + frame->m_pyramidLayer;
-        else
-            sliceQpY = param.QPP;
-        break;
-    case MFX_FRAMETYPE_B:
-        if (param.BiPyramidLayers > 1 && param.longGop && frame->m_biFramesInMiniGop == 15)
-            sliceQpY = param.QPI + frame->m_pyramidLayer;
-        else if (param.BiPyramidLayers > 1)
-            sliceQpY = param.QPB + frame->m_pyramidLayer;
-        else
-            sliceQpY = param.QPB;
-        break;
-    default:
-        // Unsupported Picture Type
-        VM_ASSERT(0);
-        sliceQpY = param.QPI;
-        break;
-    }
+            break;
+        }
 
-    return sliceQpY;
+        return sliceQpY;
 
-} // 
+    } // 
 
 }
 mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref)
@@ -1424,8 +1424,8 @@ void MFXVideoENCODEH265::CreateRefPicList(Task *task, H265ShortTermRefPicSet *rp
     }
 
     // create RPS syntax
-//    Ipp32s numL0 = currFrame->m_refPicList[0].m_refFramesCount;
-//    Ipp32s numL1 = currFrame->m_refPicList[1].m_refFramesCount;
+    //    Ipp32s numL0 = currFrame->m_refPicList[0].m_refFramesCount;
+    //    Ipp32s numL1 = currFrame->m_refPicList[1].m_refFramesCount;
     rps->inter_ref_pic_set_prediction_flag = 0;
     rps->num_negative_pics = numStBefore;
     rps->num_positive_pics = numStAfter;
@@ -1556,8 +1556,8 @@ void MFXVideoENCODEH265::ConfigureEncodeFrame(Task* task)
         task->m_timeStamp  = task->m_frameOrigin->m_timeStamp;
         //task->m_picCodeType= task->m_frameOrigin->m_picCodeType;
         task->m_frameType= currFrame->m_picCodeType | 
-                          (currFrame->m_isIdrPic ? MFX_FRAMETYPE_IDR : 0) | 
-                          (currFrame->m_isRef ? MFX_FRAMETYPE_REF : 0);
+            (currFrame->m_isIdrPic ? MFX_FRAMETYPE_IDR : 0) | 
+            (currFrame->m_isRef ? MFX_FRAMETYPE_REF : 0);
     }
 
     // assign resource for reconstruct
@@ -1745,7 +1745,7 @@ mfxStatus H265FrameEncoder::ApplySaoCtuRange(Ipp32u ctuStart, Ipp32u ctuEnd)
                 }
 
                 std::swap(saoData->m_TmpU[0], saoData->m_TmpU[1]);
-            
+
                 if (ctb_y != regionCtbRowLast) {
                     PixType* pRecTmp = pRec[compId] + offset + ( (m_videoParam.MaxCUSize >> shift[compId]) - 1)*pitch[compId];
                     small_memcpy(saoData->m_TmpU[1] + ctb_pelx, pRecTmp, sizeof(PixType) * (roiSize.width >> shift[compId]) );
@@ -1754,11 +1754,11 @@ mfxStatus H265FrameEncoder::ApplySaoCtuRange(Ipp32u ctuStart, Ipp32u ctuEnd)
                 for (Ipp32u i = 0; i < (m_videoParam.MaxCUSize >> shift[compId])+1; i++)
                     saoData->m_TmpL[0][i] = pRec[compId][offset + i*pitch[compId]];
             }
-            
+
             if (ctb_x != regionCtbColLast)
                 for (Ipp32u i = 0; i < (m_videoParam.MaxCUSize >> shift[compId])+1; i++)
                     saoData->m_TmpL[1][i] = pRec[compId][offset + i*pitch[compId] + (m_videoParam.MaxCUSize >> shift[compId])-1];
-            
+
             if (m_saoParam[ctu][compId].mode_idx != SAO_MODE_OFF) {
                 if (m_saoParam[ctu][compId].mode_idx == SAO_MODE_MERGE) {
                     // need to restore SAO parameters
@@ -1815,7 +1815,7 @@ bool H265FrameEncoder::AllReferencesReady(Ipp32u ctb_row)
         RefPicList* refList = &(currentFrame->m_refPicList[list]);
         for (int refIdx = 0; refIdx < slice->num_ref_idx[list]; refIdx++) {
             H265Frame *ref = refList->m_refFrames[refIdx];
-            
+
             if(ref->m_codedRow == m_videoParam.PicHeightInCtbs) { // all rows were encoded
                 continue;
             } else if(ref->m_codedRow < (Ipp32s)(ctb_row + refRowLag)) {
@@ -1833,7 +1833,7 @@ void H265FrameEncoder::FindJob(Ipp32s & found, Ipp32s & complete, Ipp32u & ctb_r
     H265VideoParam *pars = &m_videoParam;
     Ipp32u ctb_addr = 0;
     Ipp32u inited_ctb_row = ctb_row;
-    
+
     ctb_row = 0; 
     ctb_col = 0;
     if (m_pps.tiles_enabled_flag) {
@@ -1862,13 +1862,13 @@ void H265FrameEncoder::FindJob(Ipp32s & found, Ipp32s & complete, Ipp32u & ctb_r
     Ipp32u startRow = m_videoParam.NumSlices > 1 ? 0: m_task->m_frameRecon->m_codedRow; // not implemented effective logic for WPP + multislices
 
     for (ctb_row = startRow; ctb_row < pars->PicHeightInCtbs; ctb_row++) {
-    //for (ctb_row = m_pReconstructFrame->m_codedRow; ctb_row < pars->PicHeightInCtbs; ctb_row++) {
+        //for (ctb_row = m_pReconstructFrame->m_codedRow; ctb_row < pars->PicHeightInCtbs; ctb_row++) {
 
         ctb_col = m_row_info[ctb_row].mt_current_ctb_col + 1;
         if (ctb_col == pars->PicWidthInCtbs) {
             continue;
         }
-        
+
         complete = 0;
 
         if (m_row_info[ctb_row].mt_busy) {
@@ -1938,45 +1938,6 @@ private:
 };
 
 
-template <class PixType> void PadOneLine_v2(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s lineCount, Ipp32s padding)
-{
-    PixType *ptr = startLine;
-    Ipp32s leftPos = 0;
-    Ipp32s rightPos = width - 1;
-
-    // left/right
-    for (Ipp32s i = 0; i < lineCount; i++, ptr += pitch) {
-
-        for(Ipp32s padIdx = 1; padIdx <= padding; padIdx++) {
-            ptr[leftPos-padIdx] = ptr[leftPos];
-            ptr[rightPos+padIdx] = ptr[rightPos];
-        }
-    }
-}
-
-
-IppStatus ippsCopy(const Ipp8u *src, Ipp8u *dst, Ipp32s len)   { return ippsCopy_8u(src, dst, len); }
-IppStatus ippsCopy(const Ipp16u *src, Ipp16u *dst, Ipp32s len) { return ippsCopy_16s((const Ipp16s *)src, (Ipp16s *)dst, len); }
-IppStatus ippsCopy(const Ipp32u *src, Ipp32u *dst, Ipp32s len) { return ippsCopy_32s((const Ipp32s *)src, (Ipp32s *)dst, len); }
-
-template <class PixType> void PadOneLine_Top_v2(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s padding_w, Ipp32s padding_h)
-{
-     PixType* ptr = startLine - padding_w;
-    for (Ipp32s i = 1; i <= padding_h; i++) {
-        ippsCopy(ptr, ptr - i*pitch, width + 2*padding_w);
-    }
-}
-
-
-template <class PixType> void PadOneLine_Bottom_v2(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s padding_w, Ipp32s padding_h)
-{
-    PixType* ptr = startLine - padding_w;
-
-    for (Ipp32s i = 1; i <= padding_h; i++) {
-        ippsCopy(ptr, ptr + i*pitch, width + 2*padding_w);
-    }
-}
-
 // try to process one row by the same thread 
 //#define _HOLD_ON_ROW_
 
@@ -1999,7 +1960,7 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
     H265EncoderRowInfo* row_info = NULL;
 
     //Ipp32s 
-     ithread = -1;
+    ithread = -1;
 
     // assign local thread id
     for(Ipp32u idx = 0; idx < m_videoParam.num_thread_structs; idx++) {
@@ -2087,23 +2048,23 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
                 (m_pps.entropy_coding_sync_enabled_flag && ctb_col == 0) ||
                 (m_pps.tiles_enabled_flag && ctb_addr_in_tile == 0)) {
 
-                ippiCABACInit_H265(&m_bs[bs_id].cabacState,
-                    m_bs[bs_id].m_base.m_pbsBase,
-                    m_bs[bs_id].m_base.m_bitOffset + (Ipp32u)(m_bs[bs_id].m_base.m_pbs - m_bs[bs_id].m_base.m_pbsBase) * 8,
-                    m_bs[bs_id].m_base.m_maxBsSize);
+                    ippiCABACInit_H265(&m_bs[bs_id].cabacState,
+                        m_bs[bs_id].m_base.m_pbsBase,
+                        m_bs[bs_id].m_base.m_bitOffset + (Ipp32u)(m_bs[bs_id].m_base.m_pbs - m_bs[bs_id].m_base.m_pbsBase) * 8,
+                        m_bs[bs_id].m_base.m_maxBsSize);
 
-                if (m_pps.entropy_coding_sync_enabled_flag && pars->PicWidthInCtbs > 1 &&
-                    (Ipp32s)ctb_addr - (Ipp32s)pars->PicWidthInCtbs + 1 >= m_task->m_slices[curr_slice].slice_segment_address) {
-                    m_bs[bs_id].CtxRestoreWPP(m_context_array_wpp + NUM_CABAC_CONTEXT * (ctb_row - 1));
-                } else {
-                    InitializeContextVariablesHEVC_CABAC(m_bs[bs_id].m_base.context_array, 2-m_task->m_slices[curr_slice].slice_type, m_task->m_sliceQpY);
-                }
+                    if (m_pps.entropy_coding_sync_enabled_flag && pars->PicWidthInCtbs > 1 &&
+                        (Ipp32s)ctb_addr - (Ipp32s)pars->PicWidthInCtbs + 1 >= m_task->m_slices[curr_slice].slice_segment_address) {
+                            m_bs[bs_id].CtxRestoreWPP(m_context_array_wpp + NUM_CABAC_CONTEXT * (ctb_row - 1));
+                    } else {
+                        InitializeContextVariablesHEVC_CABAC(m_bs[bs_id].m_base.context_array, 2-m_task->m_slices[curr_slice].slice_type, m_task->m_sliceQpY);
+                    }
 
-                if (!m_pps.entropy_coding_sync_enabled_flag && !m_pps.tiles_enabled_flag) {
-                    row_info = &(m_task->m_slices[curr_slice].m_row_info);
-                    row_info->offset = H265Bs_GetBsSize(&m_bs[bs_id]);
-                    row_info->bs_id = bs_id;
-                }
+                    if (!m_pps.entropy_coding_sync_enabled_flag && !m_pps.tiles_enabled_flag) {
+                        row_info = &(m_task->m_slices[curr_slice].m_row_info);
+                        row_info->offset = H265Bs_GetBsSize(&m_bs[bs_id]);
+                        row_info->bs_id = bs_id;
+                    }
             }
 
             small_memcpy(m_bsf[bsf_id].m_base.context_array, m_bs[bs_id].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
@@ -2147,7 +2108,7 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
             //        m_task->m_lcuQps[ctb_addr] += calq;
             //    }*/
             //}
-            
+
             cu[ithread].GetInitAvailablity();
 
             cu[ithread].ModeDecision(0, 0);
@@ -2183,49 +2144,49 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
                 (m_pps.tiles_enabled_flag && ctb_addr_in_tile == num_ctb_in_tile - 1) || 
                 end_of_slice_flag) {
 #ifdef DEBUG_CABAC
-                int d = DEBUG_CABAC_PRINT;
-                DEBUG_CABAC_PRINT = 1;
+                    int d = DEBUG_CABAC_PRINT;
+                    DEBUG_CABAC_PRINT = 1;
 #endif
-                if (!end_of_slice_flag)
-                    m_bs[bs_id].EncodeSingleBin_CABAC(CTX(&m_bs[bs_id],END_OF_SLICE_FLAG_HEVC), 1);
-                m_bs[bs_id].TerminateEncode_CABAC();
-                m_bs[bs_id].ByteAlignWithZeros();
+                    if (!end_of_slice_flag)
+                        m_bs[bs_id].EncodeSingleBin_CABAC(CTX(&m_bs[bs_id],END_OF_SLICE_FLAG_HEVC), 1);
+                    m_bs[bs_id].TerminateEncode_CABAC();
+                    m_bs[bs_id].ByteAlignWithZeros();
 #ifdef DEBUG_CABAC
-                DEBUG_CABAC_PRINT = d;
+                    DEBUG_CABAC_PRINT = d;
 #endif
-                // ----------------------------------------
-                if (!m_pps.entropy_coding_sync_enabled_flag && !m_pps.tiles_enabled_flag) {
-                    H265EncoderRowInfo *row_info = &(m_task->m_slices[curr_slice].m_row_info);
-                    row_info->bs_id = bs_id;
-                    row_info->size = H265Bs_GetBsSize(&m_bs[bs_id]) - row_info->offset;
-                }
-                //-----------------------------------------
+                    // ----------------------------------------
+                    if (!m_pps.entropy_coding_sync_enabled_flag && !m_pps.tiles_enabled_flag) {
+                        H265EncoderRowInfo *row_info = &(m_task->m_slices[curr_slice].m_row_info);
+                        row_info->bs_id = bs_id;
+                        row_info->size = H265Bs_GetBsSize(&m_bs[bs_id]) - row_info->offset;
+                    }
+                    //-----------------------------------------
             }
-            
+
             ctb_addr_in_tile ++;
             if (ctb_col == pars->tileColStart[tile_col] + pars->tileColWidth[tile_col] - 1) {
                 if (isRef || pars->reconForDump) {
                     if (ctb_row > 0 &&
                         curr_slice == m_slice_ids[ctb_addr - pars->PicWidthInCtbs] &&
                         tile_id == m_tile_ids[ctb_addr - pars->PicWidthInCtbs]) {
-                        if (m_sps.sample_adaptive_offset_enabled_flag) {
-                            Ipp32u ctuEnd = ctb_addr - pars->PicWidthInCtbs + 1;
-                            Ipp32u ctuStart = ctuEnd - pars->tileColWidth[tile_col];
-                            ApplySaoCtuRange<PixType>(ctuStart, ctuEnd);
-                        }
-                        if (!m_pps.tiles_enabled_flag)
-                            PadOneReconRow<PixType>(ctb_row - 1);
+                            if (m_sps.sample_adaptive_offset_enabled_flag) {
+                                Ipp32u ctuEnd = ctb_addr - pars->PicWidthInCtbs + 1;
+                                Ipp32u ctuStart = ctuEnd - pars->tileColWidth[tile_col];
+                                ApplySaoCtuRange<PixType>(ctuStart, ctuEnd);
+                            }
+                            if (!m_pps.tiles_enabled_flag)
+                                PadOneReconRow<PixType>(ctb_row - 1);
                     }
                     if( ctb_row == pars->PicHeightInCtbs - 1 ||
                         curr_slice != m_slice_ids[ctb_addr + pars->PicWidthInCtbs] ||
                         tile_id != m_tile_ids[ctb_addr + pars->PicWidthInCtbs]) { //special case for last row
-                        if (m_sps.sample_adaptive_offset_enabled_flag) {
-                            Ipp32u ctuEnd = ctb_addr + 1;
-                            Ipp32u ctuStart = ctuEnd - pars->tileColWidth[tile_col];
-                            ApplySaoCtuRange<PixType>(ctuStart, ctuEnd);
-                        }
-                        if (!m_pps.tiles_enabled_flag)
-                            PadOneReconRow<PixType>(ctb_row);
+                            if (m_sps.sample_adaptive_offset_enabled_flag) {
+                                Ipp32u ctuEnd = ctb_addr + 1;
+                                Ipp32u ctuStart = ctuEnd - pars->tileColWidth[tile_col];
+                                ApplySaoCtuRange<PixType>(ctuStart, ctuEnd);
+                            }
+                            if (!m_pps.tiles_enabled_flag)
+                                PadOneReconRow<PixType>(ctb_row);
                     }
                 }
 
@@ -2240,9 +2201,9 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
                     }
                 } else {
                     // increment to signal enother encoder
-                vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *> (&(reconstructFrame->m_codedRow)));
+                    vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *> (&(reconstructFrame->m_codedRow)));
 
-                vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *> (&(m_row_info[ctb_row].mt_current_ctb_col)));
+                    vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *> (&(m_row_info[ctb_row].mt_current_ctb_col)));
                     vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>(&(m_row_info[ctb_row].mt_busy)), 0, 1);
                 }
 
@@ -2258,34 +2219,34 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
                     ctb_addr++;
                     checkCondition = false;
                 } else {
-                vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *> (&(m_row_info[ctb_row].mt_current_ctb_col)) );
+                    vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *> (&(m_row_info[ctb_row].mt_current_ctb_col)) );
 
-                if (ctb_row != pars->PicHeightInCtbs - 1 && ctb_col > 0 && pars->num_threads > 1)
-                    semaphore.Signal(1); // +1 job in the line below the current line
+                    if (ctb_row != pars->PicHeightInCtbs - 1 && ctb_col > 0 && pars->num_threads > 1)
+                        semaphore.Signal(1); // +1 job in the line below the current line
 
 #ifndef _HOLD_ON_ROW_
-                vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>(&(m_row_info[ctb_row].mt_busy)), 0, 1);
+                    vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>(&(m_row_info[ctb_row].mt_busy)), 0, 1);
 #else
 
-                if ( onExitEvent && (*onExitEvent) >= 2) {
-                    vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>(&(m_row_info[ctb_row].mt_busy)), 0, 1);
-                    return MFX_TASK_WORKING;
-                }
+                    if ( onExitEvent && (*onExitEvent) >= 2) {
+                        vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>(&(m_row_info[ctb_row].mt_busy)), 0, 1);
+                        return MFX_TASK_WORKING;
+                    }
 
-                ctb_col = m_row_info[ctb_row].mt_current_ctb_col + 1;
-                ctb_addr = ctb_row * pars->PicWidthInCtbs + ctb_col;
-                
-                // dependency check
-                checkCondition = false;
-                if (m_pps.entropy_coding_sync_enabled_flag && ctb_row > 0) {
-                    Ipp32s nsync = ctb_col < pars->PicWidthInCtbs - 1 ? 1 : 0;
-                    if ((Ipp32s)ctb_addr - (Ipp32s)pars->PicWidthInCtbs + nsync >= m_task->m_slices[m_slice_ids[ctb_addr]].slice_segment_address) {
-                        if (m_row_info[ctb_row - 1].mt_current_ctb_col < (Ipp32s)ctb_col + nsync) { // failed dependency check
-                            vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>(&(m_row_info[ctb_row].mt_busy)), 0, 1);
-                            checkCondition = true; // try to find next task (ctb) in current frame
+                    ctb_col = m_row_info[ctb_row].mt_current_ctb_col + 1;
+                    ctb_addr = ctb_row * pars->PicWidthInCtbs + ctb_col;
+
+                    // dependency check
+                    checkCondition = false;
+                    if (m_pps.entropy_coding_sync_enabled_flag && ctb_row > 0) {
+                        Ipp32s nsync = ctb_col < pars->PicWidthInCtbs - 1 ? 1 : 0;
+                        if ((Ipp32s)ctb_addr - (Ipp32s)pars->PicWidthInCtbs + nsync >= m_task->m_slices[m_slice_ids[ctb_addr]].slice_segment_address) {
+                            if (m_row_info[ctb_row - 1].mt_current_ctb_col < (Ipp32s)ctb_col + nsync) { // failed dependency check
+                                vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>(&(m_row_info[ctb_row].mt_busy)), 0, 1);
+                                checkCondition = true; // try to find next task (ctb) in current frame
+                            }
                         }
                     }
-                }
 #endif
                 }
             }
@@ -2302,38 +2263,38 @@ void H265FrameEncoder::EstimateCtuSao(Ipp32s ithread, Ipp32s bs_id, Ipp32s bsf_i
     H265CU<PixType> *cu = (H265CU<PixType> *)this->cu;
 
 #if defined(MFX_HEVC_SAO_PREDEBLOCKED_ENABLED)
-                Ipp32s left_addr  = cu[ithread].left_addr;
-                Ipp32s above_addr = cu[ithread].above_addr;
-                MFX_HEVC_PP::CTBBorders borders = {0};
+    Ipp32s left_addr  = cu[ithread].left_addr;
+    Ipp32s above_addr = cu[ithread].above_addr;
+    MFX_HEVC_PP::CTBBorders borders = {0};
 
-                borders.m_left = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
-                borders.m_top  = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+    borders.m_left = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+    borders.m_top  = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
 
-                cu[ithread].GetStatisticsCtuSaoPredeblocked( borders );
+    cu[ithread].GetStatisticsCtuSaoPredeblocked( borders );
 #endif
-                Ipp32s left_addr = cu[ithread].m_leftAddr;
-                Ipp32s above_addr = cu[ithread].m_aboveAddr;
+    Ipp32s left_addr = cu[ithread].m_leftAddr;
+    Ipp32s above_addr = cu[ithread].m_aboveAddr;
 
-                MFX_HEVC_PP::CTBBorders borders = {0};
+    MFX_HEVC_PP::CTBBorders borders = {0};
 
-                borders.m_left  = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
-                borders.m_top = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+    borders.m_left  = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+    borders.m_top = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
 
-                // aya: here should be slice lambda always
-                cu[ithread].m_rdLambda = m_task->m_slices[curr_slice].rd_lambda_slice;
+    // aya: here should be slice lambda always
+    cu[ithread].m_rdLambda = m_task->m_slices[curr_slice].rd_lambda_slice;
 
-                cu[ithread].EstimateCtuSao(&m_bsf[bsf_id], &m_saoParam[ctb_addr], &m_saoParam[0], borders, m_slice_ids);
+    cu[ithread].EstimateCtuSao(&m_bsf[bsf_id], &m_saoParam[ctb_addr], &m_saoParam[0], borders, m_slice_ids);
 
-                // aya: tiles issues???
-                borders.m_left = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[left_addr]) ? 1 : 0;
-                borders.m_top  = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[above_addr]) ? 1 : 0;
+    // aya: tiles issues???
+    borders.m_left = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[left_addr]) ? 1 : 0;
+    borders.m_top  = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[above_addr]) ? 1 : 0;
 
-                bool leftMergeAvail  = borders.m_left > 0 ? true : false;
-                bool aboveMergeAvail = borders.m_top  > 0 ? true : false;
+    bool leftMergeAvail  = borders.m_left > 0 ? true : false;
+    bool aboveMergeAvail = borders.m_top  > 0 ? true : false;
 
-                cu[ithread].EncodeSao(&m_bs[bs_id], 0, 0, 0, m_saoParam[ctb_addr], leftMergeAvail, aboveMergeAvail);
+    cu[ithread].EncodeSao(&m_bs[bs_id], 0, 0, 0, m_saoParam[ctb_addr], leftMergeAvail, aboveMergeAvail);
 
-                cu[ithread].m_saoEncodeFilter.ReconstructCtuSaoParam(m_saoParam[ctb_addr]);
+    cu[ithread].m_saoEncodeFilter.ReconstructCtuSaoParam(m_saoParam[ctb_addr]);
 
 }
 
@@ -2343,6 +2304,7 @@ void H265FrameEncoder::PadOneReconRow(Ipp32u ctb_row)
 {
     H265Frame *reconstructFrame = m_task->m_frameRecon;
 
+#if defined (OLD_STYLE_PAD)
     Ipp8u bitDepth8 = (m_videoParam.bitDepthLuma == 8) ? 1 : 0;
     Ipp32s shift_w = reconstructFrame->m_chromaFormatIdc != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
     Ipp32s shift_h = reconstructFrame->m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
@@ -2382,6 +2344,9 @@ void H265FrameEncoder::PadOneReconRow(Ipp32u ctb_row)
             ? PadOneLine_Bottom_v2((Ipp16u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h)
             : PadOneLine_Bottom_v2((Ipp32u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h);
     }
+#else
+    ::PadOneReconRow(m_task->m_frameRecon, ctb_row, m_videoParam.MaxCUSize, m_videoParam.PicHeightInCtbs);
+#endif
 }
 
 
@@ -2411,7 +2376,7 @@ mfxStatus H265FrameEncoder::SetEncodeTask(Task* task)
     for (Ipp32u i = 0; i < m_videoParam.num_bs_subsets; i++) {
         m_bs[i].Reset();
     }
-    
+
     m_mt_current_tile = -1;
     m_mt_num_tiles_done = 0;
     for (Ipp32u i = 0; i < m_videoParam.PicHeightInCtbs; i++) {

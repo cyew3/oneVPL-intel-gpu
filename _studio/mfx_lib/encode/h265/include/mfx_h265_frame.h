@@ -237,6 +237,7 @@ namespace H265Enc {
 
     FramePtrIter GetFreeFrame(FramePtrList & queue, H265VideoParam *par);
     void Dump(const vm_char* fname, H265VideoParam *par, H265Frame* frame, TaskList & dpb);
+    void PadOneReconRow(H265Frame* frame, Ipp32u ctb_row, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs);
 
 } // namespace
 
