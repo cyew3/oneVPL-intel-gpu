@@ -3072,6 +3072,12 @@ H265Frame* MFXVideoENCODEH265::InsertInputFrame(const mfxFrameSurface1 *surface)
     (*frm)->m_timeStamp = surface->Data.TimeStamp;
     m_inputQueue.back()->m_frameOrigin = *frm;
 
+    if (m_videoParam.preEncMode > 0) {
+        for( Ipp32s row = 0; row < m_videoParam.PicHeightInCtbs; row++ ) {
+            PadOneReconRow(*frm, row, m_videoParam.MaxCUSize, m_videoParam.PicHeightInCtbs);
+        }
+    }
+
     return m_inputQueue.back()->m_frameOrigin;
 
 } // 

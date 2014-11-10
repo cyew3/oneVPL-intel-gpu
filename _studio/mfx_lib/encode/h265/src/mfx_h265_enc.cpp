@@ -465,11 +465,14 @@ namespace H265Enc {
         pars->m_maxDeltaQP = 0;
         pars->UseDQP = 0;
 
+#if defined(MFX_ENABLE_H265_PAQ)
         if (pars->preEncMode) {
             pars->MaxCuDQPDepth = 0;
             pars->m_maxDeltaQP = 0;
             pars->UseDQP = 1;
         }
+#endif
+
         if (pars->MaxCuDQPDepth > 0 || pars->m_maxDeltaQP > 0)
             pars->UseDQP = 1;
 

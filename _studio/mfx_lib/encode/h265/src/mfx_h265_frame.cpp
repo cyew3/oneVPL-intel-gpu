@@ -179,11 +179,6 @@ void H265Frame::CopyFrame(const mfxFrameSurface1 *surface)
         ? PadOnePix((Ipp16u *)uv, pitch_chroma_pix / 2, width / 2, height / 2)
         : PadOnePix((Ipp32u *)uv, pitch_chroma_pix / 2, width / 2, height / 2);
 
-    //if(m_videoParam.preEncMode) 
-    {
-
-    }
-
 }
 
 
