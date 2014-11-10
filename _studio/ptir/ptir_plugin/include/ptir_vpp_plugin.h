@@ -116,6 +116,7 @@ protected:
     mfxPluginParam      m_PluginParam;
     mfxVideoParam       m_mfxInitPar;
     mfxVideoParam       m_mfxCurrentPar;
+    mfxExtOpaqueSurfaceAlloc m_OpaqSurfAlloc;
     bool                m_createdByDispatcher;
     std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > m_adapter;
     PTIR_Processor*  ptir;
@@ -140,6 +141,7 @@ protected:
     inline mfxStatus CheckInFrameSurface1(mfxFrameSurface1*& mfxSurf, mfxFrameSurface1*& mfxSurfOut);
     inline mfxStatus CheckOutFrameSurface1(mfxFrameSurface1*& mfxSurf);
     inline mfxStatus CheckFrameSurface1(mfxFrameSurface1*& mfxSurf);
+    mfxStatus CheckOpaqMode(const mfxVideoParam& par, mfxVideoParam* pParOut, const mfxExtOpaqueSurfaceAlloc& opaqAlloc, mfxExtOpaqueSurfaceAlloc* pOpaqAllocOut, bool bOpaqMode[2] );
 
     inline mfxStatus PrepareTask(PTIR_Task *ptir_task, mfxThreadTask *task, mfxFrameSurface1 **surface_out);
     inline mfxFrameSurface1* GetFreeSurf(std::vector<mfxFrameSurface1*>& vSurfs);

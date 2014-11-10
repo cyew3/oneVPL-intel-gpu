@@ -47,6 +47,7 @@ public:
     virtual mfxStatus SetDevice(CmDeviceEx* _pCMdevice);
     virtual void* SetMap(std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap);
     virtual void* SetFrmBuffer(Frame *_frmBuffer[LASTFRAME]);
+    virtual void* SetFrmType(const mfxU16& _in, const mfxU16& _out);
     virtual CmSurface2D* GetWorkSurfaceCM();
     virtual mfxFrameSurface1* GetWorkSurfaceMfx();
     virtual mfxStatus AddCPUPtirOutSurf(mfxU8* buffer, mfxFrameSurface1* surface);
@@ -57,7 +58,8 @@ public:
     virtual mfxStatus CMCopySysToGpu(mfxFrameSurface1*& mfxSurf, CmSurface2D*& cmSurfOut);
     virtual mfxStatus CMCopyGpuToSys(CmSurface2D*& cmSurfOut, mfxFrameSurface1*& mfxSurf);
     virtual size_t countFreeWorkSurfs();
-    virtual mfxStatus CMCreateSurface2D(mfxFrameSurface1*& mfxSurf, CmSurface2D*& cmSurfOut, bool bCopy);
+    virtual mfxStatus CMCreateSurfaceIn(mfxFrameSurface1*& mfxSurf, CmSurface2D*& cmSurfOut, bool bCopy);
+    virtual mfxStatus CMCreateSurfaceOut(mfxFrameSurface1*& mfxSurf, CmSurface2D*& cmSurfOut, bool bCopy);
 
 protected:
     CmDeviceEx* pCMdevice;
@@ -69,6 +71,8 @@ protected:
     std::map<CmSurface2D*,mfxFrameSurface1*> *CmToMfxSurfmap;
     Frame   **frmBuffer;
     mfxU16  IOPattern;
+    mfxU16  opqFrTypeIn;
+    mfxU16  opqFrTypeOut;
     bool    isD3D11;
     UMC::Mutex& m_guard;
 };

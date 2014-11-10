@@ -11,6 +11,7 @@ File Name: ptir_vpp_plugin.cpp
 \* ****************************************************************************** */
 
 #include "ptir_vpp_plugin.h"
+#include "mfxstructures.h"
 //#include "mfx_session.h"
 #include "vm_sys_info.h"
 
@@ -77,6 +78,7 @@ MFX_PTIR_Plugin::MFX_PTIR_Plugin(bool CreateByDispatcher)
     m_pmfxCore = 0;
     memset(&m_mfxInitPar, 0, sizeof(mfxVideoParam));
     memset(&m_mfxCurrentPar, 0, sizeof(mfxVideoParam));
+    memset(&m_OpaqSurfAlloc, 0, sizeof(mfxExtOpaqueSurfaceAlloc));
     ptir = 0;
     bEOS = false;
     bInited = false;
@@ -414,6 +416,8 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     bool error       = false;
     bool p_accel     = false;
     bool HWSupported = false;
+    bool opaque      = false;
+    bool big_resol   = false;
     if(!in && !out)
         return MFX_ERR_NULL_PTR;
 
@@ -437,15 +441,78 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         }
         out->IOPattern  = const_in.IOPattern;
 
-        if(!(const_in.IOPattern == (MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY )||
-             const_in.IOPattern == (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY)))
+        //if opaque
+        if(const_in.IOPattern == (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY) ||
+           const_in.IOPattern == (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY) ||
+           const_in.IOPattern == (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY ) ||
+           const_in.IOPattern == (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY) ||
+           const_in.IOPattern == (MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_OPAQUE_MEMORY)   )
         {
-            //other IOPatterns temporary unsupported
+            //check that opaque buffer is present -- probably check is needed only at Init()?
+            opaque = true;
+            if((const_in.NumExtParam && 
+                const_in.ExtParam && 
+                const_in.ExtParam[0] && 
+                const_in.ExtParam[0]->BufferId == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION &&
+                const_in.ExtParam[0]->BufferSz == sizeof(mfxExtOpaqueSurfaceAlloc)) &&
+               (out->NumExtParam && 
+                out->ExtParam && 
+                out->ExtParam[0] && 
+                out->ExtParam[0]->BufferId == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION) &&
+                out->ExtParam[0]->BufferSz == sizeof(mfxExtOpaqueSurfaceAlloc) )
+            {
+                //verify buffer at Query() and correct output structure
+                mfxExtOpaqueSurfaceAlloc& out_opaq_buf = *((mfxExtOpaqueSurfaceAlloc*) *out->ExtParam);
+                const mfxExtOpaqueSurfaceAlloc& in_opaq_buf = *((mfxExtOpaqueSurfaceAlloc*) *in->ExtParam);
+                bool bOpaqMode[2];
+                CheckOpaqMode(const_in, out, in_opaq_buf, &out_opaq_buf, bOpaqMode);
+            }
+            else if ((const_in.NumExtParam && 
+                      const_in.ExtParam && 
+                      const_in.ExtParam[0] && 
+                      const_in.ExtParam[0]->BufferId == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION &&
+                      const_in.ExtParam[0]->BufferSz == sizeof(mfxExtOpaqueSurfaceAlloc)) &&
+                      out == &m_mfxInitPar)
+            {
+                //verify input buffer at Init() and nowhere to fill changed fields
+                mfxExtOpaqueSurfaceAlloc& in_opaq_buf = *((mfxExtOpaqueSurfaceAlloc*) *const_in.ExtParam);
+                in_opaq_buf;
+                bool bOpaqMode[2];
+                if(CheckOpaqMode(const_in, out, in_opaq_buf, 0, bOpaqMode))
+                    error = true;
+
+                if((const_in.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (!in_opaq_buf.In.Surfaces || !in_opaq_buf.In.NumSurface))
+                {
+                    error = true;
+                    out->IOPattern = 0;
+                }
+                if((const_in.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (!in_opaq_buf.Out.Surfaces || !in_opaq_buf.Out.NumSurface))
+                {
+                    error = true;
+                    out->IOPattern = 0;
+                }
+            }
+            else
+            {
+                out->IOPattern = 0;
+                error = true;
+            }
+        }
+        //if not opaque check for any other applicable IOPattern
+        else if(!(const_in.IOPattern == (MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY )||
+                  const_in.IOPattern == (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY)||
+                  const_in.IOPattern == (MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_SYSTEM_MEMORY)||
+                  const_in.IOPattern == (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY )  ))
+        {
             out->IOPattern = 0;
             error = true;
         }
 
-        if(const_in.ExtParam || const_in.NumExtParam || out->ExtParam || out->NumExtParam)
+        if(!opaque && (const_in.ExtParam || const_in.NumExtParam || out->ExtParam || out->NumExtParam))
+        {
+            error = true;
+        }
+        if(opaque && (const_in.NumExtParam > 1 || out->NumExtParam > 1))
         {
             error = true;
         }
@@ -526,15 +593,23 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             error = true;
         }
 
-        if(const_in.vpp.In.Width  % 16 != 0 || const_in.vpp.In.Width > 3840)
+        if(const_in.vpp.In.Width  % 16 != 0)
         {
             out->vpp.In.Width = 0;
             error = true;
         }
-        if(const_in.vpp.In.Height % 32 != 0 || const_in.vpp.In.Height > 3840)
+        if(const_in.vpp.In.Width > 3840)
+        {
+            big_resol = true;
+        }
+        if(const_in.vpp.In.Height % 32 != 0)
         {
             out->vpp.In.Height = 0;
             error = true;
+        }
+        if(const_in.vpp.In.Height > 3840)
+        {
+            big_resol = true;
         }
         if(const_in.vpp.Out.Height % 16 != 0 || const_in.vpp.Out.Height > 3840)
         {
@@ -678,7 +753,7 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             {
                 eMFXHWType HWType = MFX_HW_UNKNOWN;
                 mfxSts = GetHWTypeAndCheckSupport(mfxCorePar.Impl, mfxDeviceHdl, HWType, HWSupported, p_accel);
-                if(MFX_WRN_PARTIAL_ACCELERATION == mfxSts || MFX_ERR_NOT_FOUND == mfxSts)
+                if(MFX_WRN_PARTIAL_ACCELERATION == mfxSts || MFX_ERR_NOT_FOUND == mfxSts || big_resol)
                 {
                     HWSupported = false;
                     p_accel = true;
@@ -865,17 +940,6 @@ mfxStatus MFX_PTIR_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest 
     mfxU16 *pInMemType = &in->Type;
     mfxU16 *pOutMemType = &out->Type;
 
-    if ((IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) &&
-        (IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY))
-    {
-        error = true;
-    }
-
-    if ((IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) &&
-        (IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
-    {
-        error = true;
-    }
 
 
     mfxU16 nativeMemType = (bSWLib) ? (mfxU16)MFX_MEMTYPE_SYSTEM_MEMORY : (mfxU16)MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
@@ -964,6 +1028,10 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     if(MFX_ERR_NONE > mfxSts)
         return mfxSts;
 
+                    //hack
+                    //HWSupported = false;
+                    //par_accel = true;
+
     bool isD3D11 = false;
     if(MFX_IMPL_VIA_D3D11 == ((mfxCorePar.Impl) & 0xF00))
         isD3D11 = true;
@@ -1005,7 +1073,6 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
         frmSupply = 0;
         return MFX_ERR_UNKNOWN;
     }
-
 
     try
     {
@@ -1063,35 +1130,80 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
             frmSupply = 0;
             mfxSts = MFX_ERR_UNKNOWN;
         }
-
     }
-
-    // Some kind of correct work with system memory provided
-    //  In case of poorly system memory provided (e.g. different memory blocks for Y and UV), without memory aligning, etc
-    //  Plugin has to copy provided data by VA ifce (d3d or libVA, e.g. by LockRect) - but in this case plugin should deal with internal VA surface allocation.
-    /* 
-    if((par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) ||
-        (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) )
-    {
-        mfxFrameAllocRequest  in_req;
-        mfxFrameAllocRequest out_req;
-        mfxVideoParam tmp_par = *par;
-        tmp_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
-        mfxSts = QueryIOSurf(&tmp_par, &in_req, &out_req);
-        in_req.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
-        out_req.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
-        mfxFrameAllocResponse in_resp;
-        mfxFrameAllocResponse out_resp;
-
-        mfxSts = m_pmfxCore->FrameAllocator.Alloc(m_pmfxCore->FrameAllocator.pthis, &in_req, &in_resp);
-        if(MFX_ERR_NONE != mfxSts)
-            return mfxSts;
-    }
-    */
-
     bInited = true;
-    m_mfxCurrentPar = m_mfxInitPar;
-    b_work = false;
+
+    if(MFX_ERR_NONE == mfxSts)
+    {
+        m_mfxCurrentPar = m_mfxInitPar;
+        b_work = false;
+
+        //if opaque
+        if(par->IOPattern == (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY) ||
+           par->IOPattern == (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY) ||
+           par->IOPattern == (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY ) ||
+           par->IOPattern == (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY) ||
+           par->IOPattern == (MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_OPAQUE_MEMORY)   )
+        {
+            if ((par->NumExtParam && 
+                 par->ExtParam && 
+                 par->ExtParam[0] && 
+                 par->ExtParam[0]->BufferId == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION &&
+                 par->ExtParam[0]->BufferSz == sizeof(mfxExtOpaqueSurfaceAlloc)))
+            {
+                mfxExtOpaqueSurfaceAlloc& in_opaq_buf = *((mfxExtOpaqueSurfaceAlloc*) *par->ExtParam);
+                mfxFrameAllocRequest req_in ;
+                mfxFrameAllocRequest req_out;
+
+                memset(&req_in , 0, sizeof(req_in) );
+                memset(&req_out, 0, sizeof(req_out));
+
+                bool bOpaqMode[2];
+
+                mfxSts = CheckOpaqMode(*par, 0, in_opaq_buf, 0, bOpaqMode);
+                if(mfxSts)
+                {
+                    Close();
+                    return MFX_ERR_MEMORY_ALLOC;
+                }
+
+                //QueryIOSurf(par, &req_in, &req_out);
+
+                if((par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && in_opaq_buf.In.Surfaces && in_opaq_buf.In.NumSurface)
+                {
+                    mfxSts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf.In.NumSurface, in_opaq_buf.In.Type, in_opaq_buf.In.Surfaces);
+                    //mfxSts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf.In.NumSurface, req_in.Type, in_opaq_buf.In.Surfaces);
+                    if(mfxSts)
+                    {
+                        Close();
+                        return MFX_ERR_MEMORY_ALLOC;
+                    }
+                }
+                if((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && in_opaq_buf.Out.Surfaces && in_opaq_buf.Out.NumSurface)
+                {
+                    mfxSts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf.Out.NumSurface, in_opaq_buf.Out.Type, in_opaq_buf.Out.Surfaces);
+                    //mfxSts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf.Out.NumSurface, req_out.Type, in_opaq_buf.Out.Surfaces);
+                    if(mfxSts)
+                    {
+                        Close();
+                        return MFX_ERR_MEMORY_ALLOC;
+                    }
+                }
+                m_OpaqSurfAlloc = in_opaq_buf;
+                //frmSupply->SetFrmType(req_in.Type, req_out.Type);
+                frmSupply->SetFrmType(in_opaq_buf.In.Type, in_opaq_buf.Out.Type);
+            }
+            else
+            {
+                Close();
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+        }
+    }
+    else
+    {
+        Close();
+    }
 
     if(par_accel)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -1155,6 +1267,27 @@ mfxStatus MFX_PTIR_Plugin::Close()
         delete frmSupply;
         frmSupply = 0;
     }
+
+    if(m_mfxInitPar.IOPattern == (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY) ||
+       m_mfxInitPar.IOPattern == (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY) ||
+       m_mfxInitPar.IOPattern == (MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY ) ||
+       m_mfxInitPar.IOPattern == (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY) ||
+       m_mfxInitPar.IOPattern == (MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_OPAQUE_MEMORY)   )
+    {
+        if((m_mfxInitPar.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && m_OpaqSurfAlloc.In.Surfaces && m_OpaqSurfAlloc.In.NumSurface)
+        {
+            mfxSts = m_pmfxCore->UnmapOpaqueSurface(m_pmfxCore->pthis, m_OpaqSurfAlloc.In.NumSurface, m_OpaqSurfAlloc.In.Type, m_OpaqSurfAlloc.In.Surfaces);
+        }
+        if((m_mfxInitPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && m_OpaqSurfAlloc.Out.Surfaces && !m_OpaqSurfAlloc.Out.NumSurface)
+        {
+            mfxSts = m_pmfxCore->UnmapOpaqueSurface(m_pmfxCore->pthis, m_OpaqSurfAlloc.Out.NumSurface, m_OpaqSurfAlloc.Out.Type, m_OpaqSurfAlloc.Out.Surfaces);
+        }
+    }
+
+    memset(&m_mfxInitPar, 0, sizeof(mfxVideoParam));
+    memset(&m_mfxCurrentPar, 0, sizeof(mfxVideoParam));
+    memset(&m_OpaqSurfAlloc, 0, sizeof(mfxExtOpaqueSurfaceAlloc));
+
     bInited = false;
     if(mfxSts)
         return mfxSts;
@@ -1362,6 +1495,9 @@ inline mfxStatus MFX_PTIR_Plugin::CheckInFrameSurface1(mfxFrameSurface1*& mfxSur
         (m_mfxCurrentPar.vpp.In.Height > mfxSurf->Info.Height))
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
+    if(!(m_mfxCurrentPar.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (!mfxSurf->Data.MemId && !(mfxSurf->Data.Y && mfxSurf->Data.UV)))
+        return MFX_ERR_NULL_PTR;
+
     if(mfxSurfOut)
     {
         if((mfxSurf->Info.Width  != mfxSurfOut->Info.Width)  ||
@@ -1394,6 +1530,9 @@ inline mfxStatus MFX_PTIR_Plugin::CheckOutFrameSurface1(mfxFrameSurface1*& mfxSu
     if(mfxSurf->Info.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
+    if(!(m_mfxCurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (!mfxSurf->Data.MemId && !(mfxSurf->Data.Y && mfxSurf->Data.UV)))
+        return MFX_ERR_NULL_PTR;
+
     return CheckFrameSurface1(mfxSurf);
 }
 
@@ -1404,9 +1543,6 @@ inline mfxStatus MFX_PTIR_Plugin::CheckFrameSurface1(mfxFrameSurface1*& mfxSurf)
     if((mfxSurf->Info.ChromaFormat != MFX_CHROMAFORMAT_YUV420) ||
        (mfxSurf->Info.FourCC      != MFX_FOURCC_NV12))
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-
-    if(!mfxSurf->Data.MemId && !(mfxSurf->Data.Y && mfxSurf->Data.UV))
-        return MFX_ERR_NULL_PTR;
 
     if((mfxSurf->Info.CropW > mfxSurf->Info.Width)  ||
         (mfxSurf->Info.CropH > mfxSurf->Info.Height) ||
@@ -1431,3 +1567,57 @@ inline mfxStatus MFX_PTIR_Plugin::CheckFrameSurface1(mfxFrameSurface1*& mfxSurf)
 
     return MFX_ERR_NONE;
 }
+
+mfxStatus MFX_PTIR_Plugin::CheckOpaqMode(const mfxVideoParam& par, mfxVideoParam* pParOut, const mfxExtOpaqueSurfaceAlloc& opaqAlloc, mfxExtOpaqueSurfaceAlloc* pOpaqAllocOut, bool bOpaqMode[2] )
+{
+    bool error = false;
+    if ( (par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) || (par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) )
+    {
+        if( par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY )
+        {
+            if (!(opaqAlloc.In.Type & (MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET)) && !(opaqAlloc.In.Type  & MFX_MEMTYPE_SYSTEM_MEMORY))
+            {
+                if(pParOut)
+                    pParOut->IOPattern = 0;
+                if(pOpaqAllocOut)
+                    pOpaqAllocOut->In.Type = 0;
+                error = true;
+            }
+            if ((opaqAlloc.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && (opaqAlloc.In.Type & (MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET)))
+            {
+                if(pParOut)
+                    pParOut->IOPattern = 0;
+                if(pOpaqAllocOut)
+                    pOpaqAllocOut->In.Type = 0;
+                error = true;
+            }
+            bOpaqMode[0] = true;
+        }
+
+        if( par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY )
+        {
+            if (!(opaqAlloc.Out.Type & (MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET)) && !(opaqAlloc.Out.Type  & MFX_MEMTYPE_SYSTEM_MEMORY))
+            {
+                if(pParOut)
+                    pParOut->IOPattern = 0;
+                if(pOpaqAllocOut)
+                    pOpaqAllocOut->Out.Type = 0;
+                error = true;
+            }
+            if ((opaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && (opaqAlloc.Out.Type & (MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET)))
+            {
+                if(pParOut)
+                    pParOut->IOPattern = 0;
+                if(pOpaqAllocOut)
+                    pOpaqAllocOut->Out.Type = 0;
+                error = true;
+            }
+            bOpaqMode[1] = true;
+        }
+    }
+
+    if(error)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    else
+        return MFX_ERR_NONE;
+} // mfxStatus CheckOpaqMode( mfxVideoParam* par, bool bOpaqMode[2] )

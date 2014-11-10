@@ -134,6 +134,8 @@ void FrameQueue_Add(FrameQueue *pfq, Frame *pfrm)
 {
     FrameNode
         *pfn = (FrameNode *)malloc(sizeof(FrameNode));
+    assert(pfq != 0);
+    assert(pfrm != 0);
     if(!pfn)
         return;
     pfn->pfrmItem = pfrm;

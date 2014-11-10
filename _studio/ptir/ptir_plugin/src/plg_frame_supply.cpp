@@ -26,6 +26,8 @@ frameSupplier::frameSupplier(std::vector<mfxFrameSurface1*>* _inSurfs, std::vect
     IOPattern      = _IOPattern;
     isD3D11        = _isD3D11;
     frmBuffer      = 0;
+    opqFrTypeIn    = 0;
+    opqFrTypeOut   = 0;
 }
 mfxStatus frameSupplier::SetDevice(CmDeviceEx* _pCMdevice)
 {
@@ -47,6 +49,13 @@ void* frameSupplier::SetMap(std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSu
 void* frameSupplier::SetFrmBuffer(Frame *_frmBuffer[LASTFRAME])
 {
     frmBuffer = _frmBuffer;
+    return 0;
+}
+
+void* frameSupplier::SetFrmType(const mfxU16& _in, const mfxU16& _out)
+{
+    opqFrTypeIn    = _in;
+    opqFrTypeOut   = _out;
     return 0;
 }
 
@@ -73,7 +82,7 @@ CmSurface2D* frameSupplier::GetWorkSurfaceCM()
         }
         if(!cm_out)
         {
-            CMCreateSurface2D(s_out,cm_out,false);
+            CMCreateSurfaceOut(s_out,cm_out,false);
             //result = (*pCMdevice)->CreateSurface2D((IDirect3DSurface9 *) s_out->Data.MemId, cm_out);
             //assert(result == 0);
             //(*CmToMfxSurfmap)[cm_out] = s_out;
@@ -107,21 +116,29 @@ mfxFrameSurface1* frameSupplier::GetWorkSurfaceMfx()
 }
 mfxStatus frameSupplier::AddCPUPtirOutSurf(mfxU8* buffer, mfxFrameSurface1* surface)
 {
-    bool unlockreq = false;
     mfxStatus mfxSts = MFX_ERR_NONE;
-    if(surface->Data.MemId)
+    mfxFrameSurface1* realSurf = surface;
+    if(IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
-        unlockreq = true;
-        mfxSts = mfxCoreIfce->FrameAllocator.Lock(mfxCoreIfce->FrameAllocator.pthis, surface->Data.MemId, &(surface->Data));
+        mfxSts = mfxCoreIfce->GetRealSurface(mfxCoreIfce->pthis, surface, &realSurf);
         if(mfxSts)
             return mfxSts;
     }
-    mfxSts = Ptir420toMfxNv12(buffer, surface);
+
+    bool unlockreq = false;
+    if(realSurf->Data.MemId)
+    {
+        unlockreq = true;
+        mfxSts = mfxCoreIfce->FrameAllocator.Lock(mfxCoreIfce->FrameAllocator.pthis, realSurf->Data.MemId, &(realSurf->Data));
+        if(mfxSts)
+            return mfxSts;
+    }
+    mfxSts = Ptir420toMfxNv12(buffer, realSurf);
     if(mfxSts)
         return mfxSts;
     if(unlockreq)
     {
-        mfxSts = mfxCoreIfce->FrameAllocator.Unlock(mfxCoreIfce->FrameAllocator.pthis, surface->Data.MemId, &(surface->Data));
+        mfxSts = mfxCoreIfce->FrameAllocator.Unlock(mfxCoreIfce->FrameAllocator.pthis, realSurf->Data.MemId, &(realSurf->Data));
         if(mfxSts)
             return mfxSts;
     }
@@ -489,7 +506,7 @@ size_t frameSupplier::countFreeWorkSurfs()
     return (*workSurfs).size();
 }
 
-mfxStatus frameSupplier::CMCreateSurface2D(mfxFrameSurface1*& mfxSurf, CmSurface2D*& cmSurfOut, bool bCopy)
+mfxStatus frameSupplier::CMCreateSurfaceIn(mfxFrameSurface1*& mfxSurf, CmSurface2D*& cmSurfOut, bool bCopy)
 {
     if(!mfxSurf)
         return MFX_ERR_NULL_PTR;
@@ -502,10 +519,21 @@ mfxStatus frameSupplier::CMCreateSurface2D(mfxFrameSurface1*& mfxSurf, CmSurface
     mfxI32 cmSts = CM_SUCCESS;
     mfxStatus mfxSts = MFX_ERR_NONE;
 
-    if(!mfxSurf->Data.MemId && !(mfxSurf->Data.Y && mfxSurf->Data.UV))
+    mfxFrameSurface1* realSurf = mfxSurf;
+
+    if(IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+    {
+        mfxSts = mfxCoreIfce->GetRealSurface(mfxCoreIfce->pthis, mfxSurf, &realSurf);
+        if(mfxSts)
+            return mfxSts;
+        if(!realSurf)
+            return MFX_ERR_NULL_PTR;
+    }
+
+    if(!realSurf->Data.MemId && !(realSurf->Data.Y && realSurf->Data.UV))
         return MFX_ERR_NULL_PTR;
 
-    if((IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
+    if((IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) || (opqFrTypeIn & MFX_MEMTYPE_SYSTEM_MEMORY))
     {
         cmSts = (*pCMdevice)->CreateSurface2D(mfxSurf->Info.Width, mfxSurf->Info.Height, CM_SURFACE_FORMAT_NV12, cmSurfOut);
         assert(cmSts == 0);
@@ -515,15 +543,83 @@ mfxStatus frameSupplier::CMCreateSurface2D(mfxFrameSurface1*& mfxSurf, CmSurface
 
         if(bCopy)
         {
-            mfxSts = CMCopySysToGpu(mfxSurf, cmSurfOut);
+            mfxSts = CMCopySysToGpu(realSurf, cmSurfOut);
             if(MFX_ERR_NONE != mfxSts)
                 return mfxSts;
         }
     }
-    else if((IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+    else if((IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) || ((opqFrTypeIn & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET) || (opqFrTypeIn & MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)))
     {
         mfxHDLPair native_surf = {};
-        mfxSts = mfxCoreIfce->FrameAllocator.GetHDL(mfxCoreIfce->FrameAllocator.pthis, mfxSurf->Data.MemId, (mfxHDL*)&native_surf);
+        mfxSts = mfxCoreIfce->FrameAllocator.GetHDL(mfxCoreIfce->FrameAllocator.pthis, realSurf->Data.MemId, (mfxHDL*)&native_surf);
+        if(MFX_ERR_NONE > mfxSts)
+            return mfxSts;
+
+        if(!isD3D11)
+            cmSts = (*pCMdevice)->CreateSurface2D(native_surf.first, cmSurfOut);
+        else
+            cmSts = (*pCMdevice)->CreateSurface2D( ((mfxHDLPair*) &native_surf)->first, cmSurfOut);
+
+        assert(cmSts == 0);
+        if(CM_SUCCESS != cmSts)
+            return MFX_ERR_DEVICE_FAILED;
+        (*CmToMfxSurfmap)[cmSurfOut] = mfxSurf;
+
+        //useless when associating native video surface to CM surface
+        //if(bCopy)
+        //    ;
+    }
+
+    else
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus frameSupplier::CMCreateSurfaceOut(mfxFrameSurface1*& mfxSurf, CmSurface2D*& cmSurfOut, bool bCopy)
+{
+    if(!mfxSurf)
+        return MFX_ERR_NULL_PTR;
+
+    if(mfxSurf->Info.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    if(mfxSurf->Info.FourCC != MFX_FOURCC_NV12)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+    mfxI32 cmSts = CM_SUCCESS;
+    mfxStatus mfxSts = MFX_ERR_NONE;
+
+    mfxFrameSurface1* realSurf = mfxSurf;
+
+    if(IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+    {
+        mfxSts = mfxCoreIfce->GetRealSurface(mfxCoreIfce->pthis, mfxSurf, &realSurf);
+        if(mfxSts)
+            return mfxSts;
+    }
+
+    if(!realSurf->Data.MemId && !(realSurf->Data.Y && realSurf->Data.UV))
+        return MFX_ERR_NULL_PTR;
+
+    if((IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (opqFrTypeOut & MFX_MEMTYPE_SYSTEM_MEMORY))
+    {
+        cmSts = (*pCMdevice)->CreateSurface2D(mfxSurf->Info.Width, mfxSurf->Info.Height, CM_SURFACE_FORMAT_NV12, cmSurfOut);
+        assert(cmSts == 0);
+        if(CM_SUCCESS != cmSts)
+            return MFX_ERR_DEVICE_FAILED;
+        (*CmToMfxSurfmap)[cmSurfOut] = mfxSurf;
+
+        if(bCopy)
+        {
+            mfxSts = CMCopySysToGpu(realSurf, cmSurfOut);
+            if(MFX_ERR_NONE != mfxSts)
+                return mfxSts;
+        }
+    }
+    else if((IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || ((opqFrTypeOut & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET) || (opqFrTypeOut & MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)))
+    {
+        mfxHDLPair native_surf = {};
+        mfxSts = mfxCoreIfce->FrameAllocator.GetHDL(mfxCoreIfce->FrameAllocator.pthis, realSurf->Data.MemId, (mfxHDL*)&native_surf);
         if(MFX_ERR_NONE > mfxSts)
             return mfxSts;
 

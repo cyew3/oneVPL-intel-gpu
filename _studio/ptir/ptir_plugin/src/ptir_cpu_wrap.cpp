@@ -188,18 +188,26 @@ mfxStatus PTIR_ProcessorCPU::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfa
     {
         bool isUnlockReq = false;
 
-        if(surface_in->Data.MemId)
+        mfxFrameSurface1* realSurf = surface_in;
+        if(work_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
-            mfx_core->FrameAllocator.Lock(mfx_core->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
+            mfxSts = mfx_core->GetRealSurface(mfx_core->pthis, surface_in, &realSurf);
+            if(mfxSts)
+                return mfxSts;
+        }
+
+        if(realSurf->Data.MemId)
+        {
+            mfx_core->FrameAllocator.Lock(mfx_core->FrameAllocator.pthis, realSurf->Data.MemId, &(realSurf->Data));
             isUnlockReq = true;
         }
-        mfxCCSts = MfxNv12toPtir420(surface_in, frmBuffer[uiSupBuf]->ucMem);
+        mfxCCSts = MfxNv12toPtir420(realSurf, frmBuffer[uiSupBuf]->ucMem);
         assert(!mfxCCSts);
         frmBuffer[uiSupBuf]->frmProperties.fr = dFrameRate;
         frmBuffer[uiSupBuf]->frmProperties.timestamp = (long double) surface_in->Data.TimeStamp;
         if(isUnlockReq)
         {
-            mfx_core->FrameAllocator.Unlock(mfx_core->FrameAllocator.pthis, surface_in->Data.MemId, &(surface_in->Data));
+            mfx_core->FrameAllocator.Unlock(mfx_core->FrameAllocator.pthis, realSurf->Data.MemId, &(realSurf->Data));
             isUnlockReq = false;
         }
         mfxSts = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &surface_in->Data);

@@ -281,7 +281,6 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
 
         //if((surface_in->Data.MemId) && (work_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || work_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         {
-            //MemId should be a video memory surface
             CmDeviceEx& pCMdevice = this->deinterlaceFilter->DeviceEx();
             int result = -1;
 
@@ -291,14 +290,14 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
                 if(surface_in == it->second)
                 {
                     pInCmSurface2D = it->first;
-                    if(work_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY || work_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+                    if(work_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY /*|| work_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY*/)
                         frmSupply->CMCopySysToGpu(surface_in, pInCmSurface2D);
                     break;
                 }
             }
             if(!pInCmSurface2D)
             {
-                mfxSts = frmSupply->CMCreateSurface2D(surface_in,pInCmSurface2D,true);
+                mfxSts = frmSupply->CMCreateSurfaceIn(surface_in,pInCmSurface2D,true);
                 if(MFX_ERR_NONE != mfxSts)
                     return mfxSts;
                 //result = pCMdevice->CreateSurface2D((IDirect3DSurface9 *) surface_in->Data.MemId, pInCmSurface2D);
@@ -316,7 +315,7 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
             }
             if(!pOutCmSurface2D)
             {
-                mfxSts = frmSupply->CMCreateSurface2D(*surface_out,pOutCmSurface2D,true);
+                mfxSts = frmSupply->CMCreateSurfaceOut(*surface_out,pOutCmSurface2D,false);
                 if(MFX_ERR_NONE != mfxSts)
                     return mfxSts;
                 //result = pCMdevice->CreateSurface2D((IDirect3DSurface9 *) (*surface_out)->Data.MemId, pOutCmSurface2D);
@@ -413,7 +412,7 @@ mfxStatus PTIR_ProcessorCM::Process(mfxFrameSurface1 *surface_in, mfxFrameSurfac
             }
             if(!pOutCmSurface2D)
             {
-                mfxSts = frmSupply->CMCreateSurface2D(*surface_out,pOutCmSurface2D,true);
+                mfxSts = frmSupply->CMCreateSurfaceOut(*surface_out,pOutCmSurface2D,true);
                 if(MFX_ERR_NONE != mfxSts)
                     return mfxSts;
             }
@@ -566,6 +565,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
             frmBuffer[uiCur]->frmProperties.processed = true;
             dSAD = frmBuffer[uiCur]->plaY.ucStats.ucSAD;
             dRs = frmBuffer[uiCur]->plaY.ucStats.ucRs;
+
+            //printf("%i\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.0lf\t%4.3lf\t%4.0lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\n", uiFrame + 1, dSAD[0], dSAD[1], dSAD[2], dSAD[3], dSAD[4], dRs[0], dRs[1], dRs[2], dRs[3], dRs[4], dRs[5] / dPicSize * 1000, dRs[6], dRs[7] / dPicSize * 1000, dRs[8], dRs[9], dRs[10]);
 
             if ((uiCur == BUFMINSIZE - 1) || beof/*|| (uiFrame == (uiCount - 1))*/)
             {
@@ -744,7 +745,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                                 else //TFF
                                 {
                                     FrameQueue_Add(&fqIn, first_field);
-                                    FrameQueue_Add(&fqIn, second_field);
+                                    if(bFullFrameRate)
+                                        FrameQueue_Add(&fqIn, second_field);
                                 }
 
                                 Rotate_Buffer_deinterlaced(frmBuffer);
