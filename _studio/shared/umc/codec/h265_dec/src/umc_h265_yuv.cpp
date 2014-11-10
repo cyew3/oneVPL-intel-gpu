@@ -128,7 +128,7 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
         m_chromaSize = info->GetPlaneInfo(1)->m_ippSize;
         m_pitch_chroma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(1)->m_pitch / info->GetPlaneSampleSize(1);
 
-        if (m_frameData.GetInfo()->GetColorFormat() == UMC::NV12)
+        if (m_frameData.GetInfo()->GetNumPlanes() == 2)
         {
             m_pUVPlane = (PlanePtrUV)m_frameData.GetPlaneMemoryInfo(1)->m_planePtr;
             m_pUPlane = 0;

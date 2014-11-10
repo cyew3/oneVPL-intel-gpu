@@ -1208,14 +1208,15 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
         return false;
 #endif
 
-    if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010)
+    if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 &&
+        in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_P210)
         return false;
 
     // both zero or not zero
     if ((in->mfx.FrameInfo.AspectRatioW || in->mfx.FrameInfo.AspectRatioH) && !(in->mfx.FrameInfo.AspectRatioW && in->mfx.FrameInfo.AspectRatioH))
         return false;
 
-    if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+    if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210)
     {
         if (in->mfx.FrameInfo.BitDepthLuma < 8 || in->mfx.FrameInfo.BitDepthLuma > 16)
             return false;
@@ -1252,7 +1253,9 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
         return false;
     }
 
-    if (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
+    if (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 &&
+        in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422 &&
+        in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV400)
         return false;
 
     if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))

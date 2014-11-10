@@ -293,15 +293,30 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb, Ipp32s en
                 cuSize, picSize);
     }
 
-    bool nv12_support = (pCurrentFrame->GetColorFormat() == UMC::NV12);
-    if (nv12_support)
+    if (!pCurrentFrame->m_pVPlane)
     {
-        offsetY >>= 1;
-        offsetYL >>= 1;
+        switch (pCurrentFrame->m_chroma_format)
+        {
+        case CHROMA_FORMAT_420: // YUV420
+            offsetY >>= 1;
+            offsetYL >>= 1;
 
-        cuSize >>= 1;
+            cuSize >>= 1;
 
-        picSize.height >>= 1;
+            picSize.height >>= 1;
+            break;
+        case CHROMA_FORMAT_422: // YUV422
+            cuSize >>= 1;
+            break;
+        case CHROMA_FORMAT_444: // YUV444
+            break;
+
+        case CHROMA_FORMAT_400: // YUV400
+            return;
+        default:
+            VM_ASSERT(false);
+            return;
+        }
 
         if (refFrame && refFrame->m_pUVPlane)
         {
