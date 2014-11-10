@@ -274,7 +274,7 @@ VAAPIVideoCORE::VAAPIVideoCORE(
           , m_HWType(MFX_HW_IVB) //MFX_HW_UNKNOWN
 #if !defined(ANDROID)
           , m_bCmCopy(false)
-          , m_bCmCopyAllowed(true)
+          , m_bCmCopyAllowed(false)
 #else
           , m_bCmCopy(false)
           , m_bCmCopyAllowed(false)
