@@ -651,7 +651,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
     // get FrameInfo from original VideoParam
     request->Info = tmp.mfx.FrameInfo;
 
-    return MFX_ERR_NONE;
+    return checkSts;
 }
 
 ImplementationAvc::ImplementationAvc(VideoCORE * core)
