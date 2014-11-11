@@ -285,11 +285,10 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
     }
 
     mfxVideoParam decPar = *par;
-
+    decPar.mfx.FrameInfo = request.Info;
 #if defined (MFX_VA)
     if (m_platform != MFX_PLATFORM_SOFTWARE)
     {
-        decPar.mfx.FrameInfo = request.Info;
         mfxSts = m_core->CreateVA(&decPar, &request, &m_response);
         if (mfxSts < MFX_ERR_NONE)
             return mfxSts;

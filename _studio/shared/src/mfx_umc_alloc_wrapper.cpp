@@ -196,22 +196,10 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
         return UMC::UMC_ERR_UNSUPPORTED;
     }
 
-    UMC::Status umcSts;
+    UMC::Status umcSts = m_info.Init(params->mfx.FrameInfo.Width, params->mfx.FrameInfo.Height, color_format, bit_depth);
 
-    if (MFX_CODEC_JPEG != params->mfx.CodecId || MFX_ROTATION_0 == params->mfx.Rotation || MFX_ROTATION_180 == params->mfx.Rotation)
-    {
-        umcSts = m_info.Init(params->mfx.FrameInfo.Width, params->mfx.FrameInfo.Height, color_format, bit_depth);
-
-        m_surface.Info.Width = params->mfx.FrameInfo.Width;
-        m_surface.Info.Height = params->mfx.FrameInfo.Height;
-    }
-    else
-    {
-        umcSts = m_info.Init(params->mfx.FrameInfo.Height, params->mfx.FrameInfo.Width, color_format, bit_depth);
-
-        m_surface.Info.Width = params->mfx.FrameInfo.Height;
-        m_surface.Info.Height = params->mfx.FrameInfo.Width;
-    }
+    m_surface.Info.Width = params->mfx.FrameInfo.Width;
+    m_surface.Info.Height = params->mfx.FrameInfo.Height;
 
     if (umcSts != UMC::UMC_OK)
         return umcSts;
@@ -1321,22 +1309,10 @@ UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::InitMfx(UMC::FrameAllocatorPar
         return UMC::UMC_ERR_UNSUPPORTED;
     }
 
-    UMC::Status umcSts;
+    UMC::Status umcSts = m_info.Init(params->mfx.FrameInfo.Width, params->mfx.FrameInfo.Height, color_format, 8);
 
-    if(MFX_CODEC_JPEG != params->mfx.CodecId || MFX_ROTATION_0 == params->mfx.Rotation || MFX_ROTATION_180 == params->mfx.Rotation)
-    {
-        umcSts = m_info.Init(params->mfx.FrameInfo.Width, params->mfx.FrameInfo.Height, color_format, 8);
-
-        m_surface.Info.Width = params->mfx.FrameInfo.Width;
-        m_surface.Info.Height = params->mfx.FrameInfo.Height;
-    }
-    else
-    {
-        umcSts = m_info.Init(params->mfx.FrameInfo.Height, params->mfx.FrameInfo.Width, color_format, 8);
-
-        m_surface.Info.Width = params->mfx.FrameInfo.Height;
-        m_surface.Info.Height = params->mfx.FrameInfo.Width;
-    }
+    m_surface.Info.Width = params->mfx.FrameInfo.Width;
+    m_surface.Info.Height = params->mfx.FrameInfo.Height;
 
     if (umcSts != UMC::UMC_OK)
         return umcSts;

@@ -403,6 +403,9 @@ Status MJPEGVideoDecoderMFX::AllocateFrame()
     size.height = m_DecoderParams.info.clip_info.height;
     size.width = m_DecoderParams.info.clip_info.width;
 
+    if (m_rotation == 270 || m_rotation == 90)
+        std::swap(size.width, size.height);
+
     VideoDataInfo info;
     info.Init(size.width, size.height, NV12, 8);
     info.SetPictureStructure(m_interleaved ? VideoDataInfo::PS_FRAME : VideoDataInfo::PS_TOP_FIELD_FIRST);
