@@ -215,7 +215,11 @@ mfxU32 Str2FourCC( vm_char* strInput )
     {
         fourcc = MFX_FOURCC_P210;
     }
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("a2rgb10")) ) 
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("nv16")) )
+    {
+        fourcc = MFX_FOURCC_NV16;
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("a2rgb10")) )
     {
         fourcc = MFX_FOURCC_A2RGB10;
     }

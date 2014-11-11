@@ -93,6 +93,9 @@ vm_char* FourCC2Str( mfxU32 FourCC )
     case MFX_FOURCC_P210:
         strFourCC = VM_STRING("P210");
         break;
+    case MFX_FOURCC_NV16:
+        strFourCC = VM_STRING("NV16");
+        break;
     case MFX_FOURCC_A2RGB10:
         strFourCC = VM_STRING("A2RGB10");
         break;
@@ -1208,6 +1211,25 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
     }
+    else if( pInfo->FourCC == MFX_FOURCC_NV16 )
+    {
+        ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
+
+        // read luminance plane
+        for(i = 0; i < h; i++)
+        {
+            nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
+            IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
+        }
+
+        // load UV
+        ptr = pData->UV + pInfo->CropX + (pInfo->CropY >> 1) * pitch;
+        for (i = 0; i < h; i++)
+        {
+            nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
+            IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
+        }
+    }
     else if( pInfo->FourCC == MFX_FOURCC_P010 )
     {
         ptr = pData->Y + pInfo->CropX * 2 + pInfo->CropY * pitch;
@@ -1767,6 +1789,25 @@ mfxStatus CRawVideoWriter::WriteFrame(
         ptr  = pData->UV + (pInfo->CropX ) + (pInfo->CropY >> 1) * pitch;
 
         for(i = 0; i < h; i++) 
+        {
+            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
+            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+        }
+    }
+    else if( pInfo->FourCC == MFX_FOURCC_NV16 )
+    {
+        ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
+
+        for (i = 0; i < h; i++)
+        {
+            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
+            if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+        }
+
+        // write UV data
+        ptr  = pData->UV + (pInfo->CropX ) + (pInfo->CropY >> 1) * pitch;
+
+        for(i = 0; i < h; i++)
         {
             CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
             if ( m_need_crc ) CRC32(ptr + i * pitch, w);
