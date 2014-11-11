@@ -985,7 +985,7 @@ void H265CU<PixType>::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData
     Ipp32s tile_row = tile_id / m_par->NumTileCols;
     Ipp32s tile_col = tile_id % m_par->NumTileCols;
     
-    if (m_par->NumTiles == 1 || m_par->deblockTileBordersFlag) {
+    if ((m_par->NumTiles == 1 && m_par->NumSlices == 1) || m_par->deblockTileBordersFlag) {
         m_tile_border_right = m_par->Width;
         m_tile_border_bottom = m_par->Height;
     } else {
@@ -993,7 +993,8 @@ void H265CU<PixType>::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData
         if (m_tile_border_right > m_par->Width)
             m_tile_border_right = m_par->Width;
 
-        m_tile_border_bottom = (m_par->tileRowStart[tile_row] + m_par->tileRowHeight[tile_row]) << m_par->Log2MaxCUSize;
+        m_tile_border_bottom = m_par->NumTiles > 1 ? ((m_par->tileRowStart[tile_row] + m_par->tileRowHeight[tile_row]) << m_par->Log2MaxCUSize) :
+            ((m_cslice->row_last + 1)  << m_par->Log2MaxCUSize);
         if (m_tile_border_bottom > m_par->Height)
             m_tile_border_bottom = m_par->Height;
     }

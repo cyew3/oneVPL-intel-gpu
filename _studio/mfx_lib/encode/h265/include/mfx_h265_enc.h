@@ -298,8 +298,8 @@ private:
     DispatchSaoApplyFilter m_saoApplyFilter[NUM_USED_SAO_COMPONENTS];
 
 public:
-    volatile Ipp32s m_mt_current_tile;
-    volatile Ipp32s m_mt_num_tiles_done;
+    volatile Ipp32s m_mt_current_region;
+    volatile Ipp32s m_mt_num_regions_done;
     H265EncoderRowInfo* m_row_info;
 
 #ifdef MFX_ENABLE_WATERMARK

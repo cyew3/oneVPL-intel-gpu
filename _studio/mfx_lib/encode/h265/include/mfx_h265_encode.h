@@ -148,7 +148,7 @@ private:
     mfxStatus SetVPS();
     mfxStatus SetSPS();
     mfxStatus SetPPS();
-    mfxStatus SetSlice(H265Slice *slice, Ipp32u curr_slice, H265Frame* currentFrame);
+    mfxStatus SetSlice(H265Slice *slice, Ipp32u curr_slice, H265Frame* currentFrame, Ipp32s rowFirst, Ipp32s sliceHeight);
 
     // ------ _global_ stages of Input Frame Control
     mfxStatus AcceptFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxBS);
