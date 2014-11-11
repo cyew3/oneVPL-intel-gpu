@@ -83,7 +83,6 @@ namespace H265Enc {
         Ipp32u m_picCodeType;
         Ipp32s m_RPSIndex;
         Ipp8u  m_wasLookAheadProcessed;// paq
-        //Ipp8u  m_wasLookAheadProcessed_new;// paq
 
         Ipp32s m_pyramidLayer;
         Ipp32s m_miniGopCount;
@@ -106,6 +105,8 @@ namespace H265Enc {
 
         volatile Ipp32s m_codedRow; // sync info in case of frame threading
         volatile Ipp32u m_refCounter; // to prevent race condition in case of frame threading
+
+        std::vector<Ipp32s> m_intraSatd; // brc lookahead
 
         H265Frame()
         {

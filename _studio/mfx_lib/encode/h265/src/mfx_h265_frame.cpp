@@ -93,6 +93,16 @@ void H265Frame::Create(H265VideoParam *par)
 
     y += ((pitch_luma_pix + 1) * padding) << m_bdLumaFlag;
     uv += ((pitch_chroma_pix * padding >> par->chromaShiftH) + (padding << par->chromaShiftWInv)) << m_bdChromaFlag;
+
+    //brc lookahead
+    {
+        const Ipp32s sizeBlk = 8;
+        const Ipp32s picWidthInBlks  = (width  + sizeBlk - 1) / sizeBlk;
+        const Ipp32s picHeightInBlks = (height + sizeBlk - 1) / sizeBlk;
+
+        m_intraSatd.resize(picWidthInBlks*picHeightInBlks);
+    }
+
 }
 
 inline static void memset_bd(Ipp8u *dst, Ipp32s val, Ipp32s size_pix, Ipp8u bdFlag) {
@@ -440,8 +450,8 @@ void H265Frame::ResetMemInfo()
 
 void H265Frame::ResetEncInfo()
 {
-        m_timeStamp = 0;
-        m_picCodeType = 0;
+    m_timeStamp = 0;
+    m_picCodeType = 0;
     m_RPSIndex = 0;
     m_wasLookAheadProcessed = 0;
     m_pyramidLayer = 0;
