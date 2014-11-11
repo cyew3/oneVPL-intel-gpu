@@ -103,10 +103,15 @@ namespace H265Enc {
         Ipp32s m_numRefUnique;
         Ipp32s m_allRefFramesAreFromThePast;
 
+        // for frame threading
         volatile Ipp32s m_codedRow; // sync info in case of frame threading
         volatile Ipp32u m_refCounter; // to prevent race condition in case of frame threading
 
-        std::vector<Ipp32s> m_intraSatd; // brc lookahead
+        // for brc lookahead analysis
+        std::vector<Ipp32s> m_intraSatd;
+        std::vector<Ipp32s> m_interSatd;
+        Ipp32f              m_avgSadt; //= sum( min{ interSadt[i], intraSadt[i] } ) / {winth*height};
+        Ipp32f              m_intraRatio;
 
         H265Frame()
         {
@@ -185,6 +190,8 @@ namespace H265Enc {
         // for threading control
         std::vector<Ipp32u> m_ithreadPool;
 
+        // for BRC lookahead
+        std::vector<H265Frame*> m_futureFrames;
 
         Task()
             : m_frameOrigin(NULL)

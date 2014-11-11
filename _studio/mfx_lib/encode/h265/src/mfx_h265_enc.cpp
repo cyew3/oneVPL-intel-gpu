@@ -650,7 +650,7 @@ mfxStatus MFXVideoENCODEH265::SetPPS()
     pps->num_tile_rows = m_videoParam.NumTileRows;
 
     if (m_brc)
-        pps->init_qp = (Ipp8s)m_brc->GetQP(m_videoParam, NULL);
+        pps->init_qp = (Ipp8s)m_brc->GetQP(m_videoParam, NULL, NULL);
     else
         pps->init_qp = m_videoParam.QPI;
 
@@ -1298,7 +1298,22 @@ namespace H265Enc {
 
     } // 
 
+    Ipp8s GetRateQp(Task const & task, H265VideoParam const & param, H265BRC* brc)
+    {
+        if ( brc == NULL )
+            return 51;//
+
+        H265Frame* frames[128] = {task.m_frameOrigin};// need more???
+        Ipp32s framesCount = task.m_futureFrames.size();
+        
+        for (Ipp32s frmIdx = 0; frmIdx < framesCount; frmIdx++) {
+            frames[frmIdx+1] = task.m_futureFrames[frmIdx];
+        }
+
+        return brc->GetQP(const_cast<H265VideoParam &>(param), frames, framesCount+1);
+    }
 }
+
 mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref)
 {
     VM_ASSERT(displayOrder >= begin);
@@ -1449,15 +1464,15 @@ Ipp8u SameRps(const H265ShortTermRefPicSet *rps1, const H265ShortTermRefPicSet *
 
 void MFXVideoENCODEH265::ConfigureEncodeFrame(Task* task)
 {
-    if (m_brc) {
-        // to provide bitexact result in case of frame-threading we set Qp here
-        // otherwise we will set Qp late (before encode directly) to provide more accurate feedback encode<->brc
-        if ( m_videoParam.m_framesInParallel > 1) { 
-            task->m_sliceQpY = (Ipp8s)m_brc->GetQP(m_videoParam, task->m_frameOrigin);
-        }
-    } else {
-        task->m_sliceQpY = GetConstQp(*task, m_videoParam);
-    }
+    //if (m_brc) {
+    //    // to provide bitexact result in case of frame-threading we set Qp here
+    //    // otherwise we will set Qp late (before encode directly) to provide more accurate feedback encode<->brc
+    //    if ( m_videoParam.m_framesInParallel > 1) { 
+    //        task->m_sliceQpY = (Ipp8s)m_brc->GetQP(m_videoParam, task->m_frameOrigin);
+    //    }
+    //} else {
+    //    task->m_sliceQpY = GetConstQp(*task, m_videoParam);
+    //}
 
     H265Frame *currFrame = task->m_frameOrigin;
 

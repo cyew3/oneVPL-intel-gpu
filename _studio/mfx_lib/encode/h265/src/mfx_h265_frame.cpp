@@ -101,6 +101,7 @@ void H265Frame::Create(H265VideoParam *par)
         const Ipp32s picHeightInBlks = (height + sizeBlk - 1) / sizeBlk;
 
         m_intraSatd.resize(picWidthInBlks*picHeightInBlks);
+        m_interSatd.resize(picWidthInBlks*picHeightInBlks);
     }
 
 }

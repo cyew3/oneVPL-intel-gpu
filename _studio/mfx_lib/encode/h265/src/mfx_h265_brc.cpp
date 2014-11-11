@@ -405,7 +405,7 @@ static const Ipp8u h265_QPtoChromaQP_1[3][58]=
      }
 };
 
-mfxI32 H265BRC::GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP) //mfxU16 frameType, mfxU16 chromaFormatIdc, mfxI32 *chromaQP)
+mfxI32 H265BRC::GetQP(H265VideoParam &video, H265Frame* frames[], Ipp32s framesCount) 
 {
 #if defined(NEW_BRC)
     mfxI32 qp;
@@ -436,6 +436,11 @@ mfxI32 H265BRC::GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP
         *chromaQP = h265_QPtoChromaQP_1[video.chromaFormatIdc-1][qp];
     return qp;
 #else
+    framesCount;
+    H265Frame* pFrame = NULL;//frames[0];
+    if( frames )
+        pFrame = frames[0];
+
     mfxI32 qp = mQuantB;
 
     if (pFrame) {

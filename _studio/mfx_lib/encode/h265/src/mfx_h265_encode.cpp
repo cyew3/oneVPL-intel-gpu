@@ -602,7 +602,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     m_frameCountSync++;
 
     mfxU32 noahead = 0;//1;
-    Ipp32s lookaheadBuffering = m_videoParam.preEncMode > 0 ? 1 : 0;//2*m_mfxParam.mfx.GopRefDist + 1 : 0;// 9 in case of 3 B frames
+    Ipp32s lookaheadBuffering = m_videoParam.preEncMode > 0 ? m_mfxParam.mfx.GopRefDist : 0;//2*m_mfxParam.mfx.GopRefDist + 1 : 0;// 9 in case of 3 B frames
     if (m_mfxHEVCOpts.EnableCm == MFX_CODINGOPTION_ON)
         noahead = 0;
 
@@ -2550,8 +2550,24 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
     }
 #endif
 
-    if ( m_brc && m_videoParam.m_framesInParallel == 1 ) {
-        task->m_sliceQpY = (Ipp8s)m_brc->GetQP(m_videoParam, task->m_frameOrigin);
+    if ( m_brc && m_videoParam.preEncMode > 0 ) {
+        Ipp32s framesCount = IPP_MIN(m_videoParam.GopRefDist, m_encodeQueue.size());
+
+        //printf("\n futureFrames %i\n", framesCount);
+
+        task->m_futureFrames.clear();
+        task->m_futureFrames.resize(framesCount-1);
+        TaskIter it = m_encodeQueue.begin();
+        it++;
+        for ( it; it != m_encodeQueue.end(); it++ ) {
+            task->m_futureFrames.push_back( (*it)->m_frameOrigin );
+        }
+    }
+
+    if( m_brc ) {
+        task->m_sliceQpY = GetRateQp(*task, m_videoParam, m_brc);
+    } else {
+        task->m_sliceQpY = GetConstQp(*task, m_videoParam);
     }
 
     Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
@@ -2755,7 +2771,8 @@ void MFXVideoENCODEH265::SyncOnTaskCompletion(Task *task, mfxBitstream *mfxBs, v
                         std::list<Task*> & queue = listQueue[qIdx];
                         for( tit = queue.begin(); tit != queue.end(); tit++) {
 
-                            (*tit)->m_sliceQpY = (Ipp8s)m_brc->GetQP(m_videoParam, (*tit)->m_frameOrigin);
+                            //(*tit)->m_sliceQpY = (Ipp8s)m_brc->GetQP(m_videoParam, (*tit)->m_frameOrigin);
+                            (*tit)->m_sliceQpY = GetRateQp( **tit, m_videoParam, m_brc);
 
                             memset(& (*tit)->m_lcuQps[0], (*tit)->m_sliceQpY, sizeof((*tit)->m_sliceQpY)*numCtb);
 

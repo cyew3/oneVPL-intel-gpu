@@ -118,7 +118,7 @@ public:
     //mfxBRCStatus PostPackFrame(mfxU16 picType, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0, mfxI32 poc = 0);
     mfxBRCStatus PostPackFrame(H265VideoParam &video, Ipp8s sliceQpY, H265Frame *pFrame, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0);
 
-    mfxI32 GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP = NULL);
+    mfxI32 GetQP(H265VideoParam &video, H265Frame* frames[], Ipp32s framesCount);
     mfxStatus SetQP(mfxI32 qp, mfxU16 frameType);
 
     mfxStatus GetInitialCPBRemovalDelay(mfxU32 *initial_cpb_removal_delay, mfxI32 recode = 0);
