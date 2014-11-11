@@ -570,7 +570,10 @@ typedef struct {
     mfxU16      QVBRQuality;
     mfxU16      EnableMBQP;
     mfxU16      IntRefCycleDist;
-    mfxU16      reserved[244];
+    mfxU16      DirectBiasAdjustment;          /* tri-state option */
+    mfxU16      GlobalMotionBiasAdjustment;    /* tri-state option */
+    mfxU16      MVCostScalingFactor;
+    mfxU16      reserved[241];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
