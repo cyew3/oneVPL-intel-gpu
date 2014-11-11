@@ -508,7 +508,8 @@ mfxStatus SetMBQP(
     VAContextID  vaContextEncode,
     VABufferID & mbqp_id,
     mfxU8*       mbqp,
-    mfxU32       numMB)
+    mfxU32       mbW,
+    mfxU32       mbH)
 {
     VAStatus vaSts;
 
@@ -518,8 +519,8 @@ mfxStatus SetMBQP(
     vaSts = vaCreateBuffer(vaDisplay,
         vaContextEncode,
         (VABufferType)VAEncQpBufferType,
-        numMB * sizeof (VAEncQpBufferH264),
-        1,
+        mbW,
+        mbH,
         mbqp,
         &mbqp_id);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -1256,6 +1257,11 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
     if (m_caps.HeaderInsertion == 0)
         m_headerPacker.Init(par, m_caps);
+    
+    mfxExtCodingOption3 const *extOpt3 = GetExtBuffer(par);
+
+    if (extOpt3 && IsOn(extOpt3->EnableMBQP))
+        m_mbqp_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
 
     return MFX_ERR_NONE;
 
@@ -2094,12 +2100,20 @@ mfxStatus VAAPIEncoder::Execute(
     if (task.m_isMBQP)
     {
         const mfxExtMBQP *mbqp = GetExtBuffer(task.m_ctrl);
-        mfxU32 numMB = m_sps.picture_height_in_mbs * m_sps.picture_width_in_mbs;
+        mfxU32 mbW = m_sps.picture_width_in_mbs;
+        mfxU32 mbH = m_sps.picture_height_in_mbs;
 
-        if (mbqp && mbqp->QP && mbqp->NumQPAlloc >= numMB)
+        if (mbqp && mbqp->QP && mbqp->NumQPAlloc >= mbW * mbH)
         {
+            //width(64byte alignment) height(8byte alignment)
+            mfxU32 pitch = ((mbW + 63) & ~63);
+
+            Zero(m_mbqp_buffer);
+            for (mfxU32 mbRow = 0; mbRow < mbH; mbRow ++)
+                MFX_INTERNAL_CPY(&m_mbqp_buffer[mbRow * pitch], &mbqp->QP[mbRow * mbW], mbW);
+
             MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMBQP(m_vaDisplay, m_vaContextEncode, m_mbqpBufferId, 
-                                                          mbqp->QP, numMB), MFX_ERR_DEVICE_FAILED);
+                                                          &m_mbqp_buffer[0], pitch, ((mbH + 7) & ~7)), MFX_ERR_DEVICE_FAILED);
 
             configBuffers[buffersCount++] = m_mbqpBufferId;
         }

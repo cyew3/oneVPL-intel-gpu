@@ -220,6 +220,7 @@ namespace MfxHwH264Encode
 
         VAEncMiscParameterRateControl m_vaBrcPar;
         VAEncMiscParameterFrameRate   m_vaFrameRate;
+        std::vector<mfxU8>            m_mbqp_buffer;
     };
 
     //extend encoder to FEI interface

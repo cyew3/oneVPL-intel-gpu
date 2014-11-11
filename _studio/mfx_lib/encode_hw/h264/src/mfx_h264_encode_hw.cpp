@@ -1878,6 +1878,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     mfxExtCodingOption    const * extOpt = GetExtBuffer(m_video);
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
     mfxExtCodingOption2    const * extOpt2 = GetExtBuffer(m_video);
+    mfxExtCodingOption3    const & extOpt3 = GetExtBufferRef(m_video);
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "Avc::Async");
 
@@ -2313,6 +2314,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             }
         }
 
+        if (IsOn(extOpt3.EnableMBQP))
         {
             const mfxExtMBQP *mbqp = GetExtBuffer(task->m_ctrl);
             mfxU32 wMB = (m_video.mfx.FrameInfo.CropW + 15) / 16;
