@@ -338,7 +338,7 @@ mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROI
                               outData->UV+outOffset1, outPitch, roiSize);
         VPP_CHECK_IPP_STS( sts );
     }
-    else if( MFX_FOURCC_P210 == in->Info.FourCC )
+    else if( MFX_FOURCC_NV16 == in->Info.FourCC || MFX_FOURCC_P210 == in->Info.FourCC )
     {
         sts = ippiCopy_8u_C1R(inData->UV+inOffset1,   inPitch,
                               outData->UV+outOffset1, outPitch, roiSize);
@@ -1475,6 +1475,7 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
         case MFX_FOURCC_RGB4:
         case MFX_FOURCC_P010:
         case MFX_FOURCC_P210:
+        case MFX_FOURCC_NV16:
             break;
         case MFX_FOURCC_IMC3:
         case MFX_FOURCC_YV12:
@@ -1484,7 +1485,6 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
         case MFX_FOURCC_YUV422H:
         case MFX_FOURCC_YUV422V:
         case MFX_FOURCC_YUV444:
-        case MFX_FOURCC_NV16:
             if (VPP_OUT == request)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
             break;

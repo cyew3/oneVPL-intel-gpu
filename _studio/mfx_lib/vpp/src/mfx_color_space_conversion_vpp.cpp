@@ -29,6 +29,10 @@
 #define CHOP10(x)     ((x < 0) ? 0 : ((x > 1023) ? 1023 : x))
 #endif
 
+#ifndef V_POS
+#define V_POS(ptr, shift, step, pos) ( (pos) >= 0  ? ( ptr + (shift) + (step) * (pos) )[0] : ( ptr + (shift) - (step) * (-1*pos) )[0])
+#endif
+
 /* ******************************************************************** */
 /*                 prototype of CSC algorithms                          */
 /* ******************************************************************** */
@@ -68,6 +72,8 @@ IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 IppStatus cc_NV16_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo);
 
+IppStatus cc_NV12_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo);
 
 IppStatus cc_RGB3_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo, mfxU16 picStruct );
@@ -169,6 +175,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Reset(mfxVideoParam *par)
           case MFX_FOURCC_RGB4:
           case MFX_FOURCC_P010:
           case MFX_FOURCC_P210:
+          case MFX_FOURCC_NV16:
           case MFX_FOURCC_A2RGB10:
               break;
 
@@ -326,6 +333,10 @@ mfxStatus MFXVideoVPPColorSpaceConversion::RunFrameVPP(mfxFrameSurface1 *in,
           ippSts = cc_NV12_to_P010(inData, inInfo, outData, outInfo);
           break;
 
+      case MFX_FOURCC_NV16:
+          ippSts = cc_NV12_to_NV16(inData, inInfo, outData, outInfo);
+          break;
+
       case MFX_FOURCC_YV12:
           ippSts = cc_NV12_to_YV12(inData, inInfo, outData, outInfo);
           break;
@@ -437,6 +448,7 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Init(mfxFrameInfo* In, mfxFrameInfo* 
       case MFX_FOURCC_RGB4:
       case MFX_FOURCC_P010:
       case MFX_FOURCC_P210:
+      case MFX_FOURCC_NV16:
       case MFX_FOURCC_A2RGB10:
           break;
 
@@ -632,10 +644,43 @@ IppStatus cc_NV16_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
       sts = ippiCopy_8u_C1R(inData->Y, outData->Pitch, outData->Y, outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
 
-      // Copy every second line of UV plane
-      roiSize.height >>= 1;
-      sts = ippiCopy_8u_C1R(inData->UV, outData->Pitch * 2, outData->UV, outData->Pitch, roiSize);
-      IPP_CHECK_STS( sts );
+      mfxU8  *Out;
+      mfxU32 InStep  = inData->Pitch;
+      mfxU32 OutStep = outData->Pitch;
+      mfxU32 InShift  = 0;
+      mfxU32 OutShift = 0;
+      mfxU32 UShift   = 0;
+      mfxU32 VShift   = 0;
+
+      for (mfxU16 j = 0; j < roiSize.height; j+=2)
+      {
+          InShift  = ( InStep  ) * j;
+          OutShift = ( OutStep ) * (j/2);
+
+          for (mfxU16 i = 0; i < roiSize.width; i+=2)
+          {
+              UShift  = InShift + i;
+              VShift  = UShift  + 1;
+              Out     = outData->UV + OutShift  + i;
+              if ( j == 0  )
+              {
+                  Out[0] =  V_POS(inData->UV, UShift, InStep, 0);
+                  Out[1] =  V_POS(inData->UV, VShift, InStep, 0);
+              }
+              else if ( j == ( roiSize.height - 1))
+              {
+                  Out[0] =  V_POS(inData->UV, UShift, InStep, 1);
+                  Out[1] =  V_POS(inData->UV, VShift, InStep, 1);
+              }
+              else
+              {
+                  // U
+                  Out[0] = CHOP( ((V_POS(inData->UV, UShift, InStep,  0) + V_POS(inData->UV, UShift, InStep, 1) + 1)>>1));
+                  // V
+                  Out[1] = CHOP( ((V_POS(inData->UV, VShift, InStep,  0) + V_POS(inData->UV, VShift, InStep, 1) + 1)>>1));
+              }
+          }
+      }
   }
   else
   {
@@ -646,6 +691,76 @@ IppStatus cc_NV16_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   return sts;
 } // IppStatus cc_NV16_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
+IppStatus cc_NV12_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo*)
+{
+    IppStatus sts = ippStsNoErr;
+    IppiSize  roiSize = {0, 0};
+
+    VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
+    VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
+
+    if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
+    {
+        // Copy Y plane as is
+        sts = ippiCopy_8u_C1R((const Ipp8u *)inData->Y, outData->Pitch, (Ipp8u *)outData->Y, outData->Pitch, roiSize);
+        IPP_CHECK_STS( sts );
+
+        // Chroma is interpolated using nearest points that gives closer match with ffmpeg
+        mfxU8  *Out;
+        mfxU32 InStep  = inData->Pitch;
+        mfxU32 OutStep = outData->Pitch;
+
+        mfxU32 InShift  = 0;
+        mfxU32 OutShift = 0;
+        mfxU32 UShift   = 0;
+        mfxU32 VShift   = 0;
+        int main   = 0;
+        int part   = 0;
+
+        for (mfxU16 j = 0; j < roiSize.height; j++)
+        {
+            InShift  = ( InStep  ) * ( j / 2 );
+            OutShift = ( OutStep ) * j;
+
+            if ( 0 == j || j == (roiSize.height -1 ))
+            {
+                // First and last lines
+                part = 0;
+            }
+            else if ( j % 2 == 0 )
+            {
+                // Odd lines
+                part = -1;
+            }
+            else
+            {
+                // Even lines
+                part = 1;
+            }
+
+            for (mfxU16 i = 0; i < roiSize.width; i+=2)
+            {
+                UShift  = InShift + i;
+                VShift  = UShift  + 1;
+                Out     = outData->UV + OutShift  + i;
+
+                // U
+                Out[0] = CHOP((3*V_POS(inData->UV, UShift, InStep, main) + V_POS(inData->UV, UShift, InStep, part)) >> 2);
+                // V
+                Out[1] = CHOP((3*V_POS(inData->UV, VShift, InStep, main) + V_POS(inData->UV, VShift, InStep, part)) >> 2);
+            }
+      }
+  }
+  else
+  {
+      /* Interlaced content is not supported... yet. */
+     return ippStsErr;
+  }
+
+  return sts;
+
+} // IppStatus cc_NV12_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo)
@@ -770,9 +885,6 @@ IppStatus cc_P210_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
   return sts;
 } // IppStatus cc_P210_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
-
-
-#define V_POS(ptr, shift, step, pos) ( (pos) >= 0  ? ( ptr + (shift) + (step) * (pos) )[0] : ( ptr + (shift) - (step) * (-1*pos) )[0])
 
 IppStatus cc_P010_to_P210( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo*)

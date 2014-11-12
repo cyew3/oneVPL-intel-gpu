@@ -429,6 +429,7 @@ mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
 
                 if ( Out->FourCC == MFX_FOURCC_P010 ||
                      Out->FourCC == MFX_FOURCC_P210 ||
+                     Out->FourCC == MFX_FOURCC_NV16 ||
                      Out->FourCC == MFX_FOURCC_A2RGB10)
                 {
                     outFrameInfo.FourCC = Out->FourCC;

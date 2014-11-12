@@ -1609,6 +1609,7 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
                     filtParam.vpp.Out.FourCC = MFX_FOURCC_NV12;
                     if ( MFX_FOURCC_P010 == par->vpp.Out.FourCC  ||
                          MFX_FOURCC_P210 == par->vpp.Out.FourCC  ||
+                         MFX_FOURCC_NV16 == par->vpp.Out.FourCC  ||
                          MFX_FOURCC_A2RGB10 == par->vpp.Out.FourCC  )
                     {
                         filtParam.vpp.Out.FourCC = par->vpp.Out.FourCC;
