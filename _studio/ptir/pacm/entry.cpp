@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
                         {
                             if (!frmBuffer[i]->frmProperties.drop)
                             {
-                                CheckGenFrameCM(frmBuffer, i, mainPattern.ucPatternType,uiisInterlaced);
+                                CheckGenFrameCM(frmBuffer, i,/* mainPattern.ucPatternType,*/uiisInterlaced);
                                 Prepare_frame_for_queueCM(&frmIn, frmBuffer[i], uiWidth, uiHeight);
                                 ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
 

@@ -85,11 +85,9 @@ public:
 
     unsigned int
         i,
-        uiDeinterlacingMode,
-        uiDeinterlacingMeasure,
+        uiNumFramesToDispatch,
         uiSupBuf,
         uiCur,
-        uiCurTemp,
         uiNext,
         uiTimer,
         uiFrame,
@@ -101,14 +99,14 @@ public:
         uiHeight,
         uiStart,
         //uiCount,
-        uiFrameCount,
         uiBufferCount,
         uiSize,
         uiisInterlaced,
         uiTeleCount,
         uiLastFrameNumber,
         uiDispatch,
-        uiInterlaceParity; //is Top Field First (0) or Bottom Field First (1)
+        uiInterlaceParity, //is Top Field First (0) or Bottom Field First (1)
+        uiDeinterlace;
     unsigned char
         *pucIO;
     Frame
@@ -121,16 +119,13 @@ public:
         uiBytesRead;
     double
         dTime,
-        *dSAD,
-        *dRs,
-        dPicSize,
         dFrameRate,
         dTimeStamp,
         dBaseTime,
         dOutBaseTime,
         dBaseTimeSw,
         dDeIntTime,
-        dCurrentTime;
+        dTimePerFrame;
     LARGE_INTEGER
         liTime,
         liFreq,

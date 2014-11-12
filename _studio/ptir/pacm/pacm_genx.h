@@ -6,7 +6,7 @@ agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
-File Name: ptir_vpp_plugin.h
+File Name: pacm_genx.h
 
 \* ****************************************************************************** */
 
@@ -28,7 +28,7 @@ template <unsigned int PLANE_WIDTH, unsigned int PLANE_HEIGHT, unsigned int TOP_
 void cmk_DeinterlaceBorder(SurfaceIndex inputSurface, unsigned int WIDTH, unsigned int HEIGHT);
 
 template<unsigned int PLANE_WIDTH, unsigned int PLANE_HEIGHT>
-void cmk_sad_rs_nv12(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId, SurfaceIndex rsSurfaceId);
+void cmk_sad_rs_nv12(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId, SurfaceIndex rsSurfaceId/*, int AntiCropW*/);
 
 void cmk_FixEdgeDirectionalIYUV_Main_Bottom_Instance(SurfaceIndex surfIn, SurfaceIndex surfBadMC);
 void cmk_FixEdgeDirectionalIYUV_Main_Top_Instance(SurfaceIndex surfIn, SurfaceIndex surfBadMC);
@@ -49,5 +49,5 @@ template <unsigned int THREADYSCALE>
 void cmk_FilterMask_Main_2Fields_VarWidth(SurfaceIndex surfIn, SurfaceIndex surfIn2, SurfaceIndex surfBadMC, int Height, int Width);
 
 template<unsigned int PLANE_WIDTH, unsigned int PLANE_HEIGHT>
-void cmk_sad_rs_nv12(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId, SurfaceIndex rsSurfaceId);
+void cmk_sad_rs_nv12(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId, SurfaceIndex rsSurfaceId/*, int AntiCropW*/);
 

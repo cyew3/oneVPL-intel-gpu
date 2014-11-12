@@ -4,7 +4,6 @@
     <ClCompile Include="deinterlacer.cpp" />
     <ClCompile Include="deinterlace_genx.cpp" />
     <ClCompile Include="utilities.cpp" />
-    <ClCompile Include="entry.cpp" />
     <ClCompile Include="kernels\deinterlace_genx_hsw.cpp">
       <Filter>kernels</Filter>
     </ClCompile>

@@ -6,7 +6,7 @@ agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
-File Name: api.h
+File Name: deinterlacer.c
 
 \* ****************************************************************************** */
 
@@ -238,24 +238,14 @@ void FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int Botto
     unsigned char* pDstLine;
 
     // copying Y-component
-    //for (i=(BottomLinesBaseY?1:0); i < pSrc->plaY.uiHeight; i += 2)
-    for (i = 0; i < pSrc->plaY.uiHeight - 1; i++)
+    for (i = 0; i < pSrc->plaY.uiHeight; i++)
     {
         pSrcLine = pSrc->plaY.ucCorner + i * pSrc->plaY.uiStride;
         pDstLine = pDst->plaY.ucCorner + i * pDst->plaY.uiStride;
         ptir_memcpy(pDstLine, pSrcLine, pDst->plaY.uiWidth);
     }
-    pSrcLine = pSrc->plaY.ucCorner + i * pSrc->plaY.uiStride;
-    pDstLine = pDst->plaY.ucCorner + i * pDst->plaY.uiStride;
-    //for(i = 0; i < pSrc->plaY.uiWidth; i++)
-    //    val += pSrcLine[i];
-    //if(val / pSrc->plaY.uiWidth < 25)
-    //    ptir_memcpy(pDstLine, pSrcLine - pSrc->plaY.uiStride, pDst->plaY.uiWidth);
-    //else
-        ptir_memcpy(pDstLine, pSrcLine, pDst->plaY.uiWidth);
 
     // copying U-component
-    //for (i=(BottomLinesBaseY?1:0); i < pSrc->plaU.uiHeight; i += 2)
     for (i = 0; i < pSrc->plaU.uiHeight; i++)
     {
         pSrcLine = pSrc->plaU.ucCorner + i * pSrc->plaU.uiStride;
@@ -263,7 +253,6 @@ void FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int Botto
         ptir_memcpy(pDstLine, pSrcLine, pDst->plaU.uiWidth);
     }
     // copying V-component
-    //for (i=(BottomLinesBaseY?1:0); i < pSrc->plaV.uiHeight; i += 2)
     for (i = 0; i < pSrc->plaV.uiHeight; i++)
     {
         pSrcLine = pSrc->plaV.ucCorner + i * pSrc->plaV.uiStride;
@@ -294,7 +283,7 @@ void BilinearDeint(Frame *This, int BotBase)
         CurLine2 = PrvLine2 + This->plaY.uiStride;
         NxtLine2 = CurLine2 + This->plaY.uiStride;
 
-        ColorOffset = (((y << 1) + 2) >> 2) * This->plaU.uiStride;  // this is correct, it was calculated on the paper :)
+        ColorOffset = (((y << 1) + 2) >> 2) * This->plaU.uiStride;
 
         CurLineU = This->plaU.ucCorner + ColorOffset;
         PrvLineU = CurLineU - This->plaU.uiStride;
@@ -533,7 +522,7 @@ void MedianDeinterlace(Frame *This, int BotBase)
         CurLine2 = PrvLine2 + This->plaY.uiStride;
         NxtLine2 = CurLine2 + This->plaY.uiStride;
 
-        ColorOffset = ((y+1)>>1) * This->plaU.uiStride;  // this is correct, it was calculated on the paper :)
+        ColorOffset = ((y+1)>>1) * This->plaU.uiStride;
 
         CurLineU = This->plaU.ucCorner + ColorOffset;
         PrvLineU = CurLineU - This->plaU.uiStride;
@@ -576,9 +565,6 @@ void BuildLowEdgeMask_Main(Frame **frmBuffer, unsigned int frame, unsigned int B
           *Ubadmc = &frmBuffer[BADMCBUF]->plaU,
           *Vbadmc = &frmBuffer[BADMCBUF]->plaV;
 
-    // borders filled manually, below
-//    memset(frmBuffer[TEMPBUF]->ucMem, 128, frmBuffer[TEMPBUF]->uiSize);
-
     // loop inner area
     for (y = (BotBase?8:5); y < frmBuffer[frame]->plaY.uiHeight - (BotBase?5:8); y += 4)
     {
@@ -598,7 +584,7 @@ void BuildLowEdgeMask_Main(Frame **frmBuffer, unsigned int frame, unsigned int B
         PrvPrvLine2 = PrvLine2 - frmBuffer[frame]->plaY.uiStride;
         NxtNxtLine2 = NxtLine2 + frmBuffer[frame]->plaY.uiStride;
 
-        ColorOffset = (((y << 1) + 2) >> 2) * wDiv2;  // this is correct, it was calculated on the paper :)
+        ColorOffset = (((y << 1) + 2) >> 2) * wDiv2;
 
         tmpCurU     = frmBuffer[TEMPBUF]->plaU.ucCorner + ColorOffset;
         CurLineU    = frmBuffer[frame]->plaU.ucCorner + ColorOffset;
@@ -947,7 +933,7 @@ void CalculateEdgesIYUV(Frame **frmBuffer, unsigned int frame, int BotBase)
     /* Y plane */
     PrvLine = frmBuffer[frame]->plaY.ucCorner + (yStart - 1) * frmBuffer[frame]->plaY.uiStride;
     NxtLine = frmBuffer[frame]->plaY.ucCorner + (yStart + 1) * frmBuffer[frame]->plaY.uiStride;
-       CurEdgeDirLine = (char *)(frmBuffer[EDGESBUF]->plaY.ucCorner + yStart * frmBuffer[EDGESBUF]->plaY.uiStride);
+    CurEdgeDirLine = (char *)(frmBuffer[EDGESBUF]->plaY.ucCorner + yStart * frmBuffer[EDGESBUF]->plaY.uiStride);
 
     if (xEnd - xStart > 0)
         CalculateEdgesLuma_SSE4(PrvLine, NxtLine, CurEdgeDirLine, xStart, xEnd, yStart, yEnd, frmBuffer[frame]->plaY.uiStride, frmBuffer[EDGESBUF]->plaY.uiStride);
@@ -1171,15 +1157,10 @@ void EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame, int BotB
         CurBadMCLineU = frmBuffer[BADMCBUF]->plaU.ucCorner + ColorOffset;
         CurBadMCLineV = frmBuffer[BADMCBUF]->plaV.ucCorner + ColorOffset;
 
-        //curSAD    = This->sad + (y >> 3) * (w >> 3);
-
         // two lines loop (one line color component)
         for (x = 4; x < frmBuffer[curFrame]->plaY.uiWidth - 4; x += 2)
         {
             xover2 = x>>1;
-
-            /*prevW = curSAD[x >> 3].w;
-            curW  = (255 - prevW);*/
 
             prevW = 0;
             curW  = 255;
@@ -1269,7 +1250,7 @@ void EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame, int BotB
         }
     }
 }
-void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, int BotBase)
+void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int refFrame, int BotBase)
 {
     BYTE *curLine;
     BYTE *prevLine;
@@ -1302,6 +1283,10 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, int BotBase)
         for(x = 0; x < frmBuffer[curFrame]->plaY.uiWidth; x++)
             curLine[x] = (prevLine[x] + nextLine[x]) / 2;
 
+        //memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 4)), frmBuffer[refFrame]->plaY.ucCorner + (frmBuffer[refFrame]->plaY.uiStride * (frmBuffer[refFrame]->plaY.uiHeight - 4)), frmBuffer[curFrame]->plaY.uiWidth);
+        //memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 3)), frmBuffer[refFrame]->plaY.ucCorner + (frmBuffer[refFrame]->plaY.uiStride * (frmBuffer[refFrame]->plaY.uiHeight - 3)), frmBuffer[curFrame]->plaY.uiWidth);
+        //memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 2)), frmBuffer[refFrame]->plaY.ucCorner + (frmBuffer[refFrame]->plaY.uiStride * (frmBuffer[refFrame]->plaY.uiHeight - 2)), frmBuffer[curFrame]->plaY.uiWidth);
+        //memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 1)), frmBuffer[0]->plaY.ucCorner + (frmBuffer[0]->plaY.uiStride * (frmBuffer[0]->plaY.uiHeight - 1)), frmBuffer[curFrame]->plaY.uiWidth);
 
 //U processing
         ptir_memcpy(frmBuffer[curFrame]->plaU.ucCorner, frmBuffer[curFrame]->plaU.ucCorner + frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.uiWidth);
@@ -1325,7 +1310,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, int BotBase)
     {
 //UpperBase, non MC; upper and bottom lines processing
 //Y processing
-        ptir_memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * frmBuffer[curFrame]->plaY.uiHeight) - frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * frmBuffer[curFrame]->plaY.uiHeight) - frmBuffer[curFrame]->plaY.uiStride - frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.uiWidth);
+        ptir_memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * frmBuffer[curFrame]->plaY.uiHeight) - frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 1)) /*- frmBuffer[curFrame]->plaY.uiStride - frmBuffer[curFrame]->plaY.uiStride*/, frmBuffer[curFrame]->plaY.uiWidth);
 
         curLine  = frmBuffer[curFrame]->plaY.ucCorner + frmBuffer[curFrame]->plaY.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaY.uiStride;
@@ -1407,19 +1392,19 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, int BotBase)
         }
     }
 }
-void DeinterlaceBilinearFilter(Frame **frmBuffer, unsigned int curFrame, int BotBase)
+void DeinterlaceBilinearFilter(Frame **frmBuffer, unsigned int curFrame, unsigned int refFrame, int BotBase)
 {
         BilinearDeint(frmBuffer[curFrame], BotBase);
         BuildLowEdgeMask_Main(frmBuffer, curFrame, BotBase);
         CalculateEdgesIYUV(frmBuffer, curFrame, BotBase);
         EdgeDirectionalIYUV_Main(frmBuffer, curFrame, BotBase);
-        DeinterlaceBorders(frmBuffer, curFrame, BotBase);
+        DeinterlaceBorders(frmBuffer, curFrame, refFrame, BotBase);
 }
-void DeinterlaceMedianFilter(Frame **frmBuffer, unsigned int curFrame, int BotBase)
+void DeinterlaceMedianFilter(Frame **frmBuffer, unsigned int curFrame, unsigned int refFrame, int BotBase)
 {
         MedianDeinterlace(frmBuffer[curFrame], BotBase);
         BuildLowEdgeMask_Main(frmBuffer, curFrame, BotBase);
         CalculateEdgesIYUV(frmBuffer, curFrame, BotBase);
         EdgeDirectionalIYUV_Main(frmBuffer, curFrame, BotBase);
-        DeinterlaceBorders(frmBuffer, curFrame, BotBase);
+        DeinterlaceBorders(frmBuffer, curFrame, refFrame, BotBase);
 }

@@ -473,7 +473,7 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         }
         //w/a for debug. Waiting for HSD5595359. This w/a will cause decoder resource leak.
         #if defined(_DEBUG)
-            pDecoder.p->AddRef();
+            //pDecoder.p->AddRef();
         #endif
 
         mfxRes = CheckCapabilities(pD11VideoContext, width, height);
@@ -549,7 +549,7 @@ mfxStatus MFXScreenCapture_Plugin::CreateVideoAccelerator(mfxU16& SampleWidth, m
         return MFX_ERR_DEVICE_FAILED;
     //w/a for debug. Waiting for HSD5595359. This w/a will cause decoder resource leak.
 #if defined(_DEBUG)
-    m_pDecoder.p->AddRef();
+    //m_pDecoder.p->AddRef();
 #endif
 
     return MFX_ERR_NONE;

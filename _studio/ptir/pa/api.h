@@ -9,18 +9,22 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 File Name: api.h
 
 \* ****************************************************************************** */
+#ifndef PTIR_API_H
+#define PTIR_API_H
 
-#ifndef PA_API_H
-#define PA_API_H
+#define NTEST 0
+
+#include "common.h"
 
 // Picture Format Conversion
 #include "pfc/pfc.h"
 
-// Telecine and Deinterlace
+// Telecine Reversal
 #include "telecine/telecine.h"
+
+// Deinterlace
 #include "deinterlacer/deinterlacer.h"
 
 
-#include "common.h"
 
 #endif

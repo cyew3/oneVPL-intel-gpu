@@ -286,6 +286,28 @@ void DeinterlaceFilter::DeinterlaceMedianFilterCM(Frame **frmBuffer, UINT curFra
 
 }
 
+void DeinterlaceFilter::DeinterlaceMedianFilterCM_BFF(Frame **frmBuffer, UINT curFrame, UINT curFrame2)
+{
+    CMUT_ASSERT_MESSAGE((curFrame == SKIP_FIELD || frmBuffer[curFrame]->plaY.uiWidth == this->width), "Frame width doesn't matach filter's processing configuration");
+    CMUT_ASSERT_MESSAGE((curFrame == SKIP_FIELD || frmBuffer[curFrame]->plaY.uiHeight == this->height), "Frame height doesn't matach filter's processing configuration");
+    CMUT_ASSERT_MESSAGE((curFrame2 == SKIP_FIELD || frmBuffer[curFrame2]->plaY.uiWidth == this->width), "Frame2 width doesn't matach filter's processing configuration");
+    CMUT_ASSERT_MESSAGE((curFrame2 == SKIP_FIELD || frmBuffer[curFrame2]->plaY.uiHeight == this->height), "Frame2 height doesn't matach filter's processing configuration");
+    if (curFrame == SKIP_FIELD && curFrame2 == SKIP_FIELD)
+        return;
+
+    clockDeinterlaceTotalGPU.Begin();
+    Frame *pFrame, *pFrame2;
+    pFrame = (SKIP_FIELD == curFrame) ? NULL : frmBuffer[curFrame];
+    pFrame2 = (SKIP_FIELD == curFrame2) ? NULL : frmBuffer[curFrame2];
+    this->MedianDeinterlaceCM(pFrame, pFrame2);
+    this->BuildLowEdgeMask_Main_CM(frmBuffer, curFrame, curFrame2);
+    this->FixEdgeDirectionalIYUVCM(frmBuffer, curFrame, curFrame2);
+    this->DeinterlaceBordersCM(frmBuffer, curFrame, curFrame2);
+    this->SyncGPU();
+    clockDeinterlaceTotalGPU.End();
+}
+
+
 //post processing for SAD operation
 //reducing thru atomic operation on CmSurface2D is very slow.
 //each atomic operation (8 DWORD) take about 0.2 us on IVB GT2, to reduce 4050 threads we have on 1920*1080 image it would

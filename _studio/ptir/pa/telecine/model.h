@@ -13,9 +13,11 @@ File Name: model.h
 #ifndef MODEL_H
 #define MODEL_H
 
+#include "../common.h"
+
 unsigned int classify(double dTextureLevel, double dDynDif, double dStatDif, double dStatCount, double dCountDif,
-	                                                  double dZeroTexture, double dRsT, double dAngle, double dSADv, double dBigTexture,
-	                                                  double dCount, double dRsG, double dRsDif, double dRsB, double SADCBPT, double SADCTPB);
+                                                      double dZeroTexture, double dRsT, double dAngle, double dSADv, double dBigTexture,
+                                                      double dCount, double dRsG, double dRsDif, double dRsB, double SADCBPT, double SADCTPB);
 
 unsigned int classify_f1(double dTextureLevel, double dRsG, double dStatDif, double dBigTexture, double dSADv);
 unsigned int classify_f2(double dRsG, double dDynDif, double dAngle, double dSADv, double dZeroTexture);

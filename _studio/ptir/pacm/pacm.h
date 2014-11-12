@@ -6,7 +6,7 @@ agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
-File Name: ptir_vpp_plugin.h
+File Name: pacm.h
 
 \* ****************************************************************************** */
 
@@ -45,6 +45,7 @@ public:
     void MeasureRs(Frame * pFrame);
     void CalculateSADRs(Frame *pfrmCur, Frame *pfrmPrv);
     void DeinterlaceMedianFilterCM(Frame **frmBuffer, unsigned int curFrame, unsigned int curFrame2 = SKIP_FIELD); // when curFrame2 is SKIP_FIELD, only Top Field is deinterlaced.
+    void DeinterlaceMedianFilterCM_BFF(Frame **frmBuffer, unsigned int curFrame, unsigned int curFrame2 = SKIP_FIELD); // when curFrame2 is SKIP_FIELD, only Top Field is deinterlaced.
     void DeinterlaceMedianFilterSingleFieldCM(Frame **frmBuffer, unsigned int curFrame, int BotBase);
     void MedianDeinterlaceCM(Frame * pFrame, Frame * pFrame2);
     void FixEdgeDirectionalIYUVCM(Frame **frmBuffer, unsigned int curFrame, unsigned int curFrame2);
@@ -54,8 +55,6 @@ public:
     void SyncGPU();
     void FrameCreateSurface(Frame *pfrmIn, bool bcreate = true);
     void FrameReleaseSurface(Frame *pfrmIn);
-    static void WriteRAWI420ToGPUNV12(Frame * pFrame, void* ucMem);
-    static void ReadRAWI420FromGPUNV12(Frame * pFrame, void* ucMem);
     CmDeviceEx & DeviceEx() { return *device; }
 
 protected:

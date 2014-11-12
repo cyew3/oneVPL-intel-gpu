@@ -14,18 +14,32 @@ File Name: ptir_vpp_plugin.cpp
 
 PTIR_ProcessorCPU::PTIR_ProcessorCPU(mfxCoreInterface* mfxCore, frameSupplier* _frmSupply)
 {
-    uiDeinterlacingMode = INTL_MODE_SMART_CHECK;
-    uiDeinterlacingMeasure = 16;
     dTimeStamp = 0.0;
     dBaseTime = 0.0;
     dOutBaseTime = 0.0;
     dBaseTimeSw = 0.0;
     dDeIntTime = 0.0;
-    //liTime[sizeof(cOperations) / sizeof(const char *) + 1] = {0},
+    dTimePerFrame = 0.0;
     liFreq;
     liFileSize;
     fTCodeOut = NULL;
     uiInterlaceParity = 0;
+
+    uiCur = 1;
+    uiBufferCount = 0;
+    patternFound = FALSE;
+    uiDispatch = 0;
+    //uiStart = 1;
+    mainPattern.blendedCount = 0.0;
+    mainPattern.uiIFlush = 0;
+    mainPattern.uiPFlush = 0;
+    mainPattern.uiOverrideHalfFrameRate = FALSE;
+    mainPattern.uiCountFullyInterlacedBuffers = 0;
+    mainPattern.uiInterlacedFramesNum = 0;
+
+    dBaseTime = (1 / dFrameRate) * 1000;
+    dDeIntTime = dBaseTime / 2;
+
 
     FrameQueue_Initialize(&fqIn);
     Pattern_init(&mainPattern);
@@ -61,7 +75,7 @@ mfxStatus PTIR_ProcessorCPU::Init(mfxVideoParam *par)
     //bisInterlaced = false;
     uiisInterlaced = 0;
     uiTeleCount = 0;
-    uiCurTemp = 0;
+    //uiCurTemp = 0;
     bFullFrameRate = false;
     uiLastFrameNumber = 0;
     if(MFX_PICSTRUCT_UNKNOWN == par->vpp.In.PicStruct &&
@@ -113,6 +127,12 @@ mfxStatus PTIR_ProcessorCPU::Init(mfxVideoParam *par)
         //reverse telecine + additional frame rate conversion are unsupported
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
+
+
+    if (uiisInterlaced == 2)
+        dBaseTimeSw = (dBaseTime * 5 / 4);
+    else
+        dBaseTimeSw = dBaseTime;
 
     //PTIR's frames init
     try //try is useless here since frames allocated by malloc, but probably in future it could be changed to new
@@ -287,36 +307,13 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
     if(!b_firstFrameProceed)
     {
         uiStart = 1;
-        ptir_memcpy(frmBuffer[0]->ucMem, frmBuffer[uiSupBuf]->ucMem, frmBuffer[uiSupBuf]->uiSize);
-        frmBuffer[0]->frmProperties.tindex = uiStart + 1;
-        sadCalc_I420_frame(frmBuffer[0],frmBuffer[0]);
-        Rs_measurement(frmBuffer[0]);
-        Artifacts_Detection_frame(frmBuffer, 0, true);
+
         frmBuffer[0]->frmProperties.processed = false;
 
-        frmBuffer[0]->plaY.ucStats.ucSAD[0] = 99.999;
-        frmBuffer[0]->plaY.ucStats.ucSAD[1] = 99.999;
+        Frame_Prep_and_Analysis(frmBuffer, /*pcFormat*/0, dFrameRate, 0, 0, 0);
+        frmBuffer[0]->frmProperties.timestamp = dTimeStamp;
 
-        uiCur = 1;
-        uiCurTemp = uiCur;
-        uiBufferCount = 0;
-        patternFound = false;
-        //bFullFrameRate = false;
-        uiDispatch = 0;
-        mainPattern.blendedCount = 0.0;
-        mainPattern.uiIFlush = 0;
-        mainPattern.uiPFlush = 0;
-
-        dBaseTime = (1 / dFrameRate) * 1000;
-        dDeIntTime = dBaseTime / 2;
-        //frmBuffer[0]->frmProperties.timestamp = dTimeStamp;
-        if (uiisInterlaced == 2)
-            dBaseTimeSw = (dBaseTime * 5 / 4);
-        else
-            dBaseTimeSw = dBaseTime;
         b_firstFrameProceed = true;
-
-        uiFrame = uiStart;
 
         return MFX_ERR_MORE_DATA;
     }
@@ -344,16 +341,9 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                 //----------------------------------------
                 //Convert_to_I420(pucIO, frmBuffer[uiSupBuf], pcFormat, dFrameRate);
 
-                ptir_memcpy(frmBuffer[uiCur]->ucMem, frmBuffer[uiSupBuf]->ucMem, frmBuffer[uiSupBuf]->uiSize);
-                frmBuffer[uiCur]->frmProperties.tindex = uiFrame + 1;
-                sadCalc_I420_frame(frmBuffer[uiCur], frmBuffer[uiNext]);
-                Rs_measurement(frmBuffer[uiCur]);
-                frmBuffer[uiCur]->frmProperties.processed = true;
-                dSAD = frmBuffer[uiCur]->plaY.ucStats.ucSAD;
-                dRs = frmBuffer[uiCur]->plaY.ucStats.ucRs;
-    //#if PRINTX == 2
-    //            printf("%i\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.0lf\t%4.3lf\t%4.0lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\n", uiFrame + 1, dSAD[0], dSAD[1], dSAD[2], dSAD[3], dSAD[4], dRs[0], dRs[1], dRs[2], dRs[3], dRs[4], dRs[5] / dPicSize * 1000, dRs[6], dRs[7] / dPicSize * 1000, dRs[8], dRs[9], dRs[10]);
-    //#endif
+                Convert_to_I420(pucIO, frmBuffer[BUFMINSIZE], /*pcFormat*/0, dFrameRate);
+                Frame_Prep_and_Analysis(frmBuffer, /*pcFormat*/0, dFrameRate, uiCur, uiNext, uiFrame);
+           
                 if ((uiCur == BUFMINSIZE - 1) || beof/*|| (uiFrame == (uiCount - 1))*/)
                 {
                     if(beof)
@@ -361,64 +351,45 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                     Analyze_Buffer_Stats(frmBuffer, &mainPattern, &uiDispatch, &uiisInterlaced);
                     if(mainPattern.ucPatternFound && uiisInterlaced != 1)
                     {
-                        if (((mainPattern.ucPatternType == 0 || mainPattern.ucPatternType == 6) && uiisInterlaced != 2) || uiisInterlaced == 3)
-                            dOutBaseTime = dBaseTime;
+                        if (uiisInterlaced != 3)
+                            dTimePerFrame = Calculate_Resulting_timestamps(frmBuffer, uiDispatch, uiCur, dBaseTime, &uiNumFramesToDispatch, mainPattern.ucPatternType);
                         else
-                            dOutBaseTime = (dBaseTime * 5 / 4);
+                        {
+                            uiNumFramesToDispatch = min(uiDispatch, uiCur + 1);
+                            dTimePerFrame = dBaseTime;
+                        }
 
-                        for(mfxU32 i = 0; i < min(uiDispatch,uiCur + 1); i++)
+                        for (i = 0; i < uiNumFramesToDispatch; i++)
                         {
                             if (!frmBuffer[i]->frmProperties.drop)
-                            {
-                                CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
-                                Prepare_frame_for_queue(&frmIn,frmBuffer[i], uiWidth, uiHeight);
-                                ptir_memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[i]->plaY.ucStats.ucRs,sizeof(double) * 10);
-
-                                //Timestamp
-                                //frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dOutBaseTime;
-                                //frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
-
-                                FrameQueue_Add(&fqIn, frmIn);
-                            }
+                                Update_Frame_Buffer(frmBuffer, i, dTimePerFrame, uiisInterlaced, uiInterlaceParity, bFullFrameRate, frmIn, &fqIn);
                             else
                             {
-                                //frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
-                                //frmBuffer[i]->frmProperties.drop = false;
                                 if (uiisInterlaced != 3)
                                 {
                                     frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
-                                    frmBuffer[i]->frmProperties.drop = false;
+                                    frmBuffer[i]->frmProperties.drop = FALSE;
                                 }
                                 else
                                 {
-                                    frmBuffer[i]->frmProperties.candidate = true;
-                                    CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
-                                    Prepare_frame_for_queue(&frmIn, frmBuffer[i], uiWidth, uiHeight);
-                                    if(!frmIn)
-                                        return MFX_ERR_DEVICE_FAILED;
-                                    ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
-
-                                    frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dOutBaseTime;
-                                    frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
-                                    frmBuffer[i]->frmProperties.drop = false;
-                                    frmBuffer[i]->frmProperties.candidate = false;
-
-                                    FrameQueue_Add(&fqIn, frmIn);
+                                    frmBuffer[i]->frmProperties.candidate = TRUE;
+                                    Update_Frame_Buffer(frmBuffer, i, dTimePerFrame, uiisInterlaced, uiInterlaceParity, bFullFrameRate, frmIn, &fqIn);
                                 }
                             }
                         }
                         Rotate_Buffer_borders(frmBuffer, uiDispatch);
                         uiCur -= min(uiDispatch,uiCur);
-                        dBaseTimeSw = dOutBaseTime;
+                        dBaseTimeSw = dTimePerFrame;
                     }
                     else
                     {
-                        uiCurTemp = uiCur;
+                        uiDeinterlace = (uiisInterlaced == 1 || mainPattern.uiOverrideHalfFrameRate);
                         if (uiisInterlaced == 2)
                             dBaseTimeSw = (dBaseTime * 5 / 4);
                         else
-                            dBaseTimeSw = dBaseTime;
-                        for(i = 0; i < min(uiDispatch,uiCurTemp + 1); i++)
+                            dTimePerFrame = Calculate_Resulting_timestamps(frmBuffer, uiDispatch, uiCur, dBaseTime, &uiNumFramesToDispatch, mainPattern.ucPatternType);
+                        dBaseTimeSw = dTimePerFrame / (1 + (bFullFrameRate && uiDeinterlace));
+                        for(i = 0; i < min(uiDispatch,uiCur + 1); i++)
                         {
                             FillBaseLinesIYUV(frmBuffer[0], frmBuffer[BUFMINSIZE], uiInterlaceParity, uiInterlaceParity);
                             if (!frmBuffer[0]->frmProperties.drop)
@@ -427,66 +398,24 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                                 if ((uiisInterlaced == 0 && !(mainPattern.uiInterlacedFramesNum == (BUFMINSIZE - 1))) || uiisInterlaced == 2)
                                 {
                                     if ((uiisInterlaced == 2 && uiBufferCount < (BUFMINSIZE - 1)) || uiisInterlaced == 0)
-                                    {
-                                        if (frmBuffer[0]->frmProperties.interlaced)
-                                        {
-                                            //First field
-                                            DeinterlaceMedianFilter(frmBuffer, 0, uiInterlaceParity);
-                                            //Second field
-                                            DeinterlaceMedianFilter(frmBuffer, BUFMINSIZE, !uiInterlaceParity);
-                                            Prepare_frame_for_queue(&frmIn, frmBuffer[0], uiWidth, uiHeight);
-                                        }
-                                        else
-                                            Prepare_frame_for_queue(&frmIn, frmBuffer[0], uiWidth, uiHeight);
-                                        ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
-
-                                        //Timestamp
-                                        //frmBuffer[1]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp + dBaseTimeSw;
-                                        //frmIn->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp;
-
-                                        FrameQueue_Add(&fqIn, frmIn);
-                                    }
+                                        Update_Frame_Buffer(frmBuffer, 0, dBaseTimeSw, uiisInterlaced, uiInterlaceParity, bFullFrameRate, frmIn, &fqIn);
                                     else
                                     {
-                                        //frmBuffer[1]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp;// +dBaseTimeSw;
+                                        frmBuffer[1]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp + dBaseTimeSw;
                                         uiBufferCount = 0;
                                     }
                                     Rotate_Buffer(frmBuffer);
                                 }
                                 else
                                 {
-                                    //First field
-                                    DeinterlaceMedianFilter(frmBuffer, 0, uiInterlaceParity);
-                                    //Second field
-                                    DeinterlaceMedianFilter(frmBuffer, BUFMINSIZE, !uiInterlaceParity);
-
-                                    Prepare_frame_for_queue(&frmIn, frmBuffer[0], uiWidth, uiHeight); // Go to input frame rate
-                                    ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[0]->plaY.ucStats.ucRs, sizeof(double)* 10);
-
-                                    //Timestamp
-                                    frmBuffer[BUFMINSIZE]->frmProperties.tindex = frmBuffer[0]->frmProperties.tindex;
-                                    //frmBuffer[BUFMINSIZE]->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp + dDeIntTime;
-                                    //frmBuffer[1]->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp + dDeIntTime;
-                                    //frmIn->frmProperties.timestamp = frmBuffer[0]->frmProperties.timestamp;
-
-                                    FrameQueue_Add(&fqIn, frmIn);
-                                    if (bFullFrameRate && uiisInterlaced == 1)
-                                    {
-                                        Prepare_frame_for_queue(&frmIn, frmBuffer[BUFMINSIZE], uiWidth, uiHeight); // Go to double frame rate
-                                        ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
-
-                                        //Timestamp
-                                        //frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
-
-                                        FrameQueue_Add(&fqIn, frmIn);
-                                    }
+                                    Update_Frame_Buffer(frmBuffer, 0, dBaseTimeSw, uiDeinterlace, uiInterlaceParity, bFullFrameRate, frmIn, &fqIn);
                                     Rotate_Buffer_deinterlaced(frmBuffer);
                                 }
                             }
                             else
                             {
                                 uiBufferCount = 0;
-                                frmBuffer[0]->frmProperties.drop = false;
+                                frmBuffer[0]->frmProperties.drop = FALSE;
                             }
                             uiCur--;
                         }
@@ -501,79 +430,38 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                 //QueryPerformanceCounter(&liTime[uiTimer++]);
             }
         }
+    //}
 
     if(surf_out)
     {
         frmIn = NULL;
         //QueryPerformanceCounter(&liTime[uiTimer++]);
-        if(fqIn.iCount >= 1 && !mainPattern.ucPatternFound)
+
+        while(frmIn = FrameQueue_Get(&fqIn))
         {
-            uiFrameCount = fqIn.iCount;
-            for(mfxU32 i = 0; i < uiFrameCount; i++)
-            {
-                if(!surf_out && !frmSupply->countFreeWorkSurfs())
-                    break;
-                uiLastFrameNumber = fqIn.pfrmHead->pfrmItem->frmProperties.tindex;
-                frmIn = FrameQueue_Get(&fqIn);
-                //----------------------------------------
-                // Saving Test Output
-                //----------------------------------------
-                if (frmIn)
-                {
-                    ferror = false;
-                    TrimBorders(&frmIn->plaY, &frmIO[LASTFRAME].plaY);
-                    TrimBorders(&frmIn->plaU, &frmIO[LASTFRAME].plaU);
-                    TrimBorders(&frmIn->plaV, &frmIO[LASTFRAME].plaV);
+            Frame* frmOut = &frmIO[LASTFRAME];
 
-                    //fprintf(fTCodeOut,"%4.3lf\n",frmIn->frmProperties.timestamp);
-                    //ferror = WriteFile(hOut, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize, &uiBytesRead, NULL);
-                    if(!surf_out){
-                        surf_out = frmSupply->GetWorkSurfaceMfx();
-                    }
-                    surf_out->Data.TimeStamp = (mfxU64) frmIO[LASTFRAME].frmProperties.timestamp;
-                    frmSupply->AddCPUPtirOutSurf(frmIO[LASTFRAME].ucMem, surf_out);
-                    Frame_Release(frmIn);
-                    free(frmIn);
-                    surf_out = 0;
+            uiLastFrameNumber = frmIn->frmProperties.tindex;
+            ferror = FALSE;
+            TrimBorders(&frmIn->plaY, &frmOut->plaY);
+            TrimBorders(&frmIn->plaU, &frmOut->plaU);
+            TrimBorders(&frmIn->plaV, &frmOut->plaV);
 
-                    uiFrameOut++;
-                }
+            //fprintf(fTCodeOut,"%4.3lf\n",frmIn->frmProperties.timestamp);
+            //ferror = WriteFile(hOut, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize, &uiBytesRead, NULL);
+            if(!surf_out){
+                surf_out = frmSupply->GetWorkSurfaceMfx();
             }
+            surf_out->Data.TimeStamp = (mfxU64) frmIO[LASTFRAME].frmProperties.timestamp;
+            frmSupply->AddCPUPtirOutSurf(frmIO[LASTFRAME].ucMem, surf_out);
+
+            Frame_Release(frmIn);
+            free(frmIn);
+            surf_out = 0;
+
+            uiFrameOut++;
         }
-        else if(mainPattern.ucPatternFound)
-        {
-            mainPattern.ucPatternFound = false;
-            uiFrameCount = fqIn.iCount;
 
-            for(mfxU32 i = 0; i < uiFrameCount; i++)
-            {
-                if(!surf_out && !frmSupply->countFreeWorkSurfs())
-                    break;
-                ferror = false;
-                uiLastFrameNumber = fqIn.pfrmHead->pfrmItem->frmProperties.tindex;
-                frmIn = FrameQueue_Get(&fqIn);
-                if (frmIn)
-                {
-                    TrimBorders(&frmIn->plaY, &frmIO[LASTFRAME].plaY);
-                    TrimBorders(&frmIn->plaU, &frmIO[LASTFRAME].plaU);
-                    TrimBorders(&frmIn->plaV, &frmIO[LASTFRAME].plaV);
-
-                    //fprintf(fTCodeOut,"%4.3lf\n",frmIn->frmProperties.timestamp);
-                    //ferror = WriteFile(hOut, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize, &uiBytesRead, NULL);
-                    if(!surf_out){
-                        surf_out = frmSupply->GetWorkSurfaceMfx();
-                    }
-                    surf_out->Data.TimeStamp = (mfxU64) frmIO[LASTFRAME].frmProperties.timestamp;
-                    frmSupply->AddCPUPtirOutSurf(frmIO[LASTFRAME].ucMem, surf_out);
-                    //ptir_memcpy(surf_out->Data.Y, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize);
-                    Frame_Release(frmIn);
-                    free(frmIn);
-                    surf_out = 0;
-
-                    uiFrameOut++;
-                }
-            }
-        }
         //QueryPerformanceCounter(&liTime[uiTimer++]);
 
         //// Update Time Counters
@@ -591,80 +479,43 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                     if (uiisInterlaced == 1)
                     {
                         FillBaseLinesIYUV(frmBuffer[i], frmBuffer[BUFMINSIZE], false, false);
-                        DeinterlaceMedianFilter(frmBuffer, i, 0);
-                        //Second field
-                        DeinterlaceMedianFilter(frmBuffer, BUFMINSIZE, 1);
-
-                        Prepare_frame_for_queue(&frmIn, frmBuffer[i], uiWidth, uiHeight); // Go to input frame rate
-                        ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
-
-                        //Timestamp
-                        frmBuffer[BUFMINSIZE]->frmProperties.tindex = frmBuffer[i]->frmProperties.tindex;
-                        //frmBuffer[BUFMINSIZE]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + dDeIntTime;
-                        //frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp + dDeIntTime;
-                        //frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
-
-                        FrameQueue_Add(&fqIn, frmIn);
-                        if (bFullFrameRate)
-                        {
-                            Prepare_frame_for_queue(&frmIn, frmBuffer[BUFMINSIZE], uiWidth, uiHeight); // Go to double frame rate
-                            ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
-
-                            //Timestamp
-                            //frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
-
-                            FrameQueue_Add(&fqIn, frmIn);
-                        }
+                        Update_Frame_Buffer(frmBuffer, i, dBaseTimeSw, uiisInterlaced, uiInterlaceParity, bFullFrameRate, frmIn, &fqIn);
                     }
                     else
                     {
                         uiBufferCount++;
                         if (uiisInterlaced != 2 || (uiisInterlaced == 2 && uiBufferCount < 5))
-                        {
-                            CheckGenFrame(frmBuffer, i, mainPattern.ucPatternType, uiisInterlaced);
-                            Prepare_frame_for_queue(&frmIn, frmBuffer[i], uiWidth, uiHeight);
-                            ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[i]->plaY.ucStats.ucRs, sizeof(double)* 10);
-
-                            //timestamp
-                            //frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp + (dBaseTime * 5 / 4);
-                            //frmIn->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
-
-                            FrameQueue_Add(&fqIn, frmIn);
-                        }
-                        else
-                            uiBufferCount = 0;
+                            Update_Frame_Buffer(frmBuffer, i, dTimePerFrame, uiisInterlaced, uiInterlaceParity, bFullFrameRate, frmIn, &fqIn);
                     }
                 }
             }
 
             uiCur = 0;
 
-            uiFrameCount = fqIn.iCount;
-            for(mfxU32 i = 0; i < uiFrameCount; i++)
+            //uiFrameCount = fqIn.iCount;
+            while(frmIn = FrameQueue_Get(&fqIn))
             {
-                if(!surf_out && !frmSupply->countFreeWorkSurfs())
-                    break;
-                ferror = false;
-                frmIn = FrameQueue_Get(&fqIn);
-                if (frmIn)
-                {
-                    TrimBorders(&frmIn->plaY, &frmIO[LASTFRAME].plaY);
-                    TrimBorders(&frmIn->plaU, &frmIO[LASTFRAME].plaU);
-                    TrimBorders(&frmIn->plaV, &frmIO[LASTFRAME].plaV);
+                Frame* frmOut = &frmIO[LASTFRAME];
 
-                        //fprintf(fTCodeOut,"%4.3lf\n",frmIn->frmProperties.timestamp);
-                        //ferror = WriteFile(hOut, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize, &uiBytesRead, NULL);
-                    if(!surf_out){
-                        surf_out = frmSupply->GetWorkSurfaceMfx();
-                    }
-                    surf_out->Data.TimeStamp = (mfxU64) frmIO[LASTFRAME].frmProperties.timestamp;
-                    frmSupply->AddCPUPtirOutSurf(frmIO[LASTFRAME].ucMem, surf_out);
-                    Frame_Release(frmIn);
-                    free(frmIn);
-                    surf_out = 0;
+                uiLastFrameNumber = frmIn->frmProperties.tindex;
+                ferror = FALSE;
+                TrimBorders(&frmIn->plaY, &frmOut->plaY);
+                TrimBorders(&frmIn->plaU, &frmOut->plaU);
+                TrimBorders(&frmIn->plaV, &frmOut->plaV);
 
-                    uiFrameOut++;
+                //fprintf(fTCodeOut,"%4.3lf\n",frmIn->frmProperties.timestamp);
+                //ferror = WriteFile(hOut, frmIO[LASTFRAME].ucMem, frmIO[LASTFRAME].uiSize, &uiBytesRead, NULL);
+                if(!surf_out){
+                    surf_out = frmSupply->GetWorkSurfaceMfx();
                 }
+                surf_out->Data.TimeStamp = (mfxU64) frmIO[LASTFRAME].frmProperties.timestamp;
+                frmSupply->AddCPUPtirOutSurf(frmIO[LASTFRAME].ucMem, surf_out);
+
+                Frame_Release(frmIn);
+                free(frmIn);
+                surf_out = 0;
+
+                uiFrameOut++;
             }
         }
     }

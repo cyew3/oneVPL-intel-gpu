@@ -643,16 +643,6 @@ del embed_isa.exe</Command>
       <FloatingPointModel Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'">Precise</FloatingPointModel>
       <FloatingPointModel Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'">Precise</FloatingPointModel>
     </ClCompile>
-    <ClCompile Include="entry.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-emu|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-emu|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="kernels\deinterlace_genx_hsw.cpp" />
     <ClCompile Include="kernels\embed_isa.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-emu|Win32'">true</ExcludedFromBuild>

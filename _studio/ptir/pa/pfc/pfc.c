@@ -9,7 +9,6 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 File Name: api.h
 
 \* ****************************************************************************** */
-
 #include "pfc.h"
 #include "../telecine/telecine.h"
 #include <assert.h> 
@@ -22,11 +21,6 @@ File Name: api.h
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
 #endif
-
-int InvTelecine(unsigned char *frame, unsigned char *prev_frame, int pels, int lines)
-{
-    return INVTELE_RESULT_FRAME_OK;
-}
 
 static const float pi = 3.14159265f;
 static const float sF0[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f};
@@ -212,24 +206,12 @@ static void Filter_gradient(Plane *plaOut, Plane *plaIn)
 
     int    i, j;
     int s = plaIn->uiWidth * plaIn->uiHeight * sizeof(float);
-    float *gradX = 0;
-    float *gradY = 0;
-    float rx = 0;
-    float ry = 0;
-    gradX = (float *)malloc(s);
-    if(!gradX)
-        return;
-    gradY = (float *)malloc(s);
-    if(!gradY)
-    {
-        free(gradX);
-        return;
-    }
+    float *gradX = (float *)malloc(s);
+    float *gradY = (float *)malloc(s);
 
-    rx = (float)plaIn->uiWidth / (float)plaOut->uiWidth;
-    ry = (float)plaIn->uiHeight / (float)plaOut->uiHeight;
-    assert(gradX != NULL);
-    assert(gradY != NULL);
+    float rx = (float)plaIn->uiWidth / (float)plaOut->uiWidth;
+    float ry = (float)plaIn->uiHeight / (float)plaOut->uiHeight;
+
     memset(gradX, 0, s);
     memset(gradY, 0, s);
 
@@ -466,6 +448,6 @@ void ReSample(Frame *frmOut, Frame *frmIn)
     }
     else
         AddBorders(&frmIn->plaV, &frmOut->plaV, frmOut->plaV.uiBorder);
-    ptir_memcpy(frmOut->plaY.ucStats.ucSAD,frmIn->plaY.ucStats.ucSAD,sizeof(double) * 5);
+    memcpy(frmOut->plaY.ucStats.ucSAD,frmIn->plaY.ucStats.ucSAD,sizeof(double) * 5);
     frmOut->frmProperties.tindex = frmIn->frmProperties.tindex;
 }

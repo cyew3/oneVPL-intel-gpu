@@ -258,13 +258,11 @@ protected:
     case CM_SURFACE_FORMAT_R32F:
       return 4 * width;
     case CM_SURFACE_FORMAT_V8U8:
-    case CM_SURFACE_FORMAT_R16_SINT:
     case CM_SURFACE_FORMAT_UYVY:
     case CM_SURFACE_FORMAT_YUY2:
       return 2 * width;
     case CM_SURFACE_FORMAT_A8:
     case CM_SURFACE_FORMAT_P8:
-    case CM_SURFACE_FORMAT_R8_UINT:
       return 1 * width;
     case CM_SURFACE_FORMAT_NV12:
       return 1 * width;
@@ -278,13 +276,11 @@ protected:
     case CM_SURFACE_FORMAT_R32F:
       return 1 * height;
     case CM_SURFACE_FORMAT_V8U8:
-    case CM_SURFACE_FORMAT_R16_SINT:
     case CM_SURFACE_FORMAT_UYVY:
     case CM_SURFACE_FORMAT_YUY2:
       return 1 * height;
     case CM_SURFACE_FORMAT_A8:
     case CM_SURFACE_FORMAT_P8:
-    case CM_SURFACE_FORMAT_R8_UINT:
       return 1 * height;
     case CM_SURFACE_FORMAT_NV12:
       return 3 * height / 2;
