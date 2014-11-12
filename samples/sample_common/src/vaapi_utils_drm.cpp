@@ -145,6 +145,7 @@ DRMLibVA::DRMLibVA(void):
         }
         i++;
     }
+    if (adapters_num) free(adapters);
     // If Intel adapter with specified number wasn't found, throws exception
     if (nFoundAdapters != numberOfRequiredIntelAdapter)
         throw std::range_error("The Intel adapter with a specified number wasn't found");
@@ -187,6 +188,12 @@ DRMLibVA::DRMLibVA(void):
 
         if (MFX_ERR_NONE == sts) break;
     }
+
+    for (int i=0; i<2; i++)
+    {
+        delete [] adapterPaths[i];
+    }
+    delete [] adapterPaths;
 
     if (MFX_ERR_NONE != sts)
         throw std::invalid_argument("Loading of VA display was failed");
