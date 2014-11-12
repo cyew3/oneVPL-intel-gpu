@@ -1308,6 +1308,7 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_ENCODER_WIDI_USAGE
         || id == MFX_EXTBUFF_ENCODER_ROI
         || id == MFX_EXTBUFF_CODING_OPTION3
+        || id == MFX_EXTBUFF_CHROMA_LOC_INFO
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || id == MFX_EXTBUFF_FEI_PARAM
 #endif
@@ -1654,6 +1655,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
     mfxExtEncoderROI *         extRoi  = GetExtBuffer(par);
     mfxExtCodingOption3 *      extOpt3 = GetExtBuffer(par);
+    mfxExtChromaLocInfo *      extCli  = GetExtBuffer(par);
 
     // check hw capabilities
     if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
@@ -2512,6 +2514,19 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckRangeDflt(extVsi->MatrixCoefficients,      0, 255, 2)) changed = true;
     if (!CheckFlag(extVsi->VideoFullRange, 0))                       changed = true;
     if (!CheckFlag(extVsi->ColourDescriptionPresent, 0))             changed = true;
+
+    if (!CheckRangeDflt(extCli->ChromaLocInfoPresentFlag,       0, 1, 0)) changed = true;
+    if (!CheckRangeDflt(extCli->ChromaSampleLocTypeTopField,    0, 5, 0)) changed = true;
+    if (!CheckRangeDflt(extCli->ChromaSampleLocTypeBottomField, 0, 5, 0)) changed = true;
+
+    if (   IsOn(extOpt2->DisableVUI) && extCli->ChromaLocInfoPresentFlag
+        || !extCli->ChromaLocInfoPresentFlag && (extCli->ChromaSampleLocTypeTopField || extCli->ChromaSampleLocTypeBottomField))
+    {
+        extCli->ChromaLocInfoPresentFlag       = 0;
+        extCli->ChromaSampleLocTypeTopField    = 0;
+        extCli->ChromaSampleLocTypeBottomField = 0;
+        changed = true;
+    }
 
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && par.calcParam.targetKbps != 0)
     {
@@ -3774,6 +3789,7 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtPpsHeader *          extPps  = GetExtBuffer(par);
     mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(par);
     mfxExtSVCRateControl *     extRc   = GetExtBuffer(par);
+    mfxExtChromaLocInfo*       extCli  = GetExtBuffer(par);
     
     if (extOpt2->UseRawRef)
         extDdi->RefRaw = extOpt2->UseRawRef;
@@ -4482,9 +4498,9 @@ void MfxHwH264Encode::SetDefaults(
                 extSps->vui.flags.videoFullRange           != 0 ||
                 extSps->vui.flags.colourDescriptionPresent != 0;
 
-            extSps->vui.flags.chromaLocInfoPresent     = 0;
-            extSps->vui.chromaSampleLocTypeTopField    = 0;
-            extSps->vui.chromaSampleLocTypeBottomField = 0;
+            extSps->vui.flags.chromaLocInfoPresent     = !!extCli->ChromaLocInfoPresentFlag;
+            extSps->vui.chromaSampleLocTypeTopField    = mfxU8(extCli->ChromaSampleLocTypeTopField);
+            extSps->vui.chromaSampleLocTypeBottomField = mfxU8(extCli->ChromaSampleLocTypeBottomField);
 
             extSps->vui.flags.timingInfoPresent = 1;
             extSps->vui.numUnitsInTick          = fi.FrameRateExtD;
@@ -5495,6 +5511,8 @@ void MfxVideoParam::SyncCalculableToVideoParam()
 
 }
 
+
+
 void MfxVideoParam::Construct(mfxVideoParam const & par)
 {
     mfxVideoParam & base = *this;
@@ -5503,123 +5521,38 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     Zero(m_extParam);
     Zero(calcParam);
 
-    InitExtBufHeader(m_extOpt);
-    InitExtBufHeader(m_extOptSpsPps);
-    InitExtBufHeader(m_extOptPavp);
-    InitExtBufHeader(m_extVideoSignal);
-    InitExtBufHeader(m_extOpaque);
-    InitExtBufHeader(m_extMvcSeqDescr);
-    InitExtBufHeader(m_extPicTiming);
-    InitExtBufHeader(m_extTempLayers);
-    InitExtBufHeader(m_extSvcSeqDescr);
-    InitExtBufHeader(m_extSvcRateCtrl);
-    InitExtBufHeader(m_extOptDdi);
-    InitExtBufHeader(m_extDumpFiles);
-    InitExtBufHeader(m_extSps);
-    InitExtBufHeader(m_extPps);
-    InitExtBufHeader(m_extOpt2);
-    InitExtBufHeader(m_extEncResetOpt);
-    InitExtBufHeader(m_extEncRoi);
-    InitExtBufHeader(m_extOpt3);
-    InitExtBufHeader(m_extFeiParam);
+    NumExtParam = 0;
 
+#define CONSTRUCT_EXT_BUFFER(type, name)        \
+    InitExtBufHeader(name);                     \
+    if (type * opts = GetExtBuffer(par))        \
+        name = *opts;                           \
+    m_extParam[NumExtParam++] = &name.Header;
 
-    if (mfxExtCodingOption * opts = GetExtBuffer(par))
-        m_extOpt = *opts;
-
-    if (mfxExtCodingOptionSPSPPS * opts = GetExtBuffer(par))
-        m_extOptSpsPps = *opts;
-
-    if (mfxExtPAVPOption * opts = GetExtBuffer(par))
-        m_extOptPavp = *opts;
-
-    if (mfxExtVideoSignalInfo * opts = GetExtBuffer(par))
-        m_extVideoSignal = *opts;
-
-    if (mfxExtOpaqueSurfaceAlloc * opts = GetExtBuffer(par))
-        m_extOpaque = *opts;
-
-    if (mfxExtMVCSeqDesc * opts = GetExtBuffer(par))
-        ConstructMvcSeqDesc(*opts);
-
-    if (mfxExtAvcTemporalLayers * opts = GetExtBuffer(par))
-        m_extTempLayers = *opts;
-
-    if (mfxExtSVCSeqDesc * opts = GetExtBuffer(par))
-        m_extSvcSeqDescr = *opts;
-
-    if (mfxExtSVCRateControl * opts = GetExtBuffer(par))
-        m_extSvcRateCtrl = *opts;
-
-    if (mfxExtPictureTimingSEI * opts = GetExtBuffer(par))
-        m_extPicTiming = *opts;
-
-    if (mfxExtCodingOptionDDI * opts = GetExtBuffer(par))
-        m_extOptDdi = *opts;
-
-    if (mfxExtDumpFiles * opts = GetExtBuffer(par))
-        m_extDumpFiles = *opts;
-
-    if (mfxExtSpsHeader * opts = GetExtBuffer(par))
-        m_extSps = *opts;
-
-    if (mfxExtPpsHeader * opts = GetExtBuffer(par))
-        m_extPps = *opts;
-
-    if (mfxExtCodingOption2 * opts = GetExtBuffer(par))
-        m_extOpt2 = *opts;
-
-    if (mfxExtEncoderResetOption * opts = GetExtBuffer(par))
-        m_extEncResetOpt = *opts;
-
-    if (mfxExtEncoderROI * opts = GetExtBuffer(par))
-        m_extEncRoi = *opts;
-
-    if (mfxExtCodingOption3 * opts = GetExtBuffer(par))
-        m_extOpt3 = *opts;
-
-    if (mfxExtFeiParam * opts = GetExtBuffer(par))
-        m_extFeiParam = *opts;
-
-    m_extParam[0]  = &m_extOpt.Header;
-    m_extParam[1]  = &m_extOptSpsPps.Header;
-    m_extParam[2]  = &m_extOptPavp.Header;
-    m_extParam[3]  = &m_extVideoSignal.Header;
-    m_extParam[4]  = &m_extOpaque.Header;
-    m_extParam[5]  = &m_extMvcSeqDescr.Header;
-    m_extParam[6]  = &m_extPicTiming.Header;
-    m_extParam[7]  = &m_extTempLayers.Header;
-    m_extParam[8]  = &m_extSvcSeqDescr.Header;
-    m_extParam[9]  = &m_extSvcRateCtrl.Header;
-    m_extParam[10]  = &m_extOptDdi.Header;
-    m_extParam[11]  = &m_extDumpFiles.Header;
-    m_extParam[12] = &m_extSps.Header;
-    m_extParam[13] = &m_extPps.Header;
-    m_extParam[14] = &m_extOpt2.Header;
-    m_extParam[15] = &m_extEncResetOpt.Header;
-    m_extParam[16] = &m_extEncRoi.Header;
-    m_extParam[17] = &m_extOpt3.Header;
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
-    m_extParam[18] = &m_extFeiParam.Header;
-    //add additional params if any
-    //NumExtParam = 19;
-#endif
-    ExtParam = m_extParam;
-    NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
-    assert(NumExtParam == 19);
-#else
-    assert(NumExtParam == 18);
-#endif
-
+    CONSTRUCT_EXT_BUFFER(mfxExtCodingOption,        m_extOpt);
+    CONSTRUCT_EXT_BUFFER(mfxExtCodingOptionSPSPPS,  m_extOptSpsPps);
+    CONSTRUCT_EXT_BUFFER(mfxExtPAVPOption,          m_extOptPavp);
+    CONSTRUCT_EXT_BUFFER(mfxExtVideoSignalInfo,     m_extVideoSignal);
+    CONSTRUCT_EXT_BUFFER(mfxExtOpaqueSurfaceAlloc,  m_extOpaque);
+    CONSTRUCT_EXT_BUFFER(mfxExtMVCSeqDesc,          m_extMvcSeqDescr);
+    CONSTRUCT_EXT_BUFFER(mfxExtPictureTimingSEI,    m_extPicTiming);
+    CONSTRUCT_EXT_BUFFER(mfxExtAvcTemporalLayers,   m_extTempLayers);
+    CONSTRUCT_EXT_BUFFER(mfxExtSVCSeqDesc,          m_extSvcSeqDescr);
+    CONSTRUCT_EXT_BUFFER(mfxExtSVCRateControl,      m_extSvcRateCtrl);
+    CONSTRUCT_EXT_BUFFER(mfxExtCodingOptionDDI,     m_extOptDdi);
+    CONSTRUCT_EXT_BUFFER(mfxExtDumpFiles,           m_extDumpFiles);
+    CONSTRUCT_EXT_BUFFER(mfxExtSpsHeader,           m_extSps);
+    CONSTRUCT_EXT_BUFFER(mfxExtPpsHeader,           m_extPps);
+    CONSTRUCT_EXT_BUFFER(mfxExtCodingOption2,       m_extOpt2);
+    CONSTRUCT_EXT_BUFFER(mfxExtEncoderResetOption,  m_extEncResetOpt);
+    CONSTRUCT_EXT_BUFFER(mfxExtEncoderROI,          m_extEncRoi);
+    CONSTRUCT_EXT_BUFFER(mfxExtCodingOption3,       m_extOpt3);
+    CONSTRUCT_EXT_BUFFER(mfxExtChromaLocInfo,       m_extChromaLoc);
+    CONSTRUCT_EXT_BUFFER(mfxExtFeiParam,            m_extFeiParam);
+#undef CONSTRUCT_EXT_BUFFER
 
     ExtParam = m_extParam;
-    NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
-    assert(NumExtParam == 19);
-#else
-    assert(NumExtParam == 18);
-#endif
+    assert(NumExtParam == mfxU16(sizeof m_extParam / sizeof m_extParam[0]));
 }
 
 void MfxVideoParam::ConstructMvcSeqDesc(

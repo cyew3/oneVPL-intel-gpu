@@ -198,6 +198,7 @@ namespace MfxHwH264Encode
 #endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3,        MFX_EXTBUFF_CODING_OPTION3           );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMBQP,                 MFX_EXTBUFF_MBQP                     );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtChromaLocInfo,        MFX_EXTBUFF_CHROMA_LOC_INFO          );
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -515,12 +516,7 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
-        mfxExtBuffer *              m_extParam[19];
-#else
-        mfxExtBuffer *              m_extParam[18];
-#endif
+        mfxExtBuffer *              m_extParam[20];
         // external, documented
         mfxExtCodingOption          m_extOpt;
         mfxExtCodingOption2         m_extOpt2;
@@ -537,6 +533,7 @@ namespace MfxHwH264Encode
         mfxExtEncoderResetOption    m_extEncResetOpt;
         mfxExtEncoderROI            m_extEncRoi;
         mfxExtFeiParam              m_extFeiParam;
+        mfxExtChromaLocInfo         m_extChromaLoc;
 
         // internal, not documented
         mfxExtCodingOptionDDI       m_extOptDdi;
