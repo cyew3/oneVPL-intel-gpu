@@ -270,19 +270,18 @@ TaskIter  findOldestToLookAheadProcess(std::list<Task*> & queue)
 
 void MFXVideoENCODEH265::LookAheadAnalysis()
 {
-
     TaskIter it = findOldestToLookAheadProcess(m_inputQueue);
+    TaskIter prevIt = it;
+    --prevIt;
 
-    if( it == m_inputQueue.end() ) {
-        if( !m_inputQueue.empty() ) {
+    if (it == m_inputQueue.end()) {
+        if (!m_inputQueue.empty())
             m_lookaheadQueue.splice(m_lookaheadQueue.end(), m_inputQueue, m_inputQueue.begin());
-        }
-
         return;
     }
 
     Task* curr = (*it);
-    Task* prev = (it == m_inputQueue.begin()) ? NULL : (*std::prev(it));
+    Task* prev = (it == m_inputQueue.begin()) ? NULL : (*prevIt);
 
     DoIntraAnalysis(curr);
     //DoInterAnalysis(curr, prev);
@@ -290,8 +289,7 @@ void MFXVideoENCODEH265::LookAheadAnalysis()
     curr->m_frameOrigin->setWasLAProcessed();
 
     if(prev)
-        m_lookaheadQueue.splice(m_lookaheadQueue.end(), m_inputQueue, std::prev(it));
-
-} // 
+        m_lookaheadQueue.splice(m_lookaheadQueue.end(), m_inputQueue, prevIt);
+}
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

@@ -10,6 +10,11 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
+#include <new>
+#include <numeric>
+#include <math.h>
+#include <limits.h>
+
 #include "mfxdefs.h"
 #include "mfx_common_int.h"
 #include "mfx_task.h"
@@ -21,9 +26,6 @@
 #include "vm_event.h"
 #include "vm_sys_info.h"
 #include "mfx_ext_buffers.h"
-#include <new>
-#include <numeric>
-#include <math.h>
 
 #include "mfx_h265_encode.h"
 
@@ -3073,7 +3075,7 @@ H265Frame* MFXVideoENCODEH265::InsertInputFrame(const mfxFrameSurface1 *surface)
     m_inputQueue.back()->m_frameOrigin = *frm;
 
     if (m_videoParam.preEncMode > 0) {
-        for( Ipp32s row = 0; row < m_videoParam.PicHeightInCtbs; row++ ) {
+        for (Ipp32u row = 0; row < m_videoParam.PicHeightInCtbs; row++) {
             PadOneReconRow(*frm, row, m_videoParam.MaxCUSize, m_videoParam.PicHeightInCtbs);
         }
     }
