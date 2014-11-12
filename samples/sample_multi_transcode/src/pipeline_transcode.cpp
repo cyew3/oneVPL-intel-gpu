@@ -1098,7 +1098,7 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
     mfxStatus sts = MFX_ERR_NONE;
     MSDK_CHECK_POINTER(pInParams, MFX_ERR_NULL_PTR);
 
-    m_mfxDecParams.AsyncDepth = pInParams->nAsyncDepth;
+    m_mfxDecParams.AsyncDepth = m_AsyncDepth;
 
     // configure and attach external parameters
     if (m_bUseOpaqueMemory)
@@ -1213,7 +1213,7 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
     MSDK_CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
     m_mfxEncParams.mfx.CodecId                 = pInParams->EncodeId;
     m_mfxEncParams.mfx.TargetUsage             = pInParams->nTargetUsage; // trade-off between quality and speed
-    m_mfxEncParams.AsyncDepth                  = pInParams->nAsyncDepth;
+    m_mfxEncParams.AsyncDepth                  = m_AsyncDepth;
 
     if (m_pParentPipeline && m_pParentPipeline->m_pmfxPreENC.get())
     {
@@ -1379,7 +1379,7 @@ mfxStatus CTranscodingPipeline::InitPreEncMfxParams(sInputParams *pInParams)
 
     mfxVideoParam & param = m_mfxPreEncParams;
 
-    param.AsyncDepth = pInParams->nAsyncDepth;
+    param.AsyncDepth = m_AsyncDepth;
 
     MSDK_ZERO_MEMORY(param.mfx);
     param.mfx.CodecId= MFX_CODEC_AVC;
@@ -1449,7 +1449,7 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
  mfxStatus CTranscodingPipeline::InitVppMfxParams(sInputParams *pInParams)
 {
     MSDK_CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
-    m_mfxVppParams.AsyncDepth = pInParams->nAsyncDepth;
+    m_mfxVppParams.AsyncDepth = m_AsyncDepth;
 
     mfxU16 InPatternFromParent = (mfxU16)((MFX_IOPATTERN_OUT_VIDEO_MEMORY == m_mfxDecParams.IOPattern) ?
 MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
