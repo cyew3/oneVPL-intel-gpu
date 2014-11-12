@@ -432,8 +432,10 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
     char *tname = "ProcCur";
     if (!prevFrameDone) tname = "ProcNext";
 
+#if defined(_WIN32) || defined(_WIN64)
     static mfxTraceStaticHandle _trace_static_handle;
     MFXTraceTask _mfx_trace_task(MFX_TRACE_PARAMS, MFX_TRACE_LEVEL_API, tname, false);
+#endif
 
     // take right ptrs
     mfxFEIH265Input *feiH265In = &m_feiH265In[feiInIdx];
@@ -540,7 +542,9 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
     }
 #endif
 
+#if defined(_WIN32) || defined(_WIN64)
     _mfx_trace_task.Stop();
+#endif
 
     if (prevFrameDone) {
 #ifndef SAVE_FEI_STATE

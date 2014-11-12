@@ -11,6 +11,8 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include <numeric>
+#include <limits.h>
+
 //#include "mfx_h265_defs.h"
 #include "mfx_h265_encode.h"
 #include "mfx_h265_frame.h"
