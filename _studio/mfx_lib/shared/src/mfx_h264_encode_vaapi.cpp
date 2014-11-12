@@ -356,6 +356,7 @@ mfxStatus SetPrivateParams(
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterPrivate *private_param;
     mfxExtCodingOption2 const * extOpt2  = GetExtBuffer(par);
+    mfxExtCodingOption3 const * extOpt3  = GetExtBuffer(par);
 
     if ( privateParams_id != VA_INVALID_ID)
     {
@@ -381,13 +382,32 @@ mfxStatus SetPrivateParams(
 
     private_param->target_usage = (unsigned int)(par.mfx.TargetUsage);
     private_param->useRawPicForRef = extOpt2 && IsOn(extOpt2->UseRawRef);
+    
+    if (extOpt3)
+    {
+        private_param->directBiasAdjustmentEnable       = IsOn(extOpt3->DirectBiasAdjustment);
+        private_param->globalMotionBiasAdjustmentEnable = IsOn(extOpt3->GlobalMotionBiasAdjustment);
+
+        if (private_param->globalMotionBiasAdjustmentEnable && extOpt3->MVCostScalingFactor < 4)
+            private_param->HMEMVCostScalingFactor = extOpt3->MVCostScalingFactor;
+    }
 
     if (pCtrl)
     {
         mfxExtCodingOption2 const * extOpt2rt  = GetExtBuffer(*pCtrl);
+        mfxExtCodingOption3 const * extOpt3rt  = GetExtBuffer(*pCtrl);
 
         if (extOpt2rt)
             private_param->useRawPicForRef = IsOn(extOpt2rt->UseRawRef);
+
+        if (extOpt3rt)
+        {
+            private_param->directBiasAdjustmentEnable       = IsOn(extOpt3rt->DirectBiasAdjustment);
+            private_param->globalMotionBiasAdjustmentEnable = IsOn(extOpt3rt->GlobalMotionBiasAdjustment);
+
+            if (private_param->globalMotionBiasAdjustmentEnable && extOpt3rt->MVCostScalingFactor < 4)
+                private_param->HMEMVCostScalingFactor = extOpt3rt->MVCostScalingFactor;
+        }
     }
 
     vaUnmapBuffer(vaDisplay, privateParams_id);

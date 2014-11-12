@@ -1635,7 +1635,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     MfxVideoParam &     par,
     ENCODE_CAPS const & hwCaps,
     eMFXHWType          platform,
-    eMFXVAType          /*vaType*/)
+    eMFXVAType          vaType)
 {
     Bool unsupported(false);
     Bool changed(false);
@@ -2314,6 +2314,25 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckTriStateOption(extOpt2->FixedFrameRate))          changed = true;
     if (!CheckTriStateOption(extOpt2->DisableVUI))              changed = true;
     if (!CheckTriStateOption(extOpt2->UseRawRef))               changed = true;
+
+    if (!CheckTriStateOption(extOpt3->DirectBiasAdjustment))        changed = true;
+    if (!CheckTriStateOption(extOpt3->GlobalMotionBiasAdjustment))  changed = true;
+
+    if (    vaType != MFX_HW_VAAPI
+        && (IsOn(extOpt3->DirectBiasAdjustment) || IsOn(extOpt3->GlobalMotionBiasAdjustment)))
+    {
+        changed = true;
+        extOpt3->DirectBiasAdjustment       = MFX_CODINGOPTION_OFF;
+        extOpt3->GlobalMotionBiasAdjustment = MFX_CODINGOPTION_OFF;
+    }
+
+    if (!CheckRangeDflt(extOpt3->MVCostScalingFactor, 0, 3, 0)) changed = true;
+
+    if (extOpt3->MVCostScalingFactor && !IsOn(extOpt3->GlobalMotionBiasAdjustment))
+    {
+        changed = true;
+        extOpt3->MVCostScalingFactor = 0;
+    }
 
     if (extOpt2->BufferingPeriodSEI > MFX_BPSEI_IFRAME)
     {
