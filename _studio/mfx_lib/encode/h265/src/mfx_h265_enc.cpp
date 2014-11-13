@@ -208,9 +208,6 @@ namespace H265Enc {
         pars->enableCmFlag = 0;
 #endif // MFX_VA
 
-        pars->NumSlices = param->mfx.NumSlice;
-        pars->NumTileCols = optsHevc->NumTileCols;
-        pars->NumTileRows = optsHevc->NumTileRows;
         pars->m_framesInParallel = optsHevc->FramesInParallel;
 
         if ( pars->enableCmFlag ) {
@@ -219,7 +216,6 @@ namespace H265Enc {
             // TO DO: discribe feature list and priority to support high priority feature in case of incompatibility
         }
 
-        pars->NumTiles = pars->NumTileCols * pars->NumTileRows;
         pars->deblockTileBordersFlag = 0;
 
         pars->GopPicSize = param->mfx.GopPicSize;
@@ -436,6 +432,11 @@ namespace H265Enc {
         pars->PicHeightInMinCbs = pars->Height / pars->MinCUSize;
         pars->PicWidthInCtbs = (pars->Width + pars->MaxCUSize - 1) / pars->MaxCUSize;
         pars->PicHeightInCtbs = (pars->Height + pars->MaxCUSize - 1) / pars->MaxCUSize;
+
+        pars->NumSlices = IPP_MIN(param->mfx.NumSlice, pars->PicHeightInCtbs);
+        pars->NumTileCols = IPP_MIN(optsHevc->NumTileCols, pars->PicWidthInCtbs);
+        pars->NumTileRows = IPP_MIN(optsHevc->NumTileRows, pars->PicHeightInCtbs);
+        pars->NumTiles = pars->NumTileCols * pars->NumTileRows;
 
         /*if (pars->num_threads > pars->PicHeightInCtbs)
         pars->num_threads = pars->PicHeightInCtbs;
@@ -1122,7 +1123,7 @@ mfxStatus H265FrameEncoder::Init(const mfxVideoParam* mfxParam, const H265VideoP
         ptr += streamBufSize;
     }
     m_bs[m_videoParam.num_bs_subsets].m_base.m_maxBsSize = streamBufSizeMain;
-    ptr += streamBufSizeMain - streamBufSize;
+    ptr += Ipp32s(streamBufSizeMain - streamBufSize);
 
     for (Ipp32u i = 0; i < m_videoParam.num_thread_structs; i++) {
         m_bsf[i].Reset();
