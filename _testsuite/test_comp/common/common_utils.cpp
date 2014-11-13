@@ -42,14 +42,8 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool /*bSim*/)
     mfxFrameInfo* pInfo = &pSurface->Info;
     mfxFrameData* pData = &pSurface->Data;
 
-    if (pInfo->CropH > 0 && pInfo->CropW > 0) {
-        w = pInfo->CropW;
-        h = pInfo->CropH;
-    }
-    else {
-        w = pInfo->Width;
-        h = pInfo->Height;
-    }
+    w = pInfo->Width;
+    h = pInfo->Height;
 
     /* IF we have RGB4 input*/
     if (pInfo->FourCC == MFX_FOURCC_RGB4)
