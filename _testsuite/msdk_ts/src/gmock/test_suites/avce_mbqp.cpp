@@ -107,7 +107,7 @@ public:
         if (m_mb == m_sh->mb)
             m_prevqp = 26 + m_sh->pps_active->pic_init_qp_minus26 + m_sh->slice_qp_delta;
 
-        m_prevqp += m_mb->mb_qp_delta;
+        m_prevqp = (m_prevqp + m_mb->mb_qp_delta + 52) % 52;
 
         return m_prevqp;
     }
@@ -256,7 +256,7 @@ public:
                 if (i++ % wMB == 0)
                     g_tsLog << "\n";
 
-                g_tsLog << mfxU16(qp) << " ";
+                g_tsLog << std::setw(2) << mfxU16(qp) << " ";
 
                 qp = au.NextQP();
             }
