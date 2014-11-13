@@ -15,6 +15,7 @@
 
 
 #include "mfx_h264_encode_hw_utils.h"
+#include "ippi.h"
 
 using namespace MfxHwH264Encode;
 
@@ -1887,6 +1888,78 @@ mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
 
     return MFX_ERR_NONE;
 }
+mfxStatus MfxHwH264Encode::CodeAsSkipFrame(     VideoCORE &            core,
+                                                MfxVideoParam const &  video,
+                                                DdiTask&       task,
+                                                MfxFrameAllocResponse & pool)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (task.m_midRaw == NULL)
+    {
+
+        task.m_idx    = FindFreeResourceIndex(pool);
+        task.m_midRaw = AcquireResource(pool, task.m_idx);
+
+        sts = core.GetFrameHDL(task.m_midRaw, &task.m_handleRaw.first);
+        MFX_CHECK_STS(sts);
+    }
+    MFX_CHECK_NULL_PTR1(task.m_midRaw);
+
+    if (task.GetFrameType() & MFX_FRAMETYPE_I)
+    {
+        mfxFrameData curr = { 0 };
+        IppiSize roiSize = {video.mfx.FrameInfo.Width, video.mfx.FrameInfo.Height};
+        curr.MemId = task.m_midRaw;
+        FrameLocker lock1(&core, curr, task.m_midRaw);  
+        ippiSet_8u_C1R(0, curr.Y, curr.Pitch,roiSize);
+
+        switch (video.mfx.FrameInfo.FourCC)
+        {
+            case MFX_FOURCC_NV12:
+                roiSize.height >>= 1;
+                ippiSet_8u_C1R(0, curr.UV, curr.Pitch,roiSize);
+                break;
+            case MFX_FOURCC_YV12:
+                roiSize.width >>= 1;
+                roiSize.height >>= 1;
+                ippiSet_8u_C1R(0, curr.U, curr.Pitch>>1,roiSize);
+                ippiSet_8u_C1R(0, curr.V, curr.Pitch>>1,roiSize);
+                break;
+            default:
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+    }
+    if (task.GetFrameType() & MFX_FRAMETYPE_P)
+    {
+        DpbFrame& refFrame = task.m_dpb[0][task.m_list0[0][0] & 127];
+        mfxFrameData curr = { 0 };
+        mfxFrameData ref  = { 0 };
+        curr.MemId = task.m_midRaw;
+        ref.MemId  = refFrame.m_midRec;
+
+        mfxFrameSurface1 surfSrc = { {0,}, video.mfx.FrameInfo, ref  };
+        mfxFrameSurface1 surfDst = { {0,}, video.mfx.FrameInfo, curr };
+        sts = core.DoFastCopyWrapper(&surfDst,MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE);
+
+    }
+    if (task.GetFrameType() & MFX_FRAMETYPE_B)
+    {
+        DpbFrame& refFrame = task.m_dpb[0][task.m_list1[0][0] & 127];
+        mfxFrameData curr = { 0 };
+        mfxFrameData ref  = { 0 };
+        curr.MemId = task.m_midRaw;
+        ref.MemId  = refFrame.m_midRec;
+
+        mfxFrameSurface1 surfSrc = { {0,}, video.mfx.FrameInfo, ref  };
+        mfxFrameSurface1 surfDst = { {0,}, video.mfx.FrameInfo, curr };
+        sts = core.DoFastCopyWrapper(&surfDst,MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE);
+    } 
+
+    return sts;
+}
+
+
 
 
 mfxStatus MfxHwH264Encode::GetNativeHandleToRawSurface(

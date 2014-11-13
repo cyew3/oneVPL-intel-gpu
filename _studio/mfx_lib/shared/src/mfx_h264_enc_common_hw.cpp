@@ -1866,11 +1866,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
             changed = true;
         }
-        if (extDdi->LaScaleFactor > 1)
-        {
-            extDdi->LaScaleFactor = 1;
-            changed = true;        
-        }
         if (extDdi->LookAheadDependency != 0)
         {
             extDdi->LookAheadDependency = 0;
@@ -3845,7 +3840,7 @@ void MfxHwH264Encode::SetDefaults(
         if (par.mfx.FrameInfo.PicStruct  == 0)
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         if (extDdi->LaScaleFactor == 0)
-            extDdi->LaScaleFactor = 1;
+            extDdi->LaScaleFactor = 2;
         if (par.AsyncDepth == 0)
             par.AsyncDepth = 1;
     }

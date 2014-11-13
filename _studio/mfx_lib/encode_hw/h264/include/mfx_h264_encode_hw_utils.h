@@ -638,6 +638,7 @@ namespace MfxHwH264Encode
             , m_reference(false, false)
             , m_picStruct((mfxU16)MFX_PICSTRUCT_PROGRESSIVE)
             , m_tid(0)
+            ,m_panicMode(0)
         {
         }
 
@@ -687,6 +688,7 @@ namespace MfxHwH264Encode
         mfxU32  m_extFrameTag;
         mfxU32  m_tid;              // temporal_id
         mfxU32  m_tidx;             // temporal layer index (in acsending order of temporal_id)
+        mfxU8   m_panicMode;
     };
 
     struct RefListMod
@@ -1326,9 +1328,12 @@ namespace MfxHwH264Encode
             m_lastFrameOrder(0),
             m_NumberOfErrors(0)
         {
-
+            mfxU32 minFrameSize = maxBitLimitPerFrame / 10;
             m_slidingWindow.resize(windowSize);
-            Zero(m_slidingWindow);        
+            for (mfxU32 i = 0; i < windowSize; i++)
+            {
+                m_slidingWindow[i] = minFrameSize;
+            }
         }
         virtual ~AVGBitrate() 
         {
@@ -1957,6 +1962,7 @@ namespace MfxHwH264Encode
 #endif
 
         MfxFrameAllocResponse   m_raw;
+        MfxFrameAllocResponse   m_rawSkip;
         MfxFrameAllocResponse   m_rawLa;
         MfxFrameAllocResponse   m_mb;
         MfxFrameAllocResponse   m_curbe;
@@ -3058,13 +3064,20 @@ namespace MfxHwH264Encode
     mfxStatus FillSliceInfo(
         DdiTask &           task, 
         mfxU32              MaxSliceSize, 
-        mfxU32              FrameSize);
+        mfxU32              FrameSize,
+        mfxU32              widthLa,
+        mfxU32              heightLa);
 
     mfxStatus CorrectSliceInfo(
         DdiTask &           task,
-        mfxU32              sliceWeight);
+        mfxU32              sliceWeight,
+        mfxU32              widthLa, 
+        mfxU32              heightLa);
+
     mfxStatus CorrectSliceInfoForsed(
-        DdiTask &           task);
+        DdiTask &           task,
+        mfxU32              widthLa, 
+        mfxU32              heightLa);
 
 
 
@@ -3152,6 +3165,10 @@ namespace MfxHwH264Encode
         DdiTask const &       task,
         mfxHDLPair &          handle);
 
+    mfxStatus CodeAsSkipFrame(  VideoCORE&            core,
+                                MfxVideoParam const & video,
+                                DdiTask&       task,
+                                MfxFrameAllocResponse & pool);
     mfxStatus CopyRawSurfaceToVideoMemory(
         VideoCORE &           core,
         MfxVideoParam const & video,

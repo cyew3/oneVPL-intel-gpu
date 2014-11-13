@@ -3184,10 +3184,10 @@ mfxU32 LookAheadBrc2::Report(mfxU32 /* frameType*/ , mfxU32 dataLength, mfxU32 /
         m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, picOrder);
         if (!m_AvgBitrate->CheckBitrate())
         {
-            if (qp < 51)
+            //if (qp < 51)
                 return 1; 
-            else
-                m_AvgBitrate->StoreError();                
+            //else
+            //   m_AvgBitrate->StoreError();                
         }
     }
 
@@ -5730,7 +5730,23 @@ mfxStatus MfxHwH264Encode::UpdateSliceInfo(
             num++;
         }
     }
-   if (task.m_repack == 0) bRecoding = true;
+   if (task.m_repack == 0 && !bRecoding) 
+   {
+       if (num > 4)
+       {
+           mfxF32 weight_avg = 0;
+           for (mfxU32 i = 0; i < num; i ++)
+           {
+               weight_avg += task.m_SliceInfo[i].weight;           
+           }
+           weight_avg = weight_avg/(mfxF32)num;
+           bRecoding = (weight_avg < 25);
+           //if (bRecoding)
+          //{
+                //printf("short slices %d, w=%f\n", num, weight_avg);
+          //}
+       }
+   }
    return (task.m_SliceInfo.size()!= num)? MFX_ERR_UNDEFINED_BEHAVIOR : MFX_ERR_NONE;
 }
 mfxU8 * MfxHwH264Encode::PatchBitstream(
@@ -5889,9 +5905,12 @@ namespace
             return 128;
         return CalcDistScaleFactor(task.GetPoc(0), pocL0, pocL1);
     }
-    mfxU32 GetMBCost(DdiTask const & task, mfxU32 nMB)
+    mfxU32 GetMBCost(DdiTask const & task, mfxU32 nMB, mfxU32 widthMB, mfxU32 heightMB, mfxU32 widthVME, mfxU32 heightVME)
     {
-        mfxU32 mbCost = task.m_vmeData->mb[nMB].dist;
+        mfxU32 xVME =  (mfxU32)((mfxF32)(nMB%widthMB) / ((mfxF32)widthMB/(mfxF32)widthVME));
+        mfxU32 yVME =  (mfxU32)((mfxF32)(nMB/widthMB) / ((mfxF32)heightMB/(mfxF32)heightVME));
+
+        mfxU32 mbCost = task.m_vmeData->mb[yVME*widthVME + xVME].dist;
         /* if (!task.m_vmeData->mb[nMB].intraMbFlag)
         {
             mbCost = task.m_cqpValue[0] < GetSkippedQp(task.m_vmeData->mb[nMB]) ? mbCost : 0;        
@@ -5955,7 +5974,7 @@ mfxU8 * MfxHwH264Encode::AddEmulationPreventionAndCopy(
     }
     return write;
 }
-mfxStatus MfxHwH264Encode::FillSliceInfo(DdiTask &  task, mfxU32 MaxSliceSize, mfxU32 FrameSize)
+mfxStatus MfxHwH264Encode::FillSliceInfo(DdiTask &  task, mfxU32 MaxSliceSize, mfxU32 FrameSize, mfxU32 widthLa, mfxU32 heightLa)
 {
     if (MaxSliceSize == 0)  return MFX_ERR_NONE;
 
@@ -5968,14 +5987,12 @@ mfxStatus MfxHwH264Encode::FillSliceInfo(DdiTask &  task, mfxU32 MaxSliceSize, m
     numSlices = (numSlices > 0)  ? numSlices : 1;
     numSlices = (numSlices > 255) ? 255 : numSlices;
 
-    if (numMB != (mfxU32) task.m_vmeData->mb.size())
-        return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
 
     mfxU32  curMB = 0;
     mfxF32  maxSliceCost = 0.0;        
     for (mfxU32 i = 0; i < numMB; i ++)
     {
-       maxSliceCost = maxSliceCost + GetMBCost(task, i);
+       maxSliceCost = maxSliceCost + GetMBCost(task, i, widthMB, heightMB, widthLa/16, heightLa/16);
     } 
     maxSliceCost = maxSliceCost/numSlices;
 
@@ -5990,7 +6007,7 @@ mfxStatus MfxHwH264Encode::FillSliceInfo(DdiTask &  task, mfxU32 MaxSliceSize, m
         mfxU32 numMBForSlice =  0;
         while (curMB < numMB)
         {
-            mfxU32 mbCost = GetMBCost(task, curMB);
+            mfxU32 mbCost = GetMBCost(task, curMB, widthMB, heightMB, widthLa/16, heightLa/16);
             if (((sliceCost + mbCost) > maxSliceCost * (i + 1)) && (numMBForSlice > 0) && (i < (task.m_SliceInfo.size() - 1)))
             {
                 break;
@@ -6011,7 +6028,7 @@ mfxStatus MfxHwH264Encode::FillSliceInfo(DdiTask &  task, mfxU32 MaxSliceSize, m
 
     return MFX_ERR_NONE;    
 }
-mfxStatus MfxHwH264Encode::CorrectSliceInfo(DdiTask &  task, mfxU32  MaxSliceWeight)
+mfxStatus MfxHwH264Encode::CorrectSliceInfo(DdiTask &  task, mfxU32  MaxSliceWeight, mfxU32 widthLa, mfxU32 heightLa)
 {
     if (task.m_SliceInfo.size() == 0)  return MFX_ERR_NONE;
 
@@ -6025,8 +6042,6 @@ mfxStatus MfxHwH264Encode::CorrectSliceInfo(DdiTask &  task, mfxU32  MaxSliceWei
     mfxU32  heightMB  =  task.m_yuv->Info.Height/16;
     mfxU32  numMB = widthMB*heightMB;
 
-    if (numMB != (mfxU32) task.m_vmeData->mb.size())
-        return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
 
     // Form new slices using VME MB data and real coded slice size
 
@@ -6042,7 +6057,7 @@ mfxStatus MfxHwH264Encode::CorrectSliceInfo(DdiTask &  task, mfxU32  MaxSliceWei
             {
                 old_slice ++; 
             }
-            mfxU32 mbCost = GetMBCost(task, curMB);          
+            mfxU32 mbCost = GetMBCost(task, curMB, widthMB, heightMB, widthLa/16, heightLa/16);          
             mfxF64 mbWeight = (mfxF64) mbCost/task.m_SliceInfo[old_slice].cost*task.m_SliceInfo[old_slice].weight;
                       
             if (((sliceWeight + mbWeight) > MaxSliceWeight) && (numMBForSlice > 0))
@@ -6071,7 +6086,7 @@ mfxStatus MfxHwH264Encode::CorrectSliceInfo(DdiTask &  task, mfxU32  MaxSliceWei
     }
     return MFX_ERR_NONE;    
 }
-mfxStatus MfxHwH264Encode::CorrectSliceInfoForsed(DdiTask & task)
+mfxStatus MfxHwH264Encode::CorrectSliceInfoForsed(DdiTask & task, mfxU32 widthLa, mfxU32 heightLa)
 {
     mfxU32 freeSlisesMax = task.m_SliceInfo.size() < 256 ? mfxU32(256 - task.m_SliceInfo.size()) : 0;
     if (!freeSlisesMax)
@@ -6080,6 +6095,10 @@ mfxStatus MfxHwH264Encode::CorrectSliceInfoForsed(DdiTask & task)
     mfxU32 bigSlices[256] ={0};
     mfxU32 numBigSlices = 0;
     SliceStructInfo new_info[256] = {0};
+   
+    mfxU32  widthMB   =  task.m_yuv->Info.Width/16;
+    mfxU32  heightMB  =  task.m_yuv->Info.Height/16;
+
 
     // sort big slices
     for (mfxU32 i = 0; i < (mfxU32)task.m_SliceInfo.size(); i++)
@@ -6127,7 +6146,7 @@ mfxStatus MfxHwH264Encode::CorrectSliceInfoForsed(DdiTask & task)
             new_info[numSlises].cost = 0;
             for (mfxU32 n = new_info[numSlises].startMB; n < new_info[numSlises].startMB +  new_info[numSlises].numMB; n++)
             {
-                new_info[numSlises].cost += GetMBCost(task, n);
+                new_info[numSlises].cost += GetMBCost(task, n,  widthMB, heightMB, widthLa/16, heightLa/16);
             }
             numSlises ++;
             new_info[numSlises].startMB = new_info[numSlises - 1].startMB + new_info[numSlises - 1].numMB;
@@ -6135,7 +6154,7 @@ mfxStatus MfxHwH264Encode::CorrectSliceInfoForsed(DdiTask & task)
             new_info[numSlises].cost = 0;
             for (mfxU32 n = new_info[numSlises].startMB; n < new_info[numSlises].startMB +  new_info[numSlises].numMB; n++)
             {
-                new_info[numSlises].cost += GetMBCost(task, n);
+                new_info[numSlises].cost += GetMBCost(task, n, widthMB, heightMB, widthLa/16, heightLa/16);
             }
             numSlises ++;
         }
