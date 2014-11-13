@@ -238,6 +238,10 @@ int main(int argc, char *argv[])
         sts = MFX_ERR_UNKNOWN;  // should never happen, added mainly for KW
         break;
     }
+    else
+    {
+        pInSurf[nInStreamInd] = NULL;
+    }
     if( !bDoNotUpdateIn )
     {
         if (nInStreamInd == argbSurfaceIndex)

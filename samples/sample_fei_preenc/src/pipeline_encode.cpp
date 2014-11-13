@@ -1079,9 +1079,9 @@ mfxStatus CEncodingPipeline::Run() {
 
         //drop output data to output file
         //pCurrentTask->WriteBitstream();
-        if(!preENCCtr.DisableStatisticsOutput)
+        if(!preENCCtr.DisableStatisticsOutput && mbdata.MB)
             fwrite(mbdata.MB, sizeof(mbdata.MB[0])*mbdata.NumMBAlloc, 1, mbstatout);
-        if(!preENCCtr.DisableMVOutput)
+        if(!preENCCtr.DisableMVOutput && mvs.MB)
             fwrite(mvs.MB, sizeof(mvs.MB[0])*mvs.NumMBAlloc, 1, mvout);
         //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
@@ -1259,9 +1259,9 @@ mfxStatus CEncodingPipeline::Run() {
 
         //drop output data to output file
         //pCurrentTask->WriteBitstream();
-        if(!preENCCtr.DisableStatisticsOutput)
+        if(!preENCCtr.DisableStatisticsOutput && mbdata.MB)
             fwrite(mbdata.MB, sizeof(mbdata.MB[0])*mbdata.NumMBAlloc, 1, mbstatout);
-        if(!preENCCtr.DisableMVOutput)
+        if(!preENCCtr.DisableMVOutput && mvs.MB)
             fwrite(mvs.MB, sizeof(mvs.MB[0])*mvs.NumMBAlloc, 1, mvout);
 
 
