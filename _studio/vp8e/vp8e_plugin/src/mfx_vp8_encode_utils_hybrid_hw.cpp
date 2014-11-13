@@ -70,7 +70,7 @@ namespace MFX_VP8ENC
     {
         MFX_CHECK_NULL_PTR1(par);
 
-        mfxExtVP8CodingOption *   pExtVP8OptDst  = (mfxExtVP8CodingOption*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VP8_CODING_OPT); 
+        mfxExtVP8CodingOption *   pExtVP8OptDst  = (mfxExtVP8CodingOption*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VP8_CODING_OPTION); 
         mfxExtOpaqueSurfaceAlloc* opaqDst = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION); 
 
         par->mfx        = parSrc->mfx;

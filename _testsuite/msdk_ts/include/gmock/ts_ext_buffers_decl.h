@@ -21,7 +21,7 @@ EXTBUF(mfxExtVPPComposite           , MFX_EXTBUFF_VPP_COMPOSITE             )
 EXTBUF(mfxExtVPPVideoSignalInfo     , MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO     )
 EXTBUF(mfxExtEncoderROI             , MFX_EXTBUFF_ENCODER_ROI               )
 EXTBUF(mfxExtVPPDeinterlacing       , MFX_EXTBUFF_VPP_DEINTERLACING         )
-EXTBUF(mfxExtVP8CodingOption        , MFX_EXTBUFF_VP8_CODING_OPT         )
+EXTBUF(mfxExtVP8CodingOption        , MFX_EXTBUFF_VP8_CODING_OPTION         )
 EXTBUF(mfxExtLAControl              , MFX_EXTBUFF_LOOKAHEAD_CTRL            )
 // FEI
 EXTBUF(mfxExtFeiParam               , MFX_EXTBUFF_FEI_PARAM                 )

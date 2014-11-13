@@ -327,7 +327,7 @@ DEF_STRUCT_TRACE(mfxExtBuffer){
         PRINT_BUF(MFX_EXTBUFF_AVC_REFLIST_CTRL          , mfxExtAVCRefListCtrl          );
         
 #ifdef __MFXVP8_H__
-        PRINT_BUF(MFX_EXTBUFF_VP8_CODING_OPT         , mfxExtVP8CodingOption         );
+        PRINT_BUF(MFX_EXTBUFF_VP8_CODING_OPTION         , mfxExtVP8CodingOption         );
 #endif //__MFXVP8_H__
         default: break;
     }

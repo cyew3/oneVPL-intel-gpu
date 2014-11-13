@@ -784,7 +784,7 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
             SerializeStruct(VM_STRING("HEVC."), *(mfxExtCodingOptionHEVC*)m_pStruct);
             break;
         }
-        case MFX_EXTBUFF_VP8_CODING_OPT :{
+        case MFX_EXTBUFF_VP8_CODING_OPTION :{
             SerializeStruct(VM_STRING("VP8."), *(mfxExtVP8CodingOption*)m_pStruct);
             break;
         }

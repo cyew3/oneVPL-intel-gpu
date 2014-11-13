@@ -29,7 +29,7 @@ mfxStatus CheckExtendedBuffers (mfxVideoParam* par)
     mfxU32 supported_buffers[NUM_SUPPORTED_BUFFERS] = {
             //MFX_EXTBUFF_CODING_OPTION_SPSPPS,
             MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
-            MFX_EXTBUFF_VP8_CODING_OPT,
+            MFX_EXTBUFF_VP8_CODING_OPTION,
             MFX_EXTBUFF_ENCODER_ROI
     };
     mfxU32 num_supported = 0;
@@ -536,7 +536,7 @@ static void SetDefaultExCodingParameters(mfxExtVP8CodingOption*  par, mfxExtEnco
 
      pExtVP8Opt =(mfxExtVP8CodingOption*)GetExtBuffer(  par->ExtParam, 
                                                      par->NumExtParam,
-                                                     MFX_EXTBUFF_VP8_CODING_OPT);
+                                                     MFX_EXTBUFF_VP8_CODING_OPTION);
      if (pExtVP8Opt)
      {
          SetSupportedExCodingParameters(pExtVP8Opt);    
@@ -616,10 +616,10 @@ static void SetDefaultExCodingParameters(mfxExtVP8CodingOption*  par, mfxExtEnco
         mfxStatus temp_sts = MFX_ERR_NONE;
         pExtVP8OptSrc = (mfxExtVP8CodingOption*)GetExtBuffer(parSrc->ExtParam, 
                                                       parSrc->NumExtParam,
-                                                      MFX_EXTBUFF_VP8_CODING_OPT);
+                                                      MFX_EXTBUFF_VP8_CODING_OPTION);
         pExtVP8OptDst = (mfxExtVP8CodingOption*)GetExtBuffer(parDst->ExtParam, 
                                                       parDst->NumExtParam,
-                                                      MFX_EXTBUFF_VP8_CODING_OPT);
+                                                      MFX_EXTBUFF_VP8_CODING_OPTION);
 
         if (pExtVP8OptSrc && pExtVP8OptDst)
         {
@@ -747,7 +747,7 @@ mfxStatus CheckParametersAndSetDefault(mfxVideoParam*              pParamSrc,
         mfxStatus temp_sts = MFX_ERR_NONE;
         pExCodingVP8Src =(mfxExtVP8CodingOption*)GetExtBuffer(pParamSrc->ExtParam, 
             pParamSrc->NumExtParam,
-            MFX_EXTBUFF_VP8_CODING_OPT);
+            MFX_EXTBUFF_VP8_CODING_OPTION);
         if (pExCodingVP8Src)
         {
             memcpy(pExtVP8OptDst,pExCodingVP8Src,sizeof(mfxExtVP8CodingOption));
