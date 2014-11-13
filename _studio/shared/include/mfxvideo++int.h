@@ -563,17 +563,8 @@ public:
     mfxStatus DecodeFrameCheck(mfxBitstream *bs,
                                mfxFrameSurface1 *surface_work,
                                mfxFrameSurface1 **surface_out,
-                               MFX_ENTRY_POINT *pEntryPoint)
-    {
-        pEntryPoint = pEntryPoint;
-        return DecodeFrameCheck(bs, surface_work, surface_out);
-    }
-    virtual
-    mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out) = 0;
-    virtual
-    mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) = 0;
-    virtual
-    mfxStatus SetSkipMode(mfxSkipMode mode) {mode=mode;return MFX_ERR_UNSUPPORTED;};
+                               MFX_ENTRY_POINT *pEntryPoint) = 0;
+    virtual mfxStatus SetSkipMode(mfxSkipMode mode) {mode=mode;return MFX_ERR_UNSUPPORTED;};
     virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload) = 0;
 
 };

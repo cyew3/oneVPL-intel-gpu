@@ -28,6 +28,7 @@ class VideoDECODEVP9_HW : public VideoDECODE
 public:
 
     VideoDECODEVP9_HW(VideoCORE *pCore, mfxStatus *sts);
+    virtual ~VideoDECODEVP9_HW();
 
     static mfxStatus Query(VideoCORE *pCore, mfxVideoParam *pIn, mfxVideoParam *pOut);
     static mfxStatus QueryIOSurf(VideoCORE *pCore, mfxVideoParam *pPar, mfxFrameAllocRequest *pRequest);
@@ -41,9 +42,7 @@ public:
     virtual mfxStatus GetDecodeStat(mfxDecodeStat *pStat);
 
     virtual mfxStatus DecodeHeader(VideoCORE * core, mfxBitstream *bs, mfxVideoParam *params);
-    virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out);
     virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *pSurfaceWork, mfxFrameSurface1 **ppSurfaceOut, MFX_ENTRY_POINT *pEntryPoint);
-    virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *pSurfaceWork, mfxFrameSurface1 *pSurfaceOut);
 
     virtual mfxStatus GetUserData(mfxU8 *pUserData, mfxU32 *pSize, mfxU64 *pTimeStamp);
     virtual mfxStatus GetPayload(mfxU64 *pTimeStamp, mfxPayload *pPayload);
@@ -64,15 +63,15 @@ protected:
     mfxStatus GetOutputSurface(mfxFrameSurface1 **surface_out, mfxFrameSurface1 *surface_work, UMC::FrameMemID index);
 
 private:
-    bool                    m_is_initialized;
+    bool                    m_isInit;
     bool                    m_is_software_buffer;
     VideoCORE*              m_core;
     eMFXPlatform            m_platform;
 
-    mfxVideoParamWrapper    m_on_init_video_params,
-                            m_video_params;
-    mfxU32                  m_init_w,
-                            m_init_h;
+
+    mfxVideoParamWrapper    m_vInitPar;
+    mfxVideoParamWrapper    m_vPar;
+
     mfxU32                  m_num_output_frames;
     mfxF64                  m_in_framerate;
     mfxU16                  m_frameOrder;
@@ -81,7 +80,6 @@ private:
 
     mfxU32                  m_index;
     std::auto_ptr<mfx_UMC_FrameAllocator> m_FrameAllocator;
-
 
     mfxFrameAllocResponse   m_response;
     mfxDecodeStat           m_stat;

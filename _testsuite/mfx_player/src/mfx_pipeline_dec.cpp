@@ -1308,6 +1308,12 @@ mfxStatus MFXDecPipeline::DecodeHeader()
                 }
             }
 
+            if (m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_VP9)
+            {
+                m_components[eDEC].m_params.mfx.FrameInfo.Width = m_inParams.FrameInfo.Width;
+                m_components[eDEC].m_params.mfx.FrameInfo.Height = m_inParams.FrameInfo.Height;
+            }
+
             break;
         }
 

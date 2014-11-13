@@ -498,6 +498,15 @@ MediaDataEx * NALUnitSplitter::GetNalUnits(MediaData * pSource)
     pMediaDataEx->offsets[1] = (Ipp32s)out->GetDataSize();
     pMediaDataEx->count = 1;
     pMediaDataEx->index = 0;
+
+    /*static int k = 0;
+    if (k)
+    {
+        static FILE  * fl = fopen("f:\\out.avc", "wb");
+        fwrite(start_code_prefix, 4, 1, fl);
+        fwrite(out->GetDataPointer(), out->GetDataSize(), 1, fl);
+    }*/
+
     return out;
 }
 

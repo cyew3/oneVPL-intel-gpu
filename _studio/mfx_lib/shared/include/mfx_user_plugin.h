@@ -54,7 +54,6 @@ public:
     mfxStatus GetDecodeStat(mfxDecodeStat *stat) ;
     mfxStatus GetVPPStat(mfxVPPStat *stat) ;
     mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, MFX_ENTRY_POINT * ep) ;
-    mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) ;
     mfxStatus SetSkipMode(mfxSkipMode mode) ;
     mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload) ;
     
@@ -147,16 +146,7 @@ protected:
             MFX_ENTRY_POINT *pEntryPoint) {
             return m_plg->DecodeFrameCheck(bs, surface_work, surface_out, pEntryPoint);
         }
-        
-        mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out) {
-            bs;
-            surface_work;
-            surface_out;
-            return MFX_ERR_NONE;
-        }
-        mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) {
-            return m_plg->DecodeFrame(bs, surface_work, surface_out);
-        }
+
         mfxStatus SetSkipMode(mfxSkipMode mode) {return m_plg->SetSkipMode(mode);} 
         mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload) {return m_plg->GetPayload(ts, payload);}
         //vpp

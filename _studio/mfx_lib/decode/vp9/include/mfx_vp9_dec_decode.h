@@ -55,7 +55,6 @@ typedef struct _THREAD_TASK_INFO_VP9
     mfxFrameSurface1 *m_p_surface_work;
     mfxFrameSurface1 *m_p_surface_out;
 
-    vm_mutex  *m_p_mutex;
     mfxU8     *m_p_bitstream;
 
     mfx_UMC_FrameAllocator *m_p_mfx_umc_frame_allocator;
@@ -88,9 +87,7 @@ class VideoDECODEVP9: public VideoDECODE
 
         virtual mfxStatus GetVideoParam(mfxVideoParam *pPar);
         virtual mfxStatus GetDecodeStat(mfxDecodeStat *pStat);
-        virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out);
         virtual mfxStatus DecodeFrameCheck(mfxBitstream *pBs, mfxFrameSurface1 *pSurfaceWork, mfxFrameSurface1 **ppSurfaceOut, MFX_ENTRY_POINT *pEntryPoint);
-        virtual mfxStatus DecodeFrame(mfxBitstream *pBs, mfxFrameSurface1 *pSurfaceWork, mfxFrameSurface1 *pSurfaceOut);
         virtual mfxStatus GetUserData(mfxU8 *pUserData, mfxU32 *pSize, mfxU64 *pTimeStamp);
         virtual mfxStatus GetPayload(mfxU64 *pTimeStamp, mfxPayload *pPayload);
         virtual mfxStatus SetSkipMode(mfxSkipMode mode);
@@ -112,47 +109,33 @@ class VideoDECODEVP9: public VideoDECODE
 
         bool IsSameVideoParam(mfxVideoParam *pNewPar, mfxVideoParam *pOldPar);
 
-        mfx_UMC_MemAllocator m_memoryAllocator;
+        std::auto_ptr<mfx_UMC_FrameAllocator> m_FrameAllocator;
 
-        std::auto_ptr<mfx_UMC_FrameAllocator> m_p_frame_allocator;
-
-        mfxVideoParamWrapper m_on_init_video_params;
-        mfxVideoParamWrapper m_video_params;
+        mfxVideoParamWrapper    m_vInitPar;
 
         VideoCORE *m_core;
 
-        bool m_is_initialized;
-        bool m_is_image_available;
+        bool m_isInit;
         bool m_is_opaque_memory;
 
-        mfxU32 m_curr_decode_index;
-        mfxU32 m_curr_display_index;
         mfxU32 m_num_output_frames;
 
         mfxF64 m_in_framerate;
-
-        vm_mutex  m_mutex;
 
         mfxFrameAllocResponse m_response;
         mfxFrameAllocResponse m_opaque_response;
 
         mfxFrameAllocRequest m_request;
 
-        mfxDecodeStat m_decode_stat;
+        mfxDecodeStat m_stat;
         eMFXPlatform m_platform;
-
-        UMC::FrameMemID m_mid[4];
+        VP9BaseFrameInfo m_frameInfo;
 
         UMC::Mutex m_mGuard;
 
         mfxBitstream m_bs;
 
-        UMC::VideoAccelerator *m_p_video_accelerator;
-
         mfxHDL m_vpx_codec;
-
-        mfxU32 m_init_w;
-        mfxU32 m_init_h;
 };
 
 #endif // MFX_ENABLE_VP8_VIDEO_DECODE

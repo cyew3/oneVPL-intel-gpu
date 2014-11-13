@@ -407,9 +407,6 @@ mfxStatus VideoUSERPlugin::GetDecodeStat(mfxDecodeStat *stat) {
 mfxStatus VideoUSERPlugin::GetVPPStat(mfxVPPStat *stat) {
     return MFX_ERR_NONE;
 }
-mfxStatus VideoUSERPlugin::DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) {
-    return MFX_ERR_NONE;
-}
 mfxStatus VideoUSERPlugin::SetSkipMode(mfxSkipMode mode) {
     return MFX_ERR_NONE;
 }
