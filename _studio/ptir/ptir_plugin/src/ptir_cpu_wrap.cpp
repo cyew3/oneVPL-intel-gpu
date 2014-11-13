@@ -27,13 +27,13 @@ PTIR_ProcessorCPU::PTIR_ProcessorCPU(mfxCoreInterface* mfxCore, frameSupplier* _
 
     uiCur = 1;
     uiBufferCount = 0;
-    patternFound = FALSE;
+    patternFound = false;
     uiDispatch = 0;
     //uiStart = 1;
     mainPattern.blendedCount = 0.0;
     mainPattern.uiIFlush = 0;
     mainPattern.uiPFlush = 0;
-    mainPattern.uiOverrideHalfFrameRate = FALSE;
+    mainPattern.uiOverrideHalfFrameRate = false;
     mainPattern.uiCountFullyInterlacedBuffers = 0;
     mainPattern.uiInterlacedFramesNum = 0;
 
@@ -368,11 +368,11 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                                 if (uiisInterlaced != 3)
                                 {
                                     frmBuffer[i + 1]->frmProperties.timestamp = frmBuffer[i]->frmProperties.timestamp;
-                                    frmBuffer[i]->frmProperties.drop = FALSE;
+                                    frmBuffer[i]->frmProperties.drop = false;
                                 }
                                 else
                                 {
-                                    frmBuffer[i]->frmProperties.candidate = TRUE;
+                                    frmBuffer[i]->frmProperties.candidate = true;
                                     Update_Frame_Buffer(frmBuffer, i, dTimePerFrame, uiisInterlaced, uiInterlaceParity, bFullFrameRate, frmIn, &fqIn);
                                 }
                             }
@@ -415,7 +415,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                             else
                             {
                                 uiBufferCount = 0;
-                                frmBuffer[0]->frmProperties.drop = FALSE;
+                                frmBuffer[0]->frmProperties.drop = false;
                             }
                             uiCur--;
                         }
@@ -442,7 +442,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
             Frame* frmOut = &frmIO[LASTFRAME];
 
             uiLastFrameNumber = frmIn->frmProperties.tindex;
-            ferror = FALSE;
+            ferror = false;
             TrimBorders(&frmIn->plaY, &frmOut->plaY);
             TrimBorders(&frmIn->plaU, &frmOut->plaU);
             TrimBorders(&frmIn->plaV, &frmOut->plaV);
@@ -498,7 +498,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                 Frame* frmOut = &frmIO[LASTFRAME];
 
                 uiLastFrameNumber = frmIn->frmProperties.tindex;
-                ferror = FALSE;
+                ferror = false;
                 TrimBorders(&frmIn->plaY, &frmOut->plaY);
                 TrimBorders(&frmIn->plaU, &frmOut->plaU);
                 TrimBorders(&frmIn->plaV, &frmOut->plaV);

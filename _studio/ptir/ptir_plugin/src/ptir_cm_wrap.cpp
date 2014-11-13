@@ -14,6 +14,9 @@ File Name: ptir_vpp_plugin.cpp
 #include "../pacm/utilities.h"
 #include "mfxvideo++int.h"
 
+#define max(x, y) (((x) > (y)) ? (x) : (y))
+#define min(x, y) (((x) < (y)) ? (x) : (y))
+
 #define GPUPATH
 
 DeinterlaceFilter* pdeinterlaceFilter;

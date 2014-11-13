@@ -11,6 +11,9 @@ File Name: utilities.cpp
 \* ****************************************************************************** */
 #include "utilities.h"
 
+#define max(x, y) (((x) > (y)) ? (x) : (y))
+#define min(x, y) (((x) < (y)) ? (x) : (y))
+
 extern DeinterlaceFilter *pdeinterlaceFilter;
 
 static void CopyFrame(Frame *pSrc, Frame* pDst)
@@ -1298,7 +1301,7 @@ int OutputFrameToDiskCM(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int *
     ferror = false;
     void* ucMem = malloc(frmIn->uiSize);
     //pdeinterlaceFilter->ReadRAWI420FromGPUNV12(frmIn, ucMem);
-    ferror = WriteFile(hOut, ucMem, frmOut->uiSize, uiBytesRead, NULL);
+    //ferror = WriteFile(hOut, ucMem, frmOut->uiSize, uiBytesRead, NULL);
     free(ucMem);
 
     return ferror;

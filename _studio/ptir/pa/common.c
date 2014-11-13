@@ -11,6 +11,9 @@ File Name: common.c
 \* ****************************************************************************** */
 #include "api.h"
 
+#define max(x, y) (((x) > (y)) ? (x) : (y))
+#define min(x, y) (((x) < (y)) ? (x) : (y))
+
 #if defined(_WIN32) || defined(_WIN64)
 void PrintOutputStats(HANDLE hStd,
                               CONSOLE_SCREEN_BUFFER_INFO sbInfo, 
@@ -420,6 +423,7 @@ void Update_Frame_Buffer(Frame** frmBuffer, unsigned int frameIndex, double dTim
     frmBuffer[frameIndex]->frmProperties.candidate = FALSE;
 }
 
+#if defined(_WIN32) || defined(_WIN64)
 int OutputFrameToDisk(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int * uiLastFrameNumber, DWORD *uiBytesRead)
 {
     int ferror;
@@ -433,6 +437,7 @@ int OutputFrameToDisk(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int * u
 
     return ferror;
 }
+#endif
 
 void PTIR_PutFrame(unsigned char *pucIO, PTIRSystemBuffer *SysBuffer)
 {

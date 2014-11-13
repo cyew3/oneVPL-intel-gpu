@@ -46,11 +46,9 @@ File Name: common.h
 #define FALSE 0
 #endif
 #include <smmintrin.h>
-typedef long long __int64;
-typedef unsigned char BYTE;
+//typedef long long __int64;
+//typedef unsigned char BYTE;
 
-#define max(x, y) (((x) > (y)) ? (x) : (y))
-#define min(x, y) (((x) < (y)) ? (x) : (y))
 #define ALIGN_DECL(X) __attribute__ ((aligned(X)))
 #endif
 
@@ -277,7 +275,9 @@ extern "C" {
     void   Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight);
     double Calculate_Resulting_timestamps(Frame** frmBuffer, unsigned int uiDispatch, unsigned int uiCur, double dBaseTime, unsigned int *uiNumFramesToDispatch, unsigned int PatternType);
     void   Update_Frame_Buffer(Frame** frmBuffer, unsigned int frameIndex, double dTimePerFrame, unsigned int uiisInterlaced, unsigned int uiInterlaceParity, unsigned int bFullFrameRate, Frame* frmIn, FrameQueue *fqIn);
+#if defined(_WIN32) || defined(_WIN64)
     int    OutputFrameToDisk(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int * uiLastFrameNumber, DWORD *uiBytesRead);
+#endif
 
 
     /*PTIR Complete Functions*/
