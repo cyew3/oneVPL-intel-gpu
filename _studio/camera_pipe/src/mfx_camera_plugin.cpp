@@ -501,10 +501,14 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             //need to check carefully, it is not right for cases when app gives padded surface.
             if(!padding)
             {
-                if(out->vpp.Out.Width != out->vpp.In.Width &&
-                   out->vpp.Out.Width != out->vpp.In.CropW &&
-                   out->vpp.Out.CropW != out->vpp.In.Width &&
-                   out->vpp.Out.CropW != out->vpp.In.CropW)
+                mfxU32 InWidth  = out->vpp.In.CropW;
+                mfxU32 InHeight = out->vpp.In.CropH;
+
+                mfxU32 OutWidth  = out->vpp.Out.CropW;
+                mfxU32 OutHeight = out->vpp.Out.CropH;
+
+                if(InWidth  != OutWidth &&
+                   InHeight != OutHeight)
                 {
                     out->vpp.Out.Width = 0;
                     out->vpp.In.Width  = 0;
@@ -553,10 +557,14 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             //need to check carefully, it is not right for cases when app gives padded surface.
             if(!padding)
             {
-                if(out->vpp.Out.Height != (out->vpp.In.Height) &&
-                   out->vpp.Out.Height != (out->vpp.In.CropH)  &&
-                   out->vpp.Out.CropH  != (out->vpp.In.Height) &&
-                   out->vpp.Out.CropH  != (out->vpp.In.CropH))
+                mfxU32 InWidth  = out->vpp.In.CropW;
+                mfxU32 InHeight = out->vpp.In.CropH;
+
+                mfxU32 OutWidth  = out->vpp.Out.CropW;
+                mfxU32 OutHeight = out->vpp.Out.CropH;
+
+                if(InWidth  != OutWidth &&
+                   InHeight != OutHeight)
                 {
                     out->vpp.Out.Height = 0;
                     out->vpp.In.Height  = 0;
@@ -1088,7 +1096,9 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
     frameSizeExtra.tileNum           = m_nTiles;
     frameSizeExtra.tileOffsets       = new CameraTileOffset[m_nTiles];
     frameSizeExtra.TileWidth         = newParam.vpp.In.CropW;
-    frameSizeExtra.TileHeight        = ( ( newParam.vpp.In.CropH / m_nTiles ) + 31 ) &~ 0x1F;
+    frameSizeExtra.TileHeight        = ((((newParam.vpp.In.CropH)/ m_nTiles ) + 1)/2)*2;
+    if ( m_nTiles > 1 )
+        frameSizeExtra.TileHeight = ((newParam.vpp.In.CropH)/ m_nTiles + 31 ) &~ 0x1F;
     frameSizeExtra.TileHeightPadded  = frameSizeExtra.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
     frameSizeExtra.BitDepth          = newParam.vpp.In.BitDepthLuma;
     frameSizeExtra.TileInfo          = newParam.vpp.In;
@@ -1098,10 +1108,11 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
         {
             // In case of several tiles, last tile must be aligned to the original frame bottom
             frameSizeExtra.tileOffsets[i].TileOffset = newParam.vpp.In.CropH - frameSizeExtra.TileHeight;
+            frameSizeExtra.tileOffsets[i].TileOffset = ((frameSizeExtra.tileOffsets[i].TileOffset + 1)/2)*2;
         }
         else
         {
-            frameSizeExtra.tileOffsets[i].TileOffset = ( newParam.vpp.In.CropH / m_nTiles ) * i;
+            frameSizeExtra.tileOffsets[i].TileOffset = ( frameSizeExtra.TileHeight ) * i;
         }
     }
 

@@ -546,7 +546,9 @@ void CmContext::CreateCmTasks()
         if (!m_caps.bNoPadding)
             CreateTask(CAM_PIPE_TASK_ARRAY(task_Padding, i));
 
-        CreateTask(CAM_PIPE_TASK_ARRAY(task_BayerCorrection, i));
+        if ( m_caps.bBlackLevelCorrection || m_caps.bWhiteBalance )
+            CreateTask(CAM_PIPE_TASK_ARRAY(task_BayerCorrection, i));
+
         CreateTask(CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck, i));
 
         for (int j = 0; j < CAM_PIPE_KERNEL_SPLIT; j++)
@@ -1239,7 +1241,8 @@ void CmContext::Reset(
     {
         if (CAM_PIPE_TASK_ARRAY(task_FwGamma, i))
             DestroyTask(CAM_PIPE_TASK_ARRAY(task_FwGamma, i));
-
+        if (CAM_PIPE_TASK_ARRAY(task_BayerCorrection, i))
+            DestroyTask(CAM_PIPE_TASK_ARRAY(task_BayerCorrection, i));
         if (CAM_PIPE_TASK_ARRAY(task_ARGB, i))
             DestroyTask(CAM_PIPE_TASK_ARRAY(task_ARGB, i));
     }
@@ -1258,17 +1261,14 @@ void CmContext::Reset(
     kernel_FwGamma1        = 0;
     kernel_BayerCorrection = 0;
 
-    CreateTask(CAM_PIPE_TASK_ARRAY(task_BayerCorrection, i));
 
     if (pCaps->bForwardGammaCorrection || pCaps->bColorConversionMatrix)
         CreateTask(CAM_PIPE_TASK_ARRAY(task_FwGamma, i));
 
-    if (pCaps->bOutToARGB16 || ( !pCaps->bForwardGammaCorrection ) || pCaps->bColorConversionMatrix)
-        CreateTask(CAM_PIPE_TASK_ARRAY(task_ARGB, i));
-
     if (pCaps->bBlackLevelCorrection || pCaps->bWhiteBalance || pCaps->bVignetteCorrection)
     {
         kernel_BayerCorrection = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(BAYER_CORRECTION), NULL);
+        CreateTask(CAM_PIPE_TASK_ARRAY(task_BayerCorrection, i));
     }
 
     if (pCaps->bForwardGammaCorrection && !pCaps->bColorConversionMatrix)
@@ -1322,10 +1322,12 @@ void CmContext::Reset(
     if (pCaps->bOutToARGB16)
     {
         kernel_ARGB = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(ARGB16), NULL);
+        CreateTask(CAM_PIPE_TASK_ARRAY(task_ARGB, i));
     }
     else if (bNeedConversionToRGB)
     {
         kernel_ARGB = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(ARGB8), NULL);
+        CreateTask(CAM_PIPE_TASK_ARRAY(task_ARGB, i));
     }
 
     if ((video.vpp.In.BitDepthLuma | m_video.BitDepth) > 16)

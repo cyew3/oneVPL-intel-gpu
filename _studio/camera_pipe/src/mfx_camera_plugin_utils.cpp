@@ -339,7 +339,7 @@ mfxStatus MFXCamera_Plugin::ReallocateInternalSurfaces(mfxVideoParam &newParam, 
     MFX_CHECK_STS(sts);
 
     request.Info.Width  = (mfxU16)paddedFrameWidth;
-    request.Info.Height = (mfxU16)frameSizeExtra.TileHeight;
+    request.Info.Height = (mfxU16)frameSizeExtra.TileHeightPadded;
     request.Info.FourCC = CM_SURFACE_FORMAT_A8;
     frNum = 2;
     request.NumFrameMin = request.NumFrameSuggested = (mfxU16)(frNum);
@@ -580,15 +580,15 @@ mfxStatus MFXCamera_Plugin::SetExternalSurfaces(AsyncParams *pParam)
     { // need to do padding
         if (m_Caps.InputMemoryOperationMode == MEM_GPUSHARED)
         {
-            mfxU32 inWidth  = (mfxU32)surfIn->Info.Width;
-            mfxU32 inHeight = (mfxU32)surfIn->Info.Height;
+            mfxU32 inWidth  = (mfxU32)surfIn->Info.CropW;
+            mfxU32 inHeight = (mfxU32)surfIn->Info.CropH;
             mfxU32 allocSize, allocPitch;
 
             CAMERA_DEBUG_LOG("SetExternalSurfaces Non Padded: m_cmDevice =%p \n", m_cmDevice);
             m_cmDevice->GetSurface2DInfo(sizeof(mfxU16)*inWidth, inHeight, CM_SURFACE_FORMAT_A8, allocPitch, allocSize);
             CAMERA_DEBUG_LOG("SetExternalSurfaces Non Padded: inPitch=%d allocPitch=%d inWidth=%d inHeight=%d \n", inPitch, allocPitch,inWidth, inHeight);
 
-            if (1 == m_nTiles && inPitch == allocPitch && !((mfxU64)surfIn->Data.Y16 & 0xFFF))
+            if (! surfIn->Info.CropX && ! surfIn->Info.CropY && 1 == m_nTiles && inPitch == allocPitch && !((mfxU64)surfIn->Data.Y16 & 0xFFF))
             {
                 pParam->inSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, allocPitch,  inHeight, CM_SURFACE_FORMAT_A8, (void *)surfIn->Data.Y16);
             }
@@ -898,14 +898,16 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
 
         if (m_Caps.InputMemoryOperationMode == MEM_GPUSHARED && !pParam->inSurf2DUP)
         {
-            CAMERA_DEBUG_LOG("CreateEnqueueTasks EnqueueCopyCPUToGPU Width*2=%d Pitch=%d device %p \n", pParam->surf_in->Info.Width*2, pParam->surf_in->Data.Pitch, m_cmDevice);
-            if (1 == m_nTiles && pParam->surf_in->Info.Width*2 == pParam->surf_in->Data.Pitch)
+            CAMERA_DEBUG_LOG("CreateEnqueueTasks EnqueueCopyCPUToGPU Width*2=%d Pitch=%d device %p \n", pParam->surf_in->Info.CropW*2, pParam->surf_in->Data.Pitch, m_cmDevice);
+            if (! m_FrameSizeExtra.TileInfo.CropX && ! m_FrameSizeExtra.TileInfo.CropY &&  1 == m_nTiles && pParam->surf_in->Info.CropW*2 == pParam->surf_in->Data.Pitch)
             {
                 m_cmCtx->EnqueueCopyCPUToGPU(m_cmSurfIn, pParam->surf_in->Data.Y16);
             }
             else
             {
-                m_cmCtx->EnqueueCopyCPUToGPU(m_cmSurfIn, pParam->surf_in->Data.Y16 + in_shift, pParam->surf_in->Data.Pitch);
+                m_cmCtx->EnqueueCopyCPUToGPU(m_cmSurfIn,
+                                             (pParam->surf_in->Data.Y16 + in_shift + m_FrameSizeExtra.TileInfo.CropX +  m_FrameSizeExtra.TileInfo.CropY * ( pParam->surf_in->Data.Pitch / 2 )),
+                                             pParam->surf_in->Data.Pitch);
             }
         }
 
