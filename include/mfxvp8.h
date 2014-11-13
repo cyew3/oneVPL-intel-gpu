@@ -50,7 +50,7 @@ enum {
 
 /* Extended Buffer Ids */
 enum {
-    MFX_EXTBUFF_VP8_CODING_OPT =   MFX_MAKEFOURCC('V','P','8','E'),
+    MFX_EXTBUFF_VP8_CODING_OPTION =   MFX_MAKEFOURCC('V','P','8','E'),
 };
 
 typedef struct { 
