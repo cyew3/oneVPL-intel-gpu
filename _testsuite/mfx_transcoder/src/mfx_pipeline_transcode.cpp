@@ -313,6 +313,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(MaxQPB,                 OPT_UINT_8,     "max QP for B-frames, 0 = default"),
         HANDLE_EXT_OPTION2(DisableVUI,             OPT_UINT_16,    ""),
         HANDLE_EXT_OPTION2(BufferingPeriodSEI,     OPT_UINT_16,    ""),
+        HANDLE_EXT_OPTION2(UseRawRef,              OPT_TRI_STATE,  "on|off"),
 
         // mfxExtCodingOption3
         HANDLE_EXT_OPTION3(NumSliceI,              OPT_UINT_16,    ""),
