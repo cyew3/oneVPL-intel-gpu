@@ -2522,8 +2522,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                                 nextTask->m_cqpValue[0] = nextTask->m_cqpValue[0] + 1;
                                 nextTask->m_cqpValue[1] = nextTask->m_cqpValue[0];
                             }
-                            else
-                                MFX_ERR_UNDEFINED_BEHAVIOR;
                        }
                         curTask = nextTask;
                     }
