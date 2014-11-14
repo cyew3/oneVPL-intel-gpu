@@ -259,7 +259,6 @@ public:
 
     virtual Status Init(BaseCodecParams *pInit);
     virtual void Close();
-    virtual bool GetFrameToDisplay(MediaData *dst, bool force);
     void SetBufferedFramesNumber(Ipp32u buffered);
     virtual Status AddSource(MediaData * pSource, MediaData *dst);
 

@@ -76,7 +76,7 @@ protected:
     bool IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * oldPar, eMFXHWType type);
 
     void FillOutputSurface(mfxFrameSurface1 **surface_out, mfxFrameSurface1 *surface_work, UMC::H264DecoderFrame * pFrame);
-    UMC::H264DecoderFrame * GetFrameToDisplay(UMC::VideoData * dst, bool force);
+    UMC::H264DecoderFrame * GetFrameToDisplay(bool force);
 
     mfxStatus DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264DecoderFrame * pFrame = 0);
 

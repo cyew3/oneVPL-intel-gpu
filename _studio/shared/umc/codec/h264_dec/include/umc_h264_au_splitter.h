@@ -84,6 +84,7 @@ public:
 
     H264DecoderFrame * m_frame;
     bool m_isCompleted;
+    bool m_isFull;
 
     SeiPayloadArray  m_payloads;
 
@@ -115,6 +116,9 @@ public:
 
     size_t GetLayersCount() const;
     SetOfSlices * GetLayer(size_t pos);
+    SetOfSlices * GetLastLayer();
+
+    void CompleteLastLayer();
 
     Ipp32s FindLayerByDependency(Ipp32s dependency);
 

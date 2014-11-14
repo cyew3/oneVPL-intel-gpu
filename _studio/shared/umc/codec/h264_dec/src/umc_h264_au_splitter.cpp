@@ -120,12 +120,14 @@ void SeiPayloadArray::AddPayload(H264SEIPayLoad* payload)
 SetOfSlices::SetOfSlices()
     : m_frame(0)
     , m_isCompleted(false)
+    , m_isFull(false)
 {
 }
 
 SetOfSlices::SetOfSlices(const SetOfSlices& set)
     : m_frame(set.m_frame)
     , m_isCompleted(set.m_isCompleted)
+    , m_isFull(set.m_isFull)
     , m_payloads(set.m_payloads)
     , m_pSliceQueue(set.m_pSliceQueue)
 {
@@ -194,6 +196,7 @@ void SetOfSlices::Reset()
 {
     m_frame = 0;
     m_isCompleted = false;
+    m_isFull = false;
     m_pSliceQueue.clear();
     m_payloads.Release();
 }
@@ -341,6 +344,14 @@ Ipp32s AccessUnit::FindLayerByDependency(Ipp32s dependency)
     return -1;
 }
 
+SetOfSlices * AccessUnit::GetLastLayer()
+{
+    if (!GetLayersCount())
+        return 0;
+
+    return GetLayer(GetLayersCount() - 1);
+}
+
 SetOfSlices * AccessUnit::GetLayer(size_t pos)
 {
     if (pos >= m_layers.size())
@@ -371,6 +382,12 @@ bool AccessUnit::IsFullAU() const
     return m_isFullAU;
 }
 
+void AccessUnit::CompleteLastLayer()
+{
+    if (GetLayersCount())
+        GetLastLayer()->m_isFull = true;
+}
+
 bool AccessUnit::AddSlice(H264Slice * slice)
 {
     if (!slice)
@@ -388,7 +405,7 @@ bool AccessUnit::AddSlice(H264Slice * slice)
     {
         if (GetLayersCount())
         {
-            SetOfSlices * setOfSlices = GetLayer(GetLayersCount() - 1);
+            SetOfSlices * setOfSlices = GetLastLayer();
             if (setOfSlices->GetSlice(0)->GetSliceHeader()->nal_ext.svc.dependency_id > slice->GetSliceHeader()->nal_ext.svc.dependency_id)
             {
                 m_isFullAU = true;
@@ -401,7 +418,7 @@ bool AccessUnit::AddSlice(H264Slice * slice)
     }
 
     H264Slice * lastSlice = setOfSlices->GetSlice(setOfSlices->GetSliceCount() - 1);
-    if (!IsPictureTheSame(lastSlice, slice))
+    if (!IsPictureTheSame(lastSlice, slice) || setOfSlices->m_isFull)
     {
         m_isFullAU = true;
         return false;

@@ -496,7 +496,7 @@ public:
 
     Status GetInfo(VideoDecoderParams *lpInfo);
 
-    virtual Status AddSource(MediaData * pSource, MediaData *dst);
+    virtual Status AddSource(MediaData * pSource);
 
     Status ProcessNalUnit(MediaDataEx *nalUnit);
 
@@ -511,7 +511,6 @@ public:
     }
 
     virtual H264DecoderFrame *GetFrameToDisplayInternal(bool force);
-    virtual bool GetFrameToDisplay(MediaData *dst, bool force);
     Status  SetParams(BaseCodecParams* params);
 
     Status GetUserData(MediaData * pUD);
@@ -531,10 +530,10 @@ public:
         return m_pTaskBroker;
     }
 
-    virtual Status RunDecoding_1();
+    virtual Status RunDecoding();
     virtual H264DecoderFrame * FindSurface(FrameMemID id);
 
-    void PostProcessDisplayFrame(MediaData *dst, H264DecoderFrame *pFrame);
+    void PostProcessDisplayFrame(H264DecoderFrame *pFrame);
 
     virtual void AfterErrorRestore();
 
@@ -563,8 +562,6 @@ protected:
 
     virtual void CreateTaskBroker();
 
-    void InitColorConverter(H264DecoderFrame *source, VideoData * videoData, Ipp8u force_field);
-
     void AddSliceToFrame(H264DecoderFrame *pFrame, H264Slice *pSlice);
 
     // Initialize just allocated frame with slice parameters
@@ -583,7 +580,7 @@ protected:
 
     virtual void AddFakeReferenceFrame(H264Slice * pSlice);
 
-    Status AddOneFrame(MediaData * pSource, MediaData *dst);
+    Status AddOneFrame(MediaData * pSource);
 
     virtual Status AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat color_format);
 

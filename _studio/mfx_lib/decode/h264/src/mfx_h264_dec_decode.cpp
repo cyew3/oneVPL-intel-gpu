@@ -1273,7 +1273,6 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     try
     {
-        UMC::VideoData dst;
         bool force = false;
 
         UMC::Status umcFrameRes = UMC::UMC_OK;
@@ -1289,7 +1288,7 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             }
             else
             {
-                umcRes = m_pH264VideoDecoder->AddSource(bs ? &src : 0, &dst);
+                umcRes = m_pH264VideoDecoder->AddSource(bs ? &src : 0);
             }
 
             umcAddSourceRes = umcFrameRes = umcRes;
@@ -1349,12 +1348,12 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
                 return sts;
 
-            umcRes = m_pH264VideoDecoder->RunDecoding_1();
+            umcRes = m_pH264VideoDecoder->RunDecoding();
 
             if (m_vInitPar.mfx.DecodedOrder)
                 force = true;
 
-            UMC::H264DecoderFrame *pFrame = GetFrameToDisplay(&dst, force);
+            UMC::H264DecoderFrame *pFrame = GetFrameToDisplay(force);
 
             UMC::AutomaticUMCMutex guard(m_mGuard);
 
@@ -1717,7 +1716,7 @@ mfxStatus VideoDECODEH264::GetPayload( mfxU64 *ts, mfxPayload *payload )
     return MFX_ERR_NONE;
 }
 
-UMC::H264DecoderFrame * VideoDECODEH264::GetFrameToDisplay(UMC::VideoData * dst, bool force)
+UMC::H264DecoderFrame * VideoDECODEH264::GetFrameToDisplay(bool force)
 {
     UMC::H264DecoderFrame * pFrame = 0;
     do
@@ -1728,7 +1727,7 @@ UMC::H264DecoderFrame * VideoDECODEH264::GetFrameToDisplay(UMC::VideoData * dst,
             break;
         }
 
-        m_pH264VideoDecoder->PostProcessDisplayFrame(dst, pFrame);
+        m_pH264VideoDecoder->PostProcessDisplayFrame(pFrame);
 
         if (pFrame->IsSkipped())
         {

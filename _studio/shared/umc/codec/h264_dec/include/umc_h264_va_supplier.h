@@ -44,8 +44,6 @@ public:
 
     virtual void Reset();
 
-    virtual bool GetFrameToDisplay(MediaData *dst, bool force);
-
     void SetBufferedFramesNumber(Ipp32u buffered);
 
     virtual Status DecodeHeaders(MediaDataEx *nalUnit);

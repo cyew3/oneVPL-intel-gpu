@@ -3375,59 +3375,8 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
         }
     }   // while
 
-//    return view.pDPB->IsDisposableExist() ? UMC_OK : UMC_ERR_NOT_ENOUGH_DATA;
-//    return view.GetDPBList(maxDId-dId)->IsDisposableExist() ? UMC_OK : UMC_ERR_NOT_ENOUGH_DATA;
     return UMC_OK;
 }   // ProcessFrameNumGap
-
-bool TaskSupplier::GetFrameToDisplay(MediaData *dst, bool force)
-{
-    // Perform output color conversion and video effects, if we didn't
-    // already write our output to the application's buffer.
-    VideoData *pVData = DynamicCast<VideoData> (dst);
-    if (!pVData)
-        return false;
-
-    m_pLastDisplayed = 0;
-
-    H264DecoderFrame * pFrame = 0;
-
-    do
-    {
-        pFrame = GetFrameToDisplayInternal(force);
-        if (!pFrame || !pFrame->IsDecoded())
-        {
-            return false;
-        }
-
-        PostProcessDisplayFrame(dst, pFrame);
-
-        if (pFrame->IsSkipped())
-        {
-            SetFrameDisplayed(pFrame->PicOrderCnt(0, 3));
-        }
-    } while (pFrame->IsSkipped());
-
-    m_pLastDisplayed = pFrame;
-    pVData->SetInvalid(pFrame->GetError());
-
-    VideoData data;
-
-    InitColorConverter(pFrame, &data, 0);
-
-    if (m_pPostProcessing->GetFrame(&data, pVData) != UMC_OK)
-    {
-        pFrame->setWasOutputted();
-        pFrame->setWasDisplayed();
-        return false;
-    }
-
-    pVData->SetDataSize(pVData->GetMappingSize());
-
-    pFrame->setWasOutputted();
-    pFrame->setWasDisplayed();
-    return true;
-}
 
 bool TaskSupplier::IsWantToShowFrame(bool force)
 {
@@ -3448,7 +3397,7 @@ bool TaskSupplier::IsWantToShowFrame(bool force)
     return false;
 }
 
-void TaskSupplier::PostProcessDisplayFrame(MediaData *dst, H264DecoderFrame *pFrame)
+void TaskSupplier::PostProcessDisplayFrame(H264DecoderFrame *pFrame)
 {
     if (!pFrame || pFrame->post_procces_complete)
         return;
@@ -3502,12 +3451,6 @@ void TaskSupplier::PostProcessDisplayFrame(MediaData *dst, H264DecoderFrame *pFr
 
     if (view.GetDPBList(0)->GetRecoveryFrameCnt() != -1)
         view.GetDPBList(0)->SetRecoveryFrameCnt(-1);
-
-    /*if (!CutPlanes(pFrame, m_Headers.GetSeqParamSet(m_CurrentSeqParamSet)))
-    {
-        m_pDecodedFramesList->DebugPrint();
-    }*/
-    dst->SetTime(pFrame->m_dFrameTime);
 }
 
 H264DecoderFrame *TaskSupplier::GetFrameToDisplayInternal(bool force)
@@ -4227,13 +4170,13 @@ Status TaskSupplier::CompleteDecodedFrames(H264DecoderFrame ** decoded)
     return existCompleted ? UMC_OK : UMC_ERR_NOT_ENOUGH_DATA;
 }
 
-Status TaskSupplier::AddSource(MediaData * pSource, MediaData *dst)
+Status TaskSupplier::AddSource(MediaData * pSource)
 {
     Status umcRes = UMC_OK;
 
     CompleteDecodedFrames(0);
 
-    umcRes = AddOneFrame(pSource, dst); // construct frame
+    umcRes = AddOneFrame(pSource); // construct frame
 
     if (UMC_ERR_NOT_ENOUGH_BUFFER == umcRes)
     {
@@ -4314,7 +4257,7 @@ Status TaskSupplier::ProcessNalUnit(MediaDataEx *nalUnit)
         umcRes = DecodeSEI(nalUnit);
         break;
     case NAL_UT_AUD:
-        umcRes = AddSlice(0, false);
+        m_accessUnit.CompleteLastLayer();
         break;
 
     case NAL_UT_DPA: //ignore it
@@ -4327,7 +4270,7 @@ Status TaskSupplier::ProcessNalUnit(MediaDataEx *nalUnit)
     case NAL_UT_END_OF_STREAM:
     case NAL_UT_END_OF_SEQ:
         {
-            umcRes = AddSlice(0, false);
+            m_accessUnit.CompleteLastLayer();
             m_WaitForIDR = true;
         }
         break;
@@ -4339,7 +4282,7 @@ Status TaskSupplier::ProcessNalUnit(MediaDataEx *nalUnit)
     return umcRes;
 }
 
-Status TaskSupplier::AddOneFrame(MediaData * pSource, MediaData *dst)
+Status TaskSupplier::AddOneFrame(MediaData * pSource)
 {
     Status umsRes = UMC_OK;
 
@@ -4355,29 +4298,8 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource, MediaData *dst)
             return sts;
     }
 
-    bool is_header_readed = false;
-
     do
     {
-        if (!dst && is_header_readed)
-        {
-            Ipp32s iCode = m_pNALSplitter->CheckNalUnitType(pSource);
-            switch (iCode)
-            {
-            case NAL_UT_IDR_SLICE:
-            case NAL_UT_SLICE:
-            case NAL_UT_AUXILIARY:
-            case NAL_UT_CODED_SLICE_EXTENSION:
-
-            case NAL_UT_DPA: //ignore it
-            case NAL_UT_DPB:
-            case NAL_UT_DPC:
-
-            case NAL_UT_SEI:
-                return UMC_OK;
-            }
-        }
-
         MediaDataEx *nalUnit = m_pNALSplitter->GetNalUnits(pSource);
 
         if (!nalUnit && pSource)
@@ -4390,7 +4312,7 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource, MediaData *dst)
                 return AddSlice(0, true);
             }
 
-            return is_header_readed && !dst ? UMC_OK : UMC_ERR_SYNC;
+            return UMC_ERR_SYNC;
         }
 
         if (!nalUnit)
@@ -4405,43 +4327,6 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource, MediaData *dst)
 
         for (Ipp32s i = 0; i < (Ipp32s)pMediaDataEx->count; i++, pMediaDataEx->index ++)
         {
-            if (!dst)
-            {
-                switch ((NAL_Unit_Type)pMediaDataEx->values[i]) // skip data at DecodeHeader mode
-                {
-                case NAL_UT_IDR_SLICE:
-                case NAL_UT_SLICE:
-                case NAL_UT_AUXILIARY:
-                case NAL_UT_CODED_SLICE_EXTENSION:
-
-                case NAL_UT_DPA: //ignore it
-                case NAL_UT_DPB:
-                case NAL_UT_DPC:
-
-                case NAL_UT_SEI:
-                    if (!is_header_readed)
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        return UMC_OK;
-                    }
-                case NAL_UT_UNSPECIFIED:
-                case NAL_UT_SPS:
-                case NAL_UT_PPS:
-                case NAL_UT_AUD:
-                case NAL_UT_END_OF_SEQ:
-                case NAL_UT_END_OF_STREAM:
-                case NAL_UT_FD:
-                case NAL_UT_SPS_EX:
-                case NAL_UT_PREFIX:
-                case NAL_UT_SUBSET_SPS:
-                default:
-                    break;
-                }
-            }
-
             if ((NAL_UT_IDR_SLICE != (NAL_Unit_Type)pMediaDataEx->values[i]) &&
                 (NAL_UT_SLICE != (NAL_Unit_Type)pMediaDataEx->values[i]))
             {
@@ -4485,32 +4370,35 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource, MediaData *dst)
                     }
                     return umsRes;
                 }
-                
-                is_header_readed = true;
+
+                if (m_decodingMode != SVC_DECODING_MODE)
+                {
+                    if (pMediaDataEx->values[i] == NAL_UT_SPS || pMediaDataEx->values[i] == NAL_UT_PPS)
+                    {
+                        m_accessUnit.CompleteLastLayer();
+                    }
+                }
                 break;
 
             case NAL_UT_SEI:
+                if (m_decodingMode != SVC_DECODING_MODE)
+                {
+                    m_accessUnit.CompleteLastLayer();
+                }
                 DecodeSEI(nalUnit);
                 break;
             case NAL_UT_AUD:  //ignore it
-/*                {
-                    Status sts = AddSlice(0, !pSource);
-                    if (sts == UMC_OK)
-                    {
-                        return sts;
-                    }
-                }*/
+                if (m_decodingMode != SVC_DECODING_MODE)
+                {
+                    m_accessUnit.CompleteLastLayer();
+                }
                 break;
 
             case NAL_UT_END_OF_STREAM:
             case NAL_UT_END_OF_SEQ:
                 {
-                    umsRes = AddSlice(0, !pSource);
+                    m_accessUnit.CompleteLastLayer();
                     m_WaitForIDR = true;
-                    if (umsRes == UMC_OK)
-                    {
-                        return umsRes;
-                    }
                 }
                 break;
 
@@ -5866,7 +5754,7 @@ H264DecoderFrame * TaskSupplier::FindSurface(FrameMemID id)
     return 0;
 }
 
-Status TaskSupplier::RunDecoding_1()
+Status TaskSupplier::RunDecoding()
 {
     CompleteDecodedFrames(0);
 
@@ -5898,136 +5786,6 @@ Status TaskSupplier::RunDecoding_1()
     //DEBUG_PRINT((VM_STRING("Decode POC - %d\n"), pFrame->m_PicOrderCnt[0]));
 
     return UMC_OK;
-}
-
-static ColorFormat color_formats[2][4] =
-{
-    {YUV420,
-    NV12,
-    YUV422,
-    YUV444},
-
-    {YUV420A,
-    YUV420A,
-    YUV422A,
-    YUV444A},
-};
-
-void TaskSupplier::InitColorConverter(H264DecoderFrame *source, VideoData * videoData, Ipp8u force_field)
-{
-    if (!videoData || ! source)
-        return;
-
-    // set correct size in color converter
-    Ipp32s crop_left   = source->m_crop_left;
-    Ipp32s crop_right  = source->m_crop_right;
-    Ipp32s crop_top    = source->m_crop_top;
-    Ipp32s crop_bottom = source->m_crop_bottom;
-    Ipp32s width  = source->lumaSize().width;
-    Ipp32s height = source->lumaSize().height;
-
-    if (force_field)
-    {
-        height >>= 1;
-        crop_top >>= 1;
-        crop_bottom >>= 1;
-    }
-
-    H264DecoderFrame * auxiliary = GetAuxiliaryFrame(source);
-
-    if (videoData->GetColorFormat() != source->GetColorFormat() ||
-        videoData->GetWidth() != width ||
-        videoData->GetHeight() != height)
-    {
-        videoData->Init(width,
-                        height,
-                        source->GetColorFormat(),
-                        source->m_bpp);
-    }
-
-    Ipp32s pixel_sz = source->m_bpp > 8 ? 2 : 1;
-
-
-    if (source->m_pYPlane)
-    {
-        videoData->SetPlanePointer((void*)source->m_pYPlane, 0);
-    }
-    else
-    {
-        videoData->SetPlanePointer((void*)1, 0);
-    }
-
-    if (source->m_pUPlane)
-    {
-        videoData->SetPlanePointer((void*)source->m_pUPlane, 1);
-        videoData->SetPlanePointer((void*)source->m_pVPlane, 2);
-    }
-    else
-    {
-        if (source->m_pUVPlane) // NV12
-        {
-            videoData->SetPlanePointer((void*)source->m_pUVPlane, 1);
-        }
-        else
-        {
-            videoData->SetPlanePointer((void*)1, 1);
-            videoData->SetPlanePointer((void*)1, 2);
-        }
-    }
-
-    Ipp32s pitch = source->pitch_luma()*pixel_sz;
-    videoData->SetPlanePitch(pitch, 0);
-    pitch = source->pitch_chroma()*pixel_sz;
-    videoData->SetPlanePitch(pitch, 1);
-    videoData->SetPlanePitch(pitch, 2);
-
-    if (auxiliary)
-    {
-        Ipp32s pixel_size = auxiliary->m_bpp > 8 ? 2 : 1;
-        Ipp32s step = auxiliary->pitch_luma()*pixel_size;
-        videoData->SetPlanePointer((void*)auxiliary->m_pYPlane, 3);
-        videoData->SetPlanePitch(step, 3);
-    }
-
-    switch (source->m_displayPictureStruct)
-    {
-    case DPS_BOTTOM:
-    case DPS_BOTTOM_TOP:
-    case DPS_BOTTOM_TOP_BOTTOM:
-        videoData->SetPictureStructure(PS_BOTTOM_FIELD_FIRST);
-        break;
-    case DPS_TOP_BOTTOM:
-    case DPS_TOP:
-    case DPS_TOP_BOTTOM_TOP:
-        videoData->SetPictureStructure(PS_TOP_FIELD_FIRST);
-        break;
-
-    case DPS_FRAME:
-    case DPS_FRAME_DOUBLING:
-    case DPS_FRAME_TRIPLING:
-    default:
-        videoData->SetPictureStructure(PS_FRAME);
-        break;
-    }
-
-    videoData->SetDataSize(videoData->GetMappingSize());
-    videoData->SetFrameType(source->m_FrameType);
-    videoData->SetAspectRatio(source->m_aspect_width, source->m_aspect_height);
-
-    m_LastNonCropDecodedFrame = *videoData;
-
-    if (crop_left | crop_right | crop_top | crop_bottom)
-    {
-        UMC::sRECT SrcCropArea;
-        SrcCropArea.left = (Ipp16s) (crop_left);
-        SrcCropArea.top  = (Ipp16s) (crop_top);
-        SrcCropArea.right = (Ipp16s) (width - crop_right);
-        SrcCropArea.bottom = (Ipp16s) (height - crop_bottom);
-
-        videoData->Crop(SrcCropArea);
-    }
-
-    videoData->SetTime(source->m_dFrameTime);
 }
 
 Status TaskSupplier::GetUserData(MediaData * pUD)
