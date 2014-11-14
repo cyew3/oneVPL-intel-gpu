@@ -181,21 +181,33 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'" />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'">
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">
+    <OutDir>$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
