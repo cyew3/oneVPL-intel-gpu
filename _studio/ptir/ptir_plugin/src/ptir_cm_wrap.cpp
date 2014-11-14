@@ -488,7 +488,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
 
         deinterlaceFilter->CalculateSADRs(frmBuffer[0], frmBuffer[0]);
 
-        Artifacts_Detection_frame(frmBuffer, 0, true);
+        Artifacts_Detection_frame(frmBuffer, 0/*, true*/);
         frmBuffer[0]->frmProperties.processed = false;
 
         frmBuffer[0]->plaY.ucStats.ucSAD[0] = 99.999;
@@ -598,7 +598,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D 
                 Analyze_Buffer_Stats_CM(frmBuffer, &mainPattern, &uiDispatch, &uiisInterlaced);
                 if(mainPattern.ucPatternFound && uiisInterlaced != 1)
                 {
-                    dTimePerFrame = Calculate_Resulting_timestamps(frmBuffer, uiDispatch, uiCur, dBaseTime, &uiNumFramesToDispatch, 000);
+                    dTimePerFrame = Calculate_Resulting_timestamps(frmBuffer, uiDispatch, uiCur, dBaseTime, &uiNumFramesToDispatch, 000, 0);
 
                     for (i = 0; i < uiNumFramesToDispatch; i++)
                     {

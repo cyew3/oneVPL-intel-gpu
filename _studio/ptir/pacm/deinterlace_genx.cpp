@@ -1,4 +1,4 @@
-/* ****************************************************************************** *\
+﻿/* ****************************************************************************** *\
 
 INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
@@ -6,7 +6,7 @@ agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
-File Name: ptir_vpp_plugin.h
+File Name: deinterlace_genx.cpp
 
 \* ****************************************************************************** */
 
@@ -285,7 +285,7 @@ inline _GENX_ void
         int blocky = get_thread_origin_y();
 #define YPROT 15
 #define UVPROT 15
-        FixEdgeDirectionalIYUV_Plane_PackedBadMC<VWIDTH * 2, VHEIGHT, 32, UVPROT, 2, 2, BotBase, GENX_SURFACE_UV_PLANE>(surfIn, surfBadMC, blockx, blocky);
+  FixEdgeDirectionalIYUV_Plane_PackedBadMC<VWIDTH * 2, VHEIGHT, 32, UVPROT, 2, 2, BotBase, GENX_SURFACE_UV_PLANE>(surfIn, surfBadMC, blockx, blocky);
         FixEdgeDirectionalIYUV_Plane_PackedBadMC<VWIDTH * 2, VHEIGHT * 2, 32, YPROT, 4, 1, BotBase, GENX_SURFACE_Y_PLANE>(surfIn, surfBadMC, blockx, blocky);
 }
 

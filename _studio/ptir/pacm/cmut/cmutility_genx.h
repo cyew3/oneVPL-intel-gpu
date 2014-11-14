@@ -58,13 +58,13 @@ namespace cmut
   template<uint R, uint C>
   inline _GENX_ matrix<uchar, R, C> cm_median(const matrix<uchar, R, C> & v0, const matrix<uchar, R, C> & v1, const matrix<uchar, R, C> & v2)
   {
-    matrix<ushort, R, C> v1v2min = cm_min<ushort>(v1, v2);
-    matrix<ushort, R, C> v1v2max = cm_max<ushort>(v1, v2);
-    matrix<ushort, R, C> temp = cm_max<ushort>(v0, v1v2min);
-    matrix<uchar, R, C> out; // optimization to avoid uw -> ub conversion at end of function
-    out.template select<R, 1, C, 2>(0, 0) = cm_min<uchar>(temp.template select<R, 1, C, 2>(0, 0), v1v2max.template select<R, 1, C, 2>(0, 0));
-    out.template select<R, 1, C, 2>(0, 1) = cm_min<uchar>(temp.template select<R, 1, C, 2>(0, 1), v1v2max.template select<R, 1, C, 2>(0, 1));
-    return out;
+      matrix<ushort, R, C> v1v2min = cm_min<ushort>(v1, v2);
+      matrix<ushort, R, C> v1v2max = cm_max<ushort>(v1, v2);
+      matrix<ushort, R, C> temp = cm_max<ushort>(v0, v1v2min);
+      matrix<uchar, R, C> out; // optimization to avoid uw -> ub conversion at end of function
+      out.template select<R, 1, C, 2>(0, 0) = cm_min<uchar>(temp.template select<R, 1, C, 2>(0, 0), v1v2max.template select<R, 1, C, 2>(0, 0));
+      out.template select<R, 1, C, 2>(0, 1) = cm_min<uchar>(temp.template select<R, 1, C, 2>(0, 1), v1v2max.template select<R, 1, C, 2>(0, 1));
+      return out;
 #endif
   }
 
@@ -203,35 +203,35 @@ namespace cmut
   template<CmSurfacePlaneIndex PLANE, uint IS_TOP_FIELD, typename T, uint HEIGHT, uint WIDTH>
   inline _GENX_ void cm_read_plane_field(SurfaceIndex surfaceId, uint x, uint y, matrix_ref<T, HEIGHT, WIDTH> m)
   {
-    //Fill as wide width as possible, then to decide height, but will xtile or ytile layout impact?
-    enum
-    {
-      EACH_IO_WIDTH = min(WIDTH * sizeof(T), max_media_block_rw_width),
-      EACH_IO_HEIGHT = min(HEIGHT, max_media_block_rw_height(EACH_IO_WIDTH)),
-    };
+      //Fill as wide width as possible, then to decide height, but will xtile or ytile layout impact?
+      enum
+      {
+          EACH_IO_WIDTH = min(WIDTH * sizeof(T), max_media_block_rw_width),
+          EACH_IO_HEIGHT = min(HEIGHT, max_media_block_rw_height(EACH_IO_WIDTH)),
+      };
 
-    static_assert(((WIDTH * sizeof(T)) % EACH_IO_WIDTH) == 0, "WIDTH is not compitable to EACH_IO_WIDTH");
-    static_assert((HEIGHT % EACH_IO_HEIGHT) == 0, "HEIGHT is not compitable to EACH_IO_HEIGHT");
+      static_assert(((WIDTH * sizeof(T)) % EACH_IO_WIDTH) == 0, "WIDTH is not compitable to EACH_IO_WIDTH");
+      static_assert((HEIGHT % EACH_IO_HEIGHT) == 0, "HEIGHT is not compitable to EACH_IO_HEIGHT");
 
-    uint h = 0;
-    uint w = 0;
+      uint h = 0;
+      uint w = 0;
 #pragma unroll
-    for (h = 0; h < HEIGHT; h += EACH_IO_HEIGHT) {
+      for (h = 0; h < HEIGHT; h += EACH_IO_HEIGHT) {
 #pragma unroll
-      for (w = 0; w < WIDTH * sizeof(T); w += EACH_IO_WIDTH) {
+          for (w = 0; w < WIDTH * sizeof(T); w += EACH_IO_WIDTH) {
 #ifndef CMRT_EMU
-        if (IS_TOP_FIELD)
-        read_plane(TOP_FIELD(surfaceId), PLANE, x + w, y + h, m.template select<EACH_IO_HEIGHT, 1, EACH_IO_WIDTH / sizeof(T), 1>(h, w / sizeof(T)));
-        else
-        read_plane(BOTTOM_FIELD(surfaceId), PLANE, x + w, y + h, m.template select<EACH_IO_HEIGHT, 1, EACH_IO_WIDTH / sizeof(T), 1>(h, w / sizeof(T)));
+              if (IS_TOP_FIELD)
+                read_plane(TOP_FIELD(surfaceId), PLANE, x + w, y + h, m.template select<EACH_IO_HEIGHT, 1, EACH_IO_WIDTH / sizeof(T), 1>(h, w / sizeof(T)));
+              else
+                read_plane(BOTTOM_FIELD(surfaceId), PLANE, x + w, y + h, m.template select<EACH_IO_HEIGHT, 1, EACH_IO_WIDTH / sizeof(T), 1>(h, w / sizeof(T)));
 #else
-        if (IS_TOP_FIELD)
-          read_plane(TOP_FIELD(surfaceId), PLANE, x + w, (y + h)<<1, m.template select<EACH_IO_HEIGHT, 1, EACH_IO_WIDTH / sizeof(T), 1>(h, w / sizeof(T)));
-        else
-          read_plane(BOTTOM_FIELD(surfaceId), PLANE, x + w, (y + h)<<1, m.template select<EACH_IO_HEIGHT, 1, EACH_IO_WIDTH / sizeof(T), 1>(h, w / sizeof(T)));
+              if (IS_TOP_FIELD)
+                  read_plane(TOP_FIELD(surfaceId), PLANE, x + w, (y + h)<<1, m.template select<EACH_IO_HEIGHT, 1, EACH_IO_WIDTH / sizeof(T), 1>(h, w / sizeof(T)));
+              else
+                  read_plane(BOTTOM_FIELD(surfaceId), PLANE, x + w, (y + h)<<1, m.template select<EACH_IO_HEIGHT, 1, EACH_IO_WIDTH / sizeof(T), 1>(h, w / sizeof(T)));
 #endif
+          }
       }
-    }
   }
 
   template<CmSurfacePlaneIndex PLANE, typename T, uint HEIGHT, uint WIDTH>
@@ -243,7 +243,7 @@ namespace cmut
   template<CmSurfacePlaneIndex PLANE, uint IS_TOP_FIELD, typename T, uint HEIGHT, uint WIDTH>
   inline _GENX_ void cm_read_plane_field(SurfaceIndex surfaceId, uint x, uint y, matrix<T, HEIGHT, WIDTH> & m)
   {
-    cm_read_plane_field<PLANE, IS_TOP_FIELD>(surfaceId, x, y, m.select_all());
+      cm_read_plane_field<PLANE, IS_TOP_FIELD>(surfaceId, x, y, m.select_all());
   }
 
   template<CmSurfacePlaneIndex PLANE, typename T, uint HEIGHT, uint WIDTH>

@@ -352,7 +352,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                     if(mainPattern.ucPatternFound && uiisInterlaced != 1)
                     {
                         if (uiisInterlaced != 3)
-                            dTimePerFrame = Calculate_Resulting_timestamps(frmBuffer, uiDispatch, uiCur, dBaseTime, &uiNumFramesToDispatch, mainPattern.ucPatternType);
+                            dTimePerFrame = Calculate_Resulting_timestamps(frmBuffer, uiDispatch, uiCur, dBaseTime, &uiNumFramesToDispatch, mainPattern.ucPatternType, 0);
                         else
                         {
                             uiNumFramesToDispatch = min(uiDispatch, uiCur + 1);
@@ -387,7 +387,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                         if (uiisInterlaced == 2)
                             dBaseTimeSw = (dBaseTime * 5 / 4);
                         else
-                            dTimePerFrame = Calculate_Resulting_timestamps(frmBuffer, uiDispatch, uiCur, dBaseTime, &uiNumFramesToDispatch, mainPattern.ucPatternType);
+                            dTimePerFrame = Calculate_Resulting_timestamps(frmBuffer, uiDispatch, uiCur, dBaseTime, &uiNumFramesToDispatch, mainPattern.ucPatternType, 0);
                         dBaseTimeSw = dTimePerFrame / (1 + (bFullFrameRate && uiDeinterlace));
                         for(i = 0; i < min(uiDispatch,uiCur + 1); i++)
                         {

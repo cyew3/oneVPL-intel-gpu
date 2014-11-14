@@ -23,20 +23,24 @@ File Name: common.h
 #include <math.h>
 #include <stdio.h>
 
+
 #if defined(_WIN32) || defined(_WIN64)
-#define PTIR_API      __declspec(dllexport)
-#define PTIR_API_FUNC __declspec(dllexport)
-#define STDCALL       __stdcall
 
 #include <Windows.h>
 #include <malloc.h>
 #include <intrin.h>
 #define ALIGN_DECL(X) __declspec(align(X))
 #else
-#define PTIR_API_FUNC __attribute__((visibility("default")))
-#define PTIR_API      __attribute__((visibility("default")))
-#define STDCALL       __attribute__((stdcall))
-#define BOOL bool
+
+#include <stdlib.h>
+
+#ifdef __cplusplus
+//typedef bool BOOL;
+#else
+//typedef _Bool BOOL;
+#endif
+
+#define    __stosb memset
 
 #ifndef TRUE
 #define TRUE 1
@@ -99,6 +103,7 @@ extern "C" {
 #define PA_C                     0
 #define PA_SSE2                  1
 #define PRINTDEBUG               0
+#define PRINTXPERT               0
 
 #define PA_PERF_LEVEL            PA_SSE2
 
@@ -113,6 +118,7 @@ extern "C" {
 #define FULLFRAMERATEMODE        1
 #define HALFFRAMERATEMODE        0
 #define MODE_NOT_AVAILABLE       -1
+#define THOMSONMODE              0
 
 // Latch
     typedef struct _Latch
@@ -132,10 +138,13 @@ extern "C" {
                      uiPFlush,
                      uiInterlacedFramesNum,
                      uiOverrideHalfFrameRate,
-                     uiCountFullyInterlacedBuffers;
+                     uiCountFullyInterlacedBuffers,
+                     uiPreviousPartialPattern,
+                     uiPartialPattern;
         double ucAvgSAD;
         Latch  ucLatch;
         double blendedCount;
+        unsigned long ulCountInterlacedDetections;
     } Pattern;
 
     //stats
@@ -165,13 +174,16 @@ extern "C" {
     {
         BOOL processed,        //Indicates if frame has been processed, used for first two frames in the beginning of the run
              interlaced,       //Indicates if frame is interlaced or not
+             detection,
              drop,             //Indicates if frame has to be dropped
              parity,           //Indicates the parity for the 3:2 pulldown (0) TFF, (1) BFF;
              drop24fps,
+             sceneChange,
              candidate;
         double fr;
-        long double timestamp;
+        double timestamp;
         unsigned int tindex;
+        unsigned int uiInterlacedDetectionValue;
     } Meta;
 
     // frm
@@ -224,12 +236,17 @@ extern "C" {
         unsigned int uiBufferCount;
         unsigned int uiFrameCount;
         unsigned int uiEndOfFrames;
+        unsigned int uiPatternTypeNumber;
+        unsigned int uiPatternTypeInit;
+        unsigned int uiFrameOut;
         double       dFrameRate,
                      dBaseTime,
                      dTimeStamp,
                      dDeIntTime,
                      dBaseTimeSw,
-                     dTimePerFrame;
+                     dTimePerFrame,
+                     pts,
+                     frame_duration;
         Pattern      mainPattern;
 
     } PTIRBufferControl;
@@ -256,7 +273,9 @@ extern "C" {
 
 #if defined(_WIN32) || defined(_WIN64)
     void   PrintOutputStats(HANDLE hStd, CONSOLE_SCREEN_BUFFER_INFO sbInfo, unsigned int uiFrame, unsigned int uiStart, unsigned int uiCount, unsigned int *uiProgress, unsigned int uiFrameOut, unsigned int uiTimer, FrameQueue fqIn, const char **cOperations, double *dTime);
+    int    OutputFrameToDisk(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int * uiLastFrameNumber, DWORD *uiBytesRead);
 #endif
+    void   PrintOutputStats_PvsI(unsigned long ulNumberofInterlacedFrames, unsigned long ulTotalNumberofFramesProcessed, const char **cSummary);
     void*  aligned_malloc(size_t required_bytes, size_t alignment);
     void   aligned_free(void *p);
     void   Plane_Create(Plane *pplaIn, unsigned int uiWidth, unsigned int uiHeight, unsigned int uiBorder);
@@ -273,12 +292,9 @@ extern "C" {
     void   Frame_Prep_and_Analysis(Frame **frmBuffer, char *pcFormat, double dFrameRate, unsigned int uiframeBufferIndexCur, unsigned int uiframeBufferIndexNext, unsigned int uiTemporalIndex);
     void   CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int uiOPMode);
     void   Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight);
-    double Calculate_Resulting_timestamps(Frame** frmBuffer, unsigned int uiDispatch, unsigned int uiCur, double dBaseTime, unsigned int *uiNumFramesToDispatch, unsigned int PatternType);
+    double Calculate_Resulting_timestamps(Frame** frmBuffer, unsigned int uiDispatch, unsigned int uiCur, double dBaseTime, unsigned int *uiNumFramesToDispatch, unsigned int PatternType, unsigned int uiEndOfFrames);
     void   Update_Frame_Buffer(Frame** frmBuffer, unsigned int frameIndex, double dTimePerFrame, unsigned int uiisInterlaced, unsigned int uiInterlaceParity, unsigned int bFullFrameRate, Frame* frmIn, FrameQueue *fqIn);
-#if defined(_WIN32) || defined(_WIN64)
-    int    OutputFrameToDisk(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int * uiLastFrameNumber, DWORD *uiBytesRead);
-#endif
-
+    void   Update_Frame_BufferNEW(Frame** frmBuffer, unsigned int frameIndex, double dCurTimeStamp, double dTimePerFrame, unsigned int uiisInterlaced, unsigned int uiInterlaceParity, unsigned int bFullFrameRate, Frame* frmIn, FrameQueue *fqIn);
 
     /*PTIR Complete Functions*/
     int    PTIR_AutoMode_FF(PTIRSystemBuffer *SysBuffer); /*Detection and processing of progressive, telecined and interlaced content.
@@ -287,17 +303,20 @@ extern "C" {
                                                                          System returns half frame rate from interlaced content. Intended for variable frame rate encoding*/
     int    PTIR_DeinterlaceMode_FF(PTIRSystemBuffer *SysBuffer); /*Direct deinterlacing without content analysis. System returns full frame rate from deinterlacing process.
                                                                                 Constant frame rate*/
+    int    PTIR_DeinterlaceMode_HF_timestamp(PTIRSystemBuffer *SysBuffer);
     int    PTIR_DeinterlaceMode_HF(PTIRSystemBuffer *SysBuffer); /*Direct deinterlacing without content analysis. System returns half frame rate from deinterlacing process.
                                                                                 Constant frame rate*/
     int    PTIR_BaseFrameMode(PTIRSystemBuffer *SysBuffer); /*Detection and processing of progressive, telecined and interlaced content.
                                                                            System returns same input framerate. Constant frame rate*/
+    int    PTIR_BaseFrameMode_NoChange(PTIRSystemBuffer *SysBuffer);
     int    PTIR_Auto24fpsMode(PTIRSystemBuffer *SysBuffer);
     int    PTIR_FixedTelecinePatternMode(PTIRSystemBuffer *SysBuffer);
     int    PTIR_MultipleMode(PTIRSystemBuffer *SysBuffer, unsigned int uiOpMode);
+    int    PTIR_SimpleMode(PTIRSystemBuffer *SysBuffer, unsigned int uiOpMode);
     Frame* PTIR_GetFrame(PTIRSystemBuffer *SysBuffer);
-    void   PTIR_PutFrame(unsigned char *pucIO, PTIRSystemBuffer *SysBuffer);
+    int    PTIR_PutFrame(unsigned char *pucIO, PTIRSystemBuffer *SysBuffer, double dTimestamp);
     void   PTIR_Frame_Prep_and_Analysis(PTIRSystemBuffer *SysBuffer);
-    void   PTIR_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned int _uiInHeight, double _dFrameRate, unsigned int _uiInterlaceParity);
+    void   PTIR_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned int _uiInHeight, double _dFrameRate, unsigned int _uiInterlaceParity, unsigned int _uiPatternTypeNumber, unsigned int _uiPatternTypeInit);
     void   PTIR_Clean(PTIRSystemBuffer *SysBuffer);
 #ifdef __cplusplus
 }

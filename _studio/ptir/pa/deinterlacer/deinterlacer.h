@@ -15,7 +15,6 @@ File Name: deinterlacer.h
 #pragma once
 
 #include "../api.h"
-#include <assert.h> 
 
 #ifdef __cplusplus
 extern "C" {

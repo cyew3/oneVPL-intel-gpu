@@ -24,7 +24,7 @@ using namespace std;
 namespace cmut
 {
   inline UINT DivUp(UINT x, UINT y) {
-    return (x + y - 1) / y;
+      return (x + y - 1) / y;
   }
   
   inline const char * cm_result_to_str(int result)

@@ -12,8 +12,6 @@ File Name: api.h
 #ifndef PTIR_API_H
 #define PTIR_API_H
 
-#define NTEST 0
-
 #include "common.h"
 
 // Picture Format Conversion

@@ -111,7 +111,7 @@ class CmSurface2DEx
 {
 public:
   CmSurface2DEx(CmDeviceEx & cmDeviceEx, UINT width, UINT height, CM_SURFACE_FORMAT format)
-    : cmDeviceEx(cmDeviceEx), isCreated(true)
+      : cmDeviceEx(cmDeviceEx), isCreated(true)
   {
 #ifdef _DEBUG
 //    cout << "CmSurface2DEx (" << width << ", " << height << ")" << endl;
@@ -120,17 +120,17 @@ public:
   }
 
   CmSurface2DEx(CmDeviceEx & cmDeviceEx, UINT width, UINT height, CM_SURFACE_FORMAT format, CmSurface2D* psurf)
-    : cmDeviceEx(cmDeviceEx), isCreated(false)
+      : cmDeviceEx(cmDeviceEx), isCreated(false)
   {
 #ifdef _DEBUG
 //    cout << "CmSurface2DEx (" << width << ", " << height << ")" << endl;
 #endif
     //assert(psurf != NULL);
-    pCmSurface2D = psurf;
+      pCmSurface2D = psurf;
   }
 
   CmSurface2DEx(CmDeviceEx & cmDeviceEx, const unsigned char * pData, UINT width, UINT height, CM_SURFACE_FORMAT format)
-    : cmDeviceEx(cmDeviceEx), isCreated(true)
+      : cmDeviceEx(cmDeviceEx), isCreated(true)
   {
 #ifdef _DEBUG
 //    cout << "CmSurface2DEx (" << width << ", " << height << ")" << endl;
@@ -226,14 +226,14 @@ public:
   void Read(void * pSysMem, CmEvent* pEvent = NULL)
   {
     assert (pSysMem != NULL);
-  for (int row = 0; row < actualHeight(); row++)
+    for (int row = 0; row < actualHeight(); row++)
     ptir_memcpy((char*)pSysMem + actualWidth() *row, DataPtr(row), actualWidth());
   }
 
   void Write(const unsigned char * pSysMem)
   {
     assert (pSysMem != NULL);
-  for (int row = 0; row < actualHeight(); row++)
+    for (int row = 0; row < actualHeight(); row++)
     ptir_memcpy(DataPtr(row), (char*)pSysMem + actualWidth()*row, actualWidth());
   }
 
@@ -252,40 +252,44 @@ protected:
   bool malloced;
 
   int actualWidth() const {
-    switch (format) {
-    case CM_SURFACE_FORMAT_A8R8G8B8:
-    case CM_SURFACE_FORMAT_X8R8G8B8:
-    case CM_SURFACE_FORMAT_R32F:
-      return 4 * width;
-    case CM_SURFACE_FORMAT_V8U8:
-    case CM_SURFACE_FORMAT_UYVY:
-    case CM_SURFACE_FORMAT_YUY2:
-      return 2 * width;
-    case CM_SURFACE_FORMAT_A8:
-    case CM_SURFACE_FORMAT_P8:
-      return 1 * width;
-    case CM_SURFACE_FORMAT_NV12:
-      return 1 * width;
-    }
-    throw CMUT_EXCEPTION("Unkown Format Code");
+      switch (format) {
+      case CM_SURFACE_FORMAT_A8R8G8B8:
+      case CM_SURFACE_FORMAT_X8R8G8B8:
+      case CM_SURFACE_FORMAT_R32F:
+          return 4 * width;
+      case CM_SURFACE_FORMAT_V8U8:
+      //case CM_SURFACE_FORMAT_R16_SINT:
+      case CM_SURFACE_FORMAT_UYVY:
+      case CM_SURFACE_FORMAT_YUY2:
+          return 2 * width;
+      case CM_SURFACE_FORMAT_A8:
+      case CM_SURFACE_FORMAT_P8:
+      //case CM_SURFACE_FORMAT_R8_UINT:
+          return 1 * width;
+      case CM_SURFACE_FORMAT_NV12:
+          return 1 * width;
+      }
+      throw CMUT_EXCEPTION("Unkown Format Code");
   }
   int actualHeight() const {
-    switch (format) {
-    case CM_SURFACE_FORMAT_A8R8G8B8:
-    case CM_SURFACE_FORMAT_X8R8G8B8:
-    case CM_SURFACE_FORMAT_R32F:
-      return 1 * height;
-    case CM_SURFACE_FORMAT_V8U8:
-    case CM_SURFACE_FORMAT_UYVY:
-    case CM_SURFACE_FORMAT_YUY2:
-      return 1 * height;
-    case CM_SURFACE_FORMAT_A8:
-    case CM_SURFACE_FORMAT_P8:
-      return 1 * height;
-    case CM_SURFACE_FORMAT_NV12:
-      return 3 * height / 2;
-    }
-    throw CMUT_EXCEPTION("Unkown Format Code");
+      switch (format) {
+      case CM_SURFACE_FORMAT_A8R8G8B8:
+      case CM_SURFACE_FORMAT_X8R8G8B8:
+      case CM_SURFACE_FORMAT_R32F:
+          return 1 * height;
+      case CM_SURFACE_FORMAT_V8U8:
+      //case CM_SURFACE_FORMAT_R16_SINT:
+      case CM_SURFACE_FORMAT_UYVY:
+      case CM_SURFACE_FORMAT_YUY2:
+          return 1 * height;
+      case CM_SURFACE_FORMAT_A8:
+      case CM_SURFACE_FORMAT_P8:
+      //case CM_SURFACE_FORMAT_R8_UINT:
+          return 1 * height;
+      case CM_SURFACE_FORMAT_NV12:
+          return 3 * height / 2;
+      }
+      throw CMUT_EXCEPTION("Unkown Format Code");
   }
 
 };

@@ -13,6 +13,7 @@ File Name: picfmrtconv.h
 #define PTIR_PICFFRMTCONV_H
 
 #include "../api.h"
+#include <math.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,9 +28,9 @@ extern "C" {
 #define MSQUARED(v) ((v) * (v))
 
 
-PTIR_API void ReSample(Frame *frmOut, Frame *frmIn);
+void ReSample(Frame *frmOut, Frame *frmIn);
 
-PTIR_API void Filter_CCIR601(Plane *plaOut, Plane *plaIn, int *data);
+void Filter_CCIR601(Plane *plaOut, Plane *plaIn, int *data);
 #ifdef __cplusplus
 }
 #endif 

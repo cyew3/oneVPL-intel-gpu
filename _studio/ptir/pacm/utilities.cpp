@@ -27,7 +27,7 @@ static void CopyFrame(Frame *pSrc, Frame* pDst)
     {
         pSrcLine = pSrc->plaY.ucCorner + i * pSrc->plaY.uiStride;
         pDstLine = pDst->plaY.ucCorner + i * pDst->plaY.uiStride;
-        ptir_memcpy(pDstLine, pSrcLine, pDst->plaY.uiWidth);
+        memcpy(pDstLine, pSrcLine, pDst->plaY.uiWidth);
     }
 
     // copying U-component
@@ -35,14 +35,14 @@ static void CopyFrame(Frame *pSrc, Frame* pDst)
     {
         pSrcLine = pSrc->plaU.ucCorner + i * pSrc->plaU.uiStride;
         pDstLine = pDst->plaU.ucCorner + i * pDst->plaU.uiStride;
-        ptir_memcpy(pDstLine, pSrcLine, pDst->plaU.uiWidth);
+        memcpy(pDstLine, pSrcLine, pDst->plaU.uiWidth);
     }
     // copying V-component
     for (i = 0; i < pSrc->plaV.uiHeight; i++)
     {
         pSrcLine = pSrc->plaV.ucCorner + i * pSrc->plaV.uiStride;
         pDstLine = pDst->plaV.ucCorner + i * pDst->plaV.uiStride;
-        ptir_memcpy(pDstLine, pSrcLine, pDst->plaV.uiWidth);
+        memcpy(pDstLine, pSrcLine, pDst->plaV.uiWidth);
     }
 }
 
@@ -64,11 +64,11 @@ void Undo2Frames_CMTest(Frame *frmBuffer1, Frame *frmBuffer2, bool BFF)
     start = BFF;
 
     for(i = start; i < frmBuffer1_c->plaY.uiHeight; i += 2)
-        ptir_memcpy(frmBuffer1_c->plaY.ucData + (i * frmBuffer1_c->plaY.uiStride), frmBuffer2->plaY.ucData + (i * frmBuffer2->plaY.uiStride),frmBuffer2->plaY.uiStride);
+        memcpy(frmBuffer1_c->plaY.ucData + (i * frmBuffer1_c->plaY.uiStride), frmBuffer2->plaY.ucData + (i * frmBuffer2->plaY.uiStride),frmBuffer2->plaY.uiStride);
     for(i = start; i < frmBuffer1_c->plaU.uiHeight; i += 2)
-        ptir_memcpy(frmBuffer1_c->plaU.ucData + (i * frmBuffer1_c->plaU.uiStride), frmBuffer2->plaU.ucData + (i * frmBuffer2->plaU.uiStride),frmBuffer2->plaU.uiStride);
+        memcpy(frmBuffer1_c->plaU.ucData + (i * frmBuffer1_c->plaU.uiStride), frmBuffer2->plaU.ucData + (i * frmBuffer2->plaU.uiStride),frmBuffer2->plaU.uiStride);
     for(i = start; i < frmBuffer1_c->plaV.uiHeight; i += 2)
-        ptir_memcpy(frmBuffer1_c->plaV.ucData + (i * frmBuffer1_c->plaV.uiStride), frmBuffer2->plaV.ucData + (i * frmBuffer2->plaV.uiStride),frmBuffer2->plaV.uiStride);
+        memcpy(frmBuffer1_c->plaV.ucData + (i * frmBuffer1_c->plaV.uiStride), frmBuffer2->plaV.ucData + (i * frmBuffer2->plaV.uiStride),frmBuffer2->plaV.uiStride);
 
     unsigned char * line0 = frmBuffer1->plaY.ucData;
     unsigned char * line1 = frmBuffer1->plaY.ucData + frmBuffer1->plaY.uiStride;
@@ -121,6 +121,8 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
         pFrm[0]->frmProperties.drop = false;//true;
         pFrm[0]->frmProperties.drop24fps = true;
         pFrm[0]->frmProperties.candidate = true;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = true;
         ptrn->ucLatch.ucFullLatch = true;
         if(pFrm[4]->plaY.ucStats.ucSAD[2] > pFrm[4]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
@@ -148,14 +150,16 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
     //SAD analysis
     condition[3] = pFrm[0]->plaY.ucStats.ucSAD[4] * T1 > min((pFrm[0]->plaY.ucStats.ucSAD[2]),(pFrm[0]->plaY.ucStats.ucSAD[3]));
     condition[4] = pFrm[1]->plaY.ucStats.ucSAD[4] * T1 > min((pFrm[1]->plaY.ucStats.ucSAD[2]),(pFrm[1]->plaY.ucStats.ucSAD[3]));
-    condition[5] = pFrm[5]->plaY.ucStats.ucSAD[4] * T1 > min((pFrm[5]->plaY.ucStats.ucSAD[2]),(pFrm[5]->plaY.ucStats.ucSAD[3]));
-    if(condition[0] && condition[1] && condition[2] && condition[3] && condition[4] && condition[5])
+    //condition[5] = pFrm[5]->plaY.ucStats.ucSAD[4] * T1 > min((pFrm[5]->plaY.ucStats.ucSAD[2]),(pFrm[5]->plaY.ucStats.ucSAD[3]));
+    if(condition[0] && condition[1] && condition[2] && condition[3] && condition[4]/* && condition[5]*/)
     {
         pFrm[0]->frmProperties.drop = false;
         pFrm[1]->frmProperties.drop = false;//true;
         pFrm[1]->frmProperties.drop24fps = true;
         pFrm[1]->frmProperties.candidate = true;
         pFrm[2]->frmProperties.drop = false;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = true;
         ptrn->ucLatch.ucFullLatch = true;
 
         if(pFrm[1]->plaY.ucStats.ucSAD[2] > pFrm[1]->plaY.ucStats.ucSAD[3])
@@ -190,6 +194,8 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
         pFrm[2]->frmProperties.drop24fps = true;
         pFrm[2]->frmProperties.candidate = true;
         pFrm[3]->frmProperties.drop = false;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = true;
         ptrn->ucLatch.ucFullLatch = true;
         if(pFrm[2]->plaY.ucStats.ucSAD[2] > pFrm[2]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
@@ -218,6 +224,8 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
     if(condition[0] && condition[1] && condition[2] && condition[3])
     {
         pFrm[3]->frmProperties.drop = true;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = false;
         ptrn->ucLatch.ucFullLatch = true;
         if(pFrm[3]->plaY.ucStats.ucSAD[2] > pFrm[3]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
@@ -245,6 +253,8 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
     if((condition[0] && condition[1] && condition[2]) || (condition[0] && condition[1] && condition[3]))
     {
         pFrm[0]->frmProperties.drop = false;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = true;
         ptrn->ucLatch.ucFullLatch = true;
         if(pFrm[3]->plaY.ucStats.ucSAD[2] > pFrm[3]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
@@ -260,8 +270,6 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
 
 static void Detect_32Pattern_rigorous_CM(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch)
 {
-    //Detect_32Pattern_rigorous(pFrm, ptrn, dispatch);
-    //return;
     bool condition[10];
     int previousPattern = ptrn->ucPatternType;
     double previousAvgSAD = ptrn->ucAvgSAD;
@@ -432,7 +440,6 @@ void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsign
             Detect_Interlacing_Artifacts_fast_CM(frmBuffer, ptrn, pdispatch);
         else
             Detect_32Pattern_rigorous_CM(frmBuffer, ptrn, pdispatch);
-
         if(!ptrn->ucLatch.ucFullLatch)
         {
             if(ptrn->uiInterlacedFramesNum < 2 && !ptrn->ucLatch.ucThalfLatch)
@@ -480,7 +487,8 @@ void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsign
         else
         {
             if(ptrn->uiInterlacedFramesNum + frmBuffer[BUFMINSIZE - 1]->frmProperties.interlaced == BUFMINSIZE)
-                ptrn->uiCountFullyInterlacedBuffers = min(ptrn->uiCountFullyInterlacedBuffers + 1, 2);
+                ptrn->uiOverrideHalfFrameRate = true;
+                //ptrn->uiCountFullyInterlacedBuffers = min(ptrn->uiCountFullyInterlacedBuffers + 1, 2);
             else
             {
                 if(ptrn->uiCountFullyInterlacedBuffers > 0)
@@ -494,7 +502,7 @@ void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsign
     ptrn->ucPatternFound = ptrn->ucLatch.ucFullLatch;
 }
 
-void STDCALL Analyze_Buffer_Stats_Automode_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch)
+void Analyze_Buffer_Stats_Automode_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch)
 {
     unsigned int uiAutomode = AUTOMODE;
 
@@ -511,108 +519,112 @@ void Detect_Solve_32BlendedPatternsCM(Frame **pFrm, Pattern *ptrn, unsigned int 
     ptrn->ucLatch.ucThalfLatch = false;
     previousPattern = ptrn->ucPatternType;
     ptrn->ucPatternType = 0;
- for (i = 0; i < 10; i++)
-  condition[i] = 0;
-
-    if (previousPattern != 5 && previousPattern != 7)
+    if (pFrm[0]->plaY.uiHeight > 720)
     {
-        condition[0] = (pFrm[0]->plaY.ucStats.ucRs[4] + 2 < pFrm[1]->plaY.ucStats.ucRs[4]) &&
-            (pFrm[0]->plaY.ucStats.ucRs[4] + 2 < pFrm[2]->plaY.ucStats.ucRs[4]) &&
-            (pFrm[0]->plaY.ucStats.ucRs[4] + 2 < pFrm[3]->plaY.ucStats.ucRs[4]) &&
-            (pFrm[0]->plaY.ucStats.ucRs[4] + 2 < pFrm[4]->plaY.ucStats.ucRs[4]) &&
-            (pFrm[0]->plaY.ucStats.ucRs[4] < 100);//(pFrm[0]->plaY.ucStats.ucRs[7] < 0.22);//
+        for (i = 0; i < 10; i++)
+            condition[i] = 0;
 
-        condition[1] = (pFrm[4]->plaY.ucStats.ucRs[4] + 2 < pFrm[0]->plaY.ucStats.ucRs[4]) &&
-            (pFrm[4]->plaY.ucStats.ucRs[4] + 2 < pFrm[1]->plaY.ucStats.ucRs[4]) &&
-            (pFrm[4]->plaY.ucStats.ucRs[4] + 2 < pFrm[2]->plaY.ucStats.ucRs[4]) &&
-            (pFrm[4]->plaY.ucStats.ucRs[4] + 2 < pFrm[3]->plaY.ucStats.ucRs[4]) &&
-            (pFrm[4]->plaY.ucStats.ucRs[4] < 100);//(pFrm[4]->plaY.ucStats.ucRs[7] < 0.22);//
-
-        if (condition[0] && !condition[1])
-            start = 1;
-        else if (!condition[0] && condition[1])
-            start = 0;
-        else
+        if (previousPattern != 5 && previousPattern != 7)
         {
-            if (!pFrm[5]->frmProperties.interlaced)
-                ptrn->ucLatch.ucSHalfLatch = true;
-            return;
-        }
+            condition[0] = (pFrm[0]->plaY.ucStats.ucRs[4] + 2 < pFrm[1]->plaY.ucStats.ucRs[4]) &&
+                           (pFrm[0]->plaY.ucStats.ucRs[4] + 2 < pFrm[2]->plaY.ucStats.ucRs[4]) &&
+                           (pFrm[0]->plaY.ucStats.ucRs[4] + 2 < pFrm[3]->plaY.ucStats.ucRs[4]) &&
+                           (pFrm[0]->plaY.ucStats.ucRs[4] + 2 < pFrm[4]->plaY.ucStats.ucRs[4]) &&
+                           (pFrm[0]->plaY.ucStats.ucRs[4] < 100);
 
-        for (i = 0; i < 4; i++)
-            condition[i + start] = (pFrm[i + start]->plaY.ucStats.ucRs[6] > 100) && (pFrm[i + start]->plaY.ucStats.ucRs[7] > 0.1);
+            condition[1] = (pFrm[4]->plaY.ucStats.ucRs[4] + 2 < pFrm[0]->plaY.ucStats.ucRs[4]) &&
+                           (pFrm[4]->plaY.ucStats.ucRs[4] + 2 < pFrm[1]->plaY.ucStats.ucRs[4]) &&
+                           (pFrm[4]->plaY.ucStats.ucRs[4] + 2 < pFrm[2]->plaY.ucStats.ucRs[4]) &&
+                           (pFrm[4]->plaY.ucStats.ucRs[4] + 2 < pFrm[3]->plaY.ucStats.ucRs[4]) &&
+                           (pFrm[4]->plaY.ucStats.ucRs[4] < 100);
 
-        count = 1;
-        for (i = 1; i < 4; i++)
-            count += condition[i];
-        if (count > 3)
-        {
-            if (condition[0])
-            {
+            if (condition[0] && !condition[1])
                 start = 1;
-                pFrm[4]->frmProperties.drop = true;
-                *dispatch = 5;
-            }
-            else
-            {
+            else if (!condition[0] && condition[1])
                 start = 0;
-                pFrm[3]->frmProperties.drop = true;
-                *dispatch = 4;
-            }
-            UndoPatternTypes5and7CM(pFrm, start);
-            ptrn->ucLatch.ucFullLatch = true;
-            if (previousPattern != 6)
-                ptrn->ucPatternType = 5;
             else
-                ptrn->ucPatternType = 7;
-        }
-    }
-    else
-    {
-        count = 0;
-        for (i = 0; i < 3; i++)
-            count += pFrm[i]->frmProperties.interlaced;
-        if (count < 2)
-        {
-            if (previousPattern != 7)
             {
-                ptrn->ucLatch.ucFullLatch = true;
-                ptrn->blendedCount += BLENDEDOFF;
-                if (ptrn->blendedCount > 1)
+                if (!pFrm[5]->frmProperties.interlaced)
+                    ptrn->ucLatch.ucSHalfLatch = true;
+                return;
+            }
+
+            for (i = 0; i < 4; i++)
+                condition[i + start] = (pFrm[i + start]->plaY.ucStats.ucRs[6] > 100) && (pFrm[i + start]->plaY.ucStats.ucRs[7] > 0.1);
+
+            count = 1;
+            for (i = 1; i < 4; i++)
+                count += condition[i];
+            if (count > 3)
+            {
+                if (condition[0])
                 {
-                    pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(pFrm, 1, 0);
-                    ptrn->blendedCount -= 1;
+                    start = 1;
+                    pFrm[4]->frmProperties.drop = true;
+                    *dispatch = 5;
                 }
                 else
                 {
-                    pFrm[1]->frmProperties.drop = true;
+                    start = 0;
+                    pFrm[3]->frmProperties.drop = true;
+                    *dispatch = 4;
                 }
-                ptrn->ucPatternType = 6;
-                *dispatch = 2;
+                UndoPatternTypes5and7CM(pFrm, start);
+                ptrn->ucLatch.ucFullLatch = true;
+                if (previousPattern != 6)
+                    ptrn->ucPatternType = 5;
+                else
+                    ptrn->ucPatternType = 7;
             }
-            else
+        }
+        else
+        {
+            count = 0;
+            for (i = 0; i < 3; i++)
+                count += pFrm[i]->frmProperties.interlaced;
+            if (count < 2)
             {
-                count = 0;
-                for (i = 3; i < 5; i++)
-                    count += pFrm[i]->frmProperties.interlaced;
-                if (count > 1 && pFrm[5]->frmProperties.interlaced)
+                if (previousPattern != 7)
                 {
                     ptrn->ucLatch.ucFullLatch = true;
-                    ptrn->ucPatternType = 8;
+                    ptrn->blendedCount += BLENDEDOFF;
+                    if (ptrn->blendedCount > 1)
+                    {
+                        pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(pFrm, 1, 0);
+                        ptrn->blendedCount -= 1;
+                    }
+                    else
+                    {
+                        pFrm[1]->frmProperties.drop = false;
+                        pFrm[1]->frmProperties.candidate;
+                    }
+                    ptrn->ucPatternType = 6;
                     *dispatch = 2;
                 }
                 else
                 {
-                    ptrn->ucLatch.ucFullLatch = true;
-                    ptrn->ucPatternType = 1;
-                    *dispatch = 1;
+                    count = 0;
+                    for (i = 3; i < 5; i++)
+                        count += pFrm[i]->frmProperties.interlaced;
+                    if (count > 1 && pFrm[5]->frmProperties.interlaced)
+                    {
+                        ptrn->ucLatch.ucFullLatch = true;
+                        ptrn->ucPatternType = 8;
+                        *dispatch = 2;
+                    }
+                    else
+                    {
+                        ptrn->ucLatch.ucFullLatch = true;
+                        ptrn->ucPatternType = 1;
+                        *dispatch = 1;
+                    }
                 }
             }
         }
     }
 }
 
-void UndoPatternTypes5and7CM(Frame *frmBuffer[BUFMINSIZE + BUFEXTRASIZE], unsigned int firstPos)
+void UndoPatternTypes5and7CM(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos)
 {
     unsigned int
         start = firstPos;
@@ -638,6 +650,40 @@ void UndoPatternTypes5and7CM(Frame *frmBuffer[BUFMINSIZE + BUFEXTRASIZE], unsign
 
 }
 
+void Pattern32RemovalCM(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch)
+{
+    if(uiInitFramePosition < BUFMINSIZE - 2)
+    {
+        frmBuffer[uiInitFramePosition + 1]->frmProperties.drop = true;
+        Undo2Frames_CM(frmBuffer[uiInitFramePosition],frmBuffer[uiInitFramePosition + 1],TelecineParityCheck(*frmBuffer[uiInitFramePosition + 1]));
+        *pdispatch = 5;
+    }
+    else
+    {
+        frmBuffer[uiInitFramePosition]->frmProperties.interlaced = true;
+        *pdispatch = 2;
+    }
+}
+
+void RemovePatternCM(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned int uiInitFramePosition, unsigned int *pdispatch)
+{
+    Init_drop_frames(frmBuffer);
+
+    Artifacts_Detection(frmBuffer);
+
+    if(uiPatternNumber == 0)
+        Pattern32RemovalCM(frmBuffer, uiInitFramePosition, pdispatch);
+    else if(uiPatternNumber <= 2)
+        Pattern2332Removal(frmBuffer, uiInitFramePosition, pdispatch);
+    else if(uiPatternNumber == 3)
+        Pattern41Removal(frmBuffer, uiInitFramePosition, pdispatch);
+    else
+    {
+        printf("\nUnknown Pattern, please check your selection\n");
+        exit(-1001);
+    }
+}
+
 void CheckGenFrameCM(Frame **pfrmIn, unsigned int frameNum, /*unsigned int patternType, */unsigned int uiOPMode)
 {
     bool stop = false;
@@ -645,16 +691,16 @@ void CheckGenFrameCM(Frame **pfrmIn, unsigned int frameNum, /*unsigned int patte
     {
         pdeinterlaceFilter->MeasureRs(pfrmIn[frameNum]);
         pfrmIn[frameNum]->frmProperties.interlaced = false;
-        Artifacts_Detection_frame(pfrmIn,frameNum, false);
+        Artifacts_Detection_frame(pfrmIn,frameNum);
         if(pfrmIn[frameNum]->frmProperties.interlaced)
         {
-            //FillBaseLinesIYUV(pfrmIn[frameNum], pfrmIn[BUFMINSIZE], false, false);
+            ///FillBaseLinesIYUV(pfrmIn[frameNum], pfrmIn[BUFMINSIZE], false, false);
             pdeinterlaceFilter->DeinterlaceMedianFilterCM(pfrmIn, frameNum);
         }
     }
 }
 
-void Prepare_frame_for_queueCM(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight, frameSupplier* frmSupply, bool bCreate)
+void Prepare_frame_for_queueCM(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight, frameSupplier* frmSupply, bool bCreate) 
 {
     assert(0 != pfrmOut);
     assert(pfrmIn != NULL && pfrmIn->inSurf != NULL && pfrmIn->outSurf != NULL);
@@ -724,7 +770,7 @@ void Frame_CreateCM(Frame *pfrmIn, unsigned int uiYWidth, unsigned int uiYHeight
         pfrmIn->plaV.ucCorner = pfrmIn->plaV.ucData + (pfrmIn->plaV.uiStride + 1) * pfrmIn->plaV.uiBorder;
     }
     //else
-    //    pfrmIn->uiSize = 0;
+    // pfrmIn->uiSize = 0;
 #endif
     pdeinterlaceFilter->FrameCreateSurface(pfrmIn, bcreate);
 }
@@ -762,7 +808,7 @@ unsigned int Convert_to_I420CM(unsigned char *pucIn, Frame *pfrmOut, char *pcFor
     pfrmOut->frmProperties.fr = dFrameRate;
     if (strcmp(pcFormat, "I420") == 0)
     {
-        ptir_memcpy(pfrmOut->ucMem, pucIn, pfrmOut->uiSize);
+        memcpy(pfrmOut->ucMem, pucIn, pfrmOut->uiSize);
         return 1;
     }
     else if (strcmp(pcFormat, "UYVY") == 0)
@@ -787,7 +833,6 @@ void Frame_Prep_and_AnalysisCM(Frame **frmBuffer, char *pcFormat, double dFrameR
     //pdeinterlaceFilter->WriteRAWI420ToGPUNV12(frmBuffer[uiframeBufferIndexCur], frmBuffer[BUFMINSIZE]->ucMem);
     frmBuffer[uiframeBufferIndexCur]->frmProperties.tindex = uiTemporalIndex + 1;
     pdeinterlaceFilter->CalculateSADRs(frmBuffer[uiframeBufferIndexCur], frmBuffer[uiframeBufferIndexNext]);
-    Artifacts_Detection_frame(frmBuffer, uiframeBufferIndexCur, true);
     frmBuffer[uiframeBufferIndexCur]->frmProperties.processed = true;
 
     if(uiframeBufferIndexCur == uiframeBufferIndexNext)
@@ -810,7 +855,17 @@ void PTIRCM_Frame_Prep_and_Analysis(PTIRSystemBuffer *SysBuffer)
         SysBuffer->control.uiNext = 0;
         SysBuffer->control.uiFrame = 0;
     }
-    Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
+    //pdeinterlaceFilter->WriteRAWI420ToGPUNV12(SysBuffer->frmBuffer[SysBuffer->control.uiCur], SysBuffer->frmBuffer[BUFMINSIZE]->ucMem);
+    SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex = SysBuffer->control.uiFrame + 1;
+    pdeinterlaceFilter->CalculateSADRs(SysBuffer->frmBuffer[SysBuffer->control.uiCur], SysBuffer->frmBuffer[SysBuffer->control.uiNext]);
+    Artifacts_Detection_frame(SysBuffer->frmBuffer, SysBuffer->control.uiCur);
+    SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.processed = true;
+
+    if(SysBuffer->control.uiCur == SysBuffer->control.uiNext)
+    {
+        SysBuffer->frmBuffer[SysBuffer->control.uiCur]->plaY.ucStats.ucSAD[0] = 99.999;
+        SysBuffer->frmBuffer[SysBuffer->control.uiCur]->plaY.ucStats.ucSAD[1] = 99.999;
+    }
     SysBuffer->control.uiCur++;
 }
 
@@ -838,7 +893,7 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
          CheckGenFrameCM(frmBuffer, frameIndex, uiisInterlaced);
 
     Prepare_frame_for_queueCM(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight);
-    ptir_memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
+    memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
            
     //Timestamp
     if (frmBuffer[frameIndex]->frmProperties.interlaced && bFullFrameRate == 1 && uiisInterlaced == 1)
@@ -857,7 +912,53 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
     if (bFullFrameRate && uiisInterlaced == 1)
     {
         Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight); // Go to double frame rate
-        ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+
+        //Timestamp
+        frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
+
+        FrameQueue_Add(fqIn, frmIn);
+    }
+    
+    frmBuffer[frameIndex]->frmProperties.drop = false;
+    frmBuffer[frameIndex]->frmProperties.candidate = false;
+}
+
+void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, double dCurTimeStamp, double dTimePerFrame, unsigned int uiisInterlaced, unsigned int uiInterlaceParity, unsigned int bFullFrameRate, Frame* frmIn, FrameQueue *fqIn)
+{
+    if (frmBuffer[frameIndex]->frmProperties.interlaced)
+    {
+        if(uiInterlaceParity) //BFF
+        {
+            if(bFullFrameRate) //Generate second frame
+            {
+                pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, frameIndex, BUFMINSIZE);
+            }
+            pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, -1, 0); //bootom field
+            pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, -1); //top field
+        }
+        else //TFF, use old scheme
+        {
+            pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, frameIndex, BUFMINSIZE);
+            //deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, -1, 1);
+            //deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, -1);
+        }
+     }
+     else
+         CheckGenFrameCM(frmBuffer, frameIndex, uiisInterlaced);
+
+    Prepare_frame_for_queueCM(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight);
+    memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
+           
+    //Timestamp
+    frmIn->frmProperties.timestamp = dCurTimeStamp;
+
+    FrameQueue_Add(fqIn, frmIn);
+
+    if (bFullFrameRate && uiisInterlaced == 1)
+    {
+        Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight); // Go to double frame rate
+        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
         //Timestamp
         frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
@@ -873,6 +974,7 @@ int PTIRCM_AutoMode_FF(PTIRSystemBuffer *SysBuffer)
 {
     unsigned int i, uiDeinterlace = 0,
                  uiNumFramesToDispatch;
+    double cur_timestamp;
 
     Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
@@ -880,43 +982,35 @@ int PTIRCM_AutoMode_FF(PTIRSystemBuffer *SysBuffer)
         Analyze_Buffer_Stats_Automode_CM(SysBuffer->frmBuffer, &SysBuffer->control.mainPattern, &SysBuffer->control.uiDispatch);
         if(SysBuffer->control.mainPattern.ucPatternFound)
         {
-            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType);
+            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType, SysBuffer->control.uiEndOfFrames);
+            double cur_timestamp = SysBuffer->frmBuffer[0]->frmProperties.timestamp;
+            
             for (i = 0; i < uiNumFramesToDispatch; i++)
             {
                 if (!SysBuffer->frmBuffer[i]->frmProperties.drop)
-                    Update_Frame_Buffer_CM(SysBuffer->frmBuffer, i, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-                else
                 {
-                    SysBuffer->frmBuffer[i + 1]->frmProperties.timestamp = SysBuffer->frmBuffer[i]->frmProperties.timestamp;
-                    SysBuffer->frmBuffer[i]->frmProperties.drop = false;
+                    Update_Frame_BufferNEW_CM(SysBuffer->frmBuffer, i, cur_timestamp, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                    cur_timestamp += SysBuffer->control.dTimePerFrame;
                 }
+                else
+                    SysBuffer->frmBuffer[i]->frmProperties.drop = false;
             }
-            Rotate_Buffer_borders(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch);
-            SysBuffer->control.uiCur -= min(SysBuffer->control.uiDispatch,SysBuffer->control.uiCur);
+            Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+            SysBuffer->control.uiCur -= min(uiNumFramesToDispatch,SysBuffer->control.uiCur);
         }
         else
         {
             uiDeinterlace = SysBuffer->control.mainPattern.uiOverrideHalfFrameRate;
-            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &SysBuffer->control.uiDispatch, SysBuffer->control.mainPattern.ucPatternType);
-            SysBuffer->control.dBaseTimeSw = SysBuffer->control.dTimePerFrame / (1 + uiDeinterlace);
-            for(i = 0; i < SysBuffer->control.uiDispatch; i++)
+
+            if(!SysBuffer->control.uiEndOfFrames)
+                uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
+            else
+                uiNumFramesToDispatch = SysBuffer->control.uiCur;
+            
+            for(i = 0; i < uiNumFramesToDispatch; i++)
             {
-                //FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
-                if (!SysBuffer->frmBuffer[0]->frmProperties.drop)
-                {
-                    if (!(SysBuffer->control.mainPattern.uiInterlacedFramesNum == (BUFMINSIZE - 1)))
-                    {
-                        Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, SysBuffer->control.dBaseTimeSw, AUTOMODE, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-                        Rotate_Buffer(SysBuffer->frmBuffer);
-                    }
-                    else
-                    {
-                        Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, SysBuffer->control.dBaseTimeSw, uiDeinterlace, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-                        Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
-                    }
-                }
-                else
-                    SysBuffer->frmBuffer[0]->frmProperties.drop = false;
+                Update_Frame_BufferNEW_CM(SysBuffer->frmBuffer, 0, SysBuffer->frmBuffer[0]->frmProperties.timestamp, SysBuffer->control.dBaseTime, uiDeinterlace, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
                 SysBuffer->control.uiCur--;
             }
         }
@@ -941,11 +1035,7 @@ int PTIRCM_AutoMode_HF(PTIRSystemBuffer *SysBuffer)
         Analyze_Buffer_Stats_Automode_CM(SysBuffer->frmBuffer, &SysBuffer->control.mainPattern, &SysBuffer->control.uiDispatch);
         if(SysBuffer->control.mainPattern.ucPatternFound)
         {
-            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType);
-            if(!SysBuffer->control.uiEndOfFrames)
-                uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
-            else
-                uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur);
+            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType, SysBuffer->control.uiEndOfFrames);
             for (i = 0; i < uiNumFramesToDispatch; i++)
             {
                 if (!SysBuffer->frmBuffer[i]->frmProperties.drop)
@@ -956,26 +1046,25 @@ int PTIRCM_AutoMode_HF(PTIRSystemBuffer *SysBuffer)
                     SysBuffer->frmBuffer[i]->frmProperties.drop = false;
                 }
             }
-            Rotate_Buffer_borders(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch);
-            SysBuffer->control.uiCur -= min(SysBuffer->control.uiDispatch,SysBuffer->control.uiCur);
+            Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+            SysBuffer->control.uiCur -= min(uiNumFramesToDispatch,SysBuffer->control.uiCur);
         }
         else
         {
-            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &SysBuffer->control.uiDispatch, SysBuffer->control.mainPattern.ucPatternType);
-            SysBuffer->control.dBaseTimeSw = SysBuffer->control.dTimePerFrame;
-            for(i = 0; i < SysBuffer->control.uiDispatch; i++)
+            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType, SysBuffer->control.uiEndOfFrames);
+            for(i = 0; i < uiNumFramesToDispatch; i++)
             {
                 //FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
                 if (!SysBuffer->frmBuffer[0]->frmProperties.drop)
                 {
                     if (!(SysBuffer->control.mainPattern.uiInterlacedFramesNum == (BUFMINSIZE - 1)))
                     {
-                        Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, SysBuffer->control.dBaseTimeSw, AUTOMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                        Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
                         Rotate_Buffer(SysBuffer->frmBuffer);
                     }
                     else
                     {
-                        Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, SysBuffer->control.dBaseTimeSw, uiDeinterlace, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                        Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, SysBuffer->control.dTimePerFrame, uiDeinterlace, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
                         Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
                     }
                 }
@@ -1038,18 +1127,19 @@ int PTIRCM_BaseFrameMode(PTIRSystemBuffer *SysBuffer)
             uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
         else
             uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur);
+
+        Interlaced_detection_log(SysBuffer->frmBuffer, uiNumFramesToDispatch);
         if(SysBuffer->control.mainPattern.ucPatternFound)
         {
             for (i = 0; i < uiNumFramesToDispatch; i++)
                 Update_Frame_Buffer_CM(SysBuffer->frmBuffer, i, SysBuffer->control.dBaseTime, BASEFRAMEMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-            Rotate_Buffer_borders(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch);
-            SysBuffer->control.uiCur -= min(SysBuffer->control.uiDispatch,SysBuffer->control.uiCur);
+            Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+            SysBuffer->control.uiCur -= min(uiNumFramesToDispatch,SysBuffer->control.uiCur);
         }
         else
         {
-            for(i = 0; i < SysBuffer->control.uiDispatch; i++)
+            for(i = 0; i < uiNumFramesToDispatch; i++)
             {
-                //FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
                 Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, SysBuffer->control.dBaseTime, BASEFRAMEMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
                 Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
                 SysBuffer->control.uiCur--;
@@ -1065,18 +1155,42 @@ int PTIRCM_BaseFrameMode(PTIRSystemBuffer *SysBuffer)
     }
 }
 
+int PTIRCM_BaseFrameMode_NoChange(PTIRSystemBuffer *SysBuffer)
+{
+    unsigned int i, uiDeinterlace = 0,
+                 uiNumFramesToDispatch;
+
+    Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
+    if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
+    {
+        Artifacts_Detection(SysBuffer->frmBuffer);
+        uiNumFramesToDispatch = min(BUFMINSIZE - 1, SysBuffer->control.uiCur);
+        Interlaced_detection_log(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+        for (i = 0; i < uiNumFramesToDispatch; i++)
+            SysBuffer->control.mainPattern.ulCountInterlacedDetections += SysBuffer->frmBuffer[i]->frmProperties.interlaced;
+        Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+        SysBuffer->control.uiCur -= uiNumFramesToDispatch;
+        SysBuffer->control.uiCur++;
+        return READY;
+    }
+    else
+    {
+        SysBuffer->control.uiCur++;
+        return NOTREADY;
+    }
+}
+
 int PTIRCM_Auto24fpsMode(PTIRSystemBuffer *SysBuffer)
 {
     unsigned int i, uiTelecineMode = TELECINE24FPSMODE,
-                 uiNumFramesToDispatch, uiLetGo = 0;
+                 uiNumFramesToDispatch, uiLetGo = 0, uiDone = 0, uiCheckCount = 0;
     const double filmfps = 1 / 23.976 * 1000;
+    double frmVal = 0.0;
 
     Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
     {
         Analyze_Buffer_Stats_CM(SysBuffer->frmBuffer, &SysBuffer->control.mainPattern, &SysBuffer->control.uiDispatch, &uiTelecineMode);
-        /*if(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex > SysBuffer->control.uiFrameCount)
-            SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.drop = true;*/
         if(!SysBuffer->control.uiEndOfFrames)
             uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
         else
@@ -1088,10 +1202,12 @@ int PTIRCM_Auto24fpsMode(PTIRSystemBuffer *SysBuffer)
                 uiLetGo++;
         }
 
-        if(SysBuffer->control.mainPattern.ucPatternFound)
+        if(SysBuffer->control.mainPattern.ucPatternFound && (!SysBuffer->control.uiEndOfFrames || uiNumFramesToDispatch == (BUFMINSIZE - 1)) )
         {
+            uiDone = 0;
             for (i = 0; i < uiNumFramesToDispatch; i++)
             {
+                uiCheckCount = ((SysBuffer->control.uiBufferCount + 1 + i == 5) && !uiLetGo);
                 if (!SysBuffer->frmBuffer[i]->frmProperties.drop24fps && !SysBuffer->frmBuffer[i]->frmProperties.drop && (!(SysBuffer->control.uiBufferCount + 1 + i == 5) || uiLetGo))
                     Update_Frame_Buffer_CM(SysBuffer->frmBuffer, i, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
                 else
@@ -1101,31 +1217,35 @@ int PTIRCM_Auto24fpsMode(PTIRSystemBuffer *SysBuffer)
                     SysBuffer->frmBuffer[i]->frmProperties.drop = false;
                     if((SysBuffer->control.uiBufferCount + 1 + i == 5) && !uiLetGo)
                         SysBuffer->control.uiBufferCount = 0;
+                    if(uiCheckCount)
+                        uiDone = true;
                 }
             }
-            Rotate_Buffer_borders(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch);
+            Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
             SysBuffer->control.uiCur -= min(SysBuffer->control.uiDispatch,SysBuffer->control.uiCur);
             if((uiNumFramesToDispatch < (BUFMINSIZE - 1)) && !uiLetGo)
                 SysBuffer->control.uiBufferCount += uiNumFramesToDispatch;
         }
         else
         {
-            for(i = 0; i < SysBuffer->control.uiDispatch; i++)
+            uiDone = 1;
+            for(i = 0; i < uiNumFramesToDispatch; i++)
             {
-                //FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
+                frmVal = 0.4 + (double) (SysBuffer->frmBuffer[0]->frmProperties.tindex) * 4 / 5;
+                uiCheckCount = ((SysBuffer->control.uiFrameOut + uiDone + i) <= frmVal);
+                if(!uiCheckCount)
+                    uiDone = 0;
                 if (!SysBuffer->frmBuffer[0]->frmProperties.drop24fps && !SysBuffer->frmBuffer[i]->frmProperties.drop)
                 {
                     SysBuffer->control.uiBufferCount++;
 
-                    if ((SysBuffer->control.uiBufferCount < (BUFMINSIZE - 1)))
-                    {
+                    if ((SysBuffer->control.uiBufferCount < (BUFMINSIZE - 1)) && uiCheckCount)
                         Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-                        Rotate_Buffer(SysBuffer->frmBuffer);
-                    }
                     else
                     {
                         SysBuffer->control.uiBufferCount = 0;
                         SysBuffer->frmBuffer[1]->frmProperties.timestamp = SysBuffer->frmBuffer[0]->frmProperties.timestamp;
+                        uiDone = 0;
                     }
                 }
                 else
@@ -1134,6 +1254,7 @@ int PTIRCM_Auto24fpsMode(PTIRSystemBuffer *SysBuffer)
                     SysBuffer->frmBuffer[0]->frmProperties.drop = false;
                     SysBuffer->control.uiBufferCount = 0;
                 }
+                Rotate_Buffer(SysBuffer->frmBuffer);
                 SysBuffer->control.uiCur--;
             }
         }
@@ -1153,15 +1274,14 @@ int PTIRCM_FixedTelecinePatternMode(PTIRSystemBuffer *SysBuffer)
                  uiNumFramesToDispatch, uiLetGo = 0;
     const double filmfps = 1 / 23.976 * 1000;
 
-    printf("Fixed Telecine pattern removal mode or Mode 5 is not available right now\n");
-    exit(MODE_NOT_AVAILABLE);
+    //printf("Fixed Telecine pattern removal mode or Mode 5 is not available right now\n");
+    //exit(MODE_NOT_AVAILABLE);
 
     Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
     {
-        Analyze_Buffer_Stats_CM(SysBuffer->frmBuffer, &SysBuffer->control.mainPattern, &SysBuffer->control.uiDispatch, &uiTelecineMode);
-        if(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex > SysBuffer->control.uiFrameCount)
-            SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.drop = true;
+        RemovePatternCM(SysBuffer->frmBuffer, SysBuffer->control.uiPatternTypeNumber, SysBuffer->control.uiPatternTypeInit, &SysBuffer->control.uiDispatch);
+
         if(!SysBuffer->control.uiEndOfFrames)
             uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
         else
@@ -1169,59 +1289,17 @@ int PTIRCM_FixedTelecinePatternMode(PTIRSystemBuffer *SysBuffer)
 
         for(i = 0; i < uiNumFramesToDispatch; i++)
         {
-            if(SysBuffer->frmBuffer[i]->frmProperties.drop || SysBuffer->frmBuffer[i]->frmProperties.drop24fps)
-                uiLetGo++;
-        }
-
-        if(SysBuffer->control.mainPattern.ucPatternFound)
-        {
-            for (i = 0; i < uiNumFramesToDispatch; i++)
+            if(!SysBuffer->frmBuffer[i]->frmProperties.drop)
+                Update_Frame_Buffer_CM(SysBuffer->frmBuffer, i, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+            else
             {
-                if (!SysBuffer->frmBuffer[i]->frmProperties.drop24fps && !SysBuffer->frmBuffer[i]->frmProperties.drop && (!(SysBuffer->control.uiBufferCount + 1 + i == 5) || uiLetGo))
-                    Update_Frame_Buffer_CM(SysBuffer->frmBuffer, i, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-                else
-                {
-                    SysBuffer->frmBuffer[i + 1]->frmProperties.timestamp = SysBuffer->frmBuffer[i]->frmProperties.timestamp;
-                    SysBuffer->frmBuffer[i]->frmProperties.drop24fps = false;
-                    SysBuffer->frmBuffer[i]->frmProperties.drop = false;
-                    if((SysBuffer->control.uiBufferCount + 1 + i == 5) && !uiLetGo)
-                        SysBuffer->control.uiBufferCount = 0;
-                }
-            }
-            Rotate_Buffer_borders(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch);
-            SysBuffer->control.uiCur -= min(SysBuffer->control.uiDispatch,SysBuffer->control.uiCur);
-            if((uiNumFramesToDispatch < (BUFMINSIZE - 1)) && !uiLetGo)
-                SysBuffer->control.uiBufferCount += uiNumFramesToDispatch;
-        }
-        else
-        {
-            for(i = 0; i < SysBuffer->control.uiDispatch; i++)
-            {
-                //FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
-                if (!SysBuffer->frmBuffer[0]->frmProperties.drop24fps && !SysBuffer->frmBuffer[i]->frmProperties.drop)
-                {
-                    SysBuffer->control.uiBufferCount++;
-
-                    if ((SysBuffer->control.uiBufferCount < (BUFMINSIZE - 1)))
-                    {
-                        Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-                        Rotate_Buffer(SysBuffer->frmBuffer);
-                    }
-                    else
-                    {
-                        SysBuffer->control.uiBufferCount = 0;
-                        SysBuffer->frmBuffer[1]->frmProperties.timestamp = SysBuffer->frmBuffer[0]->frmProperties.timestamp;
-                    }
-                }
-                else
-                {
-                    SysBuffer->frmBuffer[0]->frmProperties.drop24fps = false;
-                    SysBuffer->frmBuffer[0]->frmProperties.drop = false;
-                    SysBuffer->control.uiBufferCount = 0;
-                }
-                SysBuffer->control.uiCur--;
+                SysBuffer->frmBuffer[i + 1]->frmProperties.timestamp = SysBuffer->frmBuffer[i]->frmProperties.timestamp;
+                SysBuffer->frmBuffer[i]->frmProperties.drop = false;
             }
         }
+        Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+        SysBuffer->control.uiCur -= min(SysBuffer->control.uiDispatch,SysBuffer->control.uiCur);
+
         SysBuffer->control.uiCur++;
         return READY;
     }
@@ -1246,11 +1324,27 @@ int PTIRCM_MultipleMode(PTIRSystemBuffer *SysBuffer, unsigned int uiOpMode)
         return(PTIRCM_Auto24fpsMode(SysBuffer));
     else if(uiOpMode == 5)
         return(PTIRCM_FixedTelecinePatternMode(SysBuffer));
-    else
+    else if(uiOpMode == 6)
         return(PTIRCM_BaseFrameMode(SysBuffer));
+    else if (uiOpMode == 7)
+        return(PTIRCM_BaseFrameMode_NoChange(SysBuffer));
+    else
+    {
+        printf("\nInvalid Operation Mode\n");
+        exit(-1002);
+    }
 }
 
-void PTIRCM_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned int _uiInHeight, double _dFrameRate, unsigned int _uiInterlaceParity)
+int PTIRCM_SimpleMode(PTIRSystemBuffer *SysBuffer, unsigned int uiOpMode)
+{
+    if (uiOpMode)
+        return(PTIRCM_BaseFrameMode_NoChange(SysBuffer));
+    else
+        return(PTIRCM_BaseFrameMode(SysBuffer));
+        
+}
+
+void PTIRCM_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned int _uiInHeight, double _dFrameRate, unsigned int _uiInterlaceParity, unsigned int _uiPatternTypeNumber, unsigned int _uiPatternTypeInit)
 {
     unsigned int i;
 
@@ -1260,19 +1354,16 @@ void PTIRCM_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned 
     SysBuffer->control.uiInterlaceParity = _uiInterlaceParity;
     SysBuffer->control.uiWidth = _uiInWidth;
     SysBuffer->control.uiHeight = _uiInHeight;
+    SysBuffer->control.uiPatternTypeNumber = _uiPatternTypeNumber;
+    SysBuffer->control.uiPatternTypeInit = _uiPatternTypeInit;
 
     SysBuffer->control.uiCur = 0;
     SysBuffer->control.uiNext = 0;
     SysBuffer->control.uiFrame = 0;
     SysBuffer->control.uiBufferCount = 0;
     SysBuffer->control.uiFrameCount = 0;
+    SysBuffer->control.uiFrameOut = 0;
     SysBuffer->control.uiDispatch = 0;
-    SysBuffer->control.mainPattern.blendedCount = 0.0;
-    SysBuffer->control.mainPattern.uiIFlush = 0;
-    SysBuffer->control.mainPattern.uiPFlush = 0;
-    SysBuffer->control.mainPattern.uiOverrideHalfFrameRate = false;
-    SysBuffer->control.mainPattern.uiCountFullyInterlacedBuffers = 0;
-    SysBuffer->control.mainPattern.uiInterlacedFramesNum = 0;
     SysBuffer->control.dBaseTime = (1 / SysBuffer->control.dFrameRate) * 1000;
     SysBuffer->control.dDeIntTime = SysBuffer->control.dBaseTime / 2;
     SysBuffer->control.dBaseTimeSw = SysBuffer->control.dBaseTime;
@@ -1280,12 +1371,25 @@ void PTIRCM_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned 
     SysBuffer->control.dTimeStamp = 0.0;
     SysBuffer->control.uiSize = SysBuffer->control.uiInWidth * SysBuffer->control.uiInHeight * 3 / 2;
     SysBuffer->control.uiEndOfFrames = 0;
+    SysBuffer->control.pts = 0.0;
+    SysBuffer->control.frame_duration = 1000 / _dFrameRate;
 
     for(i = 0; i < LASTFRAME; i++)
     {
         SysBuffer->frmIO[i] = (Frame*)malloc(sizeof(Frame));
         Frame_CreateCM(SysBuffer->frmIO[i], SysBuffer->control.uiInWidth, SysBuffer->control.uiInHeight, SysBuffer->control.uiInWidth / 2, SysBuffer->control.uiInHeight / 2, 0);
         SysBuffer->frmBuffer[i] = SysBuffer->frmIO[i];
+        SysBuffer->frmBuffer[i]->frmProperties.candidate = false;
+        SysBuffer->frmBuffer[i]->frmProperties.detection = false;
+        SysBuffer->frmBuffer[i]->frmProperties.drop = false;
+        SysBuffer->frmBuffer[i]->frmProperties.drop24fps = false;
+        SysBuffer->frmBuffer[i]->frmProperties.fr = 0.0;
+        SysBuffer->frmBuffer[i]->frmProperties.interlaced = false;
+        SysBuffer->frmBuffer[i]->frmProperties.parity = 0;
+        SysBuffer->frmBuffer[i]->frmProperties.processed = false;
+        SysBuffer->frmBuffer[i]->frmProperties.timestamp = 0.0;
+        SysBuffer->frmBuffer[i]->frmProperties.tindex = 0;
+        SysBuffer->frmBuffer[i]->frmProperties.uiInterlacedDetectionValue = 0;
     }
     SysBuffer->frmIO[LASTFRAME] = (Frame*)malloc(sizeof(Frame));
     Frame_CreateCM(SysBuffer->frmIO[LASTFRAME], SysBuffer->control.uiWidth, SysBuffer->control.uiHeight, SysBuffer->control.uiWidth / 2, SysBuffer->control.uiHeight / 2, 0);
@@ -1294,6 +1398,7 @@ void PTIRCM_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned 
     SysBuffer->frmIn = NULL;
 }
 
+#if defined(_WIN32) || defined(_WIN64)
 int OutputFrameToDiskCM(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int * uiLastFrameNumber, DWORD *uiBytesRead)
 {
     int ferror;
@@ -1301,16 +1406,18 @@ int OutputFrameToDiskCM(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int *
     ferror = false;
     void* ucMem = malloc(frmIn->uiSize);
     //pdeinterlaceFilter->ReadRAWI420FromGPUNV12(frmIn, ucMem);
-    //ferror = WriteFile(hOut, ucMem, frmOut->uiSize, uiBytesRead, NULL);
+    ferror = WriteFile(hOut, ucMem, frmOut->uiSize, uiBytesRead, NULL);
     free(ucMem);
 
     return ferror;
 
 }
+#endif
 
-void PTIRCM_PutFrame(unsigned char *pucIO, PTIRSystemBuffer *SysBuffer)
+void PTIRCM_PutFrame(unsigned char *pucIO, PTIRSystemBuffer *SysBuffer, double dTimestamp)
 {
     unsigned int status = 0;
+    SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.timestamp = dTimestamp;
     status = Convert_to_I420CM(pucIO, SysBuffer->frmBuffer[BUFMINSIZE], "I420", SysBuffer->control.dFrameRate);
     if(status)
         SysBuffer->control.uiFrameCount += status;

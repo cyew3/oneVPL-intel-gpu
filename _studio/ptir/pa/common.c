@@ -57,6 +57,32 @@ void PrintOutputStats(HANDLE hStd,
 }
 #endif
 
+void PrintOutputStats_PvsI(unsigned long ulNumberofInterlacedFrames, unsigned long ulTotalNumberofFramesProcessed, const char **cSummary)
+{
+#if !PRINTDEBUG
+    unsigned long ulDifference = 0;
+    unsigned int uiMessage = 5;
+    if(ulNumberofInterlacedFrames <= ulTotalNumberofFramesProcessed)
+    {
+        ulDifference = (ulTotalNumberofFramesProcessed - ulNumberofInterlacedFrames);
+        if(ulDifference <= ulTotalNumberofFramesProcessed * 0.02)
+            uiMessage = 4;
+        else if(ulDifference <= ulTotalNumberofFramesProcessed * 0.49)
+            uiMessage = 3;
+        else if(ulDifference <= ulTotalNumberofFramesProcessed * 0.98)
+            uiMessage = 2;
+        else
+            uiMessage = 1;
+    }
+
+#if THOMSONMODE
+    printf("%32s      %s\n",cSummary[0], cSummary[uiMessage]);
+#else
+    printf("%32s      %s\t%lu\t%lu\n",cSummary[0], cSummary[uiMessage], ulNumberofInterlacedFrames, ulTotalNumberofFramesProcessed);
+#endif
+#endif
+}
+
 
 void* aligned_malloc(size_t required_bytes, size_t alignment)
 {
@@ -162,10 +188,6 @@ void FrameQueue_Add(FrameQueue *pfq, Frame *pfrm)
 {
     FrameNode
         *pfn = (FrameNode *)malloc(sizeof(FrameNode));
-    assert(pfq != 0);
-    assert(pfrm != 0);
-    if(!pfn)
-        return;
     pfn->pfrmItem = pfrm;
     pfn->pfnNext = NULL;
 
@@ -312,7 +334,7 @@ void Frame_Prep_and_Analysis(Frame **frmBuffer, char *pcFormat, double dFrameRat
     frmBuffer[uiframeBufferIndexCur]->frmProperties.tindex = uiTemporalIndex + 1;
     sadCalc_I420_frame(frmBuffer[uiframeBufferIndexCur],frmBuffer[uiframeBufferIndexNext]);
     Rs_measurement(frmBuffer[uiframeBufferIndexCur]);
-    Artifacts_Detection_frame(frmBuffer, uiframeBufferIndexCur, TRUE);
+    //Artifacts_Detection_frame(frmBuffer, uiframeBufferIndexCur, TRUE);
     frmBuffer[uiframeBufferIndexCur]->frmProperties.processed = TRUE;
 
     if(uiframeBufferIndexCur == uiframeBufferIndexNext)
@@ -336,7 +358,7 @@ void CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int uiOPMode)
     {
         Rs_measurement(pfrmIn[frameNum]);
         pfrmIn[frameNum]->frmProperties.interlaced = FALSE;
-        Artifacts_Detection_frame(pfrmIn,frameNum, FALSE);
+        Artifacts_Detection_frame(pfrmIn,frameNum);
         if(pfrmIn[frameNum]->frmProperties.interlaced)
         {
             FillBaseLinesIYUV(pfrmIn[frameNum], pfrmIn[BUFMINSIZE], FALSE, FALSE);
@@ -346,42 +368,92 @@ void CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int uiOPMode)
 }
 void Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight)
 {
-    if(!pfrmOut)
-        return;
     *pfrmOut = (Frame *)malloc(sizeof(Frame));
-    if(!*pfrmOut)
-        return;
     Frame_Create(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 64);
     (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.tindex;
     ReSample(*pfrmOut, pfrmIn);
     (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.tindex;
 }
 
-double Calculate_Resulting_timestamps(Frame** frmBuffer, unsigned int uiDispatch, unsigned int uiCur, double dBaseTime, unsigned int *uiNumFramesToDispatch, unsigned int PatternType)
+double Calculate_Resulting_timestamps(Frame** frmBuffer, unsigned int uiDispatch, unsigned int uiCur, double dBaseTime, unsigned int *uiNumFramesToDispatch, unsigned int PatternType, unsigned int uiEndOfFrames)
 {
     unsigned int uiNumFramesToDrop,
                  i;
 
     double dCurrentTimeStart,
            dCurrentTimeEnd,
+           dCurrentFrameDuration,
            dTimePerFrame;
 
-    *uiNumFramesToDispatch = min(uiDispatch, uiCur + 1);
+    if(!uiEndOfFrames)
+        *uiNumFramesToDispatch = min(uiDispatch, uiCur + 1);
+    else {
+        //*uiNumFramesToDispatch = min(uiDispatch, uiCur);
+        *uiNumFramesToDispatch = uiCur;
+    }
+
     uiNumFramesToDrop = 0;
     for (i = 0; i < *uiNumFramesToDispatch; i++)
         uiNumFramesToDrop += frmBuffer[i]->frmProperties.drop;
 
-    dCurrentTimeStart = frmBuffer[0]->frmProperties.timestamp;
-    dCurrentTimeEnd = frmBuffer[*uiNumFramesToDispatch - 1]->frmProperties.tindex * dBaseTime;
-    dTimePerFrame = (dCurrentTimeEnd - dCurrentTimeStart) / (*uiNumFramesToDispatch - uiNumFramesToDrop);
+    if ((*uiNumFramesToDispatch - uiNumFramesToDrop) > 2) {
+        dCurrentFrameDuration = frmBuffer[1]->frmProperties.timestamp - frmBuffer[0]->frmProperties.timestamp;
+        dCurrentTimeStart = frmBuffer[0]->frmProperties.timestamp;
+        //dCurrentTimeEnd = frmBuffer[*uiNumFramesToDispatch - 1]->frmProperties.tindex * dBaseTime;
+        dCurrentTimeEnd = frmBuffer[*uiNumFramesToDispatch - 1]->frmProperties.timestamp;
+        dTimePerFrame = (dCurrentTimeEnd - dCurrentTimeStart + dCurrentFrameDuration) / ((double)(*uiNumFramesToDispatch - uiNumFramesToDrop));
+    } else {
+        if ((*uiNumFramesToDispatch - uiNumFramesToDrop) == 2) {
+            dTimePerFrame = frmBuffer[1]->frmProperties.timestamp - frmBuffer[0]->frmProperties.timestamp;
+        } else
+            dTimePerFrame =  dBaseTime;
+    }
 
     return dTimePerFrame;
+}
+
+void Update_Frame_BufferNEW(Frame** frmBuffer, unsigned int frameIndex, double dCurTimeStamp, double dTimePerFrame, unsigned int uiisInterlaced, unsigned int uiInterlaceParity, unsigned int bFullFrameRate, Frame* frmIn, FrameQueue *fqIn)
+{
+    if (frmBuffer[frameIndex]->frmProperties.interlaced)
+    {
+        FillBaseLinesIYUV(frmBuffer[frameIndex], frmBuffer[BUFMINSIZE], uiInterlaceParity, uiInterlaceParity);
+        //First field
+        DeinterlaceMedianFilter(frmBuffer, frameIndex, BUFMINSIZE, uiInterlaceParity);
+        //Second field
+        if(bFullFrameRate)
+            DeinterlaceMedianFilter(frmBuffer, BUFMINSIZE, frameIndex, !uiInterlaceParity);
+     }
+     else
+         CheckGenFrame(frmBuffer, frameIndex, uiisInterlaced);
+
+    Prepare_frame_for_queue(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight);
+    memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
+
+    //Timestamp
+    frmIn->frmProperties.timestamp = dCurTimeStamp;
+
+    FrameQueue_Add(fqIn, frmIn);
+
+    if (bFullFrameRate && uiisInterlaced == 1)
+    {
+        Prepare_frame_for_queue(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight); // Go to double frame rate
+        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+
+        //Timestamp
+        frmIn->frmProperties.timestamp = dCurTimeStamp + dTimePerFrame / 2;
+
+        FrameQueue_Add(fqIn, frmIn);
+    }
+
+    frmBuffer[frameIndex]->frmProperties.drop = FALSE;
+    frmBuffer[frameIndex]->frmProperties.candidate = FALSE;
 }
 
 void Update_Frame_Buffer(Frame** frmBuffer, unsigned int frameIndex, double dTimePerFrame, unsigned int uiisInterlaced, unsigned int uiInterlaceParity, unsigned int bFullFrameRate, Frame* frmIn, FrameQueue *fqIn)
 {
     if (frmBuffer[frameIndex]->frmProperties.interlaced)
     {
+        FillBaseLinesIYUV(frmBuffer[frameIndex], frmBuffer[BUFMINSIZE], uiInterlaceParity, uiInterlaceParity);
         //First field
         DeinterlaceMedianFilter(frmBuffer, frameIndex, BUFMINSIZE, uiInterlaceParity);
         //Second field
@@ -439,24 +511,60 @@ int OutputFrameToDisk(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int * u
 }
 #endif
 
-void PTIR_PutFrame(unsigned char *pucIO, PTIRSystemBuffer *SysBuffer)
+// timestamp in msecs
+int PTIR_PutFrame(unsigned char *pucIO, PTIRSystemBuffer *SysBuffer, double dTimestamp)
 {
     unsigned int status = 0;
+
+    //SysBuffer->control.uiNext = SysBuffer->control.uiCur - 1;
+
+    SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.timestamp = dTimestamp;
+
     status = Convert_to_I420(pucIO, SysBuffer->frmBuffer[BUFMINSIZE], "I420", SysBuffer->control.dFrameRate);
     if(status)
         SysBuffer->control.uiFrameCount += status;
     else
-        exit(-1000);
+        return(-1000);            // error
+
+    //SysBuffer->control.uiFrame++;
+
+    return 0;                    // success
 }
 
 void PTIR_Frame_Prep_and_Analysis(PTIRSystemBuffer *SysBuffer)
 {
+#if PRINTDEBUG
+    double    *dSAD,
+            *dRs;
+    unsigned int dPicSize;
+
+    dPicSize = SysBuffer->frmBuffer[SysBuffer->control.uiCur]->plaY.uiWidth * SysBuffer->frmBuffer[SysBuffer->control.uiCur]->plaY.uiHeight;
+#endif
     if(SysBuffer->control.uiCur == 0)
     {
         SysBuffer->control.uiNext = 0;
         SysBuffer->control.uiFrame = 0;
     }
-    Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
+
+    memcpy(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->ucMem, SysBuffer->frmBuffer[BUFMINSIZE]->ucMem, SysBuffer->frmBuffer[BUFMINSIZE]->uiSize);
+    SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex = SysBuffer->control.uiFrame + 1;
+    sadCalc_I420_frame(SysBuffer->frmBuffer[SysBuffer->control.uiCur],SysBuffer->frmBuffer[SysBuffer->control.uiNext]);
+    Rs_measurement(SysBuffer->frmBuffer[SysBuffer->control.uiCur]);
+    Artifacts_Detection_frame(SysBuffer->frmBuffer, SysBuffer->control.uiCur);
+    SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.processed = TRUE;
+
+    if(SysBuffer->control.uiCur == SysBuffer->control.uiNext)
+    {
+        SysBuffer->frmBuffer[SysBuffer->control.uiCur]->plaY.ucStats.ucSAD[0] = 99.999;
+        SysBuffer->frmBuffer[SysBuffer->control.uiCur]->plaY.ucStats.ucSAD[1] = 99.999;
+    }
+
+#if PRINTDEBUG
+    dSAD = SysBuffer->frmBuffer[SysBuffer->control.uiCur]->plaY.ucStats.ucSAD;
+    dRs = SysBuffer->frmBuffer[SysBuffer->control.uiCur]->plaY.ucStats.ucRs;
+    printf("%i\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.0lf\t%4.3lf\t%4.0lf\t%4.3lf\t%4.3lf\t%4.3lf\t%4.3lf\n", SysBuffer->control.uiFrame + 1, dSAD[0], dSAD[1], dSAD[2], dSAD[3], dSAD[4], dRs[0], dRs[1], dRs[2], dRs[3], dRs[4], dRs[5] / dPicSize * 1000, dRs[6], dRs[7] / dPicSize * 1000, dRs[8], dRs[9], dRs[10]);
+#endif
+    //Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     SysBuffer->control.uiCur++;
 }
 
@@ -464,6 +572,7 @@ int PTIR_AutoMode_FF(PTIRSystemBuffer *SysBuffer)
 {
     unsigned int i, uiDeinterlace = 0,
                  uiNumFramesToDispatch;
+    double cur_timestamp;
 
     Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
@@ -471,16 +580,18 @@ int PTIR_AutoMode_FF(PTIRSystemBuffer *SysBuffer)
         Analyze_Buffer_Stats_Automode(SysBuffer->frmBuffer, &SysBuffer->control.mainPattern, &SysBuffer->control.uiDispatch);
         if(SysBuffer->control.mainPattern.ucPatternFound)
         {
-            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType);
+            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType, SysBuffer->control.uiEndOfFrames);
+            cur_timestamp = SysBuffer->frmBuffer[0]->frmProperties.timestamp;
+
             for (i = 0; i < uiNumFramesToDispatch; i++)
             {
                 if (!SysBuffer->frmBuffer[i]->frmProperties.drop)
-                    Update_Frame_Buffer(SysBuffer->frmBuffer, i, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-                else
                 {
-                    SysBuffer->frmBuffer[i + 1]->frmProperties.timestamp = SysBuffer->frmBuffer[i]->frmProperties.timestamp;
-                    SysBuffer->frmBuffer[i]->frmProperties.drop = FALSE;
+                    Update_Frame_BufferNEW(SysBuffer->frmBuffer, i, cur_timestamp, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                    cur_timestamp += SysBuffer->control.dTimePerFrame;
                 }
+                else
+                    SysBuffer->frmBuffer[i]->frmProperties.drop = FALSE;
             }
             Rotate_Buffer_borders(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch);
             SysBuffer->control.uiCur -= min(SysBuffer->control.uiDispatch,SysBuffer->control.uiCur);
@@ -488,26 +599,16 @@ int PTIR_AutoMode_FF(PTIRSystemBuffer *SysBuffer)
         else
         {
             uiDeinterlace = SysBuffer->control.mainPattern.uiOverrideHalfFrameRate;
-            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &SysBuffer->control.uiDispatch, SysBuffer->control.mainPattern.ucPatternType);
-            SysBuffer->control.dBaseTimeSw = SysBuffer->control.dTimePerFrame / (1 + uiDeinterlace);
-            for(i = 0; i < SysBuffer->control.uiDispatch; i++)
+
+            if(!SysBuffer->control.uiEndOfFrames)
+                uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
+            else
+                uiNumFramesToDispatch = SysBuffer->control.uiCur;
+
+            for(i = 0; i < uiNumFramesToDispatch; i++)
             {
-                FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
-                if (!SysBuffer->frmBuffer[0]->frmProperties.drop)
-                {
-                    if (!(SysBuffer->control.mainPattern.uiInterlacedFramesNum == (BUFMINSIZE - 1)))
-                    {
-                        Update_Frame_Buffer(SysBuffer->frmBuffer, 0, SysBuffer->control.dBaseTimeSw, AUTOMODE, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-                        Rotate_Buffer(SysBuffer->frmBuffer);
-                    }
-                    else
-                    {
-                        Update_Frame_Buffer(SysBuffer->frmBuffer, 0, SysBuffer->control.dBaseTimeSw, uiDeinterlace, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-                        Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
-                    }
-                }
-                else
-                    SysBuffer->frmBuffer[0]->frmProperties.drop = FALSE;
+                Update_Frame_BufferNEW(SysBuffer->frmBuffer, 0, SysBuffer->frmBuffer[0]->frmProperties.timestamp, SysBuffer->control.dBaseTime, uiDeinterlace, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
                 SysBuffer->control.uiCur--;
             }
         }
@@ -532,11 +633,7 @@ int PTIR_AutoMode_HF(PTIRSystemBuffer *SysBuffer)
         Analyze_Buffer_Stats_Automode(SysBuffer->frmBuffer, &SysBuffer->control.mainPattern, &SysBuffer->control.uiDispatch);
         if(SysBuffer->control.mainPattern.ucPatternFound)
         {
-            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType);
-            if(!SysBuffer->control.uiEndOfFrames)
-                uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
-            else
-                uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur);
+            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType, SysBuffer->control.uiEndOfFrames);
             for (i = 0; i < uiNumFramesToDispatch; i++)
             {
                 if (!SysBuffer->frmBuffer[i]->frmProperties.drop)
@@ -547,26 +644,25 @@ int PTIR_AutoMode_HF(PTIRSystemBuffer *SysBuffer)
                     SysBuffer->frmBuffer[i]->frmProperties.drop = FALSE;
                 }
             }
-            Rotate_Buffer_borders(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch);
-            SysBuffer->control.uiCur -= min(SysBuffer->control.uiDispatch,SysBuffer->control.uiCur);
+            Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+            SysBuffer->control.uiCur -= min(uiNumFramesToDispatch,SysBuffer->control.uiCur);
         }
         else
         {
-            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &SysBuffer->control.uiDispatch, SysBuffer->control.mainPattern.ucPatternType);
-            SysBuffer->control.dBaseTimeSw = SysBuffer->control.dTimePerFrame;
-            for(i = 0; i < SysBuffer->control.uiDispatch; i++)
+            SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType, SysBuffer->control.uiEndOfFrames);
+            for(i = 0; i < uiNumFramesToDispatch; i++)
             {
-                FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
+                //FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
                 if (!SysBuffer->frmBuffer[0]->frmProperties.drop)
                 {
                     if (!(SysBuffer->control.mainPattern.uiInterlacedFramesNum == (BUFMINSIZE - 1)))
                     {
-                        Update_Frame_Buffer(SysBuffer->frmBuffer, 0, SysBuffer->control.dBaseTimeSw, AUTOMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                        Update_Frame_Buffer(SysBuffer->frmBuffer, 0, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
                         Rotate_Buffer(SysBuffer->frmBuffer);
                     }
                     else
                     {
-                        Update_Frame_Buffer(SysBuffer->frmBuffer, 0, SysBuffer->control.dBaseTimeSw, uiDeinterlace, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                        Update_Frame_Buffer(SysBuffer->frmBuffer, 0, SysBuffer->control.dTimePerFrame, uiDeinterlace, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
                         Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
                     }
                 }
@@ -592,7 +688,6 @@ int PTIR_DeinterlaceMode_FF(PTIRSystemBuffer *SysBuffer)
         SysBuffer->frmBuffer[0]->frmProperties.interlaced = 1;
         Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
         SysBuffer->control.dTimePerFrame = SysBuffer->control.dBaseTime / 2;
-        FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
         Update_Frame_Buffer(SysBuffer->frmBuffer, 0, SysBuffer->control.dTimePerFrame, DEINTERLACEMODE, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
         Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
         return READY;
@@ -601,13 +696,46 @@ int PTIR_DeinterlaceMode_FF(PTIRSystemBuffer *SysBuffer)
         return NOTREADY;
 }
 
+int PTIR_DeinterlaceMode_HF_timestamp(PTIRSystemBuffer *SysBuffer)
+{
+    if(SysBuffer->control.uiCur >= 1) {
+        unsigned int uiisInterlaced = 1;
+        SysBuffer->frmBuffer[0]->frmProperties.interlaced = 1;
+        Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
+
+        if (SysBuffer->frmBuffer[0]->frmProperties.interlaced) {
+            FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
+            // First field
+            DeinterlaceMedianFilter(SysBuffer->frmBuffer, 0, BUFMINSIZE, SysBuffer->control.uiInterlaceParity);
+            // Second field -- for full frame rate
+            //    DeinterlaceMedianFilter(frmBuffer, BUFMINSIZE, frameIndex, !uiInterlaceParity);
+         }
+         else
+             CheckGenFrame(SysBuffer->frmBuffer, 0, uiisInterlaced);
+
+        Prepare_frame_for_queue(&SysBuffer->frmIn, SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[0]->plaY.uiWidth, SysBuffer->frmBuffer[0]->plaY.uiHeight);
+        memcpy(SysBuffer->frmIn->plaY.ucStats.ucRs, SysBuffer->frmBuffer[0]->plaY.ucStats.ucRs,sizeof(double) * 10);
+
+        SysBuffer->frmIn->frmProperties.timestamp = SysBuffer->frmBuffer[0]->frmProperties.timestamp;
+        FrameQueue_Add(&SysBuffer->fqIn, SysBuffer->frmIn);
+
+        SysBuffer->frmBuffer[0]->frmProperties.drop = FALSE;
+        SysBuffer->frmBuffer[0]->frmProperties.candidate = FALSE;
+
+        Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
+        return READY;
+    }
+    else
+        return NOTREADY;
+}
+
+
 int PTIR_DeinterlaceMode_HF(PTIRSystemBuffer *SysBuffer)
 {
     if(SysBuffer->control.uiCur >= 1)
     {
         SysBuffer->frmBuffer[0]->frmProperties.interlaced = 1;
         Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
-        FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
         Update_Frame_Buffer(SysBuffer->frmBuffer, 0, SysBuffer->control.dBaseTime, DEINTERLACEMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
         Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
         return READY;
@@ -629,18 +757,19 @@ int PTIR_BaseFrameMode(PTIRSystemBuffer *SysBuffer)
             uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
         else
             uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur);
+
+        Interlaced_detection_log(SysBuffer->frmBuffer, uiNumFramesToDispatch);
         if(SysBuffer->control.mainPattern.ucPatternFound)
         {
             for (i = 0; i < uiNumFramesToDispatch; i++)
                 Update_Frame_Buffer(SysBuffer->frmBuffer, i, SysBuffer->control.dBaseTime, BASEFRAMEMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-            Rotate_Buffer_borders(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch);
-            SysBuffer->control.uiCur -= min(SysBuffer->control.uiDispatch,SysBuffer->control.uiCur);
+            Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+            SysBuffer->control.uiCur -= min(uiNumFramesToDispatch,SysBuffer->control.uiCur);
         }
         else
         {
-            for(i = 0; i < SysBuffer->control.uiDispatch; i++)
+            for(i = 0; i < uiNumFramesToDispatch; i++)
             {
-                FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
                 Update_Frame_Buffer(SysBuffer->frmBuffer, 0, SysBuffer->control.dBaseTime, BASEFRAMEMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
                 Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
                 SysBuffer->control.uiCur--;
@@ -656,18 +785,42 @@ int PTIR_BaseFrameMode(PTIRSystemBuffer *SysBuffer)
     }
 }
 
+int PTIR_BaseFrameMode_NoChange(PTIRSystemBuffer *SysBuffer)
+{
+    unsigned int i, uiDeinterlace = 0,
+                 uiNumFramesToDispatch;
+
+    Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
+    if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
+    {
+        Artifacts_Detection(SysBuffer->frmBuffer);
+        uiNumFramesToDispatch = min(BUFMINSIZE - 1, SysBuffer->control.uiCur);
+        Interlaced_detection_log(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+        for (i = 0; i < uiNumFramesToDispatch; i++)
+            SysBuffer->control.mainPattern.ulCountInterlacedDetections += SysBuffer->frmBuffer[i]->frmProperties.interlaced;
+        Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+        SysBuffer->control.uiCur -= uiNumFramesToDispatch;
+        SysBuffer->control.uiCur++;
+        return READY;
+    }
+    else
+    {
+        SysBuffer->control.uiCur++;
+        return NOTREADY;
+    }
+}
+
 int PTIR_Auto24fpsMode(PTIRSystemBuffer *SysBuffer)
 {
     unsigned int i, uiTelecineMode = TELECINE24FPSMODE,
-                 uiNumFramesToDispatch, uiLetGo = 0;
+                 uiNumFramesToDispatch, uiLetGo = 0, uiDone = 0, uiCheckCount = 0;
     const double filmfps = 1 / 23.976 * 1000;
+    double frmVal = 0.0;
 
     Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
     {
         Analyze_Buffer_Stats(SysBuffer->frmBuffer, &SysBuffer->control.mainPattern, &SysBuffer->control.uiDispatch, &uiTelecineMode);
-        /*if(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex > SysBuffer->control.uiFrameCount)
-            SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.drop = TRUE;*/
         if(!SysBuffer->control.uiEndOfFrames)
             uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
         else
@@ -679,11 +832,13 @@ int PTIR_Auto24fpsMode(PTIRSystemBuffer *SysBuffer)
                 uiLetGo++;
         }
 
-        if(SysBuffer->control.mainPattern.ucPatternFound)
+        if(SysBuffer->control.mainPattern.ucPatternFound && (!SysBuffer->control.uiEndOfFrames || uiNumFramesToDispatch == (BUFMINSIZE - 1)) )
         {
+            uiDone = 0;
             for (i = 0; i < uiNumFramesToDispatch; i++)
             {
-                if (!SysBuffer->frmBuffer[i]->frmProperties.drop24fps && !SysBuffer->frmBuffer[i]->frmProperties.drop && (!(SysBuffer->control.uiBufferCount + 1 + i == 5) || uiLetGo))
+                uiCheckCount = ((SysBuffer->control.uiBufferCount + 1 + i == 5) && !uiLetGo);
+                if (!SysBuffer->frmBuffer[i]->frmProperties.drop24fps && !SysBuffer->frmBuffer[i]->frmProperties.drop && (!uiCheckCount || uiDone))
                     Update_Frame_Buffer(SysBuffer->frmBuffer, i, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
                 else
                 {
@@ -692,31 +847,35 @@ int PTIR_Auto24fpsMode(PTIRSystemBuffer *SysBuffer)
                     SysBuffer->frmBuffer[i]->frmProperties.drop = FALSE;
                     if((SysBuffer->control.uiBufferCount + 1 + i == 5) && !uiLetGo)
                         SysBuffer->control.uiBufferCount = 0;
+                    if(uiCheckCount)
+                        uiDone = TRUE;
                 }
             }
-            Rotate_Buffer_borders(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch);
-            SysBuffer->control.uiCur -= min(SysBuffer->control.uiDispatch,SysBuffer->control.uiCur);
+            Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+            SysBuffer->control.uiCur -= min(uiNumFramesToDispatch,SysBuffer->control.uiCur);
             if((uiNumFramesToDispatch < (BUFMINSIZE - 1)) && !uiLetGo)
                 SysBuffer->control.uiBufferCount += uiNumFramesToDispatch;
         }
         else
         {
-            for(i = 0; i < SysBuffer->control.uiDispatch; i++)
+            uiDone = 1;
+            for(i = 0; i < uiNumFramesToDispatch; i++)
             {
-                FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
-                if (!SysBuffer->frmBuffer[0]->frmProperties.drop24fps && !SysBuffer->frmBuffer[i]->frmProperties.drop)
+                frmVal = 0.4 + (double) (SysBuffer->frmBuffer[0]->frmProperties.tindex) * 4 / 5;
+                uiCheckCount = ((SysBuffer->control.uiFrameOut + uiDone + i) <= frmVal);
+                if(!uiCheckCount)
+                    uiDone = 0;
+                if ((!SysBuffer->frmBuffer[0]->frmProperties.drop24fps && !SysBuffer->frmBuffer[0]->frmProperties.drop))
                 {
                     SysBuffer->control.uiBufferCount++;
 
-                    if ((SysBuffer->control.uiBufferCount < (BUFMINSIZE - 1)))
-                    {
+                    if ((SysBuffer->control.uiBufferCount < (BUFMINSIZE - 1)) && uiCheckCount)
                         Update_Frame_Buffer(SysBuffer->frmBuffer, 0, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-                        Rotate_Buffer(SysBuffer->frmBuffer);
-                    }
                     else
                     {
                         SysBuffer->control.uiBufferCount = 0;
                         SysBuffer->frmBuffer[1]->frmProperties.timestamp = SysBuffer->frmBuffer[0]->frmProperties.timestamp;
+                        uiDone = 0;
                     }
                 }
                 else
@@ -725,6 +884,7 @@ int PTIR_Auto24fpsMode(PTIRSystemBuffer *SysBuffer)
                     SysBuffer->frmBuffer[0]->frmProperties.drop = FALSE;
                     SysBuffer->control.uiBufferCount = 0;
                 }
+                Rotate_Buffer(SysBuffer->frmBuffer);
                 SysBuffer->control.uiCur--;
             }
         }
@@ -744,15 +904,11 @@ int PTIR_FixedTelecinePatternMode(PTIRSystemBuffer *SysBuffer)
                  uiNumFramesToDispatch, uiLetGo = 0;
     const double filmfps = 1 / 23.976 * 1000;
 
-    printf("Fixed Telecine pattern removal mode or Mode 5 is not available right now\n");
-    exit(MODE_NOT_AVAILABLE);
-
     Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
     {
-        Analyze_Buffer_Stats(SysBuffer->frmBuffer, &SysBuffer->control.mainPattern, &SysBuffer->control.uiDispatch, &uiTelecineMode);
-        if(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex > SysBuffer->control.uiFrameCount)
-            SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.drop = TRUE;
+        RemovePattern(SysBuffer->frmBuffer, SysBuffer->control.uiPatternTypeNumber, SysBuffer->control.uiPatternTypeInit, &SysBuffer->control.uiDispatch);
+
         if(!SysBuffer->control.uiEndOfFrames)
             uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
         else
@@ -760,59 +916,17 @@ int PTIR_FixedTelecinePatternMode(PTIRSystemBuffer *SysBuffer)
 
         for(i = 0; i < uiNumFramesToDispatch; i++)
         {
-            if(SysBuffer->frmBuffer[i]->frmProperties.drop || SysBuffer->frmBuffer[i]->frmProperties.drop24fps)
-                uiLetGo++;
-        }
-
-        if(SysBuffer->control.mainPattern.ucPatternFound)
-        {
-            for (i = 0; i < uiNumFramesToDispatch; i++)
+            if(!SysBuffer->frmBuffer[i]->frmProperties.drop)
+                Update_Frame_Buffer(SysBuffer->frmBuffer, i, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+            else
             {
-                if (!SysBuffer->frmBuffer[i]->frmProperties.drop24fps && !SysBuffer->frmBuffer[i]->frmProperties.drop && (!(SysBuffer->control.uiBufferCount + 1 + i == 5) || uiLetGo))
-                    Update_Frame_Buffer(SysBuffer->frmBuffer, i, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-                else
-                {
-                    SysBuffer->frmBuffer[i + 1]->frmProperties.timestamp = SysBuffer->frmBuffer[i]->frmProperties.timestamp;
-                    SysBuffer->frmBuffer[i]->frmProperties.drop24fps = FALSE;
-                    SysBuffer->frmBuffer[i]->frmProperties.drop = FALSE;
-                    if((SysBuffer->control.uiBufferCount + 1 + i == 5) && !uiLetGo)
-                        SysBuffer->control.uiBufferCount = 0;
-                }
-            }
-            Rotate_Buffer_borders(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch);
-            SysBuffer->control.uiCur -= min(SysBuffer->control.uiDispatch,SysBuffer->control.uiCur);
-            if((uiNumFramesToDispatch < (BUFMINSIZE - 1)) && !uiLetGo)
-                SysBuffer->control.uiBufferCount += uiNumFramesToDispatch;
-        }
-        else
-        {
-            for(i = 0; i < SysBuffer->control.uiDispatch; i++)
-            {
-                FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
-                if (!SysBuffer->frmBuffer[0]->frmProperties.drop24fps && !SysBuffer->frmBuffer[i]->frmProperties.drop)
-                {
-                    SysBuffer->control.uiBufferCount++;
-
-                    if ((SysBuffer->control.uiBufferCount < (BUFMINSIZE - 1)))
-                    {
-                        Update_Frame_Buffer(SysBuffer->frmBuffer, 0, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
-                        Rotate_Buffer(SysBuffer->frmBuffer);
-                    }
-                    else
-                    {
-                        SysBuffer->control.uiBufferCount = 0;
-                        SysBuffer->frmBuffer[1]->frmProperties.timestamp = SysBuffer->frmBuffer[0]->frmProperties.timestamp;
-                    }
-                }
-                else
-                {
-                    SysBuffer->frmBuffer[0]->frmProperties.drop24fps = FALSE;
-                    SysBuffer->frmBuffer[0]->frmProperties.drop = FALSE;
-                    SysBuffer->control.uiBufferCount = 0;
-                }
-                SysBuffer->control.uiCur--;
+                SysBuffer->frmBuffer[i + 1]->frmProperties.timestamp = SysBuffer->frmBuffer[i]->frmProperties.timestamp;
+                SysBuffer->frmBuffer[i]->frmProperties.drop = FALSE;
             }
         }
+        Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+        SysBuffer->control.uiCur -= min(uiNumFramesToDispatch,SysBuffer->control.uiCur);
+
         SysBuffer->control.uiCur++;
         return READY;
     }
@@ -837,8 +951,24 @@ int PTIR_MultipleMode(PTIRSystemBuffer *SysBuffer, unsigned int uiOpMode)
         return(PTIR_Auto24fpsMode(SysBuffer));
     else if(uiOpMode == 5)
         return(PTIR_FixedTelecinePatternMode(SysBuffer));
+    else if (uiOpMode == 6)
+        return(PTIR_BaseFrameMode(SysBuffer));
+    else if (uiOpMode == 7)
+        return(PTIR_BaseFrameMode_NoChange(SysBuffer));
+    else
+    {
+        printf("\nInvalid Operation Mode\n");
+        exit(-1002);
+    }
+}
+
+int PTIR_SimpleMode(PTIRSystemBuffer *SysBuffer, unsigned int uiOpMode)
+{
+    if (uiOpMode)
+        return(PTIR_BaseFrameMode_NoChange(SysBuffer));
     else
         return(PTIR_BaseFrameMode(SysBuffer));
+        
 }
 
 
@@ -847,7 +977,7 @@ Frame* PTIR_GetFrame(PTIRSystemBuffer *SysBuffer)
     return FrameQueue_Get(&SysBuffer->fqIn);
 }
 
-void PTIR_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned int _uiInHeight, double _dFrameRate, unsigned int _uiInterlaceParity)
+void PTIR_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned int _uiInHeight, double _dFrameRate, unsigned int _uiInterlaceParity, unsigned int _uiPatternTypeNumber, unsigned int _uiPatternTypeInit)
 {
     unsigned int i;
 
@@ -857,19 +987,16 @@ void PTIR_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned in
     SysBuffer->control.uiInterlaceParity = _uiInterlaceParity;
     SysBuffer->control.uiWidth = _uiInWidth;
     SysBuffer->control.uiHeight = _uiInHeight;
+    SysBuffer->control.uiPatternTypeNumber = _uiPatternTypeNumber;
+    SysBuffer->control.uiPatternTypeInit = _uiPatternTypeInit;
 
     SysBuffer->control.uiCur = 0;
     SysBuffer->control.uiNext = 0;
     SysBuffer->control.uiFrame = 0;
     SysBuffer->control.uiBufferCount = 0;
     SysBuffer->control.uiFrameCount = 0;
+    SysBuffer->control.uiFrameOut = 0;
     SysBuffer->control.uiDispatch = 0;
-    SysBuffer->control.mainPattern.blendedCount = 0.0;
-    SysBuffer->control.mainPattern.uiIFlush = 0;
-    SysBuffer->control.mainPattern.uiPFlush = 0;
-    SysBuffer->control.mainPattern.uiOverrideHalfFrameRate = FALSE;
-    SysBuffer->control.mainPattern.uiCountFullyInterlacedBuffers = 0;
-    SysBuffer->control.mainPattern.uiInterlacedFramesNum = 0;
     SysBuffer->control.dBaseTime = (1 / SysBuffer->control.dFrameRate) * 1000;
     SysBuffer->control.dDeIntTime = SysBuffer->control.dBaseTime / 2;
     SysBuffer->control.dBaseTimeSw = SysBuffer->control.dBaseTime;
@@ -877,12 +1004,26 @@ void PTIR_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned in
     SysBuffer->control.dTimeStamp = 0.0;
     SysBuffer->control.uiSize = SysBuffer->control.uiInWidth * SysBuffer->control.uiInHeight * 3 / 2;
     SysBuffer->control.uiEndOfFrames = 0;
+    SysBuffer->control.pts = 0.0;
+    SysBuffer->control.frame_duration = 1000 / _dFrameRate;
 
     for(i = 0; i < LASTFRAME; i++)
     {
         SysBuffer->frmIO[i] = (Frame*)malloc(sizeof(Frame));
         Frame_Create(SysBuffer->frmIO[i], SysBuffer->control.uiInWidth, SysBuffer->control.uiInHeight, SysBuffer->control.uiInWidth / 2, SysBuffer->control.uiInHeight / 2, 0);
         SysBuffer->frmBuffer[i] = SysBuffer->frmIO[i];
+        SysBuffer->frmBuffer[i]->frmProperties.candidate = FALSE;
+        SysBuffer->frmBuffer[i]->frmProperties.detection = FALSE;
+        SysBuffer->frmBuffer[i]->frmProperties.drop = FALSE;
+        SysBuffer->frmBuffer[i]->frmProperties.drop24fps = FALSE;
+        SysBuffer->frmBuffer[i]->frmProperties.sceneChange = FALSE;
+        SysBuffer->frmBuffer[i]->frmProperties.fr = 0.0;
+        SysBuffer->frmBuffer[i]->frmProperties.interlaced = FALSE;
+        SysBuffer->frmBuffer[i]->frmProperties.parity = 0;
+        SysBuffer->frmBuffer[i]->frmProperties.processed = FALSE;
+        SysBuffer->frmBuffer[i]->frmProperties.timestamp = 0.0;
+        SysBuffer->frmBuffer[i]->frmProperties.tindex = 0;
+        SysBuffer->frmBuffer[i]->frmProperties.uiInterlacedDetectionValue = 0;
     }
     SysBuffer->frmIO[LASTFRAME] = (Frame*)malloc(sizeof(Frame));
     Frame_Create(SysBuffer->frmIO[LASTFRAME], SysBuffer->control.uiWidth, SysBuffer->control.uiHeight, SysBuffer->control.uiWidth / 2, SysBuffer->control.uiHeight / 2, 0);

@@ -14,35 +14,35 @@ File Name: log_debug.c
 
 void Interlaced_detection_log(Frame *frmBuffer[BUFMINSIZE], unsigned int uiNumFramesToDispatch)
 {
-	unsigned int i = 0;
-	FILE* fLogDetection = NULL;
+    unsigned int i = 0;
+    FILE* fLogDetection = NULL;
 
-	if(frmBuffer[0]->frmProperties.tindex == 1)
-	{
+    if(frmBuffer[0]->frmProperties.tindex == 1)
+    {
 #if defined(_WIN32) || defined(_WIN64)
-		fopen_s(&fLogDetection,"prog_interlace_detect.txt","w");
+        fopen_s(&fLogDetection,"prog_interlace_detect.txt","w");
 #else
-		fLogDetection = fopen("prog_interlace_detect.txt","w");
+        fLogDetection = fopen("prog_interlace_detect.txt","w");
 #endif
-		fprintf(fLogDetection,"Frame\tInterlaced\n");
-	}
-	else
+        fprintf(fLogDetection,"Frame\tInterlaced\n");
+    }
+    else
 #if defined(_WIN32) || defined(_WIN64)
-		fopen_s(&fLogDetection,"prog_interlace_detect.txt","a+");
+        fopen_s(&fLogDetection,"prog_interlace_detect.txt","a+");
 #else
-		fLogDetection = fopen("prog_interlace_detect.txt","a+");
+        fLogDetection = fopen("prog_interlace_detect.txt","a+");
 #endif
 
-	for (i = 0; i < uiNumFramesToDispatch; i++)
-	{
+    for (i = 0; i < uiNumFramesToDispatch; i++)
+    {
 #if PRINTDEBUG || PRINTXPERT
-		fprintf(fLogDetection,"%i\t%i\t%i\n",frmBuffer[i]->frmProperties.tindex,frmBuffer[i]->frmProperties.detection, frmBuffer[i]->frmProperties.uiInterlacedDetectionValue);
+        fprintf(fLogDetection,"%i\t%i\t%i\n",frmBuffer[i]->frmProperties.tindex,frmBuffer[i]->frmProperties.detection, frmBuffer[i]->frmProperties.uiInterlacedDetectionValue);
 #else
-		fprintf(fLogDetection,"%i\t%i\n",frmBuffer[i]->frmProperties.tindex - 1,frmBuffer[i]->frmProperties.detection);
+        fprintf(fLogDetection,"%i\t%i\n",frmBuffer[i]->frmProperties.tindex - 1,frmBuffer[i]->frmProperties.detection);
 #endif
-		frmBuffer[i]->frmProperties.detection = FALSE;
-	}
+        frmBuffer[i]->frmProperties.detection = FALSE;
+    }
 
-	fclose(fLogDetection);
+    fclose(fLogDetection);
 
 }

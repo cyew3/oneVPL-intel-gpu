@@ -9,17 +9,10 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 File Name: deinterlacer.c
 
 \* ****************************************************************************** */
-
 #include "deinterlacer.h"
 
-#if (defined(LINUX32) || defined(LINUX64))
-#ifndef min
-#define min(a,b)            (((a) < (b)) ? (a) : (b))
-#endif
-#ifndef max
-#define max(a,b)            (((a) > (b)) ? (a) : (b))
-#endif
-#endif
+#define max(x, y) (((x) > (y)) ? (x) : (y))
+#define min(x, y) (((x) < (y)) ? (x) : (y))
 
 __inline unsigned int EDIError(BYTE* PrvLinePixel, BYTE* NxtLinePixel, int dir)
 {
@@ -34,12 +27,7 @@ void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybeg
     unsigned int prevN, curN, spacer, lastCol, borderLen, borderStart;
     BYTE *tmpCur, *CurLine;
 
-#if defined(_WIN32) || defined(_WIN64)
     __stosb(d->ucData, 0, d->uiSize);
-#else
-    memset(d->ucData, 0, d->uiSize); //TODO FIXME: review this
-#endif
-
 
     for (y = ybegin; y < yend; y += 2)
     {
@@ -65,9 +53,9 @@ void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybeg
             bits = _mm_movemask_epi8(mask);
 #if defined(_WIN32) || defined(_WIN64)
             _BitScanForward(&count, ~bits);
-#endif
-#if (defined(LINUX32) || defined(LINUX64))
-            count = __builtin_ffs(~bits); //TODO FIXME: review this
+#else
+            int nbits = ~bits;
+            count = __builtin_ctz(nbits);
 #endif
 
             if (count > 0)
@@ -77,11 +65,7 @@ void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybeg
                     borderStart = (min(curN, prevN) * 3  + 2) >> 2;
                     borderLen   = borderStart * 2 + spacer;
                     borderStart += spacer + curN;
-#if defined(_WIN32) || defined(_WIN64)
                     __stosb(&CurLine[x - borderStart], 255, borderLen);    //filing mask
-#else
-                    memset(&CurLine[x - borderStart], 255, borderLen); //TODO FIXME: review this
-#endif
 
                     prevN  = 0;
                     spacer = 0;
@@ -104,11 +88,10 @@ void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybeg
             {
 #if defined(_WIN32) || defined(_WIN64)
                 _BitScanForward(&count, 0xffff0000 | bits);
+#else
+                int nbits = 0xffff0000 | bits;
+                count = __builtin_ctz(nbits);
 #endif
-#if (defined(LINUX32) || defined(LINUX64))
-                count = __builtin_ffs(0xffff0000 | bits);  //TODO FIXME: review this
-#endif
-                
                 for (count += x; x < count; x++)
                 {
                     if (tmpCur[x] == lastCol)//same Color
@@ -129,11 +112,7 @@ void FilterMask_Main(Plane *s, Plane *d, unsigned int BotBase, unsigned int ybeg
                                 borderStart = (min(curN, prevN) * 3  + 2) >> 2;
                                 borderLen   = borderStart * 2 + spacer;
                                 borderStart += spacer + curN;
-#if defined(_WIN32) || defined(_WIN64)
                                 __stosb(&CurLine[x - borderStart], 255, borderLen);    //filing mask
-#else
-                                memset(&CurLine[x - borderStart], 255, borderLen); //TODO FIXME: review this
-#endif
 
                                 spacer = 0;
                             }
@@ -242,7 +221,7 @@ void FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int Botto
     {
         pSrcLine = pSrc->plaY.ucCorner + i * pSrc->plaY.uiStride;
         pDstLine = pDst->plaY.ucCorner + i * pDst->plaY.uiStride;
-        ptir_memcpy(pDstLine, pSrcLine, pDst->plaY.uiWidth);
+        memcpy(pDstLine, pSrcLine, pDst->plaY.uiWidth);
     }
 
     // copying U-component
@@ -250,14 +229,14 @@ void FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int Botto
     {
         pSrcLine = pSrc->plaU.ucCorner + i * pSrc->plaU.uiStride;
         pDstLine = pDst->plaU.ucCorner + i * pDst->plaU.uiStride;
-        ptir_memcpy(pDstLine, pSrcLine, pDst->plaU.uiWidth);
+        memcpy(pDstLine, pSrcLine, pDst->plaU.uiWidth);
     }
     // copying V-component
     for (i = 0; i < pSrc->plaV.uiHeight; i++)
     {
         pSrcLine = pSrc->plaV.ucCorner + i * pSrc->plaV.uiStride;
         pDstLine = pDst->plaV.ucCorner + i * pDst->plaV.uiStride;
-        ptir_memcpy(pDstLine, pSrcLine, pDst->plaV.uiWidth);
+        memcpy(pDstLine, pSrcLine, pDst->plaV.uiWidth);
     }
 }
 void BilinearDeint(Frame *This, int BotBase)
@@ -511,6 +490,7 @@ void MedianDeinterlace(Frame *This, int BotBase)
     BYTE *CurLineU, *PrvLineU, *NxtLineU;
     BYTE *CurLineV, *PrvLineV, *NxtLineV;
 
+
     // loop inner area
     for (y = 4 + (BotBase?0:1); y < This->plaY.uiHeight - (3 * !BotBase); y += 4)
     {
@@ -627,7 +607,7 @@ void BuildLowEdgeMask_Main(Frame **frmBuffer, unsigned int frame, unsigned int B
 
 #ifdef USE_SSE4
 
-ALIGN_DECL(16) static const signed char shufTabLumaEdges[18][16] = {
+ALIGN_DECL(16) static const unsigned char shufTabLumaEdges[18][16] = {
     { 0x00, 0xff, 0x01, 0xff, 0x02, 0xff, 0x03, 0xff, 0x04, 0xff, 0x05, 0xff, 0x06, 0xff, 0x07, 0xff }, 
     { 0x08, 0xff, 0x07, 0xff, 0x06, 0xff, 0x05, 0xff, 0x04, 0xff, 0x03, 0xff, 0x02, 0xff, 0x01, 0xff },
 
@@ -656,7 +636,7 @@ ALIGN_DECL(16) static const signed char shufTabLumaEdges[18][16] = {
     { 0x00, 0xff, 0x01, 0xff, 0x02, 0xff, 0x03, 0xff, 0x04, 0xff, 0x05, 0xff, 0x06, 0xff, 0x07, 0xff }, 
 };
 
-ALIGN_DECL(16) static const signed char shufTabChromaEdges[10][16] = {
+ALIGN_DECL(16) static const unsigned char shufTabChromaEdges[10][16] = {
     { 0x04, 0xff, 0x05, 0xff, 0x06, 0xff, 0x07, 0xff, 0x08, 0xff, 0x09, 0xff, 0x0a, 0xff, 0x0b, 0xff }, 
     { 0x08, 0xff, 0x09, 0xff, 0x0a, 0xff, 0x0b, 0xff, 0x0c, 0xff, 0x0d, 0xff, 0x0e, 0xff, 0x0f, 0xff }, 
 
@@ -870,7 +850,7 @@ static __inline void CalculateEdgesLuma_C(unsigned char *PrvLine, unsigned char 
         for (x = xStart; x < xEnd; x++) {
             EdgeError = 4096;
             EdgeDir   = 0;
-            for (dir =- 4; dir < 5; dir++) {
+            for (dir = -4; dir < 5; dir++) {
                 error = abs(PrvLine[x+dir] - NxtLine[x-dir]);
                 if (error < EdgeError) {
                     EdgeError = error;
@@ -895,7 +875,7 @@ static __inline void CalculateEdgesChroma_C(unsigned char *PrvLine, unsigned cha
         for (x = xStart; x < xEnd; x++) {
             EdgeError = 4096;
             EdgeDir   = 0;
-            for (dir =- 2; dir < 3; dir++) {
+            for (dir = -2; dir < 3; dir++) {
                 error = abs(PrvLine[x+dir] - NxtLine[x-dir]);
                 if (error < EdgeError) {
                     EdgeError = error;
@@ -1175,8 +1155,8 @@ void EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame, int BotB
 
                 tmpCurVal = (BYTE)((PrvLine[x+EdgeDir] + NxtLine[x-EdgeDir] + 1) >> 1);
                     
-                if (tmpCurVal - YPROT > PrvLine[x] && tmpCurVal - YPROT > NxtLine[x] ||
-                    tmpCurVal + YPROT < PrvLine[x] && tmpCurVal + YPROT < NxtLine[x])
+                if ((tmpCurVal - YPROT > PrvLine[x] && tmpCurVal - YPROT > NxtLine[x]) ||
+                    (tmpCurVal + YPROT < PrvLine[x] && tmpCurVal + YPROT < NxtLine[x]))
                     tmpCurVal = (BYTE)((PrvLine[x] + NxtLine[x]) >> 1);
 
                 CurLine [x    ] = (CurLine [x    ] * prevW + tmpCurVal * curW) / 255;
@@ -1187,8 +1167,8 @@ void EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame, int BotB
                     
                 tmpCurVal = (BYTE)((PrvLine[x+1+EdgeDir] + NxtLine[x+1-EdgeDir]+1)>>1);
                     
-                if (tmpCurVal - YPROT > PrvLine[x+1] && tmpCurVal - YPROT > NxtLine[x+1] ||
-                        tmpCurVal + YPROT < PrvLine[x+1] && tmpCurVal + YPROT < NxtLine[x+1])
+                if ((tmpCurVal - YPROT > PrvLine[x+1] && tmpCurVal - YPROT > NxtLine[x+1]) ||
+                    (tmpCurVal + YPROT < PrvLine[x+1] && tmpCurVal + YPROT < NxtLine[x+1]))
                     tmpCurVal = (BYTE)((PrvLine[x+1] + NxtLine[x+1]) >> 1);
 
                 CurLine [x + 1] = (CurLine [x + 1] * prevW + tmpCurVal * curW) / 255;
@@ -1201,8 +1181,8 @@ void EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame, int BotB
             
                 tmpCurVal = (BYTE)((PrvLine2[x+EdgeDir] + NxtLine2[x-EdgeDir]+1)>>1);
                     
-                if (tmpCurVal - YPROT > PrvLine2[x] && tmpCurVal - YPROT > NxtLine2[x] ||
-                        tmpCurVal + YPROT < PrvLine2[x] && tmpCurVal + YPROT < NxtLine2[x])
+                if ((tmpCurVal - YPROT > PrvLine2[x] && tmpCurVal - YPROT > NxtLine2[x]) ||
+                    (tmpCurVal + YPROT < PrvLine2[x] && tmpCurVal + YPROT < NxtLine2[x]))
                     tmpCurVal = (BYTE)((PrvLine2[x] + NxtLine2[x]) >> 1);
 
                 CurLine2[x    ] = (CurLine2[x    ] * prevW + tmpCurVal * curW) / 255;
@@ -1213,8 +1193,8 @@ void EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame, int BotB
 
                 tmpCurVal = (BYTE)((PrvLine2[x+1+EdgeDir] + NxtLine2[x+1-EdgeDir]+1)>>1);
 
-                if (tmpCurVal - YPROT > PrvLine2[x+1] && tmpCurVal - YPROT > NxtLine2[x+1] ||
-                    tmpCurVal + YPROT < PrvLine2[x+1] && tmpCurVal + YPROT < NxtLine2[x+1])
+                if ((tmpCurVal - YPROT > PrvLine2[x+1] && tmpCurVal - YPROT > NxtLine2[x+1]) ||
+                    (tmpCurVal + YPROT < PrvLine2[x+1] && tmpCurVal + YPROT < NxtLine2[x+1]))
                     tmpCurVal = (BYTE)((PrvLine2[x+1] + NxtLine2[x+1]) >> 1);
 
                 CurLine2[x+1] = (CurLine2[x + 1] * prevW + tmpCurVal * curW) / 255;
@@ -1227,8 +1207,8 @@ void EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame, int BotB
 
                 tmpCurVal = (BYTE)((PrvLineU[xover2+EdgeDir] + NxtLineU[xover2-EdgeDir]+1)>>1);
 
-                if (tmpCurVal - YPROT > PrvLineU[xover2] && tmpCurVal - YPROT > NxtLineU[xover2] ||
-                        tmpCurVal + YPROT < PrvLineU[xover2] && tmpCurVal + YPROT < NxtLineU[xover2])
+                if ((tmpCurVal - YPROT > PrvLineU[xover2] && tmpCurVal - YPROT > NxtLineU[xover2]) ||
+                    (tmpCurVal + YPROT < PrvLineU[xover2] && tmpCurVal + YPROT < NxtLineU[xover2]))
                     tmpCurVal = (BYTE)((PrvLineU[xover2] + NxtLineU[xover2]) >> 1);
 
                 CurLineU[xover2] = (CurLineU[xover2] * prevW + tmpCurVal * curW) / 255;
@@ -1241,8 +1221,8 @@ void EdgeDirectionalIYUV_Main(Frame **frmBuffer, unsigned int curFrame, int BotB
 
                 tmpCurVal = (BYTE)((PrvLineV[xover2+EdgeDir] + NxtLineV[xover2-EdgeDir]+1)>>1);
 
-                if (tmpCurVal - YPROT > PrvLineV[xover2] && tmpCurVal - YPROT > NxtLineV[xover2] ||
-                        tmpCurVal + YPROT < PrvLineV[xover2] && tmpCurVal + YPROT < NxtLineV[xover2])
+                if ((tmpCurVal - YPROT > PrvLineV[xover2] && tmpCurVal - YPROT > NxtLineV[xover2]) ||
+                    (tmpCurVal + YPROT < PrvLineV[xover2] && tmpCurVal + YPROT < NxtLineV[xover2]))
                     tmpCurVal = (BYTE)((PrvLineV[xover2] + NxtLineV[xover2]) >> 1);
 
                 CurLineV[xover2] = (CurLineV[xover2] * prevW + tmpCurVal * curW) / 255;
@@ -1263,7 +1243,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
     {
 //BottomBase, non MC; upper and bottom lines processing
 //Y processing
-        ptir_memcpy(frmBuffer[curFrame]->plaY.ucCorner, frmBuffer[curFrame]->plaY.ucCorner + frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.uiWidth);
+        memcpy(frmBuffer[curFrame]->plaY.ucCorner, frmBuffer[curFrame]->plaY.ucCorner + frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.uiWidth);
         
         curLine  = frmBuffer[curFrame]->plaY.ucCorner + frmBuffer[curFrame]->plaY.uiStride + frmBuffer[curFrame]->plaY.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaY.uiStride;
@@ -1288,8 +1268,9 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
         //memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 2)), frmBuffer[refFrame]->plaY.ucCorner + (frmBuffer[refFrame]->plaY.uiStride * (frmBuffer[refFrame]->plaY.uiHeight - 2)), frmBuffer[curFrame]->plaY.uiWidth);
         //memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 1)), frmBuffer[0]->plaY.ucCorner + (frmBuffer[0]->plaY.uiStride * (frmBuffer[0]->plaY.uiHeight - 1)), frmBuffer[curFrame]->plaY.uiWidth);
 
+
 //U processing
-        ptir_memcpy(frmBuffer[curFrame]->plaU.ucCorner, frmBuffer[curFrame]->plaU.ucCorner + frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.uiWidth);
+        memcpy(frmBuffer[curFrame]->plaU.ucCorner, frmBuffer[curFrame]->plaU.ucCorner + frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.uiWidth);
 
         curLine  = frmBuffer[curFrame]->plaU.ucCorner + (frmBuffer[curFrame]->plaU.uiHeight * frmBuffer[curFrame]->plaU.uiStride) - frmBuffer[curFrame]->plaU.uiStride - frmBuffer[curFrame]->plaU.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaU.uiStride;
@@ -1298,7 +1279,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
             curLine[x] = (prevLine[x] + nextLine[x]) / 2;
 
 //V processing
-        ptir_memcpy(frmBuffer[curFrame]->plaV.ucCorner, frmBuffer[curFrame]->plaV.ucCorner + frmBuffer[curFrame]->plaV.uiStride, frmBuffer[curFrame]->plaV.uiWidth);
+        memcpy(frmBuffer[curFrame]->plaV.ucCorner, frmBuffer[curFrame]->plaV.ucCorner + frmBuffer[curFrame]->plaV.uiStride, frmBuffer[curFrame]->plaV.uiWidth);
             
         curLine  = frmBuffer[curFrame]->plaV.ucCorner + (frmBuffer[curFrame]->plaV.uiHeight * frmBuffer[curFrame]->plaV.uiStride) - frmBuffer[curFrame]->plaV.uiStride - frmBuffer[curFrame]->plaV.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaV.uiStride;
@@ -1310,7 +1291,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
     {
 //UpperBase, non MC; upper and bottom lines processing
 //Y processing
-        ptir_memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * frmBuffer[curFrame]->plaY.uiHeight) - frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 1)) /*- frmBuffer[curFrame]->plaY.uiStride - frmBuffer[curFrame]->plaY.uiStride*/, frmBuffer[curFrame]->plaY.uiWidth);
+        memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * frmBuffer[curFrame]->plaY.uiHeight) - frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 1)) /*- frmBuffer[curFrame]->plaY.uiStride - frmBuffer[curFrame]->plaY.uiStride*/, frmBuffer[curFrame]->plaY.uiWidth);
 
         curLine  = frmBuffer[curFrame]->plaY.ucCorner + frmBuffer[curFrame]->plaY.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaY.uiStride;
@@ -1332,7 +1313,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
 
             
 //U processing
-        ptir_memcpy(frmBuffer[curFrame]->plaU.ucCorner + (frmBuffer[curFrame]->plaU.uiHeight * frmBuffer[curFrame]->plaU.uiStride) - frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.ucCorner + (frmBuffer[curFrame]->plaU.uiHeight * frmBuffer[curFrame]->plaU.uiStride) - frmBuffer[curFrame]->plaU.uiStride - frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.uiWidth);
+        memcpy(frmBuffer[curFrame]->plaU.ucCorner + (frmBuffer[curFrame]->plaU.uiHeight * frmBuffer[curFrame]->plaU.uiStride) - frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.ucCorner + (frmBuffer[curFrame]->plaU.uiHeight * frmBuffer[curFrame]->plaU.uiStride) - frmBuffer[curFrame]->plaU.uiStride - frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.uiWidth);
 
         curLine  = frmBuffer[curFrame]->plaU.ucCorner + frmBuffer[curFrame]->plaU.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaU.uiStride;
@@ -1341,7 +1322,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
             curLine[x] = (prevLine[x] + nextLine[x]) / 2;
             
 //V processing
-        ptir_memcpy(frmBuffer[curFrame]->plaV.ucCorner + (frmBuffer[curFrame]->plaV.uiHeight * frmBuffer[curFrame]->plaV.uiStride) - frmBuffer[curFrame]->plaV.uiStride, frmBuffer[curFrame]->plaV.ucCorner + (frmBuffer[curFrame]->plaV.uiHeight * frmBuffer[curFrame]->plaV.uiStride) - frmBuffer[curFrame]->plaV.uiStride - frmBuffer[curFrame]->plaV.uiStride, frmBuffer[curFrame]->plaV.uiWidth);
+        memcpy(frmBuffer[curFrame]->plaV.ucCorner + (frmBuffer[curFrame]->plaV.uiHeight * frmBuffer[curFrame]->plaV.uiStride) - frmBuffer[curFrame]->plaV.uiStride, frmBuffer[curFrame]->plaV.ucCorner + (frmBuffer[curFrame]->plaV.uiHeight * frmBuffer[curFrame]->plaV.uiStride) - frmBuffer[curFrame]->plaV.uiStride - frmBuffer[curFrame]->plaV.uiStride, frmBuffer[curFrame]->plaV.uiWidth);
 
         curLine  = frmBuffer[curFrame]->plaV.ucCorner + frmBuffer[curFrame]->plaV.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaV.uiStride;

@@ -122,8 +122,8 @@ public:
   {
     auto iter = eventsMap.find(kernelName);
     //CMUT_ASSERT(iter != eventsMap.end());
-  if (iter == eventsMap.end())
-    return 0;
+    if (iter == eventsMap.end())
+        return 0;
 
     UINT64 enqueueKernelDuration = 0;
     for (unsigned int i = 0; i < iter->second.size(); ++i) {
@@ -142,9 +142,18 @@ public:
   {
     auto iter = eventsMap.find(kernelName);
     if (iter != eventsMap.end())
-    return KernelDuration(kernelName) / iter->second.size();
-  else
-    return 0;
+        return KernelDuration(kernelName) / iter->second.size();
+    else
+        return 0;
+  }
+
+  int KernelCount(const string & kernelName) const
+  {
+    auto iter = eventsMap.find(kernelName);
+    if (iter != eventsMap.end())
+        return iter->second.size();
+    else
+        return 0;
   }
 
   double KernelDuration() const

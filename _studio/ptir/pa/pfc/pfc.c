@@ -6,7 +6,7 @@ agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
-File Name: api.h
+File Name: pfc.c
 
 \* ****************************************************************************** */
 #include "pfc.h"

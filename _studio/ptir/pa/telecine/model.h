@@ -31,5 +31,10 @@ unsigned int classify_f9(double SADCBPT, double dAngle, double dRsT, double SADC
 unsigned int classify_fA(double dRsG, double dStatDif, double dBigTexture, double dStatCount, double dSADv);
 unsigned int classify_fB(double dRsT, double dCountDif, double dStatDif, double SADCTPB, double dZeroTexture);
 
-
+unsigned int classify_fC(double dRsG, double dBigTexture, double dAngle, double SADCBPT, double dZeroTexture);
+unsigned int classify_fD(double dTextureLevel, double dSADv, double dStatDif, double dStatCount, double dZeroTexture);
+unsigned int classify_fE(double dRsT, double dCountDif, double SADCBPT, double dAngle, double dRsDif);
+unsigned int classify_fF(double dRsT, double dStatDif, double SADCTPB, double dRsB, double dCount);
+unsigned int classify_f10(double dRsG, double dDynDif, double dCountDif, double dRsB, double dStatDif);
+unsigned int classify_f11(double dRsG, double dDynDif, double dAngle, double dStatDif, double dCount);
 #endif

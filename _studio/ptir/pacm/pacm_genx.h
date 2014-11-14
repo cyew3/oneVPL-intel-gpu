@@ -9,7 +9,6 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 File Name: pacm_genx.h
 
 \* ****************************************************************************** */
-
 #pragma once
 
 template<unsigned int PLANE_WIDTH, unsigned int PLANE_HEIGHT>

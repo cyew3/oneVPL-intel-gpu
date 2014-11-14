@@ -14,6 +14,7 @@ File Name: telecine.h
 #define PTIR_TELECINE_H
 
 #include "../api.h"
+#include "../log_debug.h"
 #include "model.h"
 #ifdef __cplusplus
 extern "C" {
@@ -52,8 +53,8 @@ void         Extract_Fields_I420(unsigned char *pucLine, Frame *pfrmOut, BOOL To
 void         sadCalc_I420_frame(Frame *pfrmCur, Frame *pfrmPrv);
 unsigned int Classifier_old(double dTextureLevel, double dDynDif, double dStatDif, double dStatCount, double dCountDif, double dZeroTexture, double dRsT, double dAngle, double dSADv, double dBigTexture, double dCount, double dRsG, double dRsDif, double dRsB);
 unsigned int Classifier(double dTextureLevel, double dDynDif, double dStatDif, double dStatCount, double dCountDif, double dZeroTexture, double dRsT, double dAngle, double dSADv, double dBigTexture, double dCount, double dRsG, double dRsDif, double dRsB, double SADCBPT, double SADCTPB);
+void         Artifacts_Detection_frame(Frame **pFrm, unsigned int frameNum);
 unsigned int Artifacts_Detection(Frame **pFrm);
-void         Artifacts_Detection_frame(Frame **pFrm, unsigned int frameNum, unsigned int firstRun);
 void         Detect_Solve_32RepeatedFramePattern(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch);
 void         Detect_Solve_41FramePattern(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch);
 void         Detect_Solve_32BlendedPatterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch);
@@ -67,7 +68,11 @@ void         UndoPatternTypes5and7(Frame *frmBuffer[BUFMINSIZE], unsigned int fi
 void         Undo2Frames(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF);
 void         Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced);
 void         Analyze_Buffer_Stats_Automode(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch);
-
+unsigned char TelecineParityCheck(Frame frmBuffer);
+void         Pattern32Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch);
+void         Pattern2332Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch);
+void         Pattern41Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch);
+void         RemovePattern(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned int uiInitFramePosition, unsigned int *pdispatch);
 
 #ifdef __cplusplus
 }

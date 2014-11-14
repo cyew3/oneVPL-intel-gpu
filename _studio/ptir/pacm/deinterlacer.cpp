@@ -6,7 +6,7 @@ agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 
-File Name: ptir_vpp_plugin.h
+File Name: deinterlacer.cpp
 
 \* ****************************************************************************** */
 
@@ -20,8 +20,8 @@ File Name: ptir_vpp_plugin.h
 //       width/height - size of input/output frames. we only support same resolution for input and output.
 DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height, mfxHandleType mfxDeviceType, mfxHDL mfxDeviceHdl)
 {
-    CMUT_ASSERT_EQUAL(1, width<=3840, "Frame width can not exceed 3840");
-    
+ CMUT_ASSERT_EQUAL(1, width<=3840, "Frame width can not exceed 3840");
+ 
     assert(MFX_HW_UNKNOWN != HWType);
 
     //for (int i = 0; i < size; ++i) {
@@ -66,8 +66,8 @@ DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height,
     this->kernelFixEdgeTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FixEdgeDirectionalIYUV_Main_Top_Instance)));
     this->kernelFixEdgeBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FixEdgeDirectionalIYUV_Main_Bottom_Instance)));
 
-    //select most fit kernel base on video width. Kernel with _VarWidth surfix can handle smaller width,
-    //while kernels without surfix can only handle fixed width.
+ //select most fit kernel base on video width. Kernel with _VarWidth surfix can handle smaller width,
+ //while kernels without surfix can only handle fixed width.
     if (704 == width) {
         this->kernelLowEdgeMaskTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<704U, 0, 32U>)));
         this->kernelLowEdgeMaskBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<704U, 1, 32U>)));
@@ -119,25 +119,25 @@ DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height,
 #endif
 
 #if 1
-    this->kernelSad->SetKernelArg(2, *sadFrame);
-    this->kernelRs->SetKernelArg(1, *rsFrame);
-    this->kernelSadRs->SetKernelArg(2, *sadFrame);
-    this->kernelSadRs->SetKernelArg(3, *rsFrame);
-    this->kernelFixEdgeTop->SetKernelArg(1, *this->badMCFrame);
-    this->kernelFixEdgeBottom->SetKernelArg(1, *this->badMCFrame);
-    this->kernelLowEdgeMask2Fields->SetKernelArg(2, *this->badMCFrame);
-    this->kernelLowEdgeMask2Fields->SetKernelArg(3, height);
-    this->kernelLowEdgeMask2Fields->SetKernelArg(4, width);
-    this->kernelLowEdgeMaskTop->SetKernelArg(1, *this->badMCFrame);
-    this->kernelLowEdgeMaskTop->SetKernelArg(2, height);
-    this->kernelLowEdgeMaskTop->SetKernelArg(3, width);
-    this->kernelLowEdgeMaskBottom->SetKernelArg(1, *this->badMCFrame);
-    this->kernelLowEdgeMaskBottom->SetKernelArg(2, height);
-    this->kernelLowEdgeMaskBottom->SetKernelArg(3, width);
-    this->kernelDeinterlaceBorderTop->SetKernelArg(1, width);
-    this->kernelDeinterlaceBorderTop->SetKernelArg(2, height);
-    this->kernelDeinterlaceBorderBottom->SetKernelArg(1, width);
-    this->kernelDeinterlaceBorderBottom->SetKernelArg(2, height);
+ this->kernelSad->SetKernelArg(2, *sadFrame);
+ this->kernelRs->SetKernelArg(1, *rsFrame);
+ this->kernelSadRs->SetKernelArg(2, *sadFrame);
+ this->kernelSadRs->SetKernelArg(3, *rsFrame);
+ this->kernelFixEdgeTop->SetKernelArg(1, *this->badMCFrame);
+ this->kernelFixEdgeBottom->SetKernelArg(1, *this->badMCFrame);
+ this->kernelLowEdgeMask2Fields->SetKernelArg(2, *this->badMCFrame);
+ this->kernelLowEdgeMask2Fields->SetKernelArg(3, height);
+ this->kernelLowEdgeMask2Fields->SetKernelArg(4, width);
+ this->kernelLowEdgeMaskTop->SetKernelArg(1, *this->badMCFrame);
+ this->kernelLowEdgeMaskTop->SetKernelArg(2, height);
+ this->kernelLowEdgeMaskTop->SetKernelArg(3, width);
+ this->kernelLowEdgeMaskBottom->SetKernelArg(1, *this->badMCFrame);
+ this->kernelLowEdgeMaskBottom->SetKernelArg(2, height);
+ this->kernelLowEdgeMaskBottom->SetKernelArg(3, width);
+ this->kernelDeinterlaceBorderTop->SetKernelArg(1, width);
+ this->kernelDeinterlaceBorderTop->SetKernelArg(2, height);
+ this->kernelDeinterlaceBorderBottom->SetKernelArg(1, width);
+ this->kernelDeinterlaceBorderBottom->SetKernelArg(2, height);
 #endif
 }
 
@@ -215,8 +215,8 @@ void DeinterlaceFilter::DeinterlaceMedianFilterCM(Frame **frmBuffer, UINT curFra
     CMUT_ASSERT_MESSAGE((curFrame == SKIP_FIELD || frmBuffer[curFrame]->plaY.uiHeight == this->height), "Frame height doesn't matach filter's processing configuration");
     CMUT_ASSERT_MESSAGE((curFrame2 == SKIP_FIELD || frmBuffer[curFrame2]->plaY.uiWidth == this->width), "Frame2 width doesn't matach filter's processing configuration");
     CMUT_ASSERT_MESSAGE((curFrame2 == SKIP_FIELD || frmBuffer[curFrame2]->plaY.uiHeight == this->height), "Frame2 height doesn't matach filter's processing configuration");
-    if (curFrame == SKIP_FIELD && curFrame2 == SKIP_FIELD)
-        return;
+ if (curFrame == SKIP_FIELD && curFrame2 == SKIP_FIELD)
+  return;
 
 #ifdef GPUPATH // 1: turn on GPU path, 0: turn off.
     clockDeinterlaceTotalGPU.Begin();
@@ -396,12 +396,12 @@ void DeinterlaceFilter::SumRs(CmSurface2DUPEx &rsFrame, Frame *pFrame, UINT size
         for (UINT j = 0; j < (this->height + RSSAD_PLANE_HEIGHT - 1) / RSSAD_PLANE_HEIGHT; ++j) {
             UINT rsIndex = (i + j * threadsWidth) * RS_UNIT_SIZE;
 #pragma unroll
-            for (int k = 0; k < 8; k++)
-                Rs2[k] += pRs[rsIndex + k];
-            // pRs[16]~pRs[31] contain possible sums of all possible "data" value.
-            // in this way we can do most work in GPU kernel.
-            Rs2[8] += pRs[rsIndex + 16 + shift];
-            Rs2[9] += pRs[rsIndex + 17 + shift];
+   for (int k = 0; k < 8; k++)
+    Rs2[k] += pRs[rsIndex + k];
+   // pRs[16]~pRs[31] contain possible sums of all possible "data" value.
+   // in this way we can do most work in GPU kernel.
+   Rs2[8] += pRs[rsIndex + 16 + shift];
+   Rs2[9] += pRs[rsIndex + 17 + shift];
         }
     }
     // Store Rs results from GPU to Rs array
@@ -414,8 +414,8 @@ void DeinterlaceFilter::SumRs(CmSurface2DUPEx &rsFrame, Frame *pFrame, UINT size
         Rs[5] = Rs2[5];
         Rs[9] = Rs2[6];
         Rs[10] = Rs2[7];
-        Rs[6] = Rs2[8];
-        Rs[7] = Rs2[9];
+  Rs[6] = Rs2[8];
+  Rs[7] = Rs2[9];
     }
 
     Rs[0] = sqrt(Rs[0] / pFrame->plaY.uiSize);
@@ -445,10 +445,10 @@ void DeinterlaceFilter::SumRs(CmSurface2DUPEx &rsFrame, Frame *pFrame, UINT size
 
 void DeinterlaceFilter::CalculateSAD(Frame *pfrmCur, Frame *pfrmPrv)
 {
-    CMUT_ASSERT_EQUAL(this->width, pfrmCur->plaY.uiWidth, "Frame width doesn't matach filter's processing configuration");
-    CMUT_ASSERT_EQUAL(this->height, pfrmCur->plaY.uiHeight, "Frame height doesn't matach filter's processing configuration");
-    CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiHeight % RSSAD_PLANE_HEIGHT, "Frame height doesn't matach filter's processing configuration");
-    CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiWidth % RSSAD_PLANE_WIDTH, "Frame height doesn't matach filter's processing configuration");
+ CMUT_ASSERT_EQUAL(this->width, pfrmCur->plaY.uiWidth, "Frame width doesn't matach filter's processing configuration");
+ CMUT_ASSERT_EQUAL(this->height, pfrmCur->plaY.uiHeight, "Frame height doesn't matach filter's processing configuration");
+ CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiHeight % RSSAD_PLANE_HEIGHT, "Frame height doesn't matach filter's processing configuration");
+ CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiWidth % RSSAD_PLANE_WIDTH, "Frame height doesn't matach filter's processing configuration");
 
 #ifdef CPUPATH
     clockSAD.Begin();
@@ -478,34 +478,34 @@ void DeinterlaceFilter::CalculateSAD(Frame *pfrmCur, Frame *pfrmPrv)
 
 void DeinterlaceFilter::MeasureRs(Frame * pfrmCur)
 {
-    CMUT_ASSERT_EQUAL(this->width, pfrmCur->plaY.uiWidth, "Frame width doesn't matach filter's processing configuration");
-    CMUT_ASSERT_EQUAL(this->height, pfrmCur->plaY.uiHeight, "Frame height doesn't matach filter's processing configuration");
-    CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiHeight % RSSAD_PLANE_HEIGHT, "Frame height doesn't matach filter's processing configuration");
-    CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiWidth % RSSAD_PLANE_WIDTH, "Frame width doesn't matach filter's processing configuration");
+ CMUT_ASSERT_EQUAL(this->width, pfrmCur->plaY.uiWidth, "Frame width doesn't matach filter's processing configuration");
+ CMUT_ASSERT_EQUAL(this->height, pfrmCur->plaY.uiHeight, "Frame height doesn't matach filter's processing configuration");
+ CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiHeight % RSSAD_PLANE_HEIGHT, "Frame height doesn't matach filter's processing configuration");
+ CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiWidth % RSSAD_PLANE_WIDTH, "Frame width doesn't matach filter's processing configuration");
 
 #ifdef CPUPATH
     clockRs.Begin();
-    Rs_measurement(pfrmCur);
+ Rs_measurement(pfrmCur);
     clockRs.End();
 #endif
 
 
 #ifdef GPUPATH
     clockRSGPUTotal.Begin();
-    UINT threadsWidth = cmut::DivUp(this->width, RSSAD_PLANE_WIDTH);
+ UINT threadsWidth = cmut::DivUp(this->width, RSSAD_PLANE_WIDTH);
     UINT threadsHeight = cmut::DivUp(this->height, RSSAD_PLANE_HEIGHT);
 
     CmThreadSpaceEx threadSpace(this->DeviceEx(), threadsWidth, threadsHeight);
     kernelRs->SetThreadCount(threadSpace.ThreadCount());
-    kernelRs->SetKernelArg(0, *GetFrameSurfaceCur(pfrmCur));
+ kernelRs->SetKernelArg(0, *GetFrameSurfaceCur(pfrmCur));
 #if 0 //this arg is set in constructor
-    kernelRs->SetKernelArg(1, *rsFrame);
+ kernelRs->SetKernelArg(1, *rsFrame);
 #endif
 
     QueueEx().Enqueue(*kernelRs, threadSpace);
     QueueEx().WaitForLastKernel();
     UINT size = threadsWidth * RS_UNIT_SIZE * threadsHeight;
-    SumRs(*rsFrame, pfrmCur, size, threadsWidth, RSSAD_PLANE_WIDTH);
+ SumRs(*rsFrame, pfrmCur, size, threadsWidth, RSSAD_PLANE_WIDTH);
     clockRSGPUTotal.End();
 
 #endif
@@ -515,8 +515,8 @@ void DeinterlaceFilter::CalculateSADRs(Frame *pfrmCur, Frame *pfrmPrv)
 {
     CMUT_ASSERT_EQUAL(this->width, pfrmCur->plaY.uiWidth, "Frame width doesn't matach filter's processing configuration");
     CMUT_ASSERT_EQUAL(this->height, pfrmCur->plaY.uiHeight, "Frame height doesn't matach filter's processing configuration");
-    CMUT_ASSERT_EQUAL(this->width, pfrmPrv->plaY.uiWidth, "Frame width doesn't matach filter's processing configuration");
-    CMUT_ASSERT_EQUAL(this->height, pfrmPrv->plaY.uiHeight, "Frame height doesn't matach filter's processing configuration");
+ CMUT_ASSERT_EQUAL(this->width, pfrmPrv->plaY.uiWidth, "Frame width doesn't matach filter's processing configuration");
+ CMUT_ASSERT_EQUAL(this->height, pfrmPrv->plaY.uiHeight, "Frame height doesn't matach filter's processing configuration");
     //CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiHeight % RSSAD_PLANE_HEIGHT, "Frame height doesn't matach filter's processing configuration");
     //CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiWidth % RSSAD_PLANE_WIDTH, "Frame width doesn't matach filter's processing configuration");
 
@@ -533,7 +533,7 @@ void DeinterlaceFilter::CalculateSADRs(Frame *pfrmCur, Frame *pfrmPrv)
 #ifdef GPUPATH
     clockSADRSGPUTotal.Begin();
     clockSADRSCreateSurfaces.Begin();
-    UINT threadsWidth = cmut::DivUp(this->width, RSSAD_PLANE_WIDTH);
+ UINT threadsWidth = cmut::DivUp(this->width, RSSAD_PLANE_WIDTH);
     UINT threadsHeight = cmut::DivUp(this->height, RSSAD_PLANE_HEIGHT);
 
     clockSADRSCreateSurfaces.End();
@@ -626,36 +626,36 @@ void DeinterlaceFilter::MedianDeinterlaceCM(Frame * pFrame, Frame * pFrame2)
 //This is async call, need to use GPU Sync before fetch result.
 void DeinterlaceFilter::FixEdgeDirectionalIYUVCM(Frame **frmBuffer, unsigned int curFrame, unsigned int curFrame2)
 {
-    CMUT_ASSERT_MESSAGE((curFrame == SKIP_FIELD || frmBuffer[curFrame]->outState == Frame::OUT_PROCESSED), "Unprocessed frame is served as input.");
-    CMUT_ASSERT_MESSAGE((curFrame2 == SKIP_FIELD || frmBuffer[curFrame2]->outState == Frame::OUT_PROCESSED), "Unprocessed frame is served as input.");
-    clockFixEdgeHost.Begin();
+ CMUT_ASSERT_MESSAGE((curFrame == SKIP_FIELD || frmBuffer[curFrame]->outState == Frame::OUT_PROCESSED), "Unprocessed frame is served as input.");
+ CMUT_ASSERT_MESSAGE((curFrame2 == SKIP_FIELD || frmBuffer[curFrame2]->outState == Frame::OUT_PROCESSED), "Unprocessed frame is served as input.");
+ clockFixEdgeHost.Begin();
 
-    enum {
-        WIDTHPERTHREAD = 16,
-        HEIGHTPERTHREAD = 12,
-    };
+ enum {
+  WIDTHPERTHREAD = 16,
+  HEIGHTPERTHREAD = 12,
+ };
 
     //CmKernelEx* kernelBot, *kernelTop;
     //kernelTop = this->kernelFixEdgeTop.get();
     //kernelBot = this->kernelFixEdgeBottom.get();
 
-    CmThreadSpaceEx threadSpace(DeviceEx(), cmut::DivUp(width, WIDTHPERTHREAD), cmut::DivUp(height, HEIGHTPERTHREAD));
+ CmThreadSpaceEx threadSpace(DeviceEx(), cmut::DivUp(width, WIDTHPERTHREAD), cmut::DivUp(height, HEIGHTPERTHREAD));
 
     if (SKIP_FIELD != curFrame) {
-        this->kernelFixEdgeTop->SetThreadCount(cmut::DivUp(width, WIDTHPERTHREAD) * cmut::DivUp(height, HEIGHTPERTHREAD));
-        this->kernelFixEdgeTop->SetKernelArg(0, *GetFrameSurfaceOut(frmBuffer[curFrame]));
+  this->kernelFixEdgeTop->SetThreadCount(cmut::DivUp(width, WIDTHPERTHREAD) * cmut::DivUp(height, HEIGHTPERTHREAD));
+  this->kernelFixEdgeTop->SetKernelArg(0, *GetFrameSurfaceOut(frmBuffer[curFrame]));
 #if 0 //this arg is set in constructor
-        this->kernelFixEdgeTop->SetKernelArg(1, *this->badMCFrame);
+  this->kernelFixEdgeTop->SetKernelArg(1, *this->badMCFrame);
 #endif
-        QueueEx().Enqueue(*this->kernelFixEdgeTop.get(), threadSpace);
+  QueueEx().Enqueue(*this->kernelFixEdgeTop.get(), threadSpace);
     }
     if (SKIP_FIELD != curFrame2) {
-        this->kernelFixEdgeBottom->SetThreadCount(cmut::DivUp(width, WIDTHPERTHREAD) * cmut::DivUp(height, HEIGHTPERTHREAD));
-        this->kernelFixEdgeBottom->SetKernelArg(0, *GetFrameSurfaceOut(frmBuffer[curFrame2]));
+  this->kernelFixEdgeBottom->SetThreadCount(cmut::DivUp(width, WIDTHPERTHREAD) * cmut::DivUp(height, HEIGHTPERTHREAD));
+  this->kernelFixEdgeBottom->SetKernelArg(0, *GetFrameSurfaceOut(frmBuffer[curFrame2]));
 #if 0 //this arg is set in constructor
-        this->kernelFixEdgeBottom->SetKernelArg(1, *this->badMCFrame);
+  this->kernelFixEdgeBottom->SetKernelArg(1, *this->badMCFrame);
 #endif
-        QueueEx().Enqueue(*this->kernelFixEdgeBottom.get(), threadSpace);
+  QueueEx().Enqueue(*this->kernelFixEdgeBottom.get(), threadSpace);
     }
     clockFixEdgeHost.End();
 }
@@ -666,10 +666,10 @@ void DeinterlaceFilter::FixEdgeDirectionalIYUVCM(Frame **frmBuffer, unsigned int
 //This is async call, need to use GPU Sync before fetch result.
 void DeinterlaceFilter::BuildLowEdgeMask_Main_CM(Frame **frmBuffer, unsigned int curFrame, unsigned int curFrame2)
 {
-    CMUT_ASSERT_MESSAGE((curFrame == SKIP_FIELD || frmBuffer[curFrame]->outState == Frame::OUT_PROCESSED), "Unprocessed frame is served as input.");
-    CMUT_ASSERT_MESSAGE((curFrame2 == SKIP_FIELD || frmBuffer[curFrame2]->outState == Frame::OUT_PROCESSED), "Unprocessed frame is served as input.");
-    
-    clockLowEdgeMaskHost.Begin();
+ CMUT_ASSERT_MESSAGE((curFrame == SKIP_FIELD || frmBuffer[curFrame]->outState == Frame::OUT_PROCESSED), "Unprocessed frame is served as input.");
+ CMUT_ASSERT_MESSAGE((curFrame2 == SKIP_FIELD || frmBuffer[curFrame2]->outState == Frame::OUT_PROCESSED), "Unprocessed frame is served as input.");
+ 
+ clockLowEdgeMaskHost.Begin();
 
     if (SKIP_FIELD != curFrame && SKIP_FIELD != curFrame2) {
         CmThreadSpaceEx threadSpace(DeviceEx(), 32, cmut::DivUp(height * 3 / 2, 32));
@@ -677,33 +677,33 @@ void DeinterlaceFilter::BuildLowEdgeMask_Main_CM(Frame **frmBuffer, unsigned int
         this->kernelLowEdgeMask2Fields->SetKernelArg(0, *GetFrameSurfaceOut(frmBuffer[curFrame]));
         this->kernelLowEdgeMask2Fields->SetKernelArg(1, *GetFrameSurfaceOut(frmBuffer[curFrame2]));
 #if 0 //this arg is set in constructor
-        this->kernelLowEdgeMask2Fields->SetKernelArg(2, *this->badMCFrame);
+  this->kernelLowEdgeMask2Fields->SetKernelArg(2, *this->badMCFrame);
         this->kernelLowEdgeMask2Fields->SetKernelArg(3, height);
         this->kernelLowEdgeMask2Fields->SetKernelArg(4, width);
 #endif
-        QueueEx().Enqueue(*(this->kernelLowEdgeMask2Fields), threadSpace);
+  QueueEx().Enqueue(*(this->kernelLowEdgeMask2Fields), threadSpace);
     }
     else if (SKIP_FIELD != curFrame) {
         CmThreadSpaceEx threadSpace(DeviceEx(), 32, cmut::DivUp(height * 3 / 4, 32));
         this->kernelLowEdgeMaskTop->SetThreadCount(32 * cmut::DivUp(height * 3 / 4, 32));
         this->kernelLowEdgeMaskTop->SetKernelArg(0, *GetFrameSurfaceOut(frmBuffer[curFrame]));
 #if 0 //this arg is set in constructor
-        this->kernelLowEdgeMaskTop->SetKernelArg(1, *this->badMCFrame);
+  this->kernelLowEdgeMaskTop->SetKernelArg(1, *this->badMCFrame);
         this->kernelLowEdgeMaskTop->SetKernelArg(2, height);
         this->kernelLowEdgeMaskTop->SetKernelArg(3, width);
 #endif
-        QueueEx().Enqueue(*(this->kernelLowEdgeMaskTop), threadSpace);
+  QueueEx().Enqueue(*(this->kernelLowEdgeMaskTop), threadSpace);
     }
     else if (SKIP_FIELD != curFrame2) {
         CmThreadSpaceEx threadSpace(DeviceEx(), 32, cmut::DivUp(height * 3 / 4, 32));
         this->kernelLowEdgeMaskBottom->SetThreadCount(32 * cmut::DivUp(height * 3 / 4, 32));
         this->kernelLowEdgeMaskBottom->SetKernelArg(0, *GetFrameSurfaceOut(frmBuffer[curFrame2]));
 #if 0 //this arg is set in constructor
-        this->kernelLowEdgeMaskBottom->SetKernelArg(1, *this->badMCFrame);
+  this->kernelLowEdgeMaskBottom->SetKernelArg(1, *this->badMCFrame);
         this->kernelLowEdgeMaskBottom->SetKernelArg(2, height);
         this->kernelLowEdgeMaskBottom->SetKernelArg(3, width);
 #endif
-        QueueEx().Enqueue(*this->kernelLowEdgeMaskBottom, threadSpace);
+  QueueEx().Enqueue(*this->kernelLowEdgeMaskBottom, threadSpace);
     }
     clockLowEdgeMaskHost.End();
 }
@@ -737,19 +737,19 @@ void DeinterlaceFilter::Undo2FramesYUVCM(Frame *frmBuffer1, Frame *frmBuffer2, b
 
     QueueEx().Enqueue(*kernel, threadSpace);
     frmBuffer1->frmProperties.candidate = true;
-    frmBuffer1->outState = Frame::OUT_PROCESSED;
-    
-    QueueEx().WaitForLastKernel();
+ frmBuffer1->outState = Frame::OUT_PROCESSED;
+ 
+ QueueEx().WaitForLastKernel();
 }
 
 //This is async call, need to use GPU Sync before fetch result.
 //No border risk
 void DeinterlaceFilter::DeinterlaceBordersCM(Frame **frmBuffer, unsigned int curFrame, unsigned int curFrame2)
 {
-    CMUT_ASSERT_MESSAGE((curFrame == SKIP_FIELD || frmBuffer[curFrame]->outState == Frame::OUT_PROCESSED), "Unprocessed frame is served as input.");
-    CMUT_ASSERT_MESSAGE((curFrame2 == SKIP_FIELD || frmBuffer[curFrame2]->outState == Frame::OUT_PROCESSED), "Unprocessed frame is served as input.");
-    
-    enum
+ CMUT_ASSERT_MESSAGE((curFrame == SKIP_FIELD || frmBuffer[curFrame]->outState == Frame::OUT_PROCESSED), "Unprocessed frame is served as input.");
+ CMUT_ASSERT_MESSAGE((curFrame2 == SKIP_FIELD || frmBuffer[curFrame2]->outState == Frame::OUT_PROCESSED), "Unprocessed frame is served as input.");
+ 
+ enum
     {
         PLANE_WIDTH = 4, PLANE_HEIGHT = 4
     };
@@ -769,20 +769,20 @@ void DeinterlaceFilter::DeinterlaceBordersCM(Frame **frmBuffer, unsigned int cur
         this->kernelDeinterlaceBorderTop->SetThreadCount(32 * spaceHeight);
         this->kernelDeinterlaceBorderTop->SetKernelArg(0, *GetFrameSurfaceOut(frmBuffer[curFrame]));
 #if 0 //this arg is set in constructor
-        this->kernelDeinterlaceBorderTop->SetKernelArg(1, width);
+  this->kernelDeinterlaceBorderTop->SetKernelArg(1, width);
         this->kernelDeinterlaceBorderTop->SetKernelArg(2, height);
 #endif
-        QueueEx().Enqueue(*this->kernelDeinterlaceBorderTop.get(), threadSpace);
+  QueueEx().Enqueue(*this->kernelDeinterlaceBorderTop.get(), threadSpace);
     }
 
     if (SKIP_FIELD != curFrame2) {
         this->kernelDeinterlaceBorderBottom->SetThreadCount(32 * spaceHeight);
         this->kernelDeinterlaceBorderBottom->SetKernelArg(0, *GetFrameSurfaceOut(frmBuffer[curFrame2]));
 #if 0 //this arg is set in constructor
-        this->kernelDeinterlaceBorderBottom->SetKernelArg(1, width);
+  this->kernelDeinterlaceBorderBottom->SetKernelArg(1, width);
         this->kernelDeinterlaceBorderBottom->SetKernelArg(2, height);
 #endif
-        QueueEx().Enqueue(*this->kernelDeinterlaceBorderBottom.get(), threadSpace);
+  QueueEx().Enqueue(*this->kernelDeinterlaceBorderBottom.get(), threadSpace);
     }
 
     clockDeinterlaceBorderHost.End();
@@ -790,15 +790,15 @@ void DeinterlaceFilter::DeinterlaceBordersCM(Frame **frmBuffer, unsigned int cur
 
 void DeinterlaceFilter::FrameCreateSurface(Frame * pfrmIn,  bool bcreate)
 {
-    CMUT_ASSERT_MESSAGE(pfrmIn != NULL, "NULL Frame is served as input.");
-    
+ CMUT_ASSERT_MESSAGE(pfrmIn != NULL, "NULL Frame is served as input.");
+ 
     assert(pfrmIn->inSurf == 0);
     assert(pfrmIn->outSurf == 0);
 
     if(bcreate)
     {
-        pfrmIn->inSurf = new CmSurface2DEx(DeviceEx(), pfrmIn->plaY.uiWidth, pfrmIn->plaY.uiHeight, CM_SURFACE_FORMAT_NV12);
-        pfrmIn->outSurf = new CmSurface2DEx(DeviceEx(), pfrmIn->plaY.uiWidth, pfrmIn->plaY.uiHeight, CM_SURFACE_FORMAT_NV12);
+ pfrmIn->inSurf = new CmSurface2DEx(DeviceEx(), pfrmIn->plaY.uiWidth, pfrmIn->plaY.uiHeight, CM_SURFACE_FORMAT_NV12);
+    pfrmIn->outSurf = new CmSurface2DEx(DeviceEx(), pfrmIn->plaY.uiWidth, pfrmIn->plaY.uiHeight, CM_SURFACE_FORMAT_NV12);
     }
     else
     {
@@ -810,8 +810,8 @@ void DeinterlaceFilter::FrameCreateSurface(Frame * pfrmIn,  bool bcreate)
 
 void DeinterlaceFilter::FrameReleaseSurface(Frame * pfrmIn)
 {
-    CMUT_ASSERT_MESSAGE(pfrmIn != NULL, "NULL Frame is served as input.");
-    CMUT_ASSERT_MESSAGE((GetFrameSurfaceIn(pfrmIn) != NULL && GetFrameSurfaceOut(pfrmIn) != NULL), "Surface Leaked.");
+ CMUT_ASSERT_MESSAGE(pfrmIn != NULL, "NULL Frame is served as input.");
+ CMUT_ASSERT_MESSAGE((GetFrameSurfaceIn(pfrmIn) != NULL && GetFrameSurfaceOut(pfrmIn) != NULL), "Surface Leaked.");
     if (NULL != GetFrameSurfaceIn(pfrmIn)) {
         delete GetFrameSurfaceIn(pfrmIn);
         pfrmIn->inSurf = NULL;
@@ -829,9 +829,9 @@ void DeinterlaceFilter::FrameReleaseSurface(Frame * pfrmIn)
 void DeinterlaceFilter::WriteRAWI420ToGPUNV12(Frame * pFrame, void* ucMem)
 {
 
-    CMUT_ASSERT_MESSAGE((pFrame->plaY.uiHeight & 1) == 0 && (pFrame->plaY.uiWidth & 1) == 0, "Frame Height or Width is odd. Can't process.");
-    
-    int height = pFrame->plaY.uiHeight;
+ CMUT_ASSERT_MESSAGE((pFrame->plaY.uiHeight & 1) == 0 && (pFrame->plaY.uiWidth & 1) == 0, "Frame Height or Width is odd. Can't process.");
+ 
+ int height = pFrame->plaY.uiHeight;
     int width = pFrame->plaY.uiWidth;
     int heightby2 = height / 2;
     int widthby2 = width / 2;
@@ -868,8 +868,8 @@ void DeinterlaceFilter::WriteRAWI420ToGPUNV12(Frame * pFrame, void* ucMem)
 //Not optimized for speed, should not be used in plugin
 void DeinterlaceFilter::ReadRAWI420FromGPUNV12(Frame * pFrame, void* ucMem)
 {
-    CMUT_ASSERT_MESSAGE((pFrame->plaY.uiHeight & 1) == 0 && (pFrame->plaY.uiWidth & 1) == 0, "Frame Height or Width is odd. Can't process.");
-    int height = pFrame->plaY.uiHeight;
+ CMUT_ASSERT_MESSAGE((pFrame->plaY.uiHeight & 1) == 0 && (pFrame->plaY.uiWidth & 1) == 0, "Frame Height or Width is odd. Can't process.");
+ int height = pFrame->plaY.uiHeight;
     int width = pFrame->plaY.uiWidth;
     int heightby2 = height / 2;
     int widthby2 = width / 2;

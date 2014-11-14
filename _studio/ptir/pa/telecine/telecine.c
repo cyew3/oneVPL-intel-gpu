@@ -31,6 +31,15 @@ void Pattern_init(Pattern *ptrn)
     ptrn->ucPatternFound = FALSE;
     ptrn->ucPatternType = 0;
     ptrn->ucLatch.ucParity = 0;
+    ptrn->blendedCount = 0.0;
+    ptrn->uiIFlush = 0;
+    ptrn->uiPFlush = 0;
+    ptrn->uiOverrideHalfFrameRate = FALSE;
+    ptrn->uiCountFullyInterlacedBuffers = 0;
+    ptrn->uiInterlacedFramesNum = 0;
+    ptrn->uiPreviousPartialPattern = 0;
+    ptrn->uiPartialPattern = 0;
+    ptrn->ulCountInterlacedDetections = 0;
 }
 void Rotate_Buffer(Frame *frmBuffer[LASTFRAME])
 {
@@ -372,10 +381,10 @@ void setLinePointers(unsigned char *pLine[10], Frame pfrmIn, int offset, BOOL la
 }
 void Line_rearrangement(unsigned char *pFrmDstTop,unsigned char *pFrmDstBottom, unsigned char **pucIn, Plane planeOut,unsigned int *off)
 {
-    ptir_memcpy(pFrmDstTop + *off, *pucIn, planeOut.uiWidth);
+    memcpy(pFrmDstTop + *off, *pucIn, planeOut.uiWidth);
     *pucIn += planeOut.uiWidth;
 
-    ptir_memcpy(pFrmDstBottom + *off, *pucIn, planeOut.uiWidth);
+    memcpy(pFrmDstBottom + *off, *pucIn, planeOut.uiWidth);
     *pucIn += planeOut.uiWidth;
 
     *off += planeOut.uiStride;
@@ -618,7 +627,7 @@ void Detect_Solve_32RepeatedFramePattern(Frame **pFrm, Pattern *ptrn, unsigned i
                  countDrop = 0,
                  countStay = 0;
 
-    const unsigned int framesToDispatch[6] = {3, 4, 5, 1, 2, 5};
+    const unsigned int framesToDispatch[6] = {2, 3, 4, 5, 1, 5};
 
     position = BUFMINSIZE;
 
@@ -681,6 +690,82 @@ void Detect_Solve_41FramePattern(Frame **pFrm, Pattern *ptrn, unsigned int *disp
             pFrm[0]->frmProperties.drop = TRUE;
         else
             pFrm[position + 1]->frmProperties.drop = TRUE;
+
+        /*if(position == 0)
+        {
+            if(pFrm[2]->plaY.ucStats.ucSAD[2] > pFrm[2]->plaY.ucStats.ucSAD[3])
+                ptrn->ucLatch.ucParity = 1;
+            else
+                ptrn->ucLatch.ucParity = 0;
+            Undo2Frames(pFrm[1],pFrm[2],ptrn->ucLatch.ucParity);
+            Undo2Frames(pFrm[2],pFrm[3],ptrn->ucLatch.ucParity);
+            Undo2Frames(pFrm[3],pFrm[4],ptrn->ucLatch.ucParity);
+            Undo2Frames(pFrm[4],pFrm[5],ptrn->ucLatch.ucParity);
+            pFrm[1]->frmProperties.candidate = TRUE;
+            pFrm[2]->frmProperties.candidate = TRUE;
+            pFrm[3]->frmProperties.candidate = TRUE;
+            pFrm[4]->frmProperties.candidate = TRUE;
+        }*/
+
+        //else if(position == 1)
+        //{
+        //    if(pFrm[3]->plaY.ucStats.ucSAD[2] > pFrm[3]->plaY.ucStats.ucSAD[3])
+        //        ptrn->ucLatch.ucParity = 1;
+        //    else
+        //        ptrn->ucLatch.ucParity = 0;
+
+        //    Undo2Frames(pFrm[0],pFrm[1],ptrn->ucLatch.ucParity);
+        //    Undo2Frames(pFrm[3],pFrm[4],ptrn->ucLatch.ucParity);
+        //    Undo2Frames(pFrm[4],pFrm[5],ptrn->ucLatch.ucParity);
+        //    pFrm[0]->frmProperties.candidate = TRUE;
+        //    pFrm[3]->frmProperties.candidate = TRUE;
+        //    pFrm[4]->frmProperties.candidate = TRUE;
+        //}
+
+        //else if(position == 2)
+        //{
+        //    if(pFrm[4]->plaY.ucStats.ucSAD[2] > pFrm[4]->plaY.ucStats.ucSAD[3])
+        //        ptrn->ucLatch.ucParity = 1;
+        //    else
+        //        ptrn->ucLatch.ucParity = 0;
+
+        //    Undo2Frames(pFrm[0],pFrm[1],ptrn->ucLatch.ucParity);
+        //    Undo2Frames(pFrm[1],pFrm[2],ptrn->ucLatch.ucParity);
+        //    Undo2Frames(pFrm[4],pFrm[5],ptrn->ucLatch.ucParity);
+        //    pFrm[0]->frmProperties.candidate = TRUE;
+        //    pFrm[1]->frmProperties.candidate = TRUE;
+        //    pFrm[4]->frmProperties.candidate = TRUE;
+        //}
+
+        //else if(position == 3)
+        //{
+        //    if(pFrm[1]->plaY.ucStats.ucSAD[2] > pFrm[1]->plaY.ucStats.ucSAD[3])
+        //        ptrn->ucLatch.ucParity = 1;
+        //    else
+        //        ptrn->ucLatch.ucParity = 0;
+
+        //    Undo2Frames(pFrm[0],pFrm[1],ptrn->ucLatch.ucParity);
+        //    Undo2Frames(pFrm[1],pFrm[2],ptrn->ucLatch.ucParity);
+        //    Undo2Frames(pFrm[2],pFrm[3],ptrn->ucLatch.ucParity);
+        //    pFrm[0]->frmProperties.candidate = TRUE;
+        //    pFrm[1]->frmProperties.candidate = TRUE;
+        //    pFrm[2]->frmProperties.candidate = TRUE;
+        //}
+
+        //else/* if(position == 4)*/
+        //{
+        //    if(pFrm[2]->plaY.ucStats.ucSAD[2] > pFrm[2]->plaY.ucStats.ucSAD[3])
+        //        ptrn->ucLatch.ucParity = 1;
+        //    else
+        //        ptrn->ucLatch.ucParity = 0;
+
+        //    Undo2Frames(pFrm[1],pFrm[2],ptrn->ucLatch.ucParity);
+        //    Undo2Frames(pFrm[2],pFrm[3],ptrn->ucLatch.ucParity);
+        //    Undo2Frames(pFrm[3],pFrm[4],ptrn->ucLatch.ucParity);
+        //    pFrm[1]->frmProperties.candidate = TRUE;
+        //    pFrm[2]->frmProperties.candidate = TRUE;
+        //    pFrm[3]->frmProperties.candidate = TRUE;
+        //}
 
         ptrn->ucPatternFound = TRUE;
         ptrn->ucLatch.ucFullLatch = TRUE; 
@@ -777,7 +862,7 @@ void Detect_Solve_32BlendedPatterns(Frame **pFrm, Pattern *ptrn, unsigned int *d
                     else
                     {
                         pFrm[1]->frmProperties.drop = FALSE;//TRUE;
-                        pFrm[1]->frmProperties.candidate;
+                        /*pFrm[1]->frmProperties.candidate;*/
                         //DeinterlaceMedianFilter(pFrm, 1, 0);
                     }
                     ptrn->ucPatternType = 6;
@@ -834,6 +919,8 @@ void Detect_Solve_32Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch
         pFrm[0]->frmProperties.drop = FALSE;//TRUE;
         pFrm[0]->frmProperties.drop24fps = TRUE;
         pFrm[0]->frmProperties.candidate = TRUE;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = TRUE;
         ptrn->ucLatch.ucFullLatch = TRUE;
         if(pFrm[4]->plaY.ucStats.ucSAD[2] > pFrm[4]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
@@ -854,21 +941,23 @@ void Detect_Solve_32Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch
                    pFrm[1]->plaY.ucStats.ucRs[7] > (pFrm[3]->plaY.ucStats.ucRs[7]) &&
                    pFrm[1]->plaY.ucStats.ucRs[7] > (pFrm[4]->plaY.ucStats.ucRs[7])) ||
                    pFrm[1]->frmProperties.interlaced;
-    condition[2] = (pFrm[5]->plaY.ucStats.ucRs[7] > (pFrm[2]->plaY.ucStats.ucRs[7]) &&
-                   pFrm[5]->plaY.ucStats.ucRs[7] > (pFrm[3]->plaY.ucStats.ucRs[7]) &&
-                   pFrm[5]->plaY.ucStats.ucRs[7] > (pFrm[4]->plaY.ucStats.ucRs[7])) ||
+    condition[2] = (pFrm[5]->plaY.ucStats.ucRs[7] >= (pFrm[2]->plaY.ucStats.ucRs[7]) &&
+                   pFrm[5]->plaY.ucStats.ucRs[7] >= (pFrm[3]->plaY.ucStats.ucRs[7]) &&
+                   pFrm[5]->plaY.ucStats.ucRs[7] >= (pFrm[4]->plaY.ucStats.ucRs[7])) ||
                    pFrm[5]->frmProperties.interlaced;
     //SAD analysis
     condition[3] = pFrm[0]->plaY.ucStats.ucSAD[4] * T1 > min((pFrm[0]->plaY.ucStats.ucSAD[2]),(pFrm[0]->plaY.ucStats.ucSAD[3]));
     condition[4] = pFrm[1]->plaY.ucStats.ucSAD[4] * T1 > min((pFrm[1]->plaY.ucStats.ucSAD[2]),(pFrm[1]->plaY.ucStats.ucSAD[3]));
-    condition[5] = pFrm[5]->plaY.ucStats.ucSAD[4] * T1 > min((pFrm[5]->plaY.ucStats.ucSAD[2]),(pFrm[5]->plaY.ucStats.ucSAD[3]));
-    if(condition[0] && condition[1] && condition[2] && condition[3] && condition[4] && condition[5])
+    //condition[5] = pFrm[5]->plaY.ucStats.ucSAD[4] * T1 > min((pFrm[5]->plaY.ucStats.ucSAD[2]),(pFrm[5]->plaY.ucStats.ucSAD[3]));
+    if(condition[0] && condition[1] && condition[2] && condition[3] && condition[4]/* && condition[5]*/)
     {
         pFrm[0]->frmProperties.drop = FALSE;
         pFrm[1]->frmProperties.drop = FALSE;//TRUE;
         pFrm[1]->frmProperties.drop24fps = TRUE;
         pFrm[1]->frmProperties.candidate = TRUE;
         pFrm[2]->frmProperties.drop = FALSE;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = TRUE;
         ptrn->ucLatch.ucFullLatch = TRUE;
 
         if(pFrm[1]->plaY.ucStats.ucSAD[2] > pFrm[1]->plaY.ucStats.ucSAD[3])
@@ -876,6 +965,7 @@ void Detect_Solve_32Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch
         else
             ptrn->ucLatch.ucParity = 0;
         ptrn->ucPatternType = 1;
+
         *dispatch = 3;
         Undo2Frames(pFrm[0],pFrm[1],ptrn->ucLatch.ucParity);
         return;
@@ -902,12 +992,15 @@ void Detect_Solve_32Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch
         pFrm[2]->frmProperties.drop24fps = TRUE;
         pFrm[2]->frmProperties.candidate = TRUE;
         pFrm[3]->frmProperties.drop = FALSE;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = TRUE;
         ptrn->ucLatch.ucFullLatch = TRUE;
         if(pFrm[2]->plaY.ucStats.ucSAD[2] > pFrm[2]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
         else
             ptrn->ucLatch.ucParity = 0;
         ptrn->ucPatternType = 1;
+
         *dispatch = 4;
         Undo2Frames(pFrm[1],pFrm[2],ptrn->ucLatch.ucParity);
         return;
@@ -929,6 +1022,8 @@ void Detect_Solve_32Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch
     if(condition[0] && condition[1] && condition[2] && condition[3])
     {
         pFrm[3]->frmProperties.drop = TRUE;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = FALSE;
         ptrn->ucLatch.ucFullLatch = TRUE;
         if(pFrm[3]->plaY.ucStats.ucSAD[2] > pFrm[3]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
@@ -956,6 +1051,8 @@ void Detect_Solve_32Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch
     if((condition[0] && condition[1] && condition[2]) || (condition[0] && condition[1] && condition[3]))
     {
         pFrm[0]->frmProperties.drop = FALSE;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = TRUE;
         ptrn->ucLatch.ucFullLatch = TRUE;
         if(pFrm[3]->plaY.ucStats.ucSAD[2] > pFrm[3]->plaY.ucStats.ucSAD[3])
             ptrn->ucLatch.ucParity = 1;
@@ -963,6 +1060,7 @@ void Detect_Solve_32Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch
             ptrn->ucLatch.ucParity = 0;
         ptrn->ucPatternType = 1;
         pFrm[0]->frmProperties.candidate = TRUE;
+
         *dispatch = 1;
         return;
     }
@@ -990,13 +1088,16 @@ void Detect_Solve_3223Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispat
 
     if(condition[0] && condition[1] && condition[2] && condition[3])
     {
-        pFrm[0]->frmProperties.drop = TRUE;
+        pFrm[0]->frmProperties.drop = FALSE;//TRUE;
+        pFrm[0]->frmProperties.drop24fps = TRUE;
         pFrm[1]->frmProperties.drop = FALSE;//TRUE;
         pFrm[1]->frmProperties.candidate = TRUE;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = TRUE;
         ptrn->ucLatch.ucFullLatch = FALSE;
         ptrn->ucPatternType = 2;
 
-        *dispatch = 1;
+        *dispatch = 2;
 
         return;
     }
@@ -1020,6 +1121,8 @@ void Detect_Solve_3223Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispat
         pFrm[1]->frmProperties.drop24fps = TRUE;
         pFrm[1]->frmProperties.candidate = TRUE;
         pFrm[2]->frmProperties.candidate = TRUE;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = TRUE;
         ptrn->ucLatch.ucFullLatch = TRUE;
         ptrn->ucPatternType = 2;
 
@@ -1045,6 +1148,8 @@ void Detect_Solve_3223Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispat
         pFrm[2]->frmProperties.drop24fps = TRUE;
         pFrm[2]->frmProperties.candidate = TRUE;
         pFrm[3]->frmProperties.candidate = TRUE;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = TRUE;
         ptrn->ucLatch.ucFullLatch = TRUE;
         ptrn->ucPatternType = 2;
 
@@ -1068,6 +1173,8 @@ void Detect_Solve_3223Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispat
         pFrm[2]->frmProperties.candidate = TRUE;
         pFrm[3]->frmProperties.drop = TRUE;
         pFrm[4]->frmProperties.candidate = TRUE;
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = FALSE;
         ptrn->ucLatch.ucFullLatch = TRUE;
         ptrn->ucPatternType = 2;
         *dispatch = 5;
@@ -1087,6 +1194,8 @@ void Detect_Solve_3223Patterns(Frame **pFrm, Pattern *ptrn, unsigned int *dispat
                    (pFrm[5]->plaY.ucStats.ucSAD[0] < pFrm[5]->plaY.ucStats.ucSAD[1] && pFrm[4]->plaY.ucStats.ucSAD[1] < pFrm[4]->plaY.ucStats.ucSAD[0]);
     if(condition[0] && condition[1] && condition[2])
     {
+        ptrn->uiPreviousPartialPattern = ptrn->uiPartialPattern;
+        ptrn->uiPartialPattern = TRUE;
         ptrn->ucLatch.ucFullLatch = TRUE;
         ptrn->ucPatternType = 2;
         *dispatch = 1;
@@ -1236,98 +1345,98 @@ unsigned int Classifier(double dTextureLevel, double dDynDif, double dStatDif, d
     else
         return ui_cls;
 }
+
+double EquationPw3Check(double ddataIn, unsigned int uiyCoeffMtxPos)
+{
+    const double dCoeff[2][4] =  { {  0.01637, -0.01124,  4.20553,  2.44986 },
+                                   {        0,  0.06672,  1.46968,      0.5 } };
+
+    return ((ddataIn * ddataIn * ddataIn * dCoeff[uiyCoeffMtxPos][0]) + (ddataIn * ddataIn * dCoeff[uiyCoeffMtxPos][1]) + (ddataIn * dCoeff[uiyCoeffMtxPos][2]) + dCoeff[uiyCoeffMtxPos][3]);
+}
+
 unsigned int Classifier_ML(double dTextureLevel, double dDynDif, double dStatDif, double dStatCount, double dCountDif,
     double dZeroTexture, double dRsT, double dAngle, double dSADv, double dBigTexture,
-    double dCount, double dRsG, double dRsDif, double dRsB, double SADCBPT, double SADCTPB)
+    double dCount, double dRsG, double dRsDif, double dRsB, double SADCBPT, double SADCTPB, unsigned int *ui_cls, unsigned int uiHeight)
 {
-    unsigned int ui_cls = 0;
-    
-    ui_cls += classify_f1(dTextureLevel, dRsG, dStatDif, dBigTexture, dSADv);
-    ui_cls += classify_f2(dRsG, dDynDif, dAngle, dSADv, dZeroTexture);
-    ui_cls += classify_f3(dTextureLevel, dRsG, dCountDif, dRsT, dCount);
-    ui_cls += classify_f4(dTextureLevel, dStatDif, dZeroTexture, dStatCount, dSADv);
-    ui_cls += classify_f5(dTextureLevel, dDynDif, dCountDif, dStatCount, dStatDif);
-    ui_cls += classify_f6(dTextureLevel, dRsG, dRsT, dStatDif, dCount);
-    ui_cls += classify_f7(dTextureLevel, dDynDif, dRsDif, dStatCount, dZeroTexture);
-    ui_cls += classify_f8(dDynDif, dAngle, SADCTPB, dRsB, dRsDif);
-    ui_cls += classify_f9(SADCBPT, dAngle, dRsT, SADCTPB, dCount);
-    ui_cls += classify_fA(dRsG, dStatDif, dBigTexture, dStatCount, dSADv);
-    ui_cls += classify_fB(dRsT, dCountDif, dStatDif, SADCTPB, dZeroTexture);
-
-    if (ui_cls > 5)
+    *ui_cls = 0;
+    if(dAngle >= 1000.0)
+        return 0;
+    else if(dStatDif >= EquationPw3Check(dRsDif,0))
+        return 1;
+    else if((dStatDif >= EquationPw3Check(dRsDif,1)) && (uiHeight < 487) && (uiHeight > 479))
         return 1;
     else
-        return 0;
+    {
+        *ui_cls += classify_f1(dTextureLevel, dRsG, dStatDif, dBigTexture, dSADv);
+        *ui_cls += classify_f2(dRsG, dDynDif, dAngle, dSADv, dZeroTexture);
+        *ui_cls += classify_f3(dTextureLevel, dRsG, dCountDif, dRsT, dCount);
+        *ui_cls += classify_f5(dTextureLevel, dDynDif, dCountDif, dStatCount, dStatDif);
+        *ui_cls += classify_f6(dTextureLevel, dRsG, dRsT, dStatDif, dCount);
+        *ui_cls += classify_f7(dTextureLevel, dDynDif, dRsDif, dStatCount, dZeroTexture);
+        *ui_cls += classify_f8(dDynDif, dAngle, SADCTPB, dRsB, dRsDif);
+        *ui_cls += classify_f9(SADCBPT, dAngle, dRsT, SADCTPB, dCount);
+        *ui_cls += classify_fA(dRsG, dStatDif, dBigTexture, dStatCount, dSADv);
+        *ui_cls += classify_fB(dRsT, dCountDif, dStatDif, SADCTPB, dZeroTexture);
+        *ui_cls += classify_fD(dTextureLevel, dSADv, dStatDif, dStatCount, dZeroTexture);
+        *ui_cls += classify_fE(dRsT, dCountDif, SADCBPT, dAngle, dRsDif);
+        *ui_cls += classify_fF(dRsT, dStatDif, SADCTPB, dRsB, dCount);
+        *ui_cls += classify_f10(dRsG, dDynDif, dCountDif, dRsB, dStatDif);
+        *ui_cls += classify_f11(dRsG, dDynDif, dAngle, dStatDif, dCount);
+        *ui_cls += classify_f4(dTextureLevel, dStatDif, dZeroTexture, dStatCount, dSADv);
+        *ui_cls += classify_fC(dRsG, dBigTexture, dAngle, SADCBPT, dZeroTexture);
+
+        if (*ui_cls > 8)
+            return 1;
+        else
+            return 0;
+    }
+}
+
+void Artifacts_Detection_frame(Frame **pFrm, unsigned int frameNum)
+{
+    unsigned int uiIACount = 0, uiConStatus = 0;
+    double dSADv, dSADt, dSADb, dCount, dStatCount, dCountDif, dAngle, dRsG, dRsT, dRsB, dRsDif, dDynDif, dStatDif, dZeroTexture, dBigTexture, dTextureLevel, SADCBPT, SADCTPB;
+
+    dSADv = pFrm[frameNum]->plaY.ucStats.ucSAD[4];
+    dSADt = pFrm[frameNum]->plaY.ucStats.ucSAD[0];
+    dSADb = pFrm[frameNum]->plaY.ucStats.ucSAD[1];
+    SADCBPT = pFrm[frameNum]->plaY.ucStats.ucSAD[3];
+    SADCTPB = pFrm[frameNum]->plaY.ucStats.ucSAD[2];
+
+    dRsDif = pFrm[frameNum]->plaY.ucStats.ucRs[3];
+    dDynDif = pFrm[frameNum]->plaY.ucStats.ucRs[7] / pFrm[frameNum]->plaY.uiSize * 1000;
+    dStatDif = pFrm[frameNum]->plaY.ucStats.ucRs[5] / pFrm[frameNum]->plaY.uiSize * 1000;
+    dCountDif = dDynDif - dStatDif;
+    dStatCount = pFrm[frameNum]->plaY.ucStats.ucRs[4];
+    dCount = pFrm[frameNum]->plaY.ucStats.ucRs[6];
+    dAngle = pFrm[frameNum]->plaY.ucStats.ucRs[8];
+    dRsG = pFrm[frameNum]->plaY.ucStats.ucRs[0];
+    dRsT = pFrm[frameNum]->plaY.ucStats.ucRs[1];
+    dRsB = pFrm[frameNum]->plaY.ucStats.ucRs[2];
+    dZeroTexture = pFrm[frameNum]->plaY.ucStats.ucRs[9];
+    dBigTexture = pFrm[frameNum]->plaY.ucStats.ucRs[10];
+    dTextureLevel = (dRsG - ((dRsT + dRsB) / 2));
+
+    pFrm[frameNum]->frmProperties.interlaced = FALSE;
+    pFrm[frameNum]->frmProperties.detection = FALSE;
+
+    pFrm[frameNum]->frmProperties.interlaced = Classifier_ML(dTextureLevel, dDynDif, dStatDif, dStatCount, dCountDif, dZeroTexture, dRsT, dAngle, dSADv, dBigTexture, dCount, dRsG, dRsDif, dRsB, SADCBPT, SADCTPB, &pFrm[frameNum]->frmProperties.uiInterlacedDetectionValue, pFrm[frameNum]->plaY.uiHeight);
+    pFrm[frameNum]->frmProperties.detection = pFrm[frameNum]->frmProperties.interlaced;
 }
 
 unsigned int Artifacts_Detection(Frame **pFrm)
 {
     unsigned int ui, uiIACount = 0, uiConStatus = 0;
-    double dSADv, dSADt, dSADb, dCount, dStatCount, dCountDif, dAngle, dRsG, dRsT, dRsB, dRsDif, dDynDif, dStatDif, dZeroTexture, dBigTexture, dTextureLevel, SADCBPT, SADCTPB;
 
     for (ui = 1; ui < BUFMINSIZE; ui++)
     {
-        dSADv = pFrm[ui]->plaY.ucStats.ucSAD[4];
-        dSADt = pFrm[ui]->plaY.ucStats.ucSAD[0];
-        dSADb = pFrm[ui]->plaY.ucStats.ucSAD[1];
-        SADCBPT = pFrm[ui]->plaY.ucStats.ucSAD[3];
-        SADCTPB = pFrm[ui]->plaY.ucStats.ucSAD[2];
-
-        dRsDif = pFrm[ui]->plaY.ucStats.ucRs[3];
-        dDynDif = pFrm[ui]->plaY.ucStats.ucRs[7] / pFrm[ui]->plaY.uiSize * 1000;
-        dStatDif = pFrm[ui]->plaY.ucStats.ucRs[5] / pFrm[ui]->plaY.uiSize * 1000;
-        dCountDif = dDynDif - dStatDif;
-        dStatCount = pFrm[ui]->plaY.ucStats.ucRs[4];
-        dCount = pFrm[ui]->plaY.ucStats.ucRs[6];
-        dAngle = pFrm[ui]->plaY.ucStats.ucRs[8];
-        dRsG = pFrm[ui]->plaY.ucStats.ucRs[0];
-        dRsT = pFrm[ui]->plaY.ucStats.ucRs[1];
-        dRsB = pFrm[ui]->plaY.ucStats.ucRs[2];
-        dZeroTexture = pFrm[ui]->plaY.ucStats.ucRs[9];
-        dBigTexture = pFrm[ui]->plaY.ucStats.ucRs[10];
-        dTextureLevel = (dRsG - ((dRsT + dRsB) / 2));
-
-        pFrm[ui]->frmProperties.interlaced = FALSE;
-
-        pFrm[ui]->frmProperties.interlaced = Classifier_ML(dTextureLevel, dDynDif, dStatDif, dStatCount, dCountDif, dZeroTexture, dRsT, dAngle, dSADv, dBigTexture, dCount, dRsG, dRsDif, dRsB, SADCBPT, SADCTPB);
-
-
+        Artifacts_Detection_frame(pFrm, ui);
         if (ui < BUFMINSIZE - 1)
             uiIACount += pFrm[ui]->frmProperties.interlaced;
         if (pFrm[ui]->frmProperties.interlaced)
             pFrm[ui]->frmProperties.candidate = TRUE;
     }
     return uiIACount;
-}
-void Artifacts_Detection_frame(Frame **pFrm, unsigned int frameNum, unsigned int firstRun)
-{
-    unsigned int ui, uiIACount = 0, uiConStatus = 0;
-    double dSADv, dSADt, dSADb, dCount, dStatCount, dCountDif, dAngle, dRsG, dRsT, dRsB, dRsDif, dDynDif, dStatDif, dZeroTexture, dBigTexture, dTextureLevel, SADCBPT, SADCTPB;
-
-    ui = frameNum;
-    dSADv = pFrm[ui]->plaY.ucStats.ucSAD[4];
-    dSADt = pFrm[ui]->plaY.ucStats.ucSAD[0];
-    dSADb = pFrm[ui]->plaY.ucStats.ucSAD[1];
-    SADCBPT = pFrm[ui]->plaY.ucStats.ucSAD[3];
-    SADCTPB = pFrm[ui]->plaY.ucStats.ucSAD[2];
-
-    dRsDif = pFrm[ui]->plaY.ucStats.ucRs[3];
-    dDynDif = pFrm[ui]->plaY.ucStats.ucRs[7] / pFrm[ui]->plaY.uiSize * 1000;
-    dStatDif = pFrm[ui]->plaY.ucStats.ucRs[5] / pFrm[ui]->plaY.uiSize * 1000;
-    dCountDif = dDynDif - dStatDif;
-    dStatCount = pFrm[ui]->plaY.ucStats.ucRs[4];
-    dCount = pFrm[ui]->plaY.ucStats.ucRs[6];
-    dAngle = pFrm[ui]->plaY.ucStats.ucRs[8];
-    dRsG = pFrm[ui]->plaY.ucStats.ucRs[0];
-    dRsT = pFrm[ui]->plaY.ucStats.ucRs[1];
-    dRsB = pFrm[ui]->plaY.ucStats.ucRs[2];
-    dZeroTexture = pFrm[ui]->plaY.ucStats.ucRs[9];
-    dBigTexture = pFrm[ui]->plaY.ucStats.ucRs[10];
-    dTextureLevel = (dRsG - ((dRsT + dRsB) / 2));
-
-    pFrm[ui]->frmProperties.interlaced = FALSE;
-
-    pFrm[ui]->frmProperties.interlaced = Classifier(dTextureLevel, dDynDif, dStatDif, dStatCount, dCountDif, dZeroTexture, dRsT, dAngle, dSADv, dBigTexture, dCount, dRsG, dRsDif, dRsB, SADCBPT, SADCTPB);
 }
 
 void Init_drop_frames(Frame **pFrm)
@@ -1374,7 +1483,7 @@ void Detect_Interlacing_Artifacts_fast(Frame **pFrm, Pattern *ptrn, unsigned int
 }
 double CalcSAD_Avg_NoSC(Frame **pFrm)
 {
-    unsigned int i, control = 0;
+    unsigned int i, sc = 0, control = 0;
     double max1 = 0.0, max2 = 0.0, avg = 0.0;
 
     for(i = 0; i < 5; i++)
@@ -1383,6 +1492,7 @@ double CalcSAD_Avg_NoSC(Frame **pFrm)
         max1 = max(max1, pFrm[i]->plaY.ucStats.ucSAD[0]);
         if(max1 != max2)
             control = i;
+        sc += pFrm[i]->frmProperties.sceneChange;
     }
 
     if(max1 - max2 > 20)
@@ -1532,7 +1642,7 @@ void Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned int *dispat
         *dispatch = 5;
     }
 }
-void UndoPatternTypes5and7(Frame *frmBuffer[BUFMINSIZE + BUFEXTRASIZE], unsigned int firstPos)
+void UndoPatternTypes5and7(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos)
 {
     unsigned int 
         start = firstPos;
@@ -1571,12 +1681,14 @@ void Undo2Frames(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
         memcpy(frmBuffer1->plaV.ucData + (i * frmBuffer1->plaV.uiStride), frmBuffer2->plaV.ucData + (i * frmBuffer2->plaV.uiStride),frmBuffer2->plaV.uiStride);
 
     frmBuffer1->frmProperties.candidate = TRUE;
+    frmBuffer1->frmProperties.interlaced = FALSE;
 }
-void Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE + BUFEXTRASIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
+void Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
 {
     unsigned int uiDropCount = 0,
         i = 0,
         uiPrevInterlacedFramesNum = (*pdispatch == 1 ? 0:ptrn->uiInterlacedFramesNum);
+    FILE* fLogDetection = NULL;
 
     ptrn->uiInterlacedFramesNum = Artifacts_Detection(frmBuffer) + frmBuffer[0]->frmProperties.interlaced;
     
@@ -1633,7 +1745,8 @@ void Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE + BUFEXTRASIZE], Pattern *
         else
         {
             if(ptrn->uiInterlacedFramesNum + frmBuffer[BUFMINSIZE - 1]->frmProperties.interlaced == BUFMINSIZE)
-                ptrn->uiCountFullyInterlacedBuffers = min(ptrn->uiCountFullyInterlacedBuffers + 1, 2);
+                ptrn->uiOverrideHalfFrameRate = TRUE;
+                //ptrn->uiCountFullyInterlacedBuffers = min(ptrn->uiCountFullyInterlacedBuffers + 1, 2);
             else
             {
                 if(ptrn->uiCountFullyInterlacedBuffers > 0)
@@ -1644,6 +1757,14 @@ void Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE + BUFEXTRASIZE], Pattern *
         }
     }
 
+    if(!ptrn->ucLatch.ucFullLatch)
+    {
+        for (i = 0; i < *pdispatch; i++)
+            ptrn->ulCountInterlacedDetections += frmBuffer[i]->frmProperties.interlaced;
+    }
+    else
+        ptrn->ulCountInterlacedDetections += ptrn->uiInterlacedFramesNum;
+
     ptrn->ucPatternFound = ptrn->ucLatch.ucFullLatch;
 }
 
@@ -1653,4 +1774,74 @@ void Analyze_Buffer_Stats_Automode(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, 
 
     Analyze_Buffer_Stats(frmBuffer, ptrn, pdispatch, &uiAutomode);
 
+}
+
+unsigned char TelecineParityCheck(Frame frmBuffer)
+{
+    if(frmBuffer.plaY.ucStats.ucSAD[2] > frmBuffer.plaY.ucStats.ucSAD[3])
+        return 1;
+    else
+        return 0;
+}
+
+void Pattern32Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch)
+{
+    if(uiInitFramePosition < BUFMINSIZE - 2)
+    {
+        frmBuffer[uiInitFramePosition + 1]->frmProperties.drop = TRUE;
+        Undo2Frames(frmBuffer[uiInitFramePosition],frmBuffer[uiInitFramePosition + 1],TelecineParityCheck(*frmBuffer[uiInitFramePosition + 1]));
+        *pdispatch = 5;
+    }
+    else
+    {
+        frmBuffer[uiInitFramePosition]->frmProperties.interlaced = TRUE;
+        *pdispatch = 2;
+    }
+}
+
+void Pattern2332Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch)
+{
+    frmBuffer[uiInitFramePosition]->frmProperties.drop = TRUE;
+    *pdispatch = 5;
+}
+
+void Pattern41Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch)
+{
+    const unsigned int fwr[5] = {4,3,2,1,0};
+    int unsigned i;
+
+    for(i = uiInitFramePosition + 1; i <= fwr[uiInitFramePosition]; i++)
+        frmBuffer[i]->frmProperties.interlaced = TRUE;
+
+    for(i = 0; i < uiInitFramePosition; i++)
+        frmBuffer[i]->frmProperties.interlaced = TRUE;
+
+    frmBuffer[uiInitFramePosition]->frmProperties.interlaced = FALSE;
+
+    if(uiInitFramePosition == BUFMINSIZE - 2)
+        frmBuffer[0]->frmProperties.drop = TRUE;
+    else
+        frmBuffer[uiInitFramePosition + 1]->frmProperties.drop = TRUE;
+
+    *pdispatch = 5;
+
+}
+
+void RemovePattern(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned int uiInitFramePosition, unsigned int *pdispatch)
+{
+    Init_drop_frames(frmBuffer);
+
+    Artifacts_Detection(frmBuffer);
+
+    if(uiPatternNumber == 0)
+        Pattern32Removal(frmBuffer, uiInitFramePosition, pdispatch);
+    else if(uiPatternNumber <= 2)
+        Pattern2332Removal(frmBuffer, uiInitFramePosition, pdispatch);
+    else if(uiPatternNumber == 3)
+        Pattern41Removal(frmBuffer, uiInitFramePosition, pdispatch);
+    else
+    {
+        printf("\nUnknown Pattern, please check your selection\n");
+        exit(-1001);
+    }
 }
