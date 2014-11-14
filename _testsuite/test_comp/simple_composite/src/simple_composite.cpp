@@ -290,6 +290,12 @@ public:
         m_nVPPSurfNumOut = 0;
         m_Arguments = pa;
         m_pVPPSurfacesIn = 0;
+
+        for (int i = 0; i < MAX_INPUT_STREAMS; i++)
+        {
+            m_RealWidths[i] = 0;
+            m_RealHeights[i] = 0;
+        }
     }
     ~Composition()
     {
@@ -380,6 +386,16 @@ public:
             return NULL;
 
         return m_Files[index];
+    }
+
+    mfxU16 GetRealWidth(mfxU16 idx)
+    {
+        return m_RealWidths[idx];
+    }
+
+    mfxU16 GetRealHeight(mfxU16 idx)
+    {
+        return m_RealHeights[idx];
     }
 
     mfxStatus RequestSurfaces()
@@ -650,6 +666,10 @@ protected:
                                      (mfxU16) MSDK_ALIGN16(atoi(params["height"].c_str())) :
                                      (mfxU16) MSDK_ALIGN32(atoi(params["height"].c_str()));
 
+                // We need to save real sizes for correct reading from input files
+                m_RealWidths[m_nStreams] = atoi(params["width"].c_str());
+                m_RealHeights[m_nStreams] = atoi(params["height"].c_str());
+
                 /* Update maximal Width & Height */
                 if (m_Arguments->maxWidth < m_Streams[m_nStreams].Width)
                     m_Arguments->maxWidth = m_Streams[m_nStreams].Width;
@@ -699,6 +719,8 @@ private:
     mfxU16               m_nVPPSurfNumOut;
     mfxU8              * m_surfaceBuffersOut;
     mfxExtBuffer       * m_ExtBuffer[1];
+    mfxU16               m_RealWidths[MAX_INPUT_STREAMS];
+    mfxU16               m_RealHeights[MAX_INPUT_STREAMS];
 };
 
 int main(int argc, char *argv[])
@@ -826,7 +848,7 @@ int main(int argc, char *argv[])
             if (MFX_ERR_NOT_FOUND == nSurfIdxIn)
                 return MFX_ERR_MEMORY_ALLOC;
 
-            sts = LoadRawFrame(pVPPSurfacesIn[nSurfIdxIn], composition.GetFileHandle(nSource++)); // Load frame from file into surface
+            sts = LoadRawFrame(pVPPSurfacesIn[nSurfIdxIn], composition.GetFileHandle(nSource++), composition.GetRealWidth(nSurfIdxIn), composition.GetRealHeight(nSurfIdxIn)); // Load frame from file into surface
             MSDK_BREAK_ON_ERROR(sts);
             if (nSource >= (mfxU32)StreamCount)
                 nSource = 0;
@@ -943,7 +965,7 @@ int main(int argc, char *argv[])
                 if (MFX_ERR_NOT_FOUND == nSurfIdxIn)
                     return MFX_ERR_MEMORY_ALLOC;
 
-                sts = LoadRawFrame(pVPPSurfacesIn[nSurfIdxIn], composition.GetFileHandle(nSource++)); // Load frame from file into surface
+                sts = LoadRawFrame(pVPPSurfacesIn[nSurfIdxIn], composition.GetFileHandle(nSource++), composition.GetRealWidth(nSurfIdxIn), composition.GetRealHeight(nSurfIdxIn)); // Load frame from file into surface
 
                     MSDK_BREAK_ON_ERROR(sts);
                 if (nSource >= (mfxU32)StreamCount)

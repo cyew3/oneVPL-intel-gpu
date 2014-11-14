@@ -26,7 +26,7 @@ mfxStatus ReadPlaneData(mfxU16 w, mfxU16 h, mfxU8 *buf, mfxU8 *ptr, mfxU16 pitch
     return MFX_ERR_NONE;
 }
 
-mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool /*bSim*/)
+mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, mfxU16 width, mfxU16 height, bool /*bSim*/)
 {/*
     if(bSim) {
         // Simulate instantaneous access to 1000 "empty" frames. 
@@ -42,8 +42,8 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool /*bSim*/)
     mfxFrameInfo* pInfo = &pSurface->Info;
     mfxFrameData* pData = &pSurface->Data;
 
-    w = pInfo->Width;
-    h = pInfo->Height;
+    w = width;
+    h = height;
 
     /* IF we have RGB4 input*/
     if (pInfo->FourCC == MFX_FOURCC_RGB4)
@@ -102,7 +102,7 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool /*bSim*/)
         }
     }
 
-    return MFX_ERR_NONE;   
+    return MFX_ERR_NONE;
 }
 
 mfxStatus LoadRawRGBFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)

@@ -44,11 +44,11 @@
 // LoadRawRGBFrame: Reads raw RGB32 frames from file into RGB32 surface
 // - For the simulation case, the surface is filled with default image data
 #ifdef ENABLE_INPUT
-    mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim = false);
-    mfxStatus LoadRawRGBFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim = false);
+    mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, mfxU16 width, mfxU16 height, bool bSim = false);
+    mfxStatus LoadRawRGBFrame(mfxFrameSurface1* pSurface, FILE* fSource, mfxU16 width, mfxU16 height, bool bSim = false);
 #else
-    mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim = true);
-    mfxStatus LoadRawRGBFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim = true);
+    mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, mfxU16 width, mfxU16 height, bool bSim = true);
+    mfxStatus LoadRawRGBFrame(mfxFrameSurface1* pSurface, FILE* fSource, mfxU16 width, mfxU16 height, bool bSim = true);
 #endif
 // Write raw YUV (NV12) surface to YUV (YV12) file
 mfxStatus WriteRawFrame(mfxFrameSurface1 *pSurface, FILE* fSink);
