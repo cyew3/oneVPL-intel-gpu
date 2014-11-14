@@ -1789,6 +1789,7 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
                     m_core->DecreaseReference(&iniDpb[i].m_yuvRaw->Data);
 
                 ReleaseResource(m_raw, iniDpb[i].m_midRaw);
+                ReleaseResource(m_rawSkip, iniDpb[i].m_midRaw);
             }
         }
     }
@@ -1799,6 +1800,7 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
             m_core->DecreaseReference(&task->m_yuv->Data);
 
         ReleaseResource(m_raw, task->m_midRaw);
+        ReleaseResource(m_rawSkip, task->m_midRaw);
     }
 
     ReleaseResource(m_bit, task->m_midBit[0]);

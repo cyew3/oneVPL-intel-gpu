@@ -1900,11 +1900,12 @@ mfxStatus MfxHwH264Encode::CodeAsSkipFrame(     VideoCORE &            core,
 
         task.m_idx    = FindFreeResourceIndex(pool);
         task.m_midRaw = AcquireResource(pool, task.m_idx);
+        MFX_CHECK_NULL_PTR1(task.m_midRaw);
 
         sts = core.GetFrameHDL(task.m_midRaw, &task.m_handleRaw.first);
         MFX_CHECK_STS(sts);
     }
-    MFX_CHECK_NULL_PTR1(task.m_midRaw);
+    
 
     if (task.GetFrameType() & MFX_FRAMETYPE_I)
     {
@@ -1945,7 +1946,7 @@ mfxStatus MfxHwH264Encode::CodeAsSkipFrame(     VideoCORE &            core,
     }
     if (task.GetFrameType() & MFX_FRAMETYPE_B)
     {
-        DpbFrame& refFrame = task.m_dpb[0][task.m_list1[0][0] & 127];
+        DpbFrame& refFrame = task.m_dpb[0][task.m_list0[0][0] & 127];
         mfxFrameData curr = { 0 };
         mfxFrameData ref  = { 0 };
         curr.MemId = task.m_midRaw;
