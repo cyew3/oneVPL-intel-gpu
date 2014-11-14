@@ -122,7 +122,7 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
         mfxExtPAVPOption const * extPavp = GetExtBuffer(par);
 
         mfxStatus sts = Init(
-            DXVA2_Intel_Encode_AVC,//guid,
+            m_guid,
             pD3d11->GetD3D11VideoDevice(), 
             pD3d11->GetD3D11VideoContext(), 
             par.mfx.FrameInfo.Width,
@@ -863,7 +863,12 @@ mfxStatus D3D11Encoder::Init(
     m_pVideoDevice  = pVideoDevice;
     m_pVideoContext = pVideoContext;
 
-    m_guid = DXVA2_Intel_Encode_AVC;
+    if (   guid == MSDK_Private_Guid_Encode_AVC_Query
+        || guid == MSDK_Private_Guid_Encode_MVC_Dependent_View)
+        m_guid = DXVA2_Intel_Encode_AVC;
+    else
+        m_guid = guid;
+
     m_requestedGuid = guid;
     HRESULT hRes;
 
@@ -925,7 +930,7 @@ mfxStatus D3D11Encoder::Init(
             video_desc.SampleWidth  = width;
             video_desc.SampleHeight = height;
             video_desc.OutputFormat = DXGI_FORMAT_NV12;
-            video_desc.Guid = DXVA2_Intel_Encode_AVC; 
+            video_desc.Guid = m_guid; 
 
             mfxU32 count;
 
@@ -951,7 +956,7 @@ mfxStatus D3D11Encoder::Init(
             video_desc.SampleWidth  = width;
             video_desc.SampleHeight = height;
             video_desc.OutputFormat = DXGI_FORMAT_NV12;
-            video_desc.Guid = DXVA2_Intel_Encode_AVC; 
+            video_desc.Guid = m_guid; 
 
             // D3D11_VIDEO_DECODER_CONFIG video_config;
             video_config.ConfigDecoderSpecific = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;  
