@@ -920,6 +920,12 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
         // TODO: make number of tiles dependent on frame size.
         // For existing 7Kx4K 2 tiles seems to be enough.
         m_nTiles = 2;
+        if ( m_mfxVideoParam.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY )
+        {
+            // In case of tiling, only system memory is supported as output.
+            // Must be documented
+            return MFX_ERR_UNSUPPORTED;
+        }
     }
 
     m_PaddingParams.top    = MFX_CAM_DEFAULT_PADDING_TOP;
@@ -964,15 +970,29 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
         m_FrameSizeExtra.paddedFrameWidth  = m_mfxVideoParam.vpp.In.Width;
         m_FrameSizeExtra.paddedFrameHeight = m_mfxVideoParam.vpp.In.Height;
         m_FrameSizeExtra.vSliceWidth       = (((m_mfxVideoParam.vpp.In.Width / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
-        m_nTiles = 1;
         m_FrameSizeExtra.tileNum           = m_nTiles;
         m_FrameSizeExtra.tileOffsets       = new CameraTileOffset[m_nTiles];
         m_FrameSizeExtra.TileWidth         = m_mfxVideoParam.vpp.In.Width;
-        m_FrameSizeExtra.TileHeight        = m_mfxVideoParam.vpp.In.Height;
-        m_FrameSizeExtra.TileHeightPadded  = m_mfxVideoParam.vpp.In.Height;
+        m_FrameSizeExtra.TileHeight        = ((( m_mfxVideoParam.vpp.In.Height / m_nTiles ) + 1)/2)*2;
+        if ( m_nTiles > 1 )
+            m_FrameSizeExtra.TileHeight = ( m_mfxVideoParam.vpp.In.Height / m_nTiles + 31 ) &~ 0x1F;
+        
+        m_FrameSizeExtra.TileHeightPadded  =  m_FrameSizeExtra.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
         m_FrameSizeExtra.BitDepth          = m_mfxVideoParam.vpp.In.BitDepthLuma;
         m_FrameSizeExtra.TileInfo          = m_mfxVideoParam.vpp.In;
-        m_FrameSizeExtra.tileOffsets[0].TileOffset = 0;
+        for (int i = 0; i < m_nTiles; i++)
+        {
+            if ( m_nTiles - 1 == i && i > 0)
+            {
+                // In case of several tiles, last tile must be aligned to the original frame bottom
+                m_FrameSizeExtra.tileOffsets[i].TileOffset = m_mfxVideoParam.vpp.In.Height - m_FrameSizeExtra.TileHeight;
+                m_FrameSizeExtra.tileOffsets[i].TileOffset = ((m_FrameSizeExtra.tileOffsets[i].TileOffset + 1)/2)*2;
+            }
+            else
+            {
+                m_FrameSizeExtra.tileOffsets[i].TileOffset = ( m_FrameSizeExtra.TileHeight ) * i;
+            }
+        }
     }
 
     m_InputBitDepth = m_mfxVideoParam.vpp.In.BitDepthLuma;
@@ -1087,7 +1107,14 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
         // TODO: make number of tiles dependent on frame size.
         // For existing 7Kx4K 2 tiles seems to be enough.
         m_nTiles = 2;
+        if ( m_mfxVideoParam.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY )
+        {
+            // In case of tiling, only system memory is supported as output.
+            // Must be documented
+            return MFX_ERR_UNSUPPORTED;
+        }
     }
+
     CameraFrameSizeExtra frameSizeExtra;
     frameSizeExtra.frameWidth64      = ((newParam.vpp.In.CropW  + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
     frameSizeExtra.paddedFrameWidth  = newParam.vpp.In.CropW  + m_PaddingParams.left + m_PaddingParams.right;

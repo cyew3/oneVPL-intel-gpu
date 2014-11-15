@@ -365,7 +365,11 @@ mfxStatus MFXCamera_Plugin::ReallocateInternalSurfaces(mfxVideoParam &newParam, 
     {
         if (m_gammaOutSurf)
             m_cmDevice->DestroySurface(m_gammaOutSurf);
-        m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW * sizeof(mfxU16),  m_FrameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8);
+
+        if (! m_Caps.bOutToARGB16)
+            m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW,  m_FrameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8R8G8B8);
+        else
+            m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW * sizeof(mfxU16),  m_FrameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8);
     }
     else if (m_gammaOutSurf)
         m_cmDevice->DestroySurface(m_gammaOutSurf);
@@ -893,8 +897,8 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
 #endif
     for ( int tileID = 0; tileID < m_nTiles; tileID++)
     {
-        int in_shift  =  m_FrameSizeExtra.tileOffsets[tileID].TileOffset * ( pParam->surf_in->Data.Pitch / 2 );
-        int out_shift =  m_FrameSizeExtra.tileOffsets[tileID].TileOffset *  pParam->surf_out->Data.Pitch;
+        int in_shift  =  m_FrameSizeExtra.tileOffsets[tileID].TileOffset * pParam->surf_in->Data.Pitch;
+        int out_shift =  m_FrameSizeExtra.tileOffsets[tileID].TileOffset * pParam->surf_out->Data.Pitch;
 
         if (m_Caps.InputMemoryOperationMode == MEM_GPUSHARED && !pParam->inSurf2DUP)
         {
@@ -906,7 +910,7 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
             else
             {
                 m_cmCtx->EnqueueCopyCPUToGPU(m_cmSurfIn,
-                                             (pParam->surf_in->Data.Y16 + in_shift + m_FrameSizeExtra.TileInfo.CropX +  m_FrameSizeExtra.TileInfo.CropY * ( pParam->surf_in->Data.Pitch / 2 )),
+                                             (mfxU8 *)(pParam->surf_in->Data.Y16 + m_FrameSizeExtra.TileInfo.CropX ) + in_shift + m_FrameSizeExtra.TileInfo.CropY * pParam->surf_in->Data.Pitch,
                                              pParam->surf_in->Data.Pitch);
             }
         }
