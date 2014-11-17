@@ -209,6 +209,10 @@ STRUCT(mfxExtCodingOption2,
     FIELD_T(mfxU8       , MaxQPB          )
     FIELD_T(mfxU16      , FixedFrameRate       )
     FIELD_T(mfxU16      , DisableDeblockingIdc )
+    FIELD_T(mfxU16      , DisableVUI        )
+    FIELD_T(mfxU16      , BufferingPeriodSEI)
+    FIELD_T(mfxU16      , EnableMAD         )
+    FIELD_T(mfxU16      , UseRawRef         )
 )
 
 STRUCT(mfxExtVPPDoNotUse,

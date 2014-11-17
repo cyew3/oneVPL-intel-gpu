@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ts_common.h"
+#include <ipp.h>
 
 class tsReader : public mfxBitstream
 {
@@ -60,5 +61,26 @@ public:
     tsBitstreamReaderIVF(const char* fname, mfxU32 buf_size) : tsBitstreamReader(fname, buf_size), m_first_call(true) {};
     tsBitstreamReaderIVF(mfxBitstream bs, mfxU32 buf_size) : tsBitstreamReader(bs, buf_size), m_first_call(true)  {};
     ~tsBitstreamReaderIVF(){};
+    mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
+};
+
+class tsBitstreamCRC32 : public tsBitstreamProcessor
+{
+    Ipp32u m_crc;
+public:
+    bool    m_eos;
+    mfxU8*  m_buf;
+    mfxU32  m_buf_size;
+
+    inline Ipp32u GetCRC() { return m_crc; }
+    tsBitstreamCRC32()
+        : m_eos(false)
+        , m_buf(new mfxU8[1024*1024])
+        , m_buf_size(1024*1024)
+        , m_crc(0)
+    {
+    }
+    tsBitstreamCRC32(mfxBitstream bs, mfxU32 buf_size);
+    ~tsBitstreamCRC32();
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 };

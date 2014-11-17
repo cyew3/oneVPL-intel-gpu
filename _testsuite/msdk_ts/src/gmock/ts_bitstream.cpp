@@ -200,3 +200,37 @@ mfxStatus tsBitstreamReaderIVF::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrame
 
     return MFX_ERR_NONE;
 }
+
+
+tsBitstreamCRC32::tsBitstreamCRC32(mfxBitstream bs, mfxU32 buf_size)
+    : m_eos(false)
+    , m_buf(new mfxU8[buf_size])
+    , m_buf_size(buf_size)
+    , m_crc(0)
+{
+}
+
+tsBitstreamCRC32::~tsBitstreamCRC32()
+{
+    if(m_buf)
+    {
+        delete[] m_buf;
+    }
+}
+
+mfxStatus tsBitstreamCRC32::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
+{
+    if (!bs.DataLength)
+    {
+        return MFX_ERR_MORE_DATA;
+    }
+
+    IppStatus sts = ippsCRC32_8u(bs.Data, bs.DataLength, &m_crc);
+    if (sts != ippStsNoErr)
+    {
+        g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
+        return MFX_ERR_ABORTED;
+    }
+
+    return MFX_ERR_NONE;
+}

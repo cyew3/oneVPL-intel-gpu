@@ -259,9 +259,6 @@
     <ClCompile Include="src\gmock\test_suites\avce_constraint_vbr.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\ptir_time_stamps.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\ts_fei.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -300,6 +297,12 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevc10d_shift.cpp">
       <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_co2_use_rawref.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\ptir_time_stamps.cpp">
+      <Filter>Source Files\test_suites\ptir</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

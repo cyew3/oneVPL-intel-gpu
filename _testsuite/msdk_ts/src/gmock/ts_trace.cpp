@@ -260,7 +260,7 @@ tsTrace& tsTrace::operator<<(mfxStatus& p)
 }
 
 tsTrace& tsTrace::operator<<(BSErr& p)
-    {
+{
     ENUM(p,
         FIELD_E(BS_ERR_NONE)
         FIELD_E(BS_ERR_UNKNOWN)
