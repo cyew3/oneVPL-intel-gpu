@@ -81,9 +81,12 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
         m_mfxVideoParams.vpp.In.Height = (mfxU16)pParams->frameInfo[VPP_IN].nHeight;
     }
 
-    m_mfxVideoParams.vpp.In.CropW = (mfxU16)pParams->frameInfo[VPP_IN].CropW;
+    m_mfxVideoParams.vpp.In.Width  = align(m_mfxVideoParams.vpp.In.Width);
+    m_mfxVideoParams.vpp.In.Height = align(m_mfxVideoParams.vpp.In.Height);
+
+    m_mfxVideoParams.vpp.In.CropW = align((mfxU16)pParams->frameInfo[VPP_IN].CropW);
     m_mfxVideoParams.vpp.In.CropH = (mfxU16)pParams->frameInfo[VPP_IN].CropH;
-    m_mfxVideoParams.vpp.In.CropX = (mfxU16)pParams->frameInfo[VPP_IN].CropX;
+    m_mfxVideoParams.vpp.In.CropX = align((mfxU16)pParams->frameInfo[VPP_IN].CropX);
     m_mfxVideoParams.vpp.In.CropY = (mfxU16)pParams->frameInfo[VPP_IN].CropY;
     m_mfxVideoParams.vpp.In.FourCC = pParams->frameInfo[VPP_IN].FourCC;
     //Only R16 input supported now, should use chroma format monochrome
@@ -91,11 +94,11 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
 
     m_mfxVideoParams.vpp.In.BitDepthLuma = (mfxU16)pParams->bitDepth;
 
-    m_mfxVideoParams.vpp.Out.CropW = (mfxU16)pParams->frameInfo[VPP_OUT].CropW;
+    m_mfxVideoParams.vpp.Out.CropW = align((mfxU16)pParams->frameInfo[VPP_OUT].CropW);
     m_mfxVideoParams.vpp.Out.CropH = (mfxU16)pParams->frameInfo[VPP_OUT].CropH;
-    m_mfxVideoParams.vpp.Out.Width = (mfxU16)pParams->frameInfo[VPP_OUT].nWidth;
-    m_mfxVideoParams.vpp.Out.Height = (mfxU16)pParams->frameInfo[VPP_OUT].nHeight;
-    m_mfxVideoParams.vpp.Out.CropX = (mfxU16)pParams->frameInfo[VPP_OUT].CropX;
+    m_mfxVideoParams.vpp.Out.Width = align((mfxU16)pParams->frameInfo[VPP_OUT].nWidth);
+    m_mfxVideoParams.vpp.Out.Height = align((mfxU16)pParams->frameInfo[VPP_OUT].nHeight);
+    m_mfxVideoParams.vpp.Out.CropX = align((mfxU16)pParams->frameInfo[VPP_OUT].CropX);
     m_mfxVideoParams.vpp.Out.CropY = (mfxU16)pParams->frameInfo[VPP_OUT].CropY;
     m_mfxVideoParams.vpp.Out.FourCC = pParams->frameInfo[VPP_OUT].FourCC;
     //Only ARGB onput supported now, should use chroma format 444
@@ -722,17 +725,20 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     {
-        pParams->frameInfo[VPP_OUT].nWidth = pParams->frameInfo[VPP_IN].nWidth;
-        pParams->frameInfo[VPP_OUT].nHeight = pParams->frameInfo[VPP_IN].nHeight;
         if (pParams->frameInfo[VPP_IN].CropW == NOT_INIT_VALUE)
             pParams->frameInfo[VPP_IN].CropW = pParams->frameInfo[VPP_IN].nWidth;
         if (pParams->frameInfo[VPP_IN].CropH == NOT_INIT_VALUE)
             pParams->frameInfo[VPP_IN].CropH = pParams->frameInfo[VPP_IN].nHeight;
-        pParams->frameInfo[VPP_OUT].CropW = pParams->frameInfo[VPP_OUT].nWidth;
-        pParams->frameInfo[VPP_OUT].CropH = pParams->frameInfo[VPP_OUT].nHeight;
+
+        pParams->frameInfo[VPP_IN].CropW    =  align(pParams->frameInfo[VPP_IN].CropW);
+        pParams->frameInfo[VPP_IN].CropX    =  align(pParams->frameInfo[VPP_IN].CropX);
+
+        pParams->frameInfo[VPP_OUT].nWidth  = pParams->frameInfo[VPP_IN].CropW;
+        pParams->frameInfo[VPP_OUT].nHeight = pParams->frameInfo[VPP_IN].CropH;
+        pParams->frameInfo[VPP_OUT].CropW   = pParams->frameInfo[VPP_OUT].nWidth;
+        pParams->frameInfo[VPP_OUT].CropH   = pParams->frameInfo[VPP_OUT].nHeight;
 
         pParams->frameInfo[VPP_OUT].nWidth  = align(pParams->frameInfo[VPP_OUT].nWidth);
-        pParams->frameInfo[VPP_OUT].nHeight = align(pParams->frameInfo[VPP_OUT].nHeight);
         pParams->frameInfo[VPP_IN].nWidth   = align(pParams->frameInfo[VPP_IN].nWidth);
         pParams->frameInfo[VPP_IN].nHeight  = align(pParams->frameInfo[VPP_IN].nHeight);
 
@@ -1089,6 +1095,9 @@ mfxStatus CCameraPipeline::Reset(sInputParams *pParams)
     MSDK_ZERO_MEMORY(m_mfxVideoParams);
     m_ExtBuffers.clear();
 
+    sts = m_pRawFileReader->Init(pParams);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
     sts = InitMfxParams(pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -1096,9 +1105,6 @@ mfxStatus CCameraPipeline::Reset(sInputParams *pParams)
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     sts = ReallocFrames(&oldMfxParams);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    sts = m_pRawFileReader->Init(pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     if (m_bOutput)

@@ -116,6 +116,10 @@ typedef struct _resetParams
     msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN];
     mfxU32 width;
     mfxU32 height;
+    mfxU16 cropW;
+    mfxU16 cropH;
+    mfxU16 cropX;
+    mfxU16 cropY;
     mfxU32 bayerType;
 
     bool   bBlackLevel;
@@ -138,6 +142,7 @@ typedef struct _resetParams
         bBlackLevel   = false;
         bWhiteBalance = false;
         bCCM          = false;
+        cropX = cropY = cropW = cropH = 0;
     }
 } sResetParams;
 
@@ -258,6 +263,8 @@ protected:
 #endif
   bool     m_DoPadding;
   bool     m_bSingleFileMode;
+  mfxU32   m_Width;
+  mfxU32   m_Height;
 
 };
 

@@ -196,6 +196,9 @@ mfxStatus CRawVideoReader::Init(sInputParams* pParams)
     m_pPaddingBuffer = new mfxU16[m_paddingBufSize];
 #endif
 
+    m_Width  = pParams->frameInfo->nWidth;
+    m_Height = pParams->frameInfo->nHeight;
+
     //msdk_char *strFileName = pParams->strSrcFile;
 
     //MSDK_CHECK_POINTER(strFileName, MFX_ERR_NULL_PTR);
@@ -255,16 +258,8 @@ mfxStatus CRawVideoReader::LoadNextFrameSingle(mfxFrameData* pData, mfxFrameInfo
     mfxI32 nBytesRead;
     mfxU16 *ptr = pData->Y16;
 
-    if (pInfo->CropH > 0 && pInfo->CropW > 0)
-    {
-        w = (mfxI32)pInfo->CropW;
-        h = (mfxI32)pInfo->CropH;
-    }
-    else
-    {
-        w = (mfxI32)pInfo->Width;
-        h = (mfxI32)pInfo->Height;
-    }
+    w = m_Width;
+    h = m_Height;
 
     pitch = (mfxI32)(pData->Pitch >> 1);
 
@@ -369,16 +364,8 @@ mfxStatus CRawVideoReader::LoadNextFrameSequential(mfxFrameData* pData, mfxFrame
     mfxI32 nBytesRead;
     mfxU16 *ptr = pData->Y16;
 
-    if (pInfo->CropH > 0 && pInfo->CropW > 0)
-    {
-        w = (mfxI32)pInfo->CropW;
-        h = (mfxI32)pInfo->CropH;
-    }
-    else
-    {
-        w = (mfxI32)pInfo->Width;
-        h = (mfxI32)pInfo->Height;
-    }
+    w = m_Width;
+    h = m_Height;
 
     pitch = (mfxI32)(pData->Pitch >> 1);
 

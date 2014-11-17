@@ -271,6 +271,22 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             msdk_opt_read(strInput[++i], pParams->frameInfo[VPP_IN].nHeight);
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cropW")))
+        {
+            msdk_opt_read(strInput[++i], pParams->frameInfo[VPP_IN].CropW);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cropH")))
+        {
+            msdk_opt_read(strInput[++i], pParams->frameInfo[VPP_IN].CropH);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cropX")))
+        {
+            msdk_opt_read(strInput[++i], pParams->frameInfo[VPP_IN].CropX);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cropY")))
+        {
+            msdk_opt_read(strInput[++i], pParams->frameInfo[VPP_IN].CropY);
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-alpha")))
         {
             msdk_opt_read(strInput[++i], pParams->alphaValue);
@@ -347,6 +363,22 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-h")))
                 {
                     msdk_opt_read(strInput[++i], resPar.height);
+                }
+                else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cropW")))
+                {
+                    msdk_opt_read(strInput[++i], resPar.cropW);
+                }
+                else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cropH")))
+                {
+                    msdk_opt_read(strInput[++i], resPar.cropH);
+                }
+                else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cropX")))
+                {
+                    msdk_opt_read(strInput[++i], resPar.cropX);
+                }
+                else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cropY")))
+                {
+                    msdk_opt_read(strInput[++i], resPar.cropY);
                 }
                 else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i")))
                 {
@@ -456,12 +488,32 @@ int main(int argc, char *argv[])
                 break;
             msdk_strcopy(Params.strSrcFile, Params.resetParams[resetNum].strSrcFile);
             msdk_strcopy(pParams->strDstFile, Params.resetParams[resetNum].strDstFile);
-            pParams->frameInfo[VPP_OUT].nWidth = pParams->frameInfo[VPP_IN].nWidth = (mfxU16)Params.resetParams[resetNum].width;
-            pParams->frameInfo[VPP_OUT].nHeight = pParams->frameInfo[VPP_IN].nHeight = (mfxU16)Params.resetParams[resetNum].height;
+            pParams->frameInfo[VPP_IN].nWidth   = (mfxU16)Params.resetParams[resetNum].width;
+            pParams->frameInfo[VPP_IN].nHeight  = (mfxU16)Params.resetParams[resetNum].height;
             pParams->frameInfo[VPP_IN].CropW = pParams->frameInfo[VPP_IN].nWidth;
+            if ( Params.resetParams[resetNum].cropW )
+                pParams->frameInfo[VPP_IN].CropW = Params.resetParams[resetNum].cropW;
             pParams->frameInfo[VPP_IN].CropH = pParams->frameInfo[VPP_IN].nHeight;
-            pParams->frameInfo[VPP_OUT].CropW = pParams->frameInfo[VPP_OUT].nWidth;
-            pParams->frameInfo[VPP_OUT].CropH = pParams->frameInfo[VPP_OUT].nHeight;
+            if ( Params.resetParams[resetNum].cropH )
+                pParams->frameInfo[VPP_IN].CropH = Params.resetParams[resetNum].cropH;
+            pParams->frameInfo[VPP_IN].CropX = align(Params.resetParams[resetNum].cropX);
+            pParams->frameInfo[VPP_IN].CropY = Params.resetParams[resetNum].cropY;
+
+            if ( ! pParams->frameInfo[VPP_IN].CropW )
+            {
+                pParams->frameInfo[VPP_IN].CropW = pParams->frameInfo[VPP_IN].nWidth;
+            }
+
+            if ( ! pParams->frameInfo[VPP_IN].CropH )
+            {
+                pParams->frameInfo[VPP_IN].CropH = pParams->frameInfo[VPP_IN].nHeight;
+            }
+
+            pParams->frameInfo[VPP_OUT].nWidth  = pParams->frameInfo[VPP_IN].CropW;
+            pParams->frameInfo[VPP_OUT].nHeight = pParams->frameInfo[VPP_IN].CropH;
+            pParams->frameInfo[VPP_OUT].CropW = pParams->frameInfo[VPP_IN].CropW;
+            pParams->frameInfo[VPP_OUT].CropH = pParams->frameInfo[VPP_IN].CropH;
+
             pParams->bayerType     = Params.resetParams[resetNum].bayerType;
             pParams->bBlackLevel   = Params.resetParams[resetNum].bBlackLevel;
             pParams->black_level_B = Params.resetParams[resetNum].black_level_B;
