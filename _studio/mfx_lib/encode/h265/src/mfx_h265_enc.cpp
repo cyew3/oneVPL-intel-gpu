@@ -25,8 +25,6 @@
 #include "mfx_h265_enc.h"
 #include "mfx_h265_brc.h"
 
-#include "mfx_h265_paq.h"
-
 #if defined (MFX_VA)
 #include "mfx_h265_enc_fei.h"
 #endif // MFX_VA
@@ -345,16 +343,22 @@ namespace H265Enc {
         //    pars->enableCmFlag = 0;
         //#endif // MFX_VA
 
-        pars->preEncMode = 0;
-        pars->lookAheadDelay = 0;
-#if defined(MFX_ENABLE_H265_PAQ)
-        // support for 64x64 && BPyramid && RefDist==8 || 16 (aka tu1 & tu2)
-        //if( pars->BPyramid && (8 == pars->GopRefDist || 16 == pars->GopRefDist) && (6 == pars->Log2MaxCUSize) )
-        pars->preEncMode = optsHevc->DeltaQpMode;
-#endif
-        pars->preEncMode = optsHevc->DeltaQpMode;
-        if (pars->preEncMode > 0) {
-            pars->lookAheadDelay = pars->GopRefDist + 1;
+        pars->DeltaQpMode = 0;
+        pars->AnalyzeCmplx= 0;
+        pars->SceneCut = 0;
+        pars->RateControlDepth = 0;
+        pars->LowresFactor = 0;
+
+        pars->LowresFactor = optsHevc->LowresFactor;
+        pars->DeltaQpMode = optsHevc->DeltaQpMode;
+        pars->SceneCut = optsHevc->SceneCut;
+        pars->AnalyzeCmplx = optsHevc->AnalyzeCmplx;
+        if (pars->AnalyzeCmplx) {
+            if (optsHevc->RateControlDepth == 0) {
+                pars->RateControlDepth = pars->GopRefDist + 1;
+            } else {
+                pars->RateControlDepth = optsHevc->RateControlDepth;
+            }
         }
 
         pars->TryIntra         = optsHevc->TryIntra;
@@ -464,19 +468,16 @@ namespace H265Enc {
         for (Ipp32s i = 0; i < pars->MaxCUDepth; i++ )
             pars->AMPAcc[i] = i < pars->MaxCUDepth-pars->AddCUDepth ? (pars->partModes==3) : 0;
 
-        // deltaQP control, main control params
+        // deltaQP control
         pars->MaxCuDQPDepth = 0;
         pars->m_maxDeltaQP = 0;
         pars->UseDQP = 0;
 
-#if defined(MFX_ENABLE_H265_PAQ)
-        if (pars->preEncMode) {
+        if (pars->DeltaQpMode) {
             pars->MaxCuDQPDepth = 0;
             pars->m_maxDeltaQP = 0;
             pars->UseDQP = 1;
         }
-#endif
-
         if (pars->MaxCuDQPDepth > 0 || pars->m_maxDeltaQP > 0)
             pars->UseDQP = 1;
 
@@ -499,7 +500,6 @@ namespace H265Enc {
         pars->Level = (param->mfx.CodecLevel &~ MFX_TIER_HEVC_HIGH) * 1; // mult 3 it SetProfileLevel
 
         pars->tcDuration90KHz = (mfxF64)param->mfx.FrameInfo.FrameRateExtD / param->mfx.FrameInfo.FrameRateExtN * 90000; // calculate tick duration    
-        //pars->m_framesInParallel = optsHevc->FramesInParallel;    
         pars->tileColWidthMax = pars->tileRowHeightMax = 0;
         Ipp16u tileColStart = 0, tileRowStart = 0;
 
@@ -661,7 +661,7 @@ mfxStatus MFXVideoENCODEH265::SetPPS()
     pps->num_tile_rows = m_videoParam.NumTileRows;
 
     if (m_brc)
-        pps->init_qp = (Ipp8s)m_brc->GetQP(m_videoParam, NULL, NULL);
+        pps->init_qp = (Ipp8s)m_brc->GetQP(&m_videoParam, NULL, NULL);
     else
         pps->init_qp = m_videoParam.QPI;
 
@@ -807,7 +807,7 @@ namespace H265Enc {
                 case B_SLICE:
                     if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
                         Ipp8u layer = currFrame->m_pyramidLayer;
-                        /*if (videoParam.preEncMode > 1) {
+                        if (videoParam.DeltaQpMode > 1) {
                             if (isHiCmplxGop)
                                 slice->rd_lambda_slice *= tab_rdLambdaBPyramid_HiCmplx[layer];
                             else if (isMidCmplxGop)
@@ -815,7 +815,8 @@ namespace H265Enc {
                             else
                                 slice->rd_lambda_slice *= tab_rdLambdaBPyramid_LoCmplx[layer];
                         }
-                        else */{
+                        else 
+                        {
                             slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
                                 ? (videoParam.longGop)
                                 ? tab_rdLambdaBPyramid5LongGop[layer]
@@ -1329,7 +1330,7 @@ namespace H265Enc {
             return 51;//
 
         H265Frame* frames[128] = {task.m_frameOrigin};// need more???
-        Ipp32s framesCount = task.m_futureFrames.size();
+        Ipp32s framesCount = (Ipp32s)task.m_futureFrames.size();
 
         //printf("\n futureFrames %i \n", framesCount);fflush(stderr);
         
@@ -1337,7 +1338,7 @@ namespace H265Enc {
             frames[frmIdx+1] = task.m_futureFrames[frmIdx];
         }
 
-        return brc->GetQP(const_cast<H265VideoParam &>(param), frames, framesCount+1);
+        return brc->GetQP(const_cast<H265VideoParam *>(&param), frames, framesCount+1);
     }
 }
 
@@ -1415,6 +1416,16 @@ void MFXVideoENCODEH265::UpdateGopCounters(H265Frame *inputFrame)
     }
 }
 
+
+void MFXVideoENCODEH265::RestoreGopCountersFromFrame(H265Frame *frame)
+{
+    // restore global state
+    m_frameOrder = frame->m_frameOrder;
+    m_frameOrderOfLastIdr = frame->m_frameOrderOfLastIdr;
+    m_frameOrderOfLastIntra = frame->m_frameOrderOfLastIntra;
+    m_frameOrderOfLastAnchor = frame->m_frameOrderOfLastAnchor;
+    m_miniGopCount = frame->m_miniGopCount - !(frame->m_picCodeType == MFX_FRAMETYPE_B);
+}
 
 bool PocIsLess(const H265Frame *f1, const H265Frame *f2) { return f1->m_poc < f2->m_poc; }
 bool PocIsGreater(const H265Frame *f1, const H265Frame *f2) { return f1->m_poc > f2->m_poc; }
@@ -2023,6 +2034,7 @@ private:
 
 // try to process one row by the same thread 
 //#define _HOLD_ON_ROW_
+#define CLIPVAL(VAL, MINVAL, MAXVAL) MAX(MINVAL, MIN(MAXVAL, VAL))
 
 template <typename PixType>
 mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onExitEvent, UMC::Semaphore &semaphore) 
@@ -2177,22 +2189,9 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
                 (PixType*)reconstructFrame->uv, reconstructFrame->pitch_luma_pix, reconstructFrame->pitch_chroma_pix, m_pCurrentFrame,
                 &m_bsf[bsf_id], &m_task->m_slices[curr_slice], 1, m_logMvCostTable, feiOutPtr, m_task);
 
-            //if(m_videoParam.UseDQP && m_videoParam.preEncMode) {
-            //    int deltaQP = -(m_task->m_sliceQpY - m_task->m_lcuQps[ctb_addr]);
-            //    int idxDqp = 2*abs(deltaQP)-((deltaQP<0)?1:0);
-
-            //    H265Slice* curSlice = &(m_task->m_dqpSlice[idxDqp]);
-            //    cu[ithread].m_rdLambda = curSlice->rd_lambda_slice;
-            //    cu[ithread]. m_rdLambdaSqrt = curSlice->rd_lambda_sqrt_slice;
-            //    cu[ithread].m_ChromaDistWeight = curSlice->ChromaDistWeight_slice;
-            //    cu[ithread].m_rdLambdaInter = curSlice->rd_lambda_inter_slice;
-            //    cu[ithread].m_rdLambdaInterMv = curSlice->rd_lambda_inter_mv_slice;
-
-            //    /*if(m_videoParam.preEncMode > 1) {
-            //        int calq = cu[ithread].GetCalqDeltaQp(m_pAQP, m_slices[curr_slice].rd_lambda_slice);
-            //        m_task->m_lcuQps[ctb_addr] += calq;
-            //    }*/
-            //}
+            if(m_videoParam.UseDQP && m_videoParam.DeltaQpMode) {
+               cu[ithread].SetCuLambda(m_task);
+            }
 
             cu[ithread].GetInitAvailablity();
 
@@ -2217,9 +2216,10 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
 #endif
             bool doDbl = !m_task->m_slices[curr_slice].slice_deblocking_filter_disabled_flag;
 
+            if (pars->UseDQP)
+                cu[ithread].UpdateCuQp();
+
             if (doDbl && (isRef || doSao || pars->reconForDump)) {
-                if (pars->UseDQP)
-                    cu[ithread].UpdateCuQp();
                 cu[ithread].Deblock();
             }
 
@@ -2489,209 +2489,6 @@ mfxStatus H265FrameEncoder::SetEncodeTask(Task* task)
 
     return MFX_ERR_NONE; 
 }
-
-
-#if defined (MFX_ENABLE_H265_PAQ)
-
-H265Frame*  findOldestToLookAheadProcess(std::list<Task*> & queue)
-{
-    if ( queue.empty() ) 
-        return NULL;
-
-    for (TaskIter it = queue.begin(); it != queue.end(); it++ ) {
-
-        if ( !(*it)->m_frameOrigin->wasLAProcessed() ) {
-            return (*it)->m_frameOrigin;
-        }
-    }
-
-    return NULL;
-}
-
-mfxStatus MFXVideoENCODEH265::PreEncAnalysis(void)
-{
-    H265Frame* curFrameInEncodeOrder = findOldestToLookAheadProcess(m_inputQueue);
-
-    if(curFrameInEncodeOrder) {
-        curFrameInEncodeOrder->setWasLAProcessed();
-    }
-    if(curFrameInEncodeOrder) {
-        mfxFrameSurface1 inputSurface;
-        inputSurface.Info.Width = curFrameInEncodeOrder->width;
-        inputSurface.Info.Height = curFrameInEncodeOrder->height;
-        inputSurface.Data.Pitch = curFrameInEncodeOrder->pitch_luma_pix;
-        inputSurface.Data.Y = curFrameInEncodeOrder->y;
-
-        m_preEnc.m_inputSurface = &inputSurface;
-        bool bStatus = m_preEnc.preAnalyzeOne(m_preEnc.m_acQPMap);
-    } else {
-        m_preEnc.m_inputSurface = NULL;
-        bool bStatus = m_preEnc.preAnalyzeOne(m_preEnc.m_acQPMap); 
-    }
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus MFXVideoENCODEH265::UpdateAllLambda(Task* task)
-{
-    H265Frame* frame = task->m_frameOrigin;
-
-    int  origQP = task->m_sliceQpY;
-    for(int iDQpIdx = 0; iDQpIdx < 2*(MAX_DQP)+1; iDQpIdx++)  {
-        int deltaQP = ((iDQpIdx+1)>>1)*(iDQpIdx%2 ? -1 : 1);
-        int curQp = origQP + deltaQP;
-
-        task->m_dqpSlice[iDQpIdx].slice_type = task->m_slices[0].slice_type;
-
-        bool IsHiCplxGOP = false;
-        bool IsMedCplxGOP = false;
-        if (2 == m_videoParam.preEncMode ) {
-            TQPMap *pcQPMapPOC = &m_preEnc.m_acQPMap[frame->m_poc % m_preEnc.m_histLength];
-            double SADpp = pcQPMapPOC->getAvgGopSADpp();
-            double SCpp  = pcQPMapPOC->getAvgGopSCpp();
-            if (SCpp > 2.0) {
-                double minSADpp = 0;
-                if (m_videoParam.GopRefDist > 8) {
-                    minSADpp = 1.3*SCpp - 2.6;
-                    if (minSADpp>0 && minSADpp<SADpp) IsHiCplxGOP = true;
-                    if (!IsHiCplxGOP) {
-                        double minSADpp = 1.1*SCpp - 2.2;
-                        if(minSADpp>0 && minSADpp<SADpp) IsMedCplxGOP = true;
-                    }
-                } 
-                else {
-                    minSADpp = 1.1*SCpp - 1.5;
-                    if (minSADpp>0 && minSADpp<SADpp) IsHiCplxGOP = true;
-                    if (!IsHiCplxGOP) {
-                        double minSADpp = 1.0*SCpp - 2.0;
-                        if (minSADpp>0 && minSADpp<SADpp) IsMedCplxGOP = true;
-                    }
-                }
-            }
-        }
-
-        SetAllLambda(m_videoParam, &(task->m_dqpSlice[iDQpIdx]), curQp, frame, IsHiCplxGOP, IsMedCplxGOP);
-    }
-
-    if ( m_videoParam.preEncMode > 1 ) {
-        m_pAQP->m_POC = frame->m_poc;
-        m_pAQP->m_SliceType = B_SLICE;
-        if (MFX_FRAMETYPE_I == frame->m_picCodeType) {
-            m_pAQP->m_SliceType = I_SLICE;
-        }
-
-        m_pAQP->set_pic_coding_class(frame->m_pyramidLayer + 1);
-        m_pAQP->setSliceQP(task->m_sliceQpY);
-    }
-
-    return MFX_ERR_NONE;
-}
-
-
-template <typename PixType>
-double compute_block_rscs(PixType *pSrcBuf, int width, int height, int stride)
-{
-    int     i, j;
-    int     tmpVal, CsVal, RsVal;
-    int     blkSizeC = (width-1) * height;
-    int     blkSizeR = width * (height-1);
-    double  RS, CS, RsCs;
-    PixType *pBuf;
-
-    RS = CS = RsCs = 0.0;
-    CsVal =    0;
-    RsVal =    0;
-
-    // CS
-    CsVal =    0;
-    pBuf = pSrcBuf;
-    for(i = 0; i < height; i++) {
-        for(j = 1; j < width; j++) {
-            tmpVal = pBuf[j] - pBuf[j-1];
-            CsVal += tmpVal * tmpVal;
-        }
-        pBuf += stride;
-    }
-
-    if(blkSizeC) {
-        CS = sqrt((double)CsVal / (double)blkSizeC);
-    }
-    else {
-        VM_ASSERT(!"ERROR: RSCS block");
-        CS = 0;
-    }
-
-    // RS
-    pBuf = pSrcBuf;
-    for(i = 1; i < height; i++) {
-        for(j = 0; j < width; j++) {
-            tmpVal = pBuf[j] - pBuf[j+stride];
-            RsVal += tmpVal * tmpVal;
-        }
-        pBuf += stride;
-    }
-
-    if(blkSizeR)
-        RS = sqrt((double)RsVal / (double)blkSizeR);
-    else {
-        VM_ASSERT(!"ERROR: RSCS block");
-        RS = 0;
-    }
-
-    RsCs = sqrt(CS * CS + RS * RS);
-
-    return RsCs;
-}
-
-template <typename PixType>
-int H265CU<PixType>::GetCalqDeltaQp(TAdapQP* sliceAQP, Ipp64f sliceLambda)
-{
-    TAdapQP ctbAQP;
-
-    ctbAQP.m_cuAddr = m_ctbAddr;
-    ctbAQP.m_Xcu    = m_ctbPelX;
-    ctbAQP.m_Ycu    = m_ctbPelY;
-
-    if((ctbAQP.m_Xcu + sliceAQP->m_maxCUWidth) > (int)sliceAQP->m_picWidth)  ctbAQP.m_cuWidth = sliceAQP->m_picWidth - ctbAQP.m_Xcu;
-    else ctbAQP.m_cuWidth = sliceAQP->m_maxCUWidth;
-
-    if((ctbAQP.m_Ycu + sliceAQP->m_maxCUHeight) > (int)sliceAQP->m_picHeight)  ctbAQP.m_cuHeight = sliceAQP->m_picHeight - ctbAQP.m_Ycu;
-    else ctbAQP.m_cuHeight = sliceAQP->m_maxCUHeight;
-
-    ctbAQP.m_rscs =  compute_block_rscs(m_ySrc, ctbAQP.m_cuWidth, ctbAQP.m_cuHeight, m_pitchSrcLuma);
-
-    ctbAQP.m_GOPSize = sliceAQP->m_GOPSize;
-    ctbAQP.m_picClass = sliceAQP->m_picClass;
-    ctbAQP.setSliceQP(sliceAQP->m_sliceQP);
-    ctbAQP.setClass_RSCS(ctbAQP.m_rscs);
-
-    int calq = (ctbAQP.getQPFromLambda(sliceLambda * 256.0) - sliceAQP->m_sliceQP);
-    return calq;
-}
-
-#else
-
-mfxStatus MFXVideoENCODEH265::PreEncAnalysis(void)
-{
-    return MFX_ERR_NONE;
-
-}
-mfxStatus MFXVideoENCODEH265::UpdateAllLambda(Task* task)
-{
-    task;
-    return MFX_ERR_NONE;
-}
-
-template <typename PixType>
-int H265CU<PixType>::GetCalqDeltaQp(TAdapQP* sliceAQP, Ipp64f sliceLambda)
-{
-    sliceAQP;
-    sliceLambda;
-
-    return 0;
-}
-
-#endif
 
 template mfxStatus H265FrameEncoder::EncodeThread<Ipp8u>(Ipp32s & ithread, volatile Ipp32u* onExitEvent, UMC::Semaphore &semaphore);
 template mfxStatus H265FrameEncoder::EncodeThread<Ipp16u>(Ipp32s & ithread, volatile Ipp32u* onExitEvent, UMC::Semaphore &semaphore);

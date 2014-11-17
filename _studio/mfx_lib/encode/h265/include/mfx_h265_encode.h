@@ -13,6 +13,7 @@
 #ifndef __MFX_H265_ENCODE_H__
 #define __MFX_H265_ENCODE_H__
 
+#include "memory"
 #include "ippdefs.h"
 #include "umc_semaphore.h"
 
@@ -29,16 +30,12 @@ namespace H265Enc {
     class H265FrameEncoder;
     class H265BRC;
     struct Task;
+    class Lookahead;
 
 #if defined(MFX_VA)
     class FeiContext;
 #endif
 }
-
-struct StatItem {
-        Ipp64s met;
-        Ipp32s frameOrder;
-    };
 
 class MFXVideoENCODEH265 : public VideoENCODE {
 public:
@@ -139,10 +136,8 @@ private:
 
 
     H265BRC *m_brc;
-    TAdapQP *m_pAQP;
-#if defined(MFX_ENABLE_H265_PAQ)
-    TVideoPreanalyzer m_preEnc;
-#endif
+    //Lookahead *m_la;
+    std::auto_ptr<Lookahead> m_la;
 
 #if defined(MFX_VA)
     FeiContext *m_FeiCtx;
@@ -160,8 +155,12 @@ private:
     // ------ _global_ stages of Input Frame Control
     mfxStatus AcceptFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxBS);
     H265Frame *InsertInputFrame(const mfxFrameSurface1 *surface);
+
+    friend class H265Enc::Lookahead;
     void ConfigureInputFrame(H265Frame *frame) const;
     void UpdateGopCounters(H265Frame *frame);
+    void RestoreGopCountersFromFrame(H265Frame *frame);
+
     void ConfigureEncodeFrame(Task *task);
     mfxStatus AddNewOutputTask(int& encIdx);// find next task and free encoder, bind them and return encIdx [-1(not found resources), or 0, ..., N-1]
     void OnEncodingQueried(Task *encoded);
@@ -180,30 +179,7 @@ private:
     mfxStatus EncSolver(Task* task, volatile Ipp32u* onExitEvent);
     void SyncOnTaskCompletion(Task* task, mfxBitstream* mfxBs, void *pParam);
 
-    // ------- Pre Encode Analysis (lookahead / paq etc)
-    mfxStatus PreEncAnalysis(void);
-    mfxStatus UpdateAllLambda(Task* task);
-
-    //-----------------------------------------------------
-    // alternative LA
-    // {
-    enum {
-        ALG_PIX_DIFF = 0,
-        ALG_HIST_DIFF
-    };
-    void LookAheadAnalysis();
-    std::vector<Ipp8u>  m_workBuf;
-    std::vector<StatItem> m_slideWindowStat; // store metrics
-    struct ScdConfig {
-        Ipp32s M; // window size = 2*M+1
-        Ipp32s N; // if (peak1 / peak2 > N) => SC Detected!
-        Ipp32s algorithm; // ALG_PIX_DIFF, ALG_HIST_DIFF
-        Ipp32s scaleFactor; // analysis will be done on (origW >> scaleFactor, origH >> scaleFactor) resolution
-    } m_scdConfig;
-
-    void DetectSceneChange_AndUpdateState( void );
-    // }
-    //-----------------------------------------------------
+    void RunLookahead();
 
     // -------FEI
     void ProcessFrameFEI(Task* task);

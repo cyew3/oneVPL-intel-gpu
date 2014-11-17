@@ -55,12 +55,6 @@
     <ClCompile Include="h265\src\mfx_h265_sao_filter.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_me4paq.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_paq.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_enc_fei.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -109,9 +103,6 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="h265\include\mfx_h265_sao_filter.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="h265\include\mfx_h265_paq.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="h265\include\mfx_h265_enc_fei.h">

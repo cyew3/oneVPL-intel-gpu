@@ -16,7 +16,6 @@
 #include "mfx_h265_defs.h"
 #include "mfx_h265_ctb.h"
 #include "mfx_h265_frame.h"
-#include "mfx_h265_paq.h"
 #include "mfx_h265_sao_filter.h"
 #include "mfx_h265_brc.h"
 
@@ -91,8 +90,13 @@ struct H265VideoParam {
     Ipp8u  maxCUDepthAdapt;
     Ipp16u cuSplitThreshold;
     Ipp8u  enableCmFlag;
-    Ipp8u  preEncMode; // pre Encode Analysis
-    Ipp32s lookAheadDelay;
+
+    Ipp8u  DeltaQpMode;      // 0 - disable, 1 - PAQ, 2 - CALQ, 3 PAQ+CALQ
+    Ipp32s RateControlDepth; // rate control depth: how many analyzed future frames are required for BRC
+    Ipp8u  SceneCut;         // Enable Scene Change Detection and insert IDR frame
+    Ipp8u  AnalyzeCmplx;     // analyze frame complexity (for BRC)
+    Ipp8u  LowresFactor;     // > 0 means lookahead algorithms is applied on downscaled frames
+
     Ipp8u  TryIntra;        // 0-default, 1-always, 2-Try intra based on spatio temporal content analysis in inter
     Ipp8u  FastAMPSkipME;   // 0-default, 1-never, 2-Skip AMP ME of Large Partition when Skip is best
     Ipp8u  FastAMPRD;       // 0-default, 1-never, 2-Adaptive Fast Decision 
@@ -318,7 +322,7 @@ Ipp8s GetRateQp(Task const & task, H265VideoParam const & param, H265BRC* brc);
 
 void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, int qp, const H265Frame* currentFrame, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
 Ipp64f h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP);
-
+void ApplyDeltaQp(Task* task, const H265VideoParam & par, Ipp8u useBrc = 0);
 } // namespace
 
 #endif // __MFX_H265_ENC_H__

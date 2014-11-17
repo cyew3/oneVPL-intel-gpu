@@ -663,11 +663,6 @@
     <ClInclude Include="..\..\shared\include\mfxvideo++int.h" />
     <ClInclude Include="..\..\shared\include\mfxvideopro++.h" />
     <ClInclude Include="..\..\shared\include\mfxvideopro.h" />
-    <ClInclude Include="..\..\..\include\mfxdefs.h" />
-    <ClInclude Include="..\..\..\include\mfxplugin.h" />
-    <ClInclude Include="..\..\..\include\mfxstructures.h" />
-    <ClInclude Include="..\..\..\include\mfxvideo++.h" />
-    <ClInclude Include="..\..\..\include\mfxvideo.h" />
     <ClInclude Include="..\scheduler\include\mfx_scheduler_core.h" />
     <ClInclude Include="..\scheduler\include\mfx_scheduler_core_handle.h" />
     <ClInclude Include="..\scheduler\include\mfx_scheduler_core_task.h" />

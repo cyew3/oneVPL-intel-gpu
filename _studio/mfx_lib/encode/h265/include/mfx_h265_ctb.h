@@ -19,7 +19,6 @@
 #include "mfx_h265_optimization.h"
 #include "mfx_h265_sao_filter.h"
 #include "mfx_h265_tables.h"
-#include "mfx_h265_paq.h"
 #include "mfx_h265_frame.h"
 
 #if defined(MFX_VA)
@@ -84,11 +83,11 @@ namespace H265Enc {
 
 struct H265VideoParam;
 
-struct H265MV
-{
-    Ipp16s  mvx;
-    Ipp16s  mvy;
-};
+//struct H265MV
+//{
+//    Ipp16s  mvx;
+//    Ipp16s  mvy;
+//};
 
 #ifdef MEMOIZE_SUBPEL
 
@@ -887,7 +886,6 @@ public:
 
     bool getdQPFlag           ()                        { return m_bEncodeDQP;        }
     void setdQPFlag           ( bool b )                { m_bEncodeDQP = b;           }
-    int GetCalqDeltaQp(TAdapQP* sliceAQP, Ipp64f sliceLambda);
 
     bool HaveChromaRec() const;
 
@@ -910,6 +908,8 @@ public:
     void LoadBestInterPredAndResid(Ipp32s absPartIdx, Ipp32s depth);
 
     Ipp8u GetAdaptiveMinDepth() const;
+
+    void SetCuLambda(Task* task);
 
 private:
 #ifndef AMT_ALT_ENCODE

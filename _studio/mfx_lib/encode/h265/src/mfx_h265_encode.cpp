@@ -33,6 +33,7 @@
 #include "mfx_h265_defs.h"
 #include "mfx_h265_enc.h"
 #include "mfx_h265_frame.h"
+#include "mfx_h265_lookahead.h"
 #include "umc_structures.h"
 #include "mfx_enc_common.h"
 
@@ -181,8 +182,10 @@ namespace H265Enc {
     tab_##mode##_AdaptiveRefs[x],\
     tab_##mode##_FastCoeffCost[x],\
     tab_##mode##_NumRefFrameB[x],\
-    tab_##mode##_NumTileCols[x],\
-    tab_##mode##_NumTileRows[x],\
+    tab_##mode##_SceneCut[x],\
+    tab_##mode##_AnalyzeCmplx[x],\
+    tab_##mode##_RateControlDepth[x],\
+    tab_##mode##_LowresFactor[x],\
     }
 
     // Extended bit depth
@@ -415,6 +418,11 @@ namespace H265Enc {
     Ipp8u tab_tuNumRefFrame_SW[8]   = {2, 4, 4, 4, 3, 3, 2, 2};
 #endif
     Ipp8u tab_tuNumRefFrame_GACC[8] = {4, 4, 4, 4, 4, 4, 4, 2};
+
+    TU_OPT_ALL (AnalyzeCmplx,          0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_ALL (SceneCut,              0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_ALL (RateControlDepth,      0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_ALL (LowresFactor,          0,   0,   0,   0,   0,   0,   0);
 
 
     mfxExtCodingOptionHEVC tab_tu[8] = {
@@ -667,7 +675,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     m_frameCountSync++;
 
     mfxU32 noahead = 0;//1;
-    Ipp32s lookaheadBuffering = m_videoParam.preEncMode > 0 ? (m_videoParam.lookAheadDelay + m_scdConfig.M) : 0;
+    Ipp32s lookaheadBuffering = m_la.get() ? m_la.get()->GetDelay() : 0;
     if (m_mfxHEVCOpts.EnableCm == MFX_CODINGOPTION_ON)
         noahead = 0;
 
@@ -1107,6 +1115,16 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.DeltaQpMode = opts_tu->DeltaQpMode;
         if (m_mfxHEVCOpts.Enable10bit == 0)
             m_mfxHEVCOpts.Enable10bit = opts_tu->Enable10bit;
+        if (m_mfxHEVCOpts.FramesInParallel == 0)
+            m_mfxHEVCOpts.FramesInParallel = opts_tu->FramesInParallel;
+        if (m_mfxHEVCOpts.SceneCut == 0)
+            m_mfxHEVCOpts.SceneCut = opts_tu->SceneCut;
+        if (m_mfxHEVCOpts.AnalyzeCmplx == 0)
+            m_mfxHEVCOpts.AnalyzeCmplx = opts_tu->AnalyzeCmplx;
+        if (m_mfxHEVCOpts.RateControlDepth == 0)
+            m_mfxHEVCOpts.RateControlDepth = opts_tu->RateControlDepth;
+        if (m_mfxHEVCOpts.LowresFactor == 0)
+            m_mfxHEVCOpts.LowresFactor = opts_tu->LowresFactor;
     }
 
     if (!optsTiles) {
@@ -1119,7 +1137,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         if (m_mfxHevcTiles.NumTileRows == 0)
             m_mfxHevcTiles.NumTileRows = 1;
     }
-
+    
     // uncomment here if sign bit hiding doesn't work properly
     //m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
 
@@ -1268,24 +1286,12 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         sts =  m_frameEncoder[encIdx]->Init(&m_mfxParam, m_videoParam, &m_mfxHEVCOpts, m_core);
         MFX_CHECK_STS(sts);
     }
-    // 
-
+    
     m_isInitialized = true;
-
     m_semaphore.Init(0, INT_MAX);
 
-    // LA configuration
-    if (m_videoParam.preEncMode > 0) {
-        m_scdConfig.M = 10;
-        m_scdConfig.N = 3;
-        m_scdConfig.algorithm = ALG_HIST_DIFF;
-        m_scdConfig.scaleFactor = m_videoParam.preEncMode - 1;
-
-        StatItem initVal = {0, -1};
-        Ipp32s windowSize = 2*m_scdConfig.M + 1;
-        m_slideWindowStat.resize( windowSize, initVal );
-
-        //m_videoParam.lookAheadDelay = IPP_MAX(m_videoParam.lookAheadDelay, m_scdConfig.M);
+    if (m_videoParam.SceneCut || m_videoParam.DeltaQpMode || m_videoParam.AnalyzeCmplx) {
+        m_la.reset(new Lookahead(m_inputQueue, m_videoParam, (*this)) );
     }
 
     return stsQuery;
@@ -1481,16 +1487,8 @@ mfxStatus MFXVideoENCODEH265::Close()
         m_FeiCtx = NULL;
     }
 #endif // MFX_VA
-
-#if defined(MFX_ENABLE_H265_PAQ)
-    if (m_videoParam.preEncMode) {
-        m_preEnc.Close();
-        if(m_pAQP) {
-            m_pAQP->Close();
-            delete m_pAQP;
-        }
-    }
-#endif
+    
+    m_la.reset(0);
 
     return MFX_ERR_NONE;
 }
@@ -1620,6 +1618,11 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.AdaptiveRefs                 ) optsNew.AdaptiveRefs                  = optsOld.AdaptiveRefs                 ;
         if (!optsNew.FastCoeffCost                ) optsNew.FastCoeffCost                 = optsOld.FastCoeffCost                ;
         if (!optsNew.NumRefFrameB                 ) optsNew.NumRefFrameB                  = optsOld.NumRefFrameB                 ;
+        if (!optsNew.AnalyzeCmplx                 ) optsNew.AnalyzeCmplx                  = optsOld.AnalyzeCmplx                 ;
+        if (!optsNew.SceneCut                     ) optsNew.SceneCut                      = optsOld.SceneCut                     ;
+        if (!optsNew.RateControlDepth             ) optsNew.RateControlDepth              = optsOld.RateControlDepth             ;
+        if (!optsNew.LowresFactor                 ) optsNew.LowresFactor                  = optsOld.LowresFactor                 ;
+
     }
 
     mfxExtHEVCTiles optsTilesNew;
@@ -1814,6 +1817,10 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 optsHEVC->AdaptiveRefs = 1;
                 optsHEVC->FastCoeffCost = 1;
                 optsHEVC->NumRefFrameB = 1;
+                optsHEVC->AnalyzeCmplx = 1;
+                optsHEVC->SceneCut = 1;
+                optsHEVC->RateControlDepth = 1;
+                optsHEVC->LowresFactor = 1;
             }
 
             mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
@@ -2226,7 +2233,11 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 opts_out->CUSplitThreshold = opts_in->CUSplitThreshold;
                 opts_out->DeltaQpMode = opts_in->DeltaQpMode;
                 opts_out->CpuFeature = opts_in->CpuFeature;
-                opts_out->FramesInParallel         = opts_in->FramesInParallel;
+                opts_out->FramesInParallel = opts_in->FramesInParallel;
+                opts_out->AnalyzeCmplx = opts_in->AnalyzeCmplx;
+                opts_out->SceneCut = opts_in->SceneCut;
+                opts_out->RateControlDepth = opts_in->RateControlDepth;
+                opts_out->LowresFactor = opts_in->LowresFactor;
 
                 CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
                 CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */
@@ -2658,7 +2669,6 @@ Task* FindOldestOutputTask(TaskList & encodeQueue)
 
 mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxBS)
 {
-    // STAGE:: [ACCEPT]
     if (surface) {
         H265Frame* inputFrame = InsertInputFrame(surface); // copy surface -> inputFrame (with padding) and returns ptr to inputFrame
         MFX_CHECK_NULL_PTR1(inputFrame);
@@ -2672,14 +2682,11 @@ mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstrea
         ConfigureInputFrame(inputFrame);
         UpdateGopCounters(inputFrame);
     }
-
-    std::list<Task*> & inputQueue = m_videoParam.preEncMode ? m_lookaheadQueue : m_inputQueue;
-    // STAGE:: [REORDER]
-    // prepare next frame for encoding
+    
+    std::list<Task*> & inputQueue = m_la.get() ? m_lookaheadQueue : m_inputQueue;
     if (m_reorderedQueue.empty()) {
         ReorderFrames(inputQueue, m_reorderedQueue, m_videoParam, surface == NULL);
     }
-
     if (!m_reorderedQueue.empty()) {
         ConfigureEncodeFrame(m_reorderedQueue.front());
         m_lastEncOrder = m_reorderedQueue.front()->m_encOrder;
@@ -2688,26 +2695,14 @@ mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstrea
         m_encodeQueue.push_back(m_dpb.back());
     }
 
-    // general criteria to continue encoding
-    //bool isGo = !m_encodeQueue.empty() ||
-    //    inputQueue.size() >= (size_t)m_videoParam.GopRefDist ||
-    //    !surface && !inputQueue.empty();
-
-    // special criterion for "instantaneous" first IDR frame
-    /*if (!isGo && mfxBS && 1 == m_inputQueue.size() && m_inputQueue.front()->m_frameOrigin->m_isIdrPic)
-        isGo = true;*/
-
     if (!mfxBS)
         return MFX_ERR_NONE;
-        //return isGo ? MFX_ERR_NONE : MFX_ERR_MORE_DATA; // means delay
-
-    /*if (!isGo)
-        return MFX_ERR_MORE_DATA;*/
 
     return MFX_ERR_NONE;
 
 } //
 
+#define CLIPVAL(VAL, MINVAL, MAXVAL) MAX(MINVAL, MIN(MAXVAL, VAL))
 
 mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
 {
@@ -2745,10 +2740,8 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
     }
 #endif
 
-    if (m_brc && m_videoParam.preEncMode > 0) {
-        Ipp32s framesCount = IPP_MIN(m_videoParam.lookAheadDelay, (Ipp32s)m_encodeQueue.size()-1);
-        //printf("\n futureFrames %i\n", framesCount);
-
+    if ( m_brc && m_videoParam.AnalyzeCmplx > 0 ) {
+        Ipp32s framesCount = IPP_MIN((size_t)m_videoParam.RateControlDepth - 1, m_encodeQueue.size()-1);
         //task->m_futureFrames.clear();
         task->m_futureFrames.resize(0);
         TaskIter it = m_encodeQueue.begin();
@@ -2776,21 +2769,9 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
         SetAllLambda(m_videoParam, (currSlices + i), task->m_sliceQpY, task->m_frameOrigin );
     }
 
-#if defined (MFX_ENABLE_H265_PAQ)
-    if (m_videoParam.preEncMode && m_videoParam.UseDQP) {
-        Ipp32s poc = task->m_frameOrigin->m_poc;
-        for (Ipp32s ctb = 0; ctb < numCtb; ctb++) {
-            Ipp32s ctb_adapt = ctb;
-            Ipp32s locPoc = poc % m_preEnc.m_histLength;
-            if (m_videoParam.preEncMode != 2) // no pure CALQ 
-                task->m_lcuQps[ctb] += (Ipp8s)m_preEnc.m_acQPMap[locPoc].getDQP(ctb_adapt);
-        }
-        for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++)
-            if (m_videoParam.preEncMode && m_videoParam.UseDQP)
-                UpdateAllLambda(task);
-    }
-#endif
-
+    if (m_videoParam.DeltaQpMode && m_videoParam.UseDQP)
+        ApplyDeltaQp(task, m_videoParam, m_brc ? 1 : 0);
+    
     mfxStatus sts = m_frameEncoder[encIdx]->SetEncodeTask(task);
     MFX_CHECK_STS(sts);
     m_outputQueue.splice(m_outputQueue.end(), m_encodeQueue, m_encodeQueue.begin());
@@ -2932,7 +2913,7 @@ void MFXVideoENCODEH265::SyncOnTaskCompletion(Task *task, mfxBitstream *mfxBs, v
         if (m_brc) {
             const Ipp32s min_qp = 1;
             Ipp32s frameBytes = bs->DataLength - initialDataLength;
-            mfxBRCStatus brcSts = m_brc->PostPackFrame(*frameEnc->GetVideoParam(),  task->m_sliceQpY, task->m_frameOrigin, frameBytes << 3, overheadBytes << 3, inputParam->m_reencode);
+            mfxBRCStatus brcSts = m_brc->PostPackFrame(frameEnc->GetVideoParam(),  task->m_sliceQpY, task->m_frameOrigin, frameBytes << 3, overheadBytes << 3, inputParam->m_reencode);
             inputParam->m_reencode = 0;
 
             if (brcSts != MFX_BRC_OK ) {
@@ -2975,6 +2956,10 @@ void MFXVideoENCODEH265::SyncOnTaskCompletion(Task *task, mfxBitstream *mfxBs, v
                                 (currSlices + i)->slice_qp_delta = (*tit)->m_sliceQpY - m_pps.init_qp;
                                 SetAllLambda(m_videoParam, (currSlices + i), (*tit)->m_sliceQpY, (*tit)->m_frameOrigin );
                             }
+
+                            if (m_videoParam.DeltaQpMode && m_videoParam.UseDQP) {
+                                ApplyDeltaQp(*tit, m_videoParam, 1);
+                            }
                         }
                     }
 
@@ -3014,7 +2999,7 @@ void MFXVideoENCODEH265::SyncOnTaskCompletion(Task *task, mfxBitstream *mfxBs, v
                     }
                     bitsize += numCabacZeroWords * 24;
 
-                    m_brc->PostPackFrame(*frameEnc->GetVideoParam(),  task->m_sliceQpY, task->m_frameOrigin, bitsize, (overheadBytes << 3) + bitsize - (frameBytes << 3), 1);
+                    m_brc->PostPackFrame(frameEnc->GetVideoParam(),  task->m_sliceQpY, task->m_frameOrigin, bitsize, (overheadBytes << 3) + bitsize - (frameBytes << 3), 1);
                     mfxBs->DataLength += (bitsize >> 3) - frameBytes;
 
                 } else {
@@ -3123,13 +3108,9 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     Ipp32s stage = vm_interlocked_cas32( &inputParam->m_doStage, 1, 0);
     if (0 == stage) {
         th->PrepareToEncode(pParam);// here <m_doStage> will be switched ->2->3->4 consequentially
-
-        /*if(inputParam->m_targetTask) {
-            printf("\n onEncode %i \n", inputParam->m_targetTask->m_frameOrder);fflush(stdout);
-        }*/
-
-        if (th->m_videoParam.preEncMode) {
-            th->LookAheadAnalysis();
+        
+        if (th->m_la.get()) {
+            th->RunLookahead();
         }
     }
 
@@ -3290,11 +3271,18 @@ H265Frame* MFXVideoENCODEH265::InsertInputFrame(const mfxFrameSurface1 *surface)
     (*frm)->m_timeStamp = surface->Data.TimeStamp;
     m_inputQueue.back()->m_frameOrigin = *frm;
 
-    if (m_videoParam.preEncMode > 0) {
-        for (Ipp32u row = 0; row < m_videoParam.PicHeightInCtbs; row++) {
-            PadOneReconRow(*frm, row, m_videoParam.MaxCUSize, m_videoParam.PicHeightInCtbs);
+    if (m_videoParam.DeltaQpMode > 0 || m_videoParam.AnalyzeCmplx) {
+        H265Frame* frame = m_videoParam.LowresFactor ? (*frm)->m_lowres : (*frm);
+        Ipp32s blkSize = m_videoParam.LowresFactor ? SIZE_BLK_LA : m_videoParam.MaxCUSize;
+        Ipp32s heightInBlks = (frame->height + blkSize - 1) / blkSize;
+        for (Ipp32s row = 0; row < heightInBlks; row++) {
+            PadOneReconRow(*frm, row, blkSize, heightInBlks);
         }
     }
+
+    // each new frame should be analysed by lookahead algorithms family.
+    Ipp32u ownerCount =  (m_videoParam.DeltaQpMode ? 1 : 0) + (m_videoParam.SceneCut ? 1 : 0) + (m_videoParam.AnalyzeCmplx ? 1 : 0);
+    m_inputQueue.back()->m_frameOrigin->m_lookaheadRefCounter = ownerCount;
 
     return m_inputQueue.back()->m_frameOrigin;
 

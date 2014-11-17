@@ -24,6 +24,12 @@ namespace H265Enc {
 
     struct H265VideoParam;
 
+    struct H265MV
+    {
+        Ipp16s  mvx;
+        Ipp16s  mvy;
+    };
+
     class State
     {
     public:
@@ -47,10 +53,9 @@ namespace H265Enc {
     };
 
     struct H265CUData;
-    class H265Frame// : public State
+    class H265Frame
     {
     public:
-
         void *mem;
         H265CUData *cu_data;
 
@@ -64,6 +69,7 @@ namespace H265Enc {
         Ipp32s pitch_luma_bytes;
         Ipp32s pitch_chroma_pix;
         Ipp32s pitch_chroma_bytes;
+
         Ipp8u  m_bitDepthLuma;
         Ipp8u  m_bdLumaFlag;
         Ipp8u  m_bitDepthChroma;
@@ -73,7 +79,10 @@ namespace H265Enc {
         mfxU64 m_timeStamp;
         Ipp32u m_picCodeType;
         Ipp32s m_RPSIndex;
-        Ipp8u  m_wasLookAheadProcessed;// paq
+
+        // flags indicate that the stages were done on the frame
+        Ipp8u  m_wasLookAheadProcessed;
+        Ipp32u m_lookaheadRefCounter;
 
         Ipp32s m_pyramidLayer;
         Ipp32s m_miniGopCount;
@@ -98,33 +107,42 @@ namespace H265Enc {
         // for frame threading
         volatile Ipp32s m_codedRow; // sync info in case of frame threading
         volatile Ipp32u m_refCounter; // to prevent race condition in case of frame threading
+        
+        // complexity/content statistics
+        std::vector<Ipp32s> m_interSad;
+        std::vector<Ipp32s> m_interSad_pdist_past;
+        std::vector<Ipp32s> m_interSad_pdist_future;
 
-        // for brc lookahead analysis
-        struct Frame {
-            void *mem;
-            Ipp8u *y;
-            Ipp8u *uv;
-            Ipp32s width;
-            Ipp32s height;
-            Ipp32s padding;
-            Ipp32s pitch_luma_pix;
-            Ipp32s pitch_luma_bytes;
+        std::vector<H265MV> m_mv;
+        std::vector<H265MV> m_mv_pdist_future;
+        std::vector<H265MV> m_mv_pdist_past;
+        std::vector<Ipp64f> m_rs;
+        std::vector<Ipp64f> m_cs;
+        Ipp64f m_frameRs;
+        Ipp64f m_frameCs;
+        std::vector<Ipp32s> sc_mask;
+        std::vector<Ipp32s> qp_mask;
+        std::vector<Ipp32s> coloc_past;
+        std::vector<Ipp32s> coloc_futr;
 
-            Ipp32s pitch_chroma_pix;
-            Ipp32s pitch_chroma_bytes;
-            Ipp8u  m_bitDepthLuma;
-            Ipp8u  m_bdLumaFlag;
-            Ipp8u  m_bitDepthChroma;
-            Ipp8u  m_bdChromaFlag;
-            Ipp8u  m_chromaFormatIdc;
-        } m_lowres;
+        Ipp64f SC;
+        Ipp64f TSC;
 
+        Ipp64f avgsqrSCpp;
+        Ipp64f avgTSC;
+        
+        // BRC
         std::vector<Ipp32s> m_intraSatd;
         std::vector<Ipp32s> m_interSatd;
         Ipp32f              m_avgBestSatd; //= sum( min{ interSatd[i], intraSatd[i] } ) / {winth*height};
         Ipp32f              m_intraRatio;
         Ipp32s              m_sceneCut;
         Ipp64s              m_metric;// special metric per frame for SCD
+
+        Ipp64f m_avCmplx;
+        Ipp64f m_CmplxQstep;
+
+        H265Frame* m_lowres;
 
         H265Frame()
         {
@@ -139,12 +157,10 @@ namespace H265Enc {
         void setWasLAProcessed() { m_wasLookAheadProcessed = true; }
         void unsetWasLAProcessed() { m_wasLookAheadProcessed = false; }
 
-        void Create(H265VideoParam *par);
+        void Create(H265VideoParam *par, Ipp8u needExtData = 0);
+        void Destroy();
         void CopyFrame(const mfxFrameSurface1 *surface);
         void doPadding();
-
-        void Destroy();
-        //void Dump(const vm_char* fname, H265VideoParam *par, TaskList * dpb, Ipp32s frame_num);
 
         void ResetMemInfo();
         void ResetEncInfo();

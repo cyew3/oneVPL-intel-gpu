@@ -31,8 +31,10 @@ T align_pointer(void *pv, size_t lAlignValue = UMC::DEFAULT_ALIGN_VALUE)
 }
 
 
-void H265Frame::Create(H265VideoParam *par)
+void H265Frame::Create(H265VideoParam *par, Ipp8u needExtData)
 {
+    // par 
+    // ----------------------------------------------------
     Ipp32s numCtbs = par->PicWidthInCtbs * par->PicHeightInCtbs;
     Ipp32s numCtbs_parts = numCtbs << par->Log2NumPartInCU;
 
@@ -46,6 +48,7 @@ void H265Frame::Create(H265VideoParam *par)
     m_bdLumaFlag = par->bitDepthLuma > 8;
     m_bdChromaFlag = par->bitDepthChroma > 8;
     m_chromaFormatIdc = par->chromaFormatIdc;
+    // ----------------------------------------------------
 
     pitch_luma_bytes = pitch_luma_pix = width + padding * 2;
 
@@ -92,54 +95,37 @@ void H265Frame::Create(H265VideoParam *par)
 
     y += ((pitch_luma_pix + 1) * padding) << m_bdLumaFlag;
     uv += ((pitch_chroma_pix * padding >> par->chromaShiftH) + (padding << par->chromaShiftWInv)) << m_bdChromaFlag;
+    
+    if (needExtData) {
+        // all algorithms designed for 8x8 (CsRs - 4x4)
+        Ipp32s blkSize = SIZE_BLK_LA;
+        Ipp32s PicWidthInBlk  = (width  + blkSize - 1) / blkSize;
+        Ipp32s PicHeightInBlk = (height + blkSize - 1) / blkSize;
+        Ipp32s numBlk = PicWidthInBlk * PicHeightInBlk;
 
-    //if (par->preEncMode == 0) 
-    //    return;
+        // for BRC
+        m_intraSatd.resize(numBlk);
+        m_interSatd.resize(numBlk);
 
-    //brc lookahead
-    m_lowres.mem= NULL;
-    bool useLowRes = (par->preEncMode > 1) ? true : false;
-    const Ipp32s sizeBlk = 8;
-    // for SCD algoriithm
-    if (useLowRes) {        
-        m_lowres.width   = width >> 1;
-        m_lowres.height  = height >> 1;
-        m_lowres.padding = sizeBlk + sizeBlk / 2;
-        m_lowres.pitch_luma_pix = m_lowres.pitch_luma_bytes = m_lowres.width + m_lowres.padding * 2;
+        // for content analysis (paq/calq)
+        m_interSad.resize(numBlk);
 
-        m_lowres.m_bitDepthLuma = m_bitDepthLuma;
-        m_lowres.m_bdLumaFlag = m_bdLumaFlag;
-        m_lowres.m_bitDepthChroma = m_bitDepthChroma;
-        m_lowres.m_bdChromaFlag = m_bdChromaFlag;
-        m_lowres.m_chromaFormatIdc = m_chromaFormatIdc;
+        m_interSad_pdist_past.resize(numBlk);
+        m_interSad_pdist_future.resize(numBlk);
 
-        Ipp32s plane_size_luma = (m_lowres.width + m_lowres.padding * 2) * (m_lowres.height + m_lowres.padding * 2);
-        if (m_bdLumaFlag) {
-            plane_size_luma <<= 1;
-            m_lowres.pitch_luma_bytes <<= 1;
-        }
-        
-        len = (plane_size_luma) + ALIGN_VALUE*3;
+        H265MV initMv = {0,0};
+        m_mv.resize(numBlk, initMv);
+        m_mv_pdist_past.resize(numBlk, initMv);
+        m_mv_pdist_future.resize(numBlk, initMv);
+    
+        size_t len = width * height >> 4;// because RsCs configured for 4x4 blk only
+        m_rs.resize(len, 0);
+        m_cs.resize(len, 0);
 
-        m_lowres.mem = H265_Malloc(len);
-        if (!m_lowres.mem)
-            throw std::exception();
-
-        m_lowres.y = align_pointer<Ipp8u *> (m_lowres.mem, ALIGN_VALUE);
-        m_lowres.y += ((m_lowres.pitch_luma_pix + 1) * m_lowres.padding) << m_bdLumaFlag;
-    }
-
-    // for ME algoriithm
-    useLowRes = false; // tmp hack to provide ME on original resolution
-    if (par->preEncMode > 0) {
-        
-        Ipp32s width_1  = useLowRes ? m_lowres.width : width;
-        Ipp32s height_1 = useLowRes ? m_lowres.height : width;
-        const Ipp32s picWidthInBlks  = (width_1  + sizeBlk - 1) / sizeBlk;
-        const Ipp32s picHeightInBlks = (height_1 + sizeBlk - 1) / sizeBlk;
-
-        m_intraSatd.resize(picWidthInBlks*picHeightInBlks);
-        m_interSatd.resize(picWidthInBlks*picHeightInBlks);
+        sc_mask.resize(numBlk, 0);
+        qp_mask.resize(numBlk, 0);
+        coloc_futr.resize(numBlk, 0);
+        coloc_past.resize(numBlk, 0);
     }
 }
 
@@ -464,9 +450,10 @@ void H265Frame::Destroy()
         H265_Free(mem);
     mem = NULL;
 
-    if (m_lowres.mem)
-        H265_Free(m_lowres.mem);
-    m_lowres.mem = NULL;
+    if (m_lowres) {
+        m_lowres->Destroy();
+        m_lowres = NULL;
+    }
 }
 
 void H265Frame::ResetMemInfo()
@@ -476,8 +463,7 @@ void H265Frame::ResetMemInfo()
     y = NULL;
     uv = NULL;
 
-    m_lowres.mem = NULL;
-    m_lowres.y   = NULL;
+    m_lowres = NULL;
 
     width = 0;
     height = 0;
@@ -498,7 +484,10 @@ void H265Frame::ResetEncInfo()
     m_timeStamp = 0;
     m_picCodeType = 0;
     m_RPSIndex = 0;
+
     m_wasLookAheadProcessed = 0;
+    m_lookaheadRefCounter = 0;
+
     m_pyramidLayer = 0;
     m_miniGopCount = 0;
     m_biFramesInMiniGop = 0;
@@ -519,6 +508,12 @@ void H265Frame::ResetEncInfo()
 
     m_sceneCut = 0;
     m_metric = 0;
+
+    // persistence analysis
+    SC = 0.0;
+    TSC = 0.0;
+    avgsqrSCpp = 0.0;
+    avgTSC = 0.0;
 }
 
 void H265Frame::ResetCounters()
@@ -543,7 +538,31 @@ void H265Frame::ResetCounters()
             return i;
 
         std::auto_ptr<H265Frame> newFrame(new H265Frame());
-        newFrame->Create(par);
+
+        // ------------------------------------------------
+        Ipp8u needExtData = (par->SceneCut || par->DeltaQpMode || par->AnalyzeCmplx) && !par->LowresFactor ? 1 : 0;
+        newFrame->Create(par, needExtData);
+        if (par->LowresFactor || par->SceneCut) {
+            H265VideoParam parLowres = *par;
+
+            // hack!!!
+            if (par->SceneCut && par->LowresFactor == 0) {
+                parLowres.LowresFactor = 1;
+            }
+
+            parLowres.Width  >>= parLowres.LowresFactor;
+            parLowres.Width = ((parLowres.Width + 7) >> 3) << 3;
+            parLowres.Height >>= parLowres.LowresFactor;
+            parLowres.Height = ((parLowres.Height + 7) >> 3) << 3;
+            parLowres.MaxCUSize = SIZE_BLK_LA;
+            parLowres.PicWidthInCtbs = (parLowres.Width + parLowres.MaxCUSize - 1) / parLowres.MaxCUSize;
+            parLowres.PicHeightInCtbs = (parLowres.Height + parLowres.MaxCUSize - 1) / parLowres.MaxCUSize;
+            std::auto_ptr<H265Frame> newLowres(new H265Frame());
+            Ipp8u needExtData = 1;
+            newLowres->Create(&parLowres, needExtData);
+            newFrame.get()->m_lowres = newLowres.release();
+        }
+        // ------------------------------------------------
         newFrame->AddRef();
         queue.push_back(newFrame.release());
         return --queue.end();
@@ -554,7 +573,10 @@ void H265Frame::ResetCounters()
         m_timeStamp = src->m_timeStamp;
         m_picCodeType = src->m_picCodeType;
         m_RPSIndex = src->m_RPSIndex;
+
         m_wasLookAheadProcessed = src->m_wasLookAheadProcessed;
+        m_lookaheadRefCounter = src->m_lookaheadRefCounter;
+
         m_pyramidLayer = src->m_pyramidLayer;
         m_miniGopCount = src->m_miniGopCount;
         m_biFramesInMiniGop = src->m_biFramesInMiniGop;

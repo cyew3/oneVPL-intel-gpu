@@ -208,6 +208,8 @@ const Ipp32s OPT_LAMBDA_PYRAMID  = 1;
 
 // PAQ/CALQ tools
 #define  MAX_DQP (6)
+// size of block for lookahead algorithms
+#define SIZE_BLK_LA (8)
 
 enum {
     B_SLICE = 0,

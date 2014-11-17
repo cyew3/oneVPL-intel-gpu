@@ -9847,6 +9847,21 @@ void H265CU<PixType>::LoadBestInterPredAndResid(Ipp32s absPartIdx, Ipp32s depth)
 }
 
 template <typename PixType>
+void H265CU<PixType>::SetCuLambda(Task* task)
+{
+    int deltaQP = task->m_frameOrigin->qp_mask[m_ctbAddr];
+    deltaQP = Saturate(-MAX_DQP, MAX_DQP, deltaQP);
+    int idxDqp = 2*abs(deltaQP)-((deltaQP<0)?1:0);
+
+    H265Slice* curSlice = &(task->m_dqpSlice[idxDqp]);
+    m_rdLambda = curSlice->rd_lambda_slice;
+    m_rdLambdaSqrt = curSlice->rd_lambda_sqrt_slice;
+    m_ChromaDistWeight = curSlice->ChromaDistWeight_slice;
+    m_rdLambdaInter = curSlice->rd_lambda_inter_slice;
+    m_rdLambdaInterMv = curSlice->rd_lambda_inter_mv_slice;
+}
+
+template <typename PixType>
 const H265CUData *H265CU<PixType>::GetBestCuDecision(Ipp32s absPartIdx, Ipp32s depth) const
 {
     VM_ASSERT((Ipp32u)depth < sizeof(m_costStored) / sizeof(m_costStored[0]));
