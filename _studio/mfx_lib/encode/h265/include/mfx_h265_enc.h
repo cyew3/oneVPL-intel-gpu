@@ -92,6 +92,7 @@ struct H265VideoParam {
     Ipp16u cuSplitThreshold;
     Ipp8u  enableCmFlag;
     Ipp8u  preEncMode; // pre Encode Analysis
+    Ipp32s lookAheadDelay;
     Ipp8u  TryIntra;        // 0-default, 1-always, 2-Try intra based on spatio temporal content analysis in inter
     Ipp8u  FastAMPSkipME;   // 0-default, 1-never, 2-Skip AMP ME of Large Partition when Skip is best
     Ipp8u  FastAMPRD;       // 0-default, 1-never, 2-Adaptive Fast Decision 

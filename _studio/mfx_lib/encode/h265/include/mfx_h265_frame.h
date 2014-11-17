@@ -46,16 +46,6 @@ namespace H265Enc {
         bool m_free; // resource in use or could be reused (m_free == true means could be reused).
     };
 
-    struct BiFrameLocation
-    {
-        BiFrameLocation() 
-            : miniGopCount(0), encodingOrder(0), refFrameFlag(0) {}
-
-        mfxU32 miniGopCount;    // sequence of B frames between I/P frames
-        mfxU32 encodingOrder;   // number within mini-GOP (in encoding order)
-        mfxU16 refFrameFlag;    // MFX_FRAMETYPE_REF if B frame is reference
-    };
-
     struct H265CUData;
     class H265Frame// : public State
     {
@@ -63,6 +53,7 @@ namespace H265Enc {
 
         void *mem;
         H265CUData *cu_data;
+
         Ipp8u *y;
         Ipp8u *uv;
 
@@ -108,10 +99,31 @@ namespace H265Enc {
         volatile Ipp32u m_refCounter; // to prevent race condition in case of frame threading
 
         // for brc lookahead analysis
+        struct Frame {
+            void *mem;
+            Ipp8u *y;
+            Ipp8u *uv;
+            Ipp32s width;
+            Ipp32s height;
+            Ipp32s padding;
+            Ipp32s pitch_luma_pix;
+            Ipp32s pitch_luma_bytes;
+
+            Ipp32s pitch_chroma_pix;
+            Ipp32s pitch_chroma_bytes;
+            Ipp8u  m_bitDepthLuma;
+            Ipp8u  m_bdLumaFlag;
+            Ipp8u  m_bitDepthChroma;
+            Ipp8u  m_bdChromaFlag;
+            Ipp8u  m_chromaFormatIdc;
+        } m_lowres;
+
         std::vector<Ipp32s> m_intraSatd;
         std::vector<Ipp32s> m_interSatd;
-        Ipp32f              m_avgSadt; //= sum( min{ interSadt[i], intraSadt[i] } ) / {winth*height};
+        Ipp32f              m_avgBestSatd; //= sum( min{ interSatd[i], intraSatd[i] } ) / {winth*height};
         Ipp32f              m_intraRatio;
+        Ipp32s              m_sceneCut;
+        Ipp64s              m_metric;// special metric per frame for SCD
 
         H265Frame()
         {
@@ -125,21 +137,6 @@ namespace H265Enc {
         Ipp8u wasLAProcessed()    { return m_wasLookAheadProcessed; }
         void setWasLAProcessed() { m_wasLookAheadProcessed = true; }
         void unsetWasLAProcessed() { m_wasLookAheadProcessed = false; }
-
-        bool IsReference() const
-        {
-            return (isShortTermRef() || isLongTermRef() );
-        }
-
-        Ipp8u isShortTermRef() const
-        {
-            return m_isShortTermRef;
-        }
-
-        Ipp8u isLongTermRef() const
-        {
-            return m_isLongTermRef;
-        }
 
         void Create(H265VideoParam *par);
         void CopyFrame(const mfxFrameSurface1 *surface);

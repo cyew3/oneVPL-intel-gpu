@@ -35,6 +35,11 @@ namespace H265Enc {
 #endif
 }
 
+struct StatItem {
+        Ipp64s met;
+        Ipp32s frameOrder;
+    };
+
 class MFXVideoENCODEH265 : public VideoENCODE {
 public:
     virtual mfxTaskThreadingPolicy GetThreadingPolicy(void)
@@ -155,6 +160,7 @@ private:
     mfxStatus AcceptFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxBS);
     H265Frame *InsertInputFrame(const mfxFrameSurface1 *surface);
     void ConfigureInputFrame(H265Frame *frame) const;
+    void UpdateGopCounters(H265Frame *frame);
     void ConfigureEncodeFrame(Task *task);
     mfxStatus AddNewOutputTask(int& encIdx);// find next task and free encoder, bind them and return encIdx [-1(not found resources), or 0, ..., N-1]
     void OnEncodingQueried(Task *encoded);
@@ -177,8 +183,26 @@ private:
     mfxStatus PreEncAnalysis(void);
     mfxStatus UpdateAllLambda(Task* task);
 
-    // own me base preprocessing
+    //-----------------------------------------------------
+    // alternative LA
+    // {
+    enum {
+        ALG_PIX_DIFF = 0,
+        ALG_HIST_DIFF
+    };
     void LookAheadAnalysis();
+    std::vector<Ipp8u>  m_workBuf;
+    std::vector<StatItem> m_slideWindowStat; // store metrics
+    struct ScdConfig {
+        Ipp32s M; // window size = 2*M+1
+        Ipp32s N; // if (peak1 / peak2 > N) => SC Detected!
+        Ipp32s algorithm; // ALG_PIX_DIFF, ALG_HIST_DIFF
+        Ipp32s scaleFactor; // analysis will be done on (origW >> scaleFactor, origH >> scaleFactor) resolution
+    } m_scdConfig;
+
+    void DetectSceneChange_AndUpdateState( void );
+    // }
+    //-----------------------------------------------------
 
     // -------FEI
     void ProcessFrameFEI(Task* task);

@@ -233,23 +233,25 @@ Ipp32s IntraPredSATD(PixType *pSrc, Ipp32s srcPitch, Ipp32s x, Ipp32s y, IppiSiz
 
 template Ipp32s IntraPredSATD<Ipp8u>(Ipp8u *pSrc, Ipp32s srcPitch, Ipp32s x, Ipp32s y, IppiSize roi, Ipp32s width, Ipp8u bitDepthLuma);
 
-void DoIntraAnalysis(Task* task)
+void DoIntraAnalysis(Task* task, bool useLowRes)
 {
-    // analysis for blk 8x8.
-    //pars->PicWidthInCtbs = (pars->Width + pars->MaxCUSize - 1) / pars->MaxCUSize;
-    //pars->PicHeightInCtbs = (pars->Height + pars->MaxCUSize - 1) / pars->MaxCUSize;
-    const Ipp32s sizeBlk = 8;
-    const Ipp32s picWidthInBlks  = (task->m_frameOrigin->width  + sizeBlk - 1) / sizeBlk;
-    const Ipp32s picHeightInBlks = (task->m_frameOrigin->height + sizeBlk - 1) / sizeBlk;
-    const IppiSize frmSize = {task->m_frameOrigin->width, task->m_frameOrigin->height};
+    Ipp32s width  = useLowRes ? task->m_frameOrigin->m_lowres.width  : task->m_frameOrigin->width;
+    Ipp32s height = useLowRes ? task->m_frameOrigin->m_lowres.height : task->m_frameOrigin->height;
+    Ipp8u* luma      = useLowRes ? task->m_frameOrigin->m_lowres.y : task->m_frameOrigin->y;
+    Ipp32s pitch_luma_pix = useLowRes ? task->m_frameOrigin->m_lowres.pitch_luma_pix : task->m_frameOrigin->pitch_luma_pix;
 
-    
+    // analysis for blk 8x8
+    const Ipp32s sizeBlk = 8;
+    const Ipp32s picWidthInBlks  = (width  + sizeBlk - 1) / sizeBlk;
+    const Ipp32s picHeightInBlks = (height + sizeBlk - 1) / sizeBlk;
+    const IppiSize frmSize = {width, height};
+
     for (Ipp32s blk_row = 0; blk_row < picHeightInBlks; blk_row++) {
         for (Ipp32s blk_col = 0; blk_col < picWidthInBlks; blk_col++) {
             Ipp32s x = blk_col*sizeBlk;
             Ipp32s y = blk_row*sizeBlk;
             Ipp32s fPos = blk_row * picWidthInBlks + blk_col;
-            task->m_frameOrigin->m_intraSatd[fPos] = IntraPredSATD(task->m_frameOrigin->y, task->m_frameOrigin->pitch_luma_pix, x, y, frmSize, sizeBlk, 8);
+            task->m_frameOrigin->m_intraSatd[fPos] = IntraPredSATD(luma, pitch_luma_pix, x, y, frmSize, sizeBlk, 8);
         }
     }
 }
@@ -339,8 +341,8 @@ Ipp32s tuHad_1(const Ipp8u *src, Ipp32s pitchSrc, const Ipp8u *rec, Ipp32s pitch
 }
 
 
-template <typename PixType>
-Ipp32s MatchingMetricPu(const PixType *src, Ipp32s srcPitch, const H265Frame *refPic, const H265MEInfo *meInfo, const H265MV *mv, Ipp32s useHadamard, Ipp32s pelX, Ipp32s pelY)
+template <typename PixType, typename Frame>
+Ipp32s MatchingMetricPu(const PixType *src, Ipp32s srcPitch, Frame *refPic, const H265MEInfo *meInfo, const H265MV *mv, Ipp32s useHadamard, Ipp32s pelX, Ipp32s pelY)
 {
     Ipp32s refOffset = pelX + meInfo->posx + (mv->mvx >> 2) + (pelY + meInfo->posy + (mv->mvy >> 2)) * refPic->pitch_luma_pix;
     const PixType *rec = (PixType*)refPic->y + refOffset;
@@ -395,8 +397,8 @@ const struct TransitionTable {
     {1,8}, {7,5}, {1,3}, {1,5}, {3,3}, {3,5}, {5,3}, {5,5}, {7,3}, {7,5}, {1,3}, {1,5}
 };
 
-template <typename PixType>
-void MeIntPelLog(/*const */H265Frame *curr, /*const*/ H265Frame *ref, Ipp32s pelX, Ipp32s pelY, Ipp32s posx, Ipp32s posy, /*const MvPredInfo<2> *predInfo,*/ H265MV *mv, Ipp32s *cost, Ipp32s *mvCost)
+template <typename PixType, typename Frame>
+void MeIntPelLog(/*const */Frame *curr, /*const*/ Frame *ref, Ipp32s pelX, Ipp32s pelY, Ipp32s posx, Ipp32s posy, /*const MvPredInfo<2> *predInfo,*/ H265MV *mv, Ipp32s *cost, Ipp32s *mvCost)
 {
     // Log2( step ) is used, except meStepMax
     Ipp16s meStepBest = 2;
@@ -424,7 +426,7 @@ void MeIntPelLog(/*const */H265Frame *curr, /*const*/ H265Frame *ref, Ipp32s pel
     // expanding search
     H265MV mvCenter = mvBest;
     for (Ipp16s meStep = meStepBest; (1<<meStep) <= meStepMax; meStep ++) {
-        for (Ipp16s mePos = 1; mePos < 9; mePos++) {
+        for (Ipp16s mePos = 0; mePos < 9; mePos++) {
             H265MV mv = {
                 Ipp16s(mvCenter.mvx + (tab_mePattern[mePos][0] << meStep)),
                 Ipp16s(mvCenter.mvy + (tab_mePattern[mePos][1] << meStep))
@@ -436,8 +438,8 @@ void MeIntPelLog(/*const */H265Frame *curr, /*const*/ H265Frame *ref, Ipp32s pel
 
             //Ipp32s cost = MatchingMetricPu(src, meInfo, &mv, ref, useHadamard);
             H265MEInfo meInfo;
-            meInfo.posx = posx;
-            meInfo.posy = posy;
+            meInfo.posx = (Ipp8u)posx;
+            meInfo.posy = (Ipp8u)posy;
             Ipp32s cost = MatchingMetricPu(src, curr->pitch_luma_pix, ref, &meInfo, &mv, useHadamard, pelX, pelY);
 
             if (costBest > cost) {
@@ -476,8 +478,8 @@ void MeIntPelLog(/*const */H265Frame *curr, /*const*/ H265Frame *ref, Ipp32s pel
 
             //Ipp32s cost = MatchingMetricPu(src, meInfo, &mv, ref, useHadamard);
             H265MEInfo meInfo;
-            meInfo.posx = posx;
-            meInfo.posy = posy;
+            meInfo.posx = (Ipp8u)posx;
+            meInfo.posy = (Ipp8u)posy;
             Ipp32s cost = MatchingMetricPu(src, curr->pitch_luma_pix, ref, &meInfo, &mv, useHadamard, pelX, pelY);
 
             if (costBest > cost) {
@@ -510,8 +512,8 @@ void MeIntPelLog(/*const */H265Frame *curr, /*const*/ H265Frame *ref, Ipp32s pel
 
     // recalc hadamar
     H265MEInfo meInfo;
-    meInfo.posx = posx;
-    meInfo.posy = posy;
+    meInfo.posx = (Ipp8u)posx;
+    meInfo.posy = (Ipp8u)posy;
     useHadamard = 1;
     *cost = MatchingMetricPu(src, curr->pitch_luma_pix, ref, &meInfo, mv, useHadamard, pelX, pelY);
 } //
@@ -519,27 +521,28 @@ void MeIntPelLog(/*const */H265Frame *curr, /*const*/ H265Frame *ref, Ipp32s pel
 template
 void MeIntPelLog<Ipp8u>(/*const */H265Frame *curr, /*const*/ H265Frame *ref, Ipp32s pelX, Ipp32s pelY, Ipp32s posx, Ipp32s posy, /*const MvPredInfo<2> *predInfo,*/ H265MV *mv, Ipp32s *cost, Ipp32s *mvCost);
 
-void DoInterAnalysis(Task* curr, Task* ref)
+void DoInterAnalysis(Task* curr, Task* ref, bool useLowRes)
 {
     // analysis for blk 8x8.
-    //pars->PicWidthInCtbs = (pars->Width + pars->MaxCUSize - 1) / pars->MaxCUSize;
-    //pars->PicHeightInCtbs = (pars->Height + pars->MaxCUSize - 1) / pars->MaxCUSize;
+    Ipp32s width  = useLowRes ? curr->m_frameOrigin->m_lowres.width  : curr->m_frameOrigin->width;
+    Ipp32s height = useLowRes ? curr->m_frameOrigin->m_lowres.height : curr->m_frameOrigin->height;
     const Ipp32s sizeBlk = 8;
-    const Ipp32s picWidthInBlks  = (curr->m_frameOrigin->width  + sizeBlk - 1) / sizeBlk;
-    const Ipp32s picHeightInBlks = (curr->m_frameOrigin->height + sizeBlk - 1) / sizeBlk;
-    const IppiSize frmSize = {curr->m_frameOrigin->width, curr->m_frameOrigin->height};
+    const Ipp32s picWidthInBlks  = (width  + sizeBlk - 1) / sizeBlk;
+    const Ipp32s picHeightInBlks = (height + sizeBlk - 1) / sizeBlk;
 
-    
     for (Ipp32s blk_row = 0; blk_row < picHeightInBlks; blk_row++) {
         for (Ipp32s blk_col = 0; blk_col < picWidthInBlks; blk_col++) {
             Ipp32s x = blk_col*sizeBlk;
             Ipp32s y = blk_row*sizeBlk;
             Ipp32s fPos = blk_row * picWidthInBlks + blk_col;
-            //curr->m_frameOrigin->m_interSatd[fPos] = IntraPredSATD(task->m_frameOrigin->y, task->m_frameOrigin->pitch_luma_pix, x, y, frmSize, sizeBlk, 8);
+            
             H265MV mv;
             Ipp32s cost = 0;
             Ipp32s mvCost = 0;
-            MeIntPelLog<Ipp8u>(curr->m_frameOrigin, ref->m_frameOrigin, x, y, 0, 0, /*const MvPredInfo<2> *predInfo, */ &mv, &cost, &mvCost);
+            (useLowRes ) 
+                ? MeIntPelLog<Ipp8u>(&(curr->m_frameOrigin->m_lowres), &(ref->m_frameOrigin->m_lowres), x, y, 0, 0, /*const MvPredInfo<2> *predInfo, */ &mv, &cost, &mvCost)
+                : MeIntPelLog<Ipp8u>(curr->m_frameOrigin, ref->m_frameOrigin, x, y, 0, 0, /*const MvPredInfo<2> *predInfo, */ &mv, &cost, &mvCost);
+
             curr->m_frameOrigin->m_interSatd[fPos] = cost;
         }
     }
@@ -562,49 +565,323 @@ TaskIter  findOldestToLookAheadProcess(std::list<Task*> & queue)
     return queue.end();
 }
 
+template <class PixType>
+PixType AvgPixBlk(PixType* in, Ipp32s pitch, Ipp32s posx, Ipp32s posy, Ipp32s step)
+{
+    Ipp32s posx_orig = posx * step;
+    Ipp32s posy_orig = posy * step;
+
+    PixType* src = in + posy_orig*pitch + posx_orig;
+    Ipp64s sum = 0;
+
+    for (Ipp32s y = 0; y < step; y++) {
+        for (Ipp32s x = 0; x < step; x++) {
+            sum += src[ y*pitch + x ];
+        }
+    }
+
+    return (PixType) ((sum + (step * step / 2)) / (step * step));
+}
+
+
+template <class PixType, typename Frame>
+Ipp64s Scale(H265Frame *in, Frame *out, Ipp32s planeIdx)
+{
+    const PixType *pixIn = (const PixType *)in->y;
+    PixType *pixOut = (PixType *)out->y;
+    Ipp32s widthOrig  = in->width;
+    Ipp32s heightOrig = in->height;
+
+    Ipp32s widthOut  = out->width;
+    Ipp32s heightOut = out->height;
+
+    Ipp32s pitchIn = in->pitch_luma_pix;
+    Ipp32s pitchOut = out->pitch_luma_pix;
+    Ipp32s step = widthOrig / widthOut;
+
+    //if (planeIdx > 0) {
+    //    pixPrev = (const PixType *)prev->uv;
+    //    pixCurr = (const PixType *)curr->uv;
+    //    pitchPrev = prev->pitch_chroma_pix;
+    //    pitchCurr = curr->pitch_chroma_pix;
+    //    height /= 2; // TODO: YUV420
+    //}
+
+    /*Ipp64s diff = 0;
+    for (Ipp32s y = 0; y < height; y++, pixPrev += pitchPrev, pixCurr += pitchCurr) {
+        for (Ipp32s x = 0; x < width; x++) {
+            diff += abs(pixPrev[x] - pixCurr[x]);
+        }
+    }*/
+
+    for ( Ipp32s y = 0; y < heightOut; y++ ) {
+        for (Ipp32s x = 0; x < widthOut; x++) {
+            pixOut[ y*pitchOut + x] = AvgPixBlk( pixIn, pitchIn, x, y, step);
+        }
+    }
+
+    return 0;
+}
+
+
+template <class PixType, typename Frame>
+Ipp64s CalcPixDiff(Frame *prev, Frame *curr, Ipp32s planeIdx)
+{
+    const PixType *pixPrev = (const PixType *)prev->y;
+    const PixType *pixCurr = (const PixType *)curr->y;
+    Ipp32s width = prev->width;
+    Ipp32s height = prev->height;
+    Ipp32s pitchPrev = prev->pitch_luma_pix;
+    Ipp32s pitchCurr = curr->pitch_luma_pix;
+
+    if (planeIdx > 0) {
+        pixPrev = (const PixType *)prev->uv;
+        pixCurr = (const PixType *)curr->uv;
+        pitchPrev = prev->pitch_chroma_pix;
+        pitchCurr = curr->pitch_chroma_pix;
+        height /= 2; // TODO: YUV420
+    }
+
+    Ipp64s diff = 0;
+    for (Ipp32s y = 0; y < height; y++, pixPrev += pitchPrev, pixCurr += pitchCurr) {
+        for (Ipp32s x = 0; x < width; x++) {
+            diff += abs(pixPrev[x] - pixCurr[x]);
+        }
+    }
+
+    return diff;
+}
+
+template <class PixType>
+void BuildHistLuma(const PixType *pix, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s bitDepth, Ipp64s *hist)
+{
+    memset(hist, 0, (1 << bitDepth) * sizeof(hist[0]));
+    for (Ipp32s y = 0; y < height; y++, pix += pitch)
+        for (Ipp32s x = 0; x < width; x++)
+            hist[pix[x]]++;
+}
+
+template <class PixType>
+void BuildHistChroma(const PixType *pix, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s bitDepth, Ipp64s *hist)
+{
+    memset(hist, 0, (1 << bitDepth) * sizeof(hist[0]));
+    for (Ipp32s y = 0; y < height; y++, pix += pitch)
+        for (Ipp32s x = 0; x < width * 2; x += 2)
+            hist[pix[x]]++;
+}
+
+template <class PixType, class Frame>
+Ipp32s CalcHistDiff(Frame *prev, Frame *curr, Ipp32s planeIdx)
+{
+    const Ipp32s maxNumBins = 1 << (sizeof(PixType) == 1 ? 8 : 10);
+    Ipp64s histPrev[maxNumBins];
+    Ipp64s histCurr[maxNumBins];
+    Ipp32s bitDepth = prev->m_bitDepthLuma;
+
+    if (planeIdx == 0) {
+        const PixType *pixPrev = (const PixType *)prev->y;
+        const PixType *pixCurr = (const PixType *)curr->y;
+        Ipp32s width = prev->width;
+        Ipp32s height = prev->height;
+        Ipp32s pitchPrev = prev->pitch_luma_pix;
+        Ipp32s pitchCurr = curr->pitch_luma_pix;
+
+        BuildHistLuma<PixType>(pixPrev, pitchPrev, width, height, bitDepth, histPrev);
+        BuildHistLuma<PixType>(pixCurr, pitchCurr, width, height, bitDepth, histCurr);
+    }
+    else {
+        const PixType *pixPrev = (const PixType *)prev->uv + (planeIdx - 1);
+        const PixType *pixCurr = (const PixType *)curr->uv + (planeIdx - 1);
+        Ipp32s width = prev->width / 2; // TODO: YUV422, YUV444
+        Ipp32s height = prev->height / 2; // TODO: YUV422, YUV444
+        Ipp32s pitchPrev = prev->pitch_chroma_pix;
+        Ipp32s pitchCurr = curr->pitch_chroma_pix;
+        bitDepth = prev->m_bitDepthChroma;
+
+        BuildHistChroma<PixType>(pixPrev, pitchPrev, width, height, bitDepth, histPrev);
+        BuildHistChroma<PixType>(pixCurr, pitchCurr, width, height, bitDepth, histCurr);
+    }
+    
+    Ipp32s numBins = 1 << bitDepth;
+    Ipp32s diff = 0;
+    for (Ipp32s i = 0; i < numBins; i++)
+        diff += abs(histPrev[i] - histCurr[i]);
+
+    return diff;
+}
+
+
 void MFXVideoENCODEH265::LookAheadAnalysis()
 {
     TaskIter it = findOldestToLookAheadProcess(m_inputQueue);
     TaskIter prevIt = it;
-    --prevIt;
+    if (it != m_inputQueue.begin() ) {
+        --prevIt;
+    }
 
     if (it == m_inputQueue.end()) {
-        if (!m_inputQueue.empty())
-            m_lookaheadQueue.splice(m_lookaheadQueue.end(), m_inputQueue, m_inputQueue.begin());
+        if (!m_inputQueue.empty()) {
+            DetectSceneChange_AndUpdateState();
+        }
+
         return;
     }
 
     Task* curr = (*it);
     Task* prev = (it == m_inputQueue.begin()) ? NULL : (*prevIt);
 
-    DoIntraAnalysis(curr);
+    //-----------------------------------------------------
+    // analysis #1: ME/Intra based
+    //-----------------------------------------------------
+    bool useLowResMe = false; // force analysis based on original resolution
+    DoIntraAnalysis(curr, useLowResMe);
     if (prev) {
-        DoInterAnalysis(curr, prev);
+        DoInterAnalysis(curr, prev, useLowResMe);
     }
 
-    Ipp32s sumSadt = 0;
+    Ipp32s resolution = (useLowResMe) 
+        ? curr->m_frameOrigin->m_lowres.width * curr->m_frameOrigin->m_lowres.height 
+        : curr->m_frameOrigin->width * curr->m_frameOrigin->height;
+
+    Ipp64s sumSatd = 0;
+    Ipp64s sumSatdIntra = 0;
+    Ipp64s sumSatdInter = 0;
     if( prev ) {
-        Ipp32s blkCount = curr->m_frameOrigin->m_intraSatd.size();
+        Ipp32s blkCount = (Ipp32s)curr->m_frameOrigin->m_intraSatd.size();
         Ipp32s intraBlkCount = 0;
         for (Ipp32s blk = 0; blk < blkCount; blk++) {
-            sumSadt += IPP_MIN(curr->m_frameOrigin->m_intraSatd[blk], curr->m_frameOrigin->m_interSatd[blk]);
+            sumSatd += IPP_MIN(curr->m_frameOrigin->m_intraSatd[blk], curr->m_frameOrigin->m_interSatd[blk]);
             if( curr->m_frameOrigin->m_intraSatd[blk] <= curr->m_frameOrigin->m_interSatd[blk] ) {
                 intraBlkCount++;
             }
+
+            sumSatdIntra += curr->m_frameOrigin->m_intraSatd[blk];
+            sumSatdInter += curr->m_frameOrigin->m_interSatd[blk];
         }
         curr->m_frameOrigin->m_intraRatio = (Ipp32f)intraBlkCount / blkCount;
 
     } else {
-        sumSadt =std::accumulate(curr->m_frameOrigin->m_intraSatd.begin(), curr->m_frameOrigin->m_intraSatd.end(), 0);
+        sumSatd =std::accumulate(curr->m_frameOrigin->m_intraSatd.begin(), curr->m_frameOrigin->m_intraSatd.end(), 0);
         curr->m_frameOrigin->m_intraRatio = 1.f;
+        sumSatdIntra = sumSatd;
     }
-    curr->m_frameOrigin->m_avgSadt = sumSadt / (curr->m_frameOrigin->width * curr->m_frameOrigin->height);
+    // store metric in frame
+    curr->m_frameOrigin->m_avgBestSatd = (Ipp32f)sumSatd / (resolution);
 
+    //-----------------------------------------------------
+    // analysis #2: Pix Dif/Hist based
+    //-----------------------------------------------------
+    bool isLowRes = (m_videoParam.preEncMode > 1);
+    const Ipp32s scaleFactor = m_scdConfig.scaleFactor;
+
+    if (isLowRes) {
+        Ipp32s widthOrig   = curr->m_frameOrigin->width;
+        Ipp32s heightOrig  = curr->m_frameOrigin->height;
+
+        curr->m_frameOrigin->m_lowres.width  = widthOrig >> (scaleFactor);
+        curr->m_frameOrigin->m_lowres.height = heightOrig >> (scaleFactor);
+        curr->m_frameOrigin->m_lowres.pitch_luma_pix = curr->m_frameOrigin->m_lowres.width;
+
+        Scale<Ipp8u>(curr->m_frameOrigin, &curr->m_frameOrigin->m_lowres, 0);
+    }
+
+    if (prev) {
+        Ipp64s lumaPixDiff;
+        Ipp64s lumaHistDiff;
+        
+        lumaPixDiff = (isLowRes)
+            ? CalcPixDiff<Ipp8u>(&prev->m_frameOrigin->m_lowres, &curr->m_frameOrigin->m_lowres, 0)
+            : CalcPixDiff<Ipp8u>(prev->m_frameOrigin, curr->m_frameOrigin, 0);
+
+        lumaHistDiff = (isLowRes)
+            ? CalcHistDiff<Ipp8u>(&prev->m_frameOrigin->m_lowres, &curr->m_frameOrigin->m_lowres, 0)
+            : CalcHistDiff<Ipp8u>(prev->m_frameOrigin, curr->m_frameOrigin, 0);
+
+        // store metric in frame
+        curr->m_frameOrigin->m_metric = (m_scdConfig.algorithm == ALG_HIST_DIFF) ? lumaHistDiff : lumaPixDiff;
+
+        // store statistics 
+        Ipp32s lastpos = m_slideWindowStat.size() - 1;
+        m_slideWindowStat[ lastpos ].met = curr->m_frameOrigin->m_metric;
+        m_slideWindowStat[ lastpos ].frameOrder = curr->m_frameOrigin->m_frameOrder;
+    }
+
+    // update
     curr->m_frameOrigin->setWasLAProcessed();
-    if(prev)
-        m_lookaheadQueue.splice(m_lookaheadQueue.end(), m_inputQueue, prevIt);
 
-    //printf("\n frame %i, avgSatd %15.3f, intraRatio %15.3f \n", curr->m_frameOrder, curr->m_frameOrigin->m_avgSadt, curr->m_frameOrigin->m_intraRatio); fflush(stderr);
+    DetectSceneChange_AndUpdateState();
+
+} // 
+
+struct isEqual
+{
+    isEqual(Ipp32s frameOrder): m_frameOrder(frameOrder)
+    {}
+
+    template<typename T>
+    bool operator()(const T& l)
+    {
+        return (*l).m_frameOrigin->m_frameOrder == m_frameOrder;
+    }
+
+    Ipp32s m_frameOrder;
+};
+
+bool MetricIsGreater(const StatItem &l, const StatItem &r) { return (l.met > r.met); }
+
+void MFXVideoENCODEH265::DetectSceneChange_AndUpdateState( void )
+{
+    Ipp32s frameOrderCentral = m_slideWindowStat[m_scdConfig.M].frameOrder;
+    bool doAnalysis = (frameOrderCentral >= 0);
+
+    StatItem peaks[2] = {0};
+    if (doAnalysis) {
+        std::partial_sort_copy(m_slideWindowStat.begin(), m_slideWindowStat.end(), peaks, peaks+2, MetricIsGreater);
+
+        TaskIter it = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(frameOrderCentral));
+
+        bool scd = ((*it)->m_frameOrigin->m_metric == peaks[0].met) && (peaks[0].met > m_scdConfig.N*peaks[1].met);
+        if (scd && !(*it)->m_frameOrigin->m_isIdrPic) {
+
+            H265Frame* frame = (*it)->m_frameOrigin;
+
+            // restore global state
+            m_frameOrder = frame->m_frameOrder;
+            m_frameOrderOfLastIdr = frame->m_frameOrderOfLastIdr;
+            m_frameOrderOfLastIntra = frame->m_frameOrderOfLastIntra;
+            m_frameOrderOfLastAnchor = frame->m_frameOrderOfLastAnchor;
+            m_miniGopCount = frame->m_miniGopCount - !(frame->m_picCodeType == MFX_FRAMETYPE_B);
+
+            // light configure
+            frame->m_isIdrPic = true;
+            frame->m_picCodeType = MFX_FRAMETYPE_I;
+            frame->m_poc = 0;
+            
+            UpdateGopCounters(frame);
+
+            frame->m_sceneCut = 1;
+
+            // we need update all frames in inputQueue after the frame to propogate SCD (frame type change) effect
+            it++;
+            for (TaskIter frmIt = it; frmIt != m_inputQueue.end(); frmIt++) {
+                frame = (*frmIt)->m_frameOrigin;
+                ConfigureInputFrame(frame);
+                UpdateGopCounters(frame);
+            }
+        }
+
+        // move processed frame and frames before to lookaheadQueue 
+        it = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(frameOrderCentral));
+        it++;
+        m_lookaheadQueue.splice(m_lookaheadQueue.end(), m_inputQueue, m_inputQueue.begin(), it);
+    }
+
+    // update statictics
+    std::copy(m_slideWindowStat.begin()+1, m_slideWindowStat.end(), m_slideWindowStat.begin());
+
+    // force last element to _zero_ to prevent issue with EndOfStream
+    m_slideWindowStat[m_slideWindowStat.size()-1].met = 0;
+    m_slideWindowStat[m_slideWindowStat.size()-1].frameOrder = -1;//invalid
 
 } // 
 

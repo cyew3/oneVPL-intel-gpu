@@ -348,12 +348,16 @@ namespace H265Enc {
         //#endif // MFX_VA
 
         pars->preEncMode = 0;
+        pars->lookAheadDelay = 0;
 #if defined(MFX_ENABLE_H265_PAQ)
         // support for 64x64 && BPyramid && RefDist==8 || 16 (aka tu1 & tu2)
         //if( pars->BPyramid && (8 == pars->GopRefDist || 16 == pars->GopRefDist) && (6 == pars->Log2MaxCUSize) )
         pars->preEncMode = optsHevc->DeltaQpMode;
 #endif
         pars->preEncMode = optsHevc->DeltaQpMode;
+        if (pars->preEncMode > 0) {
+            pars->lookAheadDelay = pars->GopRefDist + 1;
+        }
 
         pars->TryIntra         = optsHevc->TryIntra;
         pars->FastAMPSkipME    = optsHevc->FastAMPSkipME;
@@ -801,7 +805,7 @@ namespace H265Enc {
                 case B_SLICE:
                     if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
                         Ipp8u layer = currFrame->m_pyramidLayer;
-                        if (videoParam.preEncMode > 1) {
+                        /*if (videoParam.preEncMode > 1) {
                             if (isHiCmplxGop)
                                 slice->rd_lambda_slice *= tab_rdLambdaBPyramid_HiCmplx[layer];
                             else if (isMidCmplxGop)
@@ -809,7 +813,7 @@ namespace H265Enc {
                             else
                                 slice->rd_lambda_slice *= tab_rdLambdaBPyramid_LoCmplx[layer];
                         }
-                        else {
+                        else */{
                             slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
                                 ? (videoParam.longGop)
                                 ? tab_rdLambdaBPyramid5LongGop[layer]
@@ -1324,6 +1328,8 @@ namespace H265Enc {
 
         H265Frame* frames[128] = {task.m_frameOrigin};// need more???
         Ipp32s framesCount = task.m_futureFrames.size();
+
+        //printf("\n futureFrames %i \n", framesCount);fflush(stderr);
         
         for (Ipp32s frmIdx = 0; frmIdx < framesCount; frmIdx++) {
             frames[frmIdx+1] = task.m_futureFrames[frmIdx];
@@ -1348,6 +1354,8 @@ mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 co
     else
         return GetEncodingOrder(displayOrder, pivot + 1, end, counter + 1 + pivot - begin, ref);
 };
+
+
 void MFXVideoENCODEH265::ConfigureInputFrame(H265Frame* frame) const
 {
     frame->m_frameOrder = m_frameOrder;
@@ -1388,6 +1396,21 @@ void MFXVideoENCODEH265::ConfigureInputFrame(H265Frame* frame) const
     }
 
 } // void H265FrameEncoder::ConfigureFrame(Ipp32u pictureType)
+
+void MFXVideoENCODEH265::UpdateGopCounters(H265Frame *inputFrame)
+{
+    m_frameOrder++;
+    m_lastTimeStamp = inputFrame->m_timeStamp;
+
+    if (inputFrame->m_isIdrPic)
+        m_frameOrderOfLastIdr = inputFrame->m_frameOrder;
+    if (inputFrame->m_picCodeType == MFX_FRAMETYPE_I)
+        m_frameOrderOfLastIntra = inputFrame->m_frameOrder;
+    if (inputFrame->m_picCodeType != MFX_FRAMETYPE_B) {
+        m_frameOrderOfLastAnchor = inputFrame->m_frameOrder;
+        m_miniGopCount++;
+    }
+}
 
 
 bool PocIsLess(const H265Frame *f1, const H265Frame *f2) { return f1->m_poc < f2->m_poc; }

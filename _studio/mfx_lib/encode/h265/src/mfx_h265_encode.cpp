@@ -671,7 +671,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     m_frameCountSync++;
 
     mfxU32 noahead = 0;//1;
-    Ipp32s lookaheadBuffering = m_videoParam.preEncMode > 0 ? m_mfxParam.mfx.GopRefDist : 0;//2*m_mfxParam.mfx.GopRefDist + 1 : 0;// 9 in case of 3 B frames
+    Ipp32s lookaheadBuffering = m_videoParam.preEncMode > 0 ? (m_videoParam.lookAheadDelay + m_scdConfig.M) : 0;
     if (m_mfxHEVCOpts.EnableCm == MFX_CODINGOPTION_ON)
         noahead = 0;
 
@@ -1275,6 +1275,20 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     m_isInitialized = true;
 
     m_semaphore.Init(0, INT_MAX);
+
+    // LA configuration
+    if (m_videoParam.preEncMode > 0) {
+        m_scdConfig.M = 10;
+        m_scdConfig.N = 3;
+        m_scdConfig.algorithm = ALG_HIST_DIFF;
+        m_scdConfig.scaleFactor = m_videoParam.preEncMode - 1;
+
+        StatItem initVal = {0, -1};
+        Ipp32s windowSize = 2*m_scdConfig.M + 1;
+        m_slideWindowStat.resize( windowSize, initVal );
+
+        //m_videoParam.lookAheadDelay = IPP_MAX(m_videoParam.lookAheadDelay, m_scdConfig.M);
+    }
 
     return stsQuery;
 } // mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
@@ -2646,27 +2660,8 @@ mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstrea
 #endif
 
         ConfigureInputFrame(inputFrame);
-
-        // update counters
-        m_frameOrder++;
-        m_lastTimeStamp = inputFrame->m_timeStamp;
-        if (inputFrame->m_isIdrPic)
-            m_frameOrderOfLastIdr = inputFrame->m_frameOrder;
-        if (inputFrame->m_picCodeType & MFX_FRAMETYPE_I)
-            m_frameOrderOfLastIntra = inputFrame->m_frameOrder;
-        if (inputFrame->m_picCodeType != MFX_FRAMETYPE_B) {
-            m_frameOrderOfLastAnchor = inputFrame->m_frameOrder;
-            m_miniGopCount++;
-        }
+        UpdateGopCounters(inputFrame);
     }
-
-    //-----------------------------------------------------
-    // aya: tmp hack!!! buffering here
-    /*if (m_videoParam.preEncMode) {
-        mfxStatus stsPreEnc = PreEncAnalysis();
-        stsPreEnc;
-    }*/
-    //-----------------------------------------------------
 
     std::list<Task*> & inputQueue = m_videoParam.preEncMode ? m_lookaheadQueue : m_inputQueue;
     // STAGE:: [REORDER]
@@ -2741,16 +2736,17 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
 #endif
 
     if (m_brc && m_videoParam.preEncMode > 0) {
-        Ipp32s framesCount = IPP_MIN(m_videoParam.GopRefDist, Ipp32s(m_encodeQueue.size()));
-
+        Ipp32s framesCount = IPP_MIN(m_videoParam.lookAheadDelay, (Ipp32s)m_encodeQueue.size()-1);
         //printf("\n futureFrames %i\n", framesCount);
 
-        task->m_futureFrames.clear();
-        task->m_futureFrames.resize(framesCount-1);
+        //task->m_futureFrames.clear();
+        task->m_futureFrames.resize(0);
         TaskIter it = m_encodeQueue.begin();
         it++;
-        for ( it; it != m_encodeQueue.end(); it++ ) {
+        for (Ipp32s frmIdx = 0; frmIdx < framesCount; frmIdx++ ) {
             task->m_futureFrames.push_back( (*it)->m_frameOrigin );
+            if ( frmIdx+1 < framesCount )
+                it++;
         }
     }
 
@@ -2960,7 +2956,7 @@ void MFXVideoENCODEH265::SyncOnTaskCompletion(Task *task, mfxBitstream *mfxBs, v
                     for (Ipp32s qIdx = 0; qIdx < qIdxCnt; qIdx++) {
                         std::list<Task*> & queue = listQueue[qIdx];
                         for (tit = queue.begin(); tit != queue.end(); tit++) {
-
+                            
                             (*tit)->m_sliceQpY = GetRateQp( **tit, m_videoParam, m_brc);
                             memset(& (*tit)->m_lcuQps[0], (*tit)->m_sliceQpY, sizeof((*tit)->m_sliceQpY)*numCtb);
 
@@ -3118,6 +3114,10 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     if (0 == stage) {
         th->PrepareToEncode(pParam);// here <m_doStage> will be switched ->2->3->4 consequentially
 
+        /*if(inputParam->m_targetTask) {
+            printf("\n onEncode %i \n", inputParam->m_targetTask->m_frameOrder);fflush(stdout);
+        }*/
+
         if (th->m_videoParam.preEncMode) {
             th->LookAheadAnalysis();
         }
@@ -3138,6 +3138,11 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     OnExitHelperRoutine onExitHelper( &inputParam->m_threadCount );
     if (newThreadCount > th->m_videoParam.num_threads) {
         return MFX_TASK_BUSY;
+    }
+
+    // experiment: early exit
+    {
+        //return MFX_TASK_DONE;
     }
 
     // [multi threading]::FRAME THREADING LOOP
