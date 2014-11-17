@@ -316,10 +316,13 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(UseRawRef,              OPT_TRI_STATE,  "on|off"),
 
         // mfxExtCodingOption3
-        HANDLE_EXT_OPTION3(NumSliceI,              OPT_UINT_16,    ""),
-        HANDLE_EXT_OPTION3(NumSliceP,              OPT_UINT_16,    ""),
-        HANDLE_EXT_OPTION3(NumSliceB,              OPT_UINT_16,    ""),
-        HANDLE_EXT_OPTION3(QVBRQuality,            OPT_UINT_16,    ""),
+        HANDLE_EXT_OPTION3(NumSliceI,                  OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION3(NumSliceP,                  OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION3(NumSliceB,                  OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION3(QVBRQuality,                OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION3(DirectBiasAdjustment,       OPT_TRI_STATE, "on|off"),
+        HANDLE_EXT_OPTION3(GlobalMotionBiasAdjustment, OPT_TRI_STATE, "on|off"),
+        HANDLE_EXT_OPTION3(MVCostScalingFactor,        OPT_UINT_16,   ""),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
