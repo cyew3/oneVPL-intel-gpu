@@ -272,7 +272,6 @@ namespace H265Enc {
         pars->rdoqChromaFlag = (optsHevc->RDOQuantChroma == MFX_CODINGOPTION_ON);
         pars->rdoqCGZFlag = (optsHevc->RDOQuantCGZ == MFX_CODINGOPTION_ON);
         pars->SAOFlag  = (optsHevc->SAO == MFX_CODINGOPTION_ON);
-        pars->WPPFlag  = pars->NumTiles > 1 ? 0 : ((optsHevc->WPP == MFX_CODINGOPTION_ON) || (optsHevc->WPP == MFX_CODINGOPTION_UNKNOWN && param->mfx.NumThread > 1));
         pars->num_threads = param->mfx.NumThread;
         if (pars->num_threads == 0)
             pars->num_threads = vm_sys_info_get_cpu_num();
@@ -437,6 +436,8 @@ namespace H265Enc {
         pars->NumTileCols = IPP_MIN(optsHevc->NumTileCols, pars->PicWidthInCtbs);
         pars->NumTileRows = IPP_MIN(optsHevc->NumTileRows, pars->PicHeightInCtbs);
         pars->NumTiles = pars->NumTileCols * pars->NumTileRows;
+
+        pars->WPPFlag  = pars->NumTiles > 1 ? 0 : ((optsHevc->WPP == MFX_CODINGOPTION_ON) || (optsHevc->WPP == MFX_CODINGOPTION_UNKNOWN && param->mfx.NumThread > 1));
 
         /*if (pars->num_threads > pars->PicHeightInCtbs)
         pars->num_threads = pars->PicHeightInCtbs;
