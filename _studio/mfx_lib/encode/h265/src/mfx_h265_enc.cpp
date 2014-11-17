@@ -448,7 +448,7 @@ namespace H265Enc {
         //pars->num_thread_structs = pars->threading_by_rows ? pars->num_threads : pars->PicHeightInCtbs;
         //pars->threading_by_rows = pars->WPPFlag && pars->num_threads > 1 && pars->NumSlices == 1 ? 0 : 1;
         pars->threading_by_rows = 0;//pars->WPPFlag && /*pars->num_threads > 1 &&*/ pars->NumSlices == 1 ? 0 : 1;
-        pars->num_thread_structs = pars->WPPFlag ? pars->PicHeightInCtbs : pars->num_threads;
+        pars->num_thread_structs = pars->WPPFlag ? pars->PicHeightInCtbs : IPP_MAX(pars->NumSlices, pars->NumTiles);
         pars->num_bs_subsets = pars->NumTiles > 1 ? pars->NumTiles : !pars->WPPFlag ? pars->NumSlices : pars->num_thread_structs;
 
         for (Ipp32s i = 0; i < pars->MaxCUDepth; i++ )
@@ -493,7 +493,7 @@ namespace H265Enc {
         pars->tileColWidthMax = pars->tileRowHeightMax = 0;
         Ipp16u tileColStart = 0, tileRowStart = 0;
 
-        for (Ipp32u i = 0; i < pars->NumTileCols; i++) {
+        for (Ipp32s i = 0; i < pars->NumTileCols; i++) {
             pars->tileColWidth[i] = ((i + 1) * pars->PicWidthInCtbs) / pars->NumTileCols -
                 (i * pars->PicWidthInCtbs / pars->NumTileCols);
             if (pars->tileColWidthMax < pars->tileColWidth[i])
@@ -501,7 +501,7 @@ namespace H265Enc {
             pars->tileColStart[i] = tileColStart;
             tileColStart += pars->tileColWidth[i];
         }
-        for (Ipp32u i = 0; i < pars->NumTileRows; i++) {
+        for (Ipp32s i = 0; i < pars->NumTileRows; i++) {
             pars->tileRowHeight[i] = ((i + 1) * pars->PicHeightInCtbs) / pars->NumTileRows -
                 (i * pars->PicHeightInCtbs / pars->NumTileRows);
             if (pars->tileRowHeightMax < pars->tileRowHeight[i])
@@ -1868,6 +1868,10 @@ void H265FrameEncoder::FindJob(Ipp32s & found, Ipp32s & complete, Ipp32u & ctb_r
                 m_task->m_frameRecon->m_codedRow = pars->PicHeightInCtbs;
             }
         }
+
+        if (m_videoParam.m_framesInParallel > 1)
+            found = AllReferencesReady(ctb_row);
+
         return;
     }
 
