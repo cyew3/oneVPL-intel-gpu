@@ -25,6 +25,8 @@ File Name: .h
 #include "mfx_shared_ptr.h"
 #include "mfx_factory_default.h"
 
+#define NOT_ASSIGNED_VALUE 0xFFF
+
 //this factory passed across pipeline
 typedef Adapter<IAllocatorFactoryTmpl<MFXFrameAllocatorRW>, IAllocatorFactory> RWAllocatorFactory;
 
@@ -46,7 +48,7 @@ public:
         , m_bExternalAlloc(false)
         , m_bD3D11SingeTexture()
         , m_nMaxAsync(1)
-        , m_fFrameRate()
+        , m_fFrameRate(NOT_ASSIGNED_VALUE)
         , m_uiMaxAsyncReached()
         , m_fAverageAsync()
         , m_zoomx()

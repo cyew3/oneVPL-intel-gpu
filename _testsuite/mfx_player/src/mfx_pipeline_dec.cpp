@@ -965,7 +965,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_inParams.bUseCameraPipe);
     ENABLE_VPP(m_inParams.bSceneAnalyzer);
     ENABLE_VPP(m_inParams.bPAFFDetect);
-    ENABLE_VPP(0.0 != m_components[eVPP].m_fFrameRate);
+    ENABLE_VPP(NOT_ASSIGNED_VALUE != m_components[eVPP].m_fFrameRate);
     ENABLE_VPP(m_inParams.bUseVPP_ifdi);
     ENABLE_VPP(m_inParams.nImageStab);
     ENABLE_VPP(m_inParams.bExtVppApi);
@@ -1335,7 +1335,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         pFrameRateString   = VM_STRING("Unknown, set to %.2lf");
     }else
     {
-        if (0.0 != m_components[eDEC].m_fFrameRate)//overriding frame rate values using command line
+        if (NOT_ASSIGNED_VALUE != m_components[eDEC].m_fFrameRate)//overriding frame rate values using command line
         {
             //framerate used in vpp/encoder input
             FrameRate2Code(m_components[eDEC].m_fFrameRate, &info);
@@ -1405,7 +1405,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         m_inParams.FrameInfo.PicStruct = m_components[eVPP].m_nOverPS;
     }
 
-    if (0.0 == m_components[eDEC].m_fFrameRate)//not initialized from cmdline
+    if (NOT_ASSIGNED_VALUE == m_components[eDEC].m_fFrameRate)//not initialized from cmdline
     {
         m_components[eDEC].m_fFrameRate = (mfxF64)info.FrameRateExtN / (mfxF64)info.FrameRateExtD;
     }
@@ -1418,6 +1418,11 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     {
         m_components[eDEC].m_params.mfx.FrameInfo.FourCC       = dec_info.FourCC;
         m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat = dec_info.ChromaFormat;
+    }
+
+    if ( NOT_ASSIGNED_VALUE != m_inParams.InputPicstruct )
+    {
+        m_components[eDEC].m_params.mfx.FrameInfo.PicStruct = m_inParams.InputPicstruct;
     }
 
     // Special case when SFC should be used in decoder
@@ -1673,6 +1678,11 @@ mfxStatus MFXDecPipeline::CreateRender()
         || MFX_FOURCC_A2RGB10 == m_inParams.outFrameInfo.FourCC
         ) {
             m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_inParams.outFrameInfo.FourCC;
+    }
+
+    if ( NOT_ASSIGNED_VALUE != m_inParams.OutputPicstruct )
+    {
+        m_components[eREN].m_params.mfx.FrameInfo.PicStruct = m_inParams.OutputPicstruct;
     }
 
     FileWriterRenderInputParams renderParams;
@@ -2110,7 +2120,7 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
         MFX_FOURCC_NV12 == m_inParams.InputCodecType ||
         MFX_FOURCC_YV12 == m_inParams.InputCodecType)
     {
-        if (0 == m_components[eDEC].m_fFrameRate)//not initialized from cmd line
+        if (NOT_ASSIGNED_VALUE == m_components[eDEC].m_fFrameRate)//not initialized from cmd line
             m_components[eDEC].m_fFrameRate = 30.0;
 
         //yuv decoder requires this information to be returned on decode header level
@@ -4577,6 +4587,22 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.outFrameInfo.BitDepthLuma = 10;
                 m_inParams.outFrameInfo.BitDepthChroma = 10;
                 m_inParams.isAllegroTest = true;
+          }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-i:picstruct"), VM_STRING("Set picstruct for decoded frames"), OPT_INT_32))
+          {
+              MFX_CHECK(1 + argv < argvEnd);
+              argv ++;
+              mfxU16 picstruct;
+              MFX_PARSE_INT(picstruct, argv[0]);
+              m_inParams.InputPicstruct = Convert_CmdPS_to_MFXPS(picstruct);
+          }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-o:picstruct"), VM_STRING("Set picstruct for the output frames"), OPT_INT_32))
+          {
+              MFX_CHECK(1 + argv < argvEnd);
+              argv ++;
+              mfxU16 picstruct;
+              MFX_PARSE_INT(picstruct, argv[0]);
+              m_inParams.OutputPicstruct = Convert_CmdPS_to_MFXPS(picstruct);
           }
           else
           {

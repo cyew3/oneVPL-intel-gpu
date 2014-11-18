@@ -111,6 +111,9 @@ struct sCommandlineParams
   mfxU16         EncodedOrder;
   EncodeExtraParams encodeExtraParams;
 
+  mfxU16         InputPicstruct;
+  mfxU16         OutputPicstruct;
+
   vm_char        strSrcFile[MAX_FILE_PATH];
   vm_char        crcFile[MAX_FILE_PATH];
   vm_char        strDstFile[MAX_FILE_PATH];
@@ -264,6 +267,9 @@ struct sCommandlineParams
       bFadeBackground = false;
 
       nInputBitdepth = 8;
+
+      InputPicstruct  = NOT_ASSIGNED_VALUE;
+      OutputPicstruct = NOT_ASSIGNED_VALUE;
   }
 };
 
