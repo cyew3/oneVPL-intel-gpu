@@ -13,16 +13,6 @@
 #ifndef _MFX_VP8_ENCODE_UTILS_HW_H_
 #define _MFX_VP8_ENCODE_UTILS_HW_H_
 
-//#define VP8_LOGGING
-
-#ifdef VP8_LOGGING
-#define VP8_LOG(S)     printf(S); fflush(0);
-#define VP8_LOG_1(S,n) printf(S,n); fflush(0);
-#else
-#define VP8_LOG(S)
-#define VP8_LOG_1(S,n)
-#endif
-
 #include "umc_mutex.h"
 
 #if defined(_WIN32) || defined(_WIN64)

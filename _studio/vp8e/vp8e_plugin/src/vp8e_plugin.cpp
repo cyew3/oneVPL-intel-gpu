@@ -123,13 +123,11 @@ mfxStatus MFX_VP8E_Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurfac
 mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 {
     MFX_VP8ENC::TaskHybridDDI       *pTask = (MFX_VP8ENC::TaskHybridDDI*)task;
-    VP8_LOG_1("\n (sefremov) Frame %d MFX_VP8E_Plugin::Execute +", pTask->m_frameOrder);
     MFX_CHECK(pTask->m_status == MFX_VP8ENC::TASK_INITIALIZED || pTask->m_status == MFX_VP8ENC::TASK_SUBMITTED, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     if (pTask->m_status == MFX_VP8ENC::TASK_INITIALIZED)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "VP8::SubmitFrame");
-        VP8_LOG_1("\n (sefremov) Frame %d MFX_VP8E_Plugin::SubmitFrame +", pTask->m_frameOrder);
         mfxStatus sts = MFX_ERR_NONE;
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);
@@ -166,13 +164,11 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             m_pTaskManager->RememberSubmittedTask(*pTask);
         }
 
-        VP8_LOG_1("\n (sefremov) Frame %d MFX_VP8E_Plugin::SubmitFrame -", pTask->m_frameOrder);
         return MFX_TASK_WORKING;
     }
     else
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "VP8::SyncFrame");
-        VP8_LOG_1("\n (sefremov) Frame %d MFX_VP8E_Plugin::QueryFrame +", pTask->m_frameOrder);
         mfxStatus           sts = MFX_ERR_NONE;
 
         {
@@ -221,7 +217,6 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             pTask->FreeTask();
         }
 
-        VP8_LOG_1("\n (sefremov) Frame %d MFX_VP8E_Plugin::QueryFrame -", pTask->m_frameOrder);
         return MFX_TASK_DONE;
     }
 }
