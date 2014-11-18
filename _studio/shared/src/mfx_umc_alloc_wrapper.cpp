@@ -200,6 +200,8 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
 
     m_surface.Info.Width = params->mfx.FrameInfo.Width;
     m_surface.Info.Height = params->mfx.FrameInfo.Height;
+    m_surface.Info.BitDepthLuma = params->mfx.FrameInfo.BitDepthLuma;
+    m_surface.Info.BitDepthChroma = params->mfx.FrameInfo.BitDepthChroma;
 
     if (umcSts != UMC::UMC_OK)
         return umcSts;
@@ -575,13 +577,13 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
         return MFX_ERR_MORE_SURFACE;
 
     // check input surface
-    if (surf->Info.Width < m_info.GetWidth() || surf->Info.Height < m_info.GetHeight())
+    if (surf->Info.Width < m_surface.Info.Width || surf->Info.Height < m_surface.Info.Height)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (surf->Info.BitDepthLuma && surf->Info.BitDepthLuma != m_info.GetPlaneBitDepth(0))
+    if (surf->Info.BitDepthLuma && surf->Info.BitDepthLuma != m_surface.Info.BitDepthLuma)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (surf->Info.BitDepthChroma && surf->Info.BitDepthChroma != m_info.GetPlaneBitDepth(1))
+    if (surf->Info.BitDepthChroma && surf->Info.BitDepthChroma != m_surface.Info.BitDepthChroma)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (surf->Info.FourCC == MFX_FOURCC_P010 || surf->Info.FourCC == MFX_FOURCC_P210)
