@@ -328,24 +328,24 @@ namespace H265Enc {
     TU_OPT_ALL (PatternSubPel,                  3,   3,   3,   3,   4,   4,   4); //4 -dia subpel search; 3- square (see enum SUBPEL_*)
     TU_OPT_ALL (NumBiRefineIter,              999, 999, 999,   3,   2,   1,   1); //999-practically infinite iteration
     TU_OPT_ALL (FastInterp,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF); 
-    TU_OPT_SW  (TryIntra,                     2,   2,   2,   2,   2,   2,   1);
-    TU_OPT_GACC(TryIntra,                     1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_SW  (FastAMPSkipME,                2,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(FastAMPSkipME,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_SW  (FastAMPRD,                    2,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(FastAMPRD,                    1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_SW  (SkipMotionPartition,          2,   2,   2,   1,   1,   1,   1);
-    TU_OPT_GACC(SkipMotionPartition,          1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_SW  (SkipCandRD,                  ON,  ON,  ON,  OFF,  OFF, OFF, OFF);
-    TU_OPT_GACC(SkipCandRD,                  OFF, OFF, OFF, OFF,  OFF, OFF, OFF);
-    TU_OPT_ALL (FramesInParallel,               1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (TryIntra,                       2,   2,   2,   2,   2,   2,   1);
+    TU_OPT_GACC(TryIntra,                       1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (FastAMPSkipME,                  2,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(FastAMPSkipME,                  1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (FastAMPRD,                      2,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(FastAMPRD,                      1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (SkipMotionPartition,            2,   2,   2,   1,   1,   1,   1);
+    TU_OPT_GACC(SkipMotionPartition,            1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (SkipCandRD,                    ON,  ON,  ON,  OFF,  OFF, OFF, OFF);
+    TU_OPT_GACC(SkipCandRD,                   OFF, OFF, OFF, OFF,  OFF, OFF, OFF);
+    TU_OPT_ALL (FramesInParallel,               0,   0,   0,   0,   0,   0,   0);
     //GOP structure, reference options
     TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
     TU_OPT_GACC(GPB,                          OFF, OFF, OFF, OFF, OFF, OFF, OFF);
     TU_OPT_ALL (BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
 
-    TU_OPT_ALL (NumTileCols,                   1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_ALL (NumTileRows,                   1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_ALL (NumTileCols,                    1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_ALL (NumTileRows,                    1,   1,   1,   1,   1,   1,   1);
 
     Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 8, 8, 8};
 #ifdef AMT_SETTINGS
@@ -985,8 +985,6 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.DeltaQpMode = opts_tu->DeltaQpMode;
         if (m_mfxHEVCOpts.Enable10bit == 0)
             m_mfxHEVCOpts.Enable10bit = opts_tu->Enable10bit;
-        if (m_mfxHEVCOpts.FramesInParallel == 0)
-            m_mfxHEVCOpts.FramesInParallel = opts_tu->FramesInParallel;
         if (m_mfxHEVCOpts.NumTileCols == 0)
             m_mfxHEVCOpts.NumTileCols = opts_tu->NumTileCols;
         if (m_mfxHEVCOpts.NumTileRows == 0)
@@ -1101,6 +1099,26 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     m_mfxParam.IOPattern = par->IOPattern;
     m_mfxParam.Protected = 0;
     m_mfxParam.AsyncDepth = par->AsyncDepth;
+
+    if (m_mfxHEVCOpts.FramesInParallel == 0) {
+        if (m_mfxHEVCOpts.NumTileCols > 1 || m_mfxHEVCOpts.NumTileRows > 1 || par->mfx.NumSlice > 1) {
+            m_mfxHEVCOpts.FramesInParallel = 1;
+        }
+        else if (m_mfxParam.AsyncDepth > 0) {
+            m_mfxHEVCOpts.FramesInParallel = m_mfxParam.AsyncDepth;
+        }
+        else {
+            if      (m_mfxParam.mfx.NumThread >= 48) m_mfxHEVCOpts.FramesInParallel = 8;
+            else if (m_mfxParam.mfx.NumThread >= 32) m_mfxHEVCOpts.FramesInParallel = 7;
+            else if (m_mfxParam.mfx.NumThread >= 16) m_mfxHEVCOpts.FramesInParallel = 5;
+            else if (m_mfxParam.mfx.NumThread >= 8)  m_mfxHEVCOpts.FramesInParallel = 3;
+            else if (m_mfxParam.mfx.NumThread >= 4)  m_mfxHEVCOpts.FramesInParallel = 2;
+            else                                     m_mfxHEVCOpts.FramesInParallel = 1;
+        }
+    }
+
+    if (m_mfxParam.AsyncDepth == 0)
+        m_mfxParam.AsyncDepth = m_mfxHEVCOpts.FramesInParallel;
 
     m_frameCountSync = 0;
     m_frameCount = 0;
@@ -2167,13 +2185,15 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
 
 mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-    MFX_CHECK_NULL_PTR1(par)
-        MFX_CHECK_NULL_PTR1(request)
+    MFX_CHECK_NULL_PTR1(par);
+    MFX_CHECK_NULL_PTR1(request);
 
-        // check for valid IOPattern
-        mfxU16 IOPatternIn = par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_OPAQUE_MEMORY);
+    // check for valid IOPattern
+    mfxU16 IOPatternIn = par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_OPAQUE_MEMORY);
     if ((par->IOPattern & 0xffc8) || (par->IOPattern == 0) ||
-        (IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY))
+        (IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY) &&
+        (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY) &&
+        (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (par->Protected != 0)
@@ -2181,30 +2201,26 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, m
 
     mfxU16 nFrames = IPP_MIN(par->mfx.GopRefDist, H265_MAXREFDIST); // 1 for current and GopRefDist - 1 for reordering
 
-    if( nFrames == 0 ) {
-        // curr + number of B-frames from target usage
+    if (nFrames == 0) // curr + number of B-frames from target usage
         nFrames = tab_tuGopRefDist[par->mfx.TargetUsage];
-    }
 
-    //if(LookAhead)
 #if defined(MFX_ENABLE_H265_PAQ)
-    //if(m_enc->m_videoParam.preEncMode)
-    {
+    /*if(m_enc->m_videoParam.preEncMode)*/ {
         mfxVideoParam tmpParam = *par;
         nFrames = (mfxU16) AsyncRoutineEmulator(tmpParam).GetTotalGreediness() + par->AsyncDepth - 1 + 10;
     }
 #endif
+
     request->NumFrameMin = nFrames;
     request->NumFrameSuggested = IPP_MAX(nFrames,par->AsyncDepth);
     request->Info = par->mfx.FrameInfo;
 
-    if (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY){
-        request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-    } else if (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) {
-        request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
-    } else {
-        request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
-    }
+    if (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
+        request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+    else if (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+        request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY;
+    else
+        request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY;
 
     return MFX_ERR_NONE;
 }
@@ -2550,8 +2566,8 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
     }
 #endif
 
-    if ( m_brc && m_videoParam.preEncMode > 0 ) {
-        Ipp32s framesCount = IPP_MIN(m_videoParam.GopRefDist, m_encodeQueue.size());
+    if (m_brc && m_videoParam.preEncMode > 0) {
+        Ipp32s framesCount = IPP_MIN(m_videoParam.GopRefDist, Ipp32s(m_encodeQueue.size()));
 
         //printf("\n futureFrames %i\n", framesCount);
 
