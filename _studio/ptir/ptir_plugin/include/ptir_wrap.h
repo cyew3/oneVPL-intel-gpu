@@ -83,74 +83,33 @@ public:
     //PTIR_Processor();
     virtual ~PTIR_Processor() {}
 
-    unsigned int
-        i,
-        uiNumFramesToDispatch,
-        uiSupBuf,
-        uiCur,
-        uiNext,
-        uiTimer,
-        uiFrame,
-        uiFrameOut,
-        uiProgress,
-        uiInWidth,
-        uiInHeight,
-        uiWidth,
-        uiHeight,
-        uiStart,
-        //uiCount,
-        uiBufferCount,
-        uiSize,
-        uiisInterlaced,
-        uiTeleCount,
-        uiLastFrameNumber,
-        uiDispatch,
-        uiInterlaceParity, //is Top Field First (0) or Bottom Field First (1)
-        uiDeinterlace;
-    unsigned char
-        *pucIO;
-    Frame
-        frmIO[LASTFRAME + 1],
-        *frmIn,
-        *frmBuffer[LASTFRAME];
-    FrameQueue
-        fqIn;
-    DWORD
-        uiBytesRead;
-    double
-        dTime,
-        dFrameRate,
-        dTimeStamp,
-        dBaseTime,
-        dOutBaseTime,
-        dBaseTimeSw,
-        dDeIntTime,
-        dTimePerFrame;
-    LARGE_INTEGER
-        liTime,
-        liFreq,
-        liFileSize;
-//    CONSOLE_SCREEN_BUFFER_INFO
-//        sbInfo;
-    HANDLE
-        hIn,
-        hOut;
-    FILE
-        *fTCodeOut;
-    BOOL
-        patternFound,
-        ferror,
-        //bisInterlaced,
-        bFullFrameRate;
-    Pattern
-        mainPattern;
-//    errno_t
-//        errorT;
+    PTIRSystemBuffer           Env;
+
+    unsigned int               i,
+                               _uiInWidth,
+                               _uiInHeight,
+                               uiTimer,
+                               uiOpMode,
+                               uiProgress,
+                               uiStart,
+                               uiCount,
+                               uiLastFrameNumber,
+                               _uiInterlaceParity;
+    unsigned char*              pucIO;
+
+    double                       dOutBaseTime,
+                               _dFrameRate,
+                               dTime,
+                               dTimeTotal;
+    double                     pts;
+    double                     frame_duration;//1000 / _dFrameRate;
+
+    bool bFullFrameRate;
     bool b_firstFrameProceed;
     bool bInited;
     bool isHW;
 
-    virtual mfxStatus Init(mfxVideoParam *)
+    virtual mfxStatus Init(mfxVideoParam *, mfxExtVPPDeinterlacing*)
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -180,7 +139,7 @@ public:
     PTIR_ProcessorCPU(mfxCoreInterface* mfxCore, frameSupplier* _frmSupply);
     virtual ~PTIR_ProcessorCPU();
 
-    virtual mfxStatus Init(mfxVideoParam *par);
+    virtual mfxStatus Init(mfxVideoParam *par, mfxExtVPPDeinterlacing* pDeinter);
     virtual mfxStatus Close();
     virtual mfxStatus PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out, bool beof = 0, mfxFrameSurface1 *exp_surf = 0);
     virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false, mfxFrameSurface1 *exp_surf = 0);
@@ -188,7 +147,8 @@ public:
 protected:
     PTIR_ProcessorCPU(const PTIR_ProcessorCPU& ); // Disallow copy constructor
     PTIR_ProcessorCPU& operator=(const PTIR_ProcessorCPU&); // Disallow assignment operator
-
+    mfxStatus MFX_PTIR_PutFrame(mfxFrameSurface1 *surf_in, PTIRSystemBuffer *SysBuffer, double dTimestamp);
+    mfxStatus OutputFrameToMfx(Frame* frmIn, Frame* frmOut, mfxFrameSurface1 *surf_out, unsigned int * uiLastFrameNumber);
 };
 
 class PTIR_ProcessorCM : public PTIR_Processor
@@ -197,14 +157,17 @@ public:
     PTIR_ProcessorCM(mfxCoreInterface* mfxCore, frameSupplier* _frmSupply, eMFXHWType HWType);
     virtual ~PTIR_ProcessorCM();
 
-    virtual mfxStatus Init(mfxVideoParam *par);
+    virtual mfxStatus Init(mfxVideoParam *par, mfxExtVPPDeinterlacing* pDeinter);
     virtual mfxStatus Close();
-    virtual mfxStatus PTIR_ProcessFrame(CmSurface2D *surf_in, CmSurface2D *surf_out, mfxFrameSurface1 **surf_outt = 0, bool beof = 0, mfxFrameSurface1 *exp_surf = 0);
+    virtual mfxStatus PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out, mfxFrameSurface1 **surf_outt = 0, bool beof = 0, mfxFrameSurface1 *exp_surf = 0);
     virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false, mfxFrameSurface1 *exp_surf = 0);
 
 protected:
     PTIR_ProcessorCM(const PTIR_ProcessorCM& ); // Disallow copy constructor
     PTIR_ProcessorCM& operator=(const PTIR_ProcessorCM&); // Disallow assignment operator
+    mfxStatus MFX_PTIRCM_PutFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out, Frame* frame, PTIRSystemBuffer *SysBuffer, double dTimestamp);
+    mfxStatus OutputFrameToMfx(Frame* frmOut, mfxFrameSurface1* surf_out, mfxFrameSurface1*& exp_surf, unsigned int * uiLastFrameNumber);
+
     template <typename D3DAbstract>
     CmDevice* GetCmDevice(D3DAbstract *pD3D)
     {

@@ -251,7 +251,7 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
             in_expected = false;
             return MFX_ERR_NONE;
         }
-        else if(0 != ptir->uiCur || ptir->fqIn.iCount || outSurfs.size())
+        else if(0 != ptir->Env.control.uiCur || ptir->Env.fqIn.iCount || outSurfs.size())
         {
             addWorkSurf(surface_work);
             mfxSts = PrepareTask(ptir_task, task, surface_out);
@@ -261,7 +261,7 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
             in_expected = false;
             return MFX_ERR_NONE;
         }
-        else if(0 == ptir->fqIn.iCount && 0 == ptir->uiCur)
+        else if(0 == ptir->Env.fqIn.iCount && 0 == ptir->Env.control.uiCur)
         {
             m_guard.Unlock();
             in_expected = true;
@@ -315,7 +315,7 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             {
                 surface_out = 0;
                 //lets try to minimize latency
-                break;
+                //break;
                 if(0 == workSurfs.size())
                     break;
             }
@@ -344,7 +344,7 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 break;
         }
     }
-    else if(bEOS && ptir->uiCur)
+    else if(bEOS && !inSurfs.size() && ptir->Env.control.uiCur)
     {
         if(!surface_out)
             surface_out = GetFreeSurf(workSurfs);
@@ -418,6 +418,7 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     bool HWSupported = false;
     bool opaque      = false;
     bool big_resol   = false;
+    bool buffer_mode = false;
     if(!in && !out)
         return MFX_ERR_NULL_PTR;
 
@@ -450,53 +451,6 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         {
             //check that opaque buffer is present -- probably check is needed only at Init()?
             opaque = true;
-            if((const_in.NumExtParam && 
-                const_in.ExtParam && 
-                const_in.ExtParam[0] && 
-                const_in.ExtParam[0]->BufferId == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION &&
-                const_in.ExtParam[0]->BufferSz == sizeof(mfxExtOpaqueSurfaceAlloc)) &&
-               (out->NumExtParam && 
-                out->ExtParam && 
-                out->ExtParam[0] && 
-                out->ExtParam[0]->BufferId == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION) &&
-                out->ExtParam[0]->BufferSz == sizeof(mfxExtOpaqueSurfaceAlloc) )
-            {
-                //verify buffer at Query() and correct output structure
-                mfxExtOpaqueSurfaceAlloc& out_opaq_buf = *((mfxExtOpaqueSurfaceAlloc*) *out->ExtParam);
-                const mfxExtOpaqueSurfaceAlloc& in_opaq_buf = *((mfxExtOpaqueSurfaceAlloc*) *in->ExtParam);
-                bool bOpaqMode[2];
-                CheckOpaqMode(const_in, out, in_opaq_buf, &out_opaq_buf, bOpaqMode);
-            }
-            else if ((const_in.NumExtParam && 
-                      const_in.ExtParam && 
-                      const_in.ExtParam[0] && 
-                      const_in.ExtParam[0]->BufferId == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION &&
-                      const_in.ExtParam[0]->BufferSz == sizeof(mfxExtOpaqueSurfaceAlloc)) &&
-                      out == &m_mfxInitPar)
-            {
-                //verify input buffer at Init() and nowhere to fill changed fields
-                mfxExtOpaqueSurfaceAlloc& in_opaq_buf = *((mfxExtOpaqueSurfaceAlloc*) *const_in.ExtParam);
-                in_opaq_buf;
-                bool bOpaqMode[2];
-                if(CheckOpaqMode(const_in, out, in_opaq_buf, 0, bOpaqMode))
-                    error = true;
-
-                if((const_in.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (!in_opaq_buf.In.Surfaces || !in_opaq_buf.In.NumSurface))
-                {
-                    error = true;
-                    out->IOPattern = 0;
-                }
-                if((const_in.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (!in_opaq_buf.Out.Surfaces || !in_opaq_buf.Out.NumSurface))
-                {
-                    error = true;
-                    out->IOPattern = 0;
-                }
-            }
-            else
-            {
-                out->IOPattern = 0;
-                error = true;
-            }
         }
         //if not opaque check for any other applicable IOPattern
         else if(!(const_in.IOPattern == (MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY )||
@@ -508,14 +462,149 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             error = true;
         }
 
-        if(!opaque && (const_in.ExtParam || const_in.NumExtParam || out->ExtParam || out->NumExtParam))
+        if(const_in.ExtParam || const_in.NumExtParam)
         {
-            error = true;
+            if(!const_in.ExtParam || !const_in.NumExtParam)
+            {
+                error = true;
+            }
+            else if(out != &m_mfxInitPar &&
+               ((const_in.NumExtParam != out->NumExtParam) || !out->ExtParam))
+            {
+                //input and output ext buffers must match
+                error = true;
+            }
+            else
+            {
+                mfxExtVPPDeinterlacing* extVPPDeintIn = 0;
+                mfxExtVPPDeinterlacing* extVPPDeintOut = 0;
+                mfxExtOpaqueSurfaceAlloc* in_opaq_buf = 0;
+                mfxExtOpaqueSurfaceAlloc* out_opaq_buf = 0;
+                for(mfxU32 i = 0; i < const_in.NumExtParam; ++i)
+                {
+                    if(const_in.ExtParam[i])
+                    {
+                        if( const_in.ExtParam[i]->BufferId == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION &&
+                            const_in.ExtParam[i]->BufferSz == sizeof(mfxExtOpaqueSurfaceAlloc))
+                        {
+                            if(opaque)
+                            {
+                                in_opaq_buf = (mfxExtOpaqueSurfaceAlloc*) const_in.ExtParam[i];
+                            }
+                            else
+                            {
+                                error = true;
+                                out->IOPattern = 0;
+                            }
+                        }
+                        else if( const_in.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DEINTERLACING &&
+                                 const_in.ExtParam[i]->BufferSz == sizeof(mfxExtVPPDeinterlacing))
+                        {
+                            extVPPDeintIn = (mfxExtVPPDeinterlacing*) const_in.ExtParam[i];
+                        }
+                        else
+                        {
+                            error = true; //unknown ext buffer
+                        }
+                    }
+                    if(out != &m_mfxInitPar && out->ExtParam[i])
+                    {
+                        if( out->ExtParam[i]->BufferId == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION &&
+                            out->ExtParam[i]->BufferSz == sizeof(mfxExtOpaqueSurfaceAlloc))
+                        {
+                            if(opaque)
+                            {
+                                out_opaq_buf = (mfxExtOpaqueSurfaceAlloc*) out->ExtParam[i];
+                            }
+                            else
+                            {
+                                out->IOPattern = 0;
+                                error = true;
+                            }
+                        }
+                        else if( out->ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DEINTERLACING &&
+                                 out->ExtParam[i]->BufferSz == sizeof(mfxExtVPPDeinterlacing))
+                        {
+                            extVPPDeintOut = (mfxExtVPPDeinterlacing*) out->ExtParam[i];
+                        }
+                        else
+                        {
+                            error = true; //unknown ext buffer
+                        }
+                    }
+                }
+                if(extVPPDeintIn)
+                {
+                    if(extVPPDeintOut)
+                        *extVPPDeintOut = *extVPPDeintIn;
+                    buffer_mode = true;
+                    if( extVPPDeintIn->Mode == MFX_DEINTERLACING_AUTO_DOUBLE            ||
+                        extVPPDeintIn->Mode == MFX_DEINTERLACING_AUTO_SINGLE            ||
+                        extVPPDeintIn->Mode == MFX_DEINTERLACING_FULL_FR_OUT            ||
+                        extVPPDeintIn->Mode == MFX_DEINTERLACING_HALF_FR_OUT            ||
+                        extVPPDeintIn->Mode == MFX_DEINTERLACING_24FPS_OUT              ||
+                        extVPPDeintIn->Mode == MFX_DEINTERLACING_30FPS_OUT              ||
+                        extVPPDeintIn->Mode == MFX_DEINTERLACING_DETECT_INTERLACE      )
+                    {
+                        if(extVPPDeintIn->TelecineLocation || extVPPDeintIn->TelecinePattern)
+                        {
+                            error = true;
+                            if(extVPPDeintOut)
+                            {
+                                extVPPDeintOut->Mode = extVPPDeintOut->TelecineLocation = extVPPDeintOut->TelecinePattern = 0;
+                            }
+                        }
+                    }
+                    else if(extVPPDeintIn->Mode == MFX_DEINTERLACING_FIXED_TELECINE_PATTERN)
+                    {
+                        if(extVPPDeintIn->TelecinePattern == MFX_TELECINE_PATTERN_32           ||
+                           extVPPDeintIn->TelecinePattern == MFX_TELECINE_PATTERN_2332         ||
+                           extVPPDeintIn->TelecinePattern == MFX_TELECINE_PATTERN_FRAME_REPEAT ||
+                           extVPPDeintIn->TelecinePattern == MFX_TELECINE_PATTERN_41           )
+                        {
+                            ;//ok
+                        }
+                        else if(extVPPDeintIn->TelecinePattern == MFX_TELECINE_POSITION_PROVIDED)
+                        {
+                            if(extVPPDeintIn->TelecineLocation > 4)
+                            {
+                                error = true;
+                                if(extVPPDeintOut)
+                                {
+                                    extVPPDeintOut->TelecineLocation = 0;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            error = true;
+                            if(extVPPDeintOut)
+                            {
+                                extVPPDeintOut->TelecineLocation = extVPPDeintOut->TelecinePattern = 0;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        error = true;
+                        if(extVPPDeintOut)
+                        {
+                            extVPPDeintOut->Mode = extVPPDeintOut->TelecineLocation = extVPPDeintOut->TelecinePattern = 0;
+                        }
+                    }
+                }
+                if(in_opaq_buf)
+                {
+                    bool bOpaqMode[2];
+                    CheckOpaqMode(const_in, out, *in_opaq_buf, out_opaq_buf, bOpaqMode);
+                }
+            }
         }
-        if(opaque && (const_in.NumExtParam > 1 || out->NumExtParam > 1))
-        {
-            error = true;
-        }
+
+        //if(opaque && (const_in.NumExtParam > 1 || out->NumExtParam > 1))
+        //{
+        //    error = true;
+        //}
         if(const_in.Protected)
         {
             out->Protected = 0;
@@ -529,15 +618,15 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             error = true;
         }
         // auto-detection mode is allowed only for unknown picstruct and unknown input frame rate
-        if(const_in.vpp.In.PicStruct == MFX_PICSTRUCT_UNKNOWN && 
-           (const_in.vpp.In.FrameRateExtN || const_in.vpp.Out.FrameRateExtN))
+        if(const_in.vpp.In.PicStruct == MFX_PICSTRUCT_UNKNOWN/* && 
+           (const_in.vpp.In.FrameRateExtN || const_in.vpp.Out.FrameRateExtN)*/)
         {
             out->vpp.In.PicStruct = 0; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
             out->vpp.In.FrameRateExtN = 0;
             out->vpp.In.FrameRateExtD = 0;
             out->vpp.Out.FrameRateExtN = 0;
             out->vpp.Out.FrameRateExtD = 0;
-            error = true;
+            //error = true;
         }
         if(const_in.vpp.Out.PicStruct == MFX_PICSTRUCT_UNKNOWN)
         {
@@ -675,8 +764,8 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
     
         //find suitable mode
-        if(MFX_PICSTRUCT_UNKNOWN == const_in.vpp.In.PicStruct &&
-           0 == const_in.vpp.In.FrameRateExtN && 0 == const_in.vpp.Out.FrameRateExtN)
+        if(MFX_PICSTRUCT_UNKNOWN == const_in.vpp.In.PicStruct/* &&
+           0 == const_in.vpp.In.FrameRateExtN && 0 == const_in.vpp.Out.FrameRateExtN*/)
         {
             ;//auto-detection mode
         }
@@ -1007,6 +1096,36 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     if(!m_mfxInitPar.AsyncDepth)
         m_mfxInitPar.AsyncDepth = 1;
 
+    mfxExtVPPDeinterlacing*   extVPPDeintIn = 0;
+    mfxExtOpaqueSurfaceAlloc* in_opaq_buf   = 0;
+    if(par->ExtParam || par->NumExtParam)
+    {
+        if(!par->ExtParam || !par->NumExtParam)
+        {
+            Close();
+            return MFX_ERR_MEMORY_ALLOC;
+        }
+        else
+        {
+            for(mfxU32 i = 0; i < par->NumExtParam; ++i)
+            {
+                if(par->ExtParam[i])
+                {
+                    if( par->ExtParam[i]->BufferId == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION &&
+                        par->ExtParam[i]->BufferSz == sizeof(mfxExtOpaqueSurfaceAlloc))
+                    {
+                        in_opaq_buf = (mfxExtOpaqueSurfaceAlloc*) par->ExtParam[i];
+                    }
+                    else if( par->ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DEINTERLACING &&
+                                par->ExtParam[i]->BufferSz == sizeof(mfxExtVPPDeinterlacing))
+                    {
+                        extVPPDeintIn = (mfxExtVPPDeinterlacing*) par->ExtParam[i];
+                    }
+                }
+            }
+        }
+    }
+
     mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
     mfxHDL mfxDeviceHdl = 0;
 
@@ -1028,7 +1147,7 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     if(MFX_ERR_NONE > mfxSts)
         return mfxSts;
 
-                    //hack
+                    ////hack
                     //HWSupported = false;
                     //par_accel = true;
 
@@ -1076,7 +1195,7 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
 
     try
     {
-        mfxSts = ptir->Init(par);
+        mfxSts = ptir->Init(par, extVPPDeintIn);
     }
     catch(std::bad_alloc&)
     {
@@ -1112,7 +1231,7 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
 
         try
         {
-            mfxSts = ptir->Init(par);
+            mfxSts = ptir->Init(par, extVPPDeintIn);
         }
         catch(std::bad_alloc&)
         {
@@ -1145,13 +1264,8 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
            par->IOPattern == (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY) ||
            par->IOPattern == (MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_OPAQUE_MEMORY)   )
         {
-            if ((par->NumExtParam && 
-                 par->ExtParam && 
-                 par->ExtParam[0] && 
-                 par->ExtParam[0]->BufferId == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION &&
-                 par->ExtParam[0]->BufferSz == sizeof(mfxExtOpaqueSurfaceAlloc)))
+            if (in_opaq_buf)
             {
-                mfxExtOpaqueSurfaceAlloc& in_opaq_buf = *((mfxExtOpaqueSurfaceAlloc*) *par->ExtParam);
                 mfxFrameAllocRequest req_in ;
                 mfxFrameAllocRequest req_out;
 
@@ -1160,7 +1274,7 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
 
                 bool bOpaqMode[2];
 
-                mfxSts = CheckOpaqMode(*par, 0, in_opaq_buf, 0, bOpaqMode);
+                mfxSts = CheckOpaqMode(*par, 0, *in_opaq_buf, 0, bOpaqMode);
                 if(mfxSts)
                 {
                     Close();
@@ -1168,35 +1282,38 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
                 }
 
                 //QueryIOSurf(par, &req_in, &req_out);
-
-                if((par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && in_opaq_buf.In.Surfaces && in_opaq_buf.In.NumSurface)
+                if((par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && in_opaq_buf->In.Surfaces && in_opaq_buf->In.NumSurface)
                 {
-                    mfxSts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf.In.NumSurface, in_opaq_buf.In.Type, in_opaq_buf.In.Surfaces);
-                    //mfxSts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf.In.NumSurface, req_in.Type, in_opaq_buf.In.Surfaces);
+                    mfxSts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf->In.NumSurface, in_opaq_buf->In.Type, in_opaq_buf->In.Surfaces);
+                    //mfxSts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf->In.NumSurface, req_in.Type, in_opaq_buf->In.Surfaces);
                     if(mfxSts)
                     {
                         Close();
                         return MFX_ERR_MEMORY_ALLOC;
                     }
                 }
-                if((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && in_opaq_buf.Out.Surfaces && in_opaq_buf.Out.NumSurface)
+                if((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && in_opaq_buf->Out.Surfaces && in_opaq_buf->Out.NumSurface)
                 {
-                    mfxSts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf.Out.NumSurface, in_opaq_buf.Out.Type, in_opaq_buf.Out.Surfaces);
-                    //mfxSts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf.Out.NumSurface, req_out.Type, in_opaq_buf.Out.Surfaces);
+                    mfxSts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf->Out.NumSurface, in_opaq_buf->Out.Type, in_opaq_buf->Out.Surfaces);
+                    //mfxSts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf->Out.NumSurface, req_out.Type, in_opaq_buf->Out.Surfaces);
                     if(mfxSts)
                     {
                         Close();
                         return MFX_ERR_MEMORY_ALLOC;
                     }
                 }
-                m_OpaqSurfAlloc = in_opaq_buf;
+                m_OpaqSurfAlloc = *in_opaq_buf;
                 //frmSupply->SetFrmType(req_in.Type, req_out.Type);
-                frmSupply->SetFrmType(in_opaq_buf.In.Type, in_opaq_buf.Out.Type);
+                frmSupply->SetFrmType(in_opaq_buf->In.Type, in_opaq_buf->Out.Type);
             }
             else
             {
                 Close();
                 return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+            if(extVPPDeintIn)
+            {
+                m_extVPPDeint = *extVPPDeintIn;
             }
         }
     }
@@ -1258,6 +1375,7 @@ mfxStatus MFX_PTIR_Plugin::Close()
     mfxStatus mfxSts = MFX_ERR_NONE;
     if(ptir)
     {
+        frmSupply->FreeFrames();
         mfxSts = ptir->Close();
         delete ptir;
         ptir = 0;
@@ -1326,6 +1444,7 @@ inline mfxStatus MFX_PTIR_Plugin::PrepareTask(PTIR_Task *ptir_task, mfxThreadTas
         {
             b_work = true;
             *surface_out = workSurfs.front();
+            //workSurfs.erase(workSurfs.begin());
         }
         ptir_task->surface_out = *surface_out;
         //m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_out->Data);
@@ -1368,7 +1487,7 @@ inline mfxStatus MFX_PTIR_Plugin::addWorkSurf(mfxFrameSurface1* pSurface)
         assert((*it)->Data.Locked != 0);
     }
 #endif
-    if(workSurfs.end() == std::find (workSurfs.begin(), workSurfs.end(), pSurface) && (workSurfs.size() + ptir->fqIn.iCount + ptir->uiCur) < 18)
+    if(workSurfs.end() == std::find (workSurfs.begin(), workSurfs.end(), pSurface) && (workSurfs.size() + ptir->Env.fqIn.iCount + ptir->Env.control.uiCur) < 16)
     {
         workSurfs.push_back(pSurface);
         m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &pSurface->Data);
@@ -1380,7 +1499,7 @@ inline mfxStatus MFX_PTIR_Plugin::addInSurf(mfxFrameSurface1* pSurface)
 {
     if(!pSurface)
         return MFX_ERR_NONE;
-    if(pSurface && ((inSurfs.size() == 0) || (inSurfs.size() != 0 && inSurfs.back() != pSurface)) /*&& prevSurf != pSurface*/ && (inSurfs.size() + ptir->fqIn.iCount + ptir->uiCur) < 18)
+    if(pSurface && ((inSurfs.size() == 0) || (inSurfs.size() != 0 && inSurfs.back() != pSurface)) /*&& prevSurf != pSurface*/ && (inSurfs.size() + ptir->Env.fqIn.iCount + ptir->Env.control.uiCur) < 18)
     {
         if(inSurfs.end() == std::find (inSurfs.begin(), inSurfs.end(), pSurface) || inSurfs.size() == 0)
         {

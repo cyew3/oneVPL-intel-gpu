@@ -64,7 +64,10 @@ CmSurface2D* frameSupplier::GetWorkSurfaceCM()
     mfxFrameSurface1* s_out = 0;
     CmSurface2D* cm_out = 0;
     if(0 == workSurfs->size())
+    {
+        assert(false);
         return 0;
+    }
     else
     {
         s_out = workSurfs->front();
@@ -155,7 +158,7 @@ mfxStatus frameSupplier::AddOutputSurf(mfxFrameSurface1* outSurf, mfxFrameSurfac
 #endif
     CmSurface2D* freeSurf = 0;
     CmSurface2D* delSurf = 0;
-    if(pCMdevice && (IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
+    if(pCMdevice && (IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
     {
         CmSurface2D* cmSurf = 0;
         //change to .find
@@ -231,9 +234,15 @@ mfxStatus frameSupplier::AddOutputSurf(mfxFrameSurface1* outSurf, mfxFrameSurfac
         for(mfxU32 i = 0; i < LASTFRAME; ++i)
         {
             if(frmBuffer[i] && (static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D == freeSurf))
+            {
                 static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D = 0;
+                static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D = GetWorkSurfaceCM();
+            }
             if(delSurf && frmBuffer[i] && (static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D == delSurf))
+            {
                 static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D = 0;
+                static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D = GetWorkSurfaceCM();
+            }
         }
         FreeSurface(freeSurf);
     }

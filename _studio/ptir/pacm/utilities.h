@@ -22,6 +22,8 @@ File Name: utilities.h
 
 #define TEST_UNDO2FRAMES_CM 1
 
+void Interlaced_detection_logCM(Frame *frmBuffer[BUFMINSIZE], unsigned int uiNumFramesToDispatch);
+
 #if TEST_UNDO2FRAMES_CM
 void Undo2Frames_CMTest(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF);
 #endif

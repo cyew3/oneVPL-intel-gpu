@@ -56,9 +56,6 @@
     <ClCompile Include="src\ptir_cpu_wrap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ptir_cm_wrap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\mfx_lib\shared\src\mfx_check_hardware_support.cpp">
       <Filter>from_libmfxhw</Filter>
     </ClCompile>
@@ -69,6 +66,9 @@
       <Filter>from_libmfxhw</Filter>
     </ClCompile>
     <ClCompile Include="src\plg_frame_supply.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ptir_cm_wrap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

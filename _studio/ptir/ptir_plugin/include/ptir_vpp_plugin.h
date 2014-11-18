@@ -25,6 +25,32 @@ File Name: ptir_vpp_plugin.h
 #include "ptir_wrap.h"
 #include "ptir_vpp_utils.h"
 
+//0,1,2,3 with reference to the reference PTIR application
+typedef enum {
+    TELECINE_PATTERN_0_32           = 0, //(0) 3:2 Telecine
+    TELECINE_PATTERN_1_2332         = 1, //(1) 2:3:3:2 Telecine
+    TELECINE_PATTERN_2_FRAME_REPEAT = 2, //(2) One frame repeat Telecine
+    TELECINE_PATTERN_3_41           = 3, //(3) 4:1 Telecine
+    TELECINE_POSITION_PROVIDED      = 4  //User must provide position inside a sequence 
+                                         //of 5 frames where the artifacts starts - Value [0 - 4]
+} ptirTelecinePattern;
+
+typedef enum {
+    PTIR_AUTO_DOUBLE                    = 0, //AutoMode with deinterlacing double framerate output
+    PTIR_AUTO_SINGLE                    = 1, //AutoMode with deinterlacing single framerate output
+    PTIR_DEINTERLACE_FULL               = 2, //Deinterlace only Mode with full framerate output
+    PTIR_DEINTERLACE_HALF               = 3, //Deinterlace only Mode with half framerate output
+    PTIR_OUT24FPS_FIXED                 = 4, //24fps Fixed output mode
+    PTIR_FIXED_TELECINE_PATTERN_REMOVAL = 5, //Fixed Telecine pattern removal mode
+    PTIR_OUT30FPS_FIXED                 = 6, //30fps Fixed output mode
+    PTIR_ONLY_DETECT_INTERLACE          = 7  //Only interlace detection
+} ptirOperationMode;
+
+typedef enum {
+    PTIR_TFF  = 0, //Top Field First
+    PTIR_BFF  = 1  //Bottom Field First
+} ptirTopBotFrameFirst;
+
 struct PTIR_Task
 {
     mfxU32           id;
@@ -117,6 +143,7 @@ protected:
     mfxVideoParam       m_mfxInitPar;
     mfxVideoParam       m_mfxCurrentPar;
     mfxExtOpaqueSurfaceAlloc m_OpaqSurfAlloc;
+    mfxExtVPPDeinterlacing   m_extVPPDeint;
     bool                m_createdByDispatcher;
     std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > m_adapter;
     PTIR_Processor*  ptir;

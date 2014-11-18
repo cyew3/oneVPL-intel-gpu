@@ -334,7 +334,6 @@ void Frame_Prep_and_Analysis(Frame **frmBuffer, char *pcFormat, double dFrameRat
     frmBuffer[uiframeBufferIndexCur]->frmProperties.tindex = uiTemporalIndex + 1;
     sadCalc_I420_frame(frmBuffer[uiframeBufferIndexCur],frmBuffer[uiframeBufferIndexNext]);
     Rs_measurement(frmBuffer[uiframeBufferIndexCur]);
-    //Artifacts_Detection_frame(frmBuffer, uiframeBufferIndexCur, TRUE);
     frmBuffer[uiframeBufferIndexCur]->frmProperties.processed = TRUE;
 
     if(uiframeBufferIndexCur == uiframeBufferIndexNext)
@@ -519,7 +518,6 @@ int PTIR_PutFrame(unsigned char *pucIO, PTIRSystemBuffer *SysBuffer, double dTim
     //SysBuffer->control.uiNext = SysBuffer->control.uiCur - 1;
 
     SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.timestamp = dTimestamp;
-
     status = Convert_to_I420(pucIO, SysBuffer->frmBuffer[BUFMINSIZE], "I420", SysBuffer->control.dFrameRate);
     if(status)
         SysBuffer->control.uiFrameCount += status;
@@ -695,40 +693,6 @@ int PTIR_DeinterlaceMode_FF(PTIRSystemBuffer *SysBuffer)
     else
         return NOTREADY;
 }
-
-int PTIR_DeinterlaceMode_HF_timestamp(PTIRSystemBuffer *SysBuffer)
-{
-    if(SysBuffer->control.uiCur >= 1) {
-        unsigned int uiisInterlaced = 1;
-        SysBuffer->frmBuffer[0]->frmProperties.interlaced = 1;
-        Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
-
-        if (SysBuffer->frmBuffer[0]->frmProperties.interlaced) {
-            FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
-            // First field
-            DeinterlaceMedianFilter(SysBuffer->frmBuffer, 0, BUFMINSIZE, SysBuffer->control.uiInterlaceParity);
-            // Second field -- for full frame rate
-            //    DeinterlaceMedianFilter(frmBuffer, BUFMINSIZE, frameIndex, !uiInterlaceParity);
-         }
-         else
-             CheckGenFrame(SysBuffer->frmBuffer, 0, uiisInterlaced);
-
-        Prepare_frame_for_queue(&SysBuffer->frmIn, SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[0]->plaY.uiWidth, SysBuffer->frmBuffer[0]->plaY.uiHeight);
-        memcpy(SysBuffer->frmIn->plaY.ucStats.ucRs, SysBuffer->frmBuffer[0]->plaY.ucStats.ucRs,sizeof(double) * 10);
-
-        SysBuffer->frmIn->frmProperties.timestamp = SysBuffer->frmBuffer[0]->frmProperties.timestamp;
-        FrameQueue_Add(&SysBuffer->fqIn, SysBuffer->frmIn);
-
-        SysBuffer->frmBuffer[0]->frmProperties.drop = FALSE;
-        SysBuffer->frmBuffer[0]->frmProperties.candidate = FALSE;
-
-        Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
-        return READY;
-    }
-    else
-        return NOTREADY;
-}
-
 
 int PTIR_DeinterlaceMode_HF(PTIRSystemBuffer *SysBuffer)
 {

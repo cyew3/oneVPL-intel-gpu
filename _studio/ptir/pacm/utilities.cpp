@@ -46,6 +46,41 @@ static void CopyFrame(Frame *pSrc, Frame* pDst)
     }
 }
 
+void Interlaced_detection_logCM(Frame *frmBuffer[BUFMINSIZE], unsigned int uiNumFramesToDispatch)
+{
+    unsigned int i = 0;
+    FILE* fLogDetection = NULL;
+
+    if(frmBuffer[0]->frmProperties.tindex == 1)
+    {
+#if defined(_WIN32) || defined(_WIN64)
+        fopen_s(&fLogDetection,"prog_interlace_detect.txt","w");
+#else
+        fLogDetection = fopen("prog_interlace_detect.txt","w");
+#endif
+        fprintf(fLogDetection,"Frame\tInterlaced\n");
+    }
+    else
+#if defined(_WIN32) || defined(_WIN64)
+        fopen_s(&fLogDetection,"prog_interlace_detect.txt","a+");
+#else
+        fLogDetection = fopen("prog_interlace_detect.txt","a+");
+#endif
+
+    for (i = 0; i < uiNumFramesToDispatch; i++)
+    {
+#if PRINTDEBUG || PRINTXPERT
+        fprintf(fLogDetection,"%i\t%i\t%i\n",frmBuffer[i]->frmProperties.tindex,frmBuffer[i]->frmProperties.detection, frmBuffer[i]->frmProperties.uiInterlacedDetectionValue);
+#else
+        fprintf(fLogDetection,"%i\t%i\n",frmBuffer[i]->frmProperties.tindex - 1,frmBuffer[i]->frmProperties.detection);
+#endif
+        frmBuffer[i]->frmProperties.detection = false;
+    }
+
+    fclose(fLogDetection);
+}
+
+
 #if TEST_UNDO2FRAMES_CM
 void Undo2Frames_CMTest(Frame *frmBuffer1, Frame *frmBuffer2, bool BFF)
 {    
@@ -499,6 +534,14 @@ void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsign
         }
     }
 
+    if(!ptrn->ucLatch.ucFullLatch)
+    {
+        for (i = 0; i < *pdispatch; i++)
+            ptrn->ulCountInterlacedDetections += frmBuffer[i]->frmProperties.interlaced;
+    }
+    else
+        ptrn->ulCountInterlacedDetections += ptrn->uiInterlacedFramesNum;
+
     ptrn->ucPatternFound = ptrn->ucLatch.ucFullLatch;
 }
 
@@ -571,6 +614,7 @@ void Detect_Solve_32BlendedPatternsCM(Frame **pFrm, Pattern *ptrn, unsigned int 
                 }
                 UndoPatternTypes5and7CM(pFrm, start);
                 ptrn->ucLatch.ucFullLatch = true;
+                pFrm[3]->frmProperties.candidate = true;
                 if (previousPattern != 6)
                     ptrn->ucPatternType = 5;
                 else
@@ -596,7 +640,7 @@ void Detect_Solve_32BlendedPatternsCM(Frame **pFrm, Pattern *ptrn, unsigned int 
                     else
                     {
                         pFrm[1]->frmProperties.drop = false;
-                        pFrm[1]->frmProperties.candidate;
+                        //pFrm[1]->frmProperties.candidate;
                     }
                     ptrn->ucPatternType = 6;
                     *dispatch = 2;
@@ -718,9 +762,9 @@ void Prepare_frame_for_queueCM(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWi
 #ifdef CPUPATH
     ReSample(*pfrmOut, pfrmIn);
 #endif
- std::swap((*pfrmOut)->outSurf, pfrmIn->outSurf);
- std::swap((*pfrmOut)->inSurf, pfrmIn->inSurf);
- std::swap((*pfrmOut)->outState, pfrmIn->outState);
+    std::swap((*pfrmOut)->outSurf, pfrmIn->outSurf);
+    std::swap((*pfrmOut)->inSurf, pfrmIn->inSurf);
+    std::swap((*pfrmOut)->outState, pfrmIn->outState);
 }
 
 void Frame_CreateCM(Frame *pfrmIn, unsigned int uiYWidth, unsigned int uiYHeight, unsigned int uiUVWidth, unsigned int uiUVHeight, unsigned int uiBorder, bool bcreate)
@@ -728,14 +772,14 @@ void Frame_CreateCM(Frame *pfrmIn, unsigned int uiYWidth, unsigned int uiYHeight
 #ifdef CPUPATH
     Frame_Create(pfrmIn, uiYWidth, uiYHeight, uiUVWidth, uiUVHeight, uiBorder);
 #else
- unsigned int uiOffset;
- pfrmIn->uiSize = (uiYWidth + 2 * uiBorder) * (uiYHeight + 2 * uiBorder) + (2 * (uiUVWidth + 2 * uiBorder) * (uiUVHeight + 2 * uiBorder));
- //pfrmIn->ucMem = (unsigned char *)malloc(pfrmIn->uiSize);
-    assert(pfrmIn->inSurf == 0);
-    assert(pfrmIn->outSurf == 0);
- pfrmIn->ucMem = NULL;
- pfrmIn->inSurf = NULL;
- pfrmIn->outSurf = NULL;
+    unsigned int uiOffset;
+    pfrmIn->uiSize = (uiYWidth + 2 * uiBorder) * (uiYHeight + 2 * uiBorder) + (2 * (uiUVWidth + 2 * uiBorder) * (uiUVHeight + 2 * uiBorder));
+    //pfrmIn->ucMem = (unsigned char *)malloc(pfrmIn->uiSize);
+    //assert(pfrmIn->inSurf == 0);
+    //assert(pfrmIn->outSurf == 0);
+    pfrmIn->ucMem = NULL;
+    pfrmIn->inSurf = NULL;
+    pfrmIn->outSurf = NULL;
 
     //if (pfrmIn->ucMem)
     {
@@ -869,30 +913,27 @@ void PTIRCM_Frame_Prep_and_Analysis(PTIRSystemBuffer *SysBuffer)
     SysBuffer->control.uiCur++;
 }
 
-void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double dTimePerFrame, unsigned int uiisInterlaced, unsigned int uiInterlaceParity, unsigned int bFullFrameRate, Frame* frmIn, FrameQueue *fqIn)
+void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double dTimePerFrame, unsigned int uiisInterlaced, unsigned int uiInterlaceParity, unsigned int bFullFrameRate, Frame* frmIn, FrameQueue *fqIn, frameSupplier *frmSupply = 0, bool bCreate = false)
 {
     if (frmBuffer[frameIndex]->frmProperties.interlaced)
     {
-        if(uiInterlaceParity) //BFF
+        if(bFullFrameRate)
         {
-            if(bFullFrameRate) //Generate second frame
-            {
-                pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, frameIndex, BUFMINSIZE);
-            }
-            pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, -1, 0); //bootom field
-            pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, -1); //top field
+            //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
+            //frmSupply->CMCopyGPUToGpu(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D, static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D);
+            static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D;
+            pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
+            if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D)
+                //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
+                pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, BUFMINSIZE, !uiInterlaceParity);
         }
-        else //TFF, use old scheme
-        {
-            pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, frameIndex, BUFMINSIZE);
-            //deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, -1, 1);
-            //deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, -1);
-        }
+        else
+            pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
      }
      else
          CheckGenFrameCM(frmBuffer, frameIndex, uiisInterlaced);
 
-    Prepare_frame_for_queueCM(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight);
+    Prepare_frame_for_queueCM(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight/*, frmSupply, bCreate*/);
     memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
            
     //Timestamp
@@ -924,25 +965,23 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
     frmBuffer[frameIndex]->frmProperties.candidate = false;
 }
 
-void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, double dCurTimeStamp, double dTimePerFrame, unsigned int uiisInterlaced, unsigned int uiInterlaceParity, unsigned int bFullFrameRate, Frame* frmIn, FrameQueue *fqIn)
+void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, double dCurTimeStamp, double dTimePerFrame, unsigned int uiisInterlaced, unsigned int uiInterlaceParity, unsigned int bFullFrameRate, Frame* frmIn, FrameQueue *fqIn, frameSupplier *frmSupply = 0, bool bCreate = false)
 {
     if (frmBuffer[frameIndex]->frmProperties.interlaced)
     {
-        if(uiInterlaceParity) //BFF
+        if(bFullFrameRate)
         {
-            if(bFullFrameRate) //Generate second frame
-            {
-                pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, frameIndex, BUFMINSIZE);
-            }
-            pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, -1, 0); //bootom field
-            pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, -1); //top field
+            //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
+            //frmSupply->CMCopyGPUToGpu(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D, static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D);
+            static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D;
+            pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
+            if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D)
+                //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
+                pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, BUFMINSIZE, !uiInterlaceParity);
+            static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = 0;
         }
-        else //TFF, use old scheme
-        {
-            pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, frameIndex, BUFMINSIZE);
-            //deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, -1, 1);
-            //deinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, 0, -1);
-        }
+        else
+            pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
      }
      else
          CheckGenFrameCM(frmBuffer, frameIndex, uiisInterlaced);
@@ -983,13 +1022,13 @@ int PTIRCM_AutoMode_FF(PTIRSystemBuffer *SysBuffer)
         if(SysBuffer->control.mainPattern.ucPatternFound)
         {
             SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType, SysBuffer->control.uiEndOfFrames);
-            double cur_timestamp = SysBuffer->frmBuffer[0]->frmProperties.timestamp;
+            cur_timestamp = SysBuffer->frmBuffer[0]->frmProperties.timestamp;
             
             for (i = 0; i < uiNumFramesToDispatch; i++)
             {
                 if (!SysBuffer->frmBuffer[i]->frmProperties.drop)
                 {
-                    Update_Frame_BufferNEW_CM(SysBuffer->frmBuffer, i, cur_timestamp, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                    Update_Frame_BufferNEW_CM(SysBuffer->frmBuffer, i, cur_timestamp, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn, (frameSupplier*) SysBuffer->frmSupply, false);
                     cur_timestamp += SysBuffer->control.dTimePerFrame;
                 }
                 else
@@ -1009,7 +1048,7 @@ int PTIRCM_AutoMode_FF(PTIRSystemBuffer *SysBuffer)
             
             for(i = 0; i < uiNumFramesToDispatch; i++)
             {
-                Update_Frame_BufferNEW_CM(SysBuffer->frmBuffer, 0, SysBuffer->frmBuffer[0]->frmProperties.timestamp, SysBuffer->control.dBaseTime, uiDeinterlace, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                Update_Frame_BufferNEW_CM(SysBuffer->frmBuffer, 0, SysBuffer->frmBuffer[0]->frmProperties.timestamp, SysBuffer->control.dBaseTime, uiDeinterlace, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn, (frameSupplier*) SysBuffer->frmSupply, false);
                 Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
                 SysBuffer->control.uiCur--;
             }
@@ -1039,7 +1078,7 @@ int PTIRCM_AutoMode_HF(PTIRSystemBuffer *SysBuffer)
             for (i = 0; i < uiNumFramesToDispatch; i++)
             {
                 if (!SysBuffer->frmBuffer[i]->frmProperties.drop)
-                    Update_Frame_Buffer_CM(SysBuffer->frmBuffer, i, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                    Update_Frame_Buffer_CM(SysBuffer->frmBuffer, i, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn, (frameSupplier*) SysBuffer->frmSupply, true);
                 else
                 {
                     SysBuffer->frmBuffer[i + 1]->frmProperties.timestamp = SysBuffer->frmBuffer[i]->frmProperties.timestamp;
@@ -1054,7 +1093,6 @@ int PTIRCM_AutoMode_HF(PTIRSystemBuffer *SysBuffer)
             SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType, SysBuffer->control.uiEndOfFrames);
             for(i = 0; i < uiNumFramesToDispatch; i++)
             {
-                //FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
                 if (!SysBuffer->frmBuffer[0]->frmProperties.drop)
                 {
                     if (!(SysBuffer->control.mainPattern.uiInterlacedFramesNum == (BUFMINSIZE - 1)))
@@ -1090,8 +1128,7 @@ int PTIRCM_DeinterlaceMode_FF(PTIRSystemBuffer *SysBuffer)
         SysBuffer->frmBuffer[0]->frmProperties.interlaced = 1;
         Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
         SysBuffer->control.dTimePerFrame = SysBuffer->control.dBaseTime / 2;
-        //FillBaseLinesIYUV(SysBuffer->frmBuffer[0], SysBuffer->frmBuffer[BUFMINSIZE], SysBuffer->control.uiInterlaceParity, SysBuffer->control.uiInterlaceParity);
-        Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, SysBuffer->control.dTimePerFrame, DEINTERLACEMODE, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+        Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, SysBuffer->control.dTimePerFrame, DEINTERLACEMODE, SysBuffer->control.uiInterlaceParity, FULLFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn, (frameSupplier*) SysBuffer->frmSupply, false);
         Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
         return READY;
     }
@@ -1128,7 +1165,7 @@ int PTIRCM_BaseFrameMode(PTIRSystemBuffer *SysBuffer)
         else
             uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur);
 
-        Interlaced_detection_log(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+        Interlaced_detection_logCM(SysBuffer->frmBuffer, uiNumFramesToDispatch);
         if(SysBuffer->control.mainPattern.ucPatternFound)
         {
             for (i = 0; i < uiNumFramesToDispatch; i++)
@@ -1165,7 +1202,7 @@ int PTIRCM_BaseFrameMode_NoChange(PTIRSystemBuffer *SysBuffer)
     {
         Artifacts_Detection(SysBuffer->frmBuffer);
         uiNumFramesToDispatch = min(BUFMINSIZE - 1, SysBuffer->control.uiCur);
-        Interlaced_detection_log(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+        Interlaced_detection_logCM(SysBuffer->frmBuffer, uiNumFramesToDispatch);
         for (i = 0; i < uiNumFramesToDispatch; i++)
             SysBuffer->control.mainPattern.ulCountInterlacedDetections += SysBuffer->frmBuffer[i]->frmProperties.interlaced;
         Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
@@ -1274,9 +1311,6 @@ int PTIRCM_FixedTelecinePatternMode(PTIRSystemBuffer *SysBuffer)
                  uiNumFramesToDispatch, uiLetGo = 0;
     const double filmfps = 1 / 23.976 * 1000;
 
-    //printf("Fixed Telecine pattern removal mode or Mode 5 is not available right now\n");
-    //exit(MODE_NOT_AVAILABLE);
-
     Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
     {
@@ -1290,7 +1324,7 @@ int PTIRCM_FixedTelecinePatternMode(PTIRSystemBuffer *SysBuffer)
         for(i = 0; i < uiNumFramesToDispatch; i++)
         {
             if(!SysBuffer->frmBuffer[i]->frmProperties.drop)
-                Update_Frame_Buffer_CM(SysBuffer->frmBuffer, i, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                Update_Frame_Buffer_CM(SysBuffer->frmBuffer, i, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn, (frameSupplier*) SysBuffer->frmSupply, true);
             else
             {
                 SysBuffer->frmBuffer[i + 1]->frmProperties.timestamp = SysBuffer->frmBuffer[i]->frmProperties.timestamp;
@@ -1377,7 +1411,7 @@ void PTIRCM_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned 
     for(i = 0; i < LASTFRAME; i++)
     {
         SysBuffer->frmIO[i] = (Frame*)malloc(sizeof(Frame));
-        Frame_CreateCM(SysBuffer->frmIO[i], SysBuffer->control.uiInWidth, SysBuffer->control.uiInHeight, SysBuffer->control.uiInWidth / 2, SysBuffer->control.uiInHeight / 2, 0);
+        Frame_CreateCM(SysBuffer->frmIO[i], SysBuffer->control.uiInWidth, SysBuffer->control.uiInHeight, SysBuffer->control.uiInWidth / 2, SysBuffer->control.uiInHeight / 2, 0, false);
         SysBuffer->frmBuffer[i] = SysBuffer->frmIO[i];
         SysBuffer->frmBuffer[i]->frmProperties.candidate = false;
         SysBuffer->frmBuffer[i]->frmProperties.detection = false;
@@ -1392,7 +1426,7 @@ void PTIRCM_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned 
         SysBuffer->frmBuffer[i]->frmProperties.uiInterlacedDetectionValue = 0;
     }
     SysBuffer->frmIO[LASTFRAME] = (Frame*)malloc(sizeof(Frame));
-    Frame_CreateCM(SysBuffer->frmIO[LASTFRAME], SysBuffer->control.uiWidth, SysBuffer->control.uiHeight, SysBuffer->control.uiWidth / 2, SysBuffer->control.uiHeight / 2, 0);
+    Frame_CreateCM(SysBuffer->frmIO[LASTFRAME], SysBuffer->control.uiWidth, SysBuffer->control.uiHeight, SysBuffer->control.uiWidth / 2, SysBuffer->control.uiHeight / 2, 0, false);
     FrameQueue_Initialize(&SysBuffer->fqIn);
     Pattern_init(&SysBuffer->control.mainPattern);
     SysBuffer->frmIn = NULL;

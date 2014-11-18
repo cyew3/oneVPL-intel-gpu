@@ -258,6 +258,7 @@ extern "C" {
                      *frmBuffer[LASTFRAME];
         FrameQueue   fqIn;
         PTIRBufferControl control;
+        void         *frmSupply;
     } PTIRSystemBuffer;
 
     typedef struct _pPTIRSys
@@ -303,7 +304,6 @@ extern "C" {
                                                                          System returns half frame rate from interlaced content. Intended for variable frame rate encoding*/
     int    PTIR_DeinterlaceMode_FF(PTIRSystemBuffer *SysBuffer); /*Direct deinterlacing without content analysis. System returns full frame rate from deinterlacing process.
                                                                                 Constant frame rate*/
-    int    PTIR_DeinterlaceMode_HF_timestamp(PTIRSystemBuffer *SysBuffer);
     int    PTIR_DeinterlaceMode_HF(PTIRSystemBuffer *SysBuffer); /*Direct deinterlacing without content analysis. System returns half frame rate from deinterlacing process.
                                                                                 Constant frame rate*/
     int    PTIR_BaseFrameMode(PTIRSystemBuffer *SysBuffer); /*Detection and processing of progressive, telecined and interlaced content.

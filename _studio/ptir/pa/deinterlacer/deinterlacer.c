@@ -10,6 +10,7 @@ File Name: deinterlacer.c
 
 \* ****************************************************************************** */
 #include "deinterlacer.h"
+#include <assert.h>
 
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 #define min(x, y) (((x) < (y)) ? (x) : (y))
@@ -221,6 +222,7 @@ void FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int Botto
     {
         pSrcLine = pSrc->plaY.ucCorner + i * pSrc->plaY.uiStride;
         pDstLine = pDst->plaY.ucCorner + i * pDst->plaY.uiStride;
+        assert(pDstLine != 0 && pSrcLine != 0);
         memcpy(pDstLine, pSrcLine, pDst->plaY.uiWidth);
     }
 
@@ -229,6 +231,7 @@ void FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int Botto
     {
         pSrcLine = pSrc->plaU.ucCorner + i * pSrc->plaU.uiStride;
         pDstLine = pDst->plaU.ucCorner + i * pDst->plaU.uiStride;
+        assert(pDstLine != 0 && pSrcLine != 0);
         memcpy(pDstLine, pSrcLine, pDst->plaU.uiWidth);
     }
     // copying V-component
@@ -236,6 +239,7 @@ void FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int Botto
     {
         pSrcLine = pSrc->plaV.ucCorner + i * pSrc->plaV.uiStride;
         pDstLine = pDst->plaV.ucCorner + i * pDst->plaV.uiStride;
+        assert(pDstLine != 0 && pSrcLine != 0);
         memcpy(pDstLine, pSrcLine, pDst->plaV.uiWidth);
     }
 }

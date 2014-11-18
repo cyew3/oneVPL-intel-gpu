@@ -783,7 +783,6 @@ void Detect_Solve_32BlendedPatterns(Frame **pFrm, Pattern *ptrn, unsigned int *d
     ptrn->ucLatch.ucThalfLatch = FALSE;
     previousPattern = ptrn->ucPatternType;
     ptrn->ucPatternType = 0;
-
     if (pFrm[0]->plaY.uiHeight > 720)
     {
         for (i = 0; i < 10; i++)
@@ -863,7 +862,6 @@ void Detect_Solve_32BlendedPatterns(Frame **pFrm, Pattern *ptrn, unsigned int *d
                     {
                         pFrm[1]->frmProperties.drop = FALSE;//TRUE;
                         /*pFrm[1]->frmProperties.candidate;*/
-                        //DeinterlaceMedianFilter(pFrm, 1, 0);
                     }
                     ptrn->ucPatternType = 6;
                     *dispatch = 2;
@@ -1688,7 +1686,6 @@ void Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned 
     unsigned int uiDropCount = 0,
         i = 0,
         uiPrevInterlacedFramesNum = (*pdispatch == 1 ? 0:ptrn->uiInterlacedFramesNum);
-    FILE* fLogDetection = NULL;
 
     ptrn->uiInterlacedFramesNum = Artifacts_Detection(frmBuffer) + frmBuffer[0]->frmProperties.interlaced;
     
