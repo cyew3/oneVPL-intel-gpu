@@ -573,7 +573,8 @@ typedef struct {
     mfxU16      DirectBiasAdjustment;          /* tri-state option */
     mfxU16      GlobalMotionBiasAdjustment;    /* tri-state option */
     mfxU16      MVCostScalingFactor;
-    mfxU16      reserved[241];
+    mfxU16      MBDisableSkipMap;              /* tri-state option */
+    mfxU16      reserved[240];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
@@ -639,7 +640,8 @@ enum {
     MFX_EXTBUFF_CODING_OPTION3             = MFX_MAKEFOURCC('C','D','O','3'),
     MFX_EXTBUFF_CHROMA_LOC_INFO            = MFX_MAKEFOURCC('C','L','I','N'),
     MFX_EXTBUFF_MBQP                       = MFX_MAKEFOURCC('M','B','Q','P'),
-    MFX_EXTBUFF_HEVC_TILES                 = MFX_MAKEFOURCC('2','6','5','T')
+    MFX_EXTBUFF_HEVC_TILES                 = MFX_MAKEFOURCC('2','6','5','T'),
+    MFX_EXTBUFF_MB_DISABLE_SKIP_MAP        = MFX_MAKEFOURCC('M','D','S','M')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1176,6 +1178,17 @@ typedef struct {
     mfxU16 NumTileColumns;
     mfxU16 reserved[74];
 }mfxExtHEVCTiles;
+
+typedef struct {
+    mfxExtBuffer Header;
+    
+    mfxU32 reserved[11];
+    mfxU32 MapSize;
+    union {
+        mfxU8  *Map;
+        mfxU64  reserved2;
+    };
+} mfxExtMBDisableSkipMap;
 
 #ifdef __cplusplus
 } // extern "C"
