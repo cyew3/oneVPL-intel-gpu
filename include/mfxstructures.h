@@ -1039,15 +1039,35 @@ typedef struct {
     } ROI[256];
 } mfxExtEncoderROI;
 
+/*Deinterlacing Mode*/
 enum {
-    MFX_DEINTERLACING_BOB      = 0x0001,
-    MFX_DEINTERLACING_ADVANCED = 0x0002
+    MFX_DEINTERLACING_BOB                    =  1,
+    MFX_DEINTERLACING_ADVANCED               =  2,
+    MFX_DEINTERLACING_AUTO_DOUBLE            =  3,
+    MFX_DEINTERLACING_AUTO_SINGLE            =  4,
+    MFX_DEINTERLACING_FULL_FR_OUT            =  5,
+    MFX_DEINTERLACING_HALF_FR_OUT            =  6,
+    MFX_DEINTERLACING_24FPS_OUT              =  7,
+    MFX_DEINTERLACING_FIXED_TELECINE_PATTERN =  8,
+    MFX_DEINTERLACING_30FPS_OUT              =  9,
+    MFX_DEINTERLACING_DETECT_INTERLACE       = 10
+};
+
+/*TelecinePattern*/
+enum {
+    MFX_TELECINE_PATTERN_32           = 0,
+    MFX_TELECINE_PATTERN_2332         = 1,
+    MFX_TELECINE_PATTERN_FRAME_REPEAT = 2,
+    MFX_TELECINE_PATTERN_41           = 3,
+    MFX_TELECINE_POSITION_PROVIDED    = 4
 };
 
 typedef struct {
     mfxExtBuffer    Header;
     mfxU16  Mode;
-    mfxU16  reserved[11];
+    mfxU16  TelecinePattern;
+    mfxU16  TelecineLocation;
+    mfxU16  reserved[9];
 } mfxExtVPPDeinterlacing;
 
 typedef struct {
