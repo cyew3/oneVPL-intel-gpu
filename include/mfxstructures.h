@@ -638,7 +638,8 @@ enum {
     MFX_EXTBUFF_VPP_FIELD_PROCESSING       = MFX_MAKEFOURCC('F','P','R','O'),
     MFX_EXTBUFF_CODING_OPTION3             = MFX_MAKEFOURCC('C','D','O','3'),
     MFX_EXTBUFF_CHROMA_LOC_INFO            = MFX_MAKEFOURCC('C','L','I','N'),
-    MFX_EXTBUFF_MBQP                       = MFX_MAKEFOURCC('M','B','Q','P')
+    MFX_EXTBUFF_MBQP                       = MFX_MAKEFOURCC('M','B','Q','P'),
+    MFX_EXTBUFF_HEVC_TILES                 = MFX_MAKEFOURCC('2','6','5','T')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1147,6 +1148,14 @@ typedef struct {
         mfxU64 reserved2;
     };
 } mfxExtMBQP;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 NumTileRows;
+    mfxU16 NumTileColumns;
+    mfxU16 reserved[74];
+}mfxExtHEVCTiles;
 
 #ifdef __cplusplus
 } // extern "C"
