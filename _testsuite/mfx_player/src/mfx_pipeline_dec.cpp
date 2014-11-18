@@ -691,6 +691,7 @@ mfxStatus MFXDecPipeline::ReleasePipeline()
     m_components[eREN].m_params.AsyncDepth = ad;
     m_components[eREN].m_params.mfx.FrameInfo.ChromaFormat = info.ChromaFormat;
     m_components[eREN].m_params.mfx.FrameInfo.FourCC = info.FourCC;
+    m_components[eREN].m_params.mfx.FrameInfo.Shift = info.Shift;
 
     MFX_CHECK_STS(release_sts);
 
@@ -956,7 +957,8 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_components[eVPP].m_params.vpp.Out.CropW);
     ENABLE_VPP(m_components[eVPP].m_params.vpp.Out.CropH);
     ENABLE_VPP(dec_info.FourCC != enc_info.FourCC);
-    ENABLE_VPP(m_components[eDEC].m_bufType != m_components[eREN].m_bufType);
+    ENABLE_VPP(m_components[eDEC].m_bufType != m_components[eREN].m_bufType)
+    ENABLE_VPP(m_components[eDEC].m_params.mfx.FrameInfo.Shift != m_components[eREN].m_params.mfx.FrameInfo.Shift);
     ENABLE_VPP(m_inParams.nDenoiseFactorPlus1);
     ENABLE_VPP(m_inParams.nDetailFactorPlus1);
     ENABLE_VPP(m_inParams.bUseProcAmp);
@@ -1624,7 +1626,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         m_components[eREN].m_params.mfx.FrameInfo.FourCC         = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
         m_components[eREN].m_params.mfx.FrameInfo.BitDepthLuma   = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
         m_components[eREN].m_params.mfx.FrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
-        m_components[eREN].m_params.mfx.FrameInfo.Shift          = m_components[eDEC].m_params.mfx.FrameInfo.Shift;
+        m_components[eREN].m_params.mfx.FrameInfo.Shift          = 0;
     }
 
     //shouldn't recreate existed render in case of light reset
@@ -1643,7 +1645,6 @@ mfxStatus MFXDecPipeline::CreateRender()
             m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YUV420_16;
             m_inParams.outFrameInfo.BitDepthLuma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
             m_inParams.outFrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
-            m_inParams.outFrameInfo.Shift          = m_components[eDEC].m_params.mfx.FrameInfo.Shift;
         }
     }
     //crc calculation only possible in filewriter render
@@ -1663,7 +1664,6 @@ mfxStatus MFXDecPipeline::CreateRender()
         m_components[eREN].m_params.mfx.FrameInfo.FourCC         = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
         m_components[eREN].m_params.mfx.FrameInfo.BitDepthLuma   = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
         m_components[eREN].m_params.mfx.FrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
-        m_components[eREN].m_params.mfx.FrameInfo.Shift          = m_components[eDEC].m_params.mfx.FrameInfo.Shift;
     }
 
     if (   MFX_FOURCC_P010    == m_inParams.outFrameInfo.FourCC
@@ -4561,21 +4561,30 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_FILENAME_OPTION(m_inParams.strEncPluginGuid, VM_STRING("-encode_plugin_guid"), VM_STRING("MediaSDK Encoder plugin GUID"))
             else HANDLE_FILENAME_OPTION(m_inParams.strVPPPluginGuid, VM_STRING("-vpp_plugin_guid"),    VM_STRING("MediaSDK VPP plugin GUID"))
             else HANDLE_BOOL_OPTION(m_inParams.bUseOverlay, VM_STRING("-overlay"), VM_STRING("Use overlay for rendering"));
-
-            else if (m_OptProc.Check(argv[0], VM_STRING("-allegro"), VM_STRING("allegro")))
+            else if (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-(dec|enc):shift)"), VM_STRING("Desired data shift in frame data"), OPT_INT_32)))
             {
+                ComponentsContainer::iterator component;
+                component = std::find_if(m_components.begin(), m_components.end(),
+                    std::bind2nd(mem_var_isequal<ComponentParams, tstring>(&ComponentParams::m_ShortName), tstring(argv[0]).substr(1, 3)));
+
+                argv++;
+                MFX_CHECK(argv < argvEnd);
+                MFX_PARSE_INT(component->m_params.mfx.FrameInfo.Shift, argv[0]);
+          }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-allegro"), VM_STRING("allegro")))
+          {
                 m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YUV420_16;
                 m_inParams.outFrameInfo.BitDepthLuma = 10;
                 m_inParams.outFrameInfo.BitDepthChroma = 10;
                 m_inParams.isAllegroTest = true;
-            }
-            else
-            {
-                MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED
+          }
+          else
+          {
+               MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED
                     , !bReportError
                     , PE_OPTION
                     , (VM_STRING("ERROR: Unknown option: %s\n"), argv[0]));
-            }
+          }
         }
     }
     return MFX_ERR_NONE;
