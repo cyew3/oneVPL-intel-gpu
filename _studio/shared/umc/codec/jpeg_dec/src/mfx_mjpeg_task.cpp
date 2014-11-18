@@ -113,6 +113,12 @@ mfxStatus CJpegTask::Initialize(UMC::VideoDecoderParams &params,
     {
         UMC::Status umcRes;
 
+        params.info.disp_clip_info.height = params.info.clip_info.height;
+        params.info.disp_clip_info.width = params.info.clip_info.width;
+
+        if (rotation == MFX_ROTATION_270 || rotation == MFX_ROTATION_90)
+            std::swap(params.info.disp_clip_info.width, params.info.disp_clip_info.height);
+
         m_pMJPEGVideoDecoder.reset(new UMC::MJPEGVideoDecoderMFX);
         if (NULL == m_pMJPEGVideoDecoder.get())
         {

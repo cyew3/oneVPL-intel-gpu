@@ -889,7 +889,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     if (m_isOpaq)
     {
-        sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_HEVC);
+        sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_HEVC, m_platform != MFX_PLATFORM_SOFTWARE);
         if (sts != MFX_ERR_NONE)
             return MFX_ERR_UNSUPPORTED;
 
@@ -899,7 +899,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
         surface_work = GetOriginalSurface(surface_work);
     }
 
-    sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_HEVC);
+    sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_HEVC, m_platform != MFX_PLATFORM_SOFTWARE);
     if (sts != MFX_ERR_NONE)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
