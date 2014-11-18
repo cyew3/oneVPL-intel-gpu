@@ -551,6 +551,26 @@ protected:
 
 
 template<>
+class MFXStructureRef <mfxExtHEVCTiles>
+    : public MFXStructureBase<mfxExtHEVCTiles>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtHEVCTiles>((mfxExtHEVCTiles &)refStruct, flags)
+    {
+    }
+
+    MFXStructureRef(mfxExtHEVCTiles & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtHEVCTiles>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues () const;
+};
+
+
+template<>
 class MFXStructureRef <mfxExtVP8CodingOption>
     : public MFXStructureBase<mfxExtVP8CodingOption>
 {

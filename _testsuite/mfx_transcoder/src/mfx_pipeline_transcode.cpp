@@ -79,6 +79,7 @@ File Name: .h
 #define HANDLE_VSIG_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extVideoSignalInfo, member, OPT_TYPE, description)
 #define HANDLE_CAP_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderCapability, member, OPT_TYPE, description)
 #define HANDLE_HEVC_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsHEVC, member, OPT_TYPE, description)
+#define HANDLE_HEVC_TILES(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extHEVCTiles, member, OPT_TYPE, description)
 #define HANDLE_VP8_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP8CodingOptions, member, OPT_TYPE, description)
 #define HANDLE_ENCRESET_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderReset, member, OPT_TYPE, description)
 
@@ -115,6 +116,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 , m_extDumpFiles(new mfxExtDumpFiles())
 , m_extVideoSignalInfo(new mfxExtVideoSignalInfo())
 , m_extCodingOptionsHEVC(new mfxExtCodingOptionHEVC())
+, m_extHEVCTiles(new mfxExtHEVCTiles())
 , m_extVP8CodingOptions(new mfxExtVP8CodingOption())
 , m_extEncoderRoi(new mfxExtEncoderROI())
 , m_extAvcTemporalLayers(new mfxExtAvcTemporalLayers())
@@ -278,8 +280,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(SkipMotionPartition,      OPT_UINT_16,    "Skip Motion Partition RD; 0-default, 1-Never, 2-Adaptive"),
         HANDLE_HEVC_OPTION(SkipCandRD,               OPT_TRI_STATE,  "Skip Candidate RD; on-Full RD, off-Fast Decision"),
         HANDLE_HEVC_OPTION(FramesInParallel,         OPT_UINT_16,    "encoding multiple frames at the same time (0 - auto detect, 1 - default, no frame threading)."),
-        HANDLE_HEVC_OPTION(NumTileCols,              OPT_UINT_16,    "number of tile columns (1 - default)"),
-        HANDLE_HEVC_OPTION(NumTileRows,              OPT_UINT_16,    "number of tile rows (1 - default)"),
+
+        HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "number of tile columns (1 - default)"),
+        HANDLE_HEVC_TILES(NumTileRows,               OPT_UINT_16,    "number of tile rows (1 - default)"),
 		
         HANDLE_VP8_OPTION(Version,            OPT_UINT_16,   "0-maxU16"),
         HANDLE_VP8_OPTION(EnableMultipleSegments,OPT_UINT_16,   "0-maxU32"),
@@ -1499,6 +1502,9 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_extCodingOptionsHEVC.IsZero())
         m_components[eREN].m_extParams.push_back(m_extCodingOptionsHEVC);
+
+    if (!m_extHEVCTiles.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extHEVCTiles);
 
     if (!m_extVP8CodingOptions.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVP8CodingOptions);

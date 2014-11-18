@@ -83,6 +83,7 @@ protected:
     MFXExtBufferPtr<mfxExtDumpFiles>   m_extDumpFiles;
     MFXExtBufferPtr<mfxExtVideoSignalInfo> m_extVideoSignalInfo;
     MFXExtBufferPtr<mfxExtCodingOptionHEVC>  m_extCodingOptionsHEVC;
+    MFXExtBufferPtr<mfxExtHEVCTiles> m_extHEVCTiles;
     MFXExtBufferPtr<mfxExtVP8CodingOption>  m_extVP8CodingOptions;
     MFXExtBufferPtr<mfxExtEncoderROI>  m_extEncoderRoi;
 

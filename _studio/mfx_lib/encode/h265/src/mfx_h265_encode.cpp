@@ -429,7 +429,8 @@ namespace H265Enc {
         if (!parMfx) // just check for valid level value
             return inLevelTier;
 
-        const mfxExtCodingOptionHEVC* opts  = (mfxExtCodingOptionHEVC*)GetExtBuffer(  parMfx->ExtParam,  parMfx->NumExtParam, MFX_EXTBUFF_HEVCENC );
+        const mfxExtCodingOptionHEVC *opts = (mfxExtCodingOptionHEVC *)GetExtBuffer(parMfx->ExtParam,  parMfx->NumExtParam, MFX_EXTBUFF_HEVCENC);
+        const mfxExtHEVCTiles *optsTiles = (mfxExtHEVCTiles *)GetExtBuffer(parMfx->ExtParam,  parMfx->NumExtParam, MFX_EXTBUFF_HEVC_TILES);
 
         for( ; level < NUM_265_LEVELS; level++) {
             Ipp32s lumaPs = parMfx->mfx.FrameInfo.Width * parMfx->mfx.FrameInfo.Height;
@@ -456,9 +457,12 @@ namespace H265Enc {
             if (opts) {
                 if (opts->Log2MaxCUSize > 0 && tab_level[level].levelId >= MFX_LEVEL_HEVC_5 && opts->Log2MaxCUSize < 5)
                     continue;
-                if (opts->NumTileCols > tab_level[level].maxTileCols)
+            }
+
+            if (optsTiles) {
+                if (optsTiles->NumTileColumns > tab_level[level].maxTileCols)
                     continue;
-                if (opts->NumTileRows > tab_level[level].maxTileRows)
+                if (optsTiles->NumTileRows > tab_level[level].maxTileRows)
                     continue;
             }
 
@@ -517,7 +521,7 @@ namespace H265Enc {
     mfxStatus CheckExtBuffers_H265enc(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
     {
 
-        mfxU32 ID_list[] = { MFX_EXTBUFF_HEVCENC, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_DUMP };
+        mfxU32 ID_list[] = { MFX_EXTBUFF_HEVCENC, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_DUMP, MFX_EXTBUFF_HEVC_TILES };
 
         mfxU32 ID_found[sizeof(ID_list)/sizeof(ID_list[0])] = {0,};
         if (!ebuffers) return MFX_ERR_NONE;
@@ -636,18 +640,20 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     if (sts != MFX_ERR_NONE)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    mfxExtCodingOptionHEVC* opts_hevc = (mfxExtCodingOptionHEVC*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVCENC );
-    mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
-    mfxExtDumpFiles* opts_Dump = (mfxExtDumpFiles*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_DUMP );
+    mfxExtCodingOptionHEVC *opts_hevc = (mfxExtCodingOptionHEVC*)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVCENC);
+    mfxExtOpaqueSurfaceAlloc *opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+    mfxExtDumpFiles *opts_Dump = (mfxExtDumpFiles *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_DUMP);
+    mfxExtHEVCTiles *optsTiles = (mfxExtHEVCTiles *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVC_TILES);
 
     const mfxVideoParam *par = par_in;
 
     mfxExtOpaqueSurfaceAlloc checked_opaqAllocReq;
-    mfxExtBuffer *ptr_checked_ext[3] = {0};
+    mfxExtBuffer *ptr_checked_ext[4] = {0};
     mfxU16 ext_counter = 0;
     memset(&m_mfxParam,0,sizeof(mfxVideoParam));
     memset(&m_mfxHEVCOpts,0,sizeof(m_mfxHEVCOpts));
     memset(&m_mfxDumpFiles,0,sizeof(m_mfxDumpFiles));
+    memset(&m_mfxHevcTiles,0,sizeof(m_mfxHevcTiles));
 
     if (opts_hevc) {
         m_mfxHEVCOpts.Header.BufferId = MFX_EXTBUFF_HEVCENC;
@@ -662,6 +668,11 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         m_mfxDumpFiles.Header.BufferId = MFX_EXTBUFF_DUMP;
         m_mfxDumpFiles.Header.BufferSz = sizeof(m_mfxDumpFiles);
         ptr_checked_ext[ext_counter++] = &m_mfxDumpFiles.Header;
+    }
+    if (optsTiles) {
+        m_mfxHevcTiles.Header.BufferId = MFX_EXTBUFF_HEVC_TILES;
+        m_mfxHevcTiles.Header.BufferSz = sizeof(m_mfxHevcTiles);
+        ptr_checked_ext[ext_counter++] = &m_mfxHevcTiles.Header;
     }
     m_mfxParam.ExtParam = ptr_checked_ext;
     m_mfxParam.NumExtParam = ext_counter;
@@ -985,10 +996,17 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.DeltaQpMode = opts_tu->DeltaQpMode;
         if (m_mfxHEVCOpts.Enable10bit == 0)
             m_mfxHEVCOpts.Enable10bit = opts_tu->Enable10bit;
-        if (m_mfxHEVCOpts.NumTileCols == 0)
-            m_mfxHEVCOpts.NumTileCols = opts_tu->NumTileCols;
-        if (m_mfxHEVCOpts.NumTileRows == 0)
-            m_mfxHEVCOpts.NumTileRows = opts_tu->NumTileRows;
+    }
+
+    if (!optsTiles) {
+        m_mfxHevcTiles.NumTileColumns = 1;
+        m_mfxHevcTiles.NumTileRows = 1;
+    }
+    else {
+        if (m_mfxHevcTiles.NumTileColumns == 0)
+            m_mfxHevcTiles.NumTileColumns = 1;
+        if (m_mfxHevcTiles.NumTileRows == 0)
+            m_mfxHevcTiles.NumTileRows = 1;
     }
 
     // uncomment here if sign bit hiding doesn't work properly
@@ -1053,7 +1071,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     if (m_mfxHEVCOpts.SAO == MFX_CODINGOPTION_ON && m_mfxParam.mfx.NumSlice > 1)
         m_mfxHEVCOpts.SAO = MFX_CODINGOPTION_OFF; // switch off SAO for now, because of inter-slice deblocking
     if (m_mfxParam.mfx.NumSlice > 1) {
-        m_mfxHEVCOpts.NumTileCols = m_mfxHEVCOpts.NumTileRows = 1;
+        m_mfxHevcTiles.NumTileColumns = m_mfxHevcTiles.NumTileRows = 1;
     }
 
     if (!m_mfxParam.mfx.NumRefFrame) {
@@ -1101,7 +1119,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     m_mfxParam.AsyncDepth = par->AsyncDepth;
 
     if (m_mfxHEVCOpts.FramesInParallel == 0) {
-        if (m_mfxHEVCOpts.NumTileCols > 1 || m_mfxHEVCOpts.NumTileRows > 1 || par->mfx.NumSlice > 1) {
+        if (m_mfxHevcTiles.NumTileColumns > 1 || m_mfxHevcTiles.NumTileRows > 1 || par->mfx.NumSlice > 1) {
             m_mfxHEVCOpts.FramesInParallel = 1;
         }
         else if (m_mfxParam.AsyncDepth > 0) {
@@ -1126,7 +1144,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     m_frameCountBuffered = 0;
     m_taskID = 0;
 
-    sts = InitH265VideoParam(&m_mfxParam, &m_videoParam,  &m_mfxHEVCOpts);
+    sts = InitH265VideoParam(&m_mfxParam, &m_videoParam, &m_mfxHEVCOpts, &m_mfxHevcTiles);
     MFX_CHECK_STS(sts);
 
     sts = Init_Internal();
@@ -1377,9 +1395,10 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     if (sts != MFX_ERR_NONE)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    mfxExtCodingOptionHEVC* opts_hevc = (mfxExtCodingOptionHEVC*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVCENC );
-    mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
-    mfxExtDumpFiles* opts_Dump = (mfxExtDumpFiles*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_DUMP );
+    mfxExtCodingOptionHEVC *opts_hevc = (mfxExtCodingOptionHEVC *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVCENC);
+    mfxExtOpaqueSurfaceAlloc *opaqAllocReq = (mfxExtOpaqueSurfaceAlloc *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+    mfxExtDumpFiles *opts_Dump = (mfxExtDumpFiles *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_DUMP);
+    mfxExtHEVCTiles *optsTiles = (mfxExtHEVCTiles *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVC_TILES);
 
     mfxVideoParam parNew = *par_in;
     mfxVideoParam& parOld = m_mfxParam;
@@ -1486,8 +1505,14 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.SkipMotionPartition          ) optsNew.SkipMotionPartition           = optsOld.SkipMotionPartition          ;
         if (!optsNew.SkipCandRD                   ) optsNew.SkipCandRD                    = optsOld.SkipCandRD                   ;
         if (!optsNew.FramesInParallel             ) optsNew.FramesInParallel              = optsOld.FramesInParallel             ;
-        if (!optsNew.NumTileCols                 ) optsNew.NumTileCols                  = optsOld.NumTileCols                 ;
-        if (!optsNew.NumTileRows                 ) optsNew.NumTileRows                  = optsOld.NumTileRows                 ;
+    }
+
+    mfxExtHEVCTiles optsTilesNew;
+    if (optsTiles) {
+        mfxExtHEVCTiles &optsTilesOld = m_mfxHevcTiles;
+        optsTilesNew = *optsTiles;
+        if (!optsTilesNew.NumTileColumns) optsTilesNew.NumTileColumns = optsTilesOld.NumTileColumns;
+        if (!optsTilesNew.NumTileRows   ) optsTilesNew.NumTileRows    = optsTilesOld.NumTileRows;
     }
 
     if ((parNew.IOPattern & 0xffc8) || (parNew.IOPattern == 0)) // 0 is possible after Query
@@ -1504,9 +1529,10 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     mfxExtCodingOptionHEVC checked_codingOptionHEVC = m_mfxHEVCOpts;
     mfxExtOpaqueSurfaceAlloc checked_opaqAllocReq;
     mfxExtDumpFiles checked_DumpFiles = m_mfxDumpFiles;
+    mfxExtHEVCTiles checked_optsTiles = m_mfxHevcTiles;
 
-    mfxExtBuffer *ptr_input_ext[3] = {0};
-    mfxExtBuffer *ptr_checked_ext[3] = {0};
+    mfxExtBuffer *ptr_input_ext[4] = {0};
+    mfxExtBuffer *ptr_checked_ext[4] = {0};
     mfxU16 ext_counter = 0;
 
     if (opts_hevc) {
@@ -1521,6 +1547,10 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     if (opts_Dump) {
         ptr_input_ext  [ext_counter  ] = &opts_Dump->Header;
         ptr_checked_ext[ext_counter++] = &checked_DumpFiles.Header;
+    }
+    if (optsTiles) {
+        ptr_input_ext  [ext_counter  ] = &optsTilesNew.Header;
+        ptr_checked_ext[ext_counter++] = &checked_optsTiles.Header;
     }
     parNew.ExtParam = ptr_input_ext;
     parNew.NumExtParam = ext_counter;
@@ -1665,8 +1695,6 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 optsHEVC->SkipMotionPartition = 1;
                 optsHEVC->SkipCandRD = 1;
                 optsHEVC->FramesInParallel = 1;
-                optsHEVC->NumTileCols = 1;
-                optsHEVC->NumTileRows = 1;
             }
 
             mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
@@ -1676,6 +1704,15 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 optsDump->Header = HeaderCopy;
                 optsDump->ReconFilename[0] = 1;
             }
+
+            if (mfxExtHEVCTiles *optsTiles = (mfxExtHEVCTiles *)GetExtBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVC_TILES)) {
+                mfxExtBuffer HeaderCopy = optsTiles->Header;
+                memset(optsTiles, 0, sizeof(optsTiles));
+                optsTiles->Header = HeaderCopy;
+                optsTiles->NumTileColumns = 1;
+                optsTiles->NumTileRows = 1;
+            }
+
             // ignore all reserved
         } else { //Check options for correctness
             const mfxVideoParam * const in = par_in;
@@ -1693,16 +1730,21 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             mfxExtCodingOptionHEVC*      opts_out = (mfxExtCodingOptionHEVC*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVCENC );
             const mfxExtDumpFiles*    optsDump_in = (mfxExtDumpFiles*)GetExtBuffer( in->ExtParam, in->NumExtParam, MFX_EXTBUFF_DUMP );
             mfxExtDumpFiles*         optsDump_out = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
+            const mfxExtHEVCTiles*   optsTiles_in = (mfxExtHEVCTiles*)GetExtBuffer( in->ExtParam, in->NumExtParam, MFX_EXTBUFF_HEVC_TILES );
+            mfxExtHEVCTiles*        optsTiles_out = (mfxExtHEVCTiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVC_TILES );
 
-            if (opts_in           ) CHECK_EXTBUF_SIZE( *opts_in,            isInvalid)
-                if (opts_out          ) CHECK_EXTBUF_SIZE( *opts_out,           isInvalid)
-                    if (optsDump_in       ) CHECK_EXTBUF_SIZE( *optsDump_in,        isInvalid)
-                        if (optsDump_out      ) CHECK_EXTBUF_SIZE( *optsDump_out,       isInvalid)
-                            if (isInvalid)
-                                return MFX_ERR_UNSUPPORTED;
+            if (opts_in) CHECK_EXTBUF_SIZE(*opts_in, isInvalid);
+            if (opts_out) CHECK_EXTBUF_SIZE(*opts_out, isInvalid);
+            if (optsDump_in) CHECK_EXTBUF_SIZE(*optsDump_in, isInvalid);
+            if (optsDump_out) CHECK_EXTBUF_SIZE(*optsDump_out, isInvalid);
+            if (optsTiles_in) CHECK_EXTBUF_SIZE(*optsTiles_in, isInvalid);
+            if (optsTiles_out) CHECK_EXTBUF_SIZE(*optsTiles_out, isInvalid);
+            if (isInvalid)
+                return MFX_ERR_UNSUPPORTED;
 
             if ((opts_in==0) != (opts_out==0) ||
-                (optsDump_in==0) != (optsDump_out==0))
+                (optsDump_in==0) != (optsDump_out==0) ||
+                (optsTiles_in==0) != (optsTiles_out==0))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
             //if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && in->mfx.FrameInfo.ChromaFormat == 0) { // because 0 == monochrome
@@ -2010,95 +2052,96 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                         isInvalid ++;
                 } else opts_out->QuadtreeTULog2MinSize = opts_in->QuadtreeTULog2MinSize;
 
-                if (opts_out->QuadtreeTULog2MinSize)
+                if (opts_out->QuadtreeTULog2MinSize) {
                     if ((out->mfx.FrameInfo.Width | out->mfx.FrameInfo.Height) & ((1<<opts_out->QuadtreeTULog2MinSize)-1)) {
                         opts_out->QuadtreeTULog2MinSize = 0;
                         isInvalid ++;
                     }
+                }
 
-                    if ( (opts_in->QuadtreeTUMaxDepthIntra > 5) ||
-                        (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthIntra + 1 > opts_out->Log2MaxCUSize) ) {
-                            opts_out->QuadtreeTUMaxDepthIntra = 0;
-                            isInvalid ++;
-                    } else opts_out->QuadtreeTUMaxDepthIntra = opts_in->QuadtreeTUMaxDepthIntra;
-
-                    if ( (opts_in->QuadtreeTUMaxDepthInter > 5) ||
-                        (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthInter + 1 > opts_out->Log2MaxCUSize) ) {
-                            opts_out->QuadtreeTUMaxDepthInter = 0;
-                            isInvalid ++;
-                    } else opts_out->QuadtreeTUMaxDepthInter = opts_in->QuadtreeTUMaxDepthInter;
-
-                    opts_out->TryIntra = opts_in->TryIntra;
-                    opts_out->CmIntraThreshold = opts_in->CmIntraThreshold;
-                    opts_out->TUSplitIntra = opts_in->TUSplitIntra;
-                    opts_out->CUSplit = opts_in->CUSplit;
-                    opts_out->IntraAngModes = opts_in->IntraAngModes;
-                    opts_out->IntraAngModesP = opts_in->IntraAngModesP;
-                    opts_out->IntraAngModesBRef = opts_in->IntraAngModesBRef;
-                    opts_out->IntraAngModesBnonRef = opts_in->IntraAngModesBnonRef;
-                    opts_out->HadamardMe = opts_in->HadamardMe;
-                    opts_out->TMVP = opts_in->TMVP;
-                    opts_out->EnableCm = opts_in->EnableCm;
-                    opts_out->SaoOpt = opts_in->SaoOpt;
-                    opts_out->PatternIntPel = opts_in->PatternIntPel;
-                    opts_out->PatternSubPel = opts_in->PatternSubPel;
-                    opts_out->ForceNumThread = opts_in->ForceNumThread;
-                    opts_out->NumBiRefineIter = opts_in->NumBiRefineIter;
-                    opts_out->CUSplitThreshold = opts_in->CUSplitThreshold;
-                    opts_out->DeltaQpMode = opts_in->DeltaQpMode;
-                    opts_out->CpuFeature = opts_in->CpuFeature;
-                    opts_out->FramesInParallel         = opts_in->FramesInParallel;
-
-                    CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->RDOQuant, opts_out->RDOQuant, isInvalid);            /* tri-state option */
-                    CHECK_OPTION(opts_in->GPB, opts_out->GPB, isInvalid);            /* tri-state option */
-                    CHECK_OPTION(opts_in->SAO, opts_out->SAO, isInvalid);            /* tri-state option */
-                    CHECK_OPTION(opts_in->WPP, opts_out->WPP, isInvalid);       /* tri-state option */
-                    CHECK_OPTION(opts_in->BPyramid, opts_out->BPyramid, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->Deblocking, opts_out->Deblocking, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->RDOQuantChroma, opts_out->RDOQuantChroma, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->RDOQuantCGZ, opts_out->RDOQuantCGZ, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->CostChroma, opts_out->CostChroma, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->IntraChromaRDO, opts_out->IntraChromaRDO, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->FastInterp, opts_out->FastInterp, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->FastSkip, opts_out->FastSkip, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->FastCbfMode, opts_out->FastCbfMode, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->PuDecisionSatd, opts_out->PuDecisionSatd, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->MinCUDepthAdapt, opts_out->MinCUDepthAdapt, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->MaxCUDepthAdapt, opts_out->MaxCUDepthAdapt, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->Enable10bit, opts_out->Enable10bit, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->SkipCandRD, opts_out->SkipCandRD, isInvalid);  /* tri-state option */
-
-                    if (opts_in->PartModes > 3) {
-                        opts_out->PartModes = 0;
+                if ( (opts_in->QuadtreeTUMaxDepthIntra > 5) ||
+                    (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthIntra + 1 > opts_out->Log2MaxCUSize) ) {
+                        opts_out->QuadtreeTUMaxDepthIntra = 0;
                         isInvalid ++;
-                    } else opts_out->PartModes = opts_in->PartModes;
+                } else opts_out->QuadtreeTUMaxDepthIntra = opts_in->QuadtreeTUMaxDepthIntra;
 
-                    if (opts_out->SAO == MFX_CODINGOPTION_ON && in->mfx.NumSlice > 1) { // switch off SAO for now, because of inter-slice deblocking
-                        opts_out->SAO = MFX_CODINGOPTION_OFF;
-                        isCorrected++;
-                    }
-
-                    if (opts_in->SplitThresholdStrengthCUIntra > 4) {
-                        opts_out->SplitThresholdStrengthCUIntra = 0;
+                if ( (opts_in->QuadtreeTUMaxDepthInter > 5) ||
+                    (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthInter + 1 > opts_out->Log2MaxCUSize) ) {
+                        opts_out->QuadtreeTUMaxDepthInter = 0;
                         isInvalid ++;
-                    } else opts_out->SplitThresholdStrengthCUIntra = opts_in->SplitThresholdStrengthCUIntra;
+                } else opts_out->QuadtreeTUMaxDepthInter = opts_in->QuadtreeTUMaxDepthInter;
 
-                    if (opts_in->SplitThresholdStrengthTUIntra > 4) {
-                        opts_out->SplitThresholdStrengthTUIntra = 0;
-                        isInvalid ++;
-                    } else opts_out->SplitThresholdStrengthTUIntra = opts_in->SplitThresholdStrengthTUIntra;
+                opts_out->TryIntra = opts_in->TryIntra;
+                opts_out->CmIntraThreshold = opts_in->CmIntraThreshold;
+                opts_out->TUSplitIntra = opts_in->TUSplitIntra;
+                opts_out->CUSplit = opts_in->CUSplit;
+                opts_out->IntraAngModes = opts_in->IntraAngModes;
+                opts_out->IntraAngModesP = opts_in->IntraAngModesP;
+                opts_out->IntraAngModesBRef = opts_in->IntraAngModesBRef;
+                opts_out->IntraAngModesBnonRef = opts_in->IntraAngModesBnonRef;
+                opts_out->HadamardMe = opts_in->HadamardMe;
+                opts_out->TMVP = opts_in->TMVP;
+                opts_out->EnableCm = opts_in->EnableCm;
+                opts_out->SaoOpt = opts_in->SaoOpt;
+                opts_out->PatternIntPel = opts_in->PatternIntPel;
+                opts_out->PatternSubPel = opts_in->PatternSubPel;
+                opts_out->ForceNumThread = opts_in->ForceNumThread;
+                opts_out->NumBiRefineIter = opts_in->NumBiRefineIter;
+                opts_out->CUSplitThreshold = opts_in->CUSplitThreshold;
+                opts_out->DeltaQpMode = opts_in->DeltaQpMode;
+                opts_out->CpuFeature = opts_in->CpuFeature;
+                opts_out->FramesInParallel         = opts_in->FramesInParallel;
 
-                    if (opts_in->SplitThresholdStrengthCUInter > 4) {
-                        opts_out->SplitThresholdStrengthCUInter = 0;
-                        isInvalid ++;
-                    } else opts_out->SplitThresholdStrengthCUInter = opts_in->SplitThresholdStrengthCUInter;
+                CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->RDOQuant, opts_out->RDOQuant, isInvalid);            /* tri-state option */
+                CHECK_OPTION(opts_in->GPB, opts_out->GPB, isInvalid);            /* tri-state option */
+                CHECK_OPTION(opts_in->SAO, opts_out->SAO, isInvalid);            /* tri-state option */
+                CHECK_OPTION(opts_in->WPP, opts_out->WPP, isInvalid);       /* tri-state option */
+                CHECK_OPTION(opts_in->BPyramid, opts_out->BPyramid, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->Deblocking, opts_out->Deblocking, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->RDOQuantChroma, opts_out->RDOQuantChroma, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->RDOQuantCGZ, opts_out->RDOQuantCGZ, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->CostChroma, opts_out->CostChroma, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->IntraChromaRDO, opts_out->IntraChromaRDO, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->FastInterp, opts_out->FastInterp, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->FastSkip, opts_out->FastSkip, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->FastCbfMode, opts_out->FastCbfMode, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->PuDecisionSatd, opts_out->PuDecisionSatd, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->MinCUDepthAdapt, opts_out->MinCUDepthAdapt, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->MaxCUDepthAdapt, opts_out->MaxCUDepthAdapt, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->Enable10bit, opts_out->Enable10bit, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->SkipCandRD, opts_out->SkipCandRD, isInvalid);  /* tri-state option */
 
-                    if (opts_in->SplitThresholdTabIndex > 3) {
-                        opts_out->SplitThresholdTabIndex = 0;
-                        isInvalid ++;
-                    } else opts_out->SplitThresholdTabIndex = opts_in->SplitThresholdTabIndex;
+                if (opts_in->PartModes > 3) {
+                    opts_out->PartModes = 0;
+                    isInvalid ++;
+                } else opts_out->PartModes = opts_in->PartModes;
+
+                if (opts_out->SAO == MFX_CODINGOPTION_ON && in->mfx.NumSlice > 1) { // switch off SAO for now, because of inter-slice deblocking
+                    opts_out->SAO = MFX_CODINGOPTION_OFF;
+                    isCorrected++;
+                }
+
+                if (opts_in->SplitThresholdStrengthCUIntra > 4) {
+                    opts_out->SplitThresholdStrengthCUIntra = 0;
+                    isInvalid ++;
+                } else opts_out->SplitThresholdStrengthCUIntra = opts_in->SplitThresholdStrengthCUIntra;
+
+                if (opts_in->SplitThresholdStrengthTUIntra > 4) {
+                    opts_out->SplitThresholdStrengthTUIntra = 0;
+                    isInvalid ++;
+                } else opts_out->SplitThresholdStrengthTUIntra = opts_in->SplitThresholdStrengthTUIntra;
+
+                if (opts_in->SplitThresholdStrengthCUInter > 4) {
+                    opts_out->SplitThresholdStrengthCUInter = 0;
+                    isInvalid ++;
+                } else opts_out->SplitThresholdStrengthCUInter = opts_in->SplitThresholdStrengthCUInter;
+
+                if (opts_in->SplitThresholdTabIndex > 3) {
+                    opts_out->SplitThresholdTabIndex = 0;
+                    isInvalid ++;
+                } else opts_out->SplitThresholdTabIndex = opts_in->SplitThresholdTabIndex;
 
 #define CHECK_NUMCAND(field)                            \
     if (opts_in->field > maxnum) {              \
@@ -2106,46 +2149,54 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
     isInvalid ++;                           \
     } else opts_out->field = opts_in->field
 
-                    mfxU16 maxnum = 35;
-                    CHECK_NUMCAND(IntraNumCand0_2);
-                    CHECK_NUMCAND(IntraNumCand0_3);
-                    CHECK_NUMCAND(IntraNumCand0_4);
-                    CHECK_NUMCAND(IntraNumCand0_5);
-                    CHECK_NUMCAND(IntraNumCand0_6);
-                    CHECK_NUMCAND(IntraNumCand1_2);
-                    CHECK_NUMCAND(IntraNumCand1_3);
-                    CHECK_NUMCAND(IntraNumCand1_4);
-                    CHECK_NUMCAND(IntraNumCand1_5);
-                    CHECK_NUMCAND(IntraNumCand1_6);
-                    CHECK_NUMCAND(IntraNumCand2_2);
-                    CHECK_NUMCAND(IntraNumCand2_3);
-                    CHECK_NUMCAND(IntraNumCand2_4);
-                    CHECK_NUMCAND(IntraNumCand2_5);
-                    CHECK_NUMCAND(IntraNumCand2_6);
+                mfxU16 maxnum = 35;
+                CHECK_NUMCAND(IntraNumCand0_2);
+                CHECK_NUMCAND(IntraNumCand0_3);
+                CHECK_NUMCAND(IntraNumCand0_4);
+                CHECK_NUMCAND(IntraNumCand0_5);
+                CHECK_NUMCAND(IntraNumCand0_6);
+                CHECK_NUMCAND(IntraNumCand1_2);
+                CHECK_NUMCAND(IntraNumCand1_3);
+                CHECK_NUMCAND(IntraNumCand1_4);
+                CHECK_NUMCAND(IntraNumCand1_5);
+                CHECK_NUMCAND(IntraNumCand1_6);
+                CHECK_NUMCAND(IntraNumCand2_2);
+                CHECK_NUMCAND(IntraNumCand2_3);
+                CHECK_NUMCAND(IntraNumCand2_4);
+                CHECK_NUMCAND(IntraNumCand2_5);
+                CHECK_NUMCAND(IntraNumCand2_6);
 
 #undef CHECK_NUMCAND
 
-                    // check again Numslice using Log2MaxCUSize
-                    if ( out->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width && opts_out->Log2MaxCUSize) {
-                        mfxU16 rnd = (1 << opts_out->Log2MaxCUSize) - 1, shft = opts_out->Log2MaxCUSize;
-                        if (out->mfx.NumSlice > ((out->mfx.FrameInfo.Height+rnd)>>shft) * ((out->mfx.FrameInfo.Width+rnd)>>shft) ) {
-                            out->mfx.NumSlice = 0;
-                            isInvalid ++;
-                        }
+                // check again Numslice using Log2MaxCUSize
+                if ( out->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width && opts_out->Log2MaxCUSize) {
+                    mfxU16 rnd = (1 << opts_out->Log2MaxCUSize) - 1, shft = opts_out->Log2MaxCUSize;
+                    if (out->mfx.NumSlice > ((out->mfx.FrameInfo.Height+rnd)>>shft) * ((out->mfx.FrameInfo.Width+rnd)>>shft) ) {
+                        out->mfx.NumSlice = 0;
+                        isInvalid ++;
                     }
-
-                    if (opts_in->NumTileCols > MAX_NUM_TILE_COLUMNS ||
-                        (opts_in->NumTileCols > 1 && (out->mfx.NumSlice > 1 || opts_out->FramesInParallel > 1))) {
-                            opts_out->NumTileCols = 1;
-                            isInvalid ++;
-                    } else opts_out->NumTileCols = opts_in->NumTileCols;
-
-                    if (opts_in->NumTileRows > MAX_NUM_TILE_ROWS ||
-                        (opts_in->NumTileRows > 1 && (out->mfx.NumSlice > 1 || opts_out->FramesInParallel > 1))) {
-                            opts_out->NumTileRows = 1;
-                            isInvalid ++;
-                    } else opts_out->NumTileRows = opts_in->NumTileRows;
+                }
             } // EO mfxExtCodingOptionHEVC
+
+            if (optsTiles_in) {
+                if (optsTiles_in->NumTileColumns > MAX_NUM_TILE_COLUMNS ||
+                    (optsTiles_in->NumTileColumns > 1 && (out->mfx.NumSlice > 1 || opts_out && opts_out->FramesInParallel > 1))) {
+                    optsTiles_out->NumTileColumns = 1;
+                    isCorrected++;
+                }
+                else {
+                    optsTiles_out->NumTileColumns = optsTiles_in->NumTileColumns;
+                }
+
+                if (optsTiles_in->NumTileRows > MAX_NUM_TILE_ROWS ||
+                    (optsTiles_in->NumTileRows > 1 && (out->mfx.NumSlice > 1 || opts_out && opts_out->FramesInParallel > 1))) {
+                    optsTiles_out->NumTileRows = 1;
+                    isCorrected++;
+                }
+                else {
+                    optsTiles_out->NumTileRows = optsTiles_in->NumTileRows;
+                }
+            }
 
             if (optsDump_in) {
                 vm_string_strncpy_s(optsDump_out->ReconFilename, sizeof(optsDump_out->ReconFilename), optsDump_in->ReconFilename, sizeof(optsDump_out->ReconFilename)-1);

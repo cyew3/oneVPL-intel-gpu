@@ -160,7 +160,7 @@ namespace H265Enc {
         return 0;
     }
 
-    mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam *pars /* OUT */, const mfxExtCodingOptionHEVC *optsHevc)
+    mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam *pars /* OUT */, const mfxExtCodingOptionHEVC *optsHevc, const mfxExtHEVCTiles *optsTiles)
     {
         //H265VideoParam *pars = &m_videoParam;
         Ipp32u width = param->mfx.FrameInfo.Width;
@@ -433,8 +433,8 @@ namespace H265Enc {
         pars->PicHeightInCtbs = (pars->Height + pars->MaxCUSize - 1) / pars->MaxCUSize;
 
         pars->NumSlices = IPP_MIN(param->mfx.NumSlice, pars->PicHeightInCtbs);
-        pars->NumTileCols = IPP_MIN(optsHevc->NumTileCols, pars->PicWidthInCtbs);
-        pars->NumTileRows = IPP_MIN(optsHevc->NumTileRows, pars->PicHeightInCtbs);
+        pars->NumTileCols = IPP_MIN(optsTiles->NumTileColumns, pars->PicWidthInCtbs);
+        pars->NumTileRows = IPP_MIN(optsTiles->NumTileRows, pars->PicHeightInCtbs);
         pars->NumTiles = pars->NumTileCols * pars->NumTileRows;
 
         pars->WPPFlag  = pars->NumTiles > 1 ? 0 : ((optsHevc->WPP == MFX_CODINGOPTION_ON) || (optsHevc->WPP == MFX_CODINGOPTION_UNKNOWN && param->mfx.NumThread > 1));

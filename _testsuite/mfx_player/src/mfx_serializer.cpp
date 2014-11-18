@@ -228,6 +228,7 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     SERIALIZE_INT(CabacInitIdcPlus1);
 
 }
+
 void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
 {
     SERIALIZE_INT(Log2MaxCUSize);
@@ -299,7 +300,11 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(SkipMotionPartition);
     SERIALIZE_INT(SkipCandRD);
     SERIALIZE_INT(FramesInParallel);
-    SERIALIZE_INT(NumTileCols);
+}
+
+void MFXStructureRef <mfxExtHEVCTiles>::ConstructValues() const
+{
+    SERIALIZE_INT(NumTileColumns);
     SERIALIZE_INT(NumTileRows);
 }
 
