@@ -2448,10 +2448,8 @@ void MfxHwH264Encode::PrepareSeiMessage(
     DdiTask const &         task,
     mfxExtAvcSeiRecPoint &  msg)
 {
-    if (task.m_IRState.refrType == NO_REFRESH || task.m_IRState.IntraSize == 0)
-        return;
-    mfxU16 refreshDimension = (task.m_IRState.refrType == VERT_REFRESH ? par.mfx.FrameInfo.Width : par.mfx.FrameInfo.Height) / 16;
-    msg.recovery_frame_cnt = (refreshDimension + task.m_IRState.IntraSize - 1) / task.m_IRState.IntraSize - 1;
+    mfxExtCodingOption2 * extOpt2 = GetExtBuffer(par);
+    msg.recovery_frame_cnt = extOpt2->IntRefCycleSize - 1;
     msg.exact_match_flag = 1;
     msg.broken_link_flag = 0;
     msg.changing_slice_group_idc = 0;
@@ -5203,7 +5201,7 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
     mfxU32 needMarkingRepetitionSei =
         IsOn(extOpt->RefPicMarkRep) && task.m_decRefPicMrkRep[fieldId].presentFlag;
 
-    mfxU32 needRecoveryPointSei = (task.m_IRState.refrType != NO_REFRESH && task.m_IRState.IntraLocation == 0 && extOpt->RecoveryPointSEI == MFX_CODINGOPTION_ON);
+    mfxU32 needRecoveryPointSei = (task.m_IRState.firstFrameInCycle && task.m_IRState.IntraLocation == 0 && extOpt->RecoveryPointSEI == MFX_CODINGOPTION_ON);
 
     mfxU32 needBufferingPeriod =
         IsOn(extOpt->VuiNalHrdParameters) && needCpbRemovalDelay ||

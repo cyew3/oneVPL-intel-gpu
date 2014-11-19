@@ -1461,12 +1461,17 @@ IntraRefreshState MfxHwH264Encode::GetIntraRefreshState(
     IntraRefreshState state;
     mfxExtCodingOption2 * extOpt2Init = GetExtBuffer(video);
     if (extOpt2Init->IntRefType == 0 || frameOrderInGopDispOrder == 0)
+    {
+        state.firstFrameInCycle = false;
         return state;
+    }
 
     // check if Intra refresh required for current frame
     mfxU32 refreshDimension = extOpt2Init->IntRefType == HORIZ_REFRESH ? video.mfx.FrameInfo.Height >> 4 : video.mfx.FrameInfo.Width >> 4;
     mfxU32 numFramesWithoutRefresh = extOpt2Init->IntRefCycleSize - (refreshDimension + intraStripeWidthInMBs - 1) / intraStripeWidthInMBs;
-    mfxI32 idxInActualRefreshPeriod = (frameOrderInGopDispOrder - 1) % extOpt2Init->IntRefCycleSize - numFramesWithoutRefresh;
+    mfxU32 idxInRefreshPeriod = (frameOrderInGopDispOrder - 1) % extOpt2Init->IntRefCycleSize;
+    state.firstFrameInCycle = (idxInRefreshPeriod == 0);
+    mfxI32 idxInActualRefreshPeriod = idxInRefreshPeriod - numFramesWithoutRefresh;
     if (idxInActualRefreshPeriod < 0)
         return state; // actual refresh isn't started yet within current refresh cycle, no Intra column/row required for current frame
 

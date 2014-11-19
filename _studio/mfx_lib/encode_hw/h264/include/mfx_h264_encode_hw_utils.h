@@ -591,12 +591,13 @@ namespace MfxHwH264Encode
 
     struct IntraRefreshState
     {
-        IntraRefreshState() : refrType(0), IntraLocation(0), IntraSize(0), IntRefQPDelta(0) {}
+        IntraRefreshState() : refrType(0), IntraLocation(0), IntraSize(0), IntRefQPDelta(0), firstFrameInCycle(false) {}
 
         mfxU16  refrType;
         mfxU16  IntraLocation;
         mfxU16  IntraSize;
         mfxI16  IntRefQPDelta;
+        bool    firstFrameInCycle;
     };
 
     class Surface
