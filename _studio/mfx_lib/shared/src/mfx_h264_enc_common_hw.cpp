@@ -2806,14 +2806,17 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             mfxU16  minlevel = GetMinLevelForAllParameters(par);
             if(minlevel > MFX_LEVEL_AVC_41)
             {
-                if(minlevel == MFX_LEVEL_AVC_52)
+                if (minlevel == MFX_LEVEL_AVC_52)
                 {
                     warning = true;
                 }
                 else
                 {
-                    changed = true;
-                    par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+                    if(par.mfx.CodecLevel != MFX_LEVEL_AVC_52)
+                    {
+                        changed = true;
+                        par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+                    }
                 }
             }
         }
