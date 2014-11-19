@@ -30,28 +30,7 @@ PTIR_ProcessorCM::PTIR_ProcessorCM(mfxCoreInterface* mfxCore, frameSupplier* _fr
     m_pCmKernel2       = 0;
     mb_UsePtirSurfs    = false;
     CmToMfxSurfmap.clear();
-    HWType             = MFX_HW_UNKNOWN;
 
-
-    //dTimeStamp = 0.0;
-    //dBaseTime = 0.0;
-    //dOutBaseTime = 0.0;
-    //dBaseTimeSw = 0.0;
-    //dDeIntTime = 0.0;
-    ////liTime[sizeof(cOperations) / sizeof(const char *) + 1] = {0},
-    //liFreq;
-    //liFileSize;
-    //fTCodeOut = NULL;
-    //uiInterlaceParity = 0;
-    //
-    //FrameQueue_Initialize(&fqIn);
-    //Pattern_init(&mainPattern);
-    ////uiCount = MFX_INFINITE / 2; // /2 to avoid overflow. TODO: fix
-    //uiSupBuf = BUFMINSIZE;
-    //
-    //b_firstFrameProceed = false;
-    //uiCur = 0;
-    //uiStart = 0;
     m_pmfxCore = mfxCore;
     frmSupply = _frmSupply;
     HWType = _HWType;

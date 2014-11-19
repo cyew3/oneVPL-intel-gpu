@@ -1332,7 +1332,8 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
                 }
                 m_OpaqSurfAlloc = *in_opaq_buf;
                 //frmSupply->SetFrmType(req_in.Type, req_out.Type);
-                frmSupply->SetFrmType(in_opaq_buf->In.Type, in_opaq_buf->Out.Type);
+                if(frmSupply)
+                    frmSupply->SetFrmType(in_opaq_buf->In.Type, in_opaq_buf->Out.Type);
             }
             else
             {
@@ -1404,7 +1405,8 @@ mfxStatus MFX_PTIR_Plugin::Close()
     mfxStatus mfxSts = MFX_ERR_NONE;
     if(ptir)
     {
-        frmSupply->FreeFrames();
+        if(frmSupply)
+            frmSupply->FreeFrames();
         mfxSts = ptir->Close();
         delete ptir;
         ptir = 0;

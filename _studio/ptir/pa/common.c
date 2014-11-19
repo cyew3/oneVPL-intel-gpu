@@ -186,8 +186,12 @@ void FrameQueue_Initialize(FrameQueue *pfq)
 }
 void FrameQueue_Add(FrameQueue *pfq, Frame *pfrm)
 {
-    FrameNode
-        *pfn = (FrameNode *)malloc(sizeof(FrameNode));
+    FrameNode  *pfn = 0;
+    if(!pfq)
+        return;
+    pfn = (FrameNode *)malloc(sizeof(FrameNode));
+    if(!pfn)
+        return;
     pfn->pfrmItem = pfrm;
     pfn->pfnNext = NULL;
 
@@ -367,7 +371,11 @@ void CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int uiOPMode)
 }
 void Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight)
 {
+    if(!pfrmOut)
+        return;
     *pfrmOut = (Frame *)malloc(sizeof(Frame));
+    if(!*pfrmOut)
+        return;
     Frame_Create(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 64);
     (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.tindex;
     ReSample(*pfrmOut, pfrmIn);
@@ -493,22 +501,6 @@ void Update_Frame_Buffer(Frame** frmBuffer, unsigned int frameIndex, double dTim
     frmBuffer[frameIndex]->frmProperties.drop = FALSE;
     frmBuffer[frameIndex]->frmProperties.candidate = FALSE;
 }
-
-#if defined(_WIN32) || defined(_WIN64)
-int OutputFrameToDisk(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int * uiLastFrameNumber, DWORD *uiBytesRead)
-{
-    int ferror;
-    *uiLastFrameNumber = frmIn->frmProperties.tindex;
-    ferror = FALSE;
-    TrimBorders(&frmIn->plaY, &frmOut->plaY);
-    TrimBorders(&frmIn->plaU, &frmOut->plaU);
-    TrimBorders(&frmIn->plaV, &frmOut->plaV);
-
-    ferror = WriteFile(hOut, frmOut->ucMem, frmOut->uiSize, uiBytesRead, NULL);
-
-    return ferror;
-}
-#endif
 
 // timestamp in msecs
 int PTIR_PutFrame(unsigned char *pucIO, PTIRSystemBuffer *SysBuffer, double dTimestamp)

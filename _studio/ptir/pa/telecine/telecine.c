@@ -1640,7 +1640,7 @@ void Detect_32Pattern_rigorous(Frame **pFrm, Pattern *ptrn, unsigned int *dispat
         *dispatch = 5;
     }
 }
-void UndoPatternTypes5and7(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos)
+void UndoPatternTypes5and7(Frame *frmBuffer[LASTFRAME], unsigned int firstPos)
 {
     unsigned int 
         start = firstPos;
@@ -1681,7 +1681,7 @@ void Undo2Frames(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF)
     frmBuffer1->frmProperties.candidate = TRUE;
     frmBuffer1->frmProperties.interlaced = FALSE;
 }
-void Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
+void Analyze_Buffer_Stats(Frame *frmBuffer[LASTFRAME], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced)
 {
     unsigned int uiDropCount = 0,
         i = 0,
@@ -1765,7 +1765,7 @@ void Analyze_Buffer_Stats(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned 
     ptrn->ucPatternFound = ptrn->ucLatch.ucFullLatch;
 }
 
-void Analyze_Buffer_Stats_Automode(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch)
+void Analyze_Buffer_Stats_Automode(Frame *frmBuffer[LASTFRAME], Pattern *ptrn, unsigned int *pdispatch)
 {
     unsigned int uiAutomode = AUTOMODE;
 

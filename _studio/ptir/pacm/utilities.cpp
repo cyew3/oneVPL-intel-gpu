@@ -58,7 +58,8 @@ void Interlaced_detection_logCM(Frame *frmBuffer[BUFMINSIZE], unsigned int uiNum
 #else
         fLogDetection = fopen("prog_interlace_detect.txt","w");
 #endif
-        fprintf(fLogDetection,"Frame\tInterlaced\n");
+        if(fLogDetection)
+            fprintf(fLogDetection,"Frame\tInterlaced\n");
     }
     else
 #if defined(_WIN32) || defined(_WIN64)
@@ -934,6 +935,8 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
          CheckGenFrameCM(frmBuffer, frameIndex, uiisInterlaced);
 
     Prepare_frame_for_queueCM(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight/*, frmSupply, bCreate*/);
+    if(!frmIn)
+        return;
     memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
            
     //Timestamp
@@ -953,6 +956,8 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
     if (bFullFrameRate && uiisInterlaced == 1)
     {
         Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight); // Go to double frame rate
+        if(!frmIn)
+            return;
         memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
         //Timestamp
@@ -1431,22 +1436,6 @@ void PTIRCM_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned 
     Pattern_init(&SysBuffer->control.mainPattern);
     SysBuffer->frmIn = NULL;
 }
-
-#if defined(_WIN32) || defined(_WIN64)
-int OutputFrameToDiskCM(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int * uiLastFrameNumber, DWORD *uiBytesRead)
-{
-    int ferror;
-    *uiLastFrameNumber = frmIn->frmProperties.tindex;
-    ferror = false;
-    void* ucMem = malloc(frmIn->uiSize);
-    //pdeinterlaceFilter->ReadRAWI420FromGPUNV12(frmIn, ucMem);
-    ferror = WriteFile(hOut, ucMem, frmOut->uiSize, uiBytesRead, NULL);
-    free(ucMem);
-
-    return ferror;
-
-}
-#endif
 
 void PTIRCM_PutFrame(unsigned char *pucIO, PTIRSystemBuffer *SysBuffer, double dTimestamp)
 {

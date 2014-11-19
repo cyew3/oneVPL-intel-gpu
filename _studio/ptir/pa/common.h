@@ -274,7 +274,6 @@ extern "C" {
 
 #if defined(_WIN32) || defined(_WIN64)
     void   PrintOutputStats(HANDLE hStd, CONSOLE_SCREEN_BUFFER_INFO sbInfo, unsigned int uiFrame, unsigned int uiStart, unsigned int uiCount, unsigned int *uiProgress, unsigned int uiFrameOut, unsigned int uiTimer, FrameQueue fqIn, const char **cOperations, double *dTime);
-    int    OutputFrameToDisk(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int * uiLastFrameNumber, DWORD *uiBytesRead);
 #endif
     void   PrintOutputStats_PvsI(unsigned long ulNumberofInterlacedFrames, unsigned long ulTotalNumberofFramesProcessed, const char **cSummary);
     void*  aligned_malloc(size_t required_bytes, size_t alignment);

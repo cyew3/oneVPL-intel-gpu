@@ -24,7 +24,8 @@ void Interlaced_detection_log(Frame *frmBuffer[BUFMINSIZE], unsigned int uiNumFr
 #else
         fLogDetection = fopen("prog_interlace_detect.txt","w");
 #endif
-        fprintf(fLogDetection,"Frame\tInterlaced\n");
+        if(fLogDetection)
+            fprintf(fLogDetection,"Frame\tInterlaced\n");
     }
     else
 #if defined(_WIN32) || defined(_WIN64)

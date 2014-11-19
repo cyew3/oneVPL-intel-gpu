@@ -28,10 +28,6 @@ void Interlaced_detection_logCM(Frame *frmBuffer[BUFMINSIZE], unsigned int uiNum
 void Undo2Frames_CMTest(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF);
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
-int  OutputFrameToDiskCM(HANDLE hOut, Frame* frmIn, Frame* frmOut, unsigned int * uiLastFrameNumber, DWORD *uiBytesRead);
-#endif
-
 void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced);
 void Analyze_Buffer_Stats_Automode_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsigned int *pdispatch);
 void Detect_Solve_32BlendedPatternsCM(Frame **pFrm, Pattern *ptrn, unsigned int *dispatch);
