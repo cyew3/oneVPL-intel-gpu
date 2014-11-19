@@ -617,21 +617,33 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             out->vpp.In.PicStruct = 0;
             error = true;
         }
-        // auto-detection mode is allowed only for unknown picstruct and unknown input frame rate
-        if(const_in.vpp.In.PicStruct == MFX_PICSTRUCT_UNKNOWN/* && 
-           (const_in.vpp.In.FrameRateExtN || const_in.vpp.Out.FrameRateExtN)*/)
+        // auto-detection mode is allowed only for unknown picstruct and frame rates 30 and 60
+        if(!buffer_mode)
         {
-            out->vpp.In.PicStruct = 0; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
-            out->vpp.In.FrameRateExtN = 0;
-            out->vpp.In.FrameRateExtD = 0;
-            out->vpp.Out.FrameRateExtN = 0;
-            out->vpp.Out.FrameRateExtD = 0;
-            //error = true;
-        }
-        if(const_in.vpp.Out.PicStruct == MFX_PICSTRUCT_UNKNOWN)
-        {
-            out->vpp.Out.PicStruct = 0; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
-            error = true;
+            if(MFX_PICSTRUCT_UNKNOWN == const_in.vpp.In.PicStruct)
+            {
+               if (!((0 == const_in.vpp.In.FrameRateExtN &&
+                   0 != const_in.vpp.Out.FrameRateExtD &&
+                   30 == (const_in.vpp.Out.FrameRateExtN / const_in.vpp.Out.FrameRateExtD)
+                   ) ||
+                   (0 == const_in.vpp.In.FrameRateExtN &&
+                   0 != const_in.vpp.Out.FrameRateExtD &&
+                   60 == (const_in.vpp.Out.FrameRateExtN / const_in.vpp.Out.FrameRateExtD)
+                   )))
+                {
+                    out->vpp.In.PicStruct = 0; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
+                    out->vpp.In.FrameRateExtN = 0;
+                    out->vpp.In.FrameRateExtD = 0;
+                    out->vpp.Out.FrameRateExtN = 0;
+                    out->vpp.Out.FrameRateExtD = 0;
+                    error = true;
+                }
+            }
+            if(const_in.vpp.Out.PicStruct == MFX_PICSTRUCT_UNKNOWN)
+            {
+                out->vpp.Out.PicStruct = 0; // MFX_PICSTRUCT_UNKNOWN == 0, so that 0 is meaningless here
+                error = true;
+            }
         }
         if(const_in.vpp.Out.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
         {
@@ -764,59 +776,75 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
     
         //find suitable mode
-        if(MFX_PICSTRUCT_UNKNOWN == const_in.vpp.In.PicStruct/* &&
-           0 == const_in.vpp.In.FrameRateExtN && 0 == const_in.vpp.Out.FrameRateExtN*/)
+
+        if(!buffer_mode)
         {
-            ;//auto-detection mode
-        }
-        else if((MFX_PICSTRUCT_FIELD_TFF == const_in.vpp.In.PicStruct ||
-                 MFX_PICSTRUCT_FIELD_BFF == const_in.vpp.In.PicStruct) &&
-           (4 * const_in.vpp.In.FrameRateExtN * const_in.vpp.In.FrameRateExtD ==
-            5 * const_in.vpp.Out.FrameRateExtN * const_in.vpp.Out.FrameRateExtD))
-        {
-            ;//reverse telecine mode
-        }
-        else if(MFX_PICSTRUCT_FIELD_TFF == const_in.vpp.In.PicStruct ||
-               MFX_PICSTRUCT_FIELD_BFF == const_in.vpp.In.PicStruct)
-        {
-            ;//Deinterlace only mode
-            if(2 * const_in.vpp.In.FrameRateExtN * const_in.vpp.Out.FrameRateExtD ==
-                const_in.vpp.In.FrameRateExtD * const_in.vpp.Out.FrameRateExtN)
+            if(MFX_PICSTRUCT_UNKNOWN == const_in.vpp.In.PicStruct &&
+               0 == const_in.vpp.In.FrameRateExtN &&
+               0 != const_in.vpp.Out.FrameRateExtD &&
+               30 == (const_in.vpp.Out.FrameRateExtN / const_in.vpp.Out.FrameRateExtD)
+               )
             {
-                ;//30i -> 60p mode
+                ;//auto-detection mode
             }
-            else if(const_in.vpp.In.FrameRateExtN * const_in.vpp.Out.FrameRateExtD ==
-                const_in.vpp.In.FrameRateExtD * const_in.vpp.Out.FrameRateExtN)
+            else if (MFX_PICSTRUCT_UNKNOWN == const_in.vpp.In.PicStruct &&
+               0 == const_in.vpp.In.FrameRateExtN &&
+               0 != const_in.vpp.Out.FrameRateExtD &&
+               60 == (const_in.vpp.Out.FrameRateExtN / const_in.vpp.Out.FrameRateExtD)
+               )
             {
-                ;//30i -> 30p mode
+                ;//auto-detection mode
+            }
+            else if((MFX_PICSTRUCT_FIELD_TFF == const_in.vpp.In.PicStruct ||
+                     MFX_PICSTRUCT_FIELD_BFF == const_in.vpp.In.PicStruct) &&
+               (4 * const_in.vpp.In.FrameRateExtN * const_in.vpp.In.FrameRateExtD ==
+                5 * const_in.vpp.Out.FrameRateExtN * const_in.vpp.Out.FrameRateExtD))
+            {
+                ;//reverse telecine mode
+            }
+            else if(MFX_PICSTRUCT_FIELD_TFF == const_in.vpp.In.PicStruct ||
+                   MFX_PICSTRUCT_FIELD_BFF == const_in.vpp.In.PicStruct)
+            {
+                //Deinterlace only mode
+
+                if(2 * const_in.vpp.In.FrameRateExtN * const_in.vpp.Out.FrameRateExtD ==
+                    const_in.vpp.In.FrameRateExtD * const_in.vpp.Out.FrameRateExtN)
+                {
+                    ;//30i -> 60p mode
+                }
+                else if(const_in.vpp.In.FrameRateExtN * const_in.vpp.Out.FrameRateExtD ==
+                    const_in.vpp.In.FrameRateExtD * const_in.vpp.Out.FrameRateExtN)
+                {
+                    ;//30i -> 30p mode
+                }
+                else
+                {
+                    if(const_in.vpp.In.FrameRateExtD &&
+                       (30 != const_in.vpp.In.FrameRateExtN / const_in.vpp.In.FrameRateExtD))
+                    {
+                        out->vpp.In.FrameRateExtN = 0;
+                        out->vpp.In.FrameRateExtD = 0;
+                    }
+                    if(const_in.vpp.Out.FrameRateExtD &&
+                       ((30 != const_in.vpp.Out.FrameRateExtN / const_in.vpp.Out.FrameRateExtD) && (60 != const_in.vpp.Out.FrameRateExtN / const_in.vpp.Out.FrameRateExtD)))
+                    {
+                        out->vpp.Out.FrameRateExtN = 0;
+                        out->vpp.Out.FrameRateExtD = 0;
+                    }
+                    ;//any additional frame rate conversions are unsupported
+                    error = true;
+                }
             }
             else
             {
-                if(const_in.vpp.In.FrameRateExtD &&
-                   (30 != const_in.vpp.In.FrameRateExtN / const_in.vpp.In.FrameRateExtD))
-                {
-                    out->vpp.In.FrameRateExtN = 0;
-                    out->vpp.In.FrameRateExtD = 0;
-                }
-                if(const_in.vpp.Out.FrameRateExtD &&
-                   ((30 != const_in.vpp.Out.FrameRateExtN / const_in.vpp.Out.FrameRateExtD) && (60 != const_in.vpp.Out.FrameRateExtN / const_in.vpp.Out.FrameRateExtD)))
-                {
-                    out->vpp.Out.FrameRateExtN = 0;
-                    out->vpp.Out.FrameRateExtD = 0;
-                }
-                ;//any additional frame rate conversions are unsupported
+                //reverse telecine + additional frame rate conversion are unsupported
+                out->vpp.In.FrameRateExtN = 0;
+                out->vpp.In.FrameRateExtD = 0;
+                out->vpp.Out.FrameRateExtN = 0;
+                out->vpp.Out.FrameRateExtD = 0;
+
                 error = true;
             }
-        }
-        else
-        {
-            //reverse telecine + additional frame rate conversion are unsupported
-            out->vpp.In.FrameRateExtN = 0;
-            out->vpp.In.FrameRateExtD = 0;
-            out->vpp.Out.FrameRateExtN = 0;
-            out->vpp.Out.FrameRateExtD = 0;
-
-            error = true;
         }
 
         //Check partial acceleration
@@ -1320,6 +1348,7 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     else
     {
         Close();
+        return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
     if(par_accel)

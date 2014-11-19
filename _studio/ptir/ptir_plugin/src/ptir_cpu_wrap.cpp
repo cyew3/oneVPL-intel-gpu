@@ -187,6 +187,7 @@ mfxStatus PTIR_ProcessorCPU::Close()
             free(pucIO);
 
             PTIR_Clean(&Env);
+            bInited = false;
 
             return MFX_ERR_NONE;
         }
