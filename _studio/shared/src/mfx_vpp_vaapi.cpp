@@ -335,8 +335,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             VAProcFilterParameterBufferDeinterlacing deint;
             deint.type  = VAProcFilterDeinterlacing;
             deint.flags = 0;
-            //WA for VPG driver. Need to rewrite it with caps usage when driver begins to return a correct list of supported DI algorithms
-#ifndef MFX_VA_ANDROID
+
             if (MFX_DEINTERLACING_BOB == pParams->iDeinterlacingAlgorithm)
             {
                 deint.algorithm = VAProcDeinterlacingBob;
@@ -360,7 +359,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                     deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
                     break;
             }
-#endif
+
             vaSts = vaCreateBuffer(m_vaDisplay,
                                    m_vaContextVPP,
                                    VAProcFilterParameterBufferType,
