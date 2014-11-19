@@ -474,6 +474,8 @@ STRUCT(mfxExtEncoderROI,
 STRUCT(mfxExtVPPDeinterlacing,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16, Mode)
+    FIELD_T(mfxU16, TelecinePattern)
+    FIELD_T(mfxU16, TelecineLocation)
 )
 
 STRUCT(mfxExtVP8CodingOption,
