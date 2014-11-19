@@ -125,11 +125,8 @@ Status MJPEGVideoDecoderMFX_HW::Close(void)
 Status MJPEGVideoDecoderMFX_HW::AllocateFrame()
 {
     IppiSize size = m_frameDims;
-    size.height = m_DecoderParams.info.clip_info.height;
-    size.width = m_DecoderParams.info.clip_info.width;
-
-    if (m_rotation == 270 || m_rotation == 90)
-        std::swap(size.width, size.height);
+    size.height = m_DecoderParams.info.disp_clip_info.height;
+    size.width = m_DecoderParams.info.disp_clip_info.width;
 
     VideoDataInfo info;
     info.Init(size.width, size.height, NV12, 8);

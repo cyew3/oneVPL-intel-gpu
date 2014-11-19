@@ -106,6 +106,9 @@ void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoStreamInfo *umcVideoPar
     umcVideoParams->clip_info.height = par->mfx.FrameInfo.Height;
     umcVideoParams->clip_info.width = par->mfx.FrameInfo.Width;
 
+    umcVideoParams->disp_clip_info.height = umcVideoParams->clip_info.height;
+    umcVideoParams->disp_clip_info.width = umcVideoParams->clip_info.width;
+
     if(par->mfx.CodecId == MFX_CODEC_JPEG && (MFX_ROTATION_90 == par->mfx.Rotation || MFX_ROTATION_270 == par->mfx.Rotation))
     {
         std::swap(umcVideoParams->clip_info.height, umcVideoParams->clip_info.width);

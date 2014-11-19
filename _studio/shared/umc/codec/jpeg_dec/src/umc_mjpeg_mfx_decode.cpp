@@ -400,11 +400,8 @@ Status MJPEGVideoDecoderMFX::DecodeHeader(MediaData* in)
 Status MJPEGVideoDecoderMFX::AllocateFrame()
 {
     IppiSize size;
-    size.height = m_DecoderParams.info.clip_info.height;
-    size.width = m_DecoderParams.info.clip_info.width;
-
-    if (m_rotation == 270 || m_rotation == 90)
-        std::swap(size.width, size.height);
+    size.height = m_DecoderParams.info.disp_clip_info.height;
+    size.width = m_DecoderParams.info.disp_clip_info.width;
 
     VideoDataInfo info;
     info.Init(size.width, size.height, NV12, 8);
@@ -691,8 +688,8 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
         size_t pDstPitch[4];
         Status sts = UMC_OK;
 
-        size.height = m_DecoderParams.info.clip_info.height;
-        size.width = m_DecoderParams.info.clip_info.width;
+        size.height = m_DecoderParams.info.disp_clip_info.height;
+        size.width = m_DecoderParams.info.disp_clip_info.width;
 
         rotatedFrame.Init(size.width, size.height, m_internalFrame.GetColorFormat());
 
@@ -893,8 +890,8 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
     if(m_needPostProcessing)
     {
         IppiSize size;
-        size.height = m_DecoderParams.info.clip_info.height;
-        size.width = m_DecoderParams.info.clip_info.width;
+        size.height = m_DecoderParams.info.disp_clip_info.height;
+        size.width = m_DecoderParams.info.disp_clip_info.width;
 
         AdjustFrameSize(size);
 
