@@ -360,9 +360,9 @@ FeiContext::FeiContext(const H265VideoParam *param, VideoCORE *core)
 
 FeiContext::~FeiContext()
 {
-///    H265FEI_Close();
+    H265FEI_Close(m_feiH265);
 #ifdef SAVE_FEI_STATE
-        CloseOutputFiles();
+    CloseOutputFiles();
 #endif
 }
 
