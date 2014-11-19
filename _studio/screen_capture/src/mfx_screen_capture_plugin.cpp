@@ -343,16 +343,16 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         out.mfx.FrameInfo.CropX = 0;
         error = true;
     }
-    if(in.mfx.FrameInfo.Width  % 16 != 0)
-    {
-        out.mfx.FrameInfo.Width = 0;
-        error = true;
-    }
-    if(in.mfx.FrameInfo.Height % 16 != 0)
-    {
-        out.mfx.FrameInfo.Height = 0;
-        error = true;
-    }
+    //if(in.mfx.FrameInfo.Width  % 16 != 0)
+    //{
+    //    out.mfx.FrameInfo.Width = 0;
+    //    error = true;
+    //}
+    //if(in.mfx.FrameInfo.Height % 16 != 0)
+    //{
+    //    out.mfx.FrameInfo.Height = 0;
+    //    error = true;
+    //}
     if(in.mfx.FrameInfo.Width > 4096)
     {
         out.mfx.FrameInfo.Width = 0;
@@ -656,9 +656,9 @@ mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfx
 
 mfxStatus MFXScreenCapture_Plugin::CheckFrameInfo(mfxFrameInfo *info)
 {
-    if (info->Width  > m_CurrentPar.mfx.FrameInfo.Width)
+    if (info->Width  < m_CurrentPar.mfx.FrameInfo.Width)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    if (info->Height > m_CurrentPar.mfx.FrameInfo.Height)
+    if (info->Height < m_CurrentPar.mfx.FrameInfo.Height)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     return MFX_ERR_NONE;
