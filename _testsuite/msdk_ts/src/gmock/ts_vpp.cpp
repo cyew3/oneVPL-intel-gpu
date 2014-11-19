@@ -52,7 +52,13 @@ tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
         }
         if(m_default && (plugin_id == MFX_MAKEFOURCC('P','T','I','R')))
         {
-            m_par.vpp.In.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
+            // configure for MFX_DEINTERLACING_AUTO_SINGLE
+            m_par.vpp.In.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+            m_par.vpp.In.FrameRateExtN = 0;
+            m_par.vpp.In.FrameRateExtD = 1;
+            m_par.vpp.Out.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            m_par.vpp.Out.FrameRateExtN = 30;
+            m_par.vpp.Out.FrameRateExtD = 1;
             if(g_tsImpl == MFX_IMPL_HARDWARE)
             {
                 if(g_tsHWtype < MFX_HW_IVB)
