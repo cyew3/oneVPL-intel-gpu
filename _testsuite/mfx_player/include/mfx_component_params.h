@@ -48,7 +48,7 @@ public:
         , m_bExternalAlloc(false)
         , m_bD3D11SingeTexture()
         , m_nMaxAsync(1)
-        , m_fFrameRate(NOT_ASSIGNED_VALUE)
+        , m_fFrameRate()
         , m_uiMaxAsyncReached()
         , m_fAverageAsync()
         , m_zoomx()

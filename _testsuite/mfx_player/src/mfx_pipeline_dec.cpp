@@ -965,7 +965,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_inParams.bUseCameraPipe);
     ENABLE_VPP(m_inParams.bSceneAnalyzer);
     ENABLE_VPP(m_inParams.bPAFFDetect);
-    ENABLE_VPP(NOT_ASSIGNED_VALUE != m_components[eVPP].m_fFrameRate);
+    //ENABLE_VPP(NOT_ASSIGNED_VALUE != m_components[eVPP].m_fFrameRate);
     ENABLE_VPP(m_inParams.bUseVPP_ifdi);
     ENABLE_VPP(m_inParams.nImageStab);
     ENABLE_VPP(m_inParams.bExtVppApi);
@@ -1335,7 +1335,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         pFrameRateString   = VM_STRING("Unknown, set to %.2lf");
     }else
     {
-        if (NOT_ASSIGNED_VALUE != m_components[eDEC].m_fFrameRate)//overriding frame rate values using command line
+        if (0.0 != m_components[eDEC].m_fFrameRate)//overriding frame rate values using command line
         {
             //framerate used in vpp/encoder input
             FrameRate2Code(m_components[eDEC].m_fFrameRate, &info);
@@ -1405,7 +1405,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         m_inParams.FrameInfo.PicStruct = m_components[eVPP].m_nOverPS;
     }
 
-    if (NOT_ASSIGNED_VALUE == m_components[eDEC].m_fFrameRate)//not initialized from cmdline
+    if (0.0 == m_components[eDEC].m_fFrameRate)//not initialized from cmdline
     {
         m_components[eDEC].m_fFrameRate = (mfxF64)info.FrameRateExtN / (mfxF64)info.FrameRateExtD;
     }
@@ -2120,7 +2120,7 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
         MFX_FOURCC_NV12 == m_inParams.InputCodecType ||
         MFX_FOURCC_YV12 == m_inParams.InputCodecType)
     {
-        if (NOT_ASSIGNED_VALUE == m_components[eDEC].m_fFrameRate)//not initialized from cmd line
+        if (0.0 == m_components[eDEC].m_fFrameRate)//not initialized from cmd line
             m_components[eDEC].m_fFrameRate = 30.0;
 
         //yuv decoder requires this information to be returned on decode header level
