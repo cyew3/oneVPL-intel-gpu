@@ -426,7 +426,12 @@ int TestSuite::RunTest(unsigned int id)
 
     ///////////////////////////////////////////////////////////////////////////
     g_tsStatus.expect(tc.sts);
+    if (tc.sts == MFX_ERR_INVALID_VIDEO_PARAM)
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+    mfxVideoParam vp = {0};
+    Query(m_session, m_pPar, &vp);
 
+    g_tsStatus.expect(tc.sts);
     Init(m_session, m_pPar);
 
     TS_END;
