@@ -95,11 +95,19 @@ int TestSuite::RunTest(unsigned int id)
 
     for (mfxU32 i = 0; i < m_pSurfPoolIn->PoolSize(); i++)
     {
-        EXPECT_EQ(0, m_pSurfPoolIn->GetSurface(i)->Data.Locked);
+        if (0 != m_pSurfPoolIn->GetSurface(i)->Data.Locked)
+        {
+            g_tsLog << "ERROR: there is Locked IN surface after Close()\n";
+            g_tsStatus.check(MFX_ERR_ABORTED);
+        }
     }
     for (mfxU32 i = 0; i < m_pSurfPoolOut->PoolSize(); i++)
     {
-        EXPECT_EQ(0, m_pSurfPoolOut->GetSurface(i)->Data.Locked);
+        if (0 != m_pSurfPoolOut->GetSurface(i)->Data.Locked)
+        {
+            g_tsLog << "ERROR: there is Locked OUT surface after Close()\n";
+            g_tsStatus.check(MFX_ERR_ABORTED);
+        }
     }
 
     TS_END;
