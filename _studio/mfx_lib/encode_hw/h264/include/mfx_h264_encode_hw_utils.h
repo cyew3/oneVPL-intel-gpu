@@ -227,7 +227,6 @@ namespace MfxHwH264Encode
 
     void PrepareSeiMessage(
         MfxVideoParam const &   par,
-        DdiTask const &         task,
         mfxExtAvcSeiRecPoint &  msg);
 
 // MVC BD {

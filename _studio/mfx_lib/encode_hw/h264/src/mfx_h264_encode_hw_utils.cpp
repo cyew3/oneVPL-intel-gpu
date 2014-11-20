@@ -2445,7 +2445,6 @@ void MfxHwH264Encode::PrepareSeiMessage(
 
 void MfxHwH264Encode::PrepareSeiMessage(
     MfxVideoParam const &   par,
-    DdiTask const &         task,
     mfxExtAvcSeiRecPoint &  msg)
 {
     mfxExtCodingOption2 * extOpt2 = GetExtBuffer(par);
@@ -5296,7 +5295,7 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
     if (needRecoveryPointSei)
     {
         mfxExtAvcSeiRecPoint msgPicTiming;
-        PrepareSeiMessage(video, task, msgPicTiming);
+        PrepareSeiMessage(video, msgPicTiming);
         if (IsOff(extOpt->SingleSeiNalUnit))
             writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
         PutSeiMessage(writer, msgPicTiming);
