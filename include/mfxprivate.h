@@ -69,7 +69,7 @@ typedef struct {
 
     //mfxU16 MbDisableSkipMapSize; 
     //mfxU8* MbDisableSkipMap;      => mfxExtCodingOption3::MBDisableSkipMap = ON (Init), mfxExtMBDisableSkipMap (RT, no 64 alignment required)
-    mfxU16 deprecated[5];
+    mfxU16 deprecated1[5];
 
 } mfxExtAVCEncodeCtrl;
 
