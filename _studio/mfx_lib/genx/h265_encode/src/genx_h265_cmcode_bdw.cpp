@@ -1464,7 +1464,9 @@ void Ime(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex 
     VME_SET_UNIInput_SrcY(uniIn, y);
 
     // M0.3 various prediction parameters
-    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78
+//    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x16,16x8,16x16
+    VME_SET_DWORD(uniIn, 0, 3, 0x7e040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x7e: 16x16 only
+
     // M1.1 MaxNumMVs
     VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
     // M0.5 Reference Window Width & Height
@@ -1668,7 +1670,8 @@ void Ime3tiers(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_REF_256x256,
     VME_SET_UNIInput_SrcY(uniIn, y);
 
     // M0.3 various prediction parameters
-    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78
+//    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x16,16x8,16x16
+    VME_SET_DWORD(uniIn, 0, 3, 0x7e040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x7e: 16x16 only
     // M1.1 MaxNumMVs
     VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
     // M0.5 Reference Window Width & Height
@@ -1901,8 +1904,8 @@ void MeP32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceInde
     VME_SET_UNIInput_SrcY(uniIn, y);
 
     // M0.3 various prediction parameters
-    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78
-
+//    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x16,16x8,16x16
+    VME_SET_DWORD(uniIn, 0, 3, 0x7e040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x7e: 16x16 only
     // M1.1 MaxNumMVs
     VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
 
@@ -1961,6 +1964,7 @@ void MeP32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceInde
     fbrIn.format<uint, 4, 8>().select<4, 1, 4, 2>(0, 0) = imeOut.row(7).format<uint>()[5]; // motion vectors 16x16
     run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 0, 0, 0, fbrOut16x16);
 
+/*
     matrix<uchar, 7, 32> fbrOut16x8;
     VME_SET_UNIInput_FBRMbModeInput(uniIn, 1);
     VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
@@ -1976,10 +1980,12 @@ void MeP32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceInde
     fbrIn.format<uint, 4, 8>().select<2, 2, 4, 2>(0, 0) = imeOut.row(8).format<uint>()[2]; // motion vectors 8x16_0
     fbrIn.format<uint, 4, 8>().select<2, 2, 4, 2>(1, 0) = imeOut.row(8).format<uint>()[3]; // motion vectors 8x16_1
     run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 2, 0, 0, fbrOut8x16);
+*/
 
     // 32x32
     SLICE(fbrOut16x16.format<short>(), 16, 2, 1) = SLICE(fbrOut16x16.format<short>(), 16, 2, 1) << 1;
     write(SURF_MV32x32, mbX * MVDATA_SIZE, mbY, SLICE(fbrOut16x16.format<uint>(), 8, 1, 1));
+/*
     // 32x16
     fbrOut16x8.format<short, 7, 16>().select<2, 2, 2, 1>(1, 0) = fbrOut16x8.format<short, 7, 16>().select<2, 2, 2, 1>(1, 0) << 1;
     matrix<uint, 2, 1> mv32x16 = SLICE(fbrOut16x8.format<uint>(), 8, 2, 16); 
@@ -1988,6 +1994,7 @@ void MeP32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceInde
     fbrOut8x16.format<short, 7, 16>().select<2, 1, 2, 1>(1, 0) = fbrOut8x16.format<short, 7, 16>().select<2, 1, 2, 1>(1, 0) << 1;
     matrix<uint, 1, 2> mv16x32 = SLICE(fbrOut8x16.format<uint>(), 8, 2, 8);
     write(SURF_MV16x32,  mbX * MVDATA_SIZE * 2, mbY, mv16x32);
+*/
 }
 
 
@@ -2535,7 +2542,7 @@ void InterpolateFrame(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_HORZ,
 
 extern "C" _GENX_MAIN_
 void InterpolateFrameWithBorder(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_HORZ,
-                      SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG)
+                                SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG)
 {
     const uint2 BlockW = 8;
     const uint2 BlockH = 8;

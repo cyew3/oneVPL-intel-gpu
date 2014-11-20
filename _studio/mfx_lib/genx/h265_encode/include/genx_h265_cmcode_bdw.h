@@ -134,7 +134,7 @@ FindBestMod(vector_ref<Tamp, 36>hist, uint4 &maxCombineOut)
 {
     vector <uint4, 36> histCombined = hist << 8;
     histCombined += g_Oneto36;
-    maxCombineOut = cm_reduced_max<uint4>(histCombined) & 255;
+    maxCombineOut = cm_reduced_max<uint4>(histCombined.select<33,1>(2)) & 255;
 }
 
 void _GENX_ inline InitGlobalVariables()
@@ -144,9 +144,9 @@ void _GENX_ inline InitGlobalVariables()
 
 extern "C" _GENX_MAIN_  void
 AnalyzeGradient2(SurfaceIndex SURF_SRC,
-SurfaceIndex SURF_GRADIENT_4x4,
-SurfaceIndex SURF_GRADIENT_8x8,
-uint4        width)
+                 SurfaceIndex SURF_GRADIENT_4x4,
+                 SurfaceIndex SURF_GRADIENT_8x8,
+                 uint4        width)
 {
     enum {
         W = 8,
@@ -295,10 +295,10 @@ uint4        width)
 
 extern "C" _GENX_MAIN_  void
 AnalyzeGradient32x32Modes(SurfaceIndex SURF_SRC,
-SurfaceIndex SURF_GRADIENT_8x8,
-SurfaceIndex SURF_GRADIENT_16x16,
-SurfaceIndex SURF_GRADIENT_32x32,
-uint4        width)
+                          SurfaceIndex SURF_GRADIENT_8x8,
+                          SurfaceIndex SURF_GRADIENT_16x16,
+                          SurfaceIndex SURF_GRADIENT_32x32,
+                          uint4        width)
 {
     InitGlobalVariables();
     enum {
@@ -359,6 +359,96 @@ uint4        width)
         }
     }
     
+    write(SURF_GRADIENT_8x8, x * (W / 8 * MODESIZE), y * (H / 8), output8x8);
+
+    write(SURF_GRADIENT_16x16, x * (W / 16 * MODESIZE), y * (H / 16), output16x16);
+
+    FindBestMod(histogram32x32.select<36, 1>(0), output32x32(0, 0));
+    write(SURF_GRADIENT_32x32, x * (W / 32 * MODESIZE), y * (H / 32), output32x32);
+}
+
+extern "C" _GENX_MAIN_  void
+    AnalyzeGradient32x32Best(SurfaceIndex SURF_SRC,
+                             SurfaceIndex SURF_GRADIENT_4x4,
+                             SurfaceIndex SURF_GRADIENT_8x8,
+                             SurfaceIndex SURF_GRADIENT_16x16,
+                             SurfaceIndex SURF_GRADIENT_32x32,
+                             uint4        width)
+{
+    InitGlobalVariables();
+    enum {
+        W = 32,
+        H = 32,
+        MODESIZE = sizeof(uint4),
+    };
+
+    static_assert(W % 32 == 0 && H % 32 == 0, "Width and Height must be multiple of 32");
+
+    uint x = get_thread_origin_x();
+    uint y = get_thread_origin_y();
+
+    matrix<uint1, 6, 8> data;
+    matrix<int2, 8, 8> dx, dy;
+    matrix<uint2, 8, 8> amp;
+    matrix<uint2, 8, 8> ang;
+    vector<uint2, 40> histogram4x4;
+    vector<uint2, 40> histogram8x8;
+    vector<uint4, 40> histogram16x16;
+    vector<uint4, 40> histogram32x32=0;
+    const int yBase = y * H;
+    const int xBase = x * W;
+    uint offset;
+
+    matrix<uint4, 8, 8> output4x4 = 0;
+    matrix<uint4, 4, 4> output8x8 = 0;
+    matrix<uint4, 2, 2> output16x16 = 0;
+    matrix<uint4, 1, 1> output32x32 = 0;
+    int yBlk16 = 0;
+    int xBlk16 = 0;
+    //#pragma unroll
+    for (yBlk16 = 0; yBlk16 < H; yBlk16 += 16) 
+    {
+        //#pragma unroll
+        for (xBlk16 = 0; xBlk16 < W; xBlk16 += 16) 
+        {
+            histogram16x16 = 0;
+            int xBlk8 = 0;
+            int yBlk8 = 0;
+            //#pragma unroll //remarked because after unroll compiler generates spilled code
+            for (yBlk8 = 0; yBlk8 < 16; yBlk8 += 8) 
+            {
+#pragma unroll
+                for (xBlk8 = 0; xBlk8 < 16; xBlk8 += 8) 
+                {
+                    ReadGradient(SURF_SRC, xBase + (xBlk16 + xBlk8), yBase + (yBlk16 + yBlk8), dx, dy);
+                    Gradiant2AngAmp_MaskAtan2(dx, dy, ang, amp);
+
+                    histogram8x8 = 0;
+
+#pragma unroll
+                    for (int yBlk4 = 0; yBlk4 < 8; yBlk4 += 4) {
+#pragma unroll
+                        for (int xBlk4 = 0; xBlk4 < 8; xBlk4 += 4) {
+
+                            histogram4x4 = 0;
+                            Histogram_iselect(ang.select<4, 1, 4, 1>(yBlk4, xBlk4), amp.select<4, 1, 4, 1>(yBlk4, xBlk4), histogram4x4.select<histogram4x4.SZ, 1>(0));
+
+                            histogram8x8 += histogram4x4;
+                            FindBestMod(histogram4x4.select<36, 1>(0), output4x4((yBlk16 + yBlk8 + yBlk4) >> 2, (xBlk16 + xBlk8 + xBlk4) >> 2));
+                        }
+                    }
+
+                    histogram16x16 += histogram8x8;
+                    FindBestMod(histogram8x8.select<36, 1>(0), output8x8((yBlk16 + yBlk8) >> 3, (xBlk16 + xBlk8) >> 3));
+                }
+            }
+            histogram32x32 += histogram16x16;
+            FindBestMod(histogram16x16.select<36, 1>(0), output16x16(yBlk16 >> 4, xBlk16 >> 4));
+        }
+    }
+
+    write(SURF_GRADIENT_4x4, x * (W / 4 * MODESIZE), y * (H / 4), output4x4);
+
     write(SURF_GRADIENT_8x8, x * (W / 8 * MODESIZE), y * (H / 8), output8x8);
 
     write(SURF_GRADIENT_16x16, x * (W / 16 * MODESIZE), y * (H / 16), output16x16);
