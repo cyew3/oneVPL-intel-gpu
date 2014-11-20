@@ -74,7 +74,7 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
     mfxStatus sts = MFX_ERR_NONE;
 
     if (pParams->bDoPadding) {
-        m_mfxVideoParams.vpp.In.Width = (mfxU16)pParams->frameInfo[VPP_IN].nWidth + 16;
+        m_mfxVideoParams.vpp.In.Width  = (mfxU16)pParams->frameInfo[VPP_IN].nWidth + 16;
         m_mfxVideoParams.vpp.In.Height = (mfxU16)pParams->frameInfo[VPP_IN].nHeight + 16;
     } else {
         m_mfxVideoParams.vpp.In.Width = (mfxU16)pParams->frameInfo[VPP_IN].nWidth;
@@ -84,7 +84,7 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
     m_mfxVideoParams.vpp.In.Width  = align(m_mfxVideoParams.vpp.In.Width);
     m_mfxVideoParams.vpp.In.Height = align(m_mfxVideoParams.vpp.In.Height);
 
-    m_mfxVideoParams.vpp.In.CropW = align((mfxU16)pParams->frameInfo[VPP_IN].CropW);
+    m_mfxVideoParams.vpp.In.CropW = (mfxU16)pParams->frameInfo[VPP_IN].CropW;
     m_mfxVideoParams.vpp.In.CropH = (mfxU16)pParams->frameInfo[VPP_IN].CropH;
     m_mfxVideoParams.vpp.In.CropX = align((mfxU16)pParams->frameInfo[VPP_IN].CropX);
     m_mfxVideoParams.vpp.In.CropY = (mfxU16)pParams->frameInfo[VPP_IN].CropY;
@@ -94,7 +94,7 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
 
     m_mfxVideoParams.vpp.In.BitDepthLuma = (mfxU16)pParams->bitDepth;
 
-    m_mfxVideoParams.vpp.Out.CropW = align((mfxU16)pParams->frameInfo[VPP_OUT].CropW);
+    m_mfxVideoParams.vpp.Out.CropW = (mfxU16)pParams->frameInfo[VPP_OUT].CropW;
     m_mfxVideoParams.vpp.Out.CropH = (mfxU16)pParams->frameInfo[VPP_OUT].CropH;
     m_mfxVideoParams.vpp.Out.Width = align((mfxU16)pParams->frameInfo[VPP_OUT].nWidth);
     m_mfxVideoParams.vpp.Out.Height = align((mfxU16)pParams->frameInfo[VPP_OUT].nHeight);
@@ -730,7 +730,7 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
         if (pParams->frameInfo[VPP_IN].CropH == NOT_INIT_VALUE)
             pParams->frameInfo[VPP_IN].CropH = pParams->frameInfo[VPP_IN].nHeight;
 
-        pParams->frameInfo[VPP_IN].CropW    =  align(pParams->frameInfo[VPP_IN].CropW);
+        pParams->frameInfo[VPP_IN].CropW    =  pParams->frameInfo[VPP_IN].CropW;
         pParams->frameInfo[VPP_IN].CropX    =  align(pParams->frameInfo[VPP_IN].CropX);
 
         pParams->frameInfo[VPP_OUT].nWidth  = pParams->frameInfo[VPP_IN].CropW;
