@@ -942,7 +942,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
         m_FrameSizeExtra.tileNum           = m_nTiles;
         m_FrameSizeExtra.tileOffsets       = new CameraTileOffset[m_nTiles];
         m_FrameSizeExtra.TileWidth         = m_mfxVideoParam.vpp.In.CropW;
-        m_FrameSizeExtra.TileHeight        = ((( m_mfxVideoParam.vpp.In.CropH / m_nTiles ) + 1)/2)*2;
+        m_FrameSizeExtra.TileHeight        = m_mfxVideoParam.vpp.In.CropH;
         if ( m_nTiles > 1 )
             m_FrameSizeExtra.TileHeight = ( m_mfxVideoParam.vpp.In.CropH / m_nTiles + 31 ) &~ 0x1F;
         
@@ -973,11 +973,11 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
         m_FrameSizeExtra.tileNum           = m_nTiles;
         m_FrameSizeExtra.tileOffsets       = new CameraTileOffset[m_nTiles];
         m_FrameSizeExtra.TileWidth         = m_mfxVideoParam.vpp.In.Width;
-        m_FrameSizeExtra.TileHeight        = ((( m_mfxVideoParam.vpp.In.Height / m_nTiles ) + 1)/2)*2;
+        m_FrameSizeExtra.TileHeight        = m_mfxVideoParam.vpp.In.Height;
         if ( m_nTiles > 1 )
             m_FrameSizeExtra.TileHeight = ( m_mfxVideoParam.vpp.In.Height / m_nTiles + 31 ) &~ 0x1F;
         
-        m_FrameSizeExtra.TileHeightPadded  =  m_FrameSizeExtra.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
+        m_FrameSizeExtra.TileHeightPadded  = m_FrameSizeExtra.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
         m_FrameSizeExtra.BitDepth          = m_mfxVideoParam.vpp.In.BitDepthLuma;
         m_FrameSizeExtra.TileInfo          = m_mfxVideoParam.vpp.In;
         for (int i = 0; i < m_nTiles; i++)

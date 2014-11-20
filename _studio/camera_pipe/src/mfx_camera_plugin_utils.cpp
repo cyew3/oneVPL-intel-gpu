@@ -387,7 +387,7 @@ mfxStatus MFXCamera_Plugin::ReallocateInternalSurfaces(mfxVideoParam &newParam, 
         if (m_cmSurfIn)
             m_cmDevice->DestroySurface(m_cmSurfIn);
         int width  = m_Caps.bNoPadding ? paddedFrameWidth  : newParam.vpp.In.CropW;
-        int height = m_Caps.bNoPadding ? paddedFrameHeight : m_FrameSizeExtra.TileHeight;
+        int height = m_FrameSizeExtra.TileHeight;
 
         CAMERA_DEBUG_LOG("ReallocateInternalSurfaces:  m_cmSurfIn width %d height %d \n", width, height);
         m_cmSurfIn = CreateSurface(m_cmDevice, width * sizeof(mfxU16),  height, CM_SURFACE_FORMAT_A8);
@@ -495,8 +495,8 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
 
     if (m_Caps.InputMemoryOperationMode == MEM_GPUSHARED) // need to allocate inputSurf in case the output memory is not 4k aligned
     {
-        int width  = m_Caps.bNoPadding ? m_FrameSizeExtra.paddedFrameWidth  : m_mfxVideoParam.vpp.In.CropW;
-        int height = m_Caps.bNoPadding ? m_FrameSizeExtra.paddedFrameHeight : m_FrameSizeExtra.TileHeight;
+        int width  = m_Caps.bNoPadding ? m_FrameSizeExtra.paddedFrameWidth : m_mfxVideoParam.vpp.In.CropW;
+        int height = m_FrameSizeExtra.TileHeight;
 
         CAMERA_DEBUG_LOG("AllocateInternalSurfaces:  m_cmSurfIn width %d height %d \n", width, height);
         m_cmSurfIn = CreateSurface(m_cmDevice, width * sizeof(mfxU16),  height, CM_SURFACE_FORMAT_A8);
@@ -586,13 +586,14 @@ mfxStatus MFXCamera_Plugin::SetExternalSurfaces(AsyncParams *pParam)
         {
             mfxU32 inWidth  = (mfxU32)surfIn->Info.CropW;
             mfxU32 inHeight = (mfxU32)surfIn->Info.CropH;
+            mfxU32 inHeightAligned = ((mfxU32)(surfIn->Info.CropH + 1)/2)*2;
             mfxU32 allocSize, allocPitch;
 
             CAMERA_DEBUG_LOG("SetExternalSurfaces Non Padded: m_cmDevice =%p \n", m_cmDevice);
             m_cmDevice->GetSurface2DInfo(sizeof(mfxU16)*inWidth, inHeight, CM_SURFACE_FORMAT_A8, allocPitch, allocSize);
             CAMERA_DEBUG_LOG("SetExternalSurfaces Non Padded: inPitch=%d allocPitch=%d inWidth=%d inHeight=%d \n", inPitch, allocPitch,inWidth, inHeight);
 
-            if (! surfIn->Info.CropX && ! surfIn->Info.CropY && 1 == m_nTiles && inPitch == allocPitch && !((mfxU64)surfIn->Data.Y16 & 0xFFF))
+            if (! surfIn->Info.CropX && ! surfIn->Info.CropY && 1 == m_nTiles && inHeight == inHeightAligned && inPitch == allocPitch && !((mfxU64)surfIn->Data.Y16 & 0xFFF))
             {
                 pParam->inSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, allocPitch,  inHeight, CM_SURFACE_FORMAT_A8, (void *)surfIn->Data.Y16);
             }
@@ -960,7 +961,7 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
             }
             else
             {
-                if (1 == m_nTiles && pParam->surf_out->Info.Width*4 == pParam->surf_out->Data.Pitch)
+                if (1 == m_nTiles && pParam->surf_out->Info.CropW*4 == pParam->surf_out->Data.Pitch)
                 {
                     e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B);
                 }
