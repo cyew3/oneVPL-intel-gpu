@@ -813,7 +813,7 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
 
     m_frameCount++;
 
-    H264SliceHeader const * sliceHeader = pSlice->GetSliceHeader();
+    H264SliceHeader  * sliceHeader = pSlice->GetSliceHeader();
     Ipp32s dId = sliceHeader->nal_ext.svc.dependency_id;
     Ipp32s index = GetDPBLayerIndex(pFrame->m_maxDId, dId);
 
@@ -974,6 +974,7 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                     // set frame_num to zero for this picture, for correct
                     // FrameNumWrap
                     pFrame->setFrameNum(0);
+                    sliceHeader->frame_num = 0;
                     break;
                 case 6:
                     // Assign long term frame idx to current picture
@@ -4447,8 +4448,8 @@ bool IsFieldOfOneFrame(const H264DecoderFrame *pFrame, const H264Slice * pSlice1
     if (pSlice1->GetSliceHeader()->field_pic_flag != pSlice2->GetSliceHeader()->field_pic_flag)
         return false;
 
-//    if (pSlice1->GetSliceHeader()->frame_num != pSlice2->GetSliceHeader()->frame_num)
-  //      return false;
+    if (pSlice1->GetSliceHeader()->frame_num != pSlice2->GetSliceHeader()->frame_num)
+        return false;
 
     if (pSlice1->GetSliceHeader()->bottom_field_flag == pSlice2->GetSliceHeader()->bottom_field_flag)
         return false;
