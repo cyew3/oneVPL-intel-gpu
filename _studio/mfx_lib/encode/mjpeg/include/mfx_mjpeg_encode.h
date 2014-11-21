@@ -129,6 +129,11 @@ protected:
     bool m_isOpaque;
     bool m_isInitialized;
 
+    mfxExtJPEGQuantTables    m_checkedJpegQT;
+    mfxExtJPEGHuffmanTables  m_checkedJpegHT;
+    mfxExtOpaqueSurfaceAlloc m_checkedOpaqAllocReq;
+    mfxExtBuffer*            m_pCheckedExt[3];
+
     //
     // Asynchronous processing functions
     //
