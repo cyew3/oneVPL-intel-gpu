@@ -49,9 +49,6 @@ enum
 /* FEI block sizes */
 enum
 {
-    MFX_FEI_H265_BLK_256x256 = 0,
-    MFX_FEI_H265_BLK_128x128 = 1,
-    MFX_FEI_H265_BLK_64x64 = 2,
     MFX_FEI_H265_BLK_32x32 = 3,
     MFX_FEI_H265_BLK_32x16 = 4,
     MFX_FEI_H265_BLK_16x32 = 5,
