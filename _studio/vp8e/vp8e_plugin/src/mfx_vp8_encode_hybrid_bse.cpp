@@ -423,7 +423,6 @@ namespace MFX_VP8ENC
         CHECK(pBitstream->DataLength + pBitstream->DataOffset + IVFHeaderSize  < pBitstream->MaxLength);
 
         m_pBitstream = pBitstream;
-        printf("\n (sefremov) bIVFHeaders = %d", bIVFHeaders); fflush(0);
         if (bIVFHeaders)
         {
             pPictureHeader = pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset;
