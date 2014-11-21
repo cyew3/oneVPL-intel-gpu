@@ -262,14 +262,6 @@
       <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\core\vm\vm.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\vm_plus\vm_plus.vcxproj">
-      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\..\io\media_buffers\media_buffers.vcxproj">
       <Project>{9befd888-5d4d-49fb-bda0-e5987f4f6fc7}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
