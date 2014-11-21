@@ -192,13 +192,15 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncoderWiDiUsage,  MFX_EXTBUFF_ENCODER_WIDI_USAGE       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderROI,           MFX_EXTBUFF_ENCODER_ROI              );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtLAFrameStatistics,    MFX_EXTBUFF_LOOKAHEAD_STAT           );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiParam,           MFX_EXTBUFF_FEI_PARAM              );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiParam,             MFX_EXTBUFF_FEI_PARAM                );
 #if defined (ADVANCED_REF)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS             );
 #endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3,        MFX_EXTBUFF_CODING_OPTION3           );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMBQP,                 MFX_EXTBUFF_MBQP                     );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtChromaLocInfo,        MFX_EXTBUFF_CHROMA_LOC_INFO          );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtMBDisableSkipMap,     MFX_EXTBUFF_MB_DISABLE_SKIP_MAP      );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncodeCtrl,        MFX_EXTBUFF_AVC_ENCODE_CTRL          );
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)

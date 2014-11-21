@@ -20,6 +20,7 @@
 #include <va/va.h>
 #include <va/va_enc.h>
 #include <va/va_enc_h264.h>
+#include "vaapi_ext_interface.h"
 
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
 //#include <va/vendor/va_intel_fei.h>
@@ -167,6 +168,7 @@ namespace MfxHwH264Encode
         VABufferID m_roiBufferId;
         VABufferID m_ppsBufferId;
         VABufferID m_mbqpBufferId;
+        VABufferID m_mbNoSkipBufferId;
         std::vector<VABufferID> m_sliceBufferId;
 
         VABufferID m_packedAudHeaderBufferId;
@@ -205,7 +207,7 @@ namespace MfxHwH264Encode
 
         std::vector<VAEncROI> m_arrayVAEncROI;
 
-        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 25 + 5; //added FEI buffers
+        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 26 + 5; //added FEI buffers
 
         UMC::Mutex m_guard;
         HeaderPacker m_headerPacker;
@@ -218,9 +220,10 @@ namespace MfxHwH264Encode
         mfxU32 m_skipMode;
         bool m_isENCPAK;
 
-        VAEncMiscParameterRateControl m_vaBrcPar;
-        VAEncMiscParameterFrameRate   m_vaFrameRate;
-        std::vector<mfxU8>            m_mbqp_buffer;
+        VAEncMiscParameterRateControl  m_vaBrcPar;
+        VAEncMiscParameterFrameRate    m_vaFrameRate;
+        std::vector<VAEncQpBufferH264> m_mbqp_buffer;
+        std::vector<mfxU8>             m_mb_noskip_buffer;
     };
 
     //extend encoder to FEI interface

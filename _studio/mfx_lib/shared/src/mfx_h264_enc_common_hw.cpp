@@ -1263,8 +1263,11 @@ mfxStatus MfxHwH264Encode::CorrectCropping(MfxVideoParam& par)
 bool MfxHwH264Encode::IsRunTimeOnlyExtBuffer(mfxU32 id)
 {
     return
-        id == MFX_EXTBUFF_AVC_REFLIST_CTRL   ||
-        id == MFX_EXTBUFF_ENCODED_FRAME_INFO;
+           id == MFX_EXTBUFF_AVC_REFLIST_CTRL
+        || id == MFX_EXTBUFF_ENCODED_FRAME_INFO
+        || id == MFX_EXTBUFF_MBQP
+        || id == MFX_EXTBUFF_MB_DISABLE_SKIP_MAP
+        || id == MFX_EXTBUFF_AVC_ENCODE_CTRL;
 }
 
 bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
@@ -1279,6 +1282,8 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_CODING_OPTION2
         || id == MFX_EXTBUFF_ENCODER_ROI
         || id == MFX_EXTBUFF_MBQP
+        || id == MFX_EXTBUFF_MB_DISABLE_SKIP_MAP
+        || id == MFX_EXTBUFF_AVC_ENCODE_CTRL
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || id == MFX_EXTBUFF_FEI_ENC_CTRL
         || id == MFX_EXTBUFF_FEI_ENC_MB
@@ -3277,6 +3282,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
         changed = true;
     }
+    
+    if (!CheckTriStateOption(extOpt3->MBDisableSkipMap)) changed = true;
+
+    if (IsOn(extOpt3->MBDisableSkipMap) && vaType != MFX_HW_VAAPI)
+    {
+        extOpt3->MBDisableSkipMap = MFX_CODINGOPTION_OFF;
+        changed = true;
+    }
 
     if (!CheckRangeDflt(extOpt2->DisableDeblockingIdc, 0, 1, 0)) changed = true;
     if (!CheckTriStateOption(extOpt2->EnableMAD)) changed = true;
@@ -4230,6 +4243,9 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extOpt3->EnableMBQP == MFX_CODINGOPTION_UNKNOWN)
         extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
+
+    if (extOpt3->MBDisableSkipMap == MFX_CODINGOPTION_UNKNOWN)
+        extOpt3->MBDisableSkipMap = MFX_CODINGOPTION_OFF;
 
     CheckVideoParamMvcQueryLike(par);
 

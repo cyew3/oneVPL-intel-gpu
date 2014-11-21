@@ -396,6 +396,7 @@ mfxStatus SetPrivateParams(
     {
         mfxExtCodingOption2 const * extOpt2rt  = GetExtBuffer(*pCtrl);
         mfxExtCodingOption3 const * extOpt3rt  = GetExtBuffer(*pCtrl);
+        mfxExtAVCEncodeCtrl const * extPCQC    = GetExtBuffer(*pCtrl);
 
         if (extOpt2rt)
             private_param->useRawPicForRef = IsOn(extOpt2rt->UseRawRef);
@@ -407,6 +408,34 @@ mfxStatus SetPrivateParams(
 
             if (private_param->globalMotionBiasAdjustmentEnable && extOpt3rt->MVCostScalingFactor < 4)
                 private_param->HMEMVCostScalingFactor = extOpt3rt->MVCostScalingFactor;
+        }
+
+        if (extPCQC)
+        {
+            private_param->skipCheckDisable = (extPCQC->SkipCheck & 0x0F) == MFX_SKIP_CHECK_DISABLE;
+            private_param->FTQEnable        = (extPCQC->SkipCheck & 0x0F) == MFX_SKIP_CHECK_FTQ_ON;
+            private_param->FTQOverride      = private_param->FTQEnable || (extPCQC->SkipCheck & 0x0F) == MFX_SKIP_CHECK_FTQ_OFF;
+
+            if (extPCQC->SkipCheck & MFX_SKIP_CHECK_SET_THRESHOLDS)
+            {
+                if (private_param->FTQEnable)
+                {
+                    private_param->FTQSkipThresholdLUTInput = 1;
+                    for (mfxU32 i = 0; i < 52; i ++)
+                        private_param->FTQSkipThresholdLUT[i] = (mfxU8)extPCQC->SkipThreshold[i];
+                }
+                else
+                {
+                    private_param->NonFTQSkipThresholdLUTInput = 1;
+                    Copy(private_param->NonFTQSkipThresholdLUT, extPCQC->SkipThreshold);
+                }
+            }
+
+            if (IsOn(extPCQC->LambdaValueFlag))
+            {
+                private_param->lambdaValueLUTInput = 1;
+                Copy(private_param->lambdaValueLUT, extPCQC->LambdaValue );
+            }
         }
     }
 
@@ -519,31 +548,6 @@ static mfxStatus SetROI(
         roi_Param->min_delta_qp = -51;
     }
     vaUnmapBuffer(vaDisplay, roiParam_id);
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus SetMBQP(
-    VADisplay    vaDisplay,
-    VAContextID  vaContextEncode,
-    VABufferID & mbqp_id,
-    mfxU8*       mbqp,
-    mfxU32       mbW,
-    mfxU32       mbH)
-{
-    VAStatus vaSts;
-
-    if (mbqp_id != VA_INVALID_ID)
-        vaDestroyBuffer(vaDisplay, mbqp_id);
-
-    vaSts = vaCreateBuffer(vaDisplay,
-        vaContextEncode,
-        (VABufferType)VAEncQpBufferType,
-        mbW,
-        mbH,
-        mbqp,
-        &mbqp_id);
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 }
@@ -864,6 +868,7 @@ VAAPIEncoder::VAAPIEncoder()
 , m_roiBufferId(VA_INVALID_ID)
 , m_ppsBufferId(VA_INVALID_ID)
 , m_mbqpBufferId(VA_INVALID_ID)
+, m_mbNoSkipBufferId(VA_INVALID_ID)
 , m_packedAudHeaderBufferId(VA_INVALID_ID)
 , m_packedAudBufferId(VA_INVALID_ID)
 , m_packedSpsHeaderBufferId(VA_INVALID_ID)
@@ -1280,8 +1285,14 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     
     mfxExtCodingOption3 const *extOpt3 = GetExtBuffer(par);
 
-    if (extOpt3 && IsOn(extOpt3->EnableMBQP))
-        m_mbqp_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
+    if (extOpt3)
+    {   
+        if (IsOn(extOpt3->EnableMBQP))
+            m_mbqp_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
+        
+        if (IsOn(extOpt3->MBDisableSkipMap))
+            m_mb_noskip_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
+    }
 
     return MFX_ERR_NONE;
 
@@ -1475,7 +1486,8 @@ mfxStatus VAAPIEncoder::Execute(
     VAStatus    vaSts;
     mfxU8 skipFlag  = task.SkipFlag();
     mfxU16 skipMode = m_skipMode;
-    mfxExtCodingOption2 const * ctrlOpt2 = GetExtBuffer(task.m_ctrl);
+    mfxExtCodingOption2     const * ctrlOpt2      = GetExtBuffer(task.m_ctrl);
+    mfxExtMBDisableSkipMap  const * ctrlNoSkipMap = GetExtBuffer(task.m_ctrl);
 
     if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_BRC_ONLY)
         skipMode = ctrlOpt2->SkipFrame;
@@ -2122,20 +2134,59 @@ mfxStatus VAAPIEncoder::Execute(
         const mfxExtMBQP *mbqp = GetExtBuffer(task.m_ctrl);
         mfxU32 mbW = m_sps.picture_width_in_mbs;
         mfxU32 mbH = m_sps.picture_height_in_mbs;
+        //width(64byte alignment) height(8byte alignment)
+        mfxU32 bufW = ((mbW + 63) & ~63);
+        mfxU32 bufH = ((mbH + 7) & ~7);
 
-        if (mbqp && mbqp->QP && mbqp->NumQPAlloc >= mbW * mbH)
+        if (   mbqp && mbqp->QP && mbqp->NumQPAlloc >= mbW * mbH
+            && m_mbqp_buffer.size() >= (bufW * bufH))
         {
-            //width(64byte alignment) height(8byte alignment)
-            mfxU32 pitch = ((mbW + 63) & ~63);
 
             Zero(m_mbqp_buffer);
             for (mfxU32 mbRow = 0; mbRow < mbH; mbRow ++)
-                MFX_INTERNAL_CPY(&m_mbqp_buffer[mbRow * pitch], &mbqp->QP[mbRow * mbW], mbW);
+                for (mfxU32 mbCol = 0; mbCol < mbW; mbCol ++)
+                    m_mbqp_buffer[mbRow * bufW + mbCol].qp_y = mbqp->QP[mbRow * mbW + mbCol];
 
-            MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMBQP(m_vaDisplay, m_vaContextEncode, m_mbqpBufferId, 
-                                                          &m_mbqp_buffer[0], pitch, ((mbH + 7) & ~7)), MFX_ERR_DEVICE_FAILED);
+            MFX_DESTROY_VABUFFER(m_mbqpBufferId, m_vaDisplay);
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                m_vaContextEncode,
+                (VABufferType)VAEncQpBufferType,
+                sizeof(VAEncQpBufferH264),
+                (bufW * bufH),
+                &m_mbqp_buffer[0],
+                &m_mbqpBufferId);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             configBuffers[buffersCount++] = m_mbqpBufferId;
+        }
+    }
+
+    if (ctrlNoSkipMap)
+    {
+        mfxU32 mbW = m_sps.picture_width_in_mbs;
+        mfxU32 mbH = m_sps.picture_height_in_mbs;
+        mfxU32 bufW = ((mbW + 63) & ~63);
+        mfxU32 bufH = ((mbH + 7) & ~7);
+
+        if (   m_mb_noskip_buffer.size() >= (bufW * bufH)
+            && ctrlNoSkipMap->Map
+            && ctrlNoSkipMap->MapSize >= (mbW * mbH))
+        {
+            Zero(m_mb_noskip_buffer);
+            for (mfxU32 mbRow = 0; mbRow < mbH; mbRow ++)
+                MFX_INTERNAL_CPY(&m_mb_noskip_buffer[mbRow * bufW], &ctrlNoSkipMap->Map[mbRow * mbW], mbW);
+
+            MFX_DESTROY_VABUFFER(m_mbNoSkipBufferId, m_vaDisplay);
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                    m_vaContextEncode,
+                    (VABufferType)VAEncMacroblockDisableSkipMapBufferType,
+                    (bufW * bufH),
+                    1,
+                    &m_mb_noskip_buffer[0],
+                    &m_mbNoSkipBufferId);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            configBuffers[buffersCount++] = m_mbNoSkipBufferId;
         }
     }
 
@@ -2563,6 +2614,7 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_roiBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_mbqpBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_mbNoSkipBufferId, m_vaDisplay);
     for( mfxU32 i = 0; i < m_slice.size(); i++ )
     {
         MFX_DESTROY_VABUFFER(m_sliceBufferId[i], m_vaDisplay);

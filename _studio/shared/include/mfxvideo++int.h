@@ -22,6 +22,7 @@ File Name: mfxvideo++int.h
 #include "mfxvp8.h"
 #include "mfxvp9.h"
 #include "mfxplugin.h"
+#include "mfxprivate.h"
 
 
 #if defined(_WIN32) || defined(_WIN64)
