@@ -37,11 +37,12 @@ else( )
 endif( )
 
 if( Linux OR Darwin )
-  find_path( MFX_INCLUDE mfxdefs.h PATHS $ENV{MFX_HOME}/include )
+  set( API_HOME $ENV{MFX_HOME} )
+  find_path( MFX_INCLUDE mfxdefs.h PATHS ${API_HOME} PATH_SUFFIXES include mdp_msdk-api/include )
   find_library ( MFX_LIBRARY libmfx.a PATHS $ENV{MFX_HOME}/lib PATH_SUFFIXES ${os_arch} )
 
   # required:
-  include_directories( $ENV{MFX_HOME}/include )
+  include_directories( ${API_HOME}/include )
   link_directories( $ENV{MFX_HOME}/lib/${os_arch} )
 
 else( )
@@ -56,13 +57,14 @@ if(NOT MFX_INCLUDE MATCHES NOTFOUND)
 endif( )
 
 if(NOT DEFINED MFX_FOUND)
-  message( FATAL_ERROR "Intel(R) Media SDK was not found (required)! Set/check MFX_HOME environment variable!")
+  message( FATAL_ERROR "Intel(R) Media SDK was not found in ${API_HOME} (${MFX_INCLUDE}, ${MFX_LIBRARY} required)! Set/check MFX_HOME environment variable!")
 else ( )
-  message( STATUS "Intel(R) Media SDK was found here $ENV{MFX_HOME}")
+  message( STATUS "Intel(R) Media SDK ${MFX_INCLUDE}, ${MFX_LIBRARY} was found here ${API_HOME}")
 endif( )
 
 if(NOT MFX_LIBRARY MATCHES NOTFOUND)
   get_filename_component(MFX_LIBRARY_PATH ${MFX_LIBRARY} PATH )
+  message( STATUS "Intel(R) Media SDK ${MFX_LIBRARY_PATH} will be used")
   link_directories( ${MFX_LIBRARY_PATH} )
 endif( )
 

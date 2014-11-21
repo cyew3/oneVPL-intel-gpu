@@ -38,6 +38,7 @@
 #include "mfxmvc.h"
 #include "mfxjpeg.h"
 #include "mfxla.h"
+#include "mfxvp8.h"
 
 #include "../../sample_user_modules/plugin_api/plugin_loader.h"
 

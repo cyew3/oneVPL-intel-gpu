@@ -18,6 +18,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include "sample_utils.h"
 #include "mfxcommon.h"
 #include "mfxjpeg.h"
+#include "mfxvp8.h"
 
 #pragma warning( disable : 4748 )
 
@@ -1753,7 +1754,7 @@ bool IsDecodeCodecSupported(mfxU32 codecFormat)
         case MFX_CODEC_VC1:
         case CODEC_MVC:
         case MFX_CODEC_JPEG:
-        case CODEC_VP8:
+        case MFX_CODEC_VP8:
         break;
     default:
         return false;
@@ -1769,6 +1770,7 @@ bool IsEncodeCodecSupported(mfxU32 codecFormat)
         case MFX_CODEC_HEVC:
         case MFX_CODEC_MPEG2:
         case CODEC_MVC:
+        case MFX_CODEC_VP8:
         case MFX_CODEC_JPEG:
         break;
     default:
@@ -1785,6 +1787,7 @@ bool IsPluginCodecSupported(mfxU32 codecFormat)
         case MFX_CODEC_AVC:
         case MFX_CODEC_MPEG2:
         case MFX_CODEC_VC1:
+        case MFX_CODEC_VP8:
         break;
     default:
         return false;
@@ -1828,7 +1831,7 @@ mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat)
         }
         else if (0 == msdk_strcmp(strInput, MSDK_STRING("vp8")))
         {
-            codecFormat = CODEC_VP8;
+            codecFormat = MFX_CODEC_VP8;
         }
         else
             sts = MFX_ERR_UNSUPPORTED;

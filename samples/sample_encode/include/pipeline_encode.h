@@ -26,6 +26,7 @@
 
 #include "mfxmvc.h"
 #include "mfxvideo.h"
+#include "mfxvp8.h"
 #include "mfxvideo++.h"
 #include "mfxplugin.h"
 #include "mfxplugin++.h"
