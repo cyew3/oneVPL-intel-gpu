@@ -115,3 +115,5 @@ bool tsStatus::check(mfxStatus status)
     m_status = status;
     return check();
 }
+
+

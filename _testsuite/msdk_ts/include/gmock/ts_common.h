@@ -107,3 +107,4 @@ extern tsStreamPool g_tsStreamPool;
 std::string ENV(const char* name, const char* def);
 
 bool operator == (const mfxFrameInfo&, const mfxFrameInfo&);
+

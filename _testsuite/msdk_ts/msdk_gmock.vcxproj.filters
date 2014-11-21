@@ -304,5 +304,8 @@
     <ClCompile Include="src\gmock\test_suites\ptir_time_stamps.cpp">
       <Filter>Source Files\test_suites\ptir</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mjpegd_init.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
