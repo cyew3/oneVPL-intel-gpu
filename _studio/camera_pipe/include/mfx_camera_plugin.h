@@ -122,6 +122,7 @@ protected:
 
         mfxMemId inSurf2D;
         mfxMemId inSurf2DUP;
+        mfxU16   tileID;
 
         mfxMemId outSurf2D;
         mfxMemId outSurf2DUP;

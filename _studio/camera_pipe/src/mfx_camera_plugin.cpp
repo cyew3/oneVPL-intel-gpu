@@ -920,9 +920,10 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
         // TODO: make number of tiles dependent on frame size.
         // For existing 7Kx4K 2 tiles seems to be enough.
         m_nTiles = 2;
-        if ( m_mfxVideoParam.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY )
+        if ( m_mfxVideoParam.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY || m_Caps.bNoPadding )
         {
-            // In case of tiling, only system memory is supported as output.
+            // In case of tiling, only system memory is supported as output
+            // Temporary limitation: tiling is not supported in case of padded input - must be fixed till production release
             // Must be documented
             return MFX_ERR_UNSUPPORTED;
         }
@@ -955,7 +956,6 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
             {
                 // In case of several tiles, last tile must be aligned to the original frame bottom
                 m_FrameSizeExtra.tileOffsets[i].TileOffset = m_mfxVideoParam.vpp.In.CropH - m_FrameSizeExtra.TileHeight;
-                m_FrameSizeExtra.tileOffsets[i].TileOffset = ((m_FrameSizeExtra.tileOffsets[i].TileOffset + 1)/2)*2;
             }
             else
             {
@@ -1298,19 +1298,6 @@ mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
     m_core->IncreasePureReference(m_activeThreadCount);
 
 #ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipe, __itt_null, __itt_null, tasks);
-#endif
-
-    sts = SetExternalSurfaces(pParam);
-    if (sts != MFX_ERR_NONE)
-        return sts;
-
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipe);
-#endif
-
-
-#ifdef CAMP_PIPE_ITT
     __itt_task_begin(CamPipe, __itt_null, __itt_null, task1);
 #endif
 
@@ -1460,7 +1447,7 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     AsyncParams *pParams = new AsyncParams;
-    pParams->surf_in = surface_in;
+    pParams->surf_in  = surface_in;
     pParams->surf_out = surface_out;
 
     *mfxthreadtask = (mfxThreadTask*) pParams;
