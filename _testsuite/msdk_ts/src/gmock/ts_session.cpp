@@ -10,6 +10,7 @@ tsSession::tsSession(mfxIMPL impl, mfxVersion version)
     , m_pVAHandle(0)
     , m_initialized(false)
     , m_sw_fallback(false)
+    , m_is_handle_set(false)
 {
 }
 
@@ -57,6 +58,7 @@ mfxStatus tsSession::MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
         }
         m_pVAHandle->get_hdl(type, hdl);
         SetHandle(m_session, type, hdl);
+        m_is_handle_set = (g_tsStatus.get() >= 0);
     }
 #endif
 
@@ -120,5 +122,6 @@ mfxStatus tsSession::SetHandle(mfxSession session, mfxHandleType type, mfxHDL ha
 {
     TRACE_FUNC3(MFXVideoCORE_SetHandle, session, type, handle);
     g_tsStatus.check( MFXVideoCORE_SetHandle(session, type, handle) );
+    m_is_handle_set = (g_tsStatus.get() >= 0);
     return g_tsStatus.get();
 }

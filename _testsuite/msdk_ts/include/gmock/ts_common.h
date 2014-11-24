@@ -102,6 +102,8 @@ extern tsStreamPool g_tsStreamPool;
 #define TS_START try {
 #define TS_END   } catch(tsRes r) { return r; }
 
+#define TS_HW_ALLOCATOR_TYPE (!!((g_tsImpl) & 0xF00) ? frame_allocator::HARDWARE_DX11 : frame_allocator::HARDWARE)
+
 std::string ENV(const char* name, const char* def);
 
 bool operator == (const mfxFrameInfo&, const mfxFrameInfo&);

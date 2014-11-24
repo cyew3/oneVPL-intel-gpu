@@ -7,6 +7,7 @@ class tsSession
 public:
     bool                m_initialized;
     bool                m_sw_fallback;
+    bool                m_is_handle_set;
     mfxSession          m_session;
     mfxIMPL             m_impl;
     mfxVersion          m_version;

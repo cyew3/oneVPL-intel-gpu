@@ -378,25 +378,28 @@ int TestSuite::RunTest(unsigned int id)
         SetFrameAllocator(m_session, m_spool_in.GetAllocator());
         m_spool_out.SetAllocator(m_spool_in.GetAllocator(), true);
 
-        mfxHDL hdl;
-        mfxHandleType type;
-        if (isSW)
+        if (!m_is_handle_set)
         {
-            if (!m_pVAHandle)
+            mfxHDL hdl;
+            mfxHandleType type;
+            if (isSW)
             {
-                m_pVAHandle = new frame_allocator(
-                        frame_allocator::HARDWARE,
-                        frame_allocator::ALLOC_MAX,
-                        frame_allocator::ENABLE_ALL,
-                        frame_allocator::ALLOC_EMPTY);
+                if (!m_pVAHandle)
+                {
+                    m_pVAHandle = new frame_allocator(
+                            TS_HW_ALLOCATOR_TYPE,
+                            frame_allocator::ALLOC_MAX,
+                            frame_allocator::ENABLE_ALL,
+                            frame_allocator::ALLOC_EMPTY);
+                }
+                m_pVAHandle->get_hdl(type, hdl);
             }
-            m_pVAHandle->get_hdl(type, hdl);
+            else
+            {
+                m_spool_in.GetAllocator()->get_hdl(type, hdl);
+            }
+            SetHandle(m_session, type, hdl);
         }
-        else
-        {
-            m_spool_in.GetAllocator()->get_hdl(type, hdl);
-        }
-        SetHandle(m_session, type, hdl);
     }
 
     if (tc.mode & ALLOC_OPAQUE)
