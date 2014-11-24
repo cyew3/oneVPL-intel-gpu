@@ -396,6 +396,44 @@ mfxStatus SetHRD(
     return MFX_ERR_NONE;
 }
 
+mfxStatus SetQualityLevel(
+    mfxVideoParam const & par,
+    VADisplay    m_vaDisplay,
+    VAContextID  m_vaContextEncode,
+    VABufferID & qualityLevelBuf_id)
+{
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param;
+    VAEncMiscParameterBufferQualityLevel *quality_param;
+
+    if ( qualityLevelBuf_id != VA_INVALID_ID)
+    {
+        vaDestroyBuffer(m_vaDisplay, qualityLevelBuf_id);
+    }
+    vaSts = vaCreateBuffer(m_vaDisplay,
+                   m_vaContextEncode,
+                   VAEncMiscParameterBufferType,
+                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterBufferQualityLevel),
+                   1,
+                   NULL,
+                   &qualityLevelBuf_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(m_vaDisplay,
+                 qualityLevelBuf_id,
+                (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = VAEncMiscParameterTypeQualityLevel;
+    quality_param = (VAEncMiscParameterBufferQualityLevel *)misc_param->data;
+
+    quality_param->quality_level = par.mfx.TargetUsage;
+
+    vaUnmapBuffer(m_vaDisplay, qualityLevelBuf_id);
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus SetFrameRate(
     mfxVideoParam const & par,
     VADisplay    m_vaDisplay,
@@ -524,6 +562,7 @@ VAAPIEncoder::VAAPIEncoder()
 , m_frameRateBufferId(VA_INVALID_ID)
 , m_rateCtrlBufferId(VA_INVALID_ID)
 , m_hrdBufferId(VA_INVALID_ID)
+, m_qualityLevelBufferId(VA_INVALID_ID)
 {
 } // VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
 
@@ -662,6 +701,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     FillSpsBuffer(par, m_sps);
     SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
     SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
+    SetQualityLevel(par, m_vaDisplay, m_vaContextEncode, m_qualityLevelBufferId);
     SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_rateCtrlBufferId);
 
     hybridQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
@@ -696,6 +736,7 @@ mfxStatus VAAPIEncoder::Reset(mfxVideoParam const & par)
     FillSpsBuffer(par, m_sps);
     SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
     SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
+    SetQualityLevel(par, m_vaDisplay, m_vaContextEncode, m_qualityLevelBufferId);
     SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
 
     return MFX_ERR_NONE;
@@ -951,6 +992,9 @@ mfxStatus VAAPIEncoder::Execute(
         configBuffers[buffersCount++] = m_rateCtrlBufferId;
         // 9. frame rate
         configBuffers[buffersCount++] = m_frameRateBufferId;
+        // 10. quality level
+        // VAEncMiscParameterBufferQualityLevel isn't supported by driver yet - don't send it until support will be added
+        //configBuffers[buffersCount++] = m_qualityLevelBufferId;
     }
 
     assert(buffersCount <= configBuffers.size());
@@ -1101,6 +1145,7 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_frameRateBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_rateCtrlBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_hrdBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_qualityLevelBufferId, m_vaDisplay);
 
     return MFX_ERR_NONE;
 

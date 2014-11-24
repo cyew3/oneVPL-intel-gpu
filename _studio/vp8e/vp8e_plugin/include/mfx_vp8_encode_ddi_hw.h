@@ -268,6 +268,7 @@ do {                                               \
         VABufferID m_frameRateBufferId;
         VABufferID m_rateCtrlBufferId;
         VABufferID m_hrdBufferId;
+        VABufferID m_qualityLevelBufferId;
       
         std::vector<ExtVASurface> m_feedbackCache;
         std::vector<ExtVASurface> m_mbDataQueue;
