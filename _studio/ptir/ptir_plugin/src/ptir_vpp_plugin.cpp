@@ -596,7 +596,9 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 if(in_opaq_buf)
                 {
                     bool bOpaqMode[2];
-                    CheckOpaqMode(const_in, out, *in_opaq_buf, out_opaq_buf, bOpaqMode);
+                    mfxSts = CheckOpaqMode(const_in, out, *in_opaq_buf, out_opaq_buf, bOpaqMode);
+                    if(mfxSts)
+                        error = true;
                 }
             }
         }

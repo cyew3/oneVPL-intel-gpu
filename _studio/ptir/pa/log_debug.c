@@ -14,6 +14,10 @@ File Name: log_debug.c
 
 void Interlaced_detection_log(Frame *frmBuffer[BUFMINSIZE], unsigned int uiNumFramesToDispatch)
 {
+    frmBuffer;
+    uiNumFramesToDispatch;
+    return;
+#if 0
     unsigned int i = 0;
     FILE* fLogDetection = NULL;
 
@@ -45,5 +49,6 @@ void Interlaced_detection_log(Frame *frmBuffer[BUFMINSIZE], unsigned int uiNumFr
     }
 
     fclose(fLogDetection);
+#endif
 
 }

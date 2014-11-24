@@ -48,6 +48,11 @@ static void CopyFrame(Frame *pSrc, Frame* pDst)
 
 void Interlaced_detection_logCM(Frame *frmBuffer[BUFMINSIZE], unsigned int uiNumFramesToDispatch)
 {
+    frmBuffer;
+    uiNumFramesToDispatch;
+    return;
+
+#if 0
     unsigned int i = 0;
     FILE* fLogDetection = NULL;
 
@@ -79,6 +84,7 @@ void Interlaced_detection_logCM(Frame *frmBuffer[BUFMINSIZE], unsigned int uiNum
     }
 
     fclose(fLogDetection);
+#endif
 }
 
 
@@ -110,7 +116,7 @@ void Undo2Frames_CMTest(Frame *frmBuffer1, Frame *frmBuffer2, bool BFF)
     unsigned char * line1 = frmBuffer1->plaY.ucData + frmBuffer1->plaY.uiStride;
 
     comp = memcmp(frmBuffer1_c->ucMem, frmBuffer1->ucMem, frmBuffer1->uiSize);
-    printf("Undo2Frames_CM test result: %s", comp?"Failed!\n":"Successful!\n");
+    //printf("Undo2Frames_CM test result: %s", comp?"Failed!\n":"Successful!\n");
 }
 #endif
 
@@ -724,8 +730,9 @@ void RemovePatternCM(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned i
         Pattern41Removal(frmBuffer, uiInitFramePosition, pdispatch);
     else
     {
-        printf("\nUnknown Pattern, please check your selection\n");
-        exit(-1001);
+        throw (int) -16;
+        //printf("\nUnknown Pattern, please check your selection\n");
+        //exit(-1001);
     }
 }
 
@@ -992,6 +999,8 @@ void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, doubl
          CheckGenFrameCM(frmBuffer, frameIndex, uiisInterlaced);
 
     Prepare_frame_for_queueCM(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight);
+    if(!frmIn)
+        return;
     memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
            
     //Timestamp
@@ -1369,8 +1378,7 @@ int PTIRCM_MultipleMode(PTIRSystemBuffer *SysBuffer, unsigned int uiOpMode)
         return(PTIRCM_BaseFrameMode_NoChange(SysBuffer));
     else
     {
-        printf("\nInvalid Operation Mode\n");
-        exit(-1002);
+        throw (int) -16;
     }
 }
 

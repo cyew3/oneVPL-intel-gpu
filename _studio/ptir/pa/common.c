@@ -14,6 +14,7 @@ File Name: common.c
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 
+#if 0
 #if defined(_WIN32) || defined(_WIN64)
 void PrintOutputStats(HANDLE hStd,
                               CONSOLE_SCREEN_BUFFER_INFO sbInfo, 
@@ -82,7 +83,7 @@ void PrintOutputStats_PvsI(unsigned long ulNumberofInterlacedFrames, unsigned lo
 #endif
 #endif
 }
-
+#endif
 
 void* aligned_malloc(size_t required_bytes, size_t alignment)
 {
@@ -434,6 +435,8 @@ void Update_Frame_BufferNEW(Frame** frmBuffer, unsigned int frameIndex, double d
          CheckGenFrame(frmBuffer, frameIndex, uiisInterlaced);
 
     Prepare_frame_for_queue(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight);
+    if(!frmIn)
+        return;
     memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
 
     //Timestamp
@@ -471,6 +474,8 @@ void Update_Frame_Buffer(Frame** frmBuffer, unsigned int frameIndex, double dTim
          CheckGenFrame(frmBuffer, frameIndex, uiisInterlaced);
 
     Prepare_frame_for_queue(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight);
+    if(!frmIn)
+        return;
     memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
            
     //Timestamp
@@ -913,8 +918,8 @@ int PTIR_MultipleMode(PTIRSystemBuffer *SysBuffer, unsigned int uiOpMode)
         return(PTIR_BaseFrameMode_NoChange(SysBuffer));
     else
     {
-        printf("\nInvalid Operation Mode\n");
-        exit(-1002);
+        //throw (int) -16;
+        return -16;
     }
 }
 

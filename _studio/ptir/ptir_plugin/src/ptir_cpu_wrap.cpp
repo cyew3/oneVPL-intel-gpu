@@ -236,6 +236,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
         Env.frmBuffer[0]->frmProperties.processed = false;
 
         uiStart = 1;
+        Env.control.uiFrame = uiStart;
 
         b_firstFrameProceed = true;
         return MFX_ERR_MORE_DATA;
@@ -253,6 +254,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
         mfxSts = MFX_PTIR_PutFrame(surf_in, &Env, pts);
         if(mfxSts)
             return mfxSts;
+        Env.control.uiFrame++;
         if(!PTIR_MultipleMode(&Env, uiOpMode))
         {
             while(Env.frmIn = PTIR_GetFrame(&Env))

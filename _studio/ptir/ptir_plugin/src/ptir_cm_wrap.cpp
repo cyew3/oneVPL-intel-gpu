@@ -296,6 +296,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFram
         Env.frmBuffer[0]->frmProperties.processed = false;
 
         uiStart = 1;
+        Env.control.uiFrame = uiStart;
 
         b_firstFrameProceed = true;
         return MFX_ERR_MORE_DATA;
@@ -316,6 +317,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFram
         mfxSts = MFX_PTIRCM_PutFrame(surf_in, surf_out, Env.frmBuffer[Env.control.uiCur], &Env, pts);
         if(mfxSts)
             return mfxSts;
+        Env.control.uiFrame++;
 
         if(static_cast<CmSurface2DEx*>(Env.frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D == 0)
            static_cast<CmSurface2DEx*>(Env.frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
