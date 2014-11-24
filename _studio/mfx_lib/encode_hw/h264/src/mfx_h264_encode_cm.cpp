@@ -820,6 +820,7 @@ void CmContext::Setup(
         m_program = ReadProgram(m_device, genx_hsw_simple_me, SizeOf(genx_hsw_simple_me));
         break;
     case MFX_HW_BDW:
+    case MFX_HW_CHV:
         m_program = ReadProgram(m_device, genx_bdw_simple_me, SizeOf(genx_bdw_simple_me));
         break;
     default:
