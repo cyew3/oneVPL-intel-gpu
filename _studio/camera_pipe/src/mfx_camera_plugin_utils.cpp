@@ -629,7 +629,7 @@ mfxStatus MFXCamera_Plugin::SetExternalSurfaces(AsyncParams *pParam)
             if (m_Caps.bOutToARGB16)
                 pParam->outSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, allocPitch>>2, outHeight, CM_SURFACE_FORMAT_A8R8G8B8, (void *)surfOut->Data.V16);
             else
-                pParam->outSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, allocPitch, outHeight, CM_SURFACE_FORMAT_A8, (void *)surfOut->Data.B);
+                pParam->outSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, allocPitch>>2, outHeight, CM_SURFACE_FORMAT_A8R8G8B8, (void *)ptr);
         }
         else
         {

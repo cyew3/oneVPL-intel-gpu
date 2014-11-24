@@ -945,9 +945,13 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
         m_FrameSizeExtra.TileWidth         = m_mfxVideoParam.vpp.In.CropW;
         m_FrameSizeExtra.TileHeight        = m_mfxVideoParam.vpp.In.CropH;
         if ( m_nTiles > 1 )
-            m_FrameSizeExtra.TileHeight = ( m_mfxVideoParam.vpp.In.CropH / m_nTiles + 31 ) &~ 0x1F;
-        
-        m_FrameSizeExtra.TileHeightPadded  =  m_FrameSizeExtra.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
+        {
+            // in case frame data pointer is 4K aligned, adding aligned_cut gives another 4K aligned pointer
+            // below of the tiles border
+            mfxU32 aligned_cut = ( m_mfxVideoParam.vpp.In.CropH / m_nTiles - 0x3F ) &~0x3F;
+            m_FrameSizeExtra.TileHeight = m_mfxVideoParam.vpp.In.CropH - aligned_cut;
+        }
+        m_FrameSizeExtra.TileHeightPadded  = m_FrameSizeExtra.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
         m_FrameSizeExtra.BitDepth          = m_mfxVideoParam.vpp.In.BitDepthLuma;
         m_FrameSizeExtra.TileInfo          = m_mfxVideoParam.vpp.In;
         for (int i = 0; i < m_nTiles; i++)
@@ -1123,9 +1127,14 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
     frameSizeExtra.tileNum           = m_nTiles;
     frameSizeExtra.tileOffsets       = new CameraTileOffset[m_nTiles];
     frameSizeExtra.TileWidth         = newParam.vpp.In.CropW;
-    frameSizeExtra.TileHeight        = ((((newParam.vpp.In.CropH)/ m_nTiles ) + 1)/2)*2;
+    frameSizeExtra.TileHeight        = newParam.vpp.In.CropH;
     if ( m_nTiles > 1 )
-        frameSizeExtra.TileHeight = ((newParam.vpp.In.CropH)/ m_nTiles + 31 ) &~ 0x1F;
+    {
+        // in case frame data pointer is 4K aligned, aligned_cut gives another 4K aligned pointer
+        // below of the tiles border
+        mfxU32 aligned_cut = ( newParam.vpp.In.CropH / m_nTiles - 0x3F ) &~0x3F;
+        frameSizeExtra.TileHeight = newParam.vpp.In.CropH - aligned_cut;
+    }
     frameSizeExtra.TileHeightPadded  = frameSizeExtra.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
     frameSizeExtra.BitDepth          = newParam.vpp.In.BitDepthLuma;
     frameSizeExtra.TileInfo          = newParam.vpp.In;
