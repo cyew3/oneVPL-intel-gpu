@@ -663,7 +663,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
 }
 
 
-mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_LoadByPath)(mfxSession session, const mfxPluginUID *uid, mfxU32 version, const msdk_disp_char *path, mfxU32 len) 
+mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_LoadByPath)(mfxSession session, const mfxPluginUID *uid, mfxU32 version, const mfxChar *path, mfxU32 len)
 {
     MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
     if (!&pHandle)
@@ -684,7 +684,20 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_LoadByPath)(mfxSession session,
 
     PluginDescriptionRecord record;
     record.sName[0] = 0;
+
+#ifdef _WIN32
+    msdk_disp_char wPath[MAX_PLUGIN_PATH];
+    int res = ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, len, wPath, MAX_PLUGIN_PATH);
+    if (!res)
+    {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_LoadByPath: cant convert UTF-8 path to UTF-16\n")));
+        return MFX_ERR_NOT_FOUND;
+    }
+    msdk_disp_char_cpy_s(record.sPath, res < MAX_PLUGIN_PATH ? res : MAX_PLUGIN_PATH, wPath);
+#else // Linux/Android 
     msdk_disp_char_cpy_s(record.sPath, len < MAX_PLUGIN_PATH ? len : MAX_PLUGIN_PATH, path);
+#endif
+    
     record.PluginUID = *uid; 
     record.PluginVersion = (mfxU16)version;
     record.Default = true;
