@@ -198,7 +198,8 @@ typedef enum _GPU_PLATFORM{
     PLATFORM_INTEL_IVB         = 2,   //Ivy Bridge
     PLATFORM_INTEL_HSW         = 3,   //Haswell
     PLATFORM_INTEL_BDW         = 4,   //Broadwell
-    PLATFORM_INTEL_VLV         = 5    //ValleyView
+    PLATFORM_INTEL_VLV         = 5,   //ValleyView
+    PLATFORM_INTEL_CHV         = 6    //CherryView
 } GPU_PLATFORM;
 
 typedef enum _GPU_GT_PLATFORM{
@@ -209,6 +210,7 @@ typedef enum _GPU_GT_PLATFORM{
     PLATFORM_INTEL_GT4         = 4,
     PLATFORM_INTEL_GTVLV       = 5,
     PLATFORM_INTEL_GTVLVPLUS   = 6,
+    PLATFORM_INTEL_GTCHV       = 7
 } GPU_GT_PLATFORM;
 
 typedef enum _CM_DEVICE_CAP_NAME
