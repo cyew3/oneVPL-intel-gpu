@@ -1312,8 +1312,8 @@ mfxStatus MFXDecPipeline::DecodeHeader()
 
             if (m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_VP9)
             {
-                m_components[eDEC].m_params.mfx.FrameInfo.Width = m_inParams.FrameInfo.Width;
-                m_components[eDEC].m_params.mfx.FrameInfo.Height = m_inParams.FrameInfo.Height;
+                //m_components[eDEC].m_params.mfx.FrameInfo.Width = m_inParams.FrameInfo.Width;
+                //m_components[eDEC].m_params.mfx.FrameInfo.Height = m_inParams.FrameInfo.Height;
             }
 
             break;
@@ -2367,7 +2367,10 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
         // DXVA2Dump wrapper
         if (m_inParams.bDXVA2Dump)
         {
-            m_dxvaSpy.reset(pMgr = CreateDXVASpy(pMgr));
+            if (!m_dxvaSpy.get())
+                m_dxvaSpy.reset(pMgr = CreateDXVASpy(pMgr));
+            else
+                pMgr = (IDirect3DDeviceManager9 *)m_dxvaSpy.get();
         }
 
         // Set D3D device manager to MediaSDK session(s)

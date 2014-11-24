@@ -344,7 +344,7 @@ namespace MfxVP9Decode
                     mfxU32 this_sz = 0;
 
                     for (mfxU32 j = 0; j < mag; j++)
-                    this_sz |= (*x++) << (j * 8);
+                        this_sz |= (*x++) << (j * 8);
                     sizes[i] = this_sz;
                 }
 

@@ -98,6 +98,11 @@ private:
     UMC::VideoAccelerator * m_va;
 
     VP9FrameInfo m_frameInfo;
+    struct {
+        mfxU32 width;
+        mfxU32 height;
+    } m_firstSizes;
+    
     mfxBitstream m_bs;
 
     mfxI32 m_baseQIndex;

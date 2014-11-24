@@ -149,6 +149,8 @@ namespace UMC
             Status sts;
             READ_BYTES(&nBytesInFrame, sizeof(nBytesInFrame));
             READ_BYTES(&m_nPts, sizeof(m_nPts));
+            if (m_LastFrame.GetBufferSize() < nBytesInFrame)
+                m_LastFrame.Alloc(nBytesInFrame*2);
             UMC_CHECK(nBytesInFrame <= m_LastFrame.GetBufferSize(), UMC_ERR_NOT_ENOUGH_BUFFER);
 
             READ_BYTES((Ipp8u*)m_LastFrame.GetDataPointer(), nBytesInFrame);
