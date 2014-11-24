@@ -367,9 +367,9 @@ mfxStatus MFXCamera_Plugin::ReallocateInternalSurfaces(mfxVideoParam &newParam, 
             m_cmDevice->DestroySurface(m_gammaOutSurf);
 
         if (! m_Caps.bOutToARGB16)
-            m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW,  m_FrameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8R8G8B8);
+            m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW,  frameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8R8G8B8);
         else
-            m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW * sizeof(mfxU16),  m_FrameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8);
+            m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW * sizeof(mfxU16),  frameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8);
     }
     else if (m_gammaOutSurf)
         m_cmDevice->DestroySurface(m_gammaOutSurf);
@@ -387,7 +387,7 @@ mfxStatus MFXCamera_Plugin::ReallocateInternalSurfaces(mfxVideoParam &newParam, 
         if (m_cmSurfIn)
             m_cmDevice->DestroySurface(m_cmSurfIn);
         int width  = m_Caps.bNoPadding ? paddedFrameWidth  : newParam.vpp.In.CropW;
-        int height = m_FrameSizeExtra.TileHeight;
+        int height = frameSizeExtra.TileHeight;
 
         CAMERA_DEBUG_LOG("ReallocateInternalSurfaces:  m_cmSurfIn width %d height %d \n", width, height);
         m_cmSurfIn = CreateSurface(m_cmDevice, width * sizeof(mfxU16),  height, CM_SURFACE_FORMAT_A8);
