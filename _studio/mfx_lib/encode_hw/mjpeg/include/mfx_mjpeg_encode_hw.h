@@ -105,6 +105,11 @@ protected:
     mfxU32                m_counter;    // task number (StatusReportFeedbackNumber)
 
     TaskManager           m_TaskManager;
+
+    mfxExtJPEGQuantTables    m_checkedJpegQT;
+    mfxExtJPEGHuffmanTables  m_checkedJpegHT;
+    mfxExtOpaqueSurfaceAlloc m_checkedOpaqAllocReq;
+    mfxExtBuffer*            m_pCheckedExt[3];
 };
 
 #endif // #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_VA)

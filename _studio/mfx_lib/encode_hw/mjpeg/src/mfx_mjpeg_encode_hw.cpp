@@ -386,41 +386,37 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
 
     mfxVideoParam checked;
-    mfxExtJPEGQuantTables checked_jpegQT;
-    mfxExtJPEGHuffmanTables checked_jpegHT;
-    mfxExtOpaqueSurfaceAlloc checked_opaqAllocReq;
-    mfxExtBuffer *ptr_checked_ext[3] = {0,};
     mfxU16 ext_counter = 0;
     checked = *par;
 
     if (jpegQT)
     {
-        checked_jpegQT = *jpegQT;
-        ptr_checked_ext[ext_counter++] = &checked_jpegQT.Header;
+        m_checkedJpegQT = *jpegQT;
+        m_pCheckedExt[ext_counter++] = &m_checkedJpegQT.Header;
     }
     else
     {
-        memset(&checked_jpegQT, 0, sizeof(checked_jpegQT));
-        checked_jpegQT.Header.BufferId = MFX_EXTBUFF_JPEG_QT;
-        checked_jpegQT.Header.BufferSz = sizeof(checked_jpegQT);
+        memset(&m_checkedJpegQT, 0, sizeof(m_checkedJpegQT));
+        m_checkedJpegQT.Header.BufferId = MFX_EXTBUFF_JPEG_QT;
+        m_checkedJpegQT.Header.BufferSz = sizeof(m_checkedJpegQT);
     }
     if (jpegHT)
     {
-        checked_jpegHT = *jpegHT;
-        ptr_checked_ext[ext_counter++] = &checked_jpegHT.Header;
+        m_checkedJpegHT = *jpegHT;
+        m_pCheckedExt[ext_counter++] = &m_checkedJpegHT.Header;
     }
     else
     {
-        memset(&checked_jpegHT, 0, sizeof(checked_jpegHT));
-        checked_jpegHT.Header.BufferId = MFX_EXTBUFF_JPEG_HUFFMAN;
-        checked_jpegHT.Header.BufferSz = sizeof(checked_jpegHT);
+        memset(&m_checkedJpegHT, 0, sizeof(m_checkedJpegHT));
+        m_checkedJpegHT.Header.BufferId = MFX_EXTBUFF_JPEG_HUFFMAN;
+        m_checkedJpegHT.Header.BufferSz = sizeof(m_checkedJpegHT);
     }
     if (opaqAllocReq)
     {
-        checked_opaqAllocReq = *opaqAllocReq;
-        ptr_checked_ext[ext_counter++] = &checked_opaqAllocReq.Header;
+        m_checkedOpaqAllocReq = *opaqAllocReq;
+        m_pCheckedExt[ext_counter++] = &m_checkedOpaqAllocReq.Header;
     }
-    checked.ExtParam = ptr_checked_ext;
+    checked.ExtParam = m_pCheckedExt;
     checked.NumExtParam = ext_counter;
 
     sts = Query(m_pCore, par, &checked);
@@ -438,7 +434,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     par = &checked; // from now work with fixed copy of input!
 
     if (opaqAllocReq)
-        opaqAllocReq = &checked_opaqAllocReq;
+        opaqAllocReq = &m_checkedOpaqAllocReq;
 
     if (!m_pCore->IsExternalFrameAllocator() && (par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)))
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -543,41 +539,37 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Reset(mfxVideoParam *par)
     mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
 
     mfxVideoParam checked;
-    mfxExtJPEGQuantTables checked_jpegQT;
-    mfxExtJPEGHuffmanTables checked_jpegHT;
-    mfxExtOpaqueSurfaceAlloc checked_opaqAllocReq;
-    mfxExtBuffer *ptr_checked_ext[3] = {0,};
     mfxU16 ext_counter = 0;
     checked = *par;
 
     if (jpegQT)
     {
-        checked_jpegQT = *jpegQT;
-        ptr_checked_ext[ext_counter++] = &checked_jpegQT.Header;
+        m_checkedJpegQT = *jpegQT;
+        m_pCheckedExt[ext_counter++] = &m_checkedJpegQT.Header;
     } 
     else 
     {
-        memset(&checked_jpegQT, 0, sizeof(checked_jpegQT));
-        checked_jpegQT.Header.BufferId = MFX_EXTBUFF_JPEG_QT;
-        checked_jpegQT.Header.BufferSz = sizeof(checked_jpegQT);
+        memset(&m_checkedJpegQT, 0, sizeof(m_checkedJpegQT));
+        m_checkedJpegQT.Header.BufferId = MFX_EXTBUFF_JPEG_QT;
+        m_checkedJpegQT.Header.BufferSz = sizeof(m_checkedJpegQT);
     }
     if (jpegHT)
     {
-        checked_jpegHT = *jpegHT;
-        ptr_checked_ext[ext_counter++] = &checked_jpegHT.Header;
+        m_checkedJpegHT = *jpegHT;
+        m_pCheckedExt[ext_counter++] = &m_checkedJpegHT.Header;
     } 
     else 
     {
-        memset(&checked_jpegHT, 0, sizeof(checked_jpegHT));
-        checked_jpegHT.Header.BufferId = MFX_EXTBUFF_JPEG_HUFFMAN;
-        checked_jpegHT.Header.BufferSz = sizeof(checked_jpegHT);
+        memset(&m_checkedJpegHT, 0, sizeof(m_checkedJpegHT));
+        m_checkedJpegHT.Header.BufferId = MFX_EXTBUFF_JPEG_HUFFMAN;
+        m_checkedJpegHT.Header.BufferSz = sizeof(m_checkedJpegHT);
     }
     if (opaqAllocReq) 
     {
-        checked_opaqAllocReq = *opaqAllocReq;
-        ptr_checked_ext[ext_counter++] = &checked_opaqAllocReq.Header;
+        m_checkedOpaqAllocReq = *opaqAllocReq;
+        m_pCheckedExt[ext_counter++] = &m_checkedOpaqAllocReq.Header;
     }
-    checked.ExtParam = ptr_checked_ext;
+    checked.ExtParam = m_pCheckedExt;
     checked.NumExtParam = ext_counter;
 
     sts = Query(m_pCore, par, &checked);
