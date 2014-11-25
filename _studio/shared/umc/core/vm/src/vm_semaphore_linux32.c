@@ -162,8 +162,9 @@ vm_status vm_semaphore_wait(vm_semaphore *sem)
         umc_status = VM_OK;
         if (0 == pthread_mutex_lock(&sem->mutex))
         {
-            if (0 == sem->count && 0 != pthread_cond_wait(&sem->cond, &sem->mutex))
-                umc_status = VM_OPERATION_FAILED;
+            while (0 == sem->count && umc_status == VM_OK)
+                if (0 != pthread_cond_wait(&sem->cond, &sem->mutex))
+                    umc_status = VM_OPERATION_FAILED;
 
             if (VM_OK == umc_status)
                 sem->count--;
@@ -226,8 +227,8 @@ vm_status vm_semaphore_post(vm_semaphore *sem)
     {
         if (0 == pthread_mutex_lock(&sem->mutex))
         {
-            if (0 == sem->count++)
-                res = pthread_cond_signal(&sem->cond);
+            sem->count++;
+            res = pthread_cond_signal(&sem->cond);
 
             umc_status = (res)? VM_OPERATION_FAILED: VM_OK;
 
@@ -264,11 +265,9 @@ vm_status vm_semaphore_post_many(vm_semaphore *sem, Ipp32s post_count)
             res = pthread_mutex_lock(&sem->mutex);
             if (0 == res)
             {
-                if (i == sem->count++)
-                {
-                    sts = pthread_cond_signal(&sem->cond);
-                    if (!res) res = sts;
-                }
+                sem->count++;
+                sts = pthread_cond_signal(&sem->cond);
+                if (!res) res = sts;
 
                 sts = pthread_mutex_unlock(&sem->mutex);
                 if (!res) res = sts;
