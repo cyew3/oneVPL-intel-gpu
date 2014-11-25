@@ -87,6 +87,9 @@
     <ClInclude Include="include\sample_params.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\general_allocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\base_allocator.cpp">
@@ -132,6 +135,9 @@
       <Filter>Source Files\vm</Filter>
     </ClCompile>
     <ClCompile Include="src\plugin_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\general_allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

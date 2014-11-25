@@ -91,6 +91,13 @@ const mfxPluginUID & msdkGetPluginUID(mfxIMPL impl, msdkComponentType type, mfxU
                 return MFX_PLUGINID_HEVCE_SW; // MFX_PLUGINID_HEVCD_SW for now
             }
             break;
+        case MSDK_VENC:
+            switch(uCodecid)
+            {
+            case MFX_CODEC_HEVC:
+                return MFX_PLUGINID_HEVCE_FEI_HW;   // HEVC FEI uses ENC interface
+            }
+            break;
         }
     }
 
