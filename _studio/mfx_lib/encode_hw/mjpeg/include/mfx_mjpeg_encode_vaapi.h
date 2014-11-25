@@ -117,6 +117,7 @@ namespace MfxHwMJpegEncode
         VABufferID  m_htBufferId;
         VABufferID  m_scanBufferId;
         VABufferID  m_ppsBufferId;
+        std::vector<VABufferID>  m_appBufferIds;;
     };
 
 }; // namespace

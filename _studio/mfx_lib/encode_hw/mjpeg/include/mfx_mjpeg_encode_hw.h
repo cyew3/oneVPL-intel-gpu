@@ -85,9 +85,7 @@ protected:
     mfxStatus UpdateDeviceStatus(mfxStatus sts);
     mfxStatus CheckDevice();
 
-    mfxStatus CheckEncodeFrameParam(mfxVideoParam const & video,
-                                    mfxEncodeCtrl       * ctrl,
-                                    mfxFrameSurface1    * surface,
+    mfxStatus CheckEncodeFrameParam(mfxFrameSurface1    * surface,
                                     mfxBitstream        * bs,
                                     bool                  isExternalFrameAllocator);
 

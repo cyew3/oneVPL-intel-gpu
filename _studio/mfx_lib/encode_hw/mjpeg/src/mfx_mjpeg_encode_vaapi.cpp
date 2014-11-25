@@ -280,33 +280,79 @@ mfxStatus VAAPIEncoder::Execute(DdiTask &task, mfxHDL surface)
     ExtVASurface codedbuffer = m_bsQueue[task.m_idxBS];
     pExecuteBuffers->m_pps.coded_buf = (VABufferID)codedbuffer.surface;
 
-    vaSts= vaBeginPicture(m_vaDisplay, m_vaContextEncode, *(VASurfaceID*)surface);
+    vaSts = vaBeginPicture(m_vaDisplay, m_vaContextEncode, *(VASurfaceID*)surface);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     DestroyBuffers();
-    vaCreateBuffer(m_vaDisplay, m_vaContextEncode,VAEncPictureParameterBufferType, sizeof(VAEncPictureParameterBufferJPEG),
-    1, &pExecuteBuffers->m_pps,&m_ppsBufferId);
+    vaSts = vaCreateBuffer(m_vaDisplay, m_vaContextEncode, VAEncPictureParameterBufferType, sizeof(VAEncPictureParameterBufferJPEG), 1, &pExecuteBuffers->m_pps, &m_ppsBufferId);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    if(pExecuteBuffers->m_dqt_list.size()) {
+    if(pExecuteBuffers->m_dqt_list.size())
+    {
         // only the first dq table has been handled
-        vaSts = vaCreateBuffer(m_vaDisplay, m_vaContextEncode,VAQMatrixBufferType, sizeof(VAQMatrixBufferJPEG),1 , &pExecuteBuffers->m_dqt_list[0],&m_qmBufferId);
+        vaSts = vaCreateBuffer(m_vaDisplay, m_vaContextEncode, VAQMatrixBufferType, sizeof(VAQMatrixBufferJPEG), 1, &pExecuteBuffers->m_dqt_list[0], &m_qmBufferId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-    if(pExecuteBuffers->m_dht_list.size()){
+    if(pExecuteBuffers->m_dht_list.size())
+    {
         // only the first huffmn table has been handled
-        vaSts = vaCreateBuffer(m_vaDisplay, m_vaContextEncode,VAHuffmanTableBufferType, sizeof(VAHuffmanTableBufferJPEGBaseline),1, &pExecuteBuffers->m_dht_list[0],&m_htBufferId);
+        vaSts = vaCreateBuffer(m_vaDisplay, m_vaContextEncode, VAHuffmanTableBufferType, sizeof(VAHuffmanTableBufferJPEGBaseline), 1, &pExecuteBuffers->m_dht_list[0], &m_htBufferId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-    if(pExecuteBuffers->m_scan_list.size() == 1) {
-        vaSts = vaCreateBuffer(m_vaDisplay, m_vaContextEncode,VAEncSliceParameterBufferType, sizeof(VAEncSliceParameterBufferJPEG),1, &pExecuteBuffers->m_scan_list[0],&m_scanBufferId);
+    if(pExecuteBuffers->m_payload_list.size())
+    {
+        m_appBufferIds.resize(pExecuteBuffers->m_payload_list.size());
+        for( mfxU8 index = 0; index < pExecuteBuffers->m_payload_list.size(); index++)
+        {
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                                   m_vaContextEncode,
+                                   VAEncPackedHeaderDataBufferType,
+                                   pExecuteBuffers->m_payload_list[index].length,
+                                   1,
+                                   pExecuteBuffers->m_payload_list[index].data,
+                                   &m_appBufferIds[index]);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
     }
-    else {
+    if(pExecuteBuffers->m_scan_list.size() == 1)
+    {
+        vaSts = vaCreateBuffer(m_vaDisplay, m_vaContextEncode, VAEncSliceParameterBufferType, sizeof(VAEncSliceParameterBufferJPEG), 1, &pExecuteBuffers->m_scan_list[0], &m_scanBufferId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+    else
+    {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    vaSts=vaRenderPicture(m_vaDisplay, m_vaContextEncode, (VABufferID *)&m_ppsBufferId, 1);
-    vaSts=vaRenderPicture(m_vaDisplay, m_vaContextEncode, (VABufferID *)&m_qmBufferId, 1);
-    vaSts=vaRenderPicture(m_vaDisplay, m_vaContextEncode, (VABufferID *)&m_htBufferId, 1);
-    vaSts=vaRenderPicture(m_vaDisplay, m_vaContextEncode, (VABufferID *)&m_scanBufferId, 1);
+    vaSts = vaRenderPicture(m_vaDisplay, m_vaContextEncode, (VABufferID *)&m_ppsBufferId, 1);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    vaSts = vaEndPicture(m_vaDisplay,m_vaContextEncode);
+    if(m_qmBufferId != VA_INVALID_ID)
+    {
+        vaSts = vaRenderPicture(m_vaDisplay, m_vaContextEncode, (VABufferID *)&m_qmBufferId, 1);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+
+    if( m_htBufferId != VA_INVALID_ID)
+    {
+        vaSts = vaRenderPicture(m_vaDisplay, m_vaContextEncode, (VABufferID *)&m_htBufferId, 1);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+
+    if(m_appBufferIds.size())
+    {
+        for( mfxU8 index = 0; index < m_appBufferIds.size(); index++)
+        {
+            vaSts = vaRenderPicture(m_vaDisplay, m_vaContextEncode, (VABufferID *)&m_appBufferIds[index], 1);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
+    }
+
+    vaSts = vaRenderPicture(m_vaDisplay, m_vaContextEncode, (VABufferID *)&m_scanBufferId, 1);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     {
         UMC::AutomaticUMCMutex guard(m_guard);
 
@@ -459,6 +505,11 @@ mfxStatus VAAPIEncoder::DestroyBuffers() {
     MFX_DESTROY_VABUFFER(m_htBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_scanBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
+    for (mfxU8 index = 0; index < m_appBufferIds.size(); index++)
+    {
+        MFX_DESTROY_VABUFFER(m_appBufferIds[0], m_vaDisplay);
+    }
+    m_appBufferIds.clear();
     return MFX_ERR_NONE;
 }
 
@@ -478,6 +529,7 @@ mfxStatus VAAPIEncoder::Destroy()
     }
     m_bsQueue.clear();
     m_feedbackCache.clear();
+    DestroyBuffers();
     return sts;
 }
 

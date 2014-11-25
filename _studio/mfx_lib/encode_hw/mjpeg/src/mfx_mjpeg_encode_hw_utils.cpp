@@ -136,7 +136,7 @@ mfxStatus MfxHwMJpegEncode::FastCopyFrameBufferSys2Vid(
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->vid)");
         mfxFrameSurface1 surfSrc = { {0,}, frmInfo, sysSurf };
         mfxFrameSurface1 surfDst = { {0,}, frmInfo, vidSurf };
-        sts = core->DoFastCopy(&surfDst, &surfSrc);
+        sts = core->DoFastCopyExtended(&surfDst, &surfSrc);
         MFX_CHECK_STS(sts);
     }
     if(bExternalFrameLocked) {
@@ -149,17 +149,92 @@ mfxStatus MfxHwMJpegEncode::FastCopyFrameBufferSys2Vid(
     return sts;
 }
 
-mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
+mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * ctrl, JpegEncCaps const * hwCaps)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    memset(&m_payload, 0, sizeof(m_payload));
-    m_payload_data_present = false;
+    mfxU32 fourCC = par->mfx.FrameInfo.FourCC;
+    mfxU16 chromaFormat = par->mfx.FrameInfo.ChromaFormat;
+
+    mfxExtJPEGQuantTables* jpegQT = NULL;
+    mfxExtJPEGHuffmanTables* jpegHT = NULL;
+    if (ctrl && ctrl->ExtParam && ctrl->NumExtParam > 0)
+    {
+        jpegQT = (mfxExtJPEGQuantTables*)   GetExtBuffer( ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_JPEG_QT );
+        jpegHT = (mfxExtJPEGHuffmanTables*) GetExtBuffer( ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
+    }
+
+    mfxExtJPEGQuantTables* jpegQTInitial = (mfxExtJPEGQuantTables*) GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_JPEG_QT );
+    mfxExtJPEGHuffmanTables* jpegHTInitial = (mfxExtJPEGHuffmanTables*) GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
+
+    m_payload_base.length = 0;
+    m_payload_list.clear();
+    if (fourCC == MFX_FOURCC_RGB4 && chromaFormat == MFX_CHROMAFORMAT_YUV444)
+    {
+        m_app14_data.header    = 0xeeFF;
+        m_app14_data.lenH      = 0;
+        m_app14_data.lenL      = 14;
+        m_app14_data.s[0]      = 0x41;//"A"
+        m_app14_data.s[1]      = 0x64;//"D"
+        m_app14_data.s[2]      = 0x6F;//"O"
+        m_app14_data.s[3]      = 0x62;//"B"
+        m_app14_data.s[4]      = 0x65;//"E"
+        m_app14_data.version   = 100;
+        m_app14_data.flags0    = 0;
+        m_app14_data.flags1    = 0;
+        m_app14_data.transform = 0; //RGB
+        
+        mfxU32 payloadSize = 16;
+        if (m_payload_base.length + payloadSize > m_payload_base.maxLength)
+        {
+            mfxU8* data = new mfxU8[m_payload_base.length + payloadSize];
+            memcpy_s(data, m_payload_base.length, m_payload_base.data, m_payload_base.length);
+            delete[] m_payload_base.data;
+            m_payload_base.data = data;
+            m_payload_base.maxLength = m_payload_base.length + payloadSize;
+        }
+        m_payload_list.resize(1);
+        m_payload_list.back().data = m_payload_base.data + m_payload_base.length;
+        memcpy_s(m_payload_list.back().data, payloadSize, &m_app14_data, payloadSize);
+        m_payload_list.back().length = payloadSize;
+        m_payload_base.length += m_payload_list.back().length;
+    }
+
+    if (ctrl && ctrl->Payload && ctrl->NumPayload > 0)
+    {
+        for (mfxU16 i=0; i<ctrl->NumPayload; i++)
+        {
+            mfxPayload* pExtPayload = ctrl->Payload[i];
+            if (pExtPayload)
+            {
+                if (pExtPayload->Data && (pExtPayload->NumBit>>3) > 0)
+                {
+                    mfxU32 payloadSize = pExtPayload->NumBit>>3;
+                    if (m_payload_base.length + payloadSize > m_payload_base.maxLength)
+                    {
+                        mfxU8* data = new mfxU8[m_payload_base.length + payloadSize];
+                        memcpy_s(data, m_payload_base.length, m_payload_base.data, m_payload_base.length);
+                        delete[] m_payload_base.data;
+                        m_payload_base.data = data;
+                        m_payload_base.maxLength = m_payload_base.length + payloadSize;
+                    }
+                    m_payload_list.resize(m_payload_list.size()+1);
+                    m_payload_list.back().data = m_payload_base.data + m_payload_base.length;
+                    memcpy_s(m_payload_list.back().data, payloadSize, pExtPayload->Data, payloadSize);
+                    m_payload_list.back().length = payloadSize;
+                    m_payload_base.length += m_payload_list.back().length;
+                }
+                else
+                {
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
+                }
+            }
+        }
+    }
 
 #if defined (MFX_VA_WIN)
-    memset(&m_pps, 0, sizeof(m_pps));
-
     // Picture Header
+    memset(&m_pps, 0, sizeof(m_pps));
     m_pps.Profile        = 0; // Baseline
     m_pps.Progressive    = 0;
     m_pps.Huffman        = 1;
@@ -171,11 +246,10 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
     m_pps.ComponentID[0] = 0;
     m_pps.ComponentID[1] = 1;
     m_pps.ComponentID[2] = 2;
-    m_pps.ComponentID[3] = 3;
-    m_pps.Quality = (par->mfx.Quality > 100) ? 100 : par->mfx.Quality;
 
-    mfxU32 fourCC = par->mfx.FrameInfo.FourCC;
-    mfxU16 chromaFormat = par->mfx.FrameInfo.ChromaFormat;
+    if (!jpegQT && !jpegQTInitial)
+        m_pps.Quality = (par->mfx.Quality > 100) ? 100 : par->mfx.Quality;
+
     if (fourCC == MFX_FOURCC_NV12 && chromaFormat == MFX_CHROMAFORMAT_YUV420)
     {
         m_pps.InputSurfaceFormat = 1; // NV12
@@ -202,6 +276,7 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
     // Scan Header
     m_pps.NumScan = 1;
     m_scan_list.resize(1);
+    memset(&m_scan_list[0], 0, sizeof(m_scan_list[0]));
     m_scan_list[0].RestartInterval = par->mfx.RestartInterval;
     m_scan_list[0].NumComponent = m_pps.NumComponent;
     m_scan_list[0].ComponentSelector[0] = 0;
@@ -212,12 +287,163 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
     m_scan_list[0].Ah = 0;
     m_scan_list[0].Al = 0;
 
-    if (fourCC == MFX_FOURCC_RGB4)
+    // Quanlization tables
+    if (jpegQT || jpegQTInitial)
     {
-        m_pps.QuantTableSelector[0] = 0;
-        m_pps.QuantTableSelector[1] = 0;
-        m_pps.QuantTableSelector[2] = 0;
-        m_pps.QuantTableSelector[3] = 0;
+        // External tables
+        mfxExtJPEGQuantTables *pExtQuant = jpegQT ? jpegQT : jpegQTInitial;
+        MFX_CHECK(pExtQuant->NumTable && (pExtQuant->NumTable <= hwCaps->MaxNumQuantTable), MFX_ERR_UNDEFINED_BEHAVIOR);
+        m_pps.NumQuantTable = (UINT)pExtQuant->NumTable;
+        m_dqt_list.resize(m_pps.NumQuantTable);
+        for (mfxU16 j = 0; j < m_pps.NumQuantTable; j++)
+        {
+            m_dqt_list[j].TableID   = j;
+            m_dqt_list[j].Precision = 0; /* (UINT)pExtQuant->Precision[j];*/
+            MFX_INTERNAL_CPY(m_dqt_list[j].Qm, &pExtQuant->Qm[j], 64 * sizeof(USHORT));
+        }
+        if (m_pps.NumQuantTable == 1)
+        {
+            m_pps.QuantTableSelector[0] = 0;
+            m_pps.QuantTableSelector[1] = 0;
+            m_pps.QuantTableSelector[2] = 0;
+        }
+        else if (m_pps.NumQuantTable == 2)
+        {
+            m_pps.QuantTableSelector[0] = 0;
+            m_pps.QuantTableSelector[1] = 1;
+            m_pps.QuantTableSelector[2] = 1;
+        }
+        else if (m_pps.NumQuantTable == 3)
+        {
+            m_pps.QuantTableSelector[0] = 0;
+            m_pps.QuantTableSelector[1] = 1;
+            m_pps.QuantTableSelector[2] = 2;
+        }
+        else
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+    else
+    {
+        // No external tables - use Quality parameter
+        m_pps.NumQuantTable = 0;
+        m_dqt_list.resize(m_pps.NumQuantTable);
+
+        if (fourCC == MFX_FOURCC_RGB4)
+        {
+            m_pps.QuantTableSelector[0] = 0;
+            m_pps.QuantTableSelector[1] = 0;
+            m_pps.QuantTableSelector[2] = 0;
+        }
+        else
+        {
+            m_pps.QuantTableSelector[0] = 0;
+            m_pps.QuantTableSelector[1] = 1;
+            m_pps.QuantTableSelector[2] = 1;
+        }
+    }
+
+    // Huffman tables
+    if (jpegHT || jpegHTInitial)
+    {
+        // External tables
+        mfxExtJPEGHuffmanTables *pExtHuffman = jpegHT ? jpegHT : jpegHTInitial;
+        MFX_CHECK(pExtHuffman->NumDCTable &&
+                  pExtHuffman->NumACTable &&
+                 (pExtHuffman->NumDCTable <= hwCaps->MaxNumHuffTable) &&
+                 (pExtHuffman->NumACTable <= hwCaps->MaxNumHuffTable), MFX_ERR_UNDEFINED_BEHAVIOR);
+        m_pps.NumCodingTable = (UINT)(pExtHuffman->NumDCTable + pExtHuffman->NumACTable);
+        m_dht_list.resize(m_pps.NumCodingTable);
+        for (mfxU16 j = 0; j < pExtHuffman->NumDCTable; j++)
+        {
+            m_dht_list[j].TableClass = 0;
+            m_dht_list[j].TableID    = j;
+            MFX_INTERNAL_CPY(m_dht_list[j].BITS, pExtHuffman->DCTables[j].Bits, 16 * sizeof(UCHAR));
+            MFX_INTERNAL_CPY(m_dht_list[j].HUFFVAL, pExtHuffman->DCTables[j].Values, 12 * sizeof(UCHAR));
+        }
+        for (mfxU16 j = 0; j < pExtHuffman->NumACTable; j++)
+        {
+            m_dht_list[pExtHuffman->NumDCTable + j].TableClass = 1;
+            m_dht_list[pExtHuffman->NumDCTable + j].TableID    = j;
+            MFX_INTERNAL_CPY(m_dht_list[pExtHuffman->NumDCTable + j].BITS, pExtHuffman->ACTables[j].Bits, 16 * sizeof(UCHAR));
+            MFX_INTERNAL_CPY(m_dht_list[pExtHuffman->NumDCTable + j].HUFFVAL, pExtHuffman->ACTables[j].Values, 162 * sizeof(UCHAR));
+        }
+    }
+    else
+    {
+        // Internal tables
+        if (hwCaps->MaxNumHuffTable == 0)
+        {
+            m_pps.NumCodingTable = 0;
+            m_dht_list.resize(m_pps.NumCodingTable);
+        }
+        else if (hwCaps->MaxNumHuffTable == 1 || fourCC == MFX_FOURCC_RGB4)
+        {
+            m_pps.NumCodingTable = 2;
+            m_dht_list.resize(m_pps.NumCodingTable);
+
+            {
+                m_dht_list[0].TableClass = 0;
+                m_dht_list[0].TableID    = 0;
+                for(mfxU16 i = 0; i < 16; i++)
+                    m_dht_list[0].BITS[i] = DefaultLuminanceDCBits[i];
+                for(mfxU16 i = 0; i < 162; i++)
+                    m_dht_list[0].HUFFVAL[i] = DefaultLuminanceDCValues[i];
+            }
+
+            {
+                m_dht_list[1].TableClass = 1;
+                m_dht_list[1].TableID    = 0;
+                for(mfxU16 i = 0; i < 16; i++)
+                    m_dht_list[1].BITS[i] = DefaultLuminanceACBits[i];
+                for(mfxU16 i = 0; i < 162; i++)
+                    m_dht_list[1].HUFFVAL[i] = DefaultLuminanceACValues[i];
+            }
+        }
+        else
+        {
+            m_pps.NumCodingTable = 4;
+            m_dht_list.resize(m_pps.NumCodingTable);
+
+            {
+                m_dht_list[0].TableClass = 0;
+                m_dht_list[0].TableID    = 0;
+                for(mfxU16 i = 0; i < 16; i++)
+                    m_dht_list[0].BITS[i] = DefaultLuminanceDCBits[i];
+                for(mfxU16 i = 0; i < 162; i++)
+                    m_dht_list[0].HUFFVAL[i] = DefaultLuminanceDCValues[i];
+            }
+
+            {
+                m_dht_list[1].TableClass = 0;
+                m_dht_list[1].TableID    = 1;
+                for(mfxU16 i = 0; i < 16; i++)
+                    m_dht_list[1].BITS[i] = DefaultChrominanceDCBits[i];
+                for(mfxU16 i = 0; i < 162; i++)
+                    m_dht_list[1].HUFFVAL[i] = DefaultChrominanceDCValues[i];
+            }
+
+            {
+                m_dht_list[2].TableClass = 1;
+                m_dht_list[2].TableID    = 0;
+                for(mfxU16 i = 0; i < 16; i++)
+                    m_dht_list[2].BITS[i] = DefaultLuminanceACBits[i];
+                for(mfxU16 i = 0; i < 162; i++)
+                    m_dht_list[2].HUFFVAL[i] = DefaultLuminanceACValues[i];
+            }
+
+            {
+                m_dht_list[3].TableClass = 1;
+                m_dht_list[3].TableID    = 1;
+                for(mfxU16 i = 0; i < 16; i++)
+                    m_dht_list[3].BITS[i] = DefaultChrominanceACBits[i];
+                for(mfxU16 i = 0; i < 162; i++)
+                    m_dht_list[3].HUFFVAL[i] = DefaultChrominanceACValues[i];
+            }
+        }
+    }
+
+    if (m_pps.NumCodingTable == 2)
+    {
         m_scan_list[0].DcCodingTblSelector[0] = 0;
         m_scan_list[0].DcCodingTblSelector[1] = 0;
         m_scan_list[0].DcCodingTblSelector[2] = 0;
@@ -225,12 +451,8 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
         m_scan_list[0].AcCodingTblSelector[1] = 0;
         m_scan_list[0].AcCodingTblSelector[2] = 0;
     }
-    else
+    else if (m_pps.NumCodingTable == 4)
     {
-        m_pps.QuantTableSelector[0] = 0;
-        m_pps.QuantTableSelector[1] = 1;
-        m_pps.QuantTableSelector[2] = 1;
-        m_pps.QuantTableSelector[3] = 1;
         m_scan_list[0].DcCodingTblSelector[0] = 0;
         m_scan_list[0].DcCodingTblSelector[1] = 1;
         m_scan_list[0].DcCodingTblSelector[2] = 1;
@@ -239,167 +461,9 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
         m_scan_list[0].AcCodingTblSelector[2] = 1;
     }
 
-    // Quantization Table
-    //{
-    //    m_pps.NumQuantTable = 2;
-    //    m_dqt_list.resize(m_pps.NumQuantTable);
-
-    //    {
-    //        m_dqt_list[0].TableID   = 0;
-    //        m_dqt_list[0].Precision = 0;
-    //        for(mfxU16 i = 0; i < 64; i++)
-    //            m_dqt_list[0].Qm[i] = DefaultLuminanceQuant[i];
-    //    }
-
-    //    {
-    //        m_dqt_list[1].TableID   = 1;
-    //        m_dqt_list[1].Precision = 0;
-    //        for(mfxU16 i = 0; i < 64; i++)
-    //            m_dqt_list[1].Qm[i] = DefaultChrominanceQuant[i];
-    //    }
-    //}
-
-    // Huffman Table
-    m_pps.NumCodingTable = 4;
-    m_dht_list.resize(m_pps.NumCodingTable);
-
-    {
-        m_dht_list[0].TableClass = 0;
-        m_dht_list[0].TableID    = 0;
-        for(mfxU16 i = 0; i < 16; i++)
-            m_dht_list[0].BITS[i] = DefaultLuminanceDCBits[i];
-        for(mfxU16 i = 0; i < 162; i++)
-            m_dht_list[0].HUFFVAL[i] = DefaultLuminanceDCValues[i];
-    }
-
-    {
-        m_dht_list[1].TableClass = 0;
-        m_dht_list[1].TableID    = 1;
-        for(mfxU16 i = 0; i < 16; i++)
-            m_dht_list[1].BITS[i] = DefaultChrominanceDCBits[i];
-        for(mfxU16 i = 0; i < 162; i++)
-            m_dht_list[1].HUFFVAL[i] = DefaultChrominanceDCValues[i];
-    }
-
-    {
-        m_dht_list[2].TableClass = 1;
-        m_dht_list[2].TableID    = 0;
-        for(mfxU16 i = 0; i < 16; i++)
-            m_dht_list[2].BITS[i] = DefaultLuminanceACBits[i];
-        for(mfxU16 i = 0; i < 162; i++)
-            m_dht_list[2].HUFFVAL[i] = DefaultLuminanceACValues[i];
-    }
-
-    {
-        m_dht_list[3].TableClass = 1;
-        m_dht_list[3].TableID    = 1;
-        for(mfxU16 i = 0; i < 16; i++)
-            m_dht_list[3].BITS[i] = DefaultChrominanceACBits[i];
-        for(mfxU16 i = 0; i < 162; i++)
-            m_dht_list[3].HUFFVAL[i] = DefaultChrominanceACValues[i];
-    }
-
-    // fetch extention buffers if existed
-    if (par->ExtParam != 0)
-    {
-        for (mfxU16 i = 0; i < par->NumExtParam; i++)
-        {
-            if (par->ExtParam[i] != 0)
-            {
-                switch (par->ExtParam[i]->BufferId)
-                {
-                case MFX_EXTBUFF_JPEG_QT:
-                    {
-                        mfxExtJPEGQuantTables *pExtQuant = (mfxExtJPEGQuantTables*)par->ExtParam[i];
-                        m_pps.NumQuantTable = (UINT)pExtQuant->NumTable;
-                        if (m_pps.NumQuantTable)
-                        {
-                            m_dqt_list.resize(m_pps.NumQuantTable);
-                            for (mfxU16 j = 0; j < m_pps.NumQuantTable; j++)
-                            {
-                                m_dqt_list[j].TableID   = j;
-                                m_dqt_list[j].Precision = 0; /* (UINT)pExtQuant->Precision[j];*/
-                                MFX_INTERNAL_CPY(m_dqt_list[j].Qm, &pExtQuant->Qm[j], 64 * sizeof(USHORT));
-                            }
-                        }
-                        else
-                        {
-                            return MFX_ERR_INVALID_VIDEO_PARAM;
-                        }
-                    }
-                    break;
-
-                case MFX_EXTBUFF_JPEG_HUFFMAN:
-                    {
-                        mfxExtJPEGHuffmanTables *pExtHuffman = (mfxExtJPEGHuffmanTables*)par->ExtParam[i];
-                        m_pps.NumCodingTable = (UINT)(pExtHuffman->NumDCTable + pExtHuffman->NumACTable);
-                        if (m_pps.NumCodingTable)
-                        {
-                            m_dht_list.resize(m_pps.NumCodingTable);
-                            for (mfxU16 j = 0; j < pExtHuffman->NumDCTable; j++)
-                            {
-                                m_dht_list[j].TableClass = 0;
-                                m_dht_list[j].TableID    = j;
-                                MFX_INTERNAL_CPY(m_dht_list[j].BITS, pExtHuffman->DCTables[j].Bits, 16 * sizeof(UCHAR));
-                                MFX_INTERNAL_CPY(m_dht_list[j].HUFFVAL, pExtHuffman->DCTables[j].Values, 12 * sizeof(UCHAR));
-                            }
-                            for (mfxU16 j = 0; j < pExtHuffman->NumACTable; j++)
-                            {
-                                m_dht_list[pExtHuffman->NumDCTable + j].TableClass = 1;
-                                m_dht_list[pExtHuffman->NumDCTable + j].TableID    = j;
-                                MFX_INTERNAL_CPY(m_dht_list[pExtHuffman->NumDCTable + j].BITS, pExtHuffman->ACTables[j].Bits, 16 * sizeof(UCHAR));
-                                MFX_INTERNAL_CPY(m_dht_list[pExtHuffman->NumDCTable + j].HUFFVAL, pExtHuffman->ACTables[j].Values, 162 * sizeof(UCHAR));
-                            }
-                        }
-                        else
-                        {
-                            return MFX_ERR_INVALID_VIDEO_PARAM;
-                        }
-                    }
-                    break;
-
-#if 0                    
-                case MFX_EXTBUFF_JPEG_PAYLOAD:
-                    {
-                        mfxExtJPEGPayloadData *pExtPayload = (mfxExtJPEGPayloadData*)par->ExtParam[i];
-                        if (pExtPayload->Data && pExtPayload->NumByte > 0)
-                        {
-                            if (m_payload.data && m_payload.size < pExtPayload->NumByte)
-                            {
-                                delete [] m_payload.data;
-                                m_payload.data = 0;
-                            }
-                            if (!m_payload.data)
-                            {
-                                m_payload.data = new UCHAR[pExtPayload->NumByte];
-                            }
-                            if (m_payload.data)
-                            {
-                                MFX_INTERNAL_CPY(m_payload.data, pExtPayload->Data, pExtPayload->NumByte);
-                                m_payload.size = pExtPayload->NumByte;
-                                m_payload_data_present = true;
-                            }
-                        }
-                        else
-                        {
-                            return MFX_ERR_INVALID_VIDEO_PARAM;
-                        }
-                    }
-                    break;
-#endif
-
-                default:
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
-                    break;
-                }
-            }
-        }
-    }
-
 #elif defined (MFX_VA_LINUX)
-    memset(&m_pps, 0, sizeof(m_pps));
-
     // Picture Header
+    memset(&m_pps, 0, sizeof(m_pps));
     m_pps.reconstructed_picture = 0;
     m_pps.pic_flags.bits.profile = 0;
     m_pps.pic_flags.bits.progressive = 0;
@@ -412,11 +476,10 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
     m_pps.component_id[0] = 0;
     m_pps.component_id[1] = 1;
     m_pps.component_id[2] = 2;
-    m_pps.component_id[3] = 3;
-    m_pps.quality = (par->mfx.Quality > 100) ? 100 : par->mfx.Quality;
 
-    mfxU32 fourCC = par->mfx.FrameInfo.FourCC;
-    mfxU16 chromaFormat = par->mfx.FrameInfo.ChromaFormat;
+    if (!jpegQT && !jpegQTInitial)
+        m_pps.quality = (par->mfx.Quality > 100) ? 100 : par->mfx.Quality;
+
     if (fourCC == MFX_FOURCC_NV12 && chromaFormat == MFX_CHROMAFORMAT_YUV420)
         m_pps.num_components = 3;
     else if (fourCC == MFX_FOURCC_YUY2 && chromaFormat == MFX_CHROMAFORMAT_YUV422H)
@@ -431,155 +494,158 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
     // Scan Header
     m_pps.num_scan = 1;
     m_scan_list.resize(1);
+    memset(&m_scan_list[0], 0, sizeof(m_scan_list[0]));
     m_scan_list[0].restart_interval = par->mfx.RestartInterval;
     m_scan_list[0].num_components = m_pps.num_components;
     m_scan_list[0].components[0].component_selector = 0;
     m_scan_list[0].components[1].component_selector = 1;
     m_scan_list[0].components[2].component_selector = 2;
 
-    if (fourCC == MFX_FOURCC_RGB4)
+    // Quanlization tables
+    if (jpegQT || jpegQTInitial)
     {
-        m_pps.quantiser_table_selector[0] = 0;
-        m_pps.quantiser_table_selector[1] = 0;
-        m_pps.quantiser_table_selector[2] = 0;
-        m_pps.quantiser_table_selector[3] = 0;
-        m_scan_list[0].components[0].dc_table_selector = 0;
-        m_scan_list[0].components[1].dc_table_selector = 0;
-        m_scan_list[0].components[2].dc_table_selector = 0;
-        m_scan_list[0].components[0].ac_table_selector = 0;
-        m_scan_list[0].components[1].ac_table_selector = 0;
-        m_scan_list[0].components[2].ac_table_selector = 0;
+        // External tables
+        mfxExtJPEGQuantTables *pExtQuant = jpegQT ? jpegQT : jpegQTInitial;
+        MFX_CHECK(pExtQuant->NumTable && (pExtQuant->NumTable <= hwCaps->MaxNumQuantTable), MFX_ERR_UNDEFINED_BEHAVIOR);
+        m_dqt_list.resize(1);
+        if(pExtQuant->NumTable == 1)
+        {
+            m_dqt_list[0].load_lum_quantiser_matrix = true;
+            m_dqt_list[0].load_chroma_quantiser_matrix = false;
+            for(mfxU16 i = 0; i< 64; i++)
+            {
+                m_dqt_list[0].lum_quantiser_matrix[i]=(unsigned char) pExtQuant->Qm[0][i];
+            }
+            m_pps.quantiser_table_selector[0] = 0;
+            m_pps.quantiser_table_selector[1] = 0;
+            m_pps.quantiser_table_selector[2] = 0;
+        }
+        else if(pExtQuant->NumTable == 2)
+        {
+            m_dqt_list[0].load_chroma_quantiser_matrix = true;
+            m_dqt_list[0].load_lum_quantiser_matrix = true;
+            for(mfxU16 i = 0; i< 64; i++)
+            {
+                m_dqt_list[0].lum_quantiser_matrix[i]=(unsigned char) pExtQuant->Qm[0][i];
+                m_dqt_list[0].chroma_quantiser_matrix[i]=(unsigned char) pExtQuant->Qm[1][i];
+            }
+            m_pps.quantiser_table_selector[0] = 0;
+            m_pps.quantiser_table_selector[1] = 1;
+            m_pps.quantiser_table_selector[2] = 1;
+        }
+        else
+            return MFX_ERR_INVALID_VIDEO_PARAM;
     }
     else
     {
-        m_pps.quantiser_table_selector[0] = 0;
-        m_pps.quantiser_table_selector[1] = 1;
-        m_pps.quantiser_table_selector[2] = 1;
-        m_pps.quantiser_table_selector[3] = 1;
-        m_scan_list[0].components[0].dc_table_selector = 0;
-        m_scan_list[0].components[1].dc_table_selector = 1;
-        m_scan_list[0].components[2].dc_table_selector = 1;
-        m_scan_list[0].components[0].ac_table_selector = 0;
-        m_scan_list[0].components[1].ac_table_selector = 1;
-        m_scan_list[0].components[2].ac_table_selector = 1;
-    }
-
-    // Huffman Table
-    m_dht_list.resize(1);
-
-    m_dht_list[0].load_huffman_table[0] = 1;  //0 for luma
-    m_dht_list[0].load_huffman_table[1] = 1;  // 1 for chroma
-    for(mfxU16 i = 0; i < 16; i++){
-        m_dht_list[0].huffman_table[0].num_dc_codes[i] = DefaultLuminanceDCBits[i];
-    }
-    for(mfxU16 i = 0; i < 162; i++) {
-        m_dht_list[0].huffman_table[0].dc_values[i] = DefaultLuminanceDCValues[i];
-    }
-    for(mfxU16 i = 0; i < 16; i++){
-        m_dht_list[0].huffman_table[0].num_ac_codes[i] = DefaultLuminanceACBits[i];
-    }
-    for(mfxU16 i = 0; i < 162; i++) {
-        m_dht_list[0].huffman_table[0].ac_values[i] = DefaultLuminanceACValues[i];
-    }
-    for(mfxU16 i = 0; i < 16; i++){
-        m_dht_list[0].huffman_table[1].num_dc_codes[i] = DefaultChrominanceDCBits[i];
-    }
-    for(mfxU16 i = 0; i < 162; i++) {
-        m_dht_list[0].huffman_table[1].dc_values[i] = DefaultChrominanceDCValues[i];
-    }
-    for(mfxU16 i = 0; i < 16; i++){
-        m_dht_list[0].huffman_table[1].num_ac_codes[i] = DefaultChrominanceACBits[i];
-    }
-    for(mfxU16 i = 0; i < 162; i++) {
-        m_dht_list[0].huffman_table[1].ac_values[i] = DefaultChrominanceACValues[i];
-    }
-
-    //m_dqt_list.resize(1);
-
-    //m_dqt_list[0].load_lum_quantiser_matrix = 1;
-    //for(mfxU16 i = 0; i< 64; i++){
-    //    m_dqt_list[0].lum_quantiser_matrix[i]= DefaultLuminanceQuant[i];
-    //}
-    //m_dqt_list[0].load_chroma_quantiser_matrix = 1;
-    //for(mfxU16 i = 0; i< 64; i++){
-    //    m_dqt_list[0].chroma_quantiser_matrix[i]=(unsigned char) DefaultChrominanceQuant[i];
-    //}
-
-    if (par->ExtParam != 0)
-    {
-        for (mfxU16 i = 0; i < par->NumExtParam; i++)
+        // No external tables - use Quality parameter
+        m_dqt_list.resize(0);
+        if (fourCC == MFX_FOURCC_RGB4)
         {
-            if (par->ExtParam[i] != 0)
-            {
-                switch (par->ExtParam[i]->BufferId)
-                {
-                case MFX_EXTBUFF_JPEG_QT:
-                    {
-                        mfxExtJPEGQuantTables *pExtQuant = (mfxExtJPEGQuantTables*)par->ExtParam[i];
-                        if(pExtQuant->NumTable == 1) {
-                            m_dqt_list[0].load_lum_quantiser_matrix = true;
-                            m_dqt_list[0].load_chroma_quantiser_matrix = false;
-                            for(mfxU16 i = 0; i< 64; i++){
-                                m_dqt_list[0].lum_quantiser_matrix[i]=(unsigned char) pExtQuant->Qm[0][i];
-                            }
-                        }
-                        else if(pExtQuant->NumTable == 2) {
-                            m_dqt_list[0].load_chroma_quantiser_matrix = true;
-                            m_dqt_list[0].load_lum_quantiser_matrix = true;
-                            for(mfxU16 i = 0; i< 64; i++){
-                                m_dqt_list[0].lum_quantiser_matrix[i]=(unsigned char) pExtQuant->Qm[0][i];
-                                m_dqt_list[0].chroma_quantiser_matrix[i]=(unsigned char) pExtQuant->Qm[1][i];
-                            }
-                        }
-                        else {
-                            return MFX_ERR_INVALID_VIDEO_PARAM;
-                        }
-
-                    }
-                    break;
-
-                case MFX_EXTBUFF_JPEG_HUFFMAN:
-                    {
-                        mfxExtJPEGHuffmanTables *pExtHuffman = (mfxExtJPEGHuffmanTables*)par->ExtParam[i];
-                        if (pExtHuffman->NumACTable || pExtHuffman->NumDCTable)
-                        {
-                            for (mfxU16 j = 0; j < pExtHuffman->NumDCTable; j++)
-                            {
-                                if(j < 2) {
-                                    MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].num_dc_codes, pExtHuffman->DCTables[j].Bits, 16 * sizeof(mfxU8));
-                                    MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].dc_values, pExtHuffman->DCTables[j].Values, 12 * sizeof(mfxU8));
-                                }
-                                else {
-                                    return MFX_ERR_INVALID_VIDEO_PARAM;
-                                }
-                            }
-                            for (mfxU16 j = 0; j < pExtHuffman->NumACTable; j++)
-                            {
-                                if(j < 2) {
-                                    MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].num_ac_codes, pExtHuffman->ACTables[j].Bits, 16 * sizeof(mfxU8));
-                                    MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].ac_values, pExtHuffman->ACTables[j].Values, 12 * sizeof(mfxU8));
-                                }
-                                else {
-                                    return MFX_ERR_INVALID_VIDEO_PARAM;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            return MFX_ERR_INVALID_VIDEO_PARAM;
-                        }
-                    }
-                    break;
-
-
-                default:
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
-                    break;
-                }
-            }
+            m_pps.quantiser_table_selector[0] = 0;
+            m_pps.quantiser_table_selector[1] = 0;
+            m_pps.quantiser_table_selector[2] = 0;
+        }
+        else
+        {
+            m_pps.quantiser_table_selector[0] = 0;
+            m_pps.quantiser_table_selector[1] = 1;
+            m_pps.quantiser_table_selector[2] = 1;
         }
     }
 
+    // Huffman tables
+    if (jpegHT || jpegHTInitial)
+    {
+        // External tables
+        mfxExtJPEGHuffmanTables *pExtHuffman = jpegHT ? jpegHT : jpegHTInitial;
+        MFX_CHECK(pExtHuffman->NumDCTable &&
+                  pExtHuffman->NumACTable &&
+                 (pExtHuffman->NumDCTable < hwCaps->MaxNumHuffTable) &&
+                 (pExtHuffman->NumACTable < hwCaps->MaxNumHuffTable), MFX_ERR_UNDEFINED_BEHAVIOR);
+        m_dht_list.resize(1);
+        for (mfxU16 j = 0; j < pExtHuffman->NumDCTable; j++)
+        {
+            if(j < 2)
+            {
+                MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].num_dc_codes, pExtHuffman->DCTables[j].Bits, 16 * sizeof(mfxU8));
+                MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].dc_values, pExtHuffman->DCTables[j].Values, 12 * sizeof(mfxU8));
+            }
+            else
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+        for (mfxU16 j = 0; j < pExtHuffman->NumACTable; j++)
+        {
+            if(j < 2)
+            {
+                MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].num_ac_codes, pExtHuffman->ACTables[j].Bits, 16 * sizeof(mfxU8));
+                MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].ac_values, pExtHuffman->ACTables[j].Values, 12 * sizeof(mfxU8));
+            }
+            else
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+    }
+    else
+    {
+        // Internal tables
+        if (hwCaps->MaxNumHuffTable == 0)
+        {
+            m_dht_list.resize(0);
+        }
+        else if (hwCaps->MaxNumHuffTable == 1 || fourCC == MFX_FOURCC_RGB4)
+        {
+            m_dht_list.resize(1);
+
+            m_dht_list[0].load_huffman_table[0] = 1;  //0 for luma
+
+            for(mfxU16 i = 0; i < 16; i++)
+                m_dht_list[0].huffman_table[0].num_dc_codes[i] = DefaultLuminanceDCBits[i];
+            for(mfxU16 i = 0; i < 162; i++)
+                m_dht_list[0].huffman_table[0].dc_values[i] = DefaultLuminanceDCValues[i];
+            for(mfxU16 i = 0; i < 16; i++)
+                m_dht_list[0].huffman_table[0].num_ac_codes[i] = DefaultLuminanceACBits[i];
+            for(mfxU16 i = 0; i < 162; i++)
+                m_dht_list[0].huffman_table[0].ac_values[i] = DefaultLuminanceACValues[i];
+
+            m_scan_list[0].components[0].dc_table_selector = 0;
+            m_scan_list[0].components[1].dc_table_selector = 0;
+            m_scan_list[0].components[2].dc_table_selector = 0;
+            m_scan_list[0].components[0].ac_table_selector = 0;
+            m_scan_list[0].components[1].ac_table_selector = 0;
+            m_scan_list[0].components[2].ac_table_selector = 0;
+        }
+        else
+        {
+            m_dht_list.resize(1);
+
+            m_dht_list[0].load_huffman_table[0] = 1;  //0 for luma
+            m_dht_list[0].load_huffman_table[1] = 1;  // 1 for chroma
+
+            for(mfxU16 i = 0; i < 16; i++)
+                m_dht_list[0].huffman_table[0].num_dc_codes[i] = DefaultLuminanceDCBits[i];
+            for(mfxU16 i = 0; i < 162; i++)
+                m_dht_list[0].huffman_table[0].dc_values[i] = DefaultLuminanceDCValues[i];
+            for(mfxU16 i = 0; i < 16; i++)
+                m_dht_list[0].huffman_table[0].num_ac_codes[i] = DefaultLuminanceACBits[i];
+            for(mfxU16 i = 0; i < 162; i++)
+                m_dht_list[0].huffman_table[0].ac_values[i] = DefaultLuminanceACValues[i];
+            for(mfxU16 i = 0; i < 16; i++)
+                m_dht_list[0].huffman_table[1].num_dc_codes[i] = DefaultChrominanceDCBits[i];
+            for(mfxU16 i = 0; i < 162; i++)
+                m_dht_list[0].huffman_table[1].dc_values[i] = DefaultChrominanceDCValues[i];
+            for(mfxU16 i = 0; i < 16; i++)
+                m_dht_list[0].huffman_table[1].num_ac_codes[i] = DefaultChrominanceACBits[i];
+            for(mfxU16 i = 0; i < 162; i++)
+                m_dht_list[0].huffman_table[1].ac_values[i] = DefaultChrominanceACValues[i];
+
+            m_scan_list[0].components[0].dc_table_selector = 0;
+            m_scan_list[0].components[1].dc_table_selector = 1;
+            m_scan_list[0].components[2].dc_table_selector = 1;
+            m_scan_list[0].components[0].ac_table_selector = 0;
+            m_scan_list[0].components[1].ac_table_selector = 1;
+            m_scan_list[0].components[2].ac_table_selector = 1;
+        }
+    }
 #endif
 
     return sts;
@@ -587,11 +653,17 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
 
 void ExecuteBuffers::Close()
 {
-    if (m_payload.data)
+    if (m_payload_base.data)
     {
-        delete [] m_payload.data;
-        m_payload.data = 0;
+        delete [] m_payload_base.data;
+        m_payload_base.data = 0;
+        m_payload_base.length = 0;
+        m_payload_base.maxLength = 0;
     }
+    m_dht_list.clear();
+    m_dqt_list.clear();
+    m_scan_list.clear();
+    m_payload_list.clear();
 }
 
 TaskManager::TaskManager()

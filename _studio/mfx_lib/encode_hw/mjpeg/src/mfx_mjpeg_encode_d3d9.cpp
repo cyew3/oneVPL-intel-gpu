@@ -286,7 +286,8 @@ mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
     mfxU32 compBufferCount = 2 + 
         (pExecuteBuffers->m_pps.NumQuantTable ? 1 : 0) + 
         (pExecuteBuffers->m_pps.NumCodingTable ? 1 : 0) + 
-        (pExecuteBuffers->m_pps.NumScan ? 1 : 0);
+        (pExecuteBuffers->m_pps.NumScan ? 1 : 0) + 
+        (pExecuteBuffers->m_payload_list.size() ? 1 : 0);
     std::vector<ENCODE_COMPBUFFERDESC>  encodeCompBufferDesc;
     encodeCompBufferDesc.resize(compBufferCount);
     memset(&encodeCompBufferDesc[0], 0, sizeof(ENCODE_COMPBUFFERDESC) * compBufferCount);
@@ -351,13 +352,13 @@ mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
         bufCnt++;
     }
 
-    //if (pExecuteBuffers->m_payload_data_present)
-    //{
-    //    encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PAYLOADDATA;
-    //    encodeCompBufferDesc[bufCnt].DataSize = mfxU32(pExecuteBuffers->m_payload.size);
-    //    encodeCompBufferDesc[bufCnt].pCompBuffer = (void*)pExecuteBuffers->m_payload.data;
-    //    bufCnt++;
-    //}
+    if (pExecuteBuffers->m_payload_list.size())
+    {
+        encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PAYLOADDATA;
+        encodeCompBufferDesc[bufCnt].DataSize = mfxU32(pExecuteBuffers->m_payload_base.length);
+        encodeCompBufferDesc[bufCnt].pCompBuffer = (void*)pExecuteBuffers->m_payload_base.data;
+        bufCnt++;
+    }
 
     try
     {

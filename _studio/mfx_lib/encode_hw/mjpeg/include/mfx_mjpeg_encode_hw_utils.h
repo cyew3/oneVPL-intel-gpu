@@ -70,6 +70,23 @@ namespace MfxHwMJpegEncode
         mfxU32    MaxNumQuantTable;
     } JpegEncCaps;
 
+    typedef struct {
+        mfxU16 header;
+        mfxU8  lenH;
+        mfxU8  lenL;
+        mfxU8  s[5];
+        mfxU16 version;
+        mfxU16 flags0;
+        mfxU16 flags1;
+        mfxU8  transform;
+    } JpegApp14Data;
+
+    typedef struct {
+        mfxU8 * data;
+        mfxU32  length;
+        mfxU32  maxLength;
+    } JpegPayload;
+
     mfxStatus QueryHwCaps(
         VideoCORE * core,
         JpegEncCaps & hwCaps);
@@ -96,12 +113,11 @@ namespace MfxHwMJpegEncode
         ExecuteBuffers()
         {
             memset(&m_pps, 0, sizeof(m_pps));
-            memset(&m_payload, 0, sizeof(m_payload));
-
-            m_payload_data_present = false;
+            memset(&m_payload_base, 0, sizeof(m_payload_base));
+            memset(&m_app14_data, 0, sizeof(m_app14_data));
         }
 
-        mfxStatus Init(mfxVideoParam const *par);
+        mfxStatus Init(mfxVideoParam const *par, mfxEncodeCtrl const * ctrl, JpegEncCaps const * hwCaps);
         void      Close();
 
 #if defined (MFX_VA_WIN)
@@ -117,14 +133,9 @@ namespace MfxHwMJpegEncode
         std::vector<VAHuffmanTableBufferJPEGBaseline> m_dht_list;
 
 #endif
-
-        struct {
-            mfxU8 * data;
-            mfxU16  reserved;
-            mfxU16  size;
-        } m_payload;
-
-        bool m_payload_data_present;
+        std::vector<JpegPayload>                      m_payload_list;
+        JpegPayload                                   m_payload_base;
+        JpegApp14Data                                 m_app14_data;
     };
 
     typedef struct {
@@ -135,6 +146,7 @@ namespace MfxHwMJpegEncode
         mfxU32             lInUse;               // 0: free, 1: used.
         mfxU32             m_statusReportNumber;
         mfxU32             m_bsDataLength;       // output bitstream length
+        bool               m_cleanDdiData;
         ExecuteBuffers   * m_pDdiData;
     } DdiTask;
 

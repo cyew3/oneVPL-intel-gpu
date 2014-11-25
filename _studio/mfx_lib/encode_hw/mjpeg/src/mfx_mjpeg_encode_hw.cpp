@@ -658,24 +658,67 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
                                MFX_ENTRY_POINT pEntryPoints[],
                                mfxU32 &numEntryPoints)
 {
-    reordered_surface;pInternalParams;
+    reordered_surface;
+    pInternalParams;
+
+    mfxExtJPEGQuantTables*   jpegQT = NULL;
+    mfxExtJPEGHuffmanTables* jpegHT = NULL;
+    JpegEncCaps              hwCaps = {0};
 
     mfxStatus checkSts = CheckEncodeFrameParam(
-        m_vParam,
-        ctrl,
         surface,
         bs,
         m_pCore->IsExternalFrameAllocator());
     MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
+    if (ctrl && ctrl->ExtParam && ctrl->NumExtParam > 0)
+    {
+        jpegQT = (mfxExtJPEGQuantTables*)   GetExtBuffer( ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_JPEG_QT );
+        jpegHT = (mfxExtJPEGHuffmanTables*) GetExtBuffer( ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
+    }
+
+    // Check new tables if exists
+    if (jpegQT || jpegHT)
+    {
+        JpegEncCaps hwCaps = {0};
+        mfxVideoParam vPar = m_vParam;
+        vPar.ExtParam = ctrl->ExtParam;
+        vPar.NumExtParam = ctrl->NumExtParam;
+
+        mfxStatus mfxRes = m_ddi->QueryEncodeCaps(hwCaps);
+        MFX_CHECK_STS(mfxRes);
+
+        mfxRes = CheckJpegParam(vPar, hwCaps);
+        if (mfxRes != MFX_ERR_NONE)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    mfxExtJPEGQuantTables* jpegQTInitial = (mfxExtJPEGQuantTables*) GetExtBuffer( m_vParam.ExtParam, m_vParam.NumExtParam, MFX_EXTBUFF_JPEG_QT );
+    if (!(jpegQTInitial || jpegQT || m_vParam.mfx.Quality))
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
     DdiTask * task = 0;
     checkSts = m_TaskManager.AssignTask(task);
     MFX_CHECK_STS(checkSts);
 
-    if(!task->m_pDdiData)
+    if (!task->m_pDdiData || task->m_cleanDdiData || jpegQT || jpegHT)
     {
+        task->m_cleanDdiData = jpegQT || jpegHT;
+
+        if (task->m_pDdiData)
+        {
+            task->m_pDdiData->Close();
+            delete task->m_pDdiData;
+            task->m_pDdiData = NULL;
+        }
+
+        mfxStatus mfxRes = m_ddi->QueryEncodeCaps(hwCaps);
+        MFX_CHECK_STS(mfxRes);
+
         task->m_pDdiData = new MfxHwMJpegEncode::ExecuteBuffers;
-        checkSts = task->m_pDdiData->Init(&m_vParam);
+        checkSts = task->m_pDdiData->Init(&m_vParam, ctrl, &hwCaps);
         MFX_CHECK_STS(checkSts);
     }
 
@@ -707,62 +750,37 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
 
 
 mfxStatus MFXVideoENCODEMJPEG_HW::CheckEncodeFrameParam(
-    mfxVideoParam const & video,
-    mfxEncodeCtrl       * ctrl,
     mfxFrameSurface1    * surface,
     mfxBitstream        * bs,
     bool                  isExternalFrameAllocator)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    UMC::Status umc_sts = UMC::UMC_OK;
-    MFX_CHECK_NULL_PTR1(bs);
 
-    mfxExtJPEGQuantTables*   jpegQT = NULL;
-    mfxExtJPEGHuffmanTables* jpegHT = NULL;
+    if (!m_bInitialized) return MFX_ERR_NOT_INITIALIZED;
+
+    MFX_CHECK_NULL_PTR1(bs);
+    MFX_CHECK_NULL_PTR1(bs->Data);
+
+    // Check for enough bitstream buffer size
+    if (bs->MaxLength <= (bs->DataOffset + bs->DataLength))
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     if (surface != 0)
     {
+        if (surface->Info.ChromaFormat != m_vParam.mfx.FrameInfo.ChromaFormat)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
         MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16) < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(surface->Data.Y != 0 || isExternalFrameAllocator, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        if (surface->Info.Width != video.mfx.FrameInfo.Width || surface->Info.Height != video.mfx.FrameInfo.Height)
+        if (surface->Info.Width != m_vParam.mfx.FrameInfo.Width || surface->Info.Height != m_vParam.mfx.FrameInfo.Height)
             sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
     else
     {
-        sts = MFX_ERR_MORE_DATA;
+        return MFX_ERR_MORE_DATA;
     }
-
-    if (ctrl && ctrl->ExtParam && ctrl->NumExtParam > 0)
-    {
-        jpegQT = (mfxExtJPEGQuantTables*)   GetExtBuffer( ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_JPEG_QT );
-        jpegHT = (mfxExtJPEGHuffmanTables*) GetExtBuffer( ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
-    }
-
-    if(jpegQT)
-    {
-        // TBD: set external quant table
-        // umc_sts = pMJPEGVideoEncoder->SetQuantTableExtBuf(jpegQT);
-        // check with hwCaps
-    }
-    else if(!m_vParam.mfx.Quality)
-    {
-        umc_sts = UMC::UMC_ERR_FAILED;
-    }
-
-    if(umc_sts != UMC::UMC_OK)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-    if(jpegHT)
-    {
-        // TBD: set external Huffman table
-        // umc_sts = pMJPEGVideoEncoder->SetHuffmanTableExtBuf(jpegHT);
-        // check with hwCaps
-    }
-
-    if(umc_sts != UMC::UMC_OK)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     return sts;
 }
