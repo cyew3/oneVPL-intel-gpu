@@ -51,9 +51,7 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
     
     mfxU32 numThreads;
 
-#if !defined (EXTERNAL_THREADING)
     mfxU32 iRes;
-#endif
 
 
 
@@ -116,14 +114,17 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-    // decide the number of threads
-    numThreads = vm_sys_info_get_cpu_num();
-    if (m_param.numberOfThreads)
+    if (MFX_SINGLE_THREAD != pParam->flags)
     {
-        numThreads = UMC::get_min(numThreads, m_param.numberOfThreads);
-    }
-    //we have to create threads more than cores to support Intel plug-ins threading 
-    //m_param.numberOfThreads = numThreads + 1;
+
+        // decide the number of threads
+        numThreads = vm_sys_info_get_cpu_num();
+        if (m_param.numberOfThreads)
+        {
+            numThreads = UMC::get_min(numThreads, m_param.numberOfThreads);
+        }
+        //we have to create threads more than cores to support Intel plug-ins threading 
+        //m_param.numberOfThreads = numThreads + 1;
 
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     m_param.numberOfThreads = UMC::get_max(m_param.numberOfThreads, 2);
@@ -151,12 +152,11 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
 
         // allocate thread contexts
         m_pThreadCtx = new MFX_SCHEDULER_THREAD_CONTEXT[m_param.numberOfThreads];
-        memset(m_pThreadCtx, 0, sizeof(MFX_SCHEDULER_THREAD_CONTEXT) * m_param.numberOfThreads);
+            memset(m_pThreadCtx, 0, sizeof(MFX_SCHEDULER_THREAD_CONTEXT) * m_param.numberOfThreads);
 
-#if !defined (EXTERNAL_THREADING)
-        // start threads
-        for (i = 0; i < m_param.numberOfThreads; i += 1)
-        {
+            // start threads
+            for (i = 0; i < m_param.numberOfThreads; i += 1)
+            {
             // prepare context
             m_pThreadCtx[i].threadNum = i;
             m_pThreadCtx[i].pSchedulerCore = this;
@@ -171,33 +171,33 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
             }
             // 02.2012 vcherepa: DON'T use high priority for internal thread #0.
             // It is useless when CPU affinity mask is not set.
-            //if ((0 == i) && (1 < m_param.numberOfThreads))
-            //{
-            //    vm_thread_set_priority(&(m_pThreadCtx[i].threadHandle), VM_THREAD_PRIORITY_HIGH);
-            //}
+                //if ((0 == i) && (1 < m_param.numberOfThreads))
+                //{
+                //    vm_thread_set_priority(&(m_pThreadCtx[i].threadHandle), VM_THREAD_PRIORITY_HIGH);
+                //}
+            }
         }
-#endif
+        catch(...)
+        {
+            return MFX_ERR_MEMORY_ALLOC;
+        }
 
         // 02.2012 vcherepa: DON'T set CPU affinity for particular internal
         // threads. it leads to unpredictable stops and hangings up to 60ms.
         // set CPU mask for every thread
         // need to care about internal threading another way
-//#if !defined(MFX_VA)
-//        SetThreadsAffinityMask();
-//#endif // !defined(MFX_VA)
-//
+        //#if !defined(MFX_VA)
+        //        SetThreadsAffinityMask();
+        //#endif // !defined(MFX_VA)
+        //
     }
-    catch(...)
+    else
     {
-        return MFX_ERR_MEMORY_ALLOC;
-    }
-
- // to run HW listen thread. Will be enabled if tests are OK
+        // to run HW listen thread. Will be enabled if tests are OK
 #if defined (MFX_VA)
-#if defined (EXTERNAL_THREADING)
-    #if defined(_WIN32) || defined(_WIN64)
-    m_hwTaskDone.handle = CreateEventExW(NULL, 
-                                        _T("Global\\IGFXKMDNotifyBatchBuffersComplete"), 
+#if defined(_WIN32) || defined(_WIN64)
+        m_hwTaskDone.handle = CreateEventExW(NULL, 
+            _T("Global\\IGFXKMDNotifyBatchBuffersComplete"), 
                                         CREATE_EVENT_MANUAL_RESET, 
                                         STANDARD_RIGHTS_ALL | EVENT_MODIFY_STATE);
     if (m_hwTaskDone.handle)
@@ -205,11 +205,12 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
     else 
         m_zero_thread_wait  = 1;
     
-    #endif
+#endif
 #else
-    MFX_CHECK_STS(StartWakeUpThread());
+        MFX_CHECK_STS(StartWakeUpThread());
 #endif
-#endif
+
+    }
 
     return MFX_ERR_NONE;
 
@@ -270,65 +271,6 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxSyncPoint syncPoint, mfxU32 timeToWai
 
 } // mfxStatus mfxSchedulerCore::Synchronize(mfxSyncPoint syncPoint, mfxU32 timeToWait)
 
-#if !defined (EXTERNAL_THREADING)
-mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
-{
-    MFX_SCHEDULER_TASK *pTask;
-
-    // check error(s)
-    if (0 == m_param.numberOfThreads)
-    {
-        return MFX_ERR_NOT_INITIALIZED;
-    }
-
-    // look up the task
-    pTask = m_ppTaskLookUpTable[handle.taskID];
-    if (NULL == pTask)
-    {
-        return MFX_ERR_NULL_PTR;
-    }
-    //
-    // inspect the task
-    //
-
-    // the handle is outdated,
-    // the previous task job is over and completed with successful status
-    // NOTE: it make sense to read task result and job ID the following order.
-    if ((MFX_ERR_NONE == pTask->opRes) ||
-        (pTask->jobID != handle.jobID))
-    {
-        return MFX_ERR_NONE;
-    }
-
-    // wait the result on the event
-    if (MFX_WRN_IN_EXECUTION == pTask->opRes)
-    {
-        UMC::Status res;
-
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_PRIVATE, "Scheduler::Wait");
-        MFX_LTRACE_1(MFX_TRACE_LEVEL_SCHED, "^Depends^on", "%d", pTask->param.task.nParentId);
-        MFX_LTRACE_I(MFX_TRACE_LEVEL_SCHED, timeToWait);
-
-        res = pTask->done.Wait(timeToWait);
-        if (UMC::UMC_ERR_TIMEOUT == res)
-        {
-            return MFX_WRN_IN_EXECUTION;
-        }
-    }
-
-    // check error status
-    if ((MFX_ERR_NONE != pTask->opRes) &&
-        (pTask->jobID == handle.jobID))
-    {
-        return pTask->opRes;
-    }
-
-    // in all other cases task is complete
-    return MFX_ERR_NONE;
-
-} // mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
-#else
-
 mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
 {
     MFX_SCHEDULER_TASK *pTask;
@@ -346,12 +288,12 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
         return MFX_ERR_NULL_PTR;
     }
 
-
-    //let really run task to 
+    if (MFX_SINGLE_THREAD == m_param.flags)
     {
+        //let really run task to 
         MFX_CALL_INFO call = {0};
         mfxTaskHandle previousTaskHandle = {0, 0};
-        
+
         mfxStatus task_sts = MFX_ERR_NONE;
         mfxU64 start = GetHighPerformanceCounter();
         mfxU64 frequency = vm_time_get_frequency();
@@ -386,7 +328,25 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
                     vmRes = vm_event_reset(&m_hwTaskDone);
                     IncrementHWEventCounter();
                 }
-                
+
+            }
+        }
+    }
+    else
+    {
+        // wait the result on the event
+        if (MFX_WRN_IN_EXECUTION == pTask->opRes)
+        {
+            UMC::Status res;
+
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_PRIVATE, "Scheduler::Wait");
+            MFX_LTRACE_1(MFX_TRACE_LEVEL_SCHED, "^Depends^on", "%d", pTask->param.task.nParentId);
+            MFX_LTRACE_I(MFX_TRACE_LEVEL_SCHED, timeToWait);
+
+            res = pTask->done.Wait(timeToWait);
+            if (UMC::UMC_ERR_TIMEOUT == res)
+            {
+                return MFX_WRN_IN_EXECUTION;
             }
         }
     }
@@ -421,7 +381,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
     return MFX_ERR_NONE;
 
 } // mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
-#endif
+
 
 mfxStatus mfxSchedulerCore::WaitForDependencyResolved(const void *pDependency)
 {
@@ -635,23 +595,25 @@ mfxStatus mfxSchedulerCore::AdjustPerformance(const mfxSchedulerMessage message)
 
     case MFX_SCHEDULER_START_HW_LISTENING:
 #if defined (MFX_VA)
-#if !defined (EXTERNAL_THREADING)
-        if (0 == vm_thread_is_valid(&m_hwWakeUpThread))
+        if (m_param.flags != MFX_SINGLE_THREAD)
         {
-            mfxRes = StartWakeUpThread();
+            if (0 == vm_thread_is_valid(&m_hwWakeUpThread))
+            {
+                mfxRes = StartWakeUpThread();
+            }
         }
-#endif
 #endif
         break;
 
     case MFX_SCHEDULER_STOP_HW_LISTENING:
 #if defined (MFX_VA)
-#if !defined (EXTERNAL_THREADING)
-        if (vm_thread_is_valid(&m_hwWakeUpThread))
+        if (m_param.flags != MFX_SINGLE_THREAD)
         {
-            mfxRes = StopWakeUpThread();
+            if (vm_thread_is_valid(&m_hwWakeUpThread))
+            {
+                mfxRes = StopWakeUpThread();
+            }
         }
-#endif
 #endif
         break;
 
@@ -765,9 +727,9 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
         if (m_hwTaskDone.handle)
             m_zero_thread_wait = 15;
 
-#if !defined (EXTERNAL_THREADING)
-        StartWakeUpThread();
-#endif
+        if (m_param.flags != MFX_SINGLE_THREAD)
+            StartWakeUpThread();
+
 
     }
 #endif

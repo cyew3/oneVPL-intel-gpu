@@ -547,6 +547,8 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
     mfxStatus mfxRes;
     MFX_SCHEDULER_PARAM schedParam;
     mfxU32 maxNumThreads;
+    bool isExternalThreading = (implInterface & MFX_IMPL_EXTERNAL_THREADING)?true:false;
+    implInterface &= ~MFX_IMPL_EXTERNAL_THREADING;
 
     // release the object before initialization
     Cleanup();
@@ -563,7 +565,7 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
     }
 
     // save working HW interface
-    switch (implInterface)
+    switch (implInterface&-MFX_IMPL_VIA_ANY)
     {
         // if nothing is set, nothing is returned
     case MFX_IMPL_UNSUPPORTED:
@@ -642,7 +644,7 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
         return MFX_ERR_UNKNOWN;
     }
     memset(&schedParam, 0, sizeof(schedParam));
-    schedParam.flags = MFX_SCHEDULER_DEFAULT;
+    schedParam.flags = isExternalThreading?MFX_SINGLE_THREAD:MFX_SCHEDULER_DEFAULT;
     schedParam.numberOfThreads = maxNumThreads;
     schedParam.pCore = m_pCORE.get();
     mfxRes = m_pScheduler->Initialize(&schedParam);

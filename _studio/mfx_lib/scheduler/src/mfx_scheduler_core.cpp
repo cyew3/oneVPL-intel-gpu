@@ -245,6 +245,8 @@ void mfxSchedulerCore::SetThreadsAffinityMask(void)
 void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
                                      const eWakeUpReason reason)
 {
+    if (m_param.flags == MFX_SINGLE_THREAD)
+        return;
 
     // it is a common working situation, wake up only threads, which
     // have something to do
@@ -286,6 +288,8 @@ void mfxSchedulerCore::WakeUpNumThreads(mfxU32 numThreadsToWakeUp,
                                         const mfxU32 curThreadNum)
 {
 #if defined(SYNCHRONIZATION_BY_NON_ZERO_THREAD)
+    if (m_param.flags == MFX_SINGLE_THREAD)
+        return;
     if (false == m_bQuit)
     {
         mfxU32 i;

@@ -132,6 +132,7 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
 
 
     if (!(implInterface & MFX_IMPL_AUDIO) &&
+        !(implInterface & MFX_IMPL_EXTERNAL_THREADING)&&
         (0 != implInterface) &&
 #if defined(MFX_VA_WIN)
         (MFX_IMPL_VIA_D3D11 != implInterface) &&

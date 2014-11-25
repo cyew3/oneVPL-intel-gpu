@@ -25,7 +25,8 @@ MFX_GUID MFXIScheduler_GUID =
 enum mfxSchedulerFlags
 {
     // default behaviour policy
-    MFX_SCHEDULER_DEFAULT = 0
+    MFX_SCHEDULER_DEFAULT = 0,
+    MFX_SINGLE_THREAD = 1
 
 };
 
