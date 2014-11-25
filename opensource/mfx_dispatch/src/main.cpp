@@ -66,7 +66,13 @@ namespace
         {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE3, 2},
         {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE4, 3},
         {MFX_LIB_SOFTWARE, MFX_IMPL_SOFTWARE,  0},
-        {MFX_LIB_SOFTWARE, MFX_IMPL_SOFTWARE | MFX_IMPL_AUDIO,  0}
+        {MFX_LIB_SOFTWARE, MFX_IMPL_SOFTWARE | MFX_IMPL_AUDIO,  0},
+
+        //MFX_SINGLE_THREAD case
+        {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE|MFX_IMPL_EXTERNAL_THREADING, 0},
+        {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE2|MFX_IMPL_EXTERNAL_THREADING, 1},
+        {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE3|MFX_IMPL_EXTERNAL_THREADING, 2},
+        {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE4|MFX_IMPL_EXTERNAL_THREADING, 3}
     };
 
     const
@@ -88,6 +94,7 @@ namespace
         {4, 4},  // MFX_IMPL_HARDWARE3    
         {5, 5},  // MFX_IMPL_HARDWARE4
         {2, 6},  // MFX_IMPL_RUNTIME, same as MFX_IMPL_HARDWARE_ANY 
+        {8, 11},  // MFX_SINGLE_THREAD, 
         {7, 7}   // MFX_IMPL_AUDIO
     };
 
@@ -168,7 +175,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     MFX_DISP_HANDLE *pHandle;
     msdk_disp_char dllName[MFX_MAX_DLL_PATH];
     MFX::MFXLibraryIterator libIterator;
-
+    
     // there iterators are used only if the caller specified implicit type like AUTO
     mfxU32 curImplIdx, maxImplIdx;
     // particular implementation value
@@ -187,7 +194,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     {
         return MFX_ERR_NULL_PTR;
     }
-    if (((MFX_IMPL_AUTO > implMethod) || (MFX_IMPL_RUNTIME < implMethod)) && !(impl & MFX_IMPL_AUDIO))
+    if (((MFX_IMPL_AUTO > implMethod) || (MFX_IMPL_SINGLE_THREAD < implMethod)) && !(impl & MFX_IMPL_AUDIO))
     {
         return MFX_ERR_UNSUPPORTED;
     }

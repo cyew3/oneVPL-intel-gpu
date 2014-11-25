@@ -108,6 +108,7 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
     }
     // only exact types of implementation is allowed
     if (!(impl & MFX_IMPL_AUDIO) &&
+        !(impl & MFX_IMPL_EXTERNAL_THREADING) &&
         (MFX_IMPL_SOFTWARE != impl) &&
         (MFX_IMPL_HARDWARE != impl) &&
         (MFX_IMPL_HARDWARE2 != impl) &&
