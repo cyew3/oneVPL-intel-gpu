@@ -123,7 +123,9 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
     {
         pResources->deinterlaceConfig.Header.BufferId = MFX_EXTBUFF_VPP_DEINTERLACING;
         pResources->deinterlaceConfig.Header.BufferSz = sizeof(mfxExtVPPDeinterlacing);
-        pResources->deinterlaceConfig.Mode   = pParams->deinterlaceParam.algorithm;
+        pResources->deinterlaceConfig.Mode = pParams->deinterlaceParam.algorithm;
+        pResources->deinterlaceConfig.TelecinePattern  = pParams->deinterlaceParam.tc_pattern;
+        pResources->deinterlaceConfig.TelecineLocation = pParams->deinterlaceParam.tc_pos;
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->deinterlaceConfig);
     }

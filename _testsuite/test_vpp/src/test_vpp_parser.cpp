@@ -66,6 +66,7 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   Video Enhancement Algorithms\n"));
 
     vm_string_printf(VM_STRING("   [-di_mode (mode)] - set type of deinterlace algorithm\n"));
+    vm_string_printf(VM_STRING("                        8 - reverse telecine for a selected telecine pattern (use -tc_pattern). For PTIR plug-in\n"));
     vm_string_printf(VM_STRING("                        2 - advanced or motion adaptive (default)\n"));
     vm_string_printf(VM_STRING("                        1 - simple or BOB\n\n"));
 
@@ -126,7 +127,16 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("                      var_to_var - variable input ROI and variable output ROI\n")); 
     vm_string_printf(VM_STRING("               seed1 - seed for init of rand generator for src\n"));
     vm_string_printf(VM_STRING("               seed2 - seed for init of rand generator for dst\n"));
-    vm_string_printf(VM_STRING("                       range of seed [1, 65535]. 0 reserved for random init\n"));
+    vm_string_printf(VM_STRING("                       range of seed [1, 65535]. 0 reserved for random init\n\n"));
+
+    vm_string_printf(VM_STRING("   [-tc_pattern (pattern)] - set telecine pattern\n"));
+    vm_string_printf(VM_STRING("                        4 - provide a position inside a sequence of 5 frames where the artifacts starts. Use to -tc_pos to provide position\n"));
+    vm_string_printf(VM_STRING("                        3 - 4:1 pattern\n"));
+    vm_string_printf(VM_STRING("                        2 - frame repeat pattern\n"));
+    vm_string_printf(VM_STRING("                        1 - 2:3:3:2 pattern\n"));
+    vm_string_printf(VM_STRING("                        0 - 3:2 pattern\n\n"));
+
+    vm_string_printf(VM_STRING("   [-tc_pos (position)] - Position inside a telecine sequence of 5 frames where the artifacts starts - Value [0 - 4]\n\n"));
 
     vm_string_printf(VM_STRING("\n"));
 
@@ -451,6 +461,32 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                     {
                         pParams->deinterlaceParam.algorithm = (mfxU16)readData;
                         pParams->deinterlaceParam.mode   = VPP_FILTER_ENABLED_CONFIGURED;
+                        i++;
+                    }
+                }
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tc_pattern")))
+            {
+                if( i+1 < nArgNum )
+                {
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    if ( ioStatus > 0 )
+                    {
+                        pParams->deinterlaceParam.tc_pattern   = (mfxU16)readData;
+                        i++;
+                    }
+                }
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tc_pos")))
+            {
+                pParams->deinterlaceParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+
+                if( i+1 < nArgNum )
+                {
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    if ( ioStatus > 0 )
+                    {
+                        pParams->deinterlaceParam.tc_pos   = (mfxU16)readData;
                         i++;
                     }
                 }

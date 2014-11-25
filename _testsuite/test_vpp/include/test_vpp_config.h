@@ -97,6 +97,8 @@ typedef struct
 typedef struct
 {
     mfxU16 algorithm;
+    mfxU16 tc_pattern;
+    mfxU16 tc_pos;
     FilterConfig mode;
 
 } sDIParam;
