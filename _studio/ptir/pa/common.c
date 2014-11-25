@@ -447,6 +447,8 @@ void Update_Frame_BufferNEW(Frame** frmBuffer, unsigned int frameIndex, double d
     if (bFullFrameRate && uiisInterlaced == 1)
     {
         Prepare_frame_for_queue(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight); // Go to double frame rate
+        if(!frmIn)
+            return;
         memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
         //Timestamp
@@ -495,6 +497,8 @@ void Update_Frame_Buffer(Frame** frmBuffer, unsigned int frameIndex, double dTim
     if (bFullFrameRate && uiisInterlaced == 1)
     {
         Prepare_frame_for_queue(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight); // Go to double frame rate
+        if(!frmIn)
+            return;
         memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
         //Timestamp

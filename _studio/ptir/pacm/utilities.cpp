@@ -929,11 +929,13 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
         {
             //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
             //frmSupply->CMCopyGPUToGpu(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D, static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D);
+            CmSurface2D* old_surf = static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D;
             static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D;
             pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
             if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D)
                 //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
                 pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, BUFMINSIZE, !uiInterlaceParity);
+            static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = old_surf;
         }
         else
             pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
@@ -985,12 +987,13 @@ void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, doubl
         {
             //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
             //frmSupply->CMCopyGPUToGpu(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D, static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D);
+            CmSurface2D* old_surf = static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D;
             static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D;
             pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
             if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D)
                 //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
                 pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, BUFMINSIZE, !uiInterlaceParity);
-            static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = 0;
+            static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = old_surf;
         }
         else
             pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
@@ -1011,6 +1014,8 @@ void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, doubl
     if (bFullFrameRate && uiisInterlaced == 1)
     {
         Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight); // Go to double frame rate
+        if(!frmIn)
+            return;
         memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
         //Timestamp

@@ -1838,7 +1838,6 @@ void RemovePattern(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned int
         Pattern41Removal(frmBuffer, uiInitFramePosition, pdispatch);
     else
     {
-        printf("\nUnknown Pattern, please check your selection\n");
-        exit(-1001);
+        return;
     }
 }
