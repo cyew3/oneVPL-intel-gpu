@@ -747,8 +747,8 @@ mfxStatus CTranscodingPipeline::Decode()
         {
             usleep(m_cnNecessaryPeriod - m_nTimeDifference);
         }
-    }
 #endif
+    }
 
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
 
