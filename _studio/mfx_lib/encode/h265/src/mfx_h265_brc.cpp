@@ -439,7 +439,7 @@ mfxI32 H265BRC::GetQP(H265VideoParam &video, H265Frame* frames[], Ipp32s framesC
         }
     }
 
-    return qp;
+    return qp - mQuantOffset;
 
 #endif
 
