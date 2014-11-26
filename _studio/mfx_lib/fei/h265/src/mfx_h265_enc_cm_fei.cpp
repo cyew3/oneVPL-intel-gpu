@@ -728,7 +728,7 @@ mfxFEISyncPoint H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxFEIH265Output *feiO
  */
 mfxStatus H265CmCtx::SyncCurrent(mfxSyncPoint syncp, mfxU32 wait)
 {
-    mfxU32 i, j, k;
+    mfxU32 j, k;
 
     if (!syncp)
         return MFX_ERR_NULL_PTR;
@@ -769,7 +769,7 @@ mfxStatus H265CmCtx::SyncCurrent(mfxSyncPoint syncp, mfxU32 wait)
     feiOut->InterpolateHeight = interpHeight;
     feiOut->InterpolatePitch  = um_interpolatePitch;
 
-    for (i = 0; i < MFX_FEI_H265_MAX_NUM_REF_FRAMES; i++) {
+    for (mfxU32 i = 0; i < MFX_FEI_H265_MAX_NUM_REF_FRAMES; i++) {
         for (j = 0; j < 3; j++) {
             feiOut->Interp[i][j] = um_pInterpolateData[syncp->curIdx][i][j];
         }
