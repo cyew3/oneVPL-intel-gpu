@@ -143,8 +143,8 @@ typedef struct {
 typedef enum {
     MFX_CAM_BAYER_BGGR   = 0x0000,
     MFX_CAM_BAYER_RGGB   = 0x0001,
-    MFX_CAM_BAYER_GRBG   = 0x0002,
-    MFX_CAM_BAYER_GBRG   = 0x0003
+    MFX_CAM_BAYER_GBRG   = 0x0002,
+    MFX_CAM_BAYER_GRBG   = 0x0003
 } mfxCamBayerFormat;
 
 typedef struct {
