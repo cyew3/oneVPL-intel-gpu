@@ -3098,7 +3098,7 @@ void MFXVideoENCODEH265::ProcessFrameFEI(Task* task)
 {
     task;
 #if defined(MFX_VA)
-    m_FeiCtx->ProcessFrameFEI(m_FeiCtx->feiInIdx, task->m_frameOrigin, task->m_slices, task->m_dpb, task->m_dpbSize, 1);
+    m_FeiCtx->ProcessFrameFEI(m_FeiCtx->feiInIdx, task->m_frameOrigin, &task->m_slices[0], task->m_dpb, task->m_dpbSize, 1);
 #endif
 
 }
@@ -3108,7 +3108,7 @@ void MFXVideoENCODEH265::ProcessFrameFEI_Next(Task* task)
 {
     task;
 #if defined(MFX_VA)
-    m_FeiCtx->ProcessFrameFEI(1 - m_FeiCtx->feiInIdx, task->m_frameOrigin, task->m_slices, task->m_dpb, task->m_dpbSize, 0);
+    m_FeiCtx->ProcessFrameFEI(1 - m_FeiCtx->feiInIdx, task->m_frameOrigin, &task->m_slices[0], task->m_dpb, task->m_dpbSize, 0);
     m_FeiCtx->feiInIdx = 1 - m_FeiCtx->feiInIdx;
 #endif
 }
