@@ -97,5 +97,14 @@ typedef struct
     FilterConfig mode;
 } sCompositionParam;
 
+typedef struct
+{
+    mfxU16 algorithm;
+    mfxU16 tc_pattern;
+    mfxU16 tc_pos;
+    FilterConfig mode;
+
+} sDIParam;
+
 #endif /* __SAMPLE_VPP_CONFIG_H */
 /* EOF */

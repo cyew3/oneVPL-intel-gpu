@@ -81,6 +81,7 @@ struct sInputParams
   sOwnFrameInfo outFrameInfo;
 
   /* Video Enhancement Algorithms */
+  sDIParam            deinterlaceParam;
   sDenoiseParam       denoiseParam;
   sDetailParam        detailParam;
   sProcAmpParam       procampParam;
@@ -183,11 +184,12 @@ struct sAppResources
   mfxExtVppAuxData    extVPPAuxData;
 
   /* config video enhancement algorithms */
-  mfxExtVPPProcAmp    procampConfig;
-  mfxExtVPPDetail     detailConfig;
-  mfxExtVPPDenoise    denoiseConfig;
-  mfxExtVPPImageStab  istabConfig;
-  mfxExtVPPComposite  compositeConfig;
+  mfxExtVPPProcAmp       procampConfig;
+  mfxExtVPPDetail        detailConfig;
+  mfxExtVPPDenoise       denoiseConfig;
+  mfxExtVPPImageStab     istabConfig;
+  mfxExtVPPComposite     compositeConfig;
+  mfxExtVPPDeinterlacing deinterlaceConfig;
 };
 
 /* ******************************************************************* */
