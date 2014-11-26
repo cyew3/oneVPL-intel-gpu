@@ -166,10 +166,9 @@ namespace H265Enc {
         Ipp32u     m_encOrder;
         Ipp32u     m_frameOrder;
         Ipp64u     m_timeStamp;
-        //Ipp32u     m_picCodeType;
-        Ipp32u     m_frameType;// full info for bs. m_frameType = m_codeType | isIDR ? | isRef ? 
-
-        H265Slice  m_slices[10];//aya tmp hack
+        Ipp32u     m_frameType;// full info for bs. m_frameType = m_codeType | isIDR ? | isRef ?
+        
+        std::vector<H265Slice> m_slices;
         H265Frame* m_dpb[16];
         Ipp32s     m_dpbSize;
 
@@ -223,10 +222,11 @@ namespace H265Enc {
             m_dpbSize     = 0;
         }
 
-        void Create(Ipp32u numCtb, Ipp32u numThreadStructs)
+        void Create(Ipp32u numCtb, Ipp32u numThreadStructs, Ipp32s numSlices)
         {
             m_lcuQps.resize(numCtb);
             m_ithreadPool.resize(numThreadStructs, 0);
+            m_slices.resize(numSlices);
         }
 
         void Destroy()

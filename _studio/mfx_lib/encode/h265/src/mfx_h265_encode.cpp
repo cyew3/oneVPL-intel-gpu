@@ -2588,8 +2588,8 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
         return MFX_ERR_MORE_DATA;
     }
 
-    for (encIdx = 0; encIdx < (int)m_frameEncoder.size(); encIdx++){
-        if(m_frameEncoder[encIdx]->IsFree()){
+    for (encIdx = 0; encIdx < (int)m_frameEncoder.size(); encIdx++) {
+        if (m_frameEncoder[encIdx]->IsFree()) {
             break;
         }
     }
@@ -2641,7 +2641,7 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
     memset(&task->m_lcuQps[0], task->m_sliceQpY, sizeof(task->m_sliceQpY)*numCtb);
 
     // setup slices
-    H265Slice *currSlices = task->m_slices;
+    H265Slice *currSlices = &task->m_slices[0];
     for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
         (currSlices + i)->slice_qp_delta = task->m_sliceQpY - m_pps.init_qp;
         SetAllLambda(m_videoParam, (currSlices + i), task->m_sliceQpY, task->m_frameOrigin );
@@ -2806,7 +2806,7 @@ void MFXVideoENCODEH265::SyncOnTaskCompletion(Task *task, mfxBitstream *mfxBs, v
             mfxBRCStatus brcSts = m_brc->PostPackFrame(*frameEnc->GetVideoParam(),  task->m_sliceQpY, task->m_frameOrigin, frameBytes << 3, overheadBytes << 3, inputParam->m_reencode);
             inputParam->m_reencode = 0;
 
-            if( brcSts != MFX_BRC_OK ) {
+            if (brcSts != MFX_BRC_OK ) {
                 if ((brcSts & MFX_BRC_ERR_SMALL_FRAME) && (task->m_sliceQpY < min_qp))
                     brcSts |= MFX_BRC_NOT_ENOUGH_BUFFER;
                 if (brcSts == MFX_BRC_ERR_BIG_FRAME && task->m_sliceQpY == 51)
@@ -2819,8 +2819,8 @@ void MFXVideoENCODEH265::SyncOnTaskCompletion(Task *task, mfxBitstream *mfxBs, v
 
                     // [1] wait completion of all running tasks
                     TaskIter tit = m_outputQueue.begin();
-                    for( size_t taskIdx = 0; taskIdx < inputParam->m_outputQueueSize; taskIdx++ ) {
-                        while( Ipp32u sum_of_elems =std::accumulate((*tit)->m_ithreadPool.begin(), (*tit)->m_ithreadPool.end(),0) > 0 ) {
+                    for (size_t taskIdx = 0; taskIdx < inputParam->m_outputQueueSize; taskIdx++) {
+                        while (Ipp32u sum_of_elems =std::accumulate((*tit)->m_ithreadPool.begin(), (*tit)->m_ithreadPool.end(),0) > 0) {
                             thread_sleep(0);
                             //x86_pause();
                         }
@@ -2834,16 +2834,14 @@ void MFXVideoENCODEH265::SyncOnTaskCompletion(Task *task, mfxBitstream *mfxBs, v
                     Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
                     Ipp32s qIdxCnt = (m_videoParam.m_framesInParallel > 1) ? 2 : 1;
 
-                    for( Ipp32s qIdx = 0; qIdx < qIdxCnt; qIdx++) {
+                    for (Ipp32s qIdx = 0; qIdx < qIdxCnt; qIdx++) {
                         std::list<Task*> & queue = listQueue[qIdx];
-                        for( tit = queue.begin(); tit != queue.end(); tit++) {
+                        for (tit = queue.begin(); tit != queue.end(); tit++) {
 
-                            //(*tit)->m_sliceQpY = (Ipp8s)m_brc->GetQP(m_videoParam, (*tit)->m_frameOrigin);
                             (*tit)->m_sliceQpY = GetRateQp( **tit, m_videoParam, m_brc);
-
                             memset(& (*tit)->m_lcuQps[0], (*tit)->m_sliceQpY, sizeof((*tit)->m_sliceQpY)*numCtb);
 
-                            H265Slice *currSlices = (*tit)->m_slices;
+                            H265Slice *currSlices = &((*tit)->m_slices[0]);
                             for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
                                 (currSlices + i)->slice_qp_delta = (*tit)->m_sliceQpY - m_pps.init_qp;
                                 SetAllLambda(m_videoParam, (currSlices + i), (*tit)->m_sliceQpY, (*tit)->m_frameOrigin );
@@ -2853,12 +2851,12 @@ void MFXVideoENCODEH265::SyncOnTaskCompletion(Task *task, mfxBitstream *mfxBs, v
 
                     // [3] reset encoded data
                     tit = m_outputQueue.begin();
-                    for( size_t taskIdx = 0; taskIdx < m_outputQueue.size(); taskIdx++ ) { // <- issue with Size()!!!
+                    for (size_t taskIdx = 0; taskIdx < m_outputQueue.size(); taskIdx++) { // <- issue with Size()!!!
 
-                        if( (*tit)->m_statusReport == 1 || taskIdx == 0 ) {
+                        if ((*tit)->m_statusReport == 1 || taskIdx == 0) {
                             m_frameEncoder[ (*tit)->m_encIdx ]->SetEncodeTask( (*tit) );
                         }
-                        if(taskIdx + 1 < m_outputQueue.size()) 
+                        if (taskIdx + 1 < m_outputQueue.size())
                             tit++;
                     }
 
@@ -2913,8 +2911,7 @@ public:
     {}
     ~OnExitHelperRoutine() 
     { 
-        if(m_arg) {
-            //printf("\n     exit <=== encOrder = %i thread %i \n", m_task->m_encOrder, ithread);fflush(stderr);
+        if (m_arg) {
             vm_interlocked_dec32(reinterpret_cast<volatile Ipp32u *>(m_arg));
         }
     }
@@ -2931,14 +2928,14 @@ void MFXVideoENCODEH265::PrepareToEncode(void *pParam)
     AcceptFrameHelper(inputParam->ctrl, NULL, inputParam->surface, inputParam->bs);
     vm_interlocked_cas32( &inputParam->m_doStage, 2, 1);
 
-    if(NULL == inputParam->bs) {
+    if (NULL == inputParam->bs) {
         return;
     }
 
     Ipp32s stage = vm_interlocked_cas32( &inputParam->m_doStage, 3, 2);
-    if(stage == 2) {
+    if (stage == 2) {
 
-        while( m_outputQueue.size() < (size_t)m_videoParam.m_framesInParallel && !m_encodeQueue.empty() ) {
+        while (m_outputQueue.size() < (size_t)m_videoParam.m_framesInParallel && !m_encodeQueue.empty()) {
             int encIdx = 0;
             AddNewOutputTask(encIdx);
         }
@@ -2999,18 +2996,18 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     if (0 == stage) {
         th->PrepareToEncode(pParam);// here <m_doStage> will be switched ->2->3->4 consequentially
 
-        if( th->m_videoParam.preEncMode ) {
+        if (th->m_videoParam.preEncMode) {
             th->LookAheadAnalysis();
         }
     }
 
     // early termination if no external bs 
-    if(NULL == inputParam->bs) {
+    if (NULL == inputParam->bs) {
         return MFX_TASK_DONE;
     }
 
     // threading barrier: if not completed preparation stage
-    if(inputParam->m_doStage < 4) {
+    if (inputParam->m_doStage < 4) {
         th->m_semaphore.Wait();
     }
 
@@ -3034,18 +3031,17 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         TaskIter beg = th->m_outputQueue.begin();
         for (size_t taskIdx = 0; taskIdx < inputParam->m_outputQueueSize; taskIdx++) {
             Task* nextTask = *beg;
-            if(nextTask->m_statusReport == 1 ) {
+            if (nextTask->m_statusReport == 1 ) {
                 sts = th->EncSolver(nextTask, (taskIdx == 0) ? NULL : &(inputParam->m_targetTask->m_statusReport)); // taskIdx == 0 the same as nextTask == inputParam->targetTask
                 if (sts == 100) {
                     failCounter++;
-                }
-                else {
+                } else {
                     failCounter = 0;
                 }
-                if(taskIdx == 0 && sts == MFX_TASK_DONE) { // special case OnComplete for expectedTask
+                if (taskIdx == 0 && sts == MFX_TASK_DONE) { // special case OnComplete for expectedTask
                     th->SyncOnTaskCompletion(inputParam->m_targetTask, inputParam->bs, inputParam);
                 }
-                if(sts == MFX_TASK_DONE || sts == MFX_TASK_WORKING) {
+                if (sts == MFX_TASK_DONE || sts == MFX_TASK_WORKING) {
                     break;
                 }
             }
@@ -3139,18 +3135,17 @@ mfxFrameSurface1* MFXVideoENCODEH265::GetOriginalSurface(mfxFrameSurface1* input
 H265Frame* MFXVideoENCODEH265::InsertInputFrame(const mfxFrameSurface1 *surface)
 {
     // get free task
-    if( m_free.empty() ) {
+    if (m_free.empty()) {
         H265Enc::Task* task = new H265Enc::Task;
-        task->Create(m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs, m_videoParam.num_thread_structs);
+        task->Create(m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs, m_videoParam.num_thread_structs, m_videoParam.NumSlices);
         m_free.push_back(task);
     }
 
     m_free.front()->Reset();
     m_inputQueue.splice(m_inputQueue.end(), m_free, m_free.begin());
 
-
     FramePtrIter frm = GetFreeFrame(m_freeFrames, &m_videoParam);
-    if(frm == m_freeFrames.end()) return NULL;
+    if (frm == m_freeFrames.end()) return NULL;
 
     // light configure
     (*frm)->ResetEncInfo();

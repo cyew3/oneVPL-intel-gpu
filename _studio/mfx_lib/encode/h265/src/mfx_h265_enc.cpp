@@ -1525,7 +1525,7 @@ void MFXVideoENCODEH265::ConfigureEncodeFrame(Task* task)
             currFrame->m_allRefFramesAreFromThePast = false;
 
     // setup slices
-    H265Slice *currSlices = task->m_slices;
+    H265Slice *currSlices = &task->m_slices[0];
 
     Ipp32s sliceRowStart = 0;
     for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
@@ -1816,7 +1816,7 @@ bool H265FrameEncoder::AllReferencesReady(Ipp32u ctb_row)
 {
     Ipp32u refRowLag = m_videoParam.m_lagBehindRefRows;
     H265Frame* currentFrame = m_task->m_frameOrigin;
-    H265Slice* slice = m_task->m_slices; // aya: should be &(m_task->m_slices[currentSlice]) 
+    H265Slice* slice = &m_task->m_slices[0]; // aya: should be &(m_task->m_slices[currentSlice]) 
     // but multislce + parallelFrames don't work together so it is OK now
 
     for (int list = 0; list < 2; list++) {
@@ -2112,7 +2112,7 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
             cu[ithread].InitCu(pars, reconstructFrame->cu_data + (ctb_addr << pars->Log2NumPartInCU),
                 data_temp + ithread * data_temp_size, ctb_addr, (PixType*)reconstructFrame->y,
                 (PixType*)reconstructFrame->uv, reconstructFrame->pitch_luma_pix, reconstructFrame->pitch_chroma_pix, m_pCurrentFrame,
-                &m_bsf[bsf_id], m_task->m_slices + curr_slice, 1, m_logMvCostTable, feiOutPtr, m_task);
+                &m_bsf[bsf_id], &m_task->m_slices[curr_slice], 1, m_logMvCostTable, feiOutPtr, m_task);
 
             //if(m_videoParam.UseDQP && m_videoParam.preEncMode) {
             //    int deltaQP = -(m_task->m_sliceQpY - m_task->m_lcuQps[ctb_addr]);
@@ -2380,7 +2380,7 @@ mfxStatus H265FrameEncoder::SetEncodeTask(Task* task)
     m_task = (Task*)task;
 
     for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
-        H265Slice *slice = m_task->m_slices + curr_slice;
+        H265Slice *slice = &m_task->m_slices[curr_slice];
         for (Ipp32u i = slice->slice_segment_address; i <= slice->slice_address_last_ctb; i++)
             m_slice_ids[i] = curr_slice;
     }

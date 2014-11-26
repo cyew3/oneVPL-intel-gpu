@@ -634,7 +634,7 @@ mfxStatus H265FrameEncoder::WriteBitstreamPayload(mfxBitstream *mfxBS, Ipp32s bs
     //return MFX_ERR_NONE;
 
     for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
-        H265Slice *pSlice = m_task->m_slices + curr_slice;
+        H265Slice *pSlice = &m_task->m_slices[curr_slice];
 
         if (m_pps.entropy_coding_sync_enabled_flag || m_pps.tiles_enabled_flag) {
             Ipp32s ctb_row = pSlice->row_first;
