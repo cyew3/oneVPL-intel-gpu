@@ -29,6 +29,10 @@ namespace H265Enc {
     mQuantB = ((mQuantP + mQuantPrev + 1) >> 1) + 1; \
     BRC_CLIP(mQuantB, 1, mQuantMax)
 
+//#define SetQuantB(layer) \
+//    mQuantB = ((5*mQuantP + 3*mQuantPrev + (mQuantP - mQuantPrev > 0 ? 7 : 0)) >> 3) + 1; \
+//    BRC_CLIP(mQuantB, 1, mQuantMax)
+
 
 #define MFX_H265_BITRATE_SCALE 0
 #define  MFX_H265_CPBSIZE_SCALE 3
@@ -74,7 +78,7 @@ typedef struct _mfxBRC_HRDState
 typedef struct _mfxBRC_Params
 {
     // ???
-    // either need this to with GetParams(mfxBRC_Params*) or use GetParams(mfxVideoParam*) to report BRC params to the encoder
+    // either need this  with GetParams(mfxBRC_Params*) or use GetParams(mfxVideoParam*) to report BRC params to the encoder
     mfxI32  BRCMode;
     mfxI32  targetBitrate;
 
@@ -115,7 +119,6 @@ public:
     mfxStatus SetParams(const mfxVideoParam *init, H265VideoParam &video);
     mfxStatus GetParams(mfxVideoParam *init);
 
-    //mfxBRCStatus PostPackFrame(mfxU16 picType, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0, mfxI32 poc = 0);
     mfxBRCStatus PostPackFrame(H265VideoParam &video, Ipp8s sliceQpY, H265Frame *pFrame, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0);
 
     mfxI32 GetQP(H265VideoParam &video, H265Frame* frames[], Ipp32s framesCount);
@@ -133,42 +136,27 @@ protected:
     mfxF64 mFramerate;
     mfxU16 mRCMode;
     mfxU16 mQuantUpdated;
+    mfxI32 mBitsDesiredFrame;
+    mfxI64 mBitsEncodedTotal, mBitsDesiredTotal;
+    mfxU32 mPicType;
+    mfxI32 mQuantI, mQuantP, mQuantB, mQuantMax, mQuantMin, mQuantPrev, mQuantOffset, mQPprev;
+    mfxI32 mRCfap, mRCqap, mRCbap, mRCq;
+    mfxF64 mRCqa, mRCfa, mRCqa0;
+    mfxF64 mRCfa_short;
 
-    mfxI32  mBitsDesiredFrame;
-    mfxI64  mBitsEncodedTotal, mBitsDesiredTotal;
+    mfxI32 mRecodedFrame_encOrder;
+    mfxI32 mQuantRecoded;
 
-    mfxU32  mPicType;
-
-    mfxI8  mBpyramidLayers[129];
-    mfxI32 mBpyramidLayersLen;
-    mfxI32 mNumLayers;
-    mfxI8  mDeltaQp[8];
-    mfxI8  mQp[8];
-    mfxI32 *mFrameSizeHist;
-    
-
-
-    mfxI32  mQuantI, mQuantP, mQuantB, mQuantMax, mQuantMin, mQuantPrev, mQuantOffset, mQPprev;
-    mfxI32  mRCfap, mRCqap, mRCbap, mRCq;
-    mfxF64  mRCqa, mRCfa, mRCqa0;
-    mfxF64  mRCfa_short;
-
-    mfxF64  mRCqa1, mRCfa1;
-    mfxI32  mRCfap1, mRCqap1, mRCbap1;
-
-    mfxI32  mQuantIprev, mQuantPprev, mQuantBprev;
-    mfxI32  mBitsEncoded;
-    mfxU16  mPictureFlags, mPictureFlagsPrev;
+    mfxI32 mQuantIprev, mQuantPprev, mQuantBprev;
+    mfxI32 mBitsEncoded;
 
     mfxI32 mRecode;
     mfxI32 GetInitQP();
-    mfxBRCStatus UpdateQuant(mfxI32 bEncoded, mfxI32 totalPicBits);
-//    mfxBRCStatus UpdateQuant_ScCh(mfxI32 bEncoded, mfxI32 totalPicBits);
-    mfxBRCStatus UpdateQuantHRD(mfxI32 bEncoded, mfxBRCStatus sts, mfxI32 overheadBits = 0);
+    mfxBRCStatus UpdateQuant(mfxI32 bEncoded, mfxI32 totalPicBits, mfxI32 layer = 0, mfxI32 recode = 0);
+    mfxBRCStatus UpdateQuantHRD(mfxI32 bEncoded, mfxBRCStatus sts, mfxI32 overheadBits = 0, mfxI32 layer = 0, mfxI32 recode = 0);
     mfxBRCStatus UpdateAndCheckHRD(mfxI32 frameBits, mfxF64 inputBitsPerFrame, mfxI32 recode);
     mfxBRC_HRDState mHRD;
     mfxStatus InitHRD();
-//    mfxU64 mMaxBitsPerPic, mMaxBitsPerPicNot0;
     mfxI32 mSceneChange;
     mfxI32 mBitsEncodedP, mBitsEncodedPrev;
     mfxI32 mPoc, mSChPoc;
@@ -178,8 +166,6 @@ protected:
 
     mfxI32 mMinQp;
     mfxI32 mMaxQp;
-//    mfxI32 mScChFrameCnt;
-//    mfxI32 mScChLength;
 };
 
 } // namespace
