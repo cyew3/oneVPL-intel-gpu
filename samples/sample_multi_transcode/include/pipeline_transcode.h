@@ -106,6 +106,7 @@ namespace TranscodingSample
         sPluginParams encoderPluginParams;
 
         mfxU32 nTimeout; // how long transcoding works in seconds
+        mfxU32 nFPS; // limit transcoding to the number of frames per second
 
         bool bLABRC; // use look ahead bitrate control algorithm
         mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
@@ -446,6 +447,10 @@ namespace TranscodingSample
         // pointer to already extended bs processor
         BitstreamProcessor                   *m_pBSProcessor;
 
+        msdk_tick m_nBeginTime; //The time when last frame processing was begin.
+        msdk_tick m_nEndTime;   //The time when last frame processing was end;
+        msdk_tick m_nTimeDifference; //How much time was spent for frame processing.
+        msdk_tick m_cnNecessaryPeriod; //Necessary time for frame processing.
 
     private:
         DISALLOW_COPY_AND_ASSIGN(CTranscodingPipeline);

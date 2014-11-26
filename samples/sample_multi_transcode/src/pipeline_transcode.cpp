@@ -101,7 +101,11 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_pParentPipeline(NULL),
     m_bIsInit(false),
     m_MaxFramesForTranscode(0xFFFFFFFF),
-    m_pBSProcessor(NULL)
+    m_pBSProcessor(NULL),
+    m_nBeginTime(0),
+    m_nEndTime(0),
+    m_nTimeDifference(0),
+    m_cnNecessaryPeriod(0)
 {
     MSDK_ZERO_MEMORY(m_mfxDecParams);
     MSDK_ZERO_MEMORY(m_mfxVppParams);
@@ -241,6 +245,12 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
         m_MVCSeqDesc = m_pParentPipeline->GetDecMVCSeqDesc();
         m_bOwnMVCSeqDescMemory = false;
     }
+
+    if (pParams->nFPS)
+    {
+        this->m_cnNecessaryPeriod = 1000000 / pParams->nFPS;
+    }
+
     return sts;
 
 } //mfxStatus CTranscodingPipeline::Init(sInputParams *pParams)
@@ -634,6 +644,8 @@ mfxStatus CTranscodingPipeline::Decode()
             break;
         }
 
+        m_nBeginTime = msdk_time_get_tick(); //m_nBeginTime is in microseconds.
+
         if (!bEndOfFile)
         {
             sts = DecodeOneFrame(&DecExtSurface);
@@ -727,7 +739,16 @@ mfxStatus CTranscodingPipeline::Decode()
         {
             break;
         }
+
+        m_nEndTime = msdk_time_get_tick();
+        m_nTimeDifference = m_nEndTime - m_nBeginTime;
+#if !defined(_WIN32) && !defined(_WIN64)
+        if (m_nTimeDifference < m_cnNecessaryPeriod)
+        {
+            usleep(m_cnNecessaryPeriod - m_nTimeDifference);
+        }
     }
+#endif
 
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
 
@@ -750,6 +771,8 @@ mfxStatus CTranscodingPipeline::Encode()
     time_t start = time(0);
     while (MFX_ERR_NONE == sts ||  MFX_ERR_MORE_DATA == sts)
     {
+        m_nBeginTime = msdk_time_get_tick(); //m_nBeginTime is in microseconds.
+
         while (MFX_ERR_MORE_SURFACE == m_pBuffer->GetSurface(DecExtSurface) && !isQuit)
             MSDK_SLEEP(TIME_TO_SLEEP);
 
@@ -848,6 +871,14 @@ mfxStatus CTranscodingPipeline::Encode()
             break;
         }
 
+        m_nEndTime = msdk_time_get_tick();
+        m_nTimeDifference = m_nEndTime - m_nBeginTime;
+#if !defined(_WIN32) && !defined(_WIN64)
+        if (m_nTimeDifference < m_cnNecessaryPeriod)
+        {
+            usleep(m_cnNecessaryPeriod - m_nTimeDifference);
+        }
+#endif
     }
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
 
@@ -884,6 +915,8 @@ mfxStatus CTranscodingPipeline::Transcode()
     time_t start = time(0);
     while (MFX_ERR_NONE == sts )
     {
+        m_nBeginTime = msdk_time_get_tick(); //m_nBeginTime is in microseconds.
+
         if (time(0) - start >= m_nTimeout)
             bLastCycle = true;
         if (m_MaxFramesForTranscode == m_nProcessedFramesNum)
@@ -1011,6 +1044,15 @@ mfxStatus CTranscodingPipeline::Transcode()
             sts = PutBS();
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
+
+        m_nEndTime = msdk_time_get_tick();
+        m_nTimeDifference = m_nEndTime - m_nBeginTime;
+#if !defined(_WIN32) && !defined(_WIN64)
+        if (m_nTimeDifference < m_cnNecessaryPeriod)
+        {
+            usleep(m_cnNecessaryPeriod - m_nTimeDifference);
+        }
+#endif
     }
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
 

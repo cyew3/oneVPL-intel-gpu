@@ -100,6 +100,8 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -join         Join session with other session(s), by default sessions are not joined\n"));
     msdk_printf(MSDK_STRING("  -priority     Use priority for join sessions. 0 - Low, 1 - Normal, 2 - High. Normal by default\n"));
     msdk_printf(MSDK_STRING("  -n            Number of frames to transcode \n"));
+    msdk_printf(MSDK_STRING("  -fps <frames per second>\n"));
+    msdk_printf(MSDK_STRING("                Transcoding frame rate limit\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Pipeline description (encoding options):\n"));
     msdk_printf(MSDK_STRING("  -b <Kbits per second>\n"));
@@ -563,6 +565,16 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.dFrameRate))
             {
                 PrintHelp(NULL, MSDK_STRING("frameRate \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-fps")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nFPS))
+            {
+                PrintHelp(NULL, MSDK_STRING("FPS limit \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
         }
