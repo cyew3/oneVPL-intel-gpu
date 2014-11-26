@@ -241,6 +241,7 @@ namespace MfxHwH264Encode
         virtual mfxStatus Execute(mfxHDL surface, DdiTask const & task,
                 mfxU32 fieldId, PreAllocatedVector const & sei);
         virtual mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId);
+        virtual mfxStatus Destroy();
 
     protected:
         //helper functions

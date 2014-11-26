@@ -2655,16 +2655,36 @@ mfxStatus VAAPIEncoder::Destroy()
 
 VAAPIFEIPREENCEncoder::VAAPIFEIPREENCEncoder()
 : VAAPIEncoder()
-, m_statParamsId(0)
-, m_statMVId(0)
-, m_statOutId(0) {
+, m_statParamsId(VA_INVALID_ID)
+, m_statMVId(VA_INVALID_ID)
+, m_statOutId(VA_INVALID_ID) {
 } // VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
 
 VAAPIFEIPREENCEncoder::~VAAPIFEIPREENCEncoder()
 {
+
     Destroy();
 
 } // VAAPIEncoder::~VAAPIEncoder()
+
+mfxStatus VAAPIFEIPREENCEncoder::Destroy()
+{
+
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (m_statParamsId != VA_INVALID_ID)
+        MFX_DESTROY_VABUFFER(m_statParamsId, m_vaDisplay);
+    if (m_statMVId != VA_INVALID_ID)
+        MFX_DESTROY_VABUFFER(m_statMVId, m_vaDisplay);
+    if (m_statOutId != VA_INVALID_ID)
+        MFX_DESTROY_VABUFFER(m_statOutId, m_vaDisplay);
+
+    sts = VAAPIEncoder::Destroy();
+
+    return sts;
+
+} // VAAPIEncoder::~VAAPIEncoder()
+
 
 mfxStatus VAAPIFEIPREENCEncoder::CreateAccelerationService(MfxVideoParam const & par)
 {
@@ -2965,6 +2985,8 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
     std::vector<VABufferID> configBuffers;
     configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);
+    for (mfxU32 ii = 0; ii < configBuffers.size(); ii++)
+        configBuffers[ii]=VA_INVALID_ID;
     mfxU16 buffersCount = 0;
 
     //Add preENC buffers
@@ -3066,8 +3088,8 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         vaSts = vaCreateBuffer(m_vaDisplay,
                 m_vaContextEncode,
                 (VABufferType)VAStatsMotionVectorBufferTypeIntel,
-                sizeof (VAMotionVectorIntel),
-                numMB * 16, //16 MV per MB
+                sizeof (VAMotionVectorIntel)*numMB * 16, //16 MV per MB
+                1,
                 NULL, //should be mapped later
                 &statMVid);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -3080,8 +3102,8 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         vaSts = vaCreateBuffer(m_vaDisplay,
                 m_vaContextEncode,
                 (VABufferType)VAStatsStatisticsBufferTypeIntel,
-                sizeof (VAStatsStatistics16x16Intel),
-                numMB,
+                sizeof (VAStatsStatistics16x16Intel) * numMB,
+                1,
                 NULL,
                 &statOUTid);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -3188,7 +3210,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     vaSts = vaCreateBuffer(m_vaDisplay,
             m_vaContextEncode,
             (VABufferType)VAStatsStatisticsParameterBufferTypeIntel,
-            sizeof (m_statParams),
+            sizeof (m_statParams)*numMB,
             1,
             &m_statParams,
             &statParamsId);
@@ -3219,7 +3241,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         vaSts = vaRenderPicture(
                 m_vaDisplay,
                 m_vaContextEncode,
-                Begin(configBuffers),
+                &configBuffers[0], /* vector store leaner in memory*/
                 buffersCount);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
