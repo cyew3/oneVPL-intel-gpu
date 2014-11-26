@@ -825,7 +825,7 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
             else if (MFX_EXTBUF_CAM_PIPECONTROL == par->ExtParam[i]->BufferId)
             {
                 mfxExtCamPipeControl* pipeExtBufParams = (mfxExtCamPipeControl*)par->ExtParam[i];
-                m_Caps.BayerPatternType = pipeExtBufParams->RawFormat;
+                m_Caps.BayerPatternType = BayerPattern_API2CM(pipeExtBufParams->RawFormat);
             }
         }
     }
@@ -1285,7 +1285,7 @@ mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
         // Step 4. Demosaic
         m_cmi.cpu_status = Demosaic_CPU(&m_cmi, surfIn->Data.Y16, surfIn->Data.Pitch);
 
-        if (m_Caps.BayerPatternType == MFX_CAM_BAYER_RGGB || m_Caps.BayerPatternType == MFX_CAM_BAYER_GBRG)
+        if (m_Caps.BayerPatternType == RGGB || m_Caps.BayerPatternType == GBRG)
         {
             /* swap R and B buffers */
             m_cmi.cpu_R_fgc_in = m_cmi.cpu_B_o;

@@ -210,6 +210,23 @@ protected:
     CmSurface2D         *m_vignetteMaskSurf;
     CmBuffer            *m_LUTSurf;
 
+    mfxU16  BayerPattern_API2CM(mfxU16 api_bayer_type)
+    {
+        switch(api_bayer_type)
+        {
+          case MFX_CAM_BAYER_BGGR:
+            return BGGR;
+          case MFX_CAM_BAYER_GBRG:
+            return GBRG;
+          case MFX_CAM_BAYER_GRBG:
+            return GRBG;
+          case MFX_CAM_BAYER_RGGB:
+            return RGGB;
+        }
+
+        return 0;
+    };
+
 private:
 
     MfxFrameAllocResponse   m_raw16padded;

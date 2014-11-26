@@ -20,6 +20,12 @@ File Name: mfx_camera_plugin_utils.h
 #include "mfxplugin++.h"
 #include "mfx_camera_plugin_cm.h"
 
+// CM bayer patterns
+#define BGGR 0
+#define RGGB 1
+#define GRBG 2
+#define GBRG 3
+
 //#define CAMP_PIPE_ITT
 
 #if !defined(_MFX_CAMERA_PLUGIN_UTILS_)
