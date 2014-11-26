@@ -988,6 +988,7 @@ void CEncodingPipeline::Close()
         msdk_printf(MSDK_STRING("Frame number: %u\r"), m_FileWriters.first->m_nProcessedFramesNum);
 
     MSDK_SAFE_DELETE(m_pmfxENCPAK);
+    MSDK_SAFE_DELETE(m_pmfxPREENC);
     MSDK_SAFE_DELETE(m_pmfxVPP);
 
     //if (m_pUID) MFXVideoUSER_UnLoad(m_mfxSession, &(m_pUID->mfx));
@@ -1054,14 +1055,17 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
         m_mfxEncParams.mfx.EncodedOrder = 1;
     }
 
-    sts = m_pmfxENCPAK->Init(&m_mfxEncParams);
-    if (MFX_WRN_PARTIAL_ACCELERATION == sts)
+    if(!m_pmfxPREENC)
     {
-        msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
-        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
-    }
+        sts = m_pmfxENCPAK->Init(&m_mfxEncParams);
+        if (MFX_WRN_PARTIAL_ACCELERATION == sts)
+        {
+            msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
+            MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        }
 
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     if(m_pmfxPREENC) {
         mfxVideoParam preEncParams = m_mfxEncParams;
@@ -1271,7 +1275,7 @@ mfxStatus CEncodingPipeline::Run()
             mvs.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
             mvs.Header.BufferSz = sizeof (mfxExtFeiPreEncMV);
             mvs.NumMBAlloc = numMB;
-            mvs.MB = new mfxExtFeiPreEncMV::mfxMB [numMB];
+            mvs.MB = new mfxExtFeiPreEncMV::mfxMB [numMB*16*2];
             outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mvs;
 
             if (m_encpakParams.mvoutFile != NULL &&
@@ -1289,7 +1293,7 @@ mfxStatus CEncodingPipeline::Run()
             mbdata.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
             mbdata.Header.BufferSz = sizeof (mfxExtFeiPreEncMBStat);
             mbdata.NumMBAlloc = numMB;
-            mbdata.MB = new mfxExtFeiPreEncMBStat::mfxMB [numMB];
+            mbdata.MB = new mfxExtFeiPreEncMBStat::mfxMB [numMB*16];
             outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mbdata;
             outBufsPreEncI[0] = (mfxExtBuffer*) & mbdata; //special case for I frames
 
@@ -1311,7 +1315,7 @@ mfxStatus CEncodingPipeline::Run()
 
         bool MVPredictors = (m_encpakParams.mvinFile != NULL) || m_encpakParams.bPREENC; //couple with PREENC
         bool MBCtrl = m_encpakParams.mbctrinFile != NULL;
-        bool MBQP = false; //m_encpakParams.mbQpFile != NULL; //not supported by driver for now
+        bool MBQP = m_encpakParams.mbQpFile != NULL;
 
         memset(&feiEncCtrl, 0, sizeof (mfxExtFeiEncFrameCtrl));
         feiEncCtrl.Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;

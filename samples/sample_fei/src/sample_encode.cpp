@@ -45,7 +45,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-mvout file] - use this input to set MV predictor for FEI\n"));
     msdk_printf(MSDK_STRING("   [-mbcode file] - file to output per MB information (structure mfxExtFeiPakMBCtrl) for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbstat file] - file to output per MB distortions for each frame\n"));
-    msdk_printf(MSDK_STRING("   [-mbqp file] - file to input per MB QPs the same for each frame (only PREENC)\n"));
+    msdk_printf(MSDK_STRING("   [-mbqp file] - file to input per MB QPs the same for each frame\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -130,14 +130,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->mbstatoutFile = strInput[i+1];
             i++;
         }
-#if 0 //not supported
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mbqp")))
         {
             //GET_OPTION_POINTER(strArgument);
             pParams->mbQpFile = strInput[i+1];
             i++;
         }
-#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mbsize")))
         {
             pParams->bMBSize = true;
