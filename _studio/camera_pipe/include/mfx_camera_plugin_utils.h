@@ -170,7 +170,7 @@ typedef struct
     mfxU32              TileOffset;
 } CameraTileOffset;
 
-typedef struct
+typedef struct _CameraFrameSizeExtra
 {
     mfxU32              frameWidth64;
     mfxU32              paddedFrameWidth;
@@ -186,6 +186,23 @@ typedef struct
     mfxU32              TileHeightPadded;
     CameraTileOffset    *tileOffsets;
     mfxFrameInfo        TileInfo;
+
+    bool operator!= (const _CameraFrameSizeExtra &new_frame) const
+    {
+        if (this->frameWidth64      != new_frame.frameWidth64      ||
+            this->paddedFrameHeight != new_frame.paddedFrameHeight ||
+            this->BitDepth          != new_frame.BitDepth          ||
+            this->paddedFrameWidth  != new_frame.paddedFrameWidth  ||
+            this->TileHeight        != new_frame.TileHeight        ||
+            this->TileHeightPadded  != new_frame.TileHeightPadded  ||
+            this->tileNum           != new_frame.tileNum)
+        {
+            return true;
+        }
+
+        return false;
+
+    }
 } CameraFrameSizeExtra;
 
 
@@ -219,6 +236,16 @@ typedef struct _mfxCameraCaps
       mfxU32       MemoryOperationMode;
     };
     mfxU16    API_Mode;
+
+    bool operator!= (const _mfxCameraCaps &newCaps) const
+    {
+        if ( this->Version != newCaps.Version ||
+             this->ModuleConfiguration != newCaps.ModuleConfiguration)
+             return true;
+
+        return false;
+    }
+
 }   mfxCameraCaps;
 
 

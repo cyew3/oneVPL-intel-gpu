@@ -199,7 +199,8 @@ public:
 
     void Reset(
         mfxVideoParam const & video,
-        mfxCameraCaps       *pCaps);
+        mfxCameraCaps       *pCaps,
+        mfxCameraCaps       *pOldCaps);
 
     void Close() {
         ReleaseCmSurfaces();

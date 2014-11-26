@@ -1232,11 +1232,13 @@ void CmContext::Setup(
 
 void CmContext::Reset(
     mfxVideoParam const & video,
-    mfxCameraCaps      *pCaps)
+    mfxCameraCaps      *pCaps,
+    mfxCameraCaps      *pOldCaps)
 {
     bool bNeedConversionToRGB = true;
 
     // Demosaic is always on, so the DM kernels must be here already
+#if 0
     for (int i = 0; i < CAM_PIPE_NUM_TASK_BUFFERS; i++)
     {
         if (CAM_PIPE_TASK_ARRAY(task_FwGamma, i))
@@ -1261,70 +1263,74 @@ void CmContext::Reset(
     kernel_FwGamma1        = 0;
     kernel_BayerCorrection = 0;
 
-
-    if (pCaps->bForwardGammaCorrection || pCaps->bColorConversionMatrix)
+#endif
+    if (! task_FwGamma && ( pCaps->bForwardGammaCorrection || pCaps->bColorConversionMatrix) )
         CreateTask(CAM_PIPE_TASK_ARRAY(task_FwGamma, i));
 
-    if (pCaps->bBlackLevelCorrection || pCaps->bWhiteBalance || pCaps->bVignetteCorrection)
+    if (! task_BayerCorrection && ( pCaps->bBlackLevelCorrection || pCaps->bWhiteBalance || pCaps->bVignetteCorrection) )
     {
         kernel_BayerCorrection = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(BAYER_CORRECTION), NULL);
         CreateTask(CAM_PIPE_TASK_ARRAY(task_BayerCorrection, i));
     }
 
-    if (pCaps->bForwardGammaCorrection && !pCaps->bColorConversionMatrix)
+    if ( ! kernel_FwGamma || !kernel_FwGamma ||  pCaps->bColorConversionMatrix != pOldCaps->bColorConversionMatrix || pCaps->bForwardGammaCorrection != pOldCaps->bForwardGammaCorrection)
     {
-        // Only gamma correction needed w/o color corection
+        // Create gamma and ccm related kernels/tasks if they are not created yet
+        if (pCaps->bForwardGammaCorrection && !pCaps->bColorConversionMatrix)
+        {
+            // Only gamma correction needed w/o color corection
 
-        if (m_video.BitDepth == 16)
-        {
-            kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
-            kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
-        }
-        else
-        {
-            if (pCaps->bOutToARGB16)
+            if (m_video.BitDepth == 16)
             {
-                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY), NULL);
-                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY), NULL);
+                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
+                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_16bits), NULL);
             }
             else
             {
-                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
-                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
+                if (pCaps->bOutToARGB16)
+                {
+                    kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY), NULL);
+                    kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY), NULL);
+                }
+                else
+                {
+                    kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
+                    kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_GPUV4_ARGB8_2D), NULL);
 
-                // This kernel does a conversion, so separate conversion is not needed.
-                bNeedConversionToRGB = false;
+                    // This kernel does a conversion, so separate conversion is not needed.
+                    bNeedConversionToRGB = false;
+                }
             }
         }
-    }
-    else if (pCaps->bForwardGammaCorrection && pCaps->bColorConversionMatrix)
-    {
-        // Both gamma correction and color corection needed
-
-        if (m_video.BitDepth == 16)
+        else if (pCaps->bForwardGammaCorrection && pCaps->bColorConversionMatrix)
         {
-            kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA_16bits), NULL);
-            kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA_16bits), NULL);
+            // Both gamma correction and color corection needed
+
+            if (m_video.BitDepth == 16)
+            {
+                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA_16bits), NULL);
+                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA_16bits), NULL);
+            }
+            else
+            {
+                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
+                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
+            }
         }
-        else
+        else if (! pCaps->bForwardGammaCorrection && pCaps->bColorConversionMatrix)
         {
-            kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
-            kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
+            // color corection needed w/o gamma correction
+            kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_ONLY), NULL);
+            kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_ONLY), NULL);
         }
-    }
-    else if (! pCaps->bForwardGammaCorrection && pCaps->bColorConversionMatrix)
-    {
-        // color corection needed w/o gamma correction
-        kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_ONLY), NULL);
-        kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_ONLY), NULL);
     }
 
-    if (pCaps->bOutToARGB16)
+    if (! task_ARGB && pCaps->bOutToARGB16)
     {
         kernel_ARGB = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(ARGB16), NULL);
         CreateTask(CAM_PIPE_TASK_ARRAY(task_ARGB, i));
     }
-    else if (bNeedConversionToRGB)
+    else if (! task_ARGB && bNeedConversionToRGB)
     {
         kernel_ARGB = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(ARGB8), NULL);
         CreateTask(CAM_PIPE_TASK_ARRAY(task_ARGB, i));

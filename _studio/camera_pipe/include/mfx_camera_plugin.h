@@ -124,6 +124,16 @@ protected:
         mfxMemId inSurf2DUP;
         mfxU16   tileID;
 
+        CameraPipeWhiteBalanceParams       WBparams;
+        CameraPipeForwardGammaParams       GammaParams;
+        CameraPipeVignetteParams           VignetteParams;
+        CameraPipePaddingParams            PaddingParams;
+        CameraPipeBlackLevelParams         BlackLevelParams;
+        CameraPipe3x3ColorConversionParams CCMParams;
+        CameraFrameSizeExtra               FrameSizeExtra;
+        mfxCameraCaps                      Caps;
+        mfxU32                             InputBitDepth;
+
         mfxMemId outSurf2D;
         mfxMemId outSurf2DUP;
 

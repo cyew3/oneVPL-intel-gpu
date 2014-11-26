@@ -1048,8 +1048,6 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
     mfxStatus mfxSts;
 
-    WaitForActiveThreads();
-
     CAMERA_DEBUG_LOG("MFXVideoVPP_Reset \n");
 
     mfxVideoParam newParam;
@@ -1071,6 +1069,7 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
 
     CameraPipeForwardGammaParams oldGammaParams = m_GammaParams;
 
+    mfxCameraCaps old_caps = m_Caps;
     m_Caps.ModuleConfiguration = 0; // zero all filters
     m_Caps.bDemosaic = 1;           // demosaic is always on
     ProcessExtendedBuffers(&newParam);
@@ -1152,15 +1151,41 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
         }
     }
 
+    bool bFrameSizeChanged = frameSizeExtra != m_FrameSizeExtra;
+    bool bNewFilters       = m_Caps != old_caps;
+
     m_InputBitDepth = newParam.vpp.In.BitDepthLuma;
 
-    m_cmCtx->Reset(newParam, &m_Caps);
-    m_cmCtx->CreateThreadSpaces(&frameSizeExtra);
+    if ( bFrameSizeChanged || bNewFilters )
+    {
+        bool CCM_Gamma_change = false;
+        if ( (m_Caps.bColorConversionMatrix != old_caps.bColorConversionMatrix           && m_Caps.bForwardGammaCorrection == 1 &&  old_caps.bForwardGammaCorrection == 1 ) ||
+             (m_Caps.bColorConversionMatrix == 1 && old_caps.bColorConversionMatrix == 1 && m_Caps.bForwardGammaCorrection != old_caps.bForwardGammaCorrection ))
+        {
+            // CMM and Gamma share the same kernel. If any changes happens in CCM/Gamma need to re-create kernels
+            CCM_Gamma_change = true;
+        }
+        
+        if ( bFrameSizeChanged || CCM_Gamma_change )
+        {
+            WaitForActiveThreads();
+        }
 
-    mfxSts = ReallocateInternalSurfaces(newParam, frameSizeExtra);
-    if (mfxSts < MFX_ERR_NONE)
-        return mfxSts;
+        m_cmCtx->Reset(newParam, &m_Caps, &old_caps);
 
+        if ( bFrameSizeChanged)
+        {
+            m_cmCtx->CreateThreadSpaces(&frameSizeExtra);
+        }
+
+        if ( bFrameSizeChanged  || ( bNewFilters && m_Caps.bColorConversionMatrix == 1 && old_caps.bColorConversionMatrix == 0 ) )
+        {
+            // Re-allocate surfaces in case frame resolution is changed or add CCM that requires additional surf. 
+            mfxSts = ReallocateInternalSurfaces(newParam, frameSizeExtra);
+            if (mfxSts < MFX_ERR_NONE)
+                return mfxSts;
+        }
+    }
     // will need to check numPoints as well when different LUT sizes are supported
     if (m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix)
     {
@@ -1458,6 +1483,16 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
     AsyncParams *pParams = new AsyncParams;
     pParams->surf_in  = surface_in;
     pParams->surf_out = surface_out;
+    pParams->Caps     = m_Caps;
+    pParams->FrameSizeExtra   = m_FrameSizeExtra;
+    pParams->BlackLevelParams = m_BlackLevelParams;
+    pParams->CCMParams        = m_CCMParams;
+    pParams->GammaParams      = m_GammaParams;
+    pParams->InputBitDepth    = m_InputBitDepth;
+    pParams->PaddingParams    = m_PaddingParams;
+    pParams->VignetteParams   = m_VignetteParams;
+    pParams->WBparams         = m_WBparams;
+
 
     *mfxthreadtask = (mfxThreadTask*) pParams;
 
