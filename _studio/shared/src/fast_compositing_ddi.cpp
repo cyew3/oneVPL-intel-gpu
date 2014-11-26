@@ -548,12 +548,6 @@ mfxStatus FastCompositingDDI::QueryFrcCaps(FASTCOMP_FRC_CAPS& frcCaps)
     }
     else
     {
-#ifndef MSDK_BANNED
-        char cStr[256];
-        sprintf_s(cStr, "\nFRC unsupported\n");
-        OutputDebugStringA(cStr);
-#endif
-
         FASTCOMP_FRC_CAPS caps = {0};
         frcCaps = caps;
     }
@@ -578,10 +572,6 @@ mfxStatus FastCompositingDDI::QueryVarianceCaps(
     }
     else
     {
-        char cStr[256];
-        sprintf_s(cStr, "\nVariance unsupported\n");
-        OutputDebugStringA(cStr);
-
         //FASTCOMP_VARIANCE_CAPS caps;// = {0};
         //*pVarianceCaps = caps;
     }
