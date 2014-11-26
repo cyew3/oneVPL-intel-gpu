@@ -166,6 +166,12 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
             break;
 #endif // MFX_ENABLE_H264_VIDEO_ENC || MFX_ENABLE_H264_VIDEO_ENC_H
 
+#if defined (MFX_VA) && defined (MFX_ENABLE_H265FEI_HW)
+        case MFX_CODEC_HEVC:
+            mfxRes = VideoENC_H265FEI::Query(session->m_pCORE.get(), in, out);
+            break;
+#endif
+
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENC) && !defined (MFX_VA)
         case MFX_CODEC_MPEG2:
             mfxRes = MFXVideoENCMPEG2::Query(in, out);
@@ -229,6 +235,12 @@ mfxStatus MFXVideoENC_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
 #endif //MFX_VA
             break;
 #endif // MFX_ENABLE_H264_VIDEO_ENC || MFX_ENABLE_H264_VIDEO_ENC_H
+
+#if defined (MFX_VA) && defined (MFX_ENABLE_H265FEI_HW)
+        case MFX_CODEC_HEVC:
+            mfxRes = VideoENC_H265FEI::QueryIOSurf(session->m_pCORE.get(), par, request);
+            break;
+#endif
 
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENC) && !defined (MFX_VA)
         case MFX_CODEC_MPEG2:

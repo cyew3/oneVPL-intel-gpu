@@ -20,12 +20,55 @@
 extern "C" {
 #endif
 
+typedef void *mfxFEIH265;
+typedef void *mfxFEISyncPoint;
+
+/* input parameters - set once at init */
+typedef struct
+{
+    mfxU32 Width;
+    mfxU32 Height;
+    mfxU32 MaxCUSize;
+    mfxU32 MPMode;
+    mfxU32 NumRefFrames;
+    mfxU32 NumIntraModes;
+} mfxFEIH265Param;
+
+/* basic info for current and reference frames */
+typedef struct
+{
+    mfxU8* YPlane;
+    mfxU32 YPitch;
+    mfxU32 PicOrder;
+    mfxU32 EncOrder;
+} mfxFEIH265Frame;
+
+/* FEI input - update before each call to ProcessFrameAsync */
+typedef struct
+{
+    mfxU32 FEIOp;
+    mfxU32 FrameType;
+    mfxU32 RefIdx;
+
+    mfxFEIH265Frame FEIFrameIn;
+    mfxFEIH265Frame FEIFrameRef;
+
+} mfxFEIH265Input;
+
 /* must correspond with public API! */
 enum UnsupportedBlockSizes {
-    FEI_16x8_US  = 7,
-    FEI_8x16_US  = 8,
-    FEI_8x4_US   = 10,
-    FEI_4x8_US   = 11,
+    MFX_FEI_H265_BLK_16x8_US  = 7,
+    MFX_FEI_H265_BLK_8x16_US  = 8,
+    MFX_FEI_H265_BLK_8x4_US   = 10,
+    MFX_FEI_H265_BLK_4x8_US   = 11,
+
+    /* only used internally */
+    MFX_FEI_H265_BLK_256x256 = 0,
+    MFX_FEI_H265_BLK_128x128 = 1,
+    MFX_FEI_H265_BLK_64x64 = 2,
+
+    /* public API allocates 64 slots so this could be increased later (update SyncCurrent()) */
+    MFX_FEI_H265_BLK_MAX      = 12,
 };
 
 

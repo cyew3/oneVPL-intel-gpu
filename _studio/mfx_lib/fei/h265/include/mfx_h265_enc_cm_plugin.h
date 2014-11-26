@@ -48,6 +48,11 @@ public:
     virtual
     mfxStatus Close(void);
 
+    static 
+    mfxStatus Query(VideoCORE*, mfxVideoParam *in, mfxVideoParam *out);
+    static 
+    mfxStatus QueryIOSurf(VideoCORE*, mfxVideoParam *par, mfxFrameAllocRequest *request);
+
     virtual
     mfxStatus GetVideoParam(mfxVideoParam *par);
     

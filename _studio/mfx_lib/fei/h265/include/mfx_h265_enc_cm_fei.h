@@ -52,7 +52,7 @@ typedef struct {
 /* internal - the public API only returns list of top modes now */
 typedef struct
 {
-    mfxU16 Histogram[FEI_MAX_INTRA_MODES + 2];  /* 33 + 2 for DC and planar */
+    mfxU16 Histogram[MFX_FEI_H265_MAX_INTRA_MODES + 2];  /* 33 + 2 for DC and planar */
     mfxU16 reserved[5];
 } MbIntraGrad;
 
@@ -76,8 +76,8 @@ private:
     CmSurface2DUP * mbIntraGrad8x8[FEI_DEPTH];
     CmSurface2DUP * mbIntraGrad16x16[FEI_DEPTH];
     CmSurface2DUP * mbIntraGrad32x32[FEI_DEPTH];
-    CmSurface2DUP * distGpu[FEI_DEPTH][FEI_MAX_NUM_REF_FRAMES][FEI_BLK_MAX];
-    CmSurface2DUP * mvGpu[FEI_DEPTH][FEI_MAX_NUM_REF_FRAMES][FEI_BLK_MAX];
+    CmSurface2DUP * distGpu[FEI_DEPTH][MFX_FEI_H265_MAX_NUM_REF_FRAMES][MFX_FEI_H265_BLK_MAX];
+    CmSurface2DUP * mvGpu[FEI_DEPTH][MFX_FEI_H265_MAX_NUM_REF_FRAMES][MFX_FEI_H265_BLK_MAX];
     CmBuffer * curbe;
     CmBuffer * me1xControl;
     CmBuffer * me2xControl;
@@ -98,7 +98,6 @@ private:
     CmKernel * kernelRefine16x32;
     CmKernel * kernelInterpolateFrame;
     CmKernel * kernelIme;
-//    CmKernel * kernelImeWithPred;
     CmKernel * kernelIme3tiers;
 
     /* CPU-side: user-provided memory */
@@ -113,15 +112,15 @@ private:
     mfxU32      um_pitchGrad16x16[FEI_DEPTH];
     mfxU32      um_pitchGrad32x32[FEI_DEPTH];
 
-    mfxU32         * um_distCpu[FEI_DEPTH][FEI_MAX_NUM_REF_FRAMES][FEI_BLK_MAX];
-    mfxI16Pair     * um_mvCpu[FEI_DEPTH][FEI_MAX_NUM_REF_FRAMES][FEI_BLK_MAX];
-    mfxU32           um_pitchDist[FEI_BLK_MAX];
-    mfxU32           um_pitchMv[FEI_BLK_MAX];
+    mfxU32         * um_distCpu[FEI_DEPTH][MFX_FEI_H265_MAX_NUM_REF_FRAMES][MFX_FEI_H265_BLK_MAX];
+    mfxI16Pair     * um_mvCpu[FEI_DEPTH][MFX_FEI_H265_MAX_NUM_REF_FRAMES][MFX_FEI_H265_BLK_MAX];
+    mfxU32           um_pitchDist[MFX_FEI_H265_BLK_MAX];
+    mfxU32           um_pitchMv[MFX_FEI_H265_BLK_MAX];
 
     /* interpolated frames correspond to ref buffer, so need 1 extra for lookahead */
     mfxU32           um_interpolatePitch;
-    mfxU8          * um_interpolateData[FEI_MAX_NUM_REF_FRAMES+1][3];
-    mfxU8          * um_pInterpolateData[FEI_DEPTH][FEI_MAX_NUM_REF_FRAMES+1][3];
+    mfxU8          * um_interpolateData[MFX_FEI_H265_MAX_NUM_REF_FRAMES+1][3];
+    mfxU8          * um_pInterpolateData[FEI_DEPTH][MFX_FEI_H265_MAX_NUM_REF_FRAMES+1][3];
 
     mfxI16         * um_mbIntraModeTop4[FEI_DEPTH];
     mfxI16         * um_mbIntraModeTop8[FEI_DEPTH];
@@ -130,7 +129,7 @@ private:
 
     /* internal buffers to track input and ref frames that have been uploaded to GPU (avoid redundant work) */
     PicBufGpu picBufInput[FEI_DEPTH];
-    PicBufGpu picBufRef[FEI_MAX_NUM_REF_FRAMES + 1];
+    PicBufGpu picBufRef[MFX_FEI_H265_MAX_NUM_REF_FRAMES + 1];
 
     /* set once at init */
     mfxU32 width;
@@ -201,7 +200,6 @@ public:
         kernelRefine16x32(),
         kernelInterpolateFrame(),
         kernelIme(),
-//        kernelImeWithPred(),
         kernelIme3tiers(),
 
         um_intraPitch(),

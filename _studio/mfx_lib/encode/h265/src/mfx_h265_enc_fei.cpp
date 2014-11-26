@@ -95,15 +95,15 @@ void InitOutputFiles(mfxFEIH265Param *param)
     memset(bwBuf, 0x80, sizeof(bwBuf));
 }
 
-void AddFrameParamsFile(mfxFEIH265Input *feiH265In, H265Frame *frameIn, H265Slice *sliceIn, FEIFrame *feiFrame, mfxFEISyncPoint *syncp, Ipp32s prevFrameDone, Ipp32s RefPicOrder[2][FEI_MAX_NUM_REF_FRAMES])
+void AddFrameParamsFile(mfxFEIH265Input *feiH265In, H265Frame *frameIn, H265Slice *sliceIn, FEIFrame *feiFrame, mfxFEISyncPoint *syncp, Ipp32s prevFrameDone, Ipp32s RefPicOrder[2][MFX_FEI_H265_MAX_NUM_REF_FRAMES])
 {
     int i;
 
-    FEIFrameType frameType;
+    int frameType;
     switch (sliceIn->slice_type) {
-    case I_SLICE:   frameType = FEI_I_FRAME; break;
-    case P_SLICE:   frameType = FEI_P_FRAME; break;
-    case B_SLICE:   frameType = FEI_B_FRAME; break;
+    case I_SLICE:   frameType = MFX_FRAMETYPE_I; break;
+    case P_SLICE:   frameType = MFX_FRAMETYPE_P; break;
+    case B_SLICE:   frameType = MFX_FRAMETYPE_B; break;
     }
 
     fprintf(outfileParams, "NewFrame\n");
@@ -134,11 +134,11 @@ void WriteFrameIntraModes(mfxFEIH265Output *feiOut)
     int i, x, y;
 
     fprintf(outfileIntraModes, "Intra Modes 4x4\n");
-    for (y = 0; y < feiOut->PaddedHeight / 4; y++) {
-        for (x = 0; x < feiOut->PaddedWidth / 4; x++) {
+    for (y = 0; y < (int)feiOut->PaddedHeight / 4; y++) {
+        for (x = 0; x < (int)feiOut->PaddedWidth / 4; x++) {
             fprintf(outfileIntraModes, "block [% 5d, % 5d]: ", y*4, x*4);
-            for (i = 0; i < feiOut->IntraMaxModes; i++) {
-                fprintf(outfileIntraModes, "%d ",   feiOut->IntraModes4x4[feiOut->IntraMaxModes*(y*feiOut->IntraPitch4x4 + x) + i]);
+            for (i = 0; i < (int)feiOut->IntraMaxModes; i++) {
+                fprintf(outfileIntraModes, "%d ",   (int)feiOut->IntraModes4x4[feiOut->IntraMaxModes*(y*feiOut->IntraPitch4x4 + x) + i]);
             }
             fprintf(outfileIntraModes, "\n");
         }
@@ -146,11 +146,11 @@ void WriteFrameIntraModes(mfxFEIH265Output *feiOut)
     fprintf(outfileIntraModes, "\n");
 
     fprintf(outfileIntraModes, "Intra Modes 8x8\n");
-    for (y = 0; y < feiOut->PaddedHeight / 8; y++) {
-        for (x = 0; x < feiOut->PaddedWidth / 8; x++) {
+    for (y = 0; y < (int)feiOut->PaddedHeight / 8; y++) {
+        for (x = 0; x < (int)feiOut->PaddedWidth / 8; x++) {
             fprintf(outfileIntraModes, "block [% 5d, % 5d]: ", y*8, x*8);
-            for (i = 0; i < feiOut->IntraMaxModes; i++) {
-                fprintf(outfileIntraModes, "%d ", feiOut->IntraModes8x8[feiOut->IntraMaxModes*(y*feiOut->IntraPitch8x8 + x) + i]);
+            for (i = 0; i < (int)feiOut->IntraMaxModes; i++) {
+                fprintf(outfileIntraModes, "%d ", (int)feiOut->IntraModes8x8[feiOut->IntraMaxModes*(y*feiOut->IntraPitch8x8 + x) + i]);
             }
             fprintf(outfileIntraModes, "\n");
         }
@@ -158,11 +158,11 @@ void WriteFrameIntraModes(mfxFEIH265Output *feiOut)
     fprintf(outfileIntraModes, "\n");
 
     fprintf(outfileIntraModes, "Intra Modes 16x16\n");
-    for (y = 0; y < feiOut->PaddedHeight / 16; y++) {
-        for (x = 0; x < feiOut->PaddedWidth / 16; x++) {
+    for (y = 0; y < (int)feiOut->PaddedHeight / 16; y++) {
+        for (x = 0; x < (int)feiOut->PaddedWidth / 16; x++) {
             fprintf(outfileIntraModes, "block [% 5d, % 5d]: ", y*16, x*16);
-            for (i = 0; i < feiOut->IntraMaxModes; i++) {
-                fprintf(outfileIntraModes, "%d ", feiOut->IntraModes16x16[feiOut->IntraMaxModes*(y*feiOut->IntraPitch16x16 + x) + i]);
+            for (i = 0; i < (int)feiOut->IntraMaxModes; i++) {
+                fprintf(outfileIntraModes, "%d ", (int)feiOut->IntraModes16x16[feiOut->IntraMaxModes*(y*feiOut->IntraPitch16x16 + x) + i]);
             }
             fprintf(outfileIntraModes, "\n");
         }
@@ -170,11 +170,11 @@ void WriteFrameIntraModes(mfxFEIH265Output *feiOut)
     fprintf(outfileIntraModes, "\n");
 
     fprintf(outfileIntraModes, "Intra Modes 32x32\n");
-    for (y = 0; y < feiOut->PaddedHeight / 32; y++) {
-        for (x = 0; x < feiOut->PaddedWidth / 32; x++) {
+    for (y = 0; y < (int)feiOut->PaddedHeight / 32; y++) {
+        for (x = 0; x < (int)feiOut->PaddedWidth / 32; x++) {
             fprintf(outfileIntraModes, "block [% 5d, % 5d]: ", y*32, x*32);
-            for (i = 0; i < feiOut->IntraMaxModes; i++) {
-                fprintf(outfileIntraModes, "%d ", feiOut->IntraModes32x32[feiOut->IntraMaxModes*(y*feiOut->IntraPitch32x32 + x) + i]);
+            for (i = 0; i < (int)feiOut->IntraMaxModes; i++) {
+                fprintf(outfileIntraModes, "%d ", (int)feiOut->IntraModes32x32[feiOut->IntraMaxModes*(y*feiOut->IntraPitch32x32 + x) + i]);
             }
             fprintf(outfileIntraModes, "\n");
         }
@@ -187,9 +187,9 @@ void WriteFrameIntraDist(mfxFEIH265Output *feiOut)
     int x, y;
 
     fprintf(outfileIntraDist, "Intra Distortion 16x16\n");
-    for (y = 0; y < feiOut->PaddedHeight / 16; y++) {
+    for (y = 0; y < (int)feiOut->PaddedHeight / 16; y++) {
         fprintf(outfileIntraDist, "Row % 5d", y*16);
-        for (x = 0; x < feiOut->PaddedWidth / 16; x++) {
+        for (x = 0; x < (int)feiOut->PaddedWidth / 16; x++) {
             fprintf(outfileIntraDist, "% 6d", feiOut->IntraDist[y*feiOut->IntraPitch + x].Dist);
         }
         fprintf(outfileIntraDist, "\n");
@@ -197,6 +197,9 @@ void WriteFrameIntraDist(mfxFEIH265Output *feiOut)
     fprintf(outfileIntraDist, "\n");
 
 }
+
+/* TEMP - 16x32 and 32x16 currently disabled */
+#define DISABLE_NONSQUARE
 
 void WriteFrameInterLarge(mfxFEIH265Output *feiOut, int refIdx, int blockSize)
 {
@@ -206,18 +209,24 @@ void WriteFrameInterLarge(mfxFEIH265Output *feiOut, int refIdx, int blockSize)
     int pitchDist = feiOut->PitchDist[blockSize];
 
     switch (blockSize) {
-    case FEI_32x32:
+    case MFX_FEI_H265_BLK_32x32:
         w = 32;
         h = 32;
         break;
-    case FEI_32x16:
+#ifndef DISABLE_NONSQUARE
+    case MFX_FEI_H265_BLK_32x16:
         w = 32;
         h = 16;
         break;
-    case FEI_16x32:
+    case MFX_FEI_H265_BLK_16x32:
         w = 16;
         h = 32;
         break;
+#endif
+    default:
+        w = 0;
+        h = 0;
+        return;    
     }
 
     /* for large blocks, 9 dist estimates are returned (spaced 16 units apart) 
@@ -234,10 +243,10 @@ void WriteFrameInterLarge(mfxFEIH265Output *feiOut, int refIdx, int blockSize)
     fprintf(outfileInterMV,   "MV - %dx%d blocks\n", w, h);
     fprintf(outfileInterDist, "Dist - %dx%d blocks\n", w, h);
 
-    for (y = 0; y < feiOut->PaddedHeight / h; y++) {
+    for (y = 0; y < (int)feiOut->PaddedHeight / h; y++) {
         fprintf(outfileInterMV, "Row % 5d: ", y*h);
         fprintf(outfileInterDist, "Row % 5d: ", y*h);
-        for (x = 0; x < feiOut->PaddedWidth / w; x++) {
+        for (x = 0; x < (int)feiOut->PaddedWidth / w; x++) {
             fprintf(outfileInterMV, "[% 4d, % 4d] ", feiOut->MV[refIdx][blockSize][y*pitchMv + x].x, feiOut->MV[refIdx][blockSize][y*pitchMv + x].y);
             for (i = 0; i < 9; i++)
                 fprintf(outfileInterDist, "% 6d ", (int)feiOut->Dist[refIdx][blockSize][y*pitchDist + 16*x + i]);
@@ -258,11 +267,11 @@ void WriteFrameInterSmall(mfxFEIH265Output *feiOut, int refIdx, int blockSize)
     int pitchDist = feiOut->PitchDist[blockSize];
 
     switch (blockSize) {
-    case FEI_16x16:
+    case MFX_FEI_H265_BLK_16x16:
         w = 16;
         h = 16;
         break;
-    case FEI_8x8:
+    case MFX_FEI_H265_BLK_8x8:
         w = 8;
         h = 8;
         break;
@@ -270,10 +279,10 @@ void WriteFrameInterSmall(mfxFEIH265Output *feiOut, int refIdx, int blockSize)
 
     fprintf(outfileInterMV,   "MV - %dx%d blocks\n", w, h);
     fprintf(outfileInterDist, "Dist - %dx%d blocks\n", w, h);
-    for (y = 0; y < feiOut->PaddedHeight / h; y++) {
+    for (y = 0; y < (int)feiOut->PaddedHeight / h; y++) {
         fprintf(outfileInterMV, "Row % 5d: ", y*h);
         fprintf(outfileInterDist, "Row % 5d: ", y*h);
-        for (x = 0; x < feiOut->PaddedWidth / w; x++) {
+        for (x = 0; x < (int)feiOut->PaddedWidth / w; x++) {
             fprintf(outfileInterMV, "[% 4d, % 4d] ", feiOut->MV[refIdx][blockSize][y*pitchMv + x].x, feiOut->MV[refIdx][blockSize][y*pitchMv + x].y);
             fprintf(outfileInterDist, "% 6d", (int)feiOut->Dist[refIdx][blockSize][y*pitchDist + x]);
         }
@@ -290,9 +299,9 @@ void WriteFrameInterpolate(mfxFEIH265Output *feiOut, int refIdx)
 
     /* write Y plane to file, fill U/V planes with 0x80 (zero in 8-bit YUV420) */
     for (i = 0; i < 3; i++) {
-        for (j = 0; j < feiOut->InterpolateHeight; j++)
+        for (j = 0; j < (int)feiOut->InterpolateHeight; j++)
             fwrite(feiOut->Interp[refIdx][i] + j*feiOut->InterpolatePitch, 1, feiOut->InterpolateWidth, outfileInterpolate[i]);
-        for (j = 0; j < feiOut->InterpolateHeight / 2; j++)
+        for (j = 0; j < (int)feiOut->InterpolateHeight / 2; j++)
             fwrite(bwBuf, 1, feiOut->InterpolateWidth, outfileInterpolate[i]);
     }
 }
@@ -300,13 +309,13 @@ void WriteFrameInterpolate(mfxFEIH265Output *feiOut, int refIdx)
 /* refList = 0 or 1 (ref frames) */
 void WriteFrameInter(mfxFEIH265Output *feiOut, int refIdx, int puSize, int MPMode)
 {
-    WriteFrameInterSmall(feiOut, refIdx, FEI_8x8);
-    WriteFrameInterSmall(feiOut, refIdx, FEI_16x16);
-    WriteFrameInterLarge(feiOut, refIdx, FEI_32x32);
+    WriteFrameInterSmall(feiOut, refIdx, MFX_FEI_H265_BLK_8x8);
+    WriteFrameInterSmall(feiOut, refIdx, MFX_FEI_H265_BLK_16x16);
+    WriteFrameInterLarge(feiOut, refIdx, MFX_FEI_H265_BLK_32x32);
     if (MPMode > 1) {
         /* non-square blocks */
-        WriteFrameInterLarge(feiOut, refIdx, FEI_16x32);
-        WriteFrameInterLarge(feiOut, refIdx, FEI_32x16);
+        WriteFrameInterLarge(feiOut, refIdx, MFX_FEI_H265_BLK_16x32);
+        WriteFrameInterLarge(feiOut, refIdx, MFX_FEI_H265_BLK_32x16);
     }
 }
 
@@ -396,13 +405,13 @@ void FeiContext::UpdateFrameStateFEI(mfxFEIH265Input *feiIn, H265Frame *frameIn,
      */
     switch (sliceType) {
     case I_SLICE:
-        feiIn->FrameType = FEI_I_FRAME; 
+        feiIn->FrameType = MFX_FRAMETYPE_I; 
         break;
     case P_SLICE:
-        feiIn->FrameType = FEI_P_FRAME; 
+        feiIn->FrameType = MFX_FRAMETYPE_P; 
         break;
     case B_SLICE:
-        feiIn->FrameType = FEI_B_FRAME; 
+        feiIn->FrameType = MFX_FRAMETYPE_B; 
         break;
     }
 
@@ -447,13 +456,13 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
     /* run intra analysis on all frame types */
     if (feiFrame->IntraDone == 0) {
         if (sliceIn->sliceIntraAngMode == INTRA_ANG_MODE_GRADIENT)
-            feiH265In->FEIOp = (FEIOperation)(FEI_INTRA_DIST | FEI_INTRA_MODE);
+            feiH265In->FEIOp = (MFX_FEI_H265_OP_INTRA_DIST | MFX_FEI_H265_OP_INTRA_MODE);
         else
-            feiH265In->FEIOp = (FEIOperation)(FEI_INTRA_DIST);
+            feiH265In->FEIOp = (MFX_FEI_H265_OP_INTRA_DIST);
 
 #ifdef SAVE_FEI_STATE
         /* force it to always produce intra for testing */
-        feiH265In->FEIOp = (FEIOperation)(FEI_INTRA_DIST | FEI_INTRA_MODE);
+        feiH265In->FEIOp = (MFX_FEI_H265_OP_INTRA_DIST | MFX_FEI_H265_OP_INTRA_MODE);
 #endif
 
         UpdateFrameStateFEI(feiH265In, frameIn, 0, 0, sliceIn->slice_type);
@@ -463,14 +472,17 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
 
     if (sliceIn->slice_type == P_SLICE || sliceIn->slice_type == B_SLICE) {
 
-        feiH265In->FEIOp = (FEIOperation)(FEI_INTER_ME/* | FEI_INTERPOLATE*/);
+        feiH265In->FEIOp = (MFX_FEI_H265_OP_INTER_ME/* | MFX_FEI_H265_OP_INTERPOLATE */);
 
 #ifdef SAVE_FEI_STATE
         /* force it to always produce interpolated frames for testing */
-        feiH265In->FEIOp = (FEIOperation)(FEI_INTER_ME | FEI_INTERPOLATE);
+        feiH265In->FEIOp = (MFX_FEI_H265_OP_INTER_ME | MFX_FEI_H265_OP_INTERPOLATE);
 #endif
 
         for (refIdx = 0; refIdx < sliceIn->num_ref_idx[0]; refIdx++) {
+            if (refIdx >= MFX_FEI_H265_MAX_NUM_REF_FRAMES)
+                break;  /* avoid KW warning */
+
             frameRef = frameIn->m_refPicList[0].m_refFrames[refIdx];
 
             if (!prevFrameDone && (frameRef->m_encOrder == feiFrame->EncOrder - 1))
@@ -487,6 +499,9 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
 
         if (sliceIn->slice_type == B_SLICE) {
             for (refIdxB = 0; refIdxB < sliceIn->num_ref_idx[1]; refIdxB++, refIdx++) {
+                if (refIdxB >= MFX_FEI_H265_MAX_NUM_REF_FRAMES)
+                    break;  /* avoid KW warning */
+
                 frameRef = frameIn->m_refPicList[1].m_refFrames[refIdxB];
 
                 if (!prevFrameDone && (frameRef->m_encOrder == feiFrame->EncOrder - 1) )
@@ -509,7 +524,7 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
         H265FEI_SyncOperation(m_feiH265, *syncp, -1);
 
         /* for testing, we need the display order to load correct frame from recon.yuv */
-        Ipp32s RefPicOrder[2][FEI_MAX_NUM_REF_FRAMES]; 
+        Ipp32s RefPicOrder[2][MFX_FEI_H265_MAX_NUM_REF_FRAMES]; 
         for (refIdx = 0; refIdx < sliceIn->num_ref_idx[0]; refIdx++)
             RefPicOrder[0][refIdx] = frameIn->m_refPicList[0].m_refFrames[refIdx]->m_poc;
         for (refIdx = 0; refIdx < sliceIn->num_ref_idx[1]; refIdx++)
@@ -524,16 +539,16 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
             WriteFrameIntraDist(feiH265Out);
 
             for (i = 0; i < sliceIn->num_ref_idx[0] + sliceIn->num_ref_idx[1]; i++) {
-                WriteFrameInterSmall(feiH265Out, i, FEI_8x8);
-                WriteFrameInterSmall(feiH265Out, i, FEI_16x16);
+                WriteFrameInterSmall(feiH265Out, i, MFX_FEI_H265_BLK_8x8);
+                WriteFrameInterSmall(feiH265Out, i, MFX_FEI_H265_BLK_16x16);
 
                 /* large blocks enabled */
                 if (m_feiParam.MaxCUSize >= 32)
-                    WriteFrameInterLarge(feiH265Out, i, FEI_32x32);
+                    WriteFrameInterLarge(feiH265Out, i, MFX_FEI_H265_BLK_32x32);
                 /* non-square blocks enabled */
                 if (m_feiParam.MaxCUSize >= 32 && m_feiParam.MPMode > 1) {
-                    WriteFrameInterLarge(feiH265Out, i, FEI_16x32);
-                    WriteFrameInterLarge(feiH265Out, i, FEI_32x16);
+                    WriteFrameInterLarge(feiH265Out, i, MFX_FEI_H265_BLK_16x32);
+                    WriteFrameInterLarge(feiH265Out, i, MFX_FEI_H265_BLK_32x16);
                 }
 
                 WriteFrameInterpolate(feiH265Out, i);

@@ -29,11 +29,11 @@ void Me1xAndInterpolateFrame(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AN
                              SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG);
 void InterpolateFrame(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_HORZ,
                       SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG);
-void RawMeMB_P(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_DIST16x16,
-               SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
-               SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, SurfaceIndex SURF_MV16x16,
-               SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8,
-               SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8);
+void MeP16(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_DIST16x16,
+           SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
+           SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, SurfaceIndex SURF_MV16x16,
+           SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8,
+           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8);
 };
 #endif //CMRT_EMU
 
@@ -441,7 +441,7 @@ int RunRef(CmDevice *device, unsigned char *src, unsigned char *ref, MeControl &
     CHECK_CM_ERR(res);
 
     CmKernel *kernelMe = 0;
-    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(RawMeMB_P), kernelMe);
+    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(MeP16), kernelMe);
     CHECK_CM_ERR(res);
 
     CmKernel *kernelInterp = 0;

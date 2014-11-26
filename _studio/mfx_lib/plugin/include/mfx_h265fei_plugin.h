@@ -22,9 +22,6 @@ File Name: mfx_h265fei_plugin.h
 #include "mfxvideo++int.h"
 #include "mfxenc.h"
 
-/* TODO - this should be moved to the public API: mdp_msdk-api\include\mfxplugin.h */
-static const mfxPluginUID  MFX_PLUGINID_HEVCE_FEI_HW = {{0x87, 0xe0, 0xe8, 0x02, 0x07, 0x37, 0x52, 0x40, 0x85, 0x25, 0x15, 0xcf, 0x4a, 0x5e, 0xdd, 0xe6}};
-
 #if defined( AS_H265FEI_PLUGIN )
 
 class MFXH265FEIPlugin : public MFXEncPlugin

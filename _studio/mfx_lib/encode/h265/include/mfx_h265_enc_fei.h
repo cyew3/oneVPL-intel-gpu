@@ -28,8 +28,8 @@ typedef struct _FEIFrame {
     int EncOrder;   // input frame order
 
     int IntraDone;
-    int RefEncOrder[2][FEI_MAX_NUM_REF_FRAMES];
-    int RefDone[2][FEI_MAX_NUM_REF_FRAMES];
+    int RefEncOrder[2][MFX_FEI_H265_MAX_NUM_REF_FRAMES];
+    int RefDone[2][MFX_FEI_H265_MAX_NUM_REF_FRAMES];
 } FEIFrame;
 
 class FeiContext

@@ -70,8 +70,8 @@ int TestRefineMeP32x32Sad()
     // fill motion vector field
     for (mfxI32 y = 0; y < numBlocksVer; y++) {
         for (mfxI32 x = 0; x < numBlocksHor; x++) {
-            mv[y * numBlocksHor + x].x = (mfxI16)((numBlocksHor / 2 - x) * 2);
-            mv[y * numBlocksHor + x].y = (mfxI16)((numBlocksVer / 2 - y) * 2);
+            mv[y * numBlocksHor + x].x = (mfxI16)((numBlocksHor / 2 - x) * 2) * 4;
+            mv[y * numBlocksHor + x].y = (mfxI16)((numBlocksVer / 2 - y) * 2) * 4;
         }
     }
 
@@ -215,7 +215,8 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     const mfxU16 BlockW = 8;
     const mfxU16 BlockH = 8;
     mfxU32 tsWidth = (WIDTHB + BlockW - 1) / BlockW;
-    mfxU32 tsHeight = (HEIGHTB + BlockH - 1) / BlockH * 2;
+///    mfxU32 tsHeight = (HEIGHTB + BlockH - 1) / BlockH * 2;
+    mfxU32 tsHeight = (HEIGHTB + BlockH - 1) / BlockH;
     res = kernelHpel->SetThreadCount(tsWidth * tsHeight);
     CHECK_CM_ERR(res);
     CmThreadSpace * threadSpace = 0;
