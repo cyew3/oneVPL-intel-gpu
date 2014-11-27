@@ -33,9 +33,6 @@ static FILE *outfileInterpolate[3] = { 0 };
 #define MAX_BW_WIDTH    8192
 static unsigned char bwBuf[MAX_BW_WIDTH];
 
-/* TEMP - 16x32 and 32x16 currently disabled */
-#define DISABLE_NONSQUARE
-
 void OpenOutputFiles(void)
 {
     int i, err;
@@ -175,7 +172,6 @@ void WriteFrameInterLarge(mfxFEIH265Output *feiOut, int refIdx, int blockSize)
         w = 32;
         h = 32;
         break;
-#ifndef DISABLE_NONSQUARE
     case MFX_FEI_H265_BLK_32x16:
         w = 32;
         h = 16;
@@ -184,7 +180,6 @@ void WriteFrameInterLarge(mfxFEIH265Output *feiOut, int refIdx, int blockSize)
         w = 16;
         h = 32;
         break;
-#endif
     default:
         w = 0;
         h = 0;

@@ -17,6 +17,7 @@
 #include "plugin_wrapper.h"
 
 #define YPLANE_ALIGN    16
+#define MAX_PARAM_16    (1 << 16)
 
 static void Usage(void)
 {
@@ -166,6 +167,13 @@ int main(int argc, char **argv)
         SetFileDefaults(&sp);
     }
 
+    /* upper bound check - (avoid KW warnings) */
+    if (sp.Width > MAX_PARAM_16 || sp.PaddedWidth > MAX_PARAM_16 || sp.Height > MAX_PARAM_16 || sp.PaddedHeight > MAX_PARAM_16)
+    {
+        printf("Error - parameter exceeds %d\n", MAX_PARAM_16);
+        Usage();
+    }
+
     hFEI = new CH265FEI;
     err = hFEI->Init(&sp);
 
@@ -209,6 +217,9 @@ int main(int argc, char **argv)
         encOrder++;
 
         //printf("Processing frame %d...\r", fi.EncOrder);
+
+        if (fi.RefNum > MFX_FEI_H265_MAX_NUM_REF_FRAMES)
+            break;
 
         if (LoadFrame(sp.SourceFile, sp.Width, sp.Height, sp.PaddedWidth, sp.PaddedHeight, fi.PicOrder, srcFrame))
             break;
@@ -287,6 +298,10 @@ int main(int argc, char **argv)
     /* shutdown and cleanup */
     hFEI->Close();
     delete hFEI;
+
+    if (sp.ParamsFile)  fclose(sp.ParamsFile);
+    if (sp.SourceFile)  fclose(sp.SourceFile);
+    if (sp.ReconFile)   fclose(sp.ReconFile);
 
     if (sp.WriteFiles)
         CloseOutputFiles();

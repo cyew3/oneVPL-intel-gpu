@@ -35,12 +35,12 @@ int ReadFileParams(SampleParams *sp)
 {
     int nRead;
 
-    nRead = fscanf(sp->ParamsFile, "Width=%d\n",         &sp->PaddedWidth);
-    nRead = fscanf(sp->ParamsFile, "Height=%d\n",        &sp->PaddedHeight);
-    nRead = fscanf(sp->ParamsFile, "MaxCUSize=%d\n",     &sp->MaxCUSize);
-    nRead = fscanf(sp->ParamsFile, "MPMode=%d\n",        &sp->MPMode);
-    nRead = fscanf(sp->ParamsFile, "NumRefFrames=%d\n",  &sp->NumRefFrames);
-    nRead = fscanf(sp->ParamsFile, "NumIntraModes=%d\n", &sp->NumIntraModes);
+    nRead = fscanf(sp->ParamsFile, "Width=%u\n",         &sp->PaddedWidth);
+    nRead = fscanf(sp->ParamsFile, "Height=%u\n",        &sp->PaddedHeight);
+    nRead = fscanf(sp->ParamsFile, "MaxCUSize=%u\n",     &sp->MaxCUSize);
+    nRead = fscanf(sp->ParamsFile, "MPMode=%u\n",        &sp->MPMode);
+    nRead = fscanf(sp->ParamsFile, "NumRefFrames=%u\n",  &sp->NumRefFrames);
+    nRead = fscanf(sp->ParamsFile, "NumIntraModes=%u\n", &sp->NumIntraModes);
     nRead = fscanf(sp->ParamsFile, "\n");
 
     return nRead;
@@ -85,18 +85,21 @@ int ReadFrameParams(FILE *infileParams, FrameInfo *fi)
     unsigned int i;
 
     nRead = fscanf(infileParams, "NewFrame\n");
-    nRead = fscanf(infileParams, "FrameType = %d\n", &fi->FrameType);
-    nRead = fscanf(infileParams, "EncOrder = %d\n",  &fi->EncOrder);
-    nRead = fscanf(infileParams, "PicOrder = %d\n",  &fi->PicOrder);
+    nRead = fscanf(infileParams, "FrameType = %u\n", &fi->FrameType);
+    nRead = fscanf(infileParams, "EncOrder = %u\n",  &fi->EncOrder);
+    nRead = fscanf(infileParams, "PicOrder = %u\n",  &fi->PicOrder);
 
-    nRead = fscanf(infileParams, "RefNum = %d\n", &fi->RefNum);
+    nRead = fscanf(infileParams, "RefNum = %u\n", &fi->RefNum);
+    if (fi->RefNum > MFX_FEI_H265_MAX_NUM_REF_FRAMES)
+        return -1;
+
     nRead = fscanf(infileParams, "RefEncOrder = ");
     for (i = 0; i < fi->RefNum; i++)
-        nRead = fscanf(infileParams, "%d,", &fi->RefEncOrder[i]);
+        nRead = fscanf(infileParams, "%u,", &fi->RefEncOrder[i]);
     nRead = fscanf(infileParams, "\n");
     nRead = fscanf(infileParams, "RefPicOrder = ");
     for (i = 0; i < fi->RefNum; i++)
-        nRead = fscanf(infileParams, "%d,", &fi->RefPicOrder[i]);
+        nRead = fscanf(infileParams, "%u,", &fi->RefPicOrder[i]);
     nRead = fscanf(infileParams, "\n");
 
     nRead = fscanf(infileParams, "EndFrame\n\n");
