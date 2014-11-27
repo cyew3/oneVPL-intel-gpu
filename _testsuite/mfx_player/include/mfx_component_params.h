@@ -49,6 +49,7 @@ public:
         , m_bD3D11SingeTexture()
         , m_nMaxAsync(1)
         , m_fFrameRate()
+        , m_bFrameRateUnknown(false)
         , m_uiMaxAsyncReached()
         , m_fAverageAsync()
         , m_zoomx()
@@ -123,6 +124,7 @@ public:
     bool                           m_bD3D11SingeTexture;//single texture mode for d3d11 allocator
     mfxU16                         m_nMaxAsync;
     mfxF64                         m_fFrameRate;
+    bool                           m_bFrameRateUnknown;
     //real allocated CORE
     //copy ctor required when we put parameters into vector, shared_pointer remove necessity of copy ctor
     //ComponentParams

@@ -965,7 +965,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_inParams.bUseCameraPipe);
     ENABLE_VPP(m_inParams.bSceneAnalyzer);
     ENABLE_VPP(m_inParams.bPAFFDetect);
-    //ENABLE_VPP(NOT_ASSIGNED_VALUE != m_components[eVPP].m_fFrameRate);
+    //ENABLE_VPP(m_components[eDEC].m_params.mfx.FrameInfo.FrameRateExtN != m_components[eREN].m_params.mfx.FrameInfo.FrameRateExtN);
     ENABLE_VPP(m_inParams.bUseVPP_ifdi);
     ENABLE_VPP(m_inParams.nImageStab);
     ENABLE_VPP(m_inParams.bExtVppApi);
@@ -1326,7 +1326,13 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     mfxFrameInfo &info = m_components[eDEC].m_params.mfx.FrameInfo;
     const vm_char * pFrameRateString;
 
-    if (0.0 == info.FrameRateExtD &&
+    if (m_components[eDEC].m_bFrameRateUnknown)
+    {
+        info.FrameRateExtD = 0.0;
+        info.FrameRateExtN = 0.0;
+        pFrameRateString = VM_STRING("Unknown (provided by cmd), set to 0.0");
+    }
+    else if (0.0 == info.FrameRateExtD &&
         0.0 == info.FrameRateExtN)
     {
         //framerate is unknown set it to 30
@@ -1405,7 +1411,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         m_inParams.FrameInfo.PicStruct = m_components[eVPP].m_nOverPS;
     }
 
-    if (0.0 == m_components[eDEC].m_fFrameRate)//not initialized from cmdline
+    if (m_components[eDEC].m_bFrameRateUnknown)//not initialized from cmdline
     {
         m_components[eDEC].m_fFrameRate = (mfxF64)info.FrameRateExtN / (mfxF64)info.FrameRateExtD;
     }
@@ -2120,7 +2126,7 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
         MFX_FOURCC_NV12 == m_inParams.InputCodecType ||
         MFX_FOURCC_YV12 == m_inParams.InputCodecType)
     {
-        if (0.0 == m_components[eDEC].m_fFrameRate)//not initialized from cmd line
+        if (m_components[eDEC].m_bFrameRateUnknown)
             m_components[eDEC].m_fFrameRate = 30.0;
 
         //yuv decoder requires this information to be returned on decode header level
@@ -3773,6 +3779,8 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             MFX_CHECK(1 + argv != argvEnd);
             argv++;
             MFX_PARSE_DOUBLE(component->m_fFrameRate, argv[0]);
+            if (0 == component->m_fFrameRate)
+                component->m_bFrameRateUnknown = true;
         }
         else if (!vm_string_stricmp(sub_option, VM_STRING("async_depth")))
         {
