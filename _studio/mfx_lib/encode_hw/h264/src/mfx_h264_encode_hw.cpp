@@ -837,15 +837,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
         sts = m_raw.Alloc(m_core, request, true);
         MFX_CHECK_STS(sts);
-    } else if ( m_enabledSwBrc)
-    {
-        request.Type        = MFX_MEMTYPE_D3D_INT;
-        request.NumFrameMin =  mfxU16(m_video.AsyncDepth) ;
-
-        sts = m_rawSkip.Alloc(m_core, request, true);
-        MFX_CHECK_STS(sts);
-    }
-
+    } 
     else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         request.Type        = extOpaq->In.Type;
@@ -861,6 +853,15 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
             sts = m_raw.Alloc(m_core, request, true);
         }
     }
+    mfxExtCodingOption3 & extOpt3 = GetExtBufferRef(m_video);
+    bool bPanicModeSupport = ((extOpt3.WinBRCSize > 0) || (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD));
+    if (m_raw.NumFrameActual == 0 && bPanicModeSupport )
+    {
+        request.Type        = MFX_MEMTYPE_D3D_INT;
+        request.NumFrameMin =  mfxU16(m_video.AsyncDepth) ;
+        sts = m_rawSkip.Alloc(m_core, request, true);
+        MFX_CHECK_STS(sts);
+    }
 
     m_inputFrameType =
         m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
@@ -874,7 +875,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame +
         m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE) +
         bParallelEncPak);
-    sts = m_rec.Alloc(m_core, request,true);
+    sts = m_rec.Alloc(m_core, request,bPanicModeSupport);
     MFX_CHECK_STS(sts);
 
     sts = m_ddi->Register(m_rec.NumFrameActual ? m_rec : m_raw, D3DDDIFMT_NV12);
@@ -884,7 +885,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     m_recNonRef[0] = m_recNonRef[1] = 0xffffffff;
 
-    mfxExtCodingOption3 & extOpt3 = GetExtBufferRef(m_video);
+   
 
 #if defined(MFX_VA_WIN)
     if (IsOn(extOpt3.EnableMBQP) && m_core->GetVAType() != MFX_HW_VAAPI)
