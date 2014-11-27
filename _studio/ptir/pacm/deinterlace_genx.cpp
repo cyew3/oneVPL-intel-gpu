@@ -513,12 +513,12 @@ inline _GENX_ void rs_plane(SurfaceIndex frameSurfaceId, SurfaceIndex rsSurfaceI
     uint x = get_thread_origin_x() * PLANE_WIDTH;
 
     matrix<uchar, 1, BLOCK_WIDTH> frame_topleft;
-    cmut::cm_read_plane<PLANE>(frameSurfaceId, 0, (get_thread_origin_y() * PLANE_HEIGHT - 8), frame_topleft);
+    cmut::cm_read_plane<PLANE>(frameSurfaceId, 0, (get_thread_origin_y() * PLANE_HEIGHT/* - 8*/), frame_topleft);
 
     //pr: plane row index, pc: plane col index
 #pragma unroll
     for (uint pc = 0; pc < PLANE_WIDTH; pc += BLOCK_WIDTH) {
-        uint y = (get_thread_origin_y() * PLANE_HEIGHT - 8);
+        uint y = (get_thread_origin_y() * PLANE_HEIGHT/* - 8*/);
 
         //Read first 2 lines
         cmut::cm_read_plane<PLANE>(frameSurfaceId, x, y, frame.template select<2, 1, BLOCK_WIDTH, 1>(0, 0));

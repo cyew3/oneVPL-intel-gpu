@@ -117,6 +117,8 @@ void Undo2Frames_CMTest(Frame *frmBuffer1, Frame *frmBuffer2, bool BFF)
 
     comp = memcmp(frmBuffer1_c->ucMem, frmBuffer1->ucMem, frmBuffer1->uiSize);
     //printf("Undo2Frames_CM test result: %s", comp?"Failed!\n":"Successful!\n");
+    frmBuffer1->frmProperties.candidate = true;
+    frmBuffer1->frmProperties.interlaced = false;
 }
 #endif
 
@@ -126,6 +128,9 @@ static void Undo2Frames_CM(Frame *frmBuffer1, Frame *frmBuffer2, bool BFF)
  //return;
 #ifdef GPUPATH
     pdeinterlaceFilter->Undo2FramesYUVCM(frmBuffer1, frmBuffer2, BFF);
+
+    frmBuffer1->frmProperties.candidate = true;
+    frmBuffer1->frmProperties.interlaced = false;
 #endif
 
 #ifdef CPUPATH
@@ -633,7 +638,7 @@ void Detect_Solve_32BlendedPatternsCM(Frame **pFrm, Pattern *ptrn, unsigned int 
             count = 0;
             for (i = 0; i < 3; i++)
                 count += pFrm[i]->frmProperties.interlaced;
-            if (count < 2)
+            if (count < 3)
             {
                 if (previousPattern != 7)
                 {
@@ -764,8 +769,8 @@ void Prepare_frame_for_queueCM(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWi
     memset(*pfrmOut, 0, sizeof(Frame));
     assert(*pfrmOut != NULL);
     Frame_CreateCM(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 64, bCreate);
-    if(frmSupply && !bCreate)
-        static_cast<CmSurface2DEx*>((*pfrmOut)->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
+    //if(frmSupply && !bCreate)
+    //    static_cast<CmSurface2DEx*>((*pfrmOut)->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
     (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.tindex;
 #ifdef CPUPATH
     ReSample(*pfrmOut, pfrmIn);
@@ -773,6 +778,19 @@ void Prepare_frame_for_queueCM(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWi
     std::swap((*pfrmOut)->outSurf, pfrmIn->outSurf);
     std::swap((*pfrmOut)->inSurf, pfrmIn->inSurf);
     std::swap((*pfrmOut)->outState, pfrmIn->outState);
+    if(frmSupply && Frame::OUT_UNCHANGED == (*pfrmOut)->outState)
+    {
+        if(static_cast<CmSurface2DEx*>((*pfrmOut)->inSurf)->pCmSurface2D)
+        {
+            if(!static_cast<CmSurface2DEx*>((*pfrmOut)->outSurf)->pCmSurface2D)
+                static_cast<CmSurface2DEx*>((*pfrmOut)->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
+            frmSupply->CMCopyGPUToGpu(static_cast<CmSurface2DEx*>((*pfrmOut)->outSurf)->pCmSurface2D, static_cast<CmSurface2DEx*>((*pfrmOut)->inSurf)->pCmSurface2D);
+            (*pfrmOut)->outState = Frame::OUT_PROCESSED;
+        }
+        else
+            assert(false);
+    }
+    assert(static_cast<CmSurface2DEx*>((*pfrmOut)->outSurf)->pCmSurface2D != 0);
 }
 
 void Frame_CreateCM(Frame *pfrmIn, unsigned int uiYWidth, unsigned int uiYHeight, unsigned int uiUVWidth, unsigned int uiUVHeight, unsigned int uiBorder, bool bcreate)
@@ -923,14 +941,17 @@ void PTIRCM_Frame_Prep_and_Analysis(PTIRSystemBuffer *SysBuffer)
 
 void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double dTimePerFrame, unsigned int uiisInterlaced, unsigned int uiInterlaceParity, unsigned int bFullFrameRate, Frame* frmIn, FrameQueue *fqIn, frameSupplier *frmSupply = 0, bool bCreate = false)
 {
+    bool restore = false;
+    CmSurface2D *old_surf = 0;
     if (frmBuffer[frameIndex]->frmProperties.interlaced)
     {
         if(bFullFrameRate)
         {
             //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
             //frmSupply->CMCopyGPUToGpu(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D, static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D);
-            CmSurface2D* old_surf = static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D;
+            old_surf = static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D;
             static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D;
+            restore = true;
             pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
             if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D)
                 //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
@@ -943,7 +964,7 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
      else
          CheckGenFrameCM(frmBuffer, frameIndex, uiisInterlaced);
 
-    Prepare_frame_for_queueCM(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight/*, frmSupply, bCreate*/);
+    Prepare_frame_for_queueCM(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight, frmSupply, false);
     if(!frmIn)
         return;
     memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
@@ -964,7 +985,7 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
 
     if (bFullFrameRate && uiisInterlaced == 1)
     {
-        Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight); // Go to double frame rate
+        Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight, frmSupply, false); // Go to double frame rate
         if(!frmIn)
             return;
         memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
@@ -975,25 +996,35 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
         FrameQueue_Add(fqIn, frmIn);
     }
     
+    if(restore)
+        static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D = old_surf;
+
     frmBuffer[frameIndex]->frmProperties.drop = false;
     frmBuffer[frameIndex]->frmProperties.candidate = false;
 }
 
 void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, double dCurTimeStamp, double dTimePerFrame, unsigned int uiisInterlaced, unsigned int uiInterlaceParity, unsigned int bFullFrameRate, Frame* frmIn, FrameQueue *fqIn, frameSupplier *frmSupply = 0, bool bCreate = false)
 {
+    bool restore = false;
+    CmSurface2D *old_surf = 0;
     if (frmBuffer[frameIndex]->frmProperties.interlaced)
     {
         if(bFullFrameRate)
         {
             //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
             //frmSupply->CMCopyGPUToGpu(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D, static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D);
-            CmSurface2D* old_surf = static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D;
+            old_surf = static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D;
             static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D;
-            pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
-            if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D)
-                //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
-                pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, BUFMINSIZE, !uiInterlaceParity);
-            static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = old_surf;
+            restore = true;
+            //pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
+            if(!static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D)
+                static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
+                //pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, BUFMINSIZE, !uiInterlaceParity);
+            //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = old_surf;
+            if(uiInterlaceParity)
+                pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, BUFMINSIZE, frameIndex);
+            else
+                pdeinterlaceFilter->DeinterlaceMedianFilterCM(frmBuffer, frameIndex, BUFMINSIZE);
         }
         else
             pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
@@ -1001,7 +1032,7 @@ void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, doubl
      else
          CheckGenFrameCM(frmBuffer, frameIndex, uiisInterlaced);
 
-    Prepare_frame_for_queueCM(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight);
+    Prepare_frame_for_queueCM(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight, frmSupply, false);
     if(!frmIn)
         return;
     memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
@@ -1013,7 +1044,7 @@ void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, doubl
 
     if (bFullFrameRate && uiisInterlaced == 1)
     {
-        Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight); // Go to double frame rate
+        Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight, frmSupply, false); // Go to double frame rate
         if(!frmIn)
             return;
         memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
@@ -1023,6 +1054,9 @@ void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, doubl
 
         FrameQueue_Add(fqIn, frmIn);
     }
+
+    if(restore)
+        static_cast<CmSurface2DEx*>(frmIn->inSurf)->pCmSurface2D = old_surf;
     
     frmBuffer[frameIndex]->frmProperties.drop = false;
     frmBuffer[frameIndex]->frmProperties.candidate = false;

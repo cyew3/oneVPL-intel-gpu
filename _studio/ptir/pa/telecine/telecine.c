@@ -1490,7 +1490,7 @@ double CalcSAD_Avg_NoSC(Frame **pFrm)
         max1 = max(max1, pFrm[i]->plaY.ucStats.ucSAD[0]);
         if(max1 != max2)
             control = i;
-        sc += pFrm[i]->frmProperties.sceneChange;
+        //sc += pFrm[i]->frmProperties.sceneChange;
     }
 
     if(max1 - max2 > 20)

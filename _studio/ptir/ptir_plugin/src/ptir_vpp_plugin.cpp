@@ -170,7 +170,7 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
         return mfxSts;
     }
 
-    if(!surface_in)
+    if((!surface_in && in_expected) || bEOS)
         bEOS = true;
     else
         bEOS = false;
@@ -265,6 +265,8 @@ mfxStatus MFX_PTIR_Plugin::VPPFrameSubmitEx(mfxFrameSurface1 *surface_in, mfxFra
         {
             m_guard.Unlock();
             in_expected = true;
+            if(bEOS)
+                bEOS = false;
             return MFX_ERR_MORE_DATA;
         }
     }
@@ -1173,11 +1175,14 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
         par_accel = true;
     }
 
-    mfxSts = GetHWTypeAndCheckSupport(mfxCorePar.Impl, mfxDeviceHdl, HWType, HWSupported, par_accel);
-    if(MFX_ERR_NONE > mfxSts)
-        return mfxSts;
+    if (!par_accel)
+    {
+        mfxSts = GetHWTypeAndCheckSupport(mfxCorePar.Impl, mfxDeviceHdl, HWType, HWSupported, par_accel);
+        if (MFX_ERR_NONE > mfxSts)
+            return mfxSts;
+    }
 
-                    ////hack
+                    ////force fallback hack
                     //HWSupported = false;
                     //par_accel = true;
 

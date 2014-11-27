@@ -87,6 +87,10 @@ mfxStatus PTIR_ProcessorCPU::Init(mfxVideoParam *par, mfxExtVPPDeinterlacing* pD
            (4 * par->vpp.In.FrameRateExtN * par->vpp.In.FrameRateExtD ==
             5 * par->vpp.Out.FrameRateExtN * par->vpp.Out.FrameRateExtD))
         {
+            if(MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct)
+                _uiInterlaceParity = 0;
+            else
+                _uiInterlaceParity = 1;
             uiOpMode = PTIR_OUT24FPS_FIXED;
         }
         else if(MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct ||
@@ -162,7 +166,8 @@ mfxStatus PTIR_ProcessorCPU::Init(mfxVideoParam *par, mfxExtVPPDeinterlacing* pD
             break;
         }
 
-        if(MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct)
+        if((bFullFrameRate || PTIR_FIXED_TELECINE_PATTERN_REMOVAL == uiOpMode || PTIR_DEINTERLACE_HALF == uiOpMode || PTIR_OUT24FPS_FIXED == uiOpMode ) && 
+            MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct)
             _uiInterlaceParity = 1;
         else
             _uiInterlaceParity = 0;
@@ -244,7 +249,12 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
 
     if(surf_in)
     {
-        Env.control.uiNext = Env.control.uiCur - 1;
+        if (Env.control.uiCur >= 1)
+            Env.control.uiNext = Env.control.uiCur - 1;
+        else
+        {
+            assert(0);
+        }
         uiProgress = 0;
         uiTimer = 0;
 
@@ -319,6 +329,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
                 Env.control.uiCur--;
         }
 
+        b_firstFrameProceed = false;
         return MFX_ERR_NONE;
 
         //if(uiOpMode != 7)

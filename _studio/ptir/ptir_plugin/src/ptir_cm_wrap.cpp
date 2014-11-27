@@ -92,6 +92,10 @@ mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par, mfxExtVPPDeinterlacing* pDe
            (4 * par->vpp.In.FrameRateExtN * par->vpp.In.FrameRateExtD ==
             5 * par->vpp.Out.FrameRateExtN * par->vpp.Out.FrameRateExtD))
         {
+            if(MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct)
+                _uiInterlaceParity = 0;
+            else
+                _uiInterlaceParity = 1;
             uiOpMode = PTIR_OUT24FPS_FIXED;
         }
         else if(MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct ||
@@ -170,7 +174,8 @@ mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par, mfxExtVPPDeinterlacing* pDe
             break;
         }
 
-        if(MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct)
+        if((bFullFrameRate || PTIR_FIXED_TELECINE_PATTERN_REMOVAL == uiOpMode || PTIR_DEINTERLACE_HALF == uiOpMode || PTIR_OUT24FPS_FIXED == uiOpMode ) && 
+            MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct)
             _uiInterlaceParity = 1;
         else
             _uiInterlaceParity = 0;
@@ -310,7 +315,12 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFram
         //if(beof)
         //    Env.control.uiEndOfFrames = 1;
 
-        Env.control.uiNext = Env.control.uiCur - 1;
+        if(Env.control.uiCur >= 1)
+            Env.control.uiNext = Env.control.uiCur - 1;
+        else
+        {
+            assert(0);
+        }
         uiProgress = 0;
         uiTimer = 0;
 
@@ -449,6 +459,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFram
                 Env.control.uiCur--;
         }
 
+        b_firstFrameProceed = false;
         return MFX_ERR_NONE;
 
         //if(uiOpMode != 7)
@@ -583,10 +594,6 @@ mfxStatus PTIR_ProcessorCM::OutputFrameToMfx(Frame* frmOut, mfxFrameSurface1* su
         frmSupply->CMCopyGPUToGpu(static_cast<CmSurface2DEx*>(frmOut->outSurf)->pCmSurface2D, static_cast<CmSurface2DEx*>(frmOut->inSurf)->pCmSurface2D);
     }
 
-    mfxSts = frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmOut->inSurf)->pCmSurface2D);
-    static_cast<CmSurface2DEx*>(frmOut->outSurf)->pCmSurface2D = 0;
-    static_cast<CmSurface2DEx*>(frmOut->inSurf)->pCmSurface2D = 0;
-
     if(output)
     {
         frmSupply->AddOutputSurf(output, exp_surf);
@@ -594,9 +601,40 @@ mfxStatus PTIR_ProcessorCM::OutputFrameToMfx(Frame* frmOut, mfxFrameSurface1* su
     }
     else
     {
-        ;
-        assert(false);
+        output = frmSupply->GetWorkSurfaceMfx();
+        if(output)
+        {
+            bool ready = false;
+            CmSurface2D* out_cm = 0;
+            mfxSts = frmSupply->CMCreateSurfaceOut(output, out_cm, false);
+            if(mfxSts)
+                return mfxSts;
+            if(!out_cm)
+                return MFX_ERR_DEVICE_FAILED;
+            if(frmOut->outState == Frame::OUT_UNCHANGED && static_cast<CmSurface2DEx*>(frmOut->inSurf)->pCmSurface2D)
+            {
+                mfxSts = frmSupply->CMCopyGPUToGpu(out_cm, static_cast<CmSurface2DEx*>(frmOut->inSurf)->pCmSurface2D);
+                ready = true;
+            }
+            else if(frmOut->outState == Frame::OUT_PROCESSED && static_cast<CmSurface2DEx*>(frmOut->outSurf)->pCmSurface2D)
+            {
+                mfxSts = frmSupply->CMCopyGPUToGpu(out_cm, static_cast<CmSurface2DEx*>(frmOut->outSurf)->pCmSurface2D);
+                ready = true;
+            }
+            else
+            {
+                assert(false);
+            }
+            if(mfxSts) 
+                return mfxSts;
+            frmSupply->AddOutputSurf(output, exp_surf);
+            exp_surf = 0;
+        }
     }
+
+    mfxSts = frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmOut->inSurf)->pCmSurface2D);
+    static_cast<CmSurface2DEx*>(frmOut->outSurf)->pCmSurface2D = 0;
+    static_cast<CmSurface2DEx*>(frmOut->inSurf)->pCmSurface2D = 0;
 
     return MFX_ERR_NONE;
 }
