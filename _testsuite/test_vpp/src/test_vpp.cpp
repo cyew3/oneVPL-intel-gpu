@@ -216,6 +216,8 @@ mfxStatus OutputProcessFrame(
         sts = Resources.pProcessor->mfxSession.SyncOperation(
             Resources.pSurfStore->m_SyncPoints.front().first, 
             VPP_WAIT_INTERVAL);
+        if(sts)
+            vm_string_printf(VM_STRING("SyncOperation wait interval exceeded\n"));
         CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
 
         pProcessedSurface = Resources.pSurfStore->m_SyncPoints.front().second.pSurface;
@@ -227,6 +229,8 @@ mfxStatus OutputProcessFrame(
             //(bSvcMode) ? &(pProcessedSurface->Info) : &(frameInfo[VPP_OUT]),
             (bSvcMode) ? &(Resources.realSvcOutFrameInfo[pProcessedSurface->Info.FrameId.DependencyId]) : &(frameInfo[VPP_OUT]),
             pProcessedSurface);
+        if(sts)
+            vm_string_printf(VM_STRING("Failed to write frame to disk\n"));
         CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
 
         nFrames++;
@@ -405,7 +409,7 @@ int main(int argc, vm_char *argv[])
         (VPP_FILTER_DISABLED != Params.svcParam.mode) ? Params.svcParam.descr : NULL,
         Params.isOutYV12, 
         Params.need_crc);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to init YUV writer\n")); WipeResources(&Resources);});
 
 #ifdef LIBVA_SUPPORT
     allocator.libvaKeeper.reset(CreateLibVA());
@@ -413,13 +417,13 @@ int main(int argc, vm_char *argv[])
 
     //prepare mfxParams
     sts = InitParamsVPP(&mfxParamsVideo, &Params);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to prepare mfxParams\n")); WipeResources(&Resources);});
 
     // prepare pts Checker
     if (ptsMaker.get())
     {
         sts = ptsMaker.get()->Init(&mfxParamsVideo, Params.asyncNum - 1, Params.ptsAdvanced);
-        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));
+        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to prepare pts Checker\n")); WipeResources(&Resources);});
     }
 
     // prepare ROI generator
@@ -438,7 +442,7 @@ int main(int argc, vm_char *argv[])
     }
 
     sts = ConfigVideoEnhancementFilters(&Params, &Resources);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to ConfigVideoEnhancementFilters\n")); WipeResources(&Resources);});
 
     Resources.pAllocator->bUsedAsExternalAllocator = !Params.bDefAlloc;
 
@@ -478,7 +482,7 @@ int main(int argc, vm_char *argv[])
         IGNORE_MFX_STS(sts, MFX_WRN_FILTER_SKIPPED);
 
     }
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to InitResources\n")); WipeResources(&Resources);});
 
     if (MFX_WRN_PARTIAL_ACCELERATION == sts)
     {
@@ -492,7 +496,7 @@ int main(int argc, vm_char *argv[])
     if (Params.bPerf)
     {
         sts = yuvReader.PreAllocateFrameChunk(&mfxParamsVideo, &Params, allocator.pMfxAllocator);
-        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));
+        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to yuvReader.PreAllocateFrameChunk\n")); WipeResources(&Resources);});
     }
     else if (Params.numFrames)
     {
@@ -760,13 +764,13 @@ int main(int argc, vm_char *argv[])
     if (MFX_ERR_MORE_DATA == sts)
     {
         sts = OutputProcessFrame(Resources, realFrameInfo, nFrames);
-        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));  
+        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to process remain sync points\n")); WipeResources(&Resources);});
     }
 
     // means that file has ended, need to go to buffering loop
     IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
     // exit in case of other errors
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Exit in case of other errors\n")); WipeResources(&Resources);});
 
 
     // loop to get buffered frames from VPP
@@ -838,12 +842,16 @@ int main(int argc, vm_char *argv[])
         sts = Resources.pProcessor->mfxSession.SyncOperation(
             syncPoint, 
             VPP_WAIT_INTERVAL);
+        if(sts)
+            vm_string_printf(VM_STRING("SyncOperation wait interval exceeded\n"));
         BREAK_ON_ERROR(sts);
 
         sts = Resources.pDstFileWriter->PutNextFrame(
             Resources.pAllocator, 
             (bSvcMode) ?  &(Resources.realSvcOutFrameInfo[pSurf[VPP_OUT]->Info.FrameId.DependencyId]) : &(realFrameInfo[VPP_OUT]), 
             pSurf[VPP_OUT]);
+        if(sts)
+            vm_string_printf(VM_STRING("Failed to write frame to disk\n"));
         CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
 
         if(bSvcMode)
@@ -887,7 +895,7 @@ int main(int argc, vm_char *argv[])
     IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
 
     // report any errors that occurred 
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Unexpected error during processing\n")); WipeResources(&Resources);});
 
     vm_string_printf(VM_STRING("\nVPP finished\n"));
     vm_string_printf(VM_STRING("\n"));

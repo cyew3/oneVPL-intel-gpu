@@ -443,8 +443,8 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
 
     //MFX session
     sts = pProcessor->mfxSession.Init(impl, &version);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeFrameProcessor(pProcessor));
-    
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to Init mfx session\n"));  WipeFrameProcessor(pProcessor);});
+
     // Plug-in
     if ( pInParams->need_plugin ) 
     {
@@ -606,7 +606,7 @@ mfxStatus InitSurfaces(
     mfxU16    nFrames, i;
 
     sts = pAllocator->pMfxAllocator->Alloc(pAllocator->pMfxAllocator->pthis, pRequest, &(pAllocator->response[indx]));
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to Alloc frames\n"));  WipeMemoryAllocator(pAllocator);});
 
     nFrames = pAllocator->response[indx].NumFrameActual;
     pAllocator->pSurfaces[indx] = new mfxFrameSurface1 [nFrames];
@@ -625,7 +625,7 @@ mfxStatus InitSurfaces(
             sts = pAllocator->pMfxAllocator->Lock(pAllocator->pMfxAllocator->pthis, 
                 pAllocator->response[indx].mids[i], 
                 &(pAllocator->pSurfaces[indx][i].Data));
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to lock frames\n"));  WipeMemoryAllocator(pAllocator);});
         }
     }
 
@@ -669,7 +669,7 @@ mfxStatus InitSvcSurfaces(
                 pAllocator->pMfxAllocator->pthis, 
                 &(layerRequest[did]), 
                 &(pAllocator->svcResponse[did]));
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to alloc frames\n"));  WipeMemoryAllocator(pAllocator);});
 
             pAllocator->pSvcSurfaces[did] = new mfxFrameSurface1 [nFrames];
         }
@@ -696,7 +696,7 @@ mfxStatus InitSvcSurfaces(
                     pAllocator->pMfxAllocator->pthis, 
                     pAllocator->svcResponse[did].mids[i], 
                     &(pAllocator->pSvcSurfaces[did][i].Data));
-                CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+                CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to lock frames\n"));  WipeMemoryAllocator(pAllocator);});
             }
         }
     }
@@ -753,10 +753,10 @@ mfxStatus InitMemoryAllocator(
             D3DAllocatorParams *pd3dAllocParams = new D3DAllocatorParams;  
             // prepare device manager
             sts = CreateDeviceManager(&(pAllocator->pd3dDeviceManager));
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to CreateDeviceManager\n")); WipeMemoryAllocator(pAllocator);});
 
             sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9, pAllocator->pd3dDeviceManager);
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to SetHandle\n"));  WipeMemoryAllocator(pAllocator);});
 
             // prepare allocator
             pd3dAllocParams->pManager = pAllocator->pd3dDeviceManager;
@@ -766,7 +766,7 @@ mfxStatus InitMemoryAllocator(
             thus we demonstrate "external allocator" usage model.
             Call SetAllocator to pass allocator to mediasdk */
             sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to SetFrameAllocator\n"));  WipeMemoryAllocator(pAllocator);});
         }
         else if ( ((MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11) == pInParams->ImpLib) || ((ALLOC_IMPL_VIA_D3D11 == pInParams->vaType)))
         {
@@ -776,17 +776,17 @@ mfxStatus InitMemoryAllocator(
 
             // prepare device manager
             sts = CreateD3D11Device(&(pAllocator->pD3D11Device), &(pAllocator->pD3D11DeviceContext));
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to CreateD3D11Device\n"));  WipeMemoryAllocator(pAllocator);});
 
             sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_D3D11_DEVICE, pAllocator->pD3D11Device);
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to SetHandle\n"));  WipeMemoryAllocator(pAllocator);});
 
             // prepare allocator
             pd3d11AllocParams->pDevice = pAllocator->pD3D11Device;
             pAllocator->pAllocatorParams = pd3d11AllocParams;
 
             sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to SetFrameAllocator\n"));  WipeMemoryAllocator(pAllocator);});
 
             ((GeneralAllocator *)(pAllocator->pMfxAllocator))->SetDX11();
 
@@ -806,19 +806,19 @@ mfxStatus InitMemoryAllocator(
         thus we demonstrate "external allocator" usage model.
         Call SetAllocator to pass allocator to mediasdk */
         sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
-        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to SetFrameAllocator\n"));  WipeMemoryAllocator(pAllocator);});
 #endif
     }  
     else if (pAllocator->bUsedAsExternalAllocator)
     {
         sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
-        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to SetFrameAllocator\n"));  WipeMemoryAllocator(pAllocator);});
     }
 
     //((GeneralAllocator *)(pAllocator->pMfxAllocator))->setDxVersion(pInParams->ImpLib);
 
     sts = pAllocator->pMfxAllocator->Init(pAllocator->pAllocatorParams);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to pMfxAllocator->Init\n"));  WipeMemoryAllocator(pAllocator);});
 
     // see the spec
     // (1) MFXInit()
@@ -826,12 +826,12 @@ mfxStatus InitMemoryAllocator(
     // (3) MFXVideoCORE_SetHandle()
     // after (1-3), call of any MSDK function is OK
     sts = pProcessor->pmfxVPP->QueryIOSurf(pParams, request);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed in QueryIOSurf\n"));  WipeMemoryAllocator(pAllocator);});
 
     // alloc frames for vpp
     // [IN]
     sts = InitSurfaces(pAllocator, &(request[VPP_IN]), &(pParams->vpp.In), VPP_IN, isInPtr);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to InitSurfaces\n"));  WipeMemoryAllocator(pAllocator);});
 
     // [OUT]
     if( VPP_FILTER_DISABLED == pInParams->svcParam.mode )
@@ -853,7 +853,7 @@ mfxStatus InitMemoryAllocator(
             isOutPtr,
             &(pInParams->svcParam.descr[0]));
     }
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to InitSurfaces\n"));  WipeMemoryAllocator(pAllocator);});
 
     return MFX_ERR_NONE;
 }
@@ -867,10 +867,10 @@ mfxStatus InitResources(sAppResources* pResources, mfxVideoParam* pParams, sInpu
     CHECK_POINTER(pResources, MFX_ERR_NULL_PTR);
     CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
     sts = CreateFrameProcessor(pResources->pProcessor, pParams, pInParams);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeResources(pResources));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to CreateFrameProcessor\n")); WipeResources(pResources);});
 
     sts = InitMemoryAllocator(pResources->pProcessor, pResources->pAllocator, pParams, pInParams);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeResources(pResources));
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to InitMemoryAllocator\n")); WipeResources(pResources);});
 
     sts = InitFrameProcessor(pResources->pProcessor, pParams);
 
@@ -878,7 +878,7 @@ mfxStatus InitResources(sAppResources* pResources, mfxVideoParam* pParams, sInpu
         return sts;
     else
     {
-        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeResources(pResources));
+        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to InitFrameProcessor\n")); WipeResources(pResources);});
     }
 
     return sts;
