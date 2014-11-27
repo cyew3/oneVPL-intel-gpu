@@ -57,8 +57,6 @@ typedef struct
 
 /* must correspond with public API! */
 enum UnsupportedBlockSizes {
-    MFX_FEI_H265_BLK_16x8_US  = 7,
-    MFX_FEI_H265_BLK_8x16_US  = 8,
     MFX_FEI_H265_BLK_8x4_US   = 10,
     MFX_FEI_H265_BLK_4x8_US   = 11,
 

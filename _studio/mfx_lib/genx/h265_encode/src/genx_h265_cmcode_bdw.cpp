@@ -1781,7 +1781,7 @@ void MeP32Frac(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF,
 
     // M0.3 various prediction parameters
 //>    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78
-    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x79 - 16x16 is off
+    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78
     // M1.1 MaxNumMVs
     VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
     // M0.5 Reference Window Width & Height
@@ -1904,7 +1904,7 @@ void MeP32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceInde
     VME_SET_UNIInput_SrcY(uniIn, y);
 
     // M0.3 various prediction parameters
-    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x16,16x8,16x16 (rect subparts are for FEI
+    VME_SET_DWORD(uniIn, 0, 3, 0x78040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x16,16x8,16x16 (rect subparts are for FEI are on)
 //    VME_SET_DWORD(uniIn, 0, 3, 0x7e040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x7e: 16x16 only
     // M1.1 MaxNumMVs
     VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
@@ -2222,10 +2222,10 @@ void MeP16_Intra(SurfaceIndex SURF_CURBE_DATA, SurfaceIndex SURF_SRC_AND_REF,
 
 extern "C" _GENX_MAIN_ 
 void MeP16(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_MV_PRED, SurfaceIndex SURF_DIST16x16,
-           /*SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, */SurfaceIndex SURF_DIST8x8,
+           SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
            /*SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, */SurfaceIndex SURF_MV16x16,
-           /*SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, */SurfaceIndex SURF_MV8x8/*,
-           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/)
+           SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8/*,
+           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/, int rectParts)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
@@ -2262,7 +2262,8 @@ void MeP16(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceInde
     VME_SET_UNIInput_SrcY(uniIn, y);
 
     // M0.3 various prediction parameters
-    VME_SET_DWORD(uniIn, 0, 3, 0x76a40000); // BMEDisableFBR=1 InterSAD=2 SubMbPartMask=0x76
+///    VME_SET_DWORD(uniIn, 0, 3, 0x76a40000); // BMEDisableFBR=1 InterSAD=2 SubMbPartMask=0x76: 8x8,16x16
+    VME_SET_DWORD(uniIn, 0, 3, 0x70a40000); // BMEDisableFBR=1 InterSAD=2 SubMbPartMask=0x70: 8x8,8x16,16x8,16x16 (rect subparts are for FEI are on)
     // M1.1 MaxNumMVs
     VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
     // M0.5 Reference Window Width & Height
@@ -2320,22 +2321,6 @@ void MeP16(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceInde
     fbrIn.format<uint, 4, 8>().select<4, 1, 4, 2>(0, 0) = imeOut.row(7).format<uint>()[5]; // motion vectors 16x16
     run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 0, 0, 0, fbrOut16x16);
 
-    //matrix<uchar, 7, 32> fbrOut16x8;
-    //VME_SET_UNIInput_FBRMbModeInput(uniIn, 1);
-    //VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
-    //VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
-    //fbrIn.format<uint, 4, 8>().select<2, 1, 4, 2>(0, 0) = imeOut.row(8).format<uint>()[0]; // motion vectors 16x8_0
-    //fbrIn.format<uint, 4, 8>().select<2, 1, 4, 2>(2, 0) = imeOut.row(8).format<uint>()[1]; // motion vectors 16x8_1
-    //run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 1, 0, 0, fbrOut16x8);
-
-    //matrix<uchar, 7, 32> fbrOut8x16;
-    //VME_SET_UNIInput_FBRMbModeInput(uniIn, 2);
-    //VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
-    //VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
-    //fbrIn.format<uint, 4, 8>().select<2, 2, 4, 2>(0, 0) = imeOut.row(8).format<uint>()[2]; // motion vectors 8x16_0
-    //fbrIn.format<uint, 4, 8>().select<2, 2, 4, 2>(1, 0) = imeOut.row(8).format<uint>()[3]; // motion vectors 8x16_1
-    //run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 2, 0, 0, fbrOut8x16);
-
     matrix<uchar, 7, 32> fbrOut8x8;
     subMbShape = 0;
     VME_SET_UNIInput_FBRMbModeInput(uniIn, 3);
@@ -2347,62 +2332,87 @@ void MeP16(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceInde
     fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(3, 0) = imeOut.row(8).format<uint>()[7]; // motion vectors 8x8_3
     run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut8x8);
 
-    //matrix<uchar, 7, 32> fbrOut8x4;
-    //subMbShape = 1 + 4 + 16 + 64;
-    //VME_SET_UNIInput_FBRMbModeInput(uniIn, 3);
-    //VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, subMbShape);
-    //VME_SET_UNIInput_FBRSubPredModeInput(uniIn, subMbPredMode);
-    //run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut8x4);
-
-    //matrix<uchar, 7, 32> fbrOut4x8;
-    //subMbShape = (1 + 4 + 16 + 64) << 1;
-    //VME_SET_UNIInput_FBRMbModeInput(uniIn, 3);
-    //VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, subMbShape);
-    //VME_SET_UNIInput_FBRSubPredModeInput(uniIn, subMbPredMode);
-    //run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut4x8);
-
     // distortions
     // 16x16
     matrix<uint, 1, 1> dist16x16 = SLICE(fbrOut16x16.row(5).format<ushort>(), 0, 1, 1); 
     write(SURF_DIST16x16, mbX * DIST_SIZE, mbY, dist16x16);
-    //// 16x8
-    //matrix<uint, 2, 1> dist16x8 = SLICE(fbrOut16x8.row(5).format<ushort>(), 0, 2, 8); 
-    //write(SURF_DIST16x8, mbX * DIST_SIZE, mbY * 2, dist16x8);
-    //// 8x16
-    //matrix<uint, 1, 2> dist8x16 = SLICE(fbrOut8x16.row(5).format<ushort>(), 0, 2, 4); 
-    //write(SURF_DIST8x16, mbX * DIST_SIZE * 2, mbY, dist8x16);
     // 8x8
     matrix<uint, 2, 2> dist8x8 = SLICE(fbrOut8x8.row(5).format<ushort>(), 0, 4, 4); 
     write(SURF_DIST8x8, mbX * DIST_SIZE * 2, mbY * 2, dist8x8);
-    //// 8x4
-    //matrix<uint, 4, 2> dist8x4 = SLICE(fbrOut8x4.row(5).format<ushort>(), 0, 8, 2); 
-    //write(SURF_DIST8x4, mbX * DIST_SIZE * 2, mbY * 4, dist8x4);
-    //// 4x8
-    //matrix<uint, 2, 4> dist4x8; 
-    //dist4x8.row(0) = SLICE(fbrOut4x8.row(5).format<ushort>(), 0, 4, 4); 
-    //dist4x8.row(1) = SLICE(fbrOut4x8.row(5).format<ushort>(), 1, 4, 4); 
-    //write(SURF_DIST4x8, mbX * DIST_SIZE * 4, mbY * 2, dist4x8);
 
     // motion vectors
     // 16x16
     write(SURF_MV16x16, mbX * MVDATA_SIZE, mbY, SLICE(fbrOut16x16.format<uint>(), 8, 1, 1));
-    //// 16x8
-    //matrix<uint, 2, 1> mv16x8 = SLICE(fbrOut16x8.format<uint>(), 8, 2, 16); 
-    //write(SURF_MV16x8,  mbX * MVDATA_SIZE, mbY * 2, mv16x8);
-    //// 8x16
-    //matrix<uint, 1, 2> mv8x16 = SLICE(fbrOut8x16.format<uint>(), 8, 2, 8); 
-    //write(SURF_MV8x16,  mbX * MVDATA_SIZE * 2, mbY, mv8x16);
     // 8x8
     matrix<uint, 2, 2> mv8x8 = SLICE(fbrOut8x8.format<uint>(), 8, 4, 8); 
     write(SURF_MV8x8,   mbX * MVDATA_SIZE * 2, mbY * 2, mv8x8);
-    //// 8x4
-    //matrix<uint, 4, 2> mv8x4 = SLICE(fbrOut8x4.format<uint>(), 8, 8, 4); 
-    //write(SURF_MV8x4,   mbX * MVDATA_SIZE * 2, mbY * 4, mv8x4);
-    //// 4x8
-    //matrix<uint, 2, 4> mv4x8;
-    //SLICE(mv4x8.format<uint>(), 0, 4, 2) = SLICE(fbrOut4x8.format<uint>(),  8, 4, 8); 
-    //SLICE(mv4x8.format<uint>(), 1, 4, 2) = SLICE(fbrOut4x8.format<uint>(), 10, 4, 8); 
-    //write(SURF_MV4x8, mbX * MVDATA_SIZE * 4, mbY * 2, mv4x8);
+
+
+    if (rectParts)
+    {
+        matrix<uchar, 7, 32> fbrOut16x8;
+        VME_SET_UNIInput_FBRMbModeInput(uniIn, 1);
+        VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
+        VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
+        fbrIn.format<uint, 4, 8>().select<2, 1, 4, 2>(0, 0) = imeOut.row(8).format<uint>()[0]; // motion vectors 16x8_0
+        fbrIn.format<uint, 4, 8>().select<2, 1, 4, 2>(2, 0) = imeOut.row(8).format<uint>()[1]; // motion vectors 16x8_1
+        run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 1, 0, 0, fbrOut16x8);
+
+        matrix<uchar, 7, 32> fbrOut8x16;
+        VME_SET_UNIInput_FBRMbModeInput(uniIn, 2);
+        VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
+        VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
+        fbrIn.format<uint, 4, 8>().select<2, 2, 4, 2>(0, 0) = imeOut.row(8).format<uint>()[2]; // motion vectors 8x16_0
+        fbrIn.format<uint, 4, 8>().select<2, 2, 4, 2>(1, 0) = imeOut.row(8).format<uint>()[3]; // motion vectors 8x16_1
+        run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 2, 0, 0, fbrOut8x16);
+
+        // distortions
+        // 16x8
+        matrix<uint, 2, 1> dist16x8 = SLICE(fbrOut16x8.row(5).format<ushort>(), 0, 2, 8); 
+        write(SURF_DIST16x8, mbX * DIST_SIZE, mbY * 2, dist16x8);
+        // 8x16
+        matrix<uint, 1, 2> dist8x16 = SLICE(fbrOut8x16.row(5).format<ushort>(), 0, 2, 4); 
+        write(SURF_DIST8x16, mbX * DIST_SIZE * 2, mbY, dist8x16);
+
+        // motion vectors
+        // 16x8
+        matrix<uint, 2, 1> mv16x8 = SLICE(fbrOut16x8.format<uint>(), 8, 2, 16); 
+        write(SURF_MV16x8,  mbX * MVDATA_SIZE, mbY * 2, mv16x8);
+        // 8x16
+        matrix<uint, 1, 2> mv8x16 = SLICE(fbrOut8x16.format<uint>(), 8, 2, 8); 
+        write(SURF_MV8x16,  mbX * MVDATA_SIZE * 2, mbY, mv8x16);
+
+        //matrix<uchar, 7, 32> fbrOut8x4;
+        //subMbShape = 1 + 4 + 16 + 64;
+        //VME_SET_UNIInput_FBRMbModeInput(uniIn, 3);
+        //VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, subMbShape);
+        //VME_SET_UNIInput_FBRSubPredModeInput(uniIn, subMbPredMode);
+        //run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut8x4);
+
+        //matrix<uchar, 7, 32> fbrOut4x8;
+        //subMbShape = (1 + 4 + 16 + 64) << 1;
+        //VME_SET_UNIInput_FBRMbModeInput(uniIn, 3);
+        //VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, subMbShape);
+        //VME_SET_UNIInput_FBRSubPredModeInput(uniIn, subMbPredMode);
+        //run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut4x8);
+
+        //// 8x4
+        //matrix<uint, 4, 2> dist8x4 = SLICE(fbrOut8x4.row(5).format<ushort>(), 0, 8, 2); 
+        //write(SURF_DIST8x4, mbX * DIST_SIZE * 2, mbY * 4, dist8x4);
+        //// 4x8
+        //matrix<uint, 2, 4> dist4x8; 
+        //dist4x8.row(0) = SLICE(fbrOut4x8.row(5).format<ushort>(), 0, 4, 4); 
+        //dist4x8.row(1) = SLICE(fbrOut4x8.row(5).format<ushort>(), 1, 4, 4); 
+        //write(SURF_DIST4x8, mbX * DIST_SIZE * 4, mbY * 2, dist4x8);
+        //// 8x4
+        //matrix<uint, 4, 2> mv8x4 = SLICE(fbrOut8x4.format<uint>(), 8, 8, 4); 
+        //write(SURF_MV8x4,   mbX * MVDATA_SIZE * 2, mbY * 4, mv8x4);
+        //// 4x8
+        //matrix<uint, 2, 4> mv4x8;
+        //SLICE(mv4x8.format<uint>(), 0, 4, 2) = SLICE(fbrOut4x8.format<uint>(),  8, 4, 8); 
+        //SLICE(mv4x8.format<uint>(), 1, 4, 2) = SLICE(fbrOut4x8.format<uint>(), 10, 4, 8); 
+        //write(SURF_MV4x8, mbX * MVDATA_SIZE * 4, mbY * 2, mv4x8);
+    }
 }
 
 static const uint1 MODE_INIT_TABLE[257] = {

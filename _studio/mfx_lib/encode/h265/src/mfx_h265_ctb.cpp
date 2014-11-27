@@ -6175,8 +6175,8 @@ Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh)
     static const Ipp8s tab_lookUpPuSize[IDX_MAX][IDX_MAX] = {
         //H=       4                            8                        16                      32
         {                      -1,  MFX_FEI_H265_BLK_4x8_US,                       -1,                       -1 }, //W=4
-        { MFX_FEI_H265_BLK_8x4_US,     MFX_FEI_H265_BLK_8x8, MFX_FEI_H265_BLK_8x16_US,                       -1 }, //W=8
-        {                      -1, MFX_FEI_H265_BLK_16x8_US,   MFX_FEI_H265_BLK_16x16,   MFX_FEI_H265_BLK_16x32 }, //W=16
+        { MFX_FEI_H265_BLK_8x4_US,     MFX_FEI_H265_BLK_8x8,    MFX_FEI_H265_BLK_8x16,                       -1 }, //W=8
+        {                      -1,    MFX_FEI_H265_BLK_16x8,   MFX_FEI_H265_BLK_16x16,   MFX_FEI_H265_BLK_16x32 }, //W=16
         {                      -1,                       -1,   MFX_FEI_H265_BLK_32x16,   MFX_FEI_H265_BLK_32x32 }, //W=32
     };
 

@@ -226,8 +226,8 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
      * currently Cm kernels do not process non-square blocks < 16x16, but allocate surfaces anyway to avoid changing API (may be supported in future)
      */
     cmMvW[MFX_FEI_H265_BLK_16x16   ] = width / 16;      cmMvH[MFX_FEI_H265_BLK_16x16   ] = height / 16;
-    cmMvW[MFX_FEI_H265_BLK_16x8_US ] = width / 16;      cmMvH[MFX_FEI_H265_BLK_16x8_US ] = height /  8;
-    cmMvW[MFX_FEI_H265_BLK_8x16_US ] = width /  8;      cmMvH[MFX_FEI_H265_BLK_8x16_US ] = height / 16;
+    cmMvW[MFX_FEI_H265_BLK_16x8    ] = width / 16;      cmMvH[MFX_FEI_H265_BLK_16x8    ] = height /  8;
+    cmMvW[MFX_FEI_H265_BLK_8x16    ] = width /  8;      cmMvH[MFX_FEI_H265_BLK_8x16    ] = height / 16;
     cmMvW[MFX_FEI_H265_BLK_8x8     ] = width /  8;      cmMvH[MFX_FEI_H265_BLK_8x8     ] = height /  8;
     cmMvW[MFX_FEI_H265_BLK_8x4_US  ] = width /  8;      cmMvH[MFX_FEI_H265_BLK_8x4_US  ] = height /  4;
     cmMvW[MFX_FEI_H265_BLK_4x8_US  ] = width /  4;      cmMvH[MFX_FEI_H265_BLK_4x8_US  ] = height /  8;
@@ -254,14 +254,14 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
             for (k = MFX_FEI_H265_BLK_32x32; k <=  MFX_FEI_H265_BLK_16x32; k++)
                 CreateCmSurface2DUp(device, cmMvW[k] * 16, cmMvH[k], CM_SURFACE_FORMAT_P8, um_distCpu[i][j][k], distGpu[i][j][k], um_pitchDist[k]);
             for (k = MFX_FEI_H265_BLK_16x16; k < MFX_FEI_H265_BLK_MAX; k++) {
-                if ((k == MFX_FEI_H265_BLK_16x8_US) || (k == MFX_FEI_H265_BLK_8x16_US) || (k == MFX_FEI_H265_BLK_8x4_US) || (k == MFX_FEI_H265_BLK_4x8_US))
+                if (/*(k == MFX_FEI_H265_BLK_16x8) || (k == MFX_FEI_H265_BLK_8x16) || */(k == MFX_FEI_H265_BLK_8x4_US) || (k == MFX_FEI_H265_BLK_4x8_US))
                     continue; // others are not used in tu7 now
                 CreateCmSurface2DUp(device, cmMvW[k] * 1, cmMvH[k], CM_SURFACE_FORMAT_P8, um_distCpu[i][j][k], distGpu[i][j][k], um_pitchDist[k]);
             }
 
             /* motion vectors */
             for (k = 0; k < MFX_FEI_H265_BLK_MAX; k++) {
-                if ((k == MFX_FEI_H265_BLK_16x8_US) || (k == MFX_FEI_H265_BLK_8x16_US) || (k == MFX_FEI_H265_BLK_8x4_US) || (k == MFX_FEI_H265_BLK_4x8_US))
+                if (/*(k == MFX_FEI_H265_BLK_16x8) || (k == MFX_FEI_H265_BLK_8x16) || */(k == MFX_FEI_H265_BLK_8x4_US) || (k == MFX_FEI_H265_BLK_4x8_US))
                     continue; // others are not used in tu7 now
                 if (HME_LEVEL_LOW) {
                     if ((k == MFX_FEI_H265_BLK_256x256) || (k == MFX_FEI_H265_BLK_128x128))
@@ -621,8 +621,13 @@ void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurfac
     {
         /* always estimate 4x8, 8x4, ... 16x16 */
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Me16");
-        SetKernelArg(kernelMe16, me1xControl, *refs, mv[MFX_FEI_H265_BLK_32x32], dist[MFX_FEI_H265_BLK_16x16]/*, dist[MFX_FEI_H265_BLK_16x8], dist[MFX_FEI_H265_BLK_8x16]*/,
-            dist[MFX_FEI_H265_BLK_8x8]/*, dist[MFX_FEI_H265_BLK_8x4_US], dist[MFX_FEI_H265_BLK_4x8_US]*/, mv[MFX_FEI_H265_BLK_16x16]/*, mv[MFX_FEI_H265_BLK_16x8], mv[MFX_FEI_H265_BLK_8x16]*/, mv[MFX_FEI_H265_BLK_8x8]/*, mv[MFX_FEI_H265_BLK_8x4_US], mv[MFX_FEI_H265_BLK_4x8_US]*/);
+        mfxI32 rectParts = 0;
+#if defined (AS_H265FEI_PLUGIN)
+        rectParts = 1;  // to enable 16x8 and 8x16
+#endif  // (AS_H265FEI_PLUGIN)
+        SetKernelArg(kernelMe16, me1xControl, *refs, mv[MFX_FEI_H265_BLK_32x32], dist[MFX_FEI_H265_BLK_16x16], dist[MFX_FEI_H265_BLK_16x8], dist[MFX_FEI_H265_BLK_8x16],
+            dist[MFX_FEI_H265_BLK_8x8]/*, dist[MFX_FEI_H265_BLK_8x4_US], dist[MFX_FEI_H265_BLK_4x8_US]*/, mv[MFX_FEI_H265_BLK_16x16],
+            mv[MFX_FEI_H265_BLK_16x8], mv[MFX_FEI_H265_BLK_8x16], mv[MFX_FEI_H265_BLK_8x8]/*, mv[MFX_FEI_H265_BLK_8x4_US], mv[MFX_FEI_H265_BLK_4x8_US]*/, rectParts);
         EnqueueKernel(device, queue, task, kernelMe16, width / 16, height / 16, *lastEvent);
     }
 

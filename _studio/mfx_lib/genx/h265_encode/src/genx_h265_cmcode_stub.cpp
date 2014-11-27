@@ -23,7 +23,7 @@ void Ime3tiers(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIn
 void MeP32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, int) {}
 void MeP16_Intra(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
 void MeP16(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex,
-           SurfaceIndex/*, SurfaceIndex, SurfaceIndex, SurfaceIndex*/) {}
+           SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex, int) {}
 void RefineMeP32x32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
 void RefineMeP32x16(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
 void RefineMeP16x32(SurfaceIndex, SurfaceIndex, SurfaceIndex, SurfaceIndex) {}
