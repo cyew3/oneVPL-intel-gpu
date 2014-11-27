@@ -232,6 +232,14 @@ void WriteFrameInterSmall(mfxFEIH265Output *feiOut, int refIdx, int blockSize)
         w = 8;
         h = 8;
         break;
+    case MFX_FEI_H265_BLK_8x16:
+        w = 8;
+        h = 16;
+        break;
+    case MFX_FEI_H265_BLK_16x8:
+        w = 16;
+        h = 8;
+        break;
     default:
         w = 0;
         h = 0;

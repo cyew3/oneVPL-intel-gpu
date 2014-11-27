@@ -274,6 +274,12 @@ int main(int argc, char **argv)
                 WriteFrameInterSmall(&feiH265Out[feiOutIdx], i, MFX_FEI_H265_BLK_8x8);
                 WriteFrameInterSmall(&feiH265Out[feiOutIdx], i, MFX_FEI_H265_BLK_16x16);
 
+                /* non-square blocks enabled */
+                if (sp.MPMode > 1) {
+                    WriteFrameInterSmall(&feiH265Out[feiOutIdx], i, MFX_FEI_H265_BLK_8x16);
+                    WriteFrameInterSmall(&feiH265Out[feiOutIdx], i, MFX_FEI_H265_BLK_16x8);
+                }
+
                 /* large blocks enabled */
                 if (sp.MaxCUSize >= 32)
                     WriteFrameInterLarge(&feiH265Out[feiOutIdx], i, MFX_FEI_H265_BLK_32x32);
