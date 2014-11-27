@@ -192,20 +192,27 @@ enum VideoAccelerationPlatform
 
 enum VideoAccelerationHW
 {
-    VA_HW_UNKNOWN = 0,
+    VA_HW_UNKNOWN   = 0,
+    VA_HW_LAKE      = 0x010000,
+    VA_HW_LRB       = 0x020000,
+    VA_HW_SNB       = 0x030000,
 
-    VA_HW_LAKE  = 0x010000,
-    VA_HW_LRB   = 0x020000,
-    VA_HW_SNB   = 0x030000,
-    VA_HW_IVB   = 0x040000,
+    VA_HW_IVB       = 0x040000,
 
-    VA_HW_HSW   = 0x050000,
+    VA_HW_HSW       = 0x050000,
     VA_HW_HSW_ULT   = 0x050001,
 
     VA_HW_VLV       = 0x060000,
 
-    VA_HW_BDW       = 0x700000,
-    VA_HW_SCL       = 0x800000
+    VA_HW_BDW       = 0x070000,
+
+    VA_HW_CHV       = 0x080000,
+
+    VA_HW_SCL       = 0x090000,
+
+    VA_HW_BXT       = 0x100000,
+
+    VA_HW_CNL       = 0x110000
 };
 
 class VideoData;

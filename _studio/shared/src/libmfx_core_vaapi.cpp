@@ -205,14 +205,29 @@ VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
     case MFX_HW_IVB:
         umcType = VA_HW_IVB;
         break;
-    case MFX_HW_VLV:
-        umcType = VA_HW_VLV;
-        break;
     case MFX_HW_HSW:
         umcType = VA_HW_HSW;
         break;
+    case MFX_HW_HSW_ULT:
+        umcType = VA_HW_HSW_ULT;
+        break;
+    case MFX_HW_VLV:
+        umcType = VA_HW_VLV;
+        break;
     case MFX_HW_BDW:
         umcType = VA_HW_BDW;
+        break;
+    case MFX_HW_CHV:
+        umcType = VA_HW_CHV;
+        break;
+    case MFX_HW_SCL:
+        umcType = VA_HW_SCL;
+        break;
+    case MFX_HW_BXT:
+        umcType = VA_HW_BXT;
+        break;
+    case MFX_HW_CNL:
+        umcType = VA_HW_CNL;
         break;
     default:
         break;
