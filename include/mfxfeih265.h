@@ -53,6 +53,8 @@ enum
     MFX_FEI_H265_BLK_32x16 = 4,
     MFX_FEI_H265_BLK_16x32 = 5,
     MFX_FEI_H265_BLK_16x16 = 6,
+    MFX_FEI_H265_BLK_16x8  = 7,
+    MFX_FEI_H265_BLK_8x16  = 8,
     MFX_FEI_H265_BLK_8x8   = 9,
 };
 
