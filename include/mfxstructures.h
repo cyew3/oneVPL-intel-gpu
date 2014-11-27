@@ -643,7 +643,8 @@ enum {
     MFX_EXTBUFF_CHROMA_LOC_INFO            = MFX_MAKEFOURCC('C','L','I','N'),
     MFX_EXTBUFF_MBQP                       = MFX_MAKEFOURCC('M','B','Q','P'),
     MFX_EXTBUFF_HEVC_TILES                 = MFX_MAKEFOURCC('2','6','5','T'),
-    MFX_EXTBUFF_MB_DISABLE_SKIP_MAP        = MFX_MAKEFOURCC('M','D','S','M')
+    MFX_EXTBUFF_MB_DISABLE_SKIP_MAP        = MFX_MAKEFOURCC('M','D','S','M'),
+    MFX_EXTBUFF_DPB                        = MFX_MAKEFOURCC('E','D','P','B')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -940,6 +941,11 @@ typedef struct {
     mfxU16      reserved[11];
 } mfxExtEncoderResetOption;
 
+/*LongTermIdx*/
+enum {
+    MFX_LONGTERM_IDX_NO_IDX = 0xFFFF
+};
+
 typedef struct {
     mfxExtBuffer    Header; 
 
@@ -1094,6 +1100,7 @@ enum {
     MFX_VPP_SWAP_FIELDS     =0x03
 };
 
+/*PicType*/
 enum {
     MFX_PICTYPE_UNKNOWN     =0x00,
     MFX_PICTYPE_FRAME       =0x01,
@@ -1191,6 +1198,20 @@ typedef struct {
         mfxU64  reserved2;
     };
 } mfxExtMBDisableSkipMap;
+
+typedef struct {
+    mfxExtBuffer    Header;
+
+    mfxU16          DPBSize;
+    mfxU16          reserved[11];
+
+    struct {
+        mfxU32      FrameOrder;
+        mfxU16      PicType;
+        mfxU16      LongTermIdx;
+        mfxU16      reserved[4];
+    } DPB[32];
+}mfxExtDPB;
 
 #ifdef __cplusplus
 } // extern "C"
