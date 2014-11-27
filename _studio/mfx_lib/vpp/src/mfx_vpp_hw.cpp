@@ -28,6 +28,11 @@ Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 #include "mfx_vpp_defs.h"
 #include "mfx_vpp_hw.h"
 
+// GPU Copy V.S. Composition hack
+#ifdef MFX_VA_LINUX
+#include "libmfx_core_vaapi.h"
+#endif
+
 using namespace MfxHwVideoProcessing;
 
 enum 
@@ -1549,6 +1554,27 @@ mfxStatus  VideoVPPHW::Init(
     //-----------------------------------------------------
     sts = m_taskMngr.Init(m_pCore, m_config);
     MFX_CHECK_STS(sts);
+
+    //-----------------------------------------------------
+    // [6] temporary hack: disable GPU Copy on Linux if composition is in pipeline
+    //-----------------------------------------------------
+#ifdef MFX_VA_LINUX
+    bool foundCompositionFilter = false;
+    for(mfxU16 bufIndex = 0; bufIndex < par->NumExtParam; bufIndex++)
+    {
+        if (MFX_EXTBUFF_VPP_COMPOSITE == par->ExtParam[bufIndex]->BufferId)
+        {
+            foundCompositionFilter = true;
+            break;
+        }
+    }
+
+    if (foundCompositionFilter)
+    {
+        dynamic_cast<VAAPIVideoCORE&>(*m_pCore).SetCmCopyStatus(false);
+    }    
+#endif
+
 
     return (bIsFilterSkipped) ? MFX_WRN_FILTER_SKIPPED : MFX_ERR_NONE;
 
