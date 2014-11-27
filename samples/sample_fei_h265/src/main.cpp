@@ -173,7 +173,7 @@ int main(int argc, char **argv)
     if (err) {
         printf("Error initializing FEI library (err = %d)\n", err);
 
-        /* free resources (avoid KW warnings) */
+        /* free resources */
         if (sp.ParamsFile)  fclose(sp.ParamsFile);
         if (sp.SourceFile)  fclose(sp.SourceFile);
         if (sp.ReconFile)   fclose(sp.ReconFile);

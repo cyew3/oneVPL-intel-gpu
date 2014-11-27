@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
   {
     if (nInStreamInd >= MAX_INPUT_STREAMS)
     {
-        sts = MFX_ERR_UNKNOWN;  // should never happen, added mainly for KW
+        sts = MFX_ERR_UNKNOWN;  // should never happen
         break;
     }
     else

@@ -1021,6 +1021,9 @@ mfxStatus CTranscodingPipeline::Transcode()
                 bInsertIDR = true;
                 static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetInput();
                 static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetOutput();
+                m_nProcessedFramesNum = 0;
+                bNeedDecodedFrames = true;
+
                 bEndOfFile = 0;
             }
             sts = MFX_ERR_NONE;
