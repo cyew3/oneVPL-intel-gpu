@@ -1050,7 +1050,7 @@ void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, doubl
         memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
         //Timestamp
-        frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
+        frmIn->frmProperties.timestamp = dCurTimeStamp + dTimePerFrame / 2;
 
         FrameQueue_Add(fqIn, frmIn);
     }
@@ -1120,6 +1120,7 @@ int PTIRCM_AutoMode_HF(PTIRSystemBuffer *SysBuffer)
 {
     unsigned int i, uiDeinterlace = 0,
                  uiNumFramesToDispatch;
+    double cur_timestamp;
 
     Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
@@ -1128,10 +1129,14 @@ int PTIRCM_AutoMode_HF(PTIRSystemBuffer *SysBuffer)
         if(SysBuffer->control.mainPattern.ucPatternFound)
         {
             SysBuffer->control.dTimePerFrame = Calculate_Resulting_timestamps(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch, SysBuffer->control.uiCur, SysBuffer->control.dBaseTime, &uiNumFramesToDispatch, SysBuffer->control.mainPattern.ucPatternType, SysBuffer->control.uiEndOfFrames);
+            cur_timestamp = SysBuffer->frmBuffer[0]->frmProperties.timestamp;
             for (i = 0; i < uiNumFramesToDispatch; i++)
             {
                 if (!SysBuffer->frmBuffer[i]->frmProperties.drop)
+                {
                     Update_Frame_Buffer_CM(SysBuffer->frmBuffer, i, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn, (frameSupplier*) SysBuffer->frmSupply, true);
+                    cur_timestamp += SysBuffer->control.dTimePerFrame;
+                }
                 else
                 {
                     SysBuffer->frmBuffer[i + 1]->frmProperties.timestamp = SysBuffer->frmBuffer[i]->frmProperties.timestamp;
@@ -1150,12 +1155,12 @@ int PTIRCM_AutoMode_HF(PTIRSystemBuffer *SysBuffer)
                 {
                     if (!(SysBuffer->control.mainPattern.uiInterlacedFramesNum == (BUFMINSIZE - 1)))
                     {
-                        Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                        Update_Frame_BufferNEW_CM(SysBuffer->frmBuffer, 0, SysBuffer->frmBuffer[0]->frmProperties.timestamp, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn, (frameSupplier*) SysBuffer->frmSupply, true);
                         Rotate_Buffer(SysBuffer->frmBuffer);
                     }
                     else
                     {
-                        Update_Frame_Buffer_CM(SysBuffer->frmBuffer, 0, SysBuffer->control.dTimePerFrame, uiDeinterlace, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
+                        Update_Frame_BufferNEW_CM(SysBuffer->frmBuffer, 0, SysBuffer->frmBuffer[0]->frmProperties.timestamp, SysBuffer->control.dTimePerFrame, AUTOMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn, (frameSupplier*) SysBuffer->frmSupply, true);
                         Rotate_Buffer_deinterlaced(SysBuffer->frmBuffer);
                     }
                 }

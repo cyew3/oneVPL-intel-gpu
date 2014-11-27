@@ -231,7 +231,8 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
     mfxStatus mfxSts = MFX_ERR_NONE;
     if(!b_firstFrameProceed)
     {
-        pts = 0;
+        //(divide TimeStamp by 90,000 (90 KHz) to obtain the time in seconds)
+        pts = (double) (surf_in->Data.TimeStamp / 90);
         frame_duration = 1000 / _dFrameRate;
 
         mfxSts = MFX_PTIR_PutFrame(surf_in, &Env, pts);
@@ -396,11 +397,12 @@ mfxStatus PTIR_ProcessorCPU::OutputFrameToMfx(Frame* frmIn, Frame* frmOut, mfxFr
     mfxStatus mfxSts = MFX_ERR_NONE;
     *uiLastFrameNumber = frmIn->frmProperties.tindex;
 
-    TrimBorders(&frmIn->plaY, &frmOut->plaY);
-    TrimBorders(&frmIn->plaU, &frmOut->plaU);
-    TrimBorders(&frmIn->plaV, &frmOut->plaV);
+    //TrimBorders(&frmIn->plaY, &frmOut->plaY);
+    //TrimBorders(&frmIn->plaU, &frmOut->plaU);
+    //TrimBorders(&frmIn->plaV, &frmOut->plaV);
 
-    mfxSts = frmSupply->AddCPUPtirOutSurf(frmOut->ucMem, surf_out);
+    mfxSts = frmSupply->AddCPUPtirOutSurf(frmIn->ucMem, surf_out);
+    surf_out->Data.TimeStamp = (mfxU64) (frmIn->frmProperties.timestamp * 90);
     if(mfxSts) return mfxSts;
     //ferror = WriteFile(hOut, frmOut->ucMem, frmOut->uiSize, uiBytesRead, NULL);
 

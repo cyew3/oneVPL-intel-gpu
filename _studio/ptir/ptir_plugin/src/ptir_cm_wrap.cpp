@@ -281,7 +281,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFram
     mfxStatus mfxSts = MFX_ERR_NONE;
     if(!b_firstFrameProceed)
     {
-        pts = 0;
+        //(divide TimeStamp by 90,000 (90 KHz) to obtain the time in seconds)
+        pts = (double) (surf_in->Data.TimeStamp / 90);
         frame_duration = 1000 / _dFrameRate;
 
         mfxSts = MFX_PTIRCM_PutFrame(surf_in, surf_out, Env.frmBuffer[Env.control.uiCur], &Env, pts);
@@ -416,7 +417,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFram
                 {
                     if(!static_cast<CmSurface2DEx*>(Env.frmBuffer[i]->outSurf)->pCmSurface2D)
                     {
-                        static_cast<CmSurface2DEx*>(Env.frmBuffer[i]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
+                        result = device->CreateSurface2D(_uiInWidth, _uiInHeight, CM_SURFACE_FORMAT_NV12, static_cast<CmSurface2DEx*>(Env.frmBuffer[i]->outSurf)->pCmSurface2D );
                         assert(0 != static_cast<CmSurface2DEx*>(Env.frmBuffer[i]->outSurf)->pCmSurface2D);
                     }
                     if(!static_cast<CmSurface2DEx*>(Env.frmBuffer[i]->inSurf)->pCmSurface2D)
@@ -631,6 +632,7 @@ mfxStatus PTIR_ProcessorCM::OutputFrameToMfx(Frame* frmOut, mfxFrameSurface1* su
             exp_surf = 0;
         }
     }
+    output->Data.TimeStamp = (mfxU64) (frmOut->frmProperties.timestamp * 90);
 
     mfxSts = frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmOut->inSurf)->pCmSurface2D);
     static_cast<CmSurface2DEx*>(frmOut->outSurf)->pCmSurface2D = 0;

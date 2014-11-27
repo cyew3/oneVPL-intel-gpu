@@ -377,7 +377,7 @@ void Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidt
     *pfrmOut = (Frame *)malloc(sizeof(Frame));
     if(!*pfrmOut)
         return;
-    Frame_Create(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 64);
+    Frame_Create(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 0);
     (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.tindex;
     ReSample(*pfrmOut, pfrmIn);
     (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.tindex;
@@ -592,8 +592,8 @@ int PTIR_AutoMode_FF(PTIRSystemBuffer *SysBuffer)
                 else
                     SysBuffer->frmBuffer[i]->frmProperties.drop = FALSE;
             }
-            Rotate_Buffer_borders(SysBuffer->frmBuffer, SysBuffer->control.uiDispatch);
-            SysBuffer->control.uiCur -= min(SysBuffer->control.uiDispatch,SysBuffer->control.uiCur);
+            Rotate_Buffer_borders(SysBuffer->frmBuffer, uiNumFramesToDispatch);
+            SysBuffer->control.uiCur -= min(uiNumFramesToDispatch,SysBuffer->control.uiCur);
         }
         else
         {

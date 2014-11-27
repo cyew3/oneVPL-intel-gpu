@@ -72,9 +72,9 @@ void Rotate_Buffer_deinterlaced(Frame *frmBuffer[LASTFRAME])
     for(i = 0; i < BUFMINSIZE - 1; i++)
         frmBuffer[i] = frmBuffer[i + 1];
     frmBuffer[BUFMINSIZE - 1] = pfrmBkp;
-    pfrmBkp = frmBuffer[BUFMINSIZE];
-    frmBuffer[BUFMINSIZE] = frmBuffer[BUFMINSIZE + 1];
-    frmBuffer[BUFMINSIZE + 1] = pfrmBkp;
+    //pfrmBkp = frmBuffer[BUFMINSIZE];
+    //frmBuffer[BUFMINSIZE] = frmBuffer[BUFMINSIZE + 1];
+    //frmBuffer[BUFMINSIZE + 1] = pfrmBkp;
 }
 
 #ifdef USE_SSE4
