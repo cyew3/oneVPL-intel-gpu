@@ -37,6 +37,8 @@ File Name: d3d11_video_processor.cpp
 #define D3DFMT_NV12 (DXGI_FORMAT)MAKEFOURCC('N','V','1','2')
 #define D3DFMT_YV12 (DXGI_FORMAT)MAKEFOURCC('Y','V','1','2')
 
+#define SAFE_DELETE_ARRAY(ptr) if (ptr) { delete [] ptr; ptr = 0; }
+
 template<class T> inline void Zero(T & obj)                { memset(&obj, 0, sizeof(obj)); }
 template<class T> inline void Zero(std::vector<T> & vec)   { memset(&vec[0], 0, sizeof(T) * vec.size()); }
 template<class T> inline void Zero(T * first, size_t cnt)  { memset(first, 0, sizeof(T) * cnt); }
@@ -1839,8 +1841,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         videoProcessorStreams,
         pParams->statusReportID);
 
-    delete videoProcessorStreams;
-    videoProcessorStreams = NULL;
+    SAFE_DELETE_ARRAY(videoProcessorStreams);
 
     for( refIdx = 0; refIdx < pParams->refCount; refIdx++ )
     {
@@ -1851,8 +1852,6 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     return sts;
 
 } // mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
-
-#define SAFE_DELETE_ARRAY(ptr) if (ptr) delete [] ptr; ptr = NULL;
 
 mfxStatus D3D11VideoProcessor::ExecuteBlt(
     ID3D11Texture2D *pOutputSurface,
