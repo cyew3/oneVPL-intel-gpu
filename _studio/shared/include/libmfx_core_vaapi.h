@@ -96,10 +96,7 @@ public:
     mfxStatus              GetVAService(VADisplay *pVADisplay);
 
     // this function should not be virtual
-    void SetCmCopyStatus(bool enable)
-    {
-        m_bCmCopyAllowed = enable;
-    }
+    void SetCmCopyStatus(bool enable);
 
 protected:
     VAAPIVideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session = NULL);
