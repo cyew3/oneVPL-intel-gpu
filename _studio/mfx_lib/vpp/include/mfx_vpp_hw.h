@@ -22,6 +22,10 @@ Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 #include "mfx_vpp_interface.h"
 #include "mfx_vpp_defs.h"
 
+#if defined(MFX_VA)
+#include "cmrt_cross_platform.h"
+#endif
+
 namespace MfxHwVideoProcessing
 {
     enum WorkloadMode
@@ -686,6 +690,8 @@ namespace MfxHwVideoProcessing
         mfxStatus PostWorkOutSurface(ExtSurface & output);
         mfxStatus PostWorkInputSurface(mfxU32 numSamples);
 
+        mfxStatus ProcessFieldCopy(std::vector<ExtSurface> & surfQueue /* IN */, ExtSurface & output /* OUT */, int mask);
+
         mfxU16 m_asyncDepth;
 
         MfxHwVideoProcessing::mfxExecuteParams  m_executeParams;
@@ -710,6 +716,19 @@ namespace MfxHwVideoProcessing
         TaskManager   m_taskMngr;
 
         std::auto_ptr<MfxHwVideoProcessing::DriverVideoProcessing> m_ddi;
+
+#if defined(MFX_VA) // SW LIB doesn't hace access to CM DEVICE
+        CmDevice  *m_pCmDevice;
+        CmProgram *m_pCmProgram;
+        CmKernel  *m_pCmKernel;
+        CmQueue   *m_pCmQueue;
+
+        public:
+            void SetCmDevice(void* device) { m_pCmDevice = (CmDevice*)device; }
+#else
+        public:
+            void SetCmDevice(void* device) { device; }
+#endif
     };
 }; // namespace MfxHwVideoProcessing
 

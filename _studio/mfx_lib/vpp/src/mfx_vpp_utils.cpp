@@ -48,7 +48,8 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION,
     MFX_EXTBUFF_VPP_VARIANCE_REPORT,
     MFX_EXTBUFF_VPP_DEINTERLACING,
-    MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO
+    MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
+    MFX_EXTBUFF_VPP_FIELD_PROCESSING
 };
 
 
@@ -62,7 +63,8 @@ const mfxU32 g_TABLE_CONFIG [] =
     MFX_EXTBUFF_VPP_IMAGE_STABILIZATION,
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_DEINTERLACING,
-    MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO
+    MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
+    MFX_EXTBUFF_VPP_FIELD_PROCESSING
 };
 
 
@@ -83,7 +85,8 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     MFX_EXTBUFF_VPP_IMAGE_STABILIZATION,
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_DEINTERLACING,
-    MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO
+    MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
+    MFX_EXTBUFF_VPP_FIELD_PROCESSING
 };
 
 // in according with spec rev. 22583 VPP uses new PicStruct processing
@@ -930,6 +933,12 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_FIELD_PROCESSING:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "VPP_FIELD_PROCESSIN");
+                OutputDebugStringA(cStr);
+                break;
+            }
             default:
             {
             }
@@ -1075,6 +1084,12 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COMPOSITE ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_COMPOSITE;
+        index++;
+    }
+	
+	if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_PROCESSING ) )
+    {
+        newList[index] = MFX_EXTBUFF_VPP_FIELD_PROCESSING;
         index++;
     }
 

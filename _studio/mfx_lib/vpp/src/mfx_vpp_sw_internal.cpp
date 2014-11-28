@@ -1056,6 +1056,14 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 outputFramesCount[filterIndex] = 1;
                 break;
             }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_FIELD_PROCESSING:
+            {
+                // AL: fake for SW compatibility
+                inputFramesCount[filterIndex]  = 1;
+                outputFramesCount[filterIndex] = 1;
+                break;
+            }
             default:
             {
                 return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -1185,6 +1193,17 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
         }
     }
     else if( MFX_EXTBUFF_VPP_COMPOSITE == filterName )
+    {
+        if ((NULL != core) && (MFX_PLATFORM_SOFTWARE == core->GetPlatformType()))
+        {
+            sts = MFX_ERR_UNSUPPORTED;
+        }
+        else
+        {
+            sts = MFX_ERR_NONE;
+        }
+    }
+    else if( MFX_EXTBUFF_VPP_FIELD_PROCESSING == filterName )
     {
         if ((NULL != core) && (MFX_PLATFORM_SOFTWARE == core->GetPlatformType()))
         {

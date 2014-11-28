@@ -258,14 +258,23 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
     // try to use HW VPP
     if( MFX_PLATFORM_HARDWARE == m_core->GetPlatformType() )
     {
-        CommonCORE* pCommonCore = QueryCoreInterface<CommonCORE>(m_core, MFXIVideoCORE_GUID);
+        CommonCORE* pCommonCore = NULL;
+
+        bool isFieldProcessing = IsFilterFound(&m_pipelineList[0], m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_PROCESSING);
+        
+        pCommonCore = QueryCoreInterface<CommonCORE>(m_core, isFieldProcessing ? MFXICORECM_GUID : MFXIVideoCORE_GUID);
         MFX_CHECK(pCommonCore, MFX_ERR_UNDEFINED_BEHAVIOR);
+
         // trying HW VPP
         if (!((pCommonCore)->m_ExtOptions & MFX_EXTOPTION_VPP_SW))
         {
             VideoVPPHW::IOMode mode = VideoVPPHW::GetIOMode(par, m_requestOpaq);
 
             m_pHWVPP.reset(new VideoVPPHW(mode, m_core));
+
+            if(isFieldProcessing) {
+                m_pHWVPP.get()->SetCmDevice(pCommonCore);
+            }
             sts = m_pHWVPP.get()->Init(par); // OK or ERR only
             if (MFX_WRN_FILTER_SKIPPED == sts)
             {
@@ -282,6 +291,8 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
                 sts = MFX_ERR_NONE;
             }
             MFX_CHECK_STS( sts );
+
+            //m_pHWVPP.get()->SetCmDevice(pCommonCore);
         }
     }
 
@@ -886,6 +897,7 @@ mfxStatus VideoVPPSW::GetVideoParam(mfxVideoParam *par)
                     case MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
                     case MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION:
                     case MFX_EXTBUFF_VPP_COMPOSITE:
+                    case MFX_EXTBUFF_VPP_FIELD_PROCESSING:
                     {
                         if(numUsedFilters + 1 > pVPPHint->NumAlg)
                             return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1256,6 +1268,11 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
                                     continue; // stop working with ExtParam[i]
                                 }
 
+                                if(MFX_EXTBUFF_VPP_FIELD_PROCESSING == extDoUseIn->AlgList[algIdx])
+                                {
+                                    mfxSts = MFX_ERR_INVALID_VIDEO_PARAM;
+                                    continue; // stop working with ExtParam[i]
+                                }
                                 extDoUseOut->AlgList[algIdx] = extDoUseIn->AlgList[algIdx];
                             }
                             extDoUseOut->NumAlg = extDoUseIn->NumAlg;

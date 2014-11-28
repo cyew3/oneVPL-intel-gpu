@@ -187,6 +187,8 @@ namespace MfxHwVideoProcessing
         mfxU32         statusReportID;
 
         bool           bFieldWeaving;
+
+        mfxU32         iFieldProcessingMode;
     } mfxExecuteParams;
 
 
