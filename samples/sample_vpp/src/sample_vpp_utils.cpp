@@ -282,8 +282,8 @@ mfxStatus CreateDeviceManager(IDirect3DDeviceManager9** ppManager, mfxU32 nAdapt
 {
   MSDK_CHECK_POINTER(ppManager, MFX_ERR_NULL_PTR);
 
-  IDirect3D9Ex* d3d;
-  Direct3DCreate9Ex(D3D_SDK_VERSION, &d3d);
+  CComPtr<IDirect3D9> d3d;
+  d3d.Attach(Direct3DCreate9(D3D_SDK_VERSION));
 
   if (!d3d)
   {
@@ -307,14 +307,13 @@ mfxStatus CreateDeviceManager(IDirect3DDeviceManager9** ppManager, mfxU32 nAdapt
   d3dParams.BackBufferWidth = 0;
   d3dParams.BackBufferHeight = 0;
 
-  CComPtr<IDirect3DDevice9Ex> d3dDevice = 0;
-  HRESULT hr = d3d->CreateDeviceEx(
+  CComPtr<IDirect3DDevice9> d3dDevice = 0;
+  HRESULT hr = d3d->CreateDevice(
                                 nAdapterNum,
                                 D3DDEVTYPE_HAL,
                                 window,
                                 D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED | D3DCREATE_FPU_PRESERVE,
                                 &d3dParams,
-                                NULL,
                                 &d3dDevice);
 
   if (FAILED(hr) || !d3dDevice)

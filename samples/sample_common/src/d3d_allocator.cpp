@@ -299,7 +299,8 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
     if (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME) {
         for (int i = 0; i < request->NumFrameSuggested; i++) {
             hr = videoService->CreateSurface(request->Info.Width, request->Info.Height, 0,  format,
-                                                D3DPOOL_DEFAULT, m_surfaceUsage, target, &dxMids[i].m_surface, &dxMids[i].m_handle);
+                                                D3DPOOL_DEFAULT, m_surfaceUsage, target, &dxMids[i].m_surface, NULL/*&dxMids[i].m_handle*/);
+
             if (FAILED(hr)) {
                 ReleaseResponse(response);
                 MSDK_SAFE_FREE(dxMids);
@@ -314,8 +315,10 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
             MSDK_SAFE_FREE(dxMids);
             return MFX_ERR_MEMORY_ALLOC;
         }
+
         hr = videoService->CreateSurface(request->Info.Width, request->Info.Height, request->NumFrameSuggested - 1,  format,
                                             D3DPOOL_DEFAULT, m_surfaceUsage, target, dxSrf.get(), NULL);
+
         if (FAILED(hr))
         {
             MSDK_SAFE_FREE(dxMids);
