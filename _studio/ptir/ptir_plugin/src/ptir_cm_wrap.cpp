@@ -633,7 +633,8 @@ mfxStatus PTIR_ProcessorCM::OutputFrameToMfx(Frame* frmOut, mfxFrameSurface1* su
             exp_surf = 0;
         }
     }
-    output->Data.TimeStamp = (mfxU64) (frmOut->frmProperties.timestamp * 90);
+    if(output)
+        output->Data.TimeStamp = (mfxU64) (frmOut->frmProperties.timestamp * 90);
 
     mfxSts = frmSupply->FreeSurface(static_cast<CmSurface2DEx*>(frmOut->inSurf)->pCmSurface2D);
     static_cast<CmSurface2DEx*>(frmOut->outSurf)->pCmSurface2D = 0;
