@@ -1295,17 +1295,19 @@ HRESULT CVideoMemEncoderInputPin::GetService(REFGUID guidService,
         d3dParams.BackBufferHeight       = SourceHeight;
 
         // create D3D
-        m_pd3d = Direct3DCreate9(D3D_SDK_VERSION);
+        Direct3DCreate9Ex(D3D_SDK_VERSION, &m_pd3d);
+
         if (!m_pd3d)
             return E_FAIL;
 
         // create D3D device
-        hr = m_pd3d->CreateDevice(
+        hr = m_pd3d->CreateDeviceEx(
             MSDKAdapter::GetNumber(),
             D3DDEVTYPE_HAL,
             hWindow,
             D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED | D3DCREATE_FPU_PRESERVE,
             &d3dParams,
+            NULL,
             &m_pd3dDevice);
 
         if (SUCCEEDED(hr))

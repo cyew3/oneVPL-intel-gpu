@@ -164,7 +164,7 @@ HRESULT MFDeviceDXVA::DXVASupportInit(UINT nAdapter)
     m_Mutex.Lock();
     if (SUCCEEDED(hr))
     {
-        m_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
+        Direct3DCreate9Ex(D3D_SDK_VERSION, &m_pD3D);
         if (NULL == m_pD3D) hr = E_FAIL;
     }
     if (SUCCEEDED(hr))
@@ -182,11 +182,11 @@ HRESULT MFDeviceDXVA::DXVASupportInit(UINT nAdapter)
         m_PresentParams.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
         m_PresentParams.PresentationInterval       = D3DPRESENT_INTERVAL_ONE;
 
-        hr = m_pD3D->CreateDevice(nAdapter, D3DDEVTYPE_HAL, hWindow,
+        hr = m_pD3D->CreateDeviceEx(nAdapter, D3DDEVTYPE_HAL, hWindow,
                                   D3DCREATE_SOFTWARE_VERTEXPROCESSING |
                                   D3DCREATE_FPU_PRESERVE |
                                   D3DCREATE_MULTITHREADED,
-                                  &m_PresentParams, &m_pDevice);
+                                  &m_PresentParams, NULL, &m_pDevice);
     }
     m_Mutex.Unlock();
     if (SUCCEEDED(hr)) hr = DXVA2CreateDirect3DDeviceManager9(&reset_token, &m_pDeviceManager);

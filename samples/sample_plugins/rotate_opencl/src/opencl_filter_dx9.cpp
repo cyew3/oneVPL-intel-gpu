@@ -18,7 +18,6 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 // INTEL DX9 sharing functions declared deprecated in OpenCL 1.2
 #pragma warning( disable : 4996 )
 
-// define for <CL/cl_ext.h>
 #define DX9_MEDIA_SHARING
 #define DX_MEDIA_SHARING
 #define CL_DX9_MEDIA_SHARING_INTEL_EXT
@@ -118,7 +117,13 @@ cl_int OpenCLFilterDX9::InitDevice()
         }
 
         // Initialize the shared context
-        cl_context_properties props[] = { CL_CONTEXT_D3D9EX_DEVICE_INTEL, (cl_context_properties)pD3DDevice.get(), NULL};
+        cl_context_properties props[] =
+        {
+            CL_CONTEXT_D3D9EX_DEVICE_INTEL, (cl_context_properties)pD3DDevice.get(),
+            CL_CONTEXT_PLATFORM, (cl_context_properties)m_clplatform,
+            CL_CONTEXT_INTEROP_USER_SYNC, (cl_context_properties)CL_TRUE,
+            0
+        };
         m_clcontext = clCreateContext(props, 1, &m_cldevice, NULL, NULL, &error);
         if(error) {
             log.error() << "OpenCLFilter: clCreateContext failed. Error code: " << error << endl;
@@ -145,7 +150,7 @@ cl_int OpenCLFilterDX9::PrepareSharedSurfaces(int width, int height, mfxMemId pS
     HANDLE inputD3DSurfHandle = NULL;
     HANDLE outputD3DSurfHandle = NULL;
 
-#if 0
+#if 1
     directxMemId* pDxInSurfMemId = static_cast<directxMemId*>(pSurfIn);
     directxMemId* pDxOutSurfMemId = static_cast<directxMemId*>(pSurfOut);
 
@@ -196,6 +201,7 @@ cl_int OpenCLFilterDX9::PrepareSharedSurfaces(int width, int height, mfxMemId pS
                     log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
                     return error;
                 }
+
                 // Work sizes for Y plane
                 m_GlobalWorkSizeY[0] = m_currentWidth;
                 m_GlobalWorkSizeY[1] = m_currentHeight;
@@ -244,18 +250,18 @@ cl_int OpenCLFilterDX9::ProcessSurface()
                                     m_clbuffer[2],
                                     m_clbuffer[3]};
 
-            error = clEnqueueAcquireDX9ObjectsINTEL(m_clqueue,4,surfaces,0,NULL,NULL);
+            error = clEnqueueAcquireDX9ObjectsINTEL(m_clqueue, 4, surfaces, 0, NULL, NULL);
             if(error) {
                 log.error() << "clEnqueueAcquireDX9ObjectsINTEL failed. Error code: " << error << endl;
                 return error;
             }
 
-            // enqueue kernels
             error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelY, 2, NULL, m_GlobalWorkSizeY, m_LocalWorkSizeY, 0, NULL, NULL);
             if(error) {
                 log.error() << "clEnqueueNDRangeKernel for Y plane failed. Error code: " << error << endl;
                 return error;
             }
+
             error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelUV, 2, NULL, m_GlobalWorkSizeUV, m_LocalWorkSizeUV, 0, NULL, NULL);
             if(error) {
                 log.error() << "clEnqueueNDRangeKernel for UV plane failed. Error code: " << error << endl;

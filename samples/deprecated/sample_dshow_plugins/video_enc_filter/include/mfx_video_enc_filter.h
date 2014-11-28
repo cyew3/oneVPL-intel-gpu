@@ -215,9 +215,9 @@ public:
     virtual STDMETHODIMP SetSurfaceType(DXVA2_SurfaceType dwType);
 
 protected:
-    IDirect3D9*              m_pd3d;
+    IDirect3D9Ex*            m_pd3d;
     IDirect3DDeviceManager9* m_pd3dDeviceManager;
-    IDirect3DDevice9*        m_pd3dDevice;
+    IDirect3DDevice9Ex*      m_pd3dDevice;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(CVideoMemEncoderInputPin);

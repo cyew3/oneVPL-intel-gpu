@@ -99,8 +99,8 @@ protected:
     MyNamedMutex            m_Mutex;
     HRESULT                 m_mutCreateRes;
 
-    IDirect3D9*              m_pD3D;
-    IDirect3DDevice9*        m_pDevice;
+    IDirect3D9Ex*            m_pD3D;
+    IDirect3DDevice9Ex*      m_pDevice;
     IDirect3DDeviceManager9* m_pDeviceManager;
     D3DPRESENT_PARAMETERS    m_PresentParams;
     // External DXVA Device interface

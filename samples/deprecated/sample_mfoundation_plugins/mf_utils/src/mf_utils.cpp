@@ -1408,12 +1408,14 @@ HRESULT mf_test_createdevice(void)
 {
     MFX_AUTO_LTRACE_FUNC(MF_TL_PERF);
     HRESULT hr = E_FAIL;
-    IDirect3D9* pD3D = Direct3DCreate9(D3D_SDK_VERSION);
+
+    IDirect3D9Ex* pD3D;
+    Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3D);
 
     if (pD3D)
     {
         D3DPRESENT_PARAMETERS params;
-        IDirect3DDevice9* pDevice = NULL;
+        IDirect3DDevice9Ex* pDevice = NULL;
         POINT point = {0, 0};
         HWND  hWindow = 0;
 
@@ -1431,13 +1433,14 @@ HRESULT mf_test_createdevice(void)
         params.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
         params.PresentationInterval       = D3DPRESENT_INTERVAL_ONE;
 
-        hr = pD3D->CreateDevice(D3DADAPTER_DEFAULT,
+        hr = pD3D->CreateDeviceEx(D3DADAPTER_DEFAULT,
                                 D3DDEVTYPE_HAL,
                                 hWindow,
                                 D3DCREATE_SOFTWARE_VERTEXPROCESSING |
                                 D3DCREATE_FPU_PRESERVE |
                                 D3DCREATE_MULTITHREADED,
                                 &params,
+                                NULL,
                                 &pDevice);
 
         SAFE_RELEASE(pDevice);
