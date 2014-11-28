@@ -2126,7 +2126,7 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
         MFX_FOURCC_NV12 == m_inParams.InputCodecType ||
         MFX_FOURCC_YV12 == m_inParams.InputCodecType)
     {
-        if (m_components[eDEC].m_bFrameRateUnknown)
+        if ((0.0 == m_components[eDEC].m_fFrameRate) && !m_components[eDEC].m_bFrameRateUnknown)
             m_components[eDEC].m_fFrameRate = 30.0;
 
         //yuv decoder requires this information to be returned on decode header level
