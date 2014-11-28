@@ -188,7 +188,7 @@ void FrameQueue_Initialize(FrameQueue *pfq)
 void FrameQueue_Add(FrameQueue *pfq, Frame *pfrm)
 {
     FrameNode  *pfn = 0;
-    if(!pfq)
+    if(!pfq || !pfrm)
         return;
     pfn = (FrameNode *)malloc(sizeof(FrameNode));
     if(!pfn)

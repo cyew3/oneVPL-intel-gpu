@@ -346,7 +346,7 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 break;
         }
     }
-    else if(bEOS && !inSurfs.size() && ptir->Env.control.uiCur)
+    else if(bEOS && !inSurfs.size() && ptir->Env.control.uiCur && outSurfs.size() < 2)
     {
         if(!surface_out)
             surface_out = GetFreeSurf(workSurfs);

@@ -413,11 +413,12 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFram
             {
                 int result = -1;
                 CmDeviceEx& device = pdeinterlaceFilter->DeviceEx();
-                for(mfxU32 i = 0; i < BUFMINSIZE +1; ++i)
+                for(mfxU32 i = 0; i < BUFMINSIZE; ++i)
                 {
                     if(!static_cast<CmSurface2DEx*>(Env.frmBuffer[i]->outSurf)->pCmSurface2D)
                     {
-                        result = device->CreateSurface2D(_uiInWidth, _uiInHeight, CM_SURFACE_FORMAT_NV12, static_cast<CmSurface2DEx*>(Env.frmBuffer[i]->outSurf)->pCmSurface2D );
+                        static_cast<CmSurface2DEx*>(Env.frmBuffer[i]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
+                        //result = device->CreateSurface2D(_uiInWidth, _uiInHeight, CM_SURFACE_FORMAT_NV12, static_cast<CmSurface2DEx*>(Env.frmBuffer[i]->outSurf)->pCmSurface2D );
                         assert(0 != static_cast<CmSurface2DEx*>(Env.frmBuffer[i]->outSurf)->pCmSurface2D);
                     }
                     if(!static_cast<CmSurface2DEx*>(Env.frmBuffer[i]->inSurf)->pCmSurface2D)
