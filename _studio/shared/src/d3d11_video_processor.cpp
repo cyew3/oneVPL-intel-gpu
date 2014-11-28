@@ -300,7 +300,7 @@ mfxStatus D3D11VideoProcessor::Init(
 
         m_pVideoProcessor->GetContentDesc(&descr);
 
-#ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
         char cStr[512];
 
         sprintf_s(cStr, "DESCRIPTION\n\
@@ -340,7 +340,7 @@ mfxStatus D3D11VideoProcessor::Init(
             m_caps.m_advancedDIEnable = true;
         }
 
-#ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
         char cStr[256];
 
         sprintf_s(cStr, "   RATE CONV CAPS\n\
@@ -426,8 +426,6 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
     CHECK_HRES(hRes);
 
 #ifdef DEBUG_DETAIL_INFO
-#ifndef MSDK_BANNED
-
     for (mfxU16 guidIdx = 0; guidIdx < guidEnum.GuidCount; guidIdx++)
     {
         VPE_GUID_INFO *pGuidInfo = &guidEnum.pGuidArray[guidIdx];
@@ -442,7 +440,6 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
     }
     printf("\n");
 #endif
-#endif
 
     bool isVer2Enable = false;
     mfxU16 idxVer2 = 0;
@@ -454,10 +451,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         VPE_GUID_INFO *pGuidInfo = &guidEnum.pGuidArray[guidIdx];
 
 #ifdef DEBUG_DETAIL_INFO
-#ifndef MSDK_BANNED
         printf("GUID[%d] = ", guidIdx);
         printGuid(pGuidInfo->Guid);
-#endif
 #endif
 
         if(VPE_GUID_INTERFACE_V1 == pGuidInfo->Guid)
@@ -473,7 +468,6 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         }
 
 #ifdef DEBUG_DETAIL_INFO
-#ifndef MSDK_BANNED
         for(mfxU16 verIdx = 0; verIdx < pGuidInfo->VersionCount; verIdx++)
         {
             printf("\n\tVersion = %04x\n", pGuidInfo->pVersion[verIdx]);
@@ -483,7 +477,6 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
              printf("\n\tVersion = N/A\n");
         }
         printf("\n");
-#endif
 #endif
     }
 
@@ -525,7 +518,6 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         CHECK_HRES(hRes);
 
 #ifdef DEBUG_DETAIL_INFO
-#ifndef MSDK_BANNED
         printf("Success: get preproc caps\n");
 
         printf("bInterlacedScaling  = [%d]\n", m_vpreCaps.bInterlacedScaling);
@@ -534,7 +526,6 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         printf("bIS                 = [%d]\n", m_vpreCaps.bIS);
         printf("bVariance           = [%d]\n", m_vpreCaps.bVariance);
         printf("bFieldWeavingControl= [%d]\n", m_vpreCaps.bFieldWeavingControl);
-#endif
 #endif
     }
     else //if( VPE_GUID_INTERFACE_V2  == m_iface.guid )
@@ -590,7 +581,6 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         m_vpreCaps.bFieldWeavingControl = vpeCaps.bFieldWeavingControl;
         m_vpreCaps.bVariance            = vpeCaps.bVariances;
 #ifdef DEBUG_DETAIL_INFO
-#ifndef MSDK_BANNED
         printf("Success: VPE VPREP CAPS\n");
 
         printf("bImageStabilization  = [%d]\n", vpeCaps.bImageStabilization);
@@ -603,8 +593,6 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
 
         // to prevent any issues (HLD not completed yet on VPG side)
         //m_vpreCaps.bVariance = 0;
-
-#endif
 #endif
     }
 
@@ -700,7 +688,7 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
     CHECK_HRES(hRes);
 
     {
-#ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
         char cStr[256];
 
         sprintf_s(cStr, "D3D11_VIDEO_PROCESSOR_DEVICE_CAPS:\n");
@@ -722,7 +710,7 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
             hRes = m_pVideoProcessorEnum->GetVideoProcessorFilterRange(D3D11_VIDEO_PROCESSOR_FILTER_BRIGHTNESS, &range);
             CHECK_HRES(hRes);
 
-#ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
             sprintf_s(cStr, "\tD3D11_VIDEO_PROCESSOR_FILTER_CAPS_BRIGHTNESS: %d - %d, %d, %f\n", range.Minimum, range.Maximum, range.Default, range.Multiplier);
             OutputDebugStringA(cStr);
 #endif
@@ -736,7 +724,7 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
             hRes = m_pVideoProcessorEnum->GetVideoProcessorFilterRange(D3D11_VIDEO_PROCESSOR_FILTER_CONTRAST, &range);
             CHECK_HRES(hRes);
 
-#ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
             sprintf_s(cStr, "\tD3D11_VIDEO_PROCESSOR_FILTER_CAPS_CONTRAST: %d - %d, %d, %f\n", range.Minimum, range.Maximum, range.Default, range.Multiplier);
             OutputDebugStringA(cStr);
 #endif
@@ -750,7 +738,7 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
             hRes = m_pVideoProcessorEnum->GetVideoProcessorFilterRange(D3D11_VIDEO_PROCESSOR_FILTER_HUE, &range);
             CHECK_HRES(hRes);
 
-#ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
             sprintf_s(cStr, "\tD3D11_VIDEO_PROCESSOR_FILTER_CAPS_HUE: %d - %d, %d, %f\n", range.Minimum, range.Maximum, range.Default, range.Multiplier);
             OutputDebugStringA(cStr);
 #endif
@@ -764,7 +752,7 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
             hRes = m_pVideoProcessorEnum->GetVideoProcessorFilterRange(D3D11_VIDEO_PROCESSOR_FILTER_SATURATION, &range);
             CHECK_HRES(hRes);
 
-#ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
             sprintf_s(cStr, "\tD3D11_VIDEO_PROCESSOR_FILTER_CAPS_SATURATION: %d - %d, %d, %f\n", range.Minimum, range.Maximum, range.Default, range.Multiplier);
             OutputDebugStringA(cStr);
 #endif
@@ -778,7 +766,7 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
             hRes = m_pVideoProcessorEnum->GetVideoProcessorFilterRange(D3D11_VIDEO_PROCESSOR_FILTER_NOISE_REDUCTION, &range);
             CHECK_HRES(hRes);
 
-#ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
             sprintf_s(cStr, "\tD3D11_VIDEO_PROCESSOR_FILTER_CAPS_NOISE_REDUCTION: %d - %d, %d, %f\n", range.Minimum, range.Maximum, range.Default, range.Multiplier);
             OutputDebugStringA(cStr);
 #endif
@@ -792,7 +780,7 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
             hRes = m_pVideoProcessorEnum->GetVideoProcessorFilterRange(D3D11_VIDEO_PROCESSOR_FILTER_EDGE_ENHANCEMENT, &range);
             CHECK_HRES(hRes);
 
-#ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
             sprintf_s(cStr, "\tD3D11_VIDEO_PROCESSOR_FILTER_CAPS_EDGE_ENHANCEMENT: %d - %d, %d, %f\n", range.Minimum, range.Maximum, range.Default, range.Multiplier);
             OutputDebugStringA(cStr);
 #endif
@@ -808,7 +796,7 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
         hRes = m_pVideoProcessorEnum->GetVideoProcessorRateConversionCaps(rateIndx, &videoProcessorRateConvCaps);
         CHECK_HRES(hRes);
 
-#ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
         char cStr[256];
         sprintf_s(cStr, "D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS:\n");
         OutputDebugStringA(cStr);
@@ -858,7 +846,7 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
             hRes = m_pVideoProcessorEnum->CheckVideoProcessorFormat(queryFormats[i], &flag);
             CHECK_HRES(hRes);
 
-#ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
             char cStr[128];
 
             if (D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT & flag)
