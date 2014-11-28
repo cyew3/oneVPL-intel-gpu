@@ -508,12 +508,17 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     {
         pPicParam->num_tile_columns_minus1                          = (UCHAR)pPicParamSet->num_tile_columns - 1;
         pPicParam->num_tile_rows_minus1                             = (UCHAR)pPicParamSet->num_tile_rows - 1;
-        for (Ipp32u i = 0; i < pPicParamSet->num_tile_columns; i++)
+
+        pPicParam->num_tile_columns_minus1 = IPP_MIN(sizeof(pPicParam->column_width_minus1)/sizeof(pPicParam->column_width_minus1[0]) - 1, pPicParam->num_tile_columns_minus1);
+        pPicParam->num_tile_rows_minus1 = IPP_MIN(sizeof(pPicParam->row_height_minus1)/sizeof(pPicParam->row_height_minus1[0]) - 1, pPicParam->num_tile_rows_minus1);
+
+        for (Ipp32u i = 0; i <= pPicParam->num_tile_columns_minus1; i++)
             pPicParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
 
-        for (Ipp32u i = 0; i < pPicParamSet->num_tile_rows; i++)
+        for (Ipp32u i = 0; i <= pPicParam->num_tile_rows_minus1; i++)
             pPicParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
     }
+
     pPicParam->diff_cu_qp_delta_depth                               = (UCHAR)(pPicParamSet->diff_cu_qp_delta_depth);
     pPicParam->pps_beta_offset_div2                                 = (CHAR)(pPicParamSet->pps_beta_offset >> 1);
     pPicParam->pps_tc_offset_div2                                   = (CHAR)(pPicParamSet->pps_tc_offset >> 1);  
@@ -892,12 +897,15 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
         pPicParam->num_tile_columns_minus1                          = (UCHAR)pPicParamSet->num_tile_columns - 1;
         pPicParam->num_tile_rows_minus1                             = (UCHAR)pPicParamSet->num_tile_rows - 1;
 
+        pPicParam->num_tile_columns_minus1 = IPP_MIN(sizeof(pPicParam->column_width_minus1)/sizeof(pPicParam->column_width_minus1[0]) - 1, pPicParam->num_tile_columns_minus1);
+        pPicParam->num_tile_rows_minus1 = IPP_MIN(sizeof(pPicParam->row_height_minus1)/sizeof(pPicParam->row_height_minus1[0]) - 1, pPicParam->num_tile_rows_minus1);
+
         //if (!pPicParamSet->uniform_spacing_flag)
         {
-            for (Ipp32u i = 0; i < pPicParamSet->num_tile_columns; i++)
+            for (Ipp32u i = 0; i <= pPicParam->num_tile_columns_minus1; i++)
                 pPicParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
 
-            for (Ipp32u i = 0; i < pPicParamSet->num_tile_rows; i++)
+            for (Ipp32u i = 0; i <= pPicParam->num_tile_rows_minus1; i++)
                 pPicParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
         }
     }
@@ -1202,10 +1210,14 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
     {
         picParam->num_tile_columns_minus1 = (uint8_t)(pPicParamSet->num_tile_columns - 1);
         picParam->num_tile_rows_minus1 = (uint8_t)(pPicParamSet->num_tile_rows - 1);
-        for (Ipp32u i = 0; i < pPicParamSet->num_tile_columns; i++)
+
+        picParam->num_tile_columns_minus1 = IPP_MIN(sizeof(picParam->column_width_minus1)/sizeof(picParam->column_width_minus1[0]) - 1, picParam->num_tile_columns_minus1);
+        picParam->num_tile_rows_minus1 = IPP_MIN(sizeof(picParam->row_height_minus1)/sizeof(picParam->row_height_minus1[0]) - 1, picParam->num_tile_rows_minus1);
+
+        for (Ipp32u i = 0; i <= picParam->num_tile_columns_minus1; i++)
             picParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
 
-        for (Ipp32u i = 0; i < pPicParamSet->num_tile_rows; i++)
+        for (Ipp32u i = 0; i <= picParam->num_tile_rows_minus1; i++)
             picParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
     }
     

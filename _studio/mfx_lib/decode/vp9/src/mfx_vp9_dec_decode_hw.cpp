@@ -72,7 +72,7 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (!CheckHardwareSupport(m_core, par))
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        return MFX_ERR_UNSUPPORTED;
 
     if (!MFX_VP9_Utility::CheckVideoParam(par, type))
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -170,9 +170,17 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
 
     m_vInitPar = *par;
 
-    if (false == CheckHardwareSupport(m_core, par))
+    if (0 == m_vInitPar.mfx.FrameInfo.FrameRateExtN || 0 == m_vInitPar.mfx.FrameInfo.FrameRateExtD)
     {
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        m_vInitPar.mfx.FrameInfo.FrameRateExtD = 1000;
+        m_vInitPar.mfx.FrameInfo.FrameRateExtN = 30000;
+    }
+
+    m_in_framerate = (mfxF64) m_vInitPar.mfx.FrameInfo.FrameRateExtD / m_vInitPar.mfx.FrameInfo.FrameRateExtN;
+
+    if (!CheckHardwareSupport(m_core, par))
+    {
+        return MFX_ERR_UNSUPPORTED;
     }
 
     return MFX_ERR_NONE;
@@ -360,11 +368,11 @@ mfxStatus VideoDECODEVP9_HW::GetVideoParam(mfxVideoParam *par)
 
     MFX_CHECK_NULL_PTR1(par);
 
-    par->mfx = m_vPar.mfx;
+    par->mfx = m_vInitPar.mfx;
 
-    par->Protected = m_vPar.Protected;
-    par->IOPattern = m_vPar.IOPattern;
-    par->AsyncDepth = m_vPar.AsyncDepth;
+    par->Protected = m_vInitPar.Protected;
+    par->IOPattern = m_vInitPar.IOPattern;
+    par->AsyncDepth = m_vInitPar.AsyncDepth;
 
     par->mfx.FrameInfo.FrameRateExtD = m_vInitPar.mfx.FrameInfo.FrameRateExtD;
     par->mfx.FrameInfo.FrameRateExtN = m_vInitPar.mfx.FrameInfo.FrameRateExtN;
@@ -590,7 +598,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         sts = GetOutputSurface(surface_out, surface_work, m_frameInfo.currFrame);
         MFX_CHECK_STS(sts);
 
-        (*surface_out)->Data.TimeStamp = bs->TimeStamp;
+        (*surface_out)->Data.TimeStamp = bs->TimeStamp != MFX_TIMESTAMP_UNKNOWN? bs->TimeStamp : GetMfxTimeStamp(m_frameOrder * m_in_framerate);;
         (*surface_out)->Data.Corrupted = 0;
         (*surface_out)->Data.FrameOrder = m_frameOrder;
 
