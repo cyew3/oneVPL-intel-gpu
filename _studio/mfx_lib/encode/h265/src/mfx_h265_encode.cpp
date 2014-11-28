@@ -1131,8 +1131,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxParam.mfx.BufferSizeInKB = par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height * 3 / 2000 + 1; // uncompressed
 
     if (!m_mfxParam.mfx.NumSlice) m_mfxParam.mfx.NumSlice = 1;
-    if (m_mfxHEVCOpts.SAO == MFX_CODINGOPTION_ON && m_mfxParam.mfx.NumSlice > 1)
-        m_mfxHEVCOpts.SAO = MFX_CODINGOPTION_OFF; // switch off SAO for now, because of inter-slice deblocking
+
     if (m_mfxParam.mfx.NumSlice > 1) {
         m_mfxHevcTiles.NumTileColumns = m_mfxHevcTiles.NumTileRows = 1;
     }
@@ -2196,11 +2195,6 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                     opts_out->PartModes = 0;
                     isInvalid ++;
                 } else opts_out->PartModes = opts_in->PartModes;
-
-                if (opts_out->SAO == MFX_CODINGOPTION_ON && in->mfx.NumSlice > 1) { // switch off SAO for now, because of inter-slice deblocking
-                    opts_out->SAO = MFX_CODINGOPTION_OFF;
-                    isCorrected++;
-                }
 
                 if (opts_in->SplitThresholdStrengthCUIntra > 4) {
                     opts_out->SplitThresholdStrengthCUIntra = 0;

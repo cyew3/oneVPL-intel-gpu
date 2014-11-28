@@ -1746,6 +1746,20 @@ mfxStatus H265FrameEncoder::ApplySaoCtuRange(Ipp32u ctuStart, Ipp32u ctuEnd)
 
             roiSize.width = tile_border_right - tile_border_left;
             roiSize.height = tile_border_bottom - tile_border_top;
+        } else if (m_videoParam.NumSlices > 1) {
+            Ipp32s slice_id = m_videoParam.m_slice_ids[ctu];
+            regionCtbColFirst = 0;
+            regionCtbColLast = m_videoParam.PicWidthInCtbs - 1;
+            regionCtbRowFirst = m_task->m_slices[slice_id].row_first;
+            regionCtbRowLast = m_task->m_slices[slice_id].row_last;
+
+            Ipp32u border_top = regionCtbRowFirst << m_videoParam.Log2MaxCUSize;
+            Ipp32u border_bottom = (regionCtbRowLast + 1) << m_videoParam.Log2MaxCUSize;
+            if (border_bottom > m_videoParam.Height)
+                border_bottom = m_videoParam.Height;
+
+            roiSize.width = m_videoParam.Width;
+            roiSize.height = border_bottom - border_top;
         } else {
             regionCtbColFirst = regionCtbRowFirst = 0;
             regionCtbColLast = m_videoParam.PicWidthInCtbs - 1;
