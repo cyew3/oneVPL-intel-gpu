@@ -65,6 +65,7 @@ const int TFF2TFF = 0x0;
 const int TFF2BFF = 0x1;
 const int BFF2TFF = 0x2;
 const int BFF2BFF = 0x3;
+const int FRAME2FRAME = 0x16;
 ////////////////////////////////////////////////////////////////////////////////////
 // Utils
 ////////////////////////////////////////////////////////////////////////////////////
@@ -2220,7 +2221,7 @@ mfxStatus VideoVPPHW::ProcessFieldCopy(std::vector<ExtSurface> & surfQueue /* IN
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
-#endif
+#endif /* #if  defined(MFX_VA)*/
 
 mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 {
@@ -2260,10 +2261,78 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     }
 
     /* in VPP Field Copy mode we just copy field only and ignore driver call!!! */
+    mfxU32 imfxFPMode = 0xffffffff;
+    mfxExtVPPFieldProcessing *vppFieldProcessingParams = NULL;
     if (m_executeParams.iFieldProcessingMode != 0)
     {
-        sts = ProcessFieldCopy(surfQueue, pTask->output, m_executeParams.iFieldProcessingMode); // "-1" to get valid Sergey Osipov's kernel values is done internally
+        mfxFrameSurface1 * pInputSurface = surfQueue[0].pSurf;
+        /* Mean filter was configured as DOUSE, but no ExtBuf in VPP Init()
+         * And ... no any parameters in runtime. This is an error! */
+
+        if ((m_executeParams.iFieldProcessingMode == 0xffffffff) && (pInputSurface->Data.NumExtParam == 0))
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+
+        /* And one more check... If there is no ExtBuffer in RunTime we can use value from Init()*/
+        if ((pInputSurface->Data.NumExtParam == 0) || (pInputSurface->Data.ExtParam == NULL))
+        {
+            imfxFPMode = m_executeParams.iFieldProcessingMode;
+        }
+        else /* So on looks like ExtBuf is present in runtime */
+        {
+            /* So on, we skip m_executeParams.iFieldProcessingMode from Init() */
+            for ( mfxU32 jj = 0; jj < pInputSurface->Data.NumExtParam; jj++ )
+            {
+                if ( (pInputSurface->Data.ExtParam[jj]->BufferId == MFX_EXTBUFF_VPP_FIELD_PROCESSING) &&
+                     (pInputSurface->Data.ExtParam[jj]->BufferSz == sizeof(mfxExtVPPFieldProcessing)) )
+                   {
+                    vppFieldProcessingParams = (mfxExtVPPFieldProcessing *)(pInputSurface->Data.ExtParam[jj]);
+                   }
+            }
+            if (vppFieldProcessingParams->Mode == MFX_VPP_COPY_FIELD)
+            {
+                if(vppFieldProcessingParams->InField ==  MFX_PICSTRUCT_FIELD_TFF)
+                {
+                    imfxFPMode =
+                            (vppFieldProcessingParams->OutField == MFX_PICSTRUCT_FIELD_TFF) ? TFF2TFF : TFF2BFF;
+                } else
+                {
+                    imfxFPMode =
+                            (vppFieldProcessingParams->OutField == MFX_PICSTRUCT_FIELD_TFF) ? BFF2TFF : BFF2BFF;
+                }
+            } /* if (vppFieldProcessingParams->Mode == MFX_VPP_COPY_FIELD)*/
+
+            if (vppFieldProcessingParams->Mode == MFX_VPP_COPY_FRAME)
+            {
+                imfxFPMode = FRAME2FRAME;
+            }
+
+            // "-1" to get valid Sergey Osipov's kernel values is done internally
+            // aya, al : !!! Sergey Osipov's kernel uses "0"  as a "valid" data, but HW_VPP doesn't
+            // to prevent issue we increment here and decrement before kernel call
+            imfxFPMode++;
+        } // if ((pInputSurface->Data.NumExtParam == 0) || (pInputSurface->Data.ExtParam == NULL))
+    }
+
+    if ((m_executeParams.iFieldProcessingMode != 0) && /* If Mode is enabled*/
+        ((imfxFPMode - 1) != FRAME2FRAME)) /* And we don't do copy frame to frame lets call our FieldCopy*/
+    /* And remember our previous line imfxFPMode++;*/
+    {
+        sts = PreWorkOutSurface(pTask->output);
+        MFX_CHECK_STS(sts);
+
+        sts = PreWorkInputSurface(surfQueue);
+        MFX_CHECK_STS(sts);
+
+        sts = ProcessFieldCopy(surfQueue, pTask->output, imfxFPMode);
         m_executeParams.pRefSurfaces = &m_executeSurf[0];
+
+        sts = PostWorkOutSurface(pTask->output);
+        MFX_CHECK_STS(sts);
+
+        sts = PostWorkInputSurface(numSamples);
+        MFX_CHECK_STS(sts);
 
         m_executeParams.targetSurface.memId = pTask->output.pSurf->Data.MemId;
         m_executeParams.statusReportID = pTask->taskIndex;
@@ -2874,25 +2943,39 @@ mfxStatus ConfigureExecuteParams(
             }
             case MFX_EXTBUFF_VPP_FIELD_PROCESSING:
             {
-                for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+                /* As this filter for now can be configured via DOUSE way */
                 {
-                    if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_FIELD_PROCESSING)
+                    executeParams.iFieldProcessingMode = 0xffffffff;
+                }
+                for (mfxU32 jj = 0; jj < videoParam.NumExtParam; jj++)
+                {
+                    if (videoParam.ExtParam[jj]->BufferId == MFX_EXTBUFF_VPP_FIELD_PROCESSING)
                     {
-                        mfxExtVPPFieldProcessing* extFP = (mfxExtVPPFieldProcessing*) videoParam.ExtParam[i];
+                        mfxExtVPPFieldProcessing* extFP = (mfxExtVPPFieldProcessing*) videoParam.ExtParam[jj];
                         // aya: quick fix for CM
                         /*const int TFF2TFF = 0x0;
                         const int TFF2BFF = 0x1;
                         const int BFF2TFF = 0x2;
                         const int BFF2BFF = 0x3;*/
                         
-                        if(extFP->InField ==  MFX_PICSTRUCT_FIELD_TFF) {
-                            executeParams.iFieldProcessingMode = (extFP->OutField == MFX_PICSTRUCT_FIELD_TFF) ? TFF2TFF : TFF2BFF;
-                        } else {
-                            executeParams.iFieldProcessingMode = (extFP->OutField == MFX_PICSTRUCT_FIELD_TFF) ? BFF2TFF : BFF2BFF;
+                        if (extFP->Mode == MFX_VPP_COPY_FRAME)
+                        {
+                            executeParams.iFieldProcessingMode = FRAME2FRAME;
                         }
 
+                        if (extFP->Mode == MFX_VPP_COPY_FIELD)
+                        {
+                            if(extFP->InField ==  MFX_PICSTRUCT_FIELD_TFF)
+                            {
+                                executeParams.iFieldProcessingMode = (extFP->OutField == MFX_PICSTRUCT_FIELD_TFF) ? TFF2TFF : TFF2BFF;
+                            }
+                            else
+                            {
+                                executeParams.iFieldProcessingMode = (extFP->OutField == MFX_PICSTRUCT_FIELD_TFF) ? BFF2TFF : BFF2BFF;
+                            }
+                        }
 
-                        // aya: !!! Sergey Osipov's kernel uses "0"  as a "valid" data, but HW_VPP doesn't
+                        // aya, al: !!! Sergey Osipov's kernel uses "0"  as a "valid" data, but HW_VPP doesn't
                         // to prevent issue we increment here and decrement before kernel call
                         executeParams.iFieldProcessingMode++;
                     }
