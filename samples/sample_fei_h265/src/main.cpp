@@ -21,7 +21,9 @@
 
 static void Usage(void)
 {
-    printf("Usage: sample_fei.exe -i sourceFile.yuv [options]\n\n");
+    msdk_printf(MSDK_STRING("HEVC GPU Assist APIs Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+
+    printf("Usage: sample_fei_h265 -i sourceFile.yuv [options]\n\n");
     printf("Options:\n");
     printf("   -i sourceFile.yuv   uncompressed input file (8-bit YUV420)\n");
     printf("   -r reconFile.yuv    reconstructed frames (optional - if not provided use source as recon)\n");
@@ -33,8 +35,8 @@ static void Usage(void)
     printf("   -m MPMode           motion partitioning mode (1 = square only, 2 = symmetric partitions, 3 = any)\n");
     printf("   -y                  write output to text files\n");
     printf("\nExamples:\n");
-    printf(">> sample_h265_fei.exe -i sourceFile.yuv -w 1280 -h 720 -n 50\n");
-    printf(">> sample_h265_fei.exe -i sourceFile.yuv -r reconFile.yuv -p params.txt\n");
+    printf(">> sample_h265_fei -i sourceFile.yuv -w 1280 -h 720 -n 50\n");
+    printf(">> sample_h265_fei -i sourceFile.yuv -r reconFile.yuv -p params.txt\n");
     exit(-1);
 }
 
@@ -223,6 +225,9 @@ int main(int argc, char **argv)
 
         if (LoadFrame(sp.SourceFile, sp.Width, sp.Height, sp.PaddedWidth, sp.PaddedHeight, fi.PicOrder, srcFrame))
             break;
+
+        /* clear state from last frame */
+        memset(&pi, 0, sizeof(ProcessInfo));
 
         /* intra processing */
         pi.FEIOp = (MFX_FEI_H265_OP_INTRA_MODE | MFX_FEI_H265_OP_INTRA_DIST);

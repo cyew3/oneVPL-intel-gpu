@@ -96,8 +96,8 @@ mfxStatus CH265FEI::Init(SampleParams *sp)
     m_mfxExtParams.Header.BufferId = MFX_EXTBUFF_FEI_H265_PARAM;
     m_mfxExtParams.Header.BufferSz = sizeof(m_mfxExtParams);
 
-    m_mfxParams.mfx.FrameInfo.Width  = sp->Width;
-    m_mfxParams.mfx.FrameInfo.Height = sp->Height;
+    m_mfxParams.mfx.FrameInfo.Width  = sp->PaddedWidth;
+    m_mfxParams.mfx.FrameInfo.Height = sp->PaddedHeight;
     m_mfxParams.mfx.NumRefFrame      = sp->NumRefFrames;
 
     m_mfxExtParams.MaxCUSize     = sp->MaxCUSize;
