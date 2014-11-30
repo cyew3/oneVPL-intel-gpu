@@ -38,7 +38,7 @@ static FILE *outfileInterMV = 0;
 static FILE *outfileInterDist = 0;
 static FILE *outfileInterpolate[3] = { 0 };
 
-static unsigned char bwBuf[2048];
+static unsigned char bwBuf[4096];
 
 void InitOutputFiles(mfxFEIH265Param *param)
 {
@@ -50,12 +50,12 @@ void InitOutputFiles(mfxFEIH265Param *param)
         return;
     }
 
-    fprintf(outfileParams, "Width=%d\n",         param->Width);
-    fprintf(outfileParams, "Height=%d\n",        param->Height);
-    fprintf(outfileParams, "MaxCUSize=%d\n",     param->MaxCUSize);
-    fprintf(outfileParams, "MPMode=%d\n",        param->MPMode);
-    fprintf(outfileParams, "NumRefFrames=%d\n",  param->NumRefFrames);
-    fprintf(outfileParams, "NumIntraModes=%d\n", param->NumIntraModes);
+    fprintf(outfileParams, "Width=%u\n",         param->Width);
+    fprintf(outfileParams, "Height=%u\n",        param->Height);
+    fprintf(outfileParams, "MaxCUSize=%u\n",     param->MaxCUSize);
+    fprintf(outfileParams, "MPMode=%u\n",        param->MPMode);
+    fprintf(outfileParams, "NumRefFrames=%u\n",  param->NumRefFrames);
+    fprintf(outfileParams, "NumIntraModes=%u\n", param->NumIntraModes);
     fprintf(outfileParams, "\n");
 
     outfileIntraDist = fopen(fileNameIntraDist, "wt");
@@ -198,9 +198,6 @@ void WriteFrameIntraDist(mfxFEIH265Output *feiOut)
 
 }
 
-/* TEMP - 16x32 and 32x16 currently disabled */
-#define DISABLE_NONSQUARE
-
 void WriteFrameInterLarge(mfxFEIH265Output *feiOut, int refIdx, int blockSize)
 {
     int x, y, w, h, i;
@@ -213,7 +210,6 @@ void WriteFrameInterLarge(mfxFEIH265Output *feiOut, int refIdx, int blockSize)
         w = 32;
         h = 32;
         break;
-#ifndef DISABLE_NONSQUARE
     case MFX_FEI_H265_BLK_32x16:
         w = 32;
         h = 16;
@@ -222,7 +218,6 @@ void WriteFrameInterLarge(mfxFEIH265Output *feiOut, int refIdx, int blockSize)
         w = 16;
         h = 32;
         break;
-#endif
     default:
         w = 0;
         h = 0;
@@ -274,6 +269,14 @@ void WriteFrameInterSmall(mfxFEIH265Output *feiOut, int refIdx, int blockSize)
     case MFX_FEI_H265_BLK_8x8:
         w = 8;
         h = 8;
+        break;
+    case MFX_FEI_H265_BLK_16x8:
+        w = 16;
+        h = 8;
+        break;
+    case MFX_FEI_H265_BLK_8x16:
+        w = 8;
+        h = 16;
         break;
     }
 
@@ -541,6 +544,12 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
             for (i = 0; i < sliceIn->num_ref_idx[0] + sliceIn->num_ref_idx[1]; i++) {
                 WriteFrameInterSmall(feiH265Out, i, MFX_FEI_H265_BLK_8x8);
                 WriteFrameInterSmall(feiH265Out, i, MFX_FEI_H265_BLK_16x16);
+
+                /* non-square blocks enabled */
+                if (m_feiParam.MPMode > 1) {
+                    WriteFrameInterSmall(feiH265Out, i, MFX_FEI_H265_BLK_8x16);
+                    WriteFrameInterSmall(feiH265Out, i, MFX_FEI_H265_BLK_16x8);
+                }
 
                 /* large blocks enabled */
                 if (m_feiParam.MaxCUSize >= 32)

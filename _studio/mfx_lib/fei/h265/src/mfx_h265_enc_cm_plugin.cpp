@@ -51,6 +51,15 @@ mfxStatus VideoENC_H265FEI::Init(mfxVideoParam *par)
     m_feiH265Param.MPMode        = pParams->MPMode;
     m_feiH265Param.NumIntraModes = pParams->NumIntraModes;
 
+    /* validate parameters - update these limits as necessary in future versions */
+    MFX_CHECK ((m_feiH265Param.Width > 0)         && (m_feiH265Param.Height > 0),     MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK ((m_feiH265Param.Width <= 4088)     && (m_feiH265Param.Height) <= 4088, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK ((m_feiH265Param.Width & 0x0f) == 0 && (m_feiH265Param.Height & 0x0f) == 0, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK ((m_feiH265Param.NumRefFrames >= 0) && (m_feiH265Param.NumRefFrames <= MFX_FEI_H265_MAX_NUM_REF_FRAMES), MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK ((m_feiH265Param.MaxCUSize == 16)   || (m_feiH265Param.MaxCUSize == 32), MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK ((m_feiH265Param.MPMode >= 1)       && (m_feiH265Param.MPMode <= 3), MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK ((m_feiH265Param.NumIntraModes == 1), MFX_ERR_INVALID_VIDEO_PARAM);
+
     /* initialize FEI library */
     err = H265FEI_Init(&m_feiH265, &m_feiH265Param, m_core);
     if (err) {

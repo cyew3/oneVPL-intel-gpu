@@ -588,7 +588,7 @@ void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurfac
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Me32");
         mfxI32 rectParts = 0;
-#if defined (AS_H265FEI_PLUGIN)
+#if defined (AS_H265FEI_PLUGIN) || defined (SAVE_FEI_STATE)
         rectParts = 1;  // to enable 16x32 and 32x16
 #endif  // (AS_H265FEI_PLUGIN)
         SetKernelArg(kernelMe32, me2xControl, *refs2x, mv[MFX_FEI_H265_BLK_64x64], mv[MFX_FEI_H265_BLK_32x32],
@@ -622,7 +622,7 @@ void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurfac
         /* always estimate 4x8, 8x4, ... 16x16 */
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Me16");
         mfxI32 rectParts = 0;
-#if defined (AS_H265FEI_PLUGIN)
+#if defined (AS_H265FEI_PLUGIN) || defined (SAVE_FEI_STATE)
         rectParts = 1;  // to enable 16x8 and 8x16
 #endif  // (AS_H265FEI_PLUGIN)
         SetKernelArg(kernelMe16, me1xControl, *refs, mv[MFX_FEI_H265_BLK_32x32], dist[MFX_FEI_H265_BLK_16x16], dist[MFX_FEI_H265_BLK_16x8], dist[MFX_FEI_H265_BLK_8x16],
