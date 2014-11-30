@@ -260,7 +260,7 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
     {
         CommonCORE* pCommonCore = NULL;
 
-        bool isFieldProcessing = IsFilterFound(&m_pipelineList[0], m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_PROCESSING);
+        bool isFieldProcessing = IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_PROCESSING);
         
         pCommonCore = QueryCoreInterface<CommonCORE>(m_core, isFieldProcessing ? MFXICORECM_GUID : MFXIVideoCORE_GUID);
         MFX_CHECK(pCommonCore, MFX_ERR_UNDEFINED_BEHAVIOR);
