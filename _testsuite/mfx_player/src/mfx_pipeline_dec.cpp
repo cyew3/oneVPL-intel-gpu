@@ -1411,7 +1411,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         m_inParams.FrameInfo.PicStruct = m_components[eVPP].m_nOverPS;
     }
 
-    if (m_components[eDEC].m_bFrameRateUnknown)//not initialized from cmdline
+    if ((0.0 == m_components[eDEC].m_fFrameRate) && !m_components[eDEC].m_bFrameRateUnknown)
     {
         m_components[eDEC].m_fFrameRate = (mfxF64)info.FrameRateExtN / (mfxF64)info.FrameRateExtD;
     }
