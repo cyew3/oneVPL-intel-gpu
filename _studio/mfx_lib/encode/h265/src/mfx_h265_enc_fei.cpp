@@ -510,6 +510,11 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
                 if (!prevFrameDone && (frameRef->m_encOrder == feiFrame->EncOrder - 1) )
                     continue;
 
+                if (frameIn->m_mapRefIdxL1ToL0[refIdxB] >= 0) {
+                    // refFrame from L0 will be used (e.g. in GPB mode)
+                    continue;
+                }
+
                 feiFrame->RefEncOrder[1][refIdxB] = frameRef->m_encOrder;
 
                 if (feiFrame->RefDone[1][refIdxB] == 0) {

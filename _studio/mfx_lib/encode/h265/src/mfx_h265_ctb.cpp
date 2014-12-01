@@ -7774,10 +7774,20 @@ bool H265CU<PixType>::CheckGpuIntraCost(Ipp32s absPartIdx, Ipp32s depth) const
                     cmIntraCost += intraDistLine[i].Dist;
 
                     mfxU32 cmInterCost16x16 = IPP_MAX_32U;
-                    for (Ipp8s refIdx = 0; refIdx < m_cslice->num_ref_idx[0]; refIdx++) {
+                    for (Ipp8s refIdx = 0; refIdx < m_cslice->num_ref_idx[refList]; refIdx++) {
 
-                        // refIdxes from L0 and L1 are in common array
-                        Ipp8s feiRefIdx = refList * m_cslice->num_ref_idx[0] + refIdx;
+                        Ipp8s feiRefIdx = refIdx;
+
+                        /* use m_mapRefIdxL1ToL0 if L0 ref is in L1 (e.g. in case of GPB) */
+                        if (refList == 1) {
+                            Ipp32s idx0 = m_currFrame->m_mapRefIdxL1ToL0[refIdx];
+                            if (idx0 >= 0) {
+                                continue;   /* this cost was already checked in L0 */
+                            } else {
+                                /* refIdxes from L0 and L1 are in common array */
+                                feiRefIdx += m_cslice->num_ref_idx[0];
+                            }
+                        }
 
                         mfxU32 *dist16x16line = feiOut->Dist[feiRefIdx][MFX_FEI_H265_BLK_16x16] + (j        ) * feiOut->PitchDist[MFX_FEI_H265_BLK_16x16];
                         //mfxU32 *dist16x8line0 = feiOut->Dist[refList][refIdx][PU16x8]  + (j * 2    ) * feiOut->PitchDist[PU16x8];
