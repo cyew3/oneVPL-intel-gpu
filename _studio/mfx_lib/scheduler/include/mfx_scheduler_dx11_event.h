@@ -72,7 +72,7 @@ public:
 
             memset(&dec_ext, 0, sizeof(D3D11_VIDEO_DECODER_EXTENSION));
 
-            dec_ext.Function = 1;
+            dec_ext.Function = 5;
             dec_ext.ppResourceList = 0;
             dec_ext.PrivateInputDataSize = 0;
             dec_ext.pPrivateOutputData =  &m_event_handle;
