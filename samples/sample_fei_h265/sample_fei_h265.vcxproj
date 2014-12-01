@@ -92,7 +92,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\build\Win_$(Platform)\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libmfx_d.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -107,7 +107,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\build\Win_$(Platform)\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libmfx_d.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -126,7 +126,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\..\..\build\Win_$(Platform)\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libmfx.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -145,7 +145,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\..\..\build\Win_$(Platform)\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libmfx.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
