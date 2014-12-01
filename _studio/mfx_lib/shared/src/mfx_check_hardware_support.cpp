@@ -74,6 +74,8 @@ typedef enum {
     IGFX_BROXTON,
     IGFX_CANNONLAKE,
     IGFX_GENNEXT,
+    IGFX_SOFIA_LTE1 = 1001,
+    IGFX_SOFIA_LTE2 = 1002,
     PRODUCT_FAMILY_FORCE_ULONG = 0x7fffffff
 } PRODUCT_FAMILY;
 
@@ -109,6 +111,10 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_CNL;
     case IGFX_GT:
         return MFX_HW_IVB; // sandybridge
+
+    case IGFX_SOFIA_LTE1:
+    case IGFX_SOFIA_LTE2:
+      return MFX_HW_SOFIA;
     }
 
     // if we were not able to find right device via PrivateGUID let base on defines and check HW capabilities
