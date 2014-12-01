@@ -2241,10 +2241,13 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
             ctb_addr_in_region ++;
             if (ctb_col == pars->tileColStart[tile_col] + pars->tileColWidth[tile_col] - 1) {
                 if (isRef || pars->reconForDump) {
+                    bool applySao = m_sps.sample_adaptive_offset_enabled_flag && (
+                                    m_task->m_slices[curr_slice].slice_sao_luma_flag ||
+                                    m_task->m_slices[curr_slice].slice_sao_chroma_flag);
                     if (ctb_row > 0 &&
                         curr_slice == m_slice_ids[ctb_addr - pars->PicWidthInCtbs] &&
                         tile_id == m_tile_ids[ctb_addr - pars->PicWidthInCtbs]) {
-                            if (m_sps.sample_adaptive_offset_enabled_flag) {
+                            if (applySao) {
                                 Ipp32u ctuEnd = ctb_addr - pars->PicWidthInCtbs + 1;
                                 Ipp32u ctuStart = ctuEnd - pars->tileColWidth[tile_col];
                                 ApplySaoCtuRange<PixType>(ctuStart, ctuEnd);
@@ -2255,7 +2258,7 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
                     if( ctb_row == pars->PicHeightInCtbs - 1 ||
                         curr_slice != m_slice_ids[ctb_addr + pars->PicWidthInCtbs] ||
                         tile_id != m_tile_ids[ctb_addr + pars->PicWidthInCtbs]) { //special case for last row
-                            if (m_sps.sample_adaptive_offset_enabled_flag) {
+                            if (applySao) {
                                 Ipp32u ctuEnd = ctb_addr + 1;
                                 Ipp32u ctuStart = ctuEnd - pars->tileColWidth[tile_col];
                                 ApplySaoCtuRange<PixType>(ctuStart, ctuEnd);
