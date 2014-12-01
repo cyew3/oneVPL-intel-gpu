@@ -544,9 +544,9 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                         extVPPDeintIn->Mode == MFX_DEINTERLACING_AUTO_SINGLE            ||
                         extVPPDeintIn->Mode == MFX_DEINTERLACING_FULL_FR_OUT            ||
                         extVPPDeintIn->Mode == MFX_DEINTERLACING_HALF_FR_OUT            ||
-                        extVPPDeintIn->Mode == MFX_DEINTERLACING_24FPS_OUT              ||
+                        extVPPDeintIn->Mode == MFX_DEINTERLACING_24FPS_OUT            /*||
                         extVPPDeintIn->Mode == MFX_DEINTERLACING_30FPS_OUT              ||
-                        extVPPDeintIn->Mode == MFX_DEINTERLACING_DETECT_INTERLACE      )
+                        extVPPDeintIn->Mode == MFX_DEINTERLACING_DETECT_INTERLACE*/      )
                     {
                         if(extVPPDeintIn->TelecineLocation || extVPPDeintIn->TelecinePattern)
                         {
@@ -615,15 +615,14 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             error = true;
         }
 
-        if(const_in.vpp.Out.PicStruct == const_in.vpp.In.PicStruct)
-        {
-            out->vpp.Out.PicStruct = 0;
-            out->vpp.In.PicStruct = 0;
-            error = true;
-        }
-        // auto-detection mode is allowed only for unknown picstruct and frame rates 30 and 60
         if(!buffer_mode)
         {
+            if(const_in.vpp.Out.PicStruct == const_in.vpp.In.PicStruct)
+            {
+                out->vpp.Out.PicStruct = 0;
+                out->vpp.In.PicStruct = 0;
+                error = true;
+            }
             if(MFX_PICSTRUCT_UNKNOWN == const_in.vpp.In.PicStruct)
             {
                if (!((0 == const_in.vpp.In.FrameRateExtN &&

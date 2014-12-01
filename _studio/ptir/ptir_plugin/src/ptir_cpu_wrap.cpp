@@ -232,6 +232,8 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
     if(!b_firstFrameProceed)
     {
         //(divide TimeStamp by 90,000 (90 KHz) to obtain the time in seconds)
+        if(!surf_in)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
         pts = (double) (surf_in->Data.TimeStamp / 90);
         frame_duration = 1000 / _dFrameRate;
 

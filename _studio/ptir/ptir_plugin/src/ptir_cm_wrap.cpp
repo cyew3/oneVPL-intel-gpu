@@ -282,6 +282,8 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFram
     if(!b_firstFrameProceed)
     {
         //(divide TimeStamp by 90,000 (90 KHz) to obtain the time in seconds)
+        if(!surf_in)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
         pts = (double) (surf_in->Data.TimeStamp / 90);
         frame_duration = 1000 / _dFrameRate;
 
@@ -413,7 +415,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFram
             {
                 int result = -1;
                 CmDeviceEx& device = pdeinterlaceFilter->DeviceEx();
-                for(mfxU32 i = 0; i < BUFMINSIZE; ++i)
+                for(mfxU32 i = 0; i < BUFMINSIZE +1; ++i)
                 {
                     if(!static_cast<CmSurface2DEx*>(Env.frmBuffer[i]->outSurf)->pCmSurface2D)
                     {
