@@ -644,7 +644,8 @@ enum {
     MFX_EXTBUFF_MBQP                       = MFX_MAKEFOURCC('M','B','Q','P'),
     MFX_EXTBUFF_HEVC_TILES                 = MFX_MAKEFOURCC('2','6','5','T'),
     MFX_EXTBUFF_MB_DISABLE_SKIP_MAP        = MFX_MAKEFOURCC('M','D','S','M'),
-    MFX_EXTBUFF_DPB                        = MFX_MAKEFOURCC('E','D','P','B')
+    MFX_EXTBUFF_DPB                        = MFX_MAKEFOURCC('E','D','P','B'),
+    MFX_EXTBUFF_HEVC_PARAM                 = MFX_MAKEFOURCC('2','6','5','P')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1212,6 +1213,14 @@ typedef struct {
         mfxU16      reserved[4];
     } DPB[32];
 }mfxExtDPB;
+
+typedef struct {
+    mfxExtBuffer    Header;
+
+    mfxU16          PicWidthInLumaSamples;
+    mfxU16          PicHeightInLumaSamples;
+    mfxU16          reserved[122];
+} mfxExtHEVCParam;
 
 #ifdef __cplusplus
 } // extern "C"
