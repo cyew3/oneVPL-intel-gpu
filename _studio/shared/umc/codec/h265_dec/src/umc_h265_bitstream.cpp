@@ -676,7 +676,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
 
         pcSPS->log2_min_pcm_luma_coding_block_size = GetVLCElementU() + 3;
 
-        if (pcSPS->log2_min_pcm_luma_coding_block_size < MinCbLog2SizeY || pcSPS->log2_min_pcm_luma_coding_block_size > IPP_MIN(CtbLog2SizeY, 5))
+        if (pcSPS->log2_min_pcm_luma_coding_block_size < IPP_MIN(MinCbLog2SizeY, 5) || pcSPS->log2_min_pcm_luma_coding_block_size > IPP_MIN(CtbLog2SizeY, 5))
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         pcSPS->log2_max_pcm_luma_coding_block_size = GetVLCElementU() + pcSPS->log2_min_pcm_luma_coding_block_size;
