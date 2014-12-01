@@ -111,7 +111,7 @@ private:
 
 const TestSuite::stream_prop TestSuite::stream[] =
 {
-    {/*iceage_720x480_982i  */ "iceage_720x576_982.yuv",  720, 576, 982, MFX_FOURCC_NV12, 50, 1},
+    {/*iceage_720x480_982i  */ "YUV/iceage_720x576_982.yuv",  720, 576, 982, MFX_FOURCC_NV12, 50, 1},
 };
 
 const TestSuite::tc_struct TestSuite::test_case[] =
@@ -163,8 +163,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, {60}}}
     },
 };
-
-const char TestSuite::path[] = "YUV/";
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
