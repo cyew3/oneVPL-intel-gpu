@@ -119,6 +119,9 @@
     <ClCompile Include="src\mfx_video_signal_conversion_vpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\mfx_shift_vpp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_vpp_base.h">
@@ -191,6 +194,9 @@
       <Filter>Header Files\vme</Filter>
     </ClInclude>
     <ClInclude Include="include\mfx_video_signal_conversion_vpp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_shift_vpp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

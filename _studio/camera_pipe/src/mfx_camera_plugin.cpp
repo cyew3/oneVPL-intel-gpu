@@ -588,7 +588,23 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 }
             }
         }
-
+        //let it be here for now, Query should return unsupported in this case, later need to do query from MDF parameters
+        //which can provide actual supported surface size.
+        //ToDo: we need to carry about width/height in case of system memory passthrough without copy,
+        //please think about it, so actual formula should be calculated from width and height, and magic number below doesn't look like applicable
+        if ( out->vpp.In.CropW * out->vpp.In.CropH > 0x16E3600 )
+        {
+            // TODO: make number of tiles dependent on frame size.
+            // For existing 7Kx4K 2 tiles seems to be enough.
+            m_nTiles = 2;
+            if ( m_mfxVideoParam.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY || m_Caps.bNoPadding )
+            {
+                // In case of tiling, only system memory is supported as output
+                // Temporary limitation: tiling is not supported in case of padded input - must be fixed till production release
+                // Must be documented
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
         CAMERA_DEBUG_LOG("Query end sts =  %d  mfxSts = %d \n", sts, mfxSts);
 
         if (mfxSts < MFX_ERR_NONE)
@@ -637,7 +653,7 @@ mfxStatus MFXCamera_Plugin::GetVideoParam(mfxVideoParam *par)
     memcpy_s(&(par->vpp),sizeof(mfxInfoVPP), &(m_mfxVideoParam.vpp),sizeof(mfxInfoVPP));
 
     if(par->NumExtParam != 0){
-        //ToDo: report supported extparam.
+        //ToDo: report enabled ext video parameters.
     }
     return MFX_ERR_NONE;
 }
