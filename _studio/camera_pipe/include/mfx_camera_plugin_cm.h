@@ -243,7 +243,9 @@ public:
                             int bayerPattern,
                             mfxU32 task_bufId = 0);
 
-    void CreateTask_BayerCorrection(SurfaceIndex inoutSurfIndex,
+    void CreateTask_BayerCorrection(int first, 
+                                    SurfaceIndex PaddedSurfIndex,
+                                    SurfaceIndex inoutSurfIndex,
                                     SurfaceIndex vignetteMaskIndex,
                                     mfxU16 Enable_BLC,
                                     mfxU16 Enable_VIG,

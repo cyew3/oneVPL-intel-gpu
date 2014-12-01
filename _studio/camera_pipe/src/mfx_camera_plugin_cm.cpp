@@ -646,7 +646,9 @@ CmEvent *CmContext::EnqueueTask_Padding()
     return e;
 }
 
-void CmContext::CreateTask_BayerCorrection(SurfaceIndex inoutSurfIndex,
+void CmContext::CreateTask_BayerCorrection(int first,
+                                           SurfaceIndex PaddedSurfIndex,
+                                           SurfaceIndex inoutSurfIndex,
                                            SurfaceIndex vignetteMaskIndex,
                                            mfxU16 Enable_BLC,
                                            mfxU16 Enable_VIG,
@@ -667,10 +669,7 @@ void CmContext::CreateTask_BayerCorrection(SurfaceIndex inoutSurfIndex,
     mfxU16 MaxInputLevel = (1<<bitDepth)-1;
     kernel_BayerCorrection->SetThreadCount(widthIn16 * heightIn16);
     int i=0;
-    // Having first equal to 1 means that kernel is the first one, thus padding will
-    // be done. At the moment, padding is a separate kernel that is done before this
-    // so first variable must be set to 0
-    int first = 0;
+
     signed short  _B_shift;
     signed short  _Gtop_shift;
     signed short  _Gbot_shift;
@@ -725,7 +724,7 @@ void CmContext::CreateTask_BayerCorrection(SurfaceIndex inoutSurfIndex,
         break;
     }
 
-    kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &inoutSurfIndex   );
+    kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &PaddedSurfIndex   );
     kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &inoutSurfIndex   );
     kernel_BayerCorrection->SetKernelArg( i++, sizeof(SurfaceIndex), &vignetteMaskIndex);
     kernel_BayerCorrection->SetKernelArg( i++, sizeof(signed short), &Enable_BLC       );
