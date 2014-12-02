@@ -65,6 +65,8 @@ mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par, mfxExtVPPDeinterlacing* pDe
         _dFrameRate = 30.0;
 
     _uiInterlaceParity = 0;
+    Env.control.uiPatternTypeNumber = 0;
+    Env.control.uiPatternTypeInit = 0;
 
     bool buffer_mode = pDeinter ? true : false;
 
@@ -89,8 +91,11 @@ mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par, mfxExtVPPDeinterlacing* pDe
         }
         else if((MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct ||
                  MFX_PICSTRUCT_FIELD_BFF == par->vpp.In.PicStruct) &&
-           (4 * par->vpp.In.FrameRateExtN * par->vpp.In.FrameRateExtD ==
-            5 * par->vpp.Out.FrameRateExtN * par->vpp.Out.FrameRateExtD))
+              ((4 * par->vpp.In.FrameRateExtN * par->vpp.In.FrameRateExtD ==
+                5 * par->vpp.Out.FrameRateExtN * par->vpp.Out.FrameRateExtD) ||
+               (30000 == par->vpp.In.FrameRateExtN && 1001 == par->vpp.In.FrameRateExtD &&
+                24000 == par->vpp.Out.FrameRateExtN && 1001 == par->vpp.Out.FrameRateExtD)
+                ))
         {
             if(MFX_PICSTRUCT_FIELD_TFF == par->vpp.In.PicStruct)
                 _uiInterlaceParity = 0;
@@ -307,7 +312,7 @@ mfxStatus PTIR_ProcessorCM::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFram
         Env.frmBuffer[0]->frmProperties.processed = false;
 
         uiStart = 1;
-        Env.control.uiFrame = uiStart;
+        Env.control.uiFrame = 0;
 
         b_firstFrameProceed = true;
         return MFX_ERR_MORE_DATA;

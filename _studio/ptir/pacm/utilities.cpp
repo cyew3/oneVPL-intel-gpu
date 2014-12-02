@@ -706,12 +706,12 @@ void UndoPatternTypes5and7CM(Frame *frmBuffer[BUFMINSIZE], unsigned int firstPos
 
 }
 
-void Pattern32RemovalCM(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch)
+void Pattern32RemovalCM(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch, unsigned int parity)
 {
     if(uiInitFramePosition < BUFMINSIZE - 2)
     {
         frmBuffer[uiInitFramePosition + 1]->frmProperties.drop = true;
-        Undo2Frames_CM(frmBuffer[uiInitFramePosition],frmBuffer[uiInitFramePosition + 1],TelecineParityCheck(*frmBuffer[uiInitFramePosition + 1]));
+        Undo2Frames_CM(frmBuffer[uiInitFramePosition],frmBuffer[uiInitFramePosition + 1], parity);//TelecineParityCheck(*frmBuffer[uiInitFramePosition + 1]));
         *pdispatch = 5;
     }
     else
@@ -721,18 +721,38 @@ void Pattern32RemovalCM(Frame **frmBuffer, unsigned int uiInitFramePosition, uns
     }
 }
 
-void RemovePatternCM(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned int uiInitFramePosition, unsigned int *pdispatch)
+void Pattern41aRemovalCM(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch, unsigned int parity)
+{
+    unsigned int i = 0;
+    if(uiInitFramePosition < BUFMINSIZE - 4)
+    {
+        frmBuffer[uiInitFramePosition + 3]->frmProperties.drop = true;
+        Undo2Frames_CM(frmBuffer[uiInitFramePosition],frmBuffer[uiInitFramePosition + 1], parity);
+        Undo2Frames_CM(frmBuffer[uiInitFramePosition + 1],frmBuffer[uiInitFramePosition + 2], parity);
+        Undo2Frames_CM(frmBuffer[uiInitFramePosition + 2],frmBuffer[uiInitFramePosition + 3], parity);
+        *pdispatch = 5;
+    }
+    else
+    {
+        for (i = 0; i < BUFMINSIZE - 1; i++)
+            frmBuffer[uiInitFramePosition]->frmProperties.interlaced = true;
+        frmBuffer[uiInitFramePosition - 1]->frmProperties.interlaced = false;
+        *pdispatch = uiInitFramePosition;
+    }
+}
+
+void RemovePatternCM(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned int uiInitFramePosition, unsigned int *pdispatch, unsigned int parity)
 {
     Init_drop_frames(frmBuffer);
 
-    Artifacts_Detection(frmBuffer);
+    //Artifacts_Detection(frmBuffer);
 
     if(uiPatternNumber == 0)
-        Pattern32RemovalCM(frmBuffer, uiInitFramePosition, pdispatch);
+        Pattern32RemovalCM(frmBuffer, uiInitFramePosition, pdispatch, parity);
     else if(uiPatternNumber <= 2)
         Pattern2332Removal(frmBuffer, uiInitFramePosition, pdispatch);
     else if(uiPatternNumber == 3)
-        Pattern41Removal(frmBuffer, uiInitFramePosition, pdispatch);
+        Pattern41aRemovalCM(frmBuffer, uiInitFramePosition, pdispatch, parity);
     else
     {
         throw (int) -16;
@@ -1370,7 +1390,7 @@ int PTIRCM_FixedTelecinePatternMode(PTIRSystemBuffer *SysBuffer)
     Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
     {
-        RemovePatternCM(SysBuffer->frmBuffer, SysBuffer->control.uiPatternTypeNumber, SysBuffer->control.uiPatternTypeInit, &SysBuffer->control.uiDispatch);
+        RemovePatternCM(SysBuffer->frmBuffer, SysBuffer->control.uiPatternTypeNumber, SysBuffer->control.uiPatternTypeInit, &SysBuffer->control.uiDispatch, SysBuffer->control.uiInterlaceParity);
 
         if(!SysBuffer->control.uiEndOfFrames)
             uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);

@@ -1781,18 +1781,38 @@ unsigned char TelecineParityCheck(Frame frmBuffer)
         return 0;
 }
 
-void Pattern32Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch)
+void Pattern32Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch, unsigned int parity)
 {
     if(uiInitFramePosition < BUFMINSIZE - 2)
     {
         frmBuffer[uiInitFramePosition + 1]->frmProperties.drop = TRUE;
-        Undo2Frames(frmBuffer[uiInitFramePosition],frmBuffer[uiInitFramePosition + 1],TelecineParityCheck(*frmBuffer[uiInitFramePosition + 1]));
+        Undo2Frames(frmBuffer[uiInitFramePosition],frmBuffer[uiInitFramePosition + 1], parity);//TelecineParityCheck(*frmBuffer[uiInitFramePosition + 1]));
         *pdispatch = 5;
     }
     else
     {
         frmBuffer[uiInitFramePosition]->frmProperties.interlaced = TRUE;
         *pdispatch = 2;
+    }
+}
+
+void Pattern41aRemoval(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch, unsigned int parity)
+{
+    unsigned int i = 0;
+    if(uiInitFramePosition < BUFMINSIZE - 4)
+    {
+        frmBuffer[uiInitFramePosition + 3]->frmProperties.drop = TRUE;
+        Undo2Frames(frmBuffer[uiInitFramePosition],frmBuffer[uiInitFramePosition + 1], parity);
+        Undo2Frames(frmBuffer[uiInitFramePosition + 1],frmBuffer[uiInitFramePosition + 2], parity);
+        Undo2Frames(frmBuffer[uiInitFramePosition + 2],frmBuffer[uiInitFramePosition + 3], parity);
+        *pdispatch = 5;
+    }
+    else
+    {
+        for (i = 0; i < BUFMINSIZE - 1; i++)
+            frmBuffer[uiInitFramePosition]->frmProperties.interlaced = TRUE;
+        frmBuffer[uiInitFramePosition - 1]->frmProperties.interlaced = FALSE;
+        *pdispatch = uiInitFramePosition;
     }
 }
 
@@ -1824,18 +1844,18 @@ void Pattern41Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsig
 
 }
 
-void RemovePattern(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned int uiInitFramePosition, unsigned int *pdispatch)
+void RemovePattern(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned int uiInitFramePosition, unsigned int *pdispatch, unsigned int parity)
 {
     Init_drop_frames(frmBuffer);
 
-    Artifacts_Detection(frmBuffer);
+    //Artifacts_Detection(frmBuffer);
 
     if(uiPatternNumber == 0)
-        Pattern32Removal(frmBuffer, uiInitFramePosition, pdispatch);
+        Pattern32Removal(frmBuffer, uiInitFramePosition, pdispatch, parity);
     else if(uiPatternNumber <= 2)
         Pattern2332Removal(frmBuffer, uiInitFramePosition, pdispatch);
     else if(uiPatternNumber == 3)
-        Pattern41Removal(frmBuffer, uiInitFramePosition, pdispatch);
+        Pattern41aRemoval(frmBuffer, uiInitFramePosition, pdispatch, parity);
     else
     {
         return;

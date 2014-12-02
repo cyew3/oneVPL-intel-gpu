@@ -69,10 +69,11 @@ void         Undo2Frames(Frame *frmBuffer1, Frame *frmBuffer2, BOOL BFF);
 void         Analyze_Buffer_Stats(Frame *frmBuffer[LASTFRAME], Pattern *ptrn, unsigned int *pdispatch, unsigned int *uiisInterlaced);
 void         Analyze_Buffer_Stats_Automode(Frame *frmBuffer[LASTFRAME], Pattern *ptrn, unsigned int *pdispatch);
 unsigned char TelecineParityCheck(Frame frmBuffer);
-void         Pattern32Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch);
+void         Pattern32Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch, unsigned int parity);
+void         Pattern41aRemoval(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch, unsigned int parity);
 void         Pattern2332Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch);
 void         Pattern41Removal(Frame **frmBuffer, unsigned int uiInitFramePosition, unsigned int *pdispatch);
-void         RemovePattern(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned int uiInitFramePosition, unsigned int *pdispatch);
+void         RemovePattern(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned int uiInitFramePosition, unsigned int *pdispatch, unsigned int parity);
 
 #ifdef __cplusplus
 }

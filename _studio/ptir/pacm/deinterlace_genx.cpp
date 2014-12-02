@@ -555,7 +555,7 @@ inline _GENX_ void rs_plane(SurfaceIndex frameSurfaceId, SurfaceIndex rsSurfaceI
                         v_mask(4) = 0;           //Rs[4]
                         v_mask(5) = 0;           //Rs[5]         
                     }
-                    if (!(global_sum == 0 /*&& frame_topleft[0][0] != TVBLACK*/)) {
+                    if (!((global_sum == 0) && frame_topleft[0][0] != TVBLACK)) {
                         v_mask(6) = 0;           //Rs[9]
                     }
 

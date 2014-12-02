@@ -800,8 +800,11 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             }
             else if((MFX_PICSTRUCT_FIELD_TFF == const_in.vpp.In.PicStruct ||
                      MFX_PICSTRUCT_FIELD_BFF == const_in.vpp.In.PicStruct) &&
-               (4 * const_in.vpp.In.FrameRateExtN * const_in.vpp.In.FrameRateExtD ==
-                5 * const_in.vpp.Out.FrameRateExtN * const_in.vpp.Out.FrameRateExtD))
+              ((4 * const_in.vpp.In.FrameRateExtN * const_in.vpp.In.FrameRateExtD ==
+                5 * const_in.vpp.Out.FrameRateExtN * const_in.vpp.Out.FrameRateExtD) ||
+               (30000 == const_in.vpp.In.FrameRateExtN && 1001 == const_in.vpp.In.FrameRateExtD &&
+                24000 == const_in.vpp.Out.FrameRateExtN && 1001 == const_in.vpp.Out.FrameRateExtD)
+                ))
             {
                 ;//reverse telecine mode
             }
@@ -1111,9 +1114,15 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
         return MFX_ERR_NULL_PTR;
     if(bInited || ptir)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-
     mfxStatus mfxSts;
     bool warn = false;
+    bool HWSupported = false;
+    par_accel = false;
+
+    mfxCoreParam mfxCorePar;
+    mfxSts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
+    if(MFX_ERR_NONE > mfxSts)
+        return mfxSts;
 
     memset(&m_mfxInitPar, 0, sizeof(mfxVideoParam));
     mfxSts = Query(par, &m_mfxInitPar);
@@ -1124,6 +1133,12 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     }
     if( !(MFX_ERR_NONE == mfxSts || MFX_WRN_PARTIAL_ACCELERATION == mfxSts) )
         return MFX_ERR_INVALID_VIDEO_PARAM;
+    if(MFX_WRN_PARTIAL_ACCELERATION == mfxSts &&
+       MFX_IMPL_SOFTWARE != MFX_IMPL_BASETYPE(mfxCorePar.Impl))
+    {
+        HWSupported = false;
+        par_accel = true;
+    }
     if(!m_mfxInitPar.AsyncDepth)
         m_mfxInitPar.AsyncDepth = 1;
 
@@ -1160,12 +1175,7 @@ mfxStatus MFX_PTIR_Plugin::Init(mfxVideoParam *par)
     mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
     mfxHDL mfxDeviceHdl = 0;
 
-    bool HWSupported = false;
     eMFXHWType HWType = MFX_HW_UNKNOWN;
-    mfxCoreParam mfxCorePar;
-    mfxSts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &mfxCorePar);
-    if(MFX_ERR_NONE > mfxSts)
-        return mfxSts;
     mfxSts = GetHandle(mfxDeviceHdl, mfxDeviceType);
     if(MFX_ERR_NONE != mfxSts &&
        MFX_IMPL_SOFTWARE != MFX_IMPL_BASETYPE(mfxCorePar.Impl))
