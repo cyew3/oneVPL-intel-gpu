@@ -32,6 +32,7 @@
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="..\..\Intel.Mfx.Common.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
@@ -96,28 +97,28 @@
     <_ProjectFileVersion>11.0.51106.1</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\..\..\build\win_$(Platform)\</OutDir>
-    <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
+    <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
-    <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
+    <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
-    <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
+    <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
-    <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
+    <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">
-    <OutDir>..\..\..\..\build\win_$(Platform)\</OutDir>
-    <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
+    <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">
-    <OutDir>$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
+    <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
@@ -132,7 +133,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)lib\$(ProjectName)_d.lib</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
     <PostBuildEvent>
       <Command />
@@ -154,7 +155,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)lib\$(ProjectName)_d.lib</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
@@ -177,7 +178,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)lib\$(ProjectName).lib</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
@@ -203,7 +204,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)lib\$(ProjectName).lib</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
@@ -223,7 +224,7 @@
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)lib\$(ProjectName)_emu.lib</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
@@ -250,7 +251,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll $(OutDir)\bin
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)lib\$(ProjectName)_d.lib</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
