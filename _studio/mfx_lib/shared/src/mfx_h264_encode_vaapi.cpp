@@ -888,6 +888,7 @@ VAAPIEncoder::VAAPIEncoder()
 , m_skipMode(0)
 , m_isENCPAK(false)
 {
+    m_videoParam.mfx.CodecProfile = MFX_PROFILE_AVC_HIGH; // QueryHwCaps will use this value
 } // VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
 
 
@@ -1571,7 +1572,7 @@ mfxStatus VAAPIEncoder::Execute(
     VABufferID vaFeiMVOutId = VA_INVALID_ID;
     VABufferID vaFeiMCODEOutId = VA_INVALID_ID;
 
-    VABufferID* outBuffers = new VABufferID[3];
+    VABufferID outBuffers[3];
     int numOutBufs = 0;
     outBuffers[0] = VA_INVALID_ID;
     outBuffers[1] = VA_INVALID_ID;
@@ -3049,7 +3050,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     m_statParams.mb_qp = (feiQP == NULL) && feiCtrl->MBQp;
     m_statParams.mv_predictor_ctrl = (feiMVPred == NULL) ? feiCtrl->MVPredictor : 0;
 
-    VABufferID* outBuffers = new VABufferID[2];
+    VABufferID outBuffers[2];
     int numOutBufs = 0;
     //        VABufferID outBuffers[2];
     outBuffers[0] = VA_INVALID_ID;
