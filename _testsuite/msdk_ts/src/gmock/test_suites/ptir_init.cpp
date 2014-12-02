@@ -38,8 +38,8 @@ private:
         USE_EXT_BUF = 3,
 
         ALLOC_OPAQUE = 4,
-        ALLOC_OPAQUE_LESS = 4+1,
-        ALLOC_OPAQUE_MORE = 4+2
+        ALLOC_OPAQUE_LESS = ALLOC_OPAQUE+1,
+        ALLOC_OPAQUE_MORE = ALLOC_OPAQUE+2
     };
 
     struct tc_struct
@@ -65,23 +65,23 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/* 0*/ MFX_ERR_INVALID_HANDLE, NULL_SESSION},
-    {/* 1*/ MFX_ERR_NULL_PTR, NULL_PARAMS},
+    {/*0*/ MFX_ERR_INVALID_HANDLE, NULL_SESSION},
+    {/*1*/ MFX_ERR_NULL_PTR, NULL_PARAMS},
 
     // Check default parameters (see constructor)
-    {/* 2*/ MFX_ERR_NONE},
+    {/*2*/ MFX_ERR_NONE},
 
     // No resize
-    {/* 3*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 320}},
-    {/* 4*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 320}},
+    {/*3*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 320}},
+    {/*4*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 320}},
     // No crop
-    {/* 5*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.CropX, 320}},
-    {/* 6*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.CropY, 320}},
-    {/* 7*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.CropW, 320}},
-    {/* 8*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.CropH, 320}},
+    {/*5*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.CropX, 320}},
+    {/*6*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.CropY, 320}},
+    {/*7*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.CropW, 320}},
+    {/*8*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.CropH, 320}},
 
     // FourCC cases (only NV12 supported)
-    {/* 9*/ MFX_ERR_NONE, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_NV12}},
+    {/*9*/ MFX_ERR_NONE, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_NV12}},
     {/*10*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_YV12}},
     {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P8}},
     {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_RGB4}},
@@ -138,83 +138,84 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*51*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 2}},
 
     // unsupported DI modes
-    {/*60*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_EXT_BUF, {
+    {/*52*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_BOB}}},
-    {/*60*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_EXT_BUF, {
+    {/*53*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_ADVANCED}}},
 
     // MFX_DEINTERLACING_AUTO_DOUBLE
-    {/*52*/ MFX_ERR_NONE, 0, {
+    {/*54*/ MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_UNKNOWN},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 0},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 60}}},
-    {/*53*/ MFX_ERR_NONE, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 60}}},
+    {/*55*/ MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_UNKNOWN},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 0},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 120},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 2}}},
-    {/*54*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 2},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 120}}},
+    {/*56*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_UNKNOWN},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 60}}},
-    {/*55*/ MFX_ERR_NONE, USE_EXT_BUF,
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 60}}},
+    {/*57*/ MFX_ERR_NONE, USE_EXT_BUF,
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_DOUBLE}},
-    {/*56*/ MFX_ERR_NONE, USE_EXT_BUF, {
+    {/*58*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_UNKNOWN},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 60},
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_DOUBLE}}},
 
     // MFX_DEINTERLACING_AUTO_SINGLE
-    {/*57*/ MFX_ERR_NONE, 0, {
+    {/*59*/ MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_UNKNOWN},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 0},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 30}}},
-    {/*58*/ MFX_ERR_NONE, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 30}}},
+    {/*60*/ MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_UNKNOWN},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 0},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 60},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 2}}},
-    {/*59*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 1},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 60},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 2}}},
+    {/*61*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_UNKNOWN},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 30}}},
-    {/*60*/ MFX_ERR_NONE, USE_EXT_BUF, {
+    {/*62*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_SINGLE}}},
-    {/*61*/ MFX_ERR_NONE, USE_EXT_BUF, {
+    {/*63*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_UNKNOWN},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 60},
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_SINGLE}}},
 
     // MFX_DEINTERLACING_FULL_FR_OUT
-    {/*62*/ MFX_ERR_NONE, 0, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 30},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 1},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 60}}},
-    {/*63*/ MFX_ERR_NONE, 0, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_BFF},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 30},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 1},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 60}}},
     {/*64*/ MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 2},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 60},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 1},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 60}}},
-    {/*65*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 30},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 1},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 60},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 1}}},
+    {/*65*/ MFX_ERR_NONE, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_BFF},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 30},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 1},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 60},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 1}}},
+    {/*66*/ MFX_ERR_NONE, 0, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 60},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 2},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 60},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 1}}},
+    {/*67*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 24},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 60}}},
-    {/*66*/ MFX_ERR_NONE, USE_EXT_BUF, {
+    {/*68*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FULL_FR_OUT}}},
-    {/*67*/ MFX_ERR_NONE, USE_EXT_BUF, {
+    {/*69*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 24},
@@ -223,33 +224,33 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FULL_FR_OUT}}},
 
     // MFX_DEINTERLACING_HALF_FR_OUT
-    {/*68*/ MFX_ERR_NONE, 0, {
+    {/*70*/ MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 30},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 30}}},
-    {/*69*/ MFX_ERR_NONE, 0, {
+    {/*71*/ MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_BFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 30},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 30}}},
-    {/*70*/ MFX_ERR_NONE, 0, {
+    {/*72*/ MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 2},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 60},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 30}}},
-    {/*71*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*73*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 24},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 30}}},
-    {/*72*/ MFX_ERR_NONE, USE_EXT_BUF, {
+    {/*74*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_HALF_FR_OUT}}},
-    {/*73*/ MFX_ERR_NONE, USE_EXT_BUF, {
+    {/*75*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 24},
@@ -258,27 +259,27 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_HALF_FR_OUT}}},
 
     // MFX_DEINTERLACING_24FPS_OUT
-    {/*74*/ MFX_ERR_NONE, 0, {
+    {/*76*/ MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 30},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 24}}},
-    {/*75*/ MFX_ERR_NONE, 0, {
+    {/*77*/ MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_BFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 30},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 24}}},
-    {/*76*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*78*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 35},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 1},
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 28}}},
-    {/*77*/ MFX_ERR_NONE, USE_EXT_BUF, {
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 29}}},
+    {/*79*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_24FPS_OUT}}},
-    {/*78*/ MFX_ERR_NONE, 0, {
+    {/*80*/ MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 35},
@@ -287,43 +288,43 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_24FPS_OUT}}},
 
     // MFX_DEINTERLACING_FIXED_TELECINE_PATTERN
-    {/*79*/ MFX_ERR_NONE, USE_EXT_BUF, {
-        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN},
-        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_PATTERN_32}}},
-    {/*80*/ MFX_ERR_NONE, USE_EXT_BUF, {
-        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN},
-        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_PATTERN_2332}}},
     {/*81*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN},
-        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_PATTERN_FRAME_REPEAT}}},
+        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_PATTERN_32}}},
     {/*82*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN},
-        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_PATTERN_41}}},
+        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_PATTERN_2332}}},
     {/*83*/ MFX_ERR_NONE, USE_EXT_BUF, {
+        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN},
+        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_PATTERN_FRAME_REPEAT}}},
+    {/*84*/ MFX_ERR_NONE, USE_EXT_BUF, {
+        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN},
+        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_PATTERN_41}}},
+    {/*85*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN},
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_POSITION_PROVIDED}}},
-    {/*84*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_EXT_BUF, {
+    {/*86*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN},
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_POSITION_PROVIDED+1}}},
-    {/*83*/ MFX_ERR_NONE, USE_EXT_BUF, {
+    {/*87*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN},
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_POSITION_PROVIDED},
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecineLocation, 1}}},
-    {/*83*/ MFX_ERR_NONE, USE_EXT_BUF, {
+    {/*88*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN},
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_POSITION_PROVIDED},
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecineLocation, 4}}},
-    {/*83*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_EXT_BUF, {
+    {/*89*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN},
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, MFX_TELECINE_POSITION_PROVIDED},
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecineLocation, 5}}},
 
     // MFX_DEINTERLACING_30FPS_OUT
-    {/*85*/ MFX_ERR_NONE, USE_EXT_BUF, {
+    {/*90*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_30FPS_OUT}}},
 
     // MFX_DEINTERLACING_DETECT_INTERLACE
-    {/*86*/ MFX_ERR_NONE, USE_EXT_BUF, {
+    {/*91*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_DETECT_INTERLACE}}},
 };
 
@@ -343,6 +344,9 @@ int TestSuite::RunTest(unsigned int id)
     TS_START;
     const tc_struct& tc = test_case[id];
 
+    std::vector<mfxExtBuffer*> buffs;
+    std::vector<mfxExtBuffer*> buffs_cpy;
+
     if (tc.mode != NULL_SESSION)
     {
         MFXInit();
@@ -352,24 +356,26 @@ int TestSuite::RunTest(unsigned int id)
         tsSession::Load(m_session, ptir, 1);
     }
 
-    if (tc.mode & USE_EXT_BUF)
+    if (tc.mode == USE_EXT_BUF)
     {
         m_par.vpp.In.PicStruct = 0;
         m_par.vpp.In.FrameRateExtN = 0;
         m_par.vpp.In.FrameRateExtD = 0;
-        m_par.vpp.Out.PicStruct = 0;
+        m_par.vpp.Out.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         m_par.vpp.Out.FrameRateExtN = 0;
         m_par.vpp.Out.FrameRateExtD = 0;
 
-        mfxExtVPPDeinterlacing& di = m_par;
+        mfxExtVPPDeinterlacing di = {0};
+        di.Header.BufferId = MFX_EXTBUFF_VPP_DEINTERLACING;
+        di.Header.BufferSz = sizeof(mfxExtVPPDeinterlacing);
         SETPARS(&di, EXT_DI);
+        buffs.push_back((mfxExtBuffer*)&di);
+        mfxExtVPPDeinterlacing di_cpy(di);
+        buffs_cpy.push_back((mfxExtBuffer*)&di_cpy);
     }
 
     // set up parameters for case
     SETPARS(m_pPar, MFX_PAR);
-
-    if (tc.mode == NULL_PARAMS)
-        m_pPar = 0;
 
     if (tc.mode != NULL_SESSION)
     {
@@ -404,14 +410,16 @@ int TestSuite::RunTest(unsigned int id)
 
     if (tc.mode & ALLOC_OPAQUE)
     {
-        mfxExtOpaqueSurfaceAlloc& osa = m_par;
+        mfxExtOpaqueSurfaceAlloc osa = {0};
+        osa.Header.BufferId = MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION;
+        osa.Header.BufferSz = sizeof(mfxExtOpaqueSurfaceAlloc);
         QueryIOSurf();
-        if (tc.mode & ALLOC_OPAQUE_LESS)
+        if (tc.mode == ALLOC_OPAQUE_LESS)
         {
             m_request[0].NumFrameSuggested = m_request[0].NumFrameMin = m_request[0].NumFrameMin - 1;
             m_request[1].NumFrameSuggested = m_request[1].NumFrameMin = m_request[1].NumFrameMin - 1;
         }
-        else if (tc.mode & ALLOC_OPAQUE_MORE)
+        else if (tc.mode == ALLOC_OPAQUE_MORE)
         {
             m_request[0].NumFrameSuggested = m_request[0].NumFrameMin = m_request[0].NumFrameMin + 1;
             m_request[1].NumFrameSuggested = m_request[1].NumFrameMin = m_request[1].NumFrameMin + 1;
@@ -420,19 +428,41 @@ int TestSuite::RunTest(unsigned int id)
             m_spool_in.AllocOpaque(m_request[0], osa);
         if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
             m_spool_out.AllocOpaque(m_request[1], osa);
+
+        mfxExtOpaqueSurfaceAlloc osa_cpy(osa);
+        buffs.push_back((mfxExtBuffer*)&osa);
+        buffs_cpy.push_back((mfxExtBuffer*)&osa_cpy);
     }
 
-    if(tc.set_buf.func) // set ExtBuffer
+    // no buffers were added to m_par before
+    tsExtBufType<mfxVideoParam> par_cpy(m_par);
+
+    if (tc.set_buf.func) // set ExtBuffer
     {
         (*tc.set_buf.func)(this->m_par, tc.set_buf.buf, tc.set_buf.size);
+        (*tc.set_buf.func)(par_cpy, tc.set_buf.buf, tc.set_buf.size);
     }
 
+    // adding buffers
+    if (buffs.size())
+    {
+        m_par.NumExtParam = par_cpy.NumExtParam = buffs.size();
+        m_par.ExtParam = &buffs[0];
+        par_cpy.ExtParam = &buffs_cpy[0];
+    }
+
+    if (tc.mode == NULL_PARAMS)
+        m_pPar = 0;
     ///////////////////////////////////////////////////////////////////////////
     g_tsStatus.expect(tc.sts);
-    if (tc.sts == MFX_ERR_INVALID_VIDEO_PARAM)
-        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-    mfxVideoParam vp = {0};
-    Query(m_session, m_pPar, &vp);
+
+    // check Query() after Init() to avoid changing m_par
+    if (tc.sts != MFX_ERR_NULL_PTR)
+    {
+        if (tc.sts == MFX_ERR_INVALID_VIDEO_PARAM)
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+        Query(m_session, m_pPar, &par_cpy);
+    }
 
     g_tsStatus.expect(tc.sts);
     Init(m_session, m_pPar);
