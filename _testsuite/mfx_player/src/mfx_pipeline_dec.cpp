@@ -965,6 +965,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_inParams.bUseCameraPipe);
     ENABLE_VPP(m_inParams.bSceneAnalyzer);
     ENABLE_VPP(m_inParams.bPAFFDetect);
+    ENABLE_VPP(0.0 != m_components[eVPP].m_fFrameRate);
     //ENABLE_VPP(m_components[eDEC].m_params.mfx.FrameInfo.FrameRateExtN != m_components[eREN].m_params.mfx.FrameInfo.FrameRateExtN);
     ENABLE_VPP(m_inParams.bUseVPP_ifdi);
     ENABLE_VPP(m_inParams.nImageStab);
