@@ -111,7 +111,9 @@ typedef struct mfxCoreInterface {
     mfxStatus (MFX_CDECL *GetRealSurface)(mfxHDL pthis, mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf);
     mfxStatus (MFX_CDECL *GetOpaqueSurface)(mfxHDL pthis, mfxFrameSurface1 *surf, mfxFrameSurface1 **op_surf);
 
-    mfxHDL reserved4[4];
+    mfxStatus (MFX_CDECL *CreateAccelerationDevice)(mfxHDL pthis, mfxHandleType type, mfxHDL *handle);
+
+    mfxHDL reserved4[3];
 } mfxCoreInterface;
 
 /* video codec plugin extension*/
