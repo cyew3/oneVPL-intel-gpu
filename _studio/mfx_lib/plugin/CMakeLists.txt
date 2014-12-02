@@ -423,8 +423,8 @@ endforeach()
 
 # H265FEI
 
-set (H265FEI_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - SDK HEVC FEI")
-set (hw_H265FEI_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - SDK HEVC Hardware Flexible Encode Infrastructure Plugin")
+set (H265FEI_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - HEVC GPU Assist APIs")
+set (hw_H265FEI_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC GPU Assist APIs Plug-in")
 
   if( NOT DEFINED ENV{MFX_H265FEI_VERSION} )
     set( h265fei_version 0.0.000.0000 )

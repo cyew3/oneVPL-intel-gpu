@@ -2,6 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ResourceCompile Include="watermark.rc" />
+    <ResourceCompile Include="libmfxhw_plugin_h265fei.rc" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -20,5 +21,6 @@
     <ClInclude Include="include\mfx_h265fei_plugin.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
 </Project>

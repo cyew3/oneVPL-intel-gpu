@@ -236,10 +236,12 @@
     <ClCompile Include="src\mfx_h265fei_plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="libmfxhw_plugin_h265fei.rc" />
     <ResourceCompile Include="watermark.rc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_h265fei_plugin.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
