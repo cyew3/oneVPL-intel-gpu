@@ -426,7 +426,8 @@ mfxStatus ResMngr::Init(
 
     if( (config.m_extConfig.mode & FRC_INTERPOLATION) ||
         (config.m_extConfig.mode & VARIANCE_REPORT) ||
-        (config.m_extConfig.mode & COMPOSITE) )
+        (config.m_extConfig.mode & COMPOSITE) ||
+        (config.m_extConfig.mode & IS_REFERENCES))
     {
         mfxU32 totalInputFramesCount = config.m_extConfig.customRateData.bkwdRefCount + 
                                        1 + 
@@ -1069,7 +1070,8 @@ mfxStatus TaskManager::AssignTask(
     //--------------------------------------------------------
     mfxStatus sts = MFX_ERR_NONE;
 
-    bool isAdvGfxMode = (COMPOSITE & m_extMode) || (FRC_INTERPOLATION & m_extMode) || (VARIANCE_REPORT & m_extMode) ? true : false;
+    bool isAdvGfxMode = (COMPOSITE & m_extMode) || (FRC_INTERPOLATION & m_extMode) ||
+                                            (VARIANCE_REPORT & m_extMode) || (IS_REFERENCES & m_extMode)? true : false;
 
     if( isAdvGfxMode )
     {
@@ -1117,6 +1119,10 @@ mfxStatus TaskManager::AssignTask(
             &intSts);            
     }
     else if ( !(FRC_ENABLED & m_extMode) && !isAdvGfxMode )
+    { 
+        UpdatePTS_SimpleMode(input, output);
+    }
+    else if (IS_REFERENCES & m_extMode) /* case for ADI with references */
     { 
         UpdatePTS_SimpleMode(input, output);
     }
@@ -1225,7 +1231,8 @@ mfxStatus TaskManager::FillTask(
     pTask->input.endTimeStamp  = CURRENT_TIME_STAMP + (m_actualNumber + 1) * FRAME_INTERVAL;    
     pTask->output.timeStamp    = pTask->input.timeStamp;
 
-    pTask->bAdvGfxEnable     = (COMPOSITE & m_extMode) || (FRC_INTERPOLATION & m_extMode) || (VARIANCE_REPORT & m_extMode) ? true : false;
+    pTask->bAdvGfxEnable     = (COMPOSITE & m_extMode) || (FRC_INTERPOLATION & m_extMode) ||
+                                                         (VARIANCE_REPORT & m_extMode) || (IS_REFERENCES & m_extMode)? true : false;
 
     pTask->pAuxData = aux;
 
@@ -2600,7 +2607,19 @@ mfxStatus ConfigureExecuteParams(
             {
                 // FIXME: add reference frame to use motion adaptive ADI
                 executeParams.iDeinterlacingAlgorithm = GetDeinterlaceMode( videoParam, caps );
-                if (0 == executeParams.iDeinterlacingAlgorithm)
+                if(MFX_DEINTERLACING_ADVANCED == executeParams.iDeinterlacingAlgorithm)
+                {
+                    // use motion adaptive ADI with reference frame (quality)
+                    config.m_bRefFrameEnable = true;
+                    config.m_extConfig.customRateData.fwdRefCount = 0;
+                    config.m_extConfig.customRateData.bkwdRefCount = 1;
+                    config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 1;
+                    config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;
+                    config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
+                    config.m_surfCount[VPP_OUT]  = IPP_MAX(1, config.m_surfCount[VPP_OUT]);
+                    config.m_extConfig.mode = IS_REFERENCES;
+                }
+                else if (0 == executeParams.iDeinterlacingAlgorithm)
                 {
                     bIsFilterSkipped = true;
                 }
@@ -2617,6 +2636,7 @@ mfxStatus ConfigureExecuteParams(
                     // use motion adaptive ADI with reference frame (quality)
                     config.m_bMode30i60pEnable = true;
                     config.m_bRefFrameEnable = true;
+                    config.m_extConfig.customRateData.bkwdRefCount = 1;
                     config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = true;
@@ -3024,7 +3044,8 @@ mfxStatus ConfigureExecuteParams(
         }
     }
 
-    if (inDNRatio == outDNRatio && !executeParams.bVarianceEnable && !executeParams.bComposite)
+    if (inDNRatio == outDNRatio && !executeParams.bVarianceEnable && !executeParams.bComposite &&
+            !(config.m_extConfig.mode == IS_REFERENCES) )
     {
         // work around
         config.m_extConfig.mode  = FRC_DISABLED;

@@ -62,6 +62,8 @@ namespace MfxHwVideoProcessing
 
         virtual mfxStatus Execute_Composition(mfxExecuteParams *pParams);
 
+        virtual mfxStatus Execute_FakeOutput(mfxExecuteParams *pParams);
+
     private:
 
         BOOL m_bRunning;
@@ -79,6 +81,8 @@ namespace MfxHwVideoProcessing
         VABufferID m_denoiseFilterID;
         VABufferID m_detailFilterID;
         VABufferID m_deintFilterID;
+        mfxU32     m_refCountForADI;
+        BOOL       m_bFakeOutputEnabled;
 
         VABufferID m_filterBufs[VAProcFilterCount];
         mfxU32 m_numFilterBufs;
