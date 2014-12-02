@@ -268,6 +268,70 @@ mfxStatus mfxCOREGetOpaqueSurface(mfxHDL pthis, mfxFrameSurface1 *surf, mfxFrame
     return mfxRes;
 }// mfxStatus mfxCOREGetOpaqueSurface(mfxHDL pthis, mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf)
 
+mfxStatus mfxCORECreateAccelerationDevice(mfxHDL pthis, mfxHandleType type, mfxHDL *handle)
+{
+    mfxSession session = (mfxSession) pthis;
+    mfxStatus mfxRes = MFX_ERR_NONE;
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK_NULL_PTR1(handle);
+    try
+    {
+        mfxRes = session->m_pCORE.get()->GetHandle(type, handle);
+
+        if (mfxRes == MFX_ERR_NOT_FOUND)
+        {
+#if defined(MFX_VA_WIN)
+            if (type == MFX_HANDLE_D3D9_DEVICE_MANAGER)
+            {
+                D3D9Interface *pID3D = QueryCoreInterface<D3D9Interface>(session->m_pCORE.get(), MFXICORED3D_GUID);
+                if(pID3D == 0) 
+                    mfxRes = MFX_ERR_UNSUPPORTED;
+                else
+                {
+                    IDirectXVideoDecoderService *service = 0;
+                    mfxRes = pID3D->GetD3DService(1920, 1088, &service);
+
+                    *handle = (mfxHDL)pID3D->GetD3D9DeviceManager();
+                }
+            }
+            else if (type == MFX_HANDLE_D3D11_DEVICE)
+            {
+                D3D11Interface* pID3D = QueryCoreInterface<D3D11Interface>(session->m_pCORE.get());
+                if(pID3D == 0) 
+                    mfxRes = MFX_ERR_UNSUPPORTED;
+                else
+                {
+                    *handle = (mfxHDL)pID3D->GetD3D11VideoDevice();
+                }
+            }
+            else
+#endif
+            {
+                mfxRes = MFX_ERR_UNSUPPORTED;
+            }
+        }
+    }
+    /* handle error(s) */
+    catch(MFX_CORE_CATCH_TYPE)
+    {
+        /* set the default error value */
+        if (NULL == session)
+        {
+            mfxRes = MFX_ERR_INVALID_HANDLE;
+        }
+        else if (NULL == session->m_pCORE.get())
+        {
+            mfxRes = MFX_ERR_NOT_INITIALIZED;
+        }
+        else
+        {
+            mfxRes = MFX_ERR_NULL_PTR;
+        }
+    }
+    return mfxRes;
+}// mfxStatus mfxCORECreateAccelerationDevice(mfxHDL pthis, mfxHandleType type, mfxHDL *handle)
+
 #define CORE_FUNC_IMPL(func_name, formal_param_list, actual_param_list) \
 mfxStatus mfxCORE##func_name formal_param_list \
 { \
@@ -431,6 +495,7 @@ void InitCoreInterface(mfxCoreInterface *pCoreInterface,
     pCoreInterface->UnmapOpaqueSurface = &mfxCOREUnmapOpaqueSurface;
     pCoreInterface->GetRealSurface = &mfxCOREGetRealSurface;
     pCoreInterface->GetOpaqueSurface = &mfxCOREGetOpaqueSurface;
+    pCoreInterface->CreateAccelerationDevice = &mfxCORECreateAccelerationDevice;
 
 
 } // void InitCoreInterface(mfxCoreInterface *pCoreInterface,
