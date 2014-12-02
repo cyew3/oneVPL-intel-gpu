@@ -150,7 +150,7 @@ mfxU32 GetMaxDpbSizeByLevel(MfxVideoParam const & par)
     assert(par.mfx.CodecLevel != 0);
     
     mfxU32 MaxLumaPs         = TableA1[LevelIdx(par.mfx.CodecLevel)][0]; 
-    mfxU32 PicSizeInSamplesY = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height;
+    mfxU32 PicSizeInSamplesY = (mfxU32)par.m_ext.HEVCParam.PicWidthInLumaSamples * par.m_ext.HEVCParam.PicHeightInLumaSamples;
 
     return GetMaxDpbSize(PicSizeInSamplesY, MaxLumaPs, 6);
 }
@@ -167,7 +167,7 @@ mfxF64 GetMaxFrByLevel(MfxVideoParam const & par)
     assert(par.mfx.CodecLevel != 0);
 
     mfxU32 MaxLumaSr   = TableA2[LevelIdx(par.mfx.CodecLevel)][0];
-    mfxU32 PicSizeInSamplesY = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height;
+    mfxU32 PicSizeInSamplesY = (mfxU32)par.m_ext.HEVCParam.PicWidthInLumaSamples * par.m_ext.HEVCParam.PicHeightInLumaSamples;
 
     return (mfxF64)MaxLumaSr / PicSizeInSamplesY;
 }
@@ -184,7 +184,7 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool query)
     mfxStatus sts = MFX_ERR_NONE;
     //mfxU32 CpbBrVclFactor    = 1000;
     mfxU32 CpbBrNalFactor    = 1100;
-    mfxU32 PicSizeInSamplesY = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height;
+    mfxU32 PicSizeInSamplesY = (mfxU32)par.m_ext.HEVCParam.PicWidthInLumaSamples * par.m_ext.HEVCParam.PicHeightInLumaSamples;
     mfxU32 LumaSr            = Ceil(mfxF64(PicSizeInSamplesY) / par.mfx.FrameInfo.FrameRateExtN * par.mfx.FrameInfo.FrameRateExtD);
     mfxU16 NewLevel          = par.mfx.CodecLevel;
 
@@ -207,8 +207,8 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool query)
         mfxU32 MaxDpbSize  = GetMaxDpbSize(PicSizeInSamplesY, MaxLumaPs, 6);
         
         if (   PicSizeInSamplesY > MaxLumaPs
-            || par.mfx.FrameInfo.Width  > sqrt(MaxLumaPs * 8)
-            || par.mfx.FrameInfo.Height > sqrt(MaxLumaPs * 8)
+            || par.m_ext.HEVCParam.PicWidthInLumaSamples > sqrt(MaxLumaPs * 8)
+            || par.m_ext.HEVCParam.PicHeightInLumaSamples > sqrt(MaxLumaPs * 8)
             || (mfxU32)par.mfx.NumRefFrame + 1 > MaxDpbSize
             //|| (mfxU32)par.m_pps.num_tile_columns_minus1 + 1 > MaxTileCols
             //|| (mfxU32)par.m_pps.num_tile_rows_minus1 + 1 > MaxTileRows
@@ -258,15 +258,35 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
     mfxU32 unsupported = 0, changed = 0, incompatible = 0;
     mfxStatus sts = MFX_ERR_NONE;
 
-    if (   par.mfx.FrameInfo.Width > caps.MaxPicWidth
-        || (par.mfx.FrameInfo.Width & 15) != 0)
+    if (!IsAligned(par.mfx.FrameInfo.Width, HW_SURF_ALIGN_W))
+    {
+        par.mfx.FrameInfo.Width = Align(par.mfx.FrameInfo.Width, HW_SURF_ALIGN_W);
+        changed ++;
+    }
+
+    if (!IsAligned(par.mfx.FrameInfo.Height, HW_SURF_ALIGN_H))
+    {
+        par.mfx.FrameInfo.Height = Align(par.mfx.FrameInfo.Width, HW_SURF_ALIGN_H);
+        changed ++;
+    }
+
+    if (   par.m_ext.HEVCParam.PicWidthInLumaSamples  > par.mfx.FrameInfo.Width 
+        || par.m_ext.HEVCParam.PicHeightInLumaSamples > par.mfx.FrameInfo.Height
+        || !IsAligned(par.m_ext.HEVCParam.PicWidthInLumaSamples,  CODED_PIC_ALIGN_W)
+        || !IsAligned(par.m_ext.HEVCParam.PicHeightInLumaSamples, CODED_PIC_ALIGN_H))
+    {
+        par.m_ext.HEVCParam.PicWidthInLumaSamples  = 0;
+        par.m_ext.HEVCParam.PicHeightInLumaSamples = 0;
+        unsupported ++;
+    }
+
+    if (par.mfx.FrameInfo.Width > caps.MaxPicWidth)
     {
         par.mfx.FrameInfo.Width = 0;
         unsupported ++;
     }
         
-    if (   par.mfx.FrameInfo.Height > caps.MaxPicHeight
-        || (par.mfx.FrameInfo.Height & 15) != 0)
+    if (par.mfx.FrameInfo.Height > caps.MaxPicHeight)
     {
         par.mfx.FrameInfo.Height = 0;
         unsupported ++;
@@ -347,32 +367,32 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
         changed ++;
     }
 
-    if (par.mfx.FrameInfo.Width > 0)
+    if (par.m_ext.HEVCParam.PicWidthInLumaSamples > 0)
     {
-        if (par.mfx.FrameInfo.CropX > par.mfx.FrameInfo.Width)
+        if (par.mfx.FrameInfo.CropX > par.m_ext.HEVCParam.PicWidthInLumaSamples)
         {
             par.mfx.FrameInfo.CropX = 0;
             incompatible ++;
         }
 
-        if (par.mfx.FrameInfo.CropX + par.mfx.FrameInfo.CropW > par.mfx.FrameInfo.Width)
+        if (par.mfx.FrameInfo.CropX + par.mfx.FrameInfo.CropW > par.m_ext.HEVCParam.PicWidthInLumaSamples)
         {
-            par.mfx.FrameInfo.CropW = par.mfx.FrameInfo.Width - par.mfx.FrameInfo.CropX;
+            par.mfx.FrameInfo.CropW = par.m_ext.HEVCParam.PicWidthInLumaSamples - par.mfx.FrameInfo.CropX;
             incompatible ++;
         }
     }
 
-    if (par.mfx.FrameInfo.Height > 0)
+    if (par.m_ext.HEVCParam.PicHeightInLumaSamples > 0)
     {
-        if (par.mfx.FrameInfo.CropY > par.mfx.FrameInfo.Height)
+        if (par.mfx.FrameInfo.CropY > par.m_ext.HEVCParam.PicHeightInLumaSamples)
         {
             par.mfx.FrameInfo.CropY = 0;
             incompatible ++;
         }
 
-        if (par.mfx.FrameInfo.CropY + par.mfx.FrameInfo.CropH > par.mfx.FrameInfo.Height)
+        if (par.mfx.FrameInfo.CropY + par.mfx.FrameInfo.CropH > par.m_ext.HEVCParam.PicHeightInLumaSamples)
         {
-            par.mfx.FrameInfo.CropH = par.mfx.FrameInfo.Height - par.mfx.FrameInfo.CropY;
+            par.mfx.FrameInfo.CropH = par.m_ext.HEVCParam.PicHeightInLumaSamples - par.mfx.FrameInfo.CropY;
             incompatible ++;
         }
     }
@@ -428,7 +448,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
 
     if (par.BufferSizeInKB != 0)
     {
-        mfxU32 rawBytes = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000;
+        mfxU32 rawBytes = par.m_ext.HEVCParam.PicWidthInLumaSamples * par.m_ext.HEVCParam.PicHeightInLumaSamples * 3 / 2 / 1000;
 
         if (   par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
             && par.BufferSizeInKB < rawBytes)
@@ -457,10 +477,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
     if (sts == MFX_ERR_NONE && changed)
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
-    if (sts > MFX_ERR_NONE && unsupported)
+    if (sts >= MFX_ERR_NONE && unsupported)
         sts = MFX_ERR_UNSUPPORTED;
 
-    if (sts > MFX_ERR_NONE && incompatible)
+    if (sts >= MFX_ERR_NONE && incompatible)
         sts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     return sts;
@@ -470,7 +490,7 @@ void SetDefaults(
     MfxVideoParam &          par,
     ENCODE_CAPS_HEVC const & hwCaps)
 {
-    mfxU64 rawBits = mfxU64(par.mfx.FrameInfo.Width) * par.mfx.FrameInfo.Height * 3 / 2 * 8;
+    mfxU64 rawBits = (mfxU64)par.m_ext.HEVCParam.PicWidthInLumaSamples * par.m_ext.HEVCParam.PicHeightInLumaSamples * 3 / 2 * 8;
     mfxF64 maxFR   = 300.;
     mfxU32 maxBR   = 0xFFFFFFFF;
     mfxU32 maxBuf  = 0xFFFFFFFF;
@@ -500,10 +520,10 @@ void SetDefaults(
         par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 
     if (!par.mfx.FrameInfo.CropW)
-        par.mfx.FrameInfo.CropW = par.mfx.FrameInfo.Width - par.mfx.FrameInfo.CropX;
+        par.mfx.FrameInfo.CropW = par.m_ext.HEVCParam.PicWidthInLumaSamples - par.mfx.FrameInfo.CropX;
 
     if (!par.mfx.FrameInfo.CropH)
-        par.mfx.FrameInfo.CropH = par.mfx.FrameInfo.Height - par.mfx.FrameInfo.CropY;
+        par.mfx.FrameInfo.CropH = par.m_ext.HEVCParam.PicHeightInLumaSamples - par.mfx.FrameInfo.CropY;
 
     if (!par.mfx.FrameInfo.FrameRateExtN || !par.mfx.FrameInfo.FrameRateExtD)
     {

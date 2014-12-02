@@ -29,7 +29,7 @@ public:
     inline void PutUE   (mfxU32 b)    { PutGolomb(b); };
     inline void PutSE   (mfxI32 b)    { (b > 0) ? PutGolomb((b<<1)-1) : PutGolomb((-b)<<1); };
 
-    inline mfxU32 GetOffset() { return (m_bs - m_bsStart) * 8 + m_bitOffset - m_bitStart; };
+    inline mfxU32 GetOffset() { return (mfxU32)(m_bs - m_bsStart) * 8 + m_bitOffset - m_bitStart; };
 
     void Reset(mfxU8* bs = 0, mfxU32 size = 0, mfxU8 bitOffset = 0);
 

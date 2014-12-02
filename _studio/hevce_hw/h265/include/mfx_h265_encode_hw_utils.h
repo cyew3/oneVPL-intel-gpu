@@ -14,6 +14,7 @@
 
 #include <vector>
 #include <list>
+#include <assert.h>
 
 #define MFX_MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MFX_MAX(x,y) ((x) > (y) ? (x) : (y))
@@ -36,6 +37,16 @@ template<class T> inline T Abs  (T x)               { return (x > 0 ? x : -x); }
 template<class T> inline T Min  (T x, T y)          { return MFX_MIN(x, y); }
 template<class T> inline T Max  (T x, T y)          { return MFX_MAX(x, y); }
 template<class T> inline T Clip3(T min, T max, T x) { return Min(Max(min, x), max); }
+template<class T> inline T Align(T value, mfxU32 alignment)
+{
+    assert((alignment & (alignment - 1)) == 0); // should be 2^n
+    return T((value + alignment - 1) & ~(alignment - 1));
+}
+template<class T> bool IsAligned(T value, mfxU32 alignment)
+{
+    assert((alignment & (alignment - 1)) == 0); // should be 2^n
+    return !(value & (alignment - 1));
+}
 
 inline mfxU32 CeilLog2  (mfxU32 x)           { mfxU32 l = 0; while(x > mfxU32(1<<l)) l++; return l; }
 inline mfxU32 CeilDiv   (mfxU32 x, mfxU32 y) { return (x + y - 1) / y; }
@@ -55,6 +66,10 @@ enum
 {
     MAX_DPB_SIZE        = 15,
     IDX_INVALID         = 0xFF,
+    HW_SURF_ALIGN_W     = 32,
+    HW_SURF_ALIGN_H     = 32,
+    CODED_PIC_ALIGN_W   = 8,
+    CODED_PIC_ALIGN_H   = 8,
 };
 
 enum
@@ -79,12 +94,6 @@ public:
         MFXCoreInterface *     core,
         mfxFrameAllocRequest & req,
         bool                   isCopyRequired);
-
-    mfxStatus Alloc(
-        MFXCoreInterface *     core,
-        mfxFrameAllocRequest & req,
-        mfxFrameSurface1 **    opaqSurf,
-        mfxU32                 numOpaqSurf);
     
     mfxU32 Lock(mfxU32 idx);
 
@@ -122,7 +131,8 @@ typedef struct _DpbFrame
 typedef struct _Task : DpbFrame
 {
     mfxBitstream*       m_bs;
-    mfxFrameSurface1*   m_surf;
+    mfxFrameSurface1*   m_surf; //input surface, may be opaque
+    mfxFrameSurface1*   m_surf_real;
     mfxEncodeCtrl       m_ctrl;
     Slice               m_sh;
 
@@ -150,12 +160,93 @@ typedef struct _Task : DpbFrame
 
 typedef std::list<Task> TaskList;
 
+namespace ExtBuffer
+{
+    template<class T> struct Map { enum { Id = 0, Sz = 0 }; };
+
+    #define EXTBUF(TYPE, ID) template<> struct Map<TYPE> { enum { Id = ID, Sz = sizeof(TYPE) }; }
+        EXTBUF(mfxExtHEVCParam,             MFX_EXTBUFF_HEVC_PARAM);
+        EXTBUF(mfxExtOpaqueSurfaceAlloc,    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+    #undef EXTBUF
+
+    class Proxy
+    {
+    private:
+        mfxExtBuffer ** m_b;
+        mfxU16          m_n;
+    public:
+        Proxy(mfxExtBuffer ** b, mfxU16 n)
+            : m_b(b)
+            , m_n(n)
+        {
+        }
+
+        template <class T> operator T*()
+        {
+            if (m_b)
+                for (mfxU16 i = 0; i < m_n; i ++)
+                    if (m_b[i] && m_b[i]->BufferId == Map< std::remove_const<T>::type >::Id)
+                        return (T*)m_b[i];
+            return 0;
+        }
+    };
+
+    template <class P> Proxy Get(P & par)
+    {
+        return Proxy(par.ExtParam, par.NumExtParam);
+    }
+
+    template<class T> void Init(T& buf)
+    {
+        Zero(buf);
+        mfxExtBuffer& header = *((mfxExtBuffer*)&buf);
+        header.BufferId = Map<T>::Id;
+        header.BufferSz = sizeof(T);
+    }
+
+    template<class P, class T> bool Construct(P const & par, T& buf)
+    {
+        T const * p = Get(par);
+
+        if (p)
+        {
+            buf = *p;
+            return true;
+        }
+
+        Init(buf);
+
+        return false;
+    }
+
+    template<class P, class T> bool Set(P& par, T const & buf)
+    {
+        T* p = Get(par);
+
+        if (p)
+        {
+            *p = buf;
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Construct(mfxVideoParam const & par, mfxExtHEVCParam& buf);
+};
+
 class MfxVideoParam : public mfxVideoParam
 {
 public:
     VPS m_vps;
     SPS m_sps;
     PPS m_pps;
+
+    struct 
+    {
+        mfxExtHEVCParam             HEVCParam;
+        mfxExtOpaqueSurfaceAlloc    Opaque;
+    } m_ext;
 
     mfxU32 BufferSizeInKB;
     mfxU32 InitialDelayInKB;
@@ -176,6 +267,8 @@ public:
     void SyncHeadersToMfxParam();
 
     void GetSliceHeader(Task const & task, Slice & s) const;
+
+    mfxStatus GetExtBuffers(mfxVideoParam& par, bool query = false);
 
 private:
     void Construct(mfxVideoParam const & par);

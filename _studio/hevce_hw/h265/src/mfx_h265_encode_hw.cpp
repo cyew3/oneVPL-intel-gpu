@@ -26,21 +26,6 @@ MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin)
 namespace MfxHwH265Encode
 {
 
-GUID GetGUID(MfxVideoParam const & par)
-{
-    if (par.mfx.LowPower == MFX_CODINGOPTION_ON)
-    {
-        //if (par.mfx.FrameInfo.BitDepthLuma > 8)
-        //    return DXVA2_Intel_LowpowerEncode_HEVC_Main10;
-        return DXVA2_Intel_LowpowerEncode_HEVC_Main;
-    }
-    //
-    //if (par.mfx.FrameInfo.BitDepthLuma > 8)
-    //        return DXVA2_Intel_Encode_HEVC_Main10;
-
-    return DXVA2_Intel_Encode_HEVC_Main;
-}
-
 mfxStatus CheckVideoParam(MfxVideoParam & par, ENCODE_CAPS_HEVC const & caps);
 void      SetDefaults    (MfxVideoParam & par, ENCODE_CAPS_HEVC const & hwCaps);
 
@@ -129,10 +114,19 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
         sts = m_raw.Alloc(&m_core, request, true);
         MFX_CHECK_STS(sts);
     }
-    else if (m_vpar.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY 
-        || m_vpar.Protected)
+    else if (m_vpar.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
-        assert(!"not implemented");
+        mfxExtOpaqueSurfaceAlloc& opaq = m_vpar.m_ext.Opaque;
+
+        sts = m_core.MapOpaqueSurface(opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
+        MFX_CHECK_STS(sts);
+
+        if (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+        {
+            request.Type        = MFX_MEMTYPE_D3D_INT;
+            request.NumFrameMin = opaq.In.NumSurface;
+            sts = m_raw.Alloc(&m_core, request, true);
+        }
     }
 
     request.Type        = MFX_MEMTYPE_D3D_INT;
@@ -181,15 +175,16 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
     case MFX_IOPATTERN_IN_VIDEO_MEMORY:
         request->Type = MFX_MEMTYPE_D3D_EXT;
         break;
-    case MFX_IOPATTERN_IN_OPAQUE_MEMORY: assert(!"not implemented");
+    case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
+        request->Type = MFX_MEMTYPE_D3D_EXT|MFX_MEMTYPE_OPAQUE_FRAME;
+        break;
     default: return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
     sts = QueryHwCaps(&m_core, GetGUID(tmp), caps);
     MFX_CHECK_STS(sts);
 
-    //TODO: check params
-
+    CheckVideoParam(tmp, caps);
     SetDefaults(tmp, caps);
 
     request->Info = tmp.mfx.FrameInfo;
@@ -260,6 +255,8 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         tmp.SyncCalculableToVideoParam();
         *out = tmp;
+
+        tmp.GetExtBuffers(*out, true);
     }
 
     return sts;
@@ -278,6 +275,7 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
     MFX_CHECK_NULL_PTR1(par);
 
     *par = m_vpar;
+    sts = m_vpar.GetExtBuffers(*par);
 
     return sts;
 }
@@ -299,6 +297,25 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         task->m_surf = surface;
         if (ctrl)
             task->m_ctrl = *ctrl;
+
+        if (m_vpar.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+        {
+            task->m_surf_real = 0;
+
+            sts = m_core.GetRealSurface(task->m_surf, &task->m_surf_real);
+            MFX_CHECK_STS(sts);
+
+            if (task->m_surf_real == 0)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+            task->m_surf_real->Info            = task->m_surf->Info;
+            task->m_surf_real->Data.TimeStamp  = task->m_surf->Data.TimeStamp;
+            task->m_surf_real->Data.FrameOrder = task->m_surf->Data.FrameOrder;
+            task->m_surf_real->Data.Corrupted  = task->m_surf->Data.Corrupted;
+            task->m_surf_real->Data.DataFlag   = task->m_surf->Data.DataFlag;
+        }
+        else
+            task->m_surf_real = task->m_surf;
 
         m_core.IncreaseReference(&surface->Data);
 
@@ -446,6 +463,8 @@ mfxStatus Plugin::FreeResources(mfxThreadTask thread_task, mfxStatus /*sts*/)
 
 mfxStatus Plugin::Close()
 {
+    mfxExtOpaqueSurfaceAlloc& opaq = m_vpar.m_ext.Opaque;
+
     m_rec.Free();
     m_raw.Free();
     m_bs.Free();
@@ -456,6 +475,12 @@ mfxStatus Plugin::Close()
     m_frameOrder = 0;
     Zero(m_lastTask);
     Zero(m_caps);
+
+    if (m_vpar.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && opaq.In.Surfaces)
+    {
+        m_core.UnmapOpaqueSurface(opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
+        Zero(opaq);
+    }
 
     return MFX_ERR_NONE;
 }

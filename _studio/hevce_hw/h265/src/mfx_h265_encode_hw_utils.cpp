@@ -104,28 +104,6 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     return MFX_ERR_NONE;
 } 
 
-mfxStatus MfxFrameAllocResponse::Alloc(
-    MFXCoreInterface *     core,
-    mfxFrameAllocRequest & req,
-    mfxFrameSurface1 **    /*opaqSurf*/,
-    mfxU32                 /*numOpaqSurf*/)
-{
-    req.NumFrameSuggested = req.NumFrameMin;
-
-    assert(!"not implemented");
-    mfxStatus sts = MFX_ERR_UNSUPPORTED;//core->AllocFrames(&req, this, opaqSurf, numOpaqSurf);
-    MFX_CHECK_STS(sts);
-
-    if (NumFrameActual < req.NumFrameMin)
-        return MFX_ERR_MEMORY_ALLOC;
-
-    m_core = core;
-    m_numFrameActualReturnedByAllocFrames = NumFrameActual;
-    NumFrameActual = req.NumFrameMin;
-
-    return MFX_ERR_NONE;
-}
-
 mfxU32 MfxFrameAllocResponse::Lock(mfxU32 idx)
 {
     if (idx >= m_locked.size())
@@ -194,35 +172,19 @@ mfxStatus GetNativeHandleToRawSurface(
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxFrameAllocator & fa = core.FrameAllocator();
-
-    //mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(video);
+    mfxExtOpaqueSurfaceAlloc const & opaq = video.m_ext.Opaque;
 
     Zero(handle);
+
     mfxHDL * nativeHandle = &handle.first;
+    mfxFrameSurface1 * surface = task.m_surf_real;
 
-    mfxFrameSurface1 * surface = task.m_surf;
-
-    if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        assert(!"not implemented");
-        //surface = core.GetNativeSurface(task.m_yuv);
-        //if (surface == 0)
-        //    return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
-        //
-        //surface->Info            = task.m_yuv->Info;
-        //surface->Data.TimeStamp  = task.m_yuv->Data.TimeStamp;
-        //surface->Data.FrameOrder = task.m_yuv->Data.FrameOrder;
-        //surface->Data.Corrupted  = task.m_yuv->Data.Corrupted;
-        //surface->Data.DataFlag   = task.m_yuv->Data.DataFlag;
-    }
-
-    if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY /*||
-        video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)*/)
+    if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY 
+        || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
         sts = fa.GetHDL(fa.pthis, task.m_midRaw, nativeHandle);
-    else if (video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
+    else if (   video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
+             || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         sts = fa.GetHDL(fa.pthis, surface->Data.MemId, nativeHandle);
-    //else if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) // opaq with internal video memory
-    //    sts = core.GetFrameHDL(surface->Data.MemId, nativeHandle);
     else
         return (MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -237,37 +199,23 @@ mfxStatus CopyRawSurfaceToVideoMemory(
     MfxVideoParam const & video,
     Task const &          task)
 {
-    //mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(video);
-    mfxFrameSurface1 * surface = task.m_surf;
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxExtOpaqueSurfaceAlloc const & opaq = video.m_ext.Opaque;
+    mfxFrameSurface1 * surface = task.m_surf_real;
 
-    if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY 
-        /*|| video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)*/)
+    if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY 
+        || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
     {
-        if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        {
-            assert(!"not implemented");
-            //surface = core.GetNativeSurface(task.m_yuv);
-            //if (surface == 0)
-            //    return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
-            //
-            //surface->Info            = task.m_yuv->Info;
-            //surface->Data.TimeStamp  = task.m_yuv->Data.TimeStamp;
-            //surface->Data.FrameOrder = task.m_yuv->Data.FrameOrder;
-            //surface->Data.Corrupted  = task.m_yuv->Data.Corrupted;
-            //surface->Data.DataFlag   = task.m_yuv->Data.DataFlag;
-        }
-        
         mfxFrameAllocator & fa = core.FrameAllocator();
-        mfxStatus sts = MFX_ERR_NONE;
         mfxFrameData d3dSurf = {};
         mfxFrameData sysSurf = surface->Data;
         d3dSurf.MemId = task.m_midRaw;
-        bool sysLocked = false;
+        bool sysLocked = !!sysSurf.Y;
         
         mfxFrameSurface1 surfSrc = { {}, video.mfx.FrameInfo, sysSurf };
         mfxFrameSurface1 surfDst = { {}, video.mfx.FrameInfo, d3dSurf };
 
-        if (!sysSurf.Y)
+        if (!sysLocked)
         {
             sts = fa.Lock(fa.pthis, sysSurf.MemId, &surfSrc.Data);
             MFX_CHECK_STS(sts);
@@ -287,26 +235,26 @@ mfxStatus CopyRawSurfaceToVideoMemory(
         
         sts = fa.Unlock(fa.pthis, d3dSurf.MemId, &surfDst.Data);
         MFX_CHECK_STS(sts);
-
-        //core.LockExternalFrame(sysSurf.MemId, &sysSurf);
-        //
-        //if (sysSurf.Y == 0)
-        //    return (MFX_ERR_LOCK_MEMORY);
-        //
-        //
-        //{
-        //    mfxFrameSurface1 surfSrc = { {}, video.mfx.FrameInfo, sysSurf };
-        //    mfxFrameSurface1 surfDst = { {}, video.mfx.FrameInfo, d3dSurf };
-        //    sts = core.DoFastCopyWrapper(&surfDst, MFX_MEMTYPE_D3D_INT, &surfSrc, MFX_MEMTYPE_SYS_EXT);
-        //    MFX_CHECK_STS(sts);
-        //}
-        //
-        //sts = core.UnlockExternalFrame(sysSurf.MemId, &sysSurf);
-        //MFX_CHECK_STS(sts);
     }
 
-    return MFX_ERR_NONE;
+    return sts;
 }
+
+namespace ExtBuffer
+{
+    bool Construct(mfxVideoParam const & par, mfxExtHEVCParam& buf)
+    {
+        if (!Construct<mfxVideoParam, mfxExtHEVCParam>(par, buf))
+        {
+            buf.PicWidthInLumaSamples  = Align(Max(par.mfx.FrameInfo.Width,  par.mfx.FrameInfo.CropW), CODED_PIC_ALIGN_W);
+            buf.PicHeightInLumaSamples = Align(Max(par.mfx.FrameInfo.Height, par.mfx.FrameInfo.CropH), CODED_PIC_ALIGN_H);
+
+            return false;
+        }
+
+        return true;
+    }
+};
 
 MfxVideoParam::MfxVideoParam()
     : BufferSizeInKB  (0)
@@ -344,13 +292,24 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 {
     mfxVideoParam & base = *this;
     base = par;
+
+    ExtBuffer::Construct(par, m_ext.HEVCParam);
+    ExtBuffer::Construct(par, m_ext.Opaque);
+}
+
+mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool /*query*/)
+{
+    ExtBuffer::Set(par, m_ext.HEVCParam);
+    ExtBuffer::Set(par, m_ext.Opaque);
+
+    return MFX_ERR_NONE;
 }
 
 void MfxVideoParam::SyncVideoToCalculableParam()
 {
     mfxU32 multiplier = MFX_MAX(mfx.BRCParamMultiplier, 1);
 
-    BufferSizeInKB   = mfx.BufferSizeInKB   * multiplier;
+    BufferSizeInKB = mfx.BufferSizeInKB * multiplier;
 
     if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -428,14 +387,14 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     m_vps.num_hrd_parameters                = 0;
 
     general.profile_space               = 0;
-    general.tier_flag                   = !!(mfx.CodecProfile & MFX_TIER_HEVC_HIGH);
-    general.profile_idc                 = (mfx.CodecProfile & 0x55) * 3;
+    general.tier_flag                   = !!(mfx.CodecLevel & MFX_TIER_HEVC_HIGH);
+    general.profile_idc                 = (mfxU8)mfx.CodecProfile;
     general.profile_compatibility_flags = 0;
     general.progressive_source_flag     = !!(mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE);
     general.interlaced_source_flag      = !!(mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_FIELD_TFF|MFX_PICSTRUCT_FIELD_BFF));
     general.non_packed_constraint_flag  = 0;
     general.frame_only_constraint_flag  = 0;
-    general.level_idc                   = (mfxU8)mfx.CodecLevel;
+    general.level_idc                   = (mfxU8)(mfx.CodecLevel & 0xFF) * 3;
 
     slo.max_dec_pic_buffering_minus1    = mfx.NumRefFrame;
     slo.max_num_reorder_pics            = mfx.GopRefDist - 1;
@@ -452,8 +411,8 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     m_sps.seq_parameter_set_id              = 0;
     m_sps.chroma_format_idc                 = mfx.FrameInfo.ChromaFormat;
     m_sps.separate_colour_plane_flag        = 0;
-    m_sps.pic_width_in_luma_samples         = mfx.FrameInfo.Width;
-    m_sps.pic_height_in_luma_samples        = mfx.FrameInfo.Height;
+    m_sps.pic_width_in_luma_samples         = m_ext.HEVCParam.PicWidthInLumaSamples;
+    m_sps.pic_height_in_luma_samples        = m_ext.HEVCParam.PicHeightInLumaSamples;
     m_sps.conformance_window_flag           = 0;
     m_sps.bit_depth_luma_minus8             = Max(0, (mfxI32)mfx.FrameInfo.BitDepthLuma - 8);
     m_sps.bit_depth_chroma_minus8           = Max(0, (mfxI32)mfx.FrameInfo.BitDepthChroma - 8);
