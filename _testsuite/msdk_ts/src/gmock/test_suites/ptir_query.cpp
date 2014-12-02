@@ -146,7 +146,7 @@ int TestSuite::RunTest(unsigned int id)
             m_par.vpp.In.PicStruct = MFX_PICSTRUCT_UNKNOWN;
             m_par.vpp.In.FrameRateExtN = 0;
             m_par.vpp.In.FrameRateExtD = 1;
-            m_par.vpp.Out.FrameRateExtN = 30;
+            m_par.vpp.Out.FrameRateExtN = 60;
             m_par.vpp.Out.FrameRateExtD = 1;
             break;
 
@@ -154,7 +154,7 @@ int TestSuite::RunTest(unsigned int id)
             m_par.vpp.In.PicStruct = MFX_PICSTRUCT_UNKNOWN;
             m_par.vpp.In.FrameRateExtN = 0;
             m_par.vpp.In.FrameRateExtD = 1;
-            m_par.vpp.Out.FrameRateExtN = 60;
+            m_par.vpp.Out.FrameRateExtN = 30;
             m_par.vpp.Out.FrameRateExtD = 1;
             break;
 
