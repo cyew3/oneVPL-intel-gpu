@@ -604,6 +604,10 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 }
             }
         }
+        else if (opaque)
+        {
+            error = true;
+        }
 
         //if(opaque && (const_in.NumExtParam > 1 || out->NumExtParam > 1))
         //{
