@@ -664,7 +664,7 @@ mfxStatus CBaseEncoder::RunEncode(IUnknown *pSample, mfxFrameSurface1* pFrameSur
     sts = AllocateBitstream(&CurrentFrame, (int)nBSSize);
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeBitstream(CurrentFrame));
 
-    if (m_bUseVPP)
+    if (m_bUseVPP && CurrentFrame)
     {
         mfxSyncPoint syncP = {0};
 
