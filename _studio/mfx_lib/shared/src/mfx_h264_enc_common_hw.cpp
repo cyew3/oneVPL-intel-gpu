@@ -208,6 +208,7 @@ namespace
     mfxU16 GetLevelLimitByDpbSize(mfxVideoParam const & par)
     {
         mfxU32 dpbSize = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2;
+        
         dpbSize *= par.mfx.NumRefFrame;
         assert(dpbSize > 0);
 
@@ -352,17 +353,23 @@ namespace
 
         if (levelMbps > level)
             level = levelMbps;
-        
-        mfxU16 levelDpbs = GetLevelLimitByDpbSize(par);
 
-        if (levelDpbs == 0 || levelDpbs == maxSupportedLevel)
+        if (par.mfx.NumRefFrame      != 0 &&
+            par.mfx.FrameInfo.Width  != 0 &&
+            par.mfx.FrameInfo.Height != 0)
         {
-            // level is already maximum possible, return it
-            return maxSupportedLevel;
-        }
+            mfxU16 levelDpbs = GetLevelLimitByDpbSize(par);
 
-        if (levelDpbs > level)
-            level = levelDpbs;
+            if (levelDpbs == 0 || levelDpbs == maxSupportedLevel)
+            {
+                // level is already maximum possible, return it
+                return maxSupportedLevel;
+            }
+
+
+            if (levelDpbs > level)
+                level = levelDpbs;
+        }
 
         mfxU16 profile = par.mfx.CodecProfile;
         mfxU32 kbps = par.calcParam.targetKbps;
