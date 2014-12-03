@@ -39,8 +39,12 @@
 
 #include "vm/thread_defs.h"
 
+// The only supported padding size is 8
+#define CAMERA_PADDING_SIZE 8
 
 #define align(value) ((0x10) * ( (value) / (0x10) + (((value) % (0x10)) ? 1 : 0)))
+
+#define align_32(value) ((0x20) * ( (value) / (0x20) + (((value) % (0x20)) ? 1 : 0)))
 
 class CCameraPipeline
 {

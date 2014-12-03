@@ -73,33 +73,48 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
     MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_NULL_PTR);
     mfxStatus sts = MFX_ERR_NONE;
 
-    if (pParams->bDoPadding) {
-        m_mfxVideoParams.vpp.In.Width  = (mfxU16)pParams->frameInfo[VPP_IN].nWidth + 16;
-        m_mfxVideoParams.vpp.In.Height = (mfxU16)pParams->frameInfo[VPP_IN].nHeight + 16;
-    } else {
-        m_mfxVideoParams.vpp.In.Width = (mfxU16)pParams->frameInfo[VPP_IN].nWidth;
+    if (pParams->bDoPadding)
+    {
+        // first 8 lines are padded data. Original image should be
+        // placed starting 8,8 position into the input frame
+        m_mfxVideoParams.vpp.In.CropX  = CAMERA_PADDING_SIZE;
+        m_mfxVideoParams.vpp.In.CropY  = CAMERA_PADDING_SIZE;
+
+        // Take into account padding on each edge
+        m_mfxVideoParams.vpp.In.Width  = (mfxU16)pParams->frameInfo[VPP_IN].nWidth  + CAMERA_PADDING_SIZE + CAMERA_PADDING_SIZE;
+        m_mfxVideoParams.vpp.In.Height = (mfxU16)pParams->frameInfo[VPP_IN].nHeight + CAMERA_PADDING_SIZE + CAMERA_PADDING_SIZE;
+    }
+    else
+    {
+        m_mfxVideoParams.vpp.In.Width  = (mfxU16)pParams->frameInfo[VPP_IN].nWidth;
         m_mfxVideoParams.vpp.In.Height = (mfxU16)pParams->frameInfo[VPP_IN].nHeight;
     }
 
-    m_mfxVideoParams.vpp.In.Width  = align(m_mfxVideoParams.vpp.In.Width);
+    // Width and height values must be aligned in order to arhive maximum paerfromance
+    m_mfxVideoParams.vpp.In.Width  = align_32(m_mfxVideoParams.vpp.In.Width);
     m_mfxVideoParams.vpp.In.Height = align(m_mfxVideoParams.vpp.In.Height);
 
     m_mfxVideoParams.vpp.In.CropW = (mfxU16)pParams->frameInfo[VPP_IN].CropW;
     m_mfxVideoParams.vpp.In.CropH = (mfxU16)pParams->frameInfo[VPP_IN].CropH;
-    m_mfxVideoParams.vpp.In.CropX = align((mfxU16)pParams->frameInfo[VPP_IN].CropX);
-    m_mfxVideoParams.vpp.In.CropY = (mfxU16)pParams->frameInfo[VPP_IN].CropY;
+
+    // Add additional CropX,CropY if any
+    m_mfxVideoParams.vpp.In.CropX += align((mfxU16)pParams->frameInfo[VPP_IN].CropX);
+    m_mfxVideoParams.vpp.In.CropY += (mfxU16)pParams->frameInfo[VPP_IN].CropY;
     m_mfxVideoParams.vpp.In.FourCC = pParams->frameInfo[VPP_IN].FourCC;
     //Only R16 input supported now, should use chroma format monochrome
     m_mfxVideoParams.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_MONOCHROME;
 
     m_mfxVideoParams.vpp.In.BitDepthLuma = (mfxU16)pParams->bitDepth;
 
+    // CropW of the output frame must be the same as CropW of the input. Resize is not supported
+    // The same for CropH
     m_mfxVideoParams.vpp.Out.CropW = (mfxU16)pParams->frameInfo[VPP_OUT].CropW;
     m_mfxVideoParams.vpp.Out.CropH = (mfxU16)pParams->frameInfo[VPP_OUT].CropH;
-    m_mfxVideoParams.vpp.Out.Width = align((mfxU16)pParams->frameInfo[VPP_OUT].nWidth);
+
+    m_mfxVideoParams.vpp.Out.Width  = align_32((mfxU16)pParams->frameInfo[VPP_OUT].nWidth);
     m_mfxVideoParams.vpp.Out.Height = align((mfxU16)pParams->frameInfo[VPP_OUT].nHeight);
-    m_mfxVideoParams.vpp.Out.CropX = align((mfxU16)pParams->frameInfo[VPP_OUT].CropX);
-    m_mfxVideoParams.vpp.Out.CropY = (mfxU16)pParams->frameInfo[VPP_OUT].CropY;
+    m_mfxVideoParams.vpp.Out.CropX  = align((mfxU16)pParams->frameInfo[VPP_OUT].CropX);
+    m_mfxVideoParams.vpp.Out.CropY  = (mfxU16)pParams->frameInfo[VPP_OUT].CropY;
     m_mfxVideoParams.vpp.Out.FourCC = pParams->frameInfo[VPP_OUT].FourCC;
     //Only ARGB onput supported now, should use chroma format 444
     m_mfxVideoParams.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
@@ -162,7 +177,7 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
     {
         m_Padding.Header.BufferId = MFX_EXTBUF_CAM_PADDING;
         m_Padding.Header.BufferSz = sizeof(m_Padding);
-        m_Padding.Top = m_Padding.Bottom = m_Padding.Left = m_Padding.Right = 8;
+        m_Padding.Top = m_Padding.Bottom = m_Padding.Left = m_Padding.Right = CAMERA_PADDING_SIZE;
         m_ExtBuffers.push_back((mfxExtBuffer *)&m_Padding);
     }
 
@@ -738,18 +753,15 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
         pParams->frameInfo[VPP_OUT].CropW   = pParams->frameInfo[VPP_OUT].nWidth;
         pParams->frameInfo[VPP_OUT].CropH   = pParams->frameInfo[VPP_OUT].nHeight;
 
-        pParams->frameInfo[VPP_OUT].nWidth  = align(pParams->frameInfo[VPP_OUT].nWidth);
-        pParams->frameInfo[VPP_IN].nWidth   = align(pParams->frameInfo[VPP_IN].nWidth);
+        pParams->frameInfo[VPP_OUT].nWidth  = align_32(pParams->frameInfo[VPP_OUT].nWidth);
+        pParams->frameInfo[VPP_IN].nWidth   = align_32(pParams->frameInfo[VPP_IN].nWidth);
         pParams->frameInfo[VPP_IN].nHeight  = align(pParams->frameInfo[VPP_IN].nHeight);
-
-
     }
 
-    //pParams->frameInfo[VPP_OUT].FourCC = MFX_FOURCC_RGB4;
     pParams->frameInfo[VPP_IN].FourCC = MFX_FOURCC_R16;
 
     // set memory type
-    m_memTypeIn = pParams->memTypeIn;
+    m_memTypeIn  = pParams->memTypeIn;
     m_memTypeOut = pParams->memTypeOut;
 
     if (m_memTypeOut == UNDEFINED_MEMORY) {

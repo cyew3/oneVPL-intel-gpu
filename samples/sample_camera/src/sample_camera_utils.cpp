@@ -199,13 +199,6 @@ mfxStatus CRawVideoReader::Init(sInputParams* pParams)
     m_Width  = pParams->frameInfo->nWidth;
     m_Height = pParams->frameInfo->nHeight;
 
-    //msdk_char *strFileName = pParams->strSrcFile;
-
-    //MSDK_CHECK_POINTER(strFileName, MFX_ERR_NULL_PTR);
-
-    //MSDK_FOPEN(m_fSrc, strFileName, MSDK_STRING("rb"));
-    //MSDK_CHECK_POINTER(m_fSrc, MFX_ERR_ABORTED);
-
     return MFX_ERR_NONE;
 
 } // mfxStatus CRawVideoReader::Init(const msdk_char *strFileName)
@@ -267,14 +260,16 @@ mfxStatus CRawVideoReader::LoadNextFrameSingle(mfxFrameData* pData, mfxFrameInfo
     int shift = 16 - pInfo->BitDepthLuma;
 #endif
 
-    if (!m_DoPadding) {
+    if (!m_DoPadding)
+    {
         for (i = 0; i < h; i++)
         {
             nBytesRead = (mfxI32)fread_s(ptr + i * pitch, pData->Pitch, sizeof(mfxU16), w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
-    } else {
-
+    }
+    else
+    {
         ptr = pData->Y16 + 8 + 8*pitch;
         for (i = 0; i < h; i++)
         {
@@ -288,23 +283,27 @@ mfxStatus CRawVideoReader::LoadNextFrameSingle(mfxFrameData* pData, mfxFrameInfo
             nBytesRead = (mfxI32)fread_s(rowPtr, w*sizeof(mfxU16), sizeof(mfxU16), w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
 #endif
-            for (j = 0; j < 7; j++) {
+            for (j = 0; j < 7; j++)
+            {
                 rowPtr[-j - 1] = rowPtr[j + 1];
                 rowPtr[w + j] = rowPtr[w - 2 - j];
             }
             rowPtr[-8] = rowPtr[-7]; // not used
             rowPtr[w + 7] = rowPtr[w + 6]; // not used
         }
-        for (j = 0; j < 7; j++) {
+
+        for (j = 0; j < 7; j++)
+        {
             mfxU16 *pDst = pData->Y16 + (7 - j)*pitch;
             mfxU16  *pSrc = pData->Y16 + (9 + j)*pitch;
             MSDK_MEMCPY(pDst, pSrc, (w + 16)*sizeof(mfxU16));
         }
         MSDK_MEMCPY(pData->Y16, pData->Y16+pitch, (w + 16)*sizeof(mfxU16));
 
-        for (j = 0; j < 7; j++) {
+        for (j = 0; j < 7; j++)
+        {
             mfxU16 *pDst = pData->Y16 + (8 + h + j)*pitch;
-            mfxU16  *pSrc = pData->Y16 + (8 + h - 2 - j)*pitch;
+            mfxU16 *pSrc = pData->Y16 + (8 + h - 2 - j)*pitch;
             MSDK_MEMCPY(pDst, pSrc, (w + 16)*sizeof(mfxU16));
         }
         MSDK_MEMCPY(pData->Y16 + (15 + h)*pitch, pData->Y16 + (14 + h)*pitch, (w + 16)*sizeof(mfxU16));
@@ -373,14 +372,16 @@ mfxStatus CRawVideoReader::LoadNextFrameSequential(mfxFrameData* pData, mfxFrame
     int shift = 16 - pInfo->BitDepthLuma;
 #endif
 
-    if (!m_DoPadding) {
+    if (!m_DoPadding)
+    {
         for (i = 0; i < h; i++)
         {
             nBytesRead = (mfxI32)fread_s(ptr + i * pitch, pData->Pitch, sizeof(mfxU16), w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
-    } else {
-
+    }
+    else
+    {
         ptr = pData->Y16 + 8 + 8*pitch;
         for (i = 0; i < h; i++)
         {
@@ -394,28 +395,31 @@ mfxStatus CRawVideoReader::LoadNextFrameSequential(mfxFrameData* pData, mfxFrame
             nBytesRead = (mfxI32)fread_s(rowPtr, w*sizeof(mfxU16), sizeof(mfxU16), w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
 #endif
-            for (j = 0; j < 7; j++) {
+            for (j = 0; j < 7; j++)
+            {
                 rowPtr[-j - 1] = rowPtr[j + 1];
                 rowPtr[w + j] = rowPtr[w - 2 - j];
             }
             rowPtr[-8] = rowPtr[-7]; // not used
             rowPtr[w + 7] = rowPtr[w + 6]; // not used
         }
-        for (j = 0; j < 7; j++) {
+
+        for (j = 0; j < 7; j++)
+        {
             mfxU16 *pDst = pData->Y16 + (7 - j)*pitch;
-            mfxU16  *pSrc = pData->Y16 + (9 + j)*pitch;
+            mfxU16 *pSrc = pData->Y16 + (9 + j)*pitch;
             MSDK_MEMCPY(pDst, pSrc, (w + 16)*sizeof(mfxU16));
         }
         MSDK_MEMCPY(pData->Y16, pData->Y16+pitch, (w + 16)*sizeof(mfxU16));
 
-        for (j = 0; j < 7; j++) {
+        for (j = 0; j < 7; j++)
+        {
             mfxU16 *pDst = pData->Y16 + (8 + h + j)*pitch;
             mfxU16  *pSrc = pData->Y16 + (8 + h - 2 - j)*pitch;
             MSDK_MEMCPY(pDst, pSrc, (w + 16)*sizeof(mfxU16));
         }
         MSDK_MEMCPY(pData->Y16 + (15 + h)*pitch, pData->Y16 + (14 + h)*pitch, (w + 16)*sizeof(mfxU16));
    }
-
 
     pData->FrameOrder = m_FileNum;
     m_FileNum++;
