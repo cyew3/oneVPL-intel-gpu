@@ -1018,7 +1018,9 @@ mfxStatus CTranscodingPipeline::Transcode()
                     sts = PutBS();
                     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
                 }
-                bInsertIDR = true;
+                if (m_mfxEncParams.mfx.CodecId != MFX_CODEC_HEVC)
+                    bInsertIDR = true;
+
                 static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetInput();
                 static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetOutput();
                 m_nProcessedFramesNum = 0;
