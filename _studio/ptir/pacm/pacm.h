@@ -65,7 +65,7 @@ protected:
     const CmQueueEx & QueueEx() const { return *queue; }
 
     void SumSAD (CmSurface2DUPEx &sadFrame, Frame *pfrmCur, int threadsWidth, int threadsHeight);
-    void SumRs (CmSurface2DUPEx &rsFrame, Frame *pfrmCur, UINT size, int threadsWidth, int PLANE_WIDTH);
+    void SumRs (CmSurface2DUPEx &rsFrame, Frame *pfrmCur, UINT size, int threadsWidth, int PLANE_WIDTH, unsigned int uiCorrection);
 
 private:
     std::auto_ptr<CmDeviceEx> device;

@@ -872,7 +872,7 @@ int PTIR_FixedTelecinePatternMode(PTIRSystemBuffer *SysBuffer)
     Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
     {
-        RemovePattern(SysBuffer->frmBuffer, SysBuffer->control.uiPatternTypeNumber, SysBuffer->control.uiPatternTypeInit, &SysBuffer->control.uiDispatch, SysBuffer->control.uiInterlaceParity);
+        RemovePattern(SysBuffer->frmBuffer, SysBuffer->control.uiPatternTypeInit, SysBuffer->control.uiPatternTypeNumber, &SysBuffer->control.uiDispatch, SysBuffer->control.uiInterlaceParity);
 
         if(!SysBuffer->control.uiEndOfFrames)
             uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);

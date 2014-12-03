@@ -348,7 +348,7 @@ void DeinterlaceFilter::SumSAD(CmSurface2DUPEx &sadFrame, Frame *pfrmCur, int th
 //each atomic operation (8 DWORD) take about 0.2 us on IVB GT2, to reduce 4050 threads we have on 1920*1080 image it would
 //take about 890us, which is much slower than CPU reduction
 //We can do SLM reduction, however it's not worth it as CPU reduction is very quick already.. 
-void DeinterlaceFilter::SumRs(CmSurface2DUPEx &rsFrame, Frame *pFrame, UINT size, int threadsWidth, int PLANE_WIDTH)
+void DeinterlaceFilter::SumRs(CmSurface2DUPEx &rsFrame, Frame *pFrame, UINT size, int threadsWidth, int PLANE_WIDTH, unsigned int uiCorrection)
 {
     UINT * pRs = (UINT*)rsFrame.DataPtr();
     UINT pitchInDW = rsFrame.Pitch() / sizeof (UINT);
@@ -358,6 +358,10 @@ void DeinterlaceFilter::SumRs(CmSurface2DUPEx &rsFrame, Frame *pFrame, UINT size
     }
     double data = 0.0;
     int shift = 0;
+    unsigned int uiSize = pFrame->plaY.uiSize;
+
+    if(uiCorrection)
+        uiSize = (pFrame->plaY.uiWidth - 8) * pFrame->plaY.uiHeight;
 
     if (max(pFrame->plaY.ucStats.ucSAD[0], pFrame->plaY.ucStats.ucSAD[1]) < 0.45){
         data = 31.0;
@@ -393,7 +397,7 @@ void DeinterlaceFilter::SumRs(CmSurface2DUPEx &rsFrame, Frame *pFrame, UINT size
     }
     long long Rs2[RS_UNIT_SIZE] = { 0 };
     for (UINT i = 0; i < (this->width + RSSAD_PLANE_WIDTH - 1) / RSSAD_PLANE_WIDTH; ++i) {
-        for (UINT j = 0; j < (this->height + RSSAD_PLANE_HEIGHT - 1) / RSSAD_PLANE_HEIGHT; ++j) {
+        for (UINT j = 0; j < (this->height + RSSAD_PLANE_HEIGHT - 1) / RSSAD_PLANE_HEIGHT - uiCorrection; ++j) {
             UINT rsIndex = (i + j * threadsWidth) * RS_UNIT_SIZE;
 #pragma unroll
    for (int k = 0; k < 8; k++)
@@ -418,7 +422,7 @@ void DeinterlaceFilter::SumRs(CmSurface2DUPEx &rsFrame, Frame *pFrame, UINT size
   Rs[7] = Rs2[9];
     }
 
-    Rs[0] = sqrt(Rs[0] / pFrame->plaY.uiSize);
+ /*   Rs[0] = sqrt(Rs[0] / pFrame->uiSize);
     Rs[1] = sqrt(Rs[1] / (pFrame->plaY.uiSize >> 1));
     Rs[2] = sqrt(Rs[2] / (pFrame->plaY.uiSize >> 1));
     Rs[3] = sqrt(Rs[3] / (pFrame->plaY.uiSize >> 1));
@@ -429,7 +433,20 @@ void DeinterlaceFilter::SumRs(CmSurface2DUPEx &rsFrame, Frame *pFrame, UINT size
         Rs[8] = 1000;
     Rs[7] /= 1000;
     Rs[9] = (Rs[9] / pFrame->plaY.uiSize) * 1000;
-    Rs[10] = (Rs[10] / pFrame->plaY.uiSize) * 1000;
+    Rs[10] = (Rs[10] / pFrame->plaY.uiSize) * 1000;*/
+
+       Rs[0] = sqrt(Rs[0] / uiSize);
+    Rs[1] = sqrt(Rs[1] / (uiSize >> 1));
+    Rs[2] = sqrt(Rs[2] / (uiSize >> 1));
+    Rs[3] = sqrt(Rs[3] / (uiSize >> 1));
+    Rs[5] /= 1000;
+    if (Rs[6] != 0)
+        Rs[8] = atan((Rs[7] / uiSize) / Rs[6]);
+    else
+        Rs[8] = 1000;
+    Rs[7] /= 1000;
+    Rs[9] = (Rs[9] / uiSize) * 1000;
+    Rs[10] = (Rs[10] / uiSize) * 1000;
 
     for (int i = 0; i < sizeof(pFrame->plaY.ucStats.ucRs) / sizeof(pFrame->plaY.ucStats.ucRs[0]); ++i) {
 #if !defined(CPUPATH) || 0 // 0 - valiation, 1 - no validattion
@@ -447,8 +464,8 @@ void DeinterlaceFilter::CalculateSAD(Frame *pfrmCur, Frame *pfrmPrv)
 {
  CMUT_ASSERT_EQUAL(this->width, pfrmCur->plaY.uiWidth, "Frame width doesn't matach filter's processing configuration");
  CMUT_ASSERT_EQUAL(this->height, pfrmCur->plaY.uiHeight, "Frame height doesn't matach filter's processing configuration");
- CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiHeight % RSSAD_PLANE_HEIGHT, "Frame height doesn't matach filter's processing configuration");
- CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiWidth % RSSAD_PLANE_WIDTH, "Frame height doesn't matach filter's processing configuration");
+ //CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiHeight % RSSAD_PLANE_HEIGHT, "Frame height doesn't matach filter's processing configuration");
+ //CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiWidth % RSSAD_PLANE_WIDTH, "Frame height doesn't matach filter's processing configuration");
 
 #ifdef CPUPATH
     clockSAD.Begin();
@@ -480,8 +497,8 @@ void DeinterlaceFilter::MeasureRs(Frame * pfrmCur)
 {
  CMUT_ASSERT_EQUAL(this->width, pfrmCur->plaY.uiWidth, "Frame width doesn't matach filter's processing configuration");
  CMUT_ASSERT_EQUAL(this->height, pfrmCur->plaY.uiHeight, "Frame height doesn't matach filter's processing configuration");
- CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiHeight % RSSAD_PLANE_HEIGHT, "Frame height doesn't matach filter's processing configuration");
- CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiWidth % RSSAD_PLANE_WIDTH, "Frame width doesn't matach filter's processing configuration");
+ //CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiHeight % RSSAD_PLANE_HEIGHT, "Frame height doesn't matach filter's processing configuration");
+ //CMUT_ASSERT_EQUAL(0, pfrmCur->plaY.uiWidth % RSSAD_PLANE_WIDTH, "Frame width doesn't matach filter's processing configuration");
 
 #ifdef CPUPATH
     clockRs.Begin();
@@ -505,7 +522,7 @@ void DeinterlaceFilter::MeasureRs(Frame * pfrmCur)
     QueueEx().Enqueue(*kernelRs, threadSpace);
     QueueEx().WaitForLastKernel();
     UINT size = threadsWidth * RS_UNIT_SIZE * threadsHeight;
- SumRs(*rsFrame, pfrmCur, size, threadsWidth, RSSAD_PLANE_WIDTH);
+ SumRs(*rsFrame, pfrmCur, size, threadsWidth, RSSAD_PLANE_WIDTH, 1);
     clockRSGPUTotal.End();
 
 #endif
@@ -556,7 +573,7 @@ void DeinterlaceFilter::CalculateSADRs(Frame *pfrmCur, Frame *pfrmPrv)
     clockSADRSPostProcessing.Begin();
     UINT size = threadsWidth * RS_UNIT_SIZE * threadsHeight;
     SumSAD(*sadFrame, pfrmCur, threadsWidth, threadsHeight);
-    SumRs(*rsFrame, pfrmCur, size, threadsWidth, RSSAD_PLANE_WIDTH);
+    SumRs(*rsFrame, pfrmCur, size, threadsWidth, RSSAD_PLANE_WIDTH, 0);
     clockSADRSPostProcessing.End();
     clockSADRSGPUTotal.End();
 #endif

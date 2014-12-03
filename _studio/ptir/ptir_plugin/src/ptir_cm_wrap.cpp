@@ -163,7 +163,7 @@ mfxStatus PTIR_ProcessorCM::Init(mfxVideoParam *par, mfxExtVPPDeinterlacing* pDe
         case MFX_DEINTERLACING_FIXED_TELECINE_PATTERN:
             uiOpMode = PTIR_FIXED_TELECINE_PATTERN_REMOVAL;
             Env.control.uiPatternTypeInit = pDeinter->TelecinePattern;
-            if(MFX_TELECINE_POSITION_PROVIDED == Env.control.uiPatternTypeInit)
+            if(pDeinter->TelecineLocation < 5)
                 Env.control.uiPatternTypeNumber = pDeinter->TelecineLocation;
             else
                 Env.control.uiPatternTypeNumber = 0;

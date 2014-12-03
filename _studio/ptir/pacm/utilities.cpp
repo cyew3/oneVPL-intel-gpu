@@ -837,7 +837,7 @@ void Frame_CreateCM(Frame *pfrmIn, unsigned int uiYWidth, unsigned int uiYHeight
         pfrmIn->plaY.uiSize = (uiYWidth + 2 * uiBorder) * (uiYHeight + 2 * uiBorder);
         pfrmIn->plaY.uiStride = uiYWidth + 2 * uiBorder;
         pfrmIn->plaY.ucData = pfrmIn->ucMem;
-        pfrmIn->plaY.ucCorner = pfrmIn->plaY.ucData + (pfrmIn->plaY.uiStride + 1) * pfrmIn->plaY.uiBorder;
+        pfrmIn->plaY.ucCorner = NULL;//pfrmIn->plaY.ucData + (pfrmIn->plaY.uiStride + 1) * pfrmIn->plaY.uiBorder;
 
         uiOffset = pfrmIn->plaY.uiStride * (uiYHeight + 2 * uiBorder);
 
@@ -846,8 +846,8 @@ void Frame_CreateCM(Frame *pfrmIn, unsigned int uiYWidth, unsigned int uiYHeight
         pfrmIn->plaU.uiBorder = uiBorder;
         pfrmIn->plaU.uiSize = (uiUVWidth + 2 * uiBorder) * (uiUVHeight + 2 * uiBorder);
         pfrmIn->plaU.uiStride = uiUVWidth + 2 * uiBorder;
-        pfrmIn->plaU.ucData = pfrmIn->ucMem + uiOffset;
-        pfrmIn->plaU.ucCorner = pfrmIn->plaU.ucData + (pfrmIn->plaU.uiStride + 1) * pfrmIn->plaU.uiBorder;
+        pfrmIn->plaU.ucData = NULL;//pfrmIn->ucMem + uiOffset;
+        pfrmIn->plaU.ucCorner = NULL;//pfrmIn->plaU.ucData + (pfrmIn->plaU.uiStride + 1) * pfrmIn->plaU.uiBorder;
 
         uiOffset += pfrmIn->plaU.uiStride * (uiUVHeight + 2 * uiBorder);
 
@@ -856,8 +856,8 @@ void Frame_CreateCM(Frame *pfrmIn, unsigned int uiYWidth, unsigned int uiYHeight
         pfrmIn->plaV.uiBorder = uiBorder;
         pfrmIn->plaV.uiSize = (uiUVWidth + 2 * uiBorder) * (uiUVHeight + 2 * uiBorder);
         pfrmIn->plaV.uiStride = uiUVWidth + 2 * uiBorder;
-        pfrmIn->plaV.ucData = pfrmIn->ucMem + uiOffset;
-        pfrmIn->plaV.ucCorner = pfrmIn->plaV.ucData + (pfrmIn->plaV.uiStride + 1) * pfrmIn->plaV.uiBorder;
+        pfrmIn->plaV.ucData = NULL;//pfrmIn->ucMem + uiOffset;
+        pfrmIn->plaV.ucCorner = NULL;//pfrmIn->plaV.ucData + (pfrmIn->plaV.uiStride + 1) * pfrmIn->plaV.uiBorder;
     }
     //else
     // pfrmIn->uiSize = 0;
@@ -947,7 +947,9 @@ void PTIRCM_Frame_Prep_and_Analysis(PTIRSystemBuffer *SysBuffer)
     }
     //pdeinterlaceFilter->WriteRAWI420ToGPUNV12(SysBuffer->frmBuffer[SysBuffer->control.uiCur], SysBuffer->frmBuffer[BUFMINSIZE]->ucMem);
     SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex = SysBuffer->control.uiFrame + 1;
-    pdeinterlaceFilter->CalculateSADRs(SysBuffer->frmBuffer[SysBuffer->control.uiCur], SysBuffer->frmBuffer[SysBuffer->control.uiNext]);
+    pdeinterlaceFilter->CalculateSAD(SysBuffer->frmBuffer[SysBuffer->control.uiCur], SysBuffer->frmBuffer[SysBuffer->control.uiNext]);
+    pdeinterlaceFilter->MeasureRs(SysBuffer->frmBuffer[SysBuffer->control.uiCur]); //Inside this function I made the hack, I do RS sum for all columns but last one, and let the rest of the system continue.
+    //pdeinterlaceFilter->CalculateSADRs(SysBuffer->frmBuffer[SysBuffer->control.uiCur], SysBuffer->frmBuffer[SysBuffer->control.uiNext]);
     Artifacts_Detection_frame(SysBuffer->frmBuffer, SysBuffer->control.uiCur);
     SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.processed = true;
 
@@ -1390,7 +1392,7 @@ int PTIRCM_FixedTelecinePatternMode(PTIRSystemBuffer *SysBuffer)
     Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
     {
-        RemovePatternCM(SysBuffer->frmBuffer, SysBuffer->control.uiPatternTypeNumber, SysBuffer->control.uiPatternTypeInit, &SysBuffer->control.uiDispatch, SysBuffer->control.uiInterlaceParity);
+        RemovePatternCM(SysBuffer->frmBuffer, SysBuffer->control.uiPatternTypeInit, SysBuffer->control.uiPatternTypeNumber, &SysBuffer->control.uiDispatch, SysBuffer->control.uiInterlaceParity);
 
         if(!SysBuffer->control.uiEndOfFrames)
             uiNumFramesToDispatch = min(SysBuffer->control.uiDispatch, SysBuffer->control.uiCur + 1);
@@ -1478,7 +1480,7 @@ void PTIRCM_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned 
     SysBuffer->control.dBaseTimeSw = SysBuffer->control.dBaseTime;
     SysBuffer->control.dTimePerFrame = 0.0;
     SysBuffer->control.dTimeStamp = 0.0;
-    SysBuffer->control.uiSize = SysBuffer->control.uiInWidth * SysBuffer->control.uiInHeight * 3 / 2;
+    SysBuffer->control.uiSize = SysBuffer->control.uiInWidth * SysBuffer->control.uiInHeight * 2;//3 / 2;
     SysBuffer->control.uiEndOfFrames = 0;
     SysBuffer->control.pts = 0.0;
     SysBuffer->control.frame_duration = 1000 / _dFrameRate;
