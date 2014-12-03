@@ -1267,7 +1267,7 @@ mfxStatus CEncodingPipeline::Run()
 
             //size_t fsize = fseek(fqp, 0, SEEK_END);
             fseek(fqp, 0, SEEK_SET);
-            fread(qps.QP, sizeof (mfxU16) * numMB, 1, fqp);
+            fread(qps.QP, sizeof(mfxExtFeiEncQP::QP[0])*numMB, 1, fqp);
             fclose(fqp);
         }
 
