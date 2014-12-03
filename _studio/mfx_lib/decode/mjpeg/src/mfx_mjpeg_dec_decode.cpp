@@ -110,9 +110,7 @@ VideoDECODEMJPEG::VideoDECODEMJPEG(VideoCORE *core, mfxStatus * sts)
     }
 #if defined (MFX_VA)
     m_numPic = 0;
-#if defined (MFX_VA_WIN)
     m_pCc    = NULL;
-#endif
     m_needVpp = false;
 #endif
     m_tasksCount = 0;
@@ -185,7 +183,9 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
         if (!pOpaqAlloc)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
-        useInternal = (m_platform == MFX_PLATFORM_SOFTWARE) ? (pOpaqAlloc->Out.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET) : (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
+        useInternal = (m_platform == MFX_PLATFORM_SOFTWARE) ?
+                      (pOpaqAlloc->Out.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET) :
+                      (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
     }
 
     request_internal = request;
@@ -250,7 +250,6 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
     {
 #if defined (MFX_VA)
         m_pMJPEGVideoDecoder.reset(new UMC::MJPEGVideoDecoderMFX_HW()); // HW
-#if defined (MFX_VA_WIN)
         if(m_needVpp)
         {
             m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D_Converter());
@@ -259,9 +258,6 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
         {
             m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D);
         }
-#else
-        m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D);
-#endif
 
 #else // Not VA
         return MFX_ERR_UNSUPPORTED;
@@ -845,7 +841,7 @@ mfxStatus VideoDECODEMJPEG::QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *
         }
         
         mfxFrameAllocRequest request_internal = *request;
-#if defined (MFX_VA_WIN) 
+#if defined (MFX_VA)
         MFX_JPEG_Utility::AdjustFourCC(&request_internal.Info, &par->mfx, core->GetHWType(), core->GetVAType(), &needVpp);
 
         if (needVpp && MFX_HW_D3D11 == core->GetVAType())
@@ -986,12 +982,16 @@ mfxStatus VideoDECODEMJPEG::RunThreadHW(void * params, mfxU32 threadNumber)
     mfxStatus mfxSts = MFX_ERR_NONE;
     ThreadTaskInfo * info = (ThreadTaskInfo *)params;
 
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA)
     if(m_needVpp)
     {
         if(info->needCheckVppStatus)
         {
-            mfxSts = ((mfx_UMC_FrameAllocator_D3D_Converter *)m_FrameAllocator.get())->CheckPreparingToOutput(info->surface_out, info->dst, &m_vPar, &m_pCc, (mfxU16)info->vppTaskID);
+            mfxSts = ((mfx_UMC_FrameAllocator_D3D_Converter *)m_FrameAllocator.get())->CheckPreparingToOutput(info->surface_out,
+                                                                                                              info->dst,
+                                                                                                              &m_vPar,
+                                                                                                              &m_pCc,
+                                                                                                              (mfxU16)info->vppTaskID);
             if(mfxSts != MFX_TASK_DONE)
             {
                 return mfxSts;
@@ -1101,7 +1101,9 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
         {
             // output surface is always working surface
-            *surface_out = m_FrameAllocator->GetSurface(dst->GetFrameMID(), GetOriginalSurface(surface_work), &m_vPar);
+            *surface_out = m_FrameAllocator->GetSurface(dst->GetFrameMID(),
+                                                        GetOriginalSurface(surface_work),
+                                                        &m_vPar);
             *surface_out = m_core->GetOpaqSurface((*surface_out)->Data.MemId) ? m_core->GetOpaqSurface((*surface_out)->Data.MemId) : (*surface_out);
 
             if (!(*surface_out))
@@ -1185,7 +1187,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 #if defined (MFX_VA)
             mfxU16 taskId = 0;
 
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA)
             if(m_needVpp)
             {
                 UMC::ConvertInfo * convertInfo = m_pMJPEGVideoDecoder->GetConvertInfo();
@@ -1764,7 +1766,8 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
 
 #if defined (MFX_VA_LINUX)
     // NV12 is supported on Linux HW at the moment
-    if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 )
+    if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
+        par->mfx.FrameInfo.FourCC != MFX_FOURCC_RGB4)
         return true;
 #endif
 
@@ -1808,7 +1811,7 @@ eMFXPlatform MFX_JPEG_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par
         {
             needVpp = true;
         }
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA)
         mfxFrameAllocRequest request;
         memset(&request, 0, sizeof(request));
         memcpy_s(&request.Info, sizeof(mfxFrameInfo), &par->mfx.FrameInfo, sizeof(mfxFrameInfo));
@@ -1938,7 +1941,7 @@ mfxStatus MFX_JPEG_Utility::CheckDecodeCaps(VideoCORE * core, mfxVideoParam * pa
 }
 #endif
 
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA)
 mfxStatus MFX_JPEG_Utility::CheckVPPCaps(VideoCORE * core, mfxVideoParam * par)
 {
     VideoVppJpegD3D9 *pCc = new VideoVppJpegD3D9(core, false);
@@ -1975,10 +1978,9 @@ void MFX_JPEG_Utility::AdjustFrameAllocRequest(mfxFrameAllocRequest *request,
         *needVpp = true;
     }
 
-#if defined (MFX_VA_WIN)
     // set FourCC
     AdjustFourCC(&request->Info, info, hwType, vaType, needVpp);
-#endif
+
     // WA for rotation of unaligned images
     mfxU16 mcuWidth;
     mfxU16 mcuHeight;
@@ -2040,7 +2042,7 @@ void MFX_JPEG_Utility::AdjustFrameAllocRequest(mfxFrameAllocRequest *request,
 #if defined (MFX_VA)
 void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *info, eMFXHWType hwType, eMFXVAType vaType, bool *needVpp)
 {
-#if defined (MFX_VA_WIN)
+
     if(info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_UNKNOWN || info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr)
     {
         switch(info->JPEGChromaFormat)
@@ -2059,6 +2061,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_RGB4;
             }
+#if defined (MFX_VA_WIN)
             else if(hwType >= MFX_HW_SCL && 
                     vaType == MFX_HW_D3D11 &&
                     info->Rotation == MFX_ROTATION_0 && 
@@ -2072,6 +2075,28 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             {
                 requestFrameInfo->FourCC = DXGI_FORMAT_AYUV;
             }
+#else
+            else if(info->Rotation == MFX_ROTATION_0 &&
+                    requestFrameInfo->FourCC == MFX_FOURCC_RGB4 &&
+                    requestFrameInfo->Width  >= 128 &&
+                    requestFrameInfo->Height >= 128 &&
+                    requestFrameInfo->Width  <= 4096 &&
+                    requestFrameInfo->Height <= 4096)
+            {
+                requestFrameInfo->FourCC = MFX_FOURCC_NV12;
+                *needVpp = true;
+            }
+            else if(info->Rotation == MFX_ROTATION_0 &&
+                    requestFrameInfo->FourCC == MFX_FOURCC_NV12 &&
+                    requestFrameInfo->Width  >= 128 &&
+                    requestFrameInfo->Height >= 128 &&
+                    requestFrameInfo->Width  <= 4096 &&
+                    requestFrameInfo->Height <= 4096)
+            {
+                requestFrameInfo->FourCC = MFX_FOURCC_NV12;
+                *needVpp = false;
+            }
+#endif
             else
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_YUV400;
@@ -2108,6 +2133,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_RGB4;
             }
+#if defined (MFX_VA_WIN)
             else if(hwType >= MFX_HW_SCL && 
                     vaType == MFX_HW_D3D11 &&
                     info->Rotation == MFX_ROTATION_0 && 
@@ -2121,6 +2147,23 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             {
                 requestFrameInfo->FourCC = DXGI_FORMAT_AYUV;
             }
+#else
+            else if(info->Rotation == MFX_ROTATION_0 &&
+                    requestFrameInfo->FourCC == MFX_FOURCC_RGB4 &&
+                    requestFrameInfo->Width  >= 128 &&
+                    requestFrameInfo->Height >= 128 &&
+                    requestFrameInfo->Width  <= 4096 &&
+                    requestFrameInfo->Height <= 4096)
+            {
+                requestFrameInfo->FourCC = MFX_FOURCC_NV12;
+                *needVpp = true;
+            }
+            else if(info->Rotation == MFX_ROTATION_0 &&
+                    info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED)
+            {
+                 requestFrameInfo->FourCC = MFX_FOURCC_NV12;
+            }
+#endif
             else
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_IMC3;
@@ -2161,6 +2204,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_RGB4;
             }
+#if defined (MFX_VA_WIN)
             else if(hwType >= MFX_HW_SCL && 
                     vaType == MFX_HW_D3D11 &&
                     info->Rotation == MFX_ROTATION_0 && 
@@ -2174,6 +2218,19 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             {
                 requestFrameInfo->FourCC = DXGI_FORMAT_AYUV;
             }
+#else
+            else if(info->Rotation == MFX_ROTATION_0 &&
+                    requestFrameInfo->FourCC == MFX_FOURCC_RGB4 &&
+                    requestFrameInfo->Width  >= 128 &&
+                    requestFrameInfo->Height >= 128 &&
+                    requestFrameInfo->Width  <= 4096 &&
+                    requestFrameInfo->Height <= 4096)
+            {
+                requestFrameInfo->FourCC = MFX_FOURCC_NV12;
+                *needVpp = true;
+            }
+#endif
+#if defined (MFX_VA_WIN)
             else
             {
                 if(info->Rotation == MFX_ROTATION_0 || info->Rotation == MFX_ROTATION_180)
@@ -2183,6 +2240,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
 
                 *needVpp = true;
             }
+#endif
             break;
         case MFX_CHROMAFORMAT_YUV422V:
             if(hwType >= MFX_HW_BDW &&
@@ -2217,6 +2275,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_RGB4;
             }
+#if defined (MFX_VA_WIN)
             else if(hwType >= MFX_HW_SCL && 
                     vaType == MFX_HW_D3D11 &&
                     info->Rotation == MFX_ROTATION_0 &&
@@ -2230,6 +2289,18 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             {
                 requestFrameInfo->FourCC = DXGI_FORMAT_AYUV;
             }
+#else
+            else if(info->Rotation == MFX_ROTATION_0 &&
+                    requestFrameInfo->FourCC == MFX_FOURCC_RGB4 &&
+                    requestFrameInfo->Width  >= 128 &&
+                    requestFrameInfo->Height >= 128 &&
+                    requestFrameInfo->Width  <= 4096 &&
+                    requestFrameInfo->Height <= 4096)
+            {
+                requestFrameInfo->FourCC = MFX_FOURCC_NV12;
+                *needVpp = true;
+            }
+#endif
             else
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_YUV444;
@@ -2259,6 +2330,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_RGB4;
             }
+#if defined (MFX_VA_WIN)
             else if(hwType >= MFX_HW_SCL && 
                     vaType == MFX_HW_D3D11 &&
                     info->Rotation == MFX_ROTATION_0 && 
@@ -2272,6 +2344,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             {
                 requestFrameInfo->FourCC = DXGI_FORMAT_AYUV;
             }
+#endif
             else
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_RGBP;
@@ -2287,7 +2360,6 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
     {
         VM_ASSERT(false);
     }
-#endif
     return;
 }
 #endif

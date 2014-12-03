@@ -1252,7 +1252,7 @@ mfxStatus DoHwJpegCcFw(VideoVppJpegD3D9 **pCc,
 
     return sts;
 }
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA)
 
 UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::InitMfx(UMC::FrameAllocatorParams *,
                                                           VideoCORE* mfxCore,
@@ -1279,12 +1279,12 @@ UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::InitMfx(UMC::FrameAllocatorPar
 
     switch (params->mfx.FrameInfo.FourCC)
     {
-    //case MFX_FOURCC_NV12:
-    //    color_format = UMC::NV12;
-    //    break;
-    //case MFX_FOURCC_RGB4:
-    //    color_format = UMC::RGB32;
-    //    break;
+    case MFX_FOURCC_NV12:
+        color_format = UMC::NV12;
+        break;
+    case MFX_FOURCC_RGB4:
+        color_format = UMC::RGB32;
+        break;
     //case MFX_FOURCC_YV12:
     //    color_format = UMC::YUV420;
     //    break;

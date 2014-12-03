@@ -123,6 +123,7 @@ mfxStatus VideoVppJpegD3D9::Init(const mfxVideoParam *par)
 
     if (m_ddi == 0)
     {
+#if defined (MFX_VA_WIN)
         sts = m_pCore->CreateVideoProcessing((mfxVideoParam *)par);
         MFX_CHECK_STS( sts );
 
@@ -131,6 +132,15 @@ mfxStatus VideoVppJpegD3D9::Init(const mfxVideoParam *par)
         {
             return MFX_ERR_UNSUPPORTED;
         }
+#else
+        m_ddi = CreateVideoProcessing(m_pCore);
+        if(m_ddi == 0)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+        sts = m_ddi->CreateDevice(m_pCore, (mfxVideoParam *)par, false);
+        MFX_CHECK_STS( sts );
+#endif
     }
 
     mfxVppCaps caps = {0};
