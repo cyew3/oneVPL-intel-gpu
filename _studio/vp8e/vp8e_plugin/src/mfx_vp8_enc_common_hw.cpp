@@ -687,13 +687,10 @@ mfxStatus CheckParametersAndSetDefault(mfxVideoParam*              pParamSrc,
     sts = CheckVideoParamEncoders(pParamSrc,bExternalFrameAllocator, MFX_HW_UNKNOWN);
     MFX_CHECK_STS(sts);
 
-    /*if (pParamSrc->AsyncDepth == 0)
+    if (pParamSrc->AsyncDepth == 0)
         pParamDst->AsyncDepth = GetDefaultAsyncDepth();
     else
-        pParamDst->AsyncDepth = pParamSrc->AsyncDepth;*/
-    // W/A: hardcode AsyncDepth to 1
-    pParamDst->AsyncDepth = 1;
-
+        pParamDst->AsyncDepth = pParamSrc->AsyncDepth;
     pParamDst->IOPattern  = pParamSrc->IOPattern;
     pParamDst->Protected  = pParamSrc->Protected;
 
