@@ -855,7 +855,7 @@ Status MPEG2VideoDecoderBase::GetPictureHeader(MediaData* input, int task_num, i
             frame_buffer.ret_index = frame_buffer.latest_next;
             frame_buffer.curr_index[task_num] = frame_buffer.latest_next;
             if(frame_buffer.latest_next >= 0)
-                CalculateFrameTime(currentTime, &m_dTime[frame_buffer.ret_index].time, &isOriginal, task_num);
+                CalculateFrameTime(currentTime, &m_dTime[frame_buffer.ret_index].time, &isOriginal, task_num, true);
             frame_buffer.ret_index = -1;
             if(frame_buffer.latest_next >= 0)
             {
@@ -916,7 +916,7 @@ Status MPEG2VideoDecoderBase::GetPictureHeader(MediaData* input, int task_num, i
   {
       Ipp64f currentTime = input->GetTime();
       bool isOriginal = false;
-      CalculateFrameTime(currentTime, &m_dTimeCalc, &isOriginal, task_num);
+      CalculateFrameTime(currentTime, &m_dTimeCalc, &isOriginal, task_num, false);
 
       if (0 <= frame_buffer.ret_index)
       {

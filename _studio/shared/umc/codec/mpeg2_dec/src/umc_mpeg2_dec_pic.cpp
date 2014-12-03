@@ -767,7 +767,7 @@ void MPEG2VideoDecoderBase::sequence_scalable_extension(int task_num)
 // called after field_buffer_index switching
 // when FLAG_VDEC_REORDER isn't set, time can be wrong
 //   if repeat_first_field happens != 0
-void MPEG2VideoDecoderBase::CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time, bool * isOriginal, int task_num)
+void MPEG2VideoDecoderBase::CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time, bool * isOriginal, int task_num, bool buffered)
 {
     Ipp32s index;
     Ipp64f duration = sequenceHeader.delta_frame_time;
@@ -798,7 +798,7 @@ void MPEG2VideoDecoderBase::CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time
     if (PictureHeader[task_num].picture_structure == FRAME_PICTURE || frame_buffer.field_buffer_index[task_num] == 0)
     {
         // save time provided for the frame, ignore for second field
-        if (in_time > 0)
+        if (!buffered)
             frame_buffer.frame_p_c_n [frame_buffer.curr_index[task_num]].frame_time = in_time;
 
         if (in_time >= 0 && isTelecineCalc == false)

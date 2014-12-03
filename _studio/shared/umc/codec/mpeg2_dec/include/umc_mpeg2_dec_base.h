@@ -522,7 +522,7 @@ public:
 
         //MPEG2_VIRTUAL Status    DecodeBegin(Ipp64f time, sVideoStreamInfo * info);
 
-        MPEG2_VIRTUAL void      CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time, bool * isOriginal, int task_num);
+        MPEG2_VIRTUAL void      CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time, bool * isOriginal, int task_num, bool buffered);
 
         //Status                  Macroblock_444(IppVideoContext *video) { return UMC_ERR_INVALID_STREAM; }
 
