@@ -20,6 +20,7 @@
 
 #include "cm_def.h" // Needed for CM Vector
 #include "cm_vm.h"  //
+#include "cmrt_cross_platform.h"
 
 class CmDevice;
 class CmBuffer;
@@ -330,6 +331,7 @@ public:
                                  mfxU32 bitDepth,
                                  SurfaceIndex *LUTIndex,
                                  int BayerType,
+                                 int argb8out,
                                  mfxU32 task_bufId = 0);
 
     void CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
@@ -342,12 +344,14 @@ public:
                                  mfxU32 bitDepth,
                                  SurfaceIndex *LUTIndex,
                                  int BayerType,
+                                 int argb8out,
                                  mfxU32 task_bufId = 0);
 
     void CreateTask_ARGB(CmSurface2D *redSurf,
                          CmSurface2D *greenSurf,
                          CmSurface2D *blueSurf,
                          SurfaceIndex outSurfIndex,
+                         CameraPipe3x3ColorConversionParams *ccm,
                          mfxU32 bitDepth,
                          int BayerType,
                          mfxU32 task_bufId = 0);
@@ -400,6 +404,8 @@ private:
     std::map<CmSurface2D *, SurfaceIndex *> m_tableCmIndex;
 
     int m_nTiles;
+    int m_MaxNumOfThreadsPerGroup;
+    int m_NumEuPerSubSlice;
 
     CmThreadSpace *TS_16x16;
     CmThreadSpace *TS_Slice_8x8;

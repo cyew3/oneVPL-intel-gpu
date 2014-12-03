@@ -347,7 +347,7 @@ mfxStatus MFXCamera_Plugin::ReallocateInternalSurfaces(mfxVideoParam &newParam, 
     sts = m_aux8.ReallocCmSurfaces(m_cmDevice, request);
     MFX_CHECK_STS(sts);
 
-    if (m_Caps.bColorConversionMatrix || m_Caps.bOutToARGB16 )
+    if (m_Caps.bForwardGammaCorrection || m_Caps.bColorConversionMatrix)
     {
         if ( ! m_LUTSurf )
             m_LUTSurf = CreateBuffer(m_cmDevice, 65536 * 4);
@@ -448,7 +448,7 @@ mfxStatus MFXCamera_Plugin::AllocateInternalSurfaces()
                                   m_FrameSizeExtra.TileHeightPadded,
                                   CM_SURFACE_FORMAT_A8);
 
-    if (m_Caps.bColorConversionMatrix || m_Caps.bOutToARGB16 )
+    if (m_Caps.bColorConversionMatrix || m_Caps.bForwardGammaCorrection )
     {
         // in case of 16bit output kernel need LUT srface, even it's not used.
         // Why such size? Copy-paste from VPG example.
@@ -683,7 +683,7 @@ mfxStatus MFXCamera_Plugin::SetExternalSurfaces(AsyncParams *pParam)
 
 mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
 {
-    { // Guarded section start 
+    { // Guarded section start
 
     UMC::AutomaticUMCMutex guard(m_guard);
     int doShiftAndSwap = 1;
@@ -696,15 +696,15 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
 #endif
     for ( int tileID = 0; tileID < m_nTiles; tileID++)
     {
-        firstTile = ( 0 <= tileID ) ? true : false;
-
         // Calculate offsets for tiles
         int in_shift  =  pParam->FrameSizeExtra.tileOffsets[tileID].TileOffset * pParam->surf_in->Data.Pitch;
         int out_shift =  pParam->FrameSizeExtra.tileOffsets[tileID].TileOffset * pParam->surf_out->Data.Pitch;
+
         if ( tileID > 0 && pParam->Caps.bNoPadding)
         {
             out_shift-= MFX_CAM_DEFAULT_PADDING_TOP*pParam->surf_out->Data.Pitch;
         }
+
         SurfaceIndex *pPaddedSurfaceIndex = 0;
         CmSurface2D *goodPixCntSurf= 0;
         CmSurface2D *bigPixCntSurf = 0;
@@ -726,7 +726,7 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
         pParam->tileID = tileID;
         SetExternalSurfaces(pParam);
 
-        if (firstTile && pParam->inSurf2D)
+        if (pParam->inSurf2D)
         {
             CmSurface2D *inSurf = (CmSurface2D *)pParam->inSurf2D;
             inSurf->GetIndex(pInputSurfaceIndex);
@@ -736,41 +736,24 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
             CmSurface2DUP *inSurf = (CmSurface2DUP *)pParam->inSurf2DUP;
             inSurf->GetIndex(pInputSurfaceIndex);
         }
-        else if (firstTile && m_Caps.InputMemoryOperationMode == MEM_GPUSHARED)
+        else if (m_Caps.InputMemoryOperationMode == MEM_GPUSHARED)
         {
             m_cmSurfIn->GetIndex(pInputSurfaceIndex);
         }
         else
             return MFX_ERR_NULL_PTR;
 
-
-        if (pParam->Caps.InputMemoryOperationMode == MEM_GPUSHARED && !pParam->inSurf2DUP)
-        {
-            if (! pParam->FrameSizeExtra.TileInfo.CropX && ! pParam->FrameSizeExtra.TileInfo.CropY &&  1 == m_nTiles && pParam->surf_in->Info.CropW*2 == pParam->surf_in->Data.Pitch)
-            {
-                m_cmCtx->EnqueueCopyCPUToGPU(m_cmSurfIn, pParam->surf_in->Data.Y16);
-            }
-            else
-            {
-                m_cmCtx->EnqueueCopyCPUToGPU(m_cmSurfIn,
-                                             (mfxU8 *)(pParam->surf_in->Data.Y16 + pParam->FrameSizeExtra.TileInfo.CropX ) + in_shift + pParam->FrameSizeExtra.TileInfo.CropY * pParam->surf_in->Data.Pitch,
-                                             pParam->surf_in->Data.Pitch);
-            }
-        }
-
         m_paddedSurf->GetIndex(pPaddedSurfaceIndex);
         if (!pParam->Caps.bNoPadding)
         {
             m_cmCtx->CreateTask_Padding(*pInputSurfaceIndex,
-                                        *pPaddedSurfaceIndex,
-                                        pParam->FrameSizeExtra.paddedFrameWidth,
-                                        pParam->FrameSizeExtra.TileHeightPadded,
-                                        (int)pParam->InputBitDepth,
-                                        (int)pParam->Caps.BayerPatternType);
+                                    *pPaddedSurfaceIndex,
+                                    pParam->FrameSizeExtra.paddedFrameWidth,
+                                    pParam->FrameSizeExtra.TileHeightPadded,
+                                    (int)pParam->InputBitDepth,
+                                    (int)pParam->Caps.BayerPatternType);
             m_paddedSurf->GetIndex(pInputSurfaceIndex);
             doShiftAndSwap = 0;
-
-            m_cmCtx->EnqueueTask_Padding();
         }
 
         if ( pParam->Caps.bBlackLevelCorrection || pParam->Caps.bWhiteBalance || pParam->Caps.bVignetteCorrection )
@@ -798,8 +781,6 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
                             pParam->InputBitDepth,
                             pParam->Caps.BayerPatternType);
             doShiftAndSwap = 0;
-
-            m_cmCtx->EnqueueTask_BayerCorrection();
         }
 
         goodPixCntSurf = (CmSurface2D *)AcquireResource(m_aux8, 0);
@@ -813,11 +794,10 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
                                             (int)pParam->Caps.BayerPatternType);
         pInputSurfaceIndex = pPaddedSurfaceIndex;
 
-        m_cmCtx->EnqueueTask_GoodPixelCheck();
-
         greenHorSurf = (CmSurface2D *)AcquireResource(m_raw16padded, 0);
         greenVerSurf = (CmSurface2D *)AcquireResource(m_raw16padded, 1);
         greenAvgSurf = (CmSurface2D *)AcquireResource(m_raw16padded, 2);
+
         avgFlagSurf  = m_avgFlagSurf;
 
         m_cmCtx->CreateTask_RestoreGreen(*pInputSurfaceIndex,
@@ -868,82 +848,113 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
                                             (int)pParam->Caps.BayerPatternType,
                                             pParam->InputBitDepth);
 
-        for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+
+
+        if (pParam->Caps.OutputMemoryOperationMode == MEM_GPUSHARED && !pParam->outSurf2DUP)
         {
-            m_cmCtx->EnqueueSliceTasks(i);
+            pOutputSurfaceIndex = NULL;
         }
-        
-        if ( firstTile )
+        else if (pParam->outSurf2DUP)
         {
-            if (pParam->Caps.OutputMemoryOperationMode == MEM_GPUSHARED && !pParam->outSurf2DUP)
-            {
-                pOutputSurfaceIndex = NULL;
-            }
-            else if (pParam->outSurf2DUP)
-            {
-                CmSurface2DUP *outSurfUP = (CmSurface2DUP *)pParam->outSurf2DUP;
-                outSurfUP->GetIndex(pOutputSurfaceIndex);
-            }
-            else if (pParam->outSurf2D)
-            {
-                CmSurface2D *outSurf2D = (CmSurface2D *)pParam->outSurf2D;
-                outSurf2D->GetIndex(pOutputSurfaceIndex);
-            }
+            CmSurface2DUP *outSurfUP = (CmSurface2DUP *)pParam->outSurf2DUP;
+            outSurfUP->GetIndex(pOutputSurfaceIndex);
+        }
+        else if (pParam->outSurf2D)
+        {
+            CmSurface2D *outSurf2D = (CmSurface2D *)pParam->outSurf2D;
+            outSurf2D->GetIndex(pOutputSurfaceIndex);
+        }
+        else
+            return MFX_ERR_NULL_PTR;
+
+        if (pParam->Caps.bForwardGammaCorrection)
+        {
+            SurfaceIndex *LUTIndex = NULL;
+            m_LUTSurf->GetIndex(LUTIndex);
+
+            if (pOutputSurfaceIndex)
+                m_cmCtx->CreateTask_GammaAndCCM(m_gammaCorrectSurf,
+                                                m_gammaPointSurf,
+                                                redOutSurf,
+                                                greenOutSurf,
+                                                blueOutSurf,
+                                                (pParam->Caps.bColorConversionMatrix ? &pParam->CCMParams : NULL),
+                                                *pOutputSurfaceIndex,
+                                                pParam->InputBitDepth,
+                                                LUTIndex,
+                                                (int)pParam->Caps.BayerPatternType,
+                                                pParam->Caps.bOutToARGB16 ? 0 : 1);
             else
-                return MFX_ERR_NULL_PTR;
+                m_cmCtx->CreateTask_GammaAndCCM(m_gammaCorrectSurf,
+                                                m_gammaPointSurf,
+                                                redOutSurf,
+                                                greenOutSurf,
+                                                blueOutSurf,
+                                                (pParam->Caps.bColorConversionMatrix ? &pParam->CCMParams : NULL),
+                                                m_gammaOutSurf,
+                                                pParam->InputBitDepth,
+                                                LUTIndex,
+                                                (int)pParam->Caps.BayerPatternType,
+                                                pParam->Caps.bOutToARGB16 ? 0 : 1);
 
-            if (pParam->Caps.bForwardGammaCorrection || pParam->Caps.bColorConversionMatrix)
-            {
-                SurfaceIndex *LUTIndex = NULL;
-                if ( pParam->Caps.bColorConversionMatrix || pParam->Caps.bOutToARGB16 )
-                {
-                    m_LUTSurf->GetIndex(LUTIndex);
-                }
 
-                if (pOutputSurfaceIndex)
-                    m_cmCtx->CreateTask_GammaAndCCM(m_gammaCorrectSurf,
-                                                    m_gammaPointSurf,
-                                                    redOutSurf,
-                                                    greenOutSurf,
-                                                    blueOutSurf,
-                                                    (pParam->Caps.bColorConversionMatrix ? &pParam->CCMParams : NULL),
-                                                    *pOutputSurfaceIndex,
-                                                    pParam->InputBitDepth,
-                                                    LUTIndex,
-                                                    (int)pParam->Caps.BayerPatternType);
-                else
-                    m_cmCtx->CreateTask_GammaAndCCM(m_gammaCorrectSurf,
-                                                    m_gammaPointSurf,
-                                                    redOutSurf,
-                                                    greenOutSurf,
-                                                    blueOutSurf,
-                                                    (pParam->Caps.bColorConversionMatrix ? &pParam->CCMParams : NULL), 
-                                                    m_gammaOutSurf, 
-                                                    pParam->InputBitDepth,
-                                                    LUTIndex,
-                                                    (int)pParam->Caps.BayerPatternType);
-            }
         }
-
-        if (pParam->Caps.bForwardGammaCorrection || pParam->Caps.bColorConversionMatrix)
-            e = m_cmCtx->EnqueueTask_ForwardGamma();
-
-        if ( firstTile && ( pParam->Caps.bOutToARGB16 || !pParam->Caps.bForwardGammaCorrection || pParam->Caps.bColorConversionMatrix || pParam->InputBitDepth == 16))
+        else
         {
             if (!pOutputSurfaceIndex)
+            {
                     m_gammaOutSurf->GetIndex(pOutputSurfaceIndex);
+            }
+
             m_cmCtx->CreateTask_ARGB(redOutSurf,
                                         greenOutSurf,
                                         blueOutSurf,
                                         *pOutputSurfaceIndex,
+                                        (pParam->Caps.bColorConversionMatrix ? &pParam->CCMParams : NULL),
                                         pParam->InputBitDepth,
                                         (int)pParam->Caps.BayerPatternType);
+
         }
 
-        if (pParam->Caps.bOutToARGB16 || !pParam->Caps.bForwardGammaCorrection || pParam->Caps.bColorConversionMatrix || pParam->InputBitDepth == 16)
+
+        if (pParam->Caps.InputMemoryOperationMode == MEM_GPUSHARED && !pParam->inSurf2DUP)
+        {
+            if (! pParam->FrameSizeExtra.TileInfo.CropX && ! pParam->FrameSizeExtra.TileInfo.CropY &&  1 == m_nTiles && pParam->surf_in->Info.CropW*2 == pParam->surf_in->Data.Pitch)
+            {
+                m_cmCtx->EnqueueCopyCPUToGPU(m_cmSurfIn, pParam->surf_in->Data.Y16);
+            }
+            else
+            {
+                m_cmCtx->EnqueueCopyCPUToGPU(m_cmSurfIn,
+                                             (mfxU8 *)(pParam->surf_in->Data.Y16 + pParam->FrameSizeExtra.TileInfo.CropX ) + in_shift + pParam->FrameSizeExtra.TileInfo.CropY * pParam->surf_in->Data.Pitch,
+                                             pParam->surf_in->Data.Pitch);
+            }
+        }
+
+        if ( ! pParam->Caps.bNoPadding )
+            m_cmCtx->EnqueueTask_Padding();
+
+        if ( pParam->Caps.bBlackLevelCorrection || pParam->Caps.bWhiteBalance || pParam->Caps.bVignetteCorrection )
+        {
+            m_cmCtx->EnqueueTask_BayerCorrection();
+        }
+
+        m_cmCtx->EnqueueTask_GoodPixelCheck();
+
+        for (int i = 0; i < CAM_PIPE_KERNEL_SPLIT; i++)
+        {
+            m_cmCtx->EnqueueSliceTasks(i);
+        }
+
+        if ( pParam->Caps.bForwardGammaCorrection)
+        {
+            e = m_cmCtx->EnqueueTask_ForwardGamma();
+        }
+        else
         {
             if (e != NULL)
                 m_cmCtx->DestroyEventWithoutWait(e);
+
             e = m_cmCtx->EnqueueTask_ARGB();
         }
 
@@ -989,7 +1000,6 @@ void QueryCaps(mfxCameraCaps &caps)
     caps.bBlackLevelCorrection   = 1;
     caps.bWhiteBalance           = 1;
     caps.bColorConversionMatrix  = 1;
-    //caps.bOutToARGB8 = 1;
     caps.bOutToARGB16 = 1;
 
     caps.InputMemoryOperationMode = MEM_GPUSHARED; //MEM_GPU;
