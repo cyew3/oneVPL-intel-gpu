@@ -167,23 +167,23 @@ static mfxU32 Str2FourCC( msdk_char* strInput )
 {
     mfxU32 fourcc = MFX_FOURCC_YV12;//default
 
-    if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yv12")) )
+    if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yv12")) || 0 == msdk_strcmp(strInput, MSDK_STRING("YV12")) )
     {
         fourcc = MFX_FOURCC_YV12;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("rgb3")) )
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("rgb3")) || 0 == msdk_strcmp(strInput, MSDK_STRING("RGB3")) )
     {
         fourcc = MFX_FOURCC_RGB3;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("rgb4")) )
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("rgb4")) || 0 == msdk_strcmp(strInput, MSDK_STRING("RGB4")))
     {
         fourcc = MFX_FOURCC_RGB4;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yuy2")) )
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yuy2")) || 0 == msdk_strcmp(strInput, MSDK_STRING("YUV2")))
     {
         fourcc = MFX_FOURCC_YUY2;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("nv12")) )
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("nv12")) || 0 == msdk_strcmp(strInput, MSDK_STRING("NV12")))
     {
         fourcc = MFX_FOURCC_NV12;
     }
