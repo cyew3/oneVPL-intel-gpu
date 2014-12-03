@@ -10,6 +10,7 @@
 
 #include "mfx_h265_encode_hw_ddi.h"
 #include "mfx_h265_encode_hw_d3d9.h"
+#include "mfx_h265_encode_hw_d3d11.h"
 
 
 namespace MfxHwH265Encode
@@ -39,8 +40,15 @@ DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core)
         if (core->GetCoreParam(&par))
             return 0;
 
-        if ((par.Impl & 0xF00) == MFX_IMPL_VIA_D3D9)
+        switch(par.Impl & 0xF00)
+        {
+        case MFX_IMPL_VIA_D3D9:
             return new D3D9Encoder;
+        case MFX_IMPL_VIA_D3D11:
+            return new D3D11Encoder;
+        default:
+            return 0;
+        }
     }
 
     return 0;

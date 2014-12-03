@@ -10,6 +10,7 @@
     <ClCompile Include="h265\src\mfx_h265_encode_hw_bs.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_par.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_d3d9.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_d3d11.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h265\include\mfx_h265_encode_hw.h" />
@@ -21,6 +22,7 @@
     <ClInclude Include="h265\include\mfx_h265_encode_hw_bs.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_set.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_d3d9.h" />
+    <ClInclude Include="h265\include\mfx_h265_encode_hw_d3d11.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="External">

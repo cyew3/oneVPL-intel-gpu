@@ -9,10 +9,6 @@
 #include "mfx_common.h"
 #include "mfx_h265_encode_hw_d3d9.h"
 
-
-//#define HEADER_PACKING_TEST
-
-
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
 namespace MfxHwH265Encode
