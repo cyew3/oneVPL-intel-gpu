@@ -2763,11 +2763,12 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
     VAConfigAttribValStatisticsIntel statVal;
     statVal.value = attrib[0].value;
     //temp to be removed
-    printf("Statistics attributes:\n");
-    printf("max_past_refs: %d\n", statVal.bits.max_num_past_references);
-    printf("max_future_refs: %d\n", statVal.bits.max_num_future_references);
-    printf("num_outputs: %d\n", statVal.bits.num_outputs);
-    printf("interlaced: %d\n\n", statVal.bits.interlaced);
+    // But lets leave for a while
+    mdprintf("Statistics attributes:\n");
+    mdprintf("max_past_refs: %d\n", statVal.bits.max_num_past_references);
+    mdprintf("max_future_refs: %d\n", statVal.bits.max_num_future_references);
+    mdprintf("num_outputs: %d\n", statVal.bits.num_outputs);
+    mdprintf("interlaced: %d\n\n", statVal.bits.interlaced);
     //attrib[0].value |= ((2 - 1/*MV*/ - 1/*mb*/) << 8);
 
     vaSts = vaCreateConfig(
@@ -3044,7 +3045,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
     //task.m_yuv->Data.DataFlag
     //m_core->GetExternalFrameHDL(); //video mem
-    m_statParams.adaptive_search = feiCtrl->AdaptiveSearch;
+    m_statParams.adaptive_search = (feiCtrl != NULL) ? feiCtrl->AdaptiveSearch : 0;
     m_statParams.disable_statistics_output = (mbstatOut == NULL) || feiCtrl->DisableStatisticsOutput;
     m_statParams.disable_mv_output = (mvsOut == NULL) || feiCtrl->DisableMVOutput;
     m_statParams.mb_qp = (feiQP == NULL) && feiCtrl->MBQp;
@@ -3052,11 +3053,10 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
     VABufferID outBuffers[2];
     int numOutBufs = 0;
-    //        VABufferID outBuffers[2];
     outBuffers[0] = VA_INVALID_ID;
     outBuffers[1] = VA_INVALID_ID;
 
-    if (m_statParams.mv_predictor_ctrl) {
+    if ((m_statParams.mv_predictor_ctrl) && (feiMVPred != NULL) && (feiMVPred->MB != NULL)) {
         vaSts = vaCreateBuffer(m_vaDisplay,
                 m_vaContextEncode,
                 (VABufferType)VAStatsMVPredictorBufferTypeIntel,
@@ -3070,8 +3070,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 //        mdprintf(stderr, "MVPred bufId=%d\n", mvPredid);
     }
 
-    if (m_statParams.mb_qp) 
-    {
+    if ((m_statParams.mb_qp) && (feiQP != NULL) && (feiQP->QP != NULL)) {
         vaSts = vaCreateBuffer(m_vaDisplay,
                 m_vaContextEncode,
                 (VABufferType)VAEncQpBufferType,

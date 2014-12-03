@@ -499,7 +499,7 @@ mfxStatus VideoENC_PREENC::Close(void)
     m_bInit = false;
     m_ddi->Destroy();
 
-    //m_core->FreeFrames(&m_raw);
+    m_core->FreeFrames(&m_raw);
     //m_core->FreeFrames(&m_opaqHren);
 
     return MFX_ERR_NONE;
