@@ -457,7 +457,7 @@ bool IsPictureTheSame(H264Slice *pSliceOne, H264Slice *pSliceTwo)
         return false;
 
     if ((pOne->frame_num != pTwo->frame_num) ||
-        (pOne->first_mb_in_slice == pTwo->first_mb_in_slice) ||
+        //(pOne->first_mb_in_slice == pTwo->first_mb_in_slice) || // need to remove in case of duplicate slices !!!
         (pOne->pic_parameter_set_id != pTwo->pic_parameter_set_id) ||
         (pOne->field_pic_flag != pTwo->field_pic_flag) ||
         (pOne->bottom_field_flag != pTwo->bottom_field_flag))

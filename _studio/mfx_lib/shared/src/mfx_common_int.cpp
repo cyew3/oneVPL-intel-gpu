@@ -168,12 +168,9 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         break;
     case MFX_CODEC_AVC:
+    case MFX_CODEC_HEVC:
         if (info->ChromaFormat != MFX_CHROMAFORMAT_YUV420 && info->ChromaFormat != MFX_CHROMAFORMAT_YUV422 &&
             info->ChromaFormat != MFX_CHROMAFORMAT_YUV400)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        break;
-    case MFX_CODEC_HEVC:
-        if (info->ChromaFormat != MFX_CHROMAFORMAT_YUV420)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         break;
     default:
