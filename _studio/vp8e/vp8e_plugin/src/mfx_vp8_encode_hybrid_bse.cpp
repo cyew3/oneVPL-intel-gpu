@@ -260,7 +260,7 @@ namespace MFX_VP8ENC
         U32 hInMB = (m_Params.SrcHeight+15)>>4;
         U32 mxPartH = (hInMB + 7) >> 3;
         U32 mxPartS = mxPartH*wInMB*2048;
-        U32 mxToknS = mxPartH*wInMB*384;
+        U32 mxToknS = mxPartH*wInMB*800;
 
         m_externalMb1.RefFrameMode = VP8_INTRA_FRAME;
         m_externalMb1.Y4x4Modes0 = m_externalMb1.Y4x4Modes1 = m_externalMb1.Y4x4Modes2 = m_externalMb1.Y4x4Modes3 = 0;
