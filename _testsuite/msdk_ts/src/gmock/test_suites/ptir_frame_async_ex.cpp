@@ -1,22 +1,13 @@
 #include "ts_vpp.h"
 #include "ts_struct.h"
 
-#define EXT_BUF_PAR(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
-
 namespace ptir_frame_async_ex
 {
-
-typedef void (*callback)(tsExtBufType<mfxVideoParam>&, mfxU32, mfxU32);
-
-void ext_buf(tsExtBufType<mfxVideoParam>& par, mfxU32 id, mfxU32 size)
-{
-    par.AddExtBuffer(id, size); 
-}
 
 class TestSuite : tsVideoVPP
 {
 public:
-    TestSuite() : tsVideoVPP() {}
+    TestSuite() : tsVideoVPP(true, MFX_MAKEFOURCC('P','T','I','R')) {}
     ~TestSuite() {}
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
@@ -43,55 +34,49 @@ private:
     {
         mfxStatus sts;
         mfxU32 mode;
-        struct f_pair 
+        struct f_pair
         {
             const  tsStruct::Field* f;
             mfxU32 v;
         } set_par[n_par];
-        struct 
-        {
-            callback func;
-            mfxU32 buf;
-            mfxU32 size;
-        } set_buf;
     };
 
     static const tc_struct test_case[];
 };
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/* 0*/ MFX_ERR_NONE},
+    {/*00*/ MFX_ERR_NONE},
 
     // IOPattern cases
-    {/*1*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/*2*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
-    {/*3*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
-    {/*4*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/*5*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*6*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*7*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*8*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/*9*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+    {/*01*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    {/*02*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+    //{/*3*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+    //{/*4*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    //{/*5*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    //{/*6*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    //{/*7*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    //{/*8*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    //{/*9*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
 
     // unaligned W/H right before RunFrameAsync
-    {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, UNALIGNED_H},
-    {/*11*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, UNALIGNED_W},
+    {/*03*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, UNALIGNED_H},
+    {/*04*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, UNALIGNED_W},
 
     // crops are mandatory for processing, but for PTIR it is not supported
-    {/*12*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, SET_CROP_IN,  {{&tsStruct::mfxFrameSurface1.Info.CropW, 320},
+    {/*05*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, SET_CROP_IN,  {{&tsStruct::mfxFrameSurface1.Info.CropW, 320},
                                                              {&tsStruct::mfxFrameSurface1.Info.CropH, 240}}},
-    {/*13*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, SET_CROP_OUT, {{&tsStruct::mfxFrameSurface1.Info.CropW, 320},
+    {/*06*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, SET_CROP_OUT, {{&tsStruct::mfxFrameSurface1.Info.CropW, 320},
                                                              {&tsStruct::mfxFrameSurface1.Info.CropH, 240}}},
-    
-    // W/H are mandatory
-    {/*14*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, ZERO_IN_W},
-    {/*15*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, ZERO_IN_H},
-    {/*16*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, ZERO_OUT_W},
-    {/*17*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, ZERO_OUT_H},
 
-    {/*18*/ MFX_ERR_NULL_PTR, NULL_SYNCP},
-    {/*19*/ MFX_ERR_NULL_PTR, NULL_SURF_WORK},
+    // W/H are mandatory
+    {/*07*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, ZERO_IN_W},
+    {/*08*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, ZERO_IN_H},
+    {/*09*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, ZERO_OUT_W},
+    {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, ZERO_OUT_H},
+
+    {/*11*/ MFX_ERR_NULL_PTR, NULL_SYNCP},
+    {/*12*/ MFX_ERR_NULL_PTR, NULL_SURF_WORK},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -106,7 +91,6 @@ int TestSuite::RunTest(unsigned int id)
     mfxPluginUID* ptir = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, MFX_MAKEFOURCC('P','T','I','R'));
     tsSession::Load(m_session, ptir, 1);
 
-    m_pPar->vpp.In.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
     // set up parameters for case
     for(mfxU32 i = 0; i < n_par; i++)
     {
@@ -116,14 +100,33 @@ int TestSuite::RunTest(unsigned int id)
         }
     }
 
-    if(tc.set_buf.func) // set ExtBuffer
-    {
-        (*tc.set_buf.func)(this->m_par, tc.set_buf.buf, tc.set_buf.size);
-    }
-
-    m_spool_in.UseDefaultAllocator(!!(m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
+    bool isSW = !(!!(m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY));
+    m_spool_in.UseDefaultAllocator(isSW);
     SetFrameAllocator(m_session, m_spool_in.GetAllocator());
     m_spool_out.SetAllocator(m_spool_in.GetAllocator(), true);
+
+    if (!m_is_handle_set)
+    {
+        mfxHDL hdl;
+        mfxHandleType type;
+        if (isSW)
+        {
+            if (!m_pVAHandle)
+            {
+                m_pVAHandle = new frame_allocator(
+                        TS_HW_ALLOCATOR_TYPE,
+                        frame_allocator::ALLOC_MAX,
+                        frame_allocator::ENABLE_ALL,
+                        frame_allocator::ALLOC_EMPTY);
+            }
+            m_pVAHandle->get_hdl(type, hdl);
+        }
+        else
+        {
+            m_spool_in.GetAllocator()->get_hdl(type, hdl);
+        }
+        SetHandle(m_session, type, hdl);
+    }
 
     if (tc.mode == ALLOC_OPAQUE)
     {
@@ -238,7 +241,7 @@ int TestSuite::RunTest(unsigned int id)
                 g_tsStatus.check();
                 break;
             }
-            
+
             if(++submitted >= async)
             {
                 while(m_surf_out.size()) SyncOperation();
