@@ -369,7 +369,7 @@ mfxStatus MFXCamera_Plugin::ReallocateInternalSurfaces(mfxVideoParam &newParam, 
         if (! m_Caps.bOutToARGB16)
             m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW,  frameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8R8G8B8);
         else
-            m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW * sizeof(mfxU16),  frameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8);
+            m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW * sizeof(mfxU16),  frameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8R8G8B8);
     }
     else if (m_gammaOutSurf)
         m_cmDevice->DestroySurface(m_gammaOutSurf);
@@ -628,7 +628,7 @@ mfxStatus MFXCamera_Plugin::SetExternalSurfaces(AsyncParams *pParam)
         if (outPitch == allocPitch && !((mfxU64)ptr & 0xFFF))
         {
             if (m_Caps.bOutToARGB16)
-                pParam->outSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, allocPitch>>2, outHeight, CM_SURFACE_FORMAT_A8R8G8B8, (void *)surfOut->Data.V16);
+                pParam->outSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, allocPitch>>2, outHeight, CM_SURFACE_FORMAT_A8R8G8B8, (void *)ptr);
             else
                 pParam->outSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, allocPitch>>2, outHeight, CM_SURFACE_FORMAT_A8R8G8B8, (void *)ptr);
         }
@@ -968,7 +968,7 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
             m_cmCtx->DestroyEventWithoutWait(e);
             if (pParam->Caps.bOutToARGB16)
             {
-                if (1 == m_nTiles && pParam->surf_out->Info.Width*8 == pParam->surf_out->Data.Pitch)
+                if (1 == m_nTiles && pParam->surf_out->Info.CropW*8 == pParam->surf_out->Data.Pitch)
                     e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B);
                 else
                     e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B  + out_shift, pParam->surf_out->Data.Pitch);
