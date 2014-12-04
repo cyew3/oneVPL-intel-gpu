@@ -171,6 +171,9 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
             {
                 format = VA_RT_FORMAT_YUV420;
             }
+
+
+#if defined (ENABLE_ENCODER_SURFACE_HINTS) //  see VCSD100020983
             if ( request->Type & MFX_MEMTYPE_FROM_ENCODE){
                 VASurfaceAttrib surfaceAttrib[2];
                 surfaceAttrib[0].type = VASurfaceAttribPixelFormat;
@@ -178,7 +181,7 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                 surfaceAttrib[0].flags = VA_SURFACE_ATTRIB_SETTABLE;
                 surfaceAttrib[0].value.value.i = va_fourcc;
 
-                /* Input Attribute Usage Hint*/
+              //  Input Attribute Usage Hint
                 surfaceAttrib[1].flags = VA_SURFACE_ATTRIB_SETTABLE;
                 surfaceAttrib[1].type = (VASurfaceAttribType) VASurfaceAttribUsageHint;
                 surfaceAttrib[1].value.type = VAGenericValueTypeInteger;
@@ -200,6 +203,14 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                                     surfaces_num,
                                     pAttrib, pAttrib ? 1 : 0);
             }
+#else
+            va_res = vaCreateSurfaces(pSelf->pVADisplay,
+                format,
+                request->Info.Width, request->Info.Height,
+                surfaces,
+                surfaces_num,
+                pAttrib, pAttrib ? 1 : 0);
+#endif
             mfx_res = VA_TO_MFX_STATUS(va_res);
             bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
         }
