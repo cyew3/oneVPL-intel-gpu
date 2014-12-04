@@ -2947,19 +2947,18 @@ void MFXVideoENCODEH265::SyncOnTaskCompletion(Task *task, mfxBitstream *mfxBs, v
                     Ipp8u *p = mfxBs->Data + mfxBs->DataOffset + mfxBs->DataLength;
                     m_brc->GetMinMaxFrameSize(&minSize, &maxSize);
 
-                    if (minSize >  ((Ipp32s)mfxBs->MaxLength << 3))
-                        minSize = (Ipp32s)mfxBs->MaxLength << 3;
+                    // put rbsp_slice_segment_trailing_bits() which is a sequence of cabac_zero_words
+                    Ipp32s numTrailingBytes = IPP_MAX(0, ((minSize + 7) >> 3) - frameBytes);
+                    Ipp32s maxCabacZeroWords = (mfxBs->MaxLength - frameBytes) / 3;
+                    Ipp32s numCabacZeroWords = IPP_MIN(maxCabacZeroWords, (numTrailingBytes + 2) / 3);
 
-                    while (bitsize < minSize - 32) {
-                        *(Ipp32u*)p = 0;
-                        p += 4;
-                        bitsize += 32;
+                    for (Ipp32s i = 0; i < numCabacZeroWords; i++) {
+                        *p++ = 0x00;
+                        *p++ = 0x00;
+                        *p++ = 0x03;
                     }
-                    while (bitsize < minSize) {
-                        *p = 0;
-                        p++;
-                        bitsize += 8;
-                    }
+                    bitsize += numCabacZeroWords * 24;
+
                     m_brc->PostPackFrame(*frameEnc->GetVideoParam(),  task->m_sliceQpY, task->m_frameOrigin, bitsize, (overheadBytes << 3) + bitsize - (frameBytes << 3), 1);
                     mfxBs->DataLength += (bitsize >> 3) - frameBytes;
 
