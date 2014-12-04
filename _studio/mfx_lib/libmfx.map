@@ -70,3 +70,13 @@ LIBMFX_1.10 {
     MFXVideoVPP_RunFrameVPPAsyncEx;
 
 } LIBMFX_1.1;
+
+LIBMFX_1.13 {
+  global:
+    MFXVideoPAK_Query;
+    MFXVideoPAK_QueryIOSurf;
+    MFXVideoPAK_Init;
+    MFXVideoPAK_Reset;
+    MFXVideoPAK_Close;
+    MFXVideoPAK_ProcessFrameAsync;
+} LIBMFX_1.10;
