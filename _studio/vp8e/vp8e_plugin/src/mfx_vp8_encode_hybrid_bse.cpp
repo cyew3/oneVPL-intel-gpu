@@ -215,7 +215,7 @@ namespace MFX_VP8ENC
         U32 hInMB = (m_Params.SrcHeight+15)>>4;
         U32 mxPartH = (hInMB + 7) >> 3;
         U32 mxPartS = mxPartH*wInMB*2048;
-        U32 mxToknS = mxPartH*wInMB*384;
+        U32 mxToknS = mxPartH*wInMB*800;
 
         m_pPartitions[0] = (mfxU8*)malloc(2048 + m_Params.fSizeInMBs * 68); // 2048 (header) + 68 bytes per 16x16 block
         if(m_pPartitions[0]==NULL) return MFX_ERR_MEMORY_ALLOC;
@@ -225,7 +225,7 @@ namespace MFX_VP8ENC
         if(m_pPartitions[1]==NULL) return MFX_ERR_MEMORY_ALLOC;
         vp8EncodeInit(&(m_BoolEncStates[1]),(U8*)m_pPartitions[1]);
 
-        m_TokensE[0] = m_TokensB[0] = (mfxU16*)malloc(8 * mxToknS * sizeof(mfxU16)); // 256 + 128 words per 16x16 block for coefficients
+        m_TokensE[0] = m_TokensB[0] = (mfxU16*)malloc(8 * mxToknS * sizeof(mfxU16)); // 800 words per 16x16 block for coefficients
         if(m_TokensB[0]==NULL) return MFX_ERR_MEMORY_ALLOC;
 
         for(i=2;i<VP8_MAX_NUM_OF_PARTITIONS+1;i++) {
