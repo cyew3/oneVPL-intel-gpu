@@ -171,7 +171,7 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * c
     m_payload_list.clear();
     if (fourCC == MFX_FOURCC_RGB4 && chromaFormat == MFX_CHROMAFORMAT_YUV444)
     {
-        m_app14_data.header    = 0xeeFF;
+        m_app14_data.header    = 0xEEFF;//APP14
         m_app14_data.lenH      = 0;
         m_app14_data.lenL      = 14;
         m_app14_data.s[0]      = 0x41;//"A"
@@ -179,9 +179,12 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * c
         m_app14_data.s[2]      = 0x6F;//"O"
         m_app14_data.s[3]      = 0x62;//"B"
         m_app14_data.s[4]      = 0x65;//"E"
-        m_app14_data.version   = 100;
-        m_app14_data.flags0    = 0;
-        m_app14_data.flags1    = 0;
+        m_app14_data.versionH  = 0;
+        m_app14_data.versionL  = 0x64;
+        m_app14_data.flags0H   = 0;
+        m_app14_data.flags0L   = 0;
+        m_app14_data.flags1H   = 0;
+        m_app14_data.flags1L   = 0;
         m_app14_data.transform = 0; //RGB
         
         mfxU32 payloadSize = 16;
@@ -196,6 +199,39 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * c
         m_payload_list.resize(1);
         m_payload_list.back().data = m_payload_base.data + m_payload_base.length;
         memcpy_s(m_payload_list.back().data, payloadSize, &m_app14_data, payloadSize);
+        m_payload_list.back().length = payloadSize;
+        m_payload_base.length += m_payload_list.back().length;
+    }
+    else
+    {
+        m_app0_data.header      = 0xE0FF;//APP0
+        m_app0_data.lenH        = 0;
+        m_app0_data.lenL        = 16;
+        m_app0_data.s[0]        = 0x4A;//"J"
+        m_app0_data.s[1]        = 0x46;//"F"
+        m_app0_data.s[2]        = 0x49;//"I"
+        m_app0_data.s[3]        = 0x46;//"F"
+        m_app0_data.s[4]        = 0;   // 0
+        m_app0_data.versionH    = 0x01;
+        m_app0_data.versionL    = 0x02;
+        m_app0_data.units       = JRU_NONE;
+        m_app0_data.xDensity    = 0x0100;//1
+        m_app0_data.yDensity    = 0x0100;//1
+        m_app0_data.xThumbnails = 0;
+        m_app0_data.yThumbnails = 0;
+        
+        mfxU32 payloadSize = 18;
+        if (m_payload_base.length + payloadSize > m_payload_base.maxLength)
+        {
+            mfxU8* data = new mfxU8[m_payload_base.length + payloadSize];
+            memcpy_s(data, m_payload_base.length, m_payload_base.data, m_payload_base.length);
+            delete[] m_payload_base.data;
+            m_payload_base.data = data;
+            m_payload_base.maxLength = m_payload_base.length + payloadSize;
+        }
+        m_payload_list.resize(1);
+        m_payload_list.back().data = m_payload_base.data + m_payload_base.length;
+        memcpy_s(m_payload_list.back().data, payloadSize, &m_app0_data, payloadSize);
         m_payload_list.back().length = payloadSize;
         m_payload_base.length += m_payload_list.back().length;
     }

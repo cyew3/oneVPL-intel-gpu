@@ -75,9 +75,26 @@ namespace MfxHwMJpegEncode
         mfxU8  lenH;
         mfxU8  lenL;
         mfxU8  s[5];
-        mfxU16 version;
-        mfxU16 flags0;
-        mfxU16 flags1;
+        mfxU8  versionH;
+        mfxU8  versionL;
+        mfxU8  units;
+        mfxU16 xDensity;
+        mfxU16 yDensity;
+        mfxU8  xThumbnails;
+        mfxU8  yThumbnails;
+    } JpegApp0Data;
+
+    typedef struct {
+        mfxU16 header;
+        mfxU8  lenH;
+        mfxU8  lenL;
+        mfxU8  s[5];
+        mfxU8  versionH;
+        mfxU8  versionL;
+        mfxU8  flags0H;
+        mfxU8  flags0L;
+        mfxU8  flags1H;
+        mfxU8  flags1L;
         mfxU8  transform;
     } JpegApp14Data;
 
@@ -114,6 +131,7 @@ namespace MfxHwMJpegEncode
         {
             memset(&m_pps, 0, sizeof(m_pps));
             memset(&m_payload_base, 0, sizeof(m_payload_base));
+            memset(&m_app0_data, 0, sizeof(m_app0_data));
             memset(&m_app14_data, 0, sizeof(m_app14_data));
         }
 
@@ -135,6 +153,7 @@ namespace MfxHwMJpegEncode
 #endif
         std::vector<JpegPayload>                      m_payload_list;
         JpegPayload                                   m_payload_base;
+        JpegApp0Data                                  m_app0_data;
         JpegApp14Data                                 m_app14_data;
     };
 
