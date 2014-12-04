@@ -483,7 +483,7 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
 #endif
 
         for (refIdx = 0; refIdx < sliceIn->num_ref_idx[0]; refIdx++) {
-            if (refIdx >= MFX_FEI_H265_MAX_NUM_REF_FRAMES)
+            if (refIdx >= MAX_NUM_REF_IDX)
                 break;  /* avoid KW warning */
 
             frameRef = frameIn->m_refPicList[0].m_refFrames[refIdx];
@@ -502,7 +502,7 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
 
         if (sliceIn->slice_type == B_SLICE) {
             for (refIdxB = 0; refIdxB < sliceIn->num_ref_idx[1]; refIdxB++, refIdx++) {
-                if (refIdxB >= MFX_FEI_H265_MAX_NUM_REF_FRAMES)
+                if (refIdxB >= MAX_NUM_REF_IDX)
                     break;  /* avoid KW warning */
 
                 frameRef = frameIn->m_refPicList[1].m_refFrames[refIdxB];
