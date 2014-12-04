@@ -2,7 +2,7 @@ include_directories (
   ${CMAKE_SOURCE_DIR}/sample_common/include
   ${CMAKE_SOURCE_DIR}/sample_user_modules/plugin_api
   ${CMAKE_SOURCE_DIR}/sample_utilities/vpp_plugin/include
-  ${CMAKE_SOURCE_DIR}/sample_fei_h265/include
+  ${CMAKE_SOURCE_DIR}/sample_h265_gaa/include
   ${CMAKE_SOURCE_DIR}/../../mdp_msdk-api/include
 )
 

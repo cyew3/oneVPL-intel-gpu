@@ -23,7 +23,7 @@ static void Usage(void)
 {
     msdk_printf(MSDK_STRING("HEVC GPU Assist APIs Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
 
-    printf("Usage: sample_fei_h265 -i sourceFile.yuv [options]\n\n");
+    printf("Usage: sample_h265_gaa -i sourceFile.yuv [options]\n\n");
     printf("Options:\n");
     printf("   -i sourceFile.yuv   uncompressed input file (8-bit YUV420)\n");
     printf("   -r reconFile.yuv    reconstructed frames (optional - if not provided use source as recon)\n");
@@ -35,8 +35,8 @@ static void Usage(void)
     printf("   -m MPMode           motion partitioning mode (1 = square only, 2 = symmetric partitions, 3 = any)\n");
     printf("   -y                  write output to text files\n");
     printf("\nExamples:\n");
-    printf(">> sample_h265_fei -i sourceFile.yuv -w 1280 -h 720 -n 50\n");
-    printf(">> sample_h265_fei -i sourceFile.yuv -r reconFile.yuv -p params.txt\n");
+    printf(">> sample_h265_gaa -i sourceFile.yuv -w 1280 -h 720 -n 50\n");
+    printf(">> sample_h265_gaa -i sourceFile.yuv -r reconFile.yuv -p params.txt\n");
     exit(-1);
 }
 
