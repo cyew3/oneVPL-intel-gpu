@@ -76,7 +76,7 @@ VAProfile ConvertProfileTypeMFX2VAAPI(mfxU32 type)
         case MFX_PROFILE_AVC_BASELINE: return VAProfileH264Baseline;
         case MFX_PROFILE_AVC_MAIN:     return VAProfileH264Main;
         case MFX_PROFILE_AVC_HIGH:     return VAProfileH264High;
-        default: 
+        default:
             //assert(!"Unsupported profile type");
             return VAProfileH264High; //VAProfileNone;
     }
@@ -382,7 +382,7 @@ mfxStatus SetPrivateParams(
 
     private_param->target_usage = (unsigned int)(par.mfx.TargetUsage);
     private_param->useRawPicForRef = extOpt2 && IsOn(extOpt2->UseRawRef);
-    
+
     if (extOpt3)
     {
         private_param->directBiasAdjustmentEnable       = IsOn(extOpt3->DirectBiasAdjustment);
@@ -766,7 +766,7 @@ void UpdateSliceSizeLimited(
     mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
     assert( extDdi != 0 );
 
-    size_t numSlices = task.m_SliceInfo.size();   
+    size_t numSlices = task.m_SliceInfo.size();
     if (numSlices != slice.size())
     {
         size_t old_size = slice.size();
@@ -775,7 +775,7 @@ void UpdateSliceSizeLimited(
         {
             slice[i] = slice[0];
             //slice[i].slice_id = (mfxU32)i;
-        } 
+        }
     }
 
     ArrayDpbFrame const & dpb = task.m_dpb[fieldId];
@@ -1170,7 +1170,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         {
             return MFX_ERR_DEVICE_FAILED;
         }
-    } 
+    }
     else
     {
         entryPoint = (VAEntrypoint) VAEntrypointEncFEIIntel;
@@ -1283,14 +1283,14 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
     if (m_caps.HeaderInsertion == 0)
         m_headerPacker.Init(par, m_caps);
-    
+
     mfxExtCodingOption3 const *extOpt3 = GetExtBuffer(par);
 
     if (extOpt3)
-    {   
+    {
         if (IsOn(extOpt3->EnableMBQP))
             m_mbqp_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
-        
+
         if (IsOn(extOpt3->MBDisableSkipMap))
             m_mb_noskip_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
     }
@@ -1578,7 +1578,7 @@ mfxStatus VAAPIEncoder::Execute(
     outBuffers[1] = VA_INVALID_ID;
     outBuffers[2] = VA_INVALID_ID;
 
-    if (m_isENCPAK) 
+    if (m_isENCPAK)
     {
         int numMB = m_sps.picture_height_in_mbs * m_sps.picture_width_in_mbs;
 
@@ -1592,7 +1592,7 @@ mfxStatus VAAPIEncoder::Execute(
         mfxExtFeiEncMV* mvout = (mfxExtFeiEncMV*)task.m_feiMVOut;
         mfxExtFeiPakMBCtrl* mbcodeout = (mfxExtFeiPakMBCtrl*)task.m_feiMBCODEOut;
 
-        for (int i = 0; i < ctrl.NumExtParam; i++) 
+        for (int i = 0; i < ctrl.NumExtParam; i++)
         {
             if (ctrl.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_CTRL)
             {
@@ -1677,7 +1677,7 @@ mfxStatus VAAPIEncoder::Execute(
             configBuffers[buffersCount++] = m_vaFeiMBStatId[idxRecon];
         }
 
-        //output buffer for MV  
+        //output buffer for MV
         if (mvout != NULL)
         {
             if (m_vaFeiMVOutId.size() == 0 )
@@ -1741,7 +1741,7 @@ mfxStatus VAAPIEncoder::Execute(
 
             vaMapBuffer(m_vaDisplay,
                 vaFeiFrameControlId,
-                (void **)&miscParam);  
+                (void **)&miscParam);
 
             miscParam->type = (VAEncMiscParameterType)VAEncMiscParameterTypeFEIFrameControlIntel;
             VAEncMiscParameterFEIFrameControlH264Intel* vaFeiFrameControl = (VAEncMiscParameterFEIFrameControlH264Intel*)miscParam->data;
@@ -2046,7 +2046,7 @@ mfxStatus VAAPIEncoder::Execute(
                     ENCODE_PACKEDHEADER_DATA const & packedSlice = packedSlices[i];
 
                     packed_header_param_buffer.type = VAEncPackedHeaderH264_Slice;
-                    packed_header_param_buffer.has_emulation_bytes = !packedSlice.SkipEmulationByteCount;
+                    packed_header_param_buffer.has_emulation_bytes = 0;
                     packed_header_param_buffer.bit_length = packedSlice.DataLength; // DataLength is already in bits !
 
                     //MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
@@ -2073,7 +2073,7 @@ mfxStatus VAAPIEncoder::Execute(
             }
         }
     }
-    
+
     configBuffers[buffersCount++] = m_hrdBufferId;
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(m_videoParam, m_mbbrc, task.m_minQP, task.m_maxQP,
                                                          m_vaDisplay, m_vaContextEncode, m_rateParamBufferId), MFX_ERR_DEVICE_FAILED);
@@ -2193,7 +2193,7 @@ mfxStatus VAAPIEncoder::Execute(
 
     if (ctrlOpt2)
     {
-        MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetPrivateParams(m_videoParam, m_vaDisplay, 
+        MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetPrivateParams(m_videoParam, m_vaDisplay,
                                                                m_vaContextEncode, m_privateParamsId, &task.m_ctrl), MFX_ERR_DEVICE_FAILED);
     }
     if (VA_INVALID_ID != m_privateParamsId) configBuffers[buffersCount++] = m_privateParamsId;
@@ -2334,12 +2334,12 @@ mfxStatus VAAPIEncoder::Execute(
         currentFeedback.size    = storedSize;
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
         currentFeedback.mv        = vaFeiMVOutId;
-        currentFeedback.mbstat    = vaFeiMBStatId;        
-        currentFeedback.mbcode    = vaFeiMCODEOutId;        
+        currentFeedback.mbstat    = vaFeiMBStatId;
+        currentFeedback.mbcode    = vaFeiMCODEOutId;
 #endif
         m_feedbackCache.push_back( currentFeedback );
     }
-    
+
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
     MFX_DESTROY_VABUFFER(vaFeiFrameControlId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(vaFeiMVPredId, m_vaDisplay);
@@ -2404,7 +2404,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
         return MFX_ERR_UNKNOWN;
     }
 
-    if (waitSurface != VA_INVALID_SURFACE) // Not skipped frame 
+    if (waitSurface != VA_INVALID_SURFACE) // Not skipped frame
     {
         VASurfaceStatus surfSts = VASurfaceSkipped;
 
@@ -3073,7 +3073,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
                 m_vaContextEncode,
                 (VABufferType)VAStatsMVPredictorBufferTypeIntel,
                 sizeof (VAMotionVectorIntel),
-                numMB, 
+                numMB,
                 feiMVPred->MB,
                 &mvPredid);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -3083,11 +3083,12 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     }
 
     if ((m_statParams.mb_qp) && (feiQP != NULL) && (feiQP->QP != NULL)) {
+
         vaSts = vaCreateBuffer(m_vaDisplay,
                 m_vaContextEncode,
                 (VABufferType)VAEncQpBufferType,
                 sizeof (VAEncQpBufferH264),
-                numMB, 
+                numMB,
                 feiQP->QP,
                 &qpid);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -3129,7 +3130,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     m_statParams.num_past_references = in->NumFrameL0;
     //currently only video mem is used, all input surfaces should be in video mem
     m_statParams.past_references = NULL;
-    //fprintf(stderr,"in vaid: %x ", *inputSurface);    
+    //fprintf(stderr,"in vaid: %x ", *inputSurface);
     if (in->NumFrameL0)
     {
         VASurfaceID* l0surfs = new VASurfaceID [in->NumFrameL0];
@@ -3142,7 +3143,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
             VASurfaceID* s = (VASurfaceID*) handle; //id in the memory by ptr
             l0surfs[i] = *s;
         }
-      //  fprintf(stderr,"l0vaid: %x ", l0surfs[0]);    
+      //  fprintf(stderr,"l0vaid: %x ", l0surfs[0]);
     }
     m_statParams.num_future_references = in->NumFrameL1;
     m_statParams.future_references = NULL;
@@ -3157,7 +3158,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
             VASurfaceID* s = (VASurfaceID*) handle;
             l1surfs[i] = *s;
         }
-        //fprintf(stderr,"l1vaid: %x", l1surfs[0]);    
+        //fprintf(stderr,"l1vaid: %x", l1surfs[0]);
     }
 
     //fprintf(stderr,"\n");
