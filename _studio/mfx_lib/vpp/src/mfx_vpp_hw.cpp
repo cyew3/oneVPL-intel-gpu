@@ -2293,27 +2293,26 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
             {
                 if ( (pInputSurface->Data.ExtParam[jj]->BufferId == MFX_EXTBUFF_VPP_FIELD_PROCESSING) &&
                      (pInputSurface->Data.ExtParam[jj]->BufferSz == sizeof(mfxExtVPPFieldProcessing)) )
-                   {
+                {
                     vppFieldProcessingParams = (mfxExtVPPFieldProcessing *)(pInputSurface->Data.ExtParam[jj]);
-                   }
-            }
-            if (vppFieldProcessingParams->Mode == MFX_VPP_COPY_FIELD)
-            {
-                if(vppFieldProcessingParams->InField ==  MFX_PICSTRUCT_FIELD_TFF)
-                {
-                    imfxFPMode =
-                            (vppFieldProcessingParams->OutField == MFX_PICSTRUCT_FIELD_TFF) ? TFF2TFF : TFF2BFF;
-                } else
-                {
-                    imfxFPMode =
-                            (vppFieldProcessingParams->OutField == MFX_PICSTRUCT_FIELD_TFF) ? BFF2TFF : BFF2BFF;
-                }
-            } /* if (vppFieldProcessingParams->Mode == MFX_VPP_COPY_FIELD)*/
 
-            if (vppFieldProcessingParams->Mode == MFX_VPP_COPY_FRAME)
-            {
-                imfxFPMode = FRAME2FRAME;
-            }
+                    if (vppFieldProcessingParams->Mode == MFX_VPP_COPY_FIELD)
+                    {
+                        if(vppFieldProcessingParams->InField ==  MFX_PICSTRUCT_FIELD_TFF)
+                        {
+                            imfxFPMode = (vppFieldProcessingParams->OutField == MFX_PICSTRUCT_FIELD_TFF) ?
+                                            TFF2TFF : TFF2BFF;
+                        } else
+                        {
+                            imfxFPMode = (vppFieldProcessingParams->OutField == MFX_PICSTRUCT_FIELD_TFF) ?
+                                    BFF2TFF : BFF2BFF;
+                        }
+                    } /* if (vppFieldProcessingParams->Mode == MFX_VPP_COPY_FIELD)*/
+
+                    if (vppFieldProcessingParams->Mode == MFX_VPP_COPY_FRAME)
+                        imfxFPMode = FRAME2FRAME;
+                } // if ( (pInputSurface->Data.ExtParam[jj]->BufferId == MFX_EXTBUFF_VPP_FIELD_PROCESSING) &&
+            } // for ( mfxU32 jj = 0; jj < pInputSurface->Data.NumExtParam; jj++ )
 
             // "-1" to get valid Sergey Osipov's kernel values is done internally
             // aya, al : !!! Sergey Osipov's kernel uses "0"  as a "valid" data, but HW_VPP doesn't

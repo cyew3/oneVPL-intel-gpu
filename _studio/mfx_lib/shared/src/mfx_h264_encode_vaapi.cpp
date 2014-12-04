@@ -3045,11 +3045,23 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
     //task.m_yuv->Data.DataFlag
     //m_core->GetExternalFrameHDL(); //video mem
-    m_statParams.adaptive_search = (feiCtrl != NULL) ? feiCtrl->AdaptiveSearch : 0;
-    m_statParams.disable_statistics_output = (mbstatOut == NULL) || feiCtrl->DisableStatisticsOutput;
-    m_statParams.disable_mv_output = (mvsOut == NULL) || feiCtrl->DisableMVOutput;
-    m_statParams.mb_qp = (feiQP == NULL) && feiCtrl->MBQp;
-    m_statParams.mv_predictor_ctrl = (feiMVPred == NULL) ? feiCtrl->MVPredictor : 0;
+    if (feiCtrl != NULL) // KW fix actually
+    {
+        m_statParams.adaptive_search = feiCtrl->AdaptiveSearch;
+        m_statParams.disable_statistics_output = (mbstatOut == NULL) || feiCtrl->DisableStatisticsOutput;
+        m_statParams.disable_mv_output = (mvsOut == NULL) || feiCtrl->DisableMVOutput;
+        m_statParams.mb_qp = (feiQP == NULL) && feiCtrl->MBQp;
+        m_statParams.mv_predictor_ctrl = (feiMVPred == NULL) ? feiCtrl->MVPredictor : 0;
+    }
+    else
+    {
+        m_statParams.adaptive_search = 0;
+        m_statParams.disable_statistics_output = 1;
+        m_statParams.disable_mv_output = 1;
+        m_statParams.mb_qp = 0;
+        m_statParams.mv_predictor_ctrl = 0;
+    } // if (feiCtrl != NULL) // KW fix actually
+
 
     VABufferID outBuffers[2];
     int numOutBufs = 0;
