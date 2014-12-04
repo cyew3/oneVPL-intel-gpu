@@ -325,6 +325,14 @@ unsigned int Convert_to_I420(unsigned char *pucIn, Frame *pfrmOut, char *pcForma
         return 0;
 }
 
+void Clean_Frame_Info(Frame **frmBuffer)
+{
+    unsigned int i;
+
+    for(i = 0; i < BUFMINSIZE - 1; i++)
+        frmBuffer[i]->frmProperties.interlaced = 0;
+}
+
 void Frame_Prep_and_Analysis(Frame **frmBuffer, char *pcFormat, double dFrameRate, unsigned int uiframeBufferIndexCur, unsigned int uiframeBufferIndexNext, unsigned int uiTemporalIndex)
 {
 #if PRINTDEBUG

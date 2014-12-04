@@ -735,7 +735,7 @@ void Pattern41aRemovalCM(Frame **frmBuffer, unsigned int uiInitFramePosition, un
     else
     {
         for (i = 0; i < BUFMINSIZE - 1; i++)
-            frmBuffer[uiInitFramePosition]->frmProperties.interlaced = true;
+            frmBuffer[uiInitFramePosition]->frmProperties.interlaced = false;
         frmBuffer[uiInitFramePosition - 1]->frmProperties.interlaced = false;
         *pdispatch = uiInitFramePosition;
     }
@@ -759,6 +759,7 @@ void RemovePatternCM(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned i
         //printf("\nUnknown Pattern, please check your selection\n");
         //exit(-1001);
     }
+    Clean_Frame_Info(frmBuffer);
 }
 
 void CheckGenFrameCM(Frame **pfrmIn, unsigned int frameNum, /*unsigned int patternType, */unsigned int uiOPMode)
@@ -974,6 +975,10 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
             old_surf = static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D;
             static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D;
             restore = true;
+
+            if(frmBuffer[BUFMINSIZE]->outState != Frame::OUT_UNCHANGED) //This is needed after pointer is copied
+                frmBuffer[BUFMINSIZE]->outState = Frame::OUT_UNCHANGED;
+
             pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
             if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D)
                 //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
@@ -1038,6 +1043,9 @@ void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, doubl
             old_surf = static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D;
             static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = static_cast<CmSurface2DEx*>(frmBuffer[frameIndex]->inSurf)->pCmSurface2D;
             restore = true;
+
+            if(frmBuffer[BUFMINSIZE]->outState != Frame::OUT_UNCHANGED)//This is needed after pointer is copied
+                frmBuffer[BUFMINSIZE]->outState = Frame::OUT_UNCHANGED;
             //pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, frameIndex, uiInterlaceParity);
             if(!static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D)
                 static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();

@@ -289,6 +289,7 @@ extern "C" {
     void   AddBorders(Plane *pplaIn, Plane *pplaOut, unsigned int uiBorder);
     void   TrimBorders(Plane *pplaIn, Plane *pplaOut);
     unsigned int   Convert_to_I420(unsigned char *pucIn, Frame *pfrmOut, char *pcFormat, double dFrameRate);
+    void   Clean_Frame_Info(Frame **frmBuffer);
     void   Frame_Prep_and_Analysis(Frame **frmBuffer, char *pcFormat, double dFrameRate, unsigned int uiframeBufferIndexCur, unsigned int uiframeBufferIndexNext, unsigned int uiTemporalIndex);
     void   CheckGenFrame(Frame **pfrmIn, unsigned int frameNum, unsigned int uiOPMode);
     void   Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidth, unsigned int uiHeight);

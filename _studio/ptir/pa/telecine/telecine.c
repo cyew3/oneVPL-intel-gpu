@@ -1810,7 +1810,7 @@ void Pattern41aRemoval(Frame **frmBuffer, unsigned int uiInitFramePosition, unsi
     else
     {
         for (i = 0; i < BUFMINSIZE - 1; i++)
-            frmBuffer[uiInitFramePosition]->frmProperties.interlaced = TRUE;
+            frmBuffer[uiInitFramePosition]->frmProperties.interlaced = FALSE;
         frmBuffer[uiInitFramePosition - 1]->frmProperties.interlaced = FALSE;
         *pdispatch = uiInitFramePosition;
     }
@@ -1860,4 +1860,5 @@ void RemovePattern(Frame **frmBuffer, unsigned int uiPatternNumber, unsigned int
     {
         return;
     }
+    Clean_Frame_Info(frmBuffer);
 }
