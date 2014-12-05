@@ -959,13 +959,6 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
             }
         }
 
-        // no transparence
-        pInputSample->Alpha = 1.0F; 
-
-        pInputSample->bLumaKey = FALSE;
-        pInputSample->iLumaHigh = 0;
-        pInputSample->iLumaLow = 0;
-
         // cropping
         // source cropping
         mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);        
@@ -986,6 +979,11 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
             pInputSample->DstRect.left = rec.DstX;
             pInputSample->DstRect.bottom = rec.DstY + rec.DstH;
             pInputSample->DstRect.right  = rec.DstX + rec.DstW;
+
+            pInputSample->Alpha = (rec.GlobalAlphaEnable) ? rec.GlobalAlpha / 255.0f : 1.0f;
+            pInputSample->bLumaKey  = rec.LumaKeyEnable;
+            pInputSample->iLumaLow  = rec.LumaKeyMin;
+            pInputSample->iLumaHigh = rec.LumaKeyMax;
         }
         else
         {
