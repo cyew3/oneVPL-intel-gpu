@@ -41,7 +41,7 @@ PTIR_ProcessorCM::PTIR_ProcessorCM(mfxCoreInterface* mfxCore, frameSupplier* _fr
 
 PTIR_ProcessorCM::~PTIR_ProcessorCM()
 {
-    frmSupply->FreeFrames();
+    //frmSupply->FreeFrames();
     frmSupply->SetDevice(0);
     frmSupply->SetMap(0);
     Close();

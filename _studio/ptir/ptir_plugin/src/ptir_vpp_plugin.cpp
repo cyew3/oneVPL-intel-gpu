@@ -379,9 +379,10 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 }
 mfxStatus MFX_PTIR_Plugin::FreeResources(mfxThreadTask task, mfxStatus )
 {
+    UMC::AutomaticUMCMutex guard(m_guard_free);
     assert(0 != vTasks.size());
     //assert(0 != outSurfs.size());
-    if(0 == vTasks.size() /*|| 0 == outSurfs.size()*/)
+    if(0 == vTasks.size() && bInited/*|| 0 == outSurfs.size()*/)
         return MFX_ERR_UNKNOWN;
 
     for(mfxU32 i=0; i < vTasks.size(); i++){
@@ -1421,8 +1422,17 @@ mfxStatus MFX_PTIR_Plugin::Close()
     UMC::AutomaticUMCMutex guard(m_guard);
     if(!bInited)
         return MFX_ERR_NOT_INITIALIZED;
+    bInited = false;
 
     mfxStatus mfxSts = MFX_ERR_NONE;
+    if(vTasks.size())
+    {
+        UMC::AutomaticUMCMutex guard(m_guard_free);
+        while(0 != vTasks.size())
+        {
+            FreeResources((mfxThreadTask) vTasks.front(), mfxSts);
+        }
+    }
     if(ptir)
     {
         if(frmSupply)
@@ -1457,7 +1467,6 @@ mfxStatus MFX_PTIR_Plugin::Close()
     memset(&m_mfxCurrentPar, 0, sizeof(mfxVideoParam));
     memset(&m_OpaqSurfAlloc, 0, sizeof(mfxExtOpaqueSurfaceAlloc));
 
-    bInited = false;
     if(mfxSts)
         return mfxSts;
     return MFX_ERR_NONE;

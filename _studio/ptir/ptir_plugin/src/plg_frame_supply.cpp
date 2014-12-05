@@ -270,6 +270,16 @@ mfxStatus frameSupplier::FreeFrames()
     mfxU32 refs = 0;
     if(CmToMfxSurfmap && pCMdevice)
     {
+        if(frmBuffer && *frmBuffer && *frmBuffer)
+        {
+            for(mfxU32 i = 0; i < LASTFRAME; ++i)
+            {
+                if(static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D)
+                    FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[i]->inSurf)->pCmSurface2D);
+                if(static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D)
+                    FreeSurface(static_cast<CmSurface2DEx*>(frmBuffer[i]->outSurf)->pCmSurface2D);
+            }
+        }
         for(std::map<CmSurface2D*,mfxFrameSurface1*>::iterator it = CmToMfxSurfmap->begin(); it != CmToMfxSurfmap->end(); ++it) {
             CmSurface2D* cm_surf = it->first;
             //mfxFrameSurface1* mfxSurf = it->second;

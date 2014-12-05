@@ -148,6 +148,7 @@ protected:
     std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > m_adapter;
     PTIR_Processor*  ptir;
     UMC::Mutex m_guard;
+    UMC::Mutex m_guard_free;
 
     bool bEOS;
     bool bInited;
