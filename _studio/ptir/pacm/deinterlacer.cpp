@@ -123,6 +123,8 @@ DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height,
  this->kernelRs->SetKernelArg(1, *rsFrame);
  this->kernelSadRs->SetKernelArg(2, *sadFrame);
  this->kernelSadRs->SetKernelArg(3, *rsFrame);
+ this->kernelRs->SetKernelArg(2, height);
+ this->kernelSadRs->SetKernelArg(4, height);
  this->kernelFixEdgeTop->SetKernelArg(1, *this->badMCFrame);
  this->kernelFixEdgeBottom->SetKernelArg(1, *this->badMCFrame);
  this->kernelLowEdgeMask2Fields->SetKernelArg(2, *this->badMCFrame);
@@ -517,12 +519,13 @@ void DeinterlaceFilter::MeasureRs(Frame * pfrmCur)
  kernelRs->SetKernelArg(0, *GetFrameSurfaceCur(pfrmCur));
 #if 0 //this arg is set in constructor
  kernelRs->SetKernelArg(1, *rsFrame);
+ kernelRs->SetKernelArg(2, height);
 #endif
 
     QueueEx().Enqueue(*kernelRs, threadSpace);
     QueueEx().WaitForLastKernel();
     UINT size = threadsWidth * RS_UNIT_SIZE * threadsHeight;
- SumRs(*rsFrame, pfrmCur, size, threadsWidth, RSSAD_PLANE_WIDTH, 1);
+ SumRs(*rsFrame, pfrmCur, size, threadsWidth, RSSAD_PLANE_WIDTH, 0);
     clockRSGPUTotal.End();
 
 #endif
@@ -563,6 +566,7 @@ void DeinterlaceFilter::CalculateSADRs(Frame *pfrmCur, Frame *pfrmPrv)
 #if 0 //this arg is set in constructor
     kernelSadRs->SetKernelArg(2, *sadFrame);
     kernelSadRs->SetKernelArg(3, *rsFrame);
+    kernelSadRs->SetKernelArg(4, height);
 #endif
     QueueEx().Enqueue(*kernelSadRs, threadSpace);
     clockSADRSEnqueue.End();

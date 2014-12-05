@@ -487,7 +487,7 @@ _GENX_MAIN_ void cmk_sad_nv12(SurfaceIndex currFrameSurfaceId, SurfaceIndex prev
 const int init_Data[16] = {31, 31, 63, 63, 127, 127, 255, 255, 512, 512, 1023, 1023, 2047, 2047, 4095, 4095};
 
 template<uint PLANE_WIDTH, uint PLANE_HEIGHT, CmSurfacePlaneIndex PLANE>
-inline _GENX_ void rs_plane(SurfaceIndex frameSurfaceId, SurfaceIndex rsSurfaceId/*, int AntiCropW*/)
+inline _GENX_ void rs_plane(SurfaceIndex frameSurfaceId, SurfaceIndex rsSurfaceId, int Height)
 {
     enum
     {
@@ -526,7 +526,13 @@ inline _GENX_ void rs_plane(SurfaceIndex frameSurfaceId, SurfaceIndex rsSurfaceI
 #pragma unroll
         for (uint pr = 0; pr < PLANE_HEIGHT; pr += BLOCK_HEIGHT) {
             //Read rest 8 lines
-            cmut::cm_read_plane<PLANE>(frameSurfaceId, x, y + 2, frame.template select<BLOCK_HEIGHT, 1, BLOCK_WIDTH, 1>(2, 0));
+            if(Height == (y + 8)/* && pr > 5*/){
+                cmut::cm_read_plane<PLANE>(frameSurfaceId, x, y + 2, frame.template select<6, 1, BLOCK_WIDTH, 1>(2, 0)); //read next 6 real lines
+                cmut::cm_read_plane<PLANE>(frameSurfaceId, x, y + 7, frame.template select<1, 1, BLOCK_WIDTH, 1>(8, 0)); //copy the last line
+                cmut::cm_read_plane<PLANE>(frameSurfaceId, x, y + 7, frame.template select<1, 1, BLOCK_WIDTH, 1>(9, 0)); //copy the last line
+            }                                               //1072+7 = 1079
+            else //normal case
+                cmut::cm_read_plane<PLANE>(frameSurfaceId, x, y + 2, frame.template select<BLOCK_HEIGHT, 1, BLOCK_WIDTH, 1>(2, 0));
 
             matrix<short, BLOCK_HEIGHT, BLOCK_WIDTH> global = frame.template select<BLOCK_HEIGHT, 1, BLOCK_WIDTH, 1>(0, 0) - frame.template select<BLOCK_HEIGHT, 1, BLOCK_WIDTH, 1>(1, 0);
             matrix<short, BLOCK_HEIGHT / 2, BLOCK_WIDTH> top = frame.template select<BLOCK_HEIGHT / 2, 2, BLOCK_WIDTH, 1>(0, 0) - frame.template select<BLOCK_HEIGHT / 2, 2, BLOCK_WIDTH, 1>(2, 0);
@@ -588,26 +594,26 @@ inline _GENX_ void rs_plane(SurfaceIndex frameSurfaceId, SurfaceIndex rsSurfaceI
 }
 
 template<uint PLANE_WIDTH, uint PLANE_HEIGHT>
-_GENX_MAIN_ void cmk_rs_nv12(SurfaceIndex frameSurfaceId, SurfaceIndex rsSurfaceId/*, int AntiCropW*/)
+_GENX_MAIN_ void cmk_rs_nv12(SurfaceIndex frameSurfaceId, SurfaceIndex rsSurfaceId, int Height)
 {
-    rs_plane<PLANE_WIDTH, PLANE_HEIGHT, GENX_SURFACE_Y_PLANE>(frameSurfaceId, rsSurfaceId/*, int AntiCropW*/);
+    rs_plane<PLANE_WIDTH, PLANE_HEIGHT, GENX_SURFACE_Y_PLANE>(frameSurfaceId, rsSurfaceId, Height);
 }
 
 template<uint PLANE_WIDTH, uint PLANE_HEIGHT>
-_GENX_MAIN_ void cmk_sad_rs_nv12(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId, SurfaceIndex rsSurfaceId/*, int AntiCropW*/)
+_GENX_MAIN_ void cmk_sad_rs_nv12(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId, SurfaceIndex rsSurfaceId, int Height)
 {
     sad_plane<PLANE_WIDTH, PLANE_HEIGHT, GENX_SURFACE_Y_PLANE>(currFrameSurfaceId, prevFrameSurfaceId, sadSurfaceId);
-    rs_plane<PLANE_WIDTH, PLANE_HEIGHT, GENX_SURFACE_Y_PLANE>(currFrameSurfaceId, rsSurfaceId/*, anticrop*/);
+    rs_plane<PLANE_WIDTH, PLANE_HEIGHT, GENX_SURFACE_Y_PLANE>(currFrameSurfaceId, rsSurfaceId, Height);
 }
 
 template void cmk_media_deinterlace_nv12<64, 16>(SurfaceIndex scrFrameSurfaceId, SurfaceIndex dstTopFieldSurfaceId, SurfaceIndex dstBotFieldSurfaceId);
 template void cmk_media_deinterlace_single_field_nv12<1, 64, 16>(SurfaceIndex scrFrameSurfaceId, SurfaceIndex dstFieldSurfaceId);
 template void cmk_media_deinterlace_single_field_nv12<0, 64, 16>(SurfaceIndex scrFrameSurfaceId, SurfaceIndex dstFieldSurfaceId);
 template void cmk_sad_nv12<64, 8>(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId);
-template void cmk_rs_nv12<64, 8>(SurfaceIndex frameSurfaceId, SurfaceIndex rsSurfaceId);
+template void cmk_rs_nv12<64, 8>(SurfaceIndex frameSurfaceId, SurfaceIndex rsSurfaceId, int Height);
 template void cmk_undo2frame_nv12<32, 8, 0>(SurfaceIndex scrFrameSurfaceId, SurfaceIndex srcFrameSurfaceId2, SurfaceIndex dstFrameSurfaceId);
 template void cmk_undo2frame_nv12<32, 8, 1>(SurfaceIndex scrFrameSurfaceId, SurfaceIndex srcFrameSurfaceId2, SurfaceIndex dstFrameSurfaceId);
-template void cmk_sad_rs_nv12<64, 8>(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId, SurfaceIndex rsSurfaceId/*, int AntiCropW*/);
+template void cmk_sad_rs_nv12<64, 8>(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId, SurfaceIndex rsSurfaceId, int Height);
 template void cmk_DeinterlaceBorder<4U, 4U, 0U>(SurfaceIndex inputSurface, uint WIDTH, uint HEIGHT);
 template void cmk_DeinterlaceBorder<4U, 4U, 1U>(SurfaceIndex inputSurface, uint WIDTH, uint HEIGHT);
 

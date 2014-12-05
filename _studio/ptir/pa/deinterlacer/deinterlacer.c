@@ -1295,7 +1295,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
     {
 //UpperBase, non MC; upper and bottom lines processing
 //Y processing
-        memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * frmBuffer[curFrame]->plaY.uiHeight) - frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 1)) /*- frmBuffer[curFrame]->plaY.uiStride - frmBuffer[curFrame]->plaY.uiStride*/, frmBuffer[curFrame]->plaY.uiWidth);
+        memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * frmBuffer[curFrame]->plaY.uiHeight) - frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 2)) /*- frmBuffer[curFrame]->plaY.uiStride - frmBuffer[curFrame]->plaY.uiStride*/, frmBuffer[curFrame]->plaY.uiWidth);
 
         curLine  = frmBuffer[curFrame]->plaY.ucCorner + frmBuffer[curFrame]->plaY.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaY.uiStride;

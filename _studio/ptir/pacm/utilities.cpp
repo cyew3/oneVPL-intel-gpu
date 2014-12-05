@@ -509,7 +509,7 @@ void Analyze_Buffer_Stats_CM(Frame *frmBuffer[BUFMINSIZE], Pattern *ptrn, unsign
                     uiDropCount += frmBuffer[i]->frmProperties.drop;
 
                 if (!uiDropCount)
-                    frmBuffer[BUFMINSIZE > 1]->frmProperties.drop = 1;
+                    frmBuffer[BUFMINSIZE - 1]->frmProperties.drop = 1;
             }
         }
     }
@@ -983,6 +983,8 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
             if(static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D)
                 //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->outSurf)->pCmSurface2D = frmSupply->GetWorkSurfaceCM();
                 pdeinterlaceFilter->DeinterlaceMedianFilterSingleFieldCM(frmBuffer, BUFMINSIZE, !uiInterlaceParity);
+            else
+                assert(0);
             //static_cast<CmSurface2DEx*>(frmBuffer[BUFMINSIZE]->inSurf)->pCmSurface2D = old_surf;
         }
         else
@@ -1095,6 +1097,13 @@ int PTIRCM_AutoMode_FF(PTIRSystemBuffer *SysBuffer)
     unsigned int i, uiDeinterlace = 0,
                  uiNumFramesToDispatch;
     double cur_timestamp;
+    unsigned int uiFramesLeft = SysBuffer->control.uiCur;
+
+    if(SysBuffer->control.uiEndOfFrames)
+    {
+        if(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex != SysBuffer->control.uiFrame)
+            SysBuffer->control.uiCur = max(1, SysBuffer->control.uiCur - 1);
+    }
 
     Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
@@ -1149,6 +1158,13 @@ int PTIRCM_AutoMode_HF(PTIRSystemBuffer *SysBuffer)
     unsigned int i, uiDeinterlace = 0,
                  uiNumFramesToDispatch;
     double cur_timestamp;
+    unsigned int uiFramesLeft = SysBuffer->control.uiCur;
+
+    if(SysBuffer->control.uiEndOfFrames)
+    {
+        if(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex != SysBuffer->control.uiFrame)
+            SysBuffer->control.uiCur = max(1, SysBuffer->control.uiCur - 1);
+    }
 
     Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
@@ -1241,6 +1257,13 @@ int PTIRCM_BaseFrameMode(PTIRSystemBuffer *SysBuffer)
 {
     unsigned int i, uiDeinterlace = 0,
                  uiNumFramesToDispatch;
+    unsigned int uiFramesLeft = SysBuffer->control.uiCur;
+
+    if(SysBuffer->control.uiEndOfFrames)
+    {
+        if(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex != SysBuffer->control.uiFrame)
+            SysBuffer->control.uiCur = max(1, SysBuffer->control.uiCur - 1);
+    }
 
     Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
@@ -1310,6 +1333,12 @@ int PTIRCM_Auto24fpsMode(PTIRSystemBuffer *SysBuffer)
     const double filmfps = 1 / 23.976 * 1000;
     double frmVal = 0.0;
 
+    if(SysBuffer->control.uiEndOfFrames)
+    {
+        if(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex != SysBuffer->control.uiFrame)
+            SysBuffer->control.uiCur = max(1, SysBuffer->control.uiCur - 1);
+    }
+
     Frame_Prep_and_AnalysisCM(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
     {
@@ -1331,7 +1360,7 @@ int PTIRCM_Auto24fpsMode(PTIRSystemBuffer *SysBuffer)
             for (i = 0; i < uiNumFramesToDispatch; i++)
             {
                 uiCheckCount = ((SysBuffer->control.uiBufferCount + 1 + i == 5) && !uiLetGo);
-                if (!SysBuffer->frmBuffer[i]->frmProperties.drop24fps && !SysBuffer->frmBuffer[i]->frmProperties.drop && (!(SysBuffer->control.uiBufferCount + 1 + i == 5) || uiLetGo))
+                if (!SysBuffer->frmBuffer[i]->frmProperties.drop24fps && !SysBuffer->frmBuffer[i]->frmProperties.drop && (!uiCheckCount || uiDone))
                     Update_Frame_Buffer_CM(SysBuffer->frmBuffer, i, filmfps, TELECINE24FPSMODE, SysBuffer->control.uiInterlaceParity, HALFFRAMERATEMODE, SysBuffer->frmIn, &SysBuffer->fqIn);
                 else
                 {
@@ -1531,7 +1560,16 @@ void PTIRCM_PutFrame(unsigned char *pucIO, PTIRSystemBuffer *SysBuffer, double d
 void PTIRCM_Clean(PTIRSystemBuffer *SysBuffer)
 {
     unsigned int i;
+    if(!SysBuffer)
+        return;
 
     for (i = 0; i <= LASTFRAME; ++i)
+    {
         Frame_ReleaseCM(SysBuffer->frmIO[i]);
+        if(SysBuffer->frmIO[i])
+        {
+            free(SysBuffer->frmIO[i]);
+            SysBuffer->frmIO[i] = 0;
+        }
+    }
 }

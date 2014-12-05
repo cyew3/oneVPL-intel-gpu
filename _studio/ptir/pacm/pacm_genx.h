@@ -27,13 +27,13 @@ template <unsigned int PLANE_WIDTH, unsigned int PLANE_HEIGHT, unsigned int TOP_
 void cmk_DeinterlaceBorder(SurfaceIndex inputSurface, unsigned int WIDTH, unsigned int HEIGHT);
 
 template<unsigned int PLANE_WIDTH, unsigned int PLANE_HEIGHT>
-void cmk_sad_rs_nv12(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId, SurfaceIndex rsSurfaceId/*, int AntiCropW*/);
+void cmk_sad_rs_nv12(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId, SurfaceIndex rsSurfaceId, int Height);
 
 void cmk_FixEdgeDirectionalIYUV_Main_Bottom_Instance(SurfaceIndex surfIn, SurfaceIndex surfBadMC);
 void cmk_FixEdgeDirectionalIYUV_Main_Top_Instance(SurfaceIndex surfIn, SurfaceIndex surfBadMC);
 
 template<unsigned int PLANE_WIDTH, unsigned int PLANE_HEIGHT>
-void cmk_rs_nv12(SurfaceIndex frameSurfaceId, SurfaceIndex rsSurfaceId);
+void cmk_rs_nv12(SurfaceIndex frameSurfaceId, SurfaceIndex rsSurfaceId, int Height);
 
 template <unsigned int WIDTH, int BotBase, unsigned int THREADYSCALE>
 void  cmk_FilterMask_Main(SurfaceIndex surfIn, SurfaceIndex surfBadMC, int Height);
@@ -48,5 +48,5 @@ template <unsigned int THREADYSCALE>
 void cmk_FilterMask_Main_2Fields_VarWidth(SurfaceIndex surfIn, SurfaceIndex surfIn2, SurfaceIndex surfBadMC, int Height, int Width);
 
 template<unsigned int PLANE_WIDTH, unsigned int PLANE_HEIGHT>
-void cmk_sad_rs_nv12(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId, SurfaceIndex rsSurfaceId/*, int AntiCropW*/);
+void cmk_sad_rs_nv12(SurfaceIndex currFrameSurfaceId, SurfaceIndex prevFrameSurfaceId, SurfaceIndex sadSurfaceId, SurfaceIndex rsSurfaceId, int Height);
 

@@ -211,12 +211,16 @@ void FrameQueue_Add(FrameQueue *pfq, Frame *pfrm)
 Frame * FrameQueue_Get(FrameQueue *pfq)
 {
     Frame *pfrm = NULL;
+    FrameNode *node = NULL;
     if (pfq->iCount > 0)
     {
+        node = pfq->pfrmHead;
         pfrm = pfq->pfrmHead->pfrmItem;
         pfq->pfrmHead = pfq->pfrmHead->pfnNext;
         pfq->iCount--;
     }
+    if(node)
+        free(node);
     return pfrm;
 }
 void FrameQueue_Release(FrameQueue *pfq)
@@ -581,6 +585,12 @@ int PTIR_AutoMode_FF(PTIRSystemBuffer *SysBuffer)
                  uiNumFramesToDispatch;
     double cur_timestamp;
 
+    if(SysBuffer->control.uiEndOfFrames)
+    {
+        if(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex != SysBuffer->control.uiFrame)
+            SysBuffer->control.uiCur = max(1, SysBuffer->control.uiCur - 1);
+    }
+
     Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
     {
@@ -633,6 +643,12 @@ int PTIR_AutoMode_HF(PTIRSystemBuffer *SysBuffer)
 {
     unsigned int i, uiDeinterlace = 0,
                  uiNumFramesToDispatch;
+
+    if(SysBuffer->control.uiEndOfFrames)
+    {
+        if(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex != SysBuffer->control.uiFrame)
+            SysBuffer->control.uiCur = max(1, SysBuffer->control.uiCur - 1);
+    }
 
     Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
@@ -789,6 +805,12 @@ int PTIR_Auto24fpsMode(PTIRSystemBuffer *SysBuffer)
                  uiNumFramesToDispatch, uiLetGo = 0, uiDone = 0, uiCheckCount = 0;
     const double filmfps = 1 / 23.976 * 1000;
     double frmVal = 0.0;
+
+    if(SysBuffer->control.uiEndOfFrames)
+    {
+        if(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex != SysBuffer->control.uiFrame)
+            SysBuffer->control.uiCur = max(1, SysBuffer->control.uiCur - 1);
+    }
 
     Frame_Prep_and_Analysis(SysBuffer->frmBuffer, "I420", SysBuffer->control.dFrameRate, SysBuffer->control.uiCur, SysBuffer->control.uiNext, SysBuffer->control.uiFrame);
     if(SysBuffer->control.uiCur == BUFMINSIZE - 1 || SysBuffer->control.uiEndOfFrames)
@@ -1008,9 +1030,18 @@ void PTIR_Init(PTIRSystemBuffer *SysBuffer, unsigned int _uiInWidth, unsigned in
 void PTIR_Clean(PTIRSystemBuffer *SysBuffer)
 {
     unsigned int i;
+    if(!SysBuffer)
+        return;
 
     for (i = 0; i <= LASTFRAME; ++i)
+    {
         Frame_Release(SysBuffer->frmIO[i]);
+        if(SysBuffer->frmIO[i])
+        {
+            free(SysBuffer->frmIO[i]);
+            SysBuffer->frmIO[i] = 0;
+        }
+    }
 
     //free(SysBuffer->frmIO);
     //free(SysBuffer->frmBuffer);
