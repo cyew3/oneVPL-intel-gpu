@@ -121,7 +121,7 @@ public:
 
         // run over the dependent object and let them know,
         // that one of dependency is ready
-        while (&m_endListObjects != pObjects)
+        while (&m_endListObjects != pObjects && pObjects)
         {
             MFX_DEPENDENCY_LIST_ITEM *pTemp = pObjects->pNext;
 
@@ -167,16 +167,18 @@ public:
             // unlink item from all dependency lists
             for (i = 0; i < dependency_level; i += 1)
             {
-                if (m_dependency[i].pPrev && m_dependency[i].pNext)
+                if (m_dependency[i].pNext)
                 {
                     m_dependency[i].pNext->pPrev = m_dependency[i].pPrev;
-                    m_dependency[i].pPrev->pNext = m_dependency[i].pNext;
-
-                    m_dependency[i].pNext = 0;
-                    m_dependency[i].pPrev = 0;
                 }
+                if (m_dependency[i].pPrev)
+                {
+                    m_dependency[i].pPrev->pNext = m_dependency[i].pNext;
+                }
+                m_dependency[i].pNext = 0;
+                m_dependency[i].pPrev = 0;
             }
-
+  
             // make all subsequent objects know about the error
             ResolveDependencies(MFX_ERR_ABORTED);
         }
