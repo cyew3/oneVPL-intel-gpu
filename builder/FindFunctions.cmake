@@ -222,7 +222,7 @@ function( make_executable name variant )
   endif( )
 
   if( ${NEED_DISPATCHER} )
-    target_link_libraries( ${target} debug mfx_d )
+    target_link_libraries( ${target} debug mfx )
     target_link_libraries( ${target} optimized mfx )
   endif( )
 
