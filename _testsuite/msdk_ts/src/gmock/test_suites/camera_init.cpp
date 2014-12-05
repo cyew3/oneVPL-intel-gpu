@@ -156,7 +156,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                                                  {&tsStruct::mfxVideoParam.vpp.In.Height,  600},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.Width,  680},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.Height, 600}} },
-    {/*26*/ MFX_ERR_NONE,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.CropX,   720},   //Crop should be ignored during Init
+    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.CropX,   720},   
                                                                                  {&tsStruct::mfxVideoParam.vpp.In.CropY,  720}, 
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.CropW,  480},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.CropH, 480}} },
@@ -211,7 +211,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     // camera's ext buffers
     {/*57*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamGammaCorrection      )}},
     {/*58*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
-    {/*59*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
+    {/*59*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
     {/*60*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
 //    {/*61*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
 //    {/*62*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
