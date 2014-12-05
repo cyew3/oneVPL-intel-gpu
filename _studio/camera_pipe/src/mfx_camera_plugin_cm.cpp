@@ -1266,7 +1266,7 @@ void CmContext::Reset(
     if ( ! kernel_FwGamma || !kernel_FwGamma ||  pCaps->bColorConversionMatrix != pOldCaps->bColorConversionMatrix || pCaps->bForwardGammaCorrection != pOldCaps->bForwardGammaCorrection)
     {
         // Create gamma and ccm related kernels/tasks if they are not created yet
-        if ( m_caps.bColorConversionMatrix )
+        if ( pCaps->bColorConversionMatrix )
         {
             kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
             // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
