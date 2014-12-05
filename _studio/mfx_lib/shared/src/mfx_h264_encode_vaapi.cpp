@@ -1393,6 +1393,51 @@ mfxStatus VAAPIEncoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerS
     return MFX_ERR_NONE;
 }
 
+mfxStatus VAAPIEncoder::QueryInputTilingSupport(mfxVideoParam const & par, mfxU32 &inputTiling)
+{
+    VAConfigID config = VA_INVALID_ID;
+
+    VAConfigAttrib attrib[2];
+    attrib[0].type = VAConfigAttribRTFormat;
+    attrib[0].value = VA_RT_FORMAT_YUV420;
+    attrib[1].type = VAConfigAttribRateControl;
+    attrib[1].value = ConvertRateControlMFX2VAAPI(par.mfx.RateControlMethod);
+
+    VAStatus vaSts = vaCreateConfig(
+        m_vaDisplay,
+        ConvertProfileTypeMFX2VAAPI(par.mfx.CodecProfile),
+        VAEntrypointEncSlice,
+        attrib,
+        2,
+        &config);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    VAProfile    profile;
+    VAEntrypoint entrypoint;
+    mfxI32       numAttribs;
+    mfxU32       maxNumAttribs = vaMaxNumConfigAttributes(m_vaDisplay);
+
+    std::vector<VAConfigAttrib> attrs;
+    attrs.resize(maxNumAttribs);
+
+    vaSts = vaQueryConfigAttributes(m_vaDisplay, config, &profile, &entrypoint, Begin(attrs), &numAttribs);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(numAttribs < maxNumAttribs, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    if (entrypoint == VAEntrypointEncSlice)
+    {
+        for(mfxU32 i=0; i<numAttribs; i++)
+        {
+            if (attrs[i].type == VAConfigAttribInputTiling)
+                inputTiling = attrs[i].value;
+        }
+    }
+
+    vaDestroyConfig(m_vaDisplay, config);
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus VAAPIEncoder::QueryHWGUID(VideoCORE * core, GUID guid, bool isTemporal)
 {
     core;

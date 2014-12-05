@@ -629,6 +629,14 @@ namespace MfxHwH264Encode
         mfxU32 width = 1920,  
         mfxU32 height = 1088);
 
+    mfxStatus QueryInputTilingSupport(
+        VideoCORE* core,
+        mfxVideoParam const & par,
+        mfxU32 &inputTiling,
+        GUID guid,
+        mfxU32 width = 1920,
+        mfxU32 height = 1088);
+
     mfxStatus QueryGuid(
         VideoCORE* core,
         GUID guid);

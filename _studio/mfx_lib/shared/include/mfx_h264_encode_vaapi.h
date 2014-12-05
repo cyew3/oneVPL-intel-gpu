@@ -39,6 +39,7 @@ do {                                               \
     }                                              \
 } while (0)
 
+#define VAConfigAttribInputTiling  -1  // Inform the app what kind of tiling format supported by driver
 
 namespace MfxHwH264Encode
 {
@@ -116,6 +117,11 @@ namespace MfxHwH264Encode
         mfxStatus QueryMbPerSec(
             mfxVideoParam const & par,
             mfxU32              (&mbPerSec)[16]);
+
+        virtual
+        mfxStatus QueryInputTilingSupport(
+            mfxVideoParam const & par,
+            mfxU32               &inputTiling);
 
         virtual
         mfxStatus QueryStatus(

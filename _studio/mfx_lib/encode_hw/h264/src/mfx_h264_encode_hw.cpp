@@ -537,6 +537,7 @@ mfxStatus ImplementationAvc::Query(
     else if (4 == queryMode)// Query mode 4: Query should do a single thing - report MB processing rate
     {
         mfxU32 mbPerSec[16] = {0, };
+        mfxU32 inputTiling = 0;
 
         // let use dedault values if input resolution is 0x0, 1920x1088 - should cover almost all cases
         mfxU32 Width  = in->mfx.FrameInfo.Width == 0 ? 1920: in->mfx.FrameInfo.Width;
@@ -565,6 +566,19 @@ mfxStatus ImplementationAvc::Query(
             // driver returned status OK and MAX_MB_PER_SEC = 0. Treat this as driver doesn't support reporting of MAX_MB_PER_SEC for requested encoding configuration
             return MFX_ERR_UNSUPPORTED;
         }
+
+        // query input tiling support from the driver
+        sts = QueryInputTilingSupport(core, *in, inputTiling, MSDK_Private_Guid_Encode_AVC_Query, Width, Height);
+        if (sts != MFX_ERR_NONE)
+        {
+            extCaps->InputMemoryTiling = 0;
+            if (sts == MFX_ERR_UNSUPPORTED)
+                return sts; // driver don't support reporting of MB processing rate
+
+            return MFX_WRN_PARTIAL_ACCELERATION; // any other HW problem
+        }
+
+        extCaps->InputMemoryTiling = (mfxU16)inputTiling;
 
         return MFX_ERR_NONE;
     }
