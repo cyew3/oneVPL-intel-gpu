@@ -1944,14 +1944,18 @@ mfxStatus MFX_JPEG_Utility::CheckDecodeCaps(VideoCORE * core, mfxVideoParam * pa
 #if defined (MFX_VA)
 mfxStatus MFX_JPEG_Utility::CheckVPPCaps(VideoCORE * core, mfxVideoParam * par)
 {
+    mfxStatus sts = MFX_ERR_NONE;
     VideoVppJpegD3D9 *pCc = new VideoVppJpegD3D9(core, false);
     
-    mfxStatus sts = pCc->Init(par);
-
     if(pCc != NULL)
     {
+        sts = pCc->Init(par);
         delete pCc;
         pCc = NULL;
+    }
+    else
+    {
+        sts = MFX_ERR_MEMORY_ALLOC;
     }
 
     return sts;
