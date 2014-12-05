@@ -479,7 +479,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tc_pos")))
             {
-                pParams->deinterlaceParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+                //pParams->deinterlaceParam.mode = VPP_FILTER_ENABLED_DEFAULT;
 
                 if( i+1 < nArgNum )
                 {
