@@ -887,15 +887,9 @@ void H265CU<PixType>::GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s pu
             for (i = 0; i < numModes; i++)
                 modes[i] = feiOut->IntraModes32x32[feiOut->IntraMaxModes*(y*feiOut->IntraPitch32x32 + x) + i];
             break;
-            //        default:
-            //            fprintf(stderr, "GetAngModesFromHistogram() - unsupported size %d\n", puSize);
         }
 
         VM_ASSERT((modes[0] >= 2) && (modes[0] <=34));
-/*
-        if ((modes[0] < 2) || (modes[0] > 34))
-            printf("STOP!!!\n");
-*/
 
         return;
 
@@ -1163,7 +1157,7 @@ Ipp32s H265CU<PixType>::InitIntraLumaModes(Ipp32s absPartIdx, Ipp32s depth, Ipp3
 
         // B nonRef [3]; B Ref [2], P [1], I [0]
         // I_SLICE is 2, P_SLICE is 1, B_SLICE is 0
-        // npshosta: check frame->m_PicCodType here
+        // npshosta: check frame->m_picCodeType here
         Ipp32s numAngModes = (B_SLICE == m_cslice->slice_type && !m_currFrame->m_isRef)
             ? m_par->num_cand_0[B_NONREF][log2BlockSize]
             : m_par->num_cand_0[SliceTypeIndex(m_cslice->slice_type)][log2BlockSize];

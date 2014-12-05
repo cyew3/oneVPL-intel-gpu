@@ -715,7 +715,9 @@ mfxStatus MFXVideoENCODEH265::SetSlice(H265Slice *slice, Ipp32u curr_slice, H265
 
     slice->sliceIntraAngMode = EnumIntraAngMode((frame->m_picCodeType == MFX_FRAMETYPE_B && !frame->m_isRef)
         ? m_videoParam.intraAngModes[B_NONREF]
-    : m_videoParam.intraAngModes[SliceTypeIndex(slice->slice_type)]);
+    : ((frame->m_picCodeType == MFX_FRAMETYPE_P)
+        ? m_videoParam.intraAngModes[SliceTypeIndex(P_SLICE)]
+    : m_videoParam.intraAngModes[SliceTypeIndex(slice->slice_type)]));
 
     if (frame->m_isIdrPic) {
         slice->IdrPicFlag = 1;
