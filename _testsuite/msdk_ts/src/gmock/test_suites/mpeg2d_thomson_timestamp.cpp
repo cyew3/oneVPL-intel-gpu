@@ -2,6 +2,7 @@
 #include "ts_struct.h"
 #include "ts_bitstream.h"
 #include "ts_parser.h"
+#include <vector>
 
 #define EXT_BUF_PAR(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
@@ -67,6 +68,7 @@ public:
     mfxU8*  m_buf;
     mfxU32  m_buf_size;
     mfxU64  offset;
+    int     in_pts;
 
     FrameReader(const char* fname, bool read_by_frame, bool complete_frame)
         : tsParserMPEG2(BS_MPEG2_INIT_MODE_MB)
@@ -77,6 +79,7 @@ public:
         , m_eos(false)
         , m_read_by_frame(read_by_frame)
         , m_complete_frame(complete_frame)
+        , in_pts(1)
     {
         tsParserMPEG2::open(fname);
         tsParserMPEG2::set_trace_level(0/*BS_MPEG2_TRACE_LEVEL_START_CODE*/);
@@ -155,8 +158,7 @@ public:
 
             m_eos = bs.DataLength != bs.MaxLength;
         }
-
-        bs.TimeStamp = 42;
+        bs.TimeStamp = in_pts++;
         if (m_complete_frame)
         {
             bs.DataFlag = MFX_BITSTREAM_COMPLETE_FRAME;
@@ -169,19 +171,30 @@ public:
 class spCheckTimeStamp : public tsSurfaceProcessor
 {
 public:
-    mfxU32 expected_timestamp;
-    spCheckTimeStamp() : expected_timestamp(42) {}
+    std::vector<mfxU32> expected_timestamps;
+    spCheckTimeStamp()
+    {
+        mfxU32 expected[] = {1,3,4,5,6,2,8,9,10,11,7,13,14,15,16,12};
+        expected_timestamps = std::vector<mfxU32>(expected, expected + sizeof(expected) / sizeof(expected[0]));
+    }
     ~spCheckTimeStamp() {}
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
-        if (s.Data.TimeStamp != expected_timestamp)
+        if (expected_timestamps.empty())
+        {
+            g_tsLog << "ERROR: expected_timestamps is empty but there is more surface\n";
+            EXPECT_FALSE (expected_timestamps.empty());
+            return MFX_ERR_NONE;
+        }
+        
+        if (expected_timestamps[0] != s.Data.TimeStamp)
         {
             g_tsLog << "ERROR: frame timestamp=" << s.Data.TimeStamp <<
-                       " is not equal to requested=" << expected_timestamp << "\n";
+                       " is not equal to requested=" << expected_timestamps[0] << "\n";
         }
-        EXPECT_EQ(expected_timestamp, s.Data.TimeStamp);
-
+        EXPECT_EQ(expected_timestamps[0], s.Data.TimeStamp);
+        expected_timestamps.erase(expected_timestamps.begin());
         return MFX_ERR_NONE;
     }
 };
