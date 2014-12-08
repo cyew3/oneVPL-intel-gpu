@@ -414,8 +414,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                      (pRefSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF))
                 {
                     if (deint.flags == 0)
-                        deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
-                    else if (deint.flags == VA_DEINTERLACING_BOTTOM_FIELD)
+                        deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
+                    else if (deint.flags == VA_DEINTERLACING_BOTTOM_FIELD_FIRST)
                         deint.flags = 0;
                 }
                 /* BFF */
@@ -433,7 +433,10 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                  (pParams->refCount > 1) && /* ADI with references and ... */
                  (pRefSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF)) /* for TFF*/
             {
-                deint.flags = 0;
+                /* AL: Looks like this is the drivers's bug
+                 * Else I don't know how to explain what is the best quality for TFF with _BOTTOM_ flag
+                 */
+                deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
             }
 
             /* Default properties is TFF,
@@ -442,7 +445,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                  (pParams->refCount > 1) && /* ADI with references and ... */
                  (pRefSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)) /* for BFF*/
             {
-                deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
+                deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
             }
 
             vaSts = vaCreateBuffer(m_vaDisplay,
