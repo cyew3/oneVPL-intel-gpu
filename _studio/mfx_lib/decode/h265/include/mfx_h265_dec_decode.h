@@ -81,8 +81,6 @@ public:
     virtual mfxStatus GetVideoParam(mfxVideoParam *par);
     // MediaSDK DECODE_GetDecodeStat API function
     virtual mfxStatus GetDecodeStat(mfxDecodeStat *stat);
-    // Check if there is enough data to start decoding in async mode
-    virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out);
     // Initialize threads callbacks
     virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, MFX_ENTRY_POINT *pEntryPoint);
     // Wait until a frame is ready to be output and set necessary surface flags
@@ -111,6 +109,9 @@ protected:
 
     // Wait until a frame is ready to be output and set necessary surface flags
     mfxStatus DecodeFrame(mfxFrameSurface1 *surface_out, H265DecoderFrame * pFrame = 0);
+
+    // Check if there is enough data to start decoding in async mode
+    mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out);
 
     // Fill up resolution information if new header arrived
     void FillVideoParam(mfxVideoParamWrapper *par, bool full);

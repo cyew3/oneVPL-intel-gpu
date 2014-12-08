@@ -61,7 +61,7 @@ public:
 
     virtual mfxStatus GetVideoParam(mfxVideoParam *par);
     virtual mfxStatus GetDecodeStat(mfxDecodeStat *stat);
-    virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out);
+
     virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, MFX_ENTRY_POINT *pEntryPoint);
     virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out);
     virtual mfxStatus GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts);
@@ -79,6 +79,8 @@ protected:
     UMC::H264DecoderFrame * GetFrameToDisplay(bool force);
 
     mfxStatus DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264DecoderFrame * pFrame = 0);
+
+    mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out);
 
     void CopySurfaceInfo(mfxFrameSurface1 *in, mfxFrameSurface1 *out);
 

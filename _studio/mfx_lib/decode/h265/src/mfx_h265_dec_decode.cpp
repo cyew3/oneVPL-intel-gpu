@@ -821,6 +821,8 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
                                               mfxFrameSurface1 **surface_out,
                                               MFX_ENTRY_POINT *pEntryPoint)
 {
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
     mfxStatus mfxSts = DecodeFrameCheck(bs, surface_work, surface_out);
 
     if (MFX_ERR_NONE == mfxSts || MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) // It can be useful to run threads right after first frame receive
@@ -833,6 +835,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
         }
         else
         {
+            UMC::AutomaticUMCMutex guard(m_mGuardRunThread);
             H265DecoderFrame *pFrame = m_pH265VideoDecoder->GetDPBList()->head();
             for (; pFrame; pFrame = pFrame->future())
             {
@@ -845,7 +848,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
 
             if (!frame)
             {
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
+                return MFX_WRN_DEVICE_BUSY;
             }
         }
 
@@ -872,8 +875,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
 // Check if there is enough data to start decoding in async mode
 mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out)
 {
-    UMC::AutomaticUMCMutex guard(m_mGuard);
-
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -1008,8 +1009,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 force = true;
 
             H265DecoderFrame *pFrame = GetFrameToDisplay_H265(force);
-
-            UMC::AutomaticUMCMutex guard(m_mGuard);
 
             // return frame to display
             if (pFrame)

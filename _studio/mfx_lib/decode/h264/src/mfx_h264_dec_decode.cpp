@@ -1176,6 +1176,8 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs,
                                               mfxFrameSurface1 **surface_out,
                                               MFX_ENTRY_POINT *pEntryPoint)
 {
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
     mfxStatus mfxSts = DecodeFrameCheck(bs, surface_work, surface_out);
 
     if (MFX_ERR_NONE == mfxSts) // It can be useful to run threads right after first frame receive
@@ -1213,8 +1215,6 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs,
 
 mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out)
 {
-    UMC::AutomaticUMCMutex guard(m_mGuard);
-
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -1354,8 +1354,6 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 force = true;
 
             UMC::H264DecoderFrame *pFrame = GetFrameToDisplay(force);
-
-            UMC::AutomaticUMCMutex guard(m_mGuard);
 
             // return frame to display
             if (pFrame)
