@@ -11,6 +11,7 @@ File Name: libmfxsw_pak.cpp
 \* ****************************************************************************** */
 
 #include <mfxvideo.h>
+#include <mfxfei.h>
 
 #include <mfx_session.h>
 #include <mfx_common.h>
@@ -296,6 +297,11 @@ mfxStatus MFXVideoPAKLegacyRoutine(void *pState, void *pParam,
     return mfxRes;
 
 } // mfxStatus MFXVideoPAKLegacyRoutine(void *pState, void *pParam,
+
+mfxStatus MFXVideoPAK_ProcessFrameAsync(mfxSession session, mfxPAKInput *in, mfxPAKOutput *out, mfxSyncPoint *syncp)
+{
+    return MFX_ERR_UNSUPPORTED;
+}
 
 mfxStatus MFXVideoPAK_RunFramePAKAsync(mfxSession session, mfxFrameCUC *cuc, mfxSyncPoint *syncp)
 {
