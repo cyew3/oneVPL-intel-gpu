@@ -14,6 +14,7 @@
 #include <numeric>
 #include <math.h>
 #include <limits.h>
+#include <assert.h>
 
 #include "mfxdefs.h"
 #include "mfx_common_int.h"
@@ -690,6 +691,40 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     return MFX_ERR_NONE;
 }
 
+namespace
+{
+    mfxU16 GetDefaultFramesInParallel(const mfxVideoParam *videoParam, const mfxExtHEVCTiles *extTiles, const mfxExtCodingOptionHEVC *extHevc)
+    {
+        Ipp32s numThreads = videoParam->mfx.NumThread;
+        if (numThreads == 0 && extHevc && extHevc->ForceNumThread > 0)
+            numThreads = extHevc->ForceNumThread;
+        if (numThreads == 0)
+            numThreads = vm_sys_info_get_cpu_num();
+
+        Ipp32s enableCm = 0;
+#ifdef MFX_VA
+        enableCm = !(extHevc && extHevc->EnableCm == MFX_CODINGOPTION_OFF);
+#endif
+
+        if (videoParam->mfx.NumSlice > 1) {
+            return 1;
+        } else if (extTiles && (extTiles->NumTileColumns > 1 || extTiles->NumTileRows > 1)) {
+            return 1;
+        } else if (enableCm) {
+            return 1;
+        } else if (videoParam->AsyncDepth > 0) {
+            return videoParam->AsyncDepth;
+        } else {
+            if      (numThreads >= 48) return 8;
+            else if (numThreads >= 32) return 7;
+            else if (numThreads >= 16) return 5;
+            else if (numThreads >=  8) return 3;
+            else if (numThreads >=  4) return 2;
+            else                       return 1;
+        }
+    }
+}
+
 mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 {
     mfxStatus sts, stsQuery;
@@ -1190,22 +1225,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     m_mfxParam.Protected = 0;
     m_mfxParam.AsyncDepth = par->AsyncDepth;
 
-    if (m_mfxHEVCOpts.FramesInParallel == 0) {
-        if (m_mfxHevcTiles.NumTileColumns > 1 || m_mfxHevcTiles.NumTileRows > 1 || par->mfx.NumSlice > 1) {
-            m_mfxHEVCOpts.FramesInParallel = 1;
-        }
-        else if (m_mfxParam.AsyncDepth > 0) {
-            m_mfxHEVCOpts.FramesInParallel = m_mfxParam.AsyncDepth;
-        }
-        else {
-            if      (m_mfxParam.mfx.NumThread >= 48) m_mfxHEVCOpts.FramesInParallel = 8;
-            else if (m_mfxParam.mfx.NumThread >= 32) m_mfxHEVCOpts.FramesInParallel = 7;
-            else if (m_mfxParam.mfx.NumThread >= 16) m_mfxHEVCOpts.FramesInParallel = 5;
-            else if (m_mfxParam.mfx.NumThread >= 8)  m_mfxHEVCOpts.FramesInParallel = 3;
-            else if (m_mfxParam.mfx.NumThread >= 4)  m_mfxHEVCOpts.FramesInParallel = 2;
-            else                                     m_mfxHEVCOpts.FramesInParallel = 1;
-        }
-    }
+    if (m_mfxHEVCOpts.FramesInParallel == 0)
+        m_mfxHEVCOpts.FramesInParallel = GetDefaultFramesInParallel(&m_mfxParam, &m_mfxHevcTiles, &m_mfxHEVCOpts);
 
     if (m_mfxParam.AsyncDepth == 0)
         m_mfxParam.AsyncDepth = m_mfxHEVCOpts.FramesInParallel;
@@ -2338,6 +2359,19 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, m
 
     if (nFrames == 0) // curr + number of B-frames from target usage
         nFrames = tab_tuGopRefDist[par->mfx.TargetUsage];
+
+#if defined (MFX_VA)
+    nFrames++;
+#endif
+
+    const mfxExtCodingOptionHEVC *extHevc = (mfxExtCodingOptionHEVC *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_HEVCENC);
+    mfxU32 framesInParallel = extHevc ? extHevc->FramesInParallel : 0;
+    if (framesInParallel == 0) {
+        const mfxExtHEVCTiles *extTiles = (mfxExtHEVCTiles *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_HEVC_TILES);
+        framesInParallel = GetDefaultFramesInParallel(par, extTiles, extHevc);
+        assert(framesInParallel > 0);
+    }
+    nFrames += framesInParallel - 1;
 
 #if defined(MFX_ENABLE_H265_PAQ)
     /*if(m_enc->m_videoParam.preEncMode)*/ {
