@@ -1309,12 +1309,33 @@ mfxStatus GetPipelineList(
 
     PicStructMode picStructMode = GetPicStructMode(par->In.PicStruct, par->Out.PicStruct);
 
-    if( DYNAMIC_DI_PICSTRUCT_MODE == picStructMode && !IsFilterFound( &extParamList[0], extParamCount, MFX_EXTBUFF_VPP_DEINTERLACING ) )
+    mfxI32 deinterlacingMode = 0;
+    // look for user defined deinterlacing mode
+    for (mfxU32 i = 0; i < videoParam->NumExtParam; i++)
+    {
+        if (videoParam->ExtParam[i] && videoParam->ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DEINTERLACING)
+        {
+            mfxExtVPPDeinterlacing* extDI = (mfxExtVPPDeinterlacing*) videoParam->ExtParam[i];
+            if (extDI->Mode != MFX_DEINTERLACING_ADVANCED && extDI->Mode != MFX_DEINTERLACING_BOB)
+            {
+                deinterlacingMode = 0xffffffff;
+            }
+            deinterlacingMode = extDI->Mode;
+            break;
+        }
+    }
+    /* ADI 30i->60p: one ADI filter */
+    /* BOB DI 30i->60p: FRC + DI BOB filter */
+
+    if( DYNAMIC_DI_PICSTRUCT_MODE == picStructMode
+            /*&& (deinterlacingMode == MFX_DEINTERLACING_BOB)
+           && !IsFilterFound( &extParamList[0], extParamCount, MFX_EXTBUFF_VPP_DEINTERLACING ) */)
     {
         if( IsFrameRatesCorrespondMode60i60p(par->In.FrameRateExtN,
                                         par->In.FrameRateExtD,
                                         par->Out.FrameRateExtN,
-                                        par->Out.FrameRateExtD))
+                                        par->Out.FrameRateExtD) &&
+                (deinterlacingMode == MFX_DEINTERLACING_ADVANCED))
         {
             pipelineList.push_back(MFX_EXTBUFF_VPP_DI_30i60p);
         }
@@ -1325,10 +1346,10 @@ mfxStatus GetPipelineList(
         {
             pipelineList.push_back(MFX_EXTBUFF_VPP_ITC);
         }
-        else
-        {
-            pipelineList.push_back(MFX_EXTBUFF_VPP_DI);
-        }
+        //else
+        //{
+        //    pipelineList.push_back(MFX_EXTBUFF_VPP_DI);
+        //}
     }
 
     /* ********************************************************************** */
@@ -1386,14 +1407,20 @@ mfxStatus GetPipelineList(
         }
     }
 
-
     searchCount = sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG);
     fCount      = configCount;
     for(fIdx = 0; fIdx < fCount; fIdx++)
     {
-        if( IsFilterFound( g_TABLE_CONFIG, searchCount, configList[fIdx] ) && !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), configList[fIdx]) )
+        if( IsFilterFound( g_TABLE_CONFIG, searchCount, configList[fIdx] ) &&
+                !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), configList[fIdx]) )
         {
-            pipelineList.push_back( (MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION == configList[fIdx]) ? MFX_EXTBUFF_VPP_VARIANCE_REPORT : configList[fIdx]);
+            /*WA:
+             *  if VPP_DI_30i60p with (deinterlacingMode == MFX_DEINTERLACING_ADVANCED)
+             * Do not add this used defined "MFX_EXTBUFF_VPP_DEINTERLACING" filter into pipeline */
+            if ( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_30i60p ))
+            {
+                pipelineList.push_back( (MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION == configList[fIdx]) ? MFX_EXTBUFF_VPP_VARIANCE_REPORT : configList[fIdx]);
+            }
         }
     }
 

@@ -2647,6 +2647,7 @@ mfxStatus ConfigureExecuteParams(
                     config.m_bRefFrameEnable = false;
                     config.m_surfCount[VPP_IN]  = IPP_MAX(1, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
+                    executeParams.bFMDEnable = false;
                 }
                 else
                 {
