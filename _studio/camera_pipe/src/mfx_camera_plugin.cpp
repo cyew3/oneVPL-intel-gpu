@@ -727,7 +727,7 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
 
     for (i = 0; i < par->NumExtParam; i++)
     {
-        if (m_mfxVideoParam.ExtParam[i])
+        if (par->ExtParam[i])
         {
             if (MFX_EXTBUFF_VPP_DOUSE == par->ExtParam[i]->BufferId)
             {
