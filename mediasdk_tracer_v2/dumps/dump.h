@@ -9,6 +9,9 @@
 #include "mfxvideo.h"
 #include "mfxplugin.h"
 #include "mfxenc.h"
+#include "mfxfei.h"
+#include "mfxla.h"
+#include "mfxvp8.h"
 
 std::string StringToHexString(std::string data);
 
@@ -188,6 +191,41 @@ public:
     //mfxvideo
     DEFINE_DUMP_FUNCTION(mfxBufferAllocator);
     DEFINE_DUMP_FUNCTION(mfxFrameAllocator);
+
+    //mfxla
+    DEFINE_DUMP_FUNCTION(mfxExtLAControl);
+    DEFINE_DUMP_FUNCTION(mfxExtLAControl::mfxStream);
+    DEFINE_DUMP_FUNCTION(mfxLAFrameInfo);
+    DEFINE_DUMP_FUNCTION(mfxExtLAFrameStatistics);
+
+    //mfxfei
+    DEFINE_DUMP_FUNCTION(mfxExtFeiPreEncCtrl);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiPreEncMVPredictors);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiPreEncMV);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiPreEncMBStat);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiEncFrameCtrl);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMVPredictors);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMVPredictors::mfxMB);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiEncQP);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMBCtrl);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMBCtrl::mfxMB);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMV);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMBStat);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMBStat::mfxMB);
+    DEFINE_DUMP_FUNCTION(mfxFeiPakMBCtrl);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiPakMBCtrl);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiParam);
+    DEFINE_DUMP_FUNCTION(mfxPAKInput);
+    DEFINE_DUMP_FUNCTION(mfxPAKOutput);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiSPS);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiPPS);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiSliceHeader);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiSliceHeader::mfxSlice);
+    
+
+    //mfxvp8
+    DEFINE_DUMP_FUNCTION(mfxExtVP8CodingOption)
+
 };
 #endif //DUMP_H_
 

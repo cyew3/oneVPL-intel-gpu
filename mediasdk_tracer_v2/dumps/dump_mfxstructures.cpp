@@ -109,6 +109,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(BufferingPeriodSEI);
     DUMP_FIELD(EnableMAD);
     DUMP_FIELD(UseRawRef);
+
     return str;
 }
 

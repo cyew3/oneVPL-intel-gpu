@@ -32,6 +32,9 @@ set(SOURCES
   "dumps/dump_mfxsession.cpp"
   "dumps/dump_mfxstructures.cpp"
   "dumps/dump_mfxvideo.cpp"
+  "dumps/dump_mfxfei.cpp"
+  "dumps/dump_mfxla.cpp"
+  "dumps/dump_mfxvp8.cpp"  
   "loggers/log.cpp"
   "loggers/log_console.cpp"
   "loggers/log_etw_events.cpp"
@@ -47,6 +50,7 @@ set(SOURCES
   "wrappers/mfx_video_encode.cpp"
   "wrappers/mfx_video_user.cpp"
   "wrappers/mfx_video_vpp.cpp"
+  "wrappers/mfx_video_fei.cpp"
   )
 
 
