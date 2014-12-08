@@ -20,6 +20,9 @@ __itt_domain* CamPipe = __itt_domain_create(L"CamPipe");
 __itt_string_handle* task1 = __itt_string_handle_create(L"CreateEnqueueTasks");
 __itt_string_handle* taske = __itt_string_handle_create(L"WaitEvent");
 __itt_string_handle* tasks = __itt_string_handle_create(L"SetExtSurf");
+__itt_string_handle* task_destroy_surfup = __itt_string_handle_create(L"task_destroy_surfup");
+__itt_string_handle* destroyevent = __itt_string_handle_create(L"destroyevent");
+__itt_string_handle* destroyeventwowait = __itt_string_handle_create(L"destroyevenwowait");
 #endif
 
 #include "mfx_plugin_module.h"
@@ -1035,7 +1038,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     if (m_useSW)
     {
         //m_CameraProcessor = new CPUCameraProcessor();
-        InitCamera_CPU(&m_cmi, m_mfxVideoParam.vpp.In.Width, m_mfxVideoParam.vpp.In.Height, m_InputBitDepth, !m_Caps.bNoPadding, m_Caps.BayerPatternType);
+        InitCamera_CPU(&m_cmi, m_mfxVideoParam.vpp.In.CropW, m_mfxVideoParam.vpp.In.CropH, m_InputBitDepth, !m_Caps.bNoPadding, m_Caps.BayerPatternType);
     }
     else
     {
@@ -1272,12 +1275,17 @@ mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
                 for (int j = 0; j < m_cmi.InWidth; j++)
                     m_cmi.cpu_Input[i*m_cmi.InWidth + j] = (short)surfIn->Data.Y16[i*(surfIn->Data.Pitch>>1) + j];
             m_cmi.cpu_status = CPU_Padding_16bpp(m_cmi.cpu_Input, m_cmi.cpu_PaddedBayerImg, m_cmi.InWidth, m_cmi.InHeight, m_cmi.bitDepth);
+
+            if(m_Caps.BayerPatternType == GRBG || m_Caps.BayerPatternType == GBRG)
+            {
+                m_cmi.cpu_status = CPU_Bufferflip(m_cmi.cpu_PaddedBayerImg, m_cmi.FrameWidth, m_cmi.FrameHeight, m_cmi.bitDepth, false);
+            }
         }
         else
         {
             for (int i = 0; i < m_cmi.FrameHeight; i++)
                 for (int j = 0; j < m_cmi.FrameWidth; j++)
-                    m_cmi.cpu_PaddedBayerImg[i*m_cmi.FrameWidth + j] = (short)surfIn->Data.Y16[i*(surfIn->Data.Pitch>>1)];
+                    m_cmi.cpu_PaddedBayerImg[i*m_cmi.FrameWidth + j] = (short)surfIn->Data.Y16[i*(surfIn->Data.Pitch>>1) + j] >> (16 - m_cmi.bitDepth);
         }
 
         // Step 2. Black level correction
@@ -1321,22 +1329,22 @@ mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
         if (m_Caps.bColorConversionMatrix)
         {
             m_cmi.cpu_status = CPU_CCM( (unsigned short*)m_cmi.cpu_R_fgc_in, (unsigned short*)m_cmi.cpu_G_fgc_in, (unsigned short*)m_cmi.cpu_B_fgc_in, 
-                                         m_FrameSizeExtra.TileInfo.Width, m_FrameSizeExtra.TileInfo.Height, m_FrameSizeExtra.BitDepth, m_CCMParams.CCM);
+                                         m_FrameSizeExtra.TileInfo.CropW, m_FrameSizeExtra.TileInfo.CropH, m_FrameSizeExtra.BitDepth, m_CCMParams.CCM);
         }
 
         // Step 6. Gamma correction
         if (m_Caps.bForwardGammaCorrection)
         {
             m_cmi.cpu_status = CPU_Gamma_SKL( (unsigned short*)m_cmi.cpu_R_fgc_in, (unsigned short*)m_cmi.cpu_G_fgc_in, (unsigned short*)m_cmi.cpu_B_fgc_in, 
-                            m_FrameSizeExtra.TileInfo.Width, m_FrameSizeExtra.TileInfo.Height, m_FrameSizeExtra.BitDepth, 
+                            m_FrameSizeExtra.TileInfo.CropW, m_FrameSizeExtra.TileInfo.CropH, m_FrameSizeExtra.BitDepth, 
                             m_GammaParams.gamma_lut.gammaCorrect, m_GammaParams.gamma_lut.gammaPoints);
 
         }
         if (m_mfxVideoParam.vpp.Out.FourCC == MFX_FOURCC_ARGB16)
-            m_cmi.cpu_status = CPU_ARGB16Interleave(surfOut->Data.V16, surfOut->Info.Width, surfOut->Info.Height, surfOut->Data.Pitch, m_FrameSizeExtra.BitDepth, m_Caps.BayerPatternType,
+            m_cmi.cpu_status = CPU_ARGB16Interleave(surfOut->Data.V16, surfOut->Info.CropW, surfOut->Info.CropH, surfOut->Data.Pitch, m_FrameSizeExtra.BitDepth, m_Caps.BayerPatternType,
                                          m_cmi.cpu_R_fgc_in, m_cmi.cpu_G_fgc_in, m_cmi.cpu_B_fgc_in);
         else
-            m_cmi.cpu_status = CPU_ARGB8Interleave(surfOut->Data.B, surfOut->Info.Width, surfOut->Info.Height, surfOut->Data.Pitch, m_FrameSizeExtra.BitDepth, m_Caps.BayerPatternType,
+            m_cmi.cpu_status = CPU_ARGB8Interleave(surfOut->Data.B, surfOut->Info.CropW, surfOut->Info.CropH, surfOut->Data.Pitch, m_FrameSizeExtra.BitDepth, m_Caps.BayerPatternType,
                                          m_cmi.cpu_R_fgc_in, m_cmi.cpu_G_fgc_in, m_cmi.cpu_B_fgc_in);
 
         if (surfOut->Data.MemId)
@@ -1404,17 +1412,38 @@ mfxStatus MFXCamera_Plugin::CompleteCameraAsyncRoutine(AsyncParams *pParam)
         CAMERA_DEBUG_LOG("CompleteCameraAsyncRoutine e=%p device %p \n", e, m_cmDevice);
 
        if (m_isInitialized)
+       {
+#ifdef CAMP_PIPE_ITT
+    __itt_task_begin(CamPipe, __itt_null, __itt_null, destroyevent);
+#endif
             m_cmCtx->DestroyEvent(e);
-        else
-            m_cmCtx->DestroyEventWithoutWait(e);
-
+#ifdef CAMP_PIPE_ITT
+    __itt_task_end(CamPipe, __itt_null, __itt_null, destroyevent);
+#endif
+       }
+       else
+       {
+#ifdef CAMP_PIPE_ITT
+    __itt_task_begin(CamPipe, __itt_null, __itt_null, destroyeventwowait);
+#endif
+           m_cmCtx->DestroyEventWithoutWait(e);
+#ifdef CAMP_PIPE_ITT
+    __itt_task_begin(CamPipe, __itt_null, __itt_null, destroyeventwowait);
+#endif
+       }
         CAMERA_DEBUG_LOG("CompleteCameraAsyncRoutine Destroyed event e=%p \n", e);
 
         if (pParam->inSurf2DUP)
         {
+#ifdef CAMP_PIPE_ITT
+    __itt_task_begin(CamPipe, __itt_null, __itt_null, task_destroy_surfup);
+#endif
             CmSurface2DUP *surf = (CmSurface2DUP *)pParam->inSurf2DUP;
             m_cmDevice->DestroySurface2DUP(surf);
             pParam->inSurf2DUP = 0;
+#ifdef CAMP_PIPE_ITT
+    __itt_task_end(CamPipe, __itt_null, __itt_null, task_destroy_surfup);
+#endif
         }
 
         m_core->DecreaseReference(&pParam->surf_in->Data);

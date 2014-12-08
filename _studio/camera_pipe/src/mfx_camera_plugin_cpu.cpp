@@ -61,14 +61,34 @@ int CPU_Padding_16bpp(unsigned short* bayer_original, //input  of Padding module
     }
 
     return 0;
-    
+
 }
 
+int CPU_Bufferflip(unsigned short* buffer,
+                   int width, int height, int bitdepth, bool firstflag)
+{
+    unsigned short tmp;
+    int shiftamount = (firstflag == true)? (16-bitdepth) : 0;
+
+    for (int y = 0; y < (height/2); y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            tmp = buffer[y * width + x];
+            buffer[y * width + x] = buffer[(height-y-1) * width + x] >> shiftamount;
+            
+            buffer[(height-y-1) * width + x] = tmp;
+            buffer[(height-y-1) * width + x] >>= shiftamount;
+        }
+    }
+
+    return 0;
+}
 
 int CPU_BLC(unsigned short* Bayer,
             int PaddedWidth, int PaddedHeight, int bitDepth, int BayerType,
             short B_amount, short Gtop_amount, short Gbot_amount, short R_amount, bool firstflag)
-            
+
 {
     int index = 0, tmp = 0;
     unsigned short max_input = (1 << bitDepth) - 1;
@@ -121,7 +141,7 @@ int CPU_BLC(unsigned short* Bayer,
             tmp = (tmp > max_input)? max_input : tmp;
             Bayer[index] = (unsigned short)tmp;
 
-            
+
         }
     }
 
@@ -200,7 +220,7 @@ int CPU_WB(unsigned short* Bayer,
     {
         for (int x = 0;x < PaddedWidth; x++)
         {
-            index = y * PaddedWidth + x; 
+            index = y * PaddedWidth + x;
             Bayer[index] >>= shiftamount;
 
             if     ((x % 2 == 0 ) && (y % 2 == 0))
@@ -214,7 +234,7 @@ int CPU_WB(unsigned short* Bayer,
 
             tmp = (tmp < 0)?         0 : tmp;
             tmp = (tmp > max_input)? max_input : tmp;
-            
+
             Bayer[index] = (unsigned short)tmp;
         }
     }
@@ -223,7 +243,7 @@ int CPU_WB(unsigned short* Bayer,
 }
 
 /* TODO - add correct offset for BayerType, see Cm code (need test content) */
-int CPU_GoodPixelCheck(unsigned short *pSrcBayer16bpp, int m_Width, int m_Height, 
+int CPU_GoodPixelCheck(unsigned short *pSrcBayer16bpp, int m_Width, int m_Height,
                        unsigned char *pDstFlag8bpp, int Diff_Prec, bool , int bitshiftamount, bool firstflag)
 {
     int index;
@@ -232,7 +252,7 @@ int CPU_GoodPixelCheck(unsigned short *pSrcBayer16bpp, int m_Width, int m_Height
     //int Diff_Prec = 0;
 
     //int dum;
-    
+
     if(firstflag == true)
     {
             int index = 0;
@@ -243,7 +263,7 @@ int CPU_GoodPixelCheck(unsigned short *pSrcBayer16bpp, int m_Width, int m_Height
                 pSrcBayer16bpp[index] >>= bitshiftamount;
             }
     }
-    
+
     for(int y=0;y<m_Height;y++)
     for(int x=0;x<m_Width;x++)
     {
@@ -317,7 +337,7 @@ int CPU_GoodPixelCheck(unsigned short *pSrcBayer16bpp, int m_Width, int m_Height
                 }
                 Odd++;
             }
-                
+
         }
         //if(Good_Pixel == 81)
         if(Good_Pixel > NUM_GOOD_PIXEL_TH)
@@ -388,7 +408,7 @@ int CPU_RestoreG(unsigned short *m_Pin,         //Pointer to Bayer data
             //Along Vertical
             Gamma_n = abs(B13-B33);
             Gamma_s = abs(B33-B53);
-            
+
             Gamma_w = abs(B31-B33);
             Gamma_e = abs(B33-B35);
 
@@ -403,7 +423,7 @@ int CPU_RestoreG(unsigned short *m_Pin,         //Pointer to Bayer data
                 m_Pout_V__m_G[y*m_Width+x] = (int)((5*G23+3*G43-B13+2*B33-B53)>>3);
             else
                 m_Pout_V__m_G[y*m_Width+x] = (int)((5*G43+3*G23-B13+2*B33-B53)>>3);
-            
+
             m_Pout_G__m_G[y*m_Width+x] = B33 + Avg_G - Avg_B;
         }
         else if(y%2 == 0 && x%2 == 0)
@@ -420,13 +440,13 @@ int CPU_RestoreG(unsigned short *m_Pin,         //Pointer to Bayer data
 
             int Avg_R = ((R13+R15+R31+R33+R35+R51+R53+R55)>>3);//R11+
 
-            
+
             Gamma_n = abs(R13-R33);
             Gamma_s = abs(R33-R53);
-            
+
             Gamma_w = abs(R31-R33);
             Gamma_e = abs(R33-R35);
-            
+
             //For Horizontal
             if(Gamma_w < Gamma_e)
                 m_Pout_H__m_G[y*m_Width+x] = (int)((5*G32+3*G34-R31+2*R33-R35)>>3);
@@ -441,7 +461,7 @@ int CPU_RestoreG(unsigned short *m_Pin,         //Pointer to Bayer data
 
             m_Pout_G__m_G[y*m_Width+x] = R33 + Avg_G - Avg_R;
         }
-        else 
+        else
         {
             m_Pout_H__m_G[y*m_Width+x] = m_Pin[y*m_Width+x];
             m_Pout_V__m_G[y*m_Width+x] = m_Pin[y*m_Width+x];
@@ -457,13 +477,13 @@ int CPU_RestoreG(unsigned short *m_Pin,         //Pointer to Bayer data
 
 int CPU_RestoreBandR(unsigned short *m_Pin,         //Pointer to Bayer data
                      int m_Width, int m_Height,
-                      short *m_Pout_H__m_G, short *m_Pout_V__m_G, short *m_Pout_G__m_G,  //Input,  G_H, G_V, G_A component        
-                     short *m_Pout_H__m_B, short *m_Pout_V__m_B, short *m_Pout_G__m_B,  //Output, B_H, B_V, B_A    component    
+                      short *m_Pout_H__m_G, short *m_Pout_V__m_G, short *m_Pout_G__m_G,  //Input,  G_H, G_V, G_A component
+                     short *m_Pout_H__m_B, short *m_Pout_V__m_B, short *m_Pout_G__m_B,  //Output, B_H, B_V, B_A    component
                      short *m_Pout_H__m_R, short *m_Pout_V__m_R, short *m_Pout_G__m_R,  //Output, R_H, R_V, R_A component
-                     int Max_Intensity)  
+                     int Max_Intensity)
 {
     int dum;
-    
+
     //For B
     for(int y=2;y<m_Height-2;y++)
     for(int x=2;x<m_Width-2;x++)
@@ -542,7 +562,7 @@ int CPU_RestoreBandR(unsigned short *m_Pin,         //Pointer to Bayer data
             int G23_V = m_Pout_V__m_G[(y-1)*m_Width+ x   ];
             int G33_V = m_Pout_V__m_G[ y   *m_Width+ x   ];
             int G43_V = m_Pout_V__m_G[(y+1)*m_Width+ x   ];
-            
+
             //For Horizontal
             m_Pout_H__m_B[y*m_Width+x] = (B32_H + B34_H - G32_H + 2* G33_H - G34_H)/2;   // B33_H
             //FOr vertical
@@ -648,7 +668,7 @@ int CPU_RestoreBandR(unsigned short *m_Pin,         //Pointer to Bayer data
 
             if(y == 9 && x == 61)
                 dum = 1;
-            
+
             //For Horizontal
             m_Pout_H__m_R[y*m_Width+x] = (R32_H + R34_H - G32_H + 2* G33_H - G34_H)/2;
             //For Vertical
@@ -665,7 +685,7 @@ int CPU_RestoreBandR(unsigned short *m_Pin,         //Pointer to Bayer data
             int R43_G = m_Pout_G__m_R[(y+1)*m_Width+ x   ];
 
             int G23_G = m_Pout_G__m_G[(y-1)*m_Width+ x   ];
-            
+
             int G43_G = m_Pout_G__m_G[(y+1)*m_Width+ x   ];
 
             m_Pout_G__m_R[y*m_Width+x] = (R32_G + R34_G + R23_G + R43_G - G32_G + 2* G33_G - G34_G - G23_G + 2* G33_G - G43_G)/4;
@@ -790,7 +810,7 @@ int CPU_SAD (short *m_Pout_H__m_G, short *m_Pout_V__m_G, //Input, G_H, G_V compo
             VDSAD += VDSUM_V[index];
         }
         int shift_mincost = 1;//Shift_mincost is a state variable (default: 1).
-        
+
         int Min_cost_H1 = (HLSAD < HRSAD)? HLSAD : HRSAD ;
         int Min_cost_H2 = (HUSAD < HDSAD)? HUSAD : HDSAD ;
         int Min_cost_H  = Min_cost_H1 + (Min_cost_H2>>shift_mincost);
@@ -824,7 +844,7 @@ int CPU_Decide_Average(short *R_A8,       // Restored average version of R compo
                        short *m_Pout_O__m_R,
                        short *m_Pout_O__m_G,
                        short *m_Pout_O__m_B,
-                       int bitdepth)                  // Flag to indicate using average version or not 
+                       int bitdepth)                  // Flag to indicate using average version or not
 {
     //int index;
     //int index01;
@@ -858,7 +878,7 @@ int CPU_Decide_Average(short *R_A8,       // Restored average version of R compo
         yp3 = CLIP_VPOS_FLDRPT(y+3,m_Height);
         ym1 = CLIP_VPOS_FLDRPT(y-1,m_Height);
         ym2 = CLIP_VPOS_FLDRPT(y-2,m_Height);
-                
+
         //Horizonal check (8-bit differences), maskH0
         if (x % 4 == 0)       // x modulo 4 = 0
         {
@@ -929,7 +949,7 @@ int CPU_Decide_Average(short *R_A8,       // Restored average version of R compo
             abs(eval(G_A8, x, y, w)>>Diff_Prec - eval(B_A8, x, y, w)>>Diff_Prec) > AVG_COLOR_TH  ||
             abs(eval(B_A8, x, y, w)>>Diff_Prec - eval(R_A8, x, y, w)>>Diff_Prec) > AVG_COLOR_TH )
         {
-            updated_A[y*w+x] = AVG_False; 
+            updated_A[y*w+x] = AVG_False;
         }
 
         out_index = (y-8)*(m_Width-16)+(x-8);
@@ -1003,7 +1023,7 @@ int CPU_CCM(unsigned short* R_i, unsigned short* G_i, unsigned short* B_i,
     int tmpint;
     float R, G, B;
 #endif
-    
+
     int dum = 0;
 
     for (int y = 0;y < frameheight; y++)
@@ -1022,7 +1042,7 @@ int CPU_CCM(unsigned short* R_i, unsigned short* G_i, unsigned short* B_i,
             tmpR  = (int)((float)R * CCM[0][0]);
             tmpR += (int)((float)G * CCM[0][1]);
             tmpR += (int)((float)B * CCM[0][2]);
-            
+
             tmpG  = (int)((float)R * CCM[1][0]);
             tmpG += (int)((float)G * CCM[1][1]);
             tmpG += (int)((float)B * CCM[1][2]);
@@ -1037,25 +1057,25 @@ int CPU_CCM(unsigned short* R_i, unsigned short* G_i, unsigned short* B_i,
             B = (float)B_i[index];
 
             tmpint = (R * CCM[0][0]);
-            tmpR   = tmpint; 
+            tmpR   = tmpint;
             tmpint = (G * CCM[1][0]);
-            tmpR  += tmpint; 
+            tmpR  += tmpint;
             tmpint = (B * CCM[2][0]);
-            tmpR  += tmpint; 
+            tmpR  += tmpint;
 
             tmpint = (R * CCM[0][1]);
-            tmpG   = tmpint; 
+            tmpG   = tmpint;
             tmpint = (G * CCM[1][1]);
-            tmpG  += tmpint; 
+            tmpG  += tmpint;
             tmpint = (B * CCM[2][1]);
-            tmpG  += tmpint; 
+            tmpG  += tmpint;
 
             tmpint = (R * CCM[0][2]);
-            tmpB   = tmpint; 
+            tmpB   = tmpint;
             tmpint = (G * CCM[1][2]);
-            tmpB  += tmpint; 
+            tmpB  += tmpint;
             tmpint = (B * CCM[2][2]);
-            tmpB  += tmpint; 
+            tmpB  += tmpint;
 
 #endif
             R_i[index] = CLIP_VAL(tmpR, 0, MaxIntensity);
@@ -1089,11 +1109,11 @@ int CPU_Gamma_SKL(unsigned short* R_i, unsigned short* G_i, unsigned short* B_i,
 
 #if 0 // C-model
     // N= 64
-    if (input[15:0] < Point[0]) 
+    if (input[15:0] < Point[0])
         Interpolation = Correct[0] * Input[15:0] / Point[0] ;
-    else if (Input[15:0] >= Point[N-1]) 
+    else if (Input[15:0] >= Point[N-1])
         Interpolation = Correct[63] + (0xFFFF – Correct[63]) * (Input[15:0] – Point[63]) / (0xFFFF – Point[63])     ;
-    else 
+    else
     {
         //find i such that Point[i] <= Input[15:0] <Point[i+1];
         //Interpolation = Correct[i] + (Correct[i+1] - Correct[i]) * (Input[15:0] – Point[i]) / (Point[i+1] – Point[i]);
@@ -1210,7 +1230,7 @@ int CPU_ARGB16Interleave(unsigned short* ARGB16, int OutWidth, int OutHeight, in
         for(int i = 0; i < OutWidth*4; i += 4) {
 
             in_index  = j *  OutWidth    + (i/4);
-            out_index = (offset + (multiplier)*j) * (OutPitch) + i;
+            out_index = (offset + (multiplier)*j) * (OutPitch>>1) + i;
             ARGB16[out_index+0] = B[in_index] << (16-BitDepth); // << 0;
             ARGB16[out_index+1] = G[in_index] << (16-BitDepth); // << 0;
             ARGB16[out_index+2] = R[in_index] << (16-BitDepth); // << 0;
