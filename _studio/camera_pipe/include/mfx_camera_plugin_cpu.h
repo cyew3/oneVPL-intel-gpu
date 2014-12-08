@@ -77,5 +77,6 @@ int CPU_ARGB8Interleave(unsigned char* ARGB8, int OutWidth, int OutHeight, int O
 
 int CPU_ARGB16Interleave(unsigned short* ARGB16, int OutWidth, int OutHeight, int OutPitch, int BitDepth, int BayerType,
                          short* R, short* G, short* B);
-
+int CPU_Bufferflip(unsigned short* buffer,
+                   int width, int height, int bitdepth, bool firstflag);
 #endif  /* _MFX_CAMERA_PLUGIN_CPU_H */
