@@ -31,6 +31,7 @@ File Name: mfxfei.h
 #define __MFXFEI_H__
 #include "mfxdefs.h"
 #include "mfxvstructures.h"
+#include "mfxpak.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -402,40 +403,6 @@ typedef struct {
     mfxFeiFunction  Func;
     mfxU32 reserved[29];
 } mfxExtFeiParam;
-
-
-/* PAK */
-typedef struct {
-    mfxU32  reserved[32];
-
-    mfxFrameSurface1 *InSurface;
-
-    mfxU16  NumFrameL0;
-    mfxFrameSurface1 **L0Surface;
-    mfxU16  NumFrameL1;
-    mfxFrameSurface1 **L1Surface;
-
-    mfxU16  NumExtParam;
-    mfxExtBuffer    **ExtParam;
-} mfxPAKInput;
-
-typedef struct {
-    mfxBitstream     *Bs; 
-
-    mfxFrameSurface1 *OutSurface;
-
-    mfxU16            NumExtParam;
-    mfxExtBuffer    **ExtParam;
-} mfxPAKOutput;
-
-typedef struct _mfxSession *mfxSession;
-mfxStatus MFX_CDECL MFXVideoPAK_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out);
-mfxStatus MFX_CDECL MFXVideoPAK_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request);
-mfxStatus MFX_CDECL MFXVideoPAK_Init(mfxSession session, mfxVideoParam *par);
-mfxStatus MFX_CDECL MFXVideoPAK_Reset(mfxSession session, mfxVideoParam *par);
-mfxStatus MFX_CDECL MFXVideoPAK_Close(mfxSession session);
-
-mfxStatus MFX_CDECL MFXVideoPAK_ProcessFrameAsync(mfxSession session, mfxPAKInput *in, mfxPAKOutput *out,  mfxSyncPoint *syncp);
 
 
 #ifdef __cplusplus
