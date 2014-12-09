@@ -1688,7 +1688,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             pRect.bottom = rec.DstY + rec.DstH;
             pRect.right  = rec.DstX + rec.DstW;
 
-            SetStreamAlpha(refIdx, rec.GlobalAlphaEnable, rec.GlobalAlpha / 255.0f);
+            FLOAT GlobalAlpha = rec.GlobalAlphaEnable ? rec.GlobalAlpha / 255.0f : 1.0f;
+            SetStreamAlpha(refIdx, TRUE, GlobalAlpha);
             SetStreamLumaKey(refIdx, rec.LumaKeyEnable, rec.LumaKeyMin / 255.0f, rec.LumaKeyMax / 255.0f);
         }
         else
