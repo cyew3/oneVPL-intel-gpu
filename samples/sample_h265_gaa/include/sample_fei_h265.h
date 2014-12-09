@@ -19,7 +19,7 @@
 #include <malloc.h>
 #include <stdlib.h>
 #define fopen_s(ptr, name, m) (((*(ptr)) = fopen((name), (m))) == NULL)
-static __inline void *_aligned_malloc(int size, int align) { void *ptr; return (posix_memalign(&ptr, align, size) ? ptr : NULL); }
+static __inline void *_aligned_malloc(int size, int align) { void *ptr; return (posix_memalign(&ptr, align, size) ? NULL: ptr); }
 #define _aligned_free(ptr) free(ptr)
 #endif
 

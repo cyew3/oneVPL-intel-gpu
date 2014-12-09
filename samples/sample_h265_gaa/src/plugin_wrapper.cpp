@@ -65,6 +65,58 @@ mfxStatus CH265FEI::Init(SampleParams *sp)
     mfxIMPL impl = 0;
     m_pmfxSession->QueryIMPL(&impl);
 
+    /* external handle required for Linux, optional for Windows */
+    mfxHandleType eDevType;
+    mfxHDL hdl = NULL;
+
+#if defined(_WIN32) || defined(_WIN64)
+    eDevType = MFX_HANDLE_D3D9_DEVICE_MANAGER;
+#elif defined(LIBVA_SUPPORT)
+    eDevType = MFX_HANDLE_VA_DISPLAY;
+#endif
+
+#if defined(_WIN32) || defined(_WIN64)
+    if (eDevType == MFX_HANDLE_D3D9_DEVICE_MANAGER)
+    {
+        m_hwdev.reset(new CD3D9Device());
+        sts = m_hwdev->Init(NULL, 1, MSDKAdapter::GetNumber() );
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        sts = m_hwdev->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&hdl);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+#elif defined(LIBVA_X11_SUPPORT) || defined(LIBVA_DRM_SUPPORT)
+    if (eDevType == MFX_HANDLE_VA_DISPLAY)
+    {
+        m_hwdev.reset(CreateVAAPIDevice());
+        sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber() );
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        sts = m_hwdev->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*)&hdl);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+#endif
+
+    mfxHandleType handleType = (mfxHandleType)0;
+    bool bIsMustSetExternalHandle = 0;
+
+    if (MFX_IMPL_VIA_D3D9 == MFX_IMPL_VIA_MASK(impl))
+    {
+        handleType = MFX_HANDLE_D3D9_DEVICE_MANAGER;
+        bIsMustSetExternalHandle = false;
+    }
+#ifdef LIBVA_SUPPORT
+    else if (MFX_IMPL_VIA_VAAPI == MFX_IMPL_VIA_MASK(impl))
+    {
+        handleType = MFX_HANDLE_VA_DISPLAY;
+        bIsMustSetExternalHandle = true;
+    }
+#endif
+
+    if (hdl && bIsMustSetExternalHandle)
+    {
+        sts = m_pmfxSession->SetHandle(handleType, hdl);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+
     /* InitFEI() */
     mfxPluginUID uid = {0};
 

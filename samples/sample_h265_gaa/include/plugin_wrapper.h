@@ -18,6 +18,19 @@
 #include "sample_params.h"
 #include "plugin_loader.h"
 
+#include "d3d_allocator.h"
+#include "d3d11_allocator.h"
+#include "general_allocator.h"
+#include "hw_device.h"
+#include "d3d_device.h"
+#include "d3d11_device.h"
+
+#ifdef LIBVA_SUPPORT
+#include "vaapi_device.h"
+#include "vaapi_utils.h"
+#include "vaapi_allocator.h"
+#endif
+
 class CH265FEI
 {
 
@@ -39,6 +52,7 @@ private:
     std::auto_ptr<MFXVideoENC>      m_pmfxFEI;
     std::auto_ptr<MFXVideoUSER>     m_pUserEncModule;
     std::auto_ptr<MFXPlugin>        m_pUserEncPlugin;
+    std::auto_ptr<CHWDevice>        m_hwdev;
 
     std::vector<mfxExtBuffer*>      m_mfxExtParamsBuf;
     std::vector<mfxExtBuffer*>      m_mfxExtFEIInputBuf;
