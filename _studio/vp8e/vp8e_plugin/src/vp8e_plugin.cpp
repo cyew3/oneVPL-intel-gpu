@@ -205,7 +205,7 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         }
 
         pTask->m_pBitsteam->TimeStamp = pTask->m_timeStamp;
-        pTask->m_pBitsteam->FrameType = mfxU16(pTask->m_sFrameParams.bIntra ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_P);
+        pTask->m_pBitsteam->FrameType = mfxU16(pTask->m_sFrameParams.bIntra ? MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR : MFX_FRAMETYPE_P);
 
         sts = pTask->CompleteTask();
         MFX_CHECK_STS(sts);
@@ -272,7 +272,7 @@ mfxStatus MFX_VP8E_Plugin::Init(mfxVideoParam *par)
     m_ddi.reset(MFX_VP8ENC::CreatePlatformVp8Encoder());
     MFX_CHECK(m_ddi.get() != 0, MFX_WRN_PARTIAL_ACCELERATION);
 
-    sts = m_ddi->CreateAuxilliaryDevice(m_pmfxCore,DXVA2_Intel_Encode_VP8, 
+    sts = m_ddi->CreateAuxilliaryDevice(m_pmfxCore,DXVA2_Intel_Encode_VP8,
         m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
