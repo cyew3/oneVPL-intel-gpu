@@ -213,8 +213,6 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
     if (m_p_frame_allocator->Reset() != UMC::UMC_OK)
         return MFX_ERR_MEMORY_ALLOC;
 
-    m_p_video_accelerator->Reset();
-
     m_frameOrder = (mfxU16)0;
     memset(&m_stat, 0, sizeof(m_stat));
 

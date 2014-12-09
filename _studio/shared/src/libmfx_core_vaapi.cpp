@@ -310,6 +310,9 @@ VAAPIVideoCORE::VAAPIVideoCORE(
     const mfxSession session) :
             CommonCORE(numThreadsAvailable, session)
           , m_Display(0)
+          , m_ConfigId(-1)
+          , m_Context(-1)
+          , m_KeepVAState(false)
           , m_adapterNum(adapterNum)
           , m_bUseExtAllocForHWFrames(false)
           , m_HWType(MFX_HW_IVB) //MFX_HW_UNKNOWN
@@ -339,6 +342,10 @@ VAAPIVideoCORE::~VAAPIVideoCORE()
 
 void VAAPIVideoCORE::Close()
 {
+    m_ConfigId = -1;
+    m_Context = -1;
+    m_KeepVAState = false;
+
     m_pVA.reset();
 } // void VAAPIVideoCORE::Close()
 
@@ -613,6 +620,15 @@ VAAPIVideoCORE::CreateVA(
         RenderTargets[i] = *pSurface;
     }
 
+    if(GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK))
+        m_KeepVAState = true;
+    else
+    {
+        m_ConfigId = -1;
+        m_Context = -1;
+        m_KeepVAState = false;
+    }
+
     m_pVA.reset(new LinuxVideoAccelerator); //aya must be fixed late???
 
     sts = CreateVideoAccelerator(param, profile, response->NumFrameActual, RenderTargets, allocator);
@@ -730,9 +746,13 @@ VAAPIVideoCORE::CreateVideoAccelerator(
 
     m_pVA.get()->m_Platform = UMC::VA_LINUX;
     m_pVA.get()->m_Profile = (VideoAccelerationProfile)profile;
+    m_pVA.get()->m_HWPlatform = ConvertMFXToUMCType(m_HWType);
 
     // Init Accelerator
     params.m_Display = m_Display;
+    params.m_pConfigId = &m_ConfigId;
+    params.m_pContext = &m_Context;
+    params.m_pKeepVAState = &m_KeepVAState;
     params.m_pVideoStreamInfo = &VideoInfo;
     params.m_iNumberSurfaces = NumOfRenderTarget;
     params.m_allocator = allocator;
@@ -752,8 +772,6 @@ VAAPIVideoCORE::CreateVideoAccelerator(
         //m_pVA.reset(); aya must be fixed late
         return MFX_ERR_UNSUPPORTED;
     }
-
-    m_pVA.get()->m_HWPlatform = ConvertMFXToUMCType(m_HWType);
 
     return sts;
 

@@ -125,7 +125,10 @@ protected:
 
     void                   ReleaseHandle();
     s_ptr<UMC::LinuxVideoAccelerator, true> m_pVA;
-    VADisplay                           m_Display;
+    VADisplay                            m_Display;
+    VAConfigID                           m_ConfigId;
+    VAContextID                          m_Context;
+    bool                                 m_KeepVAState;
 
     const mfxU32                         m_adapterNum; // Ordinal number of adapter to work
     bool                                 m_bUseExtAllocForHWFrames;

@@ -169,8 +169,6 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-    m_va->Reset();
-
     m_frameOrder = 0;
     m_statusReportFeedbackNumber = 0;
     memset(&m_stat, 0, sizeof(m_stat));

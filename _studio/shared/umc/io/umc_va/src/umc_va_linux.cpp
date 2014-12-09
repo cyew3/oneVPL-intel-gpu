@@ -138,7 +138,7 @@ VAProfile g_VP9Profiles[] =
 
 VAProfile g_JPEGProfiles[] =
 {
-	VAProfileJPEGBaseline
+    VAProfileJPEGBaseline
 };
 
 VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
@@ -254,6 +254,7 @@ LinuxVideoAccelerator::LinuxVideoAccelerator(void)
     m_dpy        = NULL;
     m_context    = -1;
     m_config_id  = -1;
+    m_pKeepVAState = NULL;
     m_FrameState = lvaBeforeBegin;
 
     m_pCompBuffers  = NULL;
@@ -299,6 +300,12 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         umcRes = UMC_ERR_INVALID_PARAMS;
     if ((UMC_OK == umcRes) && (NULL == pParams->m_Display))
         umcRes = UMC_ERR_INVALID_PARAMS;
+    if ((UMC_OK == umcRes) && (NULL == pParams->m_pConfigId))
+        umcRes = UMC_ERR_INVALID_PARAMS;
+    if ((UMC_OK == umcRes) && (NULL == pParams->m_pContext))
+        umcRes = UMC_ERR_INVALID_PARAMS;
+    if ((UMC_OK == umcRes) && (NULL == pParams->m_pKeepVAState))
+        umcRes = UMC_ERR_INVALID_PARAMS;
     if ((UMC_OK == umcRes) && (pParams->m_iNumberSurfaces < 0))
         umcRes = UMC_ERR_INVALID_PARAMS;
     if (UMC_OK == umcRes)
@@ -310,6 +317,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     if (UMC_OK == umcRes)
     {
         m_dpy               = pParams->m_Display;
+        m_pKeepVAState      = pParams->m_pKeepVAState;
         width               = pParams->m_pVideoStreamInfo->clip_info.width;
         height              = pParams->m_pVideoStreamInfo->clip_info.height;
         m_NumOfFrameBuffers = pParams->m_iNumberSurfaces;
@@ -334,6 +342,14 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     }
     if ((UMC_OK == umcRes) && (UNKNOWN == m_Profile))
         umcRes = UMC_ERR_INVALID_PARAMS;
+
+#if defined(ANDROID)
+    bool needAllocatedSurfaces = (((m_Profile & VA_CODEC) != UMC::VA_H264) &&
+                                  ((m_Profile & VA_CODEC) != UMC::VA_H265) &&
+                                  ((m_Profile & VA_CODEC) != UMC::VA_VP8));
+#else
+    bool needAllocatedSurfaces = true;
+#endif
 
     SetTraceStrings(m_Profile & VA_CODEC);
 
@@ -466,8 +482,13 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 
         if (UMC_OK == umcRes)
         {
-            va_res = vaCreateConfig(m_dpy, va_profile, va_entrypoint, va_attributes, attribsNumber, &m_config_id);
-            umcRes = va_to_umc_res(va_res);
+            if (-1 != *pParams->m_pConfigId)
+                m_config_id = *pParams->m_pConfigId;
+            else
+            {
+                va_res = vaCreateConfig(m_dpy, va_profile, va_entrypoint, va_attributes, attribsNumber, &m_config_id);
+                umcRes = va_to_umc_res(va_res);
+            }
         }
 
         UMC_FREE(va_profiles);
@@ -477,8 +498,22 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     // creating context
     if (UMC_OK == umcRes)
     {
-        va_res = vaCreateContext(m_dpy, m_config_id, width, height, VA_PROGRESSIVE, (VASurfaceID*)pParams->m_surf, m_NumOfFrameBuffers, &m_context);
-        umcRes = va_to_umc_res(va_res);
+        if (*pParams->m_pContext != -1 && *pParams->m_pConfigId != -1)
+            m_context = *pParams->m_pContext;
+        else
+        {
+            if (needAllocatedSurfaces)
+                va_res = vaCreateContext(m_dpy, m_config_id, width, height, VA_PROGRESSIVE, (VASurfaceID*)pParams->m_surf, m_NumOfFrameBuffers, &m_context);
+            else
+                va_res = vaCreateContext(m_dpy, m_config_id, width, height, VA_PROGRESSIVE, NULL, 0, &m_context);
+
+            umcRes = va_to_umc_res(va_res);
+            if (UMC_OK == umcRes)
+            {
+                *pParams->m_pConfigId = m_config_id;
+                *pParams->m_pContext = m_context;
+            }
+        }
     }
 
     return umcRes;
@@ -505,16 +540,17 @@ Status LinuxVideoAccelerator::Close(void)
     }
     if (NULL != m_dpy)
     {
-        if (-1 != m_context)
+        if (-1 != m_context && !(m_pKeepVAState && *m_pKeepVAState))
         {
             vaDestroyContext(m_dpy, m_context);
             m_context = -1;
         }
-        if (-1 != m_config_id)
+        if (-1 != m_config_id && !(m_pKeepVAState && *m_pKeepVAState))
         {
             vaDestroyConfig(m_dpy,m_config_id);
             m_config_id  = -1;
         }
+
         m_dpy = NULL;
     }
 

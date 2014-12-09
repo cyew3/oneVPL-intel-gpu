@@ -80,14 +80,14 @@ public:
 };
 
 class AllocatorAdapterRW : public MFXFrameAllocatorRW
-{    
+{
 public:
     AllocatorAdapterRW(MFXFrameAllocatorRW * allocator);
     virtual ~AllocatorAdapterRW();
 
     virtual mfxStatus Init(mfxAllocatorParams *pParams);
     virtual mfxStatus Close();
-    virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);   
+    virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
     virtual mfxStatus AllocFrame(mfxFrameSurface1 *surface);
     virtual mfxStatus FreeFrames(mfxFrameAllocResponse *response);
 
@@ -97,7 +97,7 @@ public:
 
     //read means SW surfaces filled with actual data, write means gained memory can be written
     virtual mfxStatus LockFrameRW(mfxMemId mid, mfxFrameData *ptr, mfxU8 lockflag /*MFXReadWriteMid::read|write*/);
-    //write means data should be reflected 
+    //write means data should be reflected
     virtual mfxStatus UnlockFrameRW(mfxMemId mid, mfxFrameData *ptr, mfxU8 writeflag /*MFXReadWriteMid::write|0*/);
 
 protected:

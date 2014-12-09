@@ -9,6 +9,7 @@
 */
 
 #include "mfx_common_int.h"
+#include "mfx_ext_buffers.h"
 #include "mfxpcp.h"
 #include <stdexcept>
 #include <string>
@@ -314,20 +315,12 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
     }
     else
     {
-        if (in->mfx.CodecId == MFX_CODEC_AVC || in->mfx.CodecId == MFX_CODEC_JPEG)
-        {
-            if (GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION))
-                return MFX_ERR_INVALID_VIDEO_PARAM;
+        if (GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION))
+            return MFX_ERR_INVALID_VIDEO_PARAM;
 
-            sts = CheckDecodersExtendedBuffers(in);
-            if (sts < MFX_ERR_NONE)
-                return sts;
-        }
-        else if (!(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
-        {
-            if (in->NumExtParam)
-                return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
+        sts = CheckDecodersExtendedBuffers(in);
+        if (sts < MFX_ERR_NONE)
+            return sts;
     }
 
     return MFX_ERR_NONE;
@@ -487,13 +480,28 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
 
 mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
 {
-    static const mfxU32 g_decoderSupportedExtBuffersAVC[] = {MFX_EXTBUFF_PAVP_OPTION, MFX_EXTBUFF_MVC_SEQ_DESC,
-        MFX_EXTBUFF_MVC_TARGET_VIEWS, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_SVC_SEQ_DESC, MFX_EXTBUFF_SVC_TARGET_LAYER};
+    static const mfxU32 g_decoderSupportedExtBuffersAVC[]   = {MFX_EXTBUFF_PAVP_OPTION,
+                                                               MFX_EXTBUFF_MVC_SEQ_DESC,
+                                                               MFX_EXTBUFF_MVC_TARGET_VIEWS,
+                                                               MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+                                                               MFX_EXTBUFF_SVC_SEQ_DESC,
+                                                               MFX_EXTBUFF_SVC_TARGET_LAYER,
+                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
 
-    static const mfxU32 g_decoderSupportedExtBuffersHEVC[] = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_HEVC_PARAM};
+    static const mfxU32 g_decoderSupportedExtBuffersHEVC[]  = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+                                                               MFX_EXTBUFF_HEVC_PARAM,
+                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
 
-    static const mfxU32 g_decoderSupportedExtBuffersVC1[] = {MFX_EXTBUFF_PAVP_OPTION, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION};
-    static const mfxU32 g_decoderSupportedExtBuffersMJPEG[] = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_JPEG_HUFFMAN, MFX_EXTBUFF_JPEG_QT};
+    static const mfxU32 g_decoderSupportedExtBuffersVC1[]   = {MFX_EXTBUFF_PAVP_OPTION,
+                                                               MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
+
+    static const mfxU32 g_decoderSupportedExtBuffersVPX[]   = {MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
+
+    static const mfxU32 g_decoderSupportedExtBuffersMJPEG[] = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+                                                               MFX_EXTBUFF_JPEG_HUFFMAN,
+                                                               MFX_EXTBUFF_JPEG_QT,
+                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
 
     const mfxU32 *supported_buffers = 0;
     mfxU32 numberOfSupported = 0;
@@ -507,16 +515,21 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
     {
         supported_buffers = g_decoderSupportedExtBuffersVC1;
         numberOfSupported = sizeof(g_decoderSupportedExtBuffersVC1) / sizeof(g_decoderSupportedExtBuffersVC1[0]);
-    }else if (par->mfx.CodecId == MFX_CODEC_HEVC)
+    }
+    else if (par->mfx.CodecId == MFX_CODEC_HEVC)
     {
         supported_buffers = g_decoderSupportedExtBuffersHEVC;
         numberOfSupported = sizeof(g_decoderSupportedExtBuffersHEVC) / sizeof(g_decoderSupportedExtBuffersHEVC[0]);
     }
-
-    if (par->mfx.CodecId == MFX_CODEC_JPEG)
+    else if (par->mfx.CodecId == MFX_CODEC_JPEG)
     {
         supported_buffers = g_decoderSupportedExtBuffersMJPEG;
         numberOfSupported = sizeof(g_decoderSupportedExtBuffersMJPEG) / sizeof(g_decoderSupportedExtBuffersMJPEG[0]);
+    }
+    else if (par->mfx.CodecId == MFX_CODEC_VP8 || par->mfx.CodecId == MFX_CODEC_VP9)
+    {
+        supported_buffers = g_decoderSupportedExtBuffersVPX;
+        numberOfSupported = sizeof(g_decoderSupportedExtBuffersVPX) / sizeof(g_decoderSupportedExtBuffersVPX[0]);
     }
 
     if (!supported_buffers)
@@ -716,6 +729,7 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
         case MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION:
         case MFX_EXTBUFF_SVC_SEQ_DESC:
         case MFX_EXTBUFF_SVC_TARGET_LAYER:
+        case MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK:
         case MFX_EXTBUFF_JPEG_QT:
         case MFX_EXTBUFF_JPEG_HUFFMAN:
         case MFX_EXTBUFF_HEVC_PARAM:

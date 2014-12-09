@@ -31,6 +31,8 @@ enum eMFXExtOptions
     MFX_EXTOPTION_VPP_FASTCOMP      = 0x0010,
 };
 
+#define MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK MFX_MAKEFOURCC('A','P','B','K')
+
 #define MFX_EXTBUFF_DDI MFX_MAKEFOURCC('D','D','I','P')
 
 typedef struct {

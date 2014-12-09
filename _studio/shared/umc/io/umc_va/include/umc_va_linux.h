@@ -61,11 +61,17 @@ class LinuxVideoAcceleratorParams : public VideoAcceleratorParams
 public:
     LinuxVideoAcceleratorParams(void)
     {
-        m_Display             = NULL;
-        m_bComputeVAFncsInfo  = false;
+        m_Display            = NULL;
+        m_bComputeVAFncsInfo = false;
+        m_pConfigId          = NULL;
+        m_pContext           = NULL;
+        m_pKeepVAState       = NULL;
     }
-    VADisplay m_Display;
-    bool      m_bComputeVAFncsInfo;
+    VADisplay     m_Display;
+    bool          m_bComputeVAFncsInfo;
+    VAConfigID*   m_pConfigId;
+    VAContextID*  m_pContext;
+    bool*         m_pKeepVAState;
 };
 
 /* LinuxVideoAccelerator -----------------------------------------------------*/
@@ -123,6 +129,7 @@ protected:
     VADisplay     m_dpy;
     VAConfigID    m_config_id;
     VAContextID   m_context;
+    bool*         m_pKeepVAState;
     lvaFrameState m_FrameState;
 
     Ipp32s   m_NumOfFrameBuffers;

@@ -5147,7 +5147,7 @@ mfxStatus AllocatorAdapterRW::AllocFrames(mfxFrameAllocRequest *request, mfxFram
             m_mids.push_back(pair);
         }
     }
-    
+
     return status;
 }
 

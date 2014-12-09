@@ -400,7 +400,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
         desc.BindFlags = D3D11_BIND_DECODER;
 
         /*if ( (MFX_MEMTYPE_FROM_VPPIN & request->Type) && (DXGI_FORMAT_YUY2 == desc.Format) ||
-             (DXGI_FORMAT_B8G8R8A8_UNORM == desc.Format) || 
+             (DXGI_FORMAT_B8G8R8A8_UNORM == desc.Format) ||
              (DXGI_FORMAT_R10G10B10A2_UNORM == desc.Format) )
         {
             desc.BindFlags = D3D11_BIND_RENDER_TARGET;

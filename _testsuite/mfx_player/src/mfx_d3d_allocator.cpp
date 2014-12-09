@@ -325,7 +325,7 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
 
     if (format == D3DFMT_UNKNOWN)
         return MFX_ERR_UNSUPPORTED;
-    
+
     DWORD   target = DXVA2_VideoDecoderRenderTarget;
 
     ((IDirect3DSurface9 *)surface->Data.MemId)->Release();
@@ -381,7 +381,7 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
     }
 
     if (FAILED(hr))
-    {        
+    {
         return MFX_ERR_MEMORY_ALLOC;
     }
 

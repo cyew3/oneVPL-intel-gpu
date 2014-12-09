@@ -214,7 +214,7 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
     mfxU32 Height2 = MSDK_ALIGN32(surface->Info.Height);
     mfxU32 nbytes;
 
-    switch (surface->Info.FourCC) 
+    switch (surface->Info.FourCC)
     {
     case MFX_FOURCC_YV12:
     case MFX_FOURCC_NV12:
@@ -260,22 +260,22 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
         if (MFX_ERR_NONE != sts)
             return sts;
 
-        sts = m_pBufferAllocator->Alloc(m_pBufferAllocator->pthis, 
+        sts = m_pBufferAllocator->Alloc(m_pBufferAllocator->pthis,
             nbytes + MSDK_ALIGN32(sizeof(sFrame)), MFX_MEMTYPE_SYSTEM_MEMORY, &surface->Data.MemId);
 
-        if (MFX_ERR_NONE != sts) 
+        if (MFX_ERR_NONE != sts)
             return sts;
 
         sFrame *fs;
         sts = m_pBufferAllocator->Lock(m_pBufferAllocator->pthis, surface->Data.MemId, (mfxU8 **)&fs);
 
-        if (MFX_ERR_NONE != sts) 
+        if (MFX_ERR_NONE != sts)
             return sts;
 
         fs->id = ID_FRAME;
         fs->info = surface->Info;
         m_pBufferAllocator->Unlock(m_pBufferAllocator->pthis, surface->Data.MemId);
-    }    
+    }
 
     return MFX_ERR_NONE;
 }
