@@ -515,10 +515,31 @@ void HeaderPacker::PackSSH(
                     bs.PutBits(CeilLog2(sps.num_short_term_ref_pic_sets), slice.short_term_ref_pic_set_idx);
             }
 
-            //if (sps.long_term_ref_pics_present_flag)
-            //{
-            //}
-            assert(0 == sps.long_term_ref_pics_present_flag);
+            if (sps.long_term_ref_pics_present_flag)
+            {
+                if (sps.num_long_term_ref_pics_sps > 0)
+                    bs.PutUE(slice.num_long_term_sps);
+
+                bs.PutUE(slice.num_long_term_pics);
+
+                for (mfxU16 i = 0; i < slice.num_long_term_sps + slice.num_long_term_pics; i++)
+                {
+                    if (i < slice.num_long_term_sps && sps.num_long_term_ref_pics_sps > 1)
+                    {
+                        bs.PutBits(CeilLog2(sps.num_long_term_ref_pics_sps), slice.lt[i].lt_idx_sps);
+                    }
+                    else
+                    {
+                        bs.PutBits(sps.log2_max_pic_order_cnt_lsb_minus4+4, slice.lt[i].poc_lsb_lt);
+                        bs.PutBit(slice.lt[i].used_by_curr_pic_lt_flag);
+                    }
+
+                    bs.PutBit(slice.lt[i].delta_poc_msb_present_flag);
+
+                    if( slice.lt[i].delta_poc_msb_present_flag)
+                        bs.PutUE(slice.lt[i].delta_poc_msb_cycle_lt );
+                }
+            }
 
             if (sps.temporal_mvp_enabled_flag)
                 bs.PutBit(slice.temporal_mvp_enabled_flag);
@@ -532,6 +553,8 @@ void HeaderPacker::PackSSH(
 
         if (slice.type == P || slice.type == B)
         {
+            mfxU16 NumPocTotalCurr = 0;
+
             bs.PutBit(slice.num_ref_idx_active_override_flag);
 
             if (slice.num_ref_idx_active_override_flag)
@@ -542,7 +565,36 @@ void HeaderPacker::PackSSH(
                     bs.PutUE(slice.num_ref_idx_l1_active_minus1 );
             }
 
-            assert(0 == pps.lists_modification_present_flag);
+            for (mfxU16 i = 0; i < slice.strps.num_negative_pics; i++ )
+                if( slice.strps.pic[i].used_by_curr_pic_s0_flag )
+                    NumPocTotalCurr ++;
+
+            for (mfxU16 i = slice.strps.num_negative_pics; 
+                i < (slice.strps.num_negative_pics + slice.strps.num_positive_pics); i++)
+                if( slice.strps.pic[i].used_by_curr_pic_s1_flag )
+                    NumPocTotalCurr ++;
+
+            for (mfxU16 i = 0; i < slice.num_long_term_sps + slice.num_long_term_pics; i++ )
+                if( slice.lt[i].used_by_curr_pic_lt_flag )
+                    NumPocTotalCurr ++;
+
+            if (pps.lists_modification_present_flag && NumPocTotalCurr > 1)
+            {
+                bs.PutBit(!!slice.ref_pic_list_modification_flag_lx[0]);
+
+                if (slice.ref_pic_list_modification_flag_lx[0])
+                    for (mfxU16 i = 0; i <= slice.num_ref_idx_l0_active_minus1; i ++)
+                        bs.PutBits(CeilLog2(NumPocTotalCurr), slice.list_entry_lx[0][i]);
+
+                if (slice.type == B)
+                {
+                    bs.PutBit(!!slice.ref_pic_list_modification_flag_lx[1]);
+
+                    if (slice.ref_pic_list_modification_flag_lx[1])
+                        for (mfxU16  i = 0; i  <=  slice.num_ref_idx_l1_active_minus1; i ++)
+                        bs.PutBits(CeilLog2(NumPocTotalCurr), slice.list_entry_lx[1][i]);
+                }
+            }
 
             if (slice.type  ==  B)
                 bs.PutBit(slice.mvd_l1_zero_flag );

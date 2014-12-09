@@ -160,8 +160,6 @@ void FillPpsBuffer(
     ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps)
 {
     Zero(pps);
-    
-    Fill(pps.CollocatedRefPicIndex, IDX_INVALID);
 
     pps.tiles_enabled_flag               = par.m_pps.tiles_enabled_flag;
     pps.entropy_coding_sync_enabled_flag = par.m_pps.entropy_coding_sync_enabled_flag;
@@ -225,11 +223,17 @@ void FillPpsBuffer(
     pps.CurrOriginalPic.AssociatedFlag  = !!(task.m_frameType & MFX_FRAMETYPE_REF);
 
     pps.CurrReconstructedPic.Index7Bits     = task.m_idxRec;
-    pps.CurrReconstructedPic.AssociatedFlag = 0;
+    pps.CurrReconstructedPic.AssociatedFlag = !!task.m_ltr;
+
+    if (task.m_sh.temporal_mvp_enabled_flag)
+        pps.CollocatedRefPicIndex = task.m_refPicList[!task.m_sh.collocated_from_l0_flag][task.m_sh.collocated_ref_idx];
+    else 
+        pps.CollocatedRefPicIndex = IDX_INVALID;
     
     for (mfxU16 i = 0; i < 15; i ++)
     {
-        pps.RefFrameList[i].bPicEntry = task.m_dpb[0][i].m_idxRec;
+        pps.RefFrameList[i].bPicEntry      = task.m_dpb[0][i].m_idxRec;
+        pps.RefFrameList[i].AssociatedFlag = !!task.m_dpb[0][i].m_ltr;
         pps.RefFramePOCList[i] = task.m_dpb[0][i].m_poc;
     }
 

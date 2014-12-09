@@ -19,6 +19,13 @@
 #define MFX_MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MFX_MAX(x,y) ((x) > (y) ? (x) : (y))
 #define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1]; MESSAGE
+#define MFX_SORT_COMMON(_AR, _SZ, _COND)\
+    for (mfxU32 _i = 0; _i < (_SZ); _i ++)\
+        for (mfxU32 _j = _i; _j < (_SZ); _j ++)\
+            if (_COND) std::swap(_AR[_i], _AR[_j]);
+#define MFX_SORT(_AR, _SZ, _OP) MFX_SORT_COMMON(_AR, _SZ, _AR[_i] _OP _AR[_j])
+#define MFX_SORT_STRUCT(_AR, _SZ, _M, _OP) MFX_SORT_COMMON(_AR, _SZ, _AR[_i]._M _OP _AR[_j]._M)
+
 
 namespace MfxHwH265Encode
 {
@@ -126,6 +133,7 @@ typedef struct _DpbFrame
     mfxU16   m_frameType;
     mfxI32   m_poc;
     mfxMemId m_midRec;
+    bool     m_ltr;
 }DpbFrame, DpbArray[MAX_DPB_SIZE];
 
 typedef struct _Task : DpbFrame
@@ -138,7 +146,7 @@ typedef struct _Task : DpbFrame
 
     mfxU32 m_idxBs;
 
-    mfxU8 m_refPicList[2][15];
+    mfxU8 m_refPicList[2][MAX_DPB_SIZE];
     mfxU8 m_numRefActive[2];
 
     mfxU8  m_shNUT;
@@ -253,6 +261,7 @@ public:
     mfxU32 TargetKbps;
     mfxU32 MaxKbps;
     mfxU16 NumRefLX[2];
+    mfxU32 LTRInterval;
 
     MfxVideoParam();
     MfxVideoParam(MfxVideoParam const & par);

@@ -358,22 +358,24 @@ struct Slice
 
     STRPS strps;
 
-    //struct LongTerm
-    //{
-    //    union
-    //    {
-    //        mfxU32 lt_idx_sps;
-    //        struct
-    //        {
-    //            mfxU32 poc_lsb_lt               : 31;
-    //            mfxU32 used_by_curr_pic_lt_flag :  1;
-    //        };
-    //    };
-    //    mfxU32 delta_poc_msb_present_flag :  1;
-    //    mfxU32 delta_poc_msb_cycle_lt     : 31;
-    //} lt[MAX_NUM_LONG_TERM_PICS];
+    struct LongTerm
+    {
+        union
+        {
+            mfxU32 lt_idx_sps;
+            struct
+            {
+                mfxU32 poc_lsb_lt               : 31;
+                mfxU32 used_by_curr_pic_lt_flag :  1;
+            };
+        };
+        mfxU32 delta_poc_msb_present_flag :  1;
+        mfxU32 delta_poc_msb_cycle_lt     : 31;
+    } lt[MAX_NUM_LONG_TERM_PICS];
 
-    //RefPicListsMod  *rplm;
+    mfxU8  ref_pic_list_modification_flag_lx[2];
+    mfxU8  list_entry_lx[2][16];
+
     //PredWeightTable *pwt;
 
     mfxU32 entry_point_offset_minus1[MAX_NUM_ENTRY_POINT_OFFSETS];

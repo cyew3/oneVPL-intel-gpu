@@ -18,6 +18,8 @@
 #include <memory>
 #include <vector>
 
+//#define HEADER_PACKING_TEST
+
 #define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2'))
 #define D3DDDIFMT_YU12 (D3DDDIFORMAT)(MFX_MAKEFOURCC('Y', 'U', '1', '2'))
 
