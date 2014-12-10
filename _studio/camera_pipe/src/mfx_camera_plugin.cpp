@@ -1285,7 +1285,7 @@ mfxStatus MFXCamera_Plugin::CameraAsyncRoutine(AsyncParams *pParam)
         {
             for (int i = 0; i < m_cmi.FrameHeight; i++)
                 for (int j = 0; j < m_cmi.FrameWidth; j++)
-                    m_cmi.cpu_PaddedBayerImg[i*m_cmi.FrameWidth + j] = (short)surfIn->Data.Y16[i*(surfIn->Data.Pitch>>1) + j] >> (16 - m_cmi.bitDepth);
+                    m_cmi.cpu_PaddedBayerImg[i*m_cmi.FrameWidth + j] = (surfIn->Data.Y16[i*(surfIn->Data.Pitch>>1) + j] >> (16 - m_cmi.bitDepth));
         }
 
         // Step 2. Black level correction
