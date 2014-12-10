@@ -1418,11 +1418,13 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
         m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
     }
 
+#if !defined(ANDROID)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP vaSyncSurface");
         vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
+#endif
 
     return MFX_TASK_DONE;
 #else
