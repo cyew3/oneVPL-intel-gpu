@@ -260,8 +260,8 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
         m_uncompBufInfo.resize(cnt.UncompressedFormatCount);
 
         ENCODE_FORMATS encodeFormats = {};
-        encodeFormats.CompressedBufferInfoSize  = m_compBufInfo.size() * sizeof(ENCODE_COMP_BUFFER_INFO);
-        encodeFormats.UncompressedFormatSize    = m_uncompBufInfo.size() * sizeof(D3DDDIFORMAT);
+        encodeFormats.CompressedBufferInfoSize  = (int)(m_compBufInfo.size() * sizeof(ENCODE_COMP_BUFFER_INFO));
+        encodeFormats.UncompressedFormatSize    = (int)(m_uncompBufInfo.size() * sizeof(D3DDDIFORMAT));
         encodeFormats.pCompressedBufferInfo     = &m_compBufInfo[0];
         encodeFormats.pUncompressedFormats      = &m_uncompBufInfo[0];
 

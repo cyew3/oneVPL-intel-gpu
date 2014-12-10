@@ -7,21 +7,8 @@
 //          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 //
 */
-
-
 #include "mfx_h265_encode_hw.h"
 #include <assert.h>
-
-
-MSDK_PLUGIN_API(MFXEncoderPlugin*) mfxCreateEncoderPlugin()
-{
-    return MfxHwH265Encode::Plugin::Create();
-}
-
-MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin)
-{
-    return MfxHwH265Encode::Plugin::CreateByDispatcher(uid, plugin);
-}
 
 namespace MfxHwH265Encode
 {

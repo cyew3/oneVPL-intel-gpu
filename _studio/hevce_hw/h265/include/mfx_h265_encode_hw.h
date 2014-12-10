@@ -14,12 +14,6 @@
 #include "umc_mutex.h"
 #include "mfxplugin++.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-#define MSDK_PLUGIN_API(ret_type) extern "C" __declspec(dllexport)  ret_type __cdecl
-#else
-#define MSDK_PLUGIN_API(ret_type) extern "C"  ret_type  __cdecl
-#endif
-
 namespace MfxHwH265Encode
 {
     
