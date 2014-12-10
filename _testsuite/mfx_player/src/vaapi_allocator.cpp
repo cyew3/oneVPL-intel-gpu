@@ -141,7 +141,6 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         if( VA_FOURCC_P208 != va_fourcc)
         {
             unsigned int format;
-            VASurfaceAttrib *pAttrib = &attrib;
 
             attrib.type          = VASurfaceAttribPixelFormat;
             attrib.flags         = VA_SURFACE_ATTRIB_SETTABLE;
@@ -166,19 +165,13 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 format = VA_RT_FORMAT_YUV420;
             }
 
-#if defined(ANDROID)
-            // It seems that VA implementation on android(W49) doesn't accept "attrib" parameter (ERR_UNKNOWN on
-            // anything exept NULL). According to QuerySurfaceAttributes only NV12 is supported.
-            if (va_fourcc != VA_FOURCC_NV12) return MFX_ERR_UNSUPPORTED;
-            pAttrib = 0;
-#endif
-
             va_res = vaCreateSurfaces(m_dpy,
                                     format,
                                     request->Info.Width, request->Info.Height,
                                     surfaces,
                                     surfaces_num,
-                                    pAttrib, pAttrib ? 1 : 0);
+                                    &attrib, 1);
+
             mfx_res = va_to_mfx_status(va_res);
             bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
         }
