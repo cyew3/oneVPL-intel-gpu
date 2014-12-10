@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\_studio\mfx_lib\..\shared\src\fast_copy.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\..\shared\src\libmfx_allocator.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\..\shared\src\libmfx_core.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\..\shared\src\libmfx_core_factory.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\decode\h265\src\mfx_h265_dec_decode.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\shared\src\libmfxsw.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\shared\src\libmfxsw_async.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\shared\src\libmfxsw_decode.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\shared\src\libmfxsw_plugin.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\shared\src\libmfxsw_query.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\shared\src\libmfxsw_session.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\shared\src\mfx_common_decode_int.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\shared\src\mfx_common_int.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\shared\src\mfx_log.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\shared\src\mfx_session.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\..\shared\src\mfx_timing.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\..\shared\src\mfx_umc_alloc_wrapper.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\shared\src\mfx_user_plugin.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_ischeduler.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_iunknown.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_task.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_task_management.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_thread.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\fast_copy.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\libmfx_allocator.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\libmfx_core.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\libmfx_core_factory.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\libmfx_core_operation.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\mfx_common.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\decode\h265\include\mfx_h265_dec_decode.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\include\mfx_dependency_item.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_common_decode_int.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_common_int.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_interface.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_interface_scheduler.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_log.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_session.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_task.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_task_threading_policy.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_thread_task.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\mfx_timing.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_tools.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\mfx_umc_alloc_wrapper.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_user_plugin.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\mfx_utils.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\mfxstructurespro.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\mfxvideo++int.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\mfxvideopro++.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\mfxvideopro.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\..\include\mfxdefs.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\..\include\mfxplugin.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\..\include\mfxstructures.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\..\include\mfxvideo++.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\..\..\include\mfxvideo.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\include\mfx_scheduler_core.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\include\mfx_scheduler_core_handle.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\include\mfx_scheduler_core_task.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\include\mfx_scheduler_core_thread.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="libmfx_services">
+      <UniqueIdentifier>{5f62af97-241d-4cfe-b3a5-4e3afed190ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libmfx_scheduler">
+      <UniqueIdentifier>{8ee4bb62-ec35-4395-b2b2-932f29c0fb25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libmfx_interface">
+      <UniqueIdentifier>{f8057427-1a49-4277-965a-5674d6329fe6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="libmfx.def">
+      <Filter>libmfx_services</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="libmfxsw_plugin_hevcd.rc">
+      <Filter>libmfx_services</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
