@@ -133,7 +133,7 @@ VAProfile g_VP9Profiles[] =
     VAProfileVP9Version0
 };
 
-VAProfile g_JPEGProfiles[] = 
+VAProfile g_JPEGProfiles[] =
 {
 	VAProfileJPEGBaseline
 };
@@ -261,7 +261,13 @@ LinuxVideoAccelerator::LinuxVideoAccelerator(void)
     vm_mutex_set_invalid(&m_SyncMutex);
 
     m_bIsExtSurfaces    = false;
+
+#if defined(ANDROID)
+    m_isUseStatuReport  = false;
+#else
     m_isUseStatuReport  = true;
+#endif
+
     m_bH264MVCSupport   = false;
     memset(&m_guidDecoder, 0 , sizeof(GUID));
 }
