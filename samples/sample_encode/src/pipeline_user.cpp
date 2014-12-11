@@ -150,12 +150,6 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    mfxPluginUID uid;
-    memset(&uid, 0, sizeof(mfxPluginUID));
-    m_pusrPlugin.reset((MFXGenericPlugin*)LoadPlugin(MFX_PLUGINTYPE_VIDEO_GENERAL, m_mfxSession, uid, 1, pParams->strPluginDLLPath, strlen(pParams->strPluginDLLPath)));
-    if (m_pusrPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
     // prepare input file reader
     sts = m_FileReader.Init(pParams->strSrcFile,
                             pParams->ColorFormat,
@@ -181,6 +175,12 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
     // create a session for the second vpp and encode
     sts = m_mfxSession.Init(impl, &min_version);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    mfxPluginUID uid;
+    memset(&uid, 0, sizeof(mfxPluginUID));
+    m_pusrPlugin.reset((MFXGenericPlugin*)LoadPlugin(MFX_PLUGINTYPE_VIDEO_GENERAL, m_mfxSession, uid, 0, pParams->strPluginDLLPath, (mfxU32)strlen(pParams->strPluginDLLPath)+1));
+    if (m_pusrPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     sts = MFXQueryVersion(m_mfxSession , &version); // get real API version of the loaded library

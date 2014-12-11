@@ -203,7 +203,7 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
             if (pParams->decoderPluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && strlen(pParams->decoderPluginParams.strPluginPath))
             {
                 m_pUserDecoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
-                m_pUserDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, *m_pmfxSession.get(), pParams->decoderPluginParams.pluginGuid, 1, pParams->decoderPluginParams.strPluginPath, strlen(pParams->decoderPluginParams.strPluginPath)));
+                m_pUserDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, *m_pmfxSession.get(), pParams->decoderPluginParams.pluginGuid, 1, pParams->decoderPluginParams.strPluginPath, (mfxU32)strlen(pParams->decoderPluginParams.strPluginPath)));
                 if (m_pUserDecoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
             }
             else
@@ -323,7 +323,7 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
             if (pParams->encoderPluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && strlen(pParams->encoderPluginParams.strPluginPath))
             {
                 m_pUserEncoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
-                m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), pParams->encoderPluginParams.pluginGuid, 1, pParams->encoderPluginParams.strPluginPath, strlen(pParams->encoderPluginParams.strPluginPath)));
+                m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), pParams->encoderPluginParams.pluginGuid, 1, pParams->encoderPluginParams.strPluginPath, (mfxU32)strlen(pParams->encoderPluginParams.strPluginPath)));
                 if (m_pUserEncoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
             }
             else
