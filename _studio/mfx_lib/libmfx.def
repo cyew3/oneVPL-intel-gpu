@@ -59,3 +59,9 @@ EXPORTS
     MFXVideoENC_Close
     MFXVideoENC_ProcessFrameAsync
 
+    MFXVideoPAK_Query;
+    MFXVideoPAK_QueryIOSurf;
+    MFXVideoPAK_Init;
+    MFXVideoPAK_Reset;
+    MFXVideoPAK_Close;
+    MFXVideoPAK_ProcessFrameAsync;

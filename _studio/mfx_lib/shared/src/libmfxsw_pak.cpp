@@ -298,7 +298,7 @@ mfxStatus MFXVideoPAKLegacyRoutine(void *pState, void *pParam,
 
 } // mfxStatus MFXVideoPAKLegacyRoutine(void *pState, void *pParam,
 
-mfxStatus MFXVideoPAK_ProcessFrameAsync(mfxSession session, mfxPAKInput *in, mfxPAKOutput *out, mfxSyncPoint *syncp)
+mfxStatus MFXVideoPAK_ProcessFrameAsync(mfxSession , mfxPAKInput *, mfxPAKOutput *, mfxSyncPoint *)
 {
     return MFX_ERR_UNSUPPORTED;
 }
