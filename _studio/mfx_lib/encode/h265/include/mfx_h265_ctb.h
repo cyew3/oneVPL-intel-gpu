@@ -51,49 +51,36 @@ namespace H265Enc {
 #ifdef MEMOIZE_CAND
 #define MEMOIZE_NUMCAND MAX_NUM_MERGE_CANDS
 //#define MEMOIZE_CAND_TEST
-#ifndef MFX_VA
 #define MEMOIZE_CAND_SUBPEL
-#endif
 #ifdef MEMOIZE_CAND_SUBPEL
 //#define MEMOIZE_CAND_SUBPEL_TEST
-// Do not turn On with subopt recon in rd loop (e.g. fast interp)
-#ifndef MFX_VA
+// Do not turn On MEMOIZE_SUBPEL_RECON with subopt recon in rd loop (e.g. fast interp)
 #define MEMOIZE_SUBPEL_RECON
-#endif
 //#define MEMOIZE_SUBPEL_RECON_TEST
 #endif
 #endif
-#ifndef MFX_VA
 #define AMT_INT_ME_SEED
+#define AMT_FAST_SUBPEL_SEARCH
+#ifndef MFX_VA
+#define AMT_ALT_FAST_SKIP
 #endif
 #endif
 
 #define AMT_SETTINGS
 #define AMT_THRESHOLDS
 #define AMT_ADAPTIVE_INTRA_RD
-#ifndef MFX_VA
 #define AMT_ALT_ENCODE
 #ifdef AMT_ALT_ENCODE
 #define AMT_ALT_ENCODE_OPT
 #endif
+#define AMT_SAO_MIN
+#define AMT_MIN_DEPTH_FIX
 #define AMT_ADAPTIVE_TU_DEPTH
 #define AMT_SYM_BREF
 #define AMT_BEST_REF
-#define AMT_MIN_DEPTH_FIX
-#endif
-
-#ifdef MEMOIZE_SUBPEL
-#ifndef MFX_VA
-#define AMT_FAST_SUBPEL_SEARCH
-#define AMT_ALT_FAST_SKIP
-#endif
-#endif
-#ifndef MFX_VA
-#define AMT_SAO_MIN
-#define AMT_USE_IPP
 #define AMT_FIX_CHROMA_SKIP
+#define AMT_USE_IPP
 #define AMT_COEFF_COST_EST
-#endif
 #endif
 
 struct H265VideoParam;

@@ -250,12 +250,13 @@ namespace H265Enc {
     TU_OPT_ALL (reserved,                       0,   0,   0,   0,   0,   0,   0);
 
     //Filtering
-#ifdef AMT_ALT_ENCODE
-    TU_OPT_SW  (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, ON);
+#ifdef AMT_SAO_MIN
+    TU_OPT_ALL  (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, ON);
 #else
     TU_OPT_SW  (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, OFF);
-#endif
     TU_OPT_GACC(SAO,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
+#endif
+    
 #ifdef AMT_SAO_MIN
     TU_OPT_ALL (SaoOpt,                         1,   1,   2,   2,   2,   2,   3);
 #else
@@ -283,7 +284,7 @@ namespace H265Enc {
     TU_OPT_GACC(SignBitHiding,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
     TU_OPT_SW  (RDOQuant,                      ON,  ON,  ON,  ON, OFF, OFF, OFF);
     TU_OPT_SW  (FastCoeffCost,                 OFF, OFF, OFF, OFF, ON,  ON,  ON);
-    TU_OPT_GACC(FastCoeffCost,                 OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_GACC(FastCoeffCost,                 OFF, OFF, OFF, OFF, ON,  ON,  ON);
     TU_OPT_SW  (RDOQuantChroma,                ON,  ON,  ON, OFF, OFF, OFF, OFF);
 #ifdef AMT_ALT_ENCODE
     TU_OPT_SW  (RDOQuantCGZ,                   ON,  ON,  ON,  ON, ON,   ON, ON);
@@ -292,7 +293,11 @@ namespace H265Enc {
 #endif
     TU_OPT_GACC(RDOQuant,                      OFF, OFF, OFF, OFF, OFF, OFF, OFF);
     TU_OPT_GACC(RDOQuantChroma,                OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+#ifdef AMT_ALT_ENCODE
+    TU_OPT_GACC(RDOQuantCGZ,                   ON,  ON,  ON,  ON, ON,   ON, ON);
+#else
     TU_OPT_GACC(RDOQuantCGZ,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+#endif
     TU_OPT_ALL (DeltaQpMode,                    0,   0,   0,   0,   0,   0,   0);
 
     //Intra RDO
@@ -361,7 +366,8 @@ namespace H265Enc {
     TU_OPT_GACC(HadamardMe,                     1,   1,   1,   1,   1,   1,   1);
     TU_OPT_ALL (PatternIntPel,                  1,   1,   1,   1,   1,   1,   1);
 #ifdef AMT_FAST_SUBPEL_SEARCH
-    TU_OPT_ALL (PatternSubPel,                  3,   3,   3,   3,   6,   6,   6); //4 -dia subpel search; 3- square; 6- fast box + dia orth (see enum SUBPEL_*)
+    TU_OPT_SW  (PatternSubPel,                  3,   3,   3,   3,   6,   6,   6); //4 -dia subpel search; 3- square; 6- fast box + dia orth (see enum SUBPEL_*)
+    TU_OPT_GACC(PatternSubPel,                  3,   3,   3,   3,   4,   4,   4); //4 -dia subpel search; 3- square (see enum SUBPEL_*)
 #else
     TU_OPT_ALL (PatternSubPel,                  3,   3,   3,   3,   4,   4,   4); //4 -dia subpel search; 3- square (see enum SUBPEL_*)
 #endif
@@ -372,7 +378,11 @@ namespace H265Enc {
 #else
     TU_OPT_SW  (TryIntra,                       2,   2,   2,   2,   2,   2,   1);
 #endif
+#ifdef AMT_ALT_ENCODE
+    TU_OPT_GACC(TryIntra,                       2,   2,   2,   2,   2,   2,   2);
+#else
     TU_OPT_GACC(TryIntra,                       1,   1,   1,   1,   1,   1,   1);
+#endif
     TU_OPT_SW  (FastAMPSkipME,                  2,   1,   1,   1,   1,   1,   1);
     TU_OPT_GACC(FastAMPSkipME,                  1,   1,   1,   1,   1,   1,   1);
     TU_OPT_SW  (FastAMPRD,                      2,   1,   1,   1,   1,   1,   1);

@@ -7752,8 +7752,8 @@ template <typename PixType>
 bool H265CU<PixType>::CheckGpuIntraCost(Ipp32s absPartIdx, Ipp32s depth) const
 {
     bool tryIntra = true;
-
-#ifdef MFX_VA
+    
+#ifdef MFX_VA_BUG
     if (m_par->enableCmFlag && m_par->cmIntraThreshold != 0 && m_cslice->slice_type != I_SLICE) {
         mfxU32 cmIntraCost = 0;
         mfxU32 cmInterCost = 0;
@@ -7766,66 +7766,51 @@ bool H265CU<PixType>::CheckGpuIntraCost(Ipp32s absPartIdx, Ipp32s depth) const
         Ipp32s x_num = (cuSize == 32) ? 2 : 1;
         Ipp32s y_num = (cuSize == 32) ? 2 : 1;
 
+        for (Ipp32s j = y; j < y + y_num; j++) {
+            for (Ipp32s i = x; i < x + x_num; i++) {
+                mfxFEIH265IntraDist *intraDistLine = feiOut->IntraDist + j*feiOut->IntraPitch;
+                cmIntraCost += intraDistLine[i].Dist;
+            }
+        }
+
         for (Ipp32s refList = 0; refList < ((m_cslice->slice_type == B_SLICE) ? 2 : 1); refList++) {
             cmInterCost = 0;
             for (Ipp32s j = y; j < y + y_num; j++) {
                 for (Ipp32s i = x; i < x + x_num; i++) {
-                    mfxFEIH265IntraDist *intraDistLine = feiOut->IntraDist + j*feiOut->IntraPitch;
-                    cmIntraCost += intraDistLine[i].Dist;
+                    //mfxFEIH265IntraDist *intraDistLine = feiOut->IntraDist + j*feiOut->IntraPitch;
+                    //cmIntraCost += intraDistLine[i].Dist;
 
                     mfxU32 cmInterCost16x16 = IPP_MAX_32U;
                     for (Ipp8s refIdx = 0; refIdx < m_cslice->num_ref_idx[refList]; refIdx++) {
 
                         Ipp8s feiRefIdx = refIdx;
 
-                        /* use m_mapRefIdxL1ToL0 if L0 ref is in L1 (e.g. in case of GPB) */
+                        // use m_mapRefIdxL1ToL0 if L0 ref is in L1 (e.g. in case of GPB) 
                         if (refList == 1) {
                             Ipp32s idx0 = m_currFrame->m_mapRefIdxL1ToL0[refIdx];
                             if (idx0 >= 0) {
-                                continue;   /* this cost was already checked in L0 */
+                                continue;   // this cost was already checked in L0 
                             } else {
-                                /* refIdxes from L0 and L1 are in common array */
+                                // refIdxes from L0 and L1 are in common array 
                                 feiRefIdx += m_cslice->num_ref_idx[0];
                             }
                         }
 
                         mfxU32 *dist16x16line = feiOut->Dist[feiRefIdx][MFX_FEI_H265_BLK_16x16] + (j        ) * feiOut->PitchDist[MFX_FEI_H265_BLK_16x16];
-                        //mfxU32 *dist16x8line0 = feiOut->Dist[refList][refIdx][PU16x8]  + (j * 2    ) * feiOut->PitchDist[PU16x8];
-                        //mfxU32 *dist16x8line1 = feiOut->Dist[refList][refIdx][PU16x8]  + (j * 2 + 1) * feiOut->PitchDist[PU16x8];
-                        //mfxU32 *dist8x16line  = feiOut->Dist[refList][refIdx][PU8x16]  + (j        ) * feiOut->PitchDist[PU8x16];
+
                         mfxU32 *dist8x8line0  = feiOut->Dist[feiRefIdx][MFX_FEI_H265_BLK_8x8]   + (j * 2    ) * feiOut->PitchDist[MFX_FEI_H265_BLK_8x8];
                         mfxU32 *dist8x8line1  = feiOut->Dist[feiRefIdx][MFX_FEI_H265_BLK_8x8]   + (j * 2 + 1) * feiOut->PitchDist[MFX_FEI_H265_BLK_8x8];
-                        //mfxU32 *dist8x4line0  = feiOut->Dist[refList][refIdx][PU8x4]   + (j * 4    ) * feiOut->PitchDist[PU8x4];
-                        //mfxU32 *dist8x4line1  = feiOut->Dist[refList][refIdx][PU8x4]   + (j * 4 + 1) * feiOut->PitchDist[PU8x4];
-                        //mfxU32 *dist8x4line2  = feiOut->Dist[refList][refIdx][PU8x4]   + (j * 4 + 2) * feiOut->PitchDist[PU8x4];
-                        //mfxU32 *dist8x4line3  = feiOut->Dist[refList][refIdx][PU8x4]   + (j * 4 + 3) * feiOut->PitchDist[PU8x4];
-                        //mfxU32 *dist4x8line0  = feiOut->Dist[refList][refIdx][PU4x8]   + (j * 2    ) * feiOut->PitchDist[PU4x8];
-                        //mfxU32 *dist4x8line1  = feiOut->Dist[refList][refIdx][PU4x8]   + (j * 2 + 1) * feiOut->PitchDist[PU4x8];
+
                         Ipp32u dist16x16 = dist16x16line[i];
-                        //Ipp32u dist16x8 = dist16x8line0[i] + dist16x8line1[i];
-                        //Ipp32u dist8x16 = dist8x16line[i * 2] + dist8x16line[i * 2 + 1];
+
                         Ipp32u dist8x8 = dist8x8line0[i * 2] + dist8x8line0[i * 2 + 1] +
                                          dist8x8line1[i * 2] + dist8x8line1[i * 2 + 1];
-                        //Ipp32u dist8x4 = dist8x4line0[i * 2] + dist8x4line0[i * 2 + 1] +
-                        //                 dist8x4line1[i * 2] + dist8x4line1[i * 2 + 1] +
-                        //                 dist8x4line2[i * 2] + dist8x4line2[i * 2 + 1] +
-                        //                 dist8x4line3[i * 2] + dist8x4line3[i * 2 + 1];
-                        //Ipp32u dist4x8 = dist4x8line0[i * 4 + 0] + dist4x8line0[i * 4 + 1] +
-                        //                 dist4x8line0[i * 4 + 2] + dist4x8line0[i * 4 + 3] +
-                        //                 dist4x8line1[i * 4 + 0] + dist4x8line1[i * 4 + 1] +
-                        //                 dist4x8line1[i * 4 + 2] + dist4x8line1[i * 4 + 3];
+
                         if (dist16x16 < cmInterCost16x16)
                             cmInterCost16x16 = dist16x16; 
-                        //if (dist16x8 < cmInterCost16x16)
-                        //    cmInterCost16x16 = dist16x8; 
-                        //if (dist8x16 < cmInterCost16x16)
-                        //    cmInterCost16x16 = dist8x16; 
+
                         if (dist8x8 < cmInterCost16x16)
                             cmInterCost16x16 = dist8x8; 
-                        //if (dist8x4 < cmInterCost16x16)
-                        //    cmInterCost16x16 = dist8x4; 
-                        //if (dist4x8 < cmInterCost16x16)
-                        //    cmInterCost16x16 = dist4x8;
                     }
                     cmInterCost += cmInterCost16x16;
                 }
