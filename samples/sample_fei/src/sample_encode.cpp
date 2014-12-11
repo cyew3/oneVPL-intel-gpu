@@ -14,7 +14,7 @@ mfxStatus CheckOptions(sInputParams* pParams);
 
 void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
 {
-    msdk_printf(MSDK_STRING("Intel(R) Media SDK Decoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
+    msdk_printf(MSDK_STRING("AVC FEI Encoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
 
     if (strErrorMessage)
     {
