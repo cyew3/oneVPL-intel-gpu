@@ -743,6 +743,7 @@ mfxStatus H265CmCtx::SyncCurrent(mfxSyncPoint syncp, mfxU32 wait)
         if (syncp->lastEvent->WaitForTaskFinished(wait) != CM_SUCCESS) {
             return MFX_WRN_IN_EXECUTION;
         }
+        queue->DestroyEvent(syncp->lastEvent);
     }
 
     syncp->lastEvent = NULL;
