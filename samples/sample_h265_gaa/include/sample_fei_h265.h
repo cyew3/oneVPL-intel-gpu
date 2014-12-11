@@ -14,6 +14,7 @@
 #include <stdio.h>
 
 #include "mfxfeih265.h"
+#include "sample_defs.h"
 
 #if defined (LINUX) && defined (__GNUC__)
 #include <malloc.h>
@@ -54,6 +55,7 @@ typedef struct _SampleParams {
     mfxU32 NumRefFrames;
     mfxU32 NumIntraModes;
 
+    mfxChar PluginPath[MSDK_MAX_FILENAME_LEN];
 } SampleParams;
 
 typedef struct _FrameInfo {

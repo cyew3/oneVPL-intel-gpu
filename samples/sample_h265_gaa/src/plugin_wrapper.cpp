@@ -120,16 +120,26 @@ mfxStatus CH265FEI::Init(SampleParams *sp)
     /* InitFEI() */
     mfxPluginUID uid = {0};
 
-    if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
-        if (AreGuidsEqual(uid, MSDK_PLUGINGUID_NULL))
+    if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API))
+    {
+        if (sp->PluginPath[0])
         {
-            mfxIMPL impl = MFX_IMPL_HARDWARE;
-            uid = msdkGetPluginUID(impl, MSDK_VENC, MFX_CODEC_HEVC);
+            /* load from path specified on command line */
+            uid = msdkGetPluginUID(MFX_IMPL_HARDWARE, MSDK_VENC, MFX_CODEC_HEVC);
+            sts = MFXVideoUSER_LoadByPath(*m_pmfxSession.get(), &uid, 1, sp->PluginPath, -1);
         }
-        if (!AreGuidsEqual(uid, MSDK_PLUGINGUID_NULL))
+        else
         {
-            m_pUserEncPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), uid, 1));
-            if (m_pUserEncPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            /* load using GUID */
+            if (AreGuidsEqual(uid, MSDK_PLUGINGUID_NULL))
+            {
+                uid = msdkGetPluginUID(MFX_IMPL_HARDWARE, MSDK_VENC, MFX_CODEC_HEVC);
+            }
+            if (!AreGuidsEqual(uid, MSDK_PLUGINGUID_NULL))
+            {
+                m_pUserEncPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), uid, 1));
+                if (m_pUserEncPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            }
         }
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
@@ -179,7 +189,13 @@ mfxStatus CH265FEI::Init(SampleParams *sp)
 
 mfxStatus CH265FEI::Close(void)
 {
-    /* resources freed automatically */
+    /* other resources freed automatically */
+    if (m_pmfxFEI.get())
+        m_pmfxFEI->Close();
+
+    m_mfxExtParamsBuf.clear();
+    m_mfxExtFEIInputBuf.clear();
+    m_mfxExtFEIOutputBuf.clear();
 
     return MFX_ERR_NONE;
 }

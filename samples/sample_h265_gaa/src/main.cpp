@@ -33,6 +33,7 @@ static void Usage(void)
     printf("   -w width            width in pixels  (only used if params.txt not provided)\n");
     printf("   -c MaxCUSize        maximum coding unit size (16 or 32)\n");
     printf("   -m MPMode           motion partitioning mode (1 = square only, 2 = symmetric partitions, 3 = any)\n");
+    printf("   -d pluginPath       path to plugin (optional)\n");
     printf("   -y                  write output to text files\n");
     printf("\nExamples:\n");
     printf(">> sample_h265_gaa -i sourceFile.yuv -w 1280 -h 720 -n 50\n");
@@ -42,7 +43,7 @@ static void Usage(void)
 
 static void ParseCmdLine(int argc, char **argv, SampleParams *sp)
 {
-    int i, err;
+    int i, err = 0;
 
     memset(sp, 0, sizeof(SampleParams));
 
@@ -113,6 +114,37 @@ static void ParseCmdLine(int argc, char **argv, SampleParams *sp)
             sp->MPMode = atoi(argv[i+1]);
             if (sp->MPMode != 1 && sp->MPMode != 2 && sp->MPMode != 3) {
                 printf("Error - invalid MPMode\n");
+                Usage();
+            }
+            i += 2;
+            break;
+        case 'd':
+#if defined(_WIN32) || defined(_WIN64)
+            /* verify string lengths before copying */
+            size_t len;
+            len = strnlen_s(argv[i+1], MSDK_MAX_FILENAME_LEN);
+            if (len > 0 && len < MSDK_MAX_FILENAME_LEN)
+            {
+                strncpy_s(sp->PluginPath, MSDK_MAX_FILENAME_LEN, argv[i+1], len);
+            }
+            else
+            {
+                err = MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+#else
+            size_t len;
+            len = strnlen(argv[i+1], MSDK_MAX_FILENAME_LEN);
+            if (len > 0 && len < MSDK_MAX_FILENAME_LEN)
+            {
+                msdk_strncopy_s(sp->PluginPath, MSDK_MAX_FILENAME_LEN, argv[i+1], len);
+            }
+            else
+            {
+                err = MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+#endif
+            if (err) {
+                printf("Error - invalid plugin path\n");
                 Usage();
             }
             i += 2;
