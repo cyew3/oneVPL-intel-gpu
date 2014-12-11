@@ -990,10 +990,10 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
         *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
         */
-        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strlen(pParams->pluginParams.strPluginPath))
+        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && strlen(pParams->pluginParams.strPluginPath))
         {
             m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
-            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_pUserModule.get(), pParams->pluginParams.strPluginPath));
+            m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1, pParams->pluginParams.strPluginPath, (mfxU32)strlen(pParams->pluginParams.strPluginPath)));
             if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
         }
         else

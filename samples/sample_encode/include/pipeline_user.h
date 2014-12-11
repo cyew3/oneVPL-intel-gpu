@@ -15,8 +15,6 @@
 
 #include "vm/so_defs.h"
 #include "pipeline_encode.h"
-#include "mfx_plugin_base.h"
-#include "mfx_plugin_module.h"
 #include "rotate_plugin_api.h"
 
 /* This class implements the following pipeline: user plugin (frame rotation) -> mfxENCODE */
@@ -34,13 +32,12 @@ public:
     virtual void PrintInfo();
 
 protected:
-    msdk_so_handle          m_PluginModule;
-    MFXGenericPlugin*       m_pusrPlugin;
-    mfxFrameSurface1*       m_pPluginSurfaces; // frames array for rotate input
-    mfxFrameAllocResponse   m_PluginResponse;  // memory allocation response for rotate plugin
+    std::auto_ptr<MFXGenericPlugin> m_pusrPlugin;
+    mfxFrameSurface1*               m_pPluginSurfaces; // frames array for rotate input
+    mfxFrameAllocResponse           m_PluginResponse;  // memory allocation response for rotate plugin
 
-    mfxVideoParam           m_pluginVideoParams;
-    RotateParam             m_RotateParams;
+    mfxVideoParam                   m_pluginVideoParams;
+    RotateParam                     m_RotateParams;
 
     virtual mfxStatus InitRotateParam(sInputParams *pParams);
     virtual mfxStatus AllocFrames();

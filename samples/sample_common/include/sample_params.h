@@ -17,7 +17,7 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 struct sPluginParams
 {
     mfxPluginUID      pluginGuid;
-    msdk_char         strPluginPath[MSDK_MAX_FILENAME_LEN];
+    mfxChar           strPluginPath[MSDK_MAX_FILENAME_LEN];
     MfxPluginLoadType type;
     sPluginParams()
     {

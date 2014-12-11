@@ -14,6 +14,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include "pipeline_encode.h"
 #include "pipeline_user.h"
 #include <stdarg.h>
+#include <string>
 
 #define VAL_CHECK(val, argIdx, argName) \
 { \
@@ -59,8 +60,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-hw] - use platform specific SDK implementation (default)\n"));
     msdk_printf(MSDK_STRING("   [-sw] - use software implementation, if not specified platform specific SDK implementation is used\n"));
-    msdk_printf(MSDK_STRING("   [-p guid|path_to_plugin] - 32-character hexadecimal guid string or path to h265|vp8 encoder plugin\n"));
+    msdk_printf(MSDK_STRING("   [-p guid] - 32-character hexadecimal guid string\n"));
     msdk_printf(MSDK_STRING("                              (optional for Media SDK in-box plugins, required for user-encoder ones)\n"));
+    msdk_printf(MSDK_STRING("   [-path path] - path to plugin (valid only in pair with -p option)\n"));
     msdk_printf(MSDK_STRING("   [-async]                 - depth of asynchronous pipeline. default value is 4. must be between 1 and 20.\n"));
     msdk_printf(MSDK_STRING("   [-cqp]                   - constant quantization parameter (CQP BRC) bitrate control method\n"));
     msdk_printf(MSDK_STRING("                              (by default constant bitrate control method is used), should be used along with -qpi, -qpp, -qpb.\n"));
@@ -105,8 +107,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
+#if defined(_WIN32) || defined(_WIN64)
+    std::wstring wstr(MSDK_CPU_ROTATE_PLUGIN);
+    std::string str(wstr.begin(), wstr.end());
 
+    strcpy(pParams->strPluginDLLPath, str.c_str());
+#else
     msdk_opt_read(MSDK_CPU_ROTATE_PLUGIN, pParams->strPluginDLLPath);
+#endif
+
+
 
     // default implementation
     pParams->bUseHWLib = true;
@@ -187,7 +197,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-opencl")))
         {
+#if defined(_WIN32) || defined(_WIN64)
+            std::wstring wstr(MSDK_OCL_ROTATE_PLUGIN);
+            std::string str(wstr.begin(), wstr.end());
+
+            strcpy(pParams->strPluginDLLPath, str.c_str());
+#else
             msdk_opt_read(MSDK_OCL_ROTATE_PLUGIN, pParams->strPluginDLLPath);
+#endif
             pParams->nRotationAngle = 180;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-viewoutput")))
@@ -287,6 +304,20 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Number of slices is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
+        } else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-path")))
+        {
+            i++;
+#if defined(_WIN32) || defined(_WIN64)
+            msdk_char wchar[MSDK_MAX_FILENAME_LEN];
+            msdk_opt_read(strInput[i], wchar);
+            std::wstring wstr(wchar);
+            std::string str(wstr.begin(), wstr.end());
+
+            strcpy(pParams->pluginParams.strPluginPath, str.c_str());
+#else
+            msdk_opt_read(strInput[i], pParams->pluginParams.strPluginPath);
+#endif
+            pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
         }
         else // 1-character options
         {
@@ -388,8 +419,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                     }
                     else
                     {
-                        msdk_opt_read(strInput[i], pParams->pluginParams.strPluginPath);
-                        pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
+                        PrintHelp(strInput[0], MSDK_STRING("Unknown options"));
                     }
                 }
                 else {

@@ -78,7 +78,7 @@ struct sInputParams
 
     mfxU32  HEVCPluginVersion;
     mfxU8 nRotationAngle; // if specified, enables rotation plugin in mfx pipeline
-    msdk_char strPluginDLLPath[MSDK_MAX_FILENAME_LEN]; // plugin dll path and name
+    mfxChar strPluginDLLPath[MSDK_MAX_FILENAME_LEN]; // plugin dll path and name
 
     mfxU16 nAsyncDepth; // depth of asynchronous pipeline, this number can be tuned to achieve better performance
 

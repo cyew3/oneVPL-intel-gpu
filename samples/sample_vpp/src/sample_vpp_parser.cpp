@@ -78,17 +78,6 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-istab (mode)]              - enable Image Stabilization algorithm.  Mode is optional \n"));
     msdk_printf(MSDK_STRING("                                  mode of istab can be [1, 2] (def: 2)\n"));
     msdk_printf(MSDK_STRING("                                  where: 1 means upscale mode, 2 means cropping mode\n\n"));
-    msdk_printf(MSDK_STRING("   [-di_mode (mode)]            - set type of deinterlace / reverse telecine algorithm\n"));
-    msdk_printf(MSDK_STRING("                                   8 - reverse telecine for a selected telecine pattern (use -tc_pattern). Needed for PTIR\n"));
-    msdk_printf(MSDK_STRING("                                   for a selected telecine pattern removal mode\n\n"));
-    msdk_printf(MSDK_STRING("   [-tc_pattern (pattern)]      - set telecine pattern (PTIR only feature, -di_mod must be set to 8)\n"));
-    msdk_printf(MSDK_STRING("                                   4 - provide a position inside a sequence of 5 frames where the artifacts starts. Use to -tc_pos to provide position\n"));
-    msdk_printf(MSDK_STRING("                                   3 - 4:1 pattern\n"));
-    msdk_printf(MSDK_STRING("                                   2 - frame repeat pattern\n"));
-    msdk_printf(MSDK_STRING("                                   1 - 2:3:3:2 pattern\n"));
-    msdk_printf(MSDK_STRING("                                   0 - 3:2 pattern\n"));
-    msdk_printf(MSDK_STRING("   [-tc_pos (position)]         - position inside a telecine sequence of 5 frames where the artifacts starts - Value [0 - 4]\n"));
-    msdk_printf(MSDK_STRING("                                   (PTIR only feature)\n\n"));
 
     msdk_printf(MSDK_STRING("   [-n frames]                  - number of frames to VPP process\n\n"));
 #if D3D_SURFACES_SUPPORT
@@ -167,23 +156,23 @@ static mfxU32 Str2FourCC( msdk_char* strInput )
 {
     mfxU32 fourcc = MFX_FOURCC_YV12;//default
 
-    if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yv12")) || 0 == msdk_strcmp(strInput, MSDK_STRING("YV12")) )
+    if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yv12")) )
     {
         fourcc = MFX_FOURCC_YV12;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("rgb3")) || 0 == msdk_strcmp(strInput, MSDK_STRING("RGB3")) )
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("rgb3")) )
     {
         fourcc = MFX_FOURCC_RGB3;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("rgb4")) || 0 == msdk_strcmp(strInput, MSDK_STRING("RGB4")))
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("rgb4")) )
     {
         fourcc = MFX_FOURCC_RGB4;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yuy2")) || 0 == msdk_strcmp(strInput, MSDK_STRING("YUV2")))
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yuy2")) )
     {
         fourcc = MFX_FOURCC_YUY2;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("nv12")) || 0 == msdk_strcmp(strInput, MSDK_STRING("NV12")))
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("nv12")) )
     {
         fourcc = MFX_FOURCC_NV12;
     }
@@ -342,6 +331,7 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
         else if ((key.compare("stream") == 0 || key.compare("primarystream") == 0) && nStreamInd < (MAX_INPUT_STREAMS - 1))
         {
             const mfxU16 len_size = MSDK_MAX_FILENAME_LEN;
+
             if (firstStreamFound == 1)
             {
                 nStreamInd ++;
@@ -524,58 +514,6 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                     {
                         pParams->denoiseParam.factor = (mfxU16)readData;
                         pParams->denoiseParam.mode   = VPP_FILTER_ENABLED_CONFIGURED;
-                        i++;
-                    }
-                }
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-deinterlace")))
-            {
-                pParams->outFrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-                pParams->inFrameInfo[VPP_IN].PicStruct = MFX_PICSTRUCT_FIELD_TFF;
-
-                if (i + 1 < nArgNum)
-                {
-                    if (0 == msdk_strcmp(strInput[i + 1], MSDK_STRING("bff")))
-                    {
-                        pParams->outFrameInfo.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
-                        i++;
-                    }
-                }
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-di_mode")))
-            {
-                pParams->deinterlaceParam.mode = VPP_FILTER_ENABLED_DEFAULT;
-
-                if (i + 1 < nArgNum)
-                {
-                    if (MFX_ERR_NONE == msdk_opt_read(strInput[i + 1], readData))
-                    {
-                        pParams->deinterlaceParam.algorithm = (mfxU16)readData;
-                        pParams->deinterlaceParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
-                        i++;
-                    }
-                }
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-tc_pattern")))
-            {
-                if (i + 1 < nArgNum)
-                {
-                    if (MFX_ERR_NONE == msdk_opt_read(strInput[i + 1], readData))
-                    {
-                        pParams->deinterlaceParam.tc_pattern = (mfxU16)readData;
-                        i++;
-                    }
-                }
-            }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-tc_pos")))
-            {
-                pParams->deinterlaceParam.mode = VPP_FILTER_ENABLED_DEFAULT;
-
-                if (i + 1 < nArgNum)
-                {
-                    if (MFX_ERR_NONE == msdk_opt_read(strInput[i + 1], readData))
-                    {
-                        pParams->deinterlaceParam.tc_pos = (mfxU16)readData;
                         i++;
                     }
                 }

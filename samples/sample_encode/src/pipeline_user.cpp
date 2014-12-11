@@ -134,10 +134,8 @@ void CUserPipeline::DeleteFrames()
 CUserPipeline::CUserPipeline() : CEncodingPipeline()
 {
     m_pPluginSurfaces = NULL;
-    m_PluginModule = NULL;
-    m_pusrPlugin = NULL;
     MSDK_ZERO_MEMORY(m_PluginResponse);
-
+    m_pusrPlugin.reset();
     m_MVCflags = MVC_DISABLED;
 }
 
@@ -152,15 +150,11 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    m_PluginModule = msdk_so_load(pParams->strPluginDLLPath);
-    MSDK_CHECK_POINTER(m_PluginModule, MFX_ERR_NOT_FOUND);
-
-    PluginModuleTemplate::fncCreateGenericPlugin pCreateFunc = (PluginModuleTemplate::fncCreateGenericPlugin)msdk_so_get_addr(m_PluginModule, "mfxCreateGenericPlugin");
-
-    MSDK_CHECK_POINTER(pCreateFunc, MFX_ERR_NOT_FOUND);
-
-    m_pusrPlugin = (*pCreateFunc)();
-    MSDK_CHECK_POINTER(m_pusrPlugin, MFX_ERR_NOT_FOUND);
+    mfxPluginUID uid;
+    memset(&uid, 0, sizeof(mfxPluginUID));
+    m_pusrPlugin.reset((MFXGenericPlugin*)LoadPlugin(MFX_PLUGINTYPE_VIDEO_GENERAL, m_mfxSession, uid, 1, pParams->strPluginDLLPath, strlen(pParams->strPluginDLLPath)));
+    if (m_pusrPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // prepare input file reader
     sts = m_FileReader.Init(pParams->strSrcFile,
@@ -227,15 +221,15 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     sts = ResetMFXComponents(pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     // register plugin callbacks in Media SDK
-    mfxPlugin plg = make_mfx_plugin_adapter(m_pusrPlugin);
+    mfxPlugin plg = make_mfx_plugin_adapter(m_pusrPlugin.get());
     sts = MFXVideoUSER_Register(m_mfxSession, 0, &plg);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // need to call Init after registration because mfxCore interface is needed
-    sts = m_pusrPlugin->Init(&m_pluginVideoParams);
+    sts = m_pusrPlugin.get()->Init(&m_pluginVideoParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    sts = m_pusrPlugin->SetAuxParams(&m_RotateParams, sizeof(m_RotateParams));
+    sts = m_pusrPlugin.get()->SetAuxParams(&m_RotateParams, sizeof(m_RotateParams));
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     return MFX_ERR_NONE;
@@ -247,12 +241,7 @@ void CUserPipeline::Close()
 
     CEncodingPipeline::Close();
 
-    MSDK_SAFE_DELETE(m_pusrPlugin);
-    if (m_PluginModule)
-    {
-        msdk_so_free(m_PluginModule);
-        m_PluginModule = NULL;
-    }
+    m_pusrPlugin.reset();
 }
 
 mfxStatus CUserPipeline::ResetMFXComponents(sInputParams* pParams)

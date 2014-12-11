@@ -806,7 +806,16 @@ mfxStatus CmdProcessor::ParseOption__set(msdk_char* strCodecType, msdk_char* str
     }
     else
     {
+#if defined(_WIN32) || defined(_WIN64)
+        msdk_char wchar[1024];
+        msdk_opt_read(strPluginPath, wchar);
+        std::wstring wstr(wchar);
+        std::string str(wstr.begin(), wstr.end());
+
+        strcpy(pluginParams.strPluginPath, str.c_str());
+#else
         msdk_opt_read(strPluginPath, pluginParams.strPluginPath);
+#endif
         pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
     }
 

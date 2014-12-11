@@ -38,7 +38,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("Options:\n"));
     msdk_printf(MSDK_STRING("   [-hw]                     - use platform specific SDK implementation (default)\n"));
     msdk_printf(MSDK_STRING("   [-sw]                     - use software implementation, if not specified platform specific SDK implementation is used\n"));
-    msdk_printf(MSDK_STRING("   [-p guid|path_to_plugin]  - 32-character hexadecimal guid string or path to decoder plugin\n"));
+    msdk_printf(MSDK_STRING("   [-p guid]                 - 32-character hexadecimal guid string\n"));
+    msdk_printf(MSDK_STRING("   [-path path]              - path to plugin (valid only in pair with -p option)\n"));
     msdk_printf(MSDK_STRING("                               (optional for Media SDK in-box plugins, required for user-decoder ones)\n"));
     msdk_printf(MSDK_STRING("   [-f]                      - rendering framerate\n"));
 #if D3D_SURFACES_SUPPORT
@@ -250,6 +251,20 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("rendering frame rate is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
+        } else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-path")))
+        {
+            i++;
+#if defined(_WIN32) || defined(_WIN64)
+            msdk_char wchar[MSDK_MAX_FILENAME_LEN];
+            msdk_opt_read(strInput[i], wchar);
+            std::wstring wstr(wchar);
+            std::string str(wstr.begin(), wstr.end());
+
+            strcpy(pParams->pluginParams.strPluginPath, str.c_str());
+#else
+            msdk_opt_read(strInput[i], pParams->pluginParams.strPluginPath);
+#endif
+            pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
         }
         else // 1-character options
         {
@@ -257,14 +272,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             {
             case MSDK_CHAR('p'):
                 if (++i < nArgNum) {
-                    if (MFX_ERR_NONE == ConvertStringToGuid(strInput[i], pParams->pluginParams.pluginGuid)) {
+                   if (MFX_ERR_NONE == ConvertStringToGuid(strInput[i], pParams->pluginParams.pluginGuid))
+                    {
                         pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_GUID;
                     }
-                    else {
-                        msdk_opt_read(strInput[i], pParams->pluginParams.strPluginPath);
-                        pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
+                    else
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Unknown options"));
                     }
-                }
+                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-p' expects an argument\n"));
                 }
