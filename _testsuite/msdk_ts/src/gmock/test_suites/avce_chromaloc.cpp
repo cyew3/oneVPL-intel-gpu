@@ -90,7 +90,8 @@ public:
             {
                 if (au.NALU[i].SPS->vui_parameters_present_flag != 0)
                 {
-                    g_tsLog << "ERROR: vui_parameters_present_flag is " << au.NALU[i].SPS->vui_parameters_present_flag
+                    byte fl = au.NALU[i].SPS->vui_parameters_present_flag;
+                    g_tsLog << "ERROR: vui_parameters_present_flag is " << fl 
                              << " (expected 0)\n";
                     return MFX_ERR_ABORTED;
                 }
@@ -99,14 +100,16 @@ public:
             {
                 if (au.NALU[i].SPS->vui_parameters_present_flag != 1)
                 {
-                    g_tsLog << "ERROR: vui_parameters_present_flag is " << au.NALU[i].SPS->vui_parameters_present_flag
+                    byte fl = au.NALU[i].SPS->vui_parameters_present_flag;
+                    g_tsLog << "ERROR: vui_parameters_present_flag is " << fl 
                              << " (expected 1)\n";
                     return MFX_ERR_ABORTED;
                 }
 
                 if (au.NALU[i].SPS->vui->chroma_loc_info_present_flag != chroma_loc_present)
                 {
-                    g_tsLog << "ERROR: chroma_loc_info_present_flag is " << au.NALU[i].SPS->vui->chroma_loc_info_present_flag
+                    byte fl = au.NALU[i].SPS->vui->chroma_loc_info_present_flag;
+                    g_tsLog << "ERROR: chroma_loc_info_present_flag is " << fl
                             << " (expected " << chroma_loc_present
                             << ")\n";
                     return MFX_ERR_ABORTED;
@@ -114,7 +117,8 @@ public:
 
                 if (au.NALU[i].SPS->vui->chroma_sample_loc_type_bottom_field != chroma_type_bottom)
                 {
-                    g_tsLog << "ERROR: chroma_sample_loc_type_bottom_field is " << au.NALU[i].SPS->vui->chroma_sample_loc_type_bottom_field
+                    byte fl = au.NALU[i].SPS->vui->chroma_sample_loc_type_bottom_field;
+                    g_tsLog << "ERROR: chroma_sample_loc_type_bottom_field is " << fl
                             << " (expected " << chroma_type_bottom
                             << ")\n";
                     return MFX_ERR_ABORTED;
@@ -122,7 +126,8 @@ public:
 
                 if (au.NALU[i].SPS->vui->chroma_sample_loc_type_top_field != chroma_type_top)
                 {
-                    g_tsLog << "ERROR: chroma_sample_loc_type_top_field != " << au.NALU[i].SPS->vui->chroma_sample_loc_type_top_field
+                    byte fl = au.NALU[i].SPS->vui->chroma_sample_loc_type_top_field;
+                    g_tsLog << "ERROR: chroma_sample_loc_type_top_field != " << fl
                             << " (expected " << chroma_type_top
                             << ")\n";
                     return MFX_ERR_ABORTED;
