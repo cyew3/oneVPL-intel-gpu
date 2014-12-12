@@ -107,16 +107,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
-#if defined(_WIN32) || defined(_WIN64)
-    std::wstring wstr(MSDK_CPU_ROTATE_PLUGIN);
-    std::string str(wstr.begin(), wstr.end());
-
-    strcpy(pParams->strPluginDLLPath, str.c_str());
-#else
     msdk_opt_read(MSDK_CPU_ROTATE_PLUGIN, pParams->strPluginDLLPath);
-#endif
-
-
 
     // default implementation
     pParams->bUseHWLib = true;
@@ -197,14 +188,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-opencl")))
         {
-#if defined(_WIN32) || defined(_WIN64)
-            std::wstring wstr(MSDK_OCL_ROTATE_PLUGIN);
-            std::string str(wstr.begin(), wstr.end());
-
-            strcpy(pParams->strPluginDLLPath, str.c_str());
-#else
             msdk_opt_read(MSDK_OCL_ROTATE_PLUGIN, pParams->strPluginDLLPath);
-#endif
             pParams->nRotationAngle = 180;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-viewoutput")))

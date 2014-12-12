@@ -134,8 +134,9 @@ void CUserPipeline::DeleteFrames()
 CUserPipeline::CUserPipeline() : CEncodingPipeline()
 {
     m_pPluginSurfaces = NULL;
+    m_PluginModule = NULL;
+    m_pusrPlugin = NULL;
     MSDK_ZERO_MEMORY(m_PluginResponse);
-    m_pusrPlugin.reset();
     m_MVCflags = MVC_DISABLED;
 }
 
@@ -149,6 +150,16 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_NONE;
+
+    m_PluginModule = msdk_so_load(pParams->strPluginDLLPath);
+    MSDK_CHECK_POINTER(m_PluginModule, MFX_ERR_NOT_FOUND);
+
+    PluginModuleTemplate::fncCreateGenericPlugin pCreateFunc = (PluginModuleTemplate::fncCreateGenericPlugin)msdk_so_get_addr(m_PluginModule, "mfxCreateGenericPlugin");
+
+    MSDK_CHECK_POINTER(pCreateFunc, MFX_ERR_NOT_FOUND);
+
+    m_pusrPlugin = (*pCreateFunc)();
+    MSDK_CHECK_POINTER(m_pusrPlugin, MFX_ERR_NOT_FOUND);
 
     // prepare input file reader
     sts = m_FileReader.Init(pParams->strSrcFile,
@@ -175,12 +186,6 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
     // create a session for the second vpp and encode
     sts = m_mfxSession.Init(impl, &min_version);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    mfxPluginUID uid;
-    memset(&uid, 0, sizeof(mfxPluginUID));
-    m_pusrPlugin.reset((MFXGenericPlugin*)LoadPlugin(MFX_PLUGINTYPE_VIDEO_GENERAL, m_mfxSession, uid, 0, pParams->strPluginDLLPath, (mfxU32)strlen(pParams->strPluginDLLPath)+1));
-    if (m_pusrPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     sts = MFXQueryVersion(m_mfxSession , &version); // get real API version of the loaded library
@@ -221,15 +226,15 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     sts = ResetMFXComponents(pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     // register plugin callbacks in Media SDK
-    mfxPlugin plg = make_mfx_plugin_adapter(m_pusrPlugin.get());
+    mfxPlugin plg = make_mfx_plugin_adapter(m_pusrPlugin);
     sts = MFXVideoUSER_Register(m_mfxSession, 0, &plg);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // need to call Init after registration because mfxCore interface is needed
-    sts = m_pusrPlugin.get()->Init(&m_pluginVideoParams);
+    sts = m_pusrPlugin->Init(&m_pluginVideoParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    sts = m_pusrPlugin.get()->SetAuxParams(&m_RotateParams, sizeof(m_RotateParams));
+    sts = m_pusrPlugin->SetAuxParams(&m_RotateParams, sizeof(m_RotateParams));
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     return MFX_ERR_NONE;
@@ -241,7 +246,12 @@ void CUserPipeline::Close()
 
     CEncodingPipeline::Close();
 
-    m_pusrPlugin.reset();
+    MSDK_SAFE_DELETE(m_pusrPlugin);
+    if (m_PluginModule)
+    {
+        msdk_so_free(m_PluginModule);
+        m_PluginModule = NULL;
+    }
 }
 
 mfxStatus CUserPipeline::ResetMFXComponents(sInputParams* pParams)

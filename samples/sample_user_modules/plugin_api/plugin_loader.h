@@ -15,11 +15,48 @@ Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 
 #include "vm/so_defs.h"
 #include "sample_utils.h"
-#include "plugin_utils.h"
+#include "mfx_plugin_module.h"
 #include <iostream>
 #include <iomanip> // for std::setfill, std::setw
 #include <memory> // for std::auto_ptr
-#include "plugin_utils.h"
+
+class MsdkSoModule
+{
+protected:
+    msdk_so_handle m_module;
+public:
+    MsdkSoModule()
+        : m_module(NULL)
+    {
+    }
+    MsdkSoModule(const msdk_string & pluginName)
+        : m_module(NULL)
+    {
+        m_module = msdk_so_load(pluginName.c_str());
+        if (NULL == m_module)
+        {
+            MSDK_TRACE_ERROR(MSDK_STRING("Failed to load shared module: ") << pluginName);
+        }
+    }
+    template <class T>
+    T GetAddr(const std::string & fncName)
+    {
+        T pCreateFunc = reinterpret_cast<T>(msdk_so_get_addr(m_module, fncName.c_str()));
+        if (NULL == pCreateFunc) {
+            MSDK_TRACE_ERROR(MSDK_STRING("Failed to get function addres: ") << fncName.c_str());
+        }
+        return pCreateFunc;
+    }
+
+    virtual ~MsdkSoModule()
+    {
+        if (m_module)
+        {
+            msdk_so_free(m_module);
+            m_module = NULL;
+        }
+    }
+};
 
 /*
 * Rationale: class to load+register any mediasdk plugin decoder/encoder/generic by given name
@@ -198,5 +235,4 @@ inline MFXPlugin * LoadPlugin(mfxPluginType type, mfxSession session, const mfxP
 inline MFXPlugin * LoadPlugin(mfxPluginType type, mfxSession session, const mfxPluginUID & uid, mfxU32 version) {
     return LoadPluginByGUID(type, session, uid, version);
 }
-
 #endif // PLUGIN_LOADER
