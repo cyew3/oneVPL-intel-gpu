@@ -310,5 +310,8 @@
     <ClCompile Include="src\gmock\test_suites\avce_chromaloc.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mjpeg_payload.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
