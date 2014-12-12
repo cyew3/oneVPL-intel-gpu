@@ -219,7 +219,7 @@ void FillPpsBuffer(
     Task const & task,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps)
 {
-    pps.CurrOriginalPic.Index7Bits      = 0; //no idx for raw
+    pps.CurrOriginalPic.Index7Bits      = task.m_idxRec;
     pps.CurrOriginalPic.AssociatedFlag  = !!(task.m_frameType & MFX_FRAMETYPE_REF);
 
     pps.CurrReconstructedPic.Index7Bits     = task.m_idxRec;
@@ -275,7 +275,7 @@ void FillSliceBuffer(
         cs.slice_id = i;
 
         cs.slice_segment_address = 0;
-        cs.NumLCUsInSlice = CeilDiv(par.mfx.FrameInfo.Width, LCUSize) * CeilDiv(par.mfx.FrameInfo.Height, LCUSize);
+        cs.NumLCUsInSlice = CeilDiv(par.m_sps.pic_width_in_luma_samples, LCUSize) * CeilDiv(par.m_sps.pic_height_in_luma_samples, LCUSize);
         cs.bLastSliceOfPic = (i == slice.size() - 1);
     }
 }

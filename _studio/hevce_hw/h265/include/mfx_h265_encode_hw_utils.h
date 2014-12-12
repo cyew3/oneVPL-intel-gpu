@@ -128,18 +128,19 @@ private:
 
 typedef struct _DpbFrame
 {
+    mfxI32   m_poc;
+    bool     m_ltr;
+    mfxU16   m_frameType;
     mfxU8    m_idxRaw;
     mfxU8    m_idxRec;
-    mfxU16   m_frameType;
-    mfxI32   m_poc;
     mfxMemId m_midRec;
-    bool     m_ltr;
+    mfxMemId m_midRaw;
+    mfxFrameSurface1*   m_surf; //input surface, may be opaque
 }DpbFrame, DpbArray[MAX_DPB_SIZE];
 
 typedef struct _Task : DpbFrame
 {
     mfxBitstream*       m_bs;
-    mfxFrameSurface1*   m_surf; //input surface, may be opaque
     mfxFrameSurface1*   m_surf_real;
     mfxEncodeCtrl       m_ctrl;
     Slice               m_sh;
@@ -158,7 +159,6 @@ typedef struct _Task : DpbFrame
 
     DpbArray m_dpb[2]; //0 - before encoding, 1 - after
 
-    mfxMemId m_midRaw;
     mfxMemId m_midBs;
 
     bool m_resetBRC;

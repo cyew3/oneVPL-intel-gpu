@@ -96,7 +96,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     if (m_vpar.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         request.Type        = MFX_MEMTYPE_D3D_INT;
-        request.NumFrameMin = m_vpar.AsyncDepth + m_vpar.mfx.GopRefDist - 1;
+        request.NumFrameMin = m_vpar.AsyncDepth + m_vpar.mfx.GopRefDist - 1 + m_vpar.mfx.NumRefFrame;
 
         sts = m_raw.Alloc(&m_core, request, true);
         MFX_CHECK_STS(sts);
@@ -179,7 +179,7 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
     if (tmp.mfx.EncodedOrder)
         request->NumFrameMin = 1;
     else
-        request->NumFrameMin = tmp.AsyncDepth + tmp.mfx.GopRefDist - 1;
+        request->NumFrameMin = tmp.AsyncDepth + tmp.mfx.GopRefDist - 1 + tmp.mfx.NumRefFrame;
 
     request->NumFrameSuggested = request->NumFrameMin;
 
@@ -417,13 +417,14 @@ mfxStatus Plugin::FreeResources(mfxThreadTask thread_task, mfxStatus /*sts*/)
     assert(thread_task);
     Task& task = *(Task*)thread_task;
 
-    m_core.DecreaseReference(&task.m_surf->Data);
-
-    ReleaseResource(m_raw, task.m_midRaw);
     ReleaseResource(m_bs,  task.m_midBs);
 
     if (!(task.m_frameType & MFX_FRAMETYPE_REF))
+    {
         ReleaseResource(m_rec, task.m_midRec);
+        m_core.DecreaseReference(&task.m_surf->Data);
+        ReleaseResource(m_raw, task.m_midRaw);
+    }
     else if (task.m_stage != STAGE_READY)
     {
         ReleaseResource(m_rec, task.m_midRec);
@@ -440,7 +441,11 @@ mfxStatus Plugin::FreeResources(mfxThreadTask thread_task, mfxStatus /*sts*/)
                 break;
 
         if (isDpbEnd(task.m_dpb[1], j))
+        {
             ReleaseResource(m_rec, task.m_dpb[0][i].m_midRec);
+            m_core.DecreaseReference(&task.m_dpb[0][i].m_surf->Data);
+            ReleaseResource(m_raw, task.m_dpb[0][i].m_midRaw);
+        }
     }
 
     m_task.Ready(&task);

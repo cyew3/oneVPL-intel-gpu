@@ -49,7 +49,7 @@ public:
             return MFX_ERR_UNKNOWN;
         }
 
-        *mfxPlg = tmp_pplg->m_adapter.operator mfxPlugin();
+        *mfxPlg = tmp_pplg->m_adapter;
         tmp_pplg->m_createdByDispatcher = true;
 
         return MFX_ERR_NONE;

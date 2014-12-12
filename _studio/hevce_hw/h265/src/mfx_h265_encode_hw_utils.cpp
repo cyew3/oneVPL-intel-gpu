@@ -328,8 +328,8 @@ void MfxVideoParam::SyncVideoToCalculableParam()
 
     if (mfx.NumRefFrame)
     {
+        NumRefLX[1] = 1;
         NumRefLX[0] = mfx.NumRefFrame - (mfx.GopRefDist > 1);
-        NumRefLX[1] = mfx.GopRefDist > 1;
     } else
     {
         NumRefLX[0] = 0;
@@ -620,10 +620,6 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
             STRPS const & rps = m_sps.strps[i];
 
             assert(0 == rps.inter_ref_pic_set_prediction_flag);
-
-            if (   isB && rps.num_positive_pics == 0
-                || isP && rps.num_positive_pics != 0)
-                continue;
 
             Zero(STR);
             Zero(nSTR);
@@ -1049,6 +1045,19 @@ void ConfigureTask(
             Insert(task.m_refPicList[0], 1, ltr);
             task.m_numRefActive[0] ++;
         }
+    }
+
+    // encode P as GPB
+    if (isP)
+    {
+        mfxU8& l1 = task.m_numRefActive[1];
+
+        for (mfxI16 i = task.m_numRefActive[0] - 1; i >= 0 && l1 < par.NumRefLX[1]; i --)
+            task.m_refPicList[1][l1++] = task.m_refPicList[0][i];
+
+        task.m_frameType &= ~MFX_FRAMETYPE_P;
+        task.m_frameType |= MFX_FRAMETYPE_B;
+        task.m_codingType = 3;
     }
 
     // update dpb

@@ -583,7 +583,7 @@ void SetDefaults(
     if (!par.mfx.GopPicSize)
         par.mfx.GopPicSize = (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP ? 1 : 0xFFFF);
 
-    if (!par.NumRefLX[1] && par.mfx.GopRefDist != 1)
+    if (!par.NumRefLX[1])
         par.NumRefLX[1] = MFX_MIN(1, hwCaps.MaxNum_Reference1);
 
     if (!par.NumRefLX[0])
@@ -603,8 +603,8 @@ void SetDefaults(
         }
     }
 
-    //if (!par.LTRInterval && par.NumRefLX[0] > 1 && par.mfx.GopPicSize > 32)
-    //    par.LTRInterval = 16;
+    if (!par.LTRInterval && par.NumRefLX[0] > 1 && par.mfx.GopPicSize > 32)
+        par.LTRInterval = 16;
 
     if (!par.mfx.NumRefFrame)
         par.mfx.NumRefFrame = par.NumRefLX[0] + par.NumRefLX[1];
