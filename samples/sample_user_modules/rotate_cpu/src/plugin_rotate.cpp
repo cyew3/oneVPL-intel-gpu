@@ -25,7 +25,7 @@ PluginModuleTemplate g_PluginModule = {
     NULL,
     NULL,
     Rotate::CreateGenericPlugin,
-    Rotate::CreatePlugin
+    NULL
 };
 
 /* Rotate class implementation */
@@ -33,8 +33,7 @@ Rotate::Rotate() :
     m_bInited(false),
     m_pTasks(NULL),
     m_bIsInOpaque(false),
-    m_bIsOutOpaque(false),
-    m_adapter(this)
+    m_bIsOutOpaque(false)
 {
     m_MaxNumTasks = 0;
 

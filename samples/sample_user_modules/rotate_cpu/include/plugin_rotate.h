@@ -86,13 +86,6 @@ public:
         return new Rotate();
     }
 
-    static mfxStatus CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
-        uid;
-        mfxStatus sts = MFX_ERR_NONE;
-        Rotate* plg = new Rotate();
-        *plugin = plg->m_adapter.operator mfxPlugin();
-        return sts;
-    }
     virtual mfxStatus Close();
 
 protected:
@@ -117,7 +110,6 @@ protected:
 
     bool m_bIsInOpaque;
     bool m_bIsOutOpaque;
-    MFXPluginAdapter<MFXGenericPlugin> m_adapter;
 };
 
 #endif // __SAMPLE_PLUGIN_H__
