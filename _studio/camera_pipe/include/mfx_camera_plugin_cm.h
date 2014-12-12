@@ -365,17 +365,20 @@ public:
     CmEvent *EnqueueSliceTasks(mfxU32 sliceNum)
     {
         int result;
-        CmEvent *e = CM_NO_EVENT;
-        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_RestoreGreen, sliceNum), e, TS_Slice_8x8)) != CM_SUCCESS)
+        CmEvent *e1 = CM_NO_EVENT;
+        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_RestoreGreen, sliceNum), e1, TS_Slice_8x8)) != CM_SUCCESS)
             throw CmRuntimeError();
-        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_RestoreBlueRed, sliceNum), e, TS_Slice_8x8)) != CM_SUCCESS)
+        CmEvent *e2 = CM_NO_EVENT;
+        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_RestoreBlueRed, sliceNum), e2, TS_Slice_8x8)) != CM_SUCCESS)
             throw CmRuntimeError();
-        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_SAD, sliceNum), e, TS_Slice_8x8_np)) != CM_SUCCESS)
+        CmEvent *e3 = CM_NO_EVENT;
+        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_SAD, sliceNum), e3, TS_Slice_8x8_np)) != CM_SUCCESS)
             throw CmRuntimeError();
-        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_DecideAvg, sliceNum), e, TS_Slice_16x16_np)) != CM_SUCCESS)
+        CmEvent *e4 = CM_NO_EVENT;
+        if ((result = m_queue->Enqueue(CAM_PIPE_KERNEL_ARRAY(task_DecideAvg, sliceNum), e4, TS_Slice_16x16_np)) != CM_SUCCESS)
             throw CmRuntimeError();
 
-        return e;
+        return e4;
     };
 
     CmSurface2D * CreateCmSurface2D(void *pSrc);

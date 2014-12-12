@@ -141,6 +141,8 @@ protected:
     };
 
     UMC::Mutex m_guard;
+    UMC::Mutex m_guard_hard_reset;
+    mfxU32 m_FramesTillHardReset;
     UMC::Mutex m_guard1;
 
 #ifdef WRITE_CAMERA_LOG

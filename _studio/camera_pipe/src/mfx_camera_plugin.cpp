@@ -666,6 +666,7 @@ mfxStatus MFXCamera_Plugin::Close()
 
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
     m_isInitialized = false;
+    m_FramesTillHardReset = CAMERA_FRAMES_TILL_HARD_RESET;
 
     CAMERA_DEBUG_LOG("MFXVideoVPP_Close device %p m_cmSurfIn %p, %d active threads\n", m_cmDevice, m_cmSurfIn, m_activeThreadCount);
 
@@ -888,6 +889,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     m_mfxVideoParam = *par;
     m_core = m_session->m_pCORE.get();
 
+    m_FramesTillHardReset = CAMERA_FRAMES_TILL_HARD_RESET;
     CAMERA_DEBUG_LOG("Init ExternalFrameAllocator NOT SET\n");
 
     m_platform = m_core->GetHWType();
@@ -1553,6 +1555,55 @@ mfxStatus MFXCamera_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid
 
     mfxStatus sts = MFX_ERR_NONE;
 
+    if ( ! m_useSW )
+    {
+        // In case of CM, we need to do a hard reset every N frames to free up the memory.
+        UMC::AutomaticUMCMutex guard(m_guard_hard_reset);
+        m_FramesTillHardReset--;
+
+        if ( 0 == m_FramesTillHardReset)
+        {
+            m_FramesTillHardReset = CAMERA_FRAMES_TILL_HARD_RESET;
+
+            sts = WaitForActiveThreads();
+
+            m_raw16padded.Free();
+            m_raw16aligned.Free();
+            m_aux8.Free();
+
+            if (m_cmSurfIn)
+                m_cmDevice->DestroySurface(m_cmSurfIn);
+
+            if (m_avgFlagSurf)
+                m_cmDevice->DestroySurface(m_avgFlagSurf);
+            if (m_gammaCorrectSurf)
+                m_cmDevice->DestroySurface(m_gammaCorrectSurf);
+
+            if (m_gammaPointSurf)
+                m_cmDevice->DestroySurface(m_gammaPointSurf);
+
+            if (m_gammaOutSurf)
+                m_cmDevice->DestroySurface(m_gammaOutSurf);
+
+            if (m_paddedSurf)
+                m_cmDevice->DestroySurface(m_paddedSurf);
+
+            if (m_vignetteMaskSurf)
+                m_cmDevice->DestroySurface(m_vignetteMaskSurf);
+
+            if( m_LUTSurf)
+                m_cmDevice->DestroySurface(m_LUTSurf);
+
+            m_cmCtx->Close();
+            m_cmDevice.Reset(0);
+
+            // Init again
+            m_cmDevice.Reset(CreateCmDevicePtr(m_core));
+            m_cmCtx.reset(new CmContext(m_FrameSizeExtra, m_cmDevice, &m_Caps, m_platform));
+            m_cmCtx->CreateThreadSpaces(&m_FrameSizeExtra);
+            sts = AllocateInternalSurfaces();
+        }
+    }
     sts = CameraRoutine(this, task, uid_p, uid_a);
     MFX_CHECK_STS(sts);
 
