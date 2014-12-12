@@ -24,6 +24,7 @@ Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 PluginModuleTemplate g_PluginModule = {
     NULL,
     NULL,
+    Rotate::CreateGenericPlugin,
     Rotate::CreatePlugin
 };
 
@@ -32,7 +33,8 @@ Rotate::Rotate() :
     m_bInited(false),
     m_pTasks(NULL),
     m_bIsInOpaque(false),
-    m_bIsOutOpaque(false)
+    m_bIsOutOpaque(false),
+    m_adapter(this)
 {
     m_MaxNumTasks = 0;
 
