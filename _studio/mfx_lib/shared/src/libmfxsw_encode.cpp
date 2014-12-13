@@ -674,7 +674,12 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
 
 // specific plug-in case to run additional task after main task 
 #if !defined(AS_HEVCE_PLUGIN) 
-                task.pSrc[1] =  bs;
+                {
+                    if (session->m_plgEnc.get()) //to avoid possible side effect on other codecs
+                        task.pSrc[1] = surface;
+                    else
+                        task.pSrc[1] =  bs;
+                }
 #endif
 
 #ifdef MFX_TRACE_ENABLE
@@ -701,7 +706,12 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
 
                 // specific plug-in case to run additional task after main task 
 #if !defined(AS_HEVCE_PLUGIN) 
-                task.pSrc[1] =  bs;
+                {
+                    if (session->m_plgEnc.get()) //to avoid possible side effect on other codecs
+                        task.pSrc[1] = surface;
+                    else
+                        task.pSrc[1] =  bs;
+                }
 #endif
 
 #ifdef MFX_TRACE_ENABLE
