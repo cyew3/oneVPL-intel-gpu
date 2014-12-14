@@ -52,7 +52,8 @@ private:
     mfxFEIH265Param  m_feiParam;
     mfxFEIH265Input  m_feiH265In[2];
     mfxFEIH265Output m_feiH265Out;
-    mfxFEISyncPoint  m_syncp[2];
+    mfxFEISyncPoint  m_syncpIntra[2];
+    mfxFEISyncPoint  m_syncpInter[2][2][MAX_NUM_REF_IDX];
     
     FEIFrame         m_feiFrame[2];
 };

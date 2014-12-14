@@ -717,15 +717,18 @@ mfxFEISyncPoint H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxFEIH265Output *feiO
         }
     }
 
-    /* set up sync point for current frame */
-    if (lastEvent[curIdx]) {
-        m_syncPoint[curIdx].lastEvent = lastEvent[curIdx];
-        m_syncPoint[curIdx].feiOut = feiOut;
-        m_syncPoint[curIdx].curIdx = curIdx;
-        //fprintf(stderr, "Assigning sync point - syncp = 0x%08x  last event = 0x%08x\n", &m_syncPoint[curIdx], m_syncPoint[curIdx].lastEvent);
+    /* allocate new sync object for current frame - will be freed in SyncCurrent() */
+    mfxSyncPoint syncPoint = new (_mfxSyncPoint);
+
+    if (syncPoint) {
+        /* return NULL if memory alloc fails */
+        syncPoint->lastEvent = lastEvent[curIdx];
+        syncPoint->feiOut = feiOut;
+        syncPoint->curIdx = curIdx;
+        //fprintf(stderr, "Assigning sync point - ptr = 0x%p  lastEvent = 0x%p  feiOut = 0x%p  curIdx = %d)\n", syncPoint, syncPoint->lastEvent, syncPoint->feiOut, syncPoint->curIdx);
     }
 
-    return &(m_syncPoint[curIdx]);
+    return syncPoint;
 }
 
 /* assume wait time = -1 means wait forever (docs not clear) 
@@ -737,6 +740,8 @@ mfxStatus H265CmCtx::SyncCurrent(mfxSyncPoint syncp, mfxU32 wait)
 
     if (!syncp)
         return MFX_ERR_NULL_PTR;
+
+    //fprintf(stderr, "SyncCurrent              - ptr = 0x%p  lastEvent = 0x%p  feiOut = 0x%p  curIdx = %d)\n", syncp, syncp->lastEvent, syncp->feiOut, syncp->curIdx);
 
     /* wait for current frame to finish */
     if (syncp->lastEvent) {
@@ -792,6 +797,9 @@ mfxStatus H265CmCtx::SyncCurrent(mfxSyncPoint syncp, mfxU32 wait)
     feiOut->IntraPitch8x8   = um_pitchGrad8x8[syncp->curIdx] / sizeof(mfxU32);
     feiOut->IntraPitch16x16 = um_pitchGrad16x16[syncp->curIdx] / sizeof(mfxU32);
     feiOut->IntraPitch32x32 = um_pitchGrad32x32[syncp->curIdx] / sizeof(mfxU32);
+
+    /* free the sync object allocated at end of RunVME() */
+    delete syncp;
 
     return MFX_ERR_NONE;
 }

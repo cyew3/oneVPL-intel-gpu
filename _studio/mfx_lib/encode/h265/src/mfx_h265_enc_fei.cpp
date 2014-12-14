@@ -359,6 +359,14 @@ FeiContext::FeiContext(const H265VideoParam *param, VideoCORE *core)
     InitOutputFiles(&m_feiParam);
 #endif
 
+    for (Ipp32s j = 0; j < 2; j++) {
+        m_syncpIntra[j] = NULL;
+        for (Ipp32s k = 0; k < MAX_NUM_REF_IDX; k++) {
+            m_syncpInter[j][0][k] = NULL;
+            m_syncpInter[j][1][k] = NULL;
+        }
+    }
+
     for (Ipp32s j = 0; j < 2; j++)
         ResetFEIFrame(&m_feiFrame[j]);
 
@@ -452,7 +460,6 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
     // take right ptrs
     mfxFEIH265Input *feiH265In = &m_feiH265In[feiInIdx];
     FEIFrame *feiFrame = &m_feiFrame[feiInIdx];
-    mfxFEISyncPoint *syncp = &m_syncp[feiInIdx];
 
     feiFrame->EncOrder = frameIn->m_encOrder;
 
@@ -469,7 +476,7 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
 #endif
 
         UpdateFrameStateFEI(feiH265In, frameIn, 0, 0, sliceIn->slice_type);
-        H265FEI_ProcessFrameAsync(m_feiH265, feiH265In, feiH265Out, syncp);
+        H265FEI_ProcessFrameAsync(m_feiH265, feiH265In, feiH265Out, &m_syncpIntra[feiInIdx]);
         feiFrame->IntraDone = 1;
     }
 
@@ -495,7 +502,7 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
 
             if (feiFrame->RefDone[0][refIdx] == 0) {
                 UpdateFrameStateFEI(feiH265In, frameIn, frameRef, refIdx, sliceIn->slice_type);
-                H265FEI_ProcessFrameAsync(m_feiH265, feiH265In, feiH265Out, syncp);
+                H265FEI_ProcessFrameAsync(m_feiH265, feiH265In, feiH265Out, &m_syncpInter[feiInIdx][0][refIdx]);
                 feiFrame->RefDone[0][refIdx] = 1;
             }  
         }
@@ -519,7 +526,7 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
 
                 if (feiFrame->RefDone[1][refIdxB] == 0) {
                     UpdateFrameStateFEI(feiH265In, frameIn, frameRef, refIdx, sliceIn->slice_type);
-                    H265FEI_ProcessFrameAsync(m_feiH265, feiH265In, feiH265Out, syncp);
+                    H265FEI_ProcessFrameAsync(m_feiH265, feiH265In, feiH265Out, &m_syncpInter[feiInIdx][1][refIdxB]);
                     feiFrame->RefDone[1][refIdxB] = 1;
                 }  
             }
@@ -577,7 +584,25 @@ void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice 
 
     if (prevFrameDone) {
 #ifndef SAVE_FEI_STATE
-        H265FEI_SyncOperation(m_feiH265, m_syncp[feiInIdx], -1);
+        /* sync all pending operations (non-null) */
+        if (m_syncpIntra[feiInIdx])  {
+            H265FEI_SyncOperation(m_feiH265, m_syncpIntra[feiInIdx], -1);
+            m_syncpIntra[feiInIdx] = NULL;
+        }
+
+        for (refIdx = 0; refIdx < MAX_NUM_REF_IDX; refIdx++) {
+            if (m_syncpInter[feiInIdx][0][refIdx]) {
+                H265FEI_SyncOperation(m_feiH265, m_syncpInter[feiInIdx][0][refIdx], -1);
+                m_syncpInter[feiInIdx][0][refIdx] = NULL;
+            }
+        }
+
+        for (refIdx = 0; refIdx < MAX_NUM_REF_IDX; refIdx++) {
+            if (m_syncpInter[feiInIdx][1][refIdx]) {
+                H265FEI_SyncOperation(m_feiH265, m_syncpInter[feiInIdx][1][refIdx], -1);
+                m_syncpInter[feiInIdx][1][refIdx] = NULL;
+            }
+        }
 #endif
         ResetFEIFrame(&m_feiFrame[feiInIdx]);
     }
