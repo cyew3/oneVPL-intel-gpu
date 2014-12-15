@@ -2651,9 +2651,12 @@ mfxStatus MFXDecPipeline::Play()
   #define PIPELINE_STOP    11
 
     #ifndef WIN_TRESHOLD_MOBILE
-    DWORD  GLBENCH_MESSAGE;
-    GLBENCH_MESSAGE = RegisterWindowMessage(_T("GLBenchMessage"));
-    if (GLBENCH_MESSAGE) SendNotifyMessage(HWND_BROADCAST, GLBENCH_MESSAGE, 0, PIPELINE_START);
+    DWORD  GLBENCH_MESSAGE = 0;
+    if (m_inParams.nTestId != NOT_ASSIGNED_VALUE)
+    {
+        GLBENCH_MESSAGE = RegisterWindowMessage(_T("GLBenchMessage"));
+        if (GLBENCH_MESSAGE) SendNotifyMessage(HWND_BROADCAST, GLBENCH_MESSAGE, 0, PIPELINE_START);
+    }
     #endif
 
 #else

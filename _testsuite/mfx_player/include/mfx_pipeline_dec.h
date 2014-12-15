@@ -270,6 +270,8 @@ struct sCommandlineParams
 
       InputPicstruct  = NOT_ASSIGNED_VALUE;
       OutputPicstruct = NOT_ASSIGNED_VALUE;
+
+      nTestId = NOT_ASSIGNED_VALUE;
   }
 };
 

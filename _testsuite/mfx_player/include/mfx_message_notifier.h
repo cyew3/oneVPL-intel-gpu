@@ -51,7 +51,8 @@ public:
         , m_entered()
         , m_testId(testId)
     {
-        Started();
+        if (m_testId != NOT_ASSIGNED_VALUE)
+            Started();
     }
     void Started()
     {
@@ -72,7 +73,7 @@ public:
     }
     ~AutoMessageNotifier()
     {
-        if (m_entered > 0)
+        if (m_entered > 0 && m_testId != NOT_ASSIGNED_VALUE)
         {
             Abort();
         }
