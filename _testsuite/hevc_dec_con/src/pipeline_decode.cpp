@@ -158,7 +158,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     m_mfxVideoParams.mfx.CodecId = pParams->videoType;
 
     // prepare bit stream
-    sts = InitMfxBitstream(&m_mfxBS, 1024 * 1024);
+    sts = InitMfxBitstream(&m_mfxBS, 10*1024 * 1024);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     /* Here we actually define the following codec initialization scheme:
@@ -222,10 +222,10 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     m_eWorkMode = pParams->mode;
-    //if (m_eWorkMode == MODE_FILE_DUMP) {
+    if (m_eWorkMode == MODE_FILE_DUMP) {
         // prepare YUV file writer
         sts = m_FileWriter.Init(pParams->strDstFile, pParams->numViews);
-    //} else if (m_eWorkMode == MODE_RENDERING) {
+    }// else if (m_eWorkMode == MODE_RENDERING) {
     //    sts = CreateRenderingWindow(pParams, m_bIsMVC && (m_memType == D3D9_MEMORY));
     //} else if (m_eWorkMode != MODE_PERFORMANCE) {
     //    msdk_printf(MSDK_STRING("error: unsupported work mode\n"));
@@ -498,8 +498,8 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     // specify memory type 
     m_mfxVideoParams.IOPattern = (mfxU16)(m_memType != SYSTEM_MEMORY ? MFX_IOPATTERN_OUT_VIDEO_MEMORY : MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
-    //m_mfxVideoParams.AsyncDepth = 4;
-    m_mfxVideoParams.AsyncDepth = 1;
+    m_mfxVideoParams.AsyncDepth = 8;
+    //m_mfxVideoParams.AsyncDepth = 1;
 
     return MFX_ERR_NONE;
 }

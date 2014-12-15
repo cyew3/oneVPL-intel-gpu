@@ -11,53 +11,53 @@
 
 #pragma warning(disable: 4297)
 
-mfxStatus MFX_CDECL MFXVideoUSER_Load(mfxSession session, const mfxPluginUID *uid, mfxU32 version)
+mfxStatus MFX_CDECL MFXVideoUSER_Load(mfxSession , const mfxPluginUID *, mfxU32 )
 {
     throw std::runtime_error("No MFXVideoUSER_Load in standalone app.");
 }
 
-mfxStatus MFX_CDECL MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
+mfxStatus MFX_CDECL MFXVideoVPP_Query(mfxSession , mfxVideoParam *, mfxVideoParam *)
 {
     throw std::runtime_error("No MFXVideoVPP_Query in standalone app.");
 }
 
-mfxStatus MFX_CDECL MFXVideoVPP_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest request[2])
+mfxStatus MFX_CDECL MFXVideoVPP_QueryIOSurf(mfxSession , mfxVideoParam *, mfxFrameAllocRequest [2])
 {
     throw std::runtime_error("No MFXVideoVPP_QueryIOSurf in standalone app.");
 }
 
-mfxStatus MFX_CDECL MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
+mfxStatus MFX_CDECL MFXVideoVPP_Init(mfxSession , mfxVideoParam *)
 {
     throw std::runtime_error("No MFXVideoVPP_Init in standalone app.");
 }
 
-mfxStatus MFX_CDECL MFXVideoVPP_Reset(mfxSession session, mfxVideoParam *par)
+mfxStatus MFX_CDECL MFXVideoVPP_Reset(mfxSession , mfxVideoParam *)
 {
     throw std::runtime_error("No MFXVideoVPP_Reset in standalone app.");
 }
 
-mfxStatus MFX_CDECL MFXVideoVPP_Close(mfxSession session)
+mfxStatus MFX_CDECL MFXVideoVPP_Close(mfxSession )
 {
     throw std::runtime_error("No MFXVideoVPP_Close in standalone app.");
 }
 
 
-mfxStatus MFX_CDECL MFXVideoVPP_GetVideoParam(mfxSession session, mfxVideoParam *par)
+mfxStatus MFX_CDECL MFXVideoVPP_GetVideoParam(mfxSession , mfxVideoParam *)
 {
     throw std::runtime_error("No MFXVideoVPP_GetVideoParam in standalone app.");
 }
 
-mfxStatus MFX_CDECL MFXVideoVPP_GetVPPStat(mfxSession session, mfxVPPStat *stat)
+mfxStatus MFX_CDECL MFXVideoVPP_GetVPPStat(mfxSession , mfxVPPStat *)
 {
     throw std::runtime_error("No MFXVideoVPP_GetVPPStat in standalone app.");
 }
 
-mfxStatus MFX_CDECL MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
+mfxStatus MFX_CDECL MFXVideoVPP_RunFrameVPPAsync(mfxSession , mfxFrameSurface1 *, mfxFrameSurface1 *, mfxExtVppAuxData *, mfxSyncPoint *)
 {
     throw std::runtime_error("No MFXVideoVPP_RunFrameVPPAsync in standalone app.");
 }
 
-mfxStatus MFX_CDECL MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp)
+mfxStatus MFX_CDECL MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession , mfxFrameSurface1 *, mfxFrameSurface1 *, mfxFrameSurface1 **, mfxSyncPoint *)
 {
     throw std::runtime_error("No MFXVideoVPP_RunFrameVPPAsyncEx in standalone app.");
 }
@@ -352,11 +352,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if ((pParams->mode == MODE_FILE_DUMP) && (0 == msdk_strlen(pParams->strDstFile)))
-    {
-        msdk_printf(MSDK_STRING("error: destination file name was not found"));
-        return MFX_ERR_UNSUPPORTED;
-    }
+    if (msdk_strlen(pParams->strDstFile))
+        pParams->mode = MODE_FILE_DUMP;
+    else 
+        pParams->mode = MODE_PERFORMANCE;
 
     //if (MFX_CODEC_MPEG2 != pParams->videoType && 
     //    MFX_CODEC_AVC   != pParams->videoType && 
