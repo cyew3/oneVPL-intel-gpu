@@ -1663,7 +1663,7 @@ bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265
         if (processInfo->m_processInProgress[DEC_PROCESS_ID])
             continue;
 
-        if (refAU != 0 && pSlice->GetSliceHeader()->slice_temporal_mvp_enabled_flag)
+        if (refAU != 0)// && pSlice->GetSliceHeader()->slice_temporal_mvp_enabled_flag)
         {
             if (processInfo->m_curCUToProcess[DEC_PROCESS_ID] + (Ipp32s)info->m_pFrame->getCD()->m_WidthInCU >= refAU->m_curCUToProcess[DEC_PROCESS_ID])
                 break;
