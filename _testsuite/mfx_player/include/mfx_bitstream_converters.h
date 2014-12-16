@@ -402,30 +402,30 @@ public:
 
         mfxU32 planeSize;
         mfxU32 w, h, i, pitch;
-        mfxU8  *ptr, *ptr2;
+        mfxU8  *ptrU, *ptrV;
 
         w = info.CropW >> 1;
         h = info.CropH >> 1;
 
         pitch = (data.PitchLow + ((mfxU32)data.PitchHigh << 16)) >> 1;
 
-        ptr = data.U + (info.CropX >> 1) + (info.CropY >> 1) * pitch;
-        ptr2 = data.V + (info.CropX >> 1) + (info.CropY >> 1) * pitch;
+        ptrU = data.U + (info.CropX >> 1) + (info.CropY >> 1) * pitch;
+        ptrV = data.V + (info.CropX >> 1) + (info.CropY >> 1) * pitch;
 
         if(pitch == w) 
         {
             planeSize = w * h;
-            MFX_CHECK_WITH_ERR(planeSize == BSUtil::MoveNBytes(ptr, bs, planeSize), MFX_ERR_MORE_DATA);
-            MFX_CHECK_WITH_ERR(planeSize == BSUtil::MoveNBytes(ptr2, bs, planeSize), MFX_ERR_MORE_DATA);
+            MFX_CHECK_WITH_ERR(planeSize == BSUtil::MoveNBytes(ptrV, bs, planeSize), MFX_ERR_MORE_DATA);
+            MFX_CHECK_WITH_ERR(planeSize == BSUtil::MoveNBytes(ptrU, bs, planeSize), MFX_ERR_MORE_DATA);
         } else 
         {
             for(i = 0; i <h ; i++) 
             {
-                MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(ptr + i*pitch, bs, w), MFX_ERR_MORE_DATA);
+                MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(ptrV + i*pitch, bs, w), MFX_ERR_MORE_DATA);
             }
             for(i = 0; i < h; i++) 
             {
-                MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(ptr2 + i*pitch, bs, w), MFX_ERR_MORE_DATA);
+                MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(ptrU + i*pitch, bs, w), MFX_ERR_MORE_DATA);
             }
         }
         return MFX_ERR_NONE;

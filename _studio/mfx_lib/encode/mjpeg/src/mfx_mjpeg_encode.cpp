@@ -178,9 +178,9 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
 
                 pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
                 pDataIn->SetPlanePitch(pitch * numFields, 0);
-                pDataIn->SetPlanePointer(surface->Data.U + (frameInfo->CropX >> 1) + (fieldOffset >> 1), 1);
+                pDataIn->SetPlanePointer(surface->Data.V + (frameInfo->CropX >> 1) + (fieldOffset >> 1), 1);
                 pDataIn->SetPlanePitch((pitch >> 1) * numFields, 1);
-                pDataIn->SetPlanePointer(surface->Data.V + (frameInfo->CropX >> 1) + (fieldOffset >> 1), 2);
+                pDataIn->SetPlanePointer(surface->Data.U + (frameInfo->CropX >> 1) + (fieldOffset >> 1), 2);
                 pDataIn->SetPlanePitch((pitch >> 1) * numFields, 2);
             }
             else if(surface->Info.FourCC == MFX_FOURCC_YUY2)

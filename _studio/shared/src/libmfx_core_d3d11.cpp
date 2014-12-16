@@ -845,10 +845,10 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
                 srcPitch >>= 1;
                 dstPitch >>= 1;
 
-                sts = pFastCopy->Copy(pDst->Data.V, dstPitch, (mfxU8 *)sLockRect.pData + (sSurfDesc.Height * sLockRect.RowPitch * 5) / 4, srcPitch, roi);
+                sts = pFastCopy->Copy(pDst->Data.V, dstPitch, (mfxU8 *)sLockRect.pData + sSurfDesc.Height * sLockRect.RowPitch, srcPitch, roi);
                 MFX_CHECK_STS(sts);
 
-                sts = pFastCopy->Copy(pDst->Data.U, dstPitch, (mfxU8 *)sLockRect.pData + sSurfDesc.Height * sLockRect.RowPitch, srcPitch, roi);
+                sts = pFastCopy->Copy(pDst->Data.U, dstPitch, (mfxU8 *)sLockRect.pData + (sSurfDesc.Height * sLockRect.RowPitch * 5) / 4, srcPitch, roi);
                 MFX_CHECK_STS(sts);
 
                 break;
