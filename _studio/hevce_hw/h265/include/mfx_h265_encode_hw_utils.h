@@ -335,6 +335,16 @@ inline bool isDpbEnd(DpbArray const & dpb, mfxU32 idx) { return idx >= MAX_DPB_S
 
 mfxU8 GetFrameType(MfxVideoParam const & video, mfxU32 frameOrder);
 
+void UpdateDPB(
+    MfxVideoParam const & par,
+    DpbFrame const & task,
+    DpbArray & dpb);
+
+bool isLTR(
+    DpbArray const & dpb,
+    mfxU32 LTRInterval,
+    mfxI32 poc);
+
 void ConfigureTask(
     Task &                task,
     Task const &          prevTask,

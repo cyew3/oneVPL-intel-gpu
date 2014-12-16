@@ -451,7 +451,7 @@ void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
 
         for (mfxU32 i = 0; i < sps.num_long_term_ref_pics_sps; i++)
         {
-            bs.PutBits(sps.log2_max_pic_order_cnt_lsb_minus4, sps.lt_ref_pic_poc_lsb_sps[i] );
+            bs.PutBits(sps.log2_max_pic_order_cnt_lsb_minus4 + 4, sps.lt_ref_pic_poc_lsb_sps[i] );
             bs.PutBit(sps.used_by_curr_pic_lt_sps_flag[i] );
         }
     }

@@ -413,17 +413,11 @@ struct Slice
 
     struct LongTerm
     {
-        union
-        {
-            mfxU32 lt_idx_sps;
-            struct
-            {
-                mfxU32 poc_lsb_lt               : 31;
-                mfxU32 used_by_curr_pic_lt_flag :  1;
-            };
-        };
-        mfxU32 delta_poc_msb_present_flag :  1;
-        mfxU32 delta_poc_msb_cycle_lt     : 31;
+        mfxU8  lt_idx_sps                 :  5;
+        mfxU8  used_by_curr_pic_lt_flag   :  1;
+        mfxU8  delta_poc_msb_present_flag :  1;
+        mfxU32 poc_lsb_lt;
+        mfxU32 delta_poc_msb_cycle_lt;
     } lt[MAX_NUM_LONG_TERM_PICS];
 
     mfxU8  ref_pic_list_modification_flag_lx[2];

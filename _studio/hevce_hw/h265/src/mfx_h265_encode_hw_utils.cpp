@@ -521,10 +521,36 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     //LT
     if (LTRInterval)
     {
-        m_sps.long_term_ref_pics_present_flag   = 1;
-        m_sps.num_long_term_ref_pics_sps        = 0;
-        //m_sps.lt_ref_pic_poc_lsb_sps[0]         = (mfxU16)LTRInterval;
-        //m_sps.used_by_curr_pic_lt_sps_flag[0]   = 0;
+        mfxU32 MaxPocLsb  = (1<<(m_sps.log2_max_pic_order_cnt_lsb_minus4+4));
+        DpbArray dpb = {};
+        DpbFrame cur = {};
+
+        Fill(dpb, IDX_INVALID);
+
+        m_sps.long_term_ref_pics_present_flag = 1;
+
+        for (mfxI32 poc = 0; m_sps.num_long_term_ref_pics_sps < 32; poc ++)
+        {
+            cur.m_frameType = GetFrameType(*this, poc);
+
+            if (poc > 0 && (cur.m_frameType & MFX_FRAMETYPE_IDR))
+                break;
+
+            if (cur.m_frameType & MFX_FRAMETYPE_REF)
+            {
+                cur.m_poc    = poc;
+                cur.m_idxRec = mfxU8(poc % mfx.NumRefFrame);
+
+                UpdateDPB(*this, cur, dpb);
+
+                if (isLTR(dpb, LTRInterval, poc))
+                {
+                    m_sps.lt_ref_pic_poc_lsb_sps[m_sps.num_long_term_ref_pics_sps] = mfxU16(poc & (MaxPocLsb - 1));
+                    m_sps.used_by_curr_pic_lt_sps_flag[m_sps.num_long_term_ref_pics_sps] = 1;
+                    m_sps.num_long_term_ref_pics_sps ++;
+                }
+            }
+        }
     }
 
     m_sps.temporal_mvp_enabled_flag             = 1; // SKL ?
@@ -758,7 +784,6 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
         if (nDPBLT)
         {
             assert(m_sps.long_term_ref_pics_present_flag);
-            //TODO: check LT from SPS
 
             mfxU32 MaxPocLsb  = (1<<(m_sps.log2_max_pic_order_cnt_lsb_minus4+4));
             mfxU32 DeltaPocMsbCycleLt = 0;
@@ -773,6 +798,38 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
             MFX_SORT(DPBLT, nDPBLT, >);
 
             for (nLTR = 0, j = 0; j < nDPBLT; j ++)
+            {
+                bool found = false;
+
+                for (i = 0; i < m_sps.num_long_term_ref_pics_sps; i ++)
+                {
+                    if (   mfxU16(DPBLT[j] & (MaxPocLsb - 1)) == m_sps.lt_ref_pic_poc_lsb_sps[i]
+                        && isCurrRef(task, DPBLT[j]) == !!m_sps.used_by_curr_pic_lt_sps_flag[i])
+                    {
+                        Slice::LongTerm & curlt = s.lt[s.num_long_term_sps];
+                        curlt.lt_idx_sps = i;
+                        curlt.poc_lsb_lt = m_sps.lt_ref_pic_poc_lsb_sps[i];
+                        curlt.used_by_curr_pic_lt_flag = !!m_sps.used_by_curr_pic_lt_sps_flag[i];
+                        curlt.delta_poc_msb_cycle_lt = 
+                            (task.m_poc - s.pic_order_cnt_lsb - (DPBLT[j] - curlt.poc_lsb_lt)) 
+                            / MaxPocLsb - DeltaPocMsbCycleLt;
+                        curlt.delta_poc_msb_present_flag = !!curlt.delta_poc_msb_cycle_lt;
+                        DeltaPocMsbCycleLt += curlt.delta_poc_msb_cycle_lt;
+                        s.num_long_term_sps ++;
+                        
+                        if (curlt.used_by_curr_pic_lt_flag)
+                            LTR[nLTR++] = DPBLT[j];
+
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                    break;
+            }
+
+            for (; j < nDPBLT; j ++)
             {
                 Slice::LongTerm & curlt = s.lt[s.num_long_term_sps + s.num_long_term_pics];
 
@@ -1016,6 +1073,66 @@ template<class A> void Remove(A& _from, mfxU32 _where, mfxU32 _num = 1)
     memset(&_from[sizeof(_from)/sizeof(_from[0]) - _num], IDX_INVALID, sizeof(_from[0]) * _num);
 }
 
+void UpdateDPB(
+    MfxVideoParam const & par,
+    DpbFrame const & task,
+    DpbArray & dpb)
+{
+    mfxU16 end = 0; // DPB end
+    mfxU16 st0 = 0; // first ST ref in DPB
+
+    // frames stored in DPB in POC ascending order,
+    // LTRs before STRs (use LTR-candidate as STR as long as it possible)
+
+    while (!isDpbEnd(dpb, end)) end ++;
+
+    // sliding window over STRs
+    if (end && end == par.mfx.NumRefFrame)
+    {
+        for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0 ++);
+
+        Remove(dpb, st0 == end ? 0 : st0);
+        end --;
+    }
+
+    dpb[end++] = task;
+
+    if (par.LTRInterval)
+    {
+        // mark/replace LTR in DPB
+        while (dpb[st0].m_ltr && st0 < end) st0 ++;
+
+        if (st0 < end && end == par.mfx.NumRefFrame)
+        {
+            if (!st0)
+            {
+                dpb[st0].m_ltr = true;
+            }
+            else if (dpb[st0].m_poc - dpb[0].m_poc >= (mfxI32)par.LTRInterval)
+            {
+                dpb[st0].m_ltr = true;
+                Remove(dpb, 0);
+                end --;
+            }
+        }
+    }
+}
+
+bool isLTR(
+    DpbArray const & dpb,
+    mfxU32 LTRInterval,
+    mfxI32 poc)
+{
+    mfxI32 LTRCandidate = dpb[0].m_poc;
+
+    for (mfxU16 i = 1; !isDpbEnd(dpb, i); i ++)
+        if (   dpb[i].m_poc > LTRCandidate
+            && dpb[i].m_poc - LTRCandidate >= (mfxI32)LTRInterval)
+            LTRCandidate = dpb[i].m_poc;
+
+    return (poc == LTRCandidate) || (LTRCandidate == 0 && poc >= (mfxI32)LTRInterval);
+}
+
 void ConfigureTask(
     Task &                task,
     Task const &          prevTask,
@@ -1058,7 +1175,9 @@ void ConfigureTask(
 
     if (!isI)
     {
-        mfxU8 l0 = 0, l1 = 0, ltr = IDX_INVALID;
+        mfxU8& l0 = task.m_numRefActive[0];
+        mfxU8& l1 = task.m_numRefActive[1];
+        mfxU8 ltr = IDX_INVALID;
         mfxU8 NumStRefL0 = (mfxU8)(par.NumRefLX[0]);
 
         for (mfxU8 i = 0; !isDpbEnd(task.m_dpb[0], i); i ++)
@@ -1072,13 +1191,6 @@ void ConfigureTask(
             }
             else if (isB)
                 task.m_refPicList[1][l1++] = i;
-        }
-
-        assert(l0 > 0);
-
-        if (isB && !l1)
-        {
-            task.m_refPicList[1][l1++] = task.m_refPicList[0][l0-1];
         }
 
         NumStRefL0 -= (ltr != IDX_INVALID);
@@ -1095,9 +1207,6 @@ void ConfigureTask(
             l1 = (mfxU8)par.NumRefLX[1];
         }
 
-        task.m_numRefActive[0] = l0;
-        task.m_numRefActive[1] = l1;
-
         // reorder STRs to POC descending order
         for (mfxU8 lx = 0; lx < 2; lx ++)
             MFX_SORT_COMMON(task.m_refPicList[lx], task.m_numRefActive[lx],
@@ -1106,9 +1215,14 @@ void ConfigureTask(
         if (ltr != IDX_INVALID)
         {
             // use LTR as 2nd reference
-            Insert(task.m_refPicList[0], 1, ltr);
-            task.m_numRefActive[0] ++;
+            Insert(task.m_refPicList[0], !!l0, ltr);
+            l0 ++;
         }
+
+        assert(l0 > 0);
+
+        if (isB && !l1)
+            task.m_refPicList[1][l1++] = task.m_refPicList[0][l0-1];
     }
 
     // encode P as GPB
@@ -1130,64 +1244,12 @@ void ConfigureTask(
     else
         Copy(task.m_dpb[1], task.m_dpb[0]);
 
-    // frames stored in DPB in POC ascending order,
-    // LTRs before STRs (use LTR-candidate as STR as long as it possible)
     if (isRef)
     {
-        DpbArray& dpb = task.m_dpb[1];
-        mfxU16 end = 0; // DPB end
-        mfxU16 st0 = 0; // first ST ref in DPB
+        UpdateDPB(par, task, task.m_dpb[1]);
 
-        while (!isDpbEnd(dpb, end)) end ++;
-
-        // sliding window over STRs
-        if (end && end == par.mfx.NumRefFrame)
-        {
-            for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0 ++);
-
-            Remove(dpb, st0 == end ? 0 : st0);
-            end --;
-        }
-
-        dpb[end++] = task;
-
-        if (par.LTRInterval)
-        {
-            // mark/replace LTR in DPB
-            {
-                while (dpb[st0].m_ltr && st0 < end) st0 ++;
-
-                if (st0 < end && end == par.mfx.NumRefFrame)
-                {
-                    if (!st0)
-                    {
-                        dpb[st0].m_ltr = true;
-                    }
-                    else if (dpb[st0].m_poc - dpb[0].m_poc >= (mfxI32)par.LTRInterval)
-                    {
-                        dpb[st0].m_ltr = true;
-                        Remove(dpb, 0);
-                        end --;
-                    }
-                }
-            }
-
-            // is current frame will be used as LTR
-            {
-                mfxI32 LTRCandidate = dpb[0].m_poc;
-
-                for (mfxU16 i = 1; i < end; i ++)
-                {
-                    if (    (dpb[i].m_poc % par.LTRInterval) <= (LTRCandidate % par.LTRInterval)
-                         && dpb[i].m_poc > LTRCandidate)
-                    {
-                        LTRCandidate = dpb[i].m_poc;
-                    }
-                }
-
-                task.m_ltr = (task.m_poc == LTRCandidate);
-            }
-        }
+        // is current frame will be used as LTR
+        task.m_ltr = isLTR(task.m_dpb[1], par.LTRInterval, task.m_poc);
     }
 
     task.m_shNUT = mfxU8(isIDR ? IDR_W_RADL 
