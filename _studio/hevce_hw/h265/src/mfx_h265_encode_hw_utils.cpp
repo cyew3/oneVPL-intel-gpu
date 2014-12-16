@@ -262,6 +262,7 @@ MfxVideoParam::MfxVideoParam()
     , TargetKbps      (0)
     , MaxKbps         (0)
     , LTRInterval     (0)
+    , LCUSize         (DEFAULT_LCU_SIZE)
 {
     Zero(*(mfxVideoParam*)this);
     Zero(NumRefLX);
@@ -282,6 +283,7 @@ MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
     NumRefLX[0]      = par.NumRefLX[0];
     NumRefLX[1]      = par.NumRefLX[1];
     LTRInterval      = par.LTRInterval;
+    LCUSize          = par.LCUSize;
 }
 
 MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
@@ -309,10 +311,11 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool /*query*/)
 
 void MfxVideoParam::SyncVideoToCalculableParam()
 {
-    mfxU32 multiplier = MFX_MAX(mfx.BRCParamMultiplier, 1);
+    mfxU32 multiplier = Max<mfxU32>(mfx.BRCParamMultiplier, 1);
 
     BufferSizeInKB = mfx.BufferSizeInKB * multiplier;
     LTRInterval    = 0;
+    LCUSize        = DEFAULT_LCU_SIZE;
 
     if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -335,6 +338,8 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         NumRefLX[0] = 0;
         NumRefLX[1] = 0;
     }
+
+    m_slice.resize(0);
 }
 
 void MfxVideoParam::SyncCalculableToVideoParam()
@@ -345,10 +350,10 @@ void MfxVideoParam::SyncCalculableToVideoParam()
 
     if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
-        maxVal32 = MFX_MAX(maxVal32, TargetKbps);
+        maxVal32 = Max(maxVal32, TargetKbps);
 
         if (mfx.RateControlMethod != MFX_RATECONTROL_AVBR)
-            maxVal32 = MFX_MAX(maxVal32, MFX_MAX(MaxKbps, InitialDelayInKB));
+            maxVal32 = Max(maxVal32, Max(MaxKbps, InitialDelayInKB));
     }
 
     mfx.BRCParamMultiplier = mfxU16((maxVal32 + 0x10000) / 0x10000);
@@ -367,6 +372,29 @@ void MfxVideoParam::SyncCalculableToVideoParam()
             mfx.MaxKbps          = (mfxU16)CeilDiv(MaxKbps, mfx.BRCParamMultiplier);
         }
     }
+    mfx.NumSlice = (mfxU16)m_slice.size();
+}
+
+mfxU8 GetAspectRatioIdc(mfxU16 w, mfxU16 h)
+{
+    if (w ==   0 || h ==  0) return  0;
+    if (w ==   1 && h ==  1) return  1;
+    if (w ==  12 && h == 11) return  2;
+    if (w ==  10 && h == 11) return  3;
+    if (w ==  16 && h == 11) return  4;
+    if (w ==  40 && h == 33) return  5;
+    if (w ==  24 && h == 11) return  6;
+    if (w ==  20 && h == 11) return  7;
+    if (w ==  32 && h == 11) return  8;
+    if (w ==  80 && h == 33) return  9;
+    if (w ==  18 && h == 11) return 10;
+    if (w ==  15 && h == 11) return 11;
+    if (w ==  64 && h == 33) return 12;
+    if (w == 160 && h == 99) return 13;
+    if (w ==   4 && h ==  3) return 14;
+    if (w ==   3 && h ==  2) return 15;
+    if (w ==   2 && h ==  1) return 16;
+    return 255;
 }
 
 void MfxVideoParam::SyncMfxToHeadersParam()
@@ -422,7 +450,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     m_sps.log2_max_pic_order_cnt_lsb_minus4 = Clip3(0U, 12U, mfx.GopRefDist > 1 ? CeilLog2(mfx.GopRefDist + slo.max_dec_pic_buffering_minus1) + 3 : 0U);
 
     m_sps.log2_min_luma_coding_block_size_minus3   = 0; // SKL
-    m_sps.log2_diff_max_min_luma_coding_block_size = 2; // SKL
+    m_sps.log2_diff_max_min_luma_coding_block_size = CeilLog2(LCUSize) - 3 - m_sps.log2_min_luma_coding_block_size_minus3;
     m_sps.log2_min_transform_block_size_minus2     = 0;
     m_sps.log2_diff_max_min_transform_block_size   = 3;
     m_sps.max_transform_hierarchy_depth_inter      = 2;
@@ -501,7 +529,43 @@ void MfxVideoParam::SyncMfxToHeadersParam()
 
     m_sps.temporal_mvp_enabled_flag             = 1; // SKL ?
     m_sps.strong_intra_smoothing_enabled_flag   = 0; // SKL
-    m_sps.vui_parameters_present_flag           = 0;
+
+    m_sps.vui_parameters_present_flag = 1;
+
+    m_sps.vui.aspect_ratio_info_present_flag = 1;
+    if (m_sps.vui.aspect_ratio_info_present_flag)
+    {
+        m_sps.vui.aspect_ratio_idc = GetAspectRatioIdc(mfx.FrameInfo.AspectRatioW, mfx.FrameInfo.AspectRatioH);
+        if (m_sps.vui.aspect_ratio_idc == 255)
+        {
+            m_sps.vui.sar_width  = mfx.FrameInfo.AspectRatioW;
+            m_sps.vui.sar_height = mfx.FrameInfo.AspectRatioH;
+        }
+    }
+
+    {
+        mfxFrameInfo& fi = mfx.FrameInfo;
+        mfxU16 SubWidthC[4] = {1,2,2,1};
+        mfxU16 SubHeightC[4] = {1,2,1,1};
+        mfxU16 cropUnitX = SubWidthC[m_sps.chroma_format_idc];
+        mfxU16 cropUnitY = SubHeightC[m_sps.chroma_format_idc];
+
+        m_sps.vui.def_disp_win_left_offset      = (fi.CropX / cropUnitX);
+        m_sps.vui.def_disp_win_right_offset     = (m_sps.pic_width_in_luma_samples - fi.CropW - fi.CropX) / cropUnitX;
+        m_sps.vui.def_disp_win_top_offset       = (fi.CropY / cropUnitY);
+        m_sps.vui.def_disp_win_bottom_offset    = (m_sps.pic_height_in_luma_samples - fi.CropH - fi.CropY) / cropUnitY;
+        m_sps.vui.default_display_window_flag   =    m_sps.vui.def_disp_win_left_offset
+                                                  || m_sps.vui.def_disp_win_right_offset
+                                                  || m_sps.vui.def_disp_win_top_offset
+                                                  || m_sps.vui.def_disp_win_bottom_offset;
+    }
+
+    m_sps.vui.timing_info_present_flag = !!m_vps.timing_info_present_flag;
+    if (m_sps.vui.timing_info_present_flag)
+    {
+        m_sps.vui.num_units_in_tick = m_vps.num_units_in_tick;
+        m_sps.vui.time_scale        = m_vps.time_scale;
+    }
 
     Zero(m_pps);
     m_pps.seq_parameter_set_id = m_sps.seq_parameter_set_id;

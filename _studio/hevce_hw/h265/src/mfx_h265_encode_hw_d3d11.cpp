@@ -345,12 +345,14 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
 {
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
-    const mfxU32 MaxCompBufDesc = 16;
-    ENCODE_COMPBUFFERDESC compBufDesc[MaxCompBufDesc] = {};
+    mfxU32 MaxCompBufDesc = 7 + m_slice.size();
+    std::vector<ENCODE_COMPBUFFERDESC> compBufDesc(MaxCompBufDesc);
     ENCODE_PACKEDHEADER_DATA * pPH = 0;
     ENCODE_INPUT_DESC ein = {};
     ENCODE_EXECUTE_PARAMS executeParams = {};
-    executeParams.pCompressedBuffers = compBufDesc;
+
+    executeParams.pCompressedBuffers = &compBufDesc[0];
+    Zero(compBufDesc);
 
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
@@ -397,9 +399,11 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
     pPH = PackHeader(PPS_NUT); assert(pPH);
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
 
-    //TODO: add multi-slice
-    pPH = PackSliceHeader(task, &m_slice[0].SliceQpDeltaBitOffset); assert(pPH);
-    ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA, *pPH, 1);
+    for (mfxU32 i = 0; i < m_slice.size(); i ++)
+    {
+        pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset); assert(pPH);
+        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA, *pPH, 1);
+    }
 
     try
     {

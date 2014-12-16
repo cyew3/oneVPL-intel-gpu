@@ -260,23 +260,21 @@ mfxU16 CodingTypeToSliceType(mfxU16 ct)
 
 void FillSliceBuffer(
     MfxVideoParam const & par,
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & sps,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & /*sps*/,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice)
-{
-    mfxU32 LCUSize = (1 << (sps.log2_max_coding_block_size_minus3 + 3));
-    slice.resize(1);
+{   
+    slice.resize(par.m_slice.size());
 
     for (mfxU16 i = 0; i < slice.size(); i ++)
     {
         ENCODE_SET_SLICE_HEADER_HEVC & cs = slice[i];
         Zero(cs);
 
-        cs.slice_id = i;
-
-        cs.slice_segment_address = 0;
-        cs.NumLCUsInSlice = CeilDiv(par.m_sps.pic_width_in_luma_samples, LCUSize) * CeilDiv(par.m_sps.pic_height_in_luma_samples, LCUSize);
-        cs.bLastSliceOfPic = (i == slice.size() - 1);
+        cs.slice_id              = i;
+        cs.slice_segment_address = par.m_slice[i].SegmentAddress;
+        cs.NumLCUsInSlice        = par.m_slice[i].NumLCU;
+        cs.bLastSliceOfPic       = (i == slice.size() - 1);
     }
 }
 
@@ -437,11 +435,11 @@ ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(mfxU32 nut)
     return &*m_cur;
 }
 
-ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackSliceHeader(Task const & task, mfxU32* qpd_offset)
+ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackSliceHeader(Task const & task, mfxU32 id, mfxU32* qpd_offset)
 {
     NewHeader();
 
-    m_packer.GetSSH(task, m_cur->pData, m_cur->DataLength, qpd_offset);
+    m_packer.GetSSH(task, id, m_cur->pData, m_cur->DataLength, qpd_offset);
     m_cur->BufferSize = m_cur->DataLength;
     m_cur->SkipEmulationByteCount = 3;
     m_cur->DataLength *= 8;

@@ -417,7 +417,7 @@ public:
     void Reset(MfxVideoParam const & par);
 
     ENCODE_PACKEDHEADER_DATA* PackHeader(mfxU32 nut);
-    ENCODE_PACKEDHEADER_DATA* PackSliceHeader(Task const & task, mfxU32* qpd_offset);
+    ENCODE_PACKEDHEADER_DATA* PackSliceHeader(Task const & task, mfxU32 id, mfxU32* qpd_offset);
 
 private:
     std::vector<ENCODE_PACKEDHEADER_DATA>           m_buf;

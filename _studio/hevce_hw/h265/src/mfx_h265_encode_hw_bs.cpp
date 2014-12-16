@@ -46,7 +46,12 @@ void BitstreamWriter::Reset(mfxU8* bs, mfxU32 size, mfxU8 bitOffset)
 
 void BitstreamWriter::PutBits(mfxU32 n, mfxU32 b)
 {
-    assert(n <= 24);
+    assert(n <= sizeof(b) * 8);
+    while (n > 24)
+    {
+        n -= 16;
+        PutBits(16, (b >> n)); 
+    }
 
     b <<= (32 - n);
 
@@ -269,10 +274,8 @@ void HeaderPacker::PackVPS(BitstreamWriter& bs, VPS const &  vps)
 
     if (vps.timing_info_present_flag)
     {
-        bs.PutBits(24, (vps.num_units_in_tick >> 8));
-        bs.PutBits( 8, (vps.num_units_in_tick & 0xFF));
-        bs.PutBits(24, (vps.time_scale >> 8));
-        bs.PutBits( 8, (vps.time_scale & 0xFF));
+        bs.PutBits(32, vps.num_units_in_tick);
+        bs.PutBits(32, vps.time_scale);
 
         bs.PutBit(vps.poc_proportional_to_timing_flag);
 
@@ -286,6 +289,93 @@ void HeaderPacker::PackVPS(BitstreamWriter& bs, VPS const &  vps)
 
     bs.PutBit(0); //vps.extension_flag
     bs.PutTrailingBits();
+}
+
+void HeaderPacker::PackVUI(BitstreamWriter& bs, VUI const & vui)
+{
+    bs.PutBit(vui.aspect_ratio_info_present_flag);
+
+    if (vui.aspect_ratio_info_present_flag)
+    {
+        bs.PutBits(8, vui.aspect_ratio_idc);
+        if (vui.aspect_ratio_idc == 255)
+        {
+            bs.PutBits(16, vui.sar_width);
+            bs.PutBits(16, vui.sar_height);
+        }
+    }
+
+    bs.PutBit(vui.overscan_info_present_flag);
+
+    if (vui.overscan_info_present_flag)
+        bs.PutBit(vui.overscan_appropriate_flag);
+
+    bs.PutBit(vui.video_signal_type_present_flag);
+
+    if (vui.video_signal_type_present_flag)
+    {
+        bs.PutBits(3, vui.video_format);
+        bs.PutBit(vui.video_full_range_flag);
+        bs.PutBit(vui.colour_description_present_flag);
+
+        if (vui.colour_description_present_flag)
+        {
+            bs.PutBits(8, vui.colour_primaries);
+            bs.PutBits(8, vui.transfer_characteristics);
+            bs.PutBits(8, vui.matrix_coeffs);
+        }
+    }
+
+    bs.PutBit(vui.chroma_loc_info_present_flag);
+
+    if (vui.chroma_loc_info_present_flag)
+    {
+        bs.PutUE(vui.chroma_sample_loc_type_top_field);
+        bs.PutUE(vui.chroma_sample_loc_type_bottom_field);
+    }
+    
+    bs.PutBit(vui.neutral_chroma_indication_flag );
+    bs.PutBit(vui.field_seq_flag                 );
+    bs.PutBit(vui.frame_field_info_present_flag  );
+    bs.PutBit(vui.default_display_window_flag    );
+    
+    if (vui.default_display_window_flag)
+    {
+        bs.PutUE(vui.def_disp_win_left_offset   );
+        bs.PutUE(vui.def_disp_win_right_offset  );
+        bs.PutUE(vui.def_disp_win_top_offset    );
+        bs.PutUE(vui.def_disp_win_bottom_offset );
+    }
+    
+    bs.PutBit(vui.timing_info_present_flag);
+
+    if (vui.timing_info_present_flag)
+    {
+        bs.PutBits(32, vui.num_units_in_tick );
+        bs.PutBits(32, vui.time_scale        );
+        bs.PutBit(vui.poc_proportional_to_timing_flag);
+
+        if (vui.poc_proportional_to_timing_flag)
+            bs.PutUE(vui.num_ticks_poc_diff_one_minus1);
+
+        bs.PutBit(vui.hrd_parameters_present_flag);
+
+        assert(vui.hrd_parameters_present_flag == 0);
+    }
+    
+    bs.PutBit(vui.bitstream_restriction_flag);
+
+    if (vui.bitstream_restriction_flag)
+    {
+        bs.PutBit(vui.tiles_fixed_structure_flag              );
+        bs.PutBit(vui.motion_vectors_over_pic_boundaries_flag );
+        bs.PutBit(vui.restricted_ref_pic_lists_flag           );
+        bs.PutUE(vui.min_spatial_segmentation_idc  );
+        bs.PutUE(vui.max_bytes_per_pic_denom       );
+        bs.PutUE(vui.max_bits_per_min_cu_denom     );
+        bs.PutUE(vui.log2_max_mv_length_horizontal );
+        bs.PutUE(vui.log2_max_mv_length_vertical   );
+    }
 }
 
 void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
@@ -371,7 +461,8 @@ void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
 
     bs.PutBit(sps.vui_parameters_present_flag);
 
-    assert(0 == sps.vui_parameters_present_flag);
+    if (sps.vui_parameters_present_flag)
+        PackVUI(bs, sps.vui);
     
     bs.PutBit(0); //sps.extension_flag
 
@@ -727,6 +818,7 @@ void HeaderPacker::PackSTRPS(BitstreamWriter& bs, const STRPS* sets, mfxU32 num,
 
 HeaderPacker::HeaderPacker()
     : m_par(0)
+    , m_bs(m_bs_ssh, sizeof(m_bs_ssh))
 {
 }
 
@@ -769,18 +861,28 @@ mfxStatus HeaderPacker::Reset(MfxVideoParam const & par)
     return sts;
 }
 
-void HeaderPacker::GetSSH(Task const & task, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset)
+void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset)
 {
-    BitstreamWriter rbsp(m_bs_ssh, sizeof(m_bs_ssh));
+    BitstreamWriter& rbsp = m_bs;
     NALU nalu = {0, task.m_shNUT, 0, 1};
 
-    //TODO: add multi-slice
-
     assert(m_par);
+    assert(id < m_par->m_slice.size());
 
-    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, task.m_sh, qpd_offset);
+    if (id == 0)
+        rbsp.Reset();
 
-    buf         = m_bs_ssh;
+    Slice sh = task.m_sh;
+    sh.first_slice_segment_in_pic_flag = (id == 0);
+    sh.segment_address = m_par->m_slice[id].SegmentAddress;
+
+    buf = m_bs_ssh + CeilDiv(rbsp.GetOffset(), 8);
+
+    PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset);
+
+    if (qpd_offset)
+        *qpd_offset -= (buf - m_bs_ssh) * 8;
+
     sizeInBytes = CeilDiv(rbsp.GetOffset(), 8);
 }
 

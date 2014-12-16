@@ -253,6 +253,63 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool query)
     return sts;
 }
 
+mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
+{
+    mfxU32 nCol = CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
+    mfxU32 nRow = CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize);
+    mfxU32 nLCU = nCol * nRow;
+    mfxU32 nSlice = Min(nLCU, Max<mfxU32>(par.mfx.NumSlice, 1));
+    mfxU32 nLcuPerSlice = CeilDiv(nLCU, nSlice);
+
+    if (SliceStructure == 0)
+    {
+        nSlice = 1;
+        nLcuPerSlice = nLCU;
+    }
+    else if (SliceStructure < 4)
+    {
+        nSlice = Min(nSlice, nRow);
+        mfxU32 nRowsPerSlice = CeilDiv(nRow, nSlice);
+
+        if (SliceStructure == 1)
+        {
+            mfxU32 r0 = nRowsPerSlice;
+            mfxU32 r1 = nRowsPerSlice;
+
+            while (((r0 & (r0 - 1)) || (nRow % r0)) && r0 < nRow)
+                r0 ++;
+            
+            while (((r1 & (r1 - 1)) || (nRow % r1)) && r1)
+                r1 --;
+
+            nRowsPerSlice = (r1 > 0 && (nRowsPerSlice - r1 < r0 - nRowsPerSlice)) ? r1 : r0;
+
+            nSlice = CeilDiv(nRow, nRowsPerSlice);
+        }
+        else
+        {
+            while (nRowsPerSlice * (nSlice - 1) >= nRow)
+            {
+                nSlice ++;
+                nRowsPerSlice = CeilDiv(nRow, nSlice);
+            }
+        }
+
+        nLcuPerSlice = nRowsPerSlice * nCol;
+    }
+
+    par.m_slice.resize(nSlice);
+    
+    for (mfxU32 i = 0; i < nSlice; i ++)
+    {
+        par.m_slice[i].NumLCU = (i == nSlice-1) ? nLCU : nLcuPerSlice;
+        par.m_slice[i].SegmentAddress = (i > 0) ? (par.m_slice[i-1].SegmentAddress + par.m_slice[i-1].NumLCU) : 0;
+        nLCU -= par.m_slice[i].NumLCU;
+    }
+
+    return (mfxU16)nSlice;
+}
+
 mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
 {
     mfxU32 unsupported = 0, changed = 0, incompatible = 0;
@@ -266,7 +323,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
 
     if (!IsAligned(par.mfx.FrameInfo.Height, HW_SURF_ALIGN_H))
     {
-        par.mfx.FrameInfo.Height = Align(par.mfx.FrameInfo.Width, HW_SURF_ALIGN_H);
+        par.mfx.FrameInfo.Height = Align(par.mfx.FrameInfo.Height, HW_SURF_ALIGN_H);
         changed ++;
     }
 
@@ -397,12 +454,6 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
         }
     }
 
-    if (par.mfx.NumSlice != 0)
-    {
-        par.mfx.NumSlice = 0;
-        unsupported ++;
-    }
-
     if (   par.mfx.FrameInfo.ChromaFormat != 0
         && par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
     {
@@ -468,6 +519,17 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
             }
         }
     }
+    
+    if (par.mfx.NumSlice != 0)
+    {
+        MakeSlices(par, caps.SliceStructure);
+
+        if (par.mfx.NumSlice != par.m_slice.size())
+        {
+            par.mfx.NumSlice = (mfxU16)par.m_slice.size();
+            changed ++;
+        }
+    }
 
     sts = CheckProfile(par);
         
@@ -513,8 +575,11 @@ void SetDefaults(
     if (!par.mfx.TargetUsage)
         par.mfx.TargetUsage = 4;
 
-    if (!par.mfx.NumSlice)
-        par.mfx.NumSlice = 1;
+    if (!par.mfx.NumSlice || !par.m_slice.size())
+    {
+        MakeSlices(par, hwCaps.SliceStructure);
+        par.mfx.NumSlice = (mfxU16)par.m_slice.size();
+    }
 
     if (!par.mfx.FrameInfo.FourCC)
         par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;

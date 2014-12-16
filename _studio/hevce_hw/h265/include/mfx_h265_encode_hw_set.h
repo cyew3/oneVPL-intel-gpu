@@ -188,6 +188,59 @@ struct VPS : LayersInfo
     //VPSHRD* hrd; //max 1024
 };
 
+
+struct VUI{
+    mfxU8  aspect_ratio_info_present_flag : 1;
+    mfxU8  aspect_ratio_idc;
+    mfxU16 sar_width;
+    mfxU16 sar_height;
+
+    mfxU8  overscan_info_present_flag      : 1;
+    mfxU8  overscan_appropriate_flag       : 1;
+    mfxU8  video_signal_type_present_flag  : 1;
+    mfxU8  video_format                    : 3;
+    mfxU8  video_full_range_flag           : 1;
+    mfxU8  colour_description_present_flag : 1;
+    mfxU8  colour_primaries;
+    mfxU8  transfer_characteristics;
+    mfxU8  matrix_coeffs;
+
+    mfxU8  chroma_loc_info_present_flag        : 1;
+    mfxU8  chroma_sample_loc_type_top_field    : 3;
+    mfxU8  chroma_sample_loc_type_bottom_field : 3;
+    
+    mfxU8  neutral_chroma_indication_flag : 1;
+    mfxU8  field_seq_flag                 : 1;
+    mfxU8  frame_field_info_present_flag  : 1;
+    mfxU8  default_display_window_flag    : 1;
+
+    mfxU32 def_disp_win_left_offset;
+    mfxU32 def_disp_win_right_offset;
+    mfxU32 def_disp_win_top_offset;
+    mfxU32 def_disp_win_bottom_offset;
+
+    mfxU8  timing_info_present_flag        : 1;
+    mfxU8  hrd_parameters_present_flag     : 1;
+    mfxU8  poc_proportional_to_timing_flag : 1;
+
+    mfxU8  bitstream_restriction_flag              : 1;
+    mfxU8  tiles_fixed_structure_flag              : 1;
+    mfxU8  motion_vectors_over_pic_boundaries_flag : 1;
+    mfxU8  restricted_ref_pic_lists_flag           : 1;
+
+    mfxU32 num_units_in_tick;
+    mfxU32 time_scale;
+    mfxU32 num_ticks_poc_diff_one_minus1;
+
+    mfxU32 min_spatial_segmentation_idc : 12;
+    mfxU32 max_bytes_per_pic_denom      :  5;
+    mfxU32 max_bits_per_min_cu_denom    :  5;
+    mfxU16 log2_max_mv_length_horizontal : 5;
+    mfxU16 log2_max_mv_length_vertical   : 4;
+
+    //HRD hrd;
+};
+
 struct SPS : LayersInfo
 {
     mfxU8  video_parameter_set_id   : 4;
@@ -249,7 +302,7 @@ struct SPS : LayersInfo
     mfxU8  extension_flag                      : 1;
     mfxU8  extension_data_flag                 : 1;
 
-    //VUI vui;
+    VUI vui;
 };
 
 

@@ -77,6 +77,7 @@ enum
     HW_SURF_ALIGN_H     = 32,
     CODED_PIC_ALIGN_W   = 8,
     CODED_PIC_ALIGN_H   = 8,
+    DEFAULT_LCU_SIZE    = 32,
 };
 
 enum
@@ -250,6 +251,13 @@ public:
     SPS m_sps;
     PPS m_pps;
 
+    struct SliceInfo
+    {
+        mfxU32 SegmentAddress;
+        mfxU32 NumLCU;
+    };
+    std::vector<SliceInfo> m_slice;
+
     struct 
     {
         mfxExtHEVCParam             HEVCParam;
@@ -262,6 +270,7 @@ public:
     mfxU32 MaxKbps;
     mfxU16 NumRefLX[2];
     mfxU32 LTRInterval;
+    mfxU32 LCUSize;
 
     MfxVideoParam();
     MfxVideoParam(MfxVideoParam const & par);

@@ -216,12 +216,13 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
 {
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
-    const mfxU32 MaxCompBufDesc = 16;
-    ENCODE_COMPBUFFERDESC compBufDesc[MaxCompBufDesc] = {};
+    mfxU32 MaxCompBufDesc = 7 + m_slice.size();
+    std::vector<ENCODE_COMPBUFFERDESC> compBufDesc(MaxCompBufDesc);
     ENCODE_PACKEDHEADER_DATA * pPH = 0;
-
     ENCODE_EXECUTE_PARAMS executeParams = {};
-    executeParams.pCompressedBuffers = compBufDesc;
+
+    executeParams.pCompressedBuffers = &compBufDesc[0];
+    Zero(compBufDesc);
 
     mfxU32 bitstream = task.m_idxBs;
 
@@ -248,9 +249,11 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
     pPH = PackHeader(PPS_NUT); assert(pPH);
     ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
 
-    //TODO: add multi-slice
-    pPH = PackSliceHeader(task, &m_slice[0].SliceQpDeltaBitOffset); assert(pPH);
-    ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA, *pPH, 1);
+    for (mfxU32 i = 0; i < m_slice.size(); i ++)
+    {
+        pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset); assert(pPH);
+        ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA, *pPH, 1);
+    }
 
     try
     {
