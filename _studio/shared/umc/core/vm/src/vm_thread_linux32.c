@@ -124,6 +124,36 @@ Ipp32s vm_thread_create(vm_thread *thread,
 
 } /* Ipp32s vm_thread_create(vm_thread *thread, */
 
+
+/* attach to current thread. return 1 if successful  */
+Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg)
+{
+    Ipp32s i_res = 1;
+    pthread_attr_t attr;
+
+    /* check error(s) */
+    if (NULL == thread)
+        return 0;
+
+    if (0 != i_res)
+    {
+        if (VM_OK != vm_event_init(&thread->exit_event, 1, 0))
+            i_res = 0;
+    }
+
+    if ((0 != i_res) &&
+        (VM_OK != vm_mutex_init(&thread->access_mut)))
+        i_res = 0;
+
+    thread->is_valid = 1;
+    thread->p_thread_func = func;
+    thread->p_arg = 0;
+    thread->i_wait_count = 1; // vm_thread_wait should not try to join this thread
+    thread->handle = pthread_self();
+
+    return i_res;
+}
+
 /* set thread priority, return 1 if successful */
 Ipp32s vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority)
 {

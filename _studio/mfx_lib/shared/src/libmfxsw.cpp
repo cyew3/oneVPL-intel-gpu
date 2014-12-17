@@ -67,6 +67,26 @@ const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSI
 
 mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
 {
+    mfxInitParam par = {};
+
+    par.Implementation = implParam;
+    if (ver)
+    {
+        par.Version = *ver;
+    }
+    else
+    {
+        par.Version.Major = MFX_VERSION_MAJOR;
+        par.Version.Minor = MFX_VERSION_MINOR;
+    }
+    par.ExternalThreads = 0;
+
+    return MFXInitEx(par, session);
+
+} // mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxHDL *session)
+
+mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
+{
 #if defined(MFX_USE_VERSIONED_SESSION)
     _mfxSession_1_10 * pSession = 0;
 #else
@@ -76,8 +96,8 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
     mfxVersion libver;
     mfxStatus mfxRes;
     int adapterNum = 0;
-    mfxIMPL impl = implParam & (MFX_IMPL_VIA_ANY - 1);
-    mfxIMPL implInterface = implParam & -MFX_IMPL_VIA_ANY;
+    mfxIMPL impl = par.Implementation & (MFX_IMPL_VIA_ANY - 1);
+    mfxIMPL implInterface = par.Implementation & -MFX_IMPL_VIA_ANY;
 
 #if defined(MFX_TRACE_ENABLE)
 #if defined(_WIN32) || defined(_WIN64)
@@ -186,24 +206,22 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
 
         // create new session instance
 #if defined(MFX_USE_VERSIONED_SESSION)
-        pSession = new _mfxSession_1_10;
+        pSession = new _mfxSession_1_10(par.ExternalThreads);
         pSession->SetAdapterNum(adapterNum);
 #else
         pSession = new _mfxSession(adapterNum);
 #endif
-        mfxRes = pSession->Init(implInterface, ver);
+        //mfxRes = pSession->Init(implInterface, &par.Version);
+        mfxRes = pSession->InitEx(implInterface, &par.Version, par.ExternalThreads);
 
         // check the library version
-        if (ver)
-        {
-            MFXQueryVersion(pSession, &libver);
+        MFXQueryVersion(pSession, &libver);
 
-            // check the numbers
-            if ((libver.Major != ver->Major) ||
-                (libver.Minor < ver->Minor))
-            {
-                mfxRes = MFX_ERR_UNSUPPORTED;
-            }
+        // check the numbers
+        if ((libver.Major != par.Version.Major) ||
+            (libver.Minor < par.Version.Minor))
+        {
+            mfxRes = MFX_ERR_UNSUPPORTED;
         }
     }
     catch(MFX_CORE_CATCH_TYPE)
@@ -226,7 +244,32 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
 
     return mfxRes;
 
-} // mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxHDL *session)
+} // mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
+
+mfxStatus MFXDoWork(mfxSession session)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXDoWork");
+
+    // check error(s)
+    if (0 == session)
+    {
+        return MFX_ERR_INVALID_HANDLE;
+    }
+
+    MFXIUnknown * pInt = session->m_pScheduler;
+    MFXIScheduler2 *newScheduler = 
+        ::QueryInterface<MFXIScheduler2>(pInt, MFXIScheduler2_GUID);
+
+    if (!newScheduler)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+    newScheduler->Release();
+
+    mfxStatus res = newScheduler->DoWork();    
+
+    return res;
+} // mfxStatus MFXDoWork(mfxSession *session)
 
 mfxStatus MFXClose(mfxSession session)
 {

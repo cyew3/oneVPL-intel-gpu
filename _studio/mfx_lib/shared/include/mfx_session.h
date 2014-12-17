@@ -203,6 +203,7 @@ class _mfxSession_1_10: public _mfxSession, public MFXISession_1_10
 {
 public:
     _mfxSession_1_10();
+    explicit _mfxSession_1_10(mfxU16 externalThreads);
     // Destructor
     virtual ~_mfxSession_1_10(void);
 
@@ -234,6 +235,9 @@ public:
     virtual
         mfxU32 GetNumRef(void) const;
 
+    virtual 
+        mfxStatus InitEx(mfxIMPL implInterface, mfxVersion *ver, mfxU16 externalThreads);
+
 public:
     // Declare additional session's components
     std::auto_ptr<VideoCodecUSER> m_plgPreEnc;
@@ -241,6 +245,7 @@ public:
 protected:
     // Reference counters
     mfxU32 m_refCounter;
+    mfxU16 m_externalThreads;
 };
 
 

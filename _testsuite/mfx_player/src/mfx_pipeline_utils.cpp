@@ -1028,7 +1028,8 @@ mfxStatus myMFXInit(const vm_char *pMFXLibraryPath, mfxIMPL impl, mfxVersion *pV
             mfxRes = pHandle->LoadSelectedDLL(path,
                                      myimplTypes[curImplIdx].implType,
                                      myimplTypes[curImplIdx].impl,
-                                     implInterface);
+                                     implInterface,
+                                     0);
             // unload the failed DLL
             if ((MFX_ERR_NONE != mfxRes) &&
                 (MFX_WRN_PARTIAL_ACCELERATION != mfxRes))
