@@ -928,7 +928,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
     {
         d3dSurf.MemId =  src_sys->Data.MemId;    
     }
-
+    
     if (video.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY) 
        MFX_CHECK_STS(core.GetExternalFrameHDL(d3dSurf.MemId, &handle))
     else
@@ -950,12 +950,12 @@ mfxStatus VideoENC_LA::InitVMEData( sVMEFrameInfo *   pVME,
                                     CmBufferUP *      CmMb)
 {
     mfxMemId  dst_d3d = MfxHwH264Encode::AcquireResource(m_raw);
-    mfxHDL   currHandle = {0};
+    mfxHDLPair currHandle = {0};
 
-    MFX_CHECK_STS(CopyRawSurfaceToVideoMemory(*m_core,m_video,RawFrame,dst_d3d, currHandle));
+    MFX_CHECK_STS(CopyRawSurfaceToVideoMemory(*m_core,m_video,RawFrame,dst_d3d, (mfxHDL&)currHandle));
 
     pVME->EncOrder   = EncOrder;
-    pVME->CmRaw     =  CreateSurface(m_cmDevice, currHandle, m_core->GetVAType());
+    pVME->CmRaw     =  CreateSurface(m_cmDevice, (mfxHDL&)currHandle, m_core->GetVAType());
     pVME->CmRawLA   = (CmSurface2D *)MfxHwH264Encode::AcquireResource(m_rawLa);
     pVME->VmeData   = FindUnusedVmeData(m_vmeDataStorage);
     pVME->CmMb      = CmMb;
