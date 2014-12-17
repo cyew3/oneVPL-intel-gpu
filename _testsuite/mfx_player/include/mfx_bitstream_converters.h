@@ -395,7 +395,8 @@ public:
 #if defined(LINUX32) || defined (LINUX64)  
         // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
         memset(data.Y, 0, info.Width * info.Height);
-        memset(data.UV, 0, info.Width * info.Height / 2);
+        memset(data.V, 0, info.Width * info.Height / 4);
+        memset(data.U, 0, info.Width * info.Height / 4);
 #endif
 
         MFX_CHECK_STS(BSConverterUtil::TransFormY(bs, surface));

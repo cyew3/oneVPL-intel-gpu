@@ -1009,8 +1009,6 @@ VAAPIVideoCORE::DoFastCopyExtended(
                 Ipp32u Height =  va_image.height;
 
                 mfxStatus sts;
-                mfxU8* ptrY  = (mfxU8 *)pBits + va_image.offsets[0];
-                mfxU8* ptrUV = (mfxU8 *)pBits + va_image.offsets[1];
 
                 MFX_CHECK((pDst->Data.Y == 0) == (pDst->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
                 MFX_CHECK(dstPitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -1020,19 +1018,19 @@ VAAPIVideoCORE::DoFastCopyExtended(
                 {
                     case MFX_FOURCC_NV12:
 
-                        sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, ptrY, srcPitch, roi);
+                        sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)pBits + va_image.offsets[0], srcPitch, roi);
                         MFX_CHECK_STS(sts);
 
                         roi.height >>= 1;
 
-                        sts = pFastCopy->Copy(pDst->Data.UV, dstPitch, ptrUV, srcPitch, roi);
+                        sts = pFastCopy->Copy(pDst->Data.UV, dstPitch, (mfxU8 *)pBits + va_image.offsets[1], srcPitch, roi);
                         MFX_CHECK_STS(sts);
 
                         break;
 
                     case MFX_FOURCC_YV12:
 
-                        sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)pBits, srcPitch, roi);
+                        sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)pBits + va_image.offsets[0], srcPitch, roi);
                         MFX_CHECK_STS(sts);
 
                         roi.width >>= 1;
@@ -1041,10 +1039,10 @@ VAAPIVideoCORE::DoFastCopyExtended(
                         srcPitch >>= 1;
                         dstPitch >>= 1;
 
-                        sts = pFastCopy->Copy(pDst->Data.V, dstPitch, (mfxU8 *)pBits + (Height * srcPitch * 5) / 4, srcPitch, roi);
+                        sts = pFastCopy->Copy(pDst->Data.V, dstPitch, (mfxU8 *)pBits + va_image.offsets[1], srcPitch, roi);
                         MFX_CHECK_STS(sts);
 
-                        sts = pFastCopy->Copy(pDst->Data.U, dstPitch, (mfxU8 *)pBits + Height * srcPitch, srcPitch, roi);
+                        sts = pFastCopy->Copy(pDst->Data.U, dstPitch, (mfxU8 *)pBits + va_image.offsets[2], srcPitch, roi);
                         MFX_CHECK_STS(sts);
                     
                         break;
