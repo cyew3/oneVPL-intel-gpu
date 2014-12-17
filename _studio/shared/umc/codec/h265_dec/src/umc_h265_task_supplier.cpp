@@ -1703,7 +1703,7 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource)
                             CheckCRAOrBLA(pSlice);
 
                         m_checkCRAInsideResetProcess = false;
-                        pSource->MoveDataPointer(pSource->GetDataSize() - moveToSpsOffset);
+                        pSource->MoveDataPointer(Ipp32s(pSource->GetDataSize() - moveToSpsOffset));
                         m_pNALSplitter->Reset();
                         return UMC::UMC_NTF_NEW_RESOLUTION;
                     }
@@ -1808,7 +1808,7 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource)
 
     if (m_checkCRAInsideResetProcess)
     {
-        pSource->MoveDataPointer(pSource->GetDataSize() - moveToSpsOffset);
+        pSource->MoveDataPointer(Ipp32s(pSource->GetDataSize() - moveToSpsOffset));
         m_pNALSplitter->Reset();
     }
 

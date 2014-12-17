@@ -216,7 +216,7 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
 {
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
-    mfxU32 MaxCompBufDesc = 7 + m_slice.size();
+    size_t MaxCompBufDesc = 7 + m_slice.size();
     std::vector<ENCODE_COMPBUFFERDESC> compBufDesc(MaxCompBufDesc);
     ENCODE_PACKEDHEADER_DATA * pPH = 0;
     ENCODE_EXECUTE_PARAMS executeParams = {};

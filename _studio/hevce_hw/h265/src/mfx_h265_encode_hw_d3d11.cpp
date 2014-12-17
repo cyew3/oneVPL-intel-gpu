@@ -345,7 +345,7 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
 {
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
-    mfxU32 MaxCompBufDesc = 7 + m_slice.size();
+    size_t MaxCompBufDesc = 7 + m_slice.size();
     std::vector<ENCODE_COMPBUFFERDESC> compBufDesc(MaxCompBufDesc);
     ENCODE_PACKEDHEADER_DATA * pPH = 0;
     ENCODE_INPUT_DESC ein = {};
