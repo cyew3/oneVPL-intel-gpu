@@ -575,6 +575,14 @@ namespace MfxHwH264Encode
             mfxU32 numLayerOffset[8];
             mfxU32 dqId1Exists;
             mfxU32 lyncMode;
+            mfxU32 cqpHrdMode; // special CQP mode in which HRD information is written into bitstreams: 0 - disabled, 1 -CBR, 2 - VBR
+            struct
+            {
+                mfxU32 bufferSizeInKB;
+                mfxU32 initialDelayInKB;
+                mfxU32 targetKbps;
+                mfxU32 maxKbps;
+            } decorativeHrdParam; // decorative HRD parameters for cqpHrdMode
 
             mfxU16 widthLa;
             mfxU16 heightLa;
