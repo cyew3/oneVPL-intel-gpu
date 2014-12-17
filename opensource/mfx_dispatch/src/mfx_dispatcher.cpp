@@ -94,7 +94,7 @@ mfxStatus MFX_DISP_HANDLE::Close(void)
 } // mfxStatus MFX_DISP_HANDLE::Close(void)
 
 mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImplType implType,
-                                           mfxIMPL impl, mfxIMPL implInterface)
+                                           mfxIMPL impl, mfxIMPL implInterface, mfxU16 externalThreads)
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
 
@@ -221,7 +221,7 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
         mfxVersion version(apiVersion);
 
         /* check whether it is audio session or video */
-        int tableIndex = eMFXInit; 
+        int tableIndex = (externalThreads == 0) ? eMFXInit : eMFXInitEx; 
         mfxFunctionPointer pFunc;
         if (impl & MFX_IMPL_AUDIO) 
         { 
@@ -233,13 +233,31 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
         }
 
         {
-            DISPATCHER_LOG_BLOCK( ("MFXInit(%s,ver=%u.%u,session=0x%p)\n"
-                                , DispatcherLog_GetMFXImplString(impl| implInterface).c_str()
-                                , apiVersion.Major
-                                , apiVersion.Minor
-                                , &session));
-        
-            mfxRes = (*(mfxStatus (MFX_CDECL *) (mfxIMPL, mfxVersion *, mfxSession *)) pFunc) (impl | implInterface, &version, &session);
+            if (externalThreads == 0)
+            {
+                DISPATCHER_LOG_BLOCK(("MFXInit(%s,ver=%u.%u,session=0x%p)\n"
+                                     , DispatcherLog_GetMFXImplString(impl | implInterface).c_str()
+                                     , apiVersion.Major
+                                     , apiVersion.Minor
+                                     , &session));
+
+                mfxRes = (*(mfxStatus(MFX_CDECL *) (mfxIMPL, mfxVersion *, mfxSession *)) pFunc) (impl | implInterface, &version, &session);
+            }
+            else
+            {
+                DISPATCHER_LOG_BLOCK(("MFXInitEx(%s,ver=%u.%u,ExtThreads=%d,session=0x%p)\n"
+                                     , DispatcherLog_GetMFXImplString(impl | implInterface).c_str()
+                                     , apiVersion.Major
+                                     , apiVersion.Minor
+                                     , externalThreads
+                                     , &session));
+
+                mfxInitParam initPar = {};
+                initPar.Implementation = impl | implInterface;
+                initPar.Version = version;
+                initPar.ExternalThreads = externalThreads;
+                mfxRes = (*(mfxStatus(MFX_CDECL *) (mfxInitParam, mfxSession *)) pFunc) (initPar, &session);
+            }
         }
 
         if (MFX_ERR_NONE != mfxRes)

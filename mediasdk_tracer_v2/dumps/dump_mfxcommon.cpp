@@ -44,6 +44,18 @@ std::string DumpContext::dump(const std::string structName, const mfxPriority &p
     return std::string("mfxPriority " + structName + "=" + ToString(priority));
 }
 
+std::string DumpContext::dump(const std::string structName, const mfxInitParam &_struct)
+{
+    std::string str;
+
+    DUMP_FIELD(Implementation);
+    str += dump(structName + ".Version=", _struct.Version) + "\n";
+    DUMP_FIELD(ExternalThreads);
+    DUMP_FIELD_RESERVED(reserved);
+
+    return str;
+}
+
 std::string DumpContext::dump(const std::string structName, const mfxSyncPoint &syncPoint)
 {
     return std::string("mfxSyncPoint* " + structName + "=" + ToString(syncPoint));

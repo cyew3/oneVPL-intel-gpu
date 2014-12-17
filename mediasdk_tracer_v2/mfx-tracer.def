@@ -67,3 +67,5 @@ EXPORTS
     MFXVideoPAK_Close;
     MFXVideoPAK_ProcessFrameAsync;
     
+    MFXInitEx;
+    MFXDoWork;

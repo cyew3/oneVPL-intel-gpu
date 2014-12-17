@@ -151,6 +151,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxBitstream);
     DEFINE_DUMP_FUNCTION(mfxExtBuffer);
     DEFINE_DUMP_FUNCTION(mfxIMPL);
+    DEFINE_DUMP_FUNCTION(mfxInitParam);
     DEFINE_DUMP_FUNCTION(mfxPriority);
     DEFINE_DUMP_FUNCTION(mfxVersion);
     DEFINE_DUMP_FUNCTION(mfxSyncPoint);

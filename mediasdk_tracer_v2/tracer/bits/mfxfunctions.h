@@ -113,3 +113,9 @@ FUNCTION(mfxStatus, MFXVideoPAK_Init, (mfxSession session, mfxVideoParam *par), 
 FUNCTION(mfxStatus, MFXVideoPAK_Reset, (mfxSession session, mfxVideoParam *par), (session, par))
 FUNCTION(mfxStatus, MFXVideoPAK_Close, (mfxSession session), (session))
 FUNCTION(mfxStatus, MFXVideoPAK_ProcessFrameAsync, (mfxSession session, mfxPAKInput *in, mfxPAKOutput *out, mfxSyncPoint *syncp), (session, in, out, syncp))
+
+/*
+* API version 1.14 functions
+*/
+FUNCTION(mfxStatus, MFXInitEx, (mfxInitParam par, mfxSession session), (par, session))
+FUNCTION(mfxStatus, MFXDoWork, (mfxSession session), (session))
