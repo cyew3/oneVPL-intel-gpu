@@ -1892,7 +1892,7 @@ mfxStatus MFX_JPEG_Utility::CheckDecodeCaps(VideoCORE * core, mfxVideoParam * pa
         video_desc.Guid = sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT;
         video_desc.SampleWidth = par->mfx.FrameInfo.Width;
         video_desc.SampleHeight = par->mfx.FrameInfo.Height;
-        video_desc.OutputFormat = DXGI_FORMAT_420_OPAQUE;
+        video_desc.OutputFormat = (core->GetHWType() == MFX_HW_SOFIA)? DXGI_FORMAT_NV12: DXGI_FORMAT_420_OPAQUE;
 
         mfxU32 cDecoderProfiles = pD11VideoDevice->GetVideoDecoderProfileCount();
 
@@ -2098,7 +2098,21 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             break;
         case MFX_CHROMAFORMAT_YUV420:
 #if defined (MFX_VA_WIN)
-            if(hwType >= MFX_HW_HSW_ULT && hwType != MFX_HW_VLV &&
+            if (hwType == MFX_HW_SOFIA &&
+                info->Rotation == MFX_ROTATION_0 &&
+                requestFrameInfo->FourCC == MFX_FOURCC_NV12 &&
+                !(*needVpp))
+            {
+                requestFrameInfo->FourCC = MFX_FOURCC_NV12;
+            }
+            else if (hwType == MFX_HW_SOFIA &&
+              info->Rotation == MFX_ROTATION_0 &&
+              requestFrameInfo->FourCC == MFX_FOURCC_YUY2 &&
+              !(*needVpp))
+            {
+              requestFrameInfo->FourCC = MFX_FOURCC_YUY2;
+            }
+            else if(hwType >= MFX_HW_HSW_ULT && hwType != MFX_HW_VLV &&
                info->Rotation == MFX_ROTATION_0 && 
                info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                requestFrameInfo->FourCC == MFX_FOURCC_NV12 && 
@@ -2166,7 +2180,21 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             break;
         case MFX_CHROMAFORMAT_YUV422H:
 #if defined (MFX_VA_WIN)
-            if(hwType >= MFX_HW_HSW_ULT && hwType != MFX_HW_VLV &&
+            if (hwType == MFX_HW_SOFIA &&
+              info->Rotation == MFX_ROTATION_0 &&
+              requestFrameInfo->FourCC == MFX_FOURCC_YUY2 &&
+              !(*needVpp))
+            {
+              requestFrameInfo->FourCC = MFX_FOURCC_YUY2;
+            }
+            else if (hwType == MFX_HW_SOFIA &&
+              info->Rotation == MFX_ROTATION_0 &&
+              requestFrameInfo->FourCC == MFX_FOURCC_NV12 &&
+              !(*needVpp))
+            {
+              requestFrameInfo->FourCC = MFX_FOURCC_NV12;
+            }
+            else if (hwType >= MFX_HW_HSW_ULT && hwType != MFX_HW_VLV &&
                info->Rotation == MFX_ROTATION_0 && 
                info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                requestFrameInfo->FourCC == MFX_FOURCC_NV12 && 
