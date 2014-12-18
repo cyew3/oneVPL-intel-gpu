@@ -1346,10 +1346,10 @@ mfxStatus GetPipelineList(
         {
             pipelineList.push_back(MFX_EXTBUFF_VPP_ITC);
         }
-        //else
-        //{
-        //    pipelineList.push_back(MFX_EXTBUFF_VPP_DI);
-        //}
+        else
+        {
+            pipelineList.push_back(MFX_EXTBUFF_VPP_DI);
+        }
     }
 
     /* ********************************************************************** */
