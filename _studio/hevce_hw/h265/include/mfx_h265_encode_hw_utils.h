@@ -55,7 +55,7 @@ template<class T> bool IsAligned(T value, mfxU32 alignment)
     return !(value & (alignment - 1));
 }
 
-inline mfxU32 CeilLog2  (mfxU32 x)           { mfxU32 l = 0; while(x > mfxU32(1<<l)) l++; return l; }
+inline mfxU32 CeilLog2  (mfxU32 x)           { mfxU32 l = 0; while(x > (1U<<l)) l++; return l; }
 inline mfxU32 CeilDiv   (mfxU32 x, mfxU32 y) { return (x + y - 1) / y; }
 inline mfxU64 CeilDiv   (mfxU64 x, mfxU64 y) { return (x + y - 1) / y; }
 inline mfxU32 Ceil      (mfxF64 x)           { return (mfxU32)(.999 + x); }
@@ -89,6 +89,15 @@ enum
     STAGE_SUBMIT        = FRAME_ACCEPTED    | FRAME_REORDERED,
     STAGE_QUERY         = STAGE_SUBMIT      | FRAME_SUBMITTED,
     STAGE_READY         = STAGE_QUERY       | FRAME_ENCODED,
+};
+
+enum
+{
+    CODING_TYPE_I   = 1,
+    CODING_TYPE_P   = 2,
+    CODING_TYPE_B   = 3, //regular B, or no reference to other B frames
+    CODING_TYPE_B1  = 4, //B1, reference to only I, P or regular B frames
+    CODING_TYPE_B2  = 5, //B2, references include B1
 };
 
 class MfxFrameAllocResponse : public mfxFrameAllocResponse
@@ -131,7 +140,7 @@ typedef struct _DpbFrame
 {
     mfxI32   m_poc;
     bool     m_ltr;
-    mfxU16   m_frameType;
+    mfxU8    m_codingType;
     mfxU8    m_idxRaw;
     mfxU8    m_idxRec;
     mfxMemId m_midRec;
@@ -151,8 +160,8 @@ typedef struct _Task : DpbFrame
     mfxU8 m_refPicList[2][MAX_DPB_SIZE];
     mfxU8 m_numRefActive[2];
 
+    mfxU16 m_frameType;
     mfxU8  m_shNUT;
-    mfxU8  m_codingType;
     mfxU8  m_qpY;
 
     mfxU32 m_statusReportNumber;
@@ -271,6 +280,7 @@ public:
     mfxU16 NumRefLX[2];
     mfxU32 LTRInterval;
     mfxU32 LCUSize;
+    bool   BRef;
 
     MfxVideoParam();
     MfxVideoParam(MfxVideoParam const & par);
@@ -334,6 +344,22 @@ inline bool isValid(DpbFrame const & frame) { return IDX_INVALID !=  frame.m_idx
 inline bool isDpbEnd(DpbArray const & dpb, mfxU32 idx) { return idx >= MAX_DPB_SIZE || !isValid(dpb[idx]); }
 
 mfxU8 GetFrameType(MfxVideoParam const & video, mfxU32 frameOrder);
+
+
+void ConstructSTRPS(
+    DpbArray const & DPB,
+    mfxU8 const (&RPL)[2][MAX_DPB_SIZE],
+    mfxU8 const (&numRefActive)[2],
+    mfxI32 poc,
+    STRPS& rps);
+
+void ConstructRPL(
+    MfxVideoParam const & par,
+    DpbArray const & DPB,
+    bool isB,
+    mfxI32 poc,
+    mfxU8 (&RPL)[2][MAX_DPB_SIZE],
+    mfxU8 (&numRefActive)[2]);
 
 void UpdateDPB(
     MfxVideoParam const & par,

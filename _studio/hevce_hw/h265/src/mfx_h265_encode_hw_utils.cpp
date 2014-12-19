@@ -9,10 +9,61 @@
 #include "mfx_common.h"
 
 #include "mfx_h265_encode_hw_utils.h"
+#include <algorithm>
 #include <assert.h>
 
 namespace MfxHwH265Encode
 {
+
+mfxU32 CountL1(DpbArray const & dpb, mfxI32 poc)
+{
+    mfxU32 c = 0;
+    for (mfxU32 i = 0; !isDpbEnd(dpb, i); i ++)
+        c += dpb[i].m_poc > poc;
+    return c;
+}
+
+template<class T> T Reorder(
+    MfxVideoParam const & par,
+    DpbArray const & dpb,
+    T begin,
+    T end,
+    bool flush)
+{
+    T top  = begin;
+    T b0 = end; // 1st non-ref B with L1 > 0
+
+    while ( top != end && (top->m_frameType & MFX_FRAMETYPE_B))
+    {
+        if (CountL1(dpb, top->m_poc))
+        {
+            if (   (top->m_frameType & MFX_FRAMETYPE_REF)
+                && (b0 == end || (top->m_poc - b0->m_poc < 2)))
+                return top;
+
+            if (b0 == end && !(top->m_frameType & MFX_FRAMETYPE_REF))
+                b0 = top;
+        }
+
+        top ++;
+    }
+
+    if (b0 != end)
+        return b0;
+
+    if (flush && top == end && begin != end)
+    {
+        if (par.mfx.GopOptFlag & MFX_GOP_STRICT)
+            top = begin;
+        else
+        {
+            top --;
+            top->m_frameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+        }
+    }
+
+    return top;
+}
 
 MfxFrameAllocResponse::MfxFrameAllocResponse()
     : m_core(0)
@@ -263,6 +314,7 @@ MfxVideoParam::MfxVideoParam()
     , MaxKbps         (0)
     , LTRInterval     (0)
     , LCUSize         (DEFAULT_LCU_SIZE)
+    , BRef            (false)
 {
     Zero(*(mfxVideoParam*)this);
     Zero(NumRefLX);
@@ -284,6 +336,7 @@ MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
     NumRefLX[1]      = par.NumRefLX[1];
     LTRInterval      = par.LTRInterval;
     LCUSize          = par.LCUSize;
+    BRef             = par.BRef;
 }
 
 MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
@@ -316,6 +369,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
     BufferSizeInKB = mfx.BufferSizeInKB * multiplier;
     LTRInterval    = 0;
     LCUSize        = DEFAULT_LCU_SIZE;
+    BRef           = (mfx.GopRefDist > 3);
 
     if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -397,6 +451,76 @@ mfxU8 GetAspectRatioIdc(mfxU16 w, mfxU16 h)
     return 255;
 }
 
+struct FakeTask
+{
+    mfxI32 m_poc;
+    mfxU16 m_frameType;
+};
+
+class EqSTRPS
+{
+private:
+    STRPS const & m_ref;
+public:
+    EqSTRPS(STRPS const & ref) : m_ref(ref) {};
+    bool operator () (std::pair<STRPS, mfxU32> const & cur) { return Equal(m_ref, cur.first); };
+    EqSTRPS & operator = (EqSTRPS const &) { assert(0); return *this; }
+};
+
+bool Greater(std::pair<STRPS, mfxU32> const & l, std::pair<STRPS, mfxU32> const r)
+{
+    return (l.second > r.second);
+}
+
+mfxU32 NBitsUE(mfxU32 b)
+{
+    mfxU32 n = 1;
+
+     if (!b)
+         return n;
+
+    b ++;
+
+    while (b >> n)
+        n ++;
+
+    return n * 2 - 1;
+};
+
+mfxU32 NBits(STRPS const & rps, bool is1st = true)
+{
+    mfxU32 n = is1st;
+
+    assert(0 == rps.inter_ref_pic_set_prediction_flag);
+
+    n += NBitsUE(rps.num_negative_pics);
+    n += NBitsUE(rps.num_positive_pics);
+
+    for (mfxU32 i = 0; i < mfxU32(rps.num_negative_pics + rps.num_positive_pics); i ++)
+        n += NBitsUE(rps.pic[i].delta_poc_sx_minus1) + 1;
+
+    return n;
+}
+
+void ReduceSTRPS(std::list<std::pair<STRPS, mfxU32> > & sets, mfxU32 NumSlice)
+{
+    if (sets.empty())
+        return;
+
+    STRPS const & rps = sets.back().first;
+    mfxU32 n = sets.back().second;
+    mfxU32 nSet = mfxU32(sets.size());
+    mfxU32 bits0 = NBits(rps, nSet == 1) + (CeilLog2(nSet) - CeilLog2(nSet - 1))
+        + (nSet > 1) * (NumSlice * CeilLog2((mfxU32)sets.size()) * n);
+    mfxU32 bits1 = NBits(rps) * NumSlice * n;
+
+    if (bits1 < bits0)
+    {
+        sets.pop_back();
+        ReduceSTRPS(sets, NumSlice);
+    }
+}
+
 void MfxVideoParam::SyncMfxToHeadersParam()
 {
     PTL& general = m_vps.general;
@@ -447,7 +571,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     m_sps.conformance_window_flag           = 0;
     m_sps.bit_depth_luma_minus8             = Max(0, (mfxI32)mfx.FrameInfo.BitDepthLuma - 8);
     m_sps.bit_depth_chroma_minus8           = Max(0, (mfxI32)mfx.FrameInfo.BitDepthChroma - 8);
-    m_sps.log2_max_pic_order_cnt_lsb_minus4 = Clip3(0U, 12U, mfx.GopRefDist > 1 ? CeilLog2(mfx.GopRefDist + slo.max_dec_pic_buffering_minus1) + 3 : 0U);
+    m_sps.log2_max_pic_order_cnt_lsb_minus4 = (mfxU8)Clip3(0, 12, (mfxI32)CeilLog2(slo.max_num_reorder_pics + slo.max_dec_pic_buffering_minus1 + 1) - 3);
 
     m_sps.log2_min_luma_coding_block_size_minus3   = 0; // SKL
     m_sps.log2_diff_max_min_luma_coding_block_size = CeilLog2(LCUSize) - 3 - m_sps.log2_min_luma_coding_block_size_minus3;
@@ -462,95 +586,97 @@ void MfxVideoParam::SyncMfxToHeadersParam()
 
     assert(0 == m_sps.pcm_enabled_flag);
 
-    // ST
     {
-        //TODO: add ref B
-        mfxU16 NumStLX[2] = {NumRefLX[0] - !!LTRInterval, NumRefLX[1]};
-        mfxU16 nPSets     = NumStLX[0];
-
-        for (mfxU32 i = 0; i < nPSets; i ++)
-        {
-            STRPS& rps = m_sps.strps[i ? mfx.GopRefDist - 1 + i : 0];
-
-            rps.inter_ref_pic_set_prediction_flag = 0;
-            rps.num_negative_pics = i + 1;
-            rps.num_positive_pics = 0;
-
-            for (mfxU32 j = 0; j < rps.num_negative_pics; j ++)
-            {
-                rps.pic[j].DeltaPocS0               = -mfxI16((j + 1) * mfx.GopRefDist);
-                rps.pic[j].delta_poc_s0_minus1      = -(rps.pic[j].DeltaPocS0 - (j ? rps.pic[j-1].DeltaPocS0 : 0)) - 1;
-                rps.pic[j].used_by_curr_pic_s0_flag = 1;
-            }
-
-            m_sps.num_short_term_ref_pic_sets ++;
-        }
-
-        for (mfxU32 i = 1; i < mfx.GopRefDist; i ++)
-        {
-            STRPS& rps = m_sps.strps[i];
-
-            rps.inter_ref_pic_set_prediction_flag = 0;
-            rps.num_negative_pics = NumStLX[0];
-            rps.num_positive_pics = 1;
-
-            assert(1 == NumStLX[1]);
-            rps.pic[0].DeltaPocS0               = -mfxI16(i);
-            rps.pic[0].delta_poc_s0_minus1      = i - 1;
-            rps.pic[0].used_by_curr_pic_s0_flag = 1;
-
-            for (mfxU32 j = 1; j < rps.num_negative_pics; j ++)
-            {
-                rps.pic[j].delta_poc_s0_minus1      = mfx.GopRefDist - 1;
-                rps.pic[j].DeltaPocS0               = (-1) * mfx.GopRefDist + rps.pic[j-1].DeltaPocS0;
-                rps.pic[j].used_by_curr_pic_s0_flag = 1;
-            }
-
-            for (mfxU32 j = rps.num_negative_pics; 
-                    j < mfxU32(rps.num_negative_pics + rps.num_positive_pics); j ++)
-            {
-                rps.pic[j].DeltaPocS1               = mfxI16(mfx.GopRefDist - i);
-                rps.pic[j].delta_poc_s1_minus1      = (rps.pic[j].DeltaPocS1 - ((j > rps.num_negative_pics) ? rps.pic[j-1].DeltaPocS1 : 0)) - 1;
-                rps.pic[j].used_by_curr_pic_s1_flag = 1;
-            }
-
-            m_sps.num_short_term_ref_pic_sets ++;
-        }
-    }
-
-    //LT
-    if (LTRInterval)
-    {
-        mfxU32 MaxPocLsb  = (1<<(m_sps.log2_max_pic_order_cnt_lsb_minus4+4));
+        mfxU32 MaxPocLsb = (1<<(m_sps.log2_max_pic_order_cnt_lsb_minus4+4));
+        std::list<FakeTask> frames;
+        std::list<FakeTask>::iterator cur;
+        std::list<std::pair<STRPS, mfxU32> > sets;
+        std::list<std::pair<STRPS, mfxU32> >::iterator it;
         DpbArray dpb = {};
-        DpbFrame cur = {};
+        DpbFrame tmp = {};
+        mfxU8 rpl[2][MAX_DPB_SIZE] = {};
+        mfxU8 nRef[2] = {};
+        STRPS rps;
+        mfxI32 STDist = Min<mfxI32>(mfx.GopPicSize, 128);
+        bool moreLTR = !!LTRInterval;
 
         Fill(dpb, IDX_INVALID);
 
-        m_sps.long_term_ref_pics_present_flag = 1;
-
-        for (mfxI32 poc = 0; m_sps.num_long_term_ref_pics_sps < 32; poc ++)
+        for (mfxU32 i = 0; (moreLTR || sets.size() != 64); i ++)
         {
-            cur.m_frameType = GetFrameType(*this, poc);
+            FakeTask new_frame = {i, GetFrameType(*this, i)};
 
-            if (poc > 0 && (cur.m_frameType & MFX_FRAMETYPE_IDR))
+            frames.push_back(new_frame);
+
+            cur = Reorder(*this, dpb, frames.begin(), frames.end(), false);
+
+            if (cur == frames.end())
+                continue;
+
+            if (   (i > 0 && (cur->m_frameType & MFX_FRAMETYPE_I))
+                || (!moreLTR && cur->m_poc >= STDist))
                 break;
 
-            if (cur.m_frameType & MFX_FRAMETYPE_REF)
+            if (!(cur->m_frameType & MFX_FRAMETYPE_I) && cur->m_poc < STDist)
             {
-                cur.m_poc    = poc;
-                cur.m_idxRec = mfxU8(poc % mfx.NumRefFrame);
+                ConstructRPL(*this, dpb, !!(cur->m_frameType & MFX_FRAMETYPE_B), cur->m_poc, rpl, nRef);
 
-                UpdateDPB(*this, cur, dpb);
+                Zero(rps);
+                ConstructSTRPS(dpb, rpl, nRef, cur->m_poc, rps);
 
-                if (isLTR(dpb, LTRInterval, poc))
+                it = std::find_if(sets.begin(), sets.end(), EqSTRPS(rps));
+
+                if (it == sets.end())
+                    sets.push_back(std::make_pair(rps, 1U));
+                else
+                    it->second ++;
+            }
+
+            if (cur->m_frameType & MFX_FRAMETYPE_REF)
+            {
+                tmp.m_poc = cur->m_poc;
+                UpdateDPB(*this, tmp, dpb);
+
+                if ( moreLTR && isLTR(dpb, LTRInterval, cur->m_poc))
                 {
-                    m_sps.lt_ref_pic_poc_lsb_sps[m_sps.num_long_term_ref_pics_sps] = mfxU16(poc & (MaxPocLsb - 1));
-                    m_sps.used_by_curr_pic_lt_sps_flag[m_sps.num_long_term_ref_pics_sps] = 1;
-                    m_sps.num_long_term_ref_pics_sps ++;
+                    if (   mfxU32(m_sps.log2_max_pic_order_cnt_lsb_minus4+5) <= CeilLog2(m_sps.num_long_term_ref_pics_sps))
+                        moreLTR = false;
+                    else if (cur->m_poc >= (mfxI32)MaxPocLsb)
+                    {
+                        for (mfxU32 j = 0; j < m_sps.num_long_term_ref_pics_sps; j ++)
+                        {
+                            if (m_sps.lt_ref_pic_poc_lsb_sps[j] == mfxU16(cur->m_poc & (MaxPocLsb - 1)))
+                            {
+                                moreLTR = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (moreLTR)
+                    {
+                        m_sps.lt_ref_pic_poc_lsb_sps[m_sps.num_long_term_ref_pics_sps] = mfxU16(cur->m_poc & (MaxPocLsb - 1));
+                        m_sps.used_by_curr_pic_lt_sps_flag[m_sps.num_long_term_ref_pics_sps] = 1;
+                        m_sps.num_long_term_ref_pics_sps ++;
+
+                        if (m_sps.num_long_term_ref_pics_sps == 32)
+                            moreLTR = false;
+                    }
                 }
             }
+
+            frames.erase(cur);
         }
+
+        sets.sort(Greater);
+        assert(sets.size() <= 64);
+
+        ReduceSTRPS(sets, mfx.NumSlice);
+
+        for (it = sets.begin(); it != sets.end(); it ++)
+            m_sps.strps[m_sps.num_short_term_ref_pic_sets++] = it->first;
+        
+        m_sps.long_term_ref_pics_present_flag = !!LTRInterval;
     }
 
     m_sps.temporal_mvp_enabled_flag             = 1; // SKL ?
@@ -639,23 +765,54 @@ mfxU16 FrameType2SliceType(mfxU32 ft)
     return 2;
 }
 
-bool isCurrRef(Task const & task, mfxI32 poc)
+bool isCurrRef(
+    DpbArray const & DPB,
+    mfxU8 const (&RPL)[2][MAX_DPB_SIZE],
+    mfxU8 const (&numRefActive)[2],
+    mfxI32 poc)
 {
     for (mfxU32 i = 0; i < 2; i ++)
-        for (mfxU32 j = 0; j < task.m_numRefActive[i]; j ++)
-            if (poc == task.m_dpb[0][task.m_refPicList[i][j]].m_poc)
+        for (mfxU32 j = 0; j < numRefActive[i]; j ++)
+            if (poc == DPB[RPL[i][j]].m_poc)
                 return true;
     return false;
 }
 
-bool isStInDPB(Task const & task, mfxI32 poc, bool isRef)
+inline bool isCurrRef(Task const & task, mfxI32 poc)
 {
-    DpbArray const & DPB = task.m_dpb[0];
+    return isCurrRef(task.m_dpb[0], task.m_refPicList, task.m_numRefActive, poc);
+}
 
-    for (mfxU32 i = 0; !isDpbEnd(DPB,i); i ++)
-        if (poc == DPB[i].m_poc && !DPB[i].m_ltr)
-            return (isRef == isCurrRef(task, poc));
-    return false;
+void ConstructSTRPS(
+    DpbArray const & DPB,
+    mfxU8 const (&RPL)[2][MAX_DPB_SIZE],
+    mfxU8 const (&numRefActive)[2],
+    mfxI32 poc,
+    STRPS& rps)
+{
+    mfxU32 i, nRef;
+
+    for (i = 0, nRef = 0; !isDpbEnd(DPB, i); i ++)
+    {
+        if (DPB[i].m_ltr)
+            continue;
+
+        rps.pic[nRef].DeltaPocSX = (mfxI16)(DPB[i].m_poc - poc);
+        rps.pic[nRef].used_by_curr_pic_sx_flag = isCurrRef(DPB, RPL, numRefActive, DPB[i].m_poc);
+
+        rps.num_negative_pics += rps.pic[nRef].DeltaPocSX < 0;
+        rps.num_positive_pics += rps.pic[nRef].DeltaPocSX > 0;
+        nRef ++;
+    }
+
+    MFX_SORT_STRUCT(rps.pic, nRef, DeltaPocSX, >);
+    MFX_SORT_STRUCT(rps.pic, rps.num_negative_pics, DeltaPocSX, <);
+
+    for (i = 0; i < nRef; i ++)
+    {
+        mfxI16 prev  = (!i || i == rps.num_negative_pics) ? 0 : rps.pic[i-1].DeltaPocSX;
+        rps.pic[i].delta_poc_sx_minus1 = Abs(rps.pic[i].DeltaPocSX - prev) - 1;
+    }
 }
 
 void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
@@ -689,11 +846,13 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
     if (task.m_shNUT != IDR_W_RADL && task.m_shNUT != IDR_N_LP)
     {
         mfxU32 i, j;
-        mfxU16 nRef = 0, nLTR = 0, nSTR[2] = {}, nDPBST = 0, nDPBLT = 0;
+        mfxU16 nLTR = 0, nSTR[2] = {}, nDPBST = 0, nDPBLT = 0;
         mfxI32 STR[2][MAX_DPB_SIZE] = {};                           // used short-term references
         mfxI32 LTR[MAX_NUM_LONG_TERM_PICS] = {};                    // used long-term references
         DpbArray const & DPB = task.m_dpb[0];                       // DPB before encoding
         mfxU8 const (&RPL)[2][MAX_DPB_SIZE] = task.m_refPicList;    // Ref. Pic. List
+
+        ConstructSTRPS(DPB, RPL, task.m_numRefActive, task.m_poc, s.strps);
 
         s.pic_order_cnt_lsb = (task.m_poc & ~(0xFFFFFFFF << (m_sps.log2_max_pic_order_cnt_lsb_minus4 + 4)));
 
@@ -707,78 +866,20 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
         //check for suitable ST RPS in SPS
         for (i = 0; i < m_sps.num_short_term_ref_pic_sets; i ++)
         {
-            STRPS const & rps = m_sps.strps[i];
-
-            assert(0 == rps.inter_ref_pic_set_prediction_flag);
-
-            Zero(STR);
-            Zero(nSTR);
-            
-            for (nRef = 0, j = 0; j < mfxU32(rps.num_negative_pics + rps.num_positive_pics); j ++)
+            if (Equal(m_sps.strps[i], s.strps))
             {
-                if (isStInDPB(task, task.m_poc + rps.pic[j].DeltaPocSX, rps.pic[j].used_by_curr_pic_sx_flag))
-                {
-                    if (rps.pic[j].used_by_curr_pic_sx_flag)
-                    {
-                        bool isAfter = (rps.pic[j].DeltaPocSX > 0);
-                        STR[isAfter][nSTR[isAfter]++] = task.m_poc + rps.pic[j].DeltaPocSX;
-                    }
-
-                    nRef ++;
-                }
-                else
-                {
-                    nRef = IDX_INVALID;
-                    break;
-                }
-            }
-
-            if (nRef == nDPBST)
+                //use ST RPS from SPS
+                s.short_term_ref_pic_set_sps_flag = 1;
+                s.short_term_ref_pic_set_idx      = i;
                 break;
+            }
         }
 
-        if (i < m_sps.num_short_term_ref_pic_sets)
+        for (i = 0; i < mfxU32(s.strps.num_negative_pics + s.strps.num_positive_pics); i ++)
         {
-            //use ST RPS from SPS
-            s.short_term_ref_pic_set_sps_flag = 1;
-            s.short_term_ref_pic_set_idx      = i;
-            s.strps = m_sps.strps[i];
-        }
-        else
-        {
-            //insert own ST RPS
-            STRPS & rps = s.strps;
-            s.short_term_ref_pic_set_sps_flag = 0;
-
-            Zero(STR);
-            Zero(nSTR);
-
-            for (i = 0, nRef = 0; !isDpbEnd(DPB, i); i ++)
-            {
-                if (DPB[i].m_ltr)
-                    continue;
-
-                rps.pic[nRef].DeltaPocSX = (mfxI16)(DPB[i].m_poc - task.m_poc);
-                rps.pic[nRef].used_by_curr_pic_sx_flag = isCurrRef(task, DPB[i].m_poc);
-
-                rps.num_negative_pics += rps.pic[nRef].DeltaPocSX < 0;
-                rps.num_positive_pics += rps.pic[nRef].DeltaPocSX > 0;
-                nRef ++;
-            }
-
-            MFX_SORT_STRUCT(rps.pic, nRef, DeltaPocSX, >);
-            MFX_SORT_STRUCT(rps.pic, rps.num_negative_pics, DeltaPocSX, <);
-
-            for (i = 0; i < nRef; i ++)
-            {
-                bool   isAfter = (rps.pic[i].DeltaPocSX > 0);
-                mfxI16 prev    = (!i || i == rps.num_negative_pics) ? 0 : rps.pic[i-1].DeltaPocSX;
-
-                rps.pic[i].delta_poc_sx_minus1 = Abs(rps.pic[i].DeltaPocSX - prev) - 1;
-
-                if (rps.pic[i].used_by_curr_pic_sx_flag)
-                     STR[isAfter][nSTR[isAfter]++] = task.m_poc + rps.pic[i].DeltaPocSX;
-            }
+            bool isAfter = (s.strps.pic[i].DeltaPocSX > 0);
+            if (s.strps.pic[i].used_by_curr_pic_sx_flag)
+                STR[isAfter][nSTR[isAfter]++] = task.m_poc + s.strps.pic[i].DeltaPocSX;
         }
 
         if (nDPBLT)
@@ -972,14 +1073,6 @@ Task* TaskManager::New()
     return pTask;
 }
 
-mfxU32 CountL1(DpbArray const & dpb, mfxI32 poc)
-{
-    mfxU32 c = 0;
-    for (mfxU32 i = 0; !isDpbEnd(dpb, i); i ++)
-        c += dpb[i].m_poc > poc;
-    return c;
-}
-
 Task* TaskManager::Reorder(
     MfxVideoParam const & par,
     DpbArray const & dpb,
@@ -989,24 +1082,7 @@ Task* TaskManager::Reorder(
 
     TaskList::iterator begin = m_reordering.begin();
     TaskList::iterator end = m_reordering.end();
-    TaskList::iterator top = begin;
-
-    //TODO: add B-ref
-    while ( top != end 
-        && (top->m_frameType & MFX_FRAMETYPE_B)
-        && !CountL1(dpb, top->m_poc))
-        top ++;
-
-    if (flush && top == end && begin != end)
-    {
-        if (par.mfx.GopOptFlag & MFX_GOP_STRICT)
-            top = begin;
-        else
-        {
-            top --;
-            top->m_frameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
-        }
-    }
+    TaskList::iterator top = MfxHwH265Encode::Reorder(par, dpb, begin, end, flush);
 
     if (top == end)
         return 0;
@@ -1039,8 +1115,6 @@ mfxU8 GetFrameType(
     mfxU32 gopRefDist = video.mfx.GopRefDist;
     mfxU32 idrPicDist = gopPicSize * (video.mfx.IdrInterval + 1);
 
-    //TODO: add B-ref
-
     if (gopPicSize == 0xffff) //infinite GOP
         idrPicDist = gopPicSize = 0xffffffff;
 
@@ -1057,6 +1131,9 @@ mfxU8 GetFrameType(
         if ((frameOrder + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED) ||
             (frameOrder + 1) % idrPicDist == 0)
             return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF); // switch last B frame to P frame
+
+    if (video.BRef && (frameOrder % gopPicSize % gopRefDist - 1) % 2 == 1)
+        return (MFX_FRAMETYPE_B | MFX_FRAMETYPE_REF);
 
     return (MFX_FRAMETYPE_B);
 }
@@ -1081,41 +1158,38 @@ void UpdateDPB(
     mfxU16 end = 0; // DPB end
     mfxU16 st0 = 0; // first ST ref in DPB
 
+    while (!isDpbEnd(dpb, end)) end ++;
+
     // frames stored in DPB in POC ascending order,
     // LTRs before STRs (use LTR-candidate as STR as long as it possible)
-
-    while (!isDpbEnd(dpb, end)) end ++;
+    if (par.BRef)
+        MFX_SORT_STRUCT(dpb, end, m_poc, >);
 
     // sliding window over STRs
     if (end && end == par.mfx.NumRefFrame)
     {
         for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0 ++);
 
+        if (par.LTRInterval)
+        {
+            // mark/replace LTR in DPB
+            if (!st0)
+            {
+                dpb[st0].m_ltr = true;
+                st0 ++;
+            }
+            else if (dpb[st0].m_poc - dpb[0].m_poc >= (mfxI32)par.LTRInterval)
+            {
+                dpb[st0].m_ltr = true;
+                st0 = 0;
+            }
+        }
+
         Remove(dpb, st0 == end ? 0 : st0);
         end --;
     }
 
     dpb[end++] = task;
-
-    if (par.LTRInterval)
-    {
-        // mark/replace LTR in DPB
-        while (dpb[st0].m_ltr && st0 < end) st0 ++;
-
-        if (st0 < end && end == par.mfx.NumRefFrame)
-        {
-            if (!st0)
-            {
-                dpb[st0].m_ltr = true;
-            }
-            else if (dpb[st0].m_poc - dpb[0].m_poc >= (mfxI32)par.LTRInterval)
-            {
-                dpb[st0].m_ltr = true;
-                Remove(dpb, 0);
-                end --;
-            }
-        }
-    }
 }
 
 bool isLTR(
@@ -1133,6 +1207,99 @@ bool isLTR(
     return (poc == LTRCandidate) || (LTRCandidate == 0 && poc >= (mfxI32)LTRInterval);
 }
 
+void ConstructRPL(
+    MfxVideoParam const & par,
+    DpbArray const & DPB,
+    bool isB,
+    mfxI32 poc,
+    mfxU8 (&RPL)[2][MAX_DPB_SIZE],
+    mfxU8 (&numRefActive)[2])
+{
+    mfxU8& l0 = numRefActive[0];
+    mfxU8& l1 = numRefActive[1];
+    mfxU8 ltr = IDX_INVALID;
+    mfxU8 NumStRefL0 = (mfxU8)(par.NumRefLX[0]);
+
+    l0 = l1 = 0;
+
+    for (mfxU8 i = 0; !isDpbEnd(DPB, i); i ++)
+    {
+        if (poc > DPB[i].m_poc)
+        {
+            if (DPB[i].m_ltr && ltr == IDX_INVALID)
+                ltr = i;
+            else
+                RPL[0][l0++] = i;
+        }
+        else if (isB)
+            RPL[1][l1++] = i;
+    }
+
+    NumStRefL0 -= (ltr != IDX_INVALID);
+
+    if (l0 > NumStRefL0)
+    {
+        // remove the oldest reference unless it is LTR candidate
+        Remove(RPL[0], (par.LTRInterval && ltr == IDX_INVALID && l0 > 1), l0 - NumStRefL0);
+        l0 = NumStRefL0;
+    }
+    if (l1 > par.NumRefLX[1])
+    {
+        Remove(RPL[1], 0, l1 - par.NumRefLX[1]);
+        l1 = (mfxU8)par.NumRefLX[1];
+    }
+
+    // reorder STRs to POC descending order
+    for (mfxU8 lx = 0; lx < 2; lx ++)
+        MFX_SORT_COMMON(RPL[lx], numRefActive[lx],
+            DPB[RPL[lx][_i]].m_poc < DPB[RPL[lx][_j]].m_poc);
+
+    if (ltr != IDX_INVALID)
+    {
+        // use LTR as 2nd reference
+        Insert(RPL[0], !!l0, ltr);
+        l0 ++;
+    }
+
+    assert(l0 > 0);
+
+    if (isB && !l1)
+        RPL[1][l1++] = RPL[0][l0-1];
+
+    if (!isB)
+    {
+        for (mfxI16 i = l0 - 1; i >= 0 && l1 < par.NumRefLX[1]; i --)
+            RPL[1][l1++] = RPL[0][i];
+    }
+}
+
+mfxU8 GetCodingType(Task const & task)
+{
+    mfxU8 t = CODING_TYPE_B;
+
+    assert(task.m_frameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B));
+
+    if (task.m_frameType & MFX_FRAMETYPE_I)
+        return CODING_TYPE_I;
+
+    if (task.m_frameType & MFX_FRAMETYPE_P)
+        return CODING_TYPE_P;
+    
+    for (mfxU8 i = 0; i < 2; i ++)
+    {
+        for (mfxU32 j = 0; j < task.m_numRefActive[i]; j ++)
+        {
+            if (task.m_dpb[0][task.m_refPicList[i][j]].m_codingType > CODING_TYPE_B)
+                return CODING_TYPE_B2;
+
+            if (task.m_dpb[0][task.m_refPicList[i][j]].m_codingType == CODING_TYPE_B)
+                t = CODING_TYPE_B1;
+        }
+    }
+
+    return t;
+}
+
 void ConfigureTask(
     Task &                task,
     Task const &          prevTask,
@@ -1147,18 +1314,18 @@ void ConfigureTask(
     // set coding type and QP
     if (isB)
     {
-        task.m_codingType = 3; //TODO: add B1, B2
         task.m_qpY = (mfxU8)par.mfx.QPB;
     }
     else if (isP)
     {
-        task.m_codingType = 2;
+        // encode P as GPB
         task.m_qpY = (mfxU8)par.mfx.QPP;
+        task.m_frameType &= ~MFX_FRAMETYPE_P;
+        task.m_frameType |= MFX_FRAMETYPE_B;
     }
     else
     {
         assert(task.m_frameType & MFX_FRAMETYPE_I);
-        task.m_codingType = 1;
         task.m_qpY = (mfxU8)par.mfx.QPI;
     }
 
@@ -1174,69 +1341,9 @@ void ConfigureTask(
     Fill(task.m_refPicList, IDX_INVALID);
 
     if (!isI)
-    {
-        mfxU8& l0 = task.m_numRefActive[0];
-        mfxU8& l1 = task.m_numRefActive[1];
-        mfxU8 ltr = IDX_INVALID;
-        mfxU8 NumStRefL0 = (mfxU8)(par.NumRefLX[0]);
+        ConstructRPL(par, task.m_dpb[0], isB, task.m_poc, task.m_refPicList, task.m_numRefActive);
 
-        for (mfxU8 i = 0; !isDpbEnd(task.m_dpb[0], i); i ++)
-        {
-            if (task.m_poc > task.m_dpb[0][i].m_poc)
-            {
-                if (task.m_dpb[0][i].m_ltr && ltr == IDX_INVALID)
-                    ltr = i;
-                else
-                    task.m_refPicList[0][l0++] = i;
-            }
-            else if (isB)
-                task.m_refPicList[1][l1++] = i;
-        }
-
-        NumStRefL0 -= (ltr != IDX_INVALID);
-
-        if (l0 > NumStRefL0)
-        {
-            // remove the oldest reference unless it is LTR candidate
-            Remove(task.m_refPicList[0], (par.LTRInterval && ltr == IDX_INVALID && l0 > 1), l0 - NumStRefL0);
-            l0 = NumStRefL0;
-        }
-        if (l1 > par.NumRefLX[1])
-        {
-            Remove(task.m_refPicList[1], 0, l1 - par.NumRefLX[1]);
-            l1 = (mfxU8)par.NumRefLX[1];
-        }
-
-        // reorder STRs to POC descending order
-        for (mfxU8 lx = 0; lx < 2; lx ++)
-            MFX_SORT_COMMON(task.m_refPicList[lx], task.m_numRefActive[lx],
-                task.m_dpb[0][task.m_refPicList[lx][_i]].m_poc < task.m_dpb[0][task.m_refPicList[lx][_j]].m_poc);
-
-        if (ltr != IDX_INVALID)
-        {
-            // use LTR as 2nd reference
-            Insert(task.m_refPicList[0], !!l0, ltr);
-            l0 ++;
-        }
-
-        assert(l0 > 0);
-
-        if (isB && !l1)
-            task.m_refPicList[1][l1++] = task.m_refPicList[0][l0-1];
-    }
-
-    // encode P as GPB
-    if (isP)
-    {
-        mfxU8& l1 = task.m_numRefActive[1];
-
-        for (mfxI16 i = task.m_numRefActive[0] - 1; i >= 0 && l1 < par.NumRefLX[1]; i --)
-            task.m_refPicList[1][l1++] = task.m_refPicList[0][i];
-
-        task.m_frameType &= ~MFX_FRAMETYPE_P;
-        task.m_frameType |= MFX_FRAMETYPE_B;
-        task.m_codingType = 3;
-    }
+    task.m_codingType = GetCodingType(task);
 
     // update dpb
     if (isI)
