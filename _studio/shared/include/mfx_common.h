@@ -70,6 +70,7 @@
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
     #if defined(HEVCE_EVALUATION)
         //#define MFX_ENABLE_WATERMARK
+        #define MFX_MAX_ENCODE_FRAMES 1000
     #endif
     #if defined(HEVCD_EVALUATION)
         #define MFX_MAX_DECODE_FRAMES 1000

@@ -688,6 +688,11 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
             return (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
     }
 
+#ifdef MFX_MAX_ENCODE_FRAMES
+    if ((mfxI32)m_frameCountSync > MFX_MAX_ENCODE_FRAMES + m_mfxParam.mfx.GopRefDist + (m_videoParam.m_framesInParallel - 1) + lookaheadBuffering)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+#endif // MFX_MAX_ENCODE_FRAMES
+
     return MFX_ERR_NONE;
 }
 
