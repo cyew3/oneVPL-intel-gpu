@@ -87,7 +87,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>.\include;..\..\include;..\sample_common\include;..\sample_user_modules\plugin_api\;..\..\..\mdp_msdk-api\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\..\include;..\sample_common\include;..\sample_user_modules\plugin_api\;$(INTELMEDIASDKROOT)\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN32;WIN32;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -103,7 +103,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>.\include;..\..\include;..\sample_common\include;..\sample_user_modules\plugin_api\;..\..\..\mdp_msdk-api\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\..\include;..\sample_common\include;..\sample_user_modules\plugin_api\;$(INTELMEDIASDKROOT)\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN64;WIN64;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -121,7 +121,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>.\include;..\..\include;..\sample_common\include;..\sample_user_modules\plugin_api\;..\..\..\mdp_msdk-api\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\..\include;..\sample_common\include;..\sample_user_modules\plugin_api\;$(INTELMEDIASDKROOT)\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN32;WIN32;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -140,7 +140,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>.\include;..\..\include;..\sample_common\include;..\sample_user_modules\plugin_api\;..\..\..\mdp_msdk-api\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\..\include;..\sample_common\include;..\sample_user_modules\plugin_api\;$(INTELMEDIASDKROOT)\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN64;WIN64;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
