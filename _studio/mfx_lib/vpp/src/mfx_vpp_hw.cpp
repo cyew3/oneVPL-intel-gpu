@@ -1451,7 +1451,8 @@ mfxStatus  VideoVPPHW::Init(
 
     if (MFX_FOURCC_NV12    != par->vpp.Out.FourCC &&
         MFX_FOURCC_A2RGB10 != par->vpp.Out.FourCC &&
-        MFX_FOURCC_RGB4    != par->vpp.Out.FourCC)
+        MFX_FOURCC_RGB4    != par->vpp.Out.FourCC &&
+        MFX_FOURCC_YUY2    != par->vpp.Out.FourCC)
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -1670,7 +1671,8 @@ mfxStatus VideoVPPHW::QueryIOSurf(
 
     if (MFX_FOURCC_NV12    != par->vpp.Out.FourCC &&
         MFX_FOURCC_A2RGB10 != par->vpp.Out.FourCC &&
-        MFX_FOURCC_RGB4    != par->vpp.Out.FourCC)
+        MFX_FOURCC_RGB4    != par->vpp.Out.FourCC &&
+        MFX_FOURCC_YUY2    != par->vpp.Out.FourCC)
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -1901,6 +1903,7 @@ mfxStatus VideoVPPHW::PreWorkOutSurface(ExtSurface & output)
         {
             MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(output.pSurf->Data.MemId, (mfxHDL *)&hdl));
             m_executeParams.targetSurface.memId = output.pSurf->Data.MemId;
+
             m_executeParams.targetSurface.bExternal = true;
         }
     }
@@ -1910,6 +1913,7 @@ mfxStatus VideoVPPHW::PreWorkOutSurface(ExtSurface & output)
 
         MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_internalVidSurf[VPP_OUT].mids[resId], (mfxHDL *)&hdl));
         m_executeParams.targetSurface.memId = m_internalVidSurf[VPP_OUT].mids[resId];
+
         m_executeParams.targetSurface.bExternal = false;
     }
 
