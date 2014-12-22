@@ -81,8 +81,8 @@ Global
 		{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}.Debug_HSW_Emu|x64.Build.0 = Debug_HSW_Emu|x64
 		{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}.Debug_Intel_Evaluation|Win32.ActiveCfg = Debug_Intel_Evaluation|Win32
 		{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}.Debug_Intel_Evaluation|Win32.Build.0 = Debug_Intel_Evaluation|Win32
-		{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}.Debug_Intel_Evaluation|x64.ActiveCfg = Debug_Intel|x64
-		{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}.Debug_Intel_Evaluation|x64.Build.0 = Debug_Intel|x64
+		{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}.Debug_Intel_Evaluation|x64.ActiveCfg = Debug_Intel_Evaluation|x64
+		{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}.Debug_Intel_Evaluation|x64.Build.0 = Debug_Intel_Evaluation|x64
 		{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}.Debug_Intel|Win32.ActiveCfg = Debug_Intel|Win32
 		{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}.Debug_Intel|Win32.Build.0 = Debug_Intel|Win32
 		{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}.Debug_Intel|x64.ActiveCfg = Debug_Intel|x64
@@ -529,8 +529,8 @@ Global
 		{A404C552-193E-4A7B-B656-BA104D581869}.Debug_HSW_Emu|x64.Build.0 = Debug_Evaluation|x64
 		{A404C552-193E-4A7B-B656-BA104D581869}.Debug_Intel_Evaluation|Win32.ActiveCfg = Debug_Evaluation|Win32
 		{A404C552-193E-4A7B-B656-BA104D581869}.Debug_Intel_Evaluation|Win32.Build.0 = Debug_Evaluation|Win32
-		{A404C552-193E-4A7B-B656-BA104D581869}.Debug_Intel_Evaluation|x64.ActiveCfg = Debug|x64
-		{A404C552-193E-4A7B-B656-BA104D581869}.Debug_Intel_Evaluation|x64.Build.0 = Debug|x64
+		{A404C552-193E-4A7B-B656-BA104D581869}.Debug_Intel_Evaluation|x64.ActiveCfg = Debug_Evaluation|x64
+		{A404C552-193E-4A7B-B656-BA104D581869}.Debug_Intel_Evaluation|x64.Build.0 = Debug_Evaluation|x64
 		{A404C552-193E-4A7B-B656-BA104D581869}.Debug_Intel|Win32.ActiveCfg = Debug|Win32
 		{A404C552-193E-4A7B-B656-BA104D581869}.Debug_Intel|Win32.Build.0 = Debug|Win32
 		{A404C552-193E-4A7B-B656-BA104D581869}.Debug_Intel|x64.ActiveCfg = Debug|x64
