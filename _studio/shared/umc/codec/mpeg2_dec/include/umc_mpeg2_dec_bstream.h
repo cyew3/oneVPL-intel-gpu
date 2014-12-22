@@ -114,12 +114,13 @@
   CODE = (_code >> (16 - NUM_BITS - video##_bit_offset)) & ((1<<NUM_BITS)-1); \
 }
 
-//#define SHOW_TO9BITS(video, NUM_BITS, CODE) { \
-//  Ipp32u _code = \
-//  (video##_curr_ptr[0] << 24) | (video##_curr_ptr[1]<<16); \
-//  CODE = (_code << video##_bit_offset) >> (32 - NUM_BITS); \
-//}
-
+/*
+#define SHOW_TO9BITS(video, NUM_BITS, CODE) { \
+  Ipp32u _code = \
+  (video##_curr_ptr[0] << 24) | (video##_curr_ptr[1]<<16); \
+  CODE = (_code << video##_bit_offset) >> (32 - NUM_BITS); \
+}
+*/
 #define SKIP_TO_END(video) \
   video##_curr_ptr = video##_end_ptr; \
   video##_bit_offset = 0;
