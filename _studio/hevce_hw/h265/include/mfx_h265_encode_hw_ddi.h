@@ -38,12 +38,6 @@ static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main10 =
 
 GUID GetGUID(MfxVideoParam const & par);
 
-enum
-{
-    CODING_TYPE_B1  = 4,
-    CODING_TYPE_B2  = 5,
-};
-
 typedef struct tagENCODE_CAPS_HEVC
 {
     union 
