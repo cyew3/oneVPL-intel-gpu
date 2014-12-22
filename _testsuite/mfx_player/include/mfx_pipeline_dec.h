@@ -72,13 +72,13 @@ struct sCommandlineParams
   mfxU32         nCorruptionLevel;
   double         fLimitPipelineFps; //sleeps in every frame processing
   mfxU32         nLimitFileReader; //sleeps in every frame processing
-  mfxU32         nLimitChunkSize; //limits chunk reading from downstreams 
+  mfxU32         nLimitChunkSize; //limits chunk reading from downstreams
   mfxU64         nLimitInputBs;
   mfxI32         nSeed;
   mfxU16         nInputBitdepth;
   bool           isDefaultFC;
   bool           bVerbose;
-  bool           bPrintSplTimeStamps;  
+  bool           bPrintSplTimeStamps;
   bool           bYuvReaderMode;//indicates whether yuv reader should be used
   bool           bExactSizeBsReader;
   bool           bDXVA2Dump; //
@@ -99,6 +99,7 @@ struct sCommandlineParams
   bool           bPAFFDetect;//disables p field generation
   bool           bDxgiDebug;//
   bool           bMediaSDKSplitter;
+  bool           bAdaptivePlayback;
   vm_char        extractedAudioFile[MAX_FILE_PATH];
   mfxU16         nAdvanceFRCAlgorithm;//if non zero then directly specifies advanced FRC algorithm
   mfxU16         nImageStab;//image stabilization mode
@@ -133,13 +134,13 @@ struct sCommandlineParams
   vm_char        strDecPlugin[MAX_FILE_PATH];
   vm_char        strDecPluginGuid[33];
 
-  // encoder plugin 
+  // encoder plugin
   vm_char        strEncPlugin[MAX_FILE_PATH];
   vm_char        strEncPluginGuid[33];
 
-  // VPP plugin 
+  // VPP plugin
   vm_char        strVPPPluginGuid[33];
-  
+
 
   vm_char        pMFXLibraryPath[MAX_FILE_PATH];
 
@@ -156,14 +157,14 @@ struct sCommandlineParams
 
   //jpeg support for rotation field
   mfxU16         nRotation;
-  
+
   //multiple reliability support
   mfxU32         nRepeat;
   mfxU32         nTimeout;
 
   //process priority settings
   mfxI8          nPriority;
-  
+
   //vpp specific
   bool           bUseVPP;
   bool           bUseVPP_ifdi;
@@ -245,7 +246,7 @@ struct sCommandlineParams
       outFrameInfo.BitDepthChroma = 8;
       outFrameInfo.Shift = 0;
       outFrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-      
+
       isAllegroTest = false;
 
       nPicStruct        =  PIPELINE_PICSTRUCT_NOT_SPECIFIED;
@@ -265,7 +266,7 @@ struct sCommandlineParams
       OverlayTextSize = 0;
 
       bFadeBackground = false;
-
+      bAdaptivePlayback = false;
       nInputBitdepth = 8;
 
       InputPicstruct  = NOT_ASSIGNED_VALUE;
@@ -281,13 +282,13 @@ struct sCommandlineParams
 //IDirect3DDeviceManager9 *CreateDXVASpy(IDirect3DDeviceManager9*);
 //#endif
 
-class MFXDecPipeline 
+class MFXDecPipeline
     : public IMFXPipeline, public IPipelineControl, public ITime
 {
 public:
     MFXDecPipeline(IMFXPipelineFactory *pFactory);
     virtual ~MFXDecPipeline();
-    
+
     //IMFXPipeline
     virtual mfxStatus        ProcessCommand(vm_char ** &argv, mfxI32 argc, bool bReportError = true);
     virtual mfxStatus        ReconstructInput( vm_char ** argv, mfxI32 argc, void* pReconstrcutedargs);
@@ -327,7 +328,7 @@ public:
 protected:
     //Pipeline parameters
     sCommandlineParams       m_inParams;
-    enum 
+    enum
     {
         eDEC,
         eVPP,
@@ -343,13 +344,13 @@ protected:
     bool                     m_bPreventBuffering;//buffered reader wont be used - intends for perfopt with large streams
     bool                     m_bInPSNotSpecified;//behavior specific flag is not an input one
     MFXVideoRenderType       m_RenderType;
-    
+
     //Pipeline objects
     IBitstreamReader       * m_pSpl;         // splitter
     std::auto_ptr<IYUVSource>             m_pYUVSource;   // decoder
     IMFXVideoVPP           * m_pVPP;         // vpp
     IMFXVideoRender        * m_pRender;      // render
-    
+
     mfxBitstream2            m_inBSFrame;    // data from splitter
 
     //d3d9 memory
@@ -381,7 +382,7 @@ protected:
     virtual mfxStatus        CreateVPP();
     virtual mfxStatus        InitVPP();
     virtual mfxStatus        InitPluginParams();
-    virtual mfxStatus        InitPluginVppParams(mfxFrameInfo & pluginInfo, 
+    virtual mfxStatus        InitPluginVppParams(mfxFrameInfo & pluginInfo,
                                                  mfxFrameInfo & pluginVpp);
     virtual mfxStatus        CreateRender();
     virtual mfxStatus        CreateFileSink(std::auto_ptr<IFile> &pSink);//render ended with file sink object
@@ -402,8 +403,8 @@ protected:
     virtual mfxStatus        WriteParFile();
     virtual mfxStatus        ReadParFile(const vm_char * pInFile, IProcessCommand * pHandler);
     virtual mfxStatus        CheckExitingCondition();//if number frames is limited by cmd line
-    
-    
+
+
     //////////////////////////////////////////////////////////////////////////
     //light reset support in case of invalid params, no reset for splitter, cmp render
     virtual mfxStatus        BuildMFXPart();
@@ -417,12 +418,12 @@ protected:
     bool                     m_generateRandomSeek;
     //checking for available Commands
     virtual mfxStatus        ProcessTrickCommands();
-    
+
     //////////////////////////////////////////////////////////////////////////
     //feeding buffer control support
     MFXBistreamBuffer        m_bitstreamBuf;
-    
-       
+
+
     //////////////////////////////////////////////////////////////////////////
     //metrics calc support
     std::vector<std::pair<MetricType, mfxF64> >m_metrics;
@@ -438,14 +439,14 @@ protected:
         IP_VPPASYNC = 2,
         IP_ENCASYNC = 3
     };
-    
+
     //map that stores error incompatible params for any components calls
     std::map <IncompatComponent, bool> m_IPComponents;
     bool                                m_bResetAfterIncompatParams;
     bool                                m_bErrIncompat;
     bool                                m_bErrIncompatValid;
 
-    //helper funtcions are 
+    //helper funtcions are
     bool isErrIncompatParams();
     mfxStatus HandleIncompatParamsCode( mfxStatus error_code
                                       , IncompatComponent ID
@@ -466,7 +467,7 @@ protected:
 
     //external synhro holder
     IPipelineSynhro* m_externalsync;
-    
+
     //factory that creates everything inside pipeline
     std::auto_ptr<IMFXPipelineFactory>      m_pFactory;
 

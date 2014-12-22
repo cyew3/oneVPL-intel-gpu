@@ -32,6 +32,7 @@ struct vaapiMemId
 struct vaapiAllocatorParams : mfxAllocatorParams
 {
     VADisplay m_dpy;
+    bool bAdaptivePlayback;
 };
 
 class vaapiFrameAllocator: public BaseFrameAllocator
@@ -53,6 +54,9 @@ protected:
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
 
     VADisplay m_dpy;
+    bool      m_bAdaptivePlayback;
+    mfxU32    m_Width;
+    mfxU32    m_Height;
 };
 
 #endif //#if defined(LIBVA_SUPPORT)

@@ -70,6 +70,7 @@ public:
           m_pSession = m_Session.get();
           m_params.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
           m_params.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+          m_bAdaptivePlayback = false;
       }
       virtual ~ComponentParams(){}
 
@@ -117,7 +118,7 @@ public:
     mfxIMPL                        m_RealImpl;//real implementation is used to create intel device
     bool                           m_bHWStrict;
     bool                           m_bPrintTimeStamps;
-
+    bool                           m_bAdaptivePlayback;
     MFXBufType                     m_bufType;
     mfxU16                         m_NumThread;
     bool                           m_bExternalAlloc;

@@ -258,6 +258,7 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
 
             MFX_CHECK_STS(hwDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*) &va_dpy));
             p_vaapiAllocParams->m_dpy = va_dpy;
+            p_vaapiAllocParams->bAdaptivePlayback = m_bAdaptivePlayback;
             pAllocatorParams.reset(p_vaapiAllocParams);
 #endif
             break;

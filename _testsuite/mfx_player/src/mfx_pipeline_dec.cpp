@@ -479,7 +479,7 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     }
 
     m_components[eDEC].m_params.mfx.CodecId = m_inParams.InputCodecType;
-    if ( MFX_FOURCC_P010 == m_inParams.FrameInfo.FourCC || 
+    if ( MFX_FOURCC_P010 == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_P210 == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_NV16 == m_inParams.FrameInfo.FourCC ||
          MFX_FOURCC_R16  == m_inParams.FrameInfo.FourCC) {
@@ -576,17 +576,17 @@ mfxStatus MFXDecPipeline::ReleasePipeline()
 
             if ( m_inParams.bExtendedFpsStat )
             {
-                int dist = m_inParams.fps_frame_window ? m_inParams.fps_frame_window : 30 ;            
+                int dist = m_inParams.fps_frame_window ? m_inParams.fps_frame_window : 30 ;
                 Ipp64f max_time = 0;
                 for(int i = 0; i < m_time_stampts.size(); i++)
                 {
                     if ( i + 1 >= dist )
                     {
                         if ( i + 1 == dist )
-                        {     
+                        {
                             max_time = m_time_stampts[i] > max_time ? m_time_stampts[i] : max_time;
                         }
-                        else 
+                        else
                         {
                             max_time = (m_time_stampts[i] - m_time_stampts[i+1-dist]) > max_time ? (m_time_stampts[i] - m_time_stampts[i+1-dist]) : max_time;
                         }
@@ -1434,8 +1434,15 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         m_components[eDEC].m_params.mfx.FrameInfo.PicStruct = m_inParams.InputPicstruct;
     }
 
+    if( m_inParams.bAdaptivePlayback )
+    {
+        mfxExtBuffer decAdaptivePlayback;
+        decAdaptivePlayback.BufferId = MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK;
+        decAdaptivePlayback.BufferSz = sizeof(mfxExtBuffer);
+        m_components[eDEC].m_extParams.push_back(&decAdaptivePlayback);
+    }
     // Special case when SFC should be used in decoder
-    // FourCC and picstruct must be the same as in decoded frame 
+    // FourCC and picstruct must be the same as in decoded frame
     if (!m_extDecVideoProcessing.IsZero())
     {
         m_extDecVideoProcessing->Out.PicStruct    = m_components[eDEC].m_params.mfx.FrameInfo.PicStruct;
@@ -1781,11 +1788,11 @@ mfxStatus MFXDecPipeline::CreateRender()
                 }
             }
 
-            if ( m_inParams.bFadeBackground && iParams.window.directLocation.right > iParams.window.windowSize.right){ 
+            if ( m_inParams.bFadeBackground && iParams.window.directLocation.right > iParams.window.windowSize.right){
                 iParams.window.directLocation.right  = iParams.window.windowSize.right;
             }
 
-            if ( m_inParams.bFadeBackground && iParams.window.directLocation.bottom > iParams.window.windowSize.bottom){ 
+            if ( m_inParams.bFadeBackground && iParams.window.directLocation.bottom > iParams.window.windowSize.bottom){
                 iParams.window.directLocation.bottom = iParams.window.windowSize.bottom;
             }
 
@@ -2255,7 +2262,7 @@ D3DFORMAT StrToD3DFORMAT(vm_char *format_name)
      D3DFORMAT format = D3DFMT_X8R8G8B8;
      if ( ! format )
          return format;
-  
+
      if (0 == vm_string_strcmp(VM_STRING("D3DFMT_A2B10G10R10"), format_name) ){
          format = D3DFMT_A2B10G10R10;
          PipelineTrace((VM_STRING("D3D back buffer format: D3DFMT_A2B10G10R10\n")));
@@ -2277,7 +2284,7 @@ D3DFORMAT StrToD3DFORMAT(vm_char *format_name)
          PipelineTrace((VM_STRING("D3D back buffer format: D3DFMT_X8R8G8B8\n")));
      }
      else {
-         
+
          PipelineTrace((VM_STRING("Unsupported back buffer format provided\n")));
          return (D3DFORMAT)0;
      }
@@ -2509,6 +2516,7 @@ mfxStatus MFXDecPipeline::CreateAllocator()
             , IPP_MAX(m_components[eDEC].m_nMaxAsync, 1) - 1
             , IPP_MAX(m_components[eREN].m_nMaxAsync, 1) - 1);
 
+        m_components[eDEC].m_bAdaptivePlayback = m_inParams.bAdaptivePlayback;
         MFX_CHECK_STS(m_components[eDEC].AllocFrames(m_pAllocFactory.get(), m_pHWDevice, request, false));
 
         if (m_components[eDEC].m_bufType == MFX_BUF_OPAQ)
@@ -2641,7 +2649,7 @@ mfxStatus MFXDecPipeline::Play()
     m_statTimer.Start();
 
     //cpuusage measurement start
-#if defined(_WIN32) || defined(_WIN64) 
+#if defined(_WIN32) || defined(_WIN64)
     FILETIME notUsedVar;
 
     GetProcessTimes( GetCurrentProcess()
@@ -2861,10 +2869,20 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
         }
 
         bs.DataFlag = (mfxU16)(m_inParams.bCompleteFrame ? MFX_BITSTREAM_COMPLETE_FRAME : 0);
-        
+
         if (m_pSpl == NULL)
             bs.isNull = true;
+#ifdef LIBVA_SUPPORT
+        if ( m_inParams.bAdaptivePlayback )
+        {
+            vaapiMemId *vapi_id = (vaapiMemId *)(inSurface.pSurface->Data.MemId);
+            if ( (VASurfaceID)VA_INVALID_ID == *(vapi_id->m_surface))
+            {
+                m_components[eDEC].m_pAllocator->Lock(m_components[eDEC].m_pAllocator->pthis,inSurface.pSurface->Data.MemId, NULL );
+            }
 
+        }
+#endif
         sts = m_pYUVSource->DecodeFrameAsync(bs, inSurface.pSurface, &pDecodedSurface, &syncp);
         HandleIncompatParamsCode(sts, IP_DECASYNC, bs.isNull);
     }
@@ -3172,13 +3190,13 @@ mfxStatus MFXDecPipeline::RunRender(mfxFrameSurface1* pSurface, mfxEncodeCtrl *p
 {
 #if defined(_WIN32) || defined(_WIN64)
     vm_char title[1024];
-    if ( m_inParams.bUpdateWindowTitle ) 
+    if ( m_inParams.bUpdateWindowTitle )
     {
         if ( m_inParams.nFrames )
         {
             vm_string_sprintf(title, VM_STRING("Frames processed: %d of %d"), m_nDecFrames, m_inParams.nFrames);
         }
-        else 
+        else
         {
             vm_string_sprintf(title, VM_STRING("Frames processed: %d"), m_nDecFrames);
         }
@@ -3508,7 +3526,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             argv++;
 
             MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.strDstFile, MFX_ARRAY_SIZE(m_inParams.strDstFile), argv[0]));
-            
+
             if (m_RenderType != MFX_METRIC_CHECK_RENDER&&
                 m_RenderType != MFX_ENC_RENDER &&
                 m_RenderType != MFX_OUTLINE_RENDER&&
@@ -3517,7 +3535,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_RenderType = MFX_FW_RENDER;
             }
 
-        } 
+        }
         else {
             m_RenderType = MFX_SCREEN_RENDER;
 
@@ -3618,7 +3636,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         MFX_CHECK(1 + argv != argvEnd);
 
         vm_string_strcpy_s(m_inParams.OverlayText, MFX_ARRAY_SIZE(m_inParams.OverlayText), argv[1]);
-        if ( ! m_inParams.OverlayTextSize ) 
+        if ( ! m_inParams.OverlayTextSize )
             m_inParams.OverlayTextSize = 18;
         argv++;
     }
@@ -4621,6 +4639,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
               mfxU16 picstruct;
               MFX_PARSE_INT(picstruct, argv[0]);
               m_inParams.OutputPicstruct = Convert_CmdPS_to_MFXPS(picstruct);
+          }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-adaptive_playback"), VM_STRING("Turn on adaptive playback mode. Disabled by default.")))
+          {
+              m_inParams.bAdaptivePlayback = true;
           }
           else
           {

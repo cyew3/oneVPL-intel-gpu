@@ -70,6 +70,14 @@ namespace {\
 }
 
 //
+
+#define MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK MFX_MAKEFOURCC('A','P','B','K')
+
+typedef struct {
+    mfxExtBuffer    Header;
+} mfxExtAdaptivePlayback;
+
+DECL_BUFFER_TYPE(mfxExtAdaptivePlayback, MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK);
 DECL_BUFFER_TYPE(mfxExtVPPDoUse, MFX_EXTBUFF_VPP_DOUSE);
 DECL_BUFFER_TYPE(mfxExtVPPDoNotUse, MFX_EXTBUFF_VPP_DONOTUSE);
 DECL_BUFFER_TYPE(mfxExtVppAuxData, MFX_EXTBUFF_VPP_AUXDATA);
