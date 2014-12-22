@@ -13,6 +13,7 @@ File Name: vp8e_plugin.cpp
 #include "vp8e_plugin.h"
 #include "mfx_plugin_module.h"
 #include "mfxvideo++int.h"
+#include "plugin_version_linux.h"
 
 PluginModuleTemplate g_PluginModule = {
     NULL,
