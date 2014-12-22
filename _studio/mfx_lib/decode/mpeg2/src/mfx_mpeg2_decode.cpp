@@ -306,14 +306,14 @@ VideoDECODEMPEG2::VideoDECODEMPEG2(VideoCORE* core, mfxStatus *sts)
 : VideoDECODE()
 , m_implUmc()
 , m_pCore(core)
-, m_isSWBuf(false)
-, m_isInitialized(false)
-, m_isSWImpl(false)
 , m_FrameAllocator(NULL)
-, m_FrameAllocator_nv12(NULL)
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
 , m_FrameAllocator_d3d(NULL)
 #endif
+, m_FrameAllocator_nv12(NULL)
+, m_isInitialized(false)
+, m_isSWBuf(false)
+, m_isSWImpl(false)
 {
     int i;
 
