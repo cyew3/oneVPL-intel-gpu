@@ -893,13 +893,15 @@ namespace MfxHwH264Encode
             , m_minQP(0)
             , m_maxQP(0)
             , m_disableDeblockingIdc(0)
+            , m_resetBRC(false)
+
+            , m_idxMBQP(NO_INDEX)
+            , m_midMBQP(MID_INVALID)
+            , m_isMBQP(false)
+
             , m_feiDistortion(NULL)
             , m_feiMVOut(NULL)
             , m_feiMBCODEOut(NULL)
-            , m_resetBRC(false)
-            , m_midMBQP(MID_INVALID)
-            , m_idxMBQP(NO_INDEX)
-            , m_isMBQP(false)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);

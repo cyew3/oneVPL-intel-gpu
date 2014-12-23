@@ -641,7 +641,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
             (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxRes) ||
             (MFX_WRN_OUT_OF_RANGE == mfxRes) ||
             // WHAT IS IT??? IT SHOULD BE REMOVED
-            (MFX_ERR_MORE_DATA_RUN_TASK == mfxRes) ||
+            ((mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxRes) ||
             (MFX_ERR_MORE_BITSTREAM == mfxRes))
         {
             // prepare the obsolete kind of task.
@@ -765,7 +765,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
             }
 
             // IT SHOULD BE REMOVED
-            if (MFX_ERR_MORE_DATA_RUN_TASK == mfxRes)
+            if ((mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxRes)
             {
                 mfxRes = MFX_ERR_MORE_DATA;
                 syncPoint = NULL;
