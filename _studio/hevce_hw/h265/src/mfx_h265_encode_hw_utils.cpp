@@ -10,6 +10,8 @@
 
 #include "mfx_h265_encode_hw_utils.h"
 #include <algorithm>
+#include <functional>
+#include <list>
 #include <assert.h>
 
 namespace MfxHwH265Encode
@@ -369,7 +371,6 @@ void MfxVideoParam::SyncVideoToCalculableParam()
     BufferSizeInKB = mfx.BufferSizeInKB * multiplier;
     LTRInterval    = 0;
     LCUSize        = DEFAULT_LCU_SIZE;
-    BRef           = (mfx.GopRefDist > 3);
 
     if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -393,6 +394,8 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         NumRefLX[1] = 0;
     }
 
+    BRef = (mfx.GopRefDist > 3) && NumRefLX[0] >= 2;
+
     m_slice.resize(0);
 }
 
@@ -400,7 +403,7 @@ void MfxVideoParam::SyncCalculableToVideoParam()
 {
     mfxU32 maxVal32 = BufferSizeInKB;
 
-    mfx.NumRefFrame = NumRefLX[0] + NumRefLX[1];
+    mfx.NumRefFrame = NumRefLX[0] + (mfx.GopRefDist > 1) * NumRefLX[1];
 
     if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -457,19 +460,29 @@ struct FakeTask
     mfxU16 m_frameType;
 };
 
+struct STRPSFreq : STRPS
+{
+    STRPSFreq(STRPS const & rps, mfxU32 n)
+    {
+        *(STRPS*)this = rps;
+        N = n;
+    }
+    mfxU32 N;
+};
+
 class EqSTRPS
 {
 private:
     STRPS const & m_ref;
 public:
     EqSTRPS(STRPS const & ref) : m_ref(ref) {};
-    bool operator () (std::pair<STRPS, mfxU32> const & cur) { return Equal(m_ref, cur.first); };
+    bool operator () (STRPSFreq const & cur) { return Equal<STRPS>(m_ref, cur); };
     EqSTRPS & operator = (EqSTRPS const &) { assert(0); return *this; }
 };
 
-bool Greater(std::pair<STRPS, mfxU32> const & l, std::pair<STRPS, mfxU32> const r)
+bool Greater(STRPSFreq const & l, STRPSFreq const r)
 {
-    return (l.second > r.second);
+    return (l.N > r.N);
 }
 
 mfxU32 NBitsUE(mfxU32 b)
@@ -487,32 +500,197 @@ mfxU32 NBitsUE(mfxU32 b)
     return n * 2 - 1;
 };
 
-mfxU32 NBits(STRPS const & rps, bool is1st = true)
+template<class T> mfxU32 NBits(T const & list, mfxU8 nSet, STRPS const & rps, mfxU8 idx)
 {
-    mfxU32 n = is1st;
+    mfxU32 n = (idx != 0);
+    mfxU32 nPic = mfxU32(rps.num_negative_pics + rps.num_positive_pics);
 
-    assert(0 == rps.inter_ref_pic_set_prediction_flag);
+    if (rps.inter_ref_pic_set_prediction_flag)
+    {
+        assert(idx > rps.delta_idx_minus1);
+        STRPS const & ref = list[idx - rps.delta_idx_minus1 - 1];
+        nPic = mfxU32(ref.num_negative_pics + ref.num_positive_pics);
+
+        if (idx == nSet)
+            n += NBitsUE(rps.delta_idx_minus1);
+
+        n += 1;
+        n += NBitsUE(rps.abs_delta_rps_minus1);
+        n += nPic;
+
+        for (mfxU32 i = 0; i <= nPic; i ++)
+            if (!rps.pic[i].used_by_curr_pic_flag)
+                n ++;
+
+        return n;
+    }
 
     n += NBitsUE(rps.num_negative_pics);
     n += NBitsUE(rps.num_positive_pics);
 
-    for (mfxU32 i = 0; i < mfxU32(rps.num_negative_pics + rps.num_positive_pics); i ++)
+    for (mfxU32 i = 0; i < nPic; i ++)
         n += NBitsUE(rps.pic[i].delta_poc_sx_minus1) + 1;
 
     return n;
 }
 
-void ReduceSTRPS(std::list<std::pair<STRPS, mfxU32> > & sets, mfxU32 NumSlice)
+template<class T> void OptimizeSTRPS(T const & list, mfxU8 n, STRPS& oldRPS, mfxU8 idx)
+{
+    if (idx == 0)
+        return;
+
+    STRPS newRPS;
+    mfxI8 k = 0, i = 0, j = 0;
+
+    for (k = idx - 1; k >= 0; k --)
+    {
+        STRPS const & refRPS = list[k];
+
+        if ((refRPS.num_negative_pics + refRPS.num_positive_pics + 1)
+             < (oldRPS.num_negative_pics + oldRPS.num_positive_pics))
+            continue;
+
+        newRPS = oldRPS;
+        newRPS.inter_ref_pic_set_prediction_flag = 1;
+        newRPS.delta_idx_minus1 = (idx - k - 1);
+
+        std::list<mfxI16> dPocs[2];
+        mfxI16 dPoc = 0;
+        bool found = false;
+
+        for (i = 0; i < oldRPS.num_negative_pics + oldRPS.num_positive_pics; i ++)
+        {
+            dPoc = oldRPS.pic[i].DeltaPocSX;
+            if (dPoc)
+                dPocs[dPoc > 0].push_back(dPoc);
+
+            for (j = 0; j < refRPS.num_negative_pics + refRPS.num_positive_pics; j ++)
+            {
+                dPoc = oldRPS.pic[i].DeltaPocSX - refRPS.pic[j].DeltaPocSX;
+                if (dPoc)
+                    dPocs[dPoc > 0].push_back(dPoc);
+            }
+        }
+
+        dPocs[0].sort(std::greater<mfxI16>());
+        dPocs[1].sort(std::less<mfxI16>());
+        dPocs[0].unique();
+        dPocs[1].unique();
+
+        dPoc = 0;
+
+        while ((!dPocs[0].empty() || !dPocs[1].empty()) && !found)
+        {
+            dPoc *= -1;
+            bool positive = (dPoc > 0 && !dPocs[1].empty()) || dPocs[0].empty();
+            dPoc = dPocs[positive].front();
+            dPocs[positive].pop_front();
+
+            for (i = 0; i <= refRPS.num_negative_pics + refRPS.num_positive_pics; i ++)
+                newRPS.pic[i].used_by_curr_pic_flag = newRPS.pic[i].use_delta_flag = 0;
+
+            i = 0;
+            for (j = refRPS.num_negative_pics + refRPS.num_positive_pics - 1; 
+                 j >= refRPS.num_negative_pics; j --)
+            {
+                if (   oldRPS.pic[i].DeltaPocSX < 0
+                    && oldRPS.pic[i].DeltaPocSX - refRPS.pic[j].DeltaPocSX == dPoc)
+                {
+                    newRPS.pic[j].used_by_curr_pic_flag = oldRPS.pic[i].used_by_curr_pic_sx_flag;
+                    newRPS.pic[j].use_delta_flag = 1;
+                    i ++;
+                }
+            }
+
+            if (dPoc < 0 && oldRPS.pic[i].DeltaPocSX == dPoc)
+            {
+                j = refRPS.num_negative_pics + refRPS.num_positive_pics;
+                newRPS.pic[j].used_by_curr_pic_flag = oldRPS.pic[i].used_by_curr_pic_sx_flag;
+                newRPS.pic[j].use_delta_flag = 1;
+                i ++;
+            }
+
+            for (j = 0; j < refRPS.num_negative_pics; j ++)
+            {
+                if (   oldRPS.pic[i].DeltaPocSX < 0
+                    && oldRPS.pic[i].DeltaPocSX - refRPS.pic[j].DeltaPocSX == dPoc)
+                {
+                    newRPS.pic[j].used_by_curr_pic_flag = oldRPS.pic[i].used_by_curr_pic_sx_flag;
+                    newRPS.pic[j].use_delta_flag = 1;
+                    i ++;
+                }
+            }
+
+            if (i != oldRPS.num_negative_pics)
+                continue;
+
+            for (j = refRPS.num_negative_pics - 1; j >= 0; j --)
+            {
+                if (   oldRPS.pic[i].DeltaPocSX > 0
+                    && oldRPS.pic[i].DeltaPocSX - refRPS.pic[j].DeltaPocSX == dPoc)
+                {
+                    newRPS.pic[j].used_by_curr_pic_flag = oldRPS.pic[i].used_by_curr_pic_sx_flag;
+                    newRPS.pic[j].use_delta_flag = 1;
+                    i ++;
+                }
+            }
+
+            if (dPoc > 0 && oldRPS.pic[i].DeltaPocSX == dPoc)
+            {
+                j = refRPS.num_negative_pics + refRPS.num_positive_pics;
+                newRPS.pic[j].used_by_curr_pic_flag = oldRPS.pic[i].used_by_curr_pic_sx_flag;
+                newRPS.pic[j].use_delta_flag = 1;
+                i ++;
+            }
+
+            for (j = refRPS.num_negative_pics;
+                 j < refRPS.num_negative_pics + refRPS.num_positive_pics; j ++)
+            {
+                if (   oldRPS.pic[i].DeltaPocSX > 0
+                    && oldRPS.pic[i].DeltaPocSX - refRPS.pic[j].DeltaPocSX == dPoc)
+                {
+                    newRPS.pic[j].used_by_curr_pic_flag = oldRPS.pic[i].used_by_curr_pic_sx_flag;
+                    newRPS.pic[j].use_delta_flag = 1;
+                    i ++;
+                }
+            }
+
+            found = (i == oldRPS.num_negative_pics + oldRPS.num_positive_pics);
+        }
+
+        if (found)
+        {
+            newRPS.delta_rps_sign       = (dPoc < 0);
+            newRPS.abs_delta_rps_minus1 = Abs(dPoc) - 1;
+
+            if (NBits(list, n, newRPS, idx) < NBits(list, n, oldRPS, idx))
+                oldRPS = newRPS;
+        }
+
+        if (idx < n)
+            break;
+    }
+}
+
+void ReduceSTRPS(std::vector<STRPSFreq> & sets, mfxU32 NumSlice)
 {
     if (sets.empty())
         return;
 
-    STRPS const & rps = sets.back().first;
-    mfxU32 n = sets.back().second;
-    mfxU32 nSet = mfxU32(sets.size());
-    mfxU32 bits0 = NBits(rps, nSet == 1) + (CeilLog2(nSet) - CeilLog2(nSet - 1))
-        + (nSet > 1) * (NumSlice * CeilLog2((mfxU32)sets.size()) * n);
-    mfxU32 bits1 = NBits(rps) * NumSlice * n;
+    STRPS  rps = sets.back();
+    mfxU32 n = sets.back().N; //current RPS used for N frames
+    mfxU8  nSet = mfxU8(sets.size());
+    mfxU32 bits0 = //bits for RPS in SPS and SSHs
+        NBits(sets, nSet, rps, nSet - 1) //bits for RPS in SPS
+        + (CeilLog2(nSet) - CeilLog2(nSet - 1)) //diff of bits for STRPS num in SPS
+        + (nSet > 1) * (NumSlice * CeilLog2((mfxU32)sets.size()) * n); //bits for RPS idx in SSHs
+    
+    //emulate removal of current RPS from SPS
+    nSet --; 
+    rps.inter_ref_pic_set_prediction_flag = 0;
+    OptimizeSTRPS(sets, nSet, rps, nSet);
+
+    mfxU32 bits1 = NBits(sets, nSet, rps, nSet) * NumSlice * n;//bits for RPS in SSHs (no RPS in SPS)
 
     if (bits1 < bits0)
     {
@@ -590,8 +768,8 @@ void MfxVideoParam::SyncMfxToHeadersParam()
         mfxU32 MaxPocLsb = (1<<(m_sps.log2_max_pic_order_cnt_lsb_minus4+4));
         std::list<FakeTask> frames;
         std::list<FakeTask>::iterator cur;
-        std::list<std::pair<STRPS, mfxU32> > sets;
-        std::list<std::pair<STRPS, mfxU32> >::iterator it;
+        std::vector<STRPSFreq> sets;
+        std::vector<STRPSFreq>::iterator it;
         DpbArray dpb = {};
         DpbFrame tmp = {};
         mfxU8 rpl[2][MAX_DPB_SIZE] = {};
@@ -627,9 +805,9 @@ void MfxVideoParam::SyncMfxToHeadersParam()
                 it = std::find_if(sets.begin(), sets.end(), EqSTRPS(rps));
 
                 if (it == sets.end())
-                    sets.push_back(std::make_pair(rps, 1U));
+                    sets.push_back(STRPSFreq(rps, 1));
                 else
-                    it->second ++;
+                    it->N ++;
             }
 
             if (cur->m_frameType & MFX_FRAMETYPE_REF)
@@ -668,13 +846,16 @@ void MfxVideoParam::SyncMfxToHeadersParam()
             frames.erase(cur);
         }
 
-        sets.sort(Greater);
+        std::sort(sets.begin(), sets.end(), Greater);
         assert(sets.size() <= 64);
+
+        for (mfxU8 i = 0; i < sets.size(); i ++)
+            OptimizeSTRPS(sets, (mfxU8)sets.size(), sets[i], i);
 
         ReduceSTRPS(sets, mfx.NumSlice);
 
         for (it = sets.begin(); it != sets.end(); it ++)
-            m_sps.strps[m_sps.num_short_term_ref_pic_sets++] = it->first;
+            m_sps.strps[m_sps.num_short_term_ref_pic_sets++] = *it;
         
         m_sps.long_term_ref_pics_present_flag = !!LTRInterval;
     }
@@ -815,6 +996,22 @@ void ConstructSTRPS(
     }
 }
 
+bool Equal(STRPS const & l, STRPS const & r)
+{
+    //ignore inter_ref_pic_set_prediction_flag, check only DeltaPocSX
+
+    if (   l.num_negative_pics != r.num_negative_pics
+        || l.num_positive_pics != r.num_positive_pics)
+        return false;
+
+    for(mfxU8 i = 0; i < l.num_negative_pics + l.num_positive_pics; i ++)
+        if (   l.pic[i].DeltaPocSX != r.pic[i].DeltaPocSX
+            || l.pic[i].used_by_curr_pic_sx_flag != r.pic[i].used_by_curr_pic_sx_flag)
+            return false;
+
+    return true;
+}
+
 void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
 {
     bool  isP   = !!(task.m_frameType & MFX_FRAMETYPE_P);
@@ -874,6 +1071,9 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
                 break;
             }
         }
+
+        if (!s.short_term_ref_pic_set_sps_flag)
+            OptimizeSTRPS(m_sps.strps, m_sps.num_short_term_ref_pic_sets, s.strps, m_sps.num_short_term_ref_pic_sets);
 
         for (i = 0; i < mfxU32(s.strps.num_negative_pics + s.strps.num_positive_pics); i ++)
         {

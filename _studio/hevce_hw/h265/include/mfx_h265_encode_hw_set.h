@@ -128,30 +128,26 @@ struct STRPS
 
     struct
     {
-        struct
-        {
-            mfxU8  used_by_curr_pic_flag;
-            mfxU8  use_delta_flag;
-        };
+        mfxU8 used_by_curr_pic_flag   : 1;
+        mfxU8 use_delta_flag          : 1;
+        mfxI16 DeltaPocSX;
+
         union
         {
             struct
             {
                 mfxU16 delta_poc_s0_minus1      : 15;
                 mfxU16 used_by_curr_pic_s0_flag : 1;
-                mfxI16 DeltaPocS0;
             };
             struct
             {
                 mfxU16 delta_poc_s1_minus1      : 15;
                 mfxU16 used_by_curr_pic_s1_flag : 1;
-                mfxI16 DeltaPocS1;
             };
             struct
             {
                 mfxU16 delta_poc_sx_minus1      : 15;
                 mfxU16 used_by_curr_pic_sx_flag : 1;
-                mfxI16 DeltaPocSX;
             };
         };
     }pic[16];

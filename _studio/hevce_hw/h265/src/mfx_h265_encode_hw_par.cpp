@@ -567,7 +567,7 @@ void SetDefaults(
     }
     
     if (!par.AsyncDepth)
-        par.AsyncDepth = 1;
+        par.AsyncDepth = 5;
 
     if (!par.mfx.CodecProfile)
         par.mfx.CodecProfile = mfxU16(par.mfx.FrameInfo.BitDepthLuma > 8 ? MFX_PROFILE_HEVC_MAIN10 : MFX_PROFILE_HEVC_MAIN);
@@ -671,11 +671,11 @@ void SetDefaults(
     if (!par.LTRInterval && par.NumRefLX[0] > 1 && par.mfx.GopPicSize > 32)
         par.LTRInterval = 16;
 
-    if (!par.mfx.NumRefFrame)
-        par.mfx.NumRefFrame = par.NumRefLX[0] + par.NumRefLX[1];
-
     if (!par.mfx.GopRefDist)
         par.mfx.GopRefDist = mfxU16((par.mfx.GopPicSize > 1 && par.NumRefLX[1] && !hwCaps.SliceIPOnly) ? Min(par.mfx.GopPicSize - 1, 3) : 1);
+
+    if (!par.mfx.NumRefFrame)
+        par.mfx.NumRefFrame = par.NumRefLX[0] + (par.mfx.GopRefDist > 1) * par.NumRefLX[1];
 
     if (!par.mfx.CodecLevel)
         CorrectLevel(par, false);

@@ -92,11 +92,12 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     mfxFrameAllocRequest request = {};
     request.Info = m_vpar.mfx.FrameInfo;
+    mfxU16 minFrames = m_vpar.AsyncDepth + m_vpar.mfx.GopRefDist - 1 + m_vpar.mfx.NumRefFrame;
 
     if (m_vpar.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         request.Type        = MFX_MEMTYPE_D3D_INT;
-        request.NumFrameMin = m_vpar.AsyncDepth + m_vpar.mfx.GopRefDist - 1 + m_vpar.mfx.NumRefFrame;
+        request.NumFrameMin = minFrames;
 
         sts = m_raw.Alloc(&m_core, request, true);
         MFX_CHECK_STS(sts);
@@ -117,7 +118,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     }
 
     request.Type        = MFX_MEMTYPE_D3D_INT;
-    request.NumFrameMin = m_vpar.mfx.NumRefFrame + 1;
+    request.NumFrameMin = minFrames;
 
     sts = m_rec.Alloc(&m_core, request, false);
     MFX_CHECK_STS(sts);
@@ -129,7 +130,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     request.Type        = MFX_MEMTYPE_D3D_INT;
-    request.NumFrameMin = 1;
+    request.NumFrameMin = m_vpar.AsyncDepth;
     
     sts = m_bs.Alloc(&m_core, request, false);
     MFX_CHECK_STS(sts);
@@ -274,7 +275,6 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     
     //TODO: check par here
 
-
     if (surface)
     {
         task = m_task.New();
@@ -304,11 +304,10 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         else
             task->m_surf_real = task->m_surf;
 
-        m_core.IncreaseReference(&surface->Data);
-
         if (m_vpar.mfx.EncodedOrder)
         {
             task->m_frameType = task->m_ctrl.FrameType;
+            task->m_poc = (mfxI32)surface->Data.FrameOrder;
         }
         else
         {
@@ -317,6 +316,16 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
                 m_frameOrder = 0;
             task->m_poc = m_frameOrder;
         }
+
+        m_core.IncreaseReference(&surface->Data);
+        task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
+        task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
+
+        assert(task->m_idxRec != IDX_INVALID);
+
+        task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
+        task->m_midRec = AcquireResource(m_rec, task->m_idxRec);
+        MFX_CHECK(task->m_midRec, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         m_frameOrder ++;
         task->m_stage |= FRAME_ACCEPTED;
@@ -327,16 +336,10 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 
     task->m_stage |= FRAME_REORDERED;
             
-    task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
-    task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
-    task->m_idxBs  = (mfxU8)FindFreeResourceIndex(m_bs);
-
-    assert(task->m_idxRec != IDX_INVALID);
+    task->m_idxBs = (mfxU8)FindFreeResourceIndex(m_bs);
     assert(task->m_idxBs  != IDX_INVALID);
 
-    task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
-    task->m_midRec = AcquireResource(m_rec, task->m_idxRec);
-    task->m_midBs  = AcquireResource(m_bs,  task->m_idxBs);
+    task->m_midBs = AcquireResource(m_bs,  task->m_idxBs);
     MFX_CHECK(task->m_midRec && task->m_midBs, MFX_ERR_UNDEFINED_BEHAVIOR);
             
     ConfigureTask(*task, m_lastTask, m_vpar);
