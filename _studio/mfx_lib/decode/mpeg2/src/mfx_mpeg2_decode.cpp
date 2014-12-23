@@ -258,7 +258,7 @@ bool DARtoPAR(mfxI32 width, mfxI32 height, mfxI32 dar_h, mfxI32 dar_v,
     v>>=1;
   }
 
-  for(i=0;i<sizeof(simple_tab)/sizeof(simple_tab[0]);i++)
+  for(i=0;i<(mfxI32)(sizeof(simple_tab)/sizeof(simple_tab[0]));i++)
   {
     denom = simple_tab[i];
     while(h%denom==0 && v%denom==0) {
@@ -2620,12 +2620,12 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                                 display_order++;
                             }
 
-                            if (true == IsField && !(dec_field_count & 1) || false == IsField)
+                            if ((true == IsField && !(dec_field_count & 1)) || false == IsField)
                             {
                                 pEntryPoint->requiredNumThreads = m_NumThreads;
                                 pEntryPoint->pRoutine = VideoDECODEMPEG2::TaskRoutine;
                                 pEntryPoint->pState = (void*)this;
-                                pEntryPoint->pRoutineName = "DecodeMPEG2";
+                                pEntryPoint->pRoutineName = (char*)"DecodeMPEG2";
 
                                 m_task_param[m_task_num].NumThreads = m_implUmc.GetCurrThreadsNum(m_task_num);
                                 m_task_param[m_task_num].m_frame_curr = m_frame_curr;
@@ -2830,12 +2830,12 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                 GetOutputSurface(surface_disp, surface_work, mid[display_index]);
             }
 
-            if (true == IsField && !(dec_field_count & 1) || false == IsField)
+            if ((true == IsField && !(dec_field_count & 1)) || false == IsField)
             {
                 pEntryPoint->requiredNumThreads = m_NumThreads;
                 pEntryPoint->pRoutine = VideoDECODEMPEG2::TaskRoutine;
                 pEntryPoint->pState = (void*)this;
-                pEntryPoint->pRoutineName = "DecodeMPEG2";
+                pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
 
                 m_task_param[m_task_num].NumThreads = m_implUmc.GetCurrThreadsNum(m_task_num);
                 m_task_param[m_task_num].m_isDecodedOrder = m_isDecodedOrder;
@@ -2955,14 +2955,14 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
             if (0 <= display_index)
             {
-                if (false == m_isDecodedOrder && (true == IsField && !(dec_field_count & 1) || false == IsField))
+                if (false == m_isDecodedOrder && ((true == IsField && !(dec_field_count & 1)) || false == IsField))
                 {
                     GetOutputSurface(surface_disp, surface_work, mid[display_index]);
 
                     pEntryPoint->requiredNumThreads = m_NumThreads;
                     pEntryPoint->pRoutine = VideoDECODEMPEG2::TaskRoutine;
                     pEntryPoint->pState = (void*)this;
-                    pEntryPoint->pRoutineName = "DecodeMPEG2";
+                    pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
 
                     (*surface_disp)->Data.TimeStamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
                     (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
@@ -3114,7 +3114,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                             pEntryPoint->pState = (void*)this;
                             pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
                             pEntryPoint->pCompleteProc = VideoDECODEMPEG2::CompleteTasks;
-                            pEntryPoint->pRoutineName = "DecodeMPEG2";
+                            pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
 
                             m_implUmc.PostProcessUserData(display_index);
 
@@ -3288,7 +3288,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             pEntryPoint->pRoutine = VideoDECODEMPEG2::TaskRoutine;
             pEntryPoint->pCompleteProc = VideoDECODEMPEG2::CompleteTasks;
             pEntryPoint->pState = (void*)this;
-            pEntryPoint->pRoutineName = "DecodeMPEG2";
+            pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
 
             m_task_param[m_task_num].m_thread_completed = 0;
 
@@ -3390,7 +3390,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                     pEntryPoint->pRoutine = VideoDECODEMPEG2::TaskRoutine;
                     pEntryPoint->pCompleteProc = VideoDECODEMPEG2::CompleteTasks;
                     pEntryPoint->pState = (void*)this;
-                    pEntryPoint->pRoutineName = "DecodeMPEG2";
+                    pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
 
                     m_task_param[m_task_num].m_thread_completed = 0;
                     m_task_param[m_task_num].IsSWImpl = true;
