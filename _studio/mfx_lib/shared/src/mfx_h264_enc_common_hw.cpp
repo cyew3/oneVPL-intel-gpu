@@ -3393,6 +3393,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         if (!CheckRangeDflt(extOpt2->MinQPP, 0, (extOpt2->MaxQPP ? extOpt2->MaxQPP : 51), 0)) changed = true;
         if (!CheckRangeDflt(extOpt2->MinQPB, 0, (extOpt2->MaxQPB ? extOpt2->MaxQPB : 51), 0)) changed = true;
     }
+    if (((extOpt3->WinBRCSize > 0) || (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)) && (extOpt2->SkipFrame==0 || extOpt2->BRefType != MFX_B_REF_OFF ))
+    {
+        extOpt2->SkipFrame = MFX_SKIPFRAME_INSERT_DUMMY;
+        extOpt2->BRefType  = MFX_B_REF_OFF;
+        changed = true;   
+    }
 
     
     if (!CheckTriStateOption(extOpt3->EnableMBQP)) changed = true;

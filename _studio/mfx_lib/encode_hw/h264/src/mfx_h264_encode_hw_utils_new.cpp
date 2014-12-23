@@ -1951,15 +1951,7 @@ mfxStatus MfxHwH264Encode::CodeAsSkipFrame(     VideoCORE &            core,
     }
     if (task.GetFrameType() & MFX_FRAMETYPE_B)
     {
-        DpbFrame& refFrame = task.m_dpb[0][task.m_list0[0][0] & 127];
-        mfxFrameData curr = { 0 };
-        mfxFrameData ref  = { 0 };
-        curr.MemId = task.m_midRaw;
-        ref.MemId  = refFrame.m_midRec;
-
-        mfxFrameSurface1 surfSrc = { {0,}, video.mfx.FrameInfo, ref  };
-        mfxFrameSurface1 surfDst = { {0,}, video.mfx.FrameInfo, curr };
-        sts = core.DoFastCopyWrapper(&surfDst,MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE);
+        task.m_ctrl.SkipFrame = 1;
     } 
 
     return sts;
