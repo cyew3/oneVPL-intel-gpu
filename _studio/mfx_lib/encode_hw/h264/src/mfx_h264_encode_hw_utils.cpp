@@ -3179,12 +3179,9 @@ mfxU32 LookAheadBrc2::Report(mfxU32 /* frameType*/ , mfxU32 dataLength, mfxU32 /
     if (m_AvgBitrate)
     {
         m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, picOrder);
-        if (!m_AvgBitrate->CheckBitrate())
+        if (!m_AvgBitrate->CheckBitrate(qp < 51))
         {
-            //if (qp < 51)
-                return 1; 
-            //else
-            //   m_AvgBitrate->StoreError();                
+           return 1;
         }
     }
 
@@ -3244,12 +3241,9 @@ mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLeng
     if (m_AvgBitrate)
     {
         m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, picOrder);
-        if (!m_AvgBitrate->CheckBitrate())
+        if (!m_AvgBitrate->CheckBitrate(qp < 51))
         {
-            if (qp < 51)
-                return 1; 
-            else
-                m_AvgBitrate->StoreError();                
+            return 1; 
         }
     }
 

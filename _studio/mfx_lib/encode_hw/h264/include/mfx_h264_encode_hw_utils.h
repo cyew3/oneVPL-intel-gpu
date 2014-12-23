@@ -1324,9 +1324,8 @@ namespace MfxHwH264Encode
             m_maxBitLimit(maxBitLimitPerFrame*windowSize),
             m_currPosInWindow(0),
             m_MaxBitReal(0),
-            m_MaxBitReal_temp(0),
-            m_lastFrameOrder(0),
-            m_NumberOfErrors(0)
+            m_MaxBitLimit_strong(0),
+            m_lastFrameOrder(0)
         {
             mfxU32 minFrameSize = maxBitLimitPerFrame / 10;
             m_slidingWindow.resize(windowSize);
@@ -1334,6 +1333,7 @@ namespace MfxHwH264Encode
             {
                 m_slidingWindow[i] = minFrameSize;
             }
+            m_MaxBitLimit_strong = m_maxBitLimit - minFrameSize;
         }
         virtual ~AVGBitrate() 
         {
@@ -1353,18 +1353,17 @@ namespace MfxHwH264Encode
             //printf("GetBudget: num %d sum %d (in %d frames), buget in bits %d\n",numFrames, GetLastFrameBits(m_slidingWindow.size() - numFrames), m_slidingWindow.size() - numFrames, m_maxBitLimit - GetLastFrameBits(m_slidingWindow.size() - numFrames));
             return ((mfxI32)m_maxBitLimit - (mfxI32)GetLastFrameBits((mfxU32)m_slidingWindow.size() - numFrames));        
         }
-        bool CheckBitrate()
+        bool CheckBitrate(bool bStrong)
         {
             mfxU32 numBits = GetLastFrameBits((mfxU32)m_slidingWindow.size());
             //printf("AvgBitrate, num bits in window %d\n", numBits);
-            if ( numBits < m_maxBitLimit)
+            if ( numBits < (bStrong ? m_MaxBitLimit_strong : m_maxBitLimit))
             {
                 m_MaxBitReal = m_MaxBitReal <  numBits ? numBits : m_MaxBitReal;
                 return true;
             }
             else
             {
-                 m_MaxBitReal_temp = m_MaxBitReal_temp <  numBits ? numBits : m_MaxBitReal_temp;
                  return false;
             }
         }
@@ -1372,13 +1371,7 @@ namespace MfxHwH264Encode
         {
             return (mfxU32)m_slidingWindow.size();
         }
-        void StoreError()
-        {
-            mfxU32 numBits = GetLastFrameBits((mfxU32)m_slidingWindow.size());
-            //printf ("!!!!!!!!!!!!!!!!!!!!!       AVG Bitrate Error, size %d  !!!\n", numBits);
-            m_MaxBitReal = m_MaxBitReal <  numBits ? numBits : m_MaxBitReal;
-            m_NumberOfErrors ++;        
-        }
+
 
 
 
@@ -1387,9 +1380,8 @@ namespace MfxHwH264Encode
         mfxU32                      m_maxBitLimit;
         mfxU32                      m_currPosInWindow;
         mfxU32                      m_MaxBitReal;
-        mfxU32                      m_MaxBitReal_temp;
+        mfxU32                      m_MaxBitLimit_strong;
         mfxU32                      m_lastFrameOrder;
-        mfxU32                      m_NumberOfErrors;
         std::vector<mfxU32>         m_slidingWindow;
         
 
