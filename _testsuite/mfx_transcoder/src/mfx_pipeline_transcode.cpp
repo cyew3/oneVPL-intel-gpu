@@ -80,6 +80,7 @@ File Name: .h
 #define HANDLE_CAP_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderCapability, member, OPT_TYPE, description)
 #define HANDLE_HEVC_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsHEVC, member, OPT_TYPE, description)
 #define HANDLE_HEVC_TILES(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extHEVCTiles, member, OPT_TYPE, description)
+#define HANDLE_HEVC_PARAM(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extHEVCParam, member, OPT_TYPE, description)
 #define HANDLE_VP8_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP8CodingOptions, member, OPT_TYPE, description)
 #define HANDLE_ENCRESET_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderReset, member, OPT_TYPE, description)
 
@@ -117,6 +118,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 , m_extVideoSignalInfo(new mfxExtVideoSignalInfo())
 , m_extCodingOptionsHEVC(new mfxExtCodingOptionHEVC())
 , m_extHEVCTiles(new mfxExtHEVCTiles())
+, m_extHEVCParam(new mfxExtHEVCParam())
 , m_extVP8CodingOptions(new mfxExtVP8CodingOption())
 , m_extEncoderRoi(new mfxExtEncoderROI())
 , m_extAvcTemporalLayers(new mfxExtAvcTemporalLayers())
@@ -286,6 +288,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 
         HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "number of tile columns (1 - default)"),
         HANDLE_HEVC_TILES(NumTileRows,               OPT_UINT_16,    "number of tile rows (1 - default)"),
+
+        HANDLE_HEVC_PARAM(PicWidthInLumaSamples,     OPT_UINT_16,    "HEVC encoded picture width (SPS.pic_width_in_luma_samples)"),
+        HANDLE_HEVC_PARAM(PicHeightInLumaSamples,    OPT_UINT_16,    "HEVC encoded picture height (SPS.pic_height_in_luma_samples)"),
 		
         HANDLE_VP8_OPTION(Version,            OPT_UINT_16,   "0-maxU16"),
         HANDLE_VP8_OPTION(EnableMultipleSegments,OPT_UINT_16,   "0-maxU32"),
@@ -1508,6 +1513,9 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_extHEVCTiles.IsZero())
         m_components[eREN].m_extParams.push_back(m_extHEVCTiles);
+
+    if (!m_extHEVCParam.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extHEVCParam);
 
     if (!m_extVP8CodingOptions.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVP8CodingOptions);

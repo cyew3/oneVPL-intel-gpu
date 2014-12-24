@@ -569,6 +569,24 @@ protected:
     virtual void ConstructValues () const;
 };
 
+template<>
+class MFXStructureRef <mfxExtHEVCParam>
+    : public MFXStructureBase<mfxExtHEVCParam>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtHEVCParam>((mfxExtHEVCParam &)refStruct, flags)
+    {
+    }
+
+    MFXStructureRef(mfxExtHEVCParam & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtHEVCParam>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues () const;
+};
 
 template<>
 class MFXStructureRef <mfxExtVP8CodingOption>

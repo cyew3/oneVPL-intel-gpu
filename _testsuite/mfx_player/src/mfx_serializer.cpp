@@ -765,6 +765,12 @@ void MFXStructureRef<mfxExtAVCEncodedFrameInfo>::ConstructValues () const {
     SerializeArrayOfPODs(VM_STRING("UsedRefListL1"), (RefListFormater::RefListElement*)m_pStruct->UsedRefListL1, MFX_ARRAY_SIZE(m_pStruct->UsedRefListL1), RefListFormater());
 }
 
+void MFXStructureRef <mfxExtHEVCParam>::ConstructValues () const
+{
+    SERIALIZE_INT(PicWidthInLumaSamples);
+    SERIALIZE_INT(PicHeightInLumaSamples);
+}
+
 void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
     switch (m_pStruct->BufferId)
     {
@@ -790,6 +796,10 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
         }
         case MFX_EXTBUFF_HEVCENC :{
             SerializeStruct(VM_STRING("HEVC."), *(mfxExtCodingOptionHEVC*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_HEVC_PARAM :{
+            SerializeStruct(VM_STRING("HEVCPar."), *(mfxExtHEVCParam*)m_pStruct);
             break;
         }
         case MFX_EXTBUFF_VP8_CODING_OPTION :{
