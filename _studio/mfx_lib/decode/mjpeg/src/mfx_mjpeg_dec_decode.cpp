@@ -1945,6 +1945,10 @@ mfxStatus MFX_JPEG_Utility::CheckDecodeCaps(VideoCORE * core, mfxVideoParam * pa
 mfxStatus MFX_JPEG_Utility::CheckVPPCaps(VideoCORE * core, mfxVideoParam * par)
 {
     mfxStatus sts = MFX_ERR_NONE;
+
+    if (core->GetHWType() == MFX_HW_SOFIA)
+        return MFX_ERR_UNSUPPORTED;
+
     VideoVppJpegD3D9 *pCc = new VideoVppJpegD3D9(core, false);
     
     if(pCc != NULL)
