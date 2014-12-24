@@ -45,7 +45,7 @@
 {                                           \
     width = info->CropW;                    \
     if (width == 0 ||                       \
-    width > info->Width && info->Width > 0) \
+    (width > info->Width && info->Width > 0)) \
     width = info->Width;                    \
 }
 
@@ -53,7 +53,7 @@
 {                                              \
     height = info->CropH;                      \
     if (height == 0 ||                         \
-    height > info->Height && info->Height > 0) \
+    (height > info->Height && info->Height > 0)) \
     height = info->Height;                     \
 }
 

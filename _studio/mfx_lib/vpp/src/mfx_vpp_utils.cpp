@@ -672,7 +672,7 @@ bool IsFrameRatesCorrespondDI(mfxU32  inFrameRateExtN,  mfxU32  inFrameRateExtD,
 
 } // bool IsFrameRatesCorrespondDI(...)
 
-bool IsFrameRatesCorrespondMode60i60p(mfxU32  inFrameRateExtN,  mfxU32  inFrameRateExtD,
+bool IsFrameRatesCorrespondMode30i60p(mfxU32  inFrameRateExtN,  mfxU32  inFrameRateExtD,
                                  mfxU32  outFrameRateExtN, mfxU32  outFrameRateExtD)
 {
     mfxU32 modeAdvDI;
@@ -948,9 +948,157 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
 
     sprintf_s(cStr, sizeof(cStr), "\n");
     OutputDebugStringA(cStr);
-
 #endif // #if defined(_WIN32) || defined(_WIN64)
+
+#if defined(LINUX) || defined(LINUX32) || defined(LINUX64)
+    mfxU32 filterIndx;
+    fprintf(stderr, "VPP PIPELINE: \n");
+
+    for( filterIndx = 0; filterIndx < pipelineList.size(); filterIndx++ )
+    {
+        switch( pipelineList[filterIndx] )
+        {
+            case (mfxU32)MFX_EXTBUFF_VPP_DENOISE:
+            {
+                fprintf(stderr, "DENOISE \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_RSHIFT_IN:
+            {
+                fprintf(stderr, "MFX_EXTBUFF_VPP_RSHIFT_IN \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_RSHIFT_OUT:
+            {
+                fprintf(stderr, "MFX_EXTBUFF_VPP_RSHIFT_OUT \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_LSHIFT_IN:
+            {
+                fprintf(stderr, "MFX_EXTBUFF_VPP_LSHIFT_IN \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_LSHIFT_OUT:
+            {
+                fprintf(stderr, "MFX_EXTBUFF_VPP_LSHIFT_OUT \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_RESIZE:
+            {
+                 fprintf(stderr, "RESIZE \n");
+                 break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION:
+            {
+                fprintf(stderr, "FRC \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_DI_30i60p:
+            {
+                fprintf(stderr, "ADV DI 30i60p \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_ITC:
+            {
+                fprintf(stderr, "ITC \n");
+
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_DI:
+            {
+                fprintf(stderr, "DI \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_DEINTERLACING:
+            {
+                fprintf(stderr, "DI EXT BUF\n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_CSC:
+            {
+                fprintf(stderr, "CSC_NV12 \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
+            {
+                fprintf(stderr,"%s \n", "CSC_YUY2");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:
+            {
+                fprintf(stderr, "CSC_A2RGB10 \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_SCENE_ANALYSIS:
+            {
+                fprintf(stderr, "SA \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_PROCAMP:
+            {
+                fprintf(stderr, "PROCAMP \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_DETAIL:
+            {
+                fprintf(stderr, "DETAIL \n");
+                break;
+            }
+
+#if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
+            case (mfxU32)MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
+            {
+                fprintf(stderr, "IMAGE_STAB \n");
+                break;
+            }
 #endif
+
+            case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT:
+            {
+                fprintf(stderr, "VARIANCE_REP \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_COMPOSITE:
+            {
+                fprintf(stderr, "COMPOSITE \n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_FIELD_PROCESSING:
+            {
+                fprintf(stderr, "VPP_FIELD_PROCESSING \n");
+                break;
+            }
+            default:
+            {
+                fprintf(stderr, "UNKNOUW Filter ID!!! \n");
+                break;
+            }
+
+        }// CASE
+    } //end of filter search
+
+    //fprintf(stderr,"\n");
+#endif // #if defined(LINUX) || defined(LINUX32) || defined(LINUX64)
+
+#endif //#ifdef _DEBUG
     return;
 
 } // void ShowPipeline( std::vector<mfxU32> pipelineList )
@@ -1316,26 +1464,34 @@ mfxStatus GetPipelineList(
         if (videoParam->ExtParam[i] && videoParam->ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DEINTERLACING)
         {
             mfxExtVPPDeinterlacing* extDI = (mfxExtVPPDeinterlacing*) videoParam->ExtParam[i];
-            if (extDI->Mode != MFX_DEINTERLACING_ADVANCED && extDI->Mode != MFX_DEINTERLACING_BOB)
+            /* MSDK ignored all any DI modes values except two defined:
+             * MFX_DEINTERLACING_ADVANCED && MFX_DEINTERLACING_BOB
+             * If DI mode in Ext Buffer is not related BOB or ADVANCED Ext buffer ignored
+             * */
+            if (extDI->Mode == MFX_DEINTERLACING_ADVANCED || extDI->Mode == MFX_DEINTERLACING_BOB)
             {
-                deinterlacingMode = 0xffffffff;
+                /* DI Ext buffer present
+                 * and DI type is correct
+                 * */
+                deinterlacingMode = extDI->Mode;
             }
-            deinterlacingMode = extDI->Mode;
             break;
         }
     }
-    /* ADI 30i->60p: one ADI filter */
-    /* BOB DI 30i->60p: FRC + DI BOB filter */
+    /* DI configuration cases:
+     * Default "-spic 0 -dpic 1" (TFF to progressive ) -> MFX_EXTBUFF_VPP_DI
+     * Default "-spic 0 -dpic 1 -sf 30 -df 60" -> MFX_EXTBUFF_VPP_DI_30i60p
+     * !!! in both cases above, DI mode, ADVANCED(ADI) or BOB will be selected later, by driver's caps analysis.
+     * If ADI reported in driver's Caps MSDK should select ADI mode
+     * */
 
-    if( DYNAMIC_DI_PICSTRUCT_MODE == picStructMode
-            /*&& (deinterlacingMode == MFX_DEINTERLACING_BOB)
-           && !IsFilterFound( &extParamList[0], extParamCount, MFX_EXTBUFF_VPP_DEINTERLACING ) */)
+    if ((DYNAMIC_DI_PICSTRUCT_MODE == picStructMode ) || /* configuration via "-spic 0 -spic 1" */
+        (0 != deinterlacingMode) ) /* configuration via Ext Buf */
     {
-        if( IsFrameRatesCorrespondMode60i60p(par->In.FrameRateExtN,
+        if( IsFrameRatesCorrespondMode30i60p(par->In.FrameRateExtN,
                                         par->In.FrameRateExtD,
                                         par->Out.FrameRateExtN,
-                                        par->Out.FrameRateExtD) &&
-                (deinterlacingMode == MFX_DEINTERLACING_ADVANCED))
+                                        par->Out.FrameRateExtD) )
         {
             pipelineList.push_back(MFX_EXTBUFF_VPP_DI_30i60p);
         }
@@ -1346,10 +1502,17 @@ mfxStatus GetPipelineList(
         {
             pipelineList.push_back(MFX_EXTBUFF_VPP_ITC);
         }
-        else
+        else if (0 != deinterlacingMode)
         {
+            /* Put DI filter in pipeline only if filter configured via Ext buffer */
+            pipelineList.push_back(MFX_EXTBUFF_VPP_DEINTERLACING);
+        }
+        else if (DYNAMIC_DI_PICSTRUCT_MODE == picStructMode)
+        {
+            /* Put DI filter in pipeline only if filter configured via default way "-spic 0 -dpic 1" */
             pipelineList.push_back(MFX_EXTBUFF_VPP_DI);
         }
+
     }
 
     /* ********************************************************************** */
@@ -1368,7 +1531,8 @@ mfxStatus GetPipelineList(
 
     /* [Core Frame Rate Conversion] FILTER */
     /* must be used AFTER [Deinterlace] FILTER !!! due to SW performance specific */
-    if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_30i60p ) && !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_ITC ) )
+    if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_30i60p ) &&
+        !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_ITC ) )
     {
         if( IsFilterFound( pExtList, extCount, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION ) ||
             ( par->In.FrameRateExtN * par->Out.FrameRateExtD != par->Out.FrameRateExtN * par->In.FrameRateExtD ) )
@@ -1387,7 +1551,6 @@ mfxStatus GetPipelineList(
             pipelineList.push_back( pExtList[fIdx] );
         }
     }
-
 
 
     /* *************************************************************************** */
@@ -1414,15 +1577,13 @@ mfxStatus GetPipelineList(
         if( IsFilterFound( g_TABLE_CONFIG, searchCount, configList[fIdx] ) &&
                 !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), configList[fIdx]) )
         {
-            /*WA:
-             *  if VPP_DI_30i60p with (deinterlacingMode == MFX_DEINTERLACING_ADVANCED)
-             * Do not add this used defined "MFX_EXTBUFF_VPP_DEINTERLACING" filter into pipeline */
-            if ( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_30i60p ))
+            /* We have processed MFX_EXTBUFF_VPP_DEINTERLACING already*/
+            if( !IsFilterFound(  &configList[0], configCount, MFX_EXTBUFF_VPP_DEINTERLACING ) )
             {
                 pipelineList.push_back( (MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION == configList[fIdx]) ? MFX_EXTBUFF_VPP_VARIANCE_REPORT : configList[fIdx]);
-            }
-        }
-    }
+            } /*if( !IsFilterFound */
+        } /* if( IsFilterFound( g_TABLE_CONFIG */
+    } /*for(fIdx = 0; fIdx < fCount; fIdx++)*/
 
     /* *************************************************************************** */
     /* 5. reordering for speed/quality                                             */

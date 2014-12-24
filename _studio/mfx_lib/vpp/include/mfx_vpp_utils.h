@@ -33,7 +33,7 @@ bool IsFrameRatesCorrespondITC(
     mfxU32  outFrameRateExtD);
 
 // check if frame rates correspond advanced DI algorithm (example: 60i->60p. EPS = 0)
-bool IsFrameRatesCorrespondMode60i60p(
+bool IsFrameRatesCorrespondMode30i60p(
     mfxU32  inFrameRateExtN,  
     mfxU32  inFrameRateExtD,
     mfxU32  outFrameRateExtN, 

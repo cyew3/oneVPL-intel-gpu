@@ -441,7 +441,7 @@ mfxStatus MFXVideoVPPDeinterlace::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
       m_mode = VPP_INVERSE_TELECINE;
   }
   else if( bIsPredefinedDI &&
-           IsFrameRatesCorrespondMode60i60p(
+           IsFrameRatesCorrespondMode30i60p(
                 In->FrameRateExtN,
                 In->FrameRateExtD,
                 Out->FrameRateExtN,

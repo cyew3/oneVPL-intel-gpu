@@ -1759,6 +1759,10 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
                 caps,
                 m_executeParams,
                 m_config);
+            if (MFX_WRN_FILTER_SKIPPED == sts )
+            {
+                sts = MFX_ERR_NONE;
+            }
         }
 
     }
@@ -2540,12 +2544,17 @@ mfxI32 GetDeinterlaceMode( const mfxVideoParam& videoParam, const mfxVppCaps& ca
             {
                 return 0;
             }
+            /* To check if driver support desired DI mode*/
+            if ((MFX_DEINTERLACING_ADVANCED == extDI->Mode) && (caps.uAdvancedDI) )
+                deinterlacingMode = extDI->Mode;
 
-            deinterlacingMode = extDI->Mode;
+            if ((MFX_DEINTERLACING_BOB == extDI->Mode) && (caps.uSimpleDI) )
+                deinterlacingMode = extDI->Mode;
+            /**/
             break;
         }
     }
-
+    /* IF there is no DI ext buffer */
     if (caps.uAdvancedDI)
     {
         if (0 == deinterlacingMode)
@@ -2555,11 +2564,7 @@ mfxI32 GetDeinterlaceMode( const mfxVideoParam& videoParam, const mfxVppCaps& ca
     }
     else if (caps.uSimpleDI)
     {
-        if (MFX_DEINTERLACING_ADVANCED == deinterlacingMode)
-        {
-            deinterlacingMode = 0;
-        }
-        else
+        if (0 == deinterlacingMode)
         {
             deinterlacingMode = MFX_DEINTERLACING_BOB;
         }
@@ -2608,14 +2613,20 @@ mfxStatus ConfigureExecuteParams(
             case MFX_EXTBUFF_VPP_DEINTERLACING:
             case MFX_EXTBUFF_VPP_DI:
             {
-                // FIXME: add reference frame to use motion adaptive ADI
+                /* this function also take into account is DI ext buffer present of not */
                 executeParams.iDeinterlacingAlgorithm = GetDeinterlaceMode( videoParam, caps );
+                if (0 == executeParams.iDeinterlacingAlgorithm)
+                {
+                    /* Tragically case,
+                     * Something wrong. User requested DI but MSDK can't do it */
+                    return MFX_ERR_UNKNOWN;
+                }
                 if(MFX_DEINTERLACING_ADVANCED == executeParams.iDeinterlacingAlgorithm)
                 {
                     // use motion adaptive ADI with reference frame (quality)
                     config.m_bRefFrameEnable = true;
                     config.m_extConfig.customRateData.fwdRefCount = 0;
-                    config.m_extConfig.customRateData.bkwdRefCount = 1;
+                    config.m_extConfig.customRateData.bkwdRefCount = 1; /* ref frame */
                     config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 1;
                     config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;
                     config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
@@ -2632,12 +2643,19 @@ mfxStatus ConfigureExecuteParams(
 
             case MFX_EXTBUFF_VPP_DI_30i60p:
             {
+                /* this function also take into account is DI ext buffer present of not */
                 executeParams.iDeinterlacingAlgorithm = GetDeinterlaceMode( videoParam, caps );
+                if (0 == executeParams.iDeinterlacingAlgorithm)
+                {
+                    /* Tragically case,
+                     * Something wrong. User requested DI but MSDK can't do it */
+                    return MFX_ERR_UNKNOWN;
+                }
 
+                config.m_bMode30i60pEnable = true;
                 if(MFX_DEINTERLACING_ADVANCED == executeParams.iDeinterlacingAlgorithm)
                 {
                     // use motion adaptive ADI with reference frame (quality)
-                    config.m_bMode30i60pEnable = true;
                     config.m_bRefFrameEnable = true;
                     config.m_extConfig.customRateData.bkwdRefCount = 1;
                     config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
@@ -2647,7 +2665,6 @@ mfxStatus ConfigureExecuteParams(
                 else if(MFX_DEINTERLACING_BOB == executeParams.iDeinterlacingAlgorithm)
                 {
                     // use ADI with spatial info, no reference frame (speed)
-                    config.m_bMode30i60pEnable = true;
                     config.m_bRefFrameEnable = false;
                     config.m_surfCount[VPP_IN]  = IPP_MAX(1, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
