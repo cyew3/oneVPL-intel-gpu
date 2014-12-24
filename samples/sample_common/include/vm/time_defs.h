@@ -19,11 +19,22 @@ Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
 
 #define MSDK_SLEEP(msec) Sleep(msec)
 
+#define MSDK_USLEEP(usec) \
+{ \
+    LARGE_INTEGER due; \
+    due.QuadPart = -(10*(int)usec); \
+    HANDLE t = CreateWaitableTimer(NULL, TRUE, NULL); \
+    SetWaitableTimer(t, &due, 0, NULL, NULL, 0); \
+    WaitForSingleObject(t, INFINITE); \
+    CloseHandle(t); \
+}
+
 #else // #if defined(_WIN32) || defined(_WIN64)
 
 #include <unistd.h>
 
 #define MSDK_SLEEP(msec) usleep(1000*msec)
+#define MSDK_USLEEP(usec) usleep(usec)
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
