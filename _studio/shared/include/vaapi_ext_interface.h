@@ -306,7 +306,7 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
 
 
     /* Intel specific types start at 1001
-    /* VAEntrypointEncFEIIntel */
+     VAEntrypointEncFEIIntel */
 #define VAEncMiscParameterTypeFEIFrameControlIntel 1001
 
 
@@ -760,9 +760,9 @@ typedef struct _VAStatsStatistics16x16Intel
 
     /** \brief DWORD 5 ~ 8, variance for block16x16 or block8x8 **/
     unsigned int    variance[4];
-    /** \brief DWORD 9 ~ 10, pixel_average for block16x16 or block8x8 **/
-    unsigned short  pixel_average[4];
-} VAStatsStatistics16x16Intel;
+    /** \brief DWORD 9 ~ 12, pixel_average for block16x16 or block8x8 **/
+    unsigned int    pixel_average[4];
+} VAStatsStatistics16x16Intel;  // size is 52 bytes
 
 
 #endif // __VAAPI_EXT_INTERFACE_H__
