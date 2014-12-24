@@ -462,6 +462,8 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
             sts = PackHeaders(in, &scanParams, &buffersForUpdate);
             if (sts != UMC_OK)
                 return sts;
+
+            m_dec[0]->m_curr_scan = &m_dec[0]->m_scans[m_dec[0]->m_curr_scan->scan_no + 1];
         }
         else if (JM_DRI == marker)
         {
@@ -706,50 +708,112 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         if(!bistreamData)
             return UMC_ERR_DEVICE_FAILED;
 
-        if(m_dec[0]->m_num_scans == 1)
+        if (m_va->m_HWPlatform != VA_HW_SOFIA)
         {
-            // buffer size is enough
-            if (obtainedScanParams->DataLength <= (Ipp32u)compBuf->GetBufferSize())
+            if (m_dec[0]->m_curr_scan->scan_no == m_dec[0]->m_num_scans-1)
             {
-                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, obtainedScanParams->DataLength);
-                compBuf->SetDataSize(obtainedScanParams->DataLength);
-                shiftDataOffset = true;
+                // buffer size is enough
+                if (obtainedScanParams->DataLength <= (Ipp32u)compBuf->GetBufferSize())
+                {
+                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, obtainedScanParams->DataLength);
+                    compBuf->SetDataSize(obtainedScanParams->DataLength);
+                    shiftDataOffset = true;
+                }
+                // buffer size is not enough
+                else
+                {
+                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, (Ipp32u)compBuf->GetBufferSize());
+                    compBuf->SetDataSize((Ipp32u)compBuf->GetBufferSize());
+                    bitstreamTile = obtainedScanParams->DataLength - (Ipp32u)compBuf->GetBufferSize();
+                    shiftDataOffset = true;
+                }
             }
-            // buffer size is not enough
             else
             {
-                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, (Ipp32u)compBuf->GetBufferSize());
-                compBuf->SetDataSize((Ipp32u)compBuf->GetBufferSize());
-                bitstreamTile = obtainedScanParams->DataLength - (Ipp32u)compBuf->GetBufferSize();
-                shiftDataOffset = true;
+                // buffer size is enough to keep all data (headers + 3 scan data)
+                if ((Ipp32u)src->GetDataSize() <= (Ipp32u)compBuf->GetBufferSize())
+                {
+                    ippsCopy_8u((Ipp8u*)src->GetDataPointer(), bistreamData, (int)src->GetDataSize());
+                    compBuf->SetDataSize((Ipp32s)src->GetDataSize());
+                }
+                // buffer size is enough to keep pixel data for one scan
+                else if (obtainedScanParams->DataLength <= (Ipp32u)compBuf->GetBufferSize())
+                {
+                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, obtainedScanParams->DataLength);
+                    compBuf->SetDataSize(obtainedScanParams->DataLength);
+                    shiftDataOffset = true;
+
+                    *buffersForUpdate |= 1 << 3;
+                }
+                // buffer size is not enough
+                else
+                {
+                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, (Ipp32u)compBuf->GetBufferSize());
+                    compBuf->SetDataSize((Ipp32u)compBuf->GetBufferSize());
+                    bitstreamTile = obtainedScanParams->DataLength - (Ipp32u)compBuf->GetBufferSize();
+                    shiftDataOffset = true;
+
+                    *buffersForUpdate |= 1 << 3;
+                }
             }
         }
         else
         {
-            // buffer size is enough to keep all data (headers + 3 scan data)
-            if ((Ipp32u)src->GetDataSize() <= (Ipp32u)compBuf->GetBufferSize())
+            if (m_dec[0]->m_curr_scan->scan_no == m_dec[0]->m_num_scans - 1)
             {
-                ippsCopy_8u((Ipp8u*)src->GetDataPointer(), bistreamData, (int)src->GetDataSize());
-                compBuf->SetDataSize((Ipp32s)src->GetDataSize());
+                // buffer size is enough for MCU data and extra EOI marker
+                if (obtainedScanParams->DataLength + 2 <= (Ipp32u)compBuf->GetBufferSize())
+                {
+                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, obtainedScanParams->DataLength);
+                    bistreamData[obtainedScanParams->DataLength] = 0xFF;
+                    bistreamData[obtainedScanParams->DataLength + 1] = 0xD9;
+                    compBuf->SetDataSize(obtainedScanParams->DataLength + 2);
+                    shiftDataOffset = true;
+                }
+                // buffer size is enough for MCU data only
+                else if (obtainedScanParams->DataLength <= (Ipp32u)compBuf->GetBufferSize())
+                {
+                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, obtainedScanParams->DataLength);
+                    compBuf->SetDataSize(obtainedScanParams->DataLength);
+                    bitstreamTile = 2;
+                    shiftDataOffset = true;
+                }
+                // buffer size is not enough 
+                else
+                {
+                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, (Ipp32u)compBuf->GetBufferSize());
+                    compBuf->SetDataSize((Ipp32u)compBuf->GetBufferSize());
+                    bitstreamTile = obtainedScanParams->DataLength - (Ipp32u)compBuf->GetBufferSize() + 2;
+                    shiftDataOffset = true;
+                }
             }
-            // buffer size is enough to keep pixel data for one scan
-            else if (obtainedScanParams->DataLength <= (Ipp32u)compBuf->GetBufferSize())
-            {
-                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, obtainedScanParams->DataLength);
-                compBuf->SetDataSize(obtainedScanParams->DataLength);
-                shiftDataOffset = true;
-                
-                *buffersForUpdate |= 1 << 3;
-            }
-            // buffer size is not enough
             else
             {
-                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, (Ipp32u)compBuf->GetBufferSize());
-                compBuf->SetDataSize((Ipp32u)compBuf->GetBufferSize());
-                bitstreamTile = obtainedScanParams->DataLength - (Ipp32u)compBuf->GetBufferSize();
-                shiftDataOffset = true;
-                
-                *buffersForUpdate |= 1 << 3;
+                // buffer size is enough to keep all data (headers + 3 scan data)
+                if ((Ipp32u)src->GetDataSize() <= (Ipp32u)compBuf->GetBufferSize())
+                {
+                    ippsCopy_8u((Ipp8u*)src->GetDataPointer(), bistreamData, (int)src->GetDataSize());
+                    compBuf->SetDataSize((Ipp32s)src->GetDataSize());
+                }
+                // buffer size is enough to keep pixel data for one scan
+                else if (obtainedScanParams->DataLength <= (Ipp32u)compBuf->GetBufferSize())
+                {
+                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, obtainedScanParams->DataLength);
+                    compBuf->SetDataSize(obtainedScanParams->DataLength);
+                    shiftDataOffset = true;
+
+                    *buffersForUpdate |= 1 << 3;
+                }
+                // buffer size is not enough
+                else
+                {
+                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset, bistreamData, (Ipp32u)compBuf->GetBufferSize());
+                    compBuf->SetDataSize((Ipp32u)compBuf->GetBufferSize());
+                    bitstreamTile = obtainedScanParams->DataLength - (Ipp32u)compBuf->GetBufferSize();
+                    shiftDataOffset = true;
+
+                    *buffersForUpdate |= 1 << 3;
+                }
             }
         }
 
@@ -784,17 +848,46 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         if(!bistreamData)
             return UMC_ERR_DEVICE_FAILED;
 
-        if (bitstreamTile <= (Ipp32u)compBuf->GetBufferSize())
+        if (m_va->m_HWPlatform != VA_HW_SOFIA)
         {
-            ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bistreamData, bitstreamTile);
-            compBuf->SetDataSize(bitstreamTile);
-            bitstreamTile = 0;
+            if (bitstreamTile <= (Ipp32u)compBuf->GetBufferSize())
+            {
+                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bistreamData, bitstreamTile);
+                compBuf->SetDataSize(bitstreamTile);
+                bitstreamTile = 0;
+            }
+            else
+            {
+                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bistreamData, compBuf->GetBufferSize());
+                compBuf->SetDataSize(compBuf->GetBufferSize());
+                bitstreamTile = bitstreamTile - compBuf->GetBufferSize();
+            }
         }
         else
         {
-            ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - bitstreamTile, bistreamData, compBuf->GetBufferSize());
-            compBuf->SetDataSize(compBuf->GetBufferSize());
-            bitstreamTile = bitstreamTile - compBuf->GetBufferSize();
+            if (bitstreamTile <= (Ipp32u)compBuf->GetBufferSize())
+            {
+                if (bitstreamTile != 2)
+                    ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - (bitstreamTile-2), bistreamData, bitstreamTile - 2);
+                bistreamData[bitstreamTile - 2] = 0xFF;
+                bistreamData[bitstreamTile - 1] = 0xD9;
+                compBuf->SetDataSize(bitstreamTile);
+                bitstreamTile = 0;
+            }
+            // buffer size is enough for MCU data only
+            else if (bitstreamTile - 2 <= (Ipp32u)compBuf->GetBufferSize())
+            {
+                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - (bitstreamTile - 2), bistreamData, bitstreamTile - 2);
+                compBuf->SetDataSize(bitstreamTile - 2);
+                bitstreamTile = 2;
+            }
+            // buffer size is not enough 
+            else
+            {
+                ippsCopy_8u((Ipp8u*)src->GetDataPointer() + obtainedScanParams->DataOffset + obtainedScanParams->DataLength - (bitstreamTile-2), bistreamData, (Ipp32u)compBuf->GetBufferSize());
+                compBuf->SetDataSize((Ipp32u)compBuf->GetBufferSize());
+                bitstreamTile -= compBuf->GetBufferSize();
+            }
         }
         
         sts = m_va->Execute();
