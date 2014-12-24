@@ -645,7 +645,9 @@ enum {
     MFX_EXTBUFF_HEVC_TILES                 = MFX_MAKEFOURCC('2','6','5','T'),
     MFX_EXTBUFF_MB_DISABLE_SKIP_MAP        = MFX_MAKEFOURCC('M','D','S','M'),
     MFX_EXTBUFF_DPB                        = MFX_MAKEFOURCC('E','D','P','B'),
-    MFX_EXTBUFF_HEVC_PARAM                 = MFX_MAKEFOURCC('2','6','5','P')
+    MFX_EXTBUFF_HEVC_PARAM                 = MFX_MAKEFOURCC('2','6','5','P'),
+    MFX_EXTBUFF_DECODED_FRAME_INFO         = MFX_MAKEFOURCC('D','E','F','I'),
+    MFX_EXTBUFF_TIME_CODE                  = MFX_MAKEFOURCC('T','M','C','D')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1219,7 +1221,7 @@ typedef struct {
         mfxU16      LongTermIdx;
         mfxU16      reserved[4];
     } DPB[32];
-}mfxExtDPB;
+} mfxExtDPB;
 
 typedef struct {
     mfxExtBuffer    Header;
@@ -1228,6 +1230,24 @@ typedef struct {
     mfxU16          PicHeightInLumaSamples;
     mfxU16          reserved[122];
 } mfxExtHEVCParam;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16       FrameType;
+    mfxU16       reserved[59];
+} mfxExtDecodedFrameInfo;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16       DropFrameFlag;
+    mfxU16       TimeCodeHours;
+    mfxU16       TimeCodeMinutes;
+    mfxU16       TimeCodeSeconds;
+    mfxU16       TimeCodePictures;
+    mfxU16       reserved[7];
+} mfxExtTimeCode;
 
 #ifdef __cplusplus
 } // extern "C"
