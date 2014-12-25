@@ -406,7 +406,7 @@ mfxStatus ImplementationAvc::Query(
 
         if(IsOn(in->mfx.LowPower))
         {
-            sts = QueryHwCaps(core, hwCaps, DXVA2_INTEL_LOWPOWERENCODE_AVC, isWiDi != 0, Width, Height);
+            sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_LowPower_Query, isWiDi != 0, Width, Height);
             if (sts != MFX_ERR_NONE){
                 return MFX_ERR_UNSUPPORTED;
             }
@@ -626,7 +626,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
 
     if(IsOn(par->mfx.LowPower))
     {
-        sts = QueryHwCaps(core, hwCaps, DXVA2_INTEL_LOWPOWERENCODE_AVC, isWiDi != 0, Width, Height);
+        sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_LowPower_Query, isWiDi != 0, Width, Height);
         if (sts != MFX_ERR_NONE){
             return MFX_ERR_UNSUPPORTED;
         }

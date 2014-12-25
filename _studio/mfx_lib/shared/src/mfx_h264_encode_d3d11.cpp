@@ -866,7 +866,9 @@ mfxStatus D3D11Encoder::Init(
     if (   guid == MSDK_Private_Guid_Encode_AVC_Query
         || guid == MSDK_Private_Guid_Encode_MVC_Dependent_View)
         m_guid = DXVA2_Intel_Encode_AVC;
-    else
+    else if(guid == MSDK_Private_Guid_Encode_AVC_LowPower_Query)
+        m_guid = DXVA2_INTEL_LOWPOWERENCODE_AVC;
+    else 
         m_guid = guid;
 
     m_requestedGuid = guid;

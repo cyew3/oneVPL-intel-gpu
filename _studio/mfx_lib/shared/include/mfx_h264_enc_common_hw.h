@@ -61,10 +61,15 @@ static const GUID MSDK_Private_Guid_Encode_AVC_Query =
 // this guid is used to identify device creation for MVC BD/AVCHD dependent view
 static const GUID MSDK_Private_Guid_Encode_MVC_Dependent_View =
 { 0x68bebcda, 0xefff, 0x4858, { 0x8d, 0x65, 0x92, 0x28, 0xab, 0xc5, 0x8c, 0x4e } };
+// this guid is used to identify that device creation is performed during for low power encoder
+static const GUID MSDK_Private_Guid_Encode_AVC_LowPower_Query = 
+{ 0x6815aa23, 0xc93e, 0x4a71, { 0xae, 0x66, 0xb, 0x60, 0x5d, 0x3b, 0xc4, 0xd7 } };
+
 #else
 // no special guids for linux
 static const GUID MSDK_Private_Guid_Encode_AVC_Query          = DXVA2_Intel_Encode_AVC;
 static const GUID MSDK_Private_Guid_Encode_MVC_Dependent_View = DXVA2_Intel_Encode_AVC;
+static const GUID MSDK_Private_Guid_Encode_AVC_LowPower_Query = DXVA2_Intel_Encode_AVC;
 #endif
 
 namespace MfxHwH264Encode
