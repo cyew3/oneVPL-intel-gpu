@@ -404,7 +404,18 @@ mfxStatus ImplementationAvc::Query(
         mfxU32 Width  = in->mfx.FrameInfo.Width == 0 ? 1920: in->mfx.FrameInfo.Width;
         mfxU32 Height =  in->mfx.FrameInfo.Height == 0 ? 1088: in->mfx.FrameInfo.Height;
 
-        sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
+        if(IsOn(in->mfx.LowPower))
+        {
+            sts = QueryHwCaps(core, hwCaps, DXVA2_INTEL_LOWPOWERENCODE_AVC, isWiDi != 0, Width, Height);
+            if (sts != MFX_ERR_NONE){
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else
+        {
+            sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
+        }
+        
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -414,6 +425,7 @@ mfxStatus ImplementationAvc::Query(
         MFX_CHECK_STS(sts);
 
         mfxStatus checkSts = CheckVideoParamQueryLike(tmp, hwCaps, core->GetHWType(), core->GetVAType());
+
         if (checkSts == MFX_WRN_PARTIAL_ACCELERATION)
             return MFX_WRN_PARTIAL_ACCELERATION;
         else if (checkSts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
@@ -612,9 +624,17 @@ mfxStatus ImplementationAvc::QueryIOSurf(
     mfxU32 Width  = par->mfx.FrameInfo.Width == 0 ? 1920 : par->mfx.FrameInfo.Width;
     mfxU32 Height =  par->mfx.FrameInfo.Height == 0 ? 1088: par->mfx.FrameInfo.Height;
 
-    sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
-    if (sts != MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+    if(IsOn(par->mfx.LowPower))
+    {
+        sts = QueryHwCaps(core, hwCaps, DXVA2_INTEL_LOWPOWERENCODE_AVC, isWiDi != 0, Width, Height);
+        if (sts != MFX_ERR_NONE){
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+    else
+    {
+        sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
+    }
 
     MfxVideoParam tmp(*par);
 
