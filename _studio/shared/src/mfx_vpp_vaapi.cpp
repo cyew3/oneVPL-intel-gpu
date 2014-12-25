@@ -51,8 +51,9 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
 , m_vaConfig(0)
 , m_vaContextVPP(0)
 , m_denoiseFilterID(VA_INVALID_ID)
-, m_deintFilterID(VA_INVALID_ID)
 , m_detailFilterID(VA_INVALID_ID)
+, m_deintFilterID(VA_INVALID_ID)
+, m_frcFilterID(VA_INVALID_ID)
 , m_refCountForADI(0)
 , m_bFakeOutputEnabled(false)
 , m_numFilterBufs(0)
@@ -65,6 +66,7 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
     memset( (void*)&m_denoiseCaps, 0, sizeof(m_denoiseCaps));
     memset( (void*)&m_detailCaps, 0, sizeof(m_detailCaps));
     memset( (void*)&m_deinterlacingCaps, 0, sizeof(m_deinterlacingCaps));
+    memset( (void*)&m_frcCaps, 0, sizeof(m_frcCaps));
 
     m_cachedReadyTaskIndex.clear();
     m_feedbackCache.clear();
@@ -144,6 +146,11 @@ mfxStatus VAAPIVideoProcessing::Close(void)
     if( VA_INVALID_ID != m_deintFilterID )
     {
         vaDestroyBuffer(m_vaDisplay, m_deintFilterID);
+    }
+
+    if( VA_INVALID_ID != m_frcFilterID )
+    {
+        vaDestroyBuffer(m_vaDisplay, m_frcFilterID);
     }
 
     for(int i = 0; i < VAProcFilterCount; i++)
@@ -248,6 +255,8 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
 
     VAProcFilterType filters[VAProcFilterCount];
     mfxU32 num_filters = VAProcFilterCount;
+    VAProcFilterCapFrameRateConversion tempFRC_Caps;
+    mfxU32 num_frc_caps = 1;
 
     vaSts = vaQueryVideoProcFilters(m_vaDisplay, m_vaContextVPP, filters, &num_filters);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -272,6 +281,45 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
                                VAProcFilterDeinterlacing,
                                &m_deinterlacingCaps, &num_deinterlacing_caps);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    /* to check is FRC enabled or not*/
+    /* first need to get number of modes supported by driver*/
+    tempFRC_Caps.bget_custom_rates = 1;
+    vaSts = vaQueryVideoProcFilterCaps(m_vaDisplay,
+                               m_vaContextVPP,
+                               VAProcFilterFrameRateConversion,
+                               &tempFRC_Caps, &num_frc_caps);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    if (0 != tempFRC_Caps.frc_custom_rates) /* FRC is enabled, at least one mode */
+    {
+        caps.uFrameRateConversion = 1 ;
+        /* Again, only two modes: 24p->60p and 30p->60p is available
+         * But driver report 3, but 3rd is equal to 2rd,
+         * So only 2 real modes*/
+        if (tempFRC_Caps.frc_custom_rates > 2)
+            tempFRC_Caps.frc_custom_rates = 2;
+        caps.frcCaps.customRateData.resize(tempFRC_Caps.frc_custom_rates);
+        /*to get details about each mode */
+        tempFRC_Caps.bget_custom_rates = 0;
+
+        for (mfxU32 ii = 0; ii < tempFRC_Caps.frc_custom_rates; ii++)
+        {
+            m_frcCaps[ii].frc_custom_rates = ii + 1;
+            vaSts = vaQueryVideoProcFilterCaps(m_vaDisplay,
+                                                m_vaContextVPP,
+                                                VAProcFilterFrameRateConversion,
+                                                &m_frcCaps[ii], &num_frc_caps);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            caps.frcCaps.customRateData[ii].inputFramesOrFieldPerCycle = m_frcCaps[ii].input_frames;
+            caps.frcCaps.customRateData[ii].outputIndexCountPerCycle = m_frcCaps[ii].output_frames;
+            /* out frame rate*/
+            caps.frcCaps.customRateData[ii].customRate.FrameRateExtN = m_frcCaps[ii].output_fps;
+            /*input frame rate */
+            caps.frcCaps.customRateData[ii].customRate.FrameRateExtD = m_frcCaps[ii].input_fps;
+        }
+
+    }
 
     for( mfxU32 filtersIndx = 0; filtersIndx < num_filters; filtersIndx++ )
     {
@@ -338,7 +386,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     }
 
     /* Now msdk needs intermediate surface for ADI with ref 30i->30p mode*/
-    if ((m_primarySurface4Composition == NULL) && (pParams->iDeinterlacingAlgorithm !=0))
+    if ((m_primarySurface4Composition == NULL) && (pParams->iDeinterlacingAlgorithm !=0) )
     {
         mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[0]);
         mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
@@ -509,6 +557,44 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         }
     }
 
+    if (VA_INVALID_ID == m_frcFilterID)
+    {
+        if (pParams->bFRCEnable)
+        {
+          VAProcFilterParameterBufferFrameRateConversion frcParams;
+          frcParams.type = VAProcFilterFrameRateConversion;
+          if (30 == pParams->customRateData.customRate.FrameRateExtD)
+          {
+              frcParams.input_fps = 30;
+              frcParams.output_fps = 60;
+              frcParams.num_output_frames = 2;
+              frcParams.repeat_frame = 0;
+          }
+          else if (24 == pParams->customRateData.customRate.FrameRateExtD)
+          {
+              frcParams.input_fps = 24;
+              frcParams.output_fps = 60;
+              frcParams.num_output_frames = 5;
+              frcParams.repeat_frame = 0;
+          }
+
+          frcParams.cyclic_counter = m_frcCyclicCounter++;
+          if ((frcParams.input_fps == 30) && (m_frcCyclicCounter == 2))
+                m_frcCyclicCounter = 0;
+          if ((frcParams.input_fps == 24) && (m_frcCyclicCounter == 5))
+                m_frcCyclicCounter = 0;
+          frcParams.output_frames = (VASurfaceID*)(pParams->targetSurface.hdl.first);
+          vaSts = vaCreateBuffer((void*)m_vaDisplay,
+                        m_vaContextVPP,
+                        VAProcFilterParameterBufferType,
+                        sizeof(frcParams), 1,
+                        &frcParams, &m_frcFilterID);
+          MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+          m_filterBufs[m_numFilterBufs++] = m_frcFilterID;
+        }
+    }
+
     /* pParams->refCount is total number of processing surfaces:
      * in case of composition this is primary + sub streams*/
 
@@ -534,7 +620,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         mfxDrvSurface* pRefSurf;
         pRefSurf = &(pParams->pRefSurfaces[refIdx]);
 
-        if (pParams->refCount > 1)
+        if ((pParams->refCount > 1) && (0 != pParams->iDeinterlacingAlgorithm ))
         {
             m_refCountForADI++;
             m_pipelineParam[refIdx].num_backward_references = 1;
@@ -542,6 +628,18 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             pRefSurf_1 = &(pParams->pRefSurfaces[1]);
             VASurfaceID* ref_srf = (VASurfaceID*) (pRefSurf_1->hdl.first);
             m_pipelineParam[refIdx].backward_references = ref_srf;
+        }
+        /* FRC case */
+        if ((pParams->refCount > 2) && (0 != pParams->bFRCEnable))
+        {
+            mfxDrvSurface* pRefSurf_frc1;
+            pRefSurf_frc1 = &(pParams->pRefSurfaces[1]);
+            m_refForFRC[0] = *(VASurfaceID*)(pRefSurf_frc1->hdl.first);
+            mfxDrvSurface* pRefSurf_frc2;
+            pRefSurf_frc2 = &(pParams->pRefSurfaces[2]);
+            m_refForFRC[1] = *(VASurfaceID*) (pRefSurf_frc2->hdl.first);
+            m_pipelineParam[refIdx].num_forward_references = 2;
+            m_pipelineParam[refIdx].forward_references = m_refForFRC;
         }
 
         VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
@@ -669,6 +767,16 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         m_feedbackCache.push_back(currentFeedback);
     }
 
+
+    if (m_frcFilterID != VA_INVALID_ID)
+    {
+        vaSts = vaDestroyBuffer(m_vaDisplay, m_frcFilterID);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        m_frcFilterID = VA_INVALID_ID;
+        m_filterBufs[m_numFilterBufs] = VA_INVALID_ID;
+        m_numFilterBufs--;
+    }
+
     /* drop "internal" ADI frame for 30i->30p mode
      * HW or EU kernels always generates from interlaced SRC and REF frames two
      * de-interlaced frames, so by fact HW is always working in 30i->60p mode.
@@ -678,7 +786,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
      * for 30i->30p mode application needs to drop this is second internal frame.
      * */
 
-    if ((pParams->refCount > 1) && (pParams->bFMDEnable == false) )
+    if ((pParams->refCount > 1) && (pParams->bFMDEnable == false) && (0 != pParams->iDeinterlacingAlgorithm))
     {
         vaSts = vaSyncSurface(m_vaDisplay,*outputSurface);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);

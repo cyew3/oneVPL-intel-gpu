@@ -2020,7 +2020,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
 
         // debug info
         m_executeSurf[i].bExternal = bExternal;
-        m_executeSurf[i].memId     = memId;
+        m_executeSurf[i].memId = memId;
     }
 
     return MFX_ERR_NONE;
@@ -2825,6 +2825,20 @@ mfxStatus ConfigureExecuteParams(
                             mfxU32 framesCount = (rateData->bkwdRefCount + 1 + rateData->fwdRefCount);
                             config.m_surfCount[VPP_IN]  = (mfxU16)IPP_MAX(framesCount, config.m_surfCount[VPP_IN]);
                             config.m_surfCount[VPP_OUT] = (mfxU16)IPP_MAX(rateData->outputIndexCountPerCycle, config.m_surfCount[VPP_OUT]);
+                            if (videoParam.vpp.In.FrameRateExtN == 30)
+                            {
+                                config.m_surfCount[VPP_IN]  = 3;
+                                config.m_extConfig.customRateData.fwdRefCount = 2;
+                                config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 1;
+                                config.m_extConfig.customRateData.outputIndexCountPerCycle  = 2;
+                            }
+                            else if (videoParam.vpp.In.FrameRateExtN == 24)
+                            {
+                                config.m_surfCount[VPP_IN]  = 4;
+                                config.m_extConfig.customRateData.fwdRefCount = 3;
+                                config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 2;
+                                config.m_extConfig.customRateData.outputIndexCountPerCycle  = 5;
+                            }
 
                             executeParams.bFRCEnable     = true;
                             executeParams.customRateData = caps.frcCaps.customRateData[frcIdx];
