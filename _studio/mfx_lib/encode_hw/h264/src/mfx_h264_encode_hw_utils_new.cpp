@@ -644,6 +644,20 @@ namespace
         return isCorrect;
     }
 
+    inline mfxI8 GetIdxOfFirstSameParity(ArrayU8x33 const & refList, mfxU32 fieldId)
+    {
+        for (mfxU8 i = 0; i < refList.Size(); i ++)
+        {
+            mfxU8 refFieldId = (refList[i] & 128) >> 7;
+            if (fieldId == refFieldId)
+            {
+                return (mfxI8)i;
+            }
+        }
+
+        return -1;
+    }
+
     inline mfxU16 GetMaxNumRefActiveBL1ForHswInterlace(mfxU16 TU)
     {
         mfxU16 const MAX_VALUE_BY_TU[] = { 2, 2, 2, 2, 2, 2, 1, 1 };
@@ -665,6 +679,10 @@ namespace
         ArrayU8x33 initList0 = task.m_list0[fieldId];
         ArrayU8x33 initList1 = task.m_list1[fieldId];
         mfxI32     curPicNum = task.m_picNum[fieldId];
+
+        mfxU32 ffid = task.GetFirstField();
+        bool isField = (task.GetPicStructForEncode() & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) != 0;
+        bool isIPFieldPair = (task.m_type[ ffid] & MFX_FRAMETYPE_I) && (task.m_type[!ffid] & MFX_FRAMETYPE_P);
 
         if ((video.mfx.GopOptFlag & MFX_GOP_CLOSED) || task.m_frameOrderI < task.m_frameOrder)
         {
@@ -695,8 +713,7 @@ namespace
         mfxExtAVCRefListCtrl * ctrl = GetExtBuffer(task.m_ctrl);
 #if defined (ADVANCED_REF)
         mfxExtAVCRefLists * advCtrl = GetExtBuffer(task.m_ctrl, fieldId);
-        if (advCtrl &&
-            (task.GetPicStructForEncode() & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)))
+        if (advCtrl && isField)
         {
             // check ref list control structure for interlaced case
             // TODO: in addition WRN should be returned from sync part if passed mfxExtAVCRefLists is incorrect
@@ -781,16 +798,14 @@ namespace
         {
             // prepare ref list for P-field of I/P field pair
             // swap 1st and 2nd entries of L0 ref pic list to use I-field of I/P pair as reference for P-field
-            mfxU32 ffid = task.GetFirstField();
-            if ((task.m_type[ ffid] & MFX_FRAMETYPE_I) &&
-                (task.m_type[!ffid] & MFX_FRAMETYPE_P))
+            if (isIPFieldPair)
             {
                 if (ps != MFX_PICSTRUCT_PROGRESSIVE && fieldId != ffid && list0.Size() > 1)
                     std::swap(list0[0], list0[1]);
             }
             else if (task.m_type[fieldId] & MFX_FRAMETYPE_B)
             {
-                mfxU8 save0 = list0[0];
+                ArrayU8x33 backupList0 = list0;
                 mfxU8 save1 = list1[0];
 
                 list0.Erase(
@@ -803,9 +818,16 @@ namespace
 
                 // keep at least one ref pic in lists
                 if (list0.Size() == 0)
-                    list0.PushBack(save0);
+                    list0.PushBack(backupList0[0]);
                 if (list1.Size() == 0)
                     list1.PushBack(save1);
+
+                if (isField && (0 > GetIdxOfFirstSameParity(list0, fieldId)))
+                {
+                    // revert optimization of L0 if all fields of same parity were removed from the list
+                    // it's required since driver doesn't support field of opposite parity at 1st place in ref list
+                    list0 = backupList0;
+                }
             }
 
             if (video.calcParam.numTemporalLayer > 0)
@@ -840,6 +862,22 @@ namespace
                 list0.Resize(numActiveRefL0);
             if (numActiveRefL1 > 0 && list1.Size() > numActiveRefL1)
                 list1.Resize(numActiveRefL1);
+
+            if (isField && isIPFieldPair == false)
+            {
+                // after modification of ref list L0 it could happen that 1st entry of the list has opposite parity to current field
+                // driver doesn't support this, and MSDK performs WA and places field of same parity to 1st place
+                mfxI8 idxOf1stSameParity = GetIdxOfFirstSameParity(list0, fieldId);
+                if (idxOf1stSameParity > 0)
+                {
+                    std::swap(list0[0], list0[idxOf1stSameParity]);
+                    list0.Resize(1);
+                }
+                else if (idxOf1stSameParity < 0)
+                {
+                    assert(!"No field of same parity for reference");
+                }
+            }
         }
 
         initList0.Resize(list0.Size());
