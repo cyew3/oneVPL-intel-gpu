@@ -397,6 +397,7 @@
     <ClCompile Include="shared\src\libmfxsw_decode.cpp" />
     <ClCompile Include="shared\src\libmfxsw_enc.cpp" />
     <ClCompile Include="shared\src\libmfxsw_encode.cpp" />
+    <ClCompile Include="shared\src\libmfxsw_pak.cpp" />
     <ClCompile Include="shared\src\libmfxsw_plugin.cpp" />
     <ClCompile Include="shared\src\libmfxsw_query.cpp" />
     <ClCompile Include="shared\src\libmfxsw_session.cpp" />

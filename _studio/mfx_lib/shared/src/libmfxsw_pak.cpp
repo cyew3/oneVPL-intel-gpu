@@ -87,6 +87,7 @@ VideoPAK *CreatePAKSpecificClass(mfxU32 codecId, mfxU32 codecProfile, VideoCORE 
 
 mfxStatus MFXVideoPAK_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
+    in;
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(out, MFX_ERR_NULL_PTR);
 
@@ -119,8 +120,7 @@ mfxStatus MFXVideoPAK_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
             mfxRes = MFXVideoPAKMPEG2::Query(in, out);
             break;
 #endif
-
-        default:
+        default: case 0:
             mfxRes = MFX_ERR_UNSUPPORTED;
         }
     }
@@ -168,7 +168,7 @@ mfxStatus MFXVideoPAK_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
             break;
 #endif
 
-        default:
+        default: case 0:
             mfxRes = MFX_ERR_UNSUPPORTED;
         }
     }
@@ -195,11 +195,13 @@ mfxStatus MFXVideoPAK_Init(mfxSession session, mfxVideoParam *par)
             MFXVideoPAK_Close(session);
         }
 
+#if !defined (MFX_RT)
         // create a new instance
         session->m_pPAK.reset(CreatePAKSpecificClass(par->mfx.CodecId,
                                                      par->mfx.CodecProfile,
                                                      session->m_pCORE.get()));
         MFX_CHECK(session->m_pPAK.get(), MFX_ERR_INVALID_VIDEO_PARAM);
+#endif
         mfxRes = session->m_pPAK->Init(par);
     }
     // handle error(s)
