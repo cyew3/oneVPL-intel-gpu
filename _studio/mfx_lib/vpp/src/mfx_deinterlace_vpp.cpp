@@ -447,7 +447,7 @@ mfxStatus MFXVideoVPPDeinterlace::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
                 Out->FrameRateExtN,
                 Out->FrameRateExtD) )
   {
-      m_mode = VPP_DEINTERLACE_MODE60i60p;
+      m_mode = VPP_DEINTERLACE_MODE30i60p;
   }
   else
   {
@@ -707,7 +707,7 @@ mfxStatus MFXVideoVPPDeinterlace::CheckProduceOutputForMode60i60p(mfxFrameSurfac
 // function is called from sync part of VPP only
 mfxStatus MFXVideoVPPDeinterlace::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 *out )
 {
-  if( VPP_DEINTERLACE_MODE60i60p == m_mode )
+  if( VPP_DEINTERLACE_MODE30i60p == m_mode )
   {
       return CheckProduceOutputForMode60i60p(in, out);
   }
@@ -1093,7 +1093,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_Processing( mfxFrameSurface1* in,
     mfxStatus mfxSts = MFX_ERR_NONE;
     mfxFrameSurface1 localRefSurface;
 
-    if( VPP_DEINTERLACE_MODE60i60p == m_mode )
+    if( VPP_DEINTERLACE_MODE30i60p == m_mode )
     {
         mfxSts = di_AdvancedProcessing(in, out, pParam->inPicStruct);
 
@@ -1329,7 +1329,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_LQ_NV12( mfxFrameSurface1* in, mfxFrameSurf
       VPP_CHECK_IPP_STS(sts);
   }
 
-  if( VPP_DEINTERLACE_MODE60i60p == m_mode )
+  if( VPP_DEINTERLACE_MODE30i60p == m_mode )
   {
       bool bLockedOutBuf = false;
       mfxStatus mfxSts;
@@ -1453,7 +1453,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_HQ_NV12(mfxFrameSurface1* ref1,
 
     mfxI32 pDstStep[2] = {outData->Pitch,  outData->Pitch};
 
-    int passIndexLast = (VPP_DEINTERLACE_MODE60i60p == m_mode) ? 2 : 1;
+    int passIndexLast = (VPP_DEINTERLACE_MODE30i60p == m_mode) ? 2 : 1;
 
     for( int passIndex = 0; passIndex < passIndexLast; passIndex++ )
     {

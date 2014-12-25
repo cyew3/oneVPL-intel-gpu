@@ -29,10 +29,14 @@
 
 #define VAR_ERR_SIZE                   (7)
 
+/* MediaSDK has frame based logic
+ * So, 30i means 30 interlaced frames
+ * 30p means progressive frames.
+ * Constants was corrected according to this logic*/
 typedef enum {
-    VPP_SIMPLE_DEINTERLACE   = 0x0001, //example: 60i -> 30p, default mode
-    VPP_DEINTERLACE_MODE60i60p = 0x0002, //example: 60i -> 60p
-    VPP_INVERSE_TELECINE     = 0x003   //example: 60i -> 24p
+    VPP_SIMPLE_DEINTERLACE   = 0x0001, //example: 30i -> 30p, default mode
+    VPP_DEINTERLACE_MODE30i60p = 0x0002, //example: 30i -> 60p
+    VPP_INVERSE_TELECINE     = 0x003   //example: 30i -> 24p
 
 } mfxDIMode;
 

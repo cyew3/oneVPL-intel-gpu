@@ -2613,7 +2613,7 @@ mfxStatus ConfigureExecuteParams(
             case MFX_EXTBUFF_VPP_DEINTERLACING:
             case MFX_EXTBUFF_VPP_DI:
             {
-                /* this function also take into account is DI ext buffer present of not */
+                /* this function also take into account is DI ext buffer present or does not */
                 executeParams.iDeinterlacingAlgorithm = GetDeinterlaceMode( videoParam, caps );
                 if (0 == executeParams.iDeinterlacingAlgorithm)
                 {
@@ -2643,7 +2643,7 @@ mfxStatus ConfigureExecuteParams(
 
             case MFX_EXTBUFF_VPP_DI_30i60p:
             {
-                /* this function also take into account is DI ext buffer present of not */
+                /* this function also take into account is DI ext buffer present or does not */
                 executeParams.iDeinterlacingAlgorithm = GetDeinterlaceMode( videoParam, caps );
                 if (0 == executeParams.iDeinterlacingAlgorithm)
                 {
