@@ -9,7 +9,9 @@
 */
 //#include "ipps.h"
 
+#ifndef MFX_VA
 #define MFX_VA
+#endif
 
 #include "mfx_common.h"
 

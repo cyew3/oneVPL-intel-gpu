@@ -26,6 +26,9 @@ __itt_string_handle* destroyeventwowait = __itt_string_handle_create(L"destroyev
 #endif
 
 #include "mfx_plugin_module.h"
+#if defined(LINUX32) || defined(LINUX64)
+#include "plugin_version_linux.h"
+#endif
 PluginModuleTemplate g_PluginModule = {
     NULL,
     NULL,

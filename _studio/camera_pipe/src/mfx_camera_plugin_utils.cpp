@@ -1021,7 +1021,7 @@ const mfxU32 g_TABLE_CAMERA_EXTBUFS [] =
     MFX_EXTBUF_CAM_PIPECONTROL
 };
 
-bool IsFilterFound(const mfxU32* pList, mfxU32 len, mfxU32 filterName)
+bool IsCameraFilterFound(const mfxU32* pList, mfxU32 len, mfxU32 filterName)
 {
     mfxU32 i;
 
@@ -1064,7 +1064,7 @@ mfxStatus CorrectDoUseFilters(mfxU32* pList, mfxU32 len)
     mfxU32 searchCount = sizeof(g_TABLE_CAMERA_EXTBUFS) / sizeof(*g_TABLE_CAMERA_EXTBUFS);
     for (i = 0; i < len; i++)
     {
-        if (!IsFilterFound(g_TABLE_CAMERA_EXTBUFS, searchCount, pList[i]))
+        if (!IsCameraFilterFound(g_TABLE_CAMERA_EXTBUFS, searchCount, pList[i]))
         {
             pList[i] = 0;
             sts = MFX_ERR_UNSUPPORTED;
@@ -1073,7 +1073,7 @@ mfxStatus CorrectDoUseFilters(mfxU32* pList, mfxU32 len)
     return sts;
 }
 
-mfxStatus GetConfigurableFilterList(mfxVideoParam* par, mfxU32* pList, mfxU32* pLen)
+mfxStatus GetConfigurableCameraFilterList(mfxVideoParam* par, mfxU32* pList, mfxU32* pLen)
 {
     mfxU32 fIdx = 0;
     mfxStatus sts = MFX_ERR_NONE;
@@ -1089,9 +1089,9 @@ mfxStatus GetConfigurableFilterList(mfxVideoParam* par, mfxU32* pList, mfxU32* p
         mfxU32 curId = par->ExtParam[fIdx]->BufferId;
         if (MFX_EXTBUFF_VPP_DOUSE == curId)
             continue;
-        if (IsFilterFound(g_TABLE_CAMERA_EXTBUFS, searchCount, curId))
+        if (IsCameraFilterFound(g_TABLE_CAMERA_EXTBUFS, searchCount, curId))
         {
-            if (pList && !IsFilterFound(pList, *pLen, curId))
+            if (pList && !IsCameraFilterFound(pList, *pLen, curId))
             {
                 pList[(*pLen)++] = curId;
             }
@@ -1385,7 +1385,7 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
     bool camPipefound = false;
     for (i = 0; i < extCount; i++)
     {
-        if (!IsFilterFound(g_TABLE_CAMERA_EXTBUFS, searchCount, pExtList[i]))
+        if (!IsCameraFilterFound(g_TABLE_CAMERA_EXTBUFS, searchCount, pExtList[i]))
         {
             if (mode != MFX_CAM_QUERY_RETURN_STATUS)
             {
@@ -1420,7 +1420,7 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
             continue;
         if(curId == MFX_EXTBUF_CAM_PIPECONTROL)
             camPipefound = true;
-        if (!IsFilterFound(g_TABLE_CAMERA_EXTBUFS, searchCount, curId))
+        if (!IsCameraFilterFound(g_TABLE_CAMERA_EXTBUFS, searchCount, curId))
         {
             sts = MFX_ERR_UNSUPPORTED;
             break;
@@ -1441,7 +1441,7 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
 
     for (i = 0; i < extCount; i++)
     {
-        if (!IsFilterFound(&capsList[0], (mfxU32)capsList.size(), pExtList[i]))
+        if (!IsCameraFilterFound(&capsList[0], (mfxU32)capsList.size(), pExtList[i]))
         {
             if (mode != MFX_CAM_QUERY_RETURN_STATUS)
             {
@@ -1471,7 +1471,7 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
         mfxU32 curId = param->ExtParam[i]->BufferId;
         if (MFX_EXTBUFF_VPP_DOUSE == curId)
             continue;
-        if (!IsFilterFound(&capsList[0], (mfxU32)capsList.size(), curId))
+        if (!IsCameraFilterFound(&capsList[0], (mfxU32)capsList.size(), curId))
         {
             if (mode != MFX_CAM_QUERY_RETURN_STATUS)
             {
@@ -1485,7 +1485,7 @@ mfxStatus MfxCameraPlugin::CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *
                 break;
             }
         }
-        else if (IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), curId))
+        else if (IsCameraFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), curId))
         {
             if (mode != MFX_CAM_QUERY_RETURN_STATUS)
             {

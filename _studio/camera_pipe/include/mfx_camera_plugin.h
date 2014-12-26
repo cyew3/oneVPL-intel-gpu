@@ -19,6 +19,7 @@ File Name: mfx_camera_plugin.h
 #include <iostream>
 #include "mfxvideo.h"
 #include "mfxplugin++.h"
+#include "mfx_plugin_module.h"
 #include "mfx_session.h"
 #include "mfxcamera.h"
 
