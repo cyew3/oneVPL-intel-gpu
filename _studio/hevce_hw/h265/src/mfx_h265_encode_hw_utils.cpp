@@ -263,16 +263,16 @@ mfxStatus CopyRawSurfaceToVideoMemory(
         mfxFrameData d3dSurf = {};
         mfxFrameData sysSurf = surface->Data;
         d3dSurf.MemId = task.m_midRaw;
-        bool sysLocked = !!sysSurf.Y;
+        bool needUnlock = false;
         
         mfxFrameSurface1 surfSrc = { {}, video.mfx.FrameInfo, sysSurf };
         mfxFrameSurface1 surfDst = { {}, video.mfx.FrameInfo, d3dSurf };
 
-        if (!sysLocked)
+        if (!sysSurf.Y)
         {
             sts = fa.Lock(fa.pthis, sysSurf.MemId, &surfSrc.Data);
             MFX_CHECK_STS(sts);
-            sysLocked = true;
+            needUnlock = true;
         }
         
         sts = fa.Lock(fa.pthis, d3dSurf.MemId, &surfDst.Data);
@@ -280,7 +280,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(
 
         sts = core.CopyFrame(&surfDst, &surfSrc);
 
-        if (sysLocked)
+        if (needUnlock)
         {
             sts = fa.Unlock(fa.pthis, sysSurf.MemId, &surfSrc.Data);
             MFX_CHECK_STS(sts);

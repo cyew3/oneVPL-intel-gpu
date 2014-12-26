@@ -92,6 +92,8 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     FillPpsBuffer(par, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
+    Trace(m_caps, 0);
+
     DDIHeaderPacker::Reset(par);
 
     return MFX_ERR_NONE;
@@ -231,6 +233,7 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
     
     FillPpsBuffer(task, m_pps);
     FillSliceBuffer(task, m_sps, m_pps, m_slice);
+    m_pps.NumSlices = (USHORT)(m_slice.size());
 
     ADD_CBD(D3DDDIFMT_INTELENCODE_SPSDATA,          m_sps,      1);
     ADD_CBD(D3DDDIFMT_INTELENCODE_PPSDATA,          m_pps,      1);
@@ -254,6 +257,8 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
         pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset); assert(pPH);
         ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA, *pPH, 1);
     }
+
+    Trace(executeParams, 0);
 
     try
     {
@@ -284,7 +289,6 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
         HANDLE handle;
         HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
 
         hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, executeParams, (void *)0);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
@@ -348,6 +352,7 @@ mfxStatus D3D9Encoder::QueryStatus(Task & task)
     switch (feedback->bStatus)
     {
     case ENCODE_OK:
+        Trace(*feedback, 0);
         task.m_bsDataLength = feedback->bitstreamSize;
         m_feedbackCached.Remove(task.m_statusReportNumber);
         return MFX_ERR_NONE;
@@ -358,6 +363,7 @@ mfxStatus D3D9Encoder::QueryStatus(Task & task)
     case ENCODE_NOTAVAILABLE:
     case ENCODE_ERROR:
     default:
+        Trace(*feedback, 0);
         assert(!"bad feedback status");
         return MFX_ERR_DEVICE_FAILED;
     }

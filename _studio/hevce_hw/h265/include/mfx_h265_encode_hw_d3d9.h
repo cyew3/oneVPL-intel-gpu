@@ -8,12 +8,12 @@
 #pragma once
 
 #include "mfx_h265_encode_hw_ddi.h"
-
+#include "mfx_h265_encode_hw_ddi_trace.h"
 
 namespace MfxHwH265Encode
 {
 
-class D3D9Encoder : public DriverEncoder, DDIHeaderPacker
+class D3D9Encoder : public DriverEncoder, DDIHeaderPacker, DDITracer
 {
 public:
     D3D9Encoder();

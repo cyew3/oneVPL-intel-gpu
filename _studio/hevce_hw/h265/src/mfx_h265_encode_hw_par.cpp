@@ -429,13 +429,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
         if (par.mfx.FrameInfo.CropX > par.m_ext.HEVCParam.PicWidthInLumaSamples)
         {
             par.mfx.FrameInfo.CropX = 0;
-            incompatible ++;
+            changed ++;
         }
 
         if (par.mfx.FrameInfo.CropX + par.mfx.FrameInfo.CropW > par.m_ext.HEVCParam.PicWidthInLumaSamples)
         {
             par.mfx.FrameInfo.CropW = par.m_ext.HEVCParam.PicWidthInLumaSamples - par.mfx.FrameInfo.CropX;
-            incompatible ++;
+            changed ++;
         }
     }
 
@@ -444,13 +444,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
         if (par.mfx.FrameInfo.CropY > par.m_ext.HEVCParam.PicHeightInLumaSamples)
         {
             par.mfx.FrameInfo.CropY = 0;
-            incompatible ++;
+            changed ++;
         }
 
         if (par.mfx.FrameInfo.CropY + par.mfx.FrameInfo.CropH > par.m_ext.HEVCParam.PicHeightInLumaSamples)
         {
             par.mfx.FrameInfo.CropH = par.m_ext.HEVCParam.PicHeightInLumaSamples - par.mfx.FrameInfo.CropY;
-            incompatible ++;
+            changed ++;
         }
     }
 

@@ -883,7 +883,7 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
     if (qpd_offset)
         *qpd_offset -= mfxU32(buf - m_bs_ssh) * 8;
 
-    sizeInBytes = CeilDiv(rbsp.GetOffset(), 8);
+    sizeInBytes = CeilDiv(rbsp.GetOffset(), 8) - (buf - m_bs_ssh);
 }
 
 
