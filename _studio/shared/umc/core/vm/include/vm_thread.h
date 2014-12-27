@@ -50,11 +50,6 @@ Ipp32s vm_thread_is_valid(vm_thread *thread);
    Return 1 if successful */
 Ipp32s vm_thread_create(vm_thread *thread, vm_thread_callback func, void *arg);
 
-
-/* Attach to externally created thread. Should be called from the thread in question.
-Return 1 if successful */
-Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg);
-
 /* Wait until a thread exists */
 void vm_thread_wait(vm_thread *thread);
 

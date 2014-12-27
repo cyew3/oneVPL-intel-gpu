@@ -146,7 +146,7 @@ enum eWakeUpReason
 };
 
 
-class mfxSchedulerCore : public MFXIScheduler2
+class mfxSchedulerCore : public MFXIScheduler
 {
 public:
     // Default constructor
@@ -221,10 +221,6 @@ public:
     // Get the current reference counter value
     virtual
     mfxU32 GetNumRef(void) const;
-
-    // Entry point for external threads
-    virtual
-    mfxStatus DoWork();
 
     //MFX_SCHEDULER_TASK is only one consumer
     void ResolveDependencyTable(MFX_SCHEDULER_TASK *pTask);
@@ -319,9 +315,6 @@ protected:
     void PrintTaskInfo(void);
     void PrintTaskInfoUnsafe(void);
 
-    mfxU32 AddThreadToPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext);
-    void RemoveThreadFromPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext);
-
     // Scheduler's initialization parameters
     MFX_SCHEDULER_PARAM m_param;
     // Reference counters
@@ -355,11 +348,9 @@ protected:
     volatile
     bool m_bQuitWakeUpThread;
     // Threads contexts
-    UMC::Array<MFX_SCHEDULER_THREAD_CONTEXT *> m_ppThreadCtx;
-    //MFX_SCHEDULER_THREAD_CONTEXT *m_pThreadCtx;
+    MFX_SCHEDULER_THREAD_CONTEXT *m_pThreadCtx;
     // Objects for waiting on in case of nothing to do
-    UMC::Array<UMC::Event *> m_ppTaskAdded;
-    //UMC::Event *m_pTaskAdded;
+    UMC::Event *m_pTaskAdded;
     // Event to wait free task objects
     UMC::Semaphore m_freeTasks;
     // Some task was done in HW

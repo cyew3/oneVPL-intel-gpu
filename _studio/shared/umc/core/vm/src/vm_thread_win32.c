@@ -154,43 +154,6 @@ Ipp32s vm_thread_create(vm_thread *thread, vm_thread_callback func, void *arg)
 
 } /* Ipp32s vm_thread_create(vm_thread *thread, vm_thread_callback func, void *arg) */
 
-/* attach to current thread. return 1 if successful  */
-Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg)
-{
-    Ipp32s i_res = 1;
-
-    func;
-    arg;
-
-    /* check error(s) */
-    if ((NULL == thread) ||
-        (NULL == func))
-        return 0;
-
-#ifdef VM_THREAD_CATCHCRASH
-    thread->protected_func = func;
-    thread->protected_arg = arg;
-#endif
-
-    if ((!vm_mutex_is_valid(&thread->access_mut)) &&
-        (VM_OK != vm_mutex_init(&thread->access_mut)))
-        i_res = 0;
-
-    if (i_res)
-    {
-        if (NULL != thread->handle)
-            vm_thread_wait(thread);
-
-        vm_mutex_lock(&thread->access_mut);
-        i_res = (Ipp32s)((thread->handle) ? (1) : (0));
-        thread->i_wait_count = 1; // prevent vm_thread_wait from closing this thread handle
-        vm_mutex_unlock(&thread->access_mut);
-    }
-    return i_res;
-
-
-} /* Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg) */
-
 /* set thread priority. return 1 if success */
 Ipp32s vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority)
 {

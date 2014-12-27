@@ -65,6 +65,3 @@ EXPORTS
     MFXVideoPAK_Reset;
     MFXVideoPAK_Close;
     MFXVideoPAK_ProcessFrameAsync;
-
-    MFXInitEx;
-    MFXDoWork;

@@ -17,7 +17,6 @@
 #include <vm_sys_info.h>
 #include <umc_automatic_mutex.h>
 #include <mfx_trace.h>
-#include <cassert>
 
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
@@ -119,13 +118,16 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
     {
 
         // decide the number of threads
-    numThreads = UMC::get_min(vm_sys_info_get_cpu_num(), m_param.numberOfThreads);
-
+        numThreads = vm_sys_info_get_cpu_num();
+        if (m_param.numberOfThreads)
+        {
+            numThreads = UMC::get_min(numThreads, m_param.numberOfThreads);
+        }
         //we have to create threads more than cores to support Intel plug-ins threading 
         //m_param.numberOfThreads = numThreads + 1;
 
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-    numThreads = UMC::get_max(m_param.numberOfThreads, 2);
+    m_param.numberOfThreads = UMC::get_max(m_param.numberOfThreads, 2);
 #endif
 
     try
@@ -137,27 +139,36 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
             return MFX_ERR_UNKNOWN;
         }
 
-        // initialize the waiting objects, allocate and start threads
-        m_param.numberOfThreads = 0;
-        for (i = 0; i < numThreads; i += 1)
+        // initialize the waiting objects.
+        m_pTaskAdded = new UMC::Event[m_param.numberOfThreads];
+        for (i = 0; i < m_param.numberOfThreads; i += 1)
+        {
+            umcRes = m_pTaskAdded[i].Init(0, 0);
+            if (UMC::UMC_OK != umcRes)
             {
-            MFX_SCHEDULER_THREAD_CONTEXT * pContext = new MFX_SCHEDULER_THREAD_CONTEXT;
+                return MFX_ERR_UNKNOWN;
+            }
+        }
 
-            // prepare context            
-            pContext->pSchedulerCore = this;
-            pContext->threadNum = AddThreadToPool(pContext); // m_param.numberOfThreads modified here
+        // allocate thread contexts
+        m_pThreadCtx = new MFX_SCHEDULER_THREAD_CONTEXT[m_param.numberOfThreads];
+            memset(m_pThreadCtx, 0, sizeof(MFX_SCHEDULER_THREAD_CONTEXT) * m_param.numberOfThreads);
 
+            // start threads
+            for (i = 0; i < m_param.numberOfThreads; i += 1)
+            {
+            // prepare context
+            m_pThreadCtx[i].threadNum = i;
+            m_pThreadCtx[i].pSchedulerCore = this;
             // spawn a thread
-            vm_thread_set_invalid(&pContext->threadHandle);
-            iRes = vm_thread_create(&pContext->threadHandle,
+            vm_thread_set_invalid(&(m_pThreadCtx[i].threadHandle));
+            iRes = vm_thread_create(&(m_pThreadCtx[i].threadHandle),
                                     scheduler_thread_proc,
-                                    pContext);
+                                    m_pThreadCtx + i);
             if (0 == iRes)
             {
                 return MFX_ERR_UNKNOWN;
             }
-
-            
             // 02.2012 vcherepa: DON'T use high priority for internal thread #0.
             // It is useless when CPU affinity mask is not set.
                 //if ((0 == i) && (1 < m_param.numberOfThreads))
@@ -544,10 +555,10 @@ mfxStatus mfxSchedulerCore::GetParam(MFX_SCHEDULER_PARAM *pParam)
 mfxStatus mfxSchedulerCore::Reset(void)
 {
     // check error(s)
-//     if (0 == m_param.numberOfThreads)
-//     {
-//         return MFX_ERR_NOT_INITIALIZED;
-//     }
+    if (0 == m_param.numberOfThreads)
+    {
+        return MFX_ERR_NOT_INITIALIZED;
+    }
 
     if (NULL == m_pFailedTasks)
     {
@@ -885,89 +896,3 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
     return MFX_ERR_NONE;
 
 } // mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoint,
-
-mfxStatus mfxSchedulerCore::DoWork()
-{
-    MFX_SCHEDULER_THREAD_CONTEXT * pContext = new MFX_SCHEDULER_THREAD_CONTEXT;
-    
-    pContext->pSchedulerCore = this;
-
-    Ipp32s iRes = vm_thread_attach(&pContext->threadHandle, 0, 0);
-    mfxStatus mfxRes = MFX_ERR_NONE;
-
-    if (0 != iRes)
-    {
-        pContext->threadNum = AddThreadToPool(pContext);
-
-        scheduler_thread_proc(pContext);
-#if defined(LINUX32) || defined(__APPLE__)
-        vm_event_signal(&pContext->threadHandle.exit_event);
-#endif
-#if defined(_WIN32)
-        vm_thread_set_invalid(&pContext->threadHandle);
-#endif
-    }
-    else
-    {
-        delete pContext;
-        mfxRes = MFX_ERR_UNKNOWN;
-    }
-
-    return mfxRes;
-} // mfxStatus mfxSchedulerCore::DoWork()
-
-mfxU32 mfxSchedulerCore::AddThreadToPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext)
-{
-    UMC::AutomaticUMCMutex guard(m_guard);
-
-    size_t thNumber = m_ppThreadCtx.Size();
-    *(m_ppThreadCtx + thNumber) = pContext;
-    pContext->threadNum = (mfxU32)thNumber;
-    
-    size_t evNumber = m_ppTaskAdded.Size();
-    *(m_ppTaskAdded + evNumber) = new UMC::Event;
-    assert(thNumber == evNumber);
-
-    m_ppTaskAdded[evNumber]->Init(0, 0);
-
-    m_param.numberOfThreads++;
-
-
-    return (mfxU32)thNumber;
-    // TODO:
-    // MFX_SCHEDULER_THREAD_CONTEXT *m_pThreadCtx;
-    // UMC::Event *m_pTaskAdded;
-    // m_param.numberOfThreads
-}
-
-void mfxSchedulerCore::RemoveThreadFromPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext)
-{
-    UMC::AutomaticUMCMutex guard(m_guard);
-
-    if (!pContext)
-    {
-        assert(!"Can't remove null context from pool");
-        return;
-    }
-
-    size_t index = pContext->threadNum;
-
-    if (index >= m_ppThreadCtx.Size())
-    {
-        assert(!"Can't remove context with non-existing index");
-        return;
-    }
-    delete m_ppThreadCtx[index];
-    m_ppThreadCtx[index] = 0;
-
-    m_param.numberOfThreads--;
-
-    if (index >= m_ppTaskAdded.Size())
-    {
-        assert(!"Can't remove event with non-existing index");
-        return;
-    }
-    delete m_ppTaskAdded[index];
-    m_ppTaskAdded[index] = 0;
-}
-

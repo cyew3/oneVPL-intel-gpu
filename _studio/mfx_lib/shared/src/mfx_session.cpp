@@ -704,14 +704,6 @@ mfxStatus _mfxSession::ReleaseScheduler(void)
 _mfxSession_1_10::_mfxSession_1_10()
     : _mfxSession(0)
     , m_refCounter(1)
-    , m_externalThreads(0)
-{
-}
-
-_mfxSession_1_10::_mfxSession_1_10(mfxU16 externalThreads)
-    : _mfxSession(0)
-    , m_refCounter(1)
-    , m_externalThreads(externalThreads)
 {
 }
 
@@ -784,119 +776,6 @@ mfxU32 _mfxSession_1_10::GetNumRef(void) const
 
 } // mfxU32 _mfxSession_1_10::GetNumRef(void) const
 
-mfxStatus _mfxSession_1_10::InitEx(mfxIMPL implInterface, mfxVersion *ver, mfxU16 externalThreads)
-{
-    mfxStatus mfxRes;
-    MFX_SCHEDULER_PARAM schedParam;
-    mfxU32 maxNumThreads;
-
-    // release the object before initialization
-    Cleanup();
-
-    if (ver)
-    {
-        m_version = *ver;
-    }
-    else
-    {
-        mfxStatus sts = MFXQueryVersion(this, &m_version);
-        if (sts != MFX_ERR_NONE)
-            return sts;
-    }
-
-    // save working HW interface
-    switch (implInterface)
-    {
-        // if nothing is set, nothing is returned
-    case MFX_IMPL_UNSUPPORTED:
-        m_implInterface = MFX_IMPL_UNSUPPORTED;
-        break;
-#if defined(MFX_VA_WIN)        
-        // D3D9 is only one supported interface
-    case MFX_IMPL_VIA_ANY:
-#endif    
-    case MFX_IMPL_VIA_D3D9:
-        m_implInterface = MFX_IMPL_VIA_D3D9;
-        break;
-    case MFX_IMPL_VIA_D3D11:
-        m_implInterface = MFX_IMPL_VIA_D3D11;
-        break;
-
-#if defined(MFX_VA_LINUX)        
-        // VAAPI is only one supported interface
-    case MFX_IMPL_VIA_ANY:
-    case MFX_IMPL_VIA_VAAPI:
-        m_implInterface = MFX_IMPL_VIA_VAAPI;
-        break;
-#endif        
-
-        // unknown hardware interface
-    default:
-        if (MFX_PLATFORM_HARDWARE == m_currentPlatform)
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    }
-
-    // get the number of available threads
-    maxNumThreads = (externalThreads != 0) ? 0 : vm_sys_info_get_cpu_num();
-
-    // allocate video core
-    if (MFX_PLATFORM_SOFTWARE == m_currentPlatform)
-    {
-        m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_NO, 0, maxNumThreads, this));
-    }
-#if defined(MFX_VA_WIN)
-    else
-    {
-        if (MFX_IMPL_VIA_D3D11 == m_implInterface)
-        {
-#if defined (MFX_D3D11_ENABLED)
-            m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_D3D11, m_adapterNum, maxNumThreads, this));
-#else
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-#endif
-        }
-        else
-            m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_D3D9, m_adapterNum, maxNumThreads, this));
-
-    }
-#elif defined(MFX_VA_LINUX)
-    else
-    {
-        m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_VAAPI, m_adapterNum, maxNumThreads, this));
-    }
-
-#elif defined(MFX_VA_OSX)
-
-    else
-    {
-        m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_VDAAPI, m_adapterNum, maxNumThreads, this));
-    }
-#endif
-
-    // initialize the core interface
-    InitCoreInterface(&m_coreInt, this);
-
-    // query the scheduler interface
-    m_pScheduler = ::QueryInterface<MFXIScheduler> (m_pSchedulerAllocated,
-        MFXIScheduler_GUID);
-    if (NULL == m_pScheduler)
-    {
-        return MFX_ERR_UNKNOWN;
-    }
-    memset(&schedParam, 0, sizeof(schedParam));
-    schedParam.flags = MFX_SCHEDULER_DEFAULT;
-    schedParam.numberOfThreads = maxNumThreads;
-    schedParam.pCore = m_pCORE.get();
-    mfxRes = m_pScheduler->Initialize(&schedParam);
-    if (MFX_ERR_NONE != mfxRes)
-    {
-        return mfxRes;
-    }
-
-    m_pOperatorCore = new OperatorCORE(m_pCORE.get());
-
-    return MFX_ERR_NONE;
-} // mfxStatus _mfxSession_1_10::InitEx(mfxIMPL implInterface, mfxVersion *ver, mfxU16 externalThreads);
 
 //explicit specification of interface creation
 template<> MFXISession_1_10*  CreateInterfaceInstance<MFXISession_1_10>(const MFX_GUID &guid)

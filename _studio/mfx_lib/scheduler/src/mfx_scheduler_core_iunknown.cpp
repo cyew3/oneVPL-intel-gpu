@@ -23,14 +23,6 @@ void *mfxSchedulerCore::QueryInterface(const MFX_GUID &guid)
         return (MFXIScheduler *) this;
     }
 
-    if (MFXIScheduler2_GUID == guid)
-    {
-        // increment reference counter
-        vm_interlocked_inc32(&m_refCounter);
-
-        return (MFXIScheduler2 *) this;
-    }
-
     // it is unsupported interface
     return NULL;
 
@@ -67,15 +59,6 @@ template<> MFXIScheduler*  CreateInterfaceInstance<MFXIScheduler>(const MFX_GUID
 {
     if (MFXIScheduler_GUID == guid)
         return (MFXIScheduler*) (new mfxSchedulerCore);
-
-    return NULL;
-
-} //template<> MFXIScheduler*  CreateInterfaceInstance<MFXIScheduler>()
-
-template<> MFXIScheduler2*  CreateInterfaceInstance<MFXIScheduler2>(const MFX_GUID &guid)
-{
-    if (MFXIScheduler2_GUID == guid)
-        return (MFXIScheduler2*)(new mfxSchedulerCore);
 
     return NULL;
 
