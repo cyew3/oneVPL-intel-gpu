@@ -133,10 +133,3 @@ FUNCTION(mfxStatus, MFXVideoPAK_Close, (mfxSession session), (session))
 FUNCTION(mfxStatus, MFXVideoPAK_ProcessFrameAsync, (mfxSession session, mfxPAKInput *in, mfxPAKOutput *out, mfxSyncPoint *syncp), (session, in, out, syncp))
 
 #undef API_VERSION
-
-#define API_VERSION {{14, 1}}
-
-// FUNCTION(mfxStatus, MFXInitEx, (mfxInitParam par, mfxSession session), (par, session))
-FUNCTION(mfxStatus, MFXDoWork, (mfxSession session), (session))
-
-#undef API_VERSION

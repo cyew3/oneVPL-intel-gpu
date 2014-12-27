@@ -160,32 +160,12 @@ int HandleSort (const void * plhs, const void * prhs)
 
 mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfxSession *session)
 {
-    mfxInitParam par = {};
-
-    par.Implementation = impl;
-    if (pVer)
-    {
-        par.Version = *pVer;
-    }
-    else
-    {
-        par.Version.Major = DEFAULT_API_VERSION_MAJOR;
-        par.Version.Minor = DEFAULT_API_VERSION_MINOR;
-    }
-    par.ExternalThreads = 0;
-
-    return MFXInitEx(par, session);
-}
-
-mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitEx)(mfxInitParam par, mfxSession *session)
-{
     MFX::MFXAutomaticCriticalSection guard(&dispGuard);
 
-    DISPATCHER_LOG_BLOCK( ("MFXInitEx (impl=%s, pVer=%d.%d, ExternalThreads=%d session=0x%p\n"
-        , DispatcherLog_GetMFXImplString(par.Implementation).c_str()
-        , par.Version.Major
-        , par.Version.Minor
-        , par.ExternalThreads
+    DISPATCHER_LOG_BLOCK( ("MFXInit (impl=%s, pVer=%d.%d session=0x%p\n"
+        , DispatcherLog_GetMFXImplString(impl).c_str()
+        , (pVer)? pVer->Major : 0
+        , (pVer)? pVer->Minor : 0
         , session));
 
     mfxStatus mfxRes;
@@ -202,10 +182,10 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitEx)(mfxInitParam par, mfxSession *ses
     mfxIMPL curImpl;
     // implementation method masked from the input parameter
     // special case for audio library
-    const mfxIMPL implMethod = (par.Implementation & MFX_IMPL_AUDIO) ? (sizeof(implTypesRange) / sizeof(implTypesRange[0]) - 1) : (par.Implementation & (MFX_IMPL_VIA_ANY - 1));
+    const mfxIMPL implMethod = (impl & MFX_IMPL_AUDIO)?(sizeof(implTypesRange)/sizeof(implTypesRange[0])-1):(impl & (MFX_IMPL_VIA_ANY - 1));
 
     // implementation interface masked from the input parameter
-    mfxIMPL implInterface = par.Implementation & -MFX_IMPL_VIA_ANY;
+    mfxIMPL implInterface = impl & -MFX_IMPL_VIA_ANY;
     mfxIMPL implInterfaceOrig = implInterface;
     mfxVersion requiredVersion = {{MFX_VERSION_MINOR, MFX_VERSION_MAJOR}};
 
@@ -214,13 +194,16 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitEx)(mfxInitParam par, mfxSession *ses
     {
         return MFX_ERR_NULL_PTR;
     }
-    if (((MFX_IMPL_AUTO > implMethod) || (MFX_IMPL_SINGLE_THREAD < implMethod)) && !(par.Implementation & MFX_IMPL_AUDIO))
+    if (((MFX_IMPL_AUTO > implMethod) || (MFX_IMPL_SINGLE_THREAD < implMethod)) && !(impl & MFX_IMPL_AUDIO))
     {
         return MFX_ERR_UNSUPPORTED;
     }
 
     // set the minimal required version
-    requiredVersion = par.Version;
+    if (pVer)
+    {
+        requiredVersion = *pVer;
+    }
 
     try
     {
@@ -235,7 +218,16 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitEx)(mfxInitParam par, mfxSession *ses
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-    DISPATCHER_LOG_INFO((("Required API version is %u.%u\n"), requiredVersion->Major, requiredVersion->Minor));
+    DISPATCHER_LOG_OPERATION({
+        if (pVer)
+        {
+            DISPATCHER_LOG_INFO((("Required API version is %u.%u\n"), pVer->Major, pVer->Minor));
+        }
+        else
+        {
+            DISPATCHER_LOG_INFO((("Default API version is %u.%u\n"), DEFAULT_API_VERSION_MAJOR, DEFAULT_API_VERSION_MINOR));
+        }
+    });
 
     // Load HW library or RT from system location
     curImplIdx = implTypesRange[implMethod].minIndex;
@@ -284,7 +276,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitEx)(mfxInitParam par, mfxSession *ses
                         hwImplIdx = curImplIdx;
                     // try to load the selected DLL
                     curImpl = implTypes[curImplIdx].impl;
-                    mfxRes = pHandle->LoadSelectedDLL(dllName, implType, curImpl, implInterface, par.ExternalThreads);
+                    mfxRes = pHandle->LoadSelectedDLL(dllName, implType, curImpl, implInterface);
                     // unload the failed DLL
                     if (MFX_ERR_NONE != mfxRes)
                     {
@@ -350,7 +342,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitEx)(mfxInitParam par, mfxSession *ses
 
                 // try to load the selected DLL
                 curImpl = implTypes[curImplIdx].impl;
-                mfxRes = pHandle->LoadSelectedDLL(dllName, implType, curImpl, implInterface, par.ExternalThreads);
+                mfxRes = pHandle->LoadSelectedDLL(dllName, implType, curImpl, implInterface);
                 // unload the failed DLL
                 if (MFX_ERR_NONE != mfxRes)
                 {
@@ -385,7 +377,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitEx)(mfxInitParam par, mfxSession *ses
         }
         implInterface = implInterfaceOrig;
             
-        if (par.Implementation & MFX_IMPL_AUDIO)
+        if (impl & MFX_IMPL_AUDIO)
         {
             mfxRes = MFX::mfx_get_default_audio_dll_name(dllName,
                 sizeof(dllName) / sizeof(dllName[0]),
@@ -417,8 +409,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitEx)(mfxInitParam par, mfxSession *ses
                     mfxRes = pHandle->LoadSelectedDLL(dllName,
                         implTypes[curImplIdx].implType,
                         implTypes[curImplIdx].impl,
-                        implInterface,
-                        par.ExternalThreads);
+                        implInterface);
                 }
                 // unload the failed DLL
                 if ((MFX_ERR_NONE != mfxRes) &&
@@ -881,10 +872,10 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXAudioUSER_UnLoad)(mfxSession session, con
 }
 
 FUNCTION(mfxStatus, MFXQueryIMPL, (mfxSession session, mfxIMPL *impl), (session, impl))
-FUNCTION(mfxStatus, MFXQueryVersion, (mfxSession session, mfxVersion *version), (session, version))
-FUNCTION(mfxStatus, MFXDisjoinSession, (mfxSession session), (session))
-FUNCTION(mfxStatus, MFXSetPriority, (mfxSession session, mfxPriority priority), (session, priority))
-FUNCTION(mfxStatus, MFXGetPriority, (mfxSession session, mfxPriority *priority), (session, priority))
+    FUNCTION(mfxStatus, MFXQueryVersion, (mfxSession session, mfxVersion *version), (session, version))
+    FUNCTION(mfxStatus, MFXDisjoinSession, (mfxSession session), (session))
+    FUNCTION(mfxStatus, MFXSetPriority, (mfxSession session, mfxPriority priority), (session, priority))
+    FUNCTION(mfxStatus, MFXGetPriority, (mfxSession session, mfxPriority *priority), (session, priority))
 
 #undef FUNCTION
 #define FUNCTION(return_value, func_name, formal_param_list, actual_param_list) \

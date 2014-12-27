@@ -69,7 +69,6 @@ enum eFunc
     eMFXCloneSession,
     eMFXSetPriority,
     eMFXGetPriority,
-    eMFXInitEx,
 #include "mfx_exposed_functions_list.h"
     eVideoFuncTotal
 };
@@ -119,7 +118,7 @@ struct MFX_DISP_HANDLE
     ~MFX_DISP_HANDLE(void);
 
     // Load the library's module
-    mfxStatus LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImplType implType, mfxIMPL impl, mfxIMPL implInterface, mfxU16 externalThreads);
+    mfxStatus LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImplType implType, mfxIMPL impl, mfxIMPL implInterface);
     // Unload the library's module
     mfxStatus UnLoadSelectedDLL(void);
 
