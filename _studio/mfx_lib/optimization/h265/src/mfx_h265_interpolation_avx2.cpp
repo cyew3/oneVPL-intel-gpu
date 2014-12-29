@@ -2823,8 +2823,8 @@ template <int shift, typename PixType>
 static void h265_InterpLumaPack_kernel(const short *src, int pitchSrc, PixType *dst, int pitchDst, int width, int height, int bitDepth)
 {
     width = (width + 15) & ~15; // 256-bit registers
-    VM_ASSERT(width <= pitchSrc);
-    VM_ASSERT(width <= pitchDst);
+    //VM_ASSERT(width <= pitchSrc);
+    //VM_ASSERT(width <= pitchDst);
 
     __m256i line, minPel, maxPel;
     __m256i offset = _mm256_set1_epi16(1 << (shift - 1));

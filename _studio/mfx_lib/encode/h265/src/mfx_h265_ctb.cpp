@@ -7607,18 +7607,18 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
         }
     }
 
-    if (m_cslice->slice_type == P_SLICE) {
-        meInfo->interDir = INTER_DIR_PRED_L0;
-        meInfo->refIdx[0] = (Ipp8s)refIdxBest[0];
-        meInfo->refIdx[1] = -1;
-        meInfo->MV[0] = mvRefBest[0][refIdxBest[0]];
-        meInfo->MV[1] = MV_ZERO;
-#ifdef AMT_ICRA_OPT
-        return costRefBest[0][refIdxBest[0]];
-#else
-        return;
-#endif
-    }
+//    if (m_cslice->slice_type == P_SLICE) {
+//        meInfo->interDir = INTER_DIR_PRED_L0;
+//        meInfo->refIdx[0] = (Ipp8s)refIdxBest[0];
+//        meInfo->refIdx[1] = -1;
+//        meInfo->MV[0] = mvRefBest[0][refIdxBest[0]];
+//        meInfo->MV[1] = MV_ZERO;
+//#ifdef AMT_ICRA_OPT
+//        return costRefBest[0][refIdxBest[0]];
+//#else
+//        return;
+//#endif
+//    }
     
     Ipp32s idxL0 = refIdxBest[0];
     Ipp32s idxL1 = refIdxBest[1];
@@ -7629,10 +7629,22 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
 
     H265Frame *refF = m_currFrame->m_refPicList[0].m_refFrames[idxL0];
     H265Frame *refB = m_currFrame->m_refPicList[1].m_refFrames[idxL1];
+    if (m_cslice->slice_type == B_SLICE && meInfo->width + meInfo->height != 12 && refF && refB ||
+        !(m_par->fastSkip && meInfo->splitMode == PART_SIZE_2Nx2N))
+    {
+        H265MV mvc[2] = { mvBiBest[0], mvBiBest[1] };
+        ClipMV(mvc[0]);
+        ClipMV(mvc[1]);
+        Ipp32s useHadamard = (m_par->hadamardMe >= 2);
+        costList[0] = MatchingMetricPu(src, meInfo, mvc + 0, refF, useHadamard) + mvCostRefBest[0][idxL0] + (Ipp32s)(bitsRefBest[0][idxL0] * m_rdLambdaSqrt + 0.5);
+        costList[1] = MatchingMetricPu(src, meInfo, mvc + 1, refB, useHadamard) + mvCostRefBest[1][idxL1] + (Ipp32s)(bitsRefBest[1][idxL1] * m_rdLambdaSqrt + 0.5);
+    }
+
     if (m_cslice->slice_type == B_SLICE && meInfo->width + meInfo->height != 12 && refF && refB) {
         // use satd for bidir refine because it is always sub-pel
         Ipp32s useHadamard = (m_par->hadamardMe >= 2);
 
+        m_interpIdxFirst = m_interpIdxLast = 0; // for MatchingMetricBipredPu optimization
         Ipp32s mvCostBiBest = mvCostRefBest[0][idxL0] + mvCostRefBest[1][idxL1];
         costBiBest = mvCostBiBest;
         costBiBest += MatchingMetricBipredPu(src, meInfo, refIdxBest, mvBiBest, useHadamard);
