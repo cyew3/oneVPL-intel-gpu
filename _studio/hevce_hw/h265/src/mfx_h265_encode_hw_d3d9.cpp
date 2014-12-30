@@ -95,6 +95,7 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     Trace(m_caps, 0);
 
     DDIHeaderPacker::Reset(par);
+    m_cbd.resize(MAX_DDI_BUFFERS + MaxPackedHeaders());
 
     return MFX_ERR_NONE;
 }
@@ -112,6 +113,7 @@ mfxStatus D3D9Encoder::Reset(MfxVideoParam const & par)
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
     DDIHeaderPacker::Reset(par);
+    m_cbd.resize(MAX_DDI_BUFFERS + MaxPackedHeaders());
 
     m_sps.bResetBRC = !Equal(m_sps, prevSPS);
 
@@ -207,24 +209,22 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
 }
 
 #define ADD_CBD(id, buf, num)\
-    compBufDesc[executeParams.NumCompBuffers].CompressedBufferType = (id);   \
-    compBufDesc[executeParams.NumCompBuffers].DataSize = (UINT)(sizeof(buf) * (num));\
-    compBufDesc[executeParams.NumCompBuffers].pCompBuffer = &buf;            \
-    executeParams.NumCompBuffers++;                                          \
-    assert(executeParams.NumCompBuffers <= MaxCompBufDesc);
-
+    assert(executeParams.NumCompBuffers < MaxCompBufDesc);\
+    m_cbd[executeParams.NumCompBuffers].CompressedBufferType = (id); \
+    m_cbd[executeParams.NumCompBuffers].DataSize = (UINT)(sizeof(buf) * (num));\
+    m_cbd[executeParams.NumCompBuffers].pCompBuffer = &buf; \
+    executeParams.NumCompBuffers++;
 
 mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
 {
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
-    size_t MaxCompBufDesc = 7 + m_slice.size();
-    std::vector<ENCODE_COMPBUFFERDESC> compBufDesc(MaxCompBufDesc);
+    mfxU32 MaxCompBufDesc = (mfxU32)m_cbd.size();
     ENCODE_PACKEDHEADER_DATA * pPH = 0;
     ENCODE_EXECUTE_PARAMS executeParams = {};
 
-    executeParams.pCompressedBuffers = &compBufDesc[0];
-    Zero(compBufDesc);
+    executeParams.pCompressedBuffers = &m_cbd[0];
+    Zero(m_cbd);
 
     mfxU32 bitstream = task.m_idxBs;
 
@@ -240,17 +240,29 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
     ADD_CBD(D3DDDIFMT_INTELENCODE_SLICEDATA,        m_slice[0], m_slice.size());
     ADD_CBD(D3DDDIFMT_INTELENCODE_BITSTREAMDATA,    bitstream,  1);
 
-    if (task.m_frameType & MFX_FRAMETYPE_IDR)
+    if (task.m_insertHeaders & INSERT_AUD)
+    {
+        pPH = PackAudHeader(task.m_frameType); assert(pPH);
+        ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
+    }
+
+    if (task.m_insertHeaders & INSERT_VPS)
     {
         pPH = PackHeader(VPS_NUT); assert(pPH);
         ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
+    }
     
+    if (task.m_insertHeaders & INSERT_SPS)
+    {
         pPH = PackHeader(SPS_NUT); assert(pPH);
         ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
     }
-    
-    pPH = PackHeader(PPS_NUT); assert(pPH);
-    ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
+
+    if (task.m_insertHeaders & INSERT_PPS)
+    {
+        pPH = PackHeader(PPS_NUT); assert(pPH);
+        ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
+    }
 
     for (mfxU32 i = 0; i < m_slice.size(); i ++)
     {

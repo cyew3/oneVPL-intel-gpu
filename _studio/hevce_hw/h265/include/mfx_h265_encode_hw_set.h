@@ -15,8 +15,8 @@ namespace MfxHwH265Encode
 
 enum
 {
-      MAX_NUM_TILE_COLUMNS   = 16
-    , MAX_NUM_TILE_ROWS      = 16
+      MAX_NUM_TILE_COLUMNS   = 20
+    , MAX_NUM_TILE_ROWS      = 22
     , MAX_NUM_LONG_TERM_PICS = 8
     , MAX_PIC_HEIGHT_IN_CTBS = 270
     , MAX_NUM_ENTRY_POINT_OFFSETS  = ((MAX_NUM_TILE_COLUMNS*MAX_NUM_TILE_ROWS > MAX_PIC_HEIGHT_IN_CTBS) ? MAX_NUM_TILE_COLUMNS*MAX_NUM_TILE_ROWS : MAX_PIC_HEIGHT_IN_CTBS)
@@ -335,8 +335,8 @@ struct PPS
     mfxU16 num_tile_columns_minus1;
     mfxU16 num_tile_rows_minus1;
 
-    mfxU16 column_width_minus1[MAX_NUM_TILE_COLUMNS];
-    mfxU16 row_height_minus1[MAX_NUM_TILE_ROWS];
+    mfxU16 column_width[MAX_NUM_TILE_COLUMNS - 1];
+    mfxU16 row_height[MAX_NUM_TILE_ROWS - 1];
 
     mfxU8  loop_filter_across_slices_enabled_flag  : 1;
     mfxU8  deblocking_filter_control_present_flag  : 1;
@@ -421,7 +421,7 @@ struct Slice
 
     //PredWeightTable *pwt;
 
-    mfxU32 entry_point_offset_minus1[MAX_NUM_ENTRY_POINT_OFFSETS];
+    //mfxU32 entry_point_offset_minus1[MAX_NUM_ENTRY_POINT_OFFSETS];
 };
 
 struct NALU

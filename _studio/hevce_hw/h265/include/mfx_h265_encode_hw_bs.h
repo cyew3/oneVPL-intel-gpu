@@ -50,12 +50,14 @@ public:
 
     mfxStatus Reset(MfxVideoParam const & par);
 
+    inline void GetAUD(mfxU8*& buf, mfxU32& len, mfxU8 pic_type){assert(pic_type < 3); buf = m_bs_aud[pic_type%3]; len = 7;} 
     inline void GetVPS(mfxU8*& buf, mfxU32& len){buf = m_bs_vps; len = m_sz_vps;}  
     inline void GetSPS(mfxU8*& buf, mfxU32& len){buf = m_bs_sps; len = m_sz_sps;}
     inline void GetPPS(mfxU8*& buf, mfxU32& len){buf = m_bs_pps; len = m_sz_pps;}
     void GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& len, mfxU32* qpd_offset = 0);
 
     static void PackNALU (BitstreamWriter& bs, NALU  const &  nalu);
+    static void PackAUD  (BitstreamWriter& bs, mfxU8 pic_type);
     static void PackVPS  (BitstreamWriter& bs, VPS   const &  vps);
     static void PackSPS  (BitstreamWriter& bs, SPS   const &  sps);
     static void PackPPS  (BitstreamWriter& bs, PPS   const &  pps);
@@ -75,12 +77,14 @@ public:
 
 private:
     static const mfxU32 RBSP_SIZE   = 1024;
+    static const mfxU32 AUD_BS_SIZE = 8;
     static const mfxU32 VPS_BS_SIZE = 256;
     static const mfxU32 SPS_BS_SIZE = 256;
     static const mfxU32 PPS_BS_SIZE = 128;
     static const mfxU32 SSH_BS_SIZE = 2048;
 
     mfxU8  m_rbsp[RBSP_SIZE];
+    mfxU8  m_bs_aud[3][AUD_BS_SIZE];
     mfxU8  m_bs_vps[VPS_BS_SIZE];
     mfxU8  m_bs_sps[SPS_BS_SIZE];
     mfxU8  m_bs_pps[PPS_BS_SIZE];

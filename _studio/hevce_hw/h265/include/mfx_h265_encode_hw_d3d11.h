@@ -85,6 +85,7 @@ private:
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC>   m_slice;
     std::vector<ENCODE_COMP_BUFFER_INFO>        m_compBufInfo;
     std::vector<D3DDDIFORMAT>                   m_uncompBufInfo;
+    std::vector<ENCODE_COMPBUFFERDESC>          m_cbd;
     std::vector<mfxHDLPair>                     m_reconQueue;
     std::vector<mfxHDLPair>                     m_bsQueue;
     std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;

@@ -353,12 +353,14 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     base = par;
 
     ExtBuffer::Construct(par, m_ext.HEVCParam);
+    ExtBuffer::Construct(par, m_ext.HEVCTiles);
     ExtBuffer::Construct(par, m_ext.Opaque);
 }
 
 mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool /*query*/)
 {
     ExtBuffer::Set(par, m_ext.HEVCParam);
+    ExtBuffer::Set(par, m_ext.HEVCTiles);
     ExtBuffer::Set(par, m_ext.Opaque);
 
     return MFX_ERR_NONE;
@@ -927,6 +929,25 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     m_pps.transquant_bypass_enabled_flag        = 0;
     m_pps.tiles_enabled_flag                    = 0;
     m_pps.entropy_coding_sync_enabled_flag      = 0;
+
+    if (m_ext.HEVCTiles.NumTileColumns || m_ext.HEVCTiles.NumTileRows)
+    {
+        mfxU16 nCol   = (mfxU16)CeilDiv(m_ext.HEVCParam.PicWidthInLumaSamples,  LCUSize);
+        mfxU16 nRow   = (mfxU16)CeilDiv(m_ext.HEVCParam.PicHeightInLumaSamples, LCUSize);
+        mfxU16 nTCol  = Max<mfxU16>(m_ext.HEVCTiles.NumTileColumns, 1);
+        mfxU16 nTRow  = Max<mfxU16>(m_ext.HEVCTiles.NumTileRows, 1);
+
+        m_pps.tiles_enabled_flag        = 1;
+        m_pps.uniform_spacing_flag      = 1;
+        m_pps.num_tile_columns_minus1   = nTCol - 1;
+        m_pps.num_tile_rows_minus1      = nTRow - 1;
+        
+        for (mfxU16 i = 0; i < nTCol - 1; i ++)
+            m_pps.column_width[i] = ((i + 1) * nCol) / nTCol - (i * nCol) / nTCol;
+
+        for (mfxU16 j = 0; j < nTRow - 1; j ++)
+            m_pps.row_height[j] = ((j + 1) * nRow) / nTRow - (j * nRow) / nTRow;
+    }
 
     m_pps.loop_filter_across_slices_enabled_flag      = 0;
     m_pps.deblocking_filter_control_present_flag      = 0;
@@ -1544,6 +1565,14 @@ void ConfigureTask(
         ConstructRPL(par, task.m_dpb[0], isB, task.m_poc, task.m_refPicList, task.m_numRefActive);
 
     task.m_codingType = GetCodingType(task);
+
+    if (isIDR)
+        task.m_insertHeaders = (INSERT_VPS | INSERT_SPS | INSERT_PPS);
+    else
+        task.m_insertHeaders = 0;
+
+    //if (RepeatePPS)  task.m_insertHeaders |= INSERT_PPS;
+    //if (AUDelimiter) task.m_insertHeaders |= INSERT_AUD
 
     // update dpb
     if (isI)

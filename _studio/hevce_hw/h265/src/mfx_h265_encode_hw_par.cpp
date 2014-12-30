@@ -196,22 +196,22 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool query)
 
     while (lidx < MaxLidx)
     {
-        mfxU32 MaxLumaPs   = TableA1[lidx][0];    
+        mfxU32 MaxLumaPs   = TableA1[lidx][0];
         mfxU32 MaxCPB      = TableA1[lidx][1+tidx];
-        mfxU32 MaxSSPP     = TableA1[lidx][3];    
-        //mfxU32 MaxTileRows = TableA1[lidx][4];    
-        //mfxU32 MaxTileCols = TableA1[lidx][5];    
-        mfxU32 MaxLumaSr   = TableA2[lidx][0];    
+        mfxU32 MaxSSPP     = TableA1[lidx][3];
+        mfxU32 MaxTileRows = TableA1[lidx][4];
+        mfxU32 MaxTileCols = TableA1[lidx][5];
+        mfxU32 MaxLumaSr   = TableA2[lidx][0];
         mfxU32 MaxBR       = TableA2[lidx][1+tidx];
-        //mfxU32 MinCR       = TableA2[lidx][3];    
+        //mfxU32 MinCR       = TableA2[lidx][3];
         mfxU32 MaxDpbSize  = GetMaxDpbSize(PicSizeInSamplesY, MaxLumaPs, 6);
         
         if (   PicSizeInSamplesY > MaxLumaPs
             || par.m_ext.HEVCParam.PicWidthInLumaSamples > sqrt(MaxLumaPs * 8)
             || par.m_ext.HEVCParam.PicHeightInLumaSamples > sqrt(MaxLumaPs * 8)
             || (mfxU32)par.mfx.NumRefFrame + 1 > MaxDpbSize
-            //|| (mfxU32)par.m_pps.num_tile_columns_minus1 + 1 > MaxTileCols
-            //|| (mfxU32)par.m_pps.num_tile_rows_minus1 + 1 > MaxTileRows
+            || par.m_ext.HEVCTiles.NumTileColumns > MaxTileCols
+            || par.m_ext.HEVCTiles.NumTileRows > MaxTileRows
             || (mfxU32)par.mfx.NumSlice > MaxSSPP)
         {
             lidx ++;
@@ -253,13 +253,16 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool query)
     return sts;
 }
 
-mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
+mfxU16 AddTileSlices(
+    MfxVideoParam& par, 
+    mfxU32 SliceStructure,
+    mfxU32 nCol,
+    mfxU32 nRow,
+    mfxU32 nSlice)
 {
-    mfxU32 nCol = CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
-    mfxU32 nRow = CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize);
     mfxU32 nLCU = nCol * nRow;
-    mfxU32 nSlice = Min(nLCU, Max<mfxU32>(par.mfx.NumSlice, 1));
     mfxU32 nLcuPerSlice = CeilDiv(nLCU, nSlice);
+    mfxU32 nSlicePrev = (mfxU32)par.m_slice.size();
 
     if (SliceStructure == 0)
     {
@@ -298,11 +301,11 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
         nLcuPerSlice = nRowsPerSlice * nCol;
     }
 
-    par.m_slice.resize(nSlice);
+    par.m_slice.resize(nSlicePrev + nSlice);
     
-    for (mfxU32 i = 0; i < nSlice; i ++)
+    for (mfxU32 i = nSlicePrev; i < par.m_slice.size(); i ++)
     {
-        par.m_slice[i].NumLCU = (i == nSlice-1) ? nLCU : nLcuPerSlice;
+        par.m_slice[i].NumLCU = (i == nSlicePrev + nSlice-1) ? nLCU : nLcuPerSlice;
         par.m_slice[i].SegmentAddress = (i > 0) ? (par.m_slice[i-1].SegmentAddress + par.m_slice[i-1].NumLCU) : 0;
         nLCU -= par.m_slice[i].NumLCU;
     }
@@ -310,20 +313,157 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
     return (mfxU16)nSlice;
 }
 
+struct tmpTileInfo
+{
+    mfxU32 id;
+    mfxU32 nCol;
+    mfxU32 nRow;
+    mfxU32 nLCU;
+    mfxU32 nSlice;
+};
+
+inline mfxF64 nSliceCoeff(tmpTileInfo const & tile)
+{
+    assert(tile.nSlice > 0);
+    return (mfxF64(tile.nLCU) / tile.nSlice);
+}
+
+mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
+{
+    mfxU32 nCol   = CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
+    mfxU32 nRow   = CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize);
+    mfxU32 nTCol  = Max<mfxU32>(par.m_ext.HEVCTiles.NumTileColumns, 1);
+    mfxU32 nTRow  = Max<mfxU32>(par.m_ext.HEVCTiles.NumTileRows, 1);
+    mfxU32 nTile  = nTCol * nTRow;
+    mfxU32 nLCU   = nCol * nRow;
+    mfxU32 nSlice = Min(nLCU, Max<mfxU32>(par.mfx.NumSlice, 1));
+
+    if (SliceStructure == 0)
+        nSlice = 1;
+
+    if (nSlice > 1)
+        nSlice = Max(nSlice, nTile);
+
+    if (nTile == 1) //TileScan = RasterScan, no SegmentAddress conversion recuvired
+        return (mfxU16)AddTileSlices(par, SliceStructure, nCol, nRow, nSlice);
+
+    std::vector<mfxU32> colWidth(nTCol, 0);
+    std::vector<mfxU32> rowHeight(nTRow, 0);
+    std::vector<mfxU32> colBd(nTCol+1, 0);
+    std::vector<mfxU32> rowBd(nTRow+1, 0);
+    std::vector<mfxU32> TsToRs(nLCU);
+
+    //assume uniform spacing
+    for (mfxU32 i = 0; i < nTCol; i ++)
+        colWidth[i] = ((i + 1) * nCol) / nTCol - (i * nCol) / nTCol;
+
+    for (mfxU32 j = 0; j < nTRow; j ++)
+        rowHeight[j] = ((j + 1) * nRow) / nTRow - (j * nRow) / nTRow;
+    
+    for (mfxU32 i = 0; i < nTCol; i ++)
+        colBd[i + 1] = colBd[i] + colWidth[i];
+    
+    for (mfxU32 j = 0; j < nTRow; j ++)
+        rowBd[j + 1] = rowBd[j] + rowHeight[j];
+
+    for (mfxU32 rso = 0; rso < nLCU; rso ++)
+    {
+        mfxU32 tbX = rso % nCol;
+        mfxU32 tbY = rso / nCol;
+        mfxU32 tileX = 0;
+        mfxU32 tileY = 0;
+        mfxU32 tso   = 0;
+
+        for (mfxU32 i = 0; i < nTCol; i ++)
+            if (tbX >= colBd[i])
+                tileX = i;
+
+        for (mfxU32 j = 0; j < nTRow; j ++)
+            if (tbY >= rowBd[j])
+                tileY = j;
+
+        for (mfxU32 i = 0; i < tileX; i ++)
+            tso += rowHeight[tileY] * colWidth[i];
+
+        for (mfxU32 j = 0; j < tileY; j ++)
+            tso += nCol * rowHeight[j];
+
+        tso += (tbY - rowBd[tileY]) * colWidth[tileX] + tbX - colBd[tileX];
+
+        assert(tso < nLCU);
+
+        TsToRs[tso] = rso;
+    }
+
+    if (nSlice == 1)
+    {
+        AddTileSlices(par, SliceStructure, nCol, nRow, nSlice);
+    }
+    else
+    {
+        std::vector<tmpTileInfo> tile(nTile);
+        mfxU32 id = 0;
+        mfxU32 nLcuPerSlice = CeilDiv(nLCU, nSlice);
+        mfxU32 nSliceRest   = nSlice;
+
+        for (mfxU32 j = 0; j < nTRow; j ++)
+        {
+            for (mfxU32 i = 0; i < nTCol; i ++)
+            {
+                tile[id].id = id;
+                tile[id].nCol = colWidth[i];
+                tile[id].nRow = rowHeight[j];
+                tile[id].nLCU = tile[id].nCol * tile[id].nRow;
+                tile[id].nSlice = Max(1U, tile[id].nLCU / nLcuPerSlice);
+                nSliceRest -= tile[id].nSlice;
+                id ++;
+            }
+        }
+
+        if (nSliceRest)
+        {
+            while (nSliceRest)
+            {
+                MFX_SORT_COMMON(tile, tile.size(), nSliceCoeff(tile[_i]) < nSliceCoeff(tile[_j]));
+
+                if (nSliceRest && tile[0].nLCU > tile[0].nSlice)
+                {
+                    tile[0].nSlice ++;
+                    nSliceRest --;
+                }
+            }
+
+            MFX_SORT_STRUCT(tile, tile.size(), id, >);
+        }
+
+        for (mfxU32 i = 0; i < tile.size(); i ++)
+            AddTileSlices(par, SliceStructure, tile[i].nCol, tile[i].nRow, tile[i].nSlice);
+    }
+
+    for (mfxU32 i = 0; i < par.m_slice.size(); i ++)
+    {
+        assert(par.m_slice[i].SegmentAddress < nLCU);
+
+        par.m_slice[i].SegmentAddress = TsToRs[par.m_slice[i].SegmentAddress];
+    }
+
+    return (mfxU16)par.m_slice.size();
+}
+
 mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
 {
     mfxU32 unsupported = 0, changed = 0, incompatible = 0;
     mfxStatus sts = MFX_ERR_NONE;
 
-    if (!IsAligned(par.mfx.FrameInfo.Width, HW_SURF_ALIGN_W))
+    if (!IsAligned(par.mfx.FrameInfo.Width, par.LCUSize))
     {
-        par.mfx.FrameInfo.Width = Align(par.mfx.FrameInfo.Width, HW_SURF_ALIGN_W);
+        par.mfx.FrameInfo.Width = Align(par.mfx.FrameInfo.Width, par.LCUSize);
         changed ++;
     }
 
-    if (!IsAligned(par.mfx.FrameInfo.Height, HW_SURF_ALIGN_H))
+    if (!IsAligned(par.mfx.FrameInfo.Height, par.LCUSize))
     {
-        par.mfx.FrameInfo.Height = Align(par.mfx.FrameInfo.Height, HW_SURF_ALIGN_H);
+        par.mfx.FrameInfo.Height = Align(par.mfx.FrameInfo.Height, par.LCUSize);
         changed ++;
     }
 
@@ -358,6 +498,22 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
     if (par.mfx.FrameInfo.BitDepthChroma && par.mfx.FrameInfo.BitDepthChroma != par.mfx.FrameInfo.BitDepthLuma)
     {
         par.mfx.FrameInfo.BitDepthChroma = 0;
+        unsupported ++;
+    }
+
+    if (   caps.TileSupport == 0
+        && (par.m_ext.HEVCTiles.NumTileColumns > 1 || par.m_ext.HEVCTiles.NumTileRows > 1))
+    {
+        par.m_ext.HEVCTiles.NumTileColumns = 1;
+        par.m_ext.HEVCTiles.NumTileRows    = 1;
+        unsupported ++;
+    }
+
+    if (   par.m_ext.HEVCTiles.NumTileColumns > MAX_NUM_TILE_COLUMNS
+        || par.m_ext.HEVCTiles.NumTileRows > MAX_NUM_TILE_ROWS)
+    {
+        par.m_ext.HEVCTiles.NumTileColumns = Min<mfxU16>(par.m_ext.HEVCTiles.NumTileColumns, MAX_NUM_TILE_COLUMNS);
+        par.m_ext.HEVCTiles.NumTileRows    = Min<mfxU16>(par.m_ext.HEVCTiles.NumTileRows, MAX_NUM_TILE_ROWS);
         unsupported ++;
     }
 
@@ -574,6 +730,12 @@ void SetDefaults(
 
     if (!par.mfx.TargetUsage)
         par.mfx.TargetUsage = 4;
+
+    if (!par.m_ext.HEVCTiles.NumTileColumns)
+        par.m_ext.HEVCTiles.NumTileColumns = 1;
+
+    if (!par.m_ext.HEVCTiles.NumTileRows)
+        par.m_ext.HEVCTiles.NumTileRows = 1;
 
     if (!par.mfx.NumSlice || !par.m_slice.size())
     {

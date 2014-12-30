@@ -193,8 +193,9 @@ void FillPpsBuffer(
     pps.pps_cr_qp_offset        = (mfxU8)par.m_pps.cr_qp_offset;
     pps.num_tile_columns_minus1 = (mfxU8)par.m_pps.num_tile_columns_minus1;
     pps.num_tile_rows_minus1    = (mfxU8)par.m_pps.num_tile_rows_minus1;
-    //pps.tile_column_width;
-    //pps.tile_row_height;
+
+    Copy(pps.tile_column_width, par.m_pps.column_width);
+    Copy(pps.tile_row_height, par.m_pps.row_height);
     
     pps.log2_parallel_merge_level_minus2 = (mfxU8)par.m_pps.log2_parallel_merge_level_minus2;
     
@@ -396,7 +397,7 @@ DDIHeaderPacker::~DDIHeaderPacker()
 
 void DDIHeaderPacker::Reset(MfxVideoParam const & par)
 {
-    m_buf.resize(3 + par.mfx.NumSlice);
+    m_buf.resize(4 + par.mfx.NumSlice);
     m_cur = m_buf.begin();
     m_packer.Reset(par);
 }
@@ -435,13 +436,33 @@ ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(mfxU32 nut)
     return &*m_cur;
 }
 
+ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackAudHeader(mfxU32 frameType)
+{
+    NewHeader();
+
+    frameType &= (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B);
+
+    if (frameType == MFX_FRAMETYPE_I)
+        m_packer.GetAUD(m_cur->pData, m_cur->DataLength, 0);
+    else if (frameType == MFX_FRAMETYPE_P)
+        m_packer.GetAUD(m_cur->pData, m_cur->DataLength, 1);
+    else
+        m_packer.GetAUD(m_cur->pData, m_cur->DataLength, 2);
+
+    m_cur->BufferSize = m_cur->DataLength;
+    m_cur->SkipEmulationByteCount = 4;
+
+    return &*m_cur;
+}
+
 ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackSliceHeader(Task const & task, mfxU32 id, mfxU32* qpd_offset)
 {
+    bool is1stNALU = (id == 0 && task.m_insertHeaders == 0);
     NewHeader();
 
     m_packer.GetSSH(task, id, m_cur->pData, m_cur->DataLength, qpd_offset);
     m_cur->BufferSize = m_cur->DataLength;
-    m_cur->SkipEmulationByteCount = 3;
+    m_cur->SkipEmulationByteCount = 3 + is1stNALU;
     m_cur->DataLength *= 8;
 
     return &*m_cur;

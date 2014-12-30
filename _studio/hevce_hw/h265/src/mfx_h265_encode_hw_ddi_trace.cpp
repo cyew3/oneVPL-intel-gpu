@@ -47,8 +47,15 @@ void DDITracer::Trace(type const & b, mfxU32 idx)\
 }
 
 #define FIELD_FORMAT "%-24s"
-DECL(ENCODE_COMPBUFFERDESC,  
-    TRACE("%p", pCompBuffer);
+DECL(ENCODE_COMPBUFFERDESC,
+    if (b.CompressedBufferType == D3DDDIFMT_INTELENCODE_BITSTREAMDATA)
+    {
+        TRACE_HEX_ROW(pCompBuffer, b.DataSize);
+    }
+    else
+    {
+        TRACE("%p", pCompBuffer);
+    }
     TRACE("%d", CompressedBufferType);
     TRACE("%d", DataOffset);
     TRACE("%d", DataSize);

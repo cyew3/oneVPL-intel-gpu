@@ -176,7 +176,8 @@ void HeaderPacker::PackNALU(BitstreamWriter& bs, NALU const & h)
 {
     if (   h.nal_unit_type == VPS_NUT 
         || h.nal_unit_type == SPS_NUT
-        || h.nal_unit_type == PPS_NUT)
+        || h.nal_unit_type == PPS_NUT
+        || h.nal_unit_type == AUD_NUT)
     {
         bs.PutBits(8, 0); //zero_byte
     }
@@ -247,6 +248,14 @@ void HeaderPacker::PackSLO(BitstreamWriter& bs, LayersInfo const & slo, mfxU16 m
         bs.PutUE(slo.sub_layer[i].max_num_reorder_pics);
         bs.PutUE(slo.sub_layer[i].max_latency_increase_plus1);
     }
+}
+
+void HeaderPacker::PackAUD(BitstreamWriter& bs, mfxU8 pic_type)
+{
+    NALU nalu = {0, AUD_NUT, 0, 1};
+    PackNALU(bs, nalu);
+    bs.PutBits(3, pic_type);
+    bs.PutTrailingBits();
 }
 
 void HeaderPacker::PackVPS(BitstreamWriter& bs, VPS const &  vps)
@@ -510,10 +519,10 @@ void HeaderPacker::PackPPS(BitstreamWriter& bs, PPS const &  pps)
         if(!pps.uniform_spacing_flag)
         {
             for (mfxU32 i = 0; i < pps.num_tile_columns_minus1; i++)
-                bs.PutUE(pps.column_width_minus1[i]);
+                bs.PutUE(Max<mfxU16>(pps.column_width[i], 1) - 1);
 
             for (mfxU32 i = 0; i < pps.num_tile_rows_minus1; i++)
-                bs.PutUE(pps.row_height_minus1[i]);
+                bs.PutUE(Max<mfxU16>(pps.row_height[i], 1) - 1);
         }
 
         bs.PutBit(pps.loop_filter_across_tiles_enabled_flag);
@@ -748,15 +757,17 @@ void HeaderPacker::PackSSH(
 
     if (pps.tiles_enabled_flag || pps.entropy_coding_sync_enabled_flag)
     {
+        assert(slice.num_entry_point_offsets == 0);
+
         bs.PutUE(slice.num_entry_point_offsets);
 
-        if (slice.num_entry_point_offsets > 0)
+        /*if (slice.num_entry_point_offsets > 0)
         {
             bs.PutUE(slice.offset_len_minus1);
 
             for (mfxU32 i = 0; i < slice.num_entry_point_offsets; i++)
                 bs.PutBits(slice.offset_len_minus1+1, slice.entry_point_offset_minus1[i]);
-        }
+        }*/
     }
 
     assert(0 == pps.slice_segment_header_extension_present_flag);
@@ -820,6 +831,11 @@ HeaderPacker::HeaderPacker()
     : m_par(0)
     , m_bs(m_bs_ssh, sizeof(m_bs_ssh))
 {
+    for (mfxU8 i = 0; i < 3; i ++)
+    {
+        BitstreamWriter bs(m_bs_aud[i], AUD_BS_SIZE);
+        PackAUD(bs, i);
+    }
 }
 
 HeaderPacker::~HeaderPacker() 
@@ -865,6 +881,7 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
 {
     BitstreamWriter& rbsp = m_bs;
     NALU nalu = {0, task.m_shNUT, 0, 1};
+    bool is1stNALU = (id == 0 && task.m_insertHeaders == 0);
 
     assert(m_par);
     assert(id < m_par->m_slice.size());
@@ -878,12 +895,15 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
 
     buf = m_bs_ssh + CeilDiv(rbsp.GetOffset(), 8);
 
+    if (is1stNALU)
+        rbsp.PutBits(8, 0);
+
     PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset);
 
     if (qpd_offset)
-        *qpd_offset -= mfxU32(buf - m_bs_ssh) * 8;
+        *qpd_offset -= (mfxU32)(buf - m_bs_ssh) * 8;
 
-    sizeInBytes = CeilDiv(rbsp.GetOffset(), 8) - (buf - m_bs_ssh);
+    sizeInBytes = CeilDiv(rbsp.GetOffset(), 8) - (mfxU32)(buf - m_bs_ssh);
 }
 
 

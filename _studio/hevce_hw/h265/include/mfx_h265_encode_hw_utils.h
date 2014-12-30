@@ -100,6 +100,14 @@ enum
     CODING_TYPE_B2  = 5, //B2, references include B1
 };
 
+enum
+{
+    INSERT_AUD = 0x01,
+    INSERT_VPS = 0x02,
+    INSERT_SPS = 0x04,
+    INSERT_PPS = 0x08,
+};
+
 class MfxFrameAllocResponse : public mfxFrameAllocResponse
 {
 public:
@@ -161,6 +169,7 @@ typedef struct _Task : DpbFrame
     mfxU8 m_numRefActive[2];
 
     mfxU16 m_frameType;
+    mfxU16 m_insertHeaders;
     mfxU8  m_shNUT;
     mfxU8  m_qpY;
 
@@ -184,6 +193,7 @@ namespace ExtBuffer
 
     #define EXTBUF(TYPE, ID) template<> struct Map<TYPE> { enum { Id = ID, Sz = sizeof(TYPE) }; }
         EXTBUF(mfxExtHEVCParam,             MFX_EXTBUFF_HEVC_PARAM);
+        EXTBUF(mfxExtHEVCTiles,             MFX_EXTBUFF_HEVC_TILES);
         EXTBUF(mfxExtOpaqueSurfaceAlloc,    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
     #undef EXTBUF
 
@@ -270,6 +280,7 @@ public:
     struct 
     {
         mfxExtHEVCParam             HEVCParam;
+        mfxExtHEVCTiles             HEVCTiles;
         mfxExtOpaqueSurfaceAlloc    Opaque;
     } m_ext;
 

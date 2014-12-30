@@ -153,6 +153,7 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
     DDIHeaderPacker::Reset(par);
+    m_cbd.resize(MAX_DDI_BUFFERS + MaxPackedHeaders());
 
     return MFX_ERR_NONE;
 }
@@ -172,6 +173,7 @@ mfxStatus D3D11Encoder::Reset(MfxVideoParam const & par)
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
     DDIHeaderPacker::Reset(par);
+    m_cbd.resize(MAX_DDI_BUFFERS + MaxPackedHeaders());
 
     m_sps.bResetBRC = !Equal(m_sps, prevSPS);
 
@@ -335,24 +337,23 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
 }
 
 #define ADD_CBD(id, buf, num)\
-    compBufDesc[executeParams.NumCompBuffers].CompressedBufferType = (D3DFORMAT)(id);   \
-    compBufDesc[executeParams.NumCompBuffers].DataSize = (UINT)(sizeof(buf) * (num));\
-    compBufDesc[executeParams.NumCompBuffers].pCompBuffer = &buf;            \
-    executeParams.NumCompBuffers++;                                          \
-    assert(executeParams.NumCompBuffers <= MaxCompBufDesc);
+    assert(executeParams.NumCompBuffers < MaxCompBufDesc);\
+    m_cbd[executeParams.NumCompBuffers].CompressedBufferType = (D3DFORMAT)(id); \
+    m_cbd[executeParams.NumCompBuffers].DataSize = (UINT)(sizeof(buf) * (num)); \
+    m_cbd[executeParams.NumCompBuffers].pCompBuffer = &buf; \
+    executeParams.NumCompBuffers++;
 
 mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
 {
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
-    size_t MaxCompBufDesc = 7 + m_slice.size();
-    std::vector<ENCODE_COMPBUFFERDESC> compBufDesc(MaxCompBufDesc);
+    mfxU32 MaxCompBufDesc = (mfxU32)m_cbd.size();
     ENCODE_PACKEDHEADER_DATA * pPH = 0;
     ENCODE_INPUT_DESC ein = {};
     ENCODE_EXECUTE_PARAMS executeParams = {};
 
-    executeParams.pCompressedBuffers = &compBufDesc[0];
-    Zero(compBufDesc);
+    executeParams.pCompressedBuffers = &m_cbd[0];
+    Zero(m_cbd);
 
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
@@ -381,23 +382,35 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
         ein.IndexOriginal     = RES_ID_RAW;
         ein.ArraySliceRecon   = (UINT)(size_t(m_reconQueue[task.m_idxRec].second));
         ein.IndexRecon        = RES_ID_REC;
-        compBufDesc[executeParams.NumCompBuffers - 1].pReserved = &ein;
+        m_cbd[executeParams.NumCompBuffers - 1].pReserved = &ein;
     }
     
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA,        m_slice[0], m_slice.size());
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA,    RES_ID_BS,  1);
 
-    if (task.m_frameType & MFX_FRAMETYPE_IDR)
+    if (task.m_insertHeaders & INSERT_AUD)
+    {
+        pPH = PackAudHeader(task.m_frameType); assert(pPH);
+        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
+    }
+
+    if (task.m_insertHeaders & INSERT_VPS)
     {
         pPH = PackHeader(VPS_NUT); assert(pPH);
         ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
+    }
     
+    if (task.m_insertHeaders & INSERT_SPS)
+    {
         pPH = PackHeader(SPS_NUT); assert(pPH);
         ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
     }
-    
-    pPH = PackHeader(PPS_NUT); assert(pPH);
-    ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
+
+    if (task.m_insertHeaders & INSERT_PPS)
+    {
+        pPH = PackHeader(PPS_NUT); assert(pPH);
+        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
+    }
 
     for (mfxU32 i = 0; i < m_slice.size(); i ++)
     {
