@@ -209,7 +209,7 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
 }
 
 #define ADD_CBD(id, buf, num)\
-    assert(executeParams.NumCompBuffers < MaxCompBufDesc);\
+    assert(executeParams.NumCompBuffers < m_cbd.size());\
     m_cbd[executeParams.NumCompBuffers].CompressedBufferType = (id); \
     m_cbd[executeParams.NumCompBuffers].DataSize = (UINT)(sizeof(buf) * (num));\
     m_cbd[executeParams.NumCompBuffers].pCompBuffer = &buf; \
@@ -219,7 +219,6 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
 {
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
-    mfxU32 MaxCompBufDesc = (mfxU32)m_cbd.size();
     ENCODE_PACKEDHEADER_DATA * pPH = 0;
     ENCODE_EXECUTE_PARAMS executeParams = {};
 
