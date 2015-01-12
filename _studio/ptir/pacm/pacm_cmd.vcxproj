@@ -142,6 +142,7 @@
     <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-emu|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -154,6 +155,7 @@
     <OutDir>$(SolutionDir)..\..\build\win_$(PlatformName)\lib\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -169,6 +171,7 @@
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
     <TargetName>$(ProjectName)</TargetName>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-emu|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -184,6 +187,7 @@
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetExt>.lib</TargetExt>
     <TargetName>$(ProjectName)</TargetName>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'">
     <LinkIncremental>false</LinkIncremental>
