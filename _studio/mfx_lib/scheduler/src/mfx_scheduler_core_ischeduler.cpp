@@ -328,12 +328,37 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
                     vmRes = vm_event_reset(&m_hwTaskDone);
                     IncrementHWEventCounter();
                 }
-
             }
+        }
+        //
+        // inspect the task
+        //
+
+        // the handle is outdated,
+        // the previous task job is over and completed with successful status
+        // NOTE: it make sense to read task result and job ID the following order.
+        if ((MFX_ERR_NONE == pTask->opRes) ||
+            (pTask->jobID != handle.jobID))
+        {
+            return MFX_ERR_NONE;
+        }
+
+        // wait the result on the event
+        if (MFX_WRN_IN_EXECUTION == pTask->opRes)
+        {
+            return MFX_WRN_IN_EXECUTION;
         }
     }
     else
     {
+        // the handle is outdated,
+        // the previous task job is over and completed with successful status
+        // NOTE: it make sense to read task result and job ID the following order.
+        if ((MFX_ERR_NONE == pTask->opRes) ||
+            (pTask->jobID != handle.jobID))
+        {
+            return MFX_ERR_NONE;
+        }
         // wait the result on the event
         if (MFX_WRN_IN_EXECUTION == pTask->opRes)
         {
@@ -349,25 +374,6 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
                 return MFX_WRN_IN_EXECUTION;
             }
         }
-    }
-
-    //
-    // inspect the task
-    //
-
-    // the handle is outdated,
-    // the previous task job is over and completed with successful status
-    // NOTE: it make sense to read task result and job ID the following order.
-    if ((MFX_ERR_NONE == pTask->opRes) ||
-        (pTask->jobID != handle.jobID))
-    {
-        return MFX_ERR_NONE;
-    }
-
-    // wait the result on the event
-    if (MFX_WRN_IN_EXECUTION == pTask->opRes)
-    {
-        return MFX_WRN_IN_EXECUTION;
     }
 
     // check error status
