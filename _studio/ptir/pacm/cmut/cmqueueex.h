@@ -91,6 +91,23 @@ public:
     while (status != CM_STATUS_FINISHED) {
       pEvent->GetStatus(status);
     }
+
+    events.pop_back();
+    pCmQueue->DestroyEvent(pEvent);
+  }
+
+  void WaitForAllKernels()
+  {
+    CM_STATUS status;
+    for(std::vector<CmEvent*>::iterator it = events.begin(); it != events.end(); ++it) {
+        CmEvent * pEvent = *it;
+        pEvent->GetStatus(status);
+        while (status != CM_STATUS_FINISHED) {
+          pEvent->GetStatus(status);
+        }
+        pCmQueue->DestroyEvent(pEvent);
+    }
+    events.clear();
   }
 
   CmEvent * LastEvent()

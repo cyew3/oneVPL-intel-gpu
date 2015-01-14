@@ -193,7 +193,8 @@ DeinterlaceFilter::~DeinterlaceFilter()
 void DeinterlaceFilter::SyncGPU()
 {
     clockSync.Begin();
-    QueueEx().WaitForLastKernel();
+    //QueueEx().WaitForLastKernel();
+    QueueEx().WaitForAllKernels();
     clockSync.End();
 }
 
