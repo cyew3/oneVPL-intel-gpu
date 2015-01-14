@@ -41,6 +41,7 @@ static const mfxFunctionsTable g_mfxFuncTable[] =
 typedef void (MFX_CDECL * mfxFunctionPointer)(void);
 
 typedef mfxStatus (MFX_CDECL * MFXInitPointer)(mfxIMPL, mfxVersion *, mfxSession *);
+typedef mfxStatus (MFX_CDECL * MFXInitExPointer)(mfxInitParam, mfxSession *);
 typedef mfxStatus (MFX_CDECL * MFXClosePointer)(mfxSession session);
 
 typedef struct _mfxLoader

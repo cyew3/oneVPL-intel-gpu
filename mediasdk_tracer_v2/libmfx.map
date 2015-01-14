@@ -81,3 +81,9 @@ LIBMFX_1.13 {
     MFXVideoPAK_Close;
     MFXVideoPAK_ProcessFrameAsync;
 } LIBMFX_1.10;
+
+LIBMFX_1.14 {
+  global:
+    MFXInitEx;
+    MFXDoWork;
+} LIBMFX_1.13;

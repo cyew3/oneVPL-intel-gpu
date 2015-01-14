@@ -42,6 +42,7 @@ public:
     virtual ~MFXVideoSession(void) { Close(); }
 
     virtual mfxStatus Init(mfxIMPL impl, mfxVersion *ver) { return MFXInit(impl, ver, &m_session); }
+    virtual mfxStatus InitEx(mfxInitParam par) { return MFXInitEx(par, &m_session); }
     virtual mfxStatus Close(void)
     {
         mfxStatus mfxRes;
@@ -64,6 +65,8 @@ public:
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *hdl) { return MFXVideoCORE_GetHandle(m_session, type, hdl); }
 
     virtual mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait) { return MFXVideoCORE_SyncOperation(m_session, syncp, wait); }
+
+    virtual mfxStatus DoWork() { return MFXDoWork(m_session); }
 
     virtual operator mfxSession (void) { return m_session; }
 
