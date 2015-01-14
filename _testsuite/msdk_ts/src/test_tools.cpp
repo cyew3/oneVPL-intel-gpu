@@ -900,6 +900,7 @@ msdk_ts_BLOCK(t_LoadDLLPlugin){
     mfxU32&     type     = var_def<mfxU32>     ("type", MFX_PLUGINTYPE_VIDEO_DECODE);
     char*       dll_name = var_old<char*>      ("dll_name");
     mfxPlugin*& pPlugin  = var_def<mfxPlugin*> ("p_plugin", NULL);
+    mfxPluginUID*& PluginUid = var_def<mfxPluginUID*> ("p_plugin_uid", NULL);
 
     vm_char* file_name = 0;
     vm_char* temp_fn = 0;
@@ -922,21 +923,11 @@ msdk_ts_BLOCK(t_LoadDLLPlugin){
         PluginLoader<MFXGenericPlugin>& Loader = var_new<PluginLoader<MFXGenericPlugin> >("plugin_loader", new PluginLoader<MFXGenericPlugin>(file_name) );
         pPlugin = Loader.plugin;
     } 
-    else if(MFX_PLUGINTYPE_VIDEO_DECODE == type)
+    else if ((MFX_PLUGINTYPE_VIDEO_DECODE == type) || (MFX_PLUGINTYPE_VIDEO_ENCODE == type) || (MFX_PLUGINTYPE_VIDEO_VPP == type))
     {
-        PluginLoader<MFXDecoderPlugin>& Loader = var_new<PluginLoader<MFXDecoderPlugin> >("plugin_loader", new PluginLoader<MFXDecoderPlugin>(file_name) );
+        PluginLoader<MFXCodecPlugin>& Loader = var_new<PluginLoader<MFXCodecPlugin> >("plugin_loader", new PluginLoader<MFXCodecPlugin>(file_name, *PluginUid) );
         pPlugin = Loader.plugin;
     } 
-    else if(MFX_PLUGINTYPE_VIDEO_ENCODE == type)
-    {
-        PluginLoader<MFXEncoderPlugin>& Loader = var_new<PluginLoader<MFXEncoderPlugin> >("plugin_loader", new PluginLoader<MFXEncoderPlugin>(file_name) );
-        pPlugin = Loader.plugin;
-    }
-    else if(MFX_PLUGINTYPE_VIDEO_VPP == type)
-    {
-        PluginLoader<MFXVPPPlugin>& Loader =    var_new<PluginLoader<MFXVPPPlugin> >     ("plugin_loader", new PluginLoader<MFXVPPPlugin>(file_name) );
-        pPlugin = Loader.plugin;
-    }
     else
     {
         std::cout << "Wrong plugin type" << std::endl;

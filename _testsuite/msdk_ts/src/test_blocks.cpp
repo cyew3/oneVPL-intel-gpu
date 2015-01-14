@@ -2,6 +2,7 @@
 //prefix "b_" for each block
 #include "stdafx.h"
 #include "test_common.h"
+#include "mfx_plugin_loader.h"
 #include <cassert>
 
 #define TRACE_FUNCN(n, name, p1, p2, p3, p4, p5, p6, p7)\
@@ -714,7 +715,7 @@ msdk_ts_BLOCK(b_MFXVideoUSER_Register){
     mfxSession&     session     = var_def<mfxSession>   ("session",     0);
     mfxU32&         type        = var_def<mfxU32>       ("type",        0);
     mfxPlugin*&     pPlugin     = var_def<mfxPlugin*>   ("p_plugin",    NULL);
-
+    
     TRACE_FUNC3(MFXVideoUSER_Register, session, type, pPlugin);
     mfxRes = MFXVideoUSER_Register(session, type, pPlugin);
     TRACE_PAR(mfxRes);

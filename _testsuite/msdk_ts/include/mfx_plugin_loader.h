@@ -18,8 +18,12 @@ File Name: .h
 #include "vm_shared_object.h"
 #include "mfxplugin++.h"
 
+
+#define CREATE_PLUGIN_FNC "CreatePlugin"
+
 typedef std::basic_string<vm_char>tstring;
 typedef std::basic_stringstream<vm_char> tstringstream;
+typedef mfxStatus (MFX_CDECL *CreatePluginPtr_t)(mfxPluginUID uid, mfxPlugin* plugin);
 
 class MsdkSoModule
 {
@@ -134,15 +138,32 @@ class PluginLoader
 {
 protected:
     MsdkSoModule m_PluginModule;
-    std::auto_ptr<T> m_plugin;
-    MFXPluginAdapter<T> m_adapter;
     typedef PluginCreateTrait<T> Plugin;
 
 public:
     mfxPlugin* plugin;
+    
+    PluginLoader(const tstring & pluginName, mfxPluginUID uid)
+        : m_PluginModule(pluginName)
+    {
+        plugin = new mfxPlugin();
+       
+        if (!m_PluginModule.IsLoaded())
+            return;
+        CreatePluginPtr_t pCreateFunc = m_PluginModule.GetAddr<CreatePluginPtr_t >(CREATE_PLUGIN_FNC);
+        if(NULL == pCreateFunc)
+            return;
+        pCreateFunc(uid, plugin);
+        
+              
+    }
+
     PluginLoader(const tstring & pluginName)
         : m_PluginModule(pluginName)
     {
+        std::auto_ptr<T> m_plugin;
+        MFXPluginAdapter<T> m_adapter;
+               
         plugin = 0;
         if (!m_PluginModule.IsLoaded())
             return;
@@ -158,6 +179,19 @@ public:
         }
         m_adapter = make_mfx_plugin_adapter(m_plugin.get());
         plugin = (mfxPlugin*) &m_adapter;
+    }
+
+    bool Create(mfxPluginUID uid)
+    {        
+        if (!m_PluginModule.IsLoaded())
+            return false;
+        CreatePluginPtr_t pCreateFunc = m_PluginModule.GetAddr<CreatePluginPtr_t >(CREATE_PLUGIN_FNC);
+        if(NULL == pCreateFunc)
+            return false;
+        plugin = new mfxPlugin();
+        if (pCreateFunc(uid, plugin) != MFX_ERR_NONE)
+            return false;
+        return true;
     }
 
     ~PluginLoader()
