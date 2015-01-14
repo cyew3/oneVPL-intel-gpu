@@ -22,6 +22,12 @@ static const
 MFX_GUID MFXIScheduler_GUID =
 { 0xbe080281, 0x4c93, 0x4d26, { 0xb7, 0x63, 0xed, 0x2a, 0xab, 0x5d, 0x4b, 0xa1 } };
 
+// {DC775B1C-951D-421F-BFD8-CA562D95A418}
+static const
+MFX_GUID MFXIScheduler2_GUID =
+{ 0xdc775b1c, 0x951d, 0x421f, { 0xbf, 0xd8, 0xca, 0x56, 0x2d, 0x95, 0xa4, 0x18 } };
+
+
 enum mfxSchedulerFlags
 {
     // default behaviour policy
@@ -116,6 +122,13 @@ public:
     AddTask(task, ppSyncPoint, __FILE__, __LINE__)
 
 #endif // defined(SCHEDULER_DEBUG)
+};
+
+class MFXIScheduler2 : public MFXIScheduler
+{
+public:
+    virtual
+    mfxStatus DoWork() = 0;
 };
 
 #endif // __MFX_INTERFACE_SCHEDULER_H
