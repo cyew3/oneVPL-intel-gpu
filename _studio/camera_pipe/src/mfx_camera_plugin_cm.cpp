@@ -732,24 +732,24 @@ void CmContext::CreateTask_BayerCorrection(int first,
         _R_scale    = B_scale;
         break;
     case BAYER_GRBG:
-        _B_shift    = Gbot_shift;
-        _Gtop_shift = B_shift;
-        _Gbot_shift = R_shift;
-        _R_shift    = Gtop_shift;
-        _B_scale    = Gbot_scale;
-        _Gtop_scale = B_scale;
-        _Gbot_scale = R_scale;
-        _R_scale    = Gtop_scale;
+        _B_shift    = B_shift;
+        _Gtop_shift = Gtop_shift;
+        _Gbot_shift = Gbot_shift;
+        _R_shift    = R_shift;
+        _B_scale    = B_scale;
+        _Gtop_scale = Gtop_scale;
+        _Gbot_scale = Gbot_scale;
+        _R_scale    = R_scale;
         break;
     case BAYER_GBRG:
-        _B_shift    = Gtop_shift;
-        _Gtop_shift = B_shift;
-        _Gbot_shift = R_shift;
-        _R_shift    = Gbot_shift;
-        _B_scale    = Gtop_scale;
-        _Gtop_scale = B_scale;
-        _Gbot_scale = R_scale;
-        _R_scale    = Gbot_scale;
+        _B_shift    = R_shift;
+        _Gtop_shift = Gtop_shift;
+        _Gbot_shift = Gbot_shift;
+        _R_shift    = B_shift;
+        _B_scale    = R_scale;
+        _Gtop_scale = Gtop_scale;
+        _Gbot_scale = Gbot_scale;
+        _R_scale    = B_scale;
         break;
     }
 

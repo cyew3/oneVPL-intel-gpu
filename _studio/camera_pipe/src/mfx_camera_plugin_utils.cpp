@@ -777,7 +777,7 @@ mfxStatus MFXCamera_Plugin::CreateEnqueueTasks(AsyncParams *pParam)
                             pParam->Caps.bVignetteCorrection,
                             pParam->Caps.bWhiteBalance,
                             (short)pParam->BlackLevelParams.BlueLevel, (short)pParam->BlackLevelParams.GreenBottomLevel, (short)pParam->BlackLevelParams.GreenTopLevel, (short)pParam->BlackLevelParams.RedLevel,
-                            (float)pParam->WBparams.BlueCorrection,    (float)pParam->WBparams.GreenBottomCorrection,    (float)pParam->WBparams.GreenTopCorrection,    (float)pParam->WBparams.RedCorrection,
+                            (float)pParam->WBparams.RedCorrection,    (float)pParam->WBparams.GreenBottomCorrection,    (float)pParam->WBparams.GreenTopCorrection,    (float)pParam->WBparams.BlueCorrection,
                             pParam->InputBitDepth,
                             pParam->Caps.BayerPatternType);
             doShiftAndSwap = 0;
