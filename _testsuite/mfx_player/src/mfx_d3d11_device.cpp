@@ -211,6 +211,10 @@ mfxStatus MFXD3D11Device::RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator
     m_pVideoContext->VideoProcessorBlt( m_pVideoProcessor, pOutputView, 0, 1, &StreamData );                         
 
     MFX_CHECK_WITH_ERR(!FAILED(m_pSwapChain->Present( 0, 0 )), MFX_ERR_DEVICE_FAILED);
+
+    pDXGIBackBuffer->Release();
+    pInputView->Release();
+    pOutputView->Release();
     
     return MFX_ERR_NONE;
 }

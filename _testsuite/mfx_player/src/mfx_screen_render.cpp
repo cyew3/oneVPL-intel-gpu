@@ -764,6 +764,7 @@ ScreenRender::~ScreenRender()
 //    MFXClose(m_pHWCore);
       DestroyTimer();
       //DestroyD3D9();
+      CloseHandle(font);
 }
 
 #endif // #if (defined(_WIN32) || defined(_WIN64)) && !defined(WIN_TRESHOLD_MOBILE)

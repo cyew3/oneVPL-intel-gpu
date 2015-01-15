@@ -54,7 +54,6 @@ public:
     }
     virtual mfxStatus Init(mfxVideoParam *par)
     {
-        printf("\nplugin Init\n");
         return MFXVideoDECODE_Init(m_session, par);
     }
     virtual mfxStatus Reset(mfxVideoParam *par)

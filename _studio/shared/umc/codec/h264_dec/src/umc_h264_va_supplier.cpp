@@ -48,16 +48,6 @@ Status VATaskSupplier::Init(VideoDecoderParams *pInit)
     m_iThreadNum = 1;
 
     DXVASupport<VATaskSupplier>::Init();
-
-    CreateTaskBroker();
-    m_pTaskBroker->Init(m_iThreadNum);
-
-    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
-    {
-        if (UMC_OK != m_pSegmentDecoder[i]->Init(i))
-            return UMC_ERR_INIT;
-    }
-
     if (m_va)
     {
         static_cast<TaskBrokerSingleThreadDXVA*>(m_pTaskBroker)->DXVAStatusReportingMode(m_va->IsUseStatusReport());
