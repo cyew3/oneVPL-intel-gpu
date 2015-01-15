@@ -76,6 +76,7 @@ set( sources.plus "" )
 
 
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/pacm/kernels/deinterlace_genx_hsw.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/pacm/kernels/deinterlace_genx_bdw.cpp )
 
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/pacm/deinterlacer.cpp )
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/pacm/utilities.cpp )

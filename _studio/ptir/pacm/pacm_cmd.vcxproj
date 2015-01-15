@@ -647,6 +647,7 @@ del embed_isa.exe</Command>
       <FloatingPointModel Condition="'$(Configuration)|$(Platform)'=='Release-emu|x64'">Precise</FloatingPointModel>
       <FloatingPointModel Condition="'$(Configuration)|$(Platform)'=='Debug-emu|x64'">Precise</FloatingPointModel>
     </ClCompile>
+    <ClCompile Include="kernels\deinterlace_genx_bdw.cpp" />
     <ClCompile Include="kernels\deinterlace_genx_hsw.cpp" />
     <ClCompile Include="kernels\embed_isa.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-emu|Win32'">true</ExcludedFromBuild>
@@ -679,6 +680,7 @@ del embed_isa.exe</Command>
     <ClInclude Include="common_genx.h" />
     <ClInclude Include="deinterlace_buildlowedgemask_genx.h" />
     <ClInclude Include="deinterlace_genx.h" />
+    <ClInclude Include="kernels\deinterlace_genx_bdw_isa.h" />
     <ClInclude Include="kernels\deinterlace_genx_hsw_isa.h" />
     <ClInclude Include="pacm.h" />
     <ClInclude Include="pacm_genx.h">

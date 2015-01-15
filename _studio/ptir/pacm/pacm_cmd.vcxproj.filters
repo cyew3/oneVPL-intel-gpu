@@ -10,6 +10,9 @@
     <ClCompile Include="kernels\embed_isa.c">
       <Filter>kernels</Filter>
     </ClCompile>
+    <ClCompile Include="kernels\deinterlace_genx_bdw.cpp">
+      <Filter>kernels</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMUT">
@@ -70,6 +73,9 @@
     <ClInclude Include="utilities.h" />
     <ClInclude Include="deinterlace_buildlowedgemask_genx.h" />
     <ClInclude Include="kernels\deinterlace_genx_hsw_isa.h">
+      <Filter>kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="kernels\deinterlace_genx_bdw_isa.h">
       <Filter>kernels</Filter>
     </ClInclude>
   </ItemGroup>

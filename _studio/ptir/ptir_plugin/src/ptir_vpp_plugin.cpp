@@ -1644,7 +1644,7 @@ inline mfxStatus MFX_PTIR_Plugin::GetHWTypeAndCheckSupport(mfxIMPL& impl, mfxHDL
         HWType = GetHWType(1,impl,mfxDeviceHdl);
         switch (HWType)
         {
-        //case MFX_HW_BDW:
+        case MFX_HW_BDW:
         case MFX_HW_HSW_ULT:
         case MFX_HW_HSW:
         //case MFX_HW_IVB:

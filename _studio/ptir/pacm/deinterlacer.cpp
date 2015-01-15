@@ -13,15 +13,14 @@ File Name: deinterlacer.cpp
 #include "pacm.h"
 #include "cmut/clock.h"
 #include "deinterlace_genx_hsw_isa.h"
-//#include "deinterlace_genx_bdw_isa.h"
+#include "deinterlace_genx_bdw_isa.h"
 
 //input: pIsaFileNames - file names of CM ISA file list. Now due to a bug in CM runtime, we only support length of 1.
 //       size - number of files
 //       width/height - size of input/output frames. we only support same resolution for input and output.
 DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height, mfxHandleType mfxDeviceType, mfxHDL mfxDeviceHdl)
 {
- CMUT_ASSERT_EQUAL(1, width<=3840, "Frame width can not exceed 3840");
- 
+    CMUT_ASSERT_EQUAL(1, width<=3840, "Frame width can not exceed 3840");
     assert(MFX_HW_UNKNOWN != HWType);
 
     //for (int i = 0; i < size; ++i) {
@@ -38,9 +37,9 @@ DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height,
         this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(deinterlace_genx_hsw, sizeof(deinterlace_genx_hsw), mfxDeviceType, mfxDeviceHdl, jit));
         break;
     case MFX_HW_BDW:
-    //    jit = false;
-    //    this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(deinterlace_genx_bdw, sizeof(deinterlace_genx_bdw), mfxDeviceType, mfxDeviceHdl, jit));
-    //    break;
+        jit = false;
+        this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(deinterlace_genx_bdw, sizeof(deinterlace_genx_bdw), mfxDeviceType, mfxDeviceHdl, jit));
+        break;
     case MFX_HW_VLV:
     case MFX_HW_IVB:
     default:
