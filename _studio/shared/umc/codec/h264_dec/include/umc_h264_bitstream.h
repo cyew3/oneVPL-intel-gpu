@@ -95,6 +95,7 @@ public:
     // Reads one bit from the buffer.
     inline Ipp8u Get1Bit();
 
+    inline bool IsBSLeft();
     inline void CheckBSLeft();
 
     // Check amount of data
@@ -173,8 +174,8 @@ protected:
     void GetScalingList4x4(H264ScalingList4x4 *scl, Ipp8u *def, Ipp8u *scl_type);
     void GetScalingList8x8(H264ScalingList8x8 *scl, Ipp8u *def, Ipp8u *scl_type);
 
-    Status GetVUIParam(H264SeqParamSet *sps);
-    Status GetHRDParam(H264SeqParamSet *sps);
+    Status GetVUIParam(H264SeqParamSet *sps, H264VUI *vui);
+    Status GetHRDParam(H264SeqParamSet *sps, H264VUI *vui);
 
     Status GetPredWeightTable(H264SliceHeader *hdr, const H264SeqParamSet *sps,
         PredWeightTable *pPredWeight_L0, PredWeightTable *pPredWeight_L1);

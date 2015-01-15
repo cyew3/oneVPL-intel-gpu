@@ -27,11 +27,15 @@ using namespace UMC_H264_DECODER;
 
 namespace UMC
 {
+inline bool H264BaseBitstream::IsBSLeft()
+{
+    size_t bitsDecoded = BitsDecoded();
+    return (bitsDecoded <= m_maxBsSize*8);
+}
 
 inline void H264BaseBitstream::CheckBSLeft()
 {
-    size_t bitsDecoded = BitsDecoded();
-    if (bitsDecoded > m_maxBsSize*8)
+    if (!IsBSLeft())
         throw h264_exception(UMC_ERR_INVALID_STREAM);
 }
 

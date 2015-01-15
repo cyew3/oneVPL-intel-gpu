@@ -161,10 +161,10 @@ Status FillVideoParam(const UMC_H264_DECODER::H264SeqParamSet * seq, mfxVideoPar
     else
         par->mfx.FrameInfo.ChromaFormat = (mfxU16)(seq->chroma_format_idc ? MFX_CHROMAFORMAT_YUV420 : MFX_CHROMAFORMAT_YUV400);
 
-    if (seq->aspect_ratio_info_present_flag || full)
+    if (seq->vui.aspect_ratio_info_present_flag || full)
     {
-        par->mfx.FrameInfo.AspectRatioW = seq->sar_width;
-        par->mfx.FrameInfo.AspectRatioH = seq->sar_height;
+        par->mfx.FrameInfo.AspectRatioW = seq->vui.sar_width;
+        par->mfx.FrameInfo.AspectRatioH = seq->vui.sar_height;
     }
     else
     {
@@ -172,10 +172,10 @@ Status FillVideoParam(const UMC_H264_DECODER::H264SeqParamSet * seq, mfxVideoPar
         par->mfx.FrameInfo.AspectRatioH = 0;
     }
 
-    if (seq->timing_info_present_flag || full)
+    if (seq->vui.timing_info_present_flag || full)
     {
-        par->mfx.FrameInfo.FrameRateExtD = seq->num_units_in_tick * 2;
-        par->mfx.FrameInfo.FrameRateExtN = seq->time_scale;
+        par->mfx.FrameInfo.FrameRateExtD = seq->vui.num_units_in_tick * 2;
+        par->mfx.FrameInfo.FrameRateExtN = seq->vui.time_scale;
     }
     else
     {
@@ -190,12 +190,12 @@ Status FillVideoParam(const UMC_H264_DECODER::H264SeqParamSet * seq, mfxVideoPar
     mfxExtVideoSignalInfo * videoSignal = (mfxExtVideoSignalInfo *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     if (videoSignal)
     {
-        videoSignal->VideoFormat = seq->video_format;
-        videoSignal->VideoFullRange = seq->video_full_range_flag;
-        videoSignal->ColourDescriptionPresent = seq->colour_description_present_flag;
-        videoSignal->ColourPrimaries = seq->colour_primaries;
-        videoSignal->TransferCharacteristics = seq->transfer_characteristics;
-        videoSignal->MatrixCoefficients = seq->matrix_coefficients;
+        videoSignal->VideoFormat = seq->vui.video_format;
+        videoSignal->VideoFullRange = seq->vui.video_full_range_flag;
+        videoSignal->ColourDescriptionPresent = seq->vui.colour_description_present_flag;
+        videoSignal->ColourPrimaries = seq->vui.colour_primaries;
+        videoSignal->TransferCharacteristics = seq->vui.transfer_characteristics;
+        videoSignal->MatrixCoefficients = seq->vui.matrix_coefficients;
     }
 
     return UMC_OK;

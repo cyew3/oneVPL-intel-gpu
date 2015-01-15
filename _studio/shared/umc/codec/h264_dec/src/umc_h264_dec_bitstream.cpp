@@ -472,96 +472,102 @@ Status H264HeadersBitstream::GetSequenceParamSet(H264SeqParamSet *sps)
 
     } // don't need else because we zeroid structure
 
+    CheckBSLeft();
+
     sps->vui_parameters_present_flag = Get1Bit();
     if (sps->vui_parameters_present_flag)
     {
-        if (ps == UMC_OK)
-            ps = GetVUIParam(sps);
-    }
+        H264VUI vui;
+        Status vui_ps = GetVUIParam(sps, &vui);
 
-    CheckBSLeft();
+        if (vui_ps == UMC_OK && IsBSLeft())
+        {
+            sps->vui = vui;
+        }
+    }
+    
     return ps;
 }    // GetSequenceParamSet
 
-Status H264HeadersBitstream::GetVUIParam(H264SeqParamSet *sps)
+Status H264HeadersBitstream::GetVUIParam(H264SeqParamSet *sps, H264VUI *vui)
 {
     Status ps = UMC_OK;
 
-    sps->aspect_ratio_info_present_flag = Get1Bit();
+    vui->aspect_ratio_info_present_flag = Get1Bit();
 
-    sps->sar_width = 1; // default values
-    sps->sar_height = 1;
+    vui->sar_width = 1; // default values
+    vui->sar_height = 1;
 
-    if (sps->aspect_ratio_info_present_flag)
+    if (vui->aspect_ratio_info_present_flag)
     {
-        sps->aspect_ratio_idc = (Ipp8u) GetBits(8);
-        if (sps->aspect_ratio_idc  ==  255) {
-            sps->sar_width = (Ipp16u) GetBits(16);
-            sps->sar_height = (Ipp16u) GetBits(16);
+        vui->aspect_ratio_idc = (Ipp8u) GetBits(8);
+        if (vui->aspect_ratio_idc  ==  255) {
+            vui->sar_width = (Ipp16u) GetBits(16);
+            vui->sar_height = (Ipp16u) GetBits(16);
         }
         else
         {
-            if (!sps->aspect_ratio_idc || sps->aspect_ratio_idc >= sizeof(SAspectRatio)/sizeof(SAspectRatio[0]))
+            if (!vui->aspect_ratio_idc || vui->aspect_ratio_idc >= sizeof(SAspectRatio)/sizeof(SAspectRatio[0]))
             {
-                sps->aspect_ratio_info_present_flag = 0;
+                vui->aspect_ratio_info_present_flag = 0;
             }
             else
             {
-                sps->sar_width = SAspectRatio[sps->aspect_ratio_idc][0];
-                sps->sar_height = SAspectRatio[sps->aspect_ratio_idc][1];
+                vui->sar_width = SAspectRatio[vui->aspect_ratio_idc][0];
+                vui->sar_height = SAspectRatio[vui->aspect_ratio_idc][1];
             }
         }
     }
 
-    sps->overscan_info_present_flag = Get1Bit();
-    if (sps->overscan_info_present_flag)
-        sps->overscan_appropriate_flag = Get1Bit();
+    vui->overscan_info_present_flag = Get1Bit();
+    if (vui->overscan_info_present_flag)
+        vui->overscan_appropriate_flag = Get1Bit();
 
-    sps->video_signal_type_present_flag = Get1Bit();
-    if( sps->video_signal_type_present_flag ) {
-        sps->video_format = (Ipp8u) GetBits(3);
-        sps->video_full_range_flag = Get1Bit();
-        sps->colour_description_present_flag = Get1Bit();
-        if( sps->colour_description_present_flag ) {
-            sps->colour_primaries = (Ipp8u) GetBits(8);
-            sps->transfer_characteristics = (Ipp8u) GetBits(8);
-            sps->matrix_coefficients = (Ipp8u) GetBits(8);
+    vui->video_signal_type_present_flag = Get1Bit();
+    if( vui->video_signal_type_present_flag ) {
+        vui->video_format = (Ipp8u) GetBits(3);
+        vui->video_full_range_flag = Get1Bit();
+        vui->colour_description_present_flag = Get1Bit();
+        if( vui->colour_description_present_flag ) {
+            vui->colour_primaries = (Ipp8u) GetBits(8);
+            vui->transfer_characteristics = (Ipp8u) GetBits(8);
+            vui->matrix_coefficients = (Ipp8u) GetBits(8);
         }
     }
-    sps->chroma_loc_info_present_flag = Get1Bit();
-    if( sps->chroma_loc_info_present_flag ) {
-        sps->chroma_sample_loc_type_top_field = (Ipp8u) GetVLCElement(false);
-        sps->chroma_sample_loc_type_bottom_field = (Ipp8u) GetVLCElement(false);
+    vui->chroma_loc_info_present_flag = Get1Bit();
+    if( vui->chroma_loc_info_present_flag ) {
+        vui->chroma_sample_loc_type_top_field = (Ipp8u) GetVLCElement(false);
+        vui->chroma_sample_loc_type_bottom_field = (Ipp8u) GetVLCElement(false);
     }
-    sps->timing_info_present_flag = Get1Bit();
+    vui->timing_info_present_flag = Get1Bit();
 
-    if (sps->timing_info_present_flag)
+    if (vui->timing_info_present_flag)
     {
-        sps->num_units_in_tick = GetBits(32);
-        sps->time_scale = GetBits(32);
-        sps->fixed_frame_rate_flag = Get1Bit();
+        vui->num_units_in_tick = GetBits(32);
+        vui->time_scale = GetBits(32);
+        vui->fixed_frame_rate_flag = Get1Bit();
 
-        if (!sps->num_units_in_tick || !sps->time_scale)
-            sps->timing_info_present_flag = 0;
+        if (!vui->num_units_in_tick || !vui->time_scale)
+            vui->timing_info_present_flag = 0;
     }
 
-    sps->nal_hrd_parameters_present_flag = Get1Bit();
-    if( sps->nal_hrd_parameters_present_flag )
-        ps=GetHRDParam(sps);
-    sps->vcl_hrd_parameters_present_flag = Get1Bit();
-    if( sps->vcl_hrd_parameters_present_flag )
-        ps=GetHRDParam(sps);
-    if( sps->nal_hrd_parameters_present_flag  ||  sps->vcl_hrd_parameters_present_flag )
-        sps->low_delay_hrd_flag = Get1Bit();
-    sps->pic_struct_present_flag  = Get1Bit();
-    sps->bitstream_restriction_flag = Get1Bit();
-    if( sps->bitstream_restriction_flag ) {
-        sps->motion_vectors_over_pic_boundaries_flag = Get1Bit();
-        sps->max_bytes_per_pic_denom = (Ipp8u) GetVLCElement(false);
-        sps->max_bits_per_mb_denom = (Ipp8u) GetVLCElement(false);
-        sps->log2_max_mv_length_horizontal = (Ipp8u) GetVLCElement(false);
-        sps->log2_max_mv_length_vertical = (Ipp8u) GetVLCElement(false);
-        sps->num_reorder_frames = (Ipp8u) GetVLCElement(false);
+    vui->nal_hrd_parameters_present_flag = Get1Bit();
+    if( vui->nal_hrd_parameters_present_flag )
+        ps=GetHRDParam(sps, vui);
+    vui->vcl_hrd_parameters_present_flag = Get1Bit();
+    if( vui->vcl_hrd_parameters_present_flag )
+        ps=GetHRDParam(sps, vui);
+    if( vui->nal_hrd_parameters_present_flag  ||  vui->vcl_hrd_parameters_present_flag )
+        vui->low_delay_hrd_flag = Get1Bit();
+    vui->pic_struct_present_flag  = Get1Bit();
+    vui->bitstream_restriction_flag = Get1Bit();
+    if( vui->bitstream_restriction_flag ) {
+        vui->motion_vectors_over_pic_boundaries_flag = Get1Bit();
+        vui->max_bytes_per_pic_denom = (Ipp8u) GetVLCElement(false);
+        vui->max_bits_per_mb_denom = (Ipp8u) GetVLCElement(false);
+        vui->log2_max_mv_length_horizontal = (Ipp8u) GetVLCElement(false);
+        vui->log2_max_mv_length_vertical = (Ipp8u) GetVLCElement(false);
+        vui->num_reorder_frames = (Ipp8u) GetVLCElement(false);
 
         Ipp32s value = GetVLCElement(false);
         if (value < (Ipp32s)sps->num_ref_frames || value < 0)
@@ -569,13 +575,13 @@ Status H264HeadersBitstream::GetVUIParam(H264SeqParamSet *sps)
             return UMC_ERR_INVALID_STREAM;
         }
 
-        sps->max_dec_frame_buffering = (Ipp8u)value;
+        vui->max_dec_frame_buffering = (Ipp8u)value;
     }
 
     return ps;
 }
 
-Status H264HeadersBitstream::GetHRDParam(H264SeqParamSet *sps)
+Status H264HeadersBitstream::GetHRDParam(H264SeqParamSet *, H264VUI *vui)
 {
     Ipp32s cpb_cnt = (GetVLCElement(false)+1);
 
@@ -584,19 +590,19 @@ Status H264HeadersBitstream::GetHRDParam(H264SeqParamSet *sps)
         return UMC_ERR_INVALID_STREAM;
     }
 
-    sps->cpb_cnt = (Ipp8u)cpb_cnt;
+    vui->cpb_cnt = (Ipp8u)cpb_cnt;
 
-    sps->bit_rate_scale = (Ipp8u) GetBits(4);
-    sps->cpb_size_scale = (Ipp8u) GetBits(4);
-    for( Ipp32s idx= 0; idx < sps->cpb_cnt; idx++ ) {
-        sps->bit_rate_value[ idx ] = (Ipp32u) (GetVLCElement(false)+1);
-        sps->cpb_size_value[ idx ] = (Ipp32u) ((GetVLCElement(false)+1));
-        sps->cbr_flag[ idx ] = Get1Bit();
+    vui->bit_rate_scale = (Ipp8u) GetBits(4);
+    vui->cpb_size_scale = (Ipp8u) GetBits(4);
+    for( Ipp32s idx= 0; idx < vui->cpb_cnt; idx++ ) {
+        vui->bit_rate_value[ idx ] = (Ipp32u) (GetVLCElement(false)+1);
+        vui->cpb_size_value[ idx ] = (Ipp32u) ((GetVLCElement(false)+1));
+        vui->cbr_flag[ idx ] = Get1Bit();
     }
-    sps->initial_cpb_removal_delay_length = (Ipp8u)(GetBits(5)+1);
-    sps->cpb_removal_delay_length = (Ipp8u)(GetBits(5)+1);
-    sps->dpb_output_delay_length = (Ipp8u) (GetBits(5)+1);
-    sps->time_offset_length = (Ipp8u) GetBits(5);
+    vui->initial_cpb_removal_delay_length = (Ipp8u)(GetBits(5)+1);
+    vui->cpb_removal_delay_length = (Ipp8u)(GetBits(5)+1);
+    vui->dpb_output_delay_length = (Ipp8u) (GetBits(5)+1);
+    vui->time_offset_length = (Ipp8u) GetBits(5);
     return UMC_OK;
 }
 
@@ -775,7 +781,7 @@ Status H264HeadersBitstream::GetSequenceParamSetSvcVuiExt(H264SeqParamSetSVCExte
         vui.vui_entry[i].vui_ext_nal_hrd_parameters_present_flag = Get1Bit();
         if (vui.vui_entry[i].vui_ext_nal_hrd_parameters_present_flag)
         {
-            Status sts = GetHRDParam(pSPSSvcExt);
+            Status sts = GetHRDParam(pSPSSvcExt, &pSPSSvcExt->vui);
             if (sts != UMC_OK)
                 return sts;
         }
@@ -783,7 +789,7 @@ Status H264HeadersBitstream::GetSequenceParamSetSvcVuiExt(H264SeqParamSetSVCExte
         vui.vui_entry[i].vui_ext_vcl_hrd_parameters_present_flag = Get1Bit();
         if (vui.vui_entry[i].vui_ext_vcl_hrd_parameters_present_flag)
         {
-            Status sts = GetHRDParam(pSPSSvcExt);
+            Status sts = GetHRDParam(pSPSSvcExt, &pSPSSvcExt->vui);
             if (sts != UMC_OK)
                 return sts;
         }

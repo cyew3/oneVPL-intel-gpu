@@ -437,6 +437,53 @@ namespace UMC_H264_DECODER
 {
 using namespace UMC;
 
+struct H264VUI
+{
+    Ipp8u        aspect_ratio_info_present_flag;
+    Ipp8u        aspect_ratio_idc;
+    Ipp16u       sar_width;
+    Ipp16u       sar_height;
+    Ipp8u        overscan_info_present_flag;
+    Ipp8u        overscan_appropriate_flag;
+    Ipp8u        video_signal_type_present_flag;
+    Ipp8u        video_format;
+    Ipp8u        video_full_range_flag;
+    Ipp8u        colour_description_present_flag;
+    Ipp8u        colour_primaries;
+    Ipp8u        transfer_characteristics;
+    Ipp8u        matrix_coefficients;
+    Ipp8u        chroma_loc_info_present_flag;
+    Ipp8u        chroma_sample_loc_type_top_field;
+    Ipp8u        chroma_sample_loc_type_bottom_field;
+    Ipp8u        timing_info_present_flag;
+    Ipp32u       num_units_in_tick;
+    Ipp32u       time_scale;
+    Ipp8u        fixed_frame_rate_flag;
+    Ipp8u        nal_hrd_parameters_present_flag;
+    Ipp8u        vcl_hrd_parameters_present_flag;
+    Ipp8u        low_delay_hrd_flag;
+    Ipp8u        pic_struct_present_flag;
+    Ipp8u        bitstream_restriction_flag;
+    Ipp8u        motion_vectors_over_pic_boundaries_flag;
+    Ipp8u        max_bytes_per_pic_denom;
+    Ipp8u        max_bits_per_mb_denom;
+    Ipp8u        log2_max_mv_length_horizontal;
+    Ipp8u        log2_max_mv_length_vertical;
+    Ipp8u        num_reorder_frames;
+    Ipp8u        max_dec_frame_buffering;
+    //hrd_parameters
+    Ipp8u        cpb_cnt;
+    Ipp8u        bit_rate_scale;
+    Ipp8u        cpb_size_scale;
+    Ipp32u       bit_rate_value[32];
+    Ipp32u       cpb_size_value[32];
+    Ipp8u        cbr_flag[32];
+    Ipp8u        initial_cpb_removal_delay_length;
+    Ipp8u        cpb_removal_delay_length;
+    Ipp8u        dpb_output_delay_length;
+    Ipp8u        time_offset_length;
+};
+
 // Sequence parameter set structure, corresponding to the H.264 bitstream definition.
 struct H264SeqParamSetBase
 {
@@ -492,49 +539,7 @@ struct H264SeqParamSetBase
     Ipp32u       MaxPicOrderCntLsb;
 
     // vui part
-    Ipp8u        aspect_ratio_info_present_flag;
-    Ipp8u        aspect_ratio_idc;
-    Ipp16u       sar_width;
-    Ipp16u       sar_height;
-    Ipp8u        overscan_info_present_flag;
-    Ipp8u        overscan_appropriate_flag;
-    Ipp8u        video_signal_type_present_flag;
-    Ipp8u        video_format;
-    Ipp8u        video_full_range_flag;
-    Ipp8u        colour_description_present_flag;
-    Ipp8u        colour_primaries;
-    Ipp8u        transfer_characteristics;
-    Ipp8u        matrix_coefficients;
-    Ipp8u        chroma_loc_info_present_flag;
-    Ipp8u        chroma_sample_loc_type_top_field;
-    Ipp8u        chroma_sample_loc_type_bottom_field;
-    Ipp8u        timing_info_present_flag;
-    Ipp32u       num_units_in_tick;
-    Ipp32u       time_scale;
-    Ipp8u        fixed_frame_rate_flag;
-    Ipp8u        nal_hrd_parameters_present_flag;
-    Ipp8u        vcl_hrd_parameters_present_flag;
-    Ipp8u        low_delay_hrd_flag;
-    Ipp8u        pic_struct_present_flag;
-    Ipp8u        bitstream_restriction_flag;
-    Ipp8u        motion_vectors_over_pic_boundaries_flag;
-    Ipp8u        max_bytes_per_pic_denom;
-    Ipp8u        max_bits_per_mb_denom;
-    Ipp8u        log2_max_mv_length_horizontal;
-    Ipp8u        log2_max_mv_length_vertical;
-    Ipp8u        num_reorder_frames;
-    Ipp8u        max_dec_frame_buffering;
-    //hrd_parameters
-    Ipp8u        cpb_cnt;
-    Ipp8u        bit_rate_scale;
-    Ipp8u        cpb_size_scale;
-    Ipp32u       bit_rate_value[32];
-    Ipp32u       cpb_size_value[32];
-    Ipp8u        cbr_flag[32];
-    Ipp8u        initial_cpb_removal_delay_length;
-    Ipp8u        cpb_removal_delay_length;
-    Ipp8u        dpb_output_delay_length;
-    Ipp8u        time_offset_length;
+    H264VUI      vui;
 
     Ipp32s       poffset_for_ref_frame[MAX_REF_FRAMES_IN_POC_CYCLE];  // for pic order cnt type 1
 
@@ -574,11 +579,11 @@ struct H264SeqParamSet : public HeapObject, public H264SeqParamSetBase
         seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS;
 
         // set some parameters by default
-        video_format = 5; // unspecified
-        video_full_range_flag = 0;
-        colour_primaries = 2; // unspecified
-        transfer_characteristics = 2; // unspecified
-        matrix_coefficients = 2; // unspecified
+        vui.video_format = 5; // unspecified
+        vui.video_full_range_flag = 0;
+        vui.colour_primaries = 2; // unspecified
+        vui.transfer_characteristics = 2; // unspecified
+        vui.matrix_coefficients = 2; // unspecified
     }
 };    // H264SeqParamSet
 

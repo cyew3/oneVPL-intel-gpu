@@ -1056,7 +1056,7 @@ bool IsNeedSPSInvalidate(const H264SeqParamSet *old_sps, const H264SeqParamSet *
     if (old_sps->frame_height_in_mbs != new_sps->frame_height_in_mbs)
         return true;
 
-    if (old_sps->max_dec_frame_buffering < new_sps->max_dec_frame_buffering)
+    if (old_sps->vui.max_dec_frame_buffering < new_sps->vui.max_dec_frame_buffering)
         return true;
 
     if (old_sps->chroma_format_idc != new_sps->chroma_format_idc)
@@ -1307,8 +1307,8 @@ ViewItem & MVC_Extension::AllocateAndInitializeView(H264Slice * slice)
 
     ViewItem &viewRef = GetView(slice->GetSliceHeader()->nal_ext.mvc.view_id);
     viewRef.SetDPBSize(const_cast<H264SeqParamSet*>(slice->m_pSeqParamSet), m_level_idc);
-    viewRef.maxDecFrameBuffering = slice->m_pSeqParamSet->max_dec_frame_buffering ?
-                                  slice->m_pSeqParamSet->max_dec_frame_buffering :
+    viewRef.maxDecFrameBuffering = slice->m_pSeqParamSet->vui.max_dec_frame_buffering ?
+                                  slice->m_pSeqParamSet->vui.max_dec_frame_buffering :
                                   viewRef.dpbSize;
 
     return viewRef;
@@ -2756,14 +2756,14 @@ Status TaskSupplier::GetInfo(VideoDecoderParams *lpInfo)
     lpInfo->info.profile = sps->profile_idc;
     lpInfo->info.level = sps->level_idc;
 
-    if (sps->aspect_ratio_idc == 255)
+    if (sps->vui.aspect_ratio_idc == 255)
     {
-        lpInfo->info.aspect_ratio_width  = sps->sar_width;
-        lpInfo->info.aspect_ratio_height = sps->sar_height;
+        lpInfo->info.aspect_ratio_width  = sps->vui.sar_width;
+        lpInfo->info.aspect_ratio_height = sps->vui.sar_height;
     }
 
-    Ipp32u multiplier = 1 << (6 + sps->bit_rate_scale);
-    lpInfo->info.bitrate = sps->bit_rate_value[0] * multiplier;
+    Ipp32u multiplier = 1 << (6 + sps->vui.bit_rate_scale);
+    lpInfo->info.bitrate = sps->vui.bit_rate_value[0] * multiplier;
 
     if (sps->frame_mbs_only_flag)
         lpInfo->info.interlace_type = PROGRESSIVE;
@@ -2965,8 +2965,8 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                                             sps.frame_height_in_mbs * 16,
                                             sps.num_ref_frames);
 
-                bool isNeedClean = sps.max_dec_frame_buffering == 0;
-                sps.max_dec_frame_buffering = sps.max_dec_frame_buffering ? sps.max_dec_frame_buffering : newDPBsize;
+                bool isNeedClean = sps.vui.max_dec_frame_buffering == 0;
+                sps.vui.max_dec_frame_buffering = sps.vui.max_dec_frame_buffering ? sps.vui.max_dec_frame_buffering : newDPBsize;
 
                 const H264SeqParamSet * old_sps = m_Headers.m_SeqParams.GetCurrentHeader();
                 bool newResolution = false;
@@ -2976,7 +2976,7 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                 }
 
                 if (isNeedClean)
-                    sps.max_dec_frame_buffering = 0;
+                    sps.vui.max_dec_frame_buffering = 0;
 
                 DEBUG_PRINT((VM_STRING("debug headers SPS - %d, num_ref_frames - %d \n"), sps.seq_parameter_set_id, sps.num_ref_frames));
 
@@ -2989,11 +2989,11 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                 if (view)
                 {
                     view->SetDPBSize(&sps, m_level_idc);
-                    view->maxDecFrameBuffering = temp->max_dec_frame_buffering ?
-                                                temp->max_dec_frame_buffering :
+                    view->maxDecFrameBuffering = temp->vui.max_dec_frame_buffering ?
+                                                temp->vui.max_dec_frame_buffering :
                                                 view->dpbSize;
 
-                    temp->max_dec_frame_buffering = (Ipp8u)view->maxDecFrameBuffering;
+                    temp->vui.max_dec_frame_buffering = (Ipp8u)view->maxDecFrameBuffering;
 
                     if (m_TrickModeSpeed != 1)
                     {
@@ -3003,13 +3003,13 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
                 m_pNALSplitter->SetSuggestedSize(CalculateSuggestedSize(&sps));
 
-                if (!temp->timing_info_present_flag || m_use_external_framerate)
+                if (!temp->vui.timing_info_present_flag || m_use_external_framerate)
                 {
-                    temp->num_units_in_tick = 90000;
-                    temp->time_scale = (Ipp32u)(2*90000 / m_local_delta_frame_time);
+                    temp->vui.num_units_in_tick = 90000;
+                    temp->vui.time_scale = (Ipp32u)(2*90000 / m_local_delta_frame_time);
                 }
 
-                m_local_delta_frame_time = 1 / ((0.5 * temp->time_scale) / temp->num_units_in_tick);
+                m_local_delta_frame_time = 1 / ((0.5 * temp->vui.time_scale) / temp->vui.num_units_in_tick);
 
                 ErrorStatus::isSPSError = 0;
 
@@ -3131,8 +3131,8 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     if (view)
                     {
                         view->SetDPBSize(&sps, m_level_idc);
-                        view->maxDecFrameBuffering = sps.max_dec_frame_buffering ?
-                                                    sps.max_dec_frame_buffering :
+                        view->maxDecFrameBuffering = sps.vui.max_dec_frame_buffering ?
+                                                    sps.vui.max_dec_frame_buffering :
                                                     view->dpbSize;
                     }
 
@@ -3173,8 +3173,8 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     if (view)
                     {
                         view->SetDPBSize(&sps, m_level_idc);
-                        view->maxDecFrameBuffering = sps.max_dec_frame_buffering ?
-                                                    sps.max_dec_frame_buffering :
+                        view->maxDecFrameBuffering = sps.vui.max_dec_frame_buffering ?
+                                                    sps.vui.max_dec_frame_buffering :
                                                     view->dpbSize;
                     }
 
@@ -5524,8 +5524,8 @@ Status TaskSupplier::InitFreeFrame(H264DecoderFrame * pFrame, const H264Slice *p
         pFrame->setViewId(pSlice->GetSliceHeader()->nal_ext.mvc.view_id);
     }
 
-    pFrame->m_aspect_width  = pSeqParam->sar_width;
-    pFrame->m_aspect_height = pSeqParam->sar_height;
+    pFrame->m_aspect_width  = pSeqParam->vui.sar_width;
+    pFrame->m_aspect_height = pSeqParam->vui.sar_height;
 
     if (pSlice->GetSliceHeader()->field_pic_flag)
     {
@@ -5825,7 +5825,7 @@ void TaskSupplier::ApplyPayloadsToFrame(H264DecoderFrame * frame, H264Slice *sli
 
     if (frame->m_displayPictureStruct == DPS_UNKNOWN)
     {
-        if (payload && slice->GetSeqParam()->pic_struct_present_flag)
+        if (payload && slice->GetSeqParam()->vui.pic_struct_present_flag)
         {
             frame->m_displayPictureStruct = payload->SEI_messages.pic_timing.pic_struct;
         }

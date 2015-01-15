@@ -173,27 +173,27 @@ Ipp32s H264Bitstream::buffering_period(const Headers & headers, Ipp32s , H264SEI
         throw h264_exception(UMC_ERR_INVALID_STREAM);
     }
 
-    if (csps->nal_hrd_parameters_present_flag)
+    if (csps->vui.nal_hrd_parameters_present_flag)
     {
-        if (csps->cpb_cnt >= 32)
+        if (csps->vui.cpb_cnt >= 32)
             throw h264_exception(UMC_ERR_INVALID_STREAM);
 
-        for(Ipp32s i=0; i < csps->cpb_cnt; i++)
+        for(Ipp32s i=0; i < csps->vui.cpb_cnt; i++)
         {
-            bps.initial_cpb_removal_delay[0][i] = GetBits(csps->initial_cpb_removal_delay_length);
-            bps.initial_cpb_removal_delay_offset[0][i] = GetBits(csps->initial_cpb_removal_delay_length);
+            bps.initial_cpb_removal_delay[0][i] = GetBits(csps->vui.initial_cpb_removal_delay_length);
+            bps.initial_cpb_removal_delay_offset[0][i] = GetBits(csps->vui.initial_cpb_removal_delay_length);
         }
     }
 
-    if (csps->vcl_hrd_parameters_present_flag)
+    if (csps->vui.vcl_hrd_parameters_present_flag)
     {
-        if (csps->cpb_cnt >= 32)
+        if (csps->vui.cpb_cnt >= 32)
             throw h264_exception(UMC_ERR_INVALID_STREAM);
 
-        for(Ipp32s i=0; i < csps->cpb_cnt; i++)
+        for(Ipp32s i=0; i < csps->vui.cpb_cnt; i++)
         {
-            bps.initial_cpb_removal_delay[1][i] = GetBits(csps->cpb_removal_delay_length);
-            bps.initial_cpb_removal_delay_offset[1][i] = GetBits(csps->cpb_removal_delay_length);
+            bps.initial_cpb_removal_delay[1][i] = GetBits(csps->vui.cpb_removal_delay_length);
+            bps.initial_cpb_removal_delay_offset[1][i] = GetBits(csps->vui.cpb_removal_delay_length);
         }
     }
 
@@ -213,10 +213,10 @@ Ipp32s H264Bitstream::pic_timing(const Headers & headers, Ipp32s current_sps, H2
     if (!csps)
         throw h264_exception(UMC_ERR_INVALID_STREAM);
 
-    if (csps->nal_hrd_parameters_present_flag || csps->vcl_hrd_parameters_present_flag)
+    if (csps->vui.nal_hrd_parameters_present_flag || csps->vui.vcl_hrd_parameters_present_flag)
     {
-        pts.cbp_removal_delay = GetBits(csps->cpb_removal_delay_length);
-        pts.dpb_output_delay = GetBits(csps->dpb_output_delay_length);
+        pts.cbp_removal_delay = GetBits(csps->vui.cpb_removal_delay_length);
+        pts.dpb_output_delay = GetBits(csps->vui.dpb_output_delay_length);
     }
     else
     {
@@ -224,7 +224,7 @@ Ipp32s H264Bitstream::pic_timing(const Headers & headers, Ipp32s current_sps, H2
         pts.dpb_output_delay = INVALID_DPB_OUTPUT_DELAY;
     }
 
-    if (csps->pic_struct_present_flag)
+    if (csps->vui.pic_struct_present_flag)
     {
         Ipp8u picStruct = (Ipp8u)GetBits(4);
 
@@ -268,8 +268,8 @@ Ipp32s H264Bitstream::pic_timing(const Headers & headers, Ipp32s current_sps, H2
                     }
                 }
 
-                if(csps->time_offset_length > 0)
-                    pts.clock_timestamps[i].time_offset = (Ipp8u)GetBits(csps->time_offset_length);
+                if (csps->vui.time_offset_length > 0)
+                    pts.clock_timestamps[i].time_offset = (Ipp8u)GetBits(csps->vui.time_offset_length);
             }
         }
     }
