@@ -44,11 +44,11 @@
 #endif
 
 #define SKIP_FRAME_SUPPORT
+#define ROLLING_INTRA_REFRESH_SUPPORT
 
 #ifndef MFX_VA_ANDROID
     #define MAX_FRAME_SIZE_SUPPORT
     #define TRELLIS_QUANTIZATION_SUPPORT
-    #define ROLLING_INTRA_REFRESH_SUPPORT
 #endif
 
 using namespace MfxHwH264Encode;
