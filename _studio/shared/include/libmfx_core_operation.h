@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core_operation.h
 
@@ -21,18 +21,28 @@ class VideoCORE;
 class OperatorCORE
 {
 public:
-    OperatorCORE(VideoCORE* pCore):m_refCounter(1)
+    OperatorCORE(VideoCORE* pCore) 
+        : m_refCounter(1)
+        , m_CoreCounter(0)
     {
         m_Cores.push_back(pCore);
         pCore->SetCoreId(0);
     };
 
-    void AddCore(VideoCORE* pCore)
+    mfxStatus AddCore(VideoCORE* pCore)
     {
         UMC::AutomaticUMCMutex guard(m_guard);
+
+        if (m_Cores.size() == 0xFFFF)
+            return MFX_ERR_MEMORY_ALLOC;
+
         m_Cores.push_back(pCore);
-        pCore->SetCoreId((mfxU32)m_Cores.size()-1);
+        pCore->SetCoreId(++m_CoreCounter);
+        m_CoreCounter = (m_CoreCounter == 0xFFFF)?0:m_CoreCounter;
+
+        return MFX_ERR_NONE;
     }
+
     void RemoveCore(VideoCORE* pCore)
     {
         UMC::AutomaticUMCMutex guard(m_guard);
@@ -165,6 +175,8 @@ private:
     mfxU32 m_refCounter;
 
     UMC::Mutex m_guard;
+
+    mfxU32     m_CoreCounter;
 
     // Forbid the assignment operator
     OperatorCORE & operator = (const OperatorCORE &);

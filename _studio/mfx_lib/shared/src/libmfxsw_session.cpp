@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
 
 File Name: libmfxsw_sessions.cpp
 
@@ -47,7 +47,11 @@ mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
             session->RestoreScheduler();
             return MFX_ERR_INVALID_HANDLE;
         }
-        session->m_pOperatorCore->AddCore(child_session->m_pCORE.get());
+        mfxRes = session->m_pOperatorCore->AddCore(child_session->m_pCORE.get());
+        if (MFX_ERR_NONE != mfxRes)
+        {
+            return mfxRes;
+        }
         child_session->m_pOperatorCore = session->m_pOperatorCore;
     }
     catch(MFX_CORE_CATCH_TYPE)
