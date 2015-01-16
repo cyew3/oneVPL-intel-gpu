@@ -440,6 +440,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     m_ddi.reset( CreatePlatformMJpegEncoder( m_pCore ) );
+    if (m_ddi.get() == 0)
+        return MFX_WRN_PARTIAL_ACCELERATION;
 
     MFX_INTERNAL_CPY(&m_vFirstParam, par, sizeof(mfxVideoParam));
     MFX_INTERNAL_CPY(&m_vParam, &m_vFirstParam, sizeof(mfxVideoParam));

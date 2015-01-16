@@ -35,6 +35,8 @@ mfxStatus MfxHwMJpegEncode::QueryHwCaps(VideoCORE * core, JpegEncCaps & hwCaps)
 
     std::auto_ptr<DriverEncoder> ddi;
     ddi.reset( CreatePlatformMJpegEncoder(core) );
+    if (ddi.get() == 0)
+        return MFX_ERR_NULL_PTR;
 
     mfxStatus sts = ddi->CreateAuxilliaryDevice(core, 640, 480, true);
     MFX_CHECK_STS(sts);
