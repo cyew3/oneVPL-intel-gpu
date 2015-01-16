@@ -613,6 +613,8 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXCloneSession)(mfxSession session, mfxSess
 
 mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const mfxPluginUID *uid, mfxU32 version) 
 {
+    mfxStatus sts = MFX_ERR_NONE;
+    bool ErrFlag = false;
     MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
     if (!&pHandle)
     {
@@ -645,8 +647,12 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
         }
         try
         {
-            if( MFX_ERR_NONE != pHandle.pluginFactory.Create(*i))
+            sts = pHandle.pluginFactory.Create(*i);
+            if( MFX_ERR_NONE != sts)
+            {
+                ErrFlag = (ErrFlag || (sts == MFX_ERR_UNDEFINED_BEHAVIOR));
                 continue;
+            }
             return MFX_ERR_NONE;
         }
         catch(...)
@@ -665,8 +671,12 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
         i->PluginVersion = (mfxU16)version;
         try
         {
-            if( MFX_ERR_NONE != pHandle.pluginFactory.Create(*i))
+            sts = pHandle.pluginFactory.Create(*i);
+            if( MFX_ERR_NONE != sts)
+            {
+                ErrFlag = (ErrFlag || (sts == MFX_ERR_UNDEFINED_BEHAVIOR));
                 continue;
+            }
             return MFX_ERR_NONE;
         }
         catch(...)
@@ -676,7 +686,10 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
     }
 
     DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: cannot find registered plugin with requested UID, total plugins available=%d\n"), pHandle.pluginHive.size()));
-    return MFX_ERR_NOT_FOUND;
+    if (ErrFlag)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    else
+        return MFX_ERR_NOT_FOUND;
 }
 
 
