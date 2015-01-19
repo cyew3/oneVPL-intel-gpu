@@ -20,9 +20,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\include\mfx_utils.h" />
+    <ClInclude Include="include\mfx_screen_capture_d3d11.h" />
+    <ClInclude Include="include\mfx_screen_capture_d3d9.h" />
+    <ClInclude Include="include\mfx_screen_capture_ddi.h" />
     <ClInclude Include="include\mfx_screen_capture_plugin.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\mfx_screen_capture_d3d11.cpp" />
+    <ClCompile Include="src\mfx_screen_capture_d3d9.cpp" />
+    <ClCompile Include="src\mfx_screen_capture_ddi.cpp" />
     <ClCompile Include="src\mfx_screen_capture_plugin.cpp" />
   </ItemGroup>
   <ItemGroup>

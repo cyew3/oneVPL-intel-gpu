@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2015 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_screen_capture_plugin.cpp
 
@@ -16,46 +16,8 @@ File Name: mfx_screen_capture_plugin.cpp
 #include "mfx_utils.h"
 #include "mfxstructures.h"
 
-
-// {BF44DACD-217F-4370-A383-D573BC56707E}
-DEFINE_GUID(DXVADDI_Intel_GetDesktopScreen, 
-            0xbf44dacd, 0x217f, 0x4370, 0xa3, 0x83, 0xd5, 0x73, 0xbc, 0x56, 0x70, 0x7e);
-
-typedef struct tagDESKTOP_EXECUTE_PARAMS
+namespace MfxCapture
 {
-    DXGI_FORMAT  DesktopFormat;
-    UINT         StatusReportFeedbackNumber;
-    USHORT       Width;
-    USHORT      Height;
-    UINT      Reserved;
-} DESKTOP_EXECUTE_PARAMS;
-
-typedef struct tagDESKTOP_FORMAT
-{
-    DXGI_FORMAT      DesktopFormat;
-    USHORT           MaxWidth;
-    USHORT           MaxHeight;
-    UINT             Reserved[2];
-} DESKTOP_FORMAT;
-
-typedef struct tagDESKTOP_PARAM_STRUCT_SIZE
-{
-    UINT    SizeOfParamStruct;
-    UINT    reserved;
-} DESKTOP_PARAM_STRUCT_SIZE;
-
-enum
-{
-    QUERY_SIZE = 32
-};
-
-enum
-{
-    DESKTOP_FORMAT_COUNT_ID = 0x100,
-    DESKTOP_FORMATS_ID      = 0x101,
-    DESKTOP_GETDESKTOP_ID   = 0x104,
-    DESKTOP_QUERY_STATUS_ID = 0x105
-};
 
 MSDK_PLUGIN_API(MFXDecoderPlugin*) mfxCreateDecoderPlugin() {
     return MFXScreenCapture_Plugin::Create();
@@ -105,8 +67,8 @@ mfxStatus MFXScreenCapture_Plugin::PluginInit(mfxCoreInterface *core)
         return mfxRes;
 
     //only MFX_IMPL_VIA_D3D11 is supported
-    if(MFX_IMPL_VIA_D3D11 != (par.Impl & 0x0F00))
-        return MFX_ERR_UNSUPPORTED;
+    //if(MFX_IMPL_VIA_D3D11 != (par.Impl & 0x0F00))
+    //    return MFX_ERR_UNSUPPORTED;
 
     return mfxRes;
 }
@@ -191,15 +153,10 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
 
 mfxStatus MFXScreenCapture_Plugin::Close()
 {
-    if(!m_inited)
+    if(!m_inited && !m_pCapturer.get())
         return MFX_ERR_NOT_INITIALIZED;
 
-    m_pD11Device.Release();
-    m_pD11Context.Release();
-    m_pD11VideoDevice.Release();
-    m_pD11VideoContext.Release();
-    m_pDecoder.Release();
-
+    m_pCapturer.reset(0);
     m_inited = false;
 
     return MFX_ERR_NONE;
@@ -402,162 +359,32 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
     if(MFX_FOURCC_NV12 == in.mfx.FrameInfo.FourCC)
         format = DXGI_FORMAT_NV12;
 
-    //mfxRes = CreateVideoAccelerator(width, height, format);
-    //if(mfxRes)
-    //{
-    //    out.mfx.FrameInfo.Width  = out.mfx.FrameInfo.CropW = width;
-    //    out.mfx.FrameInfo.Height = out.mfx.FrameInfo.CropH = height;
-    //    return MFX_ERR_UNSUPPORTED;
-    //}
-
     if(onInit)
     {
-        mfxRes = CreateVideoAccelerator(width, height, format);
+        m_pCapturer.reset( CreatePlatformCapturer(m_pmfxCore) );
+
+        mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in);
         MFX_CHECK_STS(mfxRes);
 
-        mfxRes = CheckCapabilities(m_pD11VideoContext, width, height);
+        mfxRes = m_pCapturer.get()->CheckCapabilities(in, &out);
         MFX_CHECK_STS(mfxRes);
     }
     else
     {
-        HRESULT hres;
-        D3D11_VIDEO_DECODER_DESC video_desc;
-        mfxStatus mfxRes = MFX_ERR_NONE;
-        mfxHDL hdl;
-        CComPtr<ID3D11Device>            pD11Device;
-        CComPtr<ID3D11DeviceContext>     pD11Context;
+        m_pCapturer.reset( CreatePlatformCapturer(m_pmfxCore) );
 
-        CComQIPtr<ID3D11VideoDevice>     pD11VideoDevice;
-        CComQIPtr<ID3D11VideoContext>    pD11VideoContext;
-        CComPtr<ID3D11VideoDecoder>      pDecoder;
+        mfxRes = m_pCapturer.get()->QueryVideoAccelerator(in, &out);
+        MFX_CHECK_STS(mfxRes);
 
-        mfxRes = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&hdl);
-        if(mfxRes || !hdl)
-            return MFX_ERR_UNSUPPORTED;
-        pD11Device = (ID3D11Device*)hdl;
-        CComPtr<ID3D11DeviceContext> pImmediateContext;
-        pD11Device->GetImmediateContext(&pImmediateContext);
-        pD11Context = pImmediateContext;
-
-        pD11VideoDevice  = pD11Device;
-        pD11VideoContext = pD11Context;
-
-        video_desc.SampleWidth = width;
-        video_desc.SampleHeight = height;
-        video_desc.OutputFormat = format;
-        video_desc.Guid = DXVADDI_Intel_GetDesktopScreen;
-
-        D3D11_VIDEO_DECODER_CONFIG video_config = {0}; 
-
-        mfxU32 cDecoderProfiles = pD11VideoDevice->GetVideoDecoderProfileCount();
-        bool isRequestedGuidPresent = false;
-
-
-        for (mfxU32 i = 0; i < cDecoderProfiles; i++)
-        {
-            GUID decoderGuid;
-            HRESULT hr = pD11VideoDevice->GetVideoDecoderProfile(i, &decoderGuid);
-            if (FAILED(hr))
-            {
-                continue;
-            }
-
-            if (DXVADDI_Intel_GetDesktopScreen == decoderGuid)
-                isRequestedGuidPresent = true;
-        }
-
-        hres  = pD11VideoDevice->CreateVideoDecoder(&video_desc, &video_config, &pDecoder);
-        if (FAILED(hres))
-        {
-            error = true;
-        }
-        //w/a for debug. Waiting for HSD5595359. This w/a will cause decoder resource leak.
-        #if defined(_DEBUG)
-            //pDecoder.p->AddRef();
-        #endif
-
-        mfxRes = CheckCapabilities(pD11VideoContext, width, height);
-        if(mfxRes)
-        {
-            out.mfx.FrameInfo.Width  = out.mfx.FrameInfo.CropW = 0;
-            out.mfx.FrameInfo.Height = out.mfx.FrameInfo.CropH = 0;
-            return MFX_ERR_UNSUPPORTED;
-        }
+        m_pCapturer.reset( 0 );
     }
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus MFXScreenCapture_Plugin::CreateVideoAccelerator(mfxU16& SampleWidth, mfxU16& SampleHeight, DXGI_FORMAT& OutputFormat)
-{
-    HRESULT hres;
-    D3D11_VIDEO_DECODER_DESC video_desc;
-    mfxStatus mfxRes = MFX_ERR_NONE;
-    mfxHDL hdl;
-
-    mfxRes = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&hdl);
-    m_pD11Device = (ID3D11Device*)hdl;
-    CComPtr<ID3D11DeviceContext> pImmediateContext;
-    m_pD11Device->GetImmediateContext(&pImmediateContext);
-    m_pD11Context = pImmediateContext;
-
-    m_pD11VideoDevice = m_pD11Device;
-    m_pD11VideoContext = m_pD11Context;
-
-    video_desc.SampleWidth = SampleWidth;
-    video_desc.SampleHeight = SampleHeight;
-    video_desc.OutputFormat = OutputFormat;
-    video_desc.Guid = DXVADDI_Intel_GetDesktopScreen;
-
-    D3D11_VIDEO_DECODER_CONFIG video_config = {0}; 
-
-    mfxU32 cDecoderProfiles = m_pD11VideoDevice->GetVideoDecoderProfileCount();
-    bool isRequestedGuidPresent = false;
-
-
-    for (mfxU32 i = 0; i < cDecoderProfiles; i++)
-    {
-        GUID decoderGuid;
-        HRESULT hr = m_pD11VideoDevice->GetVideoDecoderProfile(i, &decoderGuid);
-        if (FAILED(hr))
-        {
-            continue;
-        }
-
-        if (DXVADDI_Intel_GetDesktopScreen == decoderGuid)
-            isRequestedGuidPresent = true;
-
-    }
-
-    //HRESULT hr = m_pD11VideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
-    //if (FAILED(hr)) 
-    //    return MFX_ERR_DEVICE_FAILED;
-
-    //for (mfxU32 i = 0; i < count; i++)
-    //{
-    //    hr = m_pD11VideoDevice->GetVideoDecoderConfig(&video_desc, i, &video_config);
-    //    if (FAILED(hr))
-    //        continue;
-
-
-    //    return MFX_ERR_NONE;
-
-    //} 
-    
-    hres  = m_pD11VideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
-    if (FAILED(hres))
-        return MFX_ERR_DEVICE_FAILED;
-    //w/a for debug. Waiting for HSD5595359. This w/a will cause decoder resource leak.
-#if defined(_DEBUG)
-    //m_pDecoder.p->AddRef();
-#endif
 
     return MFX_ERR_NONE;
 }
 
 mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out,  mfxThreadTask *task)
 {
-    if(!m_inited)
+    if(!m_inited || !m_pCapturer.get())
         return MFX_ERR_NOT_INITIALIZED;
 
     mfxStatus mfxRes = DecodeFrameSubmit(bs, surface_work, surface_out);
@@ -597,17 +424,14 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
     mfxRes = CheckFrameInfo(&surface_work->Info);
     MFX_CHECK_STS(mfxRes);
 
-    mfxRes = BeginFrame(surface_work->Data.MemId, pOutputView);
+    mfxRes = m_pCapturer.get()->BeginFrame(surface_work->Data.MemId);
     MFX_CHECK_STS(mfxRes);
 
-    mfxRes = GetDesktopScreenOperation(surface_work);
+    mfxRes = m_pCapturer.get()->GetDesktopScreenOperation(surface_work, m_StatusReportFeedbackNumber);
     MFX_CHECK_STS(mfxRes);
 
-    HRESULT hr = m_pD11VideoContext->DecoderEndFrame(m_pDecoder);
-    if FAILED(hr)
-    {
-        return MFX_ERR_DEVICE_FAILED;
-    }
+    mfxRes = m_pCapturer.get()->EndFrame();
+    MFX_CHECK_STS(mfxRes);
 
     surface_work->Info.CropH = m_CurrentPar.mfx.FrameInfo.Height;
     surface_work->Info.CropW = m_CurrentPar.mfx.FrameInfo.Width;
@@ -621,19 +445,17 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
 
 mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a)
 {
-    // should be query here 
+    if(!m_inited || !m_pCapturer.get())
+        return MFX_ERR_NOT_INITIALIZED;
     uid_p; uid_a;
     mfxStatus mfxRes = MFX_ERR_NONE;
+
     AsyncParams *pAsyncParam  = (AsyncParams *)task;
-    mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->surface_work->Data);
+
+    mfxRes = m_pCapturer.get()->QueryStatus(m_StatusList);
+    MFX_CHECK_STS(mfxRes);
 
     //will be enabled after check 
-    //if (!m_StatusList.size())
-    //{
-    //    mfxRes = QueryStatus();
-    //    MFX_CHECK_STS(mfxRes);
-    //}
-
     //if (m_StatusList.front().StatusReportFeedbackNumber == pAsyncParam->StatusReportFeedbackNumber)
     //{
     //    if (m_StatusList.front().uStatus == 3)
@@ -647,10 +469,12 @@ mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfx
     //}
     //else 
     //{
-    //    mfxRes = QueryStatus();
+    //    mfxRes = m_pCapturer.get()->QueryStatus(m_StatusList);
     //    return mfxRes;
     //}
-    
+
+    mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->surface_work->Data);
+
     return mfxRes;
 }
 
@@ -661,154 +485,6 @@ mfxStatus MFXScreenCapture_Plugin::CheckFrameInfo(mfxFrameInfo *info)
     if (info->Height < m_CurrentPar.mfx.FrameInfo.Height)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-    return MFX_ERR_NONE;
-}
-
-mfxStatus MFXScreenCapture_Plugin::BeginFrame(mfxMemId MemId, ID3D11VideoDecoderOutputView *pOutputView)
-{
-    HRESULT hr = S_OK;
-    mfxHDLPair Pair;
-    
-    mfxStatus mfxRes = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, MemId, (mfxHDL*)&Pair);
-    MFX_CHECK_STS(mfxRes);
-
-    D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC OutputDesc;
-    OutputDesc.DecodeProfile = DXVADDI_Intel_GetDesktopScreen;
-    OutputDesc.ViewDimension = D3D11_VDOV_DIMENSION_TEXTURE2D;
-    OutputDesc.Texture2D.ArraySlice = (UINT)(size_t)Pair.second;
-
-
-    hr = m_pD11VideoDevice->CreateVideoDecoderOutputView((ID3D11Resource *)Pair.first, 
-                                                      &OutputDesc,
-                                                      &pOutputView);
-
-
-    if( SUCCEEDED( hr ) )
-    {
-        hr = m_pD11VideoContext->DecoderBeginFrame(m_pDecoder, pOutputView, 0, NULL);
-        if SUCCEEDED( hr )
-            return MFX_ERR_NONE;
-    }
-    
-    return MFX_ERR_DEVICE_FAILED;
-
-} 
-
-mfxStatus MFXScreenCapture_Plugin::GetDesktopScreenOperation(mfxFrameSurface1 *surface_work)
-{
-    HRESULT hr;
-    D3D11_VIDEO_DECODER_EXTENSION dec_ext =  {0};
-    DESKTOP_EXECUTE_PARAMS desktop_execute;
-
-    memset( &desktop_execute, 0, sizeof(desktop_execute));
-    desktop_execute.DesktopFormat = DXGI_FORMAT_NV12;
-    desktop_execute.Height = surface_work->Info.Height;
-    desktop_execute.Width = surface_work->Info.Width;
-    desktop_execute.StatusReportFeedbackNumber = ++m_StatusReportFeedbackNumber;
-
-    dec_ext.Function = DESKTOP_GETDESKTOP_ID;
-    dec_ext.pPrivateInputData =  &desktop_execute;
-    dec_ext.PrivateInputDataSize = sizeof(desktop_execute);
-
-
-    hr = m_pD11VideoContext->DecoderExtension(m_pDecoder, &dec_ext);
-
-    if (FAILED(hr))
-        return MFX_ERR_DEVICE_FAILED;
-
-    return MFX_ERR_NONE;
-
-}
-
-mfxStatus MFXScreenCapture_Plugin::CheckCapabilities(CComQIPtr<ID3D11VideoContext>& pD11VideoContext, mfxU16& w, mfxU16& h)
-{
-    HRESULT hr;
-    D3D11_VIDEO_DECODER_EXTENSION dec_ext =  {0};
-    DESKTOP_FORMAT *desktop_format;
-    DESKTOP_PARAM_STRUCT_SIZE param_size = {0};
-    mfxU32 count = 0;
-
-    memset( &dec_ext, 0, sizeof(dec_ext));
-
-    dec_ext.Function = DESKTOP_FORMAT_COUNT_ID;
-    dec_ext.pPrivateOutputData =  &count;
-    dec_ext.PrivateOutputDataSize = sizeof(count);
-
-
-    hr = pD11VideoContext->DecoderExtension(m_pDecoder, &dec_ext);
-    if (FAILED(hr))
-        return MFX_ERR_DEVICE_FAILED;
-
-    if (count == 0)
-    {
-        return MFX_ERR_DEVICE_FAILED;
-    }
-
-    //count = dec_ext.PrivateOutputDataSize;
-
-    desktop_format = new DESKTOP_FORMAT[count];
-    param_size.SizeOfParamStruct = sizeof(DESKTOP_FORMAT);
-    
-    dec_ext.Function = DESKTOP_FORMATS_ID;
-    dec_ext.pPrivateInputData =  &param_size;
-    dec_ext.PrivateInputDataSize = sizeof(DESKTOP_PARAM_STRUCT_SIZE);
-
-    dec_ext.pPrivateOutputData = desktop_format;
-    dec_ext.PrivateOutputDataSize = sizeof(DESKTOP_FORMAT) * count; //Not sure about multiplying by count
-
-    hr = pD11VideoContext->DecoderExtension(m_pDecoder, &dec_ext);
-    if (FAILED(hr))
-    {
-        delete []desktop_format;
-        return MFX_ERR_DEVICE_FAILED;
-    }
-
-    for (mfxU32 i= 0; i < count; i++)
-    {
-        if(desktop_format[i].DesktopFormat == DXGI_FORMAT_NV12)
-        {
-            if (h <= desktop_format[i].MaxHeight &&
-                w <= desktop_format[i].MaxWidth)
-            {
-                delete []desktop_format;
-                return MFX_ERR_NONE;
-            }
-
-        }
-    }
-    
-    delete []desktop_format;
-    return MFX_ERR_UNSUPPORTED;
-
-}
-
-mfxStatus MFXScreenCapture_Plugin::QueryStatus()
-{
-    HRESULT hr;
-    D3D11_VIDEO_DECODER_EXTENSION dec_ext =  {0};
-    DESKTOP_PARAM_STRUCT_SIZE param_size = {0};
-    DESKTOP_QUERY_STATUS_PARAMS pQuaryParams[QUERY_SIZE];
-
-    param_size.SizeOfParamStruct = QUERY_SIZE;
-
-    dec_ext.Function = DESKTOP_QUERY_STATUS_ID;
-    dec_ext.pPrivateInputData =  &param_size;
-    dec_ext.PrivateInputDataSize = sizeof(DESKTOP_PARAM_STRUCT_SIZE);
-
-    dec_ext.pPrivateOutputData =  pQuaryParams;
-    dec_ext.PrivateOutputDataSize = sizeof(DESKTOP_QUERY_STATUS_PARAMS)*QUERY_SIZE;
-
-    hr = m_pD11VideoContext->DecoderExtension(m_pDecoder, &dec_ext);
-    if (FAILED(hr))
-    {
-        return MFX_ERR_DEVICE_FAILED;
-    }
-
-    for (mfxU32 i=0; i < QUERY_SIZE; i++)
-    {
-        if (pQuaryParams[i].uStatus == 0 || pQuaryParams[i].uStatus == 3)
-            m_StatusList.push_back(pQuaryParams[i]);
-    }
     return MFX_ERR_NONE;
 }
 
@@ -824,5 +500,7 @@ mfxStatus MFXScreenCapture_Plugin::GetVideoParam(mfxVideoParam *par)
     par->mfx = m_CurrentPar.mfx;
 
     return MFX_ERR_NONE;
+
+}
 
 }

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2015 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_screen_capture_plugin.h
 
@@ -13,28 +13,17 @@ File Name: mfx_screen_capture_plugin.h
 #if !defined(__MFX_SCREEN_CAPTURE_PLUGIN_H__)
 #define __MFX_SCREEN_CAPTURE_PLUGIN_H__
 
-#include <list>
 #include <atlbase.h>
-#include <d3d11.h>
 #include <memory>
 #include "mfxplugin++.h"
+#include "mfx_screen_capture_ddi.h"
 
-typedef struct tagDESKTOP_QUERY_STATUS_PARAMS  
+namespace MfxCapture
 {
-    UINT    StatusReportFeedbackNumber;
-    UINT    uStatus;
-} DESKTOP_QUERY_STATUS_PARAMS;
 
 class MFXScreenCapture_Plugin: public MFXDecoderPlugin
 {
 public:
-
-    struct AsyncParams
-    {
-        mfxFrameSurface1 *surface_work;
-        mfxFrameSurface1 *surface_out;
-        mfxU32 StatusReportFeedbackNumber;
-    };
 
     static MFXDecoderPlugin* Create() {
         return new MFXScreenCapture_Plugin(false);
@@ -129,12 +118,7 @@ protected:
     std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > m_adapter;
 
     mfxStatus DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out);
-    mfxStatus CreateVideoAccelerator(mfxU16& SampleWidth, mfxU16& SampleHeight, DXGI_FORMAT& OutputFormat);
     mfxStatus CheckFrameInfo(mfxFrameInfo *info);
-    mfxStatus BeginFrame(mfxMemId   MemId, ID3D11VideoDecoderOutputView *pOutputView);
-    mfxStatus GetDesktopScreenOperation(mfxFrameSurface1 *surface_work);
-    mfxStatus CheckCapabilities(CComQIPtr<ID3D11VideoContext>& pD11VideoContext, mfxU16& w, mfxU16& h);
-    mfxStatus QueryStatus();
 
     mfxVideoParam       m_CurrentPar;
     mfxVideoParam       m_InitPar; //for Reset() func impl
@@ -145,15 +129,7 @@ protected:
 
     mfxU32              m_StatusReportFeedbackNumber;
 
-    CComPtr<ID3D11Device>            m_pD11Device;
-    CComPtr<ID3D11DeviceContext>     m_pD11Context;
-
-    CComQIPtr<ID3D11VideoDevice>     m_pD11VideoDevice;
-    CComQIPtr<ID3D11VideoContext>    m_pD11VideoContext;
-
-
-    // we own video decoder, let using com pointer 
-    CComPtr<ID3D11VideoDecoder>      m_pDecoder;
+    std::auto_ptr<Capturer>         m_pCapturer;
 
     std::list<DESKTOP_QUERY_STATUS_PARAMS> m_StatusList;
 
@@ -164,5 +140,7 @@ protected:
 #else
 #define MSDK_PLUGIN_API(ret_type) extern "C"  ret_type  __cdecl
 #endif
+
+} //namespace MfxCapture
 
 #endif
