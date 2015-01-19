@@ -301,8 +301,9 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(SkipMotionPartition);
     SERIALIZE_INT(SkipCandRD);
     SERIALIZE_INT(FramesInParallel);
-    SERIALIZE_INT(BRefSymmetric);
+    SERIALIZE_INT(AdaptiveRefs);
     SERIALIZE_INT(FastCoeffCost);
+    SERIALIZE_INT(NumRefFrameB);
 }
 
 void MFXStructureRef <mfxExtHEVCTiles>::ConstructValues() const

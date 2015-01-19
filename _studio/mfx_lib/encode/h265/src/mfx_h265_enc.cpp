@@ -230,7 +230,10 @@ namespace H265Enc {
         pars->NumRefToStartCodeBSlice = 1;
         pars->TreatBAsReference = 0;
         pars->GeneralizedPB = (optsHevc->GPB == MFX_CODINGOPTION_ON);
-        pars->BRefSymmetric = (optsHevc->BRefSymmetric == MFX_CODINGOPTION_ON);
+        pars->AdaptiveRefs = (optsHevc->AdaptiveRefs == MFX_CODINGOPTION_ON);
+        pars->NumRefFrameB  = optsHevc->NumRefFrameB;
+        if(pars->NumRefFrameB<2) 
+            pars->NumRefFrameB = param->mfx.NumRefFrame;
 
         pars->MaxDecPicBuffering = MAX(param->mfx.NumRefFrame, pars->BiPyramidLayers);
         pars->MaxRefIdxP[0] = param->mfx.NumRefFrame;
@@ -244,15 +247,10 @@ namespace H265Enc {
                 pars->MaxRefIdxB[1] = 2;
             }
             else if (pars->BiPyramidLayers > 1) {
-            if(pars->BRefSymmetric) {
-                pars->MaxRefIdxB[0] = IPP_MAX(1, param->mfx.NumRefFrame >> 1);
-                pars->MaxRefIdxB[1] = IPP_MAX(1, param->mfx.NumRefFrame >> 1);
+                Ipp16u NumRef = IPP_MIN(pars->NumRefFrameB, param->mfx.NumRefFrame);
+                pars->MaxRefIdxB[0] = (NumRef + 1) / 2;
+                pars->MaxRefIdxB[1] = IPP_MAX(1, (NumRef + 0) / 2);
             } else {
-                pars->MaxRefIdxB[0] = (param->mfx.NumRefFrame + 1) / 2;
-                pars->MaxRefIdxB[1] = IPP_MAX(1, (param->mfx.NumRefFrame + 0) / 2);
-            }
-            }
-            else {
                 pars->MaxRefIdxB[0] = param->mfx.NumRefFrame - 1;
                 pars->MaxRefIdxB[1] = 1;
             }
@@ -1463,7 +1461,7 @@ void MFXVideoENCODEH265::CreateRefPicList(Task *task, H265ShortTermRefPicSet *rp
         currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxP[1]);
     }
     else if (currFrame->m_picCodeType == MFX_FRAMETYPE_B) {
-#ifdef AMT_BEST_REF
+#ifdef AMT_BEST_REF_ASYM
         if(m_videoParam.BiPyramidLayers > 1 && m_videoParam.MaxRefIdxB[0]>m_videoParam.MaxRefIdxB[1] && numStBefore<=numStAfter) {
             currFrame->m_refPicList[0].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[1]);
             currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[0]);
@@ -2098,7 +2096,6 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
             }
 
             ctb_addr = ctb_row * pars->PicWidthInCtbs + ctb_col;
-
             firstIter = false;
             tile_id = 0;
             if (!m_pps.entropy_coding_sync_enabled_flag) {

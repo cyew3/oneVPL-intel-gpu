@@ -332,12 +332,23 @@ void RDOQuant<PixType>::DoAlgorithm(
     const Ipp32s qshift = 1 << (qbits - 1);
 #ifdef AMT_DZ_RDOQ
     Ipp32s qshiftOff = qshift;
-    if(is_slice_i || is_blk_i) {
-        qshiftOff = qshift;
-    } else if(m_pCU->m_cslice->slice_type == B_SLICE && !m_pCU->m_currFrame->m_isRef) {
-        qshiftOff = (Ipp32s)(0.60*(double)(qshift));    // Non Ref only
-    } else {
-        qshiftOff = (Ipp32s)(0.76*(double)(qshift));    // laplacian centroid (safe for inter coding)
+#ifdef AMT_DZ_PDRDOQ
+    if(!m_pCU->m_par->RDOQFlag) {
+        if(is_slice_i) {
+            qshiftOff = qshift;
+        } else {
+            qshiftOff = (Ipp32s)(0.66*(double)(qshift));    // Match RD (base) DZ
+        }
+    } else
+#endif
+    {
+        if(is_slice_i || is_blk_i) {
+            qshiftOff = qshift;
+        } else if(m_pCU->m_cslice->slice_type == B_SLICE && !m_pCU->m_currFrame->m_isRef) {
+            qshiftOff = (Ipp32s)(0.60*(double)(qshift));    // Non Ref only
+        } else {
+            qshiftOff = (Ipp32s)(0.76*(double)(qshift));    // laplacian centroid (safe for inter coding)
+        }
     }
 #endif
     const Ipp8u  qp_rem = h265_qp_rem[QP];

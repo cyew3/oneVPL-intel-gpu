@@ -1805,7 +1805,7 @@ void H265CU<PixType>::GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp3
     static float lmt_sc2[10]   =   {16.0, 81.0, 225.0, 529.0, 1024.0, 1764.0, 2809.0, 4225.0, 6084.0, (float)INT_MAX}; // lower limit of SFM(Rs,Cs) range for spatial classification
     Ipp32s scVal = 5;
     for(Ipp32s i = 0;i<10;i++) {
-        if(SCpp < lmt_sc2[i])  {
+        if(SCpp < lmt_sc2[i]*(float)(1<<(m_par->bitDepthLumaShift*2)))  {
             scVal   =   i;
             break;
         }
@@ -1859,7 +1859,7 @@ Ipp32s H265CU<PixType>::GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s de
     float SCpp = Rs2pp+Cs2pp;
     static float lmt_sc2[10]   =   {16.0, 81.0, 225.0, 529.0, 1024.0, 1764.0, 2809.0, 4225.0, 6084.0, (float)INT_MAX}; // lower limit of SFM(Rs,Cs) range for spatial classification
     for(Ipp32s i = 0;i<10;i++) {
-        if(SCpp < lmt_sc2[i]) {
+        if(SCpp < lmt_sc2[i]*(float)(1<<(m_par->bitDepthLumaShift*2))) {
             scVal   =   i;
             break;
         }
@@ -5493,10 +5493,10 @@ void H265CU<PixType>::MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, c
     Ipp32s bestmvCostHalf = *mvCost;
     H265MV bestmvHalf = *mv;
 
-    costFast = costFunc(src, pitchSrc, tmpSubMem[3], memPitch, w, h);
+    costFast = costFunc(src, pitchSrc, tmpSubMem[3], memPitch, w, h)>> costShift;
     CompareFastCosts(costFast, bestFastCost, 3, 1, bestHalf, bestmvCostHalf, bestmvHalf);
 
-    costFast = costFunc(src, pitchSrc, tmpSubMem[7],     memPitch, w, h);
+    costFast = costFunc(src, pitchSrc, tmpSubMem[7],     memPitch, w, h)>> costShift;
     CompareFastCosts(costFast, bestFastCost, 7, 1, bestHalf, bestmvCostHalf, bestmvHalf);
 
     // interpolate vertical halfpels
@@ -5513,10 +5513,10 @@ void H265CU<PixType>::MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, c
     tmpSubMem[1] = predBuf02;
     tmpSubMem[5] = predBuf02 + memPitch;
 
-    costFast = costFunc(src, pitchSrc, tmpSubMem[1],             memPitch, w, h);
+    costFast = costFunc(src, pitchSrc, tmpSubMem[1],             memPitch, w, h)>> costShift;
     CompareFastCosts(costFast, bestFastCost, 1, 1, bestHalf, bestmvCostHalf, bestmvHalf);
 
-    costFast = costFunc(src, pitchSrc, tmpSubMem[5],  memPitch, w, h);
+    costFast = costFunc(src, pitchSrc, tmpSubMem[5],  memPitch, w, h)>> costShift;
     CompareFastCosts(costFast, bestFastCost, 5, 1, bestHalf, bestmvCostHalf, bestmvHalf);
 
     H265MV mvBest = *mv;
@@ -5547,16 +5547,16 @@ void H265CU<PixType>::MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, c
         tmpSubMem[4] = tmpSubMem[0] + 1 + memPitch;
         tmpSubMem[6] = tmpSubMem[0] + memPitch;
 
-        costFast = costFunc(src, pitchSrc, tmpSubMem[0],                 memPitch, w, h);
+        costFast = costFunc(src, pitchSrc, tmpSubMem[0],                 memPitch, w, h)>> costShift;
         CompareFastCosts(costFast, bestFastCost, 0, 1, bestHalf, bestmvCostHalf, bestmvHalf);
 
-        costFast     = costFunc(src, pitchSrc, tmpSubMem[2],             memPitch, w, h);
+        costFast = costFunc(src, pitchSrc, tmpSubMem[2],             memPitch, w, h)>> costShift;
         CompareFastCosts(costFast, bestFastCost, 2, 1, bestHalf, bestmvCostHalf, bestmvHalf);
 
-        costFast = costFunc(src, pitchSrc, tmpSubMem[4],  memPitch, w, h);
+        costFast = costFunc(src, pitchSrc, tmpSubMem[4],  memPitch, w, h)>> costShift;
         CompareFastCosts(costFast, bestFastCost, 4, 1, bestHalf, bestmvCostHalf, bestmvHalf);
 
-        costFast = costFunc(src, pitchSrc, tmpSubMem[6],  memPitch, w, h);
+        costFast = costFunc(src, pitchSrc, tmpSubMem[6],  memPitch, w, h)>> costShift;
         CompareFastCosts(costFast, bestFastCost, 6, 1, bestHalf, bestmvCostHalf, bestmvHalf);
 
         MemHadGetBuf(size, bestmvHalf.mvx&3, bestmvHalf.mvy&3, refIdxMem, &bestmvHalf, satd8);
@@ -6280,7 +6280,7 @@ void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *pr
         case SUBPEL_BOX:            // more points with square patterns
 #ifdef MEMOIZE_SUBPEL
             if(m_par->hadamardMe >= 2) {
-                if((meInfo->width == m_par->MaxCUSize && meInfo->width == meInfo->height) || MemHadFirst(size, meInfo, refIdxMem)) {
+                if(meInfo->width == meInfo->height && (meInfo->width == m_par->MaxCUSize || MemHadFirst(size, meInfo, refIdxMem))) {
                     return MemSubPelBatchedBox(meInfo, predInfo, ref, mv, cost, mvCost, refIdxMem, size);
                 } else if(MemSubpelInRange(size, meInfo, refIdxMem, mv)) {
                     pattern_index[0][1] = pattern_index[0][0] =  pattern_index[0][1] = pattern_index[1][0] = 1;
@@ -6305,7 +6305,7 @@ void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *pr
             pattern_index[1][0] = pattern_index[0][0] = 0;
             pattern_index[1][1] = 2;
             if(m_par->hadamardMe == 2) {
-                if((meInfo->width == m_par->MaxCUSize && meInfo->width == meInfo->height) || MemHadFirst(size, meInfo, refIdxMem)) {
+                if(meInfo->width == meInfo->height && (meInfo->width == m_par->MaxCUSize || MemHadFirst(size, meInfo, refIdxMem))) {
                     return MemSubPelBatchedFastBoxDiaOrth(meInfo, predInfo, ref, mv, cost, mvCost, refIdxMem, size);
                 } else if(!MemSubpelInRange(size, meInfo, refIdxMem, mv) && meInfo->width == meInfo->height) {
                     return MemSubPelBatchedFastBoxDiaOrth(meInfo, predInfo, ref, mv, cost, mvCost, refIdxMem, size);
@@ -7156,46 +7156,39 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
     for (Ipp32s list = 0; list < numLists; list++) {
 #endif
         Ipp32s numRefIdx = m_cslice->num_ref_idx[list];
-
-#ifdef AMT_BEST_REF
-        Ipp8u bestRefLayer= m_par->BiPyramidLayers;
-        Ipp8u minRefIdx   = MAX_NUM_REF_IDX;
-        if(m_par->BiPyramidLayers > 1) {
-            if(m_currFrame->m_pyramidLayer==0 && m_par->BRefSymmetric && m_par->MaxRefIdxP[0] > m_par->MaxRefIdxB[0]+m_par->MaxRefIdxB[1]) {
-                // BRefSymmetric usually allows larger (odd num) Refs to P/GPB. This keeps compute same by choosing the best ref.
-                minRefIdx = m_par->MaxRefIdxB[0]+m_par->MaxRefIdxB[1] -2;
-                for (Ipp8s refIdx = minRefIdx+1; refIdx < numRefIdx; refIdx++) {
-                    Ipp8u RefLayer = refPicList[list].m_refFrames[refIdx]->m_pyramidLayer;
-                    if(RefLayer<bestRefLayer) bestRefLayer = RefLayer;
+        // Stable Order and conditional exits
+        Ipp8s refOrder[MAX_NUM_REF_IDX][2]={{0,0},{1,-1},{2,-1},{3,-1}};
+        if(m_par->AdaptiveRefs) {
+            for (Ipp8s refIdx = 0; refIdx < numRefIdx; refIdx++) {
+                refOrder[refIdx][1] = refPicList[list].m_refFrames[refIdx]->m_pyramidLayer;
+                costRefBest[list][refIdx] = INT_MAX;
+            }
+            for (Ipp8s i = 2; i < numRefIdx; i++) {
+                Ipp8u il = refOrder[i][1];
+                Ipp8u j = i;
+                while(j>1 && refOrder[j-1][1] > il) {
+                    refOrder[j][1] = refOrder[j-1][1];
+                    refOrder[j][0] = refOrder[j-1][0];
+                    j--;
                 }
-            } else if(!m_currFrame->m_isRef) {
-                // Generic Improvement
-                if(numRefIdx>1) {
-                    minRefIdx=0;
-                    for(Ipp8s refIdx = 0; refIdx < numRefIdx; refIdx++) {
-                        Ipp8u RefLayer = refPicList[list].m_refFrames[refIdx]->m_pyramidLayer;
-                        if(RefLayer<bestRefLayer) bestRefLayer = RefLayer;
-                    }
-                }
+                refOrder[j][1] = il;
+                refOrder[j][0] = i;
             }
         }
-#endif
-        for (Ipp8s refIdx = 0; refIdx < numRefIdx; refIdx++) {
+        bool searchRef = true;
+
+        Ipp8s refIdx;
+        for (Ipp8s refIter = 0; refIter < numRefIdx && searchRef; refIter++) {
+            refIdx = refOrder[refIter][0];
             const MvPredInfo<2> *amvp = m_amvpCand[curPUidx] + 2 * refIdx + list;
             costRefBest[list][refIdx] = INT_MAX;
-#ifdef AMT_BEST_REF
-            if(refIdx>minRefIdx) {
-                Ipp8u RefLayer = (m_par->BiPyramidLayers > 1) ? refPicList[list].m_refFrames[refIdx]->m_pyramidLayer : 0;
-                if(RefLayer>bestRefLayer) continue;
-            }
-#endif
+
+            if(!m_currFrame->m_isRef && refIter && refOrder[refIter][1]>=refOrder[0][1]) 
+                continue;
+
             if (list == 1) { 
                 Ipp32s idx0 = m_currFrame->m_mapRefIdxL1ToL0[refIdx];
-#ifdef AMT_BEST_REF
                 if (idx0 >= 0 && costRefBest[0][idx0]!=INT_MAX) {
-#else
-                if (idx0 >= 0) {
-#endif
                     // don't do ME just re-calc costs
                     mvRefBest[1][refIdx] = mvRefBest[0][idx0];
                     mvCostRefBest[1][refIdx] = MvCost1RefLog(mvRefBest[0][idx0], amvp);
@@ -7206,8 +7199,11 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
                     costRefBest[1][refIdx] -= (Ipp32s)(bitsRefBest[0][idx0] * m_rdLambdaSqrt + 0.5);
                     costRefBest[1][refIdx] += mvCostRefBest[1][refIdx];
                     costRefBest[1][refIdx] += (Ipp32s)(bitsRefBest[1][refIdx] * m_rdLambdaSqrt + 0.5);
-                    if (costRefBest[1][refIdxBest[1]] > costRefBest[1][refIdx])
+                    if (costRefBest[1][refIdxBest[1]] > costRefBest[1][refIdx]) {
                         refIdxBest[1] = refIdx;
+                    } else if(refIter && refOrder[refIter][1]>refOrder[0][1]) {
+                        searchRef = false;
+                    }
                     continue;
                 }
             }
@@ -7234,7 +7230,8 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
 #ifdef MEMOIZE_CAND_SUBPEL
                 const PixType *predBuf;
                 Ipp32s memPitch;
-                if(MemCandUseSubpel(meInfo, list, &refIdx, &mv, predBuf, memPitch)) {
+                Ipp8s refsArr[2] = {refIdx, refIdx};
+                if(MemCandUseSubpel(meInfo, list, refsArr, &mv, predBuf, memPitch)) {
                     cost = MatchingMetricPuUse(src, meInfo, &mv, ref, useHadamard, predBuf, memPitch);
 #ifdef MEMOIZE_CAND_SUBPEL_TEST
                     Ipp32s testcost = MatchingMetricPu(src, meInfo, &mv, ref, useHadamard);
@@ -7335,8 +7332,11 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
             bitsRefBest[list][refIdx] = MVP_LX_FLAG_BITS + predIdxBits[list];
             bitsRefBest[list][refIdx] += GetFlBits(refIdx, numRefIdx);
             costRefBest[list][refIdx] += (Ipp32s)(bitsRefBest[list][refIdx] * m_rdLambdaSqrt + 0.5);
-            if (costRefBest[list][refIdxBest[list]] > costRefBest[list][refIdx])
+            if (costRefBest[list][refIdxBest[list]] > costRefBest[list][refIdx]) {
                 refIdxBest[list] = refIdx;
+            } else if(refIter && refOrder[refIter][1]>refOrder[0][1]) {
+                searchRef = false;
+            }
         }
     }
 

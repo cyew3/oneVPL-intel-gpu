@@ -231,9 +231,10 @@ typedef struct {
     mfxU16      SkipMotionPartition;          // 0-default, 1-never, 2-Adaptive
     mfxU16      SkipCandRD;         // on-Full RD, off-fast decision
     mfxU16      FramesInParallel;   // number of frames for encoding at the same time (0 - auto detect, 1 - default, no frame threading).
-    mfxU16      BRefSymmetric;      // on / off
+    mfxU16      AdaptiveRefs;      // on / off
     mfxU16      FastCoeffCost;
-    mfxU16      reserved[51];       // 256 bytes total
+    mfxU16      NumRefFrameB;       // 0-1-default, 2+ use given
+    mfxU16      reserved[50];       // 256 bytes total
 } mfxExtCodingOptionHEVC;
 
 #if defined (ADVANCED_REF)

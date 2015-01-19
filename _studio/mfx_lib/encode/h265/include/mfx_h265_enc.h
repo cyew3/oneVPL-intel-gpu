@@ -98,10 +98,11 @@ struct H265VideoParam {
     Ipp8u  FastAMPRD;       // 0-default, 1-never, 2-Adaptive Fast Decision 
     Ipp8u  SkipMotionPartition;  // 0-default, 1-never, 2-Adaptive
     Ipp8u  SkipCandRD;       // on: Do Full RD /off : do Fast decision 
-    Ipp8u  BRefSymmetric;    // on: Always symmetric list for B Frames
-    Ipp16u cmIntraThreshold;// 0-no theshold
-    Ipp16u tuSplitIntra;    // 0-default; 1-always; 2-never; 3-for Intra frames only
-    Ipp16u cuSplit;         // 0-default; 1-always; 2-check Skip cost first
+    Ipp8u  AdaptiveRefs;     // on: Adaptive Search for best ref
+    Ipp8u  NumRefFrameB;     // 0,1-default, 2+ Use Given
+    Ipp16u cmIntraThreshold; // 0-no theshold
+    Ipp16u tuSplitIntra;     // 0-default; 1-always; 2-never; 3-for Intra frames only
+    Ipp16u cuSplit;          // 0-default; 1-always; 2-check Skip cost first
     Ipp16u intraAngModes[4];   // Intra Angular modes: [0] I slice, [1] - P, [2] - B Ref, [3] - B non Ref
                                //values for each: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100-disable (prohibited for I slice)
 

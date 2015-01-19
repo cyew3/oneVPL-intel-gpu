@@ -178,8 +178,9 @@ namespace H265Enc {
     tab_##mode##_SkipMotionPartition[x],\
     tab_##mode##_SkipCandRD[x],\
     tab_##mode##_FramesInParallel[x],\
-    tab_##mode##_BRefSymmetric[x],\
+    tab_##mode##_AdaptiveRefs[x],\
     tab_##mode##_FastCoeffCost[x],\
+    tab_##mode##_NumRefFrameB[x],\
     tab_##mode##_NumTileCols[x],\
     tab_##mode##_NumTileRows[x],\
     }
@@ -397,24 +398,19 @@ namespace H265Enc {
 
     TU_OPT_GACC(GPB,                          OFF, OFF, OFF, OFF, OFF, OFF, OFF);
     TU_OPT_ALL (BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
-#ifdef AMT_SYM_BREF
-    TU_OPT_ALL (BRefSymmetric,                OFF, OFF, OFF,  OFF,  ON,  ON,  ON);
-    TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,   ON,  ON,  OFF);
-#else
-    TU_OPT_ALL (BRefSymmetric,                OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-    TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
-#endif
+
+    TU_OPT_ALL (AdaptiveRefs,                  ON,  ON,  ON,  ON,  ON,  ON,  ON);
+    TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON,  ON,  OFF);
 
     TU_OPT_ALL (NumTileCols,                    1,   1,   1,   1,   1,   1,   1);
     TU_OPT_ALL (NumTileRows,                    1,   1,   1,   1,   1,   1,   1);
 
+    TU_OPT_SW  (NumRefFrameB,                   0,   0,   3,   3,   2,   2,   2);
+    TU_OPT_GACC(NumRefFrameB,                   0,   0,   0,   0,   0,   0,   0);
+
     Ipp8u tab_tuGopRefDist [8] = {8, 8, 8, 8, 8, 8, 8, 8};
 #ifdef AMT_SETTINGS
-#ifdef AMT_SYM_BREF
-    Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 3, 3, 3, 3, 3};
-#else
-    Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 3, 3, 2, 2, 2};
-#endif
+    Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 4, 4, 3, 3, 3};
 #else
     Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 4, 3, 3, 2, 2};
 #endif
@@ -1054,8 +1050,10 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.SkipMotionPartition = opts_tu->SkipMotionPartition;
         if (m_mfxHEVCOpts.SkipCandRD == 0)
             m_mfxHEVCOpts.SkipCandRD = opts_tu->SkipCandRD;
-        if (m_mfxHEVCOpts.BRefSymmetric == 0)
-            m_mfxHEVCOpts.BRefSymmetric = opts_tu->BRefSymmetric;
+        if (m_mfxHEVCOpts.AdaptiveRefs == 0)
+            m_mfxHEVCOpts.AdaptiveRefs = opts_tu->AdaptiveRefs;
+        if (m_mfxHEVCOpts.NumRefFrameB == 0)
+            m_mfxHEVCOpts.NumRefFrameB = opts_tu->NumRefFrameB;
         if (m_mfxHEVCOpts.CmIntraThreshold == 0)
             m_mfxHEVCOpts.CmIntraThreshold = opts_tu->CmIntraThreshold;
         if (m_mfxHEVCOpts.TUSplitIntra == 0)
@@ -1618,8 +1616,9 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.SkipMotionPartition          ) optsNew.SkipMotionPartition           = optsOld.SkipMotionPartition          ;
         if (!optsNew.SkipCandRD                   ) optsNew.SkipCandRD                    = optsOld.SkipCandRD                   ;
         if (!optsNew.FramesInParallel             ) optsNew.FramesInParallel              = optsOld.FramesInParallel             ;
-        if (!optsNew.BRefSymmetric                ) optsNew.BRefSymmetric                 = optsOld.BRefSymmetric                ;
+        if (!optsNew.AdaptiveRefs                 ) optsNew.AdaptiveRefs                  = optsOld.AdaptiveRefs                 ;
         if (!optsNew.FastCoeffCost                ) optsNew.FastCoeffCost                 = optsOld.FastCoeffCost                ;
+        if (!optsNew.NumRefFrameB                 ) optsNew.NumRefFrameB                  = optsOld.NumRefFrameB                 ;
     }
 
     mfxExtHEVCTiles optsTilesNew;
@@ -1811,8 +1810,9 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 optsHEVC->SkipMotionPartition = 1;
                 optsHEVC->SkipCandRD = 1;
                 optsHEVC->FramesInParallel = 1;
-                optsHEVC->BRefSymmetric = 1;
+                optsHEVC->AdaptiveRefs = 1;
                 optsHEVC->FastCoeffCost = 1;
+                optsHEVC->NumRefFrameB = 1;
             }
 
             mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
@@ -2238,7 +2238,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 CHECK_OPTION(opts_in->MaxCUDepthAdapt, opts_out->MaxCUDepthAdapt, isInvalid);  /* tri-state option */
                 CHECK_OPTION(opts_in->Enable10bit, opts_out->Enable10bit, isInvalid);  /* tri-state option */
                 CHECK_OPTION(opts_in->SkipCandRD, opts_out->SkipCandRD, isInvalid);  /* tri-state option */
-                CHECK_OPTION(opts_in->BRefSymmetric, opts_out->BRefSymmetric, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->AdaptiveRefs, opts_out->AdaptiveRefs, isInvalid);  /* tri-state option */
                 CHECK_OPTION(opts_in->FastCoeffCost, opts_out->FastCoeffCost, isInvalid);  /* tri-state option */
 
 

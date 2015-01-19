@@ -72,12 +72,11 @@ namespace H265Enc {
 #define AMT_ALT_ENCODE
 #ifdef AMT_ALT_ENCODE
 #define AMT_ALT_ENCODE_OPT
+#define AMT_DZ_PDRDOQ
 #endif
 #define AMT_SAO_MIN
 #define AMT_MIN_DEPTH_FIX
 #define AMT_ADAPTIVE_TU_DEPTH
-#define AMT_SYM_BREF
-#define AMT_BEST_REF
 #define AMT_FIX_CHROMA_SKIP
 #define AMT_USE_IPP
 #define AMT_COEFF_COST_EST
