@@ -130,15 +130,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
-#define SETPARS(p, type)\
-for(mfxU32 i = 0; i < n_par; i++) \
-{ \
-    if(tc.set_par[i].f && tc.set_par[i].ext_type == type) \
-    { \
-        tsStruct::set(p, *tc.set_par[i].f, tc.set_par[i].v); \
-    } \
-}
-
 class BsDump : public tsBitstreamProcessor, tsParserH264AU
 {
     mfxU32 n_frame;

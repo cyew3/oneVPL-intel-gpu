@@ -56,15 +56,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}}},
 };
 
-#define SETPARS(p, type)\
-for(mfxU32 i = 0; i < n_par; i++) \
-{ \
-    if(tc.set_par[i].f && tc.set_par[i].ext_type == type) \
-    { \
-        tsStruct::set(p, *tc.set_par[i].f, tc.set_par[i].v); \
-    } \
-}
-
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
 class CRC32 : public tsSurfaceProcessor

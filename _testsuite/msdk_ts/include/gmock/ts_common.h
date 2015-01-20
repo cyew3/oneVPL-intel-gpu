@@ -104,6 +104,15 @@ extern tsStreamPool g_tsStreamPool;
 
 #define TS_HW_ALLOCATOR_TYPE (!!((g_tsImpl) & 0xF00) ? frame_allocator::HARDWARE_DX11 : frame_allocator::HARDWARE)
 
+#define SETPARS(p, type)\
+for(mfxU32 i = 0; i < 5; i++) \
+{ \
+    if(tc.set_par[i].f && tc.set_par[i].ext_type == type) \
+    { \
+        tsStruct::set(p, *tc.set_par[i].f, tc.set_par[i].v); \
+    } \
+}
+
 std::string ENV(const char* name, const char* def);
 
 bool operator == (const mfxFrameInfo&, const mfxFrameInfo&);
