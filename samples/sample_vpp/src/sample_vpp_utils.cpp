@@ -1095,6 +1095,7 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
         pResources->compositeConfig.Header.BufferSz = sizeof(mfxExtVPPComposite);
         pResources->compositeConfig.NumInputStream  = pParams->numStreams;
         pResources->compositeConfig.InputStream     = new mfxVPPCompInputStream[pResources->compositeConfig.NumInputStream];
+        memset(pResources->compositeConfig.InputStream, 0, sizeof(mfxVPPCompInputStream) * pResources->compositeConfig.NumInputStream);
 
         for (int i = 0; i < pResources->compositeConfig.NumInputStream; i++)
         {

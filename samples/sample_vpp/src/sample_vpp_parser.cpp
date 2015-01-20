@@ -86,7 +86,6 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 #ifdef LIBVA_SUPPORT
     msdk_printf(MSDK_STRING("\n   [-vaapi]                - work with vaapi surfaces\n"));
 #endif
-#if !defined(_WIN32) && !defined(_WIN64)
     msdk_printf(MSDK_STRING("   [-composite parameters_file] - composite several input files in one output. The syntax of the parameters file is:\n"));
     msdk_printf(MSDK_STRING("                                  stream=<video file name>\n"));
     msdk_printf(MSDK_STRING("                                  width=<input video width>\n"));
@@ -142,7 +141,6 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                                  LumaKeyEnable=1\n"));
     msdk_printf(MSDK_STRING("                                  LumaKeyMin=250\n"));
     msdk_printf(MSDK_STRING("                                  LumaKeyMax=255\n"));
-#endif //#if !defined(_WIN32) && !defined(_WIN64)
 
     msdk_printf(MSDK_STRING("\n"));
 
@@ -305,8 +303,7 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
         {
             pParams->compositionParam.streamInfo[nStreamInd].compStream.GlobalAlphaEnable = (mfxU16) atoi(value.c_str());
         }
-        else if ((key.compare("GlobalAlpha") == 0) &&
-               (pParams->compositionParam.streamInfo[nStreamInd].compStream.GlobalAlphaEnable != 0))
+        else if (key.compare("GlobalAlpha") == 0)
         {
             pParams->compositionParam.streamInfo[nStreamInd].compStream.GlobalAlpha = (mfxU16) atoi(value.c_str());
         }
@@ -318,13 +315,11 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
         {
             pParams->compositionParam.streamInfo[nStreamInd].compStream.LumaKeyEnable = (mfxU16) atoi(value.c_str());
         }
-        else if ((key.compare("LumaKeyMin") == 0) &&
-                 (pParams->compositionParam.streamInfo[nStreamInd].compStream.LumaKeyEnable != 0))
+        else if (key.compare("LumaKeyMin") == 0)
         {
             pParams->compositionParam.streamInfo[nStreamInd].compStream.LumaKeyMin = (mfxU16) atoi(value.c_str());
         }
-        else if ((key.compare("LumaKeyMax") == 0) &&
-                (pParams->compositionParam.streamInfo[nStreamInd].compStream.LumaKeyEnable != 0))
+        else if (key.compare("LumaKeyMax") == 0)
         {
             pParams->compositionParam.streamInfo[nStreamInd].compStream.LumaKeyMax = (mfxU16) atoi(value.c_str());
         }
