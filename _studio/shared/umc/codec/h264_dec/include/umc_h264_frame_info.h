@@ -113,6 +113,7 @@ public:
         }
 
         m_IsIntraAU = m_IsIntraAU && (sliceHeader.slice_type == INTRASLICE);
+        m_IsIDR = sliceHeader.IdrPicFlag != 0;
         m_isBExist = m_isBExist || (sliceHeader.slice_type == BPREDSLICE);
         m_isPExist = m_isPExist || (sliceHeader.slice_type == PREDSLICE);
 
@@ -198,6 +199,7 @@ public:
 
         m_IsReferenceAU = false;
         m_IsIntraAU = true;
+        m_IsIDR = false;
         m_isPExist = false;
         m_isBExist = false;
         m_IsBottomField = false;
@@ -369,6 +371,7 @@ public:
 
     bool m_isBExist;
     bool m_isPExist;
+    bool m_IsIDR;
 
     void IncreaseRefPicList(size_t newSize)  // DEBUG !!! temporal solution
     {

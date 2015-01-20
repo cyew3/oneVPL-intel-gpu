@@ -1483,6 +1483,48 @@ void VideoDECODEH264::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
 
     mfxFrameSurface1 *surface_out = *surf_out;
 
+    mfxExtDecodedFrameInfo * frameType = (mfxExtDecodedFrameInfo *)GetExtBuffer(surface_out->Data.ExtParam, surface_out->Data.NumExtParam, MFX_EXTBUFF_DECODED_FRAME_INFO);
+    if (frameType)
+    {
+        if (pFrame->GetAU(0)->IsIntraAU())
+        {
+            frameType->FrameType = MFX_FRAMETYPE_I;
+            if (pFrame->GetAU(0)->m_IsIDR)
+                frameType->FrameType |= MFX_FRAMETYPE_IDR;
+        }
+        else if (pFrame->GetAU(0)->m_isBExist)
+        {
+            frameType->FrameType = MFX_FRAMETYPE_B;
+        }
+        else
+            frameType->FrameType = MFX_FRAMETYPE_P;
+
+        if (pFrame->GetAU(0)->IsReference())
+            frameType->FrameType |= MFX_FRAMETYPE_REF;
+
+        if (pFrame->GetAU(1)->GetStatus() > H264DecoderFrameInfo::STATUS_NOT_FILLED)
+        {
+            if (pFrame->GetAU(1)->IsIntraAU())
+            {
+                frameType->FrameType |= MFX_FRAMETYPE_xI;
+                if (pFrame->GetAU(1)->m_IsIDR)
+                    frameType->FrameType |= MFX_FRAMETYPE_xIDR;
+            }
+            else if (pFrame->GetAU(1)->m_isBExist)
+            {
+                frameType->FrameType |= MFX_FRAMETYPE_xB;
+            }
+            else
+            {
+                frameType->FrameType |= MFX_FRAMETYPE_xP;
+            }
+
+            if (pFrame->GetAU(1)->IsReference())
+                frameType->FrameType |= MFX_FRAMETYPE_xREF;
+
+        }
+    }
+
     if (IsSVCProfile(m_vFirstPar.mfx.CodecProfile))
     {
         surface_out->Info.FrameId.DependencyId = (mfxU16)pFrame->m_maxDId;
