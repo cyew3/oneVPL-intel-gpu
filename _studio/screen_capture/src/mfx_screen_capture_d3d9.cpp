@@ -16,6 +16,19 @@ File Name: mfx_screen_capture_d3d9.cpp
 namespace MfxCapture
 {
 
+D3DFORMAT MfxFourccToD3dFormat(const mfxU32& fourcc)
+{
+    switch (fourcc)
+    {
+        case MFX_FOURCC_NV12:
+            return D3DFMT_NV12;
+        case MFX_FOURCC_RGB4:
+            return D3DFMT_A8R8G8B8;
+        default:
+            return D3DFMT_UNKNOWN;
+    }
+}
+
 D3D9_Capturer::D3D9_Capturer(mfxCoreInterface* _core)
     :m_pmfxCore(_core)
 {
@@ -36,13 +49,9 @@ mfxStatus D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
 
     mfxU16 width = 0;
     mfxU16 height = 0;
-    D3DFORMAT format = D3DFMT_NV12;
+    D3DFORMAT format = MfxFourccToD3dFormat(par.mfx.FrameInfo.FourCC);
     width  = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
     height = par.mfx.FrameInfo.CropH ? par.mfx.FrameInfo.CropH : par.mfx.FrameInfo.Height;
-    if(MFX_FOURCC_NV12 == par.mfx.FrameInfo.FourCC)
-        format = D3DFMT_NV12;
-    else if(MFX_FOURCC_RGB4 == par.mfx.FrameInfo.FourCC)
-        format = D3DFMT_A8R8G8B8;
 
     mfxRes = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&hdl);
     m_pDirect3DDeviceManager = (IDirect3DDeviceManager9*)hdl;
@@ -259,17 +268,12 @@ mfxStatus D3D9_Capturer::CheckCapabilities(mfxVideoParam const & in, mfxVideoPar
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-        else
-        {
-            if(out)
-            {
-                out->mfx.FrameInfo.FourCC  = 0;
-            }
-            delete []desktop_format;
-            return MFX_ERR_NONE;
-        }
     }
 
+    if(out)
+    {
+        out->mfx.FrameInfo.FourCC  = 0;
+    }
     delete []desktop_format;
     return MFX_ERR_UNSUPPORTED;
 }
@@ -370,7 +374,7 @@ mfxStatus D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_wor
     dec_ext.pPrivateInputData =  &desktop_execute;
     dec_ext.PrivateInputDataSize = sizeof(desktop_execute);
     
-    desktop_execute.DesktopFormat = (DXGI_FORMAT) D3DFMT_NV12;
+    desktop_execute.DesktopFormat = (DXGI_FORMAT) MfxFourccToD3dFormat(surface_work->Info.FourCC);
     desktop_execute.StatusReportFeedbackNumber = ++StatusReportFeedbackNumber;
     desktop_execute.Width = width;
     desktop_execute.Height = height;

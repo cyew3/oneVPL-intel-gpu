@@ -16,6 +16,20 @@ File Name: mfx_screen_capture_d3d11.cpp
 namespace MfxCapture
 {
 
+DXGI_FORMAT MfxFourccToDxgiFormat(const mfxU32& fourcc)
+{
+    switch (fourcc)
+    {
+        case MFX_FOURCC_NV12:
+            return DXGI_FORMAT_NV12;
+        case MFX_FOURCC_RGB4:
+        case DXGI_FORMAT_AYUV:
+            return DXGI_FORMAT_B8G8R8A8_UNORM;
+        default:
+            return DXGI_FORMAT_UNKNOWN;
+    }
+}
+
 D3D11_Capturer::D3D11_Capturer(mfxCoreInterface* _core)
     :m_pmfxCore(_core)
 {
@@ -36,13 +50,9 @@ mfxStatus D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
 
     mfxU16 width = 0;
     mfxU16 height = 0;
-    DXGI_FORMAT format = DXGI_FORMAT_NV12;
+    DXGI_FORMAT format = MfxFourccToDxgiFormat(par.mfx.FrameInfo.FourCC);
     width  = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
     height = par.mfx.FrameInfo.CropH ? par.mfx.FrameInfo.CropH : par.mfx.FrameInfo.Height;
-    if(MFX_FOURCC_NV12 == par.mfx.FrameInfo.FourCC)
-        format = DXGI_FORMAT_NV12;
-    else if(MFX_FOURCC_RGB4 == par.mfx.FrameInfo.FourCC)
-        format = DXGI_FORMAT_B8G8R8A8_UNORM;
 
     mfxRes = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&hdl);
     m_pD11Device = (ID3D11Device*)hdl;
@@ -92,7 +102,12 @@ mfxStatus D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
     //    return MFX_ERR_NONE;
 
     //} 
-    
+
+    /*Note that the format indicated here is the format driver reports for creating decode device (call CheckVideoDecoderFormat() with NV12), 
+    not the format that GetDesktopScreen will output although they may be the same. 
+    The application should query for the supported GetSesktopScreen format after creating the device as described in the flow. */
+    video_desc.OutputFormat = DXGI_FORMAT_NV12;
+
     hres  = m_pD11VideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
     if (FAILED(hres))
         return MFX_ERR_DEVICE_FAILED;
@@ -195,7 +210,8 @@ mfxStatus D3D11_Capturer::CheckCapabilities(mfxVideoParam const & in, mfxVideoPa
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-        else if((desktop_format[i].DesktopFormat == DXGI_FORMAT_B8G8R8A8_UNORM && MFX_FOURCC_RGB4 == in.mfx.FrameInfo.FourCC))
+        else if((desktop_format[i].DesktopFormat == DXGI_FORMAT_B8G8R8A8_UNORM && 
+                (MFX_FOURCC_RGB4 == in.mfx.FrameInfo.FourCC || DXGI_FORMAT_AYUV == in.mfx.FrameInfo.FourCC)))
         {
             if (height <= desktop_format[i].MaxHeight &&
                 width <= desktop_format[i].MaxWidth)
@@ -216,18 +232,13 @@ mfxStatus D3D11_Capturer::CheckCapabilities(mfxVideoParam const & in, mfxVideoPa
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-        else
-        {
-            if(out)
-            {
-                out->mfx.FrameInfo.FourCC  = 0;
-            }
-            delete []desktop_format;
-            return MFX_ERR_NONE;
-        }
-
     }
-    
+
+    if(out)
+    {
+        out->mfx.FrameInfo.FourCC  = 0;
+    }
+
     delete []desktop_format;
     return MFX_ERR_UNSUPPORTED;
 }
@@ -292,7 +303,7 @@ mfxStatus D3D11_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_wo
     DESKTOP_EXECUTE_PARAMS desktop_execute;
 
     memset( &desktop_execute, 0, sizeof(desktop_execute));
-    desktop_execute.DesktopFormat = DXGI_FORMAT_NV12;
+    desktop_execute.DesktopFormat = MfxFourccToDxgiFormat(surface_work->Info.FourCC);;
     desktop_execute.Height = surface_work->Info.Height;
     desktop_execute.Width = surface_work->Info.Width;
     desktop_execute.StatusReportFeedbackNumber = ++StatusReportFeedbackNumber;

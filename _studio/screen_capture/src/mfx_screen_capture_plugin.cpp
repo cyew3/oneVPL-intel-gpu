@@ -97,7 +97,27 @@ mfxStatus MFXScreenCapture_Plugin::GetPluginParam(mfxPluginParam *par)
 mfxStatus MFXScreenCapture_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *, mfxFrameAllocRequest *out)
 {
     MFX_CHECK_NULL_PTR2(par, out);
-    out->Info.FourCC = MFX_FOURCC_NV12;
+    mfxU32  FourCC;
+    if(MFX_FOURCC_NV12 == par->mfx.FrameInfo.FourCC)
+        FourCC = MFX_FOURCC_NV12;
+    else if(MFX_FOURCC_RGB4 == par->mfx.FrameInfo.FourCC)
+    {
+        mfxCoreParam par = {0};
+        mfxStatus mfxRes = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &par);
+        if (MFX_ERR_NONE != mfxRes)
+            return mfxRes;
+        if(MFX_IMPL_VIA_D3D11 == (par.Impl & 0x0F00))
+            FourCC = DXGI_FORMAT_AYUV;
+        else
+            FourCC = MFX_FOURCC_RGB4;
+    }
+    else if(DXGI_FORMAT_AYUV == par->mfx.FrameInfo.FourCC)
+        FourCC = DXGI_FORMAT_AYUV;
+    else
+        return MFX_ERR_UNSUPPORTED;
+
+    out->Info = par->mfx.FrameInfo;
+    out->Info.FourCC = FourCC;
 
     if (par->AsyncDepth)
     {
@@ -200,9 +220,6 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode1(mfxVideoParam& out)
 mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoParam& out, bool onInit)
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
-    mfxU16 width  = 0;
-    mfxU16 height = 0;
-    DXGI_FORMAT format = DXGI_FORMAT_NV12;
 
     //bool warning     = false;
     bool error       = false;
@@ -320,12 +337,22 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         out.mfx.FrameInfo.Height = 0;
         error = true;
     }
-    if(!(in.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 /*|| in.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4*/) )
+    if(!(in.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 || in.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 || in.mfx.FrameInfo.FourCC == DXGI_FORMAT_AYUV) )
     {
         out.mfx.FrameInfo.FourCC = 0;
         error = true;
     }
-    if(in.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
+    if(in.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && in.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
+    {
+        out.mfx.FrameInfo.ChromaFormat = 0;
+        error = true;
+    }
+    if(in.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 && in.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
+    {
+        out.mfx.FrameInfo.ChromaFormat = 0;
+        error = true;
+    }
+    if(in.mfx.FrameInfo.FourCC == DXGI_FORMAT_AYUV && in.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
     {
         out.mfx.FrameInfo.ChromaFormat = 0;
         error = true;
@@ -353,11 +380,6 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
     {
         return MFX_ERR_UNSUPPORTED;
     }
-
-    width  = in.mfx.FrameInfo.CropW ? in.mfx.FrameInfo.CropW : in.mfx.FrameInfo.Width;
-    height = in.mfx.FrameInfo.CropH ? in.mfx.FrameInfo.CropH : in.mfx.FrameInfo.Height;
-    if(MFX_FOURCC_NV12 == in.mfx.FrameInfo.FourCC)
-        format = DXGI_FORMAT_NV12;
 
     if(onInit)
     {
@@ -440,7 +462,6 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
 
     *surface_out = surface_work;
     return MFX_ERR_NONE;
-    
 }
 
 mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a)
