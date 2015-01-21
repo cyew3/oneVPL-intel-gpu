@@ -1275,8 +1275,10 @@ mfxStatus MFXDecPipeline::DecodeHeader()
 
     if (m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_CAPTURE)
     {
-        m_components[eDEC].m_params.mfx.FrameInfo.Width = m_inParams.FrameInfo.Width;
-        m_components[eDEC].m_params.mfx.FrameInfo.Height = m_inParams.FrameInfo.Height;
+        m_components[eDEC].m_params.mfx.FrameInfo.Width = mfx_align((mfxU16)(m_inParams.FrameInfo.Width), 0x10);
+        m_components[eDEC].m_params.mfx.FrameInfo.Height = mfx_align((mfxU16)(m_inParams.FrameInfo.Height), 0x10);
+        m_components[eDEC].m_params.mfx.FrameInfo.CropW = m_inParams.FrameInfo.Width;
+        m_components[eDEC].m_params.mfx.FrameInfo.CropH = m_inParams.FrameInfo.Height;
         return MFX_ERR_NONE;
     }
 
