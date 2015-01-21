@@ -313,5 +313,8 @@
     <ClCompile Include="src\gmock\test_suites\mjpeg_payload.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_cqp_hrd.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

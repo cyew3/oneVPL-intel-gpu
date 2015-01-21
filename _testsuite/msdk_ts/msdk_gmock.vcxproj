@@ -209,6 +209,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_chromaloc.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_co2_disable_deblocking.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_co2_use_rawref.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_cqp_hrd.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_bins.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_slice_size.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mbqp.cpp" />
