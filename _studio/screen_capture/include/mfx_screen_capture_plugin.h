@@ -117,13 +117,18 @@ protected:
     virtual ~MFXScreenCapture_Plugin();
     std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > m_adapter;
 
-    mfxStatus DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out);
+    mfxStatus DecodeFrameSubmit(mfxFrameSurface1 *surface);
     mfxStatus CheckFrameInfo(mfxFrameInfo *info);
+    mfxStatus CheckOpaqBuffer(const mfxVideoParam& par, mfxVideoParam* pParOut, const mfxExtOpaqueSurfaceAlloc& opaqAlloc, mfxExtOpaqueSurfaceAlloc* pOpaqAllocOut);
+    mfxFrameSurface1* GetFreeInternalSurface();
 
     mfxVideoParam       m_CurrentPar;
     mfxVideoParam       m_InitPar; //for Reset() func impl
     mfxCoreInterface*   m_pmfxCore;
     mfxPluginParam      m_PluginParam;
+    mfxFrameAllocResponse m_response;
+    mfxExtOpaqueSurfaceAlloc m_OpaqAlloc;
+    std::list<mfxFrameSurface1> m_SurfPool;
     bool                m_createdByDispatcher;
     bool                m_inited;
 

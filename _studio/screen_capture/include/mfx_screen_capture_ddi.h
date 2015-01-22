@@ -71,6 +71,7 @@ struct AsyncParams
 {
     mfxFrameSurface1 *surface_work;
     mfxFrameSurface1 *surface_out;
+    mfxFrameSurface1 *real_surface;
     mfxU32 StatusReportFeedbackNumber;
 };
 
