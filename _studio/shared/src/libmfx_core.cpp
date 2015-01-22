@@ -1880,6 +1880,64 @@ mfxStatus CommonCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface
     return MFX_ERR_NONE;
 }
 
+mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src) 
+{
+    if(!dst || !src)
+        return MFX_ERR_NULL_PTR;
+    if(src->Data.Y) //input video frame is locked or system, call old copy function
+    {
+        return DoFastCopy(dst, src);
+    }
+    else if(src->Data.MemId)
+    {
+        bool unlock_internal = false;
+        bool unlock_external = false;
+        mfxMemId srcHandle = 0;
+        mfxU16 srcMemType = MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
+        mfxU16 dstMemType = MFX_MEMTYPE_SYSTEM_MEMORY;
+        mfxStatus sts = GetExternalFrameHDL(src->Data.MemId, &srcHandle);
+        if(MFX_ERR_UNDEFINED_BEHAVIOR == sts)
+            srcMemType |= MFX_MEMTYPE_INTERNAL_FRAME;
+        else
+            srcMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
+
+        if(!dst->Data.Y)
+        {
+            sts = LockExternalFrame(dst->Data.MemId, &dst->Data);
+            if(MFX_ERR_NONE == sts)
+            {
+                unlock_external = true;
+                dstMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
+            }
+            else
+            {
+                dstMemType |= MFX_MEMTYPE_INTERNAL_FRAME;
+                unlock_internal = true;
+                sts = LockFrame(dst->Data.MemId, &dst->Data);
+                MFX_CHECK_STS(sts);
+            }
+        }
+        else
+        {
+            dstMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
+        }
+
+        sts = DoFastCopyWrapper(dst, dstMemType, src, srcMemType);
+        MFX_CHECK_STS(sts);
+        if(unlock_external)
+        {
+            sts = UnlockExternalFrame(dst->Data.MemId, &dst->Data);
+        } else if (unlock_internal) {
+            sts = UnlockFrame(dst->Data.MemId, &dst->Data);
+        }
+        return sts;
+    }
+    else
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+}
+
 bool CommonCORE::IsFastCopyEnabled()
 {
     return (FAST_COPY_SSE41 == m_pFastCopy.get()->GetSupportedMode());

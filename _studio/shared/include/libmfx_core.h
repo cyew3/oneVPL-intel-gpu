@@ -123,7 +123,8 @@ public:
     //virtual mfxStatus Init(mfxVideoParam *par);
 
     virtual
-    mfxStatus CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src) {return DoFastCopy(dst, src);}
+    mfxStatus CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src);
+
     virtual
     mfxStatus CopyBuffer(mfxU8 * /*dst*/, mfxU32 /*dst_size*/, mfxFrameSurface1 * /*src*/) {return MFX_ERR_UNKNOWN;}
 
