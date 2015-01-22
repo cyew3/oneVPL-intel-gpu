@@ -110,8 +110,8 @@ typedef struct {
 
         mfxU32  SumOfCoef;
 
-        mfxU32  Variance;
-        mfxU32  PixelAverage;
+        mfxU32  Variance[4];
+        mfxU32  PixelAverage[4];
     } *MB;
 } mfxExtFeiPreEncMBStat;
 
@@ -209,6 +209,8 @@ typedef struct {
         mfxU16  InterDistortion[16];
         mfxU16  BestInterDistortion;
         mfxU16  BestIntraDistortion;
+        mfxU16  ColocatedMbDistortion;
+        mfxU16  reserved;
     } *MB;
 } mfxExtFeiEncMBStat;
 
