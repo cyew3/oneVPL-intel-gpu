@@ -303,6 +303,8 @@ mfxStatus mfxCORECreateAccelerationDevice(mfxHDL pthis, mfxHandleType type, mfxH
                 else
                 {
                     *handle = (mfxHDL)pID3D->GetD3D11VideoDevice();
+                    if (*handle)
+                        mfxRes = MFX_ERR_NONE;
                 }
             }
             else
