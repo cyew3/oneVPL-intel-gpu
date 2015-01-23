@@ -93,6 +93,7 @@ const char* DumpContext::get_bufferid_str(mfxU32 bufferid)
 DEFINE_GET_TYPE_DEF(mfxBitstream);
 DEFINE_GET_TYPE_DEF(mfxExtBuffer);
 DEFINE_GET_TYPE_DEF(mfxIMPL);
+DEFINE_GET_TYPE_DEF(mfxInitParam);
 DEFINE_GET_TYPE_DEF(mfxPriority);
 DEFINE_GET_TYPE_DEF(mfxVersion);
 DEFINE_GET_TYPE_DEF(mfxSyncPoint);
