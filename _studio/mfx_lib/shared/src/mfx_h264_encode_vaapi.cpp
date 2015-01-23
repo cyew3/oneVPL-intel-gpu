@@ -3124,7 +3124,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         m_statParams.mv_predictor = mvPredid;
         configBuffers[buffersCount++] = mvPredid;
-//        mdprintf(stderr, "MVPred bufId=%d\n", mvPredid);
+        mdprintf(stderr, "MVPred bufId=%d\n", mvPredid);
     }
 
     if ((m_statParams.mb_qp) && (feiQP != NULL) && (feiQP->QP != NULL)) {
@@ -3337,9 +3337,10 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     //destroy buffers - this should be removed
     MFX_DESTROY_VABUFFER(statParamsId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(qpid, m_vaDisplay);
+    /* these allocated buffers will be destroyed in QueryStatus()
+     * when driver returned result of preenc processing  */
     //MFX_DESTROY_VABUFFER(statMVid, m_vaDisplay);
     //MFX_DESTROY_VABUFFER(statOUTid, m_vaDisplay);
-
 
     mdprintf(stderr, "submit_vaapi done: %d\n", task.m_frameOrder);
     return MFX_ERR_NONE;
@@ -3371,6 +3372,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
         {
             waitSurface = currentFeedback.surface;
             statMVid = currentFeedback.mv;
+            //statMVid = m_statMVId.pop_front()
             statOUTid = currentFeedback.mbstat;
 
             isFound = true;
@@ -3385,8 +3387,8 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
 
     VASurfaceStatus surfSts = VASurfaceSkipped;
 
-    //vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
-    //MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     vaSts = vaQuerySurfaceStatus(m_vaDisplay, waitSurface, &surfSts);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -3464,6 +3466,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                             statOUTid,
                             (void **) (&mbstat));
                 }
+
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
                 memcpy(mbstatOut->MB, mbstat, sizeof (VAStatsStatistics16x16Intel) * numMB);
