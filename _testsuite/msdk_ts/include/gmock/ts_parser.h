@@ -16,7 +16,7 @@ public:
         if(!g_tsTrace)
             this->set_trace_level(0);
     }
-    
+
     tsParser(mfxBitstream b, mfxU32 mode = 0)
         : m_sts(BS_ERR_NONE)
         , T(mode)
@@ -71,7 +71,7 @@ public:
         if(!g_tsTrace)
             set_trace_level(0);
     }
-    
+
     tsParserH264AU(mfxBitstream b, mfxU32 mode = 0)
         : m_sts(BS_ERR_NONE)
         , BS_H264_parser(mode)
@@ -106,5 +106,197 @@ public:
     {
         TRACE_FUNC2(BS_parser::set_buffer, b.Data + b.DataOffset, b.DataLength + 3);
         set_buffer(b.Data + b.DataOffset, b.DataLength + 3);
+    }
+};
+
+class tsParserMPEG2AU : public BS_MPEG2_parser
+{
+    BS_MPEG2_au* pAU;
+    std::vector<slice_params> slices;
+    mfxBitstream* pBs;
+    void init()
+    {
+        pAU = new BS_MPEG2_au;
+        pAU->pic_hdr = new picture_header;
+        memset(pAU->pic_hdr, 0, sizeof(picture_header));
+        pAU->seq_hdr = new sequence_header;
+        memset(pAU->seq_hdr, 0, sizeof(sequence_header));
+        pAU->seq_ext = new sequence_extension;
+        memset(pAU->seq_ext, 0, sizeof(sequence_extension));
+        pAU->seq_displ_ext = new sequence_display_extension;
+        memset(pAU->seq_displ_ext, 0, sizeof(sequence_display_extension));
+        pAU->pic_coding_ext = new picture_coding_extension;
+        memset(pAU->pic_coding_ext, 0, sizeof(picture_coding_extension));
+        pAU->gop_hdr = new group_of_pictures_header;
+        memset(pAU->gop_hdr, 0, sizeof(group_of_pictures_header));
+        pAU->seq_scalable_ext = new sequence_scalable_extension;
+        memset(pAU->seq_scalable_ext, 0, sizeof(sequence_scalable_extension));
+        pAU->NumSlice = 0;
+        pAU->slice = 0;
+    }
+public:
+    typedef BS_MPEG2_au UnitType;
+    BSErr m_sts;
+    Bs32u last_offset;
+
+    tsParserMPEG2AU(mfxU32 mode = 0)
+        : m_sts(BS_ERR_NONE)
+        , BS_MPEG2_parser(mode)
+        , last_offset(0)
+    {
+        if(!g_tsTrace)
+            set_trace_level(0);
+        init();
+    }
+
+    tsParserMPEG2AU(mfxBitstream b, mfxU32 mode = 0)
+        : m_sts(BS_ERR_NONE)
+        , BS_MPEG2_parser(mode)
+        , last_offset(0)
+    {
+        if(!g_tsTrace)
+            set_trace_level(0);
+        SetBuffer(b);
+        pBs = &b;
+        init();
+    }
+
+    ~tsParserMPEG2AU()
+    {
+        if (pAU->pic_hdr) delete pAU->pic_hdr;
+        if (pAU->seq_hdr) delete pAU->seq_hdr;
+        if (pAU->seq_ext) delete pAU->seq_ext;
+        if (pAU->seq_displ_ext) delete pAU->seq_displ_ext;
+        if (pAU->pic_coding_ext) delete pAU->pic_coding_ext;
+        if (pAU->gop_hdr) delete pAU->gop_hdr;
+        if (pAU->seq_scalable_ext) delete pAU->seq_scalable_ext;
+        for (size_t i = 0; i < slices.size(); i++) {
+            if (slices[i].mb) delete slices[i].mb;
+        }
+        // delete pAU->slice; - deleted in loop above
+        slices.clear();
+        delete pAU;
+    }
+
+    UnitType* Parse(bool orDie = false)
+    {
+        memset(pAU->pic_hdr, 0, sizeof(picture_header));
+        memset(pAU->seq_hdr, 0, sizeof(sequence_header));
+        memset(pAU->seq_ext, 0, sizeof(sequence_extension));
+        memset(pAU->seq_displ_ext, 0, sizeof(sequence_display_extension));
+        memset(pAU->pic_coding_ext, 0, sizeof(picture_coding_extension));
+        memset(pAU->gop_hdr, 0, sizeof(group_of_pictures_header));
+        memset(pAU->seq_scalable_ext, 0, sizeof(sequence_scalable_extension));
+        for (size_t i = 0; i < slices.size(); i++) {
+            if (slices[i].mb) delete slices[i].mb;
+        }
+        slices.clear();
+
+        while (1)
+        {
+            TRACE_FUNC0(BS_parser::parse_next_unit);
+            m_sts = parse_next_unit();
+            if(m_sts && m_sts != BS_ERR_MORE_DATA || m_sts && orDie)
+            {
+                if (m_sts == BS_ERR_MORE_DATA && (pAU->NumSlice || slices.size())) {
+                    last_offset = 0;
+                    pAU->slice = &slices[0];
+                    pAU->NumSlice = slices.size();
+                    return pAU;
+                }
+
+                g_tsLog << "ERROR: FAILED in tsParser: " << m_sts << "\n";
+                g_tsStatus.check(MFX_ERR_UNKNOWN);
+            }
+
+            BS_MPEG2_header* pHdr = (BS_MPEG2_header*)get_header();
+
+            bool is_slice = ((pHdr->start_code >= 0x00000101 && pHdr->start_code < 0x000001B0) &&
+                (pHdr->start_code_id >= 0x01 && pHdr->start_code_id <= 0xAF));
+
+            if (slices.size() && !is_slice) {  // end of AU
+                Bs32u len = pBs->DataLength + 3 - last_offset;
+                set_buffer(pBs->Data + pBs->DataOffset + last_offset, len);
+                pAU->slice = &slices[0];
+                pAU->NumSlice = slices.size();
+                return pAU;
+            }
+
+            if (is_slice) {  // Slice
+                slice_params s = {0};
+                memcpy(&s, pHdr->slice, sizeof(slice_params));
+                s.mb = new mpeg2_macroblock[pHdr->slice->NumMb];
+                memcpy(s.mb, pHdr->slice->mb, sizeof(mpeg2_macroblock) * pHdr->slice->NumMb);
+                slices.push_back(s);
+
+                last_offset = (Bs32u)get_offset();
+
+                continue;
+            }
+
+            switch (pHdr->start_code) {
+                case 0x00000100:
+                    memcpy(pAU->pic_hdr, pHdr->pic_hdr, sizeof(picture_header));
+                    break;
+                case 0x000001B3:
+                    memcpy(pAU->seq_hdr, pHdr->seq_hdr, sizeof(sequence_header));
+                    break;
+                case 0x000001B5: /*extension_start_code*/
+                    if (pHdr->start_code_id == 5)   // Table 6-2. extension_start_code_identifier codes.
+                    {
+                        memcpy(pAU->seq_scalable_ext, pHdr->seq_scalable_ext, sizeof(sequence_scalable_extension));
+                        break;
+                    }
+                    switch (pHdr->start_code_id)
+                    {
+                        case 0x1:
+                            memcpy(pAU->seq_ext, pHdr->seq_ext, sizeof(sequence_extension));
+                            break;
+                        case 0x2:
+                            memcpy(pAU->seq_displ_ext, pHdr->seq_displ_ext, sizeof(sequence_display_extension));
+                            break;
+                        case 0x8:
+                            memcpy(pAU->pic_coding_ext, pHdr->pic_coding_ext, sizeof(picture_coding_extension));
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                /*case 0x000001B7:
+                    trace_off();
+                    BS_TRACE( 1, ================ Sequence End ================= );
+                    break;*/
+                case 0x000001B8:
+                    memcpy(pAU->gop_hdr, pHdr->gop_hdr, sizeof(group_of_pictures_header));
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return pAU;
+    }
+
+    UnitType& ParseOrDie()
+    {
+        return *Parse(true);
+    }
+
+    void SetBuffer(mfxBitstream b)
+    {
+        TRACE_FUNC2(BS_parser::set_buffer, b.Data + b.DataOffset, b.DataLength + 3);
+        set_buffer(b.Data + b.DataOffset, b.DataLength + 3);
+    }
+
+    BSErr sset_buffer(byte* buf, Bs32u buf_size)
+    {
+        Bs32u shift = 0;
+        Bs32u curr_offset = (Bs32u)get_offset();
+        if (last_offset && curr_offset > last_offset) {
+            shift = curr_offset - last_offset;
+            buf_size += shift;
+        }
+
+        return BS_MPEG2_parser::set_buffer(buf - shift, buf_size);
     }
 };
