@@ -183,7 +183,7 @@ void H265HeadersBitstream::parseHrdParameters(H265HRD *hrd, Ipp8u cprms_present_
 
         // Infered to be 0 when not present
         hrdSubLayerInfo->low_delay_hrd_flag = 0;
-        hrdSubLayerInfo->cpb_cnt = 0;
+        hrdSubLayerInfo->cpb_cnt = 1;
 
         if (hrdSubLayerInfo->fixed_pic_rate_within_cvs_flag)
         {
@@ -198,7 +198,7 @@ void H265HeadersBitstream::parseHrdParameters(H265HRD *hrd, Ipp8u cprms_present_
         {
             hrdSubLayerInfo->cpb_cnt = GetVLCElementU() + 1;
 
-            if (!hrdSubLayerInfo->cpb_cnt || hrdSubLayerInfo->cpb_cnt > 32)
+            if (hrdSubLayerInfo->cpb_cnt > 32)
                 throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
         }
 
