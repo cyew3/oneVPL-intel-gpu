@@ -108,6 +108,67 @@ private:
 struct ID3D11VideoDevice;
 struct ID3D11VideoContext;
 
+const char RESOURCE_EXTENSION_KEY[16] = {
+    'I','N','T','C',
+    'E','X','T','N',
+    'R','E','S','O',
+    'U','R','C','E' };
+
+#define EXTENSION_INTERFACE_VERSION 0x00040000
+
+struct EXTENSION_BASE
+{
+    // Input
+    char   Key[16];
+    UINT   ApplicationVersion;
+};
+
+struct RESOURCE_EXTENSION_1_0: EXTENSION_BASE
+{
+    // Enumeration of the extension
+    UINT  Type;   //RESOURCE_EXTENSION_TYPE
+
+    // Extension data
+    union
+    {
+        UINT    Data[16];
+        UINT64  Data64[8];
+    };
+};
+
+typedef RESOURCE_EXTENSION_1_0 RESOURCE_EXTENSION;
+
+struct STATE_EXTENSION_TYPE_1_0
+{
+    static const UINT STATE_EXTENSION_RESERVED = 0;
+};
+
+struct STATE_EXTENSION_TYPE_4_0: STATE_EXTENSION_TYPE_1_0
+{
+    static const UINT STATE_EXTENSION_CONSERVATIVE_PASTERIZATION = 1 + EXTENSION_INTERFACE_VERSION;
+};
+
+struct RESOURCE_EXTENSION_TYPE_1_0
+{
+    static const UINT RESOURCE_EXTENSION_RESERVED      = 0;
+    static const UINT RESOURCE_EXTENSION_DIRECT_ACCESS = 1;
+};
+
+struct RESOURCE_EXTENSION_TYPE_4_0: RESOURCE_EXTENSION_TYPE_1_0
+{
+    static const UINT RESOURCE_EXTENSION_CAMERA_PIPE = 1 + EXTENSION_INTERFACE_VERSION;
+};
+
+struct RESOURCE_EXTENSION_CAMERA_PIPE
+{
+    enum {
+        INPUT_FORMAT_IRW0 = 0x0,
+        INPUT_FORMAT_IRW1 = 0x1,
+        INPUT_FORMAT_IRW2 = 0x2,
+        INPUT_FORMAT_IRW3 = 0x3
+    };
+};
+
 struct D3D11AllocatorParams : mfxAllocatorParams
 {
     ID3D11Device *pDevice;
@@ -144,6 +205,34 @@ protected:
     virtual mfxStatus CheckRequestType(mfxFrameAllocRequest *request);
     virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response);
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
+
+    template<typename Type>
+    inline HRESULT SetResourceExtension(
+        const Type* pExtnDesc )
+    {
+        D3D11_BUFFER_DESC desc;
+        ZeroMemory( &desc, sizeof(desc) );
+        desc.ByteWidth      = sizeof(Type);
+        desc.Usage          = D3D11_USAGE_STAGING;
+        desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+        D3D11_SUBRESOURCE_DATA initData;
+        ZeroMemory( &initData, sizeof(initData) );
+        initData.pSysMem     = pExtnDesc;
+        initData.SysMemPitch = sizeof(Type);
+        initData.SysMemSlicePitch = 0;
+
+        ID3D11Buffer* pBuffer = NULL;
+        HRESULT result = m_initParams.pDevice->CreateBuffer(
+                            &desc,
+                            &initData,
+                            &pBuffer );
+
+        if( pBuffer )
+            pBuffer->Release();
+
+        return result;
+    }
 
     D3D11AllocatorParams m_initParams;
     CComPtr<ID3D11DeviceContext> m_pDeviceContext;

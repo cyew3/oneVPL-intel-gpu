@@ -24,6 +24,10 @@ Copyright(c) 2011 - 2012 Intel Corporation. All Rights Reserved.
 
 #define D3DFMT_NV12 (DXGI_FORMAT)MAKEFOURCC('N','V','1','2')
 #define D3DFMT_YV12 (DXGI_FORMAT)MAKEFOURCC('Y','V','1','2')
+#define DXGI_FORMAT_BGGR MAKEFOURCC('I','R','W','0')
+#define DXGI_FORMAT_RGGB MAKEFOURCC('I','R','W','1')
+#define DXGI_FORMAT_GRBG MAKEFOURCC('I','R','W','2')
+#define DXGI_FORMAT_GBRG MAKEFOURCC('I','R','W','3')
 
 //for generating sequence of mfx handles
 template <typename T>
@@ -415,6 +419,31 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         if( DXGI_FORMAT_P8 == desc.Format )
         {
             desc.BindFlags = 0;
+        }
+
+        if ( DXGI_FORMAT_R16_TYPELESS == colorFormat)
+        {
+            desc.MipLevels = 1;
+            desc.ArraySize = 1;
+            desc.SampleDesc.Count   = 1;
+            desc.SampleDesc.Quality = 0;
+            desc.Usage     = D3D11_USAGE_DEFAULT;
+            desc.BindFlags      = 0;
+            desc.CPUAccessFlags = 0;
+            desc.MiscFlags      = 0;
+            RESOURCE_EXTENSION extnDesc;
+            ZeroMemory( &extnDesc, sizeof(RESOURCE_EXTENSION) );
+            memcpy( &extnDesc.Key[0], RESOURCE_EXTENSION_KEY, sizeof(extnDesc.Key) );
+            extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
+            extnDesc.Type = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
+            // TODO: Pass real Bayer type 
+            extnDesc.Data[0] = RESOURCE_EXTENSION_CAMERA_PIPE::INPUT_FORMAT_IRW0;
+            hRes = SetResourceExtension(&extnDesc);
+            if (FAILED(hRes))
+            {
+                printf("SetResourceExtension failed, hr = 0x%X\n", hRes);
+                return MFX_ERR_MEMORY_ALLOC;
+            }
         }
 
         ID3D11Texture2D* pTexture2D;
