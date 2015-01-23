@@ -998,11 +998,12 @@ void CEncodingPipeline::Close()
     FreeVppDoNotUse();
 
     DeleteFrames();
-    // allocator if used as external for MediaSDK must be deleted after SDK components
-    DeleteAllocator();
 
     m_TaskPool.Close();
     m_mfxSession.Close();
+
+    // allocator if used as external for MediaSDK must be deleted after SDK components
+    DeleteAllocator();
 
     m_FileReader.Close();
     FreeFileWriters();
@@ -1214,7 +1215,7 @@ mfxStatus CEncodingPipeline::Run()
         preENCCtr.Header.BufferSz = sizeof (mfxExtFeiPreEncCtrl);
         preENCCtr.DisableMVOutput = disableMVoutput;
         preENCCtr.DisableStatisticsOutput = disableMBoutput;
-        preENCCtr.FTEnable = 0;
+        preENCCtr.FTEnable = 1;//0;
         preENCCtr.AdaptiveSearch = 1;
         preENCCtr.LenSP = 57;
         preENCCtr.MBQp = enableMBQP;
@@ -1227,7 +1228,7 @@ mfxStatus CEncodingPipeline::Run()
         preENCCtr.Qp = m_encpakParams.QP;
         preENCCtr.InterSAD = 2;
         preENCCtr.IntraSAD = 2;
-        preENCCtr.SubMBPartMask = 0x77;
+        preENCCtr.SubMBPartMask = 0;//0x77;
 
         inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & preENCCtr;
 
@@ -1275,7 +1276,7 @@ mfxStatus CEncodingPipeline::Run()
             mvs.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
             mvs.Header.BufferSz = sizeof (mfxExtFeiPreEncMV);
             mvs.NumMBAlloc = numMB;
-            mvs.MB = new mfxExtFeiPreEncMV::mfxMB [numMB*16*2];
+            mvs.MB = new mfxExtFeiPreEncMV::mfxMB [numMB];
             outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mvs;
 
             if (m_encpakParams.mvoutFile != NULL &&
@@ -1293,7 +1294,7 @@ mfxStatus CEncodingPipeline::Run()
             mbdata.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
             mbdata.Header.BufferSz = sizeof (mfxExtFeiPreEncMBStat);
             mbdata.NumMBAlloc = numMB;
-            mbdata.MB = new mfxExtFeiPreEncMBStat::mfxMB [numMB*16];
+            mbdata.MB = new mfxExtFeiPreEncMBStat::mfxMB [numMB];
             outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mbdata;
             outBufsPreEncI[0] = (mfxExtBuffer*) & mbdata; //special case for I frames
 
@@ -1421,8 +1422,7 @@ mfxStatus CEncodingPipeline::Run()
         feiEncMbStat.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
         feiEncMbStat.Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
         feiEncMbStat.NumMBAlloc = numMB;
-        //feiEncMbStat.MB = new mfxExtFeiEncMBStat::mfxMB [numMB*128];
-        feiEncMbStat.MB = new mfxExtFeiEncMBStat::mfxMB [numMB*(16*16 + 16 + 16)];
+        feiEncMbStat.MB = new mfxExtFeiEncMBStat::mfxMB [numMB];
         outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMbStat;
             printf("Use MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
             mbstatout = fopen(m_encpakParams.mbstatoutFile, "wb");
@@ -1623,7 +1623,8 @@ mfxStatus CEncodingPipeline::Run()
 
             if (mbstatout)
                 fwrite(mbdata.MB, sizeof (mbdata.MB[0]) * mbdata.NumMBAlloc, 1, mbstatout);
-            if (mvout && !(eTask->frameType&MFX_FRAMETYPE_I))
+            //if (mvout && !(eTask->frameType&MFX_FRAMETYPE_I))
+            if (mvout)
                 fwrite(mvs.MB, sizeof (mvs.MB[0]) * mvs.NumMBAlloc, 1, mvout);
             //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -2156,5 +2157,5 @@ void CEncodingPipeline::initFrameParams(iTask* eTask) {
             eTask->out.ExtParam = outBufsPreEnc;
             break;
     }
-    mdprintf(stderr, "enc: %d t: %d\n", eTask->frameDisplayOrder, eTask->frameType);
+    mdprintf(stderr, "enc: %d t: %d\n", eTask->frameDisplayOrder, (eTask->frameType& MFX_FRAMETYPE_IPB));
 }
