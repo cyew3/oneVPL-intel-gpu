@@ -31,6 +31,9 @@ EXTBUF(mfxExtFeiEncMBCtrl           , MFX_EXTBUFF_FEI_ENC_MB                )
 EXTBUF(mfxExtFeiEncMV               , MFX_EXTBUFF_FEI_ENC_MV                )
 EXTBUF(mfxExtFeiEncMBStat           , MFX_EXTBUFF_FEI_ENC_MB_STAT           )
 EXTBUF(mfxExtFeiPakMBCtrl           , MFX_EXTBUFF_FEI_PAK_CTRL              )
+EXTBUF(mfxExtFEIH265Param           , MFX_EXTBUFF_FEI_H265_PARAM            )
+EXTBUF(mfxExtFEIH265Input           , MFX_EXTBUFF_FEI_H265_INPUT            )
+EXTBUF(mfxExtFEIH265Output          , MFX_EXTBUFF_FEI_H265_OUTPUT           )
 // end of FEI
 // Camera
 EXTBUF(mfxExtCamGammaCorrection     , MFX_EXTBUF_CAM_GAMMA_CORRECTION        )

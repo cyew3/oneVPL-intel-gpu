@@ -654,3 +654,22 @@ STRUCT(mfxExtChromaLocInfo,
     FIELD_T(mfxU16      , ChromaSampleLocTypeTopField)
     FIELD_T(mfxU16      , ChromaSampleLocTypeBottomField)
 )
+
+STRUCT(mfxExtFEIH265Param,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32      , MaxCUSize)
+    FIELD_T(mfxU32      , MPMode)
+    FIELD_T(mfxU32      , NumIntraModes)
+)
+
+STRUCT(mfxExtFEIH265Input,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32      , FEIOp)
+    FIELD_T(mfxU32      , FrameType)
+    FIELD_T(mfxU32      , RefIdx)
+)
+
+STRUCT(mfxExtFEIH265Output,
+    FIELD_S(mfxExtBuffer      , Header)
+    FIELD_T(mfxFEIH265Output* , feiOut)
+)

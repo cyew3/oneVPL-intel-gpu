@@ -30,6 +30,9 @@
     <Filter Include="Source Files\test_suites\FEI">
       <UniqueIdentifier>{daa0ed0f-66be-4a35-a33b-623791b5fadd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\test_suites\hevce_gaa">
+      <UniqueIdentifier>{ce058276-58f8-43fb-98b5-df7a6e4563d0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_sample_allocator.h">
@@ -315,6 +318,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_cqp_hrd.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_gaa_init.cpp">
+      <Filter>Source Files\test_suites\hevce_gaa</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

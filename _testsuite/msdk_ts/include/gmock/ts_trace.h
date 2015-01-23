@@ -8,6 +8,7 @@
 #include "mfxplugin.h"
 #include "mfxcamera.h"
 #include "mfxfei.h"
+#include "mfxfeih265.h"
 #include "mfxla.h"
 
 #include "bs_parser.h"

@@ -84,15 +84,17 @@ mfxStatus tsVideoENC::Init()
 mfxStatus tsVideoENC::Init(mfxSession session, mfxVideoParam *par)
 {
     mfxVideoParam orig_par;
-    memcpy(&orig_par, m_pPar, sizeof(mfxVideoParam));
+    if (par)
+        memcpy(&orig_par, par, sizeof(mfxVideoParam));
 
     TRACE_FUNC2(MFXVideoENC_Init, session, par);
     g_tsStatus.check( MFXVideoENC_Init(session, par) );
 
     m_initialized = (g_tsStatus.get() >= 0);
 
-    EXPECT_EQ(0, memcmp(&orig_par, m_pPar, sizeof(mfxVideoParam)))
-        << "ERROR: Input parameters must not be changed in Init()";
+    if (par)
+        EXPECT_EQ(0, memcmp(&orig_par, par, sizeof(mfxVideoParam)))
+            << "ERROR: Input parameters must not be changed in Init()";
 
     return g_tsStatus.get();
 }
