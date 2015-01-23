@@ -290,6 +290,8 @@ mfxStatus MFXVideoENC_Init(mfxSession session, mfxVideoParam *par)
             MFX_CHECK(session->m_pENC.get(), MFX_ERR_NULL_PTR);
             mfxRes = session->m_pENC->Init(par);
         }
+        else if (mfxRes >= MFX_ERR_NONE)
+            session->m_bIsHWENCSupport = true;
 #endif
 
         // SW fallback if EncodeGUID is absence
