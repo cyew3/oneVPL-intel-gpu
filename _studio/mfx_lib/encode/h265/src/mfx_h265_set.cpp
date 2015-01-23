@@ -86,9 +86,9 @@ mfxU32 H265BsReal::WriteNAL(mfxBitstream *dst,
     // start access unit => should be zero_byte
     // for VPS,SPS,PPS,APS NAL units zero_byte should exist
     if (startPicture ||
-        nal->nal_unit_type == NAL_UT_VPS ||
-        nal->nal_unit_type == NAL_UT_SPS ||
-        nal->nal_unit_type == NAL_UT_PPS) {
+        nal->nal_unit_type == NAL_VPS ||
+        nal->nal_unit_type == NAL_SPS ||
+        nal->nal_unit_type == NAL_PPS) {
         if (maxdst < size + 6) {
             ExtraBytes = 6;
             goto overflow;
@@ -462,7 +462,7 @@ mfxStatus H265FrameEncoder::PutSliceHeader(H265BsReal *_bs, H265Slice *slice)
     H265BsReal *bs = _bs;
 
     H265Bs_PutBit(bs, sh->first_slice_segment_in_pic_flag);
-    if (sh->RapPicFlag) {
+    if (sh->NalUnitType >= NAL_BLA_W_LP && sh->NalUnitType <= NAL_RSV_IRAP_VCL23) {
         H265Bs_PutBit(bs, sh->no_output_of_prior_pics_flag);
     }
 
@@ -484,7 +484,7 @@ mfxStatus H265FrameEncoder::PutSliceHeader(H265BsReal *_bs, H265Slice *slice)
             H265Bs_PutBit(bs, sh->pic_output_flag);
         //if (sps->separate_colour_plane_flag == 1)
         //    H265Bs_PutBits(bs, sh->colour_plane_id, 2);
-        if( !sh->IdrPicFlag ) {
+        if (sh->NalUnitType != NAL_IDR_W_RADL && sh->NalUnitType != NAL_IDR_N_LP) {
             H265Bs_PutBits(bs, sh->slice_pic_order_cnt_lsb, sps->log2_max_pic_order_cnt_lsb);
             H265Bs_PutBit(bs, sh->short_term_ref_pic_set_sps_flag);
             if (!sh->short_term_ref_pic_set_sps_flag) {
@@ -604,7 +604,7 @@ mfxStatus H265FrameEncoder::WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s 
         //m_bs[bs_main_id].Reset();
         PutVPS(&m_bs[bs_main_id]);
         m_bs[bs_main_id].WriteTrailingBits();
-        nal.nal_unit_type = NAL_UT_VPS;
+        nal.nal_unit_type = NAL_VPS;
         overheadBytes += m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
     }
 
@@ -613,12 +613,12 @@ mfxStatus H265FrameEncoder::WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s 
 
         PutSPS(&m_bs[bs_main_id]);
         m_bs[bs_main_id].WriteTrailingBits();
-        nal.nal_unit_type = NAL_UT_SPS;
+        nal.nal_unit_type = NAL_SPS;
         m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
 
         PutPPS(&m_bs[bs_main_id]);
         m_bs[bs_main_id].WriteTrailingBits();
-        nal.nal_unit_type = NAL_UT_PPS;
+        nal.nal_unit_type = NAL_PPS;
         overheadBytes += m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
     }
 
@@ -678,9 +678,7 @@ mfxStatus H265FrameEncoder::WriteBitstreamPayload(mfxBitstream *mfxBS, Ipp32s bs
             m_bs[bs_main_id].m_base.m_pbs += row_info->size;
         }
 
-        nal.nal_unit_type = (Ipp8u)(pSlice->IdrPicFlag ? NAL_UT_CODED_SLICE_IDR :
-            (m_task->m_frameOrigin->m_poc >= 0 ? NAL_UT_CODED_SLICE_TRAIL_R :
-            (m_task->m_frameOrigin->m_isRef ? NAL_UT_CODED_SLICE_DLP : NAL_UT_CODED_SLICE_RADL_N)));
+        nal.nal_unit_type = pSlice->NalUnitType;
 
         m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
     }

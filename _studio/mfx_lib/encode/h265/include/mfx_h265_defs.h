@@ -339,57 +339,64 @@ enum EnumIntraAngMode {
 
     INTRA_ANG_MODE_NUMBER           =  5
 };
+
 enum NalUnitType
 {
-  NAL_UT_CODED_SLICE_TRAIL_N = 0,   // 0
-  NAL_UT_CODED_SLICE_TRAIL_R,   // 1
+  NAL_TRAIL_N = 0,
+  NAL_TRAIL_R = 1,
+  NAL_TSA_N   = 2,
+  NAL_TSA_R   = 3,
+  NAL_STSA_N  = 4,
+  NAL_STSA_R  = 5,
+  NAL_RADL_N  = 6,
+  NAL_RADL_R  = 7,
+  NAL_RASL_N  = 8,
+  NAL_RASL_R  = 9,
 
-  NAL_UT_CODED_SLICE_TSA_N,     // 2
-  NAL_UT_CODED_SLICE_TLA,       // 3   // Current name in the spec: TSA_R
+  NAL_RSV_VCL_N10 = 10,
+  NAL_RSV_VCL_R11 = 11,
+  NAL_RSV_VCL_N12 = 12,
+  NAL_RSV_VCL_R13 = 13,
+  NAL_RSV_VCL_N14 = 14,
+  NAL_RSV_VCL_R15 = 15,
 
-  NAL_UT_CODED_SLICE_STSA_N,    // 4
-  NAL_UT_CODED_SLICE_STSA_R,    // 5
+  NAL_BLA_W_LP   = 16,
+  NAL_BLA_W_RADL = 17,
+  NAL_BLA_N_LP   = 18,
+  NAL_IDR_W_RADL = 19,
+  NAL_IDR_N_LP   = 20,
+  NAL_CRA        = 21,
 
-  NAL_UT_CODED_SLICE_RADL_N,    // 6
-  NAL_UT_CODED_SLICE_DLP,       // 7 // Current name in the spec: RADL_R
+  NAL_RSV_IRAP_VCL22 = 22,
+  NAL_RSV_IRAP_VCL23 = 23,
 
-  NAL_UT_CODED_SLICE_RASL_N,    // 8
-  NAL_UT_CODED_SLICE_TFD,       // 9 // Current name in the spec: RASL_R
+  NAL_RSV_VCL_24 = 24,
+  NAL_RSV_VCL_25 = 25,
+  NAL_RSV_VCL_26 = 26,
+  NAL_RSV_VCL_27 = 27,
+  NAL_RSV_VCL_28 = 28,
+  NAL_RSV_VCL_29 = 29,
+  NAL_RSV_VCL_30 = 30,
+  NAL_RSV_VCL_31 = 31,
 
-  NAL_UT_RESERVED_10,
-  NAL_UT_RESERVED_11,
-  NAL_UT_RESERVED_12,
-  NAL_UT_RESERVED_13,
-  NAL_UT_RESERVED_14,
-  NAL_UT_RESERVED_15,
+  NAL_VPS = 32,
+  NAL_SPS = 33,
+  NAL_PPS = 34,
+  NAL_AUD = 35,
+  NAL_EOS = 36,
+  NAL_EOB = 37,
+  NAL_FD  = 38,
 
-  NAL_UT_CODED_SLICE_BLA,       // 16   // Current name in the spec: BLA_W_LP
-  NAL_UT_CODED_SLICE_BLANT,     // 17   // Current name in the spec: BLA_W_DLP
-  NAL_UT_CODED_SLICE_BLA_N_LP,  // 18
-  NAL_UT_CODED_SLICE_IDR,       // 19  // Current name in the spec: IDR_W_DLP
-  NAL_UT_CODED_SLICE_IDR_N_LP,  // 20
-  NAL_UT_CODED_SLICE_CRA,       // 21
-  NAL_UT_RESERVED_22,
-  NAL_UT_RESERVED_23,
+  NAL_UT_PREFIX_SEI = 39,
+  NAL_UT_SUFFIX_SEI = 40,
 
-  NAL_UT_RESERVED_24,
-  NAL_UT_RESERVED_25,
-  NAL_UT_RESERVED_26,
-  NAL_UT_RESERVED_27,
-  NAL_UT_RESERVED_28,
-  NAL_UT_RESERVED_29,
-  NAL_UT_RESERVED_30,
-  NAL_UT_RESERVED_31,
-
-  NAL_UT_VPS,                   // 32
-  NAL_UT_SPS,                   // 33
-  NAL_UT_PPS,                   // 34
-  NAL_UT_ACCESS_UNIT_DELIMITER, // 35
-  NAL_UT_EOS,                   // 36
-  NAL_UT_EOB,                   // 37
-  NAL_UT_FILLER_DATA,           // 38
-  NAL_UT_SEI,                   // 39 Prefix SEI
-  NAL_UT_SEI_SUFFIX,            // 40 Suffix SEI
+  NAL_RSV_NVCL_41 = 41,
+  NAL_RSV_NVCL_42 = 42,
+  NAL_RSV_NVCL_43 = 43,
+  NAL_RSV_NVCL_44 = 44,
+  NAL_RSV_NVCL_45 = 45,
+  NAL_RSV_NVCL_46 = 46,
+  NAL_RSV_NVCL_47 = 47,
 };
 
 class H265Frame;

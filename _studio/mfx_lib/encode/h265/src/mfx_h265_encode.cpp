@@ -1310,9 +1310,10 @@ mfxStatus MFXVideoENCODEH265::Init_Internal( void )
     m_profileIndex = 0;
     m_frameOrder = 0;
 
-    m_frameOrderOfLastIdr = 0;       // frame order of last IDR frame (in display order)
-    m_frameOrderOfLastIntra = 0;     // frame order of last I-frame (in display order)
-    m_frameOrderOfLastAnchor = 0;    // frame order of last anchor (first in minigop) frame (in display order)
+    m_frameOrderOfLastIdr = 0;              // frame order of last IDR frame (in display order)
+    m_frameOrderOfLastIntra = 0;            // frame order of last I-frame (in display order)
+    m_frameOrderOfLastIntraInEncOrder = 0;  // frame order of last I-frame (in encoding order)
+    m_frameOrderOfLastAnchor = 0;           // frame order of last anchor (first in minigop) frame (in display order)
     m_miniGopCount = -1;
     m_lastTimeStamp = (mfxU64)MFX_TIMESTAMP_UNKNOWN;
     m_lastEncOrder = -1;

@@ -115,9 +115,10 @@ private:
     // input frame control counters
     Ipp32s m_profileIndex;
     Ipp32s m_frameOrder;
-    Ipp32s m_frameOrderOfLastIdr;       // frame order of last IDR frame (in display order)
-    Ipp32s m_frameOrderOfLastIntra;     // frame order of last I-frame (in display order)
-    Ipp32s m_frameOrderOfLastAnchor;    // frame order of last anchor (first in minigop) frame (in display order)
+    Ipp32s m_frameOrderOfLastIdr;               // frame order of last IDR frame (in display order)
+    Ipp32s m_frameOrderOfLastIntra;             // frame order of last I-frame (in display order)
+    Ipp32s m_frameOrderOfLastIntraInEncOrder;   // frame order of last I-frame (in encoding order)
+    Ipp32s m_frameOrderOfLastAnchor;            // frame order of last anchor (first in minigop) frame (in display order)
     Ipp32s m_miniGopCount;
     mfxU64 m_lastTimeStamp;
     Ipp32s m_lastEncOrder;

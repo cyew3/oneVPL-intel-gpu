@@ -81,6 +81,7 @@ namespace H265Enc {
         Ipp32s m_frameOrder;
         Ipp32s m_frameOrderOfLastIdr;
         Ipp32s m_frameOrderOfLastIntra;
+        Ipp32s m_frameOrderOfLastIntraInEncOrder;
         Ipp32s m_frameOrderOfLastAnchor;
         Ipp32s m_poc;
         Ipp32s m_encOrder;

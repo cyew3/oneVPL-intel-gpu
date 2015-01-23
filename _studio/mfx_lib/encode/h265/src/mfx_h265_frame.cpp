@@ -505,6 +505,7 @@ void H265Frame::ResetEncInfo()
     m_frameOrder = 0;
     m_frameOrderOfLastIdr = 0;
     m_frameOrderOfLastIntra = 0;
+    m_frameOrderOfLastIntraInEncOrder = 0;
     m_frameOrderOfLastAnchor = 0;
     m_poc = 0;
     m_encOrder = 0;
@@ -560,6 +561,7 @@ void H265Frame::ResetCounters()
         m_frameOrder = src->m_frameOrder;
         m_frameOrderOfLastIdr = src->m_frameOrderOfLastIdr;
         m_frameOrderOfLastIntra = src->m_frameOrderOfLastIntra;
+        m_frameOrderOfLastIntraInEncOrder = src->m_frameOrderOfLastIntraInEncOrder;
         m_frameOrderOfLastAnchor = src->m_frameOrderOfLastAnchor;
         m_poc = src->m_poc;
         m_encOrder = src->m_encOrder;

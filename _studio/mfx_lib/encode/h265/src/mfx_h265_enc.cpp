@@ -699,7 +699,7 @@ mfxStatus MFXVideoENCODEH265::SetSlice(H265Slice *slice, Ipp32u curr_slice, H265
 
     slice->slice_segment_address = rowFirst * m_videoParam.PicWidthInCtbs;
     slice->slice_address_last_ctb = (rowFirst + sliceHeight) * m_videoParam.PicWidthInCtbs - 1;
-
+    
     if (curr_slice) slice->first_slice_segment_in_pic_flag = 0;
     else slice->first_slice_segment_in_pic_flag = 1;
 
@@ -717,14 +717,18 @@ mfxStatus MFXVideoENCODEH265::SetSlice(H265Slice *slice, Ipp32u curr_slice, H265
 
     slice->sliceIntraAngMode = EnumIntraAngMode((frame->m_picCodeType == MFX_FRAMETYPE_B && !frame->m_isRef)
         ? m_videoParam.intraAngModes[B_NONREF]
-    : ((frame->m_picCodeType == MFX_FRAMETYPE_P)
-        ? m_videoParam.intraAngModes[SliceTypeIndex(P_SLICE)]
-    : m_videoParam.intraAngModes[SliceTypeIndex(slice->slice_type)]));
+        : ((frame->m_picCodeType == MFX_FRAMETYPE_P)
+            ? m_videoParam.intraAngModes[SliceTypeIndex(P_SLICE)]
+            : m_videoParam.intraAngModes[SliceTypeIndex(slice->slice_type)]));
 
-    if (frame->m_isIdrPic) {
-        slice->IdrPicFlag = 1;
-        slice->RapPicFlag = 1;
-    }
+    if (frame->m_isIdrPic)
+        slice->NalUnitType = NAL_IDR_W_RADL;
+    else if (frame->m_picCodeType == MFX_FRAMETYPE_I)
+        slice->NalUnitType = NAL_CRA;
+    else if (frame->m_frameOrder < frame->m_frameOrderOfLastIntraInEncOrder)
+        slice->NalUnitType = frame->m_isRef ? NAL_RASL_R : NAL_RASL_N;
+    else
+        slice->NalUnitType = frame->m_isRef ? NAL_TRAIL_R : NAL_TRAIL_N;
 
     slice->slice_pic_order_cnt_lsb = frame->m_poc & ~(0xffffffff << m_sps.log2_max_pic_order_cnt_lsb);
     slice->deblocking_filter_override_flag = 0;
@@ -1363,8 +1367,9 @@ void MFXVideoENCODEH265::ConfigureInputFrame(H265Frame* frame) const
     frame->m_poc = frame->m_frameOrder - frame->m_frameOrderOfLastIdr;
     frame->m_isIdrPic = false;
 
-    Ipp32s idrDist = m_videoParam.GopPicSize * (m_videoParam.IdrInterval + 1);
-    if ((frame->m_frameOrder - frame->m_frameOrderOfLastIdr) % idrDist == 0) {
+    Ipp32s idrDist = m_videoParam.GopPicSize * m_videoParam.IdrInterval;
+    if (frame->m_frameOrder == 0 || 
+        idrDist > 0 && (frame->m_frameOrder - frame->m_frameOrderOfLastIdr) % idrDist == 0) {
         frame->m_isIdrPic = true;
         frame->m_picCodeType = MFX_FRAMETYPE_I;
         frame->m_poc = 0;
@@ -1430,6 +1435,10 @@ void MFXVideoENCODEH265::CreateRefPicList(Task *task, H265ShortTermRefPicSet *rp
     task->m_dpbSize = 0;
     for (TaskIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i) {
         H265Frame *ref = (*i)->m_frameRecon;
+        if (currFrame->m_frameOrder > currFrame->m_frameOrderOfLastIntraInEncOrder &&
+            ref->m_frameOrder < currFrame->m_frameOrderOfLastIntraInEncOrder)
+            continue; // trailing pictures can't predict from leading pictures
+
         task->m_dpb[task->m_dpbSize++] = ref;
         if (ref->m_poc < currFrame->m_poc)
             list0[numStBefore++] = ref;
@@ -1461,16 +1470,8 @@ void MFXVideoENCODEH265::CreateRefPicList(Task *task, H265ShortTermRefPicSet *rp
         currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxP[1]);
     }
     else if (currFrame->m_picCodeType == MFX_FRAMETYPE_B) {
-#ifdef AMT_BEST_REF_ASYM
-        if(m_videoParam.BiPyramidLayers > 1 && m_videoParam.MaxRefIdxB[0]>m_videoParam.MaxRefIdxB[1] && numStBefore<=numStAfter) {
-            currFrame->m_refPicList[0].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[1]);
-            currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[0]);
-        } else
-#endif
-        {
         currFrame->m_refPicList[0].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[0]);
         currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[1]);
-        }
     }
 
     // create RPS syntax
@@ -1483,14 +1484,14 @@ void MFXVideoENCODEH265::CreateRefPicList(Task *task, H265ShortTermRefPicSet *rp
     for (Ipp32s i = 0; i < numStBefore; i++) {
         rps->delta_poc[i] = dpoc0[i] - deltaPocPred;
         //rps->used_by_curr_pic_flag[i] = i < numL0 || i < IPP_MAX(0, numL1 - numStAfter);
-        rps->used_by_curr_pic_flag[i] = 1; // mimic current behavior
+        rps->used_by_curr_pic_flag[i] = (currFrame->m_picCodeType != MFX_FRAMETYPE_I); // mimic current behavior
         deltaPocPred = dpoc0[i];
     }
     deltaPocPred = 0;
     for (Ipp32s i = 0; i < numStAfter; i++) {
         rps->delta_poc[numStBefore + i] = deltaPocPred - dpoc1[i];
         //rps->used_by_curr_pic_flag[numStBefore + i] = i < numL1 || i < IPP_MAX(0, numL0 - numStBefore);
-        rps->used_by_curr_pic_flag[numStBefore + i] = 1;
+        rps->used_by_curr_pic_flag[numStBefore + i] = (currFrame->m_picCodeType != MFX_FRAMETYPE_I);
         deltaPocPred = dpoc1[i];
     }
 }
@@ -1524,6 +1525,11 @@ void MFXVideoENCODEH265::ConfigureEncodeFrame(Task* task)
 
     H265Frame *currFrame = task->m_frameOrigin;
 
+    // update frame order of most recent intra frame in encoding order
+    currFrame->m_frameOrderOfLastIntraInEncOrder = m_frameOrderOfLastIntraInEncOrder;
+    if (currFrame->m_picCodeType == MFX_FRAMETYPE_I)
+        m_frameOrderOfLastIntraInEncOrder = currFrame->m_frameOrder;
+
     // create reference lists and RPS syntax
     H265ShortTermRefPicSet rps = {0};
     CreateRefPicList(task, &rps);
@@ -1538,30 +1544,30 @@ void MFXVideoENCODEH265::ConfigureEncodeFrame(Task* task)
         Ipp32s idxInList0 = (Ipp32s)(std::find(list0, list0 + numRefIdx0, list1[idx1]) - list0);
         currFrame->m_mapRefIdxL1ToL0[idx1] = (idxInList0 < numRefIdx0) ? idxInList0 : -1;
     }
-    { 
-        // Map to unique
-        Ipp32s uniqueIdx = 0;
-        for (Ipp32s idx = 0; idx < numRefIdx0; idx++) {
-            currFrame->m_mapListRefUnique[0][idx]=uniqueIdx;
+
+    // Map to unique
+    Ipp32s uniqueIdx = 0;
+    for (Ipp32s idx = 0; idx < numRefIdx0; idx++) {
+        currFrame->m_mapListRefUnique[0][idx] = uniqueIdx;
+        uniqueIdx++;
+    }            
+    for (Ipp32s idx = numRefIdx0; idx < MAX_NUM_REF_IDX; idx++) {
+        currFrame->m_mapListRefUnique[0][idx] = -1;
+    }            
+    for (Ipp32s idx1 = 0; idx1 < numRefIdx1; idx1++) {
+        if(currFrame->m_mapRefIdxL1ToL0[idx1] == -1) {
+            currFrame->m_mapListRefUnique[1][idx1] = uniqueIdx;
             uniqueIdx++;
-        }            
-        for (Ipp32s idx = numRefIdx0; idx < MAX_NUM_REF_IDX; idx++) {
-            currFrame->m_mapListRefUnique[0][idx]=-1;
-        }            
-        for (Ipp32s idx1 = 0; idx1 < numRefIdx1; idx1++) {
-            if(currFrame->m_mapRefIdxL1ToL0[idx1]==-1) {
-                currFrame->m_mapListRefUnique[1][idx1]=uniqueIdx;
-                uniqueIdx++;
-            } else {
-                currFrame->m_mapListRefUnique[1][idx1]=currFrame->m_mapListRefUnique[0][currFrame->m_mapRefIdxL1ToL0[idx1]];
-            }
+        } else {
+            currFrame->m_mapListRefUnique[1][idx1] = currFrame->m_mapListRefUnique[0][currFrame->m_mapRefIdxL1ToL0[idx1]];
         }
-        for (Ipp32s idx = numRefIdx1; idx < MAX_NUM_REF_IDX; idx++) {
-            currFrame->m_mapListRefUnique[1][idx]=-1;
-        }            
-        //assert(uniqueIdx<=MAX_NUM_REF_IDX);
-        currFrame->m_numRefUnique = uniqueIdx;
     }
+    for (Ipp32s idx = numRefIdx1; idx < MAX_NUM_REF_IDX; idx++) {
+        currFrame->m_mapListRefUnique[1][idx] = -1;
+    }            
+    //assert(uniqueIdx <= MAX_NUM_REF_IDX);
+    currFrame->m_numRefUnique = uniqueIdx;
+
     // setup flag m_allRefFramesAreFromThePast used for TMVP
     currFrame->m_allRefFramesAreFromThePast = true;
     for (Ipp32s i = 0; i < numRefIdx0 && currFrame->m_allRefFramesAreFromThePast; i++)
@@ -1570,6 +1576,20 @@ void MFXVideoENCODEH265::ConfigureEncodeFrame(Task* task)
     for (Ipp32s i = 0; i < numRefIdx1 && currFrame->m_allRefFramesAreFromThePast; i++)
         if (currFrame->m_refPicList[1].m_deltaPoc[i] < 0)
             currFrame->m_allRefFramesAreFromThePast = false;
+
+    // setup ref flags
+    currFrame->m_isLongTermRef = 0;
+    currFrame->m_isShortTermRef = 1;
+    if (currFrame->m_picCodeType == MFX_FRAMETYPE_B) {
+        if (m_videoParam.BiPyramidLayers > 1) {
+            if (currFrame->m_pyramidLayer == m_videoParam.BiPyramidLayers - 1)
+                currFrame->m_isShortTermRef = 0;
+        }
+        else if (!m_videoParam.TreatBAsReference) {
+            currFrame->m_isShortTermRef = 0;
+        }
+    }
+    currFrame->m_isRef = currFrame->m_isShortTermRef | currFrame->m_isLongTermRef;
 
     // setup slices
     H265Slice *currSlices = &task->m_slices[0];
@@ -1588,32 +1608,15 @@ void MFXVideoENCODEH265::ConfigureEncodeFrame(Task* task)
             currSlices[i].m_shortRefPicSet = rps;
     }
 
-    task->m_encOrder = currFrame->m_encOrder = m_lastEncOrder + 1;
-
-    // setup ref flags
-    currFrame->m_isLongTermRef = 0;
-    currFrame->m_isShortTermRef = 1;
-    if (currFrame->m_picCodeType == MFX_FRAMETYPE_B) {
-        if (m_videoParam.BiPyramidLayers > 1) {
-            if (currFrame->m_pyramidLayer == m_videoParam.BiPyramidLayers - 1)
-                currFrame->m_isShortTermRef = 0;
-        }
-        else if (!m_videoParam.TreatBAsReference) {
-            currFrame->m_isShortTermRef = 0;
-        }
-    }
-    currFrame->m_isRef = currFrame->m_isShortTermRef | currFrame->m_isLongTermRef;
+    currFrame->m_encOrder = m_lastEncOrder + 1;
 
     // set task param to simplify bitstream writing logic
-    {
-        task->m_encOrder   = m_lastEncOrder + 1;
-        task->m_frameOrder = task->m_frameOrigin->m_frameOrder;
-        task->m_timeStamp  = task->m_frameOrigin->m_timeStamp;
-        //task->m_picCodeType= task->m_frameOrigin->m_picCodeType;
-        task->m_frameType= currFrame->m_picCodeType | 
-            (currFrame->m_isIdrPic ? MFX_FRAMETYPE_IDR : 0) | 
-            (currFrame->m_isRef ? MFX_FRAMETYPE_REF : 0);
-    }
+    task->m_encOrder   = m_lastEncOrder + 1;
+    task->m_frameOrder = task->m_frameOrigin->m_frameOrder;
+    task->m_timeStamp  = task->m_frameOrigin->m_timeStamp;
+    task->m_frameType = currFrame->m_picCodeType | 
+        (currFrame->m_isIdrPic ? MFX_FRAMETYPE_IDR : 0) | 
+        (currFrame->m_isRef ? MFX_FRAMETYPE_REF : 0);
 
     // assign resource for reconstruct
     FramePtrIter frm = GetFreeFrame(m_freeFrames, &m_videoParam); // calls AddRef()

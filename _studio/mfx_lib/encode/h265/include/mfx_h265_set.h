@@ -224,8 +224,7 @@ struct H265Slice : public H265SliceHeader
     Ipp32s DependentSliceCurStartCUAddr;
     Ipp32s DependentSliceCurEndCUAddr;
 
-    Ipp8u  IdrPicFlag;
-    Ipp8u  RapPicFlag;
+    Ipp8u  NalUnitType;
     Ipp32s slice_num;
     Ipp32u slice_address_last_ctb;
     Ipp32u row_first;
