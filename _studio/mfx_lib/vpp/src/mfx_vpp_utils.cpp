@@ -1346,13 +1346,20 @@ mfxStatus GetPipelineList(
     /* ************************************************************************** */
     if( (MFX_FOURCC_RGB4 != par->In.FourCC) || (MFX_FOURCC_RGB4 != par->Out.FourCC) )
     {
-        if ( MFX_FOURCC_A2RGB10 == par->Out.FourCC && MFX_FOURCC_P010 != par->In.FourCC)
-        {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-
         switch (par->In.FourCC)
         {
+        case MFX_FOURCC_P210:
+             switch (par->Out.FourCC)
+            {
+            case MFX_FOURCC_A2RGB10:
+                pipelineList.push_back(MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10);
+                break;
+            case MFX_FOURCC_NV12:
+            case MFX_FOURCC_P010:
+                pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
+                break;
+            }
+            break;
         case MFX_FOURCC_P010:
             switch (par->Out.FourCC)
             {
@@ -1388,7 +1395,7 @@ mfxStatus GetPipelineList(
             break;
         }
 
-        if( MFX_FOURCC_NV12 != par->In.FourCC && MFX_FOURCC_P010 != par->In.FourCC)
+        if( MFX_FOURCC_NV12 != par->In.FourCC && MFX_FOURCC_P010 != par->In.FourCC && MFX_FOURCC_P210 != par->In.FourCC)
         {
             /* [Color Space Conversion] FILTER */
             pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);

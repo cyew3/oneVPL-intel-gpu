@@ -809,16 +809,24 @@ IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
          * Need to remove as soon as IPP has such support
          */
         roi.width  = 2;
-        roi.height = ( srcSize.height / 2 ) * (srcSize.width / 2);
-        sts = ippiCopy_8u_C1R(inData->UV,     4, pWorkBuf, roi.width, roi);
-        if( ippStsNoErr != sts ) return sts;
+        roi.height = (srcSize.width / 2);
+        for ( int i = 0 ; i < inInfo->Height /2; i++)
+        {
+            sts = ippiCopy_8u_C1R(inData->UV + i*inData->Pitch, 4, pWorkBuf + i*inData->Pitch, roi.width, roi);
+            if( ippStsNoErr != sts ) return sts;
+        }
 
-        sts = ippiCopy_8u_C1R(inData->UV + 2, 4, pWorkBuf + (srcSize.height / 2 ) * srcSize.width, roi.width, roi);
-        if( ippStsNoErr != sts ) return sts;
 
-        roi.width  = 2;
-        roi.height = ( srcSize.height / 2 ) * (srcSize.width);
-        sts = ippiCopy_8u_C1R(pWorkBuf, 2, inData->UV, roi.width, roi);
+        mfxU8 *ptr = pWorkBuf + srcSize.width;
+        for ( int i = 0 ; i < inInfo->Height /2; i++)
+        {
+            sts = ippiCopy_8u_C1R(inData->UV + 2 + i*inData->Pitch, 4, ptr + i*inData->Pitch, roi.width, roi);
+            if( ippStsNoErr != sts ) return sts;
+        }
+
+        roi.width  = srcSize.width;
+        roi.height = srcSize.height/2;
+        sts = ippiCopy_16u_C1R((mfxU16 *)pWorkBuf, inData->Pitch, (mfxU16*)inData->UV, inData->Pitch, roi);
         if( ippStsNoErr != sts ) return sts;
 
         srcRect.height = srcSize.height >>= 1;
@@ -828,14 +836,14 @@ IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
         dstRect.width = dstSize.width >>= 1;
 
         /* Resize U */
-        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *) inData ->UV, srcSize, inData->Pitch / 2, srcRect,
-                                               (Ipp16u *) outData->UV, dstSize.width * 2, dstRect,
+        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *) inData ->UV, srcSize, inData->Pitch, srcRect,
+                                               (Ipp16u *) outData->UV, outData->Pitch , dstRect,
                                               xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
         if( ippStsNoErr != sts ) return sts;
 
         /* Resize V */
-        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *)(&inData->UV[srcSize.height * inData->Pitch / 2 ]), srcSize, inData->Pitch / 2, srcRect,
-                                         (Ipp16u *)(&outData->UV[dstSize.height * outData->Pitch / 2 ]), dstSize.width * 2, dstRect,
+        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *)(&inData->UV[srcSize.width*2]), srcSize, inData->Pitch, srcRect,
+                                         (Ipp16u *)(&outData->UV[dstSize.width*2]), outData->Pitch, dstRect,
                                               xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
         if( ippStsNoErr != sts ) return sts;
 
@@ -849,15 +857,24 @@ IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
         dstRect.width = dstSize.width <<= 1;
 
         roi.width  = 2;
-        roi.height = ( dstSize.height / 2 ) * (dstSize.width / 2);
-        sts = ippiCopy_8u_C1R(outData->UV, roi.width, pWorkBuf, 4, roi);
-        if( ippStsNoErr != sts ) return sts;
-        sts = ippiCopy_8u_C1R(outData->UV + (dstSize.height / 2 ) * dstSize.width, roi.width, pWorkBuf + 2, 4, roi);
-        if( ippStsNoErr != sts ) return sts;
+        roi.height = dstSize.width / 2;
+        for ( int i = 0 ; i < outInfo->Height /2; i++)
+        {
+            sts = ippiCopy_8u_C1R(outData->UV + i*outData->Pitch, roi.width, pWorkBuf + i*outData->Pitch, 4, roi);
+            if( ippStsNoErr != sts ) return sts;
+        }
 
-        roi.width  = 2;
-        roi.height = ( dstSize.height / 2 ) * (dstSize.width);
-        sts = ippiCopy_8u_C1R(pWorkBuf, 2, outData->UV, roi.width, roi);
+        ptr = outData->UV + dstSize.width;
+
+        for(int i = 0; i < outInfo->Height/2; i++)
+        {
+            sts = ippiCopy_8u_C1R(ptr + i*outData->Pitch, roi.width, pWorkBuf + 2 + i*outData->Pitch, 4, roi);
+            if( ippStsNoErr != sts ) return sts;
+        }
+
+        roi.width  = dstSize.width;
+        roi.height = ( dstSize.height / 2 );
+        sts = ippiCopy_16u_C1R((mfxU16 *)pWorkBuf, outData->Pitch, (mfxU16 *)outData->UV, outData->Pitch, roi);
         if( ippStsNoErr != sts ) return sts;
     }
     else //interlaced video
