@@ -1,6 +1,3 @@
-cmake_minimum_required( VERSION 2.6.2 FATAL_ERROR )
-project(mfx-tracer)
-
 set (TRACER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 include_directories(
@@ -8,7 +5,7 @@ include_directories(
   "${TRACER_DIR}"
   )
 
-set(HEADERS
+set(headers
   "${TRACER_DIR}/config/config.h"
   "${TRACER_DIR}/dumps/dump.h"
   "${TRACER_DIR}/loggers/ilog.h"
@@ -25,7 +22,7 @@ set(HEADERS
   "${TRACER_DIR}/wrappers/mfx_structures.h"
   )
 
-set(SOURCES
+set(sources
   "${TRACER_DIR}/config/config.cpp"
   "${TRACER_DIR}/dumps/dump.cpp"
   "${TRACER_DIR}/dumps/dump_mfxcommon.cpp"
@@ -56,19 +53,11 @@ set(SOURCES
   "${TRACER_DIR}/wrappers/mfx_video_fei.cpp"
   )
 
-
-#set(no_warnings "-Wno-unknown-pragmas -Wno-unused")
-#set(debug_flags "-g -D_DEBUG -O0 -Wall ${no_warnings}")
-#set(release_flags "-DNDEBUG -O2 -D_FORTIFY_SOURCE=2 -fstack-protector -Wall ${no_warnings}")
-
-#set(CMAKE_C_FLAGS "-pipe -fPIC")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-#set(CMAKE_C_FLAGS_DEBUG     "${debug_flags}" CACHE STRING "" FORCE)
-#set(CMAKE_C_FLAGS_RELEASE   "${release_flags}" CACHE STRING "" FORCE)
-#set(CMAKE_CXX_FLAGS_DEBUG   "${debug_flags}" CACHE STRING "" FORCE)
-#set(CMAKE_CXX_FLAGS_RELEASE "${release_flags}" CACHE STRING "" FORCE)
 
-add_library(mfx-tracer SHARED ${SOURCES} ${HEADERS})
+make_library(mfx-tracer none shared)
+
 set_target_properties( mfx-tracer PROPERTIES LINK_FLAGS
-  "-Wl,--no-undefined,-z,relro,-z,now,-z,noexecstack,--version-script=${TRACER_DIR}/libmfx.map -fstack-protector" )
+  "${LINK_FLAGS} -Wl,--no-undefined,-z,relro,-z,now,-z,noexecstack,--version-script=${TRACER_DIR}/libmfx.map -fstack-protector" )
+
 target_link_libraries( mfx-tracer dl rt )
