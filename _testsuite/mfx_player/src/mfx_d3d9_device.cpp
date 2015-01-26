@@ -261,7 +261,7 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
 
         pp.BackBufferWidth  = m_D3DPP.BackBufferWidth;
         pp.BackBufferHeight = m_D3DPP.BackBufferHeight;
-        pp.BackBufferCount = 16;
+        pp.BackBufferCount = 4;
         pp.SwapEffect = D3DSWAPEFFECT_FLIPEX;
         hr = m_pD3DD9Ex->CreateAdditionalSwapChain(&pp, &m_pSwapChain);
         if (FAILED(hr))

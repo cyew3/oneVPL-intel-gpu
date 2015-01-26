@@ -2257,15 +2257,22 @@ BOOL CALLBACK GetMonitorRect_MonitorEnumProc(HMONITOR /*hMonitor*/,
     return TRUE;
 }
 
-D3DFORMAT StrToD3DFORMAT(vm_char *format_name)
+D3DFORMAT StrToD3DFORMAT(vm_char *format_name, bool directx11 = false)
 {
      D3DFORMAT format = D3DFMT_X8R8G8B8;
-     if ( ! format )
+     if ( directx11 )
+         format = (D3DFORMAT)DXGI_FORMAT_B8G8R8A8_UNORM;
+
+     if ( ! format_name )
          return format;
 
      if (0 == vm_string_strcmp(VM_STRING("D3DFMT_A2B10G10R10"), format_name) ){
          format = D3DFMT_A2B10G10R10;
          PipelineTrace((VM_STRING("D3D back buffer format: D3DFMT_A2B10G10R10\n")));
+     }
+     else if (0 == vm_string_strcmp(VM_STRING("DXGI_FORMAT_R10G10B10A2_UNORM"), format_name) ){
+         format = (D3DFORMAT)DXGI_FORMAT_R10G10B10A2_UNORM;
+         PipelineTrace((VM_STRING("D3D back buffer format: DXGI_FORMAT_R10G10B10A2_UNORM\n")));
      }
      else if (0 == vm_string_strcmp(VM_STRING("D3DFMT_A8B8G8R8"), format_name) ){
          format = D3DFMT_A8B8G8R8;
@@ -2280,8 +2287,16 @@ D3DFORMAT StrToD3DFORMAT(vm_char *format_name)
          PipelineTrace((VM_STRING("D3D back buffer format: D3DFMT_X8R8G8B8\n")));
      }
      else if (0 == vm_string_strcmp(VM_STRING(""), format_name) ){
-         format = D3DFMT_X8R8G8B8;
-         PipelineTrace((VM_STRING("D3D back buffer format: D3DFMT_X8R8G8B8\n")));
+         if ( directx11 )
+         {
+            format = (D3DFORMAT)DXGI_FORMAT_B8G8R8A8_UNORM;
+            PipelineTrace((VM_STRING("D3D back buffer format: DXGI_FORMAT_B8G8R8A8_UNORM\n")));
+         }
+         else
+         {
+            format = D3DFMT_X8R8G8B8;
+            PipelineTrace((VM_STRING("D3D back buffer format: D3DFMT_X8R8G8B8\n")));
+         }
      }
      else {
 
@@ -2409,8 +2424,12 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
                 m_inParams.bDxgiDebug ?
                 new MFXD3D11DxgiDebugDevice() :
             new MFXD3D11Device());
-
-            MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), NULL, !m_inParams.bFullscreen, D3DFMT_X8R8G8B8, 1, m_inParams.dxva2DllName, cparams.m_bD39Feat));
+            DXGI_FORMAT format = (DXGI_FORMAT)StrToD3DFORMAT(m_inParams.BackBufferFormat, true);
+            if ( 0 == format)
+            {
+                return MFX_ERR_UNSUPPORTED;
+            }
+            MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), NULL, !m_inParams.bFullscreen, format, 1, m_inParams.dxva2DllName, cparams.m_bD39Feat));
         }
         MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL *)&pDevice));
 

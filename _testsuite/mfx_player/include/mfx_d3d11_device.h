@@ -64,7 +64,7 @@ protected:
             ppImmediateContext);
     }
 
-
+    DXGI_FORMAT                             m_format;
     CComPtr<ID3D11Device>                   m_pD3D11Device;
     CComPtr<ID3D11DeviceContext>            m_pD3D11Ctx;
     CComQIPtr<ID3D11VideoDevice>            m_pDX11VideoDevice;
