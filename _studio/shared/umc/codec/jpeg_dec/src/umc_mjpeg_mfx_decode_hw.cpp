@@ -391,6 +391,7 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
 
     buffersForUpdate = (1 << 5) - 1;
     m_dec[0]->m_num_scans = GetNumScans(in);
+    m_dec[0]->m_curr_scan = &m_dec[0]->m_scans[0];
 
     for (Ipp32u i = 0; i < pAuxData->count; i += 1)
     {
