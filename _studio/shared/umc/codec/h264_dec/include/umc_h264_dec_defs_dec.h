@@ -439,6 +439,20 @@ using namespace UMC;
 
 struct H264VUI
 {
+
+    void Reset()
+    {
+        H264VUI vui = {0};
+        // set some parameters by default
+        vui.video_format = 5; // unspecified
+        vui.video_full_range_flag = 0;
+        vui.colour_primaries = 2; // unspecified
+        vui.transfer_characteristics = 2; // unspecified
+        vui.matrix_coefficients = 2; // unspecified
+
+        *this = vui;
+    }
+
     Ipp8u        aspect_ratio_info_present_flag;
     Ipp8u        aspect_ratio_idc;
     Ipp16u       sar_width;
@@ -577,13 +591,7 @@ struct H264SeqParamSet : public HeapObject, public H264SeqParamSetBase
         H264SeqParamSetBase::Reset();
 
         seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS;
-
-        // set some parameters by default
-        vui.video_format = 5; // unspecified
-        vui.video_full_range_flag = 0;
-        vui.colour_primaries = 2; // unspecified
-        vui.transfer_characteristics = 2; // unspecified
-        vui.matrix_coefficients = 2; // unspecified
+        vui.Reset();
     }
 };    // H264SeqParamSet
 

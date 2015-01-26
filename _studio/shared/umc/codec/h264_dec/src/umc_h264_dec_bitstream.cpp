@@ -493,6 +493,8 @@ Status H264HeadersBitstream::GetVUIParam(H264SeqParamSet *sps, H264VUI *vui)
 {
     Status ps = UMC_OK;
 
+    vui->Reset();
+
     vui->aspect_ratio_info_present_flag = Get1Bit();
 
     vui->sar_width = 1; // default values
