@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          HW MPEG2  encoder
@@ -124,6 +124,10 @@ namespace MPEG2EncoderHW
           }  
          mfxStatus SubmitFrame (EncodeFrameTask*  pIntTask, mfxU8 *pUserData, mfxU32 userDataLen, mfxU8 qp = 0)
          {
+             if (m_pExecuteBuffers->m_mbqp_data)
+             {
+                 m_pExecuteBuffers->m_mbqp_data[0] = 0;
+             }
              mfxStatus sts = MFX_ERR_NONE;
              sts = SubmitFrame(&pIntTask->m_FrameParams, &pIntTask->m_Frames, pUserData, userDataLen, qp);
              MFX_CHECK_STS (sts);
@@ -131,8 +135,60 @@ namespace MPEG2EncoderHW
              pIntTask->m_BitstreamFrameNumber = (mfxU32)m_pExecuteBuffers->m_idxBs;
              return sts;
          }
+
+         static void QuantIntoScaleTypeAndCode (Ipp32s quant_value, Ipp32s &q_scale_type, Ipp32s &quantiser_scale_code)
+         {
+             if(quant_value > 7 && quant_value <= 62) 
+             {
+                 q_scale_type = 0;
+                 quantiser_scale_code = (quant_value + 1) >> 1;
+             } 
+             else 
+             { // non-linear quantizer
+                 q_scale_type = 1;
+                 if(quant_value <= 8) 
+                 {
+                     quantiser_scale_code = quant_value;
+                 }
+                 else if (quant_value > 62) 
+                 {
+                     quantiser_scale_code = 25+((quant_value-64+4)>>3);
+                 }
+             }
+             if(quantiser_scale_code < 1) 
+             {
+                 quantiser_scale_code = 1;
+             }
+             if(quantiser_scale_code > 31) 
+             {
+                 quantiser_scale_code = 31;
+             } 
+         }
+
+         mfxStatus SubmitFrameMBQP (EncodeFrameTask*  pIntTask, mfxU8 *pUserData, mfxU32 userDataLen, mfxU8* mbqp, mfxU32 numMB)
+         {
+             mfxStatus sts = MFX_ERR_NONE;
+
+             mfxU8 qp = 0;
+
+             if (m_pExecuteBuffers->m_mbqp_data)
+             {
+                 Ipp32s scale_type = 0; 
+                 Ipp32s scale_code = 0;
+                 QuantIntoScaleTypeAndCode(mbqp[0], scale_type, scale_code);
+                 qp = (Ipp8u)scale_code;
+                 pIntTask->m_FrameParams.QuantScaleType = (Ipp8u)scale_type;
+             }
+
+             sts = SubmitFrame(&pIntTask->m_FrameParams, &pIntTask->m_Frames, pUserData, userDataLen, qp, mbqp, numMB);
+             MFX_CHECK_STS (sts);
+             pIntTask->m_FeedbackNumber       = m_pExecuteBuffers->m_pps.StatusReportFeedbackNumber;
+             pIntTask->m_BitstreamFrameNumber = (mfxU32)m_pExecuteBuffers->m_idxBs;
+             return sts;
+         }
+
  protected:
-          mfxStatus SubmitFrame(mfxFrameParamMPEG2*  pParams, FramesSet* pFrames, mfxU8 *pUserData, mfxU32 userDataLen, mfxU8 qp = 0)
+     mfxStatus SubmitFrame(mfxFrameParamMPEG2*  pParams, FramesSet* pFrames, mfxU8 *pUserData, mfxU32 userDataLen, mfxU8 qp = 0, mfxU8* mbqp = 0, mfxU32 numMB = 0)
           {
               mfxStatus sts = MFX_ERR_NONE;
               if (!m_pExecuteBuffers || !m_pDdiEncoder)
@@ -143,7 +199,7 @@ namespace MPEG2EncoderHW
               sts = m_pExecuteBuffers->InitPictureParameters(pParams,pFrames->m_nFrame);
               MFX_CHECK_STS(sts);
 
-              sts = m_pExecuteBuffers->InitSliceParameters(qp);
+              sts = m_pExecuteBuffers->InitSliceParameters(qp, pParams->QuantScaleType, mbqp, numMB);
               MFX_CHECK_STS(sts);
 
               m_pExecuteBuffers->InitFramesSet (pFrames->m_pInputFrame->Data.MemId, 

@@ -1,12 +1,12 @@
-    /*///// /////////////////////////////////////////////////////////////////////////
-    //
-    //                  INTEL CORPORATION PROPRIETARY INFORMATION
-    //     This software is supplied under the terms of a license agreement or
-    //     nondisclosure agreement with Intel Corporation and may not be copied
-    //     or disclosed except in accordance with the terms of that agreement.
-    //          Copyright(c) 2011 - 2013 Intel Corporation. All Rights Reserved.
-    //
-    */
+/*///// /////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2011 - 2015 Intel Corporation. All Rights Reserved.
+//
+*/
 
 #include "mfx_common.h"
 
@@ -106,6 +106,7 @@ namespace MfxHwMpeg2Encode
         ExecuteBuffers()
             : m_pSlice(0)
             , m_pMBs (0)
+            , m_mbqp_data(0)
             , m_pSurface(0)
             // , m_pSurfacePair(0)
             , m_idxMb(DWORD(-1))
@@ -134,7 +135,7 @@ namespace MfxHwMpeg2Encode
         mfxStatus InitPictureParameters(mfxFrameCUC* pCUC);
         void      InitFramesSet(mfxMemId curr, bool bExternal, mfxMemId rec, mfxMemId ref_0,mfxMemId ref_1);
         mfxStatus InitSliceParameters(mfxFrameCUC* pCUC);
-        mfxStatus InitSliceParameters(mfxU8 qp);
+        mfxStatus InitSliceParameters(mfxU8 qp, mfxU16 scale_type, mfxU8 * mbqp, mfxU32 numMB);
         mfxStatus GetMBParameters(mfxFrameCUC* pCUC);
         mfxStatus SetMBParameters(mfxFrameCUC* pCUC);
  
@@ -144,6 +145,7 @@ namespace MfxHwMpeg2Encode
         ENCODE_SET_PICTURE_PARAMETERS_MPEG2     m_pps;
         ENCODE_SET_SLICE_HEADER_MPEG2*          m_pSlice;
         ENCODE_ENC_MB_DATA_MPEG2*               m_pMBs;
+        mfxU8*                                  m_mbqp_data;
         mfxExtVideoSignalInfo                   m_VideoSignalInfo;
 
 #if defined (MFX_VA_WIN)

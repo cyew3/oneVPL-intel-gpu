@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -424,16 +424,42 @@ mfxStatus FullEncode::SubmitFrame(sExtTask2 *pExtTask)
    // coding
     {
         mfxU8  qp = 0;
+        mfxU8 * mbqpdata = 0;
+        mfxU32 mbqpNumMB = 0;
         if (bConstQuant)
         {
             m_pBRC->SetQuant(pInternalParams->QP, pInternalParams->FrameType);
             m_pBRC->SetQuantDCPredAndDelay(&pIntTask->m_FrameParams,&qp);
-        
+
+            if (pParams->bMbqpMode)
+            {
+                const mfxExtMBQP *mbqp = (mfxExtMBQP *)GetExtBuffer(pInternalParams->ExtParam, pInternalParams->NumExtParam, MFX_EXTBUFF_MBQP);
+                
+                mfxU32 wMB = (pParams->mfxVideoParams.mfx.FrameInfo.CropW + 15) / 16;
+                mfxU32 hMB = (pParams->mfxVideoParams.mfx.FrameInfo.CropH + 15) / 16;
+
+                bool isMBQP = mbqp && mbqp->QP && mbqp->NumQPAlloc >= wMB * hMB;
+
+                if (isMBQP)
+                {
+                    mbqpdata = mbqp->QP;
+                    mbqpNumMB = wMB * hMB;
+                }
+            }
         }
-        
+
+
         MFX_CHECK_STS (m_UDBuff.AddUserData(pInternalParams));
 
-        sts = m_pENCODE->SubmitFrame(pIntTask, m_UDBuff.GetUserDataBuffer(), m_UDBuff.GetUserDataSize(), qp);
+        if (mbqpdata)
+        {
+            sts = m_pENCODE->SubmitFrameMBQP(pIntTask, m_UDBuff.GetUserDataBuffer(), m_UDBuff.GetUserDataSize(), mbqpdata, mbqpNumMB);
+        }
+        else
+        {
+            sts = m_pENCODE->SubmitFrame(pIntTask, m_UDBuff.GetUserDataBuffer(), m_UDBuff.GetUserDataSize(), qp);
+        }
+
         MFX_CHECK_STS(sts);
 
 

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -17,6 +17,7 @@
 
 #include "assert.h"
 //#include "mfx_mpeg2_enc_ddi_hw.h"
+#include "mfx_enc_common.h"
 #include "mfx_mpeg2_encode_interface.h"
 
 #include <memory>
@@ -85,9 +86,9 @@ namespace MfxHwMpeg2Encode
     AUXDEV_DESTROY_ACCEL_SERVICE            = 9
 } AUXDEV_FUNCTION_ID;*/
 
-#define D3DFMT_NV12 (D3DFORMAT)(MAKEFOURCC('N', 'V', '1', '2'))
-#define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MAKEFOURCC('N', 'V', '1', '2'))
-#define D3DDDIFMT_YU12 (D3DDDIFORMAT)(MAKEFOURCC('Y', 'U', '1', '2'))
+//#define D3DFMT_NV12 (D3DFORMAT)(MAKEFOURCC('N', 'V', '1', '2'))
+//#define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MAKEFOURCC('N', 'V', '1', '2'))
+//#define D3DDDIFMT_YU12 (D3DDDIFORMAT)(MAKEFOURCC('Y', 'U', '1', '2'))
 
 typedef struct tagENCODE_QUERY_STATUS_DATA_tmp
 {
@@ -285,7 +286,7 @@ mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, 
     { 
         m_nMBs  = nMBs;
         m_pMBs  = new ENCODE_ENC_MB_DATA_MPEG2 [m_nMBs];
-        memset (m_pMBs,0,sizeof(ENCODE_ENC_MB_DATA_MPEG2)*m_nMBs);    
+        memset (m_pMBs,0,sizeof(ENCODE_ENC_MB_DATA_MPEG2)*m_nMBs);
     }
     else
     {
@@ -380,6 +381,13 @@ mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, 
         m_sps.AVBRConvergence = par->mfxVideoParams.mfx.Convergence;
     }
 
+    if (par->bMbqpMode)
+    {
+        mfxU32 wMB = (par->mfxVideoParams.mfx.FrameInfo.CropW + 15) / 16;
+        mfxU32 hMB = (par->mfxVideoParams.mfx.FrameInfo.CropH + 15) / 16;
+        m_mbqp_data = new mfxU8[wMB*hMB];
+    }    
+
     // m_caps parameters
 
     m_caps.IntraPredBlockSize = (par->bAllowFieldDCT) ?
@@ -437,6 +445,9 @@ mfxStatus ExecuteBuffers::Close()
     
     m_idxMb = (DWORD(-1));
     delete [] m_pMBs;
+    delete [] m_mbqp_data;
+    m_mbqp_data = 0;
+
     m_nMBs = 0;
     m_pMBs  = 0;
 
@@ -659,22 +670,53 @@ enum
 
 #define _TEMP_DEBUG
 
-mfxStatus ExecuteBuffers::InitSliceParameters(mfxU8 qp)
+
+static Ipp32s QuantToScaleCode(Ipp32s quant_value, Ipp32s q_scale_type)
+{
+    if (q_scale_type == 0)
+    {
+        return quant_value/2;
+    }
+    else
+    {
+        if (quant_value <= 8)
+            return quant_value;
+        else if (quant_value <= 24)
+            return 8 + (quant_value - 8)/2;
+        else if (quant_value <= 56)
+            return 16 + (quant_value - 24)/4;
+        else 
+            return 24 + (quant_value - 56)/8;
+    }
+}
+
+mfxStatus ExecuteBuffers::InitSliceParameters(mfxU8 qp, mfxU16 scale_type, mfxU8 * mbqp, mfxU32 numMB)
 {
     if (m_pps.NumSlice > m_nSlices)
         return MFX_ERR_UNSUPPORTED;
     
     mfxU8  intra = (m_pps.picture_coding_type == CODING_TYPE_I)? 1:0;
-    mfxU16 numMB = (mfxU16)((m_sps.FrameWidth +15)>>4);
+    mfxU16 numMBSlice = (mfxU16)((m_sps.FrameWidth +15)>>4);
+
+    bool isMBQP = (m_mbqp_data != 0) && (mbqp != 0) && (mbqp[0] != 0);
+
+    if (isMBQP)
+    {
+        for (mfxU32 i = 0; i < numMB; i++)
+        {
+            m_mbqp_data[i] = (Ipp8u)QuantToScaleCode(mbqp[i], scale_type);
+        }
+    }
    
     for (int i=0; i<(int)m_pps.NumSlice; i++)
     {
         ENCODE_SET_SLICE_HEADER_MPEG2*  pDDISlice = &m_pSlice[i];
         pDDISlice->FirstMbX                       = 0;
         pDDISlice->FirstMbY                       = (mfxU16)i;
-        pDDISlice->NumMbsForSlice                 = numMB;
+        pDDISlice->NumMbsForSlice                 = numMBSlice;
         pDDISlice->IntraSlice                     = intra; 
-        pDDISlice->quantiser_scale_code           = qp;
+        //pDDISlice->quantiser_scale_code           = isMBQP ? mbqp[i*numMBSlice] : qp;
+        pDDISlice->quantiser_scale_code           = isMBQP ? m_mbqp_data[0] : qp;
     }
 
     return MFX_ERR_NONE;

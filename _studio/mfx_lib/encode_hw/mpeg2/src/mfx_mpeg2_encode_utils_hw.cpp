@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -148,6 +148,7 @@ namespace MPEG2EncoderHW
             ,MFX_EXTBUFF_PAVP_OPTION
 #endif   
             ,MFX_EXTBUFF_QM
+            ,MFX_EXTBUFF_CODING_OPTION3
         };
         mfxU32 num_supported = 0;
 
@@ -1006,6 +1007,21 @@ namespace MPEG2EncoderHW
                 bWarning = true;
             }
 
+            mfxExtCodingOption3 * extOpt3 = (mfxExtCodingOption3 *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_CODING_OPTION3);
+            if (extOpt3 && extOpt3->EnableMBQP == MFX_CODINGOPTION_ON)
+            {
+                if (out->mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+                {
+                    extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
+                    bWarning = true;
+                }
+            }
+            if (extOpt3 && extOpt3->EnableMBQP == MFX_CODINGOPTION_UNKNOWN)
+            {
+                extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
+            }
+
+
             mfxU16 gof = out->mfx.GopOptFlag & (MFX_GOP_CLOSED | MFX_GOP_STRICT);
             if (out->mfx.GopOptFlag != gof)
             {    
@@ -1396,6 +1412,20 @@ namespace MPEG2EncoderHW
         {
             /*if RateControlMethod was undefined MSDK have to use default one */
             m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+        }
+
+        mfxExtCodingOption3 * extOpt3 = (mfxExtCodingOption3 *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION3);
+        if (extOpt3 && extOpt3->EnableMBQP == MFX_CODINGOPTION_ON)
+        {
+            if (m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+            {
+                extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
+                bCorrected = true;
+            }
+            else
+            {
+                m_VideoParamsEx.bMbqpMode = true;
+            }
         }
 
         Ipp64f fr = CalculateUMCFramerate(m_VideoParamsEx.mfxVideoParams.mfx.FrameInfo.FrameRateExtN,

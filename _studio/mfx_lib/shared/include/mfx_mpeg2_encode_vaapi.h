@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2013-2015 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -23,7 +23,7 @@
 #include <va/va.h>
 #include <va/va_enc.h>
 #include <va/va_enc_mpeg2.h>
-
+#include "vaapi_ext_interface.h"
 
 #include "mfx_ext_buffers.h"
 #include "mfxpcp.h"
@@ -91,6 +91,8 @@ namespace MfxHwMpeg2Encode
         mfxStatus FillMiscParameterBuffer(ExecuteBuffers* pExecuteBuffers);
         mfxStatus FillUserDataBuffer(mfxU8 *pUserData, mfxU32 userDataLen);
         mfxStatus FillVideoSignalInfoBuffer(ExecuteBuffers* pExecuteBuffers);
+        mfxStatus FillMBQPBuffer(ExecuteBuffers* pExecuteBuffers, mfxU8* mbqp, mfxU32 numMB);
+
         mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 func, mfxU8* pUserData, mfxU32 userDataLen);        
         mfxStatus Register (const mfxFrameAllocResponse* pResponse, D3DDDIFORMAT type);
         mfxI32    GetRecFrameIndex (mfxMemId memID);
@@ -123,6 +125,8 @@ namespace MfxHwMpeg2Encode
         VABufferID                          m_packedUserDataId;
         VABufferID                          m_packedSignalInfoParamsId;
         VABufferID                          m_packedSignalInfoId;
+        VABufferID                          m_mbqpBufferId;
+        std::vector<VAEncQpBufferH264>      m_mbqpDataBuffer;
 
 
         int                                 m_vbvBufSize;
