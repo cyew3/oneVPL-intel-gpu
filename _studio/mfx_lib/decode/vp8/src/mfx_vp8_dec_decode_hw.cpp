@@ -600,6 +600,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     }
     else
     {
+        mfxU16 oldgold_indx = gold_indx;
+
         switch (m_refresh_info.copy2Golden)
         {
             case 1:
@@ -621,7 +623,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
                 break;
 
             case 2:
-                altref_indx = gold_indx;
+                altref_indx = oldgold_indx;
 
             case 0:
             default:
@@ -636,7 +638,6 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
         if (m_refresh_info.refreshLastFrame)
            lastrefIndex = info.currIndex;
-
     }
 
     m_frames.push_back(info);
