@@ -2256,7 +2256,9 @@ BOOL CALLBACK GetMonitorRect_MonitorEnumProc(HMONITOR /*hMonitor*/,
 
     return TRUE;
 }
+#endif
 
+#if defined(D3D_SURFACES_SUPPORT) || defined(MFX_D3D11_SUPPORT)
 D3DFORMAT StrToD3DFORMAT(vm_char *format_name, bool directx11 = false)
 {
      D3DFORMAT format = D3DFMT_X8R8G8B8;
@@ -2305,7 +2307,7 @@ D3DFORMAT StrToD3DFORMAT(vm_char *format_name, bool directx11 = false)
      }
      return format;
 }
-#endif //D3D_SURFACES_SUPPORT
+#endif
 
 mfxStatus MFXDecPipeline::CreateDeviceManager()
 {
