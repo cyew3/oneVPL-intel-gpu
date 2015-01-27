@@ -69,6 +69,7 @@ template<class T> T Reorder(
 
 MfxFrameAllocResponse::MfxFrameAllocResponse()
     : m_core(0)
+    , m_isExternal(true)
 {
     Zero(*(mfxFrameAllocResponse*)this);
 }
@@ -153,9 +154,41 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     m_numFrameActualReturnedByAllocFrames = NumFrameActual;
     NumFrameActual = req.NumFrameMin;
     m_info = req.Info;
+    m_isExternal = false;
 
     return MFX_ERR_NONE;
 } 
+
+mfxU32 MfxFrameAllocResponse::FindFreeResourceIndex(mfxFrameSurface1* external_surf)
+{
+    if (m_isExternal && external_surf)
+    {
+        mfxU32 i = 0;
+
+        if (0 == m_mids.size())
+            m_info = external_surf->Info;
+
+        for (i = 0; i < m_mids.size(); i ++)
+        {
+            if (m_mids[i] == external_surf->Data.MemId)
+            {
+                m_locked[i] = 0;
+                return i;
+            }
+        }
+
+        m_mids.push_back(external_surf->Data.MemId);
+        m_locked.push_back(0);
+
+        mids = &m_mids[0];
+
+        m_numFrameActualReturnedByAllocFrames = NumFrameActual = (mfxU16)m_mids.size();
+
+        return i;
+    }
+
+    return MfxHwH265Encode::FindFreeResourceIndex(*this);
+}
 
 mfxU32 MfxFrameAllocResponse::Lock(mfxU32 idx)
 {
@@ -317,6 +350,8 @@ MfxVideoParam::MfxVideoParam()
     , LTRInterval     (0)
     , LCUSize         (DEFAULT_LCU_SIZE)
     , BRef            (false)
+    , InsertHRDInfo   (false)
+    , RawRef          (false)
 {
     Zero(*(mfxVideoParam*)this);
     Zero(NumRefLX);
@@ -339,6 +374,8 @@ MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
     LTRInterval      = par.LTRInterval;
     LCUSize          = par.LCUSize;
     BRef             = par.BRef;
+    InsertHRDInfo    = par.InsertHRDInfo;
+    RawRef           = par.RawRef;
 }
 
 MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
@@ -396,7 +433,9 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         NumRefLX[1] = 0;
     }
 
-    BRef = (mfx.GopRefDist > 3) && NumRefLX[0] >= 2;
+    BRef          = (mfx.GopRefDist > 3) && NumRefLX[0] >= 2;
+    InsertHRDInfo = false;
+    RawRef        = false;
 
     m_slice.resize(0);
 }
@@ -885,14 +924,14 @@ void MfxVideoParam::SyncMfxToHeadersParam()
         mfxU16 cropUnitX = SubWidthC[m_sps.chroma_format_idc];
         mfxU16 cropUnitY = SubHeightC[m_sps.chroma_format_idc];
 
-        m_sps.vui.def_disp_win_left_offset      = (fi.CropX / cropUnitX);
-        m_sps.vui.def_disp_win_right_offset     = (m_sps.pic_width_in_luma_samples - fi.CropW - fi.CropX) / cropUnitX;
-        m_sps.vui.def_disp_win_top_offset       = (fi.CropY / cropUnitY);
-        m_sps.vui.def_disp_win_bottom_offset    = (m_sps.pic_height_in_luma_samples - fi.CropH - fi.CropY) / cropUnitY;
-        m_sps.vui.default_display_window_flag   =    m_sps.vui.def_disp_win_left_offset
-                                                  || m_sps.vui.def_disp_win_right_offset
-                                                  || m_sps.vui.def_disp_win_top_offset
-                                                  || m_sps.vui.def_disp_win_bottom_offset;
+        m_sps.conf_win_left_offset      = (fi.CropX / cropUnitX);
+        m_sps.conf_win_right_offset     = (m_sps.pic_width_in_luma_samples - fi.CropW - fi.CropX) / cropUnitX;
+        m_sps.conf_win_top_offset       = (fi.CropY / cropUnitY);
+        m_sps.conf_win_bottom_offset    = (m_sps.pic_height_in_luma_samples - fi.CropH - fi.CropY) / cropUnitY;
+        m_sps.conformance_window_flag   =    m_sps.conf_win_left_offset
+                                          || m_sps.conf_win_right_offset
+                                          || m_sps.conf_win_top_offset
+                                          || m_sps.conf_win_bottom_offset;
     }
 
     m_sps.vui.timing_info_present_flag = !!m_vps.timing_info_present_flag;
@@ -900,6 +939,35 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     {
         m_sps.vui.num_units_in_tick = m_vps.num_units_in_tick;
         m_sps.vui.time_scale        = m_vps.time_scale;
+    }
+
+    //m_sps.vui.frame_field_info_present_flag = 1;
+
+    if (InsertHRDInfo && mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        HRDInfo& hrd = m_sps.vui.hrd;
+        HRDInfo::SubLayer& sl0 = hrd.sl[0];
+        HRDInfo::SubLayer::CPB& cpb0 = sl0.cpb[0];
+
+        m_sps.vui.hrd_parameters_present_flag = 1;
+
+        hrd.nal_hrd_parameters_present_flag = 1;
+        hrd.sub_pic_hrd_params_present_flag = 0;
+
+        hrd.bit_rate_scale = 0;
+        hrd.cpb_size_scale = 2;
+
+        hrd.initial_cpb_removal_delay_length_minus1 = 23;
+        hrd.au_cpb_removal_delay_length_minus1      = 23;
+        hrd.dpb_output_delay_length_minus1          = 23;
+
+        sl0.fixed_pic_rate_general_flag = 1;
+        sl0.low_delay_hrd_flag          = 0;
+        sl0.cpb_cnt_minus1              = 0;
+
+        cpb0.bit_rate_value_minus1 = ((mfx.MaxKbps * 1000) >> (6 + hrd.bit_rate_scale)) - 1;
+        cpb0.cpb_size_value_minus1 = ((mfx.BufferSizeInKB * 8000) >> (4 + hrd.cpb_size_scale)) - 1;
+        cpb0.cbr_flag              = (mfx.RateControlMethod == MFX_RATECONTROL_CBR);
     }
 
     Zero(m_pps);
@@ -916,7 +984,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     m_pps.init_qp_minus26                       = 0;
     m_pps.constrained_intra_pred_flag           = 0;
     m_pps.transform_skip_enabled_flag           = 0;
-    m_pps.cu_qp_delta_enabled_flag              = 0;
+    m_pps.cu_qp_delta_enabled_flag              = 1;
 
     if (mfx.RateControlMethod == MFX_RATECONTROL_CQP)
         m_pps.init_qp_minus26 = (mfx.GopRefDist == 1 ? mfx.QPP : mfx.QPB) - 26;
@@ -930,7 +998,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     m_pps.tiles_enabled_flag                    = 0;
     m_pps.entropy_coding_sync_enabled_flag      = 0;
 
-    if (m_ext.HEVCTiles.NumTileColumns || m_ext.HEVCTiles.NumTileRows)
+    if (m_ext.HEVCTiles.NumTileColumns * m_ext.HEVCTiles.NumTileRows > 1)
     {
         mfxU16 nCol   = (mfxU16)CeilDiv(m_ext.HEVCParam.PicWidthInLumaSamples,  LCUSize);
         mfxU16 nRow   = (mfxU16)CeilDiv(m_ext.HEVCParam.PicHeightInLumaSamples, LCUSize);
@@ -1273,6 +1341,106 @@ MfxVideoParam& MfxVideoParam::operator=(mfxVideoParam const & par)
     return *this;
 }
 
+void HRD::Setup(SPS const & sps, mfxU32 InitialDelayInKB)
+{
+    VUI const & vui = sps.vui;
+    HRDInfo const & hrd = sps.vui.hrd;
+    HRDInfo::SubLayer::CPB const & cpb0 = hrd.sl[0].cpb[0];
+
+    if (   !sps.vui_parameters_present_flag
+        || !sps.vui.hrd_parameters_present_flag
+        || !(hrd.nal_hrd_parameters_present_flag || hrd.vcl_hrd_parameters_present_flag))
+    {
+        m_bIsHrdRequired = false;
+        return;
+    }
+
+    m_bIsHrdRequired = true;
+
+    m_rcMethod = MFX_RATECONTROL_VBR;
+    if (cpb0.cbr_flag)
+        m_rcMethod = MFX_RATECONTROL_CBR;
+
+    m_bitrate  = (cpb0.bit_rate_value_minus1 + 1) << (6 + hrd.bit_rate_scale);
+    m_hrdIn90k = mfxU32(mfxF64((cpb0.cpb_size_value_minus1 + 1) << (4 + hrd.cpb_size_scale)) / m_bitrate * 90000.);
+    m_tick     = mfxF64(vui.time_scale) / vui.num_units_in_tick;
+    m_taf_prv  = 0.;
+    m_trn_cur  = 8000. * InitialDelayInKB / m_bitrate;
+    m_trn_cur = GetInitCpbRemovalDelay() / 90000.;
+}
+
+void HRD::Reset(SPS const & sps)
+{
+    HRDInfo const & hrd = sps.vui.hrd;
+    HRDInfo::SubLayer::CPB const & cpb0 = hrd.sl[0].cpb[0];
+
+    if (m_bIsHrdRequired == false)
+        return;
+
+    m_bitrate  = (cpb0.bit_rate_value_minus1 + 1) << (6 + hrd.bit_rate_scale);
+    m_hrdIn90k = mfxU32(mfxF64((cpb0.cpb_size_value_minus1 + 1) << (4 + hrd.cpb_size_scale)) / m_bitrate * 90000.);
+}
+
+void HRD::RemoveAccessUnit(mfxU32 size, mfxU32 bufferingPeriod)
+{
+    if (m_bIsHrdRequired == false)
+        return;
+
+    mfxU32 initDelay = GetInitCpbRemovalDelay();
+
+    mfxF64 tai_earliest = bufferingPeriod
+        ? m_trn_cur - (initDelay / 90000.)
+        : m_trn_cur - (m_hrdIn90k / 90000.);
+
+    mfxF64 tai_cur = (m_rcMethod == MFX_RATECONTROL_VBR)
+        ? Max(m_taf_prv, tai_earliest)
+        : m_taf_prv;
+
+    m_taf_prv = tai_cur + 8. * size / m_bitrate;
+    m_trn_cur += m_tick;
+}
+
+mfxU32 HRD::GetInitCpbRemovalDelay() const
+{
+    if (m_bIsHrdRequired == false)
+        return 0;
+
+    mfxF64 delay = Max(0., m_trn_cur - m_taf_prv);
+    mfxU32 initialCpbRemovalDelay = mfxU32(90000 * delay + 0.5);
+
+    return initialCpbRemovalDelay == 0
+        ? 1 // should not be equal to 0
+        : initialCpbRemovalDelay > m_hrdIn90k && m_rcMethod == MFX_RATECONTROL_VBR
+            ? m_hrdIn90k // should not exceed hrd buffer
+            : initialCpbRemovalDelay;
+}
+
+mfxU32 HRD::GetInitCpbRemovalDelayOffset() const
+{
+    if (m_bIsHrdRequired == false)
+        return 0;
+
+    return m_hrdIn90k - GetInitCpbRemovalDelay();
+}
+
+mfxU32 HRD::GetMaxFrameSize(mfxU32 bufferingPeriod) const
+{
+    if (m_bIsHrdRequired == false)
+        return 0;
+
+    mfxU32 initDelay = GetInitCpbRemovalDelay();
+
+    mfxF64 tai_earliest = (bufferingPeriod)
+        ? m_trn_cur - (initDelay / 90000.)
+        : m_trn_cur - (m_hrdIn90k / 90000.);
+
+    mfxF64 tai_cur = (m_rcMethod == MFX_RATECONTROL_VBR)
+        ? Max(m_taf_prv, tai_earliest)
+        : m_taf_prv;
+
+    return (mfxU32)((m_trn_cur - tai_cur) * m_bitrate);
+}
+
 void TaskManager::Reset(mfxU32 numTask)
 {
     m_free.resize(numTask);
@@ -1307,6 +1475,8 @@ Task* TaskManager::Reorder(
 
     if (top == end)
         return 0;
+
+    top->m_dpb_output_delay = (mfxU32)std::distance(begin, top);
 
     m_encoding.splice(m_encoding.end(), m_reordering, top);
 
@@ -1428,13 +1598,22 @@ bool isLTR(
     return (poc == LTRCandidate) || (LTRCandidate == 0 && poc >= (mfxI32)LTRInterval);
 }
 
+mfxU8 GetDPBIdx(DpbArray const & DPB, mfxI32 poc)
+{
+    for (mfxU8 i = 0; !isDpbEnd(DPB, i); i ++)
+        if (DPB[i].m_poc == poc)
+            return i;
+    return mfxU8(MAX_DPB_SIZE);
+}
+
 void ConstructRPL(
     MfxVideoParam const & par,
     DpbArray const & DPB,
     bool isB,
     mfxI32 poc,
     mfxU8 (&RPL)[2][MAX_DPB_SIZE],
-    mfxU8 (&numRefActive)[2])
+    mfxU8 (&numRefActive)[2],
+    mfxExtHEVCRefLists * pExtLists)
 {
     mfxU8& l0 = numRefActive[0];
     mfxU8& l1 = numRefActive[1];
@@ -1443,43 +1622,75 @@ void ConstructRPL(
 
     l0 = l1 = 0;
 
-    for (mfxU8 i = 0; !isDpbEnd(DPB, i); i ++)
+    if (pExtLists)
     {
-        if (poc > DPB[i].m_poc)
+        for (mfxU32 i = 0; i < pExtLists->NumRefIdxL0Active; i ++)
         {
-            if (DPB[i].m_ltr && ltr == IDX_INVALID)
-                ltr = i;
-            else
-                RPL[0][l0++] = i;
+            mfxU8 idx = GetDPBIdx(DPB, (mfxI32)pExtLists->RefPicList0[i].FrameOrder);
+
+            if (idx < MAX_DPB_SIZE)
+            {
+                RPL[0][l0 ++] = idx;
+
+                if (l0 == par.NumRefLX[0])
+                    break;
+            }
         }
-        else if (isB)
-            RPL[1][l1++] = i;
+
+        for (mfxU32 i = 0; i < pExtLists->NumRefIdxL1Active; i ++)
+        {
+            mfxU8 idx = GetDPBIdx(DPB, (mfxI32)pExtLists->RefPicList1[i].FrameOrder);
+
+            if (idx < MAX_DPB_SIZE)
+                RPL[0][l1 ++] = idx;
+
+            if (l1 == par.NumRefLX[1])
+                break;
+        }
     }
 
-    NumStRefL0 -= (ltr != IDX_INVALID);
-
-    if (l0 > NumStRefL0)
+    if (l0 == 0)
     {
-        // remove the oldest reference unless it is LTR candidate
-        Remove(RPL[0], (par.LTRInterval && ltr == IDX_INVALID && l0 > 1), l0 - NumStRefL0);
-        l0 = NumStRefL0;
-    }
-    if (l1 > par.NumRefLX[1])
-    {
-        Remove(RPL[1], 0, l1 - par.NumRefLX[1]);
-        l1 = (mfxU8)par.NumRefLX[1];
-    }
+        l1 = 0;
 
-    // reorder STRs to POC descending order
-    for (mfxU8 lx = 0; lx < 2; lx ++)
-        MFX_SORT_COMMON(RPL[lx], numRefActive[lx],
-            DPB[RPL[lx][_i]].m_poc < DPB[RPL[lx][_j]].m_poc);
+        for (mfxU8 i = 0; !isDpbEnd(DPB, i); i ++)
+        {
+            if (poc > DPB[i].m_poc)
+            {
+                if (DPB[i].m_ltr && ltr == IDX_INVALID)
+                    ltr = i;
+                else
+                    RPL[0][l0++] = i;
+            }
+            else if (isB)
+                RPL[1][l1++] = i;
+        }
 
-    if (ltr != IDX_INVALID)
-    {
-        // use LTR as 2nd reference
-        Insert(RPL[0], !!l0, ltr);
-        l0 ++;
+        NumStRefL0 -= (ltr != IDX_INVALID);
+
+        if (l0 > NumStRefL0)
+        {
+            // remove the oldest reference unless it is LTR candidate
+            Remove(RPL[0], (par.LTRInterval && ltr == IDX_INVALID && l0 > 1), l0 - NumStRefL0);
+            l0 = NumStRefL0;
+        }
+        if (l1 > par.NumRefLX[1])
+        {
+            Remove(RPL[1], 0, l1 - par.NumRefLX[1]);
+            l1 = (mfxU8)par.NumRefLX[1];
+        }
+
+        // reorder STRs to POC descending order
+        for (mfxU8 lx = 0; lx < 2; lx ++)
+            MFX_SORT_COMMON(RPL[lx], numRefActive[lx],
+                DPB[RPL[lx][_i]].m_poc < DPB[RPL[lx][_j]].m_poc);
+
+        if (ltr != IDX_INVALID)
+        {
+            // use LTR as 2nd reference
+            Insert(RPL[0], !!l0, ltr);
+            l0 ++;
+        }
     }
 
     assert(l0 > 0);
@@ -1521,6 +1732,21 @@ mfxU8 GetCodingType(Task const & task)
     return t;
 }
 
+void ReportDPB(DpbArray const & DPB, mfxExtDPB& report)
+{
+    report.DPBSize = 0;
+
+    while(!isDpbEnd(DPB, report.DPBSize ++));
+
+    for (mfxU32 i = 0; i < report.DPBSize; i ++)
+    {
+
+        report.DPB[i].FrameOrder  = DPB[i].m_poc;
+        report.DPB[i].LongTermIdx = DPB[i].m_ltr ? 0 : MFX_LONGTERM_IDX_NO_IDX;
+        report.DPB[i].PicType     = MFX_PICTYPE_FRAME;
+    }
+}
+
 void ConfigureTask(
     Task &                task,
     Task const &          prevTask,
@@ -1531,6 +1757,10 @@ void ConfigureTask(
     const bool isB    = !!(task.m_frameType & MFX_FRAMETYPE_B);
     const bool isRef  = !!(task.m_frameType & MFX_FRAMETYPE_REF);
     const bool isIDR  = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
+
+    assert(task.m_bs != 0);
+    mfxExtDPB*          pDPBReport = ExtBuffer::Get(*task.m_bs);
+    mfxExtHEVCRefLists* pExtLists  = ExtBuffer::Get(*task.m_bs);
 
     // set coding type and QP
     if (isB)
@@ -1562,7 +1792,7 @@ void ConfigureTask(
     Fill(task.m_refPicList, IDX_INVALID);
 
     if (!isI)
-        ConstructRPL(par, task.m_dpb[0], isB, task.m_poc, task.m_refPicList, task.m_numRefActive);
+        ConstructRPL(par, task.m_dpb[0], isB, task.m_poc, task.m_refPicList, task.m_numRefActive, pExtLists);
 
     task.m_codingType = GetCodingType(task);
 
@@ -1571,8 +1801,18 @@ void ConfigureTask(
     else
         task.m_insertHeaders = 0;
 
+    if (isIDR && par.m_sps.vui.hrd_parameters_present_flag)
+        task.m_insertHeaders |= INSERT_BPSEI;
+
+    if (   par.m_sps.vui.frame_field_info_present_flag
+        || par.m_sps.vui.hrd.nal_hrd_parameters_present_flag
+        || par.m_sps.vui.hrd.vcl_hrd_parameters_present_flag)
+        task.m_insertHeaders |= INSERT_PTSEI;
+
     //if (RepeatePPS)  task.m_insertHeaders |= INSERT_PPS;
     //if (AUDelimiter) task.m_insertHeaders |= INSERT_AUD
+
+    task.m_cpb_removal_delay = (isIDR ? 0 : prevTask.m_cpb_removal_delay + 1);
 
     // update dpb
     if (isI)
@@ -1587,6 +1827,9 @@ void ConfigureTask(
         // is current frame will be used as LTR
         task.m_ltr = isLTR(task.m_dpb[1], par.LTRInterval, task.m_poc);
     }
+
+    if (pDPBReport)
+        ReportDPB(task.m_dpb[1], *pDPBReport);
 
     task.m_shNUT = mfxU8(isIDR ? IDR_W_RADL 
         : task.m_poc >= 0 ? (isRef ? TRAIL_R : TRAIL_N)

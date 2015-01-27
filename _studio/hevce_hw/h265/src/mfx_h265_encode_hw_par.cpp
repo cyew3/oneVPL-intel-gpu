@@ -261,7 +261,7 @@ mfxU16 AddTileSlices(
     mfxU32 nSlice)
 {
     mfxU32 nLCU = nCol * nRow;
-    mfxU32 nLcuPerSlice = CeilDiv(nLCU, nSlice);
+    mfxU32 nLcuPerSlice = nLCU / nSlice;
     mfxU32 nSlicePrev = (mfxU32)par.m_slice.size();
 
     if (SliceStructure == 0)
@@ -302,10 +302,32 @@ mfxU16 AddTileSlices(
     }
 
     par.m_slice.resize(nSlicePrev + nSlice);
-    
+
+    mfxU32 f = (nSlice < 2 || (nLCU % nSlice == 0)) ? 0 : (nLCU % nSlice);
+    bool   s = false;
+
+    if (f == 0)
+    {
+        f;
+    }
+    else if (f > nSlice / 2)
+    {
+        s = false;
+        nLcuPerSlice += 1;
+        f = (nSlice / (nSlice - f));
+
+        while ((nLcuPerSlice * nSlice - (nLCU / f) > nLCU) && f)
+            f --;
+    }
+    else
+    {
+        s = true;
+        f = nSlice / f;
+    }
+
     for (mfxU32 i = nSlicePrev; i < par.m_slice.size(); i ++)
     {
-        par.m_slice[i].NumLCU = (i == nSlicePrev + nSlice-1) ? nLCU : nLcuPerSlice;
+        par.m_slice[i].NumLCU = (i == nSlicePrev + nSlice-1) ? nLCU : nLcuPerSlice + s * (f && i % f == 0) - !s * (f && i % f == 0);
         par.m_slice[i].SegmentAddress = (i > 0) ? (par.m_slice[i-1].SegmentAddress + par.m_slice[i-1].NumLCU) : 0;
         nLCU -= par.m_slice[i].NumLCU;
     }
@@ -336,7 +358,7 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
     mfxU32 nTRow  = Max<mfxU32>(par.m_ext.HEVCTiles.NumTileRows, 1);
     mfxU32 nTile  = nTCol * nTRow;
     mfxU32 nLCU   = nCol * nRow;
-    mfxU32 nSlice = Min(nLCU, Max<mfxU32>(par.mfx.NumSlice, 1));
+    mfxU32 nSlice = Min(Min<mfxU32>(nLCU, MAX_SLICES), Max<mfxU32>(par.mfx.NumSlice, 1));
 
     if (SliceStructure == 0)
         nSlice = 1;
@@ -344,7 +366,7 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
     if (nSlice > 1)
         nSlice = Max(nSlice, nTile);
 
-    if (nTile == 1) //TileScan = RasterScan, no SegmentAddress conversion recuvired
+    if (nTile == 1) //TileScan = RasterScan, no SegmentAddress conversion required
         return (mfxU16)AddTileSlices(par, SliceStructure, nCol, nRow, nSlice);
 
     std::vector<mfxU32> colWidth(nTCol, 0);
@@ -426,11 +448,10 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
             {
                 MFX_SORT_COMMON(tile, tile.size(), nSliceCoeff(tile[_i]) < nSliceCoeff(tile[_j]));
 
-                if (nSliceRest && tile[0].nLCU > tile[0].nSlice)
-                {
-                    tile[0].nSlice ++;
-                    nSliceRest --;
-                }
+                assert(tile[0].nLCU > tile[0].nSlice);
+
+                tile[0].nSlice ++;
+                nSliceRest --;
             }
 
             MFX_SORT_STRUCT(tile, tile.size(), id, >);
@@ -799,7 +820,7 @@ void SetDefaults(
         if (!par.MaxKbps)
             par.MaxKbps = par.TargetKbps;
         if (!par.BufferSizeInKB)
-            par.BufferSizeInKB = Min(maxBuf, par.MaxKbps * 8 / 2);
+            par.BufferSizeInKB = Min(maxBuf, par.MaxKbps / 16);
         if (!par.InitialDelayInKB)
             par.InitialDelayInKB = par.BufferSizeInKB / 2;
     }
@@ -811,11 +832,11 @@ void SetDefaults(
         par.mfx.GopPicSize = (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP ? 1 : 0xFFFF);
 
     if (!par.NumRefLX[1])
-        par.NumRefLX[1] = MFX_MIN(1, hwCaps.MaxNum_Reference1);
+        par.NumRefLX[1] = Min<mfxU16>(1, hwCaps.MaxNum_Reference1);
 
     if (!par.NumRefLX[0])
     {
-        par.NumRefLX[0] = MFX_MIN(2, hwCaps.MaxNum_Reference0);
+        par.NumRefLX[0] = Min<mfxU16>(2, hwCaps.MaxNum_Reference0);
 
         if (mfxU16(maxDPB - 1) < par.NumRefLX[0] + par.NumRefLX[1])
         {

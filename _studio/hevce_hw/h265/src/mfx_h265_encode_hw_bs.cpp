@@ -177,7 +177,8 @@ void HeaderPacker::PackNALU(BitstreamWriter& bs, NALU const & h)
     if (   h.nal_unit_type == VPS_NUT 
         || h.nal_unit_type == SPS_NUT
         || h.nal_unit_type == PPS_NUT
-        || h.nal_unit_type == AUD_NUT)
+        || h.nal_unit_type == AUD_NUT
+        || h.nal_unit_type == PREFIX_SEI_NUT)
     {
         bs.PutBits(8, 0); //zero_byte
     }
@@ -300,6 +301,77 @@ void HeaderPacker::PackVPS(BitstreamWriter& bs, VPS const &  vps)
     bs.PutTrailingBits();
 }
 
+void HeaderPacker::PackHRD(
+    BitstreamWriter& bs,
+    HRDInfo const & hrd,
+    bool commonInfPresentFlag,
+    mfxU16 maxNumSubLayersMinus1)
+{
+    if (commonInfPresentFlag)
+    {
+        bs.PutBit(hrd.nal_hrd_parameters_present_flag);
+        bs.PutBit(hrd.vcl_hrd_parameters_present_flag);
+
+        if (   hrd.nal_hrd_parameters_present_flag
+            || hrd.vcl_hrd_parameters_present_flag)
+        {
+            bs.PutBit(hrd.sub_pic_hrd_params_present_flag);
+
+            if (hrd.sub_pic_hrd_params_present_flag)
+            {
+                bs.PutBits(8, hrd.tick_divisor_minus2);
+                bs.PutBits(5, hrd.du_cpb_removal_delay_increment_length_minus1);
+                bs.PutBit(hrd.sub_pic_cpb_params_in_pic_timing_sei_flag);
+                bs.PutBits(5, hrd.dpb_output_delay_du_length_minus1);
+            }
+
+            bs.PutBits(4, hrd.bit_rate_scale);
+            bs.PutBits(4, hrd.cpb_size_scale);
+
+            if (hrd.sub_pic_hrd_params_present_flag)
+                bs.PutBits(4, hrd.cpb_size_du_scale);
+
+           bs.PutBits(5, hrd.initial_cpb_removal_delay_length_minus1);
+           bs.PutBits(5, hrd.au_cpb_removal_delay_length_minus1);
+           bs.PutBits(5, hrd.dpb_output_delay_length_minus1);
+        }
+    }
+
+    for (mfxU16 i = 0; i <= maxNumSubLayersMinus1; i ++)
+    {
+        bs.PutBit(hrd.sl[i].fixed_pic_rate_general_flag);
+
+        if (!hrd.sl[i].fixed_pic_rate_general_flag)
+            bs.PutBit(hrd.sl[i].fixed_pic_rate_within_cvs_flag);
+
+        if (hrd.sl[i].fixed_pic_rate_within_cvs_flag || hrd.sl[i].fixed_pic_rate_general_flag )
+            bs.PutUE(hrd.sl[i].elemental_duration_in_tc_minus1);
+        else
+            bs.PutBit(hrd.sl[i].low_delay_hrd_flag);
+
+        if (!hrd.sl[i].low_delay_hrd_flag)
+            bs.PutUE(hrd.sl[i].cpb_cnt_minus1);
+
+        if (hrd.nal_hrd_parameters_present_flag)
+        {
+            for (mfxU16 j = 0; j <= hrd.sl[i].cpb_cnt_minus1; j ++)
+            {
+               bs.PutUE(hrd.sl[i].cpb[j].bit_rate_value_minus1);
+               bs.PutUE(hrd.sl[i].cpb[j].cpb_size_value_minus1);
+
+                if (hrd.sub_pic_hrd_params_present_flag)
+                {
+                    bs.PutUE(hrd.sl[i].cpb[j].cpb_size_du_value_minus1);
+                    bs.PutUE(hrd.sl[i].cpb[j].bit_rate_du_value_minus1);
+                }
+
+                bs.PutBit(hrd.sl[i].cpb[j].cbr_flag);
+            }
+        }
+        assert(hrd.vcl_hrd_parameters_present_flag == 0);
+    }
+}
+
 void HeaderPacker::PackVUI(BitstreamWriter& bs, VUI const & vui)
 {
     bs.PutBit(vui.aspect_ratio_info_present_flag);
@@ -369,7 +441,8 @@ void HeaderPacker::PackVUI(BitstreamWriter& bs, VUI const & vui)
 
         bs.PutBit(vui.hrd_parameters_present_flag);
 
-        assert(vui.hrd_parameters_present_flag == 0);
+        if (vui.hrd_parameters_present_flag)
+            PackHRD(bs, vui.hrd, 1, 1);
     }
     
     bs.PutBit(vui.bitstream_restriction_flag);
@@ -827,6 +900,90 @@ void HeaderPacker::PackSTRPS(BitstreamWriter& bs, const STRPS* sets, mfxU32 num,
     }
 }
 
+void HeaderPacker::PackSEIPayload(
+    BitstreamWriter& bs,
+    VUI const & vui,
+    BufferingPeriodSEI const & bp)
+{
+    HRDInfo const & hrd = vui.hrd;
+
+    bs.PutUE(bp.seq_parameter_set_id);
+
+    if (!bp.irap_cpb_params_present_flag)
+        bs.PutBit(bp.irap_cpb_params_present_flag);
+
+    if (bp.irap_cpb_params_present_flag)
+    {
+        bs.PutBits(hrd.au_cpb_removal_delay_length_minus1+1, bp.cpb_delay_offset);
+        bs.PutBits(hrd.dpb_output_delay_length_minus1+1, bp.dpb_delay_offset);
+    }
+
+    bs.PutBit(bp.concatenation_flag);
+    bs.PutBits(hrd.au_cpb_removal_delay_length_minus1+1, bp.au_cpb_removal_delay_delta_minus1);
+
+    mfxU16 CpbCnt = hrd.sl[0].cpb_cnt_minus1;
+
+    if (hrd.nal_hrd_parameters_present_flag)
+    {
+        for (mfxU16 i = 0; i <= CpbCnt; i ++)
+        {
+            bs.PutBits(hrd.initial_cpb_removal_delay_length_minus1+1, bp.nal[i].initial_cpb_removal_delay  );
+            bs.PutBits(hrd.initial_cpb_removal_delay_length_minus1+1, bp.nal[i].initial_cpb_removal_offset );
+
+            if (   hrd.sub_pic_hrd_params_present_flag
+                || bp.irap_cpb_params_present_flag)
+            {
+                bs.PutBits(hrd.initial_cpb_removal_delay_length_minus1+1, bp.nal[i].initial_alt_cpb_removal_delay  );
+                bs.PutBits(hrd.initial_cpb_removal_delay_length_minus1+1, bp.nal[i].initial_alt_cpb_removal_offset );
+            }
+        }
+    }
+
+    if (hrd.vcl_hrd_parameters_present_flag)
+    {
+        for (mfxU16 i = 0; i <= CpbCnt; i ++)
+        {
+            bs.PutBits(hrd.initial_cpb_removal_delay_length_minus1+1, bp.vcl[i].initial_cpb_removal_delay  );
+            bs.PutBits(hrd.initial_cpb_removal_delay_length_minus1+1, bp.vcl[i].initial_cpb_removal_offset );
+
+            if (   hrd.sub_pic_hrd_params_present_flag
+                || bp.irap_cpb_params_present_flag)
+            {
+                bs.PutBits(hrd.initial_cpb_removal_delay_length_minus1+1, bp.vcl[i].initial_alt_cpb_removal_delay  );
+                bs.PutBits(hrd.initial_cpb_removal_delay_length_minus1+1, bp.vcl[i].initial_alt_cpb_removal_offset );
+            }
+        }
+    }
+
+    bs.PutTrailingBits();
+}
+
+void HeaderPacker::PackSEIPayload(
+    BitstreamWriter& bs,
+    VUI const & vui,
+    PicTimingSEI const & pt)
+{
+    HRDInfo const & hrd = vui.hrd;
+
+    if (vui.frame_field_info_present_flag)
+    {
+        bs.PutBits(4, pt.pic_struct);
+        bs.PutBits(2, pt.source_scan_type);
+        bs.PutBit(pt.duplicate_flag);
+    }
+
+    if (   hrd.nal_hrd_parameters_present_flag
+        || hrd.vcl_hrd_parameters_present_flag)
+    {
+       bs.PutBits(hrd.au_cpb_removal_delay_length_minus1+1, pt.au_cpb_removal_delay_minus1);
+       bs.PutBits(hrd.dpb_output_delay_length_minus1+1, pt.pic_dpb_output_delay);
+
+       assert(hrd.sub_pic_hrd_params_present_flag == 0);
+    }
+
+    bs.PutTrailingBits();
+}
+
 HeaderPacker::HeaderPacker()
     : m_par(0)
     , m_bs(m_bs_ssh, sizeof(m_bs_ssh))
@@ -877,6 +1034,126 @@ mfxStatus HeaderPacker::Reset(MfxVideoParam const & par)
     return sts;
 }
 
+void HeaderPacker::GetSEI(Task const & task,mfxU8*& buf, mfxU32& sizeInBytes)
+{
+    NALU nalu = {0, PREFIX_SEI_NUT, 0, 1};
+    BitstreamWriter rbsp(m_rbsp, sizeof(m_rbsp));
+
+    PackNALU(rbsp, nalu);
+
+    if (task.m_insertHeaders & INSERT_BPSEI)
+    {
+        BufferingPeriodSEI bp = {};
+
+        bp.seq_parameter_set_id = m_par->m_sps.seq_parameter_set_id;
+        bp.nal[0].initial_cpb_removal_delay  = bp.vcl[0].initial_cpb_removal_delay  = task.m_initial_cpb_removal_delay;
+        bp.nal[0].initial_cpb_removal_offset = bp.vcl[0].initial_cpb_removal_offset = task.m_initial_cpb_removal_offset;
+
+        mfxU32 size = CeilDiv(rbsp.GetOffset(), 8);
+        mfxU8* pl = rbsp.GetStart() + size; // payload start
+
+        rbsp.PutBits(8, 0);    //payload type
+        rbsp.PutBits(8, 0xFF); //place for payload  size
+        size += 2;
+
+        PackSEIPayload(rbsp, m_par->m_sps.vui, bp);
+
+        size = CeilDiv(rbsp.GetOffset(), 8) - size;
+
+        assert(size < 256);
+        pl[1] = (mfxU8)size; //payload size
+    }
+
+    if (task.m_insertHeaders & INSERT_PTSEI)
+    {
+        PicTimingSEI pt = {};
+
+        switch (task.m_surf->Info.PicStruct)
+        {
+        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE):
+            pt.pic_struct       = 0;
+            pt.source_scan_type = 1;
+            break;
+        case mfxU16(MFX_PICSTRUCT_FIELD_TFF):
+            pt.pic_struct       = 3;
+            pt.source_scan_type = 0;
+            break;
+        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF):
+            pt.pic_struct       = 3;
+            pt.source_scan_type = 1;
+            break;
+        case mfxU16(MFX_PICSTRUCT_FIELD_BFF):
+            pt.pic_struct       = 4;
+            pt.source_scan_type = 0;
+            break;
+        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_BFF):
+            pt.pic_struct       = 4;
+            pt.source_scan_type = 1;
+            break;
+        case mfxU16(MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED):
+            pt.pic_struct       = 5;
+            pt.source_scan_type = 0;
+            break;
+        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED):
+            pt.pic_struct       = 5;
+            pt.source_scan_type = 1;
+            break;
+        case mfxU16(MFX_PICSTRUCT_FIELD_BFF | MFX_PICSTRUCT_FIELD_REPEATED):
+            pt.pic_struct       = 6;
+            pt.source_scan_type = 0;
+            break;
+        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_BFF | MFX_PICSTRUCT_FIELD_REPEATED):
+            pt.pic_struct       = 6;
+            pt.source_scan_type = 1;
+            break;
+        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FRAME_DOUBLING):
+            pt.pic_struct       = 7;
+            pt.source_scan_type = 1;
+            break;
+        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FRAME_TRIPLING):
+            pt.pic_struct       = 8;
+            pt.source_scan_type = 1;
+            break;
+        default:
+            pt.pic_struct       = 0;
+            pt.source_scan_type = 2;
+            break;
+        }
+
+        pt.duplicate_flag = 0;
+
+        pt.au_cpb_removal_delay_minus1 = Max(task.m_cpb_removal_delay, 1U) - 1;
+        pt.pic_dpb_output_delay        = task.m_dpb_output_delay;
+
+        mfxU32 size = CeilDiv(rbsp.GetOffset(), 8);
+        mfxU8* pl = rbsp.GetStart() + size; // payload start
+
+        rbsp.PutBits(8, 1);    //payload type
+        rbsp.PutBits(8, 0xFF); //place for payload  size
+        size += 2;
+
+        PackSEIPayload(rbsp, m_par->m_sps.vui, pt);
+
+        size = CeilDiv(rbsp.GetOffset(), 8) - size;
+
+        assert(size < 256);
+        pl[1] = (mfxU8)size; //payload size
+    }
+
+    rbsp.PutTrailingBits();
+
+    buf         = m_bs_ssh;
+    sizeInBytes = sizeof(m_bs_ssh);
+
+    if (MFX_ERR_NONE != PackRBSP(buf, m_rbsp, sizeInBytes, CeilDiv(rbsp.GetOffset(), 8)))
+    {
+        buf         = 0;
+        sizeInBytes = 0;
+    }
+
+    m_bs.Reset(m_bs_ssh + sizeInBytes, sizeof(m_bs_ssh) - sizeInBytes);
+}
+
 void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset)
 {
     BitstreamWriter& rbsp = m_bs;
@@ -886,14 +1163,14 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
     assert(m_par);
     assert(id < m_par->m_slice.size());
 
-    if (id == 0)
-        rbsp.Reset();
+    if (id == 0 && !(task.m_insertHeaders & INSERT_SEI))
+        rbsp.Reset(m_bs_ssh, sizeof(m_bs_ssh));
 
     Slice sh = task.m_sh;
     sh.first_slice_segment_in_pic_flag = (id == 0);
     sh.segment_address = m_par->m_slice[id].SegmentAddress;
 
-    buf = m_bs_ssh + CeilDiv(rbsp.GetOffset(), 8);
+    buf = m_bs.GetStart() + CeilDiv(rbsp.GetOffset(), 8);
 
     if (is1stNALU)
         rbsp.PutBits(8, 0);
@@ -901,9 +1178,9 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
     PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset);
 
     if (qpd_offset)
-        *qpd_offset -= (mfxU32)(buf - m_bs_ssh) * 8;
+        *qpd_offset -= (mfxU32)(buf - m_bs.GetStart()) * 8;
 
-    sizeInBytes = CeilDiv(rbsp.GetOffset(), 8) - (mfxU32)(buf - m_bs_ssh);
+    sizeInBytes = CeilDiv(rbsp.GetOffset(), 8) - (mfxU32)(buf - m_bs.GetStart());
 }
 
 

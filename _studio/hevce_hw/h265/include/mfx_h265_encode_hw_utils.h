@@ -78,6 +78,7 @@ enum
     CODED_PIC_ALIGN_W   = 8,
     CODED_PIC_ALIGN_H   = 8,
     DEFAULT_LCU_SIZE    = 32,
+    MAX_SLICES          = 200,
 };
 
 enum
@@ -102,10 +103,14 @@ enum
 
 enum
 {
-    INSERT_AUD = 0x01,
-    INSERT_VPS = 0x02,
-    INSERT_SPS = 0x04,
-    INSERT_PPS = 0x08,
+    INSERT_AUD      = 0x01,
+    INSERT_VPS      = 0x02,
+    INSERT_SPS      = 0x04,
+    INSERT_PPS      = 0x08,
+    INSERT_BPSEI    = 0x10,
+    INSERT_PTSEI    = 0x20,
+
+    INSERT_SEI = (INSERT_BPSEI | INSERT_PTSEI)
 };
 
 class MfxFrameAllocResponse : public mfxFrameAllocResponse
@@ -130,6 +135,10 @@ public:
 
     void Free();
 
+    bool isExternal() { return m_isExternal; };
+
+    mfxU32 FindFreeResourceIndex(mfxFrameSurface1* external_surf = 0);
+
     mfxFrameInfo               m_info;
 
 private:
@@ -142,6 +151,7 @@ private:
     std::vector<mfxFrameAllocResponse> m_responseQueue;
     std::vector<mfxMemId>              m_mids;
     std::vector<mfxU32>                m_locked;
+    bool m_isExternal;
 }; 
 
 typedef struct _DpbFrame
@@ -182,10 +192,16 @@ typedef struct _Task : DpbFrame
 
     bool m_resetBRC;
 
+    mfxU32 m_initial_cpb_removal_delay;
+    mfxU32 m_initial_cpb_removal_offset;
+    mfxU32 m_cpb_removal_delay;
+    mfxU32 m_dpb_output_delay;
+
     mfxU32 m_stage;
 }Task;
 
 typedef std::list<Task> TaskList;
+typedef mfxExtAVCRefLists mfxExtHEVCRefLists;
 
 namespace ExtBuffer
 {
@@ -195,6 +211,8 @@ namespace ExtBuffer
         EXTBUF(mfxExtHEVCParam,             MFX_EXTBUFF_HEVC_PARAM);
         EXTBUF(mfxExtHEVCTiles,             MFX_EXTBUFF_HEVC_TILES);
         EXTBUF(mfxExtOpaqueSurfaceAlloc,    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+        EXTBUF(mfxExtDPB,                   MFX_EXTBUFF_DPB);
+        EXTBUF(mfxExtHEVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS);
     #undef EXTBUF
 
     class Proxy
@@ -292,6 +310,8 @@ public:
     mfxU32 LTRInterval;
     mfxU32 LCUSize;
     bool   BRef;
+    bool   InsertHRDInfo;
+    bool   RawRef;
 
     MfxVideoParam();
     MfxVideoParam(MfxVideoParam const & par);
@@ -311,6 +331,34 @@ public:
 
 private:
     void Construct(mfxVideoParam const & par);
+};
+
+class HRD
+{
+public:
+    void Setup(SPS const & sps, mfxU32 InitialDelayInKB);
+
+    void Reset(SPS const & sps);
+
+    void RemoveAccessUnit(
+        mfxU32 size,
+        mfxU32 bufferingPeriod);
+
+    mfxU32 GetInitCpbRemovalDelay() const;
+
+    mfxU32 GetInitCpbRemovalDelayOffset() const;
+    mfxU32 GetMaxFrameSize(mfxU32 bufferingPeriod) const;
+
+private:
+    mfxU32 m_bitrate;
+    mfxU32 m_rcMethod;
+    mfxU32 m_hrdIn90k;  // size of hrd buffer in 90kHz units
+
+    mfxF64 m_tick;      // clock tick
+    mfxF64 m_trn_cur;   // nominal removal time
+    mfxF64 m_taf_prv;   // final arrival time of prev unit
+
+    bool m_bIsHrdRequired;
 };
 
 class TaskManager
@@ -370,7 +418,8 @@ void ConstructRPL(
     bool isB,
     mfxI32 poc,
     mfxU8 (&RPL)[2][MAX_DPB_SIZE],
-    mfxU8 (&numRefActive)[2]);
+    mfxU8 (&numRefActive)[2],
+    mfxExtHEVCRefLists * pExtLists = 0);
 
 void UpdateDPB(
     MfxVideoParam const & par,

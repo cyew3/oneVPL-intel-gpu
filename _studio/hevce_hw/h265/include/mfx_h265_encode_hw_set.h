@@ -160,6 +160,80 @@ struct LayersInfo
     struct SubLayer : PTL, SubLayerOrdering {} sub_layer[8];
 };
 
+
+struct HRDInfo
+{
+    mfxU16 nal_hrd_parameters_present_flag              : 1;
+    mfxU16 vcl_hrd_parameters_present_flag              : 1;
+    mfxU16 sub_pic_hrd_params_present_flag              : 1;
+    mfxU16 du_cpb_removal_delay_increment_length_minus1 : 5;
+    mfxU16 sub_pic_cpb_params_in_pic_timing_sei_flag    : 1;
+    mfxU16 dpb_output_delay_du_length_minus1            : 5;
+
+    mfxU16 tick_divisor_minus2                          : 8;
+    mfxU16 bit_rate_scale                               : 4;
+    mfxU16 cpb_size_scale                               : 4;
+
+    mfxU8  cpb_size_du_scale                            : 4;
+    mfxU16 initial_cpb_removal_delay_length_minus1      : 5;
+    mfxU16 au_cpb_removal_delay_length_minus1           : 5;
+    mfxU16 dpb_output_delay_length_minus1               : 5;
+
+    struct SubLayer
+    {
+        mfxU8  fixed_pic_rate_general_flag     :  1;
+        mfxU8  fixed_pic_rate_within_cvs_flag  :  1;
+        mfxU8  low_delay_hrd_flag              :  1;
+
+        mfxU16 elemental_duration_in_tc_minus1 : 11;
+        mfxU16 cpb_cnt_minus1                  :  5;
+
+        struct CPB
+        {
+            mfxU32 bit_rate_value_minus1;
+            mfxU32 cpb_size_value_minus1;
+            mfxU32 cpb_size_du_value_minus1;
+            mfxU32 bit_rate_du_value_minus1;
+            mfxU8  cbr_flag;
+        } cpb[32];
+    } sl[8];
+};
+
+struct BufferingPeriodSEI
+{
+    mfxU8  seq_parameter_set_id         : 4;
+    mfxU8  irap_cpb_params_present_flag : 1;
+    mfxU8  concatenation_flag           : 1;
+
+    mfxU32 cpb_delay_offset;
+    mfxU32 dpb_delay_offset;
+    mfxU32 au_cpb_removal_delay_delta_minus1;
+
+    struct CPB{
+        mfxU32 initial_cpb_removal_delay;
+        mfxU32 initial_cpb_removal_offset;
+        mfxU32 initial_alt_cpb_removal_delay;
+        mfxU32 initial_alt_cpb_removal_offset;
+    } nal[32], vcl[32];
+};
+
+struct PicTimingSEI
+{
+    mfxU8  pic_struct                       : 4;
+    mfxU8  source_scan_type                 : 2;
+    mfxU8  duplicate_flag                   : 1;
+    mfxU8  du_common_cpb_removal_delay_flag : 1;
+
+    mfxU32 au_cpb_removal_delay_minus1;
+    mfxU32 pic_dpb_output_delay;
+    mfxU32 pic_dpb_output_du_delay;
+    mfxU32 num_decoding_units_minus1;
+    mfxU32 du_common_cpb_removal_delay_increment_minus1;
+
+    mfxU32* num_nalus_in_du_minus1;
+    mfxU32* du_cpb_removal_delay_increment_minus1;
+};
+
 struct VPS : LayersInfo
 {
     mfxU16 video_parameter_set_id   : 4;
@@ -234,7 +308,7 @@ struct VUI{
     mfxU16 log2_max_mv_length_horizontal : 5;
     mfxU16 log2_max_mv_length_vertical   : 4;
 
-    //HRD hrd;
+    HRDInfo hrd;
 };
 
 struct SPS : LayersInfo

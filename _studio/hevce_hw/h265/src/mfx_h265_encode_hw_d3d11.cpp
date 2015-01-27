@@ -389,25 +389,31 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
 
     if (task.m_insertHeaders & INSERT_AUD)
     {
-        pPH = PackAudHeader(task.m_frameType); assert(pPH);
+        pPH = PackHeader(task, AUD_NUT); assert(pPH);
         ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
     }
 
     if (task.m_insertHeaders & INSERT_VPS)
     {
-        pPH = PackHeader(VPS_NUT); assert(pPH);
+        pPH = PackHeader(task, VPS_NUT); assert(pPH);
         ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
     }
     
     if (task.m_insertHeaders & INSERT_SPS)
     {
-        pPH = PackHeader(SPS_NUT); assert(pPH);
+        pPH = PackHeader(task, SPS_NUT); assert(pPH);
         ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
     }
 
     if (task.m_insertHeaders & INSERT_PPS)
     {
-        pPH = PackHeader(PPS_NUT); assert(pPH);
+        pPH = PackHeader(task, PPS_NUT); assert(pPH);
+        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
+    }
+
+    if (task.m_insertHeaders & INSERT_SEI)
+    {
+        pPH = PackHeader(task, PREFIX_SEI_NUT); assert(pPH);
         ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
     }
 

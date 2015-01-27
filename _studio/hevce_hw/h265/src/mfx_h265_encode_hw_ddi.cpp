@@ -397,7 +397,7 @@ DDIHeaderPacker::~DDIHeaderPacker()
 
 void DDIHeaderPacker::Reset(MfxVideoParam const & par)
 {
-    m_buf.resize(4 + par.mfx.NumSlice);
+    m_buf.resize(5 + par.mfx.NumSlice);
     m_cur = m_buf.begin();
     m_packer.Reset(par);
 }
@@ -412,7 +412,7 @@ void DDIHeaderPacker::NewHeader()
     Zero(*m_cur);
 }
 
-ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(mfxU32 nut)
+ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(Task const & task, mfxU32 nut)
 {
     NewHeader();
 
@@ -427,28 +427,24 @@ ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(mfxU32 nut)
     case PPS_NUT:
         m_packer.GetPPS(m_cur->pData, m_cur->DataLength);
         break;
+    case AUD_NUT:
+        {
+            mfxU32 frameType = task.m_frameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B);
+
+            if (frameType == MFX_FRAMETYPE_I)
+                m_packer.GetAUD(m_cur->pData, m_cur->DataLength, 0);
+            else if (frameType == MFX_FRAMETYPE_P)
+                m_packer.GetAUD(m_cur->pData, m_cur->DataLength, 1);
+            else
+                m_packer.GetAUD(m_cur->pData, m_cur->DataLength, 2);
+        }
+        break;
+    case PREFIX_SEI_NUT:
+        m_packer.GetSEI(task, m_cur->pData, m_cur->DataLength);
+        break;
     default:
         return 0;
     }
-    m_cur->BufferSize = m_cur->DataLength;
-    m_cur->SkipEmulationByteCount = 4;
-
-    return &*m_cur;
-}
-
-ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackAudHeader(mfxU32 frameType)
-{
-    NewHeader();
-
-    frameType &= (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B);
-
-    if (frameType == MFX_FRAMETYPE_I)
-        m_packer.GetAUD(m_cur->pData, m_cur->DataLength, 0);
-    else if (frameType == MFX_FRAMETYPE_P)
-        m_packer.GetAUD(m_cur->pData, m_cur->DataLength, 1);
-    else
-        m_packer.GetAUD(m_cur->pData, m_cur->DataLength, 2);
-
     m_cur->BufferSize = m_cur->DataLength;
     m_cur->SkipEmulationByteCount = 4;
 

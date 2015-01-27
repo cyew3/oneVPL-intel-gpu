@@ -105,6 +105,7 @@ protected:
 
     TaskManager                     m_task;
     Task                            m_lastTask;
+    HRD                             m_hrd;
     mfxU32                          m_frameOrder;
 };
 

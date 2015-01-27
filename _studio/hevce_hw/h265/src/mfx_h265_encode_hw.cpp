@@ -59,6 +59,26 @@ mfxStatus Plugin::GetPluginParam(mfxPluginParam *par)
     return MFX_ERR_NONE;
 }
 
+mfxU16 MaxRec(MfxVideoParam const & par)
+{
+    return par.AsyncDepth + par.mfx.NumRefFrame;
+}
+
+mfxU16 MaxRaw(MfxVideoParam const & par)
+{
+    return Max(par.AsyncDepth, par.mfx.GopRefDist) + par.RawRef * par.mfx.NumRefFrame;
+}
+
+mfxU16 MaxBs(MfxVideoParam const & par)
+{
+    return par.AsyncDepth;
+}
+
+mfxU16 MaxTask(MfxVideoParam const & par)
+{
+    return par.AsyncDepth + par.mfx.GopRefDist - 1;
+}
+
 mfxStatus Plugin::Init(mfxVideoParam *par)
 {
     mfxStatus sts = MFX_ERR_NONE, qsts = MFX_ERR_NONE;
@@ -87,17 +107,18 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     m_vpar.SyncCalculableToVideoParam();
     m_vpar.SyncMfxToHeadersParam();
 
+    m_hrd.Setup(m_vpar.m_sps, m_vpar.InitialDelayInKB);
+
     sts = m_ddi->CreateAccelerationService(m_vpar);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_WRN_PARTIAL_ACCELERATION);
 
     mfxFrameAllocRequest request = {};
     request.Info = m_vpar.mfx.FrameInfo;
-    mfxU16 minFrames = m_vpar.AsyncDepth + m_vpar.mfx.GopRefDist - 1 + m_vpar.mfx.NumRefFrame;
 
     if (m_vpar.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         request.Type        = MFX_MEMTYPE_D3D_INT;
-        request.NumFrameMin = minFrames;
+        request.NumFrameMin = MaxRaw(m_vpar);
 
         sts = m_raw.Alloc(&m_core, request, true);
         MFX_CHECK_STS(sts);
@@ -118,7 +139,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     }
 
     request.Type        = MFX_MEMTYPE_D3D_INT;
-    request.NumFrameMin = minFrames;
+    request.NumFrameMin = MaxRec(m_vpar);
 
     sts = m_rec.Alloc(&m_core, request, false);
     MFX_CHECK_STS(sts);
@@ -130,7 +151,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     request.Type        = MFX_MEMTYPE_D3D_INT;
-    request.NumFrameMin = m_vpar.AsyncDepth;
+    request.NumFrameMin = MaxBs(m_vpar);
     
     sts = m_bs.Alloc(&m_core, request, false);
     MFX_CHECK_STS(sts);
@@ -138,7 +159,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     sts = m_ddi->Register(m_bs, D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
 
-    m_task.Reset(m_vpar.AsyncDepth + m_vpar.mfx.GopRefDist - 1);
+    m_task.Reset(MaxTask(m_vpar));
 
     m_frameOrder = 0;
 
@@ -180,7 +201,7 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
     if (tmp.mfx.EncodedOrder)
         request->NumFrameMin = 1;
     else
-        request->NumFrameMin = tmp.AsyncDepth + tmp.mfx.GopRefDist - 1 + tmp.mfx.NumRefFrame;
+        request->NumFrameMin = MaxRaw(tmp);
 
     request->NumFrameSuggested = request->NumFrameMin;
 
@@ -312,20 +333,17 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         else
         {
             task->m_frameType = GetFrameType(m_vpar, m_frameOrder);
+
+            if (task->m_ctrl.FrameType & MFX_FRAMETYPE_IDR)
+                task->m_frameType = MFX_FRAMETYPE_I|MFX_FRAMETYPE_REF|MFX_FRAMETYPE_IDR;
+
             if (task->m_frameType & MFX_FRAMETYPE_IDR)
                 m_frameOrder = 0;
+
             task->m_poc = m_frameOrder;
         }
 
         m_core.IncreaseReference(&surface->Data);
-        task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
-        task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
-
-        assert(task->m_idxRec != IDX_INVALID);
-
-        task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
-        task->m_midRec = AcquireResource(m_rec, task->m_idxRec);
-        MFX_CHECK(task->m_midRec, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         m_frameOrder ++;
         task->m_stage |= FRAME_ACCEPTED;
@@ -335,17 +353,23 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     MFX_CHECK(task, MFX_ERR_MORE_DATA);
 
     task->m_stage |= FRAME_REORDERED;
-            
-    task->m_idxBs = (mfxU8)FindFreeResourceIndex(m_bs);
-    assert(task->m_idxBs  != IDX_INVALID);
 
-    task->m_midBs = AcquireResource(m_bs,  task->m_idxBs);
+    task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
+    task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
+    task->m_idxBs  = (mfxU8)FindFreeResourceIndex(m_bs);
+    assert(task->m_idxBs  != IDX_INVALID);
+    assert(task->m_idxRec != IDX_INVALID);
+
+    task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
+    task->m_midRec = AcquireResource(m_rec, task->m_idxRec);
+    task->m_midBs  = AcquireResource(m_bs,  task->m_idxBs);
     MFX_CHECK(task->m_midRec && task->m_midBs, MFX_ERR_UNDEFINED_BEHAVIOR);
-            
+
+    task->m_bs = bs;
+
     ConfigureTask(*task, m_lastTask, m_vpar);
     m_lastTask = *task;
 
-    task->m_bs = bs;
 
     *thread_task = task;
 
@@ -363,6 +387,9 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
     if (task.m_stage == STAGE_SUBMIT)
     {
         mfxHDLPair surfaceHDL = {};
+
+        task.m_initial_cpb_removal_delay  = m_hrd.GetInitCpbRemovalDelay();
+        task.m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
 
         sts = GetNativeHandleToRawSurface(m_core, m_vpar, task, surfaceHDL);
         MFX_CHECK_STS(sts);
@@ -403,6 +430,8 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
 
             bs->DataLength += bytes2copy;
 
+            m_hrd.RemoveAccessUnit(bytes2copy, !!(task.m_frameType & MFX_FRAMETYPE_IDR));
+
             bs->TimeStamp       = task.m_surf->Data.TimeStamp;
             //bs->DecodeTimeStamp = MFX_TIMESTAMP_UNKNOWN;
             bs->PicStruct       = MFX_PICSTRUCT_PROGRESSIVE;
@@ -422,11 +451,21 @@ mfxStatus Plugin::FreeResources(mfxThreadTask thread_task, mfxStatus /*sts*/)
 
     ReleaseResource(m_bs,  task.m_midBs);
 
+    if (!m_vpar.RawRef)
+    {
+        m_core.DecreaseReference(&task.m_surf->Data);
+        ReleaseResource(m_raw, task.m_midRaw);
+    }
+
     if (!(task.m_frameType & MFX_FRAMETYPE_REF))
     {
         ReleaseResource(m_rec, task.m_midRec);
-        m_core.DecreaseReference(&task.m_surf->Data);
-        ReleaseResource(m_raw, task.m_midRaw);
+
+        if (m_vpar.RawRef)
+        {
+            m_core.DecreaseReference(&task.m_surf->Data);
+            ReleaseResource(m_raw, task.m_midRaw);
+        }
     }
     else if (task.m_stage != STAGE_READY)
     {
@@ -446,8 +485,12 @@ mfxStatus Plugin::FreeResources(mfxThreadTask thread_task, mfxStatus /*sts*/)
         if (isDpbEnd(task.m_dpb[1], j))
         {
             ReleaseResource(m_rec, task.m_dpb[0][i].m_midRec);
-            m_core.DecreaseReference(&task.m_dpb[0][i].m_surf->Data);
-            ReleaseResource(m_raw, task.m_dpb[0][i].m_midRaw);
+
+            if (m_vpar.RawRef)
+            {
+                m_core.DecreaseReference(&task.m_dpb[0][i].m_surf->Data);
+                ReleaseResource(m_raw, task.m_dpb[0][i].m_midRaw);
+            }
         }
     }
 

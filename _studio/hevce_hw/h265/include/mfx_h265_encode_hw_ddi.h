@@ -416,8 +416,7 @@ public:
 
     void Reset(MfxVideoParam const & par);
 
-    ENCODE_PACKEDHEADER_DATA* PackHeader(mfxU32 nut);
-    ENCODE_PACKEDHEADER_DATA* PackAudHeader(mfxU32 frameType);
+    ENCODE_PACKEDHEADER_DATA* PackHeader(Task const & task, mfxU32 nut);
     ENCODE_PACKEDHEADER_DATA* PackSliceHeader(Task const & task, mfxU32 id, mfxU32* qpd_offset);
 
     inline mfxU32 MaxPackedHeaders() { return (mfxU32)m_buf.size(); }

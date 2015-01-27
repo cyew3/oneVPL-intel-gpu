@@ -26,10 +26,11 @@ public:
     void PutGolomb      (mfxU32 b);
     void PutTrailingBits();
 
-    inline void PutUE   (mfxU32 b)    { PutGolomb(b); };
-    inline void PutSE   (mfxI32 b)    { (b > 0) ? PutGolomb((b<<1)-1) : PutGolomb((-b)<<1); };
+    inline void PutUE   (mfxU32 b)    { PutGolomb(b); }
+    inline void PutSE   (mfxI32 b)    { (b > 0) ? PutGolomb((b<<1)-1) : PutGolomb((-b)<<1); }
 
-    inline mfxU32 GetOffset() { return (mfxU32)(m_bs - m_bsStart) * 8 + m_bitOffset - m_bitStart; };
+    inline mfxU32 GetOffset() { return (mfxU32)(m_bs - m_bsStart) * 8 + m_bitOffset - m_bitStart; }
+    inline mfxU8* GetStart () { return m_bsStart; }
 
     void Reset(mfxU8* bs = 0, mfxU32 size = 0, mfxU8 bitOffset = 0);
 
@@ -54,6 +55,7 @@ public:
     inline void GetVPS(mfxU8*& buf, mfxU32& len){buf = m_bs_vps; len = m_sz_vps;}  
     inline void GetSPS(mfxU8*& buf, mfxU32& len){buf = m_bs_sps; len = m_sz_sps;}
     inline void GetPPS(mfxU8*& buf, mfxU32& len){buf = m_bs_pps; len = m_sz_pps;}
+    void GetSEI(Task const & task, mfxU8*& buf, mfxU32& len);
     void GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& len, mfxU32* qpd_offset = 0);
 
     static void PackNALU (BitstreamWriter& bs, NALU  const &  nalu);
@@ -68,9 +70,13 @@ public:
                           Slice const &     slice,
                           mfxU32* qpd_offset = 0);
     static void PackVUI  (BitstreamWriter& bs, VUI        const & vui);
+    static void PackHRD  (BitstreamWriter& bs, HRDInfo    const & hrd, bool commonInfPresentFlag, mfxU16 maxNumSubLayersMinus1);
     static void PackPTL  (BitstreamWriter& bs, LayersInfo const & ptl, mfxU16 max_sub_layers_minus1);
     static void PackSLO  (BitstreamWriter& bs, LayersInfo const & slo, mfxU16 max_sub_layers_minus1);
     static void PackSTRPS(BitstreamWriter& bs, const STRPS * h, mfxU32 num, mfxU32 idx);
+
+    static void PackSEIPayload(BitstreamWriter& bs, VUI const & vui, BufferingPeriodSEI const & bp);
+    static void PackSEIPayload(BitstreamWriter& bs, VUI const & vui, PicTimingSEI const & pt);
 
     static mfxStatus PackRBSP(mfxU8* dst, mfxU8* src, mfxU32& dst_size, mfxU32 src_size);
 
@@ -81,7 +87,7 @@ private:
     static const mfxU32 VPS_BS_SIZE = 256;
     static const mfxU32 SPS_BS_SIZE = 256;
     static const mfxU32 PPS_BS_SIZE = 128;
-    static const mfxU32 SSH_BS_SIZE = 2048;
+    static const mfxU32 SSH_BS_SIZE = MAX_SLICES * 16;
 
     mfxU8  m_rbsp[RBSP_SIZE];
     mfxU8  m_bs_aud[3][AUD_BS_SIZE];
