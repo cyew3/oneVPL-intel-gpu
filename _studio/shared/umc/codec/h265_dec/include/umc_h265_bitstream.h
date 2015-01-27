@@ -151,7 +151,7 @@ protected:
     void parseVUI(H265SeqParamSet *sps);
 
     // Parse weighted prediction table in slice header
-    void xParsePredWeightTable(H265SliceHeader * sliceHdr);
+    void xParsePredWeightTable(const H265SeqParamSet *sps, H265SliceHeader * sliceHdr);
     // Parse scaling list data block
     void xDecodeScalingList(H265ScalingList *scalingList, unsigned sizeId, unsigned listId);
     // Parse HRD information in VPS or in VUI block of SPS
@@ -171,9 +171,9 @@ public:
     static Ipp32u m_c;
     static FILE* cabac_bits;
 
-    inline void PRINT_CABAC_VALUES(Ipp32u val, Ipp32u range)
+    inline void PRINT_CABAC_VALUES(Ipp32u val, Ipp32u range, Ipp32u finalRange)
     {
-        fprintf(cabac_bits, "\nCount: %d \tValue: %d \tRange: %d \t", m_c++, val, range);
+        fprintf(cabac_bits, "%d: coding bin value %d, range = [%d->%d]\n", m_c++, val, range, finalRange);
         fflush(cabac_bits);
     }
 

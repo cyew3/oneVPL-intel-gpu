@@ -280,7 +280,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
         if ( scaledRange >= g_scaled256)
         {
 #if INSTRUMENTED_CABAC
-            PRINT_CABAC_VALUES(binVal, range);
+            PRINT_CABAC_VALUES(binVal, range, m_lcodIRange);
 #endif
             return binVal;
         }
@@ -326,7 +326,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 
     }
 #if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES(binVal, range);
+    PRINT_CABAC_VALUES(binVal, range, m_lcodIRange);
 #endif
     return binVal;
 
@@ -374,7 +374,7 @@ Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
         }
     }
 #if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES(Bin, range);
+    PRINT_CABAC_VALUES(Bin, range, m_lcodIRange);
 #endif
     return Bin;
 } //Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
@@ -384,7 +384,7 @@ H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
 {
 #if INSTRUMENTED_CABAC
-    Ipp32u range = m_lcodIRange;
+    //Ipp32u range = m_lcodIRange;
 #endif
 
     m_lcodIOffset += m_lcodIOffset;
@@ -416,7 +416,7 @@ Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
     }
 
 #if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES(Bin, range);
+    //PRINT_CABAC_VALUES(Bin, range, m_lcodIRange);
 #endif
     return Bin;
 } //Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
@@ -426,7 +426,7 @@ H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
 {
 #if INSTRUMENTED_CABAC
-    Ipp32u range = m_lcodIRange;
+    //Ipp32u range = m_lcodIRange;
 #endif
 
     Ipp32u bins = 0;
@@ -475,7 +475,7 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
                 m_lcodIOffset -= scaledRange;
             }
 #if INSTRUMENTED_CABAC
-            PRINT_CABAC_VALUES(bins & 1, range);
+            //PRINT_CABAC_VALUES(bins & 1, range, m_lcodIRange);
 #endif
         }
         numBins -= 8;
@@ -508,7 +508,7 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
             m_lcodIOffset -= scaledRange;
         }
 #if INSTRUMENTED_CABAC
-        PRINT_CABAC_VALUES(bins & 1, range);
+        //PRINT_CABAC_VALUES(bins & 1, range, m_lcodIRange);
 #endif
     }
 

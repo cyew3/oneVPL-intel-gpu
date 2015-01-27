@@ -45,8 +45,8 @@ struct SAOLCUParam
 {
     struct
     {
-        Ipp8u m_mergeUpFlag : 1;
-        Ipp8u m_mergeLeftFlag : 1;
+        Ipp8u sao_merge_up_flag : 1;
+        Ipp8u sao_merge_left_flag : 1;
     };
 
     Ipp8s m_typeIdx[2];

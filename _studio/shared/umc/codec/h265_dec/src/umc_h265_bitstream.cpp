@@ -538,6 +538,8 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
         pcSPS->separate_colour_plane_flag = Get1Bit();
     }
 
+    pcSPS->ChromaArrayType = pcSPS->separate_colour_plane_flag ? 0 : pcSPS->chroma_format_idc;
+
     pcSPS->pic_width_in_luma_samples  = GetVLCElementU();
     pcSPS->pic_height_in_luma_samples = GetVLCElementU();
     pcSPS->conformance_window_flag = Get1Bit();
@@ -1033,9 +1035,8 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
 }   // H265HeadersBitstream::GetPictureParamSetFull
 
 // Parse weighted prediction table in slice header
-void H265HeadersBitstream::xParsePredWeightTable(H265SliceHeader * sliceHdr)
+void H265HeadersBitstream::xParsePredWeightTable(const H265SeqParamSet *sps, H265SliceHeader * sliceHdr)
 {
-    Ipp8u chroma_format_idc = 1;
     wpScalingParam* wp;
     SliceType       eSliceType  = sliceHdr->slice_type;
     int             iNbRef      = (eSliceType == B_SLICE ) ? (2) : (1);
@@ -1044,7 +1045,7 @@ void H265HeadersBitstream::xParsePredWeightTable(H265SliceHeader * sliceHdr)
     if (sliceHdr->luma_log2_weight_denom > 7)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-    if (chroma_format_idc)
+    if (sps->ChromaArrayType)
     {
         Ipp32s delta_chroma_log2_weight_denom = GetVLCElementS();
         if (delta_chroma_log2_weight_denom + (int)sliceHdr->luma_log2_weight_denom < 0)
@@ -1073,7 +1074,7 @@ void H265HeadersBitstream::xParsePredWeightTable(H265SliceHeader * sliceHdr)
             uTotalSignalledWeightFlags += wp[0].present_flag;
         }
 
-        if (chroma_format_idc)
+        if (sps->ChromaArrayType)
         {
             for (Ipp32s iRefIdx=0 ; iRefIdx < sliceHdr->m_numRefIdx[eRefPicList] ; iRefIdx++ )
             {
@@ -1103,7 +1104,7 @@ void H265HeadersBitstream::xParsePredWeightTable(H265SliceHeader * sliceHdr)
                 wp[0].offset = 0;
             }
 
-            if (chroma_format_idc)
+            if (sps->ChromaArrayType)
             {
                 if (wp[1].present_flag)
                 {
@@ -1359,7 +1360,8 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
         if (sps->sample_adaptive_offset_enabled_flag)
         {
             sliceHdr->slice_sao_luma_flag = Get1Bit();
-            sliceHdr->slice_sao_chroma_flag = Get1Bit();
+            if (sps->ChromaArrayType)
+                sliceHdr->slice_sao_chroma_flag = Get1Bit();
         }
 
         if (sliceHdr->slice_type != I_SLICE)
@@ -1509,7 +1511,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
 
         if ( (pps->weighted_pred_flag && sliceHdr->slice_type == P_SLICE) || (pps->weighted_bipred_flag && sliceHdr->slice_type == B_SLICE) )
         {
-            xParsePredWeightTable(sliceHdr);
+            xParsePredWeightTable(sps, sliceHdr);
         }
 
         if (sliceHdr->slice_type != I_SLICE)

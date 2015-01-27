@@ -121,6 +121,7 @@ struct Context
     H265DecoderFrame *m_pCurrentFrame;                          // (H265DecoderFrame *) pointer to frame being decoded
     bool                m_bIsNeedWADeblocking;
     bool                m_hasTiles;
+    Ipp32u              m_ChromaArrayType;
 
     H265CodingUnit*     m_cu;
 
@@ -168,7 +169,7 @@ public:
 
     CoeffsBuffer    m_coeffBuffer;
 
-    H265Bitstream              m_BitStream;
+    H265Bitstream    m_BitStream;
     CoeffsPtr        m_coeffsRead;
     CoeffsPtr        m_coeffsWrite;
 

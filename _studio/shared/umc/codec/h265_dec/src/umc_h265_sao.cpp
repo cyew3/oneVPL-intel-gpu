@@ -877,7 +877,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
         if (isNeedSAOLuma)
         {
             Ipp32s typeIdx = saoLCUParam[addr].m_typeIdx[0];
-            if (!saoLCUParam[addr].m_mergeLeftFlag)
+            if (!saoLCUParam[addr].sao_merge_left_flag)
             {
                 SetOffsetsLuma(saoLCUParam[addr], typeIdx);
             }
@@ -925,7 +925,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
         {
             Ipp32s typeIdx = saoLCUParam[addr].m_typeIdx[1];
 
-            if (!saoLCUParam[addr].m_mergeLeftFlag)
+            if (!saoLCUParam[addr].sao_merge_left_flag)
             {
                 SetOffsetsChroma(saoLCUParam[addr], typeIdx);
             }

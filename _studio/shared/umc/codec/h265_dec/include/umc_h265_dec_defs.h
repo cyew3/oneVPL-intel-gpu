@@ -858,6 +858,7 @@ struct H265SeqParamSetBase
     int m_QPBDOffsetY;
     int m_QPBDOffsetC;
 
+    Ipp32u ChromaArrayType;
 
     void Reset()
     {

@@ -61,6 +61,8 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
     m_bIsNeedWADeblocking = m_pCurrentFrame->GetAU()->IsNeedWorkAroundForDeblocking();
     m_hasTiles = Task.m_pSlicesInfo->m_hasTiles;
 
+    m_ChromaArrayType = m_pSeqParamSet->ChromaArrayType;
+
     CreateReconstructor();
 
     m_DecodeDQPFlag = false;
