@@ -13,6 +13,8 @@ File Name: mfx_screen_capture_ddi.cpp
 #include "mfx_screen_capture_ddi.h"
 #include "mfx_screen_capture_d3d9.h"
 #include "mfx_screen_capture_d3d11.h"
+#include "mfx_screen_capture_sw_d3d9.h"
+#include "mfx_screen_capture_sw_d3d11.h"
 
 namespace MfxCapture
 {
@@ -40,11 +42,48 @@ Capturer* CreatePlatformCapturer(mfxCoreInterface* core)
         }
         else
         {
-            //return new SW_Capturer;
+            return new SW_D3D9_Capturer(core);
         }
     }
 
     return 0;
+}
+
+Capturer* CreateSWCapturer(mfxCoreInterface* core)
+{
+    if (core)
+    {
+        return new SW_D3D9_Capturer(core);
+    }
+
+    return 0;
+}
+
+DXGI_FORMAT MfxFourccToDxgiFormat(const mfxU32& fourcc)
+{
+    switch (fourcc)
+    {
+        case MFX_FOURCC_NV12:
+            return DXGI_FORMAT_NV12;
+        case MFX_FOURCC_RGB4:
+        case DXGI_FORMAT_AYUV:
+            return DXGI_FORMAT_B8G8R8A8_UNORM;
+        default:
+            return DXGI_FORMAT_UNKNOWN;
+    }
+}
+
+D3DFORMAT MfxFourccToD3dFormat(const mfxU32& fourcc)
+{
+    switch (fourcc)
+    {
+        case MFX_FOURCC_NV12:
+            return D3DFMT_NV12;
+        case MFX_FOURCC_RGB4:
+            return D3DFMT_A8R8G8B8;
+        default:
+            return D3DFMT_UNKNOWN;
+    }
 }
 
 } //namespace MfxCapture

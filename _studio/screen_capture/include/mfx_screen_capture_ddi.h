@@ -14,6 +14,7 @@ File Name: mfx_screen_capture_ddi.h
 #define __MFX_SCREEN_CAPTURE_DDI_H__
 
 #include <list>
+#include <d3d9.h>
 #include <d3d11.h>
 #include "mfxstructures.h"
 #include "mfxplugin.h"
@@ -21,6 +22,8 @@ File Name: mfx_screen_capture_ddi.h
 // {BF44DACD-217F-4370-A383-D573BC56707E}
 DEFINE_GUID(DXVADDI_Intel_GetDesktopScreen, 
             0xbf44dacd, 0x217f, 0x4370, 0xa3, 0x83, 0xd5, 0x73, 0xbc, 0x56, 0x70, 0x7e);
+
+#define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
 
 namespace MfxCapture
 {
@@ -75,9 +78,17 @@ struct AsyncParams
     mfxU32 StatusReportFeedbackNumber;
 };
 
+enum CaptureMode{
+    HW_D3D11 = 0x01,
+    HW_D3D9  = 0x02,
+    SW_D3D11 = 0x11,
+    SW_D3D9  = 0x12
+};
+
 class Capturer
 {
 public:
+    CaptureMode Mode;
 
     virtual ~Capturer(){}
 
@@ -108,6 +119,10 @@ public:
 };
 
 Capturer* CreatePlatformCapturer(mfxCoreInterface* core);
+Capturer* CreateSWCapturer(mfxCoreInterface* core);
+
+DXGI_FORMAT MfxFourccToDxgiFormat(const mfxU32& fourcc);
+D3DFORMAT MfxFourccToD3dFormat(const mfxU32& fourcc);
 
 } //namespace MfxCapture
 

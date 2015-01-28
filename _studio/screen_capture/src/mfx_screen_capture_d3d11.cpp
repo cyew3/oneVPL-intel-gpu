@@ -16,24 +16,10 @@ File Name: mfx_screen_capture_d3d11.cpp
 namespace MfxCapture
 {
 
-DXGI_FORMAT MfxFourccToDxgiFormat(const mfxU32& fourcc)
-{
-    switch (fourcc)
-    {
-        case MFX_FOURCC_NV12:
-            return DXGI_FORMAT_NV12;
-        case MFX_FOURCC_RGB4:
-        case DXGI_FORMAT_AYUV:
-            return DXGI_FORMAT_B8G8R8A8_UNORM;
-        default:
-            return DXGI_FORMAT_UNKNOWN;
-    }
-}
-
 D3D11_Capturer::D3D11_Capturer(mfxCoreInterface* _core)
     :m_pmfxCore(_core)
 {
-
+    Mode = HW_D3D11;
 }
 
 D3D11_Capturer::~D3D11_Capturer()
@@ -136,7 +122,7 @@ mfxStatus D3D11_Capturer::QueryVideoAccelerator(mfxVideoParam const & in, mfxVid
 
     m_pDecoder.Release();
 
-    return MFX_ERR_UNSUPPORTED;
+    return MFX_ERR_NONE;
 }
 
 mfxStatus D3D11_Capturer::CheckCapabilities(mfxVideoParam const & in, mfxVideoParam* out)

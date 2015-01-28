@@ -6,47 +6,29 @@ agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2015 Intel Corporation. All Rights Reserved.
 
-File Name: mfx_screen_capture_d3d9.h
+File Name: mfx_screen_capture_sw_d3d9.h
 
 \* ****************************************************************************** */
 
-#if !defined(__MFX_SCREEN_CAPTURE_D3D9_H__)
-#define __MFX_SCREEN_CAPTURE_D3D9_H__
+#if !defined(__MFX_SCREEN_CAPTURE_SW_D3D9_H__)
+#define __MFX_SCREEN_CAPTURE_SW_D3D9_H__
 
 #include <atlbase.h>
 #include <list>
 #include "mfx_screen_capture_ddi.h"
-
+#include <d3d9.h>
 #include <dxva2api.h>
-
-#define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
-
-static const GUID DXVA2_Intel_Auxiliary_Device = 
-{ 0xa74ccae2, 0xf466, 0x45ae, { 0x86, 0xf5, 0xab, 0x8b, 0xe8, 0xaf, 0x84, 0x83 } };
-
-// From "Intel DXVA2 Auxiliary Functionality Device rev 0.6"
-typedef enum
-{
-    AUXDEV_GET_ACCEL_GUID_COUNT             = 1,
-    AUXDEV_GET_ACCEL_GUIDS                  = 2,
-    AUXDEV_GET_ACCEL_RT_FORMAT_COUNT        = 3,
-    AUXDEV_GET_ACCEL_RT_FORMATS             = 4,
-    AUXDEV_GET_ACCEL_FORMAT_COUNT           = 5,
-    AUXDEV_GET_ACCEL_FORMATS                = 6,
-    AUXDEV_QUERY_ACCEL_CAPS                 = 7,
-    AUXDEV_CREATE_ACCEL_SERVICE             = 8,
-    AUXDEV_DESTROY_ACCEL_SERVICE            = 9
-} AUXDEV_FUNCTION_ID;
+#include "mfx_color_space_conversion_vpp.h"
 
 namespace MfxCapture
 {
 
-class D3D9_Capturer : public Capturer
+class SW_D3D9_Capturer : public Capturer
 {
 public:
 
-    D3D9_Capturer(mfxCoreInterface* _core);
-    virtual ~D3D9_Capturer();
+    SW_D3D9_Capturer(mfxCoreInterface* _core);
+    virtual ~SW_D3D9_Capturer();
 
     virtual mfxStatus CreateVideoAccelerator(mfxVideoParam const & par);
     virtual mfxStatus QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out);
@@ -61,14 +43,19 @@ public:
 protected:
     mfxCoreInterface*                m_pmfxCore;
 
+    mfxStatus CreateDeviceManager();
+
+    std::auto_ptr<MFXVideoVPPColorSpaceConversion> m_pColorConverter;
+    mfxFrameSurface1* GetFreeInternalSurface();
+    std::list<mfxFrameSurface1> m_InternalSurfPool;
+    std::list<DESKTOP_QUERY_STATUS_PARAMS> m_IntStatusList;
+
     CComPtr<IDirect3D9                 >         m_pD3D;
     CComPtr<IDirect3DDeviceManager9    >         m_pDirect3DDeviceManager;
     CComPtr<IDirect3DDevice9           >         m_pDirect3DDevice;
     CComPtr<IDirectXVideoDecoderService>         m_pDirectXVideoService;
-    CComPtr<IDirectXVideoDecoder>                m_pDecoder;
-    HANDLE                                       m_hDirectXHandle;
 
 };
 
 } //namespace MfxCapture
-#endif //#if !defined(__MFX_SCREEN_CAPTURE_D3D9_H__)
+#endif //#if !defined(__MFX_SCREEN_CAPTURE_SW_D3D9_H__)

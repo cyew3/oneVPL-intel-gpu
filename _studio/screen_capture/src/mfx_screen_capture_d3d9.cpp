@@ -16,23 +16,10 @@ File Name: mfx_screen_capture_d3d9.cpp
 namespace MfxCapture
 {
 
-D3DFORMAT MfxFourccToD3dFormat(const mfxU32& fourcc)
-{
-    switch (fourcc)
-    {
-        case MFX_FOURCC_NV12:
-            return D3DFMT_NV12;
-        case MFX_FOURCC_RGB4:
-            return D3DFMT_A8R8G8B8;
-        default:
-            return D3DFMT_UNKNOWN;
-    }
-}
-
 D3D9_Capturer::D3D9_Capturer(mfxCoreInterface* _core)
     :m_pmfxCore(_core)
 {
-
+    Mode = HW_D3D9;
 }
 
 D3D9_Capturer::~D3D9_Capturer()

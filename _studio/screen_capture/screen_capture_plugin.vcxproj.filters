@@ -10,6 +10,9 @@
     <Filter Include="cfg-files">
       <UniqueIdentifier>{99d92eac-ab2c-4ae0-bb20-1fced9ae4056}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libmfxsw VPP">
+      <UniqueIdentifier>{de1fa066-c4c0-443b-af20-b679ec704034}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_screen_capture_plugin.h">
@@ -27,6 +30,15 @@
     <ClInclude Include="include\mfx_screen_capture_d3d9.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\mfx_screen_capture_sw_d3d11.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_screen_capture_sw_d3d9.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mfx_lib\vpp\include\mfx_color_space_conversion_vpp.h">
+      <Filter>libmfxsw VPP</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\mfx_screen_capture_plugin.cpp">
@@ -40,6 +52,15 @@
     </ClCompile>
     <ClCompile Include="src\mfx_screen_capture_d3d9.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_screen_capture_sw_d3d11.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_screen_capture_sw_d3d9.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mfx_lib\vpp\src\mfx_color_space_conversion_vpp.cpp">
+      <Filter>libmfxsw VPP</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

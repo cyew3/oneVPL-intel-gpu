@@ -27,6 +27,16 @@ MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
     return MFXScreenCapture_Plugin::CreateByDispatcher(uid, plugin);
 }
 
+bool inline isSW(const Capturer* capt)
+{
+    if(!capt) 
+        return false;
+    if(SW_D3D11 == capt->Mode || SW_D3D9 == capt->Mode)
+        return true;
+    else
+        return false;
+}
+
 MFXScreenCapture_Plugin::MFXScreenCapture_Plugin(bool CreateByDispatcher)
 {
     m_pmfxCore = 0;
@@ -34,6 +44,8 @@ MFXScreenCapture_Plugin::MFXScreenCapture_Plugin(bool CreateByDispatcher)
     memset(&m_CurrentPar, 0, sizeof(mfxVideoParam));
     memset(&m_InitPar, 0, sizeof(mfxVideoParam));
     memset(&m_OpaqAlloc, 0, sizeof(mfxExtOpaqueSurfaceAlloc));
+    memset(&m_response, 0, sizeof(mfxFrameAllocResponse));
+
     m_inited = false;
 
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
@@ -156,6 +168,7 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
     MFX_CHECK_NULL_PTR1(par);
     if(m_inited)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
+    bool fallback = false;
 
     mfxCoreParam param = {0};
     mfxRes = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &param);
@@ -180,11 +193,17 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
     }
 
     mfxRes = QueryMode2(*par, m_InitPar, true);
-    if(MFX_ERR_UNSUPPORTED ==  mfxRes)
+    if(MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
+    {
+        mfxRes = MFX_ERR_NONE;
+        fallback = true;
+    }
+    if(MFX_ERR_UNSUPPORTED == mfxRes)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     else if(MFX_ERR_NONE != mfxRes)
         return mfxRes;
 
+    m_CurrentPar = m_InitPar;
     m_inited = true;
 
     mfxExtOpaqueSurfaceAlloc* in_opaq_buf   = 0;
@@ -222,7 +241,7 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
         mfxRes = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf->Out.NumSurface, in_opaq_buf->Out.Type, in_opaq_buf->Out.Surfaces);
     }
 
-    if(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY || m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+    if((par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY || m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && !isSW(m_pCapturer.get()))
     {
         mfxVideoParam tmp_par = *par;
         mfxFrameAllocRequest request = {0};
@@ -260,8 +279,8 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
     if(!m_InitPar.mfx.FrameInfo.PicStruct)
         m_InitPar.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
-    m_CurrentPar = m_InitPar;
-
+    if(fallback && mfxRes >= MFX_ERR_NONE) //fallback status is more important than warning
+        mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
     return mfxRes;
 }
 
@@ -342,6 +361,7 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
     //bool warning     = false;
     bool error       = false;
     bool opaque      = false;
+    bool fallback    = false;
 
     out.IOPattern  = in.IOPattern;
     out.AsyncDepth = in.AsyncDepth;
@@ -433,26 +453,6 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         error = true;
     }
 
-
-    if(in.ExtParam || in.NumExtParam || out.ExtParam || out.NumExtParam)
-    {
-        if(in.NumExtParam > 1 || out.NumExtParam > 1)
-            error = true;
-        mfxExtOpaqueSurfaceAlloc* in_opaq_buf   = 0;
-        for(mfxU32 i = 0; i < in.NumExtParam; ++i)
-        {
-            if(in.ExtParam[i])
-            {
-                if( in.ExtParam[i]->BufferId == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION &&
-                    in.ExtParam[i]->BufferSz == sizeof(mfxExtOpaqueSurfaceAlloc))
-                {
-                    in_opaq_buf = (mfxExtOpaqueSurfaceAlloc*) in.ExtParam[i];
-                    m_OpaqAlloc = *in_opaq_buf;
-                }
-            }
-        }
-
-    }
     if(in.Protected)
     {
         out.Protected = 0;
@@ -596,6 +596,12 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         m_pCapturer.reset( CreatePlatformCapturer(m_pmfxCore) );
 
         mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in);
+        if(mfxRes)
+        {
+            fallback = true;
+            m_pCapturer.reset( CreateSWCapturer(m_pmfxCore) );
+            mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in);
+        }
         MFX_CHECK_STS(mfxRes);
 
         mfxRes = m_pCapturer.get()->CheckCapabilities(in, &out);
@@ -606,12 +612,19 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         m_pCapturer.reset( CreatePlatformCapturer(m_pmfxCore) );
 
         mfxRes = m_pCapturer.get()->QueryVideoAccelerator(in, &out);
+        if(mfxRes)
+        {
+            fallback = true;
+        }
         MFX_CHECK_STS(mfxRes);
 
         m_pCapturer.reset( 0 );
     }
 
-    return MFX_ERR_NONE;
+    if(fallback)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    else
+        return MFX_ERR_NONE;
 }
 
 mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out,  mfxThreadTask *task)
@@ -648,11 +661,12 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
         if(!real_surface)    return MFX_ERR_NULL_PTR;
     }
 
-    if((m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY && m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+    if(!isSW(m_pCapturer.get()) &&
+       ((m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY && m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
         real_surface = GetFreeInternalSurface();
         if(!real_surface)
-            return MFX_WRN_DEVICE_BUSY;
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
         mfxRes = m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &real_surface->Data);
         MFX_CHECK_STS(mfxRes);
     }
@@ -660,8 +674,8 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
     mfxRes = DecodeFrameSubmit(real_surface);
     if (MFX_ERR_NONE == mfxRes)
     {
-        surface_work->Info.CropH = m_CurrentPar.mfx.FrameInfo.Height;
-        surface_work->Info.CropW = m_CurrentPar.mfx.FrameInfo.Width;
+        //surface_work->Info.CropH = m_CurrentPar.mfx.FrameInfo.Height;
+        //surface_work->Info.CropW = m_CurrentPar.mfx.FrameInfo.Width;
         surface_work->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
         AsyncParams *pAsyncParam = new AsyncParams;
@@ -679,17 +693,6 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxFrameSurface1 *surface)
 {
     mfxStatus mfxRes;
     CComPtr<ID3D11VideoDecoderOutputView> pOutputView;
-
-    //IF OPAQ
-    // GetRealFrame
-
-    //if SYSTEM_MEMORY
-    //mfxRes = m_pCapturer.get()->BeginFrame(surface_work->Data.MemId, **surface_internal );
-    //MFX_CHECK_STS(mfxRes);
-
-    //else if VIDEO_MEMORY
-    // GetHDL
-
 
     mfxRes = m_pCapturer.get()->BeginFrame(surface->Data.MemId);
     MFX_CHECK_STS(mfxRes);
@@ -734,7 +737,8 @@ mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfx
     //}
     mfxFrameSurface1* real_output = pAsyncParam->surface_out;
 
-    if((m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY && m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+    if(!isSW(m_pCapturer.get()) &&
+        ((m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY && m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
         if(m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
         {
