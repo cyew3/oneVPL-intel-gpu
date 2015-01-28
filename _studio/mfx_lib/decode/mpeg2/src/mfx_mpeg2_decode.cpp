@@ -161,6 +161,52 @@ void SetSurfaceTimeCode(mfxFrameSurface1* surface, UMC::MPEG2VideoDecoderBase *i
     pExtTimeCode->TimeCodeSeconds  = sh.gop_seconds;
 }
 
+mfxU16 GetMfxPictureType(mfxU32 frameType)
+{
+    switch (frameType)
+    {
+        case I_PICTURE: return MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
+        case P_PICTURE: return MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+        case B_PICTURE: return MFX_FRAMETYPE_B;
+        default:        return MFX_FRAMETYPE_UNKNOWN;
+    }
+}
+
+mfxU16 GetMfxFieldType(mfxU32 frameType)
+{
+    switch (frameType)
+    {
+        case I_PICTURE: return MFX_FRAMETYPE_xI | MFX_FRAMETYPE_xREF;
+        case P_PICTURE: return MFX_FRAMETYPE_xP | MFX_FRAMETYPE_xREF;
+        case B_PICTURE: return MFX_FRAMETYPE_xB;
+        default:        return MFX_FRAMETYPE_UNKNOWN;
+    }
+}
+
+void SetSurfacePictureType(mfxFrameSurface1* surface, Ipp32s display_index, UMC::MPEG2VideoDecoderBase *implUmc)
+{
+    if (!surface || !implUmc)
+        return;
+
+    mfxExtDecodedFrameInfo* pDecodedFrameInfoExt = (mfxExtDecodedFrameInfo*)GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_DECODED_FRAME_INFO);
+    if (!pDecodedFrameInfoExt)
+        return;
+
+    const UMC::sPictureHeader& ph = implUmc->GetPictureHeader(display_index);
+    const UMC::sSequenceHeader& sh = implUmc->GetSequenceHeader();
+
+    mfxU32 frameType = implUmc->GetFrameType(display_index);
+    pDecodedFrameInfoExt->FrameType = GetMfxPictureType(frameType);
+
+    if (sh.progressive_sequence)
+        return;
+
+    if (ph.picture_structure == FRAME_PICTURE)
+        pDecodedFrameInfoExt->FrameType |= GetMfxFieldType(frameType);
+    else
+        pDecodedFrameInfoExt->FrameType |= GetMfxFieldType(implUmc->GetFrameType(display_index+DPB));
+}
+
 inline
 mfxU8 Mpeg2GetMfxChromaFormatFromUmcMpeg2(mfxU32 umcChromaFormat)
 {
@@ -2168,6 +2214,7 @@ mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pState, void *pParam, mfxStatus 
 
     if (0 <= display_index)
     {
+        SetSurfacePictureType(parameters->surface_out, display_index, &lpOwner->m_implUmc);
 
 #ifdef _threading_deb
         FILE *pFile = NULL;
