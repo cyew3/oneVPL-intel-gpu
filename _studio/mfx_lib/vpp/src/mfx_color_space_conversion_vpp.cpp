@@ -44,6 +44,10 @@ IppStatus cc_P210_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo,
                            mfxFrameData* yv12Data);
 
+IppStatus cc_P210_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo,
+                           mfxFrameData* yv12Data);
+
 #if defined(_WIN32) || defined(_WIN64)
 IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                                    mfxFrameData* outData, mfxFrameInfo* outInfo);
@@ -316,6 +320,9 @@ mfxStatus MFXVideoVPPColorSpaceConversion::RunFrameVPP(mfxFrameSurface1 *in,
       break;
     case MFX_FOURCC_NV12:
       ippSts = cc_P210_to_NV12(inData, inInfo, outData, outInfo, &m_yv12Data);
+      break;
+    case MFX_FOURCC_NV16:
+      ippSts = cc_P210_to_NV16(inData, inInfo, outData, outInfo, &m_yv12Data);
       break;
     default:
       return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -866,6 +873,40 @@ IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   return sts;
 
 } // IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
+
+IppStatus cc_P210_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo,
+                            mfxFrameData* yv12Data)
+{
+  IppStatus sts = ippStsNoErr;
+  IppiSize  roiSize = {0, 0};
+
+  // cropping was removed
+  outInfo;
+
+  VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
+  VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
+
+  if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
+  {
+      sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, 2, (Ipp16u *)yv12Data->Y, yv12Data->Pitch, roiSize);
+      IPP_CHECK_STS( sts );
+      sts = ippiConvert_16u8u_C1R((const Ipp16u *)yv12Data->Y,  yv12Data->Pitch, outData->Y, outData->Pitch, roiSize);
+      IPP_CHECK_STS( sts );
+
+      sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch, 2, (Ipp16u *)yv12Data->UV, yv12Data->Pitch, roiSize);
+      IPP_CHECK_STS( sts );
+      sts = ippiConvert_16u8u_C1R((const Ipp16u *)yv12Data->UV,  yv12Data->Pitch, outData->UV, outData->Pitch, roiSize);
+      IPP_CHECK_STS( sts );
+  }
+  else
+  {
+     /* Interlaced content is not supported... yet. */
+     return ippStsErr;
+  }
+
+  return sts;
+} // IppStatus cc_P210_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 IppStatus cc_P210_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo,
