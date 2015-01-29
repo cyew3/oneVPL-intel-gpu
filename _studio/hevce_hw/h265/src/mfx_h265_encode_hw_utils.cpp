@@ -9,6 +9,7 @@
 #include "mfx_common.h"
 
 #include "mfx_h265_encode_hw_utils.h"
+#include "vm_time.h"
 #include <algorithm>
 #include <functional>
 #include <list>
@@ -1443,9 +1444,17 @@ mfxU32 HRD::GetMaxFrameSize(mfxU32 bufferingPeriod) const
 
 void TaskManager::Reset(mfxU32 numTask)
 {
-    m_free.resize(numTask);
-    m_reordering.resize(0);
-    m_encoding.resize(0);
+    if (numTask)
+    {
+        m_free.resize(numTask);
+        m_reordering.resize(0);
+        m_encoding.resize(0);
+    }
+    else
+    {
+        while (!m_encoding.empty())
+            vm_time_sleep(1);
+    }
 }
 
 Task* TaskManager::New()

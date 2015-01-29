@@ -365,7 +365,7 @@ class TaskManager
 {
 public:
 
-    void Reset      (mfxU32 numTask);
+    void  Reset     (mfxU32 numTask = 0);
     Task* New       ();
     Task* Reorder   (MfxVideoParam const & par, DpbArray const & dpb, bool flush);
     void  Ready     (Task* task);

@@ -85,17 +85,17 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     MFX_CHECK_NULL_PTR1(par);
 
     m_ddi.reset( CreatePlatformH265Encoder(&m_core) );
-    MFX_CHECK(m_ddi.get(), MFX_WRN_PARTIAL_ACCELERATION);
+    MFX_CHECK(m_ddi.get(), MFX_ERR_DEVICE_FAILED);
 
     sts = m_ddi->CreateAuxilliaryDevice(
         &m_core,
         GetGUID(*par),
         par->mfx.FrameInfo.Width,
         par->mfx.FrameInfo.Height);
-    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_WRN_PARTIAL_ACCELERATION);
+    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);
 
     sts = m_ddi->QueryEncodeCaps(m_caps);
-    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_WRN_PARTIAL_ACCELERATION);
+    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);
     
     m_vpar = *par;
 
@@ -110,7 +110,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     m_hrd.Setup(m_vpar.m_sps, m_vpar.InitialDelayInKB);
 
     sts = m_ddi->CreateAccelerationService(m_vpar);
-    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_WRN_PARTIAL_ACCELERATION);
+    MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);
 
     mfxFrameAllocRequest request = {};
     request.Info = m_vpar.mfx.FrameInfo;
@@ -273,9 +273,66 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
 mfxStatus Plugin::Reset(mfxVideoParam *par)
 {
-    par;
-    assert(!"not implemented");
-    return MFX_ERR_NONE;
+    mfxStatus sts = MFX_ERR_NONE;
+    MFX_CHECK_NULL_PTR1(par);
+
+    MfxVideoParam parNew = *par;
+
+    sts = CheckVideoParam(parNew, m_caps);
+    if (sts < MFX_ERR_NONE)
+        return sts;
+
+    parNew.SyncVideoToCalculableParam();
+    parNew.SyncCalculableToVideoParam();
+
+    MFX_CHECK(
+        parNew.mfx.CodecProfile           != MFX_CODEC_HEVC
+        && m_vpar.AsyncDepth                 == parNew.AsyncDepth
+        && m_vpar.mfx.GopRefDist             >= parNew.mfx.GopRefDist
+        && m_vpar.mfx.NumSlice               >= parNew.mfx.NumSlice
+        && m_vpar.mfx.NumRefFrame            >= parNew.mfx.NumRefFrame
+        && m_vpar.mfx.RateControlMethod      == parNew.mfx.RateControlMethod
+        && m_rec.m_info.Width                >= parNew.mfx.FrameInfo.Width
+        && m_rec.m_info.Height               >= parNew.mfx.FrameInfo.Height
+        && m_vpar.mfx.FrameInfo.ChromaFormat == parNew.mfx.FrameInfo.ChromaFormat
+        && m_vpar.IOPattern                  == parNew.IOPattern
+        ,  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+    if (m_vpar.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        MFX_CHECK(
+            m_vpar.InitialDelayInKB == parNew.InitialDelayInKB &&
+            m_vpar.BufferSizeInKB   == parNew.BufferSizeInKB,
+            MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    }
+
+    m_vpar = (mfxVideoParam)parNew;
+    m_vpar.SyncVideoToCalculableParam();
+    
+    SetDefaults(m_vpar, m_caps);
+
+    m_vpar.SyncMfxToHeadersParam();
+
+    while (Task* pTask = m_task.Reorder(m_vpar, m_lastTask.m_dpb[0], true))
+    {
+        m_core.DecreaseReference(&pTask->m_surf->Data);
+        pTask->m_stage = STAGE_READY;
+        m_task.Ready(pTask);
+    }
+
+    m_hrd.Reset(m_vpar.m_sps);
+    m_ddi->Reset(m_vpar);
+    m_task.Reset();
+
+    m_frameOrder = 0;
+
+    m_raw.Unlock();
+    m_rec.Unlock();
+    m_bs.Unlock();
+
+    Fill(m_lastTask, 0xFF);
+
+    return sts;
 }
 
 mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)

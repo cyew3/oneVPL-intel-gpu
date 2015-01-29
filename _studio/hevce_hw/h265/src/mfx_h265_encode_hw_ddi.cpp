@@ -59,7 +59,7 @@ mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps
     std::auto_ptr<DriverEncoder> ddi;
 
     ddi.reset(CreatePlatformH265Encoder(core));
-    MFX_CHECK(ddi.get(), MFX_WRN_PARTIAL_ACCELERATION);
+    MFX_CHECK(ddi.get(), MFX_ERR_DEVICE_FAILED);
 
     mfxStatus sts = ddi.get()->CreateAuxilliaryDevice(core, guid, 1920, 1088);
     MFX_CHECK_STS(sts);
