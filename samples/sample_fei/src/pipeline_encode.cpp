@@ -1175,6 +1175,7 @@ mfxStatus CEncodingPipeline::Run()
     mfxU16 nEncSurfIdx = 0;     // index of free surface for encoder input (vpp output)
     mfxU16 nVppSurfIdx = 0;     // index of free surface for vpp input
 
+    mfxU32 fieldId = 0, numOfFields = 1; // default is progressive case
     mfxI32 heightMB = ((m_encpakParams.nHeight + 15) & ~15);
     mfxI32 widthMB = ((m_encpakParams.nWidth + 15) & ~15);
     mfxI32 numMB = heightMB * widthMB / 256;
@@ -1186,17 +1187,30 @@ mfxStatus CEncodingPipeline::Run()
     ctr = NULL;
 
     //FEI buffers init
-    feiEncMbStat.MB = NULL;
-    feiEncMVPredictors.MB = NULL;
-    feiEncMBCtrl.MB = NULL;
-    feiEncMV.MB = NULL;
-    feiEncMBCode.MB = NULL;
+    feiEncMbStat[0].MB = NULL;
+    feiEncMbStat[1].MB = NULL;
+    feiEncMVPredictors[0].MB = NULL;
+    feiEncMVPredictors[1].MB = NULL;
+    feiEncMBCtrl[0].MB = NULL;
+    feiEncMBCtrl[1].MB = NULL;
+    feiEncMV[0].MB = NULL;
+    feiEncMV[1].MB = NULL;
+    feiEncMBCode[0].MB = NULL;
+    feiEncMBCode[1].MB = NULL;
 
     numExtInParams = 0;
     numExtOutParams = 0;
 
     numExtOutParamsPreEnc = 0;
     numExtInParamsPreEnc = 0;
+
+    /* if TFF or BFF*/
+    if ( (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
+         (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF) )
+    {
+        numOfFields = 2;
+        numMB = numMB/2;
+    }
 
     if (m_encpakParams.bPREENC) {
         inputTasks.clear();  //for reordering
@@ -1210,102 +1224,118 @@ mfxStatus CEncodingPipeline::Run()
         disableMVoutPreENC = disableMVoutput;
         disableMBStatPreENC = disableMBoutput;
 
-        memset(&preENCCtr, 0, sizeof (mfxExtFeiPreEncCtrl));
-        preENCCtr.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
-        preENCCtr.Header.BufferSz = sizeof (mfxExtFeiPreEncCtrl);
-        preENCCtr.DisableMVOutput = disableMVoutput;
-        preENCCtr.DisableStatisticsOutput = disableMBoutput;
-        preENCCtr.FTEnable = 1;//0;
-        preENCCtr.AdaptiveSearch = 1;
-        preENCCtr.LenSP = 57;
-        preENCCtr.MBQp = enableMBQP;
-        preENCCtr.MVPredictor = enableMVpredictor;
-        preENCCtr.RefHeight = 40;
-        preENCCtr.RefWidth = 48;
-        preENCCtr.SubPelMode = 3;
-        preENCCtr.SearchWindow = 0;
-        preENCCtr.MaxLenSP = 57;
-        preENCCtr.Qp = m_encpakParams.QP;
-        preENCCtr.InterSAD = 2;
-        preENCCtr.IntraSAD = 2;
-        preENCCtr.SubMBPartMask = 0;//0x77;
+        for (fieldId = 0; fieldId < numOfFields; fieldId++)
+        {
+            memset(&preENCCtr[fieldId], 0, sizeof (mfxExtFeiPreEncCtrl));
+            preENCCtr[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
+            preENCCtr[fieldId].Header.BufferSz = sizeof (mfxExtFeiPreEncCtrl);
+            preENCCtr[fieldId].DisableMVOutput = disableMVoutput;
+            preENCCtr[fieldId].DisableStatisticsOutput = disableMBoutput;
+            preENCCtr[fieldId].FTEnable = 1;//0;
+            preENCCtr[fieldId].AdaptiveSearch = 1;
+            preENCCtr[fieldId].LenSP = 57;
+            preENCCtr[fieldId].MBQp = enableMBQP;
+            preENCCtr[fieldId].MVPredictor = enableMVpredictor;
+            preENCCtr[fieldId].RefHeight = 40;
+            preENCCtr[fieldId].RefWidth = 48;
+            preENCCtr[fieldId].SubPelMode = 3;
+            preENCCtr[fieldId].SearchWindow = 0;
+            preENCCtr[fieldId].MaxLenSP = 57;
+            preENCCtr[fieldId].Qp = m_encpakParams.QP;
+            preENCCtr[fieldId].InterSAD = 2;
+            preENCCtr[fieldId].IntraSAD = 2;
+            preENCCtr[fieldId].SubMBPartMask = 0;//0x77;
 
-        inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & preENCCtr;
+            //inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & preENCCtr;
 
-        if (preENCCtr.MVPredictor) {
-            preENCCtr.MVPredictor = 0;
-            mvPreds.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV_PRED;
-            mvPreds.Header.BufferSz = sizeof (mfxExtFeiPreEncMVPredictors);
-            mvPreds.NumMBAlloc = numMB;
-            mvPreds.MB = new mfxExtFeiPreEncMVPredictors::mfxMB [numMB];
-            inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & mvPreds;
-            //read mvs from file
-            printf("Using MV input file: %s\n", m_encpakParams.mvinFile);
-            FILE* fmv = fopen(m_encpakParams.mvinFile, "rb");
-            if (fmv == NULL) {
-                fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvinFile);
-                exit(-1);
-            }
-
-            size_t fsize = fseek(fmv, 0, SEEK_END);
-
-            fclose(fmv);
-        }
-
-        if (preENCCtr.MBQp) {
-            qps.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
-            qps.Header.BufferSz = sizeof (mfxExtFeiEncQP);
-            qps.NumQPAlloc = numMB;
-            qps.QP = new mfxU8[numMB];
-            inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & qps;
-            //read mvs from file
-            printf("Using QP input file: %s\n", m_encpakParams.mbQpFile);
-            FILE* fqp = fopen(m_encpakParams.mbQpFile, "rb");
-            if (fqp == NULL) {
-                fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbQpFile);
-                exit(-1);
-            }
-
-            //size_t fsize = fseek(fqp, 0, SEEK_END);
-            fseek(fqp, 0, SEEK_SET);
-            fread(qps.QP, sizeof(mfxExtFeiEncQP::QP[0])*numMB, 1, fqp);
-            fclose(fqp);
-        }
-
-        if (!preENCCtr.DisableMVOutput) {
-            mvs.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
-            mvs.Header.BufferSz = sizeof (mfxExtFeiPreEncMV);
-            mvs.NumMBAlloc = numMB;
-            mvs.MB = new mfxExtFeiPreEncMV::mfxMB [numMB];
-            outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mvs;
-
-            if (m_encpakParams.mvoutFile != NULL &&
-                    !m_encpakParams.bENCPAK) {
-                printf("Using MV output file: %s\n", m_encpakParams.mvoutFile);
-                mvout = fopen(m_encpakParams.mvoutFile, "wb");
-                if (mvout == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvoutFile);
+            if (preENCCtr[fieldId].MVPredictor) {
+                preENCCtr[fieldId].MVPredictor = 0;
+                mvPreds[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV_PRED;
+                mvPreds[fieldId].Header.BufferSz = sizeof (mfxExtFeiPreEncMVPredictors);
+                mvPreds[fieldId].NumMBAlloc = numMB;
+                mvPreds[fieldId].MB = new mfxExtFeiPreEncMVPredictors::mfxMB [numMB];
+                //inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & mvPreds;
+                //read mvs from file
+                printf("Using MV input file: %s\n", m_encpakParams.mvinFile);
+                FILE* fmv = fopen(m_encpakParams.mvinFile, "rb");
+                if (fmv == NULL) {
+                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvinFile);
                     exit(-1);
                 }
-            }
-        }
 
-        if (!preENCCtr.DisableStatisticsOutput) {
-            mbdata.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
-            mbdata.Header.BufferSz = sizeof (mfxExtFeiPreEncMBStat);
-            mbdata.NumMBAlloc = numMB;
-            mbdata.MB = new mfxExtFeiPreEncMBStat::mfxMB [numMB];
+                size_t fsize = fseek(fmv, 0, SEEK_END);
+
+                fclose(fmv);
+            }
+
+            if (preENCCtr[fieldId].MBQp) {
+                qps[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
+                qps[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncQP);
+                qps[fieldId].NumQPAlloc = numMB;
+                qps[fieldId].QP = new mfxU8[numMB];
+                //inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & qps;
+                //read mvs from file
+                printf("Using QP input file: %s\n", m_encpakParams.mbQpFile);
+                FILE* fqp = fopen(m_encpakParams.mbQpFile, "rb");
+                if (fqp == NULL) {
+                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbQpFile);
+                    exit(-1);
+                }
+
+                //size_t fsize = fseek(fqp, 0, SEEK_END);
+                fseek(fqp, 0, SEEK_SET);
+                fread(qps[fieldId].QP, sizeof(mfxExtFeiEncQP::QP[0])*numMB, 1, fqp);
+                fclose(fqp);
+            }
+
+            if (!preENCCtr[fieldId].DisableMVOutput) {
+                mvs[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
+                mvs[fieldId].Header.BufferSz = sizeof (mfxExtFeiPreEncMV);
+                mvs[fieldId].NumMBAlloc = numMB;
+                mvs[fieldId].MB = new mfxExtFeiPreEncMV::mfxMB [numMB];
+                //outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mvs;
+
+                if (m_encpakParams.mvoutFile != NULL &&
+                        !m_encpakParams.bENCPAK) {
+                    printf("Using MV output file: %s\n", m_encpakParams.mvoutFile);
+                    mvout = fopen(m_encpakParams.mvoutFile, "wb");
+                    if (mvout == NULL) {
+                        fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvoutFile);
+                        exit(-1);
+                    }
+                }
+            }
+
+            if (!preENCCtr[fieldId].DisableStatisticsOutput) {
+                mbdata[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
+                mbdata[fieldId].Header.BufferSz = sizeof (mfxExtFeiPreEncMBStat);
+                mbdata[fieldId].NumMBAlloc = numMB;
+                mbdata[fieldId].MB = new mfxExtFeiPreEncMBStat::mfxMB [numMB];
+                //outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mbdata;
+                //outBufsPreEncI[0] = (mfxExtBuffer*) & mbdata; //special case for I frames
+
+                printf("Using MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
+                mbstatout = fopen(m_encpakParams.mbstatoutFile, "wb");
+                if (mbstatout == NULL) {
+                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbstatoutFile);
+                    exit(-1);
+                }
+            } // if (!preENCCtr.DisableStatisticsOutput)
+        } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+        // Let's count all control and Ext buffers...
+        inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & preENCCtr;
+        if (preENCCtr[fieldId].MVPredictor)
+            inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & mvPreds;
+        if (preENCCtr[fieldId].MBQp)
+            inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & qps;
+        if (!preENCCtr[fieldId].DisableMVOutput)
+            outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mvs;
+        if (!preENCCtr[fieldId].DisableStatisticsOutput)
+        {
             outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mbdata;
             outBufsPreEncI[0] = (mfxExtBuffer*) & mbdata; //special case for I frames
-
-            printf("Using MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
-            mbstatout = fopen(m_encpakParams.mbstatoutFile, "wb");
-            if (mbstatout == NULL) {
-                fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbstatoutFile);
-                exit(-1);
-            }
         }
-    }
+    } // if (m_encpakParams.bPREENC) {
 
     if (m_encpakParams.bENCPAK) {
         feiCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN; //GetFrameType(frameCount);
@@ -1318,148 +1348,167 @@ mfxStatus CEncodingPipeline::Run()
         bool MBCtrl = m_encpakParams.mbctrinFile != NULL;
         bool MBQP = m_encpakParams.mbQpFile != NULL;
 
-        memset(&feiEncCtrl, 0, sizeof (mfxExtFeiEncFrameCtrl));
-        feiEncCtrl.Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
-        feiEncCtrl.Header.BufferSz = sizeof (mfxExtFeiEncFrameCtrl);
-        feiEncCtrl.MaxLenSP = 47;
-        feiEncCtrl.LenSP = 47;
-        feiEncCtrl.SubMBPartMask = 0xf;
-        feiEncCtrl.MultiPredL0 = 0;
-        feiEncCtrl.MultiPredL1 = 0;
-        feiEncCtrl.SubPelMode = 3;
-        feiEncCtrl.InterSAD = 2;
-        feiEncCtrl.IntraSAD = 2;
-        feiEncCtrl.DistortionType = 2;
-        feiEncCtrl.RepartitionCheckEnable = 0;
-        feiEncCtrl.AdaptiveSearch = 0;
-        feiEncCtrl.MVPredictor = MVPredictors;
-        feiEncCtrl.NumMVPredictors = 4; //always 4 predictors
-        feiEncCtrl.PerMBQp = MBQP;
-        feiEncCtrl.PerMBInput = MBCtrl;
-        feiEncCtrl.MBSizeCtrl = m_encpakParams.bMBSize;
-        feiEncCtrl.RefHeight = 48;
-        feiEncCtrl.RefWidth = 48;
-        feiEncCtrl.SearchWindow = 1;
-        inBufs[numExtInParams++] = (mfxExtBuffer*) & feiEncCtrl;
+        bool MBStatOut = m_encpakParams.mbstatoutFile != NULL;
+        bool MVOut = m_encpakParams.mvoutFile != NULL;
+        bool MBCodeOut = m_encpakParams.mbcodeoutFile != NULL;
 
-        //feiEncMVPredictors;
-        if (MVPredictors) {
-            feiEncMVPredictors.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV_PRED;
-            feiEncMVPredictors.Header.BufferSz = sizeof (mfxExtFeiEncMVPredictors);
-            feiEncMVPredictors.NumMBAlloc = numMB;
-            feiEncMVPredictors.MB = new mfxExtFeiEncMVPredictors::mfxMB [numMB];
-            inBufs[numExtInParams++] = (mfxExtBuffer*) &feiEncMVPredictors;
-            //read mvs from file
+        for (fieldId = 0; fieldId < numOfFields; fieldId++)
+        {
+            memset(&feiEncCtrl[fieldId], 0, sizeof (mfxExtFeiEncFrameCtrl));
+            feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
+            feiEncCtrl[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncFrameCtrl);
+            feiEncCtrl[fieldId].MaxLenSP = 47;
+            feiEncCtrl[fieldId].LenSP = 47;
+            feiEncCtrl[fieldId].SubMBPartMask = 0xf;
+            feiEncCtrl[fieldId].MultiPredL0 = 0;
+            feiEncCtrl[fieldId].MultiPredL1 = 0;
+            feiEncCtrl[fieldId].SubPelMode = 3;
+            feiEncCtrl[fieldId].InterSAD = 2;
+            feiEncCtrl[fieldId].IntraSAD = 2;
+            feiEncCtrl[fieldId].DistortionType = 2;
+            feiEncCtrl[fieldId].RepartitionCheckEnable = 0;
+            feiEncCtrl[fieldId].AdaptiveSearch = 0;
+            feiEncCtrl[fieldId].MVPredictor = MVPredictors;
+            feiEncCtrl[fieldId].NumMVPredictors = 4; //always 4 predictors
+            feiEncCtrl[fieldId].PerMBQp = MBQP;
+            feiEncCtrl[fieldId].PerMBInput = MBCtrl;
+            feiEncCtrl[fieldId].MBSizeCtrl = m_encpakParams.bMBSize;
+            feiEncCtrl[fieldId].RefHeight = 48;
+            feiEncCtrl[fieldId].RefWidth = 48;
+            feiEncCtrl[fieldId].SearchWindow = 1;
+            //inBufs[numExtInParams++] = (mfxExtBuffer*) & feiEncCtrl;
 
-            if (!m_encpakParams.bPREENC) { //not load if we couple with PREENC
-                printf("Using MV input file: %s\n", m_encpakParams.mvinFile);
-                FILE* fmv = fopen(m_encpakParams.mvinFile, "rb");
-                if (fmv == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvinFile);
+            //feiEncMVPredictors;
+            if (MVPredictors) {
+                feiEncMVPredictors[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV_PRED;
+                feiEncMVPredictors[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncMVPredictors);
+                feiEncMVPredictors[fieldId].NumMBAlloc = numMB;
+                feiEncMVPredictors[fieldId].MB = new mfxExtFeiEncMVPredictors::mfxMB [numMB];
+                //inBufs[numExtInParams++] = (mfxExtBuffer*) &feiEncMVPredictors;
+                //read mvs from file
+                if (!m_encpakParams.bPREENC) { //not load if we couple with PREENC
+                    printf("Using MV input file: %s\n", m_encpakParams.mvinFile);
+                    FILE* fmv = fopen(m_encpakParams.mvinFile, "rb");
+                    if (fmv == NULL) {
+                        fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvinFile);
+                        exit(-1);
+                    }
+
+                    size_t fsize = fseek(fmv, 0, SEEK_END);
+                    fseek(fmv, 0, SEEK_SET);
+                    fread(feiEncMVPredictors[fieldId].MB, sizeof (mfxExtFeiEncMVPredictors::mfxMB) * numMB, 1, fmv);
+                    fclose(fmv);
+                }
+            }
+
+            //feiEncMBCtrl;
+            if (MBCtrl) {
+                feiEncMBCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB;
+                feiEncMBCtrl[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncMBCtrl);
+                feiEncMBCtrl[fieldId].NumMBAlloc = numMB;
+                feiEncMBCtrl[fieldId].MB = new mfxExtFeiEncMBCtrl::mfxMB [numMB];
+                //inBufs[numExtInParams++] = (mfxExtBuffer*) &feiEncMBCtrl;
+                //read mvs from file
+                printf("Using MB control input file: %s\n", m_encpakParams.mbctrinFile);
+
+                FILE* mbs = fopen(m_encpakParams.mbctrinFile, "rb");
+                if ( mbs == NULL) {
+                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbctrinFile);
                     exit(-1);
                 }
 
-                size_t fsize = fseek(fmv, 0, SEEK_END);
-                fseek(fmv, 0, SEEK_SET);
-                fread(feiEncMVPredictors.MB, sizeof (mfxExtFeiEncMVPredictors::mfxMB) * numMB, 1, fmv);
-                fclose(fmv);
+                size_t fsize = fseek(mbs, 0, SEEK_END);
+                fseek(mbs, 0, SEEK_SET);
+                fread(feiEncMBCtrl[fieldId].MB, sizeof(mfxExtFeiEncMBCtrl::mfxMB)*numMB, 1, mbs);
+                fclose(mbs);
             }
-        }
 
-        //feiEncMBCtrl;
-        if (MBCtrl) {
-            feiEncMBCtrl.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB;
-            feiEncMBCtrl.Header.BufferSz = sizeof (mfxExtFeiEncMBCtrl);
-            feiEncMBCtrl.NumMBAlloc = numMB;
-            feiEncMBCtrl.MB = new mfxExtFeiEncMBCtrl::mfxMB [numMB];
+            if (MBQP) {
+                feiEncMbQp[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
+                feiEncMbQp[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncQP);
+                feiEncMbQp[fieldId].NumQPAlloc = numMB;
+                feiEncMbQp[fieldId].QP = new mfxU8 [numMB];
+                //inBufs[numExtInParams++] = (mfxExtBuffer*) &feiEncMbQp;
+                //read mvs from file
+                printf("Use MB QP input file: %s\n", m_encpakParams.mbQpFile);
+
+                FILE* mbs = fopen(m_encpakParams.mbQpFile, "rb");
+                if ( mbs == NULL) {
+                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbQpFile);
+                    exit(-1);
+                }
+
+                size_t fsize = fseek(mbs, 0, SEEK_END);
+                fseek(mbs, 0, SEEK_SET);
+                fread(feiEncMbQp[fieldId].QP, sizeof(mfxExtFeiEncQP::QP[0])*numMB, 1, mbs);
+                fclose(mbs);
+            }
+
+            //Open output files if any
+            //distortion buffer have to be always provided - current limitation
+            if(MBStatOut){
+            feiEncMbStat[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
+            feiEncMbStat[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
+            feiEncMbStat[fieldId].NumMBAlloc = numMB;
+            feiEncMbStat[fieldId].MB = new mfxExtFeiEncMBStat::mfxMB [numMB];
+            //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMbStat;
+                printf("Use MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
+                mbstatout = fopen(m_encpakParams.mbstatoutFile, "wb");
+                if ( mbstatout == NULL) {
+                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbstatoutFile);
+                    exit(-1);
+                }
+            }
+            //distortion buffer have to be always provided - current limitation
+            if(MVOut){
+            feiEncMV[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
+            feiEncMV[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMV);
+            feiEncMV[fieldId].NumMBAlloc = numMB;
+            feiEncMV[fieldId].MB = new mfxExtFeiEncMV::mfxMB [numMB];
+            //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMV;
+                printf("Use MV output file: %s\n", m_encpakParams.mvoutFile);
+                mvENCPAKout = fopen(m_encpakParams.mvoutFile, "wb");
+                if ( mvENCPAKout == NULL) {
+                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvoutFile);
+                    exit(-1);
+                }
+            }
+            //distortion buffer have to be always provided - current limitation
+            if(MBCodeOut){
+            feiEncMBCode[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PAK_CTRL;
+            feiEncMBCode[fieldId].Header.BufferSz = sizeof(mfxExtFeiPakMBCtrl);
+            feiEncMBCode[fieldId].NumMBAlloc = numMB;
+            feiEncMBCode[fieldId].MB = new mfxFeiPakMBCtrl [numMB];
+            //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMBCode;
+                printf("Use MB code output file: %s\n", m_encpakParams.mbcodeoutFile);
+                mbcodeout = fopen(m_encpakParams.mbcodeoutFile, "wb");
+                if ( mbcodeout == NULL) {
+                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbcodeoutFile);
+                    exit(-1);
+                }
+            } // if(MBCodeOut){
+        } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+
+        // lets count all control and Ext buffers...
+        inBufs[numExtInParams++] = (mfxExtBuffer*) & feiEncCtrl;
+        if (MVPredictors)
+            inBufs[numExtInParams++] = (mfxExtBuffer*) &feiEncMVPredictors;
+        if (MBCtrl)
             inBufs[numExtInParams++] = (mfxExtBuffer*) &feiEncMBCtrl;
-            //read mvs from file
-            printf("Using MB control input file: %s\n", m_encpakParams.mbctrinFile);
-
-            FILE* mbs = fopen(m_encpakParams.mbctrinFile, "rb");
-            if ( mbs == NULL) {
-                fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbctrinFile);
-                exit(-1);
-            }
-
-            size_t fsize = fseek(mbs, 0, SEEK_END);
-            fseek(mbs, 0, SEEK_SET);
-            fread(feiEncMBCtrl.MB, sizeof(mfxExtFeiEncMBCtrl::mfxMB)*numMB, 1, mbs);
-            fclose(mbs);
-        }
-
-        if (MBQP) {
-            feiEncMbQp.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
-            feiEncMbQp.Header.BufferSz = sizeof (mfxExtFeiEncQP);
-            feiEncMbQp.NumQPAlloc = numMB;
-            feiEncMbQp.QP = new mfxU8 [numMB];
+        if (MBQP)
             inBufs[numExtInParams++] = (mfxExtBuffer*) &feiEncMbQp;
-            //read mvs from file
-            printf("Use MB QP input file: %s\n", m_encpakParams.mbQpFile);
-
-            FILE* mbs = fopen(m_encpakParams.mbQpFile, "rb");
-            if ( mbs == NULL) {
-                fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbQpFile);
-                exit(-1);
-            }
-
-            size_t fsize = fseek(mbs, 0, SEEK_END);
-            fseek(mbs, 0, SEEK_SET);
-            fread(feiEncMbQp.QP, sizeof(mfxExtFeiEncQP::QP[0])*numMB, 1, mbs);
-            fclose(mbs);
-        }
 
         ctr = &feiCtrl;
         feiCtrl.NumExtParam = numExtInParams;
         feiCtrl.ExtParam = &inBufs[0];
 
-        //Open output files if any
-        bool MBStatOut = m_encpakParams.mbstatoutFile != NULL;
-        bool MVOut = m_encpakParams.mvoutFile != NULL;
-        bool MBCodeOut = m_encpakParams.mbcodeoutFile != NULL;
-        //distortion buffer have to be always provided - current limitation
-        if(MBStatOut){
-        feiEncMbStat.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
-        feiEncMbStat.Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
-        feiEncMbStat.NumMBAlloc = numMB;
-        feiEncMbStat.MB = new mfxExtFeiEncMBStat::mfxMB [numMB];
-        outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMbStat;
-            printf("Use MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
-            mbstatout = fopen(m_encpakParams.mbstatoutFile, "wb");
-            if ( mbstatout == NULL) {
-                fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbstatoutFile);
-                exit(-1);
-            }
-        }
-        //distortion buffer have to be always provided - current limitation
-        if(MVOut){
-        feiEncMV.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
-        feiEncMV.Header.BufferSz = sizeof(mfxExtFeiEncMV);
-        feiEncMV.NumMBAlloc = numMB;
-        feiEncMV.MB = new mfxExtFeiEncMV::mfxMB [numMB];
-        outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMV;
-            printf("Use MV output file: %s\n", m_encpakParams.mvoutFile);
-            mvENCPAKout = fopen(m_encpakParams.mvoutFile, "wb");
-            if ( mvENCPAKout == NULL) {
-                fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvoutFile);
-                exit(-1);
-            }
-        }
-        //distortion buffer have to be always provided - current limitation
-        if(MBCodeOut){
-        feiEncMBCode.Header.BufferId = MFX_EXTBUFF_FEI_PAK_CTRL;
-        feiEncMBCode.Header.BufferSz = sizeof(mfxExtFeiPakMBCtrl);
-        feiEncMBCode.NumMBAlloc = numMB;
-        feiEncMBCode.MB = new mfxFeiPakMBCtrl [numMB];
-        outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMBCode;
-            printf("Use MB code output file: %s\n", m_encpakParams.mbcodeoutFile);
-            mbcodeout = fopen(m_encpakParams.mbcodeoutFile, "wb");
-            if ( mbcodeout == NULL) {
-                fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbcodeoutFile);
-                exit(-1);
-            }
-        }
-    }
+        if(MBStatOut)
+            outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMbStat;
+        if(MVOut)
+            outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMV;
+        if(MBCodeOut)
+            outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMBCode;
+    } // if (m_encpakParams.bENCPAK) {
 
     // Since in sample we support just 2 views
     // we will change this value between 0 and 1 in case of MVC
@@ -1468,7 +1517,7 @@ mfxStatus CEncodingPipeline::Run()
     sts = MFX_ERR_NONE;
 
     // main loop, preprocessing and encoding
-    mfxI32 frameCount = 0;
+    mfxU32 frameCount = 0;
     while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
     {
         if(m_encpakParams.nNumFrames && frameCount >= m_encpakParams.nNumFrames)
@@ -1484,7 +1533,7 @@ mfxStatus CEncodingPipeline::Run()
             eTask->frameType = GetFrameType(frameCount);
             eTask->frameDisplayOrder = frameCount;
             eTask->encoded = 0;
-            mdprintf(stderr,"frame: %d  t:%d pt=%x ", frameCount, eTask->frameType, eTask);
+            mdprintf(stderr,"frame: %d  t:%d pt=%p ", frameCount, eTask->frameType, eTask);
         }
 
         // find free surface for encoder input
@@ -1611,7 +1660,7 @@ mfxStatus CEncodingPipeline::Run()
             }
 
             eTask->encoded = 1;
-            if ((this->m_refDist * 2) == inputTasks.size()) {
+            if ( (mfxU32)(this->m_refDist * 2) == inputTasks.size()) {
                 inputTasks.front()->in.InSurface->Data.Locked = 0;
                 delete inputTasks.front();
                 //remove prevTask
@@ -1621,12 +1670,15 @@ mfxStatus CEncodingPipeline::Run()
             //drop output data to output file
             //pCurrentTask->WriteBitstream();
 
-            if (mbstatout)
-                fwrite(mbdata.MB, sizeof (mbdata.MB[0]) * mbdata.NumMBAlloc, 1, mbstatout);
-            //if (mvout && !(eTask->frameType&MFX_FRAMETYPE_I))
-            if (mvout)
-                fwrite(mvs.MB, sizeof (mvs.MB[0]) * mvs.NumMBAlloc, 1, mvout);
-            //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            for (fieldId = 0; fieldId < numOfFields; fieldId++)
+            {
+                if (mbstatout)
+                    fwrite(mbdata[fieldId].MB, sizeof (mbdata[fieldId].MB[0]) * mbdata[fieldId].NumMBAlloc, 1, mbstatout);
+                //if (mvout && !(eTask->frameType&MFX_FRAMETYPE_I))
+                if (mvout)
+                    fwrite(mvs[fieldId].MB, sizeof (mvs[fieldId].MB[0]) * mvs[fieldId].NumMBAlloc, 1, mvout);
+                //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            }
 
             if(m_encpakParams.bENCPAK) {
                 ctr->FrameType = eTask->frameType;
@@ -1634,26 +1686,30 @@ mfxStatus CEncodingPipeline::Run()
                 eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
 
                 //init MV predictors
-                memset(feiEncMVPredictors.MB, 0, sizeof(feiEncMVPredictors.MB[0])*feiEncMVPredictors.NumMBAlloc);
-                for(mfxI32 i=0; i<mvs.NumMBAlloc; i++){
-                    //only one ref is used for now
-                    /*
-                    feiEncMVPredictors.MB[i].RefIdx[0].RefL0 = 0;
-                    feiEncMVPredictors.MB[i].RefIdx[0].RefL1 = 0;
-                    feiEncMVPredictors.MB[i].RefIdx[1].RefL0 = 0;
-                    feiEncMVPredictors.MB[i].RefIdx[1].RefL1 = 0;
-                    feiEncMVPredictors.MB[i].RefIdx[2].RefL0 = 0;
-                    feiEncMVPredictors.MB[i].RefIdx[2].RefL1 = 0;
-                    feiEncMVPredictors.MB[i].RefIdx[3].RefL0 = 0;
-                    feiEncMVPredictors.MB[i].RefIdx[3].RefL1 = 0;
-                     */
+                for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                {
+                    memset(feiEncMVPredictors[fieldId].MB, 0,
+                            sizeof(feiEncMVPredictors[fieldId].MB[0])*feiEncMVPredictors[fieldId].NumMBAlloc);
+                    for(mfxU32 i=0; i<mvs[fieldId].NumMBAlloc; i++){
+                        //only one ref is used for now
+                        /*
+                        feiEncMVPredictors.MB[i].RefIdx[0].RefL0 = 0;
+                        feiEncMVPredictors.MB[i].RefIdx[0].RefL1 = 0;
+                        feiEncMVPredictors.MB[i].RefIdx[1].RefL0 = 0;
+                        feiEncMVPredictors.MB[i].RefIdx[1].RefL1 = 0;
+                        feiEncMVPredictors.MB[i].RefIdx[2].RefL0 = 0;
+                        feiEncMVPredictors.MB[i].RefIdx[2].RefL1 = 0;
+                        feiEncMVPredictors.MB[i].RefIdx[3].RefL0 = 0;
+                        feiEncMVPredictors.MB[i].RefIdx[3].RefL1 = 0;
+                         */
 
-                    //use only first subblock component of MV
-                    feiEncMVPredictors.MB[i].MV[0][0].x = mvs.MB[i].MV[0][0].x; //x L0
-                    feiEncMVPredictors.MB[i].MV[0][0].y = mvs.MB[i].MV[0][0].y; //y L0
-                    feiEncMVPredictors.MB[i].MV[0][1].x = mvs.MB[i].MV[0][1].x; //x L1
-                    feiEncMVPredictors.MB[i].MV[0][1].y = mvs.MB[i].MV[0][1].y; //y L1
-                }
+                        //use only first subblock component of MV
+                        feiEncMVPredictors[fieldId].MB[i].MV[0][0].x = mvs[fieldId].MB[i].MV[0][0].x; //x L0
+                        feiEncMVPredictors[fieldId].MB[i].MV[0][0].y = mvs[fieldId].MB[i].MV[0][0].y; //y L0
+                        feiEncMVPredictors[fieldId].MB[i].MV[0][1].x = mvs[fieldId].MB[i].MV[0][1].x; //x L1
+                        feiEncMVPredictors[fieldId].MB[i].MV[0][1].y = mvs[fieldId].MB[i].MV[0][1].y; //y L1
+                    } // for(mfxI32 i=0; i<mvs.NumMBAlloc; i++){
+                }// for (fieldId = 0; fieldId < numOfFields; fieldId++)
             }
         }
 
@@ -1785,7 +1841,7 @@ mfxStatus CEncodingPipeline::Run()
 
     // loop to get buffered frames from encoder
     if (m_encpakParams.bPREENC) {
-        mdprintf(stderr,"input_tasks_size=%d\n", inputTasks.size());
+        mdprintf(stderr,"input_tasks_size=%u\n", (mfxU32)inputTasks.size());
         //encode last frames
         std::list<iTask*>::iterator it = inputTasks.begin();
         mfxI32 numUnencoded = 0;
@@ -1840,10 +1896,13 @@ mfxStatus CEncodingPipeline::Run()
 
                 eTask->encoded = 1;
 
-                if (mbstatout)
-                    fwrite(mbdata.MB, sizeof (mbdata.MB[0]) * mbdata.NumMBAlloc, 1, mbstatout);
-                if (mvout && !(eTask->frameType&MFX_FRAMETYPE_I))
-                    fwrite(mvs.MB, sizeof (mvs.MB[0]) * mvs.NumMBAlloc, 1, mvout);
+                for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                {
+                    if (mbstatout)
+                        fwrite(mbdata[fieldId].MB, sizeof (mbdata[fieldId].MB[0]) * mbdata[fieldId].NumMBAlloc, 1, mbstatout);
+                    if (mvout && !(eTask->frameType&MFX_FRAMETYPE_I))
+                        fwrite(mvs[fieldId].MB, sizeof (mvs[fieldId].MB[0]) * mvs[fieldId].NumMBAlloc, 1, mvout);
+                }
 
                 //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
                 numUnencoded--;
@@ -1853,26 +1912,30 @@ mfxStatus CEncodingPipeline::Run()
                     eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
 
                     //init MV predictors
-                    memset(feiEncMVPredictors.MB, 0, sizeof (feiEncMVPredictors.MB[0]) * feiEncMVPredictors.NumMBAlloc);
-                    for (mfxI32 i = 0; i < mvs.NumMBAlloc; i++) {
-                        //only one ref is used for now
-                        /*
-                        feiEncMVPredictors.MB[i].RefIdx[0].RefL0 = 0;
-                        feiEncMVPredictors.MB[i].RefIdx[0].RefL1 = 0;
-                        feiEncMVPredictors.MB[i].RefIdx[1].RefL0 = 0;
-                        feiEncMVPredictors.MB[i].RefIdx[1].RefL1 = 0;
-                        feiEncMVPredictors.MB[i].RefIdx[2].RefL0 = 0;
-                        feiEncMVPredictors.MB[i].RefIdx[2].RefL1 = 0;
-                        feiEncMVPredictors.MB[i].RefIdx[3].RefL0 = 0;
-                        feiEncMVPredictors.MB[i].RefIdx[3].RefL1 = 0;
-                         */
+                    for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                    {
+                        memset(feiEncMVPredictors[fieldId].MB, 0,
+                                sizeof (feiEncMVPredictors[fieldId].MB[0]) * feiEncMVPredictors[fieldId].NumMBAlloc);
+                        for (mfxU32 i = 0; i < mvs[fieldId].NumMBAlloc; i++) {
+                            //only one ref is used for now
+                            /*
+                            feiEncMVPredictors.MB[i].RefIdx[0].RefL0 = 0;
+                            feiEncMVPredictors.MB[i].RefIdx[0].RefL1 = 0;
+                            feiEncMVPredictors.MB[i].RefIdx[1].RefL0 = 0;
+                            feiEncMVPredictors.MB[i].RefIdx[1].RefL1 = 0;
+                            feiEncMVPredictors.MB[i].RefIdx[2].RefL0 = 0;
+                            feiEncMVPredictors.MB[i].RefIdx[2].RefL1 = 0;
+                            feiEncMVPredictors.MB[i].RefIdx[3].RefL0 = 0;
+                            feiEncMVPredictors.MB[i].RefIdx[3].RefL1 = 0;
+                             */
 
-                        //use only first subblock component of MV
-                        feiEncMVPredictors.MB[i].MV[0][0].x = mvs.MB[i].MV[0][0].x; //x L0
-                        feiEncMVPredictors.MB[i].MV[0][0].y = mvs.MB[i].MV[0][0].y; //y L0
-                        feiEncMVPredictors.MB[i].MV[0][1].x = mvs.MB[i].MV[0][1].x; //x L1
-                        feiEncMVPredictors.MB[i].MV[0][1].y = mvs.MB[i].MV[0][1].y; //y L1
-                    }
+                            //use only first subblock component of MV
+                            feiEncMVPredictors[fieldId].MB[i].MV[0][0].x = mvs[fieldId].MB[i].MV[0][0].x; //x L0
+                            feiEncMVPredictors[fieldId].MB[i].MV[0][0].y = mvs[fieldId].MB[i].MV[0][0].y; //y L0
+                            feiEncMVPredictors[fieldId].MB[i].MV[0][1].x = mvs[fieldId].MB[i].MV[0][1].x; //x L1
+                            feiEncMVPredictors[fieldId].MB[i].MV[0][1].y = mvs[fieldId].MB[i].MV[0][1].y; //y L1
+                        } // for (mfxI32 i = 0; i < mvs.NumMBAlloc; i++) {
+                    } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
                 }
 
                 if (m_encpakParams.bENCPAK) { //if we have both
@@ -2079,7 +2142,7 @@ iTask* CEncodingPipeline::findFrameToEncode() {
                     break;
                 }
             }
-            mdprintf(stderr, "pT=%x ", prevTask);
+            mdprintf(stderr, "pT=%p ", prevTask);
 
             //find next ref
             it = encTask;
@@ -2091,12 +2154,12 @@ iTask* CEncodingPipeline::findFrameToEncode() {
                     break;
                 }
             }
-            mdprintf(stderr, "nT=%x ", nextTask);
+            mdprintf(stderr, "nT=%p ", nextTask);
             if (prevTask && nextTask) break;
         }
     }
 
-    mdprintf(stderr, "eT= %x in_size=%d prevTask=%x nextTask=%x ", encTask, inputTasks.size(), prevTask, nextTask);
+    mdprintf(stderr, "eT= %p in_size=%u prevTask=%p nextTask=%p ", encTask, (mfxU32)inputTasks.size(), prevTask, nextTask);
 
     if (encTask == inputTasks.end()) {
         mdprintf(stderr, "\n");
@@ -2110,52 +2173,64 @@ iTask* CEncodingPipeline::findFrameToEncode() {
 
 void CEncodingPipeline::initFrameParams(iTask* eTask) {
 
-    preENCCtr.DisableMVOutput = disableMVoutPreENC;
-    preENCCtr.DisableStatisticsOutput = disableMBStatPreENC;
+    mfxU32 fieldId = 0, numOfFields = 1;
+    preENCCtr[0].DisableMVOutput = disableMVoutPreENC;
+    preENCCtr[1].DisableMVOutput = disableMVoutPreENC;
+    preENCCtr[0].DisableStatisticsOutput = disableMBStatPreENC;
+    preENCCtr[1].DisableStatisticsOutput = disableMBStatPreENC;
 
-    switch (eTask->frameType & MFX_FRAMETYPE_IPB) {
-        case MFX_FRAMETYPE_I:
-            eTask->in.NumFrameL0 = 0; //1;  //just workaround to support I frames
-            eTask->in.NumFrameL1 = 0;
-            eTask->in.L0Surface = NULL; //eTask->in.InSurface;
-            //in data
-            eTask->in.NumExtParam = numExtInParamsPreEnc;
-            eTask->in.ExtParam = inBufsPreEnc;
-            //out data
-            //exclude MV output from output buffers
-            if (preENCCtr.DisableStatisticsOutput) {
-                eTask->out.NumExtParam = 0;
-                eTask->out.ExtParam = NULL;
-            } else {
-                eTask->out.NumExtParam = 1;
-                eTask->out.ExtParam = outBufsPreEncI;
-            }
+    if ( (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
+         (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF) )
+    {
+        numOfFields = 2;
+    }
 
-            preENCCtr.DisableMVOutput = 1;
-            break;
-        case MFX_FRAMETYPE_P:
-            eTask->in.NumFrameL0 = 1;
-            eTask->in.NumFrameL1 = 0;
-            eTask->in.L0Surface = &eTask->prevTask->in.InSurface;
-            //in data
-            eTask->in.NumExtParam = numExtInParamsPreEnc;
-            eTask->in.ExtParam = inBufsPreEnc;
-            //out data
-            eTask->out.NumExtParam = numExtOutParamsPreEnc;
-            eTask->out.ExtParam = outBufsPreEnc;
-            break;
-        case MFX_FRAMETYPE_B:
-            eTask->in.NumFrameL0 = 1;
-            eTask->in.NumFrameL1 = 1;
-            eTask->in.L0Surface = &eTask->prevTask->in.InSurface;
-            eTask->in.L1Surface = &eTask->nextTask->in.InSurface;
-            //in data
-            eTask->in.NumExtParam = numExtInParamsPreEnc;
-            eTask->in.ExtParam = inBufsPreEnc;
-            //out data
-            eTask->out.NumExtParam = numExtOutParamsPreEnc;
-            eTask->out.ExtParam = outBufsPreEnc;
-            break;
+    for (fieldId = 0; fieldId < numOfFields; fieldId++)
+    {
+        switch (eTask->frameType & MFX_FRAMETYPE_IPB) {
+            case MFX_FRAMETYPE_I:
+                eTask->in.NumFrameL0 = 0; //1;  //just workaround to support I frames
+                eTask->in.NumFrameL1 = 0;
+                eTask->in.L0Surface = NULL; //eTask->in.InSurface;
+                //in data
+                eTask->in.NumExtParam = numExtInParamsPreEnc;
+                eTask->in.ExtParam = inBufsPreEnc;
+                //out data
+                //exclude MV output from output buffers
+                if (preENCCtr[fieldId].DisableStatisticsOutput) {
+                    eTask->out.NumExtParam = 0;
+                    eTask->out.ExtParam = NULL;
+                } else {
+                    eTask->out.NumExtParam = 1;
+                    eTask->out.ExtParam = outBufsPreEncI;
+                }
+
+                preENCCtr[fieldId].DisableMVOutput = 1;
+                break;
+            case MFX_FRAMETYPE_P:
+                eTask->in.NumFrameL0 = 1;
+                eTask->in.NumFrameL1 = 0;
+                eTask->in.L0Surface = &eTask->prevTask->in.InSurface;
+                //in data
+                eTask->in.NumExtParam = numExtInParamsPreEnc;
+                eTask->in.ExtParam = inBufsPreEnc;
+                //out data
+                eTask->out.NumExtParam = numExtOutParamsPreEnc;
+                eTask->out.ExtParam = outBufsPreEnc;
+                break;
+            case MFX_FRAMETYPE_B:
+                eTask->in.NumFrameL0 = 1;
+                eTask->in.NumFrameL1 = 1;
+                eTask->in.L0Surface = &eTask->prevTask->in.InSurface;
+                eTask->in.L1Surface = &eTask->nextTask->in.InSurface;
+                //in data
+                eTask->in.NumExtParam = numExtInParamsPreEnc;
+                eTask->in.ExtParam = inBufsPreEnc;
+                //out data
+                eTask->out.NumExtParam = numExtOutParamsPreEnc;
+                eTask->out.ExtParam = outBufsPreEnc;
+                break;
+        }
     }
     mdprintf(stderr, "enc: %d t: %d\n", eTask->frameDisplayOrder, (eTask->frameType& MFX_FRAMETYPE_IPB));
 }

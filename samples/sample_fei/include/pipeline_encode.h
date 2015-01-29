@@ -250,13 +250,13 @@ protected:
 
     //FEI buffers
     mfxEncodeCtrl feiCtrl;
-    mfxExtFeiEncFrameCtrl feiEncCtrl;
-    mfxExtFeiEncMVPredictors feiEncMVPredictors;
-    mfxExtFeiEncMBCtrl feiEncMBCtrl;
-    mfxExtFeiEncMBStat feiEncMbStat;
-    mfxExtFeiEncMV feiEncMV;
-    mfxExtFeiEncQP feiEncMbQp;
-    mfxExtFeiPakMBCtrl feiEncMBCode;
+    mfxExtFeiEncFrameCtrl feiEncCtrl[2];
+    mfxExtFeiEncMVPredictors feiEncMVPredictors[2];
+    mfxExtFeiEncMBCtrl feiEncMBCtrl[2];
+    mfxExtFeiEncMBStat feiEncMbStat[2];
+    mfxExtFeiEncMV feiEncMV[2];
+    mfxExtFeiEncQP feiEncMbQp[2];
+    mfxExtFeiPakMBCtrl feiEncMBCode[2];
 
     int numExtInParams;
     int numExtOutParams;
@@ -269,11 +269,11 @@ protected:
     mfxExtBuffer * outBufsPreEnc[2];
     mfxExtBuffer * outBufsPreEncI[2];
 
-    mfxExtFeiPreEncCtrl preENCCtr;
-    mfxExtFeiPreEncMVPredictors mvPreds;
-    mfxExtFeiEncQP qps;
-    mfxExtFeiPreEncMV mvs;
-    mfxExtFeiPreEncMBStat mbdata;
+    mfxExtFeiPreEncCtrl preENCCtr[2];
+    mfxExtFeiPreEncMVPredictors mvPreds[2];
+    mfxExtFeiEncQP qps[2];
+    mfxExtFeiPreEncMV mvs[2];
+    mfxExtFeiPreEncMBStat mbdata[2];
 
     bool disableMVoutPreENC;
     bool disableMBStatPreENC;
