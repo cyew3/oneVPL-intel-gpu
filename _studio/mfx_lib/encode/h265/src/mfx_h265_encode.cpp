@@ -3309,7 +3309,7 @@ H265Frame* MFXVideoENCODEH265::InsertInputFrame(const mfxFrameSurface1 *surface)
         Ipp32s blkSize = m_videoParam.LowresFactor ? SIZE_BLK_LA : m_videoParam.MaxCUSize;
         Ipp32s heightInBlks = (frame->height + blkSize - 1) / blkSize;
         for (Ipp32s row = 0; row < heightInBlks; row++) {
-            PadOneReconRow(*frm, row, blkSize, heightInBlks);
+            PadOneReconRow(frame, row, blkSize, heightInBlks);
         }
     }
 
