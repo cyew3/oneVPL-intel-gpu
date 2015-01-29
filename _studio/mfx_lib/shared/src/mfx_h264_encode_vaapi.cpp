@@ -1633,27 +1633,27 @@ mfxStatus VAAPIEncoder::Execute(
         mfxExtFeiEncMVPredictors* mvpred = NULL;
         mfxExtFeiEncFrameCtrl* frameCtrl = NULL;
         mfxExtFeiEncQP* mbqp = NULL;
-        mfxExtFeiEncMBStat* mbstat = (mfxExtFeiEncMBStat*)task.m_feiDistortion;
-        mfxExtFeiEncMV* mvout = (mfxExtFeiEncMV*)task.m_feiMVOut;
-        mfxExtFeiPakMBCtrl* mbcodeout = (mfxExtFeiPakMBCtrl*)task.m_feiMBCODEOut;
+        mfxExtFeiEncMBStat* mbstat = &((mfxExtFeiEncMBStat*)(task.m_feiDistortion))[fieldId];
+        mfxExtFeiEncMV* mvout = &((mfxExtFeiEncMV*)(task.m_feiMVOut))[fieldId];
+        mfxExtFeiPakMBCtrl* mbcodeout = &((mfxExtFeiPakMBCtrl*)(task.m_feiMBCODEOut))[fieldId];
 
         for (int i = 0; i < ctrl.NumExtParam; i++)
         {
             if (ctrl.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_CTRL)
             {
-                frameCtrl = (mfxExtFeiEncFrameCtrl*) ctrl.ExtParam[i];
+                frameCtrl = &((mfxExtFeiEncFrameCtrl*) (ctrl.ExtParam[i]))[fieldId];
             }
             if (ctrl.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED)
             {
-                mvpred = (mfxExtFeiEncMVPredictors*) ctrl.ExtParam[i];
+                mvpred = &((mfxExtFeiEncMVPredictors*) (ctrl.ExtParam[i]))[fieldId];
             }
             if (ctrl.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB)
             {
-                mbctrl = (mfxExtFeiEncMBCtrl*) ctrl.ExtParam[i];
+                mbctrl = &((mfxExtFeiEncMBCtrl*) (ctrl.ExtParam[i]))[fieldId];
             }
             if (ctrl.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP)
             {
-                mbqp = (mfxExtFeiEncQP*) ctrl.ExtParam[i];
+                mbqp = &((mfxExtFeiEncQP*) (ctrl.ExtParam[i]))[fieldId];
             }
         }
 
@@ -2541,9 +2541,9 @@ mfxStatus VAAPIEncoder::QueryStatus(
                     int numMB = m_sps.picture_height_in_mbs * m_sps.picture_width_in_mbs;
                     //find ext buffers
 //                    mfxBitstream* bs = task.m_bs;
-                    mfxExtFeiEncMBStat* mbstat = (mfxExtFeiEncMBStat*)task.m_feiDistortion;
-                    mfxExtFeiEncMV* mvout = (mfxExtFeiEncMV*)task.m_feiMVOut;
-                    mfxExtFeiPakMBCtrl* mbcodeout = (mfxExtFeiPakMBCtrl*)task.m_feiMBCODEOut;
+                    mfxExtFeiEncMBStat* mbstat = &((mfxExtFeiEncMBStat*)(task.m_feiDistortion))[fieldId];
+                    mfxExtFeiEncMV* mvout = &((mfxExtFeiEncMV*)(task.m_feiMVOut))[fieldId];
+                    mfxExtFeiPakMBCtrl* mbcodeout = &((mfxExtFeiPakMBCtrl*)(task.m_feiMBCODEOut))[fieldId];
 
                     if (mbstat != NULL && vaFeiMBStatId != VA_INVALID_ID)
                     {
@@ -3055,11 +3055,11 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     for (int i = 0; i < out->NumExtParam; i++) {
         if (out->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV)
         {
-            mvsOut = (mfxExtFeiPreEncMV*) (out->ExtParam[i]);
+            mvsOut = &((mfxExtFeiPreEncMV*) (out->ExtParam[i]))[fieldId];
         }
         if (out->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MB)
         {
-            mbstatOut = (mfxExtFeiPreEncMBStat*) (out->ExtParam[i]);
+            mbstatOut = &((mfxExtFeiPreEncMBStat*) (out->ExtParam[i]))[fieldId];
         }
     }
 
@@ -3070,15 +3070,15 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     for (int i = 0; i < in->NumExtParam; i++) {
         if (in->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_CTRL)
         {
-            feiCtrl = (mfxExtFeiPreEncCtrl*) (in->ExtParam[i]);
+            feiCtrl = &((mfxExtFeiPreEncCtrl*) (in->ExtParam[i]))[fieldId];
         }
         if (in->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP)
         {
-            feiQP = (mfxExtFeiEncQP*) (in->ExtParam[i]);
+            feiQP = &((mfxExtFeiEncQP*) (in->ExtParam[i]))[fieldId];
         }
         if (in->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV_PRED)
         {
-            feiMVPred = (mfxExtFeiPreEncMVPredictors*) (in->ExtParam[i]);
+            feiMVPred = &((mfxExtFeiPreEncMVPredictors*) (in->ExtParam[i]))[fieldId];
         }
     }
 
@@ -3393,8 +3393,6 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
     vaSts = vaQuerySurfaceStatus(m_vaDisplay, waitSurface, &surfSts);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    int numMB = m_sps.picture_height_in_mbs * m_sps.picture_width_in_mbs;
-
     mdprintf(stderr, "sync on surface: %d\n", surfSts);
 
     switch (surfSts)
@@ -3413,7 +3411,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
             for (int i = 0; i < out->NumExtParam; i++) {
                 if (out->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV)
                 {
-                    mvsOut = (mfxExtFeiPreEncMV*) (out->ExtParam[i]);
+                    mvsOut = &((mfxExtFeiPreEncMV*)(out->ExtParam[i]))[fieldId];
                     break;
                 }
             }
@@ -3422,7 +3420,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
             for (int i = 0; i < out->NumExtParam; i++) {
                 if (out->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MB)
                 {
-                    mbstatOut = (mfxExtFeiPreEncMBStat*) (out->ExtParam[i]);
+                    mbstatOut = &((mfxExtFeiPreEncMBStat*)(out->ExtParam[i]))[fieldId];
                     break;
                 }
             }
@@ -3432,7 +3430,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
             for (int i = 0; i < in->NumExtParam; i++) {
                 if (in->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_CTRL)
                 {
-                    feiCtrl = (mfxExtFeiPreEncCtrl*) (in->ExtParam[i]);
+                    feiCtrl = &((mfxExtFeiPreEncCtrl*)(in->ExtParam[i]))[fieldId];
                     break;
                 }
             }
@@ -3448,7 +3446,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                 }
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
-                memcpy(mvsOut->MB, mvs, 16 * sizeof (VAMotionVectorIntel) * numMB);
+                memcpy(mvsOut->MB, mvs, 16 * sizeof (VAMotionVectorIntel) * mvsOut->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MV vaUnmapBuffer");
                     vaUnmapBuffer(m_vaDisplay, statMVid);
@@ -3469,7 +3467,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
 
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
-                memcpy(mbstatOut->MB, mbstat, sizeof (VAStatsStatistics16x16Intel) * numMB);
+                memcpy(mbstatOut->MB, mbstat, sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MBStat vaUnmapBuffer");
                     vaUnmapBuffer(m_vaDisplay, statOUTid);

@@ -238,10 +238,13 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
     if (sts != MFX_ERR_NONE)
           return Error(sts);
 
-    //fprintf(stderr,"handle=0x%x mid=0x%x\n", task.m_handleRaw, task.m_midRaw );
-    sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[0], m_sei);
-    if (sts != MFX_ERR_NONE)
-             return Error(sts);
+    for (mfxU32 f = 0; f <= task.m_fieldPicFlag; f++)
+    {
+        //fprintf(stderr,"handle=0x%x mid=0x%x\n", task.m_handleRaw, task.m_midRaw );
+        sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[0], m_sei);
+        if (sts != MFX_ERR_NONE)
+                 return Error(sts);
+    }
 
     return sts;
 }
@@ -256,12 +259,16 @@ static mfxStatus AsyncQuery(void * state, void * param, mfxU32 /*threadNumber*/,
 mfxStatus VideoENC_PREENC::Query(DdiTask& task)
 {
     mdprintf(stderr,"query\n");
+    mfxStatus sts = MFX_ERR_NONE;
     
-    mfxStatus sts = m_ddi->QueryStatus(task,0);
-    if (sts == MFX_WRN_DEVICE_BUSY)
-        return MFX_TASK_BUSY;
-    if (sts != MFX_ERR_NONE)
-        return Error(sts);
+    for (mfxU32 f = 0; f <= task.m_fieldPicFlag; f++)
+    {
+        sts = m_ddi->QueryStatus(task, 0);
+        if (sts == MFX_WRN_DEVICE_BUSY)
+            return MFX_TASK_BUSY;
+        if (sts != MFX_ERR_NONE)
+            return Error(sts);
+    }
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
     //move that task to free tasks from m_incoming
@@ -433,6 +440,14 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
 
     m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
     DdiTask& task = m_incoming.front();
+
+    task.m_picStruct    = GetPicStruct(m_video, task);
+    task.m_fieldPicFlag = task.m_picStruct[ENC] != MFX_PICSTRUCT_PROGRESSIVE;
+    task.m_fid[0]       = task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF;
+    task.m_fid[1]       = task.m_fieldPicFlag - task.m_fid[0];
+
+    if (task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF)
+        std::swap(task.m_type.top, task.m_type.bot);
 
     m_core->IncreaseReference(&input->InSurface->Data);
 
