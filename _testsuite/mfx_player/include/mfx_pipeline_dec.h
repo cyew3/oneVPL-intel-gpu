@@ -204,6 +204,7 @@ struct sCommandlineParams
   mfxExtSvcTargetLayer svc_layer;
 
   bool isAllegroTest;
+  bool isHMTest;
 
 #ifdef PAVP_BUILD
   // protected
@@ -248,6 +249,7 @@ struct sCommandlineParams
       outFrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
       isAllegroTest = false;
+      isHMTest = true;
 
       nPicStruct        =  PIPELINE_PICSTRUCT_NOT_SPECIFIED;
       nSeed             = -1;

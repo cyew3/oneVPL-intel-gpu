@@ -46,6 +46,7 @@ struct FileWriterRenderInputParams
     mfxFrameInfo info;
     bool useSameBitDepthForComponents;
     bool use10bitOutput;
+    bool useHMstyle;
 };
 
 

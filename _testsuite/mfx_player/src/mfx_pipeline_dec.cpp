@@ -1642,7 +1642,7 @@ mfxStatus MFXDecPipeline::CreateRender()
 {
     mfxStatus sts = MFX_ERR_UNKNOWN;
 
-    if (m_inParams.isAllegroTest)
+    if (m_inParams.isAllegroTest || m_inParams.isHMTest)
     {
         m_components[eREN].m_params.mfx.FrameInfo.FourCC         = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
         m_components[eREN].m_params.mfx.FrameInfo.BitDepthLuma   = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
@@ -1706,6 +1706,7 @@ mfxStatus MFXDecPipeline::CreateRender()
     renderParams.info = m_inParams.outFrameInfo;
     renderParams.useSameBitDepthForComponents = m_inParams.isAllegroTest;
     renderParams.use10bitOutput = m_inParams.isAllegroTest;
+    renderParams.useHMstyle = m_inParams.isHMTest;
 
     switch (m_RenderType)
     {
@@ -4644,6 +4645,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.outFrameInfo.BitDepthLuma = 10;
                 m_inParams.outFrameInfo.BitDepthChroma = 10;
                 m_inParams.isAllegroTest = true;
+          }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-hm"), VM_STRING("hm")))
+          {
+                m_inParams.isHMTest = true;
           }
           else if (m_OptProc.Check(argv[0], VM_STRING("-i:picstruct"), VM_STRING("Set picstruct for decoded frames"), OPT_INT_32))
           {
