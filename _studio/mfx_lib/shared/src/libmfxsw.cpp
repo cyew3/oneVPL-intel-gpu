@@ -50,14 +50,14 @@ void* g_hModule = NULL; // DLL handle received in DllMain
 #if defined(mfxhw64_EXPORTS) || defined(mfxhw32_EXPORTS)
 
 const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media Server Studio 2015 - SDK for Linux*";
-const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2014 Intel Corporation";
+const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2015 Intel Corporation";
 const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
 const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;
 
 #endif // mfxhwXX_EXPORTS
 #if defined(mfxaudiosw64_EXPORTS) || defined(mfxaudiosw32_EXPORTS)
 const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media Server Studio 2015 - Audio for Linux*";
-const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2014 Intel Corporation";
+const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2014-2015 Intel Corporation";
 const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
 const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;
 
