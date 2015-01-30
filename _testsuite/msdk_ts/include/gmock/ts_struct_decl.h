@@ -673,3 +673,8 @@ STRUCT(mfxExtFEIH265Output,
     FIELD_S(mfxExtBuffer      , Header)
     FIELD_T(mfxFEIH265Output* , feiOut)
 )
+
+STRUCT(mfxExtDecodedFrameInfo,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16      , FrameType)
+)
