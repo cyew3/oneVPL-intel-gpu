@@ -461,6 +461,15 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
     VideoDECODEVP9_HW::VP9DECODERoutineData& data = *(VideoDECODEVP9_HW::VP9DECODERoutineData*)p_state;
     VideoDECODEVP9_HW& decoder = *data.decoder;
 
+    if (data.copyFromFrame != UMC::FRAME_MID_INVALID)
+    {
+        decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.copyFromFrame, &decoder.m_vInitPar, false);
+        if (data.currFrameId != -1)
+           decoder.m_FrameAllocator.get()->DecreaseReference(data.currFrameId);
+
+        return MFX_ERR_NONE;
+    }
+
     #ifdef MFX_VA_LINUX
         if(UMC::UMC_OK != decoder.m_va->SyncTask(data.currFrameId))
             return MFX_ERR_DEVICE_FAILED;
@@ -512,14 +521,6 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         return MFX_ERR_MORE_DATA;
     }
 
-    mfxU8 *pBegin = bs->Data + bs->DataOffset;
-
-    InputBitstream bsReader(pBegin, pBegin+ bs->DataLength);
-    bsReader.GetBits(4);
-
-    if (bsReader.GetBit()) // showExistingFrame
-        return MFX_ERR_UNSUPPORTED; // need to implement
-
     m_index++;
     m_frameInfo.showFrame = 0;
     *surface_out = 0;
@@ -568,18 +569,27 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         return MFX_ERR_UNKNOWN;
     }
 
-	if (UMC::UMC_OK != m_va->BeginFrame(m_frameInfo.currFrame))
-        return MFX_ERR_DEVICE_FAILED;
+    UMC::FrameMemID repeateFrame = UMC::FRAME_MID_INVALID;
 
-	sts = PackHeaders(&m_bs, m_frameInfo);
-    MFX_CHECK_STS(sts);
+    if (!m_frameInfo.show_existing_frame)
+    {
+        if (UMC::UMC_OK != m_va->BeginFrame(m_frameInfo.currFrame))
+            return MFX_ERR_DEVICE_FAILED;
 
-    if (UMC::UMC_OK != m_va->Execute())
-        return MFX_ERR_DEVICE_FAILED;
+	    sts = PackHeaders(&m_bs, m_frameInfo);
+        MFX_CHECK_STS(sts);
 
-    if (UMC::UMC_OK != m_va->EndFrame())
-        return MFX_ERR_DEVICE_FAILED;
-    UpdateRefFrames(m_frameInfo.refreshFrameFlags, m_frameInfo); // move to async part
+        if (UMC::UMC_OK != m_va->Execute())
+            return MFX_ERR_DEVICE_FAILED;
+
+        if (UMC::UMC_OK != m_va->EndFrame())
+            return MFX_ERR_DEVICE_FAILED;
+        UpdateRefFrames(m_frameInfo.refreshFrameFlags, m_frameInfo); // move to async part
+    }
+    else
+    {
+        repeateFrame = m_frameInfo.ref_frame_map[m_frameInfo.frame_to_show];
+    }
 
     p_entry_point->pRoutine = &VP9DECODERoutine;
     p_entry_point->pCompleteProc = &VP9CompleteProc;
@@ -587,6 +597,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     VP9DECODERoutineData* routineData = new VP9DECODERoutineData;
     routineData->decoder = this;
     routineData->currFrameId = m_frameInfo.currFrame;
+    routineData->copyFromFrame = repeateFrame;
     routineData->surface_work = surface_work;
     routineData->index        = m_index;
 
@@ -668,9 +679,12 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
 
     bsReader.GetBit(); // skip unused version bit
 
-    if (bsReader.GetBit()) // showExistingFrame
+    info.show_existing_frame = bsReader.GetBit();
+    if (info.show_existing_frame)
     {
-        return MFX_ERR_UNSUPPORTED; // need to implement
+        info.frame_to_show = bsReader.GetBits(3);
+        info.showFrame = 1;
+        return MFX_ERR_NONE;
     }
 
     info.frameType = (VP9_FRAME_TYPE) bsReader.GetBit();

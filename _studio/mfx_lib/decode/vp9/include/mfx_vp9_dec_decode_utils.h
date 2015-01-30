@@ -182,9 +182,11 @@ namespace MfxVP9Decode
 
         VP9_FRAME_TYPE frameType;
 
+        mfxU32 show_existing_frame;
+        mfxU32 frame_to_show;
+
         mfxU32 showFrame;
         mfxU32 lastShowFrame;
-        mfxU32 showExistingFrame;
 
         mfxU32 intraOnly;
 
