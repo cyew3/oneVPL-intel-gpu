@@ -325,6 +325,9 @@
     <ClCompile Include="src\gmock\test_suites\hevce_gaa_close.cpp">
       <Filter>Source Files\test_suites\hevce_gaa</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_mbqp.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_level_profile.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
