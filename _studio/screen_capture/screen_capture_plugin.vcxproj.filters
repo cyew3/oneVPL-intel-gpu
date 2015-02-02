@@ -39,6 +39,7 @@
     <ClInclude Include="..\mfx_lib\vpp\include\mfx_color_space_conversion_vpp.h">
       <Filter>libmfxsw VPP</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\mfx_screen_capture_plugin.cpp">
@@ -70,5 +71,8 @@
     <None Include="22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg">
       <Filter>cfg-files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="screen_capture.rc" />
   </ItemGroup>
 </Project>

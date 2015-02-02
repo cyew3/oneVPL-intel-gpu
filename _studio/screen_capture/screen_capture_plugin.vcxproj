@@ -27,6 +27,7 @@
     <ClInclude Include="include\mfx_screen_capture_plugin.h" />
     <ClInclude Include="include\mfx_screen_capture_sw_d3d11.h" />
     <ClInclude Include="include\mfx_screen_capture_sw_d3d9.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\mfx_lib\vpp\src\mfx_color_space_conversion_vpp.cpp" />
@@ -48,6 +49,9 @@
     <ProjectReference Include="..\shared\umc\core\vm_plus\vm_plus.vcxproj">
       <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="screen_capture.rc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4041A665-2623-43CA-88D4-7D516875F864}</ProjectGuid>
@@ -120,19 +124,19 @@
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)32_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectName)64_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mfxplugin32_screen_capture_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_screen_capture_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\22d62c07e672408fbb4cc20ed7a053e4\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>$(ProjectName)64</TargetName>
+    <TargetName>mfxplugin64_screen_capture</TargetName>
     <PreBuildEventUseInBuild />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\22d62c07e672408fbb4cc20ed7a053e4\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>$(ProjectName)32</TargetName>
+    <TargetName>mfxplugin64_screen_capture</TargetName>
     <PreBuildEventUseInBuild />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
