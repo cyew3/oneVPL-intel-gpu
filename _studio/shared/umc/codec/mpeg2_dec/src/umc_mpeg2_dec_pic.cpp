@@ -64,7 +64,10 @@ Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, IppVideoContext* vi
       sequenceHeader.broken_link = code & 1;
       sequenceHeader.closed_gop  = code & 2;
       sequenceHeader.gop_picture = (code>>2) & 0x3f;
-      sequenceHeader.gop_second  = ((code>>8) & 0x3f) + ((code>>15) & 0x3f)*60 + ((code>>21) & 0x1f)*3600;
+      sequenceHeader.gop_seconds = (code>>8) & 0x3f;
+      sequenceHeader.gop_minutes = (code>>15) & 0x3f;
+      sequenceHeader.gop_hours   = (code>>21) & 0x1f;
+      sequenceHeader.gop_drop_frame_flag = (code>>26) & 1;
       sequenceHeader.stream_time_temporal_reference = -1; //-2; // new count
       return (UMC_OK); // ignore for a while
     case EXTENSION_START_CODE:

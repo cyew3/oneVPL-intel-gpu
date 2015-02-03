@@ -144,6 +144,23 @@ mfxU16 GetMfxPicStruct(mfxU32 progressiveSequence, mfxU32 progressiveFrame, mfxU
     return picStruct;
 }
 
+void SetSurfaceTimeCode(mfxFrameSurface1* surface, UMC::MPEG2VideoDecoderBase *implUmc)
+{
+    if (!surface || !implUmc)
+        return;
+
+    mfxExtTimeCode* pExtTimeCode = (mfxExtTimeCode *)GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_TIME_CODE);
+    if (!pExtTimeCode)
+        return;
+
+    const UMC::sSequenceHeader& sh = implUmc->GetSequenceHeader();
+    pExtTimeCode->DropFrameFlag    = sh.gop_drop_frame_flag;
+    pExtTimeCode->TimeCodePictures = sh.gop_picture;
+    pExtTimeCode->TimeCodeHours    = sh.gop_hours;
+    pExtTimeCode->TimeCodeMinutes  = sh.gop_minutes;
+    pExtTimeCode->TimeCodeSeconds  = sh.gop_seconds;
+}
+
 inline
 mfxU8 Mpeg2GetMfxChromaFormatFromUmcMpeg2(mfxU32 umcChromaFormat)
 {
@@ -1897,6 +1914,8 @@ mfxStatus VideoDECODEMPEG2::UpdateCurrVideoParams(mfxFrameSurface1 *surface_work
     pSurface->Info.PicStruct = m_vPar.mfx.FrameInfo.PicStruct;    
     pSurface->Info.FrameRateExtD = m_vPar.mfx.FrameInfo.FrameRateExtD;
     pSurface->Info.FrameRateExtN = m_vPar.mfx.FrameInfo.FrameRateExtN;
+
+    SetSurfaceTimeCode(pSurface, &m_implUmc);
     return sts;
 }
 

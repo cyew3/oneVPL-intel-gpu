@@ -148,8 +148,12 @@ struct sSequenceHeader
     // GOP info.
     Ipp32s           closed_gop;    // no ref to previous GOP
     Ipp32s           broken_link;   // ref to absent prev GOP
-    Ipp32s           gop_second;    // second of first picture
-    Ipp32s           gop_picture;   // starting picture in gop_second
+    // GOP time code
+    Ipp16u           gop_seconds;
+    Ipp16u           gop_minutes;
+    Ipp16u           gop_hours;
+    Ipp16u           gop_picture;   // starting picture in gop_second
+    Ipp16u           gop_drop_frame_flag;
 
     Ipp32s           frame_count;
 };
