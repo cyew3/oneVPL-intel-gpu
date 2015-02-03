@@ -14,6 +14,7 @@ public:
         {
             mfxFrameSurface1* p = GetSurface(i);
             p->Data.NumExtParam = 0;
+            delete p->Data.ExtParam[0];
             delete [] p->Data.ExtParam;
         }
     }
