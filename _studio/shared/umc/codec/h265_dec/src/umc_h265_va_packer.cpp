@@ -1084,7 +1084,7 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
     memset(picParam, 0, sizeof(VAPictureParameterBufferHEVC));
 
     picParam->CurrPic.picture_id = m_va->GetSurfaceID(pCurrentFrame->m_index);
-    picParam->CurrPic.PicOrderCnt = pCurrentFrame->m_PicOrderCnt;
+    picParam->CurrPic.pic_order_cnt = pCurrentFrame->m_PicOrderCnt;
     picParam->CurrPic.flags = 0;
 
     int count = 0;
@@ -1098,7 +1098,7 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
 
         if (refType != NO_REFERENCE)
         {
-            picParam->ReferenceFrames[count].PicOrderCnt = frame->m_PicOrderCnt;
+            picParam->ReferenceFrames[count].pic_order_cnt = frame->m_PicOrderCnt;
             picParam->ReferenceFrames[count].picture_id = m_va->GetSurfaceID(frame->m_index);;
             picParam->ReferenceFrames[count].flags = 0;
             count++;
@@ -1117,10 +1117,10 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
         numRefPicSetStCurrAfter  = 0,
         numRefPicSetLtCurr       = 0;
     for(index = 0; index < rps->getNumberOfNegativePictures(); index++)
-            pocList[numRefPicSetStCurrBefore++] = picParam->CurrPic.PicOrderCnt + rps->getDeltaPOC(index);
+            pocList[numRefPicSetStCurrBefore++] = picParam->CurrPic.pic_order_cnt + rps->getDeltaPOC(index);
 
     for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures(); index++)
-            pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter++] = picParam->CurrPic.PicOrderCnt + rps->getDeltaPOC(index);
+            pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter++] = picParam->CurrPic.pic_order_cnt + rps->getDeltaPOC(index);
 
     for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); index++)
     {
@@ -1133,7 +1133,7 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
         }
         else
         {
-            pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr++] = picParam->CurrPic.PicOrderCnt + rps->getDeltaPOC(index);
+            pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr++] = picParam->CurrPic.pic_order_cnt + rps->getDeltaPOC(index);
         }
     }
 
@@ -1148,7 +1148,7 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
 
         for(Ipp32s k=0;k < count;k++)
         {
-            if(pocList[n] == picParam->ReferenceFrames[k].PicOrderCnt)
+            if(pocList[n] == picParam->ReferenceFrames[k].pic_order_cnt)
             {
                 if(n < numRefPicSetStCurrBefore)
                     picParam->ReferenceFrames[k].flags |= VA_PICTURE_HEVC_RPS_ST_CURR_BEFORE;
