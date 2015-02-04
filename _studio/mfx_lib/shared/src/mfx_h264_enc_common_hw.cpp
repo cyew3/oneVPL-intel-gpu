@@ -1720,15 +1720,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         }
 
-        if (par.mfx.NumRefFrame > 2)
-        {
-            changed = true;
-            par.mfx.NumRefFrame = 2;
-        }
         
         if (par.mfx.RateControlMethod != 0 &&
             par.mfx.RateControlMethod != MFX_RATECONTROL_CBR &&
             par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
+            par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
             par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
         {
             changed = true;
@@ -3973,6 +3969,9 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.GopRefDist = 1;
         if (par.mfx.FrameInfo.PicStruct == 0)
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        if (par.mfx.NumRefFrame == 0)
+            par.mfx.NumRefFrame = hwCaps.MaxNum_Reference;
+        extDdi->NumActiveRefP = IPP_MIN(hwCaps.MaxNum_Reference, par.mfx.NumRefFrame);
     }
 #endif
 
@@ -4314,7 +4313,9 @@ void MfxHwH264Encode::SetDefaults(
 
 #if defined(LOWPOWERENCODE_AVC)
         if (IsOn(par.mfx.LowPower))
-            par.mfx.NumRefFrame = IPP_MIN(2, par.mfx.NumRefFrame);
+        {
+            par.mfx.NumRefFrame = IPP_MIN(hwCaps.MaxNum_Reference, par.mfx.NumRefFrame);
+        }
 #endif
     }
 
