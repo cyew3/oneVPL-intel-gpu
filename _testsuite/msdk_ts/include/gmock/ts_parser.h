@@ -201,7 +201,7 @@ public:
                 if (m_sts == BS_ERR_MORE_DATA && (pAU->NumSlice || slices.size())) {
                     last_offset = 0;
                     pAU->slice = &slices[0];
-                    pAU->NumSlice = slices.size();
+                    pAU->NumSlice = (Bs32u)slices.size();
                     return pAU;
                 }
 
@@ -218,7 +218,7 @@ public:
                 Bs32u len = pBs->DataLength + 3 - last_offset;
                 set_buffer(pBs->Data + pBs->DataOffset + last_offset, len);
                 pAU->slice = &slices[0];
-                pAU->NumSlice = slices.size();
+                pAU->NumSlice = (Bs32u)slices.size();
                 return pAU;
             }
 

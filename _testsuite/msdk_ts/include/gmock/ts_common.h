@@ -6,6 +6,7 @@
 #include "ts_streams.h"
 #include "test_sample_allocator.h"
 #include "ts_platforms.h"
+#include "ts_ext_buffers.h"
 
 typedef enum {
       tsOK = 0
@@ -114,6 +115,7 @@ for(mfxU32 i = 0; i < 15; i++) \
 }
 
 std::string ENV(const char* name, const char* def);
+void set_brc_params(tsExtBufType<mfxVideoParam>* p);
 
 bool operator == (const mfxFrameInfo&, const mfxFrameInfo&);
 

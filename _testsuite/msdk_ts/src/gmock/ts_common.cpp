@@ -28,6 +28,124 @@ std::string ENV(const char* name, const char* def)
     return sv;
 }
 
+void set_brc_params(tsExtBufType<mfxVideoParam>* p)
+{
+    /*
+    BitRate for AVC:
+        [image width] x [image height] x [framerate] x [motion rank] x 0.07 = [desired bitrate]
+        [motion rank]: from 1 (low motion) to 4 (high motion)
+    */
+    mfxU32 fr = mfxU32(p->mfx.FrameInfo.FrameRateExtN / p->mfx.FrameInfo.FrameRateExtD);
+    mfxU16 br = mfxU16(p->mfx.FrameInfo.Width * p->mfx.FrameInfo.Width * fr * 2 * 0.07 / 1000);
+
+    if (p->mfx.CodecId == MFX_CODEC_MPEG2)
+        br = (mfxU16)br*1.5;
+    else if (p->mfx.CodecId == MFX_CODEC_HEVC)
+        br >>= 1;
+
+    if (p->mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        p->mfx.QPI = p->mfx.QPP = p->mfx.QPB = 0;
+        p->mfx.QPI = 23;
+        if (p->mfx.GopPicSize > 1)
+            p->mfx.QPP = 25;
+        if (p->mfx.GopRefDist > 1)
+            p->mfx.QPB = 25;
+    } else if (p->mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
+               p->mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
+               p->mfx.RateControlMethod == MFX_RATECONTROL_VCM ||
+               p->mfx.RateControlMethod == MFX_RATECONTROL_LA ||
+               p->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
+    {
+        p->mfx.TargetKbps = p->mfx.MaxKbps = p->mfx.InitialDelayInKB = 0;
+
+        p->mfx.MaxKbps = p->mfx.TargetKbps = br;
+        if (p->mfx.RateControlMethod != MFX_RATECONTROL_CBR)
+        {
+            p->mfx.MaxKbps = (mfxU16)(p->mfx.TargetKbps * 1.3);
+        }
+        // buffer = 0.5 sec
+        p->mfx.BufferSizeInKB = mfxU16(p->mfx.MaxKbps / fr * mfxU16(fr / 2));
+        p->mfx.InitialDelayInKB = mfxU16(p->mfx.BufferSizeInKB / 2);
+
+        if (p->mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+            p->mfx.GopRefDist = 1;
+
+        if (p->mfx.RateControlMethod == MFX_RATECONTROL_LA ||
+            p->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
+        {
+            p->mfx.MaxKbps = 0;
+            p->mfx.InitialDelayInKB = 0;
+
+            mfxExtCodingOption2* p_cod2 = (mfxExtCodingOption2*)p->GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2);
+            if (!p_cod2)
+            {
+                mfxExtCodingOption2& cod2 = *p;
+                p_cod2 = &cod2;
+            }
+
+            mfxExtCodingOption3* p_cod3 = (mfxExtCodingOption3*)p->GetExtBuffer(MFX_EXTBUFF_CODING_OPTION3);
+            if (p_cod3)
+            {
+                p_cod3->WinBRCMaxAvgKbps = p->mfx.MaxKbps;
+                p_cod3->WinBRCSize = p->mfx.FrameInfo.FrameRateExtN << 2;
+            }
+            p_cod2->LookAheadDepth = 20;
+
+            if (p->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
+            {
+                mfxExtCodingOption* p_cod = (mfxExtCodingOption*)p->GetExtBuffer(MFX_EXTBUFF_CODING_OPTION);
+                if (!p_cod)
+                {
+                    mfxExtCodingOption& cod = *p;
+                    p_cod = &cod;
+                }
+                p_cod->NalHrdConformance = MFX_CODINGOPTION_ON;
+            }
+        }
+    } else if (p->mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        p->mfx.TargetKbps = p->mfx.Convergence = p->mfx.Accuracy = 0;
+
+        p->mfx.TargetKbps = br;
+        p->mfx.Convergence = 1;
+        p->mfx.Accuracy = 2;
+    } else if (p->mfx.RateControlMethod == MFX_RATECONTROL_ICQ ||
+               p->mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
+    {
+        p->mfx.TargetKbps = p->mfx.Convergence = p->mfx.Accuracy = 0;
+
+        p->mfx.ICQQuality = 20;
+        
+        if (p->mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
+        {
+            mfxExtCodingOption2* p_cod2 = (mfxExtCodingOption2*)p->GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2);
+            if (p_cod2)
+            {
+                p_cod2->LookAheadDepth = 20;
+            } else
+            {
+                mfxExtCodingOption2& cod2 = *p;
+                cod2.LookAheadDepth = 20;
+            }
+        }
+    } else if (p->mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+    {
+        p->mfx.TargetKbps = p->mfx.Convergence = p->mfx.Accuracy = 0;
+        p->mfx.ICQQuality = 0;
+
+        mfxExtCodingOption3* p_cod3 = (mfxExtCodingOption3*)p->GetExtBuffer(MFX_EXTBUFF_CODING_OPTION3);
+        if (p_cod3)
+        {
+            p_cod3->QVBRQuality = 20;
+        } else
+        {
+            mfxExtCodingOption3& cod3 = *p;
+            cod3.QVBRQuality = 20;
+        }
+    }
+}
+
 void MFXVideoTest::SetUp()
 {
     std::string platform = ENV("TS_PLATFORM", "auto");

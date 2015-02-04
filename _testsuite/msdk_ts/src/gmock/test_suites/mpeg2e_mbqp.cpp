@@ -302,6 +302,7 @@ int TestSuite::RunTest(unsigned int id)
     m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
     SETPARS(m_pPar, MFXPAR);
+    set_brc_params(&m_par);
 
     g_tsStatus.expect(tc.sts);
 
