@@ -533,16 +533,16 @@ static mfxStatus SetROI(
         {
             arrayVAEncROI.resize(task.m_numRoi);
         }
-        roi_Param->ROI = Begin(arrayVAEncROI);
-        memset(roi_Param->ROI, 0, task.m_numRoi*sizeof(VAEncROI));
+        roi_Param->roi = Begin(arrayVAEncROI);
+        memset(roi_Param->roi, 0, task.m_numRoi*sizeof(VAEncROI));
 
         for (mfxU32 i = 0; i < task.m_numRoi; i ++)
         {
-            roi_Param->ROI[i].roi_rectangle.x = task.m_roi[i].Left;
-            roi_Param->ROI[i].roi_rectangle.y = task.m_roi[i].Top;
-            roi_Param->ROI[i].roi_rectangle.width = task.m_roi[i].Right - task.m_roi[i].Left;
-            roi_Param->ROI[i].roi_rectangle.height = task.m_roi[i].Top - task.m_roi[i].Bottom;
-            roi_Param->ROI[i].roi_value = task.m_roi[i].Priority;
+            roi_Param->roi[i].roi_rectangle.x = task.m_roi[i].Left;
+            roi_Param->roi[i].roi_rectangle.y = task.m_roi[i].Top;
+            roi_Param->roi[i].roi_rectangle.width = task.m_roi[i].Right - task.m_roi[i].Left;
+            roi_Param->roi[i].roi_rectangle.height = task.m_roi[i].Top - task.m_roi[i].Bottom;
+            roi_Param->roi[i].roi_value = task.m_roi[i].Priority;
         }
         roi_Param->max_delta_qp = 51;
         roi_Param->min_delta_qp = -51;

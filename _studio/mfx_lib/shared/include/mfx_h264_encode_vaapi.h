@@ -57,8 +57,6 @@ namespace MfxHwH264Encode
 #endif
     } ExtVASurface;
 
-    typedef VAEncMiscParameterBufferROI::VAEncROI VAEncROI;
-
     class VAAPIEncoder : public DriverEncoder
     {
     public:
