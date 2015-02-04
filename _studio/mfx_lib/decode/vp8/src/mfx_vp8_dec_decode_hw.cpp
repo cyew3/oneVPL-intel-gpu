@@ -487,13 +487,13 @@ UMC::FrameMemID VideoDECODEVP8_HW::GetMemIdToUnlock()
 static mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32)
 {
     p_state; pp_param; thread_number;
-
+    mfxStatus sts = MFX_ERR_NONE;
     VideoDECODEVP8_HW::VP8DECODERoutineData& data = *(VideoDECODEVP8_HW::VP8DECODERoutineData*)p_state;
     VideoDECODEVP8_HW& decoder = *data.decoder;
 
     if (decoder.m_video_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {
-        decoder.m_p_frame_allocator->PrepareToOutput(data.surface_work, data.memId, &decoder.m_on_init_video_params, false);
+        sts = decoder.m_p_frame_allocator->PrepareToOutput(data.surface_work, data.memId, &decoder.m_on_init_video_params, false);
     }
 
     if (data.memIdToUnlock != -1)
@@ -501,7 +501,7 @@ static mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU3
 
     delete &data;
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 static mfxStatus VP8CompleteProc(void *, void *pp_param, mfxStatus)
@@ -638,6 +638,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
         if (m_refresh_info.refreshLastFrame)
            lastrefIndex = info.currIndex;
+
     }
 
     m_frames.push_back(info);
