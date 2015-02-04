@@ -63,11 +63,11 @@ Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, IppVideoContext* vi
       GET_BITS_LONG(video->bs, 27, code)
       sequenceHeader.broken_link = code & 1;
       sequenceHeader.closed_gop  = code & 2;
-      sequenceHeader.gop_picture = (code>>2) & 0x3f;
-      sequenceHeader.gop_seconds = (code>>8) & 0x3f;
-      sequenceHeader.gop_minutes = (code>>15) & 0x3f;
-      sequenceHeader.gop_hours   = (code>>21) & 0x1f;
-      sequenceHeader.gop_drop_frame_flag = (code>>26) & 1;
+      sequenceHeader.time_code.gop_picture = (code>>2) & 0x3f;
+      sequenceHeader.time_code.gop_seconds = (code>>8) & 0x3f;
+      sequenceHeader.time_code.gop_minutes = (code>>15) & 0x3f;
+      sequenceHeader.time_code.gop_hours   = (code>>21) & 0x1f;
+      sequenceHeader.time_code.gop_drop_frame_flag = (code>>26) & 1;
       sequenceHeader.stream_time_temporal_reference = -1; //-2; // new count
       return (UMC_OK); // ignore for a while
     case EXTENSION_START_CODE:
@@ -947,6 +947,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
     }
 
     memset(&PictureHeader[task_num], 0, sizeof(sPictureHeader));
+    PictureHeader[task_num].time_code = sequenceHeader.time_code;
 
     GET_BITS(video->bs, 10, PictureHeader[task_num].temporal_reference)
     GET_TO9BITS(video->bs, 3, pic_type)

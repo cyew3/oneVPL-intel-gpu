@@ -113,6 +113,14 @@ struct sVideoFrameBuffer
     bool             isCorrupted;
 };
 
+struct sGOPTimeCode
+{
+    Ipp16u           gop_seconds;
+    Ipp16u           gop_minutes;
+    Ipp16u           gop_hours;
+    Ipp16u           gop_picture;   // starting picture in gop_second
+    Ipp16u           gop_drop_frame_flag;
+};
 
 struct sSequenceHeader 
 {
@@ -149,11 +157,7 @@ struct sSequenceHeader
     Ipp32s           closed_gop;    // no ref to previous GOP
     Ipp32s           broken_link;   // ref to absent prev GOP
     // GOP time code
-    Ipp16u           gop_seconds;
-    Ipp16u           gop_minutes;
-    Ipp16u           gop_hours;
-    Ipp16u           gop_picture;   // starting picture in gop_second
-    Ipp16u           gop_drop_frame_flag;
+    sGOPTimeCode     time_code;
 
     Ipp32s           frame_count;
 };
@@ -228,6 +232,7 @@ struct sPictureHeader
     Ipp32s           curr_intra_dc_multi;
     Ipp32s           max_slice_vert_pos;
 
+    sGOPTimeCode     time_code;
 };
 
 struct mp2_VLCTable

@@ -1821,11 +1821,11 @@ Status MPEG2VideoDecoderBase::Reset()
     sequenceHeader.first_p_occure  = 0;
     sequenceHeader.broken_link = 0;
     sequenceHeader.closed_gop  = 0;
-    sequenceHeader.gop_picture = 0;
-    sequenceHeader.gop_seconds = 0;
-    sequenceHeader.gop_minutes = 0;
-    sequenceHeader.gop_hours   = 0;
-    sequenceHeader.gop_drop_frame_flag = 0;
+    sequenceHeader.time_code.gop_picture = 0;
+    sequenceHeader.time_code.gop_seconds = 0;
+    sequenceHeader.time_code.gop_minutes = 0;
+    sequenceHeader.time_code.gop_hours   = 0;
+    sequenceHeader.time_code.gop_drop_frame_flag = 0;
     sequenceHeader.stream_time = 0; //-sequenceHeader.delta_frame_time;
     sequenceHeader.frame_rate_extension_d = 0;
     sequenceHeader.frame_rate_extension_n = 0;
