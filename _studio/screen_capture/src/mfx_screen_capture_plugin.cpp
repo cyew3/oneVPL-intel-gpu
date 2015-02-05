@@ -358,6 +358,28 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
 
+    mfxCoreParam param = { 0 };
+    mfxRes = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &param);
+    MFX_CHECK_STS(mfxRes);
+
+    if (MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(param.Impl))
+    {
+        mfxHandleType type = (MFX_IMPL_VIA_D3D11 == (param.Impl & 0x0F00)) ? MFX_HANDLE_D3D11_DEVICE : MFX_HANDLE_D3D9_DEVICE_MANAGER;
+        mfxHDL handle = 0;
+        mfxRes = m_pmfxCore->GetHandle(m_pmfxCore->pthis, type, &handle);
+        switch (mfxRes)
+        {
+        case MFX_ERR_NONE:
+            break;
+        case MFX_ERR_NOT_FOUND:
+            mfxRes = m_pmfxCore->CreateAccelerationDevice(m_pmfxCore->pthis, type, &handle);
+            break;
+        default:
+            return mfxRes;
+        }
+        MFX_CHECK_STS(mfxRes);
+    }
+
     //bool warning     = false;
     bool error       = false;
     bool opaque      = false;
