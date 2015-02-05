@@ -28,7 +28,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Supported codecs (<codecid>):\n"));
     msdk_printf(MSDK_STRING("   <codecid>=h264|mpeg2|vc1|mvc|jpeg - built-in Media SDK codecs\n"));
-    msdk_printf(MSDK_STRING("   <codecid>=h265                    - in-box Media SDK plugins (may require separate downloading and installation)\n"));
+    msdk_printf(MSDK_STRING("   <codecid>=h265|capture            - in-box Media SDK plugins (may require separate downloading and installation)\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Work models:\n"));
     msdk_printf(MSDK_STRING("  1. Performance model: decoding on MAX speed, no rendering, no YUV dumping (no -r or -o option)\n"));
@@ -53,6 +53,11 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("       m(0,1..)              - monitor id \n"));
     msdk_printf(MSDK_STRING("       t(0/1)                - enable/disable window's title\n"));
     msdk_printf(MSDK_STRING("       tmo                   - timeout for -wall option\n"));
+    msdk_printf(MSDK_STRING("Screen capture parameters:\n"));
+    msdk_printf(MSDK_STRING("   [-w]                      - screen resolution width\n"));
+    msdk_printf(MSDK_STRING("   [-h]                      - screen resolution height\n"));
+    msdk_printf(MSDK_STRING("   [-fourcc]                 - output fourcc format\n"));
+    msdk_printf(MSDK_STRING("   Supported fourcc: nv12(default), rgb4\n\n"));
 #endif
 #if defined(LIBVA_SUPPORT)
     msdk_printf(MSDK_STRING("   [-vaapi]                  - work with vaapi surfaces\n"));
@@ -251,7 +256,63 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("rendering frame rate is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
-        } else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-path")))
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-w")))
+        {
+            if (i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -w key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->width))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("rendering frame rate is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-h")))
+        {
+            if (i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -h key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->height))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("rendering frame rate is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        } else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n")))
+        {
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -n key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nFrames))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("rendering frame rate is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        } else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-fourcc")))
+        {
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -n key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            ++i;
+            if (0 == msdk_strcmp(strInput[i], MSDK_STRING("nv12")))
+                pParams->fourcc = MFX_FOURCC_NV12;
+            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("rgb4")))
+                pParams->fourcc = MFX_FOURCC_RGB4;
+            else
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Specified fourcc is unsupported or unknown"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-path")))
         {
             i++;
 #if defined(_WIN32) || defined(_WIN64)
@@ -265,6 +326,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_opt_read(strInput[i], pParams->pluginParams.strPluginPath);
 #endif
             pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i:null")))
+        {
+            ;
         }
         else // 1-character options
         {
@@ -316,9 +381,23 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
-    if (0 == msdk_strlen(pParams->strSrcFile))
+    if (0 == msdk_strlen(pParams->strSrcFile) && MFX_CODEC_CAPTURE != pParams->videoType)
     {
         msdk_printf(MSDK_STRING("error: source file name not found"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (MFX_CODEC_CAPTURE == pParams->videoType)
+    {
+        if (!pParams->width || !pParams->height)
+        {
+            msdk_printf(MSDK_STRING("error: for screen capture, width and height must be specified manually (-w and -h)"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+    else if (pParams->width || pParams->height)
+    {
+        msdk_printf(MSDK_STRING("error: width and height parameters are supported only by screen capture decoder"));
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -328,12 +407,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (MFX_CODEC_MPEG2 != pParams->videoType &&
-        MFX_CODEC_AVC   != pParams->videoType &&
-        MFX_CODEC_HEVC  != pParams->videoType &&
-        MFX_CODEC_VC1   != pParams->videoType &&
-        MFX_CODEC_JPEG  != pParams->videoType &&
-        CODEC_VP8   != pParams->videoType)
+    if (MFX_CODEC_MPEG2   != pParams->videoType &&
+        MFX_CODEC_AVC     != pParams->videoType &&
+        MFX_CODEC_HEVC    != pParams->videoType &&
+        MFX_CODEC_VC1     != pParams->videoType &&
+        MFX_CODEC_JPEG    != pParams->videoType &&
+        MFX_CODEC_CAPTURE != pParams->videoType &&
+        CODEC_VP8         != pParams->videoType)
     {
         PrintHelp(strInput[0], MSDK_STRING("Unknown codec"));
         return MFX_ERR_UNSUPPORTED;

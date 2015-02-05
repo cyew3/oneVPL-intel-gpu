@@ -856,6 +856,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
             }
         break;
         case MFX_FOURCC_RGB4:
+        case 100: //DXGI_FORMAT_AYUV
         case MFX_FOURCC_A2RGB10:
             // Implementation for RGB4 and A2RGB10 in the next switch below
         break;
@@ -931,6 +932,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
         break;
 
         case MFX_FOURCC_RGB4:
+        case 100: //DXGI_FORMAT_AYUV
         case MFX_FOURCC_A2RGB10:
         mfxU8* ptr;
 
@@ -1755,6 +1757,7 @@ bool IsDecodeCodecSupported(mfxU32 codecFormat)
         case CODEC_MVC:
         case MFX_CODEC_JPEG:
         case MFX_CODEC_VP8:
+        case MFX_CODEC_CAPTURE:
         break;
     default:
         return false;
@@ -1788,6 +1791,7 @@ bool IsPluginCodecSupported(mfxU32 codecFormat)
         case MFX_CODEC_MPEG2:
         case MFX_CODEC_VC1:
         case MFX_CODEC_VP8:
+        case MFX_CODEC_CAPTURE:
         break;
     default:
         return false;
@@ -1832,6 +1836,10 @@ mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat)
         else if (0 == msdk_strcmp(strInput, MSDK_STRING("vp8")))
         {
             codecFormat = MFX_CODEC_VP8;
+        }
+        else if (0 == msdk_strcmp(strInput, MSDK_STRING("capture")))
+        {
+            codecFormat = MFX_CODEC_CAPTURE;
         }
         else
             sts = MFX_ERR_UNSUPPORTED;

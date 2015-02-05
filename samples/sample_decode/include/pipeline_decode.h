@@ -70,6 +70,11 @@ struct sInputParams
     mfxU32  nRotation; // rotation for Motion JPEG Codec
     mfxU16  nAsyncDepth; // asyncronous queue
 
+    mfxU16  width;
+    mfxU16  height;
+    mfxU32  fourcc;
+    mfxU32  nFrames;
+
     msdk_char     strSrcFile[MSDK_MAX_FILENAME_LEN];
     msdk_char     strDstFile[MSDK_MAX_FILENAME_LEN];
     sPluginParams pluginParams;
@@ -203,6 +208,7 @@ protected: // variables
 
     mfxU32                  m_nTimeout; // enables timeout for video playback, measured in seconds
     mfxU32                  m_nMaxFps; // limit of fps, if isn't specified equal 0.
+    mfxU32                  m_nFrames; //limit number of output frames
 
     std::vector<msdk_tick>  m_vLatency;
 

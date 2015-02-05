@@ -9,6 +9,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 **********************************************************************************/
 
 #include "mfx_samples_config.h"
+#include "sample_defs.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <tchar.h>
@@ -130,9 +131,13 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 
     m_memType = pParams->memType;
     m_nMaxFps = pParams->nMaxFPS;
+    m_nFrames = pParams->nFrames ? pParams->nFrames : MFX_INFINITE;
 
-    sts = m_FileReader->Init(pParams->strSrcFile);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    if (MFX_CODEC_CAPTURE != pParams->videoType)
+    {
+        sts = m_FileReader->Init(pParams->strSrcFile);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     mfxVersion min_version;
     mfxVersion version;     // real API version with which library is initialized
@@ -191,8 +196,11 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     m_mfxVideoParams.mfx.CodecId = pParams->videoType;
 
     // prepare bit stream
-    sts = InitMfxBitstream(&m_mfxBS, 1024 * 1024);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    if (MFX_CODEC_CAPTURE != pParams->videoType)
+    {
+        sts = InitMfxBitstream(&m_mfxBS, 1024 * 1024);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
         /* Here we actually define the following codec initialization scheme:
@@ -384,7 +392,27 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
 
     // try to find a sequence header in the stream
     // if header is not found this function exits with error (e.g. if device was lost and there's no header in the remaining stream)
-    for(;;)
+    if (MFX_CODEC_CAPTURE == pParams->videoType)
+    {
+        m_mfxVideoParams.mfx.CodecId = MFX_CODEC_CAPTURE;
+        m_mfxVideoParams.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        m_mfxVideoParams.mfx.FrameInfo.Width = MSDK_ALIGN32(pParams->width);
+        m_mfxVideoParams.mfx.FrameInfo.Height = MSDK_ALIGN32(pParams->height);
+        m_mfxVideoParams.mfx.FrameInfo.CropW = pParams->width;
+        m_mfxVideoParams.mfx.FrameInfo.CropH = pParams->height;
+        m_mfxVideoParams.mfx.FrameInfo.FourCC = pParams->fourcc;
+        if (!m_mfxVideoParams.mfx.FrameInfo.FourCC)
+            m_mfxVideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+        if (!m_mfxVideoParams.mfx.FrameInfo.ChromaFormat)
+        {
+            if (MFX_FOURCC_NV12 == m_mfxVideoParams.mfx.FrameInfo.FourCC)
+                m_mfxVideoParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            else if (MFX_FOURCC_RGB4 == m_mfxVideoParams.mfx.FrameInfo.FourCC)
+                m_mfxVideoParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+    }
+
+    for (; MFX_CODEC_CAPTURE != pParams->videoType;)
     {
         // trying to find PicStruct information in AVI headers
         if ( m_mfxVideoParams.mfx.CodecId == MFX_CODEC_JPEG )
@@ -1072,7 +1100,12 @@ mfxStatus CDecodingPipeline::RunDecoding()
         }
     }
 
-    while ((sts == MFX_ERR_NONE) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) {
+    if (MFX_CODEC_CAPTURE == this->m_mfxVideoParams.mfx.CodecId)
+    {
+        pBitstream = 0;
+    }
+
+    while (((sts == MFX_ERR_NONE) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) && (m_nFrames > m_output_count)){
         if (MFX_ERR_NONE != m_error) {
             msdk_printf(MSDK_STRING("DeliverOutput return error = %d\n"),m_error);
             break;
