@@ -19,7 +19,7 @@ File Name: .h
 
 
 MFXEncodeWRAPPER::MFXEncodeWRAPPER(ComponentParams & refParams, mfxStatus *status, std::auto_ptr<IVideoEncode>& pEncode)
-    : MFXFileWriteRender(FileWriterRenderInputParams(), refParams.m_pSession, status)
+    : MFXFileWriteRender(FileWriterRenderInputParams(MFX_FOURCC_NV12), refParams.m_pSession, status)
     , m_refParams(refParams)
     , m_encoder(pEncode)
     , m_ExtraParams()

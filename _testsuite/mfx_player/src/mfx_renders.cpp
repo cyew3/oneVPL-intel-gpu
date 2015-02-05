@@ -1521,6 +1521,9 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
 
 mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfaceOut)
 {
+    if (!pTargetInfo->FourCC)
+        return MFX_ERR_NONE;
+
     mfxU32 frameSize;
 
     MFX_CHECK_STS(InitMfxFrameSurface(pSurfaceOut, pTargetInfo, &frameSize, false));
