@@ -13,9 +13,11 @@ public:
         for (mfxU32 i = 0; i < PoolSize(); i++)
         {
             mfxFrameSurface1* p = GetSurface(i);
-            p->Data.NumExtParam = 0;
-            delete p->Data.ExtParam[0];
-            delete [] p->Data.ExtParam;
+            if (0 != p->Data.NumExtParam)
+            {
+                delete p->Data.ExtParam[0];
+                delete [] p->Data.ExtParam;
+            }
         }
     }
     int RunTest(unsigned int id);
