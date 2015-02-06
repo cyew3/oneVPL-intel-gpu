@@ -1345,17 +1345,6 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
         return true;
 
     sliceParams->slice_data_byte_offset = pSlice->m_BitStream.BytesDecoded() + sizeof(start_code_prefix);
-
-    Ipp32u k = 0;
-    for(Ipp8u *ptr = (Ipp8u *)rawDataPtr; ptr < (Ipp8u *)rawDataPtr + pSlice->m_BitStream.BytesDecoded() - 2; ptr++)
-    {
-        if(ptr[0]==0 && ptr[1]==0 && ptr[2]==3)
-        {
-            k++;
-        }
-    }
-
-    sliceParams->slice_data_byte_offset += k;
     sliceParams->slice_segment_address = sliceHeader->slice_segment_address;
 
     for(Ipp32s iDir = 0; iDir < 2; iDir++)
