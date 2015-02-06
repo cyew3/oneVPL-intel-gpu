@@ -10,11 +10,9 @@ File Name: mfx_camera_plugin_cpu.cpp
 
 \* ****************************************************************************** */
 
-#include "mfx_camera_plugin.h"
-#include "mfx_session.h"
-#include "mfx_task.h"
+#include "mfx_camera_plugin_cpu.h"
 
-int CPU_Padding_16bpp(unsigned short* bayer_original, //input  of Padding module, bayer image of 16bpp format
+int CPUCameraProcessor::CPU_Padding_16bpp(unsigned short* bayer_original, //input  of Padding module, bayer image of 16bpp format
                       unsigned short* bayer_input,      //output of Padding module, Paddded bayer image of 16bpp format
                       int width,                      //input framewidth
                       int height,                       //input frameheight
@@ -64,7 +62,7 @@ int CPU_Padding_16bpp(unsigned short* bayer_original, //input  of Padding module
 
 }
 
-int CPU_Bufferflip(unsigned short* buffer,
+int CPUCameraProcessor::CPU_Bufferflip(unsigned short* buffer,
                    int width, int height, int bitdepth, bool firstflag)
 {
     unsigned short tmp;
@@ -85,7 +83,7 @@ int CPU_Bufferflip(unsigned short* buffer,
     return 0;
 }
 
-int CPU_BLC(unsigned short* Bayer,
+int CPUCameraProcessor::CPU_BLC(unsigned short* Bayer,
             int PaddedWidth, int PaddedHeight, int bitDepth, int BayerType,
             short B_amount, short Gtop_amount, short Gbot_amount, short R_amount, bool firstflag)
 
@@ -149,7 +147,7 @@ int CPU_BLC(unsigned short* Bayer,
     return 0;
 }
 
-int CPU_VIG(unsigned short* Bayer,
+int CPUCameraProcessor::CPU_VIG(unsigned short* Bayer,
             unsigned short* Mask,
             int PaddedWidth, int PaddedHeight, int bitDepth, bool firstflag)
 {
@@ -179,7 +177,7 @@ int CPU_VIG(unsigned short* Bayer,
     return 0;
 }
 
-int CPU_WB(unsigned short* Bayer,
+int CPUCameraProcessor::CPU_WB(unsigned short* Bayer,
            int PaddedWidth, int Paddedheight, int bitDepth, int BayerType,
            float B_scale, float Gtop_scale, float Gbot_scale, float R_scale, bool firstflag)
 {
@@ -243,7 +241,7 @@ int CPU_WB(unsigned short* Bayer,
 }
 
 /* TODO - add correct offset for BayerType, see Cm code (need test content) */
-int CPU_GoodPixelCheck(unsigned short *pSrcBayer16bpp, int m_Width, int m_Height,
+int CPUCameraProcessor::CPU_GoodPixelCheck(unsigned short *pSrcBayer16bpp, int m_Width, int m_Height,
                        unsigned char *pDstFlag8bpp, int Diff_Prec, bool , int bitshiftamount, bool firstflag)
 {
     int index;
@@ -357,7 +355,7 @@ int CPU_GoodPixelCheck(unsigned short *pSrcBayer16bpp, int m_Width, int m_Height
     return 0;
 }
 
-int CPU_RestoreG(unsigned short *m_Pin,         //Pointer to Bayer data
+int CPUCameraProcessor::CPU_RestoreG(unsigned short *m_Pin,         //Pointer to Bayer data
                  int m_Width, int m_Height,
                   short *m_Pout_H__m_G,
                  short *m_Pout_V__m_G,
@@ -475,7 +473,7 @@ int CPU_RestoreG(unsigned short *m_Pin,         //Pointer to Bayer data
     return 0;
 }
 
-int CPU_RestoreBandR(unsigned short *m_Pin,         //Pointer to Bayer data
+int CPUCameraProcessor::CPU_RestoreBandR(unsigned short *m_Pin,         //Pointer to Bayer data
                      int m_Width, int m_Height,
                       short *m_Pout_H__m_G, short *m_Pout_V__m_G, short *m_Pout_G__m_G,  //Input,  G_H, G_V, G_A component
                      short *m_Pout_H__m_B, short *m_Pout_V__m_B, short *m_Pout_G__m_B,  //Output, B_H, B_V, B_A    component
@@ -699,7 +697,7 @@ int CPU_RestoreBandR(unsigned short *m_Pin,         //Pointer to Bayer data
 }
 
 
-int CPU_SAD (short *m_Pout_H__m_G, short *m_Pout_V__m_G, //Input, G_H, G_V component
+int CPUCameraProcessor::CPU_SAD (short *m_Pout_H__m_G, short *m_Pout_V__m_G, //Input, G_H, G_V component
              short *m_Pout_H__m_B, short *m_Pout_V__m_B, //Input, B_H, B_V component
              short *m_Pout_H__m_R, short *m_Pout_V__m_R,
              int m_Width, int m_Height,
@@ -835,7 +833,7 @@ int CPU_SAD (short *m_Pout_H__m_G, short *m_Pout_V__m_G, //Input, G_H, G_V compo
     return 0;
 }
 
-int CPU_Decide_Average(short *R_A8,       // Restored average version of R component
+int CPUCameraProcessor::CPU_Decide_Average(short *R_A8,       // Restored average version of R component
                        short *G_A8,          // Restored average version of G component
                        short *B_A8,       // Restored average version of B component
                        int m_Width, int m_Height,
@@ -967,7 +965,7 @@ int CPU_Decide_Average(short *R_A8,       // Restored average version of R compo
     return 0;
 }
 
-int Demosaic_CPU(CamInfo *dmi, unsigned short *, mfxU16)
+int CPUCameraProcessor::Demosaic_CPU(CamInfo *dmi, unsigned short *, mfxU16)
 {
     int Max_Intensity = ((1 << dmi->bitDepth) - 1);
 
@@ -1008,7 +1006,7 @@ int Demosaic_CPU(CamInfo *dmi, unsigned short *, mfxU16)
     return 0;
 }
 
-int CPU_CCM(unsigned short* R_i, unsigned short* G_i, unsigned short* B_i,
+int CPUCameraProcessor::CPU_CCM(unsigned short* R_i, unsigned short* G_i, unsigned short* B_i,
             int framewidth, int frameheight, int bitDepth, mfxF64 CCM[3][3])
 {
     int MaxIntensity = (1 << (bitDepth)) - 1;
@@ -1087,7 +1085,7 @@ int CPU_CCM(unsigned short* R_i, unsigned short* G_i, unsigned short* B_i,
     return 0;
 }
 
-int CPU_Gamma_SKL(unsigned short* R_i, unsigned short* G_i, unsigned short* B_i,
+int CPUCameraProcessor::CPU_Gamma_SKL(unsigned short* R_i, unsigned short* G_i, unsigned short* B_i,
                   //unsigned short* R_o, unsigned short* G_o, unsigned short* B_o,
                   int framewidth, int frameheight, int bitDepth,
                   unsigned short* Correct,         // Pointer to 64 Words
@@ -1194,9 +1192,7 @@ int CPU_Gamma_SKL(unsigned short* R_i, unsigned short* G_i, unsigned short* B_i,
     return 0;
 }
 
-
-
-int CPU_ARGB8Interleave(unsigned char* ARGB8, int OutWidth, int OutHeight, int OutPitch, int BitDepth, int BayerType,
+int CPUCameraProcessor::CPU_ARGB8Interleave(unsigned char* ARGB8, int OutWidth, int OutHeight, int OutPitch, int BitDepth, int BayerType,
                         short* R, short* G, short* B)
 {
 
@@ -1219,7 +1215,7 @@ int CPU_ARGB8Interleave(unsigned char* ARGB8, int OutWidth, int OutHeight, int O
     return 0;
 }
 
-int CPU_ARGB16Interleave(unsigned short* ARGB16, int OutWidth, int OutHeight, int OutPitch, int BitDepth, int BayerType,
+int CPUCameraProcessor::CPU_ARGB16Interleave(unsigned short* ARGB16, int OutWidth, int OutHeight, int OutPitch, int BitDepth, int BayerType,
                          short* R, short* G, short* B)
 {
     int offset       = (BayerType == BAYER_GBRG || BayerType == BAYER_GRBG)? (OutHeight - 1) : 0;
@@ -1241,7 +1237,7 @@ int CPU_ARGB16Interleave(unsigned short* ARGB16, int OutWidth, int OutHeight, in
     return 0;
 }
 
-int InitCamera_CPU(CamInfo *dmi, int InWidth, int InHeight, int BitDepth, bool enable_padd, int BayerType)
+int CPUCameraProcessor::InitCamera_CPU(CamInfo *dmi, int InWidth, int InHeight, int BitDepth, bool enable_padd, int BayerType)
 {
     int FrameWidth  = InWidth + 16;
     int FrameHeight = InHeight + 16;
@@ -1289,7 +1285,7 @@ int InitCamera_CPU(CamInfo *dmi, int InWidth, int InHeight, int BitDepth, bool e
 }
 
 /* TODO - call this from correct place */
-void FreeCamera_CPU(CamInfo *dmi)
+void CPUCameraProcessor::FreeCamera_CPU(CamInfo *dmi)
 {
     if (!dmi)
         return;

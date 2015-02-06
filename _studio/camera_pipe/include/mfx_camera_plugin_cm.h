@@ -15,12 +15,7 @@
 #include <assert.h>
 #include <map>
 
-#include "cmrt_cross_platform.h"
 #include "mfx_camera_plugin_utils.h"
-
-#include "cm_def.h" // Needed for CM Vector
-#include "cm_vm.h"  //
-#include "cmrt_cross_platform.h"
 
 class CmDevice;
 class CmBuffer;
@@ -36,11 +31,6 @@ class CmTask;
 
 namespace MfxCameraPlugin
 {
-
-#define  BAYER_BGGR  0x0000
-#define  BAYER_RGGB  0x0001
-#define  BAYER_GRBG  0x0002
-#define  BAYER_GBRG  0x0003
 
 class CmRuntimeError : public std::exception
 {
@@ -188,13 +178,13 @@ public:
     CmContext();
 
     CmContext(
-        CameraFrameSizeExtra const & video,
+        CameraParams const & video,
         CmDevice            *cmDevice,
         mfxCameraCaps       *pCaps,
         eMFXHWType platform);
 
     void Setup(
-        CameraFrameSizeExtra const & video,
+        CameraParams const & video,
         CmDevice            *cmDevice,
         mfxCameraCaps       *pCaps);
 
@@ -230,7 +220,7 @@ public:
         else return 0;
     }
 
-    void CreateThreadSpaces(CameraFrameSizeExtra *pFrameSize);
+    void CreateThreadSpaces(CameraParams *pFrameSize);
     void CopyMfxSurfToCmSurf(CmSurface2D *cmSurf, mfxFrameSurface1* mfxSurf);
     void CopyMemToCmSurf(CmSurface2D *cmSurf, void *mem);
     CmEvent *EnqueueCopyGPUToCPU(CmSurface2D *cmSurf, void *mem, mfxU16 stride = 0);
@@ -243,8 +233,23 @@ public:
                             int bitDepth,
                             int bayerPattern,
                             mfxU32 task_bufId = 0);
-
-    void CreateTask_BayerCorrection(int first, 
+    void CreateTask_Denoise(int first,
+                            SurfaceIndex InPaddedIndex,
+                            SurfaceIndex OutPaddedIndex,
+                            SurfaceIndex DNRIndex,
+                            int bitDepth,
+                            int BayerType,
+                            mfxU32 task_bufId=0);
+    void CreateTask_HotPixel(int first,
+                             SurfaceIndex InPaddedIndex,
+                             SurfaceIndex OutPaddedIndex,
+                             SurfaceIndex DNRIndex,
+                             mfxU16 ThreshPixelDiff,
+                             mfxU16 ThreshNumPix,
+                             int bitDepth,
+                             int BayerType,
+                             mfxU32 task_bufId=0);
+    void CreateTask_BayerCorrection(int first,
                                     SurfaceIndex PaddedSurfIndex,
                                     SurfaceIndex inoutSurfIndex,
                                     SurfaceIndex vignetteMaskIndex,
@@ -356,6 +361,8 @@ public:
                          int BayerType,
                          mfxU32 task_bufId = 0);
 
+    CmEvent *EnqueueTask_HP();
+    CmEvent *EnqueueTask_Denoise();
     CmEvent *EnqueueTask_Padding();
     CmEvent *EnqueueTask_BayerCorrection();
     CmEvent *EnqueueTask_GoodPixelCheck();
@@ -395,7 +402,7 @@ private:
 
     mfxStatus ReleaseCmSurfaces(void);
 
-    CameraFrameSizeExtra m_video;
+    CameraParams m_video;
     mfxCameraCaps        m_caps;
 
     CmDevice *  m_device;
@@ -424,6 +431,8 @@ private:
     mfxU32 sliceWidthIn8_np;
     mfxU32 sliceHeightIn8_np;
 
+    CmKernel*   kernel_hotpixel;
+    CmKernel*   kernel_denoise;
     CmKernel*   kernel_padding16bpp;
     CmKernel*   kernel_BayerCorrection;
     CmKernel*   kernel_whitebalance_manual;
@@ -445,6 +454,8 @@ private:
     CmKernel*   kernel_ARGB;
 
     CmTask*      CAM_PIPE_TASK_ARRAY(task_Padding,         CAM_PIPE_NUM_TASK_BUFFERS);
+    CmTask*      CAM_PIPE_TASK_ARRAY(task_HP,              CAM_PIPE_NUM_TASK_BUFFERS);
+    CmTask*      CAM_PIPE_TASK_ARRAY(task_Denoise,         CAM_PIPE_NUM_TASK_BUFFERS);
     CmTask*      CAM_PIPE_TASK_ARRAY(task_BayerCorrection, CAM_PIPE_NUM_TASK_BUFFERS);
     CmTask*      CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck,  CAM_PIPE_NUM_TASK_BUFFERS);
     CmTask*      CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreGreen,   CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
@@ -459,6 +470,126 @@ private:
     // Matrix with CCM related params
     vector<float, 9> m_ccm;
 };
+};
+
+class CMCameraProcessor: public CameraProcessor
+{
+public:
+    CMCameraProcessor()
+    {
+        m_cmSurfIn         = 0;
+        m_gammaPointSurf   = 0;
+        m_gammaCorrectSurf = 0;
+        m_gammaOutSurf     = 0;
+        m_paddedSurf       = 0;
+        m_dnrSurf          = 0;
+        m_denoiseSurf      = 0;
+        m_correctedSurf    = 0;
+        m_vignetteMaskSurf = 0;
+        m_avgFlagSurf      = 0;
+        m_LUTSurf          = 0;
+
+        m_activeThreadCount = 0;
+    };
+    ~CMCameraProcessor() {};
+    virtual mfxStatus Init(mfxVideoParam * /*par*/) { return MFX_ERR_NONE; };
+    virtual mfxStatus Init(CameraParams *FrameParams)
+    {
+        MFX_CHECK_NULL_PTR1(FrameParams);
+
+        mfxStatus sts;
+        if ( ! m_core )
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
+        m_FramesTillHardReset = CAMERA_FRAMES_TILL_HARD_RESET;
+
+        m_Params = *FrameParams;
+        m_cmDevice.Reset(CreateCmDevicePtr(m_core));
+
+        m_platform = m_core->GetHWType();
+
+        m_cmCtx.reset(new CmContext(m_Params, m_cmDevice, &m_Params.Caps, m_platform));
+        m_cmCtx->CreateThreadSpaces(&m_Params);
 
 
-}
+        sts = AllocateInternalSurfaces();
+
+        m_isInitialized = true;
+        return sts;
+    }
+    virtual mfxStatus Reset(mfxVideoParam *par, CameraParams *PipeParams);
+    virtual mfxStatus Close()
+    {
+        m_FramesTillHardReset = CAMERA_FRAMES_TILL_HARD_RESET;
+        m_raw16padded.Free();
+        m_raw16aligned.Free();
+        m_aux8.Free();
+
+        if (m_cmSurfIn)
+            m_cmDevice->DestroySurface(m_cmSurfIn);
+
+        if (m_avgFlagSurf)
+            m_cmDevice->DestroySurface(m_avgFlagSurf);
+        if (m_gammaCorrectSurf)
+            m_cmDevice->DestroySurface(m_gammaCorrectSurf);
+
+        if (m_gammaPointSurf)
+            m_cmDevice->DestroySurface(m_gammaPointSurf);
+
+        if (m_gammaOutSurf)
+            m_cmDevice->DestroySurface(m_gammaOutSurf);
+
+        if (m_paddedSurf)
+            m_cmDevice->DestroySurface(m_paddedSurf);
+
+        if (m_vignetteMaskSurf)
+            m_cmDevice->DestroySurface(m_vignetteMaskSurf);
+
+        // TODO: need to delete LUT buffer in case CCM was used.
+        m_cmCtx->Close();
+
+        m_cmDevice.Reset(0);
+        return MFX_ERR_NONE;
+    }
+    virtual mfxStatus AsyncRoutine(AsyncParams *pParam);
+
+    virtual mfxStatus CompleteRoutine(AsyncParams *pPArams);
+
+protected:
+    virtual mfxStatus CheckIOPattern(mfxU16  /*IOPattern*/) { return MFX_ERR_NONE; };
+    mfxStatus  AllocateInternalSurfaces();
+    mfxStatus  CreateEnqueueTasks(AsyncParams *pParam);
+    mfxStatus  SetExternalSurfaces(AsyncParams *pParam);
+    mfxStatus  ReallocateInternalSurfaces(mfxVideoParam &newParam, CameraParams &frameSizeExtra);
+    mfxStatus  WaitForActiveThreads();
+
+private:
+    UMC::Mutex               m_guard;
+    UMC::Mutex               m_guard_hard_reset;
+    bool                     m_isInitialized;
+    CameraParams             m_Params;
+    CmDevicePtr              m_cmDevice;
+    std::auto_ptr<CmContext> m_cmCtx;
+    eMFXHWType               m_platform;
+
+    mfxU32              m_FramesTillHardReset;
+    mfxU16              m_activeThreadCount;
+
+    CmSurface2D         *m_cmSurfIn;
+    CmSurface2D         *m_paddedSurf;
+    CmSurface2D         *m_dnrSurf;
+    CmSurface2D         *m_correctedSurf;
+    CmSurface2D         *m_denoiseSurf;
+    CmSurface2D         *m_gammaCorrectSurf;
+    CmSurface2D         *m_gammaPointSurf;
+    CmSurface2D         *m_gammaOutSurf;
+    CmSurface2D         *m_avgFlagSurf;
+    CmSurface2D         *m_vignetteMaskSurf;
+    CmBuffer            *m_LUTSurf;
+
+    MfxFrameAllocResponse   m_raw16padded;
+    MfxFrameAllocResponse   m_raw16aligned;
+    MfxFrameAllocResponse   m_aux8;
+};

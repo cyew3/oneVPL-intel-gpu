@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2015 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_camera_plugin.h
 
@@ -17,16 +17,13 @@ File Name: mfx_camera_plugin.h
 #include <string.h>
 #include <memory>
 #include <iostream>
-#include "mfxvideo.h"
-#include "mfxplugin++.h"
-#include "mfx_plugin_module.h"
-#include "mfx_session.h"
-#include "mfxcamera.h"
 
 #include "mfx_camera_plugin_utils.h"
 #include "mfx_camera_plugin_cpu.h"
-
-using namespace MfxCameraPlugin;
+#include "mfx_camera_plugin_cm.h"
+#if defined (_WIN32) || defined (_WIN64)
+#include "mfx_camera_plugin_dx11.h"
+#endif
 
 #define MFX_CAMERA_DEFAULT_ASYNCDEPTH 3
 
@@ -116,34 +113,6 @@ protected:
     virtual ~MFXCamera_Plugin();
     std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > m_adapter;
 
-    struct AsyncParams
-    {
-        mfxFrameSurface1 *surf_in;
-        mfxFrameSurface1 *surf_out;
-
-        mfxMemId inSurf2D;
-        mfxMemId inSurf2DUP;
-        mfxU16   tileID;
-
-        CameraPipeWhiteBalanceParams       WBparams;
-        CameraPipeForwardGammaParams       GammaParams;
-        CameraPipeVignetteParams           VignetteParams;
-        CameraPipePaddingParams            PaddingParams;
-        CameraPipeBlackLevelParams         BlackLevelParams;
-        CameraPipe3x3ColorConversionParams CCMParams;
-        CameraFrameSizeExtra               FrameSizeExtra;
-        mfxCameraCaps                      Caps;
-        mfxU32                             InputBitDepth;
-
-        mfxMemId outSurf2D;
-        mfxMemId outSurf2DUP;
-
-        void      *pEvent;
-    };
-
-    UMC::Mutex m_guard;
-    UMC::Mutex m_guard_hard_reset;
-    mfxU32 m_FramesTillHardReset;
     UMC::Mutex m_guard1;
 
 #ifdef WRITE_CAMERA_LOG
@@ -155,10 +124,7 @@ protected:
     mfxSession          m_session;
     mfxPluginParam      m_PluginParam;
     bool                m_createdByDispatcher;
-
-    mfxStatus           AllocateInternalSurfaces();
-    mfxStatus           ReallocateInternalSurfaces(mfxVideoParam &newParam, CameraFrameSizeExtra &frameSizeExtra);
-    mfxStatus           SetExternalSurfaces(AsyncParams *pParam);
+    CameraProcessor *   m_CameraProcessor;
 
     mfxStatus           CameraAsyncRoutine(AsyncParams *pParam);
     mfxStatus           CompleteCameraAsyncRoutine(AsyncParams *pParam);
@@ -168,8 +134,6 @@ protected:
 
     mfxStatus           ProcessExtendedBuffers(mfxVideoParam *par);
 
-    mfxStatus           CreateEnqueueTasks(AsyncParams *pParam);
-
     mfxStatus           WaitForActiveThreads();
 
     mfxVideoParam       m_mfxVideoParam;
@@ -177,7 +141,7 @@ protected:
     // Width and height provided at Init
     mfxU16              m_InitWidth;
     mfxU16              m_InitHeight;
-    CmDevicePtr         m_cmDevice;
+
     VideoCORE*          m_core;
     eMFXHWType          m_platform;
 
@@ -186,32 +150,21 @@ protected:
 
     mfxU16              m_activeThreadCount;
 
-    std::auto_ptr<CmContext>    m_cmCtx;
-
     mfxCameraCaps       m_Caps;
 
     //Filter specific parameters
+    CameraPipeDenoiseParams            m_DenoiseParams;
+    CameraPipeHotPixelParams           m_HPParams;
     CameraPipeWhiteBalanceParams       m_WBparams;
     CameraPipeForwardGammaParams       m_GammaParams;
     CameraPipeVignetteParams           m_VignetteParams;
     CameraPipePaddingParams            m_PaddingParams;
     CameraPipeBlackLevelParams         m_BlackLevelParams;
     CameraPipe3x3ColorConversionParams m_CCMParams;
-    CameraFrameSizeExtra               m_FrameSizeExtra;
+    CameraParams                       m_PipeParams;
 
     mfxU32                       m_InputBitDepth;
-    int                          m_nTiles;
-
-    void                *m_memIn;
-
-    CmSurface2D         *m_cmSurfIn;
-    CmSurface2D         *m_paddedSurf;
-    CmSurface2D         *m_gammaCorrectSurf;
-    CmSurface2D         *m_gammaPointSurf;
-    CmSurface2D         *m_gammaOutSurf;
-    CmSurface2D         *m_avgFlagSurf;
-    CmSurface2D         *m_vignetteMaskSurf;
-    CmBuffer            *m_LUTSurf;
+    mfxU16                       m_nTiles;
 
     mfxU16  BayerPattern_API2CM(mfxU16 api_bayer_type)
     {
@@ -232,11 +185,7 @@ protected:
 
 private:
 
-    MfxFrameAllocResponse   m_raw16padded;
-    MfxFrameAllocResponse   m_raw16aligned;
-    MfxFrameAllocResponse   m_aux8;
 
-    CamInfo m_cmi;
 };
 #endif //#if defined( AS_VPP_PLUGIN )
 

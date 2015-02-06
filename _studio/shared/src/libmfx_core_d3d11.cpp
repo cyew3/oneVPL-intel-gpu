@@ -32,7 +32,7 @@ File Name: libmf_core_d3d.cpp
 
 #include "cm_mem_copy.h"
 
-DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report, 
+DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report,
             0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 
 D3D11VideoCORE::D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session)
@@ -168,7 +168,7 @@ mfxStatus D3D11VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, b
 
     if (sts == MFX_ERR_NONE)
     {
-        return CheckIntelDataPrivateReport<D3D11_VIDEO_DECODER_CONFIG>(&config, par); 
+        return CheckIntelDataPrivateReport<D3D11_VIDEO_DECODER_CONFIG>(&config, par);
     }
 
     if (MFX_HW_LAKE == m_HWType || MFX_HW_SNB == m_HWType)
@@ -216,7 +216,7 @@ mfxStatus D3D11VideoCORE::InternalCreateDevice()
     D3D_DRIVER_TYPE type = D3D_DRIVER_TYPE_HARDWARE;
     m_pAdapter = NULL;
 
-    if (m_adapterNum != 0) // not default 
+    if (m_adapterNum != 0) // not default
     {
         CreateDXGIFactory(__uuidof(IDXGIFactory), (void**) (&m_pFactory));
         m_pFactory->EnumAdapters(m_adapterNum, &m_pAdapter);
@@ -237,7 +237,7 @@ mfxStatus D3D11VideoCORE::InternalCreateDevice()
     if (FAILED(hres))
     {
         // lets try to create dx11 device with d9 feature level
-        static D3D_FEATURE_LEVEL FeatureLevels9[] = { 
+        static D3D_FEATURE_LEVEL FeatureLevels9[] = {
             D3D_FEATURE_LEVEL_9_1,
             D3D_FEATURE_LEVEL_9_2,
             D3D_FEATURE_LEVEL_9_3 };
@@ -264,7 +264,7 @@ mfxStatus D3D11VideoCORE::InternalCreateDevice()
     else
         return MFX_ERR_DEVICE_FAILED;
 
-    if (NULL == (m_pD11VideoDevice = m_pD11Device) || 
+    if (NULL == (m_pD11VideoDevice = m_pD11Device) ||
         NULL == (m_pD11VideoContext = m_pD11Context))
     {
         return MFX_ERR_DEVICE_FAILED;
@@ -274,7 +274,7 @@ mfxStatus D3D11VideoCORE::InternalCreateDevice()
 
 } // mfxStatus D3D11VideoCORE::CreateDevice()
 
-mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request, 
+mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
                                       mfxFrameAllocResponse *response, bool isNeedCopy)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
@@ -292,6 +292,13 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         }
 
+        if (IsBayerFormat(temp_request.Info.FourCC))
+        {
+            // use internal allocator for R16 since creating requires
+            // Intel's internal resource extensions that are not
+            // exposed for external application
+            temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
+        }
         if (!m_bFastCopy)
         {
             // initialize sse41 fast copy
@@ -334,7 +341,7 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
         else
         {
             // external allocator
-            if (m_bSetExtFrameAlloc)
+            if (m_bSetExtFrameAlloc && ! IsBayerFormat(temp_request.Info.FourCC))
             {
 
                 sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis,&temp_request, response);
@@ -351,7 +358,7 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
 
                     return sts;
                 }
-                // let's create video accelerator 
+                // let's create video accelerator
                 else if (MFX_ERR_NONE == sts)
                 {
                     m_bUseExtAllocForHWFrames = true;
@@ -362,7 +369,7 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
                     return sts;
                 }
                 // error situation
-                else 
+                else
                 {
                     m_bUseExtAllocForHWFrames = false;
                     return sts;
@@ -409,7 +416,7 @@ mfxStatus D3D11VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxF
 
         if (!pAlloc)
         {
-            m_pcHWAlloc.reset(new mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator(request->Type, 
+            m_pcHWAlloc.reset(new mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator(request->Type,
                 m_pD11Device,
                 m_pD11Context));
             pAlloc = m_pcHWAlloc.get();
@@ -423,7 +430,7 @@ mfxStatus D3D11VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxF
         MFX_CHECK_STS(sts);
 
     }
-    else 
+    else
     {
         return CommonCORE::DefaultAllocFrames(request, response);
     }
@@ -796,7 +803,19 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             mfxStatus sts = MFX_ERR_NONE;
 
             ID3D11Texture2D *pStaging;
+            
+            if ( DXGI_FORMAT_R16_TYPELESS == sSurfDesc.Format )
+            {
+                RESOURCE_EXTENSION extnDesc;
+                ZeroMemory( &extnDesc, sizeof(RESOURCE_EXTENSION) );
+                memcpy( extnDesc.Key, RESOURCE_EXTENSION_KEY, sizeof(extnDesc.Key) );
+                extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
+                extnDesc.Type    = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
+                extnDesc.Data[0] = BayerFourCC2FormatFlag(pDst->Info.FourCC);
 
+                hRes = SetResourceExtension(m_pD11Device, &extnDesc);
+            }
+            
             hRes = m_pD11Device->CreateTexture2D(&desc, NULL, &pStaging);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_MEMORY_ALLOC);
 
@@ -1022,7 +1041,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             sts = pCmCopy->CopySystemToVideoMemoryAPI(((mfxHDLPair*)pDst->Data.MemId)->first, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi);
             MFX_CHECK_STS(sts);
         }
-        else if(m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && CM_ALIGNED(pSrc->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
+        else if(m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && ! IsBayerFormat(pDst->Info.FourCC)  && pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && CM_ALIGNED(pSrc->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
             sts = pCmCopy->CopySystemToVideoMemoryAPI(((mfxHDLPair*)pDst->Data.MemId)->first, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)verticalPitch, roi);
             MFX_CHECK_STS(sts);
         }
@@ -1043,12 +1062,20 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             desc.Usage = D3D11_USAGE_STAGING;
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
             desc.BindFlags = 0;
-
+            if ( DXGI_FORMAT_R16_TYPELESS == sSurfDesc.Format )
+            {
+                RESOURCE_EXTENSION extnDesc;
+                ZeroMemory( &extnDesc, sizeof(RESOURCE_EXTENSION) );
+                memcpy( extnDesc.Key, RESOURCE_EXTENSION_KEY, sizeof(extnDesc.Key) );
+                extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
+                extnDesc.Type    = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
+                extnDesc.Data[0] = BayerFourCC2FormatFlag(pDst->Info.FourCC);
+                hRes = SetResourceExtension(m_pD11Device, &extnDesc);
+                MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_MEMORY_ALLOC);
+            }
             ID3D11Texture2D *pStaging;
-
             hRes = m_pD11Device->CreateTexture2D(&desc, NULL, &pStaging);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_MEMORY_ALLOC);
-
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Dx11 Core Fast Copy ippiCopy");
 
 
@@ -1059,15 +1086,20 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             while (DXGI_ERROR_WAS_STILL_DRAWING == hRes);
 
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-
             Ipp32u dstPitch = sLockRect.RowPitch;
 
-            MFX_CHECK((pSrc->Data.Y == 0) == (pSrc->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK((pSrc->Data.Y == 0) == (pSrc->Data.UV == 0) || IsBayerFormat(pDst->Info.FourCC), MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(dstPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(srcPitch < 0x8000 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
-
             switch (pDst->Info.FourCC)
             {
+            case MFX_FOURCC_R16_BGGR:
+            case MFX_FOURCC_R16_RGGB:
+            case MFX_FOURCC_R16_GRBG:
+            case MFX_FOURCC_R16_GBRG:
+                roi.width <<= 1;
+                ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)sLockRect.pData, dstPitch, roi);
+                break;
             case MFX_FOURCC_NV12:
 
                 ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)sLockRect.pData, dstPitch, roi);
@@ -1251,4 +1283,4 @@ bool D3D11VideoCORE::IsCompatibleForOpaq()
 }
 
 #endif
-#endif 
+#endif

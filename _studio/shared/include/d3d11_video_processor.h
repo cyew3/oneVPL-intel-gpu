@@ -49,8 +49,8 @@ static const GUID VPE_GUID_INTERFACE_V2 = {0xEDD1D4B9, 0x8659, 0x4CBC, {0xA4, 0x
 
 typedef struct _VPE_GUID_INFO
 {
-    GUID Guid;       
-    UINT *pVersion;  
+    GUID Guid;
+    UINT *pVersion;
     UINT VersionCount;
 } VPE_GUID_INFO;
 
@@ -58,7 +58,7 @@ typedef struct _VPE_GUID_ENUM
 {
     UINT Reserved;            //[IN]
     UINT AllocSize;           //[IN/OUT]
-    UINT GuidCount;           //[OUT] 
+    UINT GuidCount;           //[OUT]
     VPE_GUID_INFO *pGuidArray;//[OUT]
 
 } VPE_GUID_ENUM;
@@ -219,13 +219,19 @@ enum
     VPE_FN_VPREP_YUV_RANGE_PARAM     = 0x36,
 
     VPE_FN_CP_QUERY_CAPS                     = 0x100,
-    VPE_FN_CP_BLACK_LEVEL_CORRECTION_PARAM   = 0x101, 
-    VPE_FN_CP_VIGNETTE_CORRECTION_PARAM      = 0x102,
-    VPE_FN_CP_WHITE_BALANCE_PARAM            = 0x103,
-    VPE_FN_CP_HOT_PIXEL_PARAM                = 0x104,
-    VPE_FN_CP_COLOR_CORRECTION_PARAM         = 0x105,
-    VPE_FN_CP_FORWARD_GAMMA_CORRECTION_PARAM = 0x106,
-    VPE_FN_CP_RGB_TO_YUV_CSC_PARAM           = 0x107,
+    VPE_FN_CP_ACTIVATE_CAMERA_PIPE           = 0x101,
+    VPE_FN_CP_BLACK_LEVEL_CORRECTION_PARAM   = 0x102,
+    VPE_FN_CP_VIGNETTE_CORRECTION_PARAM      = 0x103,
+    VPE_FN_CP_WHITE_BALANCE_PARAM            = 0x104,
+    VPE_FN_CP_HOT_PIXEL_PARAM                = 0x105,
+    VPE_FN_CP_COLOR_CORRECTION_PARAM         = 0x106,
+    VPE_FN_CP_FORWARD_GAMMA_CORRECTION       = 0x107,
+    VPE_FN_RGB_TO_YUV_CSC_PARAM              = 0x108,
+    VPE_FN_IE_SKIN_TONE_ENHANCEMENT          = 0x109,
+    VPE_FN_IE_GAMUN_COMPRESS                 = 0x10A,
+    VPE_FN_IE_TOTAL_COLOR_CONTROL            = 0x10B,
+    VPE_FN_YUV_TO_RGB_CSC                    = 0x10C,
+    VPE_FN_LENS_GEOMETRY_DISTORTION_CORRECTION = 0x10D,
 
     VPE_FN_IE_SKIN_TONE_ENHANCEMENT_PARAM = 0x150,
     VPE_FN_IE_CONTRAST_ENHANCEMENT_PARAM  = 0x151,
@@ -235,7 +241,7 @@ enum
 }; // FUNCTION ID
 
 
-typedef struct _VPE_VERSION 
+typedef struct _VPE_VERSION
 {
     UINT    Version;
 } VPE_VERSION;
@@ -275,7 +281,7 @@ typedef enum _VPE_MODE
     VPE_MODE_NONE            = 0x0,
     VPE_MODE_PREPROC         = 0x1,
     VPE_MODE_CAM_PIPE        = 0x2,
-    VPE_MODE_CPU_GPU_COPY    = 0x3  
+    VPE_MODE_CPU_GPU_COPY    = 0x3
 } VPE_MODE;
 
 
@@ -290,7 +296,7 @@ typedef enum _VPE_PROC_FEATURE
 {
     VPE_PROC_FRAME_RATE_CONVERSATION   = 0x1,
     VPE_PROC_IMAGE_STABILIZATION       = 0x2
-} VPE_PROC_FEATURE; 
+} VPE_PROC_FEATURE;
 
 
 typedef struct _VPE_PROC_CONTENT_DESC
@@ -314,8 +320,8 @@ typedef struct _VPE_PROC_CAPS
     UINT                    NumSupportedInputFormat;
     union
     {
-        struct 
-        { 
+        struct
+        {
             UINT IsInputWidthNotSupported  : 1;
             UINT IsInputHeightNotSupported : 1;
             UINT IsInputFormatNotSupported : 1;
@@ -331,7 +337,7 @@ typedef struct _VPE_VPROC_QUERY_CAPS
 {
     VPE_PROC_CONTENT_DESC   ContentDesc;                                //[in]
     VPE_PROC_CAPS           Caps;                                       //[out]
-} VPE_PROC_QUERY_CAPS; 
+} VPE_PROC_QUERY_CAPS;
 
 // CPU_GPU_COPY_INTERFACE
 
@@ -446,13 +452,17 @@ typedef struct _VPE_CP_CAPS
     UINT    bRgbToYuvCSC                      : 1;
     UINT    bYuvToRgbCSC                      : 1;
     UINT    Reserved                          : 21;
-} VPE_CP_CAPS; 
+} VPE_CP_CAPS;
 
+typedef struct _CP_ACTIVATE_PARAMS
+{
+    UINT    bActive;
+} VPE_CP_ACTIVE_PARAMS;
 
 typedef struct _VPE_CP_BLACK_LEVEL_CORRECTION_PARAMS
 {
     UINT    bActive;
-    UINT    R; 
+    UINT    R;
     UINT    G0;
     UINT    B;
     UINT    G1;
@@ -485,7 +495,7 @@ typedef struct _VPE_CP_VIGNETTE_CORRECTION_ELEM
 typedef struct _VPE_CP_VIGNETTE_CORRECTION_PARAMS
 {
     UINT                                bActive;
-    UINT                                Width; 
+    UINT                                Width;
     UINT                                Height;
     UINT                                Stride;
     VPE_CP_VIGNETTE_CORRECTION_ELEM     *pCorrectionMap;
@@ -496,7 +506,6 @@ typedef struct _VPE_CP_WHITE_BALANCE_PARAMS
 {
     UINT        bActive;
     UINT        Mode;
-    FLOAT       Matrix[3][3];
     FLOAT       RedCorrection;
     FLOAT       GreenTopCorrection;
     FLOAT       BlueCorrection;
@@ -507,7 +516,7 @@ typedef struct _VPE_CP_WHITE_BALANCE_PARAMS
 typedef struct _VPE_CP_HOT_PIXEL_PARAMS
 {
     UINT    bActive;
-    UINT    PixelThresholdDifference; 
+    UINT    PixelThresholdDifference;
     UINT    PixelCountThreshold;
 } VPE_CP_HOT_PIXEL_PARAMS;
 
@@ -519,12 +528,18 @@ typedef struct _VPE_CP_COLOR_CORRECTION_PARAMS
 } VPE_CP_COLOR_CORRECTION_PARAMS;
 
 
+typedef struct _CP_FPRWARD_GAMMA_SEG
+{
+    SHORT PixelValue;
+    SHORT RedChannelCorrectedValue;
+    SHORT GreenChannelCorrectedValue;
+    SHORT BlueChannelCorrectedValue;
+} CP_FPRWARD_GAMMA_SEG;
+
 typedef struct _VPE_CP_FORWARD_GAMMA_PARAMS
 {
     UINT    bActive;
-    float   Slope[12];          // U4.8
-    UINT    Bias[11];           // 0..255
-    UINT    Points[11];         // 0..255
+    CP_FPRWARD_GAMMA_SEG Segment[64];
 } VPE_CP_FORWARD_GAMMA_PARAMS;
 
 // CSC Param
@@ -536,6 +551,45 @@ typedef struct _VPE_CSC_PARAMS
     float   Matrix[3][3];
     float   PostOffset[3];
 } VPE_CSC_PARAMS;
+
+typedef struct _IE_STE_PARAMS
+{
+    UINT bActive;
+    UINT STEFactor;
+} VPE_IE_STE_PARAMS;
+
+typedef enum _IE_GAMUT_COMPRESS_MODE
+{
+    GAMUT_COMPRESS_BASIC,
+    GAMUT_COMPRESS_ADVANCED
+} IE_GAMUT_COMPRESS_MODE;
+
+typedef struct _IE_GAMUT_COMPRESS_PARAMS
+{
+    UINT                   bActive;
+    IE_GAMUT_COMPRESS_MODE Mode;
+} VPE_IE_GAMUT_COMPRESS_PARAMS;
+
+typedef struct _IE_TCC_PARAMS
+{
+    UINT  bActive;
+    BYTE  Red;
+    BYTE  Green;
+    BYTE  Blue;
+    BYTE  Cyan;
+    BYTE  Magenta;
+    BYTE  Yellow;
+} VPE_IE_TCC_PARAMS;
+
+typedef struct _CP_LENS_GEOMETRY_DISTORTION_CORRECTION
+{
+    UINT  bActive;
+    float a[3];
+    float b[3];
+    float c[3];
+    float d[3];
+} VPE_CP_LENS_GEOMENTRY_DISTORTION_CORRECTION;
+
 
 // Main interface Structure
 
@@ -550,7 +604,7 @@ typedef struct _VPE_FUNCTION
         VPE_GET_STATUS_PARAMS                   *pGetStatusParams;
 
         VPE_PROC_QUERY_CAPS                     *pProcCaps;
-        
+
         VPE_CPU_GPU_COPY_QUERY_CAPS             *pCpuGpuCopyCaps;
         VPE_CPU_GPU_COPY_PARAM                  *pCpuGpuCopyParam;
 
@@ -563,6 +617,7 @@ typedef struct _VPE_FUNCTION
         VPE_VPREP_YUV_RANGE_PARAM               *pYUVRangeParam;
 
         VPE_CP_CAPS                             *pCPCaps;
+        VPE_CP_ACTIVE_PARAMS                    *pCPActivate;
         VPE_CP_HOT_PIXEL_PARAMS                 *pHotPixel;
         VPE_CP_VIGNETTE_CORRECTION_PARAMS       *pVignette;
         VPE_CP_BLACK_LEVEL_CORRECTION_PARAMS    *pBlackLevel;
@@ -576,6 +631,27 @@ typedef struct _VPE_FUNCTION
 } VPE_FUNCTION;
 
 
+typedef struct _CAMPIPE_MODE
+{
+    UINT  Function : 16; // [IN]
+    union
+    {
+      VPE_CP_CAPS                                 *pCPCaps;
+      VPE_CP_ACTIVE_PARAMS                        *pActive;
+      VPE_CP_BLACK_LEVEL_CORRECTION_PARAMS        *pBlackLevel;
+      VPE_CP_VIGNETTE_CORRECTION_PARAMS           *pVignette;
+      VPE_CP_WHITE_BALANCE_PARAMS                 *pWhiteBalance;
+      VPE_CP_HOT_PIXEL_PARAMS                     *pHotPixel;
+      VPE_CP_COLOR_CORRECTION_PARAMS              *pColorCorrection;
+      VPE_CP_FORWARD_GAMMA_PARAMS                 *pForwardGamma;
+      VPE_CSC_PARAMS                              *pRgbToYuvCSC;
+      VPE_IE_STE_PARAMS                           *pSte;
+      VPE_IE_GAMUT_COMPRESS_PARAMS                *pGamutCompress;
+      VPE_IE_TCC_PARAMS                           *pTcc;
+      VPE_CSC_PARAMS                              *pYuvToRgbCSC;
+      VPE_CP_LENS_GEOMENTRY_DISTORTION_CORRECTION *pLensCorrect;
+    };
+} CAMPIPE_MODE;
 //---------------------------------------------------------
 // DriverVideoProcessing::DX11
 //---------------------------------------------------------
@@ -596,7 +672,7 @@ namespace MfxHwVideoProcessing
 
         mfxStatus CreateDevice(VideoCORE *pCore, mfxVideoParam* par, bool isTemporal = false);
         mfxStatus ReconfigDevice(mfxU32 indx);
-        mfxStatus DestroyDevice(void);                        
+        mfxStatus DestroyDevice(void);
 
         mfxStatus Register(mfxHDLPair* pSurfaces, mfxU32 num, BOOL bRegister);
 
@@ -604,7 +680,7 @@ namespace MfxHwVideoProcessing
 
         mfxStatus Execute(mfxExecuteParams *pParams);
 
-        mfxStatus QueryCapabilities(mfxVppCaps& caps);            
+        mfxStatus QueryCapabilities(mfxVppCaps& caps);
 
         //BOOL IsRunning() {return true; };
 
@@ -614,17 +690,24 @@ namespace MfxHwVideoProcessing
 
     private:
         mfxStatus Init(
-            ID3D11Device *pDevice, 
-            ID3D11VideoDevice *pVideoDevice, 
-            ID3D11DeviceContext *pDeviceContext, 
-            ID3D11VideoContext *pVideoContext, 
+            ID3D11Device *pDevice,
+            ID3D11VideoDevice *pVideoDevice,
+            ID3D11DeviceContext *pDeviceContext,
+            ID3D11VideoContext *pVideoContext,
             mfxVideoParam* videoParam);
 
         mfxStatus Close(void);
 
         //void GetVideoProcessorCapabilities(
-        //    D3D11_VIDEO_PROCESSOR_CAPS & videoProcessorCaps_, 
+        //    D3D11_VIDEO_PROCESSOR_CAPS & videoProcessorCaps_,
         //    D3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS & videoProcessorRateConvCaps_);
+
+        mfxStatus CameraPipeActivate();
+        mfxStatus CameraPipeSetBlacklevelParams(CameraBlackLevelParams *params);
+        mfxStatus CameraPipeSetWhitebalanceParams(CameraWhiteBalanceParams *params);
+        mfxStatus CameraPipeSetCCMParams(CameraCCMParams *params);
+        mfxStatus CameraPipeSetForwardGammaParams(CameraForwardGammaCorrectionParams *params);
+        mfxStatus CameraPipeSetHotPixelParams(CameraHotPixelRemovalParams *params);
 
         void SetOutputTargetRect(BOOL Enable, RECT *pRect);
         void SetOutputBackgroundColor(BOOL YCbCr, D3D11_VIDEO_COLOR *pColor);
@@ -672,7 +755,7 @@ namespace MfxHwVideoProcessing
 
 
         mfxStatus ExecuteBlt(
-            ID3D11Texture2D *pOutputSurface, 
+            ID3D11Texture2D *pOutputSurface,
             mfxU32 outIndex,
             UINT StreamCount,
             D3D11_VIDEO_PROCESSOR_STREAM *pStreams,
@@ -696,23 +779,24 @@ namespace MfxHwVideoProcessing
         ID3D11VideoProcessorEnumerator*             m_pVideoProcessorEnum;
 
         ID3D11Resource*                             m_pOutputResource;
-                
+
         std::vector<ID3D11VideoProcessorInputView*>   m_pInputView;// past + 1(cur) + future
         ID3D11VideoProcessorOutputView*               m_pOutputView;
 
         // new approach of dx11 VPE processing
-        struct 
+        struct
         {
             GUID                                        guid;
             UINT                                        version;
         } m_iface;
         //---------------------------------------------
-        
+
         bool                                        m_isInterlacedScaling;
         std::set<mfxU32>                            m_cachedReadyTaskIndex;
         PREPROC_QUERYCAPS                           m_vpreCaps;
         PREPROC_QUERY_VARIANCE_CAPS                 m_varianceCaps;
         std::vector<CustomRateData>                 m_customRateData;
+        VPE_CP_CAPS                                 m_cameraCaps;
 
         mfxVideoParam                               m_video;
         UMC::Mutex                                  m_mutex;
@@ -761,7 +845,7 @@ namespace MfxHwVideoProcessing
             bool m_isInited;
 
             //Init();
-            
+
         } m_frcState;
 
         vm_file*  m_file;

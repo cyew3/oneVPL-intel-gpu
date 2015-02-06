@@ -38,7 +38,7 @@
         UINT QueryStatusID;
         UINT Status;
 
-        UINT Reserved0; 
+        UINT Reserved0;
         UINT Reserved1;
         UINT Reserved2;
         UINT Reserved3;
@@ -96,6 +96,55 @@ namespace MfxHwVideoProcessing
         mfxU32 FourCC;
     };
 
+    typedef struct _CameraCaps
+    {
+        mfxU32 uBlackLevelCorrection;
+        mfxU32 uHotPixelCheck;
+        mfxU32 uWhiteBalance;
+        mfxU32 uColorCorrectionMatrix;
+        mfxU32 uGammaCorrection;
+        mfxU32 uVignetteCorrection;
+    } CameraCaps;
+
+    typedef struct _CameraBlackLevelParams
+    {
+        mfxU32 uR;
+        mfxU32 uG0;
+        mfxU32 uG1;
+        mfxU32 uB;
+    } CameraBlackLevelParams;
+
+    typedef struct _CameraWhiteBalanceParams
+    {
+        mfxF32 fR;
+        mfxF32 fG0;
+        mfxF32 fG1;
+        mfxF32 fB;
+    } CameraWhiteBalanceParams;
+
+    typedef struct _CameraHotPixelRemovalParams
+    {
+        mfxU32 uPixelThresholdDifference;
+        mfxU32 uPixelCountThreshold;
+    } CameraHotPixelRemovalParams;
+
+    typedef struct _CameraCCM
+    {
+        mfxF32 CCM[3][3];
+    } CameraCCMParams;
+
+    typedef struct _CameraForwardGammaCorrectionSeg
+    {
+        mfxU16 PixelValue;
+        mfxU16 RedChannelCorrectedValue;
+        mfxU16 GreenChannelCorrectedValue;
+        mfxU16 BlueChannelCorrectedValue;
+    } CameraForwardGammaCorrectionSeg;
+
+    typedef struct _CameraForwardGammaCorrectionParams
+    {
+        CameraForwardGammaCorrectionSeg Segment[64];
+    } CameraForwardGammaCorrectionParams;
 
     typedef struct _mfxVppCaps
     {
@@ -106,6 +155,7 @@ namespace MfxHwVideoProcessing
         mfxU32 uDetailFilter;
         mfxU32 uProcampFilter;
         mfxU32 uSceneChangeDetection;
+        CameraCaps cameraCaps;
 
         // MSDK 2013
         mfxU32 uFrameRateConversion;
@@ -141,7 +191,7 @@ namespace MfxHwVideoProcessing
     } mfxDrvSurface;
 
 
-    typedef struct _mfxExecuteParams    
+    typedef struct _mfxExecuteParams
     {
         //surfaces
         mfxDrvSurface  targetSurface;
@@ -152,12 +202,12 @@ namespace MfxHwVideoProcessing
 
         int            bkwdRefCount; // filled from DdiTask
         int            fwdRefCount;  //
-        
+
         // params
         mfxI32         iDeinterlacingAlgorithm; //0 - none, 1 - BOB, 2 - advanced (means reference need)
         bool           bFMDEnable;
 
-        bool           bDenoiseAutoAdjust; 
+        bool           bDenoiseAutoAdjust;
         mfxU16         denoiseFactor;
 
         bool           bDetailAutoAdjust;
@@ -189,6 +239,19 @@ namespace MfxHwVideoProcessing
         bool           bFieldWeaving;
 
         mfxU32         iFieldProcessingMode;
+
+        //  Camera Pipe specific params
+        bool                     bCameraPipeEnabled;
+        bool                     bCameraBlackLevelCorrection;
+        CameraBlackLevelParams   CameraBlackLevel;
+        bool                     bCameraWhiteBalaceCorrection;
+        CameraWhiteBalanceParams CameraWhiteBalance;
+        bool                     bCameraHotPixelRemoval;
+        CameraHotPixelRemovalParams CameraHotPixel;
+        bool                     bCCM;
+        CameraCCMParams          CCMParams;
+        bool                     bCameraGammaCorrection;
+        CameraForwardGammaCorrectionParams CameraForwardGammaCorrection;
     } mfxExecuteParams;
 
 
@@ -205,7 +268,7 @@ namespace MfxHwVideoProcessing
         virtual mfxStatus DestroyDevice( void ) = 0;
 
         virtual mfxStatus Register(mfxHDLPair* pSurfaces, mfxU32 num, BOOL bRegister) = 0;
-        
+
         virtual mfxStatus QueryTaskStatus(mfxU32 idx) = 0;
 
         virtual mfxStatus Execute(mfxExecuteParams *pParams) = 0;
@@ -215,8 +278,8 @@ namespace MfxHwVideoProcessing
         virtual mfxStatus QueryVariance(
             mfxU32 frameIndex,
             std::vector<UINT> &variance) = 0;
-        
-    }; // DriverVideoProcessing 
+
+    }; // DriverVideoProcessing
 
     DriverVideoProcessing* CreateVideoProcessing( VideoCORE* core );
 

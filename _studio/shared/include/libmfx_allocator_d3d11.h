@@ -23,7 +23,152 @@ File Name: libmfx_allocator_d3d11.h
 #include <d3d11.h>
 #include "libmfx_allocator.h"
 
-// Internal Allocators 
+#define MFX_FOURCC_R16_BGGR MAKEFOURCC('I','R','W','0')
+#define MFX_FOURCC_R16_RGGB MAKEFOURCC('I','R','W','1')
+#define MFX_FOURCC_R16_GRBG MAKEFOURCC('I','R','W','2')
+#define MFX_FOURCC_R16_GBRG MAKEFOURCC('I','R','W','3')
+
+const char RESOURCE_EXTENSION_KEY[16] = {
+    'I','N','T','C',
+    'E','X','T','N',
+    'R','E','S','O',
+    'U','R','C','E' };
+
+const char CAPS_EXTENSION_KEY[16] = {
+    'I','N','T','C',
+    'E','X','T','N',
+    'C','A','P','S',
+    'F','U','N','C' };
+
+#define EXTENSION_INTERFACE_VERSION 0x00040000
+
+struct EXTENSION_BASE
+{
+    // Input
+    char   Key[16];
+    UINT   ApplicationVersion;
+};
+
+struct CAPS_EXTENSION : EXTENSION_BASE
+{
+    // Output:
+    UINT    DriverVersion;          // EXTENSION_INTERFACE_VERSION
+    UINT    DriverBuildNumber;      // BUILD_NUMBER
+};
+
+struct RESOURCE_EXTENSION_1_0: EXTENSION_BASE
+{
+    // Enumeration of the extension
+    UINT  Type;   //RESOURCE_EXTENSION_TYPE
+
+    // Extension data
+    union
+    {
+        UINT    Data[16];
+        UINT64  Data64[8];
+    };
+};
+
+typedef RESOURCE_EXTENSION_1_0 RESOURCE_EXTENSION;
+
+struct STATE_EXTENSION_TYPE_1_0
+{
+    static const UINT STATE_EXTENSION_RESERVED = 0;
+};
+
+struct STATE_EXTENSION_TYPE_4_0: STATE_EXTENSION_TYPE_1_0
+{
+    static const UINT STATE_EXTENSION_CONSERVATIVE_PASTERIZATION = 1 + EXTENSION_INTERFACE_VERSION;
+};
+
+struct RESOURCE_EXTENSION_TYPE_1_0
+{
+    static const UINT RESOURCE_EXTENSION_RESERVED      = 0;
+    static const UINT RESOURCE_EXTENSION_DIRECT_ACCESS = 1;
+};
+
+struct RESOURCE_EXTENSION_TYPE_4_0: RESOURCE_EXTENSION_TYPE_1_0
+{
+    static const UINT RESOURCE_EXTENSION_CAMERA_PIPE = 1 + EXTENSION_INTERFACE_VERSION;
+};
+
+struct RESOURCE_EXTENSION_CAMERA_PIPE
+{
+    enum FORMAT_FLAGS {
+        INPUT_FORMAT_IRW0 = 0x0,
+        INPUT_FORMAT_IRW1 = 0x1,
+        INPUT_FORMAT_IRW2 = 0x2,
+        INPUT_FORMAT_IRW3 = 0x3
+    };
+};
+
+bool inline IsBayerFormat(mfxU32 fourCC)
+{
+    if (MFX_FOURCC_R16_BGGR == fourCC ||
+        MFX_FOURCC_R16_RGGB == fourCC ||
+        MFX_FOURCC_R16_GBRG == fourCC ||
+        MFX_FOURCC_R16_GRBG == fourCC ||
+        MFX_FOURCC_R16 == fourCC )
+    {
+        return true;
+    }
+
+    return false;
+}
+
+inline RESOURCE_EXTENSION_CAMERA_PIPE::FORMAT_FLAGS BayerFourCC2FormatFlag (mfxU32 fourcc)
+{
+    if ( MFX_FOURCC_R16_BGGR == fourcc )
+    {
+        return RESOURCE_EXTENSION_CAMERA_PIPE::FORMAT_FLAGS::INPUT_FORMAT_IRW0;
+    }
+    else if ( MFX_FOURCC_R16_RGGB == fourcc )
+    {
+        return RESOURCE_EXTENSION_CAMERA_PIPE::FORMAT_FLAGS::INPUT_FORMAT_IRW1;
+    }
+    else if ( MFX_FOURCC_R16_GRBG == fourcc )
+    {
+        return RESOURCE_EXTENSION_CAMERA_PIPE::FORMAT_FLAGS::INPUT_FORMAT_IRW2;
+    }
+    else if ( MFX_FOURCC_R16_GBRG == fourcc )
+    {
+        return RESOURCE_EXTENSION_CAMERA_PIPE::FORMAT_FLAGS::INPUT_FORMAT_IRW3;
+    }
+
+    return RESOURCE_EXTENSION_CAMERA_PIPE::FORMAT_FLAGS::INPUT_FORMAT_IRW0;
+
+}
+
+template<typename Type>
+inline HRESULT SetResourceExtension(
+    ID3D11Device* pd3dDevice,
+    const Type* pExtnDesc )
+{
+    D3D11_BUFFER_DESC desc;
+    ZeroMemory( &desc, sizeof(desc) );
+    desc.ByteWidth = sizeof(Type);
+    desc.Usage = D3D11_USAGE_STAGING;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+    D3D11_SUBRESOURCE_DATA initData;
+    ZeroMemory( &initData, sizeof(initData) );
+    initData.pSysMem = pExtnDesc;
+    initData.SysMemPitch = sizeof(Type);
+    initData.SysMemSlicePitch = 0;
+
+    ID3D11Buffer* pBuffer = NULL;
+    HRESULT result = pd3dDevice->CreateBuffer( 
+        &desc,
+        &initData,
+        &pBuffer );
+
+    if( pBuffer )
+        pBuffer->Release();
+
+    return result;
+}
+
+// Internal Allocators
 namespace mfxDefaultAllocatorD3D11
 {
 

@@ -594,6 +594,29 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         // to prevent any issues (HLD not completed yet on VPG side)
         //m_vpreCaps.bVariance = 0;
 #endif
+
+        // Camera Pipe caps
+        memset(&m_cameraCaps, 0, sizeof(VPE_CP_CAPS));
+        iFunc.Function = VPE_FN_CP_QUERY_CAPS;
+        iFunc.pCPCaps  = &m_cameraCaps;
+        hRes = GetOutputExtension(
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
+            &iFunc);
+
+#ifdef DEBUG_DETAIL_INFO
+        printf("Success: VPE CAMERA CAPS\n");
+        printf("bBlackLevelCorrection     = [%d]\n", m_cameraCaps.bBlackLevelCorrection);
+        printf("bColorCorrection          = [%d]\n", m_cameraCaps.bColorCorrection);
+        printf("bForwardGamma             = [%d]\n", m_cameraCaps.bForwardGamma);
+        printf("bHotPixel                 = [%d]\n", m_cameraCaps.bHotPixel);
+        printf("bLensDistortionCorrection = [%d]\n", m_cameraCaps.bLensDistortionCorrection);
+        printf("bRgbToYuvCSC              = [%d]\n", m_cameraCaps.bRgbToYuvCSC);
+        printf("bVignetteCorrection       = [%d]\n", m_cameraCaps.bVignetteCorrection);
+        printf("bWhiteBalanceAuto         = [%d]\n", m_cameraCaps.bWhiteBalanceAuto);
+        printf("bWhiteBalanceManual       = [%d]\n", m_cameraCaps.bWhiteBalanceManual);
+        printf("bYuvToRgbCSC              = [%d]\n", m_cameraCaps.bYuvToRgbCSC);
+#endif
     }
 
     return MFX_ERR_NONE;
@@ -834,6 +857,7 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
 
     UINT flag;
     DXGI_FORMAT queryFormats[] = {
+        DXGI_FORMAT_R16_TYPELESS,
         DXGI_FORMAT_NV12,
         DXGI_FORMAT_YUY2,
         DXGI_FORMAT_420_OPAQUE,
@@ -1420,6 +1444,203 @@ mfxStatus D3D11VideoProcessor::QueryVariance(
 
 } // mfxStatus D3D11VideoProcessor::QueryVariance(...)
 
+template<typename Type>
+inline HRESULT GetExtensionCaps(
+    ID3D11Device* pd3dDevice,
+    Type* pCaps )
+{
+    D3D11_BUFFER_DESC desc;
+    ZeroMemory( &desc, sizeof(desc) );
+    desc.ByteWidth = sizeof(Type);
+    desc.Usage = D3D11_USAGE_STAGING;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+    D3D11_SUBRESOURCE_DATA initData;
+    initData.pSysMem = pCaps;
+    initData.SysMemPitch = sizeof(Type);
+    initData.SysMemSlicePitch = 0;
+
+    ZeroMemory( pCaps, sizeof(Type) );
+    memcpy( pCaps->Key, CAPS_EXTENSION_KEY,
+        sizeof(pCaps->Key) );
+    pCaps->ApplicationVersion = EXTENSION_INTERFACE_VERSION;
+
+    ID3D11Buffer* pBuffer = NULL;
+    HRESULT result = pd3dDevice->CreateBuffer( 
+        &desc,
+        &initData,
+        &pBuffer );
+
+    if( pBuffer )
+        pBuffer->Release();
+
+    return result;
+};
+
+mfxStatus D3D11VideoProcessor::CameraPipeActivate()
+{
+    HRESULT hRes;
+    CAMPIPE_MODE          camMode;
+    VPE_CP_ACTIVE_PARAMS  bActive;
+    bActive.bActive = 1;
+
+    memset((PVOID) &camMode, 0, sizeof(camMode));
+
+    camMode.Function     = VPE_FN_CP_ACTIVATE_CAMERA_PIPE;
+    camMode.pActive      = &bActive;
+
+    hRes =  SetOutputExtension(
+                    &(m_iface.guid),
+                    sizeof(camMode),
+                    &camMode);
+    if ( FAILED(hRes))
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D11VideoProcessor::CameraPipeSetBlacklevelParams(CameraBlackLevelParams *params)
+{
+    HRESULT hRes;
+    CAMPIPE_MODE          camMode;
+    VPE_CP_BLACK_LEVEL_CORRECTION_PARAMS  blcParams;
+    blcParams.bActive = 1;
+    blcParams.B  = params->uB;
+    blcParams.G0 = params->uG0;
+    blcParams.G1 = params->uG1;
+    blcParams.R  = params->uR;
+
+    memset((PVOID) &camMode, 0, sizeof(camMode));
+
+    camMode.Function     = VPE_FN_CP_BLACK_LEVEL_CORRECTION_PARAM;
+    camMode.pBlackLevel  = &blcParams;
+
+    hRes =  SetOutputExtension(
+                    &(m_iface.guid),
+                    sizeof(camMode),
+                    &camMode);
+    if ( FAILED(hRes))
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D11VideoProcessor::CameraPipeSetCCMParams(CameraCCMParams *params)
+{
+    HRESULT hRes;
+    CAMPIPE_MODE          camMode;
+    VPE_CP_COLOR_CORRECTION_PARAMS  ccmParams;
+    ccmParams.bActive = 1;
+    for(int i = 0; i < 3; i++)
+    {
+        for(int j = 0; j < 3; j++)
+        {
+            ccmParams.CCM[i][j] = params->CCM[i][j];
+        }
+    }
+
+    memset((PVOID) &camMode, 0, sizeof(camMode));
+    camMode.Function          = VPE_FN_CP_COLOR_CORRECTION_PARAM;
+    camMode.pColorCorrection  = &ccmParams;
+
+    hRes =  SetOutputExtension(
+                    &(m_iface.guid),
+                    sizeof(camMode),
+                    &camMode);
+    if ( FAILED(hRes))
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D11VideoProcessor::CameraPipeSetForwardGammaParams(CameraForwardGammaCorrectionParams *params)
+{
+    HRESULT hRes;
+    CAMPIPE_MODE          camMode;
+    VPE_CP_FORWARD_GAMMA_PARAMS  fgcParams;
+    fgcParams.bActive = 1;
+    for(int i = 0; i < 64; i++)
+    {
+        fgcParams.Segment[i].BlueChannelCorrectedValue  = params->Segment[i].BlueChannelCorrectedValue;
+        fgcParams.Segment[i].GreenChannelCorrectedValue = params->Segment[i].GreenChannelCorrectedValue;
+        fgcParams.Segment[i].RedChannelCorrectedValue   = params->Segment[i].RedChannelCorrectedValue;
+        fgcParams.Segment[i].PixelValue                 = params->Segment[i].PixelValue;
+    }
+
+    memset((PVOID) &camMode, 0, sizeof(camMode));
+    camMode.Function       = VPE_FN_CP_FORWARD_GAMMA_CORRECTION;
+    camMode.pForwardGamma  = &fgcParams;
+
+    hRes =  SetOutputExtension(
+                    &(m_iface.guid),
+                    sizeof(camMode),
+                    &camMode);
+    if ( FAILED(hRes))
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D11VideoProcessor::CameraPipeSetHotPixelParams(CameraHotPixelRemovalParams *params)
+{
+    HRESULT hRes;
+    CAMPIPE_MODE          camMode;
+    VPE_CP_HOT_PIXEL_PARAMS  hpParams;
+    hpParams.bActive = 1;
+    hpParams.PixelCountThreshold = params->uPixelCountThreshold;
+    hpParams.PixelThresholdDifference = params->uPixelThresholdDifference;
+
+    memset((PVOID) &camMode, 0, sizeof(camMode));
+    camMode.Function   = VPE_FN_CP_HOT_PIXEL_PARAM;
+    camMode.pHotPixel  = &hpParams;
+
+    hRes =  SetOutputExtension(
+                    &(m_iface.guid),
+                    sizeof(camMode),
+                    &camMode);
+    if ( FAILED(hRes))
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D11VideoProcessor::CameraPipeSetWhitebalanceParams(CameraWhiteBalanceParams *params)
+{
+    HRESULT hRes;
+    CAMPIPE_MODE          camMode;
+    VPE_CP_WHITE_BALANCE_PARAMS  wbParams;
+    wbParams.bActive = 1;
+    wbParams.Mode    = 1; // Force manual mode
+    wbParams.BlueCorrection        = params->fB;
+    wbParams.RedCorrection         = params->fR;
+    wbParams.GreenBottomCorrection = params->fG0;
+    wbParams.GreenTopCorrection    = params->fG1;
+
+    memset((PVOID) &camMode, 0, sizeof(camMode));
+    camMode.Function   = VPE_FN_CP_WHITE_BALANCE_PARAM;
+    camMode.pWhiteBalance  = &wbParams;
+
+    hRes =  SetOutputExtension(
+                    &(m_iface.guid),
+                    sizeof(camMode),
+                    &camMode);
+    if ( FAILED(hRes))
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    return MFX_ERR_NONE;
+}
 
 mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 {
@@ -1445,6 +1666,16 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     pRect.bottom += outInfo->CropY;
     pRect.right  += outInfo->CropX;
     SetStreamDestRect(0, TRUE, &pRect);
+
+    if(pParams->bCameraPipeEnabled)
+    {
+        mfxStatus sts = MFX_ERR_NONE;
+        sts = CameraPipeActivate();
+        MFX_CHECK_STS(sts);
+
+
+
+    }
 
     // [4] ProcAmp
     if(pParams->bEnableProcAmp)
@@ -1710,6 +1941,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             inInfo->FourCC == MFX_FOURCC_YUV422H ||
             inInfo->FourCC == MFX_FOURCC_YUV422V ||
             inInfo->FourCC == MFX_FOURCC_YUV444 ||
+            inInfo->FourCC == MFX_FOURCC_R16 ||
             inInfo->FourCC == MFX_FOURCC_RGBP)
         {
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
@@ -1731,6 +1963,11 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             SetOutputColorSpace(&outColorSpace);
 
             fourCC = inInfo->FourCC;
+
+            if ( IsBayerFormat(fourCC) )
+            {
+                fourCC = BayerFourCC2FormatFlag(inInfo->FourCC);;
+            }
 
             /* [6.1.7] Set YUV Range Param
             // Full range is implemented only in 15.36 driver in DX11 and has a brightness problem
@@ -2061,6 +2298,12 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
         }
     }
 
+    caps.cameraCaps.uBlackLevelCorrection  = m_cameraCaps.bBlackLevelCorrection;
+    caps.cameraCaps.uColorCorrectionMatrix = m_cameraCaps.bColorCorrection;
+    caps.cameraCaps.uGammaCorrection       = m_cameraCaps.bForwardGamma;
+    caps.cameraCaps.uHotPixelCheck         = m_cameraCaps.bHotPixel;
+    caps.cameraCaps.uVignetteCorrection    = m_cameraCaps.bVignetteCorrection;
+    caps.cameraCaps.uWhiteBalance          = m_cameraCaps.bWhiteBalanceManual;
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)

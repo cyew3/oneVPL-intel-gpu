@@ -140,7 +140,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>genx\src;.\genx\include;include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>genx\src;.\genx\include;include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -230,6 +230,7 @@
     <ClInclude Include="include\mfx_camera_plugin.h" />
     <ClInclude Include="include\mfx_camera_plugin_cm.h" />
     <ClInclude Include="include\mfx_camera_plugin_cpu.h" />
+    <ClInclude Include="include\mfx_camera_plugin_dx11.h" />
     <ClInclude Include="include\mfx_camera_plugin_utils.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
@@ -263,6 +264,7 @@
     <ClCompile Include="src\mfx_camera_plugin.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_cm.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_cpu.cpp" />
+    <ClCompile Include="src\mfx_camera_plugin_dx11.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_utils.cpp" />
   </ItemGroup>
   <ItemGroup>

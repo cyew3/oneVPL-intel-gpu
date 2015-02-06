@@ -9,7 +9,8 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 File Name: mfx_camera_plugin_utils.h
 
 \* ****************************************************************************** */
-
+#ifndef _MFX_CAMERA_PLUGIN_UTILS_H
+#define _MFX_CAMERA_PLUGIN_UTILS_H
 
 #include <stdio.h>
 #include <string.h>
@@ -17,19 +18,22 @@ File Name: mfx_camera_plugin_utils.h
 #include <iostream>
 #include <vector>
 
+#include "mfxvideo.h"
 #include "mfxplugin++.h"
-#include "mfx_camera_plugin_cm.h"
+#include "mfx_plugin_module.h"
+#include "mfx_session.h"
+#include "mfxcamera.h"
+#include "cm_def.h" // Needed for CM Vector
+#include "cm_vm.h"  //
+#include "cmrt_cross_platform.h"
+#include "vm_time.h"
+#include "Campipe.h"
+//#include "mfx_camera_plugin_cm.h"
 
-// CM bayer patterns
-#define BGGR 0
-#define RGGB 1
-#define GRBG 2
-#define GBRG 3
-
-//#define CAMP_PIPE_ITT
-
-#if !defined(_MFX_CAMERA_PLUGIN_UTILS_)
-#define _MFX_CAMERA_PLUGIN_UTILS_
+#define  BAYER_BGGR  0x0000
+#define  BAYER_RGGB  0x0001
+#define  BAYER_GRBG  0x0002
+#define  BAYER_GBRG  0x0003
 
 // 2 hours of playing at 30fps
 #define CAMERA_FRAMES_TILL_HARD_RESET 2*108000
@@ -90,6 +94,7 @@ enum
     MEM_GPUSHARED   =  0,
     MEM_GPU
 };
+
 mfxStatus CheckIOPattern(mfxVideoParam *param, mfxVideoParam *out, mfxU32 mode);
 mfxStatus CheckExtBuffers(mfxVideoParam *param, mfxVideoParam *out, mfxU32 mode);
 
@@ -174,46 +179,6 @@ void ReleaseResource(
     MfxFrameAllocResponse & pool,
     mfxMemId                mid);
 
-typedef struct
-{
-    mfxU32              TileOffset;
-} CameraTileOffset;
-
-typedef struct _CameraFrameSizeExtra
-{
-    mfxU32              frameWidth64;
-    mfxU32              paddedFrameWidth;
-    mfxU32              paddedFrameHeight;
-    mfxU32              vSliceWidth;
-
-    mfxU32              BitDepth;
-
-    // Tile specific data
-    mfxU32              tileNum;
-    mfxU32              TileWidth;
-    mfxU32              TileHeight;
-    mfxU32              TileHeightPadded;
-    CameraTileOffset    *tileOffsets;
-    mfxFrameInfo        TileInfo;
-
-    bool operator!= (const _CameraFrameSizeExtra &new_frame) const
-    {
-        if (this->frameWidth64      != new_frame.frameWidth64      ||
-            this->paddedFrameHeight != new_frame.paddedFrameHeight ||
-            this->BitDepth          != new_frame.BitDepth          ||
-            this->paddedFrameWidth  != new_frame.paddedFrameWidth  ||
-            this->TileHeight        != new_frame.TileHeight        ||
-            this->TileHeightPadded  != new_frame.TileHeightPadded  ||
-            this->tileNum           != new_frame.tileNum)
-        {
-            return true;
-        }
-
-        return false;
-
-    }
-} CameraFrameSizeExtra;
-
 
 typedef struct _mfxCameraCaps
 {
@@ -257,6 +222,62 @@ typedef struct _mfxCameraCaps
 
 }   mfxCameraCaps;
 
+typedef struct
+{
+    mfxU32              TileOffset;
+} CameraTileOffset;
+
+//// Gamma parameters
+typedef struct
+{
+    mfxU16     numPoints;
+    mfxU16    *gammaPoints;
+    mfxU16    *gammaCorrect;
+} CameraGammaLut;
+
+typedef struct
+{
+    CameraGammaLut  gamma_lut; // will not be exposed externally (???)
+    mfxF64          gamma_value; // 2.2, 1.8 etc
+} CameraPipeForwardGammaParams;
+
+typedef struct _CameraParams
+{
+    mfxU32              frameWidth64;
+    mfxU32              paddedFrameWidth;
+    mfxU32              paddedFrameHeight;
+    mfxU32              vSliceWidth;
+
+    mfxU32              BitDepth;
+    mfxCameraCaps       Caps;
+
+    CameraPipeForwardGammaParams   GammaParams;
+
+    // Tile specific data
+    mfxU16              tileNum;
+    mfxU32              TileWidth;
+    mfxU32              TileHeight;
+    mfxU32              TileHeightPadded;
+    CameraTileOffset    *tileOffsets;
+    mfxFrameInfo        TileInfo;
+    mfxVideoParam       par;
+    bool operator!= (const _CameraParams &new_frame) const
+    {
+        if (this->frameWidth64      != new_frame.frameWidth64      ||
+            this->paddedFrameHeight != new_frame.paddedFrameHeight ||
+            this->BitDepth          != new_frame.BitDepth          ||
+            this->paddedFrameWidth  != new_frame.paddedFrameWidth  ||
+            this->TileHeight        != new_frame.TileHeight        ||
+            this->TileHeightPadded  != new_frame.TileHeightPadded  ||
+            this->tileNum           != new_frame.tileNum)
+        {
+            return true;
+        }
+
+        return false;
+
+    }
+} CameraParams;
 
 typedef struct _CameraPipeBlackLevelParams
 {
@@ -266,6 +287,20 @@ typedef struct _CameraPipeBlackLevelParams
     mfxF32      BlueLevel;
     mfxF32      GreenBottomLevel;
 } CameraPipeBlackLevelParams;
+
+
+typedef struct _CameraPipeDenoiseParams
+{
+    bool        bActive;
+} CameraPipeDenoiseParams;
+
+typedef struct _CameraPipeHotPixelParams
+{
+    bool        bActive;
+    mfxU16      PixelThresholdDifference;
+    mfxU16      PixelCountThreshold;
+} CameraPipeHotPixelParams;
+
 
 typedef struct _CameraPipeWhiteBalanceParams
 {
@@ -291,19 +326,6 @@ typedef struct _CameraPipe3x3ColorConversionParams
 
 #define MFX_CAM_GAMMA_NUM_POINTS_SKL 64
 
-//// Gamma parameters
-typedef struct
-{
-    mfxU16     numPoints;
-    mfxU16    *gammaPoints;
-    mfxU16    *gammaCorrect;
-} CameraGammaLut;
-
-typedef struct
-{
-    CameraGammaLut  gamma_lut; // will not be exposed externally (???)
-    mfxF64          gamma_value; // 2.2, 1.8 etc
-} CameraPipeForwardGammaParams;
 
 // move to mfxcamera.h ???
 #define MFX_CAM_MIN_REQUIRED_PADDING_TOP    8
@@ -325,6 +347,54 @@ typedef struct
     mfxU16 right;
 } CameraPipePaddingParams;
 
+struct AsyncParams
+{
+    mfxFrameSurface1 *surf_in;
+    mfxFrameSurface1 *surf_out;
+
+    mfxMemId inSurf2D;
+    mfxMemId inSurf2DUP;
+    mfxU16   tileID;
+
+    CameraPipeDenoiseParams            DenoiseParams;
+    CameraPipeHotPixelParams           HPParams;
+    CameraPipeWhiteBalanceParams       WBparams;
+    CameraPipeForwardGammaParams       GammaParams;
+    CameraPipeVignetteParams           VignetteParams;
+    CameraPipePaddingParams            PaddingParams;
+    CameraPipeBlackLevelParams         BlackLevelParams;
+    CameraPipe3x3ColorConversionParams CCMParams;
+    CameraParams                       FrameSizeExtra;
+    mfxCameraCaps                      Caps;
+    mfxU32                             InputBitDepth;
+
+    mfxMemId outSurf2D;
+    mfxMemId outSurf2DUP;
+
+    void      *pEvent;
+};
+
+class CameraProcessor
+{
+public:
+    CameraProcessor(): m_core(0) {};
+    ~CameraProcessor() {};
+    virtual mfxStatus Init(mfxVideoParam *par) = 0;
+    virtual mfxStatus Init(CameraParams  *pipeParams) = 0;
+    virtual mfxStatus Reset(mfxVideoParam *par, CameraParams *pipeParams) = 0;
+    virtual void SetCore(VideoCORE *core) { m_core = core; };
+    virtual mfxStatus AsyncRoutine(AsyncParams *pParam) = 0;
+    virtual mfxStatus CompleteRoutine(AsyncParams *pParam) = 0;
+    virtual mfxStatus Close() = 0;
+protected:
+    virtual mfxStatus CheckIOPattern(mfxU16  IOPattern) = 0;
+    VideoCORE*    m_core;
+    mfxU16        m_asyncDepth;
+    mfxU16        m_IOPattern;
+    mfxVideoParam m_params;
+};
+
 }
 #endif //#if defined( AS_VPP_PLUGIN )
-#endif //#if defined( _MFX_CAMERA_PLUGIN_UTILS_ )
+
+#endif

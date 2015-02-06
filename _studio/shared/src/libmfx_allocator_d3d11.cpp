@@ -33,6 +33,10 @@ File Name: libmfx_allocator_d3d11.cpp
 
 #define MFX_FOURCC_P8_MBDATA  (D3DFORMAT)MFX_MAKEFOURCC('P','8','M','B')
 
+#define DXGI_FORMAT_BGGR MAKEFOURCC('I','R','W','0')
+#define DXGI_FORMAT_RGGB MAKEFOURCC('I','R','W','1')
+#define DXGI_FORMAT_GRBG MAKEFOURCC('I','R','W','2')
+#define DXGI_FORMAT_GBRG MAKEFOURCC('I','R','W','3')
 
 template<class T> inline
 T align_value(size_t nValue, size_t lAlignValue = DEFAULT_ALIGN_VALUE)
@@ -73,17 +77,23 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
 
     case DXGI_FORMAT_AYUV:
         return DXGI_FORMAT_AYUV;
+    case MFX_FOURCC_R16:
+    case MFX_FOURCC_R16_BGGR:
+    case MFX_FOURCC_R16_RGGB:
+    case MFX_FOURCC_R16_GRBG:
+    case MFX_FOURCC_R16_GBRG:
+        return DXGI_FORMAT_R16_TYPELESS;
     }
     return DXGI_FORMAT_UNKNOWN;
 
-} // mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format) 
+} // mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
 
 // D3D11 surface working
 mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
     if (!pthis)
         return MFX_ERR_INVALID_HANDLE;
-    
+
     // only NV12 and D3DFMT_P8 buffers are supported by HW
     switch(request->Info.FourCC)
     {
@@ -101,6 +111,10 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     case MFX_FOURCC_P8:
     case MFX_FOURCC_P8_MBDATA:
     case DXGI_FORMAT_AYUV:
+    case MFX_FOURCC_R16_RGGB:
+    case MFX_FOURCC_R16_BGGR:
+    case MFX_FOURCC_R16_GBRG:
+    case MFX_FOURCC_R16_GRBG:
         break;
     default:
         return MFX_ERR_UNSUPPORTED;
@@ -179,7 +193,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     else
     {
 
-        if ( (MFX_MEMTYPE_FROM_VPPIN & request->Type) && (DXGI_FORMAT_YUY2 == Desc.Format) || 
+        if ( (MFX_MEMTYPE_FROM_VPPIN & request->Type) && (DXGI_FORMAT_YUY2 == Desc.Format) ||
             (DXGI_FORMAT_B8G8R8A8_UNORM == Desc.Format) )
         {
             Desc.BindFlags = D3D11_BIND_RENDER_TARGET;
@@ -212,6 +226,27 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
             Desc.BindFlags = 0;
         }
 
+        if ( DXGI_FORMAT_R16_TYPELESS == Desc.Format)
+        {
+            // R16 Bayer requires having special resource extension reflecting
+            // real Bayer format
+            Desc.MipLevels = 1;
+            Desc.ArraySize = 1;
+            Desc.SampleDesc.Count   = 1;
+            Desc.SampleDesc.Quality = 0;
+            Desc.Usage     = D3D11_USAGE_DEFAULT;
+            Desc.BindFlags = 0;
+            Desc.CPUAccessFlags = 0;// = D3D11_CPU_ACCESS_WRITE;
+            Desc.MiscFlags = 0;
+            RESOURCE_EXTENSION extnDesc;
+            ZeroMemory( &extnDesc, sizeof(RESOURCE_EXTENSION) );
+            memcpy( extnDesc.Key, RESOURCE_EXTENSION_KEY, sizeof(extnDesc.Key) );
+            extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
+            extnDesc.Type    = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
+            extnDesc.Data[0] = BayerFourCC2FormatFlag(request->Info.FourCC);
+            hr = SetResourceExtension(pSelf->m_pD11Device, &extnDesc);
+        }
+
         for (mfxU32 i = 0; i < maxNumFrames; i++)
         {
             hr = pSelf->m_pD11Device->CreateTexture2D(&Desc, NULL, &pSelf->m_SrfPool[i]);
@@ -229,7 +264,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
 
             hr = pSelf->m_pD11Device->CreateTexture2D(&Desc, NULL, &pSelf->m_StagingSrfPool);
         }
-            
+
         // create mapping table
         if (SUCCEEDED(hr))
         {
@@ -275,12 +310,12 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
     UINT MapFlags = D3D11_MAP_FLAG_DO_NOT_WAIT;
 
     // need to copy surface into staging surface then map
-    ID3D11Texture2D *pStagingSurface = pSelf->m_StagingSrfPool;    
+    ID3D11Texture2D *pStagingSurface = pSelf->m_StagingSrfPool;
 
     if (!pSelf->isBufferKeeper)
     {
         pSelf->m_SrfPool[index]->GetDesc(&Desc);
-        pSelf->m_pD11DeviceContext->CopySubresourceRegion(pStagingSurface, 0, 0, 0, 0, pSelf->m_SrfPool[index], 0, NULL); 
+        pSelf->m_pD11DeviceContext->CopySubresourceRegion(pStagingSurface, 0, 0, 0, 0, pSelf->m_SrfPool[index], 0, NULL);
     }
     else
     {
@@ -378,7 +413,7 @@ mfxStatus mfxDefaultAllocatorD3D11::GetHDLHW(mfxHDL pthis, mfxMemId mid, mfxHDL 
 {
     if (!pthis)
         return MFX_ERR_INVALID_HANDLE;
-    
+
     mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
     if (0 == mid)
         return MFX_ERR_INVALID_HANDLE;
@@ -386,10 +421,10 @@ mfxStatus mfxDefaultAllocatorD3D11::GetHDLHW(mfxHDL pthis, mfxMemId mid, mfxHDL 
 
     if (0 == handle)
         return MFX_ERR_INVALID_HANDLE;
-    
+
     mfxHDLPair *pPair =  (mfxHDLPair*)handle;
     size_t index      =  (size_t)mid - 1;
-    
+
     if (index >= pSelf->m_SrfPool.size())
         return MFX_ERR_INVALID_HANDLE;
 
@@ -405,7 +440,7 @@ mfxStatus mfxDefaultAllocatorD3D11::UnlockFrameHW(mfxHDL pthis, mfxMemId mid, mf
 {
     if (!pthis)
         return MFX_ERR_INVALID_HANDLE;
-    
+
     mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
     size_t index =  (size_t)mid - 1;
     ID3D11Texture2D    *pStagingSurface  = pSelf->m_StagingSrfPool;
@@ -419,7 +454,7 @@ mfxStatus mfxDefaultAllocatorD3D11::UnlockFrameHW(mfxHDL pthis, mfxMemId mid, mf
         pSelf->m_pD11DeviceContext->Unmap(pSelf->m_SrfPool.back(), 0);
     }
 
-    if (ptr) 
+    if (ptr)
     {
         ptr->PitchHigh=0;
         ptr->PitchLow=0;
@@ -435,7 +470,7 @@ mfxStatus mfxDefaultAllocatorD3D11::FreeFramesHW(mfxHDL pthis, mfxFrameAllocResp
         return MFX_ERR_INVALID_HANDLE;
 
     mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
-    
+
     for (mfxU32 i = 0; i < pSelf->m_NumSurface; i++)
         SAFE_RELEASE(pSelf->m_SrfPool[i]);
 
@@ -447,8 +482,8 @@ mfxStatus mfxDefaultAllocatorD3D11::FreeFramesHW(mfxHDL pthis, mfxFrameAllocResp
     return MFX_ERR_NONE;
 }
 
-mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator::mfxWideHWFrameAllocator(mfxU16 type, 
-                                                                           ID3D11Device *pD11Device, 
+mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator::mfxWideHWFrameAllocator(mfxU16 type,
+                                                                           ID3D11Device *pD11Device,
                                                                            ID3D11DeviceContext  *pD11DeviceContext):mfxBaseWideFrameAllocator(type),
                                                                                                                     m_pD11Device(pD11Device),
                                                                                                                     m_pD11DeviceContext(pD11DeviceContext)
