@@ -1647,7 +1647,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         m_components[eREN].m_params.mfx.FrameInfo.FourCC         = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
         m_components[eREN].m_params.mfx.FrameInfo.BitDepthLuma   = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
         m_components[eREN].m_params.mfx.FrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
-        m_components[eREN].m_params.mfx.FrameInfo.Shift          = 0;
+        m_components[eREN].m_params.mfx.FrameInfo.Shift          = m_components[eDEC].m_params.mfx.FrameInfo.Shift;
     }
 
     //shouldn't recreate existed render in case of light reset
