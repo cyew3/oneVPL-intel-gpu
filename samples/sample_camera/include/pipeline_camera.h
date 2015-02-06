@@ -82,6 +82,8 @@ protected:
     std::auto_ptr<MFXPlugin> m_pCamera_plugin;
     mfxPluginUID        m_UID_Camera;
 
+    mfxExtCamBayerDenoise         m_Denoise;
+    mfxExtCamHotPixelRemoval      m_HP;
     mfxExtCamGammaCorrection      m_GammaCorrection;
     mfxExtCamBlackLevelCorrection m_BlackLevelCorrection;
     mfxExtCamWhiteBalance         m_WhiteBalance;
@@ -144,6 +146,7 @@ protected:
     virtual mfxStatus AllocAndInitCamWhiteBalance(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamCCM(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamBlackLevelCorrection(sInputParams *pParams);
+    virtual mfxStatus AllocAndInitCamHotPixelRemoval(sInputParams *pParams);
     virtual void FreeCamGammaCorrection();
 
     virtual mfxStatus CreateAllocator();

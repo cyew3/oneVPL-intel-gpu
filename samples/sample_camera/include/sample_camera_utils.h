@@ -122,6 +122,10 @@ typedef struct _resetParams
     mfxU16 cropY;
     mfxU32 bayerType;
 
+    bool   bHP;
+    mfxU16 hp_diff;
+    mfxU16 hp_num;
+
     bool   bBlackLevel;
     mfxU16 black_level_B;
     mfxU16 black_level_G0;
@@ -139,6 +143,7 @@ typedef struct _resetParams
 
     _resetParams()
     {
+        bHP           = false;
         bBlackLevel   = false;
         bWhiteBalance = false;
         bCCM          = false;
@@ -170,6 +175,10 @@ struct sInputParams
     mfxU32  nWallFPS;//rendering limited by certain fps
     bool    bWallNoTitle;//whether to show title for each window with fps value
     mfxU32  nWallTimeout; //timeout for -wall option
+
+    bool   bHP;
+    mfxU16 hp_diff;
+    mfxU16 hp_num;
 
     bool   bGamma;
     bool   bExternalGammaLUT;
@@ -221,6 +230,7 @@ struct sInputParams
         memTypeOut = UNDEFINED_MEMORY;
         bitDepth = 10;
         bGamma = true;
+        bHP           = false;
         bBlackLevel   = false;
         bWhiteBalance = false;
         bCCM          = false;

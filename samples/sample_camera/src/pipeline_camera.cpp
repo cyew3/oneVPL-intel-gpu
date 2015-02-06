@@ -154,6 +154,19 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
         m_ExtBuffers.push_back((mfxExtBuffer *)&m_BlackLevelCorrection);
     }
 
+    if (pParams->bHP)
+    {
+        sts = AllocAndInitCamHotPixelRemoval(pParams);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        m_ExtBuffers.push_back((mfxExtBuffer *)&m_HP);
+    }
+
+    if (pParams->bBayerDenoise)
+    {
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        m_ExtBuffers.push_back((mfxExtBuffer *)&m_Denoise);
+    }
+
     if (pParams->bWhiteBalance)
     {
         sts = AllocAndInitCamWhiteBalance(pParams);
@@ -698,6 +711,14 @@ CCameraPipeline::CCameraPipeline()
     m_BlackLevelCorrection.Header.BufferId = MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION;
     m_BlackLevelCorrection.Header.BufferSz = sizeof(m_BlackLevelCorrection);
 
+    MSDK_ZERO_MEMORY(m_Denoise);
+    m_Denoise.Header.BufferId = MFX_EXTBUFF_VPP_DENOISE;
+    m_Denoise.Header.BufferSz = sizeof(m_Denoise);
+
+    MSDK_ZERO_MEMORY(m_HP);
+    m_HP.Header.BufferId = MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL;
+    m_HP.Header.BufferSz = sizeof(m_HP);
+
     MSDK_ZERO_MEMORY(m_WhiteBalance);
     m_WhiteBalance.Header.BufferId = MFX_EXTBUF_CAM_WHITE_BALANCE;
     m_WhiteBalance.Header.BufferSz = sizeof(m_WhiteBalance);
@@ -780,7 +801,7 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
         m_memType = D3D11_MEMORY;
 
     // API version
-    mfxVersion version =  {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
+    mfxVersion version =  {10, MFX_VERSION_MAJOR};
 
     // Init session
     {
@@ -948,6 +969,14 @@ mfxStatus CCameraPipeline::AllocAndInitCamBlackLevelCorrection(sInputParams *pPa
     m_BlackLevelCorrection.G0 = pParams->black_level_G0;
     m_BlackLevelCorrection.G1 = pParams->black_level_G1;
     m_BlackLevelCorrection.R  = pParams->black_level_R;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CCameraPipeline::AllocAndInitCamHotPixelRemoval(sInputParams *pParams)
+{
+    m_HP.PixelCountThreshold       = pParams->hp_num;
+    m_HP.PixelThresholdDifference  = pParams->hp_diff;
 
     return MFX_ERR_NONE;
 }

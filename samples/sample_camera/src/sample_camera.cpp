@@ -29,6 +29,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-gamma_corrected]                                  - set specific gamma corrected values (64 values expected)\n"));
     msdk_printf(MSDK_STRING("                                                           -gamma_points and -gamma_corrected options must be used together\n"));
     msdk_printf(MSDK_STRING("   [-bdn] / [-bayerDenoise]                            - bayer denoise on\n"));
+    msdk_printf(MSDK_STRING("   [-hot_pixel Diff Num]                               - bayer hot pixel removal\n"));
     msdk_printf(MSDK_STRING("   [-bbl B G0 G1 R] / [-bayerBlackLevel B G0 G1 R]     - bayer black level correction\n"));
     msdk_printf(MSDK_STRING("   [-bwb B G0 G1 R] / [-bayerWhiteBalance B G0 G1 R]   - bayer white balance\n"));
     msdk_printf(MSDK_STRING("   [-ccm n00 n01 ... n33 ]                             - color correction 3x3 matrix\n"));
@@ -171,6 +172,17 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_opt_read(strInput[++i], pParams->black_level_G1);
             msdk_opt_read(strInput[++i], pParams->black_level_R);
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hot_pixel")))
+        {
+            if(i + 2 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -hot_pixel key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            pParams->bHP = true;
+            msdk_opt_read(strInput[++i], pParams->hp_diff);
+            msdk_opt_read(strInput[++i], pParams->hp_num);
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bwb")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-bayerWhiteBalance")))
         {
             if(i + 4 >= nArgNum)
@@ -298,6 +310,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_strcopy(resPar.strDstFile, pParams->strDstFile);
             resPar.width = pParams->frameInfo[VPP_IN].nWidth;
             resPar.height = pParams->frameInfo[VPP_IN].nHeight;
+            resPar.bHP     = pParams->bHP;
+            resPar.hp_diff = pParams->hp_diff;
+            resPar.hp_num  = pParams->hp_num;
+
             resPar.bBlackLevel    = pParams->bBlackLevel;
             resPar.black_level_B  = pParams->black_level_B;
             resPar.black_level_G0 = pParams->black_level_G0;
@@ -330,6 +346,17 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                     msdk_opt_read(strInput[++i], resPar.black_level_G0);
                     msdk_opt_read(strInput[++i], resPar.black_level_G1);
                     msdk_opt_read(strInput[++i], resPar.black_level_R);
+                }
+                else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hot_pixel")))
+                {
+                    if(i + 2 >= nArgNum)
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -hot_pixel key"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
+                    resPar.bHP = true;
+                    msdk_opt_read(strInput[++i], resPar.hp_diff);
+                    msdk_opt_read(strInput[++i], resPar.hp_num);
                 }
                 else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bwb")))
                 {
@@ -515,6 +542,10 @@ int main(int argc, char *argv[])
             pParams->frameInfo[VPP_OUT].CropH = pParams->frameInfo[VPP_IN].CropH;
 
             pParams->bayerType     = Params.resetParams[resetNum].bayerType;
+            pParams->bHP           = Params.resetParams[resetNum].bHP;
+            pParams->hp_diff       = Params.resetParams[resetNum].hp_diff;
+            pParams->hp_num        = Params.resetParams[resetNum].hp_num;
+
             pParams->bBlackLevel   = Params.resetParams[resetNum].bBlackLevel;
             pParams->black_level_B = Params.resetParams[resetNum].black_level_B;
             pParams->black_level_G0= Params.resetParams[resetNum].black_level_G0;
