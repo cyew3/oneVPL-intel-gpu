@@ -453,7 +453,7 @@ mfxStatus FullEncode::SubmitFrame(sExtTask2 *pExtTask)
 
         if (mbqpdata)
         {
-            sts = m_pENCODE->SubmitFrameMBQP(pIntTask, m_UDBuff.GetUserDataBuffer(), m_UDBuff.GetUserDataSize(), mbqpdata, mbqpNumMB);
+            sts = m_pENCODE->SubmitFrameMBQP(pIntTask, m_UDBuff.GetUserDataBuffer(), m_UDBuff.GetUserDataSize(), mbqpdata, mbqpNumMB, qp);
         }
         else
         {

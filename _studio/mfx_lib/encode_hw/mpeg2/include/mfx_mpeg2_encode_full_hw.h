@@ -165,22 +165,16 @@ namespace MPEG2EncoderHW
              } 
          }
 
-         mfxStatus SubmitFrameMBQP (EncodeFrameTask*  pIntTask, mfxU8 *pUserData, mfxU32 userDataLen, mfxU8* mbqp, mfxU32 numMB)
+         mfxStatus SubmitFrameMBQP (EncodeFrameTask*  pIntTask, mfxU8 *pUserData, mfxU32 userDataLen, mfxU8* mbqp, mfxU32 numMB, mfxU8 qp)
          {
              mfxStatus sts = MFX_ERR_NONE;
 
-             mfxU8 qp = 0;
+             Ipp32s scale_type = 0; 
+             Ipp32s scale_code = 0;
+             QuantIntoScaleTypeAndCode(qp, scale_type, scale_code);
+             pIntTask->m_FrameParams.QuantScaleType = (Ipp8u)scale_type;
 
-             if (m_pExecuteBuffers->m_mbqp_data)
-             {
-                 Ipp32s scale_type = 0; 
-                 Ipp32s scale_code = 0;
-                 QuantIntoScaleTypeAndCode(mbqp[0], scale_type, scale_code);
-                 qp = (Ipp8u)scale_code;
-                 pIntTask->m_FrameParams.QuantScaleType = (Ipp8u)scale_type;
-             }
-
-             sts = SubmitFrame(&pIntTask->m_FrameParams, &pIntTask->m_Frames, pUserData, userDataLen, qp, mbqp, numMB);
+             sts = SubmitFrame(&pIntTask->m_FrameParams, &pIntTask->m_Frames, pUserData, userDataLen, (mfxU8)scale_code, mbqp, numMB);
              MFX_CHECK_STS (sts);
              pIntTask->m_FeedbackNumber       = m_pExecuteBuffers->m_pps.StatusReportFeedbackNumber;
              pIntTask->m_BitstreamFrameNumber = (mfxU32)m_pExecuteBuffers->m_idxBs;
