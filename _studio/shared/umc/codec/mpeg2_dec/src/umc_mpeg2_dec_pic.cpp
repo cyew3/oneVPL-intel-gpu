@@ -1018,8 +1018,8 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
         if(PictureHeader[task_num].f_code[0] == 0 || PictureHeader[task_num].f_code[2] == 0)
         {
             //VM_ASSERT(PictureHeader[task_num].f_code[0] != 0 && PictureHeader[task_num].f_code[2] != 0);
-            //isCorrupted = true;
-            return UMC_ERR_INVALID_STREAM;
+            isCorrupted = true;
+            //return UMC_ERR_INVALID_STREAM;
         }
         pPic->r_size[0] = PictureHeader[task_num].f_code[0] - 1;
         pPic->r_size[1] = PictureHeader[task_num].f_code[1] - 1;

@@ -4032,11 +4032,17 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
 
             if (FcState::FRAME == m_fcState.picHeader)
             {
-                m_fcState.picStart = 0;
-                m_fcState.picHeader = FcState::NONE;
-                memset(m_last_bytes, 0, NUM_REST_BYTES);
+                // CQ21432: If buffer contains less than 8 bytes it means there is no full frame in that buffer
+                // and we need to find next start code
+                // It is possible in case of corruption when start code is found inside of frame
+                if (out->DataLength > 8)
+                {
+                    m_fcState.picStart = 0;
+                    m_fcState.picHeader = FcState::NONE;
+                    memset(m_last_bytes, 0, NUM_REST_BYTES);
 
-                return MFX_ERR_NONE;
+                    return MFX_ERR_NONE;
+                }
             }
 
             if (ePIC == curr[3])
