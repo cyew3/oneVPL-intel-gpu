@@ -136,7 +136,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\22d62c07e672408fbb4cc20ed7a053e4\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin64_screen_capture</TargetName>
+    <TargetName>mfxplugin32_screen_capture</TargetName>
     <PreBuildEventUseInBuild />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
