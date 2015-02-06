@@ -115,7 +115,7 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-    if (MFX_SINGLE_THREAD != pParam->flags)
+    if (MFX_SINGLE_THREAD != m_param.flags)
     {
 
         // decide the number of threads
