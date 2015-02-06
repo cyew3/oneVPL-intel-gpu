@@ -107,7 +107,7 @@ void FillSpsBuffer(
     sps.GlobalSearch     = 0;
     sps.LocalSearch      = 0;
     sps.EarlySkip        = 0;
-    sps.MBBRC            = 0;
+    sps.MBBRC            = IsOn(par.m_ext.CO2.MBBRC);
     sps.ParallelBRC      = 0;
     sps.SliceSizeControl = 0;
 
@@ -133,7 +133,7 @@ void FillSpsBuffer(
     sps.amp_enabled_flag                   = par.m_sps.amp_enabled_flag;
     sps.SAO_enabled_flag                   = par.m_sps.sample_adaptive_offset_enabled_flag;
     sps.pcm_enabled_flag                   = par.m_sps.pcm_enabled_flag;
-    sps.pcm_loop_filter_disable_flag       = par.m_sps.pcm_loop_filter_disabled_flag;
+    sps.pcm_loop_filter_disable_flag       = 1;//par.m_sps.pcm_loop_filter_disabled_flag;
     sps.tiles_fixed_structure_flag         = 0;
     sps.chroma_format_idc                  = par.m_sps.chroma_format_idc;
     sps.separate_colour_plane_flag         = par.m_sps.separate_colour_plane_flag;

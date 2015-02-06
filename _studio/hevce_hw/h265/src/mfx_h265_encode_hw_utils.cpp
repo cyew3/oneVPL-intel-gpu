@@ -393,6 +393,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.HEVCParam);
     ExtBuffer::Construct(par, m_ext.HEVCTiles);
     ExtBuffer::Construct(par, m_ext.Opaque);
+    ExtBuffer::Construct(par, m_ext.CO2);
 }
 
 mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool /*query*/)
@@ -400,6 +401,7 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool /*query*/)
     ExtBuffer::Set(par, m_ext.HEVCParam);
     ExtBuffer::Set(par, m_ext.HEVCTiles);
     ExtBuffer::Set(par, m_ext.Opaque);
+    ExtBuffer::Set(par, m_ext.CO2);
 
     return MFX_ERR_NONE;
 }

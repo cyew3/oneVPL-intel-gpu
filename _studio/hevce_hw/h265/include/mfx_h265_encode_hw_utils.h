@@ -113,6 +113,16 @@ enum
     INSERT_SEI = (INSERT_BPSEI | INSERT_PTSEI)
 };
 
+inline bool IsOn(mfxU32 opt)
+{
+    return opt == MFX_CODINGOPTION_ON;
+}
+
+inline bool IsOff(mfxU32 opt)
+{
+    return opt == MFX_CODINGOPTION_OFF;
+}
+
 class MfxFrameAllocResponse : public mfxFrameAllocResponse
 {
 public:
@@ -213,6 +223,7 @@ namespace ExtBuffer
         EXTBUF(mfxExtOpaqueSurfaceAlloc,    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
         EXTBUF(mfxExtDPB,                   MFX_EXTBUFF_DPB);
         EXTBUF(mfxExtHEVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS);
+        EXTBUF(mfxExtCodingOption2,         MFX_EXTBUFF_CODING_OPTION2);
     #undef EXTBUF
 
     class Proxy
@@ -300,6 +311,7 @@ public:
         mfxExtHEVCParam             HEVCParam;
         mfxExtHEVCTiles             HEVCTiles;
         mfxExtOpaqueSurfaceAlloc    Opaque;
+        mfxExtCodingOption2         CO2;
     } m_ext;
 
     mfxU32 BufferSizeInKB;

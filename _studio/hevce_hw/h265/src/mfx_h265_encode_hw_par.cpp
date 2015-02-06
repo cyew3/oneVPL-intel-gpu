@@ -471,6 +471,19 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
     return (mfxU16)par.m_slice.size();
 }
 
+bool CheckTriStateOption(mfxU16 & opt)
+{
+    if (opt != MFX_CODINGOPTION_UNKNOWN &&
+        opt != MFX_CODINGOPTION_ON &&
+        opt != MFX_CODINGOPTION_OFF)
+    {
+        opt = MFX_CODINGOPTION_UNKNOWN;
+        return false;
+    }
+
+    return true;
+}
+
 mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
 {
     mfxU32 unsupported = 0, changed = 0, incompatible = 0;
@@ -592,6 +605,14 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
         par.mfx.RateControlMethod = 0;
         changed ++;
         break;
+    }
+
+    if (!CheckTriStateOption(par.m_ext.CO2.MBBRC)) changed = true;
+
+    if ((caps.MBBRCSupport == 0 || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) && IsOn(par.m_ext.CO2.MBBRC))
+    {
+        changed = true;
+        par.m_ext.CO2.MBBRC = MFX_CODINGOPTION_OFF;
     }
 
     if (   par.mfx.FrameInfo.PicStruct != 0 
@@ -811,6 +832,10 @@ void SetDefaults(
 
         if (!par.BufferSizeInKB)
             par.BufferSizeInKB = Min(maxBuf, mfxU32(rawBits / 8000));
+
+        if (par.m_ext.CO2.MBBRC == MFX_CODINGOPTION_UNKNOWN)
+            par.m_ext.CO2.MBBRC = MFX_CODINGOPTION_OFF;
+
     }
     else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
         || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
@@ -823,6 +848,8 @@ void SetDefaults(
             par.BufferSizeInKB = Min(maxBuf, par.MaxKbps / 16);
         if (!par.InitialDelayInKB)
             par.InitialDelayInKB = par.BufferSizeInKB / 2;
+        if (par.m_ext.CO2.MBBRC == MFX_CODINGOPTION_UNKNOWN)
+            par.m_ext.CO2.MBBRC = MFX_CODINGOPTION_ON;
     }
     
     if (!par.mfx.GopOptFlag)
