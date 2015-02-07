@@ -2181,7 +2181,7 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
         m_pYUVSource .reset( new LatencyDecoder(m_components[eREN].m_bCalcLatency && m_inParams.bNoPipelineSync, NULL, &PerfCounterTime::Instance(), VM_STRING("Decoder"), m_pYUVSource));
     }
 
-    if (!m_InputExtBuffers.empty() || MFX_CODEC_AVC == m_components[eDEC].m_params.mfx.CodecId)
+    if (!m_InputExtBuffers.empty() || MFX_CODEC_AVC == m_components[eDEC].m_params.mfx.CodecId || MFX_CODEC_VP8 == m_components[eDEC].m_params.mfx.CodecId)
     {
         m_pYUVSource .reset( new MVCHandler<IYUVSource>(m_components[eDEC].m_extParams, m_components[eDEC].m_bForceMVCDetection, m_pYUVSource));
     }
