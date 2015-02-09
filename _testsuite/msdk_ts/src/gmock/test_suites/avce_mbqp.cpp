@@ -126,6 +126,7 @@ private:
     mfxU32 m_fo;
     bool mbqp_on;
     mfxU32 mode;
+    tsNoiseFiller m_reader;
 public:
     TestSuite()
         : tsParserH264AU(BS_H264_INIT_MODE_CABAC|BS_H264_INIT_MODE_CAVLC)
@@ -133,6 +134,7 @@ public:
         , m_fo(0)
         , mbqp_on(true)
         , mode(0)
+        , m_reader()
     {
         set_trace_level(0);
         srand(0);
@@ -173,6 +175,7 @@ public:
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
+        m_reader.ProcessSurface(s);
         mfxU32 numMB = ((m_par.mfx.FrameInfo.CropW + 15) / 16) * ((m_par.mfx.FrameInfo.CropH + 15) / 16);
         Ctrl& ctrl = m_ctrl[m_fo];
 
