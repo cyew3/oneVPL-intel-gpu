@@ -11,7 +11,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="hevce_tests.cpp">
+    <ClCompile Include="hevce_optimization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
