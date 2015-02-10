@@ -1161,6 +1161,9 @@ typedef struct tagENCODE_SET_SLICE_HEADER_H264
     CHAR                slice_alpha_c0_offset_div2;
     CHAR                slice_beta_offset_div2;
     UINT                slice_id;
+	
+	UINT	luma_weight_flag[2];		// for l0/l1
+	UINT	chroma_weight_flag[2];	// for l0/l1
 
 } ENCODE_SET_SLICE_HEADER_H264;
 
