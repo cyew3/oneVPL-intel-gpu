@@ -55,6 +55,12 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->iBackgroundColor = 0;
     pMfxExecuteParams->statusReportID = 0;
     pMfxExecuteParams->bFieldWeaving = false;
+    pMfxExecuteParams->bCameraPipeEnabled = false;
+    pMfxExecuteParams->bCameraBlackLevelCorrection =false;
+    pMfxExecuteParams->bCameraGammaCorrection = false;
+    pMfxExecuteParams->bCameraHotPixelRemoval = false;
+    pMfxExecuteParams->bCameraWhiteBalaceCorrection = false;
+    pMfxExecuteParams->bCCM = false;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 

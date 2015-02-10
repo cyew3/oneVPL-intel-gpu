@@ -35,11 +35,11 @@ Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 using namespace MfxHwVideoProcessing;
 
-enum 
+enum
 {
     CURRENT_TIME_STAMP              = 100000,
     FRAME_INTERVAL                  = 10000,
-    ACCEPTED_DEVICE_ASYNC_DEPTH     = 15, // 
+    ACCEPTED_DEVICE_ASYNC_DEPTH     = 15, //
 
 };
 
@@ -51,7 +51,7 @@ enum QueryStatus
     VPREP_GPU_FAILED        =   3
 };
 
-enum 
+enum
 {
     DEINTERLACE_ENABLE  = 0,
     DEINTERLACE_DISABLE = 1
@@ -102,6 +102,12 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->statusReportID = 0;
     pMfxExecuteParams->bFieldWeaving = false;
     pMfxExecuteParams->iFieldProcessingMode = 0;
+    pMfxExecuteParams->bCameraPipeEnabled = false;
+    pMfxExecuteParams->bCameraBlackLevelCorrection = false;
+    pMfxExecuteParams->bCameraGammaCorrection = false;
+    pMfxExecuteParams->bCameraHotPixelRemoval = false;
+    pMfxExecuteParams->bCameraWhiteBalaceCorrection = false;
+    pMfxExecuteParams->bCCM = false;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 
@@ -150,8 +156,8 @@ mfxStatus CopyFrameDataBothFields(
 ////////////////////////////////////////////////////////////////////////////////////
 
 mfxStatus CpuFrc::StdFrc::DoCpuFRC_AndUpdatePTS(
-    mfxFrameSurface1 *input, 
-    mfxFrameSurface1 *output, 
+    mfxFrameSurface1 *input,
+    mfxFrameSurface1 *output,
     mfxStatus *intSts)
 {
     mfxF64 localDeltaTime = m_externalDeltaTime + m_timeFrameInterval;
@@ -196,7 +202,7 @@ mfxStatus CpuFrc::StdFrc::DoCpuFRC_AndUpdatePTS(
                 output->Data.FrameOrder = input->Data.FrameOrder;
             }
             else
-            {                    
+            {
                 output->Data.FrameOrder = (mfxU32) MFX_FRAMEORDER_UNKNOWN;
                 output->Data.TimeStamp = (mfxU64) MFX_TIME_STAMP_INVALID;
             }
@@ -242,8 +248,8 @@ mfxStatus CpuFrc::StdFrc::DoCpuFRC_AndUpdatePTS(
 
 
 mfxStatus CpuFrc::PtsFrc::DoCpuFRC_AndUpdatePTS(
-    mfxFrameSurface1 *input, 
-    mfxFrameSurface1 *output, 
+    mfxFrameSurface1 *input,
+    mfxFrameSurface1 *output,
     mfxStatus *intSts)
 {
     bool isIncreasedSurface = false;
@@ -376,8 +382,8 @@ mfxStatus CpuFrc::PtsFrc::DoCpuFRC_AndUpdatePTS(
 
 
 mfxStatus CpuFrc::DoCpuFRC_AndUpdatePTS(
-    mfxFrameSurface1 *input, 
-    mfxFrameSurface1 *output, 
+    mfxFrameSurface1 *input,
+    mfxFrameSurface1 *output,
     mfxStatus *intSts)
 {
     if(NULL == input) return MFX_ERR_MORE_DATA;
@@ -396,7 +402,7 @@ mfxStatus CpuFrc::DoCpuFRC_AndUpdatePTS(
 ////////////////////////////////////////////////////////////////////////////////////
 // Gfx Resource Manager
 ////////////////////////////////////////////////////////////////////////////////////
-mfxStatus ResMngr::Close(void) 
+mfxStatus ResMngr::Close(void)
 {
     ReleaseSubResource(true);
 
@@ -405,11 +411,11 @@ mfxStatus ResMngr::Close(void)
 
     return MFX_ERR_NONE;
 
-} // mfxStatus ResMngr::Close(void) 
+} // mfxStatus ResMngr::Close(void)
 
 
 mfxStatus ResMngr::Init(
-    Config & config, 
+    Config & config,
     VideoCORE* core)
 {
     if( config.m_IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
@@ -429,9 +435,9 @@ mfxStatus ResMngr::Init(
         (config.m_extConfig.mode & COMPOSITE) ||
         (config.m_extConfig.mode & IS_REFERENCES))
     {
-        mfxU32 totalInputFramesCount = config.m_extConfig.customRateData.bkwdRefCount + 
-                                       1 + 
-                                       config.m_extConfig.customRateData.fwdRefCount; 
+        mfxU32 totalInputFramesCount = config.m_extConfig.customRateData.bkwdRefCount +
+                                       1 +
+                                       config.m_extConfig.customRateData.fwdRefCount;
 
         m_inputIndexCount   = totalInputFramesCount;
         m_outputIndexCountPerCycle = config.m_extConfig.customRateData.outputIndexCountPerCycle;
@@ -449,8 +455,8 @@ mfxStatus ResMngr::Init(
 
 
 mfxStatus ResMngr::DoAdvGfx(
-    mfxFrameSurface1 *input, 
-    mfxFrameSurface1 *output, 
+    mfxFrameSurface1 *input,
+    mfxFrameSurface1 *output,
     mfxStatus *intSts)
 {
     input;
@@ -466,7 +472,7 @@ mfxStatus ResMngr::DoAdvGfx(
         if(  m_outputIndex ==  m_outputIndexCountPerCycle )//MARKER: produce last frame for current Task Slot
         {
              // update all state
-             m_bOutputReady= false; 
+             m_bOutputReady= false;
              m_outputIndex = 0;
 
             *intSts = MFX_ERR_NONE;
@@ -481,7 +487,7 @@ mfxStatus ResMngr::DoAdvGfx(
         return MFX_ERR_NONE;
     }
     else // new task
-    {   
+    {
         m_fwdRefCount = m_fwdRefCountRequired;
 
         if(input)
@@ -490,7 +496,7 @@ mfxStatus ResMngr::DoAdvGfx(
 
             mfxStatus sts = m_core->IncreaseReference( &(input->Data) );
             MFX_CHECK_STS(sts);
-            
+
             ExtSurface surf;
             surf.pSurf = input;
             if(m_surf[VPP_IN].size() > 0) // input in system memory
@@ -522,7 +528,7 @@ mfxStatus ResMngr::DoAdvGfx(
             {
                 // update all state
                 m_outputIndex = 0;
-               
+
                 *intSts = MFX_ERR_NONE;
             }
             else
@@ -550,8 +556,8 @@ mfxStatus ResMngr::DoAdvGfx(
 
 
 mfxStatus ResMngr::DoMode30i60p(
-    mfxFrameSurface1 *input, 
-    mfxFrameSurface1 *output, 
+    mfxFrameSurface1 *input,
+    mfxFrameSurface1 *output,
     mfxStatus *intSts)
 {
     input;
@@ -569,7 +575,7 @@ mfxStatus ResMngr::DoMode30i60p(
         return MFX_ERR_NONE;
     }
     else // new task
-    {   
+    {
         m_outputIndex = 1; // marker new task;
 
         if(input)
@@ -580,7 +586,7 @@ mfxStatus ResMngr::DoMode30i60p(
                 m_outputIndexCountPerCycle = 3;
                 m_bkwdRefCount = 0;
             }
-            else 
+            else
             {
                 m_bOutputReady = true;
                 *intSts = MFX_ERR_MORE_SURFACE;
@@ -599,7 +605,7 @@ mfxStatus ResMngr::DoMode30i60p(
 
             mfxStatus sts = m_core->IncreaseReference( &(input->Data) );
             MFX_CHECK_STS(sts);
-            
+
             ExtSurface surf;
             surf.pSurf = input;
             if(m_surf[VPP_IN].size() > 0) // input in system memory
@@ -611,7 +617,7 @@ mfxStatus ResMngr::DoMode30i60p(
                 m_surf[VPP_IN][surf.resIdx].SetFree(false);// marks resource as "locked"
             }
             m_surfQueue.push_back(surf);
-        
+
             if(1 != m_inputIndex)
             {
                 m_pSubResource =  CreateSubResourceForMode30i60p();
@@ -706,7 +712,7 @@ ReleaseResource* ResMngr::CreateSubResource(void)
     mfxU32 numFramesForRemove = GetNumToRemove();
 
     numFramesForRemove = IPP_MIN(numFramesForRemove, (mfxU32)m_surfQueue.size());
-    
+
     for(mfxU32 i = 0; i < numFramesForRemove; i++)
     {
         subRes->surfaceListForRelease.push_back( m_surfQueue[i] );
@@ -731,7 +737,7 @@ ReleaseResource* ResMngr::CreateSubResourceForMode30i60p(void)
     subRes->refCount = m_outputIndexCountPerCycle;
 
     mfxU32 numFramesForRemove = 1;
-    
+
     for(mfxU32 i = 0; i < numFramesForRemove; i++)
     {
         subRes->surfaceListForRelease.push_back( m_surfQueue[i] );
@@ -752,7 +758,7 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
     pInSurface;
 
     mfxU32 refIndx = 0;
-        
+
     // bkwd
     pTask->bkwdRefCount = m_bkwdRefCount;//aya: we set real bkw frames
     mfxU32 actualNumber = m_actualNumber;
@@ -810,7 +816,7 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
 
     // MARKER: last frame in current Task Slot
     // after resource are filled we can update generall container and state
-    if( m_outputIndex == 0 ) 
+    if( m_outputIndex == 0 )
     {
         size_t numFramesToRemove = m_pSubResource->surfaceListForRelease.size();
 
@@ -823,7 +829,7 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
         pTask->output.timeStamp = (pTask->input.timeStamp + pTask->input.endTimeStamp) >> 1;
     }
 
-    // update 
+    // update
     if(pTask->taskIndex > 0 && !(pTask->taskIndex & 1))
     {
         m_actualNumber++;
@@ -843,7 +849,7 @@ mfxStatus ResMngr::FillTask(
     pInSurface;
 
     mfxU32 refIndx = 0;
-        
+
     // bkwd
     pTask->bkwdRefCount = m_bkwdRefCount;//aya: we set real bkw frames
     mfxU32 actualNumber = m_actualNumber;
@@ -922,7 +928,7 @@ mfxStatus ResMngr::FillTask(
 
     // MARKER: last frame in current Task Slot
     // after resource are filled we can update generall container and state
-    if( m_outputIndex == 0 ) 
+    if( m_outputIndex == 0 )
     {
         size_t numFramesToRemove = m_pSubResource->surfaceListForRelease.size();
 
@@ -947,7 +953,7 @@ mfxStatus ResMngr::CompleteTask(DdiTask *pTask)
         pTask->pSubResource->refCount--;
     }
 
-    mfxStatus sts =  ReleaseSubResource(false); // false mean release subResource with RefCnt == 0 only 
+    mfxStatus sts =  ReleaseSubResource(false); // false mean release subResource with RefCnt == 0 only
     MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
@@ -959,26 +965,26 @@ mfxStatus ResMngr::CompleteTask(DdiTask *pTask)
 // TaskManager
 ////////////////////////////////////////////////////////////////////////////////////
 
-TaskManager::TaskManager() 
-{     
+TaskManager::TaskManager()
+{
     m_mode30i60p.m_numOutputFrames    = 0;
     m_mode30i60p.m_prevInputTimeStamp = 0;
 
     m_taskIndex = 0;
     m_actualNumber = 0;
     m_core = 0;
-    
+
     m_mode30i60p.SetEnable(false);
 
     m_extMode = 0;
 
-} // TaskManager::TaskManager() 
+} // TaskManager::TaskManager()
 
-TaskManager::~TaskManager() 
-{ 
+TaskManager::~TaskManager()
+{
     Close();
 
-} // TaskManager::~TaskManager(void) 
+} // TaskManager::~TaskManager(void)
 
 mfxStatus TaskManager::Init(
     VideoCORE* core,
@@ -993,8 +999,8 @@ mfxStatus TaskManager::Init(
     m_extMode           = config.m_extConfig.mode;
 
     m_mode30i60p.m_numOutputFrames    = 0;
-    m_mode30i60p.m_prevInputTimeStamp = 0;   
-    
+    m_mode30i60p.m_prevInputTimeStamp = 0;
+
     m_cpuFrc.Reset(m_extMode, config.m_extConfig.frcRational);
 
     m_resMngr.Init(config, this->m_core);
@@ -1006,8 +1012,8 @@ mfxStatus TaskManager::Init(
 } // mfxStatus TaskManager::Init(void)
 
 
-mfxStatus TaskManager::Close(void) 
-{ 
+mfxStatus TaskManager::Close(void)
+{
     m_actualNumber = m_taskIndex = 0;
 
     Clear(m_tasks);
@@ -1024,7 +1030,7 @@ mfxStatus TaskManager::Close(void)
     frcRational[VPP_OUT].FrameRateExtD = 1;
     m_cpuFrc.Reset(m_extMode, frcRational);
 
-    m_resMngr.Close(); // release all resource 
+    m_resMngr.Close(); // release all resource
 
     return MFX_ERR_NONE;
 
@@ -1032,8 +1038,8 @@ mfxStatus TaskManager::Close(void)
 
 
 mfxStatus TaskManager::DoCpuFRC_AndUpdatePTS(
-    mfxFrameSurface1 *input, 
-    mfxFrameSurface1 *output, 
+    mfxFrameSurface1 *input,
+    mfxFrameSurface1 *output,
     mfxStatus *intSts)
 {
     return m_cpuFrc.DoCpuFRC_AndUpdatePTS(input, output, intSts);
@@ -1042,8 +1048,8 @@ mfxStatus TaskManager::DoCpuFRC_AndUpdatePTS(
 
 
 mfxStatus TaskManager::DoAdvGfx(
-    mfxFrameSurface1 *input, 
-    mfxFrameSurface1 *output, 
+    mfxFrameSurface1 *input,
+    mfxFrameSurface1 *output,
     mfxStatus *intSts)
 {
     return m_resMngr.DoAdvGfx(input, output, intSts);
@@ -1113,17 +1119,17 @@ mfxStatus TaskManager::AssignTask(
     if (m_mode30i60p.IsEnabled())
     {
         UpdatePTS_Mode30i60p(
-            input, 
-            output, 
+            input,
+            output,
             pTask->taskIndex,
-            &intSts);            
+            &intSts);
     }
     else if ( !(FRC_ENABLED & m_extMode) && !isAdvGfxMode )
-    { 
+    {
         UpdatePTS_SimpleMode(input, output);
     }
     else if (IS_REFERENCES & m_extMode) /* case for ADI with references */
-    { 
+    {
         UpdatePTS_SimpleMode(input, output);
     }
 
@@ -1168,7 +1174,7 @@ mfxStatus TaskManager::CompleteTask(DdiTask* pTask)
     FreeTask(pTask);
 
     return MFX_TASK_DONE;
-    
+
 
 } // mfxStatus TaskManager::CompleteTask(DdiTask* pTask)
 
@@ -1228,7 +1234,7 @@ mfxStatus TaskManager::FillTask(
     pTask->taskIndex    = m_taskIndex++;
 
     pTask->input.timeStamp     = CURRENT_TIME_STAMP + m_actualNumber * FRAME_INTERVAL;
-    pTask->input.endTimeStamp  = CURRENT_TIME_STAMP + (m_actualNumber + 1) * FRAME_INTERVAL;    
+    pTask->input.endTimeStamp  = CURRENT_TIME_STAMP + (m_actualNumber + 1) * FRAME_INTERVAL;
     pTask->output.timeStamp    = pTask->input.timeStamp;
 
     pTask->bAdvGfxEnable     = (COMPOSITE & m_extMode) || (FRC_INTERPOLATION & m_extMode) ||
@@ -1262,7 +1268,7 @@ mfxStatus TaskManager::FillTask(
     }
 
     m_actualNumber += 1; // make sense for simple mode only
-    
+
     mfxStatus sts = m_core->IncreaseReference( &(pTask->input.pSurf->Data) );
     MFX_CHECK_STS(sts);
 
@@ -1277,8 +1283,8 @@ mfxStatus TaskManager::FillTask(
 
 
 void TaskManager::UpdatePTS_Mode30i60p(
-    mfxFrameSurface1 *input, 
-    mfxFrameSurface1 *output, 
+    mfxFrameSurface1 *input,
+    mfxFrameSurface1 *output,
     mfxU32 taskIndex,
     mfxStatus *intSts)
 {
@@ -1321,7 +1327,7 @@ void TaskManager::UpdatePTS_Mode30i60p(
 
 
 void TaskManager::UpdatePTS_SimpleMode(
-    mfxFrameSurface1 *input, 
+    mfxFrameSurface1 *input,
     mfxFrameSurface1 *output)
 {
     output->Data.TimeStamp = input->Data.TimeStamp;
@@ -1360,7 +1366,7 @@ mfxStatus  VideoVPPHW::CopyPassThrough(mfxFrameSurface1 *pInputSurface, mfxFrame
         dstPattern |= MFX_MEMTYPE_DXVA2_DECODER_TARGET;
     }
 
-    sts = m_pCore->DoFastCopyWrapper(pOutputSurface, 
+    sts = m_pCore->DoFastCopyWrapper(pOutputSurface,
         dstPattern,
         pInputSurface,
         srcPattern);
@@ -1380,7 +1386,7 @@ mfxStatus  VideoVPPHW::CopyPassThrough(mfxFrameSurface1 *pInputSurface, mfxFrame
 
 VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
 {
-    m_ioMode = mode; 
+    m_ioMode = mode;
     m_pCore = core;
 
     m_config.m_bRefFrameEnable = false;
@@ -1389,7 +1395,7 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
     m_config.m_bPassThroughEnable = false;
     m_config.m_surfCount[VPP_IN]   = 1;
     m_config.m_surfCount[VPP_OUT]  = 1;
- 
+
     m_executeSurf.resize(0);
 
     m_IOPattern = 0;
@@ -1421,7 +1427,7 @@ VideoVPPHW::~VideoVPPHW()
 
 
 mfxStatus  VideoVPPHW::Init(
-    mfxVideoParam *par, 
+    mfxVideoParam *par,
     bool isTemporal)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -1484,7 +1490,7 @@ mfxStatus  VideoVPPHW::Init(
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
-    
+
     sts = m_ddi->CreateDevice( m_pCore, par, isTemporal);
     MFX_CHECK_STS( sts );
 
@@ -1501,7 +1507,7 @@ mfxStatus  VideoVPPHW::Init(
     m_config.m_IOPattern = 0;
     sts = ConfigureExecuteParams(
         m_params,
-        caps, 
+        caps,
         m_executeParams,
         m_config);
 
@@ -1512,8 +1518,8 @@ mfxStatus  VideoVPPHW::Init(
     }
     MFX_CHECK_STS(sts);
 
-    if( m_executeParams.bFRCEnable && 
-       (MFX_HW_D3D11 == m_pCore->GetVAType()) && 
+    if( m_executeParams.bFRCEnable &&
+       (MFX_HW_D3D11 == m_pCore->GetVAType()) &&
        m_executeParams.customRateData.indexRateConversion != 0 )
     {
         sts = m_ddi->ReconfigDevice(m_executeParams.customRateData.indexRateConversion);
@@ -1530,9 +1536,9 @@ mfxStatus  VideoVPPHW::Init(
     m_config.m_surfCount[VPP_IN]  = (mfxU16)(m_config.m_surfCount[VPP_IN]  + m_asyncDepth);
 
     //-----------------------------------------------------
-    // [3] Opaque pre-work:: moved to high level 
+    // [3] Opaque pre-work:: moved to high level
     //-----------------------------------------------------
-    
+
     mfxFrameAllocRequest request;
 
     //-----------------------------------------------------
@@ -1596,7 +1602,7 @@ mfxStatus  VideoVPPHW::Init(
     if (foundCompositionFilter)
     {
         dynamic_cast<VAAPIVideoCORE&>(*m_pCore).SetCmCopyStatus(false);
-    }    
+    }
 #endif
 
     //-----------------------------------------------------
@@ -1643,7 +1649,7 @@ mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCap
     MFX_CHECK_STS( sts );
 
     return sts;
-    
+
 } // mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCaps& caps)
 
 
@@ -1778,7 +1784,7 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
 
 mfxStatus VideoVPPHW::Close()
 {
-    mfxStatus sts = MFX_ERR_NONE; 
+    mfxStatus sts = MFX_ERR_NONE;
 
     m_internalVidSurf[VPP_IN].Free();
     m_internalVidSurf[VPP_OUT].Free();
@@ -1793,7 +1799,7 @@ mfxStatus VideoVPPHW::Close()
     m_config.m_surfCount[VPP_OUT] = 1;
 
     m_IOPattern = 0;
-    
+
     //m_acceptedDeviceAsyncDepth = ACCEPTED_DEVICE_ASYNC_DEPTH;
 
     m_taskMngr.Close();
@@ -1816,10 +1822,10 @@ mfxStatus VideoVPPHW::Close()
 
 
 mfxStatus VideoVPPHW::VppFrameCheck(
-                                    mfxFrameSurface1 *input, 
+                                    mfxFrameSurface1 *input,
                                     mfxFrameSurface1 *output,
                                     mfxExtVppAuxData *aux,
-                                    MFX_ENTRY_POINT pEntryPoint[], 
+                                    MFX_ENTRY_POINT pEntryPoint[],
                                     mfxU32 &numEntryPoints)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
@@ -1838,7 +1844,7 @@ mfxStatus VideoVPPHW::VppFrameCheck(
         // submit task
         SyncTaskSubmission(pTask);
 
-        if (false == m_config.m_bPassThroughEnable || 
+        if (false == m_config.m_bPassThroughEnable ||
             (true == m_config.m_bPassThroughEnable && true == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf)))
         {
             // configure entry point
@@ -1853,7 +1859,7 @@ mfxStatus VideoVPPHW::VppFrameCheck(
     }
     else
     {
-        if (false == m_config.m_bPassThroughEnable || 
+        if (false == m_config.m_bPassThroughEnable ||
             (true == m_config.m_bPassThroughEnable && true == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf)))
         {
             // configure entry point
@@ -1949,7 +1955,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
         mfxMemId memId = 0;
 
         if (SYS_TO_D3D == m_ioMode || SYS_TO_SYS == m_ioMode)
-        {   
+        {
             mfxU32 resIdx = surfQueue[i].resIdx;
 
             if( surfQueue[i].bUpdate )
@@ -1981,7 +1987,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
                 inputVidSurf.Data.MemId = m_internalVidSurf[VPP_IN].mids[ resIdx ];
 
                 mfxStatus sts = m_pCore->DoFastCopyWrapper(
-                    &inputVidSurf, 
+                    &inputVidSurf,
                     MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
                     surfQueue[i].pSurf,
                     MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY);
@@ -2063,7 +2069,7 @@ mfxStatus VideoVPPHW::PostWorkOutSurface(ExtSurface & output)
         d3dSurf.Data.MemId = m_internalVidSurf[VPP_OUT].mids[ output.resIdx ];
 
         mfxStatus sts = m_pCore->DoFastCopyWrapper(
-            output.pSurf, 
+            output.pSurf,
             MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
             &d3dSurf,
             MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET
@@ -2085,7 +2091,7 @@ mfxStatus VideoVPPHW::PostWorkInputSurface(mfxU32 numSamples)
 {
     // unregister input surface(s) (make sense in case DX9 only)
     for (mfxU32 i = 0 ; i < numSamples; i += 1)
-    {        
+    {
         mfxStatus sts = m_ddi->Register( &(m_executeSurf[i].hdl), 1, FALSE);
         MFX_CHECK_STS(sts);
     }
@@ -2100,7 +2106,7 @@ mfxStatus VideoVPPHW::PostWorkInputSurface(mfxU32 numSamples)
 
 int RunGpu(
     void* inD3DSurf, void* outD3DSurf,
-    int fieldMask, 
+    int fieldMask,
     CmDevice *device, CmQueue *queue, CmKernel *kernel, int WIDTH, int HEIGHT)
 {
     int res;
@@ -2218,7 +2224,7 @@ mfxStatus VideoVPPHW::ProcessFieldCopy(std::vector<ExtSurface> & surfQueue /* IN
         mfxU32 width  = surfQueue[0].pSurf->Info.Width;
         mfxU32 height = surfQueue[0].pSurf->Info.Height;
 
-        
+
         int fieldMask = mask-1; // to get valid Sergey Osipov's kernel mask [0, 1, 2, 3]
 
         int sts = RunGpu(
@@ -2242,7 +2248,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    if (true == m_config.m_bPassThroughEnable && 
+    if (true == m_config.m_bPassThroughEnable &&
         false == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf))
     {
         sts = CopyPassThrough(pTask->input.pSurf, pTask->output.pSurf);
@@ -2260,7 +2266,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     // bkwdFrames
     for(i = 0; i < pTask->bkwdRefCount; i++)
     {
-        indx = i; 
+        indx = i;
         surfQueue[indx] = pTask->m_refList[i];
     }
 
@@ -2368,7 +2374,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     m_executeParams.statusReportID = pTask->taskIndex;
 
     // aya: logic of deinterlace using is very complex (see internal msdk spec)
-    // here is correct code but driver produce artefact. 
+    // here is correct code but driver produce artefact.
     // will be used after driver fix
     //-----------------------------------------------------
     //{
@@ -2378,7 +2384,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     //    mfxU16 srcPic = pInputSurface->Info.PicStruct;// aya: may be issue in case of multiple input frames
 
     //    bool bDeinterlaceRequired = ((dstPic & MFX_PICSTRUCT_PROGRESSIVE) && (!(srcPic & MFX_PICSTRUCT_PROGRESSIVE)));
-    //        
+    //
     //    if( bDeinterlaceRequired )
     //    {
     //        m_executeParams.iTargetInterlacingMode = DEINTERLACE_ENABLE;
@@ -2456,7 +2462,7 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
     if (0 == pHwVpp->m_executeParams.iFieldProcessingMode ) {
         sts = pHwVpp->m_ddi->QueryTaskStatus(currentTaskIdx);
-        MFX_CHECK_STS(sts);    
+        MFX_CHECK_STS(sts);
     }
 
     //[2] Variance
@@ -2479,13 +2485,13 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
                 assert(variance.size() <= 11);
 
                 for(mfxU32 i = 0; i < variance.size(); i++)
-                {    
+                {
                     pExtReport->Variances[i] = variance[i];
                 }
             }
             else if( MFX_EXTBUFF_VPP_AUXDATA == pTask->pAuxData->Header.BufferId)
             {
-                pTask->pAuxData->PicStruct = EstimatePicStruct( 
+                pTask->pAuxData->PicStruct = EstimatePicStruct(
                     &variance[0],
                     pHwVpp->m_params.vpp.Out.Width,
                     pHwVpp->m_params.vpp.Out.Height);
@@ -2795,11 +2801,11 @@ mfxStatus ConfigureExecuteParams(
                 config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);//aya fixme ????
 
                 // aya: driver supports GFX FRC for progressive content only and NV12 input!!!
-                bool isProgressiveStream = ((MFX_PICSTRUCT_PROGRESSIVE == videoParam.vpp.In.PicStruct) && 
+                bool isProgressiveStream = ((MFX_PICSTRUCT_PROGRESSIVE == videoParam.vpp.In.PicStruct) &&
                     (MFX_PICSTRUCT_PROGRESSIVE == videoParam.vpp.Out.PicStruct)) ? true : false;
 
                 bool isNV12Input = (MFX_FOURCC_NV12 == videoParam.vpp.In.FourCC) ? true : false;
-                if(caps.uFrameRateConversion && 
+                if(caps.uFrameRateConversion &&
                    (MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(videoParam)) &&
                     isProgressiveStream &&
                     isNV12Input)
@@ -2807,7 +2813,7 @@ mfxStatus ConfigureExecuteParams(
                     mfxF64 inFrameRate  = CalculateUMCFramerate(videoParam.vpp.In.FrameRateExtN,  videoParam.vpp.In.FrameRateExtD);
                     mfxF64 outFrameRate = CalculateUMCFramerate(videoParam.vpp.Out.FrameRateExtN, videoParam.vpp.Out.FrameRateExtD);
                     mfxF64 mfxRatio = outFrameRate / inFrameRate;
-                    
+
                     mfxU32 frcCount = (mfxU32)caps.frcCaps.customRateData.size();
                     mfxF64 FRC_EPS = 0.01;
 
@@ -2821,7 +2827,7 @@ mfxStatus ConfigureExecuteParams(
                         {
                             config.m_extConfig.mode = FRC_INTERPOLATION;
                             config.m_extConfig.customRateData = caps.frcCaps.customRateData[frcIdx];
-                            
+
                             mfxU32 framesCount = (rateData->bkwdRefCount + 1 + rateData->fwdRefCount);
                             config.m_surfCount[VPP_IN]  = (mfxU16)IPP_MAX(framesCount, config.m_surfCount[VPP_IN]);
                             config.m_surfCount[VPP_OUT] = (mfxU16)IPP_MAX(rateData->outputIndexCountPerCycle, config.m_surfCount[VPP_OUT]);
@@ -2845,8 +2851,8 @@ mfxStatus ConfigureExecuteParams(
                         }
                     }
                 }
-                
-                
+
+
                 inDNRatio = (mfxF64) videoParam.vpp.In.FrameRateExtD / videoParam.vpp.In.FrameRateExtN;
                 outDNRatio = (mfxF64) videoParam.vpp.Out.FrameRateExtD / videoParam.vpp.Out.FrameRateExtN;
 
@@ -2854,7 +2860,7 @@ mfxStatus ConfigureExecuteParams(
             }
 
             case MFX_EXTBUFF_VPP_ITC:
-            {   
+            {
                 // simulating inverse telecine by simple frame skipping and bob deinterlacing
                 config.m_extConfig.mode = FRC_ENABLED | FRC_STANDARD;
 
@@ -2862,10 +2868,10 @@ mfxStatus ConfigureExecuteParams(
                 config.m_extConfig.frcRational[VPP_IN].FrameRateExtD = videoParam.vpp.In.FrameRateExtD;
                 config.m_extConfig.frcRational[VPP_OUT].FrameRateExtN = videoParam.vpp.Out.FrameRateExtN;
                 config.m_extConfig.frcRational[VPP_OUT].FrameRateExtD = videoParam.vpp.Out.FrameRateExtD;
-                
+
                 inDNRatio  = (mfxF64) videoParam.vpp.In.FrameRateExtD / videoParam.vpp.In.FrameRateExtN;
                 outDNRatio = (mfxF64) videoParam.vpp.Out.FrameRateExtD / videoParam.vpp.Out.FrameRateExtN;
-                
+
                 executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_BOB;
                 config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                 config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
@@ -2889,7 +2895,7 @@ mfxStatus ConfigureExecuteParams(
 
                             executeParams.istabMode = extIStab->Mode;
 
-                            // aya: all checks provided on high level 
+                            // aya: all checks provided on high level
                             /*if( extIStab->Mode != MFX_IMAGESTAB_MODE_UPSCALE && extIStab->Mode != MFX_IMAGESTAB_MODE_BOXING )
                             {
                                 return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -2993,7 +2999,7 @@ mfxStatus ConfigureExecuteParams(
                 config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;
 
                 executeParams.bComposite = true;
-                    
+
                 break;
             }
             case MFX_EXTBUFF_VPP_FIELD_PROCESSING:
@@ -3012,7 +3018,7 @@ mfxStatus ConfigureExecuteParams(
                         const int TFF2BFF = 0x1;
                         const int BFF2TFF = 0x2;
                         const int BFF2BFF = 0x3;*/
-                        
+
                         if (extFP->Mode == MFX_VPP_COPY_FRAME)
                         {
                             executeParams.iFieldProcessingMode = FRAME2FRAME;
@@ -3065,13 +3071,13 @@ mfxStatus ConfigureExecuteParams(
         executeParams.bSceneDetectionEnable = false;
     }
 
-    if ((FRC_ENABLED & config.m_extConfig.mode) && 
+    if ((FRC_ENABLED & config.m_extConfig.mode) &&
         (2 == pipelineList.size()) &&
         IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_RESIZE))
     {
         // check that no roi or scaling was requested
         if ((videoParam.vpp.In.Width == videoParam.vpp.Out.Width && videoParam.vpp.In.Height == videoParam.vpp.Out.Height) &&
-            (videoParam.vpp.In.CropW == videoParam.vpp.Out.CropW && videoParam.vpp.In.CropH == videoParam.vpp.Out.CropH) && 
+            (videoParam.vpp.In.CropW == videoParam.vpp.Out.CropW && videoParam.vpp.In.CropH == videoParam.vpp.Out.CropH) &&
             (videoParam.vpp.In.CropX == videoParam.vpp.Out.CropX && videoParam.vpp.In.CropY == videoParam.vpp.Out.CropY)
             )
         {
@@ -3250,7 +3256,7 @@ mfxU32 GetMFXFrcMode(const mfxVideoParam & videoParam)
         if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION)
         {
             mfxExtVPPFrameRateConversion *extFrc = (mfxExtVPPFrameRateConversion *) videoParam.ExtParam[i];
-            return extFrc->Algorithm;            
+            return extFrc->Algorithm;
         }
     }
 
@@ -3469,7 +3475,7 @@ mfxStatus CopyFrameDataBothFields(
 } // mfxStatus CopyFrameDataBothFields(
 
 
-const unsigned char genx_fcopy_cmcode[5789] = { 
+const unsigned char genx_fcopy_cmcode[5789] = {
 0x43,0x49,0x53,0x41,0x03,0x00,0x01,0x00,0x0b,0x4d,0x62,0x43,0x6f,0x70,0x79,0x46,
 0x69,0x65,0x4c,0x64,0x32,0x00,0x00,0x00,0x53,0x10,0x00,0x00,0xd0,0x09,0x00,0x00,
 0x00,0x00,0x00,0x00,0x01,0x02,0x85,0x10,0x00,0x00,0x18,0x06,0x00,0x00,0x00,0x00,
