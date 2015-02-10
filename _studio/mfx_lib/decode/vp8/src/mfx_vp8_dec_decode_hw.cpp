@@ -85,6 +85,9 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+    if (m_is_initialized)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
     eMFXVAType vatype = m_p_core->GetVAType();
     if(vatype == MFX_HW_D3D11)
     {
