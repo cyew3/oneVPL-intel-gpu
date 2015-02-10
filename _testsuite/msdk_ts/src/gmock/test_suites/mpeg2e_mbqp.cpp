@@ -54,8 +54,6 @@ public:
 
     mfxU8 NextQP()
     {
-        m_mb++;
-
         if (m_mb > m_hdr.slice[m_slice].NumMb - 1)
         {
             if (++m_slice > m_hdr.NumSlice - 1)
@@ -64,7 +62,12 @@ public:
             m_mb = 0;
         }
 
-        return m_hdr.slice[m_slice].mb[m_mb].quantiser_scale_code;
+        mfxU8 quantizer_scale_code = m_hdr.slice[m_slice].mb[m_mb].quantiser_scale_code;
+
+        if (!quantizer_scale_code)
+            quantizer_scale_code = m_hdr.slice[m_slice].quantiser_scale_code;
+
+        return quantizer_scale_code;
     }
 };
 
@@ -205,7 +208,24 @@ public:
                         break;
                     }
                 }
+
                 mfxU16 quantiser_scale_code = 0;
+                if (hdr.pic_coding_ext->q_scale_type == 0)
+                {
+                    quantiser_scale_code = expected_qp / 2;
+                }
+                else
+                {
+                    if (expected_qp <= 8)
+                        quantiser_scale_code = expected_qp;
+                    else if (expected_qp <=24)
+                        quantiser_scale_code =  8 + (expected_qp-8)/2;
+                    else if (expected_qp <= 56)
+                        quantiser_scale_code =  16 + (expected_qp-24)/4;
+                    else
+                        quantiser_scale_code =  24 + (expected_qp-56)/8;
+                }
+
                 if (expected_qp > 7 && expected_qp <= 62)
                 {
                     quantiser_scale_code = (expected_qp + 1) >> 1;
@@ -223,7 +243,9 @@ public:
 
                 if (quantiser_scale_code != qp)
                 {
-                    g_tsLog << "\nERROR: Expected QP (" << mfxU16(expected_qp) << ") != real QP (" << mfxU16(qp) << ")\n";
+                    g_tsLog << "\nERROR: Expected QP converted/msdk (" << mfxU16(quantiser_scale_code)
+                            << "/" << mfxU16(expected_qp)
+                            << ") != real QP (" << mfxU16(qp) << ")\n";
                     return MFX_ERR_ABORTED;
                 }
 
