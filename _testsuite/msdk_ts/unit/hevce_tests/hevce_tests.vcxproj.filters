@@ -14,5 +14,8 @@
     <ClCompile Include="hevce_optimization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="hevce_gop.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
