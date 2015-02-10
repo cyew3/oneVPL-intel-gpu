@@ -237,7 +237,8 @@ inline
 mfxU32 GetFreeThreadNumber(MFX_THREAD_ASSIGNMENT &occupancyInfo,
                            MFX_SCHEDULER_TASK *pTask)
 {
-    mfxU32 mask, numThreads;
+    mfxU64 mask;
+    mfxU32 numThreads;
     mfxU32 i;
 
     // get available thread mask and maximum allowed threads number
@@ -253,7 +254,7 @@ mfxU32 GetFreeThreadNumber(MFX_THREAD_ASSIGNMENT &occupancyInfo,
 
     for (i = 0; i < numThreads; i += 1)
     {
-        if (0 == (mask & (1 << i)))
+        if (0 == (mask & (1LL << i)))
         {
             return i;
         }
@@ -356,10 +357,10 @@ mfxStatus mfxSchedulerCore::WrapUpTask(MFX_CALL_INFO &callInfo,
     if (0 == (MFX_TASK_INTER & occupancyInfo.threadingPolicy))
     {
         occupancyInfo.occupancy += 1;
-        occupancyInfo.threadMask |= (1 << callInfo.threadNum);
+        occupancyInfo.threadMask |= (1LL << callInfo.threadNum);
     }
     pTask->param.occupancy += 1;
-    pTask->param.threadMask |= (1 << callInfo.threadNum);
+    pTask->param.threadMask |= (1LL << callInfo.threadNum);
 
     pTask->param.numberOfCalls += 1;
 
@@ -464,11 +465,11 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
 
         // clean up the task object
         pTask->param.occupancy -= 1;
-        pTask->param.threadMask &= ~(1 << pCallInfo->threadNum);
+        pTask->param.threadMask &= ~(1LL << pCallInfo->threadNum);
         if (0 == (MFX_TASK_INTER & occupancyInfo.threadingPolicy))
         {
             occupancyInfo.occupancy -= 1;
-            occupancyInfo.threadMask &= ~(1 << pCallInfo->threadNum);
+            occupancyInfo.threadMask &= ~(1LL << pCallInfo->threadNum);
         }
         occupancyInfo.taskOccupancy -= (0 == pTask->param.occupancy) ? (1) : (0);
 

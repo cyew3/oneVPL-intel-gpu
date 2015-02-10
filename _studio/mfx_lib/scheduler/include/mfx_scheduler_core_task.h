@@ -40,7 +40,7 @@ struct MFX_THREAD_ASSIGNMENT
     // Current occupancy of the task(s) (number of threads entered inside)
     mfxU32 occupancy;
     // Occupied thread numbers mask
-    mfxU32 threadMask;
+    mfxU64 threadMask;
 
     // Pointer to the last task using this pState.
     MFX_SCHEDULER_TASK *pLastTask;
@@ -98,7 +98,7 @@ struct MFX_SCHEDULER_TASK : public mfxDependencyItem<MFX_TASK_NUM_DEPENDENCIES>
     // Current occupancy of the task (number of threads entered inside)
     mfxU32 occupancy;
     // Occupied threads bit mask
-    mfxU32 threadMask;
+    mfxU64 threadMask;
     // Number of call of the task
     mfxU32 numberOfCalls;
 
