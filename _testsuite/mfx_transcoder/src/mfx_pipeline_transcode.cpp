@@ -297,8 +297,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 
         HANDLE_HEVC_PARAM(PicWidthInLumaSamples,     OPT_UINT_16,    "HEVC encoded picture width (SPS.pic_width_in_luma_samples)"),
         HANDLE_HEVC_PARAM(PicHeightInLumaSamples,    OPT_UINT_16,    "HEVC encoded picture height (SPS.pic_height_in_luma_samples)"),
-		
-        HANDLE_VP8_OPTION(Version,            OPT_UINT_16,   "0-maxU16"),
+
         HANDLE_VP8_OPTION(EnableMultipleSegments,OPT_UINT_16,   "0-maxU32"),
         HANDLE_VP8_OPTION(LoopFilterType,        OPT_UINT_16,   "0-maxU16"),
         HANDLE_VP8_OPTION(SharpnessLevel,        OPT_UINT_16,   "0-maxU16"),
@@ -1110,6 +1109,12 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 argv ++;
 
             }
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-VP8Version"), VM_STRING("Set provided value for Version in mfxExtVP8CodingOption structure"), OPT_INT_32, VM_STRING("")))
+        {
+            MFX_CHECK(1 + argv < argvEnd);
+            argv ++;
+            MFX_PARSE_INT(m_extVP8CodingOptions->Version, argv[0]);
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-roi"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
