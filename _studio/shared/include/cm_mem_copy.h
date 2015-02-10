@@ -104,7 +104,7 @@ public:
         if (m_pCmDevice)
             return m_pCmDevice;
 
-        cmSts = ::CreateCmDevice(m_pCmDevice, version, dpy);
+        cmSts = ::CreateCmDevice(m_pCmDevice, version, dpy, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE);
         if (cmSts != CM_SUCCESS)
             return NULL;
 

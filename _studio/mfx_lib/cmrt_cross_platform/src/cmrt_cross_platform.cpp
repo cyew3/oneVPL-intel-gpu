@@ -117,6 +117,7 @@ enum { DX9=1, DX11=2, VAAPI=3 };
 
 typedef INT (* CreateCmDeviceDx9FuncTypeEx)(CmDx9::CmDevice *&, UINT &, IDirect3DDeviceManager9 *, UINT);
 typedef INT (* CreateCmDeviceDx11FuncTypeEx)(CmDx11::CmDevice *&, UINT &, ID3D11Device *, UINT);
+typedef INT (* CreateCmDeviceLinuxFuncTypeEx)(CmLinux::CmDevice *&, UINT &, VADisplay, UINT);
 typedef INT (* CreateCmDeviceDx9FuncType)(CmDx9::CmDevice *&, UINT &, IDirect3DDeviceManager9 *);
 typedef INT (* CreateCmDeviceDx11FuncType)(CmDx11::CmDevice *&, UINT &, ID3D11Device *);
 typedef INT (* CreateCmDeviceLinuxFuncType)(CmLinux::CmDevice *&, UINT &, VADisplay);
@@ -324,14 +325,14 @@ INT CreateCmDevice(CmDevice *& pD, UINT & version, VADisplay va_dpy, UINT mode)
         return CM_FAILURE;
     }
 
-    CreateCmDeviceLinuxFuncType createFunc = (CreateCmDeviceLinuxFuncType)vm_so_get_addr(device->m_dll, FUNC_NAME_CREATE_CM_DEVICE);
+    CreateCmDeviceLinuxFuncTypeEx createFunc = (CreateCmDeviceLinuxFuncTypeEx)vm_so_get_addr(device->m_dll, FUNC_NAME_CREATE_CM_DEVICE_EX);
     if (createFunc == 0)
     {
         delete device;
         return CM_FAILURE;
     }
 
-    INT res = createFunc(device->m_linux, version, va_dpy);
+    INT res = createFunc(device->m_linux, version, va_dpy, mode);
     if (res != CM_SUCCESS)
     {
         delete device;
