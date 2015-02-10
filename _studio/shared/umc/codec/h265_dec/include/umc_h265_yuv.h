@@ -26,7 +26,6 @@ class H265DecYUVBufferPadded
 {
 public:
 
-    Ipp32s  m_bpp;           // should be >= 8
     Ipp32s  m_chroma_format; // AVC standard value chroma_format_idc
 
     PlanePtrY               m_pYPlane;

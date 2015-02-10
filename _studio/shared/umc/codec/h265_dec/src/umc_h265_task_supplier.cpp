@@ -191,7 +191,7 @@ bool IsNeedSPSInvalidate(const H265SeqParamSet *old_sps, const H265SeqParamSet *
     if (old_sps->bit_depth_chroma != new_sps->bit_depth_chroma)
         return true;
 
-    if (old_sps->m_pcPTL.GetGeneralPTL()->profile_idc != old_sps->m_pcPTL.GetGeneralPTL()->profile_idc)
+    if (old_sps->m_pcPTL.GetGeneralPTL()->profile_idc != new_sps->m_pcPTL.GetGeneralPTL()->profile_idc)
         return true;
 
     if (old_sps->chroma_format_idc != new_sps->chroma_format_idc)
@@ -2179,7 +2179,7 @@ void TaskSupplier_H265::AddFakeReferenceFrame(H265Slice *)
         return;
     }
 
-    umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pFrame->m_bpp, pSlice->m_pSeqParamSet, pSlice->m_pPicParamSet);
+    umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pSlice->m_pSeqParamSet, pSlice->m_pPicParamSet);
     if (umcRes != UMC::UMC_OK)
     {
         return;
@@ -2348,11 +2348,12 @@ UMC::Status TaskSupplier_H265::InitFreeFrame(H265DecoderFrame * pFrame, const H2
 }
 
 // Allocate frame internals
-UMC::Status TaskSupplier_H265::AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet)
+UMC::Status TaskSupplier_H265::AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet)
 {
     UMC::ColorFormat color_format = pFrame->GetColorFormat();
         //(ColorFormat) pSeqParamSet->chroma_format_idc;
     UMC::VideoDataInfo info;
+    Ipp32s bit_depth = pSeqParamSet->getPTL()->GetGeneralPTL()->profile_idc == 2 ? 10 : 8;
     info.Init(dimensions.width, dimensions.height, color_format, bit_depth);
 
     UMC::FrameMemID frmMID;
@@ -2413,8 +2414,7 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
         return 0;
     }
 
-    //umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pFrame->m_bpp, pFrame->GetColorFormat());
-    umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pFrame->m_bpp, pSlice->GetSeqParam(), pSlice->GetPicParam());
+    umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pSlice->GetSeqParam(), pSlice->GetPicParam());
     if (umcRes != UMC::UMC_OK)
     {
         return 0;

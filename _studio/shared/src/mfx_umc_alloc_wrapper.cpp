@@ -346,7 +346,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
 
     if (colorFormat == UMC::NV12)
     {
-        if ((m_info.GetPlaneBitDepth(0) > 8 || m_info.GetPlaneBitDepth(1) > 8) != (info->GetPlaneBitDepth(0) > 8 || info->GetPlaneBitDepth(1) > 8))
+        if ((m_info.GetPlaneSampleSize(0) != info->GetPlaneSampleSize(0)) || (m_info.GetPlaneSampleSize(1) != info->GetPlaneSampleSize(1)))
             return UMC::UMC_ERR_UNSUPPORTED;
     }
 

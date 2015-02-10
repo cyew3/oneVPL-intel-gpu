@@ -443,19 +443,38 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 #endif 
 }
 
+mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo * frameInfo)
+{
+    mfxU32 fourcc;
+    switch (codecProfile)
+    {
+    case MFX_PROFILE_HEVC_MAIN10:
+        fourcc = MFX_FOURCC_P010;
+        break;
+    case 4:
+        if (frameInfo->BitDepthLuma > 8 || frameInfo->BitDepthChroma > 8)
+        {
+            fourcc = (frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV422) ? MFX_FOURCC_P210 : MFX_FOURCC_P010;
+        }
+        else
+        {
+            fourcc = (frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV422) ? MFX_FOURCC_NV16 : MFX_FOURCC_NV12;
+        }
+        break;
+
+    case MFX_PROFILE_HEVC_MAIN:
+    default:
+        fourcc = MFX_FOURCC_NV12;
+        break;
+    }
+
+    return fourcc;
+}
+
 // Initialize mfxVideoParam structure based on decoded bitstream header values
 UMC::Status MFX_Utility::FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool full)
 {
     par->mfx.CodecId = MFX_CODEC_HEVC;
-
-    if (seq->bit_depth_luma > 8 || seq->bit_depth_chroma > 8)
-    {
-        par->mfx.FrameInfo.FourCC = (seq->chroma_format_idc == 2) ? MFX_FOURCC_P210 : MFX_FOURCC_P010;
-    }
-    else
-    {
-        par->mfx.FrameInfo.FourCC = (seq->chroma_format_idc == 2) ? MFX_FOURCC_NV16 : MFX_FOURCC_NV12;
-    }
 
     par->mfx.FrameInfo.Width = (mfxU16) (seq->pic_width_in_luma_samples);
     par->mfx.FrameInfo.Height = (mfxU16) (seq->pic_height_in_luma_samples);
@@ -508,6 +527,8 @@ UMC::Status MFX_Utility::FillVideoParam(const H265SeqParamSet * seq, mfxVideoPar
 
     par->mfx.CodecProfile = (mfxU16)seq->m_pcPTL.GetGeneralPTL()->profile_idc;
     par->mfx.CodecLevel = (mfxU16)seq->m_pcPTL.GetGeneralPTL()->level_idc;
+
+    par->mfx.FrameInfo.FourCC = CalculateFourcc(par->mfx.CodecProfile, &par->mfx.FrameInfo);
 
     par->mfx.DecodedOrder = 0;
 
@@ -955,15 +976,16 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 && (in->mfx.FrameInfo.BitDepthLuma > 8 || in->mfx.FrameInfo.BitDepthChroma > 8))
+        mfxU32 fourcc = CalculateFourcc(in->mfx.CodecProfile, &in->mfx.FrameInfo);
+
+        if (in->mfx.FrameInfo.FourCC != fourcc)
         {
-            out->mfx.FrameInfo.BitDepthLuma = 0;
-            out->mfx.FrameInfo.BitDepthChroma = 0;
+            out->mfx.FrameInfo.FourCC = 0;
             sts = MFX_ERR_UNSUPPORTED;
         }
         
         out->mfx.FrameInfo.Shift = in->mfx.FrameInfo.Shift;
-        if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210)
         {
             if (in->mfx.FrameInfo.Shift > 1)
             {
@@ -1216,6 +1238,14 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
     if ((in->mfx.FrameInfo.AspectRatioW || in->mfx.FrameInfo.AspectRatioH) && !(in->mfx.FrameInfo.AspectRatioW && in->mfx.FrameInfo.AspectRatioH))
         return false;
 
+    if (in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN && in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN10 && in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAINSP && in->mfx.CodecProfile != 4)
+        return false;
+
+    mfxU32 fourcc = CalculateFourcc(in->mfx.CodecProfile, &in->mfx.FrameInfo);
+
+    if (in->mfx.FrameInfo.FourCC != fourcc)
+        return false;
+
     if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210)
     {
         if (in->mfx.FrameInfo.BitDepthLuma < 8 || in->mfx.FrameInfo.BitDepthLuma > 16)
@@ -1253,7 +1283,7 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
         return false;
     }
 
-    if (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
+    if (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 && in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422)
         return false;
 
     if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))

@@ -1526,7 +1526,7 @@ bool TaskBrokerTwoThread_H265::GetDecodingTileTask(H265DecoderFrameInfo * info, 
     CUProcessInfo * processInfo = &tileToWrap->processInfo;
     H265Slice *slice = FindSliceByCUAddr(info, processInfo->m_curCUToProcess[DEC_PROCESS_ID]);
 
-    if (refAU != 0 && slice->GetSliceHeader()->slice_temporal_mvp_enabled_flag)
+    if (refAU != 0)// && slice->GetSliceHeader()->slice_temporal_mvp_enabled_flag)
     {
         // if slice_temporal_mvp_enabled_flag equals zero we do not depend from collocated mv info
         Ipp32s rasterOrderCUAddr = info->m_pFrame->getCD()->getCUOrderMap(processInfo->m_curCUToProcess[DEC_PROCESS_ID]);

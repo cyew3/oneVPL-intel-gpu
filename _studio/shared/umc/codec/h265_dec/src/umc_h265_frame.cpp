@@ -336,7 +336,7 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
 
         delete[] m_cuOffsetY;
 
-        Ipp32u pixelSize = (sps->bit_depth_luma > 8 || sps->bit_depth_chroma > 8) ? 2 : 1;
+        Ipp32u pixelSize = (sps->need16bitOutput) ? 2 : 1;
         Ipp32s NumCUInWidth = m_CodingData->m_WidthInCU;
         Ipp32s NumCUInHeight = m_CodingData->m_HeightInCU;
 

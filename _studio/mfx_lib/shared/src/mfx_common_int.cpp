@@ -70,8 +70,7 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if ((info->BitDepthLuma > 0 || info->BitDepthChroma > 0) &&
-        ((info->BitDepthLuma > 8 || info->BitDepthChroma > 8) != (info->FourCC == MFX_FOURCC_P010 || info->FourCC == MFX_FOURCC_P210)))
+    if ((info->BitDepthLuma > 8 || info->BitDepthChroma > 8) && (info->FourCC != MFX_FOURCC_P010 && info->FourCC != MFX_FOURCC_P210))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (info->Shift)
@@ -440,6 +439,8 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
         switch (surface->Info.FourCC)
         {
         case MFX_FOURCC_NV12:
+        case MFX_FOURCC_P010:
+        case MFX_FOURCC_P210:
             if (!surface->Data.Y || !surface->Data.UV)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             if (pitch > 0xFFFF)

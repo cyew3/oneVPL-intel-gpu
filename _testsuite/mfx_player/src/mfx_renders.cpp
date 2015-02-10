@@ -297,7 +297,7 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
         {
             if (!m_params.useHMstyle)
             {
-                bool useP010 = (m_VideoParams.mfx.FrameInfo.BitDepthLuma > 8 || m_VideoParams.mfx.FrameInfo.BitDepthChroma > 8 || m_params.use10bitOutput);
+                bool useP010 = m_nFourCC == MFX_FOURCC_YUV420_16 || m_params.use10bitOutput;
                 m_VideoParams.mfx.FrameInfo.FourCC = useP010 ? MFX_FOURCC_YUV420_16 : MFX_FOURCC_YV12;
                 if (m_VideoParams.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
                     m_VideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_YV16;

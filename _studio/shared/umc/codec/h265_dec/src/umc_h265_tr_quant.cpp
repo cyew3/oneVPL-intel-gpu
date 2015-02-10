@@ -101,7 +101,7 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
     Ipp32s bitDepth = TxtType == TEXT_LUMA ? m_context->m_sps->bit_depth_luma : m_context->m_sps->bit_depth_chroma;
 
     bool inplace = sizeof(DstCoeffsType) == 1;
-    if (m_context->m_sps->bit_depth_luma == 8 && m_context->m_sps->bit_depth_chroma == 8)
+    if (!m_context->m_sps->need16bitOutput)
     {
         if(transQuantBypass)
         {
@@ -244,7 +244,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             }
 
             {
-            if (m_context->m_sps->bit_depth_chroma > 8 || m_context->m_sps->bit_depth_luma > 8)
+            if (m_context->m_sps->need16bitOutput)
                 SumOfResidAndPred<Ipp16u>(residualsTempBuffer, residualsTempBuffer1, res_pitch, (Ipp16u*)ptrChroma, DstStride, Size, chromaUPresent, chromaVPresent, m_context->m_sps->bit_depth_chroma);
             else
                 SumOfResidAndPred<Ipp8u>(residualsTempBuffer, residualsTempBuffer1, res_pitch, ptrChroma, DstStride, Size, chromaUPresent, chromaVPresent, m_context->m_sps->bit_depth_chroma);

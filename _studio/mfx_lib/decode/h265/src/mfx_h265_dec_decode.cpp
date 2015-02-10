@@ -612,13 +612,6 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
         }
     }
 
-    //eMFXPlatform platform = MFX_Utility::GetPlatform(core, par);
-    //if (platform != core->GetPlatformType())
-    //{
-    //    VM_ASSERT(platform == MFX_PLATFORM_SOFTWARE);
-    //    return MFX_WRN_PARTIAL_ACCELERATION;
-    //}
-
     return MFX_ERR_NONE;
 }
 
@@ -1380,11 +1373,6 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
     }
 
     if (newPar->mfx.FrameInfo.FourCC != oldPar->mfx.FrameInfo.FourCC)
-    {
-        return false;
-    }
-
-    if ((newPar->mfx.FrameInfo.BitDepthLuma > 8 || newPar->mfx.FrameInfo.BitDepthChroma > 8) != (oldPar->mfx.FrameInfo.BitDepthLuma > 8 || oldPar->mfx.FrameInfo.BitDepthChroma > 8))
     {
         return false;
     }

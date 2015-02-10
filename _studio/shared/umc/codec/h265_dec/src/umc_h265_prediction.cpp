@@ -72,7 +72,7 @@ void H265Prediction::InitTempBuff(DecodingContext* context)
 // Perform motion compensation prediction for a partition of CU
 void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    if (m_context->m_sps->bit_depth_luma > 8 || m_context->m_sps->bit_depth_chroma > 8)
+    if (m_context->m_sps->need16bitOutput)
         MotionCompensationInternal<Ipp16u>(pCU, AbsPartIdx, Depth);
     else
         MotionCompensationInternal<Ipp8u>(pCU, AbsPartIdx, Depth);

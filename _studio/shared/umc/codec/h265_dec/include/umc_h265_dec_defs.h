@@ -46,6 +46,14 @@ namespace UMC_HEVC_DECODER
 # define H265_RESTRICT
 #endif
 
+enum
+{
+    H265_PROFILE_MAIN = 1,
+    H265_PROFILE_MAIN10 = 2,
+    H265_PROFILE_MAINSP = 3,
+    H265_PROFILE_FREXT = 4,
+};
+
 // HEVC level identifiers
 enum
 {
@@ -860,6 +868,8 @@ struct H265SeqParamSetBase
 
     Ipp32u ChromaArrayType;
 
+    Ipp32u need16bitOutput;
+
     void Reset()
     {
         H265SeqParamSetBase sps = {0};
@@ -932,7 +942,8 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     ReferencePictureSetList *getRPSList()       { return &m_RPSList; }
     const ReferencePictureSetList *getRPSList() const       { return &m_RPSList; }
 
-    H265ProfileTierLevel* getPTL()     { return &m_pcPTL; }
+    H265ProfileTierLevel* getPTL() { return &m_pcPTL; }
+    const H265ProfileTierLevel* getPTL() const    { return &m_pcPTL; }
 
     H265HRD* getHrdParameters                 ()             { return &m_hrdParameters; }
 

@@ -49,7 +49,7 @@ public:
 
 
 protected:
-    virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
+    virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
 
     virtual void InitFrameCounter(H265DecoderFrame * pFrame, const H265Slice *pSlice);
 

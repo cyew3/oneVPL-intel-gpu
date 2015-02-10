@@ -318,7 +318,7 @@ namespace UMC_HEVC_DECODER
             CoeffsPtr p_ResiU = (CoeffsPtr)m_ppcYUVResi->m_pUPlane;
             CoeffsPtr p_ResiV = (CoeffsPtr)m_ppcYUVResi->m_pVPlane;
 
-            if (m_pSeqParamSet->bit_depth_chroma > 8 || m_pSeqParamSet->bit_depth_luma > 8)
+            if (m_pSeqParamSet->need16bitOutput)
                 SumOfResidAndPred<Ipp16u>(p_ResiU, p_ResiV, residualPitch, (Ipp16u*)pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
             else
                 SumOfResidAndPred<Ipp8u>(p_ResiU, p_ResiV, residualPitch, pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);

@@ -570,6 +570,12 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
 
     pcSPS->setQpBDOffsetC(6*(pcSPS->bit_depth_chroma - 8));
 
+    if ((pcSPS->bit_depth_luma > 8 || pcSPS->bit_depth_chroma > 8) && pcSPS->m_pcPTL.GetGeneralPTL()->profile_idc < H265_PROFILE_MAIN10)
+        pcSPS->m_pcPTL.GetGeneralPTL()->profile_idc = H265_PROFILE_MAIN10;
+
+    if (pcSPS->m_pcPTL.GetGeneralPTL()->profile_idc == H265_PROFILE_MAIN10 || pcSPS->bit_depth_luma > 8 || pcSPS->bit_depth_chroma > 8)
+        pcSPS->need16bitOutput = 1;
+
     pcSPS->log2_max_pic_order_cnt_lsb = 4 + GetVLCElementU();
     if (pcSPS->log2_max_pic_order_cnt_lsb > 16)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);

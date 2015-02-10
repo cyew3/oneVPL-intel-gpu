@@ -1280,10 +1280,10 @@ void ReconstructorT<bitDepth, H265PlaneType>::CopyPartOfFrameFromRef(PlanePtrY r
 
 void H265SegmentDecoderMultiThreaded::CreateReconstructor()
 {
-    if (m_reconstructor.get() && m_reconstructor->Is8BitsReconstructor() == (m_pSeqParamSet->bit_depth_luma == 8 && m_pSeqParamSet->bit_depth_chroma == 8))
+    if (m_reconstructor.get() && m_reconstructor->Is8BitsReconstructor() == !m_pSeqParamSet->need16bitOutput)
         return;
 
-    if (m_pSeqParamSet->bit_depth_luma > 8 || m_pSeqParamSet->bit_depth_chroma > 8)
+    if (m_pSeqParamSet->need16bitOutput)
     {
         m_reconstructor.reset(new ReconstructorT<true, Ipp16u>);
     }

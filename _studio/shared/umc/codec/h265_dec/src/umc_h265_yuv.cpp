@@ -79,8 +79,6 @@ void H265DecYUVBufferPadded::Init(const UMC::VideoDataInfo *info)
 {
     VM_ASSERT(info);
 
-    m_bpp = IPP_MAX(info->GetPlaneBitDepth(0), info->GetPlaneBitDepth(1));
-
     m_color_format = info->GetColorFormat();
     m_chroma_format = GetH265ColorFormat(info->GetColorFormat());
     m_lumaSize = info->GetPlaneInfo(0)->m_ippSize;
@@ -113,7 +111,6 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
         m_frameData.m_locked = true;
 
     m_color_format = info->GetColorFormat();
-    m_bpp = IPP_MAX(info->GetPlaneBitDepth(0), info->GetPlaneBitDepth(1));
 
     m_chroma_format = GetH265ColorFormat(info->GetColorFormat());
     m_lumaSize = info->GetPlaneInfo(0)->m_ippSize;

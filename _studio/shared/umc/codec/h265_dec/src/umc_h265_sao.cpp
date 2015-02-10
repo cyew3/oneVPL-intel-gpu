@@ -1268,7 +1268,7 @@ void H265SampleAdaptiveOffset::init(const H265SeqParamSet* sps)
     if (!sps->sample_adaptive_offset_enabled_flag)
         return;
 
-    bool is10bits = sps->bit_depth_luma > 8 || sps->bit_depth_chroma > 8;
+    bool is10bits = sps->need16bitOutput != 0;
     if (m_is10bits == is10bits && m_isInitialized)
     {
         if (m_base->isNeedReInit(sps))
