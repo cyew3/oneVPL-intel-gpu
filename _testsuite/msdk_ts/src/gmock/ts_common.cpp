@@ -36,7 +36,7 @@ void set_brc_params(tsExtBufType<mfxVideoParam>* p)
         [motion rank]: from 1 (low motion) to 4 (high motion)
     */
     mfxU32 fr = mfxU32(p->mfx.FrameInfo.FrameRateExtN / p->mfx.FrameInfo.FrameRateExtD);
-    mfxU16 br = mfxU16(p->mfx.FrameInfo.Width * p->mfx.FrameInfo.Width * fr * 2 * 0.07 / 1000);
+    mfxU16 br = mfxU16(p->mfx.FrameInfo.Width * p->mfx.FrameInfo.Height * fr * 2 * 0.07 / 1000);
 
     if (p->mfx.CodecId == MFX_CODEC_MPEG2)
         br = (mfxU16)br*1.5;
