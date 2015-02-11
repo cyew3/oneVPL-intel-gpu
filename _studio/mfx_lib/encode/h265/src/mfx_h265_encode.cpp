@@ -244,7 +244,7 @@ namespace H265Enc {
 #endif
     TU_OPT_GACC(SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3);
     TU_OPT_GACC(SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3);
-    TU_OPT_GACC(SplitThresholdStrengthCUInter,  1,   1,   1,   3,   3,   3,   3);
+    TU_OPT_GACC(SplitThresholdStrengthCUInter,  1,   2,   2,   3,   3,   3,   3);
     TU_OPT_ALL (SplitThresholdTabIndex       ,  1,   1,   1,   2,   2,   2,   2); //Tab1 + strength 3 - fastest combination
 
     //Chroma analysis
@@ -279,7 +279,7 @@ namespace H265Enc {
     TU_OPT_SW  (IntraAngModesP,                 1,   1,   2,   2,   2,   2,   3); //P slice SW
     TU_OPT_SW  (IntraAngModesBRef,              1,   1,   2,   2,   3,   3, 100); //B Ref slice SW
 #endif
-    TU_OPT_GACC(IntraAngModesP,                 2,   2,   2,   2,   3,   3,   3); //P slice Gacc
+    TU_OPT_GACC(IntraAngModesP,                 1,   1,   2,   2,   3,   3,   3); //P slice Gacc
     TU_OPT_GACC(IntraAngModesBRef,              1,   1,   2,   2,   3,   3, 100); //B Ref slice Gacc
     TU_OPT_SW  (IntraAngModesBnonRef,           1,   1,   2,  99,  99, 100, 100); //B non Ref slice SW
     TU_OPT_GACC(IntraAngModesBnonRef,           1,   1,   2,  99,  99, 100, 100); //B non Ref slice Gacc
@@ -335,20 +335,20 @@ namespace H265Enc {
     TU_OPT_SW  (IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
 #endif
     TU_OPT_GACC(IntraNumCand0_2,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand0_3,                2,   2,   2,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand0_4,                2,   2,   2,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand0_3,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand0_4,                1,   1,   1,   1,   1,   1,   1);
     TU_OPT_GACC(IntraNumCand0_5,                1,   1,   1,   1,   1,   1,   1);
     TU_OPT_GACC(IntraNumCand0_6,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand1_2,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand1_3,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand1_4,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand1_5,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand1_6,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand2_2,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand2_3,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand2_4,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand2_5,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand2_6,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand1_2,                6,   6,   4,   2,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand1_3,                6,   6,   4,   2,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand1_4,                4,   3,   2,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand1_5,                4,   3,   2,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand1_6,                4,   3,   2,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand2_2,                3,   3,   2,   2,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand2_3,                3,   3,   2,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
 
     //GACC
     TU_OPT_SW  (EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF);
@@ -376,7 +376,8 @@ namespace H265Enc {
 #else
     TU_OPT_ALL (PatternSubPel,                  3,   3,   3,   3,   4,   4,   4); //4 -dia subpel search; 3- square (see enum SUBPEL_*)
 #endif
-    TU_OPT_ALL (NumBiRefineIter,              999, 999, 999,   3,   2,   1,   1); //999-practically infinite iteration
+    TU_OPT_SW  (NumBiRefineIter,              999, 999, 999,   3,   2,   1,   1); //999-practically infinite iteration
+    TU_OPT_GACC(NumBiRefineIter,              999, 999, 999,   3,   2,   1,   1); //999-practically infinite iteration
     TU_OPT_ALL (FastInterp,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF); 
 #ifdef AMT_ALT_ENCODE
     TU_OPT_SW  (TryIntra,                       2,   2,   2,   2,   2,   2,   2);
@@ -2216,6 +2217,8 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
 
 
                 opts_out->TryIntra = opts_in->TryIntra;
+                opts_out->SkipMotionPartition = opts_in->SkipMotionPartition;
+                opts_out->SkipCandRD = opts_in->SkipCandRD;
                 opts_out->CmIntraThreshold = opts_in->CmIntraThreshold;
                 opts_out->TUSplitIntra = opts_in->TUSplitIntra;
                 opts_out->CUSplit = opts_in->CUSplit;

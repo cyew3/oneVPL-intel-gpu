@@ -4574,7 +4574,7 @@ void H265CU<PixType>::MeCu(Ipp32s absPartIdx, Ipp8u depth)
             return;
     }
 
-    if (m_par->partModes < 2)
+    if (m_par->partModes < 2 || m_par->enableCmFlag && cuWidth == 8)
         return; // rectangular modes are not allowed
 
     // save the decision and restore initial states
@@ -7606,19 +7606,6 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
                 refIdxBest[list] = refIdx;
         }
     }
-
-//    if (m_cslice->slice_type == P_SLICE) {
-//        meInfo->interDir = INTER_DIR_PRED_L0;
-//        meInfo->refIdx[0] = (Ipp8s)refIdxBest[0];
-//        meInfo->refIdx[1] = -1;
-//        meInfo->MV[0] = mvRefBest[0][refIdxBest[0]];
-//        meInfo->MV[1] = MV_ZERO;
-//#ifdef AMT_ICRA_OPT
-//        return costRefBest[0][refIdxBest[0]];
-//#else
-//        return;
-//#endif
-//    }
     
     Ipp32s idxL0 = refIdxBest[0];
     Ipp32s idxL1 = refIdxBest[1];
