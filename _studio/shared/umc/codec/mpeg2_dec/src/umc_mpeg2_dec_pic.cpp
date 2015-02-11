@@ -1104,7 +1104,8 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
     {
       if (MPEG2_I_PICTURE != PictureHeader[task_num].picture_coding_type) // including D-picture
       {
-        return (UMC_ERR_NOT_ENOUGH_DATA);
+        // To support only P frames streams this check is disabled
+        // return (UMC_ERR_NOT_ENOUGH_DATA);
       }
     }
 

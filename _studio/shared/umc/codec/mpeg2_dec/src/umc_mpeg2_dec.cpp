@@ -643,8 +643,9 @@ bool MPEG2VideoDecoderBase::IsPictureToSkip(int task_num)
     }
     else if(!sequenceHeader.first_i_occure)
     {
-        sequenceHeader.num_of_skipped++;
-        return true;
+        // To support only P frames streams this check is disabled
+        //sequenceHeader.num_of_skipped++;
+        //return true;
     }
     else if(PictureHeader[task_num].picture_coding_type == MPEG2_P_PICTURE) {
       sequenceHeader.first_p_occure = 1;
@@ -930,7 +931,8 @@ Status MPEG2VideoDecoderBase::GetPictureHeader(MediaData* input, int task_num, i
    if(m_IsDataFirst && PictureHeader[task_num].picture_coding_type != MPEG2_I_PICTURE)
    {
       m_IsDataFirst = false;
-      return UMC_WRN_INVALID_STREAM;
+      // To support only P frames streams this check is disabled
+      // return UMC_WRN_INVALID_STREAM;
    }
    m_IsDataFirst = false;
 
