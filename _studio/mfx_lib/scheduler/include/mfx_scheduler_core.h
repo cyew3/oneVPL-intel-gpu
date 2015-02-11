@@ -27,7 +27,7 @@
 #include "mfx_common.h"
 
 
-//#define EXTERNAL_THREADING
+//#define MFX_EXTERNAL_THREADING
 
 // set the following define to let the scheduler write log file
 // with all its activities.
@@ -319,8 +319,10 @@ protected:
     void PrintTaskInfo(void);
     void PrintTaskInfoUnsafe(void);
 
+#if defined(MFX_EXTERNAL_THREADING)
     mfxU32 AddThreadToPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext);
     void RemoveThreadFromPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext);
+#endif
 
     // Scheduler's initialization parameters
     MFX_SCHEDULER_PARAM m_param;
@@ -354,12 +356,22 @@ protected:
     bool m_bQuit;
     volatile
     bool m_bQuitWakeUpThread;
+    
+#if defined(MFX_EXTERNAL_THREADING)
     // Threads contexts
     UMC::Array<MFX_SCHEDULER_THREAD_CONTEXT *> m_ppThreadCtx;
-    //MFX_SCHEDULER_THREAD_CONTEXT *m_pThreadCtx;
     // Objects for waiting on in case of nothing to do
-    UMC::Array<UMC::Event *> m_ppTaskAdded;
-    //UMC::Event *m_pTaskAdded;
+    UMC::Array<UMC::Event *> m_ppTaskAdded;    
+#else
+    // Threads contexts
+    MFX_SCHEDULER_THREAD_CONTEXT *m_pThreadCtx;
+    // Objects for waiting on in case of nothing to do
+    UMC::Event *m_pTaskAdded;
+    
+#endif //MFX_EXTERNAL_THREADING
+
+
+
     // Event to wait free task objects
     UMC::Semaphore m_freeTasks;
     // Some task was done in HW
