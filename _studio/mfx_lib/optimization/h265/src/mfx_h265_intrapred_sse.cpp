@@ -1910,8 +1910,8 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
 
     static void PredictIntra_Ang_All_4x4_Even(PixType* PredPel, PixType* /*FiltPel*/, PixType* pels)
     {
-        ALIGN_DECL(16) Ipp8u ref1[16];  // input for mode < 18
-        ALIGN_DECL(16) Ipp8u ref2[16];  // input for mode > 18
+        ALIGN_DECL(64) Ipp8u ref1[16];  // input for mode < 18
+        ALIGN_DECL(64) Ipp8u ref2[16];  // input for mode > 18
 
         Ipp8u *PredPel2 = PredPel + 2 * 4;
         //Ipp8u *FiltPel2 = FiltPel + 2 * 4;
@@ -1937,8 +1937,8 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
 
     static void PredictIntra_Ang_All_8x8_Even(PixType* PredPel, PixType* FiltPel, PixType* pels)
     {
-        ALIGN_DECL(16) Ipp8u ref1[16];  // input for mode < 18
-        ALIGN_DECL(16) Ipp8u ref2[16];  // input for mode > 18
+        ALIGN_DECL(64) Ipp8u ref1[16];  // input for mode < 18
+        ALIGN_DECL(64) Ipp8u ref2[16];  // input for mode > 18
 
         Ipp8u *PredPel2 = PredPel + 2 * 8;
         Ipp8u *FiltPel2 = FiltPel + 2 * 8;
@@ -1969,8 +1969,8 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
 
     static void PredictIntra_Ang_All_16x16_Even(PixType* PredPel, PixType* FiltPel, PixType* pels)
     {
-        ALIGN_DECL(16) Ipp8u ref1[32];  // input for mode < 18
-        ALIGN_DECL(16) Ipp8u ref2[32];  // input for mode > 18
+        ALIGN_DECL(64) Ipp8u ref1[32];  // input for mode < 18
+        ALIGN_DECL(64) Ipp8u ref2[32];  // input for mode > 18
 
         Ipp8u *PredPel2 = PredPel + 2 * 16;
         Ipp8u *FiltPel2 = FiltPel + 2 * 16;
@@ -2000,8 +2000,8 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
 
     static void PredictIntra_Ang_All_32x32_Even(PixType* PredPel, PixType* FiltPel, PixType* pels)
     {
-        ALIGN_DECL(16) Ipp8u ref1[64];  // input for mode < 18
-        ALIGN_DECL(16) Ipp8u ref2[64];  // input for mode > 18
+        ALIGN_DECL(64) Ipp8u ref1[64];  // input for mode < 18
+        ALIGN_DECL(64) Ipp8u ref2[64];  // input for mode > 18
 
         Ipp8u *PredPel2 = PredPel + 2 * 32;
         Ipp8u *FiltPel2 = FiltPel + 2 * 32;
@@ -2029,8 +2029,8 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
 
     static void PredictIntra_Ang_All_4x4(PixType* PredPel, PixType* /*FiltPel*/, PixType* pels)
     {
-        ALIGN_DECL(16) Ipp8u ref1[16];  // input for mode < 18
-        ALIGN_DECL(16) Ipp8u ref2[16];  // input for mode > 18
+        ALIGN_DECL(64) Ipp8u ref1[16];  // input for mode < 18
+        ALIGN_DECL(64) Ipp8u ref2[16];  // input for mode > 18
 
         Ipp8u *PredPel2 = PredPel + 2 * 4;
         //Ipp8u *FiltPel2 = FiltPel + 2 * 4;
@@ -2068,8 +2068,8 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
 
     static void PredictIntra_Ang_All_8x8(PixType* PredPel, PixType* FiltPel, PixType* pels)
     {
-        ALIGN_DECL(16) Ipp8u ref1[16];  // input for mode < 18
-        ALIGN_DECL(16) Ipp8u ref2[16];  // input for mode > 18
+        ALIGN_DECL(64) Ipp8u ref1[16];  // input for mode < 18
+        ALIGN_DECL(64) Ipp8u ref2[16];  // input for mode > 18
 
         Ipp8u *PredPel2 = PredPel + 2 * 8;
         Ipp8u *FiltPel2 = FiltPel + 2 * 8;
@@ -2112,8 +2112,8 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
 
     static void PredictIntra_Ang_All_16x16(PixType* PredPel, PixType* FiltPel, PixType* pels)
     {
-        ALIGN_DECL(16) Ipp8u ref1[32];  // input for mode < 18
-        ALIGN_DECL(16) Ipp8u ref2[32];  // input for mode > 18
+        ALIGN_DECL(64) Ipp8u ref1[32];  // input for mode < 18
+        ALIGN_DECL(64) Ipp8u ref2[32];  // input for mode > 18
 
         Ipp8u *PredPel2 = PredPel + 2 * 16;
         Ipp8u *FiltPel2 = FiltPel + 2 * 16;
@@ -2156,8 +2156,8 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
 
     static void PredictIntra_Ang_All_32x32(PixType* PredPel, PixType* FiltPel, PixType* pels)
     {
-        ALIGN_DECL(16) Ipp8u ref1[64];  // input for mode < 18
-        ALIGN_DECL(16) Ipp8u ref2[64];  // input for mode > 18
+        ALIGN_DECL(64) Ipp8u ref1[64];  // input for mode < 18
+        ALIGN_DECL(64) Ipp8u ref2[64];  // input for mode > 18
 
         Ipp8u *PredPel2 = PredPel + 2 * 32;
         Ipp8u *FiltPel2 = FiltPel + 2 * 32;

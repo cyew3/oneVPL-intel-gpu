@@ -370,6 +370,8 @@ void SetTargetSSE4()
 
     g_dispatcher.h265_PredictIntra_Ang_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_16u_sse;
     g_dispatcher.h265_PredictIntra_Ang_NoTranspose_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_sse;
+    g_dispatcher.h265_PredictIntra_Ang_All_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_sse;
+    g_dispatcher.h265_PredictIntra_Ang_All_Even_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_sse;
 
     g_dispatcher.h265_FilterPredictPels_8u = &MFX_HEVC_PP::h265_FilterPredictPels_8u_sse;
     g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_sse;
@@ -557,6 +559,8 @@ void SetTargetSSSE3()
 
     g_dispatcher.h265_PredictIntra_Ang_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_16u_ssse3;
     g_dispatcher.h265_PredictIntra_Ang_NoTranspose_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_ssse3;
+    g_dispatcher.h265_PredictIntra_Ang_All_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_px;
+    g_dispatcher.h265_PredictIntra_Ang_All_Even_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_px;
 
     g_dispatcher.h265_FilterPredictPels_8u = &MFX_HEVC_PP::h265_FilterPredictPels_8u_px;
     g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_px;
@@ -757,12 +761,14 @@ void SetTargetAVX2()
 
     // [INTRA prediction]
     g_dispatcher.h265_PredictIntra_Ang_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_8u_avx2;
-    g_dispatcher.h265_PredictIntra_Ang_All_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_sse;
+    g_dispatcher.h265_PredictIntra_Ang_All_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_avx2;
     g_dispatcher.h265_PredictIntra_Ang_NoTranspose_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_avx2;
-    g_dispatcher.h265_PredictIntra_Ang_All_Even_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_sse;
+    g_dispatcher.h265_PredictIntra_Ang_All_Even_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_avx2;
 
     g_dispatcher.h265_PredictIntra_Ang_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_16u_avx2;
     g_dispatcher.h265_PredictIntra_Ang_NoTranspose_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_avx2;
+    g_dispatcher.h265_PredictIntra_Ang_All_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_avx2;
+    g_dispatcher.h265_PredictIntra_Ang_All_Even_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_avx2;
 
     g_dispatcher.h265_FilterPredictPels_8u = &MFX_HEVC_PP::h265_FilterPredictPels_8u_avx2;
     g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_avx2;
@@ -950,6 +956,8 @@ void SetTargetPX()
 
     g_dispatcher.h265_PredictIntra_Ang_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px;
     g_dispatcher.h265_PredictIntra_Ang_NoTranspose_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_px;
+    g_dispatcher.h265_PredictIntra_Ang_All_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_px;
+    g_dispatcher.h265_PredictIntra_Ang_All_Even_16u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_px;
 
     g_dispatcher.h265_FilterPredictPels_8u = &MFX_HEVC_PP::h265_FilterPredictPels_8u_px;
     g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_px;

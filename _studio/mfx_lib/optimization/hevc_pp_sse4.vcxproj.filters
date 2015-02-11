@@ -62,5 +62,8 @@
     <ClCompile Include="h265\src\mfx_h265_intragrad_sse.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_intrapred_16u_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

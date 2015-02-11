@@ -464,6 +464,7 @@ namespace MFX_HEVC_PP
     void h265_PredictIntra_Ang_All_8u_px(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
     void h265_PredictIntra_Ang_All_8u_sse(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
     void h265_PredictIntra_Ang_All_8u_ssse3(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
+    void h265_PredictIntra_Ang_All_8u_avx2(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
     void h265_PredictIntra_Ang_NoTranspose_8u_px(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
     void h265_PredictIntra_Ang_NoTranspose_8u_sse(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
     void h265_PredictIntra_Ang_NoTranspose_8u_ssse3(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
@@ -471,6 +472,8 @@ namespace MFX_HEVC_PP
     void h265_PredictIntra_Ang_All_Even_8u_px(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
     void h265_PredictIntra_Ang_All_Even_8u_sse(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
     void h265_PredictIntra_Ang_All_Even_8u_ssse3(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
+    void h265_PredictIntra_Ang_All_Even_8u_avx2(Ipp8u* PredPel, Ipp8u* FiltPel, Ipp8u* pels, Ipp32s width);
+
     void h265_PredictIntra_Ang_16u_px(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
     void h265_PredictIntra_Ang_16u_sse(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
     void h265_PredictIntra_Ang_16u_ssse3(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
@@ -479,6 +482,14 @@ namespace MFX_HEVC_PP
     void h265_PredictIntra_Ang_NoTranspose_16u_sse(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
     void h265_PredictIntra_Ang_NoTranspose_16u_ssse3(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
     void h265_PredictIntra_Ang_NoTranspose_16u_avx2(Ipp32s mode, Ipp16u* PredPel, Ipp16u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Ang_All_16u_px(Ipp16u* PredPel, Ipp16u* FiltPel, Ipp16u* pels, Ipp32s width, Ipp32s bitDepth);
+    void h265_PredictIntra_Ang_All_16u_sse(Ipp16u* PredPel, Ipp16u* FiltPel, Ipp16u* pels, Ipp32s width, Ipp32s bitDepth);
+    void h265_PredictIntra_Ang_All_16u_ssse3(Ipp16u* PredPel, Ipp16u* FiltPel, Ipp16u* pels, Ipp32s width, Ipp32s bitDepth);
+    void h265_PredictIntra_Ang_All_16u_avx2(Ipp16u* PredPel, Ipp16u* FiltPel, Ipp16u* pels, Ipp32s width, Ipp32s bitDepth);
+    void h265_PredictIntra_Ang_All_Even_16u_px(Ipp16u* PredPel, Ipp16u* FiltPel, Ipp16u* pels, Ipp32s width, Ipp32s bitDepth);
+    void h265_PredictIntra_Ang_All_Even_16u_sse(Ipp16u* PredPel, Ipp16u* FiltPel, Ipp16u* pels, Ipp32s width, Ipp32s bitDepth);
+    void h265_PredictIntra_Ang_All_Even_16u_ssse3(Ipp16u* PredPel, Ipp16u* FiltPel, Ipp16u* pels, Ipp32s width, Ipp32s bitDepth);
+    void h265_PredictIntra_Ang_All_Even_16u_avx2(Ipp16u* PredPel, Ipp16u* FiltPel, Ipp16u* pels, Ipp32s width, Ipp32s bitDepth);
 
     void h265_FilterPredictPels_8u_px(Ipp8u* PredPel, Ipp32s width);
     void h265_FilterPredictPels_8u_sse(Ipp8u* PredPel, Ipp32s width);

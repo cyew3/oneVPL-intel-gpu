@@ -872,7 +872,7 @@ namespace MFX_HEVC_PP
         PixType* FiltPel,
         PixType* pels,
         Ipp32s width,
-        Ipp32u bit_depth)
+        Ipp32s bit_depth)
     {
         PixType *pred_ptr = pels;
 
