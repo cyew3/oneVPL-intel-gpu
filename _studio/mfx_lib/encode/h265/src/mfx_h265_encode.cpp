@@ -1895,19 +1895,20 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
 
             out->AsyncDepth = in->AsyncDepth;
 
+            mfxU16 maxHeight = 4320;
+            mfxU16 maxWidth = 8192;
 #ifdef MFX_VA
-            mfxU16 max_Height = 2160;
-            mfxU16 max_With = 3480;
-#else
-            mfxU16 max_Height = 4320;
-            mfxU16 max_With = 8192;
+            if (opts_in->EnableCm != MFX_CODINGOPTION_OFF) {
+                maxHeight = 2160;
+                maxWidth = 3840;
+            }
 #endif       
 
-            if ( (in->mfx.FrameInfo.Width & 15) || in->mfx.FrameInfo.Width > max_With ) {
+            if ( (in->mfx.FrameInfo.Width & 15) || in->mfx.FrameInfo.Width > maxWidth ) {
                 out->mfx.FrameInfo.Width = 0;
                 isInvalid ++;
             } else out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
-            if ( (in->mfx.FrameInfo.Height & 15) || in->mfx.FrameInfo.Height > max_Height ) {
+            if ( (in->mfx.FrameInfo.Height & 15) || in->mfx.FrameInfo.Height > maxHeight ) {
                 out->mfx.FrameInfo.Height = 0;
                 isInvalid ++;
             } else out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
