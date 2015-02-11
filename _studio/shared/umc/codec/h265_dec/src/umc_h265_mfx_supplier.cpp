@@ -471,6 +471,19 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo * frameInfo)
     return fourcc;
 }
 
+bool CheckFourcc(mfxU32 fourcc, mfxU16 codecProfile, mfxFrameInfo * frameInfo)
+{
+    mfxU32 defaultFourcc = CalculateFourcc(codecProfile, frameInfo);
+    if (defaultFourcc == fourcc)
+        return true;
+
+    if (defaultFourcc == MFX_FOURCC_P010 && fourcc == MFX_FOURCC_NV12 && frameInfo->BitDepthLuma == 8 && frameInfo->BitDepthChroma == 8 && 
+        codecProfile == MFX_PROFILE_HEVC_MAIN10)
+        return true;
+
+    return false;
+}
+
 // Initialize mfxVideoParam structure based on decoded bitstream header values
 UMC::Status MFX_Utility::FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool full)
 {
@@ -976,9 +989,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        mfxU32 fourcc = CalculateFourcc(in->mfx.CodecProfile, &in->mfx.FrameInfo);
-
-        if (in->mfx.FrameInfo.FourCC != fourcc)
+        if (!CheckFourcc(in->mfx.FrameInfo.FourCC, in->mfx.CodecProfile, &in->mfx.FrameInfo))
         {
             out->mfx.FrameInfo.FourCC = 0;
             sts = MFX_ERR_UNSUPPORTED;
@@ -1241,9 +1252,7 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
     if (in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN && in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN10 && in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAINSP && in->mfx.CodecProfile != 4)
         return false;
 
-    mfxU32 fourcc = CalculateFourcc(in->mfx.CodecProfile, &in->mfx.FrameInfo);
-
-    if (in->mfx.FrameInfo.FourCC != fourcc)
+    if (!CheckFourcc(in->mfx.FrameInfo.FourCC, in->mfx.CodecProfile, &in->mfx.FrameInfo))
         return false;
 
     if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210)

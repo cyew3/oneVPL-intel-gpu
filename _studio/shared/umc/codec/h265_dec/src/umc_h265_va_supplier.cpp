@@ -132,7 +132,7 @@ UMC::Status VATaskSupplier::AllocateFrameData(H265DecoderFrame * pFrame, IppiSiz
 {
     UMC::ColorFormat chroma_format_idc = pFrame->GetColorFormat();
     UMC::VideoDataInfo info;
-    Ipp32s bit_depth = pSeqParamSet->getPTL()->GetGeneralPTL()->profile_idc == 2 ? 10 : 8;
+    Ipp32s bit_depth = pSeqParamSet->need16bitOutput ? 10 : 8;
     info.Init(dimensions.width, dimensions.height, chroma_format_idc, bit_depth);    
 
     UMC::FrameMemID frmMID;

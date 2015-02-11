@@ -1319,6 +1319,14 @@ mfxStatus MFXDecPipeline::DecodeHeader()
                 //m_components[eDEC].m_params.mfx.FrameInfo.Height = m_inParams.FrameInfo.Height;
             }
 
+            if (m_inParams.isPreferNV12 &&
+                m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_HEVC && m_components[eDEC].m_params.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 &&
+                m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma == 8 && m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma == 8)
+            {
+                m_components[eDEC].m_params.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+                m_components[eDEC].m_params.mfx.FrameInfo.Shift = 0;
+            }
+
             break;
         }
 
@@ -3453,10 +3461,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             m_inParams.m_container = MFX_CONTAINER_RAW;
             vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
         }
-        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg|hevc|hevc10b|vp8|h263|null)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
+        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg|hevc|vp8|h263|null)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
         {
             MFX_CHECK(1 + argv != argvEnd);
-            if (nPattern != 10)
+            if (nPattern != 9)
             {
                 argv++;
                 vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
@@ -3484,16 +3492,12 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.InputCodecType = MFX_CODEC_HEVC;
                 break;
             case 7 :
-                m_inParams.InputCodecType = MFX_CODEC_HEVC;
-                m_inParams.FrameInfo.FourCC = MFX_FOURCC_P010;
-                break;
-            case 8 :
                 m_inParams.InputCodecType = MFX_CODEC_VP8;
                 break;
-            case 9:
+            case 8:
                 m_inParams.InputCodecType = MFX_CODEC_H263;
                 break;
-            case 10:
+            case 9:
                 m_inParams.InputCodecType = MFX_CODEC_CAPTURE;
                 break;
             }
@@ -4419,12 +4423,9 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_PARSE_INT(m_inParams.nBurstDecodeFrames, argv[1])
                     argv++;
             }
-            else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:mkv"), VM_STRING("input stream is mkv container pipeline works with demuxing"), OPT_UNDEFINED)))
+            else if (0!=m_OptProc.Check(argv[0], VM_STRING("-dec:prefer_nv12"), VM_STRING("in case of HEVC Main10 profile use NV12 surface if BitdepthLuma and BitDepthChroma equals 8."), OPT_UNDEFINED))
             {
-                MFX_CHECK(1 + argv != argvEnd);
-                argv++;
-                vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
-                m_inParams.m_container = MFX_CONTAINER_MKV;
+                m_inParams.isPreferNV12 = true;
             }
             else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:webm"), VM_STRING("input stream is WebM container pipeline works with demuxing"), OPT_UNDEFINED)))
             {

@@ -128,6 +128,9 @@ void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoStreamInfo *umcVideoPar
     case MFX_FOURCC_YV12:
         umcVideoParams->color_format = UMC::YV12;
         break;
+    case MFX_FOURCC_P010:
+        umcVideoParams->color_format = UMC::P010;
+        break;
     case MFX_FOURCC_NV12:
     default:
         umcVideoParams->color_format = UMC::NV12;

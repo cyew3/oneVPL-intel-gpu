@@ -1042,6 +1042,10 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
     if(s != UMC::UMC_OK)
         return s;
 
+    if (sps.need16bitOutput && sps.m_pcPTL.GetGeneralPTL()->profile_idc == H265_PROFILE_MAIN10 && sps.bit_depth_luma == 8 && sps.bit_depth_chroma == 8 &&
+        m_initializationParams.info.color_format == UMC::NV12)
+        sps.need16bitOutput = 0;
+
     sps.WidthInCU = (sps.pic_width_in_luma_samples % sps.MaxCUSize) ? sps.pic_width_in_luma_samples / sps.MaxCUSize + 1 : sps.pic_width_in_luma_samples / sps.MaxCUSize;
     sps.HeightInCU = (sps.pic_height_in_luma_samples % sps.MaxCUSize) ? sps.pic_height_in_luma_samples / sps.MaxCUSize  + 1 : sps.pic_height_in_luma_samples / sps.MaxCUSize;
     sps.NumPartitionsInCUSize = 1 << sps.MaxCUDepth;
@@ -2353,7 +2357,7 @@ UMC::Status TaskSupplier_H265::AllocateFrameData(H265DecoderFrame * pFrame, Ippi
     UMC::ColorFormat color_format = pFrame->GetColorFormat();
         //(ColorFormat) pSeqParamSet->chroma_format_idc;
     UMC::VideoDataInfo info;
-    Ipp32s bit_depth = pSeqParamSet->getPTL()->GetGeneralPTL()->profile_idc == 2 ? 10 : 8;
+    Ipp32s bit_depth = pSeqParamSet->need16bitOutput ? 10 : 8;
     info.Init(dimensions.width, dimensions.height, color_format, bit_depth);
 
     UMC::FrameMemID frmMID;

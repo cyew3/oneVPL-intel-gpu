@@ -480,7 +480,7 @@ void H265HeadersBitstream::parseProfileTier(H265PTL *ptl)
     ptl->non_packed_constraint_flag = Get1Bit();
     ptl->frame_only_constraint_flag = Get1Bit();
 
-    if (ptl->profile_idc == 4 || (ptl->profile_compatibility_flags & (1 << 4)))
+    if (ptl->profile_idc == H265_PROFILE_FREXT || (ptl->profile_compatibility_flags & (1 << 4)))
     {
         Ipp8u max_12bit_constraint_flag = Get1Bit();
         Ipp8u max_10bit_constraint_flag = Get1Bit();

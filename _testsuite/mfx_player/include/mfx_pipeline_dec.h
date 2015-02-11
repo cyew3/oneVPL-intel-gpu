@@ -205,6 +205,7 @@ struct sCommandlineParams
 
   bool isAllegroTest;
   bool isHMTest;
+  bool isPreferNV12;
 
 #ifdef PAVP_BUILD
   // protected
@@ -250,6 +251,7 @@ struct sCommandlineParams
 
       isAllegroTest = false;
       isHMTest = true;
+      isPreferNV12 = false;
 
       nPicStruct        =  PIPELINE_PICSTRUCT_NOT_SPECIFIED;
       nSeed             = -1;
