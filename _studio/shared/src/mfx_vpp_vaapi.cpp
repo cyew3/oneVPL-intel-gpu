@@ -562,6 +562,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         if (pParams->bFRCEnable)
         {
           VAProcFilterParameterBufferFrameRateConversion frcParams;
+          /* Actually KW fix */
+          memset(&frcParams, 0, sizeof(VAProcFilterParameterBufferFrameRateConversion));
           frcParams.type = VAProcFilterFrameRateConversion;
           if (30 == pParams->customRateData.customRate.FrameRateExtD)
           {
