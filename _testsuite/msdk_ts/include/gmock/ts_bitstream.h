@@ -74,10 +74,10 @@ public:
 
     inline Ipp32u GetCRC() { return m_crc; }
     tsBitstreamCRC32()
-        : m_eos(false)
+        : m_crc(0)
+        , m_eos(false)
         , m_buf(new mfxU8[1024*1024])
         , m_buf_size(1024*1024)
-        , m_crc(0)
     {
     }
     tsBitstreamCRC32(mfxBitstream bs, mfxU32 buf_size);

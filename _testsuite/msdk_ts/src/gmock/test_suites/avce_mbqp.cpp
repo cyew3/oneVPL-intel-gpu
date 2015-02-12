@@ -7,7 +7,8 @@ namespace avce_mbqp
 enum
 {
     QP_INVALID = 255,
-    QP_BY_FRM_TYPE = 254
+    QP_BY_FRM_TYPE = 254,
+    QP_DO_NOT_CHECK = 253
 };
 
 class AUWrap
@@ -22,9 +23,9 @@ public:
 
     AUWrap(BS_H264_au& au)
         : m_au(au)
-        , m_mb(0)
-        , m_sh(0)
         , m_idx(-1)
+        , m_sh(0)
+        , m_mb(0)
         , m_prevqp(QP_INVALID)
     {
     }
@@ -109,6 +110,31 @@ public:
 
         m_prevqp = (m_prevqp + m_mb->mb_qp_delta + 52) % 52;
 
+        if (m_mb->mb_type == 25)    // I_PCM
+            return QP_DO_NOT_CHECK;
+
+        if (m_sh->slice_type % 5 == 2)  // Intra
+        {
+            // 7-11
+            if (m_mb->mb_type == 0 && m_mb->coded_block_pattern == 0)
+                return QP_DO_NOT_CHECK;
+        } else
+        {
+            if (m_mb->mb_skip_flag)
+                return QP_DO_NOT_CHECK;
+
+            if (m_sh->slice_type % 5 == 1)  // P
+            {
+                // 7-13 + 7-11
+                if ((m_mb->mb_type <= 5 && m_mb->coded_block_pattern == 0) || m_mb->mb_type == 30)
+                    return QP_DO_NOT_CHECK;
+            } else
+            {   // 7-14 + 7-11
+                if ((m_mb->mb_type <= 23 && m_mb->coded_block_pattern == 0) || m_mb->mb_type == 48)
+                    return QP_DO_NOT_CHECK;
+            }
+        }
+
         return m_prevqp;
     }
 };
@@ -129,14 +155,14 @@ private:
     tsNoiseFiller m_reader;
 public:
     TestSuite()
-        : tsParserH264AU(BS_H264_INIT_MODE_CABAC|BS_H264_INIT_MODE_CAVLC)
-        , tsVideoEncoder(MFX_CODEC_AVC)
+        : tsVideoEncoder(MFX_CODEC_AVC)
+        , tsParserH264AU(BS_H264_INIT_MODE_CABAC|BS_H264_INIT_MODE_CAVLC)
         , m_fo(0)
         , mbqp_on(true)
         , mode(0)
         , m_reader()
     {
-        set_trace_level(0);
+        set_trace_level(BS_H264_TRACE_LEVEL_FULL);
         srand(0);
 
         m_filler = this;
@@ -186,9 +212,12 @@ public:
         for (mfxU32 i = 0; i < ctrl.buf.size(); i++)
         {
             if (mbqp_on)
+            {
                 ctrl.buf[i] = 1 + rand() % 50;
-            else
+            } else
+            {
                 ctrl.buf[i] = QP_BY_FRM_TYPE;
+            }
         }
 
         mfxExtMBQP& mbqp = ctrl.ctrl;
@@ -250,7 +279,7 @@ public:
                     }
                 }
 
-                if (expected_qp != qp)
+                if (qp != QP_DO_NOT_CHECK && expected_qp != qp)
                 {
                     g_tsLog << "\nERROR: Expected QP (" << mfxU16(expected_qp) << ") != real QP (" << mfxU16(qp) << ")\n";
                     return MFX_ERR_ABORTED;

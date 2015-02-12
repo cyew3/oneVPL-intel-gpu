@@ -65,16 +65,16 @@ public:
     BSErr m_sts;
 
     tsParserH264AU(mfxU32 mode = 0)
-        : m_sts(BS_ERR_NONE)
-        , BS_H264_parser(mode)
+        : BS_H264_parser(mode)
+        , m_sts(BS_ERR_NONE)
     {
         if(!g_tsTrace)
             set_trace_level(0);
     }
 
     tsParserH264AU(mfxBitstream b, mfxU32 mode = 0)
-        : m_sts(BS_ERR_NONE)
-        , BS_H264_parser(mode)
+        : BS_H264_parser(mode)
+        , m_sts(BS_ERR_NONE)
     {
         if(!g_tsTrace)
             set_trace_level(0);
@@ -89,7 +89,7 @@ public:
 
         TRACE_FUNC0(BS_parser::parse_next_unit);
         m_sts = parse_next_au(pAU);
-        if(m_sts && m_sts != BS_ERR_MORE_DATA || m_sts && orDie)
+        if(m_sts && ((m_sts != BS_ERR_MORE_DATA) || m_sts) && orDie)
         {
             g_tsLog << "ERROR: FAILED in tsParser: " << m_sts << "\n";
             g_tsStatus.check(MFX_ERR_UNKNOWN);
@@ -140,8 +140,8 @@ public:
     Bs32u last_offset;
 
     tsParserMPEG2AU(mfxU32 mode = 0)
-        : m_sts(BS_ERR_NONE)
-        , BS_MPEG2_parser(mode)
+        : BS_MPEG2_parser(mode)
+        , m_sts(BS_ERR_NONE)
         , last_offset(0)
     {
         if(!g_tsTrace)
@@ -150,8 +150,8 @@ public:
     }
 
     tsParserMPEG2AU(mfxBitstream b, mfxU32 mode = 0)
-        : m_sts(BS_ERR_NONE)
-        , BS_MPEG2_parser(mode)
+        : BS_MPEG2_parser(mode)
+        , m_sts(BS_ERR_NONE)
         , last_offset(0)
     {
         if(!g_tsTrace)
@@ -196,7 +196,7 @@ public:
         {
             TRACE_FUNC0(BS_parser::parse_next_unit);
             m_sts = parse_next_unit();
-            if(m_sts && m_sts != BS_ERR_MORE_DATA || m_sts && orDie)
+            if(m_sts && ((m_sts != BS_ERR_MORE_DATA) || m_sts) && orDie)
             {
                 if (m_sts == BS_ERR_MORE_DATA && (pAU->NumSlice || slices.size())) {
                     last_offset = 0;
