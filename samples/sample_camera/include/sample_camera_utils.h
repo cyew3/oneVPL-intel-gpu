@@ -122,6 +122,9 @@ typedef struct _resetParams
     mfxU16 cropY;
     mfxU32 bayerType;
 
+    bool   bDenoise;
+    mfxU16 denoiseThreshold;
+
     bool   bHP;
     mfxU16 hp_diff;
     mfxU16 hp_num;
@@ -147,6 +150,7 @@ typedef struct _resetParams
         bBlackLevel   = false;
         bWhiteBalance = false;
         bCCM          = false;
+        bDenoise      = false;
         cropX = cropY = cropW = cropH = 0;
     }
 } sResetParams;
@@ -202,6 +206,9 @@ struct sInputParams
     bool   bCCM;
     mfxF64 CCM[3][3];
 
+    bool bBayerDenoise;
+    mfxU16 denoiseThreshold;
+
     mfxU32 nFramesToProceed;
 
     msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN];
@@ -211,7 +218,6 @@ struct sInputParams
     std::vector<sResetParams> resetParams;
     mfxU32 resetInterval;
 
-    bool bBayerDenoise;
     bool bDoPadding;
 
     sInputParams()
@@ -234,6 +240,8 @@ struct sInputParams
         bBlackLevel   = false;
         bWhiteBalance = false;
         bCCM          = false;
+        bBayerDenoise = false;
+
         alphaValue = -1;
         resetInterval = 7;
         bExternalGammaLUT = false;

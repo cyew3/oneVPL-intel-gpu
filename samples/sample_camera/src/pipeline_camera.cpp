@@ -163,6 +163,7 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
 
     if (pParams->bBayerDenoise)
     {
+        sts = AllocAndInitDenoise(pParams);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         m_ExtBuffers.push_back((mfxExtBuffer *)&m_Denoise);
     }
@@ -970,6 +971,12 @@ mfxStatus CCameraPipeline::AllocAndInitCamBlackLevelCorrection(sInputParams *pPa
     m_BlackLevelCorrection.G1 = pParams->black_level_G1;
     m_BlackLevelCorrection.R  = pParams->black_level_R;
 
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CCameraPipeline::AllocAndInitDenoise(sInputParams *pParams)
+{
+    m_Denoise.Threshold = pParams->denoiseThreshold;
     return MFX_ERR_NONE;
 }
 

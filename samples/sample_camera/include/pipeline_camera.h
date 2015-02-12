@@ -142,6 +142,7 @@ protected:
 
     virtual void AttachExtParam();
 
+    virtual mfxStatus AllocAndInitDenoise(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamGammaCorrection(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamWhiteBalance(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamCCM(sInputParams *pParams);

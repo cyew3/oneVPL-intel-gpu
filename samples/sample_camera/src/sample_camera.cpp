@@ -28,7 +28,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-gamma_points]                                     - set specific gamma points (64 points expected)\n"));
     msdk_printf(MSDK_STRING("   [-gamma_corrected]                                  - set specific gamma corrected values (64 values expected)\n"));
     msdk_printf(MSDK_STRING("                                                           -gamma_points and -gamma_corrected options must be used together\n"));
-    msdk_printf(MSDK_STRING("   [-bdn] / [-bayerDenoise]                            - bayer denoise on\n"));
+    msdk_printf(MSDK_STRING("   [-bdn threshold] / [-bayerDenoise threshold]        - bayer denoise on\n"));
     msdk_printf(MSDK_STRING("   [-hot_pixel Diff Num]                               - bayer hot pixel removal\n"));
     msdk_printf(MSDK_STRING("   [-bbl B G0 G1 R] / [-bayerBlackLevel B G0 G1 R]     - bayer black level correction\n"));
     msdk_printf(MSDK_STRING("   [-bwb B G0 G1 R] / [-bayerWhiteBalance B G0 G1 R]   - bayer white balance\n"));
@@ -157,7 +157,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bdn")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-bayerDenoise")))
         {
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -bdn key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
             pParams->bBayerDenoise = true;
+            msdk_opt_read(strInput[++i], pParams->denoiseThreshold);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bbl")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-bayerBlackLevel")))
         {
@@ -358,6 +364,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                     msdk_opt_read(strInput[++i], resPar.hp_diff);
                     msdk_opt_read(strInput[++i], resPar.hp_num);
                 }
+                else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bdn")))
+                {
+                    if(i + 1 >= nArgNum)
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -bdn key"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
+                    resPar.bDenoise = true;
+                    msdk_opt_read(strInput[++i], resPar.denoiseThreshold);
+                }
                 else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bwb")))
                 {
                     if(i + 4 >= nArgNum)
@@ -545,6 +561,9 @@ int main(int argc, char *argv[])
             pParams->bHP           = Params.resetParams[resetNum].bHP;
             pParams->hp_diff       = Params.resetParams[resetNum].hp_diff;
             pParams->hp_num        = Params.resetParams[resetNum].hp_num;
+
+            pParams->bBayerDenoise    = Params.resetParams[resetNum].bDenoise;
+            pParams->denoiseThreshold = Params.resetParams[resetNum].denoiseThreshold;
 
             pParams->bBlackLevel   = Params.resetParams[resetNum].bBlackLevel;
             pParams->black_level_B = Params.resetParams[resetNum].black_level_B;
