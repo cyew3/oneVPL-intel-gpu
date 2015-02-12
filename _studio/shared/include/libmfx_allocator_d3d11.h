@@ -157,7 +157,7 @@ inline HRESULT SetResourceExtension(
     initData.SysMemSlicePitch = 0;
 
     ID3D11Buffer* pBuffer = NULL;
-    HRESULT result = pd3dDevice->CreateBuffer( 
+    HRESULT result = pd3dDevice->CreateBuffer(
         &desc,
         &initData,
         &pBuffer );
