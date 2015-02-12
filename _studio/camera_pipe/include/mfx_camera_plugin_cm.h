@@ -196,6 +196,9 @@ public:
     void Close() {
         ReleaseCmSurfaces();
         DestroyCmTasks();
+        delete [] m_DenoiseDWM;
+        delete [] m_DenoisePW;
+        delete [] m_DenoiseRT;
     }
 
     int DestroyEvent( CmEvent*& e )
@@ -237,6 +240,7 @@ public:
                             SurfaceIndex InPaddedIndex,
                             SurfaceIndex OutPaddedIndex,
                             SurfaceIndex DNRIndex,
+                            mfxU16 Threshold,
                             int bitDepth,
                             int BayerType,
                             mfxU32 task_bufId=0);
@@ -469,6 +473,13 @@ private:
 
     // Matrix with CCM related params
     vector<float, 9> m_ccm;
+
+    // Denoise Pixel Range Threshold
+    unsigned short* m_DenoiseRT;
+    // Denoise Pixel Range Weight Array
+    unsigned short* m_DenoisePW;
+    // Distance Weight Matrix
+    unsigned short* m_DenoiseDWM;
 };
 };
 

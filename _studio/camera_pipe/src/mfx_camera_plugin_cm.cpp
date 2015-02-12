@@ -492,6 +492,7 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
                             *pInputSurfaceIndex,
                             *DenoiseIndex,
                             *DNRIndex,
+                            pParam->DenoiseParams.Threshold,
                             pParam->InputBitDepth,
                             pParam->Caps.BayerPatternType);
             doShiftAndSwap = 0;
@@ -1319,6 +1320,9 @@ CmContext::CmContext(
     kernel_FwGamma1 = 0;
     kernel_BayerCorrection = 0;
 
+    m_DenoiseDWM = new unsigned short[25];
+    m_DenoisePW  = new unsigned short[6];
+    m_DenoiseRT  = new unsigned short[6];
     m_platform = platform;
     Setup(video, cmDevice, pCaps);
 }
@@ -1805,10 +1809,66 @@ void CmContext::CreateTask_BayerCorrection(int first,
         throw CmRuntimeError();
 }
 
+// Bayer denosie definitions (delivered from SKL driver internal)
+#define INTERP(x0, x1, x, y0, y1)   ((unsigned short) floor(y0+(x-x0)*(y1-y0)/(double)(x1-x0)))
+#define NOISEFACTOR_MIN 0
+#define NOISEFACTOR_MID 32
+#define NOISEFACTOR_MAX 64
+// Pixel Range Threshold Array Denoise Definitions for SKL+ 5x5 Bilateral Filter
+#define NOISE_BLF_RANGE_THRESHOLD_S0_MIN            32
+#define NOISE_BLF_RANGE_THRESHOLD_S0_MID            192
+#define NOISE_BLF_RANGE_THRESHOLD_S0_MAX            384
+#define NOISE_BLF_RANGE_THRESHOLD_S1_MIN            64
+#define NOISE_BLF_RANGE_THRESHOLD_S1_MID            256
+#define NOISE_BLF_RANGE_THRESHOLD_S1_MAX            576
+#define NOISE_BLF_RANGE_THRESHOLD_S2_MIN            128
+#define NOISE_BLF_RANGE_THRESHOLD_S2_MID            512
+#define NOISE_BLF_RANGE_THRESHOLD_S2_MAX            896
+#define NOISE_BLF_RANGE_THRESHOLD_S3_MIN            128
+#define NOISE_BLF_RANGE_THRESHOLD_S3_MID            640
+#define NOISE_BLF_RANGE_THRESHOLD_S3_MAX            1280
+#define NOISE_BLF_RANGE_THRESHOLD_S4_MIN            128
+#define NOISE_BLF_RANGE_THRESHOLD_S4_MID            896
+#define NOISE_BLF_RANGE_THRESHOLD_S4_MAX            1920
+#define NOISE_BLF_RANGE_THRESHOLD_S5_MIN            128
+#define NOISE_BLF_RANGE_THRESHOLD_S5_MID            1280
+#define NOISE_BLF_RANGE_THRESHOLD_S5_MAX            2560
+
+// Pixel Range Weight Array Denoise Definitions for SKL+ 5x5 Bilateral Filter
+#define NOISE_BLF_RANGE_WGTS0_MIN                   16
+#define NOISE_BLF_RANGE_WGTS0_MID                   16
+#define NOISE_BLF_RANGE_WGTS0_MAX                   16
+#define NOISE_BLF_RANGE_WGTS1_MIN                   9
+#define NOISE_BLF_RANGE_WGTS1_MID                   14
+#define NOISE_BLF_RANGE_WGTS1_MAX                   15
+#define NOISE_BLF_RANGE_WGTS2_MIN                   2
+#define NOISE_BLF_RANGE_WGTS2_MID                   10
+#define NOISE_BLF_RANGE_WGTS2_MAX                   13
+#define NOISE_BLF_RANGE_WGTS3_MIN                   0
+#define NOISE_BLF_RANGE_WGTS3_MID                   5
+#define NOISE_BLF_RANGE_WGTS3_MAX                   10
+#define NOISE_BLF_RANGE_WGTS4_MIN                   0
+#define NOISE_BLF_RANGE_WGTS4_MID                   2
+#define NOISE_BLF_RANGE_WGTS4_MAX                   7
+#define NOISE_BLF_RANGE_WGTS5_MIN                   0
+#define NOISE_BLF_RANGE_WGTS5_MID                   1
+#define NOISE_BLF_RANGE_WGTS5_MAX                   4
+
+// Distance Weight Matrix Denoise Definitions for SKL+ 5x5 Bilateral Filter
+#define NOISE_BLF_DISTANCE_WGTS00_DEFAULT           12
+#define NOISE_BLF_DISTANCE_WGTS01_DEFAULT           12
+#define NOISE_BLF_DISTANCE_WGTS02_DEFAULT           10
+#define NOISE_BLF_DISTANCE_WGTS10_DEFAULT           12
+#define NOISE_BLF_DISTANCE_WGTS11_DEFAULT           11
+#define NOISE_BLF_DISTANCE_WGTS12_DEFAULT           10
+#define NOISE_BLF_DISTANCE_WGTS20_DEFAULT           10
+#define NOISE_BLF_DISTANCE_WGTS21_DEFAULT           10
+#define NOISE_BLF_DISTANCE_WGTS22_DEFAULT           8
 void CmContext::CreateTask_Denoise(int first,
                             SurfaceIndex InPaddedIndex,
                             SurfaceIndex OutPaddedIndex,
                             SurfaceIndex DNRIndex,
+                            mfxU16 Threshold,
                             int bitDepth,
                             int BayerType,
                             mfxU32)
@@ -1817,41 +1877,59 @@ void CmContext::CreateTask_Denoise(int first,
     mfxU16 MaxInputLevel = (1<<bitDepth)-1;
     kernel_denoise->SetThreadCount(widthIn16 * heightIn16);
     int i=0;
+    bool cui_range = (Threshold < NOISEFACTOR_MID);
 
     unsigned short  dn_thmax = 2048;
     unsigned short  dn_thmin = 512 ;
 
-    unsigned short m_5x5BLF_DistWgts00 = 12;
-    unsigned short m_5x5BLF_DistWgts01 = 12;
-    unsigned short m_5x5BLF_DistWgts02 = 10;
-    unsigned short m_5x5BLF_DistWgts10 = 12;
-    unsigned short m_5x5BLF_DistWgts11 = 11;
-    unsigned short m_5x5BLF_DistWgts12 = 10;
-    unsigned short m_5x5BLF_DistWgts20 = 10;
-    unsigned short m_5x5BLF_DistWgts21 = 10;
-    unsigned short m_5x5BLF_DistWgts22 = 8;
+    unsigned short m_5x5BLF_DistWgts00 = NOISE_BLF_DISTANCE_WGTS00_DEFAULT;
+    unsigned short m_5x5BLF_DistWgts01 = NOISE_BLF_DISTANCE_WGTS01_DEFAULT;
+    unsigned short m_5x5BLF_DistWgts02 = NOISE_BLF_DISTANCE_WGTS02_DEFAULT;
+    unsigned short m_5x5BLF_DistWgts10 = NOISE_BLF_DISTANCE_WGTS10_DEFAULT;
+    unsigned short m_5x5BLF_DistWgts11 = NOISE_BLF_DISTANCE_WGTS11_DEFAULT;
+    unsigned short m_5x5BLF_DistWgts12 = NOISE_BLF_DISTANCE_WGTS12_DEFAULT;
+    unsigned short m_5x5BLF_DistWgts20 = NOISE_BLF_DISTANCE_WGTS20_DEFAULT;
+    unsigned short m_5x5BLF_DistWgts21 = NOISE_BLF_DISTANCE_WGTS21_DEFAULT;
+    unsigned short m_5x5BLF_DistWgts22 = NOISE_BLF_DISTANCE_WGTS22_DEFAULT;
 
-    unsigned short* prt = new unsigned short[6];
-    prt[0] = 192; prt[1] = 256; prt[2] = 512 ;
-    prt[3] = 640; prt[4] = 896; prt[5] = 1280;
+    m_DenoiseRT[0] = cui_range ? INTERP(NOISEFACTOR_MIN, NOISEFACTOR_MID, Threshold, NOISE_BLF_RANGE_THRESHOLD_S0_MIN, NOISE_BLF_RANGE_THRESHOLD_S0_MID) :
+                                 INTERP(NOISEFACTOR_MID, NOISEFACTOR_MAX, Threshold, NOISE_BLF_RANGE_THRESHOLD_S0_MID, NOISE_BLF_RANGE_THRESHOLD_S0_MAX);
+    m_DenoiseRT[1] = cui_range ? INTERP(NOISEFACTOR_MIN, NOISEFACTOR_MID, Threshold, NOISE_BLF_RANGE_THRESHOLD_S1_MIN, NOISE_BLF_RANGE_THRESHOLD_S1_MID) :
+                                 INTERP(NOISEFACTOR_MID, NOISEFACTOR_MAX, Threshold, NOISE_BLF_RANGE_THRESHOLD_S1_MID, NOISE_BLF_RANGE_THRESHOLD_S1_MAX);;
+    m_DenoiseRT[2] = cui_range ? INTERP(NOISEFACTOR_MIN, NOISEFACTOR_MID, Threshold, NOISE_BLF_RANGE_THRESHOLD_S2_MIN, NOISE_BLF_RANGE_THRESHOLD_S2_MID) :
+                                 INTERP(NOISEFACTOR_MID, NOISEFACTOR_MAX, Threshold, NOISE_BLF_RANGE_THRESHOLD_S2_MID, NOISE_BLF_RANGE_THRESHOLD_S2_MAX);;
+    m_DenoiseRT[3] = cui_range ? INTERP(NOISEFACTOR_MIN, NOISEFACTOR_MID, Threshold, NOISE_BLF_RANGE_THRESHOLD_S3_MIN, NOISE_BLF_RANGE_THRESHOLD_S3_MID) :
+                                 INTERP(NOISEFACTOR_MID, NOISEFACTOR_MAX, Threshold, NOISE_BLF_RANGE_THRESHOLD_S3_MID, NOISE_BLF_RANGE_THRESHOLD_S3_MAX);;
+    m_DenoiseRT[4] = cui_range ? INTERP(NOISEFACTOR_MIN, NOISEFACTOR_MID, Threshold, NOISE_BLF_RANGE_THRESHOLD_S4_MIN, NOISE_BLF_RANGE_THRESHOLD_S4_MID) :
+                                 INTERP(NOISEFACTOR_MID, NOISEFACTOR_MAX, Threshold, NOISE_BLF_RANGE_THRESHOLD_S4_MID, NOISE_BLF_RANGE_THRESHOLD_S4_MAX);;
+    m_DenoiseRT[5] = cui_range ? INTERP(NOISEFACTOR_MIN, NOISEFACTOR_MID, Threshold, NOISE_BLF_RANGE_THRESHOLD_S5_MIN, NOISE_BLF_RANGE_THRESHOLD_S5_MID) :
+                                 INTERP(NOISEFACTOR_MID, NOISEFACTOR_MAX, Threshold, NOISE_BLF_RANGE_THRESHOLD_S5_MID, NOISE_BLF_RANGE_THRESHOLD_S5_MAX);;
 
-    unsigned short* prw = new unsigned short[6];
-    prw[0] = 16; prw[1] = 14; prw[2] = 10 ;
-    prw[3] = 5 ; prw[4] = 2 ; prw[5] = 1  ;
+    m_DenoisePW[0] = cui_range ? INTERP(NOISEFACTOR_MIN, NOISEFACTOR_MID, Threshold, NOISE_BLF_RANGE_WGTS0_MIN, NOISE_BLF_RANGE_WGTS0_MID) :
+                                 INTERP(NOISEFACTOR_MID, NOISEFACTOR_MAX, Threshold, NOISE_BLF_RANGE_WGTS0_MID, NOISE_BLF_RANGE_WGTS0_MAX);
+    m_DenoisePW[1] = cui_range ? INTERP(NOISEFACTOR_MIN, NOISEFACTOR_MID, Threshold, NOISE_BLF_RANGE_WGTS1_MIN, NOISE_BLF_RANGE_WGTS1_MID) :
+                                 INTERP(NOISEFACTOR_MID, NOISEFACTOR_MAX, Threshold, NOISE_BLF_RANGE_WGTS1_MID, NOISE_BLF_RANGE_WGTS1_MAX);;
+    m_DenoisePW[2] = cui_range ? INTERP(NOISEFACTOR_MIN, NOISEFACTOR_MID, Threshold, NOISE_BLF_RANGE_WGTS2_MIN, NOISE_BLF_RANGE_WGTS2_MID) :
+                                 INTERP(NOISEFACTOR_MID, NOISEFACTOR_MAX, Threshold, NOISE_BLF_RANGE_WGTS2_MID, NOISE_BLF_RANGE_WGTS2_MAX);;
+    m_DenoisePW[3] = cui_range ? INTERP(NOISEFACTOR_MIN, NOISEFACTOR_MID, Threshold, NOISE_BLF_RANGE_WGTS3_MIN, NOISE_BLF_RANGE_WGTS3_MID) :
+                                 INTERP(NOISEFACTOR_MID, NOISEFACTOR_MAX, Threshold, NOISE_BLF_RANGE_WGTS3_MID, NOISE_BLF_RANGE_WGTS3_MAX);;
+    m_DenoisePW[4] = cui_range ? INTERP(NOISEFACTOR_MIN, NOISEFACTOR_MID, Threshold, NOISE_BLF_RANGE_WGTS4_MIN, NOISE_BLF_RANGE_WGTS4_MID) :
+                                 INTERP(NOISEFACTOR_MID, NOISEFACTOR_MAX, Threshold, NOISE_BLF_RANGE_WGTS4_MID, NOISE_BLF_RANGE_WGTS4_MAX);;
+    m_DenoisePW[5] = cui_range ? INTERP(NOISEFACTOR_MIN, NOISEFACTOR_MID, Threshold, NOISE_BLF_RANGE_WGTS5_MIN, NOISE_BLF_RANGE_WGTS5_MID) :
+                                 INTERP(NOISEFACTOR_MID, NOISEFACTOR_MAX, Threshold, NOISE_BLF_RANGE_WGTS5_MID, NOISE_BLF_RANGE_WGTS5_MAX);;
 
-    unsigned short* dw  = new unsigned short[25];
-    dw[0]  = m_5x5BLF_DistWgts00; dw[1]  = m_5x5BLF_DistWgts01; dw[2]  = m_5x5BLF_DistWgts02; dw[3]  = m_5x5BLF_DistWgts01; dw[4]  = m_5x5BLF_DistWgts00;
-    dw[5]  = m_5x5BLF_DistWgts10; dw[6]  = m_5x5BLF_DistWgts11; dw[7]  = m_5x5BLF_DistWgts12; dw[8]  = m_5x5BLF_DistWgts11; dw[9]  = m_5x5BLF_DistWgts10;
-    dw[10] = m_5x5BLF_DistWgts20; dw[11] = m_5x5BLF_DistWgts21; dw[12] = m_5x5BLF_DistWgts22; dw[13] = m_5x5BLF_DistWgts21; dw[14] = m_5x5BLF_DistWgts20;
-    dw[15] = m_5x5BLF_DistWgts10; dw[16] = m_5x5BLF_DistWgts11; dw[17] = m_5x5BLF_DistWgts12; dw[18] = m_5x5BLF_DistWgts11; dw[19] = m_5x5BLF_DistWgts10; 
-    dw[20] = m_5x5BLF_DistWgts00; dw[21] = m_5x5BLF_DistWgts01; dw[22] = m_5x5BLF_DistWgts02; dw[23] = m_5x5BLF_DistWgts01; dw[24] = m_5x5BLF_DistWgts00;
+    m_DenoiseDWM[0]  = m_5x5BLF_DistWgts00; m_DenoiseDWM[1]  = m_5x5BLF_DistWgts01; m_DenoiseDWM[2]  = m_5x5BLF_DistWgts02; m_DenoiseDWM[3]  = m_5x5BLF_DistWgts01; m_DenoiseDWM[4]  = m_5x5BLF_DistWgts00;
+    m_DenoiseDWM[5]  = m_5x5BLF_DistWgts10; m_DenoiseDWM[6]  = m_5x5BLF_DistWgts11; m_DenoiseDWM[7]  = m_5x5BLF_DistWgts12; m_DenoiseDWM[8]  = m_5x5BLF_DistWgts11; m_DenoiseDWM[9]  = m_5x5BLF_DistWgts10;
+    m_DenoiseDWM[10] = m_5x5BLF_DistWgts20; m_DenoiseDWM[11] = m_5x5BLF_DistWgts21; m_DenoiseDWM[12] = m_5x5BLF_DistWgts22; m_DenoiseDWM[13] = m_5x5BLF_DistWgts21; m_DenoiseDWM[14] = m_5x5BLF_DistWgts20;
+    m_DenoiseDWM[15] = m_5x5BLF_DistWgts10; m_DenoiseDWM[16] = m_5x5BLF_DistWgts11; m_DenoiseDWM[17] = m_5x5BLF_DistWgts12; m_DenoiseDWM[18] = m_5x5BLF_DistWgts11; m_DenoiseDWM[19] = m_5x5BLF_DistWgts10; 
+    m_DenoiseDWM[20] = m_5x5BLF_DistWgts00; m_DenoiseDWM[21] = m_5x5BLF_DistWgts01; m_DenoiseDWM[22] = m_5x5BLF_DistWgts02; m_DenoiseDWM[23] = m_5x5BLF_DistWgts01; m_DenoiseDWM[24] = m_5x5BLF_DistWgts00;
 
     kernel_denoise->SetKernelArg( i++, sizeof(SurfaceIndex), &InPaddedIndex    );
     kernel_denoise->SetKernelArg( i++, sizeof(SurfaceIndex), &OutPaddedIndex   );
     kernel_denoise->SetKernelArg( i++, sizeof(SurfaceIndex), &DNRIndex         );
-    kernel_denoise->SetKernelArg( i++, 25 * sizeof(unsigned short), dw);
-    kernel_denoise->SetKernelArg( i++, 6 * sizeof(unsigned short), prt);
-    kernel_denoise->SetKernelArg( i++, 6 * sizeof(unsigned short), prw);
+    kernel_denoise->SetKernelArg( i++, 25 * sizeof(unsigned short), m_DenoiseDWM);
+    kernel_denoise->SetKernelArg( i++, 6 * sizeof(unsigned short), m_DenoiseRT);
+    kernel_denoise->SetKernelArg( i++, 6 * sizeof(unsigned short), m_DenoisePW);
     kernel_denoise->SetKernelArg( i++, sizeof(unsigned short), &dn_thmax);
     kernel_denoise->SetKernelArg( i++, sizeof(unsigned short), &dn_thmin);
     kernel_denoise->SetKernelArg( i++, sizeof(int),          &MaxInputLevel    );

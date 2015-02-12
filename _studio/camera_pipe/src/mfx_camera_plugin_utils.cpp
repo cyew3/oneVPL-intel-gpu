@@ -444,6 +444,7 @@ void ConvertCaps2ListDoUse(mfxCameraCaps& caps, std::vector<mfxU32>& list)
     if(caps.bBayerDenoise)
     {
         list.push_back(MFX_EXTBUF_CAM_BAYER_DENOISE);
+        list.push_back(MFX_EXTBUFF_VPP_DENOISE);
     }
     if(caps.bNoPadding)
     {

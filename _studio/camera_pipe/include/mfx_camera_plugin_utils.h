@@ -292,6 +292,7 @@ typedef struct _CameraPipeBlackLevelParams
 typedef struct _CameraPipeDenoiseParams
 {
     bool        bActive;
+    mfxU16      Threshold;
 } CameraPipeDenoiseParams;
 
 typedef struct _CameraPipeHotPixelParams

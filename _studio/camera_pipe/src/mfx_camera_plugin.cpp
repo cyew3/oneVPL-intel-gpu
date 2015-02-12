@@ -787,6 +787,7 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                 {
                     denoiseset = true;
                     m_DenoiseParams.bActive = true;
+                    m_DenoiseParams.Threshold = denoiseExtBufParams->Threshold;
                 }
             }
             else if (MFX_EXTBUF_CAM_VIGNETTE_CORRECTION == par->ExtParam[i]->BufferId)
