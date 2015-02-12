@@ -937,6 +937,10 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
             return MFX_ERR_UNSUPPORTED;
         }
     }
+    else
+    {
+         m_nTiles = 1;
+    }
 
     m_PaddingParams.top    = MFX_CAM_DEFAULT_PADDING_TOP;
     m_PaddingParams.bottom = MFX_CAM_DEFAULT_PADDING_BOTTOM;
@@ -1124,6 +1128,10 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
             // Must be documented
             return MFX_ERR_UNSUPPORTED;
         }
+    }
+    else
+    {
+         m_nTiles = 1;
     }
 
     CameraParams pipeParams;

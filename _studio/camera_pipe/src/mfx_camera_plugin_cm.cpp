@@ -721,7 +721,7 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
 
 mfxStatus CMCameraProcessor::Reset(mfxVideoParam *par, CameraParams *pipeParams)
 {
-    mfxStatus sts;
+    mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(pipeParams);
     bool bFrameSizeChanged = *pipeParams != m_Params;
     bool bNewFilters        = pipeParams->Caps != m_Params.Caps;
@@ -1819,17 +1819,17 @@ void CmContext::CreateTask_Denoise(int first,
     int i=0;
 
     unsigned short  dn_thmax = 2048;
-    unsigned short  dn_thmin = 256 ;
+    unsigned short  dn_thmin = 512 ;
 
-    unsigned short m_5x5BLF_DistWgts00 = 8 ;
-    unsigned short m_5x5BLF_DistWgts01 = 10;
+    unsigned short m_5x5BLF_DistWgts00 = 12;
+    unsigned short m_5x5BLF_DistWgts01 = 12;
     unsigned short m_5x5BLF_DistWgts02 = 10;
-    unsigned short m_5x5BLF_DistWgts10 = 10;
+    unsigned short m_5x5BLF_DistWgts10 = 12;
     unsigned short m_5x5BLF_DistWgts11 = 11;
-    unsigned short m_5x5BLF_DistWgts12 = 12;
+    unsigned short m_5x5BLF_DistWgts12 = 10;
     unsigned short m_5x5BLF_DistWgts20 = 10;
-    unsigned short m_5x5BLF_DistWgts21 = 12;
-    unsigned short m_5x5BLF_DistWgts22 = 12;
+    unsigned short m_5x5BLF_DistWgts21 = 10;
+    unsigned short m_5x5BLF_DistWgts22 = 8;
 
     unsigned short* prt = new unsigned short[6];
     prt[0] = 192; prt[1] = 256; prt[2] = 512 ;
