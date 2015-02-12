@@ -1899,7 +1899,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             mfxU16 maxHeight = 4320;
             mfxU16 maxWidth = 8192;
 #ifdef MFX_VA
-            if (opts_in->EnableCm != MFX_CODINGOPTION_OFF) {
+            if (!(opts_in && opts_in->EnableCm == MFX_CODINGOPTION_OFF)) {
                 maxHeight = 2160;
                 maxWidth = 3840;
             }
