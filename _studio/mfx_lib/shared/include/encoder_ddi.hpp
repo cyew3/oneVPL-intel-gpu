@@ -945,6 +945,43 @@ typedef struct tagENCODE_ROI
     CHAR   PriorityLevelOrDQp; // [-3..3] or [-51..51]
 } ENCODE_ROI;
 
+typedef enum tagENCODE_SCENARIO
+{
+	eScenario_Unknown = 0,
+	eScenario_DisplayRemoting = 1,
+	eScenario_VideoConference = 2,
+	eScenario_Archive = 3,
+	eScenario_LiveStreaming = 4
+} ENCODE_SCENARIO;
+
+typedef enum tagENCODE_CONTENT
+{
+	eContent_Unknown = 0,
+	eContent_FullScreenVideo = 1,
+	eContent_NonVideoScreen = 2
+} ENCODE_CONTENT;
+
+typedef struct tagENCODE_DIRTYRECT
+{
+	BOOL 	bSame;
+	UINT 	NumDirtyRects;
+	RECT 	DirtyRects[1];
+} ENCODE_DIRTYRECT;
+
+typedef struct tagMOVE_RECT
+{
+	POINT 	SourcePoint;
+	RECT 	DestRect;
+} MOVE_RECT;
+
+typedef struct tagENCODE_MOVERECT
+{
+	UINT           	NumMoveRects;
+	MOVE_RECT	MoveRects[1];
+} ENCODE_MOVERECT;
+
+
+
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
 {
@@ -1024,6 +1061,15 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     UCHAR           BRCMaxQp;
     UCHAR           BRCMinQp;
 
+	// HME Offset
+    UCHAR           bEnableHMEOffset;
+    SHORT           HMEOffset[16][2][2];
+
+    // Hints
+    ENCODE_SCENARIO		ScenarioInfo;
+    ENCODE_CONTENT		ContentInfo;
+    VOID			*pDirtyRect;
+    VOID			*pMoveRect;
 
 } ENCODE_SET_PICTURE_PARAMETERS_H264;
 
