@@ -315,11 +315,25 @@ mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
 
 } // mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
 
+void FillBrcStructures(
+    mfxVideoParam const & par,
+    VAEncMiscParameterRateControl & vaBrcPar,
+    VAEncMiscParameterFrameRate   & vaFrameRate)
+{
+    Zero(vaBrcPar);
+    Zero(vaFrameRate);
+    vaBrcPar.bits_per_second = par.mfx.MaxKbps * 1000;
+    if(par.mfx.MaxKbps)
+        vaBrcPar.target_percentage = (unsigned int)(100.0 * (mfxF64)par.mfx.TargetKbps / (mfxF64)par.mfx.MaxKbps);
+    vaFrameRate.framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
+}
+
 mfxStatus SetRateControl(
     mfxVideoParam const & par,
     VADisplay    m_vaDisplay,
     VAContextID  m_vaContextEncode,
-    VABufferID & rateParamBuf_id)
+    VABufferID & rateParamBuf_id,
+    bool         isBrcResetRequired = false)
 {
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
@@ -351,6 +365,8 @@ mfxStatus SetRateControl(
 
     if(par.mfx.MaxKbps)
         rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.mfx.TargetKbps / (mfxF64)par.mfx.MaxKbps);
+
+    rate_param->rc_flags.bits.reset = isBrcResetRequired;
 
     vaUnmapBuffer(m_vaDisplay, rateParamBuf_id);
 
@@ -699,10 +715,12 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     //------------------------------------------------------------------
 
     FillSpsBuffer(par, m_sps);
+    FillBrcStructures(par, m_vaBrcPar, m_vaFrameRate);
+    m_isBrcResetRequired = false;
     SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
-    SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
+    SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_rateCtrlBufferId);
     SetQualityLevel(par, m_vaDisplay, m_vaContextEncode, m_qualityLevelBufferId);
-    SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_rateCtrlBufferId);
+    SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
 
     hybridQueryBufferAttributes pfnVaQueryBufferAttr = NULL;
     pfnVaQueryBufferAttr = (hybridQueryBufferAttributes)vaGetLibFunc(m_vaDisplay, FUNC_QUERY_BUFFER_ATTRIBUTES);
@@ -734,8 +752,12 @@ mfxStatus VAAPIEncoder::Reset(mfxVideoParam const & par)
     m_video = par;
 
     FillSpsBuffer(par, m_sps);
+    VAEncMiscParameterRateControl oldBrcPar = m_vaBrcPar;
+    VAEncMiscParameterFrameRate oldFrameRate = m_vaFrameRate;
+    FillBrcStructures(par, m_vaBrcPar, m_vaFrameRate);
+    m_isBrcResetRequired = !Equal(m_vaBrcPar, oldBrcPar) || !Equal(m_vaFrameRate, oldFrameRate);
+
     SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
-    SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
     SetQualityLevel(par, m_vaDisplay, m_vaContextEncode, m_qualityLevelBufferId);
     SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferId);
 
@@ -989,6 +1011,8 @@ mfxStatus VAAPIEncoder::Execute(
         // 7. hrd parameters
         configBuffers[buffersCount++] = m_hrdBufferId;
         // 8. RC parameters
+        SetRateControl(m_video, m_vaDisplay, m_vaContextEncode, m_rateCtrlBufferId, m_isBrcResetRequired);
+        m_isBrcResetRequired = false; // reset BRC only once
         configBuffers[buffersCount++] = m_rateCtrlBufferId;
         // 9. frame rate
         configBuffers[buffersCount++] = m_frameRateBufferId;

@@ -281,6 +281,12 @@ do {                                               \
         mfxU32 m_height;
         ENCODE_CAPS_VP8 m_caps;
         UMC::Mutex                      m_guard;
+
+        mfxU16 m_skipMode;
+
+        VAEncMiscParameterRateControl m_vaBrcPar;
+        VAEncMiscParameterFrameRate   m_vaFrameRate;
+        bool                          m_isBrcResetRequired;
     };
 #endif
 
