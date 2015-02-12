@@ -62,7 +62,7 @@ public:
             m_mb = 0;
         }
 
-        mfxU8 quantizer_scale_code = m_hdr.slice[m_slice].mb[m_mb].quantiser_scale_code;
+        mfxU8 quantizer_scale_code = m_hdr.slice[m_slice].mb[m_mb++].quantiser_scale_code;
 
         if (!quantizer_scale_code)
             quantizer_scale_code = m_hdr.slice[m_slice].quantiser_scale_code;
@@ -86,8 +86,8 @@ private:
     mfxU32 mode;
 public:
     TestSuite()
-        : tsParserMPEG2AU(BS_MPEG2_INIT_MODE_MB)
-        , tsVideoEncoder(MFX_CODEC_MPEG2)
+        : tsVideoEncoder(MFX_CODEC_MPEG2)
+        , tsParserMPEG2AU(BS_MPEG2_INIT_MODE_MB)
         , m_fo(0)
         , mbqp_on(true)
         , mode(0)
@@ -172,7 +172,7 @@ public:
 
         if (bs.Data)
             set_buffer(bs.Data + bs.DataOffset, bs.DataLength+1);
-        
+
         while (checked++ < nFrames)
         {
             UnitType& hdr = ParseOrDie();
@@ -345,7 +345,7 @@ int TestSuite::RunTest(unsigned int id)
         }
         EncodeFrames(30);
 
-        if (tc.mode & RESET_ON || tc.mode & RESET_OFF)
+        if ((tc.mode & RESET_ON) || (tc.mode & RESET_OFF))
         {
             if (tc.mode & RESET_ON)
             {
