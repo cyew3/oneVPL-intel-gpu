@@ -353,7 +353,7 @@ mfxStatus tsVideoEncoder::SyncOperation(mfxSession session,  mfxSyncPoint syncp,
     return tsSession::SyncOperation(session, syncp, wait);
 }
 
-mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n)
+mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)
 {
     mfxU32 encoded = 0;
     mfxU32 submitted = 0;
@@ -391,6 +391,9 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n)
     }
 
     g_tsLog << encoded << " FRAMES ENCODED\n";
+
+    if (check && (encoded != n))
+        return MFX_ERR_UNKNOWN;
     
     return g_tsStatus.get();
 }

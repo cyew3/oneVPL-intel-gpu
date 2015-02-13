@@ -59,7 +59,7 @@ public:
     mfxStatus SyncOperation(mfxSyncPoint syncp);
     mfxStatus SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait);
 
-    mfxStatus EncodeFrames(mfxU32 n);
+    mfxStatus EncodeFrames(mfxU32 n, bool check=false);
 
     mfxStatus Load() { m_loaded = (0 == tsSession::Load(m_session, m_uid, 1)); return g_tsStatus.get(); }
 };
