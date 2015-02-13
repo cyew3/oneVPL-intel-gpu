@@ -17,7 +17,6 @@ public:
 
 private:
     struct tc_par;
-    static const mfxU32 n_par = 6;
 
     enum
     {
@@ -35,8 +34,8 @@ private:
             mfxU32 ext_type;
             const  tsStruct::Field* f;
             mfxU32 v;
-        } set_par[n_par];
-        char* skips;
+        } set_par[MAX_NPARS];
+        std::string skips;
     };
 
     static const tc_struct test_case[];
@@ -979,17 +978,17 @@ int TestSuite::RunTest(unsigned int id)
 
     std::vector<mfxU32> skip_frames;
     std::vector<mfxU32> skip_values;
-    if (0 == strncmp(tc.skips, "each2", strlen("each2")))
+    if (0 == strncmp(tc.skips.c_str(), "each2", strlen("each2")))
     {
         for (mfxU32 i = 1; i < nframes; i += 2)
             skip_frames.push_back(i);
     }
-    else if (0 == strncmp(tc.skips, "last10", strlen("last10")))
+    else if (0 == strncmp(tc.skips.c_str(), "last10", strlen("last10")))
     {
         for (mfxU32 i = nframes - 1; i > (nframes - 11); i--)
             skip_frames.push_back(i);
 
-        // repeate skipts for each GOP
+        // repeat skips for each GOP
         size_t sz = skip_frames.size();
         for (size_t i = 0; i < sz; i++)
         {
@@ -1010,7 +1009,7 @@ int TestSuite::RunTest(unsigned int id)
             }
         }
 
-        // repeate skipts for each GOP
+        // repeat skips for each GOP
         size_t sz = skip_frames.size();
         for (size_t i = 0; i < sz; i++)
         {
