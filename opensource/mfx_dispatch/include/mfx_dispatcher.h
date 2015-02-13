@@ -38,9 +38,7 @@ File Name: mfx_dispatcher.h
 #include "mfx_dispatcher_defs.h"
 #include "mfx_load_plugin.h"
 #include "mfxenc.h"
-
-struct mfxPAKInput;
-struct mfxPAKOutput;
+#include "mfxpak.h"
 
 enum
 {

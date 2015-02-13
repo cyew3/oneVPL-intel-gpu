@@ -34,6 +34,7 @@ File Name: mfxvideo++.h
 
 #include "mfxvideo.h"
 #include "mfxenc.h"
+#include "mfxpak.h"
 
 class MFXVideoSession
 {
@@ -168,6 +169,29 @@ public:
     //virtual mfxStatus GetEncodeStat(mfxEncodeStat *stat) { return MFXVideoENCODE_GetEncodeStat(m_session, stat); }
 
     virtual mfxStatus ProcessFrameAsync(mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp) { return MFXVideoENC_ProcessFrameAsync(m_session, in, out, syncp); }
+
+protected:
+
+    mfxSession m_session;                                       // (mfxSession) handle to the owning session
+};
+
+class MFXVideoPAK
+{
+public:
+
+    MFXVideoPAK(mfxSession session) { m_session = session; }
+    virtual ~MFXVideoPAK(void) { Close(); }
+
+    virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) { return MFXVideoPAK_Query(m_session, in, out); }
+    virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request) { return MFXVideoPAK_QueryIOSurf(m_session, par, request); }
+    virtual mfxStatus Init(mfxVideoParam *par) { return MFXVideoPAK_Init(m_session, par); }
+    virtual mfxStatus Reset(mfxVideoParam *par) { return MFXVideoPAK_Reset(m_session, par); }
+    virtual mfxStatus Close(void) { return MFXVideoPAK_Close(m_session); }
+
+    //virtual mfxStatus GetVideoParam(mfxVideoParam *par) { return MFXVideoENCODE_GetVideoParam(m_session, par); }
+    //virtual mfxStatus GetEncodeStat(mfxEncodeStat *stat) { return MFXVideoENCODE_GetEncodeStat(m_session, stat); }
+
+    virtual mfxStatus ProcessFrameAsync(mfxPAKInput *in, mfxPAKOutput *out, mfxSyncPoint *syncp) { return MFXVideoPAK_ProcessFrameAsync(m_session, in, out, syncp); }
 
 protected:
 
