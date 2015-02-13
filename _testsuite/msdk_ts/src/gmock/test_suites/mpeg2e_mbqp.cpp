@@ -226,21 +226,6 @@ public:
                         quantiser_scale_code =  24 + (expected_qp-56)/8;
                 }
 
-                if (expected_qp > 7 && expected_qp <= 62)
-                {
-                    quantiser_scale_code = (expected_qp + 1) >> 1;
-                } else
-                {
-                    if (expected_qp <= 8) {
-                        quantiser_scale_code = expected_qp;
-                    } else if (expected_qp > 62)
-                    {
-                        quantiser_scale_code = 25+((expected_qp-64+4)>>3);
-                    }
-                }
-                if (quantiser_scale_code < 1 ) quantiser_scale_code = 1;
-                if (quantiser_scale_code > 31) quantiser_scale_code = 31;
-
                 if (quantiser_scale_code != qp)
                 {
                     g_tsLog << "\nERROR: Expected QP converted/msdk (" << mfxU16(quantiser_scale_code)
