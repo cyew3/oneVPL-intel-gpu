@@ -166,6 +166,7 @@ int TestSuite::RunTest(unsigned int id)
     const tc_struct& tc = test_case[id];
 
     tsRawReader stream(g_tsStreamPool.Get("YUV/iceage_720x480_491.yuv"), m_pPar->mfx.FrameInfo);
+    g_tsStreamPool.Reg();
     m_filler = &stream;
 
     MFXInit();
