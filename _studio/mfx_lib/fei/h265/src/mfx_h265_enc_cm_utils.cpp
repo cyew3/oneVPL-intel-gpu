@@ -495,6 +495,14 @@ void SetSearchPath(VmeSearchPath *spath)
     spath->maxNumSu = 57;
 }
 
+void SetSearchPathSmall(VmeSearchPath *spath)
+{
+    memset(spath->sp, 0, sizeof(spath->sp));
+    small_memcpy(spath->sp, SmallPath, 3);
+    spath->lenSp = 4;
+    spath->maxNumSu = 9;
+}
+
 mfxU32 SetSearchPath(
     mfxVMEIMEIn & spath,
     mfxU32        frameType,

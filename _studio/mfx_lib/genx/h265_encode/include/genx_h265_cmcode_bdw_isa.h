@@ -9,5 +9,5 @@
 
 #ifndef __genx_h265_cmcode_bdw__
 #define __genx_h265_cmcode_bdw__
-extern const unsigned char genx_h265_cmcode_bdw[1195975];
+extern const unsigned char genx_h265_cmcode_bdw[1227402];
 #endif

@@ -606,6 +606,10 @@ const mfxU8 Diamond[56] =
     0x00,0x00,0x00,0x00,0x00,0x00,//51
 };
 
+const mfxU8 SmallPath[3] =
+{
+    0x0F, 0xF0, 0x01
+};
 CmProgram * ReadProgram(CmDevice * device, std::istream & is);
 CmProgram * ReadProgram(CmDevice * device, char const * filename);
 CmProgram * ReadProgram(CmDevice * device, const unsigned char* buffer, int len);
@@ -627,6 +631,7 @@ CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem);
 SurfaceIndex * CreateVmeSurfaceG75(CmDevice * device, CmSurface2D * source, CmSurface2D ** fwdRefs, CmSurface2D ** bwdRefs, mfxU32 numFwdRefs, mfxU32 numBwdRefs);
 
 void SetSearchPath(VmeSearchPath *spath);
+void SetSearchPathSmall(VmeSearchPath *spath);
 mfxU32 SetSearchPath(mfxVMEIMEIn & spath, mfxU32 frameType, mfxU32 meMethod);
 void SetCurbeData(H265EncCURBEData & curbeData, mfxU32 PicType, mfxU32  qp, mfxU32  width, mfxU32 height);
 

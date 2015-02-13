@@ -264,12 +264,17 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
                 if (/*(k == MFX_FEI_H265_BLK_16x8) || (k == MFX_FEI_H265_BLK_8x16) || */(k == MFX_FEI_H265_BLK_8x4_US) || (k == MFX_FEI_H265_BLK_4x8_US))
                     continue; // others are not used in tu7 now
                 if (HME_LEVEL_LOW) {
-                    if ((k == MFX_FEI_H265_BLK_256x256) || (k == MFX_FEI_H265_BLK_128x128))
+                    if ((k == MFX_FEI_H265_BLK_256x256) || (k == MFX_FEI_H265_BLK_128x128) || (k == MFX_FEI_H265_BLK_64x64))
+                        continue;
+                } else
+                {   /* for HME_LEVEL_HIGH 16x, 8x and 4x MVs are not saved in Ime3tiers kernel now*/
+                    if ((k == MFX_FEI_H265_BLK_256x256) || (k == MFX_FEI_H265_BLK_128x128) || (k == MFX_FEI_H265_BLK_64x64))
                         continue;
                 }
-                { // surfaces 256x256, 126x128 and 64x64 should be aligned to 256 to use Ime3tiers kernel
+                { // surfaces 256x256, 128x128 and 64x64 should be aligned to 256 to use Ime3tiers kernel
                     mfxU32 w0 = cmMvW[k];
                     mfxU32 h0 = cmMvH[k];
+/*
                     if (k == MFX_FEI_H265_BLK_128x128) {
                         w0 = width16x * 2;
                         h0 = height16x * 2;
@@ -277,6 +282,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
                         w0 = width16x * 4;
                         h0 = height16x * 4;
                     }
+*/
                     CreateCmSurface2DUp(device, w0, h0, CM_SURFACE_FORMAT_P8, um_mvCpu[i][j][k], mvGpu[i][j][k], um_pitchMv[k]);
                 }
             }
@@ -297,14 +303,14 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     kernelDownSample4tiers = CreateKernel(device, program, "DownSampleMB4t", (void *)DownSampleMB4t);
     kernelMeIntra          = CreateKernel(device, program, "MeP16_Intra", (void *)MeP16_Intra);
     kernelGradient         = CreateKernel(device, program, "AnalyzeGradient32x32Best", (void *)AnalyzeGradient32x32Best);
-    kernelMe16             = CreateKernel(device, program, "MeP16", (void *)MeP16);
-    kernelMe32             = CreateKernel(device, program, "MeP32", (void *)MeP32);
+    kernelMe16             = CreateKernel(device, program, "MeP16_4MV", (void *)MeP16_4MV);
+    kernelMe32             = CreateKernel(device, program, "MeP32_4MV", (void *)MeP32_4MV);
     kernelRefine32x32      = CreateKernel(device, program, "RefineMeP32x32", (void *)RefineMeP32x32);
     kernelRefine32x16      = CreateKernel(device, program, "RefineMeP32x16", (void *)RefineMeP32x16);
     kernelRefine16x32      = CreateKernel(device, program, "RefineMeP16x32", (void *)RefineMeP16x32);
     kernelInterpolateFrame = CreateKernel(device, program, "InterpolateFrameWithBorder", (void *)InterpolateFrame);
-    kernelIme              = CreateKernel(device, program, "Ime", (void *)Ime);
-    kernelIme3tiers        = CreateKernel(device, program, "Ime3tiers", (void *)Ime3tiers);
+    kernelIme              = CreateKernel(device, program, "Ime", (void *)Ime_4MV);
+    kernelIme3tiers        = CreateKernel(device, program, "Ime3tiers4MV", (void *)Ime3tiers4MV);
 
     /* set up VME */
     curbe       = CreateBuffer(device, sizeof(H265EncCURBEData));
@@ -325,7 +331,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     curbe->WriteSurface((mfxU8 *)&curbeData, NULL);
 
     Me2xControl control;
-    SetSearchPath(&control.searchPath);
+    SetSearchPathSmall(&control.searchPath);    // short SP for all kernels except for kernelMe16
     control.width = (mfxU16)width;
     control.height = (mfxU16)height;
     me1xControl->WriteSurface((mfxU8 *)&control, NULL);
@@ -341,6 +347,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         control.width = (mfxU16)width8x;
         control.height = (mfxU16)height8x;
         me8xControl->WriteSurface((mfxU8 *)&control, NULL);
+        SetSearchPath(&control.searchPath);
         control.width = (mfxU16)width16x;
         control.height = (mfxU16)height16x;
         me16xControl->WriteSurface((mfxU8 *)&control, NULL);
@@ -575,12 +582,12 @@ void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurfac
             refs16x = CreateVmeSurfaceG75(device, picBufInput->bufDown16x, &(picBufRef->bufDown16x), 0, 1, 0);
             {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Ime3tiers");
                 kernelIme3tiers->SetThreadCount((width16x / 16) * (height16x / 16));
-                SetKernelArg(kernelIme3tiers, me16xControl, *refs16x, *refs8x, *refs4x, mv[MFX_FEI_H265_BLK_64x64]);
+                SetKernelArg(kernelIme3tiers, me16xControl, *refs16x, *refs8x, *refs4x, mv[MFX_FEI_H265_BLK_32x32]);
                 EnqueueKernelLight(device, queue, task, kernelIme3tiers, width16x / 16, height16x / 16, *lastEvent);
             }
         } else {  // HME_LEVEL_LOW
             //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Ime4x");
-            SetKernelArg(kernelIme, me4xControl, *refs4x, mv[MFX_FEI_H265_BLK_64x64]);
+            SetKernelArg(kernelIme, me4xControl, *refs4x, mv[MFX_FEI_H265_BLK_32x32]);
             EnqueueKernel(device, queue, task, kernelIme, width4x / 16, height4x / 16, *lastEvent);
         }
     }
@@ -591,7 +598,7 @@ void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurfac
 #if defined (AS_H265FEI_PLUGIN) || defined (SAVE_FEI_STATE)
         rectParts = 1;  // to enable 16x32 and 32x16
 #endif  // (AS_H265FEI_PLUGIN)
-        SetKernelArg(kernelMe32, me2xControl, *refs2x, mv[MFX_FEI_H265_BLK_64x64], mv[MFX_FEI_H265_BLK_32x32],
+        SetKernelArg(kernelMe32, me2xControl, *refs2x, mv[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_16x16],
             mv[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_16x32], rectParts);
         EnqueueKernel(device, queue, task, kernelMe32, width2x / 16, height2x / 16, *lastEvent);
     }
@@ -625,7 +632,7 @@ void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurfac
 #if defined (AS_H265FEI_PLUGIN) || defined (SAVE_FEI_STATE)
         rectParts = 1;  // to enable 16x8 and 8x16
 #endif  // (AS_H265FEI_PLUGIN)
-        SetKernelArg(kernelMe16, me1xControl, *refs, mv[MFX_FEI_H265_BLK_32x32], dist[MFX_FEI_H265_BLK_16x16], dist[MFX_FEI_H265_BLK_16x8], dist[MFX_FEI_H265_BLK_8x16],
+        SetKernelArg(kernelMe16, me1xControl, *refs, dist[MFX_FEI_H265_BLK_16x16], dist[MFX_FEI_H265_BLK_16x8], dist[MFX_FEI_H265_BLK_8x16],
             dist[MFX_FEI_H265_BLK_8x8]/*, dist[MFX_FEI_H265_BLK_8x4_US], dist[MFX_FEI_H265_BLK_4x8_US]*/, mv[MFX_FEI_H265_BLK_16x16],
             mv[MFX_FEI_H265_BLK_16x8], mv[MFX_FEI_H265_BLK_8x16], mv[MFX_FEI_H265_BLK_8x8]/*, mv[MFX_FEI_H265_BLK_8x4_US], mv[MFX_FEI_H265_BLK_4x8_US]*/, rectParts);
         EnqueueKernel(device, queue, task, kernelMe16, width / 16, height / 16, *lastEvent);
