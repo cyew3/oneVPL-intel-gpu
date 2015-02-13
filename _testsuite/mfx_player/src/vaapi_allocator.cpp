@@ -198,10 +198,6 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             VAContextID context_id = request->reserved[0];
             int codedbuf_size;
 
-#if defined(ANDROID)
-            int codedbuf_size = static_cast<int>(
-                (m_Width * m_Height) * 400LL / (16 * 16)); //from libva spec
-#else
             int width32 = 32 * ((request->Info.Width + 31) >> 5);
             int height32 = 32 * ((request->Info.Height + 31) >> 5);
 
@@ -213,11 +209,10 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             }
             else
             {
-                codedbuf_size = static_cast<int>((width32 * height32) * 400LL / (16 * 16)); //from libva spec
-                //codedbuf_size = 0x1000 * ((codedbuf_size + 0xfff) >> 12); // align to page size
+                codedbuf_size = static_cast<int>((width32 * height32) * 400LL / (16 * 16));
                 codedbuf_type = VAEncCodedBufferType;
             }
-#endif
+
             for (numAllocated = 0; numAllocated < surfaces_num; numAllocated++)
             {
                 VABufferID coded_buf;
@@ -320,85 +315,77 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     {
         if( VA_FOURCC_P208 != vaapi_mid->m_fourcc)
         {
-             unsigned int format;
-             VASurfaceAttrib *pAttrib = &attrib;
+            unsigned int format;
+            VASurfaceAttrib *pAttrib = &attrib;
 
-             attrib.type          = VASurfaceAttribPixelFormat;
-             attrib.flags         = VA_SURFACE_ATTRIB_SETTABLE;
-             attrib.value.type    = VAGenericValueTypeInteger;
-             attrib.value.value.i = vaapi_mid->m_fourcc;
-             format               = vaapi_mid->m_fourcc;
+            attrib.type          = VASurfaceAttribPixelFormat;
+            attrib.flags         = VA_SURFACE_ATTRIB_SETTABLE;
+            attrib.value.type    = VAGenericValueTypeInteger;
+            attrib.value.value.i = vaapi_mid->m_fourcc;
+            format               = vaapi_mid->m_fourcc;
 
-             if (mfx_fourcc == MFX_FOURCC_VP8_NV12)
-             {
-                 // special configuration for NV12 surf allocation for VP8 hybrid encoder is required
-                 attrib.type          = (VASurfaceAttribType)VASurfaceAttribUsageHint;
-                 attrib.value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
-             }
-             else if (mfx_fourcc == MFX_FOURCC_VP8_MBDATA)
-             {
-                 // special configuration for MB data surf allocation for VP8 hybrid encoder is required
-                 attrib.value.value.i = VA_FOURCC_P208;
-                 format               = VA_FOURCC_P208;
-             }
-             else if (vaapi_mid->m_fourcc == VA_FOURCC_NV12)
-             {
-                 format = VA_RT_FORMAT_YUV420;
-             }
+            if (mfx_fourcc == MFX_FOURCC_VP8_NV12)
+            {
+                // special configuration for NV12 surf allocation for VP8 hybrid encoder is required
+                attrib.type          = (VASurfaceAttribType)VASurfaceAttribUsageHint;
+                attrib.value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
+            }
+            else if (mfx_fourcc == MFX_FOURCC_VP8_MBDATA)
+            {
+                // special configuration for MB data surf allocation for VP8 hybrid encoder is required
+                attrib.value.value.i = VA_FOURCC_P208;
+                format               = VA_FOURCC_P208;
+            }
+            else if (vaapi_mid->m_fourcc == VA_FOURCC_NV12)
+            {
+                format = VA_RT_FORMAT_YUV420;
+            }
 
- #if defined(ANDROID)
-             // It seems that VA implementation on android(W49) doesn't accept "attrib" parameter (ERR_UNKNOWN on
-             // anything exept NULL). According to QuerySurfaceAttributes only NV12 is supported.
-             if (vaapi_mid->m_fourcc != VA_FOURCC_NV12) return MFX_ERR_UNSUPPORTED;
-             pAttrib = 0;
- #endif
+#if defined(ANDROID)
+            // It seems that VA implementation on android(W49) doesn't accept "attrib" parameter (ERR_UNKNOWN on
+            // anything exept NULL). According to QuerySurfaceAttributes only NV12 is supported.
+            if (vaapi_mid->m_fourcc != VA_FOURCC_NV12) return MFX_ERR_UNSUPPORTED;
+            pAttrib = 0;
+#endif
 
-             va_res = vaCreateSurfaces(m_dpy,
-                                     format,
-                                     m_Width, m_Height,
-                                     vaapi_mid->m_surface,
-                                     1,
-                                     pAttrib, pAttrib ? 1 : 0);
-             mfx_res = va_to_mfx_status(va_res);
-         }
-         else
-         {
-             VAContextID context_id;// = request->reserved[0];
-             int codedbuf_size;
+            va_res = vaCreateSurfaces(m_dpy,
+                                    format,
+                                    m_Width, m_Height,
+                                    vaapi_mid->m_surface,
+                                    1,
+                                    pAttrib, pAttrib ? 1 : 0);
+            mfx_res = va_to_mfx_status(va_res);
+        }
+        else
+        {
+            int codedbuf_size;
 
- #if defined(ANDROID)
-             int codedbuf_size = static_cast<int>(
-                 (request->Info.Width * request->Info.Height) * 400LL / (16 * 16)); //from libva spec
- #else
-             int width32 = 32 * ((m_Width + 31) >> 5);
-             int height32 = 32 * ((m_Height + 31) >> 5);
+            int width32 = 32 * ((m_Width + 31) >> 5);
+            int height32 = 32 * ((m_Height + 31) >> 5);
 
-             VABufferType codedbuf_type;
-             if (mfx_fourcc == MFX_FOURCC_VP8_SEGMAP)
-             {
-                 codedbuf_size = m_Width * m_Height;
-                 codedbuf_type = (VABufferType)VAEncMacroblockMapBufferType;
-             }
-             else
-             {
-                 codedbuf_size = static_cast<int>((width32 * height32) * 400LL / (16 * 16)); //from libva spec
-                 //codedbuf_size = 0x1000 * ((codedbuf_size + 0xfff) >> 12); // align to page size
-                 codedbuf_type = VAEncCodedBufferType;
-             }
- #endif
-             VABufferID coded_buf;
+            VABufferType codedbuf_type;
+            if (mfx_fourcc == MFX_FOURCC_VP8_SEGMAP)
+            {
+                codedbuf_size = m_Width * m_Height;
+                codedbuf_type = (VABufferType)VAEncMacroblockMapBufferType;
+            }
+            else
+            {
+                codedbuf_size = static_cast<int>((width32 * height32) * 400LL / (16 * 16));
+                codedbuf_type = VAEncCodedBufferType;
+            }
+            VABufferID coded_buf;
 
-             va_res = vaCreateBuffer(m_dpy,
-                                     context_id,
-                                     codedbuf_type,
-                                     codedbuf_size,
-                                     1,
-                                     NULL,
-                                     &coded_buf);
-             mfx_res = va_to_mfx_status(va_res);
-             //vaapi_mid->m_surface = coded_buf;
-
-         }
+            va_res = vaCreateBuffer(m_dpy,
+                                    VA_INVALID_ID,
+                                    codedbuf_type,
+                                    codedbuf_size,
+                                    1,
+                                    NULL,
+                                    &coded_buf);
+            mfx_res = va_to_mfx_status(va_res);
+            //vaapi_mid->m_surface = coded_buf;
+        }
         return MFX_ERR_NONE;
     }
 
