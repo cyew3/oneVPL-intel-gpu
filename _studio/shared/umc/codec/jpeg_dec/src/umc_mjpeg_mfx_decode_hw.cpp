@@ -129,7 +129,7 @@ Status MJPEGVideoDecoderMFX_HW::AllocateFrame()
     size.width = m_DecoderParams.info.disp_clip_info.width;
 
     VideoDataInfo info;
-    info.Init(size.width, size.height, NV12, 8);
+    info.Init(size.width, size.height, m_DecoderParams.info.color_format, 8);
     info.SetPictureStructure(m_interleaved ? VideoDataInfo::PS_FRAME : VideoDataInfo::PS_TOP_FIELD_FIRST);
 
     FrameMemID frmMID;

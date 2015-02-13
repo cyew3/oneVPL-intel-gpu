@@ -475,6 +475,22 @@ void H265HeadersBitstream::parseProfileTier(H265PTL *ptl)
             ptl->profile_compatibility_flags |= 1 << j;
     }
 
+    if (!ptl->profile_idc)
+    {
+        ptl->profile_idc = H265_PROFILE_MAIN;
+        for(int j = 1; j < 32; j++)
+        {
+            if (ptl->profile_compatibility_flags & (1 << j))
+            {
+                ptl->profile_idc = j;
+                break;
+            }
+        }
+    }
+
+    if (ptl->profile_idc > H265_PROFILE_FREXT)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     ptl->progressive_source_flag    = Get1Bit();
     ptl->interlaced_source_flag     = Get1Bit();
     ptl->non_packed_constraint_flag = Get1Bit();

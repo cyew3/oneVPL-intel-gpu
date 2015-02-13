@@ -337,6 +337,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
     case UMC::YV12:
     case UMC::YUV422:
     case UMC::NV12:
+    case UMC::YUY2:
     case UMC::IMC3:
     case UMC::RGB32:
         break;
