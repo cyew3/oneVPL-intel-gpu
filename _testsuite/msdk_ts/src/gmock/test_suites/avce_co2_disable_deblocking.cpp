@@ -38,7 +38,6 @@ private:
     mfxU32 n_frame;
     mfxExtBuffer* buffers[100];
     struct tc_par;
-    static const mfxU32 n_par = 6;
 
     enum
     {
@@ -66,7 +65,7 @@ private:
             mfxU32 ext_type;
             const  tsStruct::Field* f;
             mfxU32 v;
-        } set_par[n_par];
+        } set_par[MAX_NPARS];
         char* skips;
     };
 

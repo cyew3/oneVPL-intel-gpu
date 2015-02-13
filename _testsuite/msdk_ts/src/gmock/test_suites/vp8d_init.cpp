@@ -23,7 +23,6 @@ public:
     static const unsigned int n_cases;
 
 private:
-    static const mfxU32 n_par = 10;
     
     enum
     {
@@ -43,7 +42,7 @@ private:
         {
             const  tsStruct::Field* f;
             mfxU32 v;
-        } set_par[n_par];
+        } set_par[MAX_NPARS];
         struct 
         {
             callback func;
@@ -182,7 +181,7 @@ int TestSuite::RunTest(unsigned int id)
         m_pPar = 0;
     }
 
-    for(mfxU32 i = 0; i < n_par; i++)
+    for(mfxU32 i = 0; i < MAX_NPARS; i++)
     {
         if(tc.set_par[i].f)
         {

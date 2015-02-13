@@ -31,7 +31,6 @@ private:
         mfxFrameSurface1*   pSurfOut;
         mfxSyncPoint*       pSP;
     } EFApar;
-    static const mfxU32 n_par = 6;
 
     enum
     {
@@ -52,7 +51,7 @@ private:
         {
             const  tsStruct::Field* f;
             mfxU32 v;
-        } set_par[n_par];
+        } set_par[MAX_NPARS];
         struct 
         {
             callback func;
@@ -153,7 +152,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if (tc.without_feature == 0)
     {
-        for(mfxU32 i = 0; i < n_par; i++)
+        for(mfxU32 i = 0; i < MAX_NPARS; i++)
         {
             if(tc.set_par[i].f)
             {
@@ -173,9 +172,9 @@ int TestSuite::RunTest(unsigned int id)
     g_tsStatus.expect(tc.sts_query);
     Query(m_session, m_pPar, par_out);
 
-    if (tc.sts_query == MFX_ERR_UNSUPPORTED) 
+    if (tc.sts_query == MFX_ERR_UNSUPPORTED)
     { 
-        for(mfxU32 i = 0; i < n_par; i++) 
+        for(mfxU32 i = 0; i < MAX_NPARS; i++)
         { 
             if(tc.set_par[i].f) 
             { 
@@ -190,7 +189,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if (tc.without_feature == 1)
     {
-        for(mfxU32 i = 0; i < n_par; i++)
+        for(mfxU32 i = 0; i < MAX_NPARS; i++)
         {
             if(tc.set_par[i].f)
             {
