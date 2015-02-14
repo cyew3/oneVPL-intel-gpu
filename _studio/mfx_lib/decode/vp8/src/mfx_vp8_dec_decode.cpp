@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2015 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -916,7 +916,11 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
 
         // get output surface
         sts = GetOutputSurface(pp_surface_out, p_surface_work, memId);
-        MFX_CHECK_STS(sts);
+        if( MFX_ERR_NONE != sts )
+        {
+            delete video_data;
+            MFX_RETURN(sts);
+        }
             //*pp_surface_out = m_p_frame_allocator->GetSurface(memId, p_surface_work, &m_video_params);
 
         SetOutputParams(p_surface_work);
