@@ -47,9 +47,9 @@ void set_brc_params(tsExtBufType<mfxVideoParam>* p)
     {
         p->mfx.QPI = p->mfx.QPP = p->mfx.QPB = 0;
         p->mfx.QPI = 23;
-        if (p->mfx.GopPicSize > 1)
+        if (!p->mfx.GopPicSize || p->mfx.GopPicSize > 1)
             p->mfx.QPP = 25;
-        if (p->mfx.GopRefDist > 1)
+        if (!p->mfx.GopPicSize || p->mfx.GopRefDist > 1)
             p->mfx.QPB = 25;
     } else if (p->mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
                p->mfx.RateControlMethod == MFX_RATECONTROL_VBR ||

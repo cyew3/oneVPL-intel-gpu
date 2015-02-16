@@ -16,12 +16,14 @@ private:
     tsParserMPEG2AU::UnitType& m_hdr;
     mfxU32 m_mb;
     mfxU32 m_slice;
+    mfxU8 m_prev;
 public:
 
     AUWrap(tsParserMPEG2AU::UnitType& hdr)
         : m_hdr(hdr)
         , m_mb(0)
         , m_slice(0)
+        , m_prev(0)
     {
     }
     ~AUWrap()
@@ -62,10 +64,15 @@ public:
             m_mb = 0;
         }
 
-        mfxU8 quantizer_scale_code = m_hdr.slice[m_slice].mb[m_mb++].quantiser_scale_code;
+        // 6.2.5 Macroblock
+        mfxU8 quantizer_scale_code = m_hdr.slice[m_slice].quantiser_scale_code; // use slice value
+        if (m_mb && (m_hdr.slice[m_slice].mb[m_mb].macroblock_quant == 0))      //   or previous value
+            quantizer_scale_code = m_prev;
+        if (m_hdr.slice[m_slice].mb[m_mb].macroblock_quant)                     //   or value from MB
+            quantizer_scale_code = m_hdr.slice[m_slice].mb[m_mb].quantiser_scale_code;
+        m_mb++;
 
-        if (!quantizer_scale_code)
-            quantizer_scale_code = m_hdr.slice[m_slice].quantiser_scale_code;
+        m_prev = quantizer_scale_code;
 
         return quantizer_scale_code;
     }
@@ -84,6 +91,7 @@ private:
     mfxU32 m_fo;
     bool mbqp_on;
     mfxU32 mode;
+    //tsBitstreamWriter m_writer;
 public:
     TestSuite()
         : tsVideoEncoder(MFX_CODEC_MPEG2)
@@ -91,6 +99,7 @@ public:
         , m_fo(0)
         , mbqp_on(true)
         , mode(0)
+        //, m_writer("/home/amaslenn/msdk/0001.mp2")
     {
         set_trace_level(0);
         srand(0);
@@ -173,6 +182,8 @@ public:
         if (bs.Data)
             set_buffer(bs.Data + bs.DataOffset, bs.DataLength+1);
 
+        //m_writer.ProcessBitstream(bs, nFrames);
+
         while (checked++ < nFrames)
         {
             UnitType& hdr = ParseOrDie();
@@ -183,6 +194,26 @@ public:
             mfxU32 hMB = ((m_par.mfx.FrameInfo.CropH + 15) / 16);
             mfxExtMBQP& mbqp = m_ctrl[(mfxU32)bs.TimeStamp].ctrl;
 
+            byte expected_scale_type = 0;
+            mfxU8 frm_qp = 0;
+            switch(au.GetFrameType())
+            {
+            case MFX_FRAMETYPE_I:
+                frm_qp = (mfxU8)m_par.mfx.QPI;
+                break;
+            case MFX_FRAMETYPE_P:
+                frm_qp = (mfxU8)m_par.mfx.QPP;
+                break;
+            case MFX_FRAMETYPE_B:
+                frm_qp = (mfxU8)m_par.mfx.QPB;
+                break;
+            default:
+                frm_qp = 0;
+                break;
+            }
+            if (frm_qp < 8 || frm_qp > 62)
+                expected_scale_type = 1;
+
             g_tsLog << "Frame #"<< bs.TimeStamp <<" QPs:\n";
 
             while (qp != QP_INVALID)
@@ -191,28 +222,20 @@ public:
 
                 mfxU8 expected_qp = mbqp.QP[i];
                 if (expected_qp == QP_BY_FRM_TYPE)
+                    expected_qp = frm_qp;
+
+                if (hdr.pic_coding_ext->q_scale_type != expected_scale_type)
                 {
-                    switch(au.GetFrameType())
-                    {
-                    case MFX_FRAMETYPE_I:
-                        expected_qp = (mfxU8)m_par.mfx.QPI;
-                        break;
-                    case MFX_FRAMETYPE_P:
-                        expected_qp = (mfxU8)m_par.mfx.QPP;
-                        break;
-                    case MFX_FRAMETYPE_B:
-                        expected_qp = (mfxU8)m_par.mfx.QPB;
-                        break;
-                    default:
-                        expected_qp = 0;
-                        break;
-                    }
+                    g_tsLog << "\nERROR in MB(" << i % wMB << "x" << i / wMB << "):"
+                            << " Expected scale_type (" << bool(expected_scale_type)
+                            << ") != real QP (" << bool(hdr.pic_coding_ext->q_scale_type) << ")\n";
+                    return MFX_ERR_ABORTED;
                 }
 
                 mfxU16 quantiser_scale_code = 0;
                 if (hdr.pic_coding_ext->q_scale_type == 0)
                 {
-                    quantiser_scale_code = expected_qp / 2;
+                    quantiser_scale_code = (expected_qp + 1) / 2;
                 }
                 else
                 {
@@ -228,7 +251,8 @@ public:
 
                 if (quantiser_scale_code != qp)
                 {
-                    g_tsLog << "\nERROR: Expected QP converted/msdk (" << mfxU16(quantiser_scale_code)
+                    g_tsLog << "\nERROR in MB(" << i % wMB << "x" << i / wMB << "):"
+                            << " Expected QP converted/msdk (" << mfxU16(quantiser_scale_code)
                             << "/" << mfxU16(expected_qp)
                             << ") != real QP (" << mfxU16(qp) << ")\n";
                     return MFX_ERR_ABORTED;
@@ -262,33 +286,17 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*00*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
     {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
     {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
-    {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ}},
-    {/*04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA}},
-    {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT}},
-    {/*06*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD}},
-    {/*07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ}},
-    {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR}},
-    {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM}},
-    {/*10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME}},
     // not CQP: Query
-    {/*11*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
-    {/*12*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
-    {/*13*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
-    {/*14*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ}},
-    {/*15*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA}},
-    {/*16*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT}},
-    {/*17*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD}},
-    {/*18*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ}},
-    {/*19*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR}},
-    {/*20*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM}},
-    {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME}},
+    {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
+    {/*04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
+    {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
 
-    {/*22*/ MFX_ERR_NONE, 0},
-    {/*23*/ MFX_ERR_NONE, RESET_ON},
-    {/*24*/ MFX_ERR_NONE, RESET_OFF},
-    {/*25*/ MFX_ERR_NONE, RANDOM},
-    {/*26*/ MFX_ERR_NONE, RANDOM|RESET_ON},
-    {/*27*/ MFX_ERR_NONE, RANDOM|RESET_OFF}
+    {/*06*/ MFX_ERR_NONE, 0},
+    {/*07*/ MFX_ERR_NONE, RESET_ON},
+    {/*08*/ MFX_ERR_NONE, RESET_OFF},
+    {/*09*/ MFX_ERR_NONE, RANDOM},
+    {/*10*/ MFX_ERR_NONE, RANDOM|RESET_ON},
+    {/*11*/ MFX_ERR_NONE, RANDOM|RESET_OFF}
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -322,13 +330,14 @@ int TestSuite::RunTest(unsigned int id)
         Init();
     }
 
+    mfxU32 nf = 30;
     if (tc.sts == MFX_ERR_NONE)
     {
         if (tc.mode & RESET_ON)
         {
             mbqp_on = false;
         }
-        EncodeFrames(30);
+        EncodeFrames(nf);
 
         if ((tc.mode & RESET_ON) || (tc.mode & RESET_OFF))
         {
@@ -336,10 +345,13 @@ int TestSuite::RunTest(unsigned int id)
             {
                 mfxExtCodingOption3& co3 = m_par;
                 co3.EnableMBQP = MFX_CODINGOPTION_ON;
+            } else
+            {
+                m_par.NumExtParam = 0;
             }
             mbqp_on = !mbqp_on;
             Reset();
-            EncodeFrames(30);
+            EncodeFrames(nf);
         }
     }
     else if (tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM && (tc.mode & QUERY))
