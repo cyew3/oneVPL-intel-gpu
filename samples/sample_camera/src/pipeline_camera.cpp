@@ -589,6 +589,7 @@ mfxStatus CCameraPipeline::CreateAllocator()
         We use system memory allocator simply as a memory manager for application*/
     }
 
+#if D3D_SURFACES_SUPPORT
     if (m_memType == SYSTEM_MEMORY && m_bIsRender) {
 #if MFX_D3D11_SUPPORT
         m_pMFXd3dAllocator = new D3D11FrameAllocator;
@@ -613,7 +614,7 @@ mfxStatus CCameraPipeline::CreateAllocator()
         sts = m_mfxSession.SetFrameAllocator(m_pMFXd3dAllocator);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
-
+#endif
     // initialize memory allocator(s)
     sts = m_pMFXAllocatorIn->Init(m_pmfxAllocatorParamsIn);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -1204,18 +1205,22 @@ mfxStatus CCameraPipeline::PrepareInputSurfaces()
 #ifdef CAMP_PIPE_ITT
     __itt_task_begin(CamPipeAccel, __itt_null, __itt_null, task4);
 #endif
+#if D3D_SURFACES_SUPPORT
                 if (m_memTypeIn == D3D11_MEMORY)
                     sts = m_pMFXAllocatorIn->Lock(m_pMFXAllocatorIn->pthis, MFXReadWriteMid(pSurface->Data.MemId, MFXReadWriteMid::write), &pSurface->Data);
                 else
+#endif
                     sts = m_pMFXAllocatorIn->Lock(m_pMFXAllocatorIn->pthis, pSurface->Data.MemId, &pSurface->Data);
                 if (MFX_ERR_NONE != sts)
                     break;
                 sts = m_pRawFileReader->LoadNextFrame(&pSurface->Data, &m_mfxVideoParams.vpp.In, m_BayerType);
                 if (MFX_ERR_NONE != sts)
                     break;
+#if D3D_SURFACES_SUPPORT
                 if (m_memTypeIn == D3D11_MEMORY)
                     sts = m_pMFXAllocatorIn->Unlock(m_pMFXAllocatorIn->pthis, MFXReadWriteMid(pSurface->Data.MemId, MFXReadWriteMid::write), &pSurface->Data);
                 else
+#endif
                     sts = m_pMFXAllocatorIn->Unlock(m_pMFXAllocatorIn->pthis, pSurface->Data.MemId, &pSurface->Data);
                 if (MFX_ERR_NONE != sts)
                     break;
@@ -1430,9 +1435,11 @@ mfxStatus CCameraPipeline::Run()
             if (m_bOutput) {
 
                 if (ppOutSurf[asdepth]->Data.MemId) {
+#if D3D_SURFACES_SUPPORT
                     if (m_memTypeOut == D3D11_MEMORY)
                         sts = m_pMFXAllocatorOut->Lock(m_pMFXAllocatorOut->pthis, MFXReadWriteMid(ppOutSurf[asdepth]->Data.MemId, MFXReadWriteMid::read), &ppOutSurf[asdepth]->Data);
                     else
+#endif
                         sts = m_pMFXAllocatorOut->Lock(m_pMFXAllocatorOut->pthis, ppOutSurf[asdepth]->Data.MemId, &ppOutSurf[asdepth]->Data);
                     MSDK_BREAK_ON_ERROR(sts);
                 }
@@ -1471,9 +1478,11 @@ mfxStatus CCameraPipeline::Run()
 #endif
 
                 if (ppOutSurf[asdepth]->Data.MemId) {
+#if D3D_SURFACES_SUPPORT
                     if (m_memTypeOut == D3D11_MEMORY)
                         sts = m_pMFXAllocatorOut->Unlock(m_pMFXAllocatorOut->pthis,  MFXReadWriteMid(ppOutSurf[asdepth]->Data.MemId, MFXReadWriteMid::read), &ppOutSurf[asdepth]->Data);
                     else
+#endif
                         sts = m_pMFXAllocatorOut->Unlock(m_pMFXAllocatorOut->pthis,  ppOutSurf[asdepth]->Data.MemId, &ppOutSurf[asdepth]->Data);
                     MSDK_BREAK_ON_ERROR(sts);
                 }
@@ -1631,9 +1640,11 @@ mfxStatus CCameraPipeline::Run()
             if (m_bOutput && !quitOnFrameLimit) {
 
                 if (ppOutSurf[tail_asdepth]->Data.MemId) {
+#if D3D_SURFACES_SUPPORT
                     if (m_memTypeOut == D3D11_MEMORY)
                         sts = m_pMFXAllocatorOut->Lock(m_pMFXAllocatorOut->pthis, MFXReadWriteMid(ppOutSurf[tail_asdepth]->Data.MemId, MFXReadWriteMid::read), &ppOutSurf[tail_asdepth]->Data);
                     else
+#endif
                         sts = m_pMFXAllocatorOut->Lock(m_pMFXAllocatorOut->pthis, ppOutSurf[tail_asdepth]->Data.MemId, &ppOutSurf[tail_asdepth]->Data);
                 }
                 camera_printf("--writing frame %d \n", ppOutSurf[tail_asdepth]->Data.FrameOrder);
@@ -1661,9 +1672,11 @@ mfxStatus CCameraPipeline::Run()
                     m_pBmpWriter->WriteFrame(&ppOutSurf[tail_asdepth]->Data, 0, &ppOutSurf[tail_asdepth]->Info);
 
                 if (ppOutSurf[tail_asdepth]->Data.MemId) {
+#if D3D_SURFACES_SUPPORT
                     if (m_memTypeOut == D3D11_MEMORY)
                         sts = m_pMFXAllocatorOut->Unlock(m_pMFXAllocatorOut->pthis, MFXReadWriteMid(ppOutSurf[tail_asdepth]->Data.MemId, MFXReadWriteMid::read), &ppOutSurf[tail_asdepth]->Data);
                     else
+#endif
                         sts = m_pMFXAllocatorOut->Unlock(m_pMFXAllocatorOut->pthis, ppOutSurf[tail_asdepth]->Data.MemId, &ppOutSurf[tail_asdepth]->Data);
                 }
             }

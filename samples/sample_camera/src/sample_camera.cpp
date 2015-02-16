@@ -516,12 +516,12 @@ int main(int argc, char *argv[])
     Pipeline.PrintInfo();
 
     msdk_printf(MSDK_STRING("Camera pipe started\n"));
-
+#if defined(_WIN32) || defined(_WIN64)
     LARGE_INTEGER timeBegin, timeEnd, m_Freq;
     QueryPerformanceFrequency(&m_Freq);
 
     QueryPerformanceCounter(&timeBegin);
-
+#endif
     int resetNum = 0;
     for (;;) {
         sts = Pipeline.Run();
@@ -596,7 +596,7 @@ int main(int argc, char *argv[])
             break;
     }
 
-
+#if defined(_WIN32) || defined(_WIN64)
     QueryPerformanceCounter(&timeEnd);
 
 
@@ -607,7 +607,7 @@ int main(int argc, char *argv[])
     _tprintf(_T("Total frames %d \n"), frames);
     _tprintf(_T("Total time   %.2lf sec\n"), time);
     _tprintf(_T("Total FPS    %.2lf fps\n"), frames/time);
-
+#endif
     //Pipeline.Close();
 
     if(MFX_ERR_ABORTED != sts)

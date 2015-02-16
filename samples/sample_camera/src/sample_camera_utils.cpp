@@ -264,7 +264,11 @@ mfxStatus CRawVideoReader::LoadNextFrameSingle(mfxFrameData* pData, mfxFrameInfo
     {
         for (i = 0; i < h; i++)
         {
+#if defined(_WIN32) || defined(_WIN64)
             nBytesRead = (mfxI32)fread_s(ptr + i * pitch, pData->Pitch, sizeof(mfxU16), w, m_fSrc);
+#else
+            nBytesRead = (mfxI32)fread(ptr + i * pitch, sizeof(mfxU16), w, m_fSrc);
+#endif
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
     }
@@ -280,7 +284,11 @@ mfxStatus CRawVideoReader::LoadNextFrameSingle(mfxFrameData* pData, mfxFrameInfo
             for (j = 0; j < w; j++)
                 rowPtr[j] = m_pPaddingBuffer[j] >> shift;
 #else
+#if defined(_WIN32) || defined(_WIN64)
             nBytesRead = (mfxI32)fread_s(rowPtr, w*sizeof(mfxU16), sizeof(mfxU16), w, m_fSrc);
+#else
+            nBytesRead = (mfxI32)fread(rowPtr, sizeof(mfxU16), w, m_fSrc);
+#endif
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
 #endif
             for (j = 0; j < 7; j++)
@@ -349,8 +357,11 @@ mfxStatus CRawVideoReader::LoadNextFrameSequential(mfxFrameData* pData, mfxFrame
         pExt = MSDK_STRING("rg16");
         break;
     }
-
+#if defined(_WIN32) || defined(_WIN64)
     msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%08d.%s"), m_FileNameBase, filenameIndx, pExt);
+#else
+    msdk_sprintf(fname, MSDK_STRING("%s%08d.%s"), m_FileNameBase, filenameIndx, pExt);
+#endif
     //msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s"), m_FileNameBase, filenameIndx);
 
     MSDK_FOPEN(m_fSrc, fname, MSDK_STRING("rb"));
@@ -376,7 +387,11 @@ mfxStatus CRawVideoReader::LoadNextFrameSequential(mfxFrameData* pData, mfxFrame
     {
         for (i = 0; i < h; i++)
         {
+#if defined(_WIN32) || defined(_WIN64)
             nBytesRead = (mfxI32)fread_s(ptr + i * pitch, pData->Pitch, sizeof(mfxU16), w, m_fSrc);
+#else
+            nBytesRead = (mfxI32)fread(ptr + i * pitch, sizeof(mfxU16), w, m_fSrc);
+#endif
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
     }
@@ -392,7 +407,11 @@ mfxStatus CRawVideoReader::LoadNextFrameSequential(mfxFrameData* pData, mfxFrame
             for (j = 0; j < w; j++)
                 rowPtr[j] = m_pPaddingBuffer[j] >> shift;
 #else
+#if defined(_WIN32) || defined(_WIN64)
             nBytesRead = (mfxI32)fread_s(rowPtr, w*sizeof(mfxU16), sizeof(mfxU16), w, m_fSrc);
+#else
+            nBytesRead = (mfxI32)fread(rowPtr, sizeof(mfxU16), w, m_fSrc);
+#endif
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
 #endif
             for (j = 0; j < 7; j++)
@@ -478,10 +497,17 @@ mfxStatus CBmpWriter::WriteFrame(mfxFrameData* pData, const msdk_char *fileId, m
     MSDK_CHECK_POINTER(pData, MFX_ERR_NOT_INITIALIZED);
     MSDK_CHECK_POINTER(pInfo, MFX_ERR_NOT_INITIALIZED);
 
+#if defined(_WIN32) || defined(_WIN64)
     if (fileId)
         msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%s.bmp"), m_FileNameBase, fileId);
     else
         msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%d.bmp"), m_FileNameBase, m_FileNum);
+#else
+    if (fileId)
+        msdk_sprintf(fname, MSDK_STRING("%s%s.bmp"), m_FileNameBase, fileId);
+    else
+        msdk_sprintf(fname, MSDK_STRING("%s%d.bmp"), m_FileNameBase, m_FileNum);
+#endif
 
     m_FileNum++;
 
@@ -565,10 +591,17 @@ mfxStatus CRawVideoWriter::WriteFrame(mfxFrameData* pData, const msdk_char *file
     MSDK_CHECK_POINTER(pData, MFX_ERR_NOT_INITIALIZED);
     MSDK_CHECK_POINTER(pInfo, MFX_ERR_NOT_INITIALIZED);
 
+#if defined(_WIN32) || defined(_WIN64)
     if (fileId)
         msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%s.argb16"), m_FileNameBase, fileId);
     else
         msdk_sprintf(fname, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s%d.argb16"), m_FileNameBase, m_FileNum);
+#else
+    if (fileId)
+        msdk_sprintf(fname, MSDK_STRING("%s%s.argb16"), m_FileNameBase, fileId);
+    else
+        msdk_sprintf(fname, MSDK_STRING("%s%d.argb16"), m_FileNameBase, m_FileNum);
+#endif
 
     m_FileNum++;
 
