@@ -1,6 +1,6 @@
 ##******************************************************************************
-##  Copyright(C) 2012 Intel Corporation. All Rights Reserved.
-##  
+##  Copyright(C) 2012-2015 Intel Corporation. All Rights Reserved.
+##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
 ##  Material remains  with Intel Corporation  or its suppliers or licensors. The
@@ -14,9 +14,9 @@
 ##  implication, inducement,  estoppel or  otherwise.  Any  license  under  such
 ##  intellectual  property  rights must  be express  and  approved  by  Intel in
 ##  writing.
-##  
+##
 ##  *Third Party trademarks are the property of their respective owners.
-##  
+##
 ##  Unless otherwise  agreed  by Intel  in writing, you may not remove  or alter
 ##  this  notice or  any other notice embedded  in Materials by Intel or Intel's
 ##  suppliers or licensors in any way.
@@ -114,6 +114,20 @@ endfunction( )
 #    - static|shared: build static or shared library
 #
 function( make_library name variant type )
+  get_target( target ${ARGV0} ${ARGV1} )
+  if( ${ARGV0} MATCHES shortname )
+    get_folder( folder )
+  else ( )
+    set( folder ${ARGV0} )
+  endif( )
+
+  configure_dependencies(${target} "${DEPENDENCIES}")
+  if(SKIPPING MATCHES ${target} OR NOT_CONFIGURED MATCHES ${target})
+    return()
+  else()
+    report_add_target(BUILDING ${target})
+  endif()
+
   if( NOT sources )
    get_source( include sources )
   endif( )
@@ -122,15 +136,10 @@ function( make_library name variant type )
     list( APPEND sources ${sources.plus} )
   endif( )
 
-  get_target( target ${ARGV0} ${ARGV1} )
-  if( ${ARGV0} MATCHES shortname )
-    get_folder( folder )
-  else ( )
-    set( folder ${ARGV0} )
-  endif( )
-
   if( ARGV2 MATCHES static )
     add_library( ${target} STATIC ${include} ${sources} )
+
+    append_property(${target} COMPILE_FLAGS "${SCOPE_CFLAGS}")
 
   elseif( ARGV2 MATCHES shared )
     add_library( ${target} SHARED ${include} ${sources} )
@@ -158,17 +167,15 @@ function( make_library name variant type )
       target_link_libraries( ${target} "-Xlinker --end-group" )
     endif( )
 
-    foreach( lib ${LIBS} )
+    append_property(${target} COMPILE_FLAGS "${CFLAGS} ${SCOPE_CFLAGS}")
+    append_property(${target} LINK_FLAGS "${LDFLAGS} ${SCOPE_LINKFLAGS}")
+    foreach(lib ${LIBS} ${SCOPE_LIBS})
       target_link_libraries( ${target} ${lib} )
-    endforeach( )
+    endforeach()
 
     set_target_properties( ${target} PROPERTIES LINK_INTERFACE_LIBRARIES "" )
   endif( )
 
-  configure_build_variant( ${target} ${ARGV1} )
-  if( defs )
-    append_property( ${target} COMPILE_FLAGS ${defs} )
-  endif( )
   set_target_properties( ${target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE} FOLDER ${folder} )
   set_target_properties( ${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE} FOLDER ${folder} ) 
   set_target_properties( ${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE} FOLDER ${folder} )
@@ -178,6 +185,16 @@ endfunction( )
 
 # .....................................................
 function( make_executable name variant )
+  get_target( target ${ARGV0} ${ARGV1} )
+  get_folder( folder )
+
+  configure_dependencies(${target} "${DEPENDENCIES}")
+  if(SKIPPING MATCHES ${target} OR NOT_CONFIGURED MATCHES ${target})
+    return()
+  else()
+    report_add_target(BUILDING ${target})
+  endif()
+
   if( NOT sources )
     get_source( include sources )
   endif( )
@@ -186,16 +203,10 @@ function( make_executable name variant )
     list( APPEND sources ${sources.plus} )
   endif( )
 
-  get_target( target ${ARGV0} ${ARGV1} )
-  get_folder( folder )
-
   project( ${target} )
 
   add_executable( ${target} ${include} ${sources} )
 
-  if( defs )
-    append_property( ${target} COMPILE_FLAGS ${defs} )
-  endif( )
   set_target_properties( ${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE} FOLDER ${folder} )
 
   if( Linux )
@@ -221,16 +232,11 @@ function( make_executable name variant )
     target_link_libraries( ${target} "-Xlinker --end-group" )
   endif( )
 
-  if( ${NEED_DISPATCHER} )
-    target_link_libraries( ${target} debug mfx )
-    target_link_libraries( ${target} optimized mfx )
-  endif( )
-
-  foreach( lib ${LIBS})
+  append_property(${target} COMPILE_FLAGS "${CFLAGS} ${SCOPE_CFLAGS}")
+  append_property(${target} LINK_FLAGS "${LDFLAGS} ${SCOPE_LINKFLAGS}")
+  foreach(lib ${LIBS} ${SCOPE_LIBS})
     target_link_libraries( ${target} ${lib} )
-  endforeach( )
-  
-  configure_build_variant( ${target} ${ARGV1} )
+  endforeach()
 
   set( target ${target} PARENT_SCOPE )
 endfunction( )

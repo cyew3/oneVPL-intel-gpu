@@ -4,9 +4,11 @@ include_directories (
 
 make_library( shortname none static )
 
-foreach( variant sw drm x11 )
-  check_variant( ${variant}, configured )
-  if( configured )
-    make_library( shortname ${variant} static )
-  endif( )
-endforeach( )
+set(DEPENDENCIES _enable_sw)
+make_library( shortname sw static )
+
+set(DEPENDENCIES libva-drm libdrm libva)
+make_library( shortname drm static )
+
+set(DEPENDENCIES libva-x11 x11 libva)
+make_library( shortname x11 static )

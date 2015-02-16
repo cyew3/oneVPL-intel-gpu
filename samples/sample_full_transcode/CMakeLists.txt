@@ -30,13 +30,13 @@ list(APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/src/video_session.cpp )
 
 list( APPEND LIBS_VARIANT sample_common )
-list( APPEND LIBS dl pthread sample_spl_mux_dispatcher )
-set(NEED_DISPATCHER 1)
+list( APPEND LIBS_NOVARIANT sample_spl_mux_dispatcher )
 
+set(DEPENDENCIES _enable_sw libmfx dl pthread)
+make_executable( shortname sw )
 
-foreach( variant sw drm x11 )
-  check_variant( ${variant} configured )
-  if( configured )
-    make_executable( shortname ${variant} )
-  endif( )
-endforeach( )
+set(DEPENDENCIES libmfx libva-drm libdrm libva dl pthread)
+make_executable( shortname drm )
+
+set(DEPENDENCIES libmfx libva-x11 x11 libva dl pthread)
+make_executable( shortname x11 )

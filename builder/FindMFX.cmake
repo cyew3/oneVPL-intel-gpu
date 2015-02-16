@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2012 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2012-2015 Intel Corporation. All Rights Reserved.
 ##  
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -14,9 +14,9 @@
 ##  implication, inducement,  estoppel or  otherwise.  Any  license  under  such
 ##  intellectual  property  rights must  be express  and  approved  by  Intel in
 ##  writing.
-##  
+##
 ##  *Third Party trademarks are the property of their respective owners.
-##  
+##
 ##  Unless otherwise  agreed  by Intel  in writing, you may not remove  or alter
 ##  this  notice or  any other notice embedded  in Materials by Intel or Intel's
 ##  suppliers or licensors in any way.
@@ -37,13 +37,17 @@ else( )
 endif( )
 
 if( Linux OR Darwin )
-  set( API_HOME $ENV{MFX_HOME} )
+  if(CMAKE_MFX_HOME)
+    set( API_HOME ${CMAKE_MFX_HOME} )
+  else()
+    set( API_HOME $ENV{MFX_HOME} )
+  endif()
   find_path( MFX_INCLUDE mfxdefs.h PATHS ${API_HOME} PATH_SUFFIXES include mdp_msdk-api/include )
-  find_library ( MFX_LIBRARY libmfx.a PATHS $ENV{MFX_HOME}/lib PATH_SUFFIXES ${os_arch} )
+  find_library ( MFX_LIBRARY libmfx.a PATHS ${API_HOME}/lib PATH_SUFFIXES ${os_arch} )
 
   # required:
   include_directories( ${API_HOME}/include )
-  link_directories( $ENV{MFX_HOME}/lib/${os_arch} )
+  link_directories( ${API_HOME}/lib/${os_arch} )
 
 else( )
   set( MFX_INCLUDE NOTFOUND )
@@ -71,4 +75,3 @@ endif( )
 if( Linux )
   set(MFX_LDFLAGS "-Wl,--default-symver" )
 endif( )
-

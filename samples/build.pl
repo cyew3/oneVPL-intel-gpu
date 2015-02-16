@@ -43,6 +43,12 @@ my $build = "";
 my $clean = "";
 my $msdk  = "";
 my $toolchain = "";
+my $mfx_home = "";
+my $enable_sw  = "no";
+my $enable_drm = "yes";
+my $enable_x11 = "yes";
+my $enable_ffmpeg = "yes";
+my $enable_opencl = "yes";
 
 my $test  = "";
 my $verb  = "";
@@ -72,6 +78,7 @@ sub nativepath {
   return $path;
 }
 
+my @list_yesno     = qw(yes no);
 my @list_generator = qw(make);
 my @list_arch      = qw(intel64);
 my @list_config    = qw(release debug);
@@ -79,9 +86,9 @@ my @list_config    = qw(release debug);
 
 sub usage {
   print "\n";
-  print "Copyright (c) 2012-2013 Intel Corporation. All rights reserved.\n";
+  print "Copyright (c) 2012-2015 Intel Corporation. All rights reserved.\n";
   print "This script performs Intel(R) Media SDK Samples projects creation and build.\n\n";
-  print "Usage: perl build.pl --cmake=ARCH.GENERATOR.CONFIG [--clean] [--build]\n";
+  print "Usage: perl build.pl --cmake=ARCH.GENERATOR.CONFIG [options]\n";
   print "\n";
   print "Possible variants:\n";
   print "\tARCH = intel64\n";
@@ -89,12 +96,18 @@ sub usage {
   print "\tCONFIG = debug | release\n";
   print "\n";
   print "Environment variables:\n";
-  print "\tMFX_HOME=/path/to/mediasdk/package # required\n";
-  print "\tMFX_VERSION=\"0.0.000.0000\"         # optional\n";
+  print "\tMFX_HOME=/path/to/mediasdk/package # required, can be overwritten by --mfx-home option\n";
+  print "\tMFX_VERSION=\"0.0.000.0000\"       # optional\n";
   print "\n";
   print "Optional flags:\n";
   print "\t--clean - clean build directory before projects generation / build\n";
   print "\t--build - try to build projects after generation (requires cmake>=2.8.0)\n";
+  print "\t--mfx-home=/path/to/mediasdk/package - Media SDK package location [default: <none>]\n";
+  print "\t--enable-sw=yes|no  - build SW only targets [default: $enable_sw]\n";
+  print "\t--enable-drm=yes|no - build DRM dependent targets [default: $enable_drm]\n";
+  print "\t--enable-x11=yes|no - build X11 dependent targets [default: $enable_x11]\n";
+  print "\t--enable-ffmpeg=yes|no - build DRM dependent targets [default: $enable_ffmpeg]\n";
+  print "\t--enable-opencl=yes|no - build X11 dependent targets [default: $enable_opencl]\n";
   print "\n";
   print "Examples:\n";
   print "\tperl build.pl --cmake=intel64.make.debug                 [ only generate projects    ]\n";
@@ -112,7 +125,13 @@ GetOptions (
   '--build'   => \$build,
   '--clean'   => \$clean,
   '--verbose' => \$verb,
-  '--cross=s' => \$toolchain
+  '--cross=s' => \$toolchain,
+  '--mfx-home=s' => \$mfx_home,
+  '--enable-sw=s' => \$enable_sw,
+  '--enable-drm=s' => \$enable_drm,
+  '--enable-x11=s' => \$enable_x11,
+  '--enable-ffmpeg=s' => \$enable_ffmpeg,
+  '--enable-opencl=s' => \$enable_opencl
 );
 
 (
@@ -122,12 +141,16 @@ GetOptions (
 ) = split /,|\./,$cmake;
 
 my $configuration_valid = 0;
-  if(in_array(\@list_arch, $build{'arch'})) {
-    if(in_array(\@list_generator, $build{'generator'})) {
-          if(in_array(\@list_config, $build{'config'})) {
-            $configuration_valid = 1;
-    }
-  }
+
+if(in_array(\@list_arch, $build{'arch'}) and
+   in_array(\@list_generator, $build{'generator'}) and
+   in_array(\@list_config, $build{'config'}) and
+   in_array(\@list_yesno, $enable_sw) and
+   in_array(\@list_yesno, $enable_drm) and
+   in_array(\@list_yesno, $enable_x11) and
+   in_array(\@list_yesno, $enable_ffmpeg) and
+   in_array(\@list_yesno, $enable_opencl)) {
+   $configuration_valid = 1;
 }
 
 unless($configuration_valid) {
@@ -150,6 +173,17 @@ $cmake_cmd_gen.= "-DCMAKE_BUILD_TYPE:STRING=$build{'config'} " if($build{'genera
 $cmake_cmd_gen.= "-D__GENERATOR:STRING=$build{'generator'} -D__ARCH:STRING=$build{'arch'} -D__CONFIG:STRING=$build{'config'} ";
 $cmake_cmd_gen.= "-DCMAKE_TOOLCHAIN_FILE=$toolchain " if $toolchain ne "";
 
+$cmake_cmd_gen.= "-DENABLE_SW:STRING=" . (($enable_sw eq "yes") ? "ON": "OFF") . " ";
+$cmake_cmd_gen.= "-DENABLE_DRM:STRING=" . (($enable_drm eq "yes") ? "ON": "OFF") . " ";
+$cmake_cmd_gen.= "-DENABLE_X11:STRING=" . (($enable_x11 eq "yes") ? "ON": "OFF") . " ";
+$cmake_cmd_gen.= "-DENABLE_FFMPEG:STRING=" . (($enable_ffmpeg eq "yes") ? "ON": "OFF") . " ";
+$cmake_cmd_gen.= "-DENABLE_OPENCL:STRING=" . (($enable_opencl eq "yes") ? "ON": "OFF") . " ";
+
+my $mfx_home_abs = "";
+
+$mfx_home_abs = File::Spec->rel2abs($mfx_home) if $mfx_home ne "";
+$cmake_cmd_gen.= "-DCMAKE_MFX_HOME:STRING=$mfx_home_abs " if $mfx_home_abs ne "";
+
 $cmake_cmd_gen.= nativepath($sample_path);
 
 $cmake_cmd_gen =~ s/__generator__/Unix Makefiles/g if($build{'generator'} =~ /^make$/);
@@ -171,4 +205,3 @@ if($build){
 }
 
 exit $exit;
-

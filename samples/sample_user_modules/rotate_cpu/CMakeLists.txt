@@ -6,10 +6,10 @@ include_directories (
   ${PLUGIN_API}
 )
 
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${PLUGIN_API}/mfx_plugin.map" )
+set(LDFLAGS "${LDFLAGS} -Wl,--version-script=${PLUGIN_API}/mfx_plugin.map" )
 
 list(APPEND sources.plus "${PLUGIN_API}/mfx_plugin_module.cpp")
 
-list( APPEND LIBS sample_common)
+list( APPEND LIBS_NOVARIANT sample_common)
 
 make_library(sample_rotate_plugin none shared)

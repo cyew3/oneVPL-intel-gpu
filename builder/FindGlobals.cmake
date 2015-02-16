@@ -1,6 +1,6 @@
 ##******************************************************************************
-##  Copyright(C) 2012 Intel Corporation. All Rights Reserved.
-##  
+##  Copyright(C) 2012-2015 Intel Corporation. All Rights Reserved.
+##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
 ##  Material remains  with Intel Corporation  or its suppliers or licensors. The
@@ -14,9 +14,9 @@
 ##  implication, inducement,  estoppel or  otherwise.  Any  license  under  such
 ##  intellectual  property  rights must  be express  and  approved  by  Intel in
 ##  writing.
-##  
+##
 ##  *Third Party trademarks are the property of their respective owners.
-##  
+##
 ##  Unless otherwise  agreed  by Intel  in writing, you may not remove  or alter
 ##  this  notice or  any other notice embedded  in Materials by Intel or Intel's
 ##  suppliers or licensors in any way.
@@ -128,3 +128,30 @@ else( )
     link_directories(/usr/lib64)
   endif( )
 endif( )
+
+# Some font definitions: colors, bold text, etc.
+if(NOT Windows)
+  string(ASCII 27 Esc)
+  set(EndColor   "${Esc}[m")
+  set(BoldColor  "${Esc}[1m")
+  set(Red        "${Esc}[31m")
+  set(BoldRed    "${Esc}[1;31m")
+  set(Green      "${Esc}[32m")
+  set(BoldGreen  "${Esc}[1;32m")
+endif()
+
+# Usage: report_targets( "Description for the following targets:" [targets] )
+# Note: targets list is optional
+function(report_targets description )
+  message("")
+  message("${ARGV0}")
+  foreach(target ${ARGV1})
+    message("  ${target}")
+  endforeach()
+  message("")
+endfunction()
+
+# Permits to accumulate strings in some variable for the delayed output
+function(report_add_target var target)
+  set(${ARGV0} ${${ARGV0}} ${ARGV1} CACHE INTERNAL "" FORCE)
+endfunction()
