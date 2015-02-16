@@ -197,6 +197,8 @@ void SetSurfacePictureType(mfxFrameSurface1* surface, Ipp32s display_index, UMC:
 
     mfxU32 frameType = implUmc->GetFrameType(display_index);
     pDecodedFrameInfoExt->FrameType = GetMfxPictureType(frameType);
+    if (ph.first_in_sequence)
+        pDecodedFrameInfoExt->FrameType |= MFX_FRAMETYPE_IDR;
 
     if (sh.progressive_sequence)
         return;

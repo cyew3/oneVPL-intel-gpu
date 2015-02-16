@@ -345,6 +345,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
         frame_rate_code = code  & ((1 << 4) - 1);
         m_ClipInfo.clip_info.height    = (code >> 8) & ((1 << 12) - 1);
         m_ClipInfo.clip_info.width     = (code >> 20) & ((1 << 12) - 1);
+        sequenceHeader.frame_count = 0;
 
         // this workaround for initialization (m_InitClipInfo not yet filled)
         if((!!m_InitClipInfo.clip_info.height) && (!!m_InitClipInfo.clip_info.width))
@@ -946,8 +947,11 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
         return (UMC_ERR_NOT_ENOUGH_DATA);
     }
 
+    sequenceHeader.frame_count++;
+
     memset(&PictureHeader[task_num], 0, sizeof(sPictureHeader));
     PictureHeader[task_num].time_code = sequenceHeader.time_code;
+    PictureHeader[task_num].first_in_sequence = sequenceHeader.frame_count == 1;
 
     GET_BITS(video->bs, 10, PictureHeader[task_num].temporal_reference)
     GET_TO9BITS(video->bs, 3, pic_type)

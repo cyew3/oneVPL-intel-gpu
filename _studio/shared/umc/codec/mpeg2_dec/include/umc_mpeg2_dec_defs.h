@@ -159,7 +159,7 @@ struct sSequenceHeader
     // GOP time code
     sGOPTimeCode     time_code;
 
-    Ipp32s           frame_count;
+    Ipp32s           frame_count;   // number of decoded pictures from last sequence header
 };
 
 struct sSHSavedPars
@@ -233,6 +233,7 @@ struct sPictureHeader
     Ipp32s           max_slice_vert_pos;
 
     sGOPTimeCode     time_code;
+    bool             first_in_sequence;
 };
 
 struct mp2_VLCTable

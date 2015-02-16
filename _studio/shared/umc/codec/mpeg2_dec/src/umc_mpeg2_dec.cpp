@@ -1416,9 +1416,6 @@ Status MPEG2VideoDecoderBase::PostProcessFrame(int display_index, int task_num)
 {
     Status umcRes = UMC_OK;
 
-
-    sequenceHeader.frame_count++;
-
 #if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
 
       if(pack_w.va_mode != VA_NO)
