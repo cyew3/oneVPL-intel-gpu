@@ -675,7 +675,7 @@ static Ipp32s QuantToScaleCode(Ipp32s quant_value, Ipp32s q_scale_type)
 {
     if (q_scale_type == 0)
     {
-        return quant_value/2;
+        return (quant_value + 1)/2;
     }
     else
     {
@@ -716,7 +716,7 @@ mfxStatus ExecuteBuffers::InitSliceParameters(mfxU8 qp, mfxU16 scale_type, mfxU8
         pDDISlice->NumMbsForSlice                 = numMBSlice;
         pDDISlice->IntraSlice                     = intra; 
         //pDDISlice->quantiser_scale_code           = isMBQP ? mbqp[i*numMBSlice] : qp;
-        pDDISlice->quantiser_scale_code           = isMBQP ? m_mbqp_data[0] : qp;
+        pDDISlice->quantiser_scale_code           = qp;
     }
 
     return MFX_ERR_NONE;

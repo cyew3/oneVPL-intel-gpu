@@ -1320,7 +1320,7 @@ mfxStatus VAAPIEncoder::FillMBQPBuffer(
         m_vaContextEncode,
         (VABufferType)VAEncQpBufferType,
         sizeof (VAEncQpBufferMPEG2),
-        numMB,
+        m_mbqpDataBuffer.size(),
         &m_mbqpDataBuffer[0],
         &m_mbqpBufferId);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
