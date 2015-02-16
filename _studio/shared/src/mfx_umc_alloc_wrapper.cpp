@@ -328,7 +328,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
 
     IppiSize allocated = {static_cast<int>(m_info.GetWidth()), static_cast<int>(m_info.GetHeight())};
     IppiSize passed = {static_cast<int>(info->GetWidth()), static_cast<int>(info->GetHeight())};
-    UMC::ColorFormat colorFormat = info->GetColorFormat();
+    UMC::ColorFormat colorFormat = m_info.GetColorFormat();
 
     switch(colorFormat)
     {
@@ -340,6 +340,8 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
     case UMC::YUY2:
     case UMC::IMC3:
     case UMC::RGB32:
+    case UMC::YUV444:
+    case UMC::YUV411:
         break;
     default:
         return UMC::UMC_ERR_UNSUPPORTED;
