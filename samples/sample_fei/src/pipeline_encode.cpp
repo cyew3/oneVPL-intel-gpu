@@ -540,7 +540,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
     // The number of surfaces shared by vpp output and encode input.
     // When surfaces are shared 1 surface at first component output contains output frame that goes to next component input
     nEncSurfNum = EncRequest.NumFrameSuggested + MSDK_MAX(VppRequest[1].NumFrameSuggested, 1) - 1 + (m_nAsyncDepth - 1);
-    if(m_encpakParams.bPREENC)
+    if ( (m_encpakParams.bPREENC) || (m_encpakParams.bENCoPAKo))
     {
         nEncSurfNum = m_refDist * 2;
     }
@@ -557,7 +557,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         EncRequest.Type |= MFX_MEMTYPE_FROM_VPPOUT; // surfaces are shared between vpp output and encode input
     }
 
-    if(m_pmfxPREENC)
+    if ((m_pmfxPREENC) || (m_pmfxENC) )
     {
         EncRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
     }
@@ -954,14 +954,25 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    // create encoder
-    m_pmfxENCPAK = new MFXVideoENCODE(m_mfxSession);
-    MSDK_CHECK_POINTER(m_pmfxENCPAK, MFX_ERR_MEMORY_ALLOC);
+    //if(pParams->bENCPAK){
+        // create encoder
+        m_pmfxENCPAK = new MFXVideoENCODE(m_mfxSession);
+        MSDK_CHECK_POINTER(m_pmfxENCPAK, MFX_ERR_MEMORY_ALLOC);
+    //}
 
     if(pParams->bPREENC){
         // create encoder
         m_pmfxPREENC = new MFXVideoENC(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxPREENC, MFX_ERR_MEMORY_ALLOC);
+    }
+
+    if(pParams->bENCoPAKo){
+        // create encoder
+        m_pmfxENC = new MFXVideoENC(m_mfxSession);
+        MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_MEMORY_ALLOC);
+
+        //m_pmfxPAK = new MFXVideoPAK(m_mfxSession);
+        //MSDK_CHECK_POINTER(m_pmfxPAK, MFX_ERR_MEMORY_ALLOC);
     }
 
     // create preprocessor if resizing was requested from command line
@@ -1028,13 +1039,15 @@ void CEncodingPipeline::FreeFileWriters()
 mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
-    MSDK_CHECK_POINTER(m_pmfxENCPAK, MFX_ERR_NOT_INITIALIZED);
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    sts = m_pmfxENCPAK->Close();
-    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    if(m_pmfxENCPAK)
+    {
+        sts = m_pmfxENCPAK->Close();
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     if (m_pmfxVPP)
     {
@@ -1052,11 +1065,12 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     //use encoded order if both is used
+    //TODO: check for ENC_PAK
     if(m_encpakParams.bENCPAK && m_encpakParams.bPREENC){
         m_mfxEncParams.mfx.EncodedOrder = 1;
     }
 
-    if(!m_pmfxPREENC)
+    if ((m_encpakParams.bENCPAK) && (m_pmfxENCPAK) )
     {
         sts = m_pmfxENCPAK->Init(&m_mfxEncParams);
         if (MFX_WRN_PARTIAL_ACCELERATION == sts)
@@ -1085,6 +1099,58 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
 
         sts = m_pmfxPREENC->Init(&preEncParams);
         if (MFX_WRN_PARTIAL_ACCELERATION == sts) {
+            msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
+            MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        }
+
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+
+    if(m_pmfxENC)
+    {
+        mfxVideoParam encParams = m_mfxEncParams;
+
+        //Create extended buffer to Init FEI
+        MSDK_ZERO_MEMORY(m_encpakInit);
+        m_encpakInit.Header.BufferId = MFX_EXTBUFF_FEI_PARAM;
+        m_encpakInit.Header.BufferSz = sizeof (mfxExtFeiParam);
+        m_encpakInit.Func = MFX_FEI_FUNCTION_ENC;
+
+        mfxExtBuffer* buf[1];
+        buf[0] = (mfxExtBuffer*)&m_encpakInit;
+
+        encParams.NumExtParam = 1;
+        encParams.ExtParam = buf;
+
+        sts = m_pmfxENC->Init(&encParams);
+        if (MFX_WRN_PARTIAL_ACCELERATION == sts)
+        {
+            msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
+            MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        }
+
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+
+    if(m_pmfxPAK)
+    {
+        mfxVideoParam pakParams = m_mfxEncParams;
+
+        //Create extended buffer to Init FEI
+        MSDK_ZERO_MEMORY(m_encpakInit);
+        m_encpakInit.Header.BufferId = MFX_EXTBUFF_FEI_PARAM;
+        m_encpakInit.Header.BufferSz = sizeof (mfxExtFeiParam);
+        m_encpakInit.Func = MFX_FEI_FUNCTION_PAK;
+
+        mfxExtBuffer* buf[1];
+        buf[0] = (mfxExtBuffer*)&m_encpakInit;
+
+        pakParams.NumExtParam = 1;
+        pakParams.ExtParam = buf;
+
+        sts = m_pmfxPAK->Init(&pakParams);
+        if (MFX_WRN_PARTIAL_ACCELERATION == sts)
+        {
             msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
             MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
         }
@@ -1337,10 +1403,10 @@ mfxStatus CEncodingPipeline::Run()
         }
     } // if (m_encpakParams.bPREENC) {
 
-    if (m_encpakParams.bENCPAK) {
+    if ((m_encpakParams.bENCPAK) || (m_encpakParams.bENCoPAKo)){
         feiCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN; //GetFrameType(frameCount);
         feiCtrl.QP = m_encpakParams.QP;
-        feiCtrl.SkipFrame = 0;
+        //feiCtrl.SkipFrame = 0;
         feiCtrl.NumPayload = 0;
         feiCtrl.Payload = NULL;
 
@@ -1528,7 +1594,7 @@ mfxStatus CEncodingPipeline::Run()
         MSDK_BREAK_ON_ERROR(sts);
 
         iTask* eTask;
-        if(m_encpakParams.bPREENC){
+        if ((m_encpakParams.bPREENC) || (m_encpakParams.bENCoPAKo)){
             eTask = new iTask;
             eTask->frameType = GetFrameType(frameCount);
             eTask->frameDisplayOrder = frameCount;
@@ -1712,6 +1778,80 @@ mfxStatus CEncodingPipeline::Run()
                 }// for (fieldId = 0; fieldId < numOfFields; fieldId++)
             }
         }
+
+        /* ENC call */
+        if (m_encpakParams.bENCoPAKo) {
+            pSurf->Data.Locked = 1;
+            eTask->in.InSurface = pSurf;
+
+            inputTasks.push_back(eTask); //inputTasks in display order
+
+            eTask = findFrameToEncode();
+            if(eTask == NULL) continue; //not found frame to encode
+
+            eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
+            initEncFrameParams(eTask);
+
+            for (;;) {
+                fprintf(stderr, "frame: %d  t:%d : submit ", eTask->frameDisplayOrder, eTask->frameType);
+
+                sts = m_pmfxENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
+                sts = MFX_ERR_NONE;
+
+                sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                fprintf(stderr, "synced : %d\n", sts);
+
+
+                if (MFX_ERR_NONE < sts && !eTask->EncSyncP) // repeat the call if warning and no output
+                {
+                    if (MFX_WRN_DEVICE_BUSY == sts)
+                        MSDK_SLEEP(1); // wait if device is busy
+                } else if (MFX_ERR_NONE < sts && eTask->EncSyncP) {
+                    sts = MFX_ERR_NONE; // ignore warnings if output is available
+                    break;
+                } else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
+                    //                sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
+                    //                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                } else {
+                    // get next surface and new task for 2nd bitstream in ViewOutput mode
+                    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_BITSTREAM);
+                    break;
+                }
+            }
+
+            eTask->encoded = 1;
+            if ( (mfxU32)(this->m_refDist * 2) == inputTasks.size()) {
+                inputTasks.front()->in.InSurface->Data.Locked = 0;
+                delete inputTasks.front();
+                //remove prevTask
+                inputTasks.pop_front();
+            }
+
+            //drop output data to output file
+            //pCurrentTask->WriteBitstream();
+
+            for (fieldId = 0; fieldId < numOfFields; fieldId++)
+            {
+                mfxExtFeiEncMV* mvBuf=NULL;
+                mfxExtFeiEncMBStat* mbstatBuf = NULL;
+                mfxExtFeiPakMBCtrl* mbcodeBuf = NULL;
+                for(int i=0; i<eTask->out.NumExtParam; i++){
+                    if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout){
+                        mvBuf = (mfxExtFeiEncMV*)eTask->out.ExtParam[i];
+                        fwrite(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
+                    }
+                    if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB_STAT && mbstatout){
+                        mbstatBuf = (mfxExtFeiEncMBStat*)eTask->out.ExtParam[i];
+                        fwrite(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, mbstatout);
+                    }
+                    if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
+                        mbcodeBuf = (mfxExtFeiPakMBCtrl*)eTask->out.ExtParam[i];
+                        fwrite(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
+                    }
+                } // for(int i=0; i<eTask->out.NumExtParam; i++){
+            } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+        } // if (m_encpakParams.bENCoPAKo)
+
 
         if (m_encpakParams.bENCPAK) {
             for (;;) {
@@ -1966,13 +2106,15 @@ mfxStatus CEncodingPipeline::Run()
                         }
                     }
                     MSDK_BREAK_ON_ERROR(sts);
-
+                /* FIXME ???*/
                 //drop output data to output file
                 //pCurrentTask->WriteBitstream();
+                } // if (m_encpakParams.bENCPAK) { //if we have both
 
-                }
-            }
-        }
+
+
+            }  // while (numUnencoded != 0) {
+        } //run processing on last frames  \n if (numUnencoded > 0) {
 
         //unlock last frames
         {
@@ -1997,6 +2139,97 @@ mfxStatus CEncodingPipeline::Run()
         }
     }
 
+    // loop to get buffered frames from encoder
+    if (m_encpakParams.bENCoPAKo) {
+        mdprintf(stderr,"input_tasks_size=%u\n", (mfxU32)inputTasks.size());
+        //encode last frames
+        std::list<iTask*>::iterator it = inputTasks.begin();
+        mfxI32 numUnencoded = 0;
+        for(;it != inputTasks.end(); ++it){
+            if((*it)->encoded == 0){
+                numUnencoded++;
+            }
+        }
+
+        //run processing on last frames
+        if (numUnencoded > 0) {
+            if (inputTasks.back()->frameType & MFX_FRAMETYPE_B) {
+                inputTasks.back()->frameType = MFX_FRAMETYPE_P;
+            }
+            mdprintf(stderr, "run processing on last frames: %d\n", numUnencoded);
+            while (numUnencoded != 0) {
+                // get a pointer to a free task (bit stream and sync point for encoder)
+                sts = GetFreeTask(&pCurrentTask);
+                MSDK_BREAK_ON_ERROR(sts);
+
+                iTask* eTask = findFrameToEncode();
+                if (eTask == NULL) continue; //not found frame to encode
+
+                initEncFrameParams(eTask);
+
+                for (;;) {
+                    //Only synced operation supported for now
+                    fprintf(stderr, "frame: %d  t:%d : submit ", eTask->frameDisplayOrder, eTask->frameType);
+                    sts = m_pmfxENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
+                    sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                    fprintf(stderr, "synced : %d\n", sts);
+
+                    sts = MFX_ERR_NONE;
+
+                    if (MFX_ERR_NONE < sts && !eTask->EncSyncP) // repeat the call if warning and no output
+                    {
+                        if (MFX_WRN_DEVICE_BUSY == sts)
+                            MSDK_SLEEP(1); // wait if device is busy
+                    } else if (MFX_ERR_NONE < sts && eTask->EncSyncP) {
+                        sts = MFX_ERR_NONE; // ignore warnings if output is available
+                        break;
+                    } else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
+                        //                sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
+                        //                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                    } else {
+                        // get next surface and new task for 2nd bitstream in ViewOutput mode
+                        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_BITSTREAM);
+                        break;
+                    }
+                }
+
+                eTask->encoded = 1;
+
+                for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                 {
+                     mfxExtFeiEncMV* mvBuf=NULL;
+                     mfxExtFeiEncMBStat* mbstatBuf = NULL;
+                     mfxExtFeiPakMBCtrl* mbcodeBuf = NULL;
+                     for(int i=0; i<eTask->out.NumExtParam; i++){
+                         if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout){
+                             mvBuf = (mfxExtFeiEncMV*)eTask->out.ExtParam[i];
+                             fwrite(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
+                         }
+                         if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB_STAT && mbstatout){
+                             mbstatBuf = (mfxExtFeiEncMBStat*)eTask->out.ExtParam[i];
+                             fwrite(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, mbstatout);
+                         }
+                         if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
+                             mbcodeBuf = (mfxExtFeiPakMBCtrl*)eTask->out.ExtParam[i];
+                             fwrite(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
+                         }
+                     } // for(int i=0; i<eTask->out.NumExtParam; i++){
+                 } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+
+                //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                numUnencoded--;
+            }  // while (numUnencoded != 0) {
+        } //run processing on last frames  \n if (numUnencoded > 0) {
+
+        //unlock last frames
+        {
+            std::list<iTask*>::iterator it = inputTasks.begin();
+            mfxI32 numUnencoded = 0;
+            for (; it != inputTasks.end(); ++it) {
+                (*it)->in.InSurface->Data.Locked = 0;
+            }
+        }
+    } //     if (m_encpakParams.bENCoPAKo) {
 
     if (m_encpakParams.bENCPAK && !m_encpakParams.bPREENC) {
         while (MFX_ERR_NONE <= sts) {
@@ -2044,7 +2277,7 @@ mfxStatus CEncodingPipeline::Run()
         }
     }
 
-    if (m_encpakParams.bENCPAK || m_encpakParams.bPREENC) {
+    if (m_encpakParams.bENCPAK || m_encpakParams.bPREENC || m_encpakParams.bENCoPAKo){
         if(mvout != NULL) fclose(mvout);
         if(mbstatout != NULL) fclose(mbstatout);
         if(mbcodeout != NULL) fclose(mbcodeout);
@@ -2229,6 +2462,70 @@ void CEncodingPipeline::initFrameParams(iTask* eTask) {
                 //out data
                 eTask->out.NumExtParam = numExtOutParamsPreEnc;
                 eTask->out.ExtParam = outBufsPreEnc;
+                break;
+        }
+    }
+    mdprintf(stderr, "enc: %d t: %d\n", eTask->frameDisplayOrder, (eTask->frameType& MFX_FRAMETYPE_IPB));
+}
+
+void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
+
+    mfxU32 fieldId = 0, numOfFields = 1;
+//    preENCCtr[0].DisableMVOutput = disableMVoutPreENC;
+//    preENCCtr[1].DisableMVOutput = disableMVoutPreENC;
+//    preENCCtr[0].DisableStatisticsOutput = disableMBStatPreENC;
+//    preENCCtr[1].DisableStatisticsOutput = disableMBStatPreENC;
+
+    if ( (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
+         (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF) )
+    {
+        numOfFields = 2;
+    }
+
+    for (fieldId = 0; fieldId < numOfFields; fieldId++)
+    {
+        switch (eTask->frameType & MFX_FRAMETYPE_IPB) {
+            case MFX_FRAMETYPE_I:
+                eTask->in.NumFrameL0 = 0; //1;  //just workaround to support I frames
+                eTask->in.NumFrameL1 = 0;
+                eTask->in.L0Surface = NULL; //eTask->in.InSurface;
+                //in data
+                eTask->in.NumExtParam = numExtInParams;
+                eTask->in.ExtParam = inBufs;
+                //out data
+                //exclude MV output from output buffers
+                //if (preENCCtr[fieldId].DisableStatisticsOutput) {
+                //    eTask->out.NumExtParam = 0;
+                //    eTask->out.ExtParam = NULL;
+                //} else {
+                    eTask->out.NumExtParam = numExtOutParams;
+                    eTask->out.ExtParam = outBufs;
+                //}
+
+                //preENCCtr[fieldId].DisableMVOutput = 1;
+                break;
+            case MFX_FRAMETYPE_P:
+                eTask->in.NumFrameL0 = 1;
+                eTask->in.NumFrameL1 = 0;
+                eTask->in.L0Surface = &eTask->prevTask->in.InSurface;
+                //in data
+                eTask->in.NumExtParam = numExtInParams;
+                eTask->in.ExtParam = inBufs;
+                //out data
+                eTask->out.NumExtParam = numExtOutParams;
+                eTask->out.ExtParam = outBufs;
+                break;
+            case MFX_FRAMETYPE_B:
+                eTask->in.NumFrameL0 = 1;
+                eTask->in.NumFrameL1 = 1;
+                eTask->in.L0Surface = &eTask->prevTask->in.InSurface;
+                eTask->in.L1Surface = &eTask->nextTask->in.InSurface;
+                //in data
+                eTask->in.NumExtParam = numExtInParams;
+                eTask->in.ExtParam = inBufs;
+                //out data
+                eTask->out.NumExtParam = numExtOutParams;
+                eTask->out.ExtParam = outBufs;
                 break;
         }
     }

@@ -39,6 +39,8 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames\n"));
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC+PAK (RC is forced to constant QP)\n"));
+    msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
+    msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
     msdk_printf(MSDK_STRING("   [-mbctrl file] - use the input to set MB control for FEI (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mbsize] - with this options size control fields will be used from MB control structure (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mvin file] - use this input to set MV predictor for FEI\n"));
@@ -105,6 +107,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encpak")))
         {
             pParams->bENCPAK = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc")))
+        {
+            pParams->bENCoPAKo = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preenc")))
         {
@@ -408,6 +414,7 @@ int main(int argc, char *argv[])
     Params.refDist = 1; //only I frames
     Params.gopSize = 1; //only I frames
     Params.bENCPAK = false; //default value
+    Params.bENCoPAKo = false; //default value
     Params.bPREENC = false; //default value
     Params.mvinFile = NULL;
     Params.mvoutFile = NULL;

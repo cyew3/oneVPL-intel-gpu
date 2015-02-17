@@ -90,6 +90,7 @@ struct sInputParams
 
     bool bLABRC; // use look ahead bitrate control algorithm
     bool bENCPAK;
+    bool bENCoPAKo;
     bool bPREENC;
     bool bMBSize;
     msdk_char* mvinFile;
@@ -177,6 +178,8 @@ protected:
     MFXVideoSession m_mfxSession;
     MFXVideoENCODE* m_pmfxENCPAK;
     MFXVideoENC* m_pmfxPREENC;
+    MFXVideoENC* m_pmfxENC;
+    MFXVideoPAK* m_pmfxPAK;
     MFXVideoVPP* m_pmfxVPP;
 
     mfxVideoParam m_mfxEncParams;
@@ -245,6 +248,7 @@ protected:
 
     iTask* findFrameToEncode();
     void initFrameParams(iTask* eTask);
+    void initEncFrameParams(iTask* eTask);
 
     mfxEncodeCtrl* ctr;
 
