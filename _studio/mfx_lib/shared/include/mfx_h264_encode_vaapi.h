@@ -263,6 +263,83 @@ namespace MfxHwH264Encode
     };
 #endif
 
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENC)    
+    class VAAPIFEIENCEncoder : public VAAPIEncoder
+    {
+    public:
+        VAAPIFEIENCEncoder();
+
+        virtual
+        ~VAAPIFEIENCEncoder();
+
+        virtual mfxStatus CreateAccelerationService(MfxVideoParam const & par);
+        virtual mfxStatus Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type);
+        virtual mfxStatus Execute(mfxHDL surface, DdiTask const & task,
+                mfxU32 fieldId, PreAllocatedVector const & sei);
+        virtual mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId);
+        virtual mfxStatus Destroy();
+
+    protected:
+        //helper functions
+        mfxStatus CreateENCAccelerationService(MfxVideoParam const & par);
+
+        mfxI32 m_codingFunction;
+
+        VABufferID m_statParamsId;
+        VABufferID m_statMVId;
+        VABufferID m_statOutId;
+
+        std::vector<ExtVASurface> m_statFeedbackCache;
+        std::vector<ExtVASurface> m_inputQueue;
+
+        mfxU32 m_currentFrameNum;
+        VABufferID m_codedBufferId;
+        mfxU32 m_lastRefFrameOrder;
+        signed int Cur_POC[2];
+        signed int ref0_POC[2];
+        signed int ref1_POC[2];
+    };
+#endif
+
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_PAK) && defined(MFX_ENABLE_H264_VIDEO_FEI_ENC)
+    class VAAPIFEIPAKEncoder : public VAAPIEncoder
+    {
+    public:
+        VAAPIFEIPAKEncoder();
+
+        virtual
+        ~VAAPIFEIPAKEncoder();
+
+        virtual mfxStatus CreateAccelerationService(MfxVideoParam const & par);
+        virtual mfxStatus Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type);
+        virtual mfxStatus Execute(mfxHDL surface, DdiTask const & task,
+                mfxU32 fieldId, PreAllocatedVector const & sei);
+        virtual mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId);
+        virtual mfxStatus Destroy();
+
+    protected:
+        //helper functions
+        mfxStatus CreatePAKAccelerationService(MfxVideoParam const & par);
+
+        mfxI32 m_codingFunction;
+
+        VABufferID m_statParamsId;
+        VABufferID m_statMVId;
+        VABufferID m_statOutId;
+
+        std::vector<ExtVASurface> m_statFeedbackCache;
+        std::vector<ExtVASurface> m_inputQueue;
+
+        mfxU32 m_currentFrameNum;
+        VABufferID m_codedBufferId;
+        mfxU32 m_lastRefFrameOrder;
+        signed int Cur_POC[2];
+        signed int ref0_POC[2];
+        signed int ref1_POC[2];
+    };
+#endif
+
+
 }; // namespace
 
 #endif // MFX_ENABLE_H264_VIDEO_ENCODE && (MFX_VA_LINUX)

@@ -16,6 +16,7 @@ File Name: mfx_thread_task.h
 #include <mfxvideo.h>
 #include <mfxvideo++int.h>
 #include "mfxenc.h"
+#include "mfxpak.h"
 
 // Declare task's parameters structure
 typedef
@@ -62,6 +63,11 @@ struct MFX_THREAD_TASK_PARAMETERS
             mfxENCInput  *in; 
             mfxENCOutput *out;
         } enc_ext;
+        struct
+        {
+            mfxPAKInput  *in;
+            mfxPAKOutput *out;
+        } pak_ext;
     };
 
 } MFX_THREAD_TASK_PARAMETERS;

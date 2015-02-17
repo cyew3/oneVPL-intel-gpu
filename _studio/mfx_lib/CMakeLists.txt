@@ -85,6 +85,8 @@ endforeach( )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/decode/h265/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/encode/h265/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_preenc )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_enc )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_pak )
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
 
 # =============================================================================
@@ -108,11 +110,35 @@ foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_preenc )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
-
 set( defs "-DMFX_VA" )
 make_library( h264_preenc none static )
 
 set( defs "" )
+
+# =============================================================================
+set( sources "" )
+set( sources.plus "" )
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_enc )
+  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+set( defs "-DMFX_VA" )
+make_library( h264_enc none static )
+
+set( defs "" )
+
+# =============================================================================
+set( sources "" )
+set( sources.plus "" )
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_pak )
+  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+set( defs "-DMFX_VA" )
+make_library( h264_pak none static )
+
+set( defs "" )
+
 
 # =============================================================================
 set( sources "" )
@@ -258,6 +284,8 @@ foreach( variant sw hw )
     umc_h264_enc_sw
     h264_la
     h264_preenc
+    h264_enc
+    h264_pak
     vpx
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l

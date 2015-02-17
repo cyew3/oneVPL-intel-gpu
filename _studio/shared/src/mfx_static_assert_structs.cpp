@@ -13,6 +13,7 @@ File Name: mfx_static_assert_structs.cpp
 #include "mfxstructures.h"
 #include "mfxplugin.h"
 #include "mfxenc.h"
+#include "mfxpak.h"
 #include "mfxfei.h"
 #include "mfxcamera.h"
 
