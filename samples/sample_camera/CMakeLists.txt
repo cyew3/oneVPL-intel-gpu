@@ -7,4 +7,4 @@ list( APPEND LIBS_VARIANT sample_common )
 list( APPEND LIBS dl pthread )
 set(NEED_DISPATCHER 1)
 
-make_executable( shortname none )
+#make_executable( shortname none )
