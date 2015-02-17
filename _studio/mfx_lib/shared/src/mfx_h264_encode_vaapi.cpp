@@ -2412,7 +2412,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
     VABufferID vaFeiMBCODEOutId = VA_INVALID_ID;
     VABufferID vaFeiMVOutId = VA_INVALID_ID;
 #endif
-    std::auto_ptr<UMC::AutomaticUMCMutex> guard( new UMC::AutomaticUMCMutex(m_guard) );
+    UMC::AutomaticUMCMutex guard(m_guard);
 
     for( indxSurf = 0; indxSurf < m_feedbackCache.size(); indxSurf++ )
     {
@@ -2456,7 +2456,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 
         m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
-        guard.reset();
+        guard.Unlock();
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaSyncSurface");
@@ -2473,7 +2473,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
         if (VASurfaceReady == surfSts)
         {
             m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
-            guard.reset();
+            guard.Unlock();
         }
 
 #endif

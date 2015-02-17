@@ -376,7 +376,7 @@ mfxStatus VAAPIEncoder::QueryStatus(DdiTask & task)
     mfxU32 waitIdxBs;
     mfxU32 waitSize;
     mfxU32 indxSurf;
-    std::auto_ptr<UMC::AutomaticUMCMutex> guard( new UMC::AutomaticUMCMutex(m_guard) );
+    UMC::AutomaticUMCMutex guard(m_guard);
 
     for( indxSurf = 0; indxSurf < m_feedbackCache.size(); indxSurf++ )
     {
@@ -413,7 +413,7 @@ mfxStatus VAAPIEncoder::QueryStatus(DdiTask & task)
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 
         m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
-        guard.reset();
+        guard.Unlock();
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaSyncSurface");
@@ -430,7 +430,7 @@ mfxStatus VAAPIEncoder::QueryStatus(DdiTask & task)
         if (VASurfaceReady == surfSts)
         {
             m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
-            guard.reset();
+            guard.Unlock();
         }
 
 #endif
