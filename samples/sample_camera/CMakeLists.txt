@@ -1,7 +1,6 @@
 include_directories (
   ${CMAKE_SOURCE_DIR}/sample_common/include
   ${CMAKE_SOURCE_DIR}/sample_camera/include
-  ${CMAKE_SOURCE_DIR}/../../mdp_msdk-api/include
 )
 
 list( APPEND LIBS_VARIANT sample_common )
