@@ -4,7 +4,7 @@
  This software is supplied under the terms of a license agreement or nondisclosure
  agreement with Intel Corporation and may not be copied or disclosed except in
  accordance with the terms of that agreement
- Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
+ Copyright(c) 2012-2015 Intel Corporation. All Rights Reserved.
   
 * ****************************************************************************** */
 
@@ -57,6 +57,13 @@ private: // variables
 private: // functions
     MfxAutoMutex(const MfxAutoMutex&);
     MfxAutoMutex& operator=(const MfxAutoMutex&);
+    // The following overloading 'new' operators prohibit
+    // creating the object on the heap which is inefficient from
+    // performance/memory point of view
+    void* operator new(size_t);
+    void* operator new(size_t, void*);
+    void* operator new[](size_t);
+    void* operator new[](size_t, void*);
 };
 
 /*------------------------------------------------------------------------------*/

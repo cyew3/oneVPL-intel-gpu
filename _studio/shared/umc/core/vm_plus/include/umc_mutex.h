@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2015 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -41,8 +41,16 @@ public:
     }
 
 private: // functions
+    // Preventing copy constructor and operator=
     AutomaticUMCMutex(const AutomaticUMCMutex&);
     AutomaticUMCMutex& operator=(const AutomaticUMCMutex&);
+    // The following overloading 'new' operators prohibit
+    // creating the object on the heap which is inefficient from
+    // performance/memory point of view
+    void* operator new(size_t);
+    void* operator new(size_t, void*);
+    void* operator new[](size_t);
+    void* operator new[](size_t, void*);
 };
 
 } // namespace UMC
