@@ -1494,6 +1494,8 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
 
         if (m_mbqpBufferId != VA_INVALID_ID)
             configBuffers[buffersCount++] = m_mbqpBufferId;
+
+        pExecuteBuffers->m_mbqp_data[0] = 0;
     }
 
     //------------------------------------------------------------------
