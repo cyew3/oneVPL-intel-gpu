@@ -120,6 +120,18 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(NumSliceI);
     DUMP_FIELD(NumSliceP);
     DUMP_FIELD(NumSliceB);
+
+    DUMP_FIELD(WinBRCMaxAvgKbps);
+    DUMP_FIELD(WinBRCSize);
+
+    DUMP_FIELD(QVBRQuality);
+    DUMP_FIELD(EnableMBQP);
+    DUMP_FIELD(IntRefCycleDist);
+    DUMP_FIELD(DirectBiasAdjustment);          /* tri-state option */
+    DUMP_FIELD(GlobalMotionBiasAdjustment);    /* tri-state option */
+    DUMP_FIELD(MVCostScalingFactor);
+    DUMP_FIELD(MBDisableSkipMap);              /* tri-state option */
+
     DUMP_FIELD_RESERVED(reserved);
     return str;
 }
