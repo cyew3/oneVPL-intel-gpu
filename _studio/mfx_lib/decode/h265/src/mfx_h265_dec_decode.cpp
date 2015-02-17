@@ -859,7 +859,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
         pEntryPoint->requiredNumThreads = m_vPar.mfx.NumThread;
         pEntryPoint->pParam = info;
 
-        return MFX_ERR_NONE;
+        return mfxSts;
     }
 
     return mfxSts;
