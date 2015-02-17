@@ -615,7 +615,7 @@ void UpdatePPS(
     mfxU32 i = 0;
     mfxU32 idx = 0;
     mfxU32 ref = 0;
-#if 0
+#if 1
     for( i = 0; i < task.m_dpb[fieldId].Size(); i++ )
     {
         pps.ReferenceFrames[i].frame_idx = idx  = task.m_dpb[fieldId][i].m_frameIdx & 0x7f;
@@ -625,6 +625,8 @@ void UpdatePPS(
         pps.ReferenceFrames[i].BottomFieldOrderCnt = task.m_dpb[fieldId][i].m_poc[1];
     }
 #else
+    // [sefremov] Below RefPicList formation algo (based on active reference lists) shouldn't be used. For every frame MSDK should pass to driver whole DPB, not just active refs.
+    // [sefremov] Driver immidiately releases DPB frame if it wasn't passed with RefPicList.
     ArrayDpbFrame const & dpb = task.m_dpb[fieldId];
     ArrayU8x33 const & list0 = task.m_list0[fieldId];
     ArrayU8x33 const & list1 = task.m_list1[fieldId];
