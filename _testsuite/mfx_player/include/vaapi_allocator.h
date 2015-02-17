@@ -31,6 +31,7 @@ struct vaapiMemId
 
 struct vaapiAllocatorParams : mfxAllocatorParams
 {
+    vaapiAllocatorParams(): bAdaptivePlayback(false){};
     VADisplay m_dpy;
     bool bAdaptivePlayback;
 };

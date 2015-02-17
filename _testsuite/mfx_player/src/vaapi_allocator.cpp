@@ -59,7 +59,8 @@ unsigned int ConvertVP8FourccToMfxFourcc(mfxU32 fourcc)
 }
 
 vaapiFrameAllocator::vaapiFrameAllocator():
-    m_dpy(0)
+    m_dpy(0),
+    m_bAdaptivePlayback(false)
 {
 }
 
