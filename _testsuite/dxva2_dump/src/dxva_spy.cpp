@@ -397,7 +397,15 @@ public:
 
             for (int i = 0; i < 8; i++)
             {
-                logi(ptr->SegData[i].FilterLevel[0][0]);
+                logi(ptr->SegData[i].SegmentFlags.fields.SegmentReferenceEnabled);
+                logi(ptr->SegData[i].SegmentFlags.fields.SegmentReference);
+                logi(ptr->SegData[i].SegmentFlags.fields.SegmentReferenceSkipped);
+
+                for (int j = 0; j < 4; j++)
+                {
+                    logi(ptr->SegData[i].FilterLevel[j][0]);
+                    logi(ptr->SegData[i].FilterLevel[j][1]);
+                }
                 logi(ptr->SegData[i].LumaACQuantScale);
                 logi(ptr->SegData[i].LumaDCQuantScale);
                 logi(ptr->SegData[i].ChromaACQuantScale);

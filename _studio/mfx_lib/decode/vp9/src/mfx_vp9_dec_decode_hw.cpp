@@ -62,6 +62,8 @@ VideoDECODEVP9_HW::~VideoDECODEVP9_HW(void)
 
 mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
 {
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
     mfxStatus sts   = MFX_ERR_NONE;
     UMC::Status umcSts   = UMC::UMC_OK;
     eMFXHWType type = m_core->GetHWType();
@@ -124,6 +126,7 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
     }
 
     m_frameOrder = 0;
+    m_statusReportFeedbackNumber = 0;
     m_isInit = true;
 
     return MFX_ERR_NONE;
@@ -131,6 +134,8 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
 
 mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
 {
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -165,6 +170,7 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
     m_va->Reset();
 
     m_frameOrder = 0;
+    m_statusReportFeedbackNumber = 0;
     memset(&m_stat, 0, sizeof(m_stat));
     memset(&m_firstSizes, 0, sizeof(m_firstSizes));
 
@@ -177,7 +183,7 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
     }
 
     m_in_framerate = (mfxF64) m_vInitPar.mfx.FrameInfo.FrameRateExtD / m_vInitPar.mfx.FrameInfo.FrameRateExtN;
-
+    
     if (!CheckHardwareSupport(m_core, par))
     {
         return MFX_ERR_UNSUPPORTED;
@@ -188,6 +194,8 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
 
 mfxStatus VideoDECODEVP9_HW::Close()
 {
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -202,6 +210,7 @@ mfxStatus VideoDECODEVP9_HW::Close()
     m_is_software_buffer = false;
 
     m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
+    m_statusReportFeedbackNumber = 0;
 
     m_va = NULL;
 
@@ -271,11 +280,8 @@ mfxStatus VideoDECODEVP9_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
 
     if (p_core->IsGuidSupported(sDXVA_Intel_ModeVP9_VLD, p_in) != MFX_ERR_NONE)
     {
-        //return MFX_WRN_PARTIAL_ACCELERATION;
+        return MFX_ERR_UNSUPPORTED;
     }
-
-    // todo : VA API alternative?!
-
     #endif
 
     return MFX_VP9_Utility::Query(p_core, p_in, p_out, type);
@@ -307,7 +313,6 @@ mfxStatus VideoDECODEVP9_HW::QueryIOSurfInternal(eMFXPlatform /* platform */, mf
     }
 
     return MFX_ERR_NONE;
-
 }
 
 mfxStatus VideoDECODEVP9_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_video_param, mfxFrameAllocRequest *p_request)
@@ -348,21 +353,22 @@ mfxStatus VideoDECODEVP9_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
         sts = QueryIOSurfInternal(platform, p_video_param, p_request);
     }
 
-    #ifdef MFX_VA_WIN
+#ifdef MFX_VA_WIN
 
     if (p_core->IsGuidSupported(sDXVA_Intel_ModeVP9_VLD, p_video_param) != MFX_ERR_NONE)
     {
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        return MFX_ERR_UNSUPPORTED;
     }
-    // todo : VA API alternative ?
 
-    #endif
+#endif
 
     return sts;
 }
 
 mfxStatus VideoDECODEVP9_HW::GetVideoParam(mfxVideoParam *par)
 {
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -413,6 +419,8 @@ mfxStatus VideoDECODEVP9_HW::GetOutputSurface(mfxFrameSurface1 **surface_out, mf
 
 mfxStatus VideoDECODEVP9_HW::GetUserData(mfxU8 *pUserData, mfxU32 *pSize, mfxU64 *pTimeStamp)
 {
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -423,6 +431,8 @@ mfxStatus VideoDECODEVP9_HW::GetUserData(mfxU8 *pUserData, mfxU32 *pSize, mfxU64
 
 mfxStatus VideoDECODEVP9_HW::GetPayload(mfxU64 *pTimeStamp, mfxPayload *pPayload)
 {
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -433,6 +443,8 @@ mfxStatus VideoDECODEVP9_HW::GetPayload(mfxU64 *pTimeStamp, mfxPayload *pPayload
 
 mfxStatus VideoDECODEVP9_HW::SetSkipMode(mfxSkipMode /*mode*/)
 {
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -456,6 +468,11 @@ void VideoDECODEVP9_HW::CalculateTimeSteps(mfxFrameSurface1 *p_surface)
     p_surface->Info.AspectRatioW = 1;
 }
 
+enum
+{
+    NUMBER_OF_STATUS = 32,
+};
+
 mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU32 /* thread_number */, mfxU32)
 {
     VideoDECODEVP9_HW::VP9DECODERoutineData& data = *(VideoDECODEVP9_HW::VP9DECODERoutineData*)p_state;
@@ -464,6 +481,8 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
     if (data.copyFromFrame != UMC::FRAME_MID_INVALID)
     {
         decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.copyFromFrame, &decoder.m_vInitPar, false);
+        
+        UMC::AutomaticUMCMutex guard(decoder.m_mGuard);
         if (data.currFrameId != -1)
            decoder.m_FrameAllocator.get()->DecreaseReference(data.currFrameId);
 
@@ -473,7 +492,57 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
     #ifdef MFX_VA_LINUX
         if(UMC::UMC_OK != decoder.m_va->SyncTask(data.currFrameId))
             return MFX_ERR_DEVICE_FAILED;
-    #else
+    #elif defined(MFX_VA_WIN)
+
+#if 0 // enable dxva status report
+    {
+        DXVA_Status_H264 pStatusReport[NUMBER_OF_STATUS];
+
+        for(int i = 0; i < NUMBER_OF_STATUS; i++)
+            pStatusReport[i].bStatus = 3;
+
+        decoder.m_va->ExecuteStatusReportBuffer(&pStatusReport[0], sizeof(DXVA_Status_H264)* NUMBER_OF_STATUS);
+
+        UMC::AutomaticUMCMutex guard(decoder.m_mGuard);
+
+        for (Ipp32u i = 0; i < NUMBER_OF_STATUS; i++)
+        {
+            if(pStatusReport[i].bStatus == 3)
+                return MFX_ERR_DEVICE_FAILED;
+
+            if (!pStatusReport[i].StatusReportFeedbackNumber || pStatusReport[i].CurrPic.Index7Bits == 127 ||
+                (pStatusReport[i].StatusReportFeedbackNumber & 0x80000000))
+                continue;
+
+            mfxFrameSurface1 *surface_to_complete = decoder.m_FrameAllocator->GetSurfaceByIndex(pStatusReport[i].CurrPic.Index7Bits);
+            if (!surface_to_complete)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+            switch (pStatusReport[i].bStatus)
+            {
+            case 1:
+                surface_to_complete->Data.Corrupted = MFX_CORRUPTION_MINOR;
+                break;
+            case 2:
+                surface_to_complete->Data.Corrupted = MFX_CORRUPTION_MAJOR;
+                break;
+            case 3:
+            case 4:
+                return MFX_ERR_DEVICE_FAILED;
+            }
+
+            decoder.m_completedList.push_back(surface_to_complete);
+        }
+
+        VideoDECODEVP9_HW::StatuReportList::iterator it = std::find(decoder.m_completedList.begin(), decoder.m_completedList.end(), data.surface_work);
+        if (it == decoder.m_completedList.end())
+        {
+            return MFX_TASK_WORKING;
+        }
+
+        decoder.m_completedList.remove(data.surface_work);
+    }
+#endif
 
     #endif
 
@@ -482,10 +551,12 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.currFrameId, &decoder.m_vInitPar, false);
     }
 
+    UMC::AutomaticUMCMutex guard(decoder.m_mGuard);
+
     if (data.currFrameId != -1)
        decoder.m_FrameAllocator.get()->DecreaseReference(data.currFrameId);
 
-    return MFX_ERR_NONE;
+    return MFX_TASK_DONE;
 }
 
 mfxStatus VP9CompleteProc(void * /* p_state */, void * /* pp_param */, mfxStatus)
@@ -495,17 +566,14 @@ mfxStatus VP9CompleteProc(void * /* p_state */, void * /* pp_param */, mfxStatus
 
 mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, MFX_ENTRY_POINT * p_entry_point)
 {
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
     mfxStatus sts = MFX_ERR_NONE;
 
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
     MFX_CHECK_NULL_PTR2(surface_work, surface_out);
-
-    if (surface_work->Data.Locked)
-    {
-        return MFX_ERR_MORE_SURFACE;
-    }
 
     sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_VP9);
     MFX_CHECK_STS(sts);
@@ -527,6 +595,11 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
 
     sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, false);
     MFX_CHECK_STS(sts);
+
+    if (m_FrameAllocator->FindFreeSurface() == -1)
+    {
+        return MFX_WRN_DEVICE_BUSY;
+    }
 
     UMC::FrameMemID currMid = 0;
     UMC::VideoDataInfo videoInfo;
@@ -723,11 +796,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
 
         for (mfxU8 i = 0; i < REFS_PER_FRAME; ++i)
         {
-#if 0
-            info.activeRefIdx[i] = info.currFrame;
-#else
             info.activeRefIdx[i] = 0;
-#endif
         }
         GetFrameSize(&bsReader, info);
     }
@@ -753,13 +822,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
             for (mfxU8 i = 0; i < REFS_PER_FRAME; ++i)
             {
                 const mfxI32 ref = bsReader.GetBits(REF_FRAMES_LOG2);
-#if 0
-                const UMC::FrameMemID idx = info.ref_frame_map[ref];
-                info.activeRefIdx[i] = idx;
-#else
-
                 info.activeRefIdx[i] = ref;
-#endif
                 info.refFrameSignBias[LAST_FRAME + i] = bsReader.GetBit();
             }
 
@@ -902,29 +965,6 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
                     }
                 }
             }
-#if 0
-            printf("=====segmentation======\n");
-            printf("enabled %d\n", info.segmentation.enabled);
-            printf("update_map %d\n", info.segmentation.updateMap);
-            printf("update_data %d\n", info.segmentation.updateData);
-            printf("abs_delta %d\n", info.segmentation.absDelta);
-            printf("temporal_update %d\n", info.segmentation.temporalUpdate);
-            for (mfxU8 i = 0; i < VP9_NUM_OF_SEGMENT_TREE_PROBS; ++i)
-                printf("tree_probs[%d] %d\n", i, info.segmentation.treeProbs[i]);
-
-            for (mfxU8 i = 0; i < VP9_NUM_OF_PREDICTION_PROBS; ++i)
-                printf("pred_probs[%d] %d\n", i, info.segmentation.predProbs[i]);
-
-            for (mfxU8 i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; ++i)
-            {
-                printf("feature_mask[%d] %d\n", i, info.segmentation.featureMask[i]);
-                for (mfxU8 j = 0; j < SEG_LVL_MAX; ++j)
-                {
-                    printf("feature_data[%d][%d] %d\n", i, j, info.segmentation.featureData[i][j]);
-                }
-            }
-            printf("=========================\n");
-#endif
         }
     }
 
@@ -948,10 +988,6 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
     info.firstPartitionSize = bsReader.GetBits(16);
     if (0 == info.firstPartitionSize)
         return MFX_ERR_UNSUPPORTED;
-
-#if 0
-    printf("first_partition_size %d\n", info.firstPartitionSize);
-#endif
 
     info.frameHeaderLength = (bsReader.NumBitsRead() / 8 + (bsReader.NumBitsRead() % 8 > 0));
     info.frameDataSize = in->DataLength;
@@ -994,21 +1030,6 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
                 }
             }
         }
-#if 0
-        for (mfxU8 segmentId = 0; segmentId < VP9_MAX_NUM_OF_SEGMENTS; ++segmentId)
-        {
-            printf("segmentId %d\n", segmentId);
-            for (mfxU8 ref = 0; ref < MAX_REF_FRAMES; ++ref)
-            {
-                for (mfxU8 mode = 0; mode < MAX_MODE_LF_DELTAS; ++mode)
-                {
-                    printf("lvl[%d][%d] %d, ", ref, mode, info.lf_info.level[segmentId][ref][mode]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-#endif
     }
 
     return MFX_ERR_NONE;
@@ -1042,167 +1063,6 @@ mfxStatus VideoDECODEVP9_HW::UpdateRefFrames(const mfxU8 refreshFrameFlags, VP9F
     return MFX_ERR_NONE;
 }
 
-namespace
-{
-#define DUMP_STRUCT_MEMBER(S,M) printf("%-50s %d\n", #M, S.M)
-#ifdef MFX_VA_LINUX
-    void DumpInfo(VADecPictureParameterBufferVP9 const & picParam, mfxU32 frameNum)
-    {
-        printf("Frame #%d\n", frameNum);
-
-        DUMP_STRUCT_MEMBER(picParam, frame_width);
-        DUMP_STRUCT_MEMBER(picParam, frame_height);
-//        DUMP_STRUCT_MEMBER(picParam, curr_pic);
-        for (mfxU8 ref = 0; ref < NUM_REF_FRAMES; ++ref)
-        {
-            printf("picParam.reference_frames[%d]                       %d\n", ref, picParam.reference_frames[ref]);
-        }
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.subsampling_x);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.subsampling_y);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.frame_type);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.show_frame);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.error_resilient_mode);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.intra_only);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.allow_high_precision_mv);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.mcomp_filter_type);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.frame_parallel_decoding_mode);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.reset_frame_context);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.refresh_frame_context);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.frame_context_idx);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.segmentation_enabled);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.segmentation_temporal_update);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.segmentation_update_map);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.last_ref_frame);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.last_ref_frame_sign_bias);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.golden_ref_frame);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.golden_ref_frame_sign_bias);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.alt_ref_frame);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.alt_ref_frame_sign_bias);
-        DUMP_STRUCT_MEMBER(picParam, pic_fields.bits.lossless_flag);
-
-        DUMP_STRUCT_MEMBER(picParam, filter_level);
-        DUMP_STRUCT_MEMBER(picParam, sharpness_level);
-        DUMP_STRUCT_MEMBER(picParam, log2_tile_rows);
-        DUMP_STRUCT_MEMBER(picParam, log2_tile_columns);
-        DUMP_STRUCT_MEMBER(picParam, frame_header_length_in_bytes);
-        DUMP_STRUCT_MEMBER(picParam, first_partition_size);
-//        DUMP_STRUCT_MEMBER(picParam, frame_data_size);
-        for (mfxU8 i = 0; i < VP9_NUM_OF_SEGMENT_TREE_PROBS; ++i)
-            printf("picParam.mb_segment_tree_probs[%d]                  %d\n", i, picParam.mb_segment_tree_probs[i]);
-        for (mfxU8 i = 0; i < VP9_NUM_OF_PREDICTION_PROBS; ++i)
-            printf("picParam.segment_pred_probs[%d]                     %d\n", i, picParam.segment_pred_probs[i]);
-        DUMP_STRUCT_MEMBER(picParam, version);
-
-        printf("\n");
-    }
-
-    void DumpInfo(VASliceParameterBufferVP9 const & sliceParam)
-    {
-        for (mfxU8 segmentId = 0; segmentId < VP9_MAX_NUM_OF_SEGMENTS; ++segmentId)
-        {
-            printf("sliceParam.seg_param[%d].segment_reference_enabled  %d\n",
-                   segmentId, sliceParam.seg_param[segmentId].segment_flags.fields.segment_reference_enabled);
-
-            printf("sliceParam.seg_param[%d].segment_reference          %d\n",
-                   segmentId, sliceParam.seg_param[segmentId].segment_flags.fields.segment_reference);
-
-            printf("sliceParam.seg_param[%d].segment_reference_skipped  %d\n",
-                   segmentId, sliceParam.seg_param[segmentId].segment_flags.fields.segment_reference_skipped);
-
-            for (mfxU8 ref = INTRA_FRAME; ref < MAX_REF_FRAMES; ++ref)
-                for (mfxU8 mode = 0; mode < MAX_MODE_LF_DELTAS; ++mode)
-                    printf("sliceParam.seg_param[%d].filter_level[%d][%d]         %d\n",
-                           segmentId, ref, mode, sliceParam.seg_param[segmentId].filter_level[ref][mode]);
-        }
-
-        printf("\n");
-    }
-#endif
-#ifdef  MFX_VA_WIN
-void DumpInfo(DXVA_Intel_PicParams_VP9 const & picParam, DXVA_Intel_Segment_VP9 const & segParam, mfxU32 frameNum)
-{
-    {
-        printf("\n------------------Frame Number: %d----------------------------\n", frameNum);
-#ifdef REV80
-      printf("\nPicParamsVP9.FrameWidthInMinBlocksMinus1        : %d = 0x%x",picParam.FrameWidthInMinBlocksMinus1, picParam.FrameWidthInMinBlocksMinus1);
-        printf("\nPicParamsVP9.FrameHeightInMinBlocksMinus1        : %d = 0x%x",picParam.FrameHeightInMinBlocksMinus1, picParam.FrameHeightInMinBlocksMinus1);
-#else
-      printf("\nPicParamsVP9.FrameWidthInMinBlocksMinus1        : %d = 0x%x",picParam.FrameWidthMinus1, picParam.FrameWidthMinus1);
-        printf("\nPicParamsVP9.FrameHeightInMinBlocksMinus1        : %d = 0x%x",picParam.FrameHeightMinus1, picParam.FrameHeightMinus1);
-#endif
-        printf("\nPicParamsVP9.PicFlags.fields.frame_type        : %d = 0x%x",picParam.PicFlags.fields.frame_type, picParam.PicFlags.fields.frame_type);
-        printf("\nPicParamsVP9.PicFlags.fields.show_frame        : %d = 0x%x",picParam.PicFlags.fields.show_frame, picParam.PicFlags.fields.show_frame);
-        printf("\nPicParamsVP9.PicFlags.fields.error_resilient_mode    : %d = 0x%x",picParam.PicFlags.fields.error_resilient_mode, picParam.PicFlags.fields.error_resilient_mode);
-        printf("\nPicParamsVP9.PicFlags.fields.intra_only        : %d = 0x%x",picParam.PicFlags.fields.intra_only, picParam.PicFlags.fields.intra_only);
-        printf("\nPicParamsVP9.PicFlags.fields.LastRefSignBias        : %d = 0x%x",picParam.PicFlags.fields.LastRefSignBias, picParam.PicFlags.fields.LastRefSignBias);
-        printf("\nPicParamsVP9.PicFlags.fields.GoldenRefSignBias        : %d = 0x%x",picParam.PicFlags.fields.GoldenRefSignBias, picParam.PicFlags.fields.GoldenRefSignBias);
-        printf("\nPicParamsVP9.PicFlags.fields.AltRefSignBias        : %d = 0x%x",picParam.PicFlags.fields.AltRefSignBias, picParam.PicFlags.fields.AltRefSignBias);
-        printf("\nPicParamsVP9.PicFlags.fields.LASTRefIdx[0]        : %d = 0x%x",picParam.PicFlags.fields.LastRefIdx, picParam.PicFlags.fields.LastRefIdx);
-        printf("\nPicParamsVP9.PicFlags.fields.GOLDENRefIdx[1]        : %d = 0x%x",picParam.PicFlags.fields.GoldenRefIdx, picParam.PicFlags.fields.GoldenRefIdx);
-        printf("\nPicParamsVP9.PicFlags.fields.ALTRefIdx[2]        : %d = 0x%x",picParam.PicFlags.fields.AltRefIdx, picParam.PicFlags.fields.AltRefIdx);
-
-        for (int i = 0; i < NUM_REF_FRAMES; i++) {
-            printf("\n_PicParamsVP9.RefFrameList[%d]                : %d = 0x%x", i, picParam.RefFrameList[i], picParam.RefFrameList[i]);
-        }
-/*
-        //non dxva params
-        fprintf(fdump,"\n-----------------------------------------------------");
-        fprintf(fdump,"\n non-DXVA Parameters");
-        for (int i = 0; i < NUM_YV12_BUFFERS; i++) {
-            printf("\n_surf_idx_used[%d]                    : %d = 0x%x -> (Picture = %d)", i, _surf_idx_used[i], _surf_idx_used[i], _surfIdxUsedFrmNum[i]);
-        }
-        fprintf(fdump,"\n-----------------------------------------------------");
-        for (int i = 0; i < ALLOWED_REFS_PER_FRAME; i++) {
-            printf("\nactive_ref_idx[%d]                    : %d = 0x%x -> (Picture = %d)", i, active_ref_idx[i], active_ref_idx[i], _surfIdxUsedFrmNum[i]);
-        }
-        fprintf(fdump,"\n-----------------------------------------------------");
-        //end non dxva params
-*/
-
-        printf("\nPicParamsVP9.PicFlags.fields.allow_high_precision_mv    : %d = 0x%x",picParam.PicFlags.fields.allow_high_precision_mv, picParam.PicFlags.fields.allow_high_precision_mv);
-        printf("\nPicParamsVP9.PicFlags.fields.mcomp_filter_type            : %d = 0x%x",picParam.PicFlags.fields.mcomp_filter_type, picParam.PicFlags.fields.mcomp_filter_type);
-        printf("\nPicParamsVP9.PicFlags.fields.frame_parallel_decoding_mode    : %d = 0x%x",picParam.PicFlags.fields.frame_parallel_decoding_mode, picParam.PicFlags.fields.frame_parallel_decoding_mode);
-        printf("\nPicParamsVP9.PicFlags.fields.segmentation_enabled        : %d = 0x%x",picParam.PicFlags.fields.segmentation_enabled, picParam.PicFlags.fields.segmentation_enabled);
-        printf("\nPicParamsVP9.PicFlags.fields.segmentation_temporal_update    : %d = 0x%x",picParam.PicFlags.fields.segmentation_temporal_update, picParam.PicFlags.fields.segmentation_temporal_update);
-        printf("\nPicParamsVP9.PicFlags.fields.segmentation_update_map    : %d = 0x%x",picParam.PicFlags.fields.segmentation_update_map, picParam.PicFlags.fields.segmentation_update_map);
-        printf("\nPicParamsVP9.PicFlags.fields.reset_frame_context        : %d = 0x%x",picParam.PicFlags.fields.reset_frame_context, picParam.PicFlags.fields.reset_frame_context);
-        printf("\nPicParamsVP9.PicFlags.fields.refresh_frame_context        : %d = 0x%x",picParam.PicFlags.fields.refresh_frame_context, picParam.PicFlags.fields.refresh_frame_context);
-        printf("\nPicParamsVP9.PicFlags.fields.frame_context_idx            : %d = 0x%x",picParam.PicFlags.fields.frame_context_idx, picParam.PicFlags.fields.frame_context_idx);
-        printf("\nPicParamsVP9.PicFlags.fields.LosslessFlag                : %d = 0x%x",picParam.PicFlags.fields.LosslessFlag, picParam.PicFlags.fields.LosslessFlag);
-        printf("\nPicParamsVP9.PicFlags.fields.ReservedField1                : %d = 0x%x",picParam.PicFlags.fields.ReservedField,picParam.PicFlags.fields.ReservedField);
-        printf("\nPicParamsVP9.CurrPic                                    : %d = 0x%x",picParam.CurrPic, picParam.CurrPic);
-        printf("\nPicParamsVP9.filter_level                                : %d = 0x%x",picParam.filter_level, picParam.filter_level);
-        printf("\nPicParamsVP9.sharpness_level                            : %d = 0x%x",picParam.sharpness_level, picParam.sharpness_level);
-        printf("\nPicParamsVP9.log2_tile_rows                                : %d = 0x%x",picParam.log2_tile_rows, picParam.log2_tile_rows);
-        printf("\nPicParamsVP9.log2_tile_columns                            : %d = 0x%x",picParam.log2_tile_columns, picParam.log2_tile_columns);
-        printf("\nPicParamsVP9.UncompressedHeaderLengthInBytes            : %d = 0x%x",picParam.UncompressedHeaderLengthInBytes, picParam.UncompressedHeaderLengthInBytes);
-        printf("\nPicParamsVP9.FirstPartitionSize                            : %d = 0x%x",picParam.FirstPartitionSize, picParam.FirstPartitionSize);
-        printf("\nPicParamsVP9.BSBytesInBuffer                            : %d = 0x%x",picParam.BSBytesInBuffer, picParam.BSBytesInBuffer);
-
-
-        for (int i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++) {
-            printf("\n_Segment_VP9.SegData[%d].SegmentFlags.fields.SegmentReferenceEnabled : %d = 0x%x", i, segParam.SegData[i].SegmentFlags.fields.SegmentReferenceEnabled, segParam.SegData[i].SegmentFlags.fields.SegmentReferenceEnabled);
-            printf("\n_Segment_VP9.SegData[%d].SegmentFlags.fields.SegmentReference        : %d = 0x%x", i, segParam.SegData[i].SegmentFlags.fields.SegmentReference, segParam.SegData[i].SegmentFlags.fields.SegmentReference);
-            printf("\n_Segment_VP9.SegData[%d].SegmentFlags.fields.SegmentReferenceSkipped : %d = 0x%x", i, segParam.SegData[i].SegmentFlags.fields.SegmentReferenceSkipped, segParam.SegData[i].SegmentFlags.fields.SegmentReferenceSkipped);
-            printf("\n_Segment_VP9.SegData[%d].SegmentFlags.fields.ReservedField3        : %d = 0x%x", i, segParam.SegData[i].SegmentFlags.fields.ReservedField3, segParam.SegData[i].SegmentFlags.fields.ReservedField3);
-
-            for (int j = 0; j < MAX_REF_LF_DELTAS; j++)
-        {
-                for (int k = 0; k < MAX_MODE_LF_DELTAS; k++)
-                    printf("\n_Segment_VP9.SegData[%d].FilterLevel[%d][%d]            : %d = 0x%x", i, j, k, segParam.SegData[i].FilterLevel[j][k], segParam.SegData[i].FilterLevel[j][k]);
-
-          printf("\n_Segment_VP9.SegData[%d].LumaACQuantScale            : %d = 0x%x", i, segParam.SegData[i].LumaACQuantScale, segParam.SegData[i].LumaACQuantScale);
-                printf("\n_Segment_VP9.SegData[%d].LumaDCQuantScale            : %d = 0x%x", i, segParam.SegData[i].LumaDCQuantScale, segParam.SegData[i].LumaDCQuantScale);
-                printf("\n_Segment_VP9.SegData[%d].ChromaACQuantScale            : %d = 0x%x", i, segParam.SegData[i].ChromaACQuantScale, segParam.SegData[i].ChromaACQuantScale);
-                printf("\n_Segment_VP9.SegData[%d].ChromaDCQuantScale            : %d = 0x%x", i, segParam.SegData[i].ChromaDCQuantScale, segParam.SegData[i].ChromaDCQuantScale);
-            }
-        }
-    }
-    fflush(NULL);
-}
-#endif
-};
-
 #ifdef MFX_VA_LINUX
 mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & info)
 {
@@ -1222,13 +1082,10 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
     picParam->frame_width = info.width;
     picParam->frame_height = info.height;
 
-//    picParam->curr_pic = m_va->GetSurfaceID(info.currFrame);
     if (KEY_FRAME == info.frameType)
         memset(picParam->reference_frames, VA_INVALID_SURFACE, sizeof(picParam->reference_frames));
     else
     {
-
-//        memset(picParam->reference_frames, VA_INVALID_SURFACE, sizeof(picParam->reference_frames));
         for (mfxU8 ref = 0; ref < MAX_REF_FRAMES; ++ref)
             picParam->reference_frames[ref] = m_va->GetSurfaceID(info.ref_frame_map[ref]);
     }
@@ -1248,7 +1105,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
     picParam->pic_fields.bits.segmentation_enabled = info.segmentation.enabled;
     picParam->pic_fields.bits.segmentation_temporal_update = info.segmentation.temporalUpdate;
     picParam->pic_fields.bits.segmentation_update_map = info.segmentation.updateMap;
-    if (KEY_FRAME != info.frameType)
+
     {
         picParam->pic_fields.bits.last_ref_frame = info.activeRefIdx[0];
         picParam->pic_fields.bits.last_ref_frame_sign_bias = info.refFrameSignBias[LAST_FRAME];
@@ -1265,7 +1122,6 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
     picParam->log2_tile_columns = info.log2TileColumns;
     picParam->frame_header_length_in_bytes = info.frameHeaderLength;
     picParam->first_partition_size = info.firstPartitionSize;
-//    picParam->frame_data_size = info.frameDataSize;
 
     for (mfxU8 i = 0; i < VP9_NUM_OF_SEGMENT_TREE_PROBS; ++i)
         picParam->mb_segment_tree_probs[i] = info.segmentation.treeProbs[i];
@@ -1274,7 +1130,6 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
         picParam->segment_pred_probs[i] = info.segmentation.predProbs[i];
 
     picParam->version = info.version;
-    //::DumpInfo(*picParam, m_frameOrder);
 
     // sliceParam
     pCompBuf = NULL;
@@ -1317,9 +1172,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
         if (!info.segmentation.enabled)
             break;
     }
-    //::DumpInfo(*sliceParam);
     pCompBuf->SetDataSize(sizeof(VASliceParameterBufferVP9));
-
 
     // dataBuffer
     pCompBuf = NULL;
@@ -1346,6 +1199,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
     if (!picParam || !compBufPic || (compBufPic->GetBufferSize() < sizeof(DXVA_Intel_PicParams_VP9)))
         return MFX_ERR_MEMORY_ALLOC;
 
+    compBufPic->SetDataSize(sizeof(DXVA_Intel_PicParams_VP9));
     memset(picParam, 0, sizeof(DXVA_Intel_PicParams_VP9));
 
     picParam->FrameHeightMinus1 = (USHORT)info.height - 1;
@@ -1358,12 +1212,9 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
 
     if (KEY_FRAME == info.frameType || info.intraOnly)
     {
-        picParam->PicFlags.fields.LastRefIdx = UCHAR_MAX;
-        picParam->PicFlags.fields.LastRefSignBias = UCHAR_MAX;
-        picParam->PicFlags.fields.GoldenRefIdx = UCHAR_MAX;
-        picParam->PicFlags.fields.GoldenRefSignBias = UCHAR_MAX;
-        picParam->PicFlags.fields.AltRefIdx = UCHAR_MAX;
-        picParam->PicFlags.fields.AltRefSignBias = UCHAR_MAX;
+        picParam->PicFlags.fields.LastRefIdx = info.activeRefIdx[0];
+        picParam->PicFlags.fields.GoldenRefIdx = info.activeRefIdx[1];
+        picParam->PicFlags.fields.AltRefIdx = info.activeRefIdx[2];
     }
     else
     {
@@ -1413,12 +1264,14 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
         picParam->segment_pred_probs[i] = info.segmentation.predProbs[i];
 
     picParam->BSBytesInBuffer = info.frameDataSize;
-    picParam->StatusReportFeedbackNumber = m_frameOrder + 1;
+    picParam->StatusReportFeedbackNumber = ++m_statusReportFeedbackNumber;
 
     UMC::UMCVACompBuffer* compBufSeg = NULL;
     DXVA_Intel_Segment_VP9 *segParam = (DXVA_Intel_Segment_VP9*)m_va->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_INVERSE_QUANTIZATION_MATRIX_VP9, &compBufSeg);
     if (!segParam || !compBufSeg || (compBufSeg->GetBufferSize() < sizeof(DXVA_Intel_Segment_VP9)))
         return MFX_ERR_MEMORY_ALLOC;
+
+    compBufSeg->SetDataSize(sizeof(DXVA_Intel_Segment_VP9));
 
     memset(segParam, 0, sizeof(DXVA_Intel_Segment_VP9));
 
@@ -1462,7 +1315,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
 
 		mfxU32 lenght2 = lenght;
 		if (compBufBs->GetBufferSize() < (mfxI32)lenght)
-			lenght2 = compBufBs->GetBufferSize();
+			return MFX_ERR_MEMORY_ALLOC;//lenght2 = compBufBs->GetBufferSize();
 
 		memcpy(bistreamData, bs->Data + offset, lenght2);
 		compBufBs->SetDataSize(lenght2);
@@ -1476,11 +1329,6 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
 				return MFX_ERR_DEVICE_FAILED;
 		}
 	} while (lenght);
-
-    UMC::UMCVACompBuffer* compTmpBuff = NULL;
-    void *tmpBuffer = (void*)m_va->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_COEFFICIENT_PROBABILITIES, &compTmpBuff);
-    if (!tmpBuffer || !compTmpBuff)
-        return MFX_ERR_MEMORY_ALLOC;
 
     return MFX_ERR_NONE;
 }

@@ -116,6 +116,7 @@ public:
 
     void SetExternalFramesResponse(mfxFrameAllocResponse *response);
     mfxFrameSurface1 * GetInternalSurface(UMC::FrameMemID index);
+    mfxFrameSurface1 * GetSurfaceByIndex(UMC::FrameMemID index);
 
     mfxMemId  ConvertMemId(UMC::FrameMemID index) {return m_frameData[index].first.Data.MemId;};
 

@@ -12,6 +12,8 @@
 
 #pragma warning(disable: 4201)
 
+//#define ver_0_8_7
+
 #define DXVA2_VP9CoefficientProbabilitiesBufferType 9
 
 typedef enum
@@ -73,6 +75,13 @@ typedef struct _DXVA_Intel_PicParams_VP9
     UINT     BSBytesInBuffer;
 
     UINT     StatusReportFeedbackNumber;
+
+#ifdef ver_0_8_7
+    UCHAR		profile;			// [0..3]
+    UCHAR		BitDepthMinus8;		// [0, 2, 4]
+    UCHAR		subsampling_x;		// [0..1]
+    UCHAR		subsampling_y;		// [0..1]
+#endif
 } DXVA_Intel_PicParams_VP9, *LPDXVA_Intel_PicParams_VP9;
 
 typedef struct _DXVA_Intel_Seg_VP9

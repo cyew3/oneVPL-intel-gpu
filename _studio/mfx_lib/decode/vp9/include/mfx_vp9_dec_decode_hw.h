@@ -20,6 +20,7 @@
 
 #include "mfx_task.h"
 #include "mfx_vp9_dec_decode_utils.h"
+#include <list>
 
 using namespace MfxVP9Decode;
 
@@ -75,8 +76,9 @@ private:
     mfxU32                  m_num_output_frames;
     mfxF64                  m_in_framerate;
     mfxU16                  m_frameOrder;
+    mfxU32                  m_statusReportFeedbackNumber;
 
-    vm_mutex                m_mutex;
+    UMC::Mutex              m_mGuard;
 
     mfxU32                  m_index;
     std::auto_ptr<mfx_UMC_FrameAllocator> m_FrameAllocator;
@@ -97,6 +99,9 @@ private:
     };
 
     UMC::VideoAccelerator * m_va;
+
+    typedef std::list<mfxFrameSurface1 *> StatuReportList;
+    StatuReportList m_completedList;
 
     VP9FrameInfo m_frameInfo;
     struct {

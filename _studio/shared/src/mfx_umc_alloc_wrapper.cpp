@@ -800,6 +800,20 @@ mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetInternalSurface(UMC::FrameMemID in
     return 0;
 }
 
+mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetSurfaceByIndex(UMC::FrameMemID index)
+{
+    UMC::AutomaticUMCMutex guard(m_guard);
+
+    if (index >= 0)
+    {
+        if ((Ipp32u)index >= m_frameData.size())
+            return 0;
+        return &m_frameData[index].first;
+    }
+
+    return 0;
+}
+
 void mfx_UMC_FrameAllocator::SetDoNotNeedToCopyFlag(bool doNotNeedToCopy)
 {
     m_doNotNeedToCopy = doNotNeedToCopy;
