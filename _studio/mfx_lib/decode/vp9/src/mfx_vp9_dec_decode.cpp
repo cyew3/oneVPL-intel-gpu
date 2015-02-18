@@ -165,7 +165,7 @@ mfxStatus VideoDECODEVP9::Init(mfxVideoParam *params)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     m_vInitPar = *params;
-    
+
     if (0 == m_vInitPar.mfx.FrameInfo.FrameRateExtN || 0 == m_vInitPar.mfx.FrameInfo.FrameRateExtD)
     {
         m_vInitPar.mfx.FrameInfo.FrameRateExtD = 1000;
@@ -922,51 +922,49 @@ mfxStatus VideoDECODEVP9::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *s
     UMC::FrameMemID memId = 0;
 
     UMC::FrameData *p_frame_data = NULL;
-
-    if (!m_frameInfo.ShowFrame)
-    {
-        return MFX_ERR_MORE_DATA;
-    }
-
     UMC::VideoData *video_data = new UMC::VideoData;
-    m_FrameAllocator->Alloc(&memId, &info, 0);
 
-    // get to decode frame data
-    p_frame_data = (UMC::FrameData *) m_FrameAllocator->Lock(memId);
-
-    if (NULL == p_frame_data)
+    if (m_frameInfo.ShowFrame)
     {
-        delete video_data;
-        return MFX_ERR_LOCK_MEMORY;
+        m_FrameAllocator->Alloc(&memId, &info, 0);
+
+        // get to decode frame data
+        p_frame_data = (UMC::FrameData *) m_FrameAllocator->Lock(memId);
+
+        if (NULL == p_frame_data)
+        {
+            delete video_data;
+            return MFX_ERR_LOCK_MEMORY;
+        }
+
+        m_FrameAllocator->IncreaseReference(memId);
+
+        UMC::Status umcSts = video_data->Init(surface_work->Info.Width, surface_work->Info.Height, UMC::YUV420);
+
+        {
+            const UMC::FrameData::PlaneMemoryInfo *p_info;
+
+            p_info = p_frame_data->GetPlaneMemoryInfo(0);
+
+            video_data->SetPlanePointer(p_info->m_planePtr, 0);
+            Ipp32u pitch = (Ipp32u) p_info->m_pitch;
+
+            p_info = p_frame_data->GetPlaneMemoryInfo(1);
+            video_data->SetPlanePointer(p_info->m_planePtr, 1);
+
+            video_data->SetPlanePitch(pitch, 0);
+            video_data->SetPlanePitch(pitch, 1);
+        }
+
+        // get output surface
+        sts = GetOutputSurface(surface_out, surface_work, memId);
+        MFX_CHECK_STS(sts);
+            //*surface_out = m_p_frame_allocator->GetSurface(memId, surface_work, &m_video_params);
+
+        SetOutputParams(surface_work);
+
+        (*surface_out)->Data.TimeStamp = bs->TimeStamp;
     }
-
-    m_FrameAllocator->IncreaseReference(memId);
-
-    UMC::Status umcSts = video_data->Init(surface_work->Info.Width, surface_work->Info.Height, UMC::YUV420);
-
-    {
-        const UMC::FrameData::PlaneMemoryInfo *p_info;
-
-        p_info = p_frame_data->GetPlaneMemoryInfo(0);
-
-        video_data->SetPlanePointer(p_info->m_planePtr, 0);
-        Ipp32u pitch = (Ipp32u) p_info->m_pitch;
-
-        p_info = p_frame_data->GetPlaneMemoryInfo(1);
-        video_data->SetPlanePointer(p_info->m_planePtr, 1);
-
-        video_data->SetPlanePitch(pitch, 0);
-        video_data->SetPlanePitch(pitch, 1);
-    }
-
-    // get output surface
-    sts = GetOutputSurface(surface_out, surface_work, memId);
-    MFX_CHECK_STS(sts);
-        //*surface_out = m_p_frame_allocator->GetSurface(memId, surface_work, &m_video_params);
-
-    SetOutputParams(surface_work);
-
-    (*surface_out)->Data.TimeStamp = bs->TimeStamp;
 
     THREAD_TASK_INFO_VP9 *p_info = new THREAD_TASK_INFO_VP9;
     MFX_CHECK_NULL_PTR1(p_info);
