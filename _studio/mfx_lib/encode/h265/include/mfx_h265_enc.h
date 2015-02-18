@@ -45,6 +45,7 @@ struct H265VideoParam {
     Ipp8s  QPB;
     Ipp8u  partModes;
     Ipp8u  TMVPFlag;
+    Ipp8u  encodedOrder;
 
     Ipp32s NumSlices;
     Ipp32s NumTiles;
@@ -222,6 +223,7 @@ public:
     };
 };
 
+class BrcIface;
 
 class H265FrameEncoder : public State {
 
@@ -318,7 +320,7 @@ public:
 
 Ipp8s GetConstQp(Task const & task, H265VideoParam const & param);
 class H265BRC;
-Ipp8s GetRateQp(Task const & task, H265VideoParam const & param, H265BRC* brc);
+Ipp8s GetRateQp(Task const & task, H265VideoParam const & param, BrcIface* brc);
 
 void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, int qp, const H265Frame* currentFrame, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
 Ipp64f h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP);

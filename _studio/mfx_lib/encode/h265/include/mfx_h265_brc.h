@@ -20,6 +20,9 @@
 #include "mfx_h265_frame.h"
 #include "mfx_h265_set.h"
 #include "mfx_h265_enc.h"
+#include "umc_mutex.h"
+#include "mfxla.h"
+#include <vector>
 
 namespace H265Enc {
 
@@ -31,6 +34,7 @@ namespace H265Enc {
 
 #define MFX_H265_BITRATE_SCALE 0
 #define  MFX_H265_CPBSIZE_SCALE 3
+template<class T> inline void Zero(T & obj)                { memset(&obj, 0, sizeof(obj)); }
 
 enum eMfxBRCStatus
 {
@@ -91,7 +95,178 @@ typedef struct _mfxBRC_Params
 
 } mfxBRC_Params;
 
-class H265BRC
+struct MbData
+{
+    mfxU32      intraCost;
+    mfxU32      interCost;
+    mfxU32      propCost;
+    mfxU8       w0;
+    mfxU8       w1;
+    mfxU16      dist;
+    mfxU16      rate;
+    mfxU16      lumaCoeffSum[4];
+    mfxU8       lumaCoeffCnt[4];
+    mfxI16Pair  costCenter0;
+    mfxI16Pair  costCenter1;
+    struct
+    {
+        mfxU32  intraMbFlag     : 1;
+        mfxU32  skipMbFlag      : 1;
+        mfxU32  mbType          : 5;
+        mfxU32  reserved0       : 1;
+        mfxU32  subMbShape      : 8;
+        mfxU32  subMbPredMode   : 8;
+        mfxU32  reserved1       : 8;
+    };
+    mfxI16Pair  mv[2]; // in sig-sag scan
+};
+struct VmeData
+{
+    VmeData()
+        : used(false)
+        , poc(mfxU32(-1))
+        , pocL0(mfxU32(-1))
+        , pocL1(mfxU32(-1))
+        , intraCost(0)
+        , interCost(0)
+        , propCost(0) { }
+
+    bool                used;
+    mfxU32              poc;
+    mfxU32              pocL0;
+    mfxU32              pocL1;
+    mfxU32              encOrder;
+    mfxU32              intraCost;
+    mfxU32              interCost;
+    mfxU32              propCost;
+    std::vector   <MbData> mb;
+};
+template <size_t N>
+class Regression
+{
+public:
+    static const mfxU32 MAX_WINDOW = N;
+
+    Regression() {
+        Zero(x);
+        Zero(y);
+    }
+    void Reset(mfxU32 size, mfxF64 initX, mfxF64 initY) {
+        windowSize = size;
+        normX = initX;
+        std::fill_n(x, windowSize, initX);
+        std::fill_n(y, windowSize, initY);
+        sumxx = initX * initX * windowSize;
+        sumxy = initX * initY * windowSize;
+    }
+    void Add(mfxF64 newx, mfxF64 newy) {
+        newy = newy / newx * normX;
+        newx = normX;
+        sumxy += newx * newy - x[0] * y[0];
+        sumxx += newx * newx - x[0] * x[0];
+        std::copy(x + 1, x + windowSize, x);
+        std::copy(y + 1, y + windowSize, y);
+        x[windowSize - 1] = newx;
+        y[windowSize - 1] = newy;
+    }
+
+    mfxF64 GetCoeff() const {
+        return sumxy / sumxx;
+    }
+
+//protected:
+public: // temporary for debugging and dumping
+    mfxF64 x[N];
+    mfxF64 y[N];
+    mfxU32 windowSize;
+    mfxF64 normX;
+    mfxF64 sumxy;
+    mfxF64 sumxx;
+};
+class BrcIface
+{
+public:
+    virtual ~BrcIface() {};
+    virtual mfxStatus Init(const mfxVideoParam *init, H265VideoParam &video, Ipp32s enableRecode = 1) = 0;
+    virtual mfxStatus Reset(mfxVideoParam *init, H265VideoParam &video, Ipp32s enableRecode = 1) = 0;
+    virtual mfxStatus Close() = 0;
+    virtual void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder) = 0;    
+    virtual Ipp32s GetQP(H265VideoParam *video, H265Frame *pFrame[], Ipp32s numFrames)=0;
+    virtual mfxStatus SetQP(Ipp32s qp, mfxU16 frameType) = 0;
+    virtual mfxBRCStatus   PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, H265Frame *pFrame, Ipp32s bitsEncodedFrame, Ipp32s overheadBits, Ipp32s recode = 0) =0;
+    virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) = 0;
+    virtual void GetMinMaxFrameSize(Ipp32s *minFrameSizeInBits, Ipp32s *maxFrameSizeInBits) = 0;
+    virtual bool IsVMEBRC() = 0;
+
+};
+BrcIface * CreateBrc(mfxVideoParam const * video);
+class VMEBrc : public BrcIface
+{
+public:
+    virtual ~VMEBrc() { Close(); }
+
+    mfxStatus Init(const mfxVideoParam *init, H265VideoParam &video, Ipp32s enableRecode = 1);
+    mfxStatus Reset(mfxVideoParam *init, H265VideoParam &video, Ipp32s enableRecode = 1) 
+    { 
+        return  Init( init,video, enableRecode);
+    }
+
+    mfxStatus Close() {  return MFX_ERR_NONE;}
+        
+    Ipp32s GetQP(H265VideoParam *video, H265Frame *pFrame[], Ipp32s numFrames);
+    mfxStatus SetQP(Ipp32s /* qp */, mfxU16 /* frameType */) { return MFX_ERR_NONE;  }
+
+    void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder);
+
+    mfxBRCStatus   PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, H265Frame *pFrame, Ipp32s bitsEncodedFrame, Ipp32s overheadBits, Ipp32s recode = 0)
+    {
+        Report(pFrame->m_picCodeType, bitsEncodedFrame >> 3, 0, 0, pFrame->m_encOrder, 0, 0); 
+        return MFX_ERR_NONE;    
+    }
+    bool IsVMEBRC()  {return true;}
+    mfxU32          Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp); 
+    mfxStatus       SetFrameVMEData(const mfxExtLAFrameStatistics *, Ipp32u widthMB, Ipp32u heightMB );
+    void            GetMinMaxFrameSize(Ipp32s *minFrameSizeInBits, Ipp32s *maxFrameSizeInBits) {*minFrameSizeInBits = 0; *maxFrameSizeInBits = 0;}
+        
+
+public:
+    struct LaFrameData
+    {
+        mfxU32  encOrder;
+        mfxU32  dispOrder;
+        mfxI32  poc;
+        mfxI32  deltaQp;
+        mfxF64  estRate[52];
+        mfxF64  estRateTotal[52];
+        mfxU32  interCost;
+        mfxU32  intraCost;
+        mfxU32  propCost;
+        mfxU32  bframe;
+        mfxI32  qp;
+        mfxU16   layer;
+        bool    bNotUsed;
+    };
+
+protected:
+    mfxU32  m_lookAheadDep;
+    mfxU32  m_totNumMb;
+    mfxF64  m_initTargetRate;
+    mfxF64  m_targetRateMin;
+    mfxF64  m_targetRateMax;
+    mfxU32  m_framesBehind;
+    mfxF64  m_bitsBehind;
+    mfxI32  m_curBaseQp;
+    mfxI32  m_curQp;
+    mfxU16  m_qpUpdateRange;
+    bool    m_bPyr;
+
+    std::list <LaFrameData> m_laData;
+    Regression<20>   m_rateCoeffHistory[52];
+    UMC::Mutex    m_mutex;
+
+    mfxI32 GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP );
+};
+class H265BRC : public BrcIface
 {
 
 public:
@@ -122,6 +297,12 @@ public:
     mfxStatus GetInitialCPBRemovalDelay(Ipp32u *initial_cpb_removal_delay, Ipp32s recode = 0);
 
     void GetMinMaxFrameSize(Ipp32s *minFrameSizeInBits, Ipp32s *maxFrameSizeInBits);
+    void PreEnc(mfxU32 /* frameType */, std::vector<VmeData *> const & /* vmeData */, mfxU32 /* encOrder */) {}
+    virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 )
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    bool IsVMEBRC()  {return false;}
 
 
 protected:

@@ -1816,7 +1816,7 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState(Task* in)
             H265Frame* frame = (*curr)->m_frameOrigin;
 
             // restore global state
-            m_enc.RestoreGopCountersFromFrame(frame);
+            m_enc.RestoreGopCountersFromFrame(frame, !!m_videoParam.encodedOrder);
 
             // light configure
             frame->m_isIdrPic = true;
@@ -1829,7 +1829,7 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState(Task* in)
                 frame->m_pyramidLayer = 0;//PGOP_LAYERS[frame->m_RPSIndex];
             }
             
-            m_enc.UpdateGopCounters(frame);
+            m_enc.UpdateGopCounters(frame, !!m_videoParam.encodedOrder);
 
             frame->m_sceneCut = 1;
 
@@ -1838,8 +1838,8 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState(Task* in)
             it++;
             for (it; it != m_inputQueue.end(); it++) {
                 frame = (*it)->m_frameOrigin;
-                m_enc.ConfigureInputFrame(frame);
-                m_enc.UpdateGopCounters(frame);
+                m_enc.ConfigureInputFrame(frame, !!m_videoParam.encodedOrder);
+                m_enc.UpdateGopCounters(frame, !!m_videoParam.encodedOrder);
             }
         }
         

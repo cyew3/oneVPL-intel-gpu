@@ -116,6 +116,10 @@ private:
     Ipp32s m_frameOrderOfLastIntra;             // frame order of last I-frame (in display order)
     Ipp32s m_frameOrderOfLastIntraInEncOrder;   // frame order of last I-frame (in encoding order)
     Ipp32s m_frameOrderOfLastAnchor;            // frame order of last anchor (first in minigop) frame (in display order)
+    Ipp32s m_frameOrderOfLastIdrB;       // (is used for encoded order) frame order of last IDR frame (in display order)
+    Ipp32s m_frameOrderOfLastIntraB;     // (is used for encoded order) frame order of last I-frame (in display order)
+    Ipp32s m_frameOrderOfLastAnchorB;    // (is used for encoded order)frame order of last anchor (first in minigop) frame (in display order)
+    Ipp32s m_LastbiFramesInMiniGop;      // (is used for encoded order)
     Ipp32s m_miniGopCount;
     mfxU64 m_lastTimeStamp;
     Ipp32s m_lastEncOrder;
@@ -135,7 +139,7 @@ private:
     std::list<H265Frame*> m_freeFrames;  // _global_ free frames (origin/recon/reference) pool
 
 
-    H265BRC *m_brc;
+    BrcIface *m_brc;
     //Lookahead *m_la;
     std::auto_ptr<Lookahead> m_la;
 
@@ -153,13 +157,13 @@ private:
     mfxStatus SetSlice(H265Slice *slice, Ipp32u curr_slice, H265Frame* currentFrame, Ipp32s rowFirst, Ipp32s sliceHeight);
 
     // ------ _global_ stages of Input Frame Control
-    mfxStatus AcceptFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxBS);
+    mfxStatus AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, mfxBitstream *mfxBS);
     H265Frame *InsertInputFrame(const mfxFrameSurface1 *surface);
 
     friend class H265Enc::Lookahead;
-    void ConfigureInputFrame(H265Frame *frame) const;
-    void UpdateGopCounters(H265Frame *frame);
-    void RestoreGopCountersFromFrame(H265Frame *frame);
+    void ConfigureInputFrame(H265Frame *frame, bool bEncOrder) const;
+    void UpdateGopCounters(H265Frame *frame, bool bEncOrder);
+    void RestoreGopCountersFromFrame(H265Frame *frame, bool bEncOrder);
 
     void ConfigureEncodeFrame(Task *task);
     mfxStatus AddNewOutputTask(int& encIdx);// find next task and free encoder, bind them and return encIdx [-1(not found resources), or 0, ..., N-1]

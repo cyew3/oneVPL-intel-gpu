@@ -11,6 +11,7 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include <math.h>
+#include <assert.h>
 #include <algorithm>
 #include <utility>
 
@@ -185,6 +186,7 @@ namespace H265Enc {
         pars->chromaShiftWInv = 1 - pars->chromaShiftW;
         pars->chromaShiftHInv = 1 - pars->chromaShiftH;
         pars->chromaShift = pars->chromaShiftW + pars->chromaShiftH;
+        pars->encodedOrder = (mfxU8)param->mfx.EncodedOrder;
 
         pars->SourceWidth = width;
         pars->SourceHeight = height;
@@ -1324,7 +1326,7 @@ namespace H265Enc {
 
     } // 
 
-    Ipp8s GetRateQp(Task const & task, H265VideoParam const & param, H265BRC* brc)
+    Ipp8s GetRateQp(Task const & task, H265VideoParam const & param, BrcIface* brc)
     {
         if ( brc == NULL )
             return 51;//
@@ -1359,66 +1361,110 @@ mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 co
 };
 
 
-void MFXVideoENCODEH265::ConfigureInputFrame(H265Frame* frame) const
+void MFXVideoENCODEH265::ConfigureInputFrame(H265Frame* frame, bool bEncOrder) const
 {
-    frame->m_frameOrder = m_frameOrder;
+    if (!bEncOrder)
+        frame->m_frameOrder = m_frameOrder;
     frame->m_frameOrderOfLastIdr = m_frameOrderOfLastIdr;
     frame->m_frameOrderOfLastIntra = m_frameOrderOfLastIntra;
     frame->m_frameOrderOfLastAnchor = m_frameOrderOfLastAnchor;
     frame->m_poc = frame->m_frameOrder - frame->m_frameOrderOfLastIdr;
     frame->m_isIdrPic = false;
 
-    Ipp32s idrDist = m_videoParam.GopPicSize * m_videoParam.IdrInterval;
-    if (frame->m_frameOrder == 0 || 
-        idrDist > 0 && (frame->m_frameOrder - frame->m_frameOrderOfLastIdr) % idrDist == 0) {
-        frame->m_isIdrPic = true;
-        frame->m_picCodeType = MFX_FRAMETYPE_I;
-        frame->m_poc = 0;
-    }
-    else if ((frame->m_frameOrder - frame->m_frameOrderOfLastIntra) % m_videoParam.GopPicSize == 0) {
-        frame->m_picCodeType = MFX_FRAMETYPE_I;
-    }
-    else if ((frame->m_frameOrder - frame->m_frameOrderOfLastAnchor) % m_videoParam.GopRefDist == 0) {
-        frame->m_picCodeType = MFX_FRAMETYPE_P;
+    if (!bEncOrder) {
+        Ipp32s idrDist = m_videoParam.GopPicSize * m_videoParam.IdrInterval;
+        if (frame->m_frameOrder == 0 || idrDist > 0 && (frame->m_frameOrder - frame->m_frameOrderOfLastIdr) % idrDist == 0) {
+            frame->m_isIdrPic = true;
+            frame->m_picCodeType = MFX_FRAMETYPE_I;
+            frame->m_poc = 0;
+        }
+        else if ((frame->m_frameOrder - frame->m_frameOrderOfLastIntra) % m_videoParam.GopPicSize == 0) {
+            frame->m_picCodeType = MFX_FRAMETYPE_I;
+        }
+        else if ((frame->m_frameOrder - frame->m_frameOrderOfLastAnchor) % m_videoParam.GopRefDist == 0) {
+            frame->m_picCodeType = MFX_FRAMETYPE_P;
+        }
+        else {
+            frame->m_picCodeType = MFX_FRAMETYPE_B;
+        }
     }
     else {
-        frame->m_picCodeType = MFX_FRAMETYPE_B;
+        if (frame->m_picCodeType & MFX_FRAMETYPE_IDR) {
+            frame->m_picCodeType = MFX_FRAMETYPE_I;
+            frame->m_isIdrPic = true;
+            frame->m_poc = 0;
+            frame->m_isRef = 1;
+        }
+        else if (frame->m_picCodeType & MFX_FRAMETYPE_REF) {
+            frame->m_picCodeType &= ~MFX_FRAMETYPE_REF;
+            frame->m_isRef = 1;       
+        }
     }
 
-    Ipp64f frameDuration = (Ipp64f)m_videoParam.FrameRateExtD / m_videoParam.FrameRateExtN * 90000;
-    if (frame->m_timeStamp == MFX_TIMESTAMP_UNKNOWN)
-        frame->m_timeStamp = (m_lastTimeStamp == MFX_TIMESTAMP_UNKNOWN) ? 0 : Ipp64s(m_lastTimeStamp + frameDuration);
+    if (!bEncOrder) {
+        Ipp64f frameDuration = (Ipp64f)m_videoParam.FrameRateExtD / m_videoParam.FrameRateExtN * 90000;
+        if (frame->m_timeStamp == MFX_TIMESTAMP_UNKNOWN)
+            frame->m_timeStamp = (m_lastTimeStamp == MFX_TIMESTAMP_UNKNOWN) ? 0 : Ipp64s(m_lastTimeStamp + frameDuration);
 
-    frame->m_RPSIndex = (m_videoParam.GopRefDist > 1)
-        ? (frame->m_frameOrder - frame->m_frameOrderOfLastAnchor) % m_videoParam.GopRefDist
-        : (frame->m_frameOrder - frame->m_frameOrderOfLastIntra) % m_videoParam.PGopPicSize;
-    frame->m_miniGopCount = m_miniGopCount + !(frame->m_picCodeType == MFX_FRAMETYPE_B);
+        frame->m_RPSIndex = (m_videoParam.GopRefDist > 1)
+            ? (frame->m_frameOrder - frame->m_frameOrderOfLastAnchor) % m_videoParam.GopRefDist
+            : (frame->m_frameOrder - frame->m_frameOrderOfLastIntra) % m_videoParam.PGopPicSize;
+        frame->m_miniGopCount = m_miniGopCount + !(frame->m_picCodeType == MFX_FRAMETYPE_B);
 
-    if (m_videoParam.PGopPicSize > 1) {
-        const Ipp8u PGOP_LAYERS[PGOP_PIC_SIZE] = { 0, 2, 1, 2 };
-        frame->m_pyramidLayer = PGOP_LAYERS[frame->m_RPSIndex];
+        if (m_videoParam.PGopPicSize > 1) {
+            const Ipp8u PGOP_LAYERS[PGOP_PIC_SIZE] = { 0, 2, 1, 2 };
+            frame->m_pyramidLayer = PGOP_LAYERS[frame->m_RPSIndex];
+        }
     }
-
-} // void H265FrameEncoder::ConfigureFrame(Ipp32u pictureType)
-
-void MFXVideoENCODEH265::UpdateGopCounters(H265Frame *inputFrame)
-{
-    m_frameOrder++;
-    m_lastTimeStamp = inputFrame->m_timeStamp;
-
-    if (inputFrame->m_isIdrPic)
-        m_frameOrderOfLastIdr = inputFrame->m_frameOrder;
-    if (inputFrame->m_picCodeType == MFX_FRAMETYPE_I)
-        m_frameOrderOfLastIntra = inputFrame->m_frameOrder;
-    if (inputFrame->m_picCodeType != MFX_FRAMETYPE_B) {
-        m_frameOrderOfLastAnchor = inputFrame->m_frameOrder;
-        m_miniGopCount++;
+    else {
+        Ipp64f frameDuration = (Ipp64f)m_videoParam.FrameRateExtD / m_videoParam.FrameRateExtN * 90000;
+        frame->m_miniGopCount = m_miniGopCount - (frame->m_picCodeType == MFX_FRAMETYPE_B);
+        frame->m_RPSIndex = (frame->m_picCodeType == MFX_FRAMETYPE_B) ? (frame->m_frameOrder - frame->m_frameOrderOfLastAnchor) : 0;
+        frame->m_biFramesInMiniGop = m_LastbiFramesInMiniGop;
+        if (frame->m_timeStamp == MFX_TIMESTAMP_UNKNOWN)
+            frame->m_timeStamp = (m_lastTimeStamp == MFX_TIMESTAMP_UNKNOWN) ? 0 : Ipp64s(m_lastTimeStamp + frameDuration * (frame->m_frameOrder - m_frameOrder));    
     }
 }
 
 
-void MFXVideoENCODEH265::RestoreGopCountersFromFrame(H265Frame *frame)
+void MFXVideoENCODEH265::UpdateGopCounters(H265Frame *inputFrame, bool bEncOrder)
 {
+    if (!bEncOrder) {
+        m_frameOrder++;
+        m_lastTimeStamp = inputFrame->m_timeStamp;
+
+        if (inputFrame->m_isIdrPic)
+            m_frameOrderOfLastIdr = inputFrame->m_frameOrder;
+        if (inputFrame->m_picCodeType == MFX_FRAMETYPE_I)
+            m_frameOrderOfLastIntra = inputFrame->m_frameOrder;
+        if (inputFrame->m_picCodeType != MFX_FRAMETYPE_B) {
+            m_frameOrderOfLastAnchor = inputFrame->m_frameOrder;
+            m_miniGopCount++;
+        }
+    }
+    else {
+        m_frameOrder    = inputFrame->m_frameOrder;
+        m_lastTimeStamp = inputFrame->m_timeStamp;
+            
+        if (!(inputFrame->m_picCodeType & MFX_FRAMETYPE_B)) {
+            if (inputFrame->m_isIdrPic)
+                m_frameOrderOfLastIdrB = inputFrame->m_frameOrder;           
+            if (inputFrame->m_picCodeType & MFX_FRAMETYPE_I)
+                m_frameOrderOfLastIntraB = inputFrame->m_frameOrder;
+
+            m_frameOrderOfLastAnchorB = inputFrame->m_frameOrder;
+            m_LastbiFramesInMiniGop = m_frameOrderOfLastAnchorB  -  m_frameOrderOfLastAnchor - 1;
+            assert(m_LastbiFramesInMiniGop < m_videoParam.GopRefDist);
+            m_miniGopCount++;
+        }
+    }
+
+}
+
+
+void MFXVideoENCODEH265::RestoreGopCountersFromFrame(H265Frame *frame, bool bEncOrder)
+{
+    assert (!bEncOrder);
     // restore global state
     m_frameOrder = frame->m_frameOrder;
     m_frameOrderOfLastIdr = frame->m_frameOrderOfLastIdr;

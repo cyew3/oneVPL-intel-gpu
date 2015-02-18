@@ -665,11 +665,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
 
     *reordered_surface = surface;
 
-    // why here???
-    if (m_mfxParam.mfx.EncodedOrder) 
-        return MFX_ERR_UNSUPPORTED;
-
-
+    
     if (ctrl && (ctrl->FrameType != MFX_FRAMETYPE_UNKNOWN) && ((ctrl->FrameType & 0xff) != (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR))) {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -1174,8 +1170,10 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     // TargetUsage - nothing to do
 
     // can depend on target usage
+
+    m_mfxParam.mfx.EncodedOrder = par->mfx.EncodedOrder;
     if (!m_mfxParam.mfx.GopRefDist) {
-        m_mfxParam.mfx.GopRefDist = tab_tuGopRefDist[m_mfxParam.mfx.TargetUsage];
+        m_mfxParam.mfx.GopRefDist = (m_mfxParam.mfx.EncodedOrder) ? 8 : tab_tuGopRefDist[m_mfxParam.mfx.TargetUsage];
     }
     if (!m_mfxParam.mfx.GopPicSize) {
         m_mfxParam.mfx.GopPicSize = 60 * (mfxU16) (( m_mfxParam.mfx.FrameInfo.FrameRateExtN + m_mfxParam.mfx.FrameInfo.FrameRateExtD - 1 ) / m_mfxParam.mfx.FrameInfo.FrameRateExtD);
@@ -1321,6 +1319,10 @@ mfxStatus MFXVideoENCODEH265::Init_Internal( void )
     m_frameOrderOfLastIntra = 0;            // frame order of last I-frame (in display order)
     m_frameOrderOfLastIntraInEncOrder = 0;  // frame order of last I-frame (in encoding order)
     m_frameOrderOfLastAnchor = 0;           // frame order of last anchor (first in minigop) frame (in display order)
+    m_frameOrderOfLastIdrB = 0;
+    m_frameOrderOfLastIntraB = 0;
+    m_frameOrderOfLastAnchorB  = 0;
+    m_LastbiFramesInMiniGop  = 0;
     m_miniGopCount = -1;
     m_lastTimeStamp = (mfxU64)MFX_TIMESTAMP_UNKNOWN;
     m_lastEncOrder = -1;
@@ -1328,7 +1330,7 @@ mfxStatus MFXVideoENCODEH265::Init_Internal( void )
     //m_frameCountEncoded = 0;
 
     if (m_mfxParam.mfx.RateControlMethod != MFX_RATECONTROL_CQP) {
-        m_brc = new H265BRC();
+        m_brc = CreateBrc(&m_mfxParam);
         mfxStatus sts = m_brc->Init(&m_mfxParam, m_videoParam);
         MFX_CHECK_STS(sts);
     }
@@ -2097,13 +2099,9 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             }
             out->mfx.NumRefFrame = in->mfx.NumRefFrame;
 
-            if (in->mfx.EncodedOrder != 0) {
-                isInvalid ++;
-            }
-            out->mfx.EncodedOrder = 0;
 
             if (in->mfx.RateControlMethod != 0 &&
-                in->mfx.RateControlMethod != MFX_RATECONTROL_CBR && in->mfx.RateControlMethod != MFX_RATECONTROL_VBR && in->mfx.RateControlMethod != MFX_RATECONTROL_AVBR && in->mfx.RateControlMethod != MFX_RATECONTROL_CQP) {
+                in->mfx.RateControlMethod != MFX_RATECONTROL_CBR && in->mfx.RateControlMethod != MFX_RATECONTROL_VBR && in->mfx.RateControlMethod != MFX_RATECONTROL_AVBR && in->mfx.RateControlMethod != MFX_RATECONTROL_CQP && in->mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT) {
                     out->mfx.RateControlMethod = 0;
                     isInvalid ++;
             } else out->mfx.RateControlMethod = in->mfx.RateControlMethod;
@@ -2508,7 +2506,7 @@ mfxStatus MFXVideoENCODEH265::AcceptFrameHelper(mfxEncodeCtrl *ctrl, mfxEncodeIn
 
 
     // [3] 
-    mfxRes = AcceptFrame(surface, bs);
+    mfxRes = AcceptFrame(surface, ctrl, bs);
 
 
     // [4] post-work for input
@@ -2671,11 +2669,37 @@ Task* FindOldestOutputTask(TaskList & encodeQueue)
 //              MFXVideoENCODEH265
 // --------------------------------------------------------
 
-mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxBS)
+mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, mfxBitstream *mfxBS)
 {
     if (surface) {
         H265Frame* inputFrame = InsertInputFrame(surface); // copy surface -> inputFrame (with padding) and returns ptr to inputFrame
         MFX_CHECK_NULL_PTR1(inputFrame);
+
+        if (m_videoParam.encodedOrder) {
+            MFX_CHECK_NULL_PTR1(inputFrame);
+            MFX_CHECK_NULL_PTR1(ctrl);
+
+            inputFrame->m_picCodeType = ctrl->FrameType;
+            //inputFrame->m_frameOrder = ctrl->frameOrder;
+
+            if (m_brc && m_brc->IsVMEBRC()) {
+                const mfxExtLAFrameStatistics *vmeData = (mfxExtLAFrameStatistics *)GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam,MFX_EXTBUFF_LOOKAHEAD_STAT);                
+                MFX_CHECK_NULL_PTR1(vmeData);
+                mfxStatus sts = m_brc->SetFrameVMEData(vmeData, m_videoParam.SourceWidth, m_videoParam.SourceHeight);
+                MFX_CHECK_STS(sts);
+                mfxLAFrameInfo *pInfo = &vmeData->FrameStat[0];  
+                inputFrame->m_picCodeType = pInfo->FrameType;
+                inputFrame->m_frameOrder = pInfo->FrameDisplayOrder; 
+                inputFrame->m_pyramidLayer = pInfo->Layer;
+                MFX_CHECK(inputFrame->m_pyramidLayer < m_videoParam.BiPyramidLayers, MFX_ERR_UNDEFINED_BEHAVIOR);
+            }
+
+            if (!(inputFrame->m_picCodeType & MFX_FRAMETYPE_B)) {
+                m_frameOrderOfLastIdr = m_frameOrderOfLastIdrB;
+                m_frameOrderOfLastIntra = m_frameOrderOfLastIntraB;
+                m_frameOrderOfLastAnchor = m_frameOrderOfLastAnchorB;
+            }
+        }
 
 #ifdef MFX_ENABLE_WATERMARK
         // TODO: find appropriate H265FrameEncoder with m_watermark
@@ -2683,14 +2707,20 @@ mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstrea
         return MFX_ERR_UNSUPPORTED;
 #endif
 
-        ConfigureInputFrame(inputFrame);
-        UpdateGopCounters(inputFrame);
+        ConfigureInputFrame(inputFrame, !!m_videoParam.encodedOrder);
+        UpdateGopCounters(inputFrame, !!m_videoParam.encodedOrder);
     }
     
     std::list<Task*> & inputQueue = m_la.get() ? m_lookaheadQueue : m_inputQueue;
     if (m_reorderedQueue.empty()) {
-        ReorderFrames(inputQueue, m_reorderedQueue, m_videoParam, surface == NULL);
+        if (m_videoParam.encodedOrder) {
+            if (!inputQueue.empty())   
+                m_reorderedQueue.splice(m_reorderedQueue.end(), inputQueue, inputQueue.begin()); 
+        } else {
+            ReorderFrames(inputQueue, m_reorderedQueue, m_videoParam, surface == NULL);
+        }
     }
+
     if (!m_reorderedQueue.empty()) {
         ConfigureEncodeFrame(m_reorderedQueue.front());
         m_lastEncOrder = m_reorderedQueue.front()->m_encOrder;
@@ -2703,8 +2733,7 @@ mfxStatus MFXVideoENCODEH265::AcceptFrame(mfxFrameSurface1 *surface, mfxBitstrea
         return MFX_ERR_NONE;
 
     return MFX_ERR_NONE;
-
-} //
+}
 
 #define CLIPVAL(VAL, MINVAL, MAXVAL) MAX(MINVAL, MIN(MAXVAL, VAL))
 
