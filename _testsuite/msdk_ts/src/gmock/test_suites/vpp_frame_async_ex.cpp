@@ -1,10 +1,57 @@
 #include "ts_vpp.h"
 #include "ts_struct.h"
+#include "mfxplugin++.h"
 
 #define EXT_BUF_PAR(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
 namespace vpp_frame_async_ex
 {
+
+class FakePTIR : public MFXVPPPlugin
+{
+public:
+    bool isCorrectFuncCalled;
+    FakePTIR()
+    {
+        isCorrectFuncCalled = false;
+    }
+    virtual ~FakePTIR() {}
+    mfxStatus Init(mfxVideoParam* ) { return MFX_ERR_NONE; }
+    mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out)
+    {
+        in->NumFrameMin = in->NumFrameSuggested = out->NumFrameMin = out->NumFrameSuggested = par->AsyncDepth ? par->AsyncDepth : 1;
+        in->Info = par->vpp.In;
+        out->Info = par->vpp.Out;
+        if(par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
+            in->Type = MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
+        else
+            in->Type = MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY;
+
+        if(par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+            out->Type = MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
+        else
+            out->Type = MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY;
+
+        return MFX_ERR_NONE;
+    }
+    mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) { return MFX_ERR_NONE; }
+    mfxStatus Reset(mfxVideoParam *par) { return MFX_ERR_NONE; }
+    mfxStatus Close() { return MFX_ERR_NONE; }
+    mfxStatus GetVideoParam(mfxVideoParam *par) { return MFX_ERR_NONE; }
+    mfxStatus VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task) { return MFX_ERR_NONE; }
+    mfxStatus VPPFrameSubmitEx(mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxThreadTask *task)
+    {
+        isCorrectFuncCalled = true;
+        return MFX_ERR_NONE;
+    }
+    mfxStatus PluginInit(mfxCoreInterface *core) { return MFX_ERR_NONE; }
+    mfxStatus PluginClose() { return MFX_ERR_NONE; }
+    mfxStatus GetPluginParam(mfxPluginParam *par) { return MFX_ERR_NONE; }
+    mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a) { return MFX_ERR_NONE; }
+    mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts) { return MFX_ERR_NONE; }
+    virtual mfxStatus SetAuxParams(void*, int) { return MFX_ERR_NONE; }
+    virtual void Release() { return ; }
+};
 
 class TestSuite : tsVideoVPP
 {
@@ -50,11 +97,13 @@ int TestSuite::RunTest(unsigned int id)
     const tc_struct& tc = test_case[id];
 
     MFXInit();
+    mfxStatus sts;
+    FakePTIR plg;
+    MFXPluginAdapter<MFXVPPPlugin> adapter(&plg);
 
     if (tc.mode == LOAD_PTIR)
     {
-        mfxPluginUID* ptir = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, MFX_MAKEFOURCC('P','T','I','R'));
-        tsSession::Load(m_session, ptir, 1);
+        sts = MFXVideoUSER_Register(m_session, MFX_PLUGINTYPE_VIDEO_VPP, (mfxPlugin*)&adapter);
     }
 
     // set up parameters for case
@@ -76,7 +125,7 @@ int TestSuite::RunTest(unsigned int id)
     ///////////////////////////////////////////////////////////////////////////
     g_tsStatus.expect(tc.sts);
 
-    mfxStatus sts = MFX_ERR_NONE;
+    sts = MFX_ERR_NONE;
     while (1)
     {
         sts = RunFrameVPPAsyncEx();
@@ -95,6 +144,18 @@ int TestSuite::RunTest(unsigned int id)
             g_tsStatus.check();
             break;
         }
+    }
+
+    Close();
+    if (tc.mode == LOAD_PTIR)
+    {
+        if (!plg.isCorrectFuncCalled)
+        {
+            g_tsLog << "ERROR: correct function wan't called\n";
+            g_tsStatus.check(MFX_ERR_UNKNOWN);
+        }
+
+        sts = MFXVideoUSER_Unregister(m_session, MFX_PLUGINTYPE_VIDEO_VPP);
     }
 
     TS_END;
