@@ -237,8 +237,8 @@ mfxStatus D3D9Encoder::QueryEncodeCaps(JpegEncCaps & caps)
     caps.NonInterleaved = m_caps.NonInterleaved;
     caps.Interleaved = m_caps.Interleaved;
 
-    caps.MaxPicWidth = m_caps.MaxPicHeight;
-    caps.MaxPicHeight = m_caps.MaxPicWidth;
+    caps.MaxPicWidth = m_caps.MaxPicWidth;
+    caps.MaxPicHeight = m_caps.MaxPicHeight;
 
     caps.SampleBitDepth = m_caps.SampleBitDepth;
     caps.MaxNumComponent = m_caps.MaxNumComponent;
