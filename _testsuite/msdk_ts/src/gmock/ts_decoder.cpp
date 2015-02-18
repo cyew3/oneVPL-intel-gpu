@@ -1,6 +1,6 @@
 #include "ts_decoder.h"
 
-tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults)
+tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults, mfxU32 plugin_id)
     : m_default(useDefaults)
     , m_initialized(false)
     , m_par()
@@ -22,6 +22,7 @@ tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults)
     , m_update_bs(false)
 {
     m_par.mfx.CodecId = CodecId;
+
     if(m_default)
     {
         m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
@@ -30,8 +31,24 @@ tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults)
         m_par.mfx.FrameInfo.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;
         m_par.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
-    m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_DECODE, CodecId);
-    m_loaded = !m_uid;
+
+    if (plugin_id)
+    {
+        m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_DECODE, plugin_id);
+        m_loaded = !m_uid;
+        if(m_default && (plugin_id == MFX_MAKEFOURCC('C','A','P','T')))
+        {
+            if(g_tsImpl == MFX_IMPL_HARDWARE)
+            {
+                if(g_tsHWtype < MFX_HW_HSW)
+                    m_sw_fallback = true;
+            }
+        }
+    } else
+    {
+        m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_DECODE, CodecId);
+        m_loaded = !m_uid;
+    }
 }
 
 tsVideoDecoder::~tsVideoDecoder() 
@@ -42,7 +59,7 @@ tsVideoDecoder::~tsVideoDecoder()
     }
 }
 
-mfxStatus tsVideoDecoder::Init() 
+mfxStatus tsVideoDecoder::Init()
 {
     if(m_default)
     {
@@ -86,6 +103,7 @@ mfxStatus tsVideoDecoder::Init()
 mfxStatus tsVideoDecoder::Init(mfxSession session, mfxVideoParam *par)
 {
     TRACE_FUNC2(MFXVideoDECODE_Init, session, par);
+    IS_FALLBACK_EXPECTED(m_sw_fallback, g_tsStatus);
     g_tsStatus.check( MFXVideoDECODE_Init(session, par) );
 
     m_initialized = (g_tsStatus.get() >= 0);
@@ -149,7 +167,7 @@ mfxStatus tsVideoDecoder::QueryIOSurf()
         {
             Load();
         }
-        if(!m_par_set)
+        if(!m_par_set && (m_par.mfx.CodecId != MFX_CODEC_CAPTURE))
         {
             DecodeHeader();
         }

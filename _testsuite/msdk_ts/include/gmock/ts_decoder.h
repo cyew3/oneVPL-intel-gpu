@@ -14,6 +14,7 @@ public:
     bool                        m_par_set;
     bool                        m_use_memid;
     bool                        m_update_bs;
+    bool                        m_sw_fallback;
     tsExtBufType<mfxVideoParam> m_par;
     tsExtBufType<mfxBitstream>  m_bitstream;
     mfxFrameAllocRequest        m_request;
@@ -29,7 +30,7 @@ public:
     mfxPluginUID*               m_uid;
     std::map<mfxSyncPoint, mfxFrameSurface1*> m_surf_out;
 
-    tsVideoDecoder(mfxU32 CodecId = 0, bool useDefaults = true);
+    tsVideoDecoder(mfxU32 CodecId = 0, bool useDefaults = true, mfxU32 id = 0);
     ~tsVideoDecoder();
     
     mfxStatus Init();
