@@ -573,8 +573,7 @@ mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mf
                 task.threadingPolicy = pEnc->GetThreadingPolicy();
                 // fill dependencies
 
-                task.pSrc[0] = in->InSurface;
-                task.pSrc[1] = out ? out->ExtParam : 0; // for LA plugin
+                task.pSrc[0] = out ? out->ExtParam : 0; // for LA plugin
                 task.pDst[0] = out;
 
                 // register input and call the task
@@ -590,7 +589,8 @@ mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mf
                 task.priority = session->m_priority;
                 task.threadingPolicy = MFX_TASK_THREADING_DEDICATED;
                 // fill dependencies
-                task.pSrc[0] = pEnc->GetSrcForSync(entryPoints[0]);
+                
+                task.pSrc[0] = in->InSurface;
                 task.pDst[0] = entryPoints[0].pParam;
 
                 // register input and call the task
@@ -603,8 +603,7 @@ mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mf
                 task.threadingPolicy = MFX_TASK_THREADING_DEDICATED_WAIT;
                 // fill dependencies
                 task.pSrc[0] = entryPoints[0].pParam;
-                task.pDst[0] = pEnc->GetDstForSync(entryPoints[1]);
-                task.pDst[1] = out ? out->ExtParam : 0; // sync point for LA plugin
+                task.pDst[0] = out ? out->ExtParam : 0; // sync point for LA plugin
 
                 // register input and call the task
                 MFX_CHECK_STS(session->m_pScheduler->AddTask(task, &syncPoint));

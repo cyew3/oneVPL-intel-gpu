@@ -35,39 +35,43 @@ typedef struct
     mfxFrameSurface1*   pFrame;
     mfxU32              encFrameOrder;
     mfxU32              dispFrameOrder;
+    mfxU32              poc;
     mfxU16              frameType;
+    mfxU16              layer;
 }sLAFrameInfo;
 
 typedef struct
 {
     sLAFrameInfo        InputFrame;
     sLAFrameInfo        RefFrame[2];
+    mfxU8               bFilledForVME;
 }sLAInputTask;
 
 typedef struct
 {
     mfxU32              numInput;
+    mfxU32              pocInput;
     mfxU32              numBuffered;
     mfxU32              numBufferedVME;
     bool                bLastFrameChecked;
-    sLAFrameInfo        LastRefFrame;
 }sLASyncContext;
 
 typedef struct
 {
     mfxU32                      EncOrder;
+    mfxU32                      DispOrder;
     CmSurface2D *               CmRaw;
     CmSurface2D *               CmRawLA;
     MfxHwH264Encode::VmeData *  VmeData;
     CmBufferUP *                CmMb;
     mfxMemId                    RawFrame;
+    mfxU8                       bUsed;
 }sVMEFrameInfo;
 
 typedef struct
 {
     mfxU32                      numInputFrames;
     bool                        bPreEncLastFrames;
-    sVMEFrameInfo               LastRef[2];
 }sLAAsyncContext;
 
 typedef struct
@@ -99,7 +103,6 @@ typedef struct
     CmEvent *                   m_event; 
     sVMEFrameInfo               m_Curr;    
     sVMEFrameInfo               m_Ref[2];
-    sVMEFrameInfo               m_UnusedRef;
     sLAInputTask                m_TaskInfo;
 }sLADdiTask;
 
@@ -109,6 +112,63 @@ typedef struct
     mfxFrameSurface1* output_surface;
     mfxENCOutput*     stat;
 }sAsyncParams;
+
+template<class T> inline void Zero(std::vector<T> & vec)   { if (vec.size() > 0) memset(&vec[0], 0, sizeof(T) * vec.size()); }
+class VMERefList
+{
+protected:
+    std::vector<sVMEFrameInfo>    RefList;
+public:
+    void Init(mfxU32 numRef,mfxU32 nAsync, bool bPyramid)
+    {
+        RefList.resize(nAsync + numRef + (bPyramid? 2:0));
+        Zero(RefList);
+    }
+    sVMEFrameInfo* GetByEncOrder(mfxU32 encOrder)
+    {
+        std::vector<sVMEFrameInfo>::iterator i = RefList.begin();
+        while (i != RefList.end())
+        {
+            if ((*i).bUsed && (*i).EncOrder == encOrder)
+                return &(*i);
+            ++i;
+        }
+        return NULL;    
+    }
+    sVMEFrameInfo* GetFree()
+    {
+        std::vector<sVMEFrameInfo>::iterator i = RefList.begin();
+        while (i != RefList.end())
+        {
+            if (!(*i).bUsed)
+                return &(*i);
+            ++ i;
+        }
+        return NULL;     
+    }
+    sVMEFrameInfo* GetOldest()
+    {
+        sVMEFrameInfo* pOldest = 0;
+        std::vector<sVMEFrameInfo>::iterator i = RefList.begin();
+        while (i != RefList.end())
+        {
+            if ((*i).bUsed)
+            {
+                if (pOldest == 0 || pOldest->DispOrder >(*i).DispOrder )
+                {
+                    pOldest = &(*i);
+                }
+            }
+            ++i;
+        }
+        return pOldest;     
+    }
+    size_t GetSize()
+    {
+        return RefList.size();
+    }
+
+};
 
 
 
@@ -133,6 +193,7 @@ public:
         sLADdiTask const &task,
         mfxU32           qp);
 };
+
 }; // namespace
 
 bool bEnc_LA(mfxVideoParam *par);
@@ -185,17 +246,21 @@ public:
     mfxStatus SubmitFrameLA(mfxFrameSurface1 *pInSurface);
     mfxStatus QueryFrameLA (mfxENCOutput *out);
 
+
 protected:
 
-    mfxStatus  InsertTaskWithReordenig(MfxEncLA::sLAInputTask &newTask);
-    mfxFrameSurface1*   GetFrameToVME(mfxU32 numBufferedVME);
+    mfxStatus  InsertTaskWithReordenig(MfxEncLA::sLAInputTask &newTask, bool bEndOfSequence);
+    mfxStatus  InsertTaskWithReordenigBPyr(MfxEncLA::sLAInputTask &newTask,bool bEndOfSequence);
+    mfxFrameSurface1*   GetFrameToVME();
 
     inline bool bInputFrameReady()
     {
-        return (m_syncTasks.size()>0) && (m_syncTasks.front().InputFrame.pFrame != 0) && ((m_syncTasks.front().InputFrame.frameType & MFX_FRAMETYPE_B)==0 ||(m_syncTasks.front().RefFrame[REF_BACKW].pFrame!=0));
+        return ((m_syncTasks.size()>0) && (m_syncTasks.front().InputFrame.pFrame != 0));
     }
-    mfxStatus InitVMEData(MfxEncLA::sVMEFrameInfo *   pVME, mfxU32  EncOrder, mfxFrameSurface1* RawFrame, CmBufferUP * CmMb);
+    mfxStatus InitVMEData(MfxEncLA::sVMEFrameInfo *   pVME, mfxU32  EncOrder, mfxU32  DispOrder, mfxFrameSurface1* RawFrame, CmBufferUP * CmMb);
     mfxStatus FreeUnusedVMEData(MfxEncLA::sVMEFrameInfo *pVME);
+
+
     
 
 private:
@@ -209,11 +274,14 @@ private:
 private:
     std::list <mfxFrameSurface1*>               m_SurfacesForOutput;
 
+    std::vector<MfxEncLA::sLAInputTask>         m_miniGop;
+    mfxI32                                      m_numLastB;
     std::list<MfxEncLA::sLAInputTask>           m_syncTasks;
     std::list<MfxEncLA::sLADdiTask>             m_VMETasks;
     UMC::Mutex                                  m_listMutex;
     MfxEncLA::sLASyncContext                    m_LASyncContext;
-    MfxEncLA::sLAAsyncContext                   m_LAAsyncContext;        
+    MfxEncLA::sLAAsyncContext                   m_LAAsyncContext;
+    MfxEncLA::VMERefList                        m_VMERefList;
     std::list<MfxEncLA::sLASummaryTask>         m_OutputTasks;
 
 private:
