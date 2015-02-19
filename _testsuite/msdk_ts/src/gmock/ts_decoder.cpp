@@ -20,6 +20,7 @@ tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults, mfxU32 plugin_i
     , m_par_set(false)
     , m_use_memid(false)
     , m_update_bs(false)
+    , m_sw_fallback(false)
 {
     m_par.mfx.CodecId = CodecId;
 
@@ -38,6 +39,7 @@ tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults, mfxU32 plugin_i
         m_loaded = !m_uid;
         if(m_default && (plugin_id == MFX_MAKEFOURCC('C','A','P','T')))
         {
+            m_pBitstream = 0;
             if(g_tsImpl == MFX_IMPL_HARDWARE)
             {
                 if(g_tsHWtype < MFX_HW_HSW)
@@ -283,6 +285,9 @@ void tsVideoDecoder::SetPar4_DecodeFrameAsync()
     }
     if(m_update_bs || g_tsStatus.get() == MFX_ERR_MORE_DATA)
     {
+        if (m_par.mfx.CodecId == MFX_CODEC_CAPTURE)
+            return;
+
         if(m_bs_processor)
         {
             m_pBitstream = m_bs_processor->ProcessBitstream(m_bitstream);
