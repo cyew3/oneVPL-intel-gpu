@@ -106,6 +106,8 @@ struct sInputParams
 struct iTask{
     mfxENCInput in;
     mfxENCOutput out;
+    mfxPAKInput inPAK;
+    mfxPAKOutput outPAK;
     mfxU16 frameType;
     mfxU32 frameDisplayOrder;
     mfxSyncPoint EncSyncP;
@@ -198,9 +200,11 @@ protected:
     bool m_bExternalAlloc; // use memory allocator as external for Media SDK
 
     mfxFrameSurface1* m_pEncSurfaces; // frames array for encoder input (vpp output)
+    mfxFrameSurface1* m_pReconSurfaces; // frames array for reconstructed surfaces [FEI]
     mfxFrameSurface1* m_pVppSurfaces; // frames array for vpp input
     mfxFrameAllocResponse m_EncResponse;  // memory allocation response for encoder
     mfxFrameAllocResponse m_VppResponse;  // memory allocation response for vpp
+    mfxFrameAllocResponse m_ReconResponse;  // memory allocation response for encoder for reconstructed surfaces [FEI]
 
     mfxU32 m_nNumView;
 
