@@ -1279,6 +1279,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         m_components[eDEC].m_params.mfx.FrameInfo.Height = mfx_align((mfxU16)(m_inParams.FrameInfo.Height), 0x10);
         m_components[eDEC].m_params.mfx.FrameInfo.CropW = m_inParams.FrameInfo.Width;
         m_components[eDEC].m_params.mfx.FrameInfo.CropH = m_inParams.FrameInfo.Height;
+        FrameRate2Code(m_components[eDEC].m_fFrameRate, &m_components[eDEC].m_params.mfx.FrameInfo);
         return MFX_ERR_NONE;
     }
 
