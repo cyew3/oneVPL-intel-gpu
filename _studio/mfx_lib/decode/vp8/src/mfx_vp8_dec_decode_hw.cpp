@@ -297,7 +297,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *p_
     p_request->NumFrameMin += p_params->AsyncDepth ? p_params->AsyncDepth : MFX_AUTO_ASYNC_DEPTH_VALUE;
     p_request->NumFrameSuggested = p_request->NumFrameMin;
 
-    
+
     if(p_params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {
         p_request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE;
@@ -545,6 +545,14 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     if (p_bs->DataLength == 0)
         return MFX_ERR_MORE_DATA;
 
+    sts = m_p_frame_allocator->SetCurrentMFXSurface(p_surface_work, false);
+    MFX_CHECK_STS(sts);
+
+    if (m_p_frame_allocator->FindFreeSurface() == -1)
+    {
+        return MFX_WRN_DEVICE_BUSY;
+    }
+
     mfxU8 *pTemp = p_bs->Data + p_bs->DataOffset;
     frame_type = (pTemp[0] & 1) ? P_PICTURE : I_PICTURE; // 1 bits
     show_frame = (pTemp[0] >> 4) & 0x1;
@@ -572,9 +580,6 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     MFX_CHECK_STS(sts);
 
     *pp_surface_out = 0;
-
-    sts = m_p_frame_allocator->SetCurrentMFXSurface(p_surface_work, false);
-    MFX_CHECK_STS(sts);
 
     sts = DecodeFrameHeader(&m_bs);
     MFX_CHECK_STS(sts);
@@ -652,7 +657,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
         m_p_video_accelerator->Execute();
         m_p_video_accelerator->EndFrame();
     }
-    
+
     *pp_surface_out = p_surface_work;
 
     m_p_frame_allocator->GetSurface(memId, p_surface_work, &m_video_params);
@@ -668,7 +673,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
     p_entry_point->pRoutine = &VP8DECODERoutine;
     p_entry_point->pCompleteProc = &VP8CompleteProc;
-    
+
     VP8DECODERoutineData* routineData = new VP8DECODERoutineData;
     routineData->decoder = this;
     routineData->memId = memId;
@@ -1010,8 +1015,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     {
         m_frameProbs = m_frameProbs_saved;
 
-        std::copy(reinterpret_cast<const char*>(vp8_default_mv_contexts), 
-                  reinterpret_cast<const char*>(vp8_default_mv_contexts) + sizeof(vp8_default_mv_contexts), 
+        std::copy(reinterpret_cast<const char*>(vp8_default_mv_contexts),
+                  reinterpret_cast<const char*>(vp8_default_mv_contexts) + sizeof(vp8_default_mv_contexts),
                   reinterpret_cast<char*>(m_frameProbs.mvContexts));
     }
 
@@ -1044,8 +1049,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
         data_in += 7;
 
-        std::copy(reinterpret_cast<const char*>(vp8_default_coeff_probs), 
-                  reinterpret_cast<const char*>(vp8_default_coeff_probs) + sizeof(vp8_default_coeff_probs), 
+        std::copy(reinterpret_cast<const char*>(vp8_default_coeff_probs),
+                  reinterpret_cast<const char*>(vp8_default_coeff_probs) + sizeof(vp8_default_coeff_probs),
                   reinterpret_cast<char*>(m_frameProbs.coeff_probs));
 
         UMC_SET_ZERO(m_frame_info.segmentFeatureData);
@@ -1066,8 +1071,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
             m_frameProbs.mbModeProbUV[i] = VP8Defs::vp8_mb_mode_uv_probs[i];
 
         // restore default MV contexts
-        std::copy(reinterpret_cast<const char*>(VP8Defs::vp8_default_mv_contexts), 
-                  reinterpret_cast<const char*>(VP8Defs::vp8_default_mv_contexts) + sizeof(VP8Defs::vp8_default_mv_contexts), 
+        std::copy(reinterpret_cast<const char*>(VP8Defs::vp8_default_mv_contexts),
+                  reinterpret_cast<const char*>(VP8Defs::vp8_default_mv_contexts) + sizeof(VP8Defs::vp8_default_mv_contexts),
                   reinterpret_cast<char*>(m_frameProbs.mvContexts));
 
     }
