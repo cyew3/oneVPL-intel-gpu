@@ -171,7 +171,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             {
                 if (l.poc == s.PicOrderCnt && s.PicOrderCnt)
                 {
-                    m_i = &l - &m_tc.rl[0];
+                    m_i = mfxI32(&l - &m_tc.rl[0]);
                     break;
                 }
             }

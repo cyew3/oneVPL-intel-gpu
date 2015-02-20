@@ -436,7 +436,7 @@ int TestSuite::RunTest(unsigned int id)
     // adding buffers
     if (buffs.size())
     {
-        m_par.NumExtParam = par_cpy.NumExtParam = buffs.size();
+        m_par.NumExtParam = par_cpy.NumExtParam = (mfxU16)buffs.size();
         m_par.ExtParam = &buffs[0];
         par_cpy.ExtParam = &buffs_cpy[0];
     }

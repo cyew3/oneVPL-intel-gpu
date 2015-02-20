@@ -375,7 +375,7 @@ int TestSuite::RunTest(unsigned int id)
     m_par.mfx.FrameInfo.FrameRateExtD = 1;
     m_par.mfx.TargetKbps = 600;
     if (tc.mode == VBR)
-        m_par.mfx.MaxKbps = m_par.mfx.TargetKbps * 1.3;
+        m_par.mfx.MaxKbps = mfxU16(m_par.mfx.TargetKbps * 1.3);
     mfxU32 fr = mfxU32(m_par.mfx.FrameInfo.FrameRateExtN / m_par.mfx.FrameInfo.FrameRateExtD);
     // buffer = 0.5 sec
     mfxU32 br = m_par.mfx.MaxKbps ? m_par.mfx.MaxKbps : m_par.mfx.TargetKbps;

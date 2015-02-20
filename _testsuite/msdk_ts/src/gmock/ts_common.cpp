@@ -39,7 +39,7 @@ void set_brc_params(tsExtBufType<mfxVideoParam>* p)
     mfxU16 br = mfxU16(p->mfx.FrameInfo.Width * p->mfx.FrameInfo.Height * fr * 2 * 0.07 / 1000);
 
     if (p->mfx.CodecId == MFX_CODEC_MPEG2)
-        br = (mfxU16)br*1.5;
+        br = (mfxU16)(br*1.5);
     else if (p->mfx.CodecId == MFX_CODEC_HEVC)
         br >>= 1;
 

@@ -221,7 +221,7 @@ int TestSuite::RunTest(unsigned int id)
     if (!in_buffs.empty())
     {
         m_ctrl.ExtParam = &in_buffs[0];
-        m_ctrl.NumExtParam = in_buffs.size();
+        m_ctrl.NumExtParam = (mfxU16)in_buffs.size();
     }
 
     // Create and attach output structures
@@ -265,7 +265,7 @@ int TestSuite::RunTest(unsigned int id)
     if (!out_buffs.empty())
     {
         m_bitstream.ExtParam = &out_buffs[0];
-        m_bitstream.NumExtParam = out_buffs.size();
+        m_bitstream.NumExtParam = (mfxU16)out_buffs.size();
     }
 
     EncodeFrames(n, true);
