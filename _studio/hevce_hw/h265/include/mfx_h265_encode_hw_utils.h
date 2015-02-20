@@ -167,7 +167,8 @@ private:
 typedef struct _DpbFrame
 {
     mfxI32   m_poc;
-    bool     m_ltr;
+    bool     m_ltr; // is "long-term"
+    bool     m_ldb; // is "low-delay B"
     mfxU8    m_codingType;
     mfxU8    m_idxRaw;
     mfxU8    m_idxRec;
@@ -292,6 +293,7 @@ namespace ExtBuffer
     bool Construct(mfxVideoParam const & par, mfxExtHEVCParam& buf);
 };
 
+
 class MfxVideoParam : public mfxVideoParam
 {
 public:
@@ -321,7 +323,6 @@ public:
     mfxU16 NumRefLX[2];
     mfxU32 LTRInterval;
     mfxU32 LCUSize;
-    bool   BRef;
     bool   InsertHRDInfo;
     bool   RawRef;
 
@@ -340,6 +341,8 @@ public:
     void GetSliceHeader(Task const & task, Slice & s) const;
 
     mfxStatus GetExtBuffers(mfxVideoParam& par, bool query = false);
+
+    bool isBPyramid() const { return m_ext.CO2.BRefType == MFX_B_REF_PYRAMID; }
 
 private:
     void Construct(mfxVideoParam const & par);

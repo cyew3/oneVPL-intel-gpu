@@ -212,7 +212,8 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool query)
             || (mfxU32)par.mfx.NumRefFrame + 1 > MaxDpbSize
             || par.m_ext.HEVCTiles.NumTileColumns > MaxTileCols
             || par.m_ext.HEVCTiles.NumTileRows > MaxTileRows
-            || (mfxU32)par.mfx.NumSlice > MaxSSPP)
+            || (mfxU32)par.mfx.NumSlice > MaxSSPP
+            || (par.isBPyramid() && MaxDpbSize < mfxU32((par.mfx.GopRefDist - 1) / 2 + 1)))
         {
             lidx ++;
             continue;
@@ -729,6 +730,14 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
         }
     }
 
+    if (   par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID
+        && par.mfx.NumRefFrame
+        && mfxU16((par.mfx.GopRefDist - 1) / 2 + 1) > par.mfx.NumRefFrame)
+    {
+        par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
+        changed ++;
+    }
+
     sts = CheckProfile(par);
         
     if (sts >= MFX_ERR_NONE)
@@ -885,10 +894,18 @@ void SetDefaults(
         par.mfx.GopRefDist = mfxU16((par.mfx.GopPicSize > 1 && par.NumRefLX[1] && !hwCaps.SliceIPOnly) ? Min(par.mfx.GopPicSize - 1, 3) : 1);
 
     if (!par.mfx.NumRefFrame)
-        par.mfx.NumRefFrame = par.NumRefLX[0] + (par.mfx.GopRefDist > 1) * par.NumRefLX[1];
+        par.mfx.NumRefFrame = par.isBPyramid() ? mfxU16((par.mfx.GopRefDist - 1) / 2 + 1) : (par.NumRefLX[0] + (par.mfx.GopRefDist > 1) * par.NumRefLX[1]);
 
     if (!par.mfx.CodecLevel)
         CorrectLevel(par, false);
+
+    if (par.m_ext.CO2.BRefType == MFX_B_REF_UNKNOWN)
+    {
+        if (par.mfx.GopRefDist > 3 && mfxU16((par.mfx.GopRefDist - 1) / 2 + 1) <= par.mfx.NumRefFrame)
+            par.m_ext.CO2.BRefType = MFX_B_REF_PYRAMID;
+        else
+            par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
+    }
 }
 
 } //namespace MfxHwH265Encode

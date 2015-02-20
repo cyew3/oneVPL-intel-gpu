@@ -35,21 +35,28 @@ template<class T> T Reorder(
 {
     T top  = begin;
     T b0 = end; // 1st non-ref B with L1 > 0
+    std::vector<T> brefs;
 
     while ( top != end && (top->m_frameType & MFX_FRAMETYPE_B))
     {
         if (CountL1(dpb, top->m_poc))
         {
-            if (   (top->m_frameType & MFX_FRAMETYPE_REF)
-                && (b0 == end || (top->m_poc - b0->m_poc < 2)))
-                return top;
-
-            if (b0 == end && !(top->m_frameType & MFX_FRAMETYPE_REF))
+            if (top->m_frameType & MFX_FRAMETYPE_REF)
+            {
+                if (par.isBPyramid())
+                    brefs.push_back(top);
+                else if (b0 == end || (top->m_poc - b0->m_poc < 2))
+                    return top;
+            }
+            else if (b0 == end)
                 b0 = top;
         }
 
         top ++;
     }
+
+    if (!brefs.empty())
+        return brefs[brefs.size() / 2];
 
     if (b0 != end)
         return b0;
@@ -350,7 +357,6 @@ MfxVideoParam::MfxVideoParam()
     , MaxKbps         (0)
     , LTRInterval     (0)
     , LCUSize         (DEFAULT_LCU_SIZE)
-    , BRef            (false)
     , InsertHRDInfo   (false)
     , RawRef          (false)
 {
@@ -374,7 +380,6 @@ MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
     NumRefLX[1]      = par.NumRefLX[1];
     LTRInterval      = par.LTRInterval;
     LCUSize          = par.LCUSize;
-    BRef             = par.BRef;
     InsertHRDInfo    = par.InsertHRDInfo;
     RawRef           = par.RawRef;
 }
@@ -436,7 +441,6 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         NumRefLX[1] = 0;
     }
 
-    BRef          = (mfx.GopRefDist > 3) && NumRefLX[0] >= 2;
     InsertHRDInfo = false;
     RawRef        = false;
 
@@ -447,7 +451,7 @@ void MfxVideoParam::SyncCalculableToVideoParam()
 {
     mfxU32 maxVal32 = BufferSizeInKB;
 
-    mfx.NumRefFrame = NumRefLX[0] + (mfx.GopRefDist > 1) * NumRefLX[1];
+    mfx.NumRefFrame = (isBPyramid() && mfx.GopRefDist) ? mfxU16((mfx.GopRefDist - 1) / 2 + 1) : (NumRefLX[0] + (mfx.GopRefDist > 1) * NumRefLX[1]);
 
     if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -1534,7 +1538,7 @@ mfxU8 GetFrameType(
             (frameOrder + 1) % idrPicDist == 0)
             return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF); // switch last B frame to P frame
 
-    if (video.BRef && (frameOrder % gopPicSize % gopRefDist - 1) % 2 == 1)
+    if (video.isBPyramid() && (frameOrder % gopPicSize % gopRefDist - 1) % 2 == 1)
         return (MFX_FRAMETYPE_B | MFX_FRAMETYPE_REF);
 
     return (MFX_FRAMETYPE_B);
@@ -1564,7 +1568,7 @@ void UpdateDPB(
 
     // frames stored in DPB in POC ascending order,
     // LTRs before STRs (use LTR-candidate as STR as long as it possible)
-    if (par.BRef)
+    if (par.isBPyramid())
         MFX_SORT_STRUCT(dpb, end, m_poc, >);
 
     // sliding window over STRs
@@ -1592,6 +1596,10 @@ void UpdateDPB(
     }
 
     dpb[end++] = task;
+
+    if (par.isBPyramid() && (task.m_ldb || task.m_codingType < CODING_TYPE_B))
+        for (mfxU16 i = 0; i < end - 1; i ++)
+            dpb[i].m_codingType = 0; //don't keep coding types for prev. mini-GOP
 }
 
 bool isLTR(
@@ -1687,7 +1695,8 @@ void ConstructRPL(
         }
         if (l1 > par.NumRefLX[1])
         {
-            Remove(RPL[1], 0, l1 - par.NumRefLX[1]);
+            MFX_SORT_COMMON(RPL[1], numRefActive[1], Abs(DPB[RPL[1][_i]].m_poc - poc) > Abs(DPB[RPL[1][_j]].m_poc - poc));
+            Remove(RPL[1], par.NumRefLX[1], l1 - par.NumRefLX[1]);
             l1 = (mfxU8)par.NumRefLX[1];
         }
 
@@ -1727,11 +1736,17 @@ mfxU8 GetCodingType(Task const & task)
 
     if (task.m_frameType & MFX_FRAMETYPE_P)
         return CODING_TYPE_P;
+
+    if (task.m_ldb)
+        return CODING_TYPE_B;
     
     for (mfxU8 i = 0; i < 2; i ++)
     {
         for (mfxU32 j = 0; j < task.m_numRefActive[i]; j ++)
         {
+            if (task.m_dpb[0][task.m_refPicList[i][j]].m_ldb)
+                continue; // don't count LDB as B here
+
             if (task.m_dpb[0][task.m_refPicList[i][j]].m_codingType > CODING_TYPE_B)
                 return CODING_TYPE_B2;
 
@@ -1784,6 +1799,7 @@ void ConfigureTask(
         task.m_qpY = (mfxU8)par.mfx.QPP;
         task.m_frameType &= ~MFX_FRAMETYPE_P;
         task.m_frameType |= MFX_FRAMETYPE_B;
+        task.m_ldb = true;
     }
     else
     {
