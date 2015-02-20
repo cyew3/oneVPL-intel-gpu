@@ -1646,7 +1646,7 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
                 }
                 
                 mfxU32 pitch = task.auxInput.Data.PitchLow + ((mfxU32)task.auxInput.Data.PitchHigh << 16);
-                if (pitch >= 0x8000 || !pitch)
+                if (!pitch)
                 {
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
@@ -1680,7 +1680,7 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
                 }
                 
                 mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
-                if (pitch >= 0x8000 || !pitch)
+                if (!pitch)
                 {
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
@@ -2012,7 +2012,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
             }
             
             mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
-            if (pitch >= 0x8000 || !pitch)
+            if (!pitch)
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
