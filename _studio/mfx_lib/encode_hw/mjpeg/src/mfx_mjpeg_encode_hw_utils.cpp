@@ -79,9 +79,9 @@ mfxStatus MfxHwMJpegEncode::CheckExtBufferId(mfxVideoParam const & par)
     return MFX_ERR_NONE;
 }
 
-mfxStatus MfxHwMJpegEncode::CheckJpegParam(mfxVideoParam & par,
-                                           JpegEncCaps const & hwCaps)
+mfxStatus MfxHwMJpegEncode::CheckJpegParam(VideoCORE *core, mfxVideoParam & par, JpegEncCaps const & hwCaps)
 {
+    MFX_CHECK(core, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(hwCaps.Baseline, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     MFX_CHECK(hwCaps.Sequential, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     MFX_CHECK(hwCaps.Huffman, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
@@ -91,6 +91,25 @@ mfxStatus MfxHwMJpegEncode::CheckJpegParam(mfxVideoParam & par,
 
     MFX_CHECK(par.mfx.FrameInfo.Width > 0 && par.mfx.FrameInfo.Height > 0,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+    mfxF64 BytesPerPx = 0;
+    switch (par.mfx.FrameInfo.FourCC)
+    {
+        case MFX_FOURCC_NV12:
+        case MFX_FOURCC_YV12:
+            BytesPerPx = 1.5;
+            break;
+        case MFX_FOURCC_YUY2:
+            BytesPerPx = 2;
+            break;
+        case MFX_FOURCC_RGB4:
+        default:
+            BytesPerPx = 4;
+    }
+    if (core->GetVAType() == MFX_HW_D3D9)
+    {
+        MFX_CHECK(par.mfx.FrameInfo.Height <= hwCaps.MaxPicWidth/BytesPerPx, MFX_WRN_PARTIAL_ACCELERATION );
+    }
 
     MFX_CHECK(par.mfx.FrameInfo.Width <= (mfxU16)hwCaps.MaxPicWidth && par.mfx.FrameInfo.Height <= (mfxU16)hwCaps.MaxPicHeight,
         MFX_WRN_PARTIAL_ACCELERATION);

@@ -115,6 +115,7 @@ namespace MfxHwMJpegEncode
         mfxVideoParam const & par);
 
     mfxStatus CheckJpegParam(
+        VideoCORE         * core,
         mfxVideoParam     & par,
         JpegEncCaps const & hwCaps);
 

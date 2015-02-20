@@ -88,7 +88,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfx
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
-        sts = CheckJpegParam(*in, hwCaps);
+        sts = CheckJpegParam(core, *in, hwCaps);
         if (sts == MFX_WRN_PARTIAL_ACCELERATION)
             return MFX_WRN_PARTIAL_ACCELERATION;
         else if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
@@ -690,7 +690,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
         mfxStatus mfxRes = m_ddi->QueryEncodeCaps(hwCaps);
         MFX_CHECK_STS(mfxRes);
 
-        mfxRes = CheckJpegParam(vPar, hwCaps);
+        mfxRes = CheckJpegParam(m_pCore, vPar, hwCaps);
         if (mfxRes != MFX_ERR_NONE)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
