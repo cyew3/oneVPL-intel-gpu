@@ -1,4 +1,4 @@
-mfx_include_dirs( ${CMAKE_SOURCE_DIR}/.. )
+mfx_include_dirs( )
 
 file( GLOB_RECURSE sources
   "media_buffers/*.cpp"

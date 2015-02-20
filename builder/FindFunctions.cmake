@@ -166,6 +166,9 @@ function( make_library name variant type )
   endif( )
 
   configure_build_variant( ${target} ${ARGV1} )
+
+  target_link_libraries( ${target} SafeString )
+
   if( defs )
     append_property( ${target} COMPILE_FLAGS ${defs} )
   endif( )
@@ -235,6 +238,8 @@ function( make_executable name variant )
   foreach( lib ${LIBS_SUFFIX} )
     target_link_libraries( ${target} ${lib} )
   endforeach( )
+
+  target_link_libraries( ${target} SafeString )
 
   set( target ${target} PARENT_SCOPE )
 endfunction( )

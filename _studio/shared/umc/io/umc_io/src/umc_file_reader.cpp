@@ -15,6 +15,7 @@
 #if defined (UMC_ENABLE_FILE_READER) || defined (UMC_ENABLE_FIO_READER)
 
 #include <string.h>
+#include "vm_strings.h"
 #include "vm_debug.h"
 #include "umc_dynamic_cast.h"
 

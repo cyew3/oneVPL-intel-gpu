@@ -46,7 +46,9 @@ SysInfo::SysInfo(vm_char *pProcessName)
                            pProcessName);
 #endif
 #if defined(LINUX32)
-        vm_string_strcpy(m_sSystemInfo.program_name, pProcessName);
+        vm_string_strcpy_s(m_sSystemInfo.program_name, 
+                          sizeof(m_sSystemInfo.program_name) / sizeof(m_sSystemInfo.program_name[0]),
+                          pProcessName);
 #endif
     }
     vm_sys_info_get_program_path(m_sSystemInfo.program_path);
@@ -59,7 +61,7 @@ SysInfo::SysInfo(vm_char *pProcessName)
         vm_char* username = getenv("LOGNAME");
         if (username && (vm_string_strlen(username) < _MAX_LEN))
         {
-            vm_string_strcpy(m_sSystemInfo.user_name, username);
+            vm_string_strcpy_s(m_sSystemInfo.user_name, _MAX_LEN, username);
         }
         else m_sSystemInfo.user_name[0] = 0;
     }

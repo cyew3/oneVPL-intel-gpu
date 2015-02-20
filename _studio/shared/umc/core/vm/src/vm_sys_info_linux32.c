@@ -151,14 +151,14 @@ void vm_sys_info_get_cpu_name(vm_char *cpu_name)
     {
         if (!vm_string_strncmp(buf, VM_STRING("vendor_id"), 9))
         {
-            vm_string_strncpy(tmp_buf, (vm_char*)(buf + 12), vm_string_strlen(buf) - 13);
+            vm_string_strncpy_s(tmp_buf, PATH_MAX, (vm_char*)(buf + 12), vm_string_strlen(buf) - 13);
         }
         else if (!vm_string_strncmp(buf, VM_STRING("model name"), 10))
         {
             if ((len = vm_string_strlen(buf) - 14) > 8)
-                vm_string_strncpy(cpu_name, (vm_char *)(buf + 13), len);
+                vm_string_strncpy_s(cpu_name, PATH_MAX, (vm_char *)(buf + 13), len);
             else
-                vm_string_sprintf(cpu_name, VM_STRING("%s"), tmp_buf);
+                vm_string_sprintf(cpu_name, PATH_MAX, VM_STRING("%s"), tmp_buf);
         }
     }
     fclose(pFile);
@@ -209,7 +209,7 @@ void vm_sys_info_get_program_name(vm_char *program_name)
 
     readlink("/proc/self/exe", path, sizeof(path));
     i = vm_string_strrchr(path, (vm_char)('/')) - path + 1;
-    vm_string_strncpy(program_name, path + i, vm_string_strlen(path) - i);
+    vm_string_strncpy_s(program_name, PATH_MAX, path + i, vm_string_strlen(path) - i);
 #endif /* __APPLE__ */
 
 } /* void vm_sys_info_get_program_name(vm_char *program_name) */
@@ -226,7 +226,7 @@ void vm_sys_info_get_program_path(vm_char *program_path)
 
     readlink("/proc/self/exe", path, sizeof(path));
     i = vm_string_strrchr(path, (vm_char)('/')) - path + 1;
-    vm_string_strncpy(program_path, path, i-1);
+    vm_string_strncpy_s(program_path, PATH_MAX, path, i-1);
     program_path[i - 1] = 0;
 #else /* for __APPLE__ */
     if ( getcwd( path, PATH_MAX ) != NULL )

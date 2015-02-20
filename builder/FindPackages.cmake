@@ -89,6 +89,7 @@ function( configure_build_variant_linux target variant )
   endif( )
   set( link_flags_list "-Wl,--no-undefined,-z,relro,-z,now,-z,noexecstack")
   append_property( ${ARGV0} LINK_FLAGS "${link_flags_list} ${MFX_LDFLAGS} -fstack-protector" )
+
   if( ARGV1 MATCHES hw AND Linux )
     append_property( ${ARGV0} COMPILE_FLAGS "-DMFX_VA" )
     append_property( ${ARGV0} COMPILE_FLAGS "${PKG_LIBVA_CFLAGS}" ) 

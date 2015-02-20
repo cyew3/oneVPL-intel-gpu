@@ -39,5 +39,6 @@ function( mfx_include_dirs )
     ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/shared/include
     ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/fei/include
     ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/fei/h264_la
+    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/SafeStringStaticLibrary/include
   )
 endfunction( )
