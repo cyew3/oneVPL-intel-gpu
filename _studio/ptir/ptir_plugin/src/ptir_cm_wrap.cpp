@@ -591,12 +591,22 @@ mfxStatus PTIR_ProcessorCM::OutputFrameToMfx(Frame* frmOut, mfxFrameSurface1* su
     if(it != CmToMfxSurfmap.end())
         input = CmToMfxSurfmap[static_cast<CmSurface2DEx*>(frmOut->inSurf)->pCmSurface2D];
 
+    if(input)
+    {
+        if(frmOut->frmProperties.detection)
+        {
+            if(work_par.vpp.In.PicStruct == MFX_PICSTRUCT_FIELD_BFF)
+                input->Info.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
+            else
+                input->Info.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
+        }
+        else
+        {
+            input->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        }
+    }
     //assert(0 != output);
     //assert(0 != input);
-    if(input && output)
-        output->Data.TimeStamp = input->Data.TimeStamp;
-    else if(output)
-        output->Data.TimeStamp = -1;
     if(output && frmOut->outState == Frame::OUT_UNCHANGED)
     {
         assert(0 != static_cast<CmSurface2DEx*>(frmOut->inSurf)->pCmSurface2D);

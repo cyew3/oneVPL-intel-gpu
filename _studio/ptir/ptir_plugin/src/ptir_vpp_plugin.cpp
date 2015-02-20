@@ -20,12 +20,6 @@ File Name: ptir_vpp_plugin.cpp
 #include "plugin_version_linux.h"
 #include "mfxvideo++int.h"
 #include "hw_utils.h"
-#if defined(_WIN32) || defined(_WIN64)
-#include "mfx_session.h"
-#include "libmfx_core_d3d9.h"
-#define MFX_D3D11_ENABLED
-#include "libmfx_core_d3d11.h"
-#endif
 
 #ifndef ALIGN16
 #define ALIGN16(SZ) (((SZ + 15) >> 4) << 4)
@@ -545,9 +539,9 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                         extVPPDeintIn->Mode == MFX_DEINTERLACING_AUTO_SINGLE            ||
                         extVPPDeintIn->Mode == MFX_DEINTERLACING_FULL_FR_OUT            ||
                         extVPPDeintIn->Mode == MFX_DEINTERLACING_HALF_FR_OUT            ||
-                        extVPPDeintIn->Mode == MFX_DEINTERLACING_24FPS_OUT            /*||
+                        extVPPDeintIn->Mode == MFX_DEINTERLACING_24FPS_OUT              ||
                         extVPPDeintIn->Mode == MFX_DEINTERLACING_30FPS_OUT              ||
-                        extVPPDeintIn->Mode == MFX_DEINTERLACING_DETECT_INTERLACE*/      )
+                        extVPPDeintIn->Mode == MFX_DEINTERLACING_DETECT_INTERLACE        )
                     {
                         if(extVPPDeintIn->TelecineLocation || extVPPDeintIn->TelecinePattern)
                         {
@@ -1585,53 +1579,19 @@ inline mfxStatus MFX_PTIR_Plugin::GetHandle(mfxHDL& mfxDeviceHdl, mfxHandleType&
     else if(MFX_IMPL_VIA_VAAPI == (mfxCorePar.Impl & 0xF00))
         mfxDeviceType = MFX_HANDLE_VA_DISPLAY;
     mfxSts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, mfxDeviceType, &mfxDeviceHdl);
+
     if(MFX_ERR_NONE != mfxSts &&
        MFX_IMPL_SOFTWARE != MFX_IMPL_BASETYPE(mfxCorePar.Impl))
     {
-#if defined(_WIN32) || defined(_WIN64)
-        //if version of parent library are the same as plugin version, it seems that internal device init can be safe.
-        if((MFX_VERSION_MINOR == mfxCorePar.Version.Minor) && (MFX_VERSION_MAJOR == mfxCorePar.Version.Major))
-        {
-            try
-            {
-                //let's try to init parent library device handle
-                _mfxSession* pSession = 0;
-                VideoCORE* pCORE = 0;
-                pSession = (_mfxSession*) (m_pmfxCore->pthis);
-                pCORE = pSession->m_pCORE.get();
-                if(MFX_IMPL_VIA_D3D9 == (mfxCorePar.Impl & 0xF00))
-                {
-                    IDirectXVideoDecoderService *tmpVideoService = 0;
-                    mfxSts = ((D3D9VideoCORE*) pCORE)->m_pAdapter.get()->GetD3DService(0,0);
-                }
-                else if(MFX_IMPL_VIA_D3D11 == (mfxCorePar.Impl & 0xF00))
-                {
-                    //IDirectXVideoDecoderService *tmpVideoService = 0;
-                    mfxFrameAllocRequest  request = {0};
-                    mfxFrameAllocResponse response = {0};
-                    ((D3D11VideoCORE*) pCORE)->AllocFrames(&request,&response,false);
-                }
+        mfxSts = m_pmfxCore->CreateAccelerationDevice(m_pmfxCore->pthis, mfxDeviceType, &mfxDeviceHdl);
+        if(mfxSts)
+            return mfxSts;
+        mfxSts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, mfxDeviceType, &mfxDeviceHdl);
 
-                mfxSts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, mfxDeviceType, &mfxDeviceHdl);
-
-                if(mfxSts || !mfxDeviceHdl)
-                    return MFX_ERR_NOT_FOUND;
-                else
-                    return MFX_ERR_NONE;
-            }
-            catch(...)
-            {
-                mfxDeviceHdl = 0;
-                return MFX_ERR_NOT_FOUND;
-            }
-        }
-        else
-        {
+        if(mfxSts || !mfxDeviceHdl)
             return MFX_ERR_NOT_FOUND;
-        }
-#else
-        return MFX_ERR_NOT_FOUND;
-#endif
+        else
+            return MFX_ERR_NONE;
     }
 
     return MFX_ERR_NONE;

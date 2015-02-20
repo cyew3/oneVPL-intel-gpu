@@ -391,8 +391,10 @@ void Prepare_frame_for_queue(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWidt
         return;
     Frame_Create(*pfrmOut, uiWidth, uiHeight, uiWidth / 2, uiHeight / 2, 0);
     (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.tindex;
+    (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.detection;
     ReSample(*pfrmOut, pfrmIn);
     (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.tindex;
+    (*pfrmOut)->frmProperties.tindex = pfrmIn->frmProperties.detection;
 }
 
 double Calculate_Resulting_timestamps(Frame** frmBuffer, unsigned int uiDispatch, unsigned int uiCur, double dBaseTime, unsigned int *uiNumFramesToDispatch, unsigned int PatternType, unsigned int uiEndOfFrames)

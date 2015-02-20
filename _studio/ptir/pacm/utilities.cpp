@@ -799,6 +799,7 @@ void Prepare_frame_for_queueCM(Frame **pfrmOut, Frame *pfrmIn, unsigned int uiWi
     std::swap((*pfrmOut)->outSurf, pfrmIn->outSurf);
     std::swap((*pfrmOut)->inSurf, pfrmIn->inSurf);
     std::swap((*pfrmOut)->outState, pfrmIn->outState);
+    (*pfrmOut)->frmProperties.detection = pfrmIn->frmProperties.detection;
     if(frmSupply && Frame::OUT_UNCHANGED == (*pfrmOut)->outState)
     {
         if(static_cast<CmSurface2DEx*>((*pfrmOut)->inSurf)->pCmSurface2D)
