@@ -1458,9 +1458,9 @@ mfxStatus CEncodingPipeline::Run()
             memset(&feiEncCtrl[fieldId], 0, sizeof (mfxExtFeiEncFrameCtrl));
             feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
             feiEncCtrl[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncFrameCtrl);
-            feiEncCtrl[fieldId].MaxLenSP = 47;
-            feiEncCtrl[fieldId].LenSP = 47;
-            feiEncCtrl[fieldId].SubMBPartMask = 0xf;
+            feiEncCtrl[fieldId].MaxLenSP = 57;
+            feiEncCtrl[fieldId].LenSP = 57;
+            feiEncCtrl[fieldId].SubMBPartMask = 0x77;
             feiEncCtrl[fieldId].MultiPredL0 = 0;
             feiEncCtrl[fieldId].MultiPredL1 = 0;
             feiEncCtrl[fieldId].SubPelMode = 3;
@@ -1468,15 +1468,16 @@ mfxStatus CEncodingPipeline::Run()
             feiEncCtrl[fieldId].IntraSAD = 2;
             feiEncCtrl[fieldId].DistortionType = 2;
             feiEncCtrl[fieldId].RepartitionCheckEnable = 0;
-            feiEncCtrl[fieldId].AdaptiveSearch = 0;
+            feiEncCtrl[fieldId].AdaptiveSearch = 1;
             feiEncCtrl[fieldId].MVPredictor = MVPredictors;
-            feiEncCtrl[fieldId].NumMVPredictors = 4; //always 4 predictors
+            feiEncCtrl[fieldId].NumMVPredictors = 1; //always 4 predictors
             feiEncCtrl[fieldId].PerMBQp = MBQP;
             feiEncCtrl[fieldId].PerMBInput = MBCtrl;
             feiEncCtrl[fieldId].MBSizeCtrl = m_encpakParams.bMBSize;
-            feiEncCtrl[fieldId].RefHeight = 48;
+            feiEncCtrl[fieldId].RefHeight = 40;
             feiEncCtrl[fieldId].RefWidth = 48;
             feiEncCtrl[fieldId].SearchWindow = 1;
+
             //inBufs[numExtInParams++] = (mfxExtBuffer*) & feiEncCtrl;
 
             //feiEncMVPredictors;
@@ -2556,6 +2557,10 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
                 //out data
                 eTask->out.NumExtParam = numExtOutParams;
                 eTask->out.ExtParam = outBufs;
+                eTask->inPAK.NumExtParam = numExtOutParams;
+                eTask->inPAK.ExtParam = outBufs;
+                eTask->outPAK.NumExtParam = numExtInParams;
+                eTask->outPAK.ExtParam = inBufs;
                 break;
             case MFX_FRAMETYPE_B:
                 eTask->in.NumFrameL0 = 1;
