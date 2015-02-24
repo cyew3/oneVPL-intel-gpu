@@ -116,6 +116,30 @@ bool inline IsBayerFormat(mfxU32 fourCC)
     return false;
 }
 
+
+inline mfxU32 BayerFourCC2FourCC (mfxU32 fourcc)
+{
+    if ( MFX_FOURCC_R16_BGGR == fourcc )
+    {
+        return MFX_FOURCC_R16_BGGR;
+    }
+    else if ( MFX_FOURCC_R16_RGGB == fourcc )
+    {
+        return MFX_FOURCC_R16_RGGB;
+    }
+    else if ( MFX_FOURCC_R16_GRBG == fourcc )
+    {
+        return MFX_FOURCC_R16_GRBG;
+    }
+    else if ( MFX_FOURCC_R16_GBRG == fourcc )
+    {
+        return MFX_FOURCC_R16_GBRG;
+    }
+
+    return MFX_FOURCC_R16_BGGR;
+
+}
+
 inline RESOURCE_EXTENSION_CAMERA_PIPE::FORMAT_FLAGS BayerFourCC2FormatFlag (mfxU32 fourcc)
 {
     if ( MFX_FOURCC_R16_BGGR == fourcc )
@@ -139,6 +163,33 @@ inline RESOURCE_EXTENSION_CAMERA_PIPE::FORMAT_FLAGS BayerFourCC2FormatFlag (mfxU
 
 }
 
+template<typename Type>
+inline HRESULT GetExtensionCaps(
+    ID3D11Device* pd3dDevice,
+    Type* pCaps )
+{
+    D3D11_BUFFER_DESC desc;
+    ZeroMemory( &desc, sizeof(desc) );
+    desc.ByteWidth = sizeof(Type);
+    desc.Usage = D3D11_USAGE_STAGING;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    D3D11_SUBRESOURCE_DATA initData;
+    initData.pSysMem = pCaps;
+    initData.SysMemPitch = sizeof(Type);
+    initData.SysMemSlicePitch = 0;
+    ZeroMemory( pCaps, sizeof(Type) );
+    memcpy( pCaps->Key, CAPS_EXTENSION_KEY,
+        sizeof(pCaps->Key) );
+    pCaps->ApplicationVersion = EXTENSION_INTERFACE_VERSION;
+    ID3D11Buffer* pBuffer = NULL;
+    HRESULT result = pd3dDevice->CreateBuffer( 
+        &desc,
+        &initData,
+        &pBuffer );
+    if( pBuffer )
+        pBuffer->Release();
+    return result;
+};
 template<typename Type>
 inline HRESULT SetResourceExtension(
     ID3D11Device* pd3dDevice,

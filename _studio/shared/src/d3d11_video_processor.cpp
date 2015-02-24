@@ -596,13 +596,26 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
 #endif
 
         // Camera Pipe caps
+        CAMPIPE_MODE cameraPipe;
+        memset(&cameraPipe, 0, sizeof(cameraPipe));
         memset(&m_cameraCaps, 0, sizeof(VPE_CP_CAPS));
-        iFunc.Function = VPE_FN_CP_QUERY_CAPS;
-        iFunc.pCPCaps  = &m_cameraCaps;
+        cameraPipe.Function = VPE_FN_CP_QUERY_CAPS;
+        cameraPipe.pCPCaps  = &m_cameraCaps;
         hRes = GetOutputExtension(
             &(m_iface.guid),
             sizeof(VPE_FUNCTION),
             &iFunc);
+        if ( ! FAILED(hRes) )
+        {
+            // Must have call. If not called, camera pipe may crash driver.
+            CAPS_EXTENSION CamPipeCAPSextn ;
+            memset((PVOID) &CamPipeCAPSextn, 0, sizeof(CamPipeCAPSextn));
+            hRes = GetExtensionCaps(m_pDevice, &CamPipeCAPSextn);
+        }
+        else
+        {
+            // Requesting camera related caps returns fail on non-supported platforms. Just ignore this. 
+        }
 
 #ifdef DEBUG_DETAIL_INFO
         printf("Success: VPE CAMERA CAPS\n");
@@ -1444,42 +1457,23 @@ mfxStatus D3D11VideoProcessor::QueryVariance(
 
 } // mfxStatus D3D11VideoProcessor::QueryVariance(...)
 
-template<typename Type>
-inline HRESULT GetExtensionCaps(
-    ID3D11Device* pd3dDevice,
-    Type* pCaps )
-{
-    D3D11_BUFFER_DESC desc;
-    ZeroMemory( &desc, sizeof(desc) );
-    desc.ByteWidth = sizeof(Type);
-    desc.Usage = D3D11_USAGE_STAGING;
-    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-
-    D3D11_SUBRESOURCE_DATA initData;
-    initData.pSysMem = pCaps;
-    initData.SysMemPitch = sizeof(Type);
-    initData.SysMemSlicePitch = 0;
-
-    ZeroMemory( pCaps, sizeof(Type) );
-    memcpy( pCaps->Key, CAPS_EXTENSION_KEY,
-        sizeof(pCaps->Key) );
-    pCaps->ApplicationVersion = EXTENSION_INTERFACE_VERSION;
-
-    ID3D11Buffer* pBuffer = NULL;
-    HRESULT result = pd3dDevice->CreateBuffer(
-        &desc,
-        &initData,
-        &pBuffer );
-
-    if( pBuffer )
-        pBuffer->Release();
-
-    return result;
-};
 
 mfxStatus D3D11VideoProcessor::CameraPipeActivate()
 {
     HRESULT hRes;
+
+    // Disable status reporting since it breaks camera pipe.
+    VPE_FUNCTION iFunc = {0};
+    VPE_SET_STATUS_PARAM statusParam = {0, 0};
+    iFunc.Function        = VPE_FN_SET_STATUS_PARAM;
+    iFunc.pSetStatusParam = &statusParam;
+
+    hRes = SetOutputExtension(
+        &(m_iface.guid),
+        sizeof(VPE_FUNCTION),
+        &iFunc);
+    CHECK_HRES(hRes);
+
     CAMPIPE_MODE          camMode;
     VPE_CP_ACTIVE_PARAMS  bActive;
     bActive.bActive = 1;
@@ -1669,12 +1663,37 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
     if(pParams->bCameraPipeEnabled)
     {
-        mfxStatus sts = MFX_ERR_NONE;
-        sts = CameraPipeActivate();
-        MFX_CHECK_STS(sts);
+        mfxStatus sts = CameraPipeActivate();
 
+        if ( pParams->bCameraBlackLevelCorrection )
+        {
+            sts = CameraPipeSetBlacklevelParams(&pParams->CameraBlackLevel);
+            MFX_CHECK_STS(sts);
+        }
 
+        if ( pParams->bCameraGammaCorrection )
+        {
+            sts = CameraPipeSetForwardGammaParams(&pParams->CameraForwardGammaCorrection);
+            MFX_CHECK_STS(sts);
+        }
 
+        if ( pParams->bCameraHotPixelRemoval )
+        {
+            sts = CameraPipeSetHotPixelParams(&pParams->CameraHotPixel);
+            MFX_CHECK_STS(sts);
+        }
+
+        if ( pParams->bCameraWhiteBalaceCorrection )
+        {
+            sts = CameraPipeSetWhitebalanceParams(&pParams->CameraWhiteBalance);
+            MFX_CHECK_STS(sts);
+        }
+
+        if ( pParams->bCCM )
+        {
+            sts = CameraPipeSetCCMParams(&pParams->CCMParams);
+            MFX_CHECK_STS(sts);
+        }
     }
 
     // [4] ProcAmp

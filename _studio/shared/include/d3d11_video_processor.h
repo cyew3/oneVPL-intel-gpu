@@ -616,20 +616,8 @@ typedef struct _VPE_FUNCTION
         VPE_VPREP_GET_VARIANCE_PARAMS           *pGetVarianceParam;
         VPE_VPREP_YUV_RANGE_PARAM               *pYUVRangeParam;
 
-        VPE_CP_CAPS                             *pCPCaps;
-        VPE_CP_ACTIVE_PARAMS                    *pCPActivate;
-        VPE_CP_HOT_PIXEL_PARAMS                 *pHotPixel;
-        VPE_CP_VIGNETTE_CORRECTION_PARAMS       *pVignette;
-        VPE_CP_BLACK_LEVEL_CORRECTION_PARAMS    *pBlackLevel;
-        VPE_CP_WHITE_BALANCE_PARAMS             *pWhiteBalance;
-        VPE_CP_COLOR_CORRECTION_PARAMS          *pColorCorrection;
-        VPE_CP_FORWARD_GAMMA_PARAMS             *pForwardGamma;
-
-        VPE_CSC_PARAMS                          *pRgbToYuvCSC;
-        VPE_CSC_PARAMS                          *pYuvToRgbCSC;
     };
 } VPE_FUNCTION;
-
 
 typedef struct _CAMPIPE_MODE
 {
@@ -638,10 +626,10 @@ typedef struct _CAMPIPE_MODE
     {
       VPE_CP_CAPS                                 *pCPCaps;
       VPE_CP_ACTIVE_PARAMS                        *pActive;
-      VPE_CP_BLACK_LEVEL_CORRECTION_PARAMS        *pBlackLevel;
-      VPE_CP_VIGNETTE_CORRECTION_PARAMS           *pVignette;
-      VPE_CP_WHITE_BALANCE_PARAMS                 *pWhiteBalance;
       VPE_CP_HOT_PIXEL_PARAMS                     *pHotPixel;
+      VPE_CP_VIGNETTE_CORRECTION_PARAMS           *pVignette;
+      VPE_CP_BLACK_LEVEL_CORRECTION_PARAMS        *pBlackLevel;
+      VPE_CP_WHITE_BALANCE_PARAMS                 *pWhiteBalance;
       VPE_CP_COLOR_CORRECTION_PARAMS              *pColorCorrection;
       VPE_CP_FORWARD_GAMMA_PARAMS                 *pForwardGamma;
       VPE_CSC_PARAMS                              *pRgbToYuvCSC;

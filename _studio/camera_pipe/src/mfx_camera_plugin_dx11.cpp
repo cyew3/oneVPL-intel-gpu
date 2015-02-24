@@ -138,7 +138,7 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
     // [4] Start execution
     sts = m_ddi->Execute(&m_executeParams);
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
