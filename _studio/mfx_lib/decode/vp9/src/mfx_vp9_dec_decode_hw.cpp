@@ -746,11 +746,13 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
     if (VP9_FRAME_MARKER != bsReader.GetBits(2))
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-    info.version = bsReader.GetBit();
-    if (info.version > 1)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    info.profile = bsReader.GetBit();
+    info.profile |= bsReader.GetBit() << 1;
+    if (info.profile > 2)
+        info.profile += bsReader.GetBit();
 
-    bsReader.GetBit(); // skip unused version bit
+    if (info.profile >= 4)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     info.show_existing_frame = bsReader.GetBit();
     if (info.show_existing_frame)
@@ -769,10 +771,17 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
         if (0x49 != bsReader.GetBits(8) || 0x83 != bsReader.GetBits(8) || 0x42 != bsReader.GetBits(8))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
+        if (info.profile >= 2)
+        {
+            info.bit_depth = bsReader.GetBit() ? 12 : 10;
+        }
+        else
+            info.bit_depth = 8;
+        
         if (SRGB != bsReader.GetBits(3))
         {
             bsReader.GetBit(); // 0: [16, 235] (i.e. xvYCC), 1: [0, 255]
-            if (1 == info.version)
+            if (1 == info.profile || 3 == info.profile)
             {
                 info.subsamplingX = bsReader.GetBit();
                 info.subsamplingY = bsReader.GetBit();
@@ -783,7 +792,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
         }
         else
         {
-            if (1 == info.version)
+            if (1 == info.profile || 3 == info.profile)
             {
                 info.subsamplingY = info.subsamplingX = 0;
                 bsReader.GetBit();  // has extra plane
@@ -810,6 +819,36 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
         {
             if (0x49 != bsReader.GetBits(8) || 0x83 != bsReader.GetBits(8) || 0x42 != bsReader.GetBits(8))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+            if (info.profile >= 2)
+            {
+                info.bit_depth = bsReader.GetBit() ? 12 : 10;
+            }
+            else
+                info.bit_depth = 8;
+        
+            if (SRGB != bsReader.GetBits(3))
+            {
+                bsReader.GetBit(); // 0: [16, 235] (i.e. xvYCC), 1: [0, 255]
+                if (1 == info.profile || 3 == info.profile)
+                {
+                    info.subsamplingX = bsReader.GetBit();
+                    info.subsamplingY = bsReader.GetBit();
+                    bsReader.GetBit(); // has extra plane
+                }
+                else
+                    info.subsamplingY = info.subsamplingX = 1;
+            }
+            else
+            {
+                if (1 == info.profile || 3 == info.profile)
+                {
+                    info.subsamplingY = info.subsamplingX = 0;
+                    bsReader.GetBit();  // has extra plane
+                }
+                else
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
 
             info.refreshFrameFlags = (mfxU8)bsReader.GetBits(NUM_REF_FRAMES);
 
@@ -1129,7 +1168,8 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
     for (mfxU8 i = 0; i < VP9_NUM_OF_PREDICTION_PROBS; ++i)
         picParam->segment_pred_probs[i] = info.segmentation.predProbs[i];
 
-    picParam->version = info.version;
+    picParam->profile = info.profile;
+    picParam->bit_depth = info.bit_depth;
 
     // sliceParam
     pCompBuf = NULL;
@@ -1265,6 +1305,11 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
 
     picParam->BSBytesInBuffer = info.frameDataSize;
     picParam->StatusReportFeedbackNumber = ++m_statusReportFeedbackNumber;
+
+    picParam->profile = (UCHAR)info.profile;
+    picParam->BitDepthMinus8 = (UCHAR)(info.bit_depth - 8);
+    picParam->subsampling_x = (UCHAR)info.subsamplingX;
+    picParam->subsampling_y = (UCHAR)info.subsamplingY;
 
     UMC::UMCVACompBuffer* compBufSeg = NULL;
     DXVA_Intel_Segment_VP9 *segParam = (DXVA_Intel_Segment_VP9*)m_va->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_INVERSE_QUANTIZATION_MATRIX_VP9, &compBufSeg);

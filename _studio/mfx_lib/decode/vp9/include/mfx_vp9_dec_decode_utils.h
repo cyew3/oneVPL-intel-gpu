@@ -218,7 +218,8 @@ namespace MfxVP9Decode
         // FRAME_COUNTS counts; // ?????????????
 
         mfxU32 currentVideoFrame;
-        mfxU32 version;
+        mfxU32 profile;
+        mfxU32 bit_depth;
 
         mfxU32 errorResilientMode;
         mfxU32 frameParallelDecodingMode;

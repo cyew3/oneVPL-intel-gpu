@@ -1329,7 +1329,7 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, 
     mfxU32 n_bytes_offset = 0;
     bool bHeaderRead = false;
 
-    mfxU16 version = 0;
+    mfxU32 profile = 0;
     mfxU16 width = 0;
     mfxU16 height = 0;
 
@@ -1347,9 +1347,13 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, 
                 if (MfxVP9Decode::VP9_FRAME_MARKER != bsReader.GetBits(2))
                     continue; // invalid
 
-                version = (mfxU16)bsReader.GetBit();
-                if (version > 1)
-                    continue; // invalid
+                profile = bsReader.GetBit();
+                profile |= bsReader.GetBit() << 1;
+                if (profile > 2)
+                    profile += bsReader.GetBit();
+
+                if (profile >= 4)
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
 
                 bsReader.GetBit(); // skip unused version bit
 
@@ -1364,12 +1368,12 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, 
                         if (MfxVP9Decode::SRGB != (MfxVP9Decode::COLOR_SPACE)bsReader.GetBits(3)) // color_space
                         {
                             bsReader.GetBit();
-                            if (1 == version)
+                            if (1 == profile || 3 == profile)
                                 bsReader.GetBits(3);
                         }
                         else
                         {
-                            if (1 == version)
+                            if (1 == profile || 3 == profile)
                                 bsReader.GetBit();
                             else
                                 continue; // invalid
@@ -1399,7 +1403,7 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, 
         return MFX_ERR_MORE_DATA;
     }
 
-    params->mfx.CodecProfile = version + 1;
+    params->mfx.CodecProfile = mfxU16(profile + 1);
 
     params->mfx.FrameInfo.AspectRatioW = 1;
     params->mfx.FrameInfo.AspectRatioH = 1;
