@@ -245,6 +245,8 @@ Status VACompBuffer::SetDestroyStatus(bool _destroy)
 }
 
 LinuxVideoAccelerator::LinuxVideoAccelerator(void)
+    : m_sDecodeTraceStart("")
+    , m_sDecodeTraceEnd("")
 {
     m_dpy        = NULL;
     m_context    = -1;
@@ -329,6 +331,9 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     }
     if ((UMC_OK == umcRes) && (UNKNOWN == m_Profile))
         umcRes = UMC_ERR_INVALID_PARAMS;
+
+    SetTraceStrings(m_Profile & VA_CODEC);
+
     // display initialization
     if((UMC_OK == umcRes) && !pParams->isExt)
     {
@@ -587,6 +592,7 @@ Status LinuxVideoAccelerator::BeginFrame(Ipp32s FrameBufIndex)
         {
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
+                MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, m_sDecodeTraceStart, "%d|%d", m_context, 0);
                 va_res = vaBeginPicture(m_dpy, m_context, m_surfaces[FrameBufIndex]);
             }
             umcRes = va_to_umc_res(va_res);
@@ -856,6 +862,7 @@ Status LinuxVideoAccelerator::EndFrame(void*)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
             va_sts = vaEndPicture(m_dpy, m_context);
+            MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, m_sDecodeTraceEnd, "%d|%d", m_context, 0);
         }
         if (VA_STATUS_SUCCESS != va_sts) va_res = va_sts;
         m_FrameState = lvaBeforeBegin;
@@ -944,6 +951,50 @@ VAStatus LinuxVideoAccelerator::GetDecodingError()
     }
 #endif
     return error;
+}
+
+
+void LinuxVideoAccelerator::SetTraceStrings(Ipp32u umc_codec)
+{
+    switch (umc_codec)
+    {
+    case UMC::VA_MPEG2:
+        m_sDecodeTraceStart = "A|DECODE|MPEG2|PACKET_START|";
+        m_sDecodeTraceEnd = "A|DECODE|MPEG2|PACKET_END|";
+        break;
+    case UMC::VA_MPEG4:
+        m_sDecodeTraceStart = "A|DECODE|MPEG4|PACKET_START|";
+        m_sDecodeTraceEnd = "A|DECODE|MPEG4|PACKET_END|";
+        break;
+    case UMC::VA_H264:
+        m_sDecodeTraceStart = "A|DECODE|H264|PACKET_START|";
+        m_sDecodeTraceEnd = "A|DECODE|H264|PACKET_END|";
+        break;
+    case UMC::VA_H265:
+        m_sDecodeTraceStart = "A|DECODE|H265|PACKET_START|";
+        m_sDecodeTraceEnd = "A|DECODE|H265|PACKET_END|";
+        break;
+    case UMC::VA_VC1:
+        m_sDecodeTraceStart = "A|DECODE|VC1|PACKET_START|";
+        m_sDecodeTraceEnd = "A|DECODE|VC1|PACKET_END|";
+        break;
+    case UMC::VA_VP8:
+        m_sDecodeTraceStart = "A|DECODE|VP8|PACKET_START|";
+        m_sDecodeTraceEnd = "A|DECODE|VP8|PACKET_END|";
+        break;
+    case UMC::VA_VP9:
+        m_sDecodeTraceStart = "A|DECODE|VP9|PACKET_START|";
+        m_sDecodeTraceEnd = "A|DECODE|VP9|PACKET_END|";
+        break;
+    case UMC::VA_JPEG:
+        m_sDecodeTraceStart = "A|DECODE|JPEG|PACKET_START|";
+        m_sDecodeTraceEnd = "A|DECODE|JPEG|PACKET_END|";
+        break;
+    default:
+        m_sDecodeTraceStart = "";
+        m_sDecodeTraceEnd = "";
+        break;
+    }
 }
 
 Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * status, void * error)

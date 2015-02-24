@@ -1440,7 +1440,7 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_PRIVATE, "DDI_ENC");
         MFX_LTRACE_I(MFX_TRACE_LEVEL_PRIVATE, pExecuteBuffers->m_idxMb);
-
+        MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|ENCODE|MPEG2|PACKET_START|", "%d|%d", m_vaContextEncode, 0);
 
         //TODO: external frame HDL??
         {
@@ -1473,7 +1473,7 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
             vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
-        
+        MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|ENCODE|MPEG2|PACKET_END|", "%d|%d", m_vaContextEncode, 0);
         //vaSts = vaSyncSurface(m_vaDisplay, *(VASurfaceID*)pExecuteBuffers->m_pSurface);
         //MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 

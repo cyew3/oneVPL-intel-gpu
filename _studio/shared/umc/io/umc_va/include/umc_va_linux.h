@@ -121,6 +121,8 @@ protected:
     // LinuxVideoAccelerator methods
     VAStatus GetDecodingError();
 
+    void SetTraceStrings(Ipp32u umc_codec);
+
 protected:
     VADisplay     m_dpy;
     VAConfigID    m_config_id;
@@ -137,6 +139,8 @@ protected:
 
     // introduced for MediaSDK
     bool    m_bIsExtSurfaces;
+    const char * m_sDecodeTraceStart;
+    const char * m_sDecodeTraceEnd;
 
     GUID m_guidDecoder;
 };

@@ -26,6 +26,7 @@ extern "C"
 #include "mfx_trace_etw.h"
 #include "mfx_trace_tal.h"
 #include "mfx_trace_itt.h"
+#include "mfx_trace_ftrace.h"
 }
 #include <stdlib.h>
 #include <string.h>
@@ -150,6 +151,19 @@ mfxTraceAlgorithm g_TraceAlgorithms[] =
         MFXTraceITT_BeginTask,
         MFXTraceITT_EndTask,
         MFXTraceITT_Close
+    },
+#endif
+#ifdef MFX_TRACE_ENABLE_FTRACE
+    {
+        0,
+        MFX_TRACE_OUTPUT_FTRACE,
+        MFXTraceFtrace_Init,
+        MFXTraceFtrace_SetLevel,
+        MFXTraceFtrace_DebugMessage,
+        MFXTraceFtrace_vDebugMessage,
+        MFXTraceFtrace_BeginTask,
+        MFXTraceFtrace_EndTask,
+        MFXTraceFtrace_Close
     },
 #endif
 };

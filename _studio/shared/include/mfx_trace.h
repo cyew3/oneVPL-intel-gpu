@@ -23,12 +23,16 @@ Purpose: contains definition data for MFX tracing.
 #define MFX_TRACE_ENABLE_ETW
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
+#if defined(LINUX32)
+#define MFX_TRACE_ENABLE_FTRACE
+#endif
+
 //#define MFX_TRACE_ENABLE_ITT
 //#define MFX_TRACE_ENABLE_TEXTLOG
 //#define MFX_TRACE_ENABLE_STAT
 //#define MFX_TRACE_ENABLE_TAL
 
-#if defined(MFX_TRACE_ENABLE_TEXTLOG) || defined(MFX_TRACE_ENABLE_STAT) || defined(MFX_TRACE_ENABLE_ETW) || defined(MFX_TRACE_ENABLE_ITT)
+#if defined(MFX_TRACE_ENABLE_TEXTLOG) || defined(MFX_TRACE_ENABLE_STAT) || defined(MFX_TRACE_ENABLE_ETW) || defined(MFX_TRACE_ENABLE_ITT) || defined(MFX_TRACE_ENABLE_FTRACE)
 #define MFX_TRACE_ENABLE
 #endif
 #endif // #ifndef MFX_TRACE_DISABLE
@@ -75,6 +79,7 @@ enum
     MFX_TRACE_OUTPUT_ETW    = 0x04,
     MFX_TRACE_OUTPUT_TAL    = 0x08,
     MFX_TRACE_OUTPUT_ITT    = 0x10,
+    MFX_TRACE_OUTPUT_FTRACE = 0x20,
     // special keys
     MFX_TRACE_OUTPUT_ALL     = 0xFFFFFFFF,
     MFX_TRACE_OUTPUT_REG     = MFX_TRACE_OUTPUT_ALL // output mode should be read from registry
@@ -112,7 +117,6 @@ typedef enum
 #define MFX_TRACE_LEVEL_PARAMS      MFX_TRACE_LEVEL_8
 #define MFX_TRACE_LEVEL_PRIVATE     MFX_TRACE_LEVEL_16
 #define MFX_TRACE_LEVEL_INTERNAL_VTUNE    MFX_TRACE_LEVEL_6
-
 
 // defines default trace category
 #define MFX_TRACE_CATEGORY_DEFAULT  NULL
