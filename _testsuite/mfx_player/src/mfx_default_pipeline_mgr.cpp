@@ -32,10 +32,6 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
 {
     try
     {
-#if (defined(_WIN32) || defined(_WIN64)) && (defined (DEBUG) || defined(_DEBUG))
-        _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
-#endif
-
         std::auto_ptr<IMFXPipeline> pPipeline;
         MFX_CHECK_WITH_ERR(NULL != (pPipeline.reset(pCfg->CreatePipeline()), pPipeline.get()), 1);
 

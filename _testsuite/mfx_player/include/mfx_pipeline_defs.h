@@ -17,25 +17,6 @@ File Name: .h
 #define _ATL_DISABLE_NOTHROW_NEW
 
 #if defined(_WIN32) || defined(_WIN64)
-#if defined (DEBUG) || defined(_DEBUG)
-
-    #define _CRTDBG_MAP_ALLOC
-    #include<iostream>
-    #include<crtdbg.h>
-    #include<xtree>
-
-    #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
-    #define new DEBUG_NEW
-
-#else
-
-    #include<crtdbg.h>
-    #include<xtree>
-
-    #define NOTHROW_NEW new(std::nothrow)
-    #define new NOTHROW_NEW
-
-#endif // #if defined (DEBUG) || defined(_DEBUG)
 
 #include <windows.h>
 #endif // #if defined(_WIN32) || defined(_WIN64)
