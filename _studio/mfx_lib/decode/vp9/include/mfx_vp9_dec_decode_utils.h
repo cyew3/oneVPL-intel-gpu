@@ -157,6 +157,11 @@ namespace MfxVP9Decode
     static const mfxU8 MAXQ = 255;
     static const mfxU16 QINDEX_RANGE = MAXQ - MINQ + 1;
 
+    typedef struct {
+        mfxU32 width;
+        mfxU32 height;
+    } SizeOfFrame;
+
     typedef struct
     {
         VM_ALIGN16_DECL(mfxI16) yDequant[QINDEX_RANGE][8];
@@ -179,6 +184,8 @@ namespace MfxVP9Decode
 
         mfxI32 activeRefIdx[REFS_PER_FRAME];
         UMC::FrameMemID ref_frame_map[NUM_REF_FRAMES]; /* maps fb_idx to reference slot */
+
+        SizeOfFrame sizesOfRefFrame[NUM_REF_FRAMES];
 
         VP9_FRAME_TYPE frameType;
 
@@ -284,6 +291,8 @@ namespace MfxVP9Decode
     void GetDisplaySize(InputBitstream *pBs, VP9FrameInfo & info);
 
     void GetFrameSize(InputBitstream *pBs, VP9FrameInfo & info);
+
+    mfxStatus GetBitDepthAndColorSpace(InputBitstream *pBs, VP9FrameInfo & info);
 
     void GetFrameSizeWithRefs(InputBitstream *pBs, VP9FrameInfo & info);
 

@@ -104,10 +104,15 @@ private:
     StatuReportList m_completedList;
 
     VP9FrameInfo m_frameInfo;
-    struct {
+
+    typedef struct {
         mfxU32 width;
         mfxU32 height;
-    } m_firstSizes;
+    } SizeOfFrame;
+
+    SizeOfFrame m_firstSizes;
+
+    SizeOfFrame m_sizesOfRefFrame[NUM_REF_FRAMES];
     
     mfxBitstream m_bs;
 

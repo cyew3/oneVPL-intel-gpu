@@ -112,18 +112,27 @@ void MSDKSemaphore::Post(void)
 
 void MSDKSemaphore::Wait(void)
 {
-    if (0 <= m_count)
+    if (m_count < 0)
+        return; // error
+
+    bool bError = false;
+
+    if (pthread_mutex_lock(&m_mutex))
+        return; // error
+
+    while (!m_count)
     {
-        bool bError = false;
-
-        pthread_mutex_lock(&m_mutex);
-
-        if ((0 == m_count) && (0 != pthread_cond_wait(&m_semaphore, &m_mutex)))
+        if (pthread_cond_wait(&m_semaphore, &m_mutex))
+        {
             bError = true;
-        if (!bError) --m_count;
-
-        pthread_mutex_unlock(&m_mutex);
+            break;
+        }
     }
+
+    if (!bError)
+        --m_count;
+
+    pthread_mutex_unlock(&m_mutex);
 }
 
 /* ****************************************************************************** */
@@ -174,8 +183,17 @@ void MSDKEvent::Wait(void)
     int res = pthread_mutex_lock(&m_mutex);
     if (!res)
     {
-        if (!m_state) pthread_cond_wait(&m_event, &m_mutex);
-        if (!m_manual) m_state = false;
+        if (!m_state)
+        {
+            while (!res && !m_state)
+            {
+                res = pthread_cond_wait(&m_event, &m_mutex);
+            }
+        }
+
+        if (!m_manual)
+            m_state = false;
+
         res = pthread_mutex_unlock(&m_mutex);
     }
 }

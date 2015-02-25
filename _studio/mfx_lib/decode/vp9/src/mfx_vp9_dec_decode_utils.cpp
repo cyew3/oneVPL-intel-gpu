@@ -48,6 +48,44 @@ namespace MfxVP9Decode
         GetDisplaySize(pBs, info);
     }
 
+    mfxStatus GetBitDepthAndColorSpace(InputBitstream *pBs, VP9FrameInfo & info)
+    {
+        if (info.profile >= 2)
+        {
+            info.bit_depth = pBs->GetBit() ? 12 : 10;
+        }
+        else
+            info.bit_depth = 8;
+
+        mfxU32 colorspace = pBs->GetBits(3);
+
+        if (colorspace != SRGB)
+        {
+            pBs->GetBit(); // 0: [16, 235] (i.e. xvYCC), 1: [0, 255]
+            if (1 == info.profile || 3 == info.profile)
+            {
+                info.subsamplingX = pBs->GetBit();
+                info.subsamplingY = pBs->GetBit();
+                pBs->GetBit(); // reserved bit
+            }
+            else
+                info.subsamplingY = info.subsamplingX = 1;
+        }
+        else
+        {
+            if (1 == info.profile || 3 == info.profile)
+            {
+                info.subsamplingX = 0;
+                info.subsamplingY = 0;
+                pBs->GetBit(); // reserved bit
+            }
+            else
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
+        return MFX_ERR_NONE;
+    }
+
     void GetFrameSizeWithRefs(InputBitstream *pBs, VP9FrameInfo & info)
     {
         bool bFound = false;
@@ -56,6 +94,8 @@ namespace MfxVP9Decode
             if (pBs->GetBit())
             {
                 bFound = true;
+                info.width = info.sizesOfRefFrame[i].width;
+                info.height = info.sizesOfRefFrame[i].height;
                 break;
             }
         }

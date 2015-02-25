@@ -31,6 +31,11 @@
 
 static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar);
 
+static inline void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
+{
+    memcpy_s(dst, dstLen, src, len);
+}
+
 VideoDECODEVP9_HW::VideoDECODEVP9_HW(VideoCORE *p_core, mfxStatus *sts)
     : m_isInit(false),
       m_is_software_buffer(false),
@@ -399,7 +404,7 @@ mfxStatus VideoDECODEVP9_HW::GetDecodeStat(mfxDecodeStat *pStat)
     m_stat.NumSkippedFrame = 0;
     m_stat.NumCachedFrame = 0;
 
-    memcpy(pStat, &m_stat, sizeof(m_stat));
+    mfx_memcpy(pStat, sizeof(m_stat), &m_stat, sizeof(m_stat));
 
     return MFX_ERR_NONE;
 }
@@ -485,6 +490,8 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         UMC::AutomaticUMCMutex guard(decoder.m_mGuard);
         if (data.currFrameId != -1)
            decoder.m_FrameAllocator.get()->DecreaseReference(data.currFrameId);
+
+        decoder.m_FrameAllocator.get()->DecreaseReference(data.copyFromFrame);
 
         return MFX_ERR_NONE;
     }
@@ -621,10 +628,13 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     {
         if (m_frameInfo.width > m_vInitPar.mfx.FrameInfo.Width || m_frameInfo.height > m_vInitPar.mfx.FrameInfo.Height)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+        m_firstSizes.width = m_frameInfo.width;
+        m_firstSizes.height = m_frameInfo.height;
     }
     else
     {
-        if (m_frameInfo.width != m_firstSizes.width || m_frameInfo.height != m_firstSizes.height)
+        if (m_frameInfo.width > m_firstSizes.width || m_frameInfo.height > m_firstSizes.height)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
 
@@ -633,9 +643,6 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         bs->DataOffset += bs->DataLength;
         bs->DataLength = 0;
     }
-
-    m_firstSizes.width = m_frameInfo.width;
-    m_firstSizes.height = m_frameInfo.height;
 
     if (UMC::UMC_OK != m_FrameAllocator->IncreaseReference(m_frameInfo.currFrame))
     {
@@ -662,6 +669,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     else
     {
         repeateFrame = m_frameInfo.ref_frame_map[m_frameInfo.frame_to_show];
+        m_FrameAllocator->IncreaseReference(repeateFrame);
     }
 
     p_entry_point->pRoutine = &VP9DECODERoutine;
@@ -686,8 +694,8 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         (*surface_out)->Data.Corrupted = 0;
         (*surface_out)->Data.FrameOrder = m_frameOrder;
 
-        (*surface_out)->Info.CropW = (mfxU16)m_frameInfo.displayWidth;
-        (*surface_out)->Info.CropH = (mfxU16)m_frameInfo.displayHeight;
+        (*surface_out)->Info.CropW = (mfxU16)m_frameInfo.width;
+        (*surface_out)->Info.CropH = (mfxU16)m_frameInfo.height;
 
         m_frameOrder++;
         return MFX_ERR_NONE;
@@ -771,35 +779,9 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
         if (0x49 != bsReader.GetBits(8) || 0x83 != bsReader.GetBits(8) || 0x42 != bsReader.GetBits(8))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-        if (info.profile >= 2)
-        {
-            info.bit_depth = bsReader.GetBit() ? 12 : 10;
-        }
-        else
-            info.bit_depth = 8;
-        
-        if (SRGB != bsReader.GetBits(3))
-        {
-            bsReader.GetBit(); // 0: [16, 235] (i.e. xvYCC), 1: [0, 255]
-            if (1 == info.profile || 3 == info.profile)
-            {
-                info.subsamplingX = bsReader.GetBit();
-                info.subsamplingY = bsReader.GetBit();
-                bsReader.GetBit(); // has extra plane
-            }
-            else
-                info.subsamplingY = info.subsamplingX = 1;
-        }
-        else
-        {
-            if (1 == info.profile || 3 == info.profile)
-            {
-                info.subsamplingY = info.subsamplingX = 0;
-                bsReader.GetBit();  // has extra plane
-            }
-            else
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-        }
+        mfxStatus status = GetBitDepthAndColorSpace(&bsReader, info);
+        if (status != MFX_ERR_NONE)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         info.refreshFrameFlags = (1 << NUM_REF_FRAMES) - 1;
 
@@ -807,6 +789,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
         {
             info.activeRefIdx[i] = 0;
         }
+
         GetFrameSize(&bsReader, info);
     }
     else
@@ -820,36 +803,14 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & 
             if (0x49 != bsReader.GetBits(8) || 0x83 != bsReader.GetBits(8) || 0x42 != bsReader.GetBits(8))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-            if (info.profile >= 2)
+            mfxU32 color_space = 0;
+            if (info.profile > 0)
             {
-                info.bit_depth = bsReader.GetBit() ? 12 : 10;
-            }
-            else
-                info.bit_depth = 8;
-        
-            if (SRGB != bsReader.GetBits(3))
-            {
-                bsReader.GetBit(); // 0: [16, 235] (i.e. xvYCC), 1: [0, 255]
-                if (1 == info.profile || 3 == info.profile)
-                {
-                    info.subsamplingX = bsReader.GetBit();
-                    info.subsamplingY = bsReader.GetBit();
-                    bsReader.GetBit(); // has extra plane
-                }
-                else
-                    info.subsamplingY = info.subsamplingX = 1;
-            }
-            else
-            {
-                if (1 == info.profile || 3 == info.profile)
-                {
-                    info.subsamplingY = info.subsamplingX = 0;
-                    bsReader.GetBit();  // has extra plane
-                }
-                else
+                mfxStatus status = GetBitDepthAndColorSpace(&bsReader, info);
+                if (status != MFX_ERR_NONE)
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
-
+        
             info.refreshFrameFlags = (mfxU8)bsReader.GetBits(NUM_REF_FRAMES);
 
             GetFrameSize(&bsReader, info);
@@ -1090,6 +1051,10 @@ mfxStatus VideoDECODEVP9_HW::UpdateRefFrames(const mfxU8 refreshFrameFlags, VP9F
             }
 
             info.ref_frame_map[ref_index] = info.currFrame;
+
+            info.sizesOfRefFrame[ref_index].width = info.width;
+            info.sizesOfRefFrame[ref_index].height = info.height;
+
             if (m_FrameAllocator->IncreaseReference(info.currFrame) != UMC::UMC_OK)
                 return MFX_ERR_UNKNOWN;
         }
@@ -1221,7 +1186,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
     if (NULL == bistreamData)
         return MFX_ERR_MEMORY_ALLOC;
 
-    memcpy(bistreamData, bs->Data + bs->DataOffset, bs->DataLength);
+    mfx_memcpy(bistreamData, bs->DataLength, bs->Data + bs->DataOffset, bs->DataLength);
     pCompBuf->SetDataSize(bs->DataLength);
 
     return MFX_ERR_NONE;
@@ -1362,7 +1327,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
 		if (compBufBs->GetBufferSize() < (mfxI32)lenght)
 			return MFX_ERR_MEMORY_ALLOC;//lenght2 = compBufBs->GetBufferSize();
 
-		memcpy(bistreamData, bs->Data + offset, lenght2);
+		mfx_memcpy(bistreamData, lenght2, bs->Data + offset, lenght2);
 		compBufBs->SetDataSize(lenght2);
 
 		lenght -= lenght2;

@@ -1355,8 +1355,6 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, 
                 if (profile >= 4)
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-                bsReader.GetBit(); // skip unused version bit
-
                 if (false == bsReader.GetBit()) // show_existing_frame
                 {
                     if (MfxVP9Decode::KEY_FRAME == (MfxVP9Decode::VP9_FRAME_TYPE)bsReader.GetBit())
@@ -1364,6 +1362,11 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, 
                         bsReader.GetBit(); // show_frame
                         bsReader.GetBit(); // error_resilient_mode
                         bsReader.GetBits(24); // start_code
+
+                        if (profile >= 2)
+                        {
+                            bsReader.GetBit();
+                        }
 
                         if (MfxVP9Decode::SRGB != (MfxVP9Decode::COLOR_SPACE)bsReader.GetBits(3)) // color_space
                         {

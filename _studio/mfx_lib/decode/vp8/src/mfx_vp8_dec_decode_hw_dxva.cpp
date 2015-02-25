@@ -265,14 +265,14 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         offset = 3;
     }
 
-    memcpy(bistreamData, pBuffer + offset, size - offset);
+    memcpy_s(bistreamData, size - offset, pBuffer + offset, size - offset);
     compBufBs->SetDataSize((Ipp32s)size - offset);
 
     UMCVACompBuffer* compBufCp;
     Ipp8u(*coeffProbs)[8][3][11] = (Ipp8u(*)[8][3][11])m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_VP8_COEFFICIENT_PROBABILITIES, &compBufCp);
 
     // [4][8][3][11]
-    memcpy(coeffProbs, m_frameProbs.coeff_probs, sizeof(Ipp8u)* 4 * 8 * 3 * 11);
+    memcpy_s(coeffProbs, sizeof(Ipp8u)* 4 * 8 * 3 * 11, m_frameProbs.coeff_probs, sizeof(Ipp8u)* 4 * 8 * 3 * 11);
 
 
     /*{

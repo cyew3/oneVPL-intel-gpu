@@ -808,7 +808,7 @@ mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetSurfaceByIndex(UMC::FrameMemID ind
     {
         if ((Ipp32u)index >= m_frameData.size())
             return 0;
-        return &m_frameData[index].first;
+        return m_extSurfaces[index].FrameSurface;
     }
 
     return 0;
