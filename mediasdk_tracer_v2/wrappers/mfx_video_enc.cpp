@@ -15,7 +15,7 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENC_Query];
+        mfxFunctionPointer proc = loader->table[eMFXVideoENC_Query_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -52,7 +52,7 @@ mfxStatus MFXVideoENC_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENC_QueryIOSurf];
+        mfxFunctionPointer proc = loader->table[eMFXVideoENC_QueryIOSurf_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -89,7 +89,7 @@ mfxStatus MFXVideoENC_Init(mfxSession session, mfxVideoParam *par)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENC_Init];
+        mfxFunctionPointer proc = loader->table[eMFXVideoENC_Init_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -124,7 +124,7 @@ mfxStatus MFXVideoENC_Reset(mfxSession session, mfxVideoParam *par)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENC_Reset];
+        mfxFunctionPointer proc = loader->table[eMFXVideoENC_Reset_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -159,7 +159,7 @@ mfxStatus MFXVideoENC_Close(mfxSession session)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENC_Close];
+        mfxFunctionPointer proc = loader->table[eMFXVideoENC_Close_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -185,35 +185,57 @@ mfxStatus MFXVideoENC_Close(mfxSession session)
 mfxStatus MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp)
 {
     try {
-        DumpContext context;
-        context.context = DUMPCONTEXT_MFX;
-        Log::WriteLog("function: MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp) +");
-        mfxLoader *loader = (mfxLoader*) session;
+        if (Log::GetLogLevel() >= LOG_LEVEL_FULL) // call with logging
+        {
+            DumpContext context;
+            context.context = DUMPCONTEXT_MFX;
+            Log::WriteLog("function: MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp) +");
+            mfxLoader *loader = (mfxLoader*) session;
 
-        if (!loader) return MFX_ERR_INVALID_HANDLE;
+            if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENC_ProcessFrameAsync];
-        if (!proc) return MFX_ERR_INVALID_HANDLE;
+            mfxFunctionPointer proc = loader->table[eMFXVideoENC_ProcessFrameAsync_tracer];
+            if (!proc) return MFX_ERR_INVALID_HANDLE;
 
-        session = loader->session;
-        Log::WriteLog(context.dump("session", session));
-        if (in) Log::WriteLog(context.dump("in", *in));
-        if (out) Log::WriteLog(context.dump("out", *out));
-        Log::WriteLog(context.dump("syncp", *syncp));
+            session = loader->session;
+            Log::WriteLog(context.dump("session", session));
+            if (in) Log::WriteLog(context.dump("in", *in));
+            if (out) Log::WriteLog(context.dump("out", *out));
+            Log::WriteLog(context.dump("syncp", *syncp));
+        
+            Timer t;
+            mfxStatus status = (*(fMFXVideoENC_ProcessFrameAsync) proc)(session, in, out, syncp);
+            std::string elapsed = TimeToString(t.GetTime());
+        
+            Log::WriteLog(">> MFXVideoENC_ProcessFrameAsync called");
 
-        Timer t;
-        mfxStatus status = (*(fMFXVideoENC_ProcessFrameAsync) proc)(session, in, out, syncp);
-        std::string elapsed = TimeToString(t.GetTime());
+            Log::WriteLog(context.dump("session", session));
+            if (in) Log::WriteLog(context.dump("in", *in));
+            if (out) Log::WriteLog(context.dump("out", *out));
+            Log::WriteLog(context.dump("syncp", *syncp));
 
-        Log::WriteLog(">> MFXVideoENC_ProcessFrameAsync called");
+            Log::WriteLog("function: MFXVideoENC_ProcessFrameAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+          
+            return status;
+        }
+        else // call without logging
+        {
+            DumpContext context;
+            context.context = DUMPCONTEXT_MFX;
+            
+            mfxLoader *loader = (mfxLoader*) session;
 
-        Log::WriteLog(context.dump("session", session));
-        if (in) Log::WriteLog(context.dump("in", *in));
-        if (out) Log::WriteLog(context.dump("out", *out));
-        Log::WriteLog(context.dump("syncp", *syncp));
+            if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        Log::WriteLog("function: MFXVideoENC_ProcessFrameAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
-        return status;
+            mfxFunctionPointer proc = loader->table[eMFXVideoENC_ProcessFrameAsync_tracer];
+            if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+            session = loader->session;
+            
+            mfxStatus status = (*(fMFXVideoENC_ProcessFrameAsync) proc)(session, in, out, syncp);
+            
+            return status;
+        }
     }
     catch (std::exception& e) {
         std::cerr << "Exception: " << e.what() << '\n';

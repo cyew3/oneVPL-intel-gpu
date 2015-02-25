@@ -12,8 +12,13 @@
 #include "mfxfei.h"
 #include "mfxla.h"
 #include "mfxvp8.h"
+#include "mfxcamera.h"
 
-std::string StringToHexString(std::string data);
+
+std::string pVoidToHexString(void* x);
+std::string GetStatusString(mfxStatus sts);
+std::string GetmfxIMPL(mfxIMPL impl);
+std::string GetFourCC(mfxU32 fourcc);
 
 #define GET_ARRAY_SIZE(x) sizeof(x)/sizeof(x[0])
 #define DUMP_RESERVED_ARRAY(r) dump_reserved_array(&(r[0]), GET_ARRAY_SIZE(r))
@@ -24,8 +29,8 @@ std::string StringToHexString(std::string data);
 #define DUMP_FIELD_RESERVED(_field) \
     str += structName + "." #_field "[]=" + DUMP_RESERVED_ARRAY(_struct._field) + "\n";
 
-#define ToString( x ) dynamic_cast< std::ostringstream & >( \
-        ( std::ostringstream() << std::dec << x ) ).str()
+#define ToString( x )  dynamic_cast< std::ostringstream & >( \
+    ( std::ostringstream() << std::dec << x ) ).str()
 
 #define TimeToString( x ) dynamic_cast< std::ostringstream & >( \
         ( std::ostringstream() << std::left << std::setw(4) << std::dec << x <<" msec") ).str()
@@ -35,7 +40,8 @@ std::string StringToHexString(std::string data);
         ( std::ostringstream() << std::hex << x ) ).str()
 */
 
-#define ToHexFormatString( x ) StringToHexString(dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str() )
+#define ToHexFormatString( x ) (dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::hex << pVoidToHexString((void*)x) ) ).str() )
+
 
 //#define DEFINE_GET_TYPE(type) \
 //    template<> \
@@ -132,6 +138,33 @@ public:
                   case MFX_EXTBUFF_ENCODER_RESET_OPTION:
                     str += dump(name, *((mfxExtEncoderResetOption*)_struct.ExtParam[i])) + "\n";
                     break;
+                  case  MFX_EXTBUF_CAM_GAMMA_CORRECTION:
+                    str += dump(name, *((mfxExtCamGammaCorrection*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case  MFX_EXTBUF_CAM_WHITE_BALANCE:
+                    str += dump(name, *((mfxExtCamWhiteBalance*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case  MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL:
+                    str += dump(name, *((mfxExtCamHotPixelRemoval*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case  MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION:
+                    str += dump(name, *((mfxExtCamBlackLevelCorrection*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case  MFX_EXTBUF_CAM_VIGNETTE_CORRECTION:
+                    str += dump(name, *((mfxExtCamVignetteCorrection*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case  MFX_EXTBUF_CAM_BAYER_DENOISE:
+                    str += dump(name, *((mfxExtCamBayerDenoise*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case  MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3:
+                    str += dump(name, *((mfxExtCamColorCorrection3x3*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case  MFX_EXTBUF_CAM_PADDING:
+                    str += dump(name, *((mfxExtCamPadding*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case  MFX_EXTBUF_CAM_PIPECONTROL:
+                    str += dump(name, *((mfxExtCamPipeControl*)_struct.ExtParam[i])) + "\n";
+                    break;
                   default:
                     str += dump(name, *(_struct.ExtParam[i])) + "\n";
                     break;
@@ -226,6 +259,19 @@ public:
 
     //mfxvp8
     DEFINE_DUMP_FUNCTION(mfxExtVP8CodingOption)
+
+    //mfxcamera
+    DEFINE_DUMP_FUNCTION(mfxExtCamGammaCorrection);
+    DEFINE_DUMP_FUNCTION(mfxExtCamWhiteBalance);
+    DEFINE_DUMP_FUNCTION(mfxExtCamHotPixelRemoval);
+    DEFINE_DUMP_FUNCTION(mfxExtCamBlackLevelCorrection);
+    DEFINE_DUMP_FUNCTION(mfxVignetteCorrectionParams);
+    DEFINE_DUMP_FUNCTION(mfxExtCamVignetteCorrection);
+    DEFINE_DUMP_FUNCTION(mfxExtCamBayerDenoise);
+    DEFINE_DUMP_FUNCTION(mfxExtCamColorCorrection3x3);
+    DEFINE_DUMP_FUNCTION(mfxExtCamPadding);
+    DEFINE_DUMP_FUNCTION(mfxExtCamPipeControl);
+
 
 };
 #endif //DUMP_H_

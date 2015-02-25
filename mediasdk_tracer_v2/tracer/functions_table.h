@@ -4,17 +4,18 @@
 #include "mfxvideo.h"
 #include "mfxplugin.h"
 
+
 #include "../loggers/log.h"
 #include "../dumps/dump.h"
 
 #undef FUNCTION
 #define FUNCTION(return_value, func_name, formal_param_list, actual_param_list) \
-    e##func_name,
+    e##func_name##_tracer,
 
 typedef enum _mfxFunction
 {
-    eMFXInit,
-    eMFXClose,
+    eMFXInit_tracer,
+    eMFXClose_tracer,
 #include "bits/mfxfunctions.h"
     eFunctionsNum,
     eNoMoreFunctions = eFunctionsNum
@@ -22,7 +23,7 @@ typedef enum _mfxFunction
 
 #undef FUNCTION
 #define FUNCTION(return_value, func_name, formal_param_list, actual_param_list) \
-    { e##func_name, #func_name },
+   { e##func_name##_tracer, #func_name },
 
 typedef struct _mfxFunctionsTable
 {
@@ -32,8 +33,8 @@ typedef struct _mfxFunctionsTable
 
 static const mfxFunctionsTable g_mfxFuncTable[] =
 {
-    { eMFXInit, "MFXInit" },
-    { eMFXClose, "MFXClose" },
+    { eMFXInit_tracer, "MFXInit" },
+    { eMFXClose_tracer, "MFXClose" },
 #include "bits/mfxfunctions.h"
     { eNoMoreFunctions, NULL }
 };

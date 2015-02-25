@@ -121,9 +121,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(NumSliceP);
     DUMP_FIELD(NumSliceB);
 
-    DUMP_FIELD(WinBRCMaxAvgKbps);
-    DUMP_FIELD(WinBRCSize);
-
+    DUMP_FIELD(WinBRCMaxAvgKbps);		
+    DUMP_FIELD(WinBRCSize);		
+ 
     DUMP_FIELD(QVBRQuality);
     DUMP_FIELD(EnableMBQP);
     DUMP_FIELD(IntRefCycleDist);
@@ -228,7 +228,7 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameInfo &
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(info.reserved) + "\n";
     str += dump(structName + ".mfxFrameId", info.FrameId) + "\n";
-    str += structName + ".FourCC=" + ToString(info.FourCC) + "\n";
+    str += structName + ".FourCC=" + GetFourCC(info.FourCC) + "\n";
     str += structName + ".Width=" + ToString(info.Width) + "\n";
     str += structName + ".Height=" + ToString(info.Height) + "\n";
     str += structName + ".CropX=" + ToString(info.CropX) + "\n";
@@ -358,5 +358,118 @@ std::string DumpContext::dump(const std::string structName, const mfxVPPStat &vp
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(vppStat.reserved) + "\n";
     str += structName + ".NumFrame=" + ToString(vppStat.NumFrame) + "\n";
     str += structName + ".NumCachedFrame=" + ToString(vppStat.NumCachedFrame);
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCamGammaCorrection &CamGammaCorrection)
+{
+    std::string str;
+    str += dump(structName + ".Header=", CamGammaCorrection.Header) + "\n";
+    str += structName + ".Mode=" + ToString(CamGammaCorrection.Mode) + "\n";
+    str += structName + ".reserved1=" + ToString(CamGammaCorrection.reserved1) + "\n";
+    str += structName + ".GammaValue=" + ToString(CamGammaCorrection.GammaValue) + "\n";
+    str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(CamGammaCorrection.reserved2) + "\n";
+    str += structName + ".NumPoints=" + ToString(CamGammaCorrection.NumPoints) + "\n";
+    str += structName + ".GammaPoint=" + ToString(CamGammaCorrection.GammaPoint) + "\n";
+    str += structName + ".GammaCorrected=" + ToString(CamGammaCorrection.GammaCorrected) + "\n";
+    str += structName + ".reserved3[]=" + DUMP_RESERVED_ARRAY(CamGammaCorrection.reserved3) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCamWhiteBalance &CamWhiteBalance)
+{
+    std::string str;
+    str += dump(structName + ".Header=", CamWhiteBalance.Header) + "\n";
+    str += structName + ".Mode=" + ToString(CamWhiteBalance.Mode) + "\n";
+    str += structName + ".R=" + ToString(CamWhiteBalance.R) + "\n";
+    str += structName + ".G0=" + ToString(CamWhiteBalance.G0) + "\n";
+    str += structName + ".B=" + ToString(CamWhiteBalance.B) + "\n";
+    str += structName + ".G1=" + ToString(CamWhiteBalance.G1) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamWhiteBalance.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCamHotPixelRemoval &CamHotPixelRemoval)
+{
+    std::string str;
+    str += dump(structName + ".Header=", CamHotPixelRemoval.Header) + "\n";
+    str += structName + ".PixelThresholdDifference=" + ToString(CamHotPixelRemoval.PixelThresholdDifference) + "\n";
+    str += structName + ".PixelCountThreshold=" + ToString(CamHotPixelRemoval.PixelCountThreshold) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCamBlackLevelCorrection &CamBlackLevelCorrection)
+{
+    std::string str;
+    str += dump(structName + ".Header=", CamBlackLevelCorrection.Header) + "\n";
+    str += structName + ".R=" + ToString(CamBlackLevelCorrection.R) + "\n";
+    str += structName + ".G0=" + ToString(CamBlackLevelCorrection.G0) + "\n";
+    str += structName + ".B=" + ToString(CamBlackLevelCorrection.B) + "\n";
+    str += structName + ".G1=" + ToString(CamBlackLevelCorrection.G1) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamBlackLevelCorrection.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxVignetteCorrectionParams &VignetteCorrectionParams)
+{
+    std::string str;
+    str += structName + ".R=" + ToString(VignetteCorrectionParams.R) + "\n";
+    str += structName + ".G0=" + ToString(VignetteCorrectionParams.G0) + "\n";
+    str += structName + ".B=" + ToString(VignetteCorrectionParams.B) + "\n";
+    str += structName + ".G1=" + ToString(VignetteCorrectionParams.G1) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCamVignetteCorrection &CamVignetteCorrection)
+{
+    std::string str;
+    str += dump(structName + ".Header=", CamVignetteCorrection.Header) + "\n";
+    str += structName + ".Width=" + ToString(CamVignetteCorrection.Width) + "\n";
+    str += structName + ".Height=" + ToString(CamVignetteCorrection.Height) + "\n";
+    str += structName + ".Pitch=" + ToString(CamVignetteCorrection.Pitch) + "\n";
+    str += structName + ".MaskPrecision=" + ToString(CamVignetteCorrection.MaskPrecision) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamVignetteCorrection.reserved) + "\n";
+    str += dump(structName + ".CorrectionMap", CamVignetteCorrection.CorrectionMap) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCamBayerDenoise &CamBayerDenoise)
+{
+    std::string str;
+    str += dump(structName + ".Header=", CamBayerDenoise.Header) + "\n";
+    str += structName + ".Threshold=" + ToString(CamBayerDenoise.Threshold) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamBayerDenoise.reserved) + "\n";
+    str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(CamBayerDenoise.reserved2) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCamColorCorrection3x3 &CamColorCorrection3x3)
+{
+    std::string str;
+    str += dump(structName + ".Header=", CamColorCorrection3x3.Header) + "\n";
+    str += structName + ".CCM*=" + ToString(CamColorCorrection3x3.CCM) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamColorCorrection3x3.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCamPadding &CamPadding)
+{
+    std::string str;
+    str += dump(structName + ".Header=", CamPadding.Header) + "\n";
+    str += structName + ".Top=" + ToString(CamPadding.Top) + "\n";
+    str += structName + ".Bottom=" + ToString(CamPadding.Bottom) + "\n";
+    str += structName + ".Left=" + ToString(CamPadding.Left) + "\n";
+    str += structName + ".Right=" + ToString(CamPadding.Right) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamPadding.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCamPipeControl &CamPipeControl)
+{
+    std::string str;
+    str += dump(structName + ".Header=", CamPipeControl.Header) + "\n";
+    str += structName + ".RawFormat=" + ToString(CamPipeControl.RawFormat) + "\n";
+    str += structName + ".reserved1=" + ToString(CamPipeControl.reserved1) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamPipeControl.reserved) + "\n";
     return str;
 }

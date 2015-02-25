@@ -16,7 +16,7 @@ mfxStatus MFXVideoCORE_SetBufferAllocator(mfxSession session, mfxBufferAllocator
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoCORE_SetBufferAllocator];
+        mfxFunctionPointer proc = loader->table[eMFXVideoCORE_SetBufferAllocator_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -48,7 +48,7 @@ mfxStatus MFXVideoCORE_SetFrameAllocator(mfxSession session, mfxFrameAllocator *
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoCORE_SetFrameAllocator];
+        mfxFunctionPointer proc = loader->table[eMFXVideoCORE_SetFrameAllocator_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -80,7 +80,7 @@ mfxStatus MFXVideoCORE_SetHandle(mfxSession session, mfxHandleType type, mfxHDL 
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoCORE_SetHandle];
+        mfxFunctionPointer proc = loader->table[eMFXVideoCORE_SetHandle_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -114,7 +114,7 @@ mfxStatus MFXVideoCORE_GetHandle(mfxSession session, mfxHandleType type, mfxHDL 
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoCORE_GetHandle];
+        mfxFunctionPointer proc = loader->table[eMFXVideoCORE_GetHandle_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -141,38 +141,66 @@ mfxStatus MFXVideoCORE_GetHandle(mfxSession session, mfxHandleType type, mfxHDL 
 mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait)
 {
     try{
-        DumpContext context;
-        context.context = DUMPCONTEXT_MFX;
-        TracerSyncPoint *sp = (TracerSyncPoint*)syncp;
-        if (!sp->syncPoint) {
-            // already synced
-            Log::WriteLog("Already synced");
-            return MFX_ERR_NONE;
+        if (Log::GetLogLevel() >= LOG_LEVEL_FULL) //call function with logging
+        {
+            DumpContext context;
+            context.context = DUMPCONTEXT_MFX;
+            TracerSyncPoint *sp = (TracerSyncPoint*)syncp;
+            if (!sp->syncPoint) {
+                // already synced
+                Log::WriteLog("Already synced");
+                return MFX_ERR_NONE;
+            }
+            Log::WriteLog("function: MFXVideoCORE_SyncOperation(mfxSession session=" + ToString(session) + ", mfxSyncPoint syncp=" + ToString(syncp) + ", mfxU32 wait=" + ToString(wait) + ") +");
+            if(sp) sp->component == ENCODE ? Log::WriteLog("SyncOperation(ENCODE," + TimeToString(sp->timer.GetTime()) + ")") : (sp->component == DECODE ? Log::WriteLog("SyncOperation(DECODE, " + ToString(sp->timer.GetTime()) + " sec)") : Log::WriteLog("SyncOperation(VPP, "  + ToString(sp->timer.GetTime()) + " sec)"));
+
+            mfxLoader *loader = (mfxLoader*) session;
+
+            if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+            mfxFunctionPointer proc = loader->table[eMFXVideoCORE_SyncOperation_tracer];
+            if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+            session = loader->session;
+            Log::WriteLog(context.dump("session", session));
+            Log::WriteLog(context.dump("syncp", syncp));
+            Log::WriteLog(context.dump_mfxU32("wait", wait));
+            
+            Timer t;
+            mfxStatus status = (*(fMFXVideoCORE_SyncOperation) proc) (session, sp->syncPoint, wait);
+            std::string elapsed = TimeToString(t.GetTime());
+
+            Log::WriteLog(">> MFXVideoCORE_SyncOperation called");
+            Log::WriteLog(context.dump("session", session));
+            Log::WriteLog(context.dump("syncp", sp->syncPoint));
+            Log::WriteLog(context.dump_mfxU32("wait", wait));
+            Log::WriteLog("function: MFXVideoCORE_SyncOperation(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+            
+            return status;
         }
-        Log::WriteLog("function: MFXVideoCORE_SyncOperation(mfxSession session=" + ToString(session) + ", mfxSyncPoint syncp=" + ToString(syncp) + ", mfxU32 wait=" + ToString(wait) + ") +");
-        if(sp) sp->component == ENCODE ? Log::WriteLog("SyncOperation(ENCODE," + TimeToString(sp->timer.GetTime()) + ")") : (sp->component == DECODE ? Log::WriteLog("SyncOperation(DECODE, " + ToString(sp->timer.GetTime()) + " sec)") : Log::WriteLog("SyncOperation(VPP, "  + ToString(sp->timer.GetTime()) + " sec)"));
+        else // call function without logging
+        {
+            DumpContext context;
+            context.context = DUMPCONTEXT_MFX;
+            TracerSyncPoint *sp = (TracerSyncPoint*)syncp;
+            if (!sp->syncPoint) {
+                // already synced
+                return MFX_ERR_NONE;
+            }
+            
+            mfxLoader *loader = (mfxLoader*) session;
 
-        mfxLoader *loader = (mfxLoader*) session;
+            if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        if (!loader) return MFX_ERR_INVALID_HANDLE;
+            mfxFunctionPointer proc = loader->table[eMFXVideoCORE_SyncOperation_tracer];
+            if (!proc) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoCORE_SyncOperation];
-        if (!proc) return MFX_ERR_INVALID_HANDLE;
-
-        session = loader->session;
-        Log::WriteLog(context.dump("session", session));
-        Log::WriteLog(context.dump("syncp", syncp));
-        Log::WriteLog(context.dump_mfxU32("wait", wait));
-
-        Timer t;
-        mfxStatus status = (*(fMFXVideoCORE_SyncOperation) proc) (session, sp->syncPoint, wait);
-        std::string elapsed = TimeToString(t.GetTime());
-        Log::WriteLog(">> MFXVideoCORE_SyncOperation called");
-        Log::WriteLog(context.dump("session", session));
-        Log::WriteLog(context.dump("syncp", sp->syncPoint));
-        Log::WriteLog(context.dump_mfxU32("wait", wait));
-        Log::WriteLog("function: MFXVideoCORE_SyncOperation(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
-        return status;
+            session = loader->session;
+            
+            mfxStatus status = (*(fMFXVideoCORE_SyncOperation) proc) (session, sp->syncPoint, wait);
+            
+            return status;
+        }
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';

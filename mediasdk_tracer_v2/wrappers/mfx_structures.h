@@ -5,8 +5,9 @@
 #include "mfxvideo.h"
 #include "../loggers/timer.h"
 
-enum  Component {
-    DECODE  = 0x1,
+
+ enum  Component {
+   DECODE  = 0x1,
     ENCODE  = 0x2,
     VPP     = 0x4,
 };
@@ -16,5 +17,6 @@ struct TracerSyncPoint {
     Component component;
     Timer timer;
 };
+
 
 #endif //MFX_STRUCTURES_H_

@@ -59,7 +59,6 @@ EXPORTS
     MFXVideoENC_ProcessFrameAsync;
     MFXVideoVPP_RunFrameVPPAsyncEx;
 
-    MFXVideoUSER_LoadByPath;
     MFXVideoPAK_Query;
     MFXVideoPAK_QueryIOSurf;
     MFXVideoPAK_Init;

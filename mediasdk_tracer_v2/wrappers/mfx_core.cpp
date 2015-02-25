@@ -5,6 +5,8 @@
 #include "../tracer/functions_table.h"
 #include "mfx_structures.h"
 
+
+
 mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
 {
     try{
@@ -17,7 +19,7 @@ mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXQueryIMPL];
+        mfxFunctionPointer proc = loader->table[eMFXQueryIMPL_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -43,15 +45,16 @@ mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
 
 mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *version)
 {
+    
     try{
         DumpContext context;
         context.context = DUMPCONTEXT_MFX;
         Log::WriteLog("function: MFXQueryVersion(mfxSession session=" + ToString(session) + ", mfxVersion *version=" + ToString(version) + ") +");
         mfxLoader *loader = (mfxLoader*) session;
-
+        
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXQueryVersion];
+        mfxFunctionPointer proc = loader->table[eMFXQueryVersion_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -61,6 +64,7 @@ mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *version)
 
         Timer t;
         mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session, mfxVersion *version)) proc) (session, version);
+       
         std::string elapsed = TimeToString(t.GetTime());
 
         Log::WriteLog(">> MFXQueryVersion called");
@@ -88,7 +92,7 @@ mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXJoinSession];
+        mfxFunctionPointer proc = loader->table[eMFXJoinSession_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -120,7 +124,7 @@ mfxStatus MFXCloneSession(mfxSession session, mfxSession *clone)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXCloneSession];
+        mfxFunctionPointer proc = loader->table[eMFXCloneSession_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -152,7 +156,7 @@ mfxStatus MFXDisjoinSession(mfxSession session)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXCloneSession];
+        mfxFunctionPointer proc = loader->table[eMFXCloneSession_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -182,7 +186,7 @@ mfxStatus MFXSetPriority(mfxSession session, mfxPriority priority)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXSetPriority];
+        mfxFunctionPointer proc = loader->table[eMFXSetPriority_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -214,7 +218,7 @@ mfxStatus MFXGetPriority(mfxSession session, mfxPriority *priority)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXGetPriority];
+        mfxFunctionPointer proc = loader->table[eMFXGetPriority_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -228,6 +232,37 @@ mfxStatus MFXGetPriority(mfxSession session, mfxPriority *priority)
         Log::WriteLog(context.dump("session", session));
         if(priority) Log::WriteLog(context.dump("priority", *priority));
         Log::WriteLog("function: MFXGetPriority(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e){
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+
+mfxStatus MFXDoWork(mfxSession session)
+{
+    try{
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+        Log::WriteLog("function: MFXDoWork(mfxSession session=" + ToString(session) + ") +");
+        mfxLoader *loader = (mfxLoader*) session;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+        mfxFunctionPointer proc = loader->table[eMFXDoWork_tracer];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        session = loader->session;
+        Log::WriteLog(context.dump("session", session));
+        
+
+        Timer t;
+        mfxStatus status = (*(mfxStatus (MFX_CDECL*) (mfxSession session)) proc) (session);
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> MFXGetPriority called");
+        Log::WriteLog(context.dump("session", session));
+        Log::WriteLog("function: MFXDoWorck(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e){

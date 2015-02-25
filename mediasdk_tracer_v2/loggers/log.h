@@ -34,6 +34,8 @@ public:
     static void SetFilePath(std::string file_path);
     static void SetLogLevel(eLogLevel level);
     static eLogLevel GetLogLevel();
+    static void clear();
+    static bool useGUI;
 private:
     Log();
     ~Log();

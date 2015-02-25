@@ -16,7 +16,7 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_Query];
+        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_Query_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -50,7 +50,7 @@ mfxStatus MFXVideoDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxV
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_DecodeHeader];
+        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_DecodeHeader_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -84,7 +84,7 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_QueryIOSurf];
+        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_QueryIOSurf_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -118,7 +118,7 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_Init];
+        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_Init_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -150,7 +150,7 @@ mfxStatus MFXVideoDECODE_Reset(mfxSession session, mfxVideoParam *par)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_Reset];
+        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_Reset_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -182,7 +182,7 @@ mfxStatus MFXVideoDECODE_Close(mfxSession session)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_Close];
+        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_Close_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -212,7 +212,7 @@ mfxStatus MFXVideoDECODE_GetVideoParam(mfxSession session, mfxVideoParam *par)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_GetVideoParam];
+        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_GetVideoParam_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -244,7 +244,7 @@ mfxStatus MFXVideoDECODE_GetDecodeStat(mfxSession session, mfxDecodeStat *stat)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_GetDecodeStat];
+        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_GetDecodeStat_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -276,7 +276,7 @@ mfxStatus MFXVideoDECODE_SetSkipMode(mfxSession session, mfxSkipMode mode)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_SetSkipMode];
+        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_SetSkipMode_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -308,7 +308,7 @@ mfxStatus MFXVideoDECODE_GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_GetPayload];
+        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_GetPayload_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -335,48 +335,79 @@ mfxStatus MFXVideoDECODE_GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *
 mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp)
 {
     try{
-        DumpContext context;
-        context.context = DUMPCONTEXT_MFX;
-        TracerSyncPoint * sp = new TracerSyncPoint();
-        sp->syncPoint = (*syncp);
-        sp->component = DECODE;
+        if (Log::GetLogLevel() >= LOG_LEVEL_FULL) // call with logging
+        {
+            DumpContext context;
+            context.context = DUMPCONTEXT_MFX;
+            TracerSyncPoint * sp = new TracerSyncPoint();
+            sp->syncPoint = (*syncp);
+            sp->component = DECODE;
+            Log::WriteLog("function: MFXVideoDECODE_DecodeFrameAsync(mfxSession session=" + ToString(session) + ", mfxBitstream *bs=" + ToString(bs) + ", mfxFrameSurface1 *surface_work=" + ToString(surface_work) + ", mfxFrameSurface1 **surface_out=" + ToString(surface_out) + ", mfxSyncPoint *syncp=" + ToString(syncp) + ") +");
+            mfxLoader *loader = (mfxLoader*) session;
 
-        Log::WriteLog("function: MFXVideoDECODE_DecodeFrameAsync(mfxSession session=" + ToString(session) + ", mfxBitstream *bs=" + ToString(bs) + ", mfxFrameSurface1 *surface_work=" + ToString(surface_work) + ", mfxFrameSurface1 **surface_out=" + ToString(surface_out) + ", mfxSyncPoint *syncp=" + ToString(syncp) + ") +");
-        mfxLoader *loader = (mfxLoader*) session;
+            if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        if (!loader) return MFX_ERR_INVALID_HANDLE;
+            mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_DecodeFrameAsync_tracer];
+            if (!proc) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_DecodeFrameAsync];
-        if (!proc) return MFX_ERR_INVALID_HANDLE;
+            session = loader->session;
+            Log::WriteLog(context.dump("session", session));
+            if(bs) Log::WriteLog(context.dump("bs", *bs));
+            Log::WriteLog(context.dump("surface_work", *surface_work));
+            if(surface_out && (*surface_out))
+                Log::WriteLog(context.dump("surface_out", (**surface_out)));
+            if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
+            
+            sp->timer.Restart();
+            Timer t;
+            mfxStatus status = (*(fMFXVideoDECODE_DecodeFrameAsync) proc) (session, bs, surface_work, surface_out, &sp->syncPoint);
+            std::string elapsed = TimeToString(t.GetTime());
 
-        session = loader->session;
-        Log::WriteLog(context.dump("session", session));
-        if(bs) Log::WriteLog(context.dump("bs", *bs));
-        Log::WriteLog(context.dump("surface_work", *surface_work));
-        if(surface_out && (*surface_out))
-            Log::WriteLog(context.dump("surface_out", (**surface_out)));
-        if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
-
-        sp->timer.Restart();
-        Timer t;
-        mfxStatus status = (*(fMFXVideoDECODE_DecodeFrameAsync) proc) (session, bs, surface_work, surface_out, &sp->syncPoint);
-        std::string elapsed = TimeToString(t.GetTime());
-
-        *syncp = (mfxSyncPoint)sp;
-        if (!sp->syncPoint) {
-            delete sp;
-            *syncp=NULL;
+            *syncp = (mfxSyncPoint)sp;
+            if (!sp->syncPoint) {
+                delete sp;
+                *syncp=NULL;
+            }
+            Log::WriteLog(">> MFXVideoDECODE_DecodeFrameAsync called");
+            Log::WriteLog(context.dump("session", session));
+            if(bs) Log::WriteLog(context.dump("bs", *bs));
+            Log::WriteLog(context.dump("surface_work", *surface_work));
+            if(surface_out && (*surface_out))
+               Log::WriteLog(context.dump("surface_out", (**surface_out)));
+            Log::WriteLog(context.dump("syncp", sp->syncPoint));
+            Log::WriteLog("function: MFXVideoDECODE_DecodeFrameAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+            
+            return status;
         }
+        else // call without logging
+        {
+            DumpContext context;
+            context.context = DUMPCONTEXT_MFX;
+            TracerSyncPoint * sp = new TracerSyncPoint();
+            sp->syncPoint = (*syncp);
+            sp->component = DECODE;
+            
+            mfxLoader *loader = (mfxLoader*) session;
 
-        Log::WriteLog(">> MFXVideoDECODE_DecodeFrameAsync called");
-        Log::WriteLog(context.dump("session", session));
-        if(bs) Log::WriteLog(context.dump("bs", *bs));
-        Log::WriteLog(context.dump("surface_work", *surface_work));
-        if(surface_out && (*surface_out))
-            Log::WriteLog(context.dump("surface_out", (**surface_out)));
-        Log::WriteLog(context.dump("syncp", sp->syncPoint));
-        Log::WriteLog("function: MFXVideoDECODE_DecodeFrameAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
-        return status;
+            if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+            mfxFunctionPointer proc = loader->table[eMFXVideoDECODE_DecodeFrameAsync_tracer];
+            if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+            session = loader->session;
+            
+                        
+            mfxStatus status = (*(fMFXVideoDECODE_DecodeFrameAsync) proc) (session, bs, surface_work, surface_out, &sp->syncPoint);
+            
+            *syncp = (mfxSyncPoint)sp;
+            if (!sp->syncPoint) {
+                delete sp;
+                *syncp=NULL;
+            }
+            
+            return status;
+        }
+        
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';

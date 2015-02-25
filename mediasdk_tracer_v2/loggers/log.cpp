@@ -1,6 +1,7 @@
 #include "log.h"
 
 Log* Log::_sing_log = NULL;
+bool Log::useGUI = false;
 
 Log::Log()
 {
@@ -15,7 +16,7 @@ Log::Log()
     _logmap.insert(std::pair<eLogType,ILog*>(LOG_SYSLOG, new LogSyslog()));
 #endif
 
-    _log = _logmap[LOG_CONSOLE];
+    _log = _logmap[LOG_FILE];
 
 
 #if 0
@@ -68,19 +69,45 @@ eLogLevel Log::GetLogLevel()
     return _sing_log->_log_level;
 }
 
-void Log::WriteLog(const std::string &log)
+void Log::clear()
 {
-    if(!_sing_log)
-        _sing_log = new Log();
-
-    if(_sing_log->_log_level == LOG_LEVEL_DEFAULT){
-        _sing_log->_log->WriteLog(log);
-    }
-    else if(_sing_log->_log_level == LOG_LEVEL_FULL){
-        _sing_log->_log->WriteLog(log);
-    }
-    else if(_sing_log->_log_level == LOG_LEVEL_SHORT){
-        if(log.find("function:") != std::string::npos /*&& log.find("-") != std::string::npos*/)
-            _sing_log->_log->WriteLog(log /*.substr(0, log.size()-2)*/);
+    if (_sing_log)
+    {
+        delete _sing_log; 
+        _sing_log = NULL;
     }
 }
+
+void Log::WriteLog(const std::string &log)
+{       
+    
+#if defined(_WIN32) || defined(_WIN64)
+    DWORD start_flag = 0;
+    DWORD size = sizeof(DWORD);
+    RegGetValue(HKEY_LOCAL_MACHINE, ("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), ("_start"), REG_DWORD, 0, (BYTE*)&start_flag, &size); 
+        
+    if ((start_flag) || (!useGUI))
+#endif
+        {
+            if(!_sing_log)
+                _sing_log = new Log();
+                    
+            
+
+            if(_sing_log->_log_level == LOG_LEVEL_DEFAULT){
+                _sing_log->_log->WriteLog(log);
+            }
+            else if(_sing_log->_log_level == LOG_LEVEL_FULL){
+                _sing_log->_log->WriteLog(log);
+            }
+            else if(_sing_log->_log_level == LOG_LEVEL_SHORT){
+                if(log.find("function:") != std::string::npos /*&& log.find("-") != std::string::npos*/)
+                    _sing_log->_log->WriteLog(log /*.substr(0, log.size()-2)*/);
+            }
+
+            
+        }
+      
+        
+}
+

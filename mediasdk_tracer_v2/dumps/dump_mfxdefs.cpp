@@ -17,5 +17,5 @@ std::string DumpContext::dump_mfxHDL(const std::string structName, const mfxHDL 
 
 std::string DumpContext::dump_mfxStatus(const std::string structName, mfxStatus status)
 {
-    return std::string(structName + "=" + ToString(status));
+    return std::string(structName + "=" + GetStatusString(status));
 }

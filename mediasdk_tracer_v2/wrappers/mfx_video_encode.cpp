@@ -16,7 +16,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_Query];
+        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_Query_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -50,7 +50,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_QueryIOSurf];
+        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_QueryIOSurf_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -84,7 +84,7 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_Init];
+        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_Init_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -117,7 +117,7 @@ mfxStatus MFXVideoENCODE_Reset(mfxSession session, mfxVideoParam *par)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_Reset];
+        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_Reset_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -149,7 +149,7 @@ mfxStatus MFXVideoENCODE_Close(mfxSession session)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_Close];
+        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_Close_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -179,7 +179,7 @@ mfxStatus MFXVideoENCODE_GetVideoParam(mfxSession session, mfxVideoParam *par)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_GetVideoParam];
+        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_GetVideoParam_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -211,7 +211,7 @@ mfxStatus MFXVideoENCODE_GetEncodeStat(mfxSession session, mfxEncodeStat *stat)
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_GetEncodeStat];
+        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_GetEncodeStat_tracer];
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
@@ -236,45 +236,75 @@ mfxStatus MFXVideoENCODE_GetEncodeStat(mfxSession session, mfxEncodeStat *stat)
 mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp)
 {
     try{
-        DumpContext context;
-        context.context = DUMPCONTEXT_MFX;
-        TracerSyncPoint * sp = new TracerSyncPoint();
-        sp->syncPoint = (*syncp);
-        sp->component = ENCODE;
+        if (Log::GetLogLevel() >= LOG_LEVEL_FULL)
+        {
+            DumpContext context;
+            context.context = DUMPCONTEXT_MFX;
+            TracerSyncPoint * sp = new TracerSyncPoint();
+            sp->syncPoint = (*syncp);
+            sp->component = ENCODE;
+            Log::WriteLog("function: MFXVideoENCODE_EncodeFrameAsync(mfxSession session=" + ToString(session) + ", mfxEncodeCtrl *ctrl=" + ToString(ctrl) + ", mfxFrameSurface1 *surface=" + ToString(surface) + ", mfxBitstream *bs=" + ToString(bs) + ", mfxSyncPoint *syncp=" + ToString(syncp) + ") +");
+            mfxLoader *loader = (mfxLoader*) session;
 
-        Log::WriteLog("function: MFXVideoENCODE_EncodeFrameAsync(mfxSession session=" + ToString(session) + ", mfxEncodeCtrl *ctrl=" + ToString(ctrl) + ", mfxFrameSurface1 *surface=" + ToString(surface) + ", mfxBitstream *bs=" + ToString(bs) + ", mfxSyncPoint *syncp=" + ToString(syncp) + ") +");
-        mfxLoader *loader = (mfxLoader*) session;
+            if (!loader) return MFX_ERR_INVALID_HANDLE;
 
-        if (!loader) return MFX_ERR_INVALID_HANDLE;
+            mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_EncodeFrameAsync_tracer];
+            if (!proc) return MFX_ERR_INVALID_HANDLE;
 
-        mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_EncodeFrameAsync];
-        if (!proc) return MFX_ERR_INVALID_HANDLE;
+            session = loader->session;
+            Log::WriteLog(context.dump("session", session));
+            if(ctrl) Log::WriteLog(context.dump("ctrl", *ctrl));
+            if(surface) Log::WriteLog(context.dump("surface", *surface));
+            if(bs) Log::WriteLog(context.dump("bs", *bs));
+            if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
+        
+            sp->timer.Restart();
+            Timer t;
+            mfxStatus status = (*(fMFXVideoENCODE_EncodeFrameAsync) proc) (session, ctrl, surface, bs, &sp->syncPoint);
+            std::string elapsed = TimeToString(t.GetTime());
 
-        session = loader->session;
-        Log::WriteLog(context.dump("session", session));
-        if(ctrl) Log::WriteLog(context.dump("ctrl", *ctrl));
-        if(surface) Log::WriteLog(context.dump("surface", *surface));
-        if(bs) Log::WriteLog(context.dump("bs", *bs));
-        if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
-
-        sp->timer.Restart();
-        Timer t;
-        mfxStatus status = (*(fMFXVideoENCODE_EncodeFrameAsync) proc) (session, ctrl, surface, bs, &sp->syncPoint);
-        std::string elapsed = TimeToString(t.GetTime());
-
-        *syncp = (mfxSyncPoint)sp;
-        if (!sp->syncPoint) {
-            delete sp;
-            *syncp=NULL;
+            *syncp = (mfxSyncPoint)sp;
+            if (!sp->syncPoint) {
+                delete sp;
+                *syncp=NULL;
+            }
+        
+            Log::WriteLog(">> MFXVideoENCODE_EncodeFrameAsync called");
+            Log::WriteLog(context.dump("session", session));
+            if(ctrl) Log::WriteLog(context.dump("ctrl", *ctrl));
+            if(surface) Log::WriteLog(context.dump("surface", *surface));
+            if(bs) Log::WriteLog(context.dump("bs", *bs));
+            Log::WriteLog(context.dump("syncp", sp->syncPoint));
+            Log::WriteLog("function: MFXVideoENCODE_EncodeFrameAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+            
+            return status;
         }
-        Log::WriteLog(">> MFXVideoENCODE_EncodeFrameAsync called");
-        Log::WriteLog(context.dump("session", session));
-        if(ctrl) Log::WriteLog(context.dump("ctrl", *ctrl));
-        if(surface) Log::WriteLog(context.dump("surface", *surface));
-        if(bs) Log::WriteLog(context.dump("bs", *bs));
-        Log::WriteLog(context.dump("syncp", sp->syncPoint));
-        Log::WriteLog("function: MFXVideoENCODE_EncodeFrameAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
-        return status;
+        else // call without loging
+        {
+            DumpContext context;
+            context.context = DUMPCONTEXT_MFX;
+            TracerSyncPoint * sp = new TracerSyncPoint();
+            sp->syncPoint = (*syncp);
+            sp->component = ENCODE;
+            mfxLoader *loader = (mfxLoader*) session;
+
+            if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+            mfxFunctionPointer proc = loader->table[eMFXVideoENCODE_EncodeFrameAsync_tracer];
+            if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+            session = loader->session;
+            
+            mfxStatus status = (*(fMFXVideoENCODE_EncodeFrameAsync) proc) (session, ctrl, surface, bs, &sp->syncPoint);
+            
+            *syncp = (mfxSyncPoint)sp;
+            if (!sp->syncPoint) {
+                delete sp;
+                *syncp=NULL;
+            }
+                    
+            return status;
+        }
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';

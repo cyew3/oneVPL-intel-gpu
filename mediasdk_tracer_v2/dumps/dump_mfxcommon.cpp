@@ -36,7 +36,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtBuffer &
 
 std::string DumpContext::dump(const std::string structName, const mfxIMPL &impl)
 {
-    return std::string("mfxIMPL " + structName + "=" + ToString(impl));
+    return std::string("mfxIMPL " + structName + "=" + GetmfxIMPL(impl));
 }
 
 std::string DumpContext::dump(const std::string structName, const mfxPriority &priority)

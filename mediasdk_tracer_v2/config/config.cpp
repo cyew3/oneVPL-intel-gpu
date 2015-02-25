@@ -5,13 +5,45 @@
 
 #include "config.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>    
+const char* get_path_reg()
+    {
+        char* path = new char[128];
+        DWORD size = sizeof(char)*128;
+        DWORD sts = RegGetValue(HKEY_LOCAL_MACHINE, (LPCTSTR)("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), (LPCTSTR)("_conf"), REG_SZ, (LPDWORD)0, (PVOID)path, (LPDWORD)&size);
+        int len = strlen(path); 
+        
+        if (sts != ERROR_FILE_NOT_FOUND)
+        {
+            for (int i = 0; i < len; i++)
+            {
+                    if (path[i] == '\\') 
+                        path[i] = '/';
+            }
+            
+        }
+        else
+        {
+            GetCurrentDirectory(128, path);
+            len = strlen(path);
+            for (int i = 0; i < len; i++)
+            {
+                    if (path[i] == '\\') 
+                        path[i] = '/';
+            }
+        }
+        return path;
+    }
+#endif
+
 Config* Config::conf = NULL;
 
 Config::Config()
 {
     const char* home =
 #if defined(_WIN32) || defined(_WIN64)
-        getenv("HOMEPATH");
+        get_path_reg();
 #else
         getenv("HOME");
 #endif
@@ -22,6 +54,7 @@ Config::Config()
             _file.open(_file_path.c_str(), std::ifstream::binary);
         }
     }
+    
     Init();
 }
 
@@ -39,7 +72,7 @@ void Config::Init()
     //delete comments
     //parse sections
     //parse params in sections
-
+    
     if(_file.is_open()){
         //TODO parse
         std::string curent_section;
@@ -136,3 +169,5 @@ std::string Config::GetParam(std::string section, std::string key)
 
     return conf->ini[section][key];
 }
+
+
