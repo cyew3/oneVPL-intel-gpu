@@ -3300,7 +3300,8 @@ H265Frame* MFXVideoENCODEH265::InsertInputFrame(const mfxFrameSurface1 *surface)
 
     // light configure
     (*frm)->ResetEncInfo();
-    (*frm)->CopyFrame(surface);
+    bool have8bitCopyFlag = m_videoParam.enableCmFlag;  // to have a 8bit copy for 10bit surface
+    (*frm)->CopyFrame(surface, have8bitCopyFlag);
     (*frm)->m_timeStamp = surface->Data.TimeStamp;
     m_inputQueue.back()->m_frameOrigin = *frm;
 

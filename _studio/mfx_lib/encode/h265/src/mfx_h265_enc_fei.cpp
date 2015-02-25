@@ -430,14 +430,24 @@ void FeiContext::UpdateFrameStateFEI(mfxFEIH265Input *feiIn, H265Frame *frameIn,
     feiIn->RefIdx = refIdx;
 
     /* copy state for current input frame */
-    feiIn->FEIFrameIn.YPlane   = frameIn->y;
-    feiIn->FEIFrameIn.YPitch   = frameIn->pitch_luma_bytes;
+    if (frameIn->m_bitDepthLuma > 8) {
+        feiIn->FEIFrameIn.YPlane   = frameIn->y_8bit;
+        feiIn->FEIFrameIn.YPitch   = frameIn->pitch_luma_bytes_8bit;
+    } else {
+        feiIn->FEIFrameIn.YPlane   = frameIn->y;
+        feiIn->FEIFrameIn.YPitch   = frameIn->pitch_luma_bytes;
+    }
     feiIn->FEIFrameIn.EncOrder = frameIn->m_encOrder;
 
     /* copy state for 1 reference to be processed */
     if (frameRef) {
-        feiIn->FEIFrameRef.YPlane   = frameRef->y;
-        feiIn->FEIFrameRef.YPitch   = frameRef->pitch_luma_bytes;
+        if (frameRef->m_bitDepthLuma > 8) {
+            feiIn->FEIFrameRef.YPlane   = frameRef->y_8bit;
+            feiIn->FEIFrameRef.YPitch   = frameRef->pitch_luma_bytes_8bit;
+        } else {
+            feiIn->FEIFrameRef.YPlane   = frameRef->y;
+            feiIn->FEIFrameRef.YPitch   = frameRef->pitch_luma_bytes;
+        }
         feiIn->FEIFrameRef.EncOrder = frameRef->m_encOrder;
     }
 

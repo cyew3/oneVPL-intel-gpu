@@ -324,6 +324,9 @@ namespace MFX_HEVC_PP
     typedef void (* PTR_Interp_s16_d16_Ext)(INTERP_S16_D16_PARAMETERS_LIST, int plane);
     typedef void (* PTR_InterpPack_d8)(const short*, int, unsigned char*, int, int, int, int);
     typedef void (* PTR_InterpPack_d16)(const short*, int, unsigned short*, int, int, int, int);
+    
+    // Convert w/ rshift
+    typedef void (* PTR_ConvertShiftR)(const short*, int, unsigned char*, int, int, int, int);
 
     // average
     typedef void (* PTR_AverageModeN)(INTERP_AVG_NONE_PARAMETERS_LIST);
@@ -573,6 +576,8 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_InterpPack_d8, void, h265_InterpLumaPack_d8, (const short*, int, unsigned char*, int, int, int, int));
         HEVCPP_API( PTR_InterpPack_d16, void, h265_InterpLumaPack_d16, (const short*, int, unsigned short*, int, int, int, int));
 
+        // [Convert w/ rshift]
+        HEVCPP_API( PTR_ConvertShiftR, void, h265_ConvertShiftR, (const short*, int, unsigned char*, int, int, int, int));
 
         HEVCPP_API( PTR_AverageModeN, void, h265_AverageModeN, (INTERP_AVG_NONE_PARAMETERS_LIST));
         HEVCPP_API( PTR_AverageModeP, void, h265_AverageModeP, (INTERP_AVG_PIC_PARAMETERS_LIST));
@@ -1250,6 +1255,11 @@ namespace MFX_HEVC_PP
     static inline void h265_InterpLumaPack(const Ipp16s *src, Ipp32s pitchSrc, Ipp16u *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s bitDepth)
     {
         MFX_HEVC_PP::NAME(h265_InterpLumaPack_d16)(src, pitchSrc, dst, pitchDst, width, height, bitDepth);
+    }
+
+    static inline void h265_ConvertShiftR(const Ipp16s *src, Ipp32s pitchSrc, Ipp8u *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s rshift)
+    {
+        MFX_HEVC_PP::NAME(h265_ConvertShiftR)(src, pitchSrc, dst, pitchDst, width, height, rshift);
     }
 
 } // namespace MFX_HEVC_PP

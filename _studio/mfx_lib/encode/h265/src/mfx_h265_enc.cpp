@@ -2325,6 +2325,13 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
                             }
                             if (!m_pps.tiles_enabled_flag)
                                 PadOneReconRow<PixType>(ctb_row - 1);
+
+                            if (m_videoParam.enableCmFlag && (m_task->m_frameRecon->m_bitDepthLuma > 8)) {
+                                mfxI16 *recLuma10bit = (mfxI16 *)(m_task->m_frameRecon->y + (ctb_row - 1) * m_task->m_frameRecon->pitch_luma_bytes * m_videoParam.MaxCUSize);
+                                mfxU8 *recLuma8bit = m_task->m_frameRecon->y_8bit + (ctb_row - 1) * m_task->m_frameRecon->pitch_luma_bytes_8bit * m_videoParam.MaxCUSize;
+                                h265_ConvertShiftR(recLuma10bit, m_task->m_frameRecon->pitch_luma_pix,
+                                    recLuma8bit, m_task->m_frameRecon->pitch_luma_pix, m_task->m_frameRecon->width, m_videoParam.MaxCUSize, 2);
+                            }
                     }
                     if( ctb_row == pars->PicHeightInCtbs - 1 ||
                         curr_slice != m_slice_ids[ctb_addr + pars->PicWidthInCtbs] ||
@@ -2336,7 +2343,13 @@ mfxStatus H265FrameEncoder::EncodeThread(Ipp32s & ithread, volatile Ipp32u* onEx
                             }
                             if (!m_pps.tiles_enabled_flag)
                                 PadOneReconRow<PixType>(ctb_row);
-                    }
+                            if (m_videoParam.enableCmFlag && (m_task->m_frameRecon->m_bitDepthLuma > 8)) {
+                                mfxI16 *recLuma10bit = (mfxI16 *)(m_task->m_frameRecon->y + ctb_row * m_task->m_frameRecon->pitch_luma_bytes * m_videoParam.MaxCUSize);
+                                mfxU8 *recLuma8bit = m_task->m_frameRecon->y_8bit + ctb_row * m_task->m_frameRecon->pitch_luma_bytes_8bit * m_videoParam.MaxCUSize;
+                                h265_ConvertShiftR(recLuma10bit, m_task->m_frameRecon->pitch_luma_pix,
+                                    recLuma8bit, m_task->m_frameRecon->pitch_luma_pix, m_task->m_frameRecon->width, m_videoParam.MaxCUSize, 2);
+                            }
+                   }
                 }
 
                 if (!m_pps.entropy_coding_sync_enabled_flag) {

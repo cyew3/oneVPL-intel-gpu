@@ -70,6 +70,12 @@ namespace H265Enc {
         Ipp32s pitch_chroma_pix;
         Ipp32s pitch_chroma_bytes;
 
+        /* for 10 bit surfaces */
+        Ipp8u *y_8bit;
+        Ipp8u *uv_8bit;
+        Ipp32s pitch_luma_bytes_8bit;
+        Ipp32s pitch_chroma_bytes_8bit;
+
         Ipp8u  m_bitDepthLuma;
         Ipp8u  m_bdLumaFlag;
         Ipp8u  m_bitDepthChroma;
@@ -159,7 +165,7 @@ namespace H265Enc {
 
         void Create(H265VideoParam *par, Ipp8u needExtData = 0);
         void Destroy();
-        void CopyFrame(const mfxFrameSurface1 *surface);
+        void CopyFrame(const mfxFrameSurface1 *surface, bool have8bitCopy = false);
         void doPadding();
 
         void ResetMemInfo();

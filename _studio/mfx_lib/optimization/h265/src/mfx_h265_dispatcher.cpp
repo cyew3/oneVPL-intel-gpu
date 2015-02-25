@@ -362,6 +362,9 @@ void SetTargetSSE4()
     g_dispatcher.h265_InterpLumaPack_d8 = &MFX_HEVC_PP::h265_InterpLumaPack_sse<Ipp8u>;
     g_dispatcher.h265_InterpLumaPack_d16 = &MFX_HEVC_PP::h265_InterpLumaPack_sse<Ipp16u>;
 
+    // Convert w/ rshift
+    g_dispatcher.h265_ConvertShiftR = &MFX_HEVC_PP::h265_ConvertShiftR_sse;
+
     // [INTRA prediction]
     g_dispatcher.h265_PredictIntra_Ang_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_8u_sse;
     g_dispatcher.h265_PredictIntra_Ang_All_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_sse;
@@ -550,6 +553,9 @@ void SetTargetSSSE3()
 
     g_dispatcher.h265_InterpLumaPack_d8 = &MFX_HEVC_PP::h265_InterpLumaPack_sse<Ipp8u>;
     g_dispatcher.h265_InterpLumaPack_d16 = &MFX_HEVC_PP::h265_InterpLumaPack_sse<Ipp16u>;
+
+    // Convert w/ rshift
+    g_dispatcher.h265_ConvertShiftR = &MFX_HEVC_PP::h265_ConvertShiftR_sse;
 
     // [INTRA prediction]
     g_dispatcher.h265_PredictIntra_Ang_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_8u_ssse3;
@@ -759,6 +765,9 @@ void SetTargetAVX2()
     g_dispatcher.h265_InterpLumaPack_d8 = &MFX_HEVC_PP::h265_InterpLumaPack_avx2<Ipp8u>;
     g_dispatcher.h265_InterpLumaPack_d16 = &MFX_HEVC_PP::h265_InterpLumaPack_avx2<Ipp16u>;
 
+    // Convert w/ rshift
+    g_dispatcher.h265_ConvertShiftR = &MFX_HEVC_PP::h265_ConvertShiftR_avx2;
+
     // [INTRA prediction]
     g_dispatcher.h265_PredictIntra_Ang_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_8u_avx2;
     g_dispatcher.h265_PredictIntra_Ang_All_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_avx2;
@@ -947,6 +956,9 @@ void SetTargetPX()
 
     g_dispatcher.h265_InterpLumaPack_d8 = &MFX_HEVC_PP::h265_InterpLumaPack_px<Ipp8u>;
     g_dispatcher.h265_InterpLumaPack_d16 = &MFX_HEVC_PP::h265_InterpLumaPack_px<Ipp16u>;
+
+    // Convert w/ rshift
+    g_dispatcher.h265_ConvertShiftR = &MFX_HEVC_PP::h265_ConvertShiftR_px;
 
     // [INTRA prediction]
     g_dispatcher.h265_PredictIntra_Ang_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_8u_px;

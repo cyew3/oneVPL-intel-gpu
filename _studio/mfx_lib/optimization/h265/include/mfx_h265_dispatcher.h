@@ -585,6 +585,11 @@ namespace MFX_HEVC_PP
     void h265_InterpChroma_s16_d16_V_ssse3(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s16_d16_V_atom(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s16_d16_V_avx2(INTERP_S16_D16_PARAMETERS_LIST);
+
+    // 10bit to 8bit surface conversion
+    void h265_ConvertShiftR_px(const Ipp16s *src, Ipp32s pitchSrc, unsigned char *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s rshift);
+    void h265_ConvertShiftR_sse(const Ipp16s *src, Ipp32s pitchSrc, unsigned char *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s rshift);
+    void h265_ConvertShiftR_avx2(const Ipp16s *src, Ipp32s pitchSrc, unsigned char *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s rshift);
     
     // average
     void h265_AverageModeN_px(INTERP_AVG_NONE_PARAMETERS_LIST);

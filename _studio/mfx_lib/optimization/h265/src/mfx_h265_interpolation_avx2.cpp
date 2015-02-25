@@ -2869,6 +2869,29 @@ void MAKE_NAME(h265_InterpLumaPack)(const short *src, int pitchSrc, PixType *dst
 template void MAKE_NAME(h265_InterpLumaPack)<unsigned char >(const short*, int, unsigned char  *dst, int, int, int, int);
 template void MAKE_NAME(h265_InterpLumaPack)<unsigned short>(const short*, int, unsigned short *dst, int, int, int, int);
 
+void MAKE_NAME(h265_ConvertShiftR)(const short *src, int pitchSrc, unsigned char *dst, int pitchDst, int width, int height, int rshift)
+{
+    width = (width + 15) & ~15; // 256-bit registers
+    VM_ASSERT(width <= pitchSrc);
+    VM_ASSERT(width <= pitchDst);
+
+    __m256i line;
+    __m256i offset = _mm256_set1_epi16(1 << (rshift - 1));
+
+    for (; height > 0; height--, src += pitchSrc, dst += pitchDst) {
+        for (Ipp32s col = 0; col < width; col += 16) {
+            line = _mm256_loadu_si256((__m256i *)(src + col));
+
+            line = _mm256_add_epi16(line, offset);
+            line = _mm256_srai_epi16(line, rshift);
+
+            line = _mm256_packus_epi16(line, line);
+            line = _mm256_permute4x64_epi64(line, 0x08);
+            _mm_storeu_si128((__m128i*)(dst + col), _mm256_castsi256_si128(line));
+        }
+    }
+}
+
 } // end namespace MFX_HEVC_PP
 
 #endif //#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)

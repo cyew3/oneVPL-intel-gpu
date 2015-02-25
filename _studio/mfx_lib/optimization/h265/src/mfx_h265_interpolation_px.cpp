@@ -438,6 +438,16 @@ namespace MFX_HEVC_PP
     template void MAKE_NAME(h265_InterpLumaPack)<Ipp8u >(const Ipp16s *src, Ipp32s pitchSrc, Ipp8u  *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s bitDepth);
     template void MAKE_NAME(h265_InterpLumaPack)<Ipp16u>(const Ipp16s *src, Ipp32s pitchSrc, Ipp16u *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s bitDepth);
 
+    void MAKE_NAME(h265_ConvertShiftR)(const short *src, int pitchSrc, unsigned char *dst, int pitchDst, int width, int height, int rshift)
+    {
+        int offset = 1 << (rshift - 1);
+        int maxPel = (1 << 8) - 1;
+
+        for (; height > 0; height--, src += pitchSrc, dst += pitchDst)
+            for (Ipp32s col = 0; col < width; col++)
+                dst[col] = Saturate(0, maxPel, (src[col] + offset) >> rshift);
+    }
+
 } // end namespace MFX_HEVC_PP
 
 #endif //#if defined (MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)

@@ -51,9 +51,12 @@ void H265Frame::Create(H265VideoParam *par, Ipp8u needExtData)
     // ----------------------------------------------------
 
     pitch_luma_bytes = pitch_luma_pix = width + padding * 2;
+    pitch_luma_bytes_8bit = pitch_luma_bytes;
 
     Ipp32s plane_size_luma = (width + padding * 2) * (height + padding * 2);
     Ipp32s plane_size_chroma;
+    Ipp32s plane_size_luma_8bit = plane_size_luma;
+    Ipp32s plane_size_chroma_8bit = 0;
     
     switch (m_chromaFormatIdc) {
     case MFX_CHROMAFORMAT_YUV422:
@@ -71,6 +74,9 @@ void H265Frame::Create(H265VideoParam *par, Ipp8u needExtData)
        break;
     }
 
+    plane_size_chroma_8bit = plane_size_chroma;
+    pitch_chroma_bytes_8bit = pitch_chroma_pix;
+    
     pitch_chroma_bytes = pitch_chroma_pix;
 
     if (m_bdLumaFlag) {
@@ -85,16 +91,29 @@ void H265Frame::Create(H265VideoParam *par, Ipp8u needExtData)
     Ipp32s len = numCtbs_parts * sizeof(H265CUData) + ALIGN_VALUE;
     len += (plane_size_luma + plane_size_chroma) + ALIGN_VALUE*3;
 
+    if ((m_bdLumaFlag || m_bdChromaFlag) && par->enableCmFlag)
+        len += (plane_size_luma_8bit + plane_size_chroma_8bit) + ALIGN_VALUE*2;
+
     mem = H265_Malloc(len);
     if (!mem)
         throw std::exception();
 
     cu_data = align_pointer<H265CUData *> (mem, ALIGN_VALUE);
     y = align_pointer<Ipp8u *> (cu_data + numCtbs_parts, ALIGN_VALUE);
-    uv = align_pointer<Ipp8u *> (y + plane_size_luma, ALIGN_VALUE);;
+    uv = align_pointer<Ipp8u *> (y + plane_size_luma, ALIGN_VALUE);
+
+    if ((m_bdLumaFlag || m_bdChromaFlag) && par->enableCmFlag) {
+        y_8bit = align_pointer<Ipp8u *> (uv + plane_size_chroma, ALIGN_VALUE);
+        uv_8bit = align_pointer<Ipp8u *> (y_8bit + plane_size_luma_8bit, ALIGN_VALUE);
+    }
 
     y += ((pitch_luma_pix + 1) * padding) << m_bdLumaFlag;
     uv += ((pitch_chroma_pix * padding >> par->chromaShiftH) + (padding << par->chromaShiftWInv)) << m_bdChromaFlag;
+
+    if ((m_bdLumaFlag || m_bdChromaFlag) && par->enableCmFlag) {
+        y_8bit += ((pitch_luma_pix + 1) * padding);
+        uv_8bit += ((pitch_chroma_pix * padding >> par->chromaShiftH) + (padding << par->chromaShiftWInv));
+    }
     
     if (needExtData) {
         // all algorithms designed for 8x8 (CsRs - 4x4)
@@ -155,7 +174,7 @@ template <class PixType> void PadOnePix(PixType *frame, Ipp32s pitch, Ipp32s wid
     ippsCopy(ptr - pitch, ptr, width + 2);
 }
 
-void H265Frame::CopyFrame(const mfxFrameSurface1 *surface)
+void H265Frame::CopyFrame(const mfxFrameSurface1 *surface, bool have8bitCopy)
 {
     IppiSize roi = { width, height };
     mfxU16 InputBitDepthLuma = 8;
@@ -179,6 +198,8 @@ void H265Frame::CopyFrame(const mfxFrameSurface1 *surface)
         break;
     case 3:
         ippiCopy_16u_C1R((Ipp16u*)surface->Data.Y, surface->Data.Pitch, (Ipp16u*)y, pitch_luma_bytes, roi);
+        if (have8bitCopy)
+            h265_ConvertShiftR((const Ipp16s *)y, pitch_luma_pix, y_8bit, pitch_luma_pix, roi.width, roi.height, 2);
         break;
     default:
         VM_ASSERT(0);
@@ -462,6 +483,8 @@ void H265Frame::ResetMemInfo()
     cu_data = NULL;
     y = NULL;
     uv = NULL;
+    y_8bit = NULL;
+    uv_8bit = NULL;
 
     m_lowres = NULL;
 
@@ -472,6 +495,8 @@ void H265Frame::ResetMemInfo()
     pitch_luma_bytes = 0;
     pitch_chroma_pix = 0;
     pitch_chroma_bytes = 0;
+    pitch_luma_bytes_8bit = 0;
+    pitch_chroma_bytes_8bit = 0;
     m_bitDepthLuma = 0;
     m_bdLumaFlag = 0;
     m_bitDepthChroma = 0;
