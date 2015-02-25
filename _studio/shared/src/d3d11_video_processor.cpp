@@ -2277,6 +2277,9 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
     // [Max Resolution] - WA now
     switch(m_core->GetHWType())
     {
+        case MFX_HW_CNL:
+        case MFX_HW_BXT:
+        case MFX_HW_SCL:
         case MFX_HW_CHV:
         case MFX_HW_BDW:
         case MFX_HW_HSW:
