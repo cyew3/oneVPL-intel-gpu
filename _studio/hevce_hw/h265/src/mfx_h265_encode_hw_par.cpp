@@ -601,11 +601,25 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
     case MFX_RATECONTROL_CBR:
     case MFX_RATECONTROL_VBR:
     case MFX_RATECONTROL_CQP:
+    case MFX_RATECONTROL_ICQ:
+    case MFX_RATECONTROL_VCM:
         break;
     default:
         par.mfx.RateControlMethod = 0;
-        changed ++;
+        unsupported ++;
         break;
+    }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_VCM && !caps.VCMBitRateControl)
+    {
+        par.mfx.RateControlMethod = 0;
+        unsupported ++;
+    }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ && par.mfx.ICQQuality > 51)
+    {
+        par.mfx.ICQQuality = 0;
+        unsupported ++;
     }
 
     if (!CheckTriStateOption(par.m_ext.CO2.MBBRC)) changed = true;
@@ -687,7 +701,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
         changed ++;
     }
 
-    if (   par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
+    if (   (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
         && par.MaxKbps != 0
         && par.TargetKbps != 0
         && par.MaxKbps < par.TargetKbps)
@@ -700,13 +714,14 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
     {
         mfxU32 rawBytes = par.m_ext.HEVCParam.PicWidthInLumaSamples * par.m_ext.HEVCParam.PicHeightInLumaSamples * 3 / 2 / 1000;
 
-        if (   par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
+        if (   (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
             && par.BufferSizeInKB < rawBytes)
         {
             par.BufferSizeInKB = rawBytes;
             changed ++;
         }
-        else if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+        else if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
+                 || par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
         {
             mfxF64 fr = par.mfx.FrameInfo.FrameRateExtD ? (mfxF64)par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD : 30.;
             mfxU32 avgFS = Ceil((mfxF64)par.TargetKbps / fr / 8);
@@ -846,8 +861,14 @@ void SetDefaults(
             par.m_ext.CO2.MBBRC = MFX_CODINGOPTION_OFF;
 
     }
-    else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
-        || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+    else if (   par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
+    {
+        if (!par.BufferSizeInKB)
+            par.BufferSizeInKB = Min(maxBuf, mfxU32(rawBits / 8000));
+    }
+    else if (   par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
+             || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
+             || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
     {
         if (!par.TargetKbps)
             par.TargetKbps = Min(maxBR, mfxU32(rawBits * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD / 150000));
@@ -860,6 +881,9 @@ void SetDefaults(
         if (par.m_ext.CO2.MBBRC == MFX_CODINGOPTION_UNKNOWN)
             par.m_ext.CO2.MBBRC = MFX_CODINGOPTION_ON;
     }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ && !par.mfx.ICQQuality)
+        par.mfx.ICQQuality = 26;
     
     if (!par.mfx.GopOptFlag)
         par.mfx.GopOptFlag = MFX_GOP_CLOSED;
@@ -887,14 +911,14 @@ void SetDefaults(
         }
     }
 
-    if (!par.LTRInterval && par.NumRefLX[0] > 1 && par.mfx.GopPicSize > 32)
-        par.LTRInterval = 16;
-
     if (!par.mfx.GopRefDist)
         par.mfx.GopRefDist = mfxU16((par.mfx.GopPicSize > 1 && par.NumRefLX[1] && !hwCaps.SliceIPOnly) ? Min(par.mfx.GopPicSize - 1, 3) : 1);
 
     if (!par.mfx.NumRefFrame)
         par.mfx.NumRefFrame = par.isBPyramid() ? mfxU16((par.mfx.GopRefDist - 1) / 2 + 1) : (par.NumRefLX[0] + (par.mfx.GopRefDist > 1) * par.NumRefLX[1]);
+
+    /*if (!par.LTRInterval && par.NumRefLX[0] > 1 && par.mfx.GopPicSize > 32 && par.mfx.NumRefFrame > 2)
+        par.LTRInterval = 16;*/
 
     if (!par.mfx.CodecLevel)
         CorrectLevel(par, false);

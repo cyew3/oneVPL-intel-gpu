@@ -697,9 +697,10 @@ void HeaderPacker::PackSSH(
 
                 for (mfxU16 i = 0; i < slice.num_long_term_sps + slice.num_long_term_pics; i++)
                 {
-                    if (i < slice.num_long_term_sps && sps.num_long_term_ref_pics_sps > 1)
+                    if (i < slice.num_long_term_sps)
                     {
-                        bs.PutBits(CeilLog2(sps.num_long_term_ref_pics_sps), slice.lt[i].lt_idx_sps);
+                        if (sps.num_long_term_ref_pics_sps > 1)
+                            bs.PutBits(CeilLog2(sps.num_long_term_ref_pics_sps), slice.lt[i].lt_idx_sps);
                     }
                     else
                     {

@@ -74,6 +74,8 @@ typedef struct tagENCODE_CAPS_HEVC
     UCHAR   MaxNum_Reference0;
     UCHAR   MaxNum_Reference1;
     UCHAR   MBBRCSupport;
+    UCHAR   TUSupport;
+
 } ENCODE_CAPS_HEVC;
 
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC

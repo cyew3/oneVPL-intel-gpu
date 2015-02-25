@@ -67,6 +67,9 @@ mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps
     sts = ddi.get()->QueryEncodeCaps(caps);
     MFX_CHECK_STS(sts);
 
+    DDITracer tracer;
+    tracer.Trace(caps, 0);
+
     return sts;
 }
 
@@ -118,7 +121,11 @@ void FillSpsBuffer(
         sps.AVBRAccuracy    = par.mfx.Accuracy;
         sps.AVBRConvergence = par.mfx.Convergence;
     }
-    sps.CRFQualityFactor = 0;
+    
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
+        sps.CRFQualityFactor = (mfxU8)par.mfx.ICQQuality;
+    else
+        sps.CRFQualityFactor = 0;
 
     if (sps.ParallelBRC)
     {

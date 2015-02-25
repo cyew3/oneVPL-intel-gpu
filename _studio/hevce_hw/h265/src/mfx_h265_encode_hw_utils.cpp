@@ -1060,6 +1060,24 @@ inline bool isCurrRef(Task const & task, mfxI32 poc)
     return isCurrRef(task.m_dpb[0], task.m_refPicList, task.m_numRefActive, poc);
 }
 
+bool isCurrLt(
+    DpbArray const & DPB,
+    mfxU8 const (&RPL)[2][MAX_DPB_SIZE],
+    mfxU8 const (&numRefActive)[2],
+    mfxI32 poc)
+{
+    for (mfxU32 i = 0; i < 2; i ++)
+        for (mfxU32 j = 0; j < numRefActive[i]; j ++)
+            if (poc == DPB[RPL[i][j]].m_poc)
+                return DPB[RPL[i][j]].m_ltr;
+    return false;
+}
+
+inline bool isCurrLt(Task const & task, mfxI32 poc)
+{
+    return isCurrLt(task.m_dpb[0], task.m_refPicList, task.m_numRefActive, poc);
+}
+
 void ConstructSTRPS(
     DpbArray const & DPB,
     mfxU8 const (&RPL)[2][MAX_DPB_SIZE],
@@ -1186,13 +1204,11 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
             mfxU32 DeltaPocMsbCycleLt = 0;
             mfxI32 DPBLT[MAX_DPB_SIZE] = {};
 
-            for (i = 0, j = 0; !isDpbEnd(DPB, i); i ++)
+            for (i = 0, nDPBLT = 0; !isDpbEnd(DPB, i); i ++)
                 if (DPB[i].m_ltr)
-                    DPBLT[j++] = DPB[i].m_poc;
+                    DPBLT[nDPBLT++] = DPB[i].m_poc;
 
-            assert(j == nDPBLT);
-
-            MFX_SORT(DPBLT, nDPBLT, >);
+            MFX_SORT(DPBLT, nDPBLT, <);
 
             for (nLTR = 0, j = 0; j < nDPBLT; j ++)
             {
@@ -1201,15 +1217,13 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
                 for (i = 0; i < m_sps.num_long_term_ref_pics_sps; i ++)
                 {
                     if (   mfxU16(DPBLT[j] & (MaxPocLsb - 1)) == m_sps.lt_ref_pic_poc_lsb_sps[i]
-                        && isCurrRef(task, DPBLT[j]) == !!m_sps.used_by_curr_pic_lt_sps_flag[i])
+                        && isCurrLt(task, DPBLT[j]) == !!m_sps.used_by_curr_pic_lt_sps_flag[i])
                     {
                         Slice::LongTerm & curlt = s.lt[s.num_long_term_sps];
                         curlt.lt_idx_sps = i;
                         curlt.poc_lsb_lt = m_sps.lt_ref_pic_poc_lsb_sps[i];
                         curlt.used_by_curr_pic_lt_flag = !!m_sps.used_by_curr_pic_lt_sps_flag[i];
-                        curlt.delta_poc_msb_cycle_lt = 
-                            (task.m_poc - s.pic_order_cnt_lsb - (DPBLT[j] - curlt.poc_lsb_lt)) 
-                            / MaxPocLsb - DeltaPocMsbCycleLt;
+                        curlt.delta_poc_msb_cycle_lt = (task.m_poc - s.pic_order_cnt_lsb + curlt.poc_lsb_lt - DPBLT[j]) / MaxPocLsb - DeltaPocMsbCycleLt;
                         curlt.delta_poc_msb_present_flag = !!curlt.delta_poc_msb_cycle_lt;
                         DeltaPocMsbCycleLt += curlt.delta_poc_msb_cycle_lt;
                         s.num_long_term_sps ++;
@@ -1230,11 +1244,9 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Slice & s) const
             {
                 Slice::LongTerm & curlt = s.lt[s.num_long_term_sps + s.num_long_term_pics];
 
-                curlt.used_by_curr_pic_lt_flag = isCurrRef(task, DPBLT[j]);
+                curlt.used_by_curr_pic_lt_flag = isCurrLt(task, DPBLT[j]);
                 curlt.poc_lsb_lt = (DPBLT[j] & (MaxPocLsb - 1));
-                curlt.delta_poc_msb_cycle_lt = 
-                    (task.m_poc - s.pic_order_cnt_lsb - (DPBLT[j] - curlt.poc_lsb_lt)) 
-                    / MaxPocLsb - DeltaPocMsbCycleLt;
+                curlt.delta_poc_msb_cycle_lt = (task.m_poc - s.pic_order_cnt_lsb + curlt.poc_lsb_lt - DPBLT[j]) / MaxPocLsb - DeltaPocMsbCycleLt;
                 curlt.delta_poc_msb_present_flag = !!curlt.delta_poc_msb_cycle_lt;
                 DeltaPocMsbCycleLt += curlt.delta_poc_msb_cycle_lt;
                 s.num_long_term_pics ++;
