@@ -461,7 +461,8 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitEx)(mfxInitParam par, mfxSession *ses
         //pulling up current mediasdk version, that required to match plugin version
         mfxVersion apiVerActual;
         mfxStatus stsQueryVersion;
-        stsQueryVersion = MFXQueryVersion((mfxSession)pHandle, &apiVerActual);
+        stsQueryVersion = DISPATCHER_EXPOSED_PREFIX(MFXQueryVersion)((mfxSession)pHandle, &apiVerActual);
+        
         if (MFX_ERR_NONE !=  stsQueryVersion) 
         {
             DISPATCHER_LOG_ERROR((("MFXQueryVersion returned: %d, cannot load plugins\n"), mfxRes))

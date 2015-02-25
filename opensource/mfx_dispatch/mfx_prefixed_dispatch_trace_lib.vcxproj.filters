@@ -23,9 +23,6 @@
     <ClCompile Include="src\mfx_dispatcher_log.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\mfx_dispatcher_trace.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\mfx_dxva2_device.cpp">
       <Filter>src</Filter>
     </ClCompile>

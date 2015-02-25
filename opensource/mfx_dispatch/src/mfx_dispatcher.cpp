@@ -287,7 +287,8 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
         }
         else
         {
-            mfxRes = MFXQueryVersion((mfxSession) this, &actualApiVersion);
+            mfxRes = DISPATCHER_EXPOSED_PREFIX(MFXQueryVersion)((mfxSession) this, &actualApiVersion);
+            
             if (MFX_ERR_NONE != mfxRes)
             {
                 DISPATCHER_LOG_ERROR((("MFXQueryVersion returned: %d, skiped this library\n"), mfxRes))

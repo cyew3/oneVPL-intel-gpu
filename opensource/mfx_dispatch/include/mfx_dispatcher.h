@@ -40,6 +40,9 @@ File Name: mfx_dispatcher.h
 #include "mfxenc.h"
 #include "mfxpak.h"
 
+
+mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXQueryVersion)(mfxSession session, mfxVersion *version);
+
 enum
 {
     // to avoid code changing versions are just inherited
