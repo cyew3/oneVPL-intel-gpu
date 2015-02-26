@@ -55,7 +55,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     // MFX_DEINTERLACING_AUTO_DOUBLE
     {/*02*/ MFX_ERR_UNSUPPORTED, 0, MFX_DEINTERLACING_AUTO_DOUBLE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF}}},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_PROGRESSIVE}}},
     {/*03*/ MFX_ERR_UNSUPPORTED, 0, MFX_DEINTERLACING_AUTO_DOUBLE, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},    // 0
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 60}}}, // 1
@@ -65,7 +65,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     // MFX_DEINTERLACING_AUTO_SINGLE
     {/*05*/ MFX_ERR_UNSUPPORTED, 0, MFX_DEINTERLACING_AUTO_SINGLE, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF}}},
+        {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_PROGRESSIVE}}},
     {/*06*/ MFX_ERR_UNSUPPORTED, 0, MFX_DEINTERLACING_AUTO_SINGLE, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN, 1},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD, 30}}},
