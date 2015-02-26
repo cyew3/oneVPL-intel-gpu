@@ -234,12 +234,13 @@ typedef struct {
     mfxU16      AdaptiveRefs;      // on / off
     mfxU16      FastCoeffCost;
     mfxU16      NumRefFrameB;       // 0-1-default, 2+ use given
+    mfxU16      IntraMinDepthSC;    // 0-default, 1+ use given
     mfxU16      SceneCut;           // detect scene change and insert IDR frame
     mfxU16      AnalyzeCmplx;       // analyze frame complexity (need for BRC)
     mfxU16      RateControlDepth;   // RateControlDepth - 1 = how many analyzed _forward_ frames are required by BRC
     mfxU16      LowresFactor;       // > 0 => lookahead algorithms work with scaled frames
 
-    mfxU16      reserved[47];       // 256 bytes total
+    mfxU16      reserved[46];       // 256 bytes total
 } mfxExtCodingOptionHEVC;
 
 #if defined (ADVANCED_REF)

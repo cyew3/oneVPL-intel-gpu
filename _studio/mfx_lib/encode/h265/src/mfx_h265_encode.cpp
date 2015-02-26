@@ -182,6 +182,7 @@ namespace H265Enc {
     tab_##mode##_AdaptiveRefs[x],\
     tab_##mode##_FastCoeffCost[x],\
     tab_##mode##_NumRefFrameB[x],\
+    tab_##mode##_IntraMinDepthSC[x],\
     tab_##mode##_SceneCut[x],\
     tab_##mode##_AnalyzeCmplx[x],\
     tab_##mode##_RateControlDepth[x],\
@@ -197,8 +198,12 @@ namespace H265Enc {
     TU_OPT_ALL (QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2);
     TU_OPT_SW  (Log2MaxCUSize,                  6,   6,   5,   5,   5,   5,   5);
     TU_OPT_SW  (MaxCUDepth,                     4,   4,   3,   3,   3,   3,   3);
+#ifdef AMT_ADAPTIVE_INTRA_DEPTH
+    TU_OPT_SW  (QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   2,   2,   2);
+#else
     TU_OPT_SW  (QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   2,   1,   1);
-#ifdef AMT_SETTINGS
+#endif
+
 #if defined(AMT_ADAPTIVE_TU_DEPTH)
     TU_OPT_SW  (QuadtreeTUMaxDepthInter,        3,   3,   2,   2,   2,   2,   2);
     TU_OPT_SW  (QuadtreeTUMaxDepthInterRD,      3,   3,   2,   2,   2,   1,   1);
@@ -206,16 +211,14 @@ namespace H265Enc {
     TU_OPT_SW  (QuadtreeTUMaxDepthInter,        3,   3,   2,   2,   2,   1,   1);
     TU_OPT_SW  (QuadtreeTUMaxDepthInterRD,      3,   3,   2,   2,   2,   1,   1);
 #endif
-#else
-    TU_OPT_SW  (QuadtreeTUMaxDepthInter,        4,   3,   2,   2,   2,   1,   1);
-    TU_OPT_SW  (QuadtreeTUMaxDepthInterRD,      4,   3,   2,   2,   2,   1,   1);
-#endif
+
     TU_OPT_GACC(Log2MaxCUSize,                  5,   5,   5,   5,   5,   5,   5);
     TU_OPT_GACC(MaxCUDepth,                     3,   3,   3,   3,   3,   3,   3);
     TU_OPT_GACC(QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   2,   1,   1);
     TU_OPT_GACC(QuadtreeTUMaxDepthInter,        3,   3,   2,   2,   2,   1,   1);
     TU_OPT_GACC(QuadtreeTUMaxDepthInterRD,      3,   3,   2,   2,   2,   1,   1);
     TU_OPT_ALL (TUSplitIntra,                   1,   1,   3,   3,   3,   3,   3);
+
     TU_OPT_ALL (CUSplit,                        2,   2,   2,   2,   2,   2,   2);
     TU_OPT_ALL (PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
     TU_OPT_ALL (MinCUDepthAdapt,              OFF, OFF, OFF,  ON,  ON,  ON,  ON);
@@ -251,7 +254,11 @@ namespace H265Enc {
     TU_OPT_ALL (AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON);
     TU_OPT_SW  (CostChroma,                    ON,  ON,  ON,  ON, OFF, OFF, OFF);
     TU_OPT_GACC(CostChroma,                    ON,  ON,  ON,  ON, OFF, OFF, OFF);
-    TU_OPT_ALL (IntraChromaRDO,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+#ifdef AMT_ADAPTIVE_INTRA_DEPTH
+    TU_OPT_ALL (IntraChromaRDO,                ON,  ON,  ON,  ON,  ON,  ON,  ON);
+#else
+    TU_OPT_ALL (IntraChromaRDO,               OFF, OFF, OFF, OFF, OFF, OFF,  OFF);
+#endif
     TU_OPT_ALL (reserved,                       0,   0,   0,   0,   0,   0,   0);
 
     //Filtering
@@ -274,13 +281,20 @@ namespace H265Enc {
     TU_OPT_GACC(IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice Gacc
 #ifdef AMT_SETTINGS
     TU_OPT_SW  (IntraAngModesP,                 1,   1,   2,   2,   3,   3,   3); //P slice SW
-    TU_OPT_SW  (IntraAngModesBRef,              1,   1,   2,   2,   3,   3, 100); //B Ref slice SW
 #else
     TU_OPT_SW  (IntraAngModesP,                 1,   1,   2,   2,   2,   2,   3); //P slice SW
+#endif
+#ifdef AMT_ADAPTIVE_INTRA_DEPTH
+    TU_OPT_SW  (IntraAngModesBRef,              1,   1,   2,   2,   3,   3,   99); //B Ref slice SW
+#else
     TU_OPT_SW  (IntraAngModesBRef,              1,   1,   2,   2,   3,   3, 100); //B Ref slice SW
 #endif
     TU_OPT_GACC(IntraAngModesP,                 1,   1,   2,   2,   3,   3,   3); //P slice Gacc
+#ifdef AMT_ADAPTIVE_INTRA_DEPTH
+    TU_OPT_GACC(IntraAngModesBRef,              1,   1,   2,   2,   3,   3,  99); //B Ref slice Gacc
+#else
     TU_OPT_GACC(IntraAngModesBRef,              1,   1,   2,   2,   3,   3, 100); //B Ref slice Gacc
+#endif
     TU_OPT_SW  (IntraAngModesBnonRef,           1,   1,   2,  99,  99, 100, 100); //B non Ref slice SW
     TU_OPT_GACC(IntraAngModesBnonRef,           1,   1,   2,  99,  99, 100, 100); //B non Ref slice Gacc
 
@@ -305,13 +319,25 @@ namespace H265Enc {
 #endif
     TU_OPT_ALL (DeltaQpMode,                    0,   0,   0,   0,   0,   0,   0);
 
+
     //Intra RDO
     TU_OPT_SW  (IntraNumCand0_2,                1,   1,   1,   1,   1,   1,   1);
     TU_OPT_SW  (IntraNumCand0_3,                2,   2,   2,   2,   2,   2,   2);
     TU_OPT_SW  (IntraNumCand0_4,                2,   2,   2,   2,   2,   2,   2);
     TU_OPT_SW  (IntraNumCand0_5,                1,   1,   1,   1,   1,   1,   1);
     TU_OPT_SW  (IntraNumCand0_6,                1,   1,   1,   1,   1,   1,   1);
-#ifdef AMT_SETTINGS
+#ifdef AMT_ADAPTIVE_INTRA_DEPTH
+    TU_OPT_SW  (IntraNumCand1_2,                6,   6,   4,   2,   2,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_3,                6,   6,   4,   2,   2,   2,   2);
+    TU_OPT_SW  (IntraNumCand1_4,                4,   3,   2,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_5,                4,   3,   2,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand1_6,                4,   3,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_2,                1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_3,                2,   1,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
+#else
     TU_OPT_SW  (IntraNumCand1_2,                6,   6,   4,   2,   2,   1,   1);
     TU_OPT_SW  (IntraNumCand1_3,                6,   6,   4,   2,   1,   1,   1);
     TU_OPT_SW  (IntraNumCand1_4,                4,   3,   2,   1,   1,   1,   1);
@@ -322,18 +348,8 @@ namespace H265Enc {
     TU_OPT_SW  (IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
     TU_OPT_SW  (IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
     TU_OPT_SW  (IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
-#else
-    TU_OPT_SW  (IntraNumCand1_2,                8,   6,   4,   2,   2,   1,   1);
-    TU_OPT_SW  (IntraNumCand1_3,                8,   6,   4,   2,   1,   1,   1);
-    TU_OPT_SW  (IntraNumCand1_4,                4,   3,   2,   1,   1,   1,   1);
-    TU_OPT_SW  (IntraNumCand1_5,                4,   3,   2,   1,   1,   1,   1);
-    TU_OPT_SW  (IntraNumCand1_6,                4,   3,   2,   1,   1,   1,   1);
-    TU_OPT_SW  (IntraNumCand2_2,                4,   3,   2,   2,   1,   1,   1);
-    TU_OPT_SW  (IntraNumCand2_3,                4,   3,   2,   1,   1,   1,   1);
-    TU_OPT_SW  (IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
-    TU_OPT_SW  (IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
-    TU_OPT_SW  (IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
 #endif
+
     TU_OPT_GACC(IntraNumCand0_2,                1,   1,   1,   1,   1,   1,   1);
     TU_OPT_GACC(IntraNumCand0_3,                1,   1,   1,   1,   1,   1,   1);
     TU_OPT_GACC(IntraNumCand0_4,                1,   1,   1,   1,   1,   1,   1);
@@ -411,12 +427,13 @@ namespace H265Enc {
 
     TU_OPT_SW  (NumRefFrameB,                   0,   0,   3,   3,   2,   2,   2);
     TU_OPT_GACC(NumRefFrameB,                   0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_ALL (IntraMinDepthSC,               11,  11,  11,   6,   6,   3,   3);
 
     Ipp8u tab_tuGopRefDist[8] = {8, 8, 8, 8, 8, 8, 8, 8};
 #ifdef AMT_SETTINGS
     Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 4, 4, 3, 3, 3};
 #else
-    Ipp8u tab_tuNumRefFrame_SW[8]   = {2, 4, 4, 4, 3, 3, 2, 2};
+    Ipp8u tab_tuNumRefFrame_SW[8] = {2, 4, 4, 4, 3, 3, 2, 2};
 #endif
     Ipp8u tab_tuNumRefFrame_GACC[8] = {4, 4, 4, 4, 4, 4, 4, 2};
 
@@ -1059,6 +1076,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.AdaptiveRefs = opts_tu->AdaptiveRefs;
         if (m_mfxHEVCOpts.NumRefFrameB == 0)
             m_mfxHEVCOpts.NumRefFrameB = opts_tu->NumRefFrameB;
+        if (m_mfxHEVCOpts.IntraMinDepthSC == 0)
+            m_mfxHEVCOpts.IntraMinDepthSC = opts_tu->IntraMinDepthSC;
         if (m_mfxHEVCOpts.CmIntraThreshold == 0)
             m_mfxHEVCOpts.CmIntraThreshold = opts_tu->CmIntraThreshold;
         if (m_mfxHEVCOpts.TUSplitIntra == 0)
@@ -1621,6 +1640,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.AdaptiveRefs                 ) optsNew.AdaptiveRefs                  = optsOld.AdaptiveRefs                 ;
         if (!optsNew.FastCoeffCost                ) optsNew.FastCoeffCost                 = optsOld.FastCoeffCost                ;
         if (!optsNew.NumRefFrameB                 ) optsNew.NumRefFrameB                  = optsOld.NumRefFrameB                 ;
+        if (!optsNew.IntraMinDepthSC              ) optsNew.IntraMinDepthSC               = optsOld.IntraMinDepthSC              ;
         if (!optsNew.AnalyzeCmplx                 ) optsNew.AnalyzeCmplx                  = optsOld.AnalyzeCmplx                 ;
         if (!optsNew.SceneCut                     ) optsNew.SceneCut                      = optsOld.SceneCut                     ;
         if (!optsNew.RateControlDepth             ) optsNew.RateControlDepth              = optsOld.RateControlDepth             ;
@@ -1820,6 +1840,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 optsHEVC->AdaptiveRefs = 1;
                 optsHEVC->FastCoeffCost = 1;
                 optsHEVC->NumRefFrameB = 1;
+                optsHEVC->IntraMinDepthSC = 1;
                 optsHEVC->AnalyzeCmplx = 1;
                 optsHEVC->SceneCut = 1;
                 optsHEVC->RateControlDepth = 1;
@@ -2235,7 +2256,9 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 opts_out->CUSplitThreshold = opts_in->CUSplitThreshold;
                 opts_out->DeltaQpMode = opts_in->DeltaQpMode;
                 opts_out->CpuFeature = opts_in->CpuFeature;
-                opts_out->FramesInParallel = opts_in->FramesInParallel;
+                opts_out->FramesInParallel         = opts_in->FramesInParallel;
+                opts_out->NumRefFrameB    = opts_in->NumRefFrameB;
+                opts_out->IntraMinDepthSC = opts_in->IntraMinDepthSC;
                 opts_out->AnalyzeCmplx = opts_in->AnalyzeCmplx;
                 opts_out->SceneCut = opts_in->SceneCut;
                 opts_out->RateControlDepth = opts_in->RateControlDepth;

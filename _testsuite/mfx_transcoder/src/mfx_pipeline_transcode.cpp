@@ -286,6 +286,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(AdaptiveRefs,             OPT_TRI_STATE,  "Adaptive Ref Selection"),
         HANDLE_HEVC_OPTION(FastCoeffCost,            OPT_TRI_STATE,  "Use Fast Coeff cost Estimator"),
         HANDLE_HEVC_OPTION(NumRefFrameB,             OPT_UINT_16,    "Total Number of Reference Frames used for B Frames in Pyramid"),
+        HANDLE_HEVC_OPTION(IntraMinDepthSC,          OPT_UINT_16,    "Spatial complexity for Intra min depth 1"),
         HANDLE_HEVC_OPTION(SceneCut,                 OPT_UINT_16,    "Enable Scene Cut detection and insert Idr"),
         HANDLE_HEVC_OPTION(AnalyzeCmplx,             OPT_UINT_16,    "Analyze frame complexity (for BRC)"),
         HANDLE_HEVC_OPTION(RateControlDepth,         OPT_UINT_16,    "future +1 frames for BRC"),

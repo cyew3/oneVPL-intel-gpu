@@ -105,6 +105,7 @@ struct H265VideoParam {
     Ipp8u  SkipCandRD;       // on: Do Full RD /off : do Fast decision 
     Ipp8u  AdaptiveRefs;     // on: Adaptive Search for best ref
     Ipp8u  NumRefFrameB;     // 0,1-default, 2+ Use Given
+    Ipp8u  IntraMinDepthSC;  // Spatial complexity for Intra min depth 1 [0-11] 0-default, 1-11 (1-Always, 11-Never)
     Ipp16u cmIntraThreshold; // 0-no theshold
     Ipp16u tuSplitIntra;     // 0-default; 1-always; 2-never; 3-for Intra frames only
     Ipp16u cuSplit;          // 0-default; 1-always; 2-check Skip cost first

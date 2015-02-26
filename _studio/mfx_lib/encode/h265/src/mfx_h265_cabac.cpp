@@ -686,7 +686,7 @@ static const char SCAN32X32[1024][2] =
 };
 
 
-static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, const Ipp8u* costTable, Ipp32s num_sig, Ipp32s qp)
+static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, const Ipp8u* costTable, Ipp32s num_sig, Ipp32s qp, bool isIntra)
 {
     Ipp32s b, d, z;
     Ipp32s c=0, zero_run=0;
@@ -703,7 +703,7 @@ static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, const Ip
     else if(n==8)   scan = SCAN8X8;
     else            scan = SCAN4X4;
 
-    const Ipp32s EffciencyParameter[4] = {200, 196, 192, 186};
+    const Ipp32s EffciencyParameter[4] = {200, 196, 192, 188};
     Ipp32s ctx0 = 0;
     if(qp<25)           ctx0 = 0;
     else if(qp<31)      ctx0 = 1;
@@ -770,7 +770,7 @@ void H265CU<PixType>::CodeCoeffNxN(H265Bs *bs, H265CU<PixType>* pCU, CoeffsType*
 #ifdef AMT_COEFF_COST_EST
     if(!bs->isReal() && m_par->FastCoeffCost && !m_isRdoq) {
         // A radical approach, est coeff cost & match efficiency. (suboptimal only for higher TUs)
-        Ipp32s est_bits=FastParametricCoeffCostEstimator(coeffs, width, m_logMvCostTable, num_sig, pCU->m_data[abs_part_idx].qp);
+        Ipp32s est_bits=FastParametricCoeffCostEstimator(coeffs, width, m_logMvCostTable, num_sig, pCU->m_data[abs_part_idx].qp, pCU->m_data[abs_part_idx].predMode == MODE_INTRA);
         bs->m_base.m_bitOffset += est_bits;
         return;
     }

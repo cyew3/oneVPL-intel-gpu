@@ -304,6 +304,7 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(AdaptiveRefs);
     SERIALIZE_INT(FastCoeffCost);
     SERIALIZE_INT(NumRefFrameB);
+    SERIALIZE_INT(IntraMinDepthSC);
     SERIALIZE_INT(SceneCut);
     SERIALIZE_INT(AnalyzeCmplx);
     SERIALIZE_INT(RateControlDepth);

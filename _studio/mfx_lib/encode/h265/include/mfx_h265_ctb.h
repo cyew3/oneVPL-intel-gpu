@@ -79,6 +79,7 @@ namespace H265Enc {
 #define AMT_FIX_CHROMA_SKIP
 #define AMT_USE_IPP
 #define AMT_COEFF_COST_EST
+#define AMT_ADAPTIVE_INTRA_DEPTH
 #endif
 
 struct H265VideoParam;
@@ -374,6 +375,7 @@ public:
     Ipp64f m_ChromaDistWeight;
 
     H265Slice *m_cslice;
+    Ipp8u m_intraMinDepth;      // min CU depth from spatial analysis
     Ipp8u m_adaptMinDepth;      // min CU depth from collocated CUs
     Ipp8u m_adaptMaxDepth;      // max CU depth from Projected CUs
     Ipp32s HorMax;              // MV common limits in CU
@@ -602,7 +604,7 @@ public:
                          Ipp8u costPredFlag, IntraPredOpt predOpt);
 
     void EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s offset, Ipp32s width, CostType *cost,
-                           IntraPredOpt pred_opt);
+                           IntraPredOpt pred_opt, Ipp8u costPredFlag);
 
     void QuantInvTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s isLuma);
 #ifdef AMT_DZ_RDOQ
@@ -638,7 +640,7 @@ public:
 
     void CopySubPartTo(H265CUData *dataCopy, Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trDepth);
 
-    void CalcCostLuma(Ipp32s absPartIdx, Ipp8u depth, Ipp8u trDepth, CostOpt costOpt);
+    void CalcCostLuma(Ipp32s absPartIdx, Ipp8u depth, Ipp8u trDepth, CostOpt costOpt, IntraPredOpt intraPredOpt);
 
     //CostType CalcCostSkipExperimental(Ipp32s absPartIdx, Ipp8u depth);
 
@@ -867,6 +869,7 @@ public:
 #if defined(AMT_ICRA_OPT)
     //void CalcRsCs(void);
     void GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth);
+    Ipp32s GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, Ipp32f& SCpp) const;
     Ipp32s GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth);
     Ipp32s GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, Ipp32s& scVal);
     Ipp8u EncInterLumaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width);
@@ -907,7 +910,7 @@ public:
     void SaveBestInterPredAndResid(Ipp32s absPartIdx, Ipp32s depth);
     void LoadBestInterPredAndResid(Ipp32s absPartIdx, Ipp32s depth);
 
-    Ipp8u GetAdaptiveMinDepth() const;
+    Ipp8u GetAdaptiveMinDepth(Ipp8u& intraMinDepth) const;
 
     void SetCuLambda(Task* task);
 
