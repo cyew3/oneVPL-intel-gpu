@@ -194,6 +194,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\brc\include;..\..\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -204,6 +205,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\brc\include;..\..\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -217,6 +219,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\brc\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);..\..\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -230,6 +233,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\brc\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);..\..\shared\umc\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Lib />
     <Bscmake>
