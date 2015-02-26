@@ -319,11 +319,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.TelecineLocation, 5}}},
 
     // MFX_DEINTERLACING_30FPS_OUT
-    {/*90*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_EXT_BUF, {
+    {/*90*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_30FPS_OUT}}},
 
     // MFX_DEINTERLACING_DETECT_INTERLACE
-    {/*91*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_EXT_BUF, {
+    {/*91*/ MFX_ERR_NONE, USE_EXT_BUF, {
         {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_DETECT_INTERLACE}}},
 };
 

@@ -13,7 +13,6 @@ public:
     static const unsigned int n_cases;
 
 private:
-    static const mfxU32 n_par = 6;
 
     enum
     {
@@ -40,7 +39,7 @@ private:
             mfxU32 ext_type;
             const  tsStruct::Field* f;
             mfxU32 v;
-        } set_par[n_par];
+        } set_par[MAX_NPARS];
     };
 
     static const tc_struct test_case[];
@@ -103,6 +102,13 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*16*/ MFX_ERR_UNSUPPORTED, 0, MFX_DEINTERLACING_24FPS_OUT, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN, 25},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 1}}},
+
+    // MFX_DEINTERLACING_30FPS_OUT
+    {/*17*/ MFX_ERR_NONE, 0, MFX_DEINTERLACING_30FPS_OUT},
+
+    // MFX_DEINTERLACING_DETECT_INTERLACE
+    {/*18*/ MFX_ERR_NONE, 0, MFX_DEINTERLACING_DETECT_INTERLACE},
+
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -271,7 +277,7 @@ int TestSuite::RunTest(unsigned int id)
     Query(m_session, m_pPar, m_pPar);
 
     // check m_par
-    for (mfxU32 i = 0; i < n_par; i++)
+    for (mfxU32 i = 0; i < MAX_NPARS; i++)
     {
         mfxU64 val = 0;
         if (tc.set_par[i].f && tc.set_par[i].ext_type == MFX_PAR)
