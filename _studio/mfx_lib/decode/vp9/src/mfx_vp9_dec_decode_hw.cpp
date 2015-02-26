@@ -1086,7 +1086,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
         memset(picParam->reference_frames, VA_INVALID_SURFACE, sizeof(picParam->reference_frames));
     else
     {
-        for (mfxU8 ref = 0; ref < MAX_REF_FRAMES; ++ref)
+        for (mfxU8 ref = 0; ref < NUM_REF_FRAMES; ++ref)
             picParam->reference_frames[ref] = m_va->GetSurfaceID(info.ref_frame_map[ref]);
     }
 
