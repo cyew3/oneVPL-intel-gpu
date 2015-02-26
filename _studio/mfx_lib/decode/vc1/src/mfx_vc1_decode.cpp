@@ -3038,7 +3038,8 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport(mfxFrameSurface1 *surface_disp)
         }
     }
 
-#elif defined(MFX_VA_ANDROID)
+#elif defined(MFX_VA_LINUX)
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     VideoAccelerator *va;
     m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
 
@@ -3050,8 +3051,7 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport(mfxFrameSurface1 *surface_disp)
         if (sts != UMC_OK)
              MFX_ERR_DEVICE_FAILED;
     }
-
-#elif defined(MFX_VA_LINUX)
+#else
     VideoAccelerator *va;
     m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
 
@@ -3072,6 +3072,7 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport(mfxFrameSurface1 *surface_disp)
         //    return MFX_TASK_BUSY;
         //}
     }
+#endif //#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 #endif
 
     return MFX_ERR_NONE;

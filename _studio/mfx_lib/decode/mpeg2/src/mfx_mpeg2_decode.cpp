@@ -3741,6 +3741,17 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface)
 #endif
 
 #ifdef UMC_VA_LINUX
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+    UMC::VideoAccelerator *va;
+    m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
+
+    UMC::Status sts = UMC::UMC_OK;
+
+    int index = m_implUmc.pack_w.va_index;
+    sts = va->SyncTask(index);
+    if (sts != UMC::UMC_OK)
+        return MFX_ERR_DEVICE_FAILED;
+#else
     UMC::VideoAccelerator *va;
     m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
 
@@ -3765,7 +3776,7 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface)
             break;
     }
 */
-
+#endif // #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 #endif
 
     return MFX_ERR_NONE;
