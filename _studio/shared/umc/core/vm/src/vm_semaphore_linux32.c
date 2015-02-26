@@ -124,7 +124,11 @@ vm_status vm_semaphore_timedwait(vm_semaphore *sem, Ipp32u msec)
                 msec = 1000 * msec + tval.tv_usec;
                 tspec.tv_sec = tval.tv_sec + msec / 1000000;
                 tspec.tv_nsec = (msec % 1000000) * 1000;
-                i_res = pthread_cond_timedwait(&sem->cond, &sem->mutex, &tspec);
+                i_res = 0;
+                while (!i_res && !sem->count)
+                {
+                    i_res = pthread_cond_timedwait(&sem->cond, &sem->mutex, &tspec);
+                }
 
                 if (ETIMEDOUT == i_res)
                     umc_status = VM_TIMEOUT;
@@ -152,6 +156,7 @@ vm_status vm_semaphore_timedwait(vm_semaphore *sem, Ipp32u msec)
 vm_status vm_semaphore_wait(vm_semaphore *sem)
 {
     vm_status umc_status = VM_NOT_INITIALIZED;
+    Ipp32s i_res = 0;
 
     /* check error(s) */
     if (NULL == sem)

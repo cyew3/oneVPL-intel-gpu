@@ -216,7 +216,7 @@ vm_status vm_event_pulse(vm_event *event)
 vm_status vm_event_wait(vm_event *event)
 {
     vm_status umc_status = VM_NOT_INITIALIZED;
-    int res = 0;
+    int res;
 
     /* check error(s) */
     if (NULL == event)
@@ -230,7 +230,10 @@ vm_status vm_event_wait(vm_event *event)
             umc_status = VM_OK;
             if (!event->state)
             {
-                res = pthread_cond_wait(&event->cond,&event->mutex);
+                while (!res && !event->state)
+                {
+                    res = pthread_cond_wait(&event->cond,&event->mutex);
+                }
                 if (res)
                 {
                     umc_status = VM_OPERATION_FAILED;
@@ -287,10 +290,15 @@ vm_status vm_event_timed_wait(vm_event *event, Ipp32u msec)
                     micro_sec = 1000 * msec + tval.tv_usec;
                     tspec.tv_sec = tval.tv_sec + (Ipp32u)(micro_sec / 1000000);
                     tspec.tv_nsec = (Ipp32u)(micro_sec % 1000000) * 1000;
+                    i_res = 0;
 
-                    i_res = pthread_cond_timedwait(&event->cond,
-                                                &event->mutex,
-                                                &tspec);
+                    while (!i_res && !event->state)
+                    {
+                        i_res = pthread_cond_timedwait(&event->cond,
+                            &event->mutex,
+                            &tspec);
+                    }
+
                     if (0 == i_res)
                         umc_status = VM_OK;
                     else if (ETIMEDOUT == i_res)
