@@ -91,7 +91,7 @@ public:
     virtual Status Execute();
     virtual Status ExecuteExtensionBuffer(void * buffer);
     virtual Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size);
-    virtual Status SyncTask(Ipp32s index) { index; return UMC_ERR_UNSUPPORTED;}
+    virtual Status SyncTask(Ipp32s index, void * error = NULL) { index; error; return UMC_ERR_UNSUPPORTED;}
     virtual Status QueryTaskStatus(Ipp32s , void *, void * ) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ReleaseBuffer(Ipp32s type);
     virtual Status EndFrame(void * handle = 0);

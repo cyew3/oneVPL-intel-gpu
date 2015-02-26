@@ -909,6 +909,43 @@ Ipp32s LinuxVideoAccelerator::GetIndex(void)
     return m_iIndex;
 }
 
+VAStatus LinuxVideoAccelerator::GetDecodingError()
+{
+    VAStatus error = VA_STATUS_SUCCESS;
+
+#ifndef ANDROID
+    // NOTE: at the moment there is no such support for Android, so no need to execute...
+    VAStatus va_sts;
+
+    // TODO: to reduce number of checks we can cache all used render targets
+    // during vaBeginPicture() call. For now check all render targets binded to context
+    for(int cnt = 0; cnt < m_NumOfFrameBuffers; ++cnt)
+    {
+        VASurfaceDecodeMBErrors* pVaDecErr = NULL;
+        va_sts = vaQuerySurfaceError(m_dpy, m_surfaces[cnt], VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
+
+        if (VA_STATUS_SUCCESS == va_sts)
+        {
+            if (NULL != pVaDecErr)
+            {
+                for (int i = 0; pVaDecErr[i].status != -1; ++i)
+                {
+                    if (VADecodeMBError == pVaDecErr[i].decode_error_type)
+                    {
+                        error = VA_STATUS_ERROR_DECODING_ERROR;
+                    }
+                }
+            }
+            else
+            {
+                error = VA_STATUS_ERROR_DECODING_ERROR;
+            }
+        }
+    }
+#endif
+    return error;
+}
+
 Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * status, void * error)
 {
     if ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers))
@@ -921,33 +958,9 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
     {
         // handle decoding errors
         VAStatus va_sts = vaSyncSurface(m_dpy, m_surfaces[FrameBufIndex]);
-        if (VA_STATUS_ERROR_DECODING_ERROR == va_sts)
+        if ((VA_STATUS_ERROR_DECODING_ERROR == va_sts) && (NULL != error))
         {
-            // TODO: to reduce number of checks we can cache all used render targets
-            // during vaBeginPicture() call. For now check all render targets binded to context
-            for(int cnt = 0; cnt < m_NumOfFrameBuffers; ++cnt)
-            {
-                VASurfaceDecodeMBErrors* pVaDecErr = NULL;
-                va_sts = vaQuerySurfaceError(m_dpy, m_surfaces[cnt], VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
-
-                if ((VA_STATUS_SUCCESS == va_sts) && (NULL != error))
-                {
-                    if (NULL != pVaDecErr)
-                    {
-                        for (int i = 0; pVaDecErr[i].status != -1; ++i)
-                        {
-                            if (VADecodeMBError == pVaDecErr[i].decode_error_type)
-                            {
-                                *(VAStatus*)error = VA_STATUS_ERROR_DECODING_ERROR;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        *(VAStatus*)error = VA_STATUS_ERROR_DECODING_ERROR;
-                    }
-                }
-            }
+            *(VAStatus*)error = GetDecodingError();
         }
     }
 
@@ -960,21 +973,23 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
     return umcRes;
 }
 
-Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex)
+Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex, void * error)
 {
     Status umcRes = UMC_OK;
-    VAStatus va_res = VA_STATUS_SUCCESS;
+    VAStatus va_sts = VA_STATUS_SUCCESS;
 
     if ((UMC_OK == umcRes) && ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers)))
         umcRes = UMC_ERR_INVALID_PARAMS;
 
     if (UMC_OK == umcRes)
     {
-        va_res = vaSyncSurface(m_dpy, m_surfaces[FrameBufIndex]);
-        if (VA_STATUS_ERROR_DECODING_ERROR == va_res)
-            va_res = VA_STATUS_SUCCESS;
+        va_sts = vaSyncSurface(m_dpy, m_surfaces[FrameBufIndex]);
+        if ((VA_STATUS_ERROR_DECODING_ERROR == va_sts) && (NULL != error))
+        {
+            *(VAStatus*)error = GetDecodingError();
+        }
 
-        umcRes = va_to_umc_res(va_res);
+        umcRes = va_to_umc_res(va_sts);
     }
 
     return umcRes;

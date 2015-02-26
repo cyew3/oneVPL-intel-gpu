@@ -330,24 +330,31 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
 
 #endif
 #ifdef UMC_VA_LINUX
-#ifdef ANDROID
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     Status sts = UMC_OK;
+    VAStatus surfErr = VA_STATUS_SUCCESS;
     Ipp32s index;
 
     for (H264DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
         index = au->m_pFrame->m_index;
-        au->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
-        CompleteFrame(au->m_pFrame);
 
         m_mGuard.Unlock();
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
-            sts = dxva_sd->GetPacker()->SyncTask(index);
+            sts = dxva_sd->GetPacker()->SyncTask(index, &surfErr);
         }
         m_mGuard.Lock();
+
         if (sts != UMC_OK)
             throw h264_exception(sts);
+
+        if(VA_STATUS_ERROR_DECODING_ERROR == surfErr)
+        {
+            au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
+        }
+        au->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
+        CompleteFrame(au->m_pFrame);
     }
     SwitchCurrentAU();
 #else

@@ -33,6 +33,13 @@
 #   ifndef UMC_VA_LINUX
 #       define UMC_VA_LINUX          // HW acceleration through Linux VA
 #   endif
+#   ifndef SYNCHRONIZATION_BY_VA_SYNC_SURFACE
+#       ifdef ANDROID
+#           define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
+#       else
+//#           define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
+#       endif
+#   endif
 #elif defined(_WIN32) || defined(_WIN64)
 #   ifndef UMC_VA_DXVA
 #       define UMC_VA_DXVA           // HW acceleration through DXVA
@@ -315,7 +322,7 @@ public:
     virtual Status Execute      (void) = 0;          // execute decoding
     virtual Status ExecuteExtensionBuffer(void * buffer) = 0;
     virtual Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size) = 0;
-    virtual Status SyncTask(Ipp32s index) = 0;
+    virtual Status SyncTask(Ipp32s index, void * error = NULL) = 0;
     virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error) = 0;
     virtual Status ReleaseBuffer(Ipp32s type) = 0;   // release buffer
     virtual Status EndFrame     (void * handle = 0) = 0;          // end frame

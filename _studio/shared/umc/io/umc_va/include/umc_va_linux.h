@@ -107,7 +107,7 @@ public:
     // Following functions are absent in menlow!!!!!!!!!!!!!!!!!!!!!!
     virtual Status ExecuteExtensionBuffer(void* /*x*/) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ExecuteStatusReportBuffer(void* /*x*/, Ipp32s /*y*/)  { return UMC_ERR_UNSUPPORTED;}
-    virtual Status SyncTask(Ipp32s index);
+    virtual Status SyncTask(Ipp32s index, void * error = NULL);
     virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error);
     virtual bool IsIntelCustomGUID() const { return false;}
     virtual GUID GetDecoderGuid(){return m_guidDecoder;};
@@ -117,6 +117,9 @@ protected:
     // VideoAcceleratorExt methods
     virtual Status AllocCompBuffers(void);
     virtual VACompBuffer* GetCompBufferHW(Ipp32s type, Ipp32s size, Ipp32s index = -1);
+
+    // LinuxVideoAccelerator methods
+    VAStatus GetDecodingError();
 
 protected:
     VADisplay     m_dpy;
