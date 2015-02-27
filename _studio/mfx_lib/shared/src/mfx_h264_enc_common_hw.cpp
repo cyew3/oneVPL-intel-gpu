@@ -3002,10 +3002,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
     }
 
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ &&
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR &&
         extOpt2->MBBRC == MFX_CODINGOPTION_OFF)
     {
-        // for ICQ BRC mode MBBRC is ignored by driver and always treated as ON
+        // for ICQ or QVBR BRC mode MBBRC is ignored by driver and always treated as ON
         // need to change extOpt2->MBBRC respectively to notify application about it
         extOpt2->MBBRC = MFX_CODINGOPTION_ON;
         changed = true;
