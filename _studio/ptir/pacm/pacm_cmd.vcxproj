@@ -202,7 +202,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\pa;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Precise</FloatingPointModel>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
@@ -258,7 +258,7 @@ del embed_isa.exe</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>USE_CM;CMRT_EMU;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\pa;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Precise</FloatingPointModel>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
@@ -313,7 +313,7 @@ del embed_isa.exe</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\pa;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -363,7 +363,7 @@ del embed_isa.exe</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\pa;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -415,7 +415,7 @@ del embed_isa.exe</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\pa;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Precise</FloatingPointModel>
       <FloatingPointExpressionEvaluation>Default</FloatingPointExpressionEvaluation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -475,7 +475,7 @@ del embed_isa.exe</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USE_CM;CMRT_EMU;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\pa;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Precise</FloatingPointModel>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
@@ -534,7 +534,7 @@ del embed_isa.exe</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\pa;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -588,7 +588,7 @@ del embed_isa.exe</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\pa;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>

@@ -459,6 +459,6 @@ void ReSample(Frame *frmOut, Frame *frmIn)
     }
     else
         AddBorders(&frmIn->plaV, &frmOut->plaV, frmOut->plaV.uiBorder);
-    memcpy(frmOut->plaY.ucStats.ucSAD,frmIn->plaY.ucStats.ucSAD,sizeof(double) * 5);
+    ptir_memcpy(frmOut->plaY.ucStats.ucSAD,frmIn->plaY.ucStats.ucSAD,sizeof(double) * 5);
     frmOut->frmProperties.tindex = frmIn->frmProperties.tindex;
 }

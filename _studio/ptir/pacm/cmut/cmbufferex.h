@@ -17,12 +17,7 @@
 //#include "cm_rt.h"
 #include "cmassert.h"
 #include "assert.h"
-
-#if defined(_WIN32) || defined(_WIN64)
-#define ptir_memcpy(dst, src, size)  memcpy_s(dst, size, src, size)
-#else
-#define ptir_memcpy(dst, src, size)  memcpy(dst, src, size)
-#endif
+#include "ptir_memory.h"
 
 class CmBufferEx
 {
@@ -76,6 +71,10 @@ public:
 protected:
   CmBuffer * pCmBuffer;
   CmDeviceEx & cmDeviceEx;
+
+private:
+  //prohobit copy constructor
+  CmBufferEx(const CmBufferEx& that);
 };
 
 class CmBufferUPEx

@@ -252,15 +252,15 @@ void AddBorders(Plane *pplaIn, Plane *pplaOut, unsigned int uiBorder)
 
     // Top
     for (i = 0; i < pplaOut->uiBorder; ++i)
-        memcpy(&pplaOut->ucData[i * pplaOut->uiStride + pplaOut->uiBorder], &pplaIn->ucData[0], pplaIn->uiWidth);
+        ptir_memcpy(&pplaOut->ucData[i * pplaOut->uiStride + pplaOut->uiBorder], &pplaIn->ucData[0], pplaIn->uiWidth);
 
     // Center
     for (i = 0; i < pplaIn->uiHeight; ++i)
-        memcpy(&pplaOut->ucData[(i + pplaOut->uiBorder) * pplaOut->uiStride + pplaOut->uiBorder], &pplaIn->ucData[i * pplaIn->uiWidth], pplaIn->uiWidth);
+        ptir_memcpy(&pplaOut->ucData[(i + pplaOut->uiBorder) * pplaOut->uiStride + pplaOut->uiBorder], &pplaIn->ucData[i * pplaIn->uiWidth], pplaIn->uiWidth);
 
     // Bottom
     for (i = 0; i < pplaOut->uiBorder; ++i)
-        memcpy(&pplaOut->ucData[(pplaOut->uiHeight + i + pplaOut->uiBorder) * pplaOut->uiStride + pplaOut->uiBorder], &pplaIn->ucData[pplaIn->uiWidth * (pplaIn->uiHeight - 1)], pplaIn->uiWidth);
+        ptir_memcpy(&pplaOut->ucData[(pplaOut->uiHeight + i + pplaOut->uiBorder) * pplaOut->uiStride + pplaOut->uiBorder], &pplaIn->ucData[pplaIn->uiWidth * (pplaIn->uiHeight - 1)], pplaIn->uiWidth);
 
     // Left
     for (i = 0; i < pplaOut->uiHeight + 2 * pplaOut->uiBorder; ++i)
@@ -280,7 +280,7 @@ void TrimBorders(Plane *pplaIn, Plane *pplaOut)
     pplaOut->uiBorder = 0;
 
     for (i = 0; i < pplaOut->uiHeight; ++i)
-        memcpy(&pplaOut->ucData[i * pplaOut->uiStride], &pplaIn->ucData[(i + pplaIn->uiBorder) * pplaIn->uiStride + pplaIn->uiBorder], pplaIn->uiWidth);
+        ptir_memcpy(&pplaOut->ucData[i * pplaOut->uiStride], &pplaIn->ucData[(i + pplaIn->uiBorder) * pplaIn->uiStride + pplaIn->uiBorder], pplaIn->uiWidth);
 }
 static void Convert_UYVY_to_I420(unsigned char *pucIn, Frame *pfrmOut)
 {
@@ -317,7 +317,7 @@ unsigned int Convert_to_I420(unsigned char *pucIn, Frame *pfrmOut, char *pcForma
     pfrmOut->frmProperties.fr = dFrameRate;
     if (strcmp(pcFormat, "I420") == 0)
     {
-        memcpy(pfrmOut->ucMem, pucIn, pfrmOut->uiSize);
+        ptir_memcpy(pfrmOut->ucMem, pucIn, pfrmOut->uiSize);
         return 1;
     }
     else if (strcmp(pcFormat, "UYVY") == 0)
@@ -347,7 +347,7 @@ void Frame_Prep_and_Analysis(Frame **frmBuffer, char *pcFormat, double dFrameRat
     dPicSize = frmBuffer[uiframeBufferIndexCur]->plaY.uiWidth * frmBuffer[uiframeBufferIndexCur]->plaY.uiHeight;
 #endif
 
-    memcpy(frmBuffer[uiframeBufferIndexCur]->ucMem, frmBuffer[BUFMINSIZE]->ucMem, frmBuffer[BUFMINSIZE]->uiSize);
+    ptir_memcpy(frmBuffer[uiframeBufferIndexCur]->ucMem, frmBuffer[BUFMINSIZE]->ucMem, frmBuffer[BUFMINSIZE]->uiSize);
     frmBuffer[uiframeBufferIndexCur]->frmProperties.tindex = uiTemporalIndex + 1;
     sadCalc_I420_frame(frmBuffer[uiframeBufferIndexCur],frmBuffer[uiframeBufferIndexNext]);
     Rs_measurement(frmBuffer[uiframeBufferIndexCur]);
@@ -451,7 +451,7 @@ void Update_Frame_BufferNEW(Frame** frmBuffer, unsigned int frameIndex, double d
     Prepare_frame_for_queue(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight);
     if(!frmIn)
         return;
-    memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
+    ptir_memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
 
     //Timestamp
     frmIn->frmProperties.timestamp = dCurTimeStamp;
@@ -463,7 +463,7 @@ void Update_Frame_BufferNEW(Frame** frmBuffer, unsigned int frameIndex, double d
         Prepare_frame_for_queue(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight); // Go to double frame rate
         if(!frmIn)
             return;
-        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+        ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
         //Timestamp
         frmIn->frmProperties.timestamp = dCurTimeStamp + dTimePerFrame / 2;
@@ -492,7 +492,7 @@ void Update_Frame_Buffer(Frame** frmBuffer, unsigned int frameIndex, double dTim
     Prepare_frame_for_queue(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight);
     if(!frmIn)
         return;
-    memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
+    ptir_memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
            
     //Timestamp
     if (frmBuffer[frameIndex]->frmProperties.interlaced && bFullFrameRate == 1 && uiisInterlaced == 1)
@@ -513,7 +513,7 @@ void Update_Frame_Buffer(Frame** frmBuffer, unsigned int frameIndex, double dTim
         Prepare_frame_for_queue(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight); // Go to double frame rate
         if(!frmIn)
             return;
-        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+        ptir_memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
         //Timestamp
         frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
@@ -559,7 +559,7 @@ void PTIR_Frame_Prep_and_Analysis(PTIRSystemBuffer *SysBuffer)
         SysBuffer->control.uiFrame = 0;
     }
 
-    memcpy(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->ucMem, SysBuffer->frmBuffer[BUFMINSIZE]->ucMem, SysBuffer->frmBuffer[BUFMINSIZE]->uiSize);
+    ptir_memcpy(SysBuffer->frmBuffer[SysBuffer->control.uiCur]->ucMem, SysBuffer->frmBuffer[BUFMINSIZE]->ucMem, SysBuffer->frmBuffer[BUFMINSIZE]->uiSize);
     SysBuffer->frmBuffer[SysBuffer->control.uiCur]->frmProperties.tindex = SysBuffer->control.uiFrame + 1;
     sadCalc_I420_frame(SysBuffer->frmBuffer[SysBuffer->control.uiCur],SysBuffer->frmBuffer[SysBuffer->control.uiNext]);
     Rs_measurement(SysBuffer->frmBuffer[SysBuffer->control.uiCur]);

@@ -223,7 +223,7 @@ void FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int Botto
         pSrcLine = pSrc->plaY.ucCorner + i * pSrc->plaY.uiStride;
         pDstLine = pDst->plaY.ucCorner + i * pDst->plaY.uiStride;
         assert(pDstLine != 0 && pSrcLine != 0);
-        memcpy(pDstLine, pSrcLine, pDst->plaY.uiWidth);
+        ptir_memcpy(pDstLine, pSrcLine, pDst->plaY.uiWidth);
     }
 
     // copying U-component
@@ -232,7 +232,7 @@ void FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int Botto
         pSrcLine = pSrc->plaU.ucCorner + i * pSrc->plaU.uiStride;
         pDstLine = pDst->plaU.ucCorner + i * pDst->plaU.uiStride;
         assert(pDstLine != 0 && pSrcLine != 0);
-        memcpy(pDstLine, pSrcLine, pDst->plaU.uiWidth);
+        ptir_memcpy(pDstLine, pSrcLine, pDst->plaU.uiWidth);
     }
     // copying V-component
     for (i = 0; i < pSrc->plaV.uiHeight; i++)
@@ -240,7 +240,7 @@ void FillBaseLinesIYUV(Frame *pSrc, Frame* pDst, int BottomLinesBaseY, int Botto
         pSrcLine = pSrc->plaV.ucCorner + i * pSrc->plaV.uiStride;
         pDstLine = pDst->plaV.ucCorner + i * pDst->plaV.uiStride;
         assert(pDstLine != 0 && pSrcLine != 0);
-        memcpy(pDstLine, pSrcLine, pDst->plaV.uiWidth);
+        ptir_memcpy(pDstLine, pSrcLine, pDst->plaV.uiWidth);
     }
 }
 void BilinearDeint(Frame *This, int BotBase)
@@ -1247,7 +1247,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
     {
 //BottomBase, non MC; upper and bottom lines processing
 //Y processing
-        memcpy(frmBuffer[curFrame]->plaY.ucCorner, frmBuffer[curFrame]->plaY.ucCorner + frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.uiWidth);
+        ptir_memcpy(frmBuffer[curFrame]->plaY.ucCorner, frmBuffer[curFrame]->plaY.ucCorner + frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.uiWidth);
         
         curLine  = frmBuffer[curFrame]->plaY.ucCorner + frmBuffer[curFrame]->plaY.uiStride + frmBuffer[curFrame]->plaY.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaY.uiStride;
@@ -1274,7 +1274,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
 
 
 //U processing
-        memcpy(frmBuffer[curFrame]->plaU.ucCorner, frmBuffer[curFrame]->plaU.ucCorner + frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.uiWidth);
+        ptir_memcpy(frmBuffer[curFrame]->plaU.ucCorner, frmBuffer[curFrame]->plaU.ucCorner + frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.uiWidth);
 
         curLine  = frmBuffer[curFrame]->plaU.ucCorner + (frmBuffer[curFrame]->plaU.uiHeight * frmBuffer[curFrame]->plaU.uiStride) - frmBuffer[curFrame]->plaU.uiStride - frmBuffer[curFrame]->plaU.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaU.uiStride;
@@ -1283,7 +1283,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
             curLine[x] = (prevLine[x] + nextLine[x]) / 2;
 
 //V processing
-        memcpy(frmBuffer[curFrame]->plaV.ucCorner, frmBuffer[curFrame]->plaV.ucCorner + frmBuffer[curFrame]->plaV.uiStride, frmBuffer[curFrame]->plaV.uiWidth);
+        ptir_memcpy(frmBuffer[curFrame]->plaV.ucCorner, frmBuffer[curFrame]->plaV.ucCorner + frmBuffer[curFrame]->plaV.uiStride, frmBuffer[curFrame]->plaV.uiWidth);
             
         curLine  = frmBuffer[curFrame]->plaV.ucCorner + (frmBuffer[curFrame]->plaV.uiHeight * frmBuffer[curFrame]->plaV.uiStride) - frmBuffer[curFrame]->plaV.uiStride - frmBuffer[curFrame]->plaV.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaV.uiStride;
@@ -1295,7 +1295,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
     {
 //UpperBase, non MC; upper and bottom lines processing
 //Y processing
-        memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * frmBuffer[curFrame]->plaY.uiHeight) - frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 2)) /*- frmBuffer[curFrame]->plaY.uiStride - frmBuffer[curFrame]->plaY.uiStride*/, frmBuffer[curFrame]->plaY.uiWidth);
+        ptir_memcpy(frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * frmBuffer[curFrame]->plaY.uiHeight) - frmBuffer[curFrame]->plaY.uiStride, frmBuffer[curFrame]->plaY.ucCorner + (frmBuffer[curFrame]->plaY.uiStride * (frmBuffer[curFrame]->plaY.uiHeight - 2)) /*- frmBuffer[curFrame]->plaY.uiStride - frmBuffer[curFrame]->plaY.uiStride*/, frmBuffer[curFrame]->plaY.uiWidth);
 
         curLine  = frmBuffer[curFrame]->plaY.ucCorner + frmBuffer[curFrame]->plaY.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaY.uiStride;
@@ -1317,7 +1317,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
 
             
 //U processing
-        memcpy(frmBuffer[curFrame]->plaU.ucCorner + (frmBuffer[curFrame]->plaU.uiHeight * frmBuffer[curFrame]->plaU.uiStride) - frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.ucCorner + (frmBuffer[curFrame]->plaU.uiHeight * frmBuffer[curFrame]->plaU.uiStride) - frmBuffer[curFrame]->plaU.uiStride - frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.uiWidth);
+        ptir_memcpy(frmBuffer[curFrame]->plaU.ucCorner + (frmBuffer[curFrame]->plaU.uiHeight * frmBuffer[curFrame]->plaU.uiStride) - frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.ucCorner + (frmBuffer[curFrame]->plaU.uiHeight * frmBuffer[curFrame]->plaU.uiStride) - frmBuffer[curFrame]->plaU.uiStride - frmBuffer[curFrame]->plaU.uiStride, frmBuffer[curFrame]->plaU.uiWidth);
 
         curLine  = frmBuffer[curFrame]->plaU.ucCorner + frmBuffer[curFrame]->plaU.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaU.uiStride;
@@ -1326,7 +1326,7 @@ void DeinterlaceBorders(Frame **frmBuffer, unsigned int curFrame, unsigned int r
             curLine[x] = (prevLine[x] + nextLine[x]) / 2;
             
 //V processing
-        memcpy(frmBuffer[curFrame]->plaV.ucCorner + (frmBuffer[curFrame]->plaV.uiHeight * frmBuffer[curFrame]->plaV.uiStride) - frmBuffer[curFrame]->plaV.uiStride, frmBuffer[curFrame]->plaV.ucCorner + (frmBuffer[curFrame]->plaV.uiHeight * frmBuffer[curFrame]->plaV.uiStride) - frmBuffer[curFrame]->plaV.uiStride - frmBuffer[curFrame]->plaV.uiStride, frmBuffer[curFrame]->plaV.uiWidth);
+        ptir_memcpy(frmBuffer[curFrame]->plaV.ucCorner + (frmBuffer[curFrame]->plaV.uiHeight * frmBuffer[curFrame]->plaV.uiStride) - frmBuffer[curFrame]->plaV.uiStride, frmBuffer[curFrame]->plaV.ucCorner + (frmBuffer[curFrame]->plaV.uiHeight * frmBuffer[curFrame]->plaV.uiStride) - frmBuffer[curFrame]->plaV.uiStride - frmBuffer[curFrame]->plaV.uiStride, frmBuffer[curFrame]->plaV.uiWidth);
 
         curLine  = frmBuffer[curFrame]->plaV.ucCorner + frmBuffer[curFrame]->plaV.uiStride;
         prevLine = curLine - frmBuffer[curFrame]->plaV.uiStride;

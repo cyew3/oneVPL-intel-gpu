@@ -427,7 +427,7 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     if(in)
     {
         const mfxVideoParam& const_in = *in;
-        ptir_memcpy(&out->vpp, &const_in.vpp, sizeof(mfxInfoVPP));
+        ptir_memcpy_s(&out->vpp, sizeof(out->vpp), &const_in.vpp, sizeof(const_in.vpp));
         if(const_in.AsyncDepth == 0 || const_in.AsyncDepth == 1)
         {
             out->AsyncDepth = const_in.AsyncDepth;

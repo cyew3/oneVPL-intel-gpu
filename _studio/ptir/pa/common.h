@@ -19,10 +19,9 @@ File Name: common.h
 #if defined(_WIN32) || defined(_WIN64)
 #include <intrin.h>
 #endif
-#include <memory.h>
 #include <math.h>
 #include <stdio.h>
-
+#include "ptir_memory.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -81,12 +80,6 @@ extern "C" {
 //#include <immintrin.h> // AVX, AVX2
 //#include <ammintrin.h> // AMD extention SSE5 ? FMA4
 
-#endif
-
-#if defined(_WIN32) || defined(_WIN64)
-#define ptir_memcpy(dst, src, size)  memcpy_s(dst, size, src, size)
-#else
-#define ptir_memcpy(dst, src, size)  memcpy(dst, src, size)
 #endif
 
 #define BUFMINSIZE               6

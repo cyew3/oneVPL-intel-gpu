@@ -108,7 +108,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PTIR_PLUGIN_EXPORTS;MFX_VA;MFX_VA_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\pa;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -144,7 +144,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PTIR_PLUGIN_EXPORTS;MFX_VA;MFX_VA_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\pa;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -181,7 +181,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PTIR_PLUGIN_EXPORTS;MFX_VA;MFX_VA_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\pa;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -223,7 +223,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PTIR_PLUGIN_EXPORTS;MFX_VA;MFX_VA_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\include;..\pa;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <ExceptionHandling>Async</ExceptionHandling>
