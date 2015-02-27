@@ -639,37 +639,43 @@ mfxStatus CTranscodingPipeline::Decode()
     {
         pNextBuffer = m_pBuffer;
 
-        if (m_MaxFramesForTranscode == m_nProcessedFramesNum)
+        if (m_MaxFramesForTranscode != m_nProcessedFramesNum)
         {
-            break;
-        }
-
-        m_nBeginTime = msdk_time_get_tick(); //m_nBeginTime is in microseconds.
-
-        if (!bEndOfFile)
-        {
-            sts = DecodeOneFrame(&DecExtSurface);
-            if (MFX_ERR_MORE_DATA == sts)
+            if (!bEndOfFile)
+            {
+                sts = DecodeOneFrame(&DecExtSurface);
+                if (MFX_ERR_MORE_DATA == sts)
+                {
+                    sts = DecodeLastFrame(&DecExtSurface);
+                    bEndOfFile = true;
+                }
+            }
+            else
             {
                 sts = DecodeLastFrame(&DecExtSurface);
-                bEndOfFile = true;
             }
+
+            if (sts == MFX_ERR_NONE)
+            {
+                m_nProcessedFramesNum++;
+            }
+            if (sts == MFX_ERR_MORE_DATA && (m_pmfxVPP.get() || m_pmfxPreENC.get()))
+            {
+                DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
+                sts = MFX_ERR_NONE;
+            }
+            MSDK_BREAK_ON_ERROR(sts);
+        }
+        else if ( m_pmfxVPP.get() || m_pmfxPreENC.get())
+        {
+           DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
+           bEndOfFile = true;
+           sts = MFX_ERR_NONE;
         }
         else
         {
-            sts = DecodeLastFrame(&DecExtSurface);
+            break;
         }
-
-        if (sts == MFX_ERR_NONE)
-        {
-            m_nProcessedFramesNum++;
-        }
-        if (sts == MFX_ERR_MORE_DATA && (m_pmfxVPP.get() || m_pmfxPreENC.get()))
-        {
-            DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
-            sts = MFX_ERR_NONE;
-        }
-        MSDK_BREAK_ON_ERROR(sts);
 
         if (m_pmfxVPP.get())
             sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
@@ -1340,7 +1346,7 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     }
 
     // configure and attach external parameters
-    if (pInParams->nLADepth || pInParams->nMaxSliceSize)
+    if (pInParams->bLABRC || pInParams->nMaxSliceSize)
     {
         m_CodingOption2.LookAheadDepth = pInParams->nLADepth;
         m_CodingOption2.MaxSliceSize = pInParams->nMaxSliceSize;
@@ -1463,6 +1469,11 @@ mfxStatus CTranscodingPipeline::InitPreEncMfxParams(sInputParams *pInParams)
     m_ExtLAControl.Header.BufferSz = sizeof(m_ExtLAControl);
     m_ExtLAControl.LookAheadDepth = pInParams->nLADepth? pInParams->nLADepth : 40;
     m_ExtLAControl.NumOutStream = 0;
+    m_ExtLAControl.BPyramid = (mfxU16)(pInParams->bEnableBPyramid ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+    if (m_ExtLAControl.BPyramid)
+    {
+        m_mfxPreEncParams.mfx.GopPicSize = 1500;
+    }
 
     m_PreEncExtParams.push_back((mfxExtBuffer *)&m_ExtLAControl);
 

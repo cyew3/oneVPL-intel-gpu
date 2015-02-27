@@ -742,6 +742,11 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.bLABRC = true;
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-bpyr")))
+        {
+            InputParams.bEnableBPyramid = true;
+        }
+
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-lad")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
