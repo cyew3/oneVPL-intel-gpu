@@ -452,6 +452,8 @@ typedef struct _VPE_CP_CAPS
     UINT    bRgbToYuvCSC                      : 1;
     UINT    bYuvToRgbCSC                      : 1;
     UINT    Reserved                          : 21;
+    UINT    SegEntryForwardGamma              : 16;
+    UINT    Reserved2;
 } VPE_CP_CAPS;
 
 typedef struct _CP_ACTIVATE_PARAMS
@@ -528,18 +530,18 @@ typedef struct _VPE_CP_COLOR_CORRECTION_PARAMS
 } VPE_CP_COLOR_CORRECTION_PARAMS;
 
 
-typedef struct _CP_FPRWARD_GAMMA_SEG
+typedef struct _CP_FORWARD_GAMMA_SEG
 {
     SHORT PixelValue;
     SHORT RedChannelCorrectedValue;
     SHORT GreenChannelCorrectedValue;
     SHORT BlueChannelCorrectedValue;
-} CP_FPRWARD_GAMMA_SEG;
+} CP_FORWARD_GAMMA_SEG;
 
 typedef struct _VPE_CP_FORWARD_GAMMA_PARAMS
 {
     UINT    bActive;
-    CP_FPRWARD_GAMMA_SEG Segment[64];
+    CP_FORWARD_GAMMA_SEG *pFGSegment;
 } VPE_CP_FORWARD_GAMMA_PARAMS;
 
 // CSC Param
@@ -770,7 +772,8 @@ namespace MfxHwVideoProcessing
 
         std::vector<ID3D11VideoProcessorInputView*>   m_pInputView;// past + 1(cur) + future
         ID3D11VideoProcessorOutputView*               m_pOutputView;
-
+        // Structure holds Camera Pipe forward gamma correction LUT
+        VPE_CP_FORWARD_GAMMA_PARAMS                   m_cameraFGC;
         // new approach of dx11 VPE processing
         struct
         {

@@ -223,6 +223,7 @@ D3D11VideoProcessor::D3D11VideoProcessor(void)
     m_pOutputResource = NULL;
     m_pOutputView = NULL;
 
+    m_cameraFGC.pFGSegment = 0;
 
     m_cachedReadyTaskIndex.clear();
 
@@ -603,14 +604,18 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         cameraPipe.pCPCaps  = &m_cameraCaps;
         hRes = GetOutputExtension(
             &(m_iface.guid),
-            sizeof(VPE_FUNCTION),
-            &iFunc);
+            sizeof(CAMPIPE_MODE),
+            &cameraPipe);
         if ( ! FAILED(hRes) )
         {
             // Must have call. If not called, camera pipe may crash driver.
             CAPS_EXTENSION CamPipeCAPSextn ;
             memset((PVOID) &CamPipeCAPSextn, 0, sizeof(CamPipeCAPSextn));
             hRes = GetExtensionCaps(m_pDevice, &CamPipeCAPSextn);
+
+            //Prepare array for gamma correction
+            if ( m_cameraCaps.bForwardGamma && m_cameraCaps.SegEntryForwardGamma > 0 )
+                m_cameraFGC.pFGSegment = new CP_FORWARD_GAMMA_SEG[m_cameraCaps.SegEntryForwardGamma];
         }
         else
         {
@@ -661,6 +666,8 @@ mfxStatus D3D11VideoProcessor::Close()
         vm_file_fclose(m_file);
         m_file = 0;
     }
+    if (m_cameraFGC.pFGSegment)
+        delete [] m_cameraFGC.pFGSegment;
 
     return MFX_ERR_NONE;
 
@@ -1557,19 +1564,18 @@ mfxStatus D3D11VideoProcessor::CameraPipeSetForwardGammaParams(CameraForwardGamm
 {
     HRESULT hRes;
     CAMPIPE_MODE          camMode;
-    VPE_CP_FORWARD_GAMMA_PARAMS  fgcParams;
-    fgcParams.bActive = 1;
-    for(int i = 0; i < 64; i++)
+    m_cameraFGC.bActive = 1;
+    for(int i = 0; i < (int)m_cameraCaps.SegEntryForwardGamma; i++)
     {
-        fgcParams.Segment[i].BlueChannelCorrectedValue  = params->Segment[i].BlueChannelCorrectedValue;
-        fgcParams.Segment[i].GreenChannelCorrectedValue = params->Segment[i].GreenChannelCorrectedValue;
-        fgcParams.Segment[i].RedChannelCorrectedValue   = params->Segment[i].RedChannelCorrectedValue;
-        fgcParams.Segment[i].PixelValue                 = params->Segment[i].PixelValue;
+        m_cameraFGC.pFGSegment[i].BlueChannelCorrectedValue  = params->Segment[i].BlueChannelCorrectedValue;
+        m_cameraFGC.pFGSegment[i].GreenChannelCorrectedValue = params->Segment[i].GreenChannelCorrectedValue;
+        m_cameraFGC.pFGSegment[i].RedChannelCorrectedValue   = params->Segment[i].RedChannelCorrectedValue;
+        m_cameraFGC.pFGSegment[i].PixelValue                 = params->Segment[i].PixelValue;
     }
 
     memset((PVOID) &camMode, 0, sizeof(camMode));
     camMode.Function       = VPE_FN_CP_FORWARD_GAMMA_CORRECTION;
-    camMode.pForwardGamma  = &fgcParams;
+    camMode.pForwardGamma  = &m_cameraFGC;
 
     hRes =  SetOutputExtension(
                     &(m_iface.guid),
@@ -1985,7 +1991,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
             if ( IsBayerFormat(fourCC) )
             {
-                fourCC = BayerFourCC2FormatFlag(inInfo->FourCC);;
+                fourCC = BayerFourCC2FourCC(inInfo->FourCC);;
             }
 
             /* [6.1.7] Set YUV Range Param
