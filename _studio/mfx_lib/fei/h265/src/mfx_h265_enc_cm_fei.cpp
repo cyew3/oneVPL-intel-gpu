@@ -309,7 +309,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     kernelRefine32x16      = CreateKernel(device, program, "RefineMeP32x16", (void *)RefineMeP32x16);
     kernelRefine16x32      = CreateKernel(device, program, "RefineMeP16x32", (void *)RefineMeP16x32);
     kernelInterpolateFrame = CreateKernel(device, program, "InterpolateFrameWithBorder", (void *)InterpolateFrame);
-    kernelIme              = CreateKernel(device, program, "Ime", (void *)Ime_4MV);
+    kernelIme              = CreateKernel(device, program, "Ime_4MV", (void *)Ime_4MV);
     kernelIme3tiers        = CreateKernel(device, program, "Ime3tiers4MV", (void *)Ime3tiers4MV);
 
     /* set up VME */
