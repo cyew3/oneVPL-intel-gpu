@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder VAAPI
@@ -882,9 +882,9 @@ VAAPIEncoder::VAAPIEncoder()
 , m_packedSkippedSliceHeaderBufferId(VA_INVALID_ID)
 , m_packedSkippedSliceBufferId(VA_INVALID_ID)
 , m_userMaxFrameSize(0)
+, m_mbbrc(0)
 , m_curTrellisQuantization(0)
 , m_newTrellisQuantization(0)
-, m_mbbrc(0)
 , m_numSkipFrames(0)
 , m_sizeSkipFrames(0)
 , m_skipMode(0)
@@ -1379,7 +1379,7 @@ mfxStatus VAAPIEncoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerS
         &config);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    VAProcessingRateParams proc_rate_buf = { 0 };
+    VAProcessingRateParams proc_rate_buf = { };
     mfxU32 & processing_rate = mbPerSec[0];
 
     proc_rate_buf.proc_buf_enc.level_idc = par.mfx.CodecLevel ? par.mfx.CodecLevel : 0xff;
@@ -1424,11 +1424,11 @@ mfxStatus VAAPIEncoder::QueryInputTilingSupport(mfxVideoParam const & par, mfxU3
 
     vaSts = vaQueryConfigAttributes(m_vaDisplay, config, &profile, &entrypoint, Begin(attrs), &numAttribs);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-    MFX_CHECK_WITH_ASSERT(numAttribs < maxNumAttribs, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK_WITH_ASSERT((mfxU32)numAttribs < maxNumAttribs, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     if (entrypoint == VAEntrypointEncSlice)
     {
-        for(mfxU32 i=0; i<numAttribs; i++)
+        for(mfxI32 i=0; i<numAttribs; i++)
         {
             if (attrs[i].type == VAConfigAttribInputTiling)
                 inputTiling = attrs[i].value;
@@ -1552,7 +1552,7 @@ mfxStatus VAAPIEncoder::Execute(
     {
         size_t slice_size_old = m_slice.size();
         //Destroy old buffers
-        for(int i=0; i<slice_size_old; i++){
+        for(size_t i=0; i<slice_size_old; i++){
             MFX_DESTROY_VABUFFER(m_sliceBufferId[i], m_vaDisplay);
             MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
             MFX_DESTROY_VABUFFER(m_packedSliceBufferId[i], m_vaDisplay);
