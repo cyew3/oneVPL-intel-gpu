@@ -205,6 +205,9 @@
         //#undef MFX_ENABLE_VP8_VIDEO_DECODE
         //#undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
     #endif // #if defined (MFX_VA)
+
+    #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
+
 #endif // #if defined(LINUX32) || defined(LINUX64)
 
 #else // #if !defined(ANDROID)

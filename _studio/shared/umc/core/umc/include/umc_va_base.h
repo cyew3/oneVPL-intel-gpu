@@ -37,7 +37,7 @@
 #       ifdef ANDROID
 #           define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
 #       else
-//#           define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
+#           define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
 #       endif
 #   endif
 #elif defined(_WIN32) || defined(_WIN64)
