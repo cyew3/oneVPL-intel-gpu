@@ -47,6 +47,7 @@ typedef struct sH265BsBase {
     Ipp8u* m_pbsRBSPBase;  // Points to beginning of previous "Raw Byte Sequence Payload"
 
     CABAC_CONTEXT_H265 context_array[NUM_CABAC_CONTEXT];
+    CABAC_CONTEXT_H265 context_array_enc[NUM_CABAC_CONTEXT];
 } H265BsBase;
 
 class H265BsFake {
@@ -127,6 +128,16 @@ public:
     int isReal()
     {
         return 0;
+    }
+
+    void CtxSaveWPP(CABAC_CONTEXT_H265 *context_array_wpp) {
+        small_memcpy(context_array_wpp, m_base.context_array,
+            tab_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
+    }
+    void CtxRestoreWPP(CABAC_CONTEXT_H265 *context_array_wpp) {
+        small_memcpy(m_base.context_array, context_array_wpp,
+            tab_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
+        m_base.context_array[tab_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC]] = 63;
     }
 };
 

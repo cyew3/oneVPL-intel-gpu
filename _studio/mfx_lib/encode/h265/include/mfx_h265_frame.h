@@ -113,6 +113,7 @@ namespace H265Enc {
         // for frame threading
         volatile Ipp32s m_codedRow; // sync info in case of frame threading
         volatile Ipp32u m_refCounter; // to prevent race condition in case of frame threading
+        ThreadingTask *m_threadingTasks;
         
         // complexity/content statistics
         std::vector<Ipp32s> m_interSad;
@@ -203,6 +204,8 @@ namespace H265Enc {
         void*      m_extParam;
 
         // for frame parallel
+        Ipp32u m_numThreadingTasks;
+        volatile Ipp32u m_numFinishedThreadingTasks;
         volatile Ipp32u m_statusReport; // 0 - task submitted to FrameEncoder (not run!!), 1 - FrameEncoder was run (resource assigned), 2 - task ready, 7 - need repack
         Ipp32s m_encIdx; // we have "N" frameEncoders. this index indicates owner of the task [0, ..., N-1]
 
@@ -266,6 +269,7 @@ namespace H265Enc {
     FramePtrIter GetFreeFrame(FramePtrList & queue, H265VideoParam *par);
     void Dump(const vm_char* fname, H265VideoParam *par, H265Frame* frame, TaskList & dpb);
     void PadOneReconRow(H265Frame* frame, Ipp32u ctb_row, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs);
+    void PadOneReconCtu(H265Frame* frame, Ipp32u ctb_row, Ipp32u ctb_col, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, Ipp32u PicWidthInCtbs);
 
 } // namespace
 

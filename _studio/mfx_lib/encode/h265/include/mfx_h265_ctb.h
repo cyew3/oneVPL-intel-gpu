@@ -258,9 +258,9 @@ public:
     __ALIGN32 PixType       m_srcTr[32*32]; // transposed src block
 
     // working/final coeffs
-    __ALIGN32 CoeffsType    m_coeffWorkY[MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 CoeffsType    m_coeffWorkU[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
-    __ALIGN32 CoeffsType    m_coeffWorkV[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
+    __ALIGN32 CoeffsType    *m_coeffWorkY;//[MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 CoeffsType    *m_coeffWorkU;//[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
+    __ALIGN32 CoeffsType    *m_coeffWorkV;//[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
     // temporarily best coeffs for lower depths
     __ALIGN32 CoeffsType    m_coeffStoredY[5+1][MAX_CU_SIZE * MAX_CU_SIZE];     // (+1 for Intra_NxN)
     __ALIGN32 CoeffsType    m_coeffStoredU[5+1][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV]; // (+1 for Intra Chroma, temp until code is cleaned up)
@@ -322,7 +322,8 @@ public:
     H265CUData*   m_aboveLeft;      ///< pointer of above-left CU
     H265CUData*   m_aboveRight;     ///< pointer of above-right CU
 
-    Ipp32u m_tile_border_right, m_tile_border_bottom;
+    Ipp32u m_region_border_right, m_region_border_bottom;
+    Ipp32u m_region_border_left, m_region_border_top;
 
     // merge and AMVP candidates shared between function calls for one CU depth, one part mode and all PUs (1, 2, or 4)
     MvPredInfo<5> m_mergeCand[4];
@@ -333,6 +334,10 @@ public:
     Ipp32s m_leftAddr;
     Ipp32s m_aboveLeftAddr;
     Ipp32s m_aboveRightAddr;
+    Ipp32s m_aboveSameTile;
+    Ipp32s m_leftSameTile;
+    Ipp32s m_aboveLeftSameTile;
+    Ipp32s m_aboveRightSameTile;
     Ipp8s *m_colFrmRefFramesTbList[2];
     bool  *m_colFrmRefIsLongTerm[2];
     H265EdgeData m_edge[9][9][4];
@@ -461,13 +466,28 @@ public:
     Ipp8u GetQtRootCbf(Ipp32u idx);
 
     void GetPuLeft(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true,
-                   //,Ipp32s enforceDependentSliceRestriction = true
+                   Ipp32s enforceTileRestriction = true);
+    void GetPuLeftOf(H265CUPtr *cu, H265CUPtr *cuBase, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true,
                    Ipp32s enforceTileRestriction = true);
 
     void GetPuAbove(H265CUPtr *cu, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true,
-//                    Ipp32s enforceDependentSliceRestriction = true, Ipp32s motionDataCompresssion = false,
                     Ipp32s planarAtLcuBoundary = false,
                     Ipp32s enforceTileRestriction = true);
+    void GetPuAboveOf(H265CUPtr *cu, H265CUPtr *cuBase, Ipp32u currPartUnitIdx, Ipp32s enforceSliceRestriction = true,
+                    Ipp32s planarAtLcuBoundary = false,
+                    Ipp32s enforceTileRestriction = true);
+
+    void GetCtuBelow(H265CUPtr *cu,
+                        Ipp32s enforceSliceRestriction = true,
+                        Ipp32s enforceTileRestriction = true);
+
+    void GetCtuRight(H265CUPtr *cu,
+                       Ipp32s enforceSliceRestriction = true,
+                       Ipp32s enforceTileRestriction = true);
+
+    void GetCtuBelowRight(H265CUPtr *cu,
+        Ipp32s enforceSliceRestriction = true,
+        Ipp32s enforceTileRestriction = true);
 
     bool GetTempMvPred(const H265CUData *currPb, Ipp32s xPb, Ipp32s yPb, Ipp32s nPbW, Ipp32s nPbH,
                        Ipp32s listIdx, Ipp32s refIdx, H265MV *mvLxCol);
@@ -541,7 +561,7 @@ public:
     template <class H265Bs>
     void PutTransform(H265Bs *bs, Ipp32u offsetLuma, Ipp32u offsetChroma, Ipp32s absPartIdx,
                       Ipp32u absTuPartIdx, Ipp32u depth, Ipp32u width, Ipp32u trIdx,
-                      Ipp8u& codeDqp, Ipp8u splitFlagOnly = 0);
+                      Ipp8u& codeDqp, Ipp8u rd_mode = RD_CU_ALL);
 
     template <class H265Bs>
     void EncodeSao(H265Bs *bs, Ipp32s absPartIdx, Ipp32s depth, Ipp8u rdMode,
@@ -554,7 +574,7 @@ public:
 
     template <class H265Bs>
     void EncodeCoeff(H265Bs *bs, Ipp32s absPartIdx, Ipp32u depth, Ipp32u width,
-                     Ipp8u &codeDqp);
+                     Ipp8u &codeDqp, Ipp8u rd_mode);
 
     template <class H265Bs>
     void CodeIntradirLumaAng(H265Bs *bs, Ipp32s absPartIdx, Ipp8u multiple);
@@ -621,6 +641,11 @@ public:
 
     void DeblockOneCrossChroma(Ipp32s curPixelColumn, Ipp32s curPixelRow);
 
+    void SetEdgesCTU(H265CUPtr *curLCU,
+                    Ipp32s width,
+                    Ipp32s height,
+                    Ipp32s x_inc,
+                    Ipp32s y_inc);
     void SetEdges(Ipp32s width, Ipp32s height);
 
     void GetEdgeStrength(H265CUPtr *pcCUQ, H265EdgeData *edge, Ipp32s curPixelColumn,
@@ -864,7 +889,8 @@ public:
 
     void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
                 PixType *_y, PixType *_uv, Ipp32s _pitch_luma, Ipp32s _pitch_chroma, H265Frame *currFrame, H265BsFake *_bsf,
-                H265Slice *cslice, Ipp32s initializeDataFlag, const Ipp8u *logMvCostTable, void *feiH265Out, const Task* task);
+                H265Slice *cslice, ThreadingTaskSpecifier stage, const Ipp8u *logMvCostTable, void *feiH265Out, const Task* task,
+                CoeffsType *m_coeffWork);
 
 #if defined(AMT_ICRA_OPT)
     //void CalcRsCs(void);

@@ -1514,7 +1514,7 @@ void H265CU<PixType>::GetInitAvailablity()
     }
 
     /* Left */
-    if (m_leftAddr >= m_cslice->slice_segment_address /* and in one tile */)
+    if (m_leftAddr >= m_cslice->slice_segment_address && m_leftSameTile)
     {
         for (i = 0; i < numMinTUInLCU; i++)
         {
@@ -1537,7 +1537,7 @@ void H265CU<PixType>::GetInitAvailablity()
     }
 
     /* Above Left */
-    if (m_aboveLeftAddr >= m_cslice->slice_segment_address /* and in one tile */)
+    if (m_aboveLeftAddr >= m_cslice->slice_segment_address && m_aboveLeftSameTile)
     {
         //rasterIdx = numMinTUInLCU * numMinTUInLCU - 1;
         rasterIdx = (numMinTUInLCU - 1) * PITCH_TU + numMinTUInLCU - 1;
@@ -1557,7 +1557,7 @@ void H265CU<PixType>::GetInitAvailablity()
     }
 
     /* Above */
-    if (m_aboveAddr >= m_cslice->slice_segment_address /* and in one tile */)
+    if (m_aboveAddr >= m_cslice->slice_segment_address && m_aboveSameTile)
     {
         for (i = 0; i < numMinTUInLCU; i++)
         {
@@ -1580,7 +1580,7 @@ void H265CU<PixType>::GetInitAvailablity()
     }
 
     /* Above Right*/
-    if (m_aboveRightAddr >= m_cslice->slice_segment_address /* and in one tile */)
+    if (m_aboveRightAddr >= m_cslice->slice_segment_address && m_aboveRightSameTile)
     {
         for (i = 0; i < numMinTUInLCU; i++)
         {

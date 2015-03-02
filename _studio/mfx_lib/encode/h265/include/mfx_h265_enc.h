@@ -12,6 +12,7 @@
 #define __MFX_H265_ENC_H__
 
 #include <list>
+#include <deque>
 #include "mfx_ext_buffers.h"
 #include "mfx_h265_defs.h"
 #include "mfx_h265_ctb.h"
@@ -28,6 +29,12 @@ class Semaphore;
 }
 
 namespace H265Enc {
+
+
+struct H265Tile {
+    Ipp32u first_ctb_addr;
+    Ipp32u last_ctb_addr;
+};
 
 struct H265VideoParam {
 // preset
@@ -76,7 +83,7 @@ struct H265VideoParam {
     Ipp8u num_cand_2[8];
     
     Ipp8u  deblockingFlag; // Deblocking
-    Ipp8u  deblockTileBordersFlag;
+    Ipp8u  deblockBordersFlag;
     Ipp8u  SBHFlag;  // Sign Bit Hiding
     Ipp8u  RDOQFlag; // RDO Quantization
     Ipp8u  FastCoeffCost;   // Use estimator
@@ -120,7 +127,6 @@ struct H265VideoParam {
     Ipp32u num_threads;
     Ipp32u num_thread_structs;
     Ipp32u num_bs_subsets;
-    Ipp8u threading_by_rows;
     Ipp8u IntraChromaRDO;   // 1-turns on syntax cost for chroma in Intra
     Ipp8u FastInterp;       // 1-turns on fast filters for ME
     Ipp8u cpuFeature;       // 0-auto, 1-px, 2-sse4, 3-sse4atom, 4-ssse3, 5-avx2
@@ -188,6 +194,7 @@ struct H265VideoParam {
     H265SeqParameterSet *csps;
     H265PicParameterSet *cpps;
 
+    H265Tile *m_tiles;
     Ipp16u tileColStart[MAX_NUM_TILE_COLUMNS];
     Ipp16u tileRowStart[MAX_NUM_TILE_ROWS];
     Ipp16u tileColWidth[MAX_NUM_TILE_COLUMNS];
@@ -198,7 +205,7 @@ struct H265VideoParam {
     mfxU8 reconForDump;
 
     Ipp8u *m_slice_ids;
-    Ipp8u *m_tile_ids;
+    Ipp16u *m_tile_ids;
     costStat *m_costStat;
     Ipp8u* m_logMvCostTable;
 
@@ -214,7 +221,7 @@ public:
     DispatchSaoApplyFilter();
     ~DispatchSaoApplyFilter();
 
-    mfxStatus Init(int width, int maxCUWidth, int maxDepth, int bitDepth, int num);
+    mfxStatus Init(int maxCUWidth, int maxDepth, int bitDepth, int num);
     void Close();
     
     Ipp32u m_bitDepth;
@@ -236,33 +243,26 @@ public:
     void      Close();
 
     // task based API
-    mfxStatus SetEncodeTask(Task* task);
+    mfxStatus SetEncodeTask(Task* task, std::deque<ThreadingTask *> *m_pendingTasks);
     Task* GetEncodeTask() { return m_task;}
     mfxStatus GetOutputData(mfxBitstream *mfxBS, Ipp32s & overheadBytes);
 
-    // frame threading
-    void FindJob(Ipp32s & found, Ipp32s & complete, Ipp32u & ctb_row, Ipp32u & ctb_col);
-    bool AllReferencesReady(Ipp32u ctb_row);
-
     template <typename PixType>
-    mfxStatus EncodeThread(Ipp32s & ithread, volatile Ipp32u* onExitEvent, UMC::Semaphore &semaphore);
+    mfxStatus PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u ctb_row, Ipp32u ctb_col);
 
     H265VideoParam* GetVideoParam() {return &m_videoParam;};
 
 private:
     // ------ SAO estimation
     template <typename PixType>
-    void EstimateCtuSao(Ipp32s ithread, Ipp32s bs_id, Ipp32s bsf_id, Ipp32u ctb_row, Ipp32u ctb_addr, Ipp8u curr_slice);
+    void EstimateCtuSao(Ipp32s ithread, Ipp32s bs_id, Ipp32s bsf_id, Ipp32u ctb_addr, Ipp8u curr_slice);
 
     template <typename PixType>
-    void PadOneReconRow(Ipp32u ctb_row);
+    void PadOneReconCtu(Ipp32u ctb_row, Ipp32u ctb_col);
 
     // SAO Filtering
     template <typename PixType>
-    mfxStatus ApplySaoRow(Ipp32u row);
-
-    template <typename PixType>
-    mfxStatus ApplySaoCtuRange(Ipp32u ctuStart, Ipp32u ctuEnd);
+    mfxStatus ApplySaoCtu(Ipp32u ctbRow, Ipp32u ctbCol);
 
     // ------ bitstream
     mfxStatus WriteEndOfSequence(mfxBitstream *bs);
@@ -302,17 +302,19 @@ private:
     Ipp32u data_temp_size;
 
     Ipp8u *m_slice_ids;
-    Ipp8u *m_tile_ids;
+    Ipp16u *m_tile_ids;
+    H265Tile *m_tiles;
     costStat *m_costStat;
+    Ipp32s m_numTasksPerCu;
 
+    CoeffsType *m_coeffWork;
+
+    CABAC_CONTEXT_H265 *m_context_array_wpp_enc;
     CABAC_CONTEXT_H265 *m_context_array_wpp;
     
     DispatchSaoApplyFilter m_saoApplyFilter[NUM_USED_SAO_COMPONENTS];
 
 public:
-    volatile Ipp32s m_mt_current_region;
-    volatile Ipp32s m_mt_num_regions_done;
-    H265EncoderRowInfo* m_row_info;
 
 #ifdef MFX_ENABLE_WATERMARK
     Watermark *m_watermark;

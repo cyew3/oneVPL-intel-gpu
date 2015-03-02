@@ -48,8 +48,10 @@ enum // Syntax element type for HEVC
 };
 
 enum {
+    RD_CU_ALL = 0,
     RD_CU_SPLITFLAG = 1,
     RD_CU_MODES = 2,
+    RD_CU_ALL_EXCEPT_COEFFS = 3,
 };
 
 #define CTX(bs,a) ((bs)->m_base.context_array+tab_ctxIdxOffset[a])

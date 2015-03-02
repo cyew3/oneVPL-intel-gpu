@@ -51,7 +51,12 @@ extern "C"
 #define vm_timeval timeval
 #define vm_timezone timezone
 
-
+/* vm_cond.h */
+typedef struct vm_cond
+{
+    pthread_cond_t handle;
+    Ipp32s is_valid;
+} vm_cond;
 
 /* vm_event.h */
 typedef struct vm_event

@@ -24,6 +24,7 @@
 
 #include "mfx_h265_set.h"
 #include "mfx_h265_enc.h"
+#include <deque>
 
 using namespace H265Enc;
 namespace H265Enc {
@@ -123,8 +124,10 @@ private:
     Ipp32s m_miniGopCount;
     mfxU64 m_lastTimeStamp;
     Ipp32s m_lastEncOrder;
-    UMC::Semaphore m_semaphore;
-
+    vm_cond m_condVar;
+    vm_mutex   m_critSect;
+    std::deque<ThreadingTask *> m_pendingTasks;
+    volatile Ipp32u m_threadingTaskRunning;
 
     //  frame flow-control queues
     std::list<Task*> m_free;            // _global_ free task pool
@@ -180,7 +183,6 @@ private:
     static mfxStatus TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
 
     void PrepareToEncode(void *pParam); // no threas safety. some preparation work (accept new input frame, configuration, fei, paq etc) in single thread mode!
-    mfxStatus EncSolver(Task* task, volatile Ipp32u* onExitEvent);
     void SyncOnTaskCompletion(Task* task, mfxBitstream* mfxBs, void *pParam);
 
     void RunLookahead();

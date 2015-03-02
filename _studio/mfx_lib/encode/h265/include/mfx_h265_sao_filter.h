@@ -268,16 +268,6 @@ public:
 };
 
 template <typename PixType>
-class SaoDecodeFilterData
-{
-public:
-    Ipp32s *m_OffsetEo;
-    PixType *m_OffsetBo;
-    PixType *m_TmpU[2];
-    PixType *m_TmpL[2];
-};
-
-template <typename PixType>
 class SaoDecodeFilter
 {
 public:
@@ -285,7 +275,6 @@ public:
      ~SaoDecodeFilter();
 
      void Init(
-         int row_width_max,
          int maxCUWidth,
          int maxDepth,
          int bitDepth,
@@ -293,10 +282,7 @@ public:
 
      void Close(void);
 
-     void SetOffsetsLuma(
-         SaoOffsetParam  &saoLCUParam,
-         Ipp32s typeIdx,
-         Ipp32s dataIdx);
+     void SetOffsetsLuma(SaoOffsetParam  &saoLCUParam, Ipp32s typeIdx, Ipp32s *offsetEo, PixType *offsetBo);
 
 //private:
     static const int LUMA_GROUP_NUM = 32;
@@ -315,7 +301,8 @@ public:
     PixType   *m_ClipTableBase;
     PixType   *m_lumaTableBo;
 
-    SaoDecodeFilterData<PixType> *m_saoData;
+    PixType *m_TmpU;
+    PixType *m_TmpL;
 
 private:
     SaoDecodeFilter(const SaoDecodeFilter& ){ /* do not create copies */ }

@@ -938,7 +938,8 @@ SaoDecodeFilter<PixType>::SaoDecodeFilter()
     m_ClipTableBase = NULL;
     m_lumaTableBo   = NULL;
 
-    m_saoData = NULL;
+    m_TmpU = NULL;
+    m_TmpL = NULL;
 
 } // SaoDecodeFilter::SaoDecodeFilter()
 
@@ -958,32 +959,14 @@ void SaoDecodeFilter<PixType>::Close()
         m_lumaTableBo = NULL;
     }
 
+    if (m_TmpU) {
+        delete[] m_TmpU;
+        m_TmpU = NULL;
+    }
 
-    if (m_saoData) {
-        if (m_saoData[0].m_OffsetEo) {
-            delete [] m_saoData[0].m_OffsetEo;
-        }
-
-        if (m_saoData[0].m_OffsetBo) {
-            delete [] m_saoData[0].m_OffsetBo;
-        }
-
-        if (m_saoData[0].m_TmpU[0]) {
-            delete [] m_saoData[0].m_TmpU[0];
-        }
-
-        if (m_saoData[0].m_TmpU[1]) {
-            delete [] m_saoData[0].m_TmpU[1];
-        }
-
-        if (m_saoData[0].m_TmpL[0]) {
-            delete [] m_saoData[0].m_TmpL[0];
-        }
-        if (m_saoData[0].m_TmpL[1]) {
-            delete [] m_saoData[0].m_TmpL[1];
-        }
-        delete[] m_saoData;
-        m_saoData = NULL;
+    if (m_TmpL) {
+        delete[] m_TmpL;
+        m_TmpL = NULL;
     }
 } // void SaoDecodeFilter::Close()
 
@@ -996,7 +979,7 @@ SaoDecodeFilter<PixType>::~SaoDecodeFilter()
 
 
 template <typename PixType>
-void SaoDecodeFilter<PixType>::Init(int row_width_max, int maxCUWidth, int maxDepth, int bitDepth, int num)
+void SaoDecodeFilter<PixType>::Init(int maxCUWidth, int maxDepth, int bitDepth, int num)
 {
     m_bitDepth = bitDepth;
 
@@ -1030,22 +1013,14 @@ void SaoDecodeFilter<PixType>::Init(int row_width_max, int maxCUWidth, int maxDe
 
     m_ClipTable = &(m_ClipTableBase[iCRangeExt]);
 
-    m_saoData = new SaoDecodeFilterData<PixType> [num];
-
-    for (Ipp32s i = 0; i < num; i++) {
-        m_saoData[i].m_OffsetEo = i ? (m_saoData[0].m_OffsetEo + i*LUMA_GROUP_NUM) : new Ipp32s[num*LUMA_GROUP_NUM];
-        m_saoData[i].m_OffsetBo = i ? (m_saoData[0].m_OffsetBo + i*(uiMaxY+2*iCRangeExt)) : new PixType[num*(uiMaxY+2*iCRangeExt)];
-        m_saoData[i].m_TmpU[0] = i ? (m_saoData[0].m_TmpU[0] + i*2*row_width_max) : new PixType [num*2*row_width_max];
-        m_saoData[i].m_TmpU[1] = i ? (m_saoData[0].m_TmpU[1] + i*2*row_width_max) : new PixType [num*2*row_width_max];
-
-        m_saoData[i].m_TmpL[0] = i ? (m_saoData[0].m_TmpL[0] + i*2*SAO_PRED_SIZE) : new PixType [num*2*SAO_PRED_SIZE];
-        m_saoData[i].m_TmpL[1] = i ? (m_saoData[0].m_TmpL[1] + i*2*SAO_PRED_SIZE) : new PixType [num*2*SAO_PRED_SIZE];
-    }
-} // void SaoDecodeFilter::Init(...)
+    m_TmpU = new PixType [num * maxCUWidth];
+    m_TmpL = new PixType [num * maxCUWidth];
+}
+  // void SaoDecodeFilter::Init(...)
 
 
 template <typename PixType>
-void SaoDecodeFilter<PixType>::SetOffsetsLuma(SaoOffsetParam  &saoLCUParam, Ipp32s typeIdx, Ipp32s dataIdx)
+void SaoDecodeFilter<PixType>::SetOffsetsLuma(SaoOffsetParam  &saoLCUParam, Ipp32s typeIdx, Ipp32s *offsetEo, PixType *offsetBo)
 {
     Ipp32s offset[LUMA_GROUP_NUM + 1] = {0};
     static const Ipp8u EoTable[9] = { 1,  2,   0,  3,  4,  0,  0,  0,  0 };
@@ -1060,12 +1035,12 @@ void SaoDecodeFilter<PixType>::SetOffsetsLuma(SaoOffsetParam  &saoLCUParam, Ipp3
 
         PixType *ppLumaTable = m_lumaTableBo;
         for (Ipp32s i = 0; i < (1 << m_bitDepth); i++) {
-            m_saoData[dataIdx].m_OffsetBo[i] = m_ClipTable[i + offset[ppLumaTable[i]]];
+            offsetBo[i] = m_ClipTable[i + offset[ppLumaTable[i]]];
         }
     }
     else if (typeIdx == SAO_TYPE_EO_0 || typeIdx == SAO_TYPE_EO_90 || typeIdx == SAO_TYPE_EO_135 || typeIdx == SAO_TYPE_EO_45) {
         for (Ipp32s edgeType = 0; edgeType < 6; edgeType++) {
-            m_saoData[dataIdx].m_OffsetEo[edgeType] = saoLCUParam.offset[edgeType];
+            offsetEo[edgeType] = saoLCUParam.offset[edgeType];
         }
     }
 }

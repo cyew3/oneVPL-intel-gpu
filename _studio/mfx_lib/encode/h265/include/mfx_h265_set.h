@@ -16,15 +16,6 @@
 
 namespace H265Enc {
 
-struct H265EncoderRowInfo
-{
-    Ipp32s bs_id;
-    Ipp32s offset;
-    Ipp32s size;
-    volatile Ipp32s mt_current_ctb_col;
-    volatile Ipp32s mt_busy;
-};
-
 struct H265VidParameterSet
 {
     Ipp8u  vps_video_parameter_set_id;
@@ -229,7 +220,6 @@ struct H265Slice : public H265SliceHeader
     Ipp32u slice_address_last_ctb;
     Ipp32u row_first;
     Ipp32u row_last;
-    H265EncoderRowInfo m_row_info;
 
     Ipp32s m_NumRefsInL0List;
     Ipp32s m_NumRefsInL1List;

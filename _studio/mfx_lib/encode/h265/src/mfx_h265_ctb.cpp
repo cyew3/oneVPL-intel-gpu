@@ -613,8 +613,6 @@ template <typename PixType>
 void H265CU<PixType>::GetPuAbove(H265CUPtr *cu,
                         Ipp32u currPartUnitIdx,
                         Ipp32s enforceSliceRestriction,
-//                        Ipp32s /*bEnforceDependentSliceRestriction*/,
-//                        Ipp32s /*MotionDataCompresssion*/,
                         Ipp32s planarAtLcuBoundary,
                         Ipp32s enforceTileRestriction
                         )
@@ -647,7 +645,7 @@ void H265CU<PixType>::GetPuAbove(H265CUPtr *cu,
     cu->absPartIdx = h265_scan_r2z4[ absPartIdx + PITCH_TU * (numPartInCuWidth-1) ];
 
     if ((enforceSliceRestriction && (m_above == NULL || m_aboveAddr < m_cslice->slice_segment_address)) ||
-        (enforceTileRestriction && m_above == NULL))
+        (enforceTileRestriction && (m_above == NULL || !m_aboveSameTile)))
     {
         cu->ctbData = NULL;
         cu->ctbAddr = -1;
@@ -655,6 +653,59 @@ void H265CU<PixType>::GetPuAbove(H265CUPtr *cu,
     }
     cu->ctbData = m_above;
     cu->ctbAddr = m_aboveAddr;
+}
+
+template <typename PixType>
+void H265CU<PixType>::GetPuAboveOf(H265CUPtr *cu,
+                                   H265CUPtr *cuBase, 
+                                   Ipp32u currPartUnitIdx,
+                                   Ipp32s enforceSliceRestriction,
+                                   Ipp32s planarAtLcuBoundary,
+                                   Ipp32s enforceTileRestriction)
+{
+    Ipp32s absPartIdx       = h265_scan_z2r4[currPartUnitIdx]; // raster with PITCH_PU
+    Ipp32u absZorderCuIdx   = h265_scan_z2r4[m_absIdxInLcu];
+    Ipp32u numPartInCuWidth = m_par->NumPartInCUSize;
+    Ipp32s widthInCU = m_par->PicWidthInCtbs;
+
+    if ( absPartIdx > 15  )
+    {
+        cu->absPartIdx = h265_scan_r2z4[ absPartIdx - PITCH_TU ];
+        cu->ctbData = cuBase->ctbData;
+        cu->ctbAddr = cuBase->ctbAddr;
+        if ( (absPartIdx ^ absZorderCuIdx) > 15 )
+        {
+            cu->absPartIdx -= m_absIdxInLcu;
+        }
+        return;
+    }
+
+    if(planarAtLcuBoundary)
+    {
+        cu->ctbData = NULL;
+        cu->ctbAddr = -1;
+        return;
+    }
+
+    cu->absPartIdx = h265_scan_r2z4[ absPartIdx + PITCH_TU * (numPartInCuWidth-1) ];
+
+    if (cuBase->ctbAddr < widthInCU)
+    {
+        cu->ctbData = NULL;
+        cu->ctbAddr = -1;
+        return;
+    }
+
+    cu->ctbData = cuBase->ctbData - (widthInCU << m_par->Log2NumPartInCU);
+    cu->ctbAddr = cuBase->ctbAddr - widthInCU;
+
+    if ((enforceSliceRestriction && (m_par->m_slice_ids[cu->ctbAddr] != m_par->m_slice_ids[cuBase->ctbAddr])) ||
+        (enforceTileRestriction && (m_par->m_tile_ids[cu->ctbAddr] != m_par->m_tile_ids[cuBase->ctbAddr])))
+    {
+        cu->ctbData = NULL;
+        cu->ctbAddr = -1;
+        return;
+    }
 }
 
 template <typename PixType>
@@ -685,8 +736,8 @@ void H265CU<PixType>::GetPuLeft(H265CUPtr *cu,
 
     cu->absPartIdx = h265_scan_r2z4[ absPartIdx + numPartInCuWidth - 1 ];
 
-    if (enforceSliceRestriction && (m_left == NULL || m_leftAddr < m_cslice->slice_segment_address) ||
-        (enforceTileRestriction && m_left == NULL))
+    if ((enforceSliceRestriction && (m_left == NULL || m_leftAddr < m_cslice->slice_segment_address)) ||
+        (enforceTileRestriction && (m_left == NULL || !m_leftSameTile)))
     {
         cu->ctbData = NULL;
         cu->ctbAddr = -1;
@@ -697,6 +748,145 @@ void H265CU<PixType>::GetPuLeft(H265CUPtr *cu,
     cu->ctbAddr = m_leftAddr;
 }
 
+template <typename PixType>
+void H265CU<PixType>::GetPuLeftOf(H265CUPtr *cu,
+                                  H265CUPtr *cuBase, 
+                                  Ipp32u currPartUnitIdx,
+                                  Ipp32s enforceSliceRestriction,
+                                  Ipp32s enforceTileRestriction)
+{
+    Ipp32s absPartIdx       = h265_scan_z2r4[currPartUnitIdx];
+    Ipp32u absZorderCUIdx   = h265_scan_z2r4[m_absIdxInLcu];
+    Ipp32u numPartInCuWidth = m_par->NumPartInCUSize;
+    Ipp32s widthInCU = m_par->PicWidthInCtbs;
+
+    if ( absPartIdx & 15 )
+    {
+        cu->absPartIdx = h265_scan_r2z4[ absPartIdx - 1 ];
+        cu->ctbData = cuBase->ctbData;
+        cu->ctbAddr = cuBase->ctbAddr;
+        if ( (absPartIdx ^ absZorderCUIdx) & 15 )
+        {
+            cu->absPartIdx -= m_absIdxInLcu;
+        }
+        return;
+    }
+
+    cu->absPartIdx = h265_scan_r2z4[ absPartIdx + numPartInCuWidth - 1 ];
+
+    if (!(cuBase->ctbAddr % widthInCU))
+    {
+        cu->ctbData = NULL;
+        cu->ctbAddr = -1;
+        return;
+    }
+
+    cu->ctbData = cuBase->ctbData - m_par->NumPartInCU;
+    cu->ctbAddr = cuBase->ctbAddr - 1;
+
+    if ((enforceSliceRestriction && (m_par->m_slice_ids[cu->ctbAddr] != m_par->m_slice_ids[cuBase->ctbAddr])) ||
+        (enforceTileRestriction && (m_par->m_tile_ids[cu->ctbAddr] != m_par->m_tile_ids[cuBase->ctbAddr])))
+    {
+        cu->ctbData = NULL;
+        cu->ctbAddr = -1;
+        return;
+    }
+}
+
+template <typename PixType>
+void H265CU<PixType>::GetCtuBelow(H265CUPtr *cu,
+                        Ipp32s enforceSliceRestriction,
+                        Ipp32s enforceTileRestriction
+                        )
+{
+    H265CUData *below = NULL;
+    Ipp32s belowAddr = -1, belowSameTile = 0;
+    Ipp32u widthInCU = m_par->PicWidthInCtbs;
+
+    if ((m_ctbPelY >> m_par->Log2MaxCUSize) < m_par->PicHeightInCtbs - 1)
+    {
+        below = m_data + (widthInCU << m_par->Log2NumPartInCU);
+        belowAddr = m_ctbAddr + widthInCU;
+        if (m_par->NumTiles == 1 || m_par->m_tile_ids[m_ctbAddr] == m_par->m_tile_ids[belowAddr])
+            belowSameTile = 1;
+    }
+
+    cu->absPartIdx = 0;
+
+    if ((enforceSliceRestriction && (below == NULL || belowAddr > (Ipp32s)m_cslice->slice_address_last_ctb)) ||
+        (enforceTileRestriction && (below == NULL || !belowSameTile)))
+    {
+        cu->ctbData = NULL;
+        cu->ctbAddr = -1;
+        return;
+    }
+    cu->ctbData = below;
+    cu->ctbAddr = belowAddr;
+}
+
+template <typename PixType>
+void H265CU<PixType>::GetCtuRight(H265CUPtr *cu,
+                       Ipp32s enforceSliceRestriction,
+                       Ipp32s enforceTileRestriction
+                       )
+{
+    H265CUData *right = NULL;
+    Ipp32s rightAddr = -1, rightSameTile = 0;
+    Ipp32u widthInCU = m_par->PicWidthInCtbs;
+
+    if ((m_ctbPelX >> m_par->Log2MaxCUSize) < widthInCU - 1)
+    {
+        right = m_data + m_par->NumPartInCU;
+        rightAddr = m_ctbAddr + 1;
+        if (m_par->NumTiles == 1 || m_par->m_tile_ids[m_ctbAddr] == m_par->m_tile_ids[rightAddr])
+            rightSameTile = 1;
+    }
+
+    cu->absPartIdx = 0;
+
+    if ((enforceSliceRestriction && (right == NULL || rightAddr > (Ipp32s)m_cslice->slice_address_last_ctb)) ||
+        (enforceTileRestriction && (right == NULL || !rightSameTile)))
+    {
+        cu->ctbData = NULL;
+        cu->ctbAddr = -1;
+        return;
+    }
+
+    cu->ctbData = right;
+    cu->ctbAddr = rightAddr;
+}
+
+template <typename PixType>
+void H265CU<PixType>::GetCtuBelowRight(H265CUPtr *cu,
+                        Ipp32s enforceSliceRestriction,
+                        Ipp32s enforceTileRestriction)
+{
+    H265CUData *belowRight = NULL;
+    Ipp32s belowRightAddr = -1, belowRightSameTile = 0;
+    Ipp32u widthInCU = m_par->PicWidthInCtbs;
+
+    if ((m_ctbPelY >> m_par->Log2MaxCUSize) < m_par->PicHeightInCtbs - 1 &&
+        (m_ctbPelX >> m_par->Log2MaxCUSize) < widthInCU - 1)
+    {
+        belowRight = m_data + ((widthInCU + 1) << m_par->Log2NumPartInCU);
+        belowRightAddr = m_ctbAddr + widthInCU + 1;
+        if (m_par->NumTiles == 1 || m_par->m_tile_ids[m_ctbAddr] == m_par->m_tile_ids[belowRightAddr])
+            belowRightSameTile = 1;
+    }
+
+    cu->absPartIdx = 0;
+
+    if ((enforceSliceRestriction && (belowRight == NULL || belowRightAddr > (Ipp32s)m_cslice->slice_address_last_ctb)) ||
+        (enforceTileRestriction && (belowRight == NULL || !belowRightSameTile)))
+    {
+        cu->ctbData = NULL;
+        cu->ctbAddr = -1;
+        return;
+    }
+
+    cu->ctbData = belowRight;
+    cu->ctbAddr = belowRightAddr;
+}
 
 template <typename PixType>
 H265CUData* H265CU<PixType>::GetQpMinCuLeft( Ipp32u& uiLPartUnitIdx, Ipp32u uiCurrAbsIdxInLCU, bool bEnforceSliceRestriction, bool bEnforceDependentSliceRestriction)
@@ -887,7 +1077,8 @@ void H265CU<PixType>::UpdateCuQp(void)
 template <typename PixType>
 void H265CU<PixType>::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
                     PixType *_y, PixType *_uv, Ipp32s _pitch_luma, Ipp32s _pitch_chroma, H265Frame *currFrame, H265BsFake *_bsf,
-                    H265Slice *_cslice, Ipp32s initializeDataFlag, const Ipp8u *logMvCostTable, void *feiH265Out, const Task* task) 
+                    H265Slice *_cslice, ThreadingTaskSpecifier stage, const Ipp8u *logMvCostTable, void *feiH265Out, const Task* task,
+                    CoeffsType *m_coeffWork) 
 {
     m_par = _par;
     m_sliceQpY = task->m_sliceQpY;
@@ -918,6 +1109,10 @@ void H265CU<PixType>::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData
 
     m_ySrc = (PixType*)currFrame->y + m_ctbPelX + m_ctbPelY * m_pitchSrcLuma;
 
+    m_coeffWorkY = m_coeffWork;
+    m_coeffWorkU = m_coeffWorkY + m_par->MaxCUSize * m_par->MaxCUSize;
+    m_coeffWorkV = m_coeffWorkU + (m_par->MaxCUSize * m_par->MaxCUSize >> m_par->chromaShift);
+
     // limits to clip MV allover the CU
     const Ipp32s MvShift = 2;
     const Ipp32s offset = 8;
@@ -928,7 +1123,7 @@ void H265CU<PixType>::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData
 
     m_uvSrc = (PixType*)currFrame->uv + (m_ctbPelX << _par->chromaShiftWInv) + (m_ctbPelY * m_pitchSrcChroma >> _par->chromaShiftH);
 
-    if (initializeDataFlag) {
+    if (stage == ENCODE_CTU) {
         m_rdOptFlag = m_cslice->rd_opt_flag;
         m_rdLambda = m_cslice->rd_lambda_slice;
 
@@ -949,137 +1144,154 @@ void H265CU<PixType>::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData
     m_above       = NULL;
     m_aboveLeft   = NULL;
     m_aboveRight  = NULL;
+
     m_leftAddr = -1;
     m_aboveAddr = -1;
     m_aboveLeftAddr = -1;
     m_aboveRightAddr = -1;
+    m_leftSameTile = m_aboveSameTile = m_aboveLeftSameTile = m_aboveRightSameTile = 0;
 
     Ipp32u tile_id = m_par->m_tile_ids[m_ctbAddr];
 
     Ipp32u widthInCU = m_par->PicWidthInCtbs;
-    if ( (m_ctbAddr % widthInCU) && tile_id == m_par->m_tile_ids[m_ctbAddr - 1])
+    if (m_ctbAddr % widthInCU)
     {
         m_left = m_data - m_par->NumPartInCU;
         m_leftAddr = m_ctbAddr - 1;
+        if (m_par->NumTiles == 1 || m_par->m_tile_ids[m_ctbAddr] == m_par->m_tile_ids[m_leftAddr])
+            m_leftSameTile = 1;
     }
 
-    if ( (m_ctbAddr >= widthInCU) && tile_id == m_par->m_tile_ids[m_ctbAddr - widthInCU])
+    if (m_ctbAddr >= widthInCU)
     {
         m_above = m_data - (widthInCU << m_par->Log2NumPartInCU);
         m_aboveAddr = m_ctbAddr - widthInCU;
+        if (m_par->NumTiles == 1 || m_par->m_tile_ids[m_ctbAddr] == m_par->m_tile_ids[m_aboveAddr])
+            m_aboveSameTile = 1;
     }
 
     if ( m_left && m_above )
     {
         m_aboveLeft = m_data - (widthInCU << m_par->Log2NumPartInCU) - m_par->NumPartInCU;
         m_aboveLeftAddr = m_ctbAddr - widthInCU - 1;
+        if (m_par->NumTiles == 1 || m_par->m_tile_ids[m_ctbAddr] == m_par->m_tile_ids[m_aboveLeftAddr])
+            m_aboveLeftSameTile = 1;
     }
 
-    if ( m_above && ( (m_ctbAddr%widthInCU) < (widthInCU-1) ) && tile_id == m_par->m_tile_ids[m_ctbAddr - widthInCU + 1])
+    if ( m_above && ( (m_ctbAddr%widthInCU) < (widthInCU-1) )/* && tile_id == m_par->m_tile_ids[m_ctbAddr - widthInCU + 1]*/)
     {
         m_aboveRight = m_data - (widthInCU << m_par->Log2NumPartInCU) + m_par->NumPartInCU;
         m_aboveRightAddr = m_ctbAddr - widthInCU + 1;
+        if (m_par->NumTiles == 1 || m_par->m_tile_ids[m_ctbAddr] == m_par->m_tile_ids[m_aboveRightAddr])
+            m_aboveRightSameTile = 1;
     }
 
     Ipp32s tile_row = tile_id / m_par->NumTileCols;
     Ipp32s tile_col = tile_id % m_par->NumTileCols;
     
-    if ((m_par->NumTiles == 1 && m_par->NumSlices == 1) || m_par->deblockTileBordersFlag) {
-        m_tile_border_right = m_par->Width;
-        m_tile_border_bottom = m_par->Height;
+    if ((m_par->NumTiles == 1 && m_par->NumSlices == 1) || m_par->deblockBordersFlag) {
+        m_region_border_right = m_par->Width;
+        m_region_border_bottom = m_par->Height;
+        m_region_border_left = 0;
+        m_region_border_top = 0;
     } else {
-        m_tile_border_right = (m_par->tileColStart[tile_col] + m_par->tileColWidth[tile_col]) << m_par->Log2MaxCUSize;
-        if (m_tile_border_right > m_par->Width)
-            m_tile_border_right = m_par->Width;
+        m_region_border_left = m_par->tileColStart[tile_col] << m_par->Log2MaxCUSize;
+        m_region_border_right = (m_par->tileColStart[tile_col] + m_par->tileColWidth[tile_col]) << m_par->Log2MaxCUSize;
+        if (m_region_border_right > m_par->Width)
+            m_region_border_right = m_par->Width;
 
-        m_tile_border_bottom = m_par->NumTiles > 1 ? ((m_par->tileRowStart[tile_row] + m_par->tileRowHeight[tile_row]) << m_par->Log2MaxCUSize) :
+        m_region_border_top = m_par->NumTiles > 1 ? (m_par->tileRowStart[tile_row] << m_par->Log2MaxCUSize) :
+            (m_cslice->row_first << m_par->Log2MaxCUSize);
+        m_region_border_bottom = m_par->NumTiles > 1 ? ((m_par->tileRowStart[tile_row] + m_par->tileRowHeight[tile_row]) << m_par->Log2MaxCUSize) :
             ((m_cslice->row_last + 1)  << m_par->Log2MaxCUSize);
-        if (m_tile_border_bottom > m_par->Height)
-            m_tile_border_bottom = m_par->Height;
+        if (m_region_border_bottom > m_par->Height)
+            m_region_border_bottom = m_par->Height;
     }
 
     m_bakAbsPartIdxCu = 0;
     m_isRdoq = m_par->RDOQFlag ? true : false;
-#ifdef AMT_ICRA_OPT
-    m_SCid    = 5;
-    m_SCpp    = 1764.0;
-    m_STC     = 2;
-    m_mvdMax  = 128;
-    m_mvdCost = 60;
-    h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs, m_par->MaxCUSize);
-#endif
-    m_intraMinDepth = 0;
-    m_adaptMinDepth = (m_par->minCUDepthAdapt) ? GetAdaptiveMinDepth(m_intraMinDepth) : 0;
-    m_adaptMaxDepth = MAX_TOTAL_DEPTH;
     //aya:quick fix for MB BRC!!!    
     m_ctbData = _data - (m_ctbAddr << m_par->Log2NumPartInCU);
+    if (stage == ENCODE_CTU) {
+#ifdef AMT_ICRA_OPT
+        m_SCid    = 5;
+        m_SCpp    = 1764.0;
+        m_STC     = 2;
+        m_mvdMax  = 128;
+        m_mvdCost = 60;
+        h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs, m_par->MaxCUSize);
+#endif
+        m_intraMinDepth = 0;
+        m_adaptMinDepth = (m_par->minCUDepthAdapt) ? GetAdaptiveMinDepth(m_intraMinDepth) : 0;
+        m_adaptMaxDepth = MAX_TOTAL_DEPTH;
 
-    m_isHistBuilt = false;
+        m_isHistBuilt = false;
 
 #ifdef AMT_SETTINGS
-    m_cuIntraAngMode = EnumIntraAngMode((m_currFrame->m_picCodeType == MFX_FRAMETYPE_B && !m_currFrame->m_isRef)
-        ? m_par->intraAngModes[B_NONREF]
+        m_cuIntraAngMode = EnumIntraAngMode((m_currFrame->m_picCodeType == MFX_FRAMETYPE_B && !m_currFrame->m_isRef)
+            ? m_par->intraAngModes[B_NONREF]
         : ((m_currFrame->m_picCodeType == MFX_FRAMETYPE_P)
-        ? m_par->intraAngModes[SliceTypeIndex(P_SLICE)]
+            ? m_par->intraAngModes[SliceTypeIndex(P_SLICE)]
         : m_par->intraAngModes[SliceTypeIndex(m_cslice->slice_type)]));
 #else
-    m_cuIntraAngMode = EnumIntraAngMode((m_currFrame->m_picCodeType == MFX_FRAMETYPE_B && !m_currFrame->m_isRef)
-        ? m_par->intraAngModes[B_NONREF]
+        m_cuIntraAngMode = EnumIntraAngMode((m_currFrame->m_picCodeType == MFX_FRAMETYPE_B && !m_currFrame->m_isRef)
+            ? m_par->intraAngModes[B_NONREF]
         : m_par->intraAngModes[SliceTypeIndex(m_cslice->slice_type)]);
 #endif
 #ifndef AMT_ALT_ENCODE
-    m_interPredY = m_interPredBufsY[0];
-    m_interPredC = m_interPredBufsC[0];
-    m_interResidY = m_interResidBufsY[0];
-    m_interResidU = m_interResidBufsU[0];
-    m_interResidV = m_interResidBufsV[0];
+        m_interPredY = m_interPredBufsY[0];
+        m_interPredC = m_interPredBufsC[0];
+        m_interResidY = m_interResidBufsY[0];
+        m_interResidU = m_interResidBufsU[0];
+        m_interResidV = m_interResidBufsV[0];
 
-    m_interPredBestY = m_interPredBufsY[1];
-    m_interPredBestC = m_interPredBufsC[1];
-    m_interResidBestY = m_interResidBufsY[1];
-    m_interResidBestU = m_interResidBufsU[1];
-    m_interResidBestV = m_interResidBufsV[1];
+        m_interPredBestY = m_interPredBufsY[1];
+        m_interPredBestC = m_interPredBufsC[1];
+        m_interResidBestY = m_interResidBufsY[1];
+        m_interResidBestU = m_interResidBufsU[1];
+        m_interResidBestV = m_interResidBufsV[1];
 #endif
 
 #ifdef MEMOIZE_SUBPEL
-    {
-        Ipp32s j,k,l;
-        for(j=0;j<m_currFrame->m_numRefUnique;j++) {
-            for(k=0;k<4;k++) {
-                for(l=0;l<4;l++) {
-                    m_memSubpel[3][j][k][l].Init(&(m_predBufHi3[j][k][l][0]), &(m_predBuf3[j][k][l][0]));
-                    m_memSubpel[2][j][k][l].Init(&(m_predBufHi2[j][k][l][0]), &(m_predBuf2[j][k][l][0]));
-                    m_memSubpel[1][j][k][l].Init(&(m_predBufHi1[j][k][l][0]), &(m_predBuf1[j][k][l][0]));
-                    m_memSubpel[0][j][k][l].Init(&(m_predBufHi0[j][k][l][0]), &(m_predBuf0[j][k][l][0]));
-                    if(m_par->hadamardMe>=2) {
-                        m_memSubHad[3][j][k][l].Init(&(m_satd8Buf3[j][k][l][0][0]), &(m_satd8Buf3[j][k][l][1][0]), &(m_satd8Buf3[j][k][l][2][0]), &(m_satd8Buf3[j][k][l][3][0]));
-                        m_memSubHad[2][j][k][l].Init(&(m_satd8Buf2[j][k][l][0][0]), &(m_satd8Buf2[j][k][l][1][0]), &(m_satd8Buf2[j][k][l][2][0]), &(m_satd8Buf2[j][k][l][3][0]));
-                        m_memSubHad[1][j][k][l].Init(&(m_satd8Buf1[j][k][l][0][0]), &(m_satd8Buf1[j][k][l][1][0]), &(m_satd8Buf1[j][k][l][2][0]), &(m_satd8Buf1[j][k][l][3][0]));
+        {
+            Ipp32s j,k,l;
+            for(j=0;j<m_currFrame->m_numRefUnique;j++) {
+                for(k=0;k<4;k++) {
+                    for(l=0;l<4;l++) {
+                        m_memSubpel[3][j][k][l].Init(&(m_predBufHi3[j][k][l][0]), &(m_predBuf3[j][k][l][0]));
+                        m_memSubpel[2][j][k][l].Init(&(m_predBufHi2[j][k][l][0]), &(m_predBuf2[j][k][l][0]));
+                        m_memSubpel[1][j][k][l].Init(&(m_predBufHi1[j][k][l][0]), &(m_predBuf1[j][k][l][0]));
+                        m_memSubpel[0][j][k][l].Init(&(m_predBufHi0[j][k][l][0]), &(m_predBuf0[j][k][l][0]));
+                        if(m_par->hadamardMe>=2) {
+                            m_memSubHad[3][j][k][l].Init(&(m_satd8Buf3[j][k][l][0][0]), &(m_satd8Buf3[j][k][l][1][0]), &(m_satd8Buf3[j][k][l][2][0]), &(m_satd8Buf3[j][k][l][3][0]));
+                            m_memSubHad[2][j][k][l].Init(&(m_satd8Buf2[j][k][l][0][0]), &(m_satd8Buf2[j][k][l][1][0]), &(m_satd8Buf2[j][k][l][2][0]), &(m_satd8Buf2[j][k][l][3][0]));
+                            m_memSubHad[1][j][k][l].Init(&(m_satd8Buf1[j][k][l][0][0]), &(m_satd8Buf1[j][k][l][1][0]), &(m_satd8Buf1[j][k][l][2][0]), &(m_satd8Buf1[j][k][l][3][0]));
+                        }
                     }
                 }
             }
-        }
 #ifdef MEMOIZE_CAND
-        m_memCandSubHad[0].Init();
-        m_memCandSubHad[1].Init();
-        m_memCandSubHad[2].Init();
-        m_memCandSubHad[3].Init();
-        for(k=0;k<MEMOIZE_NUMCAND;k++) {
+            m_memCandSubHad[0].Init();
+            m_memCandSubHad[1].Init();
+            m_memCandSubHad[2].Init();
+            m_memCandSubHad[3].Init();
+            for(k=0;k<MEMOIZE_NUMCAND;k++) {
 #ifdef MEMOIZE_CAND_SUBPEL
-            m_memCandSubHad[0].Init(k, &(m_satd8CandBuf0[k][0]), &(m_predBufCand0[k][0]));
-            m_memCandSubHad[1].Init(k, &(m_satd8CandBuf1[k][0]), &(m_predBufCand1[k][0]));
-            m_memCandSubHad[2].Init(k, &(m_satd8CandBuf2[k][0]), &(m_predBufCand2[k][0]));
-            m_memCandSubHad[3].Init(k, &(m_satd8CandBuf3[k][0]), &(m_predBufCand3[k][0]));
+                m_memCandSubHad[0].Init(k, &(m_satd8CandBuf0[k][0]), &(m_predBufCand0[k][0]));
+                m_memCandSubHad[1].Init(k, &(m_satd8CandBuf1[k][0]), &(m_predBufCand1[k][0]));
+                m_memCandSubHad[2].Init(k, &(m_satd8CandBuf2[k][0]), &(m_predBufCand2[k][0]));
+                m_memCandSubHad[3].Init(k, &(m_satd8CandBuf3[k][0]), &(m_predBufCand3[k][0]));
 #else
-            m_memCandSubHad[0].Init(k, &(m_satd8CandBuf0[k][0]));
-            m_memCandSubHad[1].Init(k, &(m_satd8CandBuf1[k][0]));
-            m_memCandSubHad[2].Init(k, &(m_satd8CandBuf2[k][0]));
-            m_memCandSubHad[3].Init(k, &(m_satd8CandBuf3[k][0]));
+                m_memCandSubHad[0].Init(k, &(m_satd8CandBuf0[k][0]));
+                m_memCandSubHad[1].Init(k, &(m_satd8CandBuf1[k][0]));
+                m_memCandSubHad[2].Init(k, &(m_satd8CandBuf2[k][0]));
+                m_memCandSubHad[3].Init(k, &(m_satd8CandBuf3[k][0]));
+#endif
+            }
 #endif
         }
 #endif
     }
-#endif
 }
 
 ////// random generation code, for development purposes
@@ -2355,22 +2567,22 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
 
             costCur += cur->cost[depth] * cur->num[depth];
             numCur += cur->num[depth];
-            if (m_aboveAddr >= m_cslice->slice_segment_address) {
+            if (m_aboveAddr >= m_cslice->slice_segment_address && m_aboveSameTile) {
                 costStat* above = m_costStat + m_aboveAddr;
                 costNeigh += above->cost[depth] * above->num[depth];
                 numNeigh += above->num[depth];
             }
-            if (m_aboveLeftAddr >= m_cslice->slice_segment_address) {
+            if (m_aboveLeftAddr >= m_cslice->slice_segment_address && m_aboveLeftSameTile) {
                 costStat* aboveLeft = m_costStat + m_aboveLeftAddr;
                 costNeigh += aboveLeft->cost[depth] * aboveLeft->num[depth];
                 numNeigh += aboveLeft->num[depth];
             }
-            if (m_aboveRightAddr >= m_cslice->slice_segment_address) {
+            if (m_aboveRightAddr >= m_cslice->slice_segment_address && m_aboveRightSameTile) {
                 costStat* aboveRight =  m_costStat + m_aboveRightAddr;
                 costNeigh += aboveRight->cost[depth] * aboveRight->num[depth];
                 numNeigh += aboveRight->num[depth];
             }
-            if (m_leftAddr >= m_cslice->slice_segment_address) {
+            if (m_leftAddr >= m_cslice->slice_segment_address && m_leftSameTile) {
                 costStat* left =  m_costStat + m_leftAddr;
                 costNeigh += left->cost[depth] * left->num[depth];
                 numNeigh += left->num[depth];
@@ -9354,7 +9566,7 @@ H265CUData *H265CU<PixType>::GetNeighbour(Ipp32s &neighbourBlockZScanIdx, Ipp32s
 
     if (neighbourLCU != NULL)
     {
-        if (neighbourLCUAddr < sliceStartAddr)
+        if (neighbourLCUAddr < sliceStartAddr || m_par->m_tile_ids[neighbourLCUAddr] != m_par->m_tile_ids[m_ctbAddr])
         {
             neighbourLCU = NULL;
         }

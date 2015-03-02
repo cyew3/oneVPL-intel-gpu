@@ -412,6 +412,31 @@ struct RefPicList
     Ipp32s m_refFramesCount; // number of reference frames in m_refFrames[]. must be the MAX (slice[sliceIdx]->num_ref_idx[ listIdx ], ...)
 };
 
+
+typedef enum { ENCODE_CTU, POST_PROC_CTU, POST_PROC_ROW } ThreadingTaskSpecifier;
+class H265FrameEncoder;
+
+#define MAX_NUM_DEPENDENCIES 16
+//#define DEBUG_NTM
+
+struct ThreadingTask
+{
+    ThreadingTaskSpecifier action;
+    H265FrameEncoder *fenc;
+    int row;
+    int col;
+    int poc;
+    volatile unsigned int numUpstreamDependencies;
+    int numDownstreamDependencies;
+    ThreadingTask *downstreamDependencies[MAX_NUM_DEPENDENCIES];
+
+    // very useful for debug
+#ifdef DEBUG_NTM
+    volatile int finished;
+    ThreadingTask *upstreamDependencies[MAX_NUM_DEPENDENCIES];
+#endif
+};
+
 inline Ipp32s H265_CeilLog2(Ipp32s a) {
     Ipp32s r = 0;
     while(a>(1<<r)) r++;

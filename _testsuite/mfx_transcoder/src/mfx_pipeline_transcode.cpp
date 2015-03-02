@@ -291,6 +291,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(AnalyzeCmplx,             OPT_UINT_16,    "Analyze frame complexity (for BRC)"),
         HANDLE_HEVC_OPTION(RateControlDepth,         OPT_UINT_16,    "future +1 frames for BRC"),
         HANDLE_HEVC_OPTION(LowresFactor,             OPT_UINT_16,    "enable lowres for lookahead"),
+        HANDLE_HEVC_OPTION(DeblockBorders,           OPT_TRI_STATE,  "on/off deblock borders"),
 
 
         HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "number of tile columns (1 - default)"),

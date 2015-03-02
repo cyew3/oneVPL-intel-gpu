@@ -673,9 +673,9 @@ mfxStatus H265FrameEncoder::WriteBitstreamPayload(mfxBitstream *mfxBS, Ipp32s bs
                 m_bs[bs_main_id].m_base.m_pbs += size;
             }
         } else {
-            H265EncoderRowInfo *row_info = &pSlice->m_row_info;
-            small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[row_info->bs_id].m_base.m_pbsBase + row_info->offset, row_info->size);
-            m_bs[bs_main_id].m_base.m_pbs += row_info->size;
+            Ipp32s size = H265Bs_GetBsSize(&m_bs[curr_slice]);
+            small_memcpy(m_bs[bs_main_id].m_base.m_pbs, m_bs[curr_slice].m_base.m_pbsBase, size);
+            m_bs[bs_main_id].m_base.m_pbs += size;
         }
 
         nal.nal_unit_type = pSlice->NalUnitType;

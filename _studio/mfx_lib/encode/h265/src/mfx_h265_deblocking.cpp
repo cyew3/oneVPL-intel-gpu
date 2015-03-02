@@ -55,8 +55,6 @@ template <typename PixType>
 void H265CU<PixType>::DeblockOneCrossLuma(Ipp32s curPixelColumn,
                                  Ipp32s curPixelRow)
 {
-    Ipp32s widthInSamples = m_tile_border_right;
-    Ipp32s heightInSamples = m_tile_border_bottom;
     Ipp32s x = curPixelColumn >> 3;
     Ipp32s y = curPixelRow >> 3;
     PixType* baseSrcDst;
@@ -69,14 +67,15 @@ void H265CU<PixType>::DeblockOneCrossLuma(Ipp32s curPixelColumn,
 
     start = 0;
     end = 2;
-    if ((Ipp32s)m_ctbPelY + curPixelRow >= heightInSamples - 8)
-    {
-        end = 3;
-    }
+
+    if (m_ctbPelY + curPixelRow == m_region_border_top + 8)
+        start = -1;
+    if (m_ctbPelY + curPixelRow >= m_region_border_bottom)
+        end = 1;
 
     for (i = start; i < end; i++)
     {
-        edge = &m_edge[y + ((i + 1) >> 1)][x + 1][(i + 1) & 1];
+        edge = &m_edge[y + ((i + 1) >> 1) - 1][x][(i + 1) & 1];
 
         if (edge->strength > 0)
         {
@@ -86,15 +85,16 @@ void H265CU<PixType>::DeblockOneCrossLuma(Ipp32s curPixelColumn,
     }
 
 
+    start = 0;
     end = 2;
-    if ((Ipp32s)m_ctbPelX + curPixelColumn >= widthInSamples - 8)
+    if (m_ctbPelX + curPixelColumn == m_region_border_left + 8)
+        start = -1;
+    if (m_ctbPelX + curPixelColumn >= m_region_border_right)
+        end = 1;
+    
+    for (i = start; i < end; i++)
     {
-        end = 3;
-    }
-
-    for (i = 0; i < end; i++)
-    {
-        edge = &m_edge[y + 1][x + ((i + 1) >> 1)][((i + 1) & 1) + 2];
+        edge = &m_edge[y][x + ((i + 1) >> 1) - 1][((i + 1) & 1) + 2];
 
         if (edge->strength > 0)
         {
@@ -127,8 +127,6 @@ template <typename PixType>
 void H265CU<PixType>::DeblockOneCrossChroma(Ipp32s curPixelColumn,
                                    Ipp32s curPixelRow)
 {
-    Ipp32s widthInSamples = m_tile_border_right;
-    Ipp32s heightInSamples = m_tile_border_bottom;
     Ipp32s x = curPixelColumn >> 3;
     Ipp32s y = curPixelRow >> 3;
     PixType* baseSrcDst;
@@ -141,10 +139,11 @@ void H265CU<PixType>::DeblockOneCrossChroma(Ipp32s curPixelColumn,
 
     start = 0;
     end = 2;
-    if ((Ipp32s)m_ctbPelY + curPixelRow >= heightInSamples - (8 << m_par->chromaShiftH))
-    {
-        end = 3;
-    }
+
+    if (m_ctbPelY + curPixelRow == m_region_border_top + (8 << m_par->chromaShiftH))
+        start = -1;
+    if (m_ctbPelY + curPixelRow >= m_region_border_bottom)
+        end = 1;
 
     for (i = start; i < end; i++)
     {
@@ -157,7 +156,7 @@ void H265CU<PixType>::DeblockOneCrossChroma(Ipp32s curPixelColumn,
             idxN = (i + 1) & 1;
         }
         
-        edge = &m_edge[idxY][x + 1][idxN];
+        edge = &m_edge[idxY - 1][x][idxN];
 
         if (edge->strength > 1)
         {
@@ -172,13 +171,14 @@ void H265CU<PixType>::DeblockOneCrossChroma(Ipp32s curPixelColumn,
         }
     }
 
+    start = 0;
     end = 2;
-    if ((Ipp32s)m_ctbPelX + curPixelColumn >= widthInSamples - (8 << m_par->chromaShiftW))
-    {
-        end = 3;
-    }
+    if (m_ctbPelX + curPixelColumn == m_region_border_left + (8 << m_par->chromaShiftW))
+        start = -1;
+    if (m_ctbPelX + curPixelColumn >= m_region_border_right)
+        end = 1;
 
-    for (i = 0; i < end; i++)
+    for (i = start; i < end; i++)
     {
         Ipp32s idxX, idxN;
         if ( m_par->chromaFormatIdc != MFX_CHROMAFORMAT_YUV444) {
@@ -188,7 +188,7 @@ void H265CU<PixType>::DeblockOneCrossChroma(Ipp32s curPixelColumn,
             idxX = x + ((i + 1) >> 1);
             idxN = ((i + 1) & 1) + 2;
         }
-        edge = &m_edge[y + 1][idxX][idxN];
+        edge = &m_edge[y][idxX - 1][idxN];
 
         if (edge->strength > 1)
         {
@@ -231,12 +231,7 @@ void H265CU<PixType>::GetEdgeStrength(H265CUPtr *pcCUQptr,
         {
             return;
         }
-        GetPuAbove(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag, /*false, false,*/ false, !crossTileBoundaryFlag);
-        if (pcCUQ != m_data && CUPPtr.ctbData) {
-            // pcCUQptr is left of cur CTB, adjust CUPPtr
-            CUPPtr.ctbData -= ((size_t)1 << (size_t)(m_par->Log2NumPartInCU));
-            CUPPtr.ctbAddr --;
-        }
+        GetPuAboveOf(&CUPPtr, pcCUQptr, uiPartQ, !crossSliceBoundaryFlag, /*false, false,*/ false, !crossTileBoundaryFlag);
     }
     else
     {
@@ -244,12 +239,7 @@ void H265CU<PixType>::GetEdgeStrength(H265CUPtr *pcCUQptr,
         {
             return;
         }
-        GetPuLeft(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag/*, false*/, !crossTileBoundaryFlag);
-        if (pcCUQ != m_data && CUPPtr.ctbData) {
-            // pcCUQptr is above of cur CTB, adjust CUPPtr
-            CUPPtr.ctbData -= m_par->PicWidthInCtbs << m_par->Log2NumPartInCU;
-            CUPPtr.ctbAddr -= m_par->PicWidthInCtbs;
-        }
+        GetPuLeftOf(&CUPPtr, pcCUQptr, uiPartQ, !crossSliceBoundaryFlag/*, false*/, !crossTileBoundaryFlag);
     }
 
     if (CUPPtr.ctbData == NULL)
@@ -429,6 +419,65 @@ void H265CU<PixType>::GetEdgeStrength(H265CUPtr *pcCUQptr,
 }
 
 
+template <typename PixType>
+void H265CU<PixType>::SetEdgesCTU(H265CUPtr *curLCU,
+                                  Ipp32s width,
+                                  Ipp32s height,
+                                  Ipp32s x_inc,
+                                  Ipp32s y_inc)
+{
+    Ipp32s curPixelColumn, curPixelRow;
+    Ipp32s crossSliceBoundaryFlag, crossTileBoundaryFlag;
+    Ipp32s tcOffset, betaOffset;
+    H265EdgeData edge;
+    Ipp32s dir;
+    Ipp32s i, j, e;
+
+    crossSliceBoundaryFlag = m_cslice->slice_loop_filter_across_slices_enabled_flag;
+    crossTileBoundaryFlag = m_par->NumTiles > 1 ? m_par->deblockBordersFlag : 0;
+    tcOffset = m_cslice->slice_tc_offset_div2 << 1;
+    betaOffset = m_cslice->slice_beta_offset_div2 << 1;
+
+    if (curLCU->ctbData) {
+        for (j = 0; j < height; j += 8)
+        {
+            for (i = 0; i < width; i += 8)
+            {
+                for (e = 0; e < 4; e++)
+                {
+                    if (e < 2)
+                    {
+                        curPixelColumn = i;
+                        curPixelRow = (j + 4 * e);
+                        dir = VERT_FILT;
+                    }
+                    else
+                    {
+                        curPixelColumn = (i + 4 * (e - 2));
+                        curPixelRow = j;
+                        dir = HOR_FILT;
+                    }
+
+                    GetEdgeStrength(curLCU, &edge, curPixelColumn, curPixelRow,
+                                    crossSliceBoundaryFlag, crossTileBoundaryFlag,
+                                    tcOffset, betaOffset, dir);
+
+                    m_edge[(j >> 3) + y_inc][(i >> 3) + x_inc][e] = edge;
+                }
+            }
+        }
+    } else {
+        for (j = 0; j < height; j += 8)
+        {
+            for (i = 0; i < width; i += 8)
+            {
+                for (e = 0; e < 4; e++)
+                    m_edge[(j >> 3) + y_inc][(i >> 3) + x_inc][e].strength = 0;
+            }
+        }
+    }
+}
+
 //Edges
 
 //  0
@@ -449,112 +498,36 @@ void H265CU<PixType>::SetEdges(Ipp32s width,
     Ipp32s i, j, e;
 
     crossSliceBoundaryFlag = m_cslice->slice_loop_filter_across_slices_enabled_flag;
-    crossTileBoundaryFlag = m_par->deblockTileBordersFlag;
+    crossTileBoundaryFlag = m_par->NumTiles > 1 ? m_par->deblockBordersFlag : 0;
     tcOffset = m_cslice->slice_tc_offset_div2 << 1;
     betaOffset = m_cslice->slice_beta_offset_div2 << 1;
 
-    H265CUPtr aboveLCU;
-    GetPuAbove(&aboveLCU, 0, !crossSliceBoundaryFlag, /*false, false,*/ false, !crossTileBoundaryFlag);
-
-// uncomment to hide false uninitialized memory read warning
-//    memset(&edge, 0, sizeof(edge));
-
-    if (aboveLCU.ctbData)
-    {
-        for (i = 0; i < width; i += 8)
-        {
-            for (e = 0; e < 2; e++)
-            {
-                curPixelColumn = i;
-                curPixelRow = (maxCUSize - 8 + 4 * e);
-
-                GetEdgeStrength(&aboveLCU, &edge, curPixelColumn, curPixelRow,
-                                crossSliceBoundaryFlag, crossTileBoundaryFlag,
-                                tcOffset, betaOffset, VERT_FILT);
-
-                m_edge[0][(i >> 3)+1][e] = edge;
-            }
-        }
-    }
-    else
-    {
-        for (i = 0; i < width; i += 8)
-        {
-            for (e = 0; e < 2; e++)
-            {
-                m_edge[0][(i >> 3)+1][e].strength = 0;
-            }
-        }
-    }
-
-    H265CUPtr leftLCU;
-    GetPuLeft(&leftLCU, 0, !crossSliceBoundaryFlag/*, false*/, !crossTileBoundaryFlag);
-
-    if (leftLCU.ctbData)
-    {
-        for (j = 0; j < height; j += 8)
-        {
-            for (e = 2; e < 4; e++)
-            {
-                curPixelColumn = (maxCUSize - 8 + 4 * (e - 2));
-                curPixelRow = j;
-
-                GetEdgeStrength(&leftLCU, &edge, curPixelColumn, curPixelRow,
-                                crossSliceBoundaryFlag, crossTileBoundaryFlag,
-                                tcOffset, betaOffset, HOR_FILT);
-
-                m_edge[(j >> 3)+1][0][e] = edge;
-            }
-        }
-    }
-    else
-    {
-        for (j = 0; j < (height >> 3); j++)
-        {
-            m_edge[j+1][0][2].strength = 0;
-            m_edge[j+1][0][3].strength = 0;
-        }
-    }
     H265CUPtr curLCU;
     curLCU.ctbData = m_data;
     curLCU.ctbAddr = m_ctbAddr;
     curLCU.absPartIdx = 0;
 
-    for (j = 0; j < height; j += 8)
-    {
-        for (i = 0; i < width; i += 8)
-        {
-            for (e = 0; e < 4; e++)
-            {
-                if (e < 2)
-                {
-                    curPixelColumn = i;
-                    curPixelRow = (j + 4 * e);
-                    dir = VERT_FILT;
-                }
-                else
-                {
-                    curPixelColumn = (i + 4 * (e - 2));
-                    curPixelRow = j;
-                    dir = HOR_FILT;
-                }
+//    if (m_ctbAddr == 7)
+//        printf("");
 
-                GetEdgeStrength(&curLCU, &edge, curPixelColumn, curPixelRow,
-                                crossSliceBoundaryFlag, crossTileBoundaryFlag,
-                                tcOffset, betaOffset, dir);
+    SetEdgesCTU(&curLCU, width, height, 0, 0);
 
-                m_edge[(j >> 3)+1][(i >> 3)+1][e] = edge;
-            }
-        }
-    }
+    GetCtuBelow(&curLCU, !crossSliceBoundaryFlag, !crossTileBoundaryFlag);
+    SetEdgesCTU(&curLCU, width, 1, 0, height >> 3);
+
+    GetCtuRight(&curLCU, !crossSliceBoundaryFlag, !crossTileBoundaryFlag);
+    SetEdgesCTU(&curLCU, 1, height, width >> 3, 0);
+
+    GetCtuBelowRight(&curLCU, !crossSliceBoundaryFlag, !crossTileBoundaryFlag);
+    SetEdgesCTU(&curLCU, 1, 1, width >> 3, height >> 3);
 }
 
 template <typename PixType>
 void H265CU<PixType>::Deblock()
 {
     Ipp32s maxCUSize = m_par->MaxCUSize;
-    Ipp32s widthInSamples = m_tile_border_right;
-    Ipp32s heightInSamples = m_tile_border_bottom;
+    Ipp32s widthInSamples = m_region_border_right;
+    Ipp32s heightInSamples = m_region_border_bottom;
     Ipp32s width, height;
     Ipp32s i, j;
 
@@ -574,17 +547,17 @@ void H265CU<PixType>::Deblock()
 
     SetEdges(width, height);
 
-    for (j = 0; j < height; j += 8)
+    for (j = 8; j <= height; j += 8)
     {
-        for (i = 0; i < width; i += 8)
+        for (i = 8; i <= width; i += 8)
         {
             DeblockOneCrossLuma(i, j);
         }
     }
 
-    for (j = 0; j < height; j += (8 << m_par->chromaShiftH))
+    for (j = (8 << m_par->chromaShiftH); j <= height; j += (8 << m_par->chromaShiftH))
     {
-        for (i = 0; i < width; i += (8 << m_par->chromaShiftW))
+        for (i = (8 << m_par->chromaShiftW); i <= width; i += (8 << m_par->chromaShiftW))
         {
             DeblockOneCrossChroma(i, j);
         }
