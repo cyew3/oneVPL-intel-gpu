@@ -360,7 +360,11 @@ void mfxSchedulerCore::WakeUpNumThreads(mfxU32 numThreadsToWakeUp,
         // wake up the dedicated thread if there are 'dedicated' tasks
         if (curThreadNum && m_numHwTasks)
         {
+#if defined(MFX_EXTERNAL_THREADING)
             m_ppTaskAdded[0]->Set();
+#else
+            m_pTaskAdded[0].Set();
+#endif
         }
 
         if (numThreadsToWakeUp && m_numSwTasks)
@@ -369,7 +373,12 @@ void mfxSchedulerCore::WakeUpNumThreads(mfxU32 numThreadsToWakeUp,
             {
                 if (i != curThreadNum)
                 {
+#if defined(MFX_EXTERNAL_THREADING)
                     m_ppTaskAdded[i]->Set();
+#else
+                    m_pTaskAdded[i].Set();
+#endif
+
                     numThreadsToWakeUp--;
                 }
             }
@@ -382,7 +391,11 @@ void mfxSchedulerCore::WakeUpNumThreads(mfxU32 numThreadsToWakeUp,
 
         for (i = 0; i < m_param.numberOfThreads; i += 1)
         {
+#if defined(MFX_EXTERNAL_THREADING)
             m_ppTaskAdded[i]->Set();
+#else
+            m_pTaskAdded[i].Set();
+#endif
         }
     }
 #else
