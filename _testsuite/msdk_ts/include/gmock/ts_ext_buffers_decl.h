@@ -53,6 +53,9 @@ EXTBUF(mfxExtMBQP                   , MFX_EXTBUFF_MBQP                       )
 EXTBUF(mfxExtChromaLocInfo          , MFX_EXTBUFF_CHROMA_LOC_INFO            )
 EXTBUF(mfxExtDecodedFrameInfo       , MFX_EXTBUFF_DECODED_FRAME_INFO         )
 
+// Threading API
+EXTBUF(mfxExtThreadsParam, MFX_EXTBUFF_THREADS_PARAM)
+
 //EXTBUF(mfxExtMVCSeqDesc             , MFX_EXTBUFF_MVC_SEQ_DESC              );
 //EXTBUF(mfxExtMVCTargetViews         , MFX_EXTBUFF_MVC_TARGET_VIEWS          );
 //EXTBUF(mfxExtJPEGQuantTables        , MFX_EXTBUFF_JPEG_QT                   );

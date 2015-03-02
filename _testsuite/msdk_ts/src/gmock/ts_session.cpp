@@ -11,6 +11,7 @@ tsSession::tsSession(mfxIMPL impl, mfxVersion version)
     , m_initialized(false)
     , m_sw_fallback(false)
     , m_is_handle_set(false)
+    , m_init_par()
 {
 }
 
@@ -123,5 +124,31 @@ mfxStatus tsSession::SetHandle(mfxSession session, mfxHandleType type, mfxHDL ha
     TRACE_FUNC3(MFXVideoCORE_SetHandle, session, type, handle);
     g_tsStatus.check( MFXVideoCORE_SetHandle(session, type, handle) );
     m_is_handle_set = (g_tsStatus.get() >= 0);
+    return g_tsStatus.get();
+}
+
+mfxStatus tsSession::MFXQueryVersion(mfxSession session, mfxVersion *version)
+{
+    TRACE_FUNC2(MFXQueryVersion, session, version);
+    g_tsStatus.check( ::MFXQueryVersion(session, version) );
+    return g_tsStatus.get();
+}
+
+mfxStatus tsSession::MFXInitEx()
+{
+    return MFXInitEx(m_init_par, &m_session);
+}
+
+mfxStatus tsSession::MFXInitEx(mfxInitParam par, mfxSession* session)
+{
+    TRACE_FUNC2(mfxInitParam, par, session);
+    g_tsStatus.check( ::MFXInitEx(par, session) );
+    return g_tsStatus.get();
+}
+
+mfxStatus tsSession::MFXDoWork(mfxSession session)
+{
+    TRACE_FUNC1(MFXDoWork, session);
+    g_tsStatus.check( ::MFXDoWork(session) );
     return g_tsStatus.get();
 }

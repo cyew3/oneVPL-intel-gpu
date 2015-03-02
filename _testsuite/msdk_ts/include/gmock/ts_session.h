@@ -17,6 +17,7 @@ public:
     mfxVersion*         m_pVersion;
     frame_allocator*    m_pFrameAllocator;
     frame_allocator*    m_pVAHandle;
+    tsExtBufType<mfxInitParam> m_init_par;
 
     tsSession(mfxIMPL impl = g_tsImpl, mfxVersion version = g_tsVersion);
     ~tsSession();
@@ -34,10 +35,15 @@ public:
     mfxStatus SetFrameAllocator(mfxSession session, mfxFrameAllocator *allocator);
 
     mfxStatus MFX_CDECL MFXQueryIMPL(mfxSession session, mfxIMPL *impl);
+    mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *version);
 
     mfxStatus Load(mfxSession session, const mfxPluginUID *uid, mfxU32 version);
     mfxStatus UnLoad(mfxSession session, const mfxPluginUID *uid);
     mfxStatus SetHandle(mfxSession session, mfxHandleType type, mfxHDL handle);
+
+    mfxStatus MFXInitEx();
+    mfxStatus MFXInitEx(mfxInitParam par, mfxSession* session);
+    mfxStatus MFXDoWork(mfxSession session);
 };
 
 #define IS_FALLBACK_EXPECTED(b_fallback, status)          \

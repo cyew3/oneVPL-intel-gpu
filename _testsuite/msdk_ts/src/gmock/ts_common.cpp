@@ -2,10 +2,11 @@
 
 tsTrace      g_tsLog(std::cout.rdbuf());
 tsStatus     g_tsStatus;
-mfxIMPL      g_tsImpl    = MFX_IMPL_AUTO;
-HWType       g_tsHWtype  = MFX_HW_UNKNOWN;
-mfxVersion   g_tsVersion = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
-mfxU32       g_tsTrace   = 1;
+mfxIMPL      g_tsImpl     = MFX_IMPL_AUTO;
+HWType       g_tsHWtype   = MFX_HW_UNKNOWN;
+OSFamily     g_tsOSFamily = MFX_OS_FAMILY_UNKNOWN;
+mfxVersion   g_tsVersion  = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
+mfxU32       g_tsTrace    = 1;
 tsPlugin     g_tsPlugin;
 tsStreamPool g_tsStreamPool;
 
@@ -154,6 +155,11 @@ void MFXVideoTest::SetUp()
 
     if(platform.size())
     {
+        if (platform[0] == 'w')
+        {
+            g_tsOSFamily = MFX_OS_FAMILY_WINDOWS;
+        }
+
         if(platform.find("_sw_") != std::string::npos)
         {
             g_tsImpl = MFX_IMPL_SOFTWARE;

@@ -39,6 +39,7 @@ public:
 extern mfxIMPL      g_tsImpl;
 extern mfxVersion   g_tsVersion;
 extern HWType       g_tsHWtype;
+extern OSFamily     g_tsOSFamily;
 extern tsStatus     g_tsStatus;
 extern mfxU32       g_tsTrace;
 extern tsTrace      g_tsLog;

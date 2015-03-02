@@ -680,3 +680,18 @@ STRUCT(mfxExtDecodedFrameInfo,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16      , FrameType)
 )
+
+STRUCT(mfxInitParam,
+    FIELD_T(mfxIMPL        , Implementation )
+    FIELD_S(mfxVersion     , Version        )
+    FIELD_T(mfxU16         , ExternalThreads)
+    FIELD_T(mfxExtBuffer** , ExtParam       )
+    FIELD_T(mfxU16         , NumExtParam    )
+)
+
+STRUCT(mfxExtThreadsParam,
+    FIELD_S(mfxExtBuffer, Header        )
+    FIELD_T(mfxU16      , NumThread     )
+    FIELD_T(mfxI32      , SchedulingType)
+    FIELD_T(mfxI32      , Priority      )
+)

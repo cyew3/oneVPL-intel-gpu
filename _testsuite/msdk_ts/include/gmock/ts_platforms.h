@@ -20,3 +20,10 @@ enum HWType
 
     MFX_HW_SKL       = 0x900000
 };
+
+enum OSFamily
+{
+    MFX_OS_FAMILY_UNKNOWN = 0,
+    MFX_OS_FAMILY_WINDOWS,
+    MFX_OS_FAMILY_LINUX
+};
