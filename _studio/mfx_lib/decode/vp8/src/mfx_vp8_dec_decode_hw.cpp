@@ -49,7 +49,6 @@ VideoDECODEVP8_HW::VideoDECODEVP8_HW(VideoCORE *p_core, mfxStatus *sts)
     UMC_SET_ZERO(m_frameProbs);
     UMC_SET_ZERO(m_frameProbs_saved);
     UMC_SET_ZERO(m_quantInfo);
-    m_pMbInfo = 0;
 
     gold_indx = 0;
     altref_indx = 0;
@@ -245,12 +244,6 @@ mfxStatus VideoDECODEVP8_HW::Close()
     m_frameOrder = (mfxU16)0;
     m_p_video_accelerator = 0;
     memset(&m_stat, 0, sizeof(m_stat));
-
-    if(m_pMbInfo)
-    {
-      vp8dec_Free(m_pMbInfo);
-      m_pMbInfo = 0;
-    }
 
     if(m_frame_info.blContextUp)
     {
@@ -945,13 +938,6 @@ void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
   Ipp32u mbPerCol, mbPerRow; \
   mbPerCol = m_frame_info.frameHeight >> 4; \
   mbPerRow = m_frame_info.frameWidth  >> 4; \
-  if (m_frame_info.mbPerCol * m_frame_info.mbPerRow  < mbPerRow * mbPerCol) \
-  { \
-    if (m_pMbInfo) \
-      vp8dec_Free(m_pMbInfo); \
-      \
-    m_pMbInfo = (vp8_MbInfo*)vp8dec_Malloc(mbPerRow * mbPerCol * sizeof(vp8_MbInfo)); \
-  } \
   if (m_frame_info.mbPerRow <  mbPerRow) \
   { \
     if (m_frame_info.blContextUp) \
@@ -1296,15 +1282,6 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     m_frame_info.entropyDecSize = m_boolDecoder[VP8_FIRST_PARTITION].pos() * 8 - 16 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
 
     #endif
-
-    //set to zero Mb coeffs
-    for (mfxU32 i = 0; i < m_frame_info.mbPerCol; i++)
-    {
-        for (mfxU32 j = 0; j < m_frame_info.mbPerRow; j++)
-        {
-            UMC_SET_ZERO(m_pMbInfo[i*m_frame_info.mbStep + j].coeffs);
-        }
-    }
 
     #ifdef MFX_VA_WIN
 
