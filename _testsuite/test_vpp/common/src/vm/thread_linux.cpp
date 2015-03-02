@@ -116,10 +116,16 @@ void MSDKSemaphore::Wait(void)
     {
         bool bError = false;
 
-        pthread_mutex_lock(&m_mutex);
+        int res = pthread_mutex_lock(&m_mutex);
 
-        if ((0 == m_count) && (0 != pthread_cond_wait(&m_semaphore, &m_mutex)))
+        while (!res && !m_count)
+        {
+            res = pthread_cond_wait(&m_semaphore, &m_mutex);
+        }
+
+        if ((0 == m_count) && (0 == res))
             bError = true;
+
         if (!bError) --m_count;
 
         pthread_mutex_unlock(&m_mutex);
@@ -174,7 +180,10 @@ void MSDKEvent::Wait(void)
     int res = pthread_mutex_lock(&m_mutex);
     if (!res)
     {
-        if (!m_state) pthread_cond_wait(&m_event, &m_mutex);
+        while (!res && !m_state)
+        {
+            res = pthread_cond_wait(&m_event, &m_mutex);
+        }
         if (!m_manual) m_state = false;
         res = pthread_mutex_unlock(&m_mutex);
     }
@@ -192,15 +201,18 @@ mfxStatus MSDKEvent::TimedWait(mfxU32 msec)
         {
             struct timeval tval;
             struct timespec tspec;
-            mfxI32 res;
+            mfxI32 res = 0;
 
             gettimeofday(&tval, NULL);
             msec = 1000 * msec + tval.tv_usec;
             tspec.tv_sec = tval.tv_sec + msec / 1000000;
             tspec.tv_nsec = (msec % 1000000) * 1000;
-            res = pthread_cond_timedwait(&m_event,
-                                         &m_mutex,
-                                         &tspec);
+            while (!res && !m_state)
+            {
+                res = pthread_cond_timedwait(&m_event,
+                                             &m_mutex,
+                                             &tspec);
+            }
             if (0 == res) mfx_res = MFX_ERR_NONE;
             else if (ETIMEDOUT == res) mfx_res = MFX_TASK_WORKING;
             else mfx_res = MFX_ERR_UNKNOWN;
