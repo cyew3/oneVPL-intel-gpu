@@ -142,7 +142,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
     m_request = request;
 
-    sts = m_p_core->CreateVA(&m_on_init_video_params, &request, &m_response);
+    sts = m_p_core->CreateVA(&m_on_init_video_params, &request, &m_response, m_p_frame_allocator.get());
     MFX_CHECK_STS(sts);
 
     UMC::Status umcSts = UMC::UMC_OK;

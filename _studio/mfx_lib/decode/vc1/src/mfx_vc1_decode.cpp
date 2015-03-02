@@ -773,7 +773,7 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
 #if defined (MFX_VA)
         if (!m_isSWPlatform)
         {
-            MFXSts = m_pCore->CreateVA(&m_par, &request, &m_response);
+            MFXSts = m_pCore->CreateVA(&m_par, &request, &m_response, m_pFrameAlloc.get());
             if (MFXSts < MFX_ERR_NONE)
                 return MFXSts;
         }

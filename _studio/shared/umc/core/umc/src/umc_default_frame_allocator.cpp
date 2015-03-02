@@ -204,6 +204,11 @@ Status DefaultFrameAllocator::Alloc(FrameMemID *pNewMemID, const VideoDataInfo *
     return UMC_OK;
 }
 
+Status DefaultFrameAllocator::GetFrameHandle(UMC::FrameMemID , void * )
+{
+    return UMC_ERR_UNSUPPORTED;
+}
+
 const FrameData* DefaultFrameAllocator::Lock(FrameMemID mid)
 {
     AutomaticUMCMutex guard(m_guard);

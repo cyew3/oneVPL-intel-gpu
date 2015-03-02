@@ -564,7 +564,7 @@ mfxStatus D3D9VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFr
     return sts;
 }
 
-mfxStatus D3D9VideoCORE::CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
+mfxStatus D3D9VideoCORE::CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator)
 {
    
     if (!(request->Type & MFX_MEMTYPE_FROM_DECODE) ||
@@ -583,7 +583,7 @@ mfxStatus D3D9VideoCORE::CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *r
             return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    return CreateVideoAccelerator(param, response->NumFrameActual, &renderTargets[0]);
+    return CreateVideoAccelerator(param, response->NumFrameActual, &renderTargets[0], allocator);
 }
 
 mfxStatus D3D9VideoCORE::CreateVideoProcessing(mfxVideoParam * param)
@@ -673,7 +673,7 @@ mfxStatus D3D9VideoCORE::GetD3DService(mfxU16 , mfxU16 , IDirectXVideoDecoderSer
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOfRenderTarget, IDirect3DSurface9 **RenderTargets)
+mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOfRenderTarget, IDirect3DSurface9 **RenderTargets, UMC::FrameAllocator *allocator)
 {
     mfxStatus sts = MFX_ERR_NONE;
     m_pVA.reset(new DXVA2Accelerator);
@@ -701,8 +701,8 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
     // Init Accelerator
     params.m_pVideoStreamInfo = &VideoInfo;
     params.m_iNumberSurfaces = NumOfRenderTarget;
-    params.isExt = true;
     params.m_surf = (void **)RenderTargets;
+    params.m_allocator = allocator;
 
     if (UMC_OK != m_pVA->Init(&params))
     {

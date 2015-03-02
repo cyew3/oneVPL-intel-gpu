@@ -260,31 +260,32 @@ enum eUMC_VA_Status
 };
 
 ///////////////////////////////////////////////////////////////////////////////////
-
+class FrameAllocator;
 class VideoAcceleratorParams
 {
     DYNAMIC_CAST_DECL_BASE(VideoAcceleratorParams);
 public:
+
     VideoAcceleratorParams(void)
     {
         m_pVideoStreamInfo = NULL;
         m_iNumberSurfaces  = 0; // 0 means use default value
-        m_SurfaceWidth     = 0; // 0 means use default value
-        m_SurfaceHeight    = 0; // 0 means use default value
         m_protectedVA = 0;
         m_needVideoProcessingVA = false;
+        m_surf = 0;
+        m_allocator = 0;
     }
+
     virtual ~VideoAcceleratorParams(void){}
 
     VideoStreamInfo *m_pVideoStreamInfo;
     Ipp32s          m_iNumberSurfaces;
-    Ipp32s          m_SurfaceWidth;
-    Ipp32s          m_SurfaceHeight;
     Ipp32s          m_protectedVA;
     bool            m_needVideoProcessingVA;
 
+    FrameAllocator  *m_allocator;
+
     // if extended surfaces exist
-    bool   isExt;
     void** m_surf;
 };
 
@@ -301,7 +302,8 @@ public:
         m_videoProcessingVA(0),
         m_bH264ShortSlice(false),
         m_bH264MVCSupport(false),
-        m_isUseStatuReport(true)
+        m_isUseStatuReport(true),
+        m_allocator(0)
     {
     }
 
@@ -326,10 +328,7 @@ public:
     virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error) = 0;
     virtual Status ReleaseBuffer(Ipp32s type) = 0;   // release buffer
     virtual Status EndFrame     (void * handle = 0) = 0;          // end frame
-    // output frame (with reordering)
-    virtual Status DisplayFrame (Ipp32s index, VideoData *pOutputVideoData = NULL) = 0;
 
-    bool IsSimulate() const { return ((m_Platform & VA_SIMULATOR) != 0); }
     virtual bool IsIntelCustomGUID() const = 0;
     /* TODO: is used on Linux only? On Linux there are isues with signed/unsigned return value. */
     virtual Ipp32s GetSurfaceID(Ipp32s idx) { return idx; }
@@ -349,8 +348,9 @@ public:
     VideoAccelerationHW         m_HWPlatform;
 
 protected:
-    ProtectedVA *   m_protectedVA;
-    VideoProcessingVA * m_videoProcessingVA;
+    ProtectedVA       *  m_protectedVA;
+    VideoProcessingVA *  m_videoProcessingVA;
+    FrameAllocator    *  m_allocator;
 
     bool            m_bH264ShortSlice;
     bool            m_bH264MVCSupport;

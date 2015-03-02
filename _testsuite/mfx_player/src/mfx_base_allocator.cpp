@@ -97,6 +97,11 @@ mfxStatus BaseFrameAllocator::CheckRequestType(mfxFrameAllocRequest *request)
         return MFX_ERR_UNSUPPORTED;
 }
 
+mfxStatus BaseFrameAllocator::AllocFrame(mfxFrameSurface1 *surface)
+{
+    return AllocImpl(surface);
+}
+
 mfxStatus BaseFrameAllocator::AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
 

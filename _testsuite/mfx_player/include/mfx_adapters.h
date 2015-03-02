@@ -126,6 +126,10 @@ public:
     {
         return m_pTo->Close();
     }
+    virtual mfxStatus AllocFrame(mfxFrameSurface1 * surface)
+    {
+        return m_pTo->AllocFrame(surface);
+    }
     virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
     {
         return m_pTo->Alloc(m_pTo->pthis, request, response);

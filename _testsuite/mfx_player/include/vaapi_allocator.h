@@ -53,6 +53,7 @@ protected:
     virtual mfxStatus CheckRequestType(mfxFrameAllocRequest *request);
     virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response);
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
+    virtual mfxStatus AllocImpl(mfxFrameSurface1 *surface);
 
     VADisplay m_dpy;
     bool      m_bAdaptivePlayback;

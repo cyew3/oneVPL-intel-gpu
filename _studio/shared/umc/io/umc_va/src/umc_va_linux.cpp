@@ -16,6 +16,7 @@
 #include "umc_va_video_processing.h"
 #include "vm_file.h"
 #include "mfx_trace.h"
+#include "umc_frame_allocator.h"
 
 #define UMC_VA_NUM_OF_COMP_BUFFERS 8
 
@@ -251,8 +252,6 @@ LinuxVideoAccelerator::LinuxVideoAccelerator(void)
     m_dpy        = NULL;
     m_context    = -1;
     m_config_id  = -1;
-    m_surfaces   = NULL;
-    m_iIndex     = UMC_VA_LINUX_INDEX_UNDEF;
     m_FrameState = lvaBeforeBegin;
 
     m_pCompBuffers  = NULL;
@@ -261,8 +260,6 @@ LinuxVideoAccelerator::LinuxVideoAccelerator(void)
     m_uiCompBuffersUsed = 0;
 
     vm_mutex_set_invalid(&m_SyncMutex);
-
-    m_bIsExtSurfaces    = false;
 
 #if defined(ANDROID)
     m_isUseStatuReport  = false;
@@ -288,6 +285,11 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     LinuxVideoAcceleratorParams* pParams = DynamicCast<LinuxVideoAcceleratorParams>(pInfo);
     Ipp32s width = 0, height = 0;
 
+    m_allocator = pParams->m_allocator;
+
+    if (!m_allocator)
+        return UMC_ERR_NULL_PTR;
+
     // checking errors in input parameters
     if ((UMC_OK == umcRes) && (NULL == pParams))
         umcRes = UMC_ERR_NULL_PTR;
@@ -305,7 +307,6 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     // filling input parameters
     if (UMC_OK == umcRes)
     {
-        m_iIndex            = UMC_VA_LINUX_INDEX_UNDEF;
         m_dpy               = pParams->m_Display;
         width               = pParams->m_pVideoStreamInfo->clip_info.width;
         height              = pParams->m_pVideoStreamInfo->clip_info.height;
@@ -335,13 +336,6 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     SetTraceStrings(m_Profile & VA_CODEC);
 
     // display initialization
-    if((UMC_OK == umcRes) && !pParams->isExt)
-    {
-        int major_version = 0, minor_version = 0;
-
-        va_res = vaInitialize(m_dpy, &major_version, &minor_version);
-        umcRes = va_to_umc_res(va_res);
-    }
     if (UMC_OK == umcRes)
     {
         Ipp32s i,j;
@@ -478,43 +472,10 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         UMC_FREE(va_entrypoints);
     }
 
-    // creating surfaces
-    if (UMC_OK == umcRes)
-    {
-        m_surfaces = (VASurfaceID*)ippsMalloc_8u(m_NumOfFrameBuffers*sizeof(VASurfaceID));
-        if (NULL == m_surfaces) umcRes = UMC_ERR_ALLOC;
-    }
-
-    if (UMC_OK == umcRes)
-    {
-        if(!pParams->isExt)
-        {
-            m_bIsExtSurfaces = false;
-
-            va_res = vaCreateSurfaces(m_dpy, va_attributes[0].value, width, height, m_surfaces, m_NumOfFrameBuffers, NULL, 0);
-            umcRes = va_to_umc_res(va_res);
-        }
-        else
-        {
-#if 1
-            VASurfaceID* pSurfaces = (VASurfaceID*)pParams->m_surf;
-
-            m_bIsExtSurfaces = true;
-            for(Ipp32s i = 0; i < pParams->m_iNumberSurfaces; i++)
-                m_surfaces[i] = pSurfaces[i];
-#else
-            va_res = vaCreateSurfaces(m_dpy, width, height, va_attributes[0].value, m_NumOfFrameBuffers, m_surfaces);
-            umcRes = va_to_umc_res(va_res);
-            for(Ipp32s i = 0; i < pParams->m_iNumberSurfaces; i++)
-                pParams->m_surf[i] = (void*)m_surfaces[i];
-            va_surface_list = m_surfaces;
-#endif
-        }
-    }
     // creating context
     if (UMC_OK == umcRes)
     {
-        va_res = vaCreateContext(m_dpy, m_config_id, width, height, VA_PROGRESSIVE, m_surfaces, m_NumOfFrameBuffers, &m_context);
+        va_res = vaCreateContext(m_dpy, m_config_id, width, height, VA_PROGRESSIVE, (VASurfaceID*)pParams->m_surf, m_NumOfFrameBuffers, &m_context);
         umcRes = va_to_umc_res(va_res);
     }
 
@@ -552,14 +513,6 @@ Status LinuxVideoAccelerator::Close(void)
             vaDestroyConfig(m_dpy,m_config_id);
             m_config_id  = -1;
         }
-        if (NULL != m_surfaces)
-        {
-            if (!m_bIsExtSurfaces) // free if self allocated surfaces
-            {
-                vaDestroySurfaces(m_dpy, m_surfaces, m_NumOfFrameBuffers);
-            }
-            UMC_FREE(m_surfaces);
-        }
         m_dpy = NULL;
     }
 
@@ -569,13 +522,13 @@ Status LinuxVideoAccelerator::Close(void)
     delete m_videoProcessingVA;
     m_videoProcessingVA = 0;
 
-    m_iIndex     = UMC_VA_LINUX_INDEX_UNDEF;
     m_FrameState = lvaBeforeBegin;
     m_uiCompBuffersNum  = 0;
     m_uiCompBuffersUsed = 0;
     vm_mutex_unlock (&m_SyncMutex);
     vm_mutex_destroy(&m_SyncMutex);
-    return UMC_OK;
+
+    return VideoAccelerator::Close();
 }
 
 Status LinuxVideoAccelerator::BeginFrame(Ipp32s FrameBufIndex)
@@ -586,6 +539,12 @@ Status LinuxVideoAccelerator::BeginFrame(Ipp32s FrameBufIndex)
 
     if ((UMC_OK == umcRes) && ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers)))
         umcRes = UMC_ERR_INVALID_PARAMS;
+
+    VASurfaceID surface;
+    Status sts = m_allocator->GetFrameHandle(FrameBufIndex, &surface);
+    if (sts != UMC_OK)
+        return sts;
+
     if (UMC_OK == umcRes)
     {
         if (lvaBeforeBegin == m_FrameState)
@@ -593,7 +552,7 @@ Status LinuxVideoAccelerator::BeginFrame(Ipp32s FrameBufIndex)
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
                 MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, m_sDecodeTraceStart, "%d|%d", m_context, 0);
-                va_res = vaBeginPicture(m_dpy, m_context, m_surfaces[FrameBufIndex]);
+                va_res = vaBeginPicture(m_dpy, m_context, surface);
             }
             umcRes = va_to_umc_res(va_res);
             if (UMC_OK == umcRes) m_FrameState = lvaBeforeEnd;
@@ -899,21 +858,12 @@ Status LinuxVideoAccelerator::EndFrame(void*)
 /* TODO: need to rewrite return value type (possible problems with signed/unsigned) */
 Ipp32s LinuxVideoAccelerator::GetSurfaceID(Ipp32s idx)
 {
-    Ipp32s surface = VA_INVALID_SURFACE;
+    VASurfaceID surface;
+    Status sts = m_allocator->GetFrameHandle(idx, &surface);
+    if (sts != UMC_OK)
+        return VA_INVALID_SURFACE;
 
-    if ((idx >= 0) && (idx < m_NumOfFrameBuffers)) surface = m_surfaces[idx];
     return surface;
-}
-
-Status LinuxVideoAccelerator::DisplayFrame(Ipp32s index, VideoData *pOutputVideoData)
-{
-    m_iIndex = index;
-    return UMC_OK;
-}
-
-Ipp32s LinuxVideoAccelerator::GetIndex(void)
-{
-    return m_iIndex;
 }
 
 VAStatus LinuxVideoAccelerator::GetDecodingError()
@@ -929,7 +879,12 @@ VAStatus LinuxVideoAccelerator::GetDecodingError()
     for(int cnt = 0; cnt < m_NumOfFrameBuffers; ++cnt)
     {
         VASurfaceDecodeMBErrors* pVaDecErr = NULL;
-        va_sts = vaQuerySurfaceError(m_dpy, m_surfaces[cnt], VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
+        VASurfaceID surface;
+        Status sts = m_allocator->GetFrameHandle(cnt, &surface);
+        if (sts != UMC_OK)
+            return sts;
+
+        va_sts = vaQuerySurfaceError(m_dpy, surface, VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
 
         if (VA_STATUS_SUCCESS == va_sts)
         {
@@ -1002,13 +957,18 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
     if ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers))
         return UMC_ERR_INVALID_PARAMS;
 
+    VASurfaceID surface;
+    Status sts = m_allocator->GetFrameHandle(FrameBufIndex, &surface);
+    if (sts != UMC_OK)
+        return sts;
+
     VASurfaceStatus surface_status;
-    VAStatus va_status = vaQuerySurfaceStatus(m_dpy, m_surfaces[FrameBufIndex], &surface_status);
+    VAStatus va_status = vaQuerySurfaceStatus(m_dpy, surface, &surface_status);
 
     if ((VA_STATUS_SUCCESS == va_status) && (VASurfaceReady == surface_status))
     {
         // handle decoding errors
-        VAStatus va_sts = vaSyncSurface(m_dpy, m_surfaces[FrameBufIndex]);
+        VAStatus va_sts = vaSyncSurface(m_dpy, surface);
         if ((VA_STATUS_ERROR_DECODING_ERROR == va_sts) && (NULL != error))
         {
             *(VAStatus*)error = GetDecodingError();
@@ -1032,9 +992,14 @@ Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex, void * error)
     if ((UMC_OK == umcRes) && ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers)))
         umcRes = UMC_ERR_INVALID_PARAMS;
 
+    VASurfaceID surface;
+    Status sts = m_allocator->GetFrameHandle(FrameBufIndex, &surface);
+    if (sts != UMC_OK)
+        return sts;
+
     if (UMC_OK == umcRes)
     {
-        va_sts = vaSyncSurface(m_dpy, m_surfaces[FrameBufIndex]);
+        va_sts = vaSyncSurface(m_dpy, surface);
         if ((VA_STATUS_ERROR_DECODING_ERROR == va_sts) && (NULL != error))
         {
             *(VAStatus*)error = GetDecodingError();

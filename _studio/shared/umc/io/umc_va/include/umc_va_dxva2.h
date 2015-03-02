@@ -80,7 +80,6 @@ public:
     DXVA2Accelerator();
     virtual ~DXVA2Accelerator();
 
-    virtual Status FindConfiguration(VideoStreamInfo *pVideoInfo);
     virtual Status Init(VideoAcceleratorParams *pParams);
     virtual Status CloseDirectXDecoder();
 
@@ -95,9 +94,6 @@ public:
     virtual Status QueryTaskStatus(Ipp32s , void *, void * ) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ReleaseBuffer(Ipp32s type);
     virtual Status EndFrame(void * handle = 0);
-    virtual Status DisplayFrame(Ipp32s index, VideoData *pOutputVideoData);
-    virtual Status Reset();
-    Status InternalReset();
 
     virtual bool IsIntelCustomGUID() const;
 
@@ -113,15 +109,15 @@ public:
 
 protected:
 
+    Status FindConfiguration(VideoStreamInfo *pVideoInfo);
+
     HRESULT CreateDecoder(IDirectXVideoDecoderService   *m_pDecoderService,
                           GUID                          guid,
                           DXVA2_VideoDesc               *pVideoDesc,
                           DXVA2_ConfigPictureDecode     *pDecoderConfig,
                           int                           cNumberSurfaces);
 
-    VideoStreamInfo         m_VideoStreamInfo;
     BOOL                    m_bInitilized;
-    BOOL                    m_bAllocated;
     GUID                    m_guidDecoder;
     DXVA2_ConfigPictureDecode m_Config;
     DXVA2_VideoDesc         m_videoDesc;
@@ -131,10 +127,8 @@ protected:
     IDirectXVideoDecoderService *m_pDecoderService;
     IDirectXVideoDecoder    *m_pDXVAVideoDecoder;
     HANDLE                  m_hDevice;
-    std::vector<IDirect3DSurface9*>  m_surfaces;
 
 protected:
-    bool    m_bIsExtSurfaces;
     bool    m_bIsExtManager;
 
     std::vector<Ipp32s>  m_bufferOrder;

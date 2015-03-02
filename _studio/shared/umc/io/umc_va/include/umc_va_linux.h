@@ -94,15 +94,11 @@ public:
     virtual void* GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **buf, Ipp32s size, Ipp32s index);
     virtual Status Execute      (void);
     virtual Status EndFrame     (void*);
-    virtual Status DisplayFrame (Ipp32s index, VideoData *pOutputVideoData);
     virtual Ipp32s GetSurfaceID (Ipp32s idx);
 
     // NOT implemented functions:
     virtual Status ReleaseBuffer(Ipp32s /*type*/)
     { return UMC_OK; };
-
-    // LinuxVideoAccelerator methods
-    virtual Ipp32s GetIndex (void);
 
     // Following functions are absent in menlow!!!!!!!!!!!!!!!!!!!!!!
     virtual Status ExecuteExtensionBuffer(void* /*x*/) { return UMC_ERR_UNSUPPORTED;}
@@ -126,9 +122,7 @@ protected:
 protected:
     VADisplay     m_dpy;
     VAConfigID    m_config_id;
-    VASurfaceID*  m_surfaces;
     VAContextID   m_context;
-    Ipp32s        m_iIndex;
     lvaFrameState m_FrameState;
 
     Ipp32s   m_NumOfFrameBuffers;
@@ -137,8 +131,6 @@ protected:
     vm_mutex m_SyncMutex;
     VACompBuffer** m_pCompBuffers;
 
-    // introduced for MediaSDK
-    bool    m_bIsExtSurfaces;
     const char * m_sDecodeTraceStart;
     const char * m_sDecodeTraceEnd;
 

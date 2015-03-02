@@ -355,8 +355,6 @@ namespace MfxVP9Decode
         }
 */
         memset(info.refFrameSignBias, 0, sizeof(info.refFrameSignBias));
-
-        info.frameContextIdx = 0;
     }
 
     void ParseSuperFrameIndex(const mfxU8 *data, size_t data_sz,

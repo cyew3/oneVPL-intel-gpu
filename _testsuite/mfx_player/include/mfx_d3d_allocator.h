@@ -58,6 +58,7 @@ protected:
     virtual mfxStatus CheckRequestType(mfxFrameAllocRequest *request);
     virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response);
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
+    virtual mfxStatus AllocImpl(mfxFrameSurface1 *surface);
    
     CComPtr<IDirect3DDeviceManager9> m_manager;
     CComPtr<IDirectXVideoDecoderService> m_decoderService;

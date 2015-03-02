@@ -45,6 +45,10 @@ public:
     {
         return m_pTarget->Close();
     }
+    virtual mfxStatus AllocFrame(mfxFrameSurface1 * surface)
+    {
+        return m_pTarget->AllocFrame(surface);
+    }
     virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
     {
         return m_pTarget->AllocFrames(request, response);
@@ -73,4 +77,32 @@ public:
     {
         return m_pTarget->FreeFrames(response);
     }
+};
+
+class AllocatorAdapterRW : public MFXFrameAllocatorRW
+{    
+public:
+    AllocatorAdapterRW(MFXFrameAllocatorRW * allocator);
+    virtual ~AllocatorAdapterRW();
+
+    virtual mfxStatus Init(mfxAllocatorParams *pParams);
+    virtual mfxStatus Close();
+    virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);   
+    virtual mfxStatus AllocFrame(mfxFrameSurface1 *surface);
+    virtual mfxStatus FreeFrames(mfxFrameAllocResponse *response);
+
+    virtual mfxStatus LockFrame(mfxMemId mid, mfxFrameData *ptr);
+    virtual mfxStatus UnlockFrame(mfxMemId mid, mfxFrameData *ptr);
+    virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL *handle);
+
+    //read means SW surfaces filled with actual data, write means gained memory can be written
+    virtual mfxStatus LockFrameRW(mfxMemId mid, mfxFrameData *ptr, mfxU8 lockflag /*MFXReadWriteMid::read|write*/);
+    //write means data should be reflected 
+    virtual mfxStatus UnlockFrameRW(mfxMemId mid, mfxFrameData *ptr, mfxU8 writeflag /*MFXReadWriteMid::write|0*/);
+
+protected:
+    MFXFrameAllocatorRW * m_allocator;
+
+    typedef std::pair<mfxMemId, mfxMemId> MidPair;
+    std::vector<MidPair> m_mids;
 };

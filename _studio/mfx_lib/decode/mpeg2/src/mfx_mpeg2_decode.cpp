@@ -718,7 +718,7 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
             if (false == m_isSWImpl)
             {
                 // create directx video accelerator
-                mfxSts = m_pCore->CreateVA(par, &allocRequest, &allocResponse);
+                mfxSts = m_pCore->CreateVA(par, &allocRequest, &allocResponse, m_FrameAllocator);
                 if(mfxSts)
                     return MFX_ERR_INVALID_VIDEO_PARAM;
             }

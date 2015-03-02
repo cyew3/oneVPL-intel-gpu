@@ -79,6 +79,8 @@ File Name: .h
 #include "mfx_dxgidebug_device.h"
 #include "mfx_hw_device_in_thread.h"
 
+#include "mfxstructures-int.h"
+
 #define MFX_DISPATCHER_LOG
 #include "mfx_dispatcher_log.h"
 
@@ -1318,8 +1320,10 @@ mfxStatus MFXDecPipeline::DecodeHeader()
 
             if (m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_VP9)
             {
-                //m_components[eDEC].m_params.mfx.FrameInfo.Width = m_inParams.FrameInfo.Width;
-                //m_components[eDEC].m_params.mfx.FrameInfo.Height = m_inParams.FrameInfo.Height;
+                if (m_inParams.bVP9_DRC)
+                {
+                    m_components[eDEC].m_params.mfx.SliceGroupsPresent = 1;
+                }
             }
 
             if (m_inParams.isPreferNV12 &&
@@ -2882,7 +2886,7 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
         vm_time_sleep(m_inParams.encodeExtraParams.nDelayOnMSDKCalls);
     }
 
-    for (; sts == MFX_ERR_MORE_SURFACE || sts == MFX_WRN_DEVICE_BUSY;)
+    for (; sts == MFX_ERR_MORE_SURFACE || sts == MFX_WRN_DEVICE_BUSY || sts == (mfxStatus)MFX_ERR_REALLOC_SURFACE;)
     {
         if (sts == MFX_WRN_DEVICE_BUSY)
         {
@@ -2899,6 +2903,16 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
         if (m_inParams.bPrintSplTimeStamps && !bs.isNull)
         {
             vm_string_printf(VM_STRING("spl_pts = %.2lf\n"), ConvertMFXTime2mfxF64(bs.TimeStamp));
+        }
+
+        if (sts == (mfxStatus)MFX_ERR_REALLOC_SURFACE)
+        {
+            mfxVideoParam param;
+            m_pYUVSource->GetVideoParam(&param);
+            inSurface.pSurface->Info.Width = param.mfx.FrameInfo.Width;
+            inSurface.pSurface->Info.Height = param.mfx.FrameInfo.Height;
+
+            m_components[eDEC].ReallocSurface(inSurface.pSurface);
         }
 
         bs.DataFlag = (mfxU16)(m_inParams.bCompleteFrame ? MFX_BITSTREAM_COMPLETE_FRAME : 0);
@@ -4680,6 +4694,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
           {
               m_inParams.bAdaptivePlayback = true;
           }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-vp9_drc"), VM_STRING("VP9 smooth DRC algorithm emulation.")))
+          {
+              m_inParams.bVP9_DRC = true;
+          }
           else
           {
                MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED
@@ -5079,4 +5097,102 @@ mfxStatus MFXDecPipeline::ResetAfterSeek()
 mfxU32 MFXDecPipeline::GetNumDecodedFrames(void)
 {
     return m_nDecFrames;
+}
+
+
+AllocatorAdapterRW::AllocatorAdapterRW(MFXFrameAllocatorRW * allocator)
+    : m_allocator(allocator)
+{
+}
+
+AllocatorAdapterRW::~AllocatorAdapterRW()
+{
+    delete m_allocator;
+}
+
+mfxStatus AllocatorAdapterRW::Init(mfxAllocatorParams *pParams)
+{
+    return m_allocator->Init(pParams);
+}
+
+mfxStatus AllocatorAdapterRW::Close()
+{
+    return m_allocator->Close();
+}
+
+mfxStatus AllocatorAdapterRW::AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
+{
+    mfxStatus  status =  m_allocator->AllocFrames(request, response);
+    if (status < MFX_ERR_NONE)
+        return status;
+
+    if (!m_mids.size())
+    {
+        for (mfxI32 i = 0; i < response->NumFrameActual; i++)
+        {
+            MidPair pair;
+            pair.first = (mfxMemId)(i + 1);
+            pair.second = response->mids[i];
+            response->mids[i] = (mfxMemId)(i + 1);
+            m_mids.push_back(pair);
+        }
+    }
+    
+    return status;
+}
+
+mfxStatus AllocatorAdapterRW::AllocFrame(mfxFrameSurface1 *surface)
+{
+    mfxMemId mid = surface->Data.MemId;
+    if ((size_t)mid > m_mids.size())
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    surface->Data.MemId = m_mids[(size_t)(mid) - 1].second;
+    mfxStatus  status =  m_allocator->AllocFrame(surface);
+    if (status < MFX_ERR_NONE)
+        return status;
+
+    // update surface after reallocation
+    m_mids[(size_t)(mid) - 1].second = surface->Data.MemId;
+    surface->Data.MemId = mid;
+    return status;
+}
+
+mfxStatus AllocatorAdapterRW::FreeFrames(mfxFrameAllocResponse *response)
+{
+    if (m_mids.size())
+    {
+        for (mfxI32 i = 0; i < response->NumFrameActual; i++)
+        {
+            response->mids[i] = m_mids[i].second;
+        }
+    }
+
+    m_mids.clear();
+    return m_allocator->FreeFrames(response);
+}
+
+mfxStatus AllocatorAdapterRW::LockFrame(mfxMemId mid, mfxFrameData *ptr)
+{
+    return m_allocator->LockFrame(m_mids[(size_t)(mid) - 1].second, ptr);
+}
+
+mfxStatus AllocatorAdapterRW::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
+{
+    return m_allocator->UnlockFrame(m_mids[(size_t)(mid) - 1].second, ptr);
+}
+
+mfxStatus AllocatorAdapterRW::GetFrameHDL(mfxMemId mid, mfxHDL *handle)
+{
+    return m_allocator->GetFrameHDL(m_mids[(size_t)(mid) - 1].second, handle);
+}
+
+mfxStatus AllocatorAdapterRW::LockFrameRW(mfxMemId mid, mfxFrameData *ptr, mfxU8 lockflag /*MFXReadWriteMid::read|write*/)
+{
+    return m_allocator->LockFrameRW(m_mids[(size_t)(mid) - 1].second, ptr, lockflag);
+}
+
+mfxStatus AllocatorAdapterRW::UnlockFrameRW(mfxMemId mid, mfxFrameData *ptr, mfxU8 writeflag /*MFXReadWriteMid::write|0*/)
+{
+    return m_allocator->UnlockFrameRW(m_mids[(size_t)(mid) - 1].second, ptr, writeflag);
 }

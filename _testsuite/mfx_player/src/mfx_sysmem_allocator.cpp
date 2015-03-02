@@ -205,6 +205,81 @@ mfxStatus SysMemFrameAllocator::CheckRequestType(mfxFrameAllocRequest *request)
         return MFX_ERR_UNSUPPORTED;
 }
 
+mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
+{
+    if (!m_pBufferAllocator)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    mfxU32 Width2 = MSDK_ALIGN32(surface->Info.Width);
+    mfxU32 Height2 = MSDK_ALIGN32(surface->Info.Height);
+    mfxU32 nbytes;
+
+    switch (surface->Info.FourCC) 
+    {
+    case MFX_FOURCC_YV12:
+    case MFX_FOURCC_NV12:
+        nbytes = Width2*Height2 + (Width2>>1)*(Height2>>1) + (Width2>>1)*(Height2>>1);
+        break;
+    case MFX_FOURCC_P010:
+        nbytes = Width2*Height2 + (Width2>>1)*(Height2>>1) + (Width2>>1)*(Height2>>1);
+        nbytes *= 2; // 16bits
+        break;
+    case MFX_FOURCC_P210:
+        nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
+        nbytes *= 2; // 16bits
+        break;
+    case MFX_FOURCC_RGB3:
+        nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2;
+        break;
+    case MFX_FOURCC_RGB4:
+        nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2 + Width2*Height2;
+        break;
+    case MFX_FOURCC_A2RGB10:
+        nbytes = Width2*Height2*4; // 4 bytes per pixel
+        break;
+    case MFX_FOURCC_YUY2:
+        nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
+        break;
+    case MFX_FOURCC_NV16:
+        nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
+        break;
+    case MFX_FOURCC_R16:
+        nbytes = 2*Width2*Height2;
+        break;
+    case MFX_FOURCC_ARGB16:
+        nbytes = (Width2*Height2 + Width2*Height2 + Width2*Height2 + Width2*Height2) << 1;
+        break;
+      default:
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+
+    // allocate frames
+    {
+        mfxStatus sts = m_pBufferAllocator->Free(m_pBufferAllocator->pthis, surface->Data.MemId);
+        if (MFX_ERR_NONE != sts)
+            return sts;
+
+        sts = m_pBufferAllocator->Alloc(m_pBufferAllocator->pthis, 
+            nbytes + MSDK_ALIGN32(sizeof(sFrame)), MFX_MEMTYPE_SYSTEM_MEMORY, &surface->Data.MemId);
+
+        if (MFX_ERR_NONE != sts) 
+            return sts;
+
+        sFrame *fs;
+        sts = m_pBufferAllocator->Lock(m_pBufferAllocator->pthis, surface->Data.MemId, (mfxU8 **)&fs);
+
+        if (MFX_ERR_NONE != sts) 
+            return sts;
+
+        fs->id = ID_FRAME;
+        fs->info = surface->Info;
+        m_pBufferAllocator->Unlock(m_pBufferAllocator->pthis, surface->Data.MemId);
+    }    
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
     if (!m_pBufferAllocator)

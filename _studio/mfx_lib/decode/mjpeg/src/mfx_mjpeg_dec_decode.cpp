@@ -285,7 +285,7 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
 #if defined (MFX_VA)
     if (m_platform != MFX_PLATFORM_SOFTWARE)
     {
-        mfxSts = m_core->CreateVA(&decPar, &request, &m_response);
+        mfxSts = m_core->CreateVA(&decPar, &request, &m_response, m_FrameAllocator.get());
         if (mfxSts < MFX_ERR_NONE)
             return mfxSts;
     }

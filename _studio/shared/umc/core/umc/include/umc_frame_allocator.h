@@ -65,6 +65,8 @@ public:
     // Sets lock counter to 0
     virtual Status Alloc(FrameMemID *pNewMemID, const VideoDataInfo * info, Ipp32u Flags) = 0;
 
+    virtual Status GetFrameHandle(UMC::FrameMemID MID, void * handle) = 0;
+
     // Lock() provides pointer from ID. If data is not in memory (swapped)
     // prepares (restores) it. Increases lock counter
     virtual const FrameData* Lock(FrameMemID MID) = 0;

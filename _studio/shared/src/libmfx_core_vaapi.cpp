@@ -559,7 +559,8 @@ mfxStatus
 VAAPIVideoCORE::CreateVA(
     mfxVideoParam* param,
     mfxFrameAllocRequest* request,
-    mfxFrameAllocResponse* response)
+    mfxFrameAllocResponse* response,
+    UMC::FrameAllocator *allocator)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -614,7 +615,7 @@ VAAPIVideoCORE::CreateVA(
 
     m_pVA.reset(new LinuxVideoAccelerator); //aya must be fixed late???
 
-    sts = CreateVideoAccelerator(param, profile, response->NumFrameActual, RenderTargets);
+    sts = CreateVideoAccelerator(param, profile, response->NumFrameActual, RenderTargets, allocator);
 
     return sts;
 
@@ -708,7 +709,8 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     mfxVideoParam* param,
     int profile,
     int NumOfRenderTarget,
-    VASurfaceID* RenderTargets)
+    VASurfaceID* RenderTargets,
+	UMC::FrameAllocator *allocator)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -732,7 +734,7 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     params.m_Display = m_Display;
     params.m_pVideoStreamInfo = &VideoInfo;
     params.m_iNumberSurfaces = NumOfRenderTarget;
-    params.isExt = true;
+    params.m_allocator = allocator;
     params.m_surf = (void **)RenderTargets;
 
     params.m_protectedVA = param->Protected;

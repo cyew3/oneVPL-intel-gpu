@@ -23,6 +23,8 @@
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_video_processing.h"
 
+#include "umc_frame_allocator.h"
+
 #define OVERFLOW_CHECK_VALUE    0x11
 
 using namespace UMC;
@@ -75,13 +77,10 @@ DXVA2Accelerator::DXVA2Accelerator():
     m_pDXVAVideoDecoder(NULL),
     m_hDevice(INVALID_HANDLE_VALUE),
     m_bInitilized(FALSE),
-    m_bAllocated(FALSE),
     m_guidDecoder(GUID_NULL),
-    m_bIsExtSurfaces(false),
     m_bIsExtManager(false)
 {
     memset(&m_videoDesc, 0, sizeof(m_videoDesc));
-    InternalReset();
 }
 
 //////////////////////////////////////////////////////////////
@@ -89,20 +88,8 @@ DXVA2Accelerator::DXVA2Accelerator():
 
 Status DXVA2Accelerator::CloseDirectXDecoder()
 {
-    // free if self allocated surfaces
-    if (!m_bIsExtSurfaces)
-    {
-        size_t size = m_surfaces.size();
-        for (size_t i = 0; i < size; i++)
-        {
-            SAFE_RELEASE(m_surfaces[i]);
-        }
-    }
-    vm_trace_i((Ipp32u)m_surfaces.size());
-    m_surfaces.clear();
     SAFE_RELEASE(m_pDXVAVideoDecoder);
     m_bInitilized = FALSE;
-    m_bAllocated = FALSE;
     SAFE_RELEASE(m_pDecoderService);
     if (m_pDirect3DDeviceManager9 && m_hDevice != INVALID_HANDLE_VALUE)
     {
@@ -119,31 +106,19 @@ DXVA2Accelerator::~DXVA2Accelerator()
         SAFE_RELEASE(m_pDirect3DDeviceManager9);
 }
 
-Status DXVA2Accelerator::Reset()
-{
-    InternalReset();
-    Status umcRes = VideoAccelerator::Reset();
-    UMC_RETURN(umcRes);
-}
-
-Status DXVA2Accelerator::InternalReset()
-{
-    return UMC_OK;
-}
-
 //////////////////////////////////////////////////////////////
 
 Status DXVA2Accelerator::BeginFrame(Ipp32s index)
 {
-    if (index >= (Ipp32s)m_surfaces.size() || 0 > index)
-    {
-        return UMC_ERR_INVALID_PARAMS;
-    }
+    IDirect3DSurface9* surface;
+    Status sts = m_allocator->GetFrameHandle(index, &surface);
+    if (sts != UMC_OK)
+        return sts;
 
     HRESULT hr = S_OK;
     for (Ipp32u i = 0; i < 200; i++)
     {
-        hr = m_pDXVAVideoDecoder->BeginFrame(m_surfaces[index], NULL);
+        hr = m_pDXVAVideoDecoder->BeginFrame(surface, NULL);
         
         if (E_PENDING != hr) 
             break;
@@ -523,11 +498,10 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
 
     // Close decoder if opened
     CloseDirectXDecoder();
-    m_bInitilized = FALSE;
+    bool bInitilized = false;
 
     UMC_CHECK_PTR(pVideoInfo);
 
-    m_VideoStreamInfo = *pVideoInfo;
     ConvertVideoInfo2DVXA2Desc(pVideoInfo, &m_videoDesc);
 
     // Two options to get the video decoder service.
@@ -634,7 +608,7 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
                     }
 
                     MFX_LTRACE_S(MFX_TRACE_LEVEL_PARAMS, "Found DXVA configuration");
-                    m_bInitilized = TRUE;
+                    bInitilized = true;
 
                     if (idxConfig == -1)
                         idxConfig = iConfig;
@@ -658,20 +632,20 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
                 m_Config = pConfig[idxConfig];
                 m_bH264ShortSlice = GuidProfile::isShortFormat(isHEVCGUID, m_Config.ConfigBitstreamRaw);
 
-                if (m_bInitilized)
+                if (bInitilized)
                 {
                     break;
                 }
             } // End of formats loop.
 
-            if (FAILED(hr) || m_bInitilized)
+            if (FAILED(hr) || bInitilized)
             {
                 break;
             }
         }
     }
 
-    if (!m_bInitilized)
+    if (!bInitilized)
     {
         hr = E_FAIL; // Unable to find a configuration.
     }
@@ -694,45 +668,25 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
 {
     HRESULT hr = S_OK;
 
+    if (m_bInitilized)
+    {
+        UMC_RETURN(UMC_OK);
+    }
+
+    m_allocator = pParams->m_allocator;
+
+    if (!m_allocator)
+        return UMC_ERR_NULL_PTR;
+
     if (IS_PROTECTION_ANY(pParams->m_protectedVA))
     {
         m_protectedVA = new UMC::ProtectedVA((mfxU16)pParams->m_protectedVA);
     }
 
-    if (!m_bInitilized)
-    {
-        UMC_CALL(FindConfiguration(pParams->m_pVideoStreamInfo));
-    }
-
-    if (m_bAllocated)
-    {
-        UMC_RETURN(UMC_OK);
-    }
+    UMC_CALL(FindConfiguration(pParams->m_pVideoStreamInfo));
 
     // Number of surfaces
     Ipp32u numberSurfaces = pParams->m_iNumberSurfaces;
-    if (!numberSurfaces)
-    {
-        switch (m_Profile & VA_CODEC)
-        {
-            case VA_MPEG2: numberSurfaces = 12; break;
-            case VA_MPEG4: numberSurfaces = 12; break;
-            case VA_H264:  numberSurfaces = 22; break;
-            case VA_VC1:   numberSurfaces =  8; break;
-            case VA_JPEG:  numberSurfaces =  8; break;
-            default:       numberSurfaces =  8; break;
-        }
-    }
-
-    // override width&height if specified
-    if (pParams->m_SurfaceWidth)
-    {
-        m_videoDesc.SampleWidth = pParams->m_SurfaceWidth;
-    }
-    if (pParams->m_SurfaceHeight)
-    {
-        m_videoDesc.SampleHeight = pParams->m_SurfaceHeight;
-    }
 
     // check surface width&height
     if (pParams->m_pVideoStreamInfo)
@@ -743,29 +697,6 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
 
     vm_trace_fourcc(m_videoDesc.Format);
 
-    m_surfaces.resize(numberSurfaces);
-
-    if(!pParams->isExt)
-    {
-        m_bIsExtSurfaces = false;
-        hr = m_pDecoderService->CreateSurface(
-            m_videoDesc.SampleWidth,
-            m_videoDesc.SampleHeight,
-            numberSurfaces - 1, //number of BackBuffer
-            m_videoDesc.Format,
-            D3DPOOL_DEFAULT,
-            0,
-            DXVA2_VideoDecoderRenderTarget,
-            &m_surfaces[0],
-            NULL);
-    }
-    else
-    {
-        m_bIsExtSurfaces = true;
-        for(Ipp32s i = 0; i < pParams->m_iNumberSurfaces; i++)
-            m_surfaces[i] = (IDirect3DSurface9*)pParams->m_surf[i];
-    }
-
     // Create DXVA decoder
     if (SUCCEEDED(hr))
     {
@@ -773,7 +704,7 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
             m_guidDecoder,
             &m_videoDesc,
             &m_Config,
-            &m_surfaces[0],
+            (IDirect3DSurface9**)&pParams->m_surf[0],
             numberSurfaces,
             &m_pDXVAVideoDecoder);
     }
@@ -784,7 +715,7 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
     }
 
     m_isUseStatuReport = m_HWPlatform != VA_HW_LAKE;
-    m_bAllocated = TRUE;
+    m_bInitilized = TRUE;
     UMC_RETURN(UMC_OK);
 }
 
@@ -796,14 +727,8 @@ Status DXVA2Accelerator::Close()
     delete m_videoProcessingVA;
     m_videoProcessingVA = 0;
 
+    m_bInitilized = FALSE;
     return VideoAccelerator::Close();
-}
-
-//////////////////////////////////////////////////////////////
-
-Status DXVA2Accelerator::DisplayFrame(Ipp32s , VideoData *)
-{
-    return UMC_ERR_UNSUPPORTED;
 }
 
 #endif // UMC_VA_DXVA

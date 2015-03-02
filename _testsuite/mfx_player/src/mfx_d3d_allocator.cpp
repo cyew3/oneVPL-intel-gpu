@@ -317,6 +317,77 @@ mfxStatus D3DFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
     return sts;
 }
 
+mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
+{
+    HRESULT hr;
+
+    D3DFORMAT format = ConvertMfxFourccToD3dFormat(surface->Info.FourCC);
+
+    if (format == D3DFMT_UNKNOWN)
+        return MFX_ERR_UNSUPPORTED;
+    
+    DWORD   target = DXVA2_VideoDecoderRenderTarget;
+
+    ((IDirect3DSurface9 *)surface->Data.MemId)->Release();
+
+    /*if (MFX_MEMTYPE_DXVA2_DECODER_TARGET & request->Type)
+    {
+        target = DXVA2_VideoDecoderRenderTarget;
+    }
+    else if (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET & request->Type)
+    {
+        target = DXVA2_VideoProcessorRenderTarget;
+    }
+    else
+        return MFX_ERR_UNSUPPORTED;*/
+
+    // VPP may require at input/output surfaces with color format other than NV12 (in case of color conversion)
+    // VideoProcessorService must used to create such surfaces
+    if (target == DXVA2_VideoProcessorRenderTarget)
+    {
+        if (!m_hProcessor)
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
+        hr = m_processorService->CreateSurface(
+            surface->Info.Width,
+            surface->Info.Height,
+            0,
+            format,
+            D3DPOOL_DEFAULT,
+            m_surfaceUsage,
+            target,
+            (IDirect3DSurface9 **)&surface->Data.MemId,
+            NULL);
+    }
+    else
+    {
+        if (!m_hDecoder)
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
+        hr = m_decoderService->CreateSurface(
+            surface->Info.Width,
+            surface->Info.Height,
+            0,
+            format,
+            D3DPOOL_DEFAULT,
+            m_surfaceUsage,
+            target,
+            (IDirect3DSurface9 **)&surface->Data.MemId,
+            NULL);
+    }
+
+    if (FAILED(hr))
+    {        
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
     HRESULT hr;

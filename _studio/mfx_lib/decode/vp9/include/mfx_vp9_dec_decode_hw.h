@@ -59,16 +59,16 @@ protected:
     mfxStatus DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & info);
     mfxStatus PackHeaders(mfxBitstream *bs, VP9FrameInfo const & info);
 
+    void UpdateVideoParam(mfxVideoParam *par, VP9FrameInfo const & frameInfo);
+
     bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_par);
 
     mfxStatus GetOutputSurface(mfxFrameSurface1 **surface_out, mfxFrameSurface1 *surface_work, UMC::FrameMemID index);
 
 private:
     bool                    m_isInit;
-    bool                    m_is_software_buffer;
     VideoCORE*              m_core;
     eMFXPlatform            m_platform;
-
 
     mfxVideoParamWrapper    m_vInitPar;
     mfxVideoParamWrapper    m_vPar;
@@ -80,6 +80,7 @@ private:
 
     UMC::Mutex              m_mGuard;
 
+    bool                    m_adaptiveMode;
     mfxU32                  m_index;
     std::auto_ptr<mfx_UMC_FrameAllocator> m_FrameAllocator;
 

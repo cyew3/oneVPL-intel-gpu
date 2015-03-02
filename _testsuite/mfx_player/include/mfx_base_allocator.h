@@ -33,6 +33,7 @@ public:
     virtual mfxStatus Close() = 0;
     
     virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response) = 0;
+    virtual mfxStatus AllocFrame(mfxFrameSurface1 * surface) = 0;
     virtual mfxStatus LockFrame(mfxMemId mid, mfxFrameData *ptr) = 0;
     virtual mfxStatus UnlockFrame(mfxMemId mid, mfxFrameData *ptr) = 0;
     virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL *handle) = 0;
@@ -63,6 +64,7 @@ public:
     virtual mfxStatus Init(mfxAllocatorParams *pParams) = 0; 
     virtual mfxStatus Close();
     virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);   
+    virtual mfxStatus AllocFrame(mfxFrameSurface1 *surface);
     virtual mfxStatus FreeFrames(mfxFrameAllocResponse *response);
 
 protected:
@@ -119,6 +121,7 @@ protected:
     virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response) = 0;
     // allocates memory
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response) = 0;
+    virtual mfxStatus AllocImpl(mfxFrameSurface1 * surface) = 0;
 
     template <class T>
     class safe_array

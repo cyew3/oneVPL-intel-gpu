@@ -98,7 +98,7 @@ public:
 
     // Get Video Accelerator.
     virtual void  GetVA(mfxHDL* phdl, mfxU16 type) {type=type;*phdl = 0;}
-    virtual mfxStatus CreateVA(mfxVideoParam * , mfxFrameAllocRequest *, mfxFrameAllocResponse *) { return MFX_ERR_UNSUPPORTED; }
+    virtual mfxStatus CreateVA(mfxVideoParam * , mfxFrameAllocRequest *, mfxFrameAllocResponse *, UMC::FrameAllocator *) { return MFX_ERR_UNSUPPORTED; }
     // Get the current working adapter's number
     virtual mfxU32 GetAdapterNumber(void) {return 0;}
     //

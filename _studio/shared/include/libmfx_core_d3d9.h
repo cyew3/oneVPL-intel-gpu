@@ -91,7 +91,7 @@ public:
 
     virtual eMFXHWType     GetHWType();
 
-    mfxStatus              CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
+    mfxStatus              CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator);
     // to check HW capatbilities
     mfxStatus              IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncoder = false);
     #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
@@ -123,7 +123,7 @@ protected:
 
     virtual mfxStatus      DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
 
-    mfxStatus              CreateVideoAccelerator(mfxVideoParam * param, int NumOfRenderTarget, IDirect3DSurface9 **RenderTargets);
+    mfxStatus              CreateVideoAccelerator(mfxVideoParam * param, int NumOfRenderTarget, IDirect3DSurface9 **RenderTargets, UMC::FrameAllocator *allocator);
     mfxStatus              ProcessRenderTargets(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxBaseWideFrameAllocator* pAlloc);
 
 private:

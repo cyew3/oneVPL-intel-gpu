@@ -349,6 +349,29 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
     //so target fourcc is different than input
     if (m_nFourCC != pSurface->Info.FourCC)
     {
+        if (pSurface->Info.Width != m_yv12Surface.Info.Width || pSurface->Info.Height != m_yv12Surface.Info.Height)
+        {
+            // reallocate
+            delete [] m_yv12Surface.Data.Y;
+            mfxU32 nOldCC = m_VideoParams.mfx.FrameInfo.FourCC;
+            if (!m_params.useHMstyle)
+            {
+                bool useP010 = m_nFourCC == MFX_FOURCC_YUV420_16 || m_params.use10bitOutput;
+                m_VideoParams.mfx.FrameInfo.FourCC = useP010 ? MFX_FOURCC_YUV420_16 : MFX_FOURCC_YV12;
+                if (m_VideoParams.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
+                    m_VideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_YV16;
+            }
+            else
+            {
+                m_VideoParams.mfx.FrameInfo.FourCC = m_nFourCC;
+            }
+            m_VideoParams.mfx.FrameInfo.Width = pSurface->Info.Width;
+            m_VideoParams.mfx.FrameInfo.CropW = pSurface->Info.CropW;
+            m_VideoParams.mfx.FrameInfo.Height = pSurface->Info.Height;
+            m_VideoParams.mfx.FrameInfo.CropH = pSurface->Info.CropH;
+            MFX_CHECK_STS(AllocSurface(&m_VideoParams.mfx.FrameInfo, &m_yv12Surface));
+            m_VideoParams.mfx.FrameInfo.FourCC = nOldCC;
+        }
         //selecting converter
         pConvertedSurface = ConvertSurface(pSurface, &m_yv12Surface, &m_params);
         if (!pConvertedSurface)

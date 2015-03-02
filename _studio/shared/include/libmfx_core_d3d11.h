@@ -76,7 +76,7 @@ public:
     virtual ~D3D11VideoCORE();
 
 
-    virtual mfxStatus  CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
+    virtual mfxStatus  CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator);
 
    
     // Get the current working adapter's number
@@ -109,8 +109,6 @@ public:
     
     virtual mfxStatus IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncoder = false);
     mfxStatus GetIntelDataPrivateReport(const GUID guid, mfxVideoParam *par, D3D11_VIDEO_DECODER_CONFIG & config);
-
-    mfxStatus GetDX11Handle(mfxI32 index, mfxHDLPair* pair);
 
     virtual mfxStatus     SetHandle(mfxHandleType type, mfxHDL handle);
     void ReleaseHandle();

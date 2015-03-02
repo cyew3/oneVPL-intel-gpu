@@ -41,17 +41,16 @@ MFXD3D11Accelerator::MFXD3D11Accelerator(ID3D11VideoDevice  *pVideoDevice,
                                          ID3D11VideoContext *pVideoContext):m_pVideoDevice(pVideoDevice),
                                                                                m_pVideoContext(pVideoContext),
                                                                                m_pVDOView(0),
-                                                                               m_pCore(0),
                                                                                m_pDecoder(0)
 {
 } //MFXD3D11Accelerator::MFXD3D11Accelerator
 
-mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mfxVideoParam *param, D3D11VideoCORE *pCore)
+mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mfxVideoParam *param, UMC::FrameAllocator *allocator)
 {
-    mfxStatus sts;
-    HRESULT hres;
     D3D11_VIDEO_DECODER_DESC video_desc;
-    m_pCore = pCore;
+    m_allocator = allocator;
+    if (!m_allocator)
+        return MFX_ERR_MEMORY_ALLOC;
 
     video_desc.SampleWidth = param->mfx.FrameInfo.Width;
     video_desc.SampleHeight = param->mfx.FrameInfo.Height;
@@ -66,12 +65,12 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
         m_protectedVA = new UMC::ProtectedVA(param->Protected);
     }
 
-    sts = GetSuitVideoDecoderConfig(param, &video_desc, &video_config);
+    mfxStatus sts = GetSuitVideoDecoderConfig(param, &video_desc, &video_config);
     MFX_CHECK_STS(sts);
 
     m_DecoderGuid = video_desc.Guid;
 
-    hres  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
+    HRESULT hres  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
     if (FAILED(hres))
         return MFX_ERR_DEVICE_FAILED;
 
@@ -216,12 +215,8 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
     HRESULT hr = S_OK;
     mfxHDLPair Pair;
 
-
-
-    if (MFX_ERR_NONE != m_pCore->GetDX11Handle(index, &Pair))
+    if (UMC_OK != m_allocator->GetFrameHandle(index, &Pair))
         return UMC_ERR_DEVICE_FAILED;
-    
-
 
     D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC OutputDesc;
     OutputDesc.DecodeProfile = m_DecoderGuid;
@@ -362,8 +357,7 @@ Status MFXD3D11Accelerator::Close()
     delete m_videoProcessingVA;
     m_videoProcessingVA = 0;
 
-    Status sts = VideoAccelerator::Close();
-    return sts;
+    return VideoAccelerator::Close();
 }
 
 bool MFXD3D11Accelerator::IsIntelCustomGUID() const

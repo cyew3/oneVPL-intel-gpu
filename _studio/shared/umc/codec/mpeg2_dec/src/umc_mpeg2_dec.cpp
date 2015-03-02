@@ -698,13 +698,6 @@ Status MPEG2VideoDecoderBase::BeginVAFrame(int)
         return UMC_OK;
     }
 
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
-    if(pack->m_va->IsSimulate() && !pack->is_analyzer)
-    {
-        curr_index = 0;
-    }
-    else
-#endif
     {
         curr_index = frame_buffer.curr_index[task_num];
     }

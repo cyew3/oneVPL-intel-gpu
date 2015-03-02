@@ -22,11 +22,13 @@ using namespace UMC;
 
 Status VideoAccelerator::Close(void)
 {
+    m_allocator = 0;
     return UMC_OK;
 }
 
 Status VideoAccelerator::Reset(void)
 {
+    m_allocator = 0;
     return UMC_OK;
 }
 

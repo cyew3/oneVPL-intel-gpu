@@ -51,7 +51,7 @@ public:
     virtual UMC::Status Init(UMC::VideoAcceleratorParams *pParams) {pParams; return UMC::UMC_ERR_UNSUPPORTED;};
     
     // Will use this function instead of previos two: FindConfiguration, Init
-    mfxStatus CreateVideoAccelerator(mfxU32 hwProfile, const mfxVideoParam *param,  D3D11VideoCORE *pCore);
+    mfxStatus CreateVideoAccelerator(mfxU32 hwProfile, const mfxVideoParam *param, UMC::FrameAllocator *allocator);
 
     // I/F between UMC decoders and accelerator
     virtual UMC::Status BeginFrame(Ipp32s index);
@@ -68,7 +68,6 @@ public:
 
     virtual bool IsIntelCustomGUID() const;
 
-    virtual UMC::Status DisplayFrame (Ipp32s index, UMC::VideoData *pOutputVideoData = NULL) {index; pOutputVideoData; return UMC::UMC_ERR_UNSUPPORTED;};
     void GetVideoDecoder(void **handle)
     {
         *handle = m_pDecoder;
@@ -94,16 +93,6 @@ protected:
 
     // current decoer
     GUID                              m_DecoderGuid;
-    // surface pool descriptor
-    D3D11VideoCORE                  *m_pCore;
-    mfx_UMC_FrameAllocator          *m_pAlloc;
-
-    
-    bool                    m_bInitilized;
-    bool                    m_bAllocated;
-    //GUID                    m_guidDecoder;
-    //DXVA2_ConfigPictureDecode m_Config;
-    //DXVA2_VideoDesc         m_videoDesc;
 
     UMC::UMCVACompBuffer    m_pCompBuffer[MAX_BUFFER_TYPES];
 

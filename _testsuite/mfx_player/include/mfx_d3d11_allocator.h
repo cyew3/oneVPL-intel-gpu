@@ -205,6 +205,7 @@ protected:
     virtual mfxStatus CheckRequestType(mfxFrameAllocRequest *request);
     virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response);
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
+    virtual mfxStatus AllocImpl(mfxFrameSurface1 *surface);
 
     template<typename Type>
     inline HRESULT SetResourceExtension(

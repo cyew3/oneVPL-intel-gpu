@@ -438,23 +438,18 @@ mfxStatus D3D11VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxF
     return sts;
 }
 
-mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
+mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator)
 {
     mfxStatus sts = MFX_ERR_NONE;
     param; request;
 
     m_pAccelerator.reset(new MFXD3D11Accelerator(m_pD11VideoDevice.p, m_pD11VideoContext));
 
-    mfxHDLPair Pair;
-    // TBD
-    sts = GetFrameHDL(response->mids[0], (mfxHDL*)&Pair);
-    MFX_CHECK_STS(sts);
-
     mfxU32 hwProfile = ChooseProfile(param, GetHWType());
     if (!hwProfile)
         return MFX_ERR_UNSUPPORTED;
 
-    sts = m_pAccelerator->CreateVideoAccelerator(hwProfile, param, this);
+    sts = m_pAccelerator->CreateVideoAccelerator(hwProfile, param, allocator);
     MFX_CHECK_STS(sts);
 
     if (IS_PROTECTION_ANY(param->Protected))
@@ -1200,11 +1195,6 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     }
 
     return sts;
-}
-
-mfxStatus D3D11VideoCORE::GetDX11Handle(mfxI32 index, mfxHDLPair* pair)
-{
-    return GetFrameHDL(m_pWrp->ConvertMemId(index), (mfxHDL*)pair);
 }
 
 mfxStatus D3D11VideoCORE::SetHandle(mfxHandleType type, mfxHDL handle)

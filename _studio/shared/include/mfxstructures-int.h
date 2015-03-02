@@ -55,25 +55,15 @@ enum {
     MFX_TARGETUSAGE_LOW_LATENCY      =0x10,
 };
 
-// mfxU32 FourCC;
-enum {
-    MFX_FOURCC_IMC3         =MFX_MAKEFOURCC('I','M','C','3'),
-    MFX_FOURCC_IMC4         =MFX_MAKEFOURCC('I','M','C','4'),
-    MFX_FOURCC_Y216         =MFX_MAKEFOURCC('Y','2','1','6'),
-    MFX_FOURCC_YV16         =MFX_MAKEFOURCC('Y','V','1','6'),
-    MFX_FOURCC_YUYV         =MFX_MAKEFOURCC('Y','U','Y','V'),
-};
-
-// mfxU32 FourCC;
-enum {
-    MFX_CUC_AVC_MV_DCT      =MFX_MAKEFOURCC('C','U','X','0'),
-    MFX_CUC_AVC_MV_TSQ      =MFX_MAKEFOURCC('C','U','Q','0'),
-
-    MFX_CUC_VC1_MV_DCT      =MFX_MAKEFOURCC('C','U','X','1'),
-    MFX_CUC_VC1_MV_TSQ      =MFX_MAKEFOURCC('C','U','Q','1'),
-
-    MFX_CUC_MPEG2_MV_DCT    =MFX_MAKEFOURCC('C','U','X','2'),
-    MFX_CUC_MPEG2_MV_TSQ    =MFX_MAKEFOURCC('C','U','Q','2'),
+enum
+{
+    MFX_FOURCC_IMC3         = MFX_MAKEFOURCC('I','M','C','3'),
+    MFX_FOURCC_YUV400       = MFX_MAKEFOURCC('4','0','0','P'),
+    MFX_FOURCC_YUV411       = MFX_MAKEFOURCC('4','1','1','P'),
+    MFX_FOURCC_YUV422H      = MFX_MAKEFOURCC('4','2','2','H'),
+    MFX_FOURCC_YUV422V      = MFX_MAKEFOURCC('4','2','2','V'),
+    MFX_FOURCC_YUV444       = MFX_MAKEFOURCC('4','4','4','P'),
+    MFX_FOURCC_RGBP         = MFX_MAKEFOURCC('R','G','B','P')
 };
 
 // VPP hints
@@ -81,6 +71,7 @@ enum {
     MFX_FOURCC_VPP_DEINTERLACE  =   MFX_MAKEFOURCC('D','I','T','L'),
 };
 
+#if defined (MFX_ENABLE_VC1_VIDEO_ENCODER)
 /* VC-1 Extended Buffers */
 typedef struct {
     mfxExtBuffer    Header;
@@ -389,14 +380,13 @@ enum {
     MFX_CUC_VC1_MV          =MFX_MAKEFOURCC('C','U','C','1'),
     MFX_CUC_VC1_MV_RES      =MFX_MAKEFOURCC('C','U','R','1'),
 };
+#endif
 
-/* mfxU8 SubMbShape; */
-enum {
-    MFX_SUBSHP_DCT_8X8      =0,
-    MFX_SUBSHP_DCT_8X4      =1,
-    MFX_SUBSHP_DCT_4X8      =2,
-    MFX_SUBSHP_DCT_4X4      =3,
-};
+typedef enum
+{
+    MFX_ERR_MORE_DATA_RUN_TASK  = -10000,  /* MFX_ERR_MORE_DATA but async task should be added to Session */
+    MFX_ERR_REALLOC_SURFACE     = -10001
+} mfxInternalErrors;
 
 #ifdef __cplusplus
 };

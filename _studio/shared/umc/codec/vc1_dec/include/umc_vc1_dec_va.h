@@ -57,64 +57,6 @@ namespace UMC
             if(!InitTables(pContext))
                 return false;
 
-            if (m_va->IsSimulate())
-            {
-                Ipp32u HeightMB = pContext->m_seqLayerHeader.MaxHeightMB;
-                if( pContext->m_seqLayerHeader.INTERLACE)
-                    HeightMB = HeightMB + (HeightMB&1);
-
-                { //frames allocation
-                    Ipp32s i;
-                    Ipp32u h = HeightMB*VC1_PIXEL_IN_LUMA;
-                    Ipp32u w = ((pContext->m_seqLayerHeader.MaxWidthMB * VC1_PIXEL_IN_LUMA) & 0xFFFFFF80)+ 0x080; // align on 128
-                    Ipp32s frame_size = (h + 128)*(w + 128) + ((h / 2 + 64)*(w / 2 + 64))*2;
-                    Ipp32s y_vert_pad = 64*(w+128);
-                    Ipp32s y_hor_pad = 64;
-                    Ipp32s uv_vert_pad = 32*(w+128)/2;
-                    Ipp32s uv_hor_pad = 64/2;
-                    Ipp32s n_references = MaxFrameNum + VC1NUMREFFRAMES; //
-
-
-                    for(i = 0; i < n_references; i++)
-                    {
-                        pContext->m_frmBuff.m_pFrames[i].m_pAllocatedMemory =
-                            pContext->m_frmBuff.m_pFrames[0].m_pAllocatedMemory + frame_size*i;
-
-                        pContext->m_frmBuff.m_pFrames[i].m_AllocatedMemorySize = frame_size;
-
-                        pContext->m_frmBuff.m_pFrames[i].m_pY = pContext->m_frmBuff.m_pFrames[i].m_pAllocatedMemory
-                            + y_vert_pad + y_hor_pad;
-
-                        pContext->m_frmBuff.m_pFrames[i].m_pU = pContext->m_frmBuff.m_pFrames[i].m_pAllocatedMemory
-                            + (h + 128)*(w + 128)+ uv_vert_pad+uv_hor_pad;
-
-                        pContext->m_frmBuff.m_pFrames[i].m_pV = pContext->m_frmBuff.m_pFrames[i].m_pAllocatedMemory +
-                            (h + 128)*(w + 128)+ ((h / 2 + 64)*(w / 2 + 64))+ uv_vert_pad+uv_hor_pad;
-
-                        pContext->m_frmBuff.m_pFrames[i].m_iYPitch = (w + 128);
-                        pContext->m_frmBuff.m_pFrames[i].m_iUPitch = (w / 2 + 64);
-                        pContext->m_frmBuff.m_pFrames[i].m_iVPitch = (w / 2 + 64);
-
-                        pContext->m_frmBuff.m_pFrames[i].RANGE_MAPY  = -1;
-                        pContext->m_frmBuff.m_pFrames[i].RANGE_MAPUV = -1;
-                        pContext->m_frmBuff.m_pFrames[i].pRANGE_MAPY = &pContext->m_frmBuff.m_pFrames[i].RANGE_MAPY;
-                    }
-                }
-                // one method for VC1VideoDecoderVA and VC1VideoDecoderVASim
-
-                pContext->savedMV_Curr=(Ipp16s*)ippsMalloc_8u((Ipp32s)(sizeof(Ipp16s)*HeightMB*pContext->m_seqLayerHeader.MaxWidthMB*4*2*2));
-                if (!pContext->savedMV_Curr)
-                    return false;
-
-                memset(pContext->savedMV_Curr, 0, sizeof(Ipp16s)*HeightMB*pContext->m_seqLayerHeader.MaxWidthMB*4*2*2);
-
-                pContext->savedMVSamePolarity_Curr = (Ipp8u*)ippsMalloc_8u((Ipp32s)(sizeof(Ipp8u)*HeightMB*pContext->m_seqLayerHeader.MaxWidthMB*4));
-                if (!pContext->savedMVSamePolarity_Curr)
-                    return false;
-
-                memset(pContext->savedMVSamePolarity_Curr, 0, sizeof(Ipp8u)*HeightMB*pContext->m_seqLayerHeader.MaxWidthMB*4);
-            }
-
             pContext->m_frmBuff.m_iDisplayIndex = -1;
             pContext->m_frmBuff.m_iCurrIndex    = -1;
             pContext->m_frmBuff.m_iPrevIndex    = -1;
@@ -302,20 +244,6 @@ namespace UMC
             }
             return UMC_ERR_FAILED;
         }
-        void DisplayPrevFrame(VideoData* out_data)
-        {
-            VC1FrameDescriptor *pFirstDescriptor = NULL;
-            pFirstDescriptor = m_pStore->GetFirstDS();
-
-            if (pFirstDescriptor)
-            {
-                if ((pFirstDescriptor->m_iFrameCounter > 1)&&
-                    (VC1_IS_REFERENCE(pFirstDescriptor->m_pContext->m_picLayerHeader->PTYPE)))
-                {
-                    m_va->DisplayFrame(pFirstDescriptor->m_pContext->m_frmBuff.m_iDisplayIndex,out_data);
-                }
-            }
-         }
         virtual Status FillAndExecute(VC1VideoDecoder* pDec, MediaData* in)
         {
            Ipp32u stShift = 0;

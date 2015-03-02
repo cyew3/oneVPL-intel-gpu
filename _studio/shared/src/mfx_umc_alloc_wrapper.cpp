@@ -289,6 +289,14 @@ UMC::Status mfx_UMC_FrameAllocator::Reset()
     return UMC::UMC_OK;
 }
 
+UMC::Status mfx_UMC_FrameAllocator::GetFrameHandle(UMC::FrameMemID memId, void * handle)
+{
+    if (m_pCore->GetFrameHDL(ConvertMemId(memId), (mfxHDL*)handle) != MFX_ERR_NONE)
+        return UMC::UMC_ERR_ALLOC;
+
+    return UMC::UMC_OK;
+}
+
 UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC::VideoDataInfo * info, Ipp32u )
 {
     UMC::AutomaticUMCMutex guard(m_guard);
@@ -326,7 +334,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
         *pNewMemID = (UMC::FrameMemID)index;
     }
 
-    IppiSize allocated = {static_cast<int>(m_info.GetWidth()), static_cast<int>(m_info.GetHeight())};
+    IppiSize allocated = {m_frameData[index].first.Info.Width, m_frameData[index].first.Info.Height};
     IppiSize passed = {static_cast<int>(info->GetWidth()), static_cast<int>(info->GetHeight())};
     UMC::ColorFormat colorFormat = m_info.GetColorFormat();
 
@@ -581,9 +589,6 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
         return MFX_ERR_MORE_SURFACE;
 
     // check input surface
-    if (surf->Info.Width < m_surface.Info.Width || surf->Info.Height < m_surface.Info.Height)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-
     if (surf->Info.BitDepthLuma && surf->Info.BitDepthLuma != m_surface.Info.BitDepthLuma)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
@@ -647,6 +652,9 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
         {
             m_curIndex = -1;
         }
+
+        // update info
+        m_frameData[m_curIndex].first.Info = surf->Info;
     }
     else
     {
@@ -667,8 +675,7 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
     if (!m_IsUseExternalFrames)
         return -1;
 
-    if (surface->Data.MemId && 
-        !m_isSWDecode)
+    if (surface->Data.MemId && !m_isSWDecode)
     {
         mfxU32 i;
         for (i = 0; i < m_extSurfaces.size(); i++)
@@ -704,8 +711,7 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
         return -1;
     }
 
-    if (m_IsUseExternalFrames && 
-        m_isSWDecode)
+    if (m_IsUseExternalFrames && m_isSWDecode)
     {
         FrameInfo  frameInfo;
         m_frameData.push_back(frameInfo);
@@ -805,14 +811,13 @@ mfxFrameSurface1 * mfx_UMC_FrameAllocator::GetSurfaceByIndex(UMC::FrameMemID ind
 {
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    if (index >= 0)
-    {
-        if ((Ipp32u)index >= m_frameData.size())
-            return 0;
-        return m_extSurfaces[index].FrameSurface;
-    }
+    if (index < 0)
+        return 0;
 
-    return 0;
+    if ((Ipp32u)index >= m_frameData.size())
+        return 0;
+
+    return m_IsUseExternalFrames ? m_extSurfaces[index].FrameSurface : &m_frameData[index].first;
 }
 
 void mfx_UMC_FrameAllocator::SetDoNotNeedToCopyFlag(bool doNotNeedToCopy)
@@ -855,6 +860,9 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
 
     if (m_IsUseExternalFrames)
         return MFX_ERR_NONE;
+
+    m_surface.Info.Width = (mfxU16)frame->GetInfo()->GetWidth();
+    m_surface.Info.Height = (mfxU16)frame->GetInfo()->GetHeight();
 
     switch (frame->GetInfo()->GetColorFormat())
     {

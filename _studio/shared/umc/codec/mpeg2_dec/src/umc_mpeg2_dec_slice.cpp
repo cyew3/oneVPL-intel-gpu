@@ -286,175 +286,172 @@ Status MPEG2VideoDecoderBase::DecodeSliceHeader(IppVideoContext *video, int task
                  pack_w.bs_size += dsize;
              }
 
-             if(!pack_w.m_va->IsSimulate())
-             {
-                if(pack_w.bs_size >= pack_w.bs_size_getting ||
-                    (Ipp32s)((Ipp8u*)pack_w.pSliceInfo - (Ipp8u*)pack_w.pSliceInfoBuffer) >= (Ipp32s)(pack_w.slice_size_getting-sizeof(DXVA_SliceInfo)))
+            if(pack_w.bs_size >= pack_w.bs_size_getting ||
+                (Ipp32s)((Ipp8u*)pack_w.pSliceInfo - (Ipp8u*)pack_w.pSliceInfoBuffer) >= (Ipp32s)(pack_w.slice_size_getting-sizeof(DXVA_SliceInfo)))
+            {
+                bool slice_split = false;
+                DXVA_SliceInfo s_info;
+                Ipp32s sz = 0, sz_align = 0;
+
+                memcpy_s(&s_info,sizeof(DXVA_SliceInfo),&pack_w.pSliceInfo[-1],sizeof(DXVA_SliceInfo));
+
+                pack_w.bs_size -= dsize;
+                pack_w.overlap -= overlap;
+
+                pack_w.pSliceInfo--;
+
+                if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo)
                 {
-                    bool slice_split = false;
-                    DXVA_SliceInfo s_info;
-                    Ipp32s sz = 0, sz_align = 0;
-
-                    memcpy_s(&s_info,sizeof(DXVA_SliceInfo),&pack_w.pSliceInfo[-1],sizeof(DXVA_SliceInfo));
-
-                    pack_w.bs_size -= dsize;
-                    pack_w.overlap -= overlap;
-
-                    pack_w.pSliceInfo--;
-
-                    if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo)
+                    if(pack_w.IsProtectedBS)
                     {
-                        if(pack_w.IsProtectedBS)
-                        {
-                            Ipp32s NumSlices = pack_w.pSliceInfo - pack_w.pSliceInfoBuffer;
-                            mfxEncryptedData *encryptedData = pack_w.curr_bs_encryptedData;
-                            pack_w.bs_size = pack_w.add_to_slice_start;//0;
-                            pack_w.overlap = 0;
+                        Ipp32s NumSlices = pack_w.pSliceInfo - pack_w.pSliceInfoBuffer;
+                        mfxEncryptedData *encryptedData = pack_w.curr_bs_encryptedData;
+                        pack_w.bs_size = pack_w.add_to_slice_start;//0;
+                        pack_w.overlap = 0;
 
+                        for (int i = 0; i < NumSlices; i++)
+                        {
+                            if (!encryptedData)
+                                return UMC_ERR_DEVICE_FAILED;
+                        pack_w.bs_size += SliceSize(encryptedData,
+                            (PAVP_COUNTER_TYPE)(pack_w.m_va->GetProtectedVA())->GetCounterMode(),
+                            pack_w.overlap);
+
+                            encryptedData = encryptedData->Next;
+                        }
+
+                        sz = sz_align = pack_w.bs_size;
+                        pack_w.is_bs_aligned_16 = true;
+
+                        if(pack_w.bs_size & 0xf)
+                        {
+                            sz_align = ((pack_w.bs_size >> 4) << 4) + 16;
+                            pack_w.bs_size = sz_align;
+                            pack_w.is_bs_aligned_16 = false;
+                        }
+
+                        if(!pack_w.is_bs_aligned_16)
+                        {
+                            std::vector<Ipp8u> buf(sz_align);
+                            NumSlices++;
+                            encryptedData = pack_w.curr_bs_encryptedData;
+                            Ipp8u *ptr = &buf[0];
+                        Ipp8u *pBuf=ptr;
                             for (int i = 0; i < NumSlices; i++)
                             {
                                 if (!encryptedData)
                                     return UMC_ERR_DEVICE_FAILED;
-                            pack_w.bs_size += SliceSize(encryptedData,
-                                (PAVP_COUNTER_TYPE)(pack_w.m_va->GetProtectedVA())->GetCounterMode(),
-                                pack_w.overlap);
-
-                                encryptedData = encryptedData->Next;
-                            }
-
-                            sz = sz_align = pack_w.bs_size;
-                            pack_w.is_bs_aligned_16 = true;
-
-                            if(pack_w.bs_size & 0xf)
-                            {
-                                sz_align = ((pack_w.bs_size >> 4) << 4) + 16;
-                                pack_w.bs_size = sz_align;
-                                pack_w.is_bs_aligned_16 = false;
-                            }
-
-                            if(!pack_w.is_bs_aligned_16)
-                            {
-                                std::vector<Ipp8u> buf(sz_align);
-                                NumSlices++;
-                                encryptedData = pack_w.curr_bs_encryptedData;
-                                Ipp8u *ptr = &buf[0];
-                            Ipp8u *pBuf=ptr;
-                                for (int i = 0; i < NumSlices; i++)
+                            Ipp32u alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
+                            if(alignedSize & 0xf)
+                                alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
+                                if(i < NumSlices - 1)
                                 {
-                                    if (!encryptedData)
-                                        return UMC_ERR_DEVICE_FAILED;
-                                Ipp32u alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
-                                if(alignedSize & 0xf)
-                                    alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
-                                    if(i < NumSlices - 1)
-                                    {
-                                    ippsCopy_8u(encryptedData->Data ,pBuf, alignedSize);
-                                    Ipp32u diff = (Ipp32u)(ptr - pBuf);
-                                    ptr += alignedSize - diff;
-                                    Ipp64u counter1 = encryptedData->CipherCounter.Count;
-                                    Ipp64u counter2 = encryptedData->Next->CipherCounter.Count;
-                                    Ipp64u zero = 0xffffffffffffffff;
-                                    if((pack_w.m_va->GetProtectedVA())->GetCounterMode() == PAVP_COUNTER_TYPE_A)
-                                    {
-                                        counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
-                                        counter2 = LITTLE_ENDIAN_SWAP32((DWORD)(counter2 >> 32));
-                                        zero = 0x00000000ffffffff;
-                                    }
-                                    else
-                                    {
-                                        counter1 = LITTLE_ENDIAN_SWAP64(counter1);
-                                        counter2 = LITTLE_ENDIAN_SWAP64(counter2);
-                                    }
-                                    if(counter2 < counter1)
-                                    {
-                                        (unsigned char*)pBuf += (Ipp32u)(counter2 +(zero - counter1))*16;
-                                    }
-                                    else
-                                    {
-                                        (unsigned char*)pBuf += (Ipp32u)(counter2 - counter1)*16;
-                                    }
+                                ippsCopy_8u(encryptedData->Data ,pBuf, alignedSize);
+                                Ipp32u diff = (Ipp32u)(ptr - pBuf);
+                                ptr += alignedSize - diff;
+                                Ipp64u counter1 = encryptedData->CipherCounter.Count;
+                                Ipp64u counter2 = encryptedData->Next->CipherCounter.Count;
+                                Ipp64u zero = 0xffffffffffffffff;
+                                if((pack_w.m_va->GetProtectedVA())->GetCounterMode() == PAVP_COUNTER_TYPE_A)
+                                {
+                                    counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
+                                    counter2 = LITTLE_ENDIAN_SWAP32((DWORD)(counter2 >> 32));
+                                    zero = 0x00000000ffffffff;
                                 }
                                 else
                                 {
-                                    ippsCopy_8u(encryptedData->Data,pBuf, sz_align - sz);
+                                    counter1 = LITTLE_ENDIAN_SWAP64(counter1);
+                                    counter2 = LITTLE_ENDIAN_SWAP64(counter2);
                                 }
-
-                                    encryptedData = encryptedData->Next;
+                                if(counter2 < counter1)
+                                {
+                                    (unsigned char*)pBuf += (Ipp32u)(counter2 +(zero - counter1))*16;
                                 }
-                                ptr = &buf[0] + sz_align - 16;
-                                ippsCopy_8u(pack_w.add_bytes,ptr, (sz - (sz_align - 16)));
+                                else
+                                {
+                                    (unsigned char*)pBuf += (Ipp32u)(counter2 - counter1)*16;
+                                }
                             }
-                        }
-
-
-    mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure == FRAME_PICTURE) ?
-                                            sequenceHeader.numMB[task_num] : sequenceHeader.numMB[task_num]/2;
-
-                        if(pack_w.SetBufferSize(numMB,PictureHeader[task_num].picture_coding_type)!= UMC_OK)
-                          return UMC_ERR_NOT_ENOUGH_BUFFER;
-
-                        Status umcRes = pack_w.SaveVLDParameters(&sequenceHeader,&PictureHeader[task_num],
-                            pack_w.pSliceStart,
-                            &frame_buffer,task_num,((m_ClipInfo.clip_info.height + 15) >> 4));
-
-                        if (UMC_OK != umcRes)
-                            return umcRes;
-
-                        umcRes = pack_w.m_va->Execute();
-                        if (UMC_OK != umcRes)
-                            return umcRes;
-
-                        pack_w.add_to_slice_start = 0;
-
-                        if(pack_w.IsProtectedBS)
-                        {
-                            if(!pack_w.is_bs_aligned_16)
+                            else
                             {
-                                pack_w.add_to_slice_start = sz - (sz_align - 16);
+                                ippsCopy_8u(encryptedData->Data,pBuf, sz_align - sz);
                             }
+
+                                encryptedData = encryptedData->Next;
+                            }
+                            ptr = &buf[0] + sz_align - 16;
+                            ippsCopy_8u(pack_w.add_bytes,ptr, (sz - (sz_align - 16)));
                         }
-                    }//if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo)
-
-                    pack_w.InitBuffers(0, 0);
-
-                    memcpy_s(&pack_w.pSliceInfo[0],sizeof(DXVA_SliceInfo),&s_info,sizeof(DXVA_SliceInfo));
-                    pack_w.pSliceStart += pack_w.pSliceInfo[0].dwSliceDataLocation;
-                    pack_w.pSliceInfo[0].dwSliceDataLocation = 0;
-                    if(!pack_w.IsProtectedBS)
-                    {
-                        pack_w.bs_size = pack_w.pSliceInfo[0].dwSliceBitsInBuffer/8;
-                    }
-                    else
-                    {
-                            pack_w.bs_size = pack_w.add_to_slice_start;
-                            pack_w.bs_size += SliceSize(pack_w.curr_encryptedData,
-                                (PAVP_COUNTER_TYPE)(pack_w.m_va->GetProtectedVA())->GetCounterMode(),
-                                pack_w.overlap);
                     }
 
-                    if(pack_w.bs_size >= pack_w.bs_size_getting)
-                    {
-                        slice_split = true;
-                        pack_w.pSliceInfo->dwSliceBitsInBuffer =
-                            (pack_w.bs_size_getting - 1)*8;
-                        pack_w.pSliceInfo->wBadSliceChopping = 1;
-                        pack_w.bs_size -= (pack_w.bs_size_getting - 1);
-                        s_info.dwSliceDataLocation = (pack_w.bs_size_getting - 1);
-                        s_info.dwSliceBitsInBuffer -= pack_w.pSliceInfo->dwSliceBitsInBuffer;
-                        pack_w.pSliceInfo++;
-                        goto mm;
-                    }
-                    else
-                    {
-                        if(slice_split)
-                            pack_w.pSliceInfo->wBadSliceChopping = 2;
-                    }
 
-                    pack_w.pSliceInfo++;
+mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure == FRAME_PICTURE) ?
+                                        sequenceHeader.numMB[task_num] : sequenceHeader.numMB[task_num]/2;
+
+                    if(pack_w.SetBufferSize(numMB,PictureHeader[task_num].picture_coding_type)!= UMC_OK)
+                        return UMC_ERR_NOT_ENOUGH_BUFFER;
+
+                    Status umcRes = pack_w.SaveVLDParameters(&sequenceHeader,&PictureHeader[task_num],
+                        pack_w.pSliceStart,
+                        &frame_buffer,task_num,((m_ClipInfo.clip_info.height + 15) >> 4));
+
+                    if (UMC_OK != umcRes)
+                        return umcRes;
+
+                    umcRes = pack_w.m_va->Execute();
+                    if (UMC_OK != umcRes)
+                        return umcRes;
+
+                    pack_w.add_to_slice_start = 0;
+
+                    if(pack_w.IsProtectedBS)
+                    {
+                        if(!pack_w.is_bs_aligned_16)
+                        {
+                            pack_w.add_to_slice_start = sz - (sz_align - 16);
+                        }
+                    }
+                }//if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo)
+
+                pack_w.InitBuffers(0, 0);
+
+                memcpy_s(&pack_w.pSliceInfo[0],sizeof(DXVA_SliceInfo),&s_info,sizeof(DXVA_SliceInfo));
+                pack_w.pSliceStart += pack_w.pSliceInfo[0].dwSliceDataLocation;
+                pack_w.pSliceInfo[0].dwSliceDataLocation = 0;
+                if(!pack_w.IsProtectedBS)
+                {
+                    pack_w.bs_size = pack_w.pSliceInfo[0].dwSliceBitsInBuffer/8;
                 }
-                if(pack_w.IsProtectedBS)
-                    pack_w.curr_encryptedData = pack_w.curr_encryptedData->Next;
-             }
+                else
+                {
+                        pack_w.bs_size = pack_w.add_to_slice_start;
+                        pack_w.bs_size += SliceSize(pack_w.curr_encryptedData,
+                            (PAVP_COUNTER_TYPE)(pack_w.m_va->GetProtectedVA())->GetCounterMode(),
+                            pack_w.overlap);
+                }
+
+                if(pack_w.bs_size >= pack_w.bs_size_getting)
+                {
+                    slice_split = true;
+                    pack_w.pSliceInfo->dwSliceBitsInBuffer =
+                        (pack_w.bs_size_getting - 1)*8;
+                    pack_w.pSliceInfo->wBadSliceChopping = 1;
+                    pack_w.bs_size -= (pack_w.bs_size_getting - 1);
+                    s_info.dwSliceDataLocation = (pack_w.bs_size_getting - 1);
+                    s_info.dwSliceBitsInBuffer -= pack_w.pSliceInfo->dwSliceBitsInBuffer;
+                    pack_w.pSliceInfo++;
+                    goto mm;
+                }
+                else
+                {
+                    if(slice_split)
+                        pack_w.pSliceInfo->wBadSliceChopping = 2;
+                }
+
+                pack_w.pSliceInfo++;
+            }
+            if(pack_w.IsProtectedBS)
+                pack_w.curr_encryptedData = pack_w.curr_encryptedData->Next;
         }
         else
         {
@@ -470,11 +467,6 @@ Status MPEG2VideoDecoderBase::DecodeSliceHeader(IppVideoContext *video, int task
 
                 pack_l.bs_size = pack_l.pSliceInfo[-1].slice_data_offset
                                + pack_l.pSliceInfo[-1].slice_data_size;    //AO: added by me
-
-                if(!pack_w.m_va->IsSimulate())
-                {
-                    ;   //AO TODO: Add functionality?
-                }
             }
             else
             {

@@ -13,6 +13,7 @@ File Name: mfxvideo++int.h
 #define __MFXVIDEOPLUSPLUS_INTERNAL_H
 
 #include "mfxvideo.h"
+#include "mfxstructures-int.h"
 #include "mfxvideopro.h"
 #include <mfx_task_threading_policy.h>
 #include <mfx_interface.h>
@@ -119,6 +120,11 @@ static const GUID DXVA_ModeHEVC_VLD_Main10 =
 //#endif
 
 
+namespace UMC
+{
+    class FrameAllocator;
+};
+
 // This is the include file for Media SDK component development.
 enum eMFXPlatform
 {
@@ -136,11 +142,6 @@ enum eMFXVAType
     MFX_HW_VDAAPI   = 5,// OS X VDA-API
 
 };
-
-typedef enum
-{
-    MFX_ERR_MORE_DATA_RUN_TASK  = -10000,  /* MFX_ERR_MORE_DATA but async task should be added to Session */
-} mfxInternalErrors;
 
 enum eMFXHWType
 {
@@ -167,17 +168,6 @@ enum eMFXHWType
     MFX_HW_CNL       = 0x1100000,
 
     MFX_HW_SOFIA     = 0x1200000,
-};
-
-enum
-{
-    MFX_FOURCC_IMC3         = MFX_MAKEFOURCC('I','M','C','3'),
-    MFX_FOURCC_YUV400       = MFX_MAKEFOURCC('4','0','0','P'),
-    MFX_FOURCC_YUV411       = MFX_MAKEFOURCC('4','1','1','P'),
-    MFX_FOURCC_YUV422H      = MFX_MAKEFOURCC('4','2','2','H'),
-    MFX_FOURCC_YUV422V      = MFX_MAKEFOURCC('4','2','2','V'),
-    MFX_FOURCC_YUV444       = MFX_MAKEFOURCC('4','4','4','P'),
-    MFX_FOURCC_RGBP         = MFX_MAKEFOURCC('R','G','B','P')
 };
 
 #ifdef MFX_DEBUG_TOOLS
@@ -249,7 +239,7 @@ public:
 
     // Check HW property
     virtual void  GetVA(mfxHDL* phdl, mfxU16 type) = 0;
-    virtual mfxStatus CreateVA(mfxVideoParam * , mfxFrameAllocRequest *, mfxFrameAllocResponse *) = 0;
+    virtual mfxStatus CreateVA(mfxVideoParam * , mfxFrameAllocRequest *, mfxFrameAllocResponse *, UMC::FrameAllocator *) = 0;
     // Get the current working adapter's number
     virtual mfxU32 GetAdapterNumber(void) = 0;
 

@@ -684,8 +684,6 @@ mfxStatus VideoDECODEVP9::SetSkipMode(mfxSkipMode mode)
     return MFX_ERR_NONE;
 }
 
-#define VP9_START_CODE_FOUND(ptr) ((ptr)[0] == 0x49 && (ptr)[1] == 0x83 && (ptr)[2] == 0x42)
-
 mfxStatus VideoDECODEVP9::ReadFrameInfo(mfxU8 *pData, mfxU32 size, VP9BaseFrameInfo *out)
 {
     if (!pData || !size)
@@ -1319,90 +1317,73 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, 
 
     if (bs->DataLength < 3)
     {
+        MoveBitstreamData2_VP9(*bs, bs->DataLength);
         return MFX_ERR_MORE_DATA;
     }
 
-    mfxU8 *pBegin = bs->Data + bs->DataOffset;
-    mfxU8 *pData = bs->Data + bs->DataOffset;
-    mfxU8 *pDataEnd = bs->Data + bs->DataOffset + bs->DataLength;
-
-    mfxU32 n_bytes_offset = 0;
     bool bHeaderRead = false;
 
     mfxU32 profile = 0;
     mfxU16 width = 0;
     mfxU16 height = 0;
 
-    while (pData < pDataEnd)
+    for (;;)
     {
-        if (VP9_START_CODE_FOUND(pData))
+        MfxVP9Decode::InputBitstream bsReader(bs->Data + bs->DataOffset, bs->Data + bs->DataOffset + bs->DataLength);
+
+        if (MfxVP9Decode::VP9_FRAME_MARKER != bsReader.GetBits(2))
+            break; // invalid
+
+        profile = bsReader.GetBit();
+        profile |= bsReader.GetBit() << 1;
+        if (profile > 2)
+            profile += bsReader.GetBit();
+
+        if (profile >= 4)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        if (bsReader.GetBit()) // show_existing_frame
+            break;
+
+        if (MfxVP9Decode::KEY_FRAME == (MfxVP9Decode::VP9_FRAME_TYPE)bsReader.GetBit())
         {
-            if ((pData - 1) >= pBegin)
+            bsReader.GetBit(); // show_frame
+            bsReader.GetBit(); // error_resilient_mode
+
+            if (0x49 != bsReader.GetBits(8) || 0x83 != bsReader.GetBits(8) || 0x42 != bsReader.GetBits(8))
+                break;
+
+            if (profile >= 2)
             {
-                --pData; // moving back to marker
-                --n_bytes_offset;
-
-                MfxVP9Decode::InputBitstream bsReader(pData, pData + bs->DataLength - n_bytes_offset);
-
-                if (MfxVP9Decode::VP9_FRAME_MARKER != bsReader.GetBits(2))
-                    continue; // invalid
-
-                profile = bsReader.GetBit();
-                profile |= bsReader.GetBit() << 1;
-                if (profile > 2)
-                    profile += bsReader.GetBit();
-
-                if (profile >= 4)
-                    return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-                if (false == bsReader.GetBit()) // show_existing_frame
-                {
-                    if (MfxVP9Decode::KEY_FRAME == (MfxVP9Decode::VP9_FRAME_TYPE)bsReader.GetBit())
-                    {
-                        bsReader.GetBit(); // show_frame
-                        bsReader.GetBit(); // error_resilient_mode
-                        bsReader.GetBits(24); // start_code
-
-                        if (profile >= 2)
-                        {
-                            bsReader.GetBit();
-                        }
-
-                        if (MfxVP9Decode::SRGB != (MfxVP9Decode::COLOR_SPACE)bsReader.GetBits(3)) // color_space
-                        {
-                            bsReader.GetBit();
-                            if (1 == profile || 3 == profile)
-                                bsReader.GetBits(3);
-                        }
-                        else
-                        {
-                            if (1 == profile || 3 == profile)
-                                bsReader.GetBit();
-                            else
-                                continue; // invalid
-                        }
-
-                        width = (mfxU16)bsReader.GetBits(16) + 1;
-                        height = (mfxU16)bsReader.GetBits(16) + 1;
-
-                        bHeaderRead = true;
-                        break;
-                    }
-                }
+                bsReader.GetBit();
             }
+
+            if (MfxVP9Decode::SRGB != (MfxVP9Decode::COLOR_SPACE)bsReader.GetBits(3)) // color_space
+            {
+                bsReader.GetBit();
+                if (1 == profile || 3 == profile)
+                    bsReader.GetBits(3);
+            }
+            else
+            {
+                if (1 == profile || 3 == profile)
+                    bsReader.GetBit();
+                else
+                    break; // invalid
+            }
+
+            width = (mfxU16)bsReader.GetBits(16) + 1;
+            height = (mfxU16)bsReader.GetBits(16) + 1;
+
+            bHeaderRead = true;
         }
 
-        pData++;
-        n_bytes_offset++;
+        break;
     }
 
     if (!bHeaderRead)
     {
-        // set offset, but leave last six bytes
-        // since they can be start bytes of start code and frame tag
-
-        MoveBitstreamData2_VP9(*bs, n_bytes_offset - 6);
-
+        MoveBitstreamData2_VP9(*bs, bs->DataLength);
         return MFX_ERR_MORE_DATA;
     }
 
@@ -1419,8 +1400,6 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, 
 
     params->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
     params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-
-    MoveBitstreamData2_VP9(*bs, n_bytes_offset);
 
     return MFX_ERR_NONE;
 }

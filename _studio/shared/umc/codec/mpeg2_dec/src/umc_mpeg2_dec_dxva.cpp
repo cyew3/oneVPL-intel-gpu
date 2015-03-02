@@ -146,74 +146,72 @@ PackVA::SetBufferSize(
     (size_bs);
     (size_sl);
 
-    if(!m_va->IsSimulate())
+    UMCVACompBuffer* CompBuf;
+    try
     {
-        UMCVACompBuffer* CompBuf;
-        try
+        m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &CompBuf);
+        if (NULL == CompBuf)
         {
-            m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &CompBuf);
+                return UMC_ERR_FAILED;
+        }
+        CompBuf->SetDataSize((Ipp32s) (sizeof (DXVA_PictureParameters)));
+        CompBuf->FirstMb = 0;
+        CompBuf->NumOfMB = numMB;
+
+        if(va_mode == VA_IT_W)
+        {
+            m_va->GetCompBuffer(DXVA_MACROBLOCK_CONTROL_BUFFER, &CompBuf);
+            Ipp32s size = (Ipp32s)((picture_coding_type == MPEG2_I_PICTURE) ?
+                numMB*sizeof(DXVA_MBctrl_I_OffHostIDCT_1) :
+                numMB*sizeof(DXVA_MBctrl_P_OffHostIDCT_1));
+            CompBuf->SetDataSize(size);
+
+            m_va->GetCompBuffer(DXVA_RESIDUAL_DIFFERENCE_BUFFER, &CompBuf);
+            CompBuf->SetDataSize((Ipp32s) (totalNumCoef*sizeof(DXVA_TCoefSingle)));
+        }
+        else if(va_mode == VA_VLD_W)
+        {
+            CompBuf = NULL;
+            m_va->GetCompBuffer(DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER, &CompBuf);
             if (NULL == CompBuf)
             {
-                 return UMC_ERR_FAILED;
+                return UMC_ERR_FAILED;
             }
-            CompBuf->SetDataSize((Ipp32s) (sizeof (DXVA_PictureParameters)));
+            CompBuf->SetDataSize((Ipp32s) sizeof(DXVA_QmatrixData));
             CompBuf->FirstMb = 0;
             CompBuf->NumOfMB = numMB;
 
-            if(va_mode == VA_IT_W)
+            CompBuf = NULL;
+            m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &CompBuf);
+            if (NULL == CompBuf)
             {
-                m_va->GetCompBuffer(DXVA_MACROBLOCK_CONTROL_BUFFER, &CompBuf);
-                Ipp32s size = (Ipp32s)((picture_coding_type == MPEG2_I_PICTURE) ?
-                    numMB*sizeof(DXVA_MBctrl_I_OffHostIDCT_1) :
-                    numMB*sizeof(DXVA_MBctrl_P_OffHostIDCT_1));
-                CompBuf->SetDataSize(size);
-
-                m_va->GetCompBuffer(DXVA_RESIDUAL_DIFFERENCE_BUFFER, &CompBuf);
-                CompBuf->SetDataSize((Ipp32s) (totalNumCoef*sizeof(DXVA_TCoefSingle)));
-            }
-            else if(va_mode == VA_VLD_W)
-            {
-                CompBuf = NULL;
-                m_va->GetCompBuffer(DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER, &CompBuf);
-                if (NULL == CompBuf)
-                {
                     return UMC_ERR_FAILED;
-                }
-                CompBuf->SetDataSize((Ipp32s) sizeof(DXVA_QmatrixData));
-                CompBuf->FirstMb = 0;
-                CompBuf->NumOfMB = numMB;
-
-                CompBuf = NULL;
-                m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &CompBuf);
-                if (NULL == CompBuf)
-                {
-                     return UMC_ERR_FAILED;
-                }
-                CompBuf->SetDataSize((Ipp32s) ((Ipp8u*)pSliceInfo - (Ipp8u*)pSliceInfoBuffer));
-                CompBuf->FirstMb = 0;
-                CompBuf->NumOfMB = numMB;
-
-                CompBuf = NULL;
-                m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
-                //CompBuf->SetDataSize((Ipp32s) (pSliceInfo[-1].dwSliceDataLocation +
-                
-                if (NULL == CompBuf)
-                {
-                     return UMC_ERR_FAILED;
-                }
-                
-                CompBuf->SetDataSize((bs_size > bs_size_getting) ? bs_size_getting : bs_size);
-                CompBuf->FirstMb = 0;
-                CompBuf->NumOfMB = numMB;
-
-               // CompBuf->SetNumOfItem((Ipp32s)(pSliceInfo - pSliceInfoBuffer));
             }
+            CompBuf->SetDataSize((Ipp32s) ((Ipp8u*)pSliceInfo - (Ipp8u*)pSliceInfoBuffer));
+            CompBuf->FirstMb = 0;
+            CompBuf->NumOfMB = numMB;
+
+            CompBuf = NULL;
+            m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
+            //CompBuf->SetDataSize((Ipp32s) (pSliceInfo[-1].dwSliceDataLocation +
+                
+            if (NULL == CompBuf)
+            {
+                    return UMC_ERR_FAILED;
+            }
+                
+            CompBuf->SetDataSize((bs_size > bs_size_getting) ? bs_size_getting : bs_size);
+            CompBuf->FirstMb = 0;
+            CompBuf->NumOfMB = numMB;
+
+            // CompBuf->SetNumOfItem((Ipp32s)(pSliceInfo - pSliceInfoBuffer));
         }
-        catch(...)
-        {
-            return UMC_ERR_NOT_ENOUGH_BUFFER;
-        }
-    }//if(!m_va->IsSimulate())
+    }
+    catch(...)
+    {
+        return UMC_ERR_NOT_ENOUGH_BUFFER;
+    }
+
     return UMC_OK;
 }
 
@@ -884,8 +882,6 @@ PackVA::SetBufferSize(
     int             size_bs,    //ao: is local bs_size more precize?
     int             size_sl)
 {
-    if(!m_va->IsSimulate())
-    {
 #if !defined(MFX_NO_EXCEPTIONS)
         try
 #endif // #if !defined(MFX_NO_EXCEPTIONS)
@@ -951,7 +947,6 @@ PackVA::SetBufferSize(
             return UMC_ERR_NOT_ENOUGH_BUFFER;
         }
 #endif // #if !defined(MFX_NO_EXCEPTIONS)
-    }//if(!m_va->IsSimulate())
 
     return UMC_OK;
 }

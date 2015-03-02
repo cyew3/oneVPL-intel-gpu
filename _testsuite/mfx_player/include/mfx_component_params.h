@@ -94,6 +94,8 @@ public:
                                    , mfxFrameAllocRequest  * pRequest
                                    , bool bCreateEncCtl);
 
+      virtual mfxStatus ReallocSurface(mfxFrameSurface1  * pSurface);
+
       virtual mfxStatus FindFreeSurface( mfxU32 sourceId
                                        , SrfEncCtl *ppSurface
                                        , IMFXVideoRender *pRender);

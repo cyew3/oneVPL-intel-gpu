@@ -226,6 +226,7 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
             if (NULL == m_pAllocator)
             {
                 MFX_CHECK_WITH_ERR(m_pAllocator = pFactory->CreateD3DAllocator(), MFX_ERR_MEMORY_ALLOC);
+                m_pAllocator = new AllocatorAdapterRW(m_pAllocator);
             }
 
             D3DAllocatorParams *pd3dAllocParams;
@@ -281,6 +282,7 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
             if (NULL == m_pAllocator)
             {
                 MFX_CHECK_WITH_ERR(m_pAllocator = pFactory->CreateD3D11Allocator(), MFX_ERR_MEMORY_ALLOC);
+                m_pAllocator = new AllocatorAdapterRW(m_pAllocator);
             }
 
             D3D11AllocatorParams *pd3d11AllocParams;
@@ -374,6 +376,13 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
     return MFX_ERR_NONE;
 }
 
+mfxStatus ComponentParams::ReallocSurface(mfxFrameSurface1  * pSurface)
+{
+    if (!m_pAllocator)
+        return MFX_ERR_MEMORY_ALLOC;
+
+    return m_pAllocator->AllocFrame(pSurface);
+}
 
 mfxStatus ComponentParams::FindFreeSurface( mfxU32 sourceId
                                           , SrfEncCtl *pSurface

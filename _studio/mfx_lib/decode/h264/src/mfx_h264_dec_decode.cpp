@@ -405,7 +405,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
     if (m_platform != MFX_PLATFORM_SOFTWARE)
     {
-        mfxSts = m_core->CreateVA(&m_vFirstPar, &request, &m_response);
+        mfxSts = m_core->CreateVA(&m_vFirstPar, &request, &m_response, m_FrameAllocator.get());
         if (mfxSts < MFX_ERR_NONE)
             return mfxSts;
     }

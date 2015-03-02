@@ -98,6 +98,74 @@ mfxStatus vaapiFrameAllocator::Close()
     return BaseFrameAllocator::Close();
 }
 
+mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameSurface1 * surf)
+{
+    mfxStatus mfx_res = MFX_ERR_NONE;
+    VAStatus  va_res  = VA_STATUS_SUCCESS;
+    unsigned int va_fourcc = 0;
+    VASurfaceID* surfaces = NULL;
+    VASurfaceAttrib attrib;
+    mfxU32 fourcc = surf->Info.FourCC;
+
+    // VP8 hybrid driver has weird requirements for allocation of surfaces/buffers for VP8 encoding
+    // to comply with them additional logic is required to support regular and VP8 hybrid allocation pathes
+    mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(fourcc);
+    va_fourcc = ConvertMfxFourccToVAFormat(mfx_fourcc);
+    if (!va_fourcc || ((VA_FOURCC_NV12 != va_fourcc) &&
+                       (VA_FOURCC_YV12 != va_fourcc) &&
+                       (VA_FOURCC_YUY2 != va_fourcc) &&
+                       (VA_FOURCC_ARGB != va_fourcc) &&
+                       (VA_FOURCC_P208 != va_fourcc)))
+    {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+
+    if( VA_FOURCC_P208 != va_fourcc)
+    {
+        VASurfaceID surfaces[1];
+        vaapiMemId *vaapiMid = (vaapiMemId *)surf->Data.MemId;
+        surfaces[0] = *vaapiMid->m_surface;
+        vaDestroySurfaces(m_dpy, surfaces, 1);
+
+        unsigned int format;
+
+        attrib.type          = VASurfaceAttribPixelFormat;
+        attrib.flags         = VA_SURFACE_ATTRIB_SETTABLE;
+        attrib.value.type    = VAGenericValueTypeInteger;
+        attrib.value.value.i = va_fourcc;
+        format               = va_fourcc;
+
+        if (fourcc == MFX_FOURCC_VP8_NV12)
+        {
+            // special configuration for NV12 surf allocation for VP8 hybrid encoder is required
+            attrib.type          = (VASurfaceAttribType)VASurfaceAttribUsageHint;
+            attrib.value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
+        }
+        else if (fourcc == MFX_FOURCC_VP8_MBDATA)
+        {
+            // special configuration for MB data surf allocation for VP8 hybrid encoder is required
+            attrib.value.value.i = VA_FOURCC_P208;
+            format               = VA_FOURCC_P208;
+        }
+        else if (va_fourcc == VA_FOURCC_NV12)
+        {
+            format = VA_RT_FORMAT_YUV420;
+        }
+
+        va_res = vaCreateSurfaces(m_dpy,
+                                format,
+                                surf->Info.Width, surf->Info.Height,
+                                surfaces,
+                                1,
+                                &attrib, 1);
+
+        *vaapiMid->m_surface = surfaces[0];
+        mfx_res = va_to_mfx_status(va_res);
+    }
+
+    return mfx_res;
+}
+
 mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
     mfxStatus mfx_res = MFX_ERR_NONE;

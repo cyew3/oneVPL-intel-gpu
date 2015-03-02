@@ -351,6 +351,107 @@ mfxStatus D3D11FrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
 
     return MFX_ERR_NONE;
 }
+
+mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
+{
+    HRESULT hRes;
+
+    DXGI_FORMAT colorFormat = ConverColortFormat(surface->Info.FourCC);
+
+    if (DXGI_FORMAT_UNKNOWN == colorFormat)
+    {
+       return MFX_ERR_UNSUPPORTED;
+    }
+
+
+    if (surface->Info.FourCC == MFX_FOURCC_P8)
+    {
+        /*D3D11_BUFFER_DESC desc = { 0 };
+
+        desc.ByteWidth           = surface->Info.Width * surface->Info.Height;
+        desc.Usage               = D3D11_USAGE_STAGING;
+        desc.BindFlags           = 0;
+        desc.CPUAccessFlags      = D3D11_CPU_ACCESS_READ;
+        desc.MiscFlags           = 0;
+        desc.StructureByteStride = 0;
+
+        ID3D11Buffer * buffer = 0;
+        hRes = m_initParams.pDevice->CreateBuffer(&desc, 0, &buffer);
+        if (FAILED(hRes))
+            return MFX_ERR_MEMORY_ALLOC;
+
+        newTexture.textures.push_back(reinterpret_cast<ID3D11Texture2D *>(buffer));*/
+    }
+    else
+    {
+        D3D11_TEXTURE2D_DESC desc = {0};
+
+        desc.Width = surface->Info.Width;
+        desc.Height =  surface->Info.Height;
+
+        desc.MipLevels = 1;
+        //number of subresources is 1 in case of not single texture
+        desc.ArraySize = 1;
+        desc.Format = ConverColortFormat(surface->Info.FourCC);
+        desc.SampleDesc.Count = 1;
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.MiscFlags = m_initParams.uncompressedResourceMiscFlags;
+
+        desc.BindFlags = D3D11_BIND_DECODER;
+
+        /*if ( (MFX_MEMTYPE_FROM_VPPIN & request->Type) && (DXGI_FORMAT_YUY2 == desc.Format) ||
+             (DXGI_FORMAT_B8G8R8A8_UNORM == desc.Format) || 
+             (DXGI_FORMAT_R10G10B10A2_UNORM == desc.Format) )
+        {
+            desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+            if (desc.ArraySize > 2)
+                return MFX_ERR_MEMORY_ALLOC;
+        }
+
+        if ( (MFX_MEMTYPE_FROM_VPPOUT & request->Type) ||
+             (MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET & request->Type))
+        {
+            desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+            if (desc.ArraySize > 2)
+                return MFX_ERR_MEMORY_ALLOC;
+        }*/
+
+        if( DXGI_FORMAT_P8 == desc.Format )
+        {
+            desc.BindFlags = 0;
+        }
+
+        size_t index = (size_t)MFXReadWriteMid(surface->Data.MemId).raw() - 1;
+
+        if(m_memIdMap.size() <= index)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        //reverse iterator dereferencing
+        TextureResource * p = &(*m_memIdMap[index]);
+        if (!p->bAlloc)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        ID3D11Texture2D* pTexture2D;
+
+        for(size_t i = 0; i < 1; i++)
+        {
+            hRes = m_initParams.pDevice->CreateTexture2D(&desc, NULL, &pTexture2D);
+
+            if (FAILED(hRes))
+            {
+                printf("CreateTexture2D(%d) failed, hr = 0x%X\n", i, hRes);
+                return MFX_ERR_MEMORY_ALLOC;
+            }
+        }
+
+        ptrdiff_t idx = (uintptr_t)MFXReadWriteMid(surface->Data.MemId).raw() - (uintptr_t)p->outerMids.front();
+        p->textures[idx]->Release();
+        p->textures[idx] = pTexture2D;
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
     HRESULT hRes;

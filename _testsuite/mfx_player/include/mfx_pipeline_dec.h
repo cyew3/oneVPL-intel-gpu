@@ -101,6 +101,7 @@ struct sCommandlineParams
   bool           bDxgiDebug;//
   bool           bMediaSDKSplitter;
   bool           bAdaptivePlayback;
+  bool           bVP9_DRC;
   vm_char        extractedAudioFile[MAX_FILE_PATH];
   mfxU16         nAdvanceFRCAlgorithm;//if non zero then directly specifies advanced FRC algorithm
   mfxU16         nImageStab;//image stabilization mode
@@ -272,6 +273,7 @@ struct sCommandlineParams
       OverlayTextSize = 0;
 
       bFadeBackground = false;
+      bVP9_DRC = false;
       bAdaptivePlayback = false;
       nInputBitdepth = 8;
 
