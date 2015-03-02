@@ -3,8 +3,7 @@ include_directories (
   ${CMAKE_SOURCE_DIR}/sample_camera/include
 )
 
-list( APPEND LIBS_VARIANT sample_common )
-list( APPEND LIBS dl pthread )
-set(NEED_DISPATCHER 1)
+list( APPEND LIBS_NOVARIANT sample_common )
 
-#make_executable( shortname none )
+set(DEPENDENCIES libmfx dl pthread)
+make_executable( shortname none )
