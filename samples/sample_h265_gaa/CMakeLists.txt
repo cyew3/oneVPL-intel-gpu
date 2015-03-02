@@ -1,4 +1,4 @@
-find_path( FEIH265_INCLUDE mfxfeih265.h PATHS $ENV{MFX_HOME}/include )
+find_path( FEIH265_INCLUDE mfxfeih265.h PATHS ${MFX_API_HOME}/include )
 
 if(FEIH265_INCLUDE MATCHES NOTFOUND)
   set(skipping _force_skipping)

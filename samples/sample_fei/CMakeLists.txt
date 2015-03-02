@@ -1,4 +1,4 @@
-find_path( FEI_INCLUDE mfxfei.h PATHS $ENV{MFX_HOME}/include )
+find_path( FEI_INCLUDE mfxfei.h PATHS ${MFX_API_HOME}/include )
 
 if(FEI_INCLUDE MATCHES NOTFOUND)
   set(skipping _force_skipping)
