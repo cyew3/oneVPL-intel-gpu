@@ -85,6 +85,25 @@ typedef struct _VAEncMiscParameterPrivate
 // surface, it will override the "skipCheckDisable" setting in VAEncMiscParameterPrivate.
 #define VAEncMacroblockDisableSkipMapBufferType     -7
 
+
+/** \brief Sequence display extension data structure used for */
+/*         VAEncMiscParameterTypeExtensionData buffer type. */
+/*         the element definition in this structure has 1 : 1 correspondence */
+/*         with the same element defined in sequence_display_extension() */
+/*         from mpeg2 spec */
+typedef struct _VAEncMiscParameterExtensionDataSeqDisplayMPEG2
+{
+    unsigned char extension_start_code_identifier;
+    unsigned char video_format;
+    unsigned char colour_description;
+    unsigned char colour_primaries;
+    unsigned char transfer_characteristics;
+    unsigned char matrix_coefficients;
+    unsigned short display_horizontal_size;
+    unsigned short display_vertical_size;
+} VAEncMiscParameterExtensionDataSeqDisplayMPEG2;
+
+#define VAEncMiscParameterTypeExtensionData        -8
 /*VAEncrytpionParameterBuffer*/
 typedef struct _VAEncryptionParameterBuffer
 {

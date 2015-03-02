@@ -118,13 +118,13 @@ namespace MfxHwMpeg2Encode
 
         VAEncMiscParameterBuffer           *m_pMiscParamsFps;
         VAEncMiscParameterBuffer           *m_pMiscParamsPrivate;
+        VAEncMiscParameterBuffer           *m_pMiscParamsSeqInfo;
 
         VABufferID                          m_miscParamFpsId;
         VABufferID                          m_miscParamPrivateId;
+        VABufferID                          m_miscParamSeqInfoId;
         VABufferID                          m_packedUserDataParamsId;
         VABufferID                          m_packedUserDataId;
-        VABufferID                          m_packedSignalInfoParamsId;
-        VABufferID                          m_packedSignalInfoId;
         VABufferID                          m_mbqpBufferId;
         std::vector<VAEncQpBufferH264>      m_mbqpDataBuffer;
 
