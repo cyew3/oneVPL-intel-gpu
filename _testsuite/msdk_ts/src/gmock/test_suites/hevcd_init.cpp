@@ -107,7 +107,8 @@ int TestSuite::RunTest(unsigned int id)
                 frame_allocator::OpaqueAllocMode::ALLOC_ERROR);
             SetFrameAllocator(m_session, GetAllocator());
         }
-
+        // set default param
+        m_pPar->mfx.CodecProfile = 1;
         for(mfxU32 i = 0; i < n_par; i ++)
         {
             if(tc.set_par[i].f)
