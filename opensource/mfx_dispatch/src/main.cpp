@@ -284,7 +284,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitEx)(mfxInitParam par, mfxSession *ses
                         hwImplIdx = curImplIdx;
                     // try to load the selected DLL
                     curImpl = implTypes[curImplIdx].impl;
-                    mfxRes = pHandle->LoadSelectedDLL(dllName, implType, curImpl, implInterface, par.ExternalThreads);
+                    mfxRes = pHandle->LoadSelectedDLL(dllName, implType, curImpl, implInterface, par);
                     // unload the failed DLL
                     if (MFX_ERR_NONE != mfxRes)
                     {
@@ -350,7 +350,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitEx)(mfxInitParam par, mfxSession *ses
 
                 // try to load the selected DLL
                 curImpl = implTypes[curImplIdx].impl;
-                mfxRes = pHandle->LoadSelectedDLL(dllName, implType, curImpl, implInterface, par.ExternalThreads);
+                mfxRes = pHandle->LoadSelectedDLL(dllName, implType, curImpl, implInterface, par);
                 // unload the failed DLL
                 if (MFX_ERR_NONE != mfxRes)
                 {
@@ -418,7 +418,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitEx)(mfxInitParam par, mfxSession *ses
                         implTypes[curImplIdx].implType,
                         implTypes[curImplIdx].impl,
                         implInterface,
-                        par.ExternalThreads);
+                        par);
                 }
                 // unload the failed DLL
                 if ((MFX_ERR_NONE != mfxRes) &&
