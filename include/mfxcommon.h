@@ -124,8 +124,28 @@ typedef struct {
     mfxIMPL     Implementation;
     mfxVersion  Version;
     mfxU16      ExternalThreads;
-    mfxU16      reserved[27];
+    union {
+        struct {
+            mfxExtBuffer **ExtParam;
+            mfxU16  NumExtParam;
+        };
+        mfxU16  reserved2[5];
+    };
+    mfxU16      reserved[22];
 } mfxInitParam;
+
+enum {
+    MFX_EXTBUFF_THREADS_PARAM = MFX_MAKEFOURCC('T','H','D','P')
+};
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16       NumThread;
+    mfxI32       SchedulingType;
+    mfxI32       Priority;
+    mfxU16       reserved[55];
+} mfxExtThreadsParam;
 
 #ifdef __cplusplus
 }
