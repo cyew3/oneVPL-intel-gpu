@@ -70,6 +70,15 @@ vm_thread_priority vm_get_current_thread_priority(void);
 /* Set current thread priority */
 void vm_set_current_thread_priority(vm_thread_priority priority);
 
+typedef struct
+{
+  Ipp32s schedtype;
+  Ipp32s priority;
+} vm_thread_linux_schedparams;
+
+/* Set thread scheduling type and corresponding parameters. */
+Ipp32s vm_thread_set_scheduling(vm_thread* thread, void* params);
+
 /* Set thread's affinity mask */
 void vm_set_thread_affinity_mask(vm_thread *thread, unsigned int mask);
 

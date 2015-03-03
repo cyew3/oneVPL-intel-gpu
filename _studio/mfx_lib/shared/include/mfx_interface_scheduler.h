@@ -33,7 +33,6 @@ enum mfxSchedulerFlags
     // default behaviour policy
     MFX_SCHEDULER_DEFAULT = 0,
     MFX_SINGLE_THREAD = 1
-
 };
 
 enum mfxSchedulerMessage
@@ -124,9 +123,18 @@ public:
 #endif // defined(SCHEDULER_DEBUG)
 };
 
+struct MFX_SCHEDULER_PARAM2: public MFX_SCHEDULER_PARAM
+{
+    // user-adjustable extended parameters
+    mfxExtThreadsParam params;
+};
+
 class MFXIScheduler2 : public MFXIScheduler
 {
 public:
+    virtual
+    mfxStatus Initialize2(const MFX_SCHEDULER_PARAM2 *pParam = 0) = 0;
+
     virtual
     mfxStatus DoWork() = 0;
 };

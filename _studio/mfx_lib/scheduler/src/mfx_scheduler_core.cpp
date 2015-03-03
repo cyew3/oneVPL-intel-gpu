@@ -97,6 +97,22 @@ mfxSchedulerCore::~mfxSchedulerCore(void)
 
 } // mfxSchedulerCore::~mfxSchedulerCore(void)
 
+bool mfxSchedulerCore::SetScheduling(vm_thread& handle)
+{
+    handle;
+#if !defined(_WIN32) && !defined(_WIN64)
+    if (m_param.params.SchedulingType || m_param.params.Priority) {
+        vm_thread_linux_schedparams params;
+
+        memset(&params, 0, sizeof(params));
+        params.schedtype = m_param.params.SchedulingType;
+        params.priority = m_param.params.Priority;
+        return vm_thread_set_scheduling(&handle, &params);
+    }
+#endif
+    return true;
+}
+
 void mfxSchedulerCore::Close(void)
 {
     int priority;

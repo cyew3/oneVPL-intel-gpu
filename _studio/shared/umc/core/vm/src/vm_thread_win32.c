@@ -191,6 +191,12 @@ Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg)
 
 } /* Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg) */
 
+Ipp32s vm_thread_set_scheduling(vm_thread* thread, void* params)
+{
+    thread; params;
+    return 0; // not supported
+}
+
 /* set thread priority. return 1 if success */
 Ipp32s vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority)
 {

@@ -160,6 +160,9 @@ public:
     virtual
     mfxStatus Initialize(const MFX_SCHEDULER_PARAM *pParam = 0);
 
+    virtual
+    mfxStatus Initialize2(const MFX_SCHEDULER_PARAM2 *pParam = 0);
+
     // Add a new task to the scheduler. Threads start processing task immediately.
     virtual
     mfxStatus AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoint);
@@ -319,13 +322,16 @@ protected:
     void PrintTaskInfo(void);
     void PrintTaskInfoUnsafe(void);
 
+    // Sets scheduling for the specified thread
+    bool SetScheduling(vm_thread& handle);
+
 #if defined(MFX_EXTERNAL_THREADING)
     mfxU32 AddThreadToPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext);
     void RemoveThreadFromPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext);
 #endif
 
     // Scheduler's initialization parameters
-    MFX_SCHEDULER_PARAM m_param;
+    MFX_SCHEDULER_PARAM2 m_param;
     // Reference counters
     mfxU32 m_refCounter;
     // Current time stamp

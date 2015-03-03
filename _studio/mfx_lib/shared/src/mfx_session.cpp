@@ -768,17 +768,10 @@ mfxStatus _mfxSession::ReleaseScheduler(void)
 // _mfxSession_1_10 own members
 //////////////////////////////////////////////////////////////////////////
 
-_mfxSession_1_10::_mfxSession_1_10()
-    : _mfxSession(0)
+_mfxSession_1_10::_mfxSession_1_10(mfxU32 adapterNum)
+    : _mfxSession(adapterNum)
     , m_refCounter(1)
     , m_externalThreads(0)
-{
-}
-
-_mfxSession_1_10::_mfxSession_1_10(mfxU16 externalThreads)
-    : _mfxSession(0)
-    , m_refCounter(1)
-    , m_externalThreads(externalThreads)
 {
 }
 
@@ -851,28 +844,18 @@ mfxU32 _mfxSession_1_10::GetNumRef(void) const
 
 } // mfxU32 _mfxSession_1_10::GetNumRef(void) const
 
-mfxStatus _mfxSession_1_10::InitEx(mfxIMPL implInterface, mfxVersion *ver, mfxU16 externalThreads)
+mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
 {
     mfxStatus mfxRes;
-    MFX_SCHEDULER_PARAM schedParam;
     mfxU32 maxNumThreads;
 
     // release the object before initialization
     Cleanup();
 
-    if (ver)
-    {
-        m_version = *ver;
-    }
-    else
-    {
-        mfxStatus sts = MFXQueryVersion(this, &m_version);
-        if (sts != MFX_ERR_NONE)
-            return sts;
-    }
+    m_version = par.Version;
 
     // save working HW interface
-    switch (implInterface)
+    switch (par.Implementation)
     {
         // if nothing is set, nothing is returned
     case MFX_IMPL_UNSUPPORTED:
@@ -903,8 +886,28 @@ mfxStatus _mfxSession_1_10::InitEx(mfxIMPL implInterface, mfxVersion *ver, mfxU1
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
 
+    // only mfxExtThreadsParam is allowed
+    if (par.NumExtParam)
+    {
+        if ((par.NumExtParam > 1) || !par.ExtParam)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+        if ((par.ExtParam[0]->BufferId != MFX_EXTBUFF_THREADS_PARAM) ||
+            (par.ExtParam[0]->BufferSz != sizeof(mfxExtThreadsParam)))
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+#if defined(_WIN32) || defined(_WIN64)
+    if (par.NumExtParam || par.ExtParam)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+#endif
+
     // get the number of available threads
-    maxNumThreads = (externalThreads != 0) ? 0 : vm_sys_info_get_cpu_num();
+    maxNumThreads = (par.ExternalThreads != 0) ? 0 : vm_sys_info_get_cpu_num();
 
     // allocate video core
     if (MFX_PLATFORM_SOFTWARE == m_currentPlatform)
@@ -944,38 +947,54 @@ mfxStatus _mfxSession_1_10::InitEx(mfxIMPL implInterface, mfxVersion *ver, mfxU1
     InitCoreInterface(&m_coreInt, this);
 
     // query the scheduler interface
-    m_pScheduler = ::QueryInterface<MFXIScheduler> (m_pSchedulerAllocated,
-        MFXIScheduler_GUID);
+    m_pScheduler = ::QueryInterface<MFXIScheduler>(m_pSchedulerAllocated, MFXIScheduler_GUID);
     if (NULL == m_pScheduler)
     {
         return MFX_ERR_UNKNOWN;
     }
-    memset(&schedParam, 0, sizeof(schedParam));
-    schedParam.flags = MFX_SCHEDULER_DEFAULT;
-    schedParam.numberOfThreads = maxNumThreads;
-    schedParam.pCore = m_pCORE.get();
-    mfxRes = m_pScheduler->Initialize(&schedParam);
-    if (MFX_ERR_NONE != mfxRes)
-    {
+
+    MFXIScheduler2* pScheduler2 = ::QueryInterface<MFXIScheduler2>(m_pSchedulerAllocated, MFXIScheduler2_GUID);
+
+    if (par.NumExtParam && !pScheduler2) {
+        return MFX_ERR_UNKNOWN;
+    }
+    if (pScheduler2) {
+        MFX_SCHEDULER_PARAM2 schedParam;
+        memset(&schedParam, 0, sizeof(schedParam));
+        schedParam.flags = MFX_SCHEDULER_DEFAULT;
+        schedParam.numberOfThreads = maxNumThreads;
+        schedParam.pCore = m_pCORE.get();
+        if (par.NumExtParam) {
+            schedParam.params = *((mfxExtThreadsParam*)par.ExtParam[0]);
+        }
+        mfxRes = pScheduler2->Initialize2(&schedParam);
+
+        m_pScheduler->Release();
+    } else {
+        MFX_SCHEDULER_PARAM schedParam;
+        memset(&schedParam, 0, sizeof(schedParam));
+        schedParam.flags = MFX_SCHEDULER_DEFAULT;
+        schedParam.numberOfThreads = maxNumThreads;
+        schedParam.pCore = m_pCORE.get();
+        mfxRes = m_pScheduler->Initialize(&schedParam);
+    }
+    if (MFX_ERR_NONE != mfxRes) {
         return mfxRes;
     }
 
     m_pOperatorCore = new OperatorCORE(m_pCORE.get());
 
     return MFX_ERR_NONE;
-} // mfxStatus _mfxSession_1_10::InitEx(mfxIMPL implInterface, mfxVersion *ver, mfxU16 externalThreads);
+} // mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par);
 
 //explicit specification of interface creation
 template<> MFXISession_1_10*  CreateInterfaceInstance<MFXISession_1_10>(const MFX_GUID &guid)
 {
     if (MFXISession_1_10_GUID == guid)
-        return (MFXISession_1_10*) (new _mfxSession_1_10);
+        return (MFXISession_1_10*) (new _mfxSession_1_10(0));
 
     return NULL;
-
-} //template<> MFXISession_1_10*  CreateInterfaceInstance<MFXIScheduler>()
-
-
+}
 
 namespace MFX
 {

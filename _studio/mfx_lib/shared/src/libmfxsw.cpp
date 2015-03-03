@@ -92,7 +92,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 #else
     _mfxSession * pSession = 0;
 #endif
-
     mfxVersion libver;
     mfxStatus mfxRes;
     int adapterNum = 0;
@@ -203,16 +202,19 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     {
         // reset output variable
         *session = 0;
+        // prepare initialization parameters
 
         // create new session instance
 #if defined(MFX_USE_VERSIONED_SESSION)
-        pSession = new _mfxSession_1_10(par.ExternalThreads);
-        pSession->SetAdapterNum(adapterNum);
+        pSession = new _mfxSession_1_10(adapterNum);
 #else
         pSession = new _mfxSession(adapterNum);
 #endif
+        mfxInitParam init_param = par;
+        init_param.Implementation = implInterface;
+
         //mfxRes = pSession->Init(implInterface, &par.Version);
-        mfxRes = pSession->InitEx(implInterface, &par.Version, par.ExternalThreads);
+        mfxRes = pSession->InitEx(init_param);
 
         // check the library version
         MFXQueryVersion(pSession, &libver);

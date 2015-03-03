@@ -47,14 +47,25 @@ enum
 
 mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
 {
+    MFX_SCHEDULER_PARAM2 param2;
+    memset(&param2, 0, sizeof(param2));
+    if (pParam) {
+        MFX_SCHEDULER_PARAM* casted_param2 = &param2;
+        *casted_param2 = *pParam;
+    }
+    if (!param2.numberOfThreads) {
+        // that's just in case: core, which calls scheduler, is doing
+        // exactly the same what we are doing below
+        param2.numberOfThreads = vm_sys_info_get_cpu_num();
+    }
+    return Initialize2(&param2);
+}
+
+mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
+{
     UMC::Status umcRes;
     mfxU32 i;
-    
-    mfxU32 numThreads;
-
     mfxU32 iRes;
-
-
 
     // release the object before initialization
     Close();
@@ -117,16 +128,25 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
 
     if (MFX_SINGLE_THREAD != m_param.flags)
     {
+        if (m_param.numberOfThreads && m_param.params.NumThread) {
+            // use user-overwritten number of threads
+            m_param.numberOfThreads = m_param.params.NumThread;
+        }
+#if !defined(MFX_EXTERNAL_THREADING)
+        if (!m_param.numberOfThreads) {
+            return MFX_ERR_UNSUPPORTED;
+        }
+#endif
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+        if (m_param.numberOfThreads == 1) {
+            // we need at least 2 threads to avoid dead locks
+            return MFX_ERR_UNSUPPORTED;
+        }
+#endif
+
 #if defined(MFX_EXTERNAL_THREADING)
         // decide the number of threads
-    numThreads = UMC::get_min(vm_sys_info_get_cpu_num(), m_param.numberOfThreads);
-
-        //we have to create threads more than cores to support Intel plug-ins threading 
-        //m_param.numberOfThreads = numThreads + 1;
-
-#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-    numThreads = UMC::get_max(m_param.numberOfThreads, 2);
-#endif
+        mfxU32 numThreads = m_param.numberOfThreads;
 
         try
         {
@@ -143,7 +163,7 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
             {
                 MFX_SCHEDULER_THREAD_CONTEXT * pContext = new MFX_SCHEDULER_THREAD_CONTEXT;
 
-                // prepare context            
+                // prepare context
                 pContext->pSchedulerCore = this;
                 pContext->threadNum = AddThreadToPool(pContext); // m_param.numberOfThreads modified here
 
@@ -173,18 +193,6 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
         }
 
 #else // MFX_EXTERNAL_THREADING
-        // decide the number of threads
-        numThreads = vm_sys_info_get_cpu_num();
-        if (m_param.numberOfThreads)
-        {
-            numThreads = UMC::get_min(numThreads, m_param.numberOfThreads);
-        }
-        //we have to create threads more than cores to support Intel plug-ins threading 
-        //m_param.numberOfThreads = numThreads + 1;
-
-#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-        m_param.numberOfThreads = UMC::get_max(m_param.numberOfThreads, 2);
-#endif
 
         try
         {
@@ -218,11 +226,15 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
                 m_pThreadCtx[i].pSchedulerCore = this;
                 // spawn a thread
                 vm_thread_set_invalid(&(m_pThreadCtx[i].threadHandle));
-                iRes = vm_thread_create(&(m_pThreadCtx[i].threadHandle),
+                iRes = vm_thread_create(
+                    &(m_pThreadCtx[i].threadHandle),
                     scheduler_thread_proc,
                     m_pThreadCtx + i);
                 if (0 == iRes)
                 {
+                    return MFX_ERR_UNKNOWN;
+                }
+                if (!SetScheduling(m_pThreadCtx[i].threadHandle)) {
                     return MFX_ERR_UNKNOWN;
                 }
                 // 02.2012 vcherepa: DON'T use high priority for internal thread #0.

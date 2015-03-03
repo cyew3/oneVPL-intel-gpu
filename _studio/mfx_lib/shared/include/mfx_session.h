@@ -202,8 +202,8 @@ MFXIPtr<MFXISession_1_10> TryGetSession_1_10(mfxSession session);
 class _mfxSession_1_10: public _mfxSession, public MFXISession_1_10
 {
 public:
-    _mfxSession_1_10();
-    explicit _mfxSession_1_10(mfxU16 externalThreads);
+    _mfxSession_1_10(mfxU32 adapterNum);
+
     // Destructor
     virtual ~_mfxSession_1_10(void);
 
@@ -236,7 +236,7 @@ public:
         mfxU32 GetNumRef(void) const;
 
     virtual 
-        mfxStatus InitEx(mfxIMPL implInterface, mfxVersion *ver, mfxU16 externalThreads);
+        mfxStatus InitEx(mfxInitParam& par);
 
 public:
     // Declare additional session's components

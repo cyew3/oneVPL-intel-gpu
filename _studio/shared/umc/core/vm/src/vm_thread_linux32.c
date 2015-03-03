@@ -80,7 +80,7 @@ Ipp32s vm_thread_create(vm_thread *thread,
                         void *arg)
 {
     Ipp32s i_res = 1;
-    pthread_attr_t attr;
+//    pthread_attr_t attr;
 
     /* check error(s) */
     if ((NULL == thread) ||
@@ -102,24 +102,16 @@ Ipp32s vm_thread_create(vm_thread *thread,
         vm_mutex_lock(&thread->access_mut);
         thread->p_thread_func = vm_thread_func;
         thread->p_arg = arg;
-        pthread_attr_init(&attr);
-#ifdef ANDROID
-        pthread_attr_setschedpolicy(&attr, SCHED_OTHER);
-#else
-        // SCHED_RR doesn't work on Android
-        pthread_attr_setschedpolicy(&attr, geteuid() ? SCHED_OTHER : SCHED_RR);
-#endif
 
         thread->is_valid =! pthread_create(&thread->handle,
-                                           &attr,
+                                           NULL,
                                            vm_thread_proc,
                                            (void*)thread);
 
         i_res = (thread->is_valid) ? 1 : 0;
         vm_mutex_unlock(&thread->access_mut);
-        pthread_attr_destroy(&attr);
+//        pthread_attr_destroy(&attr);
     }
-    vm_thread_set_priority(thread, VM_THREAD_PRIORITY_LOWEST);
     return i_res;
 
 } /* Ipp32s vm_thread_create(vm_thread *thread, */
@@ -151,6 +143,26 @@ Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg)
     thread->i_wait_count = 1; // vm_thread_wait should not try to join this thread
     thread->handle = pthread_self();
 
+    return i_res;
+}
+
+Ipp32s vm_thread_set_scheduling(vm_thread* thread, void* params)
+{
+    Ipp32s i_res = 1;
+    struct sched_param param;
+    vm_thread_linux_schedparams* linux_params = (vm_thread_linux_schedparams*)params;
+
+    /* check error(s) */
+    if (!thread || !linux_params)
+        return 0;
+
+    if (thread->is_valid)
+    {
+        vm_mutex_lock(&thread->access_mut);
+        param.sched_priority = linux_params->priority;
+        i_res = !pthread_setschedparam(thread->handle, linux_params->schedtype, &param);
+        vm_mutex_unlock(&thread->access_mut);
+    }
     return i_res;
 }
 
