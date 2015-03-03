@@ -48,6 +48,7 @@ enum {
 /* Extended Buffer Ids */
 enum {
     MFX_EXTBUFF_CODING_OPTION_VP9 =   MFX_MAKEFOURCC('I','V','P','9'),
+    MFX_EXTBUFF_VP9_DECODED_FRAME_INFO = MFX_MAKEFOURCC('9','D','F','I')
 };
 
 enum {
@@ -90,6 +91,14 @@ typedef struct {
 
     mfxU16   reserved[106];
 } mfxExtCodingOptionVP9;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16       DisplayWidth;
+    mfxU16       DisplayHeight;
+    mfxU16       reserved[58];
+} mfxExtVP9DecodedFrameInfo;
 
 
 #ifdef __cplusplus
