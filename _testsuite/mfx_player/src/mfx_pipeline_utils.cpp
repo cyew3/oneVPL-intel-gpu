@@ -1024,12 +1024,15 @@ mfxStatus myMFXInit(const vm_char *pMFXLibraryPath, mfxIMPL impl, mfxVersion *pV
     {
         if (MFX_ERR_NONE == mfxRes)
         {
+            mfxInitParam par;
+
+            memset(&par, 0, sizeof(mfxInitParam));
             // try to load the selected DLL using default DLL search mechanism
             mfxRes = pHandle->LoadSelectedDLL(path,
                                      myimplTypes[curImplIdx].implType,
                                      myimplTypes[curImplIdx].impl,
                                      implInterface,
-                                     0);
+                                     par);
             // unload the failed DLL
             if ((MFX_ERR_NONE != mfxRes) &&
                 (MFX_WRN_PARTIAL_ACCELERATION != mfxRes))
