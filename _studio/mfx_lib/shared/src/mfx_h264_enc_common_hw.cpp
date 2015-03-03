@@ -755,15 +755,20 @@ namespace
         return DEFAULT_BY_TU[targetUsage];
     }
 
-    mfxU16 GetDefaultMaxNumRefActivePL0(mfxU32 targetUsage, eMFXHWType platform)
+    mfxU16 GetDefaultMaxNumRefActivePL0(mfxU32 targetUsage, eMFXHWType platform, bool isLowPower)
     {
         if (platform == MFX_HW_IVB || platform == MFX_HW_VLV)
             return 1;
         else if (platform == MFX_HW_SOFIA)
             return 1; // current SoFIA 3G HW supports 1 active ref only. TODO: switch to 2 refs when LTE HW will arrive
-        else
+        else if (!isLowPower)
         {
             mfxU16 const DEFAULT_BY_TU[] = { 0, 8, 6, 4, 3, 2, 1, 1 };
+            return DEFAULT_BY_TU[targetUsage];
+        }
+        else
+        {
+            mfxU16 const DEFAULT_BY_TU[] = { 0, 3, 3, 2, 2, 2, 1, 1 };
             return DEFAULT_BY_TU[targetUsage];
         }
     }
@@ -3971,7 +3976,6 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         if (par.mfx.NumRefFrame == 0)
             par.mfx.NumRefFrame = hwCaps.MaxNum_Reference;
-        extDdi->NumActiveRefP = IPP_MIN(hwCaps.MaxNum_Reference, par.mfx.NumRefFrame);
     }
 #endif
 
@@ -4105,7 +4109,7 @@ void MfxHwH264Encode::SetDefaults(
         extDdi->NumActiveRefP = extDdi->NumActiveRefBL0 = extDdi->NumActiveRefBL1 = 1;
     }
     if (extDdi->NumActiveRefP == 0)
-        extDdi->NumActiveRefP = GetDefaultMaxNumRefActivePL0(par.mfx.TargetUsage, platform);
+        extDdi->NumActiveRefP = GetDefaultMaxNumRefActivePL0(par.mfx.TargetUsage, platform,IsOn(par.mfx.LowPower));
 
     if (par.mfx.GopRefDist > 1)
     {
