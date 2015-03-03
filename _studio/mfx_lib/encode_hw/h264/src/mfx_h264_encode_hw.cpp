@@ -561,7 +561,18 @@ mfxStatus ImplementationAvc::Query(
 
         mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*in);
         // query MB processing rate from driver
-        sts = QueryMbProcRate(core, *in, mbPerSec, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
+        if(IsOn(in->mfx.LowPower))
+        {
+            sts = QueryMbProcRate(core, *in, mbPerSec, MSDK_Private_Guid_Encode_AVC_LowPower_Query, isWiDi != 0, Width, Height);
+            if (sts != MFX_ERR_NONE){
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else
+        {
+            sts = QueryMbProcRate(core, *in, mbPerSec, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
+        }
+        
         if (sts != MFX_ERR_NONE)
         {
             extCaps->MBPerSec = 0;
