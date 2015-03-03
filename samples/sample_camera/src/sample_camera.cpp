@@ -135,6 +135,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->memTypeIn = D3D9_MEMORY;
 #endif
         }
+#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sys")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-syso")))
         {
             pParams->memTypeOut = SYSTEM_MEMORY;
@@ -471,7 +472,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
            msdk_opt_read(strInput[++i], pParams->nWallTimeout);
         }
-#endif
         else // 1-character options
         {
             std::basic_stringstream<msdk_char> stream;
