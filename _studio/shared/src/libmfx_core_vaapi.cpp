@@ -174,7 +174,30 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x22b0, MFX_HW_CHV},
     { 0x22b1, MFX_HW_CHV},
     { 0x22b2, MFX_HW_CHV},
-    { 0x22b3, MFX_HW_CHV}
+    { 0x22b3, MFX_HW_CHV},
+
+    /* SCL */
+    { 0x1916, MFX_HW_SCL},
+    { 0x1906, MFX_HW_SCL},
+    { 0x1926, MFX_HW_SCL},
+    { 0x1921, MFX_HW_SCL},
+    { 0x190E, MFX_HW_SCL},
+    { 0x191E, MFX_HW_SCL},
+    { 0x1912, MFX_HW_SCL},
+    { 0x1902, MFX_HW_SCL},
+    { 0x191B, MFX_HW_SCL},
+    { 0x192B, MFX_HW_SCL},
+    { 0x190B, MFX_HW_SCL},
+    { 0x191A, MFX_HW_SCL},
+    { 0x192A, MFX_HW_SCL},
+    { 0x190A, MFX_HW_SCL},
+    { 0x191D, MFX_HW_SCL},
+
+    /* BXT */
+    { 0x0A84, MFX_HW_BXT},
+    { 0x0A85, MFX_HW_BXT},
+    { 0x0A86, MFX_HW_BXT},
+    { 0x0A87, MFX_HW_BXT}
 };
 
 /* END: IOCTLs definitions */
@@ -237,7 +260,7 @@ VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
     }
 
     return umcType;
-    
+
 } // VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
 
 static
@@ -310,7 +333,7 @@ VAAPIVideoCORE::~VAAPIVideoCORE()
     }
 
     Close();
-    
+
 } // VAAPIVideoCORE::~VAAPIVideoCORE()
 
 
@@ -379,7 +402,7 @@ VAAPIVideoCORE::AllocFrames(
             temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
             temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         }
-        
+
         if (!m_bFastCopy)
         {
             // initialize fast copy
@@ -447,21 +470,21 @@ VAAPIVideoCORE::AllocFrames(
 
                     return TraceFrames(request, response, sts);
                 }
-                // let's create video accelerator 
+                // let's create video accelerator
                 else if (MFX_ERR_NONE == sts)
                 {
-                    // Checking for unsupported mode - external allocator exist but Device handle doesn't set 
-                    if (!m_Display) 
+                    // Checking for unsupported mode - external allocator exist but Device handle doesn't set
+                    if (!m_Display)
                         return MFX_ERR_UNSUPPORTED;
 
                     m_bUseExtAllocForHWFrames = true;
                     sts = ProcessRenderTargets(request, response, &m_FrameAllocator);
                     MFX_CHECK_STS(sts);
-                   
+
                     return TraceFrames(request, response, sts);
                 }
                 // error situation
-                else 
+                else
                 {
                     m_bUseExtAllocForHWFrames = false;
                     return sts;
@@ -485,7 +508,7 @@ VAAPIVideoCORE::AllocFrames(
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
-    
+
 } // mfxStatus VAAPIVideoCORE::AllocFrames(...)
 
 
@@ -519,16 +542,16 @@ VAAPIVideoCORE::DefaultAllocFrames(
         MFX_CHECK_STS(sts);
         sts = ProcessRenderTargets(request, response, pAlloc);
         MFX_CHECK_STS(sts);
-        
+
     }
-    else 
+    else
     {
         return CommonCORE::DefaultAllocFrames(request, response);
     }
     ++m_NumAllocators;
-    
+
     return sts;
-    
+
 } // mfxStatus VAAPIVideoCORE::DefaultAllocFrames(...)
 
 
@@ -546,7 +569,7 @@ VAAPIVideoCORE::CreateVA(
 
     int profile = UMC::VA_VLD;
 
-    // video accelerator is needed for decoders only 
+    // video accelerator is needed for decoders only
     switch (param->mfx.CodecId)
     {
     case MFX_CODEC_VC1:
@@ -594,7 +617,7 @@ VAAPIVideoCORE::CreateVA(
     sts = CreateVideoAccelerator(param, profile, response->NumFrameActual, RenderTargets);
 
     return sts;
-    
+
 } // mfxStatus VAAPIVideoCORE::CreateVA(...)
 
 
@@ -609,9 +632,9 @@ VAAPIVideoCORE::ProcessRenderTargets(
 
     RegisterMids(response, request->Type, !m_bUseExtAllocForHWFrames, pAlloc);
     m_pcHWAlloc.pop();
-    
+
     return MFX_ERR_NONE;
-    
+
 } // mfxStatus VAAPIVideoCORE::ProcessRenderTargets(
 
 
@@ -632,14 +655,14 @@ myDXVA2CreateDirect3DDeviceManager9(
     }
 
     HMODULE m_pLibDXVA2 = LoadLibraryExW(pDXVA2LIBNAME);
-    if (NULL == m_pLibDXVA2) 
-    { 
+    if (NULL == m_pLibDXVA2)
+    {
         return NULL;
     }
 
     FUNC_TYPE pFunc = (FUNC_TYPE)GetProcAddress(m_pLibDXVA2, "DXVA2CreateDirect3DDeviceManager9");
-    if (NULL == pFunc) 
-    { 
+    if (NULL == pFunc)
+    {
         return NULL;
     }
 
@@ -663,7 +686,7 @@ VAAPIVideoCORE::GetVAService(
     }
 
     return MFX_ERR_NOT_INITIALIZED;
-    
+
 } // mfxStatus VAAPIVideoCORE::GetVAService(...)
 
 void
@@ -730,7 +753,7 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     m_pVA.get()->m_HWPlatform = ConvertMFXToUMCType(m_HWType);
 
     return sts;
-    
+
 } // mfxStatus VAAPIVideoCORE::CreateVideoAccelerator(...)
 
 
@@ -769,7 +792,7 @@ VAAPIVideoCORE::DoFastCopyWrapper(
             {
                 sts = LockExternalFrame(srcMemId, &srcTempSurface.Data);
                 MFX_CHECK_STS(sts);
-                    
+
                 isSrcLocked = true;
             }
             else
@@ -903,7 +926,7 @@ VAAPIVideoCORE::DoFastCopyWrapper(
     }
 
     return MFX_ERR_NONE;
-    
+
 } // mfxStatus VAAPIVideoCORE::DoFastCopyWrapper(...)
 
 
@@ -925,7 +948,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
     }
 
     IppiSize roi = {IPP_MIN(pSrc->Info.Width, pDst->Info.Width), IPP_MIN(pSrc->Info.Height, pDst->Info.Height)};
-    
+
     // check that region of interest is valid
     if (0 == roi.width || 0 == roi.height)
     {
@@ -948,8 +971,8 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
         const tagRECT rect = {0, 0, roi.width, roi.height};
 
-        hRes = m_pDirect3DDevice->StretchRect((IDirect3DSurface9*) pSrc->Data.MemId, &rect, 
-                                              (IDirect3DSurface9*) pDst->Data.MemId, &rect, 
+        hRes = m_pDirect3DDevice->StretchRect((IDirect3DSurface9*) pSrc->Data.MemId, &rect,
+                                              (IDirect3DSurface9*) pDst->Data.MemId, &rect,
                                                D3DTEXF_LINEAR);
 
         MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
@@ -984,7 +1007,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
         // vaMapBuffer
         va_sts = vaMapBuffer(m_Display, va_image.buf, (void **) &pBits);
         MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
-        
+
         // copy data
         {
             mfxI64 verticalPitch = (mfxI64)(pDst->Data.UV - pDst->Data.Y);
@@ -1047,11 +1070,11 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
                         sts = pFastCopy->Copy(pDst->Data.U, dstPitch, (mfxU8 *)pBits + va_image.offsets[2], srcPitch, roi);
                         MFX_CHECK_STS(sts);
-                    
+
                         break;
 
                     case MFX_FOURCC_YUY2:
-                    
+
                         roi.width *= 2;
 
                         sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)pBits, srcPitch, roi);
@@ -1066,7 +1089,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
                         MFX_CHECK_NULL_PTR1(pDst->Data.B);
 
                         mfxU8* ptrDst = IPP_MIN(IPP_MIN(pDst->Data.R, pDst->Data.G), pDst->Data.B);
-                    
+
                         roi.width *= 3;
 
                         sts = pFastCopy->Copy(ptrDst, dstPitch, (mfxU8 *)pBits, srcPitch, roi);
@@ -1111,7 +1134,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
         // vaDestroyImage
         va_sts = vaDestroyImage(m_Display, va_image.image_id);
         MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
-    
+
     }
     else if (NULL != pSrc->Data.Y && NULL != pDst->Data.Y)
     {
@@ -1128,7 +1151,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
             case MFX_FOURCC_NV12:
 
                 ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
-                
+
                 roi.height >>= 1;
 
                 ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, pDst->Data.UV, dstPitch, roi);
@@ -1148,11 +1171,11 @@ VAAPIVideoCORE::DoFastCopyExtended(
                 ippiCopy_8u_C1R(pSrc->Data.V, srcPitch, pDst->Data.V, dstPitch, roi);
 
                 ippiCopy_8u_C1R(pSrc->Data.U, srcPitch, pDst->Data.U, dstPitch, roi);
-                
+
                 break;
 
             case MFX_FOURCC_YUY2:
-                
+
                 roi.width *= 2;
 
                 ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
@@ -1278,7 +1301,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
                     break;
                 case MFX_FOURCC_YUY2:
-                
+
                     roi.width *= 2;
 
                     ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)pBits + va_image.offsets[0], dstPitch, roi);
@@ -1335,7 +1358,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    
+
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIVideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
@@ -1346,7 +1369,7 @@ VAAPIVideoCORE::DoFastCopy(
     mfxFrameSurface1* src)
 {
     CommonCORE::DoFastCopy(dst, src);
-    
+
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIVideoCORE::DoFastCopy(...)
@@ -1354,11 +1377,11 @@ VAAPIVideoCORE::DoFastCopy(
 
 void VAAPIVideoCORE::ReleaseHandle()
 {
-    
+
 } // void VAAPIVideoCORE::ReleaseHandle()
 
 mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
-                                         mfxVideoParam *par, bool isEncoder) 
+                                         mfxVideoParam *par, bool isEncoder)
 {
     if (!par)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -1383,7 +1406,8 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
     case MFX_CODEC_JPEG:
         break;
     case MFX_CODEC_VP8:
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        if (m_HWType < MFX_HW_CHV)
+            return MFX_WRN_PARTIAL_ACCELERATION;
     case MFX_CODEC_VP9:
         break;
     default:
@@ -1447,7 +1471,7 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return NULL;
     }
-    
+
 } // void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
 
 bool IsHwMvcEncSupported()
@@ -1466,12 +1490,12 @@ bool IsSupported__VAEncMiscParameterPrivate(void)
 
 bool IsSupported__VAHDCPEncryptionParameterBuffer(void)
 {
-#if defined(ANDROID) && defined(VAAPI_DRIVER_VPG) 
+#if defined(ANDROID) && defined(VAAPI_DRIVER_VPG)
     return true;
 #else
     return false;
 #endif
 }
 
-#endif 
+#endif
 /* EOF */
