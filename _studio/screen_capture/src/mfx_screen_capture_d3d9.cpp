@@ -40,7 +40,7 @@ mfxStatus D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
     width  = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
     height = par.mfx.FrameInfo.CropH ? par.mfx.FrameInfo.CropH : par.mfx.FrameInfo.Height;
 
-    mfxRes = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&hdl);
+    mfxRes = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&hdl);
     m_pDirect3DDeviceManager = (IDirect3DDeviceManager9*)hdl;
 
     hres = m_pDirect3DDeviceManager->OpenDeviceHandle(&m_hDirectXHandle);

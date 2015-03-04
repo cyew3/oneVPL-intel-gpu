@@ -81,10 +81,6 @@ mfxStatus MFXScreenCapture_Plugin::PluginInit(mfxCoreInterface *core)
 
     Close();
 
-    //only MFX_IMPL_VIA_D3D11 is supported
-    //if(MFX_IMPL_VIA_D3D11 != (par.Impl & 0x0F00))
-    //    return MFX_ERR_UNSUPPORTED;
-
     return mfxRes;
 }
 
@@ -672,7 +668,7 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
     mfxRes = m_pmfxCore->IncreaseReference(m_pmfxCore->pthis, &surface_work->Data);
     MFX_CHECK_STS(mfxRes);
 
-    mfxRes = CheckFrameInfo(&surface_work->Info);
+    mfxRes = CheckFrameInfo(surface_work->Info);
     MFX_CHECK_STS(mfxRes);
 
     mfxFrameSurface1* real_surface = surface_work;
@@ -706,6 +702,9 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
         pAsyncParam->real_surface = real_surface;
         pAsyncParam->StatusReportFeedbackNumber = m_StatusReportFeedbackNumber;
         *task = (mfxThreadTask*)pAsyncParam;
+        surface_work->Data.TimeStamp = MFX_TIMESTAMPCALC_UNKNOWN;
+        surface_work->Data.Corrupted = 0;
+        surface_work->Data.DataFlag = 0;
         *surface_out = surface_work;
     }
     return mfxRes;
@@ -780,11 +779,19 @@ mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfx
     return mfxRes;
 }
 
-mfxStatus MFXScreenCapture_Plugin::CheckFrameInfo(mfxFrameInfo *info)
+mfxStatus MFXScreenCapture_Plugin::CheckFrameInfo(const mfxFrameInfo& info)
 {
-    if (info->Width  < m_CurrentPar.mfx.FrameInfo.Width)
+    if (info.Width  < m_CurrentPar.mfx.FrameInfo.Width)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    if (info->Height < m_CurrentPar.mfx.FrameInfo.Height)
+    if (info.Height < m_CurrentPar.mfx.FrameInfo.Height)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    if ((MFX_FOURCC_NV12 == m_CurrentPar.mfx.FrameInfo.FourCC) && (MFX_FOURCC_NV12 != info.FourCC))
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    if ( (MFX_FOURCC_RGB4 == m_CurrentPar.mfx.FrameInfo.FourCC) && 
+         !(MFX_FOURCC_RGB4 == info.FourCC || DXGI_FORMAT_AYUV == info.FourCC)
+       )
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    if (info.ChromaFormat < m_CurrentPar.mfx.FrameInfo.ChromaFormat)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     return MFX_ERR_NONE;
