@@ -2386,9 +2386,12 @@ mfxStatus VAAPIEncoder::Execute(
         currentFeedback.idxBs   = task.m_idxBs[fieldId];
         currentFeedback.size    = storedSize;
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
-        currentFeedback.mv        = m_vaFeiMVOutId[idxRecon];
-        currentFeedback.mbstat    = m_vaFeiMBStatId[idxRecon];
-        currentFeedback.mbcode    = m_vaFeiMCODEOutId[idxRecon];
+        if (m_isENCPAK)
+        {
+            currentFeedback.mv        = m_vaFeiMVOutId[idxRecon];
+            currentFeedback.mbstat    = m_vaFeiMBStatId[idxRecon];
+            currentFeedback.mbcode    = m_vaFeiMCODEOutId[idxRecon];
+        }
 #endif
         m_feedbackCache.push_back( currentFeedback );
     }
