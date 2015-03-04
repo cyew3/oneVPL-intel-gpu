@@ -2087,12 +2087,17 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
         if (!cu[ithread].HaveChromaRec())
             cu[ithread].EncAndRecChroma(0, 0, 0, NULL);
         
-        small_memcpy(m_bsf[bsf_id].m_base.context_array + tab_ctxIdxOffset[QT_CBF_HEVC], context_array_save + tab_ctxIdxOffset[QT_CBF_HEVC], 
-            sizeof(CABAC_CONTEXT_H265) * (tab_ctxIdxOffset[LAST_X_HEVC] - tab_ctxIdxOffset[QT_CBF_HEVC]));
-        small_memcpy(m_bsf[bsf_id].m_base.context_array + tab_ctxIdxOffset[TRANS_SUBDIV_FLAG_HEVC], context_array_save + tab_ctxIdxOffset[TRANS_SUBDIV_FLAG_HEVC], 
-            sizeof(CABAC_CONTEXT_H265) * (NUM_CABAC_CONTEXT - tab_ctxIdxOffset[TRANS_SUBDIV_FLAG_HEVC]));
+        if (m_videoParam.RDOQFlag) {
+            small_memcpy(m_bsf[bsf_id].m_base.context_array + tab_ctxIdxOffset[QT_CBF_HEVC], context_array_save + tab_ctxIdxOffset[QT_CBF_HEVC], 
+                sizeof(CABAC_CONTEXT_H265) * (tab_ctxIdxOffset[LAST_X_HEVC] - tab_ctxIdxOffset[QT_CBF_HEVC]));
+            small_memcpy(m_bsf[bsf_id].m_base.context_array + tab_ctxIdxOffset[TRANS_SUBDIV_FLAG_HEVC], context_array_save + tab_ctxIdxOffset[TRANS_SUBDIV_FLAG_HEVC], 
+                sizeof(CABAC_CONTEXT_H265) * (NUM_CABAC_CONTEXT - tab_ctxIdxOffset[TRANS_SUBDIV_FLAG_HEVC]));
 
-        cu[ithread].EncodeCU(&m_bsf[bsf_id], 0, 0, RD_CU_ALL_EXCEPT_COEFFS);
+            cu[ithread].EncodeCU(&m_bsf[bsf_id], 0, 0, RD_CU_ALL_EXCEPT_COEFFS);
+        } else {
+            small_memcpy(m_bsf[bsf_id].m_base.context_array, context_array_save, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
+            cu[ithread].EncodeCU(&m_bsf[bsf_id], 0, 0, RD_CU_ALL);
+        }
 
         if (m_pps.entropy_coding_sync_enabled_flag && ctb_col == 1)
             m_bsf[bsf_id].CtxSaveWPP(m_context_array_wpp_enc + NUM_CABAC_CONTEXT * ctb_row);
