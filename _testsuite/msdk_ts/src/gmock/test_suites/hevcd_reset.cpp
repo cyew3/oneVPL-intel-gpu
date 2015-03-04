@@ -171,7 +171,11 @@ int TestSuite::RunTest(unsigned int id)
     {
         m_bs_processor = &reader0;
         DecodeHeader();
+    } else
+    {
+        m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
     }
+
     m_par_set = true;
 
     apply_par(tc, INIT);
