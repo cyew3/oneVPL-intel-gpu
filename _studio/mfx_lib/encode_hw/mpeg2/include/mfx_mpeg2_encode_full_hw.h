@@ -128,6 +128,8 @@ namespace MPEG2EncoderHW
              {
                  m_pExecuteBuffers->m_mbqp_data[0] = 0;
              }
+             m_pExecuteBuffers->m_SkipFrame = (mfxU8)pIntTask->m_sEncodeInternalParams.SkipFrame;
+
              mfxStatus sts = MFX_ERR_NONE;
              sts = SubmitFrame(&pIntTask->m_FrameParams, &pIntTask->m_Frames, pUserData, userDataLen, qp);
              MFX_CHECK_STS (sts);
@@ -173,6 +175,7 @@ namespace MPEG2EncoderHW
              Ipp32s scale_code = 0;
              QuantIntoScaleTypeAndCode(qp, scale_type, scale_code);
              pIntTask->m_FrameParams.QuantScaleType = (Ipp8u)scale_type;
+             m_pExecuteBuffers->m_SkipFrame = (mfxU8)pIntTask->m_sEncodeInternalParams.SkipFrame;
 
              sts = SubmitFrame(&pIntTask->m_FrameParams, &pIntTask->m_Frames, pUserData, userDataLen, (mfxU8)scale_code, mbqp, numMB);
              MFX_CHECK_STS (sts);

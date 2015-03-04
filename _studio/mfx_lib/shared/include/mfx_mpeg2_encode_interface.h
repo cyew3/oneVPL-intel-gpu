@@ -107,6 +107,7 @@ namespace MfxHwMpeg2Encode
             : m_pSlice(0)
             , m_pMBs (0)
             , m_mbqp_data(0)
+            , m_SkipFrame(0)
             , m_pSurface(0)
             // , m_pSurfacePair(0)
             , m_idxMb(DWORD(-1))
@@ -147,6 +148,7 @@ namespace MfxHwMpeg2Encode
         ENCODE_ENC_MB_DATA_MPEG2*               m_pMBs;
         mfxU8*                                  m_mbqp_data;
         mfxExtVideoSignalInfo                   m_VideoSignalInfo;
+        mfxU8                                   m_SkipFrame;
 
 #if defined (MFX_VA_WIN)
         ENCODE_SET_PICTURE_QUANT                m_quantMatrix;

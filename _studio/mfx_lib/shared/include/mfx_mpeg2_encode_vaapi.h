@@ -92,6 +92,7 @@ namespace MfxHwMpeg2Encode
         mfxStatus FillUserDataBuffer(mfxU8 *pUserData, mfxU32 userDataLen);
         mfxStatus FillVideoSignalInfoBuffer(ExecuteBuffers* pExecuteBuffers);
         mfxStatus FillMBQPBuffer(ExecuteBuffers* pExecuteBuffers, mfxU8* mbqp, mfxU32 numMB);
+        mfxStatus FillSkipFrameBuffer(mfxU8 skipFlag);
 
         mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 func, mfxU8* pUserData, mfxU32 userDataLen);        
         mfxStatus Register (const mfxFrameAllocResponse* pResponse, D3DDDIFORMAT type);
@@ -119,10 +120,13 @@ namespace MfxHwMpeg2Encode
         VAEncMiscParameterBuffer           *m_pMiscParamsFps;
         VAEncMiscParameterBuffer           *m_pMiscParamsPrivate;
         VAEncMiscParameterBuffer           *m_pMiscParamsSeqInfo;
+        VAEncMiscParameterBuffer           *m_pMiscParamsSkipFrame;
+        
 
         VABufferID                          m_miscParamFpsId;
         VABufferID                          m_miscParamPrivateId;
         VABufferID                          m_miscParamSeqInfoId;
+        VABufferID                          m_miscParamSkipFrameId;
         VABufferID                          m_packedUserDataParamsId;
         VABufferID                          m_packedUserDataId;
         VABufferID                          m_mbqpBufferId;

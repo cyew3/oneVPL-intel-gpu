@@ -148,6 +148,7 @@ namespace MPEG2EncoderHW
             ,MFX_EXTBUFF_PAVP_OPTION
 #endif   
             ,MFX_EXTBUFF_QM
+            ,MFX_EXTBUFF_CODING_OPTION2
             ,MFX_EXTBUFF_CODING_OPTION3
         };
         mfxU32 num_supported = 0;
@@ -1006,6 +1007,16 @@ namespace MPEG2EncoderHW
                 out->mfx.RateControlMethod = MFX_RATECONTROL_VBR;
                 bWarning = true;
             }
+            mfxExtCodingOption2 * extOpt2 = (mfxExtCodingOption2 *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_CODING_OPTION2);
+            if (extOpt2 && extOpt2->SkipFrame)
+            {
+                // TODO: check hwCaps
+                if (extOpt2->SkipFrame != MFX_SKIPFRAME_INSERT_DUMMY || out->mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+                {
+                    extOpt2->SkipFrame = 0;
+                    bWarning = true;
+                }
+            }
 
             mfxExtCodingOption3 * extOpt3 = (mfxExtCodingOption3 *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_CODING_OPTION3);
             if (extOpt3 && extOpt3->EnableMBQP == MFX_CODINGOPTION_ON)
@@ -1414,6 +1425,12 @@ namespace MPEG2EncoderHW
             m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
         }
 
+        mfxExtCodingOption2 * extOpt2 = (mfxExtCodingOption2 *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION2);
+        if (extOpt2 && extOpt2->SkipFrame)
+        {
+            
+        }
+
         mfxExtCodingOption3 * extOpt3 = (mfxExtCodingOption3 *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION3);
         if (extOpt3 && extOpt3->EnableMBQP == MFX_CODINGOPTION_ON)
         {
@@ -1783,6 +1800,7 @@ namespace MPEG2EncoderHW
                 pInternalParams->NumPayload  = ctrl->NumPayload;
                 pInternalParams->Payload     = ctrl->Payload;
                 pInternalParams->QP          = ctrl->QP;
+                pInternalParams->SkipFrame   = ctrl->SkipFrame;
             }
             else
             {
@@ -1790,7 +1808,8 @@ namespace MPEG2EncoderHW
                 pInternalParams->NumExtParam = 0;
                 pInternalParams->NumPayload  = 0;
                 pInternalParams->Payload     = 0;
-                pInternalParams->QP          = 0;     
+                pInternalParams->QP          = 0;
+                pInternalParams->SkipFrame   = 0;
             }
 
             *reordered_surface = GetOpaqSurface(surface);
