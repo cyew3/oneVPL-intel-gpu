@@ -165,6 +165,12 @@ public:
                   case  MFX_EXTBUF_CAM_PIPECONTROL:
                     str += dump(name, *((mfxExtCamPipeControl*)_struct.ExtParam[i])) + "\n";
                     break;
+                  case  MFX_EXTBUFF_LOOKAHEAD_CTRL:
+                    str += dump(name, *((mfxExtLAControl*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_LOOKAHEAD_STAT:
+                    str += dump(name, *((mfxExtLAFrameStatistics*)_struct.ExtParam[i])) + "\n";
+                    break;
                   default:
                     str += dump(name, *(_struct.ExtParam[i])) + "\n";
                     break;
