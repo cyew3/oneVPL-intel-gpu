@@ -301,9 +301,6 @@
     <ClCompile Include="src\gmock\test_suites\avce_co2_use_rawref.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\ptir_time_stamps.cpp">
-      <Filter>Source Files\test_suites\ptir</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\mjpegd_init.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
@@ -350,6 +347,9 @@
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\screen_capture_decode_frame_async.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\screen_capture_close.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
   </ItemGroup>
