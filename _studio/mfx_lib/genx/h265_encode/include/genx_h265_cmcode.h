@@ -17,6 +17,7 @@
 #pragma warning(disable: 4505)
 #include <cm.h>
 #include <genx_vme.h>
+#include <cmtl.h>
 #include "../include/utility_genx.h"
 
 using namespace cmut;
@@ -72,8 +73,8 @@ inline _GENX_ matrix<float, R, C> cm_atan2_fast2(matrix_ref<int2, R, C> y, matri
         vector<float, 16> a1;
         a0 = (float)(CM_CONST_PI * 0.75 + 2.0 * CM_CONST_PI / 33.0);
         a1 = (float)(CM_CONST_PI * 0.25 + 2.0 * CM_CONST_PI / 33.0);
-        matrix<float, 1, 16> fx = x.select<16/C, 1, C, 1>(i/C, 0);
-        matrix<float, 1, 16> fy = y.select<16 / C, 1, C, 1>(i / C, 0);
+        matrix<float, 1, 16> fx = x.template select<16/C, 1, C, 1>(i/C, 0);
+        matrix<float, 1, 16> fy = y.template select<16 / C, 1, C, 1>(i / C, 0);
 
         matrix<float, 1, 16> xy = fx * fy;
         fx = fx * fx;
@@ -82,7 +83,7 @@ inline _GENX_ matrix<float, R, C> cm_atan2_fast2(matrix_ref<int2, R, C> y, matri
         a0 -= (xy / (fy + 0.28f * fx));
         a1 += (xy / (fx + 0.28f * fy));
 
-        atan2.select<16 / C, 1, C, 1>(i / C, 0).merge(a1, a0, cm_abs<int2>(y.select<16 / C, 1, C, 1>(i / C, 0)) <= cm_abs<int2>(x.select<16 / C, 1, C, 1>(i / C, 0)));
+        atan2.template select<16 / C, 1, C, 1>(i / C, 0).merge(a1, a0, cm_abs<int2>(y.template select<16 / C, 1, C, 1>(i / C, 0)) <= cm_abs<int2>(x.template select<16 / C, 1, C, 1>(i / C, 0)));
     }
     atan2 = matrix<float, R, C>(atan2, (flags & SAT));
     return atan2;
@@ -139,7 +140,7 @@ FindBestMod(vector_ref<Tamp, 36>hist, uint4 &maxCombineOut)
 
 void _GENX_ inline InitGlobalVariables()
 {
-    cm_vector_assign(g_Oneto36.select<g_Oneto36.SZ, 1>(0), 0, 1);
+    cmtl::cm_vector_assign(g_Oneto36.select<g_Oneto36.SZ, 1>(0), 0, 1);
 }
 
 extern "C" _GENX_MAIN_  void
@@ -197,7 +198,6 @@ AnalyzeGradient2(SurfaceIndex SURF_SRC,
     write(SURF_GRADIENT_8x8, offset + 64, cmut_slice<8>(histogram8x8, 32));
 }
 
-
 extern "C" _GENX_MAIN_  void
 AnalyzeGradient3(SurfaceIndex SURF_SRC,
                  SurfaceIndex SURF_GRADIENT_4x4,
@@ -235,7 +235,7 @@ AnalyzeGradient3(SurfaceIndex SURF_SRC,
             ReadGradient(SURF_SRC, xBase + xBlk8, yBase + yBlk8, dx, dy);
             Gradiant2AngAmp_MaskAtan2(dx, dy, ang, amp);
 
-            uint offset = (yBase + yBlk8 >> 2) * histLineSize + (xBase + xBlk8) * (HISTSIZE / 4);
+            uint offset = ((yBase + yBlk8) >> 2) * histLineSize + (xBase + xBlk8) * (HISTSIZE / 4);
 #pragma unroll
             for (int yBlk4 = 0; yBlk4 < 8; yBlk4 += 4) {
 #pragma unroll
@@ -253,7 +253,7 @@ AnalyzeGradient3(SurfaceIndex SURF_SRC,
                 offset += nextLine;
             }
 
-            offset = ((width / 8) * (yBase + yBlk8 >> 3) + (xBase + xBlk8 >> 3)) * HISTSIZE;
+            offset = ((width / 8) * ((yBase + yBlk8) >> 3) + ((xBase + xBlk8) >> 3)) * HISTSIZE;
             write(SURF_GRADIENT_8x8, offset + 0, cmut_slice<32>(histogram8x8, 0));
             write(SURF_GRADIENT_8x8, offset + 64, cmut_slice<8>(histogram8x8, 32));
         }
@@ -470,20 +470,20 @@ void HoriDiagInterpolate(matrix<uint1, H+3, W*2> &data, matrix<uint1, H, W> &out
     matrix<int2, BLOCK_H, W> interH; // x+0.5, y+0
     matrix<int2, H, W> interD; // x+0.5, y+0.5
 
-    matrix_ref<uint1, BLOCK_H, W>x_2  = data.select<BLOCK_H, 1, W, 1>(0, 0); // x-1, y>=-1
-    matrix_ref<uint1, BLOCK_H, W>x0   = data.select<BLOCK_H, 1, W, 1>(0, 1); // x+0
-    matrix_ref<uint1, BLOCK_H, W>x2   = data.select<BLOCK_H, 1, W, 1>(0, 2); // x+1
-    matrix_ref<uint1, BLOCK_H, W>x4   = data.select<BLOCK_H, 1, W, 1>(0, 3); // x+2
+    matrix_ref<uint1, BLOCK_H, W>x_2  = data.template select<BLOCK_H, 1, W, 1>(0, 0); // x-1, y>=-1
+    matrix_ref<uint1, BLOCK_H, W>x0   = data.template select<BLOCK_H, 1, W, 1>(0, 1); // x+0
+    matrix_ref<uint1, BLOCK_H, W>x2   = data.template select<BLOCK_H, 1, W, 1>(0, 2); // x+1
+    matrix_ref<uint1, BLOCK_H, W>x4   = data.template select<BLOCK_H, 1, W, 1>(0, 3); // x+2
 
     matrix<int2, BLOCK_H, W> h_tmp = x0 + x2;
     interH = h_tmp * 5;
     interH -= x_2;
     interH -= x4;
     
-    matrix_ref<int2, H, W>x1y_2  = interH.select<H, 1, W, 1>(0, 0); // y-1, x>=0.5
-    matrix_ref<int2, H, W>x1y0   = interH.select<H, 1, W, 1>(1, 0); // y+0
-    matrix_ref<int2, H, W>x1y2   = interH.select<H, 1, W, 1>(2, 0); // y+1
-    matrix_ref<int2, H, W>x1y4   = interH.select<H, 1, W, 1>(3, 0); // y+2
+    matrix_ref<int2, H, W>x1y_2  = interH.template select<H, 1, W, 1>(0, 0); // y-1, x>=0.5
+    matrix_ref<int2, H, W>x1y0   = interH.template select<H, 1, W, 1>(1, 0); // y+0
+    matrix_ref<int2, H, W>x1y2   = interH.template select<H, 1, W, 1>(2, 0); // y+1
+    matrix_ref<int2, H, W>x1y4   = interH.template select<H, 1, W, 1>(3, 0); // y+2
 
     matrix<int2, H, W> d_tmp = x1y0 + x1y2;
     interD = d_tmp * 5;
@@ -493,7 +493,7 @@ void HoriDiagInterpolate(matrix<uint1, H+3, W*2> &data, matrix<uint1, H, W> &out
     outD = cm_shr<uint1>(interD, 6, SAT);
     
     interH += 4;
-    outH = cm_shr<uint1>(interH.select<H, 1, W, 1>(1, 0), 3, SAT);
+    outH = cm_shr<uint1>(interH.template select<H, 1, W, 1>(1, 0), 3, SAT);
 }
 
 template <uint W, uint H, uint B>
@@ -527,10 +527,10 @@ void VerticalInterpolate(matrix<uint1, H+3, W> &data, matrix<uint1, H, W> &outV)
 {
     matrix<int2, H, W> interV; // x+0, y+0.5
 
-    matrix_ref<uint1, H, W>y_2  = data.select<H, 1, W, 1>(0, 0); // y-1, x>=0
-    matrix_ref<uint1, H, W>y0   = data.select<H, 1, W, 1>(1, 0); // y+0
-    matrix_ref<uint1, H, W>y2   = data.select<H, 1, W, 1>(2, 0); // y+1
-    matrix_ref<uint1, H, W>y4   = data.select<H, 1, W, 1>(3, 0); // y+2
+    matrix_ref<uint1, H, W>y_2  = data.template select<H, 1, W, 1>(0, 0); // y-1, x>=0
+    matrix_ref<uint1, H, W>y0   = data.template select<H, 1, W, 1>(1, 0); // y+0
+    matrix_ref<uint1, H, W>y2   = data.template select<H, 1, W, 1>(2, 0); // y+1
+    matrix_ref<uint1, H, W>y4   = data.template select<H, 1, W, 1>(3, 0); // y+2
 
     matrix<int2, H, W> v_tmp = y0 + y2;
     interV = v_tmp * 5;
@@ -566,8 +566,8 @@ template<uint R, uint C, uint WIDTH>
 void _GENX_ inline sad_fixWidth(matrix_ref<uchar, R, C> a, matrix_ref<uchar, R, C> b, vector<ushort, WIDTH> &sum) {
     
     sum = 0;
-    matrix_ref<uchar, R*C/WIDTH, WIDTH> a_ref = a.format<uchar, R*C/WIDTH, WIDTH>();
-    matrix_ref<uchar, R*C/WIDTH, WIDTH> b_ref = b.format<uchar, R*C/WIDTH, WIDTH>();
+    matrix_ref<uchar, R*C/WIDTH, WIDTH> a_ref = a.template format<uchar, R*C/WIDTH, WIDTH>();
+    matrix_ref<uchar, R*C/WIDTH, WIDTH> b_ref = b.template format<uchar, R*C/WIDTH, WIDTH>();
 
 #pragma unroll
     for (int i = 0; i<R*C/WIDTH; i++) {
@@ -594,39 +594,39 @@ void CalcQpelSADFromIntPel(matrix<uint1, BLOCKH, BLOCKW> m_ref_left,
     vector<ushort, SAD_WIDTH> m_sad;
 
     m_avg = cm_avg<uint1>(m_ref_top, m_ref_left);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(0) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));    
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(0) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));    
 
     m_avg = cm_avg<uint1>(m_ref_top, m_ref);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(1) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(1) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
 
     m_avg = cm_avg<uint1>(m_ref_top, m_ref_right);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(2) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(2) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
 
     m_avg = cm_avg<uint1>(m_ref, m_ref_left);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(3) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(3) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
 
-    sad_fixWidth(m_ref.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(4) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0)); 
+    sad_fixWidth(m_ref.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(4) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0)); 
 
     m_avg = cm_avg<uint1>(m_ref, m_ref_right);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(5) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(5) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
  
     m_avg = cm_avg<uint1>(m_ref_bot, m_ref_left);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(6) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(6) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
 
     m_avg = cm_avg<uint1>(m_ref_bot, m_ref);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(7) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));    
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(7) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));    
 
     m_avg = cm_avg<uint1>(m_ref_bot, m_ref_right);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(8) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(8) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
 }
 
 
@@ -653,39 +653,39 @@ void CalcQpelSADFromHalfPel( matrix<uint1, BLOCKH, BLOCKW> m_ref_left,
     vector<ushort, SAD_WIDTH> m_sad;
  
     m_avg = cm_avg<uint1>(m_ref, m_ref_topleft);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH,1,BLOCKW,1>(0,0), m_sad);
-    sad(0) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH,1,BLOCKW,1>(0,0), m_sad);
+    sad(0) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
 
     m_avg = cm_avg<uint1>(m_ref, m_ref_top);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(1) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(1) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
 
     m_avg = cm_avg<uint1>(m_ref, m_ref_topright);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(2) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(2) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
 
     m_avg = cm_avg<uint1>(m_ref, m_ref_left);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(3) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(3) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
 
-    sad_fixWidth(m_ref.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(4) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0)); 
+    sad_fixWidth(m_ref.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(4) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0)); 
 
     m_avg = cm_avg<uint1>(m_ref, m_ref_right);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(5) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(5) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
  
     m_avg = cm_avg<uint1>(m_ref, m_ref_botleft);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(6) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(6) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
 
     m_avg = cm_avg<uint1>(m_ref, m_ref_bot);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(7) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(7) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
 
     m_avg = cm_avg<uint1>(m_ref, m_ref_botright);
-    sad_fixWidth(m_avg.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
-    sad(8) = cm_sum<uint>(m_sad.select<SAD_WIDTH/2, 2>(0));   
+    sad_fixWidth(m_avg.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_src.template select<BLOCKH, 1, BLOCKW, 1>(0,0), m_sad);
+    sad(8) = cm_sum<uint>(m_sad.template select<SAD_WIDTH/2, 2>(0));   
 }
 
 template <uint BLOCKW, uint BLOCKH>
@@ -711,9 +711,9 @@ void read_block(SurfaceIndex SURF_IN, uint x, uint y, matrix<uint1, BLOCKH, BLOC
         #pragma unroll
         for (int i=0; i<count-1; i++)
         {
-            read(SURF_IN, x, y+lines*i, m_in.select<lines, 1, BLOCKW, 1>(lines*i, 0));
+            read(SURF_IN, x, y+lines*i, m_in.template select<lines, 1, BLOCKW, 1>(lines*i, 0));
         }
-        read(SURF_IN, x, y+done, m_in.select<rest, 1, BLOCKW, 1>(done, 0));
+        read(SURF_IN, x, y+done, m_in.template select<rest, 1, BLOCKW, 1>(done, 0));
     }
 }
 
@@ -749,10 +749,10 @@ void InterpolateQpelAtIntPel(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, Surfa
             
             vector< uint,9 > sad_inter;
 
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_left = m_ref_hori.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_right = m_ref_hori.select<BLOCKH, 1, BLOCKW, 1>(0, 1);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_top = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_bot = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(1, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_left = m_ref_hori.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_right = m_ref_hori.template select<BLOCKH, 1, BLOCKW, 1>(0, 1);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_top = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_bot = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(1, 0);
 
             CalcQpelSADFromIntPel<BLOCKW, BLOCKH>(m_ref_left, m_ref_right, m_ref_top, m_ref_bot, m_ref, m_src, sad_inter);
             sad += sad_inter;
@@ -790,10 +790,10 @@ void InterpolateQpelAtHalfPelDiag(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, 
             read_block(SURF_HPEL_VERT, xref+BORDER, yref+BORDER,  m_ref_vert);
             vector< uint,9 > sad_inter;
 
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_left = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_right = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(0, 1);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_top = m_ref_hori.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_bot = m_ref_hori.select<BLOCKH, 1, BLOCKW, 1>(1, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_left = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_right = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(0, 1);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_top = m_ref_hori.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_bot = m_ref_hori.template select<BLOCKH, 1, BLOCKW, 1>(1, 0);
 
             CalcQpelSADFromIntPel<BLOCKW, BLOCKH>(m_ref_left, m_ref_right, m_ref_top, m_ref_bot, m_ref, m_src, sad_inter);
             sad += sad_inter;
@@ -833,15 +833,15 @@ void InterpolateQpelAtHalfPelHorz(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, 
             read_block(SURF_HPEL_VERT, xref+BORDER, yref-1+BORDER,  m_ref_vert);
             vector< uint,9 > sad_inter;
 
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_left = m_ref.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_right = m_ref.select<BLOCKH, 1, BLOCKW, 1>(0, 1);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_top = m_ref_diag.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_bot = m_ref_diag.select<BLOCKH, 1, BLOCKW, 1>(1, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_left = m_ref.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_right = m_ref.template select<BLOCKH, 1, BLOCKW, 1>(0, 1);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_top = m_ref_diag.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_bot = m_ref_diag.template select<BLOCKH, 1, BLOCKW, 1>(1, 0);
 
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_topleft = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_topright = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(0, 1);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_botleft = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(1, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_botright = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(1, 1);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_topleft = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_topright = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(0, 1);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_botleft = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(1, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_botright = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(1, 1);
 
             CalcQpelSADFromHalfPel<BLOCKW, BLOCKH>(m_ref_left, m_ref_right, m_ref_top, m_ref_bot, 
                 m_ref_topleft, m_ref_topright, m_ref_botleft, m_ref_botright, m_ref_hori, m_src, sad_inter);
@@ -882,15 +882,15 @@ void InterpolateQpelAtHalfPelVert(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, 
             read_block(SURF_HPEL_VERT, xref+BORDER, yref+BORDER,  m_ref_vert);
             vector< uint,9 > sad_inter;
 
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_left = m_ref_diag.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_right = m_ref_diag.select<BLOCKH, 1, BLOCKW, 1>(0, 1);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_top = m_ref.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_bot = m_ref.select<BLOCKH, 1, BLOCKW, 1>(1, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_left = m_ref_diag.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_right = m_ref_diag.template select<BLOCKH, 1, BLOCKW, 1>(0, 1);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_top = m_ref.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_bot = m_ref.template select<BLOCKH, 1, BLOCKW, 1>(1, 0);
 
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_topleft = m_ref_hori.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_topright = m_ref_hori.select<BLOCKH, 1, BLOCKW, 1>(0, 1);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_botleft = m_ref_hori.select<BLOCKH, 1, BLOCKW, 1>(1, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_botright = m_ref_hori.select<BLOCKH, 1, BLOCKW, 1>(1, 1);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_topleft = m_ref_hori.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_topright = m_ref_hori.template select<BLOCKH, 1, BLOCKW, 1>(0, 1);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_botleft = m_ref_hori.template select<BLOCKH, 1, BLOCKW, 1>(1, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_botright = m_ref_hori.template select<BLOCKH, 1, BLOCKW, 1>(1, 1);
 
             CalcQpelSADFromHalfPel<BLOCKW, BLOCKH>(m_ref_left, m_ref_right, m_ref_top, m_ref_bot, 
                 m_ref_topleft, m_ref_topright, m_ref_botleft, m_ref_botright, m_ref_vert, m_src, sad_inter);
@@ -928,24 +928,24 @@ vector< uint,9 > QpelRefinement(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, Su
 template<uint W, uint H>
 void _GENX_ inline transpose4Lines(matrix<short, H, W>& a) {
    
-    matrix_ref<int, H, W/2> a_int = a.format<int, H, W/2>();
+    matrix_ref<int, H, W/2> a_int = a.template format<int, H, W/2>();
     matrix<short, 2, W/2> b;
-    matrix_ref<int, 2, W/4> b_int = b.format<int, 2, W/4>();
+    matrix_ref<int, 2, W/4> b_int = b.template format<int, 2, W/4>();
 
 #pragma unroll
     for (int i=0; i<H/4; i++)
     {
-        b_int = a_int.select<2, 1, W/4, 2>(i*4, 1);
-        a_int.select<2, 1, W/4, 2>(i*4, 1) = a_int.select<2, 1, W/4, 2>(i*4+2, 0);
-        a_int.select<2, 1, W/4, 2>(i*4+2, 0) = b_int;
+        b_int = a_int.template select<2, 1, W/4, 2>(i*4, 1);
+        a_int.template select<2, 1, W/4, 2>(i*4, 1) = a_int.template select<2, 1, W/4, 2>(i*4+2, 0);
+        a_int.template select<2, 1, W/4, 2>(i*4+2, 0) = b_int;
     }
 
 #pragma unroll
     for (int i=0; i<H/4; i++)
     {
-        b = a.select<2, 2, W/2, 2>(i*4, 1);
-        a.select<2, 2, W/2, 2>(i*4, 1) = a.select<2, 2, W/2, 2>(i*4+1, 0);
-        a.select<2, 2, W/2, 2>(i*4+1, 0) = b;
+        b = a.template select<2, 2, W/2, 2>(i*4, 1);
+        a.template select<2, 2, W/2, 2>(i*4, 1) = a.template select<2, 2, W/2, 2>(i*4+1, 0);
+        a.template select<2, 2, W/2, 2>(i*4+1, 0) = b;
     }
     
 }
@@ -960,30 +960,30 @@ void _GENX_ inline transpose8Lines(matrix<short, H, W>& a) {
 #pragma unroll
         for (int j=0; j<W/8; j++)
         {
-            b = a.select<4, 1, 4, 1>(i*8, j*8+4);
-            a.select<4, 1, 4, 1>(i*8, j*8+4) = a.select<4, 1, 4, 1>(i*8+4, j*8);
-            a.select<4, 1, 4, 1>(i*8+4, j*8) = b;
+            b = a.template select<4, 1, 4, 1>(i*8, j*8+4);
+            a.template select<4, 1, 4, 1>(i*8, j*8+4) = a.template select<4, 1, 4, 1>(i*8+4, j*8);
+            a.template select<4, 1, 4, 1>(i*8+4, j*8) = b;
         }
     }
 
     matrix<short, 2, W/2> c;
-    matrix_ref<int, 2, W/4> c_int = c.format<int, 2, W/4>();
-    matrix_ref<int, H, W/2> a_int = a.format<int, H, W/2>();
+    matrix_ref<int, 2, W/4> c_int = c.template format<int, 2, W/4>();
+    matrix_ref<int, H, W/2> a_int = a.template format<int, H, W/2>();
 
 #pragma unroll
     for (int i=0; i<H/4; i++)
     {
-        c_int = a_int.select<2, 1, W/4, 2>(i*4, 1);
-        a_int.select<2, 1, W/4, 2>(i*4, 1) = a_int.select<2, 1, W/4, 2>(i*4+2, 0);
-        a_int.select<2, 1, W/4, 2>(i*4+2, 0) = c_int;
+        c_int = a_int.template select<2, 1, W/4, 2>(i*4, 1);
+        a_int.template select<2, 1, W/4, 2>(i*4, 1) = a_int.template select<2, 1, W/4, 2>(i*4+2, 0);
+        a_int.template select<2, 1, W/4, 2>(i*4+2, 0) = c_int;
     }
 
 #pragma unroll
     for (int i=0; i<H/4; i++)
     {
-        c = a.select<2, 2, W/2, 2>(i*4, 1);
-        a.select<2, 2, W/2, 2>(i*4, 1) = a.select<2, 2, W/2, 2>(i*4+1, 0);
-        a.select<2, 2, W/2, 2>(i*4+1, 0) = c;
+        c = a.template select<2, 2, W/2, 2>(i*4, 1);
+        a.template select<2, 2, W/2, 2>(i*4, 1) = a.template select<2, 2, W/2, 2>(i*4+1, 0);
+        a.template select<2, 2, W/2, 2>(i*4+1, 0) = c;
     }
 }
 
@@ -1309,10 +1309,10 @@ void InterpolateQpelAtIntDiagPelSATD(SurfaceIndex SURF_SRC, SurfaceIndex SURF_RE
             
             vector< uint,9 > sad_inter;
 
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_left = m_ref_hori.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_right = m_ref_hori.select<BLOCKH, 1, BLOCKW, 1>(0, 1);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_top = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_bot = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(1, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_left = m_ref_hori.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_right = m_ref_hori.template select<BLOCKH, 1, BLOCKW, 1>(0, 1);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_top = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_bot = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(1, 0);
 
             if (MODE_SATD4 == SADMODE)
             {
@@ -1370,15 +1370,15 @@ void InterpolateQpelAtHoriVertPelSATD(SurfaceIndex SURF_SRC, SurfaceIndex SURF_R
 
             vector< uint,9 > sad_inter;
 
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_left = m_ref.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_right = m_ref.select<BLOCKH, 1, BLOCKW, 1>(0, 1);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_top = m_ref_diag.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_bot = m_ref_diag.select<BLOCKH, 1, BLOCKW, 1>(1, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_left = m_ref.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_right = m_ref.template select<BLOCKH, 1, BLOCKW, 1>(0, 1);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_top = m_ref_diag.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_bot = m_ref_diag.template select<BLOCKH, 1, BLOCKW, 1>(1, 0);
 
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_topleft = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(0, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_topright = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(0, 1);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_botleft = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(1, 0);
-            matrix<uint1, BLOCKH, BLOCKW> m_ref_botright = m_ref_vert.select<BLOCKH, 1, BLOCKW, 1>(1, 1);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_topleft = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(0, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_topright = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(0, 1);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_botleft = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(1, 0);
+            matrix<uint1, BLOCKH, BLOCKW> m_ref_botright = m_ref_vert.template select<BLOCKH, 1, BLOCKW, 1>(1, 1);
 
             if (MODE_SATD4 == SADMODE) 
             {
@@ -1410,9 +1410,9 @@ vector< uint,9 > QpelRefinementSATD(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF
     hpelMvy &= 3;
     vector< uint,9 > sad;
 
-    if (hpelMvx == 0 && hpelMvy == 0 || hpelMvx == 2 && hpelMvy == 2)
+    if ((hpelMvx == 0 && hpelMvy == 0) || (hpelMvx == 2 && hpelMvy == 2))
         InterpolateQpelAtIntDiagPelSATD< W, H, BLOCKW, BLOCKH, SADMODE >( SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, xref, yref, hpelMvx, hpelMvy, sad );
-    else if (hpelMvx == 2 && hpelMvy == 0 || hpelMvx == 0 && hpelMvy == 2)
+    else if ((hpelMvx == 2 && hpelMvy == 0) || (hpelMvx == 0 && hpelMvy == 2))
         InterpolateQpelAtHoriVertPelSATD< W, H, BLOCKW, BLOCKH, SADMODE >( SURF_SRC, SURF_REF, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y, xref, yref, hpelMvx, hpelMvy, sad );
     return sad;
 }

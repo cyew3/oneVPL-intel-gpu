@@ -31,8 +31,10 @@
 
 #define SELECT_N_ROWS(m, from, nrows) m.select<nrows, 1, m.COLS, 1>(from)
 #define SELECT_N_COLS(m, from, ncols) m.select<m.ROWS, 1, ncols, 1>(0, from)
-#define NROWS(m, from, nrows) SELECT_N_ROWS(m, from, nrows)
-#define NCOLS(m, from, ncols) SELECT_N_COLS(m, from, ncols)
+#define SELECT_N_ROWS_TEMPL(m, from, nrows) m.template select<nrows, 1, m.COLS, 1>(from)
+#define SELECT_N_COLS_TEMPL(m, from, ncols) m.template select<m.ROWS, 1, ncols, 1>(0, from)
+#define NROWS(m, from, nrows) SELECT_N_ROWS_TEMPL(m, from, nrows)
+#define NCOLS(m, from, ncols) SELECT_N_COLS_TEMPL(m, from, ncols)
 #define SLICE(VEC, FROM, HOWMANY, STEP) ((VEC).select<HOWMANY, STEP>(FROM))
 #define SLICE1(VEC, FROM, HOWMANY) SLICE(VEC, FROM, HOWMANY, 1)
 
@@ -453,7 +455,7 @@ _GENX_ inline
 void DebugUniOutput(matrix_ref<uchar, N, 32> uniOut)
 {
     assert(N==7||N==9);
-    matrix_ref<uchar, 7, 32> uniOut7 = SELECT_N_ROWS(uniOut, 0, 7);
+    matrix_ref<uchar, 7, 32> uniOut7 = SELECT_N_ROWS_TEMPL(uniOut, 0, 7);
 
     // W0.0
     ushort InterMbMode, IntraMbMode, FieldMbPolarityFlag, InterMbType, FieldMbFlag, Transform8x8Flag, IntraMbType, ExtendedForm, MvQuantity;
@@ -698,7 +700,7 @@ void Interpolate(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, int xsrc, int ysr
     sad = 0;
 
     read_plane(SURF_SRC, GENX_SURFACE_Y_PLANE, xsrc+0, ysrc+0, src.row(0));
-    read_plane_wide(SURF_REF, GENX_SURFACE_Y_PLANE, xref-2, yref-2, SELECT_N_COLS(fp, 0, W+4));
+    read_plane_wide(SURF_REF, GENX_SURFACE_Y_PLANE, xref-2, yref-2, SELECT_N_COLS_TEMPL(fp, 0, W+4));
 
     tmpN  = SLICE1(fp.row(2), 1, W+1) + SLICE1(fp.row(2), 2, W+1);
     tmpN *= 5;
@@ -833,13 +835,13 @@ void InterpolateSmallBlocks(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, int xs
 
     read_plane(SURF_SRC, GENX_SURFACE_Y_PLANE, xsrc+0, ysrc+0, src);
     //matrix<uchar, H+4, W+4> readBuf;
-    //read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref-2, yref-2,     SELECT_N_ROWS(readBuf, 0,   H/2));
-    //read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref-2, yref-2+H/2, SELECT_N_ROWS(readBuf, H/2, H/2));
-    //fp0 = SELECT_N_COLS(readBuf, 0, W);
-    //fp1 = SELECT_N_COLS(readBuf, 1, W);
-    //fp2 = SELECT_N_COLS(readBuf, 2, W);
-    //fp3 = SELECT_N_COLS(readBuf, 3, W);
-    //fp4 = SELECT_N_COLS(readBuf, 4, W);
+    //read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref-2, yref-2,     SELECT_N_ROWS_TEMPL(readBuf, 0,   H/2));
+    //read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref-2, yref-2+H/2, SELECT_N_ROWS_TEMPL(readBuf, H/2, H/2));
+    //fp0 = SELECT_N_COLS_TEMPL(readBuf, 0, W);
+    //fp1 = SELECT_N_COLS_TEMPL(readBuf, 1, W);
+    //fp2 = SELECT_N_COLS_TEMPL(readBuf, 2, W);
+    //fp3 = SELECT_N_COLS_TEMPL(readBuf, 3, W);
+    //fp4 = SELECT_N_COLS_TEMPL(readBuf, 4, W);
     read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref-2, yref-2, fp0);
     read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref-1, yref-2, fp1);
     read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref+0, yref-2, fp2);
@@ -850,23 +852,23 @@ void InterpolateSmallBlocks(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, int xs
     tmpH *= 5;
     tmpH -= fp0;
     tmpH -= fp3;
-    tmpH2 = SELECT_N_ROWS(tmpH, 2, H) + 4;
+    tmpH2 = SELECT_N_ROWS_TEMPL(tmpH, 2, H) + 4;
     hpH = cm_shr<uchar>(tmpH2, 3, SAT);
     sad[DIR_L] += cm_sum<ushort>(cm_sad2<short>(hpH, src).select<W*H/2,2>(0));
 
-    tmpD  = SELECT_N_ROWS(tmpH, 1, H+1) + SELECT_N_ROWS(tmpH, 2, H+1);
+    tmpD  = SELECT_N_ROWS_TEMPL(tmpH, 1, H+1) + SELECT_N_ROWS_TEMPL(tmpH, 2, H+1);
     tmpD *= 5;
-    tmpD -= SELECT_N_ROWS(tmpH, 0, H+1);
-    tmpD -= SELECT_N_ROWS(tmpH, 3, H+1);
+    tmpD -= SELECT_N_ROWS_TEMPL(tmpH, 0, H+1);
+    tmpD -= SELECT_N_ROWS_TEMPL(tmpH, 3, H+1);
     tmpD += 32;
     hpD = cm_shr<uchar>(tmpD, 6, SAT);
     sad(DIR_UL) += cm_sum<ushort>(cm_sad2<ushort>(hpD.select<H,1,W,1>(0,0), src).select<W*H/2,2>(0));
     sad(DIR_DL) += cm_sum<ushort>(cm_sad2<ushort>(hpD.select<H,1,W,1>(1,0), src).select<W*H/2,2>(0));
 
-    tmpV  = SELECT_N_ROWS(fp2, 1, H+1) + SELECT_N_ROWS(fp2, 2, H+1);
+    tmpV  = SELECT_N_ROWS_TEMPL(fp2, 1, H+1) + SELECT_N_ROWS_TEMPL(fp2, 2, H+1);
     tmpV *= 5;
-    tmpV -= SELECT_N_ROWS(fp2, 0, H+1);
-    tmpV -= SELECT_N_ROWS(fp2, 3, H+1);
+    tmpV -= SELECT_N_ROWS_TEMPL(fp2, 0, H+1);
+    tmpV -= SELECT_N_ROWS_TEMPL(fp2, 3, H+1);
     tmpV += 4;
     hpV = cm_shr<uchar>(tmpV, 3, SAT);
     sad(DIR_U) += cm_sum<ushort>(cm_sad2<ushort>(hpV.select<H,1,W,1>(0,0), src).select<W*H/2,2>(0));
@@ -876,42 +878,42 @@ void InterpolateSmallBlocks(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, int xs
     tmpH *= 5;
     tmpH -= fp1;
     tmpH -= fp4;
-    tmpH2 = SELECT_N_ROWS(tmpH, 2, H) + 4;
+    tmpH2 = SELECT_N_ROWS_TEMPL(tmpH, 2, H) + 4;
     hpH = cm_shr<uchar>(tmpH2, 3, SAT);
     sad(DIR_R) += cm_sum<ushort>(cm_sad2<ushort>(hpH, src).select<W*H/2,2>(0));
 
-    tmpD  = SELECT_N_ROWS(tmpH, 1, H+1) + SELECT_N_ROWS(tmpH, 2, H+1);
+    tmpD  = SELECT_N_ROWS_TEMPL(tmpH, 1, H+1) + SELECT_N_ROWS_TEMPL(tmpH, 2, H+1);
     tmpD *= 5;
-    tmpD -= SELECT_N_ROWS(tmpH, 0, H+1);
-    tmpD -= SELECT_N_ROWS(tmpH, 3, H+1);
+    tmpD -= SELECT_N_ROWS_TEMPL(tmpH, 0, H+1);
+    tmpD -= SELECT_N_ROWS_TEMPL(tmpH, 3, H+1);
     tmpD += 32;
     hpD = cm_shr<uchar>(tmpD, 6, SAT);
     sad(DIR_UR) += cm_sum<ushort>(cm_sad2<ushort>(hpD.select<H,1,W,1>(0,0), src).select<W*H/2,2>(0));
     sad(DIR_DR) += cm_sum<ushort>(cm_sad2<ushort>(hpD.select<H,1,W,1>(1,0), src).select<W*H/2,2>(0));
 }
 
-#define CALC_SAD(sad, ref, src) sad = cm_sad2<ushort>(ref, src).select<W/2,2>(0)
-#define CALC_SAD_ACC(sad, ref, src) sad += cm_sad2<ushort>(ref, src).select<W/2,2>(0)
+#define CALC_SAD(sad, ref, src) sad = cm_sad2<ushort>(ref, src).template select<W/2,2>(0)
+#define CALC_SAD_ACC(sad, ref, src) sad += cm_sad2<ushort>(ref, src).template select<W/2,2>(0)
 #define CALC_SAD_2(sad1, sad2, ref, src1, src2) \
-    sad1 = cm_sad2<ushort>(ref, src1).select<W/2,2>(0); \
-    sad2 = cm_sad2<ushort>(ref, src2).select<W/2,2>(0)
+    sad1 = cm_sad2<ushort>(ref, src1).template select<W/2,2>(0); \
+    sad2 = cm_sad2<ushort>(ref, src2).template select<W/2,2>(0)
 #define CALC_SAD_ACC_2(sad1, sad2, ref, src1, src2) \
-    sad1 += cm_sad2<ushort>(ref, src1).select<W/2,2>(0); \
-    sad2 += cm_sad2<ushort>(ref, src2).select<W/2,2>(0)
+    sad1 += cm_sad2<ushort>(ref, src1).template select<W/2,2>(0); \
+    sad2 += cm_sad2<ushort>(ref, src2).template select<W/2,2>(0)
 #define CALC_SAD_QPEL(sad, hpel1, hpel2, src) \
     tmp = cm_avg<short>(hpel1, hpel2); \
-    sad = cm_sad2<ushort>(tmp.format<uchar>().select<W,2>(0), src).select<W/2,2>(0)
+    sad = cm_sad2<ushort>(tmp.template format<uchar>().template select<W,2>(0), src).template select<W/2,2>(0)
 #define CALC_SAD_QPEL_ACC(sad, hpel1, hpel2, src) \
     tmp = cm_avg<short>(hpel1, hpel2); \
-    sad += cm_sad2<ushort>(tmp.format<uchar>().select<W, 2>(0), src).select<W/2,2>(0)
+    sad += cm_sad2<ushort>(tmp.template format<uchar>().template select<W, 2>(0), src).template select<W/2,2>(0)
 #define CALC_SAD_QPEL_2(sad1, sad2, hpel1, hpel2, src1, src2) \
     tmp = cm_avg<short>(hpel1, hpel2); \
-    sad1 = cm_sad2<ushort>(tmp.format<uchar>().select<W, 2>(0), src1).select<W/2,2>(0); \
-    sad2 = cm_sad2<ushort>(tmp.format<uchar>().select<W, 2>(0), src2).select<W/2,2>(0)
+    sad1 = cm_sad2<ushort>(tmp.template format<uchar>().template select<W, 2>(0), src1).template select<W/2,2>(0); \
+    sad2 = cm_sad2<ushort>(tmp.template format<uchar>().template select<W, 2>(0), src2).template select<W/2,2>(0)
 #define CALC_SAD_QPEL_ACC_2(sad1, sad2, hpel1, hpel2, src1, src2) \
     tmp = cm_avg<short>(hpel1, hpel2); \
-    sad1 += cm_sad2<ushort>(tmp.format<uchar>().select<W, 2>(0), src1).select<W/2,2>(0); \
-    sad2 += cm_sad2<ushort>(tmp.format<uchar>().select<W, 2>(0), src2).select<W/2,2>(0)
+    sad1 += cm_sad2<ushort>(tmp.template format<uchar>().template select<W, 2>(0), src1).template select<W/2,2>(0); \
+    sad2 += cm_sad2<ushort>(tmp.template format<uchar>().template select<W, 2>(0), src2).template select<W/2,2>(0)
 #define INTERPOLATE(dst, src0, src1, src2, src3) dst = src1 + src2; dst *= 5; dst -= src0; dst -= src3
 #define SHIFT_SATUR(dst, tmp, src, shift) tmp = src + (1 << (shift - 1)); dst = cm_shr<uchar>(tmp, shift, SAT);
 
@@ -1125,14 +1127,14 @@ void InterpolateQpelFromIntPel(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, int
         read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref - 1, yref + i, fpel1);
         read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref + 1, yref + i, fpel3);
         read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref + 2, yref + i, fpel4);
-        read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref + 0, yref + i + 2, SELECT_N_ROWS(fpel2, 4, 4));
+        read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref + 0, yref + i + 2, SELECT_N_ROWS_TEMPL(fpel2, 4, 4));
 
         ONE_STEP(0);
         ONE_STEP(1);
         ONE_STEP(2);
         ONE_STEP(3);
         
-        read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref + 0, yref + i + 6, SELECT_N_ROWS(fpel2, 0, 4));
+        read_plane(SURF_REF, GENX_SURFACE_Y_PLANE, xref + 0, yref + i + 6, SELECT_N_ROWS_TEMPL(fpel2, 0, 4));
 
         ONE_STEP(4);
         ONE_STEP(5);
@@ -1676,7 +1678,6 @@ void ImeWithPred(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, Surfa
 //    write(SURF_MV32x32, mbX * MVDATA_SIZE, mbY, SLICE(fbrOut16x16.format<uint>(), 8, 1, 1));
     write(SURF_MV_OUT, mbX * MVDATA_SIZE, mbY, SLICE(imv.format<uint>(), 0, 1, 1));
 }
-
 
 _GENX_ inline
 void ImeOneTier(vector_ref<int2, 2> mvPred, SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, vector_ref<int2, 2> mvOut,
