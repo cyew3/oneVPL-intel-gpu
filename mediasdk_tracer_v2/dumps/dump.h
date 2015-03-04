@@ -14,6 +14,7 @@
 #include "mfxvp8.h"
 #include "mfxcamera.h"
 #include "mfxjpeg.h"
+#include "mfxmvc.h"
 
 
 std::string pVoidToHexString(void* x);
@@ -190,6 +191,12 @@ public:
                  case  MFX_EXTBUFF_JPEG_HUFFMAN:
                     str += dump(name, *((mfxExtJPEGHuffmanTables*)_struct.ExtParam[i])) + "\n";
                     break;
+                 case  MFX_EXTBUFF_MVC_SEQ_DESC:
+                    str += dump(name, *((mfxExtMVCSeqDesc*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_MVC_TARGET_VIEWS:
+                    str += dump(name, *((mfxExtMVCTargetViews*)_struct.ExtParam[i])) + "\n";
+                    break;
                   default:
                     str += dump(name, *(_struct.ExtParam[i])) + "\n";
                     break;
@@ -303,6 +310,12 @@ public:
     //mfxjpeg
     DEFINE_DUMP_FUNCTION(mfxExtJPEGQuantTables);
     DEFINE_DUMP_FUNCTION(mfxExtJPEGHuffmanTables);
+
+    //mfxmvc
+    DEFINE_DUMP_FUNCTION(mfxMVCViewDependency);
+    DEFINE_DUMP_FUNCTION(mfxMVCOperationPoint);
+    DEFINE_DUMP_FUNCTION(mfxExtMVCSeqDesc);
+    DEFINE_DUMP_FUNCTION(mfxExtMVCTargetViews);
 
 };
 #endif //DUMP_H_

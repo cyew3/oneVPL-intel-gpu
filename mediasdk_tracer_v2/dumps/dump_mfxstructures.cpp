@@ -429,7 +429,10 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamVigne
     str += structName + ".Pitch=" + ToString(CamVignetteCorrection.Pitch) + "\n";
     str += structName + ".MaskPrecision=" + ToString(CamVignetteCorrection.MaskPrecision) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamVignetteCorrection.reserved) + "\n";
-    str += dump(structName + ".CorrectionMap", CamVignetteCorrection.CorrectionMap) + "\n";
+    if (CamVignetteCorrection.CorrectionMap)
+    {
+        str += dump(structName + ".CorrectionMap", *(CamVignetteCorrection.CorrectionMap)) + "\n";
+    }
     return str;
 }
 
@@ -522,8 +525,14 @@ std::string DumpContext::dump(const std::string structName, const mfxExtLAFrameS
     str += structName + ".NumAlloc=" + ToString(ExtLAFrameStatistics.NumAlloc) + "\n";
     str += structName + ".NumStream=" + ToString(ExtLAFrameStatistics.NumStream) + "\n";
     str += structName + ".NumFrame=" + ToString(ExtLAFrameStatistics.NumFrame) + "\n";
-    str += dump(structName + ".FrameStat", *(ExtLAFrameStatistics.FrameStat)) + "\n";
-    str += dump(structName + ".OutSurface", *(ExtLAFrameStatistics.OutSurface)) + "\n";
+    if (ExtLAFrameStatistics.FrameStat)
+    {
+        str += dump(structName + ".FrameStat", *(ExtLAFrameStatistics.FrameStat)) + "\n";
+    }
+    if (ExtLAFrameStatistics.OutSurface)
+    {
+        str += dump(structName + ".OutSurface", *(ExtLAFrameStatistics.OutSurface)) + "\n";
+    }
     return str;
 }
 
@@ -604,6 +613,63 @@ std::string DumpContext::dump(const std::string structName, const mfxExtJPEGHuff
     return str;
 }
 
+//mfxmvc
+std::string DumpContext::dump(const std::string structName, const mfxMVCViewDependency &MVCViewDependency)
+{
+    std::string str;
+    str += structName + ".ViewId=" + ToString(MVCViewDependency.ViewId) + "\n";
+    str += structName + ".NumAnchorRefsL0=" + ToString(MVCViewDependency.NumAnchorRefsL0) + "\n";
+    str += structName + ".NumAnchorRefsL1=" + ToString(MVCViewDependency.NumAnchorRefsL1) + "\n";
+    str += structName + ".AnchorRefL0[]=" + DUMP_RESERVED_ARRAY(MVCViewDependency.AnchorRefL0) + "\n";
+    str += structName + ".AnchorRefL1[]=" + DUMP_RESERVED_ARRAY(MVCViewDependency.AnchorRefL1) + "\n";
+    str += structName + ".NumNonAnchorRefsL0=" + ToString(MVCViewDependency.NumNonAnchorRefsL0) + "\n";
+    str += structName + ".NumNonAnchorRefsL1=" + ToString(MVCViewDependency.NumNonAnchorRefsL1) + "\n";
+    str += structName + ".NonAnchorRefL0[]=" + DUMP_RESERVED_ARRAY(MVCViewDependency.NonAnchorRefL0) + "\n";
+    str += structName + ".NonAnchorRefL1[]=" + DUMP_RESERVED_ARRAY(MVCViewDependency.NonAnchorRefL1) + "\n";
+    return str;
+}
 
+std::string DumpContext::dump(const std::string structName, const mfxMVCOperationPoint &MVCOperationPoint)
+{
+    std::string str;
+    str += structName + ".TemporalId=" + ToString(MVCOperationPoint.TemporalId) + "\n";
+    str += structName + ".LevelIdc=" + ToString(MVCOperationPoint.LevelIdc) + "\n";
+    str += structName + ".NumViews=" + ToString(MVCOperationPoint.NumViews) + "\n";
+    str += structName + ".NumTargetViews=" + ToString(MVCOperationPoint.NumTargetViews) + "\n";
+    str += structName + ".TargetViewId*=" + ToString(MVCOperationPoint.TargetViewId) + "\n";
+    return str;
+}
 
+std::string DumpContext::dump(const std::string structName, const mfxExtMVCSeqDesc &ExtMVCSeqDesc)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtMVCSeqDesc.Header) + "\n";
+    str += structName + ".NumView=" + ToString(ExtMVCSeqDesc.NumView) + "\n";
+    if (ExtMVCSeqDesc.View)
+    {
+        str += dump(structName + ".View", *(ExtMVCSeqDesc.View)) + "\n";
+    }
+    str += structName + ".NumViewId=" + ToString(ExtMVCSeqDesc.NumViewId) + "\n";
+    str += structName + ".NumViewIdAlloc=" + ToString(ExtMVCSeqDesc.NumViewIdAlloc) + "\n";
+    str += structName + ".ViewId*=" + ToString(ExtMVCSeqDesc.ViewId) + "\n";
+    str += structName + ".NumOP=" + ToString(ExtMVCSeqDesc.NumOP) + "\n";
+    str += structName + ".NumOPAlloc=" + ToString(ExtMVCSeqDesc.NumOPAlloc) + "\n";
+    if (ExtMVCSeqDesc.OP)
+    {
+        str += dump(structName + ".OP", *(ExtMVCSeqDesc.OP)) + "\n";
+    }
+    str += structName + ".NumRefsTotal=" + ToString(ExtMVCSeqDesc.NumRefsTotal) + "\n";
+    str += structName + ".Reserved[]=" + DUMP_RESERVED_ARRAY(ExtMVCSeqDesc.Reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtMVCTargetViews &ExtMVCTargetViews)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtMVCTargetViews.Header) + "\n";
+    str += structName + ".TemporalId=" + ToString(ExtMVCTargetViews.TemporalId) + "\n";
+    str += structName + ".NumView=" + ToString(ExtMVCTargetViews.NumView) + "\n";
+    str += structName + ".ViewId[]=" + DUMP_RESERVED_ARRAY(ExtMVCTargetViews.ViewId) + "\n";
+    return str;
+}
 
