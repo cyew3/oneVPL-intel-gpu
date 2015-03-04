@@ -485,6 +485,32 @@ bool CheckTriStateOption(mfxU16 & opt)
     return true;
 }
 
+bool CheckTU(mfxU8 support, mfxU16& tu)
+{
+    assert(tu < 8);
+
+    mfxI16 abs_diff = 0;
+    bool   sign = 0;
+    mfxI16 newtu = tu;
+
+    do
+    {
+        newtu = tu + (1 - 2 * sign) * abs_diff;
+        abs_diff += !sign;
+        sign = !sign;
+    } while (!(support & (1 << (newtu - 1))) && newtu > 0);
+
+    tu = newtu;
+
+    return !!abs_diff;
+}
+
+mfxU16 minRefForPyramid(mfxU16 GopRefDist)
+{
+    assert(GopRefDist > 0);
+    return (GopRefDist - 1) / 2 + 2;
+}
+
 mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
 {
     mfxU32 unsupported = 0, changed = 0, incompatible = 0;
@@ -557,6 +583,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
         par.mfx.TargetUsage = MFX_TARGETUSAGE_BEST_SPEED;
         changed ++;
     }
+
+    if (par.mfx.TargetUsage && caps.TUSupport)
+        changed += CheckTU(caps.TUSupport, par.mfx.TargetUsage);
 
     if (par.mfx.GopRefDist > 1 && caps.SliceIPOnly)
     {
@@ -689,6 +718,12 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
         incompatible ++;
     }
 
+    if (par.mfx.NumRefFrame > 16)
+    {
+        par.mfx.NumRefFrame = 16;
+        changed ++;
+    }
+
     if (par.NumRefLX[0] > caps.MaxNum_Reference0)
     {
         par.NumRefLX[0] = caps.MaxNum_Reference0;
@@ -714,7 +749,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
     {
         mfxU32 rawBytes = par.m_ext.HEVCParam.PicWidthInLumaSamples * par.m_ext.HEVCParam.PicHeightInLumaSamples * 3 / 2 / 1000;
 
-        if (   (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
+        if (   (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
             && par.BufferSizeInKB < rawBytes)
         {
             par.BufferSizeInKB = rawBytes;
@@ -746,8 +781,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
     }
 
     if (   par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID
-        && par.mfx.NumRefFrame
-        && mfxU16((par.mfx.GopRefDist - 1) / 2 + 1) > par.mfx.NumRefFrame)
+        && (   minRefForPyramid(par.mfx.GopRefDist) > 16
+            || (par.mfx.NumRefFrame && minRefForPyramid(par.mfx.GopRefDist) > par.mfx.NumRefFrame)))
     {
         par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
         changed ++;
@@ -778,14 +813,14 @@ void SetDefaults(
     mfxF64 maxFR   = 300.;
     mfxU32 maxBR   = 0xFFFFFFFF;
     mfxU32 maxBuf  = 0xFFFFFFFF;
-    mfxU32 maxDPB  = 16;
+    mfxU16 maxDPB  = 16;
 
     if (par.mfx.CodecLevel)
     {
         maxFR  = GetMaxFrByLevel(par);
         maxBR  = GetMaxKbpsByLevel(par);
         maxBuf = GetMaxCpbInKBByLevel(par);
-        maxDPB = GetMaxDpbSizeByLevel(par);
+        maxDPB = (mfxU16)GetMaxDpbSizeByLevel(par);
     }
     
     if (!par.AsyncDepth)
@@ -796,6 +831,9 @@ void SetDefaults(
 
     if (!par.mfx.TargetUsage)
         par.mfx.TargetUsage = 4;
+
+    if (hwCaps.TUSupport)
+        CheckTU(hwCaps.TUSupport, par.mfx.TargetUsage);
 
     if (!par.m_ext.HEVCTiles.NumTileColumns)
         par.m_ext.HEVCTiles.NumTileColumns = 1;
@@ -891,41 +929,52 @@ void SetDefaults(
     if (!par.mfx.GopPicSize)
         par.mfx.GopPicSize = (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP ? 1 : 0xFFFF);
 
-    if (!par.NumRefLX[1])
-        par.NumRefLX[1] = Min<mfxU16>(1, hwCaps.MaxNum_Reference1);
-
     if (!par.NumRefLX[0])
-    {
-        par.NumRefLX[0] = Min<mfxU16>(2, hwCaps.MaxNum_Reference0);
-
-        if (mfxU16(maxDPB - 1) < par.NumRefLX[0] + par.NumRefLX[1])
-        {
-            par.NumRefLX[0] = mfxU16(maxDPB - 1);
-
-            if (par.NumRefLX[0] > 1 && hwCaps.MaxNum_Reference1 > 0)
-            {
-                par.NumRefLX[0] -= 1;
-                par.NumRefLX[1]  = 1;
-            }
-            par.NumRefLX[0] = Min(par.NumRefLX[0], mfxU16(hwCaps.MaxNum_Reference0));
-        }
-    }
+        par.NumRefLX[0] = (par.mfx.TargetUsage) > 5 ? 1 : hwCaps.MaxNum_Reference0;
+    
+    if (!par.NumRefLX[1])
+        par.NumRefLX[1] = (par.mfx.TargetUsage) > 5 ? 1 : hwCaps.MaxNum_Reference1;
 
     if (!par.mfx.GopRefDist)
         par.mfx.GopRefDist = mfxU16((par.mfx.GopPicSize > 1 && par.NumRefLX[1] && !hwCaps.SliceIPOnly) ? Min(par.mfx.GopPicSize - 1, 3) : 1);
 
     if (!par.mfx.NumRefFrame)
-        par.mfx.NumRefFrame = par.isBPyramid() ? mfxU16((par.mfx.GopRefDist - 1) / 2 + 1) : (par.NumRefLX[0] + (par.mfx.GopRefDist > 1) * par.NumRefLX[1]);
+    {
+        par.mfx.NumRefFrame = par.isBPyramid() ? mfxU16((par.mfx.GopRefDist - 1) / 2 + 2) : (par.NumRefLX[0] + (par.mfx.GopRefDist > 1) * par.NumRefLX[1]);
+        par.mfx.NumRefFrame = Min(maxDPB, par.mfx.NumRefFrame);
+    }
+    else
+    {
+        while (par.NumRefLX[0] + par.NumRefLX[1] > par.mfx.NumRefFrame)
+        {
+            if (   par.mfx.GopRefDist == 1 && par.NumRefLX[1] == 1
+                && par.NumRefLX[0] + par.NumRefLX[1] == par.mfx.NumRefFrame + 1)
+                break;
 
-    /*if (!par.LTRInterval && par.NumRefLX[0] > 1 && par.mfx.GopPicSize > 32 && par.mfx.NumRefFrame > 2)
-        par.LTRInterval = 16;*/
+            if (    par.NumRefLX[1] >= par.NumRefLX[0]
+                && !(par.mfx.GopRefDist == 1 && par.NumRefLX[1] == 1))
+                par.NumRefLX[1] --;
+            else
+                par.NumRefLX[0] --;
+        }
+
+        par.NumRefLX[0] = Max<mfxU16>(1, par.NumRefLX[0]);
+        par.NumRefLX[1] = Max<mfxU16>(1, par.NumRefLX[1]);
+    }
+
+    /*if (   DEFAULT_LTR_INTERVAL > 0
+        && !par.LTRInterval
+        && par.NumRefLX[0] > 1
+        && par.mfx.GopPicSize > (DEFAULT_LTR_INTERVAL * 2)
+        && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR))
+        par.LTRInterval = DEFAULT_LTR_INTERVAL;*/
 
     if (!par.mfx.CodecLevel)
         CorrectLevel(par, false);
 
     if (par.m_ext.CO2.BRefType == MFX_B_REF_UNKNOWN)
     {
-        if (par.mfx.GopRefDist > 3 && mfxU16((par.mfx.GopRefDist - 1) / 2 + 1) <= par.mfx.NumRefFrame)
+        if (par.mfx.GopRefDist > 3 && minRefForPyramid(par.mfx.GopRefDist) <= par.mfx.NumRefFrame)
             par.m_ext.CO2.BRefType = MFX_B_REF_PYRAMID;
         else
             par.m_ext.CO2.BRefType = MFX_B_REF_OFF;

@@ -54,6 +54,12 @@ template<class T> bool IsAligned(T value, mfxU32 alignment)
     assert((alignment & (alignment - 1)) == 0); // should be 2^n
     return !(value & (alignment - 1));
 }
+template<class T> inline T Lsb(T val, mfxU32 maxLSB)
+{
+    if (val >= 0)
+        return val % maxLSB;
+    return (maxLSB - ((-val) % maxLSB)) % maxLSB;
+}
 
 inline mfxU32 CeilLog2  (mfxU32 x)           { mfxU32 l = 0; while(x > (1U<<l)) l++; return l; }
 inline mfxU32 CeilDiv   (mfxU32 x, mfxU32 y) { return (x + y - 1) / y; }
@@ -79,6 +85,7 @@ enum
     CODED_PIC_ALIGN_H   = 8,
     DEFAULT_LCU_SIZE    = 32,
     MAX_SLICES          = 200,
+    DEFAULT_LTR_INTERVAL= 16
 };
 
 enum
@@ -177,6 +184,14 @@ typedef struct _DpbFrame
     mfxFrameSurface1*   m_surf; //input surface, may be opaque
 }DpbFrame, DpbArray[MAX_DPB_SIZE];
 
+enum
+{
+    TASK_DPB_ACTIVE = 0, // available during task execution (modified dpb[BEFORE] )
+    TASK_DPB_AFTER,      // after task execution (ACTIVE + curTask if ref)
+    TASK_DPB_BEFORE,     // after previous task execution (prevTask dpb[AFTER])
+    TASK_DPB_NUM
+};
+
 typedef struct _Task : DpbFrame
 {
     mfxBitstream*       m_bs;
@@ -197,7 +212,7 @@ typedef struct _Task : DpbFrame
     mfxU32 m_statusReportNumber;
     mfxU32 m_bsDataLength;
 
-    DpbArray m_dpb[2]; //0 - before encoding, 1 - after
+    DpbArray m_dpb[TASK_DPB_NUM];
 
     mfxMemId m_midBs;
 
@@ -320,7 +335,7 @@ public:
     mfxU32 InitialDelayInKB;
     mfxU32 TargetKbps;
     mfxU32 MaxKbps;
-    mfxU16 NumRefLX[2];
+    mfxU16 NumRefLX[2]; // max num active refs
     mfxU32 LTRInterval;
     mfxU32 LCUSize;
     bool   InsertHRDInfo;
@@ -338,7 +353,7 @@ public:
     void SyncMfxToHeadersParam();
     void SyncHeadersToMfxParam();
 
-    void GetSliceHeader(Task const & task, Slice & s) const;
+    void GetSliceHeader(Task const & task, Task const & prevTask, Slice & s) const;
 
     mfxStatus GetExtBuffers(mfxVideoParam& par, bool query = false);
 
@@ -383,6 +398,7 @@ public:
     void  Reset     (mfxU32 numTask = 0);
     Task* New       ();
     Task* Reorder   (MfxVideoParam const & par, DpbArray const & dpb, bool flush);
+    void  Submit    (Task* task);
     void  Ready     (Task* task);
 
 private:

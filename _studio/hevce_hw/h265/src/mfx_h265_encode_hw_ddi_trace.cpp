@@ -109,6 +109,7 @@ DECL(ENCODE_CAPS_HEVC,
     TRACE("%d", MaxNum_Reference0);
     TRACE("%d", MaxNum_Reference1);
     TRACE("%d", MBBRCSupport);
+    TRACE("%d", TUSupport);
 )
 #undef FIELD_FORMAT
 

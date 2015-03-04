@@ -409,13 +409,14 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     task = m_task.Reorder(m_vpar, m_lastTask.m_dpb[1], !surface);
     MFX_CHECK(task, MFX_ERR_MORE_DATA);
 
-    task->m_stage |= FRAME_REORDERED;
-
     task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
     task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
     task->m_idxBs  = (mfxU8)FindFreeResourceIndex(m_bs);
-    assert(task->m_idxBs  != IDX_INVALID);
-    assert(task->m_idxRec != IDX_INVALID);
+    MFX_CHECK(task->m_idxBs  != IDX_INVALID, MFX_WRN_DEVICE_BUSY);
+    MFX_CHECK(task->m_idxRec != IDX_INVALID, MFX_WRN_DEVICE_BUSY);
+
+    m_task.Submit(task);
+    task->m_stage |= FRAME_REORDERED;
 
     task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
     task->m_midRec = AcquireResource(m_rec, task->m_idxRec);
@@ -528,25 +529,25 @@ mfxStatus Plugin::FreeResources(mfxThreadTask thread_task, mfxStatus /*sts*/)
     {
         ReleaseResource(m_rec, task.m_midRec);
 
-        for (mfxU16 i = 0; !isDpbEnd(task.m_dpb[1], i); i ++)
-            if (task.m_dpb[1][i].m_idxRec == task.m_idxRec)
-                Fill(task.m_dpb[1][i], IDX_INVALID);
+        for (mfxU16 i = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], i); i ++)
+            if (task.m_dpb[TASK_DPB_AFTER][i].m_idxRec == task.m_idxRec)
+                Fill(task.m_dpb[TASK_DPB_AFTER][i], IDX_INVALID);
     }
 
-    for (mfxU16 i = 0, j = 0; !isDpbEnd(task.m_dpb[0], i); i ++)
+    for (mfxU16 i = 0, j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_BEFORE], i); i ++)
     {
-        for (j = 0; !isDpbEnd(task.m_dpb[1], j); j ++)
-            if (task.m_dpb[0][i].m_idxRec == task.m_dpb[1][j].m_idxRec)
+        for (j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j); j ++)
+            if (task.m_dpb[TASK_DPB_BEFORE][i].m_idxRec == task.m_dpb[TASK_DPB_AFTER][j].m_idxRec)
                 break;
 
-        if (isDpbEnd(task.m_dpb[1], j))
+        if (isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j))
         {
-            ReleaseResource(m_rec, task.m_dpb[0][i].m_midRec);
+            ReleaseResource(m_rec, task.m_dpb[TASK_DPB_BEFORE][i].m_midRec);
 
             if (m_vpar.RawRef)
             {
-                m_core.DecreaseReference(&task.m_dpb[0][i].m_surf->Data);
-                ReleaseResource(m_raw, task.m_dpb[0][i].m_midRaw);
+                m_core.DecreaseReference(&task.m_dpb[TASK_DPB_BEFORE][i].m_surf->Data);
+                ReleaseResource(m_raw, task.m_dpb[TASK_DPB_BEFORE][i].m_midRaw);
             }
         }
     }
