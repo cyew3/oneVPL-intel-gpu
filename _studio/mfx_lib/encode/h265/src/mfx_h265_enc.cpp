@@ -2061,11 +2061,11 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
                 InitializeContextVariablesHEVC_CABAC(m_bsf[bsf_id].m_base.context_array, 2-m_task->m_slices[curr_slice_id].slice_type, m_task->m_sliceQpY);
             }
         } else {
-            small_memcpy(m_bsf[bsf_id].m_base.context_array, m_bs[bs_id].m_base.context_array_enc, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
+            m_bsf[bsf_id].CtxRestore(m_bs[bs_id].m_base.context_array_enc);
         }
 
         CABAC_CONTEXT_H265 context_array_save[NUM_CABAC_CONTEXT];
-        small_memcpy(context_array_save, m_bsf[bsf_id].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
+        m_bsf[bsf_id].CtxSave(context_array_save);
 
         m_bsf[bsf_id].Reset();
 
@@ -2079,7 +2079,7 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 #ifdef AMT_ALT_ENCODE
         if(!cu[ithread].m_isRdoq) {
             cu[ithread].m_isRdoq = true;
-            small_memcpy(m_bsf[bsf_id].m_base.context_array, context_array_save, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
+            m_bsf[bsf_id].CtxRestore(context_array_save);
             cu[ithread].EncAndRecLuma(0, 0, 0, NULL);
         }
 #endif
@@ -2095,14 +2095,14 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 
             cu[ithread].EncodeCU(&m_bsf[bsf_id], 0, 0, RD_CU_ALL_EXCEPT_COEFFS);
         } else {
-            small_memcpy(m_bsf[bsf_id].m_base.context_array, context_array_save, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
+            m_bsf[bsf_id].CtxRestore(context_array_save);
             cu[ithread].EncodeCU(&m_bsf[bsf_id], 0, 0, RD_CU_ALL);
         }
 
         if (m_pps.entropy_coding_sync_enabled_flag && ctb_col == 1)
             m_bsf[bsf_id].CtxSaveWPP(m_context_array_wpp_enc + NUM_CABAC_CONTEXT * ctb_row);
 
-        small_memcpy(m_bs[bs_id].m_base.context_array_enc, m_bsf[bsf_id].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
+        m_bsf[bsf_id].CtxSave(m_bs[bs_id].m_base.context_array_enc);
 
         break;
     case POST_PROC_ROW:
@@ -2141,7 +2141,7 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 
         
         if (doSao) {
-            small_memcpy(m_bsf[bsf_id].m_base.context_array, m_bs[bs_id].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
+            m_bsf[bsf_id].CtxRestore(m_bs[bs_id].m_base.context_array);
             EstimateCtuSao<PixType>(ithread, bs_id, bsf_id, ctb_addr, curr_slice_id);
         }
         
