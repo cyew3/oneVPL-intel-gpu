@@ -647,7 +647,8 @@ enum {
     MFX_EXTBUFF_DPB                        = MFX_MAKEFOURCC('E','D','P','B'),
     MFX_EXTBUFF_HEVC_PARAM                 = MFX_MAKEFOURCC('2','6','5','P'),
     MFX_EXTBUFF_DECODED_FRAME_INFO         = MFX_MAKEFOURCC('D','E','F','I'),
-    MFX_EXTBUFF_TIME_CODE                  = MFX_MAKEFOURCC('T','M','C','D')
+    MFX_EXTBUFF_TIME_CODE                  = MFX_MAKEFOURCC('T','M','C','D'),
+    MFX_EXTBUFF_HEVC_REGION                = MFX_MAKEFOURCC('2','6','5','R')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1248,6 +1249,18 @@ typedef struct {
     mfxU16       TimeCodePictures;
     mfxU16       reserved[7];
 } mfxExtTimeCode;
+
+enum {
+    MFX_HEVC_REGION_SLICE = 0
+};
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU32       RegionId;
+    mfxU16       RegionType;
+    mfxU16       reserved[25];
+} mfxExtHEVCRegion;
 
 #ifdef __cplusplus
 } // extern "C"
