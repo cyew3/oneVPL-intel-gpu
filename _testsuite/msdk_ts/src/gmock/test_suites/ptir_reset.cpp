@@ -209,6 +209,33 @@ int TestSuite::RunTest(unsigned int id)
     m_session = tsSession::m_session;
     tsSession::Load(m_session, ptir, 1);
 
+    bool isSW = !(!!(m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY));
+    m_spool_in.UseDefaultAllocator(isSW);
+    SetFrameAllocator(m_session, m_spool_in.GetAllocator());
+    m_spool_out.SetAllocator(m_spool_in.GetAllocator(), true);
+    if (!m_is_handle_set)
+    {
+        mfxHDL hdl;
+        mfxHandleType type;
+        if (isSW)
+        {
+            if (!m_pVAHandle)
+            {
+                m_pVAHandle = new frame_allocator(
+                        TS_HW_ALLOCATOR_TYPE,
+                        frame_allocator::ALLOC_MAX,
+                        frame_allocator::ENABLE_ALL,
+                        frame_allocator::ALLOC_EMPTY);
+            }
+            m_pVAHandle->get_hdl(type, hdl);
+        }
+        else
+        {
+            m_spool_in.GetAllocator()->get_hdl(type, hdl);
+        }
+        SetHandle(m_session, type, hdl);
+    }
+
     m_par.vpp.In.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
     apply_par(tc, INIT);
     Init();
