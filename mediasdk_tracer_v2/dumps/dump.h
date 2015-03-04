@@ -171,6 +171,18 @@ public:
                  case  MFX_EXTBUFF_LOOKAHEAD_STAT:
                     str += dump(name, *((mfxExtLAFrameStatistics*)_struct.ExtParam[i])) + "\n";
                     break;
+                 case  MFX_EXTBUFF_AVC_REFLIST_CTRL:
+                    str += dump(name, *((mfxExtAVCRefListCtrl*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_AVC_TEMPORAL_LAYERS:
+                    str += dump(name, *((mfxExtAvcTemporalLayers*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_ENCODED_FRAME_INFO:
+                    str += dump(name, *((mfxExtAVCEncodedFrameInfo*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_AVC_REFLISTS:
+                    str += dump(name, *((mfxExtAVCRefLists*)_struct.ExtParam[i])) + "\n";
+                    break;
                   default:
                     str += dump(name, *(_struct.ExtParam[i])) + "\n";
                     break;
@@ -224,7 +236,10 @@ public:
     DEFINE_DUMP_FUNCTION(mfxVideoParam);
     DEFINE_DUMP_FUNCTION(mfxVPPStat);
     DEFINE_DUMP_FUNCTION(mfxExtVPPDoNotUse);
-
+    DEFINE_DUMP_FUNCTION(mfxExtAVCRefListCtrl);
+    DEFINE_DUMP_FUNCTION(mfxExtAvcTemporalLayers);
+    DEFINE_DUMP_FUNCTION(mfxExtAVCEncodedFrameInfo);
+    DEFINE_DUMP_FUNCTION(mfxExtAVCRefLists);
     //mfxsession
     DEFINE_DUMP_FUNCTION(mfxSession);
 

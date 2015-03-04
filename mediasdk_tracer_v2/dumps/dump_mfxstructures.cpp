@@ -527,3 +527,58 @@ std::string DumpContext::dump(const std::string structName, const mfxExtLAFrameS
     return str;
 }
 
+std::string DumpContext::dump(const std::string structName, const mfxExtAVCRefListCtrl &ExtAVCRefListCtrl)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtAVCRefListCtrl.Header) + "\n";
+    str += structName + ".NumRefIdxL0Active=" + ToString(ExtAVCRefListCtrl.NumRefIdxL0Active) + "\n";
+    str += structName + ".NumRefIdxL1Active=" + ToString(ExtAVCRefListCtrl.NumRefIdxL1Active) + "\n";
+    str += structName + ".PreferredRefList*=" + ToString(ExtAVCRefListCtrl.PreferredRefList) + "\n";
+    str += structName + ".RejectedRefList*=" + ToString(ExtAVCRefListCtrl.RejectedRefList) + "\n";
+    str += structName + ".LongTermRefList*=" + ToString(ExtAVCRefListCtrl.LongTermRefList) + "\n";
+    str += structName + ".ApplyLongTermIdx=" + ToString(ExtAVCRefListCtrl.ApplyLongTermIdx) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtAVCRefListCtrl.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtAvcTemporalLayers &ExtAvcTemporalLayers)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtAvcTemporalLayers.Header) + "\n";
+    str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtAvcTemporalLayers.reserved1) + "\n";
+    str += structName + ".reserved2=" + ToString(ExtAvcTemporalLayers.reserved2) + "\n";
+    str += structName + ".BaseLayerPID=" + ToString(ExtAvcTemporalLayers.BaseLayerPID) + "\n";
+    str += structName + ".Layer*=" + ToString(ExtAvcTemporalLayers.Layer) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtAVCEncodedFrameInfo &ExtAVCEncodedFrameInfo)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtAVCEncodedFrameInfo.Header) + "\n";
+    str += structName + ".FrameOrder=" + ToString(ExtAVCEncodedFrameInfo.FrameOrder) + "\n";
+    str += structName + ".PicStruct=" + ToString(ExtAVCEncodedFrameInfo.PicStruct) + "\n";
+    str += structName + ".LongTermIdx=" + ToString(ExtAVCEncodedFrameInfo.LongTermIdx) + "\n";
+    str += structName + ".MAD=" + ToString(ExtAVCEncodedFrameInfo.MAD) + "\n";
+    str += structName + ".BRCPanicMode=" + ToString(ExtAVCEncodedFrameInfo.BRCPanicMode) + "\n";
+    str += structName + ".QP=" + ToString(ExtAVCEncodedFrameInfo.QP) + "\n";
+    str += structName + ".SecondFieldOffset=" + ToString(ExtAVCEncodedFrameInfo.SecondFieldOffset) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtAVCEncodedFrameInfo.reserved) + "\n";
+    str += structName + ".UsedRefListL0*=" + ToString(ExtAVCEncodedFrameInfo.UsedRefListL0) + "\n";
+    str += structName + ".UsedRefListL1*=" + ToString(ExtAVCEncodedFrameInfo.UsedRefListL1) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtAVCRefLists &ExtAVCRefLists)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtAVCRefLists.Header) + "\n";
+    str += structName + ".NumRefIdxL0Active=" + ToString(ExtAVCRefLists.NumRefIdxL0Active) + "\n";
+    str += structName + ".NumRefIdxL1Active=" + ToString(ExtAVCRefLists.NumRefIdxL1Active) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtAVCRefLists.reserved) + "\n";
+    str += structName + ".RefPicList0*=" + ToString(ExtAVCRefLists.RefPicList0) + "\n";
+    str += structName + ".RefPicList1*=" + ToString(ExtAVCRefLists.RefPicList1) + "\n";
+    return str;
+}
+
+
