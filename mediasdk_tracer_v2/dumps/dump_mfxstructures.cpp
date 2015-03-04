@@ -581,4 +581,29 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAVCRefLi
     return str;
 }
 
+//mfxjpeg
+std::string DumpContext::dump(const std::string structName, const mfxExtJPEGQuantTables &ExtJPEGQuantTables)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtJPEGQuantTables.Header) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtJPEGQuantTables.reserved) + "\n";
+    str += structName + ".NumTable=" + ToString(ExtJPEGQuantTables.NumTable) + "\n";
+    str += structName + ".Qm*=" + ToString(ExtJPEGQuantTables.Qm) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtJPEGHuffmanTables &ExtJPEGHuffmanTables)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtJPEGHuffmanTables.Header) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.reserved) + "\n";
+    str += structName + ".NumDCTable=" + ToString(ExtJPEGHuffmanTables.NumDCTable) + "\n";
+    str += structName + ".NumACTable=" + ToString(ExtJPEGHuffmanTables.NumACTable) + "\n";
+    str += structName + ".DCTables*=" + ToString(ExtJPEGHuffmanTables.DCTables) + "\n";
+    str += structName + ".ACTables*=" + ToString(ExtJPEGHuffmanTables.ACTables) + "\n";
+    return str;
+}
+
+
+
 

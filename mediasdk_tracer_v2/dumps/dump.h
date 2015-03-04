@@ -13,6 +13,7 @@
 #include "mfxla.h"
 #include "mfxvp8.h"
 #include "mfxcamera.h"
+#include "mfxjpeg.h"
 
 
 std::string pVoidToHexString(void* x);
@@ -183,6 +184,12 @@ public:
                  case  MFX_EXTBUFF_AVC_REFLISTS:
                     str += dump(name, *((mfxExtAVCRefLists*)_struct.ExtParam[i])) + "\n";
                     break;
+                 case  MFX_EXTBUFF_JPEG_QT:
+                    str += dump(name, *((mfxExtJPEGQuantTables*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_JPEG_HUFFMAN:
+                    str += dump(name, *((mfxExtJPEGHuffmanTables*)_struct.ExtParam[i])) + "\n";
+                    break;
                   default:
                     str += dump(name, *(_struct.ExtParam[i])) + "\n";
                     break;
@@ -293,6 +300,9 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtCamPadding);
     DEFINE_DUMP_FUNCTION(mfxExtCamPipeControl);
 
+    //mfxjpeg
+    DEFINE_DUMP_FUNCTION(mfxExtJPEGQuantTables);
+    DEFINE_DUMP_FUNCTION(mfxExtJPEGHuffmanTables);
 
 };
 #endif //DUMP_H_
