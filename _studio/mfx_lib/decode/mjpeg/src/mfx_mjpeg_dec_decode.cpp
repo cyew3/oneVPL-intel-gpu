@@ -2062,10 +2062,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
                info->Rotation == MFX_ROTATION_0 && 
                info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                requestFrameInfo->FourCC == MFX_FOURCC_RGB4 && 
-               requestFrameInfo->Width  >= 128 && 
-               requestFrameInfo->Height >= 128 && 
-               requestFrameInfo->Width  <= 4096 && 
-               requestFrameInfo->Height <= 4096 && 
+               requestFrameInfo->CropW >= 128 && 
+               requestFrameInfo->CropH >= 128 && 
+               requestFrameInfo->CropW <= 4096 && 
+               requestFrameInfo->CropH <= 4096 && 
                !(*needVpp))
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_RGB4;
@@ -2075,10 +2075,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
                     info->Rotation == MFX_ROTATION_0 && 
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == DXGI_FORMAT_AYUV && 
-                    requestFrameInfo->Width  >= 128 && 
-                    requestFrameInfo->Height >= 128 && 
-                    requestFrameInfo->Width  <= 4096 && 
-                    requestFrameInfo->Height <= 4096 && 
+                    requestFrameInfo->CropW >= 128 && 
+                    requestFrameInfo->CropH >= 128 && 
+                    requestFrameInfo->CropW <= 4096 && 
+                    requestFrameInfo->CropH <= 4096 && 
                     !(*needVpp))
             {
                 requestFrameInfo->FourCC = DXGI_FORMAT_AYUV;
@@ -2090,10 +2090,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             }
 #else
             if(requestFrameInfo->FourCC == MFX_FOURCC_RGB4 &&
-                    requestFrameInfo->Width  >= 128 &&
-                    requestFrameInfo->Height >= 128 &&
-                    requestFrameInfo->Width  <= 4096 &&
-                    requestFrameInfo->Height <= 4096)
+                    requestFrameInfo->CropW >= 128 &&
+                    requestFrameInfo->CropH >= 128 &&
+                    requestFrameInfo->CropW <= 4096 &&
+                    requestFrameInfo->CropH <= 4096)
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_NV12;
                 *needVpp = true;
@@ -2137,10 +2137,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
                     info->Rotation == MFX_ROTATION_0 && 
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == MFX_FOURCC_RGB4 && 
-                    requestFrameInfo->Width  >= 128 && 
-                    requestFrameInfo->Height >= 128 && 
-                    requestFrameInfo->Width  <= 4096 && 
-                    requestFrameInfo->Height <= 4096 && 
+                    requestFrameInfo->CropW >= 128 && 
+                    requestFrameInfo->CropH >= 128 && 
+                    requestFrameInfo->CropW <= 4096 && 
+                    requestFrameInfo->CropH <= 4096 && 
                     !(*needVpp))
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_RGB4;
@@ -2150,10 +2150,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
                     info->Rotation == MFX_ROTATION_0 && 
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == DXGI_FORMAT_AYUV && 
-                    requestFrameInfo->Width  >= 128 && 
-                    requestFrameInfo->Height >= 128 && 
-                    requestFrameInfo->Width  <= 4096 && 
-                    requestFrameInfo->Height <= 4096 && 
+                    requestFrameInfo->CropW >= 128 && 
+                    requestFrameInfo->CropH >= 128 && 
+                    requestFrameInfo->CropW <= 4096 && 
+                    requestFrameInfo->CropH <= 4096 && 
                     !(*needVpp))
             {
                 requestFrameInfo->FourCC = DXGI_FORMAT_AYUV;
@@ -2166,10 +2166,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
 #else
             if(info->Rotation == MFX_ROTATION_0 &&
                     requestFrameInfo->FourCC == MFX_FOURCC_RGB4 &&
-                    requestFrameInfo->Width  >= 128 &&
-                    requestFrameInfo->Height >= 128 &&
-                    requestFrameInfo->Width  <= 4096 &&
-                    requestFrameInfo->Height <= 4096)
+                    requestFrameInfo->CropW >= 128 &&
+                    requestFrameInfo->CropH >= 128 &&
+                    requestFrameInfo->CropW <= 4096 &&
+                    requestFrameInfo->CropH <= 4096)
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_NV12;
                 *needVpp = true;
@@ -2219,10 +2219,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
                     info->Rotation == MFX_ROTATION_0 && 
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == MFX_FOURCC_RGB4 && 
-                    requestFrameInfo->Width  >= 128 && 
-                    requestFrameInfo->Height >= 128 && 
-                    requestFrameInfo->Width  <= 4096 && 
-                    requestFrameInfo->Height <= 4096 && 
+                    requestFrameInfo->CropW >= 128 && 
+                    requestFrameInfo->CropH >= 128 && 
+                    requestFrameInfo->CropW <= 4096 && 
+                    requestFrameInfo->CropH <= 4096 && 
                     !(*needVpp))
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_RGB4;
@@ -2232,10 +2232,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
                     info->Rotation == MFX_ROTATION_0 && 
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == DXGI_FORMAT_AYUV && 
-                    requestFrameInfo->Width  >= 128 && 
-                    requestFrameInfo->Height >= 128 && 
-                    requestFrameInfo->Width  <= 4096 && 
-                    requestFrameInfo->Height <= 4096 && 
+                    requestFrameInfo->CropW >= 128 && 
+                    requestFrameInfo->CropH >= 128 && 
+                    requestFrameInfo->CropW <= 4096 && 
+                    requestFrameInfo->CropH <= 4096 && 
                     !(*needVpp))
             {
                 requestFrameInfo->FourCC = DXGI_FORMAT_AYUV;
@@ -2252,10 +2252,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
 #else
             if(info->Rotation == MFX_ROTATION_0 &&
                     requestFrameInfo->FourCC == MFX_FOURCC_RGB4 &&
-                    requestFrameInfo->Width  >= 128 &&
-                    requestFrameInfo->Height >= 128 &&
-                    requestFrameInfo->Width  <= 4096 &&
-                    requestFrameInfo->Height <= 4096)
+                    requestFrameInfo->CropW >= 128 &&
+                    requestFrameInfo->CropH >= 128 &&
+                    requestFrameInfo->CropW <= 4096 &&
+                    requestFrameInfo->CropH <= 4096)
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_NV12;
                 *needVpp = true;
@@ -2290,10 +2290,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
                info->Rotation == MFX_ROTATION_0 &&
                info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                requestFrameInfo->FourCC == MFX_FOURCC_RGB4 && 
-               requestFrameInfo->Width  >= 128 && 
-               requestFrameInfo->Height >= 128 && 
-               requestFrameInfo->Width  <= 4096 && 
-               requestFrameInfo->Height <= 4096 && 
+               requestFrameInfo->CropW >= 128 && 
+               requestFrameInfo->CropH >= 128 && 
+               requestFrameInfo->CropW <= 4096 && 
+               requestFrameInfo->CropH <= 4096 && 
                !(*needVpp))
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_RGB4;
@@ -2303,10 +2303,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
                     info->Rotation == MFX_ROTATION_0 &&
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == DXGI_FORMAT_AYUV && 
-                    requestFrameInfo->Width  >= 128 && 
-                    requestFrameInfo->Height >= 128 && 
-                    requestFrameInfo->Width  <= 4096 && 
-                    requestFrameInfo->Height <= 4096 && 
+                    requestFrameInfo->CropW >= 128 && 
+                    requestFrameInfo->CropH >= 128 && 
+                    requestFrameInfo->CropW <= 4096 && 
+                    requestFrameInfo->CropH <= 4096 && 
                     !(*needVpp))
             {
                 requestFrameInfo->FourCC = DXGI_FORMAT_AYUV;
@@ -2319,10 +2319,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
 #else
             if(info->Rotation == MFX_ROTATION_0 &&
                     requestFrameInfo->FourCC == MFX_FOURCC_RGB4 &&
-                    requestFrameInfo->Width  >= 128 &&
-                    requestFrameInfo->Height >= 128 &&
-                    requestFrameInfo->Width  <= 4096 &&
-                    requestFrameInfo->Height <= 4096)
+                    requestFrameInfo->CropW >= 128 &&
+                    requestFrameInfo->CropH >= 128 &&
+                    requestFrameInfo->CropW <= 4096 &&
+                    requestFrameInfo->CropH <= 4096)
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_NV12;
                 *needVpp = true;
@@ -2345,10 +2345,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
                info->Rotation == MFX_ROTATION_0 && 
                info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                requestFrameInfo->FourCC == MFX_FOURCC_RGB4 && 
-               requestFrameInfo->Width  >= 128 && 
-               requestFrameInfo->Height >= 128 && 
-               requestFrameInfo->Width  <= 4096 && 
-               requestFrameInfo->Height <= 4096 && 
+               requestFrameInfo->CropW >= 128 && 
+               requestFrameInfo->CropH >= 128 && 
+               requestFrameInfo->CropW <= 4096 && 
+               requestFrameInfo->CropH <= 4096 && 
                !(*needVpp))
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_RGB4;
@@ -2359,10 +2359,10 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
                     info->Rotation == MFX_ROTATION_0 && 
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == DXGI_FORMAT_AYUV && 
-                    requestFrameInfo->Width  >= 128 && 
-                    requestFrameInfo->Height >= 128 && 
-                    requestFrameInfo->Width  <= 4096 && 
-                    requestFrameInfo->Height <= 4096 && 
+                    requestFrameInfo->CropW >= 128 && 
+                    requestFrameInfo->CropH >= 128 && 
+                    requestFrameInfo->CropW <= 4096 && 
+                    requestFrameInfo->CropH <= 4096 && 
                     !(*needVpp))
             {
                 requestFrameInfo->FourCC = DXGI_FORMAT_AYUV;
