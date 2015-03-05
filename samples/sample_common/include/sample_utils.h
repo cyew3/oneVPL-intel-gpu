@@ -490,6 +490,10 @@ template<>struct mfx_ext_buffer_id<mfxExtAvcTemporalLayers>{
 template<>struct mfx_ext_buffer_id<mfxExtAVCRefListCtrl>{
     enum {id = MFX_EXTBUFF_AVC_REFLIST_CTRL};
 };
+template<>struct mfx_ext_buffer_id<mfxExtThreadsParam>{
+    enum {id = MFX_EXTBUFF_THREADS_PARAM};
+};
+
 
 //helper function to initialize mfx ext buffer structure
 template <class T>

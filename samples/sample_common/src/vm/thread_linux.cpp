@@ -12,8 +12,10 @@ Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
 
 #include <new> // std::bad_alloc
 #include <stdio.h> // setrlimit
+#include <sched.h>
 
 #include "vm/thread_defs.h"
+#include "sample_utils.h"
 
 MSDKMutex::MSDKMutex(void)
 {
@@ -253,6 +255,49 @@ mfxStatus msdk_setrlimit_vmem(mfxU64 size)
     limit.rlim_max = size;
     if (setrlimit(RLIMIT_AS, &limit)) return MFX_ERR_UNKNOWN;
     return MFX_ERR_NONE;
+}
+
+mfxStatus msdk_thread_get_schedtype(const msdk_char* str, mfxI32 &type)
+{
+    if (!msdk_strcmp(str, MSDK_STRING("fifo"))) {
+        type = SCHED_FIFO;
+    }
+    else if (!msdk_strcmp(str, MSDK_STRING("rr"))) {
+        type = SCHED_RR;
+    }
+    else if (!msdk_strcmp(str, MSDK_STRING("other"))) {
+        type = SCHED_OTHER;
+    }
+    else if (!msdk_strcmp(str, MSDK_STRING("batch"))) {
+        type = SCHED_BATCH;
+    }
+    else if (!msdk_strcmp(str, MSDK_STRING("idle"))) {
+        type = SCHED_IDLE;
+    }
+//    else if (!msdk_strcmp(str, MSDK_STRING("deadline"))) {
+//        type = SCHED_DEADLINE;
+//    }
+    else {
+        return MFX_ERR_UNSUPPORTED;
+    }
+    return MFX_ERR_NONE;
+}
+
+void msdk_thread_printf_scheduling_help()
+{
+    msdk_printf(MSDK_STRING("Note on the scheduling types and priorities:\n"));
+    msdk_printf(MSDK_STRING("  - <sched_type>: <priority_min> .. <priority_max> (notes)\n"));
+    msdk_printf(MSDK_STRING("The following scheduling types requires root privileges:\n"));
+    msdk_printf(MSDK_STRING("  - fifo: %d .. %d (static priority: low .. high)\n"), sched_get_priority_min(SCHED_FIFO), sched_get_priority_max(SCHED_FIFO));
+    msdk_printf(MSDK_STRING("  - rr: %d .. %d (static priority: low .. high)\n"), sched_get_priority_min(SCHED_RR), sched_get_priority_max(SCHED_RR));
+    msdk_printf(MSDK_STRING("The following scheduling types can be used by non-privileged users:\n"));
+    msdk_printf(MSDK_STRING("  - other: 0 .. 0 (static priority always 0)\n"));
+    msdk_printf(MSDK_STRING("  - batch: 0 .. 0 (static priority always 0)\n"));
+    msdk_printf(MSDK_STRING("  - idle: n/a\n"));
+    msdk_printf(MSDK_STRING("If you want to adjust priority for the other or batch scheduling type,\n"));
+    msdk_printf(MSDK_STRING("you can do that process-wise using dynamic priority - so called nice value.\n"));
+    msdk_printf(MSDK_STRING("Range for the nice value is: %d .. %d (high .. low)\n"), PRIO_MIN, PRIO_MAX);
+    msdk_printf(MSDK_STRING("Please, see 'man(1) nice' for details.\n"));
 }
 
 #endif // #if !defined(_WIN32) && !defined(_WIN64)

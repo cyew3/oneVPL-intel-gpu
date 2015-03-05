@@ -69,6 +69,9 @@ struct sInputParams
     mfxU32  numViews; // number of views for Multi-View Codec
     mfxU32  nRotation; // rotation for Motion JPEG Codec
     mfxU16  nAsyncDepth; // asyncronous queue
+    mfxU16  nThreadsNum;
+    mfxI32  SchedulingType;
+    mfxI32  Priority;
 
     mfxU16  width;
     mfxU16  height;

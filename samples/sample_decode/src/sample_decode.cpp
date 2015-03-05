@@ -66,6 +66,13 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-low_latency]            - configures decoder for low latency mode (supported only for H.264 and JPEG codec)\n"));
     msdk_printf(MSDK_STRING("   [-calc_latency]           - calculates latency during decoding and prints log (supported only for H.264 and JPEG codec)\n"));
     msdk_printf(MSDK_STRING("   [-async]                  - depth of asynchronous pipeline. default value is 4. must be between 1 and 20\n"));
+#if !defined(_WIN32) && !defined(_WIN64)
+    msdk_printf(MSDK_STRING("   [-threads_num]            - number of mediasdk task threads\n"));
+    msdk_printf(MSDK_STRING("   [-threads_schedtype]      - scheduling type of mediasdk task threads\n"));
+    msdk_printf(MSDK_STRING("   [-threads_priority]       - priority of mediasdk task threads\n"));
+    msdk_printf(MSDK_STRING("\n"));
+    msdk_thread_printf_scheduling_help();
+#endif
 #if defined(_WIN32) || defined(_WIN64)
     msdk_printf(MSDK_STRING("   [-jpeg_rotate n]          - rotate jpeg frame n degrees \n"));
     msdk_printf(MSDK_STRING("       n(90,180,270)         - number of degrees \n"));
@@ -244,6 +251,47 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+#if !defined(_WIN32) && !defined(_WIN64)
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-threads_num")))
+        {
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -threads_num key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nThreadsNum))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("threads_num is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-threads_schedtype")))
+        {
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -threads_schedtype key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_thread_get_schedtype(strInput[++i], pParams->SchedulingType))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("threads_schedtype is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-threads_priority")))
+        {
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -threads_priority key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->Priority))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("threads_priority is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+#endif // #if !defined(_WIN32) && !defined(_WIN64)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-f")))
         {
             if(i + 1 >= nArgNum)

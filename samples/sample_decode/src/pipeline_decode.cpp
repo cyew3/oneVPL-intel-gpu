@@ -139,32 +139,61 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    mfxVersion min_version;
+    mfxInitParam initPar;
+    mfxExtThreadsParam threadsPar;
+    mfxExtBuffer* extBufs[1];
     mfxVersion version;     // real API version with which library is initialized
 
+    MSDK_ZERO_MEMORY(initPar);
+    MSDK_ZERO_MEMORY(threadsPar);
+
     // we set version to 1.0 and later we will query actual version of the library which will got leaded
-    min_version.Major = 1;
-    min_version.Minor = 0;
+    initPar.Version.Major = 1;
+    initPar.Version.Minor = 0;
+
+    init_ext_buffer(threadsPar);
+
+    bool needInitExtPar = false;
+
+    if (pParams->nThreadsNum) {
+        threadsPar.NumThread = pParams->nThreadsNum;
+        needInitExtPar = true;
+    }
+    if (pParams->SchedulingType) {
+        threadsPar.SchedulingType = pParams->SchedulingType;
+        needInitExtPar = true;
+    }
+    if (pParams->Priority) {
+        threadsPar.Priority = pParams->Priority;
+        needInitExtPar = true;
+    }
+    if (needInitExtPar) {
+        extBufs[0] = (mfxExtBuffer*)&threadsPar;
+        initPar.ExtParam = extBufs;
+        initPar.NumExtParam = 1;
+    }
 
     // Init session
-    if (pParams->bUseHWLib)
-    {
+    if (pParams->bUseHWLib) {
         // try searching on all display adapters
-        mfxIMPL impl = MFX_IMPL_HARDWARE_ANY;
+        initPar.Implementation = MFX_IMPL_HARDWARE_ANY;
 
         // if d3d11 surfaces are used ask the library to run acceleration through D3D11
         // feature may be unsupported due to OS or MSDK API version
         if (D3D11_MEMORY == pParams->memType)
-            impl |= MFX_IMPL_VIA_D3D11;
+            initPar.Implementation |= MFX_IMPL_VIA_D3D11;
 
-        sts = m_mfxSession.Init(impl, &min_version);
+        sts = m_mfxSession.InitEx(initPar);
 
         // MSDK API version may not support multiple adapters - then try initialize on the default
-        if (MFX_ERR_NONE != sts)
-            sts = m_mfxSession.Init((impl & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE, &min_version);
+        if (MFX_ERR_NONE != sts) {
+            initPar.Implementation = (initPar.Implementation & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE;
+            sts = m_mfxSession.InitEx(initPar);
+        }
+    } else {
+        initPar.Implementation = MFX_IMPL_SOFTWARE;
+        sts = m_mfxSession.InitEx(initPar);
     }
-    else
-        sts = m_mfxSession.Init(MFX_IMPL_SOFTWARE, &min_version);
 
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 

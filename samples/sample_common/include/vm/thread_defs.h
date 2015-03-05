@@ -12,6 +12,7 @@ Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
 #define __THREAD_DEFS_H__
 
 #include "mfxdefs.h"
+#include "vm/strings_defs.h"
 
 typedef unsigned int (MFX_STDCALL * msdk_thread_callback)(void*);
 
@@ -178,5 +179,7 @@ private:
 };
 
 mfxStatus msdk_setrlimit_vmem(mfxU64 size);
+mfxStatus msdk_thread_get_schedtype(const msdk_char*, mfxI32 &type);
+void msdk_thread_printf_scheduling_help();
 
 #endif //__THREAD_DEFS_H__
