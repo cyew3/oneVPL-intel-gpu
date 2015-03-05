@@ -256,7 +256,7 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
         mfxU8* dst   = surface_work->Data.B;
         for (i = 0; i < h; i++)
         {
-            memcpy(dst + i*dst_pitch,src + i*src_pitch, 4*w);
+            memcpy_s(dst + i*dst_pitch, 4*w, src + i*src_pitch, 4*w);
         }
     }
     else if(MFX_FOURCC_NV12 == surface_work->Info.FourCC)

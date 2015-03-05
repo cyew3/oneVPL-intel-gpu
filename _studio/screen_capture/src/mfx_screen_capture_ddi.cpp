@@ -21,29 +21,36 @@ namespace MfxCapture
 
 Capturer* CreatePlatformCapturer(mfxCoreInterface* core)
 {
-    if (core)
+    try
     {
-        mfxCoreParam par = {}; 
-
-        if (core->GetCoreParam(core->pthis, &par))
-            return 0;
-
-        if(MFX_IMPL_SOFTWARE != MFX_IMPL_BASETYPE(par.Impl))
+        if (core)
         {
-            switch(par.Impl & 0xF00)
-            {
-            case MFX_IMPL_VIA_D3D9:
-                return new D3D9_Capturer(core);
-            case MFX_IMPL_VIA_D3D11:
-                return new D3D11_Capturer(core);
-            default:
+            mfxCoreParam par = {}; 
+
+            if (core->GetCoreParam(core->pthis, &par))
                 return 0;
+
+            if(MFX_IMPL_SOFTWARE != MFX_IMPL_BASETYPE(par.Impl))
+            {
+                switch(par.Impl & 0xF00)
+                {
+                case MFX_IMPL_VIA_D3D9:
+                    return new D3D9_Capturer(core);
+                case MFX_IMPL_VIA_D3D11:
+                    return new D3D11_Capturer(core);
+                default:
+                    return 0;
+                }
+            }
+            else
+            {
+                return new SW_D3D9_Capturer(core);
             }
         }
-        else
-        {
-            return new SW_D3D9_Capturer(core);
-        }
+    }
+    catch(...)
+    {
+        return 0;
     }
 
     return 0;
@@ -51,9 +58,16 @@ Capturer* CreatePlatformCapturer(mfxCoreInterface* core)
 
 Capturer* CreateSWCapturer(mfxCoreInterface* core)
 {
-    if (core)
+    try
     {
-        return new SW_D3D9_Capturer(core);
+        if (core)
+        {
+            return new SW_D3D9_Capturer(core);
+        }
+    }
+    catch(...)
+    {
+        return 0;
     }
 
     return 0;

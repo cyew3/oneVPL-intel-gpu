@@ -612,12 +612,16 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
     if(onInit)
     {
         m_pCapturer.reset( CreatePlatformCapturer(m_pmfxCore) );
-
-        mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in);
+        if(m_pCapturer.get())
+            mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in);
+        else
+            mfxRes = MFX_ERR_MEMORY_ALLOC;
         if(mfxRes)
         {
             fallback = true;
             m_pCapturer.reset( CreateSWCapturer(m_pmfxCore) );
+            if(!m_pCapturer.get())
+                return MFX_ERR_MEMORY_ALLOC;
             mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in);
         }
         MFX_CHECK_STS(mfxRes);
@@ -628,13 +632,14 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
     else
     {
         m_pCapturer.reset( CreatePlatformCapturer(m_pmfxCore) );
-
-        mfxRes = m_pCapturer.get()->QueryVideoAccelerator(in, &out);
+        if(m_pCapturer.get())
+            mfxRes = m_pCapturer.get()->QueryVideoAccelerator(in, &out);
+        else
+            mfxRes = MFX_ERR_DEVICE_FAILED;
         if(mfxRes)
         {
             fallback = true;
         }
-        MFX_CHECK_STS(mfxRes);
 
         m_pCapturer.reset( 0 );
     }
