@@ -1647,8 +1647,11 @@ mfxStatus CEncodingPipeline::Run()
         // find free surface for encoder input
         nEncSurfIdx = GetFreeSurface(m_pEncSurfaces, m_EncResponse.NumFrameActual);
         MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
-        nReconSurfIdx = GetFreeSurface(m_pReconSurfaces, m_ReconResponse.NumFrameActual);
-        MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
+        if(m_pmfxPAK)
+        {
+            nReconSurfIdx = GetFreeSurface(m_pReconSurfaces, m_ReconResponse.NumFrameActual);
+            MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
+        }
 
         frameCount++;
 
@@ -2211,7 +2214,7 @@ mfxStatus CEncodingPipeline::Run()
         //run processing on last frames
         if (numUnencoded > 0) {
             if (inputTasks.back()->frameType & MFX_FRAMETYPE_B) {
-                inputTasks.back()->frameType = MFX_FRAMETYPE_P;
+                inputTasks.back()->frameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
             }
             mdprintf(stderr, "run processing on last frames: %d\n", numUnencoded);
             while (numUnencoded != 0) {
@@ -2222,6 +2225,7 @@ mfxStatus CEncodingPipeline::Run()
                 iTask* eTask = findFrameToEncode();
                 if (eTask == NULL) continue; //not found frame to encode
 
+                eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
                 initEncFrameParams(eTask);
 
                 for (;;) {
