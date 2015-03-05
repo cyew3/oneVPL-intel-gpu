@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <iterator>
 #include <typeinfo>
+#include "mfxstructures.h"
 #include "mfxvideo.h"
 #include "mfxplugin.h"
 #include "mfxenc.h"
@@ -21,6 +22,7 @@ std::string pVoidToHexString(void* x);
 std::string GetStatusString(mfxStatus sts);
 std::string GetmfxIMPL(mfxIMPL impl);
 std::string GetFourCC(mfxU32 fourcc);
+std::string GetCodecIdString (mfxU32 id);
 
 #define GET_ARRAY_SIZE(x) sizeof(x)/sizeof(x[0])
 #define DUMP_RESERVED_ARRAY(r) dump_reserved_array(&(r[0]), GET_ARRAY_SIZE(r))

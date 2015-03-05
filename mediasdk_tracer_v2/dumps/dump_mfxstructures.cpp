@@ -267,7 +267,7 @@ std::string DumpContext::dump(const std::string structName, const mfxInfoMFX &mf
     str += structName + ".reserved5=" + ToString(mfx.reserved5) + "\n";
     str += structName + ".BRCParamMultiplier=" + ToString(mfx.BRCParamMultiplier) + "\n";
     str += dump(structName + ".FrameInfo", mfx.FrameInfo) + "\n";
-    str += structName + ".CodecId=" + ToString(mfx.CodecId) + "\n";
+    str += structName + ".CodecId=" + GetCodecIdString(mfx.CodecId) + "\n";
     str += structName + ".CodecProfile=" + ToString(mfx.CodecProfile) + "\n";
     str += structName + ".CodecLevel=" + ToString(mfx.CodecLevel) + "\n";
     str += structName + ".NumThread=" + ToString(mfx.NumThread) + "\n";
@@ -450,7 +450,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamColor
 {
     std::string str;
     str += dump(structName + ".Header=", CamColorCorrection3x3.Header) + "\n";
-    str += structName + ".CCM*=" + ToString(CamColorCorrection3x3.CCM) + "\n";
+    str += structName + ".CCM=" + ToString(CamColorCorrection3x3.CCM) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamColorCorrection3x3.reserved) + "\n";
     return str;
 }
@@ -496,7 +496,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtLAContro
     str += structName + ".BPyramid=" + ToString(ExtLAControl.BPyramid) + "\n";
     str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtLAControl.reserved1) + "\n";
     str += structName + ".NumOutStream=" + ToString(ExtLAControl.NumOutStream) + "\n";
-    str += structName + ".OutStream*=" + ToString(ExtLAControl.OutStream) + "\n";
+    str += structName + ".OutStream=" + ToHexFormatString(ExtLAControl.OutStream) + "\n";
     return str;
 }
 
@@ -542,9 +542,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAVCRefLi
     str += dump(structName + ".Header=", ExtAVCRefListCtrl.Header) + "\n";
     str += structName + ".NumRefIdxL0Active=" + ToString(ExtAVCRefListCtrl.NumRefIdxL0Active) + "\n";
     str += structName + ".NumRefIdxL1Active=" + ToString(ExtAVCRefListCtrl.NumRefIdxL1Active) + "\n";
-    str += structName + ".PreferredRefList*=" + ToString(ExtAVCRefListCtrl.PreferredRefList) + "\n";
-    str += structName + ".RejectedRefList*=" + ToString(ExtAVCRefListCtrl.RejectedRefList) + "\n";
-    str += structName + ".LongTermRefList*=" + ToString(ExtAVCRefListCtrl.LongTermRefList) + "\n";
+    str += structName + ".PreferredRefList=" + ToString(ExtAVCRefListCtrl.PreferredRefList) + "\n";
+    str += structName + ".RejectedRefList=" + ToString(ExtAVCRefListCtrl.RejectedRefList) + "\n";
+    str += structName + ".LongTermRefList=" + ToString(ExtAVCRefListCtrl.LongTermRefList) + "\n";
     str += structName + ".ApplyLongTermIdx=" + ToString(ExtAVCRefListCtrl.ApplyLongTermIdx) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtAVCRefListCtrl.reserved) + "\n";
     return str;
@@ -557,7 +557,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAvcTempo
     str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtAvcTemporalLayers.reserved1) + "\n";
     str += structName + ".reserved2=" + ToString(ExtAvcTemporalLayers.reserved2) + "\n";
     str += structName + ".BaseLayerPID=" + ToString(ExtAvcTemporalLayers.BaseLayerPID) + "\n";
-    str += structName + ".Layer*=" + ToString(ExtAvcTemporalLayers.Layer) + "\n";
+    str += structName + ".Layer=" + ToString(ExtAvcTemporalLayers.Layer) + "\n";
     return str;
 }
 
@@ -573,8 +573,8 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAVCEncod
     str += structName + ".QP=" + ToString(ExtAVCEncodedFrameInfo.QP) + "\n";
     str += structName + ".SecondFieldOffset=" + ToString(ExtAVCEncodedFrameInfo.SecondFieldOffset) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtAVCEncodedFrameInfo.reserved) + "\n";
-    str += structName + ".UsedRefListL0*=" + ToString(ExtAVCEncodedFrameInfo.UsedRefListL0) + "\n";
-    str += structName + ".UsedRefListL1*=" + ToString(ExtAVCEncodedFrameInfo.UsedRefListL1) + "\n";
+    str += structName + ".UsedRefListL0=" + ToHexFormatString(ExtAVCEncodedFrameInfo.UsedRefListL0) + "\n";
+    str += structName + ".UsedRefListL1=" + ToHexFormatString(ExtAVCEncodedFrameInfo.UsedRefListL1) + "\n";
     return str;
 }
 
@@ -585,8 +585,8 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAVCRefLi
     str += structName + ".NumRefIdxL0Active=" + ToString(ExtAVCRefLists.NumRefIdxL0Active) + "\n";
     str += structName + ".NumRefIdxL1Active=" + ToString(ExtAVCRefLists.NumRefIdxL1Active) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtAVCRefLists.reserved) + "\n";
-    str += structName + ".RefPicList0*=" + ToString(ExtAVCRefLists.RefPicList0) + "\n";
-    str += structName + ".RefPicList1*=" + ToString(ExtAVCRefLists.RefPicList1) + "\n";
+    str += structName + ".RefPicList0=" + ToString(ExtAVCRefLists.RefPicList0) + "\n";
+    str += structName + ".RefPicList1=" + ToString(ExtAVCRefLists.RefPicList1) + "\n";
     return str;
 }
 
@@ -597,7 +597,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtJPEGQuan
     str += dump(structName + ".Header=", ExtJPEGQuantTables.Header) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtJPEGQuantTables.reserved) + "\n";
     str += structName + ".NumTable=" + ToString(ExtJPEGQuantTables.NumTable) + "\n";
-    str += structName + ".Qm*=" + ToString(ExtJPEGQuantTables.Qm) + "\n";
+    str += structName + ".Qm=" + ToString(ExtJPEGQuantTables.Qm) + "\n";
     return str;
 }
 
@@ -608,8 +608,8 @@ std::string DumpContext::dump(const std::string structName, const mfxExtJPEGHuff
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.reserved) + "\n";
     str += structName + ".NumDCTable=" + ToString(ExtJPEGHuffmanTables.NumDCTable) + "\n";
     str += structName + ".NumACTable=" + ToString(ExtJPEGHuffmanTables.NumACTable) + "\n";
-    str += structName + ".DCTables*=" + ToString(ExtJPEGHuffmanTables.DCTables) + "\n";
-    str += structName + ".ACTables*=" + ToString(ExtJPEGHuffmanTables.ACTables) + "\n";
+    str += structName + ".DCTables=" + ToString(ExtJPEGHuffmanTables.DCTables) + "\n";
+    str += structName + ".ACTables=" + ToString(ExtJPEGHuffmanTables.ACTables) + "\n";
     return str;
 }
 
@@ -636,7 +636,7 @@ std::string DumpContext::dump(const std::string structName, const mfxMVCOperatio
     str += structName + ".LevelIdc=" + ToString(MVCOperationPoint.LevelIdc) + "\n";
     str += structName + ".NumViews=" + ToString(MVCOperationPoint.NumViews) + "\n";
     str += structName + ".NumTargetViews=" + ToString(MVCOperationPoint.NumTargetViews) + "\n";
-    str += structName + ".TargetViewId*=" + ToString(MVCOperationPoint.TargetViewId) + "\n";
+    str += structName + ".TargetViewId=" + ToHexFormatString(MVCOperationPoint.TargetViewId) + "\n";
     return str;
 }
 
@@ -651,7 +651,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtMVCSeqDe
     }
     str += structName + ".NumViewId=" + ToString(ExtMVCSeqDesc.NumViewId) + "\n";
     str += structName + ".NumViewIdAlloc=" + ToString(ExtMVCSeqDesc.NumViewIdAlloc) + "\n";
-    str += structName + ".ViewId*=" + ToString(ExtMVCSeqDesc.ViewId) + "\n";
+    str += structName + ".ViewId=" + ToString(ExtMVCSeqDesc.ViewId) + "\n";
     str += structName + ".NumOP=" + ToString(ExtMVCSeqDesc.NumOP) + "\n";
     str += structName + ".NumOPAlloc=" + ToString(ExtMVCSeqDesc.NumOPAlloc) + "\n";
     if (ExtMVCSeqDesc.OP)

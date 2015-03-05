@@ -11,10 +11,10 @@ const char* get_path_reg()
     {
         char* path = new char[128];
         DWORD size = sizeof(char)*128;
-        DWORD sts = RegGetValue(HKEY_LOCAL_MACHINE, (LPCTSTR)("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), (LPCTSTR)("_conf"), REG_SZ, (LPDWORD)0, (PVOID)path, (LPDWORD)&size);
+        DWORD sts = RegGetValue(HKEY_LOCAL_MACHINE, (LPCTSTR)("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), (LPCTSTR)("_conf"), RRF_RT_REG_SZ, (LPDWORD)0, (PVOID)path, (LPDWORD)&size);
         int len = strlen(path); 
         
-        if (sts != ERROR_FILE_NOT_FOUND)
+        if (sts == ERROR_SUCCESS)
         {
             for (int i = 0; i < len; i++)
             {

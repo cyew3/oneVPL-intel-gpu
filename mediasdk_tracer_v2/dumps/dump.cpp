@@ -12,60 +12,17 @@ std::string pVoidToHexString(void* x)
     return result.str();
 }
 
-std::string GetStatusString(mfxStatus sts) {
-    
-    switch (sts) {
-    case (MFX_ERR_NONE): return ToString("MFX_ERR_NONE");
-    case(MFX_ERR_UNKNOWN): return ToString("MFX_ERR_UNKNOWN");
-    case(MFX_ERR_NULL_PTR): return ToString("MFX_ERR_NULL_PTR");
-    case(MFX_ERR_UNSUPPORTED): return ToString("MFX_ERR_UNSUPPORTED");
-    case(MFX_ERR_MEMORY_ALLOC): return ToString("MFX_ERR_MEMORY_ALLOC");
-    case(MFX_ERR_NOT_ENOUGH_BUFFER): return ToString("MFX_ERR_NOT_ENOUGH_BUFFER");
-    case(MFX_ERR_INVALID_HANDLE): return ToString("MFX_ERR_INVALID_HANDLE");
-    case(MFX_ERR_LOCK_MEMORY): return ToString("MFX_ERR_LOCK_MEMORY");
-    case(MFX_ERR_NOT_INITIALIZED): return ToString("MFX_ERR_NOT_INITIALIZED");
-    case(MFX_ERR_NOT_FOUND): return ToString("MFX_ERR_NOT_FOUND");
-    case(MFX_ERR_MORE_DATA): return ToString("MFX_ERR_MORE_DATA");
-    case(MFX_ERR_MORE_SURFACE): return ToString("MFX_ERR_MORE_SURFACE");
-    case(MFX_ERR_ABORTED): return ToString("MFX_ERR_ABORTED");
-    case(MFX_ERR_DEVICE_LOST): return ToString("MFX_ERR_DEVICE_LOST");
-    case(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM): return ToString("MFX_ERR_INCOMPATIBLE_VIDEO_PARAM");
-    case(MFX_ERR_INVALID_VIDEO_PARAM): return ToString("MFX_ERR_INVALID_VIDEO_PARAM");
-    case(MFX_ERR_UNDEFINED_BEHAVIOR): return ToString("MFX_ERR_UNDEFINED_BEHAVIOR");
-    case(MFX_ERR_DEVICE_FAILED): return ToString("MFX_ERR_DEVICE_FAILED");
-    case(MFX_ERR_MORE_BITSTREAM): return ToString("MFX_ERR_MORE_BITSTREAM");
-    case(MFX_WRN_IN_EXECUTION): return ToString("MFX_WRN_IN_EXECUTION");
-    case(MFX_WRN_DEVICE_BUSY): return ToString("MFX_WRN_DEVICE_BUSY");
-    case(MFX_WRN_VIDEO_PARAM_CHANGED): return ToString("MFX_WRN_VIDEO_PARAM_CHANGED");
-    case(MFX_WRN_PARTIAL_ACCELERATION): return ToString("MFX_WRN_PARTIAL_ACCELERATION");
-    case(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM): return ToString("MFX_WRN_INCOMPATIBLE_VIDEO_PARAM");
-    case(MFX_WRN_VALUE_NOT_CHANGED): return ToString("MFX_WRN_VALUE_NOT_CHANGED");
-    case(MFX_WRN_FILTER_SKIPPED): return ToString("MFX_WRN_FILTER_SKIPPED");
-    default:
-        return ToString("UNKNOWN_STATUS");
-    }
-}
-
-
-
-struct BufferIdTable
+struct IdTable
 {
-    mfxU32 bufferid;
+    mfxU32 id;
     const char* str;
 };
 
 #define TABLE_ENTRY(_name) \
     { _name, #_name }
 
-struct StringCodeItem{
-    mfxU32 code;
-    char  name[128];
-};
 
-#define CODE_STRING(name_prefix, name_postfix)\
-{name_prefix##name_postfix, #name_postfix}
-
-static BufferIdTable g_BufferIdTable[] =
+static IdTable g_BufferIdTable[] =
 {
     TABLE_ENTRY(MFX_EXTBUFF_AVC_REFLIST_CTRL),
     TABLE_ENTRY(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS),
@@ -120,24 +77,103 @@ static BufferIdTable g_BufferIdTable[] =
     TABLE_ENTRY(MFX_EXTBUFF_FEI_PAK_CTRL),
     TABLE_ENTRY(MFX_EXTBUFF_FEI_SPS),
     TABLE_ENTRY(MFX_EXTBUFF_FEI_PPS),
-    TABLE_ENTRY(MFX_EXTBUFF_FEI_SLICE)
-
+    TABLE_ENTRY(MFX_EXTBUFF_FEI_SLICE),
+    TABLE_ENTRY(MFX_EXTBUF_CAM_GAMMA_CORRECTION),
+    TABLE_ENTRY(MFX_EXTBUF_CAM_WHITE_BALANCE),
+    TABLE_ENTRY(MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL),
+    TABLE_ENTRY(MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION),
+    TABLE_ENTRY(MFX_EXTBUF_CAM_VIGNETTE_CORRECTION),
+    TABLE_ENTRY(MFX_EXTBUF_CAM_BAYER_DENOISE),
+    TABLE_ENTRY(MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3),
+    TABLE_ENTRY(MFX_EXTBUF_CAM_PADDING),
+    TABLE_ENTRY(MFX_EXTBUF_CAM_PIPECONTROL),
+    TABLE_ENTRY(MFX_EXTBUFF_LOOKAHEAD_CTRL),
+    TABLE_ENTRY(MFX_EXTBUFF_LOOKAHEAD_STAT),
+    TABLE_ENTRY(MFX_EXTBUFF_AVC_REFLIST_CTRL),
+    TABLE_ENTRY(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS),
+    TABLE_ENTRY(MFX_EXTBUFF_ENCODED_FRAME_INFO),
+    TABLE_ENTRY(MFX_EXTBUFF_AVC_REFLISTS),
+    TABLE_ENTRY(MFX_EXTBUFF_JPEG_QT),
+    TABLE_ENTRY(MFX_EXTBUFF_JPEG_HUFFMAN),
+    TABLE_ENTRY(MFX_EXTBUFF_MVC_SEQ_DESC),
+    TABLE_ENTRY(MFX_EXTBUFF_MVC_TARGET_VIEWS),
 };
 
-StringCodeItem tbl_impl[] = {
-    CODE_STRING(MFX_IMPL_,SOFTWARE),
-    CODE_STRING(MFX_IMPL_,HARDWARE),
-    CODE_STRING(MFX_IMPL_,AUTO_ANY),
-    CODE_STRING(MFX_IMPL_,HARDWARE_ANY),
-    CODE_STRING(MFX_IMPL_,HARDWARE2),
-    CODE_STRING(MFX_IMPL_,HARDWARE3),
-    CODE_STRING(MFX_IMPL_,HARDWARE4),
-    CODE_STRING(MFX_IMPL_,RUNTIME),
-    CODE_STRING(MFX_IMPL_,VIA_ANY),
-    CODE_STRING(MFX_IMPL_,VIA_D3D9),
-    CODE_STRING(MFX_IMPL_,VIA_D3D11),
-    CODE_STRING(MFX_IMPL_,VIA_VAAPI),
-    CODE_STRING(MFX_IMPL_,AUDIO),
+static IdTable tbl_impl[] = {
+    TABLE_ENTRY(MFX_IMPL_SOFTWARE),
+    TABLE_ENTRY(MFX_IMPL_HARDWARE),
+    TABLE_ENTRY(MFX_IMPL_AUTO_ANY),
+    TABLE_ENTRY(MFX_IMPL_HARDWARE_ANY),
+    TABLE_ENTRY(MFX_IMPL_HARDWARE2),
+    TABLE_ENTRY(MFX_IMPL_HARDWARE3),
+    TABLE_ENTRY(MFX_IMPL_HARDWARE4),
+    TABLE_ENTRY(MFX_IMPL_RUNTIME),
+    TABLE_ENTRY(MFX_IMPL_VIA_ANY),
+    TABLE_ENTRY(MFX_IMPL_VIA_D3D9),
+    TABLE_ENTRY(MFX_IMPL_VIA_D3D11),
+    TABLE_ENTRY(MFX_IMPL_VIA_VAAPI),
+    TABLE_ENTRY(MFX_IMPL_AUDIO)
+};
+
+static IdTable tbl_fourcc[] = {
+    TABLE_ENTRY(MFX_FOURCC_NV12),
+    TABLE_ENTRY(MFX_FOURCC_YV12),
+    TABLE_ENTRY(MFX_FOURCC_NV16),
+    TABLE_ENTRY(MFX_FOURCC_YUY2),
+    TABLE_ENTRY(MFX_FOURCC_RGB3),
+    TABLE_ENTRY(MFX_FOURCC_RGB4),
+    TABLE_ENTRY(MFX_FOURCC_P8),
+    TABLE_ENTRY(MFX_FOURCC_P8_TEXTURE),
+    TABLE_ENTRY(MFX_FOURCC_P010),
+    TABLE_ENTRY(MFX_FOURCC_P210),
+    TABLE_ENTRY(MFX_FOURCC_BGR4),
+    TABLE_ENTRY(MFX_FOURCC_A2RGB10),
+    TABLE_ENTRY(MFX_FOURCC_ARGB16),
+    TABLE_ENTRY(MFX_FOURCC_R16)
+};
+
+static IdTable tbl_sts[] = {
+    TABLE_ENTRY(MFX_ERR_NONE),
+    TABLE_ENTRY(MFX_ERR_UNKNOWN),
+    TABLE_ENTRY(MFX_ERR_NULL_PTR),
+    TABLE_ENTRY(MFX_ERR_UNSUPPORTED),
+    TABLE_ENTRY(MFX_ERR_MEMORY_ALLOC),
+    TABLE_ENTRY(MFX_ERR_NOT_ENOUGH_BUFFER),
+    TABLE_ENTRY(MFX_ERR_INVALID_HANDLE),
+    TABLE_ENTRY(MFX_ERR_LOCK_MEMORY),
+    TABLE_ENTRY(MFX_ERR_NOT_INITIALIZED),
+    TABLE_ENTRY(MFX_ERR_NOT_FOUND),
+    TABLE_ENTRY(MFX_ERR_MORE_DATA),
+    TABLE_ENTRY(MFX_ERR_MORE_SURFACE),
+    TABLE_ENTRY(MFX_ERR_ABORTED),
+    TABLE_ENTRY(MFX_ERR_DEVICE_LOST),
+    TABLE_ENTRY(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM),
+    TABLE_ENTRY(MFX_ERR_INVALID_VIDEO_PARAM),
+    TABLE_ENTRY(MFX_ERR_UNDEFINED_BEHAVIOR),
+    TABLE_ENTRY(MFX_ERR_DEVICE_FAILED),
+    TABLE_ENTRY(MFX_ERR_MORE_BITSTREAM),
+    TABLE_ENTRY(MFX_ERR_INCOMPATIBLE_AUDIO_PARAM),
+    TABLE_ENTRY(MFX_ERR_INVALID_AUDIO_PARAM),
+    TABLE_ENTRY(MFX_WRN_IN_EXECUTION),
+    TABLE_ENTRY(MFX_WRN_DEVICE_BUSY),
+    TABLE_ENTRY(MFX_WRN_VIDEO_PARAM_CHANGED),
+    TABLE_ENTRY(MFX_WRN_PARTIAL_ACCELERATION),
+    TABLE_ENTRY(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM),
+    TABLE_ENTRY(MFX_WRN_VALUE_NOT_CHANGED),
+    TABLE_ENTRY(MFX_WRN_OUT_OF_RANGE),
+    TABLE_ENTRY(MFX_WRN_FILTER_SKIPPED),
+    TABLE_ENTRY(MFX_WRN_INCOMPATIBLE_AUDIO_PARAM),
+    TABLE_ENTRY(MFX_TASK_DONE),
+    TABLE_ENTRY(MFX_TASK_WORKING),
+    TABLE_ENTRY(MFX_TASK_BUSY)
+};
+
+static IdTable tbl_codecid[] = {
+    TABLE_ENTRY(MFX_CODEC_AVC),
+    TABLE_ENTRY(MFX_CODEC_HEVC),
+    TABLE_ENTRY(MFX_CODEC_MPEG2),
+    TABLE_ENTRY(MFX_CODEC_VC1),
+    TABLE_ENTRY(MFX_CODEC_CAPTURE)
 };
 
 
@@ -145,7 +181,7 @@ const char* DumpContext::get_bufferid_str(mfxU32 bufferid)
 {
     for (size_t i = 0; i < GET_ARRAY_SIZE(g_BufferIdTable); ++i)
     {
-        if (g_BufferIdTable[i].bufferid == bufferid)
+        if (g_BufferIdTable[i].id == bufferid)
         {
             return g_BufferIdTable[i].str;
         }
@@ -157,11 +193,10 @@ std::string GetmfxIMPL(mfxIMPL impl) {
     
     std::basic_stringstream<char> stream;
     std::string name = "UNKNOWN";
-    stream << "MFX_IMPL_";
-    
+        
     for (int i = 0; i < (sizeof(tbl_impl) / sizeof(tbl_impl[0])); i++)
-        if (tbl_impl[i].code == (impl & (MFX_IMPL_VIA_ANY - 1)))
-            name = tbl_impl[i].name;
+        if (tbl_impl[i].id == (impl & (MFX_IMPL_VIA_ANY - 1)))
+            name = tbl_impl[i].str;
     stream << name;
     
     int via_flag = impl & ~(MFX_IMPL_VIA_ANY - 1);
@@ -169,11 +204,10 @@ std::string GetmfxIMPL(mfxIMPL impl) {
     if (0 != via_flag)
     {
         stream << "|";
-        stream << "MFX_IMPL_";
         name = "UNKNOWN";
         for (int i = 0; i < (sizeof(tbl_impl) / sizeof(tbl_impl[0])); i++)
-            if (tbl_impl[i].code == via_flag)
-                name = tbl_impl[i].name;
+            if (tbl_impl[i].id == via_flag)
+                name = tbl_impl[i].str;
         stream << name;
     }
     return stream.str();
@@ -182,50 +216,60 @@ std::string GetmfxIMPL(mfxIMPL impl) {
 std::string GetFourCC(mfxU32 fourcc) {
     
     std::basic_stringstream<char> stream;
-    switch (fourcc) {
-    case MFX_FOURCC_NV12:
-        stream << "NV12";
-        break;
-    case MFX_FOURCC_RGB3:
-        stream << "RGB3";
-        break;
-    case MFX_FOURCC_RGB4:
-        stream << "RGB4";
-        break;
-    case MFX_FOURCC_YV12:
-        stream << "YV12";
-        break;
-    case MFX_FOURCC_YUY2:
-        stream << "YUY2";
-        break;
-    case MFX_FOURCC_P8:
-        stream << "P8";
-        break;
-    case MFX_FOURCC_P8_TEXTURE:
-        stream << "P8_TEXTURE";
-        break;
-    case MFX_FOURCC_P010:
-        stream << "P010";
-        break;
-    case MFX_FOURCC_BGR4:
-        stream << "BGR4";
-        break;
-    case MFX_FOURCC_A2RGB10:
-        stream << "A2RGB10";
-        break;
-    case MFX_FOURCC_ARGB16:
-        stream << "ARGB16";
-        break;
-    case MFX_FOURCC_R16:
-        stream << "R16";
-        break;
-    default:
-        stream << "UNKNOWN";
+    std::string name = "UNKNOWN";
+    int j = 0;
+    for (int i = 0; i < (sizeof(tbl_fourcc) / sizeof(tbl_fourcc[0])); i++)
+    {
+        if (tbl_fourcc[i].id == fourcc)
+        {
+            name = "";
+            while (tbl_fourcc[i].str[j + 11] != '\0')
+            {
+                name = name + tbl_fourcc[i].str[j + 11];
+                j++;
+            }
+            name = name + "\0";
+            break;
+        }
     }
-    
-    
+    stream<<name;
     return stream.str();
 }
+
+std::string GetStatusString(mfxStatus sts) {
+    
+    std::basic_stringstream<char> stream;
+    std::string name = "UNKNOWN_STATUS";
+    for (int i = 0; i < (sizeof(tbl_sts) / sizeof(tbl_sts[0])); i++)
+    {
+        if (tbl_sts[i].id == sts)
+        {
+            name = tbl_sts[i].str;
+            break;
+        }
+
+    }
+    stream<<name;
+    return stream.str();
+}
+
+std::string GetCodecIdString(mfxU32 id) {
+    
+    std::basic_stringstream<char> stream;
+    std::string name = "UNKNOWN";
+    for (int i = 0; i < (sizeof(tbl_codecid) / sizeof(tbl_codecid[0])); i++)
+    {
+        if (tbl_codecid[i].id == id)
+        {
+            name = tbl_codecid[i].str;
+            break;
+        }
+
+    }
+    stream<<name;
+    return stream.str();
+}
+
 //mfxcommon
 DEFINE_GET_TYPE_DEF(mfxBitstream);
 DEFINE_GET_TYPE_DEF(mfxExtBuffer);
