@@ -27,7 +27,7 @@ static void CopyFrame(Frame *pSrc, Frame* pDst)
     {
         pSrcLine = pSrc->plaY.ucCorner + i * pSrc->plaY.uiStride;
         pDstLine = pDst->plaY.ucCorner + i * pDst->plaY.uiStride;
-        memcpy(pDstLine, pSrcLine, pDst->plaY.uiWidth);
+        ptir_memcpy_s(pDstLine, pDst->plaY.uiWidth, pSrcLine, pSrc->plaY.uiWidth);
     }
 
     // copying U-component
@@ -35,14 +35,14 @@ static void CopyFrame(Frame *pSrc, Frame* pDst)
     {
         pSrcLine = pSrc->plaU.ucCorner + i * pSrc->plaU.uiStride;
         pDstLine = pDst->plaU.ucCorner + i * pDst->plaU.uiStride;
-        memcpy(pDstLine, pSrcLine, pDst->plaU.uiWidth);
+        ptir_memcpy_s(pDstLine, pDst->plaU.uiWidth, pSrcLine, pSrc->plaU.uiWidth);
     }
     // copying V-component
     for (i = 0; i < pSrc->plaV.uiHeight; i++)
     {
         pSrcLine = pSrc->plaV.ucCorner + i * pSrc->plaV.uiStride;
         pDstLine = pDst->plaV.ucCorner + i * pDst->plaV.uiStride;
-        memcpy(pDstLine, pSrcLine, pDst->plaV.uiWidth);
+        ptir_memcpy_s(pDstLine, pDst->plaV.uiWidth, pSrcLine, pSrc->plaV.uiWidth);
     }
 }
 
@@ -106,11 +106,11 @@ void Undo2Frames_CMTest(Frame *frmBuffer1, Frame *frmBuffer2, bool BFF)
     start = BFF;
 
     for(i = start; i < frmBuffer1_c->plaY.uiHeight; i += 2)
-        memcpy(frmBuffer1_c->plaY.ucData + (i * frmBuffer1_c->plaY.uiStride), frmBuffer2->plaY.ucData + (i * frmBuffer2->plaY.uiStride),frmBuffer2->plaY.uiStride);
+        ptir_memcpy_s(frmBuffer1_c->plaY.ucData + (i * frmBuffer1_c->plaY.uiStride), frmBuffer1_c->plaY.uiStride,frmBuffer2->plaY.ucData + (i * frmBuffer2->plaY.uiStride),frmBuffer2->plaY.uiStride);
     for(i = start; i < frmBuffer1_c->plaU.uiHeight; i += 2)
-        memcpy(frmBuffer1_c->plaU.ucData + (i * frmBuffer1_c->plaU.uiStride), frmBuffer2->plaU.ucData + (i * frmBuffer2->plaU.uiStride),frmBuffer2->plaU.uiStride);
+        ptir_memcpy_s(frmBuffer1_c->plaU.ucData + (i * frmBuffer1_c->plaU.uiStride), frmBuffer1_c->plaU.uiStride, frmBuffer2->plaU.ucData + (i * frmBuffer2->plaU.uiStride),frmBuffer2->plaU.uiStride);
     for(i = start; i < frmBuffer1_c->plaV.uiHeight; i += 2)
-        memcpy(frmBuffer1_c->plaV.ucData + (i * frmBuffer1_c->plaV.uiStride), frmBuffer2->plaV.ucData + (i * frmBuffer2->plaV.uiStride),frmBuffer2->plaV.uiStride);
+        ptir_memcpy_s(frmBuffer1_c->plaV.ucData + (i * frmBuffer1_c->plaV.uiStride), frmBuffer1_c->plaV.uiStride, frmBuffer2->plaV.ucData + (i * frmBuffer2->plaV.uiStride),frmBuffer2->plaV.uiStride);
 
     unsigned char * line0 = frmBuffer1->plaY.ucData;
     unsigned char * line1 = frmBuffer1->plaY.ucData + frmBuffer1->plaY.uiStride;
@@ -216,7 +216,7 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
         ptrn->ucPatternType = 1;
 
         *dispatch = 3;
-        Undo2Frames_CM(pFrm[0],pFrm[1],ptrn->ucLatch.ucParity);
+        Undo2Frames_CM(pFrm[0],pFrm[1],!!ptrn->ucLatch.ucParity);
         return;
     }
 
@@ -251,7 +251,7 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
         ptrn->ucPatternType = 1;
 
         *dispatch = 4;
-        Undo2Frames_CM(pFrm[1],pFrm[2],ptrn->ucLatch.ucParity);
+        Undo2Frames_CM(pFrm[1],pFrm[2],!!ptrn->ucLatch.ucParity);
         return;
     }
 
@@ -280,7 +280,7 @@ static void Detect_Solve_32Patterns_CM(Frame **pFrm, Pattern *ptrn, unsigned int
             ptrn->ucLatch.ucParity = 0;
         ptrn->ucPatternType = 1;
         *dispatch = 5;
-        Undo2Frames_CM(pFrm[2],pFrm[3],ptrn->ucLatch.ucParity);
+        Undo2Frames_CM(pFrm[2],pFrm[3],!!ptrn->ucLatch.ucParity);
         return;
     }
 
@@ -377,7 +377,7 @@ static void Detect_32Pattern_rigorous_CM(Frame **pFrm, Pattern *ptrn, unsigned i
                     ptrn->ucLatch.ucParity = 0;
                 ptrn->ucPatternType = 1;
                 *dispatch = 5;
-                Undo2Frames_CM(pFrm[2],pFrm[3],ptrn->ucLatch.ucParity);
+                Undo2Frames_CM(pFrm[2],pFrm[3],!!ptrn->ucLatch.ucParity);
                 return;
             }
             if((condition[0] || condition[1] || condition[2] || condition[3] || (condition[4] || condition[5]) || condition[6] || condition[7] || condition[9]) && (ptrn->ucAvgSAD < 2.3))
@@ -393,7 +393,7 @@ static void Detect_32Pattern_rigorous_CM(Frame **pFrm, Pattern *ptrn, unsigned i
                 else
                     ptrn->ucPatternType = 0;
                 *dispatch = 5;
-                Undo2Frames_CM(pFrm[2],pFrm[3],ptrn->ucLatch.ucParity);
+                Undo2Frames_CM(pFrm[2],pFrm[3],!!ptrn->ucLatch.ucParity);
                 return;
             }
         }
@@ -711,7 +711,7 @@ void Pattern32RemovalCM(Frame **frmBuffer, unsigned int uiInitFramePosition, uns
     if(uiInitFramePosition < BUFMINSIZE - 2)
     {
         frmBuffer[uiInitFramePosition + 1]->frmProperties.drop = true;
-        Undo2Frames_CM(frmBuffer[uiInitFramePosition],frmBuffer[uiInitFramePosition + 1], parity);//TelecineParityCheck(*frmBuffer[uiInitFramePosition + 1]));
+        Undo2Frames_CM(frmBuffer[uiInitFramePosition],frmBuffer[uiInitFramePosition + 1], !!parity);//TelecineParityCheck(*frmBuffer[uiInitFramePosition + 1]));
         *pdispatch = 5;
     }
     else
@@ -727,9 +727,9 @@ void Pattern41aRemovalCM(Frame **frmBuffer, unsigned int uiInitFramePosition, un
     if(uiInitFramePosition < BUFMINSIZE - 4)
     {
         frmBuffer[uiInitFramePosition + 3]->frmProperties.drop = true;
-        Undo2Frames_CM(frmBuffer[uiInitFramePosition],frmBuffer[uiInitFramePosition + 1], parity);
-        Undo2Frames_CM(frmBuffer[uiInitFramePosition + 1],frmBuffer[uiInitFramePosition + 2], parity);
-        Undo2Frames_CM(frmBuffer[uiInitFramePosition + 2],frmBuffer[uiInitFramePosition + 3], parity);
+        Undo2Frames_CM(frmBuffer[uiInitFramePosition],frmBuffer[uiInitFramePosition + 1], !!parity);
+        Undo2Frames_CM(frmBuffer[uiInitFramePosition + 1],frmBuffer[uiInitFramePosition + 2], !!parity);
+        Undo2Frames_CM(frmBuffer[uiInitFramePosition + 2],frmBuffer[uiInitFramePosition + 3], !!parity);
         *pdispatch = 5;
     }
     else
@@ -900,7 +900,7 @@ unsigned int Convert_to_I420CM(unsigned char *pucIn, Frame *pfrmOut, char *pcFor
     pfrmOut->frmProperties.fr = dFrameRate;
     if (strcmp(pcFormat, "I420") == 0)
     {
-        memcpy(pfrmOut->ucMem, pucIn, pfrmOut->uiSize);
+        ptir_memcpy_s(pfrmOut->ucMem, pfrmOut->uiSize, pucIn, pfrmOut->uiSize);
         return 1;
     }
     else if (strcmp(pcFormat, "UYVY") == 0)
@@ -997,8 +997,8 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
     Prepare_frame_for_queueCM(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight, frmSupply, false);
     if(!frmIn)
         return;
-    memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
-           
+    ptir_memcpy_s(frmIn->plaY.ucStats.ucRs, sizeof(frmIn->plaY.ucStats.ucRs),frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
+
     //Timestamp
     if (frmBuffer[frameIndex]->frmProperties.interlaced && bFullFrameRate == 1 && uiisInterlaced == 1)
     {
@@ -1018,7 +1018,7 @@ void Update_Frame_Buffer_CM(Frame** frmBuffer, unsigned int frameIndex, double d
         Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight, frmSupply, false); // Go to double frame rate
         if(!frmIn)
             return;
-        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+        ptir_memcpy_s(frmIn->plaY.ucStats.ucRs,sizeof(frmIn->plaY.ucStats.ucRs), frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
         //Timestamp
         frmIn->frmProperties.timestamp = frmBuffer[BUFMINSIZE]->frmProperties.timestamp;
@@ -1066,7 +1066,7 @@ void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, doubl
     Prepare_frame_for_queueCM(&frmIn,frmBuffer[frameIndex], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight, frmSupply, false);
     if(!frmIn)
         return;
-    memcpy(frmIn->plaY.ucStats.ucRs,frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
+    ptir_memcpy_s(frmIn->plaY.ucStats.ucRs,sizeof(frmIn->plaY.ucStats.ucRs),frmBuffer[frameIndex]->plaY.ucStats.ucRs,sizeof(double) * 10);
            
     //Timestamp
     frmIn->frmProperties.timestamp = dCurTimeStamp;
@@ -1078,7 +1078,7 @@ void Update_Frame_BufferNEW_CM(Frame** frmBuffer, unsigned int frameIndex, doubl
         Prepare_frame_for_queueCM(&frmIn, frmBuffer[BUFMINSIZE], frmBuffer[frameIndex]->plaY.uiWidth, frmBuffer[frameIndex]->plaY.uiHeight, frmSupply, false); // Go to double frame rate
         if(!frmIn)
             return;
-        memcpy(frmIn->plaY.ucStats.ucRs, frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
+        ptir_memcpy_s(frmIn->plaY.ucStats.ucRs, sizeof(frmIn->plaY.ucStats.ucRs),frmBuffer[BUFMINSIZE]->plaY.ucStats.ucRs, sizeof(double)* 10);
 
         //Timestamp
         frmIn->frmProperties.timestamp = dCurTimeStamp + dTimePerFrame / 2;

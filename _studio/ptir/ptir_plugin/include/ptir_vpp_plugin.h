@@ -175,6 +175,13 @@ protected:
     inline mfxFrameSurface1* GetFreeSurf(std::vector<mfxFrameSurface1*>& vSurfs);
     inline mfxStatus addWorkSurf(mfxFrameSurface1* pSurface);
     inline mfxStatus addInSurf(mfxFrameSurface1* pSurface);
+
+private:
+    //prohobit copy constructor
+    MFX_PTIR_Plugin(const MFX_PTIR_Plugin& that);
+    //prohibit assignment operator
+    MFX_PTIR_Plugin& operator=(const MFX_PTIR_Plugin&);
+
 };
 
 #if defined(_WIN32) || defined(_WIN64)

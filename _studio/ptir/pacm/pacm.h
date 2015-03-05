@@ -139,4 +139,9 @@ private:
         RS_UNIT_SIZE = 32
     };
 
+    //prohobit copy constructor
+    DeinterlaceFilter(const DeinterlaceFilter& that);
+    //prohibit assignment operator
+    DeinterlaceFilter& operator=(const DeinterlaceFilter&);
+
 };

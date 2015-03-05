@@ -109,7 +109,6 @@ mfxStatus MFX_PTIR_Plugin::PluginInit(mfxCoreInterface *core)
 
 mfxStatus MFX_PTIR_Plugin::PluginClose()
 {
-    mfxStatus mfxRes = MFX_ERR_NONE;
     mfxStatus mfxRes2 = MFX_ERR_NONE;
 
     Close();
@@ -936,9 +935,6 @@ mfxStatus MFX_PTIR_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
 mfxStatus MFX_PTIR_Plugin::QueryReset(const mfxVideoParam& old_vp, const mfxVideoParam& new_vp)
 {
-    mfxStatus mfxSts = MFX_ERR_NONE;
-    bool error = false;
-
     if((old_vp.vpp.In.Width  < new_vp.vpp.In.Width ) ||
        (old_vp.vpp.In.Height < new_vp.vpp.In.Height))
        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;

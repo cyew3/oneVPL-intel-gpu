@@ -75,6 +75,12 @@ protected:
     mfxU16  opqFrTypeOut;
     bool    isD3D11;
     UMC::Mutex& m_guard;
+
+private:
+    //prohobit copy constructor
+    frameSupplier(const frameSupplier& that);
+    //prohibit assignment operator
+    frameSupplier& operator=(const frameSupplier&);
 };
 
 class PTIR_Processor
@@ -145,10 +151,14 @@ public:
     virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false, mfxFrameSurface1 *exp_surf = 0);
 
 protected:
-    PTIR_ProcessorCPU(const PTIR_ProcessorCPU& ); // Disallow copy constructor
-    PTIR_ProcessorCPU& operator=(const PTIR_ProcessorCPU&); // Disallow assignment operator
     mfxStatus MFX_PTIR_PutFrame(mfxFrameSurface1 *surf_in, PTIRSystemBuffer *SysBuffer, double dTimestamp);
     mfxStatus OutputFrameToMfx(Frame* frmIn, Frame* frmOut, mfxFrameSurface1 *surf_out, unsigned int * uiLastFrameNumber);
+
+private:
+    //prohobit copy constructor
+    PTIR_ProcessorCPU(const PTIR_ProcessorCPU& that);
+    //prohibit assignment operator
+    PTIR_ProcessorCPU& operator=(const PTIR_ProcessorCPU&);
 };
 
 class PTIR_ProcessorCM : public PTIR_Processor
@@ -163,8 +173,6 @@ public:
     virtual mfxStatus Process(mfxFrameSurface1 *surf_in, mfxFrameSurface1 **surf_work, mfxCoreInterface *core, mfxFrameSurface1 **surf_out = 0, bool beof = false, mfxFrameSurface1 *exp_surf = 0);
 
 protected:
-    PTIR_ProcessorCM(const PTIR_ProcessorCM& ); // Disallow copy constructor
-    PTIR_ProcessorCM& operator=(const PTIR_ProcessorCM&); // Disallow assignment operator
     mfxStatus MFX_PTIRCM_PutFrame(mfxFrameSurface1 *surf_in, mfxFrameSurface1 *surf_out, Frame* frame, PTIRSystemBuffer *SysBuffer, double dTimestamp);
     mfxStatus OutputFrameToMfx(Frame* frmOut, mfxFrameSurface1* surf_out, mfxFrameSurface1*& exp_surf, unsigned int * uiLastFrameNumber);
 
@@ -196,6 +204,12 @@ protected:
     bool              mb_UsePtirSurfs;
     std::map<CmSurface2D*,mfxFrameSurface1*> CmToMfxSurfmap;
     eMFXHWType HWType;
+
+private:
+    //prohobit copy constructor
+    PTIR_ProcessorCM(const PTIR_ProcessorCM& that);
+    //prohibit assignment operator
+    PTIR_ProcessorCM& operator=(const PTIR_ProcessorCM&);
 };
 
 #endif  // __MFX_PTIR_WRAP_INCLUDED__

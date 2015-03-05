@@ -75,6 +75,8 @@ protected:
 private:
   //prohobit copy constructor
   CmBufferEx(const CmBufferEx& that);
+  //prohibit assignment operator
+  CmBufferEx& operator=(const CmBufferEx&);
 };
 
 class CmBufferUPEx
@@ -104,6 +106,12 @@ public:
 protected:
   CmBufferUP * pCmBuffer;
   CmDeviceEx & cmDeviceEx;
+
+private:
+  //prohobit copy constructor
+  CmBufferUPEx(const CmBufferUPEx& that);
+  //prohibit assignment operator
+  CmBufferUPEx& operator=(const CmBufferUPEx&);
 };
 
 class CmSurface2DEx
@@ -175,6 +183,12 @@ protected:
 
   CmDeviceEx & cmDeviceEx;
   bool isCreated;
+
+private:
+  //prohobit copy constructor
+  CmSurface2DEx(const CmSurface2DEx& that);
+  //prohibit assignment operator
+  CmSurface2DEx& operator=(const CmSurface2DEx&);
 };
 
 class CmSurface2DUPEx
@@ -290,6 +304,12 @@ protected:
       }
       throw CMUT_EXCEPTION("Unkown Format Code");
   }
+
+private:
+  //prohobit copy constructor
+  CmSurface2DUPEx(const CmSurface2DUPEx& that);
+  //prohibit assignment operator
+  CmSurface2DUPEx& operator=(const CmSurface2DUPEx&);
 
 };
 
