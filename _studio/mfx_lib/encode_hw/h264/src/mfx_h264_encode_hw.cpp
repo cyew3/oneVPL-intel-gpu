@@ -2604,7 +2604,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                     return Error(sts);
             }
             m_NumSlices = (mfxU32)task->m_SliceInfo.size();
-            if (extOpt2->MaxSliceSize && m_NumSlices > 4 && task->m_repack < 4)
+            if (extOpt2->MaxSliceSize && task->m_repack < 4)
             {
                 mfxF32 w_avg = 0;
                 for (size_t t = 0; t < task->m_SliceInfo.size(); t ++ ) 
