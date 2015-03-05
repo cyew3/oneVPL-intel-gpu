@@ -106,6 +106,9 @@ template<>struct mfx_ext_buffer_id<mfxExtCamColorCorrection3x3>{
     enum {id = MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3};
 };
 
+template<>struct mfx_ext_buffer_id<mfxExtCamVignetteCorrection>{
+    enum {id = MFX_EXTBUF_CAM_VIGNETTE_CORRECTION};
+};
 // we introduce new macros without error message (returned status only)
 // it allows to remove final error message due to EOF
 #define IOSTREAM_CHECK_NOT_EQUAL(P, X, ERR)          {if ((X) != (P)) {return ERR;}}
@@ -171,6 +174,8 @@ typedef struct _resetParams
     bool   bCCM;
     mfxF64 CCM[3][3];
 
+    bool   bVignette;
+    msdk_char  strVignetteMaskFile[MSDK_MAX_FILENAME_LEN];
     _resetParams()
     {
         bHP           = false;
@@ -178,6 +183,7 @@ typedef struct _resetParams
         bWhiteBalance = false;
         bCCM          = false;
         bDenoise      = false;
+        bVignette     = false;
         cropX = cropY = cropW = cropH = 0;
     }
 } sResetParams;
@@ -233,6 +239,8 @@ struct sInputParams
     bool   bCCM;
     mfxF64 CCM[3][3];
 
+    bool   bVignette;
+    msdk_char  strVignetteMaskFile[MSDK_MAX_FILENAME_LEN];
     bool bBayerDenoise;
     mfxU16 denoiseThreshold;
 
@@ -268,6 +276,7 @@ struct sInputParams
         bWhiteBalance = false;
         bCCM          = false;
         bBayerDenoise = false;
+        bVignette     = false;
 
         alphaValue = -1;
         resetInterval = 7;

@@ -43,8 +43,8 @@
 #define CAMERA_PADDING_SIZE 8
 
 #define align(value) ((0x10) * ( (value) / (0x10) + (((value) % (0x10)) ? 1 : 0)))
-
 #define align_32(value) ((0x20) * ( (value) / (0x20) + (((value) % (0x20)) ? 1 : 0)))
+#define align_64(value) ((0x40) * ( (value) / (0x40) + (((value) % (0x40)) ? 1 : 0)))
 
 class CCameraPipeline
 {
@@ -82,6 +82,7 @@ protected:
     std::auto_ptr<MFXPlugin> m_pCamera_plugin;
     mfxPluginUID        m_UID_Camera;
 
+    mfxExtCamVignetteCorrection   m_Vignette;
     mfxExtCamBayerDenoise         m_Denoise;
     mfxExtCamHotPixelRemoval      m_HP;
     mfxExtCamGammaCorrection      m_GammaCorrection;
@@ -143,12 +144,14 @@ protected:
     virtual void AttachExtParam();
 
     virtual mfxStatus AllocAndInitDenoise(sInputParams *pParams);
+    virtual mfxStatus AllocAndInitVignetteCorrection(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamGammaCorrection(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamWhiteBalance(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamCCM(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamBlackLevelCorrection(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamHotPixelRemoval(sInputParams *pParams);
     virtual void FreeCamGammaCorrection();
+    virtual void FreeVignetteCorrection();
 
     virtual mfxStatus CreateAllocator();
     virtual mfxStatus CreateHWDevice();

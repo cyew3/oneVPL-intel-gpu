@@ -146,6 +146,13 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
         m_ExtBuffers.push_back((mfxExtBuffer *)&m_GammaCorrection);
     }
 
+    if (pParams->bVignette)
+    {
+        sts = AllocAndInitVignetteCorrection(pParams);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        m_ExtBuffers.push_back((mfxExtBuffer *)&m_Vignette);
+    }
+
     if (pParams->bBlackLevel)
     {
         sts = AllocAndInitCamBlackLevelCorrection(pParams);
@@ -728,6 +735,9 @@ CCameraPipeline::CCameraPipeline()
     m_CCM.Header.BufferId = MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3;
     m_CCM.Header.BufferSz = sizeof(m_CCM);
 
+    MSDK_ZERO_MEMORY(m_Vignette);
+    m_Vignette.Header.BufferId = MFX_EXTBUF_CAM_VIGNETTE_CORRECTION;
+    m_Vignette.Header.BufferSz = sizeof(m_Vignette);
 }
 
 CCameraPipeline::~CCameraPipeline()
@@ -1008,6 +1018,42 @@ mfxStatus CCameraPipeline::AllocAndInitCamCCM(sInputParams *pParams)
     return MFX_ERR_NONE;
 }
 
+mfxStatus CCameraPipeline::AllocAndInitVignetteCorrection(sInputParams *pParams)
+{
+    FILE *maskFile;
+    mfxU32 i, nBytesRead;
+
+    /* Vignette correction mask must be ( 1/4 height + 1 ) (1/4 width + 1) dimension */
+    m_Vignette.Height = (mfxU32)ceil(pParams->frameInfo->nHeight/4) + 1;
+    m_Vignette.Width  = align_64((mfxU32)( ceil(pParams->frameInfo->nWidth/4) + 1 ) * 4 /* for each channel */ * 2 /* 2 bytes each */);
+
+    /* Vignette correction mask data must have 64-aligned pitch */
+    m_Vignette.Pitch  = align_64(m_Vignette.Width);
+
+    m_Vignette.CorrectionMap = (mfxVignetteCorrectionParams *)malloc(m_Vignette.Pitch * m_Vignette.Height);
+    memset(m_Vignette.CorrectionMap, 0, m_Vignette.Pitch * m_Vignette.Height);
+
+    /* Load vignette mask from file */
+    MSDK_FOPEN(maskFile, pParams->strVignetteMaskFile, MSDK_STRING("rb"));
+    MSDK_CHECK_POINTER(maskFile, MFX_ERR_ABORTED);
+    for (i = 0; i < m_Vignette.Height; i++)
+    {
+#if defined(_WIN32) || defined(_WIN64)
+        nBytesRead = (mfxU32)fread_s((mfxU8 *)m_Vignette.CorrectionMap + i * m_Vignette.Pitch, m_Vignette.Pitch, 1, m_Vignette.Width, maskFile);
+#else
+        nBytesRead = (mfxU32)fread((mfxU8 *)m_Vignette.CorrectionMap + i * m_Vignette.Pitch, 1, m_Vignette.Width, maskFile);
+#endif
+         IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, m_Vignette.Width, MFX_ERR_MORE_DATA);
+    }
+    fclose(maskFile);
+    return MFX_ERR_NONE;
+}
+
+void  CCameraPipeline::FreeVignetteCorrection()
+{
+    MSDK_SAFE_DELETE(m_Vignette.CorrectionMap);
+}
+
 mfxStatus CCameraPipeline::AllocAndInitCamGammaCorrection(sInputParams *pParams)
 {
     m_GammaCorrection.Mode = pParams->gamma_mode;
@@ -1039,6 +1085,7 @@ void CCameraPipeline::Close()
 
     DeleteFrames();
 
+    FreeVignetteCorrection();
     //FreeCamGammaCorrection();
     m_ExtBuffers.clear();
 
