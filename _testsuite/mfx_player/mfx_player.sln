@@ -45,7 +45,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_player", "mfx_player.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "color_space_converter", "..\..\_studio\shared\umc\codec\color_space_converter\color_space_converter.vcxproj", "{57FE8DAC-C7C4-4DF4-9A36-2FEE040DFF38}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher", "..\..\..\mdp_msdk-samples\samples\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcxproj", "{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher", "..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcxproj", "{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
