@@ -17,6 +17,13 @@ private:
 
     enum
     {
+        MFX_PAR = 1,
+        EXT_DI,
+        FRAME_SURFACE,
+    };
+
+    enum
+    {
         ALLOC_OPAQUE = 1,
         UNALIGNED_W,
         UNALIGNED_H,
@@ -27,7 +34,8 @@ private:
         NULL_SYNCP,
         NULL_SURF_WORK,
         SET_CROP_IN,
-        SET_CROP_OUT
+        SET_CROP_OUT,
+        USE_EXT_BUF
     };
 
     struct tc_struct
@@ -36,6 +44,7 @@ private:
         mfxU32 mode;
         struct f_pair
         {
+            mfxU32 ext_type;
             const  tsStruct::Field* f;
             mfxU32 v;
         } set_par[n_par];
@@ -49,25 +58,18 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*00*/ MFX_ERR_NONE},
 
     // IOPattern cases
-    {/*01*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/*02*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
-    //{/*3*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
-    //{/*4*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    //{/*5*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    //{/*6*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    //{/*7*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    //{/*8*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    //{/*9*/ MFX_ERR_NONE, ALLOC_OPAQUE, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+    {/*01*/ MFX_ERR_NONE, 0, {MFX_PAR,&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    {/*02*/ MFX_ERR_NONE, 0, {MFX_PAR,&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
 
     // unaligned W/H right before RunFrameAsync
     {/*03*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, UNALIGNED_H},
     {/*04*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, UNALIGNED_W},
 
     // crops are mandatory for processing, but for PTIR it is not supported
-    {/*05*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, SET_CROP_IN,  {{&tsStruct::mfxFrameSurface1.Info.CropW, 320},
-                                                             {&tsStruct::mfxFrameSurface1.Info.CropH, 240}}},
-    {/*06*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, SET_CROP_OUT, {{&tsStruct::mfxFrameSurface1.Info.CropW, 320},
-                                                             {&tsStruct::mfxFrameSurface1.Info.CropH, 240}}},
+    {/*05*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, SET_CROP_IN,  {{FRAME_SURFACE,&tsStruct::mfxFrameSurface1.Info.CropW, 320},
+                                                             {FRAME_SURFACE,&tsStruct::mfxFrameSurface1.Info.CropH, 240}}},
+    {/*06*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, SET_CROP_OUT, {{FRAME_SURFACE,&tsStruct::mfxFrameSurface1.Info.CropW, 320},
+                                                             {FRAME_SURFACE,&tsStruct::mfxFrameSurface1.Info.CropH, 240}}},
 
     // W/H are mandatory
     {/*07*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, ZERO_IN_W},
@@ -77,6 +79,22 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     {/*11*/ MFX_ERR_NULL_PTR, NULL_SYNCP},
     {/*12*/ MFX_ERR_NULL_PTR, NULL_SURF_WORK},
+
+    // MFX_DEINTERLACING_30FPS_OUT
+    {/*13*/ MFX_ERR_NONE, USE_EXT_BUF, {
+        {MFX_PAR,&tsStruct::mfxVideoParam.vpp.In.Width, 704},
+        {MFX_PAR,&tsStruct::mfxVideoParam.vpp.Out.Width, 704},
+        {MFX_PAR,&tsStruct::mfxVideoParam.vpp.In.CropW, 704},
+        {MFX_PAR,&tsStruct::mfxVideoParam.vpp.Out.CropW, 704},
+        {EXT_DI,&tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_30FPS_OUT}}},
+
+    // MFX_DEINTERLACING_DETECT_INTERLACE
+    {/*14*/ MFX_ERR_NONE, USE_EXT_BUF, {
+        {MFX_PAR,&tsStruct::mfxVideoParam.vpp.In.Width, 704},
+        {MFX_PAR,&tsStruct::mfxVideoParam.vpp.Out.Width, 704},
+        {MFX_PAR,&tsStruct::mfxVideoParam.vpp.In.CropW, 704},
+        {MFX_PAR,&tsStruct::mfxVideoParam.vpp.Out.CropW, 704},
+        {EXT_DI, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_DETECT_INTERLACE}}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -85,20 +103,46 @@ int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     const tc_struct& tc = test_case[id];
+    mfxU32 expected_ps[10] = {MFX_PICSTRUCT_PROGRESSIVE, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, 
+        MFX_PICSTRUCT_PROGRESSIVE, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF};
+
+    std::vector<mfxExtBuffer*> buffs;
 
     MFXInit();
 
     mfxPluginUID* ptir = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, MFX_MAKEFOURCC('P','T','I','R'));
     tsSession::Load(m_session, ptir, 1);
 
-    // set up parameters for case
-    for(mfxU32 i = 0; i < n_par; i++)
+    if (tc.mode == USE_EXT_BUF)
     {
-        if(tc.set_par[i].f && SET_CROP_IN != tc.mode && SET_CROP_OUT != tc.mode)
-        {
-            tsStruct::set(m_pPar, *tc.set_par[i].f, tc.set_par[i].v);
-        }
+        m_par.vpp.In.PicStruct = 0;
+        m_par.vpp.In.FrameRateExtN = 0;
+        m_par.vpp.In.FrameRateExtD = 0;
+        m_par.vpp.Out.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        m_par.vpp.Out.FrameRateExtN = 0;
+        m_par.vpp.Out.FrameRateExtD = 0;
+
+        mfxExtVPPDeinterlacing di = {0};
+        di.Header.BufferId = MFX_EXTBUFF_VPP_DEINTERLACING;
+        di.Header.BufferSz = sizeof(mfxExtVPPDeinterlacing);
+        SETPARS(&di, EXT_DI);
+        buffs.push_back((mfxExtBuffer*)&di);
     }
+
+    // set up parameters for case
+    SETPARS(m_pPar, MFX_PAR);
+
+    // adding buffers
+    if (buffs.size())
+    {
+        m_par.NumExtParam = (mfxU16)buffs.size();
+        m_par.ExtParam = &buffs[0];
+    }
+
+    tsRawReader stream(g_tsStreamPool.Get("PTIR/ktsf_704x480_300_30.yuv"), m_pPar->vpp.In);
+    g_tsStreamPool.Reg();
+    if (tc.mode == USE_EXT_BUF)
+        m_surf_in_processor = &stream;
 
     bool isSW = !(!!(m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY));
     m_spool_in.UseDefaultAllocator(isSW);
@@ -139,7 +183,6 @@ int TestSuite::RunTest(unsigned int id)
     }
 
     AllocSurfaces();
-
     Init(m_session, m_pPar);
 
     ///////////////////////////////////////////////////////////////////////////
@@ -193,25 +236,11 @@ int TestSuite::RunTest(unsigned int id)
             {
                 m_pSurfWork = 0;
             }
-            if (tc.mode == SET_CROP_IN)
+            SETPARS(m_pSurfIn, FRAME_SURFACE);
+
+            if(m_surf_in_processor)
             {
-                for(mfxU32 i = 0; i < n_par; i++)
-                {
-                    if(tc.set_par[i].f)
-                    {
-                        tsStruct::set(m_pSurfIn, *tc.set_par[i].f, tc.set_par[i].v);
-                    }
-                }
-            }
-            if (tc.mode == SET_CROP_OUT)
-            {
-                for(mfxU32 i = 0; i < n_par; i++)
-                {
-                    if(tc.set_par[i].f)
-                    {
-                        tsStruct::set(m_pSurfIn, *tc.set_par[i].f, tc.set_par[i].v);
-                    }
-                }
+                m_pSurfIn = m_surf_in_processor->ProcessSurface(m_pSurfIn, m_pFrameAllocator);
             }
 
             res = RunFrameVPPAsyncEx(m_session, m_pSurfIn, m_pSurfWork, &m_pSurfOut, m_pSyncPoint);
@@ -242,6 +271,16 @@ int TestSuite::RunTest(unsigned int id)
                 break;
             }
 
+            if (tc.mode == USE_EXT_BUF)
+            {
+                if (m_pSurfIn->Info.PicStruct != expected_ps[processed])
+                {
+                    g_tsLog << "ERROR: Frame#" << processed << " has incorrect PicStruct = " << m_pSurfIn->Info.PicStruct
+                            << " (expected = " << expected_ps[processed] << ")\n";
+                    g_tsStatus.check(MFX_ERR_ABORTED);
+                }
+            }
+
             if(++submitted >= async)
             {
                 while(m_surf_out.size()) SyncOperation();
@@ -250,6 +289,7 @@ int TestSuite::RunTest(unsigned int id)
                 async = TS_MIN(async, (n - processed));
             }
         }
+
         g_tsLog << processed << " FRAMES PROCESSED\n";
     }
     else
