@@ -4591,7 +4591,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     m_pps.coded_buf = m_codedBufferId;
     m_pps.frame_num = task.m_frameNum;
     m_pps.pic_fields.bits.idr_pic_flag =  (task.m_type[fieldId] & MFX_FRAMETYPE_IDR);
-    mdprintf(stderr, "m_pps->pic_fields.bits.idr_pic_flag=%d\n", m_pps.pic_fields.bits.idr_pic_flag);
     m_pps.pic_fields.bits.reference_pic_flag = (slice_type != SLICE_TYPE_B);
 
     vaSts = vaCreateBuffer(m_vaDisplay,
@@ -5177,9 +5176,10 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         m_sps.level_idc = 41;
         m_sps.intra_period = m_videoParam.mfx.GopPicSize;
         m_sps.ip_period    = m_videoParam.mfx.GopRefDist;
-        m_sps.max_num_ref_frames = 4;
+        m_sps.max_num_ref_frames = 1;
         m_sps.picture_width_in_mbs = m_videoParam.mfx.FrameInfo.Width/16;
         m_sps.picture_height_in_mbs = m_videoParam.mfx.FrameInfo.Height/16;
+        m_sps.seq_fields.bits.chroma_format_idc = 1;
         m_sps.seq_fields.bits.frame_mbs_only_flag = 1;
 
         if (frame_bit_rate > 0)
@@ -5199,15 +5199,28 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         m_sps.seq_fields.bits.pic_order_cnt_type = 0;
         m_sps.seq_fields.bits.direct_8x8_inference_flag = 1;
 
-        m_sps.seq_fields.bits.log2_max_frame_num_minus4 = 0;
+        m_sps.seq_fields.bits.log2_max_frame_num_minus4 = 4;
 
-        m_sps.seq_fields.bits.log2_max_pic_order_cnt_lsb_minus4 = 2;
+        m_sps.seq_fields.bits.log2_max_pic_order_cnt_lsb_minus4 = 0;
+
+        m_sps.seq_fields.bits.delta_pic_order_always_zero_flag = 1;
 
         if (frame_bit_rate > 0)
             m_sps.vui_parameters_present_flag = 1; //HRD info located in vui
         else
             m_sps.vui_parameters_present_flag = 0;
 
+        m_sps.vui_parameters_present_flag = 1;
+        m_sps.vui_fields.bits.aspect_ratio_info_present_flag = 0;
+        m_sps.vui_fields.bits.timing_info_present_flag = 1;
+        m_sps.vui_fields.bits.bitstream_restriction_flag = 1;
+        m_sps.vui_fields.bits.log2_max_mv_length_horizontal = 13;
+        m_sps.vui_fields.bits.log2_max_mv_length_vertical = 9;
+        m_sps.aspect_ratio_idc = 1;
+        m_sps.sar_width = 1;
+        m_sps.sar_height = 1;
+        m_sps.num_units_in_tick = 1;
+        m_sps.time_scale = 60;
 
         //assert(slice_type == SLICE_TYPE_I);
         length_in_bits = build_packed_seq_buffer(&packed_seq_buffer, &m_sps,
@@ -5541,8 +5554,6 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         int i = 0, j = 0;
 
         mfxU32 numPics  = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
-        mdprintf(stderr,"numPics=%d\n",numPics);
-        /* To check task.m_numSlic */
         if (task.m_numSlice[fieldId])
             m_slice.resize(task.m_numSlice[fieldId]);
         mfxU32 numSlice = m_slice.size();
@@ -5560,9 +5571,11 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
             m_slice[i].macroblock_address = divider.GetFirstMbInSlice();
             m_slice[i].num_macroblocks = divider.GetNumMbInSlice();
             m_slice[i].macroblock_info = VA_INVALID_ID;
-            m_slice[i].pic_parameter_set_id = 0;
+            //m_slice[i].pic_parameter_set_id = 0;
             m_slice[i].slice_type = slice_type;
+            m_slice[i].pic_parameter_set_id = m_pps.pic_parameter_set_id;
             /* Debug FIXME*/
+            m_slice[i].idr_pic_id = 0;
             m_slice[i].pic_order_cnt_lsb = mfxU16(task.GetPoc(fieldId));
             mdprintf(stderr,"m_slice[i].pic_order_cnt_lsb=%d\n",m_slice[i].pic_order_cnt_lsb);
             //m_slice[i].pic_order_cnt_lsb = m_currentFrameNum * 2;
@@ -5647,6 +5660,8 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         unsigned char *packed_pic_buffer = NULL;
         mfxHDL recon_handle;
         mfxSts = m_core->GetExternalFrameHDL(out->OutSurface->Data.MemId, &recon_handle);
+        m_pps.pic_fields.bits.idr_pic_flag = (task.m_type[fieldId] & MFX_FRAMETYPE_IDR) ? 1 : 0;
+
         m_pps.CurrPic.picture_id = *(VASurfaceID*) recon_handle; //id in the memory by ptr
         m_pps.CurrPic.flags = VA_PICTURE_H264_SHORT_TERM_REFERENCE;
         mdprintf(stderr,"m_pps.CurrPic.picture_id = %d\n",m_pps.CurrPic.picture_id);
@@ -5655,15 +5670,11 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         m_pps.pic_fields.bits.entropy_coding_mode_flag = 1; //ENTROPY_MODE_CABAC;
         m_pps.pic_fields.bits.transform_8x8_mode_flag = 1;
         m_pps.pic_fields.bits.deblocking_filter_control_present_flag = 1;
-
         /*FIXME*/
-        //pps.CurrPic.TopFieldOrderCnt = task.GetPoc(TFIELD);
-        //pps.CurrPic.BottomFieldOrderCnt = task.GetPoc(BFIELD);
-        int display_num = task.m_frameOrder;
-        m_pps.CurrPic.TopFieldOrderCnt = display_num * 2;
-        m_pps.CurrPic.BottomFieldOrderCnt = display_num * 2+1;
-        Cur_POC[0] = display_num * 2;
-        Cur_POC[1] = display_num * 2 + 1;
+        m_pps.pic_fields.bits.weighted_bipred_idc = 2;
+
+        m_pps.CurrPic.TopFieldOrderCnt = task.GetPoc(TFIELD);
+        m_pps.CurrPic.BottomFieldOrderCnt = task.GetPoc(BFIELD);
 
         /* Need to allocated coded buffer
          */
@@ -5685,9 +5696,10 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
             mdprintf(stderr, "m_codedBufferId=%d\n", m_codedBufferId);
         }
         m_pps.coded_buf = m_codedBufferId;
-        m_pps.frame_num = task.m_frameNum;
-        m_pps.pic_fields.bits.idr_pic_flag =  (task.m_type[fieldId] & MFX_FRAMETYPE_IDR);
-        mdprintf(stderr, "m_pps->pic_fields.bits.idr_pic_flag=%d\n", m_pps.pic_fields.bits.idr_pic_flag);
+        m_pps.frame_num = m_currentFrameNum;
+        //m_pps.frame_num++;
+        //m_pps.pic_fields.bits.idr_pic_flag =  (task.m_type[fieldId] & MFX_FRAMETYPE_IDR);
+        //mdprintf(stderr, "m_pps->pic_fields.bits.idr_pic_flag=%d\n", m_pps.pic_fields.bits.idr_pic_flag);
         m_pps.pic_fields.bits.reference_pic_flag = (slice_type != SLICE_TYPE_B);
 
         vaSts = vaCreateBuffer(m_vaDisplay,
@@ -5700,6 +5712,9 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         configBuffers[buffersCount++] = m_ppsBufferId;
         mdprintf(stderr, "m_ppsBufferId=%d\n", m_ppsBufferId);
+
+        if (SLICE_TYPE_B != slice_type)
+            m_currentFrameNum++;
 
         length_in_bits = build_packed_pic_buffer(&packed_pic_buffer, &m_pps,
                                     ConvertProfileTypeMFX2VAAPI(m_videoParam.mfx.CodecProfile));
@@ -5956,7 +5971,7 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
 
 } // mfxStatus VAAPIFEIENCEncoder::QueryStatus(mfxU32 feedbackNumber, mfxU32& bytesWritten)
 
-#endif defined(MFX_ENABLE_H264_VIDEO_FEI_ENC) && defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)
+#endif //defined(MFX_ENABLE_H264_VIDEO_FEI_ENC) && defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)
 
 #endif // (MFX_ENABLE_H264_VIDEO_ENCODE) && (MFX_VA_LINUX)
 /* EOF */

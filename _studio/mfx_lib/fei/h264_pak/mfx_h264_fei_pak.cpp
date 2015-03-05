@@ -347,6 +347,21 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     m_video = *par;
     //add ext buffers from par to m_video
 
+    MfxVideoParam tmp(*par);
+
+    sts = ReadSpsPpsHeaders(tmp);
+    MFX_CHECK_STS(sts);
+
+    sts = CheckWidthAndHeight(tmp);
+    MFX_CHECK_STS(sts);
+
+    sts = CopySpsPpsToVideoParam(tmp);
+    if (sts < MFX_ERR_NONE)
+        return sts;
+
+    //sts = SetDefaults(tmp, hwCaps, true, core->GetHWType(), core->GetVAType());
+    //MFX_CHECK_STS(sts);
+
     m_ddi.reset( new MfxHwH264Encode::VAAPIFEIPAKEncoder );
     if (m_ddi.get() == 0)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -433,21 +448,24 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     MFX_CHECK( m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     //set frame type
-    mfxU8 mtype = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
+    mfxU8 mtype = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
     if (input->NumFrameL0 > 0) {
         mtype = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
         if (input->NumFrameL1 > 0)
             mtype = MFX_FRAMETYPE_B;
     }
 
+
     UMC::AutomaticUMCMutex guard(m_listMutex);
 
     m_free.front().m_yuv = input->InSurface;
     //m_free.front().m_ctrl = 0;
-    m_free.front().m_type = Pair<mfxU8>(mtype, mtype); //ExtendFrameType(ctrl->FrameType);
+    //m_free.front().m_type = Pair<mfxU8>(mtype, mtype); //ExtendFrameType(ctrl->FrameType);
+    m_free.front().m_type = ExtendFrameType(mtype);
 
-    m_free.front().m_extFrameTag = input->InSurface->Data.FrameOrder;
     m_free.front().m_frameOrder = input->InSurface->Data.FrameOrder;
+    if (mtype & MFX_FRAMETYPE_IDR)
+        m_free.front().m_frameOrderIdr = input->InSurface->Data.FrameOrder;
     m_free.front().m_timeStamp = input->InSurface->Data.TimeStamp;
     m_free.front().m_userData.resize(2);
     m_free.front().m_userData[0] = input;
