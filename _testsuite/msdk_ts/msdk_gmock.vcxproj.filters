@@ -352,5 +352,8 @@
     <ClCompile Include="src\gmock\test_suites\screen_capture_close.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\screen_capture_decode_header.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
