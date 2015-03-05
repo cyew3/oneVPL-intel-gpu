@@ -8,6 +8,7 @@
 
 #pragma once
 #include "mfx_h265_encode_hw_set.h"
+#include "mfx_ext_buffers.h"
 #include "mfx_common.h"
 #include "mfxplugin++.h"
 #include "umc_mutex.h"
@@ -240,6 +241,7 @@ namespace ExtBuffer
         EXTBUF(mfxExtDPB,                   MFX_EXTBUFF_DPB);
         EXTBUF(mfxExtHEVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS);
         EXTBUF(mfxExtCodingOption2,         MFX_EXTBUFF_CODING_OPTION2);
+        EXTBUF(mfxExtCodingOptionDDI,       MFX_EXTBUFF_DDI);
     #undef EXTBUF
 
     class Proxy
@@ -329,6 +331,7 @@ public:
         mfxExtHEVCTiles             HEVCTiles;
         mfxExtOpaqueSurfaceAlloc    Opaque;
         mfxExtCodingOption2         CO2;
+        mfxExtCodingOptionDDI       DDI;
     } m_ext;
 
     mfxU32 BufferSizeInKB;

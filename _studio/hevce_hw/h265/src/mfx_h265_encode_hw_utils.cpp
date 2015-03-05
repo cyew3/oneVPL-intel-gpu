@@ -399,6 +399,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.HEVCTiles);
     ExtBuffer::Construct(par, m_ext.Opaque);
     ExtBuffer::Construct(par, m_ext.CO2);
+    ExtBuffer::Construct(par, m_ext.DDI);
 }
 
 mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool /*query*/)
@@ -407,6 +408,7 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool /*query*/)
     ExtBuffer::Set(par, m_ext.HEVCTiles);
     ExtBuffer::Set(par, m_ext.Opaque);
     ExtBuffer::Set(par, m_ext.CO2);
+    ExtBuffer::Set(par, m_ext.DDI);
 
     return MFX_ERR_NONE;
 }
@@ -1946,7 +1948,8 @@ void ConfigureTask(
         UpdateDPB(par, task, task.m_dpb[TASK_DPB_AFTER]);
 
         // is current frame will be used as LTR
-        task.m_ltr = isLTR(task.m_dpb[TASK_DPB_AFTER], par.LTRInterval, task.m_poc);
+        if (par.LTRInterval)
+            task.m_ltr = isLTR(task.m_dpb[TASK_DPB_AFTER], par.LTRInterval, task.m_poc);
     }
 
     if (pDPBReport)

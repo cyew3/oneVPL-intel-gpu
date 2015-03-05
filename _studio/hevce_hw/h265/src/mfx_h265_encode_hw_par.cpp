@@ -724,15 +724,15 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
         changed ++;
     }
 
-    if (par.NumRefLX[0] > caps.MaxNum_Reference0)
+    if (par.m_ext.DDI.NumActiveRefBL0 > caps.MaxNum_Reference0)
     {
-        par.NumRefLX[0] = caps.MaxNum_Reference0;
+        par.m_ext.DDI.NumActiveRefBL0 = caps.MaxNum_Reference0;
         changed ++;
     }
         
-    if (par.NumRefLX[1] > caps.MaxNum_Reference1)
+    if (par.m_ext.DDI.NumActiveRefBL1 > caps.MaxNum_Reference1)
     {
-        par.NumRefLX[1] = caps.MaxNum_Reference1;
+        par.m_ext.DDI.NumActiveRefBL1 = caps.MaxNum_Reference1;
         changed ++;
     }
 
@@ -929,9 +929,15 @@ void SetDefaults(
     if (!par.mfx.GopPicSize)
         par.mfx.GopPicSize = (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP ? 1 : 0xFFFF);
 
+    if (!par.NumRefLX[0] && par.m_ext.DDI.NumActiveRefBL0)
+        par.NumRefLX[0] = par.m_ext.DDI.NumActiveRefBL0;
+    
+    if (!par.NumRefLX[1] && par.m_ext.DDI.NumActiveRefBL1)
+        par.NumRefLX[1] = par.m_ext.DDI.NumActiveRefBL1;
+
     if (!par.NumRefLX[0])
         par.NumRefLX[0] = (par.mfx.TargetUsage) > 5 ? 1 : hwCaps.MaxNum_Reference0;
-    
+
     if (!par.NumRefLX[1])
         par.NumRefLX[1] = (par.mfx.TargetUsage) > 5 ? 1 : hwCaps.MaxNum_Reference1;
 
