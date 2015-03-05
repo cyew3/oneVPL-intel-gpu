@@ -2785,6 +2785,7 @@ void LookAheadBrc2::Init(MfxVideoParam const & video)
     mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(video);
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
     mfxExtCodingOption3  const *   extOpt3  = GetExtBuffer(video);
+    mfxU32 mult = (video.mfx.BRCParamMultiplier > 0) ? video.mfx.BRCParamMultiplier:1;
 
 
     m_lookAhead     = extOpt2->LookAheadDepth - extDdi->LookAheadDependency;
@@ -2795,7 +2796,7 @@ void LookAheadBrc2::Init(MfxVideoParam const & video)
 
     m_fr = mfxF64(video.mfx.FrameInfo.FrameRateExtN) / video.mfx.FrameInfo.FrameRateExtD;
     m_totNumMb = video.mfx.FrameInfo.Width * video.mfx.FrameInfo.Height / 256;
-    m_initTargetRate     = 1000 * video.mfx.TargetKbps /m_fr / m_totNumMb;
+    m_initTargetRate     = 1000* mult * video.mfx.TargetKbps /m_fr / m_totNumMb;
    
     m_targetRateMax = m_initTargetRate;
     m_laData.reserve(m_lookAhead);
@@ -2815,7 +2816,7 @@ void LookAheadBrc2::Init(MfxVideoParam const & video)
     m_AvgBitrate = 0;
     if (extOpt3->WinBRCSize)
     {
-        m_AvgBitrate = new AVGBitrate(extOpt3->WinBRCSize, (mfxU32)(1000.0 * extOpt3->WinBRCMaxAvgKbps/m_fr));    
+        m_AvgBitrate = new AVGBitrate(extOpt3->WinBRCSize, (mfxU32)(1000.0* mult * extOpt3->WinBRCMaxAvgKbps/m_fr));    
     }
     m_AsyncDepth = video.AsyncDepth > 1 ? 1 : 0;
     m_first = 0;
@@ -2836,6 +2837,7 @@ void VMEBrc::Init(MfxVideoParam const & video)
 {
     mfxExtCodingOptionDDI const * extDdi    = GetExtBuffer(video);
     mfxExtCodingOption3  const *   extOpt3  = GetExtBuffer(video);
+    mfxU32 mult = (video.mfx.BRCParamMultiplier > 0) ? video.mfx.BRCParamMultiplier:1;
 
 
     m_LaScaleFactor = extDdi->LaScaleFactor;
@@ -2845,7 +2847,7 @@ void VMEBrc::Init(MfxVideoParam const & video)
     m_fr = mfxF64(video.mfx.FrameInfo.FrameRateExtN) / video.mfx.FrameInfo.FrameRateExtD;
 
     m_totNumMb = video.mfx.FrameInfo.Width * video.mfx.FrameInfo.Height / 256;
-    m_initTargetRate = 1000 * video.mfx.TargetKbps / m_fr / m_totNumMb;
+    m_initTargetRate = 1000* mult * video.mfx.TargetKbps / m_fr / m_totNumMb;
     m_targetRateMin = m_initTargetRate;
     m_targetRateMax = m_initTargetRate;
     m_laData.reserve(100);
@@ -2861,7 +2863,7 @@ void VMEBrc::Init(MfxVideoParam const & video)
     m_AvgBitrate = 0;
     if (extOpt3->WinBRCSize)
     {
-        m_AvgBitrate = new AVGBitrate(extOpt3->WinBRCSize, (mfxU32)(1000.0 * extOpt3->WinBRCMaxAvgKbps/m_fr));    
+        m_AvgBitrate = new AVGBitrate(extOpt3->WinBRCSize, (mfxU32)(1000.0 * mult* extOpt3->WinBRCMaxAvgKbps/m_fr));    
     }
 }
 void VMEBrc::Close()
