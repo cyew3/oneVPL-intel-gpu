@@ -81,6 +81,7 @@ private:
     mfxExtCodingOptionHEVC  m_mfxHEVCOpts;
     mfxExtDumpFiles         m_mfxDumpFiles;
     mfxExtHEVCTiles         m_mfxHevcTiles;
+    mfxExtHEVCRegion        m_mfxHevcRegion;
 
     // frame encoder
     std::vector<H265FrameEncoder*> m_frameEncoder;
@@ -195,7 +196,7 @@ private:
 
 // pure functions
 namespace H265Enc {
-    mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam *par /* OUT */, const mfxExtCodingOptionHEVC *opts_hevc, const mfxExtHEVCTiles *optsTiles);
+    mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam *par /* OUT */, const mfxExtCodingOptionHEVC *opts_hevc, const mfxExtHEVCTiles *optsTiles, const mfxExtHEVCRegion *optsRegion);
 }
 #endif // __MFX_H265_ENCODE_H__
 

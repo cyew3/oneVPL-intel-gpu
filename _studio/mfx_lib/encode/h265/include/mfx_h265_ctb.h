@@ -448,6 +448,9 @@ public:
 #endif
 #endif
 
+    Ipp32s m_SlicePixRowFirst;
+    Ipp32s m_SlicePixRowLast;
+
     inline bool  IsIntra(Ipp32u partIdx)
     { return m_data[partIdx].predMode == MODE_INTRA; }
 
@@ -673,6 +676,7 @@ public:
                           Ipp32s useHadamard, Ipp32s *mergeCandIdx);
 
     bool CheckFrameThreadingSearchRange(const H265MEInfo *meInfo, const H265MV *mv) const;
+    bool CheckIndepRegThreadingSearchRange(const H265MEInfo *meInfo, const H265MV *mv, Ipp8u subpel = 0) const;
 
     void RefineBiPred(const H265MEInfo *meInfo, const Ipp8s refIdxs[2], Ipp32s curPUidx,
                       H265MV mvs[2], Ipp32s *cost, Ipp32s *mvCost);

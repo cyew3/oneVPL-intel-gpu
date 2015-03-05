@@ -425,9 +425,6 @@ namespace H265Enc {
     TU_OPT_ALL (AdaptiveRefs,                  ON,  ON,  ON,  ON,  ON,  ON,  ON);
     TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON,  ON,  OFF);
 
-    TU_OPT_ALL (NumTileCols,                    1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_ALL (NumTileRows,                    1,   1,   1,   1,   1,   1,   1);
-
     TU_OPT_SW  (NumRefFrameB,                   0,   0,   3,   3,   2,   2,   2);
     TU_OPT_GACC(NumRefFrameB,                   0,   0,   0,   0,   0,   0,   0);
     TU_OPT_ALL (IntraMinDepthSC,               11,  11,  11,   6,   6,   3,   3);
@@ -611,7 +608,7 @@ namespace H265Enc {
     mfxStatus CheckExtBuffers_H265enc(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
     {
 
-        mfxU32 ID_list[] = { MFX_EXTBUFF_HEVCENC, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_DUMP, MFX_EXTBUFF_HEVC_TILES };
+        mfxU32 ID_list[] = { MFX_EXTBUFF_HEVCENC, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_DUMP, MFX_EXTBUFF_HEVC_TILES, MFX_EXTBUFF_HEVC_REGION };
 
         mfxU32 ID_found[sizeof(ID_list)/sizeof(ID_list[0])] = {0,};
         if (!ebuffers) return MFX_ERR_NONE;
@@ -693,7 +690,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     }
     m_frameCountSync++;
 
-    mfxU32 noahead = 0;//1;
+    mfxU32 noahead = m_mfxParam.mfx.GopRefDist == 1;
     Ipp32s lookaheadBuffering = m_la.get() ? m_la.get()->GetDelay() : 0;
     if (m_mfxHEVCOpts.EnableCm == MFX_CODINGOPTION_ON)
         noahead = 0;
@@ -771,6 +768,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     mfxExtOpaqueSurfaceAlloc *opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
     mfxExtDumpFiles *opts_Dump = (mfxExtDumpFiles *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_DUMP);
     mfxExtHEVCTiles *optsTiles = (mfxExtHEVCTiles *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVC_TILES);
+    mfxExtHEVCTiles *optsRegion = (mfxExtHEVCTiles *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVC_REGION);
 
     const mfxVideoParam *par = par_in;
 
@@ -781,6 +779,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     memset(&m_mfxHEVCOpts,0,sizeof(m_mfxHEVCOpts));
     memset(&m_mfxDumpFiles,0,sizeof(m_mfxDumpFiles));
     memset(&m_mfxHevcTiles,0,sizeof(m_mfxHevcTiles));
+    memset(&m_mfxHevcRegion,0,sizeof(m_mfxHevcRegion));
 
     if (opts_hevc) {
         m_mfxHEVCOpts.Header.BufferId = MFX_EXTBUFF_HEVCENC;
@@ -800,6 +799,11 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         m_mfxHevcTiles.Header.BufferId = MFX_EXTBUFF_HEVC_TILES;
         m_mfxHevcTiles.Header.BufferSz = sizeof(m_mfxHevcTiles);
         ptr_checked_ext[ext_counter++] = &m_mfxHevcTiles.Header;
+    }
+    if (optsRegion) {
+        m_mfxHevcRegion.Header.BufferId = MFX_EXTBUFF_HEVC_REGION;
+        m_mfxHevcRegion.Header.BufferSz = sizeof(m_mfxHevcRegion);
+        ptr_checked_ext[ext_counter++] = &m_mfxHevcRegion.Header;
     }
     m_mfxParam.ExtParam = ptr_checked_ext;
     m_mfxParam.NumExtParam = ext_counter;
@@ -1277,13 +1281,23 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     if (m_mfxParam.AsyncDepth == 0)
         m_mfxParam.AsyncDepth = m_mfxHEVCOpts.FramesInParallel;
 
+    if (!optsRegion ||
+        m_mfxHevcRegion.RegionType != MFX_HEVC_REGION_SLICE ||
+        m_mfxHevcRegion.RegionId >= m_mfxParam.mfx.NumSlice) {
+        m_mfxHevcRegion.RegionType = USHRT_MAX;
+        m_mfxHevcRegion.RegionId = 0;
+    }
+    else {
+        m_mfxHEVCOpts.DeblockBorders = MFX_CODINGOPTION_OFF;
+    }
+
     m_frameCountSync = 0;
     m_frameCount = 0;
     m_frameCountBufferedSync = 0;
     m_frameCountBuffered = 0;
     m_taskID = 0;
 
-    sts = InitH265VideoParam(&m_mfxParam, &m_videoParam, &m_mfxHEVCOpts, &m_mfxHevcTiles);
+    sts = InitH265VideoParam(&m_mfxParam, &m_videoParam, &m_mfxHEVCOpts, &m_mfxHevcTiles, &m_mfxHevcRegion);
     MFX_CHECK_STS(sts);
 
     sts = Init_Internal();
@@ -1545,6 +1559,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     mfxExtOpaqueSurfaceAlloc *opaqAllocReq = (mfxExtOpaqueSurfaceAlloc *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
     mfxExtDumpFiles *opts_Dump = (mfxExtDumpFiles *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_DUMP);
     mfxExtHEVCTiles *optsTiles = (mfxExtHEVCTiles *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVC_TILES);
+    mfxExtHEVCRegion *optsRegion = (mfxExtHEVCRegion *)GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVC_REGION);
 
     mfxVideoParam parNew = *par_in;
     mfxVideoParam& parOld = m_mfxParam;
@@ -1672,6 +1687,17 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsTilesNew.NumTileRows   ) optsTilesNew.NumTileRows    = optsTilesOld.NumTileRows;
     }
 
+    mfxExtHEVCRegion optsRegionNew;
+    if (optsRegion) {
+        mfxExtHEVCRegion &optsRegionOld = m_mfxHevcRegion;
+        optsRegionNew = *optsRegion;
+        if (optsRegionNew.RegionType != MFX_HEVC_REGION_SLICE ||
+            optsRegionNew.RegionId >= parNew.mfx.NumSlice) {
+                optsRegionNew.RegionType = optsRegionOld.RegionType;
+                optsRegionNew.RegionId = optsRegionOld.RegionId;
+        }
+    }
+
     if ((parNew.IOPattern & 0xffc8) || (parNew.IOPattern == 0)) // 0 is possible after Query
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
@@ -1687,6 +1713,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     mfxExtOpaqueSurfaceAlloc checked_opaqAllocReq;
     mfxExtDumpFiles checked_DumpFiles = m_mfxDumpFiles;
     mfxExtHEVCTiles checked_optsTiles = m_mfxHevcTiles;
+    mfxExtHEVCRegion checked_optsRegion = m_mfxHevcRegion;
 
     mfxExtBuffer *ptr_input_ext[4] = {0};
     mfxExtBuffer *ptr_checked_ext[4] = {0};
@@ -1708,6 +1735,10 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     if (optsTiles) {
         ptr_input_ext  [ext_counter  ] = &optsTilesNew.Header;
         ptr_checked_ext[ext_counter++] = &checked_optsTiles.Header;
+    }
+    if (optsRegion) {
+        ptr_input_ext  [ext_counter  ] = &optsRegionNew.Header;
+        ptr_checked_ext[ext_counter++] = &checked_optsRegion.Header;
     }
     parNew.ExtParam = ptr_input_ext;
     parNew.NumExtParam = ext_counter;
@@ -1880,6 +1911,13 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 optsTiles->NumTileColumns = 1;
                 optsTiles->NumTileRows = 1;
             }
+            if (mfxExtHEVCRegion *optsRegion = (mfxExtHEVCRegion *)GetExtBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVC_REGION)) {
+                mfxExtBuffer HeaderCopy = optsRegion->Header;
+                memset(optsRegion, 0, sizeof(optsRegion));
+                optsRegion->Header = HeaderCopy;
+                optsRegion->RegionType = 1;
+                optsRegion->RegionId = 1;
+            }
 
             // ignore all reserved
         } else { //Check options for correctness
@@ -1900,6 +1938,8 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             mfxExtDumpFiles*         optsDump_out = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
             const mfxExtHEVCTiles*   optsTiles_in = (mfxExtHEVCTiles*)GetExtBuffer( in->ExtParam, in->NumExtParam, MFX_EXTBUFF_HEVC_TILES );
             mfxExtHEVCTiles*        optsTiles_out = (mfxExtHEVCTiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVC_TILES );
+            const mfxExtHEVCRegion*   optsRegion_in = (mfxExtHEVCRegion*)GetExtBuffer( in->ExtParam, in->NumExtParam, MFX_EXTBUFF_HEVC_REGION );
+            mfxExtHEVCRegion*        optsRegion_out = (mfxExtHEVCRegion*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVC_REGION );
 
             if (opts_in) CHECK_EXTBUF_SIZE(*opts_in, isInvalid);
             if (opts_out) CHECK_EXTBUF_SIZE(*opts_out, isInvalid);
@@ -1907,12 +1947,15 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             if (optsDump_out) CHECK_EXTBUF_SIZE(*optsDump_out, isInvalid);
             if (optsTiles_in) CHECK_EXTBUF_SIZE(*optsTiles_in, isInvalid);
             if (optsTiles_out) CHECK_EXTBUF_SIZE(*optsTiles_out, isInvalid);
+            if (optsRegion_in) CHECK_EXTBUF_SIZE(*optsRegion_in, isInvalid);
+            if (optsRegion_out) CHECK_EXTBUF_SIZE(*optsRegion_out, isInvalid);
             if (isInvalid)
                 return MFX_ERR_UNSUPPORTED;
 
             if ((opts_in==0) != (opts_out==0) ||
                 (optsDump_in==0) != (optsDump_out==0) ||
-                (optsTiles_in==0) != (optsTiles_out==0))
+                (optsTiles_in==0) != (optsTiles_out==0) ||
+                (optsRegion_in==0) != (optsRegion_out==0))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
             //if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && in->mfx.FrameInfo.ChromaFormat == 0) { // because 0 == monochrome
@@ -2290,7 +2333,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 CHECK_OPTION(opts_in->WPP, opts_out->WPP, isInvalid);       /* tri-state option */
                 CHECK_OPTION(opts_in->BPyramid, opts_out->BPyramid, isInvalid);  /* tri-state option */
                 CHECK_OPTION(opts_in->Deblocking, opts_out->Deblocking, isInvalid);  /* tri-state option */
-                    CHECK_OPTION(opts_in->DeblockBorders, opts_out->DeblockBorders, isInvalid);  /* tri-state option */
+                CHECK_OPTION(opts_in->DeblockBorders, opts_out->DeblockBorders, isInvalid);  /* tri-state option */
                 CHECK_OPTION(opts_in->RDOQuantChroma, opts_out->RDOQuantChroma, isInvalid);  /* tri-state option */
                 CHECK_OPTION(opts_in->RDOQuantCGZ, opts_out->RDOQuantCGZ, isInvalid);  /* tri-state option */
                 CHECK_OPTION(opts_in->CostChroma, opts_out->CostChroma, isInvalid);  /* tri-state option */
@@ -2384,6 +2427,28 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                 }
                 else {
                     optsTiles_out->NumTileRows = optsTiles_in->NumTileRows;
+                }
+            }
+
+            if (optsRegion_in) {
+                if (optsRegion_in->RegionType != MFX_HEVC_REGION_SLICE) {
+                    optsRegion_out->RegionType = 1;
+                    isCorrected++;
+                }
+                else {
+                    optsRegion_out->RegionType = optsRegion_in->RegionType;
+                }
+
+                if (optsRegion_in->RegionId >= out->mfx.NumSlice) {
+                    optsRegion_out->RegionId = 1;
+                    isCorrected++;
+                }
+                else {
+                    optsRegion_out->RegionId = optsRegion_in->RegionId;
+                }
+                if (opts_in && opts_out->DeblockBorders == MFX_CODINGOPTION_ON) {
+                    opts_out->DeblockBorders = MFX_CODINGOPTION_UNKNOWN;
+                    isInvalid ++;
                 }
             }
 
@@ -2836,6 +2901,13 @@ mfxStatus MFXVideoENCODEH265::AddNewOutputTask(int& encIdx)
 
     Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
     memset(&task->m_lcuQps[0], task->m_sliceQpY, sizeof(task->m_sliceQpY)*numCtb);
+    if (m_videoParam.RegionIdP1 > 0) {
+//        memset(task->m_frameRecon->cu_data, 0, sizeof(H265CUData) * (numCtb << m_videoParam.Log2NumPartInCU));
+//        memset(task->m_frameRecon->y, 0, m_videoParam.Height * task->m_frameRecon->pitch_luma_bytes);
+//        memset(task->m_frameRecon->uv, 0, m_videoParam.Height / 2 * task->m_frameRecon->pitch_chroma_bytes);
+        for (Ipp32s i = 0; i < numCtb << m_videoParam.Log2NumPartInCU; i++)
+            task->m_frameRecon->cu_data[i].predMode = MODE_INTRA;
+    }
 
     // setup slices
     H265Slice *currSlices = &task->m_slices[0];

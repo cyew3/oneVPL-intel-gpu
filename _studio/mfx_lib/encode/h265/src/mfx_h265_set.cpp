@@ -600,7 +600,7 @@ mfxStatus H265FrameEncoder::WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s 
     nal.nuh_layer_id = 0;
     nal.nuh_temporal_id = 0;
 
-    if (isVPSHeader) {
+    if (isVPSHeader && m_videoParam.RegionIdP1 < 2) {
         //m_bs[bs_main_id].Reset();
         PutVPS(&m_bs[bs_main_id]);
         m_bs[bs_main_id].WriteTrailingBits();
@@ -608,7 +608,7 @@ mfxStatus H265FrameEncoder::WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s 
         overheadBytes += m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
     }
 
-    if (m_task->m_frameOrigin->m_isIdrPic) {
+    if (m_task->m_frameOrigin->m_isIdrPic && m_videoParam.RegionIdP1 < 2) {
         //m_bs[bs_main_id].Reset();
 
         PutSPS(&m_bs[bs_main_id]);
@@ -632,8 +632,13 @@ mfxStatus H265FrameEncoder::WriteBitstreamPayload(mfxBitstream *mfxBS, Ipp32s bs
     nal.nuh_temporal_id = 0;
 
     //return MFX_ERR_NONE;
+    Ipp8u start = 0, end = m_videoParam.NumSlices;
+    if (m_videoParam.RegionIdP1 > 0) {
+        start = m_videoParam.RegionIdP1 - 1;
+        end = m_videoParam.RegionIdP1;
+    }
 
-    for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
+    for (Ipp8u curr_slice = start; curr_slice < end; curr_slice++) {
         H265Slice *pSlice = &m_task->m_slices[curr_slice];
 
         if (m_pps.entropy_coding_sync_enabled_flag || m_pps.tiles_enabled_flag) {

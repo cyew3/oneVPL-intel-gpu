@@ -198,7 +198,7 @@ namespace H265Enc {
         return 0;
     }
 
-    mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam *pars /* OUT */, const mfxExtCodingOptionHEVC *optsHevc, const mfxExtHEVCTiles *optsTiles)
+    mfxStatus InitH265VideoParam(const mfxVideoParam *param /* IN */, H265VideoParam *pars /* OUT */, const mfxExtCodingOptionHEVC *optsHevc, const mfxExtHEVCTiles *optsTiles, const mfxExtHEVCRegion *optsRegion)
     {
         //H265VideoParam *pars = &m_videoParam;
         Ipp32u width = param->mfx.FrameInfo.Width;
@@ -491,6 +491,7 @@ namespace H265Enc {
         pars->NumTileCols = IPP_MIN(optsTiles->NumTileColumns, pars->PicWidthInCtbs);
         pars->NumTileRows = IPP_MIN(optsTiles->NumTileRows, pars->PicHeightInCtbs);
         pars->NumTiles = pars->NumTileCols * pars->NumTileRows;
+        pars->RegionIdP1 = optsRegion->RegionType == MFX_HEVC_REGION_SLICE && pars->NumSlices > 1 ? optsRegion->RegionId + 1 : 0;
 
         if (pars->NumTiles > 1 && pars->NumSlices > 1)
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -2290,12 +2291,19 @@ mfxStatus H265FrameEncoder::SetEncodeTask(Task* task, std::deque<ThreadingTask *
 {
     MFX_CHECK_NULL_PTR1(task);
 
+    m_task = (Task*)task;
+
+    Ipp32u startRow = 0, endRow = m_videoParam.PicHeightInCtbs;
+    if (m_videoParam.RegionIdP1 > 0) {
+        startRow = m_task->m_slices[m_videoParam.RegionIdP1 - 1].row_first;
+        endRow = m_task->m_slices[m_videoParam.RegionIdP1 - 1].row_last + 1;
+    }
+
     Ipp32u pp_by_row = m_videoParam.m_framesInParallel > 1 && m_videoParam.NumTiles == 1 && m_videoParam.NumSlices == 1;
 
-    m_task = (Task*)task;
     m_task->m_numFinishedThreadingTasks = 0;
-    m_task->m_numThreadingTasks = pp_by_row ? (m_videoParam.PicWidthInCtbs + 1) * m_videoParam.PicHeightInCtbs : 
-        m_videoParam.PicWidthInCtbs * m_videoParam.PicHeightInCtbs * 2;
+    m_task->m_numThreadingTasks = pp_by_row ? (m_videoParam.PicWidthInCtbs + 1) * (endRow - startRow) : 
+        m_videoParam.PicWidthInCtbs * (endRow - startRow) * 2;
 
     for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
         H265Slice *slice = &m_task->m_slices[curr_slice];
@@ -2314,14 +2322,15 @@ mfxStatus H265FrameEncoder::SetEncodeTask(Task* task, std::deque<ThreadingTask *
         m_videoParam.m_tiles[curr_tile].last_ctb_addr = ctb_addr - m_videoParam.PicWidthInCtbs + m_videoParam.tileColWidth[curr_tile % m_videoParam.NumTileCols] - 1;
     }
 
-    m_task->m_frameRecon->m_codedRow = 0;
+    m_task->m_frameRecon->m_codedRow = m_videoParam.RegionIdP1 > 0 ? m_task->m_slices[m_videoParam.RegionIdP1 - 1].row_first : 0;
+
     for (Ipp32u i = 0; i < m_videoParam.num_bs_subsets; i++) {
         m_bs[i].Reset();
     }
     
     Ipp32u ctb_addr;
     m_numTasksPerCu = 2;
-    for (Ipp32u ctb_addr = 0; ctb_addr < m_videoParam.PicWidthInCtbs * m_videoParam.PicHeightInCtbs; ctb_addr++) {
+    for (Ipp32u ctb_addr = m_videoParam.PicWidthInCtbs * startRow; ctb_addr < m_videoParam.PicWidthInCtbs * endRow; ctb_addr++) {
         ThreadingTask *task_enc = m_task->m_frameRecon->m_threadingTasks + m_numTasksPerCu * ctb_addr;
         task_enc[0].numDownstreamDependencies = 0;
         task_enc[1].numDownstreamDependencies = 0;
@@ -2332,8 +2341,8 @@ mfxStatus H265FrameEncoder::SetEncodeTask(Task* task, std::deque<ThreadingTask *
         task_enc[1].finished = 0;
 #endif
     }
-    ctb_addr = 0;
-    for (Ipp32u ctb_row = 0; ctb_row < m_videoParam.PicHeightInCtbs; ctb_row++) {
+    ctb_addr = m_videoParam.PicWidthInCtbs * startRow;
+    for (Ipp32u ctb_row = startRow; ctb_row < endRow; ctb_row++) {
         for (Ipp32u ctb_col = 0; ctb_col < m_videoParam.PicWidthInCtbs; ctb_col++) {
             Ipp32s tile_id = m_videoParam.m_tile_ids[ctb_addr];
             Ipp32s slice_id = m_videoParam.m_slice_ids[ctb_addr];
@@ -2393,7 +2402,7 @@ mfxStatus H265FrameEncoder::SetEncodeTask(Task* task, std::deque<ThreadingTask *
                         H265Frame *ref = refList->m_refFrames[refIdx];
 
                         Ipp32u refRow = ctb_row + refRowLag;
-                        if(refRow <= m_videoParam.PicHeightInCtbs && ref->m_codedRow < (Ipp32s)refRow) {
+                        if(refRow <= endRow && ref->m_codedRow < (Ipp32s)refRow) {
                             Ipp32u refCtbAddr = refRow * m_videoParam.PicWidthInCtbs - 1;
                             ThreadingTask *task_pp_ref = ref->m_threadingTasks + m_numTasksPerCu * refCtbAddr + 1;
                             AddTaskDependency(task_enc, task_pp_ref);

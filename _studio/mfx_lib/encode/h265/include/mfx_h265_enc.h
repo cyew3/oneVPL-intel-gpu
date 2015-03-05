@@ -58,6 +58,7 @@ struct H265VideoParam {
     Ipp32s NumTiles;
     Ipp32s NumTileCols;
     Ipp32s NumTileRows;
+    Ipp32s RegionIdP1;
     Ipp8u  AnalyseFlags;
     Ipp32s GopPicSize;
     Ipp32s GopRefDist;

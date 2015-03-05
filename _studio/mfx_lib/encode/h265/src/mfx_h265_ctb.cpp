@@ -1207,6 +1207,8 @@ void H265CU<PixType>::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData
         if (m_region_border_bottom > m_par->Height)
             m_region_border_bottom = m_par->Height;
     }
+    m_SlicePixRowFirst = m_cslice->row_first << m_par->Log2MaxCUSize;
+    m_SlicePixRowLast = (m_cslice->row_last + 1) << m_par->Log2MaxCUSize;
 
     m_bakAbsPartIdxCu = 0;
     m_isRdoq = m_par->RDOQFlag ? true : false;
@@ -4695,6 +4697,26 @@ bool H265CU<PixType>::CheckFrameThreadingSearchRange(const H265MEInfo *meInfo, c
     return true;
 }
 
+template <typename PixType>
+bool H265CU<PixType>::CheckIndepRegThreadingSearchRange(const H265MEInfo *meInfo, const H265MV *mv, Ipp8u subpel) const
+{
+    Ipp32s shiftVer = 2 + m_par->chromaShiftH;
+    Ipp32s maskVer = (1 << shiftVer) - 1;
+    Ipp32s mv_add = 0;
+
+    if (subpel | (mv->mvy & maskVer)) {
+        mv_add = 4;
+    }
+
+    if (((Ipp32s)m_ctbPelY + meInfo->posy + mv->mvy / 4 + (meInfo->height - 1) + mv_add) >= m_SlicePixRowLast) { // +mv_add for interpolation 
+        return false;//skip
+    }
+    if (((Ipp32s)m_ctbPelY + meInfo->posy + mv->mvy / 4 - mv_add) < m_SlicePixRowFirst) { // +mv_add for interpolation 
+        return false;//skip
+    }
+    
+    return true;
+}
 
 template <typename PixType>
 Ipp32s H265CU<PixType>::CheckMergeCand(const H265MEInfo *meInfo, const MvPredInfo<5> *mergeCand,
@@ -4718,7 +4740,13 @@ Ipp32s H265CU<PixType>::CheckMergeCand(const H265MEInfo *meInfo, const MvPredInf
              refIdx[1] >= 0 && CheckFrameThreadingSearchRange(meInfo, mv + 1) == false)) {
             continue;
         }
-        //-------------------------------------------------
+        //------------------------------------------------
+        if ((m_par->RegionIdP1 > 0) &&
+            (refIdx[0] >= 0 && CheckIndepRegThreadingSearchRange(meInfo, mv + 0) == false ||
+             refIdx[1] >= 0 && CheckIndepRegThreadingSearchRange(meInfo, mv + 1) == false)) {
+            continue;
+        }
+        //------------------------------------------------
 
         Ipp32s cost;
         if (refIdx[0] >= 0 && refIdx[1] >= 0) {
@@ -5454,6 +5482,10 @@ void H265CU<PixType>::MeIntPelLog(const H265MEInfo *meInfo, const MvPredInfo<2> 
                 continue;
             }
             //-------------------------------------------------
+            if(m_par->RegionIdP1 > 0 && CheckIndepRegThreadingSearchRange(meInfo, (const H265MV*)&mv) == false ) {
+                continue;
+            }
+            //-------------------------------------------------
 
             Ipp32s cost = MatchingMetricPu(src, meInfo, &mv, ref, useHadamard);
             if (costBest > cost) {
@@ -5507,6 +5539,10 @@ void H265CU<PixType>::MeIntPelLog(const H265MEInfo *meInfo, const MvPredInfo<2> 
             //    continue;
 
             if(m_par->m_framesInParallel > 1 && CheckFrameThreadingSearchRange(meInfo, (const H265MV*)&mv) == false ) {
+                continue;
+            }
+            //-------------------------------------------------
+            if(m_par->RegionIdP1 > 0 && CheckIndepRegThreadingSearchRange(meInfo, (const H265MV*)&mv) == false ) {
                 continue;
             }
             //-------------------------------------------------
@@ -6874,6 +6910,11 @@ void H265CU<PixType>::RefineBiPred(const H265MEInfo *meInfo, const Ipp8s refIdxs
                     continue;
             }
             //-------------------------------------------------
+            if ((m_par->RegionIdP1 > 0) &&
+                (/*refIdx[0] >= 0 && */CheckIndepRegThreadingSearchRange(meInfo, mv + 0) == false ||
+                 /*refIdx[1] >= 0 && */CheckIndepRegThreadingSearchRange(meInfo, mv + 1) == false)) {
+                    continue;
+            }
 
             Ipp32s mvCost = MvCost1RefLog(mv[0], m_amvpCand[curPUidx] + 2 * refIdxs[0] + 0) +
                             MvCost1RefLog(mv[1], m_amvpCand[curPUidx] + 2 * refIdxs[1] + 1);
@@ -6957,6 +6998,12 @@ void H265CU<PixType>::CheckSkipCandFullRD(const H265MEInfo *meInfo, const MvPred
         if ((m_par->m_framesInParallel > 1) &&
             (mergeRefIdx[0] >= 0 && CheckFrameThreadingSearchRange(meInfo, mergeMv + 0) == false ||
              mergeRefIdx[1] >= 0 && CheckFrameThreadingSearchRange(meInfo, mergeMv + 1) == false)) {
+            continue;
+        }
+        //-------------------------------------------------
+        if ((m_par->RegionIdP1 > 0) &&
+            (mergeRefIdx[0] >= 0 && CheckIndepRegThreadingSearchRange(meInfo, mergeMv + 0) == false ||
+             mergeRefIdx[1] >= 0 && CheckIndepRegThreadingSearchRange(meInfo, mergeMv + 1) == false)) {
             continue;
         }
         //-------------------------------------------------
@@ -7516,6 +7563,9 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
                 if(m_par->m_framesInParallel > 1 && CheckFrameThreadingSearchRange(meInfo, (const H265MV*)&mv) == false ) {
                     continue;
                 }
+                if(m_par->RegionIdP1 > 0 && CheckIndepRegThreadingSearchRange(meInfo, (const H265MV*)&mv) == false ) {
+                    continue;
+                }
 
                 //notFound = false;
                 Ipp32s cost;
@@ -7613,10 +7663,11 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
             MeIntPel(meInfo, amvp, ref, &mvBest, &costBest, &mvCostBest);
 #endif
 
+            if (m_par->RegionIdP1 == 0 || CheckIndepRegThreadingSearchRange(meInfo, &mvBest, 1))
 #ifdef MEMOIZE_SUBPEL
-            MeSubPel(meInfo, amvp, ref, &mvBest, &costBest, &mvCostBest, m_currFrame->m_mapListRefUnique[list][refIdx]);
+                MeSubPel(meInfo, amvp, ref, &mvBest, &costBest, &mvCostBest, m_currFrame->m_mapListRefUnique[list][refIdx]);
 #else
-            MeSubPel(meInfo, amvp, ref, &mvBest, &costBest, &mvCostBest);
+                MeSubPel(meInfo, amvp, ref, &mvBest, &costBest, &mvCostBest);
 #endif
             mvRefBest[list][refIdx] = mvBest;
             mvCostRefBest[list][refIdx] = mvCostBest;
