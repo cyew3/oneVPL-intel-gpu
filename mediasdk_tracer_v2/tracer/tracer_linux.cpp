@@ -104,7 +104,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
         Log::WriteLog(context.dump("session", loader->session));
         /* Initializing loaded library */
         Timer t;
-        mfxStatus mfx_res = (*(MFXInitPointer)loader->table[eMFXInit])(impl, ver, &(loader->session));
+        mfxStatus mfx_res = (*(MFXInitPointer)loader->table[eMFXInit_tracer])(impl, ver, &(loader->session));
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXInit called");
         if (MFX_ERR_NONE != mfx_res) {
@@ -143,7 +143,7 @@ mfxStatus MFXClose(mfxSession session)
         }
         Log::WriteLog(context.dump("session", session));
         Timer t;
-        mfxStatus mfx_res = (*(MFXClosePointer)loader->table[eMFXClose])(loader->session);
+        mfxStatus mfx_res = (*(MFXClosePointer)loader->table[eMFXClose_tracer])(loader->session);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXClose called");
         dlclose(loader->dlhandle);
@@ -208,7 +208,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         Log::WriteLog(context.dump("session", loader->session));
         /* Initializing loaded library */
         Timer t;
-        mfxStatus mfx_res = (*(MFXInitExPointer)loader->table[eMFXInitEx])(par, &(loader->session));
+        mfxStatus mfx_res = (*(MFXInitExPointer)loader->table[eMFXInitEx_tracer])(par, &(loader->session));
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXInitEx called");
         if (MFX_ERR_NONE != mfx_res) {
