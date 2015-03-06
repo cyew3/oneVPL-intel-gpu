@@ -5,7 +5,7 @@ std::string pVoidToHexString(void* x)
 {
     std::ostringstream result;
     std::ostringstream tmp;
-    tmp << std::hex <<std::uppercase << ((unsigned int)x);
+    tmp << std::hex <<std::uppercase << ((mfxU64)x);
     for (int i = 0; i < (16 - tmp.str().length()); i++)
         result << "0";
     result << tmp.str();
