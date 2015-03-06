@@ -47,7 +47,6 @@ public:
 private:
     struct tc_par;
     mfxU32 mode;
-    static const mfxU32 n_par = 6;
     tsRawReader* m_reader;
     std::map<mfxU32, tsExtBufType<mfxEncodeCtrl>> ctrl;
     mfxU32 nframe;
@@ -70,18 +69,18 @@ private:
     {
         mfxStatus sts;
         mfxU32 mode;
-        struct f_pair 
+        struct f_pair
         {
             mfxU32 ext_type;
             const  tsStruct::Field* f;
             mfxU32 v;
-        } set_par[n_par];
+        } set_par[MAX_NPARS];
     };
 
     static const tc_struct test_case[];
 };
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/*00*/ MFX_ERR_NONE, INIT, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 4},

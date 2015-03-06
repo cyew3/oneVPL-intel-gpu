@@ -16,7 +16,6 @@ public:
     static const unsigned int n_cases;
 private:
     struct tc_par;
-    static const mfxU32 n_par = 6;
 
     enum
     {
@@ -43,7 +42,7 @@ private:
             mfxU32 ext_type;
             const  tsStruct::Field* f;
             mfxU32 v;
-        } set_par[n_par];
+        } set_par[MAX_NPARS];
     };
 
     static const tc_struct test_case[];
@@ -91,7 +90,7 @@ public:
                 if (au.NALU[i].SPS->vui_parameters_present_flag != 0)
                 {
                     byte fl = au.NALU[i].SPS->vui_parameters_present_flag;
-                    g_tsLog << "ERROR: vui_parameters_present_flag is " << fl 
+                    g_tsLog << "ERROR: vui_parameters_present_flag is " << fl
                              << " (expected 0)\n";
                     return MFX_ERR_ABORTED;
                 }
@@ -101,7 +100,7 @@ public:
                 if (au.NALU[i].SPS->vui_parameters_present_flag != 1)
                 {
                     byte fl = au.NALU[i].SPS->vui_parameters_present_flag;
-                    g_tsLog << "ERROR: vui_parameters_present_flag is " << fl 
+                    g_tsLog << "ERROR: vui_parameters_present_flag is " << fl
                              << " (expected 1)\n";
                     return MFX_ERR_ABORTED;
                 }
@@ -303,7 +302,7 @@ int TestSuite::RunTest(unsigned int id)
         EncodeFrames(3);
     }
 
-    if (tc.mode & RESET) 
+    if (tc.mode & RESET)
     {
         for(mfxU32 i = 0; i < 2; i++)
         {

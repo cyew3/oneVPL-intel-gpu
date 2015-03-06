@@ -195,7 +195,7 @@ public:
             mfxU32 ext_type;
             const  tsStruct::Field* f;
             mfxU32 v;
-        } set_par[5];
+        } set_par[MAX_NPARS];
     };
     static const tc_struct test_case[];
 

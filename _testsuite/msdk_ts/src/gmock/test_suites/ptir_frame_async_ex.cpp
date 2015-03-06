@@ -13,8 +13,6 @@ public:
     static const unsigned int n_cases;
 
 private:
-    static const mfxU32 n_par = 6;
-
     enum
     {
         MFX_PAR = 1,
@@ -47,7 +45,7 @@ private:
             mfxU32 ext_type;
             const  tsStruct::Field* f;
             mfxU32 v;
-        } set_par[n_par];
+        } set_par[MAX_NPARS];
     };
 
     static const tc_struct test_case[];
@@ -103,7 +101,7 @@ int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     const tc_struct& tc = test_case[id];
-    mfxU32 expected_ps[10] = {MFX_PICSTRUCT_PROGRESSIVE, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, 
+    mfxU32 expected_ps[10] = {MFX_PICSTRUCT_PROGRESSIVE, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF,
         MFX_PICSTRUCT_PROGRESSIVE, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF};
 
     std::vector<mfxExtBuffer*> buffs;

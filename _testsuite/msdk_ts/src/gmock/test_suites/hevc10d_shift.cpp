@@ -15,7 +15,6 @@ public:
     static const unsigned int n_cases;
 
 private:
-    static const mfxU32 n_par = 6;
 
     enum
     {
@@ -31,7 +30,7 @@ private:
             mfxU32 ext_type;
             const  tsStruct::Field* f;
             mfxU32 v;
-        } set_par[n_par];
+        } set_par[MAX_NPARS];
     };
 
     enum

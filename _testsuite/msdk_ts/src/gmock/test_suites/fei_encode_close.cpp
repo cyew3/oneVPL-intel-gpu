@@ -13,7 +13,6 @@ public:
     static const unsigned int n_cases;
 
 private:
-    static const mfxU32 n_par = 6;
 
     enum
     {

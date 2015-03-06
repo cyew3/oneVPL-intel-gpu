@@ -25,8 +25,6 @@ public:
     static const unsigned int n_cases;
 
 private:
-    static const mfxU32 n_par = 10;
-
     struct tc_struct
     {
         mfxStatus sts;
@@ -60,13 +58,13 @@ public:
             g_tsLog << "ERROR: null pointer ExtParam\n";
             return MFX_ERR_NULL_PTR;
         }
-        if (s.Data.ExtParam[0]->BufferId != MFX_EXTBUFF_TIME_CODE || 
+        if (s.Data.ExtParam[0]->BufferId != MFX_EXTBUFF_TIME_CODE ||
             s.Data.ExtParam[0]->BufferSz == 0)
         {
             g_tsLog << "ERROR: Wrong external buffer or zero size buffer\n";
             return MFX_ERR_NOT_INITIALIZED;
         }
-       
+
         mfxU16 buf_drop = ((mfxExtTimeCode*)s.Data.ExtParam[0])->DropFrameFlag;
         mfxU16 buf_hours = ((mfxExtTimeCode*)s.Data.ExtParam[0])->TimeCodeHours;
         mfxU16 buf_minutes = ((mfxExtTimeCode*)s.Data.ExtParam[0])->TimeCodeMinutes;
@@ -76,7 +74,7 @@ public:
         if (buf_drop == Ref[frame].DropFrameFlag)
         {
             g_tsLog << "Drop Frame Flag is the same (" << buf_drop << ") frame #" << frame <<" \n";
-        } 
+        }
         else
         {
             g_tsLog << "ERROR: Drop Frame Flag is " << Ref[frame].DropFrameFlag << " in stream and " << buf_drop
@@ -87,7 +85,7 @@ public:
         if (buf_hours == Ref[frame].TimeCodeHours)
         {
             g_tsLog << "Time Code Hour is the same (" << buf_hours << ") frame #" << frame <<" \n";
-        } 
+        }
         else
         {
             g_tsLog << "ERROR: Time Code Hour is " << Ref[frame].TimeCodeHours << " in stream and " << buf_hours
@@ -101,7 +99,7 @@ public:
         }
         else
         {
-            g_tsLog << "ERROR: Time Code Minutes is " << Ref[frame].TimeCodeMinutes << " in stream and " << buf_minutes 
+            g_tsLog << "ERROR: Time Code Minutes is " << Ref[frame].TimeCodeMinutes << " in stream and " << buf_minutes
                     << " in buffer (frame #" << frame << ")\n";
             return MFX_ERR_ABORTED;
         }
@@ -112,7 +110,7 @@ public:
         }
         else
         {
-            g_tsLog << "ERROR: Time Code Seconds is " << Ref[frame].TimeCodeSeconds << " in stream and " << buf_seconds 
+            g_tsLog << "ERROR: Time Code Seconds is " << Ref[frame].TimeCodeSeconds << " in stream and " << buf_seconds
                     << " in buffer (frame #" << frame << ")\n";
             return MFX_ERR_ABORTED;
         }
@@ -123,7 +121,7 @@ public:
         }
         else
         {
-            g_tsLog << "ERROR: Time Code Pictures is " << Ref[frame].TimeCodePictures << " in stream and " << buf_pictures 
+            g_tsLog << "ERROR: Time Code Pictures is " << Ref[frame].TimeCodePictures << " in stream and " << buf_pictures
                     << " in buffer (frame #" << frame << ")\n";
             return MFX_ERR_ABORTED;
         }
@@ -133,7 +131,7 @@ public:
     }
 };
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/*00*/ MFX_ERR_NONE, "conformance/mpeg2/bsd_pak_test/bugs_int_IPB.mpg", 30},
     {/*01*/ MFX_ERR_NONE, "conformance/mpeg2/bsd_pak_test/bugs_prg_I.mpg", 30},
@@ -177,7 +175,7 @@ int TestSuite::RunTest(unsigned int id)
         mfxU64 curr = get_offset();
         err = parse_next_unit();
         hdr = (UnitType*)get_header();
-        
+
         mfxExtTimeCode ref_code = {}; //may not compile on linux
         memset(&ref_code, 0, sizeof(ref_code));
 
@@ -201,8 +199,8 @@ int TestSuite::RunTest(unsigned int id)
         }
 
         if ((BS_ERR_NONE == err) && (hdr && hdr->start_code == 0x000001B8 && hdr->gop_hdr)) // gop header
-        {    
-            //hdr->gop_hdr->time_code = 0;  
+        {
+            //hdr->gop_hdr->time_code = 0;
             //parse time_code into hours,mins, secs.....
             TimeCodePictures = (hdr->gop_hdr->time_code & 0x3F);
             TimeCodeSeconds = (hdr->gop_hdr->time_code & 0xFC0) >> 6;
@@ -217,7 +215,7 @@ int TestSuite::RunTest(unsigned int id)
             ref_code.TimeCodePictures = TimeCodePictures;
             // push into vector
             refCodes.push_back(ref_code);
-        }   
+        }
 
     } while(hdr);
 
