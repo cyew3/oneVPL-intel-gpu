@@ -40,7 +40,7 @@
 #include "mfxla.h"
 #include "mfxvp8.h"
 
-#include "../../sample_user_modules/plugin_api/plugin_loader.h"
+#include "plugin_loader.h"
 
 #if defined(_WIN32) || defined(_WIN64)
     #define MSDK_CPU_ROTATE_PLUGIN  MSDK_STRING("sample_rotate_plugin.dll")

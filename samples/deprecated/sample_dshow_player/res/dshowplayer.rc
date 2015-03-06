@@ -1,0 +1,200 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+#include "..\..\..\sample_common\include\current_date.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDC_DSHOWPLAYER MENU 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&Play File",                  ID_FILE_OPENFILE
+        MENUITEM "Play in &S3D",                ID_FILE_PLAYINS3D
+        POPUP "Transcode File"
+        BEGIN
+            MENUITEM "MP4 (H.264 + MP3)",           ID_TRANSCODEFILE_MP4_H264_MP3
+            MENUITEM "MP4 (H.264 + AAC)",           ID_TRANSCODEFILE_MP4_H264_AAC
+            MENUITEM "MPEG-2 TS (MPEG-2 + MP3)",    ID_TRANSCODEFILE_MPEG_TS_MPEG2_MP3
+            MENUITEM "MPEG-2 TS (H.264 + AAC)",     ID_TRANSCODEFILE_MPEG_TS_H264_AAC
+        END
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+    POPUP "Configure"
+    BEGIN
+        MENUITEM "Encoder",                     ID_CONFIGURE_ENCODER, INACTIVE
+        MENUITEM "Render",                      ID_CONFIGURE_RENDER, INACTIVE
+    END
+    POPUP "Help"
+    BEGIN
+        MENUITEM "About Dshow Player",          ID_HELP_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDC_DSHOWPLAYER ACCELERATORS 
+BEGIN
+    "?",            IDM_ABOUT,              ASCII,  ALT
+    "/",            IDM_ABOUT,              ASCII,  ALT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 22, 17, 230, 42
+STYLE DS_SETFONT | DS_MODALFRAME | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOPMOST
+CAPTION "About Dshow Player"
+FONT 8, "System", 0, 0, 0x0
+BEGIN
+    ICON            107,IDC_MYICON,14,9,20,20
+    LTEXT           "DShow Player",IDC_STATIC,50,10,83,8,SS_NOPREFIX
+    LTEXT           "Copyright\xa9 2008-2014 Intel Corporation",IDC_STATIC,50,20,132,8
+    DEFPUSHBUTTON   "OK",IDOK,195,6,30,11,WS_GROUP
+    LTEXT           "Version:",IDC_STATIC,50,30,26,8
+    LTEXT           FILE_VERSION_STRING,IDC_STATIC,81,30,51,8
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_TOOLBAR_IMAGES_NORMAL BITMAP                  "Images\\toolbar1.bmp"
+IDB_TOOLBAR_IMAGES_DISABLED BITMAP                  "Images\\toolbar2.bmp"
+IDB_SLIDER_THUMB        BITMAP                  "Images\\slider.bmp"
+IDB_SLIDER_VOLUME       BITMAP                  "Images\\volume.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_APP_TITLE           "DShowPlayer"
+    IDC_DSHOWPLAYER         "DShowPlayer"
+END
+
+STRINGTABLE 
+BEGIN
+    IDC_BUTTON_PLAY         "Play"
+    IDC_BUTTON_STOP         "Stop"
+    IDC_BUTTON_PAUSE        "Pause"
+    IDC_SEEKBAR             "Seek"
+    IDC_BUTTON_MUTE         "Mute"
+    IDC_VOLUME              "Volume"
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION FILE_VERSION
+ PRODUCTVERSION FILE_VERSION
+ FILEFLAGSMASK 0x17L
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Intel Corporation"
+            VALUE "FileDescription", "DShow Player sample application"
+            VALUE "LegalCopyright", PRODUCT_COPYRIGHT
+            VALUE "FileVersion", FILE_VERSION_STRING
+            VALUE "ProductName", PRODUCT_NAME
+            VALUE "ProductVersion", PRODUCT_VERSION_STRING
+            VALUE "OriginalFilename", "sample_dshow.exe"
+            VALUE "InternalName", "sample_dshow.exe"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

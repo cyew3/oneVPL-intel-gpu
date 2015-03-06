@@ -9,6 +9,7 @@ Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 **********************************************************************************/
 
 #include "mfx_samples_config.h"
+#include "plugin_utils.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
@@ -123,6 +124,8 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -opencl       Uses implementation of rotation plugin (enabled with -angle option) through Intel(R) OpenCL\n"));
     msdk_printf(MSDK_STRING("  -w            Destination picture width, invokes VPP resize\n"));
     msdk_printf(MSDK_STRING("  -h            Destination picture height, invokes VPP resize\n"));
+    msdk_printf(MSDK_STRING("  -pe           Set encoding plugin for this particular session. This setting will override pluging settings defined by SET clause.\n"));
+    msdk_printf(MSDK_STRING("  -pd           Set decoding plugin for this particular session. This setting will override pluging settings defined by SET clause.\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("ParFile format:\n"));
     msdk_printf(MSDK_STRING("  ParFile is extension of what can be achieved by setting pipeline in the command\n"));
@@ -749,6 +752,18 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-pe")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            InputParams.encoderPluginParams = ParsePluginParameter(argv[i + 1]);
+            i++;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-pd")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            InputParams.decoderPluginParams = ParsePluginParameter(argv[i + 1]);
+            i++;
+        }
         else
         {
             PrintHelp(NULL, MSDK_STRING("Invalid input argument number %d \"%s\""), i, argv[i]);
@@ -800,6 +815,19 @@ mfxStatus CmdProcessor::ParseOption__set(msdk_char* strCodecType, msdk_char* str
         return MFX_ERR_UNSUPPORTED;
     }
 
+    pluginParams = ParsePluginParameter(strPluginPath);
+
+    if (type == MSDK_VDECODE)
+        m_decoderPlugins.insert(std::pair<mfxU32, sPluginParams>(codecid, pluginParams));
+    else
+        m_encoderPlugins.insert(std::pair<mfxU32, sPluginParams>(codecid, pluginParams));
+
+    return MFX_ERR_NONE;
+};
+
+sPluginParams CmdProcessor::ParsePluginParameter(msdk_char* strPluginPath)
+{
+    sPluginParams pluginParams;
     if (MFX_ERR_NONE == ConvertStringToGuid(strPluginPath, pluginParams.pluginGuid))
     {
         pluginParams.type = MFX_PLUGINLOAD_TYPE_GUID;
@@ -819,13 +847,9 @@ mfxStatus CmdProcessor::ParseOption__set(msdk_char* strCodecType, msdk_char* str
         pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
     }
 
-    if (type == MSDK_VDECODE)
-        m_decoderPlugins.insert(std::pair<mfxU32, sPluginParams>(codecid, pluginParams));
-    else
-        m_encoderPlugins.insert(std::pair<mfxU32, sPluginParams>(codecid, pluginParams));
+    return pluginParams;
+}
 
-    return MFX_ERR_NONE;
-};
 
 mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputParams &InputParams)
 {
@@ -930,13 +954,43 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
 
     std::map<mfxU32, sPluginParams>::iterator it;
 
-    it = m_decoderPlugins.find(InputParams.DecodeId);
-    if (it != m_decoderPlugins.end())
-        InputParams.decoderPluginParams = it->second;
+    // Set decoder plugins parameters only if they were not set before
+    if (!memcmp(InputParams.decoderPluginParams.pluginGuid.Data, MSDK_PLUGINGUID_NULL.Data, sizeof(MSDK_PLUGINGUID_NULL)) &&
+         !strcmp(InputParams.decoderPluginParams.strPluginPath,""))
+    {
+        it = m_decoderPlugins.find(InputParams.DecodeId);
+        if (it != m_decoderPlugins.end())
+            InputParams.decoderPluginParams = it->second;
+    }
+    else
+    {
+        // Decoding plugin was set manually, so let's check if codec supports plugins
+        if (!IsPluginCodecSupported(InputParams.DecodeId))
+        {
+            msdk_printf(MSDK_STRING("error: decoder does not support plugins\n"));
+            return MFX_ERR_UNSUPPORTED;
+        }
 
-    it = m_encoderPlugins.find(InputParams.EncodeId);
-    if (it != m_encoderPlugins.end())
-        InputParams.encoderPluginParams = it->second;
+    }
+
+    // Set encoder plugins parameters only if they were not set before
+    if (!memcmp(InputParams.encoderPluginParams.pluginGuid.Data, MSDK_PLUGINGUID_NULL.Data, sizeof(MSDK_PLUGINGUID_NULL)) &&
+        !strcmp(InputParams.encoderPluginParams.strPluginPath, ""))
+    {
+        it = m_encoderPlugins.find(InputParams.EncodeId);
+        if (it != m_encoderPlugins.end())
+            InputParams.encoderPluginParams = it->second;
+    }
+    else
+    {
+        // Decoding plugin was set manually, so let's check if codec supports plugins
+        if (!IsPluginCodecSupported(InputParams.DecodeId))
+        {
+            msdk_printf(MSDK_STRING("error: encoder does not support plugins\n"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+
+    }
 
     return MFX_ERR_NONE;
 

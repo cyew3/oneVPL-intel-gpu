@@ -19,7 +19,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include <algorithm>
 #include "mfx_pipeline_decvpp.h"
 #include "sysmem_allocator.h"
-#include "../../sample_user_modules/plugin_api/plugin_loader.h"
+#include "plugin_loader.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include "d3d_allocator.h"

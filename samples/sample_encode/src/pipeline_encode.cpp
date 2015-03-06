@@ -26,7 +26,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include "vaapi_device.h"
 #endif
 
-#include "../../sample_user_modules/plugin_api/plugin_loader.h"
+#include "plugin_loader.h"
 
 
 CEncTaskPool::CEncTaskPool()

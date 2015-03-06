@@ -399,7 +399,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
             if (FAILED(hRes))
             {
-                msdk_printf(MSDK_STRING("CreateTexture2D(%d) failed, hr = 0x%08lx\n"), i, hRes);
+                msdk_printf(MSDK_STRING("CreateTexture2D(%lld) failed, hr = 0x%08lx\n"), (long long)i, hRes);
                 return MFX_ERR_MEMORY_ALLOC;
             }
             newTexture.textures.push_back(pTexture2D);
@@ -417,7 +417,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
             if (FAILED(hRes))
             {
-                printf("Create staging texture(%d) failed hr = 0x%X\n", i, (unsigned int)hRes);
+                printf("Create staging texture(%lld) failed hr = 0x%X\n", (long long)i, (unsigned int)hRes);
                 return MFX_ERR_MEMORY_ALLOC;
             }
             newTexture.stagingTexture.push_back(pTexture2D);

@@ -34,7 +34,7 @@
 #include <vector>
 #include <memory>
 
-#include "../../sample_user_modules/plugin_api/plugin_loader.h"
+#include "plugin_loader.h"
 
 enum {
     MVC_DISABLED          = 0x0,

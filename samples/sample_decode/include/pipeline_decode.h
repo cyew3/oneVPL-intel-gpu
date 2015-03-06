@@ -36,7 +36,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
 
-#include "../../sample_user_modules/plugin_api/plugin_loader.h"
+#include "plugin_loader.h"
 
 enum MemType {
     SYSTEM_MEMORY = 0x00,

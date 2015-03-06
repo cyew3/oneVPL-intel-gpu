@@ -10,14 +10,14 @@
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="Header Files\vm">
-      <UniqueIdentifier>{f08f55ed-e096-4143-b918-c001baea2df1}</UniqueIdentifier>
+      <UniqueIdentifier>{06106f4d-622d-4e95-8ce3-8d129979a895}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
     <Filter Include="Source Files\vm">
-      <UniqueIdentifier>{787f9de2-0571-43dd-8370-ed19ca549061}</UniqueIdentifier>
+      <UniqueIdentifier>{06237e77-a544-4805-92e6-f1f423ddffe4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -36,19 +36,37 @@
     <ClInclude Include="include\d3d_device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\general_allocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\hw_device.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_buffering.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_samples_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\plugin_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\sample_defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\sample_params.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sample_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\sample_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sysmem_allocator.h">
+    <ClInclude Include="include\surface_auto_lock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\mfx_buffering.h">
+    <ClInclude Include="include\sysmem_allocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\vpp_ex.h">
@@ -72,24 +90,6 @@
     <ClInclude Include="include\vm\time_defs.h">
       <Filter>Header Files\vm</Filter>
     </ClInclude>
-    <ClInclude Include="include\shared_ptr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\mfx_samples_config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\plugin_utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\sample_types.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\sample_params.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\general_allocator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\base_allocator.cpp">
@@ -107,13 +107,19 @@
     <ClCompile Include="src\d3d_device.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\general_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_buffering.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\plugin_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\sample_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\sysmem_allocator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\mfx_buffering.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\vpp_ex.cpp">
@@ -134,10 +140,7 @@
     <ClCompile Include="src\vm\time.cpp">
       <Filter>Source Files\vm</Filter>
     </ClCompile>
-    <ClCompile Include="src\plugin_utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\general_allocator.cpp">
+    <ClCompile Include="src\mfx_plugin_module.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

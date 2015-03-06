@@ -21,4 +21,5 @@ ssh -p 29418 $__USER@git-ccr-1.devtools.intel.com gerrit set-reviewers \
   -p mdp_msdk-samples \
   -a dvrogozh \
   -a fzharino \
+  -a sidorovv \
   $__CHANGE

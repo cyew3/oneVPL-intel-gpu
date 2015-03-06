@@ -93,6 +93,7 @@ namespace TranscodingSample
         mfxStatus TokenizeLine(msdk_char *pLine, mfxU32 length);
         mfxStatus ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[]);
         mfxStatus ParseOption__set(msdk_char* strCodecType, msdk_char* strPluginPath);
+        sPluginParams ParsePluginParameter(msdk_char* strPluginPath);
         mfxStatus VerifyAndCorrectInputParams(TranscodingSample::sInputParams &InputParams);
         mfxU32                                       m_SessionParamId;
         std::vector<TranscodingSample::sInputParams> m_SessionArray;

@@ -15,7 +15,6 @@
 #include <algorithm>
 #include "pipeline_camera.h"
 #include "camera_sysmem_allocator.h"
-//#include "../../sample_user_modules/plugin_api/plugin_loader.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include "d3d_allocator.h"

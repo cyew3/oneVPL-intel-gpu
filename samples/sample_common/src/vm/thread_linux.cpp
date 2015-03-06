@@ -78,7 +78,7 @@ mfxStatus MSDKSemaphore::Wait(void)
 {
     int res = pthread_mutex_lock(&m_mutex);
     if (!res) {
-        if (!m_count) {
+        while(!m_count) {
             res = pthread_cond_wait(&m_semaphore, &m_mutex);
         }
         if (!res) --m_count;
@@ -142,7 +142,7 @@ mfxStatus MSDKEvent::Wait(void)
     int res = pthread_mutex_lock(&m_mutex);
     if (!res)
     {
-        if (!m_state) res = pthread_cond_wait(&m_event, &m_mutex);
+        while(!m_state) res = pthread_cond_wait(&m_event, &m_mutex);
         if (!m_manual) m_state = false;
         int sts = pthread_mutex_unlock(&m_mutex);
         if (!res) res = sts;

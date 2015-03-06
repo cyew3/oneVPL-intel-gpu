@@ -19,7 +19,7 @@ Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 #include "sample_utils.h"
 #include "mfx_vpp_plugin.h"
 
-#include "../../sample_user_modules/plugin_api/plugin_loader.h"
+#include "plugin_loader.h"
 
 using namespace TranscodingSample;
 
