@@ -45,7 +45,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     str += structName + ".RateDistortionOpt=" + ToString(_struct.RateDistortionOpt) + "\n";
     str += structName + ".MECostType=" + ToString(_struct.MECostType) + "\n";
     str += structName + ".MESearchType=" + ToString(_struct.MESearchType) + "\n";
-    //mfxI16Pair  MVSearchWindow; // TODO: dump the field
+    str += structName + ".MVSearchWindow.x=" + ToString(_struct.MVSearchWindow.x) + "\n";
+    str += structName + ".MVSearchWindow.y=" + ToString(_struct.MVSearchWindow.y) + "\n";
+    
     str += structName + ".EndOfSequence=" + ToString(_struct.EndOfSequence) + "\n";
     str += structName + ".FramePicture=" + ToString(_struct.FramePicture) + "\n";
 
@@ -179,6 +181,7 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameAllocR
     str += structName + ".reserved2=" + ToString(frameAllocRequest.reserved2);
     return str;
 }
+
 
 std::string DumpContext::dump(const std::string structName, const mfxFrameData &frameData)
 {
@@ -673,3 +676,18 @@ std::string DumpContext::dump(const std::string structName, const mfxExtMVCTarge
     return str;
 }
 
+std::string DumpContext::dump(const std::string structName, const mfxExtOpaqueSurfaceAlloc &ExtOpaqueSurfaceAlloc)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtOpaqueSurfaceAlloc.Header) + "\n";
+    str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtOpaqueSurfaceAlloc.reserved1) + "\n";
+    str += structName + ".In.NumSurface=" + ToString(ExtOpaqueSurfaceAlloc.In.NumSurface) + "\n";
+    str += structName + ".In.Surfaces**=" + ToHexFormatString(ExtOpaqueSurfaceAlloc.In.Surfaces) + "\n";
+    str += structName + ".In.Type=" + ToString(ExtOpaqueSurfaceAlloc.In.Type) + "\n";
+    str += structName + ".In.reserved2[]=" + DUMP_RESERVED_ARRAY(ExtOpaqueSurfaceAlloc.In.reserved2) + "\n";
+    str += structName + ".Out.NumSurface=" + ToString(ExtOpaqueSurfaceAlloc.Out.NumSurface) + "\n";
+    str += structName + ".Out.Surfaces**=" + ToHexFormatString(ExtOpaqueSurfaceAlloc.Out.Surfaces) + "\n";
+    str += structName + ".Out.Type=" + ToString(ExtOpaqueSurfaceAlloc.Out.Type) + "\n";
+    str += structName + ".Out.reserved2[]=" + DUMP_RESERVED_ARRAY(ExtOpaqueSurfaceAlloc.Out.reserved2) + "\n";
+    return str;
+}

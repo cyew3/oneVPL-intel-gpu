@@ -199,6 +199,9 @@ public:
                  case  MFX_EXTBUFF_MVC_TARGET_VIEWS:
                     str += dump(name, *((mfxExtMVCTargetViews*)_struct.ExtParam[i])) + "\n";
                     break;
+                 case  MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION:
+                    str += dump(name, *((mfxExtOpaqueSurfaceAlloc*)_struct.ExtParam[i])) + "\n";
+                    break;
                   default:
                     str += dump(name, *(_struct.ExtParam[i])) + "\n";
                     break;
@@ -256,6 +259,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtAvcTemporalLayers);
     DEFINE_DUMP_FUNCTION(mfxExtAVCEncodedFrameInfo);
     DEFINE_DUMP_FUNCTION(mfxExtAVCRefLists);
+    DEFINE_DUMP_FUNCTION(mfxExtOpaqueSurfaceAlloc);
     //mfxsession
     DEFINE_DUMP_FUNCTION(mfxSession);
 
