@@ -167,12 +167,24 @@ static void ParseCmdLine(int argc, char **argv, SampleParams *sp)
 
 }
 
+static void FillRand(unsigned char *buf, int bytes)
+{
+    int i;
+
+    for (i = 0; i < bytes; i++)
+        buf[i] = (rand() & 0x00ff);
+}
+
 int main(int argc, char **argv)
 {
     int nRead, feiOutIdx;
     unsigned int i, encOrder;
     unsigned char *srcFrame, *refFrame[MFX_FEI_H265_MAX_NUM_REF_FRAMES];
+#if defined(_WIN32) || defined(_WIN64)
     clock_t startTime, endTime;
+#else
+    struct timeval startTime, endTime;
+#endif
     mfxStatus err;
     SampleParams sp;
     FrameInfo fi;
@@ -235,10 +247,22 @@ int main(int argc, char **argv)
     if (sp.WriteFiles)
         OpenOutputFiles();
 
+    /* if infile not specified, fill frame buffers with random data (avoid file reading overhead for better timing estimates) */
+    if (!sp.SourceFile) {
+        FillRand(srcFrame, sp.PaddedWidth*sp.PaddedHeight*3/2);
+        for (i = 0; i < MFX_FEI_H265_MAX_NUM_REF_FRAMES; i++) {
+            FillRand(refFrame[i], sp.PaddedWidth*sp.PaddedHeight*3/2);
+        }
+    }
+
     printf("Running...\n");
     encOrder = 0;
     feiOutIdx = 0;
+#if defined(_WIN32) || defined(_WIN64)
     startTime = clock();
+#else
+    gettimeofday(&startTime, NULL);
+#endif
     while (1) {
         /* get frame parameters */
         if (sp.ParamsFile) {
@@ -255,7 +279,7 @@ int main(int argc, char **argv)
         if (fi.RefNum > MFX_FEI_H265_MAX_NUM_REF_FRAMES)
             break;
 
-        if (LoadFrame(sp.SourceFile, sp.Width, sp.Height, sp.PaddedWidth, sp.PaddedHeight, fi.PicOrder, srcFrame))
+        if (sp.SourceFile && LoadFrame(sp.SourceFile, sp.Width, sp.Height, sp.PaddedWidth, sp.PaddedHeight, fi.PicOrder, srcFrame))
             break;
 
         /* clear state from last frame */
@@ -278,8 +302,8 @@ int main(int argc, char **argv)
             pi.RefIdx = i;
 
             /* load first reference frame (for P or B) */
-            if (sp.ReconFile)   LoadFrame(sp.ReconFile, sp.PaddedWidth, sp.PaddedHeight, sp.PaddedWidth, sp.PaddedHeight, fi.RefPicOrder[i], refFrame[i]);
-            else                LoadFrame(sp.SourceFile, sp.Width, sp.Height, sp.PaddedWidth, sp.PaddedHeight, fi.RefPicOrder[i], refFrame[i]);
+            if (sp.ReconFile)       LoadFrame(sp.ReconFile, sp.PaddedWidth, sp.PaddedHeight, sp.PaddedWidth, sp.PaddedHeight, fi.RefPicOrder[i], refFrame[i]);
+            else if (sp.SourceFile) LoadFrame(sp.SourceFile, sp.Width, sp.Height, sp.PaddedWidth, sp.PaddedHeight, fi.RefPicOrder[i], refFrame[i]);
 
             pi.YPlaneRef   = refFrame[i];
             pi.YPitchRef   = sp.PaddedWidth;
@@ -336,7 +360,11 @@ int main(int argc, char **argv)
         /* FEI can process up to 2 src frames at once, allowing lookahead */
         feiOutIdx = 1 - feiOutIdx;
     }
+#if defined(_WIN32) || defined(_WIN64)
     endTime = clock();
+#else
+    gettimeofday(&endTime, NULL);
+#endif
 
     /* shutdown and cleanup */
     hFEI->Close();
@@ -354,7 +382,13 @@ int main(int argc, char **argv)
         _aligned_free(refFrame[i]);
 
     printf("Finished!\n");
+#if defined(_WIN32) || defined(_WIN64)
     printf("Processed %d frames in %.2f secs --> %.1f FPS\n", encOrder, (float)(endTime - startTime) / CLOCKS_PER_SEC, (float)encOrder * CLOCKS_PER_SEC / (endTime - startTime));
+#else
+    long long startTime_usec = startTime.tv_sec * 1000000 + startTime.tv_usec;
+    long long endTime_usec   = endTime.tv_sec   * 1000000 + endTime.tv_usec;
+    printf("Processed %d frames in %.2f secs --> %.1f FPS\n", encOrder, (float)(endTime_usec - startTime_usec) / 1000000, (float)encOrder * 1000000 / (endTime_usec - startTime_usec));
+#endif
 
     return 0;
 }
