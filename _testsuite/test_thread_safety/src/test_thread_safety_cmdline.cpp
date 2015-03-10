@@ -46,6 +46,7 @@ mfxU32 String2TestType(const vm_char* s)
         MAKE_PAIR(HEVCENCODE),
         MAKE_PAIR(VC1DECODE),
         MAKE_PAIR(VP8DECODE),
+        MAKE_PAIR(VP9DECODE),
         MAKE_PAIR(H263DECODE),
         MAKE_PAIR(JPEGENCODE),
         MAKE_PAIR(H264ENCODE),
@@ -92,7 +93,8 @@ void CommandLine::PrintUsage(const vm_char* app)
         VM_STRING("  VP8DECODE\n")
         VM_STRING("  VP8ENCODE\n")
         VM_STRING("  H263DECODE\n")
-        VM_STRING("  H263ENCODE\n"));
+        VM_STRING("  H263ENCODE\n")
+        VM_STRING("  VP9DECODE\n"));
     vm_string_printf(
         VM_STRING("numThread:\n")
         VM_STRING("  n - number of components working in parallel\n")
@@ -223,6 +225,7 @@ CommandLine::CommandLine(mfxI32 argc, vm_char** argv)
         case TEST_VC1DECODE:
         case TEST_HEVCDECODE:
         case TEST_VP8DECODE:
+        case TEST_VP9DECODE:
         case TEST_H263DECODE:
             break;
         default:
