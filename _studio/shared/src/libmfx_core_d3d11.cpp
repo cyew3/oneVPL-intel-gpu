@@ -68,7 +68,7 @@ mfxStatus D3D11VideoCORE::InternalInit()
 
     //need to replace with specific D3D11 approach
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
-    if (m_HWType >= MFX_HW_SCL) m_bCmCopyAllowed = false;
+
     return MFX_ERR_NONE;
 }
 
@@ -767,7 +767,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     {
         mfxI64 verticalPitch = (mfxI64)(pDst->Data.UV - pDst->Data.Y);
         verticalPitch = (verticalPitch % pDst->Data.Pitch)? 0 : verticalPitch / pDst->Data.Pitch;
-        if (m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && pDst->Info.FourCC == MFX_FOURCC_NV12 && CM_ALIGNED(pDst->Data.Y) && CM_ALIGNED(pDst->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
+        if (m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && (pDst->Info.FourCC == MFX_FOURCC_NV12 || pDst->Info.FourCC == MFX_FOURCC_P010) && CM_ALIGNED(pDst->Data.Y) && CM_ALIGNED(pDst->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
         {
             sts = pCmCopy->CopyVideoToSystemMemoryAPI(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi);
             MFX_CHECK_STS(sts);
@@ -1032,7 +1032,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         mfxI64 verticalPitch = (mfxI64)(pSrc->Data.UV - pSrc->Data.Y);
         verticalPitch = (verticalPitch % pSrc->Data.Pitch)? 0 : verticalPitch / pSrc->Data.Pitch;
 
-        if (m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && pDst->Info.FourCC != MFX_FOURCC_YV12 && CM_ALIGNED(pSrc->Data.Y) && CM_ALIGNED(pSrc->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)
+        if (m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && (pDst->Info.FourCC == MFX_FOURCC_NV12 || pDst->Info.FourCC == MFX_FOURCC_P010) && CM_ALIGNED(pSrc->Data.Y) && CM_ALIGNED(pSrc->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)
         {
             sts = pCmCopy->CopySystemToVideoMemoryAPI(((mfxHDLPair*)pDst->Data.MemId)->first, 0, pSrc->Data.Y, pSrc->Data.Pitch,(mfxU32)verticalPitch, roi);
             MFX_CHECK_STS(sts);
