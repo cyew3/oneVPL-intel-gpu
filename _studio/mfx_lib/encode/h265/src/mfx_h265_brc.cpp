@@ -728,6 +728,7 @@ mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, H265F
         return MFX_ERR_NULL_PTR;
 
     mPoc = pFrame->m_poc;
+    sliceQpY += mQuantOffset;
 
     Ipp32s layer = (picType == MFX_FRAMETYPE_I ? 0 : 1) + pFrame->m_pyramidLayer; // should be 0 for I, 1 for P, etc. !!!
     Ipp64f qstep = QP2Qstep(sliceQpY);
