@@ -306,7 +306,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtCamWhiteBalance);
     DEFINE_DUMP_FUNCTION(mfxExtCamHotPixelRemoval);
     DEFINE_DUMP_FUNCTION(mfxExtCamBlackLevelCorrection);
-    DEFINE_DUMP_FUNCTION(mfxVignetteCorrectionParams);
+    DEFINE_DUMP_FUNCTION(mfxCamVignetteCorrectionParam);
     DEFINE_DUMP_FUNCTION(mfxExtCamVignetteCorrection);
     DEFINE_DUMP_FUNCTION(mfxExtCamBayerDenoise);
     DEFINE_DUMP_FUNCTION(mfxExtCamColorCorrection3x3);

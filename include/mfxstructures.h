@@ -66,22 +66,13 @@ typedef struct {
     mfxFrameId FrameId;
 
     mfxU32  FourCC;
-    union {
-        struct { /* Frame parameters */
-            mfxU16  Width;
-            mfxU16  Height;
+    mfxU16  Width;
+    mfxU16  Height;
 
-            mfxU16  CropX;
-            mfxU16  CropY;
-
-            mfxU16  CropW;
-            mfxU16  CropH;
-        };
-        struct { /* Buffer parameters (for plain formats like P8) */
-            mfxU64 BufferSize;
-            mfxU32 reserved5;
-        };
-    };
+    mfxU16  CropX;
+    mfxU16  CropY;
+    mfxU16  CropW;
+    mfxU16  CropH;
 
     mfxU32  FrameRateExtN;
     mfxU32  FrameRateExtD;

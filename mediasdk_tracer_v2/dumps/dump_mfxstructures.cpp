@@ -413,13 +413,14 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamBlack
     return str;
 }
 
-std::string DumpContext::dump(const std::string structName, const mfxVignetteCorrectionParams &VignetteCorrectionParams)
+std::string DumpContext::dump(const std::string structName, const mfxCamVignetteCorrectionParam &VignetteCorrectionParams)
 {
     std::string str;
-    str += structName + ".R=" + ToString(VignetteCorrectionParams.R) + "\n";
-    str += structName + ".G0=" + ToString(VignetteCorrectionParams.G0) + "\n";
-    str += structName + ".B=" + ToString(VignetteCorrectionParams.B) + "\n";
-    str += structName + ".G1=" + ToString(VignetteCorrectionParams.G1) + "\n";
+    //need to clarify SKL HW alignment with VPG
+    str += structName + ".R=" + ToString(VignetteCorrectionParams.R.integer)+"."+ToString(VignetteCorrectionParams.R.mantissa) + "\n";
+    str += structName + ".G0=" + ToString(VignetteCorrectionParams.G0.integer)+"."+ToString(VignetteCorrectionParams.G0.mantissa) + "\n";
+    str += structName + ".B=" + ToString(VignetteCorrectionParams.G1.integer)+"."+ToString(VignetteCorrectionParams.G1.mantissa) + "\n";
+    str += structName + ".G1=" + ToString(VignetteCorrectionParams.B.integer)+"."+ToString(VignetteCorrectionParams.B.mantissa) + "\n";
     return str;
 }
 
@@ -430,7 +431,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamVigne
     str += structName + ".Width=" + ToString(CamVignetteCorrection.Width) + "\n";
     str += structName + ".Height=" + ToString(CamVignetteCorrection.Height) + "\n";
     str += structName + ".Pitch=" + ToString(CamVignetteCorrection.Pitch) + "\n";
-    str += structName + ".MaskPrecision=" + ToString(CamVignetteCorrection.MaskPrecision) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamVignetteCorrection.reserved) + "\n";
     if (CamVignetteCorrection.CorrectionMap)
     {
@@ -445,7 +445,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamBayer
     str += dump(structName + ".Header=", CamBayerDenoise.Header) + "\n";
     str += structName + ".Threshold=" + ToString(CamBayerDenoise.Threshold) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamBayerDenoise.reserved) + "\n";
-    str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(CamBayerDenoise.reserved2) + "\n";
     return str;
 }
 
