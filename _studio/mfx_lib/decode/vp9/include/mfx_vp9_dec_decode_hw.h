@@ -89,6 +89,8 @@ private:
     friend mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);
     friend mfxStatus VP9CompleteProc(void *p_state, void *pp_param, mfxStatus);
 
+    void ResetFrameInfo();
+
     struct VP9DECODERoutineData
     {
         VideoDECODEVP9_HW* decoder;

@@ -48,11 +48,7 @@ VideoDECODEVP9_HW::VideoDECODEVP9_HW(VideoCORE *p_core, mfxStatus *sts)
       m_uv_ac_delta_q(0),
       m_index(0)
 {
-    memset(&m_frameInfo, 0, sizeof(m_frameInfo));
-    m_frameInfo.currFrame = -1;
-    m_frameInfo.frameCountInBS = 0;
-    m_frameInfo.currFrameInBS = 0;
-    memset(&m_frameInfo.ref_frame_map, -1, sizeof(m_frameInfo.ref_frame_map)); // TODO: move to another place
+    ResetFrameInfo();
 
     if (sts)
     {
@@ -106,6 +102,7 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
     memset(&request, 0, sizeof(request));
     memset(&m_response, 0, sizeof(m_response));
     memset(&m_firstSizes, 0, sizeof(m_firstSizes));
+    ResetFrameInfo();
 
     sts = QueryIOSurfInternal(m_platform, &m_vInitPar, &request);
     MFX_CHECK_STS(sts);
@@ -188,6 +185,7 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
     }
 
     m_in_framerate = (mfxF64) m_vInitPar.mfx.FrameInfo.FrameRateExtD / m_vInitPar.mfx.FrameInfo.FrameRateExtN;
+    ResetFrameInfo();
     
     if (!CheckHardwareSupport(m_core, par))
     {
@@ -222,6 +220,15 @@ mfxStatus VideoDECODEVP9_HW::Close()
     memset(&m_stat, 0, sizeof(m_stat));
 
     return MFX_ERR_NONE;
+}
+
+void VideoDECODEVP9_HW::ResetFrameInfo()
+{
+    memset(&m_frameInfo, 0, sizeof(m_frameInfo));
+    m_frameInfo.currFrame = -1;
+    m_frameInfo.frameCountInBS = 0;
+    m_frameInfo.currFrameInBS = 0;
+    memset(&m_frameInfo.ref_frame_map, -1, sizeof(m_frameInfo.ref_frame_map)); // TODO: move to another place
 }
 
 mfxStatus VideoDECODEVP9_HW::DecodeHeader(VideoCORE * core, mfxBitstream *bs, mfxVideoParam *params)
