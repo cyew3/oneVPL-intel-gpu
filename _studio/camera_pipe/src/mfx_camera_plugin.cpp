@@ -798,7 +798,10 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                 {
                     vignetteset = true;
                     m_VignetteParams.bActive = true;
-                    // TODO: copy vignette mask data to internal structure
+                    m_VignetteParams.Height  = VignetteExtBufParams->Height;
+                    m_VignetteParams.Width   = VignetteExtBufParams->Width;
+                    m_VignetteParams.Stride  = VignetteExtBufParams->Pitch;
+                    m_VignetteParams.pCorrectionMap  = (CameraPipeVignetteCorrectionElem *)VignetteExtBufParams->CorrectionMap;
                 }
             }
             else if (MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3 == par->ExtParam[i]->BufferId)
@@ -1023,16 +1026,21 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
 
     m_PipeParams.Caps        = m_Caps;
     m_PipeParams.GammaParams = m_GammaParams;
+    m_PipeParams.VignetteParams = m_VignetteParams;
     m_PipeParams.par         = *par;
-//    m_CameraProcessor = new D3D11CameraProcessor();
-    if (MFX_HW_HSW_ULT == m_platform || MFX_HW_HSW == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
+
+    if (MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
     {
         m_CameraProcessor = new CMCameraProcessor();
     }
 #if defined (_WIN32) || defined (_WIN64)
-    else if (MFX_HW_SCL == m_platform)
+    else if (MFX_HW_SCL== m_platform && MFX_HW_D3D11 == m_core->GetVAType())
     {
         m_CameraProcessor = new D3D11CameraProcessor();
+    }
+    else if (MFX_HW_SCL== m_platform && MFX_HW_D3D9 == m_core->GetVAType())
+    {
+        m_CameraProcessor = new D3D9CameraProcessor();
     }
 #endif
     else

@@ -146,6 +146,32 @@ namespace MfxHwVideoProcessing
         CameraForwardGammaCorrectionSeg Segment[64];
     } CameraForwardGammaCorrectionParams;
 
+    typedef struct _CameraVignette_unsigned_8_8
+    {
+        USHORT      integer   : 8;
+        USHORT      mantissa  : 8;
+    } CameraVignette_unsigned_8_8;
+
+  
+    typedef struct _CameraVignetteCorrectionElem
+    {
+        CameraVignette_unsigned_8_8   R;
+        CameraVignette_unsigned_8_8   G0;
+        CameraVignette_unsigned_8_8   B;
+        CameraVignette_unsigned_8_8   G1;
+        USHORT                reserved;
+    } CameraVignetteCorrectionElem;
+
+    typedef struct _CameraVignetteCorrectionParams
+    {
+        UINT      bActive;
+        UINT      Width;
+        UINT      Height;
+        UINT      Stride;
+        CameraVignetteCorrectionElem *pCorrectionMap;
+    } CameraVignetteCorrectionParams;
+
+
     typedef struct _mfxVppCaps
     {
         mfxU32 uAdvancedDI;
@@ -252,6 +278,9 @@ namespace MfxHwVideoProcessing
         CameraCCMParams          CCMParams;
         bool                     bCameraGammaCorrection;
         CameraForwardGammaCorrectionParams CameraForwardGammaCorrection;
+
+        bool                     bCameraVignetteCorrection;
+        CameraVignetteCorrectionParams     CameraVignetteCorrection;
     } mfxExecuteParams;
 
 

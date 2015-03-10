@@ -241,6 +241,32 @@ typedef struct
     mfxF64          gamma_value; // 2.2, 1.8 etc
 } CameraPipeForwardGammaParams;
 
+
+typedef struct _CameraPipeVignette_unsigned_8_8
+{
+    mfxU16    integer   : 8;
+    mfxU16    mantissa  : 8;
+} CameraPipeVignette_unsigned_8_8;
+
+
+typedef struct _CameraPipeVignetteCorrectionElem
+{
+    CameraPipeVignette_unsigned_8_8   R;
+    CameraPipeVignette_unsigned_8_8   G0;
+    CameraPipeVignette_unsigned_8_8   B;
+    CameraPipeVignette_unsigned_8_8   G1;
+    mfxU16                        reserved;
+} CameraPipeVignetteCorrectionElem;
+
+typedef struct _CameraPipeVignetteParams
+{
+    bool        bActive;
+    mfxU16      Height;
+    mfxU16      Width;
+    mfxU16      Stride;
+    CameraPipeVignetteCorrectionElem *pCorrectionMap;
+} CameraPipeVignetteParams;
+
 typedef struct _CameraParams
 {
     mfxU32              frameWidth64;
@@ -252,7 +278,7 @@ typedef struct _CameraParams
     mfxCameraCaps       Caps;
 
     CameraPipeForwardGammaParams   GammaParams;
-
+    CameraPipeVignetteParams       VignetteParams;
     // Tile specific data
     mfxU16              tileNum;
     mfxU32              TileWidth;
@@ -313,11 +339,8 @@ typedef struct _CameraPipeWhiteBalanceParams
     mfxF64      GreenBottomCorrection;
 } CameraPipeWhiteBalanceParams;
 
-typedef struct _CameraPipeVignetteParams
-{
-    bool        bActive;
-    // TODO: add vignette specific params here
-} CameraPipeVignetteParams;
+
+
 
 typedef struct _CameraPipe3x3ColorConversionParams
 {

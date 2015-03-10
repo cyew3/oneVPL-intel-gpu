@@ -23,6 +23,7 @@ File Name: mfx_camera_plugin.h
 #include "mfx_camera_plugin_cm.h"
 #if defined (_WIN32) || defined (_WIN64)
 #include "mfx_camera_plugin_dx11.h"
+#include "mfx_camera_plugin_dx9.h"
 #endif
 
 #define MFX_CAMERA_DEFAULT_ASYNCDEPTH 3

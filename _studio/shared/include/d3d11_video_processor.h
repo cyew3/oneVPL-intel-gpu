@@ -698,6 +698,7 @@ namespace MfxHwVideoProcessing
         mfxStatus CameraPipeSetCCMParams(CameraCCMParams *params);
         mfxStatus CameraPipeSetForwardGammaParams(CameraForwardGammaCorrectionParams *params);
         mfxStatus CameraPipeSetHotPixelParams(CameraHotPixelRemovalParams *params);
+        mfxStatus CameraPipeSetVignetteParams(CameraVignetteCorrectionParams *params);
 
         void SetOutputTargetRect(BOOL Enable, RECT *pRect);
         void SetOutputBackgroundColor(BOOL YCbCr, D3D11_VIDEO_COLOR *pColor);

@@ -253,6 +253,10 @@ public:
                              int bitDepth,
                              int BayerType,
                              mfxU32 task_bufId=0);
+
+    void CreateTask_VignetteMaskUpSample(SurfaceIndex mask_4x4_Index,
+                                         SurfaceIndex vignetteMaskIndex);
+
     void CreateTask_BayerCorrection(int first,
                                     SurfaceIndex PaddedSurfIndex,
                                     SurfaceIndex inoutSurfIndex,
@@ -373,6 +377,7 @@ public:
     CmEvent *EnqueueTask_3x3CCM();
     CmEvent *EnqueueTask_ForwardGamma();
     CmEvent *EnqueueTask_ARGB();
+    CmEvent *EnqueueTask_VignetteMaskUpSample();
     CmEvent *EnqueueSliceTasks(mfxU32 sliceNum)
     {
         int result;
@@ -425,6 +430,7 @@ private:
     CmThreadSpace *TS_Slice_8x8;
     CmThreadSpace *TS_Slice_16x16_np;
     CmThreadSpace *TS_Slice_8x8_np;
+    CmThreadSpace *TS_VignetteUpSample;
 
     mfxU32 widthIn16;
     mfxU32 heightIn16;
@@ -438,6 +444,7 @@ private:
     CmKernel*   kernel_hotpixel;
     CmKernel*   kernel_denoise;
     CmKernel*   kernel_padding16bpp;
+    CmKernel*   kernel_VignetteUpSample;
     CmKernel*   kernel_BayerCorrection;
     CmKernel*   kernel_whitebalance_manual;
 
@@ -460,6 +467,7 @@ private:
     CmTask*      CAM_PIPE_TASK_ARRAY(task_Padding,         CAM_PIPE_NUM_TASK_BUFFERS);
     CmTask*      CAM_PIPE_TASK_ARRAY(task_HP,              CAM_PIPE_NUM_TASK_BUFFERS);
     CmTask*      CAM_PIPE_TASK_ARRAY(task_Denoise,         CAM_PIPE_NUM_TASK_BUFFERS);
+    CmTask*      CAM_PIPE_TASK_ARRAY(task_VignetteUpSample, CAM_PIPE_NUM_TASK_BUFFERS);
     CmTask*      CAM_PIPE_TASK_ARRAY(task_BayerCorrection, CAM_PIPE_NUM_TASK_BUFFERS);
     CmTask*      CAM_PIPE_TASK_ARRAY(task_GoodPixelCheck,  CAM_PIPE_NUM_TASK_BUFFERS);
     CmTask*      CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreGreen,   CAM_PIPE_NUM_TASK_BUFFERS), CAM_PIPE_KERNEL_SPLIT);
@@ -499,6 +507,7 @@ public:
         m_vignetteMaskSurf = 0;
         m_avgFlagSurf      = 0;
         m_LUTSurf          = 0;
+        m_vignette_4x4     = 0;
 
         m_activeThreadCount = 0;
     };
@@ -598,6 +607,7 @@ private:
     CmSurface2D         *m_gammaOutSurf;
     CmSurface2D         *m_avgFlagSurf;
     CmSurface2D         *m_vignetteMaskSurf;
+    CmSurface2D         *m_vignette_4x4;
     CmBuffer            *m_LUTSurf;
 
     MfxFrameAllocResponse   m_raw16padded;

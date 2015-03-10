@@ -1589,6 +1589,36 @@ mfxStatus D3D11VideoProcessor::CameraPipeSetForwardGammaParams(CameraForwardGamm
     return MFX_ERR_NONE;
 }
 
+mfxStatus D3D11VideoProcessor::CameraPipeSetVignetteParams(CameraVignetteCorrectionParams *params)
+{
+    HRESULT hRes;
+    CAMPIPE_MODE          camMode;
+    VPE_CP_VIGNETTE_CORRECTION_PARAMS vignette = {0};
+    vignette.bActive = 1;
+    vignette.Height = params->Height;
+    vignette.Width  = params->Width;
+    vignette.Stride = params->Stride;
+
+    // It's critical that app must allocate vignette correction map correctly in the memory.
+    // Or maybe it's better to allocate it properly here? 
+    vignette.pCorrectionMap = (VPE_CP_VIGNETTE_CORRECTION_ELEM *)params->pCorrectionMap;
+
+    memset((PVOID) &camMode, 0, sizeof(camMode));
+    camMode.Function   = VPE_FN_CP_VIGNETTE_CORRECTION_PARAM;
+    camMode.pVignette  = &vignette;
+
+    hRes =  SetOutputExtension(
+                    &(m_iface.guid),
+                    sizeof(camMode),
+                    &camMode);
+    if ( FAILED(hRes))
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus D3D11VideoProcessor::CameraPipeSetHotPixelParams(CameraHotPixelRemovalParams *params)
 {
     HRESULT hRes;
@@ -1699,6 +1729,11 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         {
             sts = CameraPipeSetCCMParams(&pParams->CCMParams);
             MFX_CHECK_STS(sts);
+        }
+
+        if ( pParams->bCameraVignetteCorrection )
+        {
+            sts = CameraPipeSetVignetteParams(&pParams->CameraVignetteCorrection);
         }
     }
 

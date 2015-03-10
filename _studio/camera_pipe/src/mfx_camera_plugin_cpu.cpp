@@ -74,7 +74,7 @@ int CPUCameraProcessor::CPU_Bufferflip(unsigned short* buffer,
         {
             tmp = buffer[y * width + x];
             buffer[y * width + x] = buffer[(height-y-1) * width + x] >> shiftamount;
-            
+
             buffer[(height-y-1) * width + x] = tmp;
             buffer[(height-y-1) * width + x] >>= shiftamount;
         }

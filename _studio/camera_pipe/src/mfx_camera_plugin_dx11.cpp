@@ -42,8 +42,10 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
     sts = m_ddi->QueryCapabilities( caps );
     MFX_CHECK_STS( sts );
 
+    m_AsyncDepth = CameraParams->par.AsyncDepth;
+
     // Camera Pipe expects a system memory as input. Need to allocate
-    m_executeSurf.resize( 1 );
+    m_executeSurf.resize( m_AsyncDepth );
     mfxFrameAllocRequest request;
     request.Info        = m_params.vpp.In;
 
@@ -52,8 +54,21 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
     request.Info.FourCC = BayerToFourCC(CameraParams->Caps.BayerPatternType);
     request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME;
     // Alocate a single surface at the moment. Need to allocate more surfaces depending on async
-    request.NumFrameMin = request.NumFrameSuggested = 1; // Fixme
-    m_core->AllocFrames(&request, &m_InternalSurfes, true);
+    request.NumFrameMin = request.NumFrameSuggested = m_AsyncDepth; // Fixme
+
+    m_InSurfacePool->AllocateSurfaces(m_core, request);
+
+    m_systemMemOut = false;
+    if ( CameraParams->par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY )
+    {
+        m_systemMemOut = true;
+        // Output is in system memory. Need to allocate temporary video surf
+        mfxFrameAllocRequest request;
+        request.Info        = m_params.vpp.Out;
+        request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_INTERNAL_FRAME;
+        request.NumFrameMin = request.NumFrameSuggested = m_AsyncDepth; // Fixme
+        m_OutSurfacePool->AllocateSurfaces(m_core, request);;
+    }
 
     return MFX_ERR_NONE;
 }
@@ -62,21 +77,21 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
 {
     mfxStatus sts;
     UMC::AutomaticUMCMutex guard(m_guard);
-
     m_core->IncreaseReference(&(pParam->surf_out->Data));
     m_core->IncreaseReference(&(pParam->surf_in->Data));
 
     ZeroMemory(&m_executeParams, sizeof(m_executeParams));
 
     // [1] Make required actions for the input surface
-    sts = PreWorkInSurface(pParam->surf_in);
+    mfxU32 surfInIndex;
+    sts = PreWorkInSurface(pParam->surf_in, &surfInIndex);
     MFX_CHECK_STS(sts);
-    m_executeParams.pRefSurfaces  = &m_executeSurf[0];
+    m_executeParams.pRefSurfaces  = &m_executeSurf[surfInIndex];
 
     // [2] Make required actions for the output surface
-    sts = PreWorkOutSurface(pParam->surf_out);
+    mfxU32 surfOutIndex;
+    sts = PreWorkOutSurface(pParam->surf_out, &surfOutIndex);
     MFX_CHECK_STS(sts);
-    m_executeParams.targetSurface.bExternal = true;
 
     // Turn on camera
     m_executeParams.bCameraPipeEnabled      = true;
@@ -131,12 +146,43 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
         }
     }
 
+    if ( pParam->Caps.bVignetteCorrection )
+    {
+        MFX_CHECK_NULL_PTR1(pParam->VignetteParams.pCorrectionMap);
+        m_executeParams.bCameraVignetteCorrection = 1;
+        m_executeParams.CameraVignetteCorrection.Height = pParam->VignetteParams.Height;
+        m_executeParams.CameraVignetteCorrection.Width  = pParam->VignetteParams.Width;
+        m_executeParams.CameraVignetteCorrection.Stride = pParam->VignetteParams.Stride;
+        m_executeParams.CameraVignetteCorrection.pCorrectionMap = (CameraVignetteCorrectionElem *)pParam->VignetteParams.pCorrectionMap;
+    }
+
+
     m_executeParams.refCount       = 1;
     m_executeParams.bkwdRefCount   = m_executeParams.fwdRefCount = 0;
-    m_executeParams.statusReportID = 0;
+    m_executeParams.statusReportID = surfInIndex;
 
     // [4] Start execution
     sts = m_ddi->Execute(&m_executeParams);
+
+    if ( m_systemMemOut )
+    {
+        mfxFrameSurface1 OutSurf = {0};
+        OutSurf.Data.MemId = m_OutSurfacePool->mids[surfOutIndex];
+        OutSurf.Info       = pParam->surf_out->Info;
+
+        // [1] Copy from system mem to the internal video frame
+        sts = m_core->DoFastCopyWrapper(pParam->surf_out,
+                                        MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
+                                        &OutSurf,
+                                        MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET
+                                        );
+        MFX_CHECK_STS(sts);
+    }
+
+    m_InSurfacePool->Unlock(surfInIndex);
+    m_OutSurfacePool->Unlock(surfOutIndex);
+    m_core->DecreaseReference(&(pParam->surf_out->Data));
+    m_core->DecreaseReference(&(pParam->surf_in->Data));
 
     return sts;
 }
@@ -144,9 +190,7 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
 mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
 {
     mfxStatus sts = MFX_ERR_NONE;
-
-    m_core->DecreaseReference(&(pParam->surf_out->Data));
-    m_core->DecreaseReference(&(pParam->surf_in->Data));
+    UNREFERENCED_PARAMETER(pParam);
     return sts;
 }
 
@@ -165,36 +209,54 @@ mfxStatus D3D11CameraProcessor::CheckIOPattern(mfxU16  IOPattern)
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11CameraProcessor::PreWorkOutSurface(mfxFrameSurface1 *surf)
+mfxStatus D3D11CameraProcessor::PreWorkOutSurface(mfxFrameSurface1 *surf, mfxU32 *poolIndex)
 {
     mfxHDLPair hdl;
     mfxStatus sts;
+    mfxMemId  memIdOut;
+    bool      bExternal = true;
 
-    // [1] Get external surface handle
-    sts = m_core->GetExternalFrameHDL(surf->Data.MemId, (mfxHDL *)&hdl);
-    MFX_CHECK_STS(sts);
+    if ( m_systemMemOut )
+    {
+        // Request surface from internal pool
+        memIdOut = AcquireResource(*m_OutSurfacePool, poolIndex);
+        // [2] Get surface handle
+        sts = m_core->GetFrameHDL(memIdOut, (mfxHDL *)&hdl);
+        MFX_CHECK_STS(sts);
+        bExternal = false;
+    }
+    else
+    {
+        memIdOut = surf->Data.MemId;
+        // [1] Get external surface handle
+        sts = m_core->GetExternalFrameHDL(memIdOut, (mfxHDL *)&hdl);
+        MFX_CHECK_STS(sts);
+        bExternal = true;
+    }
 
     // [2] Get surface handle
     sts = m_ddi->Register(&hdl, 1, TRUE);
     MFX_CHECK_STS(sts);
 
     // [3] Fill in Drv surfaces
-    m_executeParams.targetSurface.memId     = surf->Data.MemId;
-    m_executeParams.targetSurface.bExternal = true;
+    m_executeParams.targetSurface.memId     = memIdOut;//surf->Data.MemId;
+    m_executeParams.targetSurface.bExternal = bExternal;
     m_executeParams.targetSurface.hdl       = static_cast<mfxHDLPair>(hdl);
     m_executeParams.targetSurface.frameInfo = surf->Info;
 
     return sts;
 }
 
-mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf)
+mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *poolIndex)
 {
     mfxHDLPair hdl;
     mfxStatus sts;
 
+    // Request surface from internal pool
+    mfxMemId memIdIn = AcquireResource(*m_InSurfacePool, poolIndex);
     mfxFrameSurface1 InSurf = {0};
 
-    InSurf.Data.MemId = m_InternalSurfes.mids[0];
+    InSurf.Data.MemId = memIdIn;
     InSurf.Info       = surf->Info;
     InSurf.Info.FourCC =  BayerToFourCC(m_CameraParams.Caps.BayerPatternType);
 
@@ -206,7 +268,7 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf)
     MFX_CHECK_STS(sts);
 
     // [2] Get surface handle
-    sts = m_core->GetFrameHDL(m_InternalSurfes.mids[0], (mfxHDL *)&hdl);
+    sts = m_core->GetFrameHDL(memIdIn, (mfxHDL *)&hdl);
     MFX_CHECK_STS(sts);
 
     // [3] Register surfaece. Not needed really for DX11
@@ -214,10 +276,10 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf)
     MFX_CHECK_STS(sts);
 
     // [4] Fill in Drv surfaces
-    m_executeSurf[0].hdl       = static_cast<mfxHDLPair>(hdl);
-    m_executeSurf[0].bExternal = false;
-    m_executeSurf[0].frameInfo = surf->Info;
-    m_executeSurf[0].memId     = m_InternalSurfes.mids[0];
+    m_executeSurf[*poolIndex].hdl       = static_cast<mfxHDLPair>(hdl);
+    m_executeSurf[*poolIndex].bExternal = false;
+    m_executeSurf[*poolIndex].frameInfo = InSurf.Info;
+    m_executeSurf[*poolIndex].memId     = memIdIn;
 
     return sts;
 }

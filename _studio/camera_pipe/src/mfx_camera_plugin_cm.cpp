@@ -433,6 +433,14 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
             doShiftAndSwap = 0;
         }
 
+        if ( pParam->Caps.bVignetteCorrection )
+        {
+            SurfaceIndex *Mask4x4Index;
+            SurfaceIndex *vignetteMaskIndex;
+            m_vignetteMaskSurf->GetIndex(vignetteMaskIndex);
+            m_vignette_4x4->GetIndex(Mask4x4Index);
+            m_cmCtx->CreateTask_VignetteMaskUpSample(*Mask4x4Index, *vignetteMaskIndex);
+        }
         if ( pParam->Caps.bBlackLevelCorrection || pParam->Caps.bWhiteBalance || pParam->Caps.bVignetteCorrection )
         {
             SurfaceIndex *vignetteMaskIndex;
@@ -651,6 +659,11 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
         if ( ! pParam->Caps.bNoPadding )
             m_cmCtx->EnqueueTask_Padding();
 
+        if ( pParam->Caps.bVignetteCorrection )
+        {
+             m_cmCtx->EnqueueTask_VignetteMaskUpSample();
+        }
+
         if ( pParam->Caps.bBlackLevelCorrection || pParam->Caps.bWhiteBalance || pParam->Caps.bVignetteCorrection )
         {
             m_cmCtx->EnqueueTask_BayerCorrection();
@@ -863,6 +876,7 @@ mfxStatus CMCameraProcessor::AllocateInternalSurfaces()
     mfxFrameAllocRequest request = { { 0 } };
     mfxU32 frNum = 0;
     mfxStatus sts;
+    int  cm_sts;
 
     request.Info        = m_Params.TileInfo;
     request.Info.Width  = (mfxU16)m_Params.vSliceWidth;
@@ -917,15 +931,23 @@ mfxStatus CMCameraProcessor::AllocateInternalSurfaces()
 
     if (m_Params.Caps.bVignetteCorrection || m_Params.Caps.bBlackLevelCorrection || m_Params.Caps.bWhiteBalance )
     {
-        // Special surface for keeping vignette mask. Assume at the moment that mask size is equal to the frame size after padding
         m_vignetteMaskSurf = CreateSurface(m_cmDevice,
                                            m_Params.paddedFrameWidth * 2,
                                            m_Params.TileHeightPadded,
                                            CM_SURFACE_FORMAT_A8);
         MFX_CHECK_NULL_PTR1(m_vignetteMaskSurf);
 
-        //TODO: copy mask data to the surface
-        //m_vignetteMaskSurf->WriteSurface(m_VignetteParams.data, NULL);
+
+        if ( m_Params.Caps.bVignetteCorrection  && m_Params.VignetteParams.pCorrectionMap )
+        {
+            m_vignette_4x4  = CreateSurface(m_cmDevice,
+                                        m_Params.VignetteParams.Width,
+                                        m_Params.VignetteParams.Height,
+                                        CM_SURFACE_FORMAT_A8);
+
+            MFX_CHECK_NULL_PTR1(m_vignette_4x4);
+            cm_sts = m_vignette_4x4->WriteSurface((const mfxU8 *)m_Params.VignetteParams.pCorrectionMap, NULL);
+        }
     }
 
     if (m_Params.Caps.bForwardGammaCorrection || m_Params.Caps.bColorConversionMatrix)
@@ -1301,6 +1323,7 @@ CmContext::CmContext(
     eMFXHWType platform)
 {
     m_nTiles = video.tileNum;
+    Zero(task_VignetteUpSample);
     Zero(task_BayerCorrection);
     Zero(task_Padding);
     Zero(task_GoodPixelCheck);
@@ -1319,6 +1342,7 @@ CmContext::CmContext(
     kernel_FwGamma  = 0;
     kernel_FwGamma1 = 0;
     kernel_BayerCorrection = 0;
+    kernel_VignetteUpSample = 0;
 
     m_DenoiseDWM = new unsigned short[25];
     m_DenoisePW  = new unsigned short[6];
@@ -1367,6 +1391,11 @@ void CmContext::CreateCameraKernels()
     {
         // BlackLevel correction, White balance and vignette filter share the same kernel.
         kernel_BayerCorrection = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(BAYER_CORRECTION), NULL);
+    }
+
+    if ( m_caps.bVignetteCorrection )
+    {
+         kernel_VignetteUpSample = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GenUpSampledMask), NULL);
     }
 
     kernel_good_pixel_check = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GOOD_PIXEL_CHECK), NULL);
@@ -1508,6 +1537,10 @@ void CmContext::CreateThreadSpaces(CameraParams *pFrameSize)
     sliceHeightIn8_np = (pFrameSize->TileHeight + 7) >> 3;
     sliceWidthIn8_np  = (sliceWidth - 16) >> 3;
 
+    int vignetteMaskWidth = pFrameSize->paddedFrameWidth / (8/2 * 4);
+
+    if ((result = m_device->CreateThreadSpace(vignetteMaskWidth, 1, TS_VignetteUpSample)) != CM_SUCCESS)
+        throw CmRuntimeError();
     if ((result = m_device->CreateThreadSpace(widthIn16, heightIn16, TS_16x16)) != CM_SUCCESS)
         throw CmRuntimeError();
     if ((result = m_device->CreateThreadSpace(sliceWidthIn16_np, sliceHeightIn16_np, TS_Slice_16x16_np)) != CM_SUCCESS)
@@ -1587,8 +1620,11 @@ void CmContext::CreateCmTasks()
         if (!m_caps.bNoPadding)
             CreateTask(CAM_PIPE_TASK_ARRAY(task_Padding, i));
 
-        if ( m_caps.bBlackLevelCorrection || m_caps.bWhiteBalance )
+        if ( m_caps.bBlackLevelCorrection || m_caps.bWhiteBalance || m_caps.bVignetteCorrection )
             CreateTask(CAM_PIPE_TASK_ARRAY(task_BayerCorrection, i));
+
+        if ( m_caps.bVignetteCorrection )
+            CreateTask(CAM_PIPE_TASK_ARRAY(task_VignetteUpSample, i));
 
         if ( m_caps.bHotPixel ||  m_caps.bBayerDenoise)
             CreateTask(CAM_PIPE_TASK_ARRAY(task_HP, i));
@@ -1699,6 +1735,40 @@ CmEvent *CmContext::EnqueueTask_Padding()
     int result;
     CmEvent *e = CM_NO_EVENT;
     if ((result = m_queue->Enqueue(task_Padding, e, TS_16x16)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    return e;
+}
+
+
+#define BLOCK_WIDTH 8
+void CmContext::CreateTask_VignetteMaskUpSample(SurfaceIndex mask_4x4_Index,
+                                                SurfaceIndex vignetteMaskIndex)
+{
+    int result;
+    int i = 0;
+
+    unsigned int num_threads_w = m_video.paddedFrameWidth / (BLOCK_WIDTH / 2 * 4);
+    kernel_VignetteUpSample->SetThreadCount(num_threads_w * 1);
+
+    kernel_VignetteUpSample->SetKernelArg(i++, sizeof(SurfaceIndex), &mask_4x4_Index);
+    kernel_VignetteUpSample->SetKernelArg(i++, sizeof(SurfaceIndex), &vignetteMaskIndex);
+    kernel_VignetteUpSample->SetKernelArg(i++, sizeof(UINT32), &m_video.paddedFrameWidth);
+    kernel_VignetteUpSample->SetKernelArg(i++, sizeof(UINT32), &m_video.paddedFrameHeight);
+
+    result = task_VignetteUpSample->Reset();
+    if (result != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    result = task_VignetteUpSample->AddKernel(kernel_VignetteUpSample);
+    if (result != CM_SUCCESS )
+        throw CmRuntimeError();
+}
+
+CmEvent *CmContext::EnqueueTask_VignetteMaskUpSample()
+{
+    int result;
+    CmEvent *e = CM_NO_EVENT;
+    if ((result = m_queue->Enqueue(task_VignetteUpSample, e, TS_VignetteUpSample)) != CM_SUCCESS)
         throw CmRuntimeError();
     return e;
 }
@@ -1921,7 +1991,7 @@ void CmContext::CreateTask_Denoise(int first,
     m_DenoiseDWM[0]  = m_5x5BLF_DistWgts00; m_DenoiseDWM[1]  = m_5x5BLF_DistWgts01; m_DenoiseDWM[2]  = m_5x5BLF_DistWgts02; m_DenoiseDWM[3]  = m_5x5BLF_DistWgts01; m_DenoiseDWM[4]  = m_5x5BLF_DistWgts00;
     m_DenoiseDWM[5]  = m_5x5BLF_DistWgts10; m_DenoiseDWM[6]  = m_5x5BLF_DistWgts11; m_DenoiseDWM[7]  = m_5x5BLF_DistWgts12; m_DenoiseDWM[8]  = m_5x5BLF_DistWgts11; m_DenoiseDWM[9]  = m_5x5BLF_DistWgts10;
     m_DenoiseDWM[10] = m_5x5BLF_DistWgts20; m_DenoiseDWM[11] = m_5x5BLF_DistWgts21; m_DenoiseDWM[12] = m_5x5BLF_DistWgts22; m_DenoiseDWM[13] = m_5x5BLF_DistWgts21; m_DenoiseDWM[14] = m_5x5BLF_DistWgts20;
-    m_DenoiseDWM[15] = m_5x5BLF_DistWgts10; m_DenoiseDWM[16] = m_5x5BLF_DistWgts11; m_DenoiseDWM[17] = m_5x5BLF_DistWgts12; m_DenoiseDWM[18] = m_5x5BLF_DistWgts11; m_DenoiseDWM[19] = m_5x5BLF_DistWgts10; 
+    m_DenoiseDWM[15] = m_5x5BLF_DistWgts10; m_DenoiseDWM[16] = m_5x5BLF_DistWgts11; m_DenoiseDWM[17] = m_5x5BLF_DistWgts12; m_DenoiseDWM[18] = m_5x5BLF_DistWgts11; m_DenoiseDWM[19] = m_5x5BLF_DistWgts10;
     m_DenoiseDWM[20] = m_5x5BLF_DistWgts00; m_DenoiseDWM[21] = m_5x5BLF_DistWgts01; m_DenoiseDWM[22] = m_5x5BLF_DistWgts02; m_DenoiseDWM[23] = m_5x5BLF_DistWgts01; m_DenoiseDWM[24] = m_5x5BLF_DistWgts00;
 
     kernel_denoise->SetKernelArg( i++, sizeof(SurfaceIndex), &InPaddedIndex    );

@@ -310,6 +310,7 @@ void QueryCaps(mfxCameraCaps &caps)
     caps.bBlackLevelCorrection   = 1;
     caps.bWhiteBalance           = 1;
     caps.bColorConversionMatrix  = 1;
+    caps.bVignetteCorrection     = 1;
     caps.bOutToARGB16  = 1;
     caps.bHotPixel     = 1;
     caps.bBayerDenoise = 1;
