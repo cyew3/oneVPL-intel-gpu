@@ -51,8 +51,9 @@ static bool IsStatusReportEnable(VideoCORE * core)
     
     if (true == va->IsUseStatusReport())
     {
-        eMFXHWType type = core->GetHWType();
-        return (type == MFX_HW_SNB) || (type == MFX_HW_IVB) || (type == MFX_HW_HSW) || (type == MFX_HW_HSW_ULT) || (type == MFX_HW_VLV) || (type == MFX_HW_BDW) || (type == MFX_HW_SCL);
+        //eMFXHWType type = core->GetHWType();
+        //return (type == MFX_HW_SNB) || (type == MFX_HW_IVB) || (type == MFX_HW_HSW) || (type == MFX_HW_HSW_ULT) || (type == MFX_HW_VLV) || (type == MFX_HW_BDW) || (type == MFX_HW_SCL);
+        return true;
     }
 
     return false;
