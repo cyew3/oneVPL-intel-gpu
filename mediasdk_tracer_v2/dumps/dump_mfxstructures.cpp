@@ -363,6 +363,29 @@ std::string DumpContext::dump(const std::string structName, const mfxVPPStat &vp
     str += structName + ".NumCachedFrame=" + ToString(vppStat.NumCachedFrame);
     return str;
 }
+
+std::string DumpContext::dump(const std::string structName, const mfxExtDecodedFrameInfo &ExtDecodedFrameInfo)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtDecodedFrameInfo.Header) + "\n";
+    str += structName + ".FrameType=" + ToString(ExtDecodedFrameInfo.FrameType) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtDecodedFrameInfo.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtTimeCode &ExtTimeCode)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtTimeCode.Header) + "\n";
+    str += structName + ".DropFrameFlag=" + ToString(ExtTimeCode.DropFrameFlag) + "\n";
+    str += structName + ".TimeCodeHours=" + ToString(ExtTimeCode.TimeCodeHours) + "\n";
+    str += structName + ".TimeCodeMinutes=" + ToString(ExtTimeCode.TimeCodeMinutes) + "\n";
+    str += structName + ".TimeCodeSeconds=" + ToString(ExtTimeCode.TimeCodeSeconds) + "\n";
+    str += structName + ".TimeCodePictures=" + ToString(ExtTimeCode.TimeCodePictures) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtTimeCode.reserved) + "\n";
+    return str;
+}
+
 //camera
 std::string DumpContext::dump(const std::string structName, const mfxExtCamGammaCorrection &CamGammaCorrection)
 {
@@ -436,6 +459,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamVigne
     {
         str += dump(structName + ".CorrectionMap", *(CamVignetteCorrection.CorrectionMap)) + "\n";
     }
+    str += structName + ".reserved1=" + ToString(CamVignetteCorrection.reserved1) + "\n";
     return str;
 }
 
@@ -622,12 +646,208 @@ std::string DumpContext::dump(const std::string structName, const mfxExtOpaqueSu
     str += dump(structName + ".Header=", ExtOpaqueSurfaceAlloc.Header) + "\n";
     str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtOpaqueSurfaceAlloc.reserved1) + "\n";
     str += structName + ".In.NumSurface=" + ToString(ExtOpaqueSurfaceAlloc.In.NumSurface) + "\n";
-    str += structName + ".In.Surfaces**=" + ToHexFormatString(ExtOpaqueSurfaceAlloc.In.Surfaces) + "\n";
+    str += structName + ".In.Surfaces=" + ToHexFormatString(ExtOpaqueSurfaceAlloc.In.Surfaces) + "\n";
     str += structName + ".In.Type=" + ToString(ExtOpaqueSurfaceAlloc.In.Type) + "\n";
     str += structName + ".In.reserved2[]=" + DUMP_RESERVED_ARRAY(ExtOpaqueSurfaceAlloc.In.reserved2) + "\n";
     str += structName + ".Out.NumSurface=" + ToString(ExtOpaqueSurfaceAlloc.Out.NumSurface) + "\n";
-    str += structName + ".Out.Surfaces**=" + ToHexFormatString(ExtOpaqueSurfaceAlloc.Out.Surfaces) + "\n";
+    str += structName + ".Out.Surfaces=" + ToHexFormatString(ExtOpaqueSurfaceAlloc.Out.Surfaces) + "\n";
     str += structName + ".Out.Type=" + ToString(ExtOpaqueSurfaceAlloc.Out.Type) + "\n";
     str += structName + ".Out.reserved2[]=" + DUMP_RESERVED_ARRAY(ExtOpaqueSurfaceAlloc.Out.reserved2) + "\n";
+    return str;
+}
+
+//mfxvpp
+std::string DumpContext::dump(const std::string structName, const mfxExtVPPDenoise &ExtVPPDenoise)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtVPPDenoise.Header) + "\n";
+    str += structName + ".DenoiseFactor=" + ToString(ExtVPPDenoise.DenoiseFactor) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtVPPDetail &ExtVPPDetail)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtVPPDetail.Header) + "\n";
+    str += structName + ".DetailFactor=" + ToString(ExtVPPDetail.DetailFactor) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtVPPProcAmp &ExtVPPProcAmp)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtVPPProcAmp.Header) + "\n";
+    str += structName + ".Brightness=" + ToString(ExtVPPProcAmp.Brightness) + "\n";
+    str += structName + ".Contrast=" + ToString(ExtVPPProcAmp.Contrast) + "\n";
+    str += structName + ".Hue=" + ToString(ExtVPPProcAmp.Hue) + "\n";
+    str += structName + ".Saturation=" + ToString(ExtVPPProcAmp.Saturation) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCodingOptionSPSPPS &ExtCodingOptionSPSPPS)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtCodingOptionSPSPPS.Header) + "\n";
+    str += structName + ".SPSBuffer=" + ToHexFormatString(ExtCodingOptionSPSPPS.SPSBuffer) + "\n";
+    str += structName + ".PPSBuffer=" + ToHexFormatString(ExtCodingOptionSPSPPS.PPSBuffer) + "\n";
+    str += structName + ".SPSBufSize=" + ToString(ExtCodingOptionSPSPPS.SPSBufSize) + "\n";
+    str += structName + ".PPSBufSize=" + ToString(ExtCodingOptionSPSPPS.PPSBufSize) + "\n";
+    str += structName + ".SPSId=" + ToString(ExtCodingOptionSPSPPS.SPSId) + "\n";
+    str += structName + ".PPSId=" + ToString(ExtCodingOptionSPSPPS.PPSId) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtVideoSignalInfo &ExtVideoSignalInfo)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtVideoSignalInfo.Header) + "\n";
+    str += structName + ".VideoFormat=" + ToString(ExtVideoSignalInfo.VideoFormat) + "\n";
+    str += structName + ".VideoFullRange=" + ToString(ExtVideoSignalInfo.VideoFullRange) + "\n";
+    str += structName + ".ColourDescriptionPresent=" + ToString(ExtVideoSignalInfo.ColourDescriptionPresent) + "\n";
+    str += structName + ".ColourPrimaries=" + ToString(ExtVideoSignalInfo.ColourPrimaries) + "\n";
+    str += structName + ".TransferCharacteristics=" + ToString(ExtVideoSignalInfo.TransferCharacteristics) + "\n";
+    str += structName + ".MatrixCoefficients=" + ToString(ExtVideoSignalInfo.MatrixCoefficients) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtVPPDoUse &ExtVPPDoUse)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtVPPDoUse.Header) + "\n";
+    str += structName + ".NumAlg=" + ToString(ExtVPPDoUse.NumAlg) + "\n";
+    str += structName + ".AlgList=" + ToHexFormatString(ExtVPPDoUse.AlgList) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxVPPCompInputStream &VPPCompInputStream)
+{
+    std::string str;
+    str += structName + ".DstX=" + ToString(VPPCompInputStream.DstX) + "\n";
+    str += structName + ".DstY=" + ToString(VPPCompInputStream.DstY) + "\n";
+    str += structName + ".DstW=" + ToString(VPPCompInputStream.DstW) + "\n";
+    str += structName + ".DstH=" + ToString(VPPCompInputStream.DstH) + "\n";
+    str += structName + ".LumaKeyEnable=" + ToString(VPPCompInputStream.LumaKeyEnable) + "\n";
+    str += structName + ".LumaKeyMin=" + ToString(VPPCompInputStream.LumaKeyMin) + "\n";
+    str += structName + ".LumaKeyMax=" + ToString(VPPCompInputStream.LumaKeyMax) + "\n";
+    str += structName + ".GlobalAlphaEnable=" + ToString(VPPCompInputStream.GlobalAlphaEnable) + "\n";
+    str += structName + ".GlobalAlphae=" + ToString(VPPCompInputStream.GlobalAlpha) + "\n";
+    str += structName + ".PixelAlphaEnable=" + ToString(VPPCompInputStream.PixelAlphaEnable) + "\n";
+    str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(VPPCompInputStream.reserved2) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtVPPComposite &ExtVPPComposite)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtVPPComposite.Header) + "\n";
+    str += structName + ".Y=" + ToString(ExtVPPComposite.Y) + "\n";
+    str += structName + ".R=" + ToString(ExtVPPComposite.R) + "\n";
+    str += structName + ".U=" + ToString(ExtVPPComposite.U) + "\n";
+    str += structName + ".G=" + ToString(ExtVPPComposite.G) + "\n";
+    str += structName + ".V=" + ToString(ExtVPPComposite.V) + "\n";
+    str += structName + ".B=" + ToString(ExtVPPComposite.B) + "\n";
+    str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtVPPComposite.reserved1) + "\n";
+    str += structName + ".NumInputStream=" + ToString(ExtVPPComposite.NumInputStream) + "\n";
+    str += structName + ".InputStream=" + ToHexFormatString(ExtVPPComposite.InputStream) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtVPPVideoSignalInfo &ExtVPPVideoSignalInfo)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtVPPVideoSignalInfo.Header) + "\n";
+    str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtVPPVideoSignalInfo.reserved1) + "\n";
+    str += structName + ".In.TransferMatrix=" + ToString(ExtVPPVideoSignalInfo.In.TransferMatrix) + "\n";
+    str += structName + ".In.NominalRange=" + ToString(ExtVPPVideoSignalInfo.In.NominalRange) + "\n";
+    str += structName + ".In.reserved2[]=" + DUMP_RESERVED_ARRAY(ExtVPPVideoSignalInfo.In.reserved2) + "\n";
+    str += structName + ".Out.TransferMatrix=" + ToString(ExtVPPVideoSignalInfo.Out.TransferMatrix) + "\n";
+    str += structName + ".Out.NominalRange=" + ToString(ExtVPPVideoSignalInfo.Out.NominalRange) + "\n";
+    str += structName + ".Out.reserved2[]=" + DUMP_RESERVED_ARRAY(ExtVPPVideoSignalInfo.Out.reserved2) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtVPPDeinterlacing &ExtVPPDeinterlacing)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtVPPDeinterlacing.Header) + "\n";
+    str += structName + ".Mode=" + ToString(ExtVPPDeinterlacing.Mode) + "\n";
+    str += structName + ".TelecinePattern=" + ToString(ExtVPPDeinterlacing.TelecinePattern) + "\n";
+    str += structName + ".TelecineLocation=" + ToString(ExtVPPDeinterlacing.TelecineLocation) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtVPPDeinterlacing.reserved) + "\n";
+    return str;
+}
+
+//mfxSEI
+std::string DumpContext::dump(const std::string structName, const mfxExtPictureTimingSEI &ExtPictureTimingSEI)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtPictureTimingSEI.Header) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtPictureTimingSEI.reserved) + "\n";
+    str += structName + ".TimeStamp[0].ClockTimestampFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[0].ClockTimestampFlag) + "\n";
+    str += structName + ".TimeStamp[0].CtType=" + ToString(ExtPictureTimingSEI.TimeStamp[0].CtType) + "\n";
+    str += structName + ".TimeStamp[0].NuitFieldBasedFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[0].NuitFieldBasedFlag) + "\n";
+    str += structName + ".TimeStamp[0].CountingType=" + ToString(ExtPictureTimingSEI.TimeStamp[0].CountingType) + "\n";
+    str += structName + ".TimeStamp[0].FullTimestampFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[0].FullTimestampFlag) + "\n";
+    str += structName + ".TimeStamp[0].DiscontinuityFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[0].DiscontinuityFlag) + "\n";
+    str += structName + ".TimeStamp[0].CntDroppedFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[0].CntDroppedFlag) + "\n";
+    str += structName + ".TimeStamp[0].NFrames=" + ToString(ExtPictureTimingSEI.TimeStamp[0].NFrames) + "\n";
+    str += structName + ".TimeStamp[0].SecondsFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[0].SecondsFlag) + "\n";
+    str += structName + ".TimeStamp[0].MinutesFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[0].MinutesFlag) + "\n";
+    str += structName + ".TimeStamp[0].HoursFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[0].HoursFlag) + "\n";
+    str += structName + ".TimeStamp[0].SecondsValue=" + ToString(ExtPictureTimingSEI.TimeStamp[0].SecondsValue) + "\n";
+    str += structName + ".TimeStamp[0].MinutesValue=" + ToString(ExtPictureTimingSEI.TimeStamp[0].MinutesValue) + "\n";
+    str += structName + ".TimeStamp[0].HoursValue=" + ToString(ExtPictureTimingSEI.TimeStamp[0].HoursValue) + "\n";
+    str += structName + ".TimeStamp[0].TimeOffset=" + ToString(ExtPictureTimingSEI.TimeStamp[0].TimeOffset) + "\n";
+    str += structName + ".TimeStamp[1].ClockTimestampFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[1].ClockTimestampFlag) + "\n";
+    str += structName + ".TimeStamp[1].CtType=" + ToString(ExtPictureTimingSEI.TimeStamp[1].CtType) + "\n";
+    str += structName + ".TimeStamp[1].NuitFieldBasedFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[1].NuitFieldBasedFlag) + "\n";
+    str += structName + ".TimeStamp[1].CountingType=" + ToString(ExtPictureTimingSEI.TimeStamp[1].CountingType) + "\n";
+    str += structName + ".TimeStamp[1].FullTimestampFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[1].FullTimestampFlag) + "\n";
+    str += structName + ".TimeStamp[1].DiscontinuityFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[1].DiscontinuityFlag) + "\n";
+    str += structName + ".TimeStamp[1].CntDroppedFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[1].CntDroppedFlag) + "\n";
+    str += structName + ".TimeStamp[1].NFrames=" + ToString(ExtPictureTimingSEI.TimeStamp[1].NFrames) + "\n";
+    str += structName + ".TimeStamp[1].SecondsFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[1].SecondsFlag) + "\n";
+    str += structName + ".TimeStamp[1].MinutesFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[1].MinutesFlag) + "\n";
+    str += structName + ".TimeStamp[1].HoursFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[1].HoursFlag) + "\n";
+    str += structName + ".TimeStamp[1].SecondsValue=" + ToString(ExtPictureTimingSEI.TimeStamp[1].SecondsValue) + "\n";
+    str += structName + ".TimeStamp[1].MinutesValue=" + ToString(ExtPictureTimingSEI.TimeStamp[1].MinutesValue) + "\n";
+    str += structName + ".TimeStamp[1].HoursValue=" + ToString(ExtPictureTimingSEI.TimeStamp[1].HoursValue) + "\n";
+    str += structName + ".TimeStamp[1].TimeOffset=" + ToString(ExtPictureTimingSEI.TimeStamp[1].TimeOffset) + "\n";
+    str += structName + ".TimeStamp[2].ClockTimestampFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[2].ClockTimestampFlag) + "\n";
+    str += structName + ".TimeStamp[2].CtType=" + ToString(ExtPictureTimingSEI.TimeStamp[2].CtType) + "\n";
+    str += structName + ".TimeStamp[2].NuitFieldBasedFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[2].NuitFieldBasedFlag) + "\n";
+    str += structName + ".TimeStamp[2].CountingType=" + ToString(ExtPictureTimingSEI.TimeStamp[2].CountingType) + "\n";
+    str += structName + ".TimeStamp[2].FullTimestampFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[2].FullTimestampFlag) + "\n";
+    str += structName + ".TimeStamp[2].DiscontinuityFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[2].DiscontinuityFlag) + "\n";
+    str += structName + ".TimeStamp[2].CntDroppedFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[2].CntDroppedFlag) + "\n";
+    str += structName + ".TimeStamp[2].NFrames=" + ToString(ExtPictureTimingSEI.TimeStamp[2].NFrames) + "\n";
+    str += structName + ".TimeStamp[2].SecondsFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[2].SecondsFlag) + "\n";
+    str += structName + ".TimeStamp[2].MinutesFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[2].MinutesFlag) + "\n";
+    str += structName + ".TimeStamp[2].HoursFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[2].HoursFlag) + "\n";
+    str += structName + ".TimeStamp[2].SecondsValue=" + ToString(ExtPictureTimingSEI.TimeStamp[2].SecondsValue) + "\n";
+    str += structName + ".TimeStamp[2].MinutesValue=" + ToString(ExtPictureTimingSEI.TimeStamp[2].MinutesValue) + "\n";
+    str += structName + ".TimeStamp[2].HoursValue=" + ToString(ExtPictureTimingSEI.TimeStamp[2].HoursValue) + "\n";
+    str += structName + ".TimeStamp[2].TimeOffset=" + ToString(ExtPictureTimingSEI.TimeStamp[2].TimeOffset) + "\n";
+    return str;
+}
+
+//mfxHEVC
+std::string DumpContext::dump(const std::string structName, const mfxExtHEVCTiles &ExtHEVCTiles)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtHEVCTiles.Header) + "\n";
+    str += structName + ".NumTileRows=" + ToString(ExtHEVCTiles.NumTileRows) + "\n";
+    str += structName + ".NumTileColumns=" + ToString(ExtHEVCTiles.NumTileColumns) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtHEVCTiles.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtHEVCParam &ExtHEVCParam)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtHEVCParam.Header) + "\n";
+    str += structName + ".PicWidthInLumaSamples=" + ToString(ExtHEVCParam.PicWidthInLumaSamples) + "\n";
+    str += structName + ".PicHeightInLumaSamples=" + ToString(ExtHEVCParam.PicHeightInLumaSamples) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtHEVCParam.reserved) + "\n";
     return str;
 }

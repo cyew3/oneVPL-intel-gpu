@@ -202,7 +202,49 @@ public:
                  case  MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION:
                     str += dump(name, *((mfxExtOpaqueSurfaceAlloc*)_struct.ExtParam[i])) + "\n";
                     break;
-                  default:
+                 case  MFX_EXTBUFF_VPP_DENOISE:
+                    str += dump(name, *((mfxExtVPPDenoise*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_VPP_DETAIL:
+                    str += dump(name, *((mfxExtVPPDetail*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_VPP_PROCAMP:
+                    str += dump(name, *((mfxExtVPPProcAmp*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_CODING_OPTION_SPSPPS:
+                    str += dump(name, *((mfxExtCodingOptionSPSPPS*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_VIDEO_SIGNAL_INFO:
+                    str += dump(name, *((mfxExtVideoSignalInfo*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_VPP_DOUSE:
+                    str += dump(name, *((mfxExtVPPDoUse*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_PICTURE_TIMING_SEI:
+                    str += dump(name, *((mfxExtPictureTimingSEI*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_VPP_COMPOSITE:
+                    str += dump(name, *((mfxExtVPPComposite*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
+                    str += dump(name, *((mfxExtVPPVideoSignalInfo*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_VPP_DEINTERLACING:
+                    str += dump(name, *((mfxExtVPPDeinterlacing*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_HEVC_TILES:
+                    str += dump(name, *((mfxExtHEVCTiles*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_HEVC_PARAM:
+                    str += dump(name, *((mfxExtHEVCParam*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_DECODED_FRAME_INFO:
+                    str += dump(name, *((mfxExtDecodedFrameInfo*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_TIME_CODE:
+                    str += dump(name, *((mfxExtTimeCode*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 default:
                     str += dump(name, *(_struct.ExtParam[i])) + "\n";
                     break;
                 };
@@ -232,6 +274,8 @@ public:
 
     //mfxplugin
     DEFINE_DUMP_FUNCTION(mfxPlugin);
+    DEFINE_DUMP_FUNCTION(mfxCoreParam);
+    DEFINE_DUMP_FUNCTION(mfxPluginParam);
 
     //mfxstructures
     DEFINE_DUMP_FUNCTION(mfxDecodeStat);
@@ -260,6 +304,22 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtAVCEncodedFrameInfo);
     DEFINE_DUMP_FUNCTION(mfxExtAVCRefLists);
     DEFINE_DUMP_FUNCTION(mfxExtOpaqueSurfaceAlloc);
+    DEFINE_DUMP_FUNCTION(mfxExtVPPDenoise);
+    DEFINE_DUMP_FUNCTION(mfxExtVPPDetail);
+    DEFINE_DUMP_FUNCTION(mfxExtVPPProcAmp);
+    DEFINE_DUMP_FUNCTION(mfxExtCodingOptionSPSPPS);
+    DEFINE_DUMP_FUNCTION(mfxExtVideoSignalInfo);
+    DEFINE_DUMP_FUNCTION(mfxExtVPPDoUse);
+    DEFINE_DUMP_FUNCTION(mfxExtPictureTimingSEI);
+    DEFINE_DUMP_FUNCTION(mfxVPPCompInputStream);
+    DEFINE_DUMP_FUNCTION(mfxExtVPPComposite);
+    DEFINE_DUMP_FUNCTION(mfxExtVPPVideoSignalInfo);
+    DEFINE_DUMP_FUNCTION(mfxExtVPPDeinterlacing);
+    DEFINE_DUMP_FUNCTION(mfxExtHEVCTiles);
+    DEFINE_DUMP_FUNCTION(mfxExtHEVCParam);
+    DEFINE_DUMP_FUNCTION(mfxExtDecodedFrameInfo);
+    DEFINE_DUMP_FUNCTION(mfxExtTimeCode);
+
     //mfxsession
     DEFINE_DUMP_FUNCTION(mfxSession);
 
