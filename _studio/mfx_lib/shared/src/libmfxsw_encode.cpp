@@ -681,6 +681,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                         task.pSrc[1] =  bs;
                 }
 #endif
+                task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
 
 #ifdef MFX_TRACE_ENABLE
                 task.nParentId = MFX_AUTO_TRACE_GETID();
@@ -713,6 +714,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                         task.pSrc[1] =  bs;
                 }
 #endif
+                task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
 
 #ifdef MFX_TRACE_ENABLE
                 task.nParentId = MFX_AUTO_TRACE_GETID();
@@ -733,6 +735,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 // fill dependencies
                 task.pSrc[0] = reordered_surface;
                 task.pSrc[1] = aux;
+                task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
                 task.pDst[0] = entryPoints[0].pParam;
 
 #ifdef MFX_TRACE_ENABLE
