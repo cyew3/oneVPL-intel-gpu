@@ -667,7 +667,7 @@ IppStatus cc_NV16_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
   {
       // Copy Y plane as is
-      sts = ippiCopy_8u_C1R(inData->Y, outData->Pitch, outData->Y, outData->Pitch, roiSize);
+      sts = ippiCopy_8u_C1R(inData->Y, inData->Pitch, outData->Y, outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
 
       mfxU8  *Out;
@@ -729,7 +729,7 @@ IppStatus cc_NV12_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,
     if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
     {
         // Copy Y plane as is
-        sts = ippiCopy_8u_C1R((const Ipp8u *)inData->Y, outData->Pitch, (Ipp8u *)outData->Y, outData->Pitch, roiSize);
+        sts = ippiCopy_8u_C1R((const Ipp8u *)inData->Y, inData->Pitch, (Ipp8u *)outData->Y, outData->Pitch, roiSize);
         IPP_CHECK_STS( sts );
 
         // Chroma is interpolated using nearest points that gives closer match with ffmpeg
@@ -958,7 +958,7 @@ IppStatus cc_P010_to_P210( mfxFrameData* inData,  mfxFrameInfo* inInfo,
     if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
     {
         // Copy Y plane as is
-        sts = ippiCopy_16u_C1R((const Ipp16u *)inData->Y, outData->Pitch, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
+        sts = ippiCopy_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
         IPP_CHECK_STS( sts );
 
         // Chroma is interpolated using nearest points that gives closer match with ffmpeg
@@ -1029,7 +1029,7 @@ IppStatus cc_P210_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
     if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
     {
         // Copy Y plane as is
-        sts = ippiCopy_16u_C1R((const Ipp16u *)inData->Y, outData->Pitch, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
+        sts = ippiCopy_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
         IPP_CHECK_STS( sts );
 
         mfxU16 *Out;
