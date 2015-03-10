@@ -101,28 +101,35 @@ typedef struct {
 } mfxExtCamBlackLevelCorrection;
 
 typedef struct {
-    mfxU16      R; // in Q<MaskPrecision> format
-    mfxU16      G0;
-    mfxU16      B;
-    mfxU16      G1;
-} mfxVignetteCorrectionParams;
+    mfxU8 integer;
+    mfxU8 mantissa;
+} mfxCamVignetteCorrectionElement;
+
+typedef struct {
+    mfxCamVignetteCorrectionElement R;
+    mfxCamVignetteCorrectionElement G0;
+    mfxCamVignetteCorrectionElement B;
+    mfxCamVignetteCorrectionElement G1;
+} mfxCamVignetteCorrectionParam;
 
 typedef struct {
     mfxExtBuffer    Header;
+
     mfxU32          Width;
     mfxU32          Height;
     mfxU32          Pitch;
-    mfxU32          MaskPrecision; // num of bits for fractional part - precision of the correction map elements
-    mfxU32          reserved[6];
-    mfxVignetteCorrectionParams *CorrectionMap;
+    mfxU32          reserved[7];
+
+    union {
+        mfxCamVignetteCorrectionParam *CorrectionMap;
+        mfxU64 reserved1;
+    };
 } mfxExtCamVignetteCorrection;
 
 typedef struct {
     mfxExtBuffer    Header;
     mfxU16          Threshold;
-    mfxU16          reserved[3];
-    mfxU32          reserved2[12];
-    //...            need algo details
+    mfxU16          reserved[27];
 } mfxExtCamBayerDenoise;
 
 typedef struct {
