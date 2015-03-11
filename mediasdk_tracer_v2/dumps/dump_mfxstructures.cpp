@@ -478,65 +478,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamPipeC
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamPipeControl.reserved) + "\n";
     return str;
 }
-// mfxla
-std::string DumpContext::dump(const std::string structName, const mfxExtLAControl::mfxStream &Stream)
-{
-    std::string str;
-    str += structName + ".Width=" + ToString(Stream.Width) + "\n";
-    str += structName + ".Height=" + ToString(Stream.Height) + "\n";
-    str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(Stream.reserved2) + "\n";
-    return str;
-}
-
-std::string DumpContext::dump(const std::string structName, const mfxExtLAControl &ExtLAControl)
-{
-    std::string str;
-    str += dump(structName + ".Header=", ExtLAControl.Header) + "\n";
-    str += structName + ".LookAheadDepth=" + ToString(ExtLAControl.LookAheadDepth) + "\n";
-    str += structName + ".DependencyDepth=" + ToString(ExtLAControl.DependencyDepth) + "\n";
-    str += structName + ".DownScaleFactor=" + ToString(ExtLAControl.DownScaleFactor) + "\n";
-    str += structName + ".BPyramid=" + ToString(ExtLAControl.BPyramid) + "\n";
-    str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtLAControl.reserved1) + "\n";
-    str += structName + ".NumOutStream=" + ToString(ExtLAControl.NumOutStream) + "\n";
-    str += structName + ".OutStream=" + ToHexFormatString(ExtLAControl.OutStream) + "\n";
-    return str;
-}
-
-std::string DumpContext::dump(const std::string structName, const mfxLAFrameInfo &LAFrameInfo)
-{
-    std::string str;
-    str += structName + ".Width=" + ToString(LAFrameInfo.Width) + "\n";
-    str += structName + ".Height=" + ToString(LAFrameInfo.Height) + "\n";
-    str += structName + ".FrameType=" + ToString(LAFrameInfo.FrameType) + "\n";
-    str += structName + ".FrameDisplayOrder=" + ToString(LAFrameInfo.FrameDisplayOrder) + "\n";
-    str += structName + ".FrameEncodeOrder=" + ToString(LAFrameInfo.FrameEncodeOrder) + "\n";
-    str += structName + ".IntraCost=" + ToString(LAFrameInfo.IntraCost) + "\n";
-    str += structName + ".InterCost=" + ToString(LAFrameInfo.InterCost) + "\n";
-    str += structName + ".DependencyCost=" + ToString(LAFrameInfo.DependencyCost) + "\n";
-    str += structName + ".Layer=" + ToString(LAFrameInfo.Layer) + "\n";
-    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(LAFrameInfo.reserved) + "\n";
-    str += structName + ".EstimatedRate[]=" + DUMP_RESERVED_ARRAY(LAFrameInfo.EstimatedRate) + "\n";
-    return str;
-}
-
-std::string DumpContext::dump(const std::string structName, const mfxExtLAFrameStatistics &ExtLAFrameStatistics)
-{
-    std::string str;
-    str += dump(structName + ".Header=", ExtLAFrameStatistics.Header) + "\n";
-    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtLAFrameStatistics.reserved) + "\n";
-    str += structName + ".NumAlloc=" + ToString(ExtLAFrameStatistics.NumAlloc) + "\n";
-    str += structName + ".NumStream=" + ToString(ExtLAFrameStatistics.NumStream) + "\n";
-    str += structName + ".NumFrame=" + ToString(ExtLAFrameStatistics.NumFrame) + "\n";
-    if (ExtLAFrameStatistics.FrameStat)
-    {
-        str += dump(structName + ".FrameStat", *(ExtLAFrameStatistics.FrameStat)) + "\n";
-    }
-    if (ExtLAFrameStatistics.OutSurface)
-    {
-        str += dump(structName + ".OutSurface", *(ExtLAFrameStatistics.OutSurface)) + "\n";
-    }
-    return str;
-}
 
 std::string DumpContext::dump(const std::string structName, const mfxExtAVCRefListCtrl &ExtAVCRefListCtrl)
 {

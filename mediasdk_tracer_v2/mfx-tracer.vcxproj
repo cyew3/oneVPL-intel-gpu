@@ -162,6 +162,7 @@
     <ClCompile Include="dumps\dump_mfxcommon.cpp" />
     <ClCompile Include="dumps\dump_mfxdefs.cpp" />
     <ClCompile Include="dumps\dump_mfxenc.cpp" />
+    <ClCompile Include="dumps\dump_mfxla.cpp" />
     <ClCompile Include="dumps\dump_mfxplugin.cpp" />
     <ClCompile Include="dumps\dump_mfxsession.cpp" />
     <ClCompile Include="dumps\dump_mfxstructures.cpp" />
