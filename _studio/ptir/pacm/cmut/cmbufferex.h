@@ -209,6 +209,7 @@ public:
       // Throw a derived variant instead
       throw CMUT_EXCEPTION2("fail", cm_bad_alloc);
     }
+    memset(pData,0,physicalSize);
     malloced = true;
 
     pCmSurface2D = deviceEx.CreateSurface2DUP((unsigned char *)pData, width, height, format);

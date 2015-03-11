@@ -71,6 +71,7 @@ template<uint PLANE_WIDTH, uint PLANE_HEIGHT, CmSurfacePlaneIndex PLANEID>
 inline _GENX_ void cmk_DeinterlaceHBorder_YUVPlane(SurfaceIndex surfaceId, int topBolder, int widthIndex, uint topField, uint WIDTH, uint HEIGHT)
 {        
     matrix<uchar, PLANE_HEIGHT + 1, PLANE_WIDTH> srcBlock;
+    matrix<uchar, PLANE_HEIGHT, PLANE_WIDTH> dstBlock;
 
     if (topField && topBolder)
     {
@@ -79,10 +80,15 @@ inline _GENX_ void cmk_DeinterlaceHBorder_YUVPlane(SurfaceIndex surfaceId, int t
 #pragma unroll
         for (uint i = 1; i < PLANE_HEIGHT; i += 2) 
         {
-            srcBlock.row(i) = (srcBlock.row(i-1) + srcBlock.row(i+1))/2;       
+            srcBlock.row(i) = cm_quot((srcBlock.row(i-1) + srcBlock.row(i+1)),2);       
         }
 
-        write_plane(surfaceId, PLANEID, widthIndex * PLANE_WIDTH, 0, srcBlock);
+#pragma unroll
+        for (uint i = 0; i < PLANE_HEIGHT; i++) 
+        {
+            dstBlock.row(i) = srcBlock.row(i);
+        }
+        write_plane(surfaceId, PLANEID, widthIndex * PLANE_WIDTH, 0, dstBlock);
     }    
     else if (topField && !topBolder)
     {
@@ -91,7 +97,7 @@ inline _GENX_ void cmk_DeinterlaceHBorder_YUVPlane(SurfaceIndex surfaceId, int t
 #pragma unroll
         for (uint i = 2; i < PLANE_HEIGHT; i += 2) 
         {
-            srcBlock.row(i) = (srcBlock.row(i-1) + srcBlock.row(i+1))/2;       
+            srcBlock.row(i) = cm_quot((srcBlock.row(i-1) + srcBlock.row(i+1)),2);       
         }
         srcBlock.row(PLANE_HEIGHT) = srcBlock.row(PLANE_HEIGHT-1);        
 
@@ -105,10 +111,15 @@ inline _GENX_ void cmk_DeinterlaceHBorder_YUVPlane(SurfaceIndex surfaceId, int t
 #pragma unroll
         for (uint i = 2; i < PLANE_HEIGHT; i += 2) 
         {
-            srcBlock.row(i) = (srcBlock.row(i-1) + srcBlock.row(i+1))/2;       
-        }         
+            srcBlock.row(i) = cm_quot((srcBlock.row(i-1) + srcBlock.row(i+1)),2);       
+        }
 
-        write_plane(surfaceId, PLANEID, widthIndex * PLANE_WIDTH, 0, srcBlock);
+#pragma unroll
+        for (uint i = 0; i < PLANE_HEIGHT; i++) 
+        {
+            dstBlock.row(i) = srcBlock.row(i);
+        }
+        write_plane(surfaceId, PLANEID, widthIndex * PLANE_WIDTH, 0, dstBlock);
     }
     else if (!topField && !topBolder)
     {
@@ -117,11 +128,11 @@ inline _GENX_ void cmk_DeinterlaceHBorder_YUVPlane(SurfaceIndex surfaceId, int t
 #pragma unroll
         for (uint i = 1; i < PLANE_HEIGHT; i += 2) 
         {
-            srcBlock.row(i) = (srcBlock.row(i-1) + srcBlock.row(i+1))/2;       
+            srcBlock.row(i) = cm_quot((srcBlock.row(i-1) + srcBlock.row(i+1)),2);       
         }
 
         write_plane(surfaceId, PLANEID, widthIndex * PLANE_WIDTH, HEIGHT - PLANE_HEIGHT - 1, srcBlock);
-    }  
+    }
 }
 
 template<uint PLANE_WIDTH, uint PLANE_HEIGHT, CmSurfacePlaneIndex PLANEID>
@@ -160,7 +171,7 @@ inline _GENX_ void cmk_DeinterlaceVBorder_YPlane(SurfaceIndex surfaceId, int lef
 #pragma unroll
     for (uint i = 1; i < PLANE_HEIGHT; i += 2) 
     {
-        targetBlock.row(i) = (targetBlock.row(i-1) + targetBlock.row(i+1))/2;       
+        targetBlock.row(i) = cm_quot((targetBlock.row(i-1) + targetBlock.row(i+1)),2);
     }
 
     write_plane(surfaceId, PLANEID, x_pos, y_pos, srcBlock); 
@@ -173,6 +184,7 @@ inline _GENX_ void cmk_DeinterlaceVBorder_UVPlane(SurfaceIndex surfaceId, int le
     int y_pos = 0;
 
     matrix<uchar, PLANE_HEIGHT + 1, PLANE_WIDTH> srcBlock;
+    matrix<uchar, 1, PLANE_WIDTH> dstBlock;
 
     if (topField)
     {
@@ -197,10 +209,12 @@ inline _GENX_ void cmk_DeinterlaceVBorder_UVPlane(SurfaceIndex surfaceId, int le
 #pragma unroll
     for (uint i = 1; i < PLANE_HEIGHT; i += 2) 
     {
-        srcBlock.row(i) = (srcBlock.row(i-1) + srcBlock.row(i+1))/2;       
+        srcBlock.row(i) = cm_quot((srcBlock.row(i-1) + srcBlock.row(i+1)),2);
     }
 
-    write_plane(surfaceId, PLANEID, x_pos, y_pos, srcBlock);    
+    dstBlock.row(0) = srcBlock.row(1);
+
+    write_plane(surfaceId, PLANEID, x_pos, y_pos+1, dstBlock);
 }
 
 template <uint PLANE_WIDTH, uint PLANE_HEIGHT, uint TOP_FIELD>
