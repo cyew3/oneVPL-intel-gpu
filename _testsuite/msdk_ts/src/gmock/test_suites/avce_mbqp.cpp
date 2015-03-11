@@ -214,6 +214,14 @@ public:
             if (mbqp_on)
             {
                 ctrl.buf[i] = 1 + rand() % 50;
+                if (i) {
+                    // The decoded value of mb_qp_delta shall be in the range of −( 26 + QpBdOffsetY / 2) to +( 25 + QpBdOffsetY / 2 ), inclusive
+                    mfxI16 delta = ctrl.buf[i-1] - ctrl.buf[i];
+                    if (delta >= 25)
+                        ctrl.buf[i] = ctrl.buf[i-1] + 10;
+                    else if (delta <= -25)
+                        ctrl.buf[i] = ctrl.buf[i-1] - 10;
+                }
             } else
             {
                 ctrl.buf[i] = QP_BY_FRM_TYPE;
