@@ -1696,7 +1696,7 @@ mfxStatus CCameraPipeline::Run()
     MSDK_SAFE_DELETE_ARRAY(syncpoints);
     MSDK_SAFE_DELETE_ARRAY(ppOutSurf);
     MSDK_SAFE_DELETE_ARRAY(ppInSurf);
-    MSDK_SAFE_DELETE(syncFlags);
+    MSDK_SAFE_DELETE_ARRAY(syncFlags);
 
     for (int i = 0; i <  m_mfxResponseIn.NumFrameActual; i++)
         m_pmfxSurfacesIn[i].Data.Locked = 0;

@@ -124,8 +124,8 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -opencl       Uses implementation of rotation plugin (enabled with -angle option) through Intel(R) OpenCL\n"));
     msdk_printf(MSDK_STRING("  -w            Destination picture width, invokes VPP resize\n"));
     msdk_printf(MSDK_STRING("  -h            Destination picture height, invokes VPP resize\n"));
-    msdk_printf(MSDK_STRING("  -pe           Set encoding plugin for this particular session. This setting will override pluging settings defined by SET clause.\n"));
-    msdk_printf(MSDK_STRING("  -pd           Set decoding plugin for this particular session. This setting will override pluging settings defined by SET clause.\n"));
+    msdk_printf(MSDK_STRING("  -pe           Set encoding plugin for this particular session. This setting overrides plugin settings defined by SET clause.\n"));
+    msdk_printf(MSDK_STRING("  -pd           Set decoding plugin for this particular session. This setting overrides plugin settings defined by SET clause.\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("ParFile format:\n"));
     msdk_printf(MSDK_STRING("  ParFile is extension of what can be achieved by setting pipeline in the command\n"));

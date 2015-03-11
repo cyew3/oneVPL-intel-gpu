@@ -535,7 +535,7 @@ mfxStatus CBmpWriter::WriteFrame(mfxFrameData* pData, const msdk_char *fileId, m
             }
             nbytes = (mfxU32)fwrite(pOut, 1, width_bytes, f);
             if (nbytes != width_bytes) {
-                delete pOut;
+                delete[] pOut;
                 fclose(f);
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
@@ -628,7 +628,13 @@ mfxStatus CRawVideoWriter::WriteFrame(mfxFrameData* pData, const msdk_char *file
         mfxU32 j;
         for (j = 0; j < 4*w; j++)
             ptr[i*pitch + j] = ptr[i*pitch + j] >> shift;
-        MSDK_CHECK_NOT_EQUAL(fwrite(ptr + i*pitch, sizeof(mfxU16), 4*w, f), 4*w, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        if (fwrite(ptr + i*pitch, sizeof(mfxU16), 4*w, f) != (4*w))
+        {
+            MSDK_PRINT_RET_MSG(MFX_ERR_UNDEFINED_BEHAVIOR); 
+            fclose(f);
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
     }
 #else
     for (i = 0; i < h; i++)
