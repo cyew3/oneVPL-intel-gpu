@@ -1,3 +1,5 @@
+include( ${CMAKE_HOME_DIRECTORY}/../builder/FindFFmpeg.cmake )
+
 include_directories(
   ${CMAKE_SOURCE_DIR}/sample_common/include
   ${CMAKE_SOURCE_DIR}/deprecated/sample_spl_mux/api
