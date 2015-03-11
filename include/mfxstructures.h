@@ -55,6 +55,7 @@ typedef struct {
     };
 } mfxFrameId;
 
+#pragma pack(push, 4)
 /* Frame Info */
 typedef struct {
     mfxU32  reserved[4];
@@ -66,13 +67,21 @@ typedef struct {
     mfxFrameId FrameId;
 
     mfxU32  FourCC;
-    mfxU16  Width;
-    mfxU16  Height;
+    union {
+        struct { /* Frame parameters */
+            mfxU16  Width;
+            mfxU16  Height;
 
-    mfxU16  CropX;
-    mfxU16  CropY;
-    mfxU16  CropW;
-    mfxU16  CropH;
+            mfxU16  CropX;
+            mfxU16  CropY;
+            mfxU16  CropW;
+            mfxU16  CropH;
+        };
+        struct { /* Buffer parameters (for plain formats like P8) */
+            mfxU64 BufferSize;
+            mfxU32 reserved5;
+        };
+    };
 
     mfxU32  FrameRateExtN;
     mfxU32  FrameRateExtD;
@@ -85,6 +94,7 @@ typedef struct {
     mfxU16  ChromaFormat;
     mfxU16  reserved2;
 } mfxFrameInfo;
+#pragma pack(pop)
 
 /* FourCC */
 enum {
