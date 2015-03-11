@@ -120,10 +120,8 @@ typedef struct {
     mfxU32          Pitch;
     mfxU32          reserved[7];
 
-    union {
-        mfxCamVignetteCorrectionParam *CorrectionMap;
-        mfxU64 reserved1;
-    };
+    mfxCamVignetteCorrectionParam *CorrectionMap;
+    
 } mfxExtCamVignetteCorrection;
 
 typedef struct {
