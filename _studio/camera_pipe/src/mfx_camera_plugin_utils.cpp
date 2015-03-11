@@ -527,7 +527,7 @@ mfxStatus QueryExtBuf(mfxExtBuffer *extBuf, mfxU32 bitdepth, mfxU32 action)
             }
             else
             {
-                vignetteBuf->Height = vignetteBuf->Width = vignetteBuf->Pitch = vignetteBuf->MaskPrecision = action;
+                vignetteBuf->Height = vignetteBuf->Width = vignetteBuf->Pitch = action;
             }
         }
         break;
