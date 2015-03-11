@@ -375,10 +375,9 @@ tsTrace& tsTrace::operator<<(const mfxExtCamVignetteCorrection& p)
         FIELD_T(mfxU32,                       Width        )
         FIELD_T(mfxU32,                       Height       )
         FIELD_T(mfxU32,                       Pitch        )
-        FIELD_T(mfxU32,                       MaskPrecision)
         if(p.CorrectionMap)
         {
-            FIELD_S(mfxVignetteCorrectionParams*, CorrectionMap)
+            FIELD_S(mfxCamVignetteCorrectionParam*, CorrectionMap)
         }
     )
 
