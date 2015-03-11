@@ -567,6 +567,10 @@ STRUCT(mfxExtCamHotPixelRemoval,
     FIELD_T(mfxU16,       PixelThresholdDifference )
     FIELD_T(mfxU16,       PixelCountThreshold )
 )
+STRUCT(mfxCamVignetteCorrectionElement,
+    FIELD_T(mfxU8, integer )
+    FIELD_T(mfxU8, mantissa)
+)
 STRUCT(mfxExtCamBlackLevelCorrection,
     FIELD_S(mfxExtBuffer, Header   )
     FIELD_T(mfxU16,       R        )
@@ -576,17 +580,16 @@ STRUCT(mfxExtCamBlackLevelCorrection,
     FIELD_T(mfxU32*,      reserved )
 )
 STRUCT(mfxCamVignetteCorrectionParam,
-    FIELD_T(mfxU16, R )
-    FIELD_T(mfxU16, G0)
-    FIELD_T(mfxU16, B )
-    FIELD_T(mfxU16, G1)
+    FIELD_S(mfxCamVignetteCorrectionElement, R )
+    FIELD_S(mfxCamVignetteCorrectionElement, G0)
+    FIELD_S(mfxCamVignetteCorrectionElement, B )
+    FIELD_S(mfxCamVignetteCorrectionElement, G1)
 )
 STRUCT(mfxExtCamVignetteCorrection,
-    FIELD_S(mfxExtBuffer,                 Header       )
-    FIELD_T(mfxU32,                       Width        )
-    FIELD_T(mfxU32,                       Height       )
-    FIELD_T(mfxU32,                       Pitch        )
-    FIELD_S(mfxCamVignetteCorrectionParam,  CorrectionMap)
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32      , Width )
+    FIELD_T(mfxU32      , Height)
+    FIELD_T(mfxU32      , Pitch )
 )
 STRUCT(mfxExtCamBayerDenoise,
     FIELD_S(mfxExtBuffer, Header   )

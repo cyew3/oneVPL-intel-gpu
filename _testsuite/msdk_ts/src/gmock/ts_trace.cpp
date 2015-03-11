@@ -371,13 +371,15 @@ tsTrace& tsTrace::operator<<(const mfxExtCamGammaCorrection& p)
 tsTrace& tsTrace::operator<<(const mfxExtCamVignetteCorrection& p)
 {
     STRUCT_BODY(mfxExtCamVignetteCorrection,
-        FIELD_S(mfxExtBuffer,                 Header       )
         FIELD_T(mfxU32,                       Width        )
         FIELD_T(mfxU32,                       Height       )
         FIELD_T(mfxU32,                       Pitch        )
         if(p.CorrectionMap)
         {
-            FIELD_S(mfxCamVignetteCorrectionParam*, CorrectionMap)
+            FIELD_S(mfxCamVignetteCorrectionElement, CorrectionMap->R )
+            FIELD_S(mfxCamVignetteCorrectionElement, CorrectionMap->G0)
+            FIELD_S(mfxCamVignetteCorrectionElement, CorrectionMap->B )
+            FIELD_S(mfxCamVignetteCorrectionElement, CorrectionMap->G1)
         }
     )
 
