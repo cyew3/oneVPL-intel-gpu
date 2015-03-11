@@ -187,7 +187,6 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameData &
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(frameData.reserved) + "\n";
-    str += structName + ".reserved1=" + ToString(frameData.reserved) + "\n";
     str += structName + ".PitchHigh=" + ToString(frameData.PitchHigh) + "\n";
     str += structName + ".TimeStamp=" + ToString(frameData.TimeStamp) + "\n";
     str += structName + ".FrameOrder=" + ToString(frameData.FrameOrder) + "\n";
@@ -211,7 +210,8 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameData &
     }
     str += structName + ".MemId=" + ToString(frameData.MemId) + "\n";
     str += structName + ".Corrupted=" + ToString(frameData.Corrupted) + "\n";
-    str += structName + ".DataFlag=" + ToString(frameData.DataFlag);
+    str += structName + ".DataFlag=" + ToString(frameData.DataFlag) + "\n";
+    str += dump_mfxExtParams(structName, frameData);
     return str;
 }
 
