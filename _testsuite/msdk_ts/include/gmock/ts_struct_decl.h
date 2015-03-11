@@ -575,7 +575,7 @@ STRUCT(mfxExtCamBlackLevelCorrection,
     FIELD_T(mfxU16,       G1       )
     FIELD_T(mfxU32*,      reserved )
 )
-STRUCT(mfxVignetteCorrectionParams,
+STRUCT(mfxCamVignetteCorrectionParam,
     FIELD_T(mfxU16, R )
     FIELD_T(mfxU16, G0)
     FIELD_T(mfxU16, B )
@@ -586,8 +586,7 @@ STRUCT(mfxExtCamVignetteCorrection,
     FIELD_T(mfxU32,                       Width        )
     FIELD_T(mfxU32,                       Height       )
     FIELD_T(mfxU32,                       Pitch        )
-    FIELD_T(mfxU32,                       MaskPrecision)
-    //FIELD_S(mfxVignetteCorrectionParams,  CorrectionMap)
+    FIELD_S(mfxCamVignetteCorrectionParam,  CorrectionMap)
 )
 STRUCT(mfxExtCamBayerDenoise,
     FIELD_S(mfxExtBuffer, Header   )
