@@ -301,7 +301,7 @@
     <ProjectReference Include="..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock_main.vcxproj">
       <Project>{e4ef614b-30df-4954-8c53-580a0bf6b589}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\mdp_msdk-samples\samples\sample_common\sample_common.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-samples\samples\sample_common\sample_common_vs2012.vcxproj">
       <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj">
