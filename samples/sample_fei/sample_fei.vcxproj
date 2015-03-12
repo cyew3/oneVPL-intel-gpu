@@ -197,7 +197,7 @@
   <ItemGroup>
     <ClCompile Include="src\pipeline_encode.cpp" />
     <ClCompile Include="src\pipeline_user.cpp" />
-    <ClCompile Include="src\sample_encode_fei.cpp" />
+    <ClCompile Include="src\sample_fei.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\pipeline_encode.h" />

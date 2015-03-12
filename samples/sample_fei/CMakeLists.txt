@@ -6,7 +6,7 @@ endif()
 
 include_directories (
   ${CMAKE_SOURCE_DIR}/sample_common/include
-  ${CMAKE_SOURCE_DIR}/sample_encode_fei/include
+  ${CMAKE_SOURCE_DIR}/sample_fei/include
   ${CMAKE_SOURCE_DIR}/sample_plugins/rotate_cpu/include
 )
 

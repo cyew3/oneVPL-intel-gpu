@@ -98,7 +98,7 @@
     <Link>
       <AdditionalOptions>/DYNAMICBASE /NXCOMPAT %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>libmfx_d.lib;dxva2.lib;d3d9.lib;dwmapi.lib;igfx_s3dcontrol_d.lib;comsuppw.lib;d3d11.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib;msvcrtd.lib;LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>dwmapi.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
@@ -127,7 +127,7 @@
     <Link>
       <AdditionalOptions>/DYNAMICBASE /NXCOMPAT %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>libmfx_d.lib;dxva2.lib;d3d9.lib;dwmapi.lib;igfx_s3dcontrol_d.lib;comsuppw.lib;d3d11.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib;msvcrtd.lib;LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>dwmapi.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
@@ -162,6 +162,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -193,6 +194,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

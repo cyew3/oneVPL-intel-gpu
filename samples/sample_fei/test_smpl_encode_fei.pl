@@ -337,7 +337,7 @@ if($fail_msg eq '') {
 } else {
     print "\n------------- Additional executions -------------\n";
     # second run
-    # YUV -> sample_vpp(resize) -> YUV* -> sample_encode_fei -> bitstream -> sample_decode -> YUV**
+    # YUV -> sample_vpp(resize) -> YUV* -> sample_fei -> bitstream -> sample_decode -> YUV**
     ## YUV -> sample_vpp(resize) -> YUV*
     my @sample_vpp_cmd = my @sample_vpp_output = ();
     my $smpl_vpp_yuv = join msdk_inc::get_path_separator(), ($output_dir, $test_id.'.vpp.yuv');
@@ -379,7 +379,7 @@ if($fail_msg eq '') {
         }
     }
 
-    ## ... -> sample_encode_fei - > bitstream
+    ## ... -> sample_fei - > bitstream
     my @sample_encode_cmd = my @sample_encode_output = ();
     my $smpl_encode_out = join msdk_inc::get_path_separator(), ($output_dir, $test_id.'.enc');
     push @{$GLOB::temp_streams{'smpl_encode_out'}}, $smpl_encode_out;
