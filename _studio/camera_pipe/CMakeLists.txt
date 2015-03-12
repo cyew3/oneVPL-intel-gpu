@@ -47,6 +47,7 @@ set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE
 
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/genx/src/genx_hsw_camerapipe_isa.cpp )
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/genx/src/genx_bdw_camerapipe_isa.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/genx/src/genx_skl_camerapipe_isa.cpp )
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/src )
 
   list( APPEND sources

@@ -32,6 +32,10 @@ File Name: mfx_camera_plugin_dx9.h
 
 #define SEPARATED_FROM_CORE 1
 
+#ifndef SAFE_DELETE_ARRAY
+#define SAFE_DELETE_ARRAY(PTR)    { if (PTR) { delete [] PTR; PTR = 0; } }
+#endif
+
 using namespace MfxCameraPlugin;
 using namespace MfxHwVideoProcessing;
 
@@ -730,11 +734,7 @@ public:
         m_OutSurfacePool = new D39FrameAllocResponse();
     };
 
-    ~D3D9CameraProcessor() {
-        m_core->FreeFrames(&m_InternalSurfes);
-        
-        delete m_InSurfacePool;
-    };
+    ~D3D9CameraProcessor() { };
 
     virtual mfxStatus Init(CameraParams *CameraParams);
 
@@ -752,6 +752,14 @@ public:
 
     virtual mfxStatus Close()
     {
+         m_core->FreeFrames(&m_InternalSurfes);
+        
+        if ( m_InSurfacePool )
+            delete m_InSurfacePool;
+
+        if ( m_OutSurfacePool )
+            delete m_OutSurfacePool;
+ 
         return MFX_ERR_NONE;
     }
 

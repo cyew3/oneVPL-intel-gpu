@@ -114,6 +114,7 @@ mfxStatus CMCameraProcessor::AsyncRoutine(AsyncParams *pParam)
     mfxFrameSurface1 *surfOut = pParam->surf_out;
 
     sts = m_core->IncreasePureReference(m_activeThreadCount);
+#if 0
     {
         // In case of CM, we need to do a hard reset every N frames to free up the memory.
         UMC::AutomaticUMCMutex guard(m_guard_hard_reset);
@@ -171,6 +172,7 @@ mfxStatus CMCameraProcessor::AsyncRoutine(AsyncParams *pParam)
             sts = AllocateInternalSurfaces();
         }
     }
+#endif
 
     m_core->IncreaseReference(&surfIn->Data);
     m_core->IncreaseReference(&surfOut->Data);
@@ -194,6 +196,7 @@ mfxStatus CMCameraProcessor::SetExternalSurfaces(AsyncParams *pParam)
 {
     MFX_CHECK_NULL_PTR1(pParam);
 
+    bool    b2DUPAllowed      = true;
     int     tileIDHorizontal  = pParam->tileIDHorizontal;
     int       tileIDVertical  = pParam->tileIDVertical;
     mfxFrameSurface1 *surfIn  = pParam->surf_in;
@@ -217,6 +220,12 @@ mfxStatus CMCameraProcessor::SetExternalSurfaces(AsyncParams *pParam)
         mfxU32 inHeight = (mfxU32)m_Params.TileHeightPadded;
         mfxU16 *ptr     = (mfxU16*)((mfxU8*)surfIn->Data.Y16 + m_Params.tileOffsets[tileIDHorizontal].TileOffset *inPitch) + tileIDVertical*pParam->FrameSizeExtra.frameWidth * 2;
 
+        if ( m_platform == MFX_HW_BDW && (inWidth & 15) != 0 )
+        {
+            // CM specific beh: on BDW width must be aligned to 16, otherwise 2DUP fails
+            b2DUPAllowed = false;
+        }
+
         if (m_Params.Caps.InputMemoryOperationMode == MEM_GPUSHARED)
         {
             mfxU32 allocSize, allocPitch;
@@ -224,7 +233,7 @@ mfxStatus CMCameraProcessor::SetExternalSurfaces(AsyncParams *pParam)
             m_cmDevice->GetSurface2DInfo(sizeof(mfxU16)*inWidth, inHeight, CM_SURFACE_FORMAT_A8, allocPitch, allocSize);
             CAMERA_DEBUG_LOG("SetExternalSurfaces Padded: inPitch=%d allocPitch=%d inWidth=%d inHeight=%d \n", inPitch, allocPitch,inWidth, inHeight);
 
-            if (inPitch == allocPitch && !((mfxU64)ptr & 0xFFF))
+            if (b2DUPAllowed && inPitch == allocPitch && !((mfxU64)ptr & 0xFFF))
             {
                 pParam->inSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, inWidth*sizeof(mfxU16),  inHeight, CM_SURFACE_FORMAT_A8, (void *)ptr);
             }
@@ -259,8 +268,13 @@ mfxStatus CMCameraProcessor::SetExternalSurfaces(AsyncParams *pParam)
             mfxU16 *ptr     = (mfxU16*)((mfxU8*)surfIn->Data.Y16 + m_Params.tileOffsets[tileIDHorizontal].TileOffset*inPitch) + tileIDVertical*pParam->FrameSizeExtra.frameWidth * 2;
             mfxU32 allocSize, allocPitch;
 
+            if ( m_platform == MFX_HW_BDW && (inWidth & 15) != 0 )
+            {
+                // CM specific beh: on BDW width must be aligned to 16, otherwise 2DUP fails
+                b2DUPAllowed = false;
+            }
             m_cmDevice->GetSurface2DInfo(sizeof(mfxU16)*inWidth, inHeight, CM_SURFACE_FORMAT_A8, allocPitch, allocSize);
-            if (!surfIn->Info.CropX && !surfIn->Info.CropY && inHeight == inHeightAligned && inPitch == allocPitch && !((mfxU64)ptr & 0xFFF))
+            if (b2DUPAllowed && !surfIn->Info.CropX && !surfIn->Info.CropY && inHeight == inHeightAligned && inPitch == allocPitch && !((mfxU64)ptr & 0xFFF))
             {
                 pParam->inSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, allocPitch,  inHeight, CM_SURFACE_FORMAT_A8, (void *)ptr);
             }
@@ -292,6 +306,12 @@ mfxStatus CMCameraProcessor::SetExternalSurfaces(AsyncParams *pParam)
         mfxU8 *ptr       = (mfxU8*)surfOut->Data.B + m_Params.tileOffsets[tileIDHorizontal].TileOffset*outPitch + tileIDVertical*pParam->FrameSizeExtra.frameWidth * 4;
         mfxU32 allocSize, allocPitch;
 
+        if ( m_platform == MFX_HW_BDW && (outWidth & 15) != 0 )
+        {
+            // CM specific beh: on BDW width must be aligned to 16, otherwise 2DUP fails
+            b2DUPAllowed = false;
+        }
+
         if (pParam->Caps.bOutToARGB16)
         {
             m_cmDevice->GetSurface2DInfo(sizeof(mfxU16)*outWidth, outHeight, CM_SURFACE_FORMAT_A8R8G8B8, allocPitch, allocSize);
@@ -301,7 +321,7 @@ mfxStatus CMCameraProcessor::SetExternalSurfaces(AsyncParams *pParam)
             m_cmDevice->GetSurface2DInfo(outWidth, outHeight, CM_SURFACE_FORMAT_A8R8G8B8, allocPitch, allocSize);
         }
 
-        if (outPitch == allocPitch && !((mfxU64)ptr & 0xFFF))
+        if (b2DUPAllowed && outPitch == allocPitch && !((mfxU64)ptr & 0xFFF))
         {
             if (m_Params.Caps.bOutToARGB16)
                 pParam->outSurf2DUP = (mfxMemId)CreateSurface(m_cmDevice, allocPitch>>2, outHeight, CM_SURFACE_FORMAT_A8R8G8B8, (void *)ptr);
@@ -2541,8 +2561,8 @@ void CmContext::Setup(
         m_program = ReadProgram(m_device, genx_hsw_camerapipe, SizeOf(genx_hsw_camerapipe));
     else if(m_platform == MFX_HW_BDW || m_platform == MFX_HW_CHV)
         m_program = ReadProgram(m_device, genx_bdw_camerapipe, SizeOf(genx_bdw_camerapipe));
-    //else if(m_platform == MFX_HW_SCL || m_platform == MFX_HW_BXT)
-    //    m_program = ReadProgram(m_device, genx_skl_camerapipe, SizeOf(genx_skl_camerapipe));
+    else if(m_platform == MFX_HW_SCL)
+        m_program = ReadProgram(m_device, genx_skl_camerapipe, SizeOf(genx_skl_camerapipe));
 
     // Valid for HSW/BDW
     // Need to add caps checking

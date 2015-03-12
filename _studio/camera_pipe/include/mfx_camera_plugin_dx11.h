@@ -124,11 +124,7 @@ public:
         m_OutSurfacePool = new D3D11FrameAllocResponse();
     };
 
-    ~D3D11CameraProcessor() {
-        m_InSurfacePool->Free(m_core);
-        m_OutSurfacePool->Free(m_core);
-        delete m_InSurfacePool;
-    };
+    ~D3D11CameraProcessor() {};
 
     virtual mfxStatus Init(CameraParams *CameraParams);
 
@@ -146,6 +142,13 @@ public:
 
     virtual mfxStatus Close()
     {
+        m_InSurfacePool->Free(m_core);
+        m_OutSurfacePool->Free(m_core);
+        if (m_InSurfacePool)
+            delete m_InSurfacePool;
+
+        if (m_OutSurfacePool)
+            delete m_InSurfacePool;
         return MFX_ERR_NONE;
     }
 

@@ -1032,7 +1032,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     m_PipeParams.VignetteParams = m_VignetteParams;
     m_PipeParams.par         = *par;
 
-    if (MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
+    if (MFX_HW_SCL == m_platform || MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
     {
         m_CameraProcessor = new CMCameraProcessor();
     }

@@ -47,7 +47,7 @@ mfxStatus DXVAHDVideoProcessor::EnumerateCaps()
     hr = m_pDXVADevice->GetVideoProcessorCaps(m_dxva_caps.uiVideoProcessorCount,pVPCaps);
     if (FAILED(hr))
     {        
-        SAFE_DELETE(pVPCaps);
+        SAFE_DELETE_ARRAY(pVPCaps);
         return MFX_ERR_DEVICE_FAILED;
     }
 
@@ -59,9 +59,9 @@ mfxStatus DXVAHDVideoProcessor::EnumerateCaps()
 
     if (!m_dxva_caps.pOutputFormats || !m_dxva_caps.pInputFormats)
     {
-        SAFE_DELETE(pVPCaps);
-        SAFE_DELETE(m_dxva_caps.pInputFormats);
-        SAFE_DELETE(m_dxva_caps.pOutputFormats);
+        SAFE_DELETE_ARRAY(pVPCaps);
+        SAFE_DELETE_ARRAY(m_dxva_caps.pInputFormats);
+        SAFE_DELETE_ARRAY(m_dxva_caps.pOutputFormats);
         return MFX_ERR_DEVICE_FAILED;
     }
     
@@ -77,18 +77,18 @@ mfxStatus DXVAHDVideoProcessor::EnumerateCaps()
                                      &m_dxva_caps.EdgeEnhancementRange);
     if (FAILED(hr))
     {
-        SAFE_DELETE(pVPCaps);
-        SAFE_DELETE(m_dxva_caps.pInputFormats);
-        SAFE_DELETE(m_dxva_caps.pOutputFormats);
+        SAFE_DELETE_ARRAY(pVPCaps);
+        SAFE_DELETE_ARRAY(m_dxva_caps.pInputFormats);
+        SAFE_DELETE_ARRAY(m_dxva_caps.pOutputFormats);
         return MFX_ERR_DEVICE_FAILED;;
     }
 
     m_dxva_caps.pVPCaps = new dxvahdvpcaps[m_dxva_caps.uiVideoProcessorCount];
     if (!m_dxva_caps.pVPCaps)
     {
-        SAFE_DELETE(pVPCaps);
-        SAFE_DELETE(m_dxva_caps.pInputFormats);
-        SAFE_DELETE(m_dxva_caps.pOutputFormats);
+        SAFE_DELETE_ARRAY(pVPCaps);
+        SAFE_DELETE_ARRAY(m_dxva_caps.pInputFormats);
+        SAFE_DELETE_ARRAY(m_dxva_caps.pOutputFormats);
         return MFX_ERR_DEVICE_FAILED;
     }
     memset((void*)&m_dxva_caps.pVPCaps[0], 0, sizeof(dxvahdvpcaps)*m_dxva_caps.uiVideoProcessorCount);
@@ -108,10 +108,10 @@ mfxStatus DXVAHDVideoProcessor::EnumerateCaps()
             if (!m_dxva_caps.pVPCaps[uiVPIndex].pCustomRates)
             {
                 
-                SAFE_DELETE(pVPCaps);
-                SAFE_DELETE(m_dxva_caps.pInputFormats);
-                SAFE_DELETE(m_dxva_caps.pOutputFormats);
-                SAFE_DELETE(m_dxva_caps.pVPCaps);
+                SAFE_DELETE_ARRAY(pVPCaps);
+                SAFE_DELETE_ARRAY(m_dxva_caps.pInputFormats);
+                SAFE_DELETE_ARRAY(m_dxva_caps.pOutputFormats);
+                SAFE_DELETE_ARRAY(m_dxva_caps.pVPCaps);
                 return MFX_ERR_DEVICE_FAILED;;
             }
 
@@ -126,13 +126,13 @@ mfxStatus DXVAHDVideoProcessor::EnumerateCaps()
         } 
     } 
 
-    SAFE_DELETE(pVPCaps);
+    SAFE_DELETE_ARRAY(pVPCaps);
 
     if (FAILED(hr))
     {
-        SAFE_DELETE(m_dxva_caps.pInputFormats);
-        SAFE_DELETE(m_dxva_caps.pOutputFormats);
-        SAFE_DELETE(m_dxva_caps.pVPCaps);
+        SAFE_DELETE_ARRAY(m_dxva_caps.pInputFormats);
+        SAFE_DELETE_ARRAY(m_dxva_caps.pOutputFormats);
+        SAFE_DELETE_ARRAY(m_dxva_caps.pVPCaps);
         return MFX_ERR_DEVICE_FAILED;
     }
 
@@ -289,7 +289,7 @@ HRESULT DXVAHDVideoProcessor::GetSetOutputExtension(DXVAHD_BLT_STATE state, UINT
 
     if (bSet)
     {
-        SAFE_DELETE(pDataToGet);
+        SAFE_DELETE_ARRAY(pDataToGet);
     }
 
     return hr;
@@ -927,7 +927,7 @@ HRESULT DXVAHDVideoProcessor::SetCameraPipeEnable(TCameraPipeEnable bActive, BOO
     dxvahdPData.DataSize = sizeof(camMode);
     dxvahdPData.pData = &camMode;
 
-    hr = GetSetOutputExtension(DXVAHD_BLT_STATE_PRIVATE, sizeof(dxvahdPData), &dxvahdPData, TRUE, true);
+    hr = GetSetOutputExtension(DXVAHD_BLT_STATE_PRIVATE, sizeof(dxvahdPData), &dxvahdPData, TRUE, FALSE);
 
     return hr;
 }
@@ -982,14 +982,16 @@ mfxStatus DXVAHDVideoProcessor::Execute(MfxHwVideoProcessing::mfxExecuteParams *
     frameFmtData.FrameFormat = DXVAHD_FRAME_FORMAT_PROGRESSIVE;
     hr = SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_FRAME_FORMAT, sizeof(frameFmtData), &frameFmtData);
 
-    DXVAHD_STREAM_STATE_SOURCE_RECT_DATA srcRectData;
+    DXVAHD_STREAM_STATE_SOURCE_RECT_DATA srcRectData = {0};
+    srcRectData.SourceRect.bottom = executeParams->pRefSurfaces[0].frameInfo.Height;
+    srcRectData.SourceRect.right  = executeParams->pRefSurfaces[0].frameInfo.Width;
     srcRectData.Enable = TRUE;
-    memcpy((PVOID) &srcRectData.SourceRect, (PVOID)&targetRectData.TargetRect, sizeof(RECT));    
+    memcpy_s((PVOID) &srcRectData.SourceRect, sizeof(RECT), (PVOID)&targetRectData.TargetRect, sizeof(RECT));    
     hr = SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_SOURCE_RECT, sizeof(srcRectData), &srcRectData);
 
     DXVAHD_STREAM_STATE_DESTINATION_RECT_DATA dstRectData;
     dstRectData.Enable = TRUE;
-    memcpy((PVOID) &dstRectData.DestinationRect, &targetRectData.TargetRect, sizeof(RECT));    
+    memcpy_s((PVOID) &dstRectData.DestinationRect, sizeof(RECT), &targetRectData.TargetRect, sizeof(RECT));    
     hr = SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_DESTINATION_RECT, sizeof(dstRectData), &dstRectData);
 
     DXVAHD_STREAM_STATE_INPUT_COLOR_SPACE_DATA streamColorSpace;
@@ -1056,6 +1058,7 @@ mfxStatus DXVAHDVideoProcessor::Execute(MfxHwVideoProcessing::mfxExecuteParams *
                                                   1,
                                                   pStreams);
 
+    SAFE_DELETE_ARRAY(pStreams);
     return MFX_ERR_NONE;
 }
 
