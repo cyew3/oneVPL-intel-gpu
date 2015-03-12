@@ -70,7 +70,7 @@ namespace msdk_analyzer
                 
                 
                 UInt32 sts = MsdkAnalyzerCpp.install(Path.GetDirectoryName(Application.ExecutablePath)
-                                        , Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\Intel\\Media_SDK_Analyzer\\analyzer.log"
+                                        , Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + _PATH.TRACER_PATH + _PATH.TRACER_LOG
                                         , Path.GetDirectoryName(Application.ExecutablePath));
                 if (sts == 0)
                 {

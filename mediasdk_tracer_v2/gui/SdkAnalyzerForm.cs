@@ -23,9 +23,16 @@ using System.Threading;
 using System.IO;
 using Microsoft.Win32;
 using System.Reflection;
+using System.Security.AccessControl;
 
 namespace msdk_analyzer
 {
+    public static class _PATH
+    {
+       public static string TRACER_PATH = "\\Intel\\SDK_Tracer\\";
+       public static string TRACER_LOG = "tracer.log";
+    };
+
     public partial class SdkAnalyzerForm : Form
     {
         IDataCollector m_collector;
@@ -35,11 +42,8 @@ namespace msdk_analyzer
         {
             InitializeComponent();
             m_collector = new DataCollector();
-                    
-            tbxLogOutput.Text = Registry.GetValue(Properties.Resources.target_folder_key
-                , Properties.Resources.target_folder_value, "") as string;
-            if (String.IsNullOrEmpty(tbxLogOutput.Text))
-                tbxLogOutput.Text = AppDomain.CurrentDomain.BaseDirectory + "analizer.log";
+            System.IO.Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + _PATH.TRACER_PATH);
+            tbxLogOutput.Text = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + _PATH.TRACER_PATH + _PATH.TRACER_LOG;
             m_collector.SetLog(tbxLogOutput.Text);
             m_collector.Create();
 
