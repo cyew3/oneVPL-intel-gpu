@@ -292,6 +292,8 @@ mfxStatus MFX_PTIR_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
                 break;
             if(!surface_out)
                 surface_out = GetFreeSurf(workSurfs);
+            if(exp_surf == surface_out && ptir->isHW)
+                surface_out = GetFreeSurf(workSurfs);
             if((*it == inSurfs.back()) && bEOS)
                 beof = true;
             try

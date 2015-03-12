@@ -212,6 +212,11 @@ mfxStatus frameSupplier::AddOutputSurf(mfxFrameSurface1* outSurf, mfxFrameSurfac
                 break;
             }
         }
+        if(!cmSurfExpOut)
+        {
+            CMCreateSurfaceOut(exp_surf,cmSurfExpOut,false);
+            delSurf = cmSurfExpOut;
+        }
         for (it = CmToMfxSurfmap->begin(); it != CmToMfxSurfmap->end(); ++it)
         {
             if(outSurf == it->second)
@@ -221,7 +226,11 @@ mfxStatus frameSupplier::AddOutputSurf(mfxFrameSurface1* outSurf, mfxFrameSurfac
             }
         }
 
-        mfxSts = CMCopyGPUToGpu(cmSurfOut, cmSurfExpOut);
+        //mfxSts = CMCopyGPUToGpu(cmSurfOut, cmSurfExpOut);
+        //assert(MFX_ERR_NONE == mfxSts);
+        //outSurf = exp_surf;
+        //freeSurf = cmSurfOut;
+        mfxSts = CMCopyGPUToGpu(cmSurfExpOut, cmSurfOut);
         assert(MFX_ERR_NONE == mfxSts);
         outSurf = exp_surf;
         freeSurf = cmSurfOut;

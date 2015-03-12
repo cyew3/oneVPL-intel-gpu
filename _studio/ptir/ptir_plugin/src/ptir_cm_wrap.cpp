@@ -37,6 +37,7 @@ PTIR_ProcessorCM::PTIR_ProcessorCM(mfxCoreInterface* mfxCore, frameSupplier* _fr
     isHW = true;
     bInited = false;
     b_firstFrameProceed = false;
+    bFullFrameRate = false;
 }
 
 PTIR_ProcessorCM::~PTIR_ProcessorCM()
