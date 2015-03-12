@@ -632,7 +632,7 @@ mfxStatus CRawVideoWriter::WriteFrame(mfxFrameData* pData, const msdk_char *file
 
         if (fwrite(ptr + i*pitch, sizeof(mfxU16), 4*w, f) != (4*w))
         {
-            MSDK_PRINT_RET_MSG(MFX_ERR_UNDEFINED_BEHAVIOR); 
+            MSDK_PRINT_RET_MSG(MFX_ERR_UNDEFINED_BEHAVIOR);
             fclose(f);
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
