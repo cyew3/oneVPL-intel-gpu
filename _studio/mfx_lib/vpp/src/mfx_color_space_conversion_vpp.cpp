@@ -20,6 +20,11 @@
 #include "ippi.h"
 #include "ippcc.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+ // Set of AVX2 optimized color conversions
+ #include "mfx_color_space_conversion_vpp_avx2.cpp"
+#endif
+
 /* some macros */
 #ifndef CHOP
 #define CHOP(x)     ((x < 0) ? 0 : ((x > 255) ? 255 : x))
@@ -33,6 +38,11 @@
 #define V_POS(ptr, shift, step, pos) ( (pos) >= 0  ? ( ptr + (shift) + (step) * (pos) )[0] : ( ptr + (shift) - (step) * (-1*pos) )[0])
 #endif
 
+#if defined(_WIN32) || defined(_WIN64)
+#define AVX_DISP(func, ...)  (( m_bAVX2 ) ? func ## _avx2(__VA_ARGS__) : func(__VA_ARGS__))
+#else
+#define AVX_DISP(func, ...)   func(__VA_ARGS__);
+#endif
 /* ******************************************************************** */
 /*                 prototype of CSC algorithms                          */
 /* ******************************************************************** */
@@ -54,9 +64,9 @@ IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 IppStatus cc_P210_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                                    mfxFrameData* outData, mfxFrameInfo* outInfo);
 #endif
-IppStatus cc_P010_to_A2RGB10_not_optimal( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                                           mfxFrameData* outData, mfxFrameInfo* outInfo);
-IppStatus cc_P210_to_A2RGB10_not_optimal( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+IppStatus cc_P210_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                                           mfxFrameData* outData, mfxFrameInfo* outInfo);
 
 IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
@@ -249,22 +259,16 @@ mfxStatus MFXVideoVPPColorSpaceConversion::RunFrameVPP(mfxFrameSurface1 *in,
   case MFX_FOURCC_P010:
     switch (m_errPrtctState.Out.FourCC) {
     case MFX_FOURCC_NV12:
-        ippSts = cc_P010_to_NV12(inData, inInfo, outData, outInfo, &m_yv12Data);
+        ippSts = AVX_DISP(cc_P010_to_NV12,inData, inInfo, outData, outInfo, &m_yv12Data);
       break;
     case MFX_FOURCC_P010:
         ippSts = cc_P010_to_P010(inData, inInfo, outData, outInfo);
       break;
     case MFX_FOURCC_P210:
-        ippSts = cc_P010_to_P210(inData, inInfo, outData, outInfo);
+        ippSts = AVX_DISP(cc_P010_to_P210, inData, inInfo, outData, outInfo);
       break;
     case MFX_FOURCC_A2RGB10:
-#if defined(_WIN32) || defined(_WIN64)
-        // There is a special avx2 version working on HSW+ on Windows
-        if ( m_bAVX2 )
-            ippSts = cc_P010_to_A2RGB10_avx2(inData, inInfo, outData, outInfo);
-        else
-#endif
-            ippSts = cc_P010_to_A2RGB10_not_optimal(inData, inInfo, outData, outInfo);
+        ippSts = AVX_DISP(cc_P010_to_A2RGB10, inData, inInfo, outData, outInfo);
       break;
     default:
       return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -294,10 +298,10 @@ mfxStatus MFXVideoVPPColorSpaceConversion::RunFrameVPP(mfxFrameSurface1 *in,
   case MFX_FOURCC_NV16:
     switch ( m_errPrtctState.Out.FourCC ) {
     case MFX_FOURCC_NV12:
-      ippSts = cc_NV16_to_NV12(inData, inInfo, outData, outInfo);
+        ippSts = AVX_DISP(cc_NV16_to_NV12, inData, inInfo, outData, outInfo);
       break;
     case MFX_FOURCC_P210:
-      ippSts = cc_NV16_to_P210(inData, inInfo, outData, outInfo);
+        ippSts = AVX_DISP(cc_NV16_to_P210, inData, inInfo, outData, outInfo);
       break;
     default:
       return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -307,22 +311,16 @@ mfxStatus MFXVideoVPPColorSpaceConversion::RunFrameVPP(mfxFrameSurface1 *in,
   case MFX_FOURCC_P210:
     switch ( m_errPrtctState.Out.FourCC ) {
     case MFX_FOURCC_A2RGB10:
-#if defined(_WIN32) || defined(_WIN64)
-      // There is a special avx2 version working on HSW+ on Windows
-      if ( m_bAVX2 )
-        ippSts = cc_P210_to_A2RGB10_avx2(inData, inInfo, outData, outInfo);
-      else
-#endif
-         ippSts = cc_P210_to_A2RGB10_not_optimal(inData, inInfo, outData, outInfo);
+        ippSts = AVX_DISP(cc_P210_to_A2RGB10, inData, inInfo, outData, outInfo);
       break;
     case MFX_FOURCC_P010:
-      ippSts = cc_P210_to_P010(inData, inInfo, outData, outInfo);
+        ippSts = AVX_DISP(cc_P210_to_P010, inData, inInfo, outData, outInfo);
       break;
     case MFX_FOURCC_NV12:
-      ippSts = cc_P210_to_NV12(inData, inInfo, outData, outInfo, &m_yv12Data);
+        ippSts = AVX_DISP(cc_P210_to_NV12, inData, inInfo, outData, outInfo, &m_yv12Data);
       break;
     case MFX_FOURCC_NV16:
-      ippSts = cc_P210_to_NV16(inData, inInfo, outData, outInfo, &m_yv12Data);
+        ippSts = AVX_DISP(cc_P210_to_NV16,inData, inInfo, outData, outInfo, &m_yv12Data);
       break;
     default:
       return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -356,11 +354,11 @@ mfxStatus MFXVideoVPPColorSpaceConversion::RunFrameVPP(mfxFrameSurface1 *in,
       {
 
       case MFX_FOURCC_P010:
-          ippSts = cc_NV12_to_P010(inData, inInfo, outData, outInfo);
+          ippSts = AVX_DISP(cc_NV12_to_P010,inData, inInfo, outData, outInfo);
           break;
 
       case MFX_FOURCC_NV16:
-          ippSts = cc_NV12_to_NV16(inData, inInfo, outData, outInfo);
+          ippSts = AVX_DISP(cc_NV12_to_NV16,inData, inInfo, outData, outInfo);
           break;
 
       case MFX_FOURCC_YV12:
@@ -1080,7 +1078,7 @@ IppStatus cc_P210_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
 } // IppStatus cc_P210_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
-IppStatus cc_P010_to_A2RGB10_not_optimal( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                               mfxFrameData* outData, mfxFrameInfo* outInfo)
 {
   IppStatus sts = ippStsNoErr;
@@ -1146,7 +1144,7 @@ IppStatus cc_P010_to_A2RGB10_not_optimal( mfxFrameData* inData,  mfxFrameInfo* i
 } // IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 
-IppStatus cc_P210_to_A2RGB10_not_optimal( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+IppStatus cc_P210_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                                           mfxFrameData* outData, mfxFrameInfo* outInfo)
 {
   IppStatus sts = ippStsNoErr;
