@@ -422,7 +422,8 @@ private:
     std::map<void *, CmSurface2D *> m_tableCmRelations;
     std::map<CmSurface2D *, SurfaceIndex *> m_tableCmIndex;
 
-    int m_nTiles;
+    int m_nTilesHor;
+    int m_nTilesVer;
     int m_MaxNumOfThreadsPerGroup;
     int m_NumEuPerSubSlice;
 

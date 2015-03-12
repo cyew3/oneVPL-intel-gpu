@@ -91,7 +91,8 @@ MFXCamera_Plugin::MFXCamera_Plugin(bool CreateByDispatcher)
     m_activeThreadCount = 0;
 
     m_PipeParams.tileOffsets = 0;
-    m_nTiles = 1; // Single tile by default
+    m_nTilesHor = 1; // Single tile by default
+    m_nTilesVer = 1;
 }
 
 MFXCamera_Plugin::~MFXCamera_Plugin()
@@ -602,9 +603,8 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         //please think about it, so actual formula should be calculated from width and height, and magic number below doesn't look like applicable
         if ( in->vpp.In.CropW * in->vpp.In.CropH > 0x16E3600 )
         {
-            // TODO: make number of tiles dependent on frame size.
-            // For existing 7Kx4K 2 tiles seems to be enough.
-            m_nTiles = 2;
+            m_nTilesHor = (m_mfxVideoParam.vpp.In.CropH > 5000 ) ? 4 : 2;
+            m_nTilesVer = (m_mfxVideoParam.vpp.In.CropW > 8000 ) ? 2 : 1;
             if ( in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
             {
                 // In case of tiling, only system memory is supported as output
@@ -931,9 +931,8 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
 
     if ( m_mfxVideoParam.vpp.In.CropW * m_mfxVideoParam.vpp.In.CropH > 0x16E3600 )
     {
-        // TODO: make number of tiles dependent on frame size.
-        // For existing 7Kx4K 2 tiles seems to be enough.
-        m_nTiles = 2;
+        m_nTilesHor = (m_mfxVideoParam.vpp.In.CropH > 5000 ) ? 4 : 2;
+        m_nTilesVer = (m_mfxVideoParam.vpp.In.CropW > 8000 ) ? 2 : 1;
         if ( m_mfxVideoParam.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY )
         {
             // In case of tiling, only system memory is supported as output
@@ -943,7 +942,8 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     }
     else
     {
-         m_nTiles = 1;
+         m_nTilesVer = 1;
+         m_nTilesHor = 1;
     }
 
     m_PaddingParams.top    = MFX_CAM_DEFAULT_PADDING_TOP;
@@ -953,12 +953,15 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
 
 
     mfxU32 aligned_cut = 0;
-    m_PipeParams.frameWidth64      = ((m_mfxVideoParam.vpp.In.CropW  + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
-    m_PipeParams.paddedFrameWidth  = m_mfxVideoParam.vpp.In.CropW  + m_PaddingParams.left + m_PaddingParams.right;
+
+    m_PipeParams.frameWidth        = m_nTilesVer > 1 ? ((m_mfxVideoParam.vpp.In.CropW / m_nTilesVer + 15) &~ 0xF) + 16 : m_mfxVideoParam.vpp.In.CropW;
+    m_PipeParams.frameWidth64      = ((m_PipeParams.frameWidth  + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
+    m_PipeParams.paddedFrameWidth  = m_PipeParams.frameWidth + m_PaddingParams.left + m_PaddingParams.right;
     m_PipeParams.paddedFrameHeight = m_mfxVideoParam.vpp.In.CropH  + m_PaddingParams.top + m_PaddingParams.bottom;
-    m_PipeParams.vSliceWidth       = (((m_mfxVideoParam.vpp.In.CropW / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
-    m_PipeParams.tileNum           = m_nTiles;
-    m_PipeParams.tileOffsets       = new CameraTileOffset[m_nTiles];
+    m_PipeParams.vSliceWidth       = (((m_PipeParams.frameWidth / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
+    m_PipeParams.tileNumHor        = m_nTilesHor;
+    m_PipeParams.tileNumVer        = m_nTilesVer;
+    m_PipeParams.tileOffsets       = new CameraTileOffset[m_nTilesHor];
     m_PipeParams.TileWidth         = m_mfxVideoParam.vpp.In.CropW;
     m_PipeParams.BitDepth          = m_mfxVideoParam.vpp.In.BitDepthLuma;
     m_PipeParams.TileInfo          = m_mfxVideoParam.vpp.In;
@@ -966,31 +969,31 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     if(!m_Caps.bNoPadding)
     {
         m_PipeParams.TileHeight        = m_mfxVideoParam.vpp.In.CropH;
-        if ( m_nTiles > 1 )
+        if ( m_nTilesHor > 1 )
         {
             // in case frame data pointer is 4K aligned, adding aligned_cut gives another 4K aligned pointer
             // below of the tiles border
-            aligned_cut = ( m_mfxVideoParam.vpp.In.CropH / m_nTiles - 0x3F ) &~0x3F;
-            m_PipeParams.TileHeight = m_mfxVideoParam.vpp.In.CropH / (m_nTiles>>1) - aligned_cut;
+            aligned_cut = ( m_mfxVideoParam.vpp.In.CropH / m_nTilesHor - 0x3F ) &~0x3F;
+            m_PipeParams.TileHeight = m_mfxVideoParam.vpp.In.CropH / (m_nTilesHor>>1) - aligned_cut;
         }
         m_PipeParams.TileHeightPadded  = m_PipeParams.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
     }
     else
     {
         m_PipeParams.TileHeightPadded  = m_mfxVideoParam.vpp.In.CropH + m_PaddingParams.top + m_PaddingParams.bottom;
-        if ( m_nTiles > 1 )
+        if ( m_nTilesHor > 1 )
         {
-            aligned_cut = ( m_PipeParams.paddedFrameHeight / m_nTiles - 0x3F ) &~0x3F;
-            m_PipeParams.TileHeightPadded = m_mfxVideoParam.vpp.In.CropH / (m_nTiles>>1) - aligned_cut;
+            aligned_cut = ( m_PipeParams.paddedFrameHeight / m_nTilesHor - 0x3F ) &~0x3F;
+            m_PipeParams.TileHeightPadded = m_mfxVideoParam.vpp.In.CropH / (m_nTilesHor>>1) - aligned_cut;
         }
         m_PipeParams.TileHeight  = m_PipeParams.TileHeightPadded - m_PaddingParams.top - m_PaddingParams.bottom;
         m_PipeParams.TileInfo.CropX -= MFX_CAM_DEFAULT_PADDING_LEFT;
         m_PipeParams.TileInfo.CropY -= MFX_CAM_DEFAULT_PADDING_TOP;
     }
 
-    for (int i = 0; i < m_nTiles; i++)
+    for (int i = 0; i < m_nTilesHor; i++)
     {
-        if ( m_nTiles - 1 == i && i > 0)
+        if ( m_nTilesHor - 1 == i && i > 0)
         {
             // In case of several tiles, last tile must be aligned to the original frame bottom
             if (!m_Caps.bNoPadding)
@@ -1126,11 +1129,11 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
     else
         m_Caps.InputMemoryOperationMode = MEM_GPUSHARED;
 
+    
     if ( newParam.vpp.In.CropW * newParam.vpp.In.CropH > 0x16E3600 )
     {
-        // TODO: make number of tiles dependent on frame size.
-        // For existing 7Kx4K 2 tiles seems to be enough.
-        m_nTiles = 2;
+        m_nTilesHor = (m_mfxVideoParam.vpp.In.CropH > 5000 ) ? 4 : 2;
+        m_nTilesVer = (m_mfxVideoParam.vpp.In.CropW > 8000 ) ? 2 : 1;
         if ( m_mfxVideoParam.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY )
         {
             // In case of tiling, only system memory is supported as output.
@@ -1140,31 +1143,34 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
     }
     else
     {
-         m_nTiles = 1;
+         m_nTilesHor = 1;
+         m_nTilesVer = 1;
     }
 
     CameraParams pipeParams;
-    pipeParams.frameWidth64      = ((newParam.vpp.In.CropW  + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
-    pipeParams.paddedFrameWidth  = newParam.vpp.In.CropW  + m_PaddingParams.left + m_PaddingParams.right;
+    pipeParams.frameWidth        = m_nTilesVer > 1 ? ((newParam.vpp.In.CropW / m_nTilesVer + 15) &~ 0xF) + 16 : newParam.vpp.In.CropW;
+    pipeParams.frameWidth64      = ((pipeParams.frameWidth/ m_nTilesVer + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
+    pipeParams.paddedFrameWidth  = pipeParams.frameWidth + m_PaddingParams.left + m_PaddingParams.right;
     pipeParams.paddedFrameHeight = newParam.vpp.In.CropH  + m_PaddingParams.top + m_PaddingParams.bottom;
-    pipeParams.vSliceWidth       = (((newParam.vpp.In.CropW / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
-    pipeParams.tileNum           = m_nTiles;
-    pipeParams.tileOffsets       = new CameraTileOffset[m_nTiles];
+    pipeParams.vSliceWidth       = (((pipeParams.frameWidth / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
+    pipeParams.tileNumHor        = m_nTilesHor;
+    pipeParams.tileNumVer        = m_nTilesVer;
+    pipeParams.tileOffsets       = new CameraTileOffset[m_nTilesHor];
     pipeParams.TileWidth         = newParam.vpp.In.CropW;
     pipeParams.TileHeight        = newParam.vpp.In.CropH;
-    if ( m_nTiles > 1 )
+    if ( m_nTilesHor > 1 )
     {
         // in case frame data pointer is 4K aligned, aligned_cut gives another 4K aligned pointer
         // below of the tiles border
-        mfxU32 aligned_cut = ( newParam.vpp.In.CropH / m_nTiles - 0x3F ) &~0x3F;
+        mfxU32 aligned_cut = ( newParam.vpp.In.CropH / m_nTilesHor - 0x3F ) &~0x3F;
         pipeParams.TileHeight = newParam.vpp.In.CropH - aligned_cut;
     }
     pipeParams.TileHeightPadded  = pipeParams.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
     pipeParams.BitDepth          = newParam.vpp.In.BitDepthLuma;
     pipeParams.TileInfo          = newParam.vpp.In;
-    for (int i = 0; i < m_nTiles; i++)
+    for (int i = 0; i < m_nTilesHor; i++)
     {
-        if ( m_nTiles - 1 == i && i > 0)
+        if ( m_nTilesHor - 1 == i && i > 0)
         {
             // In case of several tiles, last tile must be aligned to the original frame bottom
             pipeParams.tileOffsets[i].TileOffset = newParam.vpp.In.CropH - pipeParams.TileHeight;

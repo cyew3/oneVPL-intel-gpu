@@ -165,7 +165,8 @@ protected:
     CameraParams                       m_PipeParams;
 
     mfxU32                       m_InputBitDepth;
-    mfxU16                       m_nTiles;
+    mfxU16                       m_nTilesVer;                       
+    mfxU16                       m_nTilesHor;
 
     mfxU16  BayerPattern_API2CM(mfxU16 api_bayer_type)
     {

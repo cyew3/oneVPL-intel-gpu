@@ -194,7 +194,8 @@ mfxStatus CMCameraProcessor::SetExternalSurfaces(AsyncParams *pParam)
 {
     MFX_CHECK_NULL_PTR1(pParam);
 
-    int               tileID  = pParam->tileID;
+    int     tileIDHorizontal  = pParam->tileIDHorizontal;
+    int       tileIDVertical  = pParam->tileIDVertical;
     mfxFrameSurface1 *surfIn  = pParam->surf_in;
     mfxFrameSurface1 *surfOut = pParam->surf_out;
 
@@ -214,7 +215,7 @@ mfxStatus CMCameraProcessor::SetExternalSurfaces(AsyncParams *pParam)
     {
         mfxU32 inWidth  = (mfxU32)surfIn->Info.Width;
         mfxU32 inHeight = (mfxU32)m_Params.TileHeightPadded;
-        mfxU16 *ptr     = (mfxU16*)((mfxU8*)surfIn->Data.Y16 + m_Params.tileOffsets[tileID].TileOffset *inPitch);
+        mfxU16 *ptr     = (mfxU16*)((mfxU8*)surfIn->Data.Y16 + m_Params.tileOffsets[tileIDHorizontal].TileOffset *inPitch) + tileIDVertical*pParam->FrameSizeExtra.frameWidth * 2;
 
         if (m_Params.Caps.InputMemoryOperationMode == MEM_GPUSHARED)
         {
@@ -255,7 +256,7 @@ mfxStatus CMCameraProcessor::SetExternalSurfaces(AsyncParams *pParam)
             mfxU32 inWidth  = (mfxU32)surfIn->Info.Width;
             mfxU32 inHeight = (mfxU32)m_Params.TileHeight;
             mfxU32 inHeightAligned = ((mfxU32)(inHeight + 1)/2)*2;
-            mfxU16 *ptr     = (mfxU16*)((mfxU8*)surfIn->Data.Y16 + m_Params.tileOffsets[tileID].TileOffset*inPitch);
+            mfxU16 *ptr     = (mfxU16*)((mfxU8*)surfIn->Data.Y16 + m_Params.tileOffsets[tileIDHorizontal].TileOffset*inPitch) + tileIDVertical*pParam->FrameSizeExtra.frameWidth * 2;
             mfxU32 allocSize, allocPitch;
 
             m_cmDevice->GetSurface2DInfo(sizeof(mfxU16)*inWidth, inHeight, CM_SURFACE_FORMAT_A8, allocPitch, allocSize);
@@ -288,7 +289,7 @@ mfxStatus CMCameraProcessor::SetExternalSurfaces(AsyncParams *pParam)
         mfxU32 outPitch  = ((mfxU32)surfOut->Data.PitchHigh << 16) | ((mfxU32)surfOut->Data.PitchLow);
         mfxU32 outWidth  = (mfxU32)surfOut->Info.Width;
         mfxU32 outHeight = (mfxU32)m_Params.TileHeight;
-        mfxU8 *ptr       = (mfxU8*)surfOut->Data.B + m_Params.tileOffsets[tileID].TileOffset*outPitch;
+        mfxU8 *ptr       = (mfxU8*)surfOut->Data.B + m_Params.tileOffsets[tileIDHorizontal].TileOffset*outPitch + tileIDVertical*pParam->FrameSizeExtra.frameWidth * 4;
         mfxU32 allocSize, allocPitch;
 
         if (pParam->Caps.bOutToARGB16)
@@ -369,13 +370,15 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
 #ifdef CAMP_PIPE_ITT
     __itt_task_begin(CamPipeAccel, __itt_null, __itt_null, task21);
 #endif
-    for ( mfxU16 tileID = 0; tileID < pParam->FrameSizeExtra.tileNum; tileID++)
+    for ( mfxU16 tileIDVert  = pParam->FrameSizeExtra.tileNumVer; tileIDVert  > 0 ; tileIDVert--) // Going over vertical tiles
+    {
+    for ( mfxU16 tileIDHor = 0; tileIDHor < pParam->FrameSizeExtra.tileNumHor;  tileIDHor++) // Goint over horizontal tiles
     {
         // Calculate offsets for tiles
-        int in_shift  =  pParam->FrameSizeExtra.tileOffsets[tileID].TileOffset * pParam->surf_in->Data.Pitch;
-        int out_shift =  pParam->FrameSizeExtra.tileOffsets[tileID].TileOffset * pParam->surf_out->Data.Pitch;
+        int in_shift  =  (tileIDVert-1) * pParam->FrameSizeExtra.frameWidth * 2 + pParam->FrameSizeExtra.tileOffsets[tileIDHor].TileOffset * pParam->surf_in->Data.Pitch;
+        int out_shift =  (tileIDVert-1) * pParam->FrameSizeExtra.frameWidth * 4 + pParam->FrameSizeExtra.tileOffsets[tileIDHor].TileOffset * pParam->surf_out->Data.Pitch;
 
-        if ( tileID > 0 && pParam->Caps.bNoPadding)
+        if ( tileIDHor > 0 && pParam->Caps.bNoPadding)
         {
             out_shift-= MFX_CAM_DEFAULT_PADDING_TOP*pParam->surf_out->Data.Pitch;
         }
@@ -400,7 +403,8 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
         CmSurface2D *blueOutSurf   = 0;
 
         SurfaceIndex *pOutputSurfaceIndex;
-        pParam->tileID = tileID;
+        pParam->tileIDHorizontal = tileIDHor;
+        pParam->tileIDVertical   = tileIDVert;
         SetExternalSurfaces(pParam);
 
         if (pParam->inSurf2D)
@@ -437,8 +441,23 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
         {
             SurfaceIndex *Mask4x4Index;
             SurfaceIndex *vignetteMaskIndex;
-            m_vignetteMaskSurf->GetIndex(vignetteMaskIndex);
-            m_vignette_4x4->GetIndex(Mask4x4Index);
+            if ( m_vignetteMaskSurf )
+            {
+                m_vignetteMaskSurf->GetIndex(vignetteMaskIndex);
+            }
+            else
+            {
+                return MFX_ERR_ABORTED;
+            }
+
+            if ( m_vignetteMaskSurf ) 
+            {
+                m_vignetteMaskSurf->GetIndex(Mask4x4Index);
+            }
+            else
+            {
+                return MFX_ERR_ABORTED;
+            }
             m_cmCtx->CreateTask_VignetteMaskUpSample(*Mask4x4Index, *vignetteMaskIndex);
         }
         if ( pParam->Caps.bBlackLevelCorrection || pParam->Caps.bWhiteBalance || pParam->Caps.bVignetteCorrection )
@@ -644,7 +663,7 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
 
         if (pParam->Caps.InputMemoryOperationMode == MEM_GPUSHARED && !pParam->inSurf2DUP)
         {
-            if (! pParam->FrameSizeExtra.TileInfo.CropX && ! pParam->FrameSizeExtra.TileInfo.CropY &&  1 == pParam->FrameSizeExtra.tileNum && pParam->surf_in->Info.CropW*2 == pParam->surf_in->Data.Pitch)
+            if (! pParam->FrameSizeExtra.TileInfo.CropX && ! pParam->FrameSizeExtra.TileInfo.CropY &&  1 == pParam->FrameSizeExtra.tileNumHor && pParam->surf_in->Info.CropW*2 == pParam->surf_in->Data.Pitch)
             {
                 m_cmCtx->EnqueueCopyCPUToGPU(m_cmSurfIn, pParam->surf_in->Data.Y16);
             }
@@ -709,14 +728,14 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
             m_cmCtx->DestroyEventWithoutWait(e);
             if (pParam->Caps.bOutToARGB16)
             {
-                if (1 == pParam->FrameSizeExtra.tileNum && pParam->surf_out->Info.CropW*8 == pParam->surf_out->Data.Pitch)
+                if (1 == pParam->FrameSizeExtra.tileNumHor && pParam->surf_out->Info.CropW*8 == pParam->surf_out->Data.Pitch)
                     e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B);
                 else
                     e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B  + out_shift, pParam->surf_out->Data.Pitch);
             }
             else
             {
-                if (1 == pParam->FrameSizeExtra.tileNum && pParam->surf_out->Info.CropW*4 == pParam->surf_out->Data.Pitch)
+                if (1 == pParam->FrameSizeExtra.tileNumHor && pParam->surf_out->Info.CropW*4 == pParam->surf_out->Data.Pitch)
                 {
                     e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B);
                 }
@@ -727,7 +746,8 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
             }
         }
         pParam->pEvent = e;
-    } // for each tile
+    } // for each horizontal tile
+    } // for each vertical tile
 
     } // Guarded section end
     return MFX_ERR_NONE;
@@ -975,7 +995,7 @@ mfxStatus CMCameraProcessor::AllocateInternalSurfaces()
 
     if (m_Params.Caps.InputMemoryOperationMode == MEM_GPUSHARED) // need to allocate inputSurf in case the output memory is not 4k aligned
     {
-        int width  = m_Params.Caps.bNoPadding ? m_Params.paddedFrameWidth : m_Params.TileInfo.CropW;
+        int width  = m_Params.Caps.bNoPadding ? m_Params.paddedFrameWidth : m_Params.frameWidth;
         int height = m_Params.Caps.bNoPadding ? m_Params.TileHeightPadded : m_Params.TileHeight;
 
         CAMERA_DEBUG_LOG("AllocateInternalSurfaces:  m_cmSurfIn width %d height %d \n", width, height);
@@ -985,9 +1005,9 @@ mfxStatus CMCameraProcessor::AllocateInternalSurfaces()
     if (m_Params.Caps.OutputMemoryOperationMode == MEM_GPUSHARED) // need to allocate gammaSurf in case the output memory is not 4k aligned
     {
         if (!m_Params.Caps.bOutToARGB16)
-            m_gammaOutSurf = CreateSurface(m_cmDevice, m_Params.TileInfo.CropW,  m_Params.TileHeight , CM_SURFACE_FORMAT_A8R8G8B8);
+            m_gammaOutSurf = CreateSurface(m_cmDevice, m_Params.frameWidth,  m_Params.TileHeight , CM_SURFACE_FORMAT_A8R8G8B8);
         else
-            m_gammaOutSurf = CreateSurface(m_cmDevice, m_Params.TileInfo.CropW*sizeof(mfxU16),  m_Params.TileHeight, CM_SURFACE_FORMAT_A8R8G8B8);
+            m_gammaOutSurf = CreateSurface(m_cmDevice, m_Params.frameWidth *sizeof(mfxU16),  m_Params.TileHeight, CM_SURFACE_FORMAT_A8R8G8B8);
     }
 
     if( m_Params.Caps.bHotPixel )
@@ -1322,7 +1342,8 @@ CmContext::CmContext(
     mfxCameraCaps *     pCaps,
     eMFXHWType platform)
 {
-    m_nTiles = video.tileNum;
+    m_nTilesHor = video.tileNumHor;
+    m_nTilesVer = video.tileNumVer;
     Zero(task_VignetteUpSample);
     Zero(task_BayerCorrection);
     Zero(task_Padding);

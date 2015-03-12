@@ -269,6 +269,7 @@ typedef struct _CameraPipeVignetteParams
 
 typedef struct _CameraParams
 {
+    mfxU32              frameWidth;
     mfxU32              frameWidth64;
     mfxU32              paddedFrameWidth;
     mfxU32              paddedFrameHeight;
@@ -280,7 +281,8 @@ typedef struct _CameraParams
     CameraPipeForwardGammaParams   GammaParams;
     CameraPipeVignetteParams       VignetteParams;
     // Tile specific data
-    mfxU16              tileNum;
+    mfxU16              tileNumHor;
+    mfxU16              tileNumVer;
     mfxU32              TileWidth;
     mfxU32              TileHeight;
     mfxU32              TileHeightPadded;
@@ -295,7 +297,8 @@ typedef struct _CameraParams
             this->paddedFrameWidth  != new_frame.paddedFrameWidth  ||
             this->TileHeight        != new_frame.TileHeight        ||
             this->TileHeightPadded  != new_frame.TileHeightPadded  ||
-            this->tileNum           != new_frame.tileNum)
+            this->tileNumHor        != new_frame.tileNumHor        || 
+            this->tileNumVer        != new_frame.tileNumVer)
         {
             return true;
         }
@@ -378,7 +381,8 @@ struct AsyncParams
 
     mfxMemId inSurf2D;
     mfxMemId inSurf2DUP;
-    mfxU16   tileID;
+    mfxU16   tileIDHorizontal;
+    mfxU16   tileIDVertical;
 
     CameraPipeDenoiseParams            DenoiseParams;
     CameraPipeHotPixelParams           HPParams;
