@@ -1024,8 +1024,10 @@ mfxStatus CCameraPipeline::AllocAndInitVignetteCorrection(sInputParams *pParams)
     mfxU32 i, nBytesRead;
 
     /* Vignette correction mask must be ( 1/4 height + 1 ) (1/4 width + 1) dimension */
-    m_Vignette.Height = (mfxU32)ceil(pParams->frameInfo->nHeight/4) + 1;
-    m_Vignette.Width  = align_64((mfxU32)( ceil(pParams->frameInfo->nWidth/4) + 1 ) * 4 /* for each channel */ * 2 /* 2 bytes each */);
+    /* If height is not divisible by 4, add extra +1 to result of division - that's equivalent to ceil() */
+    m_Vignette.Height = pParams->frameInfo->nHeight/4 + (pParams->frameInfo->nHeight%4 ? 2 : 1);
+    m_Vignette.Width  = align_64((pParams->frameInfo->nWidth/4 + (pParams->frameInfo->nWidth%4 ? 2 : 1) )
+        * 4 /* for each channel */ * 2 /* 2 bytes each */);
 
     /* Vignette correction mask data must have 64-aligned pitch */
     m_Vignette.Pitch  = align_64(m_Vignette.Width);
