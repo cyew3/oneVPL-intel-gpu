@@ -44,6 +44,8 @@ public:
     mfxI32            feiInIdx;  // flipping between current and next
 
 private:
+    FeiContext(const FeiContext&);
+    void operator=(const FeiContext&);
 
     void ResetFEIFrame(FEIFrame *feiFrame);
     void UpdateFrameStateFEI(mfxFEIH265Input *feiIn, H265Frame *frameIn, H265Frame *frameRef, Ipp32s refIdx, Ipp32s sliceType);

@@ -715,17 +715,17 @@ mfxBRCStatus H265BRC::UpdateAndCheckHRD(Ipp32s frameBits, Ipp64f inputBitsPerFra
 mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, H265Frame *pFrame, Ipp32s totalFrameBits, Ipp32s overheadBits, Ipp32s repack)
 {
     mfxBRCStatus Sts = MFX_ERR_NONE;
-    Ipp32s bitsEncoded = totalFrameBits - overheadBits;
-    Ipp64f e2pe;
-    Ipp32s qp, qpprev;
-    Ipp32u prevFrameType = mPicType;
-    Ipp32u picType = pFrame->m_picCodeType;
-
     if (mBitrate == 0)
         return Sts;
 
     if (!pFrame)
         return MFX_ERR_NULL_PTR;
+
+    Ipp32s bitsEncoded = totalFrameBits - overheadBits;
+    Ipp64f e2pe;
+    Ipp32s qp, qpprev;
+    Ipp32u prevFrameType = mPicType;
+    Ipp32u picType = pFrame->m_picCodeType;
 
     mPoc = pFrame->m_poc;
     sliceQpY += mQuantOffset;
