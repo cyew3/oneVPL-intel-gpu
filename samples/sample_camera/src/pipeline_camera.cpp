@@ -1030,7 +1030,7 @@ mfxStatus CCameraPipeline::AllocAndInitVignetteCorrection(sInputParams *pParams)
     /* Vignette correction mask data must have 64-aligned pitch */
     m_Vignette.Pitch  = align_64(m_Vignette.Width);
 
-    m_Vignette.CorrectionMap = (mfxVignetteCorrectionParams *)malloc(m_Vignette.Pitch * m_Vignette.Height);
+    m_Vignette.CorrectionMap = (mfxCamVignetteCorrectionParam *)malloc(m_Vignette.Pitch * m_Vignette.Height);
     memset(m_Vignette.CorrectionMap, 0, m_Vignette.Pitch * m_Vignette.Height);
 
     /* Load vignette mask from file */
