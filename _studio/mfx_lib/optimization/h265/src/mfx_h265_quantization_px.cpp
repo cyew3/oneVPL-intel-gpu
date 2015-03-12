@@ -97,7 +97,7 @@ namespace MFX_HEVC_PP
     void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift)
     {
 #ifdef __INTEL_COMPILER
-        if (0 == (scale >> 16)) // ML: fast path for 16-bit scale
+        if (0 == (scale >> 15)) // ML: fast path for 16-bit scale
         {
             Ipp16s scale_16s = (Ipp16s)scale;
 #pragma ivdep
