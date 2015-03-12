@@ -541,7 +541,7 @@ mfxStatus CBmpWriter::WriteFrame(mfxFrameData* pData, const msdk_char *fileId, m
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
         }
-        delete pOut;
+        delete[] pOut;
     }
     else
     for (int y = m_bih.biHeight - 1; y >= 0; y--)
