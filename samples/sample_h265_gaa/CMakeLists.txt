@@ -8,12 +8,11 @@ include_directories (
   ${CMAKE_SOURCE_DIR}/sample_common/include
   ${CMAKE_SOURCE_DIR}/sample_utilities/vpp_plugin/include
   ${CMAKE_SOURCE_DIR}/sample_h265_gaa/include
-  $ENV{MFX_HOME}/include
 )
 
 list( APPEND LIBS_VARIANT sample_common )
 
-set(DEPENDENCIES ${skipping} _enable_sw libmfx dl pthread my_check)
+set(DEPENDENCIES ${skipping} _enable_sw libmfx dl pthread)
 make_executable( shortname sw )
 
 set(DEPENDENCIES ${skipping} libmfx libva-drm libdrm libva dl pthread)
