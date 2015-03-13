@@ -1050,11 +1050,11 @@ static void PreEnc(MfxHwH264Encode::VmeData *VMEData, sSumVMEInfo& frameData, mf
     frameData.InterCost         = mfxU32(((mfxF32)frameData.InterCost) * scale);
     frameData.IntraCost         = mfxU32(((mfxF32)frameData.IntraCost)* scale);
     frameData.DependencyCost    = mfxU32(((mfxF32)frameData.DependencyCost)*scale);
-    frameData.EstimatedRate[51] = mfxU32(((mfxF32)frameData.EstimatedRate[51])* scale); 
+    frameData.EstimatedRate[51] = mfxU64(((mfxF64)frameData.EstimatedRate[51])* scale); 
 
     for (int qp =  51; qp > 0; qp--)
     {
-        frameData.EstimatedRate[qp - 1 ] = mfxU32(((mfxF32)frameData.EstimatedRate[qp - 1 ])* scale);
+        frameData.EstimatedRate[qp - 1 ] = mfxU64(((mfxF64)frameData.EstimatedRate[qp - 1 ])* scale);
         frameData.EstimatedRate[qp - 1 ] += frameData.EstimatedRate[qp];    
     }
  
