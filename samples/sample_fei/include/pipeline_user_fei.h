@@ -14,7 +14,7 @@
 #define __PIPELINE_USER_H__
 
 #include "vm/so_defs.h"
-#include "pipeline_encode.h"
+#include "pipeline_fei.h"
 #include "mfx_plugin_base.h"
 #include "mfx_plugin_module.h"
 #include "rotate_plugin_api.h"

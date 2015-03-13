@@ -7,7 +7,7 @@
 //
 
 
-#include "pipeline_encode.h"
+#include "pipeline_fei.h"
 #include "sysmem_allocator.h"
 
 #if D3D_SURFACES_SUPPORT

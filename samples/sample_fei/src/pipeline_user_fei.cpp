@@ -8,7 +8,7 @@
 //
 //*/
 
-#include "pipeline_user.h"
+#include "pipeline_user_fei.h"
 #include "sysmem_allocator.h"
 
 mfxStatus CUserPipeline::InitRotateParam(sInputParams *pInParams)

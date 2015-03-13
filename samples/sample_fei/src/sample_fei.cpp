@@ -7,8 +7,8 @@
 //
 
 #include <memory>
-#include "pipeline_encode.h"
-#include "pipeline_user.h"
+#include "pipeline_fei.h"
+#include "pipeline_user_fei.h"
 
 mfxStatus CheckOptions(sInputParams* pParams);
 
