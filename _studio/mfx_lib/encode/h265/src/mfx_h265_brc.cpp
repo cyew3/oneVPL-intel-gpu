@@ -101,7 +101,7 @@ Ipp32s H265BRC::GetInitQP()
   //Ipp32s q = (Ipp32s)(1. / 1.2 * pow(10.0, (log10(fs * 2. / 3. * mFramerate / mBitrate) - x0) * (y1 - y0) / (x1 - x0) + y0) + 0.5);
   
   Ipp64f qstep = pow(1.5 * fs * mFramerate / mBitrate, 0.8);
-  Ipp32s q = Qstep2QP(qstep);
+  Ipp32s q = Qstep2QP(qstep) + mQuantOffset;
 
   BRC_CLIP(q, 1, mQuantMax);
   return q;
