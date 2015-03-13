@@ -249,7 +249,7 @@ mfxStatus VideoENC_LA::Query(VideoCORE* pCore, mfxVideoParam *in, mfxVideoParam 
            pControl_out->DependencyDepth = 0;
            bChanged = true;       
        } 
-       memcpy (pControl_out->OutStream, pControl_in->OutStream, pControl_in->NumOutStream * sizeof(mfxExtLAControl));
+       memcpy_s (pControl_out->OutStream,pControl_in->NumOutStream * sizeof(mfxExtLAControl), pControl_in->OutStream, pControl_in->NumOutStream * sizeof(mfxExtLAControl));
        
        if (bChanged) return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     

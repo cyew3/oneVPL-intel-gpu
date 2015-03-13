@@ -178,8 +178,8 @@ inline HRESULT GetExtensionCaps(
     initData.SysMemPitch = sizeof(Type);
     initData.SysMemSlicePitch = 0;
     ZeroMemory( pCaps, sizeof(Type) );
-    memcpy( pCaps->Key, CAPS_EXTENSION_KEY,
-        sizeof(pCaps->Key) );
+    memcpy_s( pCaps->Key,sizeof(pCaps->Key), CAPS_EXTENSION_KEY,16
+         );
     pCaps->ApplicationVersion = EXTENSION_INTERFACE_VERSION;
     ID3D11Buffer* pBuffer = NULL;
     HRESULT result = pd3dDevice->CreateBuffer( 

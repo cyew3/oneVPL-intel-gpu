@@ -808,7 +808,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             {
                 RESOURCE_EXTENSION extnDesc;
                 ZeroMemory( &extnDesc, sizeof(RESOURCE_EXTENSION) );
-                memcpy( extnDesc.Key, RESOURCE_EXTENSION_KEY, sizeof(extnDesc.Key) );
+                memcpy_s( extnDesc.Key, sizeof(extnDesc.Key), RESOURCE_EXTENSION_KEY, 16 );
                 extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
                 extnDesc.Type    = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
                 extnDesc.Data[0] = BayerFourCC2FormatFlag(pDst->Info.FourCC);
@@ -1066,7 +1066,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             {
                 RESOURCE_EXTENSION extnDesc;
                 ZeroMemory( &extnDesc, sizeof(RESOURCE_EXTENSION) );
-                memcpy( extnDesc.Key, RESOURCE_EXTENSION_KEY, sizeof(extnDesc.Key) );
+                memcpy_s( extnDesc.Key, sizeof(extnDesc.Key), RESOURCE_EXTENSION_KEY, 16 );
                 extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
                 extnDesc.Type    = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
                 extnDesc.Data[0] = BayerFourCC2FormatFlag(pDst->Info.FourCC);
