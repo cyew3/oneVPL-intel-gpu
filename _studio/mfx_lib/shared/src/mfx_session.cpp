@@ -848,6 +848,8 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
 {
     mfxStatus mfxRes;
     mfxU32 maxNumThreads;
+    bool isSingleThreadMode = (par.Implementation & MFX_IMPL_EXTERNAL_THREADING) ? true : false;
+    par.Implementation &= ~MFX_IMPL_EXTERNAL_THREADING;
 
     // release the object before initialization
     Cleanup();
@@ -855,7 +857,7 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
     m_version = par.Version;
 
     // save working HW interface
-    switch (par.Implementation)
+    switch (par.Implementation&-MFX_IMPL_VIA_ANY)
     {
         // if nothing is set, nothing is returned
     case MFX_IMPL_UNSUPPORTED:
@@ -961,7 +963,7 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
     if (pScheduler2) {
         MFX_SCHEDULER_PARAM2 schedParam;
         memset(&schedParam, 0, sizeof(schedParam));
-        schedParam.flags = MFX_SCHEDULER_DEFAULT;
+        schedParam.flags = isSingleThreadMode ? MFX_SINGLE_THREAD : MFX_SCHEDULER_DEFAULT;
         schedParam.numberOfThreads = maxNumThreads;
         schedParam.pCore = m_pCORE.get();
         if (par.NumExtParam) {
@@ -970,10 +972,11 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
         mfxRes = pScheduler2->Initialize2(&schedParam);
 
         m_pScheduler->Release();
-    } else {
+    }
+    else {
         MFX_SCHEDULER_PARAM schedParam;
         memset(&schedParam, 0, sizeof(schedParam));
-        schedParam.flags = MFX_SCHEDULER_DEFAULT;
+        schedParam.flags = isSingleThreadMode ? MFX_SINGLE_THREAD : MFX_SCHEDULER_DEFAULT;
         schedParam.numberOfThreads = maxNumThreads;
         schedParam.pCore = m_pCORE.get();
         mfxRes = m_pScheduler->Initialize(&schedParam);
@@ -986,6 +989,7 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
 
     return MFX_ERR_NONE;
 } // mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par);
+
 
 //explicit specification of interface creation
 template<> MFXISession_1_10*  CreateInterfaceInstance<MFXISession_1_10>(const MFX_GUID &guid)
