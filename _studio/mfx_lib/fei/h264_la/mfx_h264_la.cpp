@@ -550,7 +550,7 @@ mfxStatus VideoENC_LA::InsertTaskWithReordenig(sLAInputTask &newTask, bool bEndO
     else if (m_miniGop.size() >1)
     {
          size_t last_index = m_miniGop.size()  - 1;
-         if (bReference(m_miniGop[last_index].InputFrame.frameType))
+         if (!bReference(m_miniGop[last_index].InputFrame.frameType))
             m_miniGop[last_index].InputFrame.frameType = MFX_FRAMETYPE_P|MFX_FRAMETYPE_REF;    
     }
 
