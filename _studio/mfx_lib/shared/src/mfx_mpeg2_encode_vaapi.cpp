@@ -1375,9 +1375,10 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
     {
         mfxSts = FillSkipFrameBuffer(pExecuteBuffers->m_SkipFrame);
         MFX_CHECK(mfxSts == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
-
-        if (m_miscParamSkipFrameId != VA_INVALID_ID)
-            configBuffers[buffersCount++] = m_miscParamSkipFrameId;
+    }
+    else
+    {
+        MFX_DESTROY_VABUFFER(m_miscParamSkipFrameId, m_vaDisplay);
     }
 
     mfxSts = FillSlices(pExecuteBuffers);
@@ -1405,6 +1406,9 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
 
     if (m_miscParamPrivateId != VA_INVALID_ID)
         configBuffers[buffersCount++] = m_miscParamPrivateId;
+
+    if (m_miscParamSkipFrameId != VA_INVALID_ID)
+        configBuffers[buffersCount++] = m_miscParamSkipFrameId;
 
     if (pUserData && userDataLen > 0)
     {
