@@ -94,10 +94,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
                 Log::WriteLog(std::string("function: DLLMain() DLL_PROCESS_DETACH +"));
                 //delete [] g_mfxlib;
                 Log::WriteLog(std::string("function: DLLMain() DLL_PROCESS_DETACH - \n\n"));
-                if (is_loaded)
-                {
-                   stop_shared_memory_server();
-                }
+                stop_shared_memory_server();
                 break;
         }
     }
@@ -116,8 +113,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
     }
     try{
         
-        is_loaded = true;
-
+        
         DumpContext context;
         context.context = DUMPCONTEXT_MFX;
         Log::WriteLog(std::string("function: MFXInit(mfxIMPL impl=" + GetmfxIMPL(impl) + ", mfxVersion *ver=" + ToString(ver) + ", mfxSession *session=" + ToString(session) + ") +"));
@@ -156,6 +152,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
             par.ExternalThreads = 0;
 
             msdk_analyzer_sink sink;
+            is_loaded = true;
             sts = _MFXInitEx(par, session);
             if (sts != MFX_ERR_NONE)
             {
@@ -164,6 +161,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
                 Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
                 return MFX_ERR_NOT_FOUND;
             }
+            is_loaded = false;
             char libModuleName[MAX_PATH];
 
             GetModuleFileName((HMODULE)(*(MFX_DISP_HANDLE**)(session))->hModule, libModuleName, MAX_PATH);
