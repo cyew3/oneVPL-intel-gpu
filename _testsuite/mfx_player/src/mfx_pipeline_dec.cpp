@@ -4377,7 +4377,6 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Contrast, VM_STRING("-contrast"), VM_STRING("enable ProcAmp filter with specified contrast (from 0.0f to 10.0f by 0.01f, default = 1.0f)"),m_inParams.bUseProcAmp)
             else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Hue, VM_STRING("-hue"), VM_STRING("enable ProcAmp filter with specified hue (from -180.0f to 180.0f by 0.1f, default = 0.0f)"),m_inParams.bUseProcAmp)
             else HANDLE_64F_OPTION_AND_FLAG(m_inParams.m_ProcAmp.Saturation, VM_STRING("-saturation"), VM_STRING("enable ProcAmp filter with specified saturation (from 0.0f to 10.0f by 0.01f, default = 1.0f)"),m_inParams.bUseProcAmp)
-            else HANDLE_BOOL_OPTION(m_inParams.bUseCameraPipe,                 VM_STRING("-camera"), VM_STRING("use camera pipe"));
             else HANDLE_BOOL_OPTION(m_inParams.bUseCameraPipePadding,          VM_STRING("-camera_padding"), VM_STRING("provide camera pipe padding exttended buffer"));
             else HANDLE_INT_OPTION(m_inParams.m_WallW,VM_STRING("-wall_w"), VM_STRING("width of video wall (several windows without overlapping"))
             else HANDLE_INT_OPTION(m_inParams.m_WallH,VM_STRING("-wall_h"), VM_STRING("height of video wall (several windows without overlapping"))
@@ -4386,6 +4385,12 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_BOOL_OPTION(m_inParams.m_bNowWidowHeader,  VM_STRING("-no_window_title"), VM_STRING("creates rendering window without title bar"));
             else HANDLE_INT_OPTION(m_inParams.m_nMonitor, VM_STRING("-monitor"), VM_STRING("monitor identificator on which to create rendering window"))
             else HANDLE_INT_OPTION(m_inParams.nRotation, VM_STRING("-rotation"), VM_STRING("rotate picture clockwise. only for jpeg decoder"))
+            else if (m_OptProc.Check(argv[0], VM_STRING("-camera"), VM_STRING("use camera pipe"), OPT_BOOL))
+            {
+                m_inParams.bUseCameraPipe = true;
+                // Disable HMTest behavior that breaks camera pipe
+                m_inParams.isHMTest       = false;
+            }
             else if (m_OptProc.Check(argv[0], VM_STRING("-viewid_from_order"), VM_STRING("maps veiw in input mvc stream, taking it's order in mvcExcSequenceDescription, to the ViewId in output stream, if absent viewIDs will be copied"), OPT_SPECIAL, VM_STRING("from to")))
             {
                 MFX_CHECK(2 + argv < argvEnd);
