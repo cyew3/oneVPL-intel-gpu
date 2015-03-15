@@ -424,7 +424,7 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
 
         SurfaceIndex *pOutputSurfaceIndex;
         pParam->tileIDHorizontal = tileIDHor;
-        pParam->tileIDVertical   = tileIDVert;
+        pParam->tileIDVertical   = (tileIDVert-1);
         SetExternalSurfaces(pParam);
 
         if (pParam->inSurf2D)
@@ -802,9 +802,12 @@ mfxStatus CMCameraProcessor::Reset(mfxVideoParam *par, CameraParams *pipeParams)
             m_cmCtx->CreateThreadSpaces(pipeParams);
         }
 
-        if ( bFrameSizeChanged  || ( bNewFilters && pipeParams->Caps.bColorConversionMatrix == 1 && m_Params.Caps.bColorConversionMatrix == 0 ) )
+        if ( bFrameSizeChanged  ||
+            ( bNewFilters && pipeParams->Caps.bColorConversionMatrix == 1 && m_Params.Caps.bColorConversionMatrix == 0 ) ||
+            ( bNewFilters && pipeParams->Caps.bHotPixel == 1 && m_Params.Caps.bHotPixel == 0 ) ||
+            ( bNewFilters && pipeParams->Caps.bVignetteCorrection == 1 && m_Params.Caps.bVignetteCorrection == 0 ))
         {
-            // Re-allocate surfaces in case frame resolution is changed or add CCM that requires additional surf.
+            // Re-allocate surfaces in case frame resolution is changed or add CCM/HP/Vignette that requires additional surf.
             sts = ReallocateInternalSurfaces(*par, *pipeParams);
             if (sts < MFX_ERR_NONE)
                 return sts;
@@ -1131,7 +1134,18 @@ mfxStatus CMCameraProcessor::ReallocateInternalSurfaces(mfxVideoParam &newParam,
         m_paddedSurf = CreateSurface(m_cmDevice,  paddedFrameWidth*sizeof(mfxU16), paddedFrameHeight, CM_SURFACE_FORMAT_A8);
     }
 
-    if (m_Params.Caps.bHotPixel )
+    if (frameSizeExtra.Caps.bVignetteCorrection && frameSizeExtra.VignetteParams.pCorrectionMap )
+    {
+        m_vignette_4x4  = CreateSurface(m_cmDevice,
+                                    frameSizeExtra.VignetteParams.Width,
+                                    frameSizeExtra.VignetteParams.Height,
+                                    CM_SURFACE_FORMAT_A8);
+
+        MFX_CHECK_NULL_PTR1(m_vignette_4x4);
+        m_vignette_4x4->WriteSurface((const mfxU8 *)frameSizeExtra.VignetteParams.pCorrectionMap, NULL);
+    }
+
+    if (frameSizeExtra.Caps.bHotPixel )
     {
         if (m_dnrSurf)
             m_cmDevice->DestroySurface(m_dnrSurf);
@@ -1759,8 +1773,8 @@ void CmContext::CreateTask_Padding(SurfaceIndex inSurfIndex,
     int result;
     int threadswidth  = paddedWidth  >> 3;
     int threadsheight = paddedHeight >> 3;
-    int width  = m_video.TileInfo.CropW;
-    int height = m_video.TileInfo.CropH;
+    int width  = m_video.frameWidth;
+    int height = m_video.TileHeight;
 
     kernel_padding16bpp->SetThreadCount(widthIn16 * heightIn16);
     SetKernelArg(kernel_padding16bpp, inSurfIndex, paddedSurfIndex, threadswidth, threadsheight, width, height, bitDepth, bayerPattern);
