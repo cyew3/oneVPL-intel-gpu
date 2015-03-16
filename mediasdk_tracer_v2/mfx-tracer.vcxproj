@@ -66,24 +66,24 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>_build\$(Configuration)\win_$(Platform)\lib\</OutDir>
+    <OutDir>..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir>_build\$(Configuration)\win_$(Platform)\objs\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>_build\$(Configuration)\win_$(Platform)\lib\</OutDir>
+    <OutDir>..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir>_build\$(Configuration)\win_$(Platform)\objs\$(ProjectName)\</IntDir>
     <TargetName>$(ProjectName)_64_d</TargetName>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IntDir>_build\$(Configuration)\win_$(Platform)\objs\$(ProjectName)\</IntDir>
-    <OutDir>..\..\build\win_$(Platform)\lib\</OutDir>
+    <OutDir>..\..\build\win_$(Platform)\bin\</OutDir>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_32</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IntDir>_build\$(Configuration)\win_$(Platform)\objs\$(ProjectName)\</IntDir>
-    <OutDir>..\..\build\win_$(Platform)\lib\</OutDir>
+    <OutDir>..\..\build\win_$(Platform)\bin\</OutDir>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_64</TargetName>
   </PropertyGroup>
