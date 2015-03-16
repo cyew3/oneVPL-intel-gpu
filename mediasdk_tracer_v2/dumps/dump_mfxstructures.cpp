@@ -459,7 +459,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamVigne
     {
         str += dump(structName + ".CorrectionMap", *(CamVignetteCorrection.CorrectionMap)) + "\n";
     }
-    str += structName + ".reserved1=" + ToString(CamVignetteCorrection.reserved1) + "\n";
     return str;
 }
 
