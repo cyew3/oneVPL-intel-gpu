@@ -1,7 +1,5 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared_utils", "..\shared\shared_utils.vcxproj", "{0D02568B-3117-47C3-AC2E-D83781259C1D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spl_common", "..\..\_studio\shared\umc\codec\spl_common\spl_common.vcxproj", "{18D5AD19-B7CE-4158-8500-842216503D6D}"
@@ -35,9 +33,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_pipeline", "..\mfx_player\mfx_pipeline.vcxproj", "{BF72A446-8425-40A2-856B-33B5742C60CE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_transcoder", "mfx_transcoder.vcxproj", "{D706986E-D483-47A4-A696-0F8F0F5D1887}"
-	ProjectSection(ProjectDependencies) = postProject
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D} = {919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dxva2_dump", "..\dxva2_dump\dxva2_dump_lib.vcxproj", "{5AD3D93A-18BF-4F7F-AEE7-52448C5B4AB3}"
 EndProject
@@ -45,7 +40,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_trans_pipeline", "mfx_t
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{430E22BA-BDF6-497C-BFC5-EC6907F90018}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher", "..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcxproj", "{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher_v11", "..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher_v11.vcxproj", "{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -625,34 +620,34 @@ Global
 		{430E22BA-BDF6-497C-BFC5-EC6907F90018}.Release|Win32.Build.0 = Release|Win32
 		{430E22BA-BDF6-497C-BFC5-EC6907F90018}.Release|x64.ActiveCfg = Release|x64
 		{430E22BA-BDF6-497C-BFC5-EC6907F90018}.Release|x64.Build.0 = Release|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug (Lucas DLL)|Win32.ActiveCfg = Debug|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug (Lucas DLL)|Win32.Build.0 = Debug|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug (Lucas DLL)|x64.ActiveCfg = Debug|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug (Lucas DLL)|x64.Build.0 = Debug|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug_THM|Win32.ActiveCfg = Debug_THM|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug_THM|Win32.Build.0 = Debug_THM|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug_THM|x64.ActiveCfg = Debug_THM|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug_THM|x64.Build.0 = Debug_THM|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug|Win32.ActiveCfg = Debug|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug|Win32.Build.0 = Debug|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug|x64.ActiveCfg = Debug|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug|x64.Build.0 = Debug|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release (Lucas DLL)|Win32.ActiveCfg = Release|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release (Lucas DLL)|Win32.Build.0 = Release|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release (Lucas DLL)|x64.Build.0 = Release|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release_THM(Lucas)|Win32.ActiveCfg = Release_THM|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release_THM(Lucas)|Win32.Build.0 = Release_THM|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release_THM(Lucas)|x64.ActiveCfg = Release_THM|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release_THM(Lucas)|x64.Build.0 = Release_THM|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release_THM|Win32.ActiveCfg = Release_THM|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release_THM|Win32.Build.0 = Release_THM|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release_THM|x64.ActiveCfg = Release_THM|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release_THM|x64.Build.0 = Release_THM|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release|Win32.ActiveCfg = Release|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release|Win32.Build.0 = Release|Win32
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release|x64.ActiveCfg = Release|x64
-		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release|x64.Build.0 = Release|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Debug (Lucas DLL)|Win32.ActiveCfg = Debug|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Debug (Lucas DLL)|Win32.Build.0 = Debug|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Debug (Lucas DLL)|x64.ActiveCfg = Debug|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Debug (Lucas DLL)|x64.Build.0 = Debug|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Debug_THM|Win32.ActiveCfg = Debug_THM|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Debug_THM|Win32.Build.0 = Debug_THM|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Debug_THM|x64.ActiveCfg = Debug_THM|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Debug_THM|x64.Build.0 = Debug_THM|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Debug|Win32.Build.0 = Debug|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Debug|x64.ActiveCfg = Debug|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Debug|x64.Build.0 = Debug|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release (Lucas DLL)|Win32.ActiveCfg = Release|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release (Lucas DLL)|Win32.Build.0 = Release|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release (Lucas DLL)|x64.Build.0 = Release|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release_THM(Lucas)|Win32.ActiveCfg = Release_THM|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release_THM(Lucas)|Win32.Build.0 = Release_THM|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release_THM(Lucas)|x64.ActiveCfg = Release_THM|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release_THM(Lucas)|x64.Build.0 = Release_THM|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release_THM|Win32.ActiveCfg = Release_THM|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release_THM|Win32.Build.0 = Release_THM|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release_THM|x64.ActiveCfg = Release_THM|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release_THM|x64.Build.0 = Release_THM|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release|Win32.ActiveCfg = Release|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release|Win32.Build.0 = Release|Win32
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release|x64.ActiveCfg = Release|x64
+		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
