@@ -787,9 +787,8 @@ namespace
     mfxU16 GetDefaultMaxNumRefActiveBL1(mfxU32 targetUsage, eMFXHWType platform)
     {
         platform; targetUsage;
-        return 1; // currently driver 15.31 support only 1 L1 reference for both IVB and HSW
-        //mfxU16 const DEFAULT_BY_TU[] = { 2, 2, 2, 2, 2, 2, 1, 1 };
-        //return DEFAULT_BY_TU[targetUsage];
+        mfxU16 const DEFAULT_BY_TU[] = { 2, 2, 1, 1, 1, 1, 1, 1 };
+        return DEFAULT_BY_TU[targetUsage];
     }
 
     mfxU16 GetDefaultIntraPredBlockSize(
