@@ -20,10 +20,18 @@
 #include "ippi.h"
 #include "ippcc.h"
 
+
+#define AVX_DISP(func, ...)   func(__VA_ARGS__);
+
+/*
+ Disabled at the moment. Need to move avx2 related optimizations to the 
+ separate VS project and use Intel compiler for it.
 #if defined(_WIN32) || defined(_WIN64)
  // Set of AVX2 optimized color conversions
  #include "mfx_color_space_conversion_vpp_avx2.cpp"
+ #define AVX_DISP(func, ...)  (( m_bAVX2 ) ? func ## _avx2(__VA_ARGS__) : func(__VA_ARGS__))
 #endif
+*/
 
 /* some macros */
 #ifndef CHOP
@@ -38,11 +46,6 @@
 #define V_POS(ptr, shift, step, pos) ( (pos) >= 0  ? ( ptr + (shift) + (step) * (pos) )[0] : ( ptr + (shift) - (step) * (-1*pos) )[0])
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
-#define AVX_DISP(func, ...)  (( m_bAVX2 ) ? func ## _avx2(__VA_ARGS__) : func(__VA_ARGS__))
-#else
-#define AVX_DISP(func, ...)   func(__VA_ARGS__);
-#endif
 /* ******************************************************************** */
 /*                 prototype of CSC algorithms                          */
 /* ******************************************************************** */
