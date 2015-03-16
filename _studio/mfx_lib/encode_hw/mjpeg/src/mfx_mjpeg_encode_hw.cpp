@@ -773,7 +773,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::CheckEncodeFrameParam(
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16) < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16) != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(surface->Data.Y != 0 || isExternalFrameAllocator, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         if (surface->Info.Width != m_vParam.mfx.FrameInfo.Width || surface->Info.Height != m_vParam.mfx.FrameInfo.Height)
