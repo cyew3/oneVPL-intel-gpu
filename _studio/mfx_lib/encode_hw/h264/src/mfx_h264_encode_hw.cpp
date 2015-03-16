@@ -116,34 +116,6 @@ namespace MfxHwH264EncodeHW
         return 0;
     }
 
-    mfxStatus ReadSpsPpsHeaders(MfxVideoParam & par)
-    {
-        mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
-
-        try
-        {
-            if (extBits->SPSBuffer)
-            {
-                InputBitstream reader(extBits->SPSBuffer, extBits->SPSBufSize);
-                mfxExtSpsHeader * extSps = GetExtBuffer(par);
-                ReadSpsHeader(reader, *extSps);
-
-                if (extBits->PPSBuffer)
-                {
-                    InputBitstream reader(extBits->PPSBuffer, extBits->PPSBufSize);
-                    mfxExtPpsHeader * extPps = GetExtBuffer(par);
-                    ReadPpsHeader(reader, *extSps, *extPps);
-                }
-            }
-        }
-        catch (std::exception &)
-        {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-
-        return MFX_ERR_NONE;
-    }
-
     mfxU16 GetFrameWidth(MfxVideoParam & par)
     {
         mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);

@@ -1191,6 +1191,7 @@ mfxStatus MfxHwH264Encode::QueryGuid(VideoCORE* core, GUID guid)
 mfxStatus MfxHwH264Encode::ReadSpsPpsHeaders(MfxVideoParam & par)
 {
     mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
+    mfxExtCodingOption2      * extOpt2 = GetExtBuffer(par);
 
     try
     {
@@ -1205,6 +1206,15 @@ mfxStatus MfxHwH264Encode::ReadSpsPpsHeaders(MfxVideoParam & par)
                 InputBitstream reader(extBits->PPSBuffer, extBits->PPSBufSize);
                 mfxExtPpsHeader * extPps = GetExtBuffer(par);
                 ReadPpsHeader(reader, *extSps, *extPps);
+            }
+        }
+        else
+        {
+            if (IsOn(extOpt2->DisableVUI))
+            {
+                mfxExtSpsHeader * extSps = GetExtBuffer(par);
+                extSps->vuiParametersPresentFlag = 0;
+                Zero(extSps->vui);
             }
         }
     }
