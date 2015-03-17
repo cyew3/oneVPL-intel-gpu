@@ -1137,13 +1137,14 @@ mfxStatus H265FrameEncoder::Init(const mfxVideoParam* mfxParam, const H265VideoP
     // temp buf size - todo reduce
 
     // [1] calc mem size to allocate
-    Ipp32u streamBufSizeMain = m_videoParam.SourceWidth * m_videoParam.SourceHeight * 6 / (2 + m_videoParam.chromaShift) + DATA_ALIGN;
+    Ipp32s bitPerPixel = videoParam.bitDepthLuma + (8 * videoParam.bitDepthChroma >> videoParam.chromaShift) / 4;
+    Ipp32u streamBufSizeMain = m_videoParam.SourceWidth * m_videoParam.SourceHeight * bitPerPixel / 8 + DATA_ALIGN;
     Ipp32u streamBufSize;
     if (m_videoParam.NumTiles > 1)
-        streamBufSize = (m_videoParam.MaxCUSize * m_videoParam.MaxCUSize * m_videoParam.tileColWidthMax * m_videoParam.tileRowHeightMax) * 6 / (2 + m_videoParam.chromaShift) + DATA_ALIGN;
+        streamBufSize = (m_videoParam.MaxCUSize * m_videoParam.MaxCUSize * m_videoParam.tileColWidthMax * m_videoParam.tileRowHeightMax) * bitPerPixel / 8 + DATA_ALIGN;
     else 
         streamBufSize = (m_videoParam.SourceWidth * (m_videoParam.WPPFlag ? m_videoParam.MaxCUSize :
-            ((m_videoParam.PicHeightInCtbs / m_videoParam.NumSlices + 1) * m_videoParam.MaxCUSize))) * 6 / (2 + m_videoParam.chromaShift) + DATA_ALIGN;
+            ((m_videoParam.PicHeightInCtbs / m_videoParam.NumSlices + 1) * m_videoParam.MaxCUSize))) * bitPerPixel / 8 + DATA_ALIGN;
     Ipp32u memSize = 0;
 
     // m_bs

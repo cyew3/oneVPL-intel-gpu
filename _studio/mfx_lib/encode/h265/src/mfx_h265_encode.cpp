@@ -2201,6 +2201,15 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
                             rcParams.TargetKbps = minBitRate;
                             isCorrected ++;
                         }
+                        Ipp32s bpp = (out->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12) ? 12
+                                   : (out->mfx.FrameInfo.FourCC == MFX_FOURCC_NV16) ? 16
+                                   : (out->mfx.FrameInfo.FourCC == MFX_FOURCC_P010) ? 15
+                                   : (out->mfx.FrameInfo.FourCC == MFX_FOURCC_P210) ? 20 : 20;
+                        Ipp32s maxBitRate = (mfxF64)out->mfx.FrameInfo.Width * out->mfx.FrameInfo.Height * bpp * out->mfx.FrameInfo.FrameRateExtN / out->mfx.FrameInfo.FrameRateExtD / 1000;
+                        if (rcParams.TargetKbps > maxBitRate) {
+                            rcParams.TargetKbps = maxBitRate;
+                            isCorrected ++;
+                        }
                         Ipp32s AveFrameKB = rcParams.TargetKbps * out->mfx.FrameInfo.FrameRateExtD / out->mfx.FrameInfo.FrameRateExtN / 8;
                         if (rcParams.BufferSizeInKB != 0 && rcParams.BufferSizeInKB < 2 * AveFrameKB) {
                             rcParams.BufferSizeInKB = 2 * AveFrameKB;
