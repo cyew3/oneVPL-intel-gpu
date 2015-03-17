@@ -33,6 +33,13 @@ public:
         m_numItems = 0;
     }
 
+    //Copy constructor
+    Array(Array &src)
+    {
+        m_pArray = (item_t *)0;
+        m_numItems = 0;
+        *this = src;
+    }
     // Destructor
     ~Array(void)
     {

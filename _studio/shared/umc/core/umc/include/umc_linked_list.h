@@ -315,7 +315,8 @@ protected:
     {
         ListElement *pElem;
         if (index < m_iSize / 2)
-        { // find from the begin
+    
+    { // find from the begin
             pElem = m_pFirst;
             while (index-- > 0)
                 pElem = pElem->pNext;
@@ -343,6 +344,10 @@ protected:
 
     // The number of elements in the list
     Ipp32s m_iSize;
+
+private:
+    LinkedList(const LinkedList<T>&);
+    void operator=(const LinkedList<T>&);
 
 }; //template <class T> class LinkedList
 
