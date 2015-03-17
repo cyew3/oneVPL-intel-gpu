@@ -140,8 +140,5 @@
     <ClCompile Include="src\vm\time.cpp">
       <Filter>Source Files\vm</Filter>
     </ClCompile>
-    <ClCompile Include="src\mfx_plugin_module.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
