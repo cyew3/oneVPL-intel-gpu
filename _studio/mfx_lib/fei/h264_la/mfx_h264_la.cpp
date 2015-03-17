@@ -315,13 +315,17 @@ VideoENC_LA::~VideoENC_LA()
     Close();
 
 } 
-static mfxU16 CheckScaleFactor(mfxU16 scale, mfxU16 tu)
+static mfxU16 CheckScaleFactor(mfxU16 scale, mfxU16 tu, bool b4k)
 {
-    if (scale != 0) return scale;
+    if (((scale == 1) && (!b4k)) || (scale == 2) || (scale == 4)) 
+        return scale;
+    if (scale == 1 && b4k) 
+        return 2;
+
     switch (tu)
     {
     case 1:
-        return 2;
+        return b4k ? 2 : 1;
     case 6:
     case 7:
         return 4;
@@ -418,7 +422,7 @@ mfxStatus VideoENC_LA::Init(mfxVideoParam *par)
     m_numLastB = 0;
 
     {
-        ddi_opt.LaScaleFactor = m_LaControl.DownScaleFactor = CheckScaleFactor(m_LaControl.DownScaleFactor, par->mfx.TargetUsage);
+        ddi_opt.LaScaleFactor = m_LaControl.DownScaleFactor = CheckScaleFactor(m_LaControl.DownScaleFactor, par->mfx.TargetUsage, par->mfx.FrameInfo.Width > 4000);
         ddi_opt.LookAheadDependency =  m_LaControl.DependencyDepth = CheckLookAheadDependency(m_LaControl.DependencyDepth,par->mfx.TargetUsage);
 
         MFX_CHECK_STS (InitEncoderParameters(par, &par_enc));    

@@ -2550,6 +2550,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod = 0;
     }
 
+    if (extDdi->LaScaleFactor < 2 && par.mfx.FrameInfo.Width > 4000)
+    {
+        extDdi->LaScaleFactor = 2;
+        changed = true;
+    }
+
     if (extDdi->LaScaleFactor > 1)
     {
         par.calcParam.widthLa = AlignValue<mfxU16>((par.mfx.FrameInfo.Width / extDdi->LaScaleFactor), 16);
@@ -4262,7 +4268,7 @@ void MfxHwH264Encode::SetDefaults(
             : extOpt2->LookAheadDepth;
 
     if (extDdi->LaScaleFactor == 0) // default: use LA 2X for TU3-7 and LA 1X for TU1-2
-        if (par.mfx.TargetUsage > 2)
+        if (par.mfx.TargetUsage > 2 || par.mfx.FrameInfo.Width >= 4000)
             extDdi->LaScaleFactor = 2;
         else
             extDdi->LaScaleFactor = 1;
