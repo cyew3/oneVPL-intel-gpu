@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_usage_models", "test_usage_models.vcxproj", "{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\..\..\mdp_msdk-samples\samples\sample_common\sample_common.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\libmfx.vcxproj", "{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "..\..\_studio\shared\umc\core\vm\vm.vcxproj", "{D41D3178-5C65-4868-BDB1-42C44643274E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared_utils", "..\shared\shared_utils.vcxproj", "{0D02568B-3117-47C3-AC2E-D83781259C1D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common_vs2012", "..\..\..\mdp_msdk-samples\samples\sample_common\sample_common_vs2012.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,20 +37,6 @@ Global
 		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Release|Win32.Build.0 = Release|Win32
 		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Release|x64.ActiveCfg = Release|x64
 		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Release|x64.Build.0 = Release|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug (Lucasz DLL)|Win32.ActiveCfg = Debug|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug (Lucasz DLL)|x64.ActiveCfg = Debug|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug (Lucasz DLL)|x64.Build.0 = Debug|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|Win32.ActiveCfg = Debug|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|Win32.Build.0 = Debug|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|x64.ActiveCfg = Debug|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|x64.Build.0 = Debug|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release (Lucas DLL)|Win32.ActiveCfg = Release|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release (Lucas DLL)|x64.Build.0 = Release|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|Win32.ActiveCfg = Release|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|Win32.Build.0 = Release|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|x64.ActiveCfg = Release|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|x64.Build.0 = Release|x64
 		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Debug (Lucasz DLL)|Win32.ActiveCfg = Debug|x64
 		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Debug (Lucasz DLL)|x64.ActiveCfg = Debug|x64
 		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Debug (Lucasz DLL)|x64.Build.0 = Debug|x64
@@ -95,6 +81,22 @@ Global
 		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release|Win32.Build.0 = Release|Win32
 		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release|x64.ActiveCfg = Release|x64
 		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release|x64.Build.0 = Release|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug (Lucasz DLL)|Win32.ActiveCfg = Debug|Win32
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug (Lucasz DLL)|Win32.Build.0 = Debug|Win32
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug (Lucasz DLL)|x64.ActiveCfg = Debug|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug (Lucasz DLL)|x64.Build.0 = Debug|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|Win32.Build.0 = Debug|Win32
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|x64.ActiveCfg = Debug|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|x64.Build.0 = Debug|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release (Lucas DLL)|Win32.ActiveCfg = Release|Win32
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release (Lucas DLL)|Win32.Build.0 = Release|Win32
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release (Lucas DLL)|x64.Build.0 = Release|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|Win32.ActiveCfg = Release|Win32
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|Win32.Build.0 = Release|Win32
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|x64.ActiveCfg = Release|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

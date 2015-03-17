@@ -112,11 +112,13 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <ExceptionHandling>Async</ExceptionHandling>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -129,12 +131,17 @@
       <TargetMachine>MachineX64</TargetMachine>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <BrowseInformation>
       </BrowseInformation>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -142,6 +149,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -154,7 +162,11 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\test_thread_safety.cpp" />
@@ -179,8 +191,8 @@
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcxproj">
-      <Project>{919d48bc-615b-4c72-b5a9-edb34f1aef7d}</Project>
+    <ProjectReference Include="..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher_v11.vcxproj">
+      <Project>{bf10bfcb-5080-4e85-93b7-13299dd6c5c2}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\codec\asf_spl\asf_spl.vcxproj">
       <Project>{7662c9c6-5ce0-42e6-aca7-92fe6b7797a6}</Project>

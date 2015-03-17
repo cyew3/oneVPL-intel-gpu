@@ -357,11 +357,11 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <UseFullPaths>true</UseFullPaths>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <SubSystem>Console</SubSystem>
@@ -373,11 +373,11 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <UseFullPaths>true</UseFullPaths>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>setupapi.lib;PowrProf.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <SubSystem>Console</SubSystem>
@@ -389,13 +389,13 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM(Lucas_DLL)|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <UseFullPaths>true</UseFullPaths>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PreprocessorDefinitions>LUCAS_DLL;WIN_TRESHOLD_MOBILE;_ATL_NO_WIN_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>setupapi.lib;PowrProf.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <SubSystem>Console</SubSystem>
@@ -411,7 +411,7 @@
     </Midl>
     <ClCompile>
       <UseFullPaths>true</UseFullPaths>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
@@ -420,7 +420,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalDependencies>winmm.lib; psapi.lib; ippcoremt.lib; ippccmt.lib; ippimt.lib; ippsmt.lib; ippvcmt.lib; ippjmt.lib;  ippcvmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -430,7 +430,7 @@
     </Midl>
     <ClCompile>
       <UseFullPaths>true</UseFullPaths>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -440,7 +440,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalDependencies>winmm.lib;psapi.lib;ippcoremt.lib;ippccmt.lib;ippimt.lib;ippsmt.lib;ippvcmt.lib;ippjmt.lib;ippcvmt.lib;mincore.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -450,7 +450,7 @@
     </Midl>
     <ClCompile>
       <UseFullPaths>true</UseFullPaths>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PreprocessorDefinitions>LUCAS_DLL;WIN_TRESHOLD_MOBILE;_ATL_NO_WIN_SUPPORT;WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -461,7 +461,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalDependencies>winmm.lib;psapi.lib;ippcoremt.lib;ippccmt.lib;ippimt.lib;ippsmt.lib;ippvcmt.lib;ippjmt.lib;ippcvmt.lib;mincore.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -470,7 +470,7 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <UseFullPaths>true</UseFullPaths>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
@@ -479,7 +479,7 @@
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>winmm.lib; psapi.lib; ippcoremt.lib; ippccmt.lib; ippimt.lib; ippsmt.lib; ippvcmt.lib; ippjmt.lib;  ippcvmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">
@@ -487,7 +487,7 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <UseFullPaths>true</UseFullPaths>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PreprocessorDefinitions>_ATL_NO_WIN_SUPPORT;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -498,7 +498,7 @@
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>ippcoremt.lib;ippccmt.lib;ippcpmt.lib;ippdcmt.lib;ippmsdkmt.lib;ippimt.lib;ippsmt.lib;ippsrmt.lib;ippvcmt.lib;ippjmt.lib;ippcvmt.lib;uuid.lib;mincore.lib;</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -506,7 +506,7 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <UseFullPaths>true</UseFullPaths>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
@@ -515,7 +515,7 @@
       <TargetMachine>MachineX64</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>winmm.lib; psapi.lib; ippcoremt.lib; ippccmt.lib; ippimt.lib; ippsmt.lib; ippvcmt.lib; ippjmt.lib;  ippcvmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'">
@@ -523,7 +523,7 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <UseFullPaths>true</UseFullPaths>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
@@ -532,16 +532,16 @@
       <TargetMachine>MachineX64</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>winmm.lib; psapi.lib; ippcoremt.lib; ippccmt.lib; ippimt.lib; ippsmt.lib; ippvcmt.lib; ippjmt.lib;  ippcvmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|Win32'">
     <ClCompile>
       <UseFullPaths>true</UseFullPaths>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>
@@ -558,7 +558,7 @@
     </Midl>
     <ClCompile>
       <UseFullPaths>true</UseFullPaths>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
@@ -567,7 +567,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalDependencies>winmm.lib; psapi.lib; ippcoremt.lib; ippccmt.lib; ippimt.lib; ippsmt.lib; ippvcmt.lib; ippjmt.lib;  ippcvmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|Win32'">
@@ -575,10 +575,10 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <UseFullPaths>true</UseFullPaths>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <SubSystem>Console</SubSystem>
@@ -595,7 +595,7 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <UseFullPaths>true</UseFullPaths>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
@@ -603,7 +603,7 @@
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalDependencies>winmm.lib; psapi.lib; ippcoremt.lib; ippccmt.lib; ippimt.lib; ippsmt.lib; ippvcmt.lib; ippjmt.lib;  ippcvmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -614,8 +614,8 @@
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcxproj">
-      <Project>{919d48bc-615b-4c72-b5a9-edb34f1aef7d}</Project>
+    <ProjectReference Include="..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher_v11.vcxproj">
+      <Project>{bf10bfcb-5080-4e85-93b7-13299dd6c5c2}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\codec\asf_spl\asf_spl.vcxproj">
       <Project>{7662c9c6-5ce0-42e6-aca7-92fe6b7797a6}</Project>
