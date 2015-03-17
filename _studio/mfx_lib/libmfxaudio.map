@@ -37,4 +37,4 @@ LIBMFXAUDIO_1.9 {
     MFXAudioUSER_Register;
     MFXAudioUSER_Unregister;
     MFXAudioUSER_ProcessFrameAsync;
-};
+} LIBMFXAUDIO_1.8;
