@@ -16,7 +16,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+
+#ifdef __cplusplus
 #include <string>
+#endif
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -25,7 +28,9 @@
 #define MSDK_STRING(x) _T(x)
 #define MSDK_CHAR(x) _T(x)
 
+#ifdef __cplusplus
 typedef std::basic_string<TCHAR> msdk_tstring;
+#endif
 typedef TCHAR msdk_char;
 
 #define msdk_printf   _tprintf
@@ -62,7 +67,9 @@ typedef TCHAR msdk_char;
 #define MSDK_STRING(x)  x
 #define MSDK_CHAR(x) x
 
+#ifdef __cplusplus
 typedef std::string msdk_tstring;
+#endif
 typedef char msdk_char;
 
 #define msdk_printf   printf
