@@ -131,9 +131,9 @@ bool TestSuite::check_output(mfxExtFEIH265Param *in, mfxFEIH265Output *out, mfxU
         }
     case MFX_FEI_H265_OP_INTRA_DIST:  
         {
-            if (!out->IntraDist->Dist)
+            if (!out->IntraDist)
             {
-                 return 0;
+                return 0;
             }
             break;
         }
@@ -143,7 +143,7 @@ bool TestSuite::check_output(mfxExtFEIH265Param *in, mfxFEIH265Output *out, mfxU
             {
                  if(!out->MV[i])
                  {
-                      return 0;
+                     return 0;
                  }
             }
             break;
@@ -198,7 +198,9 @@ int TestSuite::RunTest(unsigned int id)
 
     mfxExtFEIH265Output Out = {0};
     Out.Header.BufferId = MFX_EXTBUFF_FEI_H265_OUTPUT;
-    Out.feiOut = new mfxFEIH265Output;
+    mfxFEIH265Output tmp_out = {0};
+    Out.feiOut = &tmp_out;
+    
 
     m_ENCInput->NumExtParam = 1;
     m_ENCInput->ExtParam = new mfxExtBuffer*[m_ENCInput->NumExtParam];
@@ -240,10 +242,20 @@ int TestSuite::RunTest(unsigned int id)
             m_pPar->NumExtParam = 0;
             m_pPar->ExtParam = NULL;
             sts = MFX_ERR_NULL_PTR;
+            g_tsStatus.expect(sts);
         }
-        if (tc.mode != NOT_INIT)
+        else if (tc.mode != NOT_INIT)
         {
             g_tsStatus.expect(sts);
+            sts = MFX_ERR_NONE;
+        }
+        else
+        {
+            sts = MFX_ERR_NOT_INITIALIZED;
+        }
+        
+        if (sts != MFX_ERR_NOT_INITIALIZED)
+        {
             Init(m_session, m_pPar);
             if (sts == MFX_ERR_NONE)
             {
@@ -257,12 +269,6 @@ int TestSuite::RunTest(unsigned int id)
             }
             sts = MFX_ERR_NONE;
         }
-        else
-        {
-            sts = MFX_ERR_NOT_INITIALIZED;
-        }
-        
-        
                 
         if (tc.mode == SURF_ZERO)
         {
@@ -273,7 +279,6 @@ int TestSuite::RunTest(unsigned int id)
             g_tsStatus.check(ProcessFrameAsync(m_session, m_ENCInput, m_ENCOutput, m_pSyncPoint));
         else
             g_tsStatus.check(ProcessFrameAsync(NULL, m_ENCInput, m_ENCOutput, m_pSyncPoint));
-            
         if (g_tsStatus.get() == MFX_ERR_NONE)
         {
             SyncOperation();

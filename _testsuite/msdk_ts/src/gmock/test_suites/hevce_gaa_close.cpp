@@ -92,7 +92,8 @@ int TestSuite::RunTest(unsigned int id)
 
     mfxExtFEIH265Output Out = {0};
     Out.Header.BufferId = MFX_EXTBUFF_FEI_H265_OUTPUT;
-    Out.feiOut = new mfxFEIH265Output;
+    mfxFEIH265Output tmp_out = {0};
+    Out.feiOut = &tmp_out;
 
     m_ENCInput->NumExtParam = 1;
     m_ENCInput->ExtParam = new mfxExtBuffer*[m_ENCInput->NumExtParam];
