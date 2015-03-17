@@ -513,6 +513,8 @@ static mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
                                         mfxHDL&             handle)
 {
     mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(video);
+    if (NULL == extOpaq)
+        return MFX_ERR_NOT_FOUND;
 
     mfxFrameData d3dSurf = {0};
     if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||

@@ -2568,7 +2568,8 @@ mfxStatus VAAPIEncoder::QueryStatus(
                         }
                         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                         //copy to output in task here MVs
-                        memcpy(mbstat->MB, mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * numMB);
+                        memcpy_s(mbstat->MB, sizeof (VAEncFEIDistortionBufferH264Intel) * numMB,
+                                        mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * numMB);
                         {
                             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MV vaUnmapBuffer");
                             vaUnmapBuffer(m_vaDisplay, vaFeiMBStatId);
@@ -2591,7 +2592,8 @@ mfxStatus VAAPIEncoder::QueryStatus(
 
                         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                         //copy to output in task here MVs
-                        memcpy(mvout->MB, mvs, sizeof (VAMotionVectorIntel) * 16 * numMB);
+                        memcpy_s(mvout->MB, sizeof (VAMotionVectorIntel) * 16 * numMB,
+                                       mvs, sizeof (VAMotionVectorIntel) * 16 * numMB);
                         {
                             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MV vaUnmapBuffer");
                             vaUnmapBuffer(m_vaDisplay, vaFeiMVOutId);
@@ -2613,7 +2615,8 @@ mfxStatus VAAPIEncoder::QueryStatus(
                         }
                         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                         //copy to output in task here MVs
-                        memcpy(mbcodeout->MB, mbcs, sizeof (VAEncFEIModeBufferH264Intel) * numMB);
+                        memcpy_s(mbcodeout->MB, sizeof (VAEncFEIModeBufferH264Intel) * numMB,
+                                         mbcs, sizeof (VAEncFEIModeBufferH264Intel) * numMB);
                         {
                             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MV vaUnmapBuffer");
                             vaUnmapBuffer(m_vaDisplay, vaFeiMBCODEOutId);
@@ -3456,7 +3459,8 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                 }
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
-                memcpy(mvsOut->MB, mvs, 16 * sizeof (VAMotionVectorIntel) * mvsOut->NumMBAlloc);
+                memcpy_s(mvsOut->MB, 16 * sizeof (VAMotionVectorIntel) * mvsOut->NumMBAlloc,
+                                mvs, 16 * sizeof (VAMotionVectorIntel) * mvsOut->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MV vaUnmapBuffer");
                     vaUnmapBuffer(m_vaDisplay, statMVid);
@@ -3477,7 +3481,8 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
 
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
-                memcpy(mbstatOut->MB, mbstat, sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc);
+                memcpy_s(mbstatOut->MB, sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc,
+                                mbstat, sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MBStat vaUnmapBuffer");
                     vaUnmapBuffer(m_vaDisplay, statOUTid);
@@ -3601,8 +3606,9 @@ bitstream_put_ui(bitstream *bs, unsigned int val, int size_in_bits)
             bs->max_size_in_dword += BITSTREAM_ALLOCATE_STEPPING;
             bs->buffer = (unsigned int*)realloc(bs->buffer, bs->max_size_in_dword * sizeof(unsigned int));
         }
-
-        bs->buffer[pos + 1] = val;
+        /* KW fix */
+        if (NULL != bs->buffer)
+            bs->buffer[pos + 1] = val;
     }
 }
 
@@ -4806,7 +4812,8 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
                 }
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
-                memcpy(mbstat->MB, mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * numMB);
+                memcpy_s(mbstat->MB, sizeof (VAEncFEIDistortionBufferH264Intel) * numMB,
+                                mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * numMB);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MV vaUnmapBuffer");
                     vaUnmapBuffer(m_vaDisplay, vaFeiMBStatId);
@@ -4829,7 +4836,8 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
 
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
-                memcpy(mvout->MB, mvs, sizeof (VAMotionVectorIntel) * 16 * numMB);
+                memcpy_s(mvout->MB, sizeof (VAMotionVectorIntel) * 16 * numMB,
+                               mvs, sizeof (VAMotionVectorIntel) * 16 * numMB);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MV vaUnmapBuffer");
                     vaUnmapBuffer(m_vaDisplay, vaFeiMVOutId);
@@ -4851,7 +4859,8 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
                 }
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
-                memcpy(mbcodeout->MB, mbcs, sizeof (VAEncFEIModeBufferH264Intel) * numMB);
+                memcpy_s(mbcodeout->MB, sizeof (VAEncFEIModeBufferH264Intel) * numMB,
+                                  mbcs, sizeof (VAEncFEIModeBufferH264Intel) * numMB);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MV vaUnmapBuffer");
                     vaUnmapBuffer(m_vaDisplay, vaFeiMBCODEOutId);
@@ -5904,7 +5913,8 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
             }
 
             task.m_bsDataLength[fieldId] = codedBufferSegment->size;
-            memcpy(task.m_bs->Data + task.m_bs->DataOffset, codedBufferSegment->buf, codedBufferSegment->size);
+            memcpy_s(task.m_bs->Data + task.m_bs->DataOffset, codedBufferSegment->size,
+                                     codedBufferSegment->buf, codedBufferSegment->size);
             task.m_bs->DataLength = codedBufferSegment->size;
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaUnmapBuffer");
