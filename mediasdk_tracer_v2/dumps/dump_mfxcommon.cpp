@@ -51,6 +51,8 @@ std::string DumpContext::dump(const std::string structName, const mfxInitParam &
     DUMP_FIELD(Implementation);
     str += dump(structName + ".Version=", _struct.Version) + "\n";
     DUMP_FIELD(ExternalThreads);
+    DUMP_FIELD(NumExtParam);
+    str += structName + ".ExtParam=" + ToHexFormatString(_struct.ExtParam) + "\n";
     DUMP_FIELD_RESERVED(reserved);
 
     return str;

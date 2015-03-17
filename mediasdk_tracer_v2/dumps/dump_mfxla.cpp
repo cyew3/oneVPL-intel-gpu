@@ -8,6 +8,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtLAContro
     DUMP_FIELD(LookAheadDepth);
     DUMP_FIELD(DependencyDepth);
     DUMP_FIELD(DownScaleFactor);
+    DUMP_FIELD(BPyramid);
 
     DUMP_FIELD_RESERVED(reserved1);
 
@@ -49,7 +50,7 @@ std::string DumpContext::dump(const std::string structName, const mfxLAFrameInfo
     DUMP_FIELD(IntraCost);
     DUMP_FIELD(InterCost);
     DUMP_FIELD(DependencyCost);
-
+    DUMP_FIELD(Layer);
     DUMP_FIELD_RESERVED(reserved);
 
     DUMP_FIELD_RESERVED(EstimatedRate);
