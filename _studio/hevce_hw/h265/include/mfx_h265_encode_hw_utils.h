@@ -39,7 +39,7 @@ template<class T> inline void Zero(T * first, size_t cnt)     { memset(first, 0,
 template<class T, class U> inline void Copy(T & dst, U const & src)
 {
     STATIC_ASSERT(sizeof(T) == sizeof(U), copy_objects_of_different_size);
-    memcpy(&dst, &src, sizeof(dst));
+    memcpy_s(&dst, sizeof(dst), &src, sizeof(dst));
 }
 template<class T> inline T Abs  (T x)               { return (x > 0 ? x : -x); }
 template<class T> inline T Min  (T x, T y)          { return MFX_MIN(x, y); }
@@ -486,7 +486,7 @@ mfxStatus GetNativeHandleToRawSurface(
     MFXCoreInterface &    core,
     MfxVideoParam const & video,
     Task const &          task,
-    mfxHDLPair &          handle);
+    mfxHDL &              handle);
 
 mfxStatus CopyRawSurfaceToVideoMemory(
     MFXCoreInterface &    core,

@@ -70,7 +70,7 @@ const mfxU16 LevelIdxToMfx[] =
     MFX_LEVEL_HEVC_62,
 };
 
-inline mfxU16 MaxTidx(mfxU16 l) { return (LevelIdxToMfx[l] >= MFX_LEVEL_HEVC_4); }
+inline mfxU16 MaxTidx(mfxU16 l) { return (LevelIdxToMfx[Min(l, MaxLidx)] >= MFX_LEVEL_HEVC_4); }
 
 mfxU16 LevelIdx(mfxU16 mfx_level)
 {
@@ -100,7 +100,7 @@ mfxU16 TierIdx(mfxU16 mfx_level)
     return !!(mfx_level & MFX_TIER_HEVC_HIGH);
 }
 
-mfxU16 MfxLevel(mfxU16 l, mfxU16 t){ return LevelIdxToMfx[l] | (MFX_TIER_HEVC_HIGH * !!t); }
+mfxU16 MfxLevel(mfxU16 l, mfxU16 t){ return LevelIdxToMfx[Min(l, MaxLidx)] | (MFX_TIER_HEVC_HIGH * !!t); }
 
 mfxU32 GetMaxDpbSize(mfxU32 PicSizeInSamplesY, mfxU32 MaxLumaPs, mfxU32 maxDpbPicBuf)
 {

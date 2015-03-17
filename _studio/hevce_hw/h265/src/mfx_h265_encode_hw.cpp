@@ -313,8 +313,13 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 
     m_vpar.SyncMfxToHeadersParam();
 
-    while (Task* pTask = m_task.Reorder(m_vpar, m_lastTask.m_dpb[0], true))
+    for (;;)
     {
+        Task* pTask = m_task.Reorder(m_vpar, m_lastTask.m_dpb[0], true);
+
+        if (!pTask)
+            break;
+
         m_core.DecreaseReference(&pTask->m_surf->Data);
         pTask->m_stage = STAGE_READY;
         m_task.Ready(pTask);
@@ -444,7 +449,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
     //submit
     if (task.m_stage == STAGE_SUBMIT)
     {
-        mfxHDLPair surfaceHDL = {};
+        mfxHDL surfaceHDL = 0;
 
         task.m_initial_cpb_removal_delay  = m_hrd.GetInitCpbRemovalDelay();
         task.m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
@@ -455,7 +460,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
         sts = CopyRawSurfaceToVideoMemory(m_core, m_vpar, task);
         MFX_CHECK_STS(sts);
 
-        sts = m_ddi->Execute(task, surfaceHDL.first);
+        sts = m_ddi->Execute(task, surfaceHDL);
         MFX_CHECK_STS(sts);
 
         task.m_stage |= FRAME_SUBMITTED;
@@ -481,7 +486,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             sts = fa.Lock(fa.pthis, task.m_midBs, &codedFrame);
             MFX_CHECK(codedFrame.Y, MFX_ERR_LOCK_MEMORY);
 
-            memcpy(bs->Data + bs->DataOffset + bs->DataLength, codedFrame.Y, bytes2copy);
+            memcpy_s(bs->Data + bs->DataOffset + bs->DataLength, bytes2copy, codedFrame.Y, bytes2copy);
 
             sts = fa.Unlock(fa.pthis, task.m_midBs, &codedFrame);
             MFX_CHECK_STS(sts);

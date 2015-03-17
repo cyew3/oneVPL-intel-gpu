@@ -262,23 +262,21 @@ mfxStatus GetNativeHandleToRawSurface(
     MFXCoreInterface &    core,
     MfxVideoParam const & video,
     Task const &          task,
-    mfxHDLPair &          handle)
+    mfxHDL &              nativeHandle)
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxFrameAllocator & fa = core.FrameAllocator();
     mfxExtOpaqueSurfaceAlloc const & opaq = video.m_ext.Opaque;
-
-    Zero(handle);
-
-    mfxHDL * nativeHandle = &handle.first;
     mfxFrameSurface1 * surface = task.m_surf_real;
+
+    nativeHandle = 0;
 
     if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY 
         || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-        sts = fa.GetHDL(fa.pthis, task.m_midRaw, nativeHandle);
+        sts = fa.GetHDL(fa.pthis, task.m_midRaw, (mfxHDL*)nativeHandle);
     else if (   video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
              || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        sts = fa.GetHDL(fa.pthis, surface->Data.MemId, nativeHandle);
+        sts = fa.GetHDL(fa.pthis, surface->Data.MemId, (mfxHDL*)nativeHandle);
     else
         return (MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -1258,7 +1256,10 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
                        s.num_long_term_sps ++;
                        
                        if (curlt.used_by_curr_pic_lt_flag)
+                       {
+                           assert(nLTR < MAX_NUM_LONG_TERM_PICS); //KW
                            LTR[nLTR++] = DPBLT[j];
+                       }
 
                        DPBLT[j] = InvalidPOC;
                        break;
@@ -1287,7 +1288,10 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
                 s.num_long_term_pics ++;
 
                 if (curlt.used_by_curr_pic_lt_flag)
+                {
+                    assert(nLTR < MAX_NUM_LONG_TERM_PICS); //KW
                     LTR[nLTR++] = DPBLT[j];
+                }
             }
         }
 
@@ -1654,6 +1658,7 @@ void UpdateDPB(
         end --;
     }
 
+    assert(end < MAX_DPB_SIZE); //just for KW
     dpb[end++] = task;
 
     if (par.isBPyramid() && (task.m_ldb || task.m_codingType < CODING_TYPE_B))
