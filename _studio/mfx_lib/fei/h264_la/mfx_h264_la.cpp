@@ -1175,13 +1175,14 @@ mfxStatus VideoENC_LA::InitVMEData( sVMEFrameInfo *   pVME,
                                     CmBufferUP *      CmMb)
 {
     mfxMemId  dst_d3d = MfxHwH264Encode::AcquireResource(m_raw);
-    mfxHDL   currHandle = {0};
+    mfxHDLPair  currHandle;
+    currHandle.first = currHandle.second = 0;
 
-    MFX_CHECK_STS(CopyRawSurfaceToVideoMemory(*m_core,m_video,RawFrame,dst_d3d, currHandle));
+    MFX_CHECK_STS(CopyRawSurfaceToVideoMemory(*m_core,m_video,RawFrame,dst_d3d, currHandle.first));
 
     pVME->EncOrder   = EncOrder;
     pVME->DispOrder = DispOrder;
-    pVME->CmRaw     =  CreateSurface(m_cmDevice, currHandle, m_core->GetVAType());
+    pVME->CmRaw     =  CreateSurface(m_cmDevice, currHandle.first, m_core->GetVAType());
     pVME->CmRawLA   = (CmSurface2D *)MfxHwH264Encode::AcquireResource(m_rawLa);
     pVME->VmeData   = FindUnusedVmeData(m_vmeDataStorage);
     pVME->CmMb      = CmMb;
