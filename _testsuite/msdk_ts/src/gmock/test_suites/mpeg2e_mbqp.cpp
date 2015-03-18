@@ -146,12 +146,13 @@ public:
         Ctrl& ctrl = m_ctrl[m_fo];
 
         ctrl.buf.resize(numMB);
+        bool send_buffer = mbqp_on;
         if (mode & RANDOM)
-            mbqp_on = ((rand() % 9000) % 2 == 0);
+            send_buffer = ((rand() % 9000) % 2 == 0);
 
         for (mfxU32 i = 0; i < ctrl.buf.size(); i++)
         {
-            if (mbqp_on)
+            if (mbqp_on && send_buffer)
                 ctrl.buf[i] = 1 + rand() % 50;
             else
                 ctrl.buf[i] = QP_BY_FRM_TYPE;
@@ -161,13 +162,16 @@ public:
         mbqp.QP = &ctrl.buf[0];
         mbqp.NumQPAlloc = mfxU32(ctrl.buf.size());
 
-        if (mbqp_on)
+        if (mbqp_on && send_buffer)
         {
             m_pCtrl = &ctrl.ctrl;
+            m_pCtrl->NumExtParam = 1;
+            m_pCtrl->QP = ctrl.buf[0];
         }
         else
         {
             m_pCtrl->NumExtParam = 0;
+            m_pCtrl->QP = 0;
         }
 
         s.Data.TimeStamp = s.Data.FrameOrder = m_fo++;
