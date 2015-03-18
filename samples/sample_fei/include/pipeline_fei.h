@@ -91,6 +91,8 @@ struct sInputParams
     bool bLABRC; // use look ahead bitrate control algorithm
     bool bENCPAK;
     bool bENCoPAKo;
+    bool bOnlyENC;
+    bool bOnlyPAK;
     bool bPREENC;
     bool bMBSize;
     msdk_char* mvinFile;

@@ -526,8 +526,17 @@ mfxStatus CEncodingPipeline::AllocFrames()
     // To achieve better performance we provide extra surfaces.
     // 1 extra surface at input allows to get 1 extra output.
 
-    sts = m_pmfxENCPAK->QueryIOSurf(&m_mfxEncParams, &EncRequest);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    if (m_pmfxENCPAK)
+    {
+        sts = m_pmfxENCPAK->QueryIOSurf(&m_mfxEncParams, &EncRequest);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+    else
+    {
+        /* Looks like m_pmfxENCPAK is not Initialized */
+        sts = MFX_ERR_NULL_PTR;
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     if (m_pmfxVPP)
     {
@@ -539,7 +548,8 @@ mfxStatus CEncodingPipeline::AllocFrames()
     // The number of surfaces shared by vpp output and encode input.
     // When surfaces are shared 1 surface at first component output contains output frame that goes to next component input
     nEncSurfNum = EncRequest.NumFrameSuggested + MSDK_MAX(VppRequest[1].NumFrameSuggested, 1) - 1 + (m_nAsyncDepth - 1);
-    if ( (m_encpakParams.bPREENC) || (m_encpakParams.bENCoPAKo))
+    if ((m_encpakParams.bPREENC) || (m_encpakParams.bENCoPAKo) ||
+        (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK) )
     {
         nEncSurfNum = m_refDist * 2;
     }
@@ -887,7 +897,7 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
     mfxStatus sts = MFX_ERR_NONE;
 
     // prepare output file writers
-    if((pParams->bENCPAK) || (pParams->bENCoPAKo)){ //need only for ENC+PAK
+    if((pParams->bENCPAK) || (pParams->bENCoPAKo) || (pParams->bOnlyPAK)){ //need only for ENC+PAK
         sts = InitFileWriter(&m_FileWriters.first, pParams->dstFileBuff[0]);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
@@ -1006,6 +1016,18 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         m_pmfxENC = new MFXVideoENC(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_MEMORY_ALLOC);
 
+        m_pmfxPAK = new MFXVideoPAK(m_mfxSession);
+        MSDK_CHECK_POINTER(m_pmfxPAK, MFX_ERR_MEMORY_ALLOC);
+    }
+
+    if(pParams->bOnlyENC){
+        // create ENC
+        m_pmfxENC = new MFXVideoENC(m_mfxSession);
+        MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_MEMORY_ALLOC);
+    }
+
+    if(pParams->bOnlyPAK){
+        // create PAK
         m_pmfxPAK = new MFXVideoPAK(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxPAK, MFX_ERR_MEMORY_ALLOC);
     }
@@ -1443,7 +1465,8 @@ mfxStatus CEncodingPipeline::Run()
         }
     } // if (m_encpakParams.bPREENC) {
 
-    if ((m_encpakParams.bENCPAK) || (m_encpakParams.bENCoPAKo)){
+    if ((m_encpakParams.bENCPAK)  || (m_encpakParams.bENCoPAKo)||
+        (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC) ){
         feiCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN; //GetFrameType(frameCount);
         feiCtrl.QP = m_encpakParams.QP;
         //feiCtrl.SkipFrame = 0;
@@ -1576,7 +1599,10 @@ mfxStatus CEncodingPipeline::Run()
             feiEncMV[fieldId].MB = new mfxExtFeiEncMV::mfxMB [numMB];
             //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMV;
                 printf("Use MV output file: %s\n", m_encpakParams.mvoutFile);
-                MSDK_FOPEN(mvENCPAKout,m_encpakParams.mvoutFile, MSDK_CHAR("wb"));
+                if (m_encpakParams.bOnlyPAK)
+                    MSDK_FOPEN(mvENCPAKout,m_encpakParams.mvoutFile, MSDK_CHAR("rb"));
+                else /*for all other cases need to wtite into this file*/
+                    MSDK_FOPEN(mvENCPAKout,m_encpakParams.mvoutFile, MSDK_CHAR("wb"));
                 if ( mvENCPAKout == NULL) {
                     fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvoutFile);
                     exit(-1);
@@ -1590,7 +1616,10 @@ mfxStatus CEncodingPipeline::Run()
             feiEncMBCode[fieldId].MB = new mfxFeiPakMBCtrl [numMB];
             //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMBCode;
                 printf("Use MB code output file: %s\n", m_encpakParams.mbcodeoutFile);
-                MSDK_FOPEN(mbcodeout,m_encpakParams.mbcodeoutFile, MSDK_CHAR("wb"));
+                if (m_encpakParams.bOnlyPAK)
+                    MSDK_FOPEN(mbcodeout,m_encpakParams.mbcodeoutFile, MSDK_CHAR("rb"));
+                else
+                    MSDK_FOPEN(mbcodeout,m_encpakParams.mbcodeoutFile, MSDK_CHAR("wb"));
                 if ( mbcodeout == NULL) {
                     fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbcodeoutFile);
                     exit(-1);
@@ -1637,7 +1666,8 @@ mfxStatus CEncodingPipeline::Run()
         MSDK_BREAK_ON_ERROR(sts);
 
         iTask* eTask=NULL;
-        if ((m_encpakParams.bPREENC) || (m_encpakParams.bENCoPAKo)){
+        if ((m_encpakParams.bPREENC) || (m_encpakParams.bENCoPAKo) ||
+                (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK) ){
             eTask = new iTask;
             eTask->frameType = GetFrameType(frameCount);
             eTask->frameDisplayOrder = frameCount;
@@ -1829,8 +1859,8 @@ mfxStatus CEncodingPipeline::Run()
             }
         }
 
-        /* ENC call */
-        if (m_encpakParams.bENCoPAKo) {
+        /* ENC_and_PAK or ENConly or PAK only call */
+        if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC) ){
             pSurf->Data.Locked++;
             eTask->in.InSurface = pSurf;
             eTask->inPAK.InSurface = pSurf;
@@ -1850,17 +1880,41 @@ mfxStatus CEncodingPipeline::Run()
             for (;;) {
                 fprintf(stderr, "frame: %d  t:%d : submit ", eTask->frameDisplayOrder, eTask->frameType);
 
-                sts = m_pmfxENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
-                sts = MFX_ERR_NONE;
+                if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
+                {
+                    sts = m_pmfxENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
+                    sts = MFX_ERR_NONE;
+                    sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                    fprintf(stderr, "synced : %d\n", sts);
+                }
 
-                sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
-                fprintf(stderr, "synced : %d\n", sts);
+                /* In case of PAK only we need to read data from file */
+                if (m_encpakParams.bOnlyPAK)
+                {
+                    for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                    {
+                        mfxExtFeiEncMV* mvBuf=NULL;
+                        mfxExtFeiPakMBCtrl* mbcodeBuf = NULL;
+                        for(int i=0; i<eTask->inPAK.NumExtParam; i++){
+                            if(eTask->inPAK.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout){
+                                mvBuf = (mfxExtFeiEncMV*)eTask->inPAK.ExtParam[i];
+                                fread(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
+                            }
+                            if(eTask->inPAK.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
+                                mbcodeBuf = (mfxExtFeiPakMBCtrl*)eTask->inPAK.ExtParam[i];
+                                fread(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
+                            }
+                        } //
+                    } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                } // if (m_encpakParams.bOnlyPAK)
 
-                sts = m_pmfxPAK->ProcessFrameAsync(&eTask->inPAK, &eTask->outPAK, &eTask->EncSyncP);
-                sts = MFX_ERR_NONE;
-
-                sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
-                fprintf(stderr, "synced : %d\n", sts);
+                if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
+                {
+                    sts = m_pmfxPAK->ProcessFrameAsync(&eTask->inPAK, &eTask->outPAK, &eTask->EncSyncP);
+                    sts = MFX_ERR_NONE;
+                    sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                    fprintf(stderr, "synced : %d\n", sts);
+                }
 
                 if (MFX_ERR_NONE < sts && !eTask->EncSyncP) // repeat the call if warning and no output
                 {
@@ -1889,30 +1943,33 @@ mfxStatus CEncodingPipeline::Run()
             }
 
             //drop output data to output file
-            pCurrentTask->WriteBitstream();
+            if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
+                pCurrentTask->WriteBitstream();
 
-            for (fieldId = 0; fieldId < numOfFields; fieldId++)
+            if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
             {
-                mfxExtFeiEncMV* mvBuf=NULL;
-                mfxExtFeiEncMBStat* mbstatBuf = NULL;
-                mfxExtFeiPakMBCtrl* mbcodeBuf = NULL;
-                for(int i=0; i<eTask->out.NumExtParam; i++){
-                    if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout){
-                        mvBuf = (mfxExtFeiEncMV*)eTask->out.ExtParam[i];
-                        fwrite(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
-                    }
-                    if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB_STAT && mbstatout){
-                        mbstatBuf = (mfxExtFeiEncMBStat*)eTask->out.ExtParam[i];
-                        fwrite(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, mbstatout);
-                    }
-                    if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
-                        mbcodeBuf = (mfxExtFeiPakMBCtrl*)eTask->out.ExtParam[i];
-                        fwrite(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
-                    }
-                } // for(int i=0; i<eTask->out.NumExtParam; i++){
-            } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                {
+                    mfxExtFeiEncMV* mvBuf=NULL;
+                    mfxExtFeiEncMBStat* mbstatBuf = NULL;
+                    mfxExtFeiPakMBCtrl* mbcodeBuf = NULL;
+                    for(int i=0; i<eTask->out.NumExtParam; i++){
+                        if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout){
+                            mvBuf = (mfxExtFeiEncMV*)eTask->out.ExtParam[i];
+                            fwrite(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
+                        }
+                        if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB_STAT && mbstatout){
+                            mbstatBuf = (mfxExtFeiEncMBStat*)eTask->out.ExtParam[i];
+                            fwrite(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, mbstatout);
+                        }
+                        if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
+                            mbcodeBuf = (mfxExtFeiPakMBCtrl*)eTask->out.ExtParam[i];
+                            fwrite(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
+                        }
+                    } // for(int i=0; i<eTask->out.NumExtParam; i++){
+                } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+            } // if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
         } // if (m_encpakParams.bENCoPAKo)
-
 
         if (m_encpakParams.bENCPAK) {
             for (;;) {
@@ -2200,7 +2257,7 @@ mfxStatus CEncodingPipeline::Run()
     }
 
     // loop to get buffered frames from encoder
-    if (m_encpakParams.bENCoPAKo) {
+    if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK)){
         mdprintf(stderr,"input_tasks_size=%u\n", (mfxU32)inputTasks.size());
         //encode last frames
         std::list<iTask*>::iterator it = inputTasks.begin();
@@ -2230,16 +2287,42 @@ mfxStatus CEncodingPipeline::Run()
 
                 for (;;) {
                     //Only synced operation supported for now
-                    fprintf(stderr, "frame: %d  t:%d : submit ", eTask->frameDisplayOrder, eTask->frameType);
-                    sts = m_pmfxENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
-                    sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
-                    fprintf(stderr, "synced : %d\n", sts);
-                    MSDK_BREAK_ON_ERROR(sts);
+                    if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
+                    {
+                        fprintf(stderr, "frame: %d  t:%d : submit ", eTask->frameDisplayOrder, eTask->frameType);
+                        sts = m_pmfxENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
+                        sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                        fprintf(stderr, "synced : %d\n", sts);
+                        MSDK_BREAK_ON_ERROR(sts);
+                    }
 
-                    sts = m_pmfxPAK->ProcessFrameAsync(&eTask->inPAK, &eTask->outPAK, &eTask->EncSyncP);
-                    sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
-                    fprintf(stderr, "synced : %d\n", sts);
-                    MSDK_BREAK_ON_ERROR(sts);
+                    /* In case of PAK only we need to read data from file */
+                    if (m_encpakParams.bOnlyPAK)
+                    {
+                        for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                        {
+                            mfxExtFeiEncMV* mvBuf=NULL;
+                            mfxExtFeiPakMBCtrl* mbcodeBuf = NULL;
+                            for(int i=0; i<eTask->inPAK.NumExtParam; i++){
+                                if(eTask->inPAK.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout){
+                                    mvBuf = (mfxExtFeiEncMV*)eTask->inPAK.ExtParam[i];
+                                    fread(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
+                                }
+                                if(eTask->inPAK.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
+                                    mbcodeBuf = (mfxExtFeiPakMBCtrl*)eTask->inPAK.ExtParam[i];
+                                    fread(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
+                                }
+                            } //
+                        } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                    } // if (m_encpakParams.bOnlyPAK)
+
+                    if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
+                    {
+                        sts = m_pmfxPAK->ProcessFrameAsync(&eTask->inPAK, &eTask->outPAK, &eTask->EncSyncP);
+                        sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                        fprintf(stderr, "synced : %d\n", sts);
+                        MSDK_BREAK_ON_ERROR(sts);
+                    }
 
                     if (MFX_ERR_NONE < sts && !eTask->EncSyncP) // repeat the call if warning and no output
                     {
@@ -2261,28 +2344,32 @@ mfxStatus CEncodingPipeline::Run()
                 eTask->encoded = 1;
 
                 //drop output data to output file
-                pCurrentTask->WriteBitstream();
+                if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
+                    pCurrentTask->WriteBitstream();
 
-                for (fieldId = 0; fieldId < numOfFields; fieldId++)
-                 {
-                     mfxExtFeiEncMV* mvBuf=NULL;
-                     mfxExtFeiEncMBStat* mbstatBuf = NULL;
-                     mfxExtFeiPakMBCtrl* mbcodeBuf = NULL;
-                     for(int i=0; i<eTask->out.NumExtParam; i++){
-                         if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout){
-                             mvBuf = (mfxExtFeiEncMV*)eTask->out.ExtParam[i];
-                             fwrite(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
-                         }
-                         if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB_STAT && mbstatout){
-                             mbstatBuf = (mfxExtFeiEncMBStat*)eTask->out.ExtParam[i];
-                             fwrite(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, mbstatout);
-                         }
-                         if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
-                             mbcodeBuf = (mfxExtFeiPakMBCtrl*)eTask->out.ExtParam[i];
-                             fwrite(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
-                         }
-                     } // for(int i=0; i<eTask->out.NumExtParam; i++){
-                 } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
+                {
+                    for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                     {
+                         mfxExtFeiEncMV* mvBuf=NULL;
+                         mfxExtFeiEncMBStat* mbstatBuf = NULL;
+                         mfxExtFeiPakMBCtrl* mbcodeBuf = NULL;
+                         for(int i=0; i<eTask->out.NumExtParam; i++){
+                             if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout){
+                                 mvBuf = (mfxExtFeiEncMV*)eTask->out.ExtParam[i];
+                                 fwrite(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
+                             }
+                             if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB_STAT && mbstatout){
+                                 mbstatBuf = (mfxExtFeiEncMBStat*)eTask->out.ExtParam[i];
+                                 fwrite(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, mbstatout);
+                             }
+                             if(eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
+                                 mbcodeBuf = (mfxExtFeiPakMBCtrl*)eTask->out.ExtParam[i];
+                                 fwrite(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
+                             }
+                         } // for(int i=0; i<eTask->out.NumExtParam; i++){
+                     } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                } //if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
 
                 //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
                 numUnencoded--;
@@ -2550,50 +2637,88 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
     {
         switch (eTask->frameType & MFX_FRAMETYPE_IPB) {
             case MFX_FRAMETYPE_I:
-                eTask->in.NumFrameL0 = eTask->inPAK.NumFrameL0 = 0; //1;  //just workaround to support I frames
-                eTask->in.NumFrameL1 = eTask->inPAK.NumFrameL1 = 0;
-                eTask->in.L0Surface = eTask->inPAK.L0Surface = NULL; //eTask->in.InSurface;
-                //ENC data
-                eTask->in.NumExtParam = numExtInParams;
-                eTask->in.ExtParam = inBufs;
-                eTask->out.NumExtParam = numExtOutParams;
-                eTask->out.ExtParam = outBufs;
+                /* ENC data */
+                if (m_pmfxENC)
+                {
+                    eTask->in.NumFrameL0 = 0; //1;  //just workaround to support I frames
+                    eTask->in.NumFrameL1 = 0;
+                    eTask->in.L0Surface = eTask->in.L1Surface = NULL; //eTask->in.InSurface;
+                    eTask->in.NumExtParam = numExtInParams;
+                    eTask->in.ExtParam = inBufs;
+                    eTask->out.NumExtParam = numExtOutParams;
+                    eTask->out.ExtParam = outBufs;
+                }
                 /* PAK data */
-                eTask->inPAK.NumExtParam = numExtOutParams;
-                eTask->inPAK.ExtParam = outBufs;
-                eTask->outPAK.NumExtParam = numExtInParams;
-                eTask->outPAK.ExtParam = inBufs;
+                if (m_pmfxPAK)
+                {
+                    eTask->inPAK.NumFrameL0 = eTask->inPAK.NumFrameL1 = 0;
+                    eTask->inPAK.L0Surface = eTask->inPAK.L1Surface = NULL;
+                    eTask->inPAK.NumExtParam = numExtOutParams;
+                    eTask->inPAK.ExtParam = outBufs;
+                    eTask->outPAK.NumExtParam = numExtInParams;
+                    eTask->outPAK.ExtParam = inBufs;
+                }
                 break;
             case MFX_FRAMETYPE_P:
-                eTask->in.NumFrameL0 = eTask->inPAK.NumFrameL0 = 1;
-                eTask->in.NumFrameL1 = eTask->inPAK.NumFrameL1 = 0;
-                eTask->in.L0Surface = eTask->inPAK.L0Surface = &eTask->prevTask->outPAK.OutSurface;
-                //in data
-                eTask->in.NumExtParam = numExtInParams;
-                eTask->in.ExtParam = inBufs;
-                //out data
-                eTask->out.NumExtParam = numExtOutParams;
-                eTask->out.ExtParam = outBufs;
-                eTask->inPAK.NumExtParam = numExtOutParams;
-                eTask->inPAK.ExtParam = outBufs;
-                eTask->outPAK.NumExtParam = numExtInParams;
-                eTask->outPAK.ExtParam = inBufs;
+                if (m_pmfxENC)
+                {
+                    eTask->in.NumFrameL0 = 1;
+                    eTask->in.NumFrameL1 = 0;
+                    //eTask->in.L0Surface = NULL;
+                    eTask->in.L0Surface = &eTask->in.InSurface;
+                    eTask->in.NumExtParam = numExtInParams;
+                    eTask->in.ExtParam = inBufs;
+                    eTask->out.NumExtParam = numExtOutParams;
+                    eTask->out.ExtParam = outBufs;
+                }
+
+                if (m_pmfxPAK)
+                {
+                    eTask->inPAK.NumFrameL0 = 1;
+                    eTask->inPAK.L0Surface = &eTask->prevTask->outPAK.OutSurface;
+                    eTask->inPAK.NumFrameL1 = 0;
+                    eTask->inPAK.NumExtParam = numExtOutParams;
+                    eTask->inPAK.ExtParam = outBufs;
+                    eTask->outPAK.NumExtParam = numExtInParams;
+                    eTask->outPAK.ExtParam = inBufs;
+                }
+
+                if ((m_pmfxENC)&&(m_pmfxPAK))
+                    eTask->in.L0Surface = eTask->inPAK.L0Surface = &eTask->prevTask->outPAK.OutSurface;
+
                 break;
             case MFX_FRAMETYPE_B:
-                eTask->in.NumFrameL0 = eTask->inPAK.NumFrameL0 = 1;
-                eTask->in.NumFrameL1 = eTask->inPAK.NumFrameL1 = 1;
-                eTask->in.L0Surface = eTask->inPAK.L0Surface = &eTask->prevTask->outPAK.OutSurface;
-                eTask->in.L1Surface = eTask->inPAK.L1Surface = &eTask->nextTask->outPAK.OutSurface;
-                //in data
-                eTask->in.NumExtParam = numExtInParams;
-                eTask->in.ExtParam = inBufs;
-                //out data
-                eTask->out.NumExtParam = numExtOutParams;
-                eTask->out.ExtParam = outBufs;
-                eTask->inPAK.NumExtParam = numExtOutParams;
-                eTask->inPAK.ExtParam = outBufs;
-                eTask->outPAK.NumExtParam = numExtInParams;
-                eTask->outPAK.ExtParam = inBufs;
+                if (m_pmfxENC)
+                {
+                    eTask->in.NumFrameL0 = 1;
+                    eTask->in.NumFrameL1 = 1;
+                    //eTask->in.L0Surface = NULL;
+                    //eTask->in.L1Surface = NULL;
+                    eTask->in.L0Surface = &eTask->in.InSurface;
+                    eTask->in.L1Surface = &eTask->in.InSurface;
+                    eTask->in.NumExtParam = numExtInParams;
+                    eTask->in.ExtParam = inBufs;
+                    eTask->out.NumExtParam = numExtOutParams;
+                    eTask->out.ExtParam = outBufs;
+                }
+                if (m_pmfxPAK)
+                {
+                    eTask->inPAK.NumFrameL0 = 1;
+                    eTask->inPAK.NumFrameL1 = 1;
+                    eTask->inPAK.L0Surface = &eTask->prevTask->outPAK.OutSurface;
+                    eTask->inPAK.L1Surface = &eTask->nextTask->outPAK.OutSurface;
+                    eTask->inPAK.NumExtParam = numExtOutParams;
+                    eTask->inPAK.ExtParam = outBufs;
+                    eTask->outPAK.NumExtParam = numExtInParams;
+                    eTask->outPAK.ExtParam = inBufs;
+                }
+
+                if ((m_pmfxENC)&&(m_pmfxPAK))
+                {
+                    eTask->in.L0Surface = eTask->inPAK.L0Surface = &eTask->prevTask->outPAK.OutSurface;
+                    eTask->in.L1Surface = eTask->inPAK.L1Surface = &eTask->nextTask->outPAK.OutSurface;
+                }
+
                 break;
         }
     }

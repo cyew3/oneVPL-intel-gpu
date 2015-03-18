@@ -39,6 +39,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames\n"));
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC+PAK (RC is forced to constant QP)\n"));
+    msdk_printf(MSDK_STRING("   [-enc_and_pak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
     msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
     msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
     msdk_printf(MSDK_STRING("   [-mbctrl file] - use the input to set MB control for FEI (only ENC+PAK)\n"));
@@ -108,9 +109,17 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bENCPAK = true;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc_and_pak")))
         {
             pParams->bENCoPAKo = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc")))
+        {
+            pParams->bOnlyENC = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pak")))
+        {
+            pParams->bOnlyPAK = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preenc")))
         {
@@ -283,7 +292,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     };
 
-    if (pParams->dstFileBuff.empty() && pParams->bENCPAK)
+    if ((pParams->dstFileBuff.empty() ) &&
+        (pParams->bENCoPAKo || pParams->bOnlyPAK) )
     {
         PrintHelp(strInput[0], MSDK_STRING("Destination file name not found"));
         return MFX_ERR_UNSUPPORTED;
@@ -415,6 +425,8 @@ int main(int argc, char *argv[])
     Params.gopSize = 1; //only I frames
     Params.bENCPAK = false; //default value
     Params.bENCoPAKo = false; //default value
+    Params.bOnlyENC = false; //default value
+    Params.bOnlyPAK = false; //default value
     Params.bPREENC = false; //default value
     Params.mvinFile = NULL;
     Params.mvoutFile = NULL;
