@@ -242,6 +242,7 @@ namespace ExtBuffer
         EXTBUF(mfxExtHEVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS);
         EXTBUF(mfxExtCodingOption2,         MFX_EXTBUFF_CODING_OPTION2);
         EXTBUF(mfxExtCodingOptionDDI,       MFX_EXTBUFF_DDI);
+        EXTBUF(mfxExtCodingOptionSPSPPS,    MFX_EXTBUFF_CODING_OPTION_SPSPPS);
     #undef EXTBUF
 
     class Proxy

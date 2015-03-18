@@ -492,6 +492,7 @@ bool CheckTU(mfxU8 support, mfxU16& tu)
     mfxI16 abs_diff = 0;
     bool   sign = 0;
     mfxI16 newtu = tu;
+    bool   changed = false;
 
     do
     {
@@ -500,9 +501,10 @@ bool CheckTU(mfxU8 support, mfxU16& tu)
         sign = !sign;
     } while (!(support & (1 << (newtu - 1))) && newtu > 0);
 
-    tu = newtu;
+    changed = (tu != newtu);
+    tu      = newtu;
 
-    return !!abs_diff;
+    return changed;
 }
 
 mfxU16 minRefForPyramid(mfxU16 GopRefDist)

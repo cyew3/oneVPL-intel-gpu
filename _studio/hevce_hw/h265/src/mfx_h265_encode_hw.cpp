@@ -257,8 +257,16 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         MfxVideoParam tmp = *in;
         ENCODE_CAPS_HEVC caps = {};
 
-        sts = QueryHwCaps(&m_core, GetGUID(tmp), caps);
-        MFX_CHECK_STS(sts);
+        if (m_ddi.get())
+        {
+            sts = m_ddi->QueryEncodeCaps(caps);
+            MFX_CHECK_STS(sts);
+        }
+        else
+        {
+            sts = QueryHwCaps(&m_core, GetGUID(tmp), caps);
+            MFX_CHECK_STS(sts);
+        }
 
         sts = CheckVideoParam(tmp, caps);
 
@@ -345,7 +353,14 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
 
+    mfxU16         NumExtParam = par->NumExtParam;
+    mfxExtBuffer** ExtParam    = par->ExtParam;
+
     *par = m_vpar;
+
+    par->NumExtParam = NumExtParam;
+    par->ExtParam    = ExtParam;
+
     sts = m_vpar.GetExtBuffers(*par);
 
     return sts;
@@ -454,11 +469,13 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
         task.m_initial_cpb_removal_delay  = m_hrd.GetInitCpbRemovalDelay();
         task.m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
 
+#ifndef HEADER_PACKING_TEST
         sts = GetNativeHandleToRawSurface(m_core, m_vpar, task, surfaceHDL);
         MFX_CHECK_STS(sts);
 
         sts = CopyRawSurfaceToVideoMemory(m_core, m_vpar, task);
         MFX_CHECK_STS(sts);
+#endif
 
         sts = m_ddi->Execute(task, surfaceHDL);
         MFX_CHECK_STS(sts);

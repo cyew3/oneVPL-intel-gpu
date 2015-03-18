@@ -34,6 +34,37 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     mfxU32      height)
 {
     m_core = core;
+
+#ifdef HEADER_PACKING_TEST
+    m_guid      = guid;
+    m_width     = width;
+    m_height    = height;
+    //m_auxDevice.reset((AuxiliaryDevice*) 0xFFFFFFFF);
+
+    m_caps.CodingLimitSet           = 1;
+    m_caps.BitDepth8Only            = 1;
+    m_caps.Color420Only             = 1;
+    m_caps.SliceStructure           = 4;
+    m_caps.SliceIPOnly              = 0;
+    m_caps.NoWeightedPred           = 1;
+    m_caps.NoMinorMVs               = 1;
+    m_caps.RawReconRefToggle        = 1;
+    m_caps.NoInterlacedField        = 1;
+    m_caps.BRCReset                 = 1;
+    m_caps.RollingIntraRefresh      = 0;
+    m_caps.UserMaxFrameSizeSupport  = 0;
+    m_caps.FrameLevelRateCtrl       = 1;
+    m_caps.SliceByteSizeCtrl        = 0;
+    m_caps.VCMBitRateControl        = 1;
+    m_caps.ParallelBRC              = 1;
+    m_caps.TileSupport              = 0;
+    m_caps.MaxPicWidth              = 8192;
+    m_caps.MaxPicHeight             = 4096;
+    m_caps.MaxNum_Reference0        = 3;
+    m_caps.MaxNum_Reference1        = 1;
+    m_caps.MBBRCSupport             = 1;
+    m_caps.TUSupport                = 73;
+#else
     IDirect3DDeviceManager9 *device = 0;
     mfxStatus sts = MFX_ERR_NONE;
     
@@ -59,12 +90,14 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     m_width     = width;
     m_height    = height;
     m_auxDevice = auxDevice;
+#endif
 
     return MFX_ERR_NONE;
 }
 
 mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
 {
+#ifndef HEADER_PACKING_TEST
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
     DXVADDI_VIDEODESC desc = {};
@@ -87,6 +120,9 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     Zero(m_capsGet);
     hr = m_auxDevice->Execute(ENCODE_ENC_CTRL_GET_ID, (void *)0, m_capsGet);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+#else
+
+#endif
 
     FillSpsBuffer(par, m_caps, m_sps);
     FillPpsBuffer(par, m_pps);
@@ -123,6 +159,7 @@ mfxStatus D3D9Encoder::Reset(MfxVideoParam const & par)
 
 mfxStatus D3D9Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request)
 {
+#ifndef HEADER_PACKING_TEST
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
     if (!m_infoQueried)
@@ -162,13 +199,21 @@ mfxStatus D3D9Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocReque
     request.Info.Width  = m_compBufInfo[i].CreationWidth;
     request.Info.Height = m_compBufInfo[i].CreationHeight;
     request.Info.FourCC = m_compBufInfo[i].CompressedFormats;
+#else
+    type;
+    request.Info.Width  = (mfxU16)m_width;
+    request.Info.Height = (mfxU16)m_height;
+    request.Info.FourCC = MFX_FOURCC_NV12;
+#endif
 
     return MFX_ERR_NONE;
 }
 
 mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS_HEVC & caps)
 {
+#ifndef HEADER_PACKING_TEST
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
+#endif
 
     caps = m_caps;
 
@@ -177,6 +222,7 @@ mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS_HEVC & caps)
 
 mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
+#ifndef HEADER_PACKING_TEST
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
     mfxFrameAllocator & fa = m_core->FrameAllocator();
@@ -197,6 +243,7 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
     m_auxDevice->EndFrame(0);
+#endif
 
     if (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA)
     {
@@ -217,7 +264,9 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
 
 mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
 {
+#ifndef HEADER_PACKING_TEST
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
+#endif
 
     ENCODE_PACKEDHEADER_DATA * pPH = 0;
     ENCODE_EXECUTE_PARAMS executeParams = {};
@@ -327,7 +376,9 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
 mfxStatus D3D9Encoder::QueryStatus(Task & task)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryStatus");
+#ifndef HEADER_PACKING_TEST
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
+#endif
 
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.

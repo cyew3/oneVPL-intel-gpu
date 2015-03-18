@@ -9,6 +9,7 @@
 #include "mfx_common.h"
 
 #include "mfx_h265_encode_hw_utils.h"
+#include "mfx_h265_encode_hw_bs.h"
 #include "vm_time.h"
 #include <algorithm>
 #include <functional>
@@ -400,15 +401,43 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.DDI);
 }
 
-mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool /*query*/)
+mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
 {
+    mfxStatus sts = MFX_ERR_NONE;
+
     ExtBuffer::Set(par, m_ext.HEVCParam);
     ExtBuffer::Set(par, m_ext.HEVCTiles);
     ExtBuffer::Set(par, m_ext.Opaque);
     ExtBuffer::Set(par, m_ext.CO2);
     ExtBuffer::Set(par, m_ext.DDI);
 
-    return MFX_ERR_NONE;
+    mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(par);
+    if (pSPSPPS && !query)
+    {
+        MFX_CHECK(pSPSPPS->SPSBuffer, MFX_ERR_NULL_PTR);
+        MFX_CHECK(pSPSPPS->PPSBuffer, MFX_ERR_NULL_PTR);
+
+        HeaderPacker packer;
+        mfxU8* buf = 0;
+        mfxU32 len = 0;
+
+        sts = packer.Reset(*this);
+        MFX_CHECK_STS(sts);
+
+        packer.GetSPS(buf, len);
+        MFX_CHECK(pSPSPPS->SPSBufSize >= len, MFX_ERR_NOT_ENOUGH_BUFFER);
+
+        memcpy_s(pSPSPPS->SPSBuffer, len, buf, len);
+        pSPSPPS->SPSBufSize = (mfxU16)len;
+
+        packer.GetPPS(buf, len);
+        MFX_CHECK(pSPSPPS->PPSBufSize >= len, MFX_ERR_NOT_ENOUGH_BUFFER);
+
+        memcpy_s(pSPSPPS->PPSBuffer, len, buf, len);
+        pSPSPPS->PPSBufSize = (mfxU16)len;
+    }
+
+    return sts;
 }
 
 void MfxVideoParam::SyncVideoToCalculableParam()
