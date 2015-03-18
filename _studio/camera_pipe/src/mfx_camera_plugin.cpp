@@ -1132,9 +1132,9 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
     
     if ( newParam.vpp.In.CropW * newParam.vpp.In.CropH > 0x16E3600 )
     {
-        m_nTilesHor = (m_mfxVideoParam.vpp.In.CropH > 5000 ) ? 4 : 2;
-        m_nTilesVer = (m_mfxVideoParam.vpp.In.CropW > 8000 ) ? 2 : 1;
-        if ( m_mfxVideoParam.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY )
+        m_nTilesHor = (newParam.vpp.In.CropH > 5000 ) ? 4 : 2;
+        m_nTilesVer = (newParam.vpp.In.CropW > 8000 ) ? 2 : 1;
+        if ( newParam.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY )
         {
             // In case of tiling, only system memory is supported as output.
             // Must be documented
@@ -1149,7 +1149,7 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
 
     CameraParams pipeParams;
     pipeParams.frameWidth        = m_nTilesVer > 1 ? ((newParam.vpp.In.CropW / m_nTilesVer + 15) &~ 0xF) + 16 : newParam.vpp.In.CropW;
-    pipeParams.frameWidth64      = ((pipeParams.frameWidth/ m_nTilesVer + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
+    pipeParams.frameWidth64      = ((pipeParams.frameWidth + 31) &~ 0x1F); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
     pipeParams.paddedFrameWidth  = pipeParams.frameWidth + m_PaddingParams.left + m_PaddingParams.right;
     pipeParams.paddedFrameHeight = newParam.vpp.In.CropH  + m_PaddingParams.top + m_PaddingParams.bottom;
     pipeParams.vSliceWidth       = (((pipeParams.frameWidth / CAM_PIPE_KERNEL_SPLIT)  + 15) &~ 0xF) + 16;
@@ -1163,7 +1163,7 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
         // in case frame data pointer is 4K aligned, aligned_cut gives another 4K aligned pointer
         // below of the tiles border
         mfxU32 aligned_cut = ( newParam.vpp.In.CropH / m_nTilesHor - 0x3F ) &~0x3F;
-        pipeParams.TileHeight = newParam.vpp.In.CropH - aligned_cut;
+        pipeParams.TileHeight = newParam.vpp.In.CropH / (m_nTilesHor>>1) - aligned_cut;
     }
     pipeParams.TileHeightPadded  = pipeParams.TileHeight + m_PaddingParams.top + m_PaddingParams.bottom;
     pipeParams.BitDepth          = newParam.vpp.In.BitDepthLuma;

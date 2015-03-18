@@ -1121,9 +1121,9 @@ mfxStatus CMCameraProcessor::ReallocateInternalSurfaces(mfxVideoParam &newParam,
             m_cmDevice->DestroySurface(m_gammaOutSurf);
 
         if (! m_Params.Caps.bOutToARGB16)
-            m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW,  frameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8R8G8B8);
+            m_gammaOutSurf = CreateSurface(m_cmDevice, frameSizeExtra.frameWidth,  frameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8R8G8B8);
         else
-            m_gammaOutSurf = CreateSurface(m_cmDevice, newParam.vpp.Out.CropW * sizeof(mfxU16),  frameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8R8G8B8);
+            m_gammaOutSurf = CreateSurface(m_cmDevice, frameSizeExtra.frameWidth * sizeof(mfxU16),  frameSizeExtra.TileHeight, CM_SURFACE_FORMAT_A8R8G8B8);
     }
     else if (m_gammaOutSurf)
         m_cmDevice->DestroySurface(m_gammaOutSurf);
@@ -1162,7 +1162,7 @@ mfxStatus CMCameraProcessor::ReallocateInternalSurfaces(mfxVideoParam &newParam,
     {
         if (m_cmSurfIn)
             m_cmDevice->DestroySurface(m_cmSurfIn);
-        int width  = m_Params.Caps.bNoPadding ? paddedFrameWidth  : newParam.vpp.In.CropW;
+        int width  = m_Params.Caps.bNoPadding ? paddedFrameWidth  : frameSizeExtra.frameWidth;
         int height = frameSizeExtra.TileHeight;
 
         CAMERA_DEBUG_LOG("ReallocateInternalSurfaces:  m_cmSurfIn width %d height %d \n", width, height);
