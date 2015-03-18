@@ -192,7 +192,6 @@
     <ClCompile Include="src\d3d_device.cpp" />
     <ClCompile Include="src\general_allocator.cpp" />
     <ClCompile Include="src\mfx_buffering.cpp" />
-    <ClCompile Include="src\mfx_plugin_module.cpp" />
     <ClCompile Include="src\plugin_utils.cpp" />
     <ClCompile Include="src\sample_utils.cpp" />
     <ClCompile Include="src\sysmem_allocator.cpp" />
