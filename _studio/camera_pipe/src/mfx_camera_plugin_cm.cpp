@@ -301,7 +301,7 @@ mfxStatus CMCameraProcessor::SetExternalSurfaces(AsyncParams *pParam)
     if (pParam->Caps.OutputMemoryOperationMode == MEM_GPUSHARED) {
 
         mfxU32 outPitch  = ((mfxU32)surfOut->Data.PitchHigh << 16) | ((mfxU32)surfOut->Data.PitchLow);
-        mfxU32 outWidth  = (mfxU32)surfOut->Info.Width;
+        mfxU32 outWidth  = (mfxU32)pParam->FrameSizeExtra.frameWidth;
         mfxU32 outHeight = (mfxU32)m_Params.TileHeight;
         mfxU8 *ptr       = (mfxU8*)surfOut->Data.B + m_Params.tileOffsets[tileIDHorizontal].TileOffset*outPitch + tileIDVertical*pParam->FrameSizeExtra.frameWidth * 4;
         mfxU32 allocSize, allocPitch;
@@ -470,9 +470,9 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
                 return MFX_ERR_ABORTED;
             }
 
-            if ( m_vignetteMaskSurf ) 
+            if ( m_vignette_4x4 ) 
             {
-                m_vignetteMaskSurf->GetIndex(Mask4x4Index);
+                m_vignette_4x4->GetIndex(Mask4x4Index);
             }
             else
             {
@@ -820,6 +820,8 @@ mfxStatus CMCameraProcessor::Reset(mfxVideoParam *par, CameraParams *pipeParams)
             m_gammaCorrectSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
         if (!m_gammaPointSurf)
             m_gammaPointSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
+
+        MFX_CHECK_NULL_PTR2(m_gammaCorrectSurf, m_gammaPointSurf)
 
         mfxU8 *pGammaPts = (mfxU8 *)pipeParams->GammaParams.gamma_lut.gammaPoints;
         mfxU8 *pGammaCor = (mfxU8 *)pipeParams->GammaParams.gamma_lut.gammaCorrect;
