@@ -3208,12 +3208,14 @@ void MFXVideoENCODEH265::PrepareToEncode(void *pParam)
         }
 #endif
 
+        vm_mutex_lock(&m_critSect);
         vm_interlocked_cas32( &inputParam->m_doStage, 4, 3);
-
-        m_core->INeedMoreThreadsInside(this);
+        vm_mutex_unlock(&m_critSect);
 
         if (m_videoParam.num_threads > 1)
             vm_cond_broadcast(&m_condVar);
+
+        m_core->INeedMoreThreadsInside(this);
         
 #if defined (MFX_VA)
         if (m_videoParam.enableCmFlag) {
@@ -3279,7 +3281,8 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
     // threading barrier: if not completed preparation stage
     vm_mutex_lock(&th->m_critSect);
     while(inputParam->m_doStage < 4) {
-        vm_cond_wait(&th->m_condVar, &th->m_critSect);
+        // temp workaround, should be cond_wait. Possibly linux kernel futex bug (not sure yet)
+        vm_cond_timedwait(&th->m_condVar, &th->m_critSect, 1);
     }
     vm_mutex_unlock(&th->m_critSect);
 
@@ -3298,7 +3301,8 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
         while (inputParam->m_targetTask->m_statusReport == 2 ||
                 (!(taskNext && reencodeCounter == inputParam->m_reencode) &&
                 (inputParam->m_targetTask->m_statusReport == 1 && th->m_pendingTasks.size() == 0)))
-            vm_cond_wait(&th->m_condVar, &th->m_critSect);
+            // temp workaround, should be cond_wait. Possibly linux kernel futex bug (not sure yet)
+            vm_cond_timedwait(&th->m_condVar, &th->m_critSect, 1);
 
         if (inputParam->m_targetTask->m_statusReport >= 3) {
             if (taskNext && reencodeCounter == inputParam->m_reencode) {
