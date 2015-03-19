@@ -586,12 +586,7 @@ OpenCLRotator180Context::OpenCLRotator180Context(const std::string &program_src)
         }
 
         // create context and device
-        cl_context_properties properties[] =
-        {
-            CL_CONTEXT_PLATFORM, (cl_context_properties)m_platform(),
-            CL_CONTEXT_INTEROP_USER_SYNC, 1,
-            0
-        };
+        cl_context_properties properties[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)m_platform(), 0 };
         m_context = cl::Context(CL_DEVICE_TYPE_DEFAULT, properties);
 
         std::vector<cl::Device> devices = m_context.getInfo<CL_CONTEXT_DEVICES>();
@@ -679,7 +674,7 @@ OpenCLRotator180::OpenCLRotator180(OpenCLRotator180Context *pOpenCLRotator180Con
 }
 
 OpenCLRotator180::~OpenCLRotator180()
-{
+
 }
 
 mfxStatus OpenCLRotator180::Process(DataChunk * /*chunk*/)
