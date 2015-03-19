@@ -146,6 +146,7 @@ public:
         Ctrl& ctrl = m_ctrl[m_fo];
 
         ctrl.buf.resize(numMB);
+
         bool send_buffer = mbqp_on;
         if (mode & RANDOM)
             send_buffer = ((rand() % 9000) % 2 == 0);
@@ -165,13 +166,10 @@ public:
         if (mbqp_on && send_buffer)
         {
             m_pCtrl = &ctrl.ctrl;
-            m_pCtrl->NumExtParam = 1;
-            m_pCtrl->QP = ctrl.buf[0];
         }
         else
         {
             m_pCtrl->NumExtParam = 0;
-            m_pCtrl->QP = 0;
         }
 
         s.Data.TimeStamp = s.Data.FrameOrder = m_fo++;
