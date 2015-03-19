@@ -263,6 +263,23 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfx
         if(out->mfx.NumThread < 1)
             out->mfx.NumThread = 1;
 
+        //Check for valid height and width
+        if (in->mfx.FrameInfo.Width & 15)
+        {
+            out->mfx.FrameInfo.Width = 0;
+            isInvalid ++;
+        }
+        else
+            out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
+
+        if (in->mfx.FrameInfo.Height & ((in->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 15 : 31) )
+        {
+            out->mfx.FrameInfo.Height = 0;
+            isInvalid ++;
+        }
+        else
+            out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
+
         // Check crops
         if (in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height && in->mfx.FrameInfo.Height) {
             out->mfx.FrameInfo.CropH = 0;

@@ -933,15 +933,22 @@ mfxStatus MFXVideoENCODEMJPEG::Query(mfxVideoParam *in, mfxVideoParam *out)
         out->Protected = 0;
         out->AsyncDepth = in->AsyncDepth;
 
-        //Check for valid height and width
-        if( in->mfx.FrameInfo.Width > 65535 ) {
+        //Check for valid height and width (no need to check max size because we support all 2-bytes values)
+        if (in->mfx.FrameInfo.Width & 15)
+        {
             out->mfx.FrameInfo.Width = 0;
             isInvalid ++;
-        } else out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
-        if( in->mfx.FrameInfo.Height > 65535 ) {
+        }
+        else
+            out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
+
+        if (in->mfx.FrameInfo.Height & ((in->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 15 : 31) )
+        {
             out->mfx.FrameInfo.Height = 0;
             isInvalid ++;
-        } else out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
+        }
+        else
+            out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
 
         //Check for valid framerate
         if((!in->mfx.FrameInfo.FrameRateExtN && in->mfx.FrameInfo.FrameRateExtD) ||
