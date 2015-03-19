@@ -162,7 +162,7 @@ public:
         , mode(0)
         , m_reader()
     {
-        set_trace_level(BS_H264_TRACE_LEVEL_FULL);
+        set_trace_level(0);
         srand(0);
 
         m_filler = this;
@@ -206,21 +206,25 @@ public:
         Ctrl& ctrl = m_ctrl[m_fo];
 
         ctrl.buf.resize(numMB);
+        bool send_buffer = mbqp_on;
         if (mode & RANDOM)
-            mbqp_on = ((rand() % 9000) % 2 == 0);
+            send_buffer = ((rand() % 9000) % 2 == 0);
 
         for (mfxU32 i = 0; i < ctrl.buf.size(); i++)
         {
-            if (mbqp_on)
+            if (mbqp_on && send_buffer)
             {
                 ctrl.buf[i] = 1 + rand() % 50;
                 if (i) {
                     // The decoded value of mb_qp_delta shall be in the range of −( 26 + QpBdOffsetY / 2) to +( 25 + QpBdOffsetY / 2 ), inclusive
                     mfxI16 delta = ctrl.buf[i-1] - ctrl.buf[i];
                     if (delta >= 25)
-                        ctrl.buf[i] = ctrl.buf[i-1] + 10;
+                        ctrl.buf[i] = ctrl.buf[i] + delta - rand() % 10;
                     else if (delta <= -25)
-                        ctrl.buf[i] = ctrl.buf[i-1] - 10;
+                        ctrl.buf[i] = ctrl.buf[i] + delta + rand() % 10;
+
+                    if (ctrl.buf[i] > 51) ctrl.buf[i] = 51;
+                    if (ctrl.buf[i] <  1) ctrl.buf[i] = 1;
                 }
             } else
             {
