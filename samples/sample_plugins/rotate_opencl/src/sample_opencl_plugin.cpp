@@ -674,6 +674,7 @@ OpenCLRotator180::OpenCLRotator180(OpenCLRotator180Context *pOpenCLRotator180Con
 }
 
 OpenCLRotator180::~OpenCLRotator180()
+{
 
 }
 
