@@ -887,13 +887,11 @@ mfxStatus VideoENC_LA::RunFrameVmeENCCheck(
         if (pReord)
         {
             m_SurfacesForOutput.push_back(pReord);
-            /* KW fix */
-            //MFX_CHECK_STS(GetOpaqSurface(*m_core, m_video,pReord ,&pAsyncParams->reordered_surface));
-            sts = GetOpaqSurface(*m_core, m_video,pReord ,&pAsyncParams->reordered_surface);
-            if (MFX_ERR_NONE != sts)
+            mfxStatus ret = GetOpaqSurface(*m_core, m_video,pReord ,&pAsyncParams->reordered_surface);
+            if (MFX_ERR_NONE != ret)
             {
                 delete pAsyncParams;
-                MFX_CHECK_STS(sts);
+                MFX_CHECK_STS(ret);
             }
         }
         else
