@@ -44,8 +44,8 @@ mfxStatus tsSession::MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
     m_initialized = (g_tsStatus.get() >= 0);
 
 #if (defined(LINUX32) || defined(LINUX64))
-    // SetHandle on Linux is always required
-    if (m_initialized)
+    // SetHandle on Linux is always required for HW
+    if (m_initialized && g_tsImpl != MFX_IMPL_SOFTWARE)
     {
         mfxHDL hdl;
         mfxHandleType type;
