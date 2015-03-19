@@ -100,6 +100,7 @@ private:
     std::list<DdiTask> m_free;
     std::list<DdiTask> m_incoming;
     std::list<DdiTask> m_encoding;
+    DdiTask m_prevTask;
     UMC::Mutex m_listMutex; 
     
     mfxU32 m_inputFrameType;

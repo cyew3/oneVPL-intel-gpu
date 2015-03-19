@@ -41,6 +41,35 @@ do {                                               \
 
 #define VAConfigAttribInputTiling  -1  // Inform the app what kind of tiling format supported by driver
 
+
+mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl);
+
+VAProfile ConvertProfileTypeMFX2VAAPI(mfxU32 type);
+
+mfxStatus SetHRD(
+    MfxHwH264Encode::MfxVideoParam const & par,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & hrdBuf_id);
+
+mfxStatus SetPrivateParams(
+    MfxHwH264Encode::MfxVideoParam const & par,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & privateParams_id,
+    mfxEncodeCtrl const * pCtrl = 0);
+
+void FillConstPartOfPps(
+    MfxHwH264Encode::MfxVideoParam const & par,
+    VAEncPictureParameterBufferH264 & pps);
+
+mfxStatus SetFrameRate(
+    MfxHwH264Encode::MfxVideoParam const & par,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & frameRateBuf_id);
+
+
 namespace MfxHwH264Encode
 {
     // map feedbackNumber <-> VASurface
@@ -231,7 +260,7 @@ namespace MfxHwH264Encode
     };
 
     //extend encoder to FEI interface
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)    
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
     class VAAPIFEIPREENCEncoder : public VAAPIEncoder
     {
     public:
@@ -292,12 +321,7 @@ namespace MfxHwH264Encode
         std::vector<ExtVASurface> m_statFeedbackCache;
         std::vector<ExtVASurface> m_inputQueue;
 
-        mfxU32 m_currentFrameNum;
         VABufferID m_codedBufferId;
-        mfxU32 m_lastRefFrameOrder;
-        signed int Cur_POC[2];
-        signed int ref0_POC[2];
-        signed int ref1_POC[2];
     };
 #endif
 
@@ -330,12 +354,7 @@ namespace MfxHwH264Encode
         std::vector<ExtVASurface> m_statFeedbackCache;
         std::vector<ExtVASurface> m_inputQueue;
 
-        mfxU32 m_currentFrameNum;
         VABufferID m_codedBufferId;
-        mfxU32 m_lastRefFrameOrder;
-        signed int Cur_POC[2];
-        signed int ref0_POC[2];
-        signed int ref1_POC[2];
     };
 #endif
 

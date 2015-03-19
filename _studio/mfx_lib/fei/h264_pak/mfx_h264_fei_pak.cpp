@@ -221,11 +221,32 @@ static mfxStatus AsyncRoutine(void * state, void * param, mfxU32, mfxU32)
 
 mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
 {
-    //mfxExtCodingOption    const * extOpt = GetExtBuffer(m_video);
-    //mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
+    mfxExtSpsHeader const &         extSps         = GetExtBufferRef(m_video);
+    mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
     mfxStatus sts = MFX_ERR_NONE;
     DdiTask & task = m_incoming.front();
+
+    mfxU32 prevsfid         = m_prevTask.m_fid[1];
+    mfxU8  idrPicFlag       = !!(task.GetFrameType() & MFX_FRAMETYPE_IDR);
+    mfxU8  intraPicFlag     = !!(task.GetFrameType() & MFX_FRAMETYPE_I);
+    mfxU8  prevIdrFrameFlag = !!(m_prevTask.GetFrameType() & MFX_FRAMETYPE_IDR);
+    mfxU8  prevRefPicFlag   = !!(m_prevTask.GetFrameType() & MFX_FRAMETYPE_REF);
+    mfxU8  prevIdrPicFlag   = !!(m_prevTask.m_type[prevsfid] & MFX_FRAMETYPE_IDR);
+
+    task.m_frameOrderIdr = idrPicFlag ? task.m_frameOrder : m_prevTask.m_frameOrderIdr;
+    task.m_frameOrderI   = intraPicFlag ? task.m_frameOrder : m_prevTask.m_frameOrderI;
+    //task.m_encOrder      = m_prevTask.m_encOrder + 1;
+    //task.m_encOrderIdr   = prevIdrFrameFlag ? m_prevTask.m_encOrder : m_prevTask.m_encOrderIdr;
+
+    task.m_frameNum = mfxU16((m_prevTask.m_frameNum + prevRefPicFlag) % FRAME_NUM_MAX);
+    if (idrPicFlag)
+        task.m_frameNum = 0;
+
+    task.m_picNum[0] = task.m_frameNum * (task.m_fieldPicFlag + 1) + task.m_fieldPicFlag;
+    task.m_picNum[1] = task.m_picNum[0];
+
+    task.m_idrPicId = m_prevTask.m_idrPicId + idrPicFlag;
 
     task.m_idx    = FindFreeResourceIndex(m_raw);
     task.m_midRaw = AcquireResource(m_raw, task.m_idx);
@@ -245,6 +266,8 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
         if (sts != MFX_ERR_NONE)
                  return Error(sts);
     }
+
+    m_prevTask = task;
 
     return sts;
 }
@@ -328,6 +351,7 @@ mfxStatus VideoPAK_PAK::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAll
 VideoPAK_PAK::VideoPAK_PAK(VideoCORE *core,  mfxStatus * sts)
     : m_bInit( false )
     , m_core( core )
+    , m_prevTask()
 {
     *sts = MFX_ERR_NONE;
 } 
@@ -380,6 +404,16 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
 
     m_currentPlatform = m_core->GetHWType();
     m_currentVaType   = m_core->GetVAType();
+
+    mfxStatus spsppsSts = MfxHwH264Encode::CopySpsPpsToVideoParam(m_video);
+
+    mfxStatus checkStatus = MfxHwH264Encode::CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
+    if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    else if (checkStatus < MFX_ERR_NONE)
+        return checkStatus;
+    else if (checkStatus == MFX_ERR_NONE)
+        checkStatus = spsppsSts;
 
     //raw surfaces should be created before accel service
     mfxFrameAllocRequest request = { { 0 } };
@@ -465,7 +499,21 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
 
     m_free.front().m_frameOrder = input->InSurface->Data.FrameOrder;
     if (mtype & MFX_FRAMETYPE_IDR)
+    {
         m_free.front().m_frameOrderIdr = input->InSurface->Data.FrameOrder;
+        /* Need to insert SPS for IDR frame */
+        m_free.front().m_insertSps[0] = 1;
+        m_free.front().m_insertSps[1] = 0;
+    }
+
+    if (mtype & MFX_FRAMETYPE_I)
+    {
+        m_free.front().m_frameOrderI = input->InSurface->Data.FrameOrder;
+    }
+
+    /* By default insert PSS for each frame */
+    m_free.front().m_insertPps[0] = 1;
+    m_free.front().m_insertPps[1] = 1;
     m_free.front().m_timeStamp = input->InSurface->Data.TimeStamp;
     m_free.front().m_userData.resize(2);
     m_free.front().m_userData[0] = input;

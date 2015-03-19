@@ -221,85 +221,32 @@ static mfxStatus AsyncRoutine(void * state, void * param, mfxU32, mfxU32)
 
 mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
 {
-    //mfxExtCodingOption    const * extOpt = GetExtBuffer(m_video);
-    //mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
+    mfxExtSpsHeader const &         extSps         = GetExtBufferRef(m_video);
+    mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
     mfxStatus sts = MFX_ERR_NONE;
     DdiTask & task = m_incoming.front();
 
-//    mfxU32 prevsfid         = prevTask.m_fid[1];
-//    mfxU8  idrPicFlag       = !!(task.GetFrameType() & MFX_FRAMETYPE_IDR);
-//    mfxU8  intraPicFlag     = !!(task.GetFrameType() & MFX_FRAMETYPE_I);
-//    mfxU8  prevIdrFrameFlag = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_IDR);
-//    mfxU8  prevRefPicFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_REF);
-//    mfxU8  prevIdrPicFlag   = !!(prevTask.m_type[prevsfid] & MFX_FRAMETYPE_IDR);
-//
-//    task.m_frameOrderIdr = idrPicFlag ? task.m_frameOrder : prevTask.m_frameOrderIdr;
-//    task.m_frameOrderI   = intraPicFlag ? task.m_frameOrder : prevTask.m_frameOrderI;
-//    task.m_encOrder      = prevTask.m_encOrder + 1;
-//    task.m_encOrderIdr   = prevIdrFrameFlag ? prevTask.m_encOrder : prevTask.m_encOrderIdr;
-//
-//    task.m_frameNum = mfxU16((prevTask.m_frameNum + prevRefPicFlag));
-//    if (idrPicFlag)
-//        task.m_frameNum = 0;
-//
-//    task.m_picNum[0] = task.m_frameNum * (task.m_fieldPicFlag + 1) + task.m_fieldPicFlag;
-//    task.m_picNum[1] = task.m_picNum[0];
-//
-//    task.m_idrPicId = prevTask.m_idrPicId + idrPicFlag;
-//
-//    mfxU32 ffid = task.m_fid[0];
-//    mfxU32 sfid = !ffid;
-//
-//
-//    task.m_dpbOutputDelay   = 2 * (task.m_frameOrder + numReorderFrames - task.m_encOrder);
-//    task.m_cpbRemoval[ffid] = 2 * (task.m_encOrder - task.m_encOrderIdr);
-//    task.m_cpbRemoval[sfid] = (idrPicFlag) ? 1 : task.m_cpbRemoval[ffid] + 1;
-//
-//    task.m_reference[ffid]  = !!(task.m_type[ffid] & MFX_FRAMETYPE_REF);
-//    task.m_reference[sfid]  = !!(task.m_type[sfid] & MFX_FRAMETYPE_REF);
-//
-//    task.m_decRefPicMrkRep[ffid].presentFlag                = prevIdrPicFlag || prevTask.m_decRefPicMrk[prevsfid].mmco.Size();
-//    task.m_decRefPicMrkRep[ffid].original_idr_flag          = prevIdrPicFlag;
-//    task.m_decRefPicMrkRep[ffid].original_frame_num         = prevTask.m_frameNum;
-//    task.m_decRefPicMrkRep[ffid].original_field_pic_flag    = prevTask.m_fieldPicFlag;
-//    task.m_decRefPicMrkRep[ffid].original_bottom_field_flag = prevTask.m_fid[prevsfid];
-//    task.m_decRefPicMrkRep[ffid].dec_ref_pic_marking        = prevTask.m_decRefPicMrk[prevsfid];
-//
-//    task.m_subMbPartitionAllowed[0] = CheckSubMbPartition(&extDdi, task.m_type[0]);
-//    task.m_subMbPartitionAllowed[1] = CheckSubMbPartition(&extDdi, task.m_type[1]);
-//
-//    task.m_insertAud[ffid] = IsOn(extOpt.AUDelimiter);
-//    task.m_insertAud[sfid] = IsOn(extOpt.AUDelimiter);
-//    task.m_insertSps[ffid] = intraPicFlag;
-//    task.m_insertSps[sfid] = 0;
-//    task.m_insertPps[ffid] = task.m_insertSps[ffid] || IsOn(extOpt2.RepeatPPS);
-//    task.m_insertPps[sfid] = task.m_insertSps[sfid] || IsOn(extOpt2.RepeatPPS);
-//    task.m_nalRefIdc[ffid] = task.m_reference[ffid];
-//    task.m_nalRefIdc[sfid] = task.m_reference[sfid];
-//
-//
-//    task.m_maxFrameSize = extOpt2Runtime ? extOpt2Runtime->MaxFrameSize : extOpt2.MaxFrameSize;
-//    task.m_numMbPerSlice = extOpt2.NumMbPerSlice;
-//    task.m_numSlice[ffid] = (task.m_type[ffid] & MFX_FRAMETYPE_I) ? extOpt3->NumSliceI :
-//        (task.m_type[ffid] & MFX_FRAMETYPE_P) ? extOpt3->NumSliceP : extOpt3->NumSliceB;
-//    task.m_numSlice[!ffid] = (task.m_type[!ffid] & MFX_FRAMETYPE_I) ? extOpt3->NumSliceI :
-//        (task.m_type[!ffid] & MFX_FRAMETYPE_P) ? extOpt3->NumSliceP : extOpt3->NumSliceB;
-//
-//    if (video.calcParam.lyncMode)
-//    {
-//        task.m_insertPps[ffid] = task.m_insertSps[ffid];
-//        task.m_insertPps[sfid] = task.m_insertSps[sfid];
-//        task.m_nalRefIdc[ffid] = idrPicFlag ? 3 : (task.m_reference[ffid] ? 2 : 0);
-//        task.m_nalRefIdc[sfid] = task.m_reference[sfid] ? 2 : 0;
-//    }
-//
-//    task.m_cqpValue[0] = GetQpValue(video, task.m_ctrl, task.m_type[0]);
-//    task.m_cqpValue[1] = GetQpValue(video, task.m_ctrl, task.m_type[1]);
-//
-//    task.m_statusReportNumber[0] = 2 * task.m_encOrder;
-//    task.m_statusReportNumber[1] = 2 * task.m_encOrder + 1;
+    mfxU32 prevsfid         = m_prevTask.m_fid[1];
+    mfxU8  idrPicFlag       = !!(task.GetFrameType() & MFX_FRAMETYPE_IDR);
+    mfxU8  intraPicFlag     = !!(task.GetFrameType() & MFX_FRAMETYPE_I);
+    mfxU8  prevIdrFrameFlag = !!(m_prevTask.GetFrameType() & MFX_FRAMETYPE_IDR);
+    mfxU8  prevRefPicFlag   = !!(m_prevTask.GetFrameType() & MFX_FRAMETYPE_REF);
+    mfxU8  prevIdrPicFlag   = !!(m_prevTask.m_type[prevsfid] & MFX_FRAMETYPE_IDR);
 
+    task.m_frameOrderIdr = idrPicFlag ? task.m_frameOrder : m_prevTask.m_frameOrderIdr;
+    task.m_frameOrderI   = intraPicFlag ? task.m_frameOrder : m_prevTask.m_frameOrderI;
+    //task.m_encOrder      = m_prevTask.m_encOrder + 1;
+    //task.m_encOrderIdr   = prevIdrFrameFlag ? m_prevTask.m_encOrder : m_prevTask.m_encOrderIdr;
+
+    task.m_frameNum = mfxU16((m_prevTask.m_frameNum + prevRefPicFlag) % FRAME_NUM_MAX);
+    if (idrPicFlag)
+        task.m_frameNum = 0;
+
+    task.m_picNum[0] = task.m_frameNum * (task.m_fieldPicFlag + 1) + task.m_fieldPicFlag;
+    task.m_picNum[1] = task.m_picNum[0];
+
+    task.m_idrPicId = m_prevTask.m_idrPicId + idrPicFlag;
 
     task.m_idx    = FindFreeResourceIndex(m_raw);
     task.m_midRaw = AcquireResource(m_raw, task.m_idx);
@@ -320,6 +267,8 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
         if (sts != MFX_ERR_NONE)
                  return Error(sts);
     }
+
+    m_prevTask = task;
 
     return sts;
 }
@@ -399,6 +348,7 @@ mfxStatus VideoENC_ENC::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAll
 VideoENC_ENC::VideoENC_ENC(VideoCORE *core,  mfxStatus * sts)
     : m_bInit( false )
     , m_core( core )
+    , m_prevTask()
 {
     *sts = MFX_ERR_NONE;
 } 
@@ -418,6 +368,18 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
     m_video = *par;
     //add ext buffers from par to m_video
 
+    MfxVideoParam tmp(*par);
+
+    sts = ReadSpsPpsHeaders(tmp);
+    MFX_CHECK_STS(sts);
+
+    sts = CheckWidthAndHeight(tmp);
+    MFX_CHECK_STS(sts);
+
+    sts = CopySpsPpsToVideoParam(tmp);
+    if (sts < MFX_ERR_NONE)
+        return sts;
+
     m_ddi.reset( new MfxHwH264Encode::VAAPIFEIENCEncoder );
     if (m_ddi.get() == 0)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -436,6 +398,16 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
 
     m_currentPlatform = m_core->GetHWType();
     m_currentVaType   = m_core->GetVAType();
+
+    mfxStatus spsppsSts = MfxHwH264Encode::CopySpsPpsToVideoParam(m_video);
+
+    mfxStatus checkStatus = MfxHwH264Encode::CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
+    if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    else if (checkStatus < MFX_ERR_NONE)
+        return checkStatus;
+    else if (checkStatus == MFX_ERR_NONE)
+        checkStatus = spsppsSts;
 
     //raw surfaces should be created before accel service
     mfxFrameAllocRequest request = { { 0 } };
@@ -505,6 +477,23 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
         if (input->NumFrameL1 > 0)
             mtype = MFX_FRAMETYPE_B;
     }
+
+    if (mtype & MFX_FRAMETYPE_IDR)
+    {
+        m_free.front().m_frameOrderIdr = input->InSurface->Data.FrameOrder;
+        /* Need to insert SPS for IDR frame */
+        m_free.front().m_insertSps[0] = 1;
+        m_free.front().m_insertSps[1] = 0;
+    }
+
+    if (mtype & MFX_FRAMETYPE_I)
+    {
+        m_free.front().m_frameOrderI = input->InSurface->Data.FrameOrder;
+    }
+
+    /* By default insert PSS for each frame */
+    m_free.front().m_insertPps[0] = 1;
+    m_free.front().m_insertPps[1] = 1;
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
 

@@ -154,10 +154,6 @@ function( make_library name variant type )
       target_link_libraries( ${target} ${lib} )
     endforeach( )
 
-    if( Linux )
-      target_link_libraries( ${target} "-Xlinker --end-group" )
-    endif( )
-
     foreach( lib ${LIBS} )
       target_link_libraries( ${target} ${lib} )
     endforeach( )
@@ -175,6 +171,11 @@ function( make_library name variant type )
   set_target_properties( ${target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE} FOLDER ${folder} )
   set_target_properties( ${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE} FOLDER ${folder} ) 
   set_target_properties( ${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE} FOLDER ${folder} )
+  
+  if( Linux )
+    target_link_libraries( ${target} "-Xlinker --end-group" )
+  endif( )
+  
 
   set( target ${target} PARENT_SCOPE )
 endfunction( )
@@ -220,10 +221,6 @@ function( make_executable name variant )
     target_link_libraries( ${target} ${lib} )
   endforeach( )
 
-  if( Linux )
-    target_link_libraries( ${target} "-Xlinker --end-group" )
-  endif( )
-
   if( ${NEED_DISPATCHER} )
     target_link_libraries( ${target} debug mfx_d )
     target_link_libraries( ${target} optimized mfx )
@@ -240,6 +237,10 @@ function( make_executable name variant )
   endforeach( )
 
   target_link_libraries( ${target} SafeString )
+
+  if( Linux )
+    target_link_libraries( ${target} "-Xlinker --end-group" )
+  endif( )
 
   set( target ${target} PARENT_SCOPE )
 endfunction( )
