@@ -2034,6 +2034,8 @@ SEI_Storer::SEI_Message* SEI_Storer::AddMessage(UMC::MediaDataEx *nalUnit, SEI_T
         freeSlot = m_payloads.size() - 1;
     }
 
+    m_payloads[freeSlot] = m_payloads.back();
+    freeSlot = m_payloads.size() - 1;
     m_payloads[freeSlot].msg_size = sz;
     m_payloads[freeSlot].offset = m_offset;
     m_payloads[freeSlot].timestamp = 0;

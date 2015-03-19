@@ -78,6 +78,7 @@ struct sCommandlineParams
   mfxU16         nInputBitdepth;
   bool           isDefaultFC;
   bool           bVerbose;
+  bool           bSkipUselessOutput;
   bool           bPrintSplTimeStamps;
   bool           bYuvReaderMode;//indicates whether yuv reader should be used
   bool           bExactSizeBsReader;
@@ -249,6 +250,7 @@ struct sCommandlineParams
       outFrameInfo.Shift = 0;
       outFrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
+      bSkipUselessOutput = false;
       isAllegroTest = false;
       isHMTest = true;
       isPreferNV12 = false;

@@ -843,6 +843,8 @@ mfxStatus MFXDecPipeline::CreateCore()
     {
         AutoPipelineSynhro d3dAcess(m_externalsync);
         DispatcherLoadedLibrary lib; // not thread-safe
+        if (m_inParams.bSkipUselessOutput)
+            DispatchLog::get().DetachAllSinks();
 
 #if defined(_WIN32) || defined(_WIN64)
         MFX::DXVA2Device dxva2device;
@@ -4264,6 +4266,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         else HANDLE_BOOL_OPTION(m_inParams.DecodedOrder, VM_STRING("-DecodedOrder"), VM_STRING("disable frame reordering in decoder"));
         else HANDLE_BOOL_OPTION(m_inParams.EncodedOrder, VM_STRING("-EncodedOrder"), VM_STRING("disable frame reordering in encoder"));
         else HANDLE_BOOL_OPTION(m_inParams.bUseSeparateFileWriter, VM_STRING("-separate_file"), VM_STRING("separate output files will be created if RESET in the middle happened"));
+        else HANDLE_BOOL_OPTION(m_inParams.bSkipUselessOutput,  VM_STRING("--log_off"), VM_STRING("disable logging of dispatcher"));
         else HANDLE_BOOL_OPTION(m_inParams.bOptimizeForPerf,  VM_STRING("-perf_opt|--no-progress"), VM_STRING("optimize pipeline for accurate performance measurement"));
         else HANDLE_INT_OPTION(m_inParams.encodeExtraParams.nDelayOnMSDKCalls, VM_STRING("-delay"), VM_STRING("Sleep() for specified time (in ms) before calling to any MediaSDK async function"))
         else HANDLE_64F_OPTION(m_inParams.fLimitPipelineFps, VM_STRING("-limit_fps|-fps"), VM_STRING("limit overall fps"))
