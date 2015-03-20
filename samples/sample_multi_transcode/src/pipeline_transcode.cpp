@@ -2067,6 +2067,14 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
       m_hdl = hdl; // save handle
     }
 
+    // Joining sessions if required
+    if (pParams->bIsJoin && pParentPipeline)
+    {
+        sts = pParentPipeline->Join(m_pmfxSession.get());
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        m_bIsJoinSession = true;
+    }
+
     // Initialize pipeline components following downstream direction
     // Pre-init methods fill parameters and create components
 
@@ -2106,13 +2114,6 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     // if sink - suspended allocation
 
     // common session settings
-    if (pParams->bIsJoin && pParentPipeline)
-    {
-        sts = pParentPipeline->Join(m_pmfxSession.get());
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        m_bIsJoinSession = true;
-    }
-
     if (m_Version.Major >= 1 && m_Version.Minor >= 1)
         sts = m_pmfxSession->SetPriority(pParams->priority);
 
