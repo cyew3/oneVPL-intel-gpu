@@ -903,10 +903,20 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
         return MFX_ERR_UNSUPPORTED;
     }
 
-    // set default values for optional parameters that were not set or were set incorrectly
-    if (MFX_TARGETUSAGE_BEST_QUALITY != InputParams.nTargetUsage && MFX_TARGETUSAGE_BEST_SPEED != InputParams.nTargetUsage)
+    // valid target usage range is: [MFX_TARGETUSAGE_BEST_QUALITY .. MFX_TARGETUSAGE_BEST_SPEED] (at the moment [1..7])
+    if ((InputParams.nTargetUsage < MFX_TARGETUSAGE_BEST_QUALITY) ||
+        (InputParams.nTargetUsage > MFX_TARGETUSAGE_BEST_SPEED) )
     {
-        InputParams.nTargetUsage = MFX_TARGETUSAGE_BALANCED;
+        if (InputParams.nTargetUsage == MFX_TARGETUSAGE_UNKNOWN)
+        {
+            // if user did not specified target usage - use balanced
+            InputParams.nTargetUsage = MFX_TARGETUSAGE_BALANCED;
+        }
+        else
+        {
+            // report error if unsupported target usage was set
+            return MFX_ERR_UNSUPPORTED;
+        }
     }
 
     // Ignoring user-defined Async Depth for LA
