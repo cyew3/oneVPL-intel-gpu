@@ -1775,8 +1775,9 @@ void CmContext::CreateTask_Padding(SurfaceIndex inSurfIndex,
     int result;
     int threadswidth  = paddedWidth  >> 3;
     int threadsheight = paddedHeight >> 3;
-    int width  = m_video.frameWidth;
-    int height = m_video.TileHeight;
+    // Use crops for non-tiled cases
+    int width  = m_video.TileInfo.CropW < m_video.frameWidth ? m_video.TileInfo.CropW : m_video.frameWidth;
+    int height = m_video.TileInfo.CropH < m_video.TileHeight ? m_video.TileInfo.CropH : m_video.TileHeight;
 
     kernel_padding16bpp->SetThreadCount(widthIn16 * heightIn16);
     SetKernelArg(kernel_padding16bpp, inSurfIndex, paddedSurfIndex, threadswidth, threadsheight, width, height, bitDepth, bayerPattern);
