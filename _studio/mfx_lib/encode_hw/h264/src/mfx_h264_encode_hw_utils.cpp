@@ -2808,7 +2808,8 @@ void LookAheadBrc2::Init(MfxVideoParam const & video)
     m_bitsBehind = 0.0;
     m_curQp = -1;
     m_curBaseQp = -1;
-    m_coef = 4;    
+    m_coef = 4;
+    m_skipped = 0;
 
     m_targetRateMin = m_initTargetRate;
     
@@ -2859,6 +2860,7 @@ void VMEBrc::Init(MfxVideoParam const & video)
     m_bitsBehind = 0.0;
     m_curQp = -1;
     m_curBaseQp = -1;
+    m_skipped = 0;
 
     m_AvgBitrate = 0;
     if (extOpt3->WinBRCSize)
@@ -3059,13 +3061,10 @@ mfxU8 LookAheadBrc2::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/)
     if (m_AvgBitrate)
     {
         size_t framesForCheck = m_AvgBitrate->GetWindowSize() < m_laData.size() ? m_AvgBitrate->GetWindowSize() : m_laData.size();
-        framesForCheck  = (framesForCheck < 8) ? framesForCheck : 8;
-       // printf("..Get QP: QP [%d (%f), %d (%f)]\n", minQp, m_targetRateMin, maxQp, m_targetRateMax);
         for (mfxU32 i = (m_first + 1); i < framesForCheck; i ++)
         {
            mfxF64 budget = mfxF64(m_AvgBitrate->GetBudget(i))/(mfxF64(m_totNumMb));
            mfxU8  QP = SelectQp(m_laData, budget, i, 0);
-           //printf("....QP(%d) [%d (%f)]\n",i, QP, budget/i);
            if (minQp <  QP)
            {
                minQp  = QP;
@@ -3073,7 +3072,6 @@ mfxU8 LookAheadBrc2::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/)
            }
         }
     }
-    //printf("Corrected QP [%d %d], delta - %d\n",minQp, maxQp, m_laData[m_first].deltaQp);
 
 
 
@@ -3160,36 +3158,33 @@ void VMEBrc::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & /*vmeDa
 {
 }
 
-mfxU32 LookAheadBrc2::Report(mfxU32 /* frameType*/ , mfxU32 dataLength, mfxU32 /* userDataLength */, mfxU32 /* repack */, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp)
+mfxU32 LookAheadBrc2::Report(mfxU32 frameType , mfxU32 dataLength, mfxU32 /* userDataLength */, mfxU32  repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::Report");
     mfxF64 realRatePerMb = 8 * dataLength / mfxF64(m_totNumMb);
-    static int size = 0;
-    static int nframe = 0;   
+
     qp = CLIPVAL(1, 51, qp);
 
-   // printf("picOrder %d, mfxU32 maxFrameSize %d, dataLength %d\n",  picOrder, maxFrameSize, dataLength*8 );
+    if ((m_skipped == 1) && ((frameType & MFX_FRAMETYPE_B)!=0) && repack < 100)
+        return 3;  // skip mode for this frame
+
+    m_skipped = (repack < 100) ? 0 : 1;  //frame was skipped (panic mode)
+                                         //we will skip all frames until next reference]
+
     if (m_bControlMaxFrame && ((8 * dataLength + 24) > maxFrameSize))
-    {
-        if (qp < 51)
-        {
-          return 1;
-        }
-        //else
-        //   printf("!!!!!!!!!!!! Error\n");
+    {   
+        return 1;
     }
     if (m_AvgBitrate)
     {
         m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, picOrder);
-        if (!m_AvgBitrate->CheckBitrate(qp < 51))
+        if (!m_AvgBitrate->CheckBitrate(!m_skipped && !((frameType & MFX_FRAMETYPE_I) && (qp == 51))) )
         {
-           return 1;
+             return 1;
         }
     }
 
-    size += dataLength;
-    nframe++;
-
+   
     m_coef = (mfxF32)((m_laData[0].estRate[qp])/realRatePerMb);
 
     m_framesBehind++;
@@ -3232,26 +3227,26 @@ mfxU32 LookAheadBrc2::Report(mfxU32 /* frameType*/ , mfxU32 dataLength, mfxU32 /
     return 0;
 }
 
-mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLength*/, mfxU32 /*repack*/, mfxU32 picOrder, mfxU32 /* maxFrameSize */, mfxU32 qp )
+mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLength*/, mfxU32 repack, mfxU32 picOrder, mfxU32  /* maxFrameSize */, mfxU32 qp )
 {
     frameType; // unused
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::Report");
     mfxF64 realRatePerMb = 8 * dataLength / mfxF64(m_totNumMb);
-    static int size = 0;
-    static int nframe = 0;
     
+    if ((m_skipped == 1) && ((frameType & MFX_FRAMETYPE_B)!=0) && repack < 100)
+        return 3;  // skip mode for this frame
+
+    m_skipped = (repack < 100) ? 0 : 1;  //frame was skipped (panic mode)
+                                         //we will skip all frames until next reference]
+
     if (m_AvgBitrate)
     {
         m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, picOrder);
-        if (!m_AvgBitrate->CheckBitrate(qp < 51))
+        if (!m_AvgBitrate->CheckBitrate(!m_skipped && !((frameType & MFX_FRAMETYPE_I) && (qp == 51))) )
         {
-            return 1; 
+             return 1;
         }
     }
-
-
-    size += dataLength;
-    nframe++;
 
     m_framesBehind++;
     m_bitsBehind += realRatePerMb;
@@ -3354,13 +3349,10 @@ mfxU8 VMEBrc::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/)
     if (m_AvgBitrate)
     {
         size_t framesForCheck = m_AvgBitrate->GetWindowSize() < m_laData.size() ? m_AvgBitrate->GetWindowSize() : m_laData.size();
-        framesForCheck  = (framesForCheck < 8) ? framesForCheck : 8;
-       // printf("..Get QP: QP [%d (%f), %d (%f)]\n", minQp, m_targetRateMin, maxQp, m_targetRateMax);
         for (mfxU32 i = 1; i < framesForCheck; i ++)
         {
            mfxF64 budget = mfxF64(m_AvgBitrate->GetBudget(i))/(mfxF64(m_totNumMb));
            mfxU8  QP = SelectQp(m_laData, budget, i, 0);
-           //printf("....QP(%d) [%d (%f)]\n",i, QP, budget/i);
            if (minQp <  QP)
            {
                minQp  = QP;

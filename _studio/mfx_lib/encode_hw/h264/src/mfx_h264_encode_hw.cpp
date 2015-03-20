@@ -2494,14 +2494,15 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 }
                 if (!bRecoding)
                 {
-                    mfxU32 res = m_brc.Report(task->m_type[task->m_fid[0]], bsDataLength, 0, extOpt2->MaxSliceSize ? 0 : !!task->m_repack, task->m_frameOrder, hrd.GetMaxFrameSize((task->m_type[task->m_fid[0]] & MFX_FRAMETYPE_IDR)), task->m_cqpValue[0]);
+                    mfxU32 res = m_brc.Report(task->m_type[task->m_fid[0]], bsDataLength, 0, extOpt2->MaxSliceSize ? 0 : task->m_repack, task->m_frameOrder, hrd.GetMaxFrameSize((task->m_type[task->m_fid[0]] & MFX_FRAMETYPE_IDR)), task->m_cqpValue[0]);
                     if ((res & 1) && !extOpt2->MaxSliceSize)
                     {
                         if (task->m_panicMode)
                             return MFX_ERR_UNDEFINED_BEHAVIOR;
-                        if (task->m_cqpValue[0] ==  51)
+                        if (task->m_cqpValue[0] ==  51 || res == 3)
                         {
                             task->m_panicMode = 1;
+                            task->m_repack = 100;
                             mfxStatus sts = CodeAsSkipFrame(*m_core,m_video,*task, m_rawSkip);
                             if (sts != MFX_ERR_NONE)
                                return Error(sts);

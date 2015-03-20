@@ -1454,6 +1454,7 @@ namespace MfxHwH264Encode
         mfxF64  m_fr;
         mfxU16  m_AsyncDepth;
         mfxU16  m_first;
+        mfxU16  m_skipped;
 
         
 
@@ -1517,6 +1518,7 @@ namespace MfxHwH264Encode
         mfxI32  m_curQp;
         mfxU16  m_qpUpdateRange;
         mfxF64  m_fr;
+        mfxU16  m_skipped;
 
         AVGBitrate* m_AvgBitrate;
 
