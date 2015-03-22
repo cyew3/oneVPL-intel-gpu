@@ -700,6 +700,11 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
 
         if ( pParam->Caps.bVignetteCorrection )
         {
+             mfxU8 *ptr = (mfxU8 *)pParam->VignetteParams.pCmCorrectionMap + 
+                           pParam->VignetteParams.CmStride * tileIDHor * ( pParam->VignetteParams.Height/pParam->FrameSizeExtra.tileNumHor);
+             m_cmCtx->EnqueueCopyCPUToGPU(m_vignette_4x4,
+                                          ptr,
+                                          pParam->VignetteParams.CmStride);
              m_cmCtx->EnqueueTask_VignetteMaskUpSample();
         }
 
@@ -921,7 +926,6 @@ mfxStatus CMCameraProcessor::AllocateInternalSurfaces()
     mfxFrameAllocRequest request = { { 0 } };
     mfxU32 frNum = 0;
     mfxStatus sts;
-    int  cm_sts;
 
     request.Info        = m_Params.TileInfo;
     request.Info.Width  = (mfxU16)m_Params.vSliceWidth;
@@ -977,21 +981,23 @@ mfxStatus CMCameraProcessor::AllocateInternalSurfaces()
     if (m_Params.Caps.bVignetteCorrection || m_Params.Caps.bBlackLevelCorrection || m_Params.Caps.bWhiteBalance )
     {
         m_vignetteMaskSurf = CreateSurface(m_cmDevice,
-                                           m_Params.paddedFrameWidth * 2,
+                                           m_Params.paddedFrameWidth,
                                            m_Params.TileHeightPadded,
-                                           CM_SURFACE_FORMAT_A8);
+                                           CM_SURFACE_FORMAT_YUY2);
         MFX_CHECK_NULL_PTR1(m_vignetteMaskSurf);
 
 
         if ( m_Params.Caps.bVignetteCorrection  && m_Params.VignetteParams.pCorrectionMap )
         {
+            mfxU32 width_4x4 = ( m_Params.paddedFrameWidth >> 2 );
+            width_4x4 = width_4x4 % 2 ? width_4x4 + 1 : width_4x4;
+            mfxU32  height_4x4 = m_Params.VignetteParams.Height >> (m_Params.tileNumHor - 1) ;
             m_vignette_4x4  = CreateSurface(m_cmDevice,
-                                        m_Params.VignetteParams.Width,
-                                        m_Params.VignetteParams.Height,
-                                        CM_SURFACE_FORMAT_A8);
+                                        width_4x4,
+                                        height_4x4,
+                                        CM_SURFACE_FORMAT_YUY2);
 
             MFX_CHECK_NULL_PTR1(m_vignette_4x4);
-            cm_sts = m_vignette_4x4->WriteSurface((const mfxU8 *)m_Params.VignetteParams.pCorrectionMap, NULL);
         }
     }
 
@@ -1138,13 +1144,26 @@ mfxStatus CMCameraProcessor::ReallocateInternalSurfaces(mfxVideoParam &newParam,
 
     if (frameSizeExtra.Caps.bVignetteCorrection && frameSizeExtra.VignetteParams.pCorrectionMap )
     {
+
+        if ( m_vignetteMaskSurf )
+            m_cmDevice->DestroySurface(m_vignetteMaskSurf);
+        m_vignetteMaskSurf = CreateSurface(m_cmDevice,
+                                           frameSizeExtra.paddedFrameWidth,
+                                           frameSizeExtra.TileHeightPadded,
+                                           CM_SURFACE_FORMAT_YUY2);
+        MFX_CHECK_NULL_PTR1(m_vignetteMaskSurf);
+        if ( m_vignette_4x4 )
+            m_cmDevice->DestroySurface(m_vignette_4x4);
+
+        mfxU32 width_4x4 = ( frameSizeExtra.paddedFrameWidth >> 2 );
+        width_4x4 = width_4x4 % 2 ? width_4x4 + 1 : width_4x4;
+        mfxU32  height_4x4 = frameSizeExtra.VignetteParams.Height >> (frameSizeExtra.tileNumHor - 1) ;
         m_vignette_4x4  = CreateSurface(m_cmDevice,
-                                    frameSizeExtra.VignetteParams.Width,
-                                    frameSizeExtra.VignetteParams.Height,
-                                    CM_SURFACE_FORMAT_A8);
+                                    width_4x4,
+                                    height_4x4,
+                                    CM_SURFACE_FORMAT_YUY2);
 
         MFX_CHECK_NULL_PTR1(m_vignette_4x4);
-        m_vignette_4x4->WriteSurface((const mfxU8 *)frameSizeExtra.VignetteParams.pCorrectionMap, NULL);
     }
 
     if (frameSizeExtra.Caps.bHotPixel )
@@ -1811,7 +1830,7 @@ void CmContext::CreateTask_VignetteMaskUpSample(SurfaceIndex mask_4x4_Index,
     kernel_VignetteUpSample->SetKernelArg(i++, sizeof(SurfaceIndex), &mask_4x4_Index);
     kernel_VignetteUpSample->SetKernelArg(i++, sizeof(SurfaceIndex), &vignetteMaskIndex);
     kernel_VignetteUpSample->SetKernelArg(i++, sizeof(UINT32), &m_video.paddedFrameWidth);
-    kernel_VignetteUpSample->SetKernelArg(i++, sizeof(UINT32), &m_video.paddedFrameHeight);
+    kernel_VignetteUpSample->SetKernelArg(i++, sizeof(UINT32), &m_video.TileHeightPadded);
 
     result = task_VignetteUpSample->Reset();
     if (result != CM_SUCCESS)

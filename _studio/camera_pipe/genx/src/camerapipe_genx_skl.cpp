@@ -311,8 +311,12 @@ VIG_CORRECT(matrix_ref<ushort, 16, 16> m,
     tmp = cm_add <uint>(tmp, 128 );      //8;
     tmp = cm_quot<uint>(tmp, 256);       //16;
 
+    m = tmp;
+    m.merge(0,         tmp < 0        );
     m.merge(max_input, tmp > max_input);
-    m.merge(0,           m   < 0        );
+    //tmp.merge(0, tmp   < 0        );
+    //m.merge(max_input, tmp, tmp > max_input);
+    //m = tmp;
 }
 
 _GENX_ void inline
@@ -3004,7 +3008,7 @@ const short modY_ini[BLOCKHEIGHT][BLOCKWIDTH] = {{0,0,0,0},{1,1,1,1},{2,2,2,2},{
 
 extern "C" _GENX_MAIN_
 void GenUpSampledMask(SurfaceIndex Mask4x4Index,
-                       SurfaceIndex UpSampleMaskIndex,
+                      SurfaceIndex UpSampleMaskIndex,
                       int Width,   // Width  of Output Mask surface
                       int Height)  // Height of Output Mask surface
 {

@@ -263,8 +263,12 @@ typedef struct _CameraPipeVignetteParams
     bool        bActive;
     mfxU16      Height;
     mfxU16      Width;
+    mfxU16      CmWidth;
     mfxU16      Stride;
+    mfxU16      CmStride;
     CameraPipeVignetteCorrectionElem *pCorrectionMap;
+    CameraPipeVignetteCorrectionElem *pCmCorrectionMap;
+    _CameraPipeVignetteParams() { pCmCorrectionMap = 0; }
 } CameraPipeVignetteParams;
 
 typedef struct _CameraParams

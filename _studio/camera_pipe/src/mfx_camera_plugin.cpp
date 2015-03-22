@@ -677,6 +677,8 @@ mfxStatus MFXCamera_Plugin::Close()
 
     sts = m_CameraProcessor->Close();
 
+    if ( m_VignetteParams.pCmCorrectionMap )
+        delete [] m_VignetteParams.pCmCorrectionMap;
     return sts;
 }
 
@@ -801,7 +803,18 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                     m_VignetteParams.Height  = VignetteExtBufParams->Height;
                     m_VignetteParams.Width   = VignetteExtBufParams->Width;
                     m_VignetteParams.Stride  = VignetteExtBufParams->Pitch;
+                    m_VignetteParams.CmWidth  = m_VignetteParams.Width >> 2;
+                    m_VignetteParams.CmStride = m_VignetteParams.Stride >> 2;
                     m_VignetteParams.pCorrectionMap  = (CameraPipeVignetteCorrectionElem *)VignetteExtBufParams->CorrectionMap;
+                    if ( m_VignetteParams.pCmCorrectionMap )
+                        delete [] m_VignetteParams.pCmCorrectionMap;
+                    m_VignetteParams.pCmCorrectionMap = (CameraPipeVignetteCorrectionElem *)new mfxU8[m_VignetteParams.Height *  m_VignetteParams.CmStride];
+                    MFX_CHECK_NULL_PTR1(m_VignetteParams.pCorrectionMap);
+                    MFX_CHECK_NULL_PTR1(m_VignetteParams.pCmCorrectionMap)
+                    IppiSize size = {2, m_VignetteParams.CmWidth*m_VignetteParams.Height / 2  };
+                    IppStatus ippSts;
+                    ippSts = ippiCopy_8u_C1R((mfxU8*)m_VignetteParams.pCorrectionMap, 8, (mfxU8*)m_VignetteParams.pCmCorrectionMap, 2, size);
+                    MFX_CHECK_STS((mfxStatus)ippSts);
                 }
             }
             else if (MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3 == par->ExtParam[i]->BufferId)

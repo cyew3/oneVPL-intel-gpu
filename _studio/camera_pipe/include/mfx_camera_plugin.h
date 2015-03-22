@@ -17,6 +17,7 @@ File Name: mfx_camera_plugin.h
 #include <string.h>
 #include <memory>
 #include <iostream>
+#include <ippi.h>
 
 #include "mfx_camera_plugin_utils.h"
 #include "mfx_camera_plugin_cpu.h"
