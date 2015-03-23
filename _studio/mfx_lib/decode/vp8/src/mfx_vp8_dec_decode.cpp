@@ -569,7 +569,7 @@ mfxStatus VideoDECODEVP8::PreDecodeFrame(mfxBitstream *p_bs, mfxFrameSurface1 *p
         p_surface->Info.CropH = m_on_init_video_params.mfx.FrameInfo.CropH;
     }
 
-    if (m_init_w != width && m_init_h != height)
+    if (m_init_w != width || m_init_h != height)
     {
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
