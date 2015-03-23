@@ -130,7 +130,7 @@ VAProfile g_VP8Profiles[] =
 
 VAProfile g_VP9Profiles[] =
 {
-    VAProfileVP9Version0
+    VAProfileVP9Profile0
 };
 
 VAProfile g_JPEGProfiles[] =
