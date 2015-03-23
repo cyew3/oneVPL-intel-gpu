@@ -77,21 +77,21 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*09*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_MONOCHROME}},
     {/*10*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV422},
                                              {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YUY2}}},
-    {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV400}},
-    {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV411}},
-    {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV422H},
+    {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV400}},
+    {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV411}},
+    {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV422H},
                                              {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YUY2}}},
-    {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV422V},
+    {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV422V},
                                              {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YUY2}}},
 
-    {/*16*/ MFX_ERR_NONE, ALLOC_OPAQUE, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*17*/ MFX_ERR_NONE, ALLOC_OPAQUE_LESS, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*18*/ MFX_ERR_NONE, ALLOC_OPAQUE_MORE, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*15*/ MFX_ERR_NONE, ALLOC_OPAQUE, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, ALLOC_OPAQUE_LESS, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*17*/ MFX_ERR_NONE, ALLOC_OPAQUE_MORE, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
 
     // ext buffers
-    {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtDecodedFrameInfo  )}},
-    {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtDecVideoProcessing)}},
+    {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtDecodedFrameInfo  )}},
+    {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtDecVideoProcessing)}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -106,9 +106,9 @@ int TestSuite::RunTest(unsigned int id)
 
     SETPARS(m_pPar, MFXPAR);
 
-    if (tc.mode & ALLOC_OPAQUE)
+    if ((tc.mode & ALLOC_OPAQUE) || (tc.mode & ALLOC_OPAQUE_LESS) || (tc.mode & ALLOC_OPAQUE_MORE))
     {
-        mfxExtOpaqueSurfaceAlloc osa = {0};
+        mfxExtOpaqueSurfaceAlloc& osa = m_par;
         osa.Header.BufferId = MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION;
         osa.Header.BufferSz = sizeof(mfxExtOpaqueSurfaceAlloc);
         QueryIOSurf();

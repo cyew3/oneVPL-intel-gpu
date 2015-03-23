@@ -63,7 +63,14 @@ int TestSuite::RunTest(unsigned int id)
     Load();
 
     SETPARS(m_pPar, MFXPAR);
-
+    if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(g_tsImpl))
+    {
+        mfxHandleType type;
+        mfxHDL hdl;
+        UseDefaultAllocator( !!(m_pPar->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) );
+        if(GetAllocator() && GetAllocator()->get_hdl(type, hdl))
+            SetHandle(m_session, type, hdl);
+    }
     Init(m_session, m_pPar);
 
     g_tsStatus.expect(tc.sts);
