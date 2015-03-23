@@ -695,3 +695,10 @@ STRUCT(mfxExtThreadsParam,
     FIELD_T(mfxI32      , SchedulingType)
     FIELD_T(mfxI32      , Priority      )
 )
+
+STRUCT(mfxExtVPPFieldProcessing,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16      , Mode)
+    FIELD_T(mfxU16      , InField)
+    FIELD_T(mfxU16      , OutField)
+)
