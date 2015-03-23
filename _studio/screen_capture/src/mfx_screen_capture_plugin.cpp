@@ -109,6 +109,13 @@ mfxStatus MFXScreenCapture_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAlloc
 {
     MFX_CHECK_NULL_PTR2(par, out);
     mfxU32  FourCC;
+
+    const mfxU16& IOPattern = par->IOPattern;
+    if(((IOPattern & 0xF0) != (MFX_IOPATTERN_OUT_VIDEO_MEMORY )) &&
+       ((IOPattern & 0xF0) != (MFX_IOPATTERN_OUT_SYSTEM_MEMORY)) &&
+       ((IOPattern & 0xF0) != (MFX_IOPATTERN_OUT_OPAQUE_MEMORY)))
+       return MFX_ERR_INVALID_VIDEO_PARAM;
+
     if(MFX_FOURCC_NV12 == par->mfx.FrameInfo.FourCC)
         FourCC = MFX_FOURCC_NV12;
     else if(MFX_FOURCC_RGB4 == par->mfx.FrameInfo.FourCC)
@@ -153,7 +160,7 @@ mfxStatus MFXScreenCapture_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAlloc
     }
     else //all other types are unsupported
     {
-        return MFX_ERR_UNSUPPORTED;
+        return MFX_ERR_INVALID_VIDEO_PARAM;
     }
     return MFX_ERR_NONE;
 }
@@ -232,8 +239,13 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && in_opaq_buf && in_opaq_buf->Out.Surfaces && in_opaq_buf->Out.NumSurface)
+    if((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && in_opaq_buf)
     {
+        if(!in_opaq_buf->Out.NumSurface || !in_opaq_buf->Out.Surfaces)
+        {
+            Close();
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
         mfxRes = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, in_opaq_buf->Out.NumSurface, in_opaq_buf->Out.Type, in_opaq_buf->Out.Surfaces);
     }
 
@@ -525,25 +537,26 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         out.mfx.FrameInfo.PicStruct = 0;
         error = true;
     }
-    if(in.mfx.FrameInfo.CropH > in.mfx.FrameInfo.Height)
+    if((in.mfx.FrameInfo.CropY + in.mfx.FrameInfo.CropH) > in.mfx.FrameInfo.Height)
     {
         out.mfx.FrameInfo.CropH = 0;
         error = true;
     }
-    if(in.mfx.FrameInfo.CropW > in.mfx.FrameInfo.Width)
+    if((in.mfx.FrameInfo.CropX + in.mfx.FrameInfo.CropW) > in.mfx.FrameInfo.Width)
     {
         out.mfx.FrameInfo.CropW = 0;
         error = true;
     }
+    //Crops should be ignored on init
     if(in.mfx.FrameInfo.CropY)
     {
         out.mfx.FrameInfo.CropY = 0;
-        error = true;
+        //error = true;
     }
     if(in.mfx.FrameInfo.CropX)
     {
         out.mfx.FrameInfo.CropX = 0;
-        error = true;
+        //error = true;
     }
     //if(in.mfx.FrameInfo.Width  % 16 != 0)
     //{
@@ -707,7 +720,7 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
         pAsyncParam->real_surface = real_surface;
         pAsyncParam->StatusReportFeedbackNumber = m_StatusReportFeedbackNumber;
         *task = (mfxThreadTask*)pAsyncParam;
-        surface_work->Data.TimeStamp = MFX_TIMESTAMPCALC_UNKNOWN;
+        surface_work->Data.TimeStamp = (mfxU64) MFX_TIMESTAMP_UNKNOWN;
         surface_work->Data.Corrupted = 0;
         surface_work->Data.DataFlag = 0;
         *surface_out = surface_work;
