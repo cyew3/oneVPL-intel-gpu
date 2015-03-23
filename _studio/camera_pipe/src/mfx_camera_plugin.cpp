@@ -428,6 +428,12 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         if (out->vpp.In.Width)
         {
+            if (out->vpp.In.Width > MAX_CAMERA_SUPPORTED_WIDTH)
+            {
+                out->vpp.In.Width = 0;
+                sts = MFX_ERR_UNSUPPORTED;
+            }
+
             if ((out->vpp.In.Width & 15) != 0)
             {
                 out->vpp.In.Width = 0;
@@ -455,6 +461,12 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         if (out->vpp.In.Height)
         {
+            if (out->vpp.In.Height > MAX_CAMERA_SUPPORTED_HEIGHT)
+            {
+                out->vpp.In.Height = 0;
+                sts = MFX_ERR_UNSUPPORTED;
+            }
+
             if ((out->vpp.In.Height & 7) != 0)
             {
                 out->vpp.In.Height = 0;
@@ -490,6 +502,12 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         if (out->vpp.Out.Width)
         {
+            if (out->vpp.Out.Width > MAX_CAMERA_SUPPORTED_WIDTH)
+            {
+                out->vpp.Out.Width = 0;
+                sts = MFX_ERR_UNSUPPORTED;
+            }
+
             if ((out->vpp.Out.Width & 15) != 0)
             {
                 out->vpp.Out.Width = 0;
@@ -545,6 +563,12 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         if (out->vpp.Out.Height )
         {
+            if (out->vpp.Out.Height > MAX_CAMERA_SUPPORTED_HEIGHT)
+            {
+                out->vpp.Out.Height = 0;
+                sts = MFX_ERR_UNSUPPORTED;
+            }
+
             if ((out->vpp.Out.Height  & 7) !=0)
             {
                 out->vpp.Out.Height = 0;
