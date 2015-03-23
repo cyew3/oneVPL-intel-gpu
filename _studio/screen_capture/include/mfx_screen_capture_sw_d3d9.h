@@ -42,18 +42,22 @@ public:
 
 protected:
     mfxCoreInterface*                m_pmfxCore;
+    mfxCoreParam                     m_core_par;
 
     mfxStatus CreateDeviceManager();
+    mfxStatus AttachToLibraryDevice();
 
     std::auto_ptr<MFXVideoVPPColorSpaceConversion> m_pColorConverter;
     mfxFrameSurface1* GetFreeInternalSurface();
     std::list<mfxFrameSurface1> m_InternalSurfPool;
     std::list<DESKTOP_QUERY_STATUS_PARAMS> m_IntStatusList;
 
+    bool                                         m_bOwnDevice;
     CComPtr<IDirect3D9                 >         m_pD3D;
     CComPtr<IDirect3DDeviceManager9    >         m_pDirect3DDeviceManager;
     CComPtr<IDirect3DDevice9           >         m_pDirect3DDevice;
     CComPtr<IDirectXVideoDecoderService>         m_pDirectXVideoService;
+    HANDLE                                       m_hDirectXHandle;
 
 };
 

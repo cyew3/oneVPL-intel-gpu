@@ -117,7 +117,7 @@ protected:
     virtual ~MFXScreenCapture_Plugin();
     std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > m_adapter;
 
-    mfxStatus DecodeFrameSubmit(mfxFrameSurface1 *surface);
+    mfxStatus DecodeFrameSubmit(mfxFrameSurface1 *surface, bool& rt_fallback, mfxFrameSurface1 *ext_surface);
     mfxStatus CheckFrameInfo(const mfxFrameInfo& info);
     mfxStatus CheckOpaqBuffer(const mfxVideoParam& par, mfxVideoParam* pParOut, const mfxExtOpaqueSurfaceAlloc& opaqAlloc, mfxExtOpaqueSurfaceAlloc* pOpaqAllocOut);
     mfxFrameSurface1* GetFreeInternalSurface();
@@ -135,6 +135,7 @@ protected:
     mfxU32              m_StatusReportFeedbackNumber;
 
     std::auto_ptr<Capturer>         m_pCapturer;
+    std::auto_ptr<Capturer>         m_pFallbackCapturer;
 
     std::list<DESKTOP_QUERY_STATUS_PARAMS> m_StatusList;
 
