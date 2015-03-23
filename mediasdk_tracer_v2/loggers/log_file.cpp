@@ -11,16 +11,17 @@ LogFile::LogFile()
     else
         _file_path = std::string("mfxtracer.log");
 
-#if !(defined(_WIN32) || defined(_WIN64))
-    strproc_id = std::string("_") + strproc_id;
-    unsigned int pos = _file_path.rfind(".");
-    if (pos == std::string::npos)
-        _file_path.insert(_file_path.length(), strproc_id);
-    else if((_file_path.length() - pos) > std::string(".log").length())
-        _file_path.insert(_file_path.length(), strproc_id);
-    else
-        _file_path.insert(pos, strproc_id);
-#endif
+    if (!Log::useGUI)
+    {
+        strproc_id = std::string("_") + strproc_id;
+        unsigned int pos = _file_path.rfind(".");
+        if (pos == std::string::npos)
+            _file_path.insert(_file_path.length(), strproc_id);
+        else if((_file_path.length() - pos) > std::string(".log").length())
+            _file_path.insert(_file_path.length(), strproc_id);
+        else
+            _file_path.insert(pos, strproc_id);
+    }
 }
 
 LogFile::~LogFile()

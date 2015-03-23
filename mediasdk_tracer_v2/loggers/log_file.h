@@ -2,6 +2,7 @@
 #define LOG_FILE_H_
 
 #include "ilog.h"
+#include "log.h"
 #include <fstream>
 
 class LogFile : public ILog
