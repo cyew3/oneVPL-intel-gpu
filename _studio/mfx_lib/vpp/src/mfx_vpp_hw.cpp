@@ -2186,59 +2186,21 @@ int RunGpu(
 }
 
 // aya: quick fix!!! it is expected video->video, external memory only!!!
-mfxStatus VideoVPPHW::ProcessFieldCopy(std::vector<ExtSurface> & surfQueue /* IN */, ExtSurface & output /* OUT */, int mask)
+mfxStatus VideoVPPHW::ProcessFieldCopy(int mask)
 {
-    mfxU32 numSamples = (mfxU32)surfQueue.size();
-    mfxHDLPair hdl;
-    mfxHDLPair in;
-    //!!! - debug, case D3D to D3D
-    numSamples = 1;
+    //int fieldMask = mask-1; // to get valid Sergey Osipov's kernel mask [0, 1, 2, 3]
 
-    bool bExternal = true;
-    mfxMemId memId = 0;
+    int sts = RunGpu(
+        (m_executeSurf[0].hdl.first), (m_executeParams.targetSurface.hdl.first),
+        mask-1, m_pCmDevice, m_pCmQueue, m_pCmKernel, m_executeSurf[0].frameInfo.Width, m_executeSurf[0].frameInfo.Height);
 
-    /* Input */
-    for (mfxU32 i = 0 ; i < numSamples; i += 1)
-    {
-        MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(surfQueue[i].pSurf->Data.MemId, (mfxHDL *)&hdl));
-        in = hdl;
-
-        bExternal = true;
-        memId     = surfQueue[i].pSurf->Data.MemId;
-
-        // set input surface
-        m_executeSurf[i].hdl = static_cast<mfxHDLPair>(in);
-        m_executeSurf[i].frameInfo = surfQueue[i].pSurf->Info;
-        // debug info
-        m_executeSurf[i].bExternal = bExternal;
-        m_executeSurf[i].memId     = memId;
-    }
-
-    /* Output */
-    MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(output.pSurf->Data.MemId, (mfxHDL *)&hdl));
-    m_executeParams.targetSurface.memId = output.pSurf->Data.MemId;
-    m_executeParams.targetSurface.bExternal = true;
-    m_executeParams.targetSurface.hdl       = static_cast<mfxHDLPair>(hdl);
-
-    {
-        mfxU32 width  = surfQueue[0].pSurf->Info.Width;
-        mfxU32 height = surfQueue[0].pSurf->Info.Height;
-
-
-        int fieldMask = mask-1; // to get valid Sergey Osipov's kernel mask [0, 1, 2, 3]
-
-        int sts = RunGpu(
-            (m_executeSurf[0].hdl.first), (m_executeParams.targetSurface.hdl.first),
-            fieldMask, m_pCmDevice, m_pCmQueue, m_pCmKernel, width, height);
-
-        CHECK_CM_ERR(sts);
-    }
+    CHECK_CM_ERR(sts);
 
     return MFX_ERR_NONE;
 
 } // mfxStatus VideoVPPHW::ProcessFieldCopy(std::vector<ExtSurface> & surfQueue /* IN */, ExtSurface & output /* OUT */)
 #else
-    mfxStatus VideoVPPHW::ProcessFieldCopy(std::vector<ExtSurface> & /*surfQueue*/ /* IN */, ExtSurface & /*output*/ /* OUT */, int)
+    mfxStatus VideoVPPHW::ProcessFieldCopy(int)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -2345,8 +2307,9 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         sts = PreWorkInputSurface(surfQueue);
         MFX_CHECK_STS(sts);
 
-        sts = ProcessFieldCopy(surfQueue, pTask->output, imfxFPMode);
+        sts = ProcessFieldCopy(imfxFPMode);
         m_executeParams.pRefSurfaces = &m_executeSurf[0];
+
 
         sts = PostWorkOutSurface(pTask->output);
         MFX_CHECK_STS(sts);

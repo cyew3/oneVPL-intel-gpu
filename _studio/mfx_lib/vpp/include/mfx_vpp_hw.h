@@ -690,7 +690,7 @@ namespace MfxHwVideoProcessing
         mfxStatus PostWorkOutSurface(ExtSurface & output);
         mfxStatus PostWorkInputSurface(mfxU32 numSamples);
 
-        mfxStatus ProcessFieldCopy(std::vector<ExtSurface> & surfQueue /* IN */, ExtSurface & output /* OUT */, int mask);
+        mfxStatus ProcessFieldCopy(int mask);
 
         mfxU16 m_asyncDepth;
 
