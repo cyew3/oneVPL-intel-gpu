@@ -22,8 +22,10 @@ void LogConsole::WriteLog(const std::string &log)
             std::string logstr;
             getline(str_stream, logstr);
             if(log.find("function:") == std::string::npos && log.find(">>") == std::string::npos) spase = "    ";
-            if(logstr.length() > 2) std::cout << ThreadInfo::GetThreadId() << " " << Timer::GetTimeStamp() << " " << spase << logstr << "\n";
-            else std::cout << logstr << "\n";
+            std::stringstream pre_out;
+            if(logstr.length() > 2) pre_out << ThreadInfo::GetThreadId() << " " << Timer::GetTimeStamp() << " " << spase << logstr << std::endl; 
+            else pre_out << logstr << "\n";
+            std::cout << pre_out.str();
             if(str_stream.eof())
                 break;
         }

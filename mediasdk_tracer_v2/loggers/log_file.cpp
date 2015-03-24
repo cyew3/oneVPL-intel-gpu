@@ -43,8 +43,10 @@ void LogFile::WriteLog(const std::string &log)
             std::string logstr;
             getline(str_stream, logstr);
             if(log.find("function:") == std::string::npos && log.find(">>") == std::string::npos) spase = "    ";
-            if(logstr.length() > 2) _file << ThreadInfo::GetThreadId() << " " << Timer::GetTimeStamp() << " " << spase << logstr << std::endl;
-            else _file << logstr << "\n";
+            std::stringstream pre_out;
+            if(logstr.length() > 2) pre_out << ThreadInfo::GetThreadId() << " " << Timer::GetTimeStamp() << " " << spase << logstr << std::endl;
+            else pre_out << logstr << "\n";
+            _file << pre_out.str();
             if(str_stream.eof())
                 break;
         }
