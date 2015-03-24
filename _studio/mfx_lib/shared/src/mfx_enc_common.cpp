@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          common encoders functionality
@@ -13,7 +13,7 @@
 #include "umc_defs.h"
 #include "ipps.h"
 
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 #include <limits.h>
 #include "mfx_enc_common.h"
@@ -480,17 +480,16 @@ void ConvertFrameRateMPEG2(mfxU32 FrameRateExtD, mfxU32 FrameRateExtN, mfxI32 &f
         }
         else if (it_lower != SORTED_RATIO) // min FR not reached
         {            
-            if ( abs( (mfxF64) (it_lower - 1)->n / (it_lower - 1)->d - (mfxF64) convertedFR.n / convertedFR.d) <
-                abs( (mfxF64) it_lower->n / it_lower->d  - (mfxF64) convertedFR.n / convertedFR.d) )
+            if ( std::abs( (mfxF64) (it_lower - 1)->n / (it_lower - 1)->d - (mfxF64) convertedFR.n / convertedFR.d) <
+                std::abs((mfxF64)it_lower->n / it_lower->d - (mfxF64)convertedFR.n / convertedFR.d))
             {
                 it_lower--;
             }
         }
 
-        if ( minDifference > abs((mfxF64) convertedFR.n / convertedFR.d  - (mfxF64)it_lower->n / it_lower->d))
-
+        if (minDifference > std::abs((mfxF64)convertedFR.n / convertedFR.d - (mfxF64)it_lower->n / it_lower->d))
         {
-            minDifference = abs((mfxF64) convertedFR.n / convertedFR.d - (mfxF64)it_lower->n / it_lower->d);            
+            minDifference = std::abs((mfxF64)convertedFR.n / convertedFR.d - (mfxF64)it_lower->n / it_lower->d);
             frame_rate_code = i + 1;
             bestFR = *it_lower;
         } 
