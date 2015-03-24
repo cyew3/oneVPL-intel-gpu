@@ -901,6 +901,7 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
     default:
         return MFX_ERR_UNSUPPORTED;
     }
+    m_surface.Info.FourCC = surface_work->Info.FourCC;
 
     sts = m_pCore->DoFastCopyWrapper(surface_work,
                                      MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
