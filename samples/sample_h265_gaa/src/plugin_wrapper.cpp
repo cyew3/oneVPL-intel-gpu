@@ -43,10 +43,12 @@ mfxStatus CH265FEI::Init(SampleParams *sp)
     // init session
     m_pmfxSession.reset(new MFXVideoSession);
 
+    mfxVersion ver = {10, 1};
+
     if (libType & MFX_IMPL_HARDWARE_ANY)
     {
         // try search for MSDK on all display adapters
-        sts = m_pmfxSession->Init(libType, NULL);
+        sts = m_pmfxSession->Init(libType, &ver);
 
         // MSDK API version may have no support for multiple adapters - then try initialize on the default
         if (MFX_ERR_NONE != sts)
