@@ -11,16 +11,17 @@ LogFile::LogFile()
     else
         _file_path = std::string("mfxtracer.log");
 
-#if !(defined(_WIN32) || defined(_WIN64))
-    strproc_id = std::string("_") + strproc_id;
-    unsigned int pos = _file_path.rfind(".");
-    if (pos == std::string::npos)
-        _file_path.insert(_file_path.length(), strproc_id);
-    else if((_file_path.length() - pos) > std::string(".log").length())
-        _file_path.insert(_file_path.length(), strproc_id);
-    else
-        _file_path.insert(pos, strproc_id);
-#endif
+    if (!Log::useGUI)
+    {
+        strproc_id = std::string("_") + strproc_id;
+        unsigned int pos = _file_path.rfind(".");
+        if (pos == std::string::npos)
+            _file_path.insert(_file_path.length(), strproc_id);
+        else if((_file_path.length() - pos) > std::string(".log").length())
+            _file_path.insert(_file_path.length(), strproc_id);
+        else
+            _file_path.insert(pos, strproc_id);
+    }
 }
 
 LogFile::~LogFile()
@@ -43,8 +44,10 @@ void LogFile::WriteLog(const std::string &log)
             std::string logstr;
             getline(str_stream, logstr);
             if(log.find("function:") == std::string::npos && log.find(">>") == std::string::npos) spase = "    ";
-            if(logstr.length() > 2) _file << ThreadInfo::GetThreadId() << " " << Timer::GetTimeStamp() << " " << spase << logstr << std::endl;
-            else _file << logstr << "\n";
+            std::stringstream pre_out;
+            if(logstr.length() > 2) pre_out << ThreadInfo::GetThreadId() << " " << Timer::GetTimeStamp() << " " << spase << logstr << std::endl;
+            else pre_out << logstr << "\n";
+            _file << pre_out.str();
             if(str_stream.eof())
                 break;
         }

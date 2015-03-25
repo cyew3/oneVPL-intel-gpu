@@ -128,7 +128,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
  
     DUMP_FIELD(QVBRQuality);
     DUMP_FIELD(EnableMBQP);
-    DUMP_FIELD(IntRefCycleDist);
+    //DUMP_FIELD(reserved1); not exist in current master
     DUMP_FIELD(DirectBiasAdjustment);          /* tri-state option */
     DUMP_FIELD(GlobalMotionBiasAdjustment);    /* tri-state option */
     DUMP_FIELD(MVCostScalingFactor);
@@ -230,6 +230,10 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameInfo &
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(info.reserved) + "\n";
+    str += structName + ".reserved4=" + ToString(info.reserved4) + "\n";
+    str += structName + ".BitDepthLuma=" + ToString(info.BitDepthLuma) + "\n";
+    str += structName + ".BitDepthChroma=" + ToString(info.BitDepthChroma) + "\n";
+    str += structName + ".Shift=" + ToString(info.Shift) + "\n";
     str += dump(structName + ".mfxFrameId", info.FrameId) + "\n";
     str += structName + ".FourCC=" + GetFourCC(info.FourCC) + "\n";
     str += structName + ".Width=" + ToString(info.Width) + "\n";
@@ -238,6 +242,8 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameInfo &
     str += structName + ".CropY=" + ToString(info.CropY) + "\n";
     str += structName + ".CropW=" + ToString(info.CropW) + "\n";
     str += structName + ".CropH=" + ToString(info.CropH) + "\n";
+    str += structName + ".BufferSize=" + ToString(info.BufferSize) + "\n";
+    str += structName + ".reserved5=" + ToString(info.reserved5) + "\n";
     str += structName + ".FrameRateExtN=" + ToString(info.FrameRateExtN) + "\n";
     str += structName + ".FrameRateExtD=" + ToString(info.FrameRateExtD) + "\n";
     str += structName + ".reserved3=" + ToString(info.reserved3) + "\n";
@@ -267,7 +273,7 @@ std::string DumpContext::dump(const std::string structName, const mfxInfoMFX &mf
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(mfx.reserved) + "\n";
-    str += structName + ".reserved5=" + ToString(mfx.reserved5) + "\n";
+    str += structName + ".LowPower=" + ToString(mfx.LowPower) + "\n";
     str += structName + ".BRCParamMultiplier=" + ToString(mfx.BRCParamMultiplier) + "\n";
     str += dump(structName + ".FrameInfo", mfx.FrameInfo) + "\n";
     str += structName + ".CodecId=" + GetCodecIdString(mfx.CodecId) + "\n";

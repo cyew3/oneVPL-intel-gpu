@@ -67,7 +67,6 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
         std::string slib = "";
         switch( fdwReason ){
             case DLL_PROCESS_ATTACH:
-                tracer_init();
                 slib = Config::GetParam("core", "lib");
                 g_mfxlib = new char[slib.length()];
                 strcpy(g_mfxlib, slib.c_str());
@@ -80,6 +79,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
                     }
                                         
                 }
+                tracer_init();
                 Log::WriteLog(std::string("function: DLLMain() DLL_PROCESS_ATTACH +"));
                 Log::WriteLog("mfx_tracer: lib=" + std::string(g_mfxlib));
                 Log::WriteLog(std::string("function: DLLMain() DLL_PROCESS_ATTACH - \n\n"));
