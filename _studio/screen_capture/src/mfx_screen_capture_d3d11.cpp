@@ -289,9 +289,11 @@ mfxStatus D3D11_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_wo
     DESKTOP_EXECUTE_PARAMS desktop_execute;
 
     memset( &desktop_execute, 0, sizeof(desktop_execute));
-    desktop_execute.DesktopFormat = MfxFourccToDxgiFormat(surface_work->Info.FourCC);;
-    desktop_execute.Height = surface_work->Info.Height;
-    desktop_execute.Width = surface_work->Info.Width;
+    desktop_execute.DesktopFormat = MfxFourccToDxgiFormat(surface_work->Info.FourCC);
+    mfxU16 croph = surface_work->Info.CropY + surface_work->Info.CropH;
+    mfxU16 cropw = surface_work->Info.CropX + surface_work->Info.CropW;
+    desktop_execute.Height = croph ? croph : surface_work->Info.Height;
+    desktop_execute.Width  = cropw ? cropw : surface_work->Info.Width;
     desktop_execute.StatusReportFeedbackNumber = ++StatusReportFeedbackNumber;
 
     dec_ext.Function = DESKTOP_GETDESKTOP_ID;

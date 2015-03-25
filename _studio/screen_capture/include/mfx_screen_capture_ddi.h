@@ -19,6 +19,8 @@ File Name: mfx_screen_capture_ddi.h
 #include "mfxstructures.h"
 #include "mfxplugin.h"
 
+#include "ippi.h"
+
 // {BF44DACD-217F-4370-A383-D573BC56707E}
 DEFINE_GUID(DXVADDI_Intel_GetDesktopScreen, 
             0xbf44dacd, 0x217f, 0x4370, 0xa3, 0x83, 0xd5, 0x73, 0xbc, 0x56, 0x70, 0x7e);
@@ -124,6 +126,40 @@ Capturer* CreateSWCapturer(mfxCoreInterface* core);
 
 DXGI_FORMAT MfxFourccToDxgiFormat(const mfxU32& fourcc);
 D3DFORMAT MfxFourccToD3dFormat(const mfxU32& fourcc);
+
+//class CMFastCopy
+//{
+//public:
+//    CMFastCopy(mfxCoreInterface* _core);
+//    mfxStatus CMCopySysToGpu(mfxFrameSurface1& in, mfxFrameSurface1& out);
+//
+//protected:
+//
+//};
+
+class OwnResizeFilter
+{
+public:
+    OwnResizeFilter();
+    virtual ~OwnResizeFilter();
+    mfxStatus Init(const mfxFrameInfo& in, const mfxFrameInfo& out);
+    mfxStatus RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1& out);
+
+protected:
+    mfxStatus rs_RGB4( mfxFrameSurface1* in, mfxFrameSurface1* out );
+    mfxStatus rs_NV12( mfxFrameSurface1* in, mfxFrameSurface1* out );
+
+    IppiResizeYUV420Spec* m_pSpec;
+    IppiResizeSpec_32f*   m_pRGBSpec;
+    mfxU8*                m_pWorkBuffer;
+    IppiInterpolationType m_interpolation;
+
+private:
+    //prohobit copy constructor
+    OwnResizeFilter(const OwnResizeFilter& that);
+    //prohibit assignment operator
+    OwnResizeFilter& operator=(const OwnResizeFilter&);
+};
 
 } //namespace MfxCapture
 

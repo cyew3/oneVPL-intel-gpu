@@ -354,8 +354,10 @@ mfxStatus D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_wor
 
     mfxU16 width = 0;
     mfxU16 height = 0;
-    width  = surface_work->Info.CropW ? surface_work->Info.CropW : surface_work->Info.Width;
-    height = surface_work->Info.CropH ? surface_work->Info.CropH : surface_work->Info.Height;
+    mfxU16 croph = surface_work->Info.CropY + surface_work->Info.CropH;
+    mfxU16 cropw = surface_work->Info.CropX + surface_work->Info.CropW;
+    height = croph ? croph : surface_work->Info.Height;
+    width  = cropw ? cropw : surface_work->Info.Width;
 
     dec_ext.Function = DESKTOP_GETDESKTOP_ID;
     dec_ext.pPrivateInputData =  &desktop_execute;

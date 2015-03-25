@@ -48,8 +48,15 @@ protected:
     mfxStatus AttachToLibraryDevice();
 
     std::auto_ptr<MFXVideoVPPColorSpaceConversion> m_pColorConverter;
+    std::auto_ptr<OwnResizeFilter>                 m_pResizer;
+    bool                      m_bResize;
+    mfxU8*                    m_pResizeBuffer;
+    //std::auto_ptr<CMFastCopy> m_pFastCopy;
+    //bool                      m_bFastCopy;
     mfxFrameSurface1* GetFreeInternalSurface();
+    mfxFrameSurface1* GetFreeIntResizeSurface();
     std::list<mfxFrameSurface1> m_InternalSurfPool;
+    std::list<mfxFrameSurface1> m_InternalNV12ResizeSurfPool;
     std::list<DESKTOP_QUERY_STATUS_PARAMS> m_IntStatusList;
 
     bool                                         m_bOwnDevice;

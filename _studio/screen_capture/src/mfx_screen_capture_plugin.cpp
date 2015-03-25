@@ -548,6 +548,32 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         out.mfx.FrameInfo.CropW = 0;
         error = true;
     }
+    //scaling in case of RGB32 is not supported due to the driver bug
+    if(in.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 || in.mfx.FrameInfo.FourCC == DXGI_FORMAT_AYUV)
+    {
+        mfxU16 monitorW = (mfxU16) GetSystemMetrics(SM_CXSCREEN);
+        mfxU16 monitorH = (mfxU16) GetSystemMetrics(SM_CYSCREEN);
+        mfxU16 userW = in.mfx.FrameInfo.CropX + in.mfx.FrameInfo.CropW;
+        mfxU16 userH = in.mfx.FrameInfo.CropY + in.mfx.FrameInfo.CropH;
+        userW = userW ? userW : in.mfx.FrameInfo.Width;
+        userH = userH ? userH : in.mfx.FrameInfo.Height;
+        if(monitorH && monitorW)
+        {
+            if(monitorW != userW)
+            {
+                out.mfx.FrameInfo.Width = 0;
+                out.mfx.FrameInfo.CropW = 0;
+                error = true;
+            }
+            if(monitorH != userH)
+            {
+                out.mfx.FrameInfo.Height = 0;
+                out.mfx.FrameInfo.CropH = 0;
+                error = true;
+            }
+        }
+    }
+
     //Crops should be ignored on init
     if(in.mfx.FrameInfo.CropY)
     {
@@ -645,7 +671,8 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         }
         MFX_CHECK_STS(mfxRes);
 
-        mfxRes = m_pCapturer.get()->CheckCapabilities(in, &out);
+        if(m_pCapturer.get())
+            mfxRes = m_pCapturer.get()->CheckCapabilities(in, &out);
         if(mfxRes)
         {
             fallback = true;
@@ -761,6 +788,7 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxFrameSurface1 *surface, 
     CComPtr<ID3D11VideoDecoderOutputView> pOutputView;
 
     //HW accelerated
+    try
     {
         mfxRes = m_pCapturer.get()->BeginFrame(surface->Data.MemId);
         if(mfxRes)
@@ -774,6 +802,10 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxFrameSurface1 *surface, 
         mfxRes = m_pCapturer.get()->EndFrame();
         if(mfxRes)
             rt_fallback = true;
+    }
+    catch(...)
+    {
+        rt_fallback = true;
     }
 
     if(rt_fallback)

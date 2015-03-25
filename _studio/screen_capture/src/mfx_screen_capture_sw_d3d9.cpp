@@ -16,9 +16,14 @@ File Name: mfx_screen_capture_d3d9.cpp
 namespace MfxCapture
 {
 
+#ifndef ALIGN16
+#define ALIGN16(SZ) (((SZ + 15) >> 4) << 4) // round up to a multiple of 16
+#endif
+
 SW_D3D9_Capturer::SW_D3D9_Capturer(mfxCoreInterface* _core)
     :m_pmfxCore(_core),
-    m_bOwnDevice(false)
+    m_bOwnDevice(false),
+    m_bResize(false)
 {
     Mode = SW_D3D9;
     memset(&m_core_par, 0, sizeof(m_core_par));
@@ -37,12 +42,12 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
 
     mfxU16 width  = par.mfx.FrameInfo.Width;
     mfxU16 height = par.mfx.FrameInfo.Height;
-    mfxU16 CropW = par.mfx.FrameInfo.CropW;
-    mfxU16 CropH = par.mfx.FrameInfo.CropH;
+    mfxU16 CropW = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
+    mfxU16 CropH = par.mfx.FrameInfo.CropH ? par.mfx.FrameInfo.CropH : par.mfx.FrameInfo.Height;
     mfxU32 monitorW = GetSystemMetrics(SM_CXSCREEN);
     mfxU32 monitorH = GetSystemMetrics(SM_CYSCREEN);
-    width  = width  < monitorW ? monitorW : width;
-    height = height < monitorH ? monitorH : height;
+    width  = (mfxU16) (width  != monitorW ? monitorW : width );
+    height = (mfxU16) (height != monitorH ? monitorH : height);
 
     //will own internal device manager
     memset(&m_core_par, 0, sizeof(m_core_par));
@@ -67,9 +72,32 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
         MFX_CHECK_STS(mfxRes);
     }
 
+    //in case of fallback use CM fast copy
+    //if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(m_core_par.Impl))
+    //{
+    //    try
+    //    {
+    //        m_pFastCopy.reset( new CMFastCopy(m_pmfxCore));
+    //    }
+    //    catch(...)
+    //    {
+    //        m_pFastCopy.reset( 0 );
+    //        m_bFastCopy = false;
+    //    }
+    //    m_bFastCopy = true;
+    //}
+
     if(MFX_FOURCC_NV12 == par.mfx.FrameInfo.FourCC)
     {
-        m_pColorConverter.reset(new MFXVideoVPPColorSpaceConversion(0, &mfxRes));
+        try
+        {
+            m_pColorConverter.reset(new MFXVideoVPPColorSpaceConversion(0, &mfxRes));
+        }
+        catch(...)
+        {
+            Destroy();
+            return MFX_ERR_MEMORY_ALLOC;
+        }
         if(mfxRes)
         {
             Destroy();
@@ -81,6 +109,80 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
         m_pColorConverter.get()->Init(&in, &out);
     }
 
+    if(monitorW != CropW || monitorH != CropH)
+    {
+        try
+        {
+            m_pResizer.reset(new OwnResizeFilter());
+        }
+        catch(...)
+        {
+            Destroy();
+            return MFX_ERR_MEMORY_ALLOC;
+        }
+        if(mfxRes)
+        {
+            Destroy();
+            return mfxRes;
+        }
+        mfxFrameInfo in  = par.mfx.FrameInfo;
+        mfxFrameInfo out = par.mfx.FrameInfo;
+
+        in.CropW = width;
+        in.CropH = height;
+        in.Width  = ALIGN16(width);
+        in.Height = ALIGN16(height);
+
+        //in case of RGB32 output no CSC is needed
+        //capture into own RGB32, resize into user RGB32
+        //but in case of NV12 output a temp surface is needed
+        //capture into own RGB32, _convert to own NV12_, resize to user NV12
+        if(MFX_FOURCC_NV12 == par.mfx.FrameInfo.FourCC)
+        {
+            m_bResize = true;
+            in.FourCC = MFX_FOURCC_NV12;
+            in.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            out.FourCC = MFX_FOURCC_NV12;
+            out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            mfxFrameSurface1 surf = {0,0,0,0,in,0};
+            for(mfxU16 i = 0; i < max(1,par.AsyncDepth); ++i)
+            {
+                try
+                {
+                    surf.Data.Y = new mfxU8[surf.Info.Width * surf.Info.Height * 3 / 2];
+                    surf.Data.UV = surf.Data.Y + surf.Info.Width * surf.Info.Height;
+                    surf.Data.Pitch = surf.Info.Width;
+                    m_InternalNV12ResizeSurfPool.push_back(surf);
+                }
+                catch(...)
+                {
+                    Destroy();
+                    return MFX_ERR_MEMORY_ALLOC;
+                }
+            }
+        }
+        else if(MFX_FOURCC_RGB4 == par.mfx.FrameInfo.FourCC || DXGI_FORMAT_AYUV == par.mfx.FrameInfo.FourCC )
+        {
+            in.FourCC = MFX_FOURCC_RGB4;
+            in.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            out.FourCC = MFX_FOURCC_RGB4;
+            out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+
+            ////emulate driver behavior, no height resize in case of RGB4
+            //out.Height = in.Height;
+            //out.CropH  = in.CropH;
+
+            m_bResize = true;
+        }
+
+        mfxRes = m_pResizer.get()->Init(in, out);
+        if(mfxRes)
+        {
+            Destroy();
+            return mfxRes;
+        }
+    }
+
     //Create own surface pool
     for(mfxU16 i = 0; i < max(1,par.AsyncDepth); ++i)
     {
@@ -88,8 +190,10 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
         mfxFrameSurface1 surf = {0,0,0,0,par.mfx.FrameInfo,0};
         surf.Info.Width  = width;
         surf.Info.Height = height;
-        surf.Info.CropW  = CropW;
-        surf.Info.CropH  = CropH;
+        //surf.Info.CropW  = CropW;
+        //surf.Info.CropH  = CropH;
+        surf.Info.CropW  = width;
+        surf.Info.CropH  = height;
         surf.Info.FourCC = MFX_FOURCC_RGB4;
         surf.Info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
         hres = m_pDirect3DDevice->CreateOffscreenPlainSurface(width, height, D3DFMT_A8R8G8B8, D3DPOOL_SCRATCH, &pSurface, NULL);
@@ -161,8 +265,9 @@ mfxStatus SW_D3D9_Capturer::QueryVideoAccelerator(mfxVideoParam const & in, mfxV
 
 mfxStatus SW_D3D9_Capturer::CheckCapabilities(mfxVideoParam const & in, mfxVideoParam* out)
 {
-    if(!(MFX_FOURCC_NV12 == in.mfx.FrameInfo.FourCC ||
-         MFX_FOURCC_RGB4 == in.mfx.FrameInfo.FourCC))
+    if(!(MFX_FOURCC_NV12  == in.mfx.FrameInfo.FourCC ||
+         MFX_FOURCC_RGB4  == in.mfx.FrameInfo.FourCC ||
+         DXGI_FORMAT_AYUV == in.mfx.FrameInfo.FourCC ))
     {
         if(out) out->mfx.FrameInfo.FourCC = 0;
         return MFX_ERR_UNSUPPORTED;
@@ -175,6 +280,8 @@ mfxStatus SW_D3D9_Capturer::Destroy()
 {
     if(m_pColorConverter.get())
         m_pColorConverter.reset(0);
+    //if(m_pResizer.get())
+    //    m_pResizer.reset(0);
     if(m_InternalSurfPool.size())
     {
         for(std::list<mfxFrameSurface1>::iterator it = m_InternalSurfPool.begin(); it != m_InternalSurfPool.end(); ++it)
@@ -186,6 +293,23 @@ mfxStatus SW_D3D9_Capturer::Destroy()
             }
         }
         m_InternalSurfPool.clear();
+    }
+    if(m_InternalNV12ResizeSurfPool.size())
+    {
+        for(std::list<mfxFrameSurface1>::iterator it = m_InternalNV12ResizeSurfPool.begin(); it != m_InternalNV12ResizeSurfPool.end(); ++it)
+        {
+            if(it->Data.Y)
+            {
+                delete[] it->Data.Y;
+                it->Data.Y = 0;
+            }
+        }
+        m_InternalNV12ResizeSurfPool.clear();
+    }
+    if(m_pResizeBuffer)
+    {
+        delete[] m_pResizeBuffer;
+        m_pResizeBuffer = 0;
     }
     if(m_IntStatusList.size())
     {
@@ -256,7 +380,6 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
         return MFX_ERR_DEVICE_FAILED;
     }
 
-
     pSurf->Data.Pitch = (mfxU16)sLockRect.Pitch;
     pSurf->Data.B = (mfxU8 *)sLockRect.pBits;
     pSurf->Data.G = pSurf->Data.B + 1;
@@ -265,14 +388,18 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
     bool unlock = false;
 
     //Copy Frame
-    if(MFX_FOURCC_RGB4 == surface_work->Info.FourCC)
+    if(MFX_FOURCC_RGB4 == surface_work->Info.FourCC || DXGI_FORMAT_AYUV == surface_work->Info.FourCC)
     {
-        mfxRes = MFX_ERR_UNKNOWN;
-        //if(surface_work->Data.MemId && !surface_work->Data.R && (MFX_IMPL_VIA_D3D9 == (0xF00 & m_core_par.Impl)))
-        //    mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, surface_work, pSurf);
+        //mfxRes = MFX_ERR_UNKNOWN;
+        //if(m_bFastCopy && m_pFastCopy.get())
+        //{
+        //    mfxRes = m_pFastCopy.get()->CMCopySysToGpu(*pSurf, *surface_work);
+        //}
+        //if(mfxRes)
+        //    m_bFastCopy = false;
 
-        if(mfxRes)
-        {
+        //if(mfxRes || !m_bFastCopy)
+        //{
             unlock = surface_work->Data.Y ? false : true;
             if(unlock)
             {
@@ -280,27 +407,36 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
                 if(mfxRes) return MFX_ERR_LOCK_MEMORY;
             }
 
-            mfxU32 i = 0;
-            mfxU32 src_h = pSurf->Info.CropH ? pSurf->Info.CropH : pSurf->Info.Height;
-            mfxU32 src_w = pSurf->Info.CropW ? pSurf->Info.CropW : pSurf->Info.Width;
-            mfxU32 dst_h = surface_work->Info.CropH ? surface_work->Info.CropH : surface_work->Info.Height;
-            mfxU32 dst_w = surface_work->Info.CropW ? surface_work->Info.CropW : surface_work->Info.Width;
-            if(src_h > dst_h || src_w > dst_w)
+            if(m_bResize)
             {
-                src_h = dst_h;
-                src_w = dst_w;
+                mfxRes = m_pResizer.get()->RunFrameVPP(*pSurf, *surface_work);
+                if(mfxRes)
+                    return mfxRes;
             }
-            mfxU32 src_pitch = pSurf->Data.Pitch;
-            mfxU32 dst_pitch = surface_work->Data.Pitch;
-
-            mfxU8* src   = pSurf->Data.B;
-            mfxU8* dst   = surface_work->Data.B;
-
-            for (i = 0; i < src_h; i++)
+            else
             {
-                memcpy_s(dst + i*dst_pitch, 4*dst_w, src + i*src_pitch, 4*src_w);
+                mfxU32 i = 0;
+                mfxU32 src_h = pSurf->Info.CropH ? pSurf->Info.CropH : pSurf->Info.Height;
+                mfxU32 src_w = pSurf->Info.CropW ? pSurf->Info.CropW : pSurf->Info.Width;
+                mfxU32 dst_h = surface_work->Info.CropH ? surface_work->Info.CropH : surface_work->Info.Height;
+                mfxU32 dst_w = surface_work->Info.CropW ? surface_work->Info.CropW : surface_work->Info.Width;
+                if(src_h > dst_h || src_w > dst_w)
+                {
+                    src_h = dst_h;
+                    src_w = dst_w;
+                }
+                mfxU32 src_pitch = pSurf->Data.Pitch;
+                mfxU32 dst_pitch = surface_work->Data.Pitch;
+
+                mfxU8* src   = pSurf->Data.B;
+                mfxU8* dst   = surface_work->Data.B;
+
+                for (i = 0; i < src_h; i++)
+                {
+                    memcpy_s(dst + i*dst_pitch, 4*dst_w, src + i*src_pitch, 4*src_w);
+                }
             }
-        }
+        //}
     }
     else if(MFX_FOURCC_NV12 == surface_work->Info.FourCC)
     {
@@ -311,15 +447,45 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
             if(mfxRes) return MFX_ERR_LOCK_MEMORY;
         }
 
-        pSurf->Info.FourCC = MFX_FOURCC_RGB4;
-        FilterVPP::InternalParam param = {};
-        param.inPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        if(m_bResize)
+        {
+            mfxFrameSurface1* pNV12Surf = GetFreeIntResizeSurface();
+            if(!pNV12Surf)
+                return MFX_ERR_DEVICE_FAILED;
+            mfxRes = m_pmfxCore->IncreaseReference(m_pmfxCore->pthis,&pNV12Surf->Data);
+            if(mfxRes)
+                return mfxRes;
 
-        if(!m_pColorConverter.get())
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        mfxRes = m_pColorConverter.get()->RunFrameVPP(pSurf,surface_work,&param);
-        if(mfxRes)
-            return MFX_ERR_DEVICE_FAILED;
+            pSurf->Info.FourCC = MFX_FOURCC_RGB4;
+            FilterVPP::InternalParam param = {};
+            param.inPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
+            if(!m_pColorConverter.get())
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            mfxRes = m_pColorConverter.get()->RunFrameVPP(pSurf,pNV12Surf,&param);
+            if(mfxRes)
+                return MFX_ERR_DEVICE_FAILED;
+
+            mfxRes = m_pResizer.get()->RunFrameVPP(*pNV12Surf, *surface_work);
+            if(mfxRes)
+                return mfxRes;
+
+            mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis,&pNV12Surf->Data);
+            if(mfxRes)
+                return mfxRes;
+        }
+        else
+        {
+            pSurf->Info.FourCC = MFX_FOURCC_RGB4;
+            FilterVPP::InternalParam param = {};
+            param.inPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
+            if(!m_pColorConverter.get())
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            mfxRes = m_pColorConverter.get()->RunFrameVPP(pSurf,surface_work,&param);
+            if(mfxRes)
+                return MFX_ERR_DEVICE_FAILED;
+        }
     }
 
     hr = pSurface->UnlockRect();
@@ -460,5 +626,21 @@ mfxFrameSurface1* SW_D3D9_Capturer::GetFreeInternalSurface()
     return pSurf;
 }
 
+mfxFrameSurface1* SW_D3D9_Capturer::GetFreeIntResizeSurface()
+{
+    if(!m_InternalNV12ResizeSurfPool.size())
+        return 0;
+    mfxFrameSurface1* pSurf = 0; 
+
+    for(std::list<mfxFrameSurface1>::iterator it = m_InternalNV12ResizeSurfPool.begin(); it != m_InternalNV12ResizeSurfPool.end(); ++it)
+    {
+        if( !(*it).Data.Locked)
+        {
+            pSurf = &(*it);
+            break;
+        }
+    }
+    return pSurf;
+}
 
 } //namespace MfxCapture
