@@ -563,7 +563,7 @@ mfxStatus VideoENC_LA::InsertTaskWithReordenig(sLAInputTask &newTask, bool bEndO
         size_t last_index = m_miniGop.size() - 1;
         MFX_CHECK(!(m_miniGop[last_index].InputFrame.frameType & MFX_FRAMETYPE_B), MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        m_miniGop[last_index].InputFrame.encFrameOrder = m_miniGop[0].InputFrame.encFrameOrder + m_numLastB;
+        m_miniGop[last_index].InputFrame.encFrameOrder = m_miniGop[0].InputFrame.encFrameOrder + m_numLastB + 1;
         if (m_miniGop[last_index].InputFrame.frameType & MFX_FRAMETYPE_P)
         {
             m_miniGop[last_index].RefFrame[0] = m_miniGop[0].InputFrame;
@@ -1343,6 +1343,7 @@ mfxStatus VideoENC_LA::QueryFrameLA(mfxENCOutput *output)
     
     bool     bNoInput = false; 
     bool     bSubmittedFrames = false;
+    bool     bRistrict = false; 
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LA::Query");
     {
@@ -1397,6 +1398,9 @@ mfxStatus VideoENC_LA::QueryFrameLA(mfxENCOutput *output)
             if (task->m_TaskInfo.RefFrame[1].pFrame)
                 m_core->DecreaseReference(&task->m_TaskInfo.RefFrame[1].pFrame->Data);
             
+            if (output && (m_OutputTasks.size() < m_LaControl.DependencyDepth))
+                bRistrict = 1;
+
             if (m_OutputTasks.size() >= m_LaControl.DependencyDepth)
             {
                 std::list<sLASummaryTask>::iterator currTask = m_OutputTasks.end();               
@@ -1456,7 +1460,7 @@ mfxStatus VideoENC_LA::QueryFrameLA(mfxENCOutput *output)
         }
     } 
     // proceed buffered frames
-    else if (!m_LAAsyncContext.bPreEncLastFrames && bNoInput && m_OutputTasks.size() >0)
+    if ((!bSubmittedFrames && !m_LAAsyncContext.bPreEncLastFrames && bNoInput && m_OutputTasks.size() >0) || bRistrict)
     {
         std::list<sLASummaryTask>::iterator currTask = m_OutputTasks.end(); 
         for (int i = 0; i < m_LaControl.DependencyDepth; i++)
@@ -1480,7 +1484,7 @@ mfxStatus VideoENC_LA::QueryFrameLA(mfxENCOutput *output)
         }
         m_LAAsyncContext.bPreEncLastFrames = true;
     }
-    else if (!bNoInput)
+    else if (!bSubmittedFrames &&!bNoInput)
     {
         return MFX_TASK_BUSY;   
     }   
