@@ -281,25 +281,44 @@ mfxStatus D3D9_Capturer::Destroy()
 
     if(m_pDecoder)
     {
-        hr = m_pDecoder->Execute(&dec_exec);
-        if(FAILED(hr))
+        try{
+            hr = m_pDecoder->Execute(&dec_exec);
+            if(FAILED(hr))
+                error = true;
+            //not sure about correct closing the device, let's ignore error
+            error = false;
+            m_pDecoder.Release();
+        } catch (...) {
             error = true;
-        //not sure about correct closing the device, let's ignore error
-        error = false;
-        m_pDecoder.Release();
+        }
     }
 
-    if(m_pDirectXVideoService)
-        m_pDirectXVideoService.Release();
-    if(m_pDirect3DDevice)
-        m_pDirect3DDevice.Release();
-    if(m_pD3D)
-        m_pD3D.Release();
-
-    if (m_pDirect3DDeviceManager && m_hDirectXHandle != INVALID_HANDLE_VALUE)
-    {
-        m_pDirect3DDeviceManager->CloseDeviceHandle(m_hDirectXHandle);
-        m_hDirectXHandle = INVALID_HANDLE_VALUE;
+    try{
+        if(m_pDirectXVideoService)
+            m_pDirectXVideoService.Release();
+    } catch (...) {
+        error = true;
+    }
+    try{
+        if(m_pDirect3DDevice)
+            m_pDirect3DDevice.Release();
+    } catch (...) {
+        error = true;
+    }
+    try{
+        if(m_pD3D)
+            m_pD3D.Release();
+    } catch (...) {
+        error = true;
+    }
+    try{
+        if (m_pDirect3DDeviceManager && m_hDirectXHandle != INVALID_HANDLE_VALUE)
+        {
+            m_pDirect3DDeviceManager->CloseDeviceHandle(m_hDirectXHandle);
+            m_hDirectXHandle = INVALID_HANDLE_VALUE;
+        }
+    } catch (...) {
+        error = true;
     }
 
     //if(m_pDirect3DDeviceManager)

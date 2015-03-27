@@ -231,13 +231,33 @@ mfxStatus D3D11_Capturer::CheckCapabilities(mfxVideoParam const & in, mfxVideoPa
 
 mfxStatus D3D11_Capturer::Destroy()
 {
+    bool error = false;
     //m_pD11Device.Release(); //controlled by the application
-    m_pD11Context.Release();
-    m_pD11VideoDevice.Release();
-    m_pD11VideoContext.Release();
-    m_pDecoder.Release();
+    try{
+        m_pD11Context.Release();
+    } catch (...) {
+        error = true;
+    }
+    try{
+        m_pD11VideoDevice.Release();
+    } catch (...) {
+        error = true;
+    }
+    try{
+        m_pD11VideoContext.Release();
+    } catch (...) {
+        error = true;
+    }
+    try{
+        m_pDecoder.Release();
+    } catch (...) {
+        error = true;
+    }
 
-    return MFX_ERR_NONE;
+    if(error)
+        return MFX_ERR_DEVICE_FAILED;
+    else
+        return MFX_ERR_NONE;
 }
 
 mfxStatus D3D11_Capturer::BeginFrame( mfxMemId MemId)

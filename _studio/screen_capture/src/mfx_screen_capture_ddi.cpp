@@ -114,6 +114,10 @@ D3DFORMAT MfxFourccToD3dFormat(const mfxU32& fourcc)
 
 OwnResizeFilter::OwnResizeFilter()
 {
+    m_pSpec         = 0;
+    m_pRGBSpec      = 0;
+    m_pWorkBuffer   = 0;
+    m_interpolation = ippHahn;
 }
 
 OwnResizeFilter::~OwnResizeFilter()
@@ -202,8 +206,13 @@ mfxStatus OwnResizeFilter::Init(const mfxFrameInfo& in, const mfxFrameInfo& out)
             pInitBuffer = 0;
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
-        
-        if(sts) return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        if(sts)
+        {
+            delete[] pInitBuffer;
+            pInitBuffer = 0;
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
 
         sts = ippiResizeYUV420GetBufferSize(m_pSpec, dstSize, &BufSize);
         if(sts)
@@ -288,7 +297,12 @@ mfxStatus OwnResizeFilter::Init(const mfxFrameInfo& in, const mfxFrameInfo& out)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
         
-        if(sts) return MFX_ERR_INVALID_VIDEO_PARAM;
+        if(sts)
+        {
+            delete[] pInitBuffer;
+            pInitBuffer = 0;
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
 
         sts = ippiResizeGetBufferSize_8u(m_pRGBSpec, dstSize, 4,&BufSize);
         if(sts)
