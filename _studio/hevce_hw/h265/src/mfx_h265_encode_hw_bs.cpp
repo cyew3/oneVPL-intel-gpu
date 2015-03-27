@@ -100,7 +100,6 @@ void BitstreamWriter::PutBit(mfxU32 b)
     }
 }
 
-
 void BitstreamWriter::PutGolomb(mfxU32 b)
 {
     if (!b)
@@ -130,6 +129,654 @@ void BitstreamWriter::PutTrailingBits()
         *(++m_bs)   = 0;
         m_bitOffset = 0;
     }
+}
+
+BitstreamReader::BitstreamReader(mfxU8* bs, mfxU32 size, mfxU8 bitOffset)
+: m_bsStart(bs)
+, m_bsEnd(bs + size)
+, m_bs(bs)
+, m_bitOffset(bitOffset & 7)
+, m_bitStart(bitOffset & 7)
+, m_emulation(true)
+{
+}
+
+BitstreamReader::~BitstreamReader()
+{
+}
+
+void BitstreamReader::Reset(mfxU8* bs, mfxU32 size, mfxU8 bitOffset)
+{
+    if (bs)
+    {
+        m_bsStart = bs;
+        m_bsEnd = bs + size;
+        m_bs = bs;
+        m_bitOffset = (bitOffset & 7);
+        m_bitStart = (bitOffset & 7);
+    }
+    else
+    {
+        m_bs = m_bsStart;
+        m_bitOffset = m_bitStart;
+    }
+}
+
+mfxU32 BitstreamReader::GetBit()
+{
+    if (m_bs >= m_bsEnd)
+    {
+        assert(!"end of buffer");
+        throw EndOfBuffer();
+    }
+
+    mfxU32 b = (*m_bs >> (7 - m_bitOffset)) & 1;
+
+    if (++m_bitOffset == 8)
+    {
+        ++m_bs;
+        m_bitOffset = 0;
+
+        if (   m_emulation
+            && m_bs - m_bsStart >= 2
+            && (m_bsEnd - m_bs) >= 1 
+            && *m_bs                == 0x03 
+            && *(m_bs - 1)          == 0x00 
+            && *(m_bs - 2)          == 0x00 
+            && (*(m_bs + 1) & 0xfc) == 0x00)
+        {
+            ++m_bs;
+        }
+    }
+
+    return b;
+}
+
+mfxU32 BitstreamReader::GetBits(mfxU32 n)
+{
+    mfxU32 b = 0;
+
+    while (n--)
+        b = (b << 1) | GetBit();
+
+    return b;
+}
+
+mfxU32 BitstreamReader::GetUE()
+{
+    mfxU32 lz = 0;
+
+    while (!GetBit())
+        lz++;
+
+    return !lz ? 0 : ((1 << lz) | GetBits(lz)) - 1;
+}
+
+mfxI32 BitstreamReader::GetSE()
+{
+    mfxU32 ue = GetUE();
+    return (ue & 1) ? (mfxI32)((ue + 1) >> 1) : -(mfxI32)((ue + 1) >> 1);
+}
+
+mfxStatus HeaderReader::ReadNALU(BitstreamReader& bs, NALU & nalu)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    bool emulation = bs.GetEmulation();
+
+    bs.SetEmulation(false);
+
+    try
+    {
+        mfxU32 start_code = bs.GetBits(24);
+        mfxU32 n = 3;
+
+        while ((start_code & 0x00FFFFFF) != 1)
+        {
+            start_code <<= 8;
+            start_code |= bs.GetBits(8);
+            n++;
+        }
+
+        if (bs.GetBit())
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        nalu.long_start_code = (n > 3) && !(start_code >> 24);
+        nalu.nal_unit_type = bs.GetBits(6);
+        nalu.nuh_layer_id = bs.GetBits(6);
+        nalu.nuh_temporal_id_plus1 = bs.GetBits(3);
+    }
+    catch (std::exception &)
+    {
+        sts = MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    bs.SetEmulation(emulation);
+
+    return sts;
+}
+
+mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    NALU nalu = {};
+
+    Zero(sps);
+
+    do
+    {
+        sts = ReadNALU(bs, nalu);
+        MFX_CHECK_STS(sts);
+    } while (nalu.nal_unit_type != SPS_NUT);
+
+    try
+    {
+        sps.video_parameter_set_id = bs.GetBits(4);
+        sps.max_sub_layers_minus1 = bs.GetBits(3);
+        sps.temporal_id_nesting_flag = bs.GetBit();
+
+        sps.general.profile_space = bs.GetBits(2);
+        sps.general.tier_flag = bs.GetBit();
+        sps.general.profile_idc = bs.GetBits(5);
+        sps.general.profile_compatibility_flags = bs.GetBits(32);
+        sps.general.progressive_source_flag = bs.GetBit();
+        sps.general.interlaced_source_flag = bs.GetBit();
+        sps.general.non_packed_constraint_flag = bs.GetBit();
+        sps.general.frame_only_constraint_flag = bs.GetBit();
+
+        //general_reserved_zero_44bits
+        if (bs.GetBits(24))
+            return MFX_ERR_UNSUPPORTED;
+        if (bs.GetBits(20))
+            return MFX_ERR_UNSUPPORTED;
+
+        sps.general.level_idc = (mfxU8)bs.GetBits(8);
+
+        for (mfxU32 i = 0; i < sps.max_sub_layers_minus1; i++)
+        {
+            sps.sub_layer[i].profile_present_flag = bs.GetBit();
+            sps.sub_layer[i].level_present_flag = bs.GetBit();
+        }
+
+        if (sps.max_sub_layers_minus1 && bs.GetBits(2 * 8)) // reserved_zero_2bits[ i ]
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        for (mfxU32 i = 0; i < sps.max_sub_layers_minus1; i++)
+        {
+            if (sps.sub_layer[i].profile_present_flag)
+            {
+                sps.sub_layer[i].profile_space = bs.GetBits(2);
+                sps.sub_layer[i].tier_flag = bs.GetBit();
+                sps.sub_layer[i].profile_idc = bs.GetBits(5);
+                sps.sub_layer[i].profile_compatibility_flags = bs.GetBits(32);
+                sps.sub_layer[i].progressive_source_flag = bs.GetBit();
+                sps.sub_layer[i].interlaced_source_flag = bs.GetBit();
+                sps.sub_layer[i].non_packed_constraint_flag = bs.GetBit();
+                sps.sub_layer[i].frame_only_constraint_flag = bs.GetBit();
+
+                //general_reserved_zero_44bits
+                if (bs.GetBits(24))
+                    return MFX_ERR_UNSUPPORTED;
+                if (bs.GetBits(20))
+                    return MFX_ERR_UNSUPPORTED;
+            }
+
+            if (sps.sub_layer[i].level_present_flag)
+                sps.sub_layer[i].level_idc = (mfxU8)bs.GetBits(8);
+        }
+
+        sps.seq_parameter_set_id = bs.GetUE();
+        sps.chroma_format_idc = bs.GetUE();
+
+        if (sps.chroma_format_idc == 3)
+            sps.separate_colour_plane_flag = bs.GetBit();
+
+        sps.pic_width_in_luma_samples = bs.GetUE();
+        sps.pic_height_in_luma_samples = bs.GetUE();
+
+        sps.conformance_window_flag = bs.GetBit();
+
+        if (sps.conformance_window_flag)
+        {
+            sps.conf_win_left_offset = bs.GetUE();
+            sps.conf_win_right_offset = bs.GetUE();
+            sps.conf_win_top_offset = bs.GetUE();
+            sps.conf_win_bottom_offset = bs.GetUE();
+        }
+
+        sps.bit_depth_luma_minus8 = bs.GetUE();
+        sps.bit_depth_chroma_minus8 = bs.GetUE();
+        sps.log2_max_pic_order_cnt_lsb_minus4 = bs.GetUE();
+
+
+        sps.sub_layer_ordering_info_present_flag = bs.GetBit();
+
+        for (mfxU32 i = (sps.sub_layer_ordering_info_present_flag ? 0 : sps.max_sub_layers_minus1);
+            i <= sps.max_sub_layers_minus1; i++)
+        {
+            sps.sub_layer[i].max_dec_pic_buffering_minus1 = bs.GetUE();
+            sps.sub_layer[i].max_num_reorder_pics = bs.GetUE();
+            sps.sub_layer[i].max_latency_increase_plus1 = bs.GetUE();
+        }
+
+        sps.log2_min_luma_coding_block_size_minus3 = bs.GetUE();
+        sps.log2_diff_max_min_luma_coding_block_size = bs.GetUE();
+        sps.log2_min_transform_block_size_minus2 = bs.GetUE();
+        sps.log2_diff_max_min_transform_block_size = bs.GetUE();
+        sps.max_transform_hierarchy_depth_inter = bs.GetUE();
+        sps.max_transform_hierarchy_depth_intra = bs.GetUE();
+        sps.scaling_list_enabled_flag = bs.GetBit();
+
+        if (sps.scaling_list_enabled_flag)
+            return MFX_ERR_UNSUPPORTED;
+
+        sps.amp_enabled_flag = bs.GetBit();
+        sps.sample_adaptive_offset_enabled_flag = bs.GetBit();
+        sps.pcm_enabled_flag = bs.GetBit();
+
+        if (sps.pcm_enabled_flag)
+        {
+            sps.pcm_sample_bit_depth_luma_minus1 = bs.GetBits(4);
+            sps.pcm_sample_bit_depth_chroma_minus1 = bs.GetBits(4);
+            sps.log2_min_pcm_luma_coding_block_size_minus3 = bs.GetUE();
+            sps.log2_diff_max_min_pcm_luma_coding_block_size = bs.GetUE();
+            sps.pcm_loop_filter_disabled_flag = bs.GetBit();
+        }
+
+        sps.num_short_term_ref_pic_sets = (mfxU8)bs.GetUE();
+
+        for (mfxU32 idx = 0; idx < sps.num_short_term_ref_pic_sets; idx++)
+        {
+            STRPS & strps = sps.strps[idx];
+
+            if (idx != 0)
+                strps.inter_ref_pic_set_prediction_flag = bs.GetBit();
+
+            if (strps.inter_ref_pic_set_prediction_flag)
+            {
+                mfxI16 i = 0, j = 0, dPoc = 0;
+
+                strps.delta_rps_sign = bs.GetBit();
+                strps.abs_delta_rps_minus1 = (mfxU16)bs.GetUE();
+
+                mfxU32 RefRpsIdx = idx - (strps.delta_idx_minus1 + 1);
+                STRPS& ref = sps.strps[RefRpsIdx];
+                mfxI16 NumDeltaPocs = ref.num_negative_pics + ref.num_positive_pics;
+                mfxI16 deltaRps = (1 - 2 * strps.delta_rps_sign) * (strps.abs_delta_rps_minus1 + 1);
+
+                for (j = 0; j <= NumDeltaPocs; j++)
+                {
+                    strps.pic[j].use_delta_flag = 1;
+
+                    strps.pic[j].used_by_curr_pic_flag = bs.GetBit();
+
+                    if (!strps.pic[j].used_by_curr_pic_flag)
+                        strps.pic[j].use_delta_flag = bs.GetBit();
+                }
+
+                i = 0;
+                for (j = ref.num_positive_pics - 1; j >= 0; j--)
+                {
+                    dPoc = ref.pic[j].DeltaPocSX + deltaRps;
+
+                    if (dPoc < 0 && strps.pic[ref.num_negative_pics + j].use_delta_flag)
+                    {
+                        strps.pic[i].DeltaPocSX = dPoc;
+                        strps.pic[i].used_by_curr_pic_sx_flag = strps.pic[ref.num_negative_pics + j].used_by_curr_pic_flag;
+                        i++;
+                    }
+                }
+
+                if (deltaRps < 0 && strps.pic[NumDeltaPocs].use_delta_flag)
+                {
+                    strps.pic[i].DeltaPocSX = deltaRps;
+                    strps.pic[i].used_by_curr_pic_sx_flag = strps.pic[NumDeltaPocs].used_by_curr_pic_flag;
+                    i++;
+                }
+
+                for (j = 0; j < ref.num_negative_pics; j++)
+                {
+                    dPoc = ref.pic[j].DeltaPocSX + deltaRps;
+
+                    if (dPoc < 0 && strps.pic[j].use_delta_flag)
+                    {
+                        strps.pic[i].DeltaPocSX = dPoc;
+                        strps.pic[i].used_by_curr_pic_sx_flag = strps.pic[j].used_by_curr_pic_flag;
+                        i++;
+                    }
+                }
+
+                strps.num_negative_pics = i;
+
+                i = 0;
+                for (j = ref.num_negative_pics - 1; j >= 0; j--)
+                {
+                    dPoc = ref.pic[j].DeltaPocSX + deltaRps;
+
+                    if (dPoc > 0 && strps.pic[j].use_delta_flag)
+                    {
+                        strps.pic[i].DeltaPocSX = dPoc;
+                        strps.pic[i].used_by_curr_pic_sx_flag = strps.pic[j].used_by_curr_pic_flag;
+                        i++;
+                    }
+                }
+
+                if (deltaRps > 0 && strps.pic[NumDeltaPocs].use_delta_flag)
+                {
+                    strps.pic[i].DeltaPocSX = deltaRps;
+                    strps.pic[i].used_by_curr_pic_sx_flag = strps.pic[NumDeltaPocs].used_by_curr_pic_flag;
+                    i++;
+                }
+
+                for (j = 0; j < ref.num_positive_pics; j++)
+                {
+                    dPoc = ref.pic[j].DeltaPocSX + deltaRps;
+
+                    if (dPoc > 0 && strps.pic[j].use_delta_flag)
+                    {
+                        strps.pic[i].DeltaPocSX = dPoc;
+                        strps.pic[i].used_by_curr_pic_sx_flag = strps.pic[j].used_by_curr_pic_flag;
+                        i++;
+                    }
+                }
+
+                strps.num_positive_pics = i;
+            }
+            else
+            {
+                strps.num_negative_pics = bs.GetUE();
+                strps.num_positive_pics = bs.GetUE();
+
+                for (mfxU32 i = 0; i < strps.num_negative_pics; i++)
+                {
+                    strps.pic[i].delta_poc_s0_minus1 = bs.GetUE();
+                    strps.pic[i].used_by_curr_pic_s0_flag = bs.GetBit();
+                    strps.pic[i].DeltaPocSX = -(mfxI16)(strps.pic[i].delta_poc_sx_minus1 + 1);
+                }
+
+                for (mfxU32 i = strps.num_negative_pics; i < mfxU32(strps.num_positive_pics + strps.num_negative_pics); i++)
+                {
+                    strps.pic[i].delta_poc_s1_minus1 = bs.GetUE();
+                    strps.pic[i].used_by_curr_pic_s1_flag = bs.GetBit();
+                    strps.pic[i].DeltaPocSX = (mfxI16)(strps.pic[i].delta_poc_sx_minus1 + 1);
+                }
+            }
+        }
+
+        sps.long_term_ref_pics_present_flag = bs.GetBit();
+
+        if (sps.long_term_ref_pics_present_flag)
+        {
+            sps.num_long_term_ref_pics_sps = bs.GetUE();
+
+            for (mfxU32 i = 0; i < sps.num_long_term_ref_pics_sps; i++)
+            {
+                sps.lt_ref_pic_poc_lsb_sps[i] = (mfxU16)bs.GetBits(sps.log2_max_pic_order_cnt_lsb_minus4 + 4);
+                sps.used_by_curr_pic_lt_sps_flag[i] = (mfxU8)bs.GetBit();
+            }
+        }
+
+        sps.temporal_mvp_enabled_flag = bs.GetBit();
+        sps.strong_intra_smoothing_enabled_flag = bs.GetBit();
+
+        sps.vui_parameters_present_flag = bs.GetBit();
+
+        if (sps.vui_parameters_present_flag)
+        {
+            VUI & vui = sps.vui;
+
+            vui.aspect_ratio_info_present_flag = bs.GetBit();
+
+            if (vui.aspect_ratio_info_present_flag)
+            {
+                vui.aspect_ratio_idc = (mfxU8)bs.GetBits(8);
+                if (vui.aspect_ratio_idc == 255)
+                {
+                    vui.sar_width = (mfxU16)bs.GetBits(16);
+                    vui.sar_height = (mfxU16)bs.GetBits(16);
+                }
+            }
+
+            vui.overscan_info_present_flag = bs.GetBit();
+
+            if (vui.overscan_info_present_flag)
+                vui.overscan_appropriate_flag = bs.GetBit();
+
+            vui.video_signal_type_present_flag = bs.GetBit();
+
+            if (vui.video_signal_type_present_flag)
+            {
+                vui.video_format = bs.GetBits(3);
+                vui.video_full_range_flag = bs.GetBit();
+                vui.colour_description_present_flag = bs.GetBit();
+
+                if (vui.colour_description_present_flag)
+                {
+                    vui.colour_primaries = (mfxU8)bs.GetBits(8);
+                    vui.transfer_characteristics = (mfxU8)bs.GetBits(8);
+                    vui.matrix_coeffs = (mfxU8)bs.GetBits(8);
+                }
+            }
+
+            vui.chroma_loc_info_present_flag = bs.GetBit();
+
+            if (vui.chroma_loc_info_present_flag)
+            {
+                vui.chroma_sample_loc_type_top_field = bs.GetUE();
+                vui.chroma_sample_loc_type_bottom_field = bs.GetUE();
+            }
+
+            vui.neutral_chroma_indication_flag = bs.GetBit();
+            vui.field_seq_flag = bs.GetBit();
+            vui.frame_field_info_present_flag = bs.GetBit();
+            vui.default_display_window_flag = bs.GetBit();
+
+            if (vui.default_display_window_flag)
+            {
+                vui.def_disp_win_left_offset = bs.GetUE();
+                vui.def_disp_win_right_offset = bs.GetUE();
+                vui.def_disp_win_top_offset = bs.GetUE();
+                vui.def_disp_win_bottom_offset = bs.GetUE();
+            }
+
+            vui.timing_info_present_flag = bs.GetBit();
+
+            if (vui.timing_info_present_flag)
+            {
+                vui.num_units_in_tick = bs.GetBits(32);
+                vui.time_scale = bs.GetBits(32);
+                vui.poc_proportional_to_timing_flag = bs.GetBit();
+
+                if (vui.poc_proportional_to_timing_flag)
+                    vui.num_ticks_poc_diff_one_minus1 = bs.GetUE();
+
+                vui.hrd_parameters_present_flag = bs.GetBit();
+
+                if (vui.hrd_parameters_present_flag)
+                {
+                    HRDInfo & hrd = vui.hrd;
+
+                    hrd.nal_hrd_parameters_present_flag = bs.GetBit();
+                    hrd.vcl_hrd_parameters_present_flag = bs.GetBit();
+
+                    if (hrd.nal_hrd_parameters_present_flag
+                        || hrd.vcl_hrd_parameters_present_flag)
+                    {
+                        hrd.sub_pic_hrd_params_present_flag = bs.GetBit();
+
+                        if (hrd.sub_pic_hrd_params_present_flag)
+                        {
+                            hrd.tick_divisor_minus2 = bs.GetBits(8);
+                            hrd.du_cpb_removal_delay_increment_length_minus1 = bs.GetBits(5);
+                            hrd.sub_pic_cpb_params_in_pic_timing_sei_flag = bs.GetBit();
+                            hrd.dpb_output_delay_du_length_minus1 = bs.GetBits(5);
+                        }
+
+                        hrd.bit_rate_scale = bs.GetBits(4);
+                        hrd.cpb_size_scale = bs.GetBits(4);
+
+                        if (hrd.sub_pic_hrd_params_present_flag)
+                            hrd.cpb_size_du_scale = bs.GetBits(4);
+
+                        hrd.initial_cpb_removal_delay_length_minus1 = bs.GetBits(5);
+                        hrd.au_cpb_removal_delay_length_minus1 = bs.GetBits(5);
+                        hrd.dpb_output_delay_length_minus1 = bs.GetBits(5);
+                    }
+
+                    for (mfxU16 i = 0; i <= sps.max_sub_layers_minus1; i++)
+                    {
+                        hrd.sl[i].fixed_pic_rate_general_flag = bs.GetBit();
+
+                        if (!hrd.sl[i].fixed_pic_rate_general_flag)
+                            hrd.sl[i].fixed_pic_rate_within_cvs_flag = bs.GetBit();
+
+                        if (hrd.sl[i].fixed_pic_rate_within_cvs_flag || hrd.sl[i].fixed_pic_rate_general_flag)
+                            hrd.sl[i].elemental_duration_in_tc_minus1 = bs.GetUE();
+                        else
+                            hrd.sl[i].low_delay_hrd_flag = bs.GetBit();
+
+                        if (!hrd.sl[i].low_delay_hrd_flag)
+                            hrd.sl[i].cpb_cnt_minus1 = bs.GetUE();
+
+                        if (hrd.nal_hrd_parameters_present_flag)
+                        {
+                            for (mfxU16 j = 0; j <= hrd.sl[i].cpb_cnt_minus1; j++)
+                            {
+                                hrd.sl[i].cpb[j].bit_rate_value_minus1 = bs.GetUE();
+                                hrd.sl[i].cpb[j].cpb_size_value_minus1 = bs.GetUE();
+
+                                if (hrd.sub_pic_hrd_params_present_flag)
+                                {
+                                    hrd.sl[i].cpb[j].cpb_size_du_value_minus1 = bs.GetUE();
+                                    hrd.sl[i].cpb[j].bit_rate_du_value_minus1 = bs.GetUE();
+                                }
+
+                                hrd.sl[i].cpb[j].cbr_flag = (mfxU8)bs.GetBit();
+                            }
+                        }
+
+                        if (hrd.vcl_hrd_parameters_present_flag)
+                            return MFX_ERR_UNSUPPORTED;
+                    }
+                }
+            }
+
+            vui.bitstream_restriction_flag = bs.GetBit();
+
+            if (vui.bitstream_restriction_flag)
+            {
+                vui.tiles_fixed_structure_flag = bs.GetBit();
+                vui.motion_vectors_over_pic_boundaries_flag = bs.GetBit();
+                vui.restricted_ref_pic_lists_flag = bs.GetBit();
+                vui.min_spatial_segmentation_idc = bs.GetUE();
+                vui.max_bytes_per_pic_denom = bs.GetUE();
+                vui.max_bits_per_min_cu_denom = bs.GetUE();
+                vui.log2_max_mv_length_horizontal = bs.GetUE();
+                vui.log2_max_mv_length_vertical = bs.GetUE();
+            }
+        }
+
+        if (bs.GetBit()) //sps.extension_flag
+            return MFX_ERR_UNSUPPORTED;
+    }
+    catch (std::exception &)
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    return sts;
+}
+
+mfxStatus HeaderReader::ReadPPS(BitstreamReader& bs, PPS & pps)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    NALU nalu = {};
+
+    Zero(pps);
+
+    do
+    {
+        sts = ReadNALU(bs, nalu);
+        MFX_CHECK_STS(sts);
+    } while (nalu.nal_unit_type != PPS_NUT);
+
+    try
+    {
+        pps.pic_parameter_set_id = bs.GetUE();
+        pps.seq_parameter_set_id = bs.GetUE();
+        pps.dependent_slice_segments_enabled_flag = bs.GetBit();
+        pps.output_flag_present_flag = bs.GetBit();
+        pps.num_extra_slice_header_bits = bs.GetBits(3);
+        pps.sign_data_hiding_enabled_flag = bs.GetBit();
+        pps.cabac_init_present_flag = bs.GetBit();
+        pps.num_ref_idx_l0_default_active_minus1 = bs.GetUE();
+        pps.num_ref_idx_l1_default_active_minus1 = bs.GetUE();
+        pps.init_qp_minus26 = bs.GetSE();
+        pps.constrained_intra_pred_flag = bs.GetBit();
+        pps.transform_skip_enabled_flag = bs.GetBit();
+        pps.cu_qp_delta_enabled_flag = bs.GetBit();
+
+        if (pps.cu_qp_delta_enabled_flag)
+            pps.diff_cu_qp_delta_depth = bs.GetUE();
+
+        pps.cb_qp_offset = bs.GetSE();
+        pps.cr_qp_offset = bs.GetSE();
+        pps.slice_chroma_qp_offsets_present_flag = bs.GetBit();
+        pps.weighted_pred_flag = bs.GetBit();
+        pps.weighted_bipred_flag = bs.GetBit();
+        pps.transquant_bypass_enabled_flag = bs.GetBit();
+        pps.tiles_enabled_flag = bs.GetBit();
+        pps.entropy_coding_sync_enabled_flag = bs.GetBit();
+
+        if (pps.tiles_enabled_flag)
+        {
+            pps.num_tile_columns_minus1 = (mfxU16)bs.GetUE();
+            pps.num_tile_rows_minus1 = (mfxU16)bs.GetUE();
+            pps.uniform_spacing_flag = bs.GetBit();
+
+            if (!pps.uniform_spacing_flag)
+            {
+                for (mfxU32 i = 0; i < pps.num_tile_columns_minus1; i++)
+                    pps.column_width[i] = (mfxU16)bs.GetUE() + 1;
+
+                for (mfxU32 i = 0; i < pps.num_tile_rows_minus1; i++)
+                    pps.row_height[i] = (mfxU16)bs.GetUE() + 1;
+            }
+
+            pps.loop_filter_across_tiles_enabled_flag = bs.GetBit();
+        }
+
+        pps.loop_filter_across_slices_enabled_flag = bs.GetBit();
+        pps.deblocking_filter_control_present_flag = bs.GetBit();
+
+        if (pps.deblocking_filter_control_present_flag)
+        {
+            pps.deblocking_filter_override_enabled_flag = bs.GetBit();
+            pps.deblocking_filter_disabled_flag = bs.GetBit();
+
+            if (!pps.deblocking_filter_disabled_flag)
+            {
+                pps.beta_offset_div2 = bs.GetSE();
+                pps.tc_offset_div2 = bs.GetSE();
+            }
+        }
+
+        pps.scaling_list_data_present_flag = bs.GetBit();
+        if (pps.scaling_list_data_present_flag)
+            return MFX_ERR_UNSUPPORTED;
+
+        pps.lists_modification_present_flag = bs.GetBit();
+        pps.log2_parallel_merge_level_minus2 = (mfxU16)bs.GetUE();
+        pps.slice_segment_header_extension_present_flag = bs.GetBit();
+
+        if (bs.GetBit()) //pps.extension_flag
+            return MFX_ERR_UNSUPPORTED;
+    }
+    catch (std::exception &)
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    return sts;
 }
 
 mfxStatus HeaderPacker::PackRBSP(mfxU8* dst, mfxU8* rbsp, mfxU32& dst_size, mfxU32 rbsp_size)
@@ -178,14 +825,15 @@ void HeaderPacker::PackNALU(BitstreamWriter& bs, NALU const & h)
         || h.nal_unit_type == SPS_NUT
         || h.nal_unit_type == PPS_NUT
         || h.nal_unit_type == AUD_NUT
-        || h.nal_unit_type == PREFIX_SEI_NUT)
+        || h.nal_unit_type == PREFIX_SEI_NUT
+        || h.long_start_code)
     {
         bs.PutBits(8, 0); //zero_byte
     }
     
     bs.PutBits( 24, 0x000001);//start_code
     
-    bs.PutBit(h.forbidden_zero_bit);
+    bs.PutBit(0);
     bs.PutBits(6, h.nal_unit_type);
     bs.PutBits(6, h.nuh_layer_id);
     bs.PutBits(3, h.nuh_temporal_id_plus1);
@@ -266,11 +914,11 @@ void HeaderPacker::PackVPS(BitstreamWriter& bs, VPS const &  vps)
     PackNALU(bs, nalu);
 
     bs.PutBits(4, vps.video_parameter_set_id);
-    bs.PutBits(2, vps.reserved_three_2bits);
+    bs.PutBits(2, 3);
     bs.PutBits(6, vps.max_layers_minus1);
     bs.PutBits(3, vps.max_sub_layers_minus1);
     bs.PutBit(vps.temporal_id_nesting_flag);
-    bs.PutBits(16, vps.reserved_0xffff_16bits);
+    bs.PutBits(16, 0xFFFF);
     
     PackPTL(bs, vps, vps.max_sub_layers_minus1);
     PackSLO(bs, vps, vps.max_sub_layers_minus1);

@@ -287,6 +287,7 @@ class DriverEncoder;
     
 DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core);
 mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps);
+mfxStatus CheckHeaders(MfxVideoParam const & par, ENCODE_CAPS_HEVC const & caps);
 
 void FillSpsBuffer(
     MfxVideoParam const & par, 

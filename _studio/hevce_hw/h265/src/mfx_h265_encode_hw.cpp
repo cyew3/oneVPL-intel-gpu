@@ -79,6 +79,35 @@ mfxU16 MaxTask(MfxVideoParam const & par)
     return par.AsyncDepth + par.mfx.GopRefDist - 1;
 }
 
+mfxStatus LoadSPSPPS(MfxVideoParam& par, mfxExtCodingOptionSPSPPS* pSPSPPS)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (!pSPSPPS)
+        return MFX_ERR_NONE;
+
+    if (!pSPSPPS->SPSBuffer || !pSPSPPS->PPSBuffer)
+        return MFX_ERR_NULL_PTR;
+
+    BitstreamReader bs(pSPSPPS->SPSBuffer, pSPSPPS->SPSBufSize);
+
+    sts = HeaderReader::ReadSPS(bs, par.m_sps);
+    MFX_CHECK_STS(sts);
+
+    bs.Reset(pSPSPPS->PPSBuffer, pSPSPPS->PPSBufSize);
+
+    sts = HeaderReader::ReadPPS(bs, par.m_pps);
+    MFX_CHECK_STS(sts);
+
+    par.SyncHeadersToMfxParam();
+
+    Zero(par.m_vps);
+    ((LayersInfo&)par.m_vps) = ((LayersInfo&)par.m_sps);
+    par.m_vps.video_parameter_set_id = par.m_sps.video_parameter_set_id;
+
+    return sts;
+}
+
 mfxStatus Plugin::Init(mfxVideoParam *par)
 {
     mfxStatus sts = MFX_ERR_NONE, qsts = MFX_ERR_NONE;
@@ -99,13 +128,23 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     
     m_vpar = *par;
 
-    qsts = Query(&m_vpar, &m_vpar);
+    mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
+
+    sts = LoadSPSPPS(m_vpar, pSPSPPS);
+    MFX_CHECK_STS(sts);
+
+    qsts = CheckVideoParam(m_vpar, m_caps);
     MFX_CHECK(qsts >= MFX_ERR_NONE, qsts);
 
     SetDefaults(m_vpar, m_caps);
 
     m_vpar.SyncCalculableToVideoParam();
-    m_vpar.SyncMfxToHeadersParam();
+
+    if (!pSPSPPS)
+        m_vpar.SyncMfxToHeadersParam();
+
+    sts = CheckHeaders(m_vpar, m_caps);
+    MFX_CHECK_STS(sts);
 
     m_hrd.Setup(m_vpar.m_sps, m_vpar.InitialDelayInKB);
 
@@ -268,6 +307,17 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             MFX_CHECK_STS(sts);
         }
 
+
+        mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(tmp);
+        if (pSPSPPS)
+        {
+            sts = LoadSPSPPS(tmp, pSPSPPS);
+            MFX_CHECK_STS(sts);
+
+            sts = CheckHeaders(tmp, caps);
+            MFX_CHECK_STS(sts);
+        }
+
         sts = CheckVideoParam(tmp, caps);
 
         tmp.SyncCalculableToVideoParam();
@@ -286,15 +336,20 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 
     MfxVideoParam parNew = *par;
 
-    sts = CheckVideoParam(parNew, m_caps);
-    if (sts < MFX_ERR_NONE)
-        return sts;
+    mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
 
-    parNew.SyncVideoToCalculableParam();
+    sts = LoadSPSPPS(parNew, pSPSPPS);
+    MFX_CHECK_STS(sts);
+
+    sts = CheckVideoParam(parNew, m_caps);
+    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+
+    SetDefaults(parNew, m_caps);
+
     parNew.SyncCalculableToVideoParam();
 
     MFX_CHECK(
-        parNew.mfx.CodecProfile           != MFX_CODEC_HEVC
+           parNew.mfx.CodecProfile           != MFX_CODEC_HEVC
         && m_vpar.AsyncDepth                 == parNew.AsyncDepth
         && m_vpar.mfx.GopRefDist             >= parNew.mfx.GopRefDist
         && m_vpar.mfx.NumSlice               >= parNew.mfx.NumSlice
@@ -315,11 +370,20 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     }
 
     m_vpar = (mfxVideoParam)parNew;
-    m_vpar.SyncVideoToCalculableParam();
     
     SetDefaults(m_vpar, m_caps);
 
-    m_vpar.SyncMfxToHeadersParam();
+    if (!pSPSPPS)
+        m_vpar.SyncMfxToHeadersParam();
+    else
+    {
+        m_vpar.m_vps = parNew.m_vps;
+        m_vpar.m_sps = parNew.m_sps;
+        m_vpar.m_pps = parNew.m_pps;
+    }
+
+    sts = CheckHeaders(m_vpar, m_caps);
+    MFX_CHECK_STS(sts);
 
     for (;;)
     {

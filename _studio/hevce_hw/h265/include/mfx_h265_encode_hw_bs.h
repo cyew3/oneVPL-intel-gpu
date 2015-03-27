@@ -11,9 +11,16 @@
 #include "mfx_h265_encode_hw_set.h"
 #include "mfx_h265_encode_hw_utils.h"
 #include <vector>
+#include <exception>
 
 namespace MfxHwH265Encode
 {
+
+class EndOfBuffer : public std::exception
+{
+public:
+    EndOfBuffer() : std::exception() {}
+};
 
 class BitstreamWriter
 {
@@ -40,6 +47,46 @@ private:
     mfxU8* m_bs;
     mfxU8  m_bitStart;
     mfxU8  m_bitOffset;
+};
+
+class BitstreamReader
+{
+public:
+    BitstreamReader(mfxU8* bs, mfxU32 size, mfxU8 bitOffset = 0);
+    ~BitstreamReader();
+
+    mfxU32 GetBit ();
+    mfxU32 GetBits(mfxU32 n);
+    mfxU32 GetUE  ();
+    mfxI32 GetSE  ();
+
+    inline mfxU32 GetOffset() { return (mfxU32)(m_bs - m_bsStart) * 8 + m_bitOffset - m_bitStart; }
+    inline mfxU8* GetStart() { return m_bsStart; }
+
+    inline void SetEmulation(bool f) { m_emulation = f; };
+    inline bool GetEmulation() { return m_emulation; };
+
+    void Reset(mfxU8* bs = 0, mfxU32 size = 0, mfxU8 bitOffset = 0);
+
+private:
+    mfxU8* m_bsStart;
+    mfxU8* m_bsEnd;
+    mfxU8* m_bs;
+    mfxU8  m_bitStart;
+    mfxU8  m_bitOffset;
+    bool   m_emulation;
+};
+
+class HeaderReader
+{
+public:
+    HeaderReader(){};
+    ~HeaderReader(){};
+
+    static mfxStatus ReadNALU(BitstreamReader& bs, NALU & nalu);
+    static mfxStatus ReadSPS (BitstreamReader& bs, SPS  & sps);
+    static mfxStatus ReadPPS (BitstreamReader& bs, PPS  & pps);
+
 };
 
 class HeaderPacker

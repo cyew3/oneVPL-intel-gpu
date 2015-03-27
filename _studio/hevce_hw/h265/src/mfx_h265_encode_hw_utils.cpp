@@ -519,6 +519,27 @@ mfxU8 GetAspectRatioIdc(mfxU16 w, mfxU16 h)
     return 255;
 }
 
+const mfxU8 AspectRatioByIdc[][2] =
+{
+    {  0,  0},
+    {  1,  1},
+    { 12, 11},
+    { 10, 11},
+    { 16, 11},
+    { 40, 33},
+    { 24, 11},
+    { 20, 11},
+    { 32, 11},
+    { 80, 33},
+    { 18, 11},
+    { 15, 11},
+    { 64, 33},
+    {160, 99},
+    {  4,  3},
+    {  3,  2},
+    {  2,  1},
+};
+
 struct FakeTask
 {
     mfxI32 m_poc;
@@ -783,6 +804,110 @@ bool isCurrLt(
 inline bool isCurrLt(Task const & task, mfxI32 poc)
 {
     return isCurrLt(task.m_dpb[0], task.m_refPicList, task.m_numRefActive, poc);
+}
+
+
+void MfxVideoParam::SyncHeadersToMfxParam()
+{
+    mfxFrameInfo& fi = mfx.FrameInfo;
+    mfxU16 SubWidthC[4] = { 1, 2, 2, 1 };
+    mfxU16 SubHeightC[4] = { 1, 2, 1, 1 };
+    mfxU16 cropUnitX = SubWidthC[m_sps.chroma_format_idc];
+    mfxU16 cropUnitY = SubHeightC[m_sps.chroma_format_idc];
+
+    mfx.CodecProfile = m_sps.general.profile_idc;
+    mfx.CodecLevel = m_sps.general.level_idc / 3;
+
+    if (m_sps.general.tier_flag)
+        mfx.CodecLevel |= MFX_TIER_HEVC_HIGH;
+
+    mfx.NumRefFrame = m_sps.sub_layer[0].max_dec_pic_buffering_minus1;
+    mfx.GopRefDist  = m_sps.sub_layer[0].max_num_reorder_pics + 1;
+
+    mfx.FrameInfo.ChromaFormat = m_sps.chroma_format_idc;
+
+    m_ext.HEVCParam.PicWidthInLumaSamples  = (mfxU16)m_sps.pic_width_in_luma_samples;
+    m_ext.HEVCParam.PicHeightInLumaSamples = (mfxU16)m_sps.pic_height_in_luma_samples;
+
+    fi.Width = Align(m_ext.HEVCParam.PicWidthInLumaSamples, LCUSize);
+    fi.Height = Align(m_ext.HEVCParam.PicHeightInLumaSamples, LCUSize);
+
+    fi.CropX = 0;
+    fi.CropY = 0;
+    fi.CropW = fi.Width;
+    fi.CropH = fi.Height;
+
+    if (m_sps.conformance_window_flag)
+    {
+        fi.CropX += cropUnitX * (mfxU16)m_sps.conf_win_left_offset;
+        fi.CropW -= cropUnitX * (mfxU16)m_sps.conf_win_left_offset;
+        fi.CropW -= cropUnitX * (mfxU16)m_sps.conf_win_right_offset;
+        fi.CropY += cropUnitY * (mfxU16)m_sps.conf_win_top_offset;
+        fi.CropH -= cropUnitY * (mfxU16)m_sps.conf_win_top_offset;
+        fi.CropH -= cropUnitY * (mfxU16)m_sps.conf_win_bottom_offset;
+    }
+
+    fi.BitDepthLuma = m_sps.bit_depth_luma_minus8 + 8;
+    fi.BitDepthChroma = m_sps.bit_depth_chroma_minus8 + 8;
+
+    if (m_sps.vui_parameters_present_flag)
+    {
+        VUI& vui = m_sps.vui;
+
+        if (vui.aspect_ratio_info_present_flag)
+        {
+            if (vui.aspect_ratio_idc == 255)
+            {
+                fi.AspectRatioW = vui.sar_width;
+                fi.AspectRatioH = vui.sar_height;
+            }
+            else if (vui.aspect_ratio_idc < sizeof(AspectRatioByIdc) / sizeof(AspectRatioByIdc[0]))
+            {
+                fi.AspectRatioW = AspectRatioByIdc[vui.aspect_ratio_idc][0];
+                fi.AspectRatioH = AspectRatioByIdc[vui.aspect_ratio_idc][1];
+            }
+        }
+
+        if (vui.timing_info_present_flag)
+        {
+            fi.FrameRateExtN = vui.time_scale;
+            fi.FrameRateExtD = vui.num_units_in_tick;
+        }
+
+        if (vui.default_display_window_flag)
+        {
+            fi.CropX += cropUnitX * (mfxU16)vui.def_disp_win_left_offset;
+            fi.CropW -= cropUnitX * (mfxU16)vui.def_disp_win_left_offset;
+            fi.CropW -= cropUnitX * (mfxU16)vui.def_disp_win_right_offset;
+            fi.CropY += cropUnitY * (mfxU16)vui.def_disp_win_top_offset;
+            fi.CropH -= cropUnitY * (mfxU16)vui.def_disp_win_top_offset;
+            fi.CropH -= cropUnitY * (mfxU16)vui.def_disp_win_bottom_offset;
+        }
+
+        if (m_sps.vui.hrd_parameters_present_flag)
+        {
+            HRDInfo& hrd = m_sps.vui.hrd;
+            HRDInfo::SubLayer& sl0 = hrd.sl[0];
+            HRDInfo::SubLayer::CPB& cpb0 = sl0.cpb[0];
+
+            MaxKbps = ((cpb0.bit_rate_value_minus1 + 1) << (6 + hrd.bit_rate_scale)) / 1000;
+            BufferSizeInKB = ((cpb0.cpb_size_value_minus1 + 1) << (4 + hrd.cpb_size_scale)) / 8000;
+
+            if (cpb0.cbr_flag)
+                mfx.RateControlMethod = MFX_RATECONTROL_CBR;
+            else
+                mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+        }
+    }
+
+    NumRefLX[0] = m_pps.num_ref_idx_l0_default_active_minus1 + 1;
+    NumRefLX[1] = m_pps.num_ref_idx_l1_default_active_minus1 + 1;
+
+    if (m_pps.tiles_enabled_flag)
+    {
+        m_ext.HEVCTiles.NumTileColumns = m_pps.num_tile_columns_minus1 + 1;
+        m_ext.HEVCTiles.NumTileRows = m_pps.num_tile_rows_minus1 + 1;
+    }
 }
 
 void MfxVideoParam::SyncMfxToHeadersParam()
@@ -1414,11 +1539,6 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
 
         assert(0 == s.num_entry_point_offsets);
     }
-}
-
-void MfxVideoParam::SyncHeadersToMfxParam()
-{
-    assert(!"not implemented");
 }
 
 MfxVideoParam& MfxVideoParam::operator=(mfxVideoParam const & par)

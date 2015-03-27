@@ -500,7 +500,7 @@ struct Slice
 
 struct NALU
 {
-    mfxU16 forbidden_zero_bit    : 1;
+    mfxU16 long_start_code       : 1;
     mfxU16 nal_unit_type         : 6;
     mfxU16 nuh_layer_id          : 6;
     mfxU16 nuh_temporal_id_plus1 : 3;

@@ -73,6 +73,30 @@ mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps
     return sts;
 }
 
+mfxStatus CheckHeaders(
+    MfxVideoParam const & par,
+    ENCODE_CAPS_HEVC const & caps)
+{
+    if (!( par.m_sps.sample_adaptive_offset_enabled_flag == 0
+        && par.m_sps.pcm_enabled_flag == 0
+        //&& par.m_sps.pcm_loop_filter_disabled_flag == 1
+        && par.m_sps.log2_min_luma_coding_block_size_minus3 == 0
+        && par.m_sps.log2_diff_max_min_luma_coding_block_size == 2
+        && par.m_sps.bit_depth_luma_minus8 == 0
+        && par.m_sps.bit_depth_chroma_minus8 == 0
+        && par.m_sps.chroma_format_idc == 1
+        && par.m_sps.separate_colour_plane_flag == 0
+        && par.m_pps.cu_qp_delta_enabled_flag == 1))
+        return MFX_ERR_UNSUPPORTED;
+
+    if (   par.m_sps.pic_width_in_luma_samples > caps.MaxPicWidth
+        || par.m_sps.pic_height_in_luma_samples > caps.MaxPicHeight
+        || (UINT)(((par.m_pps.num_tile_columns_minus1 + 1) * (par.m_pps.num_tile_rows_minus1 + 1)) > 1) > caps.TileSupport)
+        return MFX_ERR_UNSUPPORTED;
+
+    return MFX_ERR_NONE;
+}
+
 void FillSpsBuffer(
     MfxVideoParam const & par, 
     ENCODE_CAPS_HEVC const & /*caps*/,
