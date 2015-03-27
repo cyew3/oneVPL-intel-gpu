@@ -22,6 +22,7 @@ Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 #define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
 #define D3DFMT_YV12 (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
+#define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
 
 D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
 {
@@ -39,6 +40,8 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
         return D3DFMT_A8R8G8B8;
     case MFX_FOURCC_P8:
         return D3DFMT_P8;
+    case MFX_FOURCC_P010:
+        return D3DFMT_P010;
     case MFX_FOURCC_A2RGB10:
         return D3DFMT_A2R10G10B10;
     default:
@@ -109,6 +112,7 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         desc.Format != D3DFMT_R8G8B8 &&
         desc.Format != D3DFMT_A8R8G8B8 &&
         desc.Format != D3DFMT_P8 &&
+        desc.Format != D3DFMT_P010 &&
         desc.Format != D3DFMT_A2R10G10B10)
         return MFX_ERR_LOCK_MEMORY;
 
@@ -157,6 +161,13 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = 0;
         ptr->V = 0;
+        break;
+    case D3DFMT_P010:
+        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
+        ptr->PitchLow = (mfxU16)(locked.Pitch % (1 << 16));
+        ptr->Y = (mfxU8 *)locked.pBits;
+        ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch;
+        ptr->V = ptr->U + 1;
         break;
     }
 
