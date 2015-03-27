@@ -403,6 +403,7 @@ enum {
     MFX_PROFILE_HEVC_MAIN             =1,
     MFX_PROFILE_HEVC_MAIN10           =2,
     MFX_PROFILE_HEVC_MAINSP           =3,
+    MFX_PROFILE_HEVC_REXT             =4,
 
     MFX_LEVEL_HEVC_1   = 10,
     MFX_LEVEL_HEVC_2   = 20,
@@ -1234,13 +1235,30 @@ typedef struct {
     } DPB[32];
 } mfxExtDPB;
 
+/*GeneralConstraintFlags*/
+enum {
+    /* REXT Profile constraint flags*/
+    MFX_HEVC_CONSTR_REXT_MAX_12BIT          = (1 << 0),
+    MFX_HEVC_CONSTR_REXT_MAX_10BIT          = (1 << 1),
+    MFX_HEVC_CONSTR_REXT_MAX_8BIT           = (1 << 2),
+    MFX_HEVC_CONSTR_REXT_MAX_422CHROMA      = (1 << 3),
+    MFX_HEVC_CONSTR_REXT_MAX_420CHROMA      = (1 << 4),
+    MFX_HEVC_CONSTR_REXT_MAX_MONOCHROME     = (1 << 5),
+    MFX_HEVC_CONSTR_REXT_INTRA              = (1 << 6),
+    MFX_HEVC_CONSTR_REXT_ONE_PICTURE_ONLY   = (1 << 7),
+    MFX_HEVC_CONSTR_REXT_LOWER_BIT_RATE     = (1 << 8)
+};
+
+#pragma pack(push, 4)
 typedef struct {
     mfxExtBuffer    Header;
 
     mfxU16          PicWidthInLumaSamples;
     mfxU16          PicHeightInLumaSamples;
-    mfxU16          reserved[122];
+    mfxU64          GeneralConstraintFlags;
+    mfxU16          reserved[118];
 } mfxExtHEVCParam;
+#pragma pack(pop)
 
 typedef struct {
     mfxExtBuffer Header;
