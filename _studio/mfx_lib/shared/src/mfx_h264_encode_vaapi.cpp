@@ -2147,26 +2147,28 @@ mfxStatus VAAPIEncoder::Execute(
     {
         const mfxExtMBQP *mbqp = GetExtBuffer(task.m_ctrl);
         mfxU32 mbW = m_sps.picture_width_in_mbs;
-        mfxU32 mbH = m_sps.picture_height_in_mbs;
+        mfxU32 mbH = m_sps.picture_height_in_mbs / (2 - !task.m_fieldPicFlag);
         //width(64byte alignment) height(8byte alignment)
         mfxU32 bufW = ((mbW + 63) & ~63);
         mfxU32 bufH = ((mbH + 7) & ~7);
+        mfxU32 fieldOffset = (mfxU32)(fieldId == task.m_fid[1]) * (mbH * mbW) * (mfxU32)!!task.m_fieldPicFlag;
 
-        if (   mbqp && mbqp->QP && mbqp->NumQPAlloc >= mbW * mbH
+        if (   mbqp && mbqp->QP && mbqp->NumQPAlloc >= mbW * m_sps.picture_height_in_mbs
             && m_mbqp_buffer.size() >= (bufW * bufH))
         {
 
             Zero(m_mbqp_buffer);
             for (mfxU32 mbRow = 0; mbRow < mbH; mbRow ++)
                 for (mfxU32 mbCol = 0; mbCol < mbW; mbCol ++)
-                    m_mbqp_buffer[mbRow * bufW + mbCol].qp_y = mbqp->QP[mbRow * mbW + mbCol];
+                    m_mbqp_buffer[mbRow * bufW + mbCol].qp_y = mbqp->QP[fieldOffset + mbRow * mbW + mbCol];
 
             MFX_DESTROY_VABUFFER(m_mbqpBufferId, m_vaDisplay);
+            // LibVA expect full buffer size w/o interlace ajustments
             vaSts = vaCreateBuffer(m_vaDisplay,
                 m_vaContextEncode,
                 (VABufferType)VAEncQpBufferType,
                 sizeof(VAEncQpBufferH264),
-                (bufW * bufH),
+                (bufW * ((m_sps.picture_height_in_mbs + 7) & ~7)),
                 &m_mbqp_buffer[0],
                 &m_mbqpBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -2178,17 +2180,19 @@ mfxStatus VAAPIEncoder::Execute(
     if (ctrlNoSkipMap)
     {
         mfxU32 mbW = m_sps.picture_width_in_mbs;
-        mfxU32 mbH = m_sps.picture_height_in_mbs;
+        mfxU32 mbH = m_sps.picture_height_in_mbs / (2 - !task.m_fieldPicFlag);
+        //width(64byte alignment) height(8byte alignment)
         mfxU32 bufW = ((mbW + 63) & ~63);
         mfxU32 bufH = ((mbH + 7) & ~7);
+        mfxU32 fieldOffset = (mfxU32)(fieldId == task.m_fid[1]) * (mbH * mbW) * (mfxU32)!!task.m_fieldPicFlag;
 
         if (   m_mb_noskip_buffer.size() >= (bufW * bufH)
             && ctrlNoSkipMap->Map
-            && ctrlNoSkipMap->MapSize >= (mbW * mbH))
+            && ctrlNoSkipMap->MapSize >= (mbW * m_sps.picture_height_in_mbs))
         {
             Zero(m_mb_noskip_buffer);
             for (mfxU32 mbRow = 0; mbRow < mbH; mbRow ++)
-                MFX_INTERNAL_CPY(&m_mb_noskip_buffer[mbRow * bufW], &ctrlNoSkipMap->Map[mbRow * mbW], mbW);
+                MFX_INTERNAL_CPY(&m_mb_noskip_buffer[mbRow * bufW], &ctrlNoSkipMap->Map[fieldOffset + mbRow * mbW], mbW);
 
             MFX_DESTROY_VABUFFER(m_mbNoSkipBufferId, m_vaDisplay);
             vaSts = vaCreateBuffer(m_vaDisplay,

@@ -99,6 +99,11 @@ public:
         return type;
     }
 
+    bool IsBottomField()
+    {
+        return m_sh && m_sh->bottom_field_flag;
+    }
+
     mfxU8 NextQP()
     {
         if (!NextMB())
@@ -177,11 +182,12 @@ public:
     };
     enum
     {
-        INIT  = 1,
-        QUERY = 1 << 1,
-        RESET_ON  = 1 << 2,
-        RESET_OFF = 1 << 3,
-        RANDOM = 1 << 4
+        INIT            = 1,
+        QUERY           = 1 << 1,
+        RESET_ON        = 1 << 2,
+        RESET_OFF       = 1 << 3,
+        RANDOM          = 1 << 4,
+        INTERLACE_FIELD = 1 << 5
     };
 
     static const unsigned int n_cases;
@@ -267,11 +273,13 @@ public:
             mfxU32 hMB = ((m_par.mfx.FrameInfo.CropH + 15) / 16);
             mfxExtMBQP& mbqp = m_ctrl[(mfxU32)bs.TimeStamp].ctrl;
 
+            mfxU32 fieldOffset = au.IsBottomField() ? (mfxU32)(hMB / 2 * wMB) : 0;
+
             g_tsLog << "Frame #"<< bs.TimeStamp <<" QPs:\n";
 
             while (qp != QP_INVALID)
             {
-                mfxU8 expected_qp = mbqp.QP[i];
+                mfxU8 expected_qp = mbqp.QP[fieldOffset + i];
                 if (expected_qp == QP_BY_FRM_TYPE)
                 {
                     switch(au.GetFrameType())
@@ -314,6 +322,7 @@ public:
     }
 };
 
+#define mfx_PicStruct tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
     // not CQP: Init
@@ -340,14 +349,45 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*19*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR}},
     {/*20*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM}},
     {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME}},
-
+    // progressive
     {/*22*/ MFX_ERR_NONE, 0},
     {/*23*/ MFX_ERR_NONE, RESET_ON},
     {/*24*/ MFX_ERR_NONE, RESET_OFF},
     {/*25*/ MFX_ERR_NONE, RANDOM},
     {/*26*/ MFX_ERR_NONE, RANDOM|RESET_ON},
-    {/*27*/ MFX_ERR_NONE, RANDOM|RESET_OFF}
+    {/*27*/ MFX_ERR_NONE, RANDOM|RESET_OFF},
+    // interlace frame tff
+    {/*28*/ MFX_ERR_NONE, 0,                  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*29*/ MFX_ERR_NONE, RESET_ON,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*30*/ MFX_ERR_NONE, RESET_OFF,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*31*/ MFX_ERR_NONE, RANDOM,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*32*/ MFX_ERR_NONE, RANDOM | RESET_ON,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*33*/ MFX_ERR_NONE, RANDOM | RESET_OFF, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    // interlace frame bff
+    {/*34*/ MFX_ERR_NONE, 0,                  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*35*/ MFX_ERR_NONE, RESET_ON,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*36*/ MFX_ERR_NONE, RESET_OFF,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*37*/ MFX_ERR_NONE, RANDOM,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*38*/ MFX_ERR_NONE, RANDOM | RESET_ON,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*39*/ MFX_ERR_NONE, RANDOM | RESET_OFF, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    // interlace field tff
+    {/*40*/ MFX_ERR_NONE, INTERLACE_FIELD,                      { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*41*/ MFX_ERR_NONE, RESET_ON | INTERLACE_FIELD,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*42*/ MFX_ERR_NONE, RESET_OFF | INTERLACE_FIELD,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*43*/ MFX_ERR_NONE, RANDOM | INTERLACE_FIELD,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*44*/ MFX_ERR_NONE, RANDOM | RESET_ON | INTERLACE_FIELD,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*45*/ MFX_ERR_NONE, RANDOM | RESET_OFF | INTERLACE_FIELD, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    // interlace field bff
+    {/*46*/ MFX_ERR_NONE, INTERLACE_FIELD,                      { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*47*/ MFX_ERR_NONE, RESET_ON | INTERLACE_FIELD,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*48*/ MFX_ERR_NONE, RESET_OFF | INTERLACE_FIELD,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*49*/ MFX_ERR_NONE, RANDOM | INTERLACE_FIELD,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*50*/ MFX_ERR_NONE, RANDOM | RESET_ON | INTERLACE_FIELD,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*51*/ MFX_ERR_NONE, RANDOM | RESET_OFF | INTERLACE_FIELD, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } }
+
 };
+
+#undef mfx_PicStruct
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -367,6 +407,12 @@ int TestSuite::RunTest(unsigned int id)
 
     SETPARS(m_pPar, MFXPAR);
     set_brc_params(&m_par);
+
+    if (m_par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+    {
+        mfxExtCodingOption& co = m_par;
+        co.FramePicture = (tc.mode & INTERLACE_FIELD) ? MFX_CODINGOPTION_OFF : MFX_CODINGOPTION_ON;
+    }
 
     g_tsStatus.expect(tc.sts);
 

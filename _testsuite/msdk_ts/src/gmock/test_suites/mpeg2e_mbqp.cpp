@@ -282,6 +282,8 @@ public:
 
 };
 
+
+#define mfx_PicStruct tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
     // not CQP: Init
@@ -298,8 +300,24 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*08*/ MFX_ERR_NONE, RESET_OFF},
     {/*09*/ MFX_ERR_NONE, RANDOM},
     {/*10*/ MFX_ERR_NONE, RANDOM|RESET_ON},
-    {/*11*/ MFX_ERR_NONE, RANDOM|RESET_OFF}
+    {/*11*/ MFX_ERR_NONE, RANDOM|RESET_OFF},
+
+    {/*12*/ MFX_ERR_NONE, 0,                  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*13*/ MFX_ERR_NONE, RESET_ON,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*14*/ MFX_ERR_NONE, RESET_OFF,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*15*/ MFX_ERR_NONE, RANDOM,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*16*/ MFX_ERR_NONE, RANDOM | RESET_ON,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*17*/ MFX_ERR_NONE, RANDOM | RESET_OFF, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+
+    {/*18*/ MFX_ERR_NONE, 0,                  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*19*/ MFX_ERR_NONE, RESET_ON,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*20*/ MFX_ERR_NONE, RESET_OFF,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*21*/ MFX_ERR_NONE, RANDOM,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*22*/ MFX_ERR_NONE, RANDOM | RESET_ON,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*23*/ MFX_ERR_NONE, RANDOM | RESET_OFF, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } }
+
 };
+#undef mfx_PicStruct
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -316,10 +334,18 @@ int TestSuite::RunTest(unsigned int id)
         mfxExtCodingOption3& co3 = m_par;
         co3.EnableMBQP = MFX_CODINGOPTION_ON;
     }
+
     m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
     SETPARS(m_pPar, MFXPAR);
     set_brc_params(&m_par);
+
+    // in MPEG2 only interlace frame supported in HW
+    if (m_par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+    {
+        mfxExtCodingOption& co = m_par;
+        co.FramePicture = MFX_CODINGOPTION_ON;
+    }
 
     g_tsStatus.expect(tc.sts);
 
