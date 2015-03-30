@@ -1578,8 +1578,8 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
 
     if (m_pHWVPP.get())
     {
-        //sts = m_pHWVPP.get()->Reset(par); // aya: may be issue???
-                                            // al: yes it is an issue with dynamic composition
+        sts = m_pHWVPP.get()->Reset(par); // aya: may be issue???
+                                          // al: yes it is an issue with dynamic composition
 
         if (MFX_ERR_NONE != sts && IS_PROTECTION_ANY(par->Protected))
         {
