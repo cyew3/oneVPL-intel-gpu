@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
 
 File Name: libmfxsw.cpp
 
@@ -46,8 +46,8 @@ void* g_hModule = NULL; // DLL handle received in DllMain
 #define MFX_PRODUCT_VERSION "0.0.000.0000"
 #endif
 
-// Copyright strings should only appear in HW Library
-#if defined(mfxhw64_EXPORTS) || defined(mfxhw32_EXPORTS)
+// Copyright strings
+#if defined(mfxhw64_EXPORTS) || defined(mfxhw32_EXPORTS) || defined(mfxsw64_EXPORTS) || defined(mfxsw32_EXPORTS)
 
 const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media Server Studio 2015 - SDK for Linux*";
 const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2015 Intel Corporation";
