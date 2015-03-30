@@ -52,10 +52,10 @@ mfxStatus CH265FEI::Init(SampleParams *sp)
 
         // MSDK API version may have no support for multiple adapters - then try initialize on the default
         if (MFX_ERR_NONE != sts)
-            sts = m_pmfxSession->Init((libType & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE, NULL);
+            sts = m_pmfxSession->Init((libType & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE, &ver);
     }
     else
-        sts = m_pmfxSession->Init(libType, NULL);
+        sts = m_pmfxSession->Init(libType, &ver);
 
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
