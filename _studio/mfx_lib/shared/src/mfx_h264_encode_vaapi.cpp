@@ -1400,8 +1400,8 @@ mfxStatus VAAPIEncoder::QueryInputTilingSupport(mfxVideoParam const & par, mfxU3
 
     VAProfile    profile;
     VAEntrypoint entrypoint;
-    mfxI32       numAttribs;
-    mfxU32       maxNumAttribs = vaMaxNumConfigAttributes(m_vaDisplay);
+    mfxI32       numAttribs, maxNumAttribs;
+    numAttribs = maxNumAttribs = vaMaxNumConfigAttributes(m_vaDisplay);
 
     std::vector<VAConfigAttrib> attrs;
     attrs.resize(maxNumAttribs);
