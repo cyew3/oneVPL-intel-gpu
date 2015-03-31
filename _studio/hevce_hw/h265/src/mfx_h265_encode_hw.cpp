@@ -528,20 +528,20 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
     //submit
     if (task.m_stage == STAGE_SUBMIT)
     {
-        mfxHDL surfaceHDL = 0;
+        mfxHDLPair surfaceHDL = {};
 
         task.m_initial_cpb_removal_delay  = m_hrd.GetInitCpbRemovalDelay();
         task.m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
 
 #ifndef HEADER_PACKING_TEST
-        sts = GetNativeHandleToRawSurface(m_core, m_vpar, task, surfaceHDL);
+        sts = GetNativeHandleToRawSurface(m_core, m_vpar, task, surfaceHDL.first);
         MFX_CHECK_STS(sts);
 
         sts = CopyRawSurfaceToVideoMemory(m_core, m_vpar, task);
         MFX_CHECK_STS(sts);
 #endif
 
-        sts = m_ddi->Execute(task, surfaceHDL);
+        sts = m_ddi->Execute(task, surfaceHDL.first);
         MFX_CHECK_STS(sts);
 
         task.m_stage |= FRAME_SUBMITTED;
