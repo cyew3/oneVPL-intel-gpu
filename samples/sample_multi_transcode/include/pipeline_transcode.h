@@ -112,6 +112,8 @@ namespace TranscodingSample
         mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
         bool bEnableExtLA;
         bool bEnableBPyramid;
+
+        bool bOpenCL;
     };
 
     struct sInputParams: public __sInputParams

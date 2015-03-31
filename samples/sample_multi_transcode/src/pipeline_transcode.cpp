@@ -2038,7 +2038,8 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     // opaque memory feature is available starting with API 1.3 and
     // can be used within 1 intra session or joined inter sessions only
     if (m_Version.Major >= 1 && m_Version.Minor >= 3 &&
-        (pParams->eMode == Native || pParams->bIsJoin))
+        (pParams->eMode == Native || pParams->bIsJoin) &&
+        !pParams->bOpenCL )
         m_bUseOpaqueMemory = true;
 
     // Media SDK session doesn't require external allocator if the application uses opaque memory
