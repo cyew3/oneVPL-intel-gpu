@@ -1969,7 +1969,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         SetStreamSourceRect(refIdx, TRUE, &pRect);
 
         // destination cropping
-        if ((pParams->bComposite) && (0 != refIdx))
+        if (pParams->bComposite)
         {
             // for sub-streams use DstRect info from ext buffer set by app
             MFX_CHECK(refIdx < (int) pParams->dstRects.size(), MFX_ERR_UNKNOWN);
@@ -2089,6 +2089,36 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
                 external);
         }
     }
+
+    // [12] background color
+    BOOL YCbCr = TRUE;
+    BYTE mask  = 0xff;
+    D3D11_VIDEO_COLOR Color = {0.0625, 0.5, 0.5, 0.0};
+
+    if (outInfo->FourCC == MFX_FOURCC_NV12 ||
+        outInfo->FourCC == MFX_FOURCC_YV12 ||
+        outInfo->FourCC == MFX_FOURCC_NV16 ||
+        outInfo->FourCC == MFX_FOURCC_YUY2)
+    {
+        YCbCr = TRUE;
+
+        Color.YCbCr.A  = ((pParams->iBackgroundColor >> 24) & mask) / 255.0f;
+        Color.YCbCr.Y  = ((pParams->iBackgroundColor >> 16) & mask) / 255.0f;
+        Color.YCbCr.Cb = ((pParams->iBackgroundColor >>  8) & mask) / 255.0f;
+        Color.YCbCr.Cr = ((pParams->iBackgroundColor      ) & mask) / 255.0f;
+    }
+    if (outInfo->FourCC == MFX_FOURCC_RGB4 ||
+        outInfo->FourCC == MFX_FOURCC_BGR4)
+    {
+        YCbCr = FALSE;
+
+        Color.RGBA.A = ((pParams->iBackgroundColor >> 24) & mask) / 255.0f;
+        Color.RGBA.R = ((pParams->iBackgroundColor >> 16) & mask) / 255.0f;
+        Color.RGBA.G = ((pParams->iBackgroundColor >>  8) & mask) / 255.0f;
+        Color.RGBA.B = ((pParams->iBackgroundColor      ) & mask) / 255.0f;
+    }
+
+    SetOutputBackgroundColor(YCbCr, &Color);
 
     UINT StreamCount;
 

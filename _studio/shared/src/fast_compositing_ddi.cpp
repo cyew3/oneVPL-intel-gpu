@@ -892,7 +892,7 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
     // reference samples 
     for( int refIdx = 0; refIdx < pExecuteParams->refCount; refIdx++ )
     {
-        mfxDrvSurface* pRefSurf = &(pExecuteParams->pRefSurfaces[refIdx]);        
+        mfxDrvSurface* pRefSurf = &(pExecuteParams->pRefSurfaces[refIdx]);
         FASTCOMP_VideoSample* pInputSample = &m_inputSamples[refIdx];
 
         memset(pInputSample, 0, sizeof(FASTCOMP_VideoSample));
@@ -961,16 +961,16 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
 
         // cropping
         // source cropping
-        mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);        
+        mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
         pInputSample->SrcRect.top    = inInfo->CropY;
         pInputSample->SrcRect.left   = inInfo->CropX;
         pInputSample->SrcRect.bottom = inInfo->CropH;
-        pInputSample->SrcRect.right  = inInfo->CropW;         
+        pInputSample->SrcRect.right  = inInfo->CropW;
         pInputSample->SrcRect.bottom += inInfo->CropY;
         pInputSample->SrcRect.right  += inInfo->CropX;
 
         // destination cropping
-        if ((pExecuteParams->bComposite) && (0 != refIdx))
+        if (pExecuteParams->bComposite)
         {
             // for sub-streams use DstRect info from ext buffer set by app
             MFX_CHECK(refIdx < (int) pExecuteParams->dstRects.size(), MFX_ERR_UNKNOWN);
@@ -980,7 +980,7 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
             pInputSample->DstRect.bottom = rec.DstY + rec.DstH;
             pInputSample->DstRect.right  = rec.DstX + rec.DstW;
 
-            pInputSample->Alpha = (rec.GlobalAlphaEnable) ? rec.GlobalAlpha / 255.0f : 1.0f;
+            pInputSample->Alpha     = (rec.GlobalAlphaEnable) ? rec.GlobalAlpha / 255.0f : 1.0f;
             pInputSample->bLumaKey  = rec.LumaKeyEnable;
             pInputSample->iLumaLow  = rec.LumaKeyMin;
             pInputSample->iLumaHigh = rec.LumaKeyMax;
@@ -1001,13 +1001,13 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
     pBltParams->pSamples    = &m_inputSamples[0];
 
     pBltParams->TargetFrame   = pExecuteParams->targetTimeStamp;
-    pBltParams->pRenderTarget = (IDirect3DSurface9*)(size_t)(pExecuteParams->targetSurface.hdl.first);    
+    pBltParams->pRenderTarget = (IDirect3DSurface9*)(size_t)(pExecuteParams->targetSurface.hdl.first);
     
     // aya: FIXME rewritting
     // initialize region of interest
     RECT srcRect, outRect;
     srcRect.left = srcRect.top = outRect.left = outRect.top = 0;
-    
+
     srcRect.right  = pExecuteParams->pRefSurfaces[0].frameInfo.Width;
     srcRect.bottom = pExecuteParams->pRefSurfaces[0].frameInfo.Height;
 
@@ -1019,6 +1019,40 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
     KeepAspectRatio(pBltParams->TargetRect, srcRect);
 
     pBltParams->BackgroundColor = BLACK16;
+
+    mfxFrameInfo *outInfo = &(pExecuteParams->targetSurface.frameInfo);
+
+    BYTE mask = 0xff;
+
+    if (outInfo->FourCC == MFX_FOURCC_NV12 ||
+        outInfo->FourCC == MFX_FOURCC_YV12 ||
+        outInfo->FourCC == MFX_FOURCC_NV16 ||
+        outInfo->FourCC == MFX_FOURCC_YUY2)
+    {
+        pBltParams->BackgroundColor.Alpha = ((pExecuteParams->iBackgroundColor >> 24) & mask) << 8;
+        pBltParams->BackgroundColor.Y     = ((pExecuteParams->iBackgroundColor >> 16) & mask) << 8;
+        pBltParams->BackgroundColor.Cb    = ((pExecuteParams->iBackgroundColor >>  8) & mask) << 8;
+        pBltParams->BackgroundColor.Cr    = ((pExecuteParams->iBackgroundColor      ) & mask) << 8;
+    }
+    if (outInfo->FourCC == MFX_FOURCC_RGB4 ||
+        outInfo->FourCC == MFX_FOURCC_BGR4)
+    {
+        pBltParams->BackgroundColor.Alpha = ((pExecuteParams->iBackgroundColor >> 24) & mask) << 8;
+
+        USHORT R, G, B;
+
+        R = (pExecuteParams->iBackgroundColor >> 16) & mask;
+        G = (pExecuteParams->iBackgroundColor >>  8) & mask;
+        B = (pExecuteParams->iBackgroundColor      ) & mask;
+        
+        pBltParams->BackgroundColor.Y  = (USHORT)(( 0x000041cb * R + 0x00008106 * G + 0x00001917 * B + 0x108000) >> 8);
+        pBltParams->BackgroundColor.Cb = (USHORT)((-0x000025e3 * R - 0x00004a7f * G + 0x00007062 * B + 0x808000) >> 8);
+        pBltParams->BackgroundColor.Cr = (USHORT)(( 0x00007062 * R - 0x00005e35 * G - 0x0000122d * B + 0x808000) >> 8);
+
+        pBltParams->BackgroundColor.Y  = IPP_MAX( IPP_MIN(255 << 8, pBltParams->BackgroundColor.Y),  0); // CLIP(val, 0, 255 << 8)
+        pBltParams->BackgroundColor.Cb = IPP_MAX( IPP_MIN(255 << 8, pBltParams->BackgroundColor.Cb), 0); // CLIP(val, 0, 255 << 8)
+        pBltParams->BackgroundColor.Cr = IPP_MAX( IPP_MIN(255 << 8, pBltParams->BackgroundColor.Cr), 0); // CLIP(val, 0, 255 << 8)
+    }
 
     return MFX_ERR_NONE;
 
@@ -1096,7 +1130,7 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
 
             frcObject.type = FASTCOMP_FEATURES_FRC_V1_0;
             frcObject.pParams = (void *)&frcParams;
-            frcObject.iSizeofParams = sizeof(frcParams);            
+            frcObject.iSizeofParams = sizeof(frcParams);
         }
         else
         {

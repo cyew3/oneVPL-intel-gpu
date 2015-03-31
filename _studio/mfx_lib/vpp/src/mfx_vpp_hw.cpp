@@ -2934,21 +2934,28 @@ mfxStatus ConfigureExecuteParams(
                                 rec.PixelAlphaEnable = 1;
                             executeParams.dstRects[cnt]= rec ;
                         }
-                        /* And now lets calculate background color
-                         * due to driver specific it is in ARGB format only*/
-                        mfxI32 uC = extComp->Y - 16;
-                        mfxI32 uD = extComp->U - 128;
-                        mfxI32 uE = extComp->V - 128;
-                        mfxI32 uR = ( 298 * uC           + 409 * uE + 128) >> 8;
-                        mfxI32 uG = ( 298 * uC - 100 * uD - 208 * uE + 128) >> 8;
-                        mfxI32 uB = ( 298 * uC + 516 * uD           + 128) >> 8;
-                        uR = VPP_RANGE_CLIP(uR, 0, 255);
-                        uG = VPP_RANGE_CLIP(uG, 0, 255);
-                        uB = VPP_RANGE_CLIP(uB, 0, 255);
-                        executeParams.iBackgroundColor = (0xff << 24) |
-                                                         (uR << 16) |
-                                                         (uG << 8) |
-                                                         (uB << 0) ;
+                        /* And now lets calculate background color*/
+
+                        mfxU32 targetFourCC = videoParam.vpp.Out.FourCC;
+
+                        if (targetFourCC == MFX_FOURCC_NV12 ||
+                            targetFourCC == MFX_FOURCC_YV12 ||
+                            targetFourCC == MFX_FOURCC_NV16 ||
+                            targetFourCC == MFX_FOURCC_YUY2)
+                        {
+                            executeParams.iBackgroundColor  = (0xff << 24)|
+                               (VPP_RANGE_CLIP(extComp->Y, 16, 235) << 16)|
+                               (VPP_RANGE_CLIP(extComp->U, 16, 240) <<  8)|
+                               (VPP_RANGE_CLIP(extComp->V, 16, 240) <<  0);
+                        }
+                        if (targetFourCC == MFX_FOURCC_RGB4 ||
+                            targetFourCC == MFX_FOURCC_BGR4)
+                        {
+                            executeParams.iBackgroundColor = (0xff << 24)|
+                               (VPP_RANGE_CLIP(extComp->R, 0, 255) << 16)|
+                               (VPP_RANGE_CLIP(extComp->G, 0, 255) <<  8)|
+                               (VPP_RANGE_CLIP(extComp->B, 0, 255) <<  0);
+                        }
                     }
                 }
 
