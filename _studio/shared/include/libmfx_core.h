@@ -238,7 +238,8 @@ protected:
 
     typedef std::map<mfxFrameSurface1*, mfxFrameSurface1> OpqTbl;
     typedef std::map<mfxMemId, mfxFrameSurface1*> OpqTbl_MemId;
-    typedef std::map<mfxFrameAllocResponse*, mfxU32>       RefCtrTbl;
+    typedef std::map<mfxFrameData*, mfxFrameSurface1*> OpqTbl_FrameData;
+    typedef std::map<mfxFrameAllocResponse*, mfxU32> RefCtrTbl;
 
 
     CorrespTbl m_CTbl;
@@ -246,6 +247,7 @@ protected:
     MemIDMap   m_RespMidQ;
     OpqTbl     m_OpqTbl;
     OpqTbl_MemId m_OpqTbl_MemId;
+    OpqTbl_FrameData m_OpqTbl_FrameData;
     RefCtrTbl  m_RefCtrTbl;
 
     // Number of available threads

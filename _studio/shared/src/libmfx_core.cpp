@@ -133,6 +133,7 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
     sts = AllocFrames(request, response);
     MFX_CHECK_STS(sts);
 
+    OpqTbl::iterator opq_it;
     for (mfxU32 i = 0; i < response->NumFrameActual; i++)
     {
         mfxFrameSurface1 surf = {};
@@ -140,8 +141,11 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
         //sts = LockFrame(response->mids[i], &surf.Data);
         //MFX_CHECK_STS(sts);
         surf.Data.MemId = response->mids[i];
-        m_OpqTbl.insert(pair<mfxFrameSurface1 *, mfxFrameSurface1>(pOpaqueSurface[i], surf));
-        m_OpqTbl_MemId.insert(pair<mfxMemId, mfxFrameSurface1*>(m_OpqTbl[pOpaqueSurface[i]].Data.MemId, pOpaqueSurface[i]));
+        opq_it = m_OpqTbl.insert(std::make_pair(pOpaqueSurface[i], surf)).first;
+
+        // filling helper tables
+        m_OpqTbl_MemId.insert(std::make_pair(opq_it->second.Data.MemId, pOpaqueSurface[i]));
+        m_OpqTbl_FrameData.insert(std::make_pair(&opq_it->second.Data, pOpaqueSurface[i]));
     }
     mfxFrameAllocResponse* pResp = new mfxFrameAllocResponse;
     *pResp = *response;
@@ -583,8 +587,9 @@ mfxFrameSurface1* CommonCORE::GetOpaqSurface(mfxMemId mid, bool ExtendedSearch)
     {
         UMC::AutomaticUMCMutex guard(m_guard);
         OpqTbl_MemId::iterator opq_it = m_OpqTbl_MemId.find(mid);
-        if (m_OpqTbl_MemId.end() != opq_it)
+        if (m_OpqTbl_MemId.end() != opq_it) {
             return opq_it->second;
+        }
     }
 
     if (ExtendedSearch)
@@ -672,6 +677,7 @@ void CommonCORE::Close()
     m_CTbl.clear();
     m_AllocatorQueue.clear();
     m_OpqTbl_MemId.clear();
+    m_OpqTbl_FrameData.clear();
     m_OpqTbl.clear();
     MemIDMap::iterator it;
     while(m_RespMidQ.size())
@@ -931,8 +937,8 @@ mfxStatus CommonCORE::IncreaseReference(mfxFrameData *ptr, bool ExtendedSearch)
             // Opaque surface syncronization
             if (m_bIsOpaqMode)
             {
-                OpqTbl_MemId::iterator opq_it = m_OpqTbl_MemId.find(ptr->MemId);
-                if (m_OpqTbl_MemId.end() != opq_it)
+                OpqTbl_FrameData::iterator opq_it = m_OpqTbl_FrameData.find(ptr);
+                if (m_OpqTbl_FrameData.end() != opq_it)
                 {
                     vm_interlocked_inc16((volatile Ipp16u*)&(opq_it->second->Data.Locked));
                     vm_interlocked_inc16((volatile Ipp16u*)&ptr->Locked);
@@ -971,8 +977,8 @@ mfxStatus CommonCORE::DecreaseReference(mfxFrameData *ptr, bool ExtendedSearch)
             // Opaque surface syncronization
             if (m_bIsOpaqMode)
             {
-                OpqTbl_MemId::iterator opq_it = m_OpqTbl_MemId.find(ptr->MemId);
-                if (m_OpqTbl_MemId.end() != opq_it)
+                OpqTbl_FrameData::iterator opq_it = m_OpqTbl_FrameData.find(ptr);
+                if (m_OpqTbl_FrameData.end() != opq_it)
                 {
                     vm_interlocked_dec16((volatile Ipp16u*)&(opq_it->second->Data.Locked));
                     vm_interlocked_dec16((volatile Ipp16u*)&ptr->Locked);
