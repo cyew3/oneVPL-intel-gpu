@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2015 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -962,17 +962,17 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
             {
                 huffmanParams->load_huffman_table[i] = 1;
                 const Ipp8u *bits = m_dec[0]->m_dctbl[i].GetBits();
-                memcpy(huffmanParams->huffman_table[i].num_dc_codes,bits,16);
+                memcpy_s(huffmanParams->huffman_table[i].num_dc_codes, sizeof(huffmanParams->huffman_table[i].num_dc_codes), bits, 16);
                 bits = m_dec[0]->m_dctbl[i].GetValues();
-                memcpy(huffmanParams->huffman_table[i].dc_values, bits, 12);
+                memcpy_s(huffmanParams->huffman_table[i].dc_values, sizeof(huffmanParams->huffman_table[i].dc_values), bits, 12);
             }
             if(m_dec[0]->m_actbl[i].IsValid())
             {
                 huffmanParams->load_huffman_table[i] = 1;
                 const Ipp8u *bits = m_dec[0]->m_actbl[i].GetBits();
-                memcpy(huffmanParams->huffman_table[i].num_ac_codes,bits,16);
+                memcpy_s(huffmanParams->huffman_table[i].num_ac_codes, sizeof(huffmanParams->huffman_table[i].num_ac_codes), bits, 16);
                 bits = m_dec[0]->m_actbl[i].GetValues();
-                memcpy(huffmanParams->huffman_table[i].ac_values, bits, 162);
+                memcpy_s(huffmanParams->huffman_table[i].ac_values, sizeof(huffmanParams->huffman_table[i].ac_values), bits, 162);
             }
             huffmanParams->huffman_table[i].pad[0] = 0;
             huffmanParams->huffman_table[i].pad[1] = 0;
@@ -1020,12 +1020,12 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
 
         if(m_dec[0]->m_num_scans == 1)
         {
-            memcpy(bistreamData, ptr + obtainedScanParams->DataOffset, obtainedScanParams->DataLength);
+            memcpy_s(bistreamData, obtainedScanParams->DataLength, ptr + obtainedScanParams->DataOffset, obtainedScanParams->DataLength);
             shiftDataOffset = true;
         }
         else
         {
-            memcpy(bistreamData, ptr + obtainedScanParams->DataOffset, obtainedScanParams->DataLength);
+            memcpy_s(bistreamData, obtainedScanParams->DataLength, ptr + obtainedScanParams->DataOffset, obtainedScanParams->DataLength);
         }
     }
 
