@@ -1100,7 +1100,7 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
         {
             picParam->ReferenceFrames[count].pic_order_cnt = frame->m_PicOrderCnt;
             picParam->ReferenceFrames[count].picture_id = m_va->GetSurfaceID(frame->m_index);;
-            picParam->ReferenceFrames[count].flags = 0;
+            picParam->ReferenceFrames[count].flags = refType == LONG_TERM_REFERENCE ? VA_PICTURE_HEVC_LONG_TERM_REFERENCE : 0;
             count++;
         }
     }
