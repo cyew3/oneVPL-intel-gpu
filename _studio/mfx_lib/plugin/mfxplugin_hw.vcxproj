@@ -70,6 +70,7 @@
     <ProjectGuid>{DB63C62E-CF81-457D-A5EC-0CB667FEB6AD}</ProjectGuid>
     <RootNamespace>mfxplugin_hevcd</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <ProjectName>mfxplugin_hw</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="Intel.Mfx.Common.props" />
@@ -853,7 +854,7 @@
     <ProjectReference Include="..\cmrt_cross_platform\cmrt_cross_platform.vcxproj">
       <Project>{811626eb-8608-4cac-abee-cd99daec38c4}</Project>
     </ProjectReference>
-    <ProjectReference Include="libmfxhw_plugin_hevcd.vcxproj">
+    <ProjectReference Include="libmfx_mfxplugin_hw.vcxproj">
       <Project>{d719372d-ba13-4730-aff6-1994b26eff6c}</Project>
     </ProjectReference>
   </ItemGroup>
@@ -864,7 +865,7 @@
     <ClCompile Include="src\mfx_vp9_dec_plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="libmfxhw_plugin_hevcd.rc" />
+    <ResourceCompile Include="mfxplugin_hw.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

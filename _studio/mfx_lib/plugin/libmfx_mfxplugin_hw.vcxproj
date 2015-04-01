@@ -70,7 +70,7 @@
     <ProjectGuid>{D719372D-BA13-4730-AFF6-1994B26EFF6C}</ProjectGuid>
     <RootNamespace>libmfxsw</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <ProjectName>libmfxhw_plugin_hevcd</ProjectName>
+    <ProjectName>libmfx_mfxplugin_hw</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="..\Intel.Mfx.Common.props" />

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfxplugin_hevcd_hw", "mfxplugin_hevcd_hw.vcxproj", "{DB63C62E-CF81-457D-A5EC-0CB667FEB6AD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfxplugin_hw", "mfxplugin_hw.vcxproj", "{DB63C62E-CF81-457D-A5EC-0CB667FEB6AD}"
 	ProjectSection(ProjectDependencies) = postProject
 		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4} = {811626EB-8608-4CAC-ABEE-CD99DAEC38C4}
 	EndProjectSection
@@ -30,7 +30,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h265_dec_hw", "..\..\shared
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "umc_va_elk", "..\..\shared\umc\io\umc_va\umc_va_elk.vcxproj", "{0E971EE7-4430-47D9-92CD-9822BC664642}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfxhw_plugin_hevcd", "libmfxhw_plugin_hevcd.vcxproj", "{D719372D-BA13-4730-AFF6-1994B26EFF6C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx_mfxplugin_hw", "libmfx_mfxplugin_hw.vcxproj", "{D719372D-BA13-4730-AFF6-1994B26EFF6C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "color_space_converter_hw", "..\..\shared\umc\codec\color_space_converter\color_space_converter_hw.vcxproj", "{57FE8DAC-C7C4-4DF4-9A36-2FEE040DFF38}"
 EndProject
