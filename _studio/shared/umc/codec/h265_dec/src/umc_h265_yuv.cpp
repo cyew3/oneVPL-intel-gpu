@@ -156,16 +156,18 @@ UMC::ColorFormat H265DecYUVBufferPadded::GetColorFormat() const
 
 // Allocate memory and initialize frame plane pointers and pitches.
 // Used for temporary picture buffers, e.g. residuals.
-void H265DecYUVBufferPadded::create(Ipp32u PicWidth, Ipp32u PicHeight, Ipp32u ElementSizeY, Ipp32u ElementSizeUV)
+void H265DecYUVBufferPadded::createPredictionBuffer(const H265SeqParamSet * sps)
 {
-    m_lumaSize.width = PicWidth;
-    m_lumaSize.height = PicHeight;
+    Ipp32u ElementSizeY = sizeof(Ipp16s);
+    Ipp32u ElementSizeUV = sizeof(Ipp16s);
+    m_lumaSize.width = sps->MaxCUSize;
+    m_lumaSize.height = sps->MaxCUSize;
 
-    m_chromaSize.width = PicWidth >> 1;
-    m_chromaSize.height = PicHeight >> 1;
+    m_chromaSize.width = sps->MaxCUSize / sps->SubWidthC();
+    m_chromaSize.height = sps->MaxCUSize / sps->SubHeightC();
 
-    m_pitch_luma = PicWidth;
-    m_pitch_chroma = PicWidth;
+    m_pitch_luma = sps->MaxCUSize;
+    m_pitch_chroma = sps->MaxCUSize;
 
     size_t allocationSize = (m_lumaSize.height) * m_pitch_luma * ElementSizeY +
         (m_chromaSize.height) * m_pitch_chroma * ElementSizeUV*2 + 512;

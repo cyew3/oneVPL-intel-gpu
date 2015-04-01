@@ -36,7 +36,7 @@ struct H265CodingUnitData
     {
         Ipp8u cu_transform_bypass : 1;
         Ipp8u pcm_flag : 1;
-        Ipp8u transform_skip : 3;
+        Ipp8u transform_skip : 5;
         Ipp8u depth : 3;
         Ipp8u predMode : 2;
         Ipp8u partSize : 3;
@@ -75,7 +75,7 @@ public:
     //CU data ----------------------------------------------------------------------------------------
     H265CodingUnitData         *m_cuData;
 
-    Ipp8u*                    m_cbf[3];         // array of coded block flags (CBF)
+    Ipp8u*                    m_cbf[5];         // array of coded block flags (CBF)
 
     Ipp8u*                    m_lumaIntraDir;    // array of intra directions (luma)
     Ipp8u*                    m_chromaIntraDir;  // array of intra directions (chroma)
@@ -112,6 +112,8 @@ public:
 
     H265_FORCEINLINE Ipp8u GetCbf(ComponentPlane plane, Ipp32s partAddr) const
     {
+        if (m_cbf[plane] == 0)
+            return 0;
         return m_cbf[plane][partAddr];
     }
 
@@ -186,6 +188,9 @@ public:
 
     H265_FORCEINLINE Ipp8u GetCbf(ComponentPlane plane, Ipp32u Idx, Ipp32u TrDepth) const
     {
+        if (m_cbf[plane] == 0)
+            return 0;
+
         return (Ipp8u)((GetCbf(plane, Idx) >> TrDepth ) & 0x1);
     }
 

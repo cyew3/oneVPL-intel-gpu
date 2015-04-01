@@ -338,10 +338,6 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
 {
-#if INSTRUMENTED_CABAC
-    Ipp32u range = m_lcodIRange;
-#endif
-
     Ipp32u Bin = 1;
     m_lcodIRange -= (2<<CABAC_MAGIC_BITS);
 #if (CABAC_MAGIC_BITS > 0)
@@ -373,9 +369,7 @@ Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
 
         }
     }
-#if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES(Bin, range, m_lcodIRange);
-#endif
+
     return Bin;
 } //Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
 

@@ -291,12 +291,14 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
     mfxU32 nOldCC = m_VideoParams.mfx.FrameInfo.FourCC;
     if ( MFX_FOURCC_YV12 != m_VideoParams.mfx.FrameInfo.FourCC ||
         MFX_FOURCC_YUV420_16 != m_VideoParams.mfx.FrameInfo.FourCC ||
+        MFX_FOURCC_YUV422_16 != m_VideoParams.mfx.FrameInfo.FourCC ||
         MFX_FOURCC_YV16 != m_VideoParams.mfx.FrameInfo.FourCC)
     {
-        if (m_nFourCC == 0 || m_nFourCC == MFX_FOURCC_YV12 || m_nFourCC == MFX_FOURCC_YUV420_16 || m_nFourCC == MFX_FOURCC_YV16)
+        if (m_nFourCC == 0 || m_nFourCC == MFX_FOURCC_YV12 || m_nFourCC == MFX_FOURCC_YUV420_16 || m_nFourCC == MFX_FOURCC_YV16 || m_nFourCC == MFX_FOURCC_YUV422_16)
         {
             if (!m_params.useHMstyle)
             {
+                VM_ASSERT(m_nFourCC != MFX_FOURCC_YUV422_16);
                 bool useP010 = m_nFourCC == MFX_FOURCC_YUV420_16 || m_params.use10bitOutput;
                 m_VideoParams.mfx.FrameInfo.FourCC = useP010 ? MFX_FOURCC_YUV420_16 : MFX_FOURCC_YV12;
                 if (m_VideoParams.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
@@ -430,8 +432,11 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
             break;
         }
+        case MFX_FOURCC_YUV422_16:
         case MFX_FOURCC_YUV420_16:
         {
+            mfxU8 isHalfHeight = m_nFourCC == MFX_FOURCC_YUV420_16 ? 1 : 0;
+
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
 
@@ -444,16 +449,18 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
 
             crop_x >>= 1;
-            crop_y >>= 1;
+            crop_y >>= isHalfHeight;
+
+            mfxI32 height = isHalfHeight ? ((pInfo->CropH + 1) >> 1) : pInfo->CropH;
 
             m_Current.m_comp = VM_STRING('U');
-            for (i = 0; i < ((pInfo->CropH + 1) >> 1); i++)
+            for (i = 0; i < height; i++)
             {
                 m_Current.m_pixY = i;
                 WRITE(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2, pInfo->CropW);
             }
             m_Current.m_comp = VM_STRING('V');
-            for (i = 0; i < ((pInfo->CropH + 1) >> 1); i++)
+            for (i = 0; i < height; i++)
             {
                 m_Current.m_pixY = i;
                 WRITE(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2, pInfo->CropW);
@@ -1073,6 +1080,11 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 3;
             break;
 
+        case MFX_FOURCC_P210 :
+        case MFX_FOURCC_YUV422_16 :
+            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 4;
+            break;
+
         default:
             vm_char ar[] = {*(0 + (char*)&surface->Info.FourCC),
                           *(1 + (char*)&surface->Info.FourCC),
@@ -1403,7 +1415,7 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         return pSurfaceIn;
     }
 
-    if (pSurfaceOut->Info.FourCC != MFX_FOURCC_YV12 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YV16)
+    if (pSurfaceOut->Info.FourCC != MFX_FOURCC_YV12 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YV16 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV422_16)
     {
         return pSurfaceIn;
     }
@@ -1470,6 +1482,34 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
 
         return pSurfaceOut;
     }
+    else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YUV422_16)
+    {
+        mfxU32 originalBDLuma = pSurfaceIn->Info.BitDepthLuma ? pSurfaceIn->Info.BitDepthLuma : 8;
+        mfxU32 originalBDChroma = pSurfaceIn->Info.BitDepthChroma ? pSurfaceIn->Info.BitDepthChroma : 8;
+
+        mfxU32 finalBitDepth = params->use10bitOutput ? 10 : IPP_MAX(originalBDLuma, originalBDChroma);
+        if (!params->useSameBitDepthForComponents)
+            finalBitDepth = originalBDLuma;
+
+        mfxI32 shift = pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDLuma - finalBitDepth;
+
+        if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
+            VM_ASSERT(false);//copyPlane<mfxU8, mfxU16>(pSurfaceIn->Data.Y, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.Y, pSurfaceOut->Data.Pitch, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width, shift);
+        else
+            copyPlane<mfxU16, mfxU16>(pSurfaceIn->Data.Y, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.Y, pSurfaceOut->Data.Pitch, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width, shift);
+
+        if (!params->useSameBitDepthForComponents)
+            finalBitDepth = originalBDChroma;
+
+        shift = pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDChroma - finalBitDepth;
+
+        if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
+            VM_ASSERT(false);//copyChromaPlane<mfxU8, mfxU16>(pSurfaceIn->Data.UV, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.U, pSurfaceOut->Data.V, pSurfaceOut->Data.Pitch >> 1, pSurfaceIn->Info.Height / 2, pSurfaceIn->Info.Width / 2, shift);
+        else
+            copyChromaPlane<mfxU16, mfxU16>(pSurfaceIn->Data.UV, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.U, pSurfaceOut->Data.V, pSurfaceOut->Data.Pitch >> 1, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width / 2, shift);
+
+        return pSurfaceOut;
+    }
     else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YV12)
     {
         VM_ASSERT(pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12);
@@ -1530,10 +1570,12 @@ mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfa
     
     pSurfaceOut->Data.PitchLow = pTargetInfo->Width;
 
-    if (pSurfaceOut->Info.FourCC != MFX_FOURCC_P010 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16)
+    mfxU8 halfHeight = pTargetInfo->ChromaFormat != MFX_CHROMAFORMAT_YUV422 ? 1 : 0;
+    mfxU32 bufSize = halfHeight ? (pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 3 / 2) : (pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 2);
+
+    if (pSurfaceOut->Info.FourCC != MFX_FOURCC_P010 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16 &&
+        pSurfaceOut->Info.FourCC != MFX_FOURCC_P210 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV422_16)
     {
-        mfxU8 halfHeight = pTargetInfo->ChromaFormat != MFX_CHROMAFORMAT_YUV422 ? 1 : 0;
-        mfxU32 bufSize = halfHeight ? (pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 3 / 2) : (pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 2);
         mfxU8 * pBuffer = new mfxU8[bufSize];
         MFX_CHECK_WITH_ERR(NULL != pBuffer, MFX_ERR_MEMORY_ALLOC);
 
@@ -1559,18 +1601,20 @@ mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfa
     }
     else
     {
-        mfxU16 * pBuffer = new mfxU16[pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 3 / 2];
+        mfxU16 * pBuffer = new mfxU16[bufSize];
         pSurfaceOut->Data.Y16 = pBuffer;
 
         switch (pSurfaceOut->Info.FourCC)
         {
+            case MFX_FOURCC_P210:
             case MFX_FOURCC_P010:
                 pSurfaceOut->Data.U16 = pBuffer + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
                 pSurfaceOut->Data.V = (mfxU8*)(pSurfaceOut->Data.U16 + 1);
                 break;
+            case MFX_FOURCC_YUV422_16:
             case MFX_FOURCC_YUV420_16:
                 pSurfaceOut->Data.U16 = pBuffer + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
-                pSurfaceOut->Data.V = (mfxU8*)(pSurfaceOut->Data.U16 + (pSurfaceOut->Data.PitchLow >> 1) * (pSurfaceOut->Info.Height >> 1));
+                pSurfaceOut->Data.V = (mfxU8*)(pSurfaceOut->Data.U16 + ((pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height) >> (1 + halfHeight)));
                 break;
         }
         pSurfaceOut->Data.PitchLow <<= 1;

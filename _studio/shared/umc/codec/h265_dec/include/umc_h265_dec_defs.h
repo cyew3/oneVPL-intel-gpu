@@ -96,6 +96,8 @@ enum ComponentPlane
     COMPONENT_LUMA = 0,
     COMPONENT_CHROMA_U,
     COMPONENT_CHROMA_V,
+    COMPONENT_CHROMA_U1,
+    COMPONENT_CHROMA_V1,
     COMPONENT_CHROMA = COMPONENT_CHROMA_U
 };
 
@@ -868,6 +870,9 @@ struct H265SeqParamSetBase
 
     Ipp32u ChromaArrayType;
 
+    Ipp32u chromaShiftW;
+    Ipp32u chromaShiftH;
+
     Ipp32u need16bitOutput;
 
     void Reset()
@@ -924,8 +929,19 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
         m_scalingList.destroy();
     }
 
-    static int getWinUnitX (int /*chromaFormatIdc*/) { /*assert (chromaFormatIdc > 0 && chromaFormatIdc <= MAX_CHROMA_FORMAT_IDC);*/ return 1/*m_cropUnitX[chromaFormatIdc]*/; } // TODO
-    static int getWinUnitY (int /*chromaFormatIdc*/) { /*assert (chromaFormatIdc > 0 && chromaFormatIdc <= MAX_CHROMA_FORMAT_IDC);*/ return 1/*m_cropUnitY[chromaFormatIdc]*/; }
+    int SubWidthC() const
+    {
+        static Ipp32s subWidth[] = {1, 2, 2, 1};
+        VM_ASSERT (chroma_format_idc > 0 && chroma_format_idc <= 4);
+        return subWidth[chroma_format_idc];
+    }
+
+    int SubHeightC() const
+    {
+        static Ipp32s subHeight[] = {1, 2, 1, 1};
+        VM_ASSERT (chroma_format_idc > 0 && chroma_format_idc <= 4);
+        return subHeight[chroma_format_idc];
+    }
 
     int getQpBDOffsetY() const                  { return m_QPBDOffsetY; }
     void setQpBDOffsetY(int val)                { m_QPBDOffsetY = val; }

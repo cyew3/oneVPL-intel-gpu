@@ -121,19 +121,19 @@ H265FrameCodingData::~H265FrameCodingData()
 }
 
 // Allocate frame CTB array table
-void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiMaxWidth, Ipp32u uiMaxHeight, Ipp32u uiMaxDepth)
+void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, const H265SeqParamSet* sps)
 {
-    m_MaxCUDepth = (Ipp8u) uiMaxDepth;
+    m_MaxCUDepth = (Ipp8u) sps->MaxCUDepth;
     m_NumPartitions  = 1 << (m_MaxCUDepth<<1);
 
-    m_MaxCUWidth = uiMaxWidth;
+    m_MaxCUWidth = sps->MaxCUSize;
 
-    Ipp32s MinCUWidth = uiMaxWidth >> m_MaxCUDepth;
+    Ipp32s MinCUWidth = m_MaxCUWidth >> m_MaxCUDepth;
 
-    m_NumPartInWidth = uiMaxWidth / MinCUWidth;
+    m_NumPartInWidth = m_MaxCUWidth / MinCUWidth;
 
-    m_WidthInCU = (iPicWidth % uiMaxWidth) ? iPicWidth / uiMaxWidth + 1 : iPicWidth / uiMaxWidth;
-    m_HeightInCU = (iPicHeight % uiMaxHeight) ? iPicHeight / uiMaxHeight + 1 : iPicHeight / uiMaxHeight;
+    m_WidthInCU = (iPicWidth % m_MaxCUWidth) ? iPicWidth / m_MaxCUWidth + 1 : iPicWidth / m_MaxCUWidth;
+    m_HeightInCU = (iPicHeight % m_MaxCUWidth) ? iPicHeight / m_MaxCUWidth + 1 : iPicHeight / m_MaxCUWidth;
 
     // Allocate main CTB table
     m_NumCUsInFrame = m_WidthInCU * m_HeightInCU;
@@ -142,23 +142,26 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     m_CU = h265_new_array_throw<H265CodingUnit>(m_NumCUsInFrame + 1);
 
     m_colocatedInfo = h265_new_array_throw<H265MVInfo>(m_NumCUsInFrame * m_NumPartitions);
+    memset(m_colocatedInfo, 0, sizeof(H265MVInfo)*m_NumCUsInFrame * m_NumPartitions);
 
     m_cuData.resize(m_NumCUsInFrame*m_NumPartitions);
 
-    Ipp8u*                    cbf[3];         // array of coded block flags (CBF)
+    Ipp8u*                    cbf[5];         // array of coded block flags (CBF)
 
     Ipp8u*                    lumaIntraDir;    // array of intra directions (luma)
     Ipp8u*                    chromaIntraDir;  // array of intra directions (chroma)
 
     // Allocate additional CTB buffers
-    m_cumulativeMemoryPtr = CumulativeArraysAllocation(5, // number of parameters
+    m_cumulativeMemoryPtr = CumulativeArraysAllocation(7, // number of parameters
                                 32, // align
                                 &lumaIntraDir, sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
                                 &chromaIntraDir, sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
 
                                 &cbf[0], sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
                                 &cbf[1], sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
-                                &cbf[2], sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame);
+                                &cbf[2], sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
+                                &cbf[3], sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame,
+                                &cbf[4], sizeof(Ipp8u) * m_NumPartitions * m_NumCUsInFrame);
 
     for (Ipp32s i = 0; i < m_NumCUsInFrame; i++)
     {
@@ -173,6 +176,14 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
         m_CU[i].m_cbf[0] = cbf[0];
         m_CU[i].m_cbf[1] = cbf[1];
         m_CU[i].m_cbf[2] = cbf[2];
+        if (sps->ChromaArrayType == CHROMA_FORMAT_422)
+        {
+            m_CU[i].m_cbf[3] = cbf[3];
+            m_CU[i].m_cbf[4] = cbf[4];
+
+            cbf[3] += m_NumPartitions;
+            cbf[4] += m_NumPartitions;
+        }
 
         cbf[0] += m_NumPartitions;
         cbf[1] += m_NumPartitions;

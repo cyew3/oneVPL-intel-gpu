@@ -211,9 +211,11 @@ void H265SegmentDecoder::DeblockTU(Ipp32u absPartIdx, Ipp32u trDepth)
                     m_reconstructor->FilterEdgeLuma(edge, m_pY_CU_Plane, m_pitch, curPixelColumn, curPixelRow + 4 * i, VERT_FILT, m_pSeqParamSet->bit_depth_luma);
                 }
 
-                if (edge->strength > 1 && (i % 2) == 0 && !(curPixelColumn % 16) && !(curPixelRow % 8))
+                bool additionalChromaCheck = (i % 2) == 0 && !(curPixelRow % 8);
+
+                if (edge->strength > 1 && !(curPixelColumn % 16) && (!m_pSeqParamSet->chromaShiftH || additionalChromaCheck))
                 {
-                    m_reconstructor->FilterEdgeChroma(edge, m_pUV_CU_Plane, m_pitch, (curPixelColumn >> 1), (curPixelRow>>1) + 4 * (i>>1), VERT_FILT, m_pPicParamSet->pps_cb_qp_offset, m_pPicParamSet->pps_cr_qp_offset, m_pSeqParamSet->bit_depth_chroma);
+                    m_reconstructor->FilterEdgeChroma(edge, m_pUV_CU_Plane, m_pitch, (curPixelColumn >> 1), (curPixelRow + 4 * i) >> m_pSeqParamSet->chromaShiftH, VERT_FILT, m_pPicParamSet->pps_cb_qp_offset, m_pPicParamSet->pps_cr_qp_offset, m_pSeqParamSet->bit_depth_chroma);
                 }
             }
 
@@ -231,9 +233,10 @@ void H265SegmentDecoder::DeblockTU(Ipp32u absPartIdx, Ipp32u trDepth)
                         m_reconstructor->FilterEdgeLuma(edge, m_pY_CU_Plane, m_pitch, curPixelColumn, curPixelRow + 4 * i, VERT_FILT, m_pSeqParamSet->bit_depth_luma);
                     }
 
-                    if (edge->strength > 1 && (i % 2) == 0 && !(curPixelColumn % 16) && !(curPixelRow % 8))
+                    bool additionalChromaCheck = (i % 2) == 0 && !(curPixelRow % 8);
+                    if (edge->strength > 1 && !(curPixelColumn % 16) && (!m_pSeqParamSet->chromaShiftH || additionalChromaCheck))
                     {
-                        m_reconstructor->FilterEdgeChroma(edge, m_pUV_CU_Plane, m_pitch, (curPixelColumn >> 1), (curPixelRow>>1) + 4 * (i>>1), VERT_FILT, m_pPicParamSet->pps_cb_qp_offset, m_pPicParamSet->pps_cr_qp_offset, m_pSeqParamSet->bit_depth_chroma);
+                        m_reconstructor->FilterEdgeChroma(edge, m_pUV_CU_Plane, m_pitch, (curPixelColumn >> 1), (curPixelRow + 4 * i) >> m_pSeqParamSet->chromaShiftH, VERT_FILT, m_pPicParamSet->pps_cb_qp_offset, m_pPicParamSet->pps_cr_qp_offset, m_pSeqParamSet->bit_depth_chroma);
                     }
                 }
             }
@@ -360,7 +363,6 @@ void H265SegmentDecoder::DeblockOneCross(Ipp32s curPixelColumn, Ipp32s curPixelR
     edge.tcOffset = (Ipp8s)m_cu->m_SliceHeader->slice_tc_offset;
     edge.betaOffset = (Ipp8s)m_cu->m_SliceHeader->slice_beta_offset;
 
-
     Ipp32s end = isNeedAddHorDeblock ? 3 : 2;
     for (Ipp32s i = 0; i < end; i++)
     {
@@ -398,12 +400,13 @@ void H265SegmentDecoder::DeblockOneCross(Ipp32s curPixelColumn, Ipp32s curPixelR
             m_reconstructor->FilterEdgeLuma(&edge, m_pY_CU_Plane, m_pitch, curPixelColumn + 4 * (i - 1), curPixelRow, HOR_FILT, m_pSeqParamSet->bit_depth_luma);
         }
 
-        if (edge.strength > 1 && i != 1 && !(curPixelRow % 16))
+        bool additionalChromaCheck = !(curPixelRow % 16);
+        if (edge.strength > 1 && i != 1 && (!m_pSeqParamSet->chromaShiftH || additionalChromaCheck))
         {
             Ipp32s column = (curPixelColumn>>1) + 4 * (i - 1);
             if (i == 2)
                 column = (curPixelColumn>>1) + 4 * (i - 2);
-            m_reconstructor->FilterEdgeChroma(&edge, m_pUV_CU_Plane, m_pitch, column, (curPixelRow >> 1), HOR_FILT, chromaCbQpOffset, chromaCrQpOffset, m_pSeqParamSet->bit_depth_chroma);
+            m_reconstructor->FilterEdgeChroma(&edge, m_pUV_CU_Plane, m_pitch, column, (curPixelRow >> m_pSeqParamSet->chromaShiftH), HOR_FILT, chromaCbQpOffset, chromaCrQpOffset, m_pSeqParamSet->bit_depth_chroma);
         }
 
         if (curPixelColumn + 4 * (i - 1) < 0)

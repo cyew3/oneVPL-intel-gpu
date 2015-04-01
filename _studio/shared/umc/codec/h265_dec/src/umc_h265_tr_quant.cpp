@@ -188,7 +188,16 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     bool chromaUPresent = pCU->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrMode) != 0;
     bool chromaVPresent = pCU->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrMode) != 0;
 
-    if (!lumaPresent && !chromaUPresent && !chromaVPresent)
+    bool chromaUPresent1 = 0;
+    bool chromaVPresent1 = 0;
+
+    if (m_context->m_sps->ChromaArrayType == CHROMA_FORMAT_422)
+    {
+        chromaUPresent1 = pCU->GetCbf(COMPONENT_CHROMA_U1, AbsPartIdx, TrMode) != 0;
+        chromaVPresent1 = pCU->GetCbf(COMPONENT_CHROMA_V1, AbsPartIdx, TrMode) != 0;
+    }
+
+    if (!lumaPresent && !chromaUPresent && !chromaVPresent && !chromaUPresent1 && !chromaVPresent1)
     {
         return;
     }
@@ -209,7 +218,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
                 pCU->GetTransformSkip(COMPONENT_LUMA, AbsPartIdx) != 0);
         }
 
-        if (chromaUPresent || chromaVPresent)
+        if (chromaUPresent || chromaVPresent || chromaUPresent1 || chromaVPresent1)
         {
             // Chroma
             if (Size == 4) {
@@ -235,6 +244,15 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
                     pCU->GetTransformSkip(COMPONENT_CHROMA_U, AbsPartIdx) != 0);
             }
 
+            size_t bottomChromaOffset = (Size*res_pitch) << m_context->m_sps->need16bitOutput;
+            if (chromaUPresent1)
+            {
+                CoeffsPtr pCoeff = m_context->m_coeffsRead;
+                m_context->m_coeffsRead += Size*Size;
+                InvTransformNxN(pCU->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_U, REG_DCT, residualsTempBuffer + bottomChromaOffset, res_pitch, pCoeff, Size,
+                    pCU->GetTransformSkip(COMPONENT_CHROMA_U1, AbsPartIdx) != 0);
+            }
+
             if (chromaVPresent)
             {
                 CoeffsPtr pCoeff = m_context->m_coeffsRead;
@@ -243,28 +261,32 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
                     pCU->GetTransformSkip(COMPONENT_CHROMA_V, AbsPartIdx) != 0);
             }
 
+            if (chromaVPresent1)
             {
-            if (m_context->m_sps->need16bitOutput)
-                SumOfResidAndPred<Ipp16u>(residualsTempBuffer, residualsTempBuffer1, res_pitch, (Ipp16u*)ptrChroma, DstStride, Size, chromaUPresent, chromaVPresent, m_context->m_sps->bit_depth_chroma);
-            else
-                SumOfResidAndPred<Ipp8u>(residualsTempBuffer, residualsTempBuffer1, res_pitch, ptrChroma, DstStride, Size, chromaUPresent, chromaVPresent, m_context->m_sps->bit_depth_chroma);
-
+                CoeffsPtr pCoeff = m_context->m_coeffsRead;
+                m_context->m_coeffsRead += Size*Size;
+                InvTransformNxN(pCU->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_V, REG_DCT, residualsTempBuffer1 + bottomChromaOffset, res_pitch, pCoeff, Size,
+                    pCU->GetTransformSkip(COMPONENT_CHROMA_V1, AbsPartIdx) != 0);
             }
 
-            // ML: OPT: TODO: Vectorize this
-            /*for (Ipp32u y = 0; y < Size; y++)
+            if (chromaUPresent || chromaVPresent)
             {
-                for (Ipp32u x = 0; x < Size; x++)
-                {
-                    if (chromaUPresent)
-                        ptrChroma[2*x] = (H265PlaneUVCommon)ClipC(residualsTempBuffer[x] + ptrChroma[2*x]);
-                    if (chromaVPresent)
-                        ptrChroma[2*x+1] = (H265PlaneUVCommon)ClipC(residualsTempBuffer1[x] + ptrChroma[2*x+1]);
-                }
-                residualsTempBuffer += res_pitch;
-                residualsTempBuffer1 += res_pitch;
-                ptrChroma += DstStride;
-            }*/
+                if (m_context->m_sps->need16bitOutput)
+                    SumOfResidAndPred<Ipp16u>(residualsTempBuffer, residualsTempBuffer1, res_pitch, (Ipp16u*)ptrChroma, DstStride, Size, chromaUPresent, chromaVPresent, m_context->m_sps->bit_depth_chroma);
+                else
+                    SumOfResidAndPred<Ipp8u>(residualsTempBuffer, residualsTempBuffer1, res_pitch, ptrChroma, DstStride, Size, chromaUPresent, chromaVPresent, m_context->m_sps->bit_depth_chroma);
+            }
+
+            if (chromaUPresent1 || chromaVPresent1)
+            {
+                residualsTempBuffer += bottomChromaOffset;
+                residualsTempBuffer1 += bottomChromaOffset;
+                ptrChroma += (Size*DstStride) << m_context->m_sps->need16bitOutput;
+                if (m_context->m_sps->need16bitOutput)
+                    SumOfResidAndPred<Ipp16u>(residualsTempBuffer, residualsTempBuffer1, res_pitch, (Ipp16u*)ptrChroma, DstStride, Size, chromaUPresent1, chromaVPresent1, m_context->m_sps->bit_depth_chroma);
+                else
+                    SumOfResidAndPred<Ipp8u>(residualsTempBuffer, residualsTempBuffer1, res_pitch, ptrChroma, DstStride, Size, chromaUPresent1, chromaVPresent1, m_context->m_sps->bit_depth_chroma);
+            }
         }
     }
     else

@@ -30,7 +30,10 @@ extern const Ipp32u g_PUOffset[8];
 extern const Ipp16u g_invQuantScales[6];            // IQ(QP%6)
 
 // Luma to chroma QP scale lookup table. HEVC spec 8.6.1
-extern const Ipp8u g_ChromaScale[58];
+extern const Ipp8u g_ChromaScale[2][58];
+
+// chroma 422 pred mode from Luma IntraPredMode table 8-3 of spec
+extern const Ipp8u g_Chroma422IntraPredModeC[INTRA_DM_CHROMA_IDX];
 
 // Lookup table used for decoding coefficients and groups of coefficients
 extern ALIGN_DECL(32) const Ipp8u scanGCZr[128];

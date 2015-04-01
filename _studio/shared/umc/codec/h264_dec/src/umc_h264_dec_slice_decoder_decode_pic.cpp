@@ -226,7 +226,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
             {
                 if (!pRefPicList0[k1])
                     break;
-                fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields0[k1].field, pRefPicList0[k1]->PicOrderCnt(pRefPicList0[k1]->GetNumberByParity(pFields0[k1].field)));
+                fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields0[k1].field, pRefPicList0[k1]->m_PicOrderCnt[pRefPicList0[k1]->GetNumberByParity(pFields0[k1].field)]);
             }
 
             fprintf(fl, "l1 - %d\n", kkkk);
@@ -234,7 +234,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
             {
                 if (!pRefPicList1[k1])
                     break;
-                fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields1[k1].field, pRefPicList1[k1]->PicOrderCnt(pRefPicList1[k1]->GetNumberByParity(pFields1[k1].field)));
+                fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields1[k1].field, pRefPicList1[k1]->m_PicOrderCnt[pRefPicList1[k1]->GetNumberByParity(pFields1[k1].field)]);
             }
 
             fclose(fl);
@@ -261,7 +261,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
             {
                 if (!pRefPicList0[k1])
                     break;
-                fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields0[k1].field, pRefPicList0[k1]->PicOrderCnt(pRefPicList0[k1]->GetNumberByParity(pFields0[k1].field)));
+                fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields0[k1].field, pRefPicList0[k1]->m_PicOrderCnt[pRefPicList0[k1]->GetNumberByParity(pFields0[k1].field)]);
             }
 
             fprintf(fl, "l1 - %d\n", kkkk);
@@ -269,7 +269,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
             {
                 if (!pRefPicList1[k1])
                     break;
-                fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields1[k1].field, pRefPicList1[k1]->PicOrderCnt(pRefPicList1[k1]->GetNumberByParity(pFields1[k1].field)));
+                fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields1[k1].field, pRefPicList1[k1]->m_PicOrderCnt[pRefPicList1[k1]->GetNumberByParity(pFields1[k1].field)]);
             }
 
             fclose(fl);

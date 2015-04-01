@@ -320,17 +320,9 @@ public:
     //  Access starting position of original picture for specific coding unit (CU)
     PlanePtrY GetLumaAddr(Ipp32s CUAddr) const;
     //  Access starting position of original picture for specific coding unit (CU)
-    PlanePtrUV GetCbAddr(Ipp32s CUAddr) const;
-    //  Access starting position of original picture for specific coding unit (CU)
-    PlanePtrUV GetCrAddr(Ipp32s CUAddr) const;
-    //  Access starting position of original picture for specific coding unit (CU)
     PlanePtrUV GetCbCrAddr(Ipp32s CUAddr) const;
     //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
     PlanePtrY GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
-    //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-    PlanePtrUV GetCbAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
-    //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-    PlanePtrUV GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
     //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
     PlanePtrUV GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
 

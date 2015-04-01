@@ -555,6 +555,8 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     }
 
     pcSPS->ChromaArrayType = pcSPS->separate_colour_plane_flag ? 0 : pcSPS->chroma_format_idc;
+    pcSPS->chromaShiftW = 1;
+    pcSPS->chromaShiftH = pcSPS->ChromaArrayType == CHROMA_FORMAT_422 ? 0 : 1;
 
     pcSPS->pic_width_in_luma_samples  = GetVLCElementU();
     pcSPS->pic_height_in_luma_samples = GetVLCElementU();
@@ -562,10 +564,10 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
 
     if (pcSPS->conformance_window_flag)
     {
-        pcSPS->conf_win_left_offset  = GetVLCElementU()*H265SeqParamSet::getWinUnitX(pcSPS->chroma_format_idc);
-        pcSPS->conf_win_right_offset = GetVLCElementU()*H265SeqParamSet::getWinUnitX(pcSPS->chroma_format_idc);
-        pcSPS->conf_win_top_offset   = GetVLCElementU()*H265SeqParamSet::getWinUnitY(pcSPS->chroma_format_idc);
-        pcSPS->conf_win_bottom_offset = GetVLCElementU()*H265SeqParamSet::getWinUnitY(pcSPS->chroma_format_idc);
+        pcSPS->conf_win_left_offset  = GetVLCElementU()*pcSPS->SubWidthC();
+        pcSPS->conf_win_right_offset = GetVLCElementU()*pcSPS->SubWidthC();
+        pcSPS->conf_win_top_offset   = GetVLCElementU()*pcSPS->SubHeightC();
+        pcSPS->conf_win_bottom_offset = GetVLCElementU()*pcSPS->SubHeightC();
 
         if (pcSPS->conf_win_left_offset + pcSPS->conf_win_right_offset >= pcSPS->pic_width_in_luma_samples)
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
@@ -842,10 +844,10 @@ void H265HeadersBitstream::parseVUI(H265SeqParamSet *pSPS)
     pSPS->default_display_window_flag = Get1Bit();
     if (pSPS->default_display_window_flag)
     {
-        pSPS->def_disp_win_left_offset   = GetVLCElementU()*H265SeqParamSet::getWinUnitX(pSPS->chroma_format_idc);
-        pSPS->def_disp_win_right_offset  = GetVLCElementU()*H265SeqParamSet::getWinUnitX(pSPS->chroma_format_idc);
-        pSPS->def_disp_win_top_offset    = GetVLCElementU()*H265SeqParamSet::getWinUnitY(pSPS->chroma_format_idc);
-        pSPS->def_disp_win_bottom_offset = GetVLCElementU()*H265SeqParamSet::getWinUnitY(pSPS->chroma_format_idc);
+        pSPS->def_disp_win_left_offset   = GetVLCElementU()*pSPS->SubWidthC();
+        pSPS->def_disp_win_right_offset  = GetVLCElementU()*pSPS->SubWidthC();
+        pSPS->def_disp_win_top_offset    = GetVLCElementU()*pSPS->SubHeightC();
+        pSPS->def_disp_win_bottom_offset = GetVLCElementU()*pSPS->SubHeightC();
 
         if (pSPS->def_disp_win_left_offset + pSPS->def_disp_win_right_offset >= pSPS->pic_width_in_luma_samples)
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);

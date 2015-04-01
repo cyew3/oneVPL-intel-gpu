@@ -26,7 +26,7 @@ class H265DecYUVBufferPadded
 {
 public:
 
-    Ipp32s  m_chroma_format; // AVC standard value chroma_format_idc
+    Ipp32s  m_chroma_format; // standard value chroma_format_idc
 
     PlanePtrY               m_pYPlane;
 
@@ -48,7 +48,7 @@ public:
 
     // Allocate memory and initialize frame plane pointers and pitches.
     // Used for temporary picture buffers, e.g. residuals.
-    void create(Ipp32u PicWidth, Ipp32u PicHeight, Ipp32u ElementSizeY, Ipp32u ElementSizeUV);
+    void createPredictionBuffer(const H265SeqParamSet * sps);
     // Deallocate planes memory
     void destroy();
 

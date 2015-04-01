@@ -332,7 +332,7 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
         m_CodingData->m_WidthInCU != widthInCU  || m_CodingData->m_HeightInCU != heightInCU || m_CodingData->m_MaxCUDepth != MaxCUDepth)
     {
         m_CodingData->destroy();
-        m_CodingData->create(m_lumaSize.width, m_lumaSize.height, MaxCUSize, MaxCUSize, sps->MaxCUDepth);
+        m_CodingData->create(m_lumaSize.width, m_lumaSize.height, sps);
 
         delete[] m_cuOffsetY;
 
@@ -352,7 +352,7 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
             for (Ipp32s cuCol = 0; cuCol < NumCUInWidth; cuCol++)
             {
                 m_cuOffsetY[cuRow * NumCUInWidth + cuCol] = m_pitch_luma * cuRow * MaxCUSize + cuCol * MaxCUSize;
-                m_cuOffsetC[cuRow * NumCUInWidth + cuCol] = m_pitch_chroma * cuRow * (MaxCUSize / 2) + cuCol * (MaxCUSize);
+                m_cuOffsetC[cuRow * NumCUInWidth + cuCol] = m_pitch_chroma * cuRow * (MaxCUSize / sps->SubHeightC()) + cuCol * MaxCUSize;
 
                 m_cuOffsetY[cuRow * NumCUInWidth + cuCol] *= pixelSize;
                 m_cuOffsetC[cuRow * NumCUInWidth + cuCol] *= pixelSize;
@@ -366,13 +366,14 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
         {
             for (Ipp32s buCol = 0; buCol < (1 << MaxCUDepth); buCol++)
             {
-                m_buOffsetY[(buRow << MaxCUDepth) + buCol] = m_pitch_luma * buRow * (MaxCUSize >> MaxCUDepth) + buCol * (MaxCUSize  >> MaxCUDepth);
-                m_buOffsetC[(buRow << MaxCUDepth) + buCol] = m_pitch_chroma * buRow * (MaxCUSize / 2 >> MaxCUDepth) + buCol * (MaxCUSize >> MaxCUDepth);
+                Ipp32s buRowOffset = buRow * (MaxCUSize >> MaxCUDepth);
+                m_buOffsetY[(buRow << MaxCUDepth) + buCol] = m_pitch_luma * buRowOffset + buCol * (MaxCUSize  >> MaxCUDepth);
+                m_buOffsetC[(buRow << MaxCUDepth) + buCol] = m_pitch_chroma * buRowOffset / sps->SubHeightC() + buCol * (MaxCUSize >> MaxCUDepth);
 
                 m_buOffsetY[(buRow << MaxCUDepth) + buCol] *= pixelSize;
                 m_buOffsetC[(buRow << MaxCUDepth) + buCol] *= pixelSize;
             }
-        }
+        }    
     }
 
     m_CodingData->m_CUOrderMap = pps->m_CtbAddrTStoRS;
@@ -463,18 +464,6 @@ PlanePtrY H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr) const
 }
 
 //  Access starting position of original picture for specific coding unit (CU)
-PlanePtrUV H265DecoderFrame::GetCbAddr(Ipp32s CUAddr) const
-{
-    return m_pUPlane + m_cuOffsetC[CUAddr];
-}
-
-//  Access starting position of original picture for specific coding unit (CU)
-PlanePtrUV H265DecoderFrame::GetCrAddr(Ipp32s CUAddr) const
-{
-    return m_pVPlane + m_cuOffsetC[CUAddr];
-}
-
-//  Access starting position of original picture for specific coding unit (CU)
 PlanePtrUV H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr) const
 {
     // Chroma offset is already multiplied to chroma pitch (double for NV12)
@@ -486,18 +475,6 @@ PlanePtrUV H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr) const
 PlanePtrY H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
     return m_pYPlane + m_cuOffsetY[CUAddr] + m_buOffsetY[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];
-}
-
-//  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-PlanePtrUV H265DecoderFrame::GetCbAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
-{
-    return m_pUPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];
-}
-
-//  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-PlanePtrUV H265DecoderFrame::GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
-{
-    return m_pVPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];
 }
 
 //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)

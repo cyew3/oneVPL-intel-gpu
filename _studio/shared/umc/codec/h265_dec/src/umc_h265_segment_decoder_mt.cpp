@@ -272,15 +272,16 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb, Ipp32s en
     H265DecoderFrame * pCurrentFrame = m_pSlice->GetCurrentFrame();
     Ipp32s mb_width = m_pSlice->GetSeqParam()->WidthInCU;
 
-    Ipp32s cuSize = m_pSlice->GetSeqParam()->MaxCUSize;
+    IppiSize cuSize;
+    cuSize.width = cuSize.height = m_pSlice->GetSeqParam()->MaxCUSize;
     IppiSize picSize = {m_pSlice->GetSeqParam()->pic_width_in_luma_samples, m_pSlice->GetSeqParam()->pic_height_in_luma_samples};
 
     Ipp32s offsetX, offsetY;
-    offsetX = (startMb % mb_width) * cuSize;
-    offsetY = (startMb / mb_width) * cuSize;
+    offsetX = (startMb % mb_width) * cuSize.height;
+    offsetY = (startMb / mb_width) * cuSize.height;
 
-    Ipp32s offsetXL = ((endMb - 1) % mb_width) * cuSize;
-    Ipp32s offsetYL = ((endMb - 1) / mb_width) * cuSize;
+    Ipp32s offsetXL = ((endMb - 1) % mb_width) * cuSize.height;
+    Ipp32s offsetYL = ((endMb - 1) / mb_width) * cuSize.height;
 
     if (refFrame && refFrame->m_pYPlane)
     {
@@ -303,12 +304,13 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb, Ipp32s en
             offsetY >>= 1;
             offsetYL >>= 1;
 
-            cuSize >>= 1;
+            cuSize.width >>= 1;
+            cuSize.height >>= 1;
 
             picSize.height >>= 1;
             break;
         case CHROMA_FORMAT_422: // YUV422
-            cuSize >>= 1;
+            //cuSize.width >>= 1;
             break;
         case CHROMA_FORMAT_444: // YUV444
             break;
@@ -343,7 +345,8 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb, Ipp32s en
             offsetXL >>= 1;
             offsetYL >>= 1;
 
-            cuSize >>= 1;
+            cuSize.width >>= 1;
+            cuSize.height >>= 1;
 
             picSize.width >>= 1;
             picSize.height >>= 1;
@@ -352,7 +355,7 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb, Ipp32s en
             offsetX >>= 1;
             offsetXL >>= 1;
 
-            cuSize >>= 1;
+            cuSize.width >>= 1;
 
             picSize.width >>= 1;
             break;
@@ -906,9 +909,19 @@ class ReconstructorT : public ReconstructorBase
 {
 public:
 
+    ReconstructorT(Ipp32s chromaFormat)
+        : m_chromaFormat(chromaFormat)
+    {
+    }
+
     virtual bool Is8BitsReconstructor() const
     {
         return !bitDepth;
+    }
+
+    virtual Ipp32s GetChromaFormat() const
+    {
+        return m_chromaFormat;
     }
 
     // Do luma intra prediction
@@ -933,11 +946,14 @@ public:
 
     virtual void CopyPartOfFrameFromRef(PlanePtrY pRefPlane, PlanePtrY pCurrentPlane, Ipp32s pitch,
         Ipp32s offsetX, Ipp32s offsetY, Ipp32s offsetXL, Ipp32s offsetYL,
-        Ipp32s cuSize, IppiSize frameSize);
+        IppiSize cuSize, IppiSize frameSize);
 
     virtual void ReconstructPCMBlock(PlanePtrY luma, Ipp32s pitchLuma, Ipp32u PcmLeftShiftBitLuma, PlanePtrY chroma, Ipp32s pitchChroma, Ipp32u PcmLeftShiftBitChroma, CoeffsPtr *pcm, Ipp32u size);
 
     virtual void DecodePCMBlock(H265Bitstream *bitStream, CoeffsPtr *pcm, Ipp32u size, Ipp32u sampleBits);
+
+private:
+    Ipp32s m_chromaFormat;
 };
 
 #pragma warning(disable: 4127)
@@ -961,15 +977,17 @@ void ReconstructorT<bitDepth, H265PlaneType>::ReconstructPCMBlock(PlanePtrY luma
         plane += pitchLuma;
     }
 
+    Ipp32u isChroma422 = GetChromaFormat() == CHROMA_FORMAT_422 ? 1 : 0;
+
     size >>= 1;
     H265PlaneType * coeffsU = (H265PlaneType *)*pcm;
-    *pcm += size*size*sizeof(H265PlaneType);
+    *pcm += (size*size*sizeof(H265PlaneType)) << isChroma422;
     H265PlaneType * coeffsV = (H265PlaneType *)*pcm;
-    *pcm += size*size*sizeof(H265PlaneType);
+    *pcm += (size*size*sizeof(H265PlaneType)) << isChroma422;
 
     plane = (H265PlaneType *)chroma;
 
-    for (Ipp32u Y = 0; Y < size; Y++)
+    for (Ipp32u Y = 0; Y < (size << isChroma422); Y++)
     {
         for (Ipp32u X = 0; X < size; X++)
         {
@@ -1048,13 +1066,14 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeLuma(H265EdgeData *edge,
     }
 }
 
-#define   QpUV(iQpY)  ( ((iQpY) < 0) ? (iQpY) : (((iQpY) > 57) ? ((iQpY)-6) : g_ChromaScale[(iQpY)]) )
+#define   QpUV(iQpY)  ( ((iQpY) < 0) ? (iQpY) : (((iQpY) > 57) ? ((iQpY)-6) : g_ChromaScale[chromaScaleIndex][(iQpY)]) )
 
 // Chroma deblocking edge filter
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeChroma(H265EdgeData *edge, PlaneY *srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir,
                                                                Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32u bit_depth)
 {
+    Ipp32s chromaScaleIndex = GetChromaFormat() != CHROMA_FORMAT_420 ? 1 : 0;
     if (bitDepth)
     {
         Ipp16u* srcDst_ = (Ipp16u*)srcDst;
@@ -1196,27 +1215,27 @@ void ReconstructorT<bitDepth, H265PlaneType>::GetPredPelsChromaNV12(PlaneY* pSrc
     H265PlaneType * src = (H265PlaneType *)pSrc;
     H265PlaneType * pels = (H265PlaneType *)PredPel;
 
-    h265_GetPredPelsChromaNV12(src, pels, blkSize, srcPitch, tpIf, lfIf, tlIf, bit_depth);
+    h265_GetPredPelsChromaNV12(src, pels, this->m_chromaFormat == CHROMA_FORMAT_422 ? 1 : 0, blkSize, srcPitch, tpIf, lfIf, tlIf, bit_depth);
 }
 
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::CopyPartOfFrameFromRef(PlanePtrY refPlane, PlanePtrY currentPlane, Ipp32s pitch,
     Ipp32s offsetX, Ipp32s offsetY, Ipp32s offsetXL, Ipp32s offsetYL,
-    Ipp32s cuSize, IppiSize picSize)
+    IppiSize cuSize, IppiSize picSize)
 {
     H265PlaneType *pRefPlane = (H265PlaneType*)refPlane;
     H265PlaneType *pCurrentPlane = (H265PlaneType*)currentPlane;
     IppiSize roiSize;
 
-    roiSize.height = cuSize;
+    roiSize.height = cuSize.height;
     roiSize.width = picSize.width - offsetX;
     Ipp32s offset = offsetX + offsetY*pitch;
 
-    offsetXL += cuSize;
+    offsetXL += cuSize.width;
     if (offsetXL > picSize.width)
         offsetXL = picSize.width;
 
-    if (offsetYL + cuSize > picSize.height)
+    if (offsetY + cuSize.height > picSize.height)
         roiSize.height = picSize.height - offsetY;
 
     if (offsetYL == offsetY)
@@ -1239,6 +1258,9 @@ void ReconstructorT<bitDepth, H265PlaneType>::CopyPartOfFrameFromRef(PlanePtrY r
 
     if (offsetYL > offsetY)
     {
+        if (offsetYL + cuSize.height > picSize.height)
+            roiSize.height = picSize.height - offsetYL;
+
         roiSize.width = offsetXL;
         offset = offsetYL*pitch;
 
@@ -1256,11 +1278,11 @@ void ReconstructorT<bitDepth, H265PlaneType>::CopyPartOfFrameFromRef(PlanePtrY r
         }
     }
 
-    if (offsetYL - offsetY > cuSize)
+    if (offsetYL - offsetY > cuSize.height)
     {
-        roiSize.height = offsetYL - offsetY - cuSize;
+        roiSize.height = offsetYL - offsetY - cuSize.height;
         roiSize.width = picSize.width;
-        offset = (offsetY + cuSize)*pitch;
+        offset = (offsetY + cuSize.height)*pitch;
 
         if (pRefPlane)
         {
@@ -1285,11 +1307,11 @@ void H265SegmentDecoderMultiThreaded::CreateReconstructor()
 
     if (m_pSeqParamSet->need16bitOutput)
     {
-        m_reconstructor.reset(new ReconstructorT<true, Ipp16u>);
+        m_reconstructor.reset(new ReconstructorT<true, Ipp16u>(m_pSeqParamSet->ChromaArrayType));
     }
     else
     {
-        m_reconstructor.reset(new ReconstructorT<false, Ipp8u>);
+        m_reconstructor.reset(new ReconstructorT<false, Ipp8u>(m_pSeqParamSet->ChromaArrayType));
     }
 }
 

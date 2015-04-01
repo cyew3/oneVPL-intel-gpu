@@ -77,6 +77,8 @@ public:
 
     virtual bool Is8BitsReconstructor() const = 0;
 
+    virtual Ipp32s GetChromaFormat() const = 0;
+
     // Do luma intra prediction
     virtual void PredictIntra(Ipp32s predMode, PlanePtrY PredPel, PlanePtrY pRec, Ipp32s pitch, Ipp32s width, Ipp32u bit_depth) = 0;
 
@@ -100,7 +102,7 @@ public:
 
     virtual void CopyPartOfFrameFromRef(PlanePtrY pRefPlane, PlanePtrY pCurrentPlane, Ipp32s pitch,
         Ipp32s offsetX, Ipp32s offsetY, Ipp32s offsetXL, Ipp32s offsetYL,
-        Ipp32s cuSize, IppiSize frameSize) = 0;
+        IppiSize cuSize, IppiSize frameSize) = 0;
 
     virtual void DecodePCMBlock(H265Bitstream *bitStream, CoeffsPtr *pcm, Ipp32u size, Ipp32u sampleBits) = 0;
 

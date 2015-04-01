@@ -286,7 +286,7 @@ namespace MFX_HEVC_PP
         }
     }
 
-    void h265_GetPredPelsChromaNV12_8u(Ipp8u* pSrc, Ipp8u* pPredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf)
+    void h265_GetPredPelsChromaNV12_8u(Ipp8u* pSrc, Ipp8u* pPredPel, Ipp8u isChroma422, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf)
     {
         Ipp8u* tmpSrcPtr;
         Ipp32s num4x4InCU   = blkSize >> 2;
@@ -295,6 +295,7 @@ namespace MFX_HEVC_PP
         Ipp32s i, j;
 
         Ipp32u avlMask  = (((Ipp32u)(1<<((num4x4InCU)<<1)))-1);
+        Ipp8u  leftFlagShift = isChroma422 ? 1 : 2;
 
         tpIf &= avlMask; lfIf &= avlMask;
 
@@ -330,7 +331,7 @@ namespace MFX_HEVC_PP
                 if(tIF) {
                     // padding from the last of left values
                     tmpSrcPtr = pSrc - 2;
-                    while((tIF & 0x1)==0) { tIF >>= 2; tmpSrcPtr += (srcPitch << 2); }
+                    while((tIF & 0x1)==0) { tIF >>= leftFlagShift; tmpSrcPtr += (srcPitch << 2); }
                     RefV = *(tmpSrcPtr);
                     RefU = *(tmpSrcPtr+1);
                 } else {
@@ -395,7 +396,7 @@ namespace MFX_HEVC_PP
                         tmpSrcPtr += (srcPitch << 2);
                         tPredPel += 8;
                     }
-                    tIF >>= 2;
+                    tIF >>= leftFlagShift;
                 }
                 // Back-sweep filling holes
                 tPredPel--;

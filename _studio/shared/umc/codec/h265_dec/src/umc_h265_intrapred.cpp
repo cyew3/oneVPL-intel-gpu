@@ -37,10 +37,6 @@ namespace UMC_HEVC_DECODER
         }
 
         Ipp32u ChromaPredMode = m_cu->GetChromaIntra(AbsPartIdx);
-        if (ChromaPredMode == INTRA_DM_CHROMA_IDX)
-        {
-            ChromaPredMode = m_cu->GetLumaIntra(AbsPartIdx);
-        }
 
         for (Ipp32u PU = 0; PU < NumPart; PU++)
         {
@@ -68,8 +64,11 @@ namespace UMC_HEVC_DECODER
             Ipp32u tpIf = m_context->m_RecTpIntraFlags[YInc] >> (XInc);
 
             IntraRecLumaBlk(TrDepth, AbsPartIdx, tpIf, lfIf, tlIf);
-            if (Size == 4) {
 
+            UpdateRecNeighboursBuffersN(XInc, YInc, Size, true);
+
+            if (Size == 4)
+            {
                 if ((AbsPartIdx & 0x03) == 0)
                 {
                     // save flags because UpdateRecNeighboursBuffersN will change it
@@ -85,8 +84,6 @@ namespace UMC_HEVC_DECODER
             } else {
                 IntraRecChromaBlk(TrDepth, AbsPartIdx, ChromaPredMode, tpIf, lfIf, tlIf);
             }
-
-            UpdateRecNeighboursBuffersN(XInc, YInc, Size, true);
         }
         else
         {
@@ -205,123 +202,113 @@ namespace UMC_HEVC_DECODER
         bool chromaUPresent = m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrDepth) != 0;
         bool chromaVPresent = m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrDepth) != 0;
 
-        if (!chromaUPresent && !chromaVPresent)
-            return;
+        bool chromaUPresent1 = 0;
+        bool chromaVPresent1 = 0;
 
-        // Inverse transform and addition of residual and prediction
-        Ipp32u residualPitch = m_ppcYUVResi->pitch_chroma() >> 1;
-
-        // Cb
-        if (chromaUPresent)
+        if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422)
         {
-            CoeffsPtr pCoeff = m_context->m_coeffsRead;
-            m_context->m_coeffsRead += Size*Size;
-
-            CoeffsPtr pResi = (CoeffsPtr)m_ppcYUVResi->m_pUPlane;
-            bool useTransformSkip = m_cu->GetTransformSkip(COMPONENT_CHROMA_U, AbsPartIdx) != 0;
-            m_TrQuant->InvTransformNxN(m_cu->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_U, REG_DCT,
-                pResi, residualPitch, pCoeff, Size, useTransformSkip);
+            chromaUPresent1 = m_cu->GetCbf(COMPONENT_CHROMA_U1, AbsPartIdx, TrDepth) != 0;
+            chromaVPresent1 = m_cu->GetCbf(COMPONENT_CHROMA_V1, AbsPartIdx, TrDepth) != 0;
         }
 
-        // Cr
-        if (chromaVPresent)
+        if (chromaUPresent || chromaVPresent || chromaUPresent1 || chromaVPresent1)
         {
-            CoeffsPtr pCoeff = m_context->m_coeffsRead;
-            m_context->m_coeffsRead += Size*Size;
+            // Inverse transform and addition of residual and prediction
+            Ipp32u residualPitch = m_ppcYUVResi->pitch_chroma() >> 1;
 
-            CoeffsPtr pResi = (CoeffsPtr)m_ppcYUVResi->m_pVPlane;
-            bool useTransformSkip = m_cu->GetTransformSkip(COMPONENT_CHROMA_V, AbsPartIdx) != 0;
-            m_TrQuant->InvTransformNxN(m_cu->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_V, REG_DCT,
-                pResi, residualPitch, pCoeff, Size, useTransformSkip);
-        }
-/*
-        //===== reconstruction =====
-        {
+            // Cb
+            if (chromaUPresent)
+            {
+                CoeffsPtr pCoeff = m_context->m_coeffsRead;
+                m_context->m_coeffsRead += Size*Size;
+
+                CoeffsPtr pResi = (CoeffsPtr)m_ppcYUVResi->m_pUPlane;
+                bool useTransformSkip = m_cu->GetTransformSkip(COMPONENT_CHROMA_U, AbsPartIdx) != 0;
+                m_TrQuant->InvTransformNxN(m_cu->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_U, REG_DCT,
+                    pResi, residualPitch, pCoeff, Size, useTransformSkip);
+            }
+
+            if (chromaUPresent1)
+            {
+                CoeffsPtr pCoeff = m_context->m_coeffsRead;
+                m_context->m_coeffsRead += Size*Size;
+
+                CoeffsPtr pResi = (CoeffsPtr)m_ppcYUVResi->m_pUPlane + Size*residualPitch;
+                bool useTransformSkip = m_cu->GetTransformSkip(COMPONENT_CHROMA_U1, AbsPartIdx) != 0;
+                m_TrQuant->InvTransformNxN(m_cu->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_U, REG_DCT,
+                    pResi, residualPitch, pCoeff, Size, useTransformSkip);
+            }
+
+            // Cr
+            if (chromaVPresent)
+            {
+                CoeffsPtr pCoeff = m_context->m_coeffsRead;
+                m_context->m_coeffsRead += Size*Size;
+
+                CoeffsPtr pResi = (CoeffsPtr)m_ppcYUVResi->m_pVPlane;
+                bool useTransformSkip = m_cu->GetTransformSkip(COMPONENT_CHROMA_V, AbsPartIdx) != 0;
+                m_TrQuant->InvTransformNxN(m_cu->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_V, REG_DCT,
+                    pResi, residualPitch, pCoeff, Size, useTransformSkip);
+            }
+
+            if (chromaVPresent1)
+            {
+                CoeffsPtr pCoeff = m_context->m_coeffsRead;
+                m_context->m_coeffsRead += Size*Size;
+
+                CoeffsPtr pResi = (CoeffsPtr)m_ppcYUVResi->m_pVPlane + Size*residualPitch;
+                bool useTransformSkip = m_cu->GetTransformSkip(COMPONENT_CHROMA_V1, AbsPartIdx) != 0;
+                m_TrQuant->InvTransformNxN(m_cu->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_V, REG_DCT,
+                    pResi, residualPitch, pCoeff, Size, useTransformSkip);
+            }
+
             CoeffsPtr p_ResiU = (CoeffsPtr)m_ppcYUVResi->m_pUPlane;
             CoeffsPtr p_ResiV = (CoeffsPtr)m_ppcYUVResi->m_pVPlane;
 
-            switch ((chromaVPresent << 1) | chromaUPresent) {
-
-            case ((0 << 1) | 1):    // U only
-
-                for (Ipp32u y = 0; y < Size; y++)
-                {
-                    for (Ipp32u x = 0; x < Size; x += 4)
-                    {
-                        __m128i ResiU = _mm_loadl_epi64((__m128i *)&p_ResiU[x]);
-                        __m128i ResiV = _mm_setzero_si128();
-                        __m128i IPred = _mm_loadl_epi64((__m128i *)&pRecIPred[2*x]);
-
-                        IPred = _mm_cvtepu8_epi16(IPred);
-                        ResiU = _mm_unpacklo_epi16(ResiU, ResiV);
-                        IPred = _mm_add_epi16(IPred, ResiU);
-                        IPred = _mm_packus_epi16(IPred, IPred);
-
-                        _mm_storel_epi64((__m128i *)&pRecIPred[2*x], IPred);
-                    }
-                    p_ResiU += residualPitch;
-                    p_ResiV += residualPitch;
-                    pRecIPred += RecIPredStride;
-                }
-                break;
-
-            case ((1 << 1) | 0):    // V only
-
-                for (Ipp32u y = 0; y < Size; y++)
-                {
-                    for (Ipp32u x = 0; x < Size; x += 4)
-                    {
-                        __m128i ResiU = _mm_setzero_si128();
-                        __m128i ResiV = _mm_loadl_epi64((__m128i *)&p_ResiV[x]);
-                        __m128i IPred = _mm_loadl_epi64((__m128i *)&pRecIPred[2*x]);
-
-                        IPred = _mm_cvtepu8_epi16(IPred);
-                        ResiU = _mm_unpacklo_epi16(ResiU, ResiV);
-                        IPred = _mm_add_epi16(IPred, ResiU);
-                        IPred = _mm_packus_epi16(IPred, IPred);
-
-                        _mm_storel_epi64((__m128i *)&pRecIPred[2*x], IPred);
-                    }
-                    p_ResiU += residualPitch;
-                    p_ResiV += residualPitch;
-                    pRecIPred += RecIPredStride;
-                }
-                break;
-
-            case ((1 << 1) | 1):    // both U and V
-
-                for (Ipp32u y = 0; y < Size; y++)
-                {
-                    for (Ipp32u x = 0; x < Size; x += 4)
-                    {
-                        __m128i ResiU = _mm_loadl_epi64((__m128i *)&p_ResiU[x]);        // load 4x16
-                        __m128i ResiV = _mm_loadl_epi64((__m128i *)&p_ResiV[x]);        // load 4x16
-                        __m128i IPred = _mm_loadl_epi64((__m128i *)&pRecIPred[2*x]);    // load 8x8
-
-                        IPred = _mm_cvtepu8_epi16(IPred);           // zero-extend
-                        ResiU = _mm_unpacklo_epi16(ResiU, ResiV);   // interleave residuals
-                        IPred = _mm_add_epi16(IPred, ResiU);        // add residuals
-                        IPred = _mm_packus_epi16(IPred, IPred);     // ClipC()
-
-                        _mm_storel_epi64((__m128i *)&pRecIPred[2*x], IPred);
-                    }
-                    p_ResiU += residualPitch;
-                    p_ResiV += residualPitch;
-                    pRecIPred += RecIPredStride;
-                }
-                break;
+            if (chromaUPresent || chromaVPresent)
+            {
+                if (m_pSeqParamSet->need16bitOutput)
+                    SumOfResidAndPred<Ipp16u>(p_ResiU, p_ResiV, residualPitch, (Ipp16u*)pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
+                else
+                    SumOfResidAndPred<Ipp8u>(p_ResiU, p_ResiV, residualPitch, pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
             }
         }
-*/
-        //===== reconstruction =====
-          {
-            CoeffsPtr p_ResiU = (CoeffsPtr)m_ppcYUVResi->m_pUPlane;
-            CoeffsPtr p_ResiV = (CoeffsPtr)m_ppcYUVResi->m_pVPlane;
 
-            if (m_pSeqParamSet->need16bitOutput)
-                SumOfResidAndPred<Ipp16u>(p_ResiU, p_ResiV, residualPitch, (Ipp16u*)pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
-            else
-                SumOfResidAndPred<Ipp8u>(p_ResiU, p_ResiV, residualPitch, pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
+        if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422)
+        {
+            Ipp32u num4x4InCU = m_cu->GetWidth(AbsPartIdx) >> TrDepth >> 2;
+
+            Ipp32s XInc = m_cu->m_rasterToPelX[AbsPartIdx] >> 2;
+            Ipp32s YInc = m_cu->m_rasterToPelY[AbsPartIdx] >> 2;
+
+            YInc += num4x4InCU >> 1;
+            Ipp32s diagId = XInc + (m_pSeqParamSet->MaxCUSize >> 2) - YInc - 1;
+
+            lfIf = m_context->m_RecLfIntraFlags[XInc] >> (YInc);
+            tlIf = (*m_context->m_RecTLIntraFlags >> diagId) & 0x1;
+            tpIf = m_context->m_RecTpIntraFlags[YInc] >> (XInc);
+
+            tlIf = lfIf & 0x01;
+
+            Ipp32u bottomOffset = (Size*RecIPredStride) << m_pSeqParamSet->need16bitOutput;
+
+            m_reconstructor->GetPredPelsChromaNV12(m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx) + bottomOffset,
+                PredPel, 2*Size, m_pCurrentFrame->pitch_chroma(), tpIf, lfIf, tlIf, m_pSeqParamSet->bit_depth_chroma);
+
+            m_reconstructor->PredictIntraChroma(ChromaPredMode, PredPel, pRecIPred + bottomOffset, RecIPredStride, Size);
+
+            if (chromaUPresent1 || chromaVPresent1)
+            {
+                Ipp32u residualPitch = m_ppcYUVResi->pitch_chroma() >> 1;
+                Ipp32u bottomResOffset = Size*residualPitch;
+                CoeffsPtr p_ResiU = (CoeffsPtr)m_ppcYUVResi->m_pUPlane + bottomResOffset;
+                CoeffsPtr p_ResiV = (CoeffsPtr)m_ppcYUVResi->m_pVPlane + bottomResOffset;
+
+                if (m_pSeqParamSet->need16bitOutput)
+                    SumOfResidAndPred<Ipp16u>(p_ResiU, p_ResiV, residualPitch, (Ipp16u*)(pRecIPred + bottomOffset), RecIPredStride, Size, chromaUPresent1, chromaVPresent1, m_pSeqParamSet->bit_depth_chroma);
+                else
+                    SumOfResidAndPred<Ipp8u>(p_ResiU, p_ResiV, residualPitch, pRecIPred + bottomOffset, RecIPredStride, Size, chromaUPresent1, chromaVPresent1, m_pSeqParamSet->bit_depth_chroma);
+            }
         }
     }
 } // end namespace UMC_HEVC_DECODER

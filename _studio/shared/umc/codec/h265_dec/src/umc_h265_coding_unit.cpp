@@ -35,6 +35,8 @@ H265CodingUnit::H265CodingUnit()
     m_cbf[0] = 0;
     m_cbf[1] = 0;
     m_cbf[2] = 0;
+    m_cbf[3] = 0;
+    m_cbf[4] = 0;
 }
 
 // CTB data structure destructor
@@ -168,6 +170,12 @@ void H265CodingUnit::setCbfSubParts(Ipp32u CbfY, Ipp32u CbfU, Ipp32u CbfV, Ipp32
     memset(m_cbf[0] + AbsPartIdx, CbfY, sizeof(Ipp8u) * CurrPartNumb);
     memset(m_cbf[1] + AbsPartIdx, CbfU, sizeof(Ipp8u) * CurrPartNumb);
     memset(m_cbf[2] + AbsPartIdx, CbfV, sizeof(Ipp8u) * CurrPartNumb);
+
+    if (m_cbf[3]) // null if not chroma 422
+    {
+        memset(m_cbf[3] + AbsPartIdx, CbfU, sizeof(Ipp8u) * CurrPartNumb);
+        memset(m_cbf[4] + AbsPartIdx, CbfV, sizeof(Ipp8u) * CurrPartNumb);
+    }
 }
 
 // Set CBF flags for one plane in CU partition
@@ -427,12 +435,13 @@ Ipp32u H265CodingUnit::getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool Is
         else
         {
             uiDirMode = GetChromaIntra(AbsPartIdx);
-            if (uiDirMode == INTRA_DM_CHROMA_IDX)
+            VM_ASSERT(uiDirMode != INTRA_DM_CHROMA_IDX);
+            /*if (uiDirMode == INTRA_DM_CHROMA_IDX)
             {
                 Ipp32u depth = GetDepth(AbsPartIdx);
                 Ipp32u numParts = m_NumPartition >> (depth << 1);
                 uiDirMode = GetLumaIntra((AbsPartIdx / numParts) * numParts);
-            }
+            }*/
             if (L2Width < 3)
             {
                 uiScanIdx = abs((Ipp32s)uiDirMode - INTRA_LUMA_VER_IDX) < 5 ? SCAN_HOR : (abs((Ipp32s)uiDirMode - INTRA_LUMA_HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);

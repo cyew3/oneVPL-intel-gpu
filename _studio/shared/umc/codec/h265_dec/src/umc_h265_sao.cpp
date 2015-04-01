@@ -209,8 +209,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::init(const H265SeqParamSet* sp
     m_TmpU[0] = h265_new_array_throw<PlaneType>(2*m_PicWidth);
     m_TmpU[1] = h265_new_array_throw<PlaneType>(2*m_PicWidth);
 
-    m_TmpL[0] = h265_new_array_throw<PlaneType>(2*SAO_PRED_SIZE);
-    m_TmpL[1] = h265_new_array_throw<PlaneType>(2*SAO_PRED_SIZE);
+    m_TmpL[0] = h265_new_array_throw<PlaneType>(3*SAO_PRED_SIZE);
+    m_TmpL[1] = h265_new_array_throw<PlaneType>(3*SAO_PRED_SIZE);
 
     // Temporary buffer to store PCM and tranquant bypass samples which may require to be skipped in filtering
     m_tempPCMBuffer = h265_new_array_throw<PlaneType>((64*64 *3) /2); // one CU data
@@ -229,18 +229,10 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuOrgChroma(Ipp32s a
     Ipp32s tmpUpBuff1[66];
     Ipp32s tmpUpBuff2[66];
     Ipp32s stride;
-    Ipp32s LCUWidth  = m_MaxCUSize;
-    Ipp32s LCUHeight = m_MaxCUSize;
-    Ipp32s LPelX     = (Ipp32s)pTmpCu->m_CUPelX;
-    Ipp32s TPelY     = (Ipp32s)pTmpCu->m_CUPelY;
-    Ipp32s RPelX;
-    Ipp32s BPelY;
     Ipp32s signLeftCb, signLeftCr;
     Ipp32s signRightCb, signRightCr;
     Ipp32s signDownCb, signDownCr;
     Ipp32u edgeTypeCb, edgeTypeCr;
-    Ipp32s picWidthTmp;
-    Ipp32s picHeightTmp;
     Ipp32s startX;
     Ipp32s startY;
     Ipp32s endX;
@@ -252,14 +244,14 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuOrgChroma(Ipp32s a
     PlaneType* pOffsetBoCb = m_OffsetBoChroma;
     PlaneType* pOffsetBoCr = m_OffsetBo2Chroma;
 
-    picWidthTmp  = m_PicWidth;
-    picHeightTmp = m_PicHeight >> 1;
-    LCUWidth     = LCUWidth;
-    LCUHeight    = LCUHeight   >> 1;
-    LPelX        = LPelX;
-    TPelY        = TPelY       >> 1;
-    RPelX        = LPelX + LCUWidth;
-    BPelY        = TPelY + LCUHeight;
+    Ipp32s picWidthTmp  = m_PicWidth;
+    Ipp32s picHeightTmp = m_PicHeight >> m_sps->chromaShiftH;
+    Ipp32s LCUWidth     = m_MaxCUSize;
+    Ipp32s LCUHeight    = m_MaxCUSize   >> m_sps->chromaShiftH;
+    Ipp32s LPelX        = (Ipp32s)pTmpCu->m_CUPelX;
+    Ipp32s TPelY        = (Ipp32s)pTmpCu->m_CUPelY >> m_sps->chromaShiftH;
+    Ipp32s RPelX        = LPelX + LCUWidth;
+    Ipp32s BPelY        = TPelY + LCUHeight;
     RPelX        = RPelX > picWidthTmp  ? picWidthTmp  : RPelX;
     BPelY        = BPelY > picHeightTmp ? picHeightTmp : BPelY;
     LCUWidth     = RPelX - LPelX;
@@ -484,11 +476,11 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuChroma(Ipp32s addr
     Ipp32s startStride;
 
     picWidthTmp  = m_PicWidth;
-    picHeightTmp = m_PicHeight >> 1;
+    picHeightTmp = m_PicHeight >> m_sps->chromaShiftH;
     LCUWidth     = LCUWidth;
-    LCUHeight    = LCUHeight   >> 1;
+    LCUHeight    = LCUHeight   >> m_sps->chromaShiftH;
     LPelX        = LPelX;
-    TPelY        = TPelY       >> 1;
+    TPelY        = TPelY       >> m_sps->chromaShiftH;
     RPelX        = LPelX + LCUWidth;
     BPelY        = TPelY + LCUHeight;
     RPelX        = RPelX > picWidthTmp  ? picWidthTmp  : RPelX;
@@ -814,13 +806,13 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
     Ipp32s picHeightTmp = m_PicHeight;
 
     Ipp32s CUHeight = LCUHeight + 1;
-    Ipp32s CUHeightChroma = (LCUHeight>>1) + 1;
+    Ipp32s CUHeightChroma = (LCUHeight >> m_sps->chromaShiftH) + 1;
     Ipp32s idxY = firstCU / frameWidthInCU;
 
     if ((idxY * LCUHeight + CUHeight) > picHeightTmp)
     {
         CUHeight = picHeightTmp - idxY * LCUHeight;
-        CUHeightChroma = CUHeight >> 1;
+        CUHeightChroma = CUHeight >> m_sps->chromaShiftH;
     }
 
     PlaneType* rec = (PlaneType*)m_Frame->GetLumaAddr(firstCU);
@@ -996,7 +988,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoUnits(Ipp32s firstCU
             PlaneType* pRec = (PlaneType*)m_Frame->GetLumaAddr(firstCU) + (LCUHeight - 1)*m_Frame->pitch_luma();
             MFX_INTERNAL_CPY(m_TmpU[1], pRec, sizeof(PlaneType) * picWidthTmp);
 
-            pRec = (PlaneType*)m_Frame->GetCbCrAddr(firstCU) + ((LCUHeight >> 1)- 1)*m_Frame->pitch_chroma();
+            pRec = (PlaneType*)m_Frame->GetCbCrAddr(firstCU) + ((LCUHeight >> m_sps->chromaShiftH)- 1)*m_Frame->pitch_chroma();
             MFX_INTERNAL_CPY(m_TmpU[1] + picWidthTmp, pRec, sizeof(PlaneType) * picWidthTmp);
         }
 

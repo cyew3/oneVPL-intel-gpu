@@ -503,18 +503,15 @@ UMC::Status MFX_Utility::FillVideoParam(const H265SeqParamSet * seq, mfxVideoPar
     {
         par->mfx.FrameInfo.CropX = (mfxU16)(SubWidthC[seq->chroma_format_idc] * (seq->conf_win_left_offset + seq->def_disp_win_left_offset));
         par->mfx.FrameInfo.CropY = (mfxU16)(SubHeightC[seq->chroma_format_idc] * (seq->conf_win_top_offset + seq->def_disp_win_top_offset));
-        par->mfx.FrameInfo.CropH = (mfxU16)(par->mfx.FrameInfo.Height - SubHeightC[seq->chroma_format_idc] *
-            (seq->conf_win_top_offset + seq->conf_win_bottom_offset + seq->def_disp_win_top_offset + seq->def_disp_win_bottom_offset));
-
-        par->mfx.FrameInfo.CropW = (mfxU16)(par->mfx.FrameInfo.Width - SubWidthC[seq->chroma_format_idc] *
-            (seq->conf_win_left_offset + seq->conf_win_right_offset + seq->def_disp_win_left_offset + seq->def_disp_win_right_offset));
+        par->mfx.FrameInfo.CropH = (mfxU16)(par->mfx.FrameInfo.Height - (seq->conf_win_top_offset + seq->conf_win_bottom_offset + seq->def_disp_win_top_offset + seq->def_disp_win_bottom_offset));
+        par->mfx.FrameInfo.CropW = (mfxU16)(par->mfx.FrameInfo.Width - (seq->conf_win_left_offset + seq->conf_win_right_offset + seq->def_disp_win_left_offset + seq->def_disp_win_right_offset));
 
         par->mfx.FrameInfo.CropH -= (mfxU16)(par->mfx.FrameInfo.Height - seq->pic_height_in_luma_samples);
         par->mfx.FrameInfo.CropW -= (mfxU16)(par->mfx.FrameInfo.Width - seq->pic_width_in_luma_samples);
     }
 
     par->mfx.FrameInfo.PicStruct = (mfxU8) (seq->field_seq_flag  ? MFX_PICSTRUCT_UNKNOWN : MFX_PICSTRUCT_PROGRESSIVE);
-    par->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;//seq->chroma_format_idc;
+    par->mfx.FrameInfo.ChromaFormat = seq->chroma_format_idc;
 
     if (seq->aspect_ratio_info_present_flag || full)
     {

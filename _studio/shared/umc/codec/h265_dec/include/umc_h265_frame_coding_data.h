@@ -144,7 +144,7 @@ public:
         return m_colocatedInfo[partNumber];
     }
 
-    void create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiMaxWidth, Ipp32u uiMaxHeight, Ipp32u uiMaxDepth);
+    void create(Ipp32s iPicWidth, Ipp32s iPicHeight, const H265SeqParamSet* sps);
     void destroy();
     void initSAO(const H265SeqParamSet* sps);
 
