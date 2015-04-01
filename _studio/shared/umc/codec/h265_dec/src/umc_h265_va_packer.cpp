@@ -1279,7 +1279,7 @@ void PackerVA::CreateSliceDataBuffer(H265DecoderFrameInfo * sliceInfo)
         H265Bitstream *pBitstream = pSlice->GetBitStream();
 
         pBitstream->GetOrg((Ipp32u**)&pNalUnit, &NalUnitSize);
-        size += NalUnitSize;
+        size += NalUnitSize + 3;
     }
 
     AlignedNalUnitSize = align_value<Ipp32s>(size, 128);
