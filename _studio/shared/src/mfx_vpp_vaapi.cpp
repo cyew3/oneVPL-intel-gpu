@@ -19,6 +19,7 @@
 #include "libmfx_core_vaapi.h"
 #include "ippcore.h"
 #include "ippi.h"
+#include <algorithm>
 
 enum QueryStatus
 {
@@ -753,6 +754,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     {
         vaSts = vaDestroyBuffer(m_vaDisplay, m_deintFilterID);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        std::remove(m_filterBufs, m_filterBufs + m_numFilterBufs, m_deintFilterID);
         m_deintFilterID = VA_INVALID_ID;
         m_numFilterBufs--;
         m_filterBufs[m_numFilterBufs] = VA_INVALID_ID;
@@ -774,6 +776,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     {
         vaSts = vaDestroyBuffer(m_vaDisplay, m_frcFilterID);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        std::remove(m_filterBufs, m_filterBufs + m_numFilterBufs, m_frcFilterID);
         m_frcFilterID = VA_INVALID_ID;
         m_filterBufs[m_numFilterBufs] = VA_INVALID_ID;
         m_numFilterBufs--;
@@ -1048,6 +1051,7 @@ mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
     {
         vaSts = vaDestroyBuffer(m_vaDisplay, m_deintFilterID);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        std::remove(m_filterBufs, m_filterBufs + m_numFilterBufs, m_deintFilterID);
         m_deintFilterID = VA_INVALID_ID;
         m_numFilterBufs--;
         m_filterBufs[m_numFilterBufs] = VA_INVALID_ID;
