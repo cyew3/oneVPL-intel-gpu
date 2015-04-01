@@ -13,8 +13,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_h265_gaa", "sample_h
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_multi_transcode", "sample_multi_transcode\sample_multi_transcode.vcxproj", "{D93E83D0-A1F5-4C9B-9557-C2A968E2BF59}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mock_encoder_plugin", "sample_plugins\mock_encoder_plugin\mock_encoder_plugin.vcxproj", "{CEC17285-C2D9-4007-A423-F3DA8520260A}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_rotate_plugin", "sample_plugins\rotate_cpu\sample_rotate_plugin.vcxproj", "{1119372D-BA13-4730-AFF6-1994B26EFF6C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_plugin_opencl", "sample_plugins\rotate_opencl\sample_plugin_opencl.vcxproj", "{D5CCF0C0-32F6-4777-AA6C-6A249016DB26}"
@@ -81,14 +79,6 @@ Global
 		{D93E83D0-A1F5-4C9B-9557-C2A968E2BF59}.Release|Win32.Build.0 = Release|Win32
 		{D93E83D0-A1F5-4C9B-9557-C2A968E2BF59}.Release|x64.ActiveCfg = Release|x64
 		{D93E83D0-A1F5-4C9B-9557-C2A968E2BF59}.Release|x64.Build.0 = Release|x64
-		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Debug|Win32.ActiveCfg = Debug|Win32
-		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Debug|Win32.Build.0 = Debug|Win32
-		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Debug|x64.ActiveCfg = Debug|x64
-		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Debug|x64.Build.0 = Debug|x64
-		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Release|Win32.ActiveCfg = Release|Win32
-		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Release|Win32.Build.0 = Release|Win32
-		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Release|x64.ActiveCfg = Release|x64
-		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Release|x64.Build.0 = Release|x64
 		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug|Win32.ActiveCfg = Debug|Win32
 		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug|Win32.Build.0 = Debug|Win32
 		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug|x64.ActiveCfg = Debug|x64
@@ -129,6 +119,5 @@ Global
 		{1119372D-BA13-4730-AFF6-1994B26EFF6C} = {E4C0D92D-FE15-43AE-A86D-A9866C0A50E6}
 		{D5CCF0C0-32F6-4777-AA6C-6A249016DB26} = {E4C0D92D-FE15-43AE-A86D-A9866C0A50E6}
 		{D6D9A3B9-5DC0-4025-B27A-751F91AA462D} = {E4C0D92D-FE15-43AE-A86D-A9866C0A50E6}
-		{CEC17285-C2D9-4007-A423-F3DA8520260A} = {E4C0D92D-FE15-43AE-A86D-A9866C0A50E6}
 	EndGlobalSection
 EndGlobal
