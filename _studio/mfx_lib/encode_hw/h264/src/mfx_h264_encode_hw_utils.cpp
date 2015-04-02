@@ -4542,6 +4542,13 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
     mfxStatus checkSts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(bs);
 
+    if(IsOn(video.mfx.LowPower) && ctrl){
+        //VDEnc can't encode low QPs
+        if(ctrl->QP < 10){
+            ctrl->QP = 10;
+        }
+    }
+
     if (video.Protected == 0)
     {
         mfxU32 bufferSizeInKB = 0;

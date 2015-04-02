@@ -579,6 +579,10 @@ mfxStatus ImplementationAvc::Query(
     }
     else if (5 == queryMode)
     {
+#if defined(LOWPOWERENCODE_AVC)
+        if(IsOn(in->mfx.LowPower))
+            return QueryGuid(core, DXVA2_INTEL_LOWPOWERENCODE_AVC);
+#endif
         return QueryGuid(core, DXVA2_Intel_Encode_AVC);
     }
 
