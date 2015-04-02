@@ -118,6 +118,9 @@ OwnResizeFilter::OwnResizeFilter()
     m_pRGBSpec      = 0;
     m_pWorkBuffer   = 0;
     m_interpolation = ippHahn;
+
+    memset(&m_in,0,sizeof(m_in));
+    memset(&m_out,0,sizeof(m_out));
 }
 
 OwnResizeFilter::~OwnResizeFilter()
@@ -143,6 +146,9 @@ mfxStatus OwnResizeFilter::Init(const mfxFrameInfo& in, const mfxFrameInfo& out)
 {
     if(in.FourCC != out.FourCC)
         return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    m_in = in;
+    m_out = out;
 
     if(MFX_FOURCC_NV12 == in.FourCC)
     {
@@ -473,6 +479,14 @@ mfxStatus OwnResizeFilter::rs_NV12( mfxFrameSurface1* in, mfxFrameSurface1* out)
         return MFX_ERR_NONE;
     else
         return MFX_ERR_DEVICE_FAILED;
+}
+
+mfxStatus OwnResizeFilter::GetParam(mfxFrameInfo& in, mfxFrameInfo& out)
+{
+    in = m_in;
+    out = m_out;
+
+    return MFX_ERR_NONE;
 }
 
 } //namespace MfxCapture

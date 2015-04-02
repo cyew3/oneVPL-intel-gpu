@@ -143,6 +143,7 @@ public:
     OwnResizeFilter();
     virtual ~OwnResizeFilter();
     mfxStatus Init(const mfxFrameInfo& in, const mfxFrameInfo& out);
+    mfxStatus GetParam(mfxFrameInfo& in, mfxFrameInfo& out);
     mfxStatus RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1& out);
 
 protected:
@@ -153,6 +154,8 @@ protected:
     IppiResizeSpec_32f*   m_pRGBSpec;
     mfxU8*                m_pWorkBuffer;
     IppiInterpolationType m_interpolation;
+    mfxFrameInfo          m_in;
+    mfxFrameInfo          m_out;
 
 private:
     //prohobit copy constructor

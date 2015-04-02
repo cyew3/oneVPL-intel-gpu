@@ -58,6 +58,13 @@ protected:
     std::list<mfxFrameSurface1> m_InternalSurfPool;
     std::list<mfxFrameSurface1> m_InternalNV12ResizeSurfPool;
     std::list<DESKTOP_QUERY_STATUS_PARAMS> m_IntStatusList;
+    mfxStatus GetDisplayResolution( mfxU32& width, mfxU32& height);
+    mfxStatus CheckResolutionChage();
+
+    mfxU32 m_width;
+    mfxU32 m_height;
+    mfxU32 m_CropW;
+    mfxU32 m_CropH;
 
     bool                                         m_bOwnDevice;
     CComPtr<IDirect3D9                 >         m_pD3D;

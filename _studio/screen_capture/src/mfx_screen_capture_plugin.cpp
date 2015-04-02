@@ -761,7 +761,7 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
 
     bool rt_fallback = false;
     mfxRes = DecodeFrameSubmit(real_surface, rt_fallback, ext_surface);
-    if (MFX_ERR_NONE == mfxRes)
+    if (MFX_ERR_NONE <= mfxRes)
     {
         //surface_work->Info.CropH = m_CurrentPar.mfx.FrameInfo.Height;
         //surface_work->Info.CropW = m_CurrentPar.mfx.FrameInfo.Width;
@@ -786,6 +786,7 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxFrameSurface1 *surface, 
 {
     mfxStatus mfxRes;
     CComPtr<ID3D11VideoDecoderOutputView> pOutputView;
+    //bool wrn = false;
 
     //HW accelerated
     try
@@ -814,13 +815,21 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxFrameSurface1 *surface, 
         MFX_CHECK_STS(mfxRes);
 
         mfxRes = m_pFallbackCapturer.get()->GetDesktopScreenOperation(ext_surface, m_StatusReportFeedbackNumber);
+        if(MFX_ERR_NONE < mfxRes)
+        {
+            //wrn = true;
+            mfxRes = MFX_ERR_NONE;
+        }
         MFX_CHECK_STS(mfxRes);
 
         mfxRes = m_pFallbackCapturer.get()->EndFrame();
         MFX_CHECK_STS(mfxRes);
     }
 
-    return MFX_ERR_NONE;
+    //if(wrn)
+    //    return MFX_WRN_VIDEO_PARAM_CHANGED;
+    //else
+        return MFX_ERR_NONE;
 }
 
 mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a)

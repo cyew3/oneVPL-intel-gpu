@@ -23,7 +23,11 @@ namespace MfxCapture
 SW_D3D9_Capturer::SW_D3D9_Capturer(mfxCoreInterface* _core)
     :m_pmfxCore(_core),
     m_bOwnDevice(false),
-    m_bResize(false)
+    m_bResize(false),
+    m_width (0),
+    m_height(0),
+    m_CropW (0),
+    m_CropH (0)
 {
     Mode = SW_D3D9;
     memset(&m_core_par, 0, sizeof(m_core_par));
@@ -39,15 +43,6 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
     HRESULT hres;
 
     mfxStatus mfxRes = MFX_ERR_NONE;
-
-    mfxU16 width  = par.mfx.FrameInfo.Width;
-    mfxU16 height = par.mfx.FrameInfo.Height;
-    mfxU16 CropW = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
-    mfxU16 CropH = par.mfx.FrameInfo.CropH ? par.mfx.FrameInfo.CropH : par.mfx.FrameInfo.Height;
-    mfxU32 monitorW = GetSystemMetrics(SM_CXSCREEN);
-    mfxU32 monitorH = GetSystemMetrics(SM_CYSCREEN);
-    width  = (mfxU16) (width  != monitorW ? monitorW : width );
-    height = (mfxU16) (height != monitorH ? monitorH : height);
 
     //will own internal device manager
     memset(&m_core_par, 0, sizeof(m_core_par));
@@ -72,20 +67,20 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
         MFX_CHECK_STS(mfxRes);
     }
 
-    //in case of fallback use CM fast copy
-    //if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(m_core_par.Impl))
-    //{
-    //    try
-    //    {
-    //        m_pFastCopy.reset( new CMFastCopy(m_pmfxCore));
-    //    }
-    //    catch(...)
-    //    {
-    //        m_pFastCopy.reset( 0 );
-    //        m_bFastCopy = false;
-    //    }
-    //    m_bFastCopy = true;
-    //}
+    mfxU32 monitorW = 0;
+    mfxU32 monitorH = 0;
+    GetDisplayResolution(monitorW, monitorH);
+
+    //use max(user_frame_size, display_resolution) for internal frame allocation
+    mfxU16 width  = par.mfx.FrameInfo.Width;
+    mfxU16 height = par.mfx.FrameInfo.Height;
+    //mfxU16 CropW = par.mfx.FrameInfo.CropW ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width;
+    //mfxU16 CropH = par.mfx.FrameInfo.CropH ? par.mfx.FrameInfo.CropH : par.mfx.FrameInfo.Height;
+
+    m_width  = width  = (mfxU16) (width  < monitorW ? monitorW : width );
+    m_height = height = (mfxU16) (height < monitorH ? monitorH : height);
+    m_CropW = monitorW;
+    m_CropH = monitorH;
 
     if(MFX_FOURCC_NV12 == par.mfx.FrameInfo.FourCC)
     {
@@ -109,7 +104,7 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
         m_pColorConverter.get()->Init(&in, &out);
     }
 
-    if(monitorW != CropW || monitorH != CropH)
+    if(/*monitorW != CropW || monitorH != CropH*/true) //always have a resizer for possible resolution change
     {
         try
         {
@@ -190,8 +185,8 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
         mfxFrameSurface1 surf = {0,0,0,0,par.mfx.FrameInfo,0};
         surf.Info.Width  = width;
         surf.Info.Height = height;
-        //surf.Info.CropW  = CropW;
-        //surf.Info.CropH  = CropH;
+        surf.Info.CropW  = (mfxU16) m_CropW;
+        surf.Info.CropH  = (mfxU16) m_CropH;
         surf.Info.CropW  = width;
         surf.Info.CropH  = height;
         surf.Info.FourCC = MFX_FOURCC_RGB4;
@@ -280,8 +275,8 @@ mfxStatus SW_D3D9_Capturer::Destroy()
 {
     if(m_pColorConverter.get())
         m_pColorConverter.reset(0);
-    //if(m_pResizer.get())
-    //    m_pResizer.reset(0);
+    if(m_pResizer.get())
+        m_pResizer.reset(0);
     if(m_InternalSurfPool.size())
     {
         for(std::list<mfxFrameSurface1>::iterator it = m_InternalSurfPool.begin(); it != m_InternalSurfPool.end(); ++it)
@@ -353,6 +348,16 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
 {
     HRESULT hr = S_OK;
     mfxStatus mfxRes = MFX_ERR_NONE;
+    bool wrn = false;
+
+    mfxRes = CheckResolutionChage();
+    if(MFX_ERR_NONE > mfxRes)
+        return mfxRes;
+    else if(MFX_ERR_NONE < mfxRes)
+        wrn = true;
+
+    mfxU16 CropW = surface_work->Info.CropW ? surface_work->Info.CropW : surface_work->Info.Width;
+    mfxU16 CropH = surface_work->Info.CropH ? surface_work->Info.CropH : surface_work->Info.Height;
 
     mfxFrameSurface1* pSurf = GetFreeInternalSurface();
     if(!pSurf)
@@ -407,7 +412,7 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
                 if(mfxRes) return MFX_ERR_LOCK_MEMORY;
             }
 
-            if(m_bResize)
+            if(/*m_bResize*/pSurf->Info.CropH != CropH || pSurf->Info.CropW != CropW)
             {
                 mfxRes = m_pResizer.get()->RunFrameVPP(*pSurf, *surface_work);
                 if(mfxRes)
@@ -447,7 +452,7 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
             if(mfxRes) return MFX_ERR_LOCK_MEMORY;
         }
 
-        if(m_bResize)
+        if(/*m_bResize*/pSurf->Info.CropH != CropH || pSurf->Info.CropW != CropW)
         {
             mfxFrameSurface1* pNV12Surf = GetFreeIntResizeSurface();
             if(!pNV12Surf)
@@ -510,7 +515,10 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
     status.uStatus = 0;
     m_IntStatusList.push_back(status);
 
-    return MFX_ERR_NONE;
+    if(wrn)
+        return MFX_WRN_VIDEO_PARAM_CHANGED;
+    else
+        return MFX_ERR_NONE;
 }
 
 mfxStatus SW_D3D9_Capturer::QueryStatus(std::list<DESKTOP_QUERY_STATUS_PARAMS>& StatusList)
@@ -544,6 +552,13 @@ mfxStatus SW_D3D9_Capturer::AttachToLibraryDevice()
         }
 
         hres = m_pDirect3DDeviceManager->LockDevice(m_hDirectXHandle, &m_pDirect3DDevice, FALSE);
+        if(FAILED(hres))
+        {
+            m_pDirect3DDeviceManager->CloseDeviceHandle(m_hDirectXHandle);
+            return MFX_ERR_DEVICE_FAILED;
+        }
+
+        hres = m_pDirect3DDevice->GetDirect3D(&m_pD3D);
         if(FAILED(hres))
         {
             m_pDirect3DDeviceManager->CloseDeviceHandle(m_hDirectXHandle);
@@ -641,6 +656,92 @@ mfxFrameSurface1* SW_D3D9_Capturer::GetFreeIntResizeSurface()
         }
     }
     return pSurf;
+}
+
+mfxStatus SW_D3D9_Capturer::GetDisplayResolution( mfxU32& width, mfxU32& height)
+{
+    //in case of non-default DPI and if application are not DPI-aware, GetSystemMetrics may return unreal resolution
+
+    //SetProcessDPIAware(); //may affect user application
+
+    mfxU32 sysMetW = GetSystemMetrics(SM_CXSCREEN);
+    mfxU32 sysMetH = GetSystemMetrics(SM_CYSCREEN);
+
+    //call GetAdapterDisplayMode to cross validate with GetSystemMetrics
+    HRESULT hr = E_FAIL;
+    D3DDISPLAYMODE d3ddisplaymode;
+    memset(&d3ddisplaymode, 0, sizeof(d3ddisplaymode));
+    if(m_pD3D)
+        hr = m_pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT,&d3ddisplaymode);
+
+    if(SUCCEEDED(hr) && (d3ddisplaymode.Width > sysMetW || d3ddisplaymode.Height > sysMetH))
+    {
+        sysMetW = d3ddisplaymode.Width ;
+        sysMetH = d3ddisplaymode.Height;
+    }
+
+    width  = sysMetW;
+    height = sysMetH;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus SW_D3D9_Capturer::CheckResolutionChage()
+{
+    mfxU32 width = 0;
+    mfxU32 height = 0;
+    GetDisplayResolution(width, height);
+
+    if(width && height)
+    {
+        if(width == m_CropW && height == m_CropH)
+            return MFX_ERR_NONE;
+
+        if(width > m_width || height > m_height)
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+        if(width != m_CropW || height != m_CropH)
+        {
+            m_CropW  = width;
+            m_CropH  = height;
+
+            for(std::list<mfxFrameSurface1>::iterator it = m_InternalSurfPool.begin(); it != m_InternalSurfPool.end(); ++it)
+            {
+                (*it).Info.CropW = (mfxU16) m_CropW;
+                (*it).Info.CropH = (mfxU16) m_CropH;
+            }
+            for(std::list<mfxFrameSurface1>::iterator it = m_InternalNV12ResizeSurfPool.begin(); it != m_InternalNV12ResizeSurfPool.end(); ++it)
+            {
+                (*it).Info.CropW = (mfxU16) m_CropW;
+                (*it).Info.CropH = (mfxU16) m_CropH;
+            }
+
+            mfxFrameInfo info[2];
+            memset(&info, 0, sizeof(info));
+            if(!m_pResizer.get())
+                return MFX_ERR_DEVICE_FAILED;
+
+            m_pResizer.get()->GetParam(info[0], info[1]);
+
+            info[0].CropW = (mfxU16) m_CropW;
+            info[0].CropH = (mfxU16) m_CropH;
+
+            try
+            {
+                m_pResizer.reset(new OwnResizeFilter());
+            } catch (...) {
+                return MFX_ERR_DEVICE_FAILED;
+            }
+
+            mfxStatus mfxRes = m_pResizer.get()->Init(info[0], info[1]);
+            if(mfxRes)
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+            return MFX_WRN_VIDEO_PARAM_CHANGED;
+        }
+    }
+
+    return MFX_ERR_NONE;
 }
 
 } //namespace MfxCapture
