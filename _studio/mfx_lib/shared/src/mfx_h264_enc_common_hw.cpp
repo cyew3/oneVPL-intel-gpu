@@ -3989,8 +3989,6 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.GopRefDist = 1;
         if (par.mfx.FrameInfo.PicStruct == 0)
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-        if (par.mfx.NumRefFrame == 0)
-            par.mfx.NumRefFrame = hwCaps.MaxNum_Reference;
     }
 #endif
 
