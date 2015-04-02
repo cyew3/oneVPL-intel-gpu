@@ -58,7 +58,8 @@ typedef struct {
     mfxU16    DisableMVOutput;
     mfxU16    DisableStatisticsOutput;
     mfxU16    PictureType;
-    mfxU16    reserved[43];
+    mfxU16    Enable8x8Stat;
+    mfxU16    reserved[42];
 } mfxExtFeiPreEncCtrl;
 
 typedef struct {
@@ -139,6 +140,8 @@ typedef struct {
     mfxU16    RefWidth;
     mfxU16    RefHeight;
     mfxU16    SearchWindow;
+    mfxU16    ColocatedMbDistortion;
+    mfxU16    reserved[39];
 } mfxExtFeiEncFrameCtrl;
 
 typedef struct {
