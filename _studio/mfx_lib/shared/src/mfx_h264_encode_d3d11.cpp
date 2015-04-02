@@ -899,7 +899,8 @@ mfxStatus D3D11Encoder::Init(
             // for PAVP case new instance of decoder should be created
             if ((width <= video_desc.SampleWidth && height <= video_desc.SampleHeight
                 || guid == MSDK_Private_Guid_Encode_AVC_Query)
-                && !extPavp)
+                && !extPavp
+                && video_desc.Guid == m_guid)
                 m_pDecoder = pVideoDecoder->get();
         }
 
