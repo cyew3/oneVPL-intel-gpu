@@ -186,16 +186,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CustomBuild Include="src\ocl_rotate.cl">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy "%(FullPath)" $(OutDir)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy "%(FullPath)" "$(OutDir)"
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename)%(Extension);%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy "%(FullPath)" $(OutDir)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">copy "%(FullPath)" "$(OutDir)"
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)%(Filename)%(Extension);%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy "%(FullPath)" $(OutDir)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy "%(FullPath)" "$(OutDir)"
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename)%(Extension);%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy "%(FullPath)" $(OutDir)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy "%(FullPath)" "$(OutDir)"
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)%(Filename)%(Extension);%(Outputs)</Outputs>
     </CustomBuild>
