@@ -882,6 +882,40 @@ void H265_FASTCALL MAKE_NAME(h265_DiffNv12)(const T *src, Ipp32s pitchSrc, const
 template void H265_FASTCALL MAKE_NAME(h265_DiffNv12)<Ipp8u> (const Ipp8u  *src, Ipp32s pitchSrc, const Ipp8u  *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
 template void H265_FASTCALL MAKE_NAME(h265_DiffNv12)<Ipp16u>(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
 
+
+#ifdef MAX
+#undef MAX
+#endif
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+
+#ifdef MIN
+#undef MIN
+#endif
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+
+#define CLIPVAL(VAL, MINVAL, MAXVAL) MAX(MINVAL, MIN(MAXVAL, VAL))
+#define CoeffsType Ipp16s
+
+void MAKE_NAME(h265_AddClipNv12UV_8u)(Ipp8u *dstNv12, Ipp32s pitchDst, 
+                          const Ipp8u *src1Nv12, Ipp32s pitchSrc1, 
+                          const CoeffsType *src2Yv12U,
+                          const CoeffsType *src2Yv12V, Ipp32s pitchSrc2,
+                          Ipp32s size)
+{ 
+    int i, j;
+
+    for (i = 0; i < size; i++) {
+        for (j = 0; j < size; j++) {
+            dstNv12[2*j]   = CLIPVAL(src1Nv12[2*j]   + src2Yv12U[j], 0, 255);
+            dstNv12[2*j+1] = CLIPVAL(src1Nv12[2*j+1] + src2Yv12V[j], 0, 255);
+        }
+        src1Nv12  += pitchSrc1;
+        src2Yv12U += pitchSrc2;
+        src2Yv12V += pitchSrc2;
+        dstNv12   += pitchDst;
+    }
+} 
+
 } // end namespace MFX_HEVC_PP
 
 #endif // #if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)

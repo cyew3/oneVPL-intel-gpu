@@ -2832,6 +2832,67 @@ int H265_FASTCALL MAKE_NAME(h265_SAD_MxN_16s)(const Ipp16s* src, Ipp32s src_stri
     return -1;
 }
 
+
+#define CoeffsType Ipp16s
+
+void MAKE_NAME(h265_AddClipNv12UV_8u)(Ipp8u *dstNv12, Ipp32s pitchDst, 
+                          const Ipp8u *src1Nv12, Ipp32s pitchSrc1, 
+                          const CoeffsType *src2Yv12U,
+                          const CoeffsType *src2Yv12V, Ipp32s pitchSrc2,
+                          Ipp32s size)
+{ 
+    int i, j;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4;
+    __m128i xmm7 = _mm_setzero_si128();
+    ALIGN_DECL(16) static const signed char uvShuf[16] = { 0,  128,  2,  128,  4,  128,  6,  128,  8,  128,  10,  128,  12,  128, 14, 128 };
+    if (size == 4) { 
+        for (i = 0; i < size; i++) {
+            xmm0 = _mm_loadl_epi64((__m128i*)(src1Nv12));       // Load NV12
+            xmm1 = _mm_srli_si128 (xmm0, 1);                    // 1 pixel shift  
+            xmm0 = _mm_shuffle_epi8(xmm0, *(__m128i*)(uvShuf)); // Remove interleaving, make Short
+            xmm1 = _mm_shuffle_epi8(xmm1, *(__m128i*)(uvShuf)); // Remove interleaving, make Short
+            xmm2 = _mm_loadl_epi64((__m128i*)(src2Yv12U));      // Load U Resid
+            xmm3 = _mm_loadl_epi64((__m128i*)(src2Yv12V));      // Load V Resid
+            
+            xmm2 = _mm_add_epi16(xmm2, xmm0);                   // Add
+            xmm3 = _mm_add_epi16(xmm3, xmm1);
+            xmm2 = _mm_packus_epi16(xmm2, xmm2);                // Saturate
+            xmm3 = _mm_packus_epi16(xmm3, xmm3);
+            xmm4 = _mm_unpacklo_epi8(xmm2, xmm3);               // Interleave
+            //store
+            _mm_storel_epi64((__m128i*)dstNv12, xmm4);
+
+            src1Nv12  += pitchSrc1;
+            src2Yv12U += pitchSrc2;
+            src2Yv12V += pitchSrc2;
+            dstNv12   += pitchDst;
+        }
+    } else { 
+        for (i = 0; i < size; i++) {
+            for (j = 0; j < size; j += 8) {
+                xmm0 = _mm_loadu_si128((__m128i*)(src1Nv12+2*j));     // Load NV12
+                xmm1 = _mm_srli_si128 (xmm0, 1);                      // 1 pixel shift 
+                xmm0 = _mm_shuffle_epi8(xmm0, *(__m128i*)(uvShuf));   // Remove interleaving, make Short
+                xmm1 = _mm_shuffle_epi8(xmm1, *(__m128i*)(uvShuf));   // Remove interleaving, make Short
+                xmm2 = _mm_loadu_si128((__m128i*)(src2Yv12U+j));      // Load U Resid
+                xmm3 = _mm_loadu_si128((__m128i*)(src2Yv12V+j));      // Load V Resid
+
+                xmm2 = _mm_add_epi16(xmm2, xmm0);                     // Add
+                xmm3 = _mm_add_epi16(xmm3, xmm1);
+                xmm2 = _mm_packus_epi16(xmm2, xmm2);                  // Saturate
+                xmm3 = _mm_packus_epi16(xmm3, xmm3);
+                xmm4 = _mm_unpacklo_epi8(xmm2, xmm3);                 // Interleave
+                //store
+                _mm_storeu_si128((__m128i*)(dstNv12+2*j), xmm4);
+            }
+            src1Nv12  += pitchSrc1;
+            src2Yv12U += pitchSrc2;
+            src2Yv12V += pitchSrc2;
+            dstNv12   += pitchDst;
+        }
+    } 
+} 
+
 } // end namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_AUTO) ...

@@ -44,7 +44,6 @@
 #define AMT_BIREFINE_CONVERGE
 #define AMT_SPEEDUP_RDOQ
 #define AMT_DZ_RDOQ
-#define AMT_INT_ME_CONVERGE
 #define AMT_INT_ME_TRANSITION
 
 #define MEMOIZE_SUBPEL
@@ -69,6 +68,7 @@
 #endif
 #define AMT_INT_ME_SEED
 #define AMT_FAST_SUBPEL_SEARCH
+#define AMT_FAST_SUBPEL_SEED
 #ifndef MFX_VA
 #define AMT_ALT_FAST_SKIP
 #endif
@@ -81,14 +81,28 @@
 #ifdef AMT_ALT_ENCODE
 #define AMT_ALT_ENCODE_OPT
 #define AMT_DZ_PDRDOQ
+#define AMT_ADAPTIVE_INTRA_DEPTH
 #endif
 #define AMT_SAO_MIN
-#define AMT_MIN_DEPTH_FIX
+
 #define AMT_ADAPTIVE_TU_DEPTH
 #define AMT_FIX_CHROMA_SKIP
-#define AMT_USE_IPP
 #define AMT_COEFF_COST_EST
-#define AMT_ADAPTIVE_INTRA_DEPTH
+
+#ifndef MFX_VA
+#define AMT_VQ_TUNE
+#endif
+#ifdef AMT_VQ_TUNE
+#if defined(AMT_ADAPTIVE_TU_DEPTH) && defined(AMT_ALT_ENCODE)
+#define AMT_ADAPTIVE_INTER_DEPTH
+#endif
+#define AMT_CHROMA_GUIDED_INTER
+#if defined(AMT_ADAPTIVE_INTRA_DEPTH)
+#define AMT_ADAPTIVE_INTER_MIN_DEPTH
+#endif
+#define AMT_VQ_TU
+#endif
+
 #endif
 
 

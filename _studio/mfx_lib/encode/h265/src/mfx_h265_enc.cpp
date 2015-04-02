@@ -84,16 +84,16 @@ namespace H265Enc {
     Ipp32f h265_split_thresholds_cu_4[3][2][4][2] = 
     {
         {
-            {{0, 0},{4.218807e+000, 2.066010e-001},{2.560569e+001, 1.677201e-001},{0, 0},},
-            {{0, 0},{4.848787e+000, 2.299086e-001},{1.198510e+001, 2.170575e-001},{0, 0},},
+            {{0, 0},{4.218807e+000, 2.066010e-001},{2.560569e+001, 1.677201e-001},{4.697359e+002, 1.113505e-001},},
+            {{0, 0},{4.848787e+000, 2.299086e-001},{1.198510e+001, 2.170575e-001},{3.218380e+001, 2.157863e-001},},
         },
         {
-            {{0, 0},{5.227898e+000, 2.117919e-001},{1.819586e+001, 1.910210e-001},{0, 0},},
-            {{0, 0},{1.098668e+001, 2.226733e-001},{2.273784e+001, 2.157968e-001},{0, 0},},
+            {{0, 0},{5.227898e+000, 2.117919e-001},{1.819586e+001, 1.910210e-001},{3.617037e+002, 1.257173e-001},},
+            {{0, 0},{1.098668e+001, 2.226733e-001},{2.273784e+001, 2.157968e-001},{3.785467e+001, 2.252255e-001},},
         },
         {
-            {{0, 0},{4.591922e+000, 2.238883e-001},{1.480393e+001, 2.032860e-001},{0, 0},},
-            {{0, 0},{1.831528e+001, 2.201327e-001},{2.999500e+001, 2.175826e-001},{0, 0},},
+            {{0, 0},{4.591922e+000, 2.238883e-001},{1.480393e+001, 2.032860e-001},{3.298872e+002, 1.336427e-001},},
+            {{0, 0},{1.831528e+001, 2.201327e-001},{2.999500e+001, 2.175826e-001},{3.572242e+001, 2.357623e-001},},
         },
     };
 
@@ -499,15 +499,17 @@ void H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame *frame)
         slice->row_last = m_videoParam.PicHeightInCtbs - 1;
         slice->num_entry_point_offsets = m_videoParam.NumTiles - 1;
     }
+    if(!m_videoParam.SAOFlag
 #ifdef AMT_SAO_MIN
-    if(!m_videoParam.SAOFlag || (m_videoParam.saoOpt>SAO_OPT_FAST_MODES_ONLY && m_videoParam.BiPyramidLayers > 1 && frame->m_pyramidLayer == m_videoParam.BiPyramidLayers - 1)) {
+        || (m_videoParam.saoSubOpt==3 && m_videoParam.BiPyramidLayers > 1 && frame->m_pyramidLayer == m_videoParam.BiPyramidLayers - 1)
+#endif
+            ) {
         slice->slice_sao_luma_flag = false;
         slice->slice_sao_chroma_flag = false;
     } else {
         slice->slice_sao_luma_flag = true;
         slice->slice_sao_chroma_flag = m_videoParam.SAOChromaFlag ? true : false;
     }
-#endif
 } 
 
 namespace H265Enc {
@@ -1807,17 +1809,25 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
         cu_ithread->ModeDecision(0, 0);
         //cu_ithread->FillRandom(0, 0);
         //cu_ithread->FillZero(0, 0);
+        {
+            bool interUpdate = false;
 #ifdef AMT_ALT_ENCODE
-        if(!cu_ithread->m_isRdoq) {
-            cu_ithread->m_isRdoq = true;
-            m_bsf[bsf_id].CtxRestore(context_array_save);
-            cu_ithread->EncAndRecLuma(0, 0, 0, NULL);
-        }
+            if(!cu_ithread->m_isRdoq) {
+                cu_ithread->m_isRdoq = true;
+                m_bsf[bsf_id].CtxRestore(context_array_save);
+                interUpdate = cu_ithread->EncAndRecLuma(0, 0, 0, NULL);
+            }
 #endif
 
-        if (!cu_ithread->HaveChromaRec())
-            cu_ithread->EncAndRecChroma(0, 0, 0, NULL);
-        
+#ifdef AMT_CHROMA_GUIDED_INTER
+            if(cu_ithread->UpdateChromaRec() || !cu_ithread->HaveChromaRec())
+                cu_ithread->EncAndRecChromaUpdate(0, 0, 0, interUpdate);
+#else
+            if (!cu_ithread->HaveChromaRec())
+                cu_ithread->EncAndRecChroma(0, 0, 0, NULL, INTRA_PRED_CALC);
+#endif
+        }
+
         if (m_videoParam.RDOQFlag) {
             small_memcpy(m_bsf[bsf_id].m_base.context_array + tab_ctxIdxOffset[QT_CBF_HEVC], context_array_save + tab_ctxIdxOffset[QT_CBF_HEVC], 
                 sizeof(CABAC_CONTEXT_H265) * (tab_ctxIdxOffset[LAST_X_HEVC] - tab_ctxIdxOffset[QT_CBF_HEVC]));
@@ -1866,9 +1876,13 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
         if (pars->UseDQP)
             cu_ithread->UpdateCuQp();
 
+#ifdef AMT_SAO_MIN
+        // subopt sao works
+        if (doDbl && (isRef || (doSao && pars->saoSubOpt!=2) || pars->doDumpRecon)) {
+#else
         if (doDbl && (isRef || doSao || pars->doDumpRecon)) {
-            cu_ithread->Deblock();
-        }
+#endif
+            cu_ithread->Deblock();        }
 
         
         if (doSao) {
@@ -1891,7 +1905,6 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
             m_bs[bs_id].CtxSaveWPP(m_context_array_wpp + NUM_CABAC_CONTEXT * ctb_row);
 
         m_bs[bs_id].EncodeSingleBin_CABAC(CTX(&m_bs[bs_id],END_OF_SLICE_FLAG_HEVC), end_of_slice_flag);
-
 
         if ((m_topEnc.m_pps.entropy_coding_sync_enabled_flag && ctb_col == pars->PicWidthInCtbs - 1) ||
             (m_topEnc.m_pps.tiles_enabled_flag && end_of_tile_flag) || 

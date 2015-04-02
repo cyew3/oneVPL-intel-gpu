@@ -61,6 +61,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     tab_##mode##_RDOQuantChroma[x],\
     tab_##mode##_RDOQuantCGZ[x],\
     tab_##mode##_SaoOpt[x],\
+    tab_##mode##_SaoSubOpt[x],\
     tab_##mode##_IntraNumCand0_2[x],\
     tab_##mode##_IntraNumCand0_3[x],\
     tab_##mode##_IntraNumCand0_4[x],\
@@ -96,6 +97,8 @@ using namespace H265Enc::MfxEnumShortAliases;
     tab_##mode##_FastCoeffCost[x],\
     tab_##mode##_NumRefFrameB[x],\
     tab_##mode##_IntraMinDepthSC[x],\
+    tab_##mode##_InterMinDepthSTC[x],\
+    tab_##mode##_MotionPartitionDepth[x],\
     tab_##mode##_SceneCut[x],\
     tab_##mode##_AnalyzeCmplx[x],\
     tab_##mode##_RateControlDepth[x],\
@@ -110,8 +113,13 @@ using namespace H265Enc::MfxEnumShortAliases;
     // Mode decision CU/TU 
     TU_OPT_ALL (QuadtreeTULog2MaxSize,          5,   5,   5,   5,   5,   5,   5);
     TU_OPT_ALL (QuadtreeTULog2MinSize,          2,   2,   2,   2,   2,   2,   2);
+#ifdef AMT_VQ_TU
+    TU_OPT_SW  (Log2MaxCUSize,                  6,   6,   6,   6,   6,   6,   6);
+    TU_OPT_SW  (MaxCUDepth,                     4,   4,   4,   4,   4,   4,   4);
+#else
     TU_OPT_SW  (Log2MaxCUSize,                  6,   6,   5,   5,   5,   5,   5);
     TU_OPT_SW  (MaxCUDepth,                     4,   4,   3,   3,   3,   3,   3);
+#endif
 #ifdef AMT_ADAPTIVE_INTRA_DEPTH
     TU_OPT_SW  (QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   2,   2,   2);
 #else
@@ -135,11 +143,19 @@ using namespace H265Enc::MfxEnumShortAliases;
 
     TU_OPT_ALL (CUSplit,                        2,   2,   2,   2,   2,   2,   2);
     TU_OPT_ALL (PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+#ifdef AMT_VQ_TU
+    TU_OPT_ALL (MinCUDepthAdapt,              OFF, OFF,  ON,  ON,  ON,  ON,  ON);
+#else
     TU_OPT_ALL (MinCUDepthAdapt,              OFF, OFF, OFF,  ON,  ON,  ON,  ON);
+#endif
     TU_OPT_SW  (MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON,  ON);
     TU_OPT_GACC(MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON,  OFF);
 #ifdef AMT_THRESHOLDS
+#ifdef AMT_VQ_TUNE
+    TU_OPT_SW  (CUSplitThreshold,               0,   0,   0,   0,   0,   0,   0);
+#else
     TU_OPT_SW  (CUSplitThreshold,               0,   0,   0,  64, 192, 224, 240);
+#endif
 #else
     TU_OPT_SW  (CUSplitThreshold,               0,  64, 128, 192, 192, 224, 256);
 #endif
@@ -162,7 +178,12 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_GACC(SplitThresholdStrengthCUIntra,  1,   1,   1,   1,   2,   3,   3);
     TU_OPT_GACC(SplitThresholdStrengthTUIntra,  1,   1,   1,   1,   2,   3,   3);
     TU_OPT_GACC(SplitThresholdStrengthCUInter,  1,   2,   2,   3,   3,   3,   3);
+#ifdef AMT_VQ_TU
+    TU_OPT_SW  (SplitThresholdTabIndex       ,  1,   1,   1,   1,   1,   1,   1); //Tab1 + strength 3 - fastest combination
+    TU_OPT_GACC(SplitThresholdTabIndex       ,  1,   1,   1,   2,   2,   2,   2); 
+#else
     TU_OPT_ALL (SplitThresholdTabIndex       ,  1,   1,   1,   2,   2,   2,   2); //Tab1 + strength 3 - fastest combination
+#endif
 
     //Chroma analysis
     TU_OPT_ALL (AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON);
@@ -187,10 +208,12 @@ using namespace H265Enc::MfxEnumShortAliases;
 #endif
     
 #ifdef AMT_SAO_MIN
-    TU_OPT_ALL (SaoOpt,                         1,   1,   2,   2,   2,   2,   3);
+    TU_OPT_SW  (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
+    TU_OPT_GACC(SaoOpt,                         1,   1,   2,   2,   2,   2,   3);
 #else
     TU_OPT_ALL (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
 #endif
+    TU_OPT_ALL (SaoSubOpt,                      1,   1,   1,   1,   1,   2,   3);
     TU_OPT_ALL (Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON);
     TU_OPT_ALL (DeblockBorders,                ON,  ON,  ON, OFF, OFF, OFF, OFF);
 
@@ -343,6 +366,8 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_SW  (NumRefFrameB,                   0,   0,   3,   3,   2,   2,   2);
     TU_OPT_GACC(NumRefFrameB,                   0,   0,   0,   0,   0,   0,   0);
     TU_OPT_ALL (IntraMinDepthSC,               11,  11,  11,   6,   6,   3,   3);
+    TU_OPT_ALL (InterMinDepthSTC,               6,   6,   3,   3,   2,   2,   2);
+    TU_OPT_ALL (MotionPartitionDepth,           6,   6,   3,   1,   1,   1,   1);
 
     TU_OPT_ALL (AnalyzeCmplx,                   0,   0,   0,   0,   0,   0,   0);
     TU_OPT_ALL (SceneCut,                       0,   0,   0,   0,   0,   0,   0);

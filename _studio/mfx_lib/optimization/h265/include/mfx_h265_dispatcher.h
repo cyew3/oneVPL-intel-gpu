@@ -462,6 +462,9 @@ namespace MFX_HEVC_PP
     void h265_GetCtuStatistics_8u_sse( SAOCU_ENCODE_PARAMETERS_LIST );
     void h265_GetCtuStatistics_8u_avx2( SAOCU_ENCODE_PARAMETERS_LIST );
 
+    void h265_GetCtuStatistics_16u_px( SAOCU_ENCODE_PARAMETERS_LIST_16U );
+    void h265_GetCtuStatistics_16u_avx2( SAOCU_ENCODE_PARAMETERS_LIST_16U );
+
     // [INTRA predict]
     void h265_PredictIntra_Ang_8u_px(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
     void h265_PredictIntra_Ang_8u_sse(Ipp32s mode, Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
@@ -529,6 +532,12 @@ namespace MFX_HEVC_PP
     template <class PixType>
     void h265_ComputeRsCs_px(const PixType* ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu);
     void h265_ComputeRsCs_8u_sse (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu);
+    void h265_ComputeRsCs_16u_sse (const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu);
+
+    void h265_AddClipNv12UV_8u_px  (Ipp8u *dstNv12, Ipp32s pitchDst, const Ipp8u *src1Nv12, Ipp32s pitchSrc1, 
+                                      const Ipp16s *src2Yv12U, const Ipp16s *src2Yv12V, Ipp32s pitchSrc2, Ipp32s size);
+    void h265_AddClipNv12UV_8u_sse (Ipp8u *dstNv12, Ipp32s pitchDst, const Ipp8u *src1Nv12, Ipp32s pitchSrc1, 
+                                      const Ipp16s *src2Yv12U, const Ipp16s *src2Yv12V, Ipp32s pitchSrc2, Ipp32s size);
 
     // Interpolation
     void h265_InterpLuma_s8_d16_H_px(INTERP_S8_D16_PARAMETERS_LIST);

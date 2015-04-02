@@ -545,6 +545,9 @@ namespace H265Enc {
 
     void Dump(H265VideoParam *par, Frame* frame, FrameList & dpb )
     {
+        if (!par->doDumpRecon)
+            return;
+
         vm_char *fname = par->reconDumpFileName;
         Ipp32s frame_num = frame->m_encOrder;
         vm_file *f;
@@ -557,10 +560,7 @@ namespace H265Enc {
         Ipp32s shift_h = frame->m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
         Ipp32s shift = 2 - shift_w - shift_h;
         Ipp32s plane_size = (W*H << bd_shift_luma) + (((W*H/2) << shift) << bd_shift_chroma);
-    
-        if (fname == 0)
-            return;
-    
+        
         Ipp32s numlater = 0; // number of dumped frames with later POC
         if (frame->m_picCodeType == MFX_FRAMETYPE_B) {
             for (FrameIter it = dpb.begin(); it != dpb.end(); it++ ) {

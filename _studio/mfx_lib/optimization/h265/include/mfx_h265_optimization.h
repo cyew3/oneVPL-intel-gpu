@@ -257,7 +257,12 @@ namespace MFX_HEVC_PP
     #define SAOCU_ENCODE_PARAMETERS_LIST_CALL compIdx, recBlk, recStride, orgBlk, orgStride, width, \
         height, shift,  borders, numSaoModes,statsDataTypes
 
+    #define SAOCU_ENCODE_PARAMETERS_LIST_16U_CALL compIdx, recBlk, recStride, orgBlk, orgStride, width, \
+        height, shift,  borders, numSaoModes,statsDataTypes
+
     typedef void(* PTR_GetCtuStatistics_8u)( SAOCU_ENCODE_PARAMETERS_LIST );
+
+    typedef void(* PTR_GetCtuStatistics_16u)( SAOCU_ENCODE_PARAMETERS_LIST_16U );
 
     // [PTR.IntraPredict]
     typedef void (* PTR_PredictIntra_Ang_8u)(
@@ -300,6 +305,8 @@ namespace MFX_HEVC_PP
 
     typedef void (* PTR_ComputeRsCs_8u)(const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu);
     typedef void (* PTR_ComputeRsCs_16u)(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu);
+    typedef void (* PTR_AddClipNv12UV_8u)(Ipp8u *dstNv12, Ipp32s pitchDst, const Ipp8u *src1Nv12, Ipp32s pitchSrc1, 
+                                            const Ipp16s *src2Yv12U, const Ipp16s *src2Yv12V, Ipp32s pitchSrc2, Ipp32s size);
 
     //-----------------------------------------------------
     // aya: approach from Ken/Jon
@@ -491,6 +498,7 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_ProcessSaoCu_Luma_8u, void, h265_ProcessSaoCu_Luma_8u, (SAOCU_PARAMETERS_LIST));
 
         HEVCPP_API( PTR_GetCtuStatistics_8u, void, h265_GetCtuStatistics_8u, (SAOCU_ENCODE_PARAMETERS_LIST));
+        HEVCPP_API( PTR_GetCtuStatistics_16u, void, h265_GetCtuStatistics_16u, (SAOCU_ENCODE_PARAMETERS_LIST_16U));
 
         HEVCPP_API( PTR_ProcessSaoCuOrg_Luma_16u, void, h265_ProcessSaoCuOrg_Luma_16u, (SAOCU_ORG_PARAMETERS_LIST_U16));
         HEVCPP_API( PTR_ProcessSaoCu_Luma_16u, void, h265_ProcessSaoCu_Luma_16u, (SAOCU_PARAMETERS_LIST_U16));
@@ -557,6 +565,8 @@ namespace MFX_HEVC_PP
 
         HEVCPP_API( PTR_ComputeRsCs_8u,  void, h265_ComputeRsCs_8u,  (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu) );
         HEVCPP_API( PTR_ComputeRsCs_16u, void, h265_ComputeRsCs_16u, (const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu) );
+        HEVCPP_API( PTR_AddClipNv12UV_8u,  void, h265_AddClipNv12UV_8u,  (Ipp8u *dstNv12, Ipp32s pitchDst, const Ipp8u *src1Nv12, Ipp32s pitchSrc1, 
+                                                                              const CoeffsType *src2Yv12U, const CoeffsType *src2Yv12V, Ipp32s pitchSrc2, Ipp32s size) );
 
         // [Interpolation]
         HEVCPP_API( PTR_Interp_s8_d16, void, h265_InterpLuma_s8_d16_H,   ( INTERP_S8_D16_PARAMETERS_LIST));
@@ -1250,7 +1260,8 @@ namespace MFX_HEVC_PP
 
     static inline void h265_GetCtuStatistics(SAOCU_ENCODE_PARAMETERS_LIST_16U)
     {
-        h265_GetCtuStatistics_16u_px(SAOCU_ENCODE_PARAMETERS_LIST_CALL);
+        //h265_GetCtuStatistics_16u_px(SAOCU_ENCODE_PARAMETERS_LIST_CALL);
+        MFX_HEVC_PP::NAME(h265_GetCtuStatistics_16u)(SAOCU_ENCODE_PARAMETERS_LIST_16U_CALL);
     }
 
     static inline void h265_InterpLumaPack(const Ipp16s *src, Ipp32s pitchSrc, Ipp8u *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s bitDepth)

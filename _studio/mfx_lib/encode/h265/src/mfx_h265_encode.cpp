@@ -109,6 +109,8 @@ namespace {
             intParam.NumRefFrameB = mfx.NumRefFrame;
         
         intParam.IntraMinDepthSC = (Ipp8u)optHevc.IntraMinDepthSC - 1;
+        intParam.InterMinDepthSTC = (Ipp8u)optHevc.InterMinDepthSTC - 1;
+        intParam.MotionPartitionDepth = (Ipp8u)optHevc.MotionPartitionDepth - 1;
         intParam.MaxDecPicBuffering = MAX(mfx.NumRefFrame, intParam.BiPyramidLayers);
         intParam.MaxRefIdxP[0] = mfx.NumRefFrame;
         intParam.MaxRefIdxP[1] = intParam.GeneralizedPB ? mfx.NumRefFrame : 0;
@@ -195,6 +197,7 @@ namespace {
         intParam.deblockingFlag = (optHevc.Deblocking == ON);
         intParam.deblockBordersFlag = (intParam.deblockingFlag && optHevc.DeblockBorders == ON);
         intParam.saoOpt = optHevc.SaoOpt;
+        intParam.saoSubOpt = optHevc.SaoSubOpt;
         intParam.patternIntPel = optHevc.PatternIntPel;
         intParam.patternSubPel = optHevc.PatternSubPel;
         intParam.numBiRefineIter = optHevc.NumBiRefineIter;
@@ -208,8 +211,11 @@ namespace {
 
         intParam.enableCmFlag = (optHevc.EnableCm == ON);
         intParam.m_framesInParallel = optHevc.FramesInParallel;
-        intParam.m_lagBehindRefRows = 3;
-        intParam.m_meSearchRangeY = (intParam.m_lagBehindRefRows - 1) * intParam.MaxCUSize; // -1 row due to deblocking lag
+        // intParam.m_lagBehindRefRows = 3;
+        // intParam.m_meSearchRangeY = (intParam.m_lagBehindRefRows - 1) * intParam.MaxCUSize; // -1 row due to deblocking lag
+        // New thread model sets up post proc (deblock) as ref task dependency; no deblocking lag, encode is leading.
+        intParam.m_lagBehindRefRows = 2;
+        intParam.m_meSearchRangeY = intParam.m_lagBehindRefRows * intParam.MaxCUSize;
 
         intParam.AddCUDepth  = 0;
         while ((intParam.MaxCUSize >> intParam.MaxCUDepth) > (1u << (intParam.QuadtreeTULog2MinSize + intParam.AddCUDepth)))

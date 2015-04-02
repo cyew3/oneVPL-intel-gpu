@@ -162,6 +162,8 @@ typedef struct {
 typedef struct {
     mfxExtBuffer Header;
 
+
+
     mfxU16      Log2MaxCUSize;
     mfxU16      MaxCUDepth;
     mfxU16      QuadtreeTULog2MaxSize;
@@ -202,6 +204,7 @@ typedef struct {
     mfxU16      RDOQuantChroma;     // tri-state
     mfxU16      RDOQuantCGZ;        // tri-state
     mfxU16      SaoOpt;             // 0-default; 1-all modes; 2-fast four modes only, 3-one first mode only
+    mfxU16      SaoSubOpt;          // 0-default; 1-All; 2-SubOpt, 3-Ref Frames only
     mfxU16      IntraNumCand0_2;    // number of candidates for SATD stage after gradient analysis for TU4x4
     mfxU16      IntraNumCand0_3;    // number of candidates for SATD stage after gradient analysis for TU8x8
     mfxU16      IntraNumCand0_4;    // number of candidates for SATD stage after gradient analysis for TU16x16
@@ -237,6 +240,8 @@ typedef struct {
     mfxU16      FastCoeffCost;
     mfxU16      NumRefFrameB;       // 0-1-default, 2+ use given
     mfxU16      IntraMinDepthSC;    // 0-default, 1+ use given
+    mfxU16      InterMinDepthSTC;   // 0-default, 1+ use given
+    mfxU16      MotionPartitionDepth;   // 0-default, 1+ use given
     mfxU16      SceneCut;           // detect scene change and insert IDR frame
     mfxU16      AnalyzeCmplx;       // analyze frame complexity (need for BRC)
     mfxU16      RateControlDepth;   // RateControlDepth - 1 = how many analyzed _forward_ frames are required by BRC
@@ -244,7 +249,7 @@ typedef struct {
     mfxU16      DeblockBorders;     // tri-state, deblock borders
     mfxU16      SAOChroma;          // on / off
 
-    mfxU16      reserved[44];       // 256 bytes total
+    mfxU16      reserved[41];       // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionHEVC;
 
 #if defined (ADVANCED_REF)

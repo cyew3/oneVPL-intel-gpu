@@ -137,6 +137,7 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOptionHevc.RDOQuantChroma = MFX_CODINGOPTION_ON;
     paramset.extCodingOptionHevc.RDOQuantCGZ = MFX_CODINGOPTION_ON;
     paramset.extCodingOptionHevc.SaoOpt = 1;
+    paramset.extCodingOptionHevc.SaoSubOpt = 1;
     paramset.extCodingOptionHevc.CostChroma = MFX_CODINGOPTION_ON;
     paramset.extCodingOptionHevc.PatternIntPel = 1;
     paramset.extCodingOptionHevc.FastSkip = MFX_CODINGOPTION_ON;
@@ -167,6 +168,8 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOptionHevc.FastCoeffCost = MFX_CODINGOPTION_OFF;
     paramset.extCodingOptionHevc.NumRefFrameB = 0;
     paramset.extCodingOptionHevc.IntraMinDepthSC = 11;
+    paramset.extCodingOptionHevc.InterMinDepthSTC = 6;
+    paramset.extCodingOptionHevc.MotionPartitionDepth = 3;
     paramset.extCodingOptionHevc.SceneCut = 0;
     paramset.extCodingOptionHevc.AnalyzeCmplx = 0;
     paramset.extCodingOptionHevc.RateControlDepth = 0;
@@ -234,6 +237,7 @@ void ApiTestCommon::InitParamSetCorrectable(ParamSet &input, ParamSet &expectedO
     SETUP(extCodingOptionHevc.RDOQuantChroma, 100, 0);
     SETUP(extCodingOptionHevc.RDOQuantCGZ, 100, 0);
     SETUP(extCodingOptionHevc.SaoOpt, 100, 0);
+    SETUP(extCodingOptionHevc.SaoSubOpt, 100, 0);
     SETUP(extCodingOptionHevc.IntraNumCand0_2, 100, 0);
     SETUP(extCodingOptionHevc.IntraNumCand0_3, 100, 0);
     SETUP(extCodingOptionHevc.IntraNumCand0_4, 100, 0);

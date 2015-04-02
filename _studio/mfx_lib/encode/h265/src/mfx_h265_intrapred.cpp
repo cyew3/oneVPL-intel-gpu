@@ -986,27 +986,27 @@ bool H265CU<PixType>::tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode 
 #endif
 #ifdef AMT_ADAPTIVE_INTRA_RD
 template <typename PixType>
-Ipp32s H265CU<PixType>::GetNumIntraRDModes(Ipp32s depth, IntraLumaMode *modes, Ipp32s numModes)
+Ipp32s H265CU<PixType>::GetNumIntraRDModes(Ipp32s absPartIdx, Ipp32s depth, Ipp32s trDepth, IntraLumaMode *modes, Ipp32s numModes)
 {
     Ipp32s numCand = numModes;
-    Ipp32s widthPu = m_par->MaxCUSize >> depth;
+    Ipp32s widthPu = m_par->MaxCUSize >> (depth+trDepth);
     Ipp32s NumModesForFullRD = numModes;
     if (widthPu > 8)  {
-        if(m_SCid>=5) NumModesForFullRD = 2;
+        if(m_SCid[depth][absPartIdx]>=5) NumModesForFullRD = 2;
     } else if (widthPu == 8)  {
-        if(m_SCid>=5) NumModesForFullRD = 4;
+        if(m_SCid[depth][absPartIdx]>=5) NumModesForFullRD = 4;
     } else {
                       NumModesForFullRD = 6;
     }
 
-    if(numModes>1 && m_cslice->slice_type != I_SLICE && m_STC<3 )
+    if(numModes>1 && m_cslice->slice_type != I_SLICE && m_STC[depth][absPartIdx]<3 )
     {
         //Restrict number of candidates for 4x4 and 8x8 blocks
         if (widthPu==4 || widthPu==8) 
         {
             CostType rdScale=1.0;
             const Ipp32s T4_1=400, T8_1=960;
-            if(m_SCid>=5) {
+            if(m_SCid[depth][absPartIdx]>=5) {
             //Restrict number of candidates based on Rd cost
             if      ((modes[0].cost+modes[0].cost) < (modes[1].cost*rdScale))                        NumModesForFullRD = 1;
             else if (numModes>2 && (modes[0].cost+modes[1].cost) < (modes[2].cost*rdScale))          NumModesForFullRD = 2;
@@ -1050,7 +1050,7 @@ void H265CU<PixType>::CheckIntraLuma(Ipp32s absPartIdx, Ipp32s depth)
         tryIntra = tryIntraRD(absPartIdx, depth, modes);
     }
 #ifdef AMT_ADAPTIVE_INTRA_RD
-    if(m_par->TryIntra>=2 && tryIntra) numModes = GetNumIntraRDModes(depth, modes, numModes);
+    if(m_par->TryIntra>=2 && tryIntra) numModes = GetNumIntraRDModes(absPartIdx, depth, 0, modes, numModes);
 #endif
 #endif
     if(tryIntra) {
@@ -1083,7 +1083,7 @@ void H265CU<PixType>::CheckIntraLuma(Ipp32s absPartIdx, Ipp32s depth)
             Ipp32s numModes = InitIntraLumaModes(absPartIdxPu, depth, 1, modes);
             numModes = FilterIntraLumaModesBySatd(absPartIdxPu, depth, 1, modes, numModes);
 #ifdef AMT_ADAPTIVE_INTRA_RD
-            if(m_par->TryIntra>=2) numModes = GetNumIntraRDModes(depth+1, modes, numModes);
+            if(m_par->TryIntra>=2) numModes = GetNumIntraRDModes(absPartIdx, depth, 1, modes, numModes);
 #endif
             numModes = FilterIntraLumaModesByRdoTr0(absPartIdxPu, depth, 1, modes, numModes);
             numModes = FilterIntraLumaModesByRdoTrAll(absPartIdxPu, depth, 1, modes, numModes);
@@ -1130,7 +1130,7 @@ void H265CU<PixType>::CheckIntraChroma(Ipp32s absPartIdx, Ipp32s depth)
             }
 
             FillSubPartIntraPredModeC_(m_data + absPartIdx, numParts, chromaDir);
-            EncAndRecChroma(absPartIdx, absPartIdx << (4 - m_par->chromaShift), depth, &chromaCost);
+            EncAndRecChroma(absPartIdx, absPartIdx << (4 - m_par->chromaShift), depth, &chromaCost, INTRA_PRED_CALC);
             chromaCost += GetIntraChromaModeCost(absPartIdx);
 
             m_costCurr += chromaCost;
@@ -1389,15 +1389,15 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesByRdoTr0(Ipp32s absPartIdx, Ipp32s d
                                                      IntraLumaMode *modes, Ipp32s numModes)
 {
     Ipp32s numModesAfterRdoTr0Stage = m_par->num_cand_2[m_par->Log2MaxCUSize - depth - trDepth];
-    Ipp32s tuSplitIntra = (m_par->tuSplitIntra == 1 ||
-                           m_par->tuSplitIntra == 3 && (m_cslice->slice_type == I_SLICE || 
-                           (m_par->BiPyramidLayers > 1 && m_currFrame->m_pyramidLayer==0)));
+    
+    Ipp32s tuSplitIntra = IsTuSplitIntra();
+
 #ifdef AMT_ADAPTIVE_INTRA_DEPTH
     Ipp8u splitMode = GetTrSplitMode(absPartIdx, depth, trDepth, m_data[absPartIdx].partSize);
     
     bool  nosplit8x8 = (m_cuIntraAngMode!=INTRA_ANG_MODE_DC_PLANAR_ONLY && m_par->SplitThresholdStrengthTUIntra && (m_par->MaxCUSize>>(depth+trDepth))==8)?true:false;
-    if (!tuSplitIntra || splitMode==SPLIT_NONE || nosplit8x8)
-        return numModes; // final decision will be made at RdoTrAll stage but without transform split, so we may skip RdoTr0 stage
+    if (!tuSplitIntra || splitMode==SPLIT_NONE || (splitMode==SPLIT_MUST && m_par->QuadtreeTUMaxDepthIntra<=2) || nosplit8x8)
+        return numModes; // final decision will be made at RdoTrAll stage but without transform split or same split, so we may skip RdoTr0 stage
 
     if(m_cuIntraAngMode == INTRA_ANG_MODE_DC_PLANAR_ONLY || 
         (numModes==2 && modes[0].mode<2 && modes[1].mode<2)) {
@@ -1440,9 +1440,8 @@ template <typename PixType>
 Ipp32s H265CU<PixType>::FilterIntraLumaModesByRdoTrAll(Ipp32s absPartIdx, Ipp32s depth, Ipp32s trDepth,
                                                        IntraLumaMode *modes, Ipp32s numModes)
 {
-    Ipp32s tuSplitIntra = (m_par->tuSplitIntra == 1 ||
-                           m_par->tuSplitIntra == 3 && (m_cslice->slice_type == I_SLICE || 
-                           (m_par->BiPyramidLayers > 1 && m_currFrame->m_pyramidLayer==0)));
+    Ipp32s tuSplitIntra = IsTuSplitIntra();
+
     CostOpt rdoCostOpt = tuSplitIntra ? COST_REC_TR_ALL : COST_REC_TR_0;
     Ipp32s partMode = (trDepth == 0) ? PART_SIZE_2Nx2N : PART_SIZE_NxN;
     Ipp32s numParts = m_par->NumPartInCU >> (2 * (depth + trDepth));

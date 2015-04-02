@@ -105,6 +105,8 @@ namespace H265Enc {
         Ipp8u  AdaptiveRefs;     // on: Adaptive Search for best ref
         Ipp8u  NumRefFrameB;     // 0,1-default, 2+ Use Given
         Ipp8u  IntraMinDepthSC;  // Spatial complexity for Intra min depth 1 [0-11] 0-default, 1-11 (1-Always, 11-Never)
+        Ipp8u  InterMinDepthSTC; // Spatio-Temporal complexity for Inter min depth 1 [0-4] 0-default, 1-6 (1-Always, 6-Never)
+        Ipp8u  MotionPartitionDepth; // MotionPartitionDepth depth [0-6] 0-default, 1-6 (1-Never, 6-Always)
         Ipp16u cmIntraThreshold; // 0-no theshold
         Ipp16u tuSplitIntra;     // 0-default; 1-always; 2-never; 3-for Intra frames only
         Ipp16u cuSplit;          // 0-default; 1-always; 2-check Skip cost first
@@ -112,6 +114,7 @@ namespace H265Enc {
         //values for each: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100-disable (prohibited for I slice)
 
         Ipp32s saoOpt;          // 0-all modes; 1-only fast 4 modes
+        Ipp32s saoSubOpt;       // 0-All; 1-SubOpt; 2-Ref Frames only
         Ipp16u hadamardMe;      // 0-default; 1-never; 2-subpel; 3-always
         Ipp16u patternIntPel;   // 0-default; 1-log; 3-dia; 100-fullsearch
         Ipp16u patternSubPel;   // 0-default; 1 - int pel only, 2-halfpel; 3-quarter pels; 4-single diamond; 5-double diamond; 6-Fast Box Dia Orth 

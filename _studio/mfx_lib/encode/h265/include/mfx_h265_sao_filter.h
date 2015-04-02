@@ -33,7 +33,8 @@ namespace H265Enc {
 enum
 {
     SAO_OPT_ALL_MODES       = 1,
-    SAO_OPT_FAST_MODES_ONLY = 2
+    SAO_OPT_FAST_MODES_ONLY = 2,
+    SAO_OPT_ONE_MODE_ONLY   = 3
 };
 
 enum SaoCabacStateMarkers

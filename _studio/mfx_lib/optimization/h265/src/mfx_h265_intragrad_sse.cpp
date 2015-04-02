@@ -460,6 +460,86 @@ void MAKE_NAME(h265_ComputeRsCs_8u)(const unsigned char *ySrc, Ipp32s pitchSrc, 
     }
 }
 
+void MAKE_NAME(h265_ComputeRsCs_16u)(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu)
+{
+    Ipp32s cuSize = widthCu;
+    Ipp32s cuPitch = MAX_CU_SIZE >> 2;
+    Ipp32s i, j, k1, k2;
+    Ipp32s p2 = pitchSrc << 1;
+    Ipp32s p3 = p2 + pitchSrc;
+    Ipp32s p4 = pitchSrc << 2;
+    const Ipp16u *pSrcG = ySrc - pitchSrc - 1;
+    const Ipp16u *pSrc;
+
+    __m128i xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm8, xmm9;
+    __m128i xmm10, xmm11, xmm12, xmm13, xmm14;
+
+    k1 = 0;
+    for(i = 0; i < cuSize; i += 4)
+    { 
+        k2 = k1;
+        pSrc = pSrcG;
+        for(j = 0; j < cuSize; j += 8)
+        {
+            xmm7  = _mm_loadu_si128((__m128i *)&pSrc[pitchSrc]); 
+            xmm9  = _mm_loadu_si128((__m128i *)&pSrc[p2]); 
+            xmm11 = _mm_loadu_si128((__m128i *)&pSrc[p3]); 
+            xmm13 = _mm_loadu_si128((__m128i *)&pSrc[p4]); 
+
+            xmm6  = _mm_loadu_si128((__m128i *)&pSrc[1]); 
+            xmm8  = _mm_loadu_si128((__m128i *)&pSrc[pitchSrc+1]);
+            xmm10 = _mm_loadu_si128((__m128i *)&pSrc[p2+1]); 
+            xmm12 = _mm_loadu_si128((__m128i *)&pSrc[p3+1]);
+            xmm14 = _mm_loadu_si128((__m128i *)&pSrc[p4+1]);
+
+            // Cs
+            xmm1 = _mm_sub_epi16(xmm8, xmm7);
+            xmm1 = _mm_madd_epi16(xmm1, xmm1);
+
+            xmm2 = _mm_sub_epi16(xmm10, xmm9);
+            xmm2 = _mm_madd_epi16(xmm2, xmm2);
+            xmm1 = _mm_add_epi32(xmm1, xmm2);
+
+            xmm2 = _mm_sub_epi16(xmm12, xmm11);
+            xmm2 = _mm_madd_epi16(xmm2, xmm2);
+            xmm1 = _mm_add_epi32(xmm1, xmm2);
+
+            xmm2 = _mm_sub_epi16(xmm14, xmm13);
+            xmm2 = _mm_madd_epi16(xmm2, xmm2);
+            xmm1 = _mm_add_epi32(xmm1, xmm2);
+            
+            xmm1 = _mm_hadd_epi32(xmm1, xmm1);
+            xmm1 = _mm_srli_epi32 (xmm1, 4);
+            _mm_storel_epi64((__m128i *)(lcuCs+k2), xmm1);
+
+            // Rs 
+            xmm3 = _mm_sub_epi16(xmm8, xmm6);
+            xmm3 = _mm_madd_epi16(xmm3, xmm3);
+
+            xmm4 = _mm_sub_epi16(xmm10, xmm8);
+            xmm4 = _mm_madd_epi16(xmm4, xmm4);
+            xmm3 = _mm_add_epi32(xmm3, xmm4);
+
+            xmm4 = _mm_sub_epi16(xmm12, xmm10);
+            xmm4 = _mm_madd_epi16(xmm4, xmm4);
+            xmm3  = _mm_add_epi32(xmm3, xmm4);
+
+            xmm4 = _mm_sub_epi16(xmm14, xmm12);
+            xmm4 = _mm_madd_epi16(xmm4, xmm4);
+            xmm3  = _mm_add_epi32(xmm3, xmm4);
+
+            xmm3 = _mm_hadd_epi32(xmm3, xmm3);
+            xmm3 = _mm_srli_epi32 (xmm3, 4);
+            _mm_storel_epi64((__m128i *)(lcuRs+k2), xmm3);
+
+            pSrc += 8;
+            k2 += 2;
+        }
+        k1 += cuPitch;
+        pSrcG += p4;
+    }
+}
+
 
 }; // namespace MFX_HEVC_PP
 

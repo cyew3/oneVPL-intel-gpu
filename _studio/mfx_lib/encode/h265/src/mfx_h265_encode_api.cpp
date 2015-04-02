@@ -429,6 +429,7 @@ namespace {
             ext->RDOQuantChroma = 1;
             ext->RDOQuantCGZ = 1;
             ext->SaoOpt = 1;
+            ext->SaoSubOpt = 1;
             ext->IntraNumCand0_2 = 1;
             ext->IntraNumCand0_3 = 1;
             ext->IntraNumCand0_4 = 1;
@@ -463,6 +464,8 @@ namespace {
             ext->FastCoeffCost = 1;
             ext->NumRefFrameB = 1;
             ext->IntraMinDepthSC = 1;
+            ext->InterMinDepthSTC = 1;
+            ext->MotionPartitionDepth = 1;
             ext->AnalyzeCmplx = 1;
             ext->SceneCut = 1;
             ext->RateControlDepth = 1;
@@ -652,6 +655,7 @@ namespace {
             wrnIncompatible = !CheckMax(optHevc->CUSplit, 2);
             wrnIncompatible = !CheckMax(optHevc->HadamardMe, 3);
             wrnIncompatible = !CheckMax(optHevc->SaoOpt, 3);
+            wrnIncompatible = !CheckMax(optHevc->SaoSubOpt, 3);
             wrnIncompatible = !CheckMax(optHevc->CpuFeature, 5);
             wrnIncompatible = !CheckMax(optHevc->TryIntra, 2);
             wrnIncompatible = !CheckMax(optHevc->SplitThresholdTabIndex, 3);
@@ -1009,6 +1013,13 @@ namespace {
             else if (mfx.NumThread >=  8) optHevc.FramesInParallel = 3;
             else if (mfx.NumThread >=  4) optHevc.FramesInParallel = 2;
             else                          optHevc.FramesInParallel = 1;
+#ifdef AMT_VQ_TU
+            Ipp32s size = defaultOptHevc.Log2MaxCUSize;
+            Ipp32f wppEff = IPP_MIN((mfx.FrameInfo.Height+(1<<(size-1)))>>size,
+                                    (mfx.FrameInfo.Width+(1<<(size-1)))>>size)/2.75;
+            Ipp32f frameMult = IPP_MAX(1.0, IPP_MIN((Ipp32f)mfx.NumThread/(Ipp32f)wppEff, 4.0));
+            if (mfx.NumThread >=  4) optHevc.FramesInParallel = IPP_MIN((optHevc.FramesInParallel*frameMult+0.5), 8);
+#endif
         }
 
         if (optHevc.WPP == 0)
@@ -1160,6 +1171,8 @@ namespace {
             optHevc.RDOQuantCGZ = defaultOptHevc.RDOQuantCGZ;
         if (optHevc.SaoOpt == 0)
             optHevc.SaoOpt = defaultOptHevc.SaoOpt;
+        if (optHevc.SaoSubOpt == 0)
+            optHevc.SaoSubOpt = defaultOptHevc.SaoSubOpt;
         if (optHevc.CostChroma == 0)
             optHevc.CostChroma = defaultOptHevc.CostChroma;
         if (optHevc.PatternIntPel == 0)
@@ -1216,6 +1229,10 @@ namespace {
             optHevc.NumRefFrameB = defaultOptHevc.NumRefFrameB;
         if (optHevc.IntraMinDepthSC == 0)
             optHevc.IntraMinDepthSC = defaultOptHevc.IntraMinDepthSC;
+        if (optHevc.InterMinDepthSTC == 0)
+            optHevc.InterMinDepthSTC = defaultOptHevc.InterMinDepthSTC;
+        if (optHevc.MotionPartitionDepth == 0)
+            optHevc.MotionPartitionDepth = defaultOptHevc.MotionPartitionDepth;
         if (optHevc.SceneCut == 0)
             optHevc.SceneCut = defaultOptHevc.SceneCut;
         if (optHevc.AnalyzeCmplx == 0)

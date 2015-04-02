@@ -227,6 +227,7 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(1, output.extCodingOptionHevc.RDOQuantChroma);
     EXPECT_EQ(1, output.extCodingOptionHevc.RDOQuantCGZ);
     EXPECT_EQ(1, output.extCodingOptionHevc.SaoOpt);
+    EXPECT_EQ(1, output.extCodingOptionHevc.SaoSubOpt);
     EXPECT_EQ(1, output.extCodingOptionHevc.IntraNumCand0_2);
     EXPECT_EQ(1, output.extCodingOptionHevc.IntraNumCand0_3);
     EXPECT_EQ(1, output.extCodingOptionHevc.IntraNumCand0_4);
@@ -262,6 +263,8 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(1, output.extCodingOptionHevc.FastCoeffCost);
     EXPECT_EQ(1, output.extCodingOptionHevc.NumRefFrameB);
     EXPECT_EQ(1, output.extCodingOptionHevc.IntraMinDepthSC);
+    EXPECT_EQ(1, output.extCodingOptionHevc.InterMinDepthSTC);
+    EXPECT_EQ(1, output.extCodingOptionHevc.MotionPartitionDepth);
     EXPECT_EQ(1, output.extCodingOptionHevc.SceneCut);
     EXPECT_EQ(1, output.extCodingOptionHevc.AnalyzeCmplx);
     EXPECT_EQ(1, output.extCodingOptionHevc.RateControlDepth);
@@ -269,6 +272,7 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(1, output.extCodingOptionHevc.DeblockBorders);
     // check if the rest of ExtCodingOptionHevc is zeroed
     EXPECT_EQ(true, IsZero(output.extCodingOptionHevc.reserved));
+    EXPECT_EQ(41 * sizeof(mfxU16), sizeof(output.extCodingOptionHevc.reserved));
 
     // check if ExtHevcTiles fields are set correctly
     EXPECT_EQ(1, output.extHevcTiles.NumTileRows);
@@ -763,6 +767,12 @@ TEST_F(QueryTest, Mode2_Single) {
         const Ipp16u unsupported[] = {4, 5, 0xff, 0xffff};
         TestOneFieldErr(input.extCodingOptionHevc.SaoOpt, output.extCodingOptionHevc.SaoOpt, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
+    { SCOPED_TRACE("Test SaoSubOpt");
+        const Ipp16u supported[] = {1, 2, 3};
+        TestOneFieldOk(input.extCodingOptionHevc.SaoSubOpt, output.extCodingOptionHevc.SaoSubOpt, supported);
+        const Ipp16u unsupported[] = {4, 5, 0xff, 0xffff};
+        TestOneFieldErr(input.extCodingOptionHevc.SaoSubOpt, output.extCodingOptionHevc.SaoSubOpt, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
+    }
     { SCOPED_TRACE("Test PatternIntPel");
         const Ipp16u supported[] = {1, 100};
         TestOneFieldOk(input.extCodingOptionHevc.PatternIntPel, output.extCodingOptionHevc.PatternIntPel, supported);
@@ -822,6 +832,21 @@ TEST_F(QueryTest, Mode2_Single) {
         TestOneFieldOk(input.extCodingOptionHevc.NumRefFrameB, output.extCodingOptionHevc.NumRefFrameB, supported);
         const Ipp16u unsupported[] = {17, 100, 0xffff};
         TestOneFieldErr(input.extCodingOptionHevc.NumRefFrameB, output.extCodingOptionHevc.NumRefFrameB, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
+    }
+    { SCOPED_TRACE("Test IntraMinDepthSC");
+        const Ipp16u supported[] = {1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946, 17711, 28657, 46368, 0xffff};
+        TestOneFieldOk(input.extCodingOptionHevc.IntraMinDepthSC, output.extCodingOptionHevc.IntraMinDepthSC, supported);
+        // no unsupported values
+    }
+    { SCOPED_TRACE("Test InterMinDepthSTC");
+        const Ipp16u supported[] = {1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946, 17711, 28657, 46368, 0xffff};
+        TestOneFieldOk(input.extCodingOptionHevc.InterMinDepthSTC, output.extCodingOptionHevc.InterMinDepthSTC, supported);
+        // no unsupported values
+    }
+    { SCOPED_TRACE("Test MotionPartitionDepth");
+        const Ipp16u supported[] = {1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946, 17711, 28657, 46368, 0xffff};
+        TestOneFieldOk(input.extCodingOptionHevc.MotionPartitionDepth, output.extCodingOptionHevc.MotionPartitionDepth, supported);
+        // no unsupported values
     }
     { SCOPED_TRACE("Test SceneCut");
         const Ipp16u supported[] = {0, 1};

@@ -134,7 +134,7 @@ RDOQuant<PixType>::RDOQuant(H265CU<PixType>* pCU, H265BsFake* bs, EnumTextType t
 {
     m_pCU    = pCU;
     m_bs     = bs;
-    m_lambda = m_pCU->m_rdLambda;
+    m_lambda = type == TEXT_LUMA ? m_pCU->m_rdLambda : m_pCU->m_rdLambdaChroma;
     m_bitDepth = type == TEXT_LUMA ? pCU->m_par->bitDepthLuma : pCU->m_par->bitDepthChroma;
     m_textType = type;
 

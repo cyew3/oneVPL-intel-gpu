@@ -49,6 +49,14 @@ namespace utils {
         return std::unique_ptr<T, decltype(&utils::AlignedFree)>(ptr, &utils::AlignedFree);
     }
 
+    template <class T, class U>
+    void InitConstBlock(T* block, int pitch, int width, int height, U val)
+    {
+        for (int r = 0; r < height; r++, block += pitch)
+            for (int c = 0; c < width; c++)
+                block[c] = val;
+    }
+
     template <class TRand, class T, class U>
     void InitRandomBlock(TRand &randEngine, T* block, int pitch, int width, int height, U minVal, U maxVal)
     {
@@ -312,6 +320,10 @@ TEST(optimization, SSE_avx2) {
     utils::InitRandomBlock(rand, src1_10b.get(), pitch1, 64, 64, 0, 1023);
     utils::InitRandomBlock(rand, src2_10b.get(), pitch2, 64, 64, 0, 1023);
 
+    //utils::InitConstBlock(src1_10b.get(), pitch1, 64, 64, 0);
+    //utils::InitConstBlock(src2_10b.get(), pitch2, 64, 64, 1023);
+    
+
     Ipp32s dims[][2] = {
         {4,4}, {4,8}, {4,16},
         {8,4}, {8,8}, {8,16}, {8,32},
@@ -323,6 +335,7 @@ TEST(optimization, SSE_avx2) {
         {64,16}, {64,32}, {64,48}, {64,64}
     };
 
+//#define PRINT_TICKS
 #ifdef PRINT_TICKS
     for (auto wh: dims) {
         Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp8u>, src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1]);
@@ -333,6 +346,7 @@ TEST(optimization, SSE_avx2) {
         ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp16u>,   src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1]);
         printf("%2dx%2d 10bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
     }
+#undef PRINT_TICKS
 #endif // PRINT_TICKS
 
     EXPECT_LE(utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp8u>, src1.get(), pitch1, src2.get(), pitch2, 16, 16),
@@ -391,7 +405,7 @@ TEST(optimization, DiffNv12_avx2) {
         {64, 16}, {64, 32}, {64, 48}, {64, 64}
     };
 
-#define PRINT_TICKS
+//#define PRINT_TICKS
 #ifdef PRINT_TICKS
     for (auto wh: dims) {
         Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_avx2<Ipp8u>, src.get(), pitchSrc, pred.get(), pitchPred, diff1Tst.get(), wh[0], diff2Tst.get(), wh[0], wh[0], wh[1]);
@@ -402,6 +416,7 @@ TEST(optimization, DiffNv12_avx2) {
         ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_px<Ipp16u>,   src_10b.get(), pitchSrc, pred_10b.get(), pitchPred, diff1Ref.get(), wh[0], diff2Ref.get(), wh[0], wh[0], wh[1]);
         printf("%2dx%2d 10bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
     }
+#undef PRINT_TICKS
 #endif //PRINT_TICKS
 
     //EXPECT_LE(utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_avx2<Ipp8u>, src.get(), pitchSrc, pred.get(), pitchPred, diff1Tst.get(), 16, diff2Tst.get(), 16, 32, 16),

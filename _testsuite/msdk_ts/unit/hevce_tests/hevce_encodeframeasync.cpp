@@ -21,8 +21,8 @@ class RuntimeTest : public ::testing::Test {
 protected:
     RuntimeTest() : ctor_status(MFX_ERR_UNKNOWN), core(), encoder(&core, &ctor_status), ctrl(), reordered(), bitstream(), entryPoint() {
         InitParamSetMandated(input);
-        input.videoParam.mfx.FrameInfo.Width = 32;
-        input.videoParam.mfx.FrameInfo.Height = 32;
+        input.videoParam.mfx.FrameInfo.Width = 64;
+        input.videoParam.mfx.FrameInfo.Height = 64;
         input.videoParam.mfx.BufferSizeInKB = 5;
         input.videoParam.mfx.TargetKbps = 20;
         core.SetParamSet(input);

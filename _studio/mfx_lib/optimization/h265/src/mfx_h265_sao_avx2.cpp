@@ -42,9 +42,9 @@ namespace MFX_HEVC_PP
     const int   g_skipLinesR[3] = {1, 1, 1};// YCbCr
     const int   g_skipLinesB[3] = {1, 1, 1};// YCbCr
 
-#ifndef PixType
-#define PixType Ipp8u
-#endif
+//#ifndef PixType
+//#define PixType Ipp8u
+//#endif
 
     // Encoder part of SAO
 ALIGN_DECL(32) static const Ipp16u tab_killmask_avx2[16][16] = {
@@ -66,8 +66,8 @@ ALIGN_DECL(32) static const Ipp16u tab_killmask_avx2[16][16] = {
     { 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xdead },
 };
 
-static
-void h265_sao_EO_general_avx2(
+template <typename PixType>
+static void h265_sao_EO_general_avx2(
         const PixType* recBlk,
         int recStride,
         const PixType* orgBlk,
@@ -113,11 +113,18 @@ void h265_sao_EO_general_avx2(
         // process 16 pixels per iteration
         for (x = startX; x < endX - startX - 15; x += 16)
         {
+            if(sizeof(PixType)==1) {
             // promote to 16-bit
             recn = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(&recLine[x + offset])));
             rec0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(&recLine[x])));
             rec1 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(&recLine[x - offset])));
             org0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(&orgLine[x+0])));
+            } else {
+            recn = _mm256_loadu_si256((__m256i *)(&recLine[x + offset]));
+            rec0 = _mm256_loadu_si256((__m256i *)(&recLine[x]));
+            rec1 = _mm256_loadu_si256((__m256i *)(&recLine[x - offset]));
+            org0 = _mm256_loadu_si256((__m256i *)(&orgLine[x+0]));
+            }
 
             // compute signLeft, signRight
             sign0 = _mm256_sign_epi16(negOne, _mm256_sub_epi16(recn, rec0));
@@ -161,11 +168,18 @@ void h265_sao_EO_general_avx2(
             // kill out-of-bound values
             mask = _mm256_load_si256((__m256i *)tab_killmask_avx2[endX - x]);
 
+            if(sizeof(PixType)==1){
             // promote to 16-bit
             recn = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(&recLine[x + offset])));
             rec0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(&recLine[x])));
             rec1 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(&recLine[x - offset])));
             org0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(&orgLine[x])));
+            } else {
+            recn = _mm256_loadu_si256((__m256i *)(&recLine[x + offset]));
+            rec0 = _mm256_loadu_si256((__m256i *)(&recLine[x]));
+            rec1 = _mm256_loadu_si256((__m256i *)(&recLine[x - offset]));
+            org0 = _mm256_loadu_si256((__m256i *)(&orgLine[x]));
+            }
 
             // compute signLeft, signRight
             sign0 = _mm256_sign_epi16(negOne, _mm256_sub_epi16(recn, rec0));
@@ -238,6 +252,7 @@ void h265_sao_EO_general_avx2(
 
 } // h265_sao_EO_general_avx2(...)
 
+template <typename PixType>
 static void h265_sao_BO_sse(
     const PixType* recLine,
     int recStride,
@@ -266,7 +281,9 @@ static void h265_sao_BO_sse(
 }
 
 
-    void MAKE_NAME(h265_GetCtuStatistics_8u)(SAOCU_ENCODE_PARAMETERS_LIST)
+template <typename PixType>
+static void h265_GetCtuStatistics_Kernel(int compIdx, const PixType* recBlk, int recStride, const PixType* orgBlk, int orgStride, int width,
+        int height, int shift,  const MFX_HEVC_PP::CTBBorders& borders, int numSaoModes, MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes)
     {
         Ipp16s signLineBuf1[64+1];
         Ipp16s signLineBuf2[64+1];
@@ -468,6 +485,16 @@ static void h265_sao_BO_sse(
             }
             }
         }
+    }
+
+    void MAKE_NAME(h265_GetCtuStatistics_8u)(SAOCU_ENCODE_PARAMETERS_LIST)
+    {
+        h265_GetCtuStatistics_Kernel<Ipp8u>(SAOCU_ENCODE_PARAMETERS_LIST_CALL);
+    }
+
+    void MAKE_NAME(h265_GetCtuStatistics_16u)(SAOCU_ENCODE_PARAMETERS_LIST_16U)
+    {
+        h265_GetCtuStatistics_Kernel<Ipp16u>(SAOCU_ENCODE_PARAMETERS_LIST_16U_CALL);
     }
 };
 

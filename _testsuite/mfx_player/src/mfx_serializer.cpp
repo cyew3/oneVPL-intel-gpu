@@ -285,6 +285,7 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(IntraChromaRDO);
     SERIALIZE_INT(FastInterp);
     SERIALIZE_INT(SaoOpt);
+    SERIALIZE_INT(SaoSubOpt);
     SERIALIZE_INT(PatternIntPel);
     SERIALIZE_INT(FastSkip);
     SERIALIZE_INT(PatternSubPel);
@@ -312,6 +313,8 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(FastCoeffCost);
     SERIALIZE_INT(NumRefFrameB);
     SERIALIZE_INT(IntraMinDepthSC);
+    SERIALIZE_INT(InterMinDepthSTC);
+    SERIALIZE_INT(MotionPartitionDepth);
     SERIALIZE_INT(SceneCut);
     SERIALIZE_INT(AnalyzeCmplx);
     SERIALIZE_INT(RateControlDepth);
