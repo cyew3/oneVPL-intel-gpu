@@ -229,6 +229,7 @@ protected:
     bool m_new_bs;
     bool m_isFrameRateFromInit;
     mfxF64 m_time[NUM_FRAMES];
+    mfxU8 m_aspect_ratio_information;
 
     Ipp32s m_NumThreads;
     Ipp32u maxNumFrameBuffered;

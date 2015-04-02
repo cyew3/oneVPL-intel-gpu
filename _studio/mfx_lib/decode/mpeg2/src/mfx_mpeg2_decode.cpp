@@ -421,6 +421,7 @@ VideoDECODEMPEG2::VideoDECODEMPEG2(VideoCORE* core, mfxStatus *sts)
     m_InitH = 0;
     m_InitPicStruct = 0;
     m_extendedPicStruct = 0;
+    m_aspect_ratio_information = 0;
 
 #ifdef UMC_VA_DXVA
     memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1) * MPEG2_STATUS_REPORT_NUM);
@@ -1937,11 +1938,6 @@ mfxStatus VideoDECODEMPEG2::UpdateCurrVideoParams(mfxFrameSurface1 *surface_work
 
     const UMC::sSequenceHeader& sh = m_implUmc.GetSequenceHeader();
     const UMC::sPictureHeader& ph = m_implUmc.GetPictureHeader(task_num);
-
-    if (sh.aspect_ratio_w != m_vPar.mfx.FrameInfo.AspectRatioW || sh.aspect_ratio_h != m_vPar.mfx.FrameInfo.AspectRatioH)
-    {
-        sts = MFX_WRN_VIDEO_PARAM_CHANGED;
-    }
 
     if (m_isFrameRateFromInit == false && ((Ipp32u)sh.frame_rate_extension_d != m_vPar.mfx.FrameInfo.FrameRateExtD || (Ipp32u)sh.frame_rate_extension_n != m_vPar.mfx.FrameInfo.FrameRateExtN))
     {
@@ -3857,7 +3853,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
         }
         if (eSEQ == curr[3] && false == m_found_SH)
         {
-            if(tail < curr + 6) 
+            if(tail < curr + 7) 
             {
                 return MFX_ERR_MORE_DATA;
             }
@@ -3866,6 +3862,14 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
             mfxU16 CropH = ((curr[5] & 0xf) << 8) + curr[6];
             mfxU16 Width = (CropW + 15) & ~0x0f;
             mfxU16 Height = (CropH + 15) & ~0x0f;
+            mfxU8  aspect_ratio_information = curr[7] >> 4;
+
+            if (m_aspect_ratio_information != aspect_ratio_information)
+            {
+                m_aspect_ratio_information = aspect_ratio_information;
+                if (!m_first_SH)
+                    return MFX_WRN_VIDEO_PARAM_CHANGED;
+            }
 
             const mfxU8* ptr = FindStartCodeEx(curr + 4, tail);
 
@@ -3912,11 +3916,11 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
 
             if (false == m_first_SH)
             {
-               if (m_InitW >  Width || m_InitH > Height)
-              {
+                if (m_InitW >  Width || m_InitH > Height)
+                {
                     m_resizing = true;  
                     return MFX_WRN_VIDEO_PARAM_CHANGED;
-              }
+                }
             }
 
             m_first_SH = false;
