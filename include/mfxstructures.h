@@ -570,6 +570,14 @@ typedef struct {
     mfxU16      UseRawRef;              /* tri-state option */
 } mfxExtCodingOption2;
 
+/* WeightedPred */
+enum {
+    MFX_WEIGHTED_PRED_UNKNOWN  = 0,
+    MFX_WEIGHTED_PRED_DEFAULT  = 1,
+    MFX_WEIGHTED_PRED_EXPLICIT = 2,
+    MFX_WEIGHTED_PRED_IMPLICIT = 3
+};
+
 typedef struct {
     mfxExtBuffer Header;
 
@@ -587,7 +595,21 @@ typedef struct {
     mfxU16      GlobalMotionBiasAdjustment;    /* tri-state option */
     mfxU16      MVCostScalingFactor;
     mfxU16      MBDisableSkipMap;              /* tri-state option */
-    mfxU16      reserved[240];
+
+    mfxU16      WeightedPred;
+    mfxU16      WeightedBiPred;
+
+    mfxU16      AspectRatioInfoPresent;         /* tri-state option */
+    mfxU16      OverscanInfoPresent;            /* tri-state option */
+    mfxU16      OverscanAppropriate;            /* tri-state option */
+    mfxU16      TimingInfoPresent;              /* tri-state option */
+    mfxU16      BitstreamRestriction;           /* tri-state option */
+    mfxU16      LowDelayHrd;                    /* tri-state option */
+    mfxU16      MotionVectorsOverPicBoundaries; /* tri-state option */
+    mfxU16      Log2MaxMvLengthHorizontal;      /* 0..16 */
+    mfxU16      Log2MaxMvLengthVertical;        /* 0..16 */
+
+    mfxU16      reserved[229];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
@@ -659,7 +681,8 @@ enum {
     MFX_EXTBUFF_HEVC_PARAM                 = MFX_MAKEFOURCC('2','6','5','P'),
     MFX_EXTBUFF_DECODED_FRAME_INFO         = MFX_MAKEFOURCC('D','E','F','I'),
     MFX_EXTBUFF_TIME_CODE                  = MFX_MAKEFOURCC('T','M','C','D'),
-    MFX_EXTBUFF_HEVC_REGION                = MFX_MAKEFOURCC('2','6','5','R')
+    MFX_EXTBUFF_HEVC_REGION                = MFX_MAKEFOURCC('2','6','5','R'),
+    MFX_EXTBUFF_PRED_WEIGHT_TABLE          = MFX_MAKEFOURCC('E','P','W','T')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1289,6 +1312,17 @@ typedef struct {
     mfxU16       RegionType;
     mfxU16       reserved[25];
 } mfxExtHEVCRegion;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16       LumaLog2WeightDenom;       // 0..7
+    mfxU16       ChromaLog2WeightDenom;     // 0..7
+    mfxU16       LumaWeightFlag[2][32];     // [list] 0,1
+    mfxU16       ChromaWeightFlag[2][32];   // [list] 0,1
+    mfxI16       Weights[2][32][3][2];      // [list][list entry][Y, Cb, Cr][weight, offset]
+    mfxU16       reserved[58];
+} mfxExtPredWeightTable;
 
 #ifdef __cplusplus
 } // extern "C"
