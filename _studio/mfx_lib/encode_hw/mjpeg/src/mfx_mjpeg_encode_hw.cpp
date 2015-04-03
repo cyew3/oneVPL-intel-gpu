@@ -263,23 +263,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfx
         if(out->mfx.NumThread < 1)
             out->mfx.NumThread = 1;
 
-        //Check for valid height and width
-        if (in->mfx.FrameInfo.Width & 15)
-        {
-            out->mfx.FrameInfo.Width = 0;
-            isInvalid ++;
-        }
-        else
-            out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
-
-        if (in->mfx.FrameInfo.Height & ((in->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 15 : 31) )
-        {
-            out->mfx.FrameInfo.Height = 0;
-            isInvalid ++;
-        }
-        else
-            out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
-
         // Check crops
         if (in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height && in->mfx.FrameInfo.Height) {
             out->mfx.FrameInfo.CropH = 0;
@@ -790,7 +773,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::CheckEncodeFrameParam(
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16) != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+        //No sense to check maximum value in ths case, 0 is valid value for video memory 
+        //MFX_CHECK(surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16) != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(surface->Data.Y != 0 || isExternalFrameAllocator, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         if (surface->Info.Width != m_vParam.mfx.FrameInfo.Width || surface->Info.Height != m_vParam.mfx.FrameInfo.Height)
