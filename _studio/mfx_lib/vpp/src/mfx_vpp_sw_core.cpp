@@ -931,29 +931,31 @@ mfxStatus VideoVPPSW::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVppCa
         caps.uFrameRateConversion= 1; // "1" means general FRC is supported. "Interpolation" modes descibed by caps.frcCaps
         caps.uDeinterlacing      = 1; // "1" means general deinterlacing is supported
         caps.uVideoSignalInfo    = 1; // "1" means general VSI is supported
+        if (sts >= MFX_ERR_NONE)
+           return sts;
     }
 
-    if(MFX_ERR_NONE != sts || MFX_PLATFORM_SOFTWARE == core->GetPlatformType())
-    {
-        caps.iNumBackwardSamples = 1; // fake
-        caps.iNumForwardSamples  = 1; // fake
+    caps.iNumBackwardSamples = 1; // fake
+    caps.iNumForwardSamples  = 1; // fake
 
-        caps.uAdvancedDI         = 1;
-        caps.uDenoiseFilter      = 1;
-        caps.uDetailFilter       = 1;
-        caps.uFieldWeavingControl= 0;
-        caps.uFrameRateConversion= 1; // "1" means general FRC is supported. "Interpolation" modes descibed by caps.frcCaps
-        caps.uDeinterlacing      = 1; // "1" means general deinterlacing is supported
-        caps.uVideoSignalInfo    = 1; // "1" means general VSI is supported
-        caps.uInverseTC          = 1;
-        caps.uIStabFilter        = 1;
-        caps.uMaxHeight          = 8096;
-        caps.uMaxWidth           = 8096;
-        caps.uProcampFilter      = 1;
-        caps.uSceneChangeDetection = 0;
-        caps.uSimpleDI           = 1;
-        caps.uVariance           = 0;
-    }
+    caps.uAdvancedDI         = 1;
+    caps.uDenoiseFilter      = 1;
+    caps.uDetailFilter       = 1;
+    caps.uFieldWeavingControl= 0;
+    caps.uFrameRateConversion= 1; // "1" means general FRC is supported. "Interpolation" modes descibed by caps.frcCaps
+    caps.uDeinterlacing      = 1; // "1" means general deinterlacing is supported
+    caps.uVideoSignalInfo    = 1; // "1" means general VSI is supported
+    caps.uInverseTC          = 1;
+    caps.uIStabFilter        = 1;
+    caps.uMaxHeight          = 8096;
+    caps.uMaxWidth           = 8096;
+    caps.uProcampFilter      = 1;
+    caps.uSceneChangeDetection = 0;
+    caps.uSimpleDI           = 1;
+    caps.uVariance           = 0;
+
+    if (MFX_PLATFORM_HARDWARE == core->GetPlatformType())
+        return MFX_WRN_PARTIAL_ACCELERATION;
 
     return MFX_ERR_NONE;
 

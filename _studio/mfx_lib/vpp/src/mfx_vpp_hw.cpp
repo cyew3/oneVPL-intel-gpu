@@ -1633,7 +1633,7 @@ mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCap
     ddi.reset( CreateVideoProcessing(core) );
     if (ddi.get() == 0) return MFX_ERR_UNKNOWN;
 
-    mfxVideoParam tmpPar;
+    mfxVideoParam tmpPar = {0};
     tmpPar.vpp.In.Width = 352;
     tmpPar.vpp.In.Height= 288;
     tmpPar.vpp.In.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
