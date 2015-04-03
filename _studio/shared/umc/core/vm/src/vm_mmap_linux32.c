@@ -87,7 +87,7 @@ void *vm_mmap_set_view(vm_mmap *handle, Ipp64u *offset, Ipp64u *sizet)
     edge = (*sizet) + (*offset);
     (*offset) = ((Ipp64u)((*offset) / pagesize)) * pagesize;
     handle->sizet = (*sizet) = edge - (*offset);
-    handle->address = mmap64(0,
+    handle->address = mmap(0,
                            *sizet,
                            PROT_READ,
                            MAP_SHARED,
