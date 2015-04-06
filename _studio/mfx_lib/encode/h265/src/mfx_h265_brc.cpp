@@ -1241,8 +1241,9 @@ mfxStatus VMEBrc::Init(const mfxVideoParam *init, H265VideoParam &, mfxI32 )
     m_targetRateMax = m_initTargetRate;
     m_laData.resize(0);
 
+   for (mfxU32 level = 0; level < 8; level++)
    for (mfxU32 qp = 0; qp < 52; qp++)
-        m_rateCoeffHistory[qp].Reset(RegressionWindow, 100.0, 100.0 * INIT_RATE_COEFF[qp]);
+        m_rateCoeffHistory[level][qp].Reset(RegressionWindow, 100.0, 100.0 * INIT_RATE_COEFF[qp]);
     m_framesBehind = 0;
     m_bitsBehind = 0.0;
     m_curQp = -1;
@@ -1421,23 +1422,24 @@ mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLeng
     }
     if (start != m_laData.end())
     {
-       mfxI32 curQp = (*start).qp;
-        mfxF64 oldCoeff = m_rateCoeffHistory[curQp].GetCoeff();
+        mfxU32 level = (*start).layer < 8 ? (*start).layer : 7;
+        mfxI32 curQp = (*start).qp;
+        mfxF64 oldCoeff = m_rateCoeffHistory[level][curQp].GetCoeff();
         mfxF64 y = IPP_MAX(0.0, realRatePerMb);
         mfxF64 x = (*start).estRate[curQp];
-        //printf("%d) intra %d, inter %d, prop %d, qp %d,  est rate %f, real %f \t k %f \n",(*start).encOrder,(*start).intraCost, (*start).interCost,(*start).propCost, curQp, (*start).estRate[curQp],realRatePerMb, x/y);
+        //printf("%4d) intra\t%8d\tinter\t%8d\tprop %8d\tqp\t%2d\t%3d\test rate\t%5f\treal\t%5f\tk\t%5f \n",(*start).encOrder,(*start).intraCost, (*start).interCost,(*start).propCost, curQp, (*start).deltaQp, (*start).estRate[curQp],realRatePerMb, x/y);
         mfxF64 minY = NORM_EST_RATE * INIT_RATE_COEFF[curQp] * MIN_RATE_COEFF_CHANGE;
         mfxF64 maxY = NORM_EST_RATE * INIT_RATE_COEFF[curQp] * MAX_RATE_COEFF_CHANGE;
         y = CLIPVAL(minY, maxY, y / x * NORM_EST_RATE); 
-        m_rateCoeffHistory[curQp].Add(NORM_EST_RATE, y);
+        m_rateCoeffHistory[level][curQp].Add(NORM_EST_RATE, y);
         //mfxF64 ratio = m_rateCoeffHistory[curQp].GetCoeff() / oldCoeff;
         mfxF64 ratio = y / (oldCoeff*NORM_EST_RATE);
         for (mfxI32 i = -m_qpUpdateRange; i <= m_qpUpdateRange; i++)
             if (i != 0 && curQp + i >= 0 && curQp + i < 52)
             {
                 mfxF64 r = ((ratio - 1.0) * (1.0 - ((mfxF64)abs(i))/((mfxF64)m_qpUpdateRange + 1.0)) + 1.0);
-                m_rateCoeffHistory[curQp + i].Add(NORM_EST_RATE,
-                    NORM_EST_RATE * m_rateCoeffHistory[curQp + i].GetCoeff() * r);
+                m_rateCoeffHistory[level][curQp + i].Add(NORM_EST_RATE,
+                    NORM_EST_RATE * m_rateCoeffHistory[level][curQp + i].GetCoeff() * r);
             }
         (*start).bNotUsed = 1;
     }
@@ -1460,7 +1462,8 @@ mfxI32 VMEBrc::GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP 
     if (!m_laData.size())
         return 26;
 
-    mfxF64 totalEstRate[52] = {};  
+    mfxF64 totalEstRate[52] = {}; 
+    mfxU16 maxLayer = 0;
 
      // start of sequence
     std::list<LaFrameData>::iterator start = m_laData.begin();
@@ -1484,7 +1487,7 @@ mfxI32 VMEBrc::GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP 
         for (mfxU32 qp = 0; qp < 52; qp++)
         {
             
-            (*it).estRateTotal[qp] = IPP_MAX(MIN_EST_RATE, m_rateCoeffHistory[qp].GetCoeff() * (*it).estRate[qp]);
+            (*it).estRateTotal[qp] = IPP_MAX(MIN_EST_RATE, m_rateCoeffHistory[(*it).layer < 8 ? (*it).layer : 7][qp].GetCoeff() * (*it).estRate[qp]);
             totalEstRate[qp] += (*it).estRateTotal[qp];        
         }
    }
@@ -1508,6 +1511,7 @@ mfxI32 VMEBrc::GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP 
             ? -mfxI32(deltaQp * 2.0 * strength + 0.5)
             : -mfxI32(deltaQp * 1.0 * strength + 0.5);
         maxDeltaQp = IPP_MAX(maxDeltaQp, (*it).deltaQp);
+        maxLayer = ((*it).layer > maxLayer) ? (*it).layer : maxLayer;
     }
  
     for (it = start; it != m_laData.end(); ++it)
@@ -1527,6 +1531,10 @@ mfxI32 VMEBrc::GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP 
             m_curBaseQp = CLIPVAL(m_curBaseQp - MAX_QP_CHANGE, m_curBaseQp + MAX_QP_CHANGE, maxQp);
         else
             ; // do not change qp if last qp guarantees target rate interval
+    }
+    if ((*start).deltaQp == 0 && (*start).layer == 0 && maxLayer > 1)
+    {
+        (*start).deltaQp = -1;     
     }
     m_curQp = CLIPVAL(1, 51, m_curBaseQp + (*start).deltaQp); // driver doesn't support qp=0
     // printf("%d) intra %d, inter %d, prop %d, delta %d, maxdelta %d, baseQP %d, qp %d \n",(*start).encOrder,(*start).intraCost, (*start).interCost, (*start).propCost, (*start).deltaQp, maxDeltaQp, m_curBaseQp,m_curQp );

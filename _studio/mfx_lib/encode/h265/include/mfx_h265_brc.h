@@ -261,7 +261,7 @@ protected:
     bool    m_bPyr;
 
     std::list <LaFrameData> m_laData;
-    Regression<20>   m_rateCoeffHistory[52];
+    Regression<20>   m_rateCoeffHistory[8][52];
     UMC::Mutex    m_mutex;
 
     mfxI32 GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP );
