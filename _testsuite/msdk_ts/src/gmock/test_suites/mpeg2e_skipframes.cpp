@@ -39,59 +39,12 @@ namespace mpeg2e_skipframes
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        // IPPP, all skipped
-        {/*00*/ MFX_ERR_NONE, 10, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY } }, "" },
-        {/*01*/ MFX_ERR_NONE, 10, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING } }, "" },
-        {/*02*/ MFX_ERR_NONE, 10, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, 3 } }, "" },
-
-        // IBBBBP, all skipped
-        {/*03*/ MFX_ERR_NONE, 10, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5 },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY } }, "" },
-        {/*04*/ MFX_ERR_NONE, 10, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5 },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING } }, "" },
-        {/*05*/ MFX_ERR_NONE, 10, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5 },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, 3 } }, "" },
-
-        // IPPP|IBBBBP, not all skipped
-        {/*06*/ MFX_ERR_NONE, 30, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY } }, "1 3 5 7" },
-        {/*07*/ MFX_ERR_NONE, 30, {
+        // IBBBBP, not all skipped
+        {/*00*/ MFX_ERR_NONE, 30, {
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5 },
             { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY } }, "1 5 7" },
-        {/*08*/ MFX_ERR_NONE, 30, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING } }, "1 3 5 7" },
-        {/*09*/ MFX_ERR_NONE, 30, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5 },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING } }, "1 5 7" },
-        {/*10*/ MFX_ERR_NONE, 30, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, 3 } }, "1 3 5 7" },
-        {/*11*/ MFX_ERR_NONE, 30, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5 },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, 3 } }, "1 5 7" },
+
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -148,6 +101,8 @@ namespace mpeg2e_skipframes
         {
             skip_frames.push_back(f);
         }
+
+        g_tsLog << "Skipped frames: " << tc.skips << "\n";
         SurfProc surf_proc;
         surf_proc.Init(m_ctrl, skip_frames);
         m_filler = &surf_proc;
