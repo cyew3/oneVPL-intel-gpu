@@ -329,6 +329,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(MaxQPP,                 OPT_UINT_8,     "max QP for P-frames, 0 = default"),
         HANDLE_EXT_OPTION2(MinQPB,                 OPT_UINT_8,     "min QP for B-frames, 0 = default"),
         HANDLE_EXT_OPTION2(MaxQPB,                 OPT_UINT_8,     "max QP for B-frames, 0 = default"),
+        HANDLE_EXT_OPTION2(FixedFrameRate,         OPT_UINT_16,     "max QP for B-frames, 0 = default"),
         HANDLE_EXT_OPTION2(DisableVUI,             OPT_UINT_16,    ""),
         HANDLE_EXT_OPTION2(BufferingPeriodSEI,     OPT_UINT_16,    ""),
         HANDLE_EXT_OPTION2(UseRawRef,              OPT_TRI_STATE,  "on|off"),
@@ -342,6 +343,11 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION3(DirectBiasAdjustment,       OPT_TRI_STATE, "on|off"),
         HANDLE_EXT_OPTION3(GlobalMotionBiasAdjustment, OPT_TRI_STATE, "on|off"),
         HANDLE_EXT_OPTION3(MVCostScalingFactor,        OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION3(AspectRatioInfoPresent,     OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION3(OverscanInfoPresent,        OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION3(TimingInfoPresent,          OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION3(LowDelayHrd,                OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION3(BitstreamRestriction,       OPT_UINT_16,   ""),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
