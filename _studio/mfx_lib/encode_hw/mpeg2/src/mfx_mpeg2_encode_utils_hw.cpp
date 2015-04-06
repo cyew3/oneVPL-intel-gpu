@@ -1751,9 +1751,9 @@ namespace MPEG2EncoderHW
         MFX_CHECK(bs->DataOffset <= 32 , MFX_ERR_UNDEFINED_BEHAVIOR);
 
         mfxU32 startbspos = bs->DataOffset + bs->DataLength;
-        mfxI32 output_buffer_size = (mfxI32)(bs->MaxLength - startbspos);
+        mfxU32 output_buffer_size = bs->MaxLength > startbspos ? (bs->MaxLength - startbspos) : 0;
 
-        MFX_CHECK(output_buffer_size >= (mfxI32)m_VideoParamsEx.mfxVideoParams.mfx.BufferSizeInKB * m_VideoParamsEx.mfxVideoParams.mfx.BRCParamMultiplier * 1000,MFX_ERR_NOT_ENOUGH_BUFFER);
+        MFX_CHECK(output_buffer_size >= mfxU32(m_VideoParamsEx.mfxVideoParams.mfx.BufferSizeInKB * m_VideoParamsEx.mfxVideoParams.mfx.BRCParamMultiplier * 1000), MFX_ERR_NOT_ENOUGH_BUFFER);
         MFX_CHECK_NULL_PTR1(bs->Data);
 
         if (surface)
