@@ -47,7 +47,7 @@ static mfxU16 GetRefDist(mfxVideoParam *par)
 {
     mfxExtLAControl *pControl = (mfxExtLAControl *) GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_LOOKAHEAD_CTRL);
     mfxU16 GopSize = GetGopSize(par);
-    mfxU16 refDist = par->mfx.GopRefDist == 0 ? ((pControl && pControl->BPyramid == MFX_CODINGOPTION_ON) ? 8 : 2) : par->mfx.GopRefDist;
+    mfxU16 refDist = par->mfx.GopRefDist == 0 ? ((pControl && pControl->BPyramid == MFX_CODINGOPTION_ON) ? 8 : 3) : par->mfx.GopRefDist;
     return refDist <= GopSize ? refDist: GopSize;
 }
 static mfxU16 GetAsyncDeph(mfxVideoParam *par)
@@ -1305,8 +1305,8 @@ mfxStatus VideoENC_LA::SubmitFrameLA(mfxFrameSurface1 *pInSurface)
                       
             task->m_Curr.VmeData->poc      = currTask.InputFrame.poc;
             task->m_Curr.VmeData->encOrder = currTask.InputFrame.dispFrameOrder;
-            task->m_Curr.VmeData->pocL0    = fwd ? 2*currTask.RefFrame[REF_FORW].poc :  0xffffffff;
-            task->m_Curr.VmeData->pocL1    = bwd ? 2*currTask.RefFrame[REF_BACKW].poc : 0xffffffff;
+            task->m_Curr.VmeData->pocL0    = fwd ? currTask.RefFrame[REF_FORW].poc :  0xffffffff;
+            task->m_Curr.VmeData->pocL1    = bwd ? currTask.RefFrame[REF_BACKW].poc : 0xffffffff;
             task->m_Curr.VmeData->used     = true;
             
 
