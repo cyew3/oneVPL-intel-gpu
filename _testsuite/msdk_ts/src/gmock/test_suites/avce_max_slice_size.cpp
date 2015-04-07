@@ -106,7 +106,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
          {BUFPAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, {1}}}
     },
     // NumMbPerSlice
-    {/*07*/ MFX_ERR_NONE,
+    {/*07*/ MFX_ERR_UNSUPPORTED,
         {{QUERY|INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {1460}},
          {BUFPAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, {30}},
          {MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}},
@@ -116,7 +116,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     // Init only
     // NumMbPerSlice
-    {/*08*/ MFX_ERR_NONE,
+    {/*08*/ MFX_ERR_INVALID_VIDEO_PARAM,
         {{INIT|BUFPAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, {1460}},
          {BUFPAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, {30}},
          {MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}},
