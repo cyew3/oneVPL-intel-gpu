@@ -1728,15 +1728,18 @@ mfxU8 GetFrameType(
     MfxVideoParam const & video,
     mfxU32                frameOrder)
 {
-    mfxU32 gopOptFlag = MFX_GOP_CLOSED;//video.mfx.GopOptFlag;
+    mfxU32 gopOptFlag = video.mfx.GopOptFlag;
     mfxU32 gopPicSize = video.mfx.GopPicSize;
     mfxU32 gopRefDist = video.mfx.GopRefDist;
-    mfxU32 idrPicDist = gopPicSize * (video.mfx.IdrInterval + 1);
+    mfxU32 idrPicDist = gopPicSize * (video.mfx.IdrInterval);
 
     if (gopPicSize == 0xffff) //infinite GOP
         idrPicDist = gopPicSize = 0xffffffff;
 
-    if (frameOrder % idrPicDist == 0)
+    if (idrPicDist && frameOrder % idrPicDist == 0)
+        return (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR);
+
+    if (!idrPicDist && frameOrder == 0)
         return (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR);
 
     if (frameOrder % gopPicSize == 0)
@@ -1745,9 +1748,9 @@ mfxU8 GetFrameType(
     if (frameOrder % gopPicSize % gopRefDist == 0)
         return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF);
 
-    if ((gopOptFlag & MFX_GOP_STRICT) == 0)
+    //if ((gopOptFlag & MFX_GOP_STRICT) == 0)
         if ((frameOrder + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED) ||
-            (frameOrder + 1) % idrPicDist == 0)
+            (idrPicDist && (frameOrder + 1) % idrPicDist == 0))
             return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF); // switch last B frame to P frame
 
     if (video.isBPyramid() && (frameOrder % gopPicSize % gopRefDist - 1) % 2 == 1)
@@ -1786,20 +1789,27 @@ void UpdateDPB(
     // sliding window over STRs
     if (end && end == par.mfx.NumRefFrame)
     {
-        for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0 ++);
-
-        if (par.LTRInterval)
+        if (par.isLowDelay() && !par.LTRInterval)
         {
-            // mark/replace LTR in DPB
-            if (!st0)
+            for (st0 = 1; ((dpb[st0].m_poc - dpb[0].m_poc) % par.NumRefLX[0]) == 0 && st0 < end; st0++);
+        }
+        else
+        {
+            for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0 ++);
+
+            if (par.LTRInterval)
             {
-                dpb[st0].m_ltr = true;
-                st0 ++;
-            }
-            else if (dpb[st0].m_poc - dpb[0].m_poc >= (mfxI32)par.LTRInterval)
-            {
-                dpb[st0].m_ltr = true;
-                st0 = 0;
+                // mark/replace LTR in DPB
+                if (!st0)
+                {
+                    dpb[st0].m_ltr = true;
+                    st0 ++;
+                }
+                else if (dpb[st0].m_poc - dpb[0].m_poc >= (mfxI32)par.LTRInterval)
+                {
+                    dpb[st0].m_ltr = true;
+                    st0 = 0;
+                }
             }
         }
 
@@ -1931,8 +1941,23 @@ void ConstructRPL(
         if (l0 > NumStRefL0)
         {
             MFX_SORT_COMMON(RPL[0], numRefActive[0], Abs(DPB[RPL[0][_i]].m_poc - poc) < Abs(DPB[RPL[0][_j]].m_poc - poc));
-            Remove(RPL[0], (par.LTRInterval && !nLTR && l0 > 1), l0 - NumStRefL0);
-            l0 = NumStRefL0;
+            if (par.isLowDelay())
+            {
+                while (l0 > NumStRefL0)
+                {
+                    mfxI32 i;
+
+                    for (i = 0; ((DPB[RPL[0][0]].m_poc - DPB[RPL[0][i]].m_poc) % par.NumRefLX[0]) == 0 && i < l0; i ++);
+
+                    Remove(RPL[0], (i+1 >= l0) ? 0 : i);
+                    l0--;
+                }
+            }
+            else
+            {
+                Remove(RPL[0], (par.LTRInterval && !nLTR && l0 > 1), l0 - NumStRefL0);
+                l0 = NumStRefL0;
+            }
         }
         if (l1 > par.NumRefLX[1])
         {
@@ -1965,8 +1990,10 @@ void ConstructRPL(
 
     if (!isB)
     {
-        for (mfxI16 i = l0 - 1; i >= 0 && l1 < par.NumRefLX[1]; i --)
+        for (mfxU16 i = 0; i < Min<mfxU16>(l0, par.NumRefLX[1]); i ++)
             RPL[1][l1++] = RPL[0][i];
+        //for (mfxI16 i = l0 - 1; i >= 0 && l1 < par.NumRefLX[1]; i --)
+        //    RPL[1][l1++] = RPL[0][i];
     }
 }
 
@@ -2018,6 +2045,27 @@ void ReportDPB(DpbArray const & DPB, mfxExtDPB& report)
     }
 }
 
+mfxU8 GetSHNUT(Task const & task)
+{
+    const bool isI   = !!(task.m_frameType & MFX_FRAMETYPE_I);
+    const bool isRef = !!(task.m_frameType & MFX_FRAMETYPE_REF);
+    const bool isIDR = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
+
+    if (isIDR)
+        return IDR_W_RADL;
+    if (isI)
+        return CRA_NUT;
+    if (task.m_poc > task.m_lastIPoc)
+    {
+        if (isRef)
+            return TRAIL_R;
+        return TRAIL_N;
+    }
+    if (isRef)
+        return RASL_R;
+    return RASL_N;
+}
+
 void ConfigureTask(
     Task &                task,
     Task const &          prevTask,
@@ -2058,7 +2106,21 @@ void ConfigureTask(
     else if (task.m_ctrl.QP)
         task.m_qpY = (mfxU8)task.m_ctrl.QP;
 
-    Copy(task.m_dpb[TASK_DPB_ACTIVE], prevTask.m_dpb[TASK_DPB_AFTER]);
+    task.m_lastIPoc = prevTask.m_lastIPoc;
+
+    if (   task.m_poc > task.m_lastIPoc
+        && prevTask.m_poc <= prevTask.m_lastIPoc) // 1st TRAIL
+    {
+        Fill(task.m_dpb[TASK_DPB_ACTIVE], IDX_INVALID);
+
+        mfxU8 idx = GetDPBIdx(prevTask.m_dpb[TASK_DPB_AFTER], task.m_lastIPoc);
+        if (idx < MAX_DPB_SIZE)
+            task.m_dpb[TASK_DPB_ACTIVE][0] = prevTask.m_dpb[TASK_DPB_AFTER][idx];
+    }
+    else
+    {
+        Copy(task.m_dpb[TASK_DPB_ACTIVE], prevTask.m_dpb[TASK_DPB_AFTER]);
+    }
     Copy(task.m_dpb[TASK_DPB_BEFORE], prevTask.m_dpb[TASK_DPB_AFTER]);
 
     //construct ref lists
@@ -2092,13 +2154,16 @@ void ConfigureTask(
     task.m_cpb_removal_delay = (isIDR ? 0 : prevTask.m_cpb_removal_delay + 1);
 
     // update dpb
-    if (isI)
+    if (isIDR)
         Fill(task.m_dpb[TASK_DPB_AFTER], IDX_INVALID);
     else
         Copy(task.m_dpb[TASK_DPB_AFTER], task.m_dpb[TASK_DPB_ACTIVE]);
 
     if (isRef)
     {
+        if (isI)
+            task.m_lastIPoc = task.m_poc;
+
         UpdateDPB(par, task, task.m_dpb[TASK_DPB_AFTER]);
 
         // is current frame will be used as LTR
@@ -2109,9 +2174,7 @@ void ConfigureTask(
     if (pDPBReport)
         ReportDPB(task.m_dpb[TASK_DPB_AFTER], *pDPBReport);
 
-    task.m_shNUT = mfxU8(isIDR ? IDR_W_RADL 
-        : task.m_poc >= 0 ? (isRef ? TRAIL_R : TRAIL_N)
-        : (isRef ? RADL_R : RADL_N));
+    task.m_shNUT = GetSHNUT(task);
 
     par.GetSliceHeader(task, prevTask, task.m_sh);
 }

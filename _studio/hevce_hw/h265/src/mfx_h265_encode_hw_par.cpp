@@ -925,8 +925,8 @@ void SetDefaults(
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ && !par.mfx.ICQQuality)
         par.mfx.ICQQuality = 26;
     
-    if (!par.mfx.GopOptFlag)
-        par.mfx.GopOptFlag = MFX_GOP_CLOSED;
+    /*if (!par.mfx.GopOptFlag)
+        par.mfx.GopOptFlag = MFX_GOP_CLOSED;*/
 
     if (!par.mfx.GopPicSize)
         par.mfx.GopPicSize = (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP ? 1 : 0xFFFF);

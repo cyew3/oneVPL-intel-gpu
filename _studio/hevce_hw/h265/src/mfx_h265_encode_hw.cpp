@@ -479,9 +479,9 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
                 task->m_frameType = MFX_FRAMETYPE_I|MFX_FRAMETYPE_REF|MFX_FRAMETYPE_IDR;
 
             if (task->m_frameType & MFX_FRAMETYPE_IDR)
-                m_frameOrder = 0;
+                m_lastIDR = m_frameOrder;
 
-            task->m_poc = m_frameOrder;
+            task->m_poc = m_frameOrder - m_lastIDR;
         }
 
         m_core.IncreaseReference(&surface->Data);

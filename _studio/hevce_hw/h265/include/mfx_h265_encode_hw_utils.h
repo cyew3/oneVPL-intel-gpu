@@ -209,6 +209,7 @@ typedef struct _Task : DpbFrame
     mfxU16 m_insertHeaders;
     mfxU8  m_shNUT;
     mfxU8  m_qpY;
+    mfxI32 m_lastIPoc;
 
     mfxU32 m_statusReportNumber;
     mfxU32 m_bsDataLength;
@@ -362,6 +363,7 @@ public:
     mfxStatus GetExtBuffers(mfxVideoParam& par, bool query = false);
 
     bool isBPyramid() const { return m_ext.CO2.BRefType == MFX_B_REF_PYRAMID; }
+    bool isLowDelay() const { return mfx.GopRefDist == 1; }
 
 private:
     void Construct(mfxVideoParam const & par);
