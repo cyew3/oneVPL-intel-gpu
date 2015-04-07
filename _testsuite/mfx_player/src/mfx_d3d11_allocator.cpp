@@ -600,6 +600,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         desc.BindFlags = 0;
         desc.MiscFlags = 0;
 
+#if 0
         for(size_t i = 0; i < request->NumFrameSuggested; i++)
         {
             hRes = m_initParams.pDevice->CreateTexture2D(&desc, NULL, &pTexture2D);
@@ -611,6 +612,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             }
             newTexture.stagingTexture.push_back(pTexture2D);
         }
+#endif
     }
 
     // mapping to self created handles array, starting from zero or from last assigned handle + 1
