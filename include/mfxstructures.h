@@ -1301,8 +1301,15 @@ typedef struct {
     mfxU16       reserved[7];
 } mfxExtTimeCode;
 
+/*RegionType*/
 enum {
     MFX_HEVC_REGION_SLICE = 0
+};
+
+/*RegionEncoding*/
+enum {
+    MFX_HEVC_REGION_ENCODING_ON  = 0,
+    MFX_HEVC_REGION_ENCODING_OFF = 1
 };
 
 typedef struct {
@@ -1310,7 +1317,8 @@ typedef struct {
 
     mfxU32       RegionId;
     mfxU16       RegionType;
-    mfxU16       reserved[25];
+    mfxU16       RegionEncoding;
+    mfxU16       reserved[24];
 } mfxExtHEVCRegion;
 
 typedef struct {
