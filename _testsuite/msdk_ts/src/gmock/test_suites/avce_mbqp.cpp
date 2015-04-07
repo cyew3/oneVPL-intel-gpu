@@ -263,6 +263,9 @@ public:
         if (bs.Data)
             set_buffer(bs.Data + bs.DataOffset, bs.DataLength+1);
 
+        if (m_par.mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))
+            nFrames = 2;
+
         while (checked++ < nFrames)
         {
             UnitType& hdr = ParseOrDie();
