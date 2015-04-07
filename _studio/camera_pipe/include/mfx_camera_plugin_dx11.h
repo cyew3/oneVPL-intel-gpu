@@ -120,11 +120,19 @@ public:
     D3D11CameraProcessor()
     {
         m_ddi.reset(0);
+        m_executeParams.resize(0);
+        m_executeSurf.resize(0);
         m_InSurfacePool  = new D3D11FrameAllocResponse();
         m_OutSurfacePool = new D3D11FrameAllocResponse();
     };
 
-    ~D3D11CameraProcessor() {};
+    ~D3D11CameraProcessor() {
+        m_InSurfacePool->Free(m_core);
+        m_OutSurfacePool->Free(m_core);
+        m_executeParams.resize(0);
+        m_executeSurf.resize(0);
+        delete m_InSurfacePool;
+    };
 
     virtual mfxStatus Init(CameraParams *CameraParams);
 
@@ -157,8 +165,8 @@ public:
 
 protected:
     mfxStatus CheckIOPattern(mfxU16  IOPattern);
-    mfxStatus PreWorkOutSurface(mfxFrameSurface1 *surf, mfxU32 *poolIndex);
-    mfxStatus PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *poolIndex);
+    mfxStatus PreWorkOutSurface(mfxFrameSurface1 *surf, mfxU32 *poolIndex, MfxHwVideoProcessing::mfxExecuteParams *params);
+    mfxStatus PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *poolIndex, mfxDrvSurface *DrvSurf);
     mfxU32    BayerToFourCC(mfxU32);
 
 private:
@@ -195,8 +203,8 @@ private:
     }
 
 
-    MfxHwVideoProcessing::mfxExecuteParams           m_executeParams;
     std::auto_ptr<D3D11VideoProcessor>               m_ddi;
+    std::vector<MfxHwVideoProcessing::mfxExecuteParams>  m_executeParams;
     std::vector<MfxHwVideoProcessing::mfxDrvSurface> m_executeSurf;
 
     D3D11FrameAllocResponse                          *m_InSurfacePool;
@@ -206,5 +214,6 @@ private:
     bool                                             m_systemMemOut;
     CameraParams                                     m_CameraParams;
     UMC::Mutex                                       m_guard;
+    UMC::Mutex                                       m_guard_exec;
     mfxU16                                           m_AsyncDepth;
 };

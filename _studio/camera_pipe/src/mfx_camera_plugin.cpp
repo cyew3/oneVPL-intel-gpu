@@ -23,6 +23,7 @@ __itt_string_handle* tasks = __itt_string_handle_create(L"SetExtSurf");
 __itt_string_handle* task_destroy_surfup = __itt_string_handle_create(L"task_destroy_surfup");
 __itt_string_handle* destroyevent = __itt_string_handle_create(L"destroyevent");
 __itt_string_handle* destroyeventwowait = __itt_string_handle_create(L"destroyevenwowait");
+__itt_string_handle* VPPFrameSubmitmark = __itt_string_handle_create(L"VPPFrameSubmit");
 #endif
 
 #include "mfx_plugin_module.h"
@@ -1069,7 +1070,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     m_PipeParams.VignetteParams = m_VignetteParams;
     m_PipeParams.par         = *par;
 
-    if (MFX_HW_SCL == m_platform || MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
+    if ( MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
     {
         m_CameraProcessor = new CMCameraProcessor();
     }
@@ -1293,6 +1294,9 @@ mfxStatus MFXCamera_Plugin::CompleteCameraAsyncRoutine(AsyncParams *pParam)
 
 mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData* /*aux*/, mfxThreadTask *mfxthreadtask)
 {
+#ifdef CAMP_PIPE_ITT
+    __itt_task_begin(CamPipe, __itt_null, __itt_null, VPPFrameSubmitmark);
+#endif
     UMC::AutomaticUMCMutex guard(m_guard1);
     mfxStatus mfxRes = MFX_ERR_NONE;
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
@@ -1366,7 +1370,9 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
     pParams->WBparams         = m_WBparams;
 
     *mfxthreadtask = (mfxThreadTask*) pParams;
-
+#ifdef CAMP_PIPE_ITT
+    __itt_task_end(CamPipe);
+#endif
     return mfxRes;
 }
 

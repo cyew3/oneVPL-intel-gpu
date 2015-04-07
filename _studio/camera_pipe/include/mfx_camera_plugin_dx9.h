@@ -21,9 +21,11 @@ File Name: mfx_camera_plugin_dx9.h
 #define MFX_VA_WIN
 #define MFX_ENABLE_VPP
 
+#include "libmfx_core.h"
 #include "libmfx_core_interface.h"
 #include "libmfx_core_d3d9.h"
 #include "mfx_vpp_interface.h"
+#include "cm_mem_copy.h"
 
 #define MFX_FOURCC_R16_BGGR MAKEFOURCC('I','R','W','0')
 #define MFX_FOURCC_R16_RGGB MAKEFOURCC('I','R','W','1')
@@ -655,6 +657,7 @@ public:
     DXVAHDVideoProcessor()    
     {
         m_cameraFGC.pSegment = new TForwardGammaSeg[64];
+        m_bIsSet = false;
     };
 
     ~DXVAHDVideoProcessor()    
@@ -720,7 +723,7 @@ private:
     VPE_VPREP_CAPS          m_vprepCaps;
     VPE_VPREP_VARIANCE_CAPS m_vprepVarianceCaps;
     VPE_GUID_INFO*          m_pVPEGuids;
-
+    bool                    m_bIsSet;
     TForwardGamma           m_cameraFGC;
 
 };
@@ -732,9 +735,14 @@ public:
     {
         m_InSurfacePool  = new D39FrameAllocResponse();
         m_OutSurfacePool = new D39FrameAllocResponse();
+        m_ddi.reset(0);
     };
 
-    ~D3D9CameraProcessor() { };
+    ~D3D9CameraProcessor() {
+        m_core->FreeFrames(&m_InternalSurfes);
+        delete [] m_lock_map;
+        delete m_InSurfacePool;
+    };
 
     virtual mfxStatus Init(CameraParams *CameraParams);
 
@@ -768,8 +776,8 @@ public:
 
 protected:
     mfxStatus CheckIOPattern(mfxU16  IOPattern);
-    mfxStatus PreWorkOutSurface(mfxFrameSurface1 *surf, mfxU32 *poolIndex);
-    mfxStatus PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *poolIndex);
+    mfxStatus PreWorkOutSurface(mfxFrameSurface1 *surf, mfxU32 *poolIndex, MfxHwVideoProcessing::mfxExecuteParams *params);
+    mfxStatus PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *poolIndex, MfxHwVideoProcessing::mfxDrvSurface *drvSurf);
     mfxU32    BayerToFourCC(mfxU32);
 
 private:
@@ -813,11 +821,49 @@ private:
     CameraParams                                     m_CameraParams;
     UMC::Mutex                                       m_guard;
     mfxU16                                           m_AsyncDepth;
-    MfxHwVideoProcessing::mfxExecuteParams           m_executeParams;
+    std::vector<MfxHwVideoProcessing::mfxExecuteParams>  m_executeParams;
     std::vector<MfxHwVideoProcessing::mfxDrvSurface> m_executeSurf;
     std::auto_ptr<DXVAHDVideoProcessor>              m_ddi;
 
-    IDirect3DSurface9      *m_inputSurf;
+    template <class T, bool isSingle>
+    class s_ptr
+    {
+    public:
+        s_ptr():m_ptr(0)
+        {
+        };
+        ~s_ptr()
+        {
+            reset(0);
+        }
+        T* get()
+        {
+            return m_ptr;
+        }
+        T* pop()
+        {
+            T* ptr = m_ptr;
+            m_ptr = 0;
+            return ptr;
+        }
+        void reset(T* ptr = NULL)
+        {
+            if (m_ptr)
+            {
+                if (isSingle)
+                    delete m_ptr;
+                else
+                    delete[] m_ptr;
+            }
+            m_ptr = ptr;
+        }
+    protected:
+        T* m_ptr;
+    };
+    s_ptr<CmCopyWrapper, true>    m_pCmCopy;
+    IDirect3DDeviceManager9      *m_pD3Dmanager;
+    IDirect3DSurface9           **m_inputSurf;
+    bool                         *m_lock_map;
     IDirect3DSurface9      *m_outputSurf;
 
 };

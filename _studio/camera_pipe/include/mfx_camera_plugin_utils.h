@@ -403,6 +403,11 @@ struct AsyncParams
     mfxMemId outSurf2D;
     mfxMemId outSurf2DUP;
 
+    // DDI specific params
+    mfxU16 nDDIIndex;
+    mfxU16 surfInIndex;
+    mfxU16 surfOutIndex;
+
     void      *pEvent;
 };
 

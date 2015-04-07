@@ -644,7 +644,7 @@ mfxStatus MfxCameraPlugin::CheckIOPattern(mfxVideoParam *in, mfxVideoParam *out,
 
    mfxStatus error_status = (mode==0) ? MFX_ERR_UNSUPPORTED : MFX_ERR_INVALID_VIDEO_PARAM;
 
-   if(in->IOPattern & (MFX_IOPATTERN_IN_OPAQUE_MEMORY))
+   if(in->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_OPAQUE_MEMORY))
    {
         out->IOPattern = 0;
         return error_status;
