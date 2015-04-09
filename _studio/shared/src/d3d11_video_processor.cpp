@@ -2091,34 +2091,39 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     }
 
     // [12] background color
-    BOOL YCbCr = TRUE;
-    BYTE mask  = 0xff;
-    D3D11_VIDEO_COLOR Color = {0.0625, 0.5, 0.5, 0.0};
+    BOOL bYCbCr = TRUE;
+    D3D11_VIDEO_COLOR Color = {0};
 
     if (outInfo->FourCC == MFX_FOURCC_NV12 ||
         outInfo->FourCC == MFX_FOURCC_YV12 ||
         outInfo->FourCC == MFX_FOURCC_NV16 ||
-        outInfo->FourCC == MFX_FOURCC_YUY2)
+        outInfo->FourCC == MFX_FOURCC_YUY2 ||
+        outInfo->FourCC == MFX_FOURCC_P010 ||
+        outInfo->FourCC == MFX_FOURCC_P210)
     {
-        YCbCr = TRUE;
+        bYCbCr = TRUE;
 
-        Color.YCbCr.A  = ((pParams->iBackgroundColor >> 24) & mask) / 255.0f;
-        Color.YCbCr.Y  = ((pParams->iBackgroundColor >> 16) & mask) / 255.0f;
-        Color.YCbCr.Cb = ((pParams->iBackgroundColor >>  8) & mask) / 255.0f;
-        Color.YCbCr.Cr = ((pParams->iBackgroundColor      ) & mask) / 255.0f;
+        Color.YCbCr.A  = ((pParams->iBackgroundColor >> 24) & 0xff) / 255.0f;
+        Color.YCbCr.Y  = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
+        Color.YCbCr.Cb = ((pParams->iBackgroundColor >>  8) & 0xff) / 255.0f;
+        Color.YCbCr.Cr = ((pParams->iBackgroundColor      ) & 0xff) / 255.0f;
     }
-    if (outInfo->FourCC == MFX_FOURCC_RGB4 ||
-        outInfo->FourCC == MFX_FOURCC_BGR4)
+    if (outInfo->FourCC == MFX_FOURCC_RGB3    ||
+        outInfo->FourCC == MFX_FOURCC_RGB4    ||
+        outInfo->FourCC == MFX_FOURCC_BGR4    ||
+        outInfo->FourCC == MFX_FOURCC_A2RGB10 ||
+        outInfo->FourCC == MFX_FOURCC_ARGB16  ||
+        outInfo->FourCC == MFX_FOURCC_R16)
     {
-        YCbCr = FALSE;
+        bYCbCr = FALSE;
 
-        Color.RGBA.A = ((pParams->iBackgroundColor >> 24) & mask) / 255.0f;
-        Color.RGBA.R = ((pParams->iBackgroundColor >> 16) & mask) / 255.0f;
-        Color.RGBA.G = ((pParams->iBackgroundColor >>  8) & mask) / 255.0f;
-        Color.RGBA.B = ((pParams->iBackgroundColor      ) & mask) / 255.0f;
+        Color.RGBA.A = ((pParams->iBackgroundColor >> 24) & 0xff) / 255.0f;
+        Color.RGBA.R = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
+        Color.RGBA.G = ((pParams->iBackgroundColor >>  8) & 0xff) / 255.0f;
+        Color.RGBA.B = ((pParams->iBackgroundColor      ) & 0xff) / 255.0f;
     }
 
-    SetOutputBackgroundColor(YCbCr, &Color);
+    SetOutputBackgroundColor(bYCbCr, &Color);
 
     UINT StreamCount;
 

@@ -2572,6 +2572,20 @@ mfxStatus ConfigureExecuteParams(
     config.m_surfCount[VPP_IN]  = 1;
     config.m_surfCount[VPP_OUT] = 1;
 
+    if (videoParam.vpp.Out.FourCC == MFX_FOURCC_NV12 ||
+        videoParam.vpp.Out.FourCC == MFX_FOURCC_YV12 ||
+        videoParam.vpp.Out.FourCC == MFX_FOURCC_NV16 ||
+        videoParam.vpp.Out.FourCC == MFX_FOURCC_YUY2 ||
+        videoParam.vpp.Out.FourCC == MFX_FOURCC_P010 ||
+        videoParam.vpp.Out.FourCC == MFX_FOURCC_P210)
+    {
+        executeParams.iBackgroundColor = 0xff108080; // black in YUV interpretation
+    }
+    else
+    {
+        executeParams.iBackgroundColor = 0xff000000; // black in RGB interpretation
+    }
+
     //-----------------------------------------------------
     for (mfxU32 i = 0; i < pipelineList.size(); i += 1)
     {
