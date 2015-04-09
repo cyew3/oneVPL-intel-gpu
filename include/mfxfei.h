@@ -214,6 +214,7 @@ typedef struct {
         mfxU16  BestIntraDistortion;
         mfxU16  ColocatedMbDistortion;
         mfxU16  reserved;
+        mfxU32  reserved1[2];
     } *MB;
 } mfxExtFeiEncMBStat;
 
