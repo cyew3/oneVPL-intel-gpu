@@ -95,6 +95,7 @@ struct sInputParams
     bool bOnlyPAK;
     bool bPREENC;
     bool bMBSize;
+    bool bPassHeaders;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;
@@ -260,6 +261,10 @@ protected:
 
     //FEI buffers
     mfxEncodeCtrl feiCtrl;
+    //FEI buffers
+    mfxExtFeiSPS m_feiSPS;
+    mfxExtFeiPPS m_feiPPS[2];
+    mfxExtFeiSliceHeader m_feiSliceHeader[2];
     mfxExtFeiEncFrameCtrl feiEncCtrl[2];
     mfxExtFeiEncMVPredictors feiEncMVPredictors[2];
     mfxExtFeiEncMBCtrl feiEncMBCtrl[2];
@@ -270,8 +275,8 @@ protected:
 
     mfxU16 numExtInParams;
     mfxU16 numExtOutParams;
-    mfxExtBuffer * inBufs[4];
-    mfxExtBuffer * outBufs[4];
+    mfxExtBuffer * inBufs[4 + 3]; // 4 general + 3 for SPS, PPS and Slice header
+    mfxExtBuffer * outBufs[4 + 3];
 
     mfxU16 numExtOutParamsPreEnc;
     mfxU16 numExtInParamsPreEnc;

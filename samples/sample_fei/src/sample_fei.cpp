@@ -49,6 +49,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-mbcode file] - file to output per MB information (structure mfxExtFeiPakMBCtrl) for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbstat file] - file to output per MB distortions for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbqp file] - file to input per MB QPs the same for each frame\n"));
+    msdk_printf(MSDK_STRING("   [-pass_headrers] - pass SPS, PPS and Slice headers to Media SDK instead of default one\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -220,6 +221,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->memType = D3D11_MEMORY;
         }
 #endif
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pass_headrers")))
+        {
+            i++;
+            pParams->bPassHeaders = true;
+        }
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -404,6 +410,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         PrintHelp(strInput[0], MSDK_STRING("Some of the command line options are not supported with rotation plugin!"));
         return MFX_ERR_UNSUPPORTED;
     }
+    /* One slice by default */
+    if (0 == pParams->numSlices)
+        pParams->numSlices = 1;
+
+    /* One Ref by default */
+    if (0 == pParams->numRef)
+        pParams->numRef = 1;
 
     return MFX_ERR_NONE;
 }
