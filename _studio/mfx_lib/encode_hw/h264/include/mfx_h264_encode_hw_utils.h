@@ -1990,6 +1990,8 @@ namespace MfxHwH264Encode
         bool        m_isWiDi;
         bool        m_resetBRC;
 
+        bool        m_sofiaMode;
+
         // bitrate reset work-around for SNB
 
         std::auto_ptr<CmContext>    m_cmCtx;
@@ -3159,7 +3161,8 @@ namespace MfxHwH264Encode
     void ConfigureTask(
         DdiTask &             task,
         DdiTask const &       prevTask,
-        MfxVideoParam const & video);
+        MfxVideoParam const & video,
+        bool const            isSofiaMode = false);
 
     mfxStatus GetNativeHandleToRawSurface(
         VideoCORE &           core,

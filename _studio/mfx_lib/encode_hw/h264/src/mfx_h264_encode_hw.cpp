@@ -774,6 +774,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_currentPlatform = m_core->GetHWType();
     m_currentVaType   = m_core->GetVAType();
 
+    m_sofiaMode = (m_currentPlatform == MFX_HW_SOFIA);
+
     mfxStatus spsppsSts = CopySpsPpsToVideoParam(m_video);
 
     mfxStatus checkStatus = CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
@@ -907,7 +909,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     request.Info.FourCC = MFX_FOURCC_NV12;
     request.Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     request.Type        = m_video.Protected ? MFX_MEMTYPE_D3D_SERPENT_INT : MFX_MEMTYPE_D3D_INT;
-    request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame +
+    if (m_sofiaMode)
+        request.NumFrameMin = m_video.mfx.NumRefFrame + !!m_video.calcParam.lyncMode; // one additional surface for non-ref frame - for now for Lync mode only
+    else
+        request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame +
         m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE) +
         bParallelEncPak);
     sts = m_rec.Alloc(m_core, request,bPanicModeSupport);
@@ -1099,7 +1104,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         m_video.calcParam.cqpHrdMode == 1; // same WA is used for CQP HRD CBR mode to avoid buffer overflows
 
     // required for slice header patching
-    if ((extOpt2->MaxSliceSize||m_caps.HeaderInsertion == 1 || m_currentPlatform == MFX_HW_IVB && m_core->GetVAType() == MFX_HW_VAAPI) && m_video.Protected == 0)
+    if ((extOpt2->MaxSliceSize||m_caps.HeaderInsertion == 1 || m_currentPlatform == MFX_HW_IVB && m_core->GetVAType() == MFX_HW_VAAPI || m_currentPlatform == MFX_HW_SOFIA) && m_video.Protected == 0)
         m_tmpBsBuf.resize(m_maxBsSize);
 
     const size_t MAX_SEI_SIZE    = 10 * 1024;
@@ -1828,6 +1833,7 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
     ArrayDpbFrame const & iniDpb = task->m_dpb[ffid];
     ArrayDpbFrame const & finDpb = task->m_dpbPostEncoding;
 
+    if (m_sofiaMode == false) // for SoFIA no need to release resources based on per-frame changes in DPB
     for (mfxU32 i = 0; i < iniDpb.Size(); i++)
     {
         if (std::find_if(finDpb.Begin(), finDpb.End(), CompareByMidRec(iniDpb[i].m_midRec)) == finDpb.End())
@@ -1856,7 +1862,8 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
 
     ReleaseResource(m_bit, task->m_midBit[0]);
     ReleaseResource(m_bit, task->m_midBit[1]);
-    if ((task->m_reference[0] + task->m_reference[1]) == 0)
+    if ((task->m_reference[0] + task->m_reference[1]) == 0
+        || m_sofiaMode) // for SoFIA recon idxs are used for notification only, not for real use. So free recon as soon as frame is encoded.
         ReleaseResource(m_rec, task->m_midRec);
 
     if(m_useMBQPSurf && task->m_isMBQP)
@@ -1913,8 +1920,6 @@ namespace
     }
 }
 
-
-
 void ImplementationAvc::BrcPreEnc(
     DdiTask const & task)
 {
@@ -1933,6 +1938,15 @@ void ImplementationAvc::BrcPreEnc(
     m_brc.PreEnc(task.GetFrameType(), m_tmpVmeData, task.m_encOrder);
 }
 
+mfxU32 FindReconIdxSofiaMode(DdiTask const & task, mfxU16 sizeOfDPB)
+{
+    if (task.m_reference[0] == 0)
+        return sizeOfDPB; // last recon idx is dedicated to non-ref frame
+    else if (task.m_longTermFrameIdx == NO_INDEX_U8)
+        return sizeOfDPB - 1; // last DPB entry is always for STR
+    else
+        return 0; // DPB entry zero is either for LTR (if DPB size > 1), or for STR (if DPB size == 1)
+}
 
 mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 {
@@ -2165,7 +2179,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         task->m_isENCPAK = m_isENCPAK;
 
-        ConfigureTask(*task, m_lastTask, m_video);
+        ConfigureTask(*task, m_lastTask, m_video, m_sofiaMode);
 
         Zero(task->m_IRState);
         if (task->m_tidx == 0)
@@ -2336,7 +2350,14 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         }
         else
         {
-            task->m_idxRecon = FindFreeResourceIndex(m_rec);
+            if (m_sofiaMode)
+            {
+                // SoFIA has severe restrictions on encoder DPB (up to 2 slots, one tied to STR, and another (if exists) - to LTR)
+                // MSDK uses individual logic for recon frames management to reflect this fact
+                task->m_idxRecon = FindReconIdxSofiaMode(*task, m_video.mfx.NumRefFrame);
+            }
+            else
+                task->m_idxRecon = FindFreeResourceIndex(m_rec);
         }
 
         task->m_idxBs[0]  = FindFreeResourceIndex(m_bit);
@@ -2960,9 +2981,9 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     mfxU32 fieldNumInStreamOrder = (task.GetFirstField() != fid);
 
     bool needIntermediateBitstreamBuffer =
-        IsSlicePatchNeeded(task, fid) ||
         m_video.calcParam.numTemporalLayer > 0 ||
-        (m_video.mfx.NumRefFrame & 1);
+        m_currentPlatform != MFX_HW_SOFIA &&
+        (IsSlicePatchNeeded(task, fid) || (m_video.mfx.NumRefFrame & 1));
 
     bool doPatch =
         needIntermediateBitstreamBuffer ||
@@ -2971,7 +2992,10 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     if (m_isWiDi && task.m_resetBRC)
         m_resetBRC = true;
 
-    if (m_caps.HeaderInsertion == 0 && (m_currentPlatform != MFX_HW_IVB || m_core->GetVAType() != MFX_HW_VAAPI) || m_video.Protected != 0)
+    if (m_currentPlatform != MFX_HW_SOFIA && // SoFIA HW always writes slice headers. MSDK should patch them if required
+        m_caps.HeaderInsertion == 0 &&
+        (m_currentPlatform != MFX_HW_IVB || m_core->GetVAType() != MFX_HW_VAAPI)
+        || m_video.Protected != 0)
         doPatch = needIntermediateBitstreamBuffer = false;
 
     // Lock d3d surface with compressed picture.

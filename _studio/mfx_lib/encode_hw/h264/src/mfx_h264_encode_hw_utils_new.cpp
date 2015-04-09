@@ -1096,7 +1096,8 @@ namespace
     void MarkDecodedRefPictures(
         MfxVideoParam const & video,
         DdiTask &             task,
-        mfxU32                fid)
+        mfxU32                fid,
+        bool                  isSofiaMode = false)
     {
         // declare shorter names
         ArrayDpbFrame const &  initDpb  = task.m_dpb[fid];
@@ -1141,6 +1142,14 @@ namespace
                         break;
                     }
                 }
+            }
+
+            if (isSofiaMode && currFrameIsLongTerm == false && video.mfx.NumRefFrame > 1)
+            {
+                // SoFIA internally marks every IDR as LTR. MSDK can't control this case and should replicate this behavior
+                marking.long_term_reference_flag = 1;
+                currFrameIsLongTerm = true;
+                task.m_longTermFrameIdx = 0;
             }
 
             DpbFrame newDpbFrame;
@@ -1239,7 +1248,8 @@ namespace
                         // mark it as 'long-term'
 
                         mfxU8 longTermIdx;
-                        if (ctrl->ApplyLongTermIdx != 1)
+                        if (ctrl->ApplyLongTermIdx != 1 &&
+                            isSofiaMode == false) // SoFIA has only one LTR slot
                         {
                             // first make free space in dpb if it is full
                             if (currDpb.Size() == video.mfx.NumRefFrame)
@@ -1276,12 +1286,19 @@ namespace
                         }
                         else
                         {
-                            // use LTR idx provided by application
-                            longTermIdx = (mfxU8)ctrl->LongTermRefList[i].LongTermIdx;
+                            if (isSofiaMode)
+                            {
+                                // SoFIA has only one LTR slot, so MSDK will replace existing LTR with ltr_idx = 0 (if any)
+                                longTermIdx = 0;
+                            }
+                            else
+                            {
+                                // use LTR idx provided by application
+                                longTermIdx = (mfxU8)ctrl->LongTermRefList[i].LongTermIdx;
+                            }
 
                             // don't validate input, just perform quick check
                             assert(longTermIdx < video.mfx.NumRefFrame);
-                            assert(currDpb.Size() < video.mfx.NumRefFrame);
 
                             DpbFrame * toRemove = std::find_if(
                                 currDpb.Begin(),
@@ -1290,6 +1307,8 @@ namespace
 
                             if (toRemove != currDpb.End())
                                 currDpb.Erase(toRemove);
+
+                            assert(currDpb.Size() < video.mfx.NumRefFrame);
                         }
 
                         if (longTermIdx >= maxLtIdx[task.m_tidx])
@@ -1685,7 +1704,8 @@ BiFrameLocation MfxHwH264Encode::GetBiFrameLocation(
 void MfxHwH264Encode::ConfigureTask(
     DdiTask &             task,
     DdiTask const &       prevTask,
-    MfxVideoParam const & video)
+    MfxVideoParam const & video,
+    bool const            isSofiaMode)
 {
     mfxExtCodingOption const &      extOpt         = GetExtBufferRef(video);
     mfxExtCodingOption2 const &     extOpt2        = GetExtBufferRef(video);
@@ -1843,7 +1863,7 @@ void MfxHwH264Encode::ConfigureTask(
     UpdateDpbFrames(task, ffid, FRAME_NUM_MAX);
     InitRefPicList(task, ffid);
     ModifyRefPicLists(video, task, ffid);
-    MarkDecodedRefPictures(video, task, ffid);
+    MarkDecodedRefPictures(video, task, ffid, isSofiaMode);
 
     if (task.m_fieldPicFlag)
     {
