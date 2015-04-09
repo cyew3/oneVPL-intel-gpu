@@ -51,7 +51,7 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
     sts = m_ddi->QueryCapabilities( caps );
     MFX_CHECK_STS( sts );
 
-    m_AsyncDepth = CameraParams->par.AsyncDepth;
+    m_AsyncDepth = ( CameraParams->par.AsyncDepth ? CameraParams->par.AsyncDepth : MFX_CAMERA_DEFAULT_ASYNCDEPTH );
 
     m_executeParams.resize(m_AsyncDepth);
     m_executeSurf.resize( m_AsyncDepth );

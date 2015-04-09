@@ -1225,7 +1225,7 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
             }
         }
     }
-    m_AsyncDepth = CameraParams->par.AsyncDepth;
+    m_AsyncDepth = ( CameraParams->par.AsyncDepth ? CameraParams->par.AsyncDepth : MFX_CAMERA_DEFAULT_ASYNCDEPTH );
 
     // Camera Pipe expects a system memory as input. Need to allocate
     m_executeParams.resize(m_AsyncDepth);
@@ -1255,6 +1255,9 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
 mfxStatus D3D9CameraProcessor::AsyncRoutine(AsyncParams *pParam)
 {
     mfxStatus sts;
+
+    m_core->IncreaseReference(&(pParam->surf_out->Data));
+    m_core->IncreaseReference(&(pParam->surf_in->Data));
 
     MfxHwVideoProcessing::mfxExecuteParams tmpParams = {};//(MfxHwVideoProcessing::mfxExecuteParams *)malloc(sizeof(MfxHwVideoProcessing::mfxExecuteParams));
     MfxHwVideoProcessing::mfxDrvSurface    tmpSurf = {};
@@ -1355,11 +1358,14 @@ mfxStatus D3D9CameraProcessor::CompleteRoutine(AsyncParams * pParam)
     
     mfxU16 inIndex  = pParam->surfInIndex;
     mfxU16 outIndex = pParam->surfOutIndex;
+
+    sts = m_ddi->Execute(&m_executeParams[inIndex]);
+
     {
         UMC::AutomaticUMCMutex guard(m_guard);
-        sts = m_ddi->Execute(&m_executeParams[inIndex]);
         m_lock_map[inIndex] = false;
     }
+
     m_InSurfacePool->Unlock(inIndex);
     m_OutSurfacePool->Unlock(outIndex);
     m_core->DecreaseReference(&(pParam->surf_out->Data));
@@ -1448,7 +1454,7 @@ mfxStatus D3D9CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *
 
     // [1] Copy from system mem to the internal video frame
     IppiSize roi = {surf->Info.Width, surf->Info.Height};
-    mfxI64 verticalPitch = (mfxI64)(surf->Data.UV - surf->Data.Y);
+    mfxI64 verticalPitch = 0;
     verticalPitch = (verticalPitch % surf->Data.Pitch)? 0 : verticalPitch / surf->Data.Pitch;
     sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(m_inputSurf[*poolIndex], 0, surf->Data.Y, surf->Data.Pitch, (mfxU32)verticalPitch, roi);
     MFX_CHECK_STS(sts);

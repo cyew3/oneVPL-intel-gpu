@@ -38,6 +38,8 @@ File Name: mfx_camera_plugin_utils.h
 // 2 hours of playing at 30fps
 #define CAMERA_FRAMES_TILL_HARD_RESET 2*108000
 
+#define MFX_CAMERA_DEFAULT_ASYNCDEPTH 3
+
 //#define CAMERA_DEBUG_PRINTF
 
 #ifdef CAMERA_DEBUG_PRINTF
