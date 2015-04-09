@@ -354,7 +354,7 @@ namespace MfxHwH264Encode
         std::vector<ExtVASurface> m_statFeedbackCache;
         std::vector<ExtVASurface> m_inputQueue;
 
-        VABufferID m_codedBufferId;
+        VABufferID m_codedBufferId[2];
     };
 #endif
 

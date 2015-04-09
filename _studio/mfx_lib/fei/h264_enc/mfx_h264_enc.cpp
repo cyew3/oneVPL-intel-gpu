@@ -236,8 +236,11 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
 
     task.m_frameOrderIdr = idrPicFlag ? task.m_frameOrder : m_prevTask.m_frameOrderIdr;
     task.m_frameOrderI   = intraPicFlag ? task.m_frameOrder : m_prevTask.m_frameOrderI;
-    //task.m_encOrder      = m_prevTask.m_encOrder + 1;
-    //task.m_encOrderIdr   = prevIdrFrameFlag ? m_prevTask.m_encOrder : m_prevTask.m_encOrderIdr;
+    task.m_encOrder      = m_prevTask.m_encOrder + 1;
+    task.m_encOrderIdr   = prevIdrFrameFlag ? m_prevTask.m_encOrder : m_prevTask.m_encOrderIdr;
+
+    task.m_statusReportNumber[0] = 2 * task.m_encOrder;
+    task.m_statusReportNumber[1] = 2 * task.m_encOrder + 1;
 
     task.m_frameNum = mfxU16((m_prevTask.m_frameNum + prevRefPicFlag) % FRAME_NUM_MAX);
     if (idrPicFlag)
@@ -263,7 +266,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
     for (mfxU32 f = 0; f <= task.m_fieldPicFlag; f++)
     {
         //fprintf(stderr,"handle=0x%x mid=0x%x\n", task.m_handleRaw, task.m_midRaw );
-        sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[0], m_sei);
+        sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[f], m_sei);
         if (sts != MFX_ERR_NONE)
                  return Error(sts);
     }
@@ -287,7 +290,7 @@ mfxStatus VideoENC_ENC::Query(DdiTask& task)
     
     for (mfxU32 f = 0; f <= task.m_fieldPicFlag; f++)
     {
-        sts = m_ddi->QueryStatus(task, 0);
+        sts = m_ddi->QueryStatus(task, task.m_fid[f]);
         if (sts == MFX_WRN_DEVICE_BUSY)
             return MFX_TASK_BUSY;
         if (sts != MFX_ERR_NONE)
@@ -510,10 +513,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
 
     m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
     DdiTask& task = m_incoming.front();
-    /*FIXME
-     * PROGRESSIVE for a while */
-    //task.m_picStruct    = GetPicStruct(m_video, task);
-    task.m_picStruct = {1,1};
+    task.m_picStruct    = GetPicStruct(m_video, task);
     task.m_fieldPicFlag = task.m_picStruct[ENC] != MFX_PICSTRUCT_PROGRESSIVE;
     task.m_fid[0]       = task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF;
     task.m_fid[1]       = task.m_fieldPicFlag - task.m_fid[0];

@@ -669,6 +669,7 @@ typedef struct _VAEncFEIDistortionBufferH264Intel {
     unsigned int    best_intra_distortion     : 16;
     unsigned int    colocated_mb_distortion   : 16;
     unsigned int    reserved                  : 16;
+    unsigned int    reserved1[2];
 } VAEncFEIDistortionBufferH264Intel;
 
 
