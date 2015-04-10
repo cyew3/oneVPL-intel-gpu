@@ -226,7 +226,8 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
             if (NULL == m_pAllocator)
             {
                 MFX_CHECK_WITH_ERR(m_pAllocator = pFactory->CreateD3DAllocator(), MFX_ERR_MEMORY_ALLOC);
-                m_pAllocator = new AllocatorAdapterRW(m_pAllocator);
+                if (m_VP9_Smooth_DRC)
+                    m_pAllocator = new AllocatorAdapterRW(m_pAllocator);
             }
 
             D3DAllocatorParams *pd3dAllocParams;
@@ -282,7 +283,8 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
             if (NULL == m_pAllocator)
             {
                 MFX_CHECK_WITH_ERR(m_pAllocator = pFactory->CreateD3D11Allocator(), MFX_ERR_MEMORY_ALLOC);
-                m_pAllocator = new AllocatorAdapterRW(m_pAllocator);
+                if (m_VP9_Smooth_DRC)
+                    m_pAllocator = new AllocatorAdapterRW(m_pAllocator);
             }
 
             D3D11AllocatorParams *pd3d11AllocParams;

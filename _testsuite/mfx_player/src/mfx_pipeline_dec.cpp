@@ -1323,6 +1323,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
                 if (m_inParams.bVP9_DRC)
                 {
                     m_components[eDEC].m_params.mfx.SliceGroupsPresent = 1;
+                    m_components[eDEC].m_VP9_Smooth_DRC = true;
                 }
             }
 
