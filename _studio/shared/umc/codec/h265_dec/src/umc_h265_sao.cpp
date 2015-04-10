@@ -828,11 +828,14 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
             rec += stride;
         }
 
-        for (Ipp32s i = 0; i < CUHeightChroma; i++)
+        if (m_sps->ChromaArrayType != CHROMA_FORMAT_400)
         {
-            m_TmpL[0][SAO_PRED_SIZE + i*2] = recChroma[0];
-            m_TmpL[0][SAO_PRED_SIZE + i*2 + 1] = recChroma[1];
-            recChroma += stride;
+            for (Ipp32s i = 0; i < CUHeightChroma; i++)
+            {
+                m_TmpL[0][SAO_PRED_SIZE + i*2] = recChroma[0];
+                m_TmpL[0][SAO_PRED_SIZE + i*2 + 1] = recChroma[1];
+                recChroma += stride;
+            }
         }
     }
 
@@ -848,10 +851,13 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoLine(SAOLCUParam* sa
                 m_TmpL[1][i] = rec[i*stride+LCUWidth-1];
             }
 
-            for (Ipp32s i = 0; i < CUHeightChroma; i++)
+            if (m_sps->ChromaArrayType != CHROMA_FORMAT_400)
             {
-                m_TmpL[1][SAO_PRED_SIZE + i*2] = recChroma[i * stride + LCUWidth - 2];
-                m_TmpL[1][SAO_PRED_SIZE + i*2 + 1] = recChroma[i * stride + LCUWidth - 1];
+                for (Ipp32s i = 0; i < CUHeightChroma; i++)
+                {
+                    m_TmpL[1][SAO_PRED_SIZE + i*2] = recChroma[i * stride + LCUWidth - 2];
+                    m_TmpL[1][SAO_PRED_SIZE + i*2 + 1] = recChroma[i * stride + LCUWidth - 1];
+                }
             }
         }
 

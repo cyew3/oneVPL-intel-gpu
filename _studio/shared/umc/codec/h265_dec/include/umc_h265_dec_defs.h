@@ -82,7 +82,8 @@ enum
 
 enum {
     AMVP_MAX_NUM_CAND       = 2,           // max number of final candidates
-    MERGE_MAX_NUM_CAND      = 5
+    MERGE_MAX_NUM_CAND      = 5,
+    MAX_CHROMA_OFFSET_ELEMENTS = 7
 };
 
 #define REG_DCT 65535
@@ -945,14 +946,14 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     int SubWidthC() const
     {
         static Ipp32s subWidth[] = {1, 2, 2, 1};
-        VM_ASSERT (chroma_format_idc > 0 && chroma_format_idc <= 4);
+        VM_ASSERT (chroma_format_idc >= 0 && chroma_format_idc <= 4);
         return subWidth[chroma_format_idc];
     }
 
     int SubHeightC() const
     {
         static Ipp32s subHeight[] = {1, 2, 1, 1};
-        VM_ASSERT (chroma_format_idc > 0 && chroma_format_idc <= 4);
+        VM_ASSERT (chroma_format_idc >= 0 && chroma_format_idc <= 4);
         return subHeight[chroma_format_idc];
     }
 
@@ -1047,6 +1048,9 @@ struct H265PicParamSetBase
     Ipp8u chroma_qp_offset_list_enabled_flag;
     Ipp32u diff_cu_chroma_qp_offset_depth;
     Ipp32u chroma_qp_offset_list_len;
+    Ipp32u cb_qp_offset_list[MAX_CHROMA_OFFSET_ELEMENTS];
+    Ipp32u cr_qp_offset_list[MAX_CHROMA_OFFSET_ELEMENTS];
+
     Ipp32u log2_sao_offset_scale_luma;
     Ipp32u log2_sao_offset_scale_chroma;
 

@@ -420,6 +420,8 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
     Ipp32s crop_y = pInfo->CropY;
     mfxU32 pitch = pData->PitchLow + ((mfxU32)pData->PitchHigh << 16);
 
+    bool skipChroma = !m_params.alwaysWriteChroma && pConvertedSurface->Info.ChromaFormat == MFX_CHROMAFORMAT_YUV400;
+
     switch (m_nFourCC)
     {
         case MFX_FOURCC_YV12:
@@ -436,22 +438,25 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 WRITE(pData->Y + (crop_y * pitch + crop_x) + i*pitch, pInfo->CropW);
             }
 
-            crop_x >>= 1;
-            crop_y >>= isHalfHeight;
-
-            mfxI32 height = isHalfHeight ? ((pInfo->CropH + 1) >> 1) : pInfo->CropH;
-
-            m_Current.m_comp = VM_STRING('U');
-            for (i = 0; i < height; i++)
+            if (!skipChroma)
             {
-                m_Current.m_pixY = i;
-                WRITE(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2, (pInfo->CropW + 1) >> 1);
-            }
-            m_Current.m_comp = VM_STRING('V');
-            for (i = 0; i < height; i++)
-            {
-                m_Current.m_pixY = i;
-                WRITE(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2, (pInfo->CropW + 1) >> 1);
+                crop_x >>= 1;
+                crop_y >>= isHalfHeight;
+
+                mfxI32 height = isHalfHeight ? ((pInfo->CropH + 1) >> 1) : pInfo->CropH;
+
+                m_Current.m_comp = VM_STRING('U');
+                for (i = 0; i < height; i++)
+                {
+                    m_Current.m_pixY = i;
+                    WRITE(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2, (pInfo->CropW + 1) >> 1);
+                }
+                m_Current.m_comp = VM_STRING('V');
+                for (i = 0; i < height; i++)
+                {
+                    m_Current.m_pixY = i;
+                    WRITE(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2, (pInfo->CropW + 1) >> 1);
+                }
             }
             break;
         }
@@ -471,22 +476,25 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 WRITE(pData->Y + (crop_y * pitch + crop_x) + i*pitch, pInfo->CropW*2);
             }
 
-            crop_x >>= 1;
-            crop_y >>= isHalfHeight;
-
-            mfxI32 height = isHalfHeight ? ((pInfo->CropH + 1) >> 1) : pInfo->CropH;
-
-            m_Current.m_comp = VM_STRING('U');
-            for (i = 0; i < height; i++)
+            if (!skipChroma)
             {
-                m_Current.m_pixY = i;
-                WRITE(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2, pInfo->CropW);
-            }
-            m_Current.m_comp = VM_STRING('V');
-            for (i = 0; i < height; i++)
-            {
-                m_Current.m_pixY = i;
-                WRITE(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2, pInfo->CropW);
+                crop_x >>= 1;
+                crop_y >>= isHalfHeight;
+
+                mfxI32 height = isHalfHeight ? ((pInfo->CropH + 1) >> 1) : pInfo->CropH;
+
+                m_Current.m_comp = VM_STRING('U');
+                for (i = 0; i < height; i++)
+                {
+                    m_Current.m_pixY = i;
+                    WRITE(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2, pInfo->CropW);
+                }
+                m_Current.m_comp = VM_STRING('V');
+                for (i = 0; i < height; i++)
+                {
+                    m_Current.m_pixY = i;
+                    WRITE(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2, pInfo->CropW);
+                }
             }
             break;
         }
@@ -499,11 +507,16 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 m_Current.m_pixY = i;
                 WRITE(pData->Y + (pInfo->CropY * pitch + pInfo->CropX)+ i * pitch, pInfo->CropW);
             }
-            m_Current.m_comp = VM_STRING('U');
-            for (i = 0; i < pInfo->CropH / 2; i++)
+
+            if (!skipChroma)
             {
-                m_Current.m_pixY = i;
-                WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW);
+                m_Current.m_comp = VM_STRING('U');
+                for (i = 0; i < pInfo->CropH / 2; i++)
+                {
+                    m_Current.m_pixY = i;
+                    WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW);
+
+                }
             }
             break;
         }
@@ -519,13 +532,17 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 m_Current.m_pixY = i;
                 WRITE(pData->Y + (pInfo->CropY * pitch + crop_x)+ i * pitch, pInfo->CropW * 2);
             }
-            m_Current.m_comp = VM_STRING('U');
 
-            crop_y >>= 1;
-            for (i = 0; i < pInfo->CropH / 2; i++)
+            if (!skipChroma)
             {
-                m_Current.m_pixY = i;
-                WRITE(pData->UV + (crop_y*pitch + crop_x) + i * pitch, pInfo->CropW * 2);
+                m_Current.m_comp = VM_STRING('U');
+
+                crop_y >>= 1;
+                for (i = 0; i < pInfo->CropH / 2; i++)
+                {
+                    m_Current.m_pixY = i;
+                    WRITE(pData->UV + (crop_y*pitch + crop_x) + i * pitch, pInfo->CropW * 2);
+                }
             }
             break;
         }
@@ -538,11 +555,15 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 m_Current.m_pixY = i;
                 WRITE(pData->Y + (pInfo->CropY * pitch + pInfo->CropX)+ i * pitch, pInfo->CropW * 2);
             }
-            m_Current.m_comp = VM_STRING('U');
-            for (i = 0; i < pInfo->CropH; i++)
+
+            if (!skipChroma)
             {
-                m_Current.m_pixY = i;
-                WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW * 2);
+                m_Current.m_comp = VM_STRING('U');
+                for (i = 0; i < pInfo->CropH; i++)
+                {
+                    m_Current.m_pixY = i;
+                    WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW * 2);
+                }
             }
             break;
         }
@@ -1073,16 +1094,23 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
         MFX_CHECK_STS(res);
         return MFX_ERR_NONE;
     }
+
+    bool skipChroma = !m_params.alwaysWriteChroma && surface->Info.ChromaFormat == MFX_CHROMAFORMAT_YUV400;
+
     mfxU64 nFrameSize = 0;
     switch (m_nFourCC)
     {
         case MFX_FOURCC_NV12 :
         case MFX_FOURCC_YV12 :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 3 / 2;
+            if (skipChroma)
+                nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH);
             break;
         case MFX_FOURCC_NV16 :
         case MFX_FOURCC_YV16 :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
+            if (skipChroma)
+                nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH);
             break;
         case MFX_FOURCC_RGB3 :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 3 ;
@@ -1101,11 +1129,15 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
         case MFX_FOURCC_P010 :
         case MFX_FOURCC_YUV420_16 :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 3;
+            if (skipChroma)
+                nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
             break;
 
         case MFX_FOURCC_P210 :
         case MFX_FOURCC_YUV422_16 :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 4;
+            if (skipChroma)
+                nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
             break;
 
         default:

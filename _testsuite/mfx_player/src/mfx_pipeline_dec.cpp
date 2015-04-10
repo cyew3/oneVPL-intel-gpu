@@ -1723,6 +1723,7 @@ mfxStatus MFXDecPipeline::CreateRender()
     renderParams.useSameBitDepthForComponents = m_inParams.isAllegroTest;
     renderParams.use10bitOutput = m_inParams.isAllegroTest;
     renderParams.useHMstyle = m_inParams.isHMTest;
+    renderParams.alwaysWriteChroma = m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_HEVC ? false : true;
 
     switch (m_RenderType)
     {

@@ -186,6 +186,9 @@ namespace UMC_HEVC_DECODER
         Ipp32u ChromaPredMode,
         Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf)
     {
+        if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_400)
+            return;
+
         Ipp8u PredPel[(4*64+2)*2];
 
         m_reconstructor->GetPredPelsChromaNV12(m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx),

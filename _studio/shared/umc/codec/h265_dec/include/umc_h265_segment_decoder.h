@@ -214,7 +214,7 @@ public:
     void ResetRecRowBuffer();
 
     // Set new QP value and calculate scaled values for luma and chroma
-    void SetNewQP(Ipp32s newQP);
+    void SetNewQP(Ipp32s newQP, Ipp32s chroma_offset_idx = -1);
     Ipp32s GetQP(void)
     {
         return m_LastValidQP;

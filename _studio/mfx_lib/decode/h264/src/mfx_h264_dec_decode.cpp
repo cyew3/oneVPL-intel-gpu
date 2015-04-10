@@ -1564,7 +1564,18 @@ void VideoDECODEH264::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     surface_out->Info.FrameRateExtN = isShouldUpdate ? m_vPar.mfx.FrameInfo.FrameRateExtN : m_vFirstPar.mfx.FrameInfo.FrameRateExtN;
 
     surface_out->Info.PicStruct = 0;
-    surface_out->Info.ChromaFormat = (mfxU16)(pFrame->m_chroma_format ? MFX_CHROMAFORMAT_YUV420 : MFX_CHROMAFORMAT_YUV400);
+    switch(pFrame->m_chroma_format)
+    {
+    case 0:
+        surface_out->Info.ChromaFormat = MFX_CHROMAFORMAT_YUV400;
+        break;
+    case 2:
+        surface_out->Info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        break;
+    default:
+        surface_out->Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        break;
+    }
 
     switch (pFrame->m_displayPictureStruct)
     {

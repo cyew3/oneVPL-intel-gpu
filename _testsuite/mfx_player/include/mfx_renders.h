@@ -41,12 +41,14 @@ struct FileWriterRenderInputParams
     {
         info = mfxFrameInfoCpp(0,0,0,0, fourCC);
         useSameBitDepthForComponents = false;
+        alwaysWriteChroma = true;
     }
 
     mfxFrameInfo info;
     bool useSameBitDepthForComponents;
     bool use10bitOutput;
     bool useHMstyle;
+    bool alwaysWriteChroma;
 };
 
 

@@ -280,8 +280,41 @@ void DecodingContext::ResetRecRowBuffer()
 }
 
 // Set new QP value and calculate scaled values for luma and chroma
-void DecodingContext::SetNewQP(Ipp32s newQP)
+void DecodingContext::SetNewQP(Ipp32s newQP, Ipp32s chroma_offset_idx)
 {
+    if (chroma_offset_idx != -1) // update chroma part
+    {
+        Ipp32s qpOffsetCb = m_pps->pps_cb_qp_offset + m_sh->slice_cb_qp_offset + m_pps->cb_qp_offset_list[chroma_offset_idx];
+        Ipp32s qpOffsetCr = m_pps->pps_cr_qp_offset + m_sh->slice_cr_qp_offset + m_pps->cr_qp_offset_list[chroma_offset_idx];
+        Ipp32s qpBdOffsetC = m_sps->m_QPBDOffsetC;
+        Ipp32s qpScaledCb = Clip3(-qpBdOffsetC, 57, m_LastValidQP + qpOffsetCb);
+        Ipp32s qpScaledCr = Clip3(-qpBdOffsetC, 57, m_LastValidQP + qpOffsetCr);
+
+        Ipp32s chromaScaleIndex = m_sps->ChromaArrayType != CHROMA_FORMAT_420 ? 1 : 0;
+
+        if (qpScaledCb < 0)
+            qpScaledCb = qpScaledCb + qpBdOffsetC;
+        else
+            qpScaledCb = g_ChromaScale[chromaScaleIndex][qpScaledCb] + qpBdOffsetC;
+
+        if (qpScaledCr < 0)
+            qpScaledCr = qpScaledCr + qpBdOffsetC;
+        else
+            qpScaledCr = g_ChromaScale[chromaScaleIndex][qpScaledCr] + qpBdOffsetC;
+
+        m_ScaledQP[COMPONENT_CHROMA_U].m_QPRem = qpScaledCb % 6;
+        m_ScaledQP[COMPONENT_CHROMA_U].m_QPPer = qpScaledCb / 6;
+        m_ScaledQP[COMPONENT_CHROMA_U].m_QPScale =
+            g_invQuantScales[m_ScaledQP[COMPONENT_CHROMA_U].m_QPRem] << m_ScaledQP[COMPONENT_CHROMA_U].m_QPPer;
+
+        m_ScaledQP[COMPONENT_CHROMA_V].m_QPRem = qpScaledCr % 6;
+        m_ScaledQP[COMPONENT_CHROMA_V].m_QPPer = qpScaledCr / 6;
+        m_ScaledQP[COMPONENT_CHROMA_V].m_QPScale =
+            g_invQuantScales[m_ScaledQP[COMPONENT_CHROMA_V].m_QPRem] << m_ScaledQP[COMPONENT_CHROMA_V].m_QPPer;
+
+        return;
+    }
+    
     if (newQP == m_LastValidQP)
         return;
 
@@ -778,7 +811,8 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
 
         BeforeCoeffs(AbsPartIdx, Depth);
         DecodeIntraDirLumaAngCABAC(AbsPartIdx, Depth);
-        DecodeIntraDirChromaCABAC(AbsPartIdx, Depth);
+        if (m_pSeqParamSet->ChromaArrayType != CHROMA_FORMAT_400)
+            DecodeIntraDirChromaCABAC(AbsPartIdx, Depth);
     }
     else
     {
@@ -1466,34 +1500,37 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
         }
     }
 
-    if (FirstCbfOfCUFlag || log2TrafoSize > 2)
+    if (m_pSeqParamSet->ChromaArrayType != CHROMA_FORMAT_400)
     {
-        if (FirstCbfOfCUFlag || m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, trafoDepth - 1))
+        if (FirstCbfOfCUFlag || log2TrafoSize > 2)
         {
-            ParseQtCbfCABAC(AbsPartIdx, COMPONENT_CHROMA_U, trafoDepth, Depth);
-            if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422 && (!Subdiv || log2TrafoSize == 3))
+            if (FirstCbfOfCUFlag || m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, trafoDepth - 1))
             {
-                ParseQtCbfCABAC(AbsPartIdx, COMPONENT_CHROMA_U1, trafoDepth, Depth);
+                ParseQtCbfCABAC(AbsPartIdx, COMPONENT_CHROMA_U, trafoDepth, Depth);
+                if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422 && (!Subdiv || log2TrafoSize == 3))
+                {
+                    ParseQtCbfCABAC(AbsPartIdx, COMPONENT_CHROMA_U1, trafoDepth, Depth);
+                }
             }
-        }
 
-        if (FirstCbfOfCUFlag || m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, trafoDepth - 1))
-        {
-            ParseQtCbfCABAC(AbsPartIdx, COMPONENT_CHROMA_V, trafoDepth, Depth);
-            if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422 && (!Subdiv || log2TrafoSize == 3))
+            if (FirstCbfOfCUFlag || m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, trafoDepth - 1))
             {
-                ParseQtCbfCABAC(AbsPartIdx , COMPONENT_CHROMA_V1, trafoDepth, Depth);
+                ParseQtCbfCABAC(AbsPartIdx, COMPONENT_CHROMA_V, trafoDepth, Depth);
+                if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422 && (!Subdiv || log2TrafoSize == 3))
+                {
+                    ParseQtCbfCABAC(AbsPartIdx , COMPONENT_CHROMA_V1, trafoDepth, Depth);
+                }
             }
         }
-    }
-    else
-    {
-        m_cu->setCbfSubParts(m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, trafoDepth - 1) << trafoDepth, COMPONENT_CHROMA_U, AbsPartIdx, Depth);
-        m_cu->setCbfSubParts(m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, trafoDepth - 1) << trafoDepth, COMPONENT_CHROMA_V, AbsPartIdx, Depth);
-        if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422)
+        else
         {
-            m_cu->setCbfSubParts(m_cu->GetCbf(COMPONENT_CHROMA_U1, AbsPartIdx, trafoDepth - 1) << trafoDepth, COMPONENT_CHROMA_U1, AbsPartIdx, Depth);
-            m_cu->setCbfSubParts(m_cu->GetCbf(COMPONENT_CHROMA_V1, AbsPartIdx, trafoDepth - 1) << trafoDepth, COMPONENT_CHROMA_V1, AbsPartIdx, Depth);
+            m_cu->setCbfSubParts(m_cu->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, trafoDepth - 1) << trafoDepth, COMPONENT_CHROMA_U, AbsPartIdx, Depth);
+            m_cu->setCbfSubParts(m_cu->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, trafoDepth - 1) << trafoDepth, COMPONENT_CHROMA_V, AbsPartIdx, Depth);
+            if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422)
+            {
+                m_cu->setCbfSubParts(m_cu->GetCbf(COMPONENT_CHROMA_U1, AbsPartIdx, trafoDepth - 1) << trafoDepth, COMPONENT_CHROMA_U1, AbsPartIdx, Depth);
+                m_cu->setCbfSubParts(m_cu->GetCbf(COMPONENT_CHROMA_V1, AbsPartIdx, trafoDepth - 1) << trafoDepth, COMPONENT_CHROMA_V1, AbsPartIdx, Depth);
+            }
         }
     }
 
@@ -1709,12 +1746,17 @@ void H265SegmentDecoder::ParseQtRootCbfCABAC(Ipp32u& QtRootCbf)
 void H265SegmentDecoder::DecodeQPChromaAdujst()
 {
     Ipp32u cu_chroma_qp_offset_flag = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[CU_CHROMA_QP_OFFSET_FLAG]);
+    if (!cu_chroma_qp_offset_flag)
+        return;
+
+    Ipp32u cu_chroma_qp_offset_idx = 1;
     if (cu_chroma_qp_offset_flag && m_pPicParamSet->chroma_qp_offset_list_len > 1)
     {
-        Ipp32u cu_chroma_qp_offset_idx;
-        ReadUnaryMaxSymbolCABAC(cu_chroma_qp_offset_idx, ctxIdxOffsetHEVC[DQP_HEVC], 0, m_pPicParamSet->chroma_qp_offset_list_len - 1);
+        ReadUnaryMaxSymbolCABAC(cu_chroma_qp_offset_idx, ctxIdxOffsetHEVC[CU_CHROMA_QP_OFFSET_IDX], 0, m_pPicParamSet->chroma_qp_offset_list_len - 1);
         cu_chroma_qp_offset_idx++;
     }
+
+    m_context->SetNewQP(0, cu_chroma_qp_offset_idx);
 }
 
 // Decode and set new QP value
@@ -1766,6 +1808,8 @@ void H265SegmentDecoder::ParseDeltaQPCABAC(Ipp32u AbsPartIdx)
 void H265SegmentDecoder::FinishDecodeCU(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast)
 {
     IsLast = DecodeSliceEnd(AbsPartIdx, Depth);
+    if (m_pSliceHeader->cu_chroma_qp_offset_enabled_flag)
+        m_context->SetNewQP(0, 0); // clear chroma qp offsets
 }
 
 // Copy CU data from position 0 to all other subparts

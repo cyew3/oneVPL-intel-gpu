@@ -1119,7 +1119,18 @@ void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     surface_out->Info.FrameRateExtN = isShouldUpdate ? m_vPar.mfx.FrameInfo.FrameRateExtN : m_vFirstPar.mfx.FrameInfo.FrameRateExtN;
 
     surface_out->Info.PicStruct = 0;
-    surface_out->Info.ChromaFormat = (mfxU16)(MFX_CHROMAFORMAT_YUV420);
+    switch(pFrame->m_chroma_format)
+    {
+    case 0:
+        surface_out->Info.ChromaFormat = MFX_CHROMAFORMAT_YUV400;
+        break;
+    case 2:
+        surface_out->Info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        break;
+    default:
+        surface_out->Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        break;
+    }
 
     surface_out->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 

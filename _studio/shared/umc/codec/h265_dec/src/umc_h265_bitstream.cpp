@@ -1036,8 +1036,8 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
                 pcPPS->chroma_qp_offset_list_len = GetVLCElementU() + 1;
                 for (Ipp32u i = 0; i < pcPPS->chroma_qp_offset_list_len; i++)
                 {
-                    Ipp32u cb_qp_offset_list = GetVLCElementS();
-                    Ipp32u cr_qp_offset_list = GetVLCElementS();
+                    pcPPS->cb_qp_offset_list[i + 1] = GetVLCElementS();
+                    pcPPS->cr_qp_offset_list[i + 1] = GetVLCElementS();
                 }
             }
 
