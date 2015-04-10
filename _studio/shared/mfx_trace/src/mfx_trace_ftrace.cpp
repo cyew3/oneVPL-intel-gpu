@@ -54,8 +54,8 @@ const char *find_debugfs(void)
                return debugfs;
 
        if ((fp = fopen("/proc/mounts","r")) == NULL) {
-               //perror("/proc/mounts");
-               return NULL;
+           //perror("/proc/mounts");
+           return "noperm";
        }
 
        while (fscanf(fp, "%*s %"
@@ -69,7 +69,7 @@ const char *find_debugfs(void)
 
        if (strcmp(type, "debugfs") != 0) {
                // fprintf(stderr, "debugfs not mounted");
-               return NULL;
+               return "notfound";
        }
 
        debugfs_found = 1;
