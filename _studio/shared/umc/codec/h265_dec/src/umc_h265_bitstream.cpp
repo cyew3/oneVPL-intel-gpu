@@ -755,20 +755,20 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     Ipp8u sps_extension_present_flag = Get1Bit();
     if (sps_extension_present_flag)
     {
-        Ipp32u sps_range_extension_flag = Get1Bit();
+        pcSPS->sps_range_extension_flag = Get1Bit();
         Ipp32u sps_extension_7bits = GetBits(7);
 
-        if (sps_range_extension_flag)
+        if (pcSPS->sps_range_extension_flag)
         {
-            Ipp8u transform_skip_rotation_enabled_flag = Get1Bit();
-            Ipp8u transform_skip_context_enabled_flag = Get1Bit();
-            Ipp8u implicit_residual_dpcm_enabled_flag = Get1Bit();
-            Ipp8u explicit_residual_dpcm_enabled_flag = Get1Bit();
-            Ipp8u extended_precision_processing_flag = Get1Bit();
-            Ipp8u intra_smoothing_disabled_flag = Get1Bit();
-            Ipp8u high_precision_offsets_enabled_flag = Get1Bit();
-            Ipp8u fast_rice_adaptation_enabled_flag = Get1Bit();
-            Ipp8u cabac_bypass_alignment_enabled_flag = Get1Bit();
+            pcSPS->transform_skip_rotation_enabled_flag = Get1Bit();
+            pcSPS->transform_skip_context_enabled_flag = Get1Bit();
+            pcSPS->implicit_residual_dpcm_enabled_flag = Get1Bit();
+            pcSPS->explicit_residual_dpcm_enabled_flag = Get1Bit();
+            pcSPS->extended_precision_processing_flag = Get1Bit();
+            pcSPS->intra_smoothing_disabled_flag = Get1Bit();
+            pcSPS->high_precision_offsets_enabled_flag = Get1Bit();
+            pcSPS->fast_rice_adaptation_enabled_flag = Get1Bit();
+            pcSPS->cabac_bypass_alignment_enabled_flag = Get1Bit();
         }
 
         if (sps_extension_7bits)
@@ -1019,31 +1019,30 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
     if (pps_extension_present_flag)
     {
         Ipp8u pps_range_extensions_flag = Get1Bit();
-        Ipp8u pps_extension_7bits = GetBits(7);
+        Ipp8u pps_extension_7bits = (Ipp8u)GetBits(7);
 
         if (pps_range_extensions_flag)
         {
             if (pcPPS->transform_skip_enabled_flag)
             {
-                Ipp32u log2_max_transform_skip_block_size_minus2 = GetVLCElementU();
-                Ipp8u cross_component_prediction_enabled_flag = Get1Bit();
-
-                Ipp8u chroma_qp_offset_list_enabled_flag = Get1Bit();
-                if (chroma_qp_offset_list_enabled_flag)
-                {
-                    Ipp32u diff_cu_chroma_qp_offset_depth = GetVLCElementU();
-                    Ipp32u chroma_qp_offset_list_len_minus1 = GetVLCElementU();
-                    for (Ipp32u i = 0; i < chroma_qp_offset_list_len_minus1; i++)
-                    {
-                        Ipp32u cb_qp_offset_list = GetVLCElementS();
-                        Ipp32u cr_qp_offset_list = GetVLCElementS();
-                    }
-                }
-
-                Ipp32u log2_sao_offset_scale_luma = GetVLCElementU();
-                Ipp32u log2_sao_offset_scale_chroma = GetVLCElementU();
+                pcPPS->log2_max_transform_skip_block_size = GetVLCElementU() + 2;
             }
 
+            pcPPS->cross_component_prediction_enabled_flag = Get1Bit();
+            pcPPS->chroma_qp_offset_list_enabled_flag = Get1Bit();
+            if (pcPPS->chroma_qp_offset_list_enabled_flag)
+            {
+                pcPPS->diff_cu_chroma_qp_offset_depth = GetVLCElementU();
+                pcPPS->chroma_qp_offset_list_len = GetVLCElementU() + 1;
+                for (Ipp32u i = 0; i < pcPPS->chroma_qp_offset_list_len; i++)
+                {
+                    Ipp32u cb_qp_offset_list = GetVLCElementS();
+                    Ipp32u cr_qp_offset_list = GetVLCElementS();
+                }
+            }
+
+            pcPPS->log2_sao_offset_scale_luma = GetVLCElementU();
+            pcPPS->log2_sao_offset_scale_chroma = GetVLCElementU();
         }
 
         if (pps_extension_7bits)
@@ -1565,6 +1564,11 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
 
             if (pps->pps_cr_qp_offset + sliceHdr->slice_cr_qp_offset < -12 || pps->pps_cr_qp_offset + sliceHdr->slice_cr_qp_offset >  12)
                 throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+        }
+
+        if (pps->chroma_qp_offset_list_enabled_flag)
+        {
+            sliceHdr->cu_chroma_qp_offset_enabled_flag = Get1Bit();
         }
 
         if (pps->deblocking_filter_control_present_flag)

@@ -166,10 +166,12 @@ enum
     TRANS_SUBDIV_FLAG_HEVC          = 24,
     TRANSFORM_SKIP_HEVC             = 25,
     TRANSQUANT_BYPASS_HEVC          = 26,
+    CU_CHROMA_QP_OFFSET_FLAG        = 27,
+    CU_CHROMA_QP_OFFSET_IDX         = 28,
     MAIN_SYNTAX_ELEMENT_NUMBER_HEVC
 };
 
-#define NUM_CTX 186
+#define NUM_CTX 188
 
 // CABAC contexts initialization values offset in a common table of all contexts
 // ML: OPT: Moved into header to allow accesses be resolved at compile time
@@ -202,7 +204,9 @@ Ipp32u ctxIdxOffsetHEVC[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
     179, // SAO_TYPE_IDX_HEVC
     180, // TRANS_SUBDIV_FLAG_HEVC
     183, // TRANSFORM_SKIP_HEVC
-    185  // TRANSQUANT_BYPASS_HEVC
+    185, // TRANSQUANT_BYPASS_HEVC
+    186, // CU_CHROMA_QP_OFFSET_FLAG
+    187, // CU_CHROMA_QP_OFFSET_IDX
 };
 
 // LPS precalculated probability ranges. HEVC spec 9.3.4.3.1

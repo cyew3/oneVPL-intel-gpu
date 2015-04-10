@@ -849,6 +849,19 @@ struct H265SeqParamSetBase
     Ipp32u  log2_max_mv_length_horizontal;
     Ipp32u  log2_max_mv_length_vertical;
 
+    // sps extension
+    Ipp8u sps_range_extension_flag;
+
+    Ipp8u transform_skip_rotation_enabled_flag;
+    Ipp8u transform_skip_context_enabled_flag;
+    Ipp8u implicit_residual_dpcm_enabled_flag;
+    Ipp8u explicit_residual_dpcm_enabled_flag;
+    Ipp8u extended_precision_processing_flag;
+    Ipp8u intra_smoothing_disabled_flag;
+    Ipp8u high_precision_offsets_enabled_flag;
+    Ipp8u fast_rice_adaptation_enabled_flag;
+    Ipp8u cabac_bypass_alignment_enabled_flag;
+
     ///////////////////////////////////////////////////////
     // calculated params
     // These fields are calculated from values above.  They are not written to the bitstream
@@ -1027,6 +1040,16 @@ struct H265PicParamSetBase
     Ipp32u  log2_parallel_merge_level;
     Ipp8u   slice_segment_header_extension_present_flag;
 
+    // pps range extension
+    Ipp32u log2_max_transform_skip_block_size;
+
+    Ipp8u cross_component_prediction_enabled_flag;
+    Ipp8u chroma_qp_offset_list_enabled_flag;
+    Ipp32u diff_cu_chroma_qp_offset_depth;
+    Ipp32u chroma_qp_offset_list_len;
+    Ipp32u log2_sao_offset_scale_luma;
+    Ipp32u log2_sao_offset_scale_chroma;
+
     ///////////////////////////////////////////////////////
     // calculated params
     // These fields are calculated from values above.  They are not written to the bitstream
@@ -1162,6 +1185,8 @@ struct H265SliceHeader
     Ipp32s      slice_qp_delta;                       // to calculate default slice QP
     Ipp32s      slice_cb_qp_offset;
     Ipp32s      slice_cr_qp_offset;
+
+    Ipp8u       cu_chroma_qp_offset_enabled_flag;
 
     Ipp8u       deblocking_filter_override_flag;
     Ipp8u       slice_deblocking_filter_disabled_flag;

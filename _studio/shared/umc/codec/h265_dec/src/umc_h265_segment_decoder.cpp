@@ -659,6 +659,9 @@ void H265SegmentDecoder::DecodeCUCABAC(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& 
         more_depth = 1;
     }
 
+    if (m_pSliceHeader->cu_chroma_qp_offset_enabled_flag && (m_pSeqParamSet->MaxCUSize >> Depth) >= (m_pSeqParamSet->MaxCUSize >> m_pPicParamSet->diff_cu_chroma_qp_offset_depth))
+        m_IsCuChromaQpOffsetCoded = false;
+
     if (more_depth)
     {
         Ipp32u Idx = AbsPartIdx;
@@ -1007,7 +1010,7 @@ void H265SegmentDecoder::DecodeIPCMInfoCABAC(Ipp32u AbsPartIdx, Ipp32u Depth)
         size >>= 1;
         m_reconstructor->DecodePCMBlock(m_pBitStream, &m_context->m_coeffsWrite, size, m_pSeqParamSet->pcm_sample_bit_depth_chroma);
         m_reconstructor->DecodePCMBlock(m_pBitStream, &m_context->m_coeffsWrite, size, m_pSeqParamSet->pcm_sample_bit_depth_chroma);
-        if (m_pSeqParamSet->ChromaArrayType != CHROMA_FORMAT_422)
+        if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422)
         {
             m_reconstructor->DecodePCMBlock(m_pBitStream, &m_context->m_coeffsWrite, size, m_pSeqParamSet->pcm_sample_bit_depth_chroma);
             m_reconstructor->DecodePCMBlock(m_pBitStream, &m_context->m_coeffsWrite, size, m_pSeqParamSet->pcm_sample_bit_depth_chroma);
@@ -1570,7 +1573,8 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
             cbfV1 = (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422) ? m_cu->GetCbf(COMPONENT_CHROMA_V1, AbsPartIdx, trafoDepth) : 0;
         }
 
-        if (cbfY || cbfU || cbfV || cbfU1 || cbfV1)
+        bool cbrChroma = cbfU || cbfV || cbfU1 || cbfV1;
+        if (cbfY || cbrChroma)
         {
             // Update TU QP value
             if (m_pPicParamSet->cu_qp_delta_enabled_flag && CodeDQP)
@@ -1580,6 +1584,12 @@ void H265SegmentDecoder::DecodeTransform(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
                 UpdateNeighborDecodedQP(m_bakAbsPartIdxQp, m_cu->GetDepth(AbsPartIdx));
                 m_cu->UpdateTUQpInfo(m_bakAbsPartIdxQp, m_context->GetQP(), m_cu->GetDepth(AbsPartIdx));
                 CodeDQP = false;
+            }
+
+            if (cbrChroma && !m_cu->GetCUTransquantBypass(AbsPartIdx) && m_pSliceHeader->cu_chroma_qp_offset_enabled_flag && !m_IsCuChromaQpOffsetCoded)
+            {
+                DecodeQPChromaAdujst();
+                m_IsCuChromaQpOffsetCoded = true;
             }
         }
 
@@ -1694,6 +1704,17 @@ void H265SegmentDecoder::ParseQtRootCbfCABAC(Ipp32u& QtRootCbf)
     const Ipp32u Ctx = 0;
     uVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[QT_ROOT_CBF_HEVC] + Ctx);
     QtRootCbf = uVal;
+}
+
+void H265SegmentDecoder::DecodeQPChromaAdujst()
+{
+    Ipp32u cu_chroma_qp_offset_flag = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[CU_CHROMA_QP_OFFSET_FLAG]);
+    if (cu_chroma_qp_offset_flag && m_pPicParamSet->chroma_qp_offset_list_len > 1)
+    {
+        Ipp32u cu_chroma_qp_offset_idx;
+        ReadUnaryMaxSymbolCABAC(cu_chroma_qp_offset_idx, ctxIdxOffsetHEVC[DQP_HEVC], 0, m_pPicParamSet->chroma_qp_offset_list_len - 1);
+        cu_chroma_qp_offset_idx++;
+    }
 }
 
 // Decode and set new QP value

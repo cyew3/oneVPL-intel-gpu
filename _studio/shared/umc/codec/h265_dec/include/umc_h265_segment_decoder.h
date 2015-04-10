@@ -300,6 +300,8 @@ public:
     void ParseQtRootCbfCABAC(Ipp32u& QtRootCbf);
     // Decode and set new QP value
     void DecodeQP(Ipp32u AbsPartIdx);
+    
+    void DecodeQPChromaAdujst(); //ChromaQpOffsetCoded
     // Calculate CU QP value based on previously used QP values. HEVC spec 8.6.1
     Ipp32s getRefQP(Ipp32s AbsPartIdx);
     // Decode and set new QP value. HEVC spec 9.3.3.8
@@ -381,6 +383,7 @@ public:
     inline void GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *mvinfoP, H265PartialEdgeData *edge);
 
     bool m_DecodeDQPFlag;
+    bool m_IsCuChromaQpOffsetCoded;
     Ipp32u m_minCUDQPSize;
     Ipp32u m_MaxDepth; //max number of depth
     H265DecYUVBufferPadded* m_ppcYUVResi; //array of residual buffer
