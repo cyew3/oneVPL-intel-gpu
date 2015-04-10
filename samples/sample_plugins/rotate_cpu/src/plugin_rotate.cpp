@@ -263,6 +263,7 @@ mfxStatus Rotate::Close()
     memset(&m_Param, 0, sizeof(RotateParam));
 
     MSDK_SAFE_DELETE_ARRAY(m_pTasks);
+    MSDK_SAFE_DELETE_ARRAY(m_pChunks);
 
     mfxStatus sts = MFX_ERR_NONE;
 
