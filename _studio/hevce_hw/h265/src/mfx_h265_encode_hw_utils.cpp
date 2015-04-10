@@ -64,13 +64,8 @@ template<class T> T Reorder(
 
     if (flush && top == end && begin != end)
     {
-        if (par.mfx.GopOptFlag & MFX_GOP_STRICT)
-            top = begin;
-        else
-        {
-            top --;
-            top->m_frameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
-        }
+        top --;
+        top->m_frameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
     }
 
     return top;
@@ -1356,7 +1351,7 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
             {
                 //use ST RPS from SPS
                 s.short_term_ref_pic_set_sps_flag = 1;
-                s.short_term_ref_pic_set_idx      = i;
+                s.short_term_ref_pic_set_idx      = (mfxU8)i;
                 break;
             }
         }

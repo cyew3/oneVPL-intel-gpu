@@ -441,7 +441,7 @@ struct Slice
     mfxU8  reserved_flags;
     mfxU8  type                       : 2;
     mfxU8  colour_plane_id            : 2;
-    mfxU8  short_term_ref_pic_set_idx : 4;
+    mfxU8  short_term_ref_pic_set_idx;
 
     mfxU8  pic_output_flag                 : 1;
     mfxU8  short_term_ref_pic_set_sps_flag : 1;

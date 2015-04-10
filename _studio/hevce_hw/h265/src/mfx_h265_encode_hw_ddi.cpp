@@ -245,6 +245,7 @@ void FillPpsBuffer(
     pps.LcuMaxBitsizeAllowed       = 0;
     pps.bUseRawPicForRef           = 0;
     pps.bScreenContent             = 0;
+    pps.NumSlices                  = par.mfx.NumSlice;
 }
 
 void FillPpsBuffer(
@@ -270,7 +271,6 @@ void FillPpsBuffer(
     }
 
     pps.CodingType      = task.m_codingType;
-    pps.NumSlices       = 1;
     pps.CurrPicOrderCnt = task.m_poc;
 
     pps.StatusReportFeedbackNumber = task.m_statusReportNumber;

@@ -352,7 +352,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
            parNew.mfx.CodecProfile           != MFX_CODEC_HEVC
         && m_vpar.AsyncDepth                 == parNew.AsyncDepth
         && m_vpar.mfx.GopRefDist             >= parNew.mfx.GopRefDist
-        && m_vpar.mfx.NumSlice               >= parNew.mfx.NumSlice
+        //&& m_vpar.mfx.NumSlice               >= parNew.mfx.NumSlice
         && m_vpar.mfx.NumRefFrame            >= parNew.mfx.NumRefFrame
         && m_vpar.mfx.RateControlMethod      == parNew.mfx.RateControlMethod
         && m_rec.m_info.Width                >= parNew.mfx.FrameInfo.Width
