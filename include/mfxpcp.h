@@ -55,7 +55,8 @@ enum
 
 /* Extended Buffer Ids */
 enum {
-    MFX_EXTBUFF_PAVP_OPTION         =   MFX_MAKEFOURCC('P','V','O','P')
+    MFX_EXTBUFF_PAVP_OPTION         = MFX_MAKEFOURCC('P','V','O','P'),
+    MFX_EXTBUFF_DECRYPTED_PARAM     = MFX_MAKEFOURCC('D','C','R','P')
 };
 
 typedef struct _mfxAES128CipherCounter{
@@ -83,6 +84,14 @@ typedef struct _mfxExtPAVPOption{
     mfxU16      CounterType;
     mfxU32      reserved[8];
 } mfxExtPAVPOption;
+
+typedef struct _mfxExtDecryptedParam{
+    mfxExtBuffer Header;
+
+    mfxU8  *Data;
+    mfxU32 DataLength;
+    mfxU32 reserved[11];
+} mfxExtDecryptedParam;
 
 #ifdef __cplusplus
 } // extern "C"
