@@ -1117,10 +1117,22 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
     if (pps.init_qp < -QpBdOffsetY || pps.init_qp > 25 + 26)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
     
+    if (pps.cross_component_prediction_enabled_flag && sps->ChromaArrayType != CHROMA_FORMAT_444)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    if (pps.chroma_qp_offset_list_enabled_flag && sps->ChromaArrayType == CHROMA_FORMAT_400)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     if (pps.diff_cu_qp_delta_depth > sps->log2_max_luma_coding_block_size - sps->log2_min_luma_coding_block_size)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     if (pps.log2_parallel_merge_level > sps->log2_max_luma_coding_block_size)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    if (pps.log2_sao_offset_scale_luma > sps->bit_depth_luma - 10)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    if (pps.log2_sao_offset_scale_chroma  > sps->bit_depth_chroma - 10)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     Ipp32u WidthInLCU = sps->WidthInCU;

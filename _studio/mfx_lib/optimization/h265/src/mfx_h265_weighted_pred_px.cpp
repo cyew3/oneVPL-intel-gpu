@@ -84,6 +84,10 @@ void MAKE_NAME(h265_CopyWeighted_S16U16)(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* p
         h265_CopyWeighted_Kernel<10, Ipp16u>(pSrc, pSrcUV, pDst, pDstUV, SrcStrideY, DstStrideY, SrcStrideC, DstStrideC, Width, Height, w, o, logWD, round, bit_depth_chroma);
     else if (bit_depth == 8)
         h265_CopyWeighted_Kernel<8, Ipp16u>(pSrc, pSrcUV, pDst, pDstUV, SrcStrideY, DstStrideY, SrcStrideC, DstStrideC, Width, Height, w, o, logWD, round, bit_depth_chroma);
+    else if (bit_depth == 11)
+        h265_CopyWeighted_Kernel<11, Ipp16u>(pSrc, pSrcUV, pDst, pDstUV, SrcStrideY, DstStrideY, SrcStrideC, DstStrideC, Width, Height, w, o, logWD, round, bit_depth_chroma);
+    else if (bit_depth == 12)
+        h265_CopyWeighted_Kernel<12, Ipp16u>(pSrc, pSrcUV, pDst, pDstUV, SrcStrideY, DstStrideY, SrcStrideC, DstStrideC, Width, Height, w, o, logWD, round, bit_depth_chroma);
 }
 
 template <int bitDepth, typename DstCoeffsType>
@@ -131,6 +135,10 @@ void MAKE_NAME(h265_CopyWeightedBidi_S16U16)(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp
         h265_CopyWeightedBidi_Kernel<10, Ipp16u>(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, SrcStride0Y, SrcStride1Y, DstStrideY, SrcStride0C, SrcStride1C, DstStrideC, Width, Height, w0, w1, logWD, round, bit_depth_chroma);
     else if (bit_depth == 8)
         h265_CopyWeightedBidi_Kernel<8, Ipp16u>(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, SrcStride0Y, SrcStride1Y, DstStrideY, SrcStride0C, SrcStride1C, DstStrideC, Width, Height, w0, w1, logWD, round, bit_depth_chroma);
+    else if (bit_depth == 11)
+        h265_CopyWeightedBidi_Kernel<11, Ipp16u>(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, SrcStride0Y, SrcStride1Y, DstStrideY, SrcStride0C, SrcStride1C, DstStrideC, Width, Height, w0, w1, logWD, round, bit_depth_chroma);
+    else if (bit_depth == 12)
+        h265_CopyWeightedBidi_Kernel<12, Ipp16u>(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, SrcStride0Y, SrcStride1Y, DstStrideY, SrcStride0C, SrcStride1C, DstStrideC, Width, Height, w0, w1, logWD, round, bit_depth_chroma);
 }
 
 } // end namespace MFX_HEVC_PP

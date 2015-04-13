@@ -960,8 +960,8 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoUnits(Ipp32s firstCU
     m_needPCMRestoration = (slice->GetSeqParam()->pcm_enabled_flag && slice->GetSeqParam()->pcm_loop_filter_disabled_flag) ||
         slice->GetPicParam()->transquant_bypass_enabled_flag;
 
-    m_SaoBitIncreaseY = IPP_MAX((Ipp32s)slice->GetSeqParam()->bit_depth_luma - 10, 0);
-    m_SaoBitIncreaseC = IPP_MAX((Ipp32s)slice->GetSeqParam()->bit_depth_chroma - 10, 0);
+    m_SaoBitIncreaseY = slice->GetPicParam()->log2_sao_offset_scale_luma;
+    m_SaoBitIncreaseC = slice->GetPicParam()->log2_sao_offset_scale_chroma;
 
     createNonDBFilterInfo();
 

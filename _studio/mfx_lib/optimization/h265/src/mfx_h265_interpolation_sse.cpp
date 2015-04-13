@@ -1669,6 +1669,10 @@ static void t_AverageMode_U16(short *pSrc, unsigned int srcPitch, unsigned short
         t_AverageMode_U16_Kernel<widthMul, avgMode, 10>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
     else if (bitDepth == 8)
         t_AverageMode_U16_Kernel<widthMul, avgMode, 8>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
+    else if (bitDepth == 11)
+        t_AverageMode_U16_Kernel<widthMul, avgMode, 11>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
+    else if (bitDepth == 12)
+        t_AverageMode_U16_Kernel<widthMul, avgMode, 12>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
 }
 
 /* mode: AVERAGE_NO, just clip/pack 16-bit output to [0, 2^bitDepth) */

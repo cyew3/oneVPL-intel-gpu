@@ -412,6 +412,10 @@ namespace MFX_HEVC_PP
             return h265_FilterEdgeLuma_Kernel<10, Ipp16u>(edge, srcDst, srcDstStride, dir);
         else if (bit_depth == 8)
             return h265_FilterEdgeLuma_Kernel<8, Ipp16u>(edge, srcDst, srcDstStride, dir);
+        else if (bit_depth == 11)
+            return h265_FilterEdgeLuma_Kernel<11, Ipp16u>(edge, srcDst, srcDstStride, dir);
+        else if (bit_depth == 12)
+            return h265_FilterEdgeLuma_Kernel<12, Ipp16u>(edge, srcDst, srcDstStride, dir);
         else
             return -1;    /* unsupported */
     }
@@ -421,7 +425,6 @@ namespace MFX_HEVC_PP
         h265_FilterEdgeChroma_Interleaved_Kernel<8, Ipp8u>(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr);
     }
 
-
     void MAKE_NAME(h265_FilterEdgeChroma_Interleaved_16u_I)(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr, Ipp32u bit_depth)
     {
         if (bit_depth == 9)
@@ -430,6 +433,10 @@ namespace MFX_HEVC_PP
             h265_FilterEdgeChroma_Interleaved_Kernel<10, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr);
         else if (bit_depth == 8)
             h265_FilterEdgeChroma_Interleaved_Kernel<8, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr);
+        else if (bit_depth == 11)
+            h265_FilterEdgeChroma_Interleaved_Kernel<11, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr);
+        else if (bit_depth == 12)
+            h265_FilterEdgeChroma_Interleaved_Kernel<12, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQpCb, chromaQpCr);
     }
 
     void MAKE_NAME(h265_FilterEdgeChroma_Plane_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp)
@@ -445,6 +452,10 @@ namespace MFX_HEVC_PP
             h265_FilterEdgeChroma_Plane_Kernel<10, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQp);
         else if (bit_depth == 8)
             h265_FilterEdgeChroma_Plane_Kernel<8, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQp);
+        else if (bit_depth == 11)
+            h265_FilterEdgeChroma_Plane_Kernel<11, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQp);
+        else if (bit_depth == 12)
+            h265_FilterEdgeChroma_Plane_Kernel<12, Ipp16u>(edge, srcDst, srcDstStride, dir, chromaQp);
     }
 
 }; // namespace MFX_HEVC_PP

@@ -498,15 +498,15 @@ void H265HeadersBitstream::parseProfileTier(H265PTL *ptl)
 
     if (ptl->profile_idc == H265_PROFILE_FREXT || (ptl->profile_compatibility_flags & (1 << 4)))
     {
-        Ipp8u max_12bit_constraint_flag = Get1Bit();
-        Ipp8u max_10bit_constraint_flag = Get1Bit();
-        Ipp8u max_8bit_constraint_flag = Get1Bit();
-        Ipp8u max_422chroma_constraint_flag = Get1Bit();
-        Ipp8u max_420chroma_constraint_flag = Get1Bit();
-        Ipp8u max_monochrome_constraint_flag = Get1Bit();
-        Ipp8u intra_constraint_flag = Get1Bit();
-        Ipp8u one_picture_only_constraint_flag = Get1Bit();
-        Ipp8u lower_bit_rate_constraint_flag = Get1Bit();
+        ptl->max_12bit_constraint_flag = Get1Bit();
+        ptl->max_10bit_constraint_flag = Get1Bit();
+        ptl->max_8bit_constraint_flag = Get1Bit();
+        ptl->max_422chroma_constraint_flag = Get1Bit();
+        ptl->max_420chroma_constraint_flag = Get1Bit();
+        ptl->max_monochrome_constraint_flag = Get1Bit();
+        ptl->intra_constraint_flag = Get1Bit();
+        ptl->one_picture_only_constraint_flag = Get1Bit();
+        ptl->lower_bit_rate_constraint_flag = Get1Bit();
 
         Ipp32u XXX_reserved_zero_35bits = GetBits(32);
         XXX_reserved_zero_35bits = GetBits(3);
@@ -1034,10 +1034,19 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
             {
                 pcPPS->diff_cu_chroma_qp_offset_depth = GetVLCElementU();
                 pcPPS->chroma_qp_offset_list_len = GetVLCElementU() + 1;
+
+                if (pcPPS->chroma_qp_offset_list_len > 6)
+                    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
                 for (Ipp32u i = 0; i < pcPPS->chroma_qp_offset_list_len; i++)
                 {
                     pcPPS->cb_qp_offset_list[i + 1] = GetVLCElementS();
                     pcPPS->cr_qp_offset_list[i + 1] = GetVLCElementS();
+
+                    if (pcPPS->cb_qp_offset_list[i + 1] < -12 || pcPPS->cb_qp_offset_list[i + 1] > 12)
+                        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+                    if (pcPPS->cr_qp_offset_list[i + 1] < -12 || pcPPS->cr_qp_offset_list[i + 1] > 12)
+                        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
                 }
             }
 

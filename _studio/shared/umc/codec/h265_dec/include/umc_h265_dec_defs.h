@@ -481,6 +481,16 @@ struct H265PTL
     Ipp8u       frame_only_constraint_flag;
     Ipp32u      level_idc;
 
+    Ipp8u       max_12bit_constraint_flag;
+    Ipp8u       max_10bit_constraint_flag;
+    Ipp8u       max_8bit_constraint_flag;
+    Ipp8u       max_422chroma_constraint_flag;
+    Ipp8u       max_420chroma_constraint_flag;
+    Ipp8u       max_monochrome_constraint_flag;
+    Ipp8u       intra_constraint_flag;
+    Ipp8u       one_picture_only_constraint_flag;
+    Ipp8u       lower_bit_rate_constraint_flag;
+
     H265PTL()   { memset(this, 0, sizeof(*this)); }
 };
 
@@ -1048,8 +1058,8 @@ struct H265PicParamSetBase
     Ipp8u chroma_qp_offset_list_enabled_flag;
     Ipp32u diff_cu_chroma_qp_offset_depth;
     Ipp32u chroma_qp_offset_list_len;
-    Ipp32u cb_qp_offset_list[MAX_CHROMA_OFFSET_ELEMENTS];
-    Ipp32u cr_qp_offset_list[MAX_CHROMA_OFFSET_ELEMENTS];
+    Ipp32s cb_qp_offset_list[MAX_CHROMA_OFFSET_ELEMENTS];
+    Ipp32s cr_qp_offset_list[MAX_CHROMA_OFFSET_ELEMENTS];
 
     Ipp32u log2_sao_offset_scale_luma;
     Ipp32u log2_sao_offset_scale_chroma;

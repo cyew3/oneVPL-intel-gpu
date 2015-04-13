@@ -569,6 +569,14 @@ namespace MFX_HEVC_PP
             /* 10 bits - clip to [0, 2^10) */
             xmm_min = _mm_setzero_si128();
             xmm_max = _mm_set1_epi16((1 << 10) - 1);
+        } else if (pClipTable[(1 << 11) - 1] == pClipTable[(1 << 11)]) {
+            /* 11 bits - clip to [0, 2^11) */
+            xmm_min = _mm_setzero_si128();
+            xmm_max = _mm_set1_epi16((1 << 11) - 1);
+        } else if (pClipTable[(1 << 12) - 1] == pClipTable[(1 << 12)]) {
+            /* 12 bits - clip to [0, 2^12) */
+            xmm_min = _mm_setzero_si128();
+            xmm_max = _mm_set1_epi16((1 << 12) - 1);
         }
 
         picWidthTmp  = picWidth;

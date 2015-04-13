@@ -141,6 +141,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     m_vPar = m_vFirstPar;
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
+    m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_HEVC_PARAM);
 
     mfxU32 asyncDepth = CalculateAsyncDepth(m_platform, par);
     m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(par, m_platform);
@@ -366,6 +367,7 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
     m_vPar = m_vFirstPar;
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
+    m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_HEVC_PARAM);
 
     m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(par, m_platform);
 
@@ -490,6 +492,13 @@ mfxStatus VideoDECODEH265::GetVideoParam(mfxVideoParam *par)
     {
         mfxExtVideoSignalInfo * videoSignalInternal = m_vPar.GetExtendedBuffer<mfxExtVideoSignalInfo>(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
         *videoSignal = *videoSignalInternal;
+    }
+
+    mfxExtHEVCParam * hevcParam = (mfxExtHEVCParam *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_HEVC_PARAM);
+    if (hevcParam)
+    {
+        mfxExtHEVCParam * hevcParamInternal = m_vPar.GetExtendedBuffer<mfxExtHEVCParam>(MFX_EXTBUFF_HEVC_PARAM);
+        *hevcParam = *hevcParamInternal;
     }
 
     // sps/pps headers
@@ -694,8 +703,16 @@ mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
     mfxU32 asyncDepth = CalculateAsyncDepth(platform, par);
     bool useDelayedDisplay = (ENABLE_DELAYED_DISPLAY_MODE != 0) && IsNeedToUseHWBuffering(type) && (asyncDepth != 1);
 
-    mfxI32 dpbSize = CalculateDPBSize(par->mfx.CodecLevel, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height);
-    mfxU32 numMin = dpbSize + 1 + asyncDepth + 1; //1 extra for avoid aligned size issue
+    mfxExtHEVCParam * hevcParam = (mfxExtHEVCParam *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_HEVC_PARAM);
+
+    mfxI32 dpbSize = 0;
+
+    if (hevcParam)
+        dpbSize = CalculateDPBSize(par->mfx.CodecLevel, hevcParam->PicWidthInLumaSamples, hevcParam->PicHeightInLumaSamples);
+    else
+        dpbSize = CalculateDPBSize(par->mfx.CodecLevel, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height);
+
+    mfxU32 numMin = dpbSize + 1 + asyncDepth + (hevcParam ? 0 : 1); //1 extra for avoid aligned size issue
     if (platform != MFX_PLATFORM_SOFTWARE && useDelayedDisplay) // equals if (m_useDelayedDisplay) - workaround
         numMin += NUMBER_OF_ADDITIONAL_FRAMES;
     request->NumFrameMin = (mfxU16)numMin;

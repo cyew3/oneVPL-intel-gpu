@@ -490,7 +490,7 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
     static const mfxU32 g_decoderSupportedExtBuffersAVC[] = {MFX_EXTBUFF_PAVP_OPTION, MFX_EXTBUFF_MVC_SEQ_DESC,
         MFX_EXTBUFF_MVC_TARGET_VIEWS, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_SVC_SEQ_DESC, MFX_EXTBUFF_SVC_TARGET_LAYER};
 
-    static const mfxU32 g_decoderSupportedExtBuffersHEVC[] = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION};
+    static const mfxU32 g_decoderSupportedExtBuffersHEVC[] = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_HEVC_PARAM};
 
     static const mfxU32 g_decoderSupportedExtBuffersVC1[] = {MFX_EXTBUFF_PAVP_OPTION, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION};
     static const mfxU32 g_decoderSupportedExtBuffersMJPEG[] = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_JPEG_HUFFMAN, MFX_EXTBUFF_JPEG_QT};
@@ -682,6 +682,10 @@ bool mfxVideoParamWrapper::CreateExtendedBuffer(mfxU32 bufferId)
         m_buffers.AddTypedBuffer<mfxExtCodingOptionSPSPPS>(bufferId);
         break;
 
+    case MFX_EXTBUFF_HEVC_PARAM:
+        m_buffers.AddTypedBuffer<mfxExtHEVCParam>(bufferId);
+        break;
+
     default:
         VM_ASSERT(false);
         return false;
@@ -714,6 +718,7 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
         case MFX_EXTBUFF_SVC_TARGET_LAYER:
         case MFX_EXTBUFF_JPEG_QT:
         case MFX_EXTBUFF_JPEG_HUFFMAN:
+        case MFX_EXTBUFF_HEVC_PARAM:
             {
                 void * in = GetExtendedBufferInternal(par.ExtParam, par.NumExtParam, par.ExtParam[i]->BufferId);
                 m_buffers.AddBuffer(par.ExtParam[i]);
