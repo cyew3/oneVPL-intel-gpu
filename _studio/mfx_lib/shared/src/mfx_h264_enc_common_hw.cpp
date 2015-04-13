@@ -3315,9 +3315,28 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.GopPicSize != 0 &&
         extOpt2->IntRefCycleSize >= par.mfx.GopPicSize)
     {
-        // refresh period shouldn't be greater or equal to GOP size
+        // refresh cycle length shouldn't be greater or equal to GOP size
         extOpt2->IntRefType = 0;
         extOpt2->IntRefCycleSize = 0;
+        changed = true;
+    }
+
+    if (extOpt3->IntRefCycleDist != 0 &&
+        par.mfx.GopPicSize != 0 &&
+        extOpt3->IntRefCycleDist >= par.mfx.GopPicSize)
+    {
+        // refresh period length shouldn't be greater or equal to GOP size
+        extOpt2->IntRefType = 0;
+        extOpt3->IntRefCycleDist = 0;
+        changed = true;
+    }
+
+    if (extOpt3->IntRefCycleDist != 0 &&
+        extOpt2->IntRefCycleSize != 0 &&
+        extOpt2->IntRefCycleSize > extOpt3->IntRefCycleDist)
+    {
+        // refresh period shouldn't be greater than refresh cycle size
+        extOpt3->IntRefCycleDist = 0;
         changed = true;
     }
 
@@ -3952,6 +3971,7 @@ void MfxHwH264Encode::InheritDefaultValues(
     InheritOption(extOpt3Init->NumSliceI, extOpt3Reset->NumSliceI);
     InheritOption(extOpt3Init->NumSliceP, extOpt3Reset->NumSliceP);
     InheritOption(extOpt3Init->NumSliceB, extOpt3Reset->NumSliceB);
+    InheritOption(extOpt3Init->IntRefCycleDist, extOpt3Reset->IntRefCycleDist);
 
     if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_QVBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
     {

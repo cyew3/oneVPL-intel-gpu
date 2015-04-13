@@ -338,6 +338,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION3(NumSliceP,              OPT_UINT_16,    ""),
         HANDLE_EXT_OPTION3(NumSliceB,              OPT_UINT_16,    ""),
         HANDLE_EXT_OPTION3(QVBRQuality,            OPT_UINT_16,    ""),
+        HANDLE_EXT_OPTION3(IntRefCycleDist,        OPT_UINT_16,    ""),
         HANDLE_EXT_OPTION3(DirectBiasAdjustment,       OPT_TRI_STATE, "on|off"),
         HANDLE_EXT_OPTION3(GlobalMotionBiasAdjustment, OPT_TRI_STATE, "on|off"),
         HANDLE_EXT_OPTION3(MVCostScalingFactor,        OPT_UINT_16,   ""),

@@ -1498,24 +1498,34 @@ IntraRefreshState MfxHwH264Encode::GetIntraRefreshState(
 {
     IntraRefreshState state;
     mfxExtCodingOption2 * extOpt2Init = GetExtBuffer(video);
-    if (extOpt2Init->IntRefType == 0 || frameOrderInGopDispOrder == 0)
-    {
-        state.firstFrameInCycle = false;
+    mfxExtCodingOption3 * extOpt3Init = GetExtBuffer(video);
+    state.firstFrameInCycle = false;
+    if (extOpt2Init->IntRefType == 0)
         return state;
-    }
+
+    mfxU32 refreshPeriod = extOpt3Init->IntRefCycleDist ? extOpt3Init->IntRefCycleDist : extOpt2Init->IntRefCycleSize;
+    mfxU32 offsetFromStartOfGop = extOpt3Init->IntRefCycleDist ? refreshPeriod : 1; // 1st refresh cycle in GOP starts with offset
+
+    mfxI32 frameOrderMinusOffset = frameOrderInGopDispOrder - offsetFromStartOfGop;
+    if (frameOrderMinusOffset < 0)
+        return state; // too early to start regresh
+
+    mfxU32 frameOrderInRefreshPeriod = frameOrderMinusOffset % refreshPeriod;
+    if (frameOrderInRefreshPeriod >= extOpt2Init->IntRefCycleSize)
+        return state; // for current refresh period refresh cycle is already passed
 
     // check if Intra refresh required for current frame
     mfxU32 refreshDimension = extOpt2Init->IntRefType == HORIZ_REFRESH ? video.mfx.FrameInfo.Height >> 4 : video.mfx.FrameInfo.Width >> 4;
     mfxU32 numFramesWithoutRefresh = extOpt2Init->IntRefCycleSize - (refreshDimension + intraStripeWidthInMBs - 1) / intraStripeWidthInMBs;
-    mfxU32 idxInRefreshPeriod = (frameOrderInGopDispOrder - 1) % extOpt2Init->IntRefCycleSize;
-    state.firstFrameInCycle = (idxInRefreshPeriod == 0);
-    mfxI32 idxInActualRefreshPeriod = idxInRefreshPeriod - numFramesWithoutRefresh;
-    if (idxInActualRefreshPeriod < 0)
+    mfxU32 idxInRefreshCycle = frameOrderInRefreshPeriod;
+    state.firstFrameInCycle = (idxInRefreshCycle == 0);
+    mfxI32 idxInActualRefreshCycle = idxInRefreshCycle - numFramesWithoutRefresh;
+    if (idxInActualRefreshCycle < 0)
         return state; // actual refresh isn't started yet within current refresh cycle, no Intra column/row required for current frame
 
     state.refrType = extOpt2Init->IntRefType;
     state.IntraSize = intraStripeWidthInMBs;
-    state.IntraLocation = (mfxU16)idxInActualRefreshPeriod * intraStripeWidthInMBs;
+    state.IntraLocation = (mfxU16)idxInActualRefreshCycle * intraStripeWidthInMBs;
     // set QP for Intra macroblocks within refreshing line
     state.IntRefQPDelta = extOpt2Init->IntRefQPDelta;
     if (ctrl)
@@ -1539,6 +1549,11 @@ mfxStatus MfxHwH264Encode::UpdateIntraRefreshWithoutIDR(
     MFX_CHECK_WITH_ASSERT((oldPar.mfx.FrameInfo.Width == newPar.mfx.FrameInfo.Width) && (oldPar.mfx.FrameInfo.Height == newPar.mfx.FrameInfo.Height), MFX_ERR_UNDEFINED_BEHAVIOR);
     mfxExtCodingOption2 * extOpt2Old = GetExtBuffer(oldPar);
     mfxExtCodingOption2 * extOpt2New = GetExtBuffer(newPar);
+    mfxExtCodingOption3 * extOpt3Old = GetExtBuffer(oldPar);
+    mfxExtCodingOption3 * extOpt3New = GetExtBuffer(newPar);
+
+    if (extOpt3Old->IntRefCycleDist || extOpt3New->IntRefCycleDist)
+        return MFX_ERR_INVALID_VIDEO_PARAM; // for now dynamic IR change isn't supported when IntRefCycleDist is enabled
 
     mfxU16 refreshDimension = extOpt2New->IntRefType == HORIZ_REFRESH ? newPar.mfx.FrameInfo.Height >> 4 : newPar.mfx.FrameInfo.Width >> 4;
     mfxU16 oldStripeWidthInMBs = (refreshDimension + extOpt2Old->IntRefCycleSize - 1) / extOpt2Old->IntRefCycleSize;

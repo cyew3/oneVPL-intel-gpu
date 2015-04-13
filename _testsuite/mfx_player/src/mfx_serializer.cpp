@@ -185,6 +185,7 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_INT(NumSliceP);
     SERIALIZE_INT(NumSliceB);
     SERIALIZE_INT(QVBRQuality);
+    SERIALIZE_INT(IntRefCycleDist);
 }
 
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
