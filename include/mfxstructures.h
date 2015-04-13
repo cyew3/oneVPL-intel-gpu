@@ -578,6 +578,23 @@ enum {
     MFX_WEIGHTED_PRED_IMPLICIT = 3
 };
 
+/* ScenarioInfo */
+enum {
+    MFX_SCENARIO_UNKNOWN             = 0,
+    MFX_SCENARIO_DISPLAY_REMOTING    = 1,
+    MFX_SCENARIO_VIDEO_CONFERENCE    = 2,
+    MFX_SCENARIO_ARCHIVE             = 3,
+    MFX_SCENARIO_LIVE_STREAMING      = 4,
+    MFX_SCENARIO_CAMERA_CAPTURE      = 5
+};
+
+/* ContentInfo */
+enum {
+    MFX_CONTENT_UNKNOWN              = 0,
+    MFX_CONTENT_FULL_SCREEN_VIDEO    = 1,
+    MFX_CONTENT_NON_VIDEO_SCREEN     = 2
+};
+
 typedef struct {
     mfxExtBuffer Header;
 
@@ -609,7 +626,9 @@ typedef struct {
     mfxU16      Log2MaxMvLengthHorizontal;      /* 0..16 */
     mfxU16      Log2MaxMvLengthVertical;        /* 0..16 */
 
-    mfxU16      reserved[229];
+    mfxU16      ScenarioInfo;
+    mfxU16      ContentInfo;
+    mfxU16      reserved[227];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
@@ -1077,11 +1096,19 @@ typedef struct {
     } In, Out;
 } mfxExtVPPVideoSignalInfo;
 
+/* ROIType */
+enum {
+    MFX_ROI         = 0,
+    MFX_DIRTY_RECT  = 1,
+    MFX_MOVE_RECT   = 2
+};
+
 typedef struct {
     mfxExtBuffer    Header;
 
     mfxU16  NumROI;
-    mfxU16  reserved1[11];
+    mfxU16  ROIType;
+    mfxU16  reserved1[10];
 
     struct  {
         mfxU32  Left;
@@ -1090,7 +1117,10 @@ typedef struct {
         mfxU32  Bottom;
 
         mfxI16  Priority;
-        mfxU16  reserved2[7];
+        mfxU16  reserved2[3];
+
+        mfxU32  SourcePointX;
+        mfxU32  SourcePointY;
     } ROI[256];
 } mfxExtEncoderROI;
 
