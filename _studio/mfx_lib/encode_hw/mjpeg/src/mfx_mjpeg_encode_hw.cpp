@@ -772,9 +772,9 @@ mfxStatus MFXVideoENCODEMJPEG_HW::CheckEncodeFrameParam(
         if (surface->Info.ChromaFormat != m_vParam.mfx.FrameInfo.ChromaFormat)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
+        mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
         MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
-        //No sense to check maximum value in ths case, 0 is valid value for video memory 
-        //MFX_CHECK(surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16) != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK((surface->Data.Y == 0) || (pitch != 0), MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(surface->Data.Y != 0 || isExternalFrameAllocator, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         if (surface->Info.Width != m_vParam.mfx.FrameInfo.Width || surface->Info.Height != m_vParam.mfx.FrameInfo.Height)
