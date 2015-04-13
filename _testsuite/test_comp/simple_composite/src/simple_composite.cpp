@@ -957,6 +957,8 @@ int main(int argc, char *argv[])
         //
         // Stage 1: Main processing loop
         //
+        nFrame = 0;
+
         while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts || bMultipleOut )
         {
             if (!bMultipleOut)
