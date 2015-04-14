@@ -99,6 +99,7 @@ extern tsStreamPool g_tsStreamPool;
 #define TS_TRACE(par)   if(g_tsTrace) {INC_PADDING(); g_tsLog << g_tsLog.m_off << #par " = " << par << "\n"; DEC_PADDING();}
 #define TS_CHECK        { if(g_tsStatus.m_failed) return 1; }
 #define TS_CHECK_MFX    { if(g_tsStatus.m_failed) return g_tsStatus.get(); }
+#define TS_FAIL_TEST(err, sts) { g_tsLog << "ERROR: " << err << "\n"; ADD_FAILURE(); return sts; }
 #define TS_MAX(x,y) ((x)>(y) ? (x) : (y))
 #define TS_MIN(x,y) ((x)<(y) ? (x) : (y))
 #define TS_START try {
