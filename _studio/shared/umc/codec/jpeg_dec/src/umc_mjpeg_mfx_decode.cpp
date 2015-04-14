@@ -217,7 +217,12 @@ ChromaType MJPEGVideoDecoderMFX::GetChromaType()
     case 1: // YUV422V_2Y, YUV444
         if (m_dec[0]->m_ccomp[0].m_vsampling == 1) // YUV444
         {
-            type = CHROMA_TYPE_YUV444;
+            if (m_dec[0]->m_jpeg_color == JC_YCBCR)
+                type = CHROMA_TYPE_YUV444;
+            else if (m_dec[0]->m_jpeg_color == JC_RGB)
+                type = CHROMA_TYPE_RGB;
+            else
+                VM_ASSERT(false);
         }
         else
         {

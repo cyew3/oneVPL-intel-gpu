@@ -193,6 +193,7 @@ inline mfxU16 GetMFXChromaFormat(ChromaType type)
         chromaFormat = MFX_CHROMAFORMAT_YUV422H;
         break;
     case CHROMA_TYPE_YUV444:
+    case CHROMA_TYPE_RGB:
         chromaFormat = MFX_CHROMAFORMAT_YUV444;
         break;
     case CHROMA_TYPE_YUV411:
