@@ -169,7 +169,8 @@ typedef struct {
     };
     mfxU16  NumExtParam;
 
-    mfxU16      reserved[10];
+    mfxU16      reserved[9];
+    mfxU16      MemType;
     mfxU16      PitchHigh;
 
     mfxU64      TimeStamp;
