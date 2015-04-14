@@ -52,6 +52,7 @@ typedef struct {
     mfxU16    MVPredictor;
     mfxU16    MBQp;
     mfxU16    FTEnable;
+    mfxU16    IntraPartMask;
     mfxU16    RefWidth;
     mfxU16    RefHeight;
     mfxU16    SearchWindow;
@@ -59,7 +60,7 @@ typedef struct {
     mfxU16    DisableStatisticsOutput;
     mfxU16    PictureType;
     mfxU16    Enable8x8Stat;
-    mfxU16    reserved[42];
+    mfxU16    reserved[41];
 } mfxExtFeiPreEncCtrl;
 
 typedef struct {
@@ -167,7 +168,8 @@ typedef struct {
     struct  mfxMB{
         mfxU32    ForceToIntra     : 1;
         mfxU32    ForceToSkip      : 1;
-        mfxU32    reserved1        : 30;
+        mfxU32    ForceToNoneSkip  : 1;
+        mfxU32    reserved1        : 29;
 
         mfxU32    reserved2;
         mfxU32    reserved3;
@@ -219,7 +221,7 @@ typedef struct {
 } mfxExtFeiEncMBStat;
 
 typedef struct {
-    mfxU32    reserved0[4];
+    mfxU32    reserved0[3];
 
     //dword 3
     mfxU32    InterMbMode         : 2;
@@ -248,12 +250,12 @@ typedef struct {
     mfxU16    CbpCr;
 
     //dword 6
-    mfxU32    QpPrimeY            : 8;
-    mfxU32    Reserved30          :17;
-    mfxU32    MbSkipConvDisable   : 1;
-    mfxU32    IsLastMB            : 1;
+    mfxU32    QpPrimeY               : 8;
+    mfxU32    Reserved30             :17;
+    mfxU32    MbSkipConvDisable      : 1;
+    mfxU32    IsLastMB               : 1;
     mfxU32    EnableCoefficientClamp : 1;
-    mfxU32    Direct8x8Pattern    : 4;
+    mfxU32    Direct8x8Pattern       : 4;
 
     union {
         struct {// Intra MBs
@@ -261,8 +263,9 @@ typedef struct {
             mfxU16   LumaIntraPredModes[4];
 
             //dword 9
-            mfxU32   MbIntraStruct : 8;
-            mfxU32   Reserved60    : 24;
+            mfxU32   ChromaIntraPredMode : 2;
+            mfxU32   IntraPredAvailFlags : 6;
+            mfxU32   Reserved60          : 24;
         } IntraMB;
         struct {// Inter MBs
             //dword 7
@@ -280,7 +283,7 @@ typedef struct {
     mfxU8     TargetSizeInWord;
     mfxU8     MaxSizeInWord;
 
-    mfxU32     reserved2[4];
+    mfxU32     reserved2[5];
 }mfxFeiPakMBCtrl;
 
 typedef struct {
