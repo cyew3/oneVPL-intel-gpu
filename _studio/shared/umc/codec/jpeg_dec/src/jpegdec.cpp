@@ -6598,13 +6598,10 @@ JERRCODE CJPEGDecoder::ReadData(Ipp32u restartNum, Ipp32u restartsToDecode)
     m_marker = JM_NONE;
 
     // find the start of VLC unit
-    if (JM_NONE == m_marker)
+    jerr = NextMarker(&m_marker);
+    if (JPEG_OK != jerr)
     {
-        jerr = NextMarker(&m_marker);
-        if (JPEG_OK != jerr)
-        {
-            return jerr;
-        }
+        return jerr;
     }
 
     // parse the VLC unit's header

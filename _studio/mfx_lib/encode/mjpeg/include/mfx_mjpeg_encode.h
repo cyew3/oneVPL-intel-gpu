@@ -31,7 +31,7 @@ public:
    ~MJPEGEncodeTask(void);
 
     // Initialize the task object
-    mfxStatus Initialize(UMC::VideoEncoderParams &params);
+    mfxStatus Initialize(UMC::VideoEncoderParams* params);
 
     // Add a picture to the task
     mfxStatus AddSource(mfxFrameSurface1* surface, mfxFrameInfo* frameInfo, bool useAuxInput);
@@ -116,7 +116,7 @@ protected:
 
     MJPEGEncodeTask *pLastTask;
 
-    UMC::MJPEGEncoderParams m_umcVideoParams;
+    std::auto_ptr<UMC::MJPEGEncoderParams> m_pUmcVideoParams;
 
     mfxU32  m_totalBits;
     mfxU32  m_frameCountSync;   // counter for sync. part

@@ -50,7 +50,7 @@ void MJPEGEncodeTask::Close(void)
 
 } // void MJPEGEncodeTask::Close(void)
 
-mfxStatus MJPEGEncodeTask::Initialize(UMC::VideoEncoderParams &params)
+mfxStatus MJPEGEncodeTask::Initialize(UMC::VideoEncoderParams* params)
 {
     // close the object before initialization
     Close();
@@ -68,7 +68,7 @@ mfxStatus MJPEGEncodeTask::Initialize(UMC::VideoEncoderParams &params)
         }
 
         //m_pMJPEGVideoDecoder.get()->SetFrameAllocator(pFrameAllocator);
-        umcRes = m_pMJPEGVideoEncoder.get()->Init(&params);
+        umcRes = m_pMJPEGVideoEncoder.get()->Init(params);
         if (umcRes != UMC::UMC_OK)
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -77,7 +77,7 @@ mfxStatus MJPEGEncodeTask::Initialize(UMC::VideoEncoderParams &params)
 
     return MFX_ERR_NONE;
 
-} // mfxStatus MJPEGEncodeTask::Initialize(UMC::VideoEncoderParams &params)
+} // mfxStatus MJPEGEncodeTask::Initialize(UMC::VideoEncoderParams* params)
 
 void MJPEGEncodeTask::Reset(void)
 {
@@ -760,8 +760,10 @@ MFXVideoENCODEMJPEG::MFXVideoENCODEMJPEG(VideoCORE *core, mfxStatus *status) : V
     if(!m_core)
         *status =  MFX_ERR_MEMORY_ALLOC;
 
-    memset(&m_vFirstParam, 0, sizeof(mfxVideoParam));
-    memset(&m_vParam, 0, sizeof(mfxVideoParam));
+    mfxVideoParam blankParams;
+    memset(&blankParams, 0, sizeof(mfxVideoParam));
+    m_vFirstParam = blankParams;
+    m_vParam = blankParams;
 }
 MFXVideoENCODEMJPEG::~MFXVideoENCODEMJPEG(void)
 {
@@ -1277,7 +1279,8 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
         //MFX_CHECK_STS(st);
     }
 
-    if (par->mfx.FrameInfo.Width == 0 || par->mfx.FrameInfo.Height == 0 ||
+    if (par->mfx.FrameInfo.Width == 0 ||
+        par->mfx.FrameInfo.Height == 0 ||
         par->mfx.FrameInfo.FrameRateExtN == 0 ||
         par->mfx.FrameInfo.FrameRateExtD == 0)
     {
@@ -1300,11 +1303,7 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
     pLastTask = NULL;
 
     m_vFirstParam = *par;
-
     m_vParam = m_vFirstParam;
-
-    if (!par->mfx.FrameInfo.FrameRateExtD || !par->mfx.FrameInfo.FrameRateExtN) 
-        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     mfxU32 DoubleBytesPerPx = 0;
     switch(m_vParam.mfx.FrameInfo.FourCC)
@@ -1322,29 +1321,29 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
             break;
     }
 
-    memset(&m_umcVideoParams, 0, sizeof(UMC::MJPEGEncoderParams));
+    m_pUmcVideoParams.reset(new UMC::MJPEGEncoderParams());
 
-    m_umcVideoParams.profile               = m_vParam.mfx.CodecProfile;
-    m_umcVideoParams.quality               = m_vParam.mfx.Quality;
-    m_umcVideoParams.numThreads            = UMC::JPEG_ENC_MAX_THREADS;
-    m_umcVideoParams.chroma_format         = m_vParam.mfx.FrameInfo.ChromaFormat;
-    m_umcVideoParams.info.clip_info.width  = m_vParam.mfx.FrameInfo.Width;
-    m_umcVideoParams.info.clip_info.height = m_vParam.mfx.FrameInfo.Height;
-    m_umcVideoParams.buf_size              = 16384 + m_vParam.mfx.FrameInfo.Width * m_vParam.mfx.FrameInfo.Height * DoubleBytesPerPx / 2;
-    m_umcVideoParams.restart_interval      = m_vParam.mfx.RestartInterval;
-    m_umcVideoParams.interleaved           = (m_vParam.mfx.Interleaved == MFX_SCANTYPE_INTERLEAVED) ? 1 : 0;
+    m_pUmcVideoParams->profile               = m_vParam.mfx.CodecProfile;
+    m_pUmcVideoParams->quality               = m_vParam.mfx.Quality;
+    m_pUmcVideoParams->numThreads            = UMC::JPEG_ENC_MAX_THREADS;
+    m_pUmcVideoParams->chroma_format         = m_vParam.mfx.FrameInfo.ChromaFormat;
+    m_pUmcVideoParams->info.clip_info.width  = m_vParam.mfx.FrameInfo.Width;
+    m_pUmcVideoParams->info.clip_info.height = m_vParam.mfx.FrameInfo.Height;
+    m_pUmcVideoParams->buf_size              = 16384 + m_vParam.mfx.FrameInfo.Width * m_vParam.mfx.FrameInfo.Height * DoubleBytesPerPx / 2;
+    m_pUmcVideoParams->restart_interval      = m_vParam.mfx.RestartInterval;
+    m_pUmcVideoParams->interleaved           = (m_vParam.mfx.Interleaved == MFX_SCANTYPE_INTERLEAVED) ? 1 : 0;
 
     switch(m_vParam.mfx.FrameInfo.PicStruct)
     {
         case MFX_PICSTRUCT_UNKNOWN:
         case MFX_PICSTRUCT_PROGRESSIVE:
-            m_umcVideoParams.info.interlace_type = UMC::PROGRESSIVE;
+            m_pUmcVideoParams->info.interlace_type = UMC::PROGRESSIVE;
             break;
         case MFX_PICSTRUCT_FIELD_TFF:
-            m_umcVideoParams.info.interlace_type = UMC::INTERLEAVED_TOP_FIELD_FIRST;
+            m_pUmcVideoParams->info.interlace_type = UMC::INTERLEAVED_TOP_FIELD_FIRST;
             break;
         case MFX_PICSTRUCT_FIELD_BFF:
-            m_umcVideoParams.info.interlace_type = UMC::INTERLEAVED_BOTTOM_FIELD_FIRST;
+            m_pUmcVideoParams->info.interlace_type = UMC::INTERLEAVED_BOTTOM_FIELD_FIRST;
             break;
     }
 
@@ -1421,7 +1420,8 @@ mfxStatus MFXVideoENCODEMJPEG::Reset(mfxVideoParam *par)
 
     par = &checked; // from now work with fixed copy of input!
     
-    if (par->mfx.FrameInfo.Width == 0 || par->mfx.FrameInfo.Height == 0 ||
+    if (par->mfx.FrameInfo.Width == 0 ||
+        par->mfx.FrameInfo.Height == 0 ||
         par->mfx.FrameInfo.FrameRateExtN == 0 ||
         par->mfx.FrameInfo.FrameRateExtD == 0)
     {
@@ -1475,9 +1475,6 @@ mfxStatus MFXVideoENCODEMJPEG::Reset(mfxVideoParam *par)
     if(par->AsyncDepth != m_vFirstParam.AsyncDepth)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (!par->mfx.FrameInfo.FrameRateExtD || !par->mfx.FrameInfo.FrameRateExtN) 
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-
     mfxU32 DoubleBytesPerPx = 0;
     switch(m_vParam.mfx.FrameInfo.FourCC)
     {
@@ -1494,29 +1491,29 @@ mfxStatus MFXVideoENCODEMJPEG::Reset(mfxVideoParam *par)
             break;
     }
 
-    memset(&m_umcVideoParams, 0, sizeof(UMC::MJPEGEncoderParams));
+    m_pUmcVideoParams.reset(new UMC::MJPEGEncoderParams());
 
-    m_umcVideoParams.profile               = m_vParam.mfx.CodecProfile;
-    m_umcVideoParams.quality               = m_vParam.mfx.Quality;
-    m_umcVideoParams.numThreads            = UMC::JPEG_ENC_MAX_THREADS;
-    m_umcVideoParams.chroma_format         = m_vParam.mfx.FrameInfo.ChromaFormat;
-    m_umcVideoParams.info.clip_info.width  = m_vParam.mfx.FrameInfo.Width;
-    m_umcVideoParams.info.clip_info.height = m_vParam.mfx.FrameInfo.Height;
-    m_umcVideoParams.buf_size              = 16384 + m_vParam.mfx.FrameInfo.Width * m_vParam.mfx.FrameInfo.Height * DoubleBytesPerPx / 2;
-    m_umcVideoParams.restart_interval      = m_vParam.mfx.RestartInterval;
-    m_umcVideoParams.interleaved           = (m_vParam.mfx.Interleaved == MFX_SCANTYPE_INTERLEAVED) ? 1 : 0;
+    m_pUmcVideoParams->profile               = m_vParam.mfx.CodecProfile;
+    m_pUmcVideoParams->quality               = m_vParam.mfx.Quality;
+    m_pUmcVideoParams->numThreads            = UMC::JPEG_ENC_MAX_THREADS;
+    m_pUmcVideoParams->chroma_format         = m_vParam.mfx.FrameInfo.ChromaFormat;
+    m_pUmcVideoParams->info.clip_info.width  = m_vParam.mfx.FrameInfo.Width;
+    m_pUmcVideoParams->info.clip_info.height = m_vParam.mfx.FrameInfo.Height;
+    m_pUmcVideoParams->buf_size              = 16384 + m_vParam.mfx.FrameInfo.Width * m_vParam.mfx.FrameInfo.Height * DoubleBytesPerPx / 2;
+    m_pUmcVideoParams->restart_interval      = m_vParam.mfx.RestartInterval;
+    m_pUmcVideoParams->interleaved           = (m_vParam.mfx.Interleaved == MFX_SCANTYPE_INTERLEAVED) ? 1 : 0;
 
     switch(m_vParam.mfx.FrameInfo.PicStruct)
     {
         case MFX_PICSTRUCT_UNKNOWN:
         case MFX_PICSTRUCT_PROGRESSIVE:
-            m_umcVideoParams.info.interlace_type = UMC::PROGRESSIVE;
+            m_pUmcVideoParams->info.interlace_type = UMC::PROGRESSIVE;
             break;
         case MFX_PICSTRUCT_FIELD_TFF:
-            m_umcVideoParams.info.interlace_type = UMC::INTERLEAVED_TOP_FIELD_FIRST;
+            m_pUmcVideoParams->info.interlace_type = UMC::INTERLEAVED_TOP_FIELD_FIRST;
             break;
         case MFX_PICSTRUCT_FIELD_BFF:
-            m_umcVideoParams.info.interlace_type = UMC::INTERLEAVED_BOTTOM_FIELD_FIRST;
+            m_pUmcVideoParams->info.interlace_type = UMC::INTERLEAVED_BOTTOM_FIELD_FIRST;
             break;
     }
 
@@ -1897,7 +1894,6 @@ mfxStatus MFXVideoENCODEMJPEG::GetEncodeStat(mfxEncodeStat *stat)
 mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams *pInternalParams)
 {
     pInternalParams;
-    mfxU32    minBufferSize = 0;
     mfxStatus sts = MFX_ERR_NONE;
     UMC::Status umc_sts = UMC::UMC_OK;
 
@@ -1925,7 +1921,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
             }
 
             // initialize the task
-            sts = pTask.get()->Initialize(m_umcVideoParams);
+            sts = pTask.get()->Initialize(m_pUmcVideoParams.get());
             if (MFX_ERR_NONE != sts)
             {
                 return sts;
@@ -1972,25 +1968,17 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
         }
     }
 
-
     //Check for enough bitstream buffer size
-    if( bs->MaxLength < (bs->DataOffset + bs->DataLength))
+    if (bs->MaxLength < (bs->DataOffset + bs->DataLength))
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-    if( bs->MaxLength - (bs->DataOffset + bs->DataLength) < minBufferSize || bs->MaxLength - bs->DataOffset == 0)
-    {
+    if (bs->MaxLength - bs->DataOffset == 0)
         return MFX_ERR_NOT_ENOUGH_BUFFER;
-    }
 
-    if(bs->Data == 0)
-    {
+    if (bs->Data == 0)
         return MFX_ERR_NULL_PTR;
-    }
 
-    if(bs)
-    {
-        m_freeTasks.front()->m_initialDataLength = bs->DataLength;
-    }
+    m_freeTasks.front()->m_initialDataLength = bs->DataLength;
 
     if (surface) 
     { // check frame parameters
@@ -2116,7 +2104,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    if (MFX_ERR_NONE == sts || (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == sts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_ERR_MORE_BITSTREAM == sts)
+    if (MFX_ERR_NONE == sts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_ERR_MORE_BITSTREAM == sts)
     {
         // lock surface. If input surface is opaque core will lock both opaque and associated realSurface
         if (pOriginalSurface) 
@@ -2134,7 +2122,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
                                                   IPP_MIN(m_vParam.mfx.NumThread,
                                                           pTask->CalculateNumPieces(pOriginalSurface, &(m_vParam.mfx.FrameInfo))));
 
-        pTask->bs           = (sts == (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK) ? 0 : bs;
+        pTask->bs           = bs;
         pTask->ctrl         = ctrl;
         pTask->surface      = pOriginalSurface;
         pEntryPoint->pParam = pTask;
