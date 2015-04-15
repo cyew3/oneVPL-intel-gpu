@@ -2736,6 +2736,14 @@ mfxStatus MFXDecPipeline::Play()
                 }
                 else
                 {
+                    m_inBSFrame.isNull = true;
+                    for(;sts != PIPELINE_ERR_STOPPED ;)
+                    {
+                        sts = RunDecode(m_inBSFrame);
+                        if (MFX_ERR_NONE != sts)
+                            break;
+                    }
+                    m_inBSFrame.isNull = false;
                     //TODO: redesign this to fix last frame missed if command gets executed due to stream finished processing
                     (*m_commands.begin())->MarkAsReady();
                     //also notify command about eos, some encdless commands should react on that

@@ -101,7 +101,7 @@ mfxStatus seekCommand::Execute()
     IYUVSource        *pSource;
     IMFXVideoVPP      *pVPP;
     IMFXVideoRender   *pRender;
-    
+
     MFX_CHECK_POINTER(m_pControl);
     MFX_CHECK_STS(m_pControl->GetYUVSource(&pSource));
     MFX_CHECK_STS(m_pControl->GetVPP(&pVPP));
@@ -198,7 +198,7 @@ void    resetEncCommand::SetResetParams(mfxVideoParam * vParam, mfxVideoParam * 
 
     memcpy(&m_NewParams, vParam, sizeof(*vParam));
     memcpy(&m_NewParamsMask, vParamMask, sizeof(*vParamMask));
-    
+
     ippsAnd_8u_I((Ipp8u*)&m_NewParamsMask, (Ipp8u*)&m_NewParams, sizeof(m_NewParams));
     ippsNot_8u_I((Ipp8u*)&m_NewParamsMask, sizeof(m_NewParamsMask));
 }
@@ -209,12 +209,13 @@ mfxStatus    resetEncCommand::Execute()
 
     IMFXVideoRender *rnd;
     MFX_CHECK_STS(m_pControl->GetRender(&rnd));
-    
+
     mfxVideoParam currentParams = {}, newParams;
 
     MFX_CHECK_STS(rnd->GetVideoParam(&currentParams));
-    
+
     newParams = currentParams;
+    newParams.mfx.BufferSizeInKB = 0;
 
     {
         // save ext buffers if those aren't specified in reset params
@@ -225,14 +226,14 @@ mfxStatus    resetEncCommand::Execute()
         ippsOr_8u_I((Ipp8u*)&m_NewParams, (Ipp8u*)&newParams, sizeof(newParams));
     }
 
-    //retrieving buffered frames 
+    //retrieving buffered frames
     MFX_CHECK_STS_SKIP(rnd->RenderFrame(NULL), MFX_ERR_MORE_DATA);
 
     //also should align height here with current PS
     newParams.mfx.FrameInfo.Height = mfx_align(newParams.mfx.FrameInfo.CropH, (newParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 0x10 : 0x20));
 
     //resolution also may change
-    if (newParams.mfx.FrameInfo.CropW != currentParams.mfx.FrameInfo.CropW || 
+    if (newParams.mfx.FrameInfo.CropW != currentParams.mfx.FrameInfo.CropW ||
         newParams.mfx.FrameInfo.CropH != currentParams.mfx.FrameInfo.CropH )
     {
         if (m_bUseResizing)
@@ -256,7 +257,7 @@ mfxStatus    resetEncCommand::Execute()
             MFX_CHECK_STS(m_pControl->GetVppParams(pParams));
             //modify surfaces info
             //TODO: surfacesidx might not be always zero
-            ComponentParams::SurfacesContainer::iterator it = 
+            ComponentParams::SurfacesContainer::iterator it =
                 pParams->GetSurfaceAlloc(currentParams.mfx.FrameInfo.Width, currentParams.mfx.FrameInfo.Height);
 
             std::vector<SrfEncCtl>  & refSurfaces = it->surfaces;
@@ -289,10 +290,14 @@ mfxStatus    resetEncCommand::Execute()
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_STS_SKIP(sts = rnd->Reset(&newParams), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
+    IYUVSource *pYUVSurf;
+    m_pControl->GetYUVSource(&pYUVSurf);
+    MFX_CHECK_STS_SKIP(sts = pYUVSurf->Reset(&newParams), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
     //if reset failed with err incompatible params during command execution we
     //shouldn't reset whole pipeline, let's map status code to pipeline code
     MFX_CHECK_STS(sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM ? sts = PIPELINE_ERROR_RESET_FAILED : sts);
-    
+
 
 
     //changing file name for downstream
@@ -304,7 +309,7 @@ mfxStatus    resetEncCommand::Execute()
         MFX_CHECK_STS(pDownStream->Close());
         //TODO: hardcode type for NOW
         MFX_CHECK_STS(pDownStream->Open(m_NewFileName.c_str(), VM_STRING("wb")));
-        
+
         PrintInfo(VM_STRING("New output file"), VM_STRING("%s\n"), m_NewFileName.c_str());
     }
 
@@ -318,7 +323,6 @@ mfxStatus    resetEncCommand::Execute()
         MFX_CHECK_STS(pReader->Init(m_NewInputFileName.c_str()));
         MFX_CHECK_STS(m_pControl->ResetAfterSeek());
     }
-
 
     return MFX_ERR_NONE;
 }
@@ -340,7 +344,7 @@ mfxStatus    addExtBufferCommand::Execute()
     MFX_CHECK_POINTER(pCtrl = pEnc->GetInterface<ICurrentFrameControl>());
     pCtrl->AddExtBuffer((mfxExtBuffer&)*m_pBuf);
     PipelineTrace((VM_STRING("ExtBufferAdded: \n%s\n"), Serialize(*m_pBuf).c_str()));
-    
+
     return MFX_ERR_NONE;
 }
 
