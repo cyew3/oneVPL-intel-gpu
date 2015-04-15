@@ -2027,14 +2027,14 @@ bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,
 {
     if (m_OpqTbl.size())
     {
+        UMC::AutomaticUMCMutex guard(m_guard);
+
         mfxU32 i = 0;
         OpqTbl::iterator oqp_it;
         oqp_it = m_OpqTbl.find(pOpaqueSurface[i]);
         // consistent already checked in CheckOpaqueRequest function
         if (oqp_it != m_OpqTbl.end())
         {
-            UMC::AutomaticUMCMutex guard(m_guard);
-
             CorrespTbl::iterator ctbl_it;
 
             m_pMemId.reset(new mfxMemId[2*NumOpaqueSurface]);

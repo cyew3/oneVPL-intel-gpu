@@ -30,6 +30,7 @@
 
 #include "mfx_mpeg2_enc_common_hw.h"
 #include "mfx_mpeg2_encode_interface.h"
+#include "umc_muxer.h"
 
 
 namespace MfxHwMpeg2Encode
@@ -150,6 +151,8 @@ namespace MfxHwMpeg2Encode
         mfxFrameAllocResponse               m_allocResponseBS;
         mfxRecFrames                        m_recFrames;
         mfxRawFrames                        m_rawFrames;
+
+        UMC::Mutex                          m_guard;
 
 #ifdef MPEG2_ENC_HW_PERF
         vm_time lock_MB_data_time[3];
