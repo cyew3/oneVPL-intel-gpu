@@ -420,6 +420,7 @@ del embed_isa.exe</Command>
       <FloatingPointExpressionEvaluation>Default</FloatingPointExpressionEvaluation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -537,6 +538,7 @@ del embed_isa.exe</Command>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MfxIppIncludeDir);.\include;..\pa;..\include;..\..\include;..\..\..\..\mdp_msdk-api\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\cmrt_cross_platform\include;.\kernels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

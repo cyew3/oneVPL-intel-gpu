@@ -204,7 +204,8 @@
     <ClCompile>
       <AdditionalIncludeDirectories>include;..\include;..\..\shared\umc\core\vm\include;$(MfxIppIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_VA;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>
+      </SDLCheck>
     </ClCompile>
     <Lib />
     <Bscmake>

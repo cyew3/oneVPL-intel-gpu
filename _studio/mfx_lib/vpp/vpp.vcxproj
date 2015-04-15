@@ -228,6 +228,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -238,6 +239,8 @@
     <ClCompile>
       <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>
+      </SDLCheck>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -263,6 +266,7 @@
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -278,6 +282,8 @@
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
+      <SDLCheck>
+      </SDLCheck>
     </ClCompile>
     <Lib />
     <Bscmake>

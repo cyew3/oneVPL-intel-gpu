@@ -246,6 +246,7 @@
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -266,6 +267,7 @@
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -286,6 +288,7 @@
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>Async</ExceptionHandling>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -306,6 +309,7 @@
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\..\..\mdp_msdk-api\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\core\vm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>Async</ExceptionHandling>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

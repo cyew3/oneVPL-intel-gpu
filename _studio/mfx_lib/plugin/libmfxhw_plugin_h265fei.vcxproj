@@ -158,8 +158,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>
-      </SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <TreatWarningAsError>false</TreatWarningAsError>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXHW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\..\..\mdp_msdk-api\include;.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\\shared\umc\io\umc_va\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\codec\vc1_dec\include;..\..\..\_studio\shared\umc\core\umc\include;..\scheduler\include;..\fei\include;..\fei\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -176,8 +175,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>
-      </SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <TreatWarningAsError>false</TreatWarningAsError>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXHW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\..\..\mdp_msdk-api\include;.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\\shared\umc\io\umc_va\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\codec\vc1_dec\include;..\..\..\_studio\shared\umc\core\umc\include;..\scheduler\include;..\fei\include;..\fei\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

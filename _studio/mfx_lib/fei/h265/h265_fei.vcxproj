@@ -239,8 +239,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>
-      </SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\mdp_msdk-api\include;..\..\..\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;..\..\..\shared\umc\core\umc\include;..\..\..\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;..\..\..\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_VA;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
@@ -284,8 +283,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>
-      </SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\..\mdp_msdk-api\include;..\..\..\shared\include;..\..\encode\h265\include;..\..\genx\h265_encode\include;include;..\..\..\..\include;..\..\shared\include;..\..\..\shared\umc\core\umc\include;..\..\..\shared\umc\core\vm\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\optimization\h265\include;..\..\..\shared\umc\core\vm_plus\include;..\..\cmrt_cross_platform\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_VA;WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
