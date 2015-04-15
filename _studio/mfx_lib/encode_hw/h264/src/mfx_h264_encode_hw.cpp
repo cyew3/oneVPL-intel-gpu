@@ -892,6 +892,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     // ENC+PAK always needs separate chain for reconstructions produced by PAK.
     bool bParallelEncPak = (m_video.mfx.RateControlMethod == MFX_RATECONTROL_CQP && m_video.mfx.GopRefDist > 2 && m_video.AsyncDepth > 2);
+    //in case if RGB or YUY2 passed we still need encode in 420
+    request.Info.FourCC = MFX_FOURCC_NV12;
+    request.Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     request.Type        = m_video.Protected ? MFX_MEMTYPE_D3D_SERPENT_INT : MFX_MEMTYPE_D3D_INT;
     request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame +
         m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE) +

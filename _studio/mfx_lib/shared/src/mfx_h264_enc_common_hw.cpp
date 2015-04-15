@@ -2168,7 +2168,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     if (par.mfx.FrameInfo.ChromaFormat != 0 &&
-        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
     {
         if (extBits->SPSBuffer)
             return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
@@ -2178,10 +2180,48 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     if (par.mfx.FrameInfo.FourCC != 0 &&
-        par.mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
+        par.mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
+        par.mfx.FrameInfo.FourCC != MFX_FOURCC_RGB4 &&
+        par.mfx.FrameInfo.FourCC != MFX_FOURCC_YUY2)
     {
         unsupported = true;
         par.mfx.FrameInfo.FourCC = 0;
+    }
+
+    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
+    {
+        if (extBits->SPSBuffer)
+            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        changed = true;
+        par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    }
+  
+    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422)
+    {
+        if (extBits->SPSBuffer)
+            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        changed = true;
+        par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+    }
+  
+    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
+    {
+        if (extBits->SPSBuffer)
+            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        changed = true;
+        par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+    }
+
+    if (par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 && hwCaps.Color420Only)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.ChromaFormat = 0;
     }
 
     if ((par.mfx.FrameInfo.FrameRateExtN == 0) !=
@@ -4636,7 +4676,7 @@ void MfxHwH264Encode::SetDefaults(
         extSps->constraints.set7                = 0;
         extSps->levelIdc                        = IsMvcProfile(par.mfx.CodecProfile) ? mfxU8(par.calcParam.mvcPerViewPar.codecLevel) : mfxU8(par.mfx.CodecLevel);
         extSps->seqParameterSetId               = mfxU8(extBits->SPSId);
-        extSps->chromaFormatIdc                 = mfxU8(fi.ChromaFormat);
+        extSps->chromaFormatIdc                 = mfxU8(MFX_CHROMAFORMAT_YUV420);//in case if RGB or YUY2 passed we still need encode in 420
         extSps->separateColourPlaneFlag         = 0;
         extSps->bitDepthLumaMinus8              = 0;
         extSps->bitDepthChromaMinus8            = 0;
