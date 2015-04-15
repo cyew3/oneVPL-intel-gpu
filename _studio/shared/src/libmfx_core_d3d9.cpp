@@ -980,23 +980,23 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
         }
         else
         {
-            hRes = m_pDirect3DDeviceManager->LockDevice(m_hDirectXHandle, &m_pDirect3DDevice, true);
+            IDirect3DDevice9    *direct3DDevice;
+            hRes = m_pDirect3DDeviceManager->LockDevice(m_hDirectXHandle, &direct3DDevice, true);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
 
-        const tagRECT rect = {0, 0, roi.width, roi.height};
+            const tagRECT rect = {0, 0, roi.width, roi.height};
 
-        hRes = m_pDirect3DDevice->StretchRect((IDirect3DSurface9*) pSrc->Data.MemId, &rect, 
-                                              (IDirect3DSurface9*) pDst->Data.MemId, &rect, 
-                                               D3DTEXF_LINEAR);
+            hRes = direct3DDevice->StretchRect((IDirect3DSurface9*) pSrc->Data.MemId, &rect, 
+                                                  (IDirect3DSurface9*) pDst->Data.MemId, &rect, 
+                                                   D3DTEXF_LINEAR);
 
-        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
 
-        hRes = m_pDirect3DDeviceManager->UnlockDevice(m_hDirectXHandle, false);
-        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+            hRes = m_pDirect3DDeviceManager->UnlockDevice(m_hDirectXHandle, false);
+            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
 
-            m_pDirect3DDevice->Release();
+            direct3DDevice->Release();
         }
-
     }
     else if (NULL != pSrc->Data.MemId && NULL != pDst->Data.Y)
     {

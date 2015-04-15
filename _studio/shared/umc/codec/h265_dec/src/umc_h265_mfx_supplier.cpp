@@ -393,6 +393,12 @@ bool MFX_Utility::IsNeedPartialAcceleration_H265(mfxVideoParam * par, eMFXHWType
     if (!par)
         return false;
 
+    if (par->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 && par->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV400)
+        return true;
+
+    if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P210 || par->mfx.FrameInfo.FourCC == MFX_FOURCC_NV16)
+        return true;
+
     return false;
 }
 

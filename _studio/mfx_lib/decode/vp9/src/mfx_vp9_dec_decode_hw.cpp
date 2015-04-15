@@ -522,7 +522,6 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         memcpy(&surface, data.surface_work, sizeof(mfxFrameSurface1));
         surface.Info.Width = (surface.Info.CropW + 15) & ~0x0f;
         surface.Info.Height = (surface.Info.CropH + 15) & ~0x0f;
-        //decoder.m_FrameAllocator->PrepareToOutput(&surface, data.copyFromFrame, 0, false);
 
 #if 1
         mfxFrameSurface1 *surfaceSrc = decoder.m_FrameAllocator->GetSurfaceByIndex(data.copyFromFrame);
@@ -536,7 +535,9 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         mfxU16 memType = MFX_MEMTYPE_DXVA2_DECODER_TARGET;
         memType |= isExternal ? MFX_MEMTYPE_EXTERNAL_FRAME : MFX_MEMTYPE_INTERNAL_FRAME;
 
-        decoder.m_core->DoFastCopyWrapper(&surface, memType, &surface1, memType);
+        mfxStatus sts = decoder.m_core->DoFastCopyWrapper(&surface, memType, &surface1, memType);
+        if (sts != MFX_ERR_NONE)
+            return sts;
 
         decoder.m_FrameAllocator->SetDoNotNeedToCopyFlag(isExternal ? true : false);
         decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.copyFromFrame, 0, false);
