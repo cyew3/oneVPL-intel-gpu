@@ -821,7 +821,8 @@ enum {
 };
 
 typedef struct {
-    mfxU32  reserved[4];
+    mfxU32  AllocId;
+    mfxU32  reserved[3];
     mfxFrameInfo    Info;
     mfxU16  Type;   /* decoder or processor render targets */
     mfxU16  NumFrameMin;
@@ -830,7 +831,8 @@ typedef struct {
 } mfxFrameAllocRequest;
 
 typedef struct {
-    mfxU32      reserved[4];
+    mfxU32      AllocId;
+    mfxU32      reserved[3];
     mfxMemId    *mids;      /* the array allocated by application */
     mfxU16      NumFrameActual;
     mfxU16      reserved2;
