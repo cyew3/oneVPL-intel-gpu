@@ -49,7 +49,7 @@ DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report, 0x49761bec, 0x4b63, 0x4349,
 DEFINE_GUID(DXVA2_ModeMPEG4_VLD, 0x8ccf025a, 0xbacf, 0x4e44, 0x81, 0x16, 0x55, 0x21, 0xd9, 0xb3, 0x94, 0x7);
 
 int g_bSkipExecute = -1;
-int g_bDumpSurface = 1;
+int g_bDumpSurface = 0;
 int MaxFrames = 0;
 
 void SkipDXVAExecute(bool bSkipExecute)

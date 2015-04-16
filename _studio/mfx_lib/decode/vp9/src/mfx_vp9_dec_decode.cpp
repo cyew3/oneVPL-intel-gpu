@@ -1345,11 +1345,12 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, 
         if (bsReader.GetBit()) // show_existing_frame
             break;
 
-        if (MfxVP9Decode::KEY_FRAME == (MfxVP9Decode::VP9_FRAME_TYPE)bsReader.GetBit())
-        {
-            bsReader.GetBit(); // show_frame
-            bsReader.GetBit(); // error_resilient_mode
+        MfxVP9Decode::VP9_FRAME_TYPE frameType = (MfxVP9Decode::VP9_FRAME_TYPE) bsReader.GetBit();
+        mfxU32 showFrame = bsReader.GetBit();
+        mfxU32 errorResilientMode = bsReader.GetBit();
 
+        if (MfxVP9Decode::KEY_FRAME == frameType)
+        {
             if (0x49 != bsReader.GetBits(8) || 0x83 != bsReader.GetBits(8) || 0x42 != bsReader.GetBits(8))
                 break;
 
@@ -1371,6 +1372,47 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, 
                 else
                     break; // invalid
             }
+
+            width = (mfxU16)bsReader.GetBits(16) + 1;
+            height = (mfxU16)bsReader.GetBits(16) + 1;
+
+            bHeaderRead = true;
+        }
+        else
+        {
+            mfxU32 intraOnly = showFrame ? 0 : bsReader.GetBit();
+            if (!intraOnly)
+                break;
+
+            if (!errorResilientMode)
+                bsReader.GetBits(2);
+
+            if (0x49 != bsReader.GetBits(8) || 0x83 != bsReader.GetBits(8) || 0x42 != bsReader.GetBits(8))
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+            if (profile > 0)
+            {
+                if (profile >= 2)
+                {
+                    bsReader.GetBit();
+                }
+
+                if (MfxVP9Decode::SRGB != (MfxVP9Decode::COLOR_SPACE)bsReader.GetBits(3)) // color_space
+                {
+                    bsReader.GetBit();
+                    if (1 == profile || 3 == profile)
+                        bsReader.GetBits(3);
+                }
+                else
+                {
+                    if (1 == profile || 3 == profile)
+                        bsReader.GetBit();
+                    else
+                        break; // invalid
+                }
+            }
+        
+            bsReader.GetBits(MfxVP9Decode::NUM_REF_FRAMES);
 
             width = (mfxU16)bsReader.GetBits(16) + 1;
             height = (mfxU16)bsReader.GetBits(16) + 1;

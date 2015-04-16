@@ -94,8 +94,8 @@ namespace MfxVP9Decode
             if (pBs->GetBit())
             {
                 bFound = true;
-                info.width = info.sizesOfRefFrame[i].width;
-                info.height = info.sizesOfRefFrame[i].height;
+                info.width = info.sizesOfRefFrame[info.activeRefIdx[i]].width;
+                info.height = info.sizesOfRefFrame[info.activeRefIdx[i]].height;
                 break;
             }
         }
