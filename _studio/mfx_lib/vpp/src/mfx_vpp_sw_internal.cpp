@@ -1169,6 +1169,7 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
 #if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
     else if( MFX_EXTBUFF_VPP_IMAGE_STABILIZATION == filterName )
     {
+        /* This filter is not supported
         if (false == bLinuxAndIVB_HSW)
             sts = MFXVideoVPPImgStab::Query( pHint );
         else
@@ -1176,6 +1177,8 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
             // This filter is not supported in Linux
             sts = MFX_WRN_FILTER_SKIPPED;
         }
+        */
+        sts = MFX_WRN_FILTER_SKIPPED;
     }
 #endif
     //else if( MFX_EXTBUFF_VPP_GAMUT_MAPPING == filterName )
