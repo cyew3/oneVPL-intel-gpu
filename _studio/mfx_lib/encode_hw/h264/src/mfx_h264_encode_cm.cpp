@@ -25,6 +25,7 @@
 #include "mfx_h264_encode_hw_utils.h"
 #include "genx_hsw_simple_me_isa.h"
 #include "genx_bdw_simple_me_isa.h"
+#include "genx_skl_simple_me_isa.h"
 
 namespace MfxHwH264EncodeHW
 {
@@ -822,6 +823,9 @@ void CmContext::Setup(
     case MFX_HW_BDW:
     case MFX_HW_CHV:
         m_program = ReadProgram(m_device, genx_bdw_simple_me, SizeOf(genx_bdw_simple_me));
+        break;
+    case MFX_HW_SCL:
+        m_program = ReadProgram(m_device, genx_skl_simple_me, SizeOf(genx_skl_simple_me));
         break;
     default:
         throw CmRuntimeError();

@@ -404,10 +404,12 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="src\genx_skl_simple_me_isa.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\genx_bdw_simple_me_isa.h" />
     <ClInclude Include="include\genx_hsw_simple_me_isa.h" />
+    <ClInclude Include="include\genx_skl_simple_me_isa.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
