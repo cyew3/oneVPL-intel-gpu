@@ -120,6 +120,13 @@ typedef struct {
 
 typedef struct _mfxSyncPoint *mfxSyncPoint;
 
+/* GPUCopy */
+enum {
+    MFX_GPUCOPY_DEFAULT = 0,
+    MFX_GPUCOPY_ON      = 1,
+    MFX_GPUCOPY_OFF     = 2
+};
+
 typedef struct {
     mfxIMPL     Implementation;
     mfxVersion  Version;
@@ -131,7 +138,8 @@ typedef struct {
         };
         mfxU16  reserved2[5];
     };
-    mfxU16      reserved[22];
+    mfxU16      GPUCopy;
+    mfxU16      reserved[21];
 } mfxInitParam;
 
 enum {
