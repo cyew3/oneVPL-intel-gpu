@@ -23,6 +23,7 @@
 #if defined (MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 #include <math.h>
+#include "assert.h"
 //#include <emmintrin.h> //SSE2
 //#include <pmmintrin.h> //SSE3 (Prescott) Pentium(R) 4 processor (_mm_lddqu_si128() present )
 //#include <tmmintrin.h> // SSSE3
@@ -31,6 +32,20 @@
 //#include <wmmintrin.h> // AES and PCLMULQDQ
 #include <immintrin.h> // AVX, AVX2
 //#include <ammintrin.h> // AMD extention SSE5 ? FMA4
+
+#ifndef _mm256_set_m128i
+#define _mm256_set_m128i(/* __m128i */ hi, /* __m128i */ lo) \
+    _mm256_insertf128_si256(_mm256_castsi128_si256(lo), (hi), 0x1)
+#endif // _mm256_set_m128i
+
+#ifndef _mm256_storeu2_m128i
+#define _mm256_storeu2_m128i(/* __m128i* */ hiaddr, /* __m128i* */ loaddr, /* __m256i */ a) \
+    do { __m256i _a = (a); /* reference a only once in macro body */ \
+        _mm_storeu_si128((loaddr), _mm256_castsi256_si128(_a)); \
+        _mm_storeu_si128((hiaddr), _mm256_extractf128_si256(_a, 0x1)); \
+    } while (0)
+#endif // _mm256_storeu2_m128i
+
 
 #define ALIGNED_SSE2 ALIGN_DECL(16)
 
@@ -2267,6 +2282,218 @@ int H265_FASTCALL MAKE_NAME(h265_SAD_MxN_16s)(const Ipp16s* src, Ipp32s src_stri
     VM_ASSERT(0);
     return -1;
 }
+
+
+namespace SseDetails {
+    template <class T, Ipp32s wstep>
+    __m256i Load(const T *p, Ipp32s pitch)
+    {
+        if (wstep == 16) {
+            return (sizeof(T) == 1)
+                ? _mm256_cvtepu8_epi16(_mm_load_si128((__m128i *)p))
+                : _mm256_load_si256((__m256i *)p);
+        } else if (wstep == 8) {
+            return (sizeof(T) == 1)
+                ? _mm256_cvtepu8_epi16(_mm_unpacklo_epi64(_mm_loadl_epi64((__m128i *)p), _mm_loadl_epi64((__m128i *)(p + pitch))))
+                : _mm256_set_m128i(_mm_load_si128((__m128i *)(p + pitch)), _mm_load_si128((__m128i *)p));
+        } else {
+            assert(wstep == 4);
+            return (sizeof(T) == 1)
+                ? _mm256_cvtepu8_epi16(_mm_set_epi32(*(Ipp32s *)(p + 3 * pitch), *(Ipp32s *)(p + 2 * pitch),
+                                                     *(Ipp32s *)(p + 1 * pitch), *(Ipp32s *)(p + 0 * pitch)))
+                : _mm256_set_epi64x(*(Ipp64u *)(p + 3 * pitch), *(Ipp64u *)(p + 2 * pitch),
+                                    *(Ipp64u *)(p + 1 * pitch), *(Ipp64u *)(p + 0 * pitch));
+        }
+    }
+
+    template <class T, Ipp32s width, Ipp32s wstep>
+    Ipp32s Impl(const T *src1, Ipp32s pitchSrc1, const T *src2, Ipp32s pitchSrc2, Ipp32s height)
+    {
+        const Ipp32s hstep = 16 / wstep;
+        assert(width % wstep == 0);
+        assert(height % hstep == 0);
+        assert(sizeof(T) <= 2);
+
+        __m256i sse = _mm256_setzero_si256();
+        for (Ipp32s y = 0; y < height; y += hstep) {
+            for (Ipp32s x = 0; x < width; x += wstep, src1 += wstep, src2 += wstep) {
+                __m256i s1 = Load<T, wstep>(src1, pitchSrc1);
+                __m256i s2 = Load<T, wstep>(src2, pitchSrc2);
+                __m256i diff = _mm256_sub_epi16(s1, s2);
+                sse = _mm256_add_epi32(sse, _mm256_madd_epi16(diff, diff));
+            }
+            src1 += hstep * pitchSrc1 - width;
+            src2 += hstep * pitchSrc2 - width;
+        }
+
+        __m128i a = _mm256_castsi256_si128(sse);
+        __m128i b = _mm256_extractf128_si256(sse, 1);
+        a = _mm_add_epi32(a, b);
+        a = _mm_hadd_epi32(a, a);
+        return _mm_cvtsi128_si32(a) + _mm_extract_epi32(a, 1);
+    }
+}
+
+template <class T>
+Ipp32s H265_FASTCALL MAKE_NAME(h265_SSE)(const T *src1, Ipp32s pitchSrc1, const T *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height)
+{
+    if (width == 4)
+        return SseDetails::Impl<T,4,4>(src1, pitchSrc1, src2, pitchSrc2, height);
+    if (width == 8)
+        return SseDetails::Impl<T,8,8>(src1, pitchSrc1, src2, pitchSrc2, height);
+    if (width == 12)
+        return SseDetails::Impl<T,8,8>(src1,   pitchSrc1, src2,   pitchSrc2, height) +
+               SseDetails::Impl<T,4,4>(src1+8, pitchSrc1, src2+8, pitchSrc2, height);
+    else if (width == 16)
+        return SseDetails::Impl<T,16,16>(src1, pitchSrc1, src2, pitchSrc2, height);
+    if (width == 24)
+        return SseDetails::Impl<T,16,16>(src1,    pitchSrc1, src2,    pitchSrc2, height) +
+               SseDetails::Impl<T,8,8>  (src1+16, pitchSrc1, src2+16, pitchSrc2, height);
+    else if (width == 32)
+        return SseDetails::Impl<T,32,16>(src1, pitchSrc1, src2, pitchSrc2, height);
+    else if (width == 48)
+        return SseDetails::Impl<T,48,16>(src1, pitchSrc1, src2, pitchSrc2, height);
+    else if (width == 64)
+        return SseDetails::Impl<T,64,16>(src1, pitchSrc1, src2, pitchSrc2, height);
+    assert(0);
+    return 0;
+}
+template Ipp32s H265_FASTCALL MAKE_NAME(h265_SSE)<Ipp8u> (const Ipp8u  *src1, Ipp32s pitchSrc1, const Ipp8u  *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height);
+template Ipp32s H265_FASTCALL MAKE_NAME(h265_SSE)<Ipp16u>(const Ipp16u *src1, Ipp32s pitchSrc1, const Ipp16u *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height);
+
+
+namespace DiffNv12Details {
+    template <class T, Ipp32s wstep> __m256i Load(const T *p, Ipp32s pitch)
+    {
+        if (wstep == 8) {
+            return (sizeof(T) == 1)
+                ? _mm256_cvtepu8_epi16(_mm_load_si128((__m128i *)p))
+                : _mm256_load_si256((__m256i *)p);
+        } else {
+            assert(wstep == 4);
+            return (sizeof(T) == 1)
+                ? _mm256_cvtepu8_epi16(_mm_unpacklo_epi64(_mm_loadl_epi64((__m128i *)p), _mm_loadl_epi64((__m128i *)(p + pitch))))
+                : _mm256_set_m128i(_mm_load_si128((__m128i *)(p + pitch)), _mm_load_si128((__m128i *)p));
+        }
+    }
+
+    template <Ipp32s wstep> void Store(Ipp16s *p1, Ipp32s pitch1, Ipp16s *p2, Ipp32s pitch2, __m256i ymm)
+    {
+        if (wstep == 8) {
+            _mm256_storeu2_m128i((__m128i *)p2, (__m128i *)p1, ymm);
+        } else {
+            assert(wstep == 4);
+            __m128i half1 = _mm256_castsi256_si128(ymm);
+            _mm_storel_epi64((__m128i *)p1, half1);
+            _mm_storeh_pd((double *)(p1 + pitch1), _mm_castsi128_pd(half1));
+            __m128i half2 = _mm256_extracti128_si256(ymm, 1);
+            _mm_storel_epi64((__m128i *)p2, half2);
+            _mm_storeh_pd((double *)(p2 + pitch2), _mm_castsi128_pd(half2));
+        }
+    }
+
+    template <class T>
+    void ImplW2(const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s height)
+    {
+        __m128i s, p;
+        for (Ipp32s y = 0; y < height; y += 2) {
+            if (sizeof(T) == 1) {
+                s = _mm_cvtepu8_epi16(_mm_set_epi32(0, 0, *(Ipp32s *)(src  + pitchSrc),  *(Ipp32s *)src));
+                p = _mm_cvtepu8_epi16(_mm_set_epi32(0, 0, *(Ipp32s *)(pred + pitchPred), *(Ipp32s *)pred));
+            } else {
+                s = _mm_set_epi64x(*(Ipp64u *)(src  + pitchSrc),  *(Ipp64u *)src);
+                p = _mm_set_epi64x(*(Ipp64u *)(pred + pitchPred), *(Ipp64u *)pred);
+            }
+
+            __m128i d = _mm_sub_epi16(s, p);
+            d = _mm_shufflelo_epi16(d, 0xD8);
+            d = _mm_shufflehi_epi16(d, 0xD8);
+
+            // store
+            *(Ipp32s *)(diff1 + 0 * pitchDiff1) = (Ipp32s)_mm_extract_epi32(d, 0);
+            *(Ipp32s *)(diff1 + 1 * pitchDiff1) = (Ipp32s)_mm_extract_epi32(d, 2);
+            *(Ipp32s *)(diff2 + 0 * pitchDiff2) = (Ipp32s)_mm_extract_epi32(d, 1);
+            *(Ipp32s *)(diff2 + 1 * pitchDiff2) = (Ipp32s)_mm_extract_epi32(d, 3);
+
+            src   += 2 * pitchSrc;
+            pred  += 2 * pitchPred;
+            diff1 += 2 * pitchDiff1;
+            diff2 += 2 * pitchDiff2;
+        }
+    }
+
+    template <class T, Ipp32s width, Ipp32s wstep>
+    void Impl(const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s height)
+    {
+        const Ipp32s hstep = 8 / wstep;
+        assert(width % wstep == 0);
+        assert(height % hstep == 0);
+        assert(sizeof(T) <= 2);
+
+        for (Ipp32s y = 0; y < height; y += hstep) {
+            for (Ipp32s x = 0; x < width; x += wstep, src += 2*wstep, pred += 2*wstep, diff1 += wstep, diff2 += wstep) {
+                __m256i s = Load<T, wstep>(src, pitchSrc);
+                __m256i p = Load<T, wstep>(pred, pitchPred);
+                __m256i d = _mm256_sub_epi16(s, p);
+                d = _mm256_shufflelo_epi16(d, 0xD8);
+                d = _mm256_shufflehi_epi16(d, 0xD8);
+                d = _mm256_shuffle_epi32(d, 0xD8);
+                d = _mm256_permute4x64_epi64(d, 0xD8);
+                Store<wstep>(diff1, pitchDiff1, diff2, pitchDiff2, d);
+            }
+
+            src   += hstep*pitchSrc - 2*width;
+            pred  += hstep*pitchPred - 2*width;
+            diff1 += hstep*pitchDiff1 - width;
+            diff2 += hstep*pitchDiff2 - width;
+        }
+    }
+};
+
+template <class T>
+void H265_FASTCALL MAKE_NAME(h265_DiffNv12)(const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height)
+{
+    if (width == 2)
+        return DiffNv12Details::ImplW2(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+    else if (width == 4)
+        return DiffNv12Details::Impl<T,4,4>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+    else if (width == 6 && height >= 4) {
+        DiffNv12Details::Impl<T,4,4>(src,   pitchSrc, pred,   pitchPred, diff1,   pitchDiff1, diff2,   pitchDiff2, height);
+        DiffNv12Details::ImplW2(src+8, pitchSrc, pred+8, pitchPred, diff1+4, pitchDiff1, diff2+4, pitchDiff2, height);
+        return;
+    }
+    else if (width == 8)
+        return DiffNv12Details::Impl<T,8,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+    else if (width == 12) {
+        DiffNv12Details::Impl<T,8,8>(src,    pitchSrc, pred,    pitchPred, diff1,   pitchDiff1, diff2,   pitchDiff2, height);
+        DiffNv12Details::Impl<T,4,4>(src+16, pitchSrc, pred+16, pitchPred, diff1+8, pitchDiff1, diff2+8, pitchDiff2, height);
+        return;
+    }
+    else if (width == 16)
+        return DiffNv12Details::Impl<T,16,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+    else if (width == 24)
+        return DiffNv12Details::Impl<T,24,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+    else if (width == 32)
+        return DiffNv12Details::Impl<T,32,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+    else if (width == 48)
+        return DiffNv12Details::Impl<T,48,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+    else if (width == 64)
+        return DiffNv12Details::Impl<T,64,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+
+    for (Ipp32s j = 0; j < height; j++) {
+        for (Ipp32s i = 0; i < width; i++) {
+            diff1[i] = (Ipp16s)src[i*2+0] - pred[i*2+0];
+            diff2[i] = (Ipp16s)src[i*2+1] - pred[i*2+1];
+        }
+        diff1 += pitchDiff1;
+        diff2 += pitchDiff2;
+        src += pitchSrc;
+        pred += pitchPred;
+    }
+
+}
+template void H265_FASTCALL MAKE_NAME(h265_DiffNv12)<Ipp8u> (const Ipp8u  *src, Ipp32s pitchSrc, const Ipp8u  *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
+template void H265_FASTCALL MAKE_NAME(h265_DiffNv12)<Ipp16u>(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
 
 } // end namespace MFX_HEVC_PP
 

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2013 - 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2013 - 2015 Intel Corporation. All Rights Reserved.
 //
 //
 //                     H.265 bitrate control
@@ -55,13 +55,11 @@ namespace H265Enc {
 
 #ifdef PRINT_BRC_STATS
 
-static FILE *outf;
 static int brc_fprintf(char *fmt, ...) 
 {
    va_list args;
    va_start(args, fmt);
    int r = vfprintf(stderr, fmt, args);
-   //int r = vfprintf(outf, fmt, args);
    va_end(args);
    return r;
 }
@@ -81,10 +79,6 @@ mfxStatus H265BRC::Close()
     if (!mIsInit)
         return MFX_ERR_NOT_INITIALIZED;
     mIsInit = false;
-#ifdef PRINT_BRC_STATS
-    if (outf)
-        fclose(outf);
-#endif
     return status;
 }
 
@@ -195,10 +189,6 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
     if (status != MFX_ERR_NONE)
         return status;
 
-#ifdef PRINT_BRC_STATS
-    outf = fopen("cbr_stat.txt", "a");
-#endif
-
     mLowres = video.LowresFactor ? 1 : 0;
     mRecode = (enableRecode && (mParams.BRCMode != MFX_RATECONTROL_AVBR)) ? 1 : 0;
 
@@ -218,8 +208,8 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
         mBFsaved = mBF;
 
         mPredBufFulness = mHRD.bufFullness;
+        mFakeFullness = mHRD.bufFullness;
     }
-
 
     mBitsDesiredFrame = (Ipp32s)(mBitrate / mFramerate);
     if (mBitsDesiredFrame < 10)
@@ -242,9 +232,10 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
 
         mNumLayers = video.PGopPicSize > 1 ?  4 : video.BiPyramidLayers + 1;
 
-        memset((void*)mEstCoeff, 0, mNumLayers*sizeof(Ipp64f));
-        memset((void*)mEstCnt, 0, mNumLayers*sizeof(Ipp64f));
-        //memset((void*)mEncBits, 0, mNumLayers*sizeof(Ipp64f));
+        if (mRCMode == MFX_RATECONTROL_AVBR) {
+            memset((void*)mEstCoeff, 0, mNumLayers*sizeof(Ipp64f));
+            memset((void*)mEstCnt, 0, mNumLayers*sizeof(Ipp64f));
+        }
         mTotAvComplx = 0;
         mTotComplxCnt = 0;
         mTotPrevCmplx = 0;
@@ -256,21 +247,15 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
         mLoanBitsPerFrame = 0;
 
         mQstepBase = -1.; // ??? need to init ???
-        mQpBase = -1;
         
-        memset(mPrevCmplxLayer, 0,  mNumLayers*sizeof(Ipp64f));
-        memset(mPrevQstepLayer, 0,  mNumLayers*sizeof(Ipp64f));
-        memset(mPrevBitsLayer, 0,  mNumLayers*sizeof(Ipp32s));
-        memset(mPrevQpLayer, 0,  mNumLayers*sizeof(Ipp32s));
-        //memset(mAvCmplxLayer, 0,  mNumLayers*sizeof(Ipp64f));
-        //memset(mAvQstepLayer, 0,  mNumLayers*sizeof(Ipp64f));
-        //memset(mAvBitsLayer, 0,  mNumLayers*sizeof(Ipp32s));
-        //mPrevCmplx = 0;
-        //mPrevBits = 0;
+        if (mRCMode != MFX_RATECONTROL_AVBR) {
+            memset(mPrevCmplxLayer, 0,  mNumLayers*sizeof(Ipp64f));
+            memset(mPrevQstepLayer, 0,  mNumLayers*sizeof(Ipp64f));
+            memset(mPrevBitsLayer, 0,  mNumLayers*sizeof(Ipp32s));
+            memset(mPrevQpLayer, 0,  mNumLayers*sizeof(Ipp32s));
+        }
         mPrevQstep = 0;
         mEncOrderCoded = -1;
-
-        //mMiniGopFrames.resize(video.GopRefDist + 1);
 
         Ipp32s fs;
         fs = mParams.width * mParams.height;
@@ -289,21 +274,26 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
         Ipp64f sum = 1;
         Ipp64f layerRatio = 0.3; // tmp ???
         Ipp64f layerShare = layerRatio;
-        for (Ipp32s i = 1; i < mNumLayers; i++) {
+        for (Ipp32s i = 2; i < mNumLayers; i++) {
             sum += layerShare;
             layerShare *= 2*layerRatio;
         }
         Ipp64f targetMiniGop = mBitsDesiredFrame * video.GopRefDist;
         mLayerTarget[1] = targetMiniGop / sum;
         mLayerTarget[0] = mLayerTarget[1] * 3;
-        //mLayerTarget[0] = mLayerTarget[1] * 2.5;
-        for (Ipp32s i = 1; i < mNumLayers; i++)
-            mLayerTarget[i] = mLayerTarget[i-1]*layerRatio;
 
-        for (Ipp32s i = 0; i < mNumLayers; i++) {
-            mEstCoeff[i] = mLayerTarget[i] * 10.;
-            //mEstCoeff[i] = mLayerTarget[i] * 5.;
-            mEstCnt[i] = 1.;
+        brc_fprintf("layer Targets: %d %d ", (int)mLayerTarget[0], (int)mLayerTarget[1]);
+        for (Ipp32s i = 2; i < mNumLayers; i++) {
+            mLayerTarget[i] = mLayerTarget[i-1]*layerRatio;
+            brc_fprintf(" %d", (int)mLayerTarget[i]);
+        }
+        brc_fprintf("\n");
+
+        if (mRCMode == MFX_RATECONTROL_AVBR) {
+            for (Ipp32s i = 0; i < mNumLayers; i++) {
+                mEstCoeff[i] = mLayerTarget[i] * 10.;
+                mEstCnt[i] = 1.;
+            }
         }
 
     } else {
@@ -570,11 +560,10 @@ Ipp32s H265BRC::PredictFrameSize(H265VideoParam *video, Frame *frames[], Ipp32s 
         if (mPrevCmplxLayer[layer] > BRC_MIN_CMPLX_LAYER)
             predBitsLayer = cmplx / mPrevCmplxLayer[layer] * mPrevQstepLayer[layer] / q * mPrevBitsLayer[layer];
 
-
         if (mPrevCmplxLayer[layer - 1] > BRC_MIN_CMPLX)
             predBits = cmplx / mPrevCmplxLayer[layer-1] * mPrevQstepLayer[layer-1] / q * mPrevBitsLayer[layer-1];
 
-
+        brc_fprintf(" -- %d %d -- ", qp, refQp);
         if (qp < refQp) {
             Ipp64f intraCmplx = frames[0]->m_stats[mLowres]->m_avgIntraSatd;
             if (mPrevCmplxLayer[layer - 1] > BRC_MIN_CMPLX) {
@@ -666,8 +655,6 @@ Ipp32s H265BRC::PredictFrameSize(H265VideoParam *video, Frame *frames[], Ipp32s 
             }
         }
 
-
-
         if (mPrevCmplxLayer[layer] > BRC_MIN_CMPLX_LAYER)
             predBitsLayer = cmplx / mPrevCmplxLayer[layer] * mPrevQstepLayer[layer] / q * mPrevBitsLayer[layer];
 
@@ -675,9 +662,6 @@ Ipp32s H265BRC::PredictFrameSize(H265VideoParam *video, Frame *frames[], Ipp32s 
             predBits = cmplx / mPrevCmplxLayer[layer-1] * mPrevQstepLayer[layer-1] / q * mPrevBitsLayer[layer-1];
 
     }
-
-    //frames[0]->m_cmplx = cmplx; //???
-
 
     if (predBits < 0 && predBitsLayer < 0) {
         predBitsLayer = cmplx / BRC_MIN_CMPLX_LAYER * mPrevQstepLayer[layer] / q * mPrevBitsLayer[layer];
@@ -775,15 +759,12 @@ void H265BRC::UpdateMiniGopData(Frame *frame, Ipp8s qp)
     }
 }
 
-
-
 Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
 {
     Frame *frame;
     Ipp32s i, j;
     Ipp32s qp;
 
-//    if (mRCMode == MFX_RATECONTROL_AVBR && video->AnalyzeCmplx) {
     if (video->AnalyzeCmplx) {
 
         if (!frames || numFrames <= 0) {
@@ -806,18 +787,6 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
         if (frames[0]->m_stats[mLowres]->m_sceneCut)
             brc_fprintf("SCENE CUT %d \n", frames[0]->m_encOrder);
 #endif
-        //if (frames[0]->m_sceneCut) {
-        //    for (Ipp32s i = 0; i < mNumLayers; i++) {
-        //        mEstCoeff[i] = mLayerTarget[i] * 10.;
-        //        mEstCnt[i] = 1.;
-        //    }
-        //}
-
-        //if (frames[0]->m_picCodeType == MFX_FRAMETYPE_I || frames[0]->m_picCodeType == MFX_FRAMETYPE_P)
-        //    SetMiniGopData(frames, len);
-
-
-        //brc_fprintf("%d \t %d \t %d \t %.3f \t ", frames[0]->m_encOrder, frames[0]->m_picCodeType, frames[0]->m_pyramidLayer, frames[0]->m_avgBestSatd);
 
         Ipp64f qstepBase = mQstepBase;
         qp = Qstep2QP(qstepBase);
@@ -831,7 +800,6 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
         frames[0]->m_totAvComplx = mTotAvComplx;
         frames[0]->m_totComplxCnt = mTotComplxCnt;
         frames[0]->m_complxSum = mComplxSum;
-
 
         Ipp64f w = 0, qScale, r, prCmplx = mTotPrevCmplx;
 
@@ -884,16 +852,11 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
             if (frames[0]->m_picCodeType == MFX_FRAMETYPE_I || frames[0]->m_picCodeType == MFX_FRAMETYPE_P)
                 SetMiniGopData(frames, len);
 
-
             qp0 = qp = IPP_MAX(qpbase + layer - 1, 1);
             qp_ = IPP_MAX(qp - 3, 1);
 
 
             frames[0]->m_qpBase = qp;
-
-            //if (frames[0]->m_encOrder == 0)
-            //    len = 1;
-
 
             brc_fprintf("%d: %d %d %.3f %.3f %.3f \n", frames[0]->m_encOrder, len, qp, complx,  frames[0]->m_stats[mLowres]->m_avgBestSatd, frames[0]->m_stats[mLowres]->m_avgIntraSatd);
 
@@ -901,14 +864,11 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
 
             for (;;) {
 
-//                if (frames[0]->m_encOrder == 0 && mPrevCmplxLayer[0] == 0) {
                 if (mPrevQstepLayer[layer] <= 0 && mPrevQstep <= 0 && frames[0]->m_encOrder == 0) {
                     Ipp64f qi = QP2Qstep(qp);
                     predbits = frames[0]->m_stats[mLowres]->m_avgBestSatd * 1000000 / qi;
                     refFrameData.qp = qp;
                     refFrameData.encOrder = -1;
-                    //frames[0]->m_cmplx = frames[0]->m_stats[mLowres]->m_avgBestSatd;
-                    
                 } else {
                     predbits = PredictFrameSize(video, frames, qp, &refFrameData);
                 }
@@ -922,15 +882,17 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
                 brc_fprintf(" %d %d \n", qp, predbits);
 
 
-//                maxbits = (Ipp32s)mHRD.bufFullness >> 1;
                 maxbits = mPredBufFulness >> 1;
+
+                if ((layer > 1) || qp >= refFrameData.qp)
+                    if (maxbits > mHRD.bufSize >> 2)
+                        maxbits = mHRD.bufSize >> 2;
 
 
                 if (predbits > maxbits && qp < mQuantMax) { // frame is predicted to exceed half buf fullness
                     qp++;
                     qpmin = qp;
-//                } else if ((Ipp32s)(mHRD.bufFullness + mHRD.inputBitsPerFrame) - predbits > (Ipp32s)mHRD.bufSize) {
-                } else if ((Ipp32s)(mPredBufFulness + mHRD.inputBitsPerFrame) - predbits > (Ipp32s)mHRD.bufSize) {
+                } else if ((Ipp32s)(mPredBufFulness + mBitsDesiredFrame) - predbits > (Ipp32s)mHRD.bufSize) {
                     if (qp > qpmin + 1 && qp > qp_)
                         qp--;
                     else
@@ -939,22 +901,16 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
                     break;
             }
 
-
-            targetBits = mLayerTarget[layer];
-            for (i = 1; i < len; i++) {
-                Ipp32s lri = (frames[i]->m_picCodeType == MFX_FRAMETYPE_I ? 0 : 1) + frames[i]->m_pyramidLayer;
-                targetBits += mLayerTarget[lri];
-            }
-
             if (refFrameData.encOrder > mEncOrderCoded) {
                 if (qp < refFrameData.qp) {
                     qp = refFrameData.qp;
                 }
             }
 
-
             UpdateMiniGopData(frames[0], qp);
 
+            qpbase = qp + 1 - layer;
+            q = QP2Qstep(qpbase);
 
             // trying to forecast the buffer state for the LA frames
             Ipp32s forecastBits = predbits;
@@ -975,48 +931,43 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
             }
             brc_fprintf("\n");
             Ipp32s targetfullness = IPP_MAX(mParams.HRDInitialDelayBytes << 3, (Ipp32s)mHRD.bufSize >> 1);
-//                Ipp32s curdev = targetfullness - mHRD.bufFullness;
             Ipp32s curdev = targetfullness - mPredBufFulness;
             Ipp64s estdev = curdev + forecastBits - targetBits;
 
-            Ipp32s maxdevStrict = IPP_MIN((Ipp32s)(mHRD.bufSize >> 2), mPredBufFulness >> 1);
             Ipp32s maxdevSoft = IPP_MIN((Ipp32s)(mHRD.bufSize >> 3), mPredBufFulness >> 1);
-            Ipp32s mindevStrict = IPP_MIN((Ipp32s)(mHRD.bufSize >> 2), ((Ipp32s)mHRD.bufSize - mPredBufFulness) >> 1);
+            Ipp32s mindevStrict = (Ipp32s)(mHRD.bufSize >> 1);
             Ipp32s mindevSoft = IPP_MIN((Ipp32s)(mHRD.bufSize >> 3), ((Ipp32s)mHRD.bufSize - mPredBufFulness) >> 1);
 
             Ipp64f qf = 1;
             Ipp32s targ;
 
-            if (estdev > maxdevStrict) {
-                targ = targetBits + maxdevStrict - curdev;
-                //targ = forecastBits - (estdev - maxdevStrict);
-                if (targ < (forecastBits >> 2) + 1)
-                    targ = (forecastBits >> 2) + 1;
-                if (targ < forecastBits)
-                    //qf = (Ipp64f)forecastBits / targ;
-                    qf = sqrt((Ipp64f)forecastBits / targ);
-            } else if (estdev > maxdevSoft) {
+            brc_fprintf("dev %d %d %d %d \n", (int)estdev, forecastBits, (int)targetBits, len*(int)mHRD.inputBitsPerFrame);
+
+            Ipp64f qf1 = 0;
+            Ipp32s laLim = IPP_MIN(mPredBufFulness * 3 >> 2, (Ipp32s)mHRD.bufSize * 3 >> 3);
+            if (forecastBits - (len - 1)*(Ipp32s)mHRD.inputBitsPerFrame > laLim) {
+                targ = (len - 1)*(Ipp32s)mHRD.inputBitsPerFrame + laLim;
+                if (targ < forecastBits >> 1)
+                    targ = forecastBits >> 1;
+                qf1 = (Ipp64f)forecastBits / targ;
+            }
+
+
+            if (estdev > maxdevSoft) {
                 targ = targetBits + maxdevSoft - curdev;
-//                    targ = forecastBits - (estdev - maxdevSoft);
                 if (targ < (forecastBits >> 1) + 1)
                     targ = (forecastBits >> 1) + 1;
                 if (targ < forecastBits)
                     qf = sqrt((Ipp64f)forecastBits / targ);
-            } else if (estdev < -mindevStrict) { // treat cbr/vbr differently for overflow ???
-                //targ = forecastBits + (-estdev) - mindevStrict;
-                targ = targetBits - mindevStrict - curdev;
-                if (targ > (forecastBits << 1) + 1)
-                    targ = (forecastBits << 1) + 1;
-                if (targ > forecastBits)
-                    qf = sqrt((Ipp64f)forecastBits / targ);
-            } else if (estdev < -mindevSoft) {
-//                    targ = forecastBits + (-estdev) - mindevSoft;
+            } else if (estdev < -mindevSoft) { // && mRCMode != MFX_RATECONTROL_VBR) {
                 targ = targetBits - mindevSoft - curdev;
                 if (targ > (forecastBits * 3 >> 1) + 1)
                     targ = (forecastBits * 3 >> 1) + 1;
                 if (targ > forecastBits)
                     qf = sqrt((Ipp64f)forecastBits / targ);
             }
+
+            qf = IPP_MAX(qf, qf1);
 
             q *= qf;
             mQstepBase = q;
@@ -1042,10 +993,15 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
                     brc_fprintf(" %d %d \n", qp, predbits);
 
                     maxbits = mPredBufFulness >> 1;
+
+                    if ((layer > 1) || qp >= refFrameData.qp)
+                        if (maxbits > mHRD.bufSize >> 2)
+                            maxbits = mHRD.bufSize >> 2;
+
                     if (predbits > maxbits && qp < mQuantMax) { // frame is predicted to exceed half buf fullness
                         qp++;
                         qpmin = qp;
-                    } else if ((Ipp32s)(mPredBufFulness + mHRD.inputBitsPerFrame) - predbits > (Ipp32s)mHRD.bufSize) {
+                    } else if ((Ipp32s)(mPredBufFulness + mBitsDesiredFrame) - predbits > (Ipp32s)mHRD.bufSize) {
                         if (qp > qpmin + 1 && qp > qp_)
                             qp--;
                         else
@@ -1060,7 +1016,7 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
 
 
             if (layer > 1) {
-                Ipp32s qpLayer_1 = Qstep2QP(mPrevQstepLayer[layer - 1]);
+                Ipp32s qpLayer_1 = mPrevQpLayer[layer - 1];
                 if (qp < qpLayer_1)
                     qp  = qpLayer_1;
             }
@@ -1071,17 +1027,19 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
 
             Ipp32s predbits_new = PredictFrameSize(video, frames, qp, &refFrameData);
 
-            mPredBufFulness -= predbits_new - mHRD.inputBitsPerFrame;
+            //mPredBufFulness -= predbits_new - mHRD.inputBitsPerFrame;
+            mPredBufFulness -= predbits_new - mBitsDesiredFrame;
             frames[0]->m_predBits = predbits_new;
+
+            mPrevQpLayer[layer] = qp;
 
             brc_fprintf("\n # %d %d %d %d \n", frames[0]->m_encOrder, predbits, predbits_new, mPredBufFulness);
 
 
         }
-        else
+        else // AVBR
         {
 
-            //Ipp32s bufsize = mParams.HRDBufferSizeBytes*8;
             Ipp32s bufsize = mParams.width * mParams.height * mParams.bitDepthLuma;
             if (mParams.chromaFormat == MFX_CHROMAFORMAT_YUV420)
                 bufsize += bufsize >> 1;
@@ -1238,6 +1196,16 @@ mfxBRCStatus H265BRC::UpdateAndCheckHRD(Ipp32s frameBits, Ipp64f inputBitsPerFra
 
     bufFullness = mHRD.bufFullness - frameBits;
 
+    if (mRCMode == MFX_RATECONTROL_VBR) {
+        mFakeFullness -= frameBits;
+        if (mFakeFullness < 0)
+            mFakeFullness = 0;
+        mFakeFullness += mBitsDesiredFrame;
+        if (mFakeFullness > (Ipp32s)mHRD.bufSize) {
+            mPredBufFulness -= mFakeFullness - (Ipp32s)mHRD.bufSize;
+            mFakeFullness = mHRD.bufSize;
+        }
+    }
     if (bufFullness < 2) {
         bufFullness = inputBitsPerFrame;
         ret = MFX_BRC_ERR_BIG_FRAME;
@@ -1266,20 +1234,14 @@ mfxBRCStatus H265BRC::UpdateAndCheckHRD(Ipp32s frameBits, Ipp64f inputBitsPerFra
 #define BRC_SCENE_CHANGE_RATIO2 10.0
 #define BRC_RCFAP_SHORT 5
 
-//#define BRC_SCENE_CHANGE_RATIO1 10.0
-//#define BRC_SCENE_CHANGE_RATIO2 5.0
-
 #define I_WEIGHT 1.2
 #define P_WEIGHT 0.25
 #define B_WEIGHT 0.2
-
 
 #define BRC_MAX_QSTEP_FACTOR 1.55
 
 #define BRC_MAX_LOAN_LENGTH 75
 #define BRC_LOAN_RATIO 0.075
-
-//#define fprintf
 
 mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame *pFrame, Ipp32s totalFrameBits, Ipp32s overheadBits, Ipp32s repack)
 {
@@ -1357,6 +1319,9 @@ mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame
                 mQstepScale *= bitsEncoded / (mHRD.bufFullness / 2);
                 brc_fprintf(" %.1f %.1f %.3f \n", mCmplxRate, mTotTarget, mQstepScale);
 
+
+                mPredBufFulness = (int)mHRD.prevBufFullness;
+
                 brc_fprintf("UNDER %d %d %d %d %d %.3f\n", pFrame->m_encOrder, totalFrameBits, pFrame->m_predBits, (int)mHRD.prevBufFullness, mPredBufFulness, mQstepScale);
 
 
@@ -1387,13 +1352,7 @@ mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame
                 mLoanLength--;
             }
 
-
-
             mPrevQstep  = qstep;
-            //mPrevCmplx = pFrame->m_avgBestSatd;
-            //mPrevBits = bitsEncoded;
-            //mPrevLayer = layer;
-
             if (sliceQpY != pFrame->m_qpBase) {
                 Ipp64f qbase = QP2Qstep(pFrame->m_qpBase);
                 Ipp64f w = sliceQpY > pFrame->m_qpBase ? qstep / qbase : (qbase / qstep - 1) * 0.3 + 1;
@@ -1411,54 +1370,51 @@ mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame
             mEncOrderCoded = pFrame->m_encOrder;
             UpdateMiniGopData(pFrame, sliceQpY);
 
-            return Sts;
-        }
+        } else { // AVBR
 
-        mTotPrevCmplx = mTotComplxCnt > 0 ? mTotAvComplx  / mTotComplxCnt : 0;
+            mTotPrevCmplx = mTotComplxCnt > 0 ? mTotAvComplx  / mTotComplxCnt : 0;
 
-        Ipp64f cmpl = pow(pFrame->m_avCmplx, BRC_RATE_CMPLX_EXPONENT); // use ^0.4 ???
+            Ipp64f cmpl = pow(pFrame->m_avCmplx, BRC_RATE_CMPLX_EXPONENT); // use ^0.4 ???
 
-        if (cmpl > pow(BRC_MIN_CMPLX, BRC_RATE_CMPLX_EXPONENT)) {
-            Ipp64f coefn = bitsEncoded * qstep / cmpl;
-            mEstCoeff[layer] *= decay;
-            mEstCoeff[layer] += coefn;
-            mEstCnt[layer] *= decay;
-            mEstCnt[layer] += 1.;
-        }
+            if (cmpl > pow(BRC_MIN_CMPLX, BRC_RATE_CMPLX_EXPONENT)) {
+                Ipp64f coefn = bitsEncoded * qstep / cmpl;
+                mEstCoeff[layer] *= decay;
+                mEstCoeff[layer] += coefn;
+                mEstCnt[layer] *= decay;
+                mEstCnt[layer] += 1.;
+            }
 
-        if (picType == MFX_FRAMETYPE_I) {
-            if (mLoanLength)
-                bitsEncoded += mLoanLength * mLoanBitsPerFrame;
+            if (picType == MFX_FRAMETYPE_I) {
+                if (mLoanLength)
+                    bitsEncoded += mLoanLength * mLoanBitsPerFrame;
 
-            mLoanLength = video->GopPicSize;
-            if (mLoanLength > BRC_MAX_LOAN_LENGTH || mLoanLength == 0)
-                mLoanLength = BRC_MAX_LOAN_LENGTH;
-            Ipp32s bitsEncodedI = (Ipp32s)((Ipp64f)bitsEncoded  / (mLoanLength * BRC_LOAN_RATIO + 1));
+                mLoanLength = video->GopPicSize;
+                if (mLoanLength > BRC_MAX_LOAN_LENGTH || mLoanLength == 0)
+                    mLoanLength = BRC_MAX_LOAN_LENGTH;
+                Ipp32s bitsEncodedI = (Ipp32s)((Ipp64f)bitsEncoded  / (mLoanLength * BRC_LOAN_RATIO + 1));
  
-            mIBitsLoan = bitsEncoded - bitsEncodedI;
-            mLoanBitsPerFrame = mIBitsLoan / mLoanLength;
+                mIBitsLoan = bitsEncoded - bitsEncodedI;
+                mLoanBitsPerFrame = mIBitsLoan / mLoanLength;
 
-            bitsEncoded = bitsEncodedI;
+                bitsEncoded = bitsEncodedI;
 
-        } else if (mLoanLength) {
-            bitsEncoded += mLoanBitsPerFrame;
-            mLoanLength--;
+            } else if (mLoanLength) {
+                bitsEncoded += mLoanBitsPerFrame;
+                mLoanLength--;
+            }
+
+            mCmplxRate += bitsEncoded * pow(qstep / pFrame->m_CmplxQstep, 1./BRC_QSTEP_SCALE_EXPONENT);
+            mTotTarget += mBitsDesiredFrame;
+
+            mQstepScale = pow(mCmplxRate / mTotTarget, BRC_QSTEP_SCALE_EXPONENT);
+
+            mBitsEncodedTotal += totalFrameBits;        
+
+            mTotalDeviation += bitsEncoded - mBitsDesiredFrame;
         }
-
-        mCmplxRate += bitsEncoded * pow(qstep / pFrame->m_CmplxQstep, 1./BRC_QSTEP_SCALE_EXPONENT);
-        mTotTarget += mBitsDesiredFrame;
-
-        mQstepScale = pow(mCmplxRate / mTotTarget, BRC_QSTEP_SCALE_EXPONENT);
-
-        mBitsEncodedTotal += totalFrameBits;        
-
-        //mEncBits[layer] *= decay;
-        //mEncBits[layer] += totalFrameBits;
-
-        mTotalDeviation += bitsEncoded - mBitsDesiredFrame;
-
 
         return Sts;
+
     }
 
     if (!repack && mQuantUpdated <= 0) { // BRC reported buffer over/underflow but the application ignored it

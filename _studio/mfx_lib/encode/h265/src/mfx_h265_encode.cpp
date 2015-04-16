@@ -49,279 +49,279 @@ using namespace H265Enc;
 using namespace H265Enc::MfxEnumShortAliases;
 
 namespace {
-    void ConvertToInternalParam(H265VideoParam &internal, const mfxVideoParam &mfxParam)
+    void ConvertToInternalParam(H265VideoParam &intParam, const mfxVideoParam &mfxParam)
     {
         const mfxInfoMFX &mfx = mfxParam.mfx;
         const mfxFrameInfo &fi = mfx.FrameInfo;
         const mfxExtOpaqueSurfaceAlloc &opaq = GetExtBuffer(mfxParam);
         const mfxExtCodingOptionHEVC &optHevc = GetExtBuffer(mfxParam);
-        const mfxExtHEVCRegion *region = GetExtBuffer(mfxParam);
+        const mfxExtHEVCRegion &region = GetExtBuffer(mfxParam);
         const mfxExtHEVCTiles &tiles = GetExtBuffer(mfxParam);
         const mfxExtHEVCParam &hevcParam = GetExtBuffer(mfxParam);
         mfxExtDumpFiles &dumpFiles = GetExtBuffer(mfxParam);
         const mfxExtCodingOption2 &opt2 = GetExtBuffer(mfxParam);
 
-        Zero(internal);
-        internal.encodedOrder = (Ipp8u)mfxParam.mfx.EncodedOrder;
+        Zero(intParam);
+        intParam.encodedOrder = (Ipp8u)mfxParam.mfx.EncodedOrder;
 
-        internal.fourcc = fi.FourCC;
-        internal.bitDepthLuma = 8;
-        internal.bitDepthChroma = 8;
-        internal.chromaFormatIdc = MFX_CHROMAFORMAT_YUV420;
+        intParam.fourcc = fi.FourCC;
+        intParam.bitDepthLuma = 8;
+        intParam.bitDepthChroma = 8;
+        intParam.chromaFormatIdc = MFX_CHROMAFORMAT_YUV420;
         if (fi.FourCC == MFX_FOURCC_P010 || fi.FourCC == MFX_FOURCC_P210) {
-            internal.bitDepthLuma = 10;
-            internal.bitDepthChroma = 10;
+            intParam.bitDepthLuma = 10;
+            intParam.bitDepthChroma = 10;
         }
-        internal.chromaFormatIdc = fi.ChromaFormat;
-        internal.bitDepthLumaShift = internal.bitDepthLuma - 8;
-        internal.bitDepthChromaShift = internal.bitDepthChroma - 8;
-        internal.chroma422 = (internal.chromaFormatIdc == MFX_CHROMAFORMAT_YUV422);
-        internal.chromaShiftW = (internal.chromaFormatIdc != MFX_CHROMAFORMAT_YUV444);
-        internal.chromaShiftH = (internal.chromaFormatIdc == MFX_CHROMAFORMAT_YUV420);
-        internal.chromaShiftWInv = 1 - internal.chromaShiftW;
-        internal.chromaShiftHInv = 1 - internal.chromaShiftH;
-        internal.chromaShift = internal.chromaShiftW + internal.chromaShiftH;
+        intParam.chromaFormatIdc = fi.ChromaFormat;
+        intParam.bitDepthLumaShift = intParam.bitDepthLuma - 8;
+        intParam.bitDepthChromaShift = intParam.bitDepthChroma - 8;
+        intParam.chroma422 = (intParam.chromaFormatIdc == MFX_CHROMAFORMAT_YUV422);
+        intParam.chromaShiftW = (intParam.chromaFormatIdc != MFX_CHROMAFORMAT_YUV444);
+        intParam.chromaShiftH = (intParam.chromaFormatIdc == MFX_CHROMAFORMAT_YUV420);
+        intParam.chromaShiftWInv = 1 - intParam.chromaShiftW;
+        intParam.chromaShiftHInv = 1 - intParam.chromaShiftH;
+        intParam.chromaShift = intParam.chromaShiftW + intParam.chromaShiftH;
 
-        internal.Log2MaxCUSize = optHevc.Log2MaxCUSize;
-        internal.MaxCUDepth = optHevc.MaxCUDepth;
-        internal.QuadtreeTULog2MaxSize = optHevc.QuadtreeTULog2MaxSize;
-        internal.QuadtreeTULog2MinSize = optHevc.QuadtreeTULog2MinSize;
-        internal.QuadtreeTUMaxDepthIntra = optHevc.QuadtreeTUMaxDepthIntra;
-        internal.QuadtreeTUMaxDepthInter = optHevc.QuadtreeTUMaxDepthInter;
-        internal.QuadtreeTUMaxDepthInterRD = optHevc.QuadtreeTUMaxDepthInterRD;
-        internal.partModes = optHevc.PartModes;
-        internal.TMVPFlag = (optHevc.TMVP == ON);
-        internal.QPI = (Ipp8s)mfx.QPI;
-        internal.QPP = (Ipp8s)mfx.QPP;
-        internal.QPB = (Ipp8s)mfx.QPB;
+        intParam.Log2MaxCUSize = optHevc.Log2MaxCUSize;
+        intParam.MaxCUDepth = optHevc.MaxCUDepth;
+        intParam.QuadtreeTULog2MaxSize = optHevc.QuadtreeTULog2MaxSize;
+        intParam.QuadtreeTULog2MinSize = optHevc.QuadtreeTULog2MinSize;
+        intParam.QuadtreeTUMaxDepthIntra = optHevc.QuadtreeTUMaxDepthIntra;
+        intParam.QuadtreeTUMaxDepthInter = optHevc.QuadtreeTUMaxDepthInter;
+        intParam.QuadtreeTUMaxDepthInterRD = optHevc.QuadtreeTUMaxDepthInterRD;
+        intParam.partModes = optHevc.PartModes;
+        intParam.TMVPFlag = (optHevc.TMVP == ON);
+        intParam.QPI = (Ipp8s)mfx.QPI;
+        intParam.QPP = (Ipp8s)mfx.QPP;
+        intParam.QPB = (Ipp8s)mfx.QPB;
 
-        internal.GopPicSize = mfx.GopPicSize;
-        internal.GopRefDist = mfx.GopRefDist;
-        internal.IdrInterval = mfx.IdrInterval;
-        internal.GopClosedFlag = !!(mfx.GopOptFlag & MFX_GOP_CLOSED);
-        internal.GopStrictFlag = !!(mfx.GopOptFlag & MFX_GOP_STRICT);
-        internal.BiPyramidLayers = (optHevc.BPyramid == ON) ? (H265_CeilLog2(internal.GopRefDist) + 1) : 1;
-        internal.longGop = (optHevc.BPyramid == ON && internal.GopRefDist == 16 && mfx.NumRefFrame == 5);
-        internal.GeneralizedPB = (optHevc.GPB == ON);
-        internal.AdaptiveRefs = (optHevc.AdaptiveRefs == ON);
-        internal.NumRefFrameB  = optHevc.NumRefFrameB;
-        if (internal.NumRefFrameB < 2) 
-            internal.NumRefFrameB = mfx.NumRefFrame;
+        intParam.GopPicSize = mfx.GopPicSize;
+        intParam.GopRefDist = mfx.GopRefDist;
+        intParam.IdrInterval = mfx.IdrInterval;
+        intParam.GopClosedFlag = !!(mfx.GopOptFlag & MFX_GOP_CLOSED);
+        intParam.GopStrictFlag = !!(mfx.GopOptFlag & MFX_GOP_STRICT);
+        intParam.BiPyramidLayers = (optHevc.BPyramid == ON) ? (H265_CeilLog2(intParam.GopRefDist) + 1) : 1;
+        intParam.longGop = (optHevc.BPyramid == ON && intParam.GopRefDist == 16 && mfx.NumRefFrame == 5);
+        intParam.GeneralizedPB = (optHevc.GPB == ON);
+        intParam.AdaptiveRefs = (optHevc.AdaptiveRefs == ON);
+        intParam.NumRefFrameB  = optHevc.NumRefFrameB;
+        if (intParam.NumRefFrameB < 2) 
+            intParam.NumRefFrameB = mfx.NumRefFrame;
         
-        internal.IntraMinDepthSC = (Ipp8u)optHevc.IntraMinDepthSC - 1;
-        internal.MaxDecPicBuffering = MAX(mfx.NumRefFrame, internal.BiPyramidLayers);
-        internal.MaxRefIdxP[0] = mfx.NumRefFrame;
-        internal.MaxRefIdxP[1] = internal.GeneralizedPB ? mfx.NumRefFrame : 0;
-        internal.MaxRefIdxB[0] = 0;
-        internal.MaxRefIdxB[1] = 0;
+        intParam.IntraMinDepthSC = (Ipp8u)optHevc.IntraMinDepthSC - 1;
+        intParam.MaxDecPicBuffering = MAX(mfx.NumRefFrame, intParam.BiPyramidLayers);
+        intParam.MaxRefIdxP[0] = mfx.NumRefFrame;
+        intParam.MaxRefIdxP[1] = intParam.GeneralizedPB ? mfx.NumRefFrame : 0;
+        intParam.MaxRefIdxB[0] = 0;
+        intParam.MaxRefIdxB[1] = 0;
 
-        if (internal.GopRefDist > 1) {
-            if (internal.longGop) {
-                internal.MaxRefIdxB[0] = 2;
-                internal.MaxRefIdxB[1] = 2;
+        if (intParam.GopRefDist > 1) {
+            if (intParam.longGop) {
+                intParam.MaxRefIdxB[0] = 2;
+                intParam.MaxRefIdxB[1] = 2;
             }
-            else if (internal.BiPyramidLayers > 1) {
-                Ipp16u NumRef = IPP_MIN(internal.NumRefFrameB, mfx.NumRefFrame);
-                internal.MaxRefIdxB[0] = (NumRef + 1) / 2;
-                internal.MaxRefIdxB[1] = IPP_MAX(1, (NumRef + 0) / 2);
+            else if (intParam.BiPyramidLayers > 1) {
+                Ipp16u NumRef = IPP_MIN(intParam.NumRefFrameB, mfx.NumRefFrame);
+                intParam.MaxRefIdxB[0] = (NumRef + 1) / 2;
+                intParam.MaxRefIdxB[1] = IPP_MAX(1, (NumRef + 0) / 2);
             } else {
-                internal.MaxRefIdxB[0] = mfx.NumRefFrame - 1;
-                internal.MaxRefIdxB[1] = 1;
+                intParam.MaxRefIdxB[0] = mfx.NumRefFrame - 1;
+                intParam.MaxRefIdxB[1] = 1;
             }
         }
 
-        internal.PGopPicSize = (internal.GopRefDist == 1 && internal.MaxRefIdxP[0] > 1) ? PGOP_PIC_SIZE : 1;
+        intParam.PGopPicSize = (intParam.GopRefDist == 1 && intParam.MaxRefIdxP[0] > 1) ? PGOP_PIC_SIZE : 1;
 
-        internal.AnalyseFlags = 0;
-        if (optHevc.AnalyzeChroma == ON) internal.AnalyseFlags |= HEVC_ANALYSE_CHROMA;
-        if (optHevc.CostChroma == ON)    internal.AnalyseFlags |= HEVC_COST_CHROMA;
+        intParam.AnalyseFlags = 0;
+        if (optHevc.AnalyzeChroma == ON) intParam.AnalyseFlags |= HEVC_ANALYSE_CHROMA;
+        if (optHevc.CostChroma == ON)    intParam.AnalyseFlags |= HEVC_COST_CHROMA;
 
-        internal.SplitThresholdStrengthCUIntra = (Ipp8u)optHevc.SplitThresholdStrengthCUIntra - 1;
-        internal.SplitThresholdStrengthTUIntra = (Ipp8u)optHevc.SplitThresholdStrengthTUIntra - 1;
-        internal.SplitThresholdStrengthCUInter = (Ipp8u)optHevc.SplitThresholdStrengthCUInter - 1;
-        internal.SplitThresholdTabIndex        = (Ipp8u)optHevc.SplitThresholdTabIndex;
+        intParam.SplitThresholdStrengthCUIntra = (Ipp8u)optHevc.SplitThresholdStrengthCUIntra - 1;
+        intParam.SplitThresholdStrengthTUIntra = (Ipp8u)optHevc.SplitThresholdStrengthTUIntra - 1;
+        intParam.SplitThresholdStrengthCUInter = (Ipp8u)optHevc.SplitThresholdStrengthCUInter - 1;
+        intParam.SplitThresholdTabIndex        = (Ipp8u)optHevc.SplitThresholdTabIndex;
 
-        internal.FastInterp = (optHevc.FastInterp == ON);
-        internal.cpuFeature = optHevc.CpuFeature;
-        internal.IntraChromaRDO = (optHevc.IntraChromaRDO == ON);
-        internal.SBHFlag = (optHevc.SignBitHiding == ON);
-        internal.RDOQFlag = (optHevc.RDOQuant == ON);
-        internal.rdoqChromaFlag = (optHevc.RDOQuantChroma == ON);
-        internal.FastCoeffCost = (optHevc.FastCoeffCost == ON);
-        internal.rdoqCGZFlag = (optHevc.RDOQuantCGZ == ON);
-        internal.SAOFlag = (optHevc.SAO == ON);
-        internal.num_threads = mfx.NumThread;
-        internal.num_cand_0[0][2] = (Ipp8u)optHevc.IntraNumCand0_2;
-        internal.num_cand_0[0][3] = (Ipp8u)optHevc.IntraNumCand0_3;
-        internal.num_cand_0[0][4] = (Ipp8u)optHevc.IntraNumCand0_4;
-        internal.num_cand_0[0][5] = (Ipp8u)optHevc.IntraNumCand0_5;
-        internal.num_cand_0[0][6] = (Ipp8u)optHevc.IntraNumCand0_6;
-        Copy(internal.num_cand_0[1], internal.num_cand_0[0]);
-        Copy(internal.num_cand_0[2], internal.num_cand_0[0]);
-        Copy(internal.num_cand_0[3], internal.num_cand_0[0]);
-        internal.num_cand_1[2] = (Ipp8u)optHevc.IntraNumCand1_2;
-        internal.num_cand_1[3] = (Ipp8u)optHevc.IntraNumCand1_3;
-        internal.num_cand_1[4] = (Ipp8u)optHevc.IntraNumCand1_4;
-        internal.num_cand_1[5] = (Ipp8u)optHevc.IntraNumCand1_5;
-        internal.num_cand_1[6] = (Ipp8u)optHevc.IntraNumCand1_6;
-        internal.num_cand_2[2] = (Ipp8u)optHevc.IntraNumCand2_2;
-        internal.num_cand_2[3] = (Ipp8u)optHevc.IntraNumCand2_3;
-        internal.num_cand_2[4] = (Ipp8u)optHevc.IntraNumCand2_4;
-        internal.num_cand_2[5] = (Ipp8u)optHevc.IntraNumCand2_5;
-        internal.num_cand_2[6] = (Ipp8u)optHevc.IntraNumCand2_6;
+        intParam.FastInterp = (optHevc.FastInterp == ON);
+        intParam.cpuFeature = optHevc.CpuFeature;
+        intParam.IntraChromaRDO = (optHevc.IntraChromaRDO == ON);
+        intParam.SBHFlag = (optHevc.SignBitHiding == ON);
+        intParam.RDOQFlag = (optHevc.RDOQuant == ON);
+        intParam.rdoqChromaFlag = (optHevc.RDOQuantChroma == ON);
+        intParam.FastCoeffCost = (optHevc.FastCoeffCost == ON);
+        intParam.rdoqCGZFlag = (optHevc.RDOQuantCGZ == ON);
+        intParam.SAOFlag = (optHevc.SAO == ON);
+        intParam.num_threads = mfx.NumThread;
+        intParam.num_cand_0[0][2] = (Ipp8u)optHevc.IntraNumCand0_2;
+        intParam.num_cand_0[0][3] = (Ipp8u)optHevc.IntraNumCand0_3;
+        intParam.num_cand_0[0][4] = (Ipp8u)optHevc.IntraNumCand0_4;
+        intParam.num_cand_0[0][5] = (Ipp8u)optHevc.IntraNumCand0_5;
+        intParam.num_cand_0[0][6] = (Ipp8u)optHevc.IntraNumCand0_6;
+        Copy(intParam.num_cand_0[1], intParam.num_cand_0[0]);
+        Copy(intParam.num_cand_0[2], intParam.num_cand_0[0]);
+        Copy(intParam.num_cand_0[3], intParam.num_cand_0[0]);
+        intParam.num_cand_1[2] = (Ipp8u)optHevc.IntraNumCand1_2;
+        intParam.num_cand_1[3] = (Ipp8u)optHevc.IntraNumCand1_3;
+        intParam.num_cand_1[4] = (Ipp8u)optHevc.IntraNumCand1_4;
+        intParam.num_cand_1[5] = (Ipp8u)optHevc.IntraNumCand1_5;
+        intParam.num_cand_1[6] = (Ipp8u)optHevc.IntraNumCand1_6;
+        intParam.num_cand_2[2] = (Ipp8u)optHevc.IntraNumCand2_2;
+        intParam.num_cand_2[3] = (Ipp8u)optHevc.IntraNumCand2_3;
+        intParam.num_cand_2[4] = (Ipp8u)optHevc.IntraNumCand2_4;
+        intParam.num_cand_2[5] = (Ipp8u)optHevc.IntraNumCand2_5;
+        intParam.num_cand_2[6] = (Ipp8u)optHevc.IntraNumCand2_6;
 
-        internal.LowresFactor = optHevc.LowresFactor;
-        internal.DeltaQpMode = optHevc.DeltaQpMode;
-        internal.SceneCut = optHevc.SceneCut;
-        internal.AnalyzeCmplx = optHevc.AnalyzeCmplx;
-        internal.RateControlDepth = optHevc.RateControlDepth;
-        internal.TryIntra = optHevc.TryIntra;
-        internal.FastAMPSkipME = optHevc.FastAMPSkipME;
-        internal.FastAMPRD = optHevc.FastAMPRD;
-        internal.SkipMotionPartition = optHevc.SkipMotionPartition;
-        internal.cmIntraThreshold = optHevc.CmIntraThreshold;
-        internal.tuSplitIntra = optHevc.TUSplitIntra;
-        internal.cuSplit = optHevc.CUSplit;
-        internal.intraAngModes[0] = optHevc.IntraAngModes;
-        internal.intraAngModes[1] = optHevc.IntraAngModesP;
-        internal.intraAngModes[2] = optHevc.IntraAngModesBRef;
-        internal.intraAngModes[3] = optHevc.IntraAngModesBnonRef;
-        internal.fastSkip = (optHevc.FastSkip == ON);
-        internal.SkipCandRD = (optHevc.SkipCandRD == ON);
-        internal.fastCbfMode = (optHevc.FastCbfMode == ON);
-        internal.hadamardMe = optHevc.HadamardMe;
-        internal.TMVPFlag = (optHevc.TMVP == ON);
-        internal.deblockingFlag = (optHevc.Deblocking == ON);
-        internal.deblockBordersFlag = (internal.deblockingFlag && optHevc.DeblockBorders == ON);
-        internal.saoOpt = optHevc.SaoOpt;
-        internal.patternIntPel = optHevc.PatternIntPel;
-        internal.patternSubPel = optHevc.PatternSubPel;
-        internal.numBiRefineIter = optHevc.NumBiRefineIter;
-        internal.puDecisionSatd = (optHevc.PuDecisionSatd == ON);
-        internal.minCUDepthAdapt = (optHevc.MinCUDepthAdapt == ON);
-        internal.maxCUDepthAdapt = (optHevc.MaxCUDepthAdapt == ON);
-        internal.cuSplitThreshold = optHevc.CUSplitThreshold;
+        intParam.LowresFactor = optHevc.LowresFactor;
+        intParam.DeltaQpMode = optHevc.DeltaQpMode;
+        intParam.SceneCut = optHevc.SceneCut;
+        intParam.AnalyzeCmplx = optHevc.AnalyzeCmplx;
+        intParam.RateControlDepth = optHevc.RateControlDepth;
+        intParam.TryIntra = optHevc.TryIntra;
+        intParam.FastAMPSkipME = optHevc.FastAMPSkipME;
+        intParam.FastAMPRD = optHevc.FastAMPRD;
+        intParam.SkipMotionPartition = optHevc.SkipMotionPartition;
+        intParam.cmIntraThreshold = optHevc.CmIntraThreshold;
+        intParam.tuSplitIntra = optHevc.TUSplitIntra;
+        intParam.cuSplit = optHevc.CUSplit;
+        intParam.intraAngModes[0] = optHevc.IntraAngModes;
+        intParam.intraAngModes[1] = optHevc.IntraAngModesP;
+        intParam.intraAngModes[2] = optHevc.IntraAngModesBRef;
+        intParam.intraAngModes[3] = optHevc.IntraAngModesBnonRef;
+        intParam.fastSkip = (optHevc.FastSkip == ON);
+        intParam.SkipCandRD = (optHevc.SkipCandRD == ON);
+        intParam.fastCbfMode = (optHevc.FastCbfMode == ON);
+        intParam.hadamardMe = optHevc.HadamardMe;
+        intParam.TMVPFlag = (optHevc.TMVP == ON);
+        intParam.deblockingFlag = (optHevc.Deblocking == ON);
+        intParam.deblockBordersFlag = (intParam.deblockingFlag && optHevc.DeblockBorders == ON);
+        intParam.saoOpt = optHevc.SaoOpt;
+        intParam.patternIntPel = optHevc.PatternIntPel;
+        intParam.patternSubPel = optHevc.PatternSubPel;
+        intParam.numBiRefineIter = optHevc.NumBiRefineIter;
+        intParam.puDecisionSatd = (optHevc.PuDecisionSatd == ON);
+        intParam.minCUDepthAdapt = (optHevc.MinCUDepthAdapt == ON);
+        intParam.maxCUDepthAdapt = (optHevc.MaxCUDepthAdapt == ON);
+        intParam.cuSplitThreshold = optHevc.CUSplitThreshold;
 
-        internal.MaxTrSize = 1 << internal.QuadtreeTULog2MaxSize;
-        internal.MaxCUSize = 1 << internal.Log2MaxCUSize;
+        intParam.MaxTrSize = 1 << intParam.QuadtreeTULog2MaxSize;
+        intParam.MaxCUSize = 1 << intParam.Log2MaxCUSize;
 
-        internal.enableCmFlag = (optHevc.EnableCm == ON);
-        internal.m_framesInParallel = optHevc.FramesInParallel;
-        internal.m_lagBehindRefRows = 3;
-        internal.m_meSearchRangeY = (internal.m_lagBehindRefRows - 1) * internal.MaxCUSize; // -1 row due to deblocking lag
+        intParam.enableCmFlag = (optHevc.EnableCm == ON);
+        intParam.m_framesInParallel = optHevc.FramesInParallel;
+        intParam.m_lagBehindRefRows = 3;
+        intParam.m_meSearchRangeY = (intParam.m_lagBehindRefRows - 1) * intParam.MaxCUSize; // -1 row due to deblocking lag
 
-        internal.AddCUDepth  = 0;
-        while ((internal.MaxCUSize >> internal.MaxCUDepth) > (1u << (internal.QuadtreeTULog2MinSize + internal.AddCUDepth)))
-            internal.AddCUDepth++;
+        intParam.AddCUDepth  = 0;
+        while ((intParam.MaxCUSize >> intParam.MaxCUDepth) > (1u << (intParam.QuadtreeTULog2MinSize + intParam.AddCUDepth)))
+            intParam.AddCUDepth++;
 
-        internal.MaxCUDepth += internal.AddCUDepth;
-        internal.AddCUDepth++;
+        intParam.MaxCUDepth += intParam.AddCUDepth;
+        intParam.AddCUDepth++;
 
-        internal.MinCUSize = internal.MaxCUSize >> (internal.MaxCUDepth - internal.AddCUDepth);
-        internal.MinTUSize = internal.MaxCUSize >> internal.MaxCUDepth;
+        intParam.MinCUSize = intParam.MaxCUSize >> (intParam.MaxCUDepth - intParam.AddCUDepth);
+        intParam.MinTUSize = intParam.MaxCUSize >> intParam.MaxCUDepth;
 
-        internal.CropLeft = fi.CropX;
-        internal.CropTop = fi.CropY;
-        internal.CropRight = hevcParam.PicWidthInLumaSamples - fi.CropW - fi.CropX;
-        internal.CropBottom = hevcParam.PicHeightInLumaSamples - fi.CropH - fi.CropY;
-        internal.Width = hevcParam.PicWidthInLumaSamples;
-        internal.Height = hevcParam.PicHeightInLumaSamples;
-        internal.Log2NumPartInCU = internal.MaxCUDepth << 1;
-        internal.NumPartInCU = 1 << internal.Log2NumPartInCU;
-        internal.NumPartInCUSize  = 1 << internal.MaxCUDepth;
-        internal.PicWidthInMinCbs = internal.Width / internal.MinCUSize;
-        internal.PicHeightInMinCbs = internal.Height / internal.MinCUSize;
-        internal.PicWidthInCtbs = (internal.Width + internal.MaxCUSize - 1) / internal.MaxCUSize;
-        internal.PicHeightInCtbs = (internal.Height + internal.MaxCUSize - 1) / internal.MaxCUSize;
+        intParam.CropLeft = fi.CropX;
+        intParam.CropTop = fi.CropY;
+        intParam.CropRight = hevcParam.PicWidthInLumaSamples - fi.CropW - fi.CropX;
+        intParam.CropBottom = hevcParam.PicHeightInLumaSamples - fi.CropH - fi.CropY;
+        intParam.Width = hevcParam.PicWidthInLumaSamples;
+        intParam.Height = hevcParam.PicHeightInLumaSamples;
+        intParam.Log2NumPartInCU = intParam.MaxCUDepth << 1;
+        intParam.NumPartInCU = 1 << intParam.Log2NumPartInCU;
+        intParam.NumPartInCUSize  = 1 << intParam.MaxCUDepth;
+        intParam.PicWidthInMinCbs = intParam.Width / intParam.MinCUSize;
+        intParam.PicHeightInMinCbs = intParam.Height / intParam.MinCUSize;
+        intParam.PicWidthInCtbs = (intParam.Width + intParam.MaxCUSize - 1) / intParam.MaxCUSize;
+        intParam.PicHeightInCtbs = (intParam.Height + intParam.MaxCUSize - 1) / intParam.MaxCUSize;
 
-        internal.NumSlices = mfx.NumSlice;
-        internal.NumTileCols = tiles.NumTileColumns;
-        internal.NumTileRows = tiles.NumTileRows;
-        internal.NumTiles = tiles.NumTileColumns * tiles.NumTileRows;
-        internal.RegionIdP1 = (region && region->RegionType == MFX_HEVC_REGION_SLICE && internal.NumSlices > 1) ? region->RegionId + 1 : 0;
-        internal.WPPFlag = (optHevc.WPP == ON);
+        intParam.NumSlices = mfx.NumSlice;
+        intParam.NumTileCols = tiles.NumTileColumns;
+        intParam.NumTileRows = tiles.NumTileRows;
+        intParam.NumTiles = tiles.NumTileColumns * tiles.NumTileRows;
+        intParam.RegionIdP1 = (region.RegionEncoding == MFX_HEVC_REGION_ENCODING_ON && region.RegionType == MFX_HEVC_REGION_SLICE && intParam.NumSlices > 1) ? region.RegionId + 1 : 0;
+        intParam.WPPFlag = (optHevc.WPP == ON);
 
-        internal.num_thread_structs = (internal.WPPFlag) ? internal.num_threads : MIN((Ipp32u)MAX(internal.NumSlices, internal.NumTiles) * 2 * internal.m_framesInParallel, internal.num_threads);
-        internal.num_bs_subsets = (internal.WPPFlag) ? internal.PicHeightInCtbs : MAX(internal.NumSlices, internal.NumTiles);
+        intParam.num_thread_structs = (intParam.WPPFlag) ? intParam.num_threads : MIN((Ipp32u)MAX(intParam.NumSlices, intParam.NumTiles) * 2 * intParam.m_framesInParallel, intParam.num_threads);
+        intParam.num_bs_subsets = (intParam.WPPFlag) ? intParam.PicHeightInCtbs : MAX(intParam.NumSlices, intParam.NumTiles);
 
-        for (Ipp32s i = 0; i < internal.MaxCUDepth; i++ )
-            internal.AMPAcc[i] = (i < internal.MaxCUDepth - internal.AddCUDepth) ? (internal.partModes == 3) : 0;
+        for (Ipp32s i = 0; i < intParam.MaxCUDepth; i++ )
+            intParam.AMPAcc[i] = (i < intParam.MaxCUDepth - intParam.AddCUDepth) ? (intParam.partModes == 3) : 0;
 
         // deltaQP control
-        internal.MaxCuDQPDepth = 0;
-        internal.m_maxDeltaQP = 0;
-        internal.UseDQP = 0;
+        intParam.MaxCuDQPDepth = 0;
+        intParam.m_maxDeltaQP = 0;
+        intParam.UseDQP = 0;
 
-        if (internal.DeltaQpMode) {
-            internal.MaxCuDQPDepth = 0;
-            internal.m_maxDeltaQP = 0;
-            internal.UseDQP = 1;
+        if (intParam.DeltaQpMode) {
+            intParam.MaxCuDQPDepth = 0;
+            intParam.m_maxDeltaQP = 0;
+            intParam.UseDQP = 1;
         }
-        if (internal.MaxCuDQPDepth > 0 || internal.m_maxDeltaQP > 0)
-            internal.UseDQP = 1;
+        if (intParam.MaxCuDQPDepth > 0 || intParam.m_maxDeltaQP > 0)
+            intParam.UseDQP = 1;
 
-        if (internal.UseDQP)
-            internal.MinCuDQPSize = internal.MaxCUSize >> internal.MaxCuDQPDepth;
+        if (intParam.UseDQP)
+            intParam.MinCuDQPSize = intParam.MaxCUSize >> intParam.MaxCuDQPDepth;
         else
-            internal.MinCuDQPSize = internal.MaxCUSize;
+            intParam.MinCuDQPSize = intParam.MaxCUSize;
 
-        internal.NumMinTUInMaxCU = internal.MaxCUSize >> internal.QuadtreeTULog2MinSize;
+        intParam.NumMinTUInMaxCU = intParam.MaxCUSize >> intParam.QuadtreeTULog2MinSize;
 
-        internal.FrameRateExtN = fi.FrameRateExtN;
-        internal.FrameRateExtD = fi.FrameRateExtD;
-        internal.vuiParametersPresentFlag = (opt2.DisableVUI == OFF);
-        internal.hrdPresentFlag = (opt2.DisableVUI == OFF && (mfx.RateControlMethod == CBR || mfx.RateControlMethod == VBR));
-        internal.cbrFlag = (mfx.RateControlMethod == CBR);
+        intParam.FrameRateExtN = fi.FrameRateExtN;
+        intParam.FrameRateExtD = fi.FrameRateExtD;
+        intParam.vuiParametersPresentFlag = (opt2.DisableVUI == OFF);
+        intParam.hrdPresentFlag = (opt2.DisableVUI == OFF && (mfx.RateControlMethod == CBR || mfx.RateControlMethod == VBR));
+        intParam.cbrFlag = (mfx.RateControlMethod == CBR);
         if (mfx.RateControlMethod != CQP) {
-            internal.targetBitrate = MIN(0xfffffed8, (Ipp64u)mfx.TargetKbps * mfx.BRCParamMultiplier * 1000);
-            if (internal.hrdPresentFlag) {
-                internal.cpbSize = MIN(0xffffE380, (Ipp64u)mfx.BufferSizeInKB * mfx.BRCParamMultiplier * 8000);
-                internal.initDelay = MIN(0xffffE380, (Ipp64u)mfx.InitialDelayInKB * mfx.BRCParamMultiplier * 8000);
-                internal.hrdBitrate = internal.cbrFlag ? internal.targetBitrate : MIN(0xfffffed8, (Ipp64u)mfx.MaxKbps * mfx.BRCParamMultiplier * 1000);
+            intParam.targetBitrate = MIN(0xfffffed8, (Ipp64u)mfx.TargetKbps * mfx.BRCParamMultiplier * 1000);
+            if (intParam.hrdPresentFlag) {
+                intParam.cpbSize = MIN(0xffffE380, (Ipp64u)mfx.BufferSizeInKB * mfx.BRCParamMultiplier * 8000);
+                intParam.initDelay = MIN(0xffffE380, (Ipp64u)mfx.InitialDelayInKB * mfx.BRCParamMultiplier * 8000);
+                intParam.hrdBitrate = intParam.cbrFlag ? intParam.targetBitrate : MIN(0xfffffed8, (Ipp64u)mfx.MaxKbps * mfx.BRCParamMultiplier * 1000);
             }
         }
 
-        internal.AspectRatioW  = fi.AspectRatioW;
-        internal.AspectRatioH  = fi.AspectRatioH;
+        intParam.AspectRatioW  = fi.AspectRatioW;
+        intParam.AspectRatioH  = fi.AspectRatioH;
 
-        internal.Profile = mfx.CodecProfile;
-        internal.Tier = (mfx.CodecLevel & MFX_TIER_HEVC_HIGH) ? 1 : 0;
-        internal.Level = (mfx.CodecLevel &~ MFX_TIER_HEVC_HIGH) * 1; // mult 3 it SetProfileLevel
-        internal.generalConstraintFlags = hevcParam.GeneralConstraintFlags;
-        internal.transquantBypassEnableFlag = 0;
-        internal.transformSkipEnabledFlag = 0;
-        internal.log2ParallelMergeLevel = 2;
-        internal.weightedPredFlag = 0;
-        internal.weightedBipredFlag = 0;
-        internal.constrainedIntrapredFlag = 0;
-        internal.strongIntraSmoothingEnabledFlag = 1;
+        intParam.Profile = mfx.CodecProfile;
+        intParam.Tier = (mfx.CodecLevel & MFX_TIER_HEVC_HIGH) ? 1 : 0;
+        intParam.Level = (mfx.CodecLevel &~ MFX_TIER_HEVC_HIGH) * 1; // mult 3 it SetProfileLevel
+        intParam.generalConstraintFlags = hevcParam.GeneralConstraintFlags;
+        intParam.transquantBypassEnableFlag = 0;
+        intParam.transformSkipEnabledFlag = 0;
+        intParam.log2ParallelMergeLevel = 2;
+        intParam.weightedPredFlag = 0;
+        intParam.weightedBipredFlag = 0;
+        intParam.constrainedIntrapredFlag = 0;
+        intParam.strongIntraSmoothingEnabledFlag = 1;
 
-        internal.tcDuration90KHz = (mfxF64)fi.FrameRateExtD / fi.FrameRateExtN * 90000; // calculate tick duration    
-        internal.tileColWidthMax = internal.tileRowHeightMax = 0;
+        intParam.tcDuration90KHz = (mfxF64)fi.FrameRateExtD / fi.FrameRateExtN * 90000; // calculate tick duration    
+        intParam.tileColWidthMax = intParam.tileRowHeightMax = 0;
 
         Ipp16u tileColStart = 0;
         Ipp16u tileRowStart = 0;
-        for (Ipp32s i = 0; i < internal.NumTileCols; i++) {
-            internal.tileColWidth[i] = ((i + 1) * internal.PicWidthInCtbs) / internal.NumTileCols -
-                (i * internal.PicWidthInCtbs / internal.NumTileCols);
-            if (internal.tileColWidthMax < internal.tileColWidth[i])
-                internal.tileColWidthMax = internal.tileColWidth[i];
-            internal.tileColStart[i] = tileColStart;
-            tileColStart += internal.tileColWidth[i];
+        for (Ipp32s i = 0; i < intParam.NumTileCols; i++) {
+            intParam.tileColWidth[i] = ((i + 1) * intParam.PicWidthInCtbs) / intParam.NumTileCols -
+                (i * intParam.PicWidthInCtbs / intParam.NumTileCols);
+            if (intParam.tileColWidthMax < intParam.tileColWidth[i])
+                intParam.tileColWidthMax = intParam.tileColWidth[i];
+            intParam.tileColStart[i] = tileColStart;
+            tileColStart += intParam.tileColWidth[i];
         }
-        for (Ipp32s i = 0; i < internal.NumTileRows; i++) {
-            internal.tileRowHeight[i] = ((i + 1) * internal.PicHeightInCtbs) / internal.NumTileRows -
-                (i * internal.PicHeightInCtbs / internal.NumTileRows);
-            if (internal.tileRowHeightMax < internal.tileRowHeight[i])
-                internal.tileRowHeightMax = internal.tileRowHeight[i];
-            internal.tileRowStart[i] = tileRowStart;
-            tileRowStart += internal.tileRowHeight[i];
+        for (Ipp32s i = 0; i < intParam.NumTileRows; i++) {
+            intParam.tileRowHeight[i] = ((i + 1) * intParam.PicHeightInCtbs) / intParam.NumTileRows -
+                (i * intParam.PicHeightInCtbs / intParam.NumTileRows);
+            if (intParam.tileRowHeightMax < intParam.tileRowHeight[i])
+                intParam.tileRowHeightMax = intParam.tileRowHeight[i];
+            intParam.tileRowStart[i] = tileRowStart;
+            tileRowStart += intParam.tileRowHeight[i];
         }
 
-        internal.doDumpRecon = (dumpFiles.ReconFilename[0] != 0);
-        if (internal.doDumpRecon)
-            Copy(internal.reconDumpFileName, dumpFiles.ReconFilename);
-        internal.inputVideoMem = (mfxParam.IOPattern == VIDMEM) || (mfxParam.IOPattern == OPAQMEM && opaq.In.Type != MFX_MEMTYPE_SYSTEM_MEMORY);
+        intParam.doDumpRecon = (dumpFiles.ReconFilename[0] != 0);
+        if (intParam.doDumpRecon)
+            Copy(intParam.reconDumpFileName, dumpFiles.ReconFilename);
+        intParam.inputVideoMem = (mfxParam.IOPattern == VIDMEM) || (mfxParam.IOPattern == OPAQMEM && opaq.In.Type != MFX_MEMTYPE_SYSTEM_MEMORY);
     }
 
     struct Deleter { template <typename T> void operator ()(T* p) const { delete p; } };
@@ -663,9 +663,9 @@ mfxStatus H265Encoder::Init_Internal()
 
     // init lookup table for 2*log2(x)+2
     m_videoParam.m_logMvCostTable[(1 << 15)] = 1;
-    Ipp32f log2reciproc = 2 / log(2.0f);
+    Ipp64f log2reciproc = 2 / log(2.0);
     for (Ipp32s i = 1; i < (1 << 15); i++) {
-        m_videoParam.m_logMvCostTable[(1 << 15) + i] = m_videoParam.m_logMvCostTable[(1 << 15) - i] = (Ipp8u)(log(i + 1.0f) * log2reciproc + 2);
+        m_videoParam.m_logMvCostTable[(1 << 15) + i] = m_videoParam.m_logMvCostTable[(1 << 15) - i] = (Ipp8u)(log(i + 1.0) * log2reciproc + 2);
     }
 
     m_profileIndex = 0;

@@ -851,6 +851,37 @@ int H265_FASTCALL MAKE_NAME(h265_SAD_MxN_16s)(const Ipp16s* src, Ipp32s src_stri
     return sad;
 }
 
+template<class T>
+Ipp32s H265_FASTCALL MAKE_NAME(h265_SSE)(const T *src1, Ipp32s pitchSrc1, const T *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height)
+{
+    Ipp32s s = 0;
+    for (Ipp32s j = 0; j < height; j++, src1 += pitchSrc1, src2 += pitchSrc2)
+        for (Ipp32s i = 0; i < width; i++)
+            s += ((Ipp32s)src1[i] - src2[i]) * ((Ipp32s)src1[i] - src2[i]);
+    return s;
+}
+template Ipp32s H265_FASTCALL MAKE_NAME(h265_SSE)<Ipp8u> (const Ipp8u  *src1, Ipp32s pitchSrc1, const Ipp8u  *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height);
+template Ipp32s H265_FASTCALL MAKE_NAME(h265_SSE)<Ipp16u>(const Ipp16u *src1, Ipp32s pitchSrc1, const Ipp16u *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height);
+
+
+template <class T>
+void H265_FASTCALL MAKE_NAME(h265_DiffNv12)(const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height)
+{
+    for (Ipp32s j = 0; j < height; j++) {
+        for (Ipp32s i = 0; i < width; i++) {
+            diff1[i] = (Ipp16s)src[i*2+0] - pred[i*2+0];
+            diff2[i] = (Ipp16s)src[i*2+1] - pred[i*2+1];
+        }
+        diff1 += pitchDiff1;
+        diff2 += pitchDiff2;
+        src += pitchSrc;
+        pred += pitchPred;
+    }
+
+}
+template void H265_FASTCALL MAKE_NAME(h265_DiffNv12)<Ipp8u> (const Ipp8u  *src, Ipp32s pitchSrc, const Ipp8u  *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
+template void H265_FASTCALL MAKE_NAME(h265_DiffNv12)<Ipp16u>(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
+
 } // end namespace MFX_HEVC_PP
 
 #endif // #if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)

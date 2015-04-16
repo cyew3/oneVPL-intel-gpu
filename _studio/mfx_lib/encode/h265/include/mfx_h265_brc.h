@@ -89,8 +89,6 @@ typedef struct _mfxBRC_FrameData
 
 typedef struct _mfxBRC_Params
 {
-    // ???
-    // either need this to with GetParams(mfxBRC_Params*) or use GetParams(mfxVideoParam*) to report BRC params to the encoder
     Ipp32s  BRCMode;
     Ipp32s  targetBitrate;
 
@@ -342,9 +340,6 @@ protected:
     Ipp64f mEstCnt[8];
     Ipp64f mLayerTarget[8];
 
-    //Ipp64f mPrevCmplx;
-    //Ipp32s mPrevBits;
-    //Ipp32s mPrevLayer;
     Ipp64f mPrevQstep;
 
     std::vector<mfxBRC_FrameData> mMiniGopFrames;
@@ -354,12 +349,6 @@ protected:
     Ipp32s mPrevBitsLayer[8];
     Ipp64f mPrevQstepLayer[8];
     Ipp32s mPrevQpLayer[8];
-
-//    Ipp64f mAvCmplxLayer[8];
-//    Ipp32s mAvBitsLayer[8];
-//    Ipp64f mAvQstepLayer[8];
-
-//    Ipp64f mEncBits[8];
 
     Ipp64f mTotAvComplx;
     Ipp64f mTotComplxCnt;
@@ -378,9 +367,9 @@ protected:
     Ipp32s mLoanBitsPerFrame;
 
     Ipp64f mQstepBase;
-    Ipp32s mQpBase;
 
     Ipp32s mPredBufFulness;
+    Ipp32s mFakeFullness;
 
     Ipp32s mNumLayers;
 

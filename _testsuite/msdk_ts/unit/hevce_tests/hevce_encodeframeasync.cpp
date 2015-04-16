@@ -284,6 +284,7 @@ TEST_F(RuntimeTest, EncodeStat) {
 
         if (sts == MFX_ERR_MORE_DATA_RUN_TASK) {
             EXPECT_CALL(core, DecreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
+            EXPECT_CALL(core, INeedMoreThreadsInside(_)).WillOnce(Return());
             ASSERT_EQ(MFX_ERR_NONE, entryPoint.pRoutine(entryPoint.pState, entryPoint.pParam, 0, 0));
             ASSERT_EQ(MFX_ERR_NONE, entryPoint.pCompleteProc(entryPoint.pState, entryPoint.pParam, MFX_ERR_NONE));
 

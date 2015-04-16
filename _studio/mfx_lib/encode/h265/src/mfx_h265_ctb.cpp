@@ -92,10 +92,6 @@ static void TuDiff(CoeffsType *residual, Ipp32s pitchDst, const PixType *src, Ip
                    const PixType *pred, Ipp32s pitchPred, Ipp32s size);
 
 template <typename PixType>
-static void TuDiffNv12(CoeffsType *residual, Ipp32s pitchDst,  const PixType *src, Ipp32s pitchSrc,
-                       const PixType *pred, Ipp32s pitchPred, Ipp32s width, Ipp32s height);
-
-template <typename PixType>
 Ipp32s tuHad_Kernel(const PixType *src, Ipp32s pitchSrc, const PixType *rec, Ipp32s pitchRec,
              Ipp32s width, Ipp32s height);
 
@@ -2325,8 +2321,9 @@ bool H265CU<PixType>::tryIntraICRA(Ipp32s absPartIdx, Ipp32s depth)
                 const PixType *predC = m_interPredC + GetChromaOffset(m_par, absPartIdx, MAX_CU_SIZE << m_par->chromaShiftWInv);
                 CoeffsType *residU = m_interResidU + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
                 CoeffsType *residV = m_interResidV + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
-                TuDiffNv12(residU, MAX_CU_SIZE >> m_par->chromaShiftW, srcC,     m_pitchSrcLuma, predC,     MAX_CU_SIZE << m_par->chromaShiftWInv, widthCu >> m_par->chromaShiftW, widthCu >> m_par->chromaShiftH);
-                TuDiffNv12(residV, MAX_CU_SIZE >> m_par->chromaShiftW, srcC + 1, m_pitchSrcLuma, predC + 1, MAX_CU_SIZE << m_par->chromaShiftWInv, widthCu >> m_par->chromaShiftW, widthCu >> m_par->chromaShiftH);
+                h265_DiffNv12(srcC, m_pitchSrcChroma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv,
+                              residU, MAX_CU_SIZE >> m_par->chromaShiftW, residV, MAX_CU_SIZE >> m_par->chromaShiftW,
+                              widthCu >> m_par->chromaShiftW, widthCu >> m_par->chromaShiftH);
             }
         }
         tryIntra = TuMaxSplitInterHasNonZeroCoeff(absPartIdx, tr_depth_max);
@@ -4675,11 +4672,6 @@ Ipp32s H265CU<PixType>::MatchingMetricBipredPu(const PixType *src, const H265MEI
         : h265_SAD_MxN_special(src, predBuf, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> (m_par->bitDepthLumaShift);
 }
 
-static Ipp32s TuSse(const Ipp8u *src, Ipp32s pitchSrc,
-                    const Ipp8u *rec, Ipp32s pitchRec, Ipp32s width, Ipp32s height, Ipp32s shift);
-static Ipp32s TuSse(const Ipp16u *src, Ipp32s pitchSrc,
-                    const Ipp16u *rec, Ipp32s pitchRec, Ipp32s width, Ipp32s height, Ipp32s shift);
-
 
 static bool IsCandFound(const Ipp8s *curRefIdx, const H265MV *curMV, const MvPredInfo<5> *mergeInfo,
                         Ipp32s candIdx, Ipp32s numRefLists);
@@ -4869,8 +4861,9 @@ void H265CU<PixType>::MeCu(Ipp32s absPartIdx, Ipp8u depth)
                 const PixType *predC = m_interPredBestC + GetChromaOffset(m_par, absPartIdx, MAX_CU_SIZE << m_par->chromaShiftWInv);
                 CoeffsType *residU = m_interResidU + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
                 CoeffsType *residV = m_interResidV + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
-                TuDiffNv12(residU, MAX_CU_SIZE >> m_par->chromaShiftW, srcC,     m_pitchSrcLuma, predC,     MAX_CU_SIZE << m_par->chromaShiftWInv, cuWidth >> m_par->chromaShiftW, cuWidth >> m_par->chromaShiftH);
-                TuDiffNv12(residV, MAX_CU_SIZE >> m_par->chromaShiftW, srcC + 1, m_pitchSrcLuma, predC + 1, MAX_CU_SIZE << m_par->chromaShiftWInv, cuWidth >> m_par->chromaShiftW, cuWidth >> m_par->chromaShiftH);
+                h265_DiffNv12(srcC, m_pitchSrcLuma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv,
+                              residU, MAX_CU_SIZE >> m_par->chromaShiftW, residV, MAX_CU_SIZE >> m_par->chromaShiftW,
+                              cuWidth >> m_par->chromaShiftW, cuWidth >> m_par->chromaShiftH);
             }
 
             GetTrDepthMinMax(m_par, depth, PART_SIZE_2Nx2N, &tr_depth_min, &tr_depth_max);
@@ -5275,8 +5268,9 @@ void H265CU<PixType>::CuCost(Ipp32s absPartIdx, Ipp8u depth, const H265MEInfo *b
         const PixType *predC = m_interPredC + GetChromaOffset(m_par, absPartIdx, MAX_CU_SIZE << m_par->chromaShiftWInv);
         CoeffsType *residU = m_interResidU + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
         CoeffsType *residV = m_interResidV + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
-        TuDiffNv12(residU, MAX_CU_SIZE >> m_par->chromaShiftW, srcC + 0, m_pitchSrcChroma, predC + 0, MAX_CU_SIZE << m_par->chromaShiftWInv, width >> m_par->chromaShiftW, width >> m_par->chromaShiftH);
-        TuDiffNv12(residV, MAX_CU_SIZE >> m_par->chromaShiftW, srcC + 1, m_pitchSrcChroma, predC + 1, MAX_CU_SIZE << m_par->chromaShiftWInv, width >> m_par->chromaShiftW, width >> m_par->chromaShiftH);
+        h265_DiffNv12(srcC, m_pitchSrcChroma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv,
+                      residU, MAX_CU_SIZE >> m_par->chromaShiftW, residV, MAX_CU_SIZE >> m_par->chromaShiftW,
+                      width >> m_par->chromaShiftW, width >> m_par->chromaShiftH);
     }
 
     Ipp8u trDepthMin, trDepthMax;
@@ -7039,15 +7033,14 @@ void H265CU<PixType>::CheckSkipCandFullRD(const H265MEInfo *meInfo, const MvPred
         if(cand) m_bsf->CtxRestore(ctxInitial);
         CostType skipBitCost = GetCuModesCost(m_data, absPartIdx, depth);
         cost += skipBitCost;
-
         // luma distortion of SKIP
-        cost += TuSse(srcY, m_pitchSrcLuma, predY, MAX_CU_SIZE, cuWidth, cuWidth, lumaCostShift);
+        cost += h265_Sse(srcY, m_pitchSrcLuma, predY, MAX_CU_SIZE, cuWidth, cuWidth) >> lumaCostShift;
 
         if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
             InterPredCu<TEXT_CHROMA>(absPartIdx, depth, m_interPredC, MAX_CU_SIZE << m_par->chromaShiftWInv);
             // chroma distortion of SKIP
-            CostType costChroma =
-                TuSse(srcC, m_pitchSrcChroma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv, cuWidth << m_par->chromaShiftWInv, cuWidth >> m_par->chromaShiftH, chromaCostShift);
+            CostType costChroma = h265_Sse(srcC, m_pitchSrcChroma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv,
+                                           cuWidth << m_par->chromaShiftWInv, cuWidth >> m_par->chromaShiftH) >> chromaCostShift;
             //kolya //WEIGHTED_CHROMA_DISTORTION (JCTVC-F386)
             if (m_par->IntraChromaRDO)
                 costChroma *= m_ChromaDistWeight;
@@ -7186,10 +7179,9 @@ void H265CU<PixType>::CheckMerge2Nx2N(Ipp32s absPartIdx, Ipp8u depth)
         if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
             CoeffsType *residU = m_interResidU + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
             CoeffsType *residV = m_interResidV + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
-            TuDiffNv12(residU, MAX_CU_SIZE >> m_par->chromaShiftW, srcC,     m_pitchSrcLuma, predC,     
-                MAX_CU_SIZE << m_par->chromaShiftWInv, cuWidth >> m_par->chromaShiftW, cuWidth >> m_par->chromaShiftH);
-            TuDiffNv12(residV, MAX_CU_SIZE >> m_par->chromaShiftW, srcC + 1, m_pitchSrcLuma, predC + 1, 
-                MAX_CU_SIZE << m_par->chromaShiftWInv, cuWidth >> m_par->chromaShiftW, cuWidth >> m_par->chromaShiftH);
+            h265_DiffNv12(srcC, m_pitchSrcLuma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv,
+                          residU, MAX_CU_SIZE >> m_par->chromaShiftW, residV, MAX_CU_SIZE >> m_par->chromaShiftW,
+                          cuWidth >> m_par->chromaShiftW, cuWidth >> m_par->chromaShiftH);
         }
 #ifdef AMT_ALT_FAST_SKIP
         if(!TuMaxSplitInterHasNonZeroCoeff(absPartIdx, trDepthMax)) 
@@ -7241,14 +7233,14 @@ void H265CU<PixType>::CheckMerge2Nx2N(Ipp32s absPartIdx, Ipp8u depth)
     }
 
     // luma distortion of SKIP
-    m_costCurr += TuSse(srcY, m_pitchSrcLuma, predY, MAX_CU_SIZE, cuWidth, cuWidth, lumaCostShift);
+    m_costCurr += h265_Sse(srcY, m_pitchSrcLuma, predY, MAX_CU_SIZE, cuWidth, cuWidth) >> lumaCostShift;
 
     CostType costChroma = 0;
 #ifdef AMT_FIX_CHROMA_SKIP
     if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
         // chroma distortion of SKIP
-        costChroma =
-            TuSse(srcC, m_pitchSrcChroma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv, cuWidth << m_par->chromaShiftWInv, cuWidth >> m_par->chromaShiftH, chromaCostShift);
+        costChroma = h265_Sse(srcC, m_pitchSrcChroma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv,
+                              cuWidth << m_par->chromaShiftWInv, cuWidth >> m_par->chromaShiftH) >> chromaCostShift;
         //kolya //WEIGHTED_CHROMA_DISTORTION (JCTVC-F386)
         if (m_par->IntraChromaRDO)
             costChroma *= m_ChromaDistWeight;
@@ -8296,8 +8288,9 @@ void H265CU<PixType>::EncAndRecChroma(Ipp32s absPartIdx, Ipp32s offset, Ipp8u de
         const PixType *predC = m_interPredC + GetChromaOffset(m_par, absPartIdx, MAX_CU_SIZE << m_par->chromaShiftWInv);
         CoeffsType *residU = m_interResidU + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
         CoeffsType *residV = m_interResidV + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
-        TuDiffNv12(residU, MAX_CU_SIZE >> m_par->chromaShiftW, srcC + 0, m_pitchSrcChroma, predC + 0, MAX_CU_SIZE << m_par->chromaShiftWInv, width, width * 2 >> m_par->chromaShiftH);
-        TuDiffNv12(residV, MAX_CU_SIZE >> m_par->chromaShiftW, srcC + 1, m_pitchSrcChroma, predC + 1, MAX_CU_SIZE << m_par->chromaShiftWInv, width, width * 2 >> m_par->chromaShiftH);
+        h265_DiffNv12(srcC, m_pitchSrcChroma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv,
+                      residU, MAX_CU_SIZE >> m_par->chromaShiftW, residV, MAX_CU_SIZE >> m_par->chromaShiftW,
+                      width, width * 2 >> m_par->chromaShiftH);
 #ifdef AMT_FIX_CHROMA_SKIP
         if(data->flags.skippedFlag && !(m_par->AnalyseFlags & HEVC_COST_CHROMA)) {
             CostType skipCost=0, mergeCost=0, lumaMergeCost=0;
@@ -8319,9 +8312,8 @@ void H265CU<PixType>::EncAndRecChroma(Ipp32s absPartIdx, Ipp32s offset, Ipp8u de
             bits>>= (8 - BIT_COST_SHIFT);
             lumaMergeCost += (bits*m_rdLambda);
 
-            skipCost = TuSse(srcC, m_pitchSrcChroma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv, 
-                            cuWidth << m_par->chromaShiftWInv, cuWidth >> m_par->chromaShiftH, 
-                            (m_par->bitDepthChromaShift << 1));
+            skipCost = h265_Sse(srcC, m_pitchSrcChroma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv, 
+                                cuWidth << m_par->chromaShiftWInv, cuWidth >> m_par->chromaShiftH) >> (m_par->bitDepthChromaShift << 1);
             //kolya //WEIGHTED_CHROMA_DISTORTION (JCTVC-F386)
             if (m_par->IntraChromaRDO)
                 skipCost *= m_ChromaDistWeight;
@@ -8608,52 +8600,6 @@ static void TuDiff(CoeffsType *residual, Ipp32s pitchDst,
     }
 }
 #endif
-static Ipp32s TuSse(const Ipp8u *src, Ipp32s pitchSrc,
-                    const Ipp8u *rec, Ipp32s pitchRec,
-                    Ipp32s width, Ipp32s height, Ipp32s shift)
-{
-    Ipp32s s = 0;
-#ifdef AMT_USE_IPP
-    if(!((height|width)&0xf)) {
-        for(Ipp32s i=0; i<height; i+=16) {
-            for(Ipp32s j=0; j<width; j+=16) {
-                Ipp32s sd;
-                ippiSqrDiff16x16_8u32s(src+i*pitchSrc+j, pitchSrc, rec+i*pitchRec+j, pitchRec, IPPVC_MC_APX_FF, &sd);
-                s+= sd;
-            }
-        }
-    } else if(height==width && width==8) {
-        ippiSSD8x8_8u32s_C1R(src, pitchSrc, rec, pitchRec, &s, 0);
-    } else if(height==width && width==4) {
-        ippiSSD4x4_8u32s_C1R(src, pitchSrc, rec, pitchRec, &s, 0 );
-    } else 
-#endif
-    {
-    for (Ipp32s j = 0; j < height; j++) {
-        for (Ipp32s i = 0; i < width; i++) {
-            s += ((CoeffsType)src[i] - rec[i]) * (Ipp32s)((CoeffsType)src[i] - rec[i]);
-        }
-        src += pitchSrc;
-        rec += pitchRec;
-    }
-    }
-    return s;
-}
-
-static Ipp32s TuSse(const Ipp16u *src, Ipp32s pitchSrc,
-                    const Ipp16u *rec, Ipp32s pitchRec,
-                    Ipp32s width, Ipp32s height, Ipp32s shift)
-{
-    Ipp32s s = 0;
-    for (Ipp32s j = 0; j < height; j++) {
-        for (Ipp32s i = 0; i < width; i++) {
-            s += (((CoeffsType)src[i] - rec[i]) * (Ipp32s)((CoeffsType)src[i] - rec[i])) >> shift;
-        }
-        src += pitchSrc;
-        rec += pitchRec;
-    }
-    return s;
-}
 
 template <typename PixType>
 Ipp32s tuHad_Kernel(const PixType *src, Ipp32s pitchSrc, const PixType *rec, Ipp32s pitchRec,
@@ -8729,68 +8675,6 @@ Ipp32s tuHad(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *rec, Ipp32s pitch
     return tuHad_Kernel<Ipp16u>(src, pitchSrc, rec, pitchRec, width, height);
 }
 
-template <typename PixType>
-static void TuDiffNv12(CoeffsType *residual, Ipp32s pitchDst,  const PixType *src, Ipp32s pitchSrc,
-                       const PixType *pred, Ipp32s pitchPred, Ipp32s width, Ipp32s height)
-{
-    for (Ipp32s j = 0; j < height; j++) {
-        for (Ipp32s i = 0; i < width; i++) {
-            residual[i] = (CoeffsType)src[i*2] - pred[i*2];
-        }
-        residual += pitchDst;
-        src += pitchSrc;
-        pred += pitchPred;
-    }
-}
-
-template <typename PixType>
-static Ipp32s tuSadNv12(const PixType *src, Ipp32s pitchSrc,
-                        const PixType *rec, Ipp32s pitchRec, Ipp32s size)
-{
-    Ipp32s s = 0;
-
-    for (Ipp32s j = 0; j < size; j++) {
-        for (Ipp32s i = 0; i < size; i++) {
-            s += abs((CoeffsType)src[i*2] - rec[i*2]);
-        }
-        src += pitchSrc;
-        rec += pitchRec;
-    }
-    return s;
-}
-// for uv can use ordinary sse twice instead
-
-static Ipp32s TuSseNv12(const Ipp8u *src, Ipp32s pitchSrc,
-                        const Ipp8u *rec, Ipp32s pitchRec, Ipp32s size, Ipp32s shift)
-{
-    Ipp32s i, j;
-    Ipp32s s = 0;
-
-    for (j = 0; j < size; j++) {
-        for (i = 0; i < size; i++) {
-            s += ((CoeffsType)src[i*2] - rec[i*2]) * ((CoeffsType)src[i*2] - rec[i*2]);
-        }
-        src += pitchSrc;
-        rec += pitchRec;
-    }
-    return s;
-}
-
-static Ipp32s TuSseNv12(const Ipp16u *src, Ipp32s pitchSrc,
-                        const Ipp16u *rec, Ipp32s pitchRec, Ipp32s size, Ipp32s shift)
-{
-    Ipp32s i, j;
-    Ipp32s s = 0;
-
-    for (j = 0; j < size; j++) {
-        for (i = 0; i < size; i++) {
-            s += (((CoeffsType)src[i*2] - rec[i*2]) * ((CoeffsType)src[i*2] - rec[i*2])) >> shift;
-        }
-        src += pitchSrc;
-        rec += pitchRec;
-    }
-    return s;
-}
 
 template <typename PixType>
 void H265CU<PixType>::EncAndRecLumaTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s width, CostType *cost,
@@ -8907,10 +8791,8 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s w
         memset(m_coeffWorkY + offset, 0, sizeof(CoeffsType) * width * width);
     }
 
-    if (cost) {
-        CostType cost_rec = TuSse(src, m_pitchSrcLuma, rec, pitch_rec, width, width, (m_par->bitDepthLumaShift << 1));
-        *cost = cost_rec;
-    }
+    if (cost)
+        *cost = h265_Sse(src, m_pitchSrcLuma, rec, pitch_rec, width, width) >> (m_par->bitDepthLumaShift << 1);
 
     if (dataTu->flags.skippedFlag)
         return;
@@ -8942,6 +8824,7 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s w
         if(cost) *cost += BIT_COST(m_bsf->GetNumBits());
     }
 }
+
 
 template <typename PixType>
 void H265CU<PixType>::EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s offset, Ipp32s width, CostType *cost, IntraPredOpt pred_opt, Ipp8u costPredFlag)
@@ -8991,16 +8874,14 @@ void H265CU<PixType>::EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s
     }
 
     if (cost && costPredFlag) {
-        *cost += TuSseNv12(pSrc + 0, m_pitchSrcChroma, pRec + 0, pitchRec, width, (m_par->bitDepthChromaShift << 1));
-        *cost += TuSseNv12(pSrc + 1, m_pitchSrcChroma, pRec + 1, pitchRec, width, (m_par->bitDepthChromaShift << 1));
+        *cost += h265_Sse(pSrc, m_pitchSrcChroma, pRec, pitchRec, width << 1, width) >> (m_par->bitDepthChromaShift << 1);
         return;
     }
 
     Ipp8u cbf[2] = {0, 0};
     if (!data->flags.skippedFlag) {
         if (data->predMode == MODE_INTRA) {
-            TuDiffNv12(m_residualsU + offset, width, pSrc, m_pitchSrcChroma, pRec, pitchRec, width, width);
-            TuDiffNv12(m_residualsV + offset, width, pSrc+1, m_pitchSrcChroma, pRec+1, pitchRec, width, width);
+            h265_DiffNv12(pSrc, m_pitchSrcChroma, pRec, pitchRec, m_residualsU + offset, width, m_residualsV + offset, width, width, width);
         } else {
             IppiSize roiSize = { width, width };
             Ipp32s offsetCh = GetChromaOffset1(m_par, absPartIdx + idx422, MAX_CU_SIZE >> m_par->chromaShiftW);
@@ -9039,8 +8920,7 @@ void H265CU<PixType>::EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s
 
 #ifdef AMT_ADAPTIVE_INTRA_DEPTH
     if (m_rdOptFlag && cost) {
-        *cost += TuSseNv12(pSrc + 0, m_pitchSrcChroma, pRec + 0, pitchRec, width, (m_par->bitDepthChromaShift << 1));
-        *cost += TuSseNv12(pSrc + 1, m_pitchSrcChroma, pRec + 1, pitchRec, width, (m_par->bitDepthChromaShift << 1));
+        *cost += h265_Sse(pSrc, m_pitchSrcChroma, pRec, pitchRec, width << 1, width) >> (m_par->bitDepthChromaShift << 1);
         //kolya //WEIGHTED_CHROMA_DISTORTION (JCTVC-F386)
         if (m_par->IntraChromaRDO)
             (*cost) *= m_ChromaDistWeight;
