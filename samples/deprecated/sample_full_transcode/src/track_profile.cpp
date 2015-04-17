@@ -37,7 +37,7 @@ mfxU32 TrackProfileBase::GuessCodecFromExtension( const msdk_string &extension )
     if (m_extensions.find(extension) == m_extensions.end()) {
         OnUnsupportedExtension(extension);
     }
-    return m_extensions[extension];
+    return ConvertStrToMFXCodecId(extension);
 }
 
 msdk_string TrackProfileBase::GetOutputExtension() {
@@ -72,12 +72,14 @@ TrackProfile<mfxVideoParam>::TrackProfile (const MFXStreamParams &splInfo, CmdLi
 void TrackProfile<mfxVideoParam>::OnUnsupportedCodec( const msdk_string & str)
 {
     MSDK_TRACE_ERROR(MSDK_STRING("Unsupported video codec_id: ") << str);
+    msdk_cout<<MSDK_STRING("ERROR: Video codec is unsupported (it is configured incorrectly or cannot be autodetected).\n       Please define it correctly using -vcodec option\n");
     throw UnsupportedVideoCodecError();
 }
 
 void TrackProfile<mfxVideoParam>::OnUnsupportedExtension( const msdk_string &extension )
 {
-    MSDK_TRACE_ERROR(MSDK_STRING("Canot gues video codec from extension: ") << extension);
+    MSDK_TRACE_ERROR(MSDK_STRING("Canot guess video codec from extension: ") << extension);
+    msdk_cout<<MSDK_STRING("ERROR: Video codec cannot be autodetected.\n       Please define it correctly using -vcodec option\n");
     throw UnsupportedVideoCodecFromExtension();
 }
 
@@ -101,15 +103,30 @@ void TrackProfile<mfxVideoParam>::ParseEncodeParams()
         }
         vInfoMFX.TargetKbps = (mfxU16) (bitrate / vInfoMFX.BRCParamMultiplier);
     }
+    else
+    {
+        msdk_cout<<MSDK_STRING("Output video bitrate is not found, default value of 2000Kbps will be used\n");
+        vInfoMFX.BRCParamMultiplier = 1;
+        vInfoMFX.TargetKbps = (mfxU16)2000;
+    }
+
+
     m_trackInfo.Encode.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
-    if (m_parser->IsPresent(OPTION_HW)) {
+    if (m_parser->IsPresent(OPTION_HW) || !m_parser->IsPresent(OPTION_SW)) {
         m_trackInfo.Encode.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
     }
     if (m_parser->IsPresent(OPTION_ADEPTH)) {
         m_trackInfo.Encode.AsyncDepth = (*m_parser)[OPTION_ADEPTH].as<mfxU16>();
     }
 
-    parse_codec_option(vInfoMFX, vInfo.VideoParam, OPTION_VCODEC);
+    try
+    {
+        parse_codec_option(vInfoMFX, vInfo.VideoParam, OPTION_VCODEC);
+    }
+    catch(KnownException e)
+    {
+
+    }
 }
 
 void TrackProfile<mfxVideoParam>::ParseDecodeParams()
@@ -175,6 +192,7 @@ void TrackProfile <mfxAudioParam>::ParseEncodeParams( )
         }
         aInfoMFX.Bitrate *= 1000;
     }
+
     parse_codec_option(aInfoMFX, aInfo.AudioParam, OPTION_ACODEC);
 
     if (m_parser->IsPresent(OPTION_ACODEC_COPY)) {
@@ -197,12 +215,14 @@ void TrackProfile <mfxAudioParam>::OnNoExtension()
 void TrackProfile <mfxAudioParam>::OnUnsupportedExtension( const msdk_string &extension )
 {
     MSDK_TRACE_ERROR(MSDK_STRING("Canot guess audio codec from extension: ") << extension);
+    msdk_cout<<MSDK_STRING("ERROR: Audio codec is unsupported (it is configured incorrectly or cannot be autodetected).\n       Please define it correctly using -acodec option\n");    
     throw UnsupportedAudioCodecFromExtension();
 }
 
 void TrackProfile <mfxAudioParam>::OnUnsupportedCodec( const msdk_string & str )
 {
     MSDK_TRACE_ERROR(MSDK_STRING("Unsupported audio codec_id: ") << str);
+    msdk_cout<<MSDK_STRING("ERROR: Audio codec cannot be autodetected.\n       Please define it correctly using -acodec option\n");
     throw UnsupportedAudioCodecError();
 }
 
