@@ -106,5 +106,12 @@ typedef struct
 
 } sDIParam;
 
+typedef struct
+{
+    mfxU32       algorithm;
+    FilterConfig mode;
+
+} sFrameRateConversionParam;
+
 #endif /* __SAMPLE_VPP_CONFIG_H */
 /* EOF */

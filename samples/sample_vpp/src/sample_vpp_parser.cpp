@@ -78,6 +78,7 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-istab (mode)]              - enable Image Stabilization algorithm.  Mode is optional \n"));
     msdk_printf(MSDK_STRING("                                  mode of istab can be [1, 2] (def: 2)\n"));
     msdk_printf(MSDK_STRING("                                  where: 1 means upscale mode, 2 means cropping mode\n\n"));
+    msdk_printf(MSDK_STRING("   [-frc:interp]                - enable FRC based on frame interpolation algorithm\n\n"));
 
     msdk_printf(MSDK_STRING("   [-n frames]                  - number of frames to VPP process\n\n"));
 #if D3D_SURFACES_SUPPORT
@@ -586,6 +587,11 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                     }
                     pParams->compositionParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
                 }
+            }
+            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-frc:interp")))
+            {
+                pParams->frcParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->frcParam.algorithm = MFX_FRCALGM_FRAME_INTERPOLATION;
             }
             //-----------------------------------------------------------------------------------
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i")))

@@ -88,6 +88,7 @@ struct sInputParams
   sVideoAnalysisParam vaParam;
   sIStabParam         istabParam;
   sCompositionParam   compositionParam;
+  sFrameRateConversionParam frcParam;
 
   // flag describes type of memory
   // true  - frames in video memory (d3d surfaces),
@@ -190,6 +191,7 @@ struct sAppResources
   mfxExtVPPImageStab     istabConfig;
   mfxExtVPPComposite     compositeConfig;
   mfxExtVPPDeinterlacing deinterlaceConfig;
+  mfxExtVPPFrameRateConversion    frcConfig;
 };
 
 /* ******************************************************************* */

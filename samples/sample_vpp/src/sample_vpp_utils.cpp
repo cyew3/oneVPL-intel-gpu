@@ -1123,6 +1123,15 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->compositeConfig);
     }
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->frcParam.mode )
+    {
+        pResources->frcConfig.Header.BufferId = MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION;
+        pResources->frcConfig.Header.BufferSz = sizeof(mfxExtVPPFrameRateConversion);
+
+        pResources->frcConfig.Algorithm   = (mfxU16)pParams->frcParam.algorithm;//MFX_FRCALGM_DISTRIBUTED_TIMESTAMP;
+
+        pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->frcConfig);
+    }
 
     // confirm configuration
     if( 0 == pVppParam->NumExtParam )
