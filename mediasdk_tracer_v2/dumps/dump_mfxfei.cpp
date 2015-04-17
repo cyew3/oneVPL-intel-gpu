@@ -343,7 +343,8 @@ std::string DumpContext::dump(const std::string structName, const mfxFeiPakMBCtr
         //dword 7,8
         str += structName + ".IntraMB.LumaIntraPredModes[]=" + DUMP_RESERVED_ARRAY(_struct.IntraMB.LumaIntraPredModes) + "\n";
         //dword 9
-        str += structName + ".IntraMB.MbIntraStruct=" + ToString(_struct.IntraMB.MbIntraStruct) + "\n";
+        str += structName + ".IntraMB.ChromaIntraPredMode=" + ToString(_struct.IntraMB.ChromaIntraPredMode) + "\n";
+        str += structName + ".IntraMB.IntraPredAvailFlags=" + ToString(_struct.IntraMB.IntraPredAvailFlags) + "\n";
         str += structName + ".IntraMB.Reserved60=" + ToString(_struct.IntraMB.Reserved60) + "\n";
     }
 
