@@ -238,10 +238,7 @@ int main(int argc, char *argv[])
         sts = MFX_ERR_UNKNOWN;
         break;
     }
-    else
-    {
-        pInSurf[nInStreamInd] = NULL;
-    }
+
     if( !bDoNotUpdateIn )
     {
         if (nInStreamInd == argbSurfaceIndex)
