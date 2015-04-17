@@ -215,7 +215,7 @@ void TrackProfile <mfxAudioParam>::OnNoExtension()
 void TrackProfile <mfxAudioParam>::OnUnsupportedExtension( const msdk_string &extension )
 {
     MSDK_TRACE_ERROR(MSDK_STRING("Canot guess audio codec from extension: ") << extension);
-    msdk_cout<<MSDK_STRING("ERROR: Audio codec is unsupported (it is configured incorrectly or cannot be autodetected).\n       Please define it correctly using -acodec option\n");    
+    msdk_cout<<MSDK_STRING("ERROR: Audio codec is unsupported (it is configured incorrectly or cannot be autodetected).\n       Please define it correctly using -acodec option\n");
     throw UnsupportedAudioCodecFromExtension();
 }
 

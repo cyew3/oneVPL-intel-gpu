@@ -33,7 +33,7 @@ bool SplitterWrapper::GetSample( SamplePtr & sample ) {
         sample.reset(new MetaSample(META_EOS, 0, 0, ++n_NullIds));
         return true;
     }
-    
+
     if (m_EOF)
         return false;
 
