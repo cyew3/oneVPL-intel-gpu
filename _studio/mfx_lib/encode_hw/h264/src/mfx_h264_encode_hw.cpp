@@ -2357,7 +2357,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             else
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-            task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(task->m_type[task->m_fid[0]], task->m_picStruct[ENC]);
+            task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(task->m_type[task->m_fid[0]], task->m_picStruct[ENC], task->m_encOrder);
             
             if (extOpt2 ->MaxSliceSize)
             {

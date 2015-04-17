@@ -1230,7 +1230,7 @@ namespace MfxHwH264Encode
         virtual void Init(MfxVideoParam const & video) = 0;
         virtual void Close() = 0;
         virtual void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder) = 0;
-        virtual mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct) = 0;
+        virtual mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct, mfxU32 encOrder) = 0;
         virtual mfxF32 GetFractionalQp(mfxU32 frameType, mfxU32 picStruct) = 0;
         virtual void SetQp(mfxU32 qp, mfxU32 frameType) = 0;
         virtual mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp) = 0;
@@ -1267,9 +1267,9 @@ namespace MfxHwH264Encode
         {
             m_impl->PreEnc(frameType, vmeData, encOrder);
         }
-        mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct)
+        mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct, mfxU32 encOrder)
         {
-            return m_impl->GetQp(frameType, picStruct);
+            return m_impl->GetQp(frameType, picStruct, encOrder);
         }
         mfxF32 GetFractionalQp(mfxU32 frameType, mfxU32 picStruct)
         {
@@ -1304,7 +1304,7 @@ namespace MfxHwH264Encode
 
         void Close();
 
-        mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct);
+        mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct, mfxU32 encOrder);
 
         mfxF32 GetFractionalQp(mfxU32 frameType, mfxU32 picStruct);
 
@@ -1411,7 +1411,7 @@ namespace MfxHwH264Encode
 
         void Close();
 
-        mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct);
+        mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct, mfxU32 encOrder);
 
         mfxF32 GetFractionalQp(mfxU32 /*frameType*/, mfxU32 /*picStruct*/) { assert(0); return 26.0f; }
 
@@ -1452,7 +1452,7 @@ namespace MfxHwH264Encode
         mfxI32  m_curBaseQp;
         mfxI32  m_curQp;
         mfxU16  m_qpUpdateRange;
-        mfxF32  m_coef;
+        //mfxF32  m_coef;
         mfxF64  m_fr;
         mfxU16  m_AsyncDepth;
         mfxU16  m_first;
@@ -1476,7 +1476,7 @@ namespace MfxHwH264Encode
 
         void Close();
 
-        mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct);
+        mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct, mfxU32 encOrder);
 
         mfxF32 GetFractionalQp(mfxU32 /*frameType*/, mfxU32 /*picStruct*/) { assert(0); return 26.0f; }
 
@@ -1495,6 +1495,7 @@ namespace MfxHwH264Encode
         struct LaFrameData
         {
             mfxU32  encOrder;
+            mfxU32  dispOrder;
             mfxI32  poc;
             mfxI32  deltaQp;
             mfxF64  estRate[52];
@@ -1503,6 +1504,7 @@ namespace MfxHwH264Encode
             mfxU32  intraCost;
             mfxU32  propCost;
             mfxU32  bframe;
+            bool    bNotUsed;
         };
 
     protected:
@@ -1523,8 +1525,8 @@ namespace MfxHwH264Encode
         mfxU16  m_skipped;
 
         AVGBitrate* m_AvgBitrate;
-
-        std::vector<LaFrameData>    m_laData;
+        
+        std::list <LaFrameData>     m_laData;
         Regression<20>              m_rateCoeffHistory[52];
     };
 
@@ -1537,7 +1539,7 @@ namespace MfxHwH264Encode
 
         void Close() {}
 
-        mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct);
+        mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct, mfxU32 encOrder);
 
         mfxF32 GetFractionalQp(mfxU32 /*frameType*/, mfxU32 /*picStruct*/) { assert(0); return 26.0f; }
 

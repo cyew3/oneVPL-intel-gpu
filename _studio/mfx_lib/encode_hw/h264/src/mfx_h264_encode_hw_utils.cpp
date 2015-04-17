@@ -2636,7 +2636,7 @@ void UmcBrc::Close()
     m_impl.Close();
 }
 
-mfxU8 UmcBrc::GetQp(mfxU32 frameType, mfxU32 picStruct)
+mfxU8 UmcBrc::GetQp(mfxU32 frameType, mfxU32 picStruct, mfxU32 /* encOrder */)
 {
     if (m_lookAhead >= 5 && (frameType & MFX_FRAMETYPE_B))
         frameType = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
@@ -2808,7 +2808,7 @@ void LookAheadBrc2::Init(MfxVideoParam const & video)
     m_bitsBehind = 0.0;
     m_curQp = -1;
     m_curBaseQp = -1;
-    m_coef = 4;
+    //m_coef = 4;
     m_skipped = 0;
 
     m_targetRateMin = m_initTargetRate;
@@ -2851,7 +2851,7 @@ void VMEBrc::Init(MfxVideoParam const & video)
     m_initTargetRate = 1000* mult * video.mfx.TargetKbps / m_fr / m_totNumMb;
     m_targetRateMin = m_initTargetRate;
     m_targetRateMax = m_initTargetRate;
-    m_laData.reserve(100);
+    m_laData.resize(0);
 
     assert(extDdi->RegressionWindow <= m_rateCoeffHistory[0].MAX_WINDOW);
     for (mfxU32 qp = 0; qp < 52; qp++)
@@ -2861,6 +2861,7 @@ void VMEBrc::Init(MfxVideoParam const & video)
     m_curQp = -1;
     m_curBaseQp = -1;
     m_skipped = 0;
+    m_lookAhead = 0;
 
     m_AvgBitrate = 0;
     if (extOpt3->WinBRCSize)
@@ -2893,26 +2894,61 @@ mfxStatus VMEBrc::SetFrameVMEData(const mfxExtLAFrameStatistics *pLaOut, mfxU32 
     MFX_CHECK(resNum <  pLaOut->NumStream, MFX_ERR_UNDEFINED_BEHAVIOR);
     mfxLAFrameInfo * pFrameData = pLaOut->FrameStat + numLaFrames*resNum;
 
-    m_lookAhead = numLaFrames;    // TODO: should be removed
 
-    if(m_laData.size() != numLaFrames)
-        m_laData.resize(numLaFrames);
+    if (m_lookAhead == 0)
+        m_lookAhead = numLaFrames;
 
-    for (size_t i = 0; i < numLaFrames; i++)
+    std::list<LaFrameData>::iterator it = m_laData.begin();
+    while (m_laData.size()>0)
     {
-        m_laData[i].encOrder  = pFrameData[i].FrameEncodeOrder;
-        m_laData[i].interCost = pFrameData[i].InterCost;
-        m_laData[i].intraCost = pFrameData[i].IntraCost;
-        m_laData[i].propCost  = pFrameData[i].DependencyCost;
-        m_laData[i].bframe    = (pFrameData[i].FrameType & MFX_FRAMETYPE_B) != 0;
+        it = m_laData.begin();
+        if (!((*it).bNotUsed))
+            break;
+        m_laData.pop_front();
+    }
 
-        MFX_CHECK(m_laData[i].intraCost, MFX_ERR_UNDEFINED_BEHAVIOR);
+    // some frames can be stored already
+    // start of stored sequence
+    it = m_laData.begin();
+     while (it != m_laData.end())
+    {
+        if ((*it).encOrder == pFrameData[0].FrameEncodeOrder)
+            break;
+        ++it;
+    }
+    mfxU32 ind  = 0;
+    
+    // check stored sequence
+    while ((it != m_laData.end()) && (ind < numLaFrames))
+    {
+        MFX_CHECK((*it).encOrder == pFrameData[ind].FrameEncodeOrder, MFX_ERR_UNDEFINED_BEHAVIOR);
+        ++ind;
+        ++it;
+    }
+    MFX_CHECK(it == m_laData.end(), MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    // store a new data
+    for (; ind < numLaFrames; ind++)
+    {
+        LaFrameData data = {};
+
+        data.encOrder  = pFrameData[ind].FrameEncodeOrder;
+        data.dispOrder = pFrameData[ind].FrameDisplayOrder;
+        data.interCost = pFrameData[ind].InterCost;
+        data.intraCost = pFrameData[ind].IntraCost;
+        data.propCost  = pFrameData[ind].DependencyCost;
+        data.bframe    = (pFrameData[ind].FrameType & MFX_FRAMETYPE_B) != 0;
+
+
+        MFX_CHECK(data.intraCost, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         for (mfxU32 qp = 0; qp < 52; qp++)
         {
-            m_laData[i].estRate[qp] = ((mfxF64)pFrameData[i].EstimatedRate[qp])/(QSTEP[qp]*k);
+            data.estRate[qp] = ((mfxF64)pFrameData[ind].EstimatedRate[qp])/(QSTEP[qp]*k);
         }
+        m_laData.push_back(data);
     }
+
     return MFX_ERR_NONE;
 }
 
@@ -2933,19 +2969,29 @@ mfxF64 GetTotalRate(std::vector<LookAheadBrc2::LaFrameData> const & laData, mfxI
     return totalRate;
 }
 
-mfxF64 GetTotalRate(std::vector<VMEBrc::LaFrameData> const & laData, mfxI32 baseQp)
+
+mfxF64 GetTotalRate(std::list<VMEBrc::LaFrameData>::iterator start, std::list<VMEBrc::LaFrameData>::iterator end, mfxI32 baseQp)
 {
     mfxF64 totalRate = 0.0;
-    for (size_t i = 0; i < laData.size(); i++)
-        totalRate += laData[i].estRateTotal[CLIPVAL(0, 51, baseQp + laData[i].deltaQp)];
+    std::list<VMEBrc::LaFrameData>::iterator it = start;
+    for (; it!=end; ++it)
+    {
+        totalRate += (*it).estRateTotal[CLIPVAL(0, 51, baseQp + (*it).deltaQp)];
+    }
     return totalRate;
 }
-mfxF64 GetTotalRate(std::vector<VMEBrc::LaFrameData> const & laData, mfxI32 baseQp, size_t size, mfxU32 first)
+mfxF64 GetTotalRate(std::list<VMEBrc::LaFrameData>::iterator start, std::list<VMEBrc::LaFrameData>::iterator end, mfxI32 baseQp, size_t size)
 {
     mfxF64 totalRate = 0.0;
-    size = (size < laData.size()) ? size : laData.size();
-    for (size_t i = 0 + first; i < size; i++)
-        totalRate += laData[i].estRateTotal[CLIPVAL(0, 51, baseQp + laData[i].deltaQp)];
+    size_t num = 0;
+
+    std::list<VMEBrc::LaFrameData>::iterator it = start;
+    for (; it!=end; ++it)
+    {
+        if ((num ++) >= size)
+            break;
+        totalRate += (*it).estRateTotal[CLIPVAL(0, 51, baseQp + (*it).deltaQp)];
+    }
     return totalRate;
 }
 
@@ -2964,13 +3010,13 @@ mfxU8 SelectQp(std::vector<LookAheadBrc2::LaFrameData> const & laData, mfxF64 bu
     }
     return 51;
 }
-mfxU8 SelectQp(std::vector<VMEBrc::LaFrameData> const & laData, mfxF64 budget, size_t size, mfxU32 async)
+mfxU8 SelectQp(std::list<VMEBrc::LaFrameData>::iterator start, std::list<VMEBrc::LaFrameData>::iterator end, mfxF64 budget, size_t size)
 {
-    mfxF64 prevTotalRate = GetTotalRate(laData, 0, size, async);
+    mfxF64 prevTotalRate = GetTotalRate(start, end, 0, size);
     //printf("SelectQp: budget = %f, size = %d, async = %d\n", budget, size, async);
     for (mfxU8 qp = 1; qp < 52; qp++)
     {
-        mfxF64 totalRate = GetTotalRate(laData, qp, size, async);
+        mfxF64 totalRate = GetTotalRate(start, end, 0, size);
         if (totalRate < budget)
             return (prevTotalRate + totalRate < 2 * budget) ? qp - 1 : qp;
         else
@@ -2978,12 +3024,13 @@ mfxU8 SelectQp(std::vector<VMEBrc::LaFrameData> const & laData, mfxF64 budget, s
     }
     return 51;
 }
-mfxU8 SelectQp(std::vector<VMEBrc::LaFrameData> const & laData, mfxF64 budget)
+
+mfxU8 SelectQp(std::list<VMEBrc::LaFrameData>::iterator start, std::list<VMEBrc::LaFrameData>::iterator end, mfxF64 budget)
 {
-    mfxF64 prevTotalRate = GetTotalRate(laData, 0);
+    mfxF64 prevTotalRate = GetTotalRate(start,end, 0);
     for (mfxU8 qp = 1; qp < 52; qp++)
     {
-        mfxF64 totalRate = GetTotalRate(laData, qp);
+        mfxF64 totalRate = GetTotalRate(start,end, qp);
         if (totalRate < budget)
             return (prevTotalRate + totalRate < 2 * budget) ? qp - 1 : qp;
         else
@@ -3004,7 +3051,7 @@ mfxU8 GetFrameTypeLetter(mfxU32 frameType)
     return 'x';
 }
 
-mfxU8 LookAheadBrc2::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/)
+mfxU8 LookAheadBrc2::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/, mfxU32 /* encOrder */)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::GetQp");
     brcprintf("\r%4d: do=%4d type=%c Rt=%7.3f-%7.3f curc=%4d numc=%2d ", m_laData[0].encOrder, m_laData[0].poc/2,
@@ -3039,6 +3086,7 @@ mfxU8 LookAheadBrc2::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/)
                 ? -mfxI32(deltaQp * 2 * strength + 0.5)
                 : -mfxI32(deltaQp * 1 * strength + 0.5);
             maxDeltaQp = IPP_MAX(maxDeltaQp, m_laData[i].deltaQp);
+
         }
     }
     else
@@ -3057,7 +3105,6 @@ mfxU8 LookAheadBrc2::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/)
 
     mfxU8 minQp = SelectQp(m_laData, m_targetRateMax * (m_laData.size() - m_first), m_laData.size(), m_first);
     mfxU8 maxQp = SelectQp(m_laData, m_targetRateMin * (m_laData.size() - m_first), m_laData.size(), m_first);
-
     if (m_AvgBitrate)
     {
         size_t framesForCheck = m_AvgBitrate->GetWindowSize() < m_laData.size() ? m_AvgBitrate->GetWindowSize() : m_laData.size();
@@ -3185,7 +3232,7 @@ mfxU32 LookAheadBrc2::Report(mfxU32 frameType , mfxU32 dataLength, mfxU32 /* use
     }
 
    
-    m_coef = (mfxF32)((m_laData[0].estRate[qp])/realRatePerMb);
+    //m_coef = (mfxF32)((m_laData[0].estRate[qp])/realRatePerMb);
 
     m_framesBehind++;
     m_bitsBehind += realRatePerMb;
@@ -3194,7 +3241,7 @@ mfxU32 LookAheadBrc2::Report(mfxU32 frameType , mfxU32 dataLength, mfxU32 /* use
     m_targetRateMax = (m_initTargetRate * (m_framesBehind + (m_lookAhead - 1)) - m_bitsBehind) / framesBeyond;
     m_targetRateMin = (m_initTargetRate * (m_framesBehind + (framesBeyond   )) - m_bitsBehind) / framesBeyond;
 
-    //printf("Target: Max %f, Min %f, framesBeyond %f, m_framesBehind %d, m_bitsBehind %f \n", m_targetRateMax, m_targetRateMin, framesBeyond, m_framesBehind, m_bitsBehind);
+    //printf("Target: Max %f, Min %f, framesBeyond %f, m_framesBehind %d, m_bitsBehind %f, m_lookAhead %d, picOrder %d, m_laData[0] %d, delta %d, qp %d  \n", m_targetRateMax, m_targetRateMin, framesBeyond, m_framesBehind, m_bitsBehind, m_lookAhead, picOrder, m_laData[0].encOrder, m_laData[0].deltaQp, qp );
 
     // correct m_targetRateMax, m_targetRateMin if Max bitrate 
     if (m_bControlMaxFrame)
@@ -3250,109 +3297,154 @@ mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLeng
 
     m_framesBehind++;
     m_bitsBehind += realRatePerMb;
-    mfxF64 framesBeyond = (mfxF64)(IPP_MAX(2, m_laData.size()) - 1);
+    
+    std::list<LaFrameData>::iterator start = m_laData.begin();
+    for(;start != m_laData.end(); ++start)
+    {
+        if ((*start).dispOrder == picOrder)
+            break;
+    }
+    mfxU32 numFrames = 0;
+    for (std::list<LaFrameData>::iterator it = start; it != m_laData.end(); ++it) 
+        numFrames++;
 
-    m_targetRateMax = (m_initTargetRate * (m_framesBehind + (m_lookAhead - 1)) - m_bitsBehind) / framesBeyond;
-    m_targetRateMin = (m_initTargetRate * (m_framesBehind + (framesBeyond   )) - m_bitsBehind) / framesBeyond;
+    numFrames = IPP_MIN(numFrames, m_lookAheadDep);
 
-    mfxF64 oldCoeff = m_rateCoeffHistory[m_curQp].GetCoeff();
-    mfxF64 y = IPP_MAX(0.0, realRatePerMb);
-    mfxF64 x = m_laData[0].estRate[m_curQp];
-    mfxF64 minY = NORM_EST_RATE * INIT_RATE_COEFF[m_curQp] * MIN_RATE_COEFF_CHANGE;
-    mfxF64 maxY = NORM_EST_RATE * INIT_RATE_COEFF[m_curQp] * MAX_RATE_COEFF_CHANGE;
-    y = CLIPVAL(minY, maxY, y / x * NORM_EST_RATE); 
-    m_rateCoeffHistory[m_curQp].Add(NORM_EST_RATE, y);
+    if (start != m_laData.end())
+    {
 
-    //static int count = 0;
-    //count++;
-    //if(FILE *dump = fopen("dump.txt", "a"))
-    //{
-    //    fprintf(dump, "%4d %4d %4d %4d %6f\n", count, frameType, dataLength, m_curQp, y);
-    //    fclose(dump);
-    //}
+        mfxF64 framesBeyond = (mfxF64)(IPP_MAX(2, numFrames - 1) - 1);
 
-    mfxF64 ratio = m_rateCoeffHistory[m_curQp].GetCoeff() / oldCoeff;
-    for (mfxI32 i = -m_qpUpdateRange; i <= m_qpUpdateRange; i++)
-        if (i != 0 && m_curQp + i >= 0 && m_curQp + i < 52)
-        {
-            mfxF64 r = ((ratio - 1.0) * (1.0 - abs(i)/(m_qpUpdateRange + 1)) + 1.0);
-            m_rateCoeffHistory[m_curQp + i].Add(NORM_EST_RATE,
-                NORM_EST_RATE * m_rateCoeffHistory[m_curQp + i].GetCoeff() * r);
-        }
 
-    brcprintf("rrate=%6.3f newCoeff=%5.3f\n", realRatePerMb, m_rateCoeffHistory[m_curQp].GetCoeff());
+        m_targetRateMax = (m_initTargetRate * (m_framesBehind + (m_lookAhead - 1)) - m_bitsBehind) / framesBeyond;
+        m_targetRateMin = (m_initTargetRate * (m_framesBehind + (framesBeyond   )) - m_bitsBehind) / framesBeyond;
+
+        //printf("Target: Max %f, Min %f, framesBeyond %f, m_framesBehind %d, m_bitsBehind %f, m_lookAhead %d, picOrder %d, m_laData[0] %d, delta %d, qp %d \n", m_targetRateMax, m_targetRateMin, framesBeyond, m_framesBehind, m_bitsBehind, m_lookAhead, picOrder, (*start).encOrder, (*start).deltaQp, qp);
+    
+        mfxF64 oldCoeff = m_rateCoeffHistory[qp].GetCoeff();
+        mfxF64 y = IPP_MAX(0.0, realRatePerMb);
+        mfxF64 x = (*start).estRate[qp];
+        mfxF64 minY = NORM_EST_RATE * INIT_RATE_COEFF[qp] * MIN_RATE_COEFF_CHANGE;
+        mfxF64 maxY = NORM_EST_RATE * INIT_RATE_COEFF[qp] * MAX_RATE_COEFF_CHANGE;
+        y = CLIPVAL(minY, maxY, y / x * NORM_EST_RATE); 
+        m_rateCoeffHistory[qp].Add(NORM_EST_RATE, y);
+
+        //static int count = 0;
+        //count++;
+        //if(FILE *dump = fopen("dump.txt", "a"))
+        //{
+        //    fprintf(dump, "%4d %4d %4d %4d %6f\n", count, frameType, dataLength, m_curQp, y);
+        //    fclose(dump);
+        //}
+
+        mfxF64 ratio = m_rateCoeffHistory[qp].GetCoeff() / oldCoeff;
+        for (mfxI32 i = -m_qpUpdateRange; i <= m_qpUpdateRange; i++)
+            if (i != 0 && qp + i >= 0 && qp + i < 52)
+            {
+                mfxF64 r = ((ratio - 1.0) * (1.0 - abs(i)/(m_qpUpdateRange + 1)) + 1.0);
+                m_rateCoeffHistory[qp + i].Add(NORM_EST_RATE,
+                    NORM_EST_RATE * m_rateCoeffHistory[qp + i].GetCoeff() * r);
+            }
+
+        brcprintf("rrate=%6.3f newCoeff=%5.3f\n", realRatePerMb, m_rateCoeffHistory[qp].GetCoeff());
+        (*start).bNotUsed = 1;
+    }
 
     return 0;
 }
 
-mfxU8 VMEBrc::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/)
+mfxU8 VMEBrc::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/, mfxU32 encOrder)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "VMEBrc::GetQp");
     frameType;
 
     mfxF64 totalEstRate[52] = { 0.0 };
-    //static int count = 0;
-    //count++;
-    for (mfxU32 qp = 0; qp < 52; qp++)
-    {
-        mfxF64 rateCoeff = m_rateCoeffHistory[qp].GetCoeff();
-        
-        //if(FILE *dump = fopen("dump3.txt", "a"))
-        //{
-        //    fprintf(dump, "%4d %4d %4d %6f \n", count, frameType, qp, m_rateCoeffHistory[qp].sumxy);
-        //    fclose(dump);
-        //}
+    if (!m_laData.size())
+        return 26;
 
-        for (mfxU32 i = 0; i < m_laData.size(); i++)
+    std::list<LaFrameData>::iterator start = m_laData.begin();
+    while (start != m_laData.end())
+    {
+        if ((*start).encOrder == encOrder)
+            break;
+        ++start;
+    }
+
+    MFX_CHECK(start != m_laData.end(), 0);
+    std::list<LaFrameData>::iterator it = start;
+    mfxU32 numberOfFrames = 0;
+    for(it = start;it != m_laData.end(); ++it) 
+        numberOfFrames++;
+
+    numberOfFrames = IPP_MIN( numberOfFrames, m_lookAheadDep);
+
+
+    // fill totalEstRate
+    it = start;   
+    for(mfxU32 i=0; i < numberOfFrames ; i++)
+    {
+        for (mfxU32 qp = 0; qp < 52; qp++)
         {
-            m_laData[i].estRateTotal[qp] = IPP_MAX(MIN_EST_RATE, rateCoeff * m_laData[i].estRate[qp]);
-            totalEstRate[qp] += m_laData[i].estRateTotal[qp];
+            
+            (*it).estRateTotal[qp] = IPP_MAX(MIN_EST_RATE, m_rateCoeffHistory[qp].GetCoeff() * (*it).estRate[qp]);
+            totalEstRate[qp] += (*it).estRateTotal[qp];        
         }
+        ++it;
     }
 
     mfxI32 maxDeltaQp = INT_MIN;
     if (m_lookAhead > 0)
     {
-        mfxI32 curQp = m_curBaseQp < 0 ? SelectQp(totalEstRate, m_targetRateMin * m_laData.size()) : m_curBaseQp;
+        mfxI32 curQp = m_curBaseQp < 0 ? SelectQp(totalEstRate, m_targetRateMin * numberOfFrames) : m_curBaseQp;
         mfxF64 strength = 0.03 * curQp + .75;
-
-        for (mfxU32 i = 0; i < m_laData.size(); i++)
+        
+        it = start;
+        for (mfxU32 i=0; i < numberOfFrames ; i++)
         {
-            mfxU32 intraCost    = m_laData[i].intraCost;
-            mfxU32 interCost    = m_laData[i].interCost;
-            mfxU32 propCost     = m_laData[i].propCost;
+            mfxU32 intraCost    = (*it).intraCost;
+            mfxU32 interCost    = (*it).interCost;
+            mfxU32 propCost     = (*it).propCost;
             mfxF64 ratio        = 1.0;//mfxF64(interCost) / intraCost;
             mfxF64 deltaQp      = log((intraCost + propCost * ratio) / intraCost) / log(2.0);
-            m_laData[i].deltaQp = (interCost >= intraCost * 0.9)
+            (*it).deltaQp = (interCost >= intraCost * 0.9)
                 ? -mfxI32(deltaQp * 2 * strength + 0.5)
                 : -mfxI32(deltaQp * 1 * strength + 0.5);
-            maxDeltaQp = IPP_MAX(maxDeltaQp, m_laData[i].deltaQp);
+            maxDeltaQp = IPP_MAX(maxDeltaQp, (*it).deltaQp);
+            //printf("%d intra %d inter %d prop %d currQP %d delta %f(%d)\n", (*it).encOrder, intraCost/4, interCost/4, propCost/4, curQp, deltaQp, (*it).deltaQp );
+            ++it;
         }
     }
     else
     {
-        for (mfxU32 i = 0; i < m_laData.size(); i++)
+        it = start;
+        for (mfxU32 i=0; i < numberOfFrames ; i++)
         {
-            mfxU32 intraCost    = m_laData[i].intraCost;
-            mfxU32 interCost    = m_laData[i].interCost;
-            m_laData[i].deltaQp = (interCost >= intraCost * 0.9) ? -5 : m_laData[i].bframe ? 0 : -2;
-            maxDeltaQp = IPP_MAX(maxDeltaQp, m_laData[i].deltaQp);
+            mfxU32 intraCost    = (*it).intraCost;
+            mfxU32 interCost    = (*it).interCost;
+            (*it).deltaQp = (interCost >= intraCost * 0.9) ? -5 : (*it).bframe ? 0 : -2;
+            maxDeltaQp = IPP_MAX(maxDeltaQp, (*it).deltaQp);
+            ++it;
         }
     }
 
-    for (mfxU32 i = 0; i < m_laData.size(); i++)
-        m_laData[i].deltaQp -= maxDeltaQp;
+   it = start;
+   for (mfxU32 i=0; i < numberOfFrames ; i++)
+   {
+        (*it).deltaQp -= maxDeltaQp;
+        ++it;
+   }
 
-    mfxU8 minQp = SelectQp(m_laData, m_targetRateMax * m_laData.size());
-    mfxU8 maxQp = SelectQp(m_laData, m_targetRateMin * m_laData.size());
+    mfxU8 minQp = SelectQp(start,m_laData.end(), m_targetRateMax * numberOfFrames);
+    mfxU8 maxQp = SelectQp(start,m_laData.end(), m_targetRateMin * numberOfFrames);
+   
 
     if (m_AvgBitrate)
     {
-        size_t framesForCheck = m_AvgBitrate->GetWindowSize() < m_laData.size() ? m_AvgBitrate->GetWindowSize() : m_laData.size();
+        size_t framesForCheck = m_AvgBitrate->GetWindowSize() < numberOfFrames ? m_AvgBitrate->GetWindowSize() : numberOfFrames;
         for (mfxU32 i = 1; i < framesForCheck; i ++)
         {
            mfxF64 budget = mfxF64(m_AvgBitrate->GetBudget(i))/(mfxF64(m_totNumMb));
-           mfxU8  QP = SelectQp(m_laData, budget, i, 0);
+           mfxU8  QP = SelectQp(start,m_laData.end(), budget, i);
            if (minQp <  QP)
            {
                minQp  = QP;
@@ -3369,9 +3461,10 @@ mfxU8 VMEBrc::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/)
         m_curBaseQp = CLIPVAL(m_curBaseQp - MAX_QP_CHANGE, m_curBaseQp + MAX_QP_CHANGE, maxQp);
     else
         ; // do not change qp if last qp guarantees target rate interval
-    m_curQp = CLIPVAL(1, 51, m_curBaseQp + m_laData[0].deltaQp); // driver doesn't support qp=0
+    m_curQp = CLIPVAL(1, 51, m_curBaseQp + (*start).deltaQp); // driver doesn't support qp=0
 
-    brcprintf("bqp=%2d qp=%2d dqp=%2d erate=%7.3f ", m_curBaseQp, m_curQp, m_laData[0].deltaQp, m_laData[0].estRateTotal[m_curQp]); 
+
+    brcprintf("bqp=%2d qp=%2d dqp=%2d erate=%7.3f ", m_curBaseQp, m_curQp, (*start).deltaQp, (*start).estRateTotal[m_curQp]); 
 
     return mfxU8(m_curQp);
 }
@@ -3389,7 +3482,7 @@ void LookAheadCrfBrc::Init(MfxVideoParam const & video)
     m_propCost  = 0;
 }
 
-mfxU8 LookAheadCrfBrc::GetQp(mfxU32 /*frameType*/, mfxU32 /*picStruct*/)
+mfxU8 LookAheadCrfBrc::GetQp(mfxU32 /*frameType*/, mfxU32 /*picStruct*/, mfxU32 /* encOrder */)
 {
     mfxF64 strength = 0.03 * m_crfQuality + .75;
     mfxF64 ratio    = 1.0;

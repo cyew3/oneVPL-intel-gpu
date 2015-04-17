@@ -41,7 +41,7 @@ using namespace MfxEncLA;
 
 static mfxU16 GetGopSize(mfxVideoParam *par)
 {
-    return  par->mfx.GopPicSize == 0 ?  500 : par->mfx.GopPicSize ;
+    return  par->mfx.GopPicSize == 0 ?  256 : par->mfx.GopPicSize ;
 }
 static mfxU16 GetRefDist(mfxVideoParam *par)
 {
@@ -63,7 +63,7 @@ static mfxStatus InitEncoderParameters(mfxVideoParam *par_in, mfxVideoParam *par
     if (pControl->BPyramid == MFX_CODINGOPTION_ON)
     {
         par_enc->mfx.GopRefDist = ((par_in->mfx.GopRefDist >  8) || (par_in->mfx.GopRefDist == 0)) ? 8   : par_in->mfx.GopRefDist;
-        par_enc->mfx.GopPicSize = (par_in->mfx.GopRefDist == 0) ? 1500   :  par_in->mfx.GopRefDist;
+        par_enc->mfx.GopPicSize = (par_in->mfx.GopPicSize == 0) ? 1500   :  par_in->mfx.GopPicSize;
     }
     par_enc->AsyncDepth = GetAsyncDeph(par_in);
     par_enc->IOPattern  = par_in->IOPattern;
@@ -1304,7 +1304,7 @@ mfxStatus VideoENC_LA::SubmitFrameLA(mfxFrameSurface1 *pInSurface)
             }
                       
             task->m_Curr.VmeData->poc      = currTask.InputFrame.poc;
-            task->m_Curr.VmeData->encOrder = currTask.InputFrame.dispFrameOrder;
+            task->m_Curr.VmeData->encOrder = currTask.InputFrame.encFrameOrder;
             task->m_Curr.VmeData->pocL0    = fwd ? currTask.RefFrame[REF_FORW].poc :  0xffffffff;
             task->m_Curr.VmeData->pocL1    = bwd ? currTask.RefFrame[REF_BACKW].poc : 0xffffffff;
             task->m_Curr.VmeData->used     = true;
@@ -1619,6 +1619,18 @@ namespace MfxHwH264EncodeHW
         MfxHwH264Encode::SVCPAKObject const & mb);
 
 };
+    mfxI32 CalcDistScaleFactor(
+        mfxU32 pocCur,
+        mfxU32 pocL0,
+        mfxU32 pocL1)
+    {
+        mfxI32 tb = IPP_MIN(IPP_MAX(-128, mfxI32(pocCur - pocL0)), 127);
+        mfxI32 td = IPP_MIN(IPP_MAX(-128, mfxI32(pocL1  - pocL0)), 127);
+        mfxI32 tx = (16384 + abs(td/2)) / td;
+        mfxI32 distScaleFactor = IPP_MIN(IPP_MAX(-1024, (tb * tx + 32) >> 6), 1023);
+        return distScaleFactor;
+    }
+
 
 
 
@@ -1664,7 +1676,14 @@ void CmContextLA::SetCurbeData(
     curbeData.EarlyImeStop          = 0;
     //DW1
     curbeData.MaxNumMVs             = (GetMaxMvsPer2Mb(m_video.mfx.CodecLevel) >> 1) & 0x3F;    // 8
-    curbeData.BiWeight              = 32; //((task.frameType & MFX_FRAMETYPE_B) && extDdi->WeightedBiPredIdc == 2) ?  CalcBiWeight(task, 0, 0) : 32; // TO DO
+    mfxI32 biWeight = 32;
+    if (frameType & MFX_FRAMETYPE_B) 
+    {
+        biWeight = CalcDistScaleFactor(task.m_TaskInfo.InputFrame.poc, task.m_TaskInfo.RefFrame[0].poc, task.m_TaskInfo.RefFrame[1].poc) >>2;
+        biWeight = (biWeight < -64 || biWeight > 128)? 32: biWeight;
+    }
+    curbeData.BiWeight              = biWeight; // TO DO
+
     curbeData.UniMixDisable         = 0;
     //DW2
     curbeData.MaxNumSU              = 57;
@@ -1859,7 +1878,7 @@ void CmContextLA::SetCurbeData(
     curbeData.TcoeffLevelPredictionFlag       = 0;
     curbeData.UseHMEPredictor                 = 0;  //!!IsOn(extDdi->Hme);
     curbeData.SpatialResChangeFlag            = 0;
-    curbeData.isFwdFrameShortTermRef          = 0; //task.m_list0[0].Size() > 0 && !task.m_dpb[0][task.m_list0[0][0] & 127].m_longterm;
+    curbeData.isFwdFrameShortTermRef          = !(frameType & MFX_FRAMETYPE_I); //task.m_list0[0].Size() > 0 && !task.m_dpb[0][task.m_list0[0][0] & 127].m_longterm;
     //DW38
     curbeData.ScaledRefLayerLeftOffset        = 0;
     curbeData.ScaledRefLayerRightOffset       = 0;
@@ -1970,8 +1989,17 @@ bool CmContextLA::QueryVme(sLADdiTask const & task,
         cur->mb[i].mbType        = cmMb[i].MbType5Bits;
         cur->mb[i].subMbShape    = cmMb[i].SubMbShape;
         cur->mb[i].subMbPredMode = cmMb[i].SubMbPredMode;
-        cur->mb[i].w1            = 32; // mfxU8(extPps->weightedBipredIdc == 2 ? CalcBiWeight(task, 0, 0) : 32);
+        
+        mfxI32 biWeight = 32;
+        if (task.m_TaskInfo.InputFrame.frameType & MFX_FRAMETYPE_B) 
+        {
+            biWeight = CalcDistScaleFactor(task.m_TaskInfo.InputFrame.poc, task.m_TaskInfo.RefFrame[0].poc, task.m_TaskInfo.RefFrame[1].poc) >>2;
+            biWeight = (biWeight < -64 || biWeight > 128)? 32: biWeight;
+        }
+
+        cur->mb[i].w1            = mfxU8(biWeight);
         cur->mb[i].w0            = mfxU8(64 - cur->mb[i].w1);
+
         cur->mb[i].costCenter0.x = cmMb[i].costCenter0X;
         cur->mb[i].costCenter0.y = cmMb[i].costCenter0Y;
         cur->mb[i].costCenter1.x = cmMb[i].costCenter1X;

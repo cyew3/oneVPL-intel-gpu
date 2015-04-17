@@ -1231,8 +1231,10 @@ mfxF64 const MAX_RATE_COEFF_CHANGE = 20.0;
 
 mfxStatus VMEBrc::Init(const mfxVideoParam *init, H265VideoParam &, mfxI32 )
 {
-    m_qpUpdateRange = 40;
+    m_qpUpdateRange = 20;
     mfxU32 RegressionWindow = 20;
+    static mfxF64 coeff[8]   = {1.3, 0.80, 0.7, 0.3, 0.25, 0.2, 0.15, 0.1};
+    static mfxU32 RegressionWindows[8] = {2,3,6,10,20,20,20,20};
 
     mfxF64 fr = mfxF64(init->mfx.FrameInfo.FrameRateExtN) / init->mfx.FrameInfo.FrameRateExtD;
     m_totNumMb = init->mfx.FrameInfo.Width * init->mfx.FrameInfo.Height / 256;
@@ -1241,15 +1243,20 @@ mfxStatus VMEBrc::Init(const mfxVideoParam *init, H265VideoParam &, mfxI32 )
     m_targetRateMax = m_initTargetRate;
     m_laData.resize(0);
 
+    m_bPyr = true; //to do
+
    for (mfxU32 level = 0; level < 8; level++)
+   {
    for (mfxU32 qp = 0; qp < 52; qp++)
-        m_rateCoeffHistory[level][qp].Reset(RegressionWindow, 100.0, 100.0 * INIT_RATE_COEFF[qp]);
+        m_rateCoeffHistory[level][qp].Reset(m_bPyr ? RegressionWindows[level] : RegressionWindow, 100.0, 100.0 * (m_bPyr ?INIT_RATE_COEFF[qp]*coeff[level]:1));
+   }
+
     m_framesBehind = 0;
     m_bitsBehind = 0.0;
     m_curQp = -1;
     m_curBaseQp = -1;
     m_lookAheadDep = 0;
-    m_bPyr = true; //to do
+    
 
     return MFX_ERR_NONE;
 }
@@ -1273,9 +1280,6 @@ mfxStatus VMEBrc::SetFrameVMEData(const mfxExtLAFrameStatistics *pLaOut, mfxU32 
     MFX_CHECK(pLaOut->NumFrame > 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     mfxLAFrameInfo * pFrameData = pLaOut->FrameStat + numLaFrames*resNum;
-    m_lookAheadDep = IPP_MAX(numLaFrames, m_lookAheadDep);
-
-    // 
     std::list<LaFrameData>::iterator it = m_laData.begin();
     while (m_laData.size()>0)
     {
@@ -1333,6 +1337,9 @@ mfxStatus VMEBrc::SetFrameVMEData(const mfxExtLAFrameStatistics *pLaOut, mfxU32 
         //    data.encOrder,data.dispOrder, data.interCost, data.intraCost, data.propCost, pFrameData[ind].FrameType );
         m_laData.push_back(data);
     }
+    if (m_lookAheadDep == 0)
+        m_lookAheadDep = numLaFrames;
+      
     //printf("VMEBrc::SetFrameVMEData m_laData[0].encOrder %d\n", pFrameData[0].FrameEncodeOrder);
 
     return MFX_ERR_NONE;
@@ -1401,25 +1408,26 @@ mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLeng
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::Report");
     //printf("VMEBrc::Report order %d\n", picOrder);
     mfxF64 realRatePerMb = 8 * dataLength / mfxF64(m_totNumMb);
-    static int size = 0;
-    static int nframe = 0;
-    size += dataLength;
-    nframe++;
 
     m_framesBehind++;
     m_bitsBehind += realRatePerMb;
-    mfxF64 framesBeyond = (mfxF64)(IPP_MAX(2, m_laData.size()) - 1);
-
-    m_targetRateMax = (m_initTargetRate * (m_framesBehind + ((mfxF64)m_laData.size() - 1)) - m_bitsBehind) / framesBeyond;
-    m_targetRateMin = (m_initTargetRate * (m_framesBehind + (framesBeyond   )) - m_bitsBehind) / framesBeyond;
-
+   
     // start of sequence
+    mfxU32 numFrames = 0;
     std::list<LaFrameData>::iterator start = m_laData.begin();
     for(;start != m_laData.end(); ++start)
     {
         if ((*start).encOrder == picOrder)
             break;
     }
+    for (std::list<LaFrameData>::iterator it = start; it != m_laData.end(); ++it) numFrames++;
+    numFrames = IPP_MIN(numFrames, m_lookAheadDep);
+
+     mfxF64 framesBeyond = (mfxF64)(IPP_MAX(2, numFrames) - 1); 
+     m_targetRateMax = (m_initTargetRate * (m_framesBehind + m_lookAheadDep - 1) - m_bitsBehind) / framesBeyond;
+     m_targetRateMin = (m_initTargetRate * (m_framesBehind + framesBeyond  ) - m_bitsBehind) / framesBeyond;
+
+
     if (start != m_laData.end())
     {
         mfxU32 level = (*start).layer < 8 ? (*start).layer : 7;
@@ -1427,7 +1435,7 @@ mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLeng
         mfxF64 oldCoeff = m_rateCoeffHistory[level][curQp].GetCoeff();
         mfxF64 y = IPP_MAX(0.0, realRatePerMb);
         mfxF64 x = (*start).estRate[curQp];
-        //printf("%4d) intra\t%8d\tinter\t%8d\tprop %8d\tqp\t%2d\t%3d\test rate\t%5f\treal\t%5f\tk\t%5f \n",(*start).encOrder,(*start).intraCost, (*start).interCost,(*start).propCost, curQp, (*start).deltaQp, (*start).estRate[curQp],realRatePerMb, x/y);
+        //printf("%4d)\tlevel\t%4d\tintra\t%8d\tinter\t%8d\tprop\t %8d\tqp\t%2d\tbase\t%2d\t%3d\test rate\t%5f\test rate total\t%5f\treal\t%5f\tk\t%5f\toldCoeff\t%5f \n",(*start).encOrder,level, (*start).intraCost, (*start).interCost,(*start).propCost, curQp, m_curBaseQp, (*start).deltaQp, (*start).estRate[curQp], (*start).estRateTotal[curQp],realRatePerMb, y/x*NORM_EST_RATE, oldCoeff*NORM_EST_RATE);
         mfxF64 minY = NORM_EST_RATE * INIT_RATE_COEFF[curQp] * MIN_RATE_COEFF_CHANGE;
         mfxF64 maxY = NORM_EST_RATE * INIT_RATE_COEFF[curQp] * MAX_RATE_COEFF_CHANGE;
         y = CLIPVAL(minY, maxY, y / x * NORM_EST_RATE); 
@@ -1474,15 +1482,17 @@ mfxI32 VMEBrc::GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP 
         ++start;
     }
     MFX_CHECK(start != m_laData.end(), MFX_ERR_UNDEFINED_BEHAVIOR);
+    
     std::list<LaFrameData>::iterator it = start;
     mfxU32 numberOfFrames = 0;
-    for(it = start;it != m_laData.end(); ++it) numberOfFrames++;
+    for(it = start;it != m_laData.end(); ++it) 
+        numberOfFrames++;
 
-
+    numberOfFrames = IPP_MIN(numberOfFrames, m_lookAheadDep);
 
    // fill totalEstRate
-   
-   for(it = start;it != m_laData.end(); ++it)
+   it = start;
+   for(mfxU32 i=0; i < numberOfFrames ; i++)
    {
         for (mfxU32 qp = 0; qp < 52; qp++)
         {
@@ -1490,6 +1500,7 @@ mfxI32 VMEBrc::GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP 
             (*it).estRateTotal[qp] = IPP_MAX(MIN_EST_RATE, m_rateCoeffHistory[(*it).layer < 8 ? (*it).layer : 7][qp].GetCoeff() * (*it).estRate[qp]);
             totalEstRate[qp] += (*it).estRateTotal[qp];        
         }
+        ++it;
    }
    
 
@@ -1500,7 +1511,8 @@ mfxI32 VMEBrc::GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP 
     mfxF64 strength = 0.01 * curQp + 1.2;
 
     // fill deltaQp
-    for (it = start; it != m_laData.end(); ++it)
+    it = start;
+    for (mfxU32 i=0; i < numberOfFrames ; i++)
     {
         mfxU32 intraCost    = (*it).intraCost;
         mfxU32 interCost    = (*it).interCost;
@@ -1508,17 +1520,22 @@ mfxI32 VMEBrc::GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP 
         mfxF64 ratio        = 1.0;//mfxF64(interCost) / intraCost;
         mfxF64 deltaQp      = log((intraCost + propCost * ratio) / intraCost) / log(2.0);
         (*it).deltaQp = (interCost >= intraCost * 0.9)
-            ? -mfxI32(deltaQp * 2.0 * strength + 0.5)
+            ? -mfxI32(deltaQp * 1.5 * strength + 0.5)
             : -mfxI32(deltaQp * 1.0 * strength + 0.5);
         maxDeltaQp = IPP_MAX(maxDeltaQp, (*it).deltaQp);
         maxLayer = ((*it).layer > maxLayer) ? (*it).layer : maxLayer;
+        ++it;
     }
+    
  
-    for (it = start; it != m_laData.end(); ++it)
+    it = start;
+    for (mfxU32 i=0; i < numberOfFrames ; i++)
+    {
         (*it).deltaQp -= maxDeltaQp;
+        ++it;
+    }
 
     
-    //if ((*start).layer == 0)
     {
         mfxU8 minQp = (mfxU8) SelectQp(start,m_laData.end(), m_targetRateMax * numberOfFrames, 8);
         mfxU8 maxQp = (mfxU8) SelectQp(start,m_laData.end(), m_targetRateMin * numberOfFrames, 8);
@@ -1537,7 +1554,7 @@ mfxI32 VMEBrc::GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP 
         (*start).deltaQp = -1;     
     }
     m_curQp = CLIPVAL(1, 51, m_curBaseQp + (*start).deltaQp); // driver doesn't support qp=0
-    // printf("%d) intra %d, inter %d, prop %d, delta %d, maxdelta %d, baseQP %d, qp %d \n",(*start).encOrder,(*start).intraCost, (*start).interCost, (*start).propCost, (*start).deltaQp, maxDeltaQp, m_curBaseQp,m_curQp );
+    //printf("%d) intra %d, inter %d, prop %d, delta %d, maxdelta %d, baseQP %d, qp %d \n",(*start).encOrder,(*start).intraCost, (*start).interCost, (*start).propCost, (*start).deltaQp, maxDeltaQp, m_curBaseQp,m_curQp );
 
     //printf("%d\t base QP %d\tdelta QP %d\tcurQp %d, rate (%f, %f), total rate %f (%f, %f), number of frames %d\n", 
     //    (*start).dispOrder, m_curBaseQp, (*start).deltaQp, m_curQp, (mfxF32)m_targetRateMax*numberOfFrames,(mfxF32)m_targetRateMin*numberOfFrames,  (mfxF32)GetTotalRate(start,m_laData.end(), m_curQp),  (mfxF32)GetTotalRate(start,m_laData.end(), m_curQp + 1), (mfxF32)GetTotalRate(start,m_laData.end(), m_curQp -1),numberOfFrames);
