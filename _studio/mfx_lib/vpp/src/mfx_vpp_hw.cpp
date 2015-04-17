@@ -1290,7 +1290,8 @@ void TaskManager::UpdatePTS_Mode30i60p(
 {
     if ( (FRC_STANDARD & m_extMode) || (FRC_DISABLED == m_extMode) )
     {
-        if (0 != taskIndex % 2)
+        if ((0 != taskIndex % 2) ||
+           (NULL == input)) /* Second condition is prevent from incorrect usage */
         {
             output->Data.TimeStamp = (mfxU64) MFX_TIME_STAMP_INVALID;
             output->Data.FrameOrder = (mfxU32) MFX_FRAMEORDER_UNKNOWN;
