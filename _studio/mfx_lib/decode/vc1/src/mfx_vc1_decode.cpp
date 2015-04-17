@@ -1025,6 +1025,7 @@ mfxStatus MFXVideoDECODEVC1::Close(void)
         m_pCore->FreeFrames(&m_fakeresponse);
 #endif
     }
+    memset(&m_response, 0, sizeof(m_response));
     memset(&m_response_op, 0, sizeof(m_response_op));
     
     m_qMemID.clear();
