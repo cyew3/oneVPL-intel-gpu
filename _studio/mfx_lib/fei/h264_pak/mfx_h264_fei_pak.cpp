@@ -419,7 +419,7 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
         checkStatus = spsppsSts;
 
     //raw surfaces should be created before accel service
-    mfxFrameAllocRequest request = { { 0 } };
+    mfxFrameAllocRequest request = { };
     request.Info = m_video.mfx.FrameInfo;
 
     /*FIXME*/

@@ -840,7 +840,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         }
     }
 
-    mfxFrameAllocRequest request = { { 0 } };
+    mfxFrameAllocRequest request = { };
     request.Info = m_video.mfx.FrameInfo;
 
     m_emulatorForSyncPart.Init(m_video);

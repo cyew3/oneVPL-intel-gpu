@@ -923,7 +923,7 @@ mfxStatus CMCameraProcessor::WaitForActiveThreads()
 
 mfxStatus CMCameraProcessor::AllocateInternalSurfaces()
 {
-    mfxFrameAllocRequest request = { { 0 } };
+    mfxFrameAllocRequest request = {};
     mfxU32 frNum = 0;
     mfxStatus sts;
 
@@ -1075,7 +1075,7 @@ mfxStatus CMCameraProcessor::ReallocateInternalSurfaces(mfxVideoParam &newParam,
     mfxU16 paddedFrameHeight = (mfxU16)frameSizeExtra.TileHeightPadded;
     mfxU16 paddedFrameWidth  = (mfxU16)frameSizeExtra.paddedFrameWidth;
 
-    mfxFrameAllocRequest request = { { 0 } };
+    mfxFrameAllocRequest request = { };
 
     request.Info        = frameSizeExtra.TileInfo;
     request.Info.Width  = (mfxU16)vSliceWidth;

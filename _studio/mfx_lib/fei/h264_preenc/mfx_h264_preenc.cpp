@@ -364,7 +364,7 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     m_currentVaType   = m_core->GetVAType();
 
     //raw surfaces should be created before accel service
-    mfxFrameAllocRequest request = { { 0 } };
+    mfxFrameAllocRequest request = { };
     request.Info = m_video.mfx.FrameInfo;
 
     //first ask one frame only
