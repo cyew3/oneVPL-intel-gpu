@@ -448,7 +448,7 @@ mfxStatus VideoENC_LA::Init(mfxVideoParam *par)
         m_vmeDataStorage[i].mb.resize(numMb);
 
 
-    mfxFrameAllocRequest request = { { 0 } };
+    mfxFrameAllocRequest request = { };
     request.Info = m_video.mfx.FrameInfo;
 
     request.Info.Width  = m_video.calcParam.widthLa / 16 * sizeof(MfxHwH264Encode::SVCPAKObject);
