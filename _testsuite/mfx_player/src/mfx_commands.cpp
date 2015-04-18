@@ -215,8 +215,6 @@ mfxStatus    resetEncCommand::Execute()
     MFX_CHECK_STS(rnd->GetVideoParam(&currentParams));
 
     newParams = currentParams;
-    newParams.mfx.BufferSizeInKB = 0;
-
     {
         // save ext buffers if those aren't specified in reset params
         auto_ext_buffer_if_exist save_buffers(m_NewParams);
@@ -290,14 +288,10 @@ mfxStatus    resetEncCommand::Execute()
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_STS_SKIP(sts = rnd->Reset(&newParams), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    IYUVSource *pYUVSurf;
-    m_pControl->GetYUVSource(&pYUVSurf);
-    MFX_CHECK_STS_SKIP(sts = pYUVSurf->Reset(&newParams), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     //if reset failed with err incompatible params during command execution we
     //shouldn't reset whole pipeline, let's map status code to pipeline code
     MFX_CHECK_STS(sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM ? sts = PIPELINE_ERROR_RESET_FAILED : sts);
-
 
 
     //changing file name for downstream
@@ -317,6 +311,11 @@ mfxStatus    resetEncCommand::Execute()
     if (!m_NewInputFileName.empty())
     {
         PrintInfo(VM_STRING("New input file"), m_NewInputFileName.c_str());
+
+        IYUVSource *pYUVSurf;
+        m_pControl->GetYUVSource(&pYUVSurf);
+        MFX_CHECK_STS_SKIP(sts = pYUVSurf->Reset(&newParams), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
         IBitstreamReader *pReader;
         MFX_CHECK_STS(m_pControl->GetSplitter(&pReader));
         pReader->Close();
