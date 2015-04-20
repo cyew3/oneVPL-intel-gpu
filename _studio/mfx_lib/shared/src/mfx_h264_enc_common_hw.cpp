@@ -2264,7 +2264,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
     }
 
-    if (par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 && hwCaps.Color420Only)
+    if (hwCaps.Color420Only &&
+        (par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ||
+         par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444))
     {
         unsupported = true;
         par.mfx.FrameInfo.ChromaFormat = 0;
