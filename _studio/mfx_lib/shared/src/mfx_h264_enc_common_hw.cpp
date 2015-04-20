@@ -2234,7 +2234,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 &&
-        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_MONOCHROME)
     {
         if (extBits->SPSBuffer)
             return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
