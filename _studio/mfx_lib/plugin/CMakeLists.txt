@@ -360,6 +360,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h264_encode/src )
   list( APPEND sources
     ${prefix}/genx_hsw_simple_me_isa.cpp
     ${prefix}/genx_bdw_simple_me_isa.cpp
+    ${prefix}/genx_skl_simple_me_isa.cpp
     ${prefix}/genx_hsw_simple_me_proto.cpp
   )
 endforeach()
