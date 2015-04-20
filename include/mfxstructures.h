@@ -702,7 +702,8 @@ enum {
     MFX_EXTBUFF_DECODED_FRAME_INFO         = MFX_MAKEFOURCC('D','E','F','I'),
     MFX_EXTBUFF_TIME_CODE                  = MFX_MAKEFOURCC('T','M','C','D'),
     MFX_EXTBUFF_HEVC_REGION                = MFX_MAKEFOURCC('2','6','5','R'),
-    MFX_EXTBUFF_PRED_WEIGHT_TABLE          = MFX_MAKEFOURCC('E','P','W','T')
+    MFX_EXTBUFF_PRED_WEIGHT_TABLE          = MFX_MAKEFOURCC('E','P','W','T'),
+    MFX_EXTBUFF_TEMPORAL_LAYERS            = MFX_MAKEFOURCC('T','M','P','L')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1367,6 +1368,24 @@ typedef struct {
     mfxI16       Weights[2][32][3][2];      // [list][list entry][Y, Cb, Cr][weight, offset]
     mfxU16       reserved[58];
 } mfxExtPredWeightTable;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16       reserved[12];
+
+    struct {
+        mfxU16   Scale;
+        mfxU16   QPI;
+        mfxU16   QPP;
+        mfxU16   QPB;
+        mfxU32   TargetKbps;
+        mfxU32   MaxKbps;
+        mfxU32   BufferSizeInKB;
+        mfxU32   InitialDelayInKB;
+        mfxU16   reserved1[20];
+    } Layer[8];
+} mfxExtTemporalLayers;
 
 #ifdef __cplusplus
 } // extern "C"
