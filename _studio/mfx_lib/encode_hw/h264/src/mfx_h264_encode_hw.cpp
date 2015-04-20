@@ -2141,6 +2141,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 task->m_cmRaw = CreateSurface(m_cmDevice, task->m_handleRaw.first, m_currentVaType);
         }
 
+        task->m_isENCPAK = m_isENCPAK;
+
         ConfigureTask(*task, m_lastTask, m_video);
 
         if(m_isENCPAK){ //temp find better way

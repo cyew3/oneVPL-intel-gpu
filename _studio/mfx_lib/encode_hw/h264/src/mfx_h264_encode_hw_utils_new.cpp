@@ -709,6 +709,13 @@ namespace
         mfxU32 numActiveRefL0 = (task.m_type[fieldId] & MFX_FRAMETYPE_P)
             ? extDdi->NumActiveRefP
             : extDdi->NumActiveRefBL0;
+        /*WA: if (1) Interlaced case and (2) FEI enabled */
+        if ((isField) && (task.m_isENCPAK))
+        {
+            numActiveRefL1 = 1;
+            numActiveRefL0 = 1;
+        }
+
 
         mfxExtAVCRefListCtrl * ctrl = GetExtBuffer(task.m_ctrl);
 #if defined (ADVANCED_REF)

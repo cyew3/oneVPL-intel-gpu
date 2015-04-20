@@ -1054,6 +1054,7 @@ namespace MfxHwH264Encode
         mfxMemId m_midMBQP; 
         bool     m_isMBQP;
 
+        bool     m_isENCPAK;
         mfxExtBuffer* m_feiDistortion;
         mfxExtBuffer* m_feiMVOut;
         mfxExtBuffer* m_feiMBCODEOut;
