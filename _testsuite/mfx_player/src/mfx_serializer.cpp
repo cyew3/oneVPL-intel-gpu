@@ -175,7 +175,6 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(MaxQPP);
     SERIALIZE_INT(MinQPB);
     SERIALIZE_INT(MaxQPB);
-    SERIALIZE_INT(FixedFrameRate);
     SERIALIZE_INT(DisableVUI);
     SERIALIZE_INT(BufferingPeriodSEI);
     SERIALIZE_INT(UseRawRef);
@@ -187,11 +186,6 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_INT(NumSliceB);
     SERIALIZE_INT(QVBRQuality);
     SERIALIZE_INT(IntRefCycleDist);
-    SERIALIZE_INT(AspectRatioInfoPresent);
-    SERIALIZE_INT(OverscanInfoPresent);
-    SERIALIZE_INT(TimingInfoPresent);
-    SERIALIZE_INT(LowDelayHrd);
-    SERIALIZE_INT(BitstreamRestriction);
 }
 
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const

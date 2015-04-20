@@ -78,33 +78,6 @@ namespace
         return true;
     }
 
-    bool CheckTriStateOptionForOff(mfxU16 & opt)
-    {
-        if (opt !=  MFX_CODINGOPTION_OFF)
-        {
-            opt = MFX_CODINGOPTION_OFF;
-            return false;
-        }
-
-        return true;
-    }
-
-    inline void SetDefaultOn(mfxU16 & opt)
-    {
-        if (opt ==  MFX_CODINGOPTION_UNKNOWN)
-        {
-            opt = MFX_CODINGOPTION_ON;
-        }
-    }
-
-    inline void SetDefaultOff(mfxU16 & opt)
-    {
-        if (opt ==  MFX_CODINGOPTION_UNKNOWN)
-        {
-            opt = MFX_CODINGOPTION_OFF;
-        }
-    }
-
     template <class T, class U>
     bool CheckFlag(T & opt, U deflt)
     {
@@ -900,22 +873,12 @@ namespace
         }
     }
 
-    inline mfxU16 FlagToTriState(mfxU16 flag)
-    {
-        return flag ? mfxU16(MFX_CODINGOPTION_ON)
-            : mfxU16(MFX_CODINGOPTION_OFF);
-    }
-
     template <class TFunc>
     bool CheckAgreementOfSequenceLevelParameters(MfxVideoParam & par, mfxExtSpsHeader const & sps)
     {
         mfxU32 changed = 0;
 
         mfxFrameInfo & fi = par.mfx.FrameInfo;
-        mfxExtCodingOption * extOpt   = GetExtBuffer(par);
-        mfxExtCodingOption2 * extOpt2 = GetExtBuffer(par);
-        mfxExtCodingOption3 * extOpt3 = GetExtBuffer(par);
-
 
         TFunc f;
 
@@ -935,27 +898,10 @@ namespace
         changed |= CheckAgreement(f, fi.CropW,     mfxU16(fi.Width  - (sps.frameCropLeftOffset + sps.frameCropRightOffset) * cropUnitX));
         changed |= CheckAgreement(f, fi.CropH,     mfxU16(fi.Height - (sps.frameCropTopOffset  + sps.frameCropBottomOffset) * cropUnitY));
 
-        mfxU16 disableVui = FlagToTriState(!sps.vui.flags.vclHrdParametersPresent);
-        changed |= CheckAgreement(f, extOpt2->DisableVUI, disableVui);
-
         if (sps.vuiParametersPresentFlag)
         {
-            mfxU16 aspectRatioPresent   = FlagToTriState(sps.vui.flags.aspectRatioInfoPresent);
-            mfxU16 timingInfoPresent    = FlagToTriState(sps.vui.flags.timingInfoPresent);
-            mfxU16 overscanInfoPresent  = FlagToTriState(sps.vui.flags.overscanInfoPresent);
-            mfxU16 bitstreamRestriction = FlagToTriState(sps.vui.flags.bitstreamRestriction);
-
-            changed |= CheckAgreement(f, extOpt3->AspectRatioInfoPresent, aspectRatioPresent);
-            changed |= CheckAgreement(f, extOpt3->TimingInfoPresent,      timingInfoPresent);
-            changed |= CheckAgreement(f, extOpt3->OverscanInfoPresent,    overscanInfoPresent);
-            changed |= CheckAgreement(f, extOpt3->BitstreamRestriction,   bitstreamRestriction);
-
             if (sps.vui.flags.timingInfoPresent)
-            {
-                mfxU16 fixedFrameRate = FlagToTriState(sps.vui.flags.fixedFrameRate);
-                changed |= CheckAgreement(f, extOpt2->FixedFrameRate, fixedFrameRate);
                 changed |= CheckAgreementOfFrameRate(f, fi.FrameRateExtN, fi.FrameRateExtD, sps.vui.timeScale, sps.vui.numUnitsInTick);
-            }
 
             if (sps.vui.flags.aspectRatioInfoPresent)
             {
@@ -972,16 +918,15 @@ namespace
                     (6 + sps.vui.nalHrdParameters.bitRateScale)) + 999) / 1000);
                 mfxU16 buffersize = mfxU16((((sps.vui.nalHrdParameters.cpbSizeValueMinus1[0] + 1) <<
                     (4 + sps.vui.nalHrdParameters.cpbSizeScale)) + 7999) / 8000);
-                mfxU16 lowDelayHrd = FlagToTriState(sps.vui.flags.lowDelayHrd);
 
                 changed |= CheckAgreement(f, par.mfx.RateControlMethod,    rcmethod);
                 changed |= CheckAgreement(f, par.calcParam.maxKbps,        maxkbps);
                 changed |= CheckAgreement(f, par.calcParam.bufferSizeInKB, buffersize);
-                changed |= CheckAgreement(f, extOpt3->LowDelayHrd,         lowDelayHrd);
 
             }
         }
 
+        mfxExtCodingOption * extOpt = GetExtBuffer(par);
         mfxU16 picTimingSei = sps.vui.flags.picStructPresent
             ? mfxU16(MFX_CODINGOPTION_ON)
             : mfxU16(MFX_CODINGOPTION_OFF);
@@ -1245,6 +1190,7 @@ mfxStatus MfxHwH264Encode::QueryGuid(VideoCORE* core, GUID guid)
 mfxStatus MfxHwH264Encode::ReadSpsPpsHeaders(MfxVideoParam & par)
 {
     mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
+    mfxExtCodingOption2      * extOpt2 = GetExtBuffer(par);
 
     try
     {
@@ -1259,6 +1205,15 @@ mfxStatus MfxHwH264Encode::ReadSpsPpsHeaders(MfxVideoParam & par)
                 InputBitstream reader(extBits->PPSBuffer, extBits->PPSBufSize);
                 mfxExtPpsHeader * extPps = GetExtBuffer(par);
                 ReadPpsHeader(reader, *extSps, *extPps);
+            }
+        }
+        else
+        {
+            if (IsOn(extOpt2->DisableVUI))
+            {
+                mfxExtSpsHeader * extSps = GetExtBuffer(par);
+                extSps->vuiParametersPresentFlag = 0;
+                Zero(extSps->vui);
             }
         }
     }
@@ -2271,36 +2226,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
         par.mfx.FrameInfo.ChromaFormat = 0;
     }
-    if (!CheckTriStateOption(extOpt2->DisableVUI))         changed = true;
-    if (!CheckTriStateOption(extOpt->VuiNalHrdParameters)) changed = true;
-    if (!CheckTriStateOption(extOpt->VuiVclHrdParameters)) changed = true;
-    if (!CheckTriStateOption(extOpt2->FixedFrameRate))     changed = true;
-    if (!CheckTriStateOption(extOpt3->LowDelayHrd))        changed = true;
-
-    if (IsOn(extOpt2->DisableVUI))
-    {
-        bool contradictoryVuiParam = false;
-        if (!CheckTriStateOptionForOff(extOpt3->TimingInfoPresent))      contradictoryVuiParam = true;
-        if (!CheckTriStateOptionForOff(extOpt3->OverscanInfoPresent))    contradictoryVuiParam = true;
-        if (!CheckTriStateOptionForOff(extOpt3->AspectRatioInfoPresent)) contradictoryVuiParam = true;
-        if (!CheckTriStateOptionForOff(extOpt3->BitstreamRestriction))   contradictoryVuiParam = true;
-        if (!CheckTriStateOptionForOff(extOpt->VuiNalHrdParameters))     contradictoryVuiParam = true;
-        if (!CheckTriStateOptionForOff(extOpt->VuiVclHrdParameters))     contradictoryVuiParam = true;
-        if (!CheckTriStateOptionForOff(extOpt->PicTimingSEI))            contradictoryVuiParam = true;
-
-        if (contradictoryVuiParam)
-        {
-            if (extBits->SPSBuffer)
-                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-            changed = true;
-        }
-    }
 
     if ((par.mfx.FrameInfo.FrameRateExtN == 0) !=
         (par.mfx.FrameInfo.FrameRateExtD == 0))
     {
-        if (extBits->SPSBuffer && !IsOff(extOpt3->TimingInfoPresent))
+        if (extSps->vui.flags.timingInfoPresent)
             return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
         unsupported = true;
@@ -2308,7 +2238,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.FrameInfo.FrameRateExtD = 0;
     }
 
-    if (!IsOff(extOpt3->TimingInfoPresent) &&
+    if (extSps->vui.flags.timingInfoPresent &&
         par.mfx.FrameInfo.FrameRateExtN != 0 &&
         par.mfx.FrameInfo.FrameRateExtD != 0 &&
         par.mfx.FrameInfo.FrameRateExtN > mfxU64(172) * par.mfx.FrameInfo.FrameRateExtD)
@@ -2321,29 +2251,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.FrameInfo.FrameRateExtD = 0;
     }
 
-    if (IsOff(extOpt3->TimingInfoPresent) &&
-        IsOn(extOpt2->FixedFrameRate))
-    {
-        // if timing_info_present_flag is 0, fixed_frame_rate_flag is inferred to be 0 (Annex E.2.1)
-        if (extBits->SPSBuffer)
-            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-        changed = true;
-        extOpt2->FixedFrameRate = MFX_CODINGOPTION_OFF;
-    }
-
-    if (!IsOff(extOpt3->TimingInfoPresent))
-    {
-        if (IsOn(extOpt2->FixedFrameRate) &&
-            IsOn(extOpt3->LowDelayHrd))
-        {
-            if (extBits->SPSBuffer)
-                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-            changed = true;
-            extOpt3->LowDelayHrd = MFX_CODINGOPTION_OFF;
-        }
-    }
 
     if (par.mfx.CodecProfile != MFX_PROFILE_UNKNOWN && !IsValidCodingProfile(par.mfx.CodecProfile))
     {
@@ -2406,7 +2313,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
-    if (!IsOff(extOpt3->TimingInfoPresent)  &&
+    if (extSps->vui.flags.timingInfoPresent  &&
         par.mfx.FrameInfo.Width         != 0 &&
         par.mfx.FrameInfo.Height        != 0 &&
         par.mfx.FrameInfo.FrameRateExtN != 0 &&
@@ -2477,6 +2384,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckTriStateOption(extOpt->AUDelimiter))              changed = true;
     if (!CheckTriStateOption(extOpt->EndOfStream))              changed = true;
     if (!CheckTriStateOption(extOpt->PicTimingSEI))             changed = true;
+    if (!CheckTriStateOption(extOpt->VuiNalHrdParameters))      changed = true;
+    if (!CheckTriStateOption(extOpt->VuiVclHrdParameters))      changed = true;
     if (!CheckTriStateOption(extOpt->SingleSeiNalUnit))         changed = true;
     if (!CheckTriStateOption(extOpt->NalHrdConformance))        changed = true;
     if (!CheckTriStateOption(extDdi->RefRaw))                   changed = true;
@@ -2486,6 +2395,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckTriStateOption(extOpt2->MBBRC))                   changed = true;
     //if (!CheckTriStateOption(extOpt2->ExtBRC))                  changed = true;
     if (!CheckTriStateOption(extOpt2->RepeatPPS))               changed = true;
+    if (!CheckTriStateOption(extOpt2->FixedFrameRate))          changed = true;
+    if (!CheckTriStateOption(extOpt2->DisableVUI))              changed = true;
     if (!CheckTriStateOption(extOpt2->UseRawRef))               changed = true;
 
     if (!CheckTriStateOption(extOpt3->DirectBiasAdjustment))        changed = true;
@@ -2643,8 +2554,22 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extOpt->VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
     }
 
+    if (IsOn(extOpt->VuiNalHrdParameters) &&
+        IsOn(extOpt2->DisableVUI))
+    {
+        changed = true;
+        extOpt->VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
+    }
+
     if (IsOn(extOpt->VuiVclHrdParameters) &&
         IsOff(extOpt->NalHrdConformance))
+    {
+        changed = true;
+        extOpt->VuiVclHrdParameters = MFX_CODINGOPTION_OFF;
+    }
+
+    if (IsOn(extOpt->VuiVclHrdParameters) &&
+        IsOn(extOpt2->DisableVUI))
     {
         changed = true;
         extOpt->VuiVclHrdParameters = MFX_CODINGOPTION_OFF;
@@ -2657,21 +2582,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     {
         changed = true;
         extOpt->VuiVclHrdParameters = MFX_CODINGOPTION_OFF;
-    }
-
-    if (!IsOn(extOpt2->DisableVUI) &&
-        IsOff(extOpt->VuiNalHrdParameters) &&
-        IsOff(extOpt->VuiVclHrdParameters) &&
-        extOpt2->FixedFrameRate != MFX_CODINGOPTION_UNKNOWN &&
-        extOpt3->LowDelayHrd != MFX_CODINGOPTION_UNKNOWN &&
-        IsOn(extOpt2->FixedFrameRate) != IsOff(extOpt3->LowDelayHrd))
-    {
-        // when low_delay_hrd_flag isn't present in bitstream, it's value should be inferred to be equal to 1 - fixed_frame_rate_flag (Annex E.2.1)
-        changed = true;
-        if (IsOn(extOpt2->FixedFrameRate))
-            extOpt3->LowDelayHrd = MFX_CODINGOPTION_OFF;
-        else
-            extOpt3->LowDelayHrd = MFX_CODINGOPTION_ON;
     }
 
     if (extDdi->WeightedBiPredIdc == 1 || extDdi->WeightedBiPredIdc > 2)
@@ -2751,7 +2661,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 }
             }
 
-            if (!IsOff(extOpt->NalHrdConformance) || IsOn(extOpt->VuiNalHrdParameters))
+            if (extSps->vui.flags.nalHrdParametersPresent || extSps->vui.flags.vclHrdParametersPresent)
             {
                 mfxU16 profile = mfxU16(IPP_MAX(MFX_PROFILE_AVC_BASELINE, par.mfx.CodecProfile & MASK_PROFILE_IDC));
                 for (; profile != MFX_PROFILE_UNKNOWN; profile = GetNextProfile(profile))
@@ -2901,9 +2811,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
                     if (par.calcParam.bufferSizeInKB < 2 * avgFrameSizeInKB)
                     {
-                        if (extBits->SPSBuffer && (
-                            extSps->vui.flags.nalHrdParametersPresent ||
-                            extSps->vui.flags.vclHrdParametersPresent))
+                        if (extSps->vui.flags.nalHrdParametersPresent ||
+                            extSps->vui.flags.vclHrdParametersPresent)
                             return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
                         changed = true;
@@ -3785,9 +3694,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamMvcQueryLike(MfxVideoParam & par)
 
                 if (par.calcParam.mvcPerViewPar.bufferSizeInKB < 2 * avgFrameSizeInKB)
                 {
-                    if (extBits->SPSBuffer && (
-                        extSps->vui.flags.nalHrdParametersPresent ||
-                        extSps->vui.flags.vclHrdParametersPresent))
+                    if (extSps->vui.flags.nalHrdParametersPresent ||
+                        extSps->vui.flags.vclHrdParametersPresent)
                         return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
                     changed = true;
@@ -4516,14 +4424,6 @@ void MfxHwH264Encode::SetDefaults(
     if (par.mfx.CodecLevel == MFX_LEVEL_UNKNOWN)
         par.mfx.CodecLevel = MFX_LEVEL_AVC_1;
 
-    SetDefaultOff(extOpt2->DisableVUI);
-    SetDefaultOn(extOpt3->AspectRatioInfoPresent);
-    SetDefaultOff(extOpt3->OverscanInfoPresent);
-    SetDefaultOn(extOpt3->TimingInfoPresent);
-    SetDefaultOn(extOpt2->FixedFrameRate);
-    SetDefaultOff(extOpt3->LowDelayHrd);
-    SetDefaultOn(extOpt3->BitstreamRestriction);
-
     CheckVideoParamQueryLike(par, hwCaps, platform, vaType);
 
     if (extOpt3->NumSliceI == 0 && extOpt3->NumSliceP == 0 && extOpt3->NumSliceB == 0)
@@ -4572,8 +4472,8 @@ void MfxHwH264Encode::SetDefaults(
                 par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
             {
                 mfxU32 maxBps = par.calcParam.targetKbps * MAX_BITRATE_RATIO;
-                if (IsOn(extOpt->NalHrdConformance) ||
-                    IsOn(extOpt->VuiVclHrdParameters))
+                if (extSps->vui.flags.nalHrdParametersPresent ||
+                    extSps->vui.flags.vclHrdParametersPresent)
                     maxBps = IPP_MIN(maxBps, GetMaxBitrate(par));
 
                 par.calcParam.maxKbps = mfxU32(IPP_MIN(maxBps / 1000, UINT_MAX));
@@ -4592,8 +4492,8 @@ void MfxHwH264Encode::SetDefaults(
                 par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
             {
                 mfxU32 maxBps = par.calcParam.mvcPerViewPar.targetKbps * MAX_BITRATE_RATIO;
-                if (IsOn(extOpt->NalHrdConformance) ||
-                    IsOn(extOpt->VuiVclHrdParameters))
+                if (extSps->vui.flags.nalHrdParametersPresent ||
+                    extSps->vui.flags.vclHrdParametersPresent)
                     maxBps = IPP_MIN(maxBps, GetMaxPerViewBitrate(par));
 
                 par.calcParam.mvcPerViewPar.maxKbps = mfxU32(IPP_MIN(maxBps / 1000, UINT_MAX));
@@ -4834,12 +4734,12 @@ void MfxHwH264Encode::SetDefaults(
         if (extSps->vuiParametersPresentFlag)
         {
             AspectRatioConverter arConv(fi.AspectRatioW, fi.AspectRatioH);
-            extSps->vui.flags.aspectRatioInfoPresent = (fi.AspectRatioH && fi.AspectRatioW) && !IsOff(extOpt3->AspectRatioInfoPresent);
+            extSps->vui.flags.aspectRatioInfoPresent = (fi.AspectRatioH && fi.AspectRatioW);
             extSps->vui.aspectRatioIdc               = arConv.GetSarIdc();
             extSps->vui.sarWidth                     = arConv.GetSarWidth();
             extSps->vui.sarHeight                    = arConv.GetSarHeight();
 
-            extSps->vui.flags.overscanInfoPresent = !IsOff(extOpt3->OverscanInfoPresent);
+            extSps->vui.flags.overscanInfoPresent = 0;
             extSps->vui.flags.overscanAppropriate = 0;
 
             extSps->vui.videoFormat                    = mfxU8(extVsi->VideoFormat);
@@ -4857,11 +4757,10 @@ void MfxHwH264Encode::SetDefaults(
             extSps->vui.chromaSampleLocTypeTopField    = mfxU8(extCli->ChromaSampleLocTypeTopField);
             extSps->vui.chromaSampleLocTypeBottomField = mfxU8(extCli->ChromaSampleLocTypeBottomField);
 
-            extSps->vui.flags.timingInfoPresent = !IsOff(extOpt3->TimingInfoPresent);
+            extSps->vui.flags.timingInfoPresent = 1;
             extSps->vui.numUnitsInTick          = fi.FrameRateExtD;
             extSps->vui.timeScale               = fi.FrameRateExtN * 2;
             extSps->vui.flags.fixedFrameRate    = !IsOff(extOpt2->FixedFrameRate);
-
 
             extSps->vui.flags.nalHrdParametersPresent = IsOn(extOpt->VuiNalHrdParameters);
             extSps->vui.flags.vclHrdParametersPresent = IsOn(extOpt->VuiVclHrdParameters);
@@ -4915,10 +4814,10 @@ void MfxHwH264Encode::SetDefaults(
             extSps->vui.vclHrdParameters.dpbOutputDelayLengthMinus1         = 23;
             extSps->vui.vclHrdParameters.timeOffsetLength                   = 24;
 
-            extSps->vui.flags.lowDelayHrd                                   = IsOn(extOpt3->LowDelayHrd);;
+            extSps->vui.flags.lowDelayHrd                                   = 0;
             extSps->vui.flags.picStructPresent                              = IsOn(extOpt->PicTimingSEI);
 
-            extSps->vui.flags.bitstreamRestriction           = !IsOff(extOpt3->BitstreamRestriction);
+            extSps->vui.flags.bitstreamRestriction           = 1;
             extSps->vui.flags.motionVectorsOverPicBoundaries = 1;
             extSps->vui.maxBytesPerPicDenom                  = 2;
             extSps->vui.maxBitsPerMbDenom                    = 1;
