@@ -1548,7 +1548,7 @@ IntraRefreshState MfxHwH264Encode::GetIntraRefreshState(
 mfxStatus MfxHwH264Encode::UpdateIntraRefreshWithoutIDR(
     MfxVideoParam const & oldPar,
     MfxVideoParam const & newPar,
-    mfxU32                frameOrder,
+    mfxU32                baseLayerOrder,
     mfxI64                oldStartFrame,
     mfxI64 &              updatedStartFrame,
     mfxU16 &              updatedStripeWidthInMBs)
@@ -1569,12 +1569,12 @@ mfxStatus MfxHwH264Encode::UpdateIntraRefreshWithoutIDR(
 
     IntraRefreshState oldIRState = MfxHwH264Encode::GetIntraRefreshState(
         oldPar,
-        mfxU32(frameOrder - oldStartFrame),
+        mfxU32(baseLayerOrder - oldStartFrame),
         0,
         oldStripeWidthInMBs);
 
     mfxU16 newIRProgressInFrames = oldIRState.IntraLocation / updatedStripeWidthInMBs + updatedNumFramesWithoutRefresh + 1;
-    updatedStartFrame = frameOrder - newIRProgressInFrames;
+    updatedStartFrame = baseLayerOrder - newIRProgressInFrames;
 
     return MFX_ERR_NONE;
 }

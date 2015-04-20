@@ -3296,13 +3296,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 
-    if (extOpt2->IntRefType && par.mfx.NumRefFrame > 1)
+    if (extOpt2->IntRefType && par.mfx.NumRefFrame > 1 && par.calcParam.lyncMode == 0)
     {
         extOpt2->IntRefType = 0;
         changed = true;
     }
 
-    if (extOpt2->IntRefType && par.calcParam.numTemporalLayer)
+    if (extOpt2->IntRefType && par.calcParam.numTemporalLayer && par.calcParam.lyncMode == 0)
     {
         extOpt2->IntRefType = 0;
         changed = true;

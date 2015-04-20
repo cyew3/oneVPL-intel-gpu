@@ -677,6 +677,7 @@ namespace MfxHwH264Encode
         mfxU32  m_frameOrderIdr;    // most recent idr frame in encoding order
         mfxU32  m_frameOrderI;      // most recent i frame in encoding order
         mfxU32  m_frameOrder;
+        mfxU32  m_baseLayerOrder;
         mfxU32  m_frameOrderStartLyncStructure; // starting point of Lync temporal scalability structure
         mfxU16  m_frameNum;
         mfxI32  m_frameNumWrap;
@@ -1933,11 +1934,12 @@ namespace MfxHwH264Encode
         mfxU32      m_fieldCounter;
         mfxStatus   m_1stFieldStatus;
         mfxU32      m_frameOrder;
+        mfxU32      m_baseLayerOrder;
         mfxU32      m_frameOrderIdrInDisplayOrder;    // frame order of last IDR frame (in display order)
         mfxU32      m_frameOrderStartLyncStructure; // starting point of Lync temporal scalability structure
 
         // parameters for Intra refresh
-        mfxI64      m_frameOrderStartIntraRefresh; // starting point of Intra refresh cycles (could be negative)
+        mfxI64      m_baseLayerOrderStartIntraRefresh; // starting point of Intra refresh cycles (could be negative)
         mfxU16      m_intraStripeWidthInMBs; // width of Intra MB stripe (column or row depending on refresh type)
 
         mfxU32      m_enabledSwBrc;

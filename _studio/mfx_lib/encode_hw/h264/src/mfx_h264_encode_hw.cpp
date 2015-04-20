@@ -1063,6 +1063,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_frameOrder     = 0;
     m_stagesToGo     = AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR;
     m_failedStatus   = MFX_ERR_NONE;
+    m_baseLayerOrder = 0;
     m_frameOrderIdrInDisplayOrder = 0;
     m_frameOrderStartLyncStructure = 0;
 
@@ -1075,7 +1076,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     {
         mfxU16 refreshDimension = extOpt2->IntRefType == HORIZ_REFRESH ? m_video.mfx.FrameInfo.Height >> 4 : m_video.mfx.FrameInfo.Width >> 4;
         m_intraStripeWidthInMBs = (refreshDimension + extOpt2->IntRefCycleSize - 1) / extOpt2->IntRefCycleSize;
-        m_frameOrderStartIntraRefresh = 0;
+        m_baseLayerOrderStartIntraRefresh = 0;
     }
     Zero(m_stat);
 
@@ -1279,6 +1280,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         m_lastTask = DdiTask();
 
         m_frameOrder                  = 0;
+        m_baseLayerOrder              = 0;
         m_frameOrderIdrInDisplayOrder = 0;
         m_frameOrderStartLyncStructure = 0;
 
@@ -1299,23 +1301,29 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         {
             mfxU16 refreshDimension = extOpt2New->IntRefType == HORIZ_REFRESH ? m_video.mfx.FrameInfo.Height >> 4 : m_video.mfx.FrameInfo.Width >> 4;
             m_intraStripeWidthInMBs = (refreshDimension + extOpt2New->IntRefCycleSize - 1) / extOpt2New->IntRefCycleSize;
-            m_frameOrderStartIntraRefresh = 0;
+            m_baseLayerOrderStartIntraRefresh = 0;
         }
-    } else if (m_video.calcParam.lyncMode && newPar.calcParam.lyncMode &&
-        m_video.calcParam.numTemporalLayer != newPar.calcParam.numTemporalLayer)
+    }
+    else
     {
-        // reset starting point of Lync temporal scalability calculation if number of temporal layers was changed w/o IDR
-        m_frameOrderStartLyncStructure = m_frameOrder;
-    } else if (extOpt2Old->IntRefType && extOpt2New->IntRefType && (extOpt2Old->IntRefType == extOpt2New->IntRefType))
-    {
-        mfxStatus sts = UpdateIntraRefreshWithoutIDR(
-            m_video,
-            newPar,
-            m_frameOrder,
-            m_frameOrderStartIntraRefresh,
-            m_frameOrderStartIntraRefresh,
-            m_intraStripeWidthInMBs);
-        MFX_CHECK_STS(sts);
+        if (m_video.calcParam.lyncMode && newPar.calcParam.lyncMode &&
+            m_video.calcParam.numTemporalLayer != newPar.calcParam.numTemporalLayer)
+        {
+            // reset starting point of Lync temporal scalability calculation if number of temporal layers was changed w/o IDR
+            m_frameOrderStartLyncStructure = m_frameOrder;
+        }
+
+        if (extOpt2Old->IntRefType && extOpt2New->IntRefType && (extOpt2Old->IntRefType == extOpt2New->IntRefType))
+        {
+            mfxStatus sts = UpdateIntraRefreshWithoutIDR(
+                m_video,
+                newPar,
+                m_baseLayerOrder,
+                m_baseLayerOrderStartIntraRefresh,
+                m_baseLayerOrderStartIntraRefresh,
+                m_intraStripeWidthInMBs);
+            MFX_CHECK_STS(sts);
+        }
     }
 
     m_video = newPar;
@@ -1982,6 +1990,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             newTask.m_fid[0]       = newTask.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF;
             newTask.m_fid[1]       = newTask.m_fieldPicFlag - newTask.m_fid[0];
 
+            newTask.m_baseLayerOrder = m_baseLayerOrder;
+
             if (newTask.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF)
                 std::swap(newTask.m_type.top, newTask.m_type.bot);
 
@@ -2004,14 +2014,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
             if (newTask.GetFrameType() & MFX_FRAMETYPE_I)
             {
-                m_frameOrderStartIntraRefresh = newTask.m_frameOrder;
+                m_baseLayerOrderStartIntraRefresh = newTask.m_baseLayerOrder;
             }
-
-            newTask.m_IRState = GetIntraRefreshState(
-                m_video,
-                mfxU32(newTask.m_frameOrder - m_frameOrderStartIntraRefresh),
-                &(newTask.m_ctrl),
-                m_intraStripeWidthInMBs);
 
             m_frameOrder++;
         }
@@ -2144,6 +2148,19 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         task->m_isENCPAK = m_isENCPAK;
 
         ConfigureTask(*task, m_lastTask, m_video);
+
+        Zero(task->m_IRState);
+        if (task->m_tidx == 0)
+        {
+            // curernt frame is in base temporal layer
+            // insert intra refresh MBs and update base layer counter
+            task->m_IRState = GetIntraRefreshState(
+                m_video,
+                mfxU32(task->m_baseLayerOrder - m_baseLayerOrderStartIntraRefresh),
+                &(task->m_ctrl),
+                m_intraStripeWidthInMBs);
+            m_baseLayerOrder ++;
+        }
 
         if(m_isENCPAK){ //temp find better way
             mfxExtFeiEncMBStat* mbstat = NULL;
