@@ -80,4 +80,4 @@ FFMPEG
     x64  (.lib files for x64 are here)
   licenses
 
-Also, you hve to copy all the .dll files for corresponding platform to the directory where sample executable resides (or add .dll directory to the PATH environment variable)
+Also, you have to copy all the .dll files for corresponding platform to the directory where sample executable resides (or add .dll directory to the PATH environment variable)

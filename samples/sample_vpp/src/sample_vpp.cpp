@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
   mfxFrameInfo        inFrameInfo[MAX_INPUT_STREAMS];
   mfxFrameInfo        outFrameInfo;
 
-  mfxFrameSurface1*   pInSurf[MAX_INPUT_STREAMS];
+  mfxFrameSurface1*   pInSurf[MAX_INPUT_STREAMS]={0};
   mfxFrameSurface1*   pOutSurf = NULL;
   mfxFrameSurface1*   pWorkSurf = NULL;
 
