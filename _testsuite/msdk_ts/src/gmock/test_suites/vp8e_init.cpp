@@ -220,6 +220,9 @@ int test(unsigned int id)
 
     enc.MFXInit();
 
+    if (enc.m_uid) // load plugin
+        enc.Load();
+
     InitPar par = {enc.m_session, &enc.m_par};
     
     if(tc.set_par)
