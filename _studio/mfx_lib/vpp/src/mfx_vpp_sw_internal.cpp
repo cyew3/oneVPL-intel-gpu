@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010 - 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010 - 2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          SW Video Pre\Post Processing: internal implementation
@@ -121,7 +121,7 @@ mfxStatus VideoVPPSW::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 
         }
 
         /* mechanism to produce buffered frames */
-        if( MFX_ERR_MORE_DATA == sts || MFX_ERR_MORE_DATA_RUN_TASK == sts)
+        if( MFX_ERR_MORE_DATA == sts || (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == sts)
         {
             outputSurf = NULL;
         }
@@ -136,7 +136,7 @@ mfxStatus VideoVPPSW::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 
     /* ***************************************************************** */
 
     /* if there are filters before pipeline is broken we should run VPP */
-    if( !(MFX_ERR_NONE == sts || MFX_ERR_MORE_DATA_RUN_TASK == sts) )
+    if( !(MFX_ERR_NONE == sts || (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == sts) )
     {
         if( isPipelineBreak && filterBreakIndex > 0 )
         {
@@ -1127,15 +1127,16 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     mfxStatus sts;
     /* Lets find out VA type (Linux, Win or Android) and platform type */
     /* It can be different behaviour for Linux and IVB, Linux and HSW*/
-    bool bLinuxAndIVB_HSW = false;
+    bool bLinuxAndIVB_HSW_BDW = false;
     if ( (NULL != core) &&
         (core->GetVAType() == MFX_HW_VAAPI) &&
-        ( (core->GetHWType() == MFX_HW_IVB) || (core->GetHWType() == MFX_HW_HSW)) )
+        ( (core->GetHWType() == MFX_HW_IVB) || (core->GetHWType() == MFX_HW_HSW) ||
+          (core->GetHWType() == MFX_HW_BDW)) )
     {
         /* !!! Some features for HSW does not supported in HSW 16.2 release
-         * It was decided HWS functionality for 16.2 will be same as for IVB 16.1 release
+         * It was decided HSW functionality for 16.2 will be same as for IVB 16.1 release
          * */
-        bLinuxAndIVB_HSW = true;
+        bLinuxAndIVB_HSW_BDW = true;
     }
 
     if( MFX_EXTBUFF_VPP_DENOISE == filterName )
@@ -1144,23 +1145,11 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     }
     else if( MFX_EXTBUFF_VPP_DETAIL == filterName )
     {
-        if (false == bLinuxAndIVB_HSW)
-            sts = MFXVideoVPPDetailEnhancement::Query( pHint );
-        else
-        {
-            // This filter is not supported in Linux
-            sts = MFX_WRN_FILTER_SKIPPED;
-        }
+        sts = MFXVideoVPPDetailEnhancement::Query( pHint );
     }
     else if( MFX_EXTBUFF_VPP_PROCAMP == filterName )
     {
-        if (false == bLinuxAndIVB_HSW)
-            sts = MFXVideoVPPProcAmp::Query( pHint );
-        else
-        {
-            // This filter is not supported in Linux
-            sts = MFX_WRN_FILTER_SKIPPED;
-        }
+        sts = MFXVideoVPPProcAmp::Query( pHint );
     }
     else if( MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION == filterName )
     {
@@ -1169,16 +1158,13 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
 #if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
     else if( MFX_EXTBUFF_VPP_IMAGE_STABILIZATION == filterName )
     {
-        /* This filter is not supported
-        if (false == bLinuxAndIVB_HSW)
+        if (false == bLinuxAndIVB_HSW_BDW)
             sts = MFXVideoVPPImgStab::Query( pHint );
         else
         {
             // This filter is not supported in Linux
             sts = MFX_WRN_FILTER_SKIPPED;
         }
-        */
-        sts = MFX_WRN_FILTER_SKIPPED;
     }
 #endif
     //else if( MFX_EXTBUFF_VPP_GAMUT_MAPPING == filterName )
@@ -1187,7 +1173,7 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     //}
     else if( MFX_EXTBUFF_VPP_SCENE_ANALYSIS == filterName )
     {
-        if (false == bLinuxAndIVB_HSW)
+        if (false == bLinuxAndIVB_HSW_BDW)
             sts = MFXVideoVPPProcAmp::Query( pHint );
         else
         {
