@@ -1,130 +1,218 @@
 #include "ts_encoder.h"
 #include "ts_struct.h"
+#include "ts_parser.h"
 
 namespace mpeg2e_skipframes
 {
 
-    class TestSuite : tsVideoEncoder
+class TestSuite : tsVideoEncoder
+{
+public:
+    TestSuite() : tsVideoEncoder(MFX_CODEC_MPEG2) {}
+    ~TestSuite() {}
+    int RunTest(unsigned int id);
+    static const unsigned int n_cases;
+
+private:
+    struct tc_par;
+
+    enum
     {
-    public:
-        TestSuite() : tsVideoEncoder(MFX_CODEC_MPEG2) {}
-        ~TestSuite() {}
-        int RunTest(unsigned int id);
-        static const unsigned int n_cases;
-
-    private:
-        struct tc_par;
-
-        enum
-        {
-            MFXPAR = 1,
-            EXT_COD2
-        };
-
-        struct tc_struct
-        {
-            mfxStatus sts;
-            mfxU32 nframes;
-            struct f_pair
-            {
-                mfxU32 ext_type;
-                const  tsStruct::Field* f;
-                mfxU32 v;
-            } set_par[MAX_NPARS];
-            char* skips;
-        };
-
-        static const tc_struct test_case[];
+        MFXPAR = 1,
+        EXT_COD2
     };
 
-    const TestSuite::tc_struct TestSuite::test_case[] =
+    struct tc_struct
     {
-        // IBBBBP, not all skipped
-        {/*00*/ MFX_ERR_NONE, 30, {
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5 },
-            { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY } }, "1 5 7" },
-
+        mfxStatus sts;
+        mfxU32 nframes;
+        struct f_pair
+        {
+            mfxU32 ext_type;
+            const  tsStruct::Field* f;
+            mfxU32 v;
+        } set_par[MAX_NPARS];
+        char* skips;
     };
 
-    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
+    static const tc_struct test_case[];
+};
 
-    class SurfProc : public tsSurfaceProcessor
+const TestSuite::tc_struct TestSuite::test_case[] =
+{
+    // IBBBBP, not all skipped
+    {/*00*/ MFX_ERR_NONE, 30, {
+        { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30 },
+        { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5 },
+        { EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY } }, "1 5 7" },
+
+};
+
+const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
+
+class SurfProc : public tsSurfaceProcessor
+{
+    std::string m_file_name;
+    mfxU32 m_nframes;
+    tsRawReader m_raw_reader;
+    mfxEncodeCtrl* pCtrl;
+    mfxFrameInfo* pFrmInfo;
+    std::vector<mfxU32> m_skip_frames;
+    std::map<mfxU32, mfxU32> m_skip_values;
+    mfxU32 m_curr_frame;
+    mfxU32 m_target_frames;
+
+public:
+
+    SurfProc(const char* fname, mfxFrameInfo& fi, mfxU32 n_frames = 0xFFFFFFFF)
+            : pCtrl(0)
+            , m_curr_frame(0)
+            , m_raw_reader(fname, fi, n_frames)
+            , m_target_frames(n_frames)
+            , pFrmInfo(&fi)
+            , m_file_name(fname)
+            , m_nframes(n_frames)
+        {}
+        ~SurfProc() {} ;
+
+    mfxStatus Init(mfxEncodeCtrl& ctrl, std::vector<mfxU32>& skip_frames)
     {
-        mfxEncodeCtrl* pCtrl;
-        std::vector<mfxU32> m_skip_frames;
-        mfxU32 m_curr_frame;
-    public:
-        SurfProc(mfxU32 n_frames = 0xFFFFFFFF) : pCtrl(0), m_curr_frame(0) {};
-        ~SurfProc() {};
-
-        mfxStatus Init(mfxEncodeCtrl& ctrl, std::vector<mfxU32>& skip_frames)
-        {
-            pCtrl = &ctrl;
-            m_skip_frames = skip_frames;
-            return MFX_ERR_NONE;
+        pCtrl = &ctrl;
+        m_skip_frames = skip_frames;
+        for (size_t i = 0; i < skip_frames.size(); i++) {
+            m_skip_values[m_skip_frames[i]] = 1;
         }
+        return MFX_ERR_NONE;
+    }
 
-        mfxStatus ProcessSurface(mfxFrameSurface1& s)
+    mfxStatus ProcessSurface(mfxFrameSurface1& s)
+    {
+        if (m_skip_frames.size())
         {
-            if (m_skip_frames.size())
-            {
-                if (std::find(m_skip_frames.begin(), m_skip_frames.end(), m_curr_frame) != m_skip_frames.end())
-                {
-                    pCtrl->SkipFrame = 1;
-                }
-                else
-                {
-                    pCtrl->SkipFrame = 0;
-                }
-            }
-            else
+            if (std::find(m_skip_frames.begin(), m_skip_frames.end(), m_curr_frame) != m_skip_frames.end())
             {
                 pCtrl->SkipFrame = 1;
             }
-            m_curr_frame++;
-            return MFX_ERR_NONE;
+            else
+            {
+                pCtrl->SkipFrame = 0;
+            }
         }
-    };
-
-    int TestSuite::RunTest(unsigned int id)
-    {
-        TS_START;
-        const tc_struct& tc = test_case[id];
-
-        MFXInit();
-
-        std::stringstream stream(tc.skips);
-        std::vector<mfxU32> skip_frames;
-        mfxU32 f;
-        while (stream >> f)
+        else
         {
-            skip_frames.push_back(f);
+            pCtrl->SkipFrame = 1;
         }
+        m_curr_frame++;
 
-        g_tsLog << "Skipped frames: " << tc.skips << "\n";
-        SurfProc surf_proc;
-        surf_proc.Init(m_ctrl, skip_frames);
-        m_filler = &surf_proc;
+        return m_raw_reader.ProcessSurface(s);
+    }
+};
 
-        // set up parameters for case
-        SETPARS(m_pPar, MFXPAR);
+class BsDump : public tsBitstreamProcessor, tsParserMPEG2AU
+{
+    tsBitstreamWriter m_writer;
+public:
+    BsDump(const char* fname)
+        : tsParserMPEG2AU(BS_MPEG2_INIT_MODE_MB)
+        , m_writer(fname)
+    {
+        set_trace_level(0);
+    }
+    ~BsDump() {}
 
-        mfxExtCodingOption2& cod2 = m_par;
-        SETPARS(&cod2, EXT_COD2);
+    mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
+    {
+        if (bs.Data)
+            set_buffer(bs.Data + bs.DataOffset, bs.DataLength+1);
 
-        SetFrameAllocator();
+        m_writer.ProcessBitstream(bs, nFrames);
 
-        ///////////////////////////////////////////////////////////////////////////
-        mfxU32 n = tc.nframes;
-        AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 1024 * 1024 * n);
+        /*while (nFrames--)
+        {
+            UnitType& au = ParseOrDie();
 
-        g_tsStatus.expect(tc.sts);
-        EncodeFrames(n);
+            for (mfxU32 i = 0; i < au.NumSlice; i++)
+            {
+                g_tsLog << au.slice[i].NumMb << "\n";
+            }
+        }*/
 
-        TS_END;
-        return 0;
+        bs.DataLength = 0;
+
+        return MFX_ERR_NONE;
+    }
+};
+
+int TestSuite::RunTest(unsigned int id)
+{
+    TS_START;
+    const tc_struct& tc = test_case[id];
+
+    MFXInit();
+
+    // set up parameters for case
+    SETPARS(m_pPar, MFXPAR);
+
+    mfxExtCodingOption2& cod2 = m_par;
+    SETPARS(&cod2, EXT_COD2);
+
+    std::stringstream stream(tc.skips);
+    std::vector<mfxU32> skip_frames;
+    mfxU32 f;
+    while (stream >> f)
+    {
+        skip_frames.push_back(f);
+    }
+    g_tsLog << "Skipped frames: " << tc.skips << "\n";
+
+
+    std::string input = ENV("TS_INPUT_YUV","");
+    std::string in_name;
+    if (input.length())
+    {
+        m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height = 0;
+        m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width = 0;
+
+        std::stringstream s(input);
+        s >> in_name;
+        s >> m_par.mfx.FrameInfo.Width;
+        s >> m_par.mfx.FrameInfo.Height;
+        m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
+        m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width;
+        m_par.mfx.FrameInfo.Width += m_par.mfx.FrameInfo.Width & 15;
+        m_par.mfx.FrameInfo.Height += m_par.mfx.FrameInfo.Height & 15;
+    }
+    if (!in_name.length() || !m_par.mfx.FrameInfo.Width || !m_par.mfx.FrameInfo.Height)
+    {
+        g_tsLog << "ERROR: input stream is not defined\n";
+        return 1;
     }
 
-    TS_REG_TEST_SUITE_CLASS(mpeg2e_skipframes);
+    ///////////////////////////////////////////////////////////////////////////
+    mfxU32 n = tc.nframes;
+    AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 1024 * 1024 * n);
+    SetFrameAllocator();
+
+    SurfProc surf_proc(in_name.c_str(), m_par.mfx.FrameInfo);
+    surf_proc.Init(m_ctrl, skip_frames);
+    m_filler = &surf_proc;
+    g_tsStreamPool.Reg();
+
+    // setup output stream
+    char tmp_out[10];
+#pragma warning(disable:4996)
+    sprintf(tmp_out, "%04d.mpeg", id+1);
+#pragma warning(default:4996)
+    std::string out_name = ENV("TS_OUTPUT_NAME", tmp_out);
+    BsDump b(out_name.c_str());
+    m_bs_processor = &b;
+
+    g_tsStatus.expect(tc.sts);
+    EncodeFrames(n);
+
+    TS_END;
+    return 0;
+}
+
+TS_REG_TEST_SUITE_CLASS(mpeg2e_skipframes);
 };
