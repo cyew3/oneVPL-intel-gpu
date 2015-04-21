@@ -132,7 +132,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         }
         else
         {
-            VAContextID context_id = request->reserved[0];
+            VAContextID context_id = request->AllocId;
 #if defined(ANDROID)
             int codedbuf_size = 
                 static_cast<int>((request->Info.Width * request->Info.Height) * 400LL / (16 * 16)); //from libva spec

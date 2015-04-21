@@ -177,7 +177,7 @@ mfxStatus VAAPIEncoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
     request.Info.FourCC = MFX_FOURCC_P8;
 
     // context_id required for allocation video memory (tmp solution)
-    request.reserved[0] = m_vaContextEncode;
+    request.AllocId = m_vaContextEncode;
     return MFX_ERR_NONE;
 }
 

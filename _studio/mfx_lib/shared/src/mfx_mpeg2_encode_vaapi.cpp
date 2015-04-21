@@ -824,7 +824,7 @@ mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     pRequest->Info.FourCC = MFX_FOURCC_P8;
 
     // context_id required for allocation video memory (tmp solution)
-    pRequest->reserved[0] = m_vaContextEncode;
+    pRequest->AllocId = m_vaContextEncode;
 
     return MFX_ERR_NONE;
 

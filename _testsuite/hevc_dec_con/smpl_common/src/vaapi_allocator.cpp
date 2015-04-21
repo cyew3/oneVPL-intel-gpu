@@ -132,7 +132,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         }
         else
         {
-            VAContextID context_id = request->reserved[0];
+            VAContextID context_id = request->AllocId;
 
             int width32 = 32 * ((request->Info.Width + 31) >> 5);
             int height32 = 32 * ((request->Info.Height + 31) >> 5);

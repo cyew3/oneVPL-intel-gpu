@@ -216,7 +216,7 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
         }
         else
         {
-            VAContextID context_id = request->reserved[0];
+            VAContextID context_id = request->AllocId;
             mfxU32 codedbuf_size;
             VABufferType codedbuf_type;
             if (fourcc == MFX_FOURCC_VP8_SEGMAP)
