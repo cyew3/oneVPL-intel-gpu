@@ -473,12 +473,16 @@ void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
             break;
         case  9: h265_DCT4x4Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         case 10: h265_DCT4x4Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case 11: h265_DCT4x4Inv_16sT_Kernel<11, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case 12: h265_DCT4x4Inv_16sT_Kernel<12, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         }
     } else {
         switch (bitDepth) {
         case  8: h265_DCT4x4Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
         case  9: h265_DCT4x4Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
         case 10: h265_DCT4x4Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case 11: h265_DCT4x4Inv_16sT_Kernel<11, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case 12: h265_DCT4x4Inv_16sT_Kernel<12, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
         }
     }
 }
@@ -631,12 +635,16 @@ void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
             break;
         case  9: h265_DST4x4Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         case 10: h265_DST4x4Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case 11: h265_DST4x4Inv_16sT_Kernel<11, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case 12: h265_DST4x4Inv_16sT_Kernel<12, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         }
     } else {
         switch (bitDepth) {
         case  8: h265_DST4x4Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
         case  9: h265_DST4x4Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
         case 10: h265_DST4x4Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case 11: h265_DST4x4Inv_16sT_Kernel<11, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case 12: h265_DST4x4Inv_16sT_Kernel<12, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
         }
     }
 }
@@ -820,12 +828,16 @@ void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
             break;
         case  9: h265_DCT8x8Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         case 10: h265_DCT8x8Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case 11: h265_DCT8x8Inv_16sT_Kernel<11, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case 12: h265_DCT8x8Inv_16sT_Kernel<12, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         }
     } else {
         switch (bitDepth) {
         case  8: h265_DCT8x8Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
         case  9: h265_DCT8x8Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
         case 10: h265_DCT8x8Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case 11: h265_DCT8x8Inv_16sT_Kernel<11, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case 12: h265_DCT8x8Inv_16sT_Kernel<12, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
         }
     }
 }
@@ -1091,12 +1103,16 @@ void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT 
             break;
         case  9: h265_DCT16x16Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         case 10: h265_DCT16x16Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case 11: h265_DCT16x16Inv_16sT_Kernel<11, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case 12: h265_DCT16x16Inv_16sT_Kernel<12, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
         }
     } else {
         switch (bitDepth) {
         case  8: h265_DCT16x16Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
         case  9: h265_DCT16x16Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
         case 10: h265_DCT16x16Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case 11: h265_DCT16x16Inv_16sT_Kernel<11, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case 12: h265_DCT16x16Inv_16sT_Kernel<12, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
         }
     }
 }

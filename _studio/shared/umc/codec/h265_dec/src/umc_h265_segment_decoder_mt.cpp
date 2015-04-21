@@ -25,6 +25,8 @@
 #include "umc_h265_debug.h"
 #include "umc_h265_ipplevel.h"
 
+#include "mfx_h265_dispatcher.h"
+
 namespace UMC_HEVC_DECODER
 {
 H265SegmentDecoderMultiThreaded::H265SegmentDecoderMultiThreaded(TaskBroker_H265 * pTaskBroker)
@@ -1044,7 +1046,14 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterPredictPels(DecodingContext*
 
         if (CUSize >= blkSize && (bilinearLeft && bilinearAbove))
         {
-            h265_FilterPredictPels_Bilinear(PredPel, width, topLeft, bottomLeft, topRight);
+            if (sd->m_sps->bit_depth_luma > 10)
+            {
+                MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_px((Ipp16s *)PredPel, width, topLeft, bottomLeft, topRight);
+            }
+            else
+            {
+                h265_FilterPredictPels_Bilinear(PredPel, width, topLeft, bottomLeft, topRight);
+            }
             return;
         }
     }
@@ -1106,22 +1115,46 @@ void ReconstructorT<bitDepth, H265PlaneType>::PredictIntra(Ipp32s predMode, Plan
     {
         Ipp16u* pels = (Ipp16u*)PredPel;
         Ipp16u* rec = (Ipp16u*)pRec;
-        switch(predMode)
+
+        if (bit_depth > 10)
         {
-        case INTRA_LUMA_PLANAR_IDX:
-            MFX_HEVC_PP::h265_PredictIntra_Planar(pels, rec, pitch, width);
-            break;
-        case INTRA_LUMA_DC_IDX:
-            MFX_HEVC_PP::h265_PredictIntra_DC_16u(pels, rec, pitch, width, 1);
-            break;
-        case INTRA_LUMA_VER_IDX:
-            MFX_HEVC_PP::h265_PredictIntra_Ver_16u(pels, rec, pitch, width, bit_depth, 1);
-            break;
-        case INTRA_LUMA_HOR_IDX:
-            MFX_HEVC_PP::h265_PredictIntra_Hor_16u(pels, rec, pitch, width, bit_depth, 1);
-            break;
-        default:
-            MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_16u)(predMode, pels, rec, pitch, width);
+            switch(predMode)
+            {
+            case INTRA_LUMA_PLANAR_IDX:
+                MFX_HEVC_PP::h265_PredictIntra_Planar_16s_px((Ipp16s *)pels, (Ipp16s *)rec, pitch, width);
+                break;
+            case INTRA_LUMA_DC_IDX:
+                MFX_HEVC_PP::h265_PredictIntra_DC_16u(pels, rec, pitch, width, 1);
+                break;
+            case INTRA_LUMA_VER_IDX:
+                MFX_HEVC_PP::h265_PredictIntra_Ver_16u(pels, rec, pitch, width, bit_depth, 1);
+                break;
+            case INTRA_LUMA_HOR_IDX:
+                MFX_HEVC_PP::h265_PredictIntra_Hor_16u(pels, rec, pitch, width, bit_depth, 1);
+                break;
+            default:
+                MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px(predMode, pels, rec, pitch, width);
+            }
+        }
+        else
+        {
+            switch(predMode)
+            {
+            case INTRA_LUMA_PLANAR_IDX:
+                MFX_HEVC_PP::h265_PredictIntra_Planar(pels, rec, pitch, width);
+                break;
+            case INTRA_LUMA_DC_IDX:
+                MFX_HEVC_PP::h265_PredictIntra_DC_16u(pels, rec, pitch, width, 1);
+                break;
+            case INTRA_LUMA_VER_IDX:
+                MFX_HEVC_PP::h265_PredictIntra_Ver_16u(pels, rec, pitch, width, bit_depth, 1);
+                break;
+            case INTRA_LUMA_HOR_IDX:
+                MFX_HEVC_PP::h265_PredictIntra_Hor_16u(pels, rec, pitch, width, bit_depth, 1);
+                break;
+            default:
+                MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_16u)(predMode, pels, rec, pitch, width);
+            }
         }
     }
     else

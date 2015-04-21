@@ -16,6 +16,8 @@
 #include "mfx_h265_optimization.h"
 #include "umc_h265_segment_decoder.h"
 
+#include "mfx_h265_dispatcher.h"
+
 namespace UMC_HEVC_DECODER
 {
 
@@ -44,28 +46,57 @@ void InverseTransform(CoeffsPtr coeff, DstCoeffsType* dst, size_t dstPitch, Ipp3
     if (inplace)
         inplace = bitDepth > 8 ? 2 : 1;
 
-    if (Size == 4)
+    if (bit_depth > 10)
     {
-        if (Mode != REG_DCT)
+        if (Size == 4)
         {
-            MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+            if (Mode != REG_DCT)
+            {
+                MFX_HEVC_PP::h265_DST4x4Inv_16sT_px(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+            }
+            else
+            {
+                MFX_HEVC_PP::h265_DCT4x4Inv_16sT_px(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+            }
         }
-        else
+        else if (Size == 8)
         {
-            MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+            MFX_HEVC_PP::h265_DCT8x8Inv_16sT_px(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+        }
+        else if (Size == 16)
+        {
+            MFX_HEVC_PP::h265_DCT16x16Inv_16sT_px(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+        }
+        else if (Size == 32)
+        {
+            MFX_HEVC_PP::h265_DCT32x32Inv_16sT_px(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
         }
     }
-    else if (Size == 8)
+    else
     {
-        MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
-    }
-    else if (Size == 16)
-    {
-        MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
-    }
-    else if (Size == 32)
-    {
-        MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+        if (Size == 4)
+        {
+            if (Mode != REG_DCT)
+            {
+                MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+            }
+            else
+            {
+                MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+            }
+        }
+        else if (Size == 8)
+        {
+            MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+        }
+        else if (Size == 16)
+        {
+            MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+        }
+        else if (Size == 32)
+        {
+            MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+        }
     }
 }
 

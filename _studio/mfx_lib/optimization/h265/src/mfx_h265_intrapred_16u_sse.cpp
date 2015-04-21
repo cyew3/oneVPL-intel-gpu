@@ -1437,6 +1437,20 @@ ALIGN_DECL(16) static const Ipp8s proj_32x32[][4][16] = {
             case 16: PredictIntra_Ang_All_16x16_Even<Ipp16u,  9>(PredPel, FiltPel, pels);    break;
             case 32: PredictIntra_Ang_All_32x32_Even<Ipp16u,  9>(PredPel, FiltPel, pels);    break;
             }
+        } else if (bitDepth == 11) {
+            switch (width) {
+            case 4:  PredictIntra_Ang_All_4x4_Even  <Ipp16u, 11>(PredPel, FiltPel, pels);    break;
+            case 8:  PredictIntra_Ang_All_8x8_Even  <Ipp16u, 11>(PredPel, FiltPel, pels);    break;
+            case 16: PredictIntra_Ang_All_16x16_Even<Ipp16u, 11>(PredPel, FiltPel, pels);    break;
+            case 32: PredictIntra_Ang_All_32x32_Even<Ipp16u, 11>(PredPel, FiltPel, pels);    break;
+            }
+        } else if (bitDepth == 12) {
+            switch (width) {
+            case 4:  PredictIntra_Ang_All_4x4_Even  <Ipp16u, 12>(PredPel, FiltPel, pels);    break;
+            case 8:  PredictIntra_Ang_All_8x8_Even  <Ipp16u, 12>(PredPel, FiltPel, pels);    break;
+            case 16: PredictIntra_Ang_All_16x16_Even<Ipp16u, 12>(PredPel, FiltPel, pels);    break;
+            case 32: PredictIntra_Ang_All_32x32_Even<Ipp16u, 12>(PredPel, FiltPel, pels);    break;
+            }
         }
     }
 
@@ -1460,6 +1474,20 @@ ALIGN_DECL(16) static const Ipp8s proj_32x32[][4][16] = {
             case 8:  PredictIntra_Ang_All_8x8  <Ipp16u,  9>(PredPel, FiltPel, pels);    break;
             case 16: PredictIntra_Ang_All_16x16<Ipp16u,  9>(PredPel, FiltPel, pels);    break;
             case 32: PredictIntra_Ang_All_32x32<Ipp16u,  9>(PredPel, FiltPel, pels);    break;
+            }
+        } else if (bitDepth == 11) {
+            switch (width) {
+            case 4:  PredictIntra_Ang_All_4x4  <Ipp16u, 11>(PredPel, FiltPel, pels);    break;
+            case 8:  PredictIntra_Ang_All_8x8  <Ipp16u, 11>(PredPel, FiltPel, pels);    break;
+            case 16: PredictIntra_Ang_All_16x16<Ipp16u, 11>(PredPel, FiltPel, pels);    break;
+            case 32: PredictIntra_Ang_All_32x32<Ipp16u, 11>(PredPel, FiltPel, pels);    break;
+            }
+        } else if (bitDepth == 12) {
+            switch (width) {
+            case 4:  PredictIntra_Ang_All_4x4  <Ipp16u, 12>(PredPel, FiltPel, pels);    break;
+            case 8:  PredictIntra_Ang_All_8x8  <Ipp16u, 12>(PredPel, FiltPel, pels);     break;
+            case 16: PredictIntra_Ang_All_16x16<Ipp16u, 12>(PredPel, FiltPel, pels);    break;
+            case 32: PredictIntra_Ang_All_32x32<Ipp16u, 12>(PredPel, FiltPel, pels);    break;
             }
         }
     }
