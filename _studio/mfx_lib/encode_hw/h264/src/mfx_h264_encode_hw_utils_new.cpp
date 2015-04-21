@@ -710,9 +710,9 @@ namespace
             ? extDdi->NumActiveRefP
             : extDdi->NumActiveRefBL0;
         /*WA: if (1) Interlaced case and (2) FEI enabled */
-        if ((isField) && (task.m_isENCPAK))
+        if ((isField) && (task.m_isENCPAK) && (task.m_type[fieldId] & MFX_FRAMETYPE_P) && (1 == fieldId))
         {
-            numActiveRefL1 = 1;
+            //numActiveRefL1 = 1;
             numActiveRefL0 = 1;
         }
 
