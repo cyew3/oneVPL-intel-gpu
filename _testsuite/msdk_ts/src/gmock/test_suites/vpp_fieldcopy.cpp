@@ -55,7 +55,8 @@ private:
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
-        m_noise.ProcessSurface(s);
+        mfxFrameAllocator* pfa = (mfxFrameAllocator*)m_spool_in.GetAllocator();
+        m_noise.tsSurfaceProcessor::ProcessSurface(&s, pfa);
 
         // provide FieldCopy buffer for each RunVPPFrameAsync. Or not.
         if (attach2frame)
@@ -100,7 +101,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_TOPFIELD},
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*05*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*05*/ MFX_ERR_NONE, 0, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_TOPFIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_TOPFIELD},
@@ -109,16 +110,16 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*06*/ MFX_ERR_NONE, 0, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME}}
     },
-    {/*07*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*07*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {   // Mode=Frame, InField=BFF - invalid
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*08*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*08*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {   // Mode is set, but OutField is set to UNKNOWN
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_UNKNOWN}}
     },
 
-    {/*09*/ MFX_ERR_UNSUPPORTED, 0, {
+    {/*09*/ MFX_ERR_UNSUPPORTED, 0, {   // feature is not supported
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_SWAP_FIELDS}}
     },
 
@@ -159,10 +160,10 @@ int TestSuite::RunTest(unsigned int id)
         m_par.NumExtParam = 1;
     }
 
-    bool isSW = !(!!(m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY));
-    m_spool_in.UseDefaultAllocator(isSW);
-    SetFrameAllocator(m_session, m_spool_in.GetAllocator());
-    m_spool_out.SetAllocator(m_spool_in.GetAllocator(), true);
+    CreateAllocators();
+
+    SetFrameAllocator();
+    SetHandle();
 
     AllocSurfaces();
 

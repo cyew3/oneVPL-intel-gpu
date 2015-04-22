@@ -579,7 +579,15 @@ mfxStatus tsVideoVPP::SetHandle(mfxSession session, mfxHandleType type, mfxHDL h
 mfxStatus tsVideoVPP::CreateAllocators()
 {
     bool isInSW = !(!!((m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)));
-    m_spool_in.UseDefaultAllocator(isInSW);
+    // VA Handle is set by default for Linux HW
+    // see tsSession::MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
+    if (m_pVAHandle && !isInSW)
+    {
+        m_spool_in.SetAllocator(m_pVAHandle, true);
+    } else
+    {
+        m_spool_in.UseDefaultAllocator(isInSW);
+    }
 
     bool isOutSW = !(!!(m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY));
     if (!isInSW && !isOutSW)    // reuse device
@@ -587,7 +595,13 @@ mfxStatus tsVideoVPP::CreateAllocators()
         m_spool_out.SetAllocator(m_spool_in.GetAllocator(), true);
     } else
     {
-        m_spool_out.UseDefaultAllocator(isOutSW);
+        if (m_pVAHandle && !isOutSW)
+        {
+            m_spool_out.SetAllocator(m_pVAHandle, true);
+        } else
+        {
+            m_spool_out.UseDefaultAllocator(isOutSW);
+        }
     }
 
     return MFX_ERR_NONE;
