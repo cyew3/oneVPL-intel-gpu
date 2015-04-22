@@ -21,9 +21,15 @@ void IOPattern      (tsVideoEncoder& enc, InitPar& , mfxU32 IOPattern, mfxU32 se
     enc.m_par.IOPattern = IOPattern;
     if(setAllocator)
     {
-        enc.UseDefaultAllocator(enc.m_impl & MFX_IMPL_SOFTWARE);
-        enc.m_pFrameAllocator = enc.GetAllocator();
-        enc.SetFrameAllocator();
+        if (enc.m_pVAHandle)
+        {
+            enc.SetAllocator(enc.m_pVAHandle, true);
+        } else
+        {
+            enc.UseDefaultAllocator(enc.m_impl & MFX_IMPL_SOFTWARE);
+            enc.m_pFrameAllocator = enc.GetAllocator();
+            enc.SetFrameAllocator();
+        }
     }
 }
 void InitClose_x5(tsVideoEncoder& enc, InitPar&, mfxU32, mfxU32, mfxU32)
