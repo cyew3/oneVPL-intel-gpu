@@ -37,7 +37,7 @@ mfxU32 TrackProfileBase::GuessCodecFromExtension( const msdk_string &extension )
     if (m_extensions.find(extension) == m_extensions.end()) {
         OnUnsupportedExtension(extension);
     }
-    return ConvertStrToMFXCodecId(extension);
+    return m_extensions[extension];
 }
 
 msdk_string TrackProfileBase::GetOutputExtension() {
@@ -193,7 +193,17 @@ void TrackProfile <mfxAudioParam>::ParseEncodeParams( )
         aInfoMFX.Bitrate *= 1000;
     }
 
-    parse_codec_option(aInfoMFX, aInfo.AudioParam, OPTION_ACODEC);
+    try
+    {
+        parse_codec_option(aInfoMFX, aInfo.AudioParam, OPTION_ACODEC);
+    }
+    catch(KnownException e)
+    {
+        msdk_cout<<MSDK_STRING("ERROR: Audio codec is unsupported (it is configured incorrectly or cannot be autodetected).\n       Using default audio codec type: aac\n");
+        aInfoMFX.CodecId = MFX_CODEC_AAC;
+        aInfoMFX.OutputFormat = MFX_AUDIO_AAC_ADTS;
+        aInfoMFX.CodecProfile = MFX_PROFILE_AAC_LC;
+    }
 
     if (m_parser->IsPresent(OPTION_ACODEC_COPY)) {
         aInfoMFX = aInfo.AudioParam;
@@ -215,14 +225,14 @@ void TrackProfile <mfxAudioParam>::OnNoExtension()
 void TrackProfile <mfxAudioParam>::OnUnsupportedExtension( const msdk_string &extension )
 {
     MSDK_TRACE_ERROR(MSDK_STRING("Canot guess audio codec from extension: ") << extension);
-    msdk_cout<<MSDK_STRING("ERROR: Audio codec is unsupported (it is configured incorrectly or cannot be autodetected).\n       Please define it correctly using -acodec option\n");
+    //msdk_cout<<MSDK_STRING("ERROR: Audio codec is unsupported (it is configured incorrectly or cannot be autodetected).\n       Please define it correctly using -acodec option\n");
     throw UnsupportedAudioCodecFromExtension();
 }
 
 void TrackProfile <mfxAudioParam>::OnUnsupportedCodec( const msdk_string & str )
 {
     MSDK_TRACE_ERROR(MSDK_STRING("Unsupported audio codec_id: ") << str);
-    msdk_cout<<MSDK_STRING("ERROR: Audio codec cannot be autodetected.\n       Please define it correctly using -acodec option\n");
+    //msdk_cout<<MSDK_STRING("ERROR: Audio codec cannot be autodetected.\n       Please define it correctly using -acodec option\n");
     throw UnsupportedAudioCodecError();
 }
 
