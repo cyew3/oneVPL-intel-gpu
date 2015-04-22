@@ -160,7 +160,7 @@ public:
 
     tsSurfaceProcessor(mfxU32 n_frames = 0xFFFFFFFF);
     virtual ~tsSurfaceProcessor() {}
-    
+
     mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa);
     virtual mfxStatus ProcessSurface(mfxFrameSurface1&) = 0;
 };

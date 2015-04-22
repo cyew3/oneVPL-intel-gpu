@@ -31,7 +31,7 @@ public:
     std::map<mfxSyncPoint, mfxFrameSurface1*> m_surf_out;
     tsSurfacePool               m_spool_in;
     tsSurfacePool               m_spool_out;
-    
+
     tsVideoVPP(bool useDefaults = true, mfxU32 id = 0);
     ~tsVideoVPP();
 
@@ -57,7 +57,11 @@ public:
     mfxStatus GetVPPStat(mfxSession session, mfxVPPStat *stat);
 
     mfxStatus AllocSurfaces();
-     
+
+    mfxStatus CreateAllocators();
+    mfxStatus SetFrameAllocator();
+    mfxStatus SetFrameAllocator(mfxSession session, mfxFrameAllocator *allocator);
+
     mfxStatus RunFrameVPPAsync();
     mfxStatus RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp);
 
@@ -72,4 +76,7 @@ public:
     mfxStatus ProcessFramesEx(mfxU32 n);
 
     mfxStatus Load();
+
+    mfxStatus SetHandle();
+    mfxStatus SetHandle(mfxSession session, mfxHandleType type, mfxHDL handle);
 };

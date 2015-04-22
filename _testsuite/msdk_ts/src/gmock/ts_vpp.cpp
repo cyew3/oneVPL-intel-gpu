@@ -544,3 +544,72 @@ mfxStatus tsVideoVPP::Load()
 
     return g_tsStatus.get(); 
 }
+
+mfxStatus tsVideoVPP::SetHandle()
+{
+    if (!m_is_handle_set)
+    {
+        mfxHDL hdl;
+        mfxHandleType type;
+
+        bool isInSW = !(!!((m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)));
+        bool isOutSW = !(!!(m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY));
+
+        if (!isInSW)
+        {
+            m_spool_in.GetAllocator()->get_hdl(type, hdl);
+            return SetHandle(m_session, type, hdl);
+        } else if (!isOutSW)
+        {
+            m_spool_out.GetAllocator()->get_hdl(type, hdl);
+            return SetHandle(m_session, type, hdl);
+        }
+
+        return MFX_ERR_NONE;    // do not set handle for SW
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus tsVideoVPP::SetHandle(mfxSession session, mfxHandleType type, mfxHDL handle)
+{
+    return tsSession::SetHandle(session, type, handle);
+}
+
+mfxStatus tsVideoVPP::CreateAllocators()
+{
+    bool isInSW = !(!!((m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)));
+    m_spool_in.UseDefaultAllocator(isInSW);
+
+    bool isOutSW = !(!!(m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY));
+    if (!isInSW && !isOutSW)    // reuse device
+    {
+        m_spool_out.SetAllocator(m_spool_in.GetAllocator(), true);
+    } else
+    {
+        m_spool_out.UseDefaultAllocator(isOutSW);
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus tsVideoVPP::SetFrameAllocator()
+{
+    bool isInSW = !(!!((m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)));
+    bool isOutSW = !(!!(m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY));
+
+    if (!isInSW)
+    {
+        return SetFrameAllocator(m_session, m_spool_in.GetAllocator());
+    } else if (!isOutSW)
+    {
+        return SetFrameAllocator(m_session, m_spool_out.GetAllocator());
+    }
+
+    return MFX_ERR_NONE;    // do not set allocator for SW
+}
+
+mfxStatus tsVideoVPP::SetFrameAllocator(mfxSession session, mfxFrameAllocator* allocator)
+{
+    return tsSession::SetFrameAllocator(session, allocator);
+}
