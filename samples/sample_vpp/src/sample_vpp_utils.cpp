@@ -523,6 +523,7 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
 
   sts = pProcessor->pmfxVPP->QueryIOSurf(pParams, request);
   MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+  MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
   MSDK_MEMCPY(&request_RGB,&(request[VPP_IN]),sizeof(mfxFrameAllocRequest) );
   // alloc frames for vpp
