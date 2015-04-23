@@ -542,7 +542,11 @@ typedef struct tagENCODE_CAPS
             UINT    LumaWeightedPred        : 1;
             UINT    ChromaWeightedPred      : 1;
             UINT    QVBRBRCSupport          : 1;
-            UINT                            : 26;
+            UINT    SliceLevelReportSupport : 1;
+            UINT    HMEOffsetSupport        : 1;
+            UINT    DirtyRectSupport        : 1;
+            UINT    MoveRectSupport         : 1;
+            UINT                            : 22;
         };
         UINT      CodingLimits2;
     };
@@ -809,7 +813,12 @@ typedef struct tagENCODE_ENC_CTRL_CAPS
 ////////////////////////////////////////////////////////////////////////////////
 // this structure is used to define the sequence level parameters
 ///////////////////////////////////////////////////////////////////////////////
-
+typedef enum tagENCODE_ARGB_COLOR
+{
+    eColorSpace_P709 = 0,
+    eColorSpace_P601 = 1,
+    eColorSpace_P2020 = 2
+}ENCODE_ARGB_COLOR;
 
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
 {
@@ -880,6 +889,7 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
     USHORT  AVBRAccuracy;
     USHORT  AVBRConvergence;
     USHORT  ICQQualityFactor;
+    ENCODE_ARGB_COLOR ARGBInputColor;
 
 } ENCODE_SET_SEQUENCE_PARAMETERS_H264;
 
@@ -936,12 +946,17 @@ typedef struct _ENCODE_PICENTRY {
     };
 } ENCODE_PICENTRY;  /* 1 byte */
 
-typedef struct tagENCODE_ROI
+typedef struct tagENCODE_RECT
 {
     USHORT Top;                // [0..(FrameHeight+ M-1)/M -1]
     USHORT Bottom;             // [0..(FrameHeight+ M-1)/M -1]
     USHORT Left;               // [0..(FrameWidth+15)/16-1]
     USHORT Right;              // [0..(FrameWidth+15)/16-1]
+} ENCODE_RECT;
+
+typedef struct tagENCODE_ROI
+{
+    ENCODE_RECT Roi;
     CHAR   PriorityLevelOrDQp; // [-3..3] or [-51..51]
 } ENCODE_ROI;
 
@@ -961,26 +976,21 @@ typedef enum tagENCODE_CONTENT
 	eContent_NonVideoScreen = 2
 } ENCODE_CONTENT;
 
-typedef struct tagENCODE_DIRTYRECT
-{
-	BOOL 	bSame;
-	UINT 	NumDirtyRects;
-	RECT 	DirtyRects[1];
-} ENCODE_DIRTYRECT;
+
 
 typedef struct tagMOVE_RECT
 {
-	POINT 	SourcePoint;
-	RECT 	DestRect;
+    USHORT SourcePointX;
+    USHORT SourcePointY;
+    ENCODE_RECT DestRect;
 } MOVE_RECT;
 
-typedef struct tagENCODE_MOVERECT
+typedef enum tagENCODE_INPUT_TYPE
 {
-	UINT           	NumMoveRects;
-	MOVE_RECT	MoveRects[1];
-} ENCODE_MOVERECT;
-
-
+    eType_DRM_NONE = 0,
+    eType_DRM_SECURE = 1,
+    eType_DRM_UNKNOWN
+}ENCODE_INPUT_TYPE;
 
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
@@ -1066,10 +1076,14 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     SHORT           HMEOffset[16][2][2];
 
     // Hints
-    ENCODE_SCENARIO		ScenarioInfo;
-    ENCODE_CONTENT		ContentInfo;
-    VOID			*pDirtyRect;
-    VOID			*pMoveRect;
+    ENCODE_SCENARIO  ScenarioInfo;
+    ENCODE_CONTENT   ContentInfo;
+    UCHAR            NumDirtyRects;
+    ENCODE_RECT     *pDirtyRect;
+    UCHAR            NumMoveRects;
+    MOVE_RECT       *pMoveRect;
+
+    ENCODE_INPUT_TYPE InputType;
 
 } ENCODE_SET_PICTURE_PARAMETERS_H264;
 

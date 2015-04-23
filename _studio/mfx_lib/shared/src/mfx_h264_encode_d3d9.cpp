@@ -230,6 +230,7 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     ENCODE_SET_PICTURE_PARAMETERS_H264 & pps)
 {
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(task.m_ctrl);
+    mfxExtAVCEncoderWiDiUsage const * extWiDi = GetExtBuffer(task.m_ctrl);
 
     pps.NumSlice                                = mfxU8(task.m_numSlice[fieldId]);
     pps.CurrOriginalPic.Index7Bits              = mfxU8(task.m_idxRecon);
@@ -258,7 +259,10 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
 
     if (extOpt2)
         pps.bUseRawPicForRef = IsOn(extOpt2->UseRawRef);
-
+    if (extWiDi)
+        pps.InputType = eType_DRM_SECURE;
+    else
+        pps.InputType = eType_DRM_NONE;
     mfxU32 i = 0;
     for (; i < task.m_dpb[fieldId].Size(); i++)
     {
@@ -280,10 +284,10 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     {
         for (i = 0; i < task.m_numRoi; i ++)
         {
-            pps.ROI[i].Left = (mfxU16)((task.m_roi[i].Left)>>4);
-            pps.ROI[i].Top = (mfxU16)((task.m_roi[i].Top)>>4);
-            pps.ROI[i].Right = (mfxU16)((task.m_roi[i].Right)>>4);
-            pps.ROI[i].Bottom = (mfxU16)((task.m_roi[i].Bottom)>>4);
+            pps.ROI[i].Roi.Left = (mfxU16)((task.m_roi[i].Left)>>4);
+            pps.ROI[i].Roi.Top = (mfxU16)((task.m_roi[i].Top)>>4);
+            pps.ROI[i].Roi.Right = (mfxU16)((task.m_roi[i].Right)>>4);
+            pps.ROI[i].Roi.Bottom = (mfxU16)((task.m_roi[i].Bottom)>>4);
             pps.ROI[i].PriorityLevelOrDQp = (mfxU8)task.m_roi[i].Priority;
         }
         pps.MaxDeltaQp = 51;

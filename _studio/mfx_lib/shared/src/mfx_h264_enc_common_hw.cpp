@@ -1371,6 +1371,7 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_ENCODER_ROI
         || id == MFX_EXTBUFF_MBQP
         || id == MFX_EXTBUFF_MB_DISABLE_SKIP_MAP
+        || id == MFX_EXTBUFF_ENCODER_WIDI_USAGE
         || id == MFX_EXTBUFF_AVC_ENCODE_CTRL
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || id == MFX_EXTBUFF_FEI_ENC_CTRL
