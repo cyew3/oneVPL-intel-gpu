@@ -832,6 +832,7 @@ namespace MfxHwH264Encode
             , m_dpbOutputDelay(0)
             , m_encOrder(mfxU32(-1))
             , m_encOrderIdr(0)
+            , m_encOrderI(0)
 
             , m_viewIdx(0)
             , m_idx(NO_INDEX)
@@ -962,6 +963,7 @@ namespace MfxHwH264Encode
         mfxU32  m_dpbOutputDelay;       // one for entire frame
         mfxU32  m_encOrder;
         mfxU32  m_encOrderIdr;
+        mfxU32  m_encOrderI;
 
         Pair<DecRefPicMarkingRepeatInfo> m_decRefPicMrkRep; // for sei_message() which repeat dec_ref_pic_marking() of previous frame
         Pair<DecRefPicMarkingInfo>       m_decRefPicMrk;    // dec_ref_pic_marking() for current frame

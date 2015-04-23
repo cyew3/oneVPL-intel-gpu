@@ -4424,6 +4424,13 @@ void MfxHwH264Encode::SetDefaults(
     if (par.mfx.CodecLevel == MFX_LEVEL_UNKNOWN)
         par.mfx.CodecLevel = MFX_LEVEL_AVC_1;
 
+    if (extOpt2->BufferingPeriodSEI == MFX_BPSEI_DEFAULT &&
+        extOpt->RecoveryPointSEI == MFX_CODINGOPTION_ON &&
+        extOpt2->IntRefType == 0)
+    {
+        extOpt2->BufferingPeriodSEI = MFX_BPSEI_IFRAME;
+    }
+
     CheckVideoParamQueryLike(par, hwCaps, platform, vaType);
 
     if (extOpt3->NumSliceI == 0 && extOpt3->NumSliceP == 0 && extOpt3->NumSliceB == 0)

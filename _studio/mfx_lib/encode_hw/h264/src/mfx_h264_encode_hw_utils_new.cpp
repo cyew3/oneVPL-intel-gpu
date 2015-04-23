@@ -1705,6 +1705,7 @@ void MfxHwH264Encode::ConfigureTask(
     mfxU8  idrPicFlag       = !!(task.GetFrameType() & MFX_FRAMETYPE_IDR);
     mfxU8  intraPicFlag     = !!(task.GetFrameType() & MFX_FRAMETYPE_I);
     mfxU8  prevIdrFrameFlag = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_IDR);
+    mfxU8  prevIFrameFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_I);
     mfxU8  prevRefPicFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_REF);
     mfxU8  prevIdrPicFlag   = !!(prevTask.m_type[prevsfid] & MFX_FRAMETYPE_IDR);
 
@@ -1714,6 +1715,8 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_frameOrderI   = intraPicFlag ? task.m_frameOrder : prevTask.m_frameOrderI;
     task.m_encOrder      = prevTask.m_encOrder + 1;
     task.m_encOrderIdr   = prevIdrFrameFlag ? prevTask.m_encOrder : prevTask.m_encOrderIdr;
+    task.m_encOrderI     = prevIFrameFlag ? prevTask.m_encOrder : prevTask.m_encOrderI;
+
 
     task.m_frameNum = mfxU16((prevTask.m_frameNum + prevRefPicFlag) % FRAME_NUM_MAX);
     if (idrPicFlag)
@@ -1727,10 +1730,11 @@ void MfxHwH264Encode::ConfigureTask(
     mfxU32 ffid = task.m_fid[0];
     mfxU32 sfid = !ffid;
 
-
+    mfxU32 prevBPSeiFrameEncOrder = (extOpt2.BufferingPeriodSEI == MFX_BPSEI_IFRAME) ? task.m_encOrderI : task.m_encOrderIdr;
+    mfxU32 insertBPSei = (extOpt2.BufferingPeriodSEI == MFX_BPSEI_IFRAME && intraPicFlag) || (idrPicFlag);
     task.m_dpbOutputDelay   = 2 * (task.m_frameOrder + numReorderFrames - task.m_encOrder);
-    task.m_cpbRemoval[ffid] = 2 * (task.m_encOrder - task.m_encOrderIdr);
-    task.m_cpbRemoval[sfid] = (idrPicFlag) ? 1 : task.m_cpbRemoval[ffid] + 1;
+    task.m_cpbRemoval[ffid] = 2 * (task.m_encOrder - prevBPSeiFrameEncOrder);
+    task.m_cpbRemoval[sfid] = (insertBPSei) ? 1 : task.m_cpbRemoval[ffid] + 1;
 
     if (video.calcParam.lyncMode)
         task.m_tidx = CalcTemporalLayerIndex(video, task.m_frameOrder - task.m_frameOrderStartLyncStructure);
