@@ -175,6 +175,8 @@ private:
 typedef struct _DpbFrame
 {
     mfxI32   m_poc;
+    mfxU32   m_fo;  // FrameOrder
+    mfxU8    m_tid;
     bool     m_ltr; // is "long-term"
     bool     m_ldb; // is "low-delay B"
     mfxU8    m_codingType;
@@ -229,7 +231,6 @@ typedef struct _Task : DpbFrame
 }Task;
 
 typedef std::list<Task> TaskList;
-typedef mfxExtAVCRefLists mfxExtHEVCRefLists;
 
 namespace ExtBuffer
 {
@@ -240,10 +241,12 @@ namespace ExtBuffer
         EXTBUF(mfxExtHEVCTiles,             MFX_EXTBUFF_HEVC_TILES);
         EXTBUF(mfxExtOpaqueSurfaceAlloc,    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
         EXTBUF(mfxExtDPB,                   MFX_EXTBUFF_DPB);
-        EXTBUF(mfxExtHEVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS);
+        EXTBUF(mfxExtAVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS);
         EXTBUF(mfxExtCodingOption2,         MFX_EXTBUFF_CODING_OPTION2);
         EXTBUF(mfxExtCodingOptionDDI,       MFX_EXTBUFF_DDI);
         EXTBUF(mfxExtCodingOptionSPSPPS,    MFX_EXTBUFF_CODING_OPTION_SPSPPS);
+        EXTBUF(mfxExtAVCRefListCtrl,        MFX_EXTBUFF_AVC_REFLIST_CTRL);
+        EXTBUF(mfxExtAvcTemporalLayers,     MFX_EXTBUFF_AVC_TEMPORAL_LAYERS);
     #undef EXTBUF
 
     class Proxy
@@ -312,8 +315,64 @@ namespace ExtBuffer
     bool Construct(mfxVideoParam const & par, mfxExtHEVCParam& buf);
 };
 
+class TemporalLayers
+{
+public:
+    TemporalLayers()
+        : m_numTL(1)
+    {
+        Zero(m_TL);
+    }
 
-class MfxVideoParam : public mfxVideoParam
+    ~TemporalLayers(){}
+
+    void SetTL(mfxExtAvcTemporalLayers const & tl)
+    {
+        m_numTL = 0;
+        Zero(m_TL);
+        m_TL[0].Scale = 1;
+
+        for (mfxU8 i = 0; i < 7; i++)
+        {
+            if (tl.Layer[i].Scale)
+            {
+                m_TL[m_numTL].TId = i;
+                m_TL[m_numTL].Scale = (mfxU8)tl.Layer[i].Scale;
+                m_numTL++;
+            }
+        }
+
+        m_numTL = Max<mfxU8>(m_numTL, 1);
+    }
+
+    mfxU8 NumTL() const { return m_numTL; }
+
+    mfxU8 GetTId(mfxU32 frameOrder) const
+    {
+        mfxU16 i;
+
+        if (!m_numTL)
+            return 0;
+
+        for (i = 0; (frameOrder % (m_TL[m_numTL - 1].Scale / m_TL[i].Scale)) && i < m_numTL; i++);
+
+        return m_TL[i].TId;
+    }
+
+    mfxU8 HighestTId() const { return  m_TL[m_numTL - 1].TId; }
+
+private:
+    mfxU8 m_numTL;
+
+    struct
+    {
+        mfxU8 TId;
+        mfxU8 Scale;
+    }m_TL[8];
+};
+
+
+class MfxVideoParam : public mfxVideoParam, public TemporalLayers
 {
 public:
     VPS m_vps;
@@ -334,6 +393,7 @@ public:
         mfxExtOpaqueSurfaceAlloc    Opaque;
         mfxExtCodingOption2         CO2;
         mfxExtCodingOptionDDI       DDI;
+        mfxExtAvcTemporalLayers     AVCTL;
     } m_ext;
 
     mfxU32 BufferSizeInKB;
@@ -363,7 +423,8 @@ public:
     mfxStatus GetExtBuffers(mfxVideoParam& par, bool query = false);
 
     bool isBPyramid() const { return m_ext.CO2.BRefType == MFX_B_REF_PYRAMID; }
-    bool isLowDelay() const { return mfx.GopRefDist == 1; }
+    bool isLowDelay() const { return mfx.GopRefDist == 1 && !isTL(); }
+    bool isTL()       const { return NumTL() > 1; }
 
 private:
     void Construct(mfxVideoParam const & par);
@@ -454,14 +515,29 @@ void ConstructRPL(
     DpbArray const & DPB,
     bool isB,
     mfxI32 poc,
+    mfxU8  tid,
     mfxU8 (&RPL)[2][MAX_DPB_SIZE],
     mfxU8 (&numRefActive)[2],
-    mfxExtHEVCRefLists * pExtLists = 0);
+    mfxExtAVCRefLists * pExtLists,
+    mfxExtAVCRefListCtrl * pLCtrl = 0);
+
+inline void ConstructRPL(
+    MfxVideoParam const & par,
+    DpbArray const & DPB,
+    bool isB,
+    mfxI32 poc,
+    mfxU8  tid,
+    mfxU8(&RPL)[2][MAX_DPB_SIZE],
+    mfxU8(&numRefActive)[2])
+{
+    ConstructRPL(par, DPB, isB, poc, tid, RPL, numRefActive, 0, 0);
+}
 
 void UpdateDPB(
     MfxVideoParam const & par,
     DpbFrame const & task,
-    DpbArray & dpb);
+    DpbArray & dpb,
+    mfxExtAVCRefListCtrl * pLCtrl = 0);
 
 bool isLTR(
     DpbArray const & dpb,

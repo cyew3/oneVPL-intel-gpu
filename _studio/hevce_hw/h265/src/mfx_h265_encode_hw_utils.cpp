@@ -19,6 +19,18 @@
 namespace MfxHwH265Encode
 {
 
+template<class T, class A> void Insert(A& _to, mfxU32 _where, T const & _what)
+{
+    memmove(&_to[_where + 1], &_to[_where], sizeof(_to)-(_where + 1) * sizeof(_to[0]));
+    _to[_where] = _what;
+}
+
+template<class A> void Remove(A& _from, mfxU32 _where, mfxU32 _num = 1)
+{
+    memmove(&_from[_where], &_from[_where + _num], sizeof(_from)-(_where + _num) * sizeof(_from[0]));
+    memset(&_from[sizeof(_from) / sizeof(_from[0]) - _num], IDX_INVALID, sizeof(_from[0]) * _num);
+}
+
 mfxU32 CountL1(DpbArray const & dpb, mfxI32 poc)
 {
     mfxU32 c = 0;
@@ -394,6 +406,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.Opaque);
     ExtBuffer::Construct(par, m_ext.CO2);
     ExtBuffer::Construct(par, m_ext.DDI);
+    ExtBuffer::Construct(par, m_ext.AVCTL);
 }
 
 mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
@@ -405,6 +418,7 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.Opaque);
     ExtBuffer::Set(par, m_ext.CO2);
     ExtBuffer::Set(par, m_ext.DDI);
+    ExtBuffer::Set(par, m_ext.AVCTL);
 
     mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(par);
     if (pSPSPPS && !query)
@@ -459,6 +473,8 @@ void MfxVideoParam::SyncVideoToCalculableParam()
     RawRef        = false;
 
     m_slice.resize(0);
+
+    SetTL(m_ext.AVCTL);
 }
 
 void MfxVideoParam::SyncCalculableToVideoParam()
@@ -539,6 +555,7 @@ struct FakeTask
 {
     mfxI32 m_poc;
     mfxU16 m_frameType;
+    mfxU8  m_tid;
 };
 
 struct STRPSFreq : STRPS
@@ -914,7 +931,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     m_vps.video_parameter_set_id    = 0;
     m_vps.reserved_three_2bits      = 3;
     m_vps.max_layers_minus1         = 0;
-    m_vps.max_sub_layers_minus1     = 0;
+    m_vps.max_sub_layers_minus1     = mfxU16(NumTL() - 1);
     m_vps.temporal_id_nesting_flag  = 1;
     m_vps.reserved_0xffff_16bits    = 0xFFFF;
     m_vps.sub_layer_ordering_info_present_flag = 0;
@@ -938,8 +955,6 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     slo.max_dec_pic_buffering_minus1    = mfx.NumRefFrame;
     slo.max_num_reorder_pics            = mfx.GopRefDist - 1;
     slo.max_latency_increase_plus1      = 0;
-
-    assert(0 == m_vps.max_sub_layers_minus1);
 
     Zero(m_sps);
     ((LayersInfo&)m_sps) = ((LayersInfo&)m_vps);
@@ -988,7 +1003,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
 
         for (mfxU32 i = 0; (moreLTR || sets.size() != 64); i ++)
         {
-            FakeTask new_frame = {i, GetFrameType(*this, i)};
+            FakeTask new_frame = {i, GetFrameType(*this, i), 0};
 
             frames.push_back(new_frame);
 
@@ -997,13 +1012,25 @@ void MfxVideoParam::SyncMfxToHeadersParam()
             if (cur == frames.end())
                 continue;
 
+            if (isTL())
+            {
+                cur->m_tid = GetTId(cur->m_poc);
+
+                if (HighestTId() == cur->m_tid)
+                    cur->m_frameType &= ~MFX_FRAMETYPE_REF;
+
+                for (mfxI16 j = 0; !isDpbEnd(dpb, j); j++)
+                    if (dpb[j].m_tid > 0 && dpb[j].m_tid >= cur->m_tid)
+                        Remove(dpb, j--);
+            }
+
             if (   (i > 0 && (cur->m_frameType & MFX_FRAMETYPE_I))
                 || (!moreLTR && cur->m_poc >= STDist))
                 break;
 
             if (!(cur->m_frameType & MFX_FRAMETYPE_I) && cur->m_poc < STDist)
             {
-                ConstructRPL(*this, dpb, !!(cur->m_frameType & MFX_FRAMETYPE_B), cur->m_poc, rpl, nRef);
+                ConstructRPL(*this, dpb, !!(cur->m_frameType & MFX_FRAMETYPE_B), cur->m_poc, cur->m_tid, rpl, nRef);
 
                 Zero(rps);
                 ConstructSTRPS(dpb, rpl, nRef, cur->m_poc, rps);
@@ -1059,6 +1086,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
                 }
 
                 tmp.m_poc = cur->m_poc;
+                tmp.m_tid = cur->m_tid;
                 UpdateDPB(*this, tmp, dpb);
             }
 
@@ -1076,7 +1104,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
         for (it = sets.begin(); it != sets.end(); it ++)
             m_sps.strps[m_sps.num_short_term_ref_pic_sets++] = *it;
         
-        m_sps.long_term_ref_pics_present_flag = !!LTRInterval;
+        m_sps.long_term_ref_pics_present_flag = 1; // !!LTRInterval;
     }
 
     m_sps.temporal_mvp_enabled_flag             = 1; // SKL ?
@@ -1754,37 +1782,86 @@ mfxU8 GetFrameType(
     return (MFX_FRAMETYPE_B);
 }
 
-template<class T, class A> void Insert(A& _to, mfxU32 _where, T const & _what)
+mfxU8 GetDPBIdxByFO(DpbArray const & DPB, mfxU32 fo)
 {
-    memmove(&_to[_where + 1], &_to[_where], sizeof(_to) - (_where + 1) * sizeof(_to[0]));
-    _to[_where] = _what;
+    for (mfxU8 i = 0; !isDpbEnd(DPB, i); i++)
+    if (DPB[i].m_fo == fo)
+        return i;
+    return mfxU8(MAX_DPB_SIZE);
 }
 
-template<class A> void Remove(A& _from, mfxU32 _where, mfxU32 _num = 1)
+mfxU8 GetDPBIdxByPoc(DpbArray const & DPB, mfxI32 poc)
 {
-    memmove(&_from[_where], &_from[_where + _num], sizeof(_from) - (_where + _num) * sizeof(_from[0]));
-    memset(&_from[sizeof(_from)/sizeof(_from[0]) - _num], IDX_INVALID, sizeof(_from[0]) * _num);
+    for (mfxU8 i = 0; !isDpbEnd(DPB, i); i++)
+    if (DPB[i].m_poc == poc)
+        return i;
+    return mfxU8(MAX_DPB_SIZE);
+}
+
+void InitDPB(
+    Task &        task,
+    Task const &  prevTask,
+    mfxExtAVCRefListCtrl * pLCtrl)
+{
+    if (   task.m_poc > task.m_lastIPoc
+        && prevTask.m_poc <= prevTask.m_lastIPoc) // 1st TRAIL
+    {
+        Fill(task.m_dpb[TASK_DPB_ACTIVE], IDX_INVALID);
+
+        mfxU8 idx = GetDPBIdxByPoc(prevTask.m_dpb[TASK_DPB_AFTER], task.m_lastIPoc);
+
+        if (idx < MAX_DPB_SIZE)
+            task.m_dpb[TASK_DPB_ACTIVE][0] = prevTask.m_dpb[TASK_DPB_AFTER][idx];
+    }
+    else
+    {
+        Copy(task.m_dpb[TASK_DPB_ACTIVE], prevTask.m_dpb[TASK_DPB_AFTER]);
+    }
+
+    Copy(task.m_dpb[TASK_DPB_BEFORE], prevTask.m_dpb[TASK_DPB_AFTER]);
+
+    {
+        DpbArray& dpb = task.m_dpb[TASK_DPB_ACTIVE];
+
+        for (mfxI16 i = 0; !isDpbEnd(dpb, i); i++)
+            if (dpb[i].m_tid > 0 && dpb[i].m_tid >= task.m_tid)
+                Remove(dpb, i--);
+
+        if (pLCtrl)
+        {
+            for (mfxU16 i = 0; i < 16 && pLCtrl->RejectedRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+            {
+                mfxU16 idx = GetDPBIdxByFO(dpb, pLCtrl->RejectedRefList[i].FrameOrder);
+
+                if (idx < MAX_DPB_SIZE && dpb[idx].m_ltr)
+                    Remove(dpb, idx);
+            }
+        }
+    }
 }
 
 void UpdateDPB(
     MfxVideoParam const & par,
     DpbFrame const & task,
-    DpbArray & dpb)
+    DpbArray & dpb,
+    mfxExtAVCRefListCtrl * pLCtrl)
 {
     mfxU16 end = 0; // DPB end
     mfxU16 st0 = 0; // first ST ref in DPB
 
     while (!isDpbEnd(dpb, end)) end ++;
+    for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0++);
 
     // frames stored in DPB in POC ascending order,
     // LTRs before STRs (use LTR-candidate as STR as long as it possible)
-    if (par.isBPyramid())
-        MFX_SORT_STRUCT(dpb, end, m_poc, >);
+
+    MFX_SORT_STRUCT(dpb, st0, m_poc, > );
+    MFX_SORT_STRUCT((dpb + st0), mfxU16(end - st0), m_poc, >);
 
     // sliding window over STRs
     if (end && end == par.mfx.NumRefFrame)
     {
-        if (par.isLowDelay() && !par.LTRInterval)
+        if (par.isLowDelay() && st0 == 0)
         {
             for (st0 = 1; ((dpb[st0].m_poc - dpb[0].m_poc) % par.NumRefLX[0]) == 0 && st0 < end; st0++);
         }
@@ -1815,38 +1892,50 @@ void UpdateDPB(
     assert(end < MAX_DPB_SIZE); //just for KW
     dpb[end++] = task;
 
+    if (pLCtrl)
+    {
+        bool sort = false;
+
+        for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0++);
+
+        for (mfxU16 i = 0; i < 16 && pLCtrl->LongTermRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+        {
+            mfxU16 idx = GetDPBIdxByFO(dpb, pLCtrl->LongTermRefList[i].FrameOrder);
+
+            if (idx < MAX_DPB_SIZE && !dpb[idx].m_ltr)
+            {
+                DpbFrame ltr = dpb[idx];
+                ltr.m_ltr = true;
+                Remove(dpb, idx);
+                Insert(dpb, st0, ltr);
+                st0++;
+                sort = true;
+            }
+        }
+
+        if (sort)
+        {
+            MFX_SORT_STRUCT(dpb, st0, m_poc, >);
+        }
+    }
+
     if (par.isBPyramid() && (task.m_ldb || task.m_codingType < CODING_TYPE_B))
         for (mfxU16 i = 0; i < end - 1; i ++)
             dpb[i].m_codingType = 0; //don't keep coding types for prev. mini-GOP
 }
 
-mfxU8 GetDPBIdx(DpbArray const & DPB, mfxI32 poc)
+void ReportDPB(DpbArray const & DPB, mfxExtDPB& report)
 {
-    for (mfxU8 i = 0; !isDpbEnd(DPB, i); i ++)
-        if (DPB[i].m_poc == poc)
-            return i;
-    return mfxU8(MAX_DPB_SIZE);
-}
+    report.DPBSize = 0;
 
-void UpdateDPB(
-    mfxExtDPB const & ctrl,
-    DpbArray & dst)
-{
-    DpbArray src;
+    while (!isDpbEnd(DPB, report.DPBSize++));
 
-    Copy(src, dst);
-    Fill(dst, IDX_INVALID);
-
-    for (mfxU16 i = 0, j = 0; i < ctrl.DPBSize; i ++)
+    for (mfxU32 i = 0; i < report.DPBSize; i++)
     {
-        mfxU16 idx = GetDPBIdx(src, ctrl.DPB[i].FrameOrder);
 
-        if (idx < MAX_DPB_SIZE)
-        {
-            dst[j] = src[idx];
-            dst[j].m_ltr = (ctrl.DPB[i].LongTermIdx != MFX_LONGTERM_IDX_NO_IDX);
-            j ++;
-        }
+        report.DPB[i].FrameOrder = DPB[i].m_fo;
+        report.DPB[i].LongTermIdx = DPB[i].m_ltr ? 0 : MFX_LONGTERM_IDX_NO_IDX;
+        report.DPB[i].PicType = MFX_PICTYPE_FRAME;
     }
 }
 
@@ -1875,9 +1964,11 @@ void ConstructRPL(
     DpbArray const & DPB,
     bool isB,
     mfxI32 poc,
+    mfxU8  tid,
     mfxU8 (&RPL)[2][MAX_DPB_SIZE],
     mfxU8 (&numRefActive)[2],
-    mfxExtHEVCRefLists * pExtLists)
+    mfxExtAVCRefLists * pExtLists,
+    mfxExtAVCRefListCtrl * pLCtrl)
 {
     mfxU8& l0 = numRefActive[0];
     mfxU8& l1 = numRefActive[1];
@@ -1891,7 +1982,7 @@ void ConstructRPL(
     {
         for (mfxU32 i = 0; i < pExtLists->NumRefIdxL0Active; i ++)
         {
-            mfxU8 idx = GetDPBIdx(DPB, (mfxI32)pExtLists->RefPicList0[i].FrameOrder);
+            mfxU8 idx = GetDPBIdxByFO(DPB, (mfxI32)pExtLists->RefPicList0[i].FrameOrder);
 
             if (idx < MAX_DPB_SIZE)
             {
@@ -1904,7 +1995,7 @@ void ConstructRPL(
 
         for (mfxU32 i = 0; i < pExtLists->NumRefIdxL1Active; i ++)
         {
-            mfxU8 idx = GetDPBIdx(DPB, (mfxI32)pExtLists->RefPicList1[i].FrameOrder);
+            mfxU8 idx = GetDPBIdxByFO(DPB, (mfxI32)pExtLists->RefPicList1[i].FrameOrder);
 
             if (idx < MAX_DPB_SIZE)
                 RPL[0][l1 ++] = idx;
@@ -1920,6 +2011,9 @@ void ConstructRPL(
 
         for (mfxU8 i = 0; !isDpbEnd(DPB, i); i ++)
         {
+            if (DPB[i].m_tid > tid)
+                continue;
+
             if (poc > DPB[i].m_poc)
             {
                 if (DPB[i].m_ltr || (par.LTRInterval && isLTR(DPB, par.LTRInterval, DPB[i].m_poc)))
@@ -1931,56 +2025,137 @@ void ConstructRPL(
                 RPL[1][l1++] = i;
         }
 
-        NumStRefL0 -= !!nLTR;
-
-        if (l0 > NumStRefL0)
+        if (pLCtrl)
         {
-            MFX_SORT_COMMON(RPL[0], numRefActive[0], Abs(DPB[RPL[0][_i]].m_poc - poc) < Abs(DPB[RPL[0][_j]].m_poc - poc));
-            if (par.isLowDelay())
+            // reorder STRs to POC descending order
+            for (mfxU8 lx = 0; lx < 2; lx++)
+                MFX_SORT_COMMON(RPL[lx], numRefActive[lx],
+                    DPB[RPL[lx][_i]].m_poc < DPB[RPL[lx][_j]].m_poc);
+
+            while (nLTR)
+                RPL[0][l0++] = LTR[--nLTR];
+        }
+        else
+        {
+            NumStRefL0 -= !!nLTR;
+
+            if (l0 > NumStRefL0)
             {
-                while (l0 > NumStRefL0)
+                MFX_SORT_COMMON(RPL[0], numRefActive[0], Abs(DPB[RPL[0][_i]].m_poc - poc) < Abs(DPB[RPL[0][_j]].m_poc - poc));
+                if (par.isLowDelay())
                 {
-                    mfxI32 i;
+                    while (l0 > NumStRefL0)
+                    {
+                        mfxI32 i;
 
-                    for (i = 0; ((DPB[RPL[0][0]].m_poc - DPB[RPL[0][i]].m_poc) % par.NumRefLX[0]) == 0 && i < l0; i ++);
+                        for (i = 0; ((DPB[RPL[0][0]].m_poc - DPB[RPL[0][i]].m_poc) % par.NumRefLX[0]) == 0 && i < l0; i++);
 
-                    Remove(RPL[0], (i+1 >= l0) ? 0 : i);
-                    l0--;
+                        Remove(RPL[0], (i + 1 >= l0) ? 0 : i);
+                        l0--;
+                    }
+                }
+                else
+                {
+                    Remove(RPL[0], (par.LTRInterval && !nLTR && l0 > 1), l0 - NumStRefL0);
+                    l0 = NumStRefL0;
                 }
             }
-            else
+            if (l1 > par.NumRefLX[1])
             {
-                Remove(RPL[0], (par.LTRInterval && !nLTR && l0 > 1), l0 - NumStRefL0);
-                l0 = NumStRefL0;
+                MFX_SORT_COMMON(RPL[1], numRefActive[1], Abs(DPB[RPL[1][_i]].m_poc - poc) > Abs(DPB[RPL[1][_j]].m_poc - poc));
+                Remove(RPL[1], par.NumRefLX[1], l1 - par.NumRefLX[1]);
+                l1 = (mfxU8)par.NumRefLX[1];
             }
-        }
-        if (l1 > par.NumRefLX[1])
-        {
-            MFX_SORT_COMMON(RPL[1], numRefActive[1], Abs(DPB[RPL[1][_i]].m_poc - poc) > Abs(DPB[RPL[1][_j]].m_poc - poc));
-            Remove(RPL[1], par.NumRefLX[1], l1 - par.NumRefLX[1]);
-            l1 = (mfxU8)par.NumRefLX[1];
-        }
 
-        // reorder STRs to POC descending order
-        for (mfxU8 lx = 0; lx < 2; lx ++)
-            MFX_SORT_COMMON(RPL[lx], numRefActive[lx],
-                DPB[RPL[lx][_i]].m_poc < DPB[RPL[lx][_j]].m_poc);
+            // reorder STRs to POC descending order
+            for (mfxU8 lx = 0; lx < 2; lx++)
+                MFX_SORT_COMMON(RPL[lx], numRefActive[lx],
+                    DPB[RPL[lx][_i]].m_poc < DPB[RPL[lx][_j]].m_poc);
 
-        if (nLTR)
-        {
-            MFX_SORT(LTR, nLTR, <);
-            // use LTR as 2nd reference
-            Insert(RPL[0], !!l0, LTR[0]);
-            l0 ++;
+            if (nLTR)
+            {
+                MFX_SORT(LTR, nLTR, < );
+                // use LTR as 2nd reference
+                Insert(RPL[0], !!l0, LTR[0]);
+                l0++;
 
-            for (mfxU16 i = 1; i < nLTR && l0 < par.NumRefLX[0]; i ++, l0 ++)
-                Insert(RPL[0], l0, LTR[i]);
+                for (mfxU16 i = 1; i < nLTR && l0 < par.NumRefLX[0]; i++, l0++)
+                    Insert(RPL[0], l0, LTR[i]);
+            }
         }
     }
 
     assert(l0 > 0);
 
-    if (isB && !l1)
+    if (pLCtrl)
+    {
+        mfxU16 MaxRef[2] = { par.NumRefLX[0], par.NumRefLX[1] };
+        mfxU16 pref[2] = {};
+
+        if (pLCtrl->NumRefIdxL0Active)
+            MaxRef[0] = Min(pLCtrl->NumRefIdxL0Active, MaxRef[0]);
+
+        if (pLCtrl->NumRefIdxL1Active)
+            MaxRef[1] = Min(pLCtrl->NumRefIdxL1Active, MaxRef[1]);
+
+        for (mfxU16 i = 0; i < 16 && pLCtrl->RejectedRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+        {
+            mfxU8 idx = GetDPBIdxByFO(DPB, pLCtrl->RejectedRefList[i].FrameOrder);
+
+            if (idx < MAX_DPB_SIZE)
+            {
+                for (mfxU16 lx = 0; lx < 2; lx++)
+                {
+                    for (mfxU16 j = 0; j < numRefActive[lx]; j++)
+                    {
+                        if (RPL[lx][j] == idx)
+                        {
+                            Remove(RPL[lx], j);
+                            numRefActive[lx]--;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        for (mfxU16 i = 0; i < 16 && pLCtrl->PreferredRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+        {
+            mfxU8 idx = GetDPBIdxByFO(DPB, pLCtrl->PreferredRefList[i].FrameOrder);
+
+            if (idx < MAX_DPB_SIZE)
+            {
+                for (mfxU16 lx = 0; lx < 2; lx++)
+                {
+                    for (mfxU16 j = 0; j < numRefActive[lx]; j++)
+                    {
+                        if (RPL[lx][j] == idx)
+                        {
+                            Remove(RPL[lx], j);
+                            Insert(RPL[lx], pref[lx]++, idx);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        for (mfxU16 lx = 0; lx < 2; lx++)
+        {
+            if (numRefActive[lx] > MaxRef[lx])
+            {
+                Remove(RPL[lx], MaxRef[lx], (numRefActive[lx] - MaxRef[lx]));
+                numRefActive[lx] = (mfxU8)MaxRef[lx];
+            }
+        }
+
+        if (l0 == 0)
+            RPL[0][l0++] = 0;
+    }
+
+    assert(l0 > 0);
+
+    if (isB && !l1 && l0)
         RPL[1][l1++] = RPL[0][l0-1];
 
     if (!isB)
@@ -2025,21 +2200,6 @@ mfxU8 GetCodingType(Task const & task)
     return t;
 }
 
-void ReportDPB(DpbArray const & DPB, mfxExtDPB& report)
-{
-    report.DPBSize = 0;
-
-    while(!isDpbEnd(DPB, report.DPBSize ++));
-
-    for (mfxU32 i = 0; i < report.DPBSize; i ++)
-    {
-
-        report.DPB[i].FrameOrder  = DPB[i].m_poc;
-        report.DPB[i].LongTermIdx = DPB[i].m_ltr ? 0 : MFX_LONGTERM_IDX_NO_IDX;
-        report.DPB[i].PicType     = MFX_PICTYPE_FRAME;
-    }
-}
-
 mfxU8 GetSHNUT(Task const & task)
 {
     const bool isI   = !!(task.m_frameType & MFX_FRAMETYPE_I);
@@ -2050,12 +2210,21 @@ mfxU8 GetSHNUT(Task const & task)
         return IDR_W_RADL;
     if (isI)
         return CRA_NUT;
+
+    if (task.m_tid > 0)
+    {
+        if (isRef)
+            return TSA_R;
+        return TSA_N;
+    }
+
     if (task.m_poc > task.m_lastIPoc)
     {
         if (isRef)
             return TRAIL_R;
         return TRAIL_N;
     }
+
     if (isRef)
         return RASL_R;
     return RASL_N;
@@ -2066,16 +2235,25 @@ void ConfigureTask(
     Task const &          prevTask,
     MfxVideoParam const & par)
 {
+    assert(task.m_bs != 0);
     const bool isI    = !!(task.m_frameType & MFX_FRAMETYPE_I);
     const bool isP    = !!(task.m_frameType & MFX_FRAMETYPE_P);
     const bool isB    = !!(task.m_frameType & MFX_FRAMETYPE_B);
-    const bool isRef  = !!(task.m_frameType & MFX_FRAMETYPE_REF);
     const bool isIDR  = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
 
-    assert(task.m_bs != 0);
-    mfxExtDPB*          pDPBReport = ExtBuffer::Get(*task.m_bs);
-    mfxExtDPB*          pDPBUpdate = ExtBuffer::Get(task.m_ctrl);
-    mfxExtHEVCRefLists* pExtLists  = ExtBuffer::Get(*task.m_bs);
+    mfxExtDPB*              pDPBReport = ExtBuffer::Get(*task.m_bs);
+    mfxExtAVCRefLists*      pExtLists = ExtBuffer::Get(task.m_ctrl);
+    mfxExtAVCRefListCtrl*   pExtListCtrl = ExtBuffer::Get(task.m_ctrl);
+
+    if (par.isTL())
+    {
+        task.m_tid = isI ? 0 : par.GetTId(task.m_poc - prevTask.m_lastIPoc);
+
+        if (par.HighestTId() == task.m_tid)
+            task.m_frameType &= ~MFX_FRAMETYPE_REF;
+    }
+
+    const bool isRef = !!(task.m_frameType & MFX_FRAMETYPE_REF);
 
     // set coding type and QP
     if (isB)
@@ -2103,30 +2281,17 @@ void ConfigureTask(
 
     task.m_lastIPoc = prevTask.m_lastIPoc;
 
-    if (   task.m_poc > task.m_lastIPoc
-        && prevTask.m_poc <= prevTask.m_lastIPoc) // 1st TRAIL
-    {
-        Fill(task.m_dpb[TASK_DPB_ACTIVE], IDX_INVALID);
-
-        mfxU8 idx = GetDPBIdx(prevTask.m_dpb[TASK_DPB_AFTER], task.m_lastIPoc);
-        if (idx < MAX_DPB_SIZE)
-            task.m_dpb[TASK_DPB_ACTIVE][0] = prevTask.m_dpb[TASK_DPB_AFTER][idx];
-    }
-    else
-    {
-        Copy(task.m_dpb[TASK_DPB_ACTIVE], prevTask.m_dpb[TASK_DPB_AFTER]);
-    }
-    Copy(task.m_dpb[TASK_DPB_BEFORE], prevTask.m_dpb[TASK_DPB_AFTER]);
+    InitDPB(task, prevTask, pExtListCtrl);
 
     //construct ref lists
     Zero(task.m_numRefActive);
     Fill(task.m_refPicList, IDX_INVALID);
 
-    if (pDPBUpdate)
-        UpdateDPB(*pDPBUpdate, task.m_dpb[TASK_DPB_ACTIVE]);
-
     if (!isI)
-        ConstructRPL(par, task.m_dpb[TASK_DPB_ACTIVE], isB, task.m_poc, task.m_refPicList, task.m_numRefActive, pExtLists);
+    {
+        ConstructRPL(par, task.m_dpb[TASK_DPB_ACTIVE], isB, task.m_poc, task.m_tid,
+            task.m_refPicList, task.m_numRefActive, pExtLists, pExtListCtrl);
+    }
 
     task.m_codingType = GetCodingType(task);
 
@@ -2159,11 +2324,11 @@ void ConfigureTask(
         if (isI)
             task.m_lastIPoc = task.m_poc;
 
-        UpdateDPB(par, task, task.m_dpb[TASK_DPB_AFTER]);
+        UpdateDPB(par, task, task.m_dpb[TASK_DPB_AFTER], pExtListCtrl);
 
         // is current frame will be used as LTR
         if (par.LTRInterval)
-            task.m_ltr = isLTR(task.m_dpb[TASK_DPB_AFTER], par.LTRInterval, task.m_poc);
+            task.m_ltr |= isLTR(task.m_dpb[TASK_DPB_AFTER], par.LTRInterval, task.m_poc);
     }
 
     if (pDPBReport)

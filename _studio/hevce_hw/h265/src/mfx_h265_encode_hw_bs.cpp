@@ -1806,7 +1806,7 @@ void HeaderPacker::GetSEI(Task const & task,mfxU8*& buf, mfxU32& sizeInBytes)
 void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset)
 {
     BitstreamWriter& rbsp = m_bs;
-    NALU nalu = {0, task.m_shNUT, 0, 1};
+    NALU nalu = {0, task.m_shNUT, 0, task.m_tid + 1};
     bool is1stNALU = (id == 0 && task.m_insertHeaders == 0);
 
     assert(m_par);

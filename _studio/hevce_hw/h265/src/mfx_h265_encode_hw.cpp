@@ -469,7 +469,6 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         if (m_vpar.mfx.EncodedOrder)
         {
             task->m_frameType = task->m_ctrl.FrameType;
-            task->m_poc = (mfxI32)surface->Data.FrameOrder;
         }
         else
         {
@@ -477,12 +476,13 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 
             if (task->m_ctrl.FrameType & MFX_FRAMETYPE_IDR)
                 task->m_frameType = MFX_FRAMETYPE_I|MFX_FRAMETYPE_REF|MFX_FRAMETYPE_IDR;
-
-            if (task->m_frameType & MFX_FRAMETYPE_IDR)
-                m_lastIDR = m_frameOrder;
-
-            task->m_poc = m_frameOrder - m_lastIDR;
         }
+
+        if (task->m_frameType & MFX_FRAMETYPE_IDR)
+            m_lastIDR = m_frameOrder;
+
+        task->m_poc = m_frameOrder - m_lastIDR;
+        task->m_fo = task->m_surf->Data.FrameOrder == MFX_FRAMEORDER_UNKNOWN ? m_frameOrder : task->m_surf->Data.FrameOrder;
 
         m_core.IncreaseReference(&surface->Data);
 
