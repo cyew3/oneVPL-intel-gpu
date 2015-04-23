@@ -236,6 +236,7 @@
     <ClCompile Include="src\gmock\test_suites\hevce_level_profile.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_spspps_get.cpp" />
     <ClCompile Include="src\gmock\test_suites\lookahead_1N.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mjpegd_corruption.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_tables.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpeg_payload.cpp" />
