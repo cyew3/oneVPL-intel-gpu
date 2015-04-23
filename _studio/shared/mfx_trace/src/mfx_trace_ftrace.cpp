@@ -35,55 +35,55 @@ extern "C" {
 #include "mfx_trace_ftrace.h"
 
 
-#define _STR(x) #x
-#define STR(x) _STR(x)
-#define MAX_PATH 256
-
-
 static int trace_handle = -1;
+static char debugfs_prefix[MAX_PATH+1];
+static char trace_file_name[MAX_PATH+1];
 
-
-const char *find_debugfs(void)
+namespace 
 {
-       static char debugfs[MAX_PATH+1];
-       static int debugfs_found;
-       char type[100];
-       FILE *fp;
+    // not thread-safe
+    const char *get_debugfs_prefix()
+    {        
+        FILE *fp = fopen("/proc/mounts","r");
 
-       if (debugfs_found)
-               return debugfs;
+        if (!fp)
+        {
+            return "noperm";
+        }
 
-       if ((fp = fopen("/proc/mounts","r")) == NULL) {
-           //perror("/proc/mounts");
-           return "noperm";
-       }
+        bool found = false;
+        while (!found)
+        {
+            char type[100];
+            if (fscanf(fp, "%*s %256s %99s %*s %*d %*d\n", debugfs_prefix, type) != 2)
+            {
+                // eof reached
+                break;
+            }
+            if (strcmp(type, "debugfs") == 0)
+            {
+                // got debugfs line
+                found = true;
+            }
+        }
+        fclose(fp);
 
-       while (fscanf(fp, "%*s %"
-                     STR(MAX_PATH)
-                     "s %99s %*s %*d %*d\n",
-                     debugfs, type) == 2) {
-               if (strcmp(type, "debugfs") == 0)
-                     break;
-       }
-       fclose(fp);
+        if (!found)
+        {
+            return "notfound";
+        }
 
-       if (strcmp(type, "debugfs") != 0) {
-               // fprintf(stderr, "debugfs not mounted");
-               return "notfound";
-       }
+        return debugfs_prefix;
+    }
 
-       debugfs_found = 1;
+    // not thread-safe
+    const char *get_tracing_file(const char *file_name)
+    {
+        snprintf(trace_file_name, MAX_PATH, "%s/%s", get_debugfs_prefix(), file_name);
+        return trace_file_name;
+    }
 
-       return debugfs;
 }
-
-const char *tracing_file(const char *file_name)
-{
-       static char trace_file[MAX_PATH+1];
-       snprintf(trace_file, MAX_PATH, "%s/%s", find_debugfs(), file_name);
-       return trace_file;
-}
-
 /*------------------------------------------------------------------------------*/
 
 mfxTraceU32 MFXTraceFtrace_Init(const mfxTraceChar * /*filename*/, mfxTraceU32 output_mode)
@@ -92,7 +92,7 @@ mfxTraceU32 MFXTraceFtrace_Init(const mfxTraceChar * /*filename*/, mfxTraceU32 o
 
     MFXTraceFtrace_Close();
 
-    const char* file_name = tracing_file("tracing/trace_marker");
+    const char* file_name = get_tracing_file("tracing/trace_marker");
     trace_handle = open(file_name , O_WRONLY);
     if (trace_handle == -1){
         // printf("@@@@ Can't open trace file!\n");
