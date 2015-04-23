@@ -31,7 +31,7 @@ private:
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_NONE, 0},
-    //{/* 1*/ MFX_ERR_NONE, MFXCLOSE}
+    {/* 1*/ MFX_ERR_NONE, MFXCLOSE}
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -47,21 +47,6 @@ int TestSuite::RunTest(unsigned int id)
 
     UseDefaultAllocator(!hw_surf);
     SetFrameAllocator(m_session, GetAllocator());
-
-    // set handle
-    mfxHDL hdl;
-    mfxHandleType type;
-    if (hw_surf)
-    {
-        GetAllocator()->get_hdl(type, hdl);
-    }
-    else
-    {
-        tsSurfacePool alloc;
-        alloc.UseDefaultAllocator(false);
-        alloc.GetAllocator()->get_hdl(type, hdl);
-    }
-    SetHandle(m_session, type, hdl);
 
     Init(m_session, m_pPar);
 
