@@ -202,7 +202,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     m_frameOrder = 0;
 
-    Fill(m_lastTask.m_dpb[1], IDX_INVALID);
+    Fill(m_lastTask, IDX_INVALID);
 
     return qsts;
 }
@@ -499,8 +499,6 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     MFX_CHECK(task->m_idxBs  != IDX_INVALID, MFX_WRN_DEVICE_BUSY);
     MFX_CHECK(task->m_idxRec != IDX_INVALID, MFX_WRN_DEVICE_BUSY);
 
-    m_task.Submit(task);
-    task->m_stage |= FRAME_REORDERED;
 
     task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
     task->m_midRec = AcquireResource(m_rec, task->m_idxRec);
@@ -515,74 +513,80 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 
     *thread_task = task;
 
+    task->m_stage |= FRAME_REORDERED;
+    m_task.Submit(task);
+    
+
     return sts;
 }
 
 mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*uid_a*/)
 {
     assert(thread_task);
-    Task& task = *(Task*)thread_task;
-    mfxBitstream* bs = task.m_bs;
+    Task* task = 0;
     mfxStatus sts = MFX_ERR_NONE;
 
-    //submit
-    if (task.m_stage == STAGE_SUBMIT)
-    {
+    while ((task= m_task.GetSubmittedTask()) != 0)
+   {
         mfxHDLPair surfaceHDL = {};
 
-        task.m_initial_cpb_removal_delay  = m_hrd.GetInitCpbRemovalDelay();
-        task.m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
+        task->m_initial_cpb_removal_delay  = m_hrd.GetInitCpbRemovalDelay();
+        task->m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
 
 #ifndef HEADER_PACKING_TEST
-        sts = GetNativeHandleToRawSurface(m_core, m_vpar, task, surfaceHDL.first);
+        sts = GetNativeHandleToRawSurface(m_core, m_vpar, *task, surfaceHDL.first);
         MFX_CHECK_STS(sts);
 
-        sts = CopyRawSurfaceToVideoMemory(m_core, m_vpar, task);
+        sts = CopyRawSurfaceToVideoMemory(m_core, m_vpar, *task);
         MFX_CHECK_STS(sts);
 #endif
-
-        sts = m_ddi->Execute(task, surfaceHDL.first);
+        sts = m_ddi->Execute(*task, surfaceHDL.first);
         MFX_CHECK_STS(sts);
 
-        task.m_stage |= FRAME_SUBMITTED;
+        task->m_stage |= FRAME_SUBMITTED;
+        m_task.SubmitForQuery(task);
     }
-    
+
+    task = (Task*)thread_task;
+    MFX_CHECK (m_task.isSubmittedForQuery(task), MFX_ERR_UNDEFINED_BEHAVIOR);
+    mfxBitstream* bs = task->m_bs;
+
+
     //query
-    if (task.m_stage == STAGE_QUERY)
     {
-        sts = m_ddi->QueryStatus(task);
+        sts = m_ddi->QueryStatus(*task);
         MFX_CHECK_STS(sts);
         
         //update bitstream
-        if (task.m_bsDataLength)
+        if (task->m_bsDataLength)
         {
             mfxFrameAllocator & fa = m_core.FrameAllocator();
             mfxFrameData codedFrame = {};
             mfxU32 bytesAvailable = bs->MaxLength - bs->DataOffset - bs->DataLength;
-            mfxU32 bytes2copy     = task.m_bsDataLength;
+            mfxU32 bytes2copy     = task->m_bsDataLength;
 
             assert(bytesAvailable > bytes2copy);
             bytes2copy = MFX_MIN(bytes2copy, bytesAvailable);
 
-            sts = fa.Lock(fa.pthis, task.m_midBs, &codedFrame);
+            sts = fa.Lock(fa.pthis, task->m_midBs, &codedFrame);
             MFX_CHECK(codedFrame.Y, MFX_ERR_LOCK_MEMORY);
 
             memcpy_s(bs->Data + bs->DataOffset + bs->DataLength, bytes2copy, codedFrame.Y, bytes2copy);
 
-            sts = fa.Unlock(fa.pthis, task.m_midBs, &codedFrame);
+            sts = fa.Unlock(fa.pthis, task->m_midBs, &codedFrame);
             MFX_CHECK_STS(sts);
 
             bs->DataLength += bytes2copy;
 
-            m_hrd.RemoveAccessUnit(bytes2copy, !!(task.m_frameType & MFX_FRAMETYPE_IDR));
+            m_hrd.RemoveAccessUnit(bytes2copy, !!(task->m_frameType & MFX_FRAMETYPE_IDR));
 
-            bs->TimeStamp       = task.m_surf->Data.TimeStamp;
+            bs->TimeStamp       = task->m_surf->Data.TimeStamp;
             //bs->DecodeTimeStamp = MFX_TIMESTAMP_UNKNOWN;
             bs->PicStruct       = MFX_PICSTRUCT_PROGRESSIVE;
-            bs->FrameType       = task.m_frameType;
+            bs->FrameType       = task->m_frameType;
         }
 
-        task.m_stage |= FRAME_ENCODED;
+        task->m_stage |= FRAME_ENCODED;
     }
 
     return sts;

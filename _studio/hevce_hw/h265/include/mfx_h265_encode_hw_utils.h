@@ -466,12 +466,16 @@ public:
     Task* New       ();
     Task* Reorder   (MfxVideoParam const & par, DpbArray const & dpb, bool flush);
     void  Submit    (Task* task);
+    Task* GetSubmittedTask();
+    void  SubmitForQuery(Task* task);
+    bool  isSubmittedForQuery(Task* task);
     void  Ready     (Task* task);
 
 private:
     TaskList   m_free;
     TaskList   m_reordering;
     TaskList   m_encoding;
+    TaskList   m_querying;
     UMC::Mutex m_listMutex;
 };
 

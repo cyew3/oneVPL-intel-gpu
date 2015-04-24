@@ -306,8 +306,9 @@ mfxU16 AddTileSlices(
     }
 
     par.m_slice.resize(nSlicePrev + nSlice);
-
-    mfxU32 f = (nSlice < 2 || (nLCU % nSlice == 0) || par.m_ext.CO2.NumMbPerSlice != 0) ? 0 : (nLCU % nSlice);
+ 
+    /*
+    mfxU32 f = (nSlice < 2 || (nLCU % nSlice == 0)) ? 0 : (nLCU % nSlice);
     bool   s = false;
 
     if (f == 0)
@@ -329,11 +330,22 @@ mfxU16 AddTileSlices(
         f = nSlice / f;
     }
 
-    for (mfxU32 i = nSlicePrev; i < par.m_slice.size(); i ++)
+    */
+    mfxF64 k = (mfxF64)nLCU / (mfxF64) nSlice;
+    
+    mfxU32 i = nSlicePrev;
+    for ( ; i < par.m_slice.size(); i ++)
     {
-        par.m_slice[i].NumLCU = (i == nSlicePrev + nSlice-1) ? nLCU : nLcuPerSlice + s * (f && i % f == 0) - !s * (f && i % f == 0);
-        par.m_slice[i].SegmentAddress = (i > 0) ? (par.m_slice[i-1].SegmentAddress + par.m_slice[i-1].NumLCU) : 0;
-        nLCU -= par.m_slice[i].NumLCU;
+        //par.m_slice[i].NumLCU = (i == nSlicePrev + nSlice-1) ? nLCU : nLcuPerSlice + s * (f && i % f == 0) - !s * (f && i % f == 0);
+        //par.m_slice[i].SegmentAddress = (i > 0) ? (par.m_slice[i-1].SegmentAddress + par.m_slice[i-1].NumLCU) : 0;
+        
+        par.m_slice[i].SegmentAddress = (mfxU32)(k*(mfxF64)i);
+        if (i != 0)
+            par.m_slice[i - 1].NumLCU = par.m_slice[i].SegmentAddress - par.m_slice[i - 1].SegmentAddress;         
+    }
+    if ((i > 1) && ((i - 1) < par.m_slice.size()))
+    {
+        par.m_slice[i - 1].NumLCU = par.m_slice[nSlicePrev].SegmentAddress + nLCU - par.m_slice[i - 1].SegmentAddress ; 
     }
 
     return (mfxU16)nSlice;

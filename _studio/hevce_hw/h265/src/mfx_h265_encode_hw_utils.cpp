@@ -1678,10 +1678,11 @@ void TaskManager::Reset(mfxU32 numTask)
         m_free.resize(numTask);
         m_reordering.resize(0);
         m_encoding.resize(0);
+        m_querying.resize(0);
     }
     else
     {
-        while (!m_encoding.empty())
+        while (!m_querying.empty())
             vm_time_sleep(1);
     }
 }
@@ -1732,8 +1733,16 @@ void TaskManager::Submit(Task* pTask)
         }
     }
 }
-
-void TaskManager::Ready(Task* pTask)
+Task* TaskManager::GetSubmittedTask()
+{
+    UMC::AutomaticUMCMutex guard(m_listMutex);
+    if (m_encoding.size() > 0)
+    {
+        return &(*m_encoding.begin());
+    }
+    return 0;
+}
+void TaskManager::SubmitForQuery(Task* pTask)
 {
     UMC::AutomaticUMCMutex guard(m_listMutex);
 
@@ -1741,7 +1750,34 @@ void TaskManager::Ready(Task* pTask)
     {
         if (pTask == &*it)
         {
-            m_free.splice(m_free.end(), m_encoding, it);
+            m_querying.splice(m_querying.end(), m_encoding, it);
+            break;
+        }
+    }
+}
+bool TaskManager::isSubmittedForQuery(Task* pTask)
+{
+    UMC::AutomaticUMCMutex guard(m_listMutex);
+
+    for (TaskList::iterator it = m_querying.begin(); it != m_querying.end(); it ++)
+    {
+        if (pTask == &*it)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void TaskManager::Ready(Task* pTask)
+{
+    UMC::AutomaticUMCMutex guard(m_listMutex);
+
+    for (TaskList::iterator it = m_querying.begin(); it != m_querying.end(); it ++)
+    {
+        if (pTask == &*it)
+        {
+            m_free.splice(m_free.end(), m_querying, it);
             break;
         }
     }
@@ -2337,6 +2373,9 @@ void ConfigureTask(
     task.m_shNUT = GetSHNUT(task);
 
     par.GetSliceHeader(task, prevTask, task.m_sh);
+    task.m_statusReportNumber = prevTask.m_statusReportNumber + 1;
+    task.m_statusReportNumber = (task.m_statusReportNumber == 0) ? 1 : task.m_statusReportNumber;
+
 }
 
 }; //namespace MfxHwH265Encode
