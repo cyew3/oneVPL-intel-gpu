@@ -48,6 +48,7 @@ namespace VP8Defs
 #define VP8_START_CODE_FOUND(ptr) ((ptr)[0] == 0x9d && (ptr)[1] == 0x01 && (ptr)[2] == 0x2a)
 
 #define vp8_CLIP(x, min, max) if ((x) < (min)) (x) = (min); else if ((x) > (max)) (x) = (max)
+#define vp8_CLIP_value(x, min, max) (((x) < (min)) ? (min) : (((x) > (max)) ? (max) : (x)))
 #define vp8_CLIPR(x, max) if ((x) > (max)) (x) = (max)
 
 #define vp8_CLIP255(x) ((x) > 255) ? 255 : ((x) < 0) ? 0 : (x)

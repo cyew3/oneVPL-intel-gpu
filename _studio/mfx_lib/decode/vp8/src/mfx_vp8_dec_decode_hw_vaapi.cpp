@@ -56,44 +56,28 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      //frame height in pixels
      picParams->frame_height = m_frame_info.frameSize.height;
 
-     //specifies the "last" reference frame
-     picParams->last_ref_frame = 0xffffffff;
-
-     //specifies the "golden" reference frame
-     picParams->golden_ref_frame = 0xffffffff;
-
-     //specifies the "alternate" referrence frame
-     picParams->alt_ref_frame = 0xffffffff;
-
-     // specifies the out-of-loop deblocked frame, not used currently
-     picParams->out_of_loop_frame = 0xffffffff;
-
      picParams->pic_fields.value = 0;
-
-     static int refI = 0;
 
      if (I_PICTURE == m_frame_info.frameType)
      {
-         refI = info.currIndex;
-         //same as key_frame in bitstream syntax
+         //0 means key_frame
          picParams->pic_fields.bits.key_frame = 0;
 
-         picParams->last_ref_frame = 0;
-         picParams->golden_ref_frame = 0;
-         picParams->alt_ref_frame = 0;
-         picParams->out_of_loop_frame = 0;
+         picParams->last_ref_frame = VA_INVALID_SURFACE;
+         picParams->golden_ref_frame = VA_INVALID_SURFACE;
+         picParams->alt_ref_frame = VA_INVALID_SURFACE;
+         picParams->out_of_loop_frame = VA_INVALID_SURFACE;
 
      }
      else // inter frame
      {
-
          picParams->pic_fields.bits.key_frame = 1;
 
          picParams->last_ref_frame    =  m_p_video_accelerator->GetSurfaceID(info.lastrefIndex);
          picParams->golden_ref_frame  =  m_p_video_accelerator->GetSurfaceID(info.goldIndex);
          picParams->alt_ref_frame     =  m_p_video_accelerator->GetSurfaceID(info.altrefIndex);
 
-         picParams->out_of_loop_frame =  0x0;
+         picParams->out_of_loop_frame =  VA_INVALID_SURFACE;
      }
 
      //same as version in bitstream syntax
@@ -148,22 +132,6 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      picParams->mb_segment_tree_probs[1] = m_frame_info.segmentTreeProbabilities[1];
      picParams->mb_segment_tree_probs[2] = m_frame_info.segmentTreeProbabilities[2];
 
-     //Post-adjustment loop filter levels for the 4 segments
-     // TO DO
-
-     int baseline_filter_level[VP8_MAX_NUM_OF_SEGMENTS];
-
-     #define SEGMENT_ABSDATA 1
-     #define MAX_LOOP_FILTER 63
-
-    // Macroblock level features
-    typedef enum
-    {
-       MB_LVL_ALT_Q = 0,   /* Use alternate Quantizer .... */
-       MB_LVL_ALT_LF = 1,  /* Use alternate loop filter value... */
-       MB_LVL_MAX = 2      /* Number of MB level features supported */
-    } MB_LVL_FEATURES;
-
      if (m_frame_info.segmentationEnabled)
      {
 
@@ -186,6 +154,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
          picParams->loop_filter_level[2] = m_frame_info.loopFilterLevel;
          picParams->loop_filter_level[3] = m_frame_info.loopFilterLevel;
      }
+
      //loop filter deltas for reference frame based MB level adjustment
      picParams->loop_filter_deltas_ref_frame[0] = m_frame_info.refLoopFilterDeltas[0];
      picParams->loop_filter_deltas_ref_frame[1] = m_frame_info.refLoopFilterDeltas[1];
@@ -250,17 +219,6 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      picParams->bool_coder_ctx.value = (m_boolDecoder[VP8_FIRST_PARTITION].value() >> 24) & 0xff;
      picParams->bool_coder_ctx.count = m_boolDecoder[VP8_FIRST_PARTITION].bitcount() & 0x7;
 
-     /*{
-         static int i = 0;
-         std::stringstream ss;
-         ss << "/data/local/mfxdump/pp" << i;
-         std::ofstream ofs(ss.str().c_str(), std::ofstream::binary);
-         i++;
-         ofs.write((char*)picParams, sizeof(VAPictureParameterBufferVP8));
-         ofs.flush();
-         ofs.close();
-     }*/
-
      compBufPic->SetDataSize(sizeof(VAPictureParameterBufferVP8));
 
      //////////////////////////////////////////////////////////////////
@@ -272,18 +230,6 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
                reinterpret_cast<const char*>(m_frameProbs.coeff_probs) + sizeof(m_frameProbs.coeff_probs), 
                reinterpret_cast<char*>(coeffProbs));
 
-     /*{
-         static int i = 0;
-         std::stringstream ss;
-         ss << "/data/local/mfxdump/pd" << i;
-         std::ofstream ofs(ss.str().c_str(), std::ofstream::binary);
-         i++;
-         ofs.write((char*)coeffProbs, sizeof(VAProbabilityDataBufferVP8));
-         ofs.flush();
-         ofs.close();
-     }*/
-
-//     compBufCp->SetDataSize(sizeof(Ipp8u) * 4 * 8 * 3 * 11);
      compBufCp->SetDataSize(sizeof(VAProbabilityDataBufferVP8));
 
      //////////////////////////////////////////////////////////////////
@@ -315,17 +261,6 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
              qmTable->quantization_index[i][3] = (unsigned char)m_quantInfo.y2acQ[i];
          }
      }
-
-     /*{
-         static int i = 0;
-         std::stringstream ss;
-         ss << "/data/local/mfxdump/iq" << i;
-         std::ofstream ofs(ss.str().c_str(), std::ofstream::binary);
-         i++;
-         ofs.write((char*)qmTable, sizeof(VAIQMatrixBufferVP8));
-         ofs.flush();
-         ofs.close();
-     }*/
 
      compBufQm->SetDataSize(sizeof(VAIQMatrixBufferVP8));
 
@@ -372,19 +307,9 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
          sliceParams->partition_size[i] = m_frame_info.partitionSize[i - 1];
      }
 
-     /*{
-         static int i = 0;
-         std::stringstream ss;
-         ss << "/data/local/mfxdump/sp" << i;
-         std::ofstream ofs(ss.str().c_str(), std::ofstream::binary);
-         i++;
-         ofs.write((char*)sliceParams, sizeof(VASliceParameterBufferVP8));
-         ofs.flush();
-         ofs.close();
-     }*/
-
      compBufSlice->SetDataSize(sizeof(VASliceParameterBufferVP8));
 
+     //////////////////////////////////////////////////////////////////
      UMCVACompBuffer* compBufBs;
      Ipp8u *bistreamData = (Ipp8u *)m_p_video_accelerator->GetCompBuffer(VASliceDataBufferType, &compBufBs, p_bistream->DataLength - offset);
 
@@ -392,16 +317,6 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
      std::copy(pBuffer + offset, pBuffer + size, bistreamData);
 
-     /*{
-         static int i = 0;
-         std::stringstream ss;
-         ss << "/data/local/mfxdump/sd" << i;
-         std::ofstream ofs(ss.str().c_str(), std::ofstream::binary);
-         i++;
-         ofs.write((char*)(pBuffer + offset), size - offset);
-         ofs.flush();
-         ofs.close();
-     }*/
 
      compBufBs->SetDataSize((Ipp32s)size - offset);
 

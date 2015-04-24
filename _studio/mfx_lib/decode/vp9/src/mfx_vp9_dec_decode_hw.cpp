@@ -518,8 +518,7 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
     if (data.copyFromFrame != UMC::FRAME_MID_INVALID)
     {
         UMC::AutomaticUMCMutex guard(decoder.m_mGuard);
-        mfxFrameSurface1 surface;
-        memcpy(&surface, data.surface_work, sizeof(mfxFrameSurface1));
+        mfxFrameSurface1 surface = *data.surface_work;
         surface.Info.Width = (surface.Info.CropW + 15) & ~0x0f;
         surface.Info.Height = (surface.Info.CropH + 15) & ~0x0f;
 
@@ -528,8 +527,7 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         if (!surfaceSrc)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-        mfxFrameSurface1 surface1;
-        memcpy(&surface1, surfaceSrc, sizeof(mfxFrameSurface1));
+        mfxFrameSurface1 surface1 = *surfaceSrc;
 
         bool isExternal = !(decoder.m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
         mfxU16 memType = MFX_MEMTYPE_DXVA2_DECODER_TARGET;

@@ -137,7 +137,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
     sts = QueryIOSurfInternal(m_platform, &m_video_params, &request);
     MFX_CHECK_STS(sts);
-    sts = m_p_core->AllocFrames(&request, &m_response,type != MFX_HW_VLV);
+    sts = m_p_core->AllocFrames(&request, &m_response, false);
     MFX_CHECK_STS(sts);
 
     m_request = request;
@@ -220,6 +220,14 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
 
     m_on_init_video_params = *p_video_param;
     m_video_params = m_on_init_video_params;
+
+    if (m_on_init_video_params.mfx.FrameInfo.FrameRateExtN == 0 || m_on_init_video_params.mfx.FrameInfo.FrameRateExtD == 0)
+    {
+        m_on_init_video_params.mfx.FrameInfo.FrameRateExtD = 1000;
+        m_on_init_video_params.mfx.FrameInfo.FrameRateExtN = 30000;
+    }
+
+    m_in_framerate = (mfxF64) m_on_init_video_params.mfx.FrameInfo.FrameRateExtD / m_on_init_video_params.mfx.FrameInfo.FrameRateExtN;
 
     if(CheckHardwareSupport(m_p_core, p_video_param) == false)
     {
@@ -672,6 +680,11 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     if(show_frame) m_frameOrder++;
 
     (*pp_surface_out)->Data.TimeStamp = p_bs->TimeStamp;
+    (*pp_surface_out)->Info.FrameRateExtD = m_on_init_video_params.mfx.FrameInfo.FrameRateExtD;
+    (*pp_surface_out)->Info.FrameRateExtN = m_on_init_video_params.mfx.FrameInfo.FrameRateExtN;
+    (*pp_surface_out)->Info.AspectRatioW = 1;
+    (*pp_surface_out)->Info.AspectRatioH = 1;
+    (*pp_surface_out)->Info.PicStruct = m_on_init_video_params.mfx.FrameInfo.PicStruct;
 
     p_entry_point->pRoutine = &VP8DECODERoutine;
     p_entry_point->pCompleteProc = &VP8CompleteProc;
@@ -912,13 +925,13 @@ void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
     #ifndef MFX_VA_WIN
 
     m_quantInfo.yacQ[segment_id]  = qp;
-    m_quantInfo.ydcQ[segment_id]  = qp + m_quantInfo.ydcDeltaQP;
+    m_quantInfo.ydcQ[segment_id]  = vp8_CLIP_value(qp + m_quantInfo.ydcDeltaQP, 0, VP8_MAX_QP);
 
-    m_quantInfo.y2acQ[segment_id] = qp + m_quantInfo.y2acDeltaQP;
-    m_quantInfo.y2dcQ[segment_id] = qp + m_quantInfo.y2dcDeltaQP;
+    m_quantInfo.y2acQ[segment_id] = vp8_CLIP_value(qp + m_quantInfo.y2acDeltaQP, 0, VP8_MAX_QP);
+    m_quantInfo.y2dcQ[segment_id] = vp8_CLIP_value(qp + m_quantInfo.y2dcDeltaQP, 0, VP8_MAX_QP);
 
-    m_quantInfo.uvacQ[segment_id] = qp + m_quantInfo.uvacDeltaQP;
-    m_quantInfo.uvdcQ[segment_id] = qp + m_quantInfo.uvdcDeltaQP;
+    m_quantInfo.uvacQ[segment_id] = vp8_CLIP_value(qp + m_quantInfo.uvacDeltaQP, 0, VP8_MAX_QP);
+    m_quantInfo.uvdcQ[segment_id] = vp8_CLIP_value(qp + m_quantInfo.uvdcDeltaQP, 0, VP8_MAX_QP);
 
     #else
 
@@ -1274,42 +1287,17 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
         //m_frame_info.goldProb = 0;
     }
 
-    #ifdef MFX_VA_WIN
-
-    int frame_data_offset = m_boolDecoder[VP8_FIRST_PARTITION].pos() +
-        ((m_frame_info.frameType == I_PICTURE) ? 10 : 3);
-    m_frame_info.entropyDecSize = frame_data_offset * 8 - 16 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
-
-    #else
-
     m_frame_info.entropyDecSize = m_boolDecoder[VP8_FIRST_PARTITION].pos() * 8 - 16 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
 
-    #endif
-
     #ifdef MFX_VA_WIN
 
-    unsigned char P0EntropyCount = unsigned char(m_boolDecoder[VP8_FIRST_PARTITION].bitcount());
-    UINT offset_counter = ((P0EntropyCount & 0x18) >> 3) + (((P0EntropyCount & 0x07) != 0) ? 1 : 0);
-
-    // + Working DDI .40
-
-    m_frame_info.firstPartitionSize += offset_counter;
-
-    if (m_frame_info.frameType == I_PICTURE)
-    {
-        m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - Ipp32u(m_boolDecoder[VP8_FIRST_PARTITION].input() - ((Ipp8u*)in->Data) - 10) + 2;
-        m_frame_info.entropyDecSize = m_frame_info.entropyDecSize / 8 - 10;
-    }
-    else
-    {
-        m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - Ipp32u(m_boolDecoder[VP8_FIRST_PARTITION].input() - ((Ipp8u*)in->Data) - 3) + 2;
-        m_frame_info.entropyDecSize = m_frame_info.entropyDecSize / 8 - 3;
-    }
+    m_frame_info.entropyDecSize = m_frame_info.entropyDecSize / 8;
+    m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - m_frame_info.entropyDecSize;
 
     #else
 
     int fix = (m_boolDecoder[VP8_FIRST_PARTITION].bitcount() & 0x7) ? 1 : 0;
-    m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - (m_boolDecoder[VP8_FIRST_PARTITION].pos() - 3) - fix;
+    m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - (m_boolDecoder[VP8_FIRST_PARTITION].pos() - 3 + fix);
 
     #endif
 
@@ -1339,29 +1327,11 @@ mfxStatus VideoDECODEVP8_HW::GetVideoParam(mfxVideoParam *pPar)
     pPar->IOPattern = m_on_init_video_params.IOPattern;
     pPar->AsyncDepth = m_on_init_video_params.AsyncDepth;
 
-    if (!pPar->mfx.FrameInfo.FrameRateExtD && !pPar->mfx.FrameInfo.FrameRateExtN)
-    {
-        pPar->mfx.FrameInfo.FrameRateExtD = m_video_params.mfx.FrameInfo.FrameRateExtD;
-        pPar->mfx.FrameInfo.FrameRateExtN = m_video_params.mfx.FrameInfo.FrameRateExtN;
+    pPar->mfx.FrameInfo.FrameRateExtD = m_on_init_video_params.mfx.FrameInfo.FrameRateExtD;
+    pPar->mfx.FrameInfo.FrameRateExtN = m_on_init_video_params.mfx.FrameInfo.FrameRateExtN;
 
-        if (!pPar->mfx.FrameInfo.FrameRateExtD && !pPar->mfx.FrameInfo.FrameRateExtN)
-        {
-            pPar->mfx.FrameInfo.FrameRateExtN = 30;
-            pPar->mfx.FrameInfo.FrameRateExtD = 1;
-        }
-    }
-
-    if (!pPar->mfx.FrameInfo.AspectRatioH && !pPar->mfx.FrameInfo.AspectRatioW)
-    {
-        pPar->mfx.FrameInfo.AspectRatioH = m_video_params.mfx.FrameInfo.AspectRatioH;
-        pPar->mfx.FrameInfo.AspectRatioW = m_video_params.mfx.FrameInfo.AspectRatioW;
-
-        if (!pPar->mfx.FrameInfo.AspectRatioH && !pPar->mfx.FrameInfo.AspectRatioW)
-        {
-            pPar->mfx.FrameInfo.AspectRatioH = 1;
-            pPar->mfx.FrameInfo.AspectRatioW = 1;
-        }
-    }
+    pPar->mfx.FrameInfo.AspectRatioH = m_on_init_video_params.mfx.FrameInfo.AspectRatioH;
+    pPar->mfx.FrameInfo.AspectRatioW = m_on_init_video_params.mfx.FrameInfo.AspectRatioW;
 
     return MFX_ERR_NONE;
 }
