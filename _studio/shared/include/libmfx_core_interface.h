@@ -134,6 +134,12 @@ public:
             memcpy_s(m_caps, sizeof(CAPS)*array_size, hwCaps, sizeof(CAPS)*array_size);
             return MFX_ERR_NONE;
         }
+        else
+        {
+            m_encode_guid = encode_guid;
+            m_size = array_size;
+            memcpy_s(m_caps, sizeof(CAPS)*array_size, hwCaps, sizeof(CAPS)*array_size);
+        }
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     }
