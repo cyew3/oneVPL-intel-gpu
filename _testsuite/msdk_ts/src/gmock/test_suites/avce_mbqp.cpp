@@ -84,10 +84,10 @@ public:
         switch(m_sh->slice_type % 5)
         {
         case 0:
-            type = MFX_FRAMETYPE_B;
+            type = MFX_FRAMETYPE_P;
             break;
         case 1:
-            type = MFX_FRAMETYPE_P;
+            type = MFX_FRAMETYPE_B;
             break;
         case 2:
             type = MFX_FRAMETYPE_I;
@@ -115,20 +115,17 @@ public:
 
         m_prevqp = (m_prevqp + m_mb->mb_qp_delta + 52) % 52;
 
-        if (m_mb->mb_type == 25)    // I_PCM
-            return QP_DO_NOT_CHECK;
-
         if (m_sh->slice_type % 5 == 2)  // Intra
         {
             // 7-11
-            if (m_mb->mb_type == 0 && m_mb->coded_block_pattern == 0)
+            if (m_mb->mb_type == 0 && m_mb->coded_block_pattern == 0 || m_mb->mb_type == 25)
                 return QP_DO_NOT_CHECK;
         } else
         {
             if (m_mb->mb_skip_flag)
                 return QP_DO_NOT_CHECK;
 
-            if (m_sh->slice_type % 5 == 1)  // P
+            if (m_sh->slice_type % 5 == 0)  // P
             {
                 // 7-13 + 7-11
                 if ((m_mb->mb_type <= 5 && m_mb->coded_block_pattern == 0) || m_mb->mb_type == 30)
@@ -311,7 +308,7 @@ public:
                 if (i++ % wMB == 0)
                     g_tsLog << "\n";
 
-                g_tsLog << std::setw(2) << mfxU16(qp) << " ";
+                g_tsLog << std::setw(3) << mfxU16(qp) << " ";
 
                 qp = au.NextQP();
             }
