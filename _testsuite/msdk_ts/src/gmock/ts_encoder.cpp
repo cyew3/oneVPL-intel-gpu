@@ -3,6 +3,7 @@
 tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     : m_default(useDefaults)
     , m_initialized(false)
+    , m_loaded(false)
     , m_par()
     , m_bitstream()
     , m_request()
@@ -17,7 +18,6 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     , m_bs_processor(0)
     , m_frames_buffered(0)
     , m_uid(0)
-    , m_loaded(false)
 {
     m_par.mfx.CodecId = CodecId;
     if(m_default)
@@ -42,23 +42,23 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
 }
 
 tsVideoEncoder::tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
-: m_default(useDefaults)
-, m_initialized(false)
-, m_par()
-, m_bitstream()
-, m_request()
-, m_pPar(&m_par)
-, m_pParOut(&m_par)
-, m_pBitstream(&m_bitstream)
-, m_pRequest(&m_request)
-, m_pSyncPoint(&m_syncpoint)
-, m_pSurf(0)
-, m_pCtrl(&m_ctrl)
-, m_filler(0)
-, m_bs_processor(0)
-, m_frames_buffered(0)
-, m_uid(0)
-, m_loaded(false)
+    : m_default(useDefaults)
+    , m_initialized(false)
+    , m_loaded(false)
+    , m_par()
+    , m_bitstream()
+    , m_request()
+    , m_pPar(&m_par)
+    , m_pParOut(&m_par)
+    , m_pBitstream(&m_bitstream)
+    , m_pRequest(&m_request)
+    , m_pSyncPoint(&m_syncpoint)
+    , m_pSurf(0)
+    , m_pCtrl(&m_ctrl)
+    , m_filler(0)
+    , m_bs_processor(0)
+    , m_frames_buffered(0)
+    , m_uid(0)
 {
     m_par.mfx.CodecId = CodecId;
     if(m_default)
@@ -125,15 +125,18 @@ mfxStatus tsVideoEncoder::Init()
 mfxStatus tsVideoEncoder::Init(mfxSession session, mfxVideoParam *par)
 {
     mfxVideoParam orig_par;
-    memcpy(&orig_par, m_pPar, sizeof(mfxVideoParam));
+    if (par) memcpy(&orig_par, m_pPar, sizeof(mfxVideoParam));
 
     TRACE_FUNC2(MFXVideoENCODE_Init, session, par);
     g_tsStatus.check( MFXVideoENCODE_Init(session, par) );
 
     m_initialized = (g_tsStatus.get() >= 0);
 
-    EXPECT_EQ(0, memcmp(&orig_par, m_pPar, sizeof(mfxVideoParam)))
-        << "ERROR: Input parameters must not be changed in Init()";
+    if (par)
+    {
+        EXPECT_EQ(0, memcmp(&orig_par, m_pPar, sizeof(mfxVideoParam)))
+            << "ERROR: Input parameters must not be changed in Init()";
+    }
 
     return g_tsStatus.get();
 }

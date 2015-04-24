@@ -14,7 +14,6 @@ public:
 
 private:
     struct tc_par;
-    static const mfxU32 n_par = 6;
 
     enum
     {
@@ -22,15 +21,21 @@ private:
         NULL_PARAMS,
     };
 
+    enum
+    {
+        MFXPAR = 1
+    };
+
     struct tc_struct
     {
         mfxStatus sts;
         mfxU32 mode;
-        struct f_pair 
+        struct f_pair
         {
+            mfxU32 ext_type;
             const  tsStruct::Field* f;
             mfxU32 v;
-        } set_par[n_par];
+        } set_par[MAX_NPARS];
     };
 
     static const tc_struct test_case[];
@@ -43,25 +48,25 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*01*/ MFX_ERR_NULL_PTR, NULL_PARAMS},
 
     // IOPattern cases
-    {/*02*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY}},
-    {/*03*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY}},
+    {/*02*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY}},
+    {/*03*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY}},
 
-    // RateControlMethods
-    {/*04*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
-                              {&tsStruct::mfxVideoParam.mfx.QPI, 21},
-                              {&tsStruct::mfxVideoParam.mfx.QPB, 23},
-                              {&tsStruct::mfxVideoParam.mfx.QPB, 24}}},
-    {/*05*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
-                              {&tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0},
-                              {&tsStruct::mfxVideoParam.mfx.TargetKbps, 500},
-                              {&tsStruct::mfxVideoParam.mfx.MaxKbps, 0}}},
-    {/*06*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
-                              {&tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0},
-                              {&tsStruct::mfxVideoParam.mfx.TargetKbps, 500},
-                              {&tsStruct::mfxVideoParam.mfx.MaxKbps, 600}}},
+    // RateControlMethods (only CQP supported)
+    {/*04*/ MFX_ERR_NONE, 0, {{MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
+                              {MFXPAR, &tsStruct::mfxVideoParam.mfx.QPI, 21},
+                              {MFXPAR, &tsStruct::mfxVideoParam.mfx.QPB, 23},
+                              {MFXPAR, &tsStruct::mfxVideoParam.mfx.QPB, 24}}},
+    {/*05*/ MFX_ERR_UNSUPPORTED, 0, {{MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
+                              {MFXPAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0},
+                              {MFXPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 500},
+                              {MFXPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 0}}},
+    {/*06*/ MFX_ERR_UNSUPPORTED, 0, {{MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
+                              {MFXPAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0},
+                              {MFXPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 500},
+                              {MFXPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 600}}},
 
-    {/*07*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.mfx.NumSlice, 4}},
-    {/*08*/ MFX_ERR_NONE, 0, {&tsStruct::mfxVideoParam.AsyncDepth, 4}},
+    {/*07*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 4}},
+    {/*08*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.AsyncDepth, 4}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -78,13 +83,10 @@ int TestSuite::RunTest(unsigned int id)
 
     m_pPar->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     // set up parameters for case
-    for(mfxU32 i = 0; i < n_par; i++)
-    {
-        if(tc.set_par[i].f)
-        {
-            tsStruct::set(m_pPar, *tc.set_par[i].f, tc.set_par[i].v);
-        }
-    }
+    SETPARS(m_pPar, MFXPAR);
+
+    bool hw_surf = m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY;
+    if (hw_surf) SetFrameAllocator(m_session, GetAllocator());
 
     if (tc.mode == NULL_PARAMS)
     {

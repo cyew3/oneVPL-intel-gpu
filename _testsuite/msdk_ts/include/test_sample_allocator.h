@@ -63,9 +63,9 @@ public:
 
         ExternalFrame(const mfxFrameAllocResponse& response, mfxU16 _w, mfxU16 _h, mfxU16 _type)
             : mfxFrameAllocResponse(response)
-            , type(_type)
             , w(_w)
             , h(_h)
+            , type(_type)
         {}
 
         bool operator () (const ExternalFrame &response)const { return mids == response.mids; }
