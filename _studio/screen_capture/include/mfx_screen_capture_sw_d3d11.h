@@ -33,7 +33,7 @@ public:
     virtual mfxStatus CheckCapabilities(mfxVideoParam const & in, mfxVideoParam* out);
     virtual mfxStatus Destroy();
 
-    virtual mfxStatus BeginFrame( mfxMemId MemId);
+    virtual mfxStatus BeginFrame( mfxFrameSurface1* pSurf );
     virtual mfxStatus EndFrame( );
     virtual mfxStatus GetDesktopScreenOperation(mfxFrameSurface1 *surface_work, mfxU32& StatusReportFeedbackNumber);
     virtual mfxStatus QueryStatus(std::list<DESKTOP_QUERY_STATUS_PARAMS>& StatusList);

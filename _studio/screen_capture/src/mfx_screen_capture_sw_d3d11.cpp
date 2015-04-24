@@ -52,9 +52,9 @@ mfxStatus SW_D3D11_Capturer::Destroy()
     return MFX_ERR_UNSUPPORTED;
 }
 
-mfxStatus SW_D3D11_Capturer::BeginFrame( mfxMemId MemId)
+mfxStatus SW_D3D11_Capturer::BeginFrame( mfxFrameSurface1* pSurf)
 {
-    MemId;
+    pSurf;
     return MFX_ERR_UNSUPPORTED;
 }
 

@@ -32,7 +32,7 @@ public:
     virtual mfxStatus CheckCapabilities(mfxVideoParam const & in, mfxVideoParam* out);
     virtual mfxStatus Destroy();
 
-    virtual mfxStatus BeginFrame( mfxMemId MemId);
+    virtual mfxStatus BeginFrame( mfxFrameSurface1* pSurf );
     virtual mfxStatus EndFrame( );
     virtual mfxStatus GetDesktopScreenOperation(mfxFrameSurface1 *surface_work, mfxU32& StatusReportFeedbackNumber);
     virtual mfxStatus QueryStatus(std::list<DESKTOP_QUERY_STATUS_PARAMS>& StatusList);
@@ -46,9 +46,19 @@ protected:
     CComQIPtr<ID3D11VideoDevice>     m_pD11VideoDevice;
     CComQIPtr<ID3D11VideoContext>    m_pD11VideoContext;
 
-
     // we own video decoder, let using com pointer 
     CComPtr<ID3D11VideoDecoder>      m_pDecoder;
+
+    //WA for implicit resize
+#if defined(ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE)
+    bool              m_bImplicitResizeWA;
+    mfxU32            m_AsyncDepth;
+    mfxU32            m_CropW;
+    mfxU32            m_CropH;
+    mfxStatus         ResetInternalSurfaces(const mfxU32& n, mfxFrameInfo* frameInfo);
+    mfxFrameSurface1* GetFreeInternalSurface();
+    std::list<mfxFrameSurface1> m_InternalSurfPool;
+#endif
 };
 
 } //namespace MfxCapture

@@ -549,30 +549,30 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         error = true;
     }
     //scaling in case of RGB32 is not supported due to the driver bug
-    if(in.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 || in.mfx.FrameInfo.FourCC == DXGI_FORMAT_AYUV)
-    {
-        mfxU16 monitorW = (mfxU16) GetSystemMetrics(SM_CXSCREEN);
-        mfxU16 monitorH = (mfxU16) GetSystemMetrics(SM_CYSCREEN);
-        mfxU16 userW = in.mfx.FrameInfo.CropX + in.mfx.FrameInfo.CropW;
-        mfxU16 userH = in.mfx.FrameInfo.CropY + in.mfx.FrameInfo.CropH;
-        userW = userW ? userW : in.mfx.FrameInfo.Width;
-        userH = userH ? userH : in.mfx.FrameInfo.Height;
-        if(monitorH && monitorW)
-        {
-            if(monitorW != userW)
-            {
-                out.mfx.FrameInfo.Width = 0;
-                out.mfx.FrameInfo.CropW = 0;
-                error = true;
-            }
-            if(monitorH != userH)
-            {
-                out.mfx.FrameInfo.Height = 0;
-                out.mfx.FrameInfo.CropH = 0;
-                error = true;
-            }
-        }
-    }
+    //if(in.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 || in.mfx.FrameInfo.FourCC == DXGI_FORMAT_AYUV)
+    //{
+    //    mfxU16 monitorW = (mfxU16) GetSystemMetrics(SM_CXSCREEN);
+    //    mfxU16 monitorH = (mfxU16) GetSystemMetrics(SM_CYSCREEN);
+    //    mfxU16 userW = in.mfx.FrameInfo.CropX + in.mfx.FrameInfo.CropW;
+    //    mfxU16 userH = in.mfx.FrameInfo.CropY + in.mfx.FrameInfo.CropH;
+    //    userW = userW ? userW : in.mfx.FrameInfo.Width;
+    //    userH = userH ? userH : in.mfx.FrameInfo.Height;
+    //    if(monitorH && monitorW)
+    //    {
+    //        if(monitorW != userW)
+    //        {
+    //            out.mfx.FrameInfo.Width = 0;
+    //            out.mfx.FrameInfo.CropW = 0;
+    //            error = true;
+    //        }
+    //        if(monitorH != userH)
+    //        {
+    //            out.mfx.FrameInfo.Height = 0;
+    //            out.mfx.FrameInfo.CropH = 0;
+    //            error = true;
+    //        }
+    //    }
+    //}
 
     //Crops should be ignored on init
     if(in.mfx.FrameInfo.CropY)
@@ -686,12 +686,14 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         }
         MFX_CHECK_STS(mfxRes);
 
+#if defined(ENABLE_RUNTIME_SW_FALLBACK)
         m_pFallbackCapturer.reset( CreateSWCapturer(m_pmfxCore) );
         if(m_pFallbackCapturer.get())
         {
             m_pFallbackCapturer.get()->CreateVideoAccelerator(in);
             m_pCapturer.get()->CheckCapabilities(in, &out);
         }
+#endif
     }
     else
     {
@@ -791,7 +793,7 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxFrameSurface1 *surface, 
     //HW accelerated
     try
     {
-        mfxRes = m_pCapturer.get()->BeginFrame(surface->Data.MemId);
+        mfxRes = m_pCapturer.get()->BeginFrame(surface);
         if(mfxRes)
             rt_fallback = true;
 
@@ -811,7 +813,8 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxFrameSurface1 *surface, 
 
     if(rt_fallback)
     {
-        mfxRes = m_pFallbackCapturer.get()->BeginFrame(ext_surface->Data.MemId);
+#if defined(ENABLE_RUNTIME_SW_FALLBACK)
+        mfxRes = m_pFallbackCapturer.get()->BeginFrame(ext_surface);
         MFX_CHECK_STS(mfxRes);
 
         mfxRes = m_pFallbackCapturer.get()->GetDesktopScreenOperation(ext_surface, m_StatusReportFeedbackNumber);
@@ -824,6 +827,10 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxFrameSurface1 *surface, 
 
         mfxRes = m_pFallbackCapturer.get()->EndFrame();
         MFX_CHECK_STS(mfxRes);
+#else
+        ext_surface;
+        return MFX_ERR_DEVICE_FAILED;
+#endif
     }
 
     //if(wrn)

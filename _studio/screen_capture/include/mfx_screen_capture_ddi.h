@@ -21,6 +21,9 @@ File Name: mfx_screen_capture_ddi.h
 
 #include "ippi.h"
 
+#define ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE
+#define ENABLE_RUNTIME_SW_FALLBACK
+
 // {BF44DACD-217F-4370-A383-D573BC56707E}
 DEFINE_GUID(DXVADDI_Intel_GetDesktopScreen, 
             0xbf44dacd, 0x217f, 0x4370, 0xa3, 0x83, 0xd5, 0x73, 0xbc, 0x56, 0x70, 0x7e);
@@ -108,7 +111,7 @@ public:
     mfxStatus Destroy() = 0;
 
     virtual
-    mfxStatus BeginFrame(mfxMemId MemId) = 0;
+    mfxStatus BeginFrame( mfxFrameSurface1* pSurf ) = 0;
 
     virtual
     mfxStatus EndFrame( ) = 0;

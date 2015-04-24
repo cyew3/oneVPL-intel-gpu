@@ -333,9 +333,9 @@ mfxStatus SW_D3D9_Capturer::Destroy()
     return MFX_ERR_NONE;
 }
 
-mfxStatus SW_D3D9_Capturer::BeginFrame( mfxMemId MemId)
+mfxStatus SW_D3D9_Capturer::BeginFrame( mfxFrameSurface1* pSurf)
 {
-    MemId;
+    pSurf;
     return MFX_ERR_NONE;
 }
 
