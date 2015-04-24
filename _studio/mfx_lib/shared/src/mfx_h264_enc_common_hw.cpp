@@ -4530,6 +4530,7 @@ void MfxHwH264Encode::SetDefaults(
     SetDefaultOn(extOpt2->FixedFrameRate);
     SetDefaultOff(extOpt3->LowDelayHrd);
     SetDefaultOn(extOpt3->BitstreamRestriction);
+    SetDefaultOff(extOpt->RecoveryPointSEI);
 
     CheckVideoParamQueryLike(par, hwCaps, platform, vaType);
 
