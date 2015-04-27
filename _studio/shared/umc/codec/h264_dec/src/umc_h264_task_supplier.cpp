@@ -34,11 +34,6 @@
 namespace UMC
 {
 
-Ipp32u GetDPBLayerIndex(Ipp32u max, Ipp32u dId)
-{
-    return max - dId; // because it easy for using target layer as zero index.
-}
-
 /****************************************************************************************************/
 // DPBOutput class routine
 /****************************************************************************************************/
@@ -783,12 +778,9 @@ void DecReferencePictureMarking::SlideWindow(ViewItem &view, H264Slice * pSlice,
     Ipp32u NumShortTermRefs, NumLongTermRefs;
     const H264SeqParamSet* sps = pSlice->GetSeqParam();
 
-    Ipp32s dId = pSlice->GetSliceHeader()->nal_ext.svc.dependency_id;
-    Ipp32s index = GetDPBLayerIndex(pSlice->GetCurrentFrame()->m_maxDId, dId);
-
     // find out how many active reference frames currently in decoded
     // frames buffer
-    view.GetDPBList(index)->countActiveRefs(NumShortTermRefs, NumLongTermRefs);
+    view.GetDPBList(0)->countActiveRefs(NumShortTermRefs, NumLongTermRefs);
     while (NumShortTermRefs > 0 &&
         (NumShortTermRefs + NumLongTermRefs >= sps->num_ref_frames) &&
         !field_index)
@@ -796,7 +788,7 @@ void DecReferencePictureMarking::SlideWindow(ViewItem &view, H264Slice * pSlice,
         // mark oldest short-term reference as unused
         VM_ASSERT(NumShortTermRefs > 0);
 
-        H264DecoderFrame * pFrame = view.GetDPBList(index)->findOldestShortTermRef();
+        H264DecoderFrame * pFrame = view.GetDPBList(0)->findOldestShortTermRef();
 
         if (!pFrame)
             break;
@@ -814,8 +806,6 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
     m_frameCount++;
 
     H264SliceHeader  * sliceHeader = pSlice->GetSliceHeader();
-    Ipp32s dId = sliceHeader->nal_ext.svc.dependency_id;
-    Ipp32s index = GetDPBLayerIndex(pFrame->m_maxDId, dId);
 
     // set MVC 'inter view flag'
     pFrame->SetInterViewRef(0 != sliceHeader->nal_ext.mvc.inter_view_flag, field_index);
@@ -823,7 +813,7 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
     if (pFrame->m_bIDRFlag)
     {
         // mark all reference pictures as unused
-        for (H264DecoderFrame *pCurr = view.GetDPBList(index)->head(); pCurr; pCurr = pCurr->future())
+        for (H264DecoderFrame *pCurr = view.GetDPBList(0)->head(); pCurr; pCurr = pCurr->future())
         {
             if (pCurr->isShortTermRef() || pCurr->isLongTermRef())
             {
@@ -837,13 +827,13 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
             AddItemAndRun(pFrame, pFrame, SET_REFERENCE | LONG_TERM | (field_index ? BOTTOM_FIELD : TOP_FIELD));
             //pFrame->SetisLongTermRef(true, field_index);
             pFrame->setLongTermFrameIdx(0);
-            view.MaxLongTermFrameIdx[index] = 0;
+            view.MaxLongTermFrameIdx[0] = 0;
         }
         else
         {
             AddItemAndRun(pFrame, pFrame, SET_REFERENCE | SHORT_TERM | (field_index ? BOTTOM_FIELD : TOP_FIELD));
             //pFrame->SetisShortTermRef(true, field_index);
-            view.MaxLongTermFrameIdx[index] = -1;        // no long term frame indices
+            view.MaxLongTermFrameIdx[0] = -1;        // no long term frame indices
         }
 
         bCurrentisST = false;
@@ -872,7 +862,7 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                         (pAdaptiveMarkingInfo->value[arpmmf_idx*2] + 1);
 
 #if 1
-                    pRefFrame = view.GetDPBList(index)->findShortTermPic(picNum, &field);
+                    pRefFrame = view.GetDPBList(0)->findShortTermPic(picNum, &field);
                     AddItemAndRun(pFrame, pRefFrame, UNSET_REFERENCE | SHORT_TERM | (field ? BOTTOM_FIELD : TOP_FIELD));
 #else
                     pRefFrame = view.pDPB->freeShortTermRef(picNum);
@@ -883,7 +873,7 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                     // value is long_term_pic_num
                     picNum = pAdaptiveMarkingInfo->value[arpmmf_idx*2];
 #if 1
-                    pRefFrame = view.GetDPBList(index)->findLongTermPic(picNum, &field);
+                    pRefFrame = view.GetDPBList(0)->findLongTermPic(picNum, &field);
                     AddItemAndRun(pFrame, pRefFrame, UNSET_REFERENCE | LONG_TERM | (field ? BOTTOM_FIELD : TOP_FIELD));
 #else
                     pRefFrame = view.pDPB->freeLongTermRef(picNum);
@@ -898,12 +888,12 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                     LongTermFrameIdx = pAdaptiveMarkingInfo->value[arpmmf_idx*2+1];
 
 #if 1
-                    pRefFrame = view.GetDPBList(index)->findShortTermPic(picNum, &field);
+                    pRefFrame = view.GetDPBList(0)->findShortTermPic(picNum, &field);
                     if (!pRefFrame)
                         break;
 
                     {
-                        H264DecoderFrame * longTerm = view.GetDPBList(index)->findLongTermRefIdx(LongTermFrameIdx);
+                        H264DecoderFrame * longTerm = view.GetDPBList(0)->findLongTermRefIdx(LongTermFrameIdx);
                         if (longTerm != pRefFrame)
                             AddItemAndRun(pFrame, longTerm, UNSET_REFERENCE | LONG_TERM | FULL_FRAME);
                     }
@@ -924,14 +914,14 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                     // Specify max long term frame idx
                     // Value is max_long_term_frame_idx_plus1
                     // Set to "no long-term frame indices" (-1) when value == 0.
-                    view.MaxLongTermFrameIdx[index] = pAdaptiveMarkingInfo->value[arpmmf_idx*2] - 1;
+                    view.MaxLongTermFrameIdx[0] = pAdaptiveMarkingInfo->value[arpmmf_idx*2] - 1;
 
 #if 1
-                    pRefFrame = view.GetDPBList(index)->findOldLongTermRef(view.MaxLongTermFrameIdx[index]);
+                    pRefFrame = view.GetDPBList(0)->findOldLongTermRef(view.MaxLongTermFrameIdx[0]);
                     while (pRefFrame)
                     {
                         AddItemAndRun(pFrame, pRefFrame, UNSET_REFERENCE | LONG_TERM | FULL_FRAME);
-                        pRefFrame = view.GetDPBList(index)->findOldLongTermRef(view.MaxLongTermFrameIdx[index]);
+                        pRefFrame = view.GetDPBList(0)->findOldLongTermRef(view.MaxLongTermFrameIdx[0]);
                     }
 #else
                     // Mark any long-term reference frames with a larger LT idx
@@ -942,7 +932,7 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                 case 5:
                     // Mark all as unused for reference
                     // no value
-                    for (H264DecoderFrame *pCurr = view.GetDPBList(index)->head(); pCurr; pCurr = pCurr->future())
+                    for (H264DecoderFrame *pCurr = view.GetDPBList(0)->head(); pCurr; pCurr = pCurr->future())
                     {
                         if (pCurr->isShortTermRef() || pCurr->isLongTermRef())
                         {
@@ -951,8 +941,8 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                         }
                     }
 
-                    view.GetDPBList(index)->IncreaseRefPicListResetCount(pFrame);
-                    view.MaxLongTermFrameIdx[index] = -1;        // no long term frame indices
+                    view.GetDPBList(0)->IncreaseRefPicListResetCount(pFrame);
+                    view.MaxLongTermFrameIdx[0] = -1;        // no long term frame indices
                     // set "previous" picture order count vars for future
 
                     if (pFrame->m_PictureStructureForDec < FRM_STRUCTURE)
@@ -970,7 +960,7 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                     }
 
                     pFrame->m_bIDRFlag = true;
-                    view.GetPOCDecoder(index)->Reset(0);
+                    view.GetPOCDecoder(0)->Reset(0);
                     // set frame_num to zero for this picture, for correct
                     // FrameNumWrap
                     pFrame->setFrameNum(0);
@@ -983,7 +973,7 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
                     bCurrentisST = false;
 
 #if 1
-                    pRefFrame = view.GetDPBList(index)->findLongTermRefIdx(LongTermFrameIdx);
+                    pRefFrame = view.GetDPBList(0)->findLongTermRefIdx(LongTermFrameIdx);
                     if (pRefFrame != pFrame)
                         AddItemAndRun(pFrame, pRefFrame, UNSET_REFERENCE | LONG_TERM | FULL_FRAME);
 
@@ -1062,20 +1052,14 @@ bool IsNeedSPSInvalidate(const H264SeqParamSet *old_sps, const H264SeqParamSet *
     if (old_sps->chroma_format_idc != new_sps->chroma_format_idc)
         return true;
 
-    /*if (old_sps->frame_cropping_rect_bottom_offset != new_sps->frame_cropping_rect_bottom_offset)
+    if (old_sps->profile_idc != new_sps->profile_idc)
         return true;
 
-    if (old_sps->frame_cropping_rect_left_offset != new_sps->frame_cropping_rect_left_offset)
+    if (old_sps->bit_depth_luma != new_sps->bit_depth_luma)
         return true;
 
-    if (old_sps->frame_cropping_rect_right_offset != new_sps->frame_cropping_rect_right_offset)
+    if (old_sps->bit_depth_chroma != new_sps->bit_depth_chroma)
         return true;
-
-    if (old_sps->frame_cropping_rect_top_offset != new_sps->frame_cropping_rect_top_offset)
-        return true;
-
-    if (old_sps->aspect_ratio_idc != new_sps->aspect_ratio_idc)
-        return true; */
 
     return false;
 }
@@ -2178,176 +2162,6 @@ void ViewItem::SetDPBSize(H264SeqParamSet *pSps, Ipp8u & level_idc)
     }
 } // void ViewItem::SetDPBSize(const H264SeqParamSet *pSps)
 
-void InferredSliceParameterSVC(H264DecoderFrameInfo * au, H264Slice* pSlice)
-{
-    H264SliceHeader *curHdr = pSlice->GetSliceHeader();
-
-    // G.7.4.3.4  because bitstream contains this information for quality_id == 0 only
-    if (curHdr->nal_ext.svc.quality_id > 0)
-    {
-        Ipp8u curDId = curHdr->nal_ext.svc.dependency_id;
-
-        for (Ipp32u i = 0; i < au->GetSliceCount(); i++)
-        {
-            H264Slice* slice = au->GetSlice(i);
-            H264SliceHeader *hdr = slice->GetSliceHeader();
-            Ipp8u baseDId = hdr->nal_ext.svc.dependency_id;
-            Ipp8u baseQId = hdr->nal_ext.svc.quality_id;
-
-            VM_ASSERT(!slice->IsSliceGroups());
-            if (!(pSlice->GetStreamFirstMB() >= slice->GetStreamFirstMB() && pSlice->GetStreamFirstMB() < slice->GetMaxMB()))
-                continue;
-
-            if (!((baseDId == curDId) && (baseQId == 0)))
-                continue;
-
-            curHdr->direct_spatial_mv_pred_flag = hdr->direct_spatial_mv_pred_flag;
-            curHdr->num_ref_idx_active_override_flag = hdr->num_ref_idx_active_override_flag;
-            curHdr->num_ref_idx_l0_active = hdr->num_ref_idx_l0_active;
-            curHdr->num_ref_idx_l1_active = hdr->num_ref_idx_l1_active;
-            curHdr->base_pred_weight_table_flag = hdr->base_pred_weight_table_flag;
-            curHdr->luma_log2_weight_denom = hdr->luma_log2_weight_denom;
-            curHdr->chroma_log2_weight_denom = hdr->chroma_log2_weight_denom;
-            curHdr->no_output_of_prior_pics_flag = hdr->no_output_of_prior_pics_flag;
-            curHdr->long_term_reference_flag = hdr->long_term_reference_flag;
-            curHdr->adaptive_ref_pic_marking_mode_flag = hdr->adaptive_ref_pic_marking_mode_flag;
-            curHdr->nal_ext.svc.store_ref_base_pic_flag = hdr->nal_ext.svc.store_ref_base_pic_flag;
-            curHdr->slice_group_change_cycle = hdr->slice_group_change_cycle;
-
-            RefPicListReorderInfo *ToReorderInfoL0 = &(pSlice->ReorderInfoL0);
-            RefPicListReorderInfo *FromReorderInfoL0 = &(slice->ReorderInfoL0);
-            RefPicListReorderInfo *ToReorderInfoL1 = &(pSlice->ReorderInfoL1);
-            RefPicListReorderInfo *FromReorderInfoL1 = &(slice->ReorderInfoL1);
-
-            ToReorderInfoL0->num_entries = FromReorderInfoL0->num_entries;
-
-            for (Ipp32s j = 0; j < (Ipp32s)ToReorderInfoL0->num_entries; j++)
-            {
-                ToReorderInfoL0->reordering_of_pic_nums_idc[j] = FromReorderInfoL0->reordering_of_pic_nums_idc[j];
-                ToReorderInfoL0->reorder_value[j] = FromReorderInfoL0->reorder_value[j];
-            }
-
-            ToReorderInfoL1->num_entries = FromReorderInfoL1->num_entries;
-
-            for (Ipp32s j = 0; j < (Ipp32s)ToReorderInfoL1->num_entries; j++)
-            {
-                ToReorderInfoL1->reordering_of_pic_nums_idc[j] = FromReorderInfoL1->reordering_of_pic_nums_idc[j];
-                ToReorderInfoL1->reorder_value[j]  = FromReorderInfoL1->reorder_value[j];
-            }
-
-            Ipp32s end = hdr->num_ref_idx_l0_active;
-
-            if ( (slice->GetPicParam()->weighted_pred_flag && (PREDSLICE == hdr->slice_type || S_PREDSLICE == hdr->slice_type)) ||
-                (slice->GetPicParam()->weighted_bipred_idc == 1 && BPREDSLICE == hdr->slice_type))
-            {
-                //pSlice->GetP
-                PredWeightTable *pFromPredWeight[2];
-                pFromPredWeight[0] = (PredWeightTable*)slice->GetPredWeigthTable(0);
-                pFromPredWeight[1] = (PredWeightTable*)slice->GetPredWeigthTable(1);
-
-                PredWeightTable *pToPredWeight[2];
-                pToPredWeight[0] = (PredWeightTable*)pSlice->GetPredWeigthTable(0);
-                pToPredWeight[1] = (PredWeightTable*)pSlice->GetPredWeigthTable(1);
-
-                for (Ipp32s jj = 0; jj < 2; jj++)
-                {
-                    for (Ipp32s j = 0; j < end; j++)
-                    {
-                        pToPredWeight[jj][j].luma_weight_flag = pFromPredWeight[jj][j].luma_weight_flag;
-                        pToPredWeight[jj][j].luma_weight = pFromPredWeight[jj][j].luma_weight;
-                        pToPredWeight[jj][j].luma_offset = pFromPredWeight[jj][j].luma_offset;
-
-                        pToPredWeight[jj][j].chroma_weight_flag = pFromPredWeight[jj][j].chroma_weight_flag;
-                        pToPredWeight[jj][j].chroma_weight[0] = pFromPredWeight[jj][j].chroma_weight[0];
-                        pToPredWeight[jj][j].chroma_offset[0] = pFromPredWeight[jj][j].chroma_offset[0];
-                        pToPredWeight[jj][j].chroma_weight[1] = pFromPredWeight[jj][j].chroma_weight[1];
-                        pToPredWeight[jj][j].chroma_offset[1] = pFromPredWeight[jj][j].chroma_offset[1];
-                    }
-                    end = hdr->num_ref_idx_l1_active;
-                }
-            }
-
-            AdaptiveMarkingInfo *ToAdaptiveMarkingInfo = &(pSlice->m_AdaptiveMarkingInfo);
-            AdaptiveMarkingInfo *ToBaseAdaptiveMarkingInfo = &(pSlice->m_BaseAdaptiveMarkingInfo);
-            AdaptiveMarkingInfo *FromAdaptiveMarkingInfo = &(slice->m_AdaptiveMarkingInfo);
-            ToAdaptiveMarkingInfo->num_entries = FromAdaptiveMarkingInfo->num_entries;
-
-            for (Ipp32s j = 0; j < (Ipp32s)ToAdaptiveMarkingInfo->num_entries; j++)
-            {
-                ToAdaptiveMarkingInfo->mmco[j] = FromAdaptiveMarkingInfo->mmco[j];
-                ToAdaptiveMarkingInfo->value[2*j] = FromAdaptiveMarkingInfo->value[2*j];
-                ToAdaptiveMarkingInfo->value[2*j+1] = FromAdaptiveMarkingInfo->value[2*j+1];
-            }
-
-            AdaptiveMarkingInfo *FromBaseAdaptiveMarkingInfo = &(slice->m_BaseAdaptiveMarkingInfo);
-            ToBaseAdaptiveMarkingInfo->num_entries = FromBaseAdaptiveMarkingInfo->num_entries;
-
-            for (Ipp32s j = 0; j < (Ipp32s)ToBaseAdaptiveMarkingInfo->num_entries; j++)
-            {
-                ToBaseAdaptiveMarkingInfo->mmco[j] = FromBaseAdaptiveMarkingInfo->mmco[j];
-                ToBaseAdaptiveMarkingInfo->value[2*j] = FromBaseAdaptiveMarkingInfo->value[2*j];
-                ToBaseAdaptiveMarkingInfo->value[2*j+1] = FromBaseAdaptiveMarkingInfo->value[2*j+1];
-            }
-        }
-    }
-    else
-    {
-        Ipp8u refDId = (Ipp8u)(curHdr->ref_layer_dq_id >> 4);//  nal_ext.svc.dependency_id;
-
-        for (Ipp32u i = 0; i < au->GetSliceCount(); i++)
-        {
-            H264Slice* slice = au->GetSlice(i);
-            H264SliceHeader *hdr = slice->GetSliceHeader();
-            Ipp8u baseDId = hdr->nal_ext.svc.dependency_id;
-            Ipp8u baseQId = hdr->nal_ext.svc.quality_id;
-            Ipp32s j, jj, end;
-
-            if (!((baseDId == refDId) && (baseQId == 0)))
-                continue;
-
-            if (curHdr->base_pred_weight_table_flag &&
-                pSlice->GetPicParam()->weighted_pred_flag &&
-                !curHdr->nal_ext.svc.no_inter_layer_pred_flag &&
-                (curHdr->slice_type == PREDSLICE || curHdr->slice_type == BPREDSLICE))
-            {
-
-                curHdr->luma_log2_weight_denom = hdr->luma_log2_weight_denom;
-                curHdr->chroma_log2_weight_denom = hdr->chroma_log2_weight_denom;
-
-                end = hdr->num_ref_idx_l0_active;
-
-                //pSlice->GetP
-                PredWeightTable *pFromPredWeight[2];
-                pFromPredWeight[0] = (PredWeightTable*)slice->GetPredWeigthTable(0);
-                pFromPredWeight[1] = (PredWeightTable*)slice->GetPredWeigthTable(1);
-
-                PredWeightTable *pToPredWeight[2];
-                pToPredWeight[0] = (PredWeightTable*)pSlice->GetPredWeigthTable(0);
-                pToPredWeight[1] = (PredWeightTable*)pSlice->GetPredWeigthTable(1);
-
-                for (jj = 0; jj < 2; jj++)
-                {
-                    for (j = 0; j < end; j++)
-                    {
-                        pToPredWeight[jj][j].luma_weight_flag = pFromPredWeight[jj][j].luma_weight_flag;
-                        pToPredWeight[jj][j].luma_weight = pFromPredWeight[jj][j].luma_weight;
-                        pToPredWeight[jj][j].luma_offset = pFromPredWeight[jj][j].luma_offset;
-
-                        pToPredWeight[jj][j].chroma_weight_flag = pFromPredWeight[jj][j].chroma_weight_flag;
-                        pToPredWeight[jj][j].chroma_weight[0] = pFromPredWeight[jj][j].chroma_weight[0];
-                        pToPredWeight[jj][j].chroma_offset[0] = pFromPredWeight[jj][j].chroma_offset[0];
-                        pToPredWeight[jj][j].chroma_weight[1] = pFromPredWeight[jj][j].chroma_weight[1];
-                        pToPredWeight[jj][j].chroma_offset[1] = pFromPredWeight[jj][j].chroma_offset[1];
-                    }
-                    end = hdr->num_ref_idx_l1_active;
-                }
-            }
-            break;
-        }
-   }
-
-}
-
 /****************************************************************************************************/
 // TaskSupplier
 /****************************************************************************************************/
@@ -2425,11 +2239,6 @@ Status TaskSupplier::Init(VideoDecoderParams *init)
     case H264VideoDecoderParams::H264_PROFILE_MULTIVIEW_HIGH:
     case H264VideoDecoderParams::H264_PROFILE_STEREO_HIGH:
         m_decodingMode = MVC_DECODING_MODE;
-        break;
-    case H264VideoDecoderParams::H264_PROFILE_SCALABLE_BASELINE:
-    case H264VideoDecoderParams::H264_PROFILE_SCALABLE_HIGH:
-        m_decodingMode = SVC_DECODING_MODE;
-        AllocateView(0);
         break;
     default:
         m_decodingMode = AVC_DECODING_MODE;
@@ -2659,11 +2468,6 @@ void TaskSupplier::Reset()
     case H264VideoDecoderParams::H264_PROFILE_MULTIVIEW_HIGH:
     case H264VideoDecoderParams::H264_PROFILE_STEREO_HIGH:
         m_decodingMode = MVC_DECODING_MODE;
-        break;
-    case H264VideoDecoderParams::H264_PROFILE_SCALABLE_BASELINE:
-    case H264VideoDecoderParams::H264_PROFILE_SCALABLE_HIGH:
-        m_decodingMode = SVC_DECODING_MODE;
-        AllocateView(0);
         break;
     default:
         m_decodingMode = AVC_DECODING_MODE;
@@ -3222,8 +3026,7 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
     const H264SeqParamSet* sps = pSlice->GetSeqParam();
     H264SliceHeader *sliceHeader = pSlice->GetSliceHeader();
 
-    Ipp32s index = GetDPBLayerIndex(maxDId, dId);
-    Ipp32u frameNumGap = view.GetPOCDecoder(index)->DetectFrameNumGap(pSlice);
+    Ipp32u frameNumGap = view.GetPOCDecoder(0)->DetectFrameNumGap(pSlice);
 
     if (!frameNumGap)
         return UMC_OK;
@@ -3267,7 +3070,6 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
     {
         H264DecoderFrame *pFrame;
 
-        if (dId == maxDId)
         {
             // allocate a frame
             // Traverse list for next disposable frame
@@ -3286,16 +3088,6 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
                 return UMC_ERR_NOT_ENOUGH_BUFFER;
             }
         }
-        else
-        {
-            pFrame = AddLayerFrameSVC(view.GetDPBList(index), pSlice);
-            if (!pFrame)
-            {
-                return UMC_ERR_NOT_ENOUGH_BUFFER;
-            }
-        }
-
-        pFrame->m_maxDId = maxDId;
 
         frameNumGap--;
 
@@ -3305,7 +3097,7 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
             Ipp32s tmp2 = sliceHeader->delta_pic_order_cnt[1];
             sliceHeader->delta_pic_order_cnt[0] = sliceHeader->delta_pic_order_cnt[1] = 0;
 
-            view.GetPOCDecoder(index)->DecodePictureOrderCount(pSlice, frame_num);
+            view.GetPOCDecoder(0)->DecodePictureOrderCount(pSlice, frame_num);
 
             sliceHeader->delta_pic_order_cnt[0] = tmp1;
             sliceHeader->delta_pic_order_cnt[1] = tmp2;
@@ -3313,7 +3105,7 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
 
         // Set frame num and pic num for the missing frame
         pFrame->setFrameNum(frame_num);
-        view.GetPOCDecoder(index)->DecodePictureOrderCountFrameGap(pFrame, sliceHeader, frame_num);
+        view.GetPOCDecoder(0)->DecodePictureOrderCountFrameGap(pFrame, sliceHeader, frame_num);
         DEBUG_PRINT((VM_STRING("frame gap - frame_num = %d, poc = %d,%d added\n"), frame_num, pFrame->m_PicOrderCnt[0], pFrame->m_PicOrderCnt[1]));
 
         if (sliceHeader->field_pic_flag == 0)
@@ -3329,7 +3121,7 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
         // Update frameNumWrap and picNum for all decoded frames
 
         H264DecoderFrame *pFrm;
-        H264DecoderFrame * pHead = view.GetDPBList(index)->head();
+        H264DecoderFrame * pHead = view.GetDPBList(0)->head();
         for (pFrm = pHead; pFrm; pFrm = pFrm->future())
         {
             // TBD: modify for fields
@@ -4119,12 +3911,6 @@ Status TaskSupplier::CompleteDecodedFrames(H264DecoderFrame ** decoded)
 
             if (frameToAdd)
             {
-                // frameToAdd->m_pLayerFrames[m_maxDId] == frameToAdd
-                for (Ipp32s i = frameToAdd->m_minDId; i < frameToAdd->m_maxDId; i++)
-                {
-                    m_pTaskBroker->AddFrameToDecoding(frameToAdd->m_pLayerFrames[i]);
-                }
-
                 if (m_pTaskBroker->AddFrameToDecoding(frameToAdd))
                 {
                     if (decoded)
@@ -4346,27 +4132,18 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource)
                     return umsRes;
                 }
 
-                if (m_decodingMode != SVC_DECODING_MODE)
+                if (pMediaDataEx->values[i] == NAL_UT_SPS || pMediaDataEx->values[i] == NAL_UT_PPS)
                 {
-                    if (pMediaDataEx->values[i] == NAL_UT_SPS || pMediaDataEx->values[i] == NAL_UT_PPS)
-                    {
-                        m_accessUnit.CompleteLastLayer();
-                    }
+                    m_accessUnit.CompleteLastLayer();
                 }
                 break;
 
             case NAL_UT_SEI:
-                if (m_decodingMode != SVC_DECODING_MODE)
-                {
-                    m_accessUnit.CompleteLastLayer();
-                }
+                m_accessUnit.CompleteLastLayer();
                 DecodeSEI(nalUnit);
                 break;
             case NAL_UT_AUD:  //ignore it
-                if (m_decodingMode != SVC_DECODING_MODE)
-                {
-                    m_accessUnit.CompleteLastLayer();
-                }
+                m_accessUnit.CompleteLastLayer();
                 break;
 
             case NAL_UT_END_OF_STREAM:
@@ -4621,8 +4398,6 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
                 AllocateAndInitializeView(slice);
 
                 ViewItem &view = GetView(slice->GetSliceHeader()->nal_ext.mvc.view_id);
-                Ipp32s dId = slice->GetSliceHeader()->nal_ext.svc.dependency_id;
-                Ipp32s index = GetDPBLayerIndex(maxDId, dId);
 
                 if (view.pCurFrame && view.pCurFrame->m_PictureStructureForDec < FRM_STRUCTURE)
                 {
@@ -4635,11 +4410,11 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
                     }
                 }
 
-                if (view.GetPOCDecoder(index)->DetectFrameNumGap(slice))
+                if (view.GetPOCDecoder(0)->DetectFrameNumGap(slice))
                 {
                     view.pCurFrame = 0;
 
-                    Status umsRes = ProcessFrameNumGap(slice, 0, dId, maxDId);
+                    Status umsRes = ProcessFrameNumGap(slice, 0, 0, maxDId);
                     if (umsRes != UMC_OK)
                         return umsRes;
                 }
@@ -4650,121 +4425,6 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
 
         size_t layersCount = m_accessUnit.GetLayersCount();
 
-        if (m_decodingMode == SVC_DECODING_MODE && layersCount)
-        { // allocates primary frame
-            Ipp32u maxDId = layersCount ? m_accessUnit.GetLayer(layersCount - 1)->GetSlice(0)->GetSliceHeader()->nal_ext.svc.dependency_id : 0;
-            SetOfSlices * setOfSlices = m_accessUnit.GetLayer(layersCount-1);
-
-            if (!setOfSlices->m_frame)
-            {
-                H264Slice * slice = setOfSlices->GetSlice(0);
-                setOfSlices->m_frame = AllocateNewFrame(slice);
-                if (!setOfSlices->m_frame)
-                    return UMC_ERR_NOT_ENOUGH_BUFFER;
-
-                H264DecoderFrame *frame = setOfSlices->m_frame;
-                frame->m_maxDId = maxDId;
-
-                size_t sliceCount = setOfSlices->GetSliceCount();
-                frame->m_maxQId = m_accessUnit.GetLayer(layersCount - 1)->GetSlice(sliceCount - 1)->GetSliceHeader()->nal_ext.svc.quality_id;
-                frame->m_minDId = m_accessUnit.GetLayer(0)->GetSlice(0)->GetSliceHeader()->nal_ext.svc.dependency_id;
-                frame->m_pLayerFrames[maxDId] = frame;
-
-                InitFrameCounter(frame, slice);
-                return UMC_OK;
-            }
-
-            H264DecoderFrame *primaryFrame = setOfSlices->m_frame;
-
-            for (size_t i = 0; i < layersCount; i++)
-            {
-                SetOfSlices * setOfSlices = m_accessUnit.GetLayer(i);
-                Ipp32u dId = setOfSlices->GetSlice(0)->GetSliceHeader()->nal_ext.svc.dependency_id;
-                if (setOfSlices->m_frame)
-                {
-                    if (setOfSlices->m_frame->m_firstSliceInBaseRefLayer != -1)
-                        continue;
-
-                    size_t count = setOfSlices->GetSliceCount();
-                    for (size_t sliceId = 0; sliceId < count; sliceId++)
-                    { // find and allocate base ref frame
-                        H264Slice * slice = setOfSlices->GetSlice(sliceId);
-
-                        if (slice->GetSliceHeader()->nal_ext.svc.quality_id || !slice->GetSliceHeader()->nal_ext.svc.store_ref_base_pic_flag || !setOfSlices->m_frame->m_maxQId)
-                            continue;
-
-                        // allocate surface for base ref pic 
-                        Status umcRes = AllocateDataForFrameSVC(setOfSlices->m_frame, slice);
-                        if (umcRes != UMC_OK)
-                        {
-                            return umcRes;
-                        }
-
-                        setOfSlices->m_frame->m_firstSliceInBaseRefLayer = 0;
-                        for (size_t k = 0; k < i; k++)
-                            setOfSlices->m_frame->m_firstSliceInBaseRefLayer += (Ipp32s)m_accessUnit.GetLayer(k)->GetSliceCount();
-
-                        setOfSlices->m_frame->allocateRefBasePicture();
-                        setOfSlices->m_frame->m_firstSliceInBaseRefLayer += (Ipp32s)sliceId;
-                        return UMC_OK;
-                    }
-                }
-
-                if (setOfSlices->m_frame)
-                    continue;
-
-                H264Slice * slice = setOfSlices->GetSlice(0);
-
-                if (i < layersCount - 1)
-                {
-                    GetView(BASE_VIEW).pCurFrame = primaryFrame;
-                    Ipp32s index = GetDPBLayerIndex(primaryFrame->m_maxDId, dId);
-
-                    H264DecoderFrame *frame = AddLayerFrameSVC(GetView(BASE_VIEW).GetDPBList(index), slice);
-                    if (!frame)
-                    {
-                        return UMC_ERR_NOT_ENOUGH_BUFFER;
-                    }
-
-                    primaryFrame->m_pLayerFrames[dId] = frame;
-                    setOfSlices->m_frame = frame;
-
-                    frame->m_maxDId = primaryFrame->m_maxDId;
-                    frame->m_minDId = primaryFrame->m_minDId;
-                    frame->m_UID = primaryFrame->m_UID;
-
-                    InitFrameCounter(frame, slice);
-
-                    if (frame != primaryFrame)
-                    {
-                        size_t allSliceCount = 0;
-
-                        size_t layersCount = m_accessUnit.GetLayersCount();
-                        for (size_t i = 0; i < layersCount; i++)
-                        {
-                            SetOfSlices * setOfSlices = m_accessUnit.GetLayer(i);
-                            allSliceCount += setOfSlices->GetSliceCount();
-                        }
-
-                        frame->GetAU(0)->IncreaseRefPicList(2*allSliceCount + 1); // 2* - for fields
-                        frame->GetAU(1)->IncreaseRefPicList(2*allSliceCount + 1); // 2* - for fields
-                    }
-
-                    setOfSlices->m_frame = primaryFrame;
-                }
-                else
-                {
-                    setOfSlices->m_frame = AllocateNewFrame(slice);
-                    if (!setOfSlices->m_frame)
-                        return UMC_ERR_NOT_ENOUGH_BUFFER;
-                }
-
-                ApplyPayloadsToFrame(setOfSlices->m_frame, slice, &setOfSlices->m_payloads);
-                setOfSlices->m_frame->m_auIndex = m_accessUnit.GetAUIndentifier();
-                return UMC_OK;
-            }
-        }
-        else
         {
             for (size_t i = 0; i < layersCount; i++)
             {
@@ -4780,19 +4440,12 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
 
                 setOfSlices->m_frame->m_auIndex = m_accessUnit.GetAUIndentifier();
                 ApplyPayloadsToFrame(setOfSlices->m_frame, slice, &setOfSlices->m_payloads);
-                setOfSlices->m_frame->m_pLayerFrames[0] = setOfSlices->m_frame;
 
                 if (layersCount == 1)
                     break;
 
                 return UMC_OK;
             }
-        }
-
-        if (m_decodingMode == SVC_DECODING_MODE)
-        {
-            m_accessUnit.CombineSets();
-            layersCount = m_accessUnit.GetLayersCount();
         }
 
         for (size_t i = 0; i < layersCount; i++)
@@ -4836,10 +4489,7 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
                             AddFakeReferenceFrame(slice);
                     }
 
-                    if (m_decodingMode != SVC_DECODING_MODE)
-                    {
-                        slice->UpdateReferenceList(m_views, 0);
-                    }
+                    slice->UpdateReferenceList(m_views, 0);
                 }
             }
 
@@ -4915,7 +4565,6 @@ void TaskSupplier::AddFakeReferenceFrame(H264Slice * pSlice)
 
     H264SliceHeader* sliceHeader = pSlice->GetSliceHeader();
     ViewItem &view = GetView(sliceHeader->nal_ext.mvc.view_id);
-    Ipp32s index = GetDPBLayerIndex(0, sliceHeader->nal_ext.svc.dependency_id); // DEBUG: set maxDid !!!
 
     if (pSlice->GetSeqParam()->pic_order_cnt_type != 0)
     {
@@ -4923,13 +4572,13 @@ void TaskSupplier::AddFakeReferenceFrame(H264Slice * pSlice)
         Ipp32s tmp2 = sliceHeader->delta_pic_order_cnt[1];
         sliceHeader->delta_pic_order_cnt[0] = sliceHeader->delta_pic_order_cnt[1] = 0;
 
-        view.GetPOCDecoder(index)->DecodePictureOrderCount(pSlice, frame_num);
+        view.GetPOCDecoder(0)->DecodePictureOrderCount(pSlice, frame_num);
 
         sliceHeader->delta_pic_order_cnt[0] = tmp1;
         sliceHeader->delta_pic_order_cnt[1] = tmp2;
     }
 
-    view.GetPOCDecoder(index)->DecodePictureOrderCountFakeFrames(pFrame, sliceHeader);
+    view.GetPOCDecoder(0)->DecodePictureOrderCountFakeFrames(pFrame, sliceHeader);
 
     // mark generated frame as short-term reference
     {
@@ -4943,33 +4592,17 @@ bool TaskSupplier::ProcessNonPairedField(H264DecoderFrame * pFrame)
 {
     if (pFrame && pFrame->GetAU(1)->GetStatus() == H264DecoderFrameInfo::STATUS_NOT_FILLED)
     {
-        H264Slice *firstSliceInDepLevel[MAX_NUM_LAYERS];
-        H264DecoderFrameInfo * slicesInfo = pFrame->GetAU(0);
-        Ipp32s sliceCount = slicesInfo->GetSliceCount();
-        Ipp32s dId = pFrame->m_minDId;
-
-        for (Ipp32s i = 0; i < sliceCount; i++)
-        {
-            H264Slice * pSlice = slicesInfo->GetSlice(i);
-
-            if (pSlice->m_bIsFirstSliceInDepLayer)
-            {
-                firstSliceInDepLevel[dId] = pSlice;
-            }
-        }
-
-        for (Ipp32s i = pFrame->m_minDId; i <= pFrame->m_maxDId; i++)
-        {
-            H264DecoderFrame *layerFrame = pFrame->m_pLayerFrames[i];
-
-            layerFrame->setPicOrderCnt(layerFrame->PicOrderCnt(0, 1), 1);
-            layerFrame->m_bottom_field_flag[1] = !layerFrame->m_bottom_field_flag[0];
-            layerFrame->setPicNum(firstSliceInDepLevel[i]->GetSliceHeader()->frame_num*2 + 1, 1);
-        }
-
+        pFrame->setPicOrderCnt(pFrame->PicOrderCnt(0, 1), 1);
         pFrame->GetAU(1)->SetStatus(H264DecoderFrameInfo::STATUS_NONE);
+        pFrame->m_bottom_field_flag[1] = !pFrame->m_bottom_field_flag[0];
 
-        Ipp32s isBottom = firstSliceInDepLevel[pFrame->m_maxDId]->IsBottomField() ? 0 : 1;
+        pFrame->m_isShortTermRef[1] = pFrame->m_isShortTermRef[0];
+        pFrame->m_isLongTermRef[1] = pFrame->m_isLongTermRef[0];
+
+        H264Slice * pSlice = pFrame->GetAU(0)->GetAnySlice();
+        pFrame->setPicNum(pSlice->GetSliceHeader()->frame_num*2 + 1, 1);
+
+        Ipp32s isBottom = pSlice->IsBottomField() ? 0 : 1;
         pFrame->DefaultFill(isBottom, false);
         return true;
     }
@@ -5003,50 +4636,6 @@ void TaskSupplier::OnFullFrame(H264DecoderFrame * pFrame)
     }
 }
 
-void TaskSupplier::CalculateResizeParameters(H264DecoderFrame * pFrame, Ipp32s field)
-{
-    H264DecoderFrameInfo * slicesInfo = pFrame->GetAU(field);
-    Ipp32s sliceCount = slicesInfo->GetSliceCount();
-
-    if (!sliceCount)
-        return;
-
-    for (Ipp32s i = 0; i < sliceCount; i++)
-    {
-        H264Slice *pSlice = slicesInfo->GetSlice(i);
-        H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
-
-        if (!pSlice->m_bIsFirstILPredSliceInDepLayer || pSliceHeader->ref_layer_dq_id < 0 || pSlice->m_bDecoded)
-            continue;
-
-        H264Slice * refSlice = 0;
-        for (Ipp32u k = 0; k < slicesInfo->GetSliceCount(); k++)
-        {
-            H264Slice * slice = slicesInfo->GetSlice(k);
-            Ipp32s dqId = (slice->GetSliceHeader()->nal_ext.svc.dependency_id << 4) + slice->GetSliceHeader()->nal_ext.svc.quality_id;
-            if (pSliceHeader->ref_layer_dq_id == dqId)
-            {
-                refSlice = slice;
-                break;
-            }
-
-            if (pSliceHeader->ref_layer_dq_id >= dqId)
-            {
-                refSlice = slice;
-            }
-        }
-
-        H264DecoderLayerDescriptor *layerMbs = pSlice->GetMBInfo().layerMbs;
-        H264DecoderLayerResizeParameter *lrp = &layerMbs[pSliceHeader->nal_ext.svc.dependency_id].lrp[field];
-        lrp->UpdateLayerParams(pSlice);
-        lrp->UpdateRefLayerParams(refSlice);
-        lrp->EvaluateSpatialResolutionChange();
-
-        layerMbs[pSliceHeader->ref_layer_dq_id >> 4].lrp[field].next_spatial_resolution_change =
-            lrp->spatial_resolution_change;
-    }
-}
-
 Status TaskSupplier::InitializeLayers(AccessUnit *accessUnit, H264DecoderFrame * pFrame, Ipp32s field)
 {
     pFrame;
@@ -5067,7 +4656,7 @@ Status TaskSupplier::InitializeLayers(AccessUnit *accessUnit, H264DecoderFrame *
         }
     }
 
-    if ((m_decodingMode == MVC_DECODING_MODE || m_decodingMode == SVC_DECODING_MODE) && layersCount > 1)
+    if ((m_decodingMode == MVC_DECODING_MODE) && layersCount > 1)
     {
         H264Slice * sliceExtension = 0;
         for (size_t i = layersCount - 1; i >= 1; i--)
@@ -5106,261 +4695,17 @@ Status TaskSupplier::InitializeLayers(AccessUnit *accessUnit, H264DecoderFrame *
         }
     }
 
-    if (m_decodingMode != SVC_DECODING_MODE)
-    {
-        for (size_t i = 0; i < layersCount; i++)
-        {
-            SetOfSlices * setOfSlices = accessUnit->GetLayer(i);
-            size_t sliceCount = setOfSlices->GetSliceCount();
-            for (size_t sliceId = 0; sliceId < sliceCount; sliceId++)
-            {
-                H264Slice * slice = setOfSlices->GetSlice(sliceId);
-                slice->m_firstILPredSliceInDepLayer = slice;
-                slice->m_bIsFirstILPredSliceInDepLayer = true;
-                slice->m_bIsMaxDId = true;
-                slice->m_bIsMaxQId = true;
-
-                slice->m_bIsFirstSliceInDepLayer = true;
-                slice->m_bIsFirstSliceInLayer = true;
-                slice->m_bIsLastSliceInDepLayer = true;
-            }
-        }
-
-        return UMC_OK;
-    }
-
-    for (size_t i = 0; i < layersCount; i++)
-    {
-        SetOfSlices * setOfSlices = accessUnit->GetLayer(i);
-        if (!setOfSlices->GetSliceCount())
-            continue;
-
-        size_t sliceCount = setOfSlices->GetSliceCount();
-        for (size_t sliceId = 0; sliceId < sliceCount; sliceId++)
-        {
-            H264Slice * slice = setOfSlices->GetSlice(sliceId);
-            slice->m_firstILPredSliceInDepLayer = slice;
-            slice->m_bIsFirstILPredSliceInDepLayer = false;
-            slice->m_bIsMaxDId = i == (layersCount - 1);
-            slice->m_bIsMaxQId = false;
-        }
-
-        setOfSlices->GetSlice(0)->m_firstILPredSliceInDepLayer = setOfSlices->GetSlice(0);
-        setOfSlices->GetSlice(0)->m_bIsFirstILPredSliceInDepLayer = true;
-
-        if (i != 0) // if it is not first layer
-        {
-            for (size_t sliceId = 0; sliceId < sliceCount; sliceId++)
-            {
-                H264Slice * slice = setOfSlices->GetSlice(sliceId);
-                if (slice->GetSliceHeader()->nal_ext.svc.no_inter_layer_pred_flag == 0 && slice->GetSliceHeader()->nal_ext.svc.quality_id == 0)
-                {
-                    setOfSlices->GetSlice(0)->m_firstILPredSliceInDepLayer = slice;
-                    setOfSlices->GetSlice(0)->m_bIsFirstILPredSliceInDepLayer = true;
-                    slice->m_bIsFirstILPredSliceInDepLayer = true;
-                    break;
-                }
-            }
-        }
-
-        Ipp32u quality_id = 100;
-        for (size_t sliceId = 0; sliceId < sliceCount; sliceId++)
-        {
-            H264Slice * slice = setOfSlices->GetSlice(sliceId);
-            slice->m_bIsFirstSliceInDepLayer = false;
-            slice->m_bIsFirstSliceInLayer = false;
-            slice->m_bIsLastSliceInDepLayer = false;
-            if (slice->GetSliceHeader()->nal_ext.svc.quality_id != quality_id)
-            {
-                slice->m_bIsFirstSliceInLayer = true;
-                quality_id = slice->GetSliceHeader()->nal_ext.svc.quality_id;
-            }
-        }
-
-        for (Ipp32s sliceId = (Ipp32s)sliceCount - 1; sliceId >= 0; --sliceId)
-        {
-            H264Slice * slice = setOfSlices->GetSlice(sliceId);
-            if (slice->GetSliceHeader()->nal_ext.svc.quality_id != quality_id)
-                break;
-            slice->m_bIsMaxQId = true;
-        }
-
-        setOfSlices->GetSlice(0)->m_bIsFirstSliceInDepLayer = true;
-        setOfSlices->GetSlice(sliceCount - 1)->m_bIsLastSliceInDepLayer = true;
-    }
-
-    /* Non reference slice should be marked as Decoded and Deblocked */
-    Ipp32s curLayer = 0;
-    if (layersCount)
-    {
-        SetOfSlices * setOfSlices = m_accessUnit.GetLayer(layersCount - 1);
-        size_t count = setOfSlices->GetSliceCount();
-        curLayer = (setOfSlices->GetSlice(count - 1)->GetSliceHeader()->nal_ext.svc.dependency_id << 4) + 
-            setOfSlices->GetSlice(count - 1)->GetSliceHeader()->nal_ext.svc.quality_id;
-    }
-
-    for(;;)
-    {
-        Ipp32s currDLayer = curLayer >> 4;
-        Ipp32s layerPos = m_accessUnit.FindLayerByDependency(currDLayer);
-        if (layerPos < 0)
-        {
-            VM_ASSERT(layerPos >= 0);
-            break;
-        }
-
-        SetOfSlices * setOfSlices = m_accessUnit.GetLayer(layerPos);
-        Ipp32s baseLayer = -1;
-
-        for (size_t sliceId = 0; sliceId < setOfSlices->GetSliceCount(); sliceId++)
-        {
-            H264Slice * slice = setOfSlices->GetSlice(sliceId);
-            
-            Ipp32s refDLayer = slice->GetSliceHeader()->ref_layer_dq_id >> 4;
-            if (slice->GetSliceHeader()->ref_layer_dq_id != -1 && refDLayer != currDLayer)
-            {
-                baseLayer = slice->GetSliceHeader()->ref_layer_dq_id;
-                break;
-            }
-        }
-
-        Ipp32s startToRemove = baseLayer < 0 ? 0 :  (baseLayer >> 4) + 1;
-
-        // remove useless dependencies
-        for (Ipp32s depIter = startToRemove; depIter < currDLayer; depIter++)
-        {
-            Ipp32s layerPos = m_accessUnit.FindLayerByDependency(depIter);
-            if (layerPos < 0)
-                continue;
-
-            SetOfSlices * set = m_accessUnit.GetLayer(layerPos);
-            for (size_t k = 0; k < set->GetSliceCount(); ++k)
-            {
-                H264Slice * baseSlice = set->GetSlice(k);
-                baseSlice->m_bDecoded = true;
-                baseSlice->m_bDeblocked = true;
-            }
-        }
-
-        if (baseLayer < 0 || currDLayer == (baseLayer >> 4))
-            break;
-
-        layerPos = m_accessUnit.FindLayerByDependency(baseLayer >> 4);
-        if (layerPos < 0)
-        {
-            VM_ASSERT(layerPos >= 0);
-            break;
-        }
-
-        SetOfSlices * baseSetOfSlices = m_accessUnit.GetLayer(layerPos);
-
-        H264Slice *pSlice_last_in_dep = 0;
-        size_t baseSliceCount = baseSetOfSlices->GetSliceCount();
-        for (size_t i = 0; i < baseSliceCount; i++)
-        {
-            H264Slice * baseSlice = baseSetOfSlices->GetSlice(i);
-            Ipp32s currDQ = (baseSlice->GetSliceHeader()->nal_ext.svc.dependency_id << 4) + baseSlice->GetSliceHeader()->nal_ext.svc.quality_id;
-
-            if (currDQ == baseLayer)
-            {
-                baseSlice->m_bIsMaxQId = true;
-                pSlice_last_in_dep = baseSlice;
-            }
-
-            if (currDQ > baseLayer)
-            {
-                for (Ipp32s k = (Ipp32s)baseSliceCount - 1; k >= (Ipp32s)i; --k)
-                {
-                    H264Slice * baseSlice = baseSetOfSlices->GetSlice(k);
-                    baseSlice->m_bDecoded = true;
-                    baseSlice->m_bDeblocked = true;
-                }
-                break;
-            }
-        }
-
-        if (pSlice_last_in_dep)
-            pSlice_last_in_dep->m_bIsLastSliceInDepLayer = true;
-
-        curLayer = baseLayer;
-    }
-
-    m_accessUnit.CleanUseless();
     return UMC_OK;
 }
 
 Status TaskSupplier::InitializeLayers(H264DecoderFrame * pFrame, Ipp32s field)
 {
-    H264DecoderFrameInfo * slicesInfo = pFrame->GetAU(field);
-    Ipp32s sliceCount = slicesInfo->GetSliceCount();
-
-    if (m_decodingMode == SVC_DECODING_MODE)
-    {
-        for (Ipp32s i = 0; i < sliceCount; i++)
-        {
-            H264Slice * pSlice = slicesInfo->GetSlice(i);
-            Ipp32s dId = (pSlice->GetSliceHeader())->nal_ext.svc.dependency_id;
-            Ipp32s index = GetDPBLayerIndex(pFrame->m_maxDId, dId);
-
-            H264DecoderFrame * temp = pSlice->m_pCurrentFrame;
-            pSlice->m_pCurrentFrame = pFrame->m_pLayerFrames[dId];
-            pSlice->UpdateReferenceList(m_views, index);
-            pSlice->m_pCurrentFrame = temp;
-        }
-    }
-
     if (!field)
     {
-        Ipp32s count = slicesInfo->GetSliceCount();
-        H264Slice *pSlice = slicesInfo->GetSlice(count-1);
-
-        Status umcRes = AllocateDataForFrameSVC(pFrame, pSlice);
-        if (umcRes != UMC_OK)
-        {
-            return umcRes;
-        }
-
-        for (Ipp32s i = 0; i <= pFrame->m_maxDId; i++)
-        {
-            if (!pFrame->m_pLayerFrames[i])
-                continue;
-
-            pFrame->m_pLayerFrames[i]->m_index = pFrame->m_index;
-        }
-
         // fill chroma planes in case of 4:0:0
         if (pFrame->m_chroma_format == 0)
         {
             pFrame->DefaultFill(2, true);
-        }
-    }
-
-    // Find last slice with dependency_id == quality_id == 0
-    pFrame->m_lastSliceInAVC = -1;
-    for (Ipp32s i = sliceCount - 1; i >= 0; i--)
-    {
-        H264Slice * pSlice = slicesInfo->GetSlice(i);
-        if ((pSlice->GetSliceHeader()->nal_ext.svc.dependency_id == 0) &&
-            (pSlice->GetSliceHeader()->nal_ext.svc.quality_id == 0))
-        {
-            pFrame->m_lastSliceInAVC = i;
-            break;
-        }
-    }
-
-    /* Base ref layer */
-    if (pFrame->m_maxQId)
-    {
-        for (Ipp32s i = sliceCount - 1; i >= 0; i--)
-        {
-            H264Slice * pSlice = slicesInfo->GetSlice(i);
-            if ((pSlice->GetSliceHeader()->nal_ext.svc.dependency_id == pFrame->m_maxDId) &&
-                (pSlice->GetSliceHeader()->nal_ext.svc.quality_id == 0))
-            {
-                pFrame->m_lastSliceInBaseRefLayer = i;
-                pFrame->m_storeRefBasePic = pSlice->GetSliceHeader()->nal_ext.svc.store_ref_base_pic_flag;
-                break;
-            }
         }
     }
 
@@ -5419,17 +4764,10 @@ Status TaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
                 pFrame->GetAU(0)->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
             }
 
-            for (Ipp32s i = 0; i <= pFrame->m_maxDId; i++)
-            {
-                if (!pFrame->m_pLayerFrames[i])
-                    continue;
-
-                pFrame->m_pLayerFrames[i]->SetisShortTermRef(false, 0);
-                pFrame->m_pLayerFrames[i]->SetisShortTermRef(false, 1);
-                pFrame->m_pLayerFrames[i]->SetisLongTermRef(false, 0);
-                pFrame->m_pLayerFrames[i]->SetisLongTermRef(false, 1);
-            }
-
+            pFrame->SetisShortTermRef(false, 0);
+            pFrame->SetisShortTermRef(false, 1);
+            pFrame->SetisLongTermRef(false, 0);
+            pFrame->SetisLongTermRef(false, 1);
             pFrame->SetSkipped(true);
             pFrame->OnDecodingCompleted();
             return UMC_OK;
@@ -5467,15 +4805,7 @@ Status TaskSupplier::AllocateDataForFrameSVC(H264DecoderFrame * pFrame, H264Slic
     dimensions.width = pSeqParam->frame_width_in_mbs * 16;
     dimensions.height = pSeqParam->frame_height_in_mbs * 16;
 
-    if (m_decodingMode != SVC_DECODING_MODE)
-    {
-        return UMC_OK;
-    }
-
-    // Allocate the frame data
-    return AllocateFrameData(pFrame, dimensions,
-                             IPP_MAX(bit_depth_luma, bit_depth_chroma),
-                             pFrame->GetColorFormat());
+    return UMC_OK;
 }
 
 Status TaskSupplier::InitFreeFrame(H264DecoderFrame * pFrame, const H264Slice *pSlice)
@@ -5553,9 +4883,6 @@ Status TaskSupplier::InitFreeFrame(H264DecoderFrame * pFrame, const H264Slice *p
 
     ColorFormat cf = GetUMCColorFormat(chroma_format_idc);
 
-    if (cf == YUV420) //  msdk !!!
-        cf = NV12;
-
     if (pSlice->GetSeqParamEx() && pSlice->GetSeqParamEx()->aux_format_idc)
     {
         cf = ConvertColorFormatToAlpha(cf);
@@ -5599,21 +4926,19 @@ void TaskSupplier::InitFrameCounter(H264DecoderFrame * pFrame, const H264Slice *
 {
     const H264SliceHeader *sliceHeader = pSlice->GetSliceHeader();
     ViewItem &view = GetView(sliceHeader->nal_ext.mvc.view_id);
-    Ipp32s dId = sliceHeader->nal_ext.svc.dependency_id;
-    Ipp32s index = GetDPBLayerIndex(pFrame->m_maxDId, dId);
 
     if (sliceHeader->IdrPicFlag)
     {
-        view.GetPOCDecoder(index)->Reset(sliceHeader->frame_num);
+        view.GetPOCDecoder(0)->Reset(sliceHeader->frame_num);
     }
 
-    view.GetPOCDecoder(index)->DecodePictureOrderCount(pSlice, sliceHeader->frame_num);
+    view.GetPOCDecoder(0)->DecodePictureOrderCount(pSlice, sliceHeader->frame_num);
 
     pFrame->m_bIDRFlag = (sliceHeader->IdrPicFlag != 0);
 
     if (pFrame->m_bIDRFlag)
     {
-        view.GetDPBList(index)->IncreaseRefPicListResetCount(pFrame);
+        view.GetDPBList(0)->IncreaseRefPicListResetCount(pFrame);
     }
 
     pFrame->setFrameNum(sliceHeader->frame_num);
@@ -5625,7 +4950,7 @@ void TaskSupplier::InitFrameCounter(H264DecoderFrame * pFrame, const H264Slice *
     else
         pFrame->setPicNum(sliceHeader->frame_num*2+1, field_index);
 
-    view.GetPOCDecoder(index)->DecodePictureOrderCountInitFrame(pFrame, field_index);
+    view.GetPOCDecoder(0)->DecodePictureOrderCountInitFrame(pFrame, field_index);
 
     DEBUG_PRINT((VM_STRING("Init frame POC - %d, %d, field - %d, uid - %d, frame_num - %d, viewId - %d\n"), pFrame->m_PicOrderCnt[0], pFrame->m_PicOrderCnt[1], field_index, pFrame->m_UID, pFrame->m_FrameNum, pFrame->m_viewId));
 
@@ -5642,12 +4967,6 @@ void TaskSupplier::AddSliceToFrame(H264DecoderFrame *pFrame, H264Slice *pSlice)
         pFrame->m_FrameType = SliceTypeToFrameType(pSlice->GetSliceHeader()->slice_type);
 
     Ipp32u field_index = pFrame->GetNumberByParity(sliceHeader->bottom_field_flag);
-
-    if (m_decodingMode == SVC_DECODING_MODE)
-    {
-        if (sliceHeader->nal_ext.svc.dependency_id < pFrame->m_maxDId)
-            field_index = 0;
-    }
 
     H264DecoderFrameInfo * au_info = pFrame->GetAU(field_index);
     Ipp32s iSliceNumber = au_info->GetSliceCount() + 1;
@@ -5666,38 +4985,28 @@ void TaskSupplier::AddSliceToFrame(H264DecoderFrame *pFrame, H264Slice *pSlice)
     pSlice->SetSliceNumber(iSliceNumber);
     pSlice->m_pCurrentFrame = pFrame;
     au_info->AddSlice(pSlice);
-    InferredSliceParameterSVC(au_info, pSlice);
 }
 
 void TaskSupplier::DBPUpdate(H264DecoderFrame * pFrame, Ipp32s field)
 {
-    Ipp32s lastdId = -1;
     H264DecoderFrameInfo *slicesInfo = pFrame->GetAU(field);
 
     for (Ipp32u i = 0; i < slicesInfo->GetSliceCount(); i++)
     {
         H264Slice * slice = slicesInfo->GetSlice(i);
-        Ipp32s dId = slice->GetSliceHeader()->nal_ext.svc.dependency_id;
-
-        if (dId == lastdId)
-            continue;
-
-        lastdId = dId;
-
         if (!slice->IsReference())
             continue;
 
         ViewItem &view = GetView(slice->GetSliceHeader()->nal_ext.mvc.view_id);
 
-        DecReferencePictureMarking::UpdateRefPicMarking(view, pFrame->m_pLayerFrames[dId], slice, field);
+        DecReferencePictureMarking::UpdateRefPicMarking(view, pFrame, slice, field);
 
         if (GetAuxiliaryFrame(pFrame))
         {
             ViewItem &view = GetView(m_currentView);
 
             // store marking results to auxiliary frames
-            Ipp32s index = GetDPBLayerIndex(pFrame->m_maxDId, dId);
-            H264DecoderFrame *pHead = view.GetDPBList(index)->head();
+            H264DecoderFrame *pHead = view.GetDPBList(0)->head();
 
             for (H264DecoderFrame *pTmp = pHead; pTmp; pTmp = pTmp->future())
             {
@@ -5706,6 +5015,8 @@ void TaskSupplier::DBPUpdate(H264DecoderFrame * pFrame, Ipp32s field)
                 frame->FillInfoToAuxiliary();
             }
         }
+
+        break;
     }
 }
 
@@ -5893,13 +5204,10 @@ H264DecoderFrame * TaskSupplier::AllocateNewFrame(const H264Slice *slice)
         return 0;
     }
 
-    if (m_decodingMode != SVC_DECODING_MODE)
+    umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pFrame->m_bpp, pFrame->GetColorFormat());
+    if (umcRes != UMC_OK)
     {
-        umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pFrame->m_bpp, pFrame->GetColorFormat());
-        if (umcRes != UMC_OK)
-        {
-            return 0;
-        }
+        return 0;
     }
 
     if (slice->IsAuxiliary())
@@ -5923,237 +5231,10 @@ H264DecoderFrame * TaskSupplier::AllocateNewFrame(const H264Slice *slice)
         pFrame->DefaultFill(2, true);
     }
 
-    if (m_decodingMode != SVC_DECODING_MODE)
-        InitFrameCounter(pFrame, slice);
+    InitFrameCounter(pFrame, slice);
 
     return pFrame;
 } // H264DecoderFrame * TaskSupplier::AddFrame(H264Slice *pSlice)
-
-
-H264DecoderFrame * TaskSupplier::AddLayerFrameSVC(H264DBPList *dpb, H264Slice *pSlice)
-{
-    if (!pSlice)
-        return 0;
-
-    // Traverse list for next disposable frame
-    H264DecoderFrame *pFrame = dpb->GetOldestDisposable();
-
-    // Did we find one?
-    if (NULL == pFrame)
-    {
-        if (dpb->countAllFrames() >= dpb->GetDPBSize() + m_DPBSizeEx)
-        {
-            return 0;
-        }
-
-        // Didn't find one. Let's try to insert a new one
-        pFrame = new H264DecoderFrameExtension(m_pMemoryAllocator, &m_ObjHeap);
-        if (NULL == pFrame)
-            return 0;
-
-        dpb->append(pFrame);
-    }
-
-    pFrame->Reset();
-
-    pFrame->setWasOutputted();
-    pFrame->unSetisDisplayable();
-    pFrame->IncrementReference();
-    pFrame->SetSkipped(false);
-    pFrame->SetFrameExistFlag(true);
-
-    InitFreeFrame(pFrame, pSlice);
-
-    /* is needed for Direct prediction */
-    //if (dId == 0)
-    {
-        const H264SeqParamSet *pSeqParam = pSlice->GetSeqParam();
-        Ipp32s iMBWidth = pSeqParam->frame_width_in_mbs;
-        Ipp32s iMBHeight = pSeqParam->frame_height_in_mbs;
-        Ipp32s chroma_format = pSeqParam->chroma_format_idc;
-        IppiSize dimensions;
-
-        dimensions.width = iMBWidth * 16;
-        dimensions.height = iMBHeight * 16;
-
-        pFrame->setImageSize(dimensions, chroma_format);
-
-        if (UMC_OK != pFrame->allocateParsedFrameData())
-            return 0;
-    }
-
-    return pFrame;
-}
-
-
-H264DecoderLayerResizeParameter::H264DecoderLayerResizeParameter()
-{
-    Reset();
-}
-
-void H264DecoderLayerResizeParameter::Reset()
-{
-    extended_spatial_scalability = 0;
-    scaled_ref_layer_width = 0;
-    scaled_ref_layer_height = 0;
-    frame_mbs_only_flag = 0;
-
-    cur_layer_width = 0;
-    cur_layer_height = 0;
-
-    leftOffset = 0;
-    topOffset = 0;
-    rightOffset = 0;
-    bottomOffset = 0;
-
-    phaseX = 0;
-    phaseY = 0;
-    refPhaseX = 0;
-    refPhaseY = 0;
-
-    spatial_resolution_change = 0;
-    next_spatial_resolution_change = 0;
-
-    level_idc = 0;
-
-    shiftX = 0;
-    shiftY = 0;
-    scaleX = 0;
-    scaleY = 0;
-    addX = 0;
-    addY = 0;
-
-    ref_layer_width = 0;
-    ref_layer_height = 0;
-
-    ref_frame_mbs_only_flag = 0;
-    field_pic_flag = 0;
-    RefLayerFieldPicFlag = 0;
-
-    MbaffFrameFlag = 0;
-    RefLayerMbaffFrameFlag = 0;
-}
-
-void H264DecoderLayerResizeParameter::UpdateRefLayerParams(H264Slice *refSlice)
-{
-    const H264SeqParamSet *sps = refSlice->GetSeqParam();
-
-    ref_layer_width = sps->frame_width_in_mbs << 4;
-    ref_layer_height = sps->frame_height_in_mbs << 4;
-
-    ref_frame_mbs_only_flag = refSlice->GetSeqParam()->frame_mbs_only_flag;
-    RefLayerFieldPicFlag = refSlice->GetSliceHeader()->field_pic_flag;
-    RefLayerMbaffFrameFlag = refSlice->GetSliceHeader()->MbaffFrameFlag;
-}
-
-void H264DecoderLayerResizeParameter::UpdateLayerParams(H264Slice *slice)
-{
-    const H264SeqParamSetSVCExtension *curSps = slice->GetSeqSVCParam();
-    const H264SliceHeader *sliceHeader = slice->GetSliceHeader();
-
-    sliceHeader = slice->m_firstILPredSliceInDepLayer ? slice->m_firstILPredSliceInDepLayer->GetSliceHeader() : sliceHeader;
-
-    if (curSps->chroma_format_idc > 0 && (curSps->chroma_format_idc != 3 || curSps->residual_colour_transform_flag == 0))
-    {
-        phaseX = curSps->chroma_phase_x;
-        phaseY = curSps->chroma_phase_y;
-    } else {
-        phaseX = 0;
-        phaseY = -1;
-    }
-
-    if (sliceHeader->nal_ext.svc.quality_id || sliceHeader->nal_ext.svc.no_inter_layer_pred_flag)
-    {
-        extended_spatial_scalability = 0;
-        leftOffset = 0;
-        topOffset = 0;
-        rightOffset = 0;
-        bottomOffset = 0;
-        refPhaseX = phaseX;
-        refPhaseY = phaseY;
-    }
-    else
-    {
-        extended_spatial_scalability = curSps->extended_spatial_scalability;
-
-        if (curSps->extended_spatial_scalability == 1) {
-            leftOffset = 2 * curSps->seq_scaled_ref_layer_left_offset;
-            topOffset = 2 * curSps->seq_scaled_ref_layer_top_offset *
-                (2 - curSps->frame_mbs_only_flag);
-
-            rightOffset = 2 * curSps->seq_scaled_ref_layer_right_offset;
-            bottomOffset = 2 * curSps->seq_scaled_ref_layer_bottom_offset *
-                (2 - curSps->frame_mbs_only_flag);
-
-            refPhaseX = curSps->seq_ref_layer_chroma_phase_x;
-            refPhaseY = curSps->seq_ref_layer_chroma_phase_y;
-        } else if (curSps->extended_spatial_scalability == 2) {
-            leftOffset = 2 * sliceHeader->scaled_ref_layer_left_offset;
-            topOffset = 2 * sliceHeader->scaled_ref_layer_top_offset *
-                (2 - curSps->frame_mbs_only_flag);
-
-            rightOffset = 2 * sliceHeader->scaled_ref_layer_right_offset;
-            bottomOffset = 2 * sliceHeader->scaled_ref_layer_bottom_offset *
-                (2 - curSps->frame_mbs_only_flag);
-
-            refPhaseX = sliceHeader->ref_layer_chroma_phase_x;
-            refPhaseY = sliceHeader->ref_layer_chroma_phase_y;
-        } else {
-            leftOffset = 0;
-            topOffset = 0;
-            rightOffset = 0;
-            bottomOffset = 0;
-            refPhaseX = curSps->chroma_phase_x;
-            refPhaseY = curSps->chroma_phase_y;
-        }
-    }
-
-    scaled_ref_layer_width = (curSps->frame_width_in_mbs << 4) - leftOffset - rightOffset;
-    scaled_ref_layer_height = (curSps->frame_height_in_mbs << 4) - topOffset - bottomOffset;
-
-    cur_layer_width = (curSps->frame_width_in_mbs << 4);
-    cur_layer_height = (curSps->frame_height_in_mbs << 4);
-
-    field_pic_flag = sliceHeader->field_pic_flag;
-    frame_mbs_only_flag = curSps->frame_mbs_only_flag;
-    MbaffFrameFlag = sliceHeader->MbaffFrameFlag;
-
-    level_idc = curSps->level_idc;
-}
-
-void H264DecoderLayerResizeParameter::EvaluateSpatialResolutionChange()
-{
-    spatial_resolution_change = 0;
-
-    if (scaled_ref_layer_width != ref_layer_width ||
-        scaled_ref_layer_height != ref_layer_height ||
-        field_pic_flag != RefLayerFieldPicFlag ||
-        MbaffFrameFlag != RefLayerMbaffFrameFlag ||
-        (leftOffset & 0xf) != 0 ||
-        (topOffset & (0xf * (1 + field_pic_flag + MbaffFrameFlag))) != 0 ||
-        refPhaseX != phaseX ||
-        refPhaseY != phaseY ||
-        extended_spatial_scalability == 2)
-    {
-        spatial_resolution_change = 1;
-    }
-
-    Ipp32u temp_scaled_ref_layer_height = scaled_ref_layer_height >> field_pic_flag;
-    Ipp32u temp_ref_layer_height = ref_layer_height >> RefLayerFieldPicFlag;
-
-    shiftX = ((level_idc <= 30) ? 16 : countShift(ref_layer_width));
-    shiftY = ((level_idc <= 30) ? 16 : countShift(temp_ref_layer_height));
-    scaleX = (Ipp32s)((((Ipp32u)ref_layer_width << shiftX ) +
-        ((Ipp32u)scaled_ref_layer_width >> 1 )) /
-        (Ipp32u)scaled_ref_layer_width);
-
-    scaleY = (Ipp32s)((((Ipp32u)temp_ref_layer_height << shiftY ) +
-        ((Ipp32u)temp_scaled_ref_layer_height >> 1 )) /
-        (Ipp32u)temp_scaled_ref_layer_height);
-
-    addX = (1 << (shiftX - 1)) - leftOffset * scaleX;
-    addY = (1 << (shiftY - 1)) - topOffset * scaleY;
-}
 
 } // namespace UMC
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

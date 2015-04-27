@@ -140,6 +140,9 @@ Status FillVideoParam(const UMC_H264_DECODER::H264SeqParamSet * seq, mfxVideoPar
     par->mfx.FrameInfo.Width = (mfxU16) (seq->frame_width_in_mbs * 16);
     par->mfx.FrameInfo.Height = (mfxU16) (seq->frame_height_in_mbs * 16);
 
+    par->mfx.FrameInfo.BitDepthLuma = seq->bit_depth_luma;
+    par->mfx.FrameInfo.BitDepthChroma = seq->bit_depth_chroma;
+
     //if (seq->frame_cropping_flag)
     {
         par->mfx.FrameInfo.CropX = (mfxU16)(SubWidthC[seq->chroma_format_idc] * seq->frame_cropping_rect_left_offset);

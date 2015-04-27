@@ -37,19 +37,12 @@ public:
     PlanePtrUVCommon              m_pUPlane;
     PlanePtrUVCommon              m_pVPlane;
 
-    PlanePtrYCommon               m_pYPlane_base;
-    PlanePtrUVCommon              m_pUVPlane_base;  // for NV12 support
-    PlanePtrUVCommon              m_pUPlane_base;
-    PlanePtrUVCommon              m_pVPlane_base;
-
     H264DecYUVBufferPadded();
     virtual ~H264DecYUVBufferPadded();
 
     void Init(const VideoDataInfo *info);
 
     void allocate(const FrameData * frameData, const VideoDataInfo *info);
-    void allocateRefBasePicture();
-
     void deallocate();
 
     const IppiSize& lumaSize() const { return m_lumaSize; }
@@ -73,7 +66,6 @@ public:
     }
 
     const FrameData * GetFrameData() const;
-    const FrameData * GetFrameDataOFBaseRefPic() const;
 
     ColorFormat GetColorFormat() const;
 
@@ -86,7 +78,6 @@ protected:
     Ipp32s  m_pitch_chroma;
 
     FrameData m_frameData;
-    FrameData m_frameDataRefBase;
 
     ColorFormat m_color_format;
 };

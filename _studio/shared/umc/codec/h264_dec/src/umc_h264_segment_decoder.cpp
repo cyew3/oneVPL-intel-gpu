@@ -23,7 +23,6 @@ H264SegmentDecoder::H264SegmentDecoder(TaskBroker * pTaskBroker)
         : H264SegmentDecoderBase(pTaskBroker)
 {
     m_pCoefficientsBuffer = NULL;
-    m_pCoefficientsBufferExt = 0;
 
     m_pSlice = 0;
 
@@ -45,11 +44,7 @@ void H264SegmentDecoder::Release(void)
     if (m_pCoefficientsBuffer)
         delete [] (Ipp32s*)m_pCoefficientsBuffer;
 
-    if (m_pCoefficientsBufferExt)
-        delete [] (Ipp32s*)m_pCoefficientsBufferExt;
-
     m_pCoefficientsBuffer = NULL;
-    m_pCoefficientsBufferExt = 0;
 } // void H264SegmentDecoder::Release(void)
 
 Status H264SegmentDecoder::Init(Ipp32s iNumber)
@@ -62,7 +57,6 @@ Status H264SegmentDecoder::Init(Ipp32s iNumber)
 
     // ADB
     m_pCoefficientsBuffer = (UMC::CoeffsCommon*)(new Ipp32s[COEFFICIENTS_BUFFER_SIZE + DEFAULT_ALIGN_VALUE]);
-    m_pCoefficientsBufferExt = new Ipp32s[COEFFICIENTS_BUFFER_SIZE + DEFAULT_ALIGN_VALUE];
 
     return UMC_OK;
 

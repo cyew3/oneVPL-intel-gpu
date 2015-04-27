@@ -12,6 +12,7 @@
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
 #include "umc_h264_dec_deblocking.h"
+#include "umc_h264_dec_ippwrap.h"
 
 namespace UMC
 {
@@ -107,51 +108,5 @@ Ipp32u INTERNAL_BLOCKS_MASK[NUMBER_OF_DIRECTION][12] =
     }
 };
 #undef DECL
-
-// implement array of IPP optimized luma deblocking functions
-#if defined(_WIN32_WCE) && defined(_M_IX86) && defined(__stdcall)
-#define _IPP_STDCALL_CDECL
-#undef __stdcall
-#endif // defined(_WIN32_WCE) && defined(_M_IX86) && defined(__stdcall)
-
-IppStatus ( *(IppDeblocking[])) (const IppiFilterDeblock_8u * pDeblockInfo) =
-{
-    &(FilterDeblockingLuma_VerEdge),
-    &(FilterDeblockingLuma_HorEdge),
-    &(FilterDeblockingChroma_VerEdge),
-    &(FilterDeblockingChroma_HorEdge),
-    &(FilterDeblockingChroma422_VerEdge),
-    &(FilterDeblockingChroma422_HorEdge),
-    &(FilterDeblockingChroma444_VerEdge),
-    &(FilterDeblockingChroma444_HorEdge),
-    &(FilterDeblockingLuma_VerEdge_MBAFF),
-    &(FilterDeblockingChroma_VerEdge_MBAFF),
-    &(FilterDeblockingChroma_VerEdge_NV12),
-    &(FilterDeblockingChroma_HorEdge_NV12),
-    &(FilterDeblockingChroma_VerEdge_MBAFF_NV12)
-};
-
-IppStatus ( *(IppDeblocking16u[])) (Ipp16u *, Ipp32s, Ipp8u *, Ipp8u *, Ipp8u *, Ipp8u *, Ipp32s ) =
-{
-    &(FilterDeblockingLuma_VerEdge),
-    &(FilterDeblockingLuma_HorEdge),
-    &(FilterDeblockingChroma_VerEdge),
-    &(FilterDeblockingChroma_HorEdge),
-    &(FilterDeblockingChroma422_VerEdge),
-    &(FilterDeblockingChroma422_HorEdge),
-    &(FilterDeblockingChroma444_VerEdge),
-    &(FilterDeblockingChroma444_HorEdge),
-    &(FilterDeblockingLuma_VerEdge_MBAFF),
-    &(FilterDeblockingChroma_VerEdge_MBAFF),
-    0,
-    0,
-    0
-};
-
-#if defined(_IPP_STDCALL_CDECL)
-#undef _IPP_STDCALL_CDECL
-#define __stdcall __cdecl
-#endif // defined(_IPP_STDCALL_CDECL)
-
 } // namespace UMC
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

@@ -153,17 +153,6 @@ class H264DecoderFrame : public H264DecYUVBufferPadded, public RefCounter
     Ipp32s           m_aspect_width;
     Ipp32s           m_aspect_height;
 
-    Ipp32s           m_minDId;
-    Ipp32s           m_maxDId;
-    Ipp32s           m_maxQId;
-    Ipp32s           m_lastSliceInAVC;
-    Ipp32s           m_firstSliceInBaseRefLayer;
-    Ipp32s           m_lastSliceInBaseRefLayer;
-    H264DecoderFrame *m_pLayerFrames[MAX_NUM_LAYERS];
-    Ipp32s           m_offsets[MAX_NUM_LAYERS][4];
-    Ipp32s           m_use_base_residual;
-    Ipp32s           m_storeRefBasePic;
-
     bool             m_isShortTermRef[2];
     bool             m_isLongTermRef[2];
     bool             m_isInterViewRef[2];

@@ -52,7 +52,7 @@ foreach( enc ${vencs} )
     )
 endforeach( )
 
-list( APPEND vdir_optimization optimization/h265 )
+list( APPEND vdir_optimization optimization/h265 optimization/h264)
 
 list( APPEND vdirs scheduler )
 list( APPEND vdirs_impl vpp genx/h264_encode cmrt_cross_platform )
@@ -287,6 +287,9 @@ foreach( variant sw hw )
     h264_preenc
     h264_enc
     h264_pak
+    h264_px
+    h264_dispatcher
+    h264_sse3
     vpx
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l

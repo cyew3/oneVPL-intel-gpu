@@ -678,51 +678,5 @@ void H264Slice::CompleteDecoding()
         FreeResources();
 }
 
-void H264Slice::StoreBaseLayerFrameInfo()
-{
-    if ((!m_pCurrentFrame->m_maxDId) && (m_pCurrentFrame->m_maxQId))
-    {
-        if ((m_iNumber - 1) == m_pCurrentFrame->m_lastSliceInAVC)
-        {
-            size_t nMBCount = m_pCurrentFrame->totalMBs << (m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
-            m_mbinfo->baseFrameInfo->totalMBs = m_pCurrentFrame->totalMBs;
-
-            MFX_INTERNAL_CPY(m_mbinfo->baseFrameInfo->m_mbinfo.MV[0], m_pCurrentFrame->m_mbinfo.MV[0], (Ipp32u)(sizeof(H264DecoderMacroblockMVs) * nMBCount));
-            MFX_INTERNAL_CPY(m_mbinfo->baseFrameInfo->m_mbinfo.MV[1], m_pCurrentFrame->m_mbinfo.MV[1], (Ipp32u)(sizeof(H264DecoderMacroblockMVs) * nMBCount));
-            MFX_INTERNAL_CPY(m_mbinfo->baseFrameInfo->m_mbinfo.mbs, m_pCurrentFrame->m_mbinfo.mbs, (Ipp32u)(sizeof(H264DecoderMacroblockGlobalInfo) * nMBCount));
-        }
-    }
-    {
-        Ipp32s dependencyId = GetSliceHeader()->nal_ext.svc.dependency_id;
-        Ipp32s qualityId = GetSliceHeader()->nal_ext.svc.quality_id;
-        if (!qualityId)
-        {
-            size_t nMBCount = m_pCurrentFrame->m_pLayerFrames[dependencyId]->totalMBs <<
-                (m_pCurrentFrame->m_pLayerFrames[dependencyId]->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
-
-            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.MV[0], m_pCurrentFrame->m_pLayerFrames[dependencyId]->m_mbinfo.MV[0], (Ipp32u)(sizeof(H264DecoderMacroblockMVs) * nMBCount));
-            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.MV[1], m_pCurrentFrame->m_pLayerFrames[dependencyId]->m_mbinfo.MV[1], (Ipp32u)(sizeof(H264DecoderMacroblockMVs) * nMBCount));
-            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.mbs, m_pCurrentFrame->m_pLayerFrames[dependencyId]->m_mbinfo.mbs, (Ipp32u)(sizeof(H264DecoderMacroblockGlobalInfo) * nMBCount));
-        }
-    }
-}
-
-void H264Slice::RestoreFrameInfoFromBaseLayerFrameInfo()
-{
-    if (m_mbinfo && !m_pCurrentFrame->m_maxDId && m_pCurrentFrame->m_maxQId)
-    {
-        if (m_bIsLastSliceInDepLayer &&
-           (GetSliceHeader()->nal_ext.svc.dependency_id == m_pCurrentFrame->m_maxDId))
-        {
-            size_t nMBCount = m_pCurrentFrame->totalMBs;
-            m_pCurrentFrame->totalMBs = m_mbinfo->baseFrameInfo->totalMBs;
-
-            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.MV[0], m_mbinfo->baseFrameInfo->m_mbinfo.MV[0], (Ipp32u)(sizeof(H264DecoderMacroblockMVs) * nMBCount));
-            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.MV[1], m_mbinfo->baseFrameInfo->m_mbinfo.MV[1], (Ipp32u)(sizeof(H264DecoderMacroblockMVs) * nMBCount));
-            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.mbs, m_mbinfo->baseFrameInfo->m_mbinfo.mbs, (Ipp32u)(sizeof(H264DecoderMacroblockGlobalInfo) * nMBCount));
-        }
-    }
-}
-
 } // namespace UMC
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

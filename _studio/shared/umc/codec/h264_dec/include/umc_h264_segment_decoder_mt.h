@@ -184,19 +184,6 @@ protected:
 
 private:
 
-    // svc part
-    void CalculateResizeParameters();
-    void CalculateResizeParametersSlice();
-    Status ProcessLayerPre();
-    Status ProcessLayerPost();
-    Status ProcessLayerPreSlice();
-
-    void StoreLayersMBInfo();
-    void StoreRefBasePicture();
-    void LoadMBInfoFromRefLayer();
-    void CopyMacroblockInfoFromBaseLayer(H264DecoderLayerDescriptor *layerMb, Ipp32s mbAddr, Ipp32s refMbAddr);
-    void SVCDeblocking();
-
     // we lock the assignment operator to avoid any
     // accasional assignments
     H264SegmentDecoderMultiThreaded & operator = (H264SegmentDecoderMultiThreaded &)

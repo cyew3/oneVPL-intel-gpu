@@ -948,7 +948,8 @@ UMC::Status mfx_UMC_FrameAllocator_NV12::InitMfx(UMC::FrameAllocatorParams *pPar
 
     UMC::ColorFormat colorFormat = (params->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422) ? UMC::YUV422 : UMC::YUV420;
 
-    UMC::Status umcSts = m_info_yuv420.Init(params->mfx.FrameInfo.Width, params->mfx.FrameInfo.Height, colorFormat, 8);
+    mfxU32 bitDepth = (params->mfx.FrameInfo.BitDepthLuma > 8 || params->mfx.FrameInfo.BitDepthChroma > 8) ? 10 : 8;
+    UMC::Status umcSts = m_info_yuv420.Init(params->mfx.FrameInfo.Width, params->mfx.FrameInfo.Height, colorFormat, bitDepth);
     if (umcSts != UMC::UMC_OK)
         return umcSts;
 
@@ -1006,14 +1007,17 @@ const UMC::FrameData* mfx_UMC_FrameAllocator_NV12::Lock(UMC::FrameMemID mid)
     return frame;
 }
 
+
+template<typename T>
 static IppStatus ippiYCbCr422_8u_P3P2R(
-  const Ipp8u*   pSrc[3],
-        int      srcStep[3],
-        Ipp8u*   pDstY,
-        int      dstYStep,
-        Ipp8u*   pDstUV,
-        int      dstUVStep,
-        IppiSize roiSize)
+  const T*   pSrc[3],
+        int  srcStep[3],
+        T*   pDstY,
+        int  dstYStep,
+        T*   pDstUV,
+        int  dstUVStep,
+        IppiSize roiSize,
+        bool is422)
 {
   int w;
   int h;
@@ -1024,8 +1028,8 @@ static IppStatus ippiYCbCr422_8u_P3P2R(
   /* Y plane */
   for( h = 0; h < height; h ++ )
   {
-    const Ipp8u* src;
-    Ipp8u* dst;
+    const  T* src;
+    T* dst;
 
     src = pSrc[0]+ h * srcStep[0];
     dst = pDstY  + h * dstYStep;
@@ -1037,12 +1041,14 @@ static IppStatus ippiYCbCr422_8u_P3P2R(
   }
 
   width  /= 2;
+  if (!is422)
+      height /= 2;
 
   for( h = 0; h < height; h ++ )
   {
-    const Ipp8u* srcu;
-    const Ipp8u* srcv;
-    Ipp8u* dstuv;
+    const T* srcu;
+    const T* srcv;
+    T* dstuv;
 
     srcu  = pSrc[1] + h * srcStep[1];
     srcv  = pSrc[2] + h * srcStep[2];
@@ -1065,6 +1071,8 @@ mfxStatus mfx_UMC_FrameAllocator_NV12::ConvertToNV12(const UMC::FrameData * fd, 
     if (!fd || !data || !videoPar)
         return MFX_ERR_NULL_PTR;
 
+    mfxU32 use16BitPlane = (videoPar->mfx.FrameInfo.BitDepthLuma > 8 || videoPar->mfx.FrameInfo.BitDepthChroma > 8) ? 1 : 0;
+
     //const UMC::VideoDataInfo * info = fd->GetInfo();
     const UMC::FrameData::PlaneMemoryInfo * planeInfo = fd->GetPlaneMemoryInfo(0);
 
@@ -1072,22 +1080,35 @@ mfxStatus mfx_UMC_FrameAllocator_NV12::ConvertToNV12(const UMC::FrameData * fd, 
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     const mfxFrameInfo & videoInfo = videoPar->mfx.FrameInfo;
-
-    Ipp32s pYVUStep[3] = {(Ipp32s)fd->GetPlaneMemoryInfo(0)->m_pitch, (Ipp32s)fd->GetPlaneMemoryInfo(1)->m_pitch, (Ipp32s)fd->GetPlaneMemoryInfo(2)->m_pitch};
-    const Ipp8u *(pYVU[3]) = {fd->GetPlaneMemoryInfo(0)->m_planePtr, fd->GetPlaneMemoryInfo(1)->m_planePtr, fd->GetPlaneMemoryInfo(2)->m_planePtr};
-
-    Ipp8u *(pDst[2]) = {data->Y,
-                        data->U};
+    
     Ipp32s pDstStep[2] = {static_cast<Ipp32s>(data->PitchLow + ((mfxU32)data->PitchHigh << 16)),
                           static_cast<Ipp32s>(data->PitchLow + ((mfxU32)data->PitchHigh << 16))};
 
     IppiSize srcSize = {videoInfo.Width, videoInfo.Height};
 
-    IppStatus sts = (fd->GetInfo()->GetColorFormat() == UMC::YUV422) ? ippiYCbCr422_8u_P3P2R(pYVU, pYVUStep, pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize) :
-        ippiYCbCr420_8u_P3P2R(pYVU, pYVUStep, pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize);
+    if (use16BitPlane)
+    {
+        Ipp32s pYVUStep[3] = {(Ipp32s)fd->GetPlaneMemoryInfo(0)->m_pitch >> 1, (Ipp32s)fd->GetPlaneMemoryInfo(1)->m_pitch >> 1, (Ipp32s)fd->GetPlaneMemoryInfo(2)->m_pitch >> 1};
+        const mfxU16 *(pYVU[3]) = {(mfxU16*)fd->GetPlaneMemoryInfo(0)->m_planePtr, (mfxU16*)fd->GetPlaneMemoryInfo(1)->m_planePtr, (mfxU16*)fd->GetPlaneMemoryInfo(2)->m_planePtr};
+        mfxU16 *(pDst[2]) = {data->Y16,
+                            data->U16};
 
-    if (sts != ippStsNoErr)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+        ippiYCbCr422_8u_P3P2R<mfxU16>(pYVU, pYVUStep, pDst[0], pDstStep[0] >> 1, pDst[1], pDstStep[1] >> 1, srcSize, fd->GetInfo()->GetColorFormat() == UMC::YUV422);
+    }
+    else
+    {
+        Ipp32s pYVUStep[3] = {(Ipp32s)fd->GetPlaneMemoryInfo(0)->m_pitch, (Ipp32s)fd->GetPlaneMemoryInfo(1)->m_pitch, (Ipp32s)fd->GetPlaneMemoryInfo(2)->m_pitch};
+        const Ipp8u *(pYVU[3]) = {fd->GetPlaneMemoryInfo(0)->m_planePtr, fd->GetPlaneMemoryInfo(1)->m_planePtr, fd->GetPlaneMemoryInfo(2)->m_planePtr};
+        Ipp8u *(pDst[2]) = {data->Y,
+                            data->U};
+
+        IppStatus sts = (fd->GetInfo()->GetColorFormat() == UMC::YUV422) ? ippiYCbCr422_8u_P3P2R<mfxU8>(pYVU, pYVUStep, pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize, true) :
+            ippiYCbCr420_8u_P3P2R(pYVU, pYVUStep, pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize);
+
+        if (sts != ippStsNoErr)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
 
     return MFX_ERR_NONE;
 }

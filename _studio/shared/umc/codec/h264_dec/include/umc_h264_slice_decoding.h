@@ -169,11 +169,6 @@ public:
     // Destructor
     virtual
     ~H264Slice(void);
-    bool m_bIsFirstSliceInDepLayer;                             // Slice is the first slice of current dependency representation
-    bool m_bIsFirstILPredSliceInDepLayer;                       // Slice is the first IL-predicted slice of current dependency representation
-    bool m_bIsLastSliceInDepLayer;                             // Slice is the last slice of current dependency representation
-    bool m_bIsFirstSliceInLayer;                                // Slice is the first slice of current layer (quality or dependency)
-    H264Slice *m_firstILPredSliceInDepLayer;
 
     // Set slice source data
     bool Reset(H264NalExtension *pNalExt);
@@ -302,10 +297,6 @@ public:
     void CompleteDecoding();
 
 public:
-    void StoreBaseLayerFrameInfo();
-    void RestoreFrameInfoFromBaseLayerFrameInfo();
-
-    Ipp32s GetDQid() {return (m_SliceHeader.nal_ext.svc.dependency_id << 4) | m_SliceHeader.nal_ext.svc.quality_id;}
 
     H264MemoryPiece m_pSource;                                 // (H264MemoryPiece *) pointer to owning memory piece
     Ipp64f m_dTime;                                             // (Ipp64f) slice's time stamp
@@ -395,9 +386,6 @@ public:  // DEBUG !!!! should remove dependence
     bool m_bDecoded;                                            // (bool) "slice has been decoded" flag
     bool m_bPrevDeblocked;                                      // (bool) "previous slice has been deblocked" flag
     bool m_bDeblocked;                                          // (bool) "slice has been deblocked" flag
-
-    bool m_bIsMaxDId;                                           // Slice has max dependency_id
-    bool m_bIsMaxQId;                                           // Slice has max quality_id in the dependency representation
 
     Ipp8s last_QP_deblock;
 

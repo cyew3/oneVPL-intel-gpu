@@ -18,7 +18,7 @@
 #include "umc_h264_dec_total_zero.h"
 #include "umc_h264_dec_run_before.h"
 #include "umc_h264_bitstream_inlines.h"
-
+#include "umc_h264_dec_ippwrap.h"
 
 #define SCLFLAT16     0
 #define SCLDEFAULT    1
@@ -1653,6 +1653,7 @@ Status H264HeadersBitstream::GetPredWeightTable(
         {
             pPredWeight_L0[refindex].luma_weight = (Ipp8s)GetVLCElement(true);
             pPredWeight_L0[refindex].luma_offset = (Ipp8s)GetVLCElement(true);
+            pPredWeight_L0[refindex].luma_offset <<= (sps->bit_depth_luma - 8);
         }
         else
         {
@@ -1672,6 +1673,9 @@ Status H264HeadersBitstream::GetPredWeightTable(
             pPredWeight_L0[refindex].chroma_offset[0] = (Ipp8s)GetVLCElement(true);
             pPredWeight_L0[refindex].chroma_weight[1] = (Ipp8s)GetVLCElement(true);
             pPredWeight_L0[refindex].chroma_offset[1] = (Ipp8s)GetVLCElement(true);
+
+            pPredWeight_L0[refindex].chroma_offset[0] <<= (sps->bit_depth_chroma - 8);
+            pPredWeight_L0[refindex].chroma_offset[1] <<= (sps->bit_depth_chroma - 8);
         }
         else
         {
@@ -1691,6 +1695,7 @@ Status H264HeadersBitstream::GetPredWeightTable(
             {
                 pPredWeight_L1[refindex].luma_weight = (Ipp8s)GetVLCElement(true);
                 pPredWeight_L1[refindex].luma_offset = (Ipp8s)GetVLCElement(true);
+                pPredWeight_L1[refindex].luma_offset <<= (sps->bit_depth_luma - 8);
             }
             else
             {
@@ -1708,6 +1713,9 @@ Status H264HeadersBitstream::GetPredWeightTable(
                 pPredWeight_L1[refindex].chroma_offset[0] = (Ipp8s)GetVLCElement(true);
                 pPredWeight_L1[refindex].chroma_weight[1] = (Ipp8s)GetVLCElement(true);
                 pPredWeight_L1[refindex].chroma_offset[1] = (Ipp8s)GetVLCElement(true);
+
+                pPredWeight_L1[refindex].chroma_offset[0] <<= (sps->bit_depth_chroma - 8);
+                pPredWeight_L1[refindex].chroma_offset[1] <<= (sps->bit_depth_chroma - 8);
             }
             else
             {
@@ -1862,23 +1870,9 @@ Status H264HeadersBitstream::GetSliceHeaderPart3(
               ((PREDSLICE == hdr->slice_type) || (S_PREDSLICE == hdr->slice_type))) ||
              ((pps->weighted_bipred_idc == 1) && (BPREDSLICE == hdr->slice_type)))
         {
-            Ipp8u flag = 0;
-
-            if (hdr->nal_ext.svc_extension_flag && hdr->nal_unit_type == NAL_UT_CODED_SLICE_EXTENSION)
-            {
-                if (!hdr->nal_ext.svc.no_inter_layer_pred_flag)
-                {
-                    hdr->base_pred_weight_table_flag = Get1Bit();
-                    flag = hdr->base_pred_weight_table_flag;
-                }
-            }
-
-            if (!flag)
-            {
-                ps = GetPredWeightTable(hdr, sps, pPredWeight_L0, pPredWeight_L1);
-                if (ps != UMC_OK)
-                    return ps;
-            }
+            ps = GetPredWeightTable(hdr, sps, pPredWeight_L0, pPredWeight_L1);
+            if (ps != UMC_OK)
+                return ps;
         }
 
         // dec_ref_pic_marking
@@ -2031,159 +2025,10 @@ Status H264HeadersBitstream::DecRefPicMarking(H264SliceHeader *hdr,        // sl
 }
 
 Status H264HeadersBitstream::GetSliceHeaderPart4(H264SliceHeader *hdr,
-                                          const H264SeqParamSetSVCExtension *spsSvcExt)
+                                          const H264SeqParamSetSVCExtension *)
 {
-    if (hdr->nal_unit_type != NAL_UT_CODED_SLICE_EXTENSION || !hdr->nal_ext.svc_extension_flag)
-    {
-        hdr->scan_idx_start = 0;
-        hdr->scan_idx_end = 15;
-        hdr->tcoeff_level_prediction_flag = 0;
-        hdr->default_base_mode_flag = 0;
-        hdr->adaptive_motion_prediction_flag = 0;
-        hdr->default_motion_prediction_flag = 0;
-        hdr->adaptive_residual_prediction_flag = 0;
-        hdr->default_motion_prediction_flag = 0;
-        hdr->ref_layer_dq_id = -1;
-        return UMC_OK;
-    }
-
-    if (!hdr->nal_ext.svc.no_inter_layer_pred_flag &&
-        (hdr->nal_ext.svc.quality_id == 0))
-    {
-        hdr->ref_layer_dq_id = GetVLCElement(false);
-
-        if (spsSvcExt->inter_layer_deblocking_filter_control_present_flag)
-        {
-            hdr->disable_inter_layer_deblocking_filter_idc_from_stream = GetVLCElement(false);
-
-            if (hdr->disable_inter_layer_deblocking_filter_idc_from_stream != DEBLOCK_FILTER_OFF)
-            {
-                hdr->inter_layer_slice_alpha_c0_offset_div2 = GetVLCElement(true);
-                hdr->inter_layer_slice_beta_offset_div2 = GetVLCElement(true);
-            }
-        } else {
-            hdr->disable_inter_layer_deblocking_filter_idc_from_stream = DEBLOCK_FILTER_ON;
-            hdr->inter_layer_slice_alpha_c0_offset_div2 = 0;
-            hdr->inter_layer_slice_beta_offset_div2 = 0;
-        }
-
-        hdr->disable_inter_layer_deblocking_filter_idc =
-            hdr->disable_inter_layer_deblocking_filter_idc_from_stream;
-
-        if (hdr->disable_inter_layer_deblocking_filter_idc == DEBLOCK_FILTER_ON_NO_CHROMA)
-        {
-            hdr->disable_inter_layer_deblocking_filter_idc = DEBLOCK_FILTER_ON;
-        }
-        else if (hdr->disable_inter_layer_deblocking_filter_idc > DEBLOCK_FILTER_ON_NO_SLICE_EDGES)
-        {
-            hdr->disable_inter_layer_deblocking_filter_idc = DEBLOCK_FILTER_ON_NO_SLICE_EDGES;
-        }
-
-        hdr->constrained_intra_resampling_flag = Get1Bit();
-
-        if (spsSvcExt->extended_spatial_scalability == 2)
-        {
-            {
-                hdr->ref_layer_chroma_phase_x = Get1Bit() - 1;
-                hdr->ref_layer_chroma_phase_y = (Ipp8s)(GetBits(2) - 1);
-            }
-
-            hdr->scaled_ref_layer_left_offset = GetVLCElement(true);
-            hdr->scaled_ref_layer_top_offset = GetVLCElement(true);
-            hdr->scaled_ref_layer_right_offset = GetVLCElement(true);
-            hdr->scaled_ref_layer_bottom_offset = GetVLCElement(true);
-        }
-        else
-        {
-            if (!hdr->nal_ext.svc.quality_id)
-            {
-                hdr->scaled_ref_layer_left_offset = spsSvcExt->seq_scaled_ref_layer_left_offset;
-                hdr->scaled_ref_layer_top_offset = spsSvcExt->seq_scaled_ref_layer_top_offset;
-                hdr->scaled_ref_layer_right_offset = spsSvcExt->seq_scaled_ref_layer_right_offset;
-                hdr->scaled_ref_layer_bottom_offset = spsSvcExt->seq_scaled_ref_layer_bottom_offset;
-            }
-        }
-    }
-    else
-    {
-        if (!hdr->nal_ext.svc.quality_id)
-        {
-            hdr->ref_layer_dq_id = -1;
-        }
-        else
-        {
-            hdr->ref_layer_dq_id =
-                (hdr->nal_ext.svc.dependency_id << 4) +
-                hdr->nal_ext.svc.quality_id - 1;
-        }
-    }
-
-    hdr->default_base_mode_flag = 0;
-    hdr->adaptive_motion_prediction_flag = 0;
-    hdr->default_motion_prediction_flag = 0;
-    hdr->adaptive_residual_prediction_flag = 0;
-    hdr->default_motion_prediction_flag = 0;
-    hdr->slice_skip_flag = 0;
-
-    if (!hdr->nal_ext.svc.no_inter_layer_pred_flag)
-    {
-        hdr->slice_skip_flag = Get1Bit();
-
-        if (hdr->slice_skip_flag)
-        {
-            hdr->num_mbs_in_slice_minus1 = GetVLCElement(false);
-        } else {
-            hdr->adaptive_prediction_flag = Get1Bit();
-
-            if (!hdr->adaptive_prediction_flag)
-            {
-                hdr->default_base_mode_flag = Get1Bit();
-            }
-
-            if (!hdr->default_base_mode_flag)
-            {
-                hdr->adaptive_motion_prediction_flag = Get1Bit();
-
-                if (!hdr->adaptive_motion_prediction_flag)
-                {
-                    hdr->default_motion_prediction_flag = Get1Bit();
-                }
-            }
-
-            hdr->adaptive_residual_prediction_flag = Get1Bit();
-
-            if (!hdr->adaptive_residual_prediction_flag)
-            {
-                hdr->default_residual_prediction_flag = Get1Bit();
-            }
-        }
-
-        if (spsSvcExt->adaptive_tcoeff_level_prediction_flag == 1)
-        {
-            hdr->tcoeff_level_prediction_flag = Get1Bit();
-        }
-        else
-        {
-            hdr->tcoeff_level_prediction_flag = spsSvcExt->seq_tcoeff_level_prediction_flag;
-        }
-    }
-    else
-    {
-        hdr->tcoeff_level_prediction_flag = 0;
-    }
-
-    if (!spsSvcExt->slice_header_restriction_flag && !hdr->slice_skip_flag)
-    {
-        hdr->scan_idx_start = (Ipp8u)GetBits(4);
-        hdr->scan_idx_end = (Ipp8u)GetBits(4);
-    }
-    else
-    {
-        hdr->scan_idx_start = 0;
-        hdr->scan_idx_end = 15;
-    }
-
-    CheckBSLeft();
+    hdr->scan_idx_start = 0;
+    hdr->scan_idx_end = 15;
     return UMC_OK;
 }// GetSliceHeaderPart4()
 

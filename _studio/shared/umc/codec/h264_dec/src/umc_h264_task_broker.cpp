@@ -419,31 +419,6 @@ bool TaskBroker::GetPreparationTask(H264DecoderFrameInfo * info)
             VM_ASSERT(pFrame->m_iResourceNumber != -1);
             Ipp32s iMBCount = pFrame->totalMBs << (pFrame->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
 
-            H264DecoderLocalMacroblockDescriptor & localDataDesc = m_localResourses.GetMBInfo(pFrame->m_iResourceNumber);
-
-            localDataDesc.m_MBLayerSizePadded = ((pFrame->lumaSize().width >> 4) + 3) * ((pFrame->lumaSize().height >> 4) + 4);
-
-            for (Ipp32s i = 0; i <= pFrame->m_maxDId; i++)
-            {
-                localDataDesc.m_MBLayerSize[i] = 0;
-
-                localDataDesc.m_LayerLumaSize[i].width = 0;
-                localDataDesc.m_LayerLumaSize[i].height = 0;
-
-                if (pFrame->m_pLayerFrames[i])
-                {
-                    localDataDesc.m_LayerLumaSize[i] = pFrame->m_pLayerFrames[i]->lumaSize();
-                    localDataDesc.m_MBLayerSize[i] = pFrame->m_pLayerFrames[i]->totalMBs << (pFrame->m_pLayerFrames[i]->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
-                }
-            }
-
-            localDataDesc.m_numberOfLayers = pFrame->m_maxDId + 1;
-            localDataDesc.m_isScalable = pFrame->m_maxDId + pFrame->m_maxQId;
-
-            localDataDesc.m_bpp = pFrame->m_bpp;
-            localDataDesc.m_chroma_format = pFrame->m_chroma_format;
-            localDataDesc.m_frame_height = pFrame->lumaSize().height;
-
             // allocate decoding data
             m_localResourses.AllocateMBInfo(pFrame->m_iResourceNumber, iMBCount);
 
@@ -460,21 +435,6 @@ bool TaskBroker::GetPreparationTask(H264DecoderFrameInfo * info)
                 pSlice->m_pMBIntraTypes = m_localResourses.GetIntraTypes(pFrame->m_iResourceNumber);
             }
 
-            if (localDataDesc.layerMbs)
-            {
-                for (Ipp32s i = 0; i <= pFrame->m_maxDId; i++)
-                {
-                    localDataDesc.layerMbs[i].lrp[0].spatial_resolution_change = 0;
-                    localDataDesc.layerMbs[i].lrp[1].spatial_resolution_change = 0;
-                    localDataDesc.layerMbs[i].restricted_spatial_resolution_change_flag = 1;
-                    localDataDesc.layerMbs[i].lrp[0].next_spatial_resolution_change = 1;
-                    localDataDesc.layerMbs[i].lrp[1].next_spatial_resolution_change = 1;
-                }
-
-                m_pTaskSupplier->CalculateResizeParameters(pFrame, 0);
-                m_pTaskSupplier->CalculateResizeParameters(pFrame, 1);
-            }
-
             // reset frame global data
             if (slicesInfo->IsSliceGroups())
             {
@@ -484,21 +444,6 @@ bool TaskBroker::GetPreparationTask(H264DecoderFrameInfo * info)
             }
             else
             {
-                if (pFrame->m_maxDId)
-                {
-                    for (Ipp32s i = pFrame->m_minDId; i <= pFrame->m_maxDId; i++)
-                    {
-                        if (!pFrame->m_pLayerFrames[i])
-                            continue;
-                        Ipp32s mb_count = pFrame->m_pLayerFrames[i]->totalMBs << (pFrame->m_pLayerFrames[i]->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
-                        memset(pFrame->m_pLayerFrames[i]->m_mbinfo.mbs, 0, mb_count*sizeof(H264DecoderMacroblockGlobalInfo));
-                    }
-                }
-                else
-                {
-                    memset(pFrame->m_mbinfo.mbs, 0, iMBCount*sizeof(H264DecoderMacroblockGlobalInfo));
-                }
-
                 if (slicesInfo->m_isBExist && slicesInfo->m_isPExist)
                 {
                     for (Ipp32s i = 0; i < sliceCount; i++)
@@ -654,14 +599,6 @@ void TaskBroker::CompleteFrame(H264DecoderFrame * frame)
 
     if (!IsFrameCompleted(frame) || frame->IsDecodingCompleted())
         return;
-
-    Ipp32s sliceCount = frame->GetAU(0)->GetSliceCount();
-    if (sliceCount)
-        frame->GetAU(0)->GetSlice(sliceCount - 1)->RestoreFrameInfoFromBaseLayerFrameInfo();
-
-    sliceCount = frame->GetAU(1)->GetSliceCount();
-    if (sliceCount)
-        frame->GetAU(1)->GetSlice(sliceCount - 1)->RestoreFrameInfoFromBaseLayerFrameInfo();
 
     m_localResourses.UnlockFrameResource(frame);
     if (frame == m_decodingQueue.front())
@@ -1287,22 +1224,6 @@ void TaskBroker::AddPerformedTask(H264Task *pTask)
 
             if (false == pSlice->m_bDeblocked)
                 pSlice->m_bDeblocked = pSlice->m_bPrevDeblocked;
-
-            if (pSlice->m_bIsMaxQId && pSlice->m_bIsMaxDId && pSlice->m_pSeqParamSetSvcEx)
-            {
-                if ((DEBLOCK_FILTER_ON_2_PASS ==
-                    pSlice->GetSliceHeader()->disable_deblocking_filter_idc_from_stream) ||
-                    (DEBLOCK_FILTER_ON_2_PASS_NO_CHROMA ==
-                    pSlice->GetSliceHeader()->disable_deblocking_filter_idc_from_stream))
-                {
-                    pSlice->m_bDeblocked = false;
-                    pSlice->GetSliceHeader()->disable_deblocking_filter_idc = DEBLOCK_FILTER_ON_2_PASS;
-
-                }
-                else { // already deblocked - should work in single thread version only!
-                    pSlice->m_bDeblocked = true;
-                }
-            }
         }
         // slice is decoded
         pSlice->m_bDecoded = true;

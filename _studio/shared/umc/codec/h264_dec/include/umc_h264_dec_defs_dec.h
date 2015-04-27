@@ -1050,30 +1050,8 @@ struct H264SliceHeader
     bool          is_auxiliary;
 
     /* for scalable stream */
-    Ipp8u         constrained_intra_resampling_flag;
-    Ipp8s         ref_layer_chroma_phase_x;
-    Ipp8s         ref_layer_chroma_phase_y;
-    Ipp8u         slice_skip_flag;
-    Ipp8u         adaptive_prediction_flag;
-    Ipp8u         default_base_mode_flag;
-    Ipp8u         adaptive_motion_prediction_flag;
-    Ipp8u         default_motion_prediction_flag;
-    Ipp8u         adaptive_residual_prediction_flag;
-    Ipp8u         default_residual_prediction_flag;
-    Ipp8u         tcoeff_level_prediction_flag;
     Ipp8u         scan_idx_start;
     Ipp8u         scan_idx_end;
-    Ipp8u         base_pred_weight_table_flag;
-    Ipp32s        ref_layer_dq_id;
-    Ipp32u        disable_inter_layer_deblocking_filter_idc;
-    Ipp32u        disable_inter_layer_deblocking_filter_idc_from_stream;
-    Ipp32s        inter_layer_slice_alpha_c0_offset_div2;
-    Ipp32s        inter_layer_slice_beta_offset_div2;
-    Ipp32s        scaled_ref_layer_left_offset;
-    Ipp32s        scaled_ref_layer_top_offset;
-    Ipp32s        scaled_ref_layer_right_offset;
-    Ipp32s        scaled_ref_layer_bottom_offset;
-    Ipp32u        num_mbs_in_slice_minus1;
 
     Ipp32u        hw_wa_redundant_elimination_bits[3]; // [0] - start redundant element, [1] - end redundant element [2] - header size in bits
 }; // H264SliceHeader
@@ -1472,12 +1450,10 @@ Ipp64u CreateIPPCBPMask444(Ipp32u cbpU, Ipp32u cbpV)
 #define GetMBFieldDecodingFlag(x) ((x).mbflags.fdf)
 #define GetMBDirectSkipFlag(x) ((x).mbflags.isDirect || (x).mbflags.isSkipped)
 #define GetMB8x8TSFlag(x) ((x).mbflags.transform8x8)
-#define GetMB8x8TSDecFlag(x) ((x).mbflags.transform8x8_dec)
 
 #define pGetMBFieldDecodingFlag(x) ((x)->mbflags.fdf)
 #define pGetMBDirectSkipFlag(x) ((x)->mbflags.isDirect || (x)->mbflags.isSkipped)
 #define pGetMB8x8TSFlag(x) ((x)->mbflags.transform8x8)
-#define pGetMB8x8TSDecFlag(x) ((x)->mbflags.transform8x8_dec)
 
 #define GetMBSkippedFlag(x) ((x).mbflags.isSkipped)
 #define pGetMBSkippedFlag(x) ((x)->mbflags.isSkipped)
@@ -1488,23 +1464,6 @@ Ipp64u CreateIPPCBPMask444(Ipp32u cbpU, Ipp32u cbpV)
 #define pSetMBSkippedFlag(x)  ((x)->mbflags.isSkipped = 1);
 #define SetMBSkippedFlag(x)  ((x).mbflags.isSkipped = 1);
 
-#define GetMBBaseModeFlag(x) (x.mbflags.isBaseMode)
-#define pGetMBBaseModeFlag(x) (x->mbflags.isBaseMode)
-
-#define pSetMBBaseModeFlag(x,y)  ((x)->mbflags.isBaseMode = (Ipp8u)y)
-#define SetMBBaseModeFlag(x,y)  ((x).mbflags.isBaseMode = (Ipp8u)y)
-
-#define GetMBCropFlag(x) ((x).mbflags.isCropped)
-#define pGetMBCropFlag(x) ((x)->mbflags.isCropped)
-
-#define pSetMBCropFlag(x,y)  ((x)->mbflags.isCropped = (Ipp8u)y)
-#define SetMBCropFlag(x,y)  ((x).mbflags.isCropped = (Ipp8u)y)
-
-#define GetMBResidualPredictionFlag(x) ((x).mbflags.residualPrediction)
-#define pGetMBResidualPredictionFlag(x) ((x)->mbflags.residualPrediction)
-
-#define pSetMBResidualPredictionFlag(x,y)  ((x)->mbflags.residualPrediction = (Ipp8u)y)
-#define SetMBResidualPredictionFlag(x,y)  ((x).mbflags.residualPrediction = (Ipp8u)y)
 
 #define pSetMBFieldDecodingFlag(x,y)     \
     (x->mbflags.fdf = (Ipp8u)y)
@@ -1517,13 +1476,6 @@ Ipp64u CreateIPPCBPMask444(Ipp32u cbpU, Ipp32u cbpV)
 
 #define SetMB8x8TSFlag(x,y)             \
     (x.mbflags.transform8x8 = (Ipp8u)y)
-
-#define pSetMB8x8TSDecFlag(x,y)            \
-    ((x)->mbflags.transform8x8_dec = (Ipp8u)y)
-
-#define SetMB8x8TSDecFlag(x,y)             \
-    ((x).mbflags.transform8x8_dec = (Ipp8u)y)
-
 
 #define pSetPairMBFieldDecodingFlag(x1,x2,y)    \
     (x1->mbflags.fdf = (Ipp8u)y);    \
@@ -1568,13 +1520,9 @@ struct H264DecoderMacroblockCoeffsInfo
 struct H264MBFlags
 {
     Ipp8u fdf : 1;
-    Ipp8u transform8x8_dec : 1;
     Ipp8u transform8x8 : 1;
-    Ipp8u residualPrediction : 1;
     Ipp8u isDirect : 1;
     Ipp8u isSkipped : 1;
-    Ipp8u isBaseMode : 1;
-    Ipp8u isCropped : 1;
 };
 
 struct H264DecoderMacroblockGlobalInfo
@@ -1590,29 +1538,19 @@ struct H264DecoderMacroblockGlobalInfo
 struct H264DecoderMacroblockLocalInfo
 {
     Ipp32u cbp4x4_luma;                                         // (Ipp32u) coded block pattern of luma blocks
-//    Ipp32u cbp4x4_luma_deblock;
-    Ipp32u cbp4x4_luma_coeffs;
-    Ipp32u cbp4x4_luma_residual;
     Ipp32u cbp4x4_chroma[2];                                    // (Ipp32u []) coded block patterns of chroma blocks
     Ipp8u cbp;
     Ipp8s QP;
-    Ipp8s QP_deblock;
-    Ipp8s baseQP;
-    Ipp8s baseMbType;
 
-    Ipp32s m_mv_prediction_flag[2];
-
-
-//    union
-//    {
+    union
+    {
         Ipp8s sbdir[4];
         struct
         {
             Ipp16u edge_type;
             Ipp8u intra_chroma_mode;
-            Ipp8u intra_chroma_mode_dec;
         } IntraTypes;
-//    };
+    };
 }; // 20 bytes
 
 struct H264DecoderBlockLocation
@@ -1678,78 +1616,6 @@ struct H264DecoderBaseFrameDescriptor
 //this structure is one(or couple) for all decoder
 class H264DecoderFrame;
 class H264Slice;
-class H264DecoderLayerResizeParameter
-{
-public:
-    Ipp32s extended_spatial_scalability;
-    Ipp32s scaled_ref_layer_width;
-    Ipp32s scaled_ref_layer_height;
-    Ipp32s frame_mbs_only_flag;
-
-    Ipp32s cur_layer_width;
-    Ipp32s cur_layer_height;
-
-    Ipp32s leftOffset;
-    Ipp32s topOffset;
-    Ipp32s rightOffset;
-    Ipp32s bottomOffset;
-
-    Ipp32s phaseX;
-    Ipp32s phaseY;
-    Ipp32s refPhaseX;
-    Ipp32s refPhaseY;
-
-    Ipp32s spatial_resolution_change;
-    Ipp32s next_spatial_resolution_change;
-
-    Ipp32s level_idc;
-
-    Ipp32s shiftX;
-    Ipp32s shiftY;
-    Ipp32s scaleX;
-    Ipp32s scaleY;
-    Ipp32s addX;
-    Ipp32s addY;
-
-    Ipp32s ref_layer_width;
-    Ipp32s ref_layer_height;
-
-    Ipp32s ref_frame_mbs_only_flag;
-
-    Ipp32s field_pic_flag;
-    Ipp32s RefLayerFieldPicFlag;
-
-    Ipp32s MbaffFrameFlag;
-    Ipp32s RefLayerMbaffFrameFlag;
-
-    H264DecoderLayerResizeParameter();
-
-    void Reset();
-    void UpdateRefLayerParams(H264Slice *refSlice);
-    void UpdateLayerParams(H264Slice *slice);
-    void EvaluateSpatialResolutionChange();
-};
-
-struct H264DecoderLayerDescriptor
-{
-    H264DecoderMacroblockMVs *MV[2];//MotionVectors L0 L1
-//    H264DecoderMacroblockRefIdxs *RefIdxs[2];//Reference Indexes L0 l1
-    H264DecoderMacroblockLayerInfo *mbs;
-    H264DecoderLayerResizeParameter lrp[2];
-    Ipp8u  *m_pYPlane;
-    Ipp8u  *m_pUPlane;
-    Ipp8u  *m_pVPlane;
-    Ipp16s *m_pYResidual;
-    Ipp16s *m_pUResidual;
-    Ipp16s *m_pVResidual;
-    Ipp32s restricted_spatial_resolution_change_flag;
-    Ipp32s frame_mbs_only_flag;
-    Ipp32s field_pic_flag;
-    Ipp32s bottom_field_flag;
-    H264DecoderLayerResizeParameter *m_pResizeParameter;
-    Ipp32s is_profile_baseline_scalable;
-    Ipp32s is_MbAff;
-};
 
 class H264DecoderLocalMacroblockDescriptor
 {
@@ -1766,28 +1632,6 @@ public:
     H264DecoderMacroblockCoeffsInfo *MacroblockCoeffsInfo;      // (H264DecoderMacroblockCoeffsInfo *) info about num_coeffs in each block in the current  picture
     H264DecoderMacroblockLocalInfo *mbs;                        // (H264DecoderMacroblockLocalInfo *) reconstuction info
     H264DecoderMBAddr *active_next_mb_table;                    // (H264DecoderMBAddr *) current "next addres" table
-// SVC part
-    H264DecoderLayerDescriptor *layerMbs;                       // (H264DecoderLayerDescriptor *) dependency layer mackroblock info
-    H264DecoderBaseFrameDescriptor *baseFrameInfo;              // (H264DecoderBaseFrameDescriptor *) saved info of AVC layer (DId = QId = 0)
-    Ipp16s *SavedMacroblockCoeffs; // PK
-    Ipp16s *SavedMacroblockTCoeffs; // PK
-
-    Ipp32s m_MBLayerSize[MAX_NUM_LAYERS];
-    Ipp32s m_MBLayerSizePadded;
-    IppiSize m_LayerLumaSize[MAX_NUM_LAYERS];
-    Ipp32s m_numberOfLayers;
-    Ipp32s m_isScalable;
-
-    // just for allocation
-    Ipp32s m_bpp;
-    Ipp32s m_chroma_format;
-    Ipp32s m_frame_height;
-
-    // for upsampling
-    Ipp32s *m_tmpBuf0;
-    Ipp32s *m_tmpBuf01;
-    Ipp32s *m_tmpBuf1;
-    Ipp32s *m_tmpBuf2;
 
     // Assignment operator
     H264DecoderLocalMacroblockDescriptor &operator = (H264DecoderLocalMacroblockDescriptor &);
@@ -1798,8 +1642,6 @@ public:
 protected:
     // Release object
     void Release(void);
-
-    H264DecoderLayerDescriptor *layerMbs_mem;                       // (H264DecoderLayerDescriptor *) dependency layer mackroblock info
 
     Ipp8u *m_pAllocated;                                        // (Ipp8u *) pointer to allocated memory
     MemID m_midAllocated;                                       // (MemID) mem id of allocated memory
@@ -1855,12 +1697,6 @@ class Macroblock
         GlobalMacroblockInfo = &gmbinfo->mbs[mbNum];
         LocalMacroblockInfo = &lmbinfo->mbs[mbNum];
         MacroblockCoeffsInfo = &lmbinfo->MacroblockCoeffsInfo[mbNum];
-        /*MVs[0] = &gmbinfo->MV[0][mbNum];
-        MVs[1] = &gmbinfo->MV[1][mbNum];
-        MVDelta[0] = &lmbinfo->MVDeltas[0][mbNum];
-        MVDelta[1] = &lmbinfo->MVDeltas[1][mbNum];*/
-        //RefIdxs[0] = &gmbinfo->refIdxs[0][mbNum];
-        //RefIdxs[1] = &gmbinfo->refIdxs[1][mbNum];
     }
 
     inline H264DecoderMacroblockMVs * GetMV(Ipp32s list) {return MVs[list];}
@@ -2057,14 +1893,14 @@ inline ColorFormat GetUMCColorFormat(Ipp32s color_format)
         format = GRAY;
         break;
     case 2:
-        format = YUV422;
+        format = NV16;
         break;
     case 3:
         format = YUV444;
         break;
     case 1:
     default:
-        format = YUV420;
+        format = NV12;
         break;
     }
 
@@ -2082,6 +1918,7 @@ inline Ipp32s GetH264ColorFormat(ColorFormat color_format)
         break;
     case YUV422A:
     case YUV422:
+    case NV16:
         format = 2;
         break;
     case YUV444:
@@ -2149,8 +1986,6 @@ inline size_t CalculateSuggestedSize(const H264SeqParamSet * sps)
 }
 
 } // end namespace UMC
-
-#include "umc_h264_dec_ippwrap.h"
 
 #endif // __UMC_H264_DEC_DEFS_DEC_H__
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

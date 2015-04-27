@@ -221,17 +221,11 @@ Status VATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
                 pFrame->GetAU(0)->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
             }
 
-            for (Ipp32s i = 0; i <= pFrame->m_maxDId; i++)
-            {
-                if (!pFrame->m_pLayerFrames[i])
-                    continue;
 
-                pFrame->m_pLayerFrames[i]->SetisShortTermRef(false, 0);
-                pFrame->m_pLayerFrames[i]->SetisShortTermRef(false, 1);
-                pFrame->m_pLayerFrames[i]->SetisLongTermRef(false, 0);
-                pFrame->m_pLayerFrames[i]->SetisLongTermRef(false, 1);
-            }
-
+            pFrame->SetisShortTermRef(false, 0);
+            pFrame->SetisShortTermRef(false, 1);
+            pFrame->SetisLongTermRef(false, 0);
+            pFrame->SetisLongTermRef(false, 1);
             pFrame->SetSkipped(true);
             pFrame->OnDecodingCompleted();
             return UMC_OK;

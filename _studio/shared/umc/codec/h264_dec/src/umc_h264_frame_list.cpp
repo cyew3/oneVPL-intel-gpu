@@ -1557,7 +1557,7 @@ void H264DBPList::AddInterViewRefs(H264Slice *slice, H264DecoderFrame **pRefPicL
 
 void H264DBPList::DebugPrint()
 {
-#if 1
+#ifdef ENABLE_TRACE
     Trace(VM_STRING("-==========================================\n"));
     for (H264DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
     {

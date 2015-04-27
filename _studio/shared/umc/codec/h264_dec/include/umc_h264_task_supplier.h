@@ -600,8 +600,6 @@ protected:
     void PreventDPBFullness();
 
     H264DecoderFrame *AllocateNewFrame(const H264Slice *pSlice);
-    H264DecoderFrame *AddLayerFrameSVC(H264DBPList *dpb, H264Slice *pSlice);
-    void CalculateResizeParameters(H264DecoderFrame * pFrame, Ipp32s field);
     Status InitializeLayers(H264DecoderFrame * pFrame, Ipp32s field);
     Status AllocateDataForFrameSVC(H264DecoderFrame * pFrame, H264Slice *pSlice);
 

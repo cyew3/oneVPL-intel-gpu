@@ -188,11 +188,6 @@ void H264SegmentDecoder::DecodeMBTypePSlice_CAVLC(void)
 {
     Ipp32u uCodeNum;
 
-    m_cur_mb.LocalMacroblockInfo->sbdir[0] =
-    m_cur_mb.LocalMacroblockInfo->sbdir[1] =
-    m_cur_mb.LocalMacroblockInfo->sbdir[2] =
-    m_cur_mb.LocalMacroblockInfo->sbdir[3] = 0;
-
     uCodeNum = m_pBitStream->GetVLCElement(false);
 
     // the macroblock has inter type
@@ -297,11 +292,6 @@ void H264SegmentDecoder::DecodeMBTypePSlice_CAVLC(void)
 void H264SegmentDecoder::DecodeMBTypeBSlice_CAVLC(void)
 {
     Ipp32u uCodeNum;
-
-    m_cur_mb.LocalMacroblockInfo->sbdir[0] =
-    m_cur_mb.LocalMacroblockInfo->sbdir[1] =
-    m_cur_mb.LocalMacroblockInfo->sbdir[2] =
-    m_cur_mb.LocalMacroblockInfo->sbdir[3] = 0;
 
     uCodeNum = m_pBitStream->GetVLCElement(false);
 
@@ -620,22 +610,6 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CAVLC(IntraType *pMBIntraTypes,
     H264DecoderMacroblockGlobalInfo *gmbinfo=m_gmbinfo->mbs;
     Ipp32u predictors=31;//5 lsb bits set
     //new version
-
-    if (m_pSliceHeader->tcoeff_level_prediction_flag == 0)
-    {
-        // above, left MB available only if they are INTRA
-        if ((m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~1);//clear 1-st bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~2); //clear 2-nd bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[1].mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[1].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~4); //clear 3-rd bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~8); //clear 4-th bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[3].mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[3].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~16); //clear 5-th bit
-    }
-    else
     {
         // above, left MB available only if they are INTRA
         if ((m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num].mbtype) && bUseConstrainedIntra)))
@@ -820,18 +794,6 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CAVLC(IntraType *pMBIntraTypes,
     H264DecoderMacroblockGlobalInfo *gmbinfo=m_gmbinfo->mbs;
     Ipp32u predictors=31;//5 lsb bits set
     //new version
-
-    if (m_pSliceHeader->tcoeff_level_prediction_flag == 0)
-    {
-        // above, left MB available only if they are INTRA
-        if ((m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~1);//clear 1-st bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~2); //clear 2-nd bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~4); //clear 4-th bit
-    }
-    else
     {
         // above, left MB available only if they are INTRA
         if ((m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num].mbtype) && bUseConstrainedIntra)))
@@ -993,57 +955,21 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CAVLC(IntraType *pMBIntraTypes,
 
 Ipp32u H264SegmentDecoder::DecodeCBP_CAVLC(Ipp32u color_format)
 {
-    Ipp32u cbp = 0;
+   Ipp32u cbp;
 
-    for (;;) // fake for
+    Ipp32u index = (Ipp32u) m_pBitStream->GetVLCElement(false);
+
+
+    if (index < 48)
     {
-        if (m_pSliceHeader->scan_idx_end < m_pSliceHeader->scan_idx_start)
-            break;
-
-        Ipp32u index = (Ipp32u) m_pBitStream->GetVLCElement(false);
-
-        if (!(m_pSliceHeader->scan_idx_start == 0 && m_pSliceHeader->scan_idx_end == 15))
-        {
-            if (index == 0)
-            {
-                if (m_cur_mb.CurrentMacroblockNeighbours.mb_A >= 0)
-                {
-                    Ipp32s left = m_isMBAFF ? (m_CurMBAddr - 2) : m_cur_mb.CurrentMacroblockNeighbours.mb_A;;
-                    cbp = m_mbinfo.mbs[left].cbp;
-                }
-                else if (m_cur_mb.CurrentMacroblockNeighbours.mb_B >= 0)
-                {
-                    Ipp32s top;
-                    if (m_isMBAFF) {
-                        if (m_CurMBAddr & 1) {
-                            top = m_CurMBAddr - 1;
-                        } else {
-                            top = m_cur_mb.CurrentMacroblockNeighbours.mb_B + 1;
-                        }
-                    }
-                    else top = m_cur_mb.CurrentMacroblockNeighbours.mb_B;
-                    cbp = m_mbinfo.mbs[top].cbp;
-                }
-                break;
-            }
-
-            index -= 1;
-        }
-
-        if (index < 48)
-        {
-            if ((MBTYPE_INTRA == m_cur_mb.GlobalMacroblockInfo->mbtype) &&
-                (pGetMBBaseModeFlag(m_cur_mb.GlobalMacroblockInfo) == 0))
-                cbp = dec_cbp_intra[0 != color_format][index];
-            else
-                cbp = dec_cbp_inter[0 != color_format][index];
-        }
+        if (MBTYPE_INTRA == m_cur_mb.GlobalMacroblockInfo->mbtype)
+            cbp = dec_cbp_intra[0 != color_format][index];
         else
-        {
-            throw h264_exception(UMC_ERR_INVALID_STREAM);
-        }
-
-        break;
+            cbp = dec_cbp_inter[0 != color_format][index];
+    }
+    else
+    {
+        throw h264_exception(UMC_ERR_INVALID_STREAM);
     }
 
     if (!cbp)
@@ -1081,14 +1007,8 @@ void H264SegmentDecoder::DecodeEdgeType()
             if (nLeft >= 0)
             {
                 mbA_fdf = GetMBFieldDecodingFlag(m_gmbinfo->mbs[m_cur_mb.CurrentMacroblockNeighbours.mb_A]);
-                if (m_pSliceHeader->tcoeff_level_prediction_flag == 0)
-                {
-                    mbA_is_intra = IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[m_cur_mb.CurrentMacroblockNeighbours.mb_A].mbtype);
-                    mbpA_is_intra = IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[m_cur_mb.CurrentMacroblockNeighbours.mb_A+1].mbtype);
-                } else {
-                    mbA_is_intra = IS_INTRA_MBTYPE(m_gmbinfo->mbs[m_cur_mb.CurrentMacroblockNeighbours.mb_A].mbtype);
-                    mbpA_is_intra = IS_INTRA_MBTYPE(m_gmbinfo->mbs[m_cur_mb.CurrentMacroblockNeighbours.mb_A+1].mbtype);
-                }
+                mbA_is_intra = IS_INTRA_MBTYPE(m_gmbinfo->mbs[m_cur_mb.CurrentMacroblockNeighbours.mb_A].mbtype);
+                mbpA_is_intra = IS_INTRA_MBTYPE(m_gmbinfo->mbs[m_cur_mb.CurrentMacroblockNeighbours.mb_A+1].mbtype);
             }
 
             if (currmb_fdf) //current mb coded as field MB
@@ -1108,221 +1028,109 @@ void H264SegmentDecoder::DecodeEdgeType()
                 }
             }
 
-            if (m_pSliceHeader->tcoeff_level_prediction_flag == 0)
+            switch (special_MBAFF_case)
             {
-                switch (special_MBAFF_case)
+            case 1:
+                if (0 > nTop)
+                    edge_type_2t |= IPPVC_TOP_EDGE;
+                else
+                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTop].mbtype)) edge_type_2t |= IPPVC_TOP_EDGE;
+
+                if (0 > nTopLeft)
+                    edge_type_2t |= IPPVC_TOP_LEFT_EDGE;
+                else
+                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopLeft].mbtype)) edge_type_2t |= IPPVC_TOP_LEFT_EDGE;
+
+                if (0 > nTopRight)
+                    edge_type_2t |= IPPVC_TOP_RIGHT_EDGE;
+                else
+                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopRight].mbtype)) edge_type_2t |= IPPVC_TOP_RIGHT_EDGE;
+
+                if (currmb_fdf)
                 {
-                case 1:
-                    if (0 > nTop)
-                        edge_type_2t |= IPPVC_TOP_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nTop].mbtype)) edge_type_2t |= IPPVC_TOP_EDGE;
-
-                    if (0 > nTopLeft)
-                        edge_type_2t |= IPPVC_TOP_LEFT_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nTopLeft].mbtype)) edge_type_2t |= IPPVC_TOP_LEFT_EDGE;
-
-                    if (0 > nTopRight)
-                        edge_type_2t |= IPPVC_TOP_RIGHT_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nTopRight].mbtype)) edge_type_2t |= IPPVC_TOP_RIGHT_EDGE;
-
-                    if (currmb_fdf)
-                    {
-                        edge_type_2b = IPPVC_LEFT_EDGE | IPPVC_TOP_RIGHT_EDGE;
-                    }
-                    else
-                    {
-                        nLeft = m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num;
-                        if (0 > nLeft)
-                            edge_type_2b |= IPPVC_LEFT_EDGE;
-                        else
-                        {
-                            if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nLeft].mbtype)) edge_type_2b |= IPPVC_LEFT_EDGE;
-                            if (mbA_fdf && !currmb_fdf && (!mbpA_is_intra || !mbA_is_intra)) edge_type_2b |= IPPVC_LEFT_EDGE;
-                        }
-
-                        edge_type_2b |= IPPVC_TOP_RIGHT_EDGE;
-                        if (!mbpA_is_intra)
-                            edge_type_2b |= IPPVC_TOP_LEFT_EDGE;
-                    }
-                    break;
-                case 2:
-                    if (0 > nLeft)
-                        edge_type_2t |= IPPVC_LEFT_EDGE;
-                    else
-                    {
-                        if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nLeft].mbtype)) edge_type_2t |= IPPVC_LEFT_EDGE;
-                        if (mbA_fdf && !currmb_fdf && (!mbpA_is_intra || !mbA_is_intra)) edge_type_2t |= IPPVC_LEFT_EDGE;
-                    }
-
-                    if (0 > nTop)
-                        edge_type_2t |= IPPVC_TOP_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nTop].mbtype)) edge_type_2t |= IPPVC_TOP_EDGE;
-
-                    if (0 > nTopLeft)
-                        edge_type_2t |= IPPVC_TOP_LEFT_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nTopLeft].mbtype)) edge_type_2t |= IPPVC_TOP_LEFT_EDGE;
-
-                    if (0 > nTopRight)
-                        edge_type_2t |= IPPVC_TOP_RIGHT_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nTopRight].mbtype)) edge_type_2t |= IPPVC_TOP_RIGHT_EDGE;
-
-                    if (currmb_fdf)
-                    {
-                        edge_type_2b = IPPVC_TOP_LEFT_EDGE | IPPVC_TOP_RIGHT_EDGE;
-                    }
-                    else
-                    {
-                        nLeft = m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num;
-                        if (0 > nLeft)
-                            edge_type_2b |= IPPVC_LEFT_EDGE;
-                        else
-                        {
-                            if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nLeft].mbtype)) edge_type_2b |= IPPVC_LEFT_EDGE;
-                            if (mbA_fdf && !currmb_fdf && (!mbpA_is_intra || !mbA_is_intra)) edge_type_2b |= IPPVC_LEFT_EDGE;
-                        }
-
-                        edge_type_2b |= IPPVC_TOP_RIGHT_EDGE;
-                        if (!mbpA_is_intra)
-                            edge_type_2b |= IPPVC_TOP_LEFT_EDGE;
-                    }
-                    break;
-                default:
-                    if (0 > nLeft)
-                        edge_type |= IPPVC_LEFT_EDGE;
-                    else
-                    {
-                        if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nLeft].mbtype)) edge_type |= IPPVC_LEFT_EDGE;
-                        if (mbA_fdf && !currmb_fdf && (!mbpA_is_intra || !mbA_is_intra)) edge_type |= IPPVC_LEFT_EDGE;
-                    }
-                    if (0 > nTop)
-                        edge_type |= IPPVC_TOP_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nTop].mbtype)) edge_type |= IPPVC_TOP_EDGE;
-                    if (0 > nTopLeft)
-                        edge_type |= IPPVC_TOP_LEFT_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nTopLeft].mbtype)) edge_type |= IPPVC_TOP_LEFT_EDGE;
-                    if (0 > nTopRight)
-                        edge_type |= IPPVC_TOP_RIGHT_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nTopRight].mbtype)) edge_type |= IPPVC_TOP_RIGHT_EDGE;
-
-                    break;
+                    edge_type_2b = IPPVC_LEFT_EDGE | IPPVC_TOP_RIGHT_EDGE;
                 }
-            }
-            else
-            {
-                switch (special_MBAFF_case)
+                else
                 {
-                case 1:
-                    if (0 > nTop)
-                        edge_type_2t |= IPPVC_TOP_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTop].mbtype)) edge_type_2t |= IPPVC_TOP_EDGE;
-
-                    if (0 > nTopLeft)
-                        edge_type_2t |= IPPVC_TOP_LEFT_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopLeft].mbtype)) edge_type_2t |= IPPVC_TOP_LEFT_EDGE;
-
-                    if (0 > nTopRight)
-                        edge_type_2t |= IPPVC_TOP_RIGHT_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopRight].mbtype)) edge_type_2t |= IPPVC_TOP_RIGHT_EDGE;
-
-                    if (currmb_fdf)
-                    {
-                        edge_type_2b = IPPVC_LEFT_EDGE | IPPVC_TOP_RIGHT_EDGE;
-                    }
-                    else
-                    {
-                        nLeft = m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num;
-                        if (0 > nLeft)
-                            edge_type_2b |= IPPVC_LEFT_EDGE;
-                        else
-                        {
-                            if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nLeft].mbtype)) edge_type_2b |= IPPVC_LEFT_EDGE;
-                            if (mbA_fdf && !currmb_fdf && (!mbpA_is_intra || !mbA_is_intra)) edge_type_2b |= IPPVC_LEFT_EDGE;
-                        }
-
-                        edge_type_2b |= IPPVC_TOP_RIGHT_EDGE;
-                        if (!mbpA_is_intra)
-                            edge_type_2b |= IPPVC_TOP_LEFT_EDGE;
-                    }
-                    break;
-                case 2:
+                    nLeft = m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num;
                     if (0 > nLeft)
-                        edge_type_2t |= IPPVC_LEFT_EDGE;
+                        edge_type_2b |= IPPVC_LEFT_EDGE;
                     else
                     {
-                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nLeft].mbtype)) edge_type_2t |= IPPVC_LEFT_EDGE;
-                        if (mbA_fdf && !currmb_fdf && (!mbpA_is_intra || !mbA_is_intra)) edge_type_2t |= IPPVC_LEFT_EDGE;
+                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nLeft].mbtype)) edge_type_2b |= IPPVC_LEFT_EDGE;
+                        if (mbA_fdf && !currmb_fdf && (!mbpA_is_intra || !mbA_is_intra)) edge_type_2b |= IPPVC_LEFT_EDGE;
                     }
 
-                    if (0 > nTop)
-                        edge_type_2t |= IPPVC_TOP_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTop].mbtype)) edge_type_2t |= IPPVC_TOP_EDGE;
-
-                    if (0 > nTopLeft)
-                        edge_type_2t |= IPPVC_TOP_LEFT_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopLeft].mbtype)) edge_type_2t |= IPPVC_TOP_LEFT_EDGE;
-
-                    if (0 > nTopRight)
-                        edge_type_2t |= IPPVC_TOP_RIGHT_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopRight].mbtype)) edge_type_2t |= IPPVC_TOP_RIGHT_EDGE;
-
-                    if (currmb_fdf)
-                    {
-                        edge_type_2b = IPPVC_TOP_LEFT_EDGE | IPPVC_TOP_RIGHT_EDGE;
-                    }
-                    else
-                    {
-                        nLeft = m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num;
-                        if (0 > nLeft)
-                            edge_type_2b |= IPPVC_LEFT_EDGE;
-                        else
-                        {
-                            if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nLeft].mbtype)) edge_type_2b |= IPPVC_LEFT_EDGE;
-                            if (mbA_fdf && !currmb_fdf && (!mbpA_is_intra || !mbA_is_intra)) edge_type_2b |= IPPVC_LEFT_EDGE;
-                        }
-
-                        edge_type_2b |= IPPVC_TOP_RIGHT_EDGE;
-                        if (!mbpA_is_intra)
-                            edge_type_2b |= IPPVC_TOP_LEFT_EDGE;
-                    }
-                    break;
-                default:
-                    if (0 > nLeft)
-                        edge_type |= IPPVC_LEFT_EDGE;
-                    else
-                    {
-                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nLeft].mbtype)) edge_type |= IPPVC_LEFT_EDGE;
-                        if (mbA_fdf && !currmb_fdf && (!mbpA_is_intra || !mbA_is_intra)) edge_type |= IPPVC_LEFT_EDGE;
-                    }
-                    if (0 > nTop)
-                        edge_type |= IPPVC_TOP_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTop].mbtype)) edge_type |= IPPVC_TOP_EDGE;
-                    if (0 > nTopLeft)
-                        edge_type |= IPPVC_TOP_LEFT_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopLeft].mbtype)) edge_type |= IPPVC_TOP_LEFT_EDGE;
-                    if (0 > nTopRight)
-                        edge_type |= IPPVC_TOP_RIGHT_EDGE;
-                    else
-                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopRight].mbtype)) edge_type |= IPPVC_TOP_RIGHT_EDGE;
-
-                    break;
+                    edge_type_2b |= IPPVC_TOP_RIGHT_EDGE;
+                    if (!mbpA_is_intra)
+                        edge_type_2b |= IPPVC_TOP_LEFT_EDGE;
                 }
+                break;
+            case 2:
+                if (0 > nLeft)
+                    edge_type_2t |= IPPVC_LEFT_EDGE;
+                else
+                {
+                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nLeft].mbtype)) edge_type_2t |= IPPVC_LEFT_EDGE;
+                    if (mbA_fdf && !currmb_fdf && (!mbpA_is_intra || !mbA_is_intra)) edge_type_2t |= IPPVC_LEFT_EDGE;
+                }
+
+                if (0 > nTop)
+                    edge_type_2t |= IPPVC_TOP_EDGE;
+                else
+                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTop].mbtype)) edge_type_2t |= IPPVC_TOP_EDGE;
+
+                if (0 > nTopLeft)
+                    edge_type_2t |= IPPVC_TOP_LEFT_EDGE;
+                else
+                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopLeft].mbtype)) edge_type_2t |= IPPVC_TOP_LEFT_EDGE;
+
+                if (0 > nTopRight)
+                    edge_type_2t |= IPPVC_TOP_RIGHT_EDGE;
+                else
+                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopRight].mbtype)) edge_type_2t |= IPPVC_TOP_RIGHT_EDGE;
+
+                if (currmb_fdf)
+                {
+                    edge_type_2b = IPPVC_TOP_LEFT_EDGE | IPPVC_TOP_RIGHT_EDGE;
+                }
+                else
+                {
+                    nLeft = m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num;
+                    if (0 > nLeft)
+                        edge_type_2b |= IPPVC_LEFT_EDGE;
+                    else
+                    {
+                        if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nLeft].mbtype)) edge_type_2b |= IPPVC_LEFT_EDGE;
+                        if (mbA_fdf && !currmb_fdf && (!mbpA_is_intra || !mbA_is_intra)) edge_type_2b |= IPPVC_LEFT_EDGE;
+                    }
+
+                    edge_type_2b |= IPPVC_TOP_RIGHT_EDGE;
+                    if (!mbpA_is_intra)
+                        edge_type_2b |= IPPVC_TOP_LEFT_EDGE;
+                }
+                break;
+            default:
+                if (0 > nLeft)
+                    edge_type |= IPPVC_LEFT_EDGE;
+                else
+                {
+                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nLeft].mbtype)) edge_type |= IPPVC_LEFT_EDGE;
+                    if (mbA_fdf && !currmb_fdf && (!mbpA_is_intra || !mbA_is_intra)) edge_type |= IPPVC_LEFT_EDGE;
+                }
+                if (0 > nTop)
+                    edge_type |= IPPVC_TOP_EDGE;
+                else
+                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTop].mbtype)) edge_type |= IPPVC_TOP_EDGE;
+                if (0 > nTopLeft)
+                    edge_type |= IPPVC_TOP_LEFT_EDGE;
+                else
+                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopLeft].mbtype)) edge_type |= IPPVC_TOP_LEFT_EDGE;
+                if (0 > nTopRight)
+                    edge_type |= IPPVC_TOP_RIGHT_EDGE;
+                else
+                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopRight].mbtype)) edge_type |= IPPVC_TOP_RIGHT_EDGE;
+                break;
             }
         }
         else
@@ -1350,7 +1158,26 @@ void H264SegmentDecoder::DecodeEdgeType()
     }
     else
     {
-        if (!m_IsUseConstrainedIntra)
+        if (m_IsUseConstrainedIntra)
+        {
+            if (0 > nLeft)
+                edge_type |= IPPVC_LEFT_EDGE;
+            else
+                if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nLeft].mbtype)) edge_type |= IPPVC_LEFT_EDGE;
+            if (0 > nTop)
+                edge_type |= IPPVC_TOP_EDGE;
+            else
+                if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTop].mbtype)) edge_type |= IPPVC_TOP_EDGE;
+            if (0 > nTopLeft)
+                edge_type |= IPPVC_TOP_LEFT_EDGE;
+            else
+                if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopLeft].mbtype)) edge_type |= IPPVC_TOP_LEFT_EDGE;
+            if (0 > nTopRight)
+                edge_type |= IPPVC_TOP_RIGHT_EDGE;
+            else
+                if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopRight].mbtype)) edge_type |= IPPVC_TOP_RIGHT_EDGE;
+        }
+        else
         {
             if (0 > nLeft)
                 edge_type |= IPPVC_LEFT_EDGE;
@@ -1361,49 +1188,10 @@ void H264SegmentDecoder::DecodeEdgeType()
             if (0 > nTopRight)
                 edge_type |= IPPVC_TOP_RIGHT_EDGE;
         }
-        else
-        {
-            if (m_pSliceHeader->tcoeff_level_prediction_flag == 0)
-            {
-                if (0 > nLeft)
-                    edge_type |= IPPVC_LEFT_EDGE;
-                else
-                    if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nLeft].mbtype)) edge_type |= IPPVC_LEFT_EDGE;
-                if (0 > nTop)
-                    edge_type |= IPPVC_TOP_EDGE;
-                else
-                    if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nTop].mbtype)) edge_type |= IPPVC_TOP_EDGE;
-                if (0 > nTopLeft)
-                    edge_type |= IPPVC_TOP_LEFT_EDGE;
-                else
-                    if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nTopLeft].mbtype)) edge_type |= IPPVC_TOP_LEFT_EDGE;
-                if (0 > nTopRight)
-                    edge_type |= IPPVC_TOP_RIGHT_EDGE;
-                else
-                    if (!IS_INTRA_MBTYPE_NOT_BL(m_gmbinfo->mbs[nTopRight].mbtype)) edge_type |= IPPVC_TOP_RIGHT_EDGE;
-            }
-            else
-            {
-                if (0 > nLeft)
-                    edge_type |= IPPVC_LEFT_EDGE;
-                else
-                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nLeft].mbtype)) edge_type |= IPPVC_LEFT_EDGE;
-                if (0 > nTop)
-                    edge_type |= IPPVC_TOP_EDGE;
-                else
-                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTop].mbtype)) edge_type |= IPPVC_TOP_EDGE;
-                if (0 > nTopLeft)
-                    edge_type |= IPPVC_TOP_LEFT_EDGE;
-                else
-                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopLeft].mbtype)) edge_type |= IPPVC_TOP_LEFT_EDGE;
-                if (0 > nTopRight)
-                    edge_type |= IPPVC_TOP_RIGHT_EDGE;
-                else
-                    if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nTopRight].mbtype)) edge_type |= IPPVC_TOP_RIGHT_EDGE;
-            }
-        }
+
         m_cur_mb.LocalMacroblockInfo->IntraTypes.edge_type = edge_type;
     }
+
 } // void H264SegmentDecoder::DecodeEdgeType()
 
 void H264SegmentDecoder::ReconstructEdgeType(Ipp8u &edge_type_2t, Ipp8u &edge_type_2b, Ipp32s &special_MBAFF_case)

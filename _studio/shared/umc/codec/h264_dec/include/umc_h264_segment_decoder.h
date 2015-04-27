@@ -86,22 +86,11 @@ struct Context
     bool m_isSliceGroups;
     Ipp32u m_uPitchLuma;
     Ipp32u m_uPitchChroma;
-    Ipp32u m_uPitchLumaCur;
-    Ipp32u m_uPitchChromaCur;
 
     Ipp8u *m_pYPlane;
     Ipp8u *m_pUPlane;
     Ipp8u *m_pVPlane;
     Ipp8u *m_pUVPlane;
-
-    Ipp8u *m_pYPlane_base;
-    Ipp8u *m_pUPlane_base;
-    Ipp8u *m_pVPlane_base;
-    Ipp8u *m_pUVPlane_base;
-
-    Ipp16s *m_pYResidual;
-    Ipp16s *m_pUResidual;
-    Ipp16s *m_pVResidual;
 
     Ipp32s m_CurMBAddr;                                         // (Ipp32s) current macroblock address
 
@@ -138,21 +127,6 @@ struct Context
     Ipp32s m_field_index;                                       // (Ipp32s) ordinal number of current field
     Ipp32s m_iSkipNextMacroblock;                               // (bool) the next macroblock shall be skipped
 
-    // SVC
-    Ipp32s m_currentLayer;
-    Ipp32s m_store_ref_base_pic_flag;
-    Ipp32s m_reconstruct_all;
-    Ipp32s m_coeff_prediction_flag;
-    Ipp32s m_refinementFlag;
-    Ipp8u  motion_pred_flag[2][4];
-    bool   m_bIsMaxQId;
-    bool   m_bIsMaxDId;
-
-    bool m_is_ref_base_pic;
-
-    Ipp8u ipred_flag[2][2];
-    Ipp32s ipred_cx, ipred_cy;
-
     // external data
     const H264PicParamSet *m_pPicParamSet;                      // (const H264PicParamSet *) pointer to current picture parameters sets
     const H264SeqParamSet *m_pSeqParamSet;                      // (const H264SeqParamSet *) pointer to current sequence parameters sets
@@ -169,13 +143,8 @@ public:
 
     // forward declaration of internal types
     typedef void (H264SegmentDecoder::*DeblockingFunction)(Ipp32s nMBAddr);
-    typedef void (H264SegmentDecoder::*ChromaDeblockingFunction)(Ipp32u dir);
-    typedef void (H264SegmentDecoder::*ChromaDeblockingFunctionMBAFF)();
-
-    static ChromaDeblockingFunction DeblockChroma[4];
-    static ChromaDeblockingFunctionMBAFF DeblockChromaVerticalMBAFF[4];
-    static ChromaDeblockingFunctionMBAFF DeblockChromaHorizontalMBAFF[4];
-
+    typedef void (H264SegmentDecoder::*PrepareMBParams)();
+    
     volatile bool m_bFrameDeblocking;                                    // (bool) frame deblocking flag
 
     H264Slice *m_pSlice;                                        // (H264Slice *) current slice pointer
@@ -268,9 +237,6 @@ public:
     void DecodeMBFieldDecodingFlag_CABAC(void);
     void DecodeMBFieldDecodingFlag_CAVLC(void);
     void DecodeMBFieldDecodingFlag(void);
-    void DecodeMBBaseModeFlag_CABAC(void);
-    void DecodeMBResidualPredictionFlag_CABAC(void);
-    Ipp8u DecodeMBMotionPredictionFlag_CABAC(Ipp32s dir);
 
     // Decode intra block types
     void DecodeIntraTypes4x4_CAVLC(IntraType *pMBIntraTypes, bool bUseConstrainedIntra);
@@ -291,7 +257,6 @@ public:
     void DecodeDirectMotionVectorsTemporal_8x8Inference();
     // Compute  direct spatial reference indexes
     void ComputeDirectSpatialRefIdx(Ipp32s *pRefIndexL0, Ipp32s *pRefIndexL1);
-    void ComputeDirectSpatialRefIdx8x8(RefIndexType *pRefIndexL0, RefIndexType *pRefIndexL1, Ipp32s idx8x8);
     void GetRefIdx4x4_CABAC(const Ipp32u nActive,
                               const Ipp8u* pBlkIdx,
                               const Ipp8u*  pCodRIx,
@@ -369,23 +334,6 @@ public:
     void GetLeftLocationForCurrentMBChromaNonMBAFFH4(H264DecoderBlockLocation *Block);
 
     CoeffsPtrCommon m_pCoefficientsBuffer;
-    Ipp32s *m_pCoefficientsBufferExt;
-
-    Ipp32s m_spatial_resolution_change;
-    Ipp32s m_next_spatial_resolution_change;
-    Ipp32s m_use_coeff_prediction;
-    Ipp32s m_use_base_residual;
-
-    Ipp32u cbp4x4_luma_dequant;
-    Ipp32u cbp4x4_chroma_dequant[2];                                    // (Ipp32u []) coded block patterns of chroma blocks
-    Ipp32s bDoDeblocking;
-
-    //
-    // Deblocking tools
-    //
-    Ipp32s deblocking_IL; // inter-layer deblocking
-    Ipp32s deblocking_stage2; // for svc and frame deblocking
-    Ipp32s is_profile_baseline_scalable;
 
     // Perform deblocking on whole frame.
     // It is possible only for Baseline profile.
@@ -407,23 +355,13 @@ public:
     void DeblockLumaVerticalMBAFF();
     void DeblockLumaHorizontalMBAFF();
     // Function to do chroma deblocking
-    void DeblockChroma400(Ipp32u dir);
-    void DeblockChroma420(Ipp32u dir);
-    void DeblockChroma422(Ipp32u dir);
-    void DeblockChroma444(Ipp32u dir);
-    void DeblockChromaVerticalMBAFF400();
-    void DeblockChromaVerticalMBAFF420();
-    void DeblockChromaVerticalMBAFF422();
-    void DeblockChromaVerticalMBAFF444();
-    void DeblockChromaHorizontalMBAFF400();
-    void DeblockChromaHorizontalMBAFF420();
-    void DeblockChromaHorizontalMBAFF422();
-    void DeblockChromaHorizontalMBAFF444();
+    void DeblockChroma(Ipp32u dir);
+    void DeblockChromaVerticalMBAFF();
+    void DeblockChromaHorizontalMBAFF();
     // Function to prepare deblocking parameters for mixed MB types
     void DeblockMacroblockMSlice();
 
     void AdujstMvsAndType();
-    void ResetInternalEdges();
 
     inline void EvaluateStrengthExternal(Ipp32s cbp4x4_luma, Ipp32s nNeighbour, Ipp32s dir,
         Ipp32s idx,
@@ -455,12 +393,10 @@ public:
     // Function to do deblocking on I slices
     //
 
-    void PrepareDeblockingParametersStrengths();
-    void PrepareDeblockingParametersStrengthsMBAFF();
+    void DeblockMacroblock(PrepareMBParams prepareMBParams);
+    void DeblockMacroblockMBAFF(PrepareMBParams prepareMBParams);
 
-    void DeblockMacroblockISlice();
     void PrepareDeblockingParametersISlice();
-    void DeblockMacroblockISliceMBAFF();
     void PrepareDeblockingParametersISliceMBAFF();
 
     // obtain reference number for block
@@ -474,8 +410,6 @@ public:
     // Function to do deblocking on P slices
     //
 
-    void DeblockMacroblockPSlice();
-    void DeblockMacroblockPSliceMBAFF();
     void PrepareDeblockingParametersPSlice();
     void PrepareDeblockingParametersPSliceMBAFF();
     // Prepare deblocking parameters for macroblocks from P slice
@@ -506,8 +440,6 @@ public:
     // Function to do deblocking on B slices
     //
 
-    void DeblockMacroblockBSlice();
-    void DeblockMacroblockBSliceMBAFF();
     void PrepareDeblockingParametersBSlice();
     void PrepareDeblockingParametersBSliceMBAFF();
     // Prepare deblocking parameters for macroblocks from B slice

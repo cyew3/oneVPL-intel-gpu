@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include "umc_h264_mfx_supplier.h"
+#include "mfx_h264_dispatcher.h"
 
 #ifndef UMC_RESTRICTED_CODE_MFX
 
@@ -113,6 +114,7 @@ RawHeader * RawHeaders::GetPPS()
 MFXTaskSupplier::MFXTaskSupplier()
     : TaskSupplier()
 {
+    MFX_H264_PP::GetH264Dispatcher();
     memset(&m_firstVideoParams, 0, sizeof(mfxVideoParam));
 }
 
@@ -158,11 +160,6 @@ Status MFXTaskSupplier::Init(VideoDecoderParams *init)
     case H264VideoDecoderParams::H264_PROFILE_MULTIVIEW_HIGH:
     case H264VideoDecoderParams::H264_PROFILE_STEREO_HIGH:
         m_decodingMode = MVC_DECODING_MODE;
-        break;
-    case H264VideoDecoderParams::H264_PROFILE_SCALABLE_BASELINE:
-    case H264VideoDecoderParams::H264_PROFILE_SCALABLE_HIGH:
-        m_decodingMode = SVC_DECODING_MODE;
-        AllocateView(0);
         break;
     default:
         m_decodingMode = AVC_DECODING_MODE;
@@ -373,7 +370,7 @@ Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
     if (currSPS)
     {
-        if (currSPS->bit_depth_luma > 8 || currSPS->bit_depth_chroma > 8 || currSPS->chroma_format_idc > 2)
+        if (currSPS->chroma_format_idc > 2)
             throw h264_exception(UMC_ERR_UNSUPPORTED);
 
         switch (currSPS->profile_idc)
@@ -383,6 +380,7 @@ Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
         case H264VideoDecoderParams::H264_PROFILE_MAIN:
         case H264VideoDecoderParams::H264_PROFILE_EXTENDED:
         case H264VideoDecoderParams::H264_PROFILE_HIGH:
+        case H264VideoDecoderParams::H264_PROFILE_HIGH10:
         case H264VideoDecoderParams::H264_PROFILE_HIGH422:
 
         case H264VideoDecoderParams::H264_PROFILE_MULTIVIEW_HIGH:
@@ -585,6 +583,9 @@ bool MFX_Utility::IsNeedPartialAcceleration(mfxVideoParam * par, eMFXHWType )
     if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12) // yuv422 in SW only
         return true;
 
+    if (par->mfx.FrameInfo.BitDepthLuma > 8 || par->mfx.FrameInfo.BitDepthChroma > 8) // yuv422 in SW only
+        return true;
+
     /*mfxExtSVCSeqDesc * svcDesc = (mfxExtSVCSeqDesc*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_SVC_SEQ_DESC);
     if (svcDesc)
     {
@@ -696,95 +697,10 @@ static inline bool IsFieldOfOneFrame(UMC::H264Slice * pSlice1, UMC::H264Slice *p
     return true;
 }
 
-UMC::Status FillVideoParamSVCBySliceInfo(mfxExtSVCSeqDesc * seqDesc, const UMC::H264Slice * slice)
+UMC::Status FillVideoParamSVCBySliceInfo(mfxExtSVCSeqDesc * , const UMC::H264Slice * slice)
 {
     if (!slice)
         return UMC::UMC_OK;
-
-    const UMC_H264_DECODER::H264SliceHeader * sliceHeader = slice->GetSliceHeader();
-    if (!sliceHeader->nal_ext.extension_present || !sliceHeader->nal_ext.svc_extension_flag)
-        return UMC::UMC_OK;
-
-    const UMC_H264_DECODER::H264SeqParamSet * seq = slice->GetSeqParam();
-    Ipp32u currentDLayer = sliceHeader->nal_ext.svc.dependency_id;
-    if (!seqDesc->DependencyLayer[currentDLayer].Active)
-    {
-        seqDesc->DependencyLayer[currentDLayer].Width = (mfxU16) (seq->frame_width_in_mbs * 16);
-        seqDesc->DependencyLayer[currentDLayer].Height = (mfxU16) (seq->frame_height_in_mbs * 16);
-
-        seqDesc->DependencyLayer[currentDLayer].CropX = (mfxU16) (0);
-        seqDesc->DependencyLayer[currentDLayer].CropY = (mfxU16) (0);
-
-        seqDesc->DependencyLayer[currentDLayer].CropW = (mfxU16) (seqDesc->DependencyLayer[currentDLayer].Width);
-        seqDesc->DependencyLayer[currentDLayer].CropH = (mfxU16) (seqDesc->DependencyLayer[currentDLayer].Height);
-
-        seqDesc->DependencyLayer[currentDLayer].Active = 1;
-    }
-
-    Ipp32u currentQLayer = sliceHeader->nal_ext.svc.quality_id;
-    if ((currentQLayer + 1) > seqDesc->DependencyLayer[currentDLayer].QualityNum)
-    {
-        seqDesc->DependencyLayer[currentDLayer].QualityNum = (mfxU16)(currentQLayer + 1);
-    }
-
-    Ipp32u currentTLayer = sliceHeader->nal_ext.svc.temporal_id;
-    bool isFound = false;
-    for (Ipp32u k = 0; k < seqDesc->DependencyLayer[currentDLayer].TemporalNum; k++)
-    {
-        if (seqDesc->DependencyLayer[currentDLayer].TemporalId[k] == currentTLayer)
-        {
-            isFound = true;
-            break;
-        }
-    }
-
-    if (!isFound && seqDesc->DependencyLayer[currentDLayer].TemporalNum <= sizeof(seqDesc->DependencyLayer[currentDLayer].TemporalId)/sizeof(seqDesc->DependencyLayer[currentDLayer].TemporalId[0]))
-    {
-        seqDesc->DependencyLayer[currentDLayer].TemporalId[seqDesc->DependencyLayer[currentDLayer].TemporalNum++] = (mfxU16)currentTLayer;
-    }
-
-    if (!seqDesc->DependencyLayer[currentDLayer].RefLayerDid && slice->GetSliceHeader()->ref_layer_dq_id != -1)
-    {
-        seqDesc->DependencyLayer[currentDLayer].RefLayerDid = (mfxU16)(slice->GetSliceHeader()->ref_layer_dq_id >> 4);
-        seqDesc->DependencyLayer[currentDLayer].RefLayerQid = (mfxU16)(slice->GetSliceHeader()->ref_layer_dq_id & 0x0f);
-
-        const H264SeqParamSetSVCExtension *curSps = slice->GetSeqSVCParam();
-
-        Ipp32s leftOffset = 0;
-        Ipp32s topOffset = 0;
-        Ipp32s rightOffset = 0;
-        Ipp32s bottomOffset = 0;
-
-        if (sliceHeader->nal_ext.svc.quality_id || sliceHeader->nal_ext.svc.no_inter_layer_pred_flag)
-        {
-        }
-        else
-        {
-            if (curSps->extended_spatial_scalability == 1) {
-                leftOffset = 2 * curSps->seq_scaled_ref_layer_left_offset;
-                topOffset = 2 * curSps->seq_scaled_ref_layer_top_offset *
-                    (2 - curSps->frame_mbs_only_flag);
-
-                rightOffset = 2 * curSps->seq_scaled_ref_layer_right_offset;
-                bottomOffset = 2 * curSps->seq_scaled_ref_layer_bottom_offset *
-                    (2 - curSps->frame_mbs_only_flag);
-
-            } else if (curSps->extended_spatial_scalability == 2) {
-                leftOffset = 2 * sliceHeader->scaled_ref_layer_left_offset;
-                topOffset = 2 * sliceHeader->scaled_ref_layer_top_offset *
-                    (2 - curSps->frame_mbs_only_flag);
-
-                rightOffset = 2 * sliceHeader->scaled_ref_layer_right_offset;
-                bottomOffset = 2 * sliceHeader->scaled_ref_layer_bottom_offset *
-                    (2 - curSps->frame_mbs_only_flag);
-            }
-        }
-
-        seqDesc->DependencyLayer[currentDLayer].ScaledRefLayerOffsets[0] = (mfxI16)leftOffset;
-        seqDesc->DependencyLayer[currentDLayer].ScaledRefLayerOffsets[1] = (mfxI16)topOffset;
-        seqDesc->DependencyLayer[currentDLayer].ScaledRefLayerOffsets[2] = (mfxI16)rightOffset;
-        seqDesc->DependencyLayer[currentDLayer].ScaledRefLayerOffsets[3] = (mfxI16)bottomOffset;
-    }
 
     return UMC::UMC_OK;
 }
@@ -1925,6 +1841,7 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
     case MFX_PROFILE_AVC_MAIN:
     case MFX_PROFILE_AVC_EXTENDED:
     case MFX_PROFILE_AVC_HIGH:
+    case MFX_PROFILE_AVC_HIGH10:
     case MFX_PROFILE_AVC_HIGH_422:
     case MFX_PROFILE_AVC_STEREO_HIGH:
     case MFX_PROFILE_AVC_MULTIVIEW_HIGH:
@@ -1979,7 +1896,8 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
         return false;
 #endif
 
-    if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16)
+    if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16 &&
+        in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_P210)
         return false;
 
     // both zero or not zero
@@ -2003,8 +1921,11 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
     if (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 && in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV400 && in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422)
         return false;
 
-    if ((in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422) != (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV16))
-        return false;
+    if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
+    {
+        if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_P210 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16)
+            return false;
+    }
 
     if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
         return false;

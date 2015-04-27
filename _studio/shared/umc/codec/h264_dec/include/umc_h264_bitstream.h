@@ -34,8 +34,114 @@
     } \
 }
 
+IppStatus MyippiDecodeCAVLCCoeffs_H264_1u16s (Ipp32u ** const ppBitStream,
+                                                    Ipp32s *pOffset,
+                                                    Ipp16s *pNumCoeff,
+                                                    Ipp16s **ppPosCoefbuf,
+                                                    Ipp32u uVLCSelect,
+                                                    Ipp16s coeffLimit,
+                                                    Ipp16s uMaxNumCoeff,
+                                                    const Ipp32s *pScanMatrix,
+                                                    Ipp32s scanIdxStart);
+
+IppStatus MyippiDecodeCAVLCCoeffs_H264_1u32s (Ipp32u ** const ppBitStream,
+                                                    Ipp32s *pOffset,
+                                                    Ipp16s *pNumCoeff,
+                                                    Ipp32s **ppPosCoefbuf,
+                                                    Ipp32u uVLCSelect,
+                                                    Ipp16s uMaxNumCoeff,
+                                                    const Ipp32s *pScanMatrix);
+
+IppStatus MyippiDecodeCAVLCChromaDcCoeffs_H264_1u16s(Ipp32u **ppBitStream,
+                                                        Ipp32s *pOffset,
+                                                        Ipp16s *pNumCoeff,
+                                                        Ipp16s **ppPosCoefbuf);
+
+
+IppStatus MyippiDecodeCAVLCChromaDcCoeffs_H264_1u32s(Ipp32u **ppBitStream,
+                                                        Ipp32s *pOffset,
+                                                        Ipp16s *pNumCoeff,
+                                                        Ipp32s **ppPosCoefbuf);
+
 namespace UMC
 {
+    inline IppStatus MyDecodeCAVLCCoeffs_H264(Ipp32u **ppBitStream, Ipp32s *pOffset,
+                                            Ipp16s *pNumCoeff, Ipp16s **ppDstCoeffs,
+                                            Ipp32u uVLCSelect, Ipp16s coeffLimit,
+                                            Ipp16s uMaxNumCoeff, const Ipp32s *pScanMatrix, Ipp32s scanIdxStart)
+    {
+        return MyippiDecodeCAVLCCoeffs_H264_1u16s(ppBitStream, pOffset,
+                                                pNumCoeff, ppDstCoeffs,
+                                                uVLCSelect, coeffLimit,
+                                                uMaxNumCoeff, pScanMatrix, scanIdxStart);
+    }
+
+    inline IppStatus MyDecodeCAVLCCoeffs_H264(Ipp32u **ppBitStream, Ipp32s *pOffset,
+                                            Ipp16s *pNumCoeff, Ipp32s **ppDstCoeffs,
+                                            Ipp32u uVLCSelect, Ipp16s ,
+                                            Ipp16s uMaxNumCoeff, const Ipp32s *pScanMatrix, Ipp32s )
+    {
+        return MyippiDecodeCAVLCCoeffs_H264_1u32s(ppBitStream, pOffset,
+                                                pNumCoeff, ppDstCoeffs,
+                                                uVLCSelect, uMaxNumCoeff, pScanMatrix);
+    }
+
+    inline IppStatus MyDecodeCAVLCChromaDcCoeffs_H264(Ipp32u **ppBitStream,
+                                                    Ipp32s *pOffset,
+                                                    Ipp16s *pNumCoeff,
+                                                    Ipp16s **ppDstCoeffs)
+    {
+        return MyippiDecodeCAVLCChromaDcCoeffs_H264_1u16s(ppBitStream,
+                                                        pOffset,
+                                                        pNumCoeff,
+                                                        ppDstCoeffs);
+    }
+
+    inline IppStatus MyDecodeCAVLCChromaDcCoeffs_H264(Ipp32u **ppBitStream,
+                                                    Ipp32s *pOffset,
+                                                    Ipp16s *pNumCoeff,
+                                                    Ipp32s **ppDstCoeffs)
+    {
+        return MyippiDecodeCAVLCChromaDcCoeffs_H264_1u32s(ppBitStream,
+                                                        pOffset,
+                                                        pNumCoeff,
+                                                        ppDstCoeffs);
+    }
+
+    inline IppStatus DecodeCAVLCChromaDcCoeffs422_H264(Ipp32u **ppBitStream,
+                                                       Ipp32s *pOffset,
+                                                       Ipp16s *pNumCoeff,
+                                                       Ipp16s **ppDstCoeffs,
+                                                       const Ipp32s *pTblCoeffToken,
+                                                       const Ipp32s **ppTblTotalZerosCR,
+                                                       const Ipp32s **ppTblRunBefore)
+    {
+        return ippiDecodeCAVLCChroma422DcCoeffs_H264_1u16s(ppBitStream,
+                                                            pOffset,
+                                                            pNumCoeff,
+                                                            ppDstCoeffs,
+                                                            pTblCoeffToken,
+                                                            ppTblTotalZerosCR,
+                                                            ppTblRunBefore);
+    }
+
+    inline IppStatus DecodeCAVLCChromaDcCoeffs422_H264(Ipp32u **ppBitStream,
+                                                       Ipp32s *pOffset,
+                                                       Ipp16s *pNumCoeff,
+                                                       Ipp32s **ppDstCoeffs,
+                                                       const Ipp32s *pTblCoeffToken,
+                                                       const Ipp32s **ppTblTotalZerosCR,
+                                                       const Ipp32s **ppTblRunBefore)
+    {
+        return ippiDecodeCAVLCChroma422DcCoeffs_H264_1u32s(ppBitStream,
+                                                            pOffset,
+                                                            pNumCoeff,
+                                                            ppDstCoeffs,
+                                                            pTblCoeffToken,
+                                                            ppTblTotalZerosCR,
+                                                            ppTblRunBefore);
+    }
+
 
 class Headers;
 
@@ -271,27 +377,6 @@ public:
         if (ippStsNoErr > ippRes)
             throw h264_exception(UMC_ERR_INVALID_STREAM);
     } // void GetCAVLCInfoChroma2(Ipp16s &sNumCoeff,
-
-
-    template <typename Coeffs>
-    void GetCAVLCInfoChroma4(Ipp16s &sNumCoeff, Coeffs **ppPosCoefbuf,
-                           Ipp8u field_flag)
-    {
-        IppStatus ippRes = DecodeCAVLCCoeffs_H264(&m_pbs,
-                                                  &m_bitOffset,
-                                                  &sNumCoeff,
-                                                  ppPosCoefbuf,
-                                                  0,
-                                                  16,
-                                                  (const Ipp32s **) m_tblCoeffToken,
-                                                  (const Ipp32s **) m_tblTotalZeros,
-                                                  (const Ipp32s **) m_tblRunBefore,
-                                                  (Ipp32s*)mp_scan4x4[field_flag]);
-
-        if (ippStsNoErr > ippRes)
-            throw h264_exception(UMC_ERR_INVALID_STREAM);
-    } // void GetCAVLCInfoChroma4(Ipp16s &sNumCoeff,
-
 
     void GetOrg(Ipp32u **pbs, Ipp32u *size);
     void GetState(Ipp32u **pbs, Ipp32u *bitOffset);

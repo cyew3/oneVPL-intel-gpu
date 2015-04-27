@@ -88,20 +88,10 @@ void H264SegmentDecoderMultiThreaded::CopyMVs8x16(Ipp32s iListNum)
 
 void H264SegmentDecoderMultiThreaded::ReconstructMVs16x16(Ipp32s iListNum)
 {
-    if (m_cur_mb.GetRefIdx(iListNum, 0) == -1)
-    {
-        ResetMVs16x16(iListNum ? 0 : 1);
-        return;
-    }
-
     H264DecoderMotionVector mvPred;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] == 0)
-        ReconstructMVPredictor16x16(iListNum, &mvPred);
-    else
-        mvPred = predPtr[0];
+    ReconstructMVPredictor16x16(iListNum, &mvPred);
 
     // do the reconstruction
     {
@@ -134,20 +124,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs16x16(Ipp32s iListNum)
 void H264SegmentDecoderMultiThreaded::ReconstructMVs16x8(Ipp32s iListNum,
                                                          Ipp32s iSubBlockNum)
 {
-    if (m_cur_mb.GetRefIdx(iListNum, 2*iSubBlockNum) == -1)
-    {
-        ResetMVs16x8(iListNum ? 0 : 1, iSubBlockNum);
-        return;
-    }
-
     H264DecoderMotionVector mvPred;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> (iSubBlockNum * 8)) & 1) == 0)
-        ReconstructMVPredictor16x8(iListNum, iSubBlockNum, &mvPred);
-    else
-        mvPred = predPtr[iSubBlockNum * 8];
+    ReconstructMVPredictor16x8(iListNum, iSubBlockNum, &mvPred);
 
     // do the reconstruction
     {
@@ -182,20 +162,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs16x8(Ipp32s iListNum,
 void H264SegmentDecoderMultiThreaded::ReconstructMVs8x16(Ipp32s iListNum,
                                                          Ipp32s iSubBlockNum)
 {
-    if (m_cur_mb.GetRefIdx(iListNum, iSubBlockNum) == -1)
-    {
-        ResetMVs8x16(iListNum ? 0 : 1, iSubBlockNum);
-        return;
-    }
-
     H264DecoderMotionVector mvPred;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> (iSubBlockNum * 2)) & 1) == 0)
-        ReconstructMVPredictor8x16(iListNum, iSubBlockNum, &mvPred);
-    else
-        mvPred = predPtr[iSubBlockNum * 2];
+    ReconstructMVPredictor8x16(iListNum, iSubBlockNum, &mvPred);
 
     // do the reconstruction
     {
@@ -371,10 +341,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8External(Ipp32s iListNum)
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if ((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] & 1) == 0)
     {
         H264DecoderBlockLocation mbAddrC;
 
@@ -385,8 +353,6 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8External(Ipp32s iListNum)
         else
             ReconstructMVPredictorExternalBlockMBAFF(iListNum, mbAddrC, &mvPred);
     }
-    else
-        mvPred = predPtr[0];
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -416,18 +382,14 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Top(Ipp32s iListNum)
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> 2) & 1) == 0)
     {
         H264DecoderBlockLocation mbAddrC;
 
         mbAddrC = m_cur_mb.CurrentBlockNeighbours.mb_above_right;
         ReconstructMVPredictorTopBlock(iListNum, 2, mbAddrC, &mvPred);
     }
-    else
-        mvPred = predPtr[2];
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -457,10 +419,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Left(Ipp32s iListNum)
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> 8) & 1) == 0)
     {
         H264DecoderBlockLocation mbAddrC;
 
@@ -468,8 +428,6 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Left(Ipp32s iListNum)
         mbAddrC.block_num = 6;
         ReconstructMVPredictorLeftBlock(iListNum, 2, mbAddrC, &mvPred);
     }
-    else
-        mvPred = predPtr[8];
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -499,13 +457,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Internal(Ipp32s iListNum)
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> 10) & 1) == 0)
     ReconstructMVPredictorInternalBlock(iListNum, 10, 5, &mvPred);
-    else
-        mvPred = predPtr[10];
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -536,20 +490,14 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4External(Ipp32s iListNum)
     H264DecoderBlockLocation mbAddrC;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if ((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] & 1) == 0)
-    {
-        mbAddrC = m_cur_mb.CurrentBlockNeighbours.mb_above;
-        mbAddrC.block_num += 2;
-        if (false == m_isMBAFF)
-            ReconstructMVPredictorExternalBlock(iListNum, mbAddrC, &mvPred);
-        else
-            ReconstructMVPredictorExternalBlockMBAFF(iListNum, mbAddrC, &mvPred);
-    }
+    mbAddrC = m_cur_mb.CurrentBlockNeighbours.mb_above;
+    mbAddrC.block_num += 2;
+    if (false == m_isMBAFF)
+        ReconstructMVPredictorExternalBlock(iListNum, mbAddrC, &mvPred);
     else
-        mvPred = predPtr[0];
+        ReconstructMVPredictorExternalBlockMBAFF(iListNum, mbAddrC, &mvPred);
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -577,18 +525,14 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Top(Ipp32s iListNum)
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> 2) & 1) == 0)
     {
         H264DecoderBlockLocation mbAddrC;
 
         mbAddrC = m_cur_mb.CurrentBlockNeighbours.mb_above_right;
         ReconstructMVPredictorTopBlock(iListNum, 2, mbAddrC, &mvPred);
     }
-    else
-        mvPred = predPtr[2];
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -617,10 +561,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Left(Ipp32s iListNum,
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> (iRowNum * 4)) & 1) == 0)
     {
         H264DecoderBlockLocation mbAddrC;
 
@@ -633,8 +575,6 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Left(Ipp32s iListNum,
         }
         ReconstructMVPredictorLeftBlock(iListNum, iRowNum, mbAddrC, &mvPred);
     }
-    else
-        mvPred = predPtr[iRowNum * 4];
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -663,13 +603,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Internal(Ipp32s iListNum,
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> iBlockNum) & 1) == 0)
-        ReconstructMVPredictorInternalBlock(iListNum, iBlockNum, iBlockNum - 5, &mvPred);
-    else
-        mvPred = predPtr[iBlockNum];
+    ReconstructMVPredictorInternalBlock(iListNum, iBlockNum, iBlockNum - 5, &mvPred);
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -697,10 +633,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8External(Ipp32s iListNum)
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if ((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] & 1) == 0)
     {
         H264DecoderBlockLocation mbAddrC;
 
@@ -711,8 +645,6 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8External(Ipp32s iListNum)
         else
             ReconstructMVPredictorExternalBlockMBAFF(iListNum, mbAddrC, &mvPred);
     }
-    else
-        mvPred = predPtr[0];
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -741,10 +673,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Top(Ipp32s iListNum,
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> iColumnNum) & 1) == 0)
     {
         H264DecoderBlockLocation mbAddrC;
 
@@ -757,8 +687,6 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Top(Ipp32s iListNum,
         }
         ReconstructMVPredictorTopBlock(iListNum, iColumnNum, mbAddrC, &mvPred);
     }
-    else
-        mvPred = predPtr[iColumnNum];
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -786,13 +714,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Left(Ipp32s iListNum)
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> 8) & 1) == 0)
-        ReconstructMVPredictorLeftBlockFewCheckRef(iListNum, 2, &mvPred);
-    else
-        mvPred = predPtr[8];
+    ReconstructMVPredictorLeftBlockFewCheckRef(iListNum, 2, &mvPred);
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -822,13 +746,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Internal(Ipp32s iListNum,
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> iBlockNum) & 1) == 0)
-        ReconstructMVPredictorInternalBlock(iListNum, iBlockNum, iAddrC, &mvPred);
-    else
-        mvPred = predPtr[iBlockNum];
+    ReconstructMVPredictorInternalBlock(iListNum, iBlockNum, iAddrC, &mvPred);
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -857,20 +777,14 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4External(Ipp32s iListNum)
     H264DecoderBlockLocation mbAddrC;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if ((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] & 1) == 0)
-    {
-        mbAddrC = m_cur_mb.CurrentBlockNeighbours.mb_above;
-        mbAddrC.block_num += 1;
-        if (false == m_isMBAFF)
-            ReconstructMVPredictorExternalBlock(iListNum, mbAddrC, &mvPred);
-        else
-            ReconstructMVPredictorExternalBlockMBAFF(iListNum, mbAddrC, &mvPred);
-    }
+    mbAddrC = m_cur_mb.CurrentBlockNeighbours.mb_above;
+    mbAddrC.block_num += 1;
+    if (false == m_isMBAFF)
+        ReconstructMVPredictorExternalBlock(iListNum, mbAddrC, &mvPred);
     else
-        mvPred = predPtr[0];
+        ReconstructMVPredictorExternalBlockMBAFF(iListNum, mbAddrC, &mvPred);
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -898,10 +812,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Top(Ipp32s iListNum,
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> iColumnNum) & 1) == 0)
     {
         H264DecoderBlockLocation mbAddrC;
 
@@ -914,8 +826,6 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Top(Ipp32s iListNum,
         }
         ReconstructMVPredictorTopBlock(iListNum, iColumnNum, mbAddrC, &mvPred);
     }
-    else
-        mvPred = predPtr[iColumnNum];
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -943,13 +853,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Left(Ipp32s iListNum,
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> (iRowNum * 4)) & 1) == 0)
-        ReconstructMVPredictorLeftBlockFewCheckRef(iListNum, iRowNum, &mvPred);
-    else
-        mvPred = predPtr[iRowNum * 4];
+    ReconstructMVPredictorLeftBlockFewCheckRef(iListNum, iRowNum, &mvPred);
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -978,13 +884,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Internal(Ipp32s iListNum,
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> iBlockNum) & 1) == 0)
-        ReconstructMVPredictorInternalBlock(iListNum, iBlockNum, iAddrC, &mvPred);
-    else
-        mvPred = predPtr[iBlockNum];
+    ReconstructMVPredictorInternalBlock(iListNum, iBlockNum, iAddrC, &mvPred);
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -1013,13 +915,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalFewCheckRef(Ipp32
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> iBlockNum) & 1) == 0)
-        ReconstructMVPredictorInternalBlockFewCheckRef(iListNum, iBlockNum, iAddrC, &mvPred);
-    else
-        mvPred = predPtr[iBlockNum];
+    ReconstructMVPredictorInternalBlockFewCheckRef(iListNum, iBlockNum, iAddrC, &mvPred);
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);
@@ -1047,13 +945,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalNoCheckRef(Ipp32s
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
     H264DecoderMotionVector *pMVd = m_cur_mb.MVDelta[iListNum]->MotionVectors;
-    H264DecoderMotionVector *predPtr = m_cur_mb.MVs[iListNum]->MotionVectors;
 
     // get the prediction
-    if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[iListNum] >> iBlockNum) & 1) == 0)
-        ReconstructMVPredictorInternalBlockNoCheckRef(iListNum, iBlockNum, &mvPred);
-    else
-        mvPred = predPtr[iBlockNum];
+    ReconstructMVPredictorInternalBlockNoCheckRef(iListNum, iBlockNum, &mvPred);
 
 #ifdef __ICL
     __assume_aligned(pMV, 16);

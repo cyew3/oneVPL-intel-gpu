@@ -110,212 +110,204 @@ Ipp32s bit_mask[] =
 
 Ipp32u H264SegmentDecoder::DecodeCBP_CABAC(Ipp32u color_format)
 {
+    H264DecoderMacroblockLocalInfo *pTop, *pLeft[2];
+    H264DecoderMacroblockGlobalInfo *pGTop, *pGLeft[2];
     Ipp32u cbp = 0;
+    bool bOk = true;
 
-    for (;;) // fake for
+    // obtain pointers to neighbouring MBs
     {
-        if (m_pSliceHeader->scan_idx_end < m_pSliceHeader->scan_idx_start)
-                break;
+        Ipp32s nNum;
 
-        H264DecoderMacroblockLocalInfo *pTop, *pLeft[2];
-        H264DecoderMacroblockGlobalInfo *pGTop, *pGLeft[2];
-        bool bOk = true;
-
-        // obtain pointers to neighbouring MBs
+        nNum = m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num;
+        if (0 <= nNum)
         {
-            Ipp32s nNum;
-
-            nNum = m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num;
-            if (0 <= nNum)
-            {
-                pTop = &m_mbinfo.mbs[nNum];
-                pGTop = &m_gmbinfo->mbs[nNum];
-            }
-            else
-            {
-                pTop = 0;
-                pGTop = 0;
-                bOk = false;
-            }
-            nNum = m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num;
-            if (0 <= nNum)
-            {
-                pLeft[0] = &m_mbinfo.mbs[nNum];
-                pGLeft[0] = &m_gmbinfo->mbs[nNum];
-            }
-            else
-            {
-                pLeft[0] = 0;
-                pGLeft[0] = 0;
-                bOk = false;
-            }
-            nNum = m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num;
-            if (0 <= nNum)
-            {
-                pLeft[1] = &m_mbinfo.mbs[nNum];
-                pGLeft[1] = &m_gmbinfo->mbs[nNum];
-            }
-            else
-            {
-                pLeft[1] = 0;
-                pGLeft[1] = 0;
-                bOk = false;
-            }
+            pTop = &m_mbinfo.mbs[nNum];
+            pGTop = &m_gmbinfo->mbs[nNum];
         }
-
-        // neightbouring MBs are present
-        if ((bOk) &&
-            (MBTYPE_PCM != pGTop->mbtype) &&
-            (MBTYPE_PCM != pGLeft[0]->mbtype) &&
-            (MBTYPE_PCM != pGLeft[1]->mbtype))
+        else
         {
-            Ipp32u condTermFlagA, condTermFlagB;
-            Ipp32u ctxIdxInc;
-            Ipp32u mask;
+            pTop = 0;
+            pGTop = 0;
+            bOk = false;
+        }
+        nNum = m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num;
+        if (0 <= nNum)
+        {
+            pLeft[0] = &m_mbinfo.mbs[nNum];
+            pGLeft[0] = &m_gmbinfo->mbs[nNum];
+        }
+        else
+        {
+            pLeft[0] = 0;
+            pGLeft[0] = 0;
+            bOk = false;
+        }
+        nNum = m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num;
+        if (0 <= nNum)
+        {
+            pLeft[1] = &m_mbinfo.mbs[nNum];
+            pGLeft[1] = &m_gmbinfo->mbs[nNum];
+        }
+        else
+        {
+            pLeft[1] = 0;
+            pGLeft[1] = 0;
+            bOk = false;
+        }
+    }
 
-            // decode first luma bit
-            mask = (m_cur_mb.CurrentBlockNeighbours.mbs_left[0].block_num <= 7) ? (2) : (8);
-            condTermFlagA = (pLeft[0]->cbp & mask) ? (0) : (1);
-            condTermFlagB = (pTop->cbp & 4) ? (0) : (1);
+    // neightbouring MBs are present
+    if ((bOk) &&
+        (MBTYPE_PCM != pGTop->mbtype) &&
+        (MBTYPE_PCM != pGLeft[0]->mbtype) &&
+        (MBTYPE_PCM != pGLeft[1]->mbtype))
+    {
+        Ipp32u condTermFlagA, condTermFlagB;
+        Ipp32u ctxIdxInc;
+        Ipp32u mask;
+
+        // decode first luma bit
+        mask = (m_cur_mb.CurrentBlockNeighbours.mbs_left[0].block_num <= 7) ? (2) : (8);
+        condTermFlagA = (pLeft[0]->cbp & mask) ? (0) : (1);
+        condTermFlagB = (pTop->cbp & 4) ? (0) : (1);
+        ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
+        cbp |= m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
+                                                   ctxIdxInc);
+
+        // decode second luma bit
+        condTermFlagA = cbp ^ 1;
+        condTermFlagB = (pTop->cbp & 8) ? (0) : (1);
+        ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
+        cbp |= 2 * (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
+                                                        ctxIdxInc));
+
+        // decode third luma bit
+        mask = (m_cur_mb.CurrentBlockNeighbours.mbs_left[2].block_num <= 7) ? (2) : (8);
+        condTermFlagA = (pLeft[1]->cbp & mask) ? (0) : (1);
+        condTermFlagB = (cbp & 1) ^ 1;
+        ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
+        cbp |= 4 * (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
+                                                        ctxIdxInc));
+
+        // decode fourth luma bit
+        condTermFlagA = ((cbp & 4) >> 2) ^ 1;
+        condTermFlagB = (cbp & 2) ^ 2;
+        // condTermFlagB has been already multiplyed on 2
+        ctxIdxInc = condTermFlagA + condTermFlagB;
+        cbp |= 8 * (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
+                                                        ctxIdxInc));
+
+        // decode chroma CBP
+        if (color_format)
+        {
+            Ipp32u bin;
+
+            condTermFlagA = (pLeft[0]->cbp & 0x30) ? (1) : (0);
+            condTermFlagB = (pTop->cbp & 0x30) ? (1) : (0);
             ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
-            cbp |= m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
-                                                       ctxIdxInc);
+            bin = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_CHROMA] +
+                                                      ctxIdxInc);
 
-            // decode second luma bit
-            condTermFlagA = cbp ^ 1;
-            condTermFlagB = (pTop->cbp & 8) ? (0) : (1);
-            ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
-            cbp |= 2 * (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
-                                                            ctxIdxInc));
-
-            // decode third luma bit
-            mask = (m_cur_mb.CurrentBlockNeighbours.mbs_left[2].block_num <= 7) ? (2) : (8);
-            condTermFlagA = (pLeft[1]->cbp & mask) ? (0) : (1);
-            condTermFlagB = (cbp & 1) ^ 1;
-            ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
-            cbp |= 4 * (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
-                                                            ctxIdxInc));
-
-            // decode fourth luma bit
-            condTermFlagA = ((cbp & 4) >> 2) ^ 1;
-            condTermFlagB = (cbp & 2) ^ 2;
-            // condTermFlagB has been already multiplyed on 2
-            ctxIdxInc = condTermFlagA + condTermFlagB;
-            cbp |= 8 * (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
-                                                            ctxIdxInc));
-
-            // decode chroma CBP
-            if (color_format)
+            if (bin)
             {
-                Ipp32u bin;
-
-                condTermFlagA = (pLeft[0]->cbp & 0x30) ? (1) : (0);
-                condTermFlagB = (pTop->cbp & 0x30) ? (1) : (0);
-                ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
+                condTermFlagA = (pLeft[0]->cbp >> 5);
+                condTermFlagB = (pTop->cbp >> 5);
+                ctxIdxInc = condTermFlagA + 2 * condTermFlagB + 4;
                 bin = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_CHROMA] +
                                                           ctxIdxInc);
-
-                if (bin)
-                {
-                    condTermFlagA = (pLeft[0]->cbp >> 5);
-                    condTermFlagB = (pTop->cbp >> 5);
-                    ctxIdxInc = condTermFlagA + 2 * condTermFlagB + 4;
-                    bin = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_CHROMA] +
-                                                              ctxIdxInc);
-                    cbp |= (bin + 1) << 4;
-                }
+                cbp |= (bin + 1) << 4;
             }
         }
+    }
         
-        else // some of macroblocks may be absent or have I_PCM type
+    else // some of macroblocks may be absent or have I_PCM type
+    {
+        Ipp32u condTermFlagA, condTermFlagB;
+        Ipp32u ctxIdxInc;
+
+        // decode first luma bit
+        if (pLeft[0])
         {
-            Ipp32u condTermFlagA, condTermFlagB;
-            Ipp32u ctxIdxInc;
+            Ipp32u mask;
+            mask = (m_cur_mb.CurrentBlockNeighbours.mbs_left[0].block_num <= 7) ? (2) : (8);
+            condTermFlagA = (pLeft[0]->cbp & mask) ? (0) : (MBTYPE_PCM != pGLeft[0]->mbtype);
+        }
+        else
+            condTermFlagA = 0;
+        if (pTop)
+            condTermFlagB = (pTop->cbp & 4) ? (0) : (MBTYPE_PCM != pGTop->mbtype);
+        else
+            condTermFlagB = 0;
+        ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
+        cbp |= m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
+                                                   ctxIdxInc);
 
-            // decode first luma bit
+        // decode second luma bit
+        condTermFlagA = cbp ^ 1;
+        if (pTop)
+            condTermFlagB = (pTop->cbp & 8) ? (0) : (MBTYPE_PCM != pGTop->mbtype);
+        else
+            condTermFlagB = 0;
+        ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
+        cbp |= 2 * (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
+                                                        ctxIdxInc));
+
+        // decode third luma bit
+        if (pLeft[1])
+        {
+            Ipp32u mask;
+            mask = (m_cur_mb.CurrentBlockNeighbours.mbs_left[2].block_num <= 7) ? (2) : (8);
+            condTermFlagA = (pLeft[1]->cbp & mask) ? (0) : (MBTYPE_PCM != pGLeft[1]->mbtype);
+        }
+        else
+            condTermFlagA = 0;
+        condTermFlagB = (cbp & 1) ^ 1;
+        ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
+        cbp |= 4 * (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
+                                                        ctxIdxInc));
+
+        // decode fourth luma bit
+        condTermFlagA = ((cbp & 4) >> 2) ^ 1;
+        condTermFlagB = (cbp & 2) ^ 2;
+        // condTermFlagB has been already multiplyed on 2
+        ctxIdxInc = condTermFlagA + condTermFlagB;
+        cbp |= 8 * (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
+                                                        ctxIdxInc));
+
+        // decode chroma CBP
+        if (color_format)
+        {
+            Ipp32u bin;
+
             if (pLeft[0])
-            {
-                Ipp32u mask;
-                mask = (m_cur_mb.CurrentBlockNeighbours.mbs_left[0].block_num <= 7) ? (2) : (8);
-                condTermFlagA = (pLeft[0]->cbp & mask) ? (0) : (MBTYPE_PCM != pGLeft[0]->mbtype);
-            }
+                condTermFlagA = (pLeft[0]->cbp & 0x30) ? (1) : (MBTYPE_PCM == pGLeft[0]->mbtype);
             else
                 condTermFlagA = 0;
             if (pTop)
-                condTermFlagB = (pTop->cbp & 4) ? (0) : (MBTYPE_PCM != pGTop->mbtype);
+                condTermFlagB = (pTop->cbp & 0x30) ? (1) : (MBTYPE_PCM == pGTop->mbtype);
             else
                 condTermFlagB = 0;
             ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
-            cbp |= m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
-                                                       ctxIdxInc);
+            bin = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_CHROMA] +
+                                                      ctxIdxInc);
 
-            // decode second luma bit
-            condTermFlagA = cbp ^ 1;
-            if (pTop)
-                condTermFlagB = (pTop->cbp & 8) ? (0) : (MBTYPE_PCM != pGTop->mbtype);
-            else
-                condTermFlagB = 0;
-            ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
-            cbp |= 2 * (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
-                                                            ctxIdxInc));
-
-            // decode third luma bit
-            if (pLeft[1])
+            if (bin)
             {
-                Ipp32u mask;
-                mask = (m_cur_mb.CurrentBlockNeighbours.mbs_left[2].block_num <= 7) ? (2) : (8);
-                condTermFlagA = (pLeft[1]->cbp & mask) ? (0) : (MBTYPE_PCM != pGLeft[1]->mbtype);
-            }
-            else
-                condTermFlagA = 0;
-            condTermFlagB = (cbp & 1) ^ 1;
-            ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
-            cbp |= 4 * (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
-                                                            ctxIdxInc));
-
-            // decode fourth luma bit
-            condTermFlagA = ((cbp & 4) >> 2) ^ 1;
-            condTermFlagB = (cbp & 2) ^ 2;
-            // condTermFlagB has been already multiplyed on 2
-            ctxIdxInc = condTermFlagA + condTermFlagB;
-            cbp |= 8 * (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_LUMA] +
-                                                            ctxIdxInc));
-
-            // decode chroma CBP
-            if (color_format)
-            {
-                Ipp32u bin;
-
                 if (pLeft[0])
-                    condTermFlagA = (pLeft[0]->cbp & 0x30) ? (1) : (MBTYPE_PCM == pGLeft[0]->mbtype);
+                    condTermFlagA = (pLeft[0]->cbp & 0x20) ? (1) : (MBTYPE_PCM == pGLeft[0]->mbtype);
                 else
                     condTermFlagA = 0;
                 if (pTop)
-                    condTermFlagB = (pTop->cbp & 0x30) ? (1) : (MBTYPE_PCM == pGTop->mbtype);
+                    condTermFlagB = (pTop->cbp & 0x20) ? (1) : (MBTYPE_PCM == pGTop->mbtype);
                 else
                     condTermFlagB = 0;
-                ctxIdxInc = condTermFlagA + 2 * condTermFlagB;
+                ctxIdxInc = condTermFlagA + 2 * condTermFlagB + 4;
                 bin = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_CHROMA] +
                                                           ctxIdxInc);
-
-                if (bin)
-                {
-                    if (pLeft[0])
-                        condTermFlagA = (pLeft[0]->cbp & 0x20) ? (1) : (MBTYPE_PCM == pGLeft[0]->mbtype);
-                    else
-                        condTermFlagA = 0;
-                    if (pTop)
-                        condTermFlagB = (pTop->cbp & 0x20) ? (1) : (MBTYPE_PCM == pGTop->mbtype);
-                    else
-                        condTermFlagB = 0;
-                    ctxIdxInc = condTermFlagA + 2 * condTermFlagB + 4;
-                    bin = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[CODED_BLOCK_PATTERN_CHROMA] +
-                                                              ctxIdxInc);
-                    cbp |= (bin + 1) << 4;
-                }
+                cbp |= (bin + 1) << 4;
             }
         }
-        break;
     }
 
     if (!cbp)
@@ -345,34 +337,17 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, boo
     H264DecoderMacroblockGlobalInfo *gmbinfo=m_gmbinfo->mbs;
     Ipp32u predictors=31;//5 lsb bits set
 
-    if (m_pSliceHeader->tcoeff_level_prediction_flag == 0)
-    {
-        // above, left MB available only if they are INTRA
-        if ((m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~1);//clear 1-st bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~2); //clear 2-nd bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[1].mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[1].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~4); //clear 3-rd bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~8); //clear 4-th bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[3].mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[3].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~16); //clear 5-th bit
-    }
-    else
-    {
-        // above, left MB available only if they are INTRA
-        if ((m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~1);//clear 1-st bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~2); //clear 2-nd bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[1].mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[1].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~4); //clear 3-rd bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~8); //clear 4-th bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[3].mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[3].mb_num].mbtype) && bUseConstrainedIntra)))
-            predictors &= (~16); //clear 5-th bit
-    }
+    // above, left MB available only if they are INTRA
+    if ((m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num].mbtype) && bUseConstrainedIntra)))
+        predictors &= (~1);//clear 1-st bit
+    if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num].mbtype) && bUseConstrainedIntra)))
+        predictors &= (~2); //clear 2-nd bit
+    if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[1].mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[1].mb_num].mbtype) && bUseConstrainedIntra)))
+        predictors &= (~4); //clear 3-rd bit
+    if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num].mbtype) && bUseConstrainedIntra)))
+        predictors &= (~8); //clear 4-th bit
+    if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[3].mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[3].mb_num].mbtype) && bUseConstrainedIntra)))
+        predictors &= (~16); //clear 5-th bit
 
     // Get modes of blocks above and to the left, substituting 0
     // when above or to left is outside this MB slice. Substitute mode 2
@@ -537,11 +512,11 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC(IntraType *pMBIntraTypes, boo
     //new version
     {
         // above, left MB available only if they are INTRA
-        if ((m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num].mbtype) && bUseConstrainedIntra)))
+        if ((m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num].mbtype) && bUseConstrainedIntra)))
             predictors &= (~1);//clear 1-st bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num].mbtype) && bUseConstrainedIntra)))
+        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num].mbtype) && bUseConstrainedIntra)))
             predictors &= (~2); //clear 2-nd bit
-        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num<0) || ((!IS_INTRA_MBTYPE_NOT_BL(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num].mbtype) && bUseConstrainedIntra)))
+        if ((m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mbs_left[2].mb_num].mbtype) && bUseConstrainedIntra)))
             predictors &= (~4); //clear 4-th bit
     }
 
@@ -708,22 +683,16 @@ void H264SegmentDecoder::DecodeIntraPredChromaMode_CABAC(void)
         nNum = m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num;
         if (0 <= nNum)
         {
-            if (IS_INTRA_MBTYPE(m_gmbinfo->mbs[nNum].mbtype) && m_mbinfo.mbs[nNum].IntraTypes.intra_chroma_mode_dec) {
+            if (IS_INTRA_MBTYPE(m_gmbinfo->mbs[nNum].mbtype) && m_mbinfo.mbs[nNum].IntraTypes.intra_chroma_mode)
                 condTermFlagA = 1;
-                if (m_pSliceHeader->tcoeff_level_prediction_flag && m_gmbinfo->mbs[nNum].mbtype == MBTYPE_INTRA_BL)
-                    condTermFlagA = 0;
-            }
         }
 
         // get above macroblock condition
         nNum = m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num;
         if (0 <= nNum)
         {
-            if (IS_INTRA_MBTYPE(m_gmbinfo->mbs[nNum].mbtype) && m_mbinfo.mbs[nNum].IntraTypes.intra_chroma_mode_dec) {
+            if (IS_INTRA_MBTYPE(m_gmbinfo->mbs[nNum].mbtype) && m_mbinfo.mbs[nNum].IntraTypes.intra_chroma_mode)
                 condTermFlagB = 1;
-                if (m_pSliceHeader->tcoeff_level_prediction_flag && m_gmbinfo->mbs[nNum].mbtype == MBTYPE_INTRA_BL)
-                    condTermFlagB = 0;
-            }
         }
 
         ctxIdxInc = condTermFlagA + condTermFlagB;
@@ -750,7 +719,7 @@ void H264SegmentDecoder::DecodeIntraPredChromaMode_CABAC(void)
             nVal += 1;
         }
 
-        m_cur_mb.LocalMacroblockInfo->IntraTypes.intra_chroma_mode_dec = (Ipp8u) nVal;
+        m_cur_mb.LocalMacroblockInfo->IntraTypes.intra_chroma_mode = (Ipp8u) nVal;
     }
 
 } // void H264SegmentDecoder::DecodeIntraPredChromaMode_CABAC(void)
@@ -932,7 +901,7 @@ void H264SegmentDecoder::DecodeMBTypeISlice_CABAC(void)
     mbAddr = m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num;
     if (0 <= mbAddr)
     {
-        if (MBTYPE_INTRA != m_gmbinfo->mbs[mbAddr].mbtype || GetMBBaseModeFlag(m_gmbinfo->mbs[mbAddr]))
+        if (MBTYPE_INTRA != m_gmbinfo->mbs[mbAddr].mbtype)
             condTermFlagA = 1;
     }
 
@@ -940,7 +909,7 @@ void H264SegmentDecoder::DecodeMBTypeISlice_CABAC(void)
     mbAddr = m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num;
     if (0 <= mbAddr)
     {
-        if (MBTYPE_INTRA != m_gmbinfo->mbs[mbAddr].mbtype || GetMBBaseModeFlag(m_gmbinfo->mbs[mbAddr]))
+        if (MBTYPE_INTRA != m_gmbinfo->mbs[mbAddr].mbtype)
             condTermFlagB = 1;
     }
 
@@ -1180,11 +1149,6 @@ void H264SegmentDecoder::DecodeMBTypeBSlice_CABAC(void)
 {
     Ipp32s ctxIdxInc;
 
-    m_cur_mb.LocalMacroblockInfo->sbdir[0] =
-    m_cur_mb.LocalMacroblockInfo->sbdir[1] =
-    m_cur_mb.LocalMacroblockInfo->sbdir[2] =
-    m_cur_mb.LocalMacroblockInfo->sbdir[3] = 0;
-
     // calculate context index increment
     {
         Ipp32s condTermFlagA = 0, condTermFlagB = 0;
@@ -1407,54 +1371,6 @@ void H264SegmentDecoder::DecodeMBTypeBSlice_CABAC(void)
     }
 
 } // void H264SegmentDecoder::DecodeMBTypeBSlice_CABAC(void)
-
-void H264SegmentDecoder::DecodeMBBaseModeFlag_CABAC(void)
-{
-    Ipp32s condTermFlagA = 1, condTermFlagB = 1;
-    Ipp32s mbAddr;
-    Ipp32s ctxIdxInc;
-
-    // get left macroblock layer skipped flag
-    mbAddr = m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num;
-    if (0 <= mbAddr)
-    {
-        if (1 == m_gmbinfo->mbs[mbAddr].mbflags.isBaseMode)
-            condTermFlagA = 0;
-    }
-
-    // get above macroblock layer skipped flag
-    mbAddr = m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num;
-    if (0 <= mbAddr)
-    {
-        if (1 == m_gmbinfo->mbs[mbAddr].mbflags.isBaseMode)
-            condTermFlagB = 0;
-    }
-
-    ctxIdxInc = condTermFlagA + condTermFlagB;
-
-    m_cur_mb.GlobalMacroblockInfo->mbflags.isBaseMode =
-        m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[BASE_MODE_FLAG] + ctxIdxInc);
-}
-
-void H264SegmentDecoder::DecodeMBResidualPredictionFlag_CABAC(void)
-{
-    Ipp32s ctxIdxInc;
-
-    ctxIdxInc = 1;
-    if (m_cur_mb.GlobalMacroblockInfo->mbflags.isBaseMode)
-        ctxIdxInc = 0;
-
-    m_cur_mb.GlobalMacroblockInfo->mbflags.residualPrediction =
-        m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[RESIDUAL_PREDICTION_FLAG] + ctxIdxInc);
-}
-
-
-Ipp8u H264SegmentDecoder::DecodeMBMotionPredictionFlag_CABAC(Ipp32s dir)
-{
-    Ipp32s mode = dir ? MOTION_PREDICTION_FLAG_L1 : MOTION_PREDICTION_FLAG_L0;
-
-    return (Ipp8u)m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[mode]);
-}
 
 } // namespace UMC
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

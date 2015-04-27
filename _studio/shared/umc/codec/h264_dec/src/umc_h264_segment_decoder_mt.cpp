@@ -65,17 +65,7 @@ void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
 
     m_pSliceHeader = m_pSlice->GetSliceHeader();
 
-    Ipp32s dId = m_pSliceHeader->nal_ext.svc.dependency_id;
-    m_pCurrentFrame->m_pLayerFrames[dId]->m_iResourceNumber = m_pCurrentFrame->m_iResourceNumber;
-    m_pCurrentFrame = m_pCurrentFrame->m_pLayerFrames[dId];
-
     m_field_index = m_pSliceHeader->bottom_field_flag;
-
-    //if (m_pSlice->m_bIsFirstSliceInDepLayer)
-    {
-        m_currentLayer = m_pSliceHeader->nal_ext.svc.dependency_id;
-        m_is_ref_base_pic = false;
-    }
 
     // reset decoding variables
     m_pBitStream = m_pSlice->GetBitStream();
@@ -110,7 +100,6 @@ void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
     }
 
     m_isSliceGroups = m_pSlice->IsSliceGroups();
-    is_profile_baseline_scalable = (m_pSlice->m_pSeqParamSet->profile_idc == H264VideoDecoderParams::H264_PROFILE_SCALABLE_BASELINE);
 
     if (Task.m_iTaskID == TASK_DEB_FRAME)
     {
@@ -124,9 +113,6 @@ void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
     m_uPitchLuma = pCurrentFrame->pitch_luma();
     m_uPitchChroma = pCurrentFrame->pitch_chroma();
 
-    m_uPitchLumaCur = m_pCurrentFrame->lumaSize().width;
-    m_uPitchChromaCur = m_pCurrentFrame->chromaSize().width;
-
     m_pYPlane = pCurrentFrame->m_pYPlane;
     m_pUPlane = pCurrentFrame->m_pUPlane;
     m_pVPlane = pCurrentFrame->m_pVPlane;
@@ -134,7 +120,7 @@ void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
 
     m_cur_mb.isInited = false;
 
-    if (m_pCurrentFrame->GetColorFormat() == NV12)
+    if (!m_pUPlane || !m_pVPlane)
     {
         m_pUPlane = pCurrentFrame->m_pUVPlane;
         m_pVPlane = pCurrentFrame->m_pUVPlane;
@@ -155,14 +141,7 @@ void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
 
         m_uPitchLuma *= 2;
         m_uPitchChroma *= 2;
-        m_uPitchLumaCur *= 2;
-        m_uPitchChromaCur *= 2;
     }
-
-    deblocking_IL = 0;
-    deblocking_stage2 = 0;
-    m_spatial_resolution_change = 0;
-    m_use_coeff_prediction = 0;
 
     if (!m_pSlice) // TASK_DEB_FRAME
         return;
@@ -188,19 +167,8 @@ void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
     m_IsUseDirect8x8Inference = (m_pSeqParamSet->direct_8x8_inference_flag != 0);
     m_IsBSlice = (m_pSliceHeader->slice_type == BPREDSLICE);
 
-    if (m_mbinfo.layerMbs) {
-        m_pYResidual = m_mbinfo.layerMbs[m_currentLayer].m_pYResidual;
-        m_pUResidual = m_mbinfo.layerMbs[m_currentLayer].m_pUResidual;
-        m_pVResidual = m_mbinfo.layerMbs[m_currentLayer].m_pVResidual;
-    } else {
-        m_pYResidual = m_pUResidual = m_pVResidual = NULL;
-    }
-
     // reset neighbouringing blocks numbers
     m_cur_mb.CurrentBlockNeighbours.m_bInited = 0;
-
-    if (TASK_DEB_SLICE == Task.m_iTaskID && m_pSlice)
-        CalculateResizeParametersSlice();
 }
 
 void H264SegmentDecoderMultiThreaded::EndProcessingSegment(H264Task &Task)
@@ -359,7 +327,6 @@ Status H264SegmentDecoderMultiThreaded::DecodeSegment(Ipp32s iCurMBNumber, Ipp32
     Ipp32s iMaxMBNumber = iCurMBNumber + iMBToProcess;
     Ipp32s iMBRowSize = m_pSlice->GetMBRowWidth();
     Ipp32s iFirstMB = iCurMBNumber;
-    ProcessLayerPreSlice();
     START_TICK
 
     // this is a cicle for rows of MBs
@@ -420,7 +387,6 @@ Status H264SegmentDecoderMultiThreaded::ReconstructSegment(Ipp32s iCurMBNumber, 
     Ipp32s iMaxMBNumber = iCurMBNumber + iMBToProcess;
     Ipp32s iMBRowSize = m_pSlice->GetMBRowWidth();
     Ipp32s iFirstMB = iCurMBNumber;
-    ProcessLayerPreSlice();
     START_TICK
 
     // this is a cicle for rows of MBs
@@ -475,8 +441,6 @@ Status H264SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, Ipp32
     Status umcRes = UMC_OK;
     Ipp32s iBorder = iCurMBNumber + iMBToProcess;
 
-    ProcessLayerPreSlice();
-
     m_psBuffer = align_pointer<UMC::CoeffsPtrCommon> (m_pCoefficientsBuffer, DEFAULT_ALIGN_VALUE);
 
     try
@@ -514,7 +478,7 @@ Status H264SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNumber, 
     }
 
     Ipp32s iMaxMBNumber = iCurMBNumber + iMBToProcess;
-    Ipp32s iMBRowSize = deblocking_IL ? mb_width : m_pSlice->GetMBRowWidth();
+    Ipp32s iMBRowSize = m_pSlice->GetMBRowWidth();
     Ipp32s iFirstMB = iCurMBNumber;
 
     // this is a cicle for rows of MBs
@@ -557,144 +521,16 @@ Status H264SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNumber, 
 
 } // Status H264SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToDeblock)
 
-static const int block8x8_mask[4] = {
-    (1 << 0) | (1 << 1) | (1 << 4) | (1 << 5),
-    (1 << 2) | (1 << 3) | (1 << 6) | (1 << 7),
-    (1 << 8) | (1 << 9) | (1 << 12) | (1 << 13),
-    (1 << 10) | (1 << 11) | (1 << 14) | (1 << 15),
-};
-
 void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CABAC(void)
 {
     Ipp32s curmb_fdf = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
     // initialize blocks coding pattern maps
 
     Ipp32s type = m_cur_mb.GlobalMacroblockInfo->mbtype - MBTYPE_FORWARD;
-
-    Ipp32s dir, dir_num;
-
-    m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[0] = 0;
-    m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[1] = 0;
-
-    dir_num = m_pSliceHeader->slice_type == BPREDSLICE ? 2 : 1;
-
-    memset(motion_pred_flag[0], 0, 4);
-    memset(motion_pred_flag[1], 0, 4);
-
-    Ipp32s is_motion_pred_flag_exist = 0;
-
-    if (m_pSliceHeader->nal_ext.svc.no_inter_layer_pred_flag == 0 && inCropWindow(this->m_cur_mb))
-    {
-        memset(motion_pred_flag[0], m_pSliceHeader->default_motion_prediction_flag, 4);
-        memset(motion_pred_flag[1], m_pSliceHeader->default_motion_prediction_flag, 4);
-
-        if (m_pSliceHeader->adaptive_motion_prediction_flag)
-        {
-            is_motion_pred_flag_exist = 1;
-            memset(motion_pred_flag[0], 0, 4);
-            memset(motion_pred_flag[1], 0, 4);
-        }
-    }
-
-    for (dir = 0; dir < dir_num; dir++)
-    switch (m_cur_mb.GlobalMacroblockInfo->mbtype) {
-        case MBTYPE_BIDIR:
-            if (is_motion_pred_flag_exist)
-            {
-                motion_pred_flag[dir][0] = this->DecodeMBMotionPredictionFlag_CABAC(dir);
-            }
-            if (motion_pred_flag[dir][0])
-                m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[dir] = 0xffff;//1;
-            break;
-        case MBTYPE_BACKWARD:
-            if (is_motion_pred_flag_exist && dir == 1)
-            {
-                motion_pred_flag[dir][0] = this->DecodeMBMotionPredictionFlag_CABAC(dir);
-            }
-            if (motion_pred_flag[dir][0])
-                m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[dir] = 0xffff;//1;
-            break;
-        case MBTYPE_FORWARD:
-            if (is_motion_pred_flag_exist && dir == 0)
-            {
-                motion_pred_flag[dir][0] = this->DecodeMBMotionPredictionFlag_CABAC(dir);
-            }
-            if (motion_pred_flag[dir][0])
-                m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[dir] = 0xffff;//1;
-            break;
-        case MBTYPE_INTER_16x8:
-            {
-                if (m_cur_mb.LocalMacroblockInfo->sbdir[0] == dir ||
-                    m_cur_mb.LocalMacroblockInfo->sbdir[0] == D_DIR_BIDIR) {
-                    if (is_motion_pred_flag_exist)
-                        motion_pred_flag[dir][0] = this->DecodeMBMotionPredictionFlag_CABAC(dir);
-                    if (motion_pred_flag[dir][0])
-                        m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[dir] |=
-                            block8x8_mask[0] | block8x8_mask[1];
-                        //1;
-                }
-                if (m_cur_mb.LocalMacroblockInfo->sbdir[1] == dir ||
-                    m_cur_mb.LocalMacroblockInfo->sbdir[1] == D_DIR_BIDIR) {
-                    if (is_motion_pred_flag_exist)
-                        motion_pred_flag[dir][1] = this->DecodeMBMotionPredictionFlag_CABAC(dir);
-                    if (motion_pred_flag[dir][1])
-                        m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[dir] |=
-                            block8x8_mask[2] | block8x8_mask[3];
-                        //(1 << 8);
-                }
-            }
-            break;
-        case MBTYPE_INTER_8x16:
-            {
-                if (m_cur_mb.LocalMacroblockInfo->sbdir[0] == dir ||
-                    m_cur_mb.LocalMacroblockInfo->sbdir[0] == D_DIR_BIDIR) {
-                    if (is_motion_pred_flag_exist)
-                        motion_pred_flag[dir][0] = this->DecodeMBMotionPredictionFlag_CABAC(dir);
-                    if (motion_pred_flag[dir][0])
-                        m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[dir] |=
-                            block8x8_mask[0] | block8x8_mask[2];
-                        //1;
-                }
-                if (m_cur_mb.LocalMacroblockInfo->sbdir[1] == dir ||
-                    m_cur_mb.LocalMacroblockInfo->sbdir[1] == D_DIR_BIDIR) {
-                    if (is_motion_pred_flag_exist)
-                        motion_pred_flag[dir][1] = this->DecodeMBMotionPredictionFlag_CABAC(dir);
-                    if (motion_pred_flag[dir][1])
-                        m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[dir] |=
-                            block8x8_mask[1] | block8x8_mask[3];
-                            //(1 << 2);
-                }
-            }
-            break;
-        case MBTYPE_INTER_8x8:
-        case MBTYPE_INTER_8x8_REF0:
-            {
-                int j;
-                for (j = 0; j < 4; j ++) {
-                    if (m_cur_mb.LocalMacroblockInfo->sbdir[j] == dir ||
-                        m_cur_mb.LocalMacroblockInfo->sbdir[j] == D_DIR_BIDIR) {
-                        if (is_motion_pred_flag_exist)
-                            motion_pred_flag[dir][j] = this->DecodeMBMotionPredictionFlag_CABAC(dir);
-                        if (motion_pred_flag[dir][j]) {
-                            m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[dir] |= 1 << (subblock_block_mapping[j]);
-                            m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[dir] |= 1 << (subblock_block_mapping[j]+1);
-                            m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[dir] |= 1 << (subblock_block_mapping[j]+4);
-                            m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[dir] |= 1 << (subblock_block_mapping[j]+5);
-                        }
-                    }
-                }
-            }
-            break;
-        default:
-            return;
-    }
-
     if(type >= 0)
     {
         if (m_cur_mb.LocalMacroblockInfo->sbdir[0] > D_DIR_BIDIR) // direct or skip MB
         {
-            memset(m_cur_mb.MVDelta[LIST_0], 0, sizeof(H264DecoderMacroblockMVs));
-            memset(m_cur_mb.MVDelta[LIST_1], 0, sizeof(H264DecoderMacroblockMVs));
             return;
         }
 
@@ -803,16 +639,9 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CABAC(void)
                 break;
             case MBTYPE_INTER_8x8:
             case MBTYPE_INTER_8x8_REF0:
-                Ipp8u pCodRIxL0[16];
-                Ipp8u pCodRIxL1[16];
-                const Ipp8u *pRIxL0, *pRIxL1;
-                pRIxL0 = pCodRIxL0;
-                pRIxL1 = pCodRIxL1;
-
-                MFX_INTERNAL_CPY(pCodRIxL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
-                MFX_INTERNAL_CPY(pCodRIxL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
-                MFX_INTERNAL_CPY(pCodMVdL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
-                MFX_INTERNAL_CPY(pCodMVdL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                memcpy(pCodMVdL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                memcpy(pCodMVdL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                {
                 for (Ipp32s i = 0; i < 4; i ++)
                 {
                     Ipp32s j = subblock_block_mapping[i];
@@ -821,8 +650,6 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CABAC(void)
                     {
                         cL0 = (m_cur_mb.LocalMacroblockInfo->sbdir[i] == D_DIR_DIRECT_SPATIAL_BWD) ? CodNone : CodSkip;
                         cL1 = (m_cur_mb.LocalMacroblockInfo->sbdir[i] == D_DIR_DIRECT_SPATIAL_FWD) ? CodNone : CodSkip;
-                        pCodRIxL0[j] = pCodRIxL0[j + 1] = pCodRIxL0[j + 4] = pCodRIxL0[j + 5] = cL0;
-                        pCodRIxL1[j] = pCodRIxL1[j + 1] = pCodRIxL1[j + 4] = pCodRIxL1[j + 5] = cL1;
                         pCodMVdL0[j] = pCodMVdL0[j + 1] = pCodMVdL0[j + 4] = pCodMVdL0[j + 5] = cL0;
                         pCodMVdL1[j] = pCodMVdL1[j + 1] = pCodMVdL1[j + 4] = pCodMVdL1[j + 5] = cL1;
                         continue;
@@ -833,92 +660,38 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CABAC(void)
                     case SBTYPE_8x8:
                         cL0 = (m_cur_mb.LocalMacroblockInfo->sbdir[i] == D_DIR_BWD) ? CodNone : CodInBS;
                         cL1 = (m_cur_mb.LocalMacroblockInfo->sbdir[i] == D_DIR_FWD) ? CodNone : CodInBS;
-
-                        if (motion_pred_flag[0][i] && cL0 == CodInBS)
-                            pCodRIxL0[j] = CodSkip;
-                        else
-                            pCodRIxL0[j] = cL0;
-
-                        if (motion_pred_flag[1][i] && cL1 == CodInBS)
-                            pCodRIxL1[j] = CodSkip;
-                        else
-                            pCodRIxL1[j] = cL1;
-
                         pCodMVdL0[j] = cL0;
                         pCodMVdL1[j] = cL1;
-                        pCodRIxL0[j + 4] = CodAbov;
-                        pCodRIxL1[j + 4] = CodAbov;
                         pCodMVdL0[j + 4] = CodAbov;
                         pCodMVdL1[j + 4] = CodAbov;
                         break;
                     case SBTYPE_8x4:
                         cL0 = (m_cur_mb.LocalMacroblockInfo->sbdir[i] == D_DIR_BWD) ? CodNone : CodInBS;
                         cL1 = (m_cur_mb.LocalMacroblockInfo->sbdir[i] == D_DIR_FWD) ? CodNone : CodInBS;
-
-                        if (motion_pred_flag[0][i] && cL0 == CodInBS)
-                            pCodRIxL0[j] = CodSkip;
-                        else
-                            pCodRIxL0[j] = cL0;
-
-                        if (motion_pred_flag[1][i] && cL1 == CodInBS)
-                            pCodRIxL1[j] = CodSkip;
-                        else
-                            pCodRIxL1[j] = cL1;
-
                         pCodMVdL0[j] = cL0;
                         pCodMVdL1[j] = cL1;
-                        pCodRIxL0[j + 4] = CodAbov;
-                        pCodRIxL1[j + 4] = CodAbov;
                         pCodMVdL0[j + 4] = cL0;
                         pCodMVdL1[j + 4] = cL1;
                         break;
                     case SBTYPE_4x8:
                         cL0 = (m_cur_mb.LocalMacroblockInfo->sbdir[i] == D_DIR_BWD) ? CodNone : CodInBS;
                         cL1 = (m_cur_mb.LocalMacroblockInfo->sbdir[i] == D_DIR_FWD) ? CodNone : CodInBS;
-
-                        if (motion_pred_flag[0][i] && cL0 == CodInBS)
-                            pCodRIxL0[j] = CodSkip;
-                        else
-                            pCodRIxL0[j] = cL0;
-
-                        if (motion_pred_flag[1][i] && cL1 == CodInBS)
-                            pCodRIxL1[j] = CodSkip;
-                        else
-                            pCodRIxL1[j] = cL1;
-
                         pCodMVdL0[j] = cL0;
                         pCodMVdL1[j] = cL1;
                         pCodMVdL0[j + 1] = cL0;
                         pCodMVdL1[j + 1] = cL1;
-                        pCodRIxL0[j + 4] = CodAbov;
-                        pCodRIxL1[j + 4] = CodAbov;
                         pCodMVdL0[j + 4] = pCodMVdL0[j + 5] = CodAbov;
                         pCodMVdL1[j + 4] = pCodMVdL1[j + 5] = CodAbov;
                         break;
                     case SBTYPE_4x4:
                         cL0 = (m_cur_mb.LocalMacroblockInfo->sbdir[i] == D_DIR_BWD) ? CodNone : CodInBS;
                         cL1 = (m_cur_mb.LocalMacroblockInfo->sbdir[i] == D_DIR_FWD) ? CodNone : CodInBS;
-
-                        if (motion_pred_flag[0][i] && cL0 == CodInBS)
-                            pCodRIxL0[j] = CodSkip;
-                        else
-                            pCodRIxL0[j] = cL0;
-
-                        if (motion_pred_flag[1][i] && cL1 == CodInBS)
-                            pCodRIxL1[j] = CodSkip;
-                        else
-                            pCodRIxL1[j] = cL1;
-
-                        pCodRIxL0[j + 4] = CodAbov;
-                        pCodRIxL1[j + 4] = CodAbov;
                         pCodMVdL0[j] = pCodMVdL0[j + 1] = pCodMVdL0[j + 4] = pCodMVdL0[j + 5] = cL0;
                         pCodMVdL1[j] = pCodMVdL1[j + 1] = pCodMVdL1[j + 4] = pCodMVdL1[j + 5] = cL1;
                         break;
                     case SBTYPE_DIRECT:
                         cL0 = (m_cur_mb.LocalMacroblockInfo->sbdir[i] == D_DIR_DIRECT_SPATIAL_BWD) ? CodNone : CodSkip;
                         cL1 = (m_cur_mb.LocalMacroblockInfo->sbdir[i] == D_DIR_DIRECT_SPATIAL_FWD) ? CodNone : CodSkip;
-                        pCodRIxL0[j] = pCodRIxL0[j + 1] = pCodRIxL0[j + 4] = pCodRIxL0[j + 5] = cL0;
-                        pCodRIxL1[j] = pCodRIxL1[j + 1] = pCodRIxL1[j + 4] = pCodRIxL1[j + 5] = cL1;
                         pCodMVdL0[j] = pCodMVdL0[j + 1] = pCodMVdL0[j + 4] = pCodMVdL0[j + 5] = cL0;
                         pCodMVdL1[j] = pCodMVdL1[j + 1] = pCodMVdL1[j + 4] = pCodMVdL1[j + 5] = cL1;
                         break;
@@ -930,7 +703,7 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CABAC(void)
                 GetRefIdx4x4_CABAC(
                             m_pSliceHeader->num_ref_idx_l0_active<<curmb_fdf,
                             BlkOrder,
-                            pRIxL0,
+                            pMVdL0,
                             0);
 
                 // get all ref_idx_L1
@@ -938,7 +711,7 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CABAC(void)
                 GetRefIdx4x4_CABAC(
                             m_pSliceHeader->num_ref_idx_l1_active<<curmb_fdf,
                             BlkOrder,
-                            pRIxL1,
+                            pMVdL1,
                             1);
 
                 // get all mvd_L0
@@ -953,66 +726,15 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CABAC(void)
                             BlkOrder,
                             pMVdL1,
                             1);
-
-                if (m_pSliceHeader->nal_unit_type == NAL_UT_CODED_SLICE_EXTENSION && m_pSliceHeader->nal_ext.svc_extension_flag)
-                {
-                    Ipp32s i, j;
-                    for (i = 0; i < 4; i ++)
-                    {
-                        RefIndexType RefIndexL0, RefIndexL1;
-                        Ipp32s uPredDir;
-                        if (m_cur_mb.LocalMacroblockInfo->sbdir[i] <= D_DIR_BIDIR)
-                            continue;
-                        j = subblock_block_mapping[i];
-                        ComputeDirectSpatialRefIdx8x8(&RefIndexL0, &RefIndexL1, i);
-
-                        if ((RefIndexL0 < 0) && (RefIndexL1 < 0))
-                            RefIndexL0 = RefIndexL1 = 0;
-
-                        if ((0 <= RefIndexL0) && (0 > RefIndexL1))
-                            uPredDir = D_DIR_DIRECT_SPATIAL_FWD;
-                        else if ((0 > RefIndexL0) && (0 <= RefIndexL1))
-                            uPredDir = D_DIR_DIRECT_SPATIAL_BWD;
-                        else
-                            uPredDir = D_DIR_DIRECT_SPATIAL_BIDIR;
-
-                        m_cur_mb.RefIdxs[0]->refIndexs[i] = (RefIndexType)RefIndexL0;
-                        m_cur_mb.RefIdxs[1]->refIndexs[i] = (RefIndexType)RefIndexL1;
-
-                        m_cur_mb.LocalMacroblockInfo->sbdir[i]=(Ipp8s)uPredDir;
-                        m_cur_mb.GlobalMacroblockInfo->sbtype[i]=SBTYPE_8x8;
-                    }   // for sb
-                }
-
                 break;
+                }
             default:
                 throw h264_exception(UMC_ERR_INVALID_STREAM);
         }    // switch
 
     }
-    Ipp32s sbdir_store[4];
-    if (m_pSliceHeader->nal_unit_type == NAL_UT_CODED_SLICE_EXTENSION && m_pSliceHeader->nal_ext.svc_extension_flag)
-    {
-        for (Ipp32s block = 0; block < 4; block++)
-        {
-            sbdir_store[block] = m_cur_mb.LocalMacroblockInfo->sbdir[block];
-            if      (m_cur_mb.LocalMacroblockInfo->sbdir[block] == D_DIR_DIRECT_SPATIAL_FWD)
-                m_cur_mb.LocalMacroblockInfo->sbdir[block] = D_DIR_FWD;
-            else if (m_cur_mb.LocalMacroblockInfo->sbdir[block] == D_DIR_DIRECT_SPATIAL_BWD)
-                m_cur_mb.LocalMacroblockInfo->sbdir[block] = D_DIR_BWD;
-            else if (m_cur_mb.LocalMacroblockInfo->sbdir[block] == D_DIR_DIRECT_SPATIAL_BIDIR)
-                m_cur_mb.LocalMacroblockInfo->sbdir[block] = D_DIR_BIDIR;
-        }
-    }
 
     ReconstructMotionVectors();
-    if (m_pSliceHeader->nal_unit_type == NAL_UT_CODED_SLICE_EXTENSION && m_pSliceHeader->nal_ext.svc_extension_flag)
-    {
-        for (Ipp32s block = 0; block < 4; block++)
-        {
-            m_cur_mb.LocalMacroblockInfo->sbdir[block] = (Ipp8s)sbdir_store[block];
-        }
-    }
 
 } // void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CABAC(void)
 
@@ -1020,37 +742,16 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CABAC(void)
     switch (pSBDir[sub_block_num]) \
     { \
     case D_DIR_FWD: \
-        if (m_cur_mb.GetRefIdx(0, sub_block_num) == -1)\
-        {\
-            ResetMVs8x8(0, vector_offset);\
-        }\
-        else\
-            ReconstructMVs##position(0); \
+        ReconstructMVs##position(0); \
         ResetMVs8x8(1, vector_offset); \
         break; \
     case D_DIR_BIDIR: \
-        if (m_cur_mb.GetRefIdx(0, sub_block_num) == -1)\
-        {\
-            ResetMVs8x8(0, vector_offset);\
-        }\
-        else\
-            ReconstructMVs##position(0); \
-        \
-        if (m_cur_mb.GetRefIdx(1, sub_block_num) == -1)\
-        {\
-            ResetMVs8x8(1, vector_offset);\
-        }\
-        else\
-            ReconstructMVs##position(1); \
+        ReconstructMVs##position(0); \
+        ReconstructMVs##position(1); \
         break; \
     case D_DIR_BWD: \
         ResetMVs8x8(0, vector_offset); \
-        if (m_cur_mb.GetRefIdx(1, sub_block_num) == -1)\
-        {\
-            ResetMVs8x8(1, vector_offset);\
-        }\
-        else\
-            ReconstructMVs##position(1); \
+        ReconstructMVs##position(1); \
         break; \
     case D_DIR_DIRECT_SPATIAL_FWD: \
         ResetMVs8x8(1, vector_offset); \
@@ -1833,17 +1534,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMotionVectors4x4(const Ipp8u *p
 
         case CodInBS:
             // TBD optimization - modify to compute predictors here instead of calling this method
-            if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[ListNum] >> j) & 1) == 0)
-            {
-                ComputeMotionVectorPredictors((Ipp8u) ListNum,
-                                              m_cur_mb.GetReferenceIndex(ListNum, j),
-                                              m++,
-                                              &mv);
-            } else {
-                mv.mvx = pMV[j].mvx;
-                mv.mvy = pMV[j].mvy;
-                m++;
-            }
+            ComputeMotionVectorPredictors((Ipp8u) ListNum,
+                                          m_cur_mb.GetReferenceIndex(ListNum, j),
+                                          m++,
+                                          &mv);
             mvd = pMVd[j];
             // new & old
             mv.mvx = (Ipp16s) (mv.mvx + (Ipp32s) mvd.mvx);
@@ -1911,16 +1605,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMotionVectors4x4(const Ipp8u pC
     else
     {
         H264DecoderMotionVector mv;
-        H264DecoderMotionVector *predPtr = m_cur_mb.MVs[ListNum]->MotionVectors;
 
-        if (m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[ListNum] == 0)
-            ComputeMotionVectorPredictors( (Ipp8u) ListNum,
-                                            pRIx[0],
-                                            0, &mv);
-        else {
-            mv.mvx = predPtr->mvx;
-            mv.mvy = predPtr->mvy;
-        }
+        ComputeMotionVectorPredictors( (Ipp8u) ListNum,
+                                        pRIx[0],
+                                        0, &mv);
 
         H264DecoderMotionVector mvd = pMVd[0];
         mv.mvx = (Ipp16s) (mv.mvx + (Ipp32s) mvd.mvx);
@@ -1991,16 +1679,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMotionVectors16x8(const Ipp8u *
     else
     {
         H264DecoderMotionVector mv;
-        H264DecoderMotionVector *predPtr = m_cur_mb.MVs[ListNum]->MotionVectors;
 
-        if ((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[ListNum] & 1) == 0) {
-            ComputeMotionVectorPredictors( (Ipp8u) ListNum,
-                                            pRIx[0],
-                                            0, &mv);
-        } else {
-            mv.mvx = predPtr[0].mvx;
-            mv.mvy = predPtr[0].mvy;
-        }
+        ComputeMotionVectorPredictors( (Ipp8u) ListNum,
+                                        pRIx[0],
+                                        0, &mv);
 
         H264DecoderMotionVector mvd = pMVd[0];
         mv.mvx  = (Ipp16s) (mv.mvx + (Ipp32s) mvd.mvx);
@@ -2021,16 +1703,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMotionVectors16x8(const Ipp8u *
     }
     else
     {
-        H264DecoderMotionVector *predPtr = m_cur_mb.MVs[ListNum]->MotionVectors;
         H264DecoderMotionVector mv;
-        if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[ListNum] >> 8) & 1) == 0) {
-            ComputeMotionVectorPredictors( (Ipp8u) ListNum,
-                                            pRIx[2],
-                                            1, &mv);
-        } else {
-            mv.mvx = predPtr[8].mvx;
-            mv.mvy = predPtr[8].mvy;
-        }
+        ComputeMotionVectorPredictors( (Ipp8u) ListNum,
+                                        pRIx[2],
+                                        1, &mv);
 
         H264DecoderMotionVector mvd = pMVd[8];
         mv.mvx  = (Ipp16s) (mv.mvx + (Ipp32s) mvd.mvx);
@@ -2106,16 +1782,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMotionVectors8x16(const Ipp8u *
     else
     {
         H264DecoderMotionVector mv;
-        H264DecoderMotionVector *predPtr = m_cur_mb.MVs[ListNum]->MotionVectors;
 
-        if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[ListNum] >> 0) & 1) == 0) {
-            ComputeMotionVectorPredictors( (Ipp8u) ListNum,
-                                            pRIx[0],
-                                            0, &mv);
-        } else {
-            mv.mvx = predPtr[0].mvx;
-            mv.mvy = predPtr[0].mvy;
-        }
+        ComputeMotionVectorPredictors( (Ipp8u) ListNum,
+                                        pRIx[0],
+                                        0, &mv);
 
         H264DecoderMotionVector mvd = pMVd[0];
         mv.mvx  = (Ipp16s) (mv.mvx + (Ipp32s) mvd.mvx);
@@ -2137,17 +1807,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMotionVectors8x16(const Ipp8u *
     else
     {
         H264DecoderMotionVector mv;
-        H264DecoderMotionVector *predPtr = m_cur_mb.MVs[ListNum]->MotionVectors;
 
-        // get the prediction
-        if (((m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[ListNum] >> 2) & 1) == 0) {
-            ComputeMotionVectorPredictors( (Ipp8u) ListNum,
-                                            pRIx[1],
-                                            1, &mv);
-        } else {
-            mv.mvx = predPtr[2].mvx;
-            mv.mvy = predPtr[2].mvy;
-        }
+        ComputeMotionVectorPredictors( (Ipp8u) ListNum,
+                                        pRIx[1],
+                                        1, &mv);
 
         H264DecoderMotionVector mvd = pMVd[2];
         mv.mvx  = (Ipp16s) (mv.mvx + (Ipp32s) mvd.mvx);
@@ -2263,9 +1926,6 @@ Ipp32s CreateMVFromCode(Ipp32s code)
 
 void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
 {
-    m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[0] = 0;
-    m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[1] = 0;
-
     if ((m_cur_mb.LocalMacroblockInfo->sbdir[0] > D_DIR_BIDIR)
         && (m_cur_mb.GlobalMacroblockInfo->mbtype - MBTYPE_FORWARD >= 0))
     {
@@ -2273,26 +1933,6 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
     }
 
     Ipp32s mbtype = m_cur_mb.GlobalMacroblockInfo->mbtype;
-    Ipp32s is_motion_pred_flag_exist = 0;
-    Ipp8u  motion_pred_flag[4] = {0, 0, 0, 0};
-    Ipp32s i;
-
-    if (m_pSliceHeader->nal_ext.svc.no_inter_layer_pred_flag == 0 && inCropWindow(this->m_cur_mb))
-    {
-        motion_pred_flag[0] = m_pSliceHeader->default_motion_prediction_flag;
-        motion_pred_flag[1] = m_pSliceHeader->default_motion_prediction_flag;
-        motion_pred_flag[2] = m_pSliceHeader->default_motion_prediction_flag;
-        motion_pred_flag[3] = m_pSliceHeader->default_motion_prediction_flag;
-
-        if (m_pSliceHeader->adaptive_motion_prediction_flag)
-        {
-            is_motion_pred_flag_exist = 1;
-            motion_pred_flag[0] = 0;
-            motion_pred_flag[1] = 0;
-            motion_pred_flag[2] = 0;
-            motion_pred_flag[3] = 0;
-        }
-    }
 
     switch (mbtype)
     {
@@ -2300,35 +1940,18 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
         {
             // decode reference indexes
             {
-                H264DecoderMacroblockRefIdxs * refs = m_cur_mb.GetReferenceIndexStruct(0);
+                Ipp32s num_ref_idx_l0_active = m_pSliceHeader->num_ref_idx_l0_active <<
+                                               pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
                 Ipp32s refIdx = 0;
 
-                if (is_motion_pred_flag_exist)
-                {
-                    motion_pred_flag[0] = (Ipp8u)m_pBitStream->Get1Bit();
-                }
+                if (2 == num_ref_idx_l0_active)
 
-                if (!motion_pred_flag[0])
-                {
-                    Ipp32s num_ref_idx_l0_active = m_pSliceHeader->num_ref_idx_l0_active <<
-                        pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
+                    refIdx = m_pBitStream->Get1Bit() ^ 1;
+                else if (2 < num_ref_idx_l0_active)
+                    refIdx = m_pBitStream->GetVLCElement(false);
 
-                    if (2 == num_ref_idx_l0_active)
-                        refIdx = m_pBitStream->Get1Bit() ^ 1;
-                    else if (2 < num_ref_idx_l0_active)
-                        refIdx = m_pBitStream->GetVLCElement(false);
-
-                    if (refIdx >= (Ipp8s)num_ref_idx_l0_active || refIdx < 0)
-                    {
-                        throw h264_exception(UMC_ERR_INVALID_STREAM);
-                    }
-                }
-                else
-                {
-                    refIdx = refs->refIndexs[0];
-                    m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[0] = 0xffff;// 1;
-                }
-                memset(refs->refIndexs, refIdx, sizeof(H264DecoderMacroblockRefIdxs));
+                H264DecoderMacroblockRefIdxs * refs = m_cur_mb.GetReferenceIndexStruct(0);
+                memset(refs->refIndexs, refIdx, sizeof(RefIndexType) * 4);
             }
 
             // decode motion vector deltas
@@ -2343,38 +1966,22 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
                 H264DecoderMacroblockRefIdxs * refs = m_cur_mb.GetReferenceIndexStruct(0);
                 Ipp32s num_ref_idx_l0_active = m_pSliceHeader->num_ref_idx_l0_active <<
                                                pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
-                RefIndexType refIdx[2] = {0, 0};
-
-                if (is_motion_pred_flag_exist)
+                if (2 == num_ref_idx_l0_active)
                 {
-                    motion_pred_flag[0] = (Ipp8u)m_pBitStream->Get1Bit();
-                    motion_pred_flag[1] = (Ipp8u)m_pBitStream->Get1Bit();
+                    refs->refIndexs[0] = 
+                    refs->refIndexs[1] = (RefIndexType)(m_pBitStream->Get1Bit() ^ 1);
+                    refs->refIndexs[2] = 
+                    refs->refIndexs[3] = (RefIndexType)(m_pBitStream->Get1Bit() ^ 1);
                 }
-
-                for (i = 0; i < 2; i++)
+                else if (2 < num_ref_idx_l0_active)
                 {
-                    if (!motion_pred_flag[i])
-                    {
-                        if (2 == num_ref_idx_l0_active)
-                            refIdx[i] = (RefIndexType)(m_pBitStream->Get1Bit() ^ 1);
-                        else if (2 < num_ref_idx_l0_active)
-                            refIdx[i] = (RefIndexType)m_pBitStream->GetVLCElement(false);
-
-                        if (refIdx[i] >= (Ipp8s)num_ref_idx_l0_active || refIdx[i] < 0)
-                        {
-                            throw h264_exception(UMC_ERR_INVALID_STREAM);
-                        }
-                    }
-                    else
-                    {
-                        refIdx[i] = refs->refIndexs[2*i];
-
-                        m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[0] |=
-                            block8x8_mask[2*i] | block8x8_mask[2*i+1];
-                    }
+                    refs->refIndexs[0] = 
+                    refs->refIndexs[1] = (RefIndexType)m_pBitStream->GetVLCElement(false);
+                    refs->refIndexs[2] = 
+                    refs->refIndexs[3] = (RefIndexType)m_pBitStream->GetVLCElement(false);
                 }
-                refs->refIndexs[0] = refs->refIndexs[1] = refIdx[0];
-                refs->refIndexs[2] = refs->refIndexs[3] = refIdx[1];
+                else
+                    memset(refs, 0, sizeof(H264DecoderMacroblockRefIdxs));
             }
 
             // decode motion vector deltas
@@ -2389,39 +1996,23 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
             {
                 H264DecoderMacroblockRefIdxs * refs = m_cur_mb.GetReferenceIndexStruct(0);
                 Ipp32s num_ref_idx_l0_active = m_pSliceHeader->num_ref_idx_l0_active <<
-                    pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
-                RefIndexType refIdx[2] = {0, 0};
-
-                if (is_motion_pred_flag_exist)
+                                               pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
+                if (2 == num_ref_idx_l0_active)
                 {
-                    motion_pred_flag[0] = (Ipp8u)m_pBitStream->Get1Bit();
-                    motion_pred_flag[1] = (Ipp8u)m_pBitStream->Get1Bit();
+                    refs->refIndexs[0] = 
+                    refs->refIndexs[2] = (RefIndexType) (m_pBitStream->Get1Bit() ^ 1);
+                    refs->refIndexs[1] = 
+                    refs->refIndexs[3] = (RefIndexType) (m_pBitStream->Get1Bit() ^ 1);
                 }
-
-                for (i = 0; i < 2; i++)
+                else if (2 < num_ref_idx_l0_active)
                 {
-                    if (!motion_pred_flag[i])
-                    {
-                        if (2 == num_ref_idx_l0_active)
-                            refIdx[i] = (RefIndexType)(m_pBitStream->Get1Bit() ^ 1);
-                        else if (2 < num_ref_idx_l0_active)
-                            refIdx[i] = (RefIndexType)m_pBitStream->GetVLCElement(false);
-
-                        if (refIdx[i] >= (Ipp8s)num_ref_idx_l0_active || refIdx[i] < 0)
-                        {
-                            throw h264_exception(UMC_ERR_INVALID_STREAM);
-                        }
-                    }
-                    else
-                    {
-                        refIdx[i] = refs->refIndexs[i];
-
-                        m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[0] |=
-                            block8x8_mask[i] | block8x8_mask[i+2];
-                    }
+                    refs->refIndexs[0] = 
+                    refs->refIndexs[2] = (RefIndexType) m_pBitStream->GetVLCElement(false);
+                    refs->refIndexs[1] = 
+                    refs->refIndexs[3] = (RefIndexType) m_pBitStream->GetVLCElement(false);
                 }
-                refs->refIndexs[0] = refs->refIndexs[2] = refIdx[0];
-                refs->refIndexs[1] = refs->refIndexs[3] = refIdx[1];
+                else
+                    memset(refs, 0, sizeof(H264DecoderMacroblockRefIdxs));
             }
 
             // decode motion vector deltas
@@ -2451,59 +2042,28 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
                 // decode reference indexes
                 {
                     Ipp32s num_ref_idx_l0_active = m_pSliceHeader->num_ref_idx_l0_active <<
-                        pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
-
-                    if (is_motion_pred_flag_exist)
-                    {
-                        motion_pred_flag[0] = (Ipp8u)m_pBitStream->Get1Bit();
-                        motion_pred_flag[1] = (Ipp8u)m_pBitStream->Get1Bit();
-                        motion_pred_flag[2] = (Ipp8u)m_pBitStream->Get1Bit();
-                        motion_pred_flag[3] = (Ipp8u)m_pBitStream->Get1Bit();
-                    }
-
-                    for (i = 0; i < 4; i++)
-                    {
-                        if (motion_pred_flag[i])
-                        {
-                            m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[0] |=
-                                block8x8_mask[i];
-                        }
-                    }
+                                                   pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
 
                     if ((MBTYPE_INTER_8x8 == mbtype) &&
                         (1 < num_ref_idx_l0_active))
                     {
-                        for (i = 0; i < 4; i++)
+                        if (2 == num_ref_idx_l0_active)
                         {
-                            if (!motion_pred_flag[i])
-                            {
-                                if (2 == num_ref_idx_l0_active)
-                                {
-                                    refs->refIndexs[i] = (RefIndexType)(m_pBitStream->Get1Bit() ^ 1);
-                                }
-                                else
-                                {
-                                    refs->refIndexs[i] = (RefIndexType)m_pBitStream->GetVLCElement(false);
-                                }
-
-                                if (refs->refIndexs[i] >= (Ipp8s)num_ref_idx_l0_active || refs->refIndexs[i] < 0)
-                                {
-                                    throw h264_exception(UMC_ERR_INVALID_STREAM);
-                                }
-                            }
+                            refs->refIndexs[0] = (RefIndexType)(m_pBitStream->Get1Bit() ^ 1);
+                            refs->refIndexs[1] = (RefIndexType)(m_pBitStream->Get1Bit() ^ 1);
+                            refs->refIndexs[2] = (RefIndexType)(m_pBitStream->Get1Bit() ^ 1);
+                            refs->refIndexs[3] = (RefIndexType)(m_pBitStream->Get1Bit() ^ 1);
+                        }
+                        else
+                        {
+                            refs->refIndexs[0] = (RefIndexType)m_pBitStream->GetVLCElement(false);
+                            refs->refIndexs[1] = (RefIndexType)m_pBitStream->GetVLCElement(false);
+                            refs->refIndexs[2] = (RefIndexType)m_pBitStream->GetVLCElement(false);
+                            refs->refIndexs[3] = (RefIndexType)m_pBitStream->GetVLCElement(false);
                         }
                     }
-                    else if (mbtype == MBTYPE_INTER_8x8_REF0) {
-                        for (i = 0; i < 4; i++)
-                        {
-                            if (!motion_pred_flag[i])
-                            {
-                                refs->refIndexs[i] = 0;
-                            }
-                        }
-                    } else {
+                    else
                         memset(refs, 0, sizeof(H264DecoderMacroblockRefIdxs));
-                    }
                 }
 
                 // decode motion vector deltas
@@ -2528,9 +2088,6 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
 
 void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
 {
-    m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[0] = 0;
-    m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[1] = 0;
-
     if ((m_cur_mb.LocalMacroblockInfo->sbdir[0] > D_DIR_BIDIR)
         && (m_cur_mb.GlobalMacroblockInfo->mbtype - MBTYPE_FORWARD >= 0))
     {
@@ -2569,26 +2126,6 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
     Ipp32s uNumRefIdxL0Active;
     Ipp32s uNumRefIdxL1Active;
     Ipp32s uNumVLCCodes;
-
-    Ipp32s is_motion_pred_flag_exist = 0;
-    Ipp8u  motion_pred_flag_l0[16];
-    Ipp8u  motion_pred_flag_l1[16];
-
-    memset(motion_pred_flag_l0, 0, 16);
-    memset(motion_pred_flag_l1, 0, 16);
-
-    if (m_pSliceHeader->nal_ext.svc.no_inter_layer_pred_flag == 0 && inCropWindow(this->m_cur_mb))
-    {
-        memset(motion_pred_flag_l0, m_pSliceHeader->default_motion_prediction_flag, 16);
-        memset(motion_pred_flag_l1, m_pSliceHeader->default_motion_prediction_flag, 16);
-
-        if (m_pSliceHeader->adaptive_motion_prediction_flag)
-        {
-            is_motion_pred_flag_exist = 1;
-            memset(motion_pred_flag_l0, 0, 16);
-            memset(motion_pred_flag_l1, 0, 16);
-        }
-    }
 
     switch (m_cur_mb.GlobalMacroblockInfo->mbtype)
     {
@@ -2719,18 +2256,6 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
         return; // DEBUG: may be throw ???
     }
 
-    if (is_motion_pred_flag_exist)
-    {
-        for (i=0; i<num_refIxL0; i++)
-        {
-            motion_pred_flag_l0[i] = (Ipp8u)m_pBitStream->Get1Bit();
-        }
-
-        for (i=0; i<num_refIxL1; i++)
-        {
-            motion_pred_flag_l1[i] = (Ipp8u)m_pBitStream->Get1Bit();
-        }
-    }
     // Get all of the reference index and MV VLC codes from the bitstream
     // The bitstream contains them in the following order, which is the
     // order they are returned in uVLCCodes:
@@ -2767,16 +2292,14 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
         {
             for (i=0; i<num_refIxL0; i++)
             {
-                if (!motion_pred_flag_l0[i])
-                    pVLCCodesL0RefIndex[i] = !m_pBitStream->Get1Bit();
+                pVLCCodesL0RefIndex[i] = !m_pBitStream->Get1Bit();
             }
         }
         else if (uNumRefIdxL0Active > 2)
         {
             for (i=0;i<num_refIxL0;i++)
             {
-                if (!motion_pred_flag_l0[i])
-                    pVLCCodesL0RefIndex[i]=m_pBitStream->GetVLCElement(false);
+                pVLCCodesL0RefIndex[i]=m_pBitStream->GetVLCElement(false);
             }
         }
 
@@ -2784,16 +2307,14 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
         {
             for (i=0; i<num_refIxL1; i++)
             {
-                if (!motion_pred_flag_l1[i])
-                    pVLCCodesL1RefIndex[i] = !m_pBitStream->Get1Bit();
+                pVLCCodesL1RefIndex[i] = !m_pBitStream->Get1Bit();
             }
         }
         else if (uNumRefIdxL1Active > 2)
         {
             for (i=0;i<num_refIxL1;i++)
             {
-                if (!motion_pred_flag_l1[i])
-                    pVLCCodesL1RefIndex[i]=m_pBitStream->GetVLCElement(false);
+                pVLCCodesL1RefIndex[i]=m_pBitStream->GetVLCElement(false);
             }
         }
 
@@ -2822,40 +2343,20 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
 
         if (dirPart == D_DIR_FWD || dirPart == D_DIR_BIDIR)
         {    // L0
-
-            if (motion_pred_flag_l0[dec_refIxL0])
-                m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[0] |= (1 << sboffset);
-
             if (num_refIxL0)
             {
+                RefIxL0 = (Ipp8s)pVLCCodesL0RefIndex[dec_refIxL0];
                 // dec_refIxL0 is incremented in mbtype-specific code below
                 // instead of here because there is only one refIx for each
                 // 8x8 block, so number of refIx values is not the same as
                 // numParts.
-                if (motion_pred_flag_l0[dec_refIxL0])
+                if (RefIxL0 >= (Ipp8s)uNumRefIdxL0Active || RefIxL0 < 0)
                 {
-                    RefIxL0 = pRefIndexL0[0];
-                }
-                else
-                {
-                    RefIxL0 = (Ipp8s)pVLCCodesL0RefIndex[dec_refIxL0];
-
-                    if (RefIxL0 >= (Ipp8s)uNumRefIdxL0Active || RefIxL0 < 0)
-                    {
-                        throw h264_exception(UMC_ERR_INVALID_STREAM);
-                    }
+                    throw h264_exception(UMC_ERR_INVALID_STREAM);
                 }
             }
             else
-            {
-                if (motion_pred_flag_l0[dec_refIxL0] &&
-                    (MBTYPE_INTER_8x8_REF0 == m_cur_mb.GlobalMacroblockInfo->mbtype/* || uNumRefIdxL0Active == 0*/))
-                {
-                    RefIxL0 = pRefIndexL0[0];
-                } else {
-                    RefIxL0 = 0;
-                }
-            }
+                RefIxL0 = 0;
 
             mvdx_l0 = (pVLCCodesL0MV[dec_vectorsL0*2]+1) >> 1;
             if (!(pVLCCodesL0MV[dec_vectorsL0*2]&1))
@@ -2879,9 +2380,6 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
 
             if (dirPart == D_DIR_BWD || dirPart == D_DIR_BIDIR)
             {
-                if (motion_pred_flag_l1[dec_refIxL1])
-                    m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[1] |= (1 << sboffset);
-
                 if (num_refIxL1)
                 {
                     RefIxL1 = (Ipp8s)pVLCCodesL1RefIndex[dec_refIxL1];
@@ -2889,30 +2387,13 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
                     // instead of here because there is only one refIx for each
                     // 8x8 block, so number of refIx values is not the same as
                     // numParts.
-                    if (motion_pred_flag_l1[dec_refIxL1])
+                    if (RefIxL1 >= (Ipp8s)uNumRefIdxL1Active || RefIxL1 < 0)
                     {
-                        RefIxL1 = pRefIndexL1[0];
-                    }
-                    else
-                    {
-                        RefIxL1 = (Ipp8s)pVLCCodesL1RefIndex[dec_refIxL1];
-
-                        if (RefIxL1 >= (Ipp8s)uNumRefIdxL1Active || RefIxL1 < 0)
-                        {
-                            throw h264_exception(UMC_ERR_INVALID_STREAM);
-                        }
+                        // something is wrong
                     }
                 }
                 else
-                {
-                    if (motion_pred_flag_l0[dec_refIxL1] &&
-                        (MBTYPE_INTER_8x8_REF0 == m_cur_mb.GlobalMacroblockInfo->mbtype/* || uNumRefIdxL1Active == 0*/))
-                    {
-                        RefIxL1 = pRefIndexL1[0];
-                    } else {
-                        RefIxL1 = 0;
-                    }
-                }
+                    RefIxL1 = 0;
 
                 mvdx_l1 = (pVLCCodesL1MV[dec_vectorsL1*2]+1)>>1;
                 if (!(pVLCCodesL1MV[dec_vectorsL1*2]&1))
@@ -3154,759 +2635,27 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
         }    // switch mbtype
     }    // for partCtr
 
-    if (m_pSliceHeader->nal_unit_type == NAL_UT_CODED_SLICE_EXTENSION && m_pSliceHeader->nal_ext.svc_extension_flag &&
-        (m_cur_mb.GlobalMacroblockInfo->mbtype == MBTYPE_INTER_8x8 ||
-        m_cur_mb.GlobalMacroblockInfo->mbtype ==  MBTYPE_INTER_8x8_REF0)) {
-        for (i = 0; i < 4; i ++)
-        {
-            RefIndexType RefIndexL0, RefIndexL1;
-            Ipp32s uPredDir;
-            if (m_cur_mb.LocalMacroblockInfo->sbdir[i] <= D_DIR_BIDIR)
-                continue;
-            ComputeDirectSpatialRefIdx8x8(&RefIndexL0, &RefIndexL1, i);
-
-            if ((RefIndexL0 < 0) && (RefIndexL1 < 0))
-                RefIndexL0 = RefIndexL1 = 0;
-
-            if ((0 <= RefIndexL0) && (0 > RefIndexL1))
-                uPredDir = D_DIR_DIRECT_SPATIAL_FWD;
-            else if ((0 > RefIndexL0) && (0 <= RefIndexL1))
-                uPredDir = D_DIR_DIRECT_SPATIAL_BWD;
-            else
-                uPredDir = D_DIR_DIRECT_SPATIAL_BIDIR;
-
-            m_cur_mb.GetReferenceIndexStruct(0)->refIndexs[i] = RefIndexL0;
-            m_cur_mb.GetReferenceIndexStruct(1)->refIndexs[i] = RefIndexL1;
-
-            m_cur_mb.LocalMacroblockInfo->sbdir[i]=(Ipp8s)uPredDir;
-            m_cur_mb.GlobalMacroblockInfo->sbtype[i]=SBTYPE_8x8;
-        }   // for sb
-    }
-
-
-    Ipp32s sbdir_store[4];
-    if (m_pSliceHeader->nal_unit_type == NAL_UT_CODED_SLICE_EXTENSION && m_pSliceHeader->nal_ext.svc_extension_flag)
-    {
-        for (Ipp32s block = 0; block < 4; block++)
-        {
-            sbdir_store[block] = m_cur_mb.LocalMacroblockInfo->sbdir[block];
-            if      (m_cur_mb.LocalMacroblockInfo->sbdir[block] == D_DIR_DIRECT_SPATIAL_FWD)
-                m_cur_mb.LocalMacroblockInfo->sbdir[block] = D_DIR_FWD;
-            else if (m_cur_mb.LocalMacroblockInfo->sbdir[block] == D_DIR_DIRECT_SPATIAL_BWD)
-                m_cur_mb.LocalMacroblockInfo->sbdir[block] = D_DIR_BWD;
-            else if (m_cur_mb.LocalMacroblockInfo->sbdir[block] == D_DIR_DIRECT_SPATIAL_BIDIR)
-                m_cur_mb.LocalMacroblockInfo->sbdir[block] = D_DIR_BIDIR;
-        }
-    }
-
     ReconstructMotionVectors();
-    if (m_pSliceHeader->nal_unit_type == NAL_UT_CODED_SLICE_EXTENSION && m_pSliceHeader->nal_ext.svc_extension_flag)
-    {
-        for (Ipp32s block = 0; block < 4; block++)
-        {
-            m_cur_mb.LocalMacroblockInfo->sbdir[block] = (Ipp8s)sbdir_store[block];
-        }
-    }
     return;
 }  // void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
 
 void H264SegmentDecoderMultiThreaded::DecodeDirectMotionVectors(bool isDirectMB)
 {
-    if (m_pSliceHeader->nal_unit_type == NAL_UT_CODED_SLICE_EXTENSION && m_pSliceHeader->nal_ext.svc_extension_flag)
+    if (m_IsUseSpatialDirectMode)
     {
-        Ipp32s RefIndexL0, RefIndexL1;
-
-        if ((m_cur_mb.GlobalMacroblockInfo->mbtype != MBTYPE_INTER_8x8)/* &&
-                                                                       (m_cur_mb.GlobalMacroblockInfo->mbtype != MBTYPE_DIRECT)*/)
-        {
-
-            // find the reference indexes
-            ComputeDirectSpatialRefIdx(&RefIndexL0, &RefIndexL1);
-
-            if ((RefIndexL0 < 0) && (RefIndexL1 < 0))
-                RefIndexL0 = RefIndexL1 = 0;
-        }
-        else
-        {
-            /* ???????????????? */
-            RefIndexL0 = RefIndexL1 = 0;
-        }
-
-        //        RefIndexL0 = RefIndexL1 = 0;
-
-        if (m_cur_mb.GlobalMacroblockInfo->mbtype != MBTYPE_INTER_8x8)
-        {
-            // set up reference index array
-            memset(m_cur_mb.RefIdxs[0]->refIndexs, RefIndexL0, 4);
-            memset(m_cur_mb.RefIdxs[1]->refIndexs, RefIndexL1, 4);
-
-            // set direction for MB
-            if ((0 <= RefIndexL0) && (0 > RefIndexL1))
-                m_cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_FORWARD;
-            else if ((0 > RefIndexL0) && (0 <= RefIndexL1))
-                m_cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_BACKWARD;
-            else
-                m_cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_BIDIR;
-
-            m_cur_mb.MVDelta[0]->MotionVectors[0].mvx = 0;
-            m_cur_mb.MVDelta[0]->MotionVectors[0].mvy = 0;
-            m_cur_mb.MVDelta[1]->MotionVectors[0].mvx = 0;
-            m_cur_mb.MVDelta[1]->MotionVectors[0].mvy = 0;
-
-            m_cur_mb.LocalMacroblockInfo->sbdir[0] = 0;
-            m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[0] = 0;
-            m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[1] = 0;
-
-            ReconstructMotionVectors();
-        }
-        else
-        {
-            bool isAll8x8Same = true;
-            Ipp32s sb, sboffset;
-            Ipp32u uPredDir;
-
-            for (sb = 0; sb<4; sb++)
-            {
-                if (m_cur_mb.GlobalMacroblockInfo->sbtype[sb] != SBTYPE_DIRECT)
-                {
-                    isAll8x8Same = false;
-                    continue;
-                }
-                uPredDir = D_DIR_DIRECT_SPATIAL_BIDIR;
-
-                sboffset = 0;
-                switch (sb)
-                {
-                case 0:
-                    sboffset = 0;
-                    break;
-                case 1:
-                    sboffset = 2;
-                    break;
-                case 2:
-                    sboffset = 8;
-                    break;
-                case 3:
-                    sboffset = 2 + 8;
-                    break;
-                }
-
-                m_cur_mb.MVDelta[0]->MotionVectors[sboffset].mvx = 0;
-                m_cur_mb.MVDelta[0]->MotionVectors[sboffset].mvy = 0;
-                m_cur_mb.MVDelta[1]->MotionVectors[sboffset].mvx = 0;
-                m_cur_mb.MVDelta[1]->MotionVectors[sboffset].mvy = 0;
-
-                m_cur_mb.RefIdxs[0]->refIndexs[sb] = (RefIndexType)RefIndexL0;
-                m_cur_mb.RefIdxs[1]->refIndexs[sb] = (RefIndexType)RefIndexL1;
-
-                m_cur_mb.LocalMacroblockInfo->sbdir[sb]=(Ipp8s)uPredDir;
-            }   // for sb
-        }
-    }
+        ReconstructDirectMotionVectorsSpatial(isDirectMB);
+    }   // temporal DIRECT
     else
     {
-        if (m_IsUseSpatialDirectMode)
+        // temporal DIRECT prediction
+        if (!m_IsUseDirect8x8Inference)
         {
-            ReconstructDirectMotionVectorsSpatial(isDirectMB);
-        }   // temporal DIRECT
-        else
-        {
-            // temporal DIRECT prediction
-            if (!m_IsUseDirect8x8Inference)
-            {
-                DecodeDirectMotionVectorsTemporal(isDirectMB);
-            }
-            else
-            {
-                DecodeDirectMotionVectorsTemporal_8x8Inference();
-            }
-        }
-    }
-}
-
-Status H264SegmentDecoderMultiThreaded::ProcessLayerPre()
-{
-    /* This is temporal solution for 1 thread mode. For AVC layer SetMBMap was already called */
-    if (m_pSlice->m_bIsFirstSliceInLayer &&
-        ((m_pSlice->m_iNumber - 1) > m_pSlice->GetCurrentFrame()->m_lastSliceInAVC))
-    {
-        m_pTaskBroker->m_pTaskSupplier->SetMBMap(m_pSlice, m_pCurrentFrame, m_pTaskBroker->GetLocalResource());
-        m_mbinfo.active_next_mb_table = m_pSlice->GetMBInfo().active_next_mb_table;
-    }
-
-    CalculateResizeParameters();
-    SVCDeblocking();
-    LoadMBInfoFromRefLayer();
-
-    if (m_isSliceGroups)
-    {
-        if (m_pSlice->m_bIsFirstSliceInLayer && (m_pSlice->m_iNumber - 1 > m_pCurrentFrame->m_lastSliceInAVC))
-        {
-            Ipp32s nMBCount = m_pCurrentFrame->totalMBs;
-            for (Ipp32s i = 0; i < nMBCount; i++)
-            {
-                m_gmbinfo->mbs[i].slice_id = -1;
-            }
-        }
-    }
-
-    return UMC_OK;
-}
-
-void H264SegmentDecoderMultiThreaded::SVCDeblocking()
-{
-    Ipp32s iMBToProcess;
-    Ipp32s m_spatial_resolution_change_save = m_spatial_resolution_change;
-
-    H264Slice *pSlice = m_pSlice;
-    H264DecoderFrame *pFrame = pSlice->GetCurrentFrame();
-    H264SliceHeader *pSliceHeader_save = pSlice->GetSliceHeader();
-    H264SliceHeader *pSliceHeader = pSlice->m_firstILPredSliceInDepLayer->GetSliceHeader();
-
-    ReferenceFlags *(pFields[2]);
-    H264DecoderFrame **(pRefPicList[2]);
-
-    if (DEBLOCK_FILTER_OFF == pSliceHeader->disable_inter_layer_deblocking_filter_idc)
-        return;
-
-    if (pSlice->m_bIsFirstSliceInDepLayer && (m_currentLayer > 0) &&
-        (pSliceHeader->ref_layer_dq_id >= 0) && m_spatial_resolution_change)
-    {
-        H264DecoderLayerDescriptor *layerMb, *curlayerMb;
-
-        Ipp32s refLayer = pSliceHeader->ref_layer_dq_id >> 4;
-        VM_ASSERT(refLayer < m_currentLayer);
-
-        layerMb = &m_mbinfo.layerMbs[refLayer];
-        curlayerMb = &m_mbinfo.layerMbs[m_currentLayer];
-
-        iMBToProcess = pFrame->m_pLayerFrames[refLayer]->totalMBs;
-
-        deblocking_IL = 1;
-        deblocking_stage2 = 0;
-        m_spatial_resolution_change = (pSliceHeader->ref_layer_dq_id & 15) ? 0 : 
-            layerMb->m_pResizeParameter->spatial_resolution_change;
-        m_pSlice = pSlice->m_firstILPredSliceInDepLayer;
-        m_pSliceHeader = pSliceHeader;
-        m_isMBAFF = 0 != m_mbinfo.layerMbs[m_pSliceHeader->ref_layer_dq_id >> 4].is_MbAff;
-
-        pFields[0] = m_pFields[0];
-        pFields[1] = m_pFields[1];
-        pRefPicList[0] = m_pRefPicList[0];
-        pRefPicList[1] = m_pRefPicList[1];
-
-        H264DecoderFrame *pCurrentFrame = m_pSlice->GetCurrentFrame()->m_pLayerFrames[refLayer];
-        m_gmbinfo = &(pCurrentFrame->m_mbinfo);
-        iMBToProcess = pCurrentFrame->totalMBs;
-        m_pCurrentFrame = pCurrentFrame;
-        mb_width = m_pCurrentFrame->lumaSize().width >> 4;
-
-        if (m_pSliceHeader->ref_layer_dq_id & 0x0f) // quality_id
-            m_gmbinfo = &(m_pSlice->GetCurrentFrame()->m_mbinfo);
-
-        Ipp32s firstMB = pCurrentFrame->GetNumberByParity(0) == 0 ? 0 : pCurrentFrame->totalMBs;
-        m_pPicParamSet = m_pSlice->GetCurrentFrame()->GetAU(m_pSlice->m_pCurrentFrame->GetNumberByParity(m_field_index))->GetSliceByNumber(m_gmbinfo->mbs[firstMB].slice_id)->GetPicParam();
-        is_profile_baseline_scalable = m_mbinfo.layerMbs[m_pSliceHeader->ref_layer_dq_id >> 4].is_profile_baseline_scalable;
-
-        DeblockSegmentTask(firstMB, iMBToProcess);
-
-        if ((DEBLOCK_FILTER_ON_2_PASS ==
-            m_pSliceHeader->disable_inter_layer_deblocking_filter_idc_from_stream) ||
-            (DEBLOCK_FILTER_ON_2_PASS_NO_CHROMA ==
-            m_pSliceHeader->disable_inter_layer_deblocking_filter_idc_from_stream))
-        {
-            deblocking_stage2 = 1;
-            DeblockSegmentTask(0, iMBToProcess);
-        }
-
-        m_pFields[0] = pFields[0];
-        m_pFields[1] = pFields[1];
-        m_pRefPicList[0] = pRefPicList[0];
-        m_pRefPicList[1] = pRefPicList[1];
-
-        m_pSlice = pSlice;
-        m_pSliceHeader = pSliceHeader_save;
-        deblocking_IL = 0;
-        deblocking_stage2 = 0;
-        m_spatial_resolution_change = m_spatial_resolution_change_save;
-        refLayer = m_pSliceHeader->nal_ext.svc.dependency_id;
-        m_pCurrentFrame = m_pSlice->GetCurrentFrame()->m_pLayerFrames[refLayer];
-        m_gmbinfo = &(m_pCurrentFrame->m_mbinfo);
-        mb_width = m_pSlice->GetMBWidth();
-        m_pPicParamSet = m_pSlice->GetPicParam();
-        m_isMBAFF = 0 != m_pSliceHeader->MbaffFrameFlag;
-        is_profile_baseline_scalable = (m_pSlice->m_pSeqParamSet->profile_idc == H264VideoDecoderParams::H264_PROFILE_SCALABLE_BASELINE);
-    }
-}
-
-void H264SegmentDecoderMultiThreaded::CopyMacroblockInfoFromBaseLayer(H264DecoderLayerDescriptor *layerMb, Ipp32s mbAddr, Ipp32s refMbAddr)
-{
-    static const Ipp32u num_coeffs[4] = {256,384,512,768};
-    Ipp32s numCoeff = num_coeffs[m_pCurrentFrame->m_chroma_format];
-
-    if (layerMb->mbs[refMbAddr].mbtype < MBTYPE_PCM)
-    {
-        IntraType *pMBIntraTypes = m_pMBIntraTypes + mbAddr*NUM_INTRA_TYPE_ELEMENTS;
-        IntraType *pRefMBIntraTypes = m_pMBIntraTypes + refMbAddr*NUM_INTRA_TYPE_ELEMENTS;
-
-        for (Ipp32u k = 0; k < NUM_INTRA_TYPE_ELEMENTS; k++)
-        {
-            pMBIntraTypes[k] = pRefMBIntraTypes[k];
-        }
-    }
-
-    Ipp16s *pCoeffPtr = m_mbinfo.SavedMacroblockTCoeffs + mbAddr*COEFFICIENTS_BUFFER_SIZE;
-    Ipp16s *pRefCoeffPtr = m_mbinfo.SavedMacroblockTCoeffs + refMbAddr*COEFFICIENTS_BUFFER_SIZE;
-
-    for (Ipp32s k = 0; k < numCoeff; k++)
-    {
-        pCoeffPtr[k] = pRefCoeffPtr[k];
-    }
-
-    pCoeffPtr = m_mbinfo.SavedMacroblockCoeffs + mbAddr*COEFFICIENTS_BUFFER_SIZE;
-    pRefCoeffPtr = m_mbinfo.SavedMacroblockCoeffs + refMbAddr*COEFFICIENTS_BUFFER_SIZE;
-
-    for (Ipp32s k = 0; k < numCoeff; k++)
-    {
-        pCoeffPtr[k] = pRefCoeffPtr[k];
-    }
-
-    m_gmbinfo->mbs[mbAddr].mbflags = m_gmbinfo->mbs[refMbAddr].mbflags;
-    m_mbinfo.mbs[mbAddr].QP = m_mbinfo.mbs[refMbAddr].QP;
-}
-
-void H264SegmentDecoderMultiThreaded::LoadMBInfoFromRefLayer()
-{
-    H264Slice *pSlice = m_pSlice;
-    H264DecoderFrame *pFrame = pSlice->GetCurrentFrame();
-    H264SliceHeader *pSliceHeader = pSlice->m_firstILPredSliceInDepLayer->GetSliceHeader();
-    Ipp32s pitch_luma = pFrame->pitch_luma();
-    Ipp32s pitch_chroma = pFrame->pitch_chroma();
-    Ipp32s pixel_sz = (pFrame->m_bpp > 8) + 1;
-    Ipp32s chromaShift = (3 > pFrame->m_chroma_format) ? 1 : 0;
-    H264DecoderLayerDescriptor *layerMb, *curlayerMb;
-    const H264SeqParamSet *curSps = pSlice->GetSeqParam();
-    Ipp32s nv12 = (pFrame->GetColorFormat() == NV12);
-
-    if (pSlice->m_bIsFirstSliceInDepLayer && (m_currentLayer > 0) &&
-       (pSliceHeader->ref_layer_dq_id >= 0))
-    {
-        Ipp32s refLayer = pSliceHeader->ref_layer_dq_id >> 4;
-        H264DecoderFrame *pRefFrame = pSlice->GetCurrentFrame()->m_pLayerFrames[refLayer];
-        Ipp32s refWidth = pRefFrame->lumaSize().width;
-        Ipp32s refHeight = pRefFrame->lumaSize().height;
-        Ipp32s refChromaWidth = refWidth >> ((Ipp32s) (3 > pFrame->m_chroma_format));
-
-        H264DecoderGlobalMacroblocksDescriptor *RefGlobalMBinfo = &(pRefFrame->m_mbinfo);
-        if (pSliceHeader->ref_layer_dq_id & 0x0f) // quality_id
-            RefGlobalMBinfo = &(pSlice->GetCurrentFrame()->m_mbinfo);
-
-        if (refLayer == m_currentLayer)
-            return;
-
-        if (!m_spatial_resolution_change && !pSlice->GetSliceHeader()->nal_ext.svc.quality_id)
-        {
-            size_t nMBCount = m_pCurrentFrame->totalMBs;
-            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.mbs, pRefFrame->m_mbinfo.mbs, (Ipp32u)(sizeof(H264DecoderMacroblockGlobalInfo) * nMBCount)); // for mbtype as baseMBType 
-        }
-
-        VM_ASSERT(refLayer < m_currentLayer);
-
-        layerMb = &m_mbinfo.layerMbs[refLayer];
-        curlayerMb = &m_mbinfo.layerMbs[m_currentLayer];
-
-        H264DecoderLayerResizeParameter *resizeParams = curlayerMb->m_pResizeParameter;
-        bool cropping = resizeParams->extended_spatial_scalability == 2 || resizeParams->leftOffset || resizeParams->topOffset ||
-            resizeParams->cur_layer_width != resizeParams->scaled_ref_layer_width ||
-            resizeParams->cur_layer_height != resizeParams->scaled_ref_layer_height;
-
-        if (!cropping && !m_spatial_resolution_change)
-        {
+            DecodeDirectMotionVectorsTemporal(isDirectMB);
         }
         else
         {
-            if (m_spatial_resolution_change && pSliceHeader->constrained_intra_resampling_flag)
-            {
-                constrainedIntraResamplingCheckMBs(pSlice->GetSeqParam(),
-                                                    curlayerMb,
-                                                    layerMb,
-                                                    RefGlobalMBinfo->mbs,
-                                                    m_mbinfo.m_tmpBuf2,
-                                                    mb_width,
-                                                    mb_height);
-
-                SVCResampling<>::umc_h264_constrainedIntraUpsampling(pSlice,
-                                                    curlayerMb,
-                                                    RefGlobalMBinfo->mbs,
-                                                    layerMb,
-                                                    pFrame,
-                                                    m_mbinfo,
-                                                    pitch_luma,
-                                                    pitch_chroma,
-                                                    pixel_sz,
-                                                    (refWidth + 32) * pixel_sz,
-                                                    ((refWidth + 32) * pixel_sz) >> chromaShift,
-                                                    nv12);
-            }
-            else
-            {
-                if (m_spatial_resolution_change)
-                    SVCResampling<>::interpolateInterMBs(layerMb->m_pYPlane, (refWidth + 32) * pixel_sz,
-                                        layerMb->m_pUPlane, (refChromaWidth + 16) * pixel_sz,
-                                        layerMb->m_pVPlane, (refChromaWidth + 16) * pixel_sz,
-                                        0, refHeight >> 4,
-                                        refWidth >> 4, refHeight >> 4,
-                                        RefGlobalMBinfo->mbs,
-                                        layerMb,
-                                        -1);
-
-                SVCResampling<>::umc_h264_upsampling(pSlice,
-                                    layerMb,
-                                    curlayerMb,
-                                    pFrame,
-                                    m_mbinfo.m_tmpBuf0,
-                                    m_mbinfo.m_tmpBuf1,
-                                    pitch_luma,
-                                    pitch_chroma,
-                                    (refWidth + 32) * pixel_sz,
-                                    ((refWidth + 32) * pixel_sz) >> chromaShift,
-                                    nv12);
-            }
+            DecodeDirectMotionVectorsTemporal_8x8Inference();
         }
-
-        umc_h264_mv_resampling(this,
-                               pSlice,
-                               layerMb, curlayerMb, m_gmbinfo,
-                               &m_mbinfo);
-
-        upsamplingResidual(pSlice, layerMb, /*(Coeffs*)*/curlayerMb,
-                                   m_mbinfo.m_tmpBuf0,m_mbinfo.m_tmpBuf1, m_mbinfo.m_tmpBuf2,
-                                    pRefFrame->lumaSize());
-
-        pFrame->m_use_base_residual = 1;
-
-        if (!m_spatial_resolution_change &&
-            (curlayerMb->m_pResizeParameter->leftOffset ||
-             curlayerMb->m_pResizeParameter->topOffset ||
-             curlayerMb->m_pResizeParameter->ref_layer_width != ((Ipp32s)curSps->frame_width_in_mbs << 4)))
-        {
-            H264DecoderLayerResizeParameter *pResizeParameter = curlayerMb->m_pResizeParameter;
-            Ipp32s MbW = (Ipp32s)curSps->frame_width_in_mbs;
-            Ipp32s MbH = (Ipp32s)curSps->frame_height_in_mbs;
-            Ipp32s leftOffset = pResizeParameter->leftOffset >> 4;
-            Ipp32s rightOffset = pResizeParameter->rightOffset >> 4;
-            Ipp32s topOffset = pResizeParameter->topOffset >> 4;
-            Ipp32s bottomOffset = pResizeParameter->bottomOffset >> 4;
-
-            Ipp32s startH = (topOffset < 0) ? 0 : topOffset;
-            Ipp32s endH = (bottomOffset < 0) ? MbH : MbH - bottomOffset;
-            Ipp32s startW = (leftOffset < 0) ? 0 : leftOffset;
-            Ipp32s endW = (rightOffset < 0) ? MbW : MbW - rightOffset;
-
-            if (curlayerMb->m_pResizeParameter->ref_layer_width != ((Ipp32s)curSps->frame_width_in_mbs << 4) && !curlayerMb->m_pResizeParameter->topOffset && 
-                !curlayerMb->m_pResizeParameter->leftOffset)
-            {
-                Ipp32s refMbW = curlayerMb->m_pResizeParameter->ref_layer_width >> 4;
-                for (Ipp32s i = MbH-bottomOffset; i > 0; i--)
-                {
-                    for (Ipp32s j = MbW-rightOffset; j >= 0; j--)
-                    {
-                        Ipp32s mbAddr = i*MbW + j;
-                        Ipp32s refMbAddr = i*refMbW + j;
-                        CopyMacroblockInfoFromBaseLayer(layerMb, mbAddr, refMbAddr);
-                    }
-                }
-                return;
-            }
-
-            Ipp32s breakPoint;
-            if ((leftOffset + rightOffset) == 0)
-            {
-                if ((leftOffset + topOffset * MbW) < 0)
-                    breakPoint = endH;
-                else
-                    breakPoint = startH;
-            }
-            else
-            {
-                breakPoint = topOffset - ((leftOffset + topOffset * MbW)/(leftOffset + rightOffset));
-            }
-
-            if (breakPoint < startH)
-                breakPoint = startH;
-
-            if (breakPoint > endH)
-                breakPoint = endH;
-
-            // shift < 0
-            for (Ipp32s j = startH; j < breakPoint; j++)
-            {
-                Ipp32s MbAddr = j * MbW;
-                Ipp32s shift = (j - topOffset) * (leftOffset + rightOffset) + leftOffset + topOffset * MbW;
-
-                for (Ipp32s i = startW; i < endW; i++)
-                {
-                    CopyMacroblockInfoFromBaseLayer(layerMb, MbAddr+i, MbAddr+i-shift);
-                }
-            }
-
-            // shift > 0
-            for (Ipp32s j = endH-1; j >= breakPoint; j--)
-            {
-                Ipp32s MbAddr = j * MbW;
-                Ipp32s shift = (j - topOffset) * (leftOffset + rightOffset) + leftOffset + topOffset * MbW;
-
-                for (Ipp32s i = endW - 1; i >= startW; i--)
-                {
-                    CopyMacroblockInfoFromBaseLayer(layerMb, MbAddr+i, MbAddr+i-shift);
-                }
-            }
-        }
-    }
-    else if (pSlice->m_bIsFirstSliceInDepLayer)
-    {
-        H264DecoderFrame *pFrame = pSlice->GetCurrentFrame();
-        IppiSize lumaSize, chromaSize;
-
-        lumaSize = m_pCurrentFrame->lumaSize();
-
-        chromaSize.width = lumaSize.width >> ((Ipp32s) (3 > pFrame->m_chroma_format));
-        chromaSize.height = lumaSize.height >> ((Ipp32s) (2 > pFrame->m_chroma_format));
-
-        if (m_pYResidual) {
-            memset(m_pYResidual, 0, lumaSize.width * lumaSize.height*sizeof(Ipp16s));
-            memset(m_pUResidual, 0, chromaSize.width * chromaSize.height*sizeof(Ipp16s));
-            memset(m_pVResidual, 0, chromaSize.width * chromaSize.height*sizeof(Ipp16s));
-        }
-
-        pFrame->m_use_base_residual = 0;
-    }
-
-    if (pSlice->m_bIsFirstSliceInDepLayer && m_spatial_resolution_change && pSliceHeader->ref_layer_dq_id >= 0)
-    {
-        Ipp32u refLayer = pSliceHeader->ref_layer_dq_id >> 4;
-        Ipp32u size = pFrame->m_pLayerFrames[refLayer]->lumaSize().width *
-                   pFrame->m_pLayerFrames[refLayer]->lumaSize().height;
-
-        memset(m_mbinfo.SavedMacroblockCoeffs, 0, size * sizeof(Ipp16s));
-
-        size = (pFrame->m_pLayerFrames[m_currentLayer]->lumaSize().width * pFrame->m_pLayerFrames[m_currentLayer]->lumaSize().height) >> 8;
-        memset(m_mbinfo.SavedMacroblockTCoeffs, 0, size * COEFFICIENTS_BUFFER_SIZE*sizeof(Ipp16s));
-    }
-}
-
-void H264SegmentDecoderMultiThreaded::StoreRefBasePicture()
-{
-    H264Slice *pSlice = m_pSlice;
-    H264DecoderFrame *pFrame = pSlice->GetCurrentFrame();
-
-    if (pSlice->GetSliceNum() - 1 != pFrame->m_lastSliceInBaseRefLayer || !m_is_ref_base_pic)
-        return;
-
-    DeblockFrame(0, m_pSlice->GetCurrentFrame()->totalMBs);
-
-    if (pFrame->m_storeRefBasePic != 1 || !pSlice->m_bIsMaxQId || !pSlice->m_bIsMaxDId)
-        return;
-
-    Ipp32s pitch_luma = pFrame->pitch_luma();
-    Ipp32s pitch_chroma = pFrame->pitch_chroma();
-
-    IppiSize lumaSize = pFrame->lumaSize();
-    IppiSize chromaSize = pFrame->chromaSize();
-    Ipp32s nv12 = (pFrame->GetColorFormat() == NV12);
-
-    VM_ASSERT(pSlice->m_bIsMaxQId && pSlice->m_bIsMaxDId);
-
-    CopyPlane(pFrame->m_pYPlane_base, pitch_luma,
-              pFrame->m_pYPlane, pitch_luma, lumaSize);
-
-    if (nv12) {
-        chromaSize.width <<= 1;
-        CopyPlane(pFrame->m_pUVPlane_base, pitch_chroma,
-            pFrame->m_pUVPlane, pitch_chroma, chromaSize);
-    } else {
-        CopyPlane(pFrame->m_pUPlane_base, pitch_chroma,
-                  pFrame->m_pUPlane, pitch_chroma, chromaSize);
-
-        CopyPlane(pFrame->m_pVPlane_base, pitch_chroma,
-                  pFrame->m_pVPlane, pitch_chroma, chromaSize);
-    }
-}
-
-void H264SegmentDecoderMultiThreaded::StoreLayersMBInfo()
-{
-    H264Slice *pSlice = m_pSlice;
-    H264DecoderFrame *pFrame = m_pCurrentFrame;
-    Ipp32s nv12_flag = pFrame->GetColorFormat() == NV12;
-
-    if (pSlice->m_bIsLastSliceInDepLayer && (m_currentLayer < pSlice->GetCurrentFrame()->m_maxDId))
-    {
-        Ipp32s nMBCount = pFrame->totalMBs << (pFrame->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
-        H264DecoderLayerDescriptor *layerMb = &m_mbinfo.layerMbs[m_currentLayer];
-        MFX_INTERNAL_CPY(layerMb->MV[0], m_gmbinfo->MV[0], sizeof(H264DecoderMacroblockMVs) * nMBCount);
-        MFX_INTERNAL_CPY(layerMb->MV[1], m_gmbinfo->MV[1], sizeof(H264DecoderMacroblockMVs) * nMBCount);
-
-        for (Ipp32s i = 0; i < nMBCount; i++)
-        {
-            layerMb->mbs[i].mbtype = m_gmbinfo->mbs[i].mbtype;
-            layerMb->mbs[i].sbtype[0] = m_gmbinfo->mbs[i].sbtype[0];
-            layerMb->mbs[i].sbtype[1] = m_gmbinfo->mbs[i].sbtype[1];
-            layerMb->mbs[i].sbtype[2] = m_gmbinfo->mbs[i].sbtype[2];
-            layerMb->mbs[i].sbtype[3] = m_gmbinfo->mbs[i].sbtype[3];
-            layerMb->mbs[i].mbflags = m_gmbinfo->mbs[i].mbflags;
-            layerMb->mbs[i].sbdir[0] = m_mbinfo.mbs[i].sbdir[0];
-            layerMb->mbs[i].sbdir[1] = m_mbinfo.mbs[i].sbdir[1];
-            layerMb->mbs[i].sbdir[2] = m_mbinfo.mbs[i].sbdir[2];
-            layerMb->mbs[i].sbdir[3] = m_mbinfo.mbs[i].sbdir[3];
-            layerMb->mbs[i].refIdxs[0] = m_gmbinfo->mbs[i].refIdxs[0];
-            layerMb->mbs[i].refIdxs[1] = m_gmbinfo->mbs[i].refIdxs[1];
-        }
-
-        IppiSize lumaSize = pFrame->lumaSize();
-
-        IppiSize chromaSize = pFrame->chromaSize();
-
-        Ipp32s pitch_luma = pSlice->GetCurrentFrame()->pitch_luma();
-        Ipp32s pitch_chroma = pSlice->GetCurrentFrame()->pitch_chroma();
-
-        // don't zero padded blocks now, will be filled in interpolateMB
-
-        CopyPlane(m_pYPlane, pitch_luma,
-                  layerMb->m_pYPlane, lumaSize.width + 32, lumaSize);
-
-        if (nv12_flag) {
-            CopyPlane_NV12(m_pUVPlane, pitch_chroma,
-                layerMb->m_pUPlane, layerMb->m_pVPlane,
-                chromaSize.width + 16, chromaSize);
-        } else {
-            CopyPlane(m_pUPlane, pitch_chroma,
-                layerMb->m_pUPlane, chromaSize.width + 16, chromaSize);
-
-            CopyPlane(m_pVPlane, pitch_chroma,
-                layerMb->m_pVPlane, chromaSize.width + 16, chromaSize);
-        }
-
-    }
-}
-
-Status H264SegmentDecoderMultiThreaded::ProcessLayerPreSlice()
-{
-    m_store_ref_base_pic_flag = 0;
-    if ((m_pSliceHeader->nal_ext.svc.store_ref_base_pic_flag== 1) &&
-        (m_pSliceHeader->nal_ext.svc.quality_id == 0) &&
-        m_pSlice->GetCurrentFrame()->m_storeRefBasePic)
-    {
-        m_store_ref_base_pic_flag = 1;
-    }
-
-    m_bIsMaxQId = m_pSlice->m_bIsMaxQId;
-    m_bIsMaxDId = m_pSlice->m_bIsMaxDId;
-
-    m_reconstruct_all = 0;
-    if ((m_bIsMaxQId || m_store_ref_base_pic_flag == 1) && m_bIsMaxDId)
-    {
-        m_reconstruct_all = 1;
-    }
-
-    if ((m_reconstruct_all != 1) /* don't do deblocking at all*/ ||
-        (m_store_ref_base_pic_flag && m_bIsMaxDId) /* do deblocking later */)
-    {
-        bDoDeblocking = false;
-        m_pSlice->m_bDeblocked = true;
-    }
-
-    CalculateResizeParametersSlice();
-
-    m_use_base_residual = m_pSlice->GetCurrentFrame()->m_use_base_residual;
-
-    m_coeff_prediction_flag = !m_pSliceHeader->nal_ext.svc.no_inter_layer_pred_flag &&
-        !m_spatial_resolution_change && !m_pSliceHeader->tcoeff_level_prediction_flag;
-
-    m_use_coeff_prediction = m_pSliceHeader->tcoeff_level_prediction_flag || m_coeff_prediction_flag;
-    return UMC_OK;
-}
-
-
-Status H264SegmentDecoderMultiThreaded::ProcessLayerPost()
-{
-    m_pSlice->StoreBaseLayerFrameInfo();
-    StoreLayersMBInfo();
-    StoreRefBasePicture();
-    return UMC_OK;
-}
-
-void H264SegmentDecoderMultiThreaded::CalculateResizeParameters()
-{
-    CalculateResizeParametersSlice();
-
-    H264Slice *pSlice = m_pSlice;
-    H264DecoderFrame *pFrame = pSlice->GetCurrentFrame();
-    H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
-
-    Ipp32s d_id = m_currentLayer;
-
-    if (m_mbinfo.layerMbs == NULL)
-        return;
-
-    if (pSlice->m_bIsFirstSliceInDepLayer)
-    {
-        pFrame->m_offsets[d_id][0] = 0;
-        pFrame->m_offsets[d_id][1] = 0;
-        pFrame->m_offsets[d_id][2] = 0;
-        pFrame->m_offsets[d_id][3] = 0;
-
-        H264DecoderLayerDescriptor *curlayerMb = &m_mbinfo.layerMbs[m_currentLayer];
-
-        if (pSliceHeader->ref_layer_dq_id >= 0)
-        {
-            pFrame->m_offsets[d_id][0] = curlayerMb->m_pResizeParameter->leftOffset;
-            pFrame->m_offsets[d_id][1] = curlayerMb->m_pResizeParameter->topOffset;
-            pFrame->m_offsets[d_id][2] = curlayerMb->m_pResizeParameter->rightOffset;
-            pFrame->m_offsets[d_id][3] = curlayerMb->m_pResizeParameter->bottomOffset;
-        }
-    }
-}
-
-void H264SegmentDecoderMultiThreaded::CalculateResizeParametersSlice()
-{
-    H264Slice *pSlice = m_pSlice;
-    H264DecoderFrame *pFrame = pSlice->GetCurrentFrame();
-    H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
-
-    pSliceHeader = pSlice->m_firstILPredSliceInDepLayer ? pSlice->m_firstILPredSliceInDepLayer->GetSliceHeader() : pSliceHeader;
-
-    m_spatial_resolution_change = 0;
-    m_next_spatial_resolution_change = 1;
-
-    if (m_mbinfo.layerMbs == NULL)
-        return;
-
-    if (pSlice->m_bIsFirstSliceInDepLayer)
-    {
-        const H264SeqParamSet *curSps = pSlice->GetSeqParam();
-        H264DecoderLayerDescriptor *curlayerMb = &m_mbinfo.layerMbs[m_currentLayer];
-        curlayerMb->frame_mbs_only_flag = curSps->frame_mbs_only_flag;
-        curlayerMb->is_MbAff = pSliceHeader->MbaffFrameFlag;
-        curlayerMb->field_pic_flag = pSliceHeader->field_pic_flag;
-        curlayerMb->bottom_field_flag = pSliceHeader->bottom_field_flag;
-        curlayerMb->is_profile_baseline_scalable = (pSlice->m_pSeqParamSet->profile_idc == H264VideoDecoderParams::H264_PROFILE_SCALABLE_BASELINE);
-
-        curlayerMb->m_pResizeParameter = &curlayerMb->lrp[pFrame->GetNumberByParity(pSliceHeader->bottom_field_flag)];
-
-        m_next_spatial_resolution_change = curlayerMb->m_pResizeParameter->next_spatial_resolution_change;
-
-        if (!pSliceHeader->nal_ext.svc.quality_id)
-        {
-            m_spatial_resolution_change = curlayerMb->m_pResizeParameter->spatial_resolution_change;
-        }
-    }
-    else
-    {
-        if (!pSliceHeader->nal_ext.svc.quality_id)
-        {
-            m_spatial_resolution_change = m_mbinfo.layerMbs[m_currentLayer].m_pResizeParameter->spatial_resolution_change;
-        }
-        m_next_spatial_resolution_change = m_mbinfo.layerMbs[m_currentLayer].m_pResizeParameter->next_spatial_resolution_change;
     }
 }
 
@@ -3917,6 +2666,7 @@ Status H264SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, Ipp32s
     Ipp32s iMBRowSize = m_pSlice->GetMBRowWidth();
     Ipp32s iMaxMBNumber = iCurMBNumber + iMBToProcess;
 
+    bool bDoDeblocking;
     Ipp32s iFirstMBToDeblock;
     Ipp32s iAvailableMBToDeblock = 0;
 
@@ -3924,63 +2674,7 @@ Status H264SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, Ipp32s
     bDoDeblocking = m_pSlice->GetDeblockingCondition();
     iFirstMBToDeblock = iCurMBNumber;
 
-    if (m_pSlice->m_pSeqParamSetSvcEx)
-    {
-        bDoDeblocking = !m_pSlice->IsSliceGroups() && (DEBLOCK_FILTER_OFF != m_pSlice->GetSliceHeader()->disable_deblocking_filter_idc);
-    }
-
     m_psBuffer = align_pointer<UMC::CoeffsPtrCommon> (m_pCoefficientsBuffer, DEFAULT_ALIGN_VALUE);
-
-    ProcessLayerPre();
-    ProcessLayerPreSlice();
-
-    m_is_ref_base_pic = ((m_pSlice->GetSliceNum() - 1) <= m_pSlice->GetCurrentFrame()->m_lastSliceInBaseRefLayer) &&
-        ((m_pSlice->GetSliceNum() - 1) >= m_pSlice->GetCurrentFrame()->m_firstSliceInBaseRefLayer) && (m_pSlice->GetCurrentFrame()->m_storeRefBasePic == 1);
-
-    if (m_is_ref_base_pic)
-    {
-        H264DecoderFrame *pFrame = m_pSlice->GetCurrentFrame();
-
-        Ipp32s pitch_luma = pFrame->pitch_luma();
-        Ipp32s pitch_chroma = pFrame->pitch_chroma();
-
-        IppiSize lumaSize = pFrame->lumaSize();
-        IppiSize chromaSize = pFrame->chromaSize();
-        Ipp32s nv12 = (pFrame->GetColorFormat() == NV12);
-
-        if ((m_pSlice->GetSliceNum() - 1) == m_pSlice->GetCurrentFrame()->m_firstSliceInBaseRefLayer)
-        {
-            VM_ASSERT(pFrame->m_pYPlane_base);
-
-            CopyPlane(pFrame->m_pYPlane, pitch_luma,
-                      pFrame->m_pYPlane_base, pitch_luma, lumaSize);
-
-            if (nv12) {
-                chromaSize.width <<= 1;
-                CopyPlane(pFrame->m_pUVPlane, pitch_chroma,
-                    pFrame->m_pUVPlane_base, pitch_chroma, chromaSize);
-            } else {
-                CopyPlane(pFrame->m_pUPlane, pitch_chroma,
-                          pFrame->m_pUPlane_base, pitch_chroma, chromaSize);
-
-                CopyPlane(pFrame->m_pVPlane, pitch_chroma,
-                          pFrame->m_pVPlane_base, pitch_chroma, chromaSize);
-            }
-        }
-
-        m_pYPlane_base = pFrame->m_pYPlane;
-        m_pUVPlane_base = pFrame->m_pUVPlane;
-        m_pYPlane = pFrame->m_pYPlane_base;
-        m_pUVPlane = pFrame->m_pUVPlane_base;
-
-        if (pFrame->GetColorFormat() == NV12)
-        {
-            m_pUPlane = m_pUVPlane;
-            m_pVPlane = m_pUVPlane;
-            m_pUPlane_base = m_pUVPlane_base;
-            m_pVPlane_base = m_pUVPlane_base;
-        }
-    }
 
     // handle a slice group case
     if (m_isSliceGroups)
@@ -4063,8 +2757,6 @@ Status H264SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, Ipp32s
             }
         }
     }
-
-    ProcessLayerPost();
 
     if ((UMC_OK == umcRes) ||
         (UMC_ERR_END_OF_STREAM == umcRes))

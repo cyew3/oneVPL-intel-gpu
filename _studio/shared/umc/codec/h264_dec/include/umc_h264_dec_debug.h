@@ -16,12 +16,15 @@
 
 #include "umc_h264_dec_defs_dec.h"
 
+//#define ENABLE_TRACE
+
 namespace UMC
 {
 
+#ifdef ENABLE_TRACE
+
 void Trace(vm_char * format, ...);
 
-#if 0
 #if defined _DEBUG
 #define DEBUG_PRINT(x) Trace x
 static int pppp = 0;
@@ -29,9 +32,9 @@ static int pppp = 0;
 #define DEBUG_PRINT(x)
 #endif
 
-#else
+#else //  ENABLE_TRACE
 #define DEBUG_PRINT(x)
-#endif
+#endif //  ENABLE_TRACE
 
 } // namespace UMC
 

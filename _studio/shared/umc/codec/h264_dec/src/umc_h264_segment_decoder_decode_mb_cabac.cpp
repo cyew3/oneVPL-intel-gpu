@@ -168,18 +168,11 @@ void H264SegmentDecoder::GetRefIdx4x4_CABAC(const Ipp32u nActive,
                                               Ipp32u ListNum)
 {
     Ipp8s refIdx = 0;
-    RefIndexType *pRIx = m_cur_mb.GetReferenceIndexStruct(ListNum)->refIndexs;
-
     if(pCodRIx == CodNone)
     {
         refIdx = -1;
-    } else if (motion_pred_flag[ListNum][0])
-    {
-        refIdx = pRIx[0];
-
-        fill_n<RefIndexType>(pRIx, 4, refIdx);
-        return ;
-    } else if (nActive > 1)
+    }
+    else if (nActive > 1)
     {
         refIdx = (Ipp8s) GetSE_RefIdx_CABAC(ListNum, 0);
         if (refIdx >= (Ipp8s) nActive || refIdx < 0)
@@ -187,6 +180,8 @@ void H264SegmentDecoder::GetRefIdx4x4_CABAC(const Ipp32u nActive,
             throw h264_exception(UMC_ERR_INVALID_STREAM);
         }
     }
+
+    RefIndexType *pRIx = m_cur_mb.GetReferenceIndexStruct(ListNum)->refIndexs;
 
 #ifdef __ICL
     __assume_aligned(pRIx, 4);
@@ -211,10 +206,6 @@ void H264SegmentDecoder::GetRefIdx4x4_16x8_CABAC(const Ipp32u nActive,
     {
         refIdx = -1;
     }
-    else if(motion_pred_flag[ListNum][0])
-    {
-        refIdx = pRIx[0];
-    }
     else if (nActive > 1)
     {
         refIdx = (Ipp8s) GetSE_RefIdx_CABAC(ListNum,0);
@@ -229,10 +220,6 @@ void H264SegmentDecoder::GetRefIdx4x4_16x8_CABAC(const Ipp32u nActive,
     if(pCodRIx[8] == CodNone)
     {
         refIdx = -1;
-    }
-    else if(motion_pred_flag[ListNum][1])
-    {
-        refIdx = pRIx[2];
     }
     else if (nActive > 1)
     {
@@ -264,10 +251,6 @@ void H264SegmentDecoder::GetRefIdx4x4_8x16_CABAC(const Ipp32u nActive,
     {
         pRIx[0] = pRIx[2] = -1;
     }
-    else if(motion_pred_flag[ListNum][0])
-    {
-        pRIx[2] = pRIx[0];
-    }
     else if (nActive > 1)
     {
         RefIndexType refIdx;
@@ -286,10 +269,6 @@ void H264SegmentDecoder::GetRefIdx4x4_8x16_CABAC(const Ipp32u nActive,
     if(pCodRIx[2] == CodNone)
     {
         pRIx[1] = pRIx[3] = -1;
-    }
-    else if(motion_pred_flag[ListNum][1])
-    {
-        pRIx[3] = pRIx[1];
     }
     else if (nActive > 1)
     {
@@ -321,10 +300,10 @@ Ipp32s H264SegmentDecoder::GetSE_RefIdx_CABAC(Ipp32u ListNum,
 
     Ipp32s leftFlag = 0;
     Ipp32s topFlag = 0;
-    Ipp32s BlockNum = subblock_block_mapping[block8x8];
 
     if (!(block8x8 & 1)) // on left edge
     {
+        Ipp32s BlockNum = subblock_block_mapping[block8x8]; // MBAFF case: i.e. second 8x8 block can use first 8x8 block of left MB ()
         iLeftMB = m_cur_mb.CurrentBlockNeighbours.mbs_left[BlockNum / 4].mb_num;
 
         if (0 <= iLeftMB)
@@ -338,19 +317,13 @@ Ipp32s H264SegmentDecoder::GetSE_RefIdx_CABAC(Ipp32u ListNum,
             Ipp32s left_block8x8 = block_subblock_mapping[iNum] / 4;
 
             bool is_skip = (IS_INTRA_MBTYPE(m_gmbinfo->mbs[iLeftMB].mbtype)) ||
-                GetMBBaseModeFlag(m_gmbinfo->mbs[iLeftMB]) ||
-                !(m_mbinfo.mbs[iLeftMB].sbdir[left_block8x8] < D_DIR_DIRECT) ||
                 GetMBDirectSkipFlag(m_gmbinfo->mbs[iLeftMB]) ||
-                (m_mbinfo.mbs[iLeftMB].m_mv_prediction_flag[ListNum] &
-                (1 << iNum));
+                !(m_mbinfo.mbs[iLeftMB].sbdir[left_block8x8] < D_DIR_DIRECT);
 
             leftFlag = is_skip ? 0 : 1;
         }
     } else {
-        bool is_skip =
-            (m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[ListNum] &
-            (1 << (BlockNum - 1)))
-            || !(m_cur_mb.LocalMacroblockInfo->sbdir[block8x8 - 1] < D_DIR_DIRECT);
+        bool is_skip = !(m_cur_mb.LocalMacroblockInfo->sbdir[block8x8 - 1] < D_DIR_DIRECT);
         leftFlag = is_skip ? 0 : 1;
         LeftRefIdx = m_cur_mb.GetRefIdx(ListNum, block8x8 - 1);
     }
@@ -361,24 +334,16 @@ Ipp32s H264SegmentDecoder::GetSE_RefIdx_CABAC(Ipp32u ListNum,
 
         if (0 <= iTopMB)
         {
-            Ipp32s iNum = m_cur_mb.CurrentBlockNeighbours.mb_above.block_num;
-
             TopRefIdx = GetRefIdx(m_gmbinfo, ListNum, iTopMB, block8x8 + 2);
 
             bool is_skip = IS_INTRA_MBTYPE(m_gmbinfo->mbs[iTopMB].mbtype) ||
-                GetMBBaseModeFlag(m_gmbinfo->mbs[iTopMB]) ||
-                !(m_mbinfo.mbs[iTopMB].sbdir[block8x8 + 2] < D_DIR_DIRECT) ||
                 GetMBDirectSkipFlag(m_gmbinfo->mbs[iTopMB]) ||
-                (m_mbinfo.mbs[iTopMB].m_mv_prediction_flag[ListNum] &
-                (1 << (iNum + BlockNum)));
+                !(m_mbinfo.mbs[iTopMB].sbdir[block8x8 + 2] < D_DIR_DIRECT);
 
             topFlag = is_skip ? 0 : 1;
         }
     } else {
-        bool is_skip =
-            (m_cur_mb.LocalMacroblockInfo->m_mv_prediction_flag[ListNum] &
-            (1 << (BlockNum - 4)))
-            || !(m_cur_mb.LocalMacroblockInfo->sbdir[block8x8 - 2] < D_DIR_DIRECT);
+        bool is_skip = !(m_cur_mb.LocalMacroblockInfo->sbdir[block8x8 - 2] < D_DIR_DIRECT);
         topFlag = is_skip ? 0 : 1;
         TopRefIdx = m_cur_mb.GetRefIdx(ListNum, block8x8 - 2);
     }
@@ -436,7 +401,7 @@ H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(Ipp32u ListNum, Ipp3
         iLeftMB = m_cur_mb.CurrentBlockNeighbours.mbs_left[BlockNum / 4].mb_num;
         iBlock = m_cur_mb.CurrentBlockNeighbours.mbs_left[BlockNum / 4].block_num;
 
-        if (0 <= iLeftMB && !GetMBBaseModeFlag(m_gmbinfo->mbs[iLeftMB]))
+        if (0 <= iLeftMB)
         {
             bool is_skip = (IS_INTRA_MBTYPE(m_gmbinfo->mbs[iLeftMB].mbtype)) ||
                 GetMBDirectSkipFlag(m_gmbinfo->mbs[iLeftMB]) ||
@@ -462,7 +427,7 @@ H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(Ipp32u ListNum, Ipp3
         iTopMB = m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num;
         iBlock = m_cur_mb.CurrentBlockNeighbours.mb_above.block_num + BlockNum;
 
-        if (0 <= iTopMB && !GetMBBaseModeFlag(m_gmbinfo->mbs[iTopMB]))
+        if (0 <= iTopMB)
         {
             bool is_skip = (IS_INTRA_MBTYPE(m_gmbinfo->mbs[iTopMB].mbtype)) ||
                 GetMBDirectSkipFlag(m_gmbinfo->mbs[iTopMB]) ||
@@ -483,7 +448,7 @@ H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(Ipp32u ListNum, Ipp3
         TopMVd = m_cur_mb.MVDelta[ListNum]->MotionVectors + BlockNum - 4;
     }
 
-    if (0 <= iLeftMB && !GetMBBaseModeFlag(m_gmbinfo->mbs[iLeftMB]))
+    if (0 <= iLeftMB)
     {
         Ipp32s sign = sign_mask[LeftMVd->mvx<0];
         ctxIdxIncx += ((((Ipp32s)LeftMVd->mvx) ^ sign) - sign);
@@ -501,7 +466,7 @@ H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(Ipp32u ListNum, Ipp3
         ctxIdxIncy += mv_y;
     }
 
-    if (0 <= iTopMB && !GetMBBaseModeFlag(m_gmbinfo->mbs[iTopMB]))
+    if (0 <= iTopMB)
     {
         Ipp32s sign = sign_mask[TopMVd->mvx<0];
         ctxIdxIncx += ((((Ipp32s)TopMVd->mvx) ^ sign) - sign);

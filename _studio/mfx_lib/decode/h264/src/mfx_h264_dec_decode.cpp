@@ -277,9 +277,9 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     {
         m_pH264VideoDecoder.reset(new UMC::MFXTaskSupplier());
         
-        if (m_vPar.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
+        /*if (m_vPar.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 || m_vPar.mfx.FrameInfo.BitDepthLuma > 8 || m_vPar.mfx.FrameInfo.BitDepthChroma > 8)
             m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_NV12());
-        else
+        else*/
             m_FrameAllocator.reset(new mfx_UMC_FrameAllocator());
     }
     else
@@ -1532,8 +1532,8 @@ void VideoDECODEH264::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
 
     if (IsSVCProfile(m_vFirstPar.mfx.CodecProfile))
     {
-        surface_out->Info.FrameId.DependencyId = (mfxU16)pFrame->m_maxDId;
-        surface_out->Info.FrameId.QualityId = (mfxU16)pFrame->m_maxQId;
+        surface_out->Info.FrameId.DependencyId = (mfxU16)0;
+        surface_out->Info.FrameId.QualityId = (mfxU16)0;
         surface_out->Info.FrameId.TemporalId = 0;
     }
     else
@@ -1892,6 +1892,11 @@ bool VideoDECODEH264::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
     }
 
     if (newPar->mfx.FrameInfo.Width > oldPar->mfx.FrameInfo.Width)
+    {
+        return false;
+    }
+
+    if (newPar->mfx.FrameInfo.FourCC != oldPar->mfx.FrameInfo.FourCC)
     {
         return false;
     }

@@ -120,37 +120,6 @@ protected:
     DXVA_PicParams_H264* m_picParams;
 };
 
-class PackerDXVA2_SVC: public PackerDXVA2
-{
-public:
-    PackerDXVA2_SVC(VideoAccelerator * va, TaskSupplier * supplier);
-
-    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
-
-    virtual Ipp32s PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField);
-
-    virtual void PackAU(const H264DecoderFrame *pFrame, Ipp32s field);
-
-    virtual void BeginFrame();
-    virtual void EndFrame();
-
-    virtual void Reset();
-
-private:
-
-    virtual void AddReferenceFrame(DXVA_PicParams_H264 * pPicParams_H264, Ipp32s &pos, H264DecoderFrame * pFrame, Ipp32s reference);
-    virtual DXVA_PicEntry_H264 GetFrameIndex(const H264DecoderFrame * frame);
-
-    void PackPicParamsSVC(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264_SVC* pPicParams_H264);
-    Ipp32s PackSliceParamsSVC(H264Slice *pSlice, Ipp32s , Ipp32s , Ipp32s , DXVA_Slice_H264_SVC_Long * pDXVA_Slice_H264);
-
-    virtual void PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s firstSlice, Ipp32s count);
-
-    H264Slice * m_layerSlice;
-    bool    m_storeRefBasePic;
-    Ipp32s  m_lastDQId;
-};
-
 #endif // UMC_VA_DXVA
 
 

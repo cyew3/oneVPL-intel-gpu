@@ -117,17 +117,7 @@ public:
         if (!m_va)
             return;
 
-        Status sts;
-        const FrameData * baseRefPic = pFrame->GetFrameDataOFBaseRefPic();
-
-        if (baseRefPic)
-        {
-            sts = m_va->BeginFrame(baseRefPic->GetFrameMID());
-            if (sts != UMC_OK)
-                throw h264_exception(sts);
-        }
-
-        sts = m_va->BeginFrame(pFrame->GetFrameData()->GetFrameMID());
+        Status sts = m_va->BeginFrame(pFrame->GetFrameData()->GetFrameMID());
         if (sts != UMC_OK)
             throw h264_exception(sts);
 
@@ -144,13 +134,6 @@ public:
         sts = m_va->EndFrame();
         if (sts != UMC_OK)
             throw h264_exception(sts);
-
-        if (baseRefPic)
-        {
-            sts = m_va->EndFrame();
-            if (sts != UMC_OK)
-                throw h264_exception(sts);
-        }
     }
 
     void SetVideoHardwareAccelerator(VideoAccelerator * va)

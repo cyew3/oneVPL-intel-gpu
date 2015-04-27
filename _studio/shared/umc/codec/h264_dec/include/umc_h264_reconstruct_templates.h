@@ -14,6 +14,8 @@
 #ifndef __UMC_H264_RECONSTRUCT_TEMPLATES_H
 #define __UMC_H264_RECONSTRUCT_TEMPLATES_H
 
+#include "umc_h264_dec_ippwrap.h"
+
 namespace UMC
 {
 
@@ -32,15 +34,14 @@ template <typename PlaneY,
           typename PlaneUV,
           Ipp32s color_format,
           Ipp32s is_field,
-          Ipp32s is_weight,
-          bool nv12_support = color_format == 1 && sizeof(PlaneY) == 1>
+          Ipp32s is_weight>
 class ReconstructMB
 {
 public:
 
     enum
     {
-        width_chroma_div = nv12_support ? 0 : (color_format < 3),  // for plane
+        width_chroma_div = 0,  // for plane
         height_chroma_div = (color_format < 2),  // for plane
 
         point_width_chroma_div = (color_format < 3),  // for plane
@@ -90,7 +91,7 @@ public:
         bool is_bottom_mb;
 
         PlanePtrY m_pDstY;                                      // (PlanePtrY) pointer to an Y plane
-        PlanePtrUV m_pDstU;                                     // (PlanePtrUV) pointer to an U plane
+        PlanePtrUV m_pDstUV;                                    // (PlanePtrUV) pointer to an U plane
     };
 
     inline
@@ -133,14 +134,7 @@ public:
         }
 
         // get reference frame & pitch
-        if ((pParams->m_pSegDec->m_pSlice->GetSliceHeader()->nal_ext.svc.use_ref_base_pic_flag == 1) && pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pYPlane_base)
-        {
-            interpolateInfo->pSrc[0] = (Ipp16u*) pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pYPlane_base;
-        }
-        else
-        {
-            interpolateInfo->pSrc[0] = (Ipp16u*) pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pYPlane;
-        }
+        interpolateInfo->pSrc[0] = (Ipp16u*) pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pYPlane;
 
         VM_ASSERT(interpolateInfo->pSrc[0]);
 
@@ -166,7 +160,7 @@ public:
         if (interpolateInfo->pointVector.x | interpolateInfo->pointVector.y)
         {
             // fill parameters
-            ippiInterpolateLumaBlock(pParams->m_pDstY, interpolateInfo);
+            ippiInterpolateLumaBlock<PlaneY>(interpolateInfo);
 
             // save pointers for optimized interpolation
             pParams->m_bidirLuma.pSrc[iDir] = interpolateInfo->pDst[0];
@@ -187,7 +181,7 @@ public:
             else
             {
                 interpolateInfo->pSrc[0] = (Ipp16u*) ((PlanePtrY)(interpolateInfo->pSrc[0]) + iOffset);
-                ippiInterpolateLuma(pParams->m_pDstY, interpolateInfo);
+                ippiInterpolateLuma<PlaneY>(interpolateInfo);
 
                 // save pointers for optimized interpolation
                 pParams->m_bidirLuma.pSrc[iDir] = interpolateInfo->pDst[0];
@@ -212,79 +206,25 @@ public:
 
         if (iRefIndex < 0)
         {
-            if (nv12_support)
-            {
-                // save pointers for optimized interpolation
-                pParams->m_bidirChroma[0].pSrc[iDir] = interpolateInfo->pDst[0];
-            }
-            else
-            {
-                // save pointers for optimized interpolation
-                pParams->m_bidirChroma[0].pSrc[iDir] = interpolateInfo->pDst[0];
-                pParams->m_bidirChroma[1].pSrc[iDir] = interpolateInfo->pDst[1];
-                pParams->m_bidirChroma[1].srcStep[iDir] = interpolateInfo->dstStep;
-            }
+            // save pointers for optimized interpolation
+            pParams->m_bidirChroma[0].pSrc[iDir] = interpolateInfo->pDst[0];
 
             pParams->m_bidirChroma[0].srcStep[iDir] = interpolateInfo->dstStep;
 
-            if (nv12_support)
+            if (sizeof(PlaneUV) == 1)
             {
-                if (sizeof(PlaneUV) == 1)
-                {
-                    ippiSet_16u_C1R(0, (Ipp16u*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
-                }
-                else
-                {
-                    ippiSet_32s_C1R(0, (Ipp32s*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
-                }
+                ippiSet_16u_C1R(0, (Ipp16u*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
             }
             else
             {
-                if (sizeof(PlaneUV) == 1)
-                {
-                    ippiSet_8u_C1R(0, (Ipp8u*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
-                    ippiSet_8u_C1R(0, (Ipp8u*)interpolateInfo->pDst[1], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
-                }
-                else
-                {
-                    ippiSet_16u_C1R(0, interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
-                    ippiSet_16u_C1R(0, interpolateInfo->pDst[1], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
-                }
+                ippiSet_32s_C1R(0, (Ipp32s*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
             }
             return;
         }
 
         // get reference frame & pitch
-        if (pParams->m_pSegDec->m_pSlice->GetSliceHeader()->nal_ext.svc.use_ref_base_pic_flag && pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pYPlane_base)
-        {
-            if (nv12_support)
-            {
-                interpolateInfo->pSrc[0] = (Ipp16u*)pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pUVPlane_base;
-                VM_ASSERT(interpolateInfo->pSrc[0]);
-            }
-            else
-            {
-                interpolateInfo->pSrc[0] = (Ipp16u*)pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pUPlane_base;
-                interpolateInfo->pSrc[1] = (Ipp16u*)pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pVPlane_base;
-                VM_ASSERT(interpolateInfo->pSrc[0]);
-                VM_ASSERT(interpolateInfo->pSrc[1]);
-            }
-        }
-        else
-        {
-            if (nv12_support)
-            {
-                interpolateInfo->pSrc[0] = (Ipp16u*)pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pUVPlane;
-                VM_ASSERT(interpolateInfo->pSrc[0]);
-            }
-            else
-            {
-                interpolateInfo->pSrc[0] = (Ipp16u*)pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pUPlane;
-                interpolateInfo->pSrc[1] = (Ipp16u*)pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pVPlane;
-                VM_ASSERT(interpolateInfo->pSrc[0]);
-                VM_ASSERT(interpolateInfo->pSrc[1]);
-            }
-        }
+        interpolateInfo->pSrc[0] = (Ipp16u*)pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pUVPlane;
+        VM_ASSERT(interpolateInfo->pSrc[0]);
 
         if (is_field)
         {
@@ -298,15 +238,7 @@ public:
 
             if (iRefFieldTop)
             {
-                if (nv12_support)
-                {
-                    interpolateInfo->pSrc[0] = (Ipp16u*)((PlanePtrUV)(interpolateInfo->pSrc[0]) + (interpolateInfo->srcStep >> 1));
-                }
-                else
-                {
-                    interpolateInfo->pSrc[0] = (Ipp16u*)((PlanePtrUV)(interpolateInfo->pSrc[0]) + (interpolateInfo->srcStep >> 1));
-                    interpolateInfo->pSrc[1] = (Ipp16u*)((PlanePtrUV)(interpolateInfo->pSrc[1]) + (interpolateInfo->srcStep >> 1));
-                }
+                interpolateInfo->pSrc[0] = (Ipp16u*)((PlanePtrUV)(interpolateInfo->pSrc[0]) + (interpolateInfo->srcStep >> 1));
             }
         }
 
@@ -338,24 +270,10 @@ public:
             interpolateInfo->pointVector.x <<= ((Ipp32s) (3 <= color_format));
             interpolateInfo->pointVector.y <<= ((Ipp32s) (2 <= color_format));
 
+            ippiInterpolateChromaBlockNV12<PlaneUV>(interpolateInfo);
 
-            if (nv12_support)
-            {
-                ippiInterpolateChromaBlockNV12(pParams->m_pDstU, interpolateInfo);
-
-                // save pointers for optimized interpolation
-                pParams->m_bidirChroma[0].pSrc[iDir] = interpolateInfo->pDst[0];
-            }
-            else
-            {
-                ippiInterpolateChromaBlock(pParams->m_pDstU, interpolateInfo);
-
-                // save pointers for optimized interpolation
-                pParams->m_bidirChroma[0].pSrc[iDir] = interpolateInfo->pDst[0];
-                pParams->m_bidirChroma[1].pSrc[iDir] = interpolateInfo->pDst[1];
-                pParams->m_bidirChroma[1].srcStep[iDir] = interpolateInfo->dstStep;
-            }
-
+            // save pointers for optimized interpolation
+            pParams->m_bidirChroma[0].pSrc[iDir] = interpolateInfo->pDst[0];
             pParams->m_bidirChroma[0].srcStep[iDir] = interpolateInfo->dstStep;
         }
         else
@@ -364,16 +282,7 @@ public:
                              pParams->m_iIntraMBChromaOffset;
 
             // save pointers for optimized interpolation
-            if (nv12_support)
-            {
-                pParams->m_bidirChroma[0].pSrc[iDir] = (Ipp16u*)((PlanePtrUV)(interpolateInfo->pSrc[0]) + iOffset);
-            }
-            else
-            {
-                pParams->m_bidirChroma[0].pSrc[iDir] = (Ipp16u*)((PlanePtrUV)(interpolateInfo->pSrc[0]) + iOffset);
-                pParams->m_bidirChroma[1].pSrc[iDir] = (Ipp16u*)((PlanePtrUV)(interpolateInfo->pSrc[1]) + iOffset);
-                pParams->m_bidirChroma[1].srcStep[iDir] = interpolateInfo->srcStep;
-            }
+            pParams->m_bidirChroma[0].pSrc[iDir] = (Ipp16u*)((PlanePtrUV)(interpolateInfo->pSrc[0]) + iOffset);
             pParams->m_bidirChroma[0].srcStep[iDir] = interpolateInfo->srcStep;
         }
 
@@ -389,18 +298,7 @@ public:
 
         if (color_format)
         {
-            if (nv12_support)
-            {
-                InterpolateBlock_NV12(pParams->m_pDstU,
-                    &pParams->m_bidirChroma[0]);
-            }
-            else
-            {
-                InterpolateBlock(pParams->m_pDstU,
-                                &pParams->m_bidirChroma[1]);
-                InterpolateBlock(pParams->m_pDstU,
-                                 &pParams->m_bidirChroma[0]);
-            }
+            InterpolateBlock_NV12(pParams->m_pDstUV, &pParams->m_bidirChroma[0]);
         }
 
     } // void InterpolateMacroblock(ReconstructParams *pParams)
@@ -419,40 +317,18 @@ public:
 
         if (color_format)
         {
-            if (nv12_support)
-            {
-                BiDirWeightBlock_NV12(pParams->m_pDstU,
-                                &pParams->m_bidirChroma[0],
-                                 pParams->chroma_log2_weight_denom,
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_FWD][pParams->m_iRefIndex[D_DIR_FWD]].chroma_weight[0],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_FWD][pParams->m_iRefIndex[D_DIR_FWD]].chroma_offset[0],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_BWD][pParams->m_iRefIndex[D_DIR_BWD]].chroma_weight[0],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_BWD][pParams->m_iRefIndex[D_DIR_BWD]].chroma_offset[0],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_FWD][pParams->m_iRefIndex[D_DIR_FWD]].chroma_weight[1],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_FWD][pParams->m_iRefIndex[D_DIR_FWD]].chroma_offset[1],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_BWD][pParams->m_iRefIndex[D_DIR_BWD]].chroma_weight[1],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_BWD][pParams->m_iRefIndex[D_DIR_BWD]].chroma_offset[1]);
-            }
-            else
-            {
-                BiDirWeightBlock(pParams->m_pDstU,
-                                 &pParams->m_bidirChroma[1],
-                                 pParams->chroma_log2_weight_denom,
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_FWD][pParams->m_iRefIndex[D_DIR_FWD]].chroma_weight[1],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_FWD][pParams->m_iRefIndex[D_DIR_FWD]].chroma_offset[1],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_BWD][pParams->m_iRefIndex[D_DIR_BWD]].chroma_weight[1],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_BWD][pParams->m_iRefIndex[D_DIR_BWD]].chroma_offset[1]);
-
-                BiDirWeightBlock(pParams->m_pDstU,
-                                 &pParams->m_bidirChroma[0],
-                                 pParams->chroma_log2_weight_denom,
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_FWD][pParams->m_iRefIndex[D_DIR_FWD]].chroma_weight[0],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_FWD][pParams->m_iRefIndex[D_DIR_FWD]].chroma_offset[0],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_BWD][pParams->m_iRefIndex[D_DIR_BWD]].chroma_weight[0],
-                                 pParams->m_pSegDec->m_pPredWeight[D_DIR_BWD][pParams->m_iRefIndex[D_DIR_BWD]].chroma_offset[0]);
-            }
+            BiDirWeightBlock_NV12(pParams->m_pDstUV,
+                            &pParams->m_bidirChroma[0],
+                                pParams->chroma_log2_weight_denom,
+                                pParams->m_pSegDec->m_pPredWeight[D_DIR_FWD][pParams->m_iRefIndex[D_DIR_FWD]].chroma_weight[0],
+                                pParams->m_pSegDec->m_pPredWeight[D_DIR_FWD][pParams->m_iRefIndex[D_DIR_FWD]].chroma_offset[0],
+                                pParams->m_pSegDec->m_pPredWeight[D_DIR_BWD][pParams->m_iRefIndex[D_DIR_BWD]].chroma_weight[0],
+                                pParams->m_pSegDec->m_pPredWeight[D_DIR_BWD][pParams->m_iRefIndex[D_DIR_BWD]].chroma_offset[0],
+                                pParams->m_pSegDec->m_pPredWeight[D_DIR_FWD][pParams->m_iRefIndex[D_DIR_FWD]].chroma_weight[1],
+                                pParams->m_pSegDec->m_pPredWeight[D_DIR_FWD][pParams->m_iRefIndex[D_DIR_FWD]].chroma_offset[1],
+                                pParams->m_pSegDec->m_pPredWeight[D_DIR_BWD][pParams->m_iRefIndex[D_DIR_BWD]].chroma_weight[1],
+                                pParams->m_pSegDec->m_pPredWeight[D_DIR_BWD][pParams->m_iRefIndex[D_DIR_BWD]].chroma_offset[1]);
         }
-
     } // void BiDirWeightMacroblock(ReconstructParams *pParams)
 
     inline
@@ -483,29 +359,14 @@ public:
 
         if (color_format)
         {
-            if (nv12_support)
-            {
-                pParams->m_bidirChroma[0].roiSize.width <<= 1;
+            pParams->m_bidirChroma[0].roiSize.width <<= 1;
 
-                BiDirWeightBlockImplicit(pParams->m_pDstU,
-                                         &pParams->m_bidirChroma[0],
-                                         64 - iDistScaleFactor,
-                                         iDistScaleFactor);
+            BiDirWeightBlockImplicit(pParams->m_pDstUV,
+                                        &pParams->m_bidirChroma[0],
+                                        64 - iDistScaleFactor,
+                                        iDistScaleFactor);
 
-                pParams->m_bidirChroma[0].roiSize.width >>= 1;
-            }
-            else
-            {
-                BiDirWeightBlockImplicit(pParams->m_pDstU,
-                                         &pParams->m_bidirChroma[1],
-                                         64 - iDistScaleFactor,
-                                         iDistScaleFactor);
-
-                BiDirWeightBlockImplicit(pParams->m_pDstU,
-                                         &pParams->m_bidirChroma[0],
-                                         64 - iDistScaleFactor,
-                                         iDistScaleFactor);
-            }
+            pParams->m_bidirChroma[0].roiSize.width >>= 1;
         }
     } // void BiDirWeightMacroblockImplicit(ReconstructParams *pParams)
 
@@ -523,37 +384,18 @@ public:
     inline
     void UniDirWeightChroma(ReconstructParams *pParams, Ipp32s iDir)
     {
-        if (nv12_support)
-        {
-            UniDirWeightBlock_NV12(pParams->m_pDstU,
-                              &pParams->m_bidirChroma[0],
-                              pParams->chroma_log2_weight_denom,
-                              pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_weight[0],
-                              pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_offset[0],
-                              pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_weight[1],
-                              pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_offset[1]);
-        }
-        else
-        {
-            UniDirWeightBlock(pParams->m_pDstU,
-                              &pParams->m_bidirChroma[1],
-                              pParams->chroma_log2_weight_denom,
-                              pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_weight[1],
-                              pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_offset[1]);
-
-            UniDirWeightBlock(pParams->m_pDstU,
-                              &pParams->m_bidirChroma[0],
-                              pParams->chroma_log2_weight_denom,
-                              pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_weight[0],
-                              pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_offset[0]);
-        }
-
+        UniDirWeightBlock_NV12(pParams->m_pDstUV,
+                            &pParams->m_bidirChroma[0],
+                            pParams->chroma_log2_weight_denom,
+                            pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_weight[0],
+                            pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_offset[0],
+                            pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_weight[1],
+                            pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_offset[1]);
     } // void UniDirWeightLuma(ReconstructParams *params, Ipp32s iDir)
 
     void CompensateBiDirBlock(ReconstructParams &params,
                               PlanePtrY pDstY,
-                              PlanePtrUV pDstU,
-                              PlanePtrUV pDstV,
+                              PlanePtrUV pDstUV,
                               Ipp32s iPitchLuma,
                               Ipp32s iPitchChroma,
                               Ipp32s iBlockNumber)
@@ -562,7 +404,7 @@ public:
             GetReferenceIndex(params.m_pRefIndex[D_DIR_BWD], iBlockNumber) == -1)
         {
             Ipp32s iDir = GetReferenceIndex(params.m_pRefIndex[D_DIR_FWD], iBlockNumber) == -1 ? D_DIR_BWD : D_DIR_FWD;
-            CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir, iBlockNumber);
+            CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir, iBlockNumber);
             return;
         }
 
@@ -577,11 +419,6 @@ public:
         {
             params.m_chromaInterpolateInfo.pDst[0] = (Ipp16u*)((PlanePtrUV) ((((PlanePtrY) params.m_pSegDec->m_pPredictionBuffer) + 16 * 16) +
                                           params.m_iIntraMBChromaOffsetTmp));
-            if (!nv12_support)
-            {
-                params.m_chromaInterpolateInfo.pDst[1] = (Ipp16u*)((PlanePtrUV) params.m_pSegDec->m_pPredictionBuffer + 2*16 * 16 +
-                                              params.m_iIntraMBChromaOffsetTmp);
-            }
             params.m_chromaInterpolateInfo.dstStep = 16;
             // do forward prediction
             CompensateMotionChromaBlock(&params, D_DIR_FWD, iBlockNumber, BI_DIR);
@@ -600,16 +437,9 @@ public:
 
         if (color_format)
         {
-            params.m_bidirChroma[0].pDst = params.m_chromaInterpolateInfo.pDst[0] = (Ipp16u*)(pDstU + params.m_iIntraMBChromaOffset);
+            params.m_bidirChroma[0].pDst = params.m_chromaInterpolateInfo.pDst[0] = (Ipp16u*)(pDstUV + params.m_iIntraMBChromaOffset);
             params.m_bidirChroma[0].dstStep = params.m_chromaInterpolateInfo.dstStep = iPitchChroma;
             params.m_bidirChroma[0].roiSize = params.m_chromaInterpolateInfo.sizeBlock;
-
-            if (!nv12_support)
-            {
-                params.m_bidirChroma[1].pDst = params.m_chromaInterpolateInfo.pDst[1] = (Ipp16u*)(pDstV + params.m_iIntraMBChromaOffset);
-                params.m_bidirChroma[1].dstStep = iPitchChroma;
-                params.m_bidirChroma[1].roiSize = params.m_chromaInterpolateInfo.sizeBlock;
-            }
 
             // do backward prediction
             CompensateMotionChromaBlock(&params, D_DIR_BWD, iBlockNumber, BI_DIR);
@@ -635,8 +465,7 @@ public:
 
     void CompensateUniDirBlock(ReconstructParams &params,
                                PlanePtrY pDstY,
-                               PlanePtrUV pDstU,
-                               PlanePtrUV pDstV,
+                               PlanePtrUV pDstUV,
                                Ipp32s iPitchLuma,
                                Ipp32s iPitchChroma,
                                Ipp32s iDir,
@@ -655,16 +484,9 @@ public:
 
         if (color_format)
         {
-            params.m_bidirChroma[0].pDst = params.m_chromaInterpolateInfo.pDst[0] = (Ipp16u*)(pDstU + params.m_iIntraMBChromaOffset);
+            params.m_bidirChroma[0].pDst = params.m_chromaInterpolateInfo.pDst[0] = (Ipp16u*)(pDstUV + params.m_iIntraMBChromaOffset);
             params.m_bidirChroma[0].dstStep = params.m_chromaInterpolateInfo.dstStep = iPitchChroma;
             params.m_bidirChroma[0].roiSize = params.m_chromaInterpolateInfo.sizeBlock;
-
-            if (!nv12_support)
-            {
-                params.m_bidirChroma[1].pDst = params.m_chromaInterpolateInfo.pDst[1] = (Ipp16u*)(pDstV + params.m_iIntraMBChromaOffset);
-                params.m_bidirChroma[1].dstStep = iPitchChroma;
-                params.m_bidirChroma[1].roiSize = params.m_chromaInterpolateInfo.sizeBlock;
-            }
 
             // do forward prediction
             CompensateMotionChromaBlock(&params, iDir, iBlockNumber, UNI_DIR);
@@ -687,8 +509,7 @@ public:
     } // void CompensateUniDirBlock(ReconstructParams &params,
 
     void CompensateBlock8x8(PlanePtrY pDstY,
-                            PlanePtrUV pDstU,
-                            PlanePtrUV pDstV,
+                            PlanePtrUV pDstUV,
                             Ipp32s iPitchLuma,
                             Ipp32s iPitchChroma,
                             ReconstructParams &params,
@@ -714,7 +535,7 @@ public:
                     params.m_iIntraMBLumaOffsetTmp = 0;
                     params.m_iIntraMBChromaOffsetTmp = 0;
 
-                    CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                    CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                          iSubBlockNumber);
                 }
                 else
@@ -723,7 +544,7 @@ public:
                                    (D_DIR_BWD) :
                                    (D_DIR_FWD);
 
-                    CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                    CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                           iSubBlockNumber);
                 }
             }
@@ -745,7 +566,7 @@ public:
                     params.m_iIntraMBLumaOffsetTmp = 0;
                     params.m_iIntraMBChromaOffsetTmp = 0;
 
-                    CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                    CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                          iSubBlockNumber);
 
                     // set sub-block offset for second half of MB
@@ -757,7 +578,7 @@ public:
                     params.m_iIntraMBLumaOffsetTmp = 4 * 16;
                     params.m_iIntraMBChromaOffsetTmp = (4 >> height_chroma_div) * 16;
 
-                    CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                    CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                          iSubBlockNumber + 4);
                 }
                 else
@@ -766,7 +587,7 @@ public:
                                    (D_DIR_BWD) :
                                    (D_DIR_FWD);
 
-                    CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                    CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                           iSubBlockNumber);
 
                     // set sub-block offset for second half of MB
@@ -775,7 +596,7 @@ public:
                     params.m_iIntraMBLumaOffset = 4 * iPitchLuma;
                     params.m_iIntraMBChromaOffset = (4 >> height_chroma_div) * iPitchChroma;
 
-                    CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                    CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                           iSubBlockNumber + 4);
                 }
             }
@@ -797,7 +618,7 @@ public:
                     params.m_iIntraMBLumaOffsetTmp = 0;
                     params.m_iIntraMBChromaOffsetTmp = 0;
 
-                    CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                    CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                          iSubBlockNumber);
 
                     // set sub-block offset for second half of MB
@@ -809,7 +630,7 @@ public:
                     params.m_iIntraMBLumaOffsetTmp = 4;
                     params.m_iIntraMBChromaOffsetTmp = (4 >> width_chroma_div);
 
-                    CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                    CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                          iSubBlockNumber + 1);
                 }
                 else
@@ -818,7 +639,7 @@ public:
                                    (D_DIR_BWD) :
                                    (D_DIR_FWD);
 
-                    CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                    CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                           iSubBlockNumber);
 
                     // set sub-block offset for second half of MB
@@ -827,7 +648,7 @@ public:
                     params.m_iIntraMBLumaOffset = 4;
                     params.m_iIntraMBChromaOffset = (4 >> width_chroma_div);
 
-                    CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                    CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                           iSubBlockNumber + 1);
                 }
             }
@@ -850,7 +671,7 @@ public:
                     params.m_iIntraMBLumaOffsetTmp = 0;
                     params.m_iIntraMBChromaOffsetTmp = 0;
 
-                    CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                    CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                          iSubBlockNumber);
 
                     // set sub-block offset for second quarter of MB
@@ -862,7 +683,7 @@ public:
                     params.m_iIntraMBLumaOffsetTmp = 4;
                     params.m_iIntraMBChromaOffsetTmp = (4 >> width_chroma_div);
 
-                    CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                    CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                          iSubBlockNumber + 1);
 
                     // set sub-block offset for third quarter of MB
@@ -876,7 +697,7 @@ public:
                     params.m_iIntraMBLumaOffsetTmp = 4 * 16;
                     params.m_iIntraMBChromaOffsetTmp = (4 >> height_chroma_div) * 16;
 
-                    CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                    CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                          iSubBlockNumber + 4);
 
                     // set sub-block offset for fourth quarter of MB
@@ -890,7 +711,7 @@ public:
                     params.m_iIntraMBChromaOffsetTmp = (4 >> width_chroma_div) +
                                                        (4 >> height_chroma_div) * 16;
 
-                    CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                    CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                          iSubBlockNumber + 5);
                 }
                 else
@@ -899,7 +720,7 @@ public:
                                    (D_DIR_BWD) :
                                    (D_DIR_FWD);
 
-                    CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                    CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                           iSubBlockNumber);
 
                     // set sub-block offset for second quarter of MB
@@ -908,7 +729,7 @@ public:
                     params.m_iIntraMBLumaOffset = 4;
                     params.m_iIntraMBChromaOffset = (4 >> width_chroma_div);
 
-                    CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                    CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                           iSubBlockNumber + 1);
 
                     // set sub-block offset for third quarter of MB
@@ -919,7 +740,7 @@ public:
                     params.m_iIntraMBLumaOffset = 4 * iPitchLuma;
                     params.m_iIntraMBChromaOffset = (4 >> height_chroma_div) * iPitchChroma;
 
-                    CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                    CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                           iSubBlockNumber + 4);
 
                     // set sub-block offset for fourth quarter of MB
@@ -929,7 +750,7 @@ public:
                     params.m_iIntraMBChromaOffset = (4 >> width_chroma_div) +
                                                     (4 >> height_chroma_div) * iPitchChroma;
 
-                    CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                    CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                           iSubBlockNumber + 5);
                 }
             }
@@ -939,8 +760,7 @@ public:
     } // void CompensateBlock8x8(PlanePtrY pDstY,
 
     void CompensateMotionMacroBlock(PlanePtrY pDstY,
-                                    PlanePtrUV pDstV,
-                                    PlanePtrUV pDstU,
+                                    PlanePtrUV pDstUV,
                                     Ipp32u mbXOffset, // for edge clipping
                                     Ipp32u mbYOffset,
                                     Ipp32s offsetY,
@@ -1078,7 +898,7 @@ public:
                         params.m_iIntraMBLumaOffsetTmp = 0;
                         params.m_iIntraMBChromaOffsetTmp = 0;
 
-                        CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                        CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                              0);
                     }
                     else
@@ -1087,7 +907,7 @@ public:
                                        (D_DIR_BWD) :
                                        (D_DIR_FWD);
 
-                        CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                        CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                               0);
                     }
 
@@ -1102,7 +922,7 @@ public:
                         params.m_iIntraMBLumaOffsetTmp = 8 * 16;
                         params.m_iIntraMBChromaOffsetTmp = (8 >> height_chroma_div) * 16;
 
-                        CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                        CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                              8);
                     }
                     else
@@ -1111,7 +931,7 @@ public:
                                        (D_DIR_BWD) :
                                        (D_DIR_FWD);
 
-                        CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                        CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                               8);
                     }
                 }
@@ -1131,7 +951,7 @@ public:
                         params.m_iIntraMBLumaOffsetTmp = 0;
                         params.m_iIntraMBChromaOffsetTmp = 0;
 
-                        CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                        CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                              0);
                     }
                     else
@@ -1140,7 +960,7 @@ public:
                                        (D_DIR_BWD) :
                                        (D_DIR_FWD);
 
-                        CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                        CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                               0);
                     }
 
@@ -1155,7 +975,7 @@ public:
                         params.m_iIntraMBLumaOffsetTmp = 8;
                         params.m_iIntraMBChromaOffsetTmp = 8 >> width_chroma_div;
 
-                        CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                        CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                              2);
                     }
                     else
@@ -1164,7 +984,7 @@ public:
                                        (D_DIR_BWD) :
                                        (D_DIR_FWD);
 
-                        CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                        CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                               2);
                     }
                 }
@@ -1184,14 +1004,14 @@ public:
                         params.m_iIntraMBLumaOffsetTmp = 0;
                         params.m_iIntraMBChromaOffsetTmp = 0;
 
-                        CompensateBiDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+                        CompensateBiDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma,
                                              0);
                     }
                     else
                     {
                         Ipp32s iDir = (MBTYPE_BACKWARD == mbtype) ? (D_DIR_BWD) : (D_DIR_FWD);
 
-                        CompensateUniDirBlock(params, pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma, iDir,
+                        CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                               0);
                     }
                 }
@@ -1204,27 +1024,24 @@ public:
             Ipp8s *pSubBlockDir = sd->m_cur_mb.LocalMacroblockInfo->sbdir;
 
             // sub block 0
-            CompensateBlock8x8(pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+            CompensateBlock8x8(pDstY, pDstUV, iPitchLuma, iPitchChroma,
                 params, pSubBlockType[0], pSubBlockDir[0], 0);
 
             // sub block 1
             pDstY += 8;
-            pDstU += (8 >> width_chroma_div);
-            pDstV += (8 >> width_chroma_div);
+            pDstUV += (8 >> width_chroma_div);
             params.m_iOffsetLuma = offsetY + 8;
             params.m_iOffsetChroma = offsetC + (8 >> width_chroma_div);
             params.m_lumaInterpolateInfo.pointBlockPos.x = mbXOffset + 8;
             params.m_lumaInterpolateInfo.pointBlockPos.y = mbYOffset;
             params.m_chromaInterpolateInfo.pointBlockPos.x = (mbXOffset + 8) >> point_width_chroma_div;
             params.m_chromaInterpolateInfo.pointBlockPos.y = mbYOffset >> point_height_chroma_div;
-            CompensateBlock8x8(pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+            CompensateBlock8x8(pDstY, pDstUV, iPitchLuma, iPitchChroma,
                 params, pSubBlockType[1], pSubBlockDir[1], 2);
 
             // sub block 2
             pDstY += - 8 + 8 * iPitchLuma;
-            pDstU += - (8 >> width_chroma_div)  +
-                     (8 >> height_chroma_div) * iPitchChroma;
-            pDstV += - (8 >> width_chroma_div) +
+            pDstUV += - (8 >> width_chroma_div)  +
                      (8 >> height_chroma_div) * iPitchChroma;
             params.m_iOffsetLuma = offsetY + 8 * iPitchLuma;
             params.m_iOffsetChroma = offsetC + (8 >> height_chroma_div) * iPitchChroma;
@@ -1232,13 +1049,12 @@ public:
             params.m_lumaInterpolateInfo.pointBlockPos.y = mbYOffset + 8;
             params.m_chromaInterpolateInfo.pointBlockPos.x = mbXOffset >> point_width_chroma_div;
             params.m_chromaInterpolateInfo.pointBlockPos.y = (mbYOffset + 8) >> point_height_chroma_div;
-            CompensateBlock8x8(pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+            CompensateBlock8x8(pDstY, pDstUV, iPitchLuma, iPitchChroma,
                 params, pSubBlockType[2], pSubBlockDir[2], 8);
 
             // sub block 3
             pDstY += 8;
-            pDstU += (8 >> width_chroma_div);
-            pDstV += (8 >> width_chroma_div);
+            pDstUV += (8 >> width_chroma_div);
             params.m_iOffsetLuma = offsetY + 8 + 8 * iPitchLuma;
             params.m_iOffsetChroma = offsetC + (8 >> width_chroma_div) +
                                      (8 >> height_chroma_div) * iPitchChroma;
@@ -1246,7 +1062,7 @@ public:
             params.m_lumaInterpolateInfo.pointBlockPos.y = mbYOffset + 8;
             params.m_chromaInterpolateInfo.pointBlockPos.x = (mbXOffset + 8) >> point_width_chroma_div;
             params.m_chromaInterpolateInfo.pointBlockPos.y = (mbYOffset + 8) >> point_height_chroma_div;
-            CompensateBlock8x8(pDstY, pDstU, pDstV, iPitchLuma, iPitchChroma,
+            CompensateBlock8x8(pDstY, pDstUV, iPitchLuma, iPitchChroma,
                 params, pSubBlockType[3], pSubBlockDir[3], 10);
         }
     } // void CompensateMotionMacroBlock(PlanePtrY pDstY,
@@ -1258,19 +1074,13 @@ public:
     void ReconstructPCMMB(Ipp32u offsetY, Ipp32u offsetC, Ipp32s pitch_luma, Ipp32s pitch_chroma,
                           H264SegmentDecoder * sd)
     {
-        PlanePtrY  pDstY;
-        PlanePtrUV pDstU;
-        PlanePtrUV pDstV;
-        Ipp32s i;
-
         // to retrieve non-aligned pointer from m_pCoeffBlocksRead
-        pDstY = (PlanePtrY)sd->m_pYPlane + offsetY;
-        pDstU = (PlanePtrUV)sd->m_pUPlane + offsetC;
-        pDstV = (PlanePtrUV)sd->m_pVPlane + offsetC;
+        PlanePtrY  pDstY = (PlanePtrY)sd->m_pYPlane + offsetY;
+        PlanePtrUV pDstUV = (PlanePtrUV)sd->m_pUVPlane + offsetC;
 
         PlanePtrY pCoeffBlocksRead_Y = reinterpret_cast<PlanePtrY> (sd->m_pCoeffBlocksRead);
         // get pointer to raw bytes from m_pCoeffBlocksRead
-        for (i = 0; i<16; i++)
+        for (Ipp32s i = 0; i<16; i++)
             MFX_INTERNAL_CPY(pDstY + i * pitch_luma, pCoeffBlocksRead_Y + i * 16, 16*sizeof(PlaneY));
 
         sd->m_pCoeffBlocksRead = (UMC::CoeffsPtrCommon)((Ipp8u*)sd->m_pCoeffBlocksRead +
@@ -1281,41 +1091,24 @@ public:
             Ipp32s iWidth = (color_format == 3) ? 16 : 8;
             Ipp32s iHeight = 8 + 8 * (color_format >> 1);
 
-            if (nv12_support)
-            {
-                PlaneUV pSrcDstUPlane[64];
-                PlaneUV pSrcDstVPlane[64];
+            PlaneUV pSrcDstUPlane[64];
+            PlaneUV pSrcDstVPlane[64];
 
-                size_t pitch = 8;
-                PlanePtrUV pCoeffBlocksRead_UV = (PlanePtrUV) (sd->m_pCoeffBlocksRead);
-                for (i = 0; i < iHeight; i += 1)
-                    MFX_INTERNAL_CPY(pSrcDstUPlane + i * pitch, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
+            size_t pitch = 8;
+            PlanePtrUV pCoeffBlocksRead_UV = (PlanePtrUV) (sd->m_pCoeffBlocksRead);
+            for (Ipp32s i = 0; i < iHeight; i += 1)
+                MFX_INTERNAL_CPY(pSrcDstUPlane + i * pitch, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
 
-                pCoeffBlocksRead_UV += iWidth * iHeight * sizeof(PlaneUV);
+            pCoeffBlocksRead_UV += iWidth * iHeight * sizeof(PlaneUV);
 
-                for (i = 0; i < iHeight; i += 1)
-                    MFX_INTERNAL_CPY(pSrcDstVPlane + i * pitch, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
+            for (Ipp32s i = 0; i < iHeight; i += 1)
+                MFX_INTERNAL_CPY(pSrcDstVPlane + i * pitch, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
 
-                sd->m_pCoeffBlocksRead = (UMC::CoeffsPtrCommon)((Ipp8u*)sd->m_pCoeffBlocksRead +
-                    2* iWidth * iHeight * sizeof(PlaneUV));
+            sd->m_pCoeffBlocksRead = (UMC::CoeffsPtrCommon)((Ipp8u*)sd->m_pCoeffBlocksRead +
+                2* iWidth * iHeight * sizeof(PlaneUV));
 
-                IppiSize roi = {8,8};
-                ConvertYV12ToNV12(pSrcDstUPlane, pSrcDstVPlane, 8, pDstU, pitch_chroma, roi);
-            }
-            else
-            {
-                PlanePtrUV pCoeffBlocksRead_UV = (PlanePtrUV) (sd->m_pCoeffBlocksRead);
-                for (i = 0; i < iHeight; i += 1)
-                    MFX_INTERNAL_CPY(pDstU + i * pitch_chroma, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
-
-                pCoeffBlocksRead_UV += iWidth * iHeight * sizeof(PlaneUV);
-
-                for (i = 0; i < iHeight; i += 1)
-                    MFX_INTERNAL_CPY(pDstV + i * pitch_chroma, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
-
-                sd->m_pCoeffBlocksRead = (UMC::CoeffsPtrCommon)((Ipp8u*)sd->m_pCoeffBlocksRead +
-                    2* iWidth * iHeight * sizeof(PlaneUV));
-            }
+            IppiSize roi = {8,8};
+            ConvertYV12ToNV12(pSrcDstUPlane, pSrcDstVPlane, 8, pDstUV, pitch_chroma, roi);
         }
     } // void ReconstructPCMMB(
 };

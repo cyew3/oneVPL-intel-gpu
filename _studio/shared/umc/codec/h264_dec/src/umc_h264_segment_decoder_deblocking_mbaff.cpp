@@ -14,38 +14,228 @@
 #include "umc_h264_segment_decoder.h"
 #include "umc_h264_dec_deblocking.h"
 #include "umc_h264_frame_info.h"
+#include "umc_h264_dec_ippwrap.h"
 
 namespace UMC
 {
 
-void H264SegmentDecoder::DeblockMacroblockISliceMBAFF()
+#define CONVERT_TO_16U(size_alpha, size_clipping)   \
+        Ipp32u i;\
+        Ipp32s bitDepthScale = 1 << (bit_depth - 8);\
+        \
+        Ipp16u pAlpha_16u[size_alpha];\
+        Ipp16u pBeta_16u[size_alpha];\
+        Ipp16u pThresholds_16u[size_clipping];\
+        IppiFilterDeblock_16u info;\
+        info.pSrcDstPlane = (Ipp16u*)pSrcDst;\
+        info.srcDstStep = srcdstStep;\
+        info.pAlpha = pAlpha_16u;\
+        info.pBeta = pBeta_16u;\
+        info.pThresholds = pThresholds_16u;\
+        info.pBs = pBS;\
+        info.bitDepth = bit_depth;\
+\
+        for (i = 0; i < sizeof(pAlpha_16u)/sizeof(pAlpha_16u[0]); i++)\
+        {\
+            pAlpha_16u[i]   = (Ipp16u)(pAlpha[i]*bitDepthScale);\
+            pBeta_16u[i]    = (Ipp16u)(pBeta[i]*bitDepthScale);\
+        }\
+\
+        for (i = 0; i < sizeof(pThresholds_16u)/sizeof(pThresholds_16u[0]); i++)\
+        {\
+            pThresholds_16u[i] = (Ipp16u)(pThresholds[i]*bitDepthScale);\
+        }
+
+void FilterDeblockingLuma_VerEdge_MBAFF(void* pSrcDst,
+                                                Ipp32s  srcdstStep,
+                                                Ipp8u*  pAlpha,
+                                                Ipp8u*  pBeta,
+                                                Ipp8u*  pThresholds,
+                                                Ipp8u*  pBS,
+                                                Ipp32s  bit_depth)
 {
-    Ipp32s mbtype = (m_gmbinfo->mbs + m_CurMBAddr)->mbtype;
-
-    if (deblocking_IL && !IS_INTRA_MBTYPE(mbtype)) {
-        return;
+    if (bit_depth > 8)
+    {
+        CONVERT_TO_16U(1, 4)
+        ippiFilterDeblockingLumaVerEdgeMBAFF_H264_16u_C1IR(&info);
     }
+    else
+    {
+        ippiFilterDeblockingLuma_VerEdge_MBAFF_H264_8u_C1IR((Ipp8u*)pSrcDst, srcdstStep, pAlpha[0], pBeta[0], pThresholds, pBS);
+    }
+}
 
+void FilterDeblockingLuma_VerEdge_MBAFF(Ipp8u* pSrcDst,
+                                                Ipp32s  srcdstStep,
+                                                Ipp8u*  alpha,
+                                                Ipp8u*  beta,
+                                                Ipp8u*  thresholds,
+                                                Ipp8u*  pStrength,
+                                                Ipp32s  bit_depth,
+                                                bool isFieldMB)
+{
+    Ipp32u pixelSize = bit_depth > 8 ? 2 : 1;
+
+    if (!isFieldMB)
+    {
+        FilterDeblockingLuma_VerEdge_MBAFF(pSrcDst,
+                            srcdstStep * 2,
+                            &alpha[0],
+                            &beta[0],
+                            thresholds, pStrength, bit_depth);
+        FilterDeblockingLuma_VerEdge_MBAFF(pSrcDst + srcdstStep*pixelSize,
+                            srcdstStep * 2,
+                            &alpha[1],
+                            &beta[1],
+                            thresholds + 4, pStrength + 4, bit_depth);
+    }
+    else
+    {
+        FilterDeblockingLuma_VerEdge_MBAFF(pSrcDst,
+                            srcdstStep,
+                            &alpha[0],
+                            &beta[0],
+                            thresholds, pStrength, bit_depth);
+        FilterDeblockingLuma_VerEdge_MBAFF(pSrcDst + srcdstStep * 8 * pixelSize,
+                            srcdstStep,
+                            &alpha[1],
+                            &beta[1],
+                            thresholds + 4, pStrength + 4, bit_depth);
+    }
+}
+
+
+void FilterDeblockingChroma_VerEdge_MBAFF(void* pSrcDst,
+                                            Ipp32s  srcdstStep,
+                                            Ipp8u*  pAlpha,
+                                            Ipp8u*  pBeta,
+                                            Ipp8u*  pThresholds,
+                                            Ipp8u*  pBS,
+                                            Ipp32s  bit_depth,
+                                            Ipp32u chroma_format_idc)
+{
+    if (bit_depth > 8)
+    {
+        MFX_H264_PP::GetH264Dispatcher()->FilterDeblockingChromaVerEdge_MBAFF((Ipp16u*)pSrcDst, srcdstStep,
+                                            pAlpha, pBeta,
+                                            pThresholds, pBS, bit_depth, chroma_format_idc);
+    }
+    else
+    {
+        MFX_H264_PP::GetH264Dispatcher()->FilterDeblockingChromaVerEdge_MBAFF((Ipp8u*)pSrcDst, srcdstStep,
+                                            pAlpha, pBeta,
+                                            pThresholds, pBS, bit_depth, chroma_format_idc);
+    }
+}
+
+void FilterDeblockingChroma_VerEdge_MBAFF(Ipp8u* pSrcDst,
+                                                Ipp32s  srcdstStep,
+                                                Ipp8u*  alpha,
+                                                Ipp8u*  beta,
+                                                Ipp8u*  thresholds,
+                                                Ipp8u*  pStrength,
+                                                Ipp32s  bit_depth,
+                                                Ipp32u chroma_format_idc,
+                                                bool isFieldMB)
+{
+    Ipp32u pixelSize = bit_depth > 8 ? 2 : 1;
+
+    if (chroma_format_idc == 1)
+    {
+        if (!isFieldMB)
+        {
+            FilterDeblockingChroma_VerEdge_MBAFF(pSrcDst,
+                                srcdstStep * 2,
+                                &alpha[0],
+                                &beta[0],
+                                thresholds, pStrength, bit_depth, chroma_format_idc);
+            FilterDeblockingChroma_VerEdge_MBAFF(pSrcDst + srcdstStep*pixelSize,
+                                srcdstStep * 2,
+                                &alpha[1],
+                                &beta[1],
+                                thresholds + 4, pStrength + 4, bit_depth, chroma_format_idc);
+        }
+        else
+        {
+            FilterDeblockingChroma_VerEdge_MBAFF(pSrcDst,
+                                srcdstStep,
+                                &alpha[0],
+                                &beta[0],
+                                thresholds, pStrength, bit_depth, chroma_format_idc);
+            FilterDeblockingChroma_VerEdge_MBAFF(pSrcDst + srcdstStep * 4 * pixelSize,
+                                srcdstStep,
+                                &alpha[1],
+                                &beta[1],
+                                thresholds + 4, pStrength + 4, bit_depth, chroma_format_idc);
+        }
+    }
+    else
+    {
+        if (!isFieldMB)
+        {
+            FilterDeblockingChroma_VerEdge_MBAFF(pSrcDst,
+                                srcdstStep * 2,
+                                &alpha[0],
+                                &beta[0],
+                                thresholds, pStrength, bit_depth, chroma_format_idc);
+            FilterDeblockingChroma_VerEdge_MBAFF(pSrcDst + srcdstStep*pixelSize,
+                                srcdstStep * 2,
+                                &alpha[1],
+                                &beta[1],
+                                thresholds + 4, pStrength + 4, bit_depth, chroma_format_idc);
+            FilterDeblockingChroma_VerEdge_MBAFF(pSrcDst + srcdstStep*pixelSize*8,
+                                srcdstStep * 2,
+                                &alpha[0],
+                                &beta[0],
+                                thresholds + 2, pStrength + 2, bit_depth, chroma_format_idc);
+            FilterDeblockingChroma_VerEdge_MBAFF(pSrcDst + srcdstStep*pixelSize*9,
+                                srcdstStep * 2,
+                                &alpha[1],
+                                &beta[1],
+                                thresholds + 6, pStrength + 6, bit_depth, chroma_format_idc);
+        }
+        else
+        {
+            FilterDeblockingChroma_VerEdge_MBAFF(pSrcDst,
+                                srcdstStep,
+                                &alpha[0],
+                                &beta[0],
+                                thresholds, pStrength, bit_depth, chroma_format_idc);
+            FilterDeblockingChroma_VerEdge_MBAFF(pSrcDst + srcdstStep * 4 * pixelSize,
+                                srcdstStep,
+                                &alpha[0],
+                                &beta[0],
+                                thresholds + 2, pStrength + 2, bit_depth, chroma_format_idc);
+            FilterDeblockingChroma_VerEdge_MBAFF(pSrcDst + srcdstStep * 8 * pixelSize,
+                                srcdstStep,
+                                &alpha[1],
+                                &beta[1],
+                                thresholds + 4, pStrength + 4, bit_depth, chroma_format_idc);
+            FilterDeblockingChroma_VerEdge_MBAFF(pSrcDst + srcdstStep * 12 * pixelSize,
+                                srcdstStep,
+                                &alpha[1],
+                                &beta[1],
+                                thresholds + 6, pStrength + 6, bit_depth, chroma_format_idc);
+        }
+    }
+}
+
+void H264SegmentDecoder::DeblockMacroblockMBAFF(PrepareMBParams prepareMBParams)
+{
     // prepare deblocking parameters
     ResetDeblockingVariablesMBAFF();
 
-    if (!m_deblockingParams.isNeedToDecblock)
-        return;
+    (this->*prepareMBParams)();
 
-    PrepareDeblockingParametersISliceMBAFF();
-
-    if (m_deblockingParams.deblockChroma)
     {
-        Ipp32u color_format = m_pCurrentFrame->m_chroma_format;
-
         if (0 == m_deblockingParams.UseComplexVerticalDeblocking)
-            (this->*DeblockChroma[color_format])(VERTICAL_DEBLOCKING);
+            DeblockChroma(VERTICAL_DEBLOCKING);
         else
-            (this->*DeblockChromaVerticalMBAFF[color_format])();
+            DeblockChromaVerticalMBAFF();
         if (0 == m_deblockingParams.ExtraHorizontalEdge)
-            (this->*DeblockChroma[color_format])(HORIZONTAL_DEBLOCKING);
+            DeblockChroma(HORIZONTAL_DEBLOCKING);
         else
-            (this->*DeblockChromaHorizontalMBAFF[color_format])();
+            DeblockChromaHorizontalMBAFF();
     }
 
     // perform luma deblocking
@@ -58,109 +248,7 @@ void H264SegmentDecoder::DeblockMacroblockISliceMBAFF()
         DeblockLuma(HORIZONTAL_DEBLOCKING);
     else
         DeblockLumaHorizontalMBAFF();
-
-} // void H264SegmentDecoder::DeblockMacroblockISliceMBAFF()
-
-void H264SegmentDecoder::DeblockMacroblockPSliceMBAFF()
-{
-/*
-    if (1) {
-        DeblockMacroblockBSliceMBAFF();
-        return;
-    }*/
-
-    InitDeblockingSliceBoundaryInfo();
-
-    if (!m_deblockingParams.m_isSameSlice)
-    {
-        DeblockMacroblockBSliceMBAFF();
-        return;
-    }
-
-
-    Ipp32s mbtype = (m_gmbinfo->mbs + m_CurMBAddr)->mbtype;
-
-    if (deblocking_IL && !IS_INTRA_MBTYPE(mbtype)) {
-        return;
-    }
-
-    // prepare deblocking parameters
-    ResetDeblockingVariablesMBAFF();
-
-    if (!m_deblockingParams.isNeedToDecblock)
-        return;
-
-    PrepareDeblockingParametersPSliceMBAFF();
-
-    // perform chroma deblocking
-    if (m_deblockingParams.deblockChroma)
-    {
-        Ipp32u color_format = m_pCurrentFrame->m_chroma_format;
-
-        if (0 == m_deblockingParams.UseComplexVerticalDeblocking)
-            (this->*DeblockChroma[color_format])(VERTICAL_DEBLOCKING);
-        else
-            (this->*DeblockChromaVerticalMBAFF[color_format])();
-        if (0 == m_deblockingParams.ExtraHorizontalEdge)
-            (this->*DeblockChroma[color_format])(HORIZONTAL_DEBLOCKING);
-        else
-            (this->*DeblockChromaHorizontalMBAFF[color_format])();
-    }
-
-    // perform luma deblocking
-    if (0 == m_deblockingParams.UseComplexVerticalDeblocking)
-        DeblockLuma(VERTICAL_DEBLOCKING);
-    else
-        DeblockLumaVerticalMBAFF();
-
-    if (0 == m_deblockingParams.ExtraHorizontalEdge)
-        DeblockLuma(HORIZONTAL_DEBLOCKING);
-    else
-        DeblockLumaHorizontalMBAFF();
-} // void H264SegmentDecoder::DeblockMacroblockPSliceMBAFF(Ipp32s m_CurMBAddr)
-
-void H264SegmentDecoder::DeblockMacroblockBSliceMBAFF()
-{
-    Ipp32s mbtype = (m_gmbinfo->mbs + m_CurMBAddr)->mbtype;
-
-    if (deblocking_IL && !IS_INTRA_MBTYPE(mbtype)) {
-        return;
-    }
-    // prepare deblocking parameters
-    ResetDeblockingVariablesMBAFF();
-
-    if (!m_deblockingParams.isNeedToDecblock)
-        return;
-
-    PrepareDeblockingParametersBSliceMBAFF();
-
-    // perform chroma deblocking
-    {
-        Ipp32u color_format = m_pCurrentFrame->m_chroma_format;
-
-        if (0 == m_deblockingParams.UseComplexVerticalDeblocking)
-            (this->*DeblockChroma[color_format])(VERTICAL_DEBLOCKING);
-        else
-            (this->*DeblockChromaVerticalMBAFF[color_format])();
-        if (0 == m_deblockingParams.ExtraHorizontalEdge)
-            (this->*DeblockChroma[color_format])(HORIZONTAL_DEBLOCKING);
-        else
-            (this->*DeblockChromaHorizontalMBAFF[color_format])();
-    }
-
-    // perform luma deblocking
-    if (0 == m_deblockingParams.UseComplexVerticalDeblocking)
-        DeblockLuma(VERTICAL_DEBLOCKING);
-    else
-        DeblockLumaVerticalMBAFF();
-
-
-    if (0 == m_deblockingParams.ExtraHorizontalEdge)
-        DeblockLuma(HORIZONTAL_DEBLOCKING);
-    else
-        DeblockLumaHorizontalMBAFF();
-
-} // void H264SegmentDecoder::DeblockMacroblockBSliceMBAFF(Ipp32s m_CurMBAddr)
+}
 
 void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
 {
@@ -174,7 +262,6 @@ void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
     Ipp32s nCurrMB_X, nCurrMB_Y;
     const H264SliceHeader *pHeader;
     Ipp32s nFieldMacroblockMode;
-    bool nv12_support = (m_pCurrentFrame->GetColorFormat() == NV12) && !deblocking_IL;
     Ipp32s disable_deblocking_filter_idc;
     Ipp32s disable_deblocking_filter_idc_from_stream;
 
@@ -183,48 +270,19 @@ void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
             (m_pCurrentFrame->GetAU(m_field_index)->GetSliceByNumber(m_gmbinfo->mbs[m_CurMBAddr].slice_id)->GetSliceHeader()) :
             (m_pSliceHeader);
  
-    if (deblocking_IL) {
-        disable_deblocking_filter_idc = pHeader->disable_inter_layer_deblocking_filter_idc;
-        disable_deblocking_filter_idc_from_stream = pHeader->disable_inter_layer_deblocking_filter_idc_from_stream;
-    } else {
-        disable_deblocking_filter_idc = pHeader->disable_deblocking_filter_idc;
-        disable_deblocking_filter_idc_from_stream = pHeader->disable_deblocking_filter_idc_from_stream;
-    }
-
-    if (deblocking_IL || m_bFrameDeblocking) {
-        m_deblockingParams.deblockEdgesStage2 = deblocking_stage2 &&
-            (disable_deblocking_filter_idc_from_stream == DEBLOCK_FILTER_ON_2_PASS ||
-            disable_deblocking_filter_idc_from_stream == DEBLOCK_FILTER_ON_2_PASS_NO_CHROMA);
-    } else {
-        m_deblockingParams.deblockEdgesStage2 = disable_deblocking_filter_idc == DEBLOCK_FILTER_ON_2_PASS ? 1 : 0;
-    }
+    disable_deblocking_filter_idc = pHeader->disable_deblocking_filter_idc;
+    disable_deblocking_filter_idc_from_stream = pHeader->disable_deblocking_filter_idc_from_stream;
 
     Ipp32s pixel_luma_sz    = bit_depth_luma > 8 ? 2 : 1;
     Ipp32s pixel_chroma_sz  = bit_depth_chroma > 8 ? 2 : 1;
 
-    if (deblocking_IL)
-    {
-        H264DecoderLayerDescriptor * layerMb = &m_mbinfo.layerMbs[(pHeader->ref_layer_dq_id >> 4)];
-        pY = layerMb->m_pYPlane;
-        pU = layerMb->m_pUPlane;
-        pV = layerMb->m_pVPlane;
+    // load planes
+    pY = m_pYPlane;
+    pU = m_pUVPlane;
+    pV = NULL;
 
-        pitch_luma = (m_pCurrentFrame->lumaSize().width + 32)* pixel_luma_sz;
-        pitch_chroma = (m_pCurrentFrame->chromaSize().width + 16)* pixel_chroma_sz;
-    } else {
-        // load planes
-        pY = m_pYPlane;
-        if (nv12_support) {
-            pU = m_pUVPlane;
-            pV = NULL;
-        } else {
-            pU = m_pUPlane;
-            pV = m_pVPlane;
-        }
-
-        pitch_luma = m_uPitchLuma;
-        pitch_chroma = m_uPitchChroma;
-    }
+    pitch_luma = m_uPitchLuma;
+    pitch_chroma = m_uPitchChroma;
 
     m_deblockingParams.pitch_luma = pitch_luma;
     m_deblockingParams.pitch_chroma = pitch_chroma;
@@ -239,9 +297,6 @@ void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
     offset = mbXOffset + (mbYOffset * pitch_luma);
     pY += offset*pixel_luma_sz;
 
-    m_deblockingParams.isNeedToDecblock = 1;
-    m_deblockingParams.deblockChroma = 1;
-
     // obtain macroblock mode
     nFieldMacroblockMode = GetMBFieldDecodingFlag(m_gmbinfo->mbs[m_CurMBAddr]);
     // set external edge variables
@@ -251,20 +306,14 @@ void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
     m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING] = nCurrMB_X;
     m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] = (nFieldMacroblockMode) ? (1 < nCurrMB_Y) : (nCurrMB_Y);
 
-    if (disable_deblocking_filter_idc_from_stream >= DEBLOCK_FILTER_ON_NO_CHROMA)
+    if (DEBLOCK_FILTER_ON_NO_SLICE_EDGES == disable_deblocking_filter_idc)
     {
-        m_deblockingParams.deblockChroma = 0;
-    }
-
-    if (m_deblockingParams.deblockEdgesStage2)
-    {
-        m_deblockingParams.isNeedToDecblock = 0;
-
-        if ( m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING])
+        // don't filter at slice boundaries
+        if (m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING])
         {
             if (m_gmbinfo->mbs[m_CurMBAddr].slice_id !=
                 m_gmbinfo->mbs[m_CurMBAddr - 2].slice_id)
-                m_deblockingParams.isNeedToDecblock = 1;
+                m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING] = 0;
         }
 
         if (m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING])
@@ -272,52 +321,23 @@ void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
             if (m_gmbinfo->mbs[m_CurMBAddr].slice_id !=
                 m_gmbinfo->mbs[m_CurMBAddr - mb_width * 2].slice_id
                 && !(!nFieldMacroblockMode && (m_CurMBAddr & 1)))
-                m_deblockingParams.isNeedToDecblock = 1;
-        }
-    } else if (DEBLOCK_FILTER_ON_NO_SLICE_EDGES == disable_deblocking_filter_idc) {
-        if (deblocking_stage2) {
-            m_deblockingParams.isNeedToDecblock = 0;
-        } else {
-            // don't filter at slice boundaries
-            if (m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING])
-            {
-                if (m_gmbinfo->mbs[m_CurMBAddr].slice_id !=
-                    m_gmbinfo->mbs[m_CurMBAddr - 2].slice_id)
-                    m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING] = 0;
-            }
-
-            if (m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING])
-            {
-                if (m_gmbinfo->mbs[m_CurMBAddr].slice_id !=
-                    m_gmbinfo->mbs[m_CurMBAddr - mb_width * 2].slice_id
-                    && !(!nFieldMacroblockMode && (m_CurMBAddr & 1)))
-                    m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] = 0;
-            }
-        }
-    } else {
-        if (deblocking_stage2) {
-            m_deblockingParams.isNeedToDecblock = 0;
+                m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] = 0;
         }
     }
 
     switch (m_pCurrentFrame->m_chroma_format)
     {
     case CHROMA_FORMAT_420:
-        if (nv12_support && !deblocking_IL)
-            offset = mbXOffset + ((mbYOffset * pitch_chroma) >> 1);
-        else
-            offset = (mbXOffset + (mbYOffset * pitch_chroma)) >> 1;
+        offset = mbXOffset + ((mbYOffset * pitch_chroma) >> 1);
         break;
 
     case CHROMA_FORMAT_422:
-        offset = (mbXOffset >> 1) + (mbYOffset * pitch_chroma);
+        offset = mbXOffset + (mbYOffset * pitch_chroma);
         break;
 
     case CHROMA_FORMAT_400:
         offset = 0;
-    case CHROMA_FORMAT_444:
         break;
-
     default:
         VM_ASSERT(false);
         break;
@@ -434,16 +454,7 @@ void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
 
     // save variables
     m_deblockingParams.pLuma = pY;
-    if (nv12_support)
-    {
-        m_deblockingParams.pChroma[0] = pU;
-        m_deblockingParams.pChroma[1] = pU + 1;
-    }
-    else
-    {
-        m_deblockingParams.pChroma[0] = pU;
-        m_deblockingParams.pChroma[1] = pV;
-    }
+    m_deblockingParams.pChroma = pU;
 
     m_deblockingParams.pitch_luma = pitch_luma;
     m_deblockingParams.pitch_chroma = pitch_chroma;
@@ -467,14 +478,14 @@ void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
     m_cur_mb.RefIdxs[0] = &m_gmbinfo->mbs[m_CurMBAddr].refIdxs[0];
     m_cur_mb.RefIdxs[1] = &m_gmbinfo->mbs[m_CurMBAddr].refIdxs[1];
 
-    m_deblockingParams.deblockInfo.pAlpha = m_deblockingParams.Alpha;
-    m_deblockingParams.deblockInfo.pBeta = m_deblockingParams.Beta;
-    m_deblockingParams.deblockInfo.pThresholds = m_deblockingParams.Clipping;
-
 } // void H264SegmentDecoder::ResetDeblockingVariablesMBAFF(DeblockingParametersMBAFF *pParams)
 
 void H264SegmentDecoder::DeblockLumaVerticalMBAFF()
 {
+    Ipp8u thresholds[32];
+    Ipp8u alpha[4];
+    Ipp8u beta[4];
+
     //
     // step 1. Perform complex deblocking on external edge
     //
@@ -489,12 +500,8 @@ void H264SegmentDecoder::DeblockLumaVerticalMBAFF()
         Ipp8u *pStrength = m_deblockingParams.StrengthComplex;
         Ipp32s i;
 
-        m_deblockingParams.deblockInfo.pBs = pStrength;
-        m_deblockingParams.deblockInfo.srcDstStep = m_deblockingParams.pitch_luma;
-        m_deblockingParams.deblockInfo.pBs = m_deblockingParams.StrengthComplex;
-
         // prepare variables
-        for (i = 0;i < 2;i += 1)
+        for (i = 0; i < 2; i++)
         {
             // get upper neighbour block QP
             pmp_QP = m_mbinfo.mbs[m_deblockingParams.nLeft[i]].QP;
@@ -504,97 +511,28 @@ void H264SegmentDecoder::DeblockLumaVerticalMBAFF()
 
             // external edge variables
             index = IClip(0, 51, QP + BetaOffset);
-            m_deblockingParams.deblockInfo.pBeta[i] = (Ipp8u)(BETA_TABLE[index]);
+            beta[i] = (Ipp8u)(BETA_TABLE[index]);
 
             index = IClip(0, 51, QP + AlphaC0Offset);
-            m_deblockingParams.deblockInfo.pAlpha[i] = (Ipp8u)(ALPHA_TABLE[index]);
+            alpha[i] = (Ipp8u)(ALPHA_TABLE[index]);
             pClipTab = CLIP_TAB[index];
 
             // create clipping values
-            m_deblockingParams.deblockInfo.pThresholds[i * 4 + 0] = (Ipp8u)(pClipTab[pStrength[i * 4 + 0]]);
-            m_deblockingParams.deblockInfo.pThresholds[i * 4 + 1] = (Ipp8u)(pClipTab[pStrength[i * 4 + 1]]);
-            m_deblockingParams.deblockInfo.pThresholds[i * 4 + 2] = (Ipp8u)(pClipTab[pStrength[i * 4 + 2]]);
-            m_deblockingParams.deblockInfo.pThresholds[i * 4 + 3] = (Ipp8u)(pClipTab[pStrength[i * 4 + 3]]);
+            thresholds[i * 4 + 0] = (Ipp8u)(pClipTab[pStrength[i * 4 + 0]]);
+            thresholds[i * 4 + 1] = (Ipp8u)(pClipTab[pStrength[i * 4 + 1]]);
+            thresholds[i * 4 + 2] = (Ipp8u)(pClipTab[pStrength[i * 4 + 2]]);
+            thresholds[i * 4 + 3] = (Ipp8u)(pClipTab[pStrength[i * 4 + 3]]);
         }
 
         // perform deblocking
-        if (0 == GetMBFieldDecodingFlag(m_gmbinfo->mbs[m_CurMBAddr]))
-        {
-            if (bit_depth_luma > 8)
-            {
-                IppDeblocking16u[8]((Ipp16u*)m_deblockingParams.pLuma,
-                                    m_deblockingParams.pitch_luma * 2,
-                                    &m_deblockingParams.deblockInfo.pAlpha[0],
-                                    &m_deblockingParams.deblockInfo.pBeta[0],
-                                    m_deblockingParams.deblockInfo.pThresholds,
-                                    pStrength,
-                                    bit_depth_luma);
-                IppDeblocking16u[8]((Ipp16u*)m_deblockingParams.pLuma + m_deblockingParams.pitch_luma,
-                                    m_deblockingParams.pitch_luma * 2,
-                                    &m_deblockingParams.deblockInfo.pAlpha[1],
-                                    &m_deblockingParams.deblockInfo.pBeta[1],
-                                    m_deblockingParams.deblockInfo.pThresholds + 4,
-                                    pStrength + 4,
-                                    bit_depth_luma);
-            }
-            else
-            {
-                m_deblockingParams.deblockInfo.srcDstStep = m_deblockingParams.pitch_luma * 2;
-                m_deblockingParams.deblockInfo.pSrcDstPlane = m_deblockingParams.pLuma;
-
-                IppDeblocking[8](&m_deblockingParams.deblockInfo);
-
-                m_deblockingParams.deblockInfo.pSrcDstPlane = m_deblockingParams.pLuma + m_deblockingParams.pitch_luma;
-
-                m_deblockingParams.deblockInfo.pAlpha += 1;
-                m_deblockingParams.deblockInfo.pBeta += 1;
-                m_deblockingParams.deblockInfo.pThresholds += 4;
-                m_deblockingParams.deblockInfo.pBs += 4;
-                IppDeblocking[8](&m_deblockingParams.deblockInfo);
-                m_deblockingParams.deblockInfo.pAlpha -= 1;
-                m_deblockingParams.deblockInfo.pBeta -= 1;
-                m_deblockingParams.deblockInfo.pThresholds -= 4;
-                m_deblockingParams.deblockInfo.pBs -= 4;
-            }
-        }
-        else
-        {
-            if (bit_depth_luma > 8)
-            {
-                IppDeblocking16u[8]((Ipp16u*)m_deblockingParams.pLuma,
-                                    m_deblockingParams.pitch_luma,
-                                    &m_deblockingParams.deblockInfo.pAlpha[0],
-                                    &m_deblockingParams.deblockInfo.pBeta[0],
-                                    m_deblockingParams.deblockInfo.pThresholds,
-                                    pStrength,
-                                    bit_depth_luma);
-                IppDeblocking16u[8]((Ipp16u*)m_deblockingParams.pLuma + m_deblockingParams.pitch_luma * 8,
-                                    m_deblockingParams.pitch_luma,
-                                    &m_deblockingParams.deblockInfo.pAlpha[1],
-                                    &m_deblockingParams.deblockInfo.pBeta[1],
-                                    m_deblockingParams.deblockInfo.pThresholds + 4,
-                                    pStrength + 4,
-                                    bit_depth_luma);
-            }
-            else
-            {
-                m_deblockingParams.deblockInfo.srcDstStep = m_deblockingParams.pitch_luma;
-                m_deblockingParams.deblockInfo.pSrcDstPlane = m_deblockingParams.pLuma;
-
-                IppDeblocking[8](&m_deblockingParams.deblockInfo);
-
-                m_deblockingParams.deblockInfo.pSrcDstPlane = m_deblockingParams.pLuma + m_deblockingParams.pitch_luma * 8;
-                m_deblockingParams.deblockInfo.pAlpha += 1;
-                m_deblockingParams.deblockInfo.pBeta += 1;
-                m_deblockingParams.deblockInfo.pThresholds += 4;
-                m_deblockingParams.deblockInfo.pBs += 4;
-                IppDeblocking[8](&m_deblockingParams.deblockInfo);
-                m_deblockingParams.deblockInfo.pAlpha -= 1;
-                m_deblockingParams.deblockInfo.pBeta -= 1;
-                m_deblockingParams.deblockInfo.pThresholds -= 4;
-                m_deblockingParams.deblockInfo.pBs -= 4;
-            }
-        }
+        FilterDeblockingLuma_VerEdge_MBAFF(m_deblockingParams.pLuma,
+                            m_deblockingParams.pitch_luma,
+                            alpha,
+                            beta,
+                            thresholds,
+                            pStrength,
+                            bit_depth_luma,
+                            GetMBFieldDecodingFlag(m_gmbinfo->mbs[m_CurMBAddr]) != 0);
     }
 
     //
@@ -604,15 +542,10 @@ void H264SegmentDecoder::DeblockLumaVerticalMBAFF()
 
 } // void H264SegmentDecoder::DeblockLumaVerticalMBAFF()
 
-void H264SegmentDecoder::DeblockChromaVerticalMBAFF400()
+void H264SegmentDecoder::DeblockChromaVerticalMBAFF()
 {
-    // there is nothing to do
-
-} // void H264SegmentDecoder::DeblockChromaVerticalMBAFF400()
-
-void H264SegmentDecoder::DeblockChromaVerticalMBAFF420()
-{
-    bool nv12_support = m_pCurrentFrame->GetColorFormat() == NV12 && !deblocking_IL;
+    if (!m_pCurrentFrame->m_chroma_format)
+        return;
 
     Ipp32s AlphaC0Offset = m_deblockingParams.nAlphaC0Offset;
     Ipp32s BetaOffset = m_deblockingParams.nBetaOffset;
@@ -625,386 +558,63 @@ void H264SegmentDecoder::DeblockChromaVerticalMBAFF420()
     Ipp32s nPlane;
     Ipp32s chroma_qp_offset = ~(m_pPicParamSet->chroma_qp_index_offset[0]);
 
-    m_deblockingParams.deblockInfo.pBs = pStrength;
-    m_deblockingParams.deblockInfo.srcDstStep = m_deblockingParams.pitch_chroma;
+    Ipp8u thresholds[32];
+    Ipp8u alpha[4];
+    Ipp8u beta[4];
 
-    if (nv12_support)
-    {
-        //
-        // step 1. Perform complex deblocking on external edge
-        //
-        {
-            for (nPlane = 0; nPlane < 2; nPlane += 1)
-            {
-                // prepare variables
-                //if (chroma_qp_offset != m_pPicParamSet->chroma_qp_index_offset[nPlane])
-                {
-                    Ipp32s i;
-
-                    chroma_qp_offset = m_pPicParamSet->chroma_qp_index_offset[nPlane];
-
-                    // prepare variables
-                    for (i = 0;i < 2;i += 1)
-                    {
-                        // get upper neighbour block QP
-                        pmp_QP = m_mbinfo.mbs[m_deblockingParams.nLeft[i]].QP;
-
-                        // external edge variables
-                        QP = (QP_SCALE_CR[IClip(0, 51, pmp_QP + chroma_qp_offset)] +
-                                QP_SCALE_CR[IClip(0, 51, pmq_QP + chroma_qp_offset)] + 1) >> 1;
-
-                        // external edge variables
-                        index = IClip(0, 51, QP + BetaOffset);
-                        m_deblockingParams.deblockInfo.pBeta[i + 2*nPlane] = (Ipp8u)(BETA_TABLE[index]);
-
-                        index = IClip(0, 51, QP + AlphaC0Offset);
-                        m_deblockingParams.deblockInfo.pAlpha[i + 2*nPlane] = (Ipp8u)(ALPHA_TABLE[index]);
-                        pClipTab = CLIP_TAB[index];
-
-                        // create clipping values
-                        m_deblockingParams.deblockInfo.pThresholds[i * 4 + 0 + 8*nPlane] = (Ipp8u)(pClipTab[pStrength[i * 4 + 0]]);
-                        m_deblockingParams.deblockInfo.pThresholds[i * 4 + 1 + 8*nPlane] = (Ipp8u)(pClipTab[pStrength[i * 4 + 1]]);
-                        m_deblockingParams.deblockInfo.pThresholds[i * 4 + 2 + 8*nPlane] = (Ipp8u)(pClipTab[pStrength[i * 4 + 2]]);
-                        m_deblockingParams.deblockInfo.pThresholds[i * 4 + 3 + 8*nPlane] = (Ipp8u)(pClipTab[pStrength[i * 4 + 3]]);
-                    }
-                }
-            }
-
-            // perform deblocking
-            if (0 == GetMBFieldDecodingFlag(m_gmbinfo->mbs[m_CurMBAddr]))
-            {
-                m_deblockingParams.deblockInfo.pSrcDstPlane = m_deblockingParams.pChroma[0];
-                m_deblockingParams.deblockInfo.srcDstStep = m_deblockingParams.pitch_chroma * 2;
-
-                IppDeblocking[12](&m_deblockingParams.deblockInfo);
-
-                m_deblockingParams.deblockInfo.pSrcDstPlane = m_deblockingParams.pChroma[0] + m_deblockingParams.pitch_chroma;
-
-                m_deblockingParams.deblockInfo.pAlpha += 1;
-                m_deblockingParams.deblockInfo.pBeta += 1;
-                m_deblockingParams.deblockInfo.pThresholds += 4;
-                m_deblockingParams.deblockInfo.pBs += 4;
-
-                IppDeblocking[12](&m_deblockingParams.deblockInfo);
-
-                m_deblockingParams.deblockInfo.pAlpha -= 1;
-                m_deblockingParams.deblockInfo.pBeta -= 1;
-                m_deblockingParams.deblockInfo.pThresholds -= 4;
-                m_deblockingParams.deblockInfo.pBs -= 4;
-
-            }
-            else
-            {
-                m_deblockingParams.deblockInfo.pSrcDstPlane = m_deblockingParams.pChroma[0];
-                m_deblockingParams.deblockInfo.srcDstStep = m_deblockingParams.pitch_chroma;
-
-                IppDeblocking[12](&m_deblockingParams.deblockInfo);
-
-                m_deblockingParams.deblockInfo.pSrcDstPlane = m_deblockingParams.pChroma[0] + 4 * m_deblockingParams.pitch_chroma;
-                m_deblockingParams.deblockInfo.pAlpha += 1;
-                m_deblockingParams.deblockInfo.pBeta += 1;
-                m_deblockingParams.deblockInfo.pThresholds += 4;
-                m_deblockingParams.deblockInfo.pBs += 4;
-
-                IppDeblocking[12](&m_deblockingParams.deblockInfo);
-
-                m_deblockingParams.deblockInfo.pAlpha -= 1;
-                m_deblockingParams.deblockInfo.pBeta -= 1;
-                m_deblockingParams.deblockInfo.pThresholds -= 4;
-                m_deblockingParams.deblockInfo.pBs -= 4;
-            }
-        }
-    }
-    else
-    {
-
-        //
-        // step 1. Perform complex deblocking on external edge
-        //
-        {
-            for (nPlane = 0; nPlane < 2; nPlane += 1)
-            {
-                // prepare variables
-                if (chroma_qp_offset != m_pPicParamSet->chroma_qp_index_offset[nPlane])
-                {
-                    Ipp32s i;
-
-                    chroma_qp_offset = m_pPicParamSet->chroma_qp_index_offset[nPlane];
-
-                    // prepare variables
-                    for (i = 0;i < 2;i += 1)
-                    {
-                        // get upper neighbour block QP
-                        pmp_QP = m_mbinfo.mbs[m_deblockingParams.nLeft[i]].QP;
-
-                        // external edge variables
-                        QP = (QP_SCALE_CR[IClip(0, 51, pmp_QP + chroma_qp_offset)] +
-                                QP_SCALE_CR[IClip(0, 51, pmq_QP + chroma_qp_offset)] + 1) >> 1;
-
-                        // external edge variables
-                        index = IClip(0, 51, QP + BetaOffset);
-                        m_deblockingParams.deblockInfo.pBeta[i] = (Ipp8u)(BETA_TABLE[index]);
-
-                        index = IClip(0, 51, QP + AlphaC0Offset);
-                        m_deblockingParams.deblockInfo.pAlpha[i] = (Ipp8u)(ALPHA_TABLE[index]);
-                        pClipTab = CLIP_TAB[index];
-
-                        // create clipping values
-                        m_deblockingParams.deblockInfo.pThresholds[i * 4 + 0] = (Ipp8u)(pClipTab[pStrength[i * 4 + 0]]);
-                        m_deblockingParams.deblockInfo.pThresholds[i * 4 + 1] = (Ipp8u)(pClipTab[pStrength[i * 4 + 1]]);
-                        m_deblockingParams.deblockInfo.pThresholds[i * 4 + 2] = (Ipp8u)(pClipTab[pStrength[i * 4 + 2]]);
-                        m_deblockingParams.deblockInfo.pThresholds[i * 4 + 3] = (Ipp8u)(pClipTab[pStrength[i * 4 + 3]]);
-                    }
-                }
-
-                // perform deblocking
-                if (0 == GetMBFieldDecodingFlag(m_gmbinfo->mbs[m_CurMBAddr]))
-                {
-                    if (bit_depth_chroma > 8)
-                    {
-                        IppDeblocking16u[9]((Ipp16u*)m_deblockingParams.pChroma[nPlane],
-                                            m_deblockingParams.pitch_chroma * 2,
-                                            &m_deblockingParams.deblockInfo.pAlpha[0],
-                                            &m_deblockingParams.deblockInfo.pBeta[0],
-                                            m_deblockingParams.deblockInfo.pThresholds,
-                                            pStrength,
-                                            bit_depth_chroma);
-                        IppDeblocking16u[9]((Ipp16u*)m_deblockingParams.pChroma[nPlane] + m_deblockingParams.pitch_chroma,
-                                            m_deblockingParams.pitch_chroma * 2,
-                                            &m_deblockingParams.deblockInfo.pAlpha[1],
-                                            &m_deblockingParams.deblockInfo.pBeta[1],
-                                            m_deblockingParams.deblockInfo.pThresholds + 4,
-                                            pStrength + 4,
-                                            bit_depth_chroma);
-                    }
-                    else
-                    {
-                        m_deblockingParams.deblockInfo.pSrcDstPlane = m_deblockingParams.pChroma[nPlane];
-                        m_deblockingParams.deblockInfo.srcDstStep = m_deblockingParams.pitch_chroma * 2;
-
-                        IppDeblocking[9](&m_deblockingParams.deblockInfo);
-
-                        m_deblockingParams.deblockInfo.pSrcDstPlane = m_deblockingParams.pChroma[nPlane] + m_deblockingParams.pitch_chroma;
-                        m_deblockingParams.deblockInfo.pAlpha += 1;
-                        m_deblockingParams.deblockInfo.pBeta += 1;
-                        m_deblockingParams.deblockInfo.pThresholds += 4;
-                        m_deblockingParams.deblockInfo.pBs += 4;
-
-                        IppDeblocking[9](&m_deblockingParams.deblockInfo);
-
-                        m_deblockingParams.deblockInfo.pAlpha -= 1;
-                        m_deblockingParams.deblockInfo.pBeta -= 1;
-                        m_deblockingParams.deblockInfo.pThresholds -= 4;
-                        m_deblockingParams.deblockInfo.pBs -= 4;
-
-                    }
-                }
-                else
-                {
-                    if (bit_depth_chroma > 8)
-                    {
-                        IppDeblocking16u[9]((Ipp16u*)m_deblockingParams.pChroma[nPlane],
-                                            m_deblockingParams.pitch_chroma,
-                                            &m_deblockingParams.deblockInfo.pAlpha[0],
-                                            &m_deblockingParams.deblockInfo.pBeta[0],
-                                            m_deblockingParams.deblockInfo.pThresholds,
-                                            pStrength,
-                                            bit_depth_chroma);
-                        IppDeblocking16u[9]((Ipp16u*)m_deblockingParams.pChroma[nPlane] + m_deblockingParams.pitch_chroma * 4,
-                                            m_deblockingParams.pitch_chroma,
-                                            &m_deblockingParams.deblockInfo.pAlpha[1],
-                                            &m_deblockingParams.deblockInfo.pBeta[1],
-                                            m_deblockingParams.deblockInfo.pThresholds + 4,
-                                            pStrength + 4,
-                                            bit_depth_chroma);
-                    }
-                    else
-                    {
-                        m_deblockingParams.deblockInfo.pSrcDstPlane = m_deblockingParams.pChroma[nPlane];
-                        m_deblockingParams.deblockInfo.srcDstStep = m_deblockingParams.pitch_chroma;
-
-                        IppDeblocking[9](&m_deblockingParams.deblockInfo);
-
-                        m_deblockingParams.deblockInfo.pSrcDstPlane = m_deblockingParams.pChroma[nPlane] + 4 * m_deblockingParams.pitch_chroma;
-                        m_deblockingParams.deblockInfo.pAlpha += 1;
-                        m_deblockingParams.deblockInfo.pBeta += 1;
-                        m_deblockingParams.deblockInfo.pThresholds += 4;
-                        m_deblockingParams.deblockInfo.pBs += 4;
-
-                        IppDeblocking[9](&m_deblockingParams.deblockInfo);
-
-                        m_deblockingParams.deblockInfo.pAlpha -= 1;
-                        m_deblockingParams.deblockInfo.pBeta -= 1;
-                        m_deblockingParams.deblockInfo.pThresholds -= 4;
-                        m_deblockingParams.deblockInfo.pBs -= 4;
-                    }
-                }
-            }
-        }
-    }
-    //
-    // step 2. Perform complex deblocking on internal edges
-    //
-    (this->*DeblockChroma[CHROMA_FORMAT_420])(VERTICAL_DEBLOCKING);
-
-} // void H264SegmentDecoder::DeblockChromaVerticalMBAFF420()
-
-void H264SegmentDecoder::DeblockChromaVerticalMBAFF422()
-{
     //
     // step 1. Perform complex deblocking on external edge
     //
+    for (nPlane = 0; nPlane < 2; nPlane += 1)
     {
-        Ipp8u Clipping[16];
-        Ipp8u Alpha[2];
-        Ipp8u Beta[2];
-        Ipp32s AlphaC0Offset = m_deblockingParams.nAlphaC0Offset;
-        Ipp32s BetaOffset = m_deblockingParams.nBetaOffset;
-        Ipp32s pmq_QP = m_mbinfo.mbs[m_CurMBAddr].QP;
-        Ipp32s pmp_QP;
-        Ipp8u *pClipTab;
-        Ipp32s QP;
-        Ipp32s index;
-        Ipp8u *pStrength = m_deblockingParams.StrengthComplex;
-        Ipp32s nPlane;
-        Ipp32s chroma_qp_offset = ~(m_pPicParamSet->chroma_qp_index_offset[0]);
-
-        m_deblockingParams.deblockInfo.pBs = pStrength;
-        m_deblockingParams.deblockInfo.srcDstStep = m_deblockingParams.pitch_chroma;
-
-        for (nPlane = 0; nPlane < 2; nPlane += 1)
+        // prepare variables
+        //if (chroma_qp_offset != m_pPicParamSet->chroma_qp_index_offset[nPlane])
         {
+            Ipp32s i;
+
+            chroma_qp_offset = m_pPicParamSet->chroma_qp_index_offset[nPlane];
+
             // prepare variables
-            if (chroma_qp_offset != m_pPicParamSet->chroma_qp_index_offset[nPlane])
+            for (i = 0;i < 2;i += 1)
             {
-                Ipp32s i;
+                // get upper neighbour block QP
+                pmp_QP = m_mbinfo.mbs[m_deblockingParams.nLeft[i]].QP;
 
-                chroma_qp_offset = m_pPicParamSet->chroma_qp_index_offset[nPlane];
+                // external edge variables
+                QP = (QP_SCALE_CR[IClip(0, 51, pmp_QP + chroma_qp_offset)] +
+                        QP_SCALE_CR[IClip(0, 51, pmq_QP + chroma_qp_offset)] + 1) >> 1;
 
-                // prepare variables
-                for (i = 0;i < 2;i += 1)
-                {
-                    // get upper neighbour block QP
-                    pmp_QP = m_mbinfo.mbs[m_deblockingParams.nLeft[i]].QP;
+                // external edge variables
+                index = IClip(0, 51, QP + BetaOffset);
+                beta[i + 2*nPlane] = (Ipp8u)(BETA_TABLE[index]);
 
-                    // external edge variables
-                    QP = (QP_SCALE_CR[IClip(0, 51, pmp_QP + chroma_qp_offset)] +
-                          QP_SCALE_CR[IClip(0, 51, pmq_QP + chroma_qp_offset)] + 1) >> 1;
+                index = IClip(0, 51, QP + AlphaC0Offset);
+                alpha[i + 2*nPlane] = (Ipp8u)(ALPHA_TABLE[index]);
+                pClipTab = CLIP_TAB[index];
 
-                    // external edge variables
-                    index = IClip(0, 51, QP + BetaOffset);
-                    Beta[i] = (Ipp8u)(BETA_TABLE[index]);
-
-                    index = IClip(0, 51, QP + AlphaC0Offset);
-                    Alpha[i] = (Ipp8u)(ALPHA_TABLE[index]);
-                    pClipTab = CLIP_TAB[index];
-
-                    // create clipping values
-                    Clipping[i * 4 + 0] = (Ipp8u)(pClipTab[pStrength[i * 4 + 0]]);
-                    Clipping[i * 4 + 1] = (Ipp8u)(pClipTab[pStrength[i * 4 + 1]]);
-                    Clipping[i * 4 + 2] = (Ipp8u)(pClipTab[pStrength[i * 4 + 2]]);
-                    Clipping[i * 4 + 3] = (Ipp8u)(pClipTab[pStrength[i * 4 + 3]]);
-                }
-            }
-
-            // perform deblocking
-            if (0 == GetMBFieldDecodingFlag(m_gmbinfo->mbs[m_CurMBAddr]))
-            {
-                if (bit_depth_chroma > 8)
-                {
-                    IppDeblocking16u[9]((Ipp16u*)m_deblockingParams.pChroma[nPlane],
-                                        m_deblockingParams.pitch_chroma * 4,
-                                        &Alpha[0],
-                                        &Beta[0],
-                                        Clipping,
-                                        pStrength,
-                                        bit_depth_chroma);
-                    IppDeblocking16u[9]((Ipp16u*)m_deblockingParams.pChroma[nPlane] + m_deblockingParams.pitch_chroma,
-                                        m_deblockingParams.pitch_chroma * 4,
-                                        &Alpha[1],
-                                        &Beta[1],
-                                        Clipping + 4,
-                                        pStrength + 4,
-                                        bit_depth_chroma);
-                    IppDeblocking16u[9]((Ipp16u*)m_deblockingParams.pChroma[nPlane] + m_deblockingParams.pitch_chroma * 2,
-                                        m_deblockingParams.pitch_chroma * 4,
-                                        &Alpha[0],
-                                        &Beta[0],
-                                        Clipping,
-                                        pStrength,
-                                        bit_depth_chroma);
-                    IppDeblocking16u[9]((Ipp16u*)m_deblockingParams.pChroma[nPlane] + m_deblockingParams.pitch_chroma * 3,
-                                        m_deblockingParams.pitch_chroma * 4,
-                                        &Alpha[1],
-                                        &Beta[1],
-                                        Clipping + 4,
-                                        pStrength + 4,
-                                        bit_depth_chroma);
-                }
-                else
-                {
-                    IppDeblocking[9](&m_deblockingParams.deblockInfo);
-                    IppDeblocking[9](&m_deblockingParams.deblockInfo);
-                    IppDeblocking[9](&m_deblockingParams.deblockInfo);
-                    IppDeblocking[9](&m_deblockingParams.deblockInfo);
-                }
-            }
-            else
-            {
-                if (bit_depth_chroma > 8)
-                {
-                    IppDeblocking16u[9]((Ipp16u*)m_deblockingParams.pChroma[nPlane],
-                                        m_deblockingParams.pitch_chroma,
-                                        &Alpha[0],
-                                        &Beta[0],
-                                        Clipping,
-                                        pStrength,
-                                        bit_depth_chroma);
-                    IppDeblocking16u[9]((Ipp16u*)m_deblockingParams.pChroma[nPlane] + m_deblockingParams.pitch_chroma * 4,
-                                        m_deblockingParams.pitch_chroma,
-                                        &Alpha[0],
-                                        &Beta[0],
-                                        Clipping,
-                                        pStrength,
-                                        bit_depth_chroma);
-                    IppDeblocking16u[9]((Ipp16u*)m_deblockingParams.pChroma[nPlane] + m_deblockingParams.pitch_chroma * 8,
-                                        m_deblockingParams.pitch_chroma,
-                                        &Alpha[1],
-                                        &Beta[1],
-                                        Clipping + 4,
-                                        pStrength + 4,
-                                        bit_depth_chroma);
-                    IppDeblocking16u[9]((Ipp16u*)m_deblockingParams.pChroma[nPlane] + m_deblockingParams.pitch_chroma * 12,
-                                        m_deblockingParams.pitch_chroma,
-                                        &Alpha[1],
-                                        &Beta[1],
-                                        Clipping + 4,
-                                        pStrength + 4,
-                                        bit_depth_chroma);
-                }
-                else
-                {
-                    IppDeblocking[9](&m_deblockingParams.deblockInfo);
-                    IppDeblocking[9](&m_deblockingParams.deblockInfo);
-                    IppDeblocking[9](&m_deblockingParams.deblockInfo);
-                    IppDeblocking[9](&m_deblockingParams.deblockInfo);
-                }
+                // create clipping values
+                thresholds[i * 4 + 0 + 8*nPlane] = (Ipp8u)(pClipTab[pStrength[i * 4 + 0]]);
+                thresholds[i * 4 + 1 + 8*nPlane] = (Ipp8u)(pClipTab[pStrength[i * 4 + 1]]);
+                thresholds[i * 4 + 2 + 8*nPlane] = (Ipp8u)(pClipTab[pStrength[i * 4 + 2]]);
+                thresholds[i * 4 + 3 + 8*nPlane] = (Ipp8u)(pClipTab[pStrength[i * 4 + 3]]);
             }
         }
     }
 
+    // perform deblocking
+    FilterDeblockingChroma_VerEdge_MBAFF(m_deblockingParams.pChroma,
+                                                    m_deblockingParams.pitch_chroma,
+                                                    alpha, beta,
+                                                    thresholds, pStrength,
+                                                    bit_depth_chroma, m_pCurrentFrame->m_chroma_format,
+                                                    GetMBFieldDecodingFlag(m_gmbinfo->mbs[m_CurMBAddr]) != 0);
+    
     //
     // step 2. Perform complex deblocking on internal edges
     //
-    (this->*DeblockChroma[CHROMA_FORMAT_422])(VERTICAL_DEBLOCKING);
+    DeblockChroma(VERTICAL_DEBLOCKING);
 
-} // void H264SegmentDecoder::DeblockChromaVerticalMBAFF422()
-
-void H264SegmentDecoder::DeblockChromaVerticalMBAFF444()
-{
-    /* this function is under development */
-
-} // void H264SegmentDecoder::DeblockChromaVerticalMBAFF444()
+} // void H264SegmentDecoder::DeblockChromaVerticalMBAFF420()
 
 void H264SegmentDecoder::DeblockLumaHorizontalMBAFF()
 {
@@ -1073,18 +683,14 @@ void H264SegmentDecoder::DeblockLumaHorizontalMBAFF()
 
 } // void H264SegmentDecoder::DeblockLumaHorizontalMBAFF()
 
-void H264SegmentDecoder::DeblockChromaHorizontalMBAFF400()
+void H264SegmentDecoder::DeblockChromaHorizontalMBAFF()
 {
-    // there is nothing to do
+    if (!m_pCurrentFrame->m_chroma_format)
+        return;
 
-} // void H264SegmentDecoder::DeblockChromaHorizontalMBAFF400()
-
-void H264SegmentDecoder::DeblockChromaHorizontalMBAFF420()
-{
     Ipp8u bTmp[16];
     Ipp32s pitch = m_deblockingParams.pitch_chroma;
     Ipp32s chroma_pixel_sz = bit_depth_chroma > 8 ? 2 : 1;
-    ChromaDeblockingFunction pFunc = DeblockChroma[m_pCurrentFrame->m_chroma_format];
 
     //
     // chroma deblocking
@@ -1107,7 +713,7 @@ void H264SegmentDecoder::DeblockChromaHorizontalMBAFF420()
         m_deblockingParams.pitch_chroma *= 2;
 
         // perform deblocking
-        (this->*pFunc)(HORIZONTAL_DEBLOCKING);
+        DeblockChroma(HORIZONTAL_DEBLOCKING);
     }
 
     //
@@ -1119,14 +725,12 @@ void H264SegmentDecoder::DeblockChromaHorizontalMBAFF420()
         // correct neighbour MB info
         m_deblockingParams.nNeighbour[HORIZONTAL_DEBLOCKING] += 1;
         // correct U & V pointer
-        m_deblockingParams.pChroma[0] += pitch*chroma_pixel_sz;
-        m_deblockingParams.pChroma[1] += pitch*chroma_pixel_sz;
+        m_deblockingParams.pChroma += pitch*chroma_pixel_sz;
         // perform deblocking
-        (this->*pFunc)(HORIZONTAL_DEBLOCKING);
+        DeblockChroma(HORIZONTAL_DEBLOCKING);
         // restore values
         m_deblockingParams.nNeighbour[HORIZONTAL_DEBLOCKING] -= 1;
-        m_deblockingParams.pChroma[0] -= pitch*chroma_pixel_sz;
-        m_deblockingParams.pChroma[1] -= pitch*chroma_pixel_sz;
+        m_deblockingParams.pChroma -= pitch*chroma_pixel_sz;
         m_deblockingParams.pitch_chroma = pitch;
     }
 
@@ -1141,7 +745,7 @@ void H264SegmentDecoder::DeblockChromaHorizontalMBAFF420()
         CopyEdgeStrength(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 8, bTmp + 8);
         CopyEdgeStrength(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 12, bTmp + 12);
         // perform deblocking
-        (this->*pFunc)(HORIZONTAL_DEBLOCKING);
+        DeblockChroma(HORIZONTAL_DEBLOCKING);
         // restore strength
         m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] = 1;
         CopyEdgeStrength(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 0, bTmp + 0);
@@ -1149,256 +753,6 @@ void H264SegmentDecoder::DeblockChromaHorizontalMBAFF420()
 
 } // void H264SegmentDecoder::DeblockChromaHorizontalMBAFF420()
 
-void H264SegmentDecoder::DeblockChromaHorizontalMBAFF422()
-{
-    Ipp8u bTmp[16];
-    Ipp32s pitch = m_deblockingParams.pitch_chroma;
-    Ipp32s chroma_pixel_sz = bit_depth_chroma > 8 ? 2 : 1;
-    ChromaDeblockingFunction pFunc = DeblockChroma[m_pCurrentFrame->m_chroma_format];
-
-    //
-    // chroma deblocking
-    //
-
-    //
-    // step 1. Deblock origin external edge
-    //
-    {
-        // save internal edges strength
-        CopyEdgeStrength(bTmp + 0, m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 0);
-        CopyEdgeStrength(bTmp + 4, m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 4);
-        CopyEdgeStrength(bTmp + 8, m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 8);
-        CopyEdgeStrength(bTmp + 12, m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 12);
-        // skip all internal edges
-        SetEdgeStrength(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 4, 0);
-        SetEdgeStrength(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 8, 0);
-        SetEdgeStrength(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 12, 0);
-        // set pitch
-        m_deblockingParams.pitch_chroma *= 2;
-        // perform deblocking
-        (this->*pFunc)(HORIZONTAL_DEBLOCKING);
-    }
-
-    //
-    // step 2. Deblock extra external edge
-    //
-    {
-        // set extra edge strength
-        CopyEdgeStrength(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING], m_deblockingParams.StrengthExtra);
-        // correct neighbour MB info
-        m_deblockingParams.nNeighbour[HORIZONTAL_DEBLOCKING] += 1;
-        // correct U & V pointer
-        m_deblockingParams.pChroma[0] += pitch*chroma_pixel_sz;
-        m_deblockingParams.pChroma[1] += pitch*chroma_pixel_sz;
-        // perform deblocking
-        (this->*pFunc)(HORIZONTAL_DEBLOCKING);
-        // restore values
-        m_deblockingParams.nNeighbour[HORIZONTAL_DEBLOCKING] -= 1;
-        m_deblockingParams.pChroma[0] -= pitch*chroma_pixel_sz;
-        m_deblockingParams.pChroma[1] -= pitch*chroma_pixel_sz;
-        m_deblockingParams.pitch_chroma = pitch;
-    }
-
-    //
-    // step 3. Deblock internal edges
-    //
-    {
-        m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] = 0;
-        // set internal edge strength
-        SetEdgeStrength(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 0, 0);
-        CopyEdgeStrength(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 4, bTmp + 4);
-        CopyEdgeStrength(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 8, bTmp + 8);
-        CopyEdgeStrength(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 12, bTmp + 12);
-        // perform deblocking
-        (this->*pFunc)(HORIZONTAL_DEBLOCKING);
-        // restore strength
-        m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] = 1;
-        CopyEdgeStrength(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING] + 0, bTmp + 0);
-    }
-
-} // void H264SegmentDecoder::DeblockChromaHorizontalMBAFF422()
-
-void H264SegmentDecoder::DeblockChromaHorizontalMBAFF444()
-{
-    /* the function is under development */
-
-} // void H264SegmentDecoder::DeblockChromaHorizontalMBAFF444()
-
-void H264SegmentDecoder::PrepareDeblockingParametersStrengthsMBAFF()
-{
-    Ipp32s i, j, dir, mbtype, mbtype_n, cbp_coeffs, cbp_coeffs_n, cbp_residual, cbp_residual_n;
-    Ipp32s field_cur, complex, addr;
-    Ipp8u s;
-
-    if (!m_spatial_resolution_change && !deblocking_IL)
-        return;
-
-    for (dir = 0; dir < 2; dir ++) {
-        if (dir) {
-            complex = m_deblockingParams.ExtraHorizontalEdge;
-        } else {
-            complex = m_deblockingParams.UseComplexVerticalDeblocking;
-        }
-        mbtype = m_cur_mb.GlobalMacroblockInfo->mbtype;
-        field_cur = m_cur_mb.GlobalMacroblockInfo->mbflags.fdf;
-
-        cbp_coeffs = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma_coeffs << 1;
-        cbp_residual = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma_residual << 1;
-        if (m_deblockingParams.ExternalEdgeFlag[dir] || complex) {
-            addr = m_deblockingParams.nNeighbour[dir];
-            mbtype_n = (m_gmbinfo->mbs + addr)->mbtype;
-            cbp_coeffs_n = (m_mbinfo.mbs + addr)->cbp4x4_luma_coeffs << 1;
-            cbp_residual_n = (m_mbinfo.mbs + addr)->cbp4x4_luma_residual << 1;
-        } else {
-            mbtype_n = cbp_coeffs_n = cbp_residual_n = 0;
-        }
-
-        for (i = complex && !dir ? 4 : 0; i < 16; i++) {
-            s = 10;
-
-            if (pGetMB8x8TSFlag(m_cur_mb.GlobalMacroblockInfo) && (i & 4)) {
-                m_deblockingParams.Strength[dir][i] = 0;
-                continue;
-            }
-
-            if (m_spatial_resolution_change) {
-                if (i >= 4) {
-                    if (mbtype == MBTYPE_INTRA_BL) {
-                        s = (cbp_coeffs & INTERNAL_BLOCKS_MASK[dir][i-4]) ? 1 : 0;
-                    }
-                } else if (m_deblockingParams.ExternalEdgeFlag[dir] || complex) {
-                    if (deblocking_IL && !IS_INTRA_MBTYPE(mbtype_n)) {
-                        s = 0;
-                    }
-                    else if (mbtype == MBTYPE_INTRA_BL && mbtype_n == MBTYPE_INTRA_BL) {
-                        s = ((cbp_coeffs & EXTERNAL_BLOCK_MASK[dir][CURRENT_BLOCK][i]) ||
-                            (cbp_coeffs_n & EXTERNAL_BLOCK_MASK[dir][NEIGHBOUR_BLOCK][i]))
-                            ? 1 : 0;
-                    } else if (mbtype == MBTYPE_INTRA_BL) {
-                        if (IS_INTRA_MBTYPE_NOT_BL(mbtype_n))
-                            s = (!dir || (dir && !complex && !field_cur)) ? 4 : 3;
-                        else
-                            s = (cbp_residual_n & EXTERNAL_BLOCK_MASK[dir][NEIGHBOUR_BLOCK][i])
-                            ? 2 : 1;
-
-                    } else if (mbtype_n == MBTYPE_INTRA_BL) {
-                        if (IS_INTRA_MBTYPE_NOT_BL(mbtype))
-                            s = (!dir || (dir && !complex && !field_cur)) ? 4 : 3;
-                        else
-                            s = (cbp_residual & EXTERNAL_BLOCK_MASK[dir][CURRENT_BLOCK][i])
-                            ? 2 : 1;
-                    }
-                }
-            } else {
-                if (deblocking_IL && m_deblockingParams.ExternalEdgeFlag[dir] &&
-                    !IS_INTRA_MBTYPE(mbtype_n) && i < 4 ) {
-                        s = 0;
-                }
-            }
-            if (s < 10) {
-                m_deblockingParams.Strength[dir][i] = s;
-            }
-        }
-
-        if (complex) {
-            if (dir == 0) {
-                for (j = 0; j < 2; j++) {
-                    Ipp8u *bs = m_deblockingParams.StrengthComplex + j * 4;
-                    Ipp32s nNeighbourBlockInc = (m_CurMBAddr & 1) ? 2 : 0;
-
-                    addr = m_deblockingParams.nLeft[j];
-                    mbtype_n = (m_gmbinfo->mbs + addr)->mbtype;
-                    cbp_coeffs_n = (m_mbinfo.mbs + addr)->cbp4x4_luma_coeffs << 1;
-                    cbp_residual_n = (m_mbinfo.mbs + addr)->cbp4x4_luma_residual << 1;
-
-                    for (i = 0; i < 4; i++) {
-                        Ipp32s idx_cur, idx_nei;
-                        if (field_cur) {
-                            idx_cur = i / 2 + j * 2;
-                            idx_nei = i;
-
-                        } else {
-                            idx_cur = i;
-                            idx_nei = i / 2 + nNeighbourBlockInc;
-                        }
-
-                        s = 10;
-                        if (deblocking_IL && !IS_INTRA_MBTYPE(mbtype_n)) {
-                            s = 0;
-                        }
-                        else if (mbtype == MBTYPE_INTRA_BL && mbtype_n == MBTYPE_INTRA_BL) {
-                            s = ((cbp_coeffs & EXTERNAL_BLOCK_MASK[dir][CURRENT_BLOCK][idx_cur]) ||
-                                (cbp_coeffs_n & EXTERNAL_BLOCK_MASK[dir][NEIGHBOUR_BLOCK][idx_nei]))
-                                ? 1 : 0;
-                        } else if (mbtype == MBTYPE_INTRA_BL) {
-                            if (IS_INTRA_MBTYPE_NOT_BL(mbtype_n))
-                                s = 4;
-                            else
-                                s = (cbp_residual_n & EXTERNAL_BLOCK_MASK[dir][NEIGHBOUR_BLOCK][idx_nei])
-                                ? 2 : 1;
-
-                        } else if (mbtype_n == MBTYPE_INTRA_BL) {
-                            if (IS_INTRA_MBTYPE_NOT_BL(mbtype))
-                                s = 4;
-                            else
-                                s = (cbp_residual & EXTERNAL_BLOCK_MASK[dir][CURRENT_BLOCK][idx_cur])
-                                ? 2 : 1;
-                        }
-                        if (s < 10) {
-                            bs[i] = s;
-                        }
-                    }
-                }
-            } else {
-                for (j = 0; j < 1; j++) {
-                    Ipp8u *bs = m_deblockingParams.StrengthExtra;
-
-                    if (!field_cur) {
-                        addr = m_deblockingParams.nNeighbour[HORIZONTAL_DEBLOCKING] + 1;
-                    } else {
-                        addr = m_deblockingParams.nNeighbour[HORIZONTAL_DEBLOCKING];
-                    }
-
-                    mbtype_n = (m_gmbinfo->mbs + addr)->mbtype;
-                    cbp_coeffs_n = (m_mbinfo.mbs + addr)->cbp4x4_luma_coeffs << 1;
-                    cbp_residual_n = (m_mbinfo.mbs + addr)->cbp4x4_luma_residual << 1;
-
-                    for (i = 0; i < 4; i++) {
-                        Ipp32s idx_cur, idx_nei;
-
-                        idx_cur = idx_nei = i;
-
-                        s = 10;
-                        if (deblocking_IL && !IS_INTRA_MBTYPE(mbtype_n)) {
-                            s = 0;
-                        }
-                        else if (mbtype == MBTYPE_INTRA_BL && mbtype_n == MBTYPE_INTRA_BL) {
-                            s = ((cbp_coeffs & EXTERNAL_BLOCK_MASK[dir][CURRENT_BLOCK][idx_cur]) ||
-                                (cbp_coeffs_n & EXTERNAL_BLOCK_MASK[dir][NEIGHBOUR_BLOCK][idx_nei]))
-                                ? 1 : 0;
-                        } else if (mbtype == MBTYPE_INTRA_BL) {
-                            if (IS_INTRA_MBTYPE_NOT_BL(mbtype_n))
-                                s = 3;
-                            else
-                                s = (cbp_residual_n & EXTERNAL_BLOCK_MASK[dir][NEIGHBOUR_BLOCK][idx_nei])
-                                ? 2 : 1;
-
-                        } else if (mbtype_n == MBTYPE_INTRA_BL) {
-                            if (IS_INTRA_MBTYPE_NOT_BL(mbtype))
-                                s = 3;
-                            else
-                                s = (cbp_residual & EXTERNAL_BLOCK_MASK[dir][CURRENT_BLOCK][idx_cur])
-                                ? 2 : 1;
-                        }
-                        if (s < 10) {
-                            bs[i] = s;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 void H264SegmentDecoder::PrepareDeblockingParametersISliceMBAFF()
 {
@@ -1452,7 +806,6 @@ void H264SegmentDecoder::PrepareDeblockingParametersISliceMBAFF()
         SetEdgeStrength(m_deblockingParams.StrengthExtra + 12, 0);
     }
 
-    PrepareDeblockingParametersStrengthsMBAFF();
 } // void H264SegmentDecoder::PrepareDeblockingParametersISliceMBAFF()
 
 void H264SegmentDecoder::PrepareDeblockingParametersPSliceMBAFF()
@@ -1464,6 +817,12 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSliceMBAFF()
     if (IS_INTRA_MBTYPE(mbtype))
     {
         PrepareDeblockingParametersISliceMBAFF();
+        return;
+    }
+
+    if (!m_deblockingParams.m_isSameSlice)
+    {
+        PrepareDeblockingParametersBSliceMBAFF();
         return;
     }
 
@@ -1534,7 +893,6 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSliceMBAFF()
             PrepareDeblockingParametersPSlice4MBAFFField(HORIZONTAL_DEBLOCKING);
     }
 
-    PrepareDeblockingParametersStrengthsMBAFF();
 } // void H264SegmentDecoder::PrepareDeblockingParametersPSliceMBAFF()
 
 void H264SegmentDecoder::PrepareDeblockingParametersBSliceMBAFF()
@@ -1614,13 +972,11 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSliceMBAFF()
         else
             PrepareDeblockingParametersBSlice4MBAFFField(HORIZONTAL_DEBLOCKING);
     }
-
-    PrepareDeblockingParametersStrengthsMBAFF();
 } // void H264SegmentDecoder::PrepareDeblockingParametersBSliceMBAFF()
 
 void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFMixedExternalEdge()
 {
-    Ipp32u cbp4x4_luma_residual = (m_mbinfo.mbs + m_CurMBAddr)->cbp4x4_luma_residual << 1;
+    Ipp32u cbp4x4_luma = (m_mbinfo.mbs + m_CurMBAddr)->cbp4x4_luma;
     Ipp8u *pStrength = m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING];
     Ipp32s nNeighbour;
 
@@ -1655,8 +1011,8 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFMixedExternalEdg
             blkP = EXTERNAL_BLOCK_MASK[HORIZONTAL_DEBLOCKING][NEIGHBOUR_BLOCK][idx];
 
             // when one of couple of blocks has coeffs
-            if ((cbp4x4_luma_residual & blkQ) ||
-                ((pNeighbour->cbp4x4_luma_residual << 1) & blkP))
+            if ((cbp4x4_luma & blkQ) ||
+                (pNeighbour->cbp4x4_luma & blkP))
                 pStrength[idx] = 2;
             // when blocks nave no coeffs
             // we set strength is 1 in mixed mode
@@ -1672,7 +1028,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFMixedExternalEdg
 
 void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFComplexFrameExternalEdge()
 {
-    Ipp32u cbp4x4_luma_residual = (m_mbinfo.mbs + m_CurMBAddr)->cbp4x4_luma_residual << 1;
+    Ipp32u cbp4x4_luma = (m_mbinfo.mbs + m_CurMBAddr)->cbp4x4_luma;
     Ipp8u *pStrength = m_deblockingParams.StrengthComplex;
     Ipp32s i, nNeighbourBlockInc;
 
@@ -1711,8 +1067,8 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFComplexFrameExte
                 blkP = EXTERNAL_BLOCK_MASK[VERTICAL_DEBLOCKING][NEIGHBOUR_BLOCK][idx / 2 + nNeighbourBlockInc];
 
                 // when one of couple of blocks has coeffs
-                if ((cbp4x4_luma_residual & blkQ) ||
-                    ((pNeighbour->cbp4x4_luma_residual << 1) & blkP))
+                if ((cbp4x4_luma & blkQ) ||
+                    (pNeighbour->cbp4x4_luma & blkP))
                     pStrength[idx] = 2;
                 // when blocks have no coeffs
                 // set strength is 1
@@ -1731,7 +1087,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFComplexFrameExte
 
 void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFComplexFieldExternalEdge()
 {
-    Ipp32u cbp4x4_luma_residual = (m_mbinfo.mbs + m_CurMBAddr)->cbp4x4_luma_residual << 1;
+    Ipp32u cbp4x4_luma = (m_mbinfo.mbs + m_CurMBAddr)->cbp4x4_luma;
     Ipp8u *pStrength = m_deblockingParams.StrengthComplex;
     Ipp32s i;
 
@@ -1767,8 +1123,8 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFComplexFieldExte
                 blkP = EXTERNAL_BLOCK_MASK[VERTICAL_DEBLOCKING][NEIGHBOUR_BLOCK][idx];
 
                 // when one of couple of blocks has coeffs
-                if ((cbp4x4_luma_residual & blkQ) ||
-                    ((pNeighbour->cbp4x4_luma_residual << 1) & blkP))
+                if ((cbp4x4_luma & blkQ) ||
+                    (pNeighbour->cbp4x4_luma & blkP))
                     pStrength[idx] = 2;
                 // when blocks have no coeffs
                 // set strength is 1
@@ -1787,7 +1143,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFComplexFieldExte
 
 void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFField(Ipp32u dir)
 {
-    Ipp32u cbp4x4_luma_residual = (m_mbinfo.mbs + m_CurMBAddr)->cbp4x4_luma_residual << 1;
+    Ipp32u cbp4x4_luma = (m_mbinfo.mbs + m_CurMBAddr)->cbp4x4_luma;
     Ipp8u *pStrength = m_deblockingParams.Strength[dir];
     Ipp32s *pDeblockingFlag = &(m_deblockingParams.DeblockingFlag[dir]);
 
@@ -1820,8 +1176,8 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFField(Ipp32u dir
                 blkP = EXTERNAL_BLOCK_MASK[dir][NEIGHBOUR_BLOCK][idx];
 
                 // when one of couple of blocks has coeffs
-                if ((cbp4x4_luma_residual & blkQ) ||
-                    ((pNeighbour->cbp4x4_luma_residual << 1) & blkP))
+                if ((cbp4x4_luma & blkQ) ||
+                    (pNeighbour->cbp4x4_luma & blkP))
                 {
                     pStrength[idx] = 2;
                     *pDeblockingFlag = 1;
@@ -1921,7 +1277,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFField(Ipp32u dir
 
             blkQ = INTERNAL_BLOCKS_MASK[dir][idx - 4];
 
-            if (cbp4x4_luma_residual & blkQ)
+            if (cbp4x4_luma & blkQ)
             {
                 pStrength[idx] = 2;
                 *pDeblockingFlag = 1;
@@ -1998,7 +1354,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFField(Ipp32u dir
 
 void H264SegmentDecoder::PrepareDeblockingParametersBSlice4MBAFFField(Ipp32u dir)
 {
-    Ipp32u cbp4x4_luma_residual = (m_mbinfo.mbs + m_CurMBAddr)->cbp4x4_luma_residual << 1;
+    Ipp32u cbp4x4_luma = (m_mbinfo.mbs + m_CurMBAddr)->cbp4x4_luma;
     Ipp8u *pStrength = m_deblockingParams.Strength[dir];
     Ipp32s *pDeblockingFlag = &(m_deblockingParams.DeblockingFlag[dir]);
 
@@ -2030,8 +1386,8 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4MBAFFField(Ipp32u dir
                 blkP = EXTERNAL_BLOCK_MASK[dir][NEIGHBOUR_BLOCK][idx];
 
                 // when one of couple of blocks has coeffs
-                if ((cbp4x4_luma_residual & blkQ) ||
-                    ((pNeighbour->cbp4x4_luma_residual << 1) & blkP))
+                if ((cbp4x4_luma & blkQ) ||
+                    (pNeighbour->cbp4x4_luma & blkP))
                 {
                     pStrength[idx] = 2;
                     *pDeblockingFlag = 1;
@@ -2190,7 +1546,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4MBAFFField(Ipp32u dir
 
             blkQ = INTERNAL_BLOCKS_MASK[dir][idx - 4];
 
-            if (cbp4x4_luma_residual & blkQ)
+            if (cbp4x4_luma & blkQ)
             {
                 pStrength[idx] = 2;
                 *pDeblockingFlag = 1;

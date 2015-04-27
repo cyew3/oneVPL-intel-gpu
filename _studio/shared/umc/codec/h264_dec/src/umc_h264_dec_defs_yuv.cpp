@@ -21,12 +21,6 @@ H264DecYUVBufferPadded::H264DecYUVBufferPadded()
     , m_pUVPlane(0)
     , m_pUPlane(0)
     , m_pVPlane(0)
-
-    , m_pYPlane_base(0)
-    , m_pUVPlane_base(0)
-    , m_pUPlane_base(0)
-    , m_pVPlane_base(0)
-
     , m_pitch_luma(0)
     , m_pitch_chroma(0)
     , m_color_format(NV12)
@@ -45,14 +39,6 @@ const FrameData * H264DecYUVBufferPadded::GetFrameData() const
     return &m_frameData;
 }
 
-const FrameData * H264DecYUVBufferPadded::GetFrameDataOFBaseRefPic() const
-{
-    if (m_frameDataRefBase.GetFrameMID() == FRAME_MID_INVALID)
-        return 0;
-
-    return &m_frameDataRefBase;
-}
-
 void H264DecYUVBufferPadded::deallocate()
 {
     if (m_frameData.GetFrameMID() != FRAME_MID_INVALID)
@@ -61,14 +47,7 @@ void H264DecYUVBufferPadded::deallocate()
         return;
     }
 
-    if (m_frameDataRefBase.GetFrameMID() != FRAME_MID_INVALID)
-    {
-        m_frameDataRefBase.Close();
-        return;
-    }
-
     m_pYPlane = m_pUPlane = m_pVPlane = m_pUVPlane = 0;
-    m_pYPlane_base = m_pUPlane_base = m_pVPlane_base = m_pUVPlane_base = 0;
 
     m_lumaSize.width = 0;
     m_lumaSize.height = 0;
@@ -149,22 +128,6 @@ void H264DecYUVBufferPadded::allocate(const FrameData * frameData, const VideoDa
         m_pUPlane = 0;
         m_pVPlane = 0;
     }
-}
-
-void H264DecYUVBufferPadded::allocateRefBasePicture()
-{
-    m_frameDataRefBase = m_frameData;
-
-    if (m_frameDataRefBase.GetPlaneMemoryInfo(0)->m_planePtr)
-        m_frameDataRefBase.m_locked = true;
-
-    m_frameData.m_locked = false;
-    m_frameData.Close();
-
-    m_pYPlane_base = m_pYPlane;
-    m_pUVPlane_base = m_pUVPlane;
-    m_pUPlane_base = m_pUPlane;
-    m_pVPlane_base = m_pVPlane;
 }
 
 ColorFormat H264DecYUVBufferPadded::GetColorFormat() const

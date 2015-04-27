@@ -145,7 +145,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;..\..\..\..\mfx_lib\optimization\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
@@ -156,7 +156,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;..\..\..\..\mfx_lib\optimization\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
@@ -170,7 +170,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;..\..\..\..\mfx_lib\optimization\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
@@ -184,7 +184,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;..\..\..\..\mfx_lib\optimization\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
@@ -195,7 +195,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;..\..\..\..\mfx_lib\optimization\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;VM_DEBUG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -206,7 +206,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;..\..\..\..\mfx_lib\optimization\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;VM_DEBUG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -220,7 +220,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;..\..\..\..\mfx_lib\optimization\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;VM_DEBUG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -233,7 +233,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;..\..\..\..\mfx_lib\optimization\h264\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;VM_DEBUG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -262,7 +262,6 @@
     <ClCompile Include="src\umc_h264_heap.cpp" />
     <ClCompile Include="src\umc_h264_log.cpp" />
     <ClCompile Include="src\umc_h264_mfx_supplier.cpp" />
-    <ClCompile Include="src\umc_h264_mv_resampling.cpp" />
     <ClCompile Include="src\umc_h264_nal_spl.cpp" />
     <ClCompile Include="src\umc_h264_segment_decoder.cpp" />
     <ClCompile Include="src\umc_h264_segment_decoder_cabac_mt.cpp" />
@@ -319,7 +318,6 @@
     <ClInclude Include="include\umc_h264_notify.h" />
     <ClInclude Include="include\umc_h264_reconstruct_templates.h" />
     <ClInclude Include="include\umc_h264_redual_decoder_templates.h" />
-    <ClInclude Include="include\umc_h264_resampling_templates.h" />
     <ClInclude Include="include\umc_h264_sd_inlines.h" />
     <ClInclude Include="include\umc_h264_segment_decoder.h" />
     <ClInclude Include="include\umc_h264_segment_decoder_dxva.h" />

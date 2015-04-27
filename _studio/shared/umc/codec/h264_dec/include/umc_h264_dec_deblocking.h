@@ -93,21 +93,12 @@ typedef struct DeblockingParameters
     Ipp32s nAlphaC0Offset;                                      // (Ipp32s) alpha c0 offset
     Ipp32s nBetaOffset;                                         // (Ipp32s) beta offset
     PlanePtrYCommon pLuma;                                      // (Ipp8u *) pointer to luminance data
-    PlanePtrUVCommon pChroma[2];                                // (Ipp8u *) pointer to chrominance data
-    size_t nDummy;
+    PlanePtrUVCommon pChroma;                                   // (Ipp8u *) pointer to chrominance data
 
-    IppiFilterDeblock_8u deblockInfo;
-    Ipp8u Clipping[32];
-    Ipp8u Alpha[4];
-    Ipp8u Beta[4];
     Ipp32s m_isSameSlice;
 
-    Ipp32s deblockChroma;
-    Ipp32s isNeedToDecblock;
-    Ipp32s deblockEdgesStage2;
     Ipp32s pitch_luma;
     Ipp32s pitch_chroma;
-    Ipp32s is_profile_baseline_scalable;
 } DeblockingParameters;
 
 typedef struct DeblockingParametersMBAFF : public DeblockingParameters
@@ -124,13 +115,6 @@ typedef struct DeblockingParametersMBAFF : public DeblockingParameters
 #pragma warning(default : 444)
 
 #pragma pack()
-
-// implement array of IPP optimized luma deblocking functions
-extern
-IppStatus (*(IppDeblocking[])) (const IppiFilterDeblock_8u * pDeblockInfo);
-
-extern
-IppStatus (*(IppDeblocking16u[])) (Ipp16u *, Ipp32s, Ipp8u *, Ipp8u *, Ipp8u *, Ipp8u *, Ipp32s );
 
 } // namespace UMC
 

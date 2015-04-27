@@ -62,11 +62,6 @@ public:
         Ipp8u bf = sd->m_pCurrentFrame->m_PictureStructureForDec<FRM_STRUCTURE || bFieldDecodeFlag;
         Ipp8u cbp = sd->m_cur_mb.LocalMacroblockInfo->cbp;
 
-        Ipp32u &cbp4x4_luma = sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
-        cbp4x4_luma = 0;
-        sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[0] = 0;
-        sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[1] = 0;
-
         // Initialize blockcbp bits from input cbp (from the bitstream)
         blockcbp = 0;   // no coeffs
         for (uBlock=0; uBlock<5; uBlock++)
@@ -75,8 +70,6 @@ public:
                 blockcbp |= blockcbp_table[uBlock];
             u8x8block <<= 1;
         }
-
-        cbp4x4_luma = (Ipp32u)blockcbp;
 
         if (cbp & u8x8block)
         {
@@ -172,9 +165,6 @@ public:
                     case 2:
                         sd->m_pBitStream->GetCAVLCInfoChroma2(sNumCoeff, (CoeffsPtr*)&sd->m_pCoeffBlocksWrite);
                         break;
-                    case 3:
-                        sd->m_pBitStream->GetCAVLCInfoChroma4(sNumCoeff, (CoeffsPtr*)&sd->m_pCoeffBlocksWrite, 0);
-                        break;
                     default:
                         sNumCoeff = 0;
                         VM_ASSERT(false);
@@ -208,10 +198,6 @@ public:
 
                     case CHROMA_FORMAT_422:
                         memset(pNumCoeffsArray + 16, 0, sizeof(*pNumCoeffsArray) * 8 * 2);
-                        break;
-
-                    case CHROMA_FORMAT_444:
-                        memset(pNumCoeffsArray + 16, 0, sizeof(*pNumCoeffsArray) * 16 * 2);
                         break;
 
                     default:
@@ -427,10 +413,6 @@ public:
             sd->m_pBitStream->GetCAVLCInfoChroma2(iCoeffsNumber, \
                    (CoeffsPtr*) &sd->m_pCoeffBlocksWrite); \
             break; \
-        case CHROMA_FORMAT_444: \
-            sd->m_pBitStream->GetCAVLCInfoChroma4(iCoeffsNumber, \
-                   (CoeffsPtr*) &sd->m_pCoeffBlocksWrite, 0); \
-            break; \
         default: \
             iCoeffsNumber = 0; \
             VM_ASSERT(false); \
@@ -453,9 +435,6 @@ public:
             break; \
         case CHROMA_FORMAT_422: \
             iVLCContext = sd->GetBlocksChromaContextH2(x_pos, y_pos, iComponent); \
-            break; \
-        case CHROMA_FORMAT_444: \
-            iVLCContext = sd->GetBlocksChromaContextH4(x_pos, y_pos, iComponent); \
             break; \
         default: \
             iVLCContext = 0; \
@@ -490,9 +469,6 @@ public:
         case CHROMA_FORMAT_422: \
             iVLCContext = sd->GetBlocksChromaContextH2(x_pos, y_pos, iComponent); \
             break; \
-        case CHROMA_FORMAT_444: \
-            iVLCContext = sd->GetBlocksChromaContextH4(x_pos, y_pos, iComponent); \
-            break; \
         default: \
             iVLCContext = 0; \
             VM_ASSERT(false); \
@@ -526,9 +502,6 @@ public:
         case CHROMA_FORMAT_422: \
             iVLCContext = sd->GetBlocksChromaContextH2(x_pos, y_pos, iComponent); \
             break; \
-        case CHROMA_FORMAT_444: \
-            iVLCContext = sd->GetBlocksChromaContextH4(x_pos, y_pos, iComponent); \
-            break; \
         default: \
             iVLCContext = 0; \
             VM_ASSERT(false); \
@@ -560,9 +533,6 @@ public:
             break; \
         case CHROMA_FORMAT_422: \
             iVLCContext = sd->GetBlocksChromaContextH2(x_pos, y_pos, iComponent); \
-            break; \
-        case CHROMA_FORMAT_444: \
-            iVLCContext = sd->GetBlocksChromaContextH4(x_pos, y_pos, iComponent); \
             break; \
         default: \
             iVLCContext = 0; \
@@ -799,11 +769,6 @@ public:
             case CHROMA_FORMAT_422:
                 memset(pNumCoeffsArray + 16, 0, sizeof(*pNumCoeffsArray) * 8 * 2);
                 break;
-
-            case CHROMA_FORMAT_444:
-                memset(pNumCoeffsArray + 16, 0, sizeof(*pNumCoeffsArray) * 16 * 2);
-                break;
-
             default:
                 break;
             }
@@ -828,9 +793,7 @@ public:
         Ipp32u i, j;
         Ipp32s top_bit     = 1;
         Ipp32s left_bit    = 1;
-        Ipp32s def_bit = /*sd->m_cur_mb.GlobalMacroblockInfo->mbtype == MBTYPE_INTRA && */
-            !pGetMBBaseModeFlag(sd->m_cur_mb.GlobalMacroblockInfo) &&
-            (sd->m_cur_mb.GlobalMacroblockInfo->mbtype == MBTYPE_INTRA) ? (1) : (0);
+        Ipp32s def_bit = sd->m_cur_mb.GlobalMacroblockInfo->mbtype == MBTYPE_INTRA;
         const Ipp32u *ctxBase;
         const Ipp32s *single_scan;
         Ipp32s iMBAbove, iMBLeft;
@@ -1521,8 +1484,7 @@ public:
         Ipp32u ctxCodedBlockFlag;
 
         // set default bit
-        defTermFlag = !pGetMBBaseModeFlag(sd->m_cur_mb.GlobalMacroblockInfo) &&
-(sd->m_cur_mb.GlobalMacroblockInfo->mbtype < MBTYPE_PCM) ? (1) : (0);
+        defTermFlag = (sd->m_cur_mb.GlobalMacroblockInfo->mbtype < MBTYPE_PCM) ? (1) : (0);
 
         // select context for block data
         ctxBlockCat = (14 == iMaxNum) ? (BLOCK_LUMA_AC_LEVELS) : (BLOCK_LUMA_LEVELS);

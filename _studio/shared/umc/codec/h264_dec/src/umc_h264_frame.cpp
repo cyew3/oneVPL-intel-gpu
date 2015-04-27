@@ -17,6 +17,7 @@
 #include "umc_h264_task_supplier.h"
 
 #include "umc_h264_log.h"
+#include "umc_h264_dec_ippwrap.h"
 
 #define NON_LAYER_FRAME
 
@@ -49,17 +50,8 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_
     , m_auIndex(-1)
     , m_index(-1)
     , m_UID(-1)
-    , m_minDId(0)
-    , m_maxDId(0)
-    , m_maxQId(0)
     , m_pObjHeap(pObjHeap)
 {
-
-    for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++)
-    {
-        m_pLayerFrames[i] = 0;
-    }
-
     m_isShortTermRef[0] = m_isShortTermRef[1] = false;
     m_isLongTermRef[0] = m_isLongTermRef[1] = false;
     m_isInterViewRef[0] = m_isInterViewRef[1] = false;
@@ -155,17 +147,6 @@ void H264DecoderFrame::FreeReferenceFrames()
 
 void H264DecoderFrame::Reset()
 {
-    for (Ipp32s i = m_minDId; i < m_maxDId; i++)
-    {
-        if (!m_pLayerFrames[i] || m_pLayerFrames[i] == this)
-            continue;
-
-#ifdef NON_LAYER_FRAME
-        //m_pLayerFrames[i]->Reset();
-#endif
-        m_pLayerFrames[i] = 0;
-    }
-
     m_TopSliceCount = 0;
 
     if (m_pSlicesInfo)
@@ -175,21 +156,6 @@ void H264DecoderFrame::Reset()
     }
 
     ResetRefCounter();
-
-    for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++)
-    {
-        m_pLayerFrames[i] = 0;
-    }
-
-    m_minDId = 0;
-    m_maxDId = 0;
-    m_maxQId = 0;
-    m_lastSliceInAVC = 0;
-    m_firstSliceInBaseRefLayer = -1;
-    m_lastSliceInBaseRefLayer = -1;
-    m_use_base_residual = 0;
-    m_storeRefBasePic = 0;
-    m_lastSliceInBaseRefLayer = 0;
 
     m_isShortTermRef[0] = m_isShortTermRef[1] = false;
     m_isLongTermRef[0] = m_isLongTermRef[1] = false;
@@ -236,10 +202,6 @@ void H264DecoderFrame::Reset()
     m_iResourceNumber = -1;
 
     m_MemID = MID_INVALID;
-
-    m_minDId = 0;
-    m_maxDId = 0;
-    m_maxQId = 0;
 
     prepared[0] = false;
     prepared[1] = false;
@@ -309,21 +271,6 @@ void H264DecoderFrame::OnDecodingCompleted()
     SetisDisplayable();
 
     m_Flags.isDecoded = 1;
-
-#ifdef NON_LAYER_FRAME
-    for (Ipp32s i = m_minDId; i < m_maxDId; i++)
-    {
-        if (!m_pLayerFrames[i] || m_pLayerFrames[i] == this)
-            continue;
-
-        m_pLayerFrames[i]->OnDecodingCompleted();
-        m_pLayerFrames[i]->setWasOutputted();
-        m_pLayerFrames[i]->setWasDisplayed();
-
-        if (m_pLayerFrames[i]->isShortTermRef() || m_pLayerFrames[i]->isLongTermRef())
-            m_pLayerFrames[i]->AddReference(this);
-    }
-#endif
 
     DecrementReference();
 
