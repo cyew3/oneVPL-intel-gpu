@@ -1162,6 +1162,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     mfxExtSpsHeader const * extSpsOld = GetExtBuffer(m_video);
     mfxExtCodingOption2 const * extOpt2New = GetExtBuffer(newPar);
     mfxExtCodingOption2 const * extOpt2Old = GetExtBuffer(m_video);
+    mfxExtCodingOption3 const * extOpt3New = GetExtBuffer(newPar);
 
     // check if IDR required after change of encoding parameters
     bool isSpsChanged = extSpsNew->vuiParametersPresentFlag == 0 ?
@@ -1215,6 +1216,11 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     MFX_CHECK(
         IsOn(m_video.mfx.LowPower) == IsOn(newPar.mfx.LowPower),
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+#endif
+
+#if defined(MFX_VA_WIN)
+    if (IsOn(extOpt3New->EnableMBQP) && !m_useMBQPSurf)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 #endif
 
     return checkStatus;
@@ -2379,15 +2385,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             {
                 task->m_idxMBQP = FindFreeResourceIndex(m_mbqp);
                 task->m_midMBQP = AcquireResource(m_mbqp, task->m_idxMBQP);
-
-                mfxFrameData qpsurf = {};
-                FrameLocker lock(m_core, qpsurf, task->m_midMBQP);
-
-                if (qpsurf.Y == 0)
-                    return Error(MFX_ERR_LOCK_MEMORY);
-
-                for (mfxU32 i = 0; i < hMB; i ++)
-                    MFX_INTERNAL_CPY(&qpsurf.Y[i * qpsurf.Pitch], &mbqp->QP[i * wMB], wMB);
             }
         }
 

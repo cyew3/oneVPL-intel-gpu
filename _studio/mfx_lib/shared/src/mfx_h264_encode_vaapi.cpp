@@ -2165,7 +2165,7 @@ mfxStatus VAAPIEncoder::Execute(
         //width(64byte alignment) height(8byte alignment)
         mfxU32 bufW = ((mbW + 63) & ~63);
         mfxU32 bufH = ((mbH + 7) & ~7);
-        mfxU32 fieldOffset = (mfxU32)(fieldId == task.m_fid[1]) * (mbH * mbW) * (mfxU32)!!task.m_fieldPicFlag;
+        mfxU32 fieldOffset = (mfxU32)fieldId * (mbH * mbW) * (mfxU32)!!task.m_fieldPicFlag;
 
         if (   mbqp && mbqp->QP && mbqp->NumQPAlloc >= mbW * m_sps.picture_height_in_mbs
             && m_mbqp_buffer.size() >= (bufW * bufH))
@@ -2198,7 +2198,7 @@ mfxStatus VAAPIEncoder::Execute(
         //width(64byte alignment) height(8byte alignment)
         mfxU32 bufW = ((mbW + 63) & ~63);
         mfxU32 bufH = ((mbH + 7) & ~7);
-        mfxU32 fieldOffset = (mfxU32)(fieldId == task.m_fid[1]) * (mbH * mbW) * (mfxU32)!!task.m_fieldPicFlag;
+        mfxU32 fieldOffset = (mfxU32)fieldId * (mbH * mbW) * (mfxU32)!!task.m_fieldPicFlag;
 
         if (   m_mb_noskip_buffer.size() >= (bufW * bufH)
             && ctrlNoSkipMap->Map

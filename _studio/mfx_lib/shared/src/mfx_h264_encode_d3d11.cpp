@@ -531,6 +531,19 @@ mfxStatus D3D11Encoder::Execute(
 
     if (task.m_isMBQP)
     {
+        const mfxExtMBQP *mbqp = GetExtBuffer(task.m_ctrl);
+        mfxU32 wMB = (m_sps.FrameWidth + 15) / 16;
+        mfxU32 hMB = (m_sps.FrameHeight + 15) / 16 / (2 - !task.m_fieldPicFlag);
+        mfxU32 fieldOffset = (mfxU32)fieldId * (wMB * hMB) * (mfxU32)!!task.m_fieldPicFlag;
+
+        mfxFrameData qpsurf = {};
+        FrameLocker lock(m_core, qpsurf, task.m_midMBQP);
+
+        MFX_CHECK_WITH_ASSERT(qpsurf.Y, MFX_ERR_LOCK_MEMORY);
+
+        for (mfxU32 i = 0; i < hMB; i++)
+            MFX_INTERNAL_CPY(&qpsurf.Y[i * qpsurf.Pitch], &mbqp->QP[fieldOffset + i * wMB], wMB);
+
         m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
         m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(RES_ID_MBQP));
         m_compBufDesc[bufCnt].pCompBuffer          = &RES_ID_MBQP;
