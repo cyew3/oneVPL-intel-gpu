@@ -697,17 +697,32 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
     }
     else
     {
-        m_pCapturer.reset( CreatePlatformCapturer(m_pmfxCore) );
-        if(m_pCapturer.get())
-            mfxRes = m_pCapturer.get()->QueryVideoAccelerator(in, &out);
-        else
-            mfxRes = MFX_ERR_DEVICE_FAILED;
-        if(mfxRes)
+        if(!m_inited)
         {
-            fallback = true;
-        }
+            std::auto_ptr<Capturer> pTmpCapturer;
 
-        m_pCapturer.reset( 0 );
+            pTmpCapturer.reset( CreatePlatformCapturer(m_pmfxCore) );
+            if(pTmpCapturer.get())
+                mfxRes = pTmpCapturer.get()->QueryVideoAccelerator(in, &out);
+            else
+                mfxRes = MFX_ERR_DEVICE_FAILED;
+            if(mfxRes)
+            {
+                fallback = true;
+            }
+            pTmpCapturer.reset( 0 );
+        }
+        else
+        {
+            if(m_pCapturer.get())
+            {
+                mfxRes = m_pCapturer.get()->CheckCapabilities(in, &out);
+                if(mfxRes)
+                {
+                    fallback = true;
+                }
+            }
+        }
     }
 
     if(fallback)
