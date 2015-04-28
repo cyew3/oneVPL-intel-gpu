@@ -121,7 +121,7 @@ public:
             }
         }
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-            
+
     }
     template <class CAPS> 
     mfxStatus SetHWCaps(GUID encode_guid, CAPS *hwCaps, mfxU32 array_size = 1)
@@ -132,7 +132,6 @@ public:
             m_size = array_size;
             m_caps = malloc(sizeof(CAPS)*array_size);
             memcpy_s(m_caps, sizeof(CAPS)*array_size, hwCaps, sizeof(CAPS)*array_size);
-            return MFX_ERR_NONE;
         }
         else
         {
@@ -140,7 +139,7 @@ public:
             m_size = array_size;
             memcpy_s(m_caps, sizeof(CAPS)*array_size, hwCaps, sizeof(CAPS)*array_size);
         }
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+        return MFX_ERR_NONE;
 
     }
 protected:
