@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -72,9 +72,10 @@ mfxStatus SelectImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterf
     {
         return MFX_ERR_NULL_PTR;
     }
+    mfxIMPL impl_via = (*pImplInterface & ~MFX_IMPL_EXTERNAL_THREADING);
 
     DXVA2Device dxvaDevice;
-    if (MFX_IMPL_VIA_D3D9 == *pImplInterface)
+    if (MFX_IMPL_VIA_D3D9 == impl_via)
     {
         // try to create the Direct3D 9 device and find right adapter
         if (!dxvaDevice.InitD3D9(adapterNum))
@@ -83,7 +84,7 @@ mfxStatus SelectImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterf
             return MFX_ERR_UNSUPPORTED;
         }
     }
-    else if (MFX_IMPL_VIA_D3D11 == *pImplInterface)
+    else if (MFX_IMPL_VIA_D3D11 == impl_via)
     {
         // try to open DXGI 1.1 device to get hardware ID
         if (!dxvaDevice.InitDXGI1(adapterNum))
@@ -92,7 +93,7 @@ mfxStatus SelectImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterf
             return MFX_ERR_UNSUPPORTED;
         }
     } 
-    else if (MFX_IMPL_VIA_ANY == *pImplInterface)
+    else if (MFX_IMPL_VIA_ANY == impl_via)
     {
         // try the Direct3D 9 device
         if (dxvaDevice.InitD3D9(adapterNum))
