@@ -74,11 +74,13 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(ProjectName)_d\</IntDir>
+    <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(ProjectName)_d\</IntDir>
+    <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -97,7 +99,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <Cpp0xSupport>true</Cpp0xSupport>
     </ClCompile>
@@ -106,6 +108,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;$(ICPP_COMPILER13)\compiler\lib\ia32</AdditionalLibraryDirectories>
       <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -115,7 +118,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <Cpp0xSupport>true</Cpp0xSupport>
     </ClCompile>
@@ -125,6 +128,7 @@
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;$(ICPP_COMPILER13)\compiler\lib\intel64</AdditionalLibraryDirectories>
       <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;ippimt.lib;ippdcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkStatus>false</LinkStatus>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -136,7 +140,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Cpp0xSupport>true</Cpp0xSupport>
     </ClCompile>
@@ -158,7 +162,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Cpp0xSupport>true</Cpp0xSupport>
     </ClCompile>
@@ -172,8 +176,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="hevce_common_api.cpp" />
+    <ClCompile Include="hevce_encodeframeasync.cpp" />
     <ClCompile Include="hevce_gop.cpp" />
+    <ClCompile Include="hevce_init.cpp" />
+    <ClCompile Include="hevce_mock_videocore.cpp" />
     <ClCompile Include="hevce_optimization.cpp" />
+    <ClCompile Include="hevce_query.cpp" />
+    <ClCompile Include="hevce_queryiosurf.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock.vcxproj">
@@ -220,6 +230,10 @@
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\vm_plus\vm_plus.vcxproj">
       <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="hevce_common_api.h" />
+    <ClInclude Include="hevce_mock_videocore.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

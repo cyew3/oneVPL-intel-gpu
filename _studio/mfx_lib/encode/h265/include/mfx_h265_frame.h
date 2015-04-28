@@ -52,13 +52,71 @@ namespace H265Enc {
         bool m_free; // resource in use or could be reused (m_free == true means could be reused).
     };
 
-    struct H265CUData;
-    class H265Frame
+    struct RefCounter
     {
-    public:
-        void *mem;
-        H265CUData *cu_data;
+        RefCounter() 
+            : m_refCounter(0) 
+        {}
+        volatile Ipp32u m_refCounter; // to prevent race condition in case of frame threading
+        void AddRef(void)  { vm_interlocked_inc32(&m_refCounter);};
+        void Release(void) { vm_interlocked_dec32(&m_refCounter);}; // !!! here not to delete in case of refCounter == 0 !!!
+    };
 
+    struct Statistics : public RefCounter
+    {
+        std::vector<Ipp32s> m_interSad;
+        std::vector<Ipp32s> m_interSad_pdist_past;
+        std::vector<Ipp32s> m_interSad_pdist_future;
+
+        std::vector<H265MV> m_mv;
+        std::vector<H265MV> m_mv_pdist_future;
+        std::vector<H265MV> m_mv_pdist_past;
+        std::vector<Ipp64f> m_rs;
+        std::vector<Ipp64f> m_cs;
+        
+        std::vector<Ipp32s> sc_mask;
+        std::vector<Ipp32s> qp_mask;
+        std::vector<Ipp32s> coloc_past;
+        std::vector<Ipp32s> coloc_futr;
+
+        std::vector<Ipp32s> m_intraSatd;
+        std::vector<Ipp32s> m_interSatd;
+
+        Ipp64f m_frameRs;
+        Ipp64f m_frameCs;
+        Ipp64f SC;
+        Ipp64f TSC;
+        Ipp64f avgsqrSCpp;
+        Ipp64f avgTSC;
+        Ipp32f m_avgBestSatd; //= sum( min{ interSatd[i], intraSatd[i] } ) / {winth*height};
+        Ipp32f m_avgIntraSatd;
+        Ipp32f m_intraRatio;
+        Ipp32s m_sceneCut;
+        Ipp64s m_metric;// special metric per frame for sceneCut
+
+        void ResetAvgMetrics()
+        {
+            m_frameRs = 0.0;
+            m_frameCs = 0.0;
+            SC = 0.0;
+            TSC = 0.0;
+            avgsqrSCpp = 0.0;
+            avgTSC = 0.0;
+            m_avgBestSatd = 0.f;
+            m_avgIntraSatd = 0.f;
+            m_intraRatio = 0.f;
+            m_sceneCut = 0;
+            m_metric = 0;
+        }
+
+        ~Statistics() { Destroy(); }
+        void Create(H265VideoParam *par);// {}
+        void Destroy();// {}
+    };
+
+    struct H265CUData;
+    struct FrameData : public RefCounter
+    {
         Ipp8u *y;
         Ipp8u *uv;
 
@@ -70,11 +128,29 @@ namespace H265Enc {
         Ipp32s pitch_chroma_pix;
         Ipp32s pitch_chroma_bytes;
 
-        /* for 10 bit surfaces */
-        Ipp8u *y_8bit;
-        Ipp8u *uv_8bit;
-        Ipp32s pitch_luma_bytes_8bit;
-        Ipp32s pitch_chroma_bytes_8bit;
+        FrameData()
+        : y(NULL)
+        , uv(NULL)
+        , mem_plane(NULL)
+        {}
+        ~FrameData() { Destroy();}
+
+        void Create(H265VideoParam *par);
+        void Destroy();
+
+    private:
+        void *mem_plane;
+    };
+
+    class Frame
+    {
+    public:
+        FrameData* m_origin;
+        FrameData* m_recon;
+        FrameData* m_luma_8bit;//used by FEI in enc:p010 mode
+        FrameData* m_lowres; // used by lookahead
+
+        H265CUData *cu_data;
 
         Ipp8u  m_bitDepthLuma;
         Ipp8u  m_bdLumaFlag;
@@ -109,88 +185,10 @@ namespace H265Enc {
         Ipp32s m_mapListRefUnique[2][MAX_NUM_REF_IDX];
         Ipp32s m_numRefUnique;
         Ipp32s m_allRefFramesAreFromThePast;
+        Ipp32u m_frameType;// full info for bs. m_frameType = m_codeType | isIDR ? | isRef ?
 
-        // for frame threading
-        volatile Ipp32s m_codedRow; // sync info in case of frame threading
-        volatile Ipp32u m_refCounter; // to prevent race condition in case of frame threading
-        ThreadingTask *m_threadingTasks;
-        
-        // complexity/content statistics
-        std::vector<Ipp32s> m_interSad;
-        std::vector<Ipp32s> m_interSad_pdist_past;
-        std::vector<Ipp32s> m_interSad_pdist_future;
-
-        std::vector<H265MV> m_mv;
-        std::vector<H265MV> m_mv_pdist_future;
-        std::vector<H265MV> m_mv_pdist_past;
-        std::vector<Ipp64f> m_rs;
-        std::vector<Ipp64f> m_cs;
-        Ipp64f m_frameRs;
-        Ipp64f m_frameCs;
-        std::vector<Ipp32s> sc_mask;
-        std::vector<Ipp32s> qp_mask;
-        std::vector<Ipp32s> coloc_past;
-        std::vector<Ipp32s> coloc_futr;
-
-        Ipp64f SC;
-        Ipp64f TSC;
-
-        Ipp64f avgsqrSCpp;
-        Ipp64f avgTSC;
-        
-        // BRC
-        std::vector<Ipp32s> m_intraSatd;
-        std::vector<Ipp32s> m_interSatd;
-        Ipp32f              m_avgBestSatd; //= sum( min{ interSatd[i], intraSatd[i] } ) / {winth*height};
-        Ipp32f              m_intraRatio;
-        Ipp32s              m_sceneCut;
-        Ipp64s              m_metric;// special metric per frame for SCD
-
-        Ipp64f m_avCmplx;
-        Ipp64f m_CmplxQstep;
-
-        H265Frame* m_lowres;
-
-        H265Frame()
-        {
-            ResetMemInfo();
-            ResetEncInfo();
-            ResetCounters();
-        }
-
-        ~H265Frame() { Destroy(); mem = NULL;}
-
-        Ipp8u wasLAProcessed()    { return m_wasLookAheadProcessed; }
-        void setWasLAProcessed() { m_wasLookAheadProcessed = true; }
-        void unsetWasLAProcessed() { m_wasLookAheadProcessed = false; }
-
-        void Create(H265VideoParam *par, Ipp8u needExtData = 0);
-        void Destroy();
-        void CopyFrame(const mfxFrameSurface1 *surface, bool have8bitCopy = false);
-        void doPadding();
-
-        void ResetMemInfo();
-        void ResetEncInfo();
-        void ResetCounters();
-        void CopyEncInfo(const H265Frame* src);
-
-        void AddRef(void)  { vm_interlocked_inc32(&m_refCounter);};
-        void Release(void) { vm_interlocked_dec32(&m_refCounter);}; // !!! here not to delete in case of refCounter == 0 !!!
-    };
-
-
-    struct Task
-    {
-        H265Frame* m_frameOrigin;
-        H265Frame* m_frameRecon;
-
-        Ipp32u     m_encOrder;
-        Ipp32u     m_frameOrder;
-        Ipp64u     m_timeStamp;
-        Ipp32u     m_frameType;// full info for bs. m_frameType = m_codeType | isIDR ? | isRef ?
-        
         std::vector<H265Slice> m_slices;
-        H265Frame* m_dpb[16];
+        Frame* m_dpb[16];
         Ipp32s     m_dpbSize;
 
         Ipp8s     m_sliceQpY;
@@ -198,78 +196,72 @@ namespace H265Enc {
         H265Slice m_dqpSlice[2*MAX_DQP+1];
 
         H265ShortTermRefPicSet m_shortRefPicSet[66];
-        mfxBitstream *m_bs;
+
+        // for (frame) threading
+        volatile Ipp32s m_codedRow; // sync info in case of frame threading
+        ThreadingTask *m_threadingTasks;
+        ThreadingTask  m_threadingTaskLast;
+        Ipp32u m_numThreadingTasks;
+        volatile Ipp32u m_numFinishedThreadingTasks;
+        volatile Ipp32u m_statusReport; // 0 - frame submitted to FrameEncoder (not run!!), 1 - FrameEncoder was run (resource assigned), 2 - frame ready, 7 - need repack
+        Ipp32s m_encIdx; // we have "N" frameEncoders. this index indicates owner of the frame [0, ..., N-1]
+        
+        // complexity/content statistics
+        // 0 - original resolution, 1 - lowres
+        Statistics* m_stats[2];
+
+        // BRC info
+        Ipp64f m_avCmplx;
+        Ipp64f m_CmplxQstep;
+        Ipp32s m_qpBase;
+        Ipp64f m_totAvComplx;
+        Ipp32s m_totComplxCnt;
+        Ipp64f m_complxSum;
+        Ipp32s m_predBits;
+        //Ipp64f m_cmplx;
+        std::vector<Frame*> m_futureFrames;
 
         // quick wa for GAAC
         void*      m_extParam;
 
-        // for frame parallel
-        Ipp32u m_numThreadingTasks;
-        volatile Ipp32u m_numFinishedThreadingTasks;
-        volatile Ipp32u m_statusReport; // 0 - task submitted to FrameEncoder (not run!!), 1 - FrameEncoder was run (resource assigned), 2 - task ready, 7 - need repack
-        Ipp32s m_encIdx; // we have "N" frameEncoders. this index indicates owner of the task [0, ..., N-1]
+        mfxPayload **m_userSeiMessages;
+        Ipp32u       m_numUserSeiMessages;
 
-        // for threading control
-        std::vector<Ipp32u> m_ithreadPool;
-
-        // for BRC lookahead
-        std::vector<H265Frame*> m_futureFrames;
-
-        Task()
-            : m_frameOrigin(NULL)
-            , m_frameRecon(NULL)
-            , m_encOrder(Ipp32u(-1))
-            , m_frameOrder(Ipp32u(-1))
-            , m_timeStamp(0)
+        Frame()
         {
-            m_bs       = NULL;
-            m_extParam = NULL;
-            m_statusReport = 0;
-            m_encIdx= -1;
+            ResetMemInfo();
+            ResetEncInfo();
+            ResetCounters();
         }
 
-        ~Task() { Destroy(); }
+        ~Frame() { Destroy(); mem = NULL;}
 
-        void Reset()
-        {
-            m_frameOrigin = NULL;
-            m_frameRecon  = NULL;
-            m_bs          = NULL;
-            m_encOrder    = Ipp32u(-1);
-            m_frameOrder  = Ipp32u(-1);
-            m_timeStamp   = 0;
-            m_bs       = NULL;
-            m_extParam = NULL;
-            m_statusReport = 0;
-            m_encIdx= -1;
-            m_dpbSize     = 0;
-        }
+        Ipp8u wasLAProcessed()    { return m_wasLookAheadProcessed; }
+        void setWasLAProcessed() { m_wasLookAheadProcessed = true; }
+        void unsetWasLAProcessed() { m_wasLookAheadProcessed = false; }
 
-        void Create(Ipp32u numCtb, Ipp32u numThreadStructs, Ipp32s numSlices)
-        {
-            m_lcuQps.resize(numCtb);
-            m_ithreadPool.resize(numThreadStructs, 0);
-            m_slices.resize(numSlices);
-        }
+        void Create(H265VideoParam *par);
+        void Destroy();
+        void CopyFrameData(const mfxFrameSurface1 *in, Ipp8u have8bitCopy);
+        void doPadding();
 
-        void Destroy()
-        {
-            m_lcuQps.resize(0);
-            m_ithreadPool.resize(0);
-        }
+        void ResetMemInfo();
+        void ResetEncInfo();
+        void ResetCounters();
+
+        private:
+            void *mem;
     };
 
-    typedef std::list<Task*> TaskList;
-    typedef std::list<Task*>::iterator   TaskIter;
+    typedef std::list<Frame*> FrameList;
+    typedef std::list<Frame*>::iterator   FrameIter;
 
-    typedef std::list<H265Frame*> FramePtrList;
-    typedef std::list<H265Frame*>::iterator   FramePtrIter;
+    void Dump(H265VideoParam *par, Frame* frame, FrameList & dpb);
+    void PadOneReconRow(FrameData* frame, Ipp32u ctb_row, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, const H265VideoParam& par);
+    void PadOneReconCtu(Frame* frame, Ipp32u ctb_row, Ipp32u ctb_col, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, Ipp32u PicWidthInCtbs);
 
-
-    FramePtrIter GetFreeFrame(FramePtrList & queue, H265VideoParam *par);
-    void Dump(const vm_char* fname, H265VideoParam *par, H265Frame* frame, TaskList & dpb);
-    void PadOneReconRow(H265Frame* frame, Ipp32u ctb_row, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs);
-    void PadOneReconCtu(H265Frame* frame, Ipp32u ctb_row, Ipp32u ctb_col, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, Ipp32u PicWidthInCtbs);
+    template <class T> 
+    T* Allocate(typename std::vector<T*> & queue, H265VideoParam *par);
 
 } // namespace
 

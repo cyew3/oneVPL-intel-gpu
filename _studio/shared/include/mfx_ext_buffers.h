@@ -194,19 +194,19 @@ typedef struct {
     mfxU16      EnableCm;           // tri-state
     mfxU16      BPyramid;           // tri-state
     mfxU16      FastPUDecision;     // tri-state
-    mfxU16      HadamardMe;         // 0-default 0-never; 1-subpel; 2-always
+    mfxU16      HadamardMe;         // 0-default 1-never; 2-subpel; 3-always
     mfxU16      TMVP;               // tri-state
     mfxU16      Deblocking;         // tri-state
     mfxU16      RDOQuantChroma;     // tri-state
     mfxU16      RDOQuantCGZ;        // tri-state
-    mfxU16      SaoOpt;             // 0-default; 1-all modes; 2-fast four modes only
+    mfxU16      SaoOpt;             // 0-default; 1-all modes; 2-fast four modes only, 3-one first mode only
     mfxU16      IntraNumCand0_2;    // number of candidates for SATD stage after gradient analysis for TU4x4
     mfxU16      IntraNumCand0_3;    // number of candidates for SATD stage after gradient analysis for TU8x8
     mfxU16      IntraNumCand0_4;    // number of candidates for SATD stage after gradient analysis for TU16x16
     mfxU16      IntraNumCand0_5;    // number of candidates for SATD stage after gradient analysis for TU32x32
     mfxU16      IntraNumCand0_6;    // number of candidates for SATD stage after gradient analysis for TU64x64
     mfxU16      CostChroma;         // tri-state, include chroma in cost
-    mfxU16      PatternIntPel;      // 0-default; 1-log; 3- dia; 100-fullsearch
+    mfxU16      PatternIntPel;      // 0-default; 1-log; 100-fullsearch
     mfxU16      FastSkip;           // tri-state
     mfxU16      PatternSubPel;      // 0-default; 1-int pel only; 2-halfpel; 3-quarter pel
     mfxU16      ForceNumThread;     // 0-default

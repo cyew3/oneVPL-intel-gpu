@@ -19,7 +19,6 @@ File Name: libmfxsw_encode.cpp
 // sheduling and threading stuff
 #include <mfx_task.h>
 
-// AYA: temp solution DXVA2 Encoder GUID
 #include "mfxvideo++int.h"
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
 #if defined(MFX_VA)
@@ -62,9 +61,9 @@ File Name: libmfxsw_encode.cpp
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 #if defined(MFX_VA)
-#include "mfx_h265_encode.h"
+#include "mfx_h265_encode_api.h"
 #else
-#include "mfx_h265_encode.h"
+#include "mfx_h265_encode_api.h"
 #endif
 #endif
 

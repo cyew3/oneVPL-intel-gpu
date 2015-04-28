@@ -25,7 +25,6 @@
     defined(MFX_MAKENAME_SSE4) && defined(MFX_TARGET_OPTIMIZATION_SSE4) || \
     defined(MFX_MAKENAME_SSSE3) && defined(MFX_TARGET_OPTIMIZATION_SSSE3)
 
-#include "mfx_h265_defs.h"
 
 #include <math.h>
 //#include <emmintrin.h> //SSE2

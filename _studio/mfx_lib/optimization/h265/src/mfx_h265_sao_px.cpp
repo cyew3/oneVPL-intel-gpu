@@ -523,8 +523,8 @@ namespace MFX_HEVC_PP
 
     } // void h265_ProcessSaoCu_Luma_8u(...)
 
-    const int   g_skipLinesR[3] = {1, 3, 3};//YCbCr
-    const int   g_skipLinesB[3] = {1, 2, 2};//YCbCr
+    const int   g_skipLinesR[3] = {1, 1, 1};//YCbCr
+    const int   g_skipLinesB[3] = {1, 1, 1};//YCbCr
 
 #ifndef PixType
 #define PixType Ipp8u

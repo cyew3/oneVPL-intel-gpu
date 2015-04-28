@@ -15,7 +15,6 @@
 #if defined (MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 #include "ippvc.h"
-#include "mfx_h265_defs.h"
 
 namespace MFX_HEVC_PP
 {
@@ -55,7 +54,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 4, 16);
 
@@ -81,7 +80,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 8, 32);
 
@@ -107,7 +106,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 12, 16);
 
@@ -137,7 +136,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 16, 4);
 
@@ -163,7 +162,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 16, 12);
 
@@ -193,7 +192,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 16, 32);
 
@@ -219,7 +218,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 16, 64);
 
@@ -253,7 +252,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 24, 32);
 
@@ -290,7 +289,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 32, 8);
 
@@ -319,7 +318,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 32, 16);
 
@@ -342,7 +341,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 32, 24);
 
@@ -379,7 +378,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 32, 32);
 
@@ -412,7 +411,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 32, 64);
 
@@ -444,7 +443,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 48, 64);
         Ipp32s offset1 = 0;
@@ -476,7 +475,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 64, 16);
 
@@ -509,7 +508,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 64, 32);
 
@@ -542,7 +541,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 64, 48);
 
@@ -575,7 +574,7 @@ namespace MFX_HEVC_PP
         Ipp32s* pDst,
         Ipp32s mc)
     {
-        H265ENC_UNREFERENCED_PARAMETER(mc);
+        mc;
 
         //h265_SAD_reference_8u32s_C1R(pSrcCur, srcCurStep, pSrcRef, srcRefStep, pDst, 64, 64);
 

@@ -95,7 +95,7 @@ void InitOutputFiles(mfxFEIH265Param *param)
     memset(bwBuf, 0x80, sizeof(bwBuf));
 }
 
-void AddFrameParamsFile(mfxFEIH265Input *feiH265In, H265Frame *frameIn, H265Slice *sliceIn, FEIFrame *feiFrame, mfxFEISyncPoint *syncp, Ipp32s prevFrameDone, Ipp32s RefPicOrder[2][MFX_FEI_H265_MAX_NUM_REF_FRAMES])
+void AddFrameParamsFile(mfxFEIH265Input *feiH265In, Frame *frameIn, H265Slice *sliceIn, FEIFrame *feiFrame, mfxFEISyncPoint *syncp, Ipp32s prevFrameDone, Ipp32s RefPicOrder[2][MFX_FEI_H265_MAX_NUM_REF_FRAMES])
 {
     int i;
 
@@ -335,11 +335,11 @@ void CloseOutputFiles(void)
 FeiContext::FeiContext(const H265VideoParam *param, VideoCORE *core)
 {
     /* set once at init */
-    m_feiParam.Width         = param->SourceWidth;
-    m_feiParam.Height        = param->SourceHeight;
+    m_feiParam.Width         = param->Width;
+    m_feiParam.Height        = param->Height;
     m_feiParam.MaxCUSize     = param->MaxCUSize;
     m_feiParam.MPMode        = param->partModes;
-    m_feiParam.NumRefFrames  = param->csps->sps_max_dec_pic_buffering[0];
+    m_feiParam.NumRefFrames  = param->MaxDecPicBuffering;
 
     feiInIdx = 0; // 0 or 1
 
@@ -397,10 +397,10 @@ void FeiContext::ResetFEIFrame(FEIFrame *feiFrame)
  * - removed check in kernel for frames in list1 being present in list0 (B frames, see m_mapRefIdxL1ToL0)
  *     caller should do this to avoid redundant work
  */
-void FeiContext::UpdateFrameStateFEI(mfxFEIH265Input *feiIn, H265Frame *frameIn, H265Frame *frameRef, Ipp32s refIdx, Ipp32s sliceType)
+void FeiContext::UpdateFrameStateFEI(mfxFEIH265Input *feiIn, Frame *frameIn, Frame *frameRef, Ipp32s refIdx, Ipp32s sliceType)
 {
     Ipp32s i, refList;
-    H265Frame *ref;
+    Frame *ref;
 
     //fprintf(stderr, "frameIn->eoc = %d, frameRef[0]->eoc = %d, frameRef[1]->eoc = %d\n", frameIn->EncOrderNum(), frameRef[0]->EncOrderNum(), (frameRef[1] ? frameRef[1]->EncOrderNum() : -1));
 
@@ -431,33 +431,33 @@ void FeiContext::UpdateFrameStateFEI(mfxFEIH265Input *feiIn, H265Frame *frameIn,
 
     /* copy state for current input frame */
     if (frameIn->m_bitDepthLuma > 8) {
-        feiIn->FEIFrameIn.YPlane   = frameIn->y_8bit;
-        feiIn->FEIFrameIn.YPitch   = frameIn->pitch_luma_bytes_8bit;
+        feiIn->FEIFrameIn.YPlane   = frameIn->m_luma_8bit->y;
+        feiIn->FEIFrameIn.YPitch   = frameIn->m_luma_8bit->pitch_luma_bytes;
     } else {
-        feiIn->FEIFrameIn.YPlane   = frameIn->y;
-        feiIn->FEIFrameIn.YPitch   = frameIn->pitch_luma_bytes;
+        feiIn->FEIFrameIn.YPlane   = frameIn->m_origin->y;
+        feiIn->FEIFrameIn.YPitch   = frameIn->m_origin->pitch_luma_bytes;
     }
     feiIn->FEIFrameIn.EncOrder = frameIn->m_encOrder;
 
     /* copy state for 1 reference to be processed */
     if (frameRef) {
         if (frameRef->m_bitDepthLuma > 8) {
-            feiIn->FEIFrameRef.YPlane   = frameRef->y_8bit;
-            feiIn->FEIFrameRef.YPitch   = frameRef->pitch_luma_bytes_8bit;
+            feiIn->FEIFrameRef.YPlane   = frameRef->m_luma_8bit->y;
+            feiIn->FEIFrameRef.YPitch   = frameRef->m_luma_8bit->pitch_luma_bytes;
         } else {
-            feiIn->FEIFrameRef.YPlane   = frameRef->y;
-            feiIn->FEIFrameRef.YPitch   = frameRef->pitch_luma_bytes;
+            feiIn->FEIFrameRef.YPlane   = frameRef->m_recon->y;
+            feiIn->FEIFrameRef.YPitch   = frameRef->m_recon->pitch_luma_bytes;
         }
         feiIn->FEIFrameRef.EncOrder = frameRef->m_encOrder;
     }
 
 }
 
-///void FeiContext::ProcessFrameFEI(mfxFEIH265Input *feiH265In, H265Frame *frameIn, H265Slice *sliceIn, FEIFrame *feiFrame, H265Frame **dpb, Ipp32s dpbSize, mfxFEISyncPoint *syncp, Ipp32s prevFrameDone)
-void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, H265Frame *frameIn, H265Slice *sliceIn, H265Frame **dpb, Ipp32s dpbSize, Ipp8u prevFrameDone)
+///void FeiContext::ProcessFrameFEI(mfxFEIH265Input *feiH265In, Frame *frameIn, H265Slice *sliceIn, FEIFrame *feiFrame, Frame **dpb, Ipp32s dpbSize, mfxFEISyncPoint *syncp, Ipp32s prevFrameDone)
+void FeiContext::ProcessFrameFEI(mfxI32 feiInIdx, Frame *frameIn, H265Slice *sliceIn, Frame **dpb, Ipp32s dpbSize, Ipp8u prevFrameDone)
 {
+    Frame *frameRef;
     Ipp32s refIdx, refIdxB;
-    H265Frame *frameRef;
 
     char *tname = "ProcCur";
     if (!prevFrameDone) tname = "ProcNext";

@@ -766,7 +766,7 @@ namespace MFX_HEVC_PP
                 {
                     endX = width- skipLinesR;
                     endY = height- skipLinesB;
-                    const int shiftBits = 3;
+                    const int shiftBits = 5;
                     for (y=0; y<endY; y++)
                     {
                         for (x=0; x<endX; x++)

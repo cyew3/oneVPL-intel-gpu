@@ -191,7 +191,7 @@ void H265CU<PixType>::QuantInvTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s widt
         : h265_QPtoChromaQP[m_par->chromaFormatIdc-1][qp] + (m_par->bitDepthChroma - 8) * 6;
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
-    VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
+    //VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
 
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
         CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
@@ -213,7 +213,7 @@ void H265CU<PixType>::QuantFwdTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s widt
 
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
-    VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
+    //VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
 
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
         CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
@@ -235,10 +235,10 @@ void H265CU<PixType>::QuantFwdTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s widt
             Ipp32s delta_u[32*32];
             h265_quant_fwd_base( residuals + offset, coeff + offset, log2TrSize, is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma,
                                  m_cslice->slice_type == I_SLICE, QP,
-                                 m_par->cpps->sign_data_hiding_enabled_flag ? delta_u : NULL,
+                                 m_par->SBHFlag ? delta_u : NULL,
                                  abs_sum );
 
-            if(this->m_par->cpps->sign_data_hiding_enabled_flag && abs_sum >= 2) {
+            if(this->m_par->SBHFlag && abs_sum >= 2) {
                 Ipp32u scan_idx = GetCoefScanIdx( abs_part_idx, log2TrSize, is_luma, IsIntra(abs_part_idx) );
 
                 if (scan_idx == COEFF_SCAN_ZIGZAG)
@@ -261,7 +261,7 @@ void H265CU<PixType>::QuantFwdTuBase(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s 
 
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
-    VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
+    //VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
 
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
         CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);

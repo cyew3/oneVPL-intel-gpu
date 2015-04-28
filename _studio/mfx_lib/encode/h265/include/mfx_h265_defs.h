@@ -28,11 +28,69 @@
 #define __ALIGN8
 #endif
 
-#include "mfxdefs.h"
+
+#include "float.h"
+#include "assert.h"
 #include "ippdefs.h"
 #include "ipps.h"
 #include "ippi.h"
-#include <float.h>
+#include "mfxdefs.h"
+#include "mfx_ext_buffers.h"
+
+
+//Optimization with Intelligent Content and RD Analysis (ICRA)
+#define AMT_ICRA_OPT 
+#ifdef AMT_ICRA_OPT
+#define AMT_BIREFINE_CONVERGE
+#define AMT_SPEEDUP_RDOQ
+#define AMT_DZ_RDOQ
+#define AMT_INT_ME_CONVERGE
+#define AMT_INT_ME_TRANSITION
+
+#define MEMOIZE_SUBPEL
+#ifdef MEMOIZE_SUBPEL
+#define MEMOIZE_SUBPEL_EXT_W (8+8)
+#define MEMOIZE_SUBPEL_EXT_H (8+2)
+//#define MEMOIZE_SUBPEL_TEST
+#define MEMOIZE_BIPRED_HI_SAVE
+//#define MEMOIZE_BIPRED_TEST
+
+#define MEMOIZE_CAND
+#ifdef MEMOIZE_CAND
+#define MEMOIZE_NUMCAND MAX_NUM_MERGE_CANDS
+//#define MEMOIZE_CAND_TEST
+#define MEMOIZE_CAND_SUBPEL
+#ifdef MEMOIZE_CAND_SUBPEL
+//#define MEMOIZE_CAND_SUBPEL_TEST
+// Do not turn On MEMOIZE_SUBPEL_RECON with subopt recon in rd loop (e.g. fast interp)
+#define MEMOIZE_SUBPEL_RECON
+//#define MEMOIZE_SUBPEL_RECON_TEST
+#endif
+#endif
+#define AMT_INT_ME_SEED
+#define AMT_FAST_SUBPEL_SEARCH
+#ifndef MFX_VA
+#define AMT_ALT_FAST_SKIP
+#endif
+#endif
+
+#define AMT_SETTINGS
+#define AMT_THRESHOLDS
+#define AMT_ADAPTIVE_INTRA_RD
+#define AMT_ALT_ENCODE
+#ifdef AMT_ALT_ENCODE
+#define AMT_ALT_ENCODE_OPT
+#define AMT_DZ_PDRDOQ
+#endif
+#define AMT_SAO_MIN
+#define AMT_MIN_DEPTH_FIX
+#define AMT_ADAPTIVE_TU_DEPTH
+#define AMT_FIX_CHROMA_SKIP
+#define AMT_USE_IPP
+#define AMT_COEFF_COST_EST
+#define AMT_ADAPTIVE_INTRA_DEPTH
+#endif
+
 
 namespace H265Enc {
 
@@ -49,7 +107,7 @@ namespace H265Enc {
 
 static void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
 {
-#if 0 // defined( __INTEL_COMPILER ) // || defined( __GNUC__ )  // TODO: check with GCC // AL: temporarely disable optimized path for Beta
+#if  0 // defined( __INTEL_COMPILER ) // || defined( __GNUC__ )  // TODO: check with GCC // AL: temporarely disable optimized path for Beta
     // 128-bit loads/stores first with then REP MOVSB, aligning dst on 16-bit to avoid costly store splits
     int peel = (0xf & (-(size_t)dst));
     __asm__ ( "cld" );
@@ -176,12 +234,9 @@ extern int DEBUG_CABAC_PRINT;
 #define CU_DQP_TU_CMAX 5 //max number bins for truncated unary
 #define CU_DQP_EG_k 0 //expgolomb order
 
-#define MAX_NUM_TILE_COLUMNS 20
-#define MAX_NUM_TILE_ROWS 22
 #define MAX_NUM_LONG_TERM_PICS 8
 #define MAX_PIC_HEIGHT_IN_CTBS 270
 #define MAX_TEMPORAL_LAYERS 16
-#define MAX_NUM_ENTRY_POINT_OFFSETS MAX(MAX_NUM_TILE_COLUMNS*MAX_NUM_TILE_ROWS,MAX_PIC_HEIGHT_IN_CTBS)
 
 #undef  ABS
 #define ABS(a)     (((a) < 0) ? (-(a)) : (a))
@@ -344,68 +399,74 @@ enum EnumIntraAngMode {
 
 enum NalUnitType
 {
-  NAL_TRAIL_N = 0,
-  NAL_TRAIL_R = 1,
-  NAL_TSA_N   = 2,
-  NAL_TSA_R   = 3,
-  NAL_STSA_N  = 4,
-  NAL_STSA_R  = 5,
-  NAL_RADL_N  = 6,
-  NAL_RADL_R  = 7,
-  NAL_RASL_N  = 8,
-  NAL_RASL_R  = 9,
+    NAL_TRAIL_N = 0,
+    NAL_TRAIL_R = 1,
+    NAL_TSA_N   = 2,
+    NAL_TSA_R   = 3,
+    NAL_STSA_N  = 4,
+    NAL_STSA_R  = 5,
+    NAL_RADL_N  = 6,
+    NAL_RADL_R  = 7,
+    NAL_RASL_N  = 8,
+    NAL_RASL_R  = 9,
 
-  NAL_RSV_VCL_N10 = 10,
-  NAL_RSV_VCL_R11 = 11,
-  NAL_RSV_VCL_N12 = 12,
-  NAL_RSV_VCL_R13 = 13,
-  NAL_RSV_VCL_N14 = 14,
-  NAL_RSV_VCL_R15 = 15,
+    NAL_RSV_VCL_N10 = 10,
+    NAL_RSV_VCL_R11 = 11,
+    NAL_RSV_VCL_N12 = 12,
+    NAL_RSV_VCL_R13 = 13,
+    NAL_RSV_VCL_N14 = 14,
+    NAL_RSV_VCL_R15 = 15,
 
-  NAL_BLA_W_LP   = 16,
-  NAL_BLA_W_RADL = 17,
-  NAL_BLA_N_LP   = 18,
-  NAL_IDR_W_RADL = 19,
-  NAL_IDR_N_LP   = 20,
-  NAL_CRA        = 21,
+    NAL_BLA_W_LP   = 16,
+    NAL_BLA_W_RADL = 17,
+    NAL_BLA_N_LP   = 18,
+    NAL_IDR_W_RADL = 19,
+    NAL_IDR_N_LP   = 20,
+    NAL_CRA        = 21,
 
-  NAL_RSV_IRAP_VCL22 = 22,
-  NAL_RSV_IRAP_VCL23 = 23,
+    NAL_RSV_IRAP_VCL22 = 22,
+    NAL_RSV_IRAP_VCL23 = 23,
 
-  NAL_RSV_VCL_24 = 24,
-  NAL_RSV_VCL_25 = 25,
-  NAL_RSV_VCL_26 = 26,
-  NAL_RSV_VCL_27 = 27,
-  NAL_RSV_VCL_28 = 28,
-  NAL_RSV_VCL_29 = 29,
-  NAL_RSV_VCL_30 = 30,
-  NAL_RSV_VCL_31 = 31,
+    NAL_RSV_VCL_24 = 24,
+    NAL_RSV_VCL_25 = 25,
+    NAL_RSV_VCL_26 = 26,
+    NAL_RSV_VCL_27 = 27,
+    NAL_RSV_VCL_28 = 28,
+    NAL_RSV_VCL_29 = 29,
+    NAL_RSV_VCL_30 = 30,
+    NAL_RSV_VCL_31 = 31,
 
-  NAL_VPS = 32,
-  NAL_SPS = 33,
-  NAL_PPS = 34,
-  NAL_AUD = 35,
-  NAL_EOS = 36,
-  NAL_EOB = 37,
-  NAL_FD  = 38,
+    NAL_VPS = 32,
+    NAL_SPS = 33,
+    NAL_PPS = 34,
+    NAL_AUD = 35,
+    NAL_EOS = 36,
+    NAL_EOB = 37,
+    NAL_FD  = 38,
 
-  NAL_UT_PREFIX_SEI = 39,
-  NAL_UT_SUFFIX_SEI = 40,
+    NAL_UT_PREFIX_SEI = 39,
+    NAL_UT_SUFFIX_SEI = 40,
 
-  NAL_RSV_NVCL_41 = 41,
-  NAL_RSV_NVCL_42 = 42,
-  NAL_RSV_NVCL_43 = 43,
-  NAL_RSV_NVCL_44 = 44,
-  NAL_RSV_NVCL_45 = 45,
-  NAL_RSV_NVCL_46 = 46,
-  NAL_RSV_NVCL_47 = 47,
+    NAL_RSV_NVCL_41 = 41,
+    NAL_RSV_NVCL_42 = 42,
+    NAL_RSV_NVCL_43 = 43,
+    NAL_RSV_NVCL_44 = 44,
+    NAL_RSV_NVCL_45 = 45,
+    NAL_RSV_NVCL_46 = 46,
+    NAL_RSV_NVCL_47 = 47,
 };
 
-class H265Frame;
+enum {
+    SEI_BUFFERING_PERIOD      = 0,
+    SEI_PIC_TIMING            = 1,
+    SEI_ACTIVE_PARAMETER_SETS = 129
+};
+
+class Frame;
 
 struct RefPicList
 {
-    H265Frame *m_refFrames[MAX_NUM_REF_FRAMES + 1];
+    Frame *m_refFrames[MAX_NUM_REF_FRAMES + 1];
     Ipp8s m_deltaPoc[MAX_NUM_REF_FRAMES + 1];
     Ipp8u m_isLongTermRef[MAX_NUM_REF_FRAMES + 1];
     // extra details for frame threading
@@ -413,28 +474,99 @@ struct RefPicList
 };
 
 
-typedef enum { ENCODE_CTU, POST_PROC_CTU, POST_PROC_ROW } ThreadingTaskSpecifier;
+typedef enum {
+    TT_INIT_NEW_FRAME,
+    TT_GPU,
+    TT_ENCODE_CTU,
+    TT_POST_PROC_CTU,
+    TT_POST_PROC_ROW,
+    TT_ENC_COMPLETE,
+    TT_HUB,
+    TT_PREENC_START,
+    TT_PREENC_ROUTINE,
+    TT_PREENC_END,
+    TT_COMPLETE
+} ThreadingTaskSpecifier;
+
+
+class H265Encoder;
 class H265FrameEncoder;
+class Lookahead;
 
 #define MAX_NUM_DEPENDENCIES 16
 //#define DEBUG_NTM
 
+#ifdef DEBUG_NTM
+//#define VM_ASSERT_(f) if (!(f)) exit(1);
+#define VM_ASSERT_ assert
+#else
+#define VM_ASSERT_ VM_ASSERT
+#endif
+
 struct ThreadingTask
 {
     ThreadingTaskSpecifier action;
-    H265FrameEncoder *fenc;
-    int row;
-    int col;
-    int poc;
+
+    union {
+        H265FrameEncoder *fenc;     // for encode, postproc
+        Lookahead *la;              // for lookahead
+        mfxFrameSurface1 *indata;   // for init-new-frame
+        Frame* frame;               // for gpu
+    };
+    Ipp32s poc;                     // for all tasks, useful in debug
+    union {
+        struct {
+            Ipp32s col;             // for encode, postproc, lookahead
+            Ipp32s row;             // for encode, postproc, lookahead
+        };
+        Frame *outdata;             // for init-new-frame
+        Ipp32s isAhead;             // for gpu
+    };
+
     volatile unsigned int numUpstreamDependencies;
     int numDownstreamDependencies;
     ThreadingTask *downstreamDependencies[MAX_NUM_DEPENDENCIES];
 
+    volatile int finished;
     // very useful for debug
 #ifdef DEBUG_NTM
-    volatile int finished;
     ThreadingTask *upstreamDependencies[MAX_NUM_DEPENDENCIES];
 #endif
+
+    void Init(ThreadingTaskSpecifier action_, Frame *frame_, Ipp32s isAhead_, Ipp32s poc_) {
+        action = action_;
+        frame = frame_;
+        isAhead = isAhead_;
+        poc = poc_;
+        numUpstreamDependencies = 0;
+        numDownstreamDependencies = 0;
+        finished = 0;
+    }
+    void Init(ThreadingTaskSpecifier action_, mfxFrameSurface1 *indata_, Frame *outdata_, Ipp32s poc_) {
+        action = action_;
+        indata = indata_;
+        outdata = outdata_;
+        poc = poc_;
+        numUpstreamDependencies = 0;
+        numDownstreamDependencies = 0;
+        finished = 0;
+    }
+    void Init(ThreadingTaskSpecifier action_, Ipp32s row_, Ipp32s col_, Ipp32s poc_, Ipp32s numUpstreamDependencies_, Ipp32s numDownstreamDependencies_) {
+        action = action_;
+        row = row_;
+        col = col_;
+        poc = poc_;
+        numUpstreamDependencies = numUpstreamDependencies_;
+        numDownstreamDependencies = numDownstreamDependencies_;
+        finished = 0;
+    }
+    Ipp32s RedoIfRepack() {
+        return action == TT_ENCODE_CTU ||
+               action == TT_POST_PROC_CTU ||
+               action == TT_POST_PROC_ROW ||
+               action == TT_ENC_COMPLETE ||
+               action == TT_COMPLETE;
+    }
 };
 
 inline Ipp32s H265_CeilLog2(Ipp32s a) {
@@ -452,6 +584,126 @@ enum {
     SUBPEL_FASTBOX_DIA_ORTH = 6, // Fast Box Half Pel + Dia Quarter + Orthogonal Update
 };
 
+template <class T> void Throw(const T &ex)
+{
+    assert(!"exception");
+    throw ex;
+}
+
+class NonCopyable
+{
+protected:
+    NonCopyable() {}
+    ~NonCopyable() {}
+private:
+    NonCopyable(const NonCopyable&);
+    const NonCopyable& operator =(const NonCopyable&);
+};
+
+namespace MfxEnumShortAliases {
+    enum { NV12=MFX_FOURCC_NV12, NV16=MFX_FOURCC_NV16, P010=MFX_FOURCC_P010, P210=MFX_FOURCC_P210 };
+
+    enum { YUV420=MFX_CHROMAFORMAT_YUV420, YUV422=MFX_CHROMAFORMAT_YUV422 };
+
+    enum { MAIN=MFX_PROFILE_HEVC_MAIN, MAIN10=MFX_PROFILE_HEVC_MAIN10, REXT=MFX_PROFILE_HEVC_REXT };
+
+    enum { M10=MFX_LEVEL_HEVC_1, M20=MFX_LEVEL_HEVC_2, M21=MFX_LEVEL_HEVC_21, M30=MFX_LEVEL_HEVC_3, M31=MFX_LEVEL_HEVC_31, M40=MFX_LEVEL_HEVC_4, M41=MFX_LEVEL_HEVC_41,
+           M50=MFX_LEVEL_HEVC_5, M51=MFX_LEVEL_HEVC_51, M52=MFX_LEVEL_HEVC_52, M60=MFX_LEVEL_HEVC_6, M61=MFX_LEVEL_HEVC_61, M62=MFX_LEVEL_HEVC_62,
+           H40=M40|256, H41=M41|256, H50=M50|256, H51=M51|256, H52=M52|256, H60=M60|256, H61=M61|256, H62=M62|256 };
+
+    enum { CBR=MFX_RATECONTROL_CBR, VBR=MFX_RATECONTROL_VBR, AVBR=MFX_RATECONTROL_AVBR, CQP=MFX_RATECONTROL_CQP, LA_EXT=MFX_RATECONTROL_LA_EXT };
+
+    enum { ON=MFX_CODINGOPTION_ON, OFF=MFX_CODINGOPTION_OFF, UNK=MFX_CODINGOPTION_UNKNOWN };
+
+    enum { SYSMEM=MFX_IOPATTERN_IN_SYSTEM_MEMORY, VIDMEM=MFX_IOPATTERN_IN_VIDEO_MEMORY, OPAQMEM=MFX_IOPATTERN_IN_OPAQUE_MEMORY };
+
+    enum { MAX_12BIT=MFX_HEVC_CONSTR_REXT_MAX_12BIT, MAX_10BIT=MFX_HEVC_CONSTR_REXT_MAX_10BIT, MAX_8BIT=MFX_HEVC_CONSTR_REXT_MAX_8BIT,
+           MAX_422=MFX_HEVC_CONSTR_REXT_MAX_422CHROMA, MAX_420=MFX_HEVC_CONSTR_REXT_MAX_420CHROMA, MAX_MONO=MFX_HEVC_CONSTR_REXT_MAX_MONOCHROME,
+           CONSTR_INTRA=MFX_HEVC_CONSTR_REXT_INTRA, CONSTR_1PIC=MFX_HEVC_CONSTR_REXT_ONE_PICTURE_ONLY, CONSTR_LOWER_RATE=MFX_HEVC_CONSTR_REXT_LOWER_BIT_RATE };
+
+    enum { MAIN_422_10=MAX_12BIT|MAX_10BIT|MAX_422|CONSTR_LOWER_RATE };
+};
+
+    namespace CodecLimits {
+        using namespace MfxEnumShortAliases;
+#ifdef MFX_VA
+        const Ipp32s MIN_TARGET_USAGE = 4;
+        const Ipp32s MAX_TARGET_USAGE = 7;
+        const Ipp32s MAX_GOP_REF_DIST = 8;
+        const Ipp32s MAX_WIDTH        = 3840;
+        const Ipp32s MAX_HEIGHT       = 2160;
+        const Ipp32s SUP_ENABLE_CM[]  = { OFF, ON };
+#else // MFX_VA
+        const Ipp32s MIN_TARGET_USAGE = 1;
+        const Ipp32s MAX_TARGET_USAGE = 7;
+        const Ipp32s MAX_GOP_REF_DIST = 16;
+        const Ipp32s MAX_WIDTH        = 8192;
+        const Ipp32s MAX_HEIGHT       = 4320;
+        const Ipp32s SUP_ENABLE_CM[]  = { OFF };
+#endif // MFX_VA
+
+        const Ipp32s MAX_NUM_TILE_COLS      = 20;
+        const Ipp32s MAX_NUM_TILE_ROWS      = 22;
+        const Ipp32s MIN_TILE_WIDTH         = 256;
+        const Ipp32s MIN_TILE_HEIGHT        = 64;
+        const Ipp32s MAX_NUM_SLICE          = (MAX_HEIGHT + 31) >> 5;
+        const Ipp32s SUP_GOP_OPT_FLAG[]     = { MFX_GOP_CLOSED, MFX_GOP_STRICT, MFX_GOP_CLOSED|MFX_GOP_STRICT };
+        const Ipp32s SUP_PROFILE[]          = { MAIN, MAIN10, REXT };
+        const Ipp32s SUP_LEVEL[]            = { M10, M20, M21, M30, M31, M40, M41, M50, M51, M52, M60, M61, M62, H40, H41, H50, H51, H52, H60, H61, H62 };
+        const Ipp32s SUP_RC_METHOD[]        = { CBR, VBR, AVBR, LA_EXT, CQP};
+        const Ipp32s SUP_FOURCC[]           = { NV12, NV16, P010, P210 };
+        const Ipp32s SUP_CHROMA_FORMAT[]    = { YUV420, YUV422 };
+        const Ipp32s SUP_INTRA_ANG_MODE_I[] = { 1, 2, 3, 99 };
+        const Ipp32s SUP_INTRA_ANG_MODE[]   = { 1, 2, 3, 99, 100 };
+        const Ipp32s SUP_PATTERN_INT_PEL[]  = { 1, 100};
+    };
+
+    template<class T> inline void Zero(T &obj) { memset(&obj, 0, sizeof(obj)); }
+    template<class T> inline void Copy(T &dst, const T &src) { memmove_s(&dst, sizeof(dst), &src, sizeof(src)); }
+
+    template<class T> struct Type2Id;
+    template<> struct Type2Id<mfxExtOpaqueSurfaceAlloc> { enum { id = MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION }; };
+    template<> struct Type2Id<mfxExtCodingOptionHEVC>   { enum { id = MFX_EXTBUFF_HEVCENC }; };
+    template<> struct Type2Id<mfxExtDumpFiles>          { enum { id = MFX_EXTBUFF_DUMP }; };
+    template<> struct Type2Id<mfxExtHEVCTiles>          { enum { id = MFX_EXTBUFF_HEVC_TILES }; };
+    template<> struct Type2Id<mfxExtHEVCRegion>         { enum { id = MFX_EXTBUFF_HEVC_REGION }; };
+    template<> struct Type2Id<mfxExtHEVCParam>          { enum { id = MFX_EXTBUFF_HEVC_PARAM }; };
+    template<> struct Type2Id<mfxExtCodingOption2>      { enum { id = MFX_EXTBUFF_CODING_OPTION2 }; };
+    template<> struct Type2Id<mfxExtCodingOptionSPSPPS> { enum { id = MFX_EXTBUFF_CODING_OPTION_SPSPPS }; };
+
+    template <class T> struct RemoveConst          { typedef T type; };
+    template <class T> struct RemoveConst<const T> { typedef T type; };
+
+    inline mfxExtBuffer *GetExtBufferById(mfxExtBuffer **extBuffer, Ipp32s numExtBuffer, Ipp32u id)
+    {
+        if (extBuffer)
+            for (Ipp32s i = 0; i < numExtBuffer; i++)
+                if (extBuffer[i]->BufferId == id)
+                    return extBuffer[i];
+        return NULL;
+    }
+
+    struct ExtBufferProxy;
+    template <class T> ExtBufferProxy GetExtBuffer(const T &par);
+    struct ExtBufferProxy
+    {
+        template <class U> operator U *() {
+            return reinterpret_cast<U *>(GetExtBufferById(m_extBuffer, m_numExtBuffer, Type2Id<typename RemoveConst<U>::type>::id));
+        }
+
+        template <class U> operator U &() {
+            if (U *p = this->operator U *())
+                return *p;
+            throw std::runtime_error("ext buffer not found");
+        }
+    private:
+        template <class T> explicit ExtBufferProxy(const T &par) : m_extBuffer(par.ExtParam), m_numExtBuffer(par.NumExtParam) {}
+        template <class T> friend ExtBufferProxy GetExtBuffer(const T &par);
+
+        mfxExtBuffer **m_extBuffer;
+        Ipp32s         m_numExtBuffer;
+    };
+    template <class T> ExtBufferProxy GetExtBuffer(const T &par) { return ExtBufferProxy(par); }
 } // namespace
 
 //#include "mfx_h265_encode.h"

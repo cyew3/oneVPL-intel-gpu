@@ -23,6 +23,9 @@ struct H265NALUnit {
     Ipp8u nal_unit_type;
     Ipp8u nuh_layer_id;
     Ipp8u nuh_temporal_id;
+    // present if nal_unit_type is NAL_UT_PREFIX_SEI or NAL_UT_SUFFIX_SEI
+    Ipp32u seiPayloadType;
+    Ipp32u seiPayloadSize;
 };
 
 typedef struct _IppvcCABACStateH265 {
@@ -145,27 +148,18 @@ public:
 class H265BsReal {
 public:
     IppvcCABACStateH265 cabacState;
-
     H265BsBase m_base;
 
     void Reset();
-
     void PutBit(Ipp32u code);
-
-    void PutBits(Ipp32u code,
-        Ipp32u length);
-
+    void PutBits(Ipp32u code, Ipp32u length);
     Ipp32u PutVLCCode(Ipp32u code);
+    void WriteTrailingBits();
+    void ByteAlignWithZeros();
+    void ByteAlignWithOnes();
+    mfxU32 WriteNAL(mfxBitstream *dst, Ipp8u startPicture, H265NALUnit *nal);
 
-    inline void WriteTrailingBits();
-    inline void ByteAlignWithZeros();
-    inline void ByteAlignWithOnes();
-    mfxU32 WriteNAL(mfxBitstream *dst,
-                    Ipp8u startPicture,
-                    H265NALUnit *nal);
-
-    inline void EncodeSingleBin_CABAC(CABAC_CONTEXT_H265 *ctx, Ipp32u code);
-
+    void EncodeSingleBin_CABAC(CABAC_CONTEXT_H265 *ctx, Ipp32u code);
     void EncodeSingleBin_CABAC_px(CABAC_CONTEXT_H265 *ctx, Ipp32u code);
 #if defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
     void EncodeSingleBin_CABAC_bmi(CABAC_CONTEXT_H265 *ctx, Ipp32u code);
@@ -183,11 +177,14 @@ public:
 
     int isReal() { return 1; }
 
-    void CtxSaveWPP(CABAC_CONTEXT_H265 *context_array_wpp) {
+    void CtxSaveWPP(CABAC_CONTEXT_H265 *context_array_wpp)
+    {
         small_memcpy(context_array_wpp, m_base.context_array,
             tab_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
     }
-    void CtxRestoreWPP(CABAC_CONTEXT_H265 *context_array_wpp) {
+    
+    void CtxRestoreWPP(CABAC_CONTEXT_H265 *context_array_wpp)
+    {
         small_memcpy(m_base.context_array, context_array_wpp,
             tab_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
         m_base.context_array[tab_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC]] = 63;

@@ -639,11 +639,11 @@ void H265CU<PixType>::IntraPredTu(Ipp32s blockZScanIdx, Ipp32u idx422, Ipp32s wi
 
         pRec = m_yRec + ((PUStartRow * m_pitchRecLuma + PUStartColumn) << m_par->QuadtreeTULog2MinSize);
 
-        GetAvailablity(this, blockZScanIdx, width, 0, m_par->cpps->constrained_intra_pred_flag,
+        GetAvailablity(this, blockZScanIdx, width, 0, m_par->constrainedIntrapredFlag,
             m_inNeighborFlags, m_outNeighborFlags);
         GetPredPelsLuma(m_par, pRec, PredPel, m_outNeighborFlags, width, m_pitchRecLuma);
 
-        if (m_par->csps->strong_intra_smoothing_enabled_flag && isFilterNeeded)
+        if (m_par->strongIntraSmoothingEnabledFlag && isFilterNeeded)
         {
             Ipp32s threshold = 1 << (m_par->bitDepthLuma - 5);
 
@@ -692,7 +692,7 @@ void H265CU<PixType>::IntraPredTu(Ipp32s blockZScanIdx, Ipp32u idx422, Ipp32s wi
         pRec = m_uvRec + (((PUStartRow * m_pitchRecChroma >> m_par->chromaShiftH) + (PUStartColumn << m_par->chromaShiftWInv)) << m_par->QuadtreeTULog2MinSize);
         GetAvailablity(this, blockZScanIdx + idx422,
             m_par->chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? width << 1 : width,
-            m_par->chroma422, m_par->cpps->constrained_intra_pred_flag, m_inNeighborFlags, m_outNeighborFlags);
+            m_par->chroma422, m_par->constrainedIntrapredFlag, m_inNeighborFlags, m_outNeighborFlags);
         GetPredPelsChromaNV12(m_par, pRec, PredPel, m_outNeighborFlags, width, m_par->chroma422, m_pitchRecChroma, m_uvRec- ((m_ctbPelX << m_par->chromaShiftWInv) + (m_ctbPelY * m_pitchRecChroma >> m_par->chromaShiftH)));
 
         switch(pred_mode)
@@ -1218,7 +1218,7 @@ template <typename PixType>
 void H265CU<PixType>::FilterIntraPredPels(const PixType *predPel, PixType *predPelFilt, Ipp32s width)
 {
     small_memcpy(predPelFilt, predPel, (4 * width + 1) * sizeof(PixType));
-    if (m_par->csps->strong_intra_smoothing_enabled_flag && width == 32) {
+    if (m_par->strongIntraSmoothingEnabledFlag && width == 32) {
         Ipp32s threshold = 1 << (m_par->bitDepthLuma - 5);
         Ipp32s topLeft = predPel[0];
         Ipp32s topRight = predPel[2 * width];
@@ -1259,7 +1259,7 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesBySatd(Ipp32s absPartIdx, Ipp32s dep
     m_bIntraCandInBuf = optimizedBranch;
 #endif
     if (optimizedBranch) {
-        GetAvailablity(this, absPartIdx, width, 0, m_par->cpps->constrained_intra_pred_flag, m_inNeighborFlags, m_outNeighborFlags);
+        GetAvailablity(this, absPartIdx, width, 0, m_par->constrainedIntrapredFlag, m_inNeighborFlags, m_outNeighborFlags);
         GetPredPelsLuma(m_par, rec, predPel, m_outNeighborFlags, width, m_pitchRecLuma);
         FilterIntraPredPels(predPel, predPelFilt, width);
 
@@ -1506,7 +1506,7 @@ void H265CU<PixType>::GetInitAvailablity()
 
     Ipp32s rasterIdx, zScanIdx;
     Ipp32s i;
-    Ipp8u constrained_intra_flag = m_par->cpps->constrained_intra_pred_flag;
+    Ipp8u constrained_intra_flag = m_par->constrainedIntrapredFlag;
 
     for (i = 0; i < 3 * numMinTUInLCU + 1; i++)
     {

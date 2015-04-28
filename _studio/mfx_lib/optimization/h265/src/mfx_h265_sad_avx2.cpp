@@ -22,8 +22,6 @@
 
 #if defined (MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
-#include "mfx_h265_defs.h"
-
 #include <math.h>
 //#include <emmintrin.h> //SSE2
 //#include <pmmintrin.h> //SSE3 (Prescott) Pentium(R) 4 processor (_mm_lddqu_si128() present )

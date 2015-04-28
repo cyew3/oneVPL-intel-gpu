@@ -34,7 +34,6 @@ namespace H265Enc {
 
 #define MFX_H265_BITRATE_SCALE 0
 #define  MFX_H265_CPBSIZE_SCALE 3
-template<class T> inline void Zero(T & obj)                { memset(&obj, 0, sizeof(obj)); }
 
 enum eMfxBRCStatus
 {
@@ -72,6 +71,20 @@ typedef struct _mfxBRC_HRDState
     Ipp32s underflowQuant;
     Ipp32s overflowQuant;
 } mfxBRC_HRDState;
+
+
+typedef struct _mfxBRC_FrameData
+{
+    Ipp64f cmplx;
+    Ipp32s dispOrder;
+    Ipp32s encOrder;
+    Ipp32s layer;
+
+    Ipp64f qstep;
+    Ipp32s qp;
+    Ipp32s encBits;
+
+} mfxBRC_FrameData;
 
 
 typedef struct _mfxBRC_Params
@@ -191,9 +204,9 @@ public:
     virtual mfxStatus Reset(mfxVideoParam *init, H265VideoParam &video, Ipp32s enableRecode = 1) = 0;
     virtual mfxStatus Close() = 0;
     virtual void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder) = 0;    
-    virtual Ipp32s GetQP(H265VideoParam *video, H265Frame *pFrame[], Ipp32s numFrames)=0;
+    virtual Ipp32s GetQP(H265VideoParam *video, Frame *pFrame[], Ipp32s numFrames)=0;
     virtual mfxStatus SetQP(Ipp32s qp, mfxU16 frameType) = 0;
-    virtual mfxBRCStatus   PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, H265Frame *pFrame, Ipp32s bitsEncodedFrame, Ipp32s overheadBits, Ipp32s recode = 0) =0;
+    virtual mfxBRCStatus   PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame *pFrame, Ipp32s bitsEncodedFrame, Ipp32s overheadBits, Ipp32s recode = 0) =0;
     virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) = 0;
     virtual void GetMinMaxFrameSize(Ipp32s *minFrameSizeInBits, Ipp32s *maxFrameSizeInBits) = 0;
     virtual bool IsVMEBRC() = 0;
@@ -213,12 +226,12 @@ public:
 
     mfxStatus Close() {  return MFX_ERR_NONE;}
         
-    Ipp32s GetQP(H265VideoParam *video, H265Frame *pFrame[], Ipp32s numFrames);
+    Ipp32s GetQP(H265VideoParam *video, Frame *pFrame[], Ipp32s numFrames);
     mfxStatus SetQP(Ipp32s /* qp */, mfxU16 /* frameType */) { return MFX_ERR_NONE;  }
 
     void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder);
 
-    mfxBRCStatus   PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, H265Frame *pFrame, Ipp32s bitsEncodedFrame, Ipp32s overheadBits, Ipp32s recode = 0)
+    mfxBRCStatus   PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame *pFrame, Ipp32s bitsEncodedFrame, Ipp32s overheadBits, Ipp32s recode = 0)
     {
         Report(pFrame->m_picCodeType, bitsEncodedFrame >> 3, 0, 0, pFrame->m_encOrder, 0, 0); 
         return MFX_ERR_NONE;    
@@ -264,7 +277,7 @@ protected:
     Regression<20>   m_rateCoeffHistory[8][52];
     UMC::Mutex    m_mutex;
 
-    mfxI32 GetQP(H265VideoParam &video, H265Frame *pFrame, mfxI32 *chromaQP );
+    mfxI32 GetQP(H265VideoParam &video, Frame *pFrame, mfxI32 *chromaQP );
 };
 class H265BRC : public BrcIface
 {
@@ -274,6 +287,7 @@ public:
     H265BRC()
     {
         mIsInit = 0;
+        mLowres = 0;
     }
     virtual ~H265BRC()
     {
@@ -289,9 +303,13 @@ public:
     mfxStatus SetParams(const mfxVideoParam *init, H265VideoParam &video);
     mfxStatus GetParams(mfxVideoParam *init);
 
-    mfxBRCStatus PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, H265Frame *pFrame, Ipp32s bitsEncodedFrame, Ipp32s overheadBits, Ipp32s recode = 0);
+    mfxBRCStatus PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame *pFrame, Ipp32s bitsEncodedFrame, Ipp32s overheadBits, Ipp32s recode = 0);
 
-    Ipp32s GetQP(H265VideoParam *video, H265Frame *pFrame[], Ipp32s numFrames);
+    Ipp32s GetQP(H265VideoParam *video, Frame *pFrame[], Ipp32s numFrames);
+    Ipp32s PredictFrameSize(H265VideoParam *video, Frame *frames[], Ipp32s qp, mfxBRC_FrameData *refFrData);
+    void SetMiniGopData(Frame *frames[], Ipp32s numFrames);
+    void UpdateMiniGopData(Frame *frame,  Ipp8s qp);
+
     mfxStatus SetQP(Ipp32s qp, Ipp16u frameType);
 
     mfxStatus GetInitialCPBRemovalDelay(Ipp32u *initial_cpb_removal_delay, Ipp32s recode = 0);
@@ -307,6 +325,7 @@ public:
 
 protected:
     mfxBRC_Params mParams;
+    Ipp8u mLowres;// 0 - use origin resolution, 1 - lowres
     bool   mIsInit;
     Ipp32u mBitrate;
     Ipp64f mFramerate;
@@ -315,7 +334,6 @@ protected:
 
     Ipp32s  mBitsDesiredFrame;
     Ipp64s  mBitsEncodedTotal, mBitsDesiredTotal;
-    Ipp64s  mBitsPredictedTotal;
 
     Ipp32u  mPicType;
 
@@ -324,13 +342,28 @@ protected:
     Ipp64f mEstCnt[8];
     Ipp64f mLayerTarget[8];
 
-    Ipp64f mEncBits[8];
+    //Ipp64f mPrevCmplx;
+    //Ipp32s mPrevBits;
+    //Ipp32s mPrevLayer;
+    Ipp64f mPrevQstep;
 
-    Ipp64f mQstep[8];
-    Ipp64f mAvCmplx[8];
+    std::vector<mfxBRC_FrameData> mMiniGopFrames;
+    Ipp32s mEncOrderCoded;
+
+    Ipp64f mPrevCmplxLayer[8];
+    Ipp32s mPrevBitsLayer[8];
+    Ipp64f mPrevQstepLayer[8];
+    Ipp32s mPrevQpLayer[8];
+
+//    Ipp64f mAvCmplxLayer[8];
+//    Ipp32s mAvBitsLayer[8];
+//    Ipp64f mAvQstepLayer[8];
+
+//    Ipp64f mEncBits[8];
 
     Ipp64f mTotAvComplx;
     Ipp64f mTotComplxCnt;
+    Ipp64f mTotPrevCmplx;
 
     Ipp64f mComplxSum;
     Ipp64f mTotMeanComplx;
@@ -339,12 +372,15 @@ protected:
     Ipp64f mCmplxRate;
     Ipp64f mTotTarget;
     Ipp64f mQstepScale;
+    Ipp64f mQstepScale0;
     Ipp32s mIBitsLoan;
     Ipp32s mLoanLength;
     Ipp32s mLoanBitsPerFrame;
 
     Ipp64f mQstepBase;
     Ipp32s mQpBase;
+
+    Ipp32s mPredBufFulness;
 
     Ipp32s mNumLayers;
 
@@ -353,9 +389,6 @@ protected:
     Ipp32s  mRCfap, mRCqap, mRCbap, mRCq;
     Ipp64f  mRCqa, mRCfa, mRCqa0;
     Ipp64f  mRCfa_short;
-
-    Ipp64f  mRCqa1, mRCfa1;
-    Ipp32s  mRCfap1, mRCqap1, mRCbap1;
 
     mfxI32 mRecodedFrame_encOrder;
     mfxI32 mQuantRecoded;
@@ -375,7 +408,6 @@ protected:
     Ipp32s mPoc, mSChPoc;
     Ipp32u mMaxBitrate;
     Ipp64s mBF, mBFsaved;
-    Ipp64f mRCfsize;
 
     Ipp32s mMinQp;
     Ipp32s mMaxQp;

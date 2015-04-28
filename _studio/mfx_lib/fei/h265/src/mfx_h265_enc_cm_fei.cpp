@@ -37,11 +37,6 @@ template<class T> inline T AlignValue(T value, mfxU32 alignment)
     return static_cast<T>((value + alignment - 1) & ~(alignment - 1));
 }
 
-template<class T> inline void Zero(T & obj)
-{
-    memset(&obj, 0, sizeof(obj));
-}
-
 /* leave in same file to avoid difficulties with templates (T is arbitrary type) */
 template <class T>
 void CreateCmSurface2DUp(CmDevice *device, Ipp32u numElemInRow, Ipp32u numRows, CM_SURFACE_FORMAT format,
@@ -183,7 +178,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     /* create surfaces for input (source) data, double buffer for max of one frame lookahead */
     for (i = 0; i < FEI_DEPTH; i++) {
         picBufInput[i].encOrder = -1;
-        picBufInput[i].bufOrig   = CreateSurface(device, width, height, CM_SURFACE_FORMAT_NV12);
+        picBufInput[i].bufOrig   = CreateSurface(device, param->Width, param->Height, CM_SURFACE_FORMAT_NV12);
         picBufInput[i].bufDown2x = CreateSurface(device, width2x, height2x, CM_SURFACE_FORMAT_NV12);
         picBufInput[i].bufDown4x = CreateSurface(device, width4x, height4x, CM_SURFACE_FORMAT_NV12);
         if (hmeLevel == HME_LEVEL_HIGH) {
@@ -207,7 +202,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
      */
     for (i = 0; i < numRefBufs; i++) {
         picBufRef[i].encOrder = -1;
-        picBufRef[i].bufOrig = CreateSurface(device, width, height, CM_SURFACE_FORMAT_NV12);
+        picBufRef[i].bufOrig = CreateSurface(device, param->Width, param->Height, CM_SURFACE_FORMAT_NV12);
         picBufRef[i].bufDown2x = CreateSurface(device, width2x, height2x, CM_SURFACE_FORMAT_NV12);
         picBufRef[i].bufDown4x = CreateSurface(device, width4x, height4x, CM_SURFACE_FORMAT_NV12);
         if (hmeLevel == HME_LEVEL_HIGH) {

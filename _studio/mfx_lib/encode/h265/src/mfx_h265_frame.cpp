@@ -12,6 +12,7 @@
 
 #include "mfx_h265_frame.h"
 #include "mfx_h265_enc.h"
+//#include "mfx_h265_encode.h"
 #include "vm_file.h"
 #include "ippi.h"
 #include "ippvc.h"
@@ -20,119 +21,95 @@
 namespace H265Enc {
 
 #define ALIGN_VALUE 32
-// template to align a pointer
-template<class T> inline
-T align_pointer(void *pv, size_t lAlignValue = UMC::DEFAULT_ALIGN_VALUE)
-{
-    // some compilers complain to conversion to/from
-    // pointer types from/to integral types.
-    return (T) ((((Ipp8u *) pv - (Ipp8u *) 0) + (lAlignValue - 1)) &
-                ~(lAlignValue - 1));
-}
-
-
-void H265Frame::Create(H265VideoParam *par, Ipp8u needExtData)
-{
-    // par 
-    // ----------------------------------------------------
-    Ipp32s numCtbs = par->PicWidthInCtbs * par->PicHeightInCtbs;
-    Ipp32s numCtbs_parts = numCtbs << par->Log2NumPartInCU;
-
-    padding = par->MaxCUSize + 16;
-
-    width = par->Width;
-    height = par->Height;
-
-    m_bitDepthLuma =  par->bitDepthLuma;
-    m_bitDepthChroma = par->bitDepthChroma;
-    m_bdLumaFlag = par->bitDepthLuma > 8;
-    m_bdChromaFlag = par->bitDepthChroma > 8;
-    m_chromaFormatIdc = par->chromaFormatIdc;
-    // ----------------------------------------------------
-
-    pitch_luma_bytes = pitch_luma_pix = width + padding * 2;
-    pitch_luma_bytes_8bit = pitch_luma_bytes;
-
-    Ipp32s plane_size_luma = (width + padding * 2) * (height + padding * 2);
-    Ipp32s plane_size_chroma;
-    Ipp32s plane_size_luma_8bit = plane_size_luma;
-    Ipp32s plane_size_chroma_8bit = 0;
-    
-    switch (m_chromaFormatIdc) {
-    case MFX_CHROMAFORMAT_YUV422:
-       plane_size_chroma = plane_size_luma;
-       pitch_chroma_pix = pitch_luma_pix;
-       break;
-    case MFX_CHROMAFORMAT_YUV444:
-       plane_size_chroma = plane_size_luma << 1;
-       pitch_chroma_pix = pitch_luma_pix << 1;
-       break;
-    default:
-    case MFX_CHROMAFORMAT_YUV420:
-       plane_size_chroma = plane_size_luma >> 1;
-       pitch_chroma_pix = pitch_luma_pix;
-       break;
+    // template to align a pointer
+    template<class T> inline
+        T align_pointer(void *pv, size_t lAlignValue = UMC::DEFAULT_ALIGN_VALUE)
+    {
+        // some compilers complain to conversion to/from
+        // pointer types from/to integral types.
+        return (T) ((((Ipp8u *) pv - (Ipp8u *) 0) + (lAlignValue - 1)) &
+            ~(lAlignValue - 1));
     }
 
-    plane_size_chroma_8bit = plane_size_chroma;
-    pitch_chroma_bytes_8bit = pitch_chroma_pix;
-    
-    pitch_chroma_bytes = pitch_chroma_pix;
 
-    if (m_bdLumaFlag) {
-        plane_size_luma <<= 1;
-        pitch_luma_bytes <<= 1;
-    }
-    if (m_bdChromaFlag) {
-        plane_size_chroma <<= 1;
-        pitch_chroma_bytes <<= 1;
-    }
+    void FrameData::Create(H265VideoParam *par)
+    {
+        padding = IPP_MAX(par->MaxCUSize, 16) + 16;
 
-    plane_size_luma += 128;
-    plane_size_chroma += 128;
+        width = par->Width;
+        height = par->Height;
 
-    Ipp32s len = numCtbs_parts * sizeof(H265CUData) + ALIGN_VALUE;
-    len += (plane_size_luma + plane_size_chroma) + ALIGN_VALUE*3;
-    len += sizeof(ThreadingTask) * 2 * numCtbs + ALIGN_VALUE;
+        Ipp32s m_bdLumaFlag = par->bitDepthLuma > 8;
+        Ipp32s m_bdChromaFlag = par->bitDepthChroma > 8;
+        Ipp32s m_chromaFormatIdc = par->chromaFormatIdc;
 
-    if ((m_bdLumaFlag || m_bdChromaFlag) && par->enableCmFlag)
-        len += (plane_size_luma_8bit + plane_size_chroma_8bit) + ALIGN_VALUE*2;
+        pitch_luma_bytes = pitch_luma_pix = width + padding * 2;
 
-    mem = H265_Malloc(len);
-    if (!mem)
-        throw std::exception();
+        Ipp32s plane_size_luma = (width + padding * 2) * (height + padding * 2);
+        Ipp32s plane_size_chroma;
 
-    Ipp8u *ptr = (Ipp8u*)mem;
+        switch (m_chromaFormatIdc) {
+        case MFX_CHROMAFORMAT_YUV422:
+            plane_size_chroma = plane_size_luma;
+            pitch_chroma_pix = pitch_luma_pix;
+            break;
+        case MFX_CHROMAFORMAT_YUV444:
+            plane_size_chroma = plane_size_luma << 1;
+            pitch_chroma_pix = pitch_luma_pix << 1;
+            break;
+        case MFX_CHROMAFORMAT_YUV400:
+            plane_size_chroma = 0;
+            pitch_chroma_pix = 0;
+            break;
+        default:
+        case MFX_CHROMAFORMAT_YUV420:
+            plane_size_chroma = plane_size_luma >> 1;
+            pitch_chroma_pix = pitch_luma_pix;
+            break;
+        }
 
-    cu_data = align_pointer<H265CUData *> (ptr, ALIGN_VALUE);
-    ptr += numCtbs_parts * sizeof(H265CUData) + ALIGN_VALUE;
+        pitch_chroma_bytes = pitch_chroma_pix;
 
-    y = align_pointer<Ipp8u *> (ptr, ALIGN_VALUE);
-    ptr += plane_size_luma + ALIGN_VALUE;
+        if (m_bdLumaFlag) {
+            plane_size_luma <<= 1;
+            pitch_luma_bytes <<= 1;
+        }
+        if (m_bdChromaFlag) {
+            plane_size_chroma <<= 1;
+            pitch_chroma_bytes <<= 1;
+        }
 
-    uv = align_pointer<Ipp8u *> (ptr, ALIGN_VALUE);
-    ptr += plane_size_chroma + ALIGN_VALUE;
+        // workarround from PKoval
+        plane_size_luma += 128;
+        plane_size_chroma += 128;
 
-    if ((m_bdLumaFlag || m_bdChromaFlag) && par->enableCmFlag) {
-        y_8bit = align_pointer<Ipp8u *> (ptr, ALIGN_VALUE);
-        ptr += plane_size_luma_8bit + ALIGN_VALUE;
+        Ipp32s len = (plane_size_luma + plane_size_chroma) + ALIGN_VALUE*3;
 
-        uv_8bit = align_pointer<Ipp8u *> (ptr, ALIGN_VALUE);
-        ptr += plane_size_chroma_8bit + ALIGN_VALUE;
-    }
+        mem_plane = H265_Malloc(len);
+        if (!mem_plane)
+            throw std::exception();
 
-    m_threadingTasks = align_pointer<ThreadingTask *> (ptr, ALIGN_VALUE);
+        y = align_pointer<Ipp8u *> (mem_plane, ALIGN_VALUE);
+        uv = align_pointer<Ipp8u *> (y + plane_size_luma, ALIGN_VALUE);;
 
-    y += ((pitch_luma_pix + 1) * padding) << m_bdLumaFlag;
-    uv += ((pitch_chroma_pix * padding >> par->chromaShiftH) + (padding << par->chromaShiftWInv)) << m_bdChromaFlag;
-
-    if ((m_bdLumaFlag || m_bdChromaFlag) && par->enableCmFlag) {
-        y_8bit += ((pitch_luma_pix + 1) * padding);
-        uv_8bit += ((pitch_chroma_pix * padding >> par->chromaShiftH) + (padding << par->chromaShiftWInv));
+        y += ((pitch_luma_pix + 1) * padding) << m_bdLumaFlag;
+        uv += ((pitch_chroma_pix * padding >> par->chromaShiftH) + (padding << par->chromaShiftWInv)) << m_bdChromaFlag;
     }
     
-    if (needExtData) {
+    void FrameData::Destroy()
+    {
+        if (mem_plane) {
+            H265_Free(mem_plane);
+        }
+        mem_plane = NULL;
+    }
+
+
+    void Statistics::Create(H265VideoParam *par)
+    {
         // all algorithms designed for 8x8 (CsRs - 4x4)
+        Ipp32s width  = par->Width;
+        Ipp32s height = par->Height;
         Ipp32s blkSize = SIZE_BLK_LA;
         Ipp32s PicWidthInBlk  = (width  + blkSize - 1) / blkSize;
         Ipp32s PicHeightInBlk = (height + blkSize - 1) / blkSize;
@@ -152,7 +129,7 @@ void H265Frame::Create(H265VideoParam *par, Ipp8u needExtData)
         m_mv.resize(numBlk, initMv);
         m_mv_pdist_past.resize(numBlk, initMv);
         m_mv_pdist_future.resize(numBlk, initMv);
-    
+
         size_t len = width * height >> 4;// because RsCs configured for 4x4 blk only
         m_rs.resize(len, 0);
         m_cs.resize(len, 0);
@@ -161,369 +138,414 @@ void H265Frame::Create(H265VideoParam *par, Ipp8u needExtData)
         qp_mask.resize(numBlk, 0);
         coloc_futr.resize(numBlk, 0);
         coloc_past.resize(numBlk, 0);
-    }
-}
 
-inline static void memset_bd(Ipp8u *dst, Ipp32s val, Ipp32s size_pix, Ipp8u bdFlag) {
-    if (bdFlag) {
-        ippsSet_16s(val, (Ipp16s *)dst, size_pix);
-    } else {
-        ippsSet_8u((Ipp8u)val, dst, size_pix);
-    }
-}
-
-IppStatus ippsCopy(const Ipp8u *src, Ipp8u *dst, Ipp32s len)   { return ippsCopy_8u(src, dst, len); }
-IppStatus ippsCopy(const Ipp16u *src, Ipp16u *dst, Ipp32s len) { return ippsCopy_16s((const Ipp16s *)src, (Ipp16s *)dst, len); }
-IppStatus ippsCopy(const Ipp32u *src, Ipp32u *dst, Ipp32s len) { return ippsCopy_32s((const Ipp32s *)src, (Ipp32s *)dst, len); }
-
-template <class PixType> void PadOnePix(PixType *frame, Ipp32s pitch, Ipp32s width, Ipp32s height)
-{
-    PixType *ptr = frame;
-    for (Ipp32s i = 0; i < height; i++, ptr += pitch) {
-        ptr[-1] = ptr[0];
-        ptr[width] = ptr[width - 1];
+        ResetAvgMetrics();
     }
 
-    ptr = frame - 1;
-    ippsCopy(ptr, ptr - pitch, width + 2);
-    ptr = frame + height * pitch - 1;
-    ippsCopy(ptr - pitch, ptr, width + 2);
-}
-
-void H265Frame::CopyFrame(const mfxFrameSurface1 *surface, bool have8bitCopy)
-{
-    IppiSize roi = { width, height };
-    mfxU16 InputBitDepthLuma = 8;
-    mfxU16 InputBitDepthChroma = 8;
-
-    if (surface->Info.FourCC == MFX_FOURCC_P010 || surface->Info.FourCC == MFX_FOURCC_P210) {
-        InputBitDepthLuma = 10;
-        InputBitDepthChroma = 10;
+    void Statistics::Destroy()
+    {
+        Ipp32s numBlk = 0;
+        Ipp32s len = 0;
+        m_intraSatd.resize(numBlk);
+        m_interSatd.resize(numBlk);
+        m_interSad.resize(numBlk);
+        m_interSad_pdist_past.resize(numBlk);
+        m_interSad_pdist_future.resize(numBlk);
+        m_mv.resize(numBlk);
+        m_mv_pdist_past.resize(numBlk);
+        m_mv_pdist_future.resize(numBlk);
+        m_rs.resize(len);
+        m_cs.resize(len);
+        sc_mask.resize(numBlk);
+        qp_mask.resize(numBlk);
+        coloc_futr.resize(numBlk);
+        coloc_past.resize(numBlk);
     }
 
-    switch ((m_bdLumaFlag << 1) | (InputBitDepthLuma > 8)) {
-    case 0:
-        ippiCopy_8u_C1R(surface->Data.Y, surface->Data.Pitch, y, pitch_luma_bytes, roi);
-        break;
-    case 1:
-        ippiConvert_16u8u_C1R((Ipp16u*)surface->Data.Y, surface->Data.Pitch, y, pitch_luma_bytes, roi);
-        break;
-    case 2:
-        ippiConvert_8u16u_C1R(surface->Data.Y, surface->Data.Pitch, (Ipp16u*)y, pitch_luma_bytes, roi);
-        ippiLShiftC_16u_C1IR(m_bitDepthLuma - 8, (Ipp16u*)y, pitch_luma_bytes, roi);
-        break;
-    case 3:
-        ippiCopy_16u_C1R((Ipp16u*)surface->Data.Y, surface->Data.Pitch, (Ipp16u*)y, pitch_luma_bytes, roi);
-        if (have8bitCopy)
-            h265_ConvertShiftR((const Ipp16s *)y, pitch_luma_pix, y_8bit, pitch_luma_pix, roi.width, roi.height, 2);
-        break;
-    default:
-        VM_ASSERT(0);
+    void Frame::Create(H265VideoParam *par)
+    {
+        Ipp32s numCtbs = par->PicWidthInCtbs * par->PicHeightInCtbs;
+        m_lcuQps.resize(numCtbs);
+        m_bitDepthLuma =  par->bitDepthLuma;
+        m_bitDepthChroma = par->bitDepthChroma;
+        m_bdLumaFlag = par->bitDepthLuma > 8;
+        m_bdChromaFlag = par->bitDepthChroma > 8;
+        m_chromaFormatIdc = par->chromaFormatIdc;
+
+        m_slices.resize(par->NumSlices);
+
+        Ipp32s numCtbs_parts = numCtbs << par->Log2NumPartInCU;
+        Ipp32s len = numCtbs_parts * sizeof(H265CUData) + ALIGN_VALUE;
+        len += sizeof(ThreadingTask) * 2 * numCtbs + ALIGN_VALUE;
+
+        mem = H265_Malloc(len);
+        if (!mem)
+            throw std::exception();
+
+        Ipp8u *ptr = (Ipp8u*)mem;
+        cu_data = align_pointer<H265CUData *> (ptr, ALIGN_VALUE);
+        ptr += numCtbs_parts * sizeof(H265CUData) + ALIGN_VALUE;
+        m_threadingTasks = align_pointer<ThreadingTask *> (ptr, ALIGN_VALUE);
     }
 
-    roi.width <<= (m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV444);
-    roi.height >>= (m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420);
-
-    switch ((m_bdChromaFlag << 1) | (InputBitDepthChroma > 8)) {
-    case 0:
-        ippiCopy_8u_C1R(surface->Data.UV, surface->Data.Pitch, uv, pitch_chroma_bytes, roi);
-        break;
-    case 1:
-        ippiConvert_16u8u_C1R((Ipp16u*)surface->Data.UV, surface->Data.Pitch, uv, pitch_chroma_bytes, roi);
-        break;
-    case 2:
-        ippiConvert_8u16u_C1R(surface->Data.UV, surface->Data.Pitch, (Ipp16u*)uv, pitch_chroma_bytes, roi);
-        ippiLShiftC_16u_C1IR(m_bitDepthChroma - 8, (Ipp16u*)uv, pitch_chroma_bytes, roi);
-        break;
-    case 3:
-        ippiCopy_16u_C1R((Ipp16u*)surface->Data.UV, surface->Data.Pitch, (Ipp16u*)uv, pitch_chroma_bytes, roi);
-        break;
-    default:
-        VM_ASSERT(0);
-    }
-
-    // so far needed for gradient analysis only
-    (m_bdLumaFlag == 0)
-        ? PadOnePix((Ipp8u *)y, pitch_luma_pix, width, height)
-        : PadOnePix((Ipp16u *)y, pitch_luma_pix, width, height);
-    (m_bdChromaFlag == 0)
-        ? PadOnePix((Ipp16u *)uv, pitch_chroma_pix / 2, width / 2, height / 2)
-        : PadOnePix((Ipp32u *)uv, pitch_chroma_pix / 2, width / 2, height / 2);
-
-}
-
-
-template <class PixType> void PadOneLine_v2(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s lineCount, Ipp32s padding)
-{
-    PixType *ptr = startLine;
-    Ipp32s leftPos = 0;
-    Ipp32s rightPos = width - 1;
-
-    // left/right
-    for (Ipp32s i = 0; i < lineCount; i++, ptr += pitch) {
-
-        for(Ipp32s padIdx = 1; padIdx <= padding; padIdx++) {
-            ptr[leftPos-padIdx] = ptr[leftPos];
-            ptr[rightPos+padIdx] = ptr[rightPos];
+    inline static void memset_bd(Ipp8u *dst, Ipp32s val, Ipp32s size_pix, Ipp8u bdFlag) {
+        if (bdFlag) {
+            ippsSet_16s(val, (Ipp16s *)dst, size_pix);
+        } else {
+            ippsSet_8u((Ipp8u)val, dst, size_pix);
         }
     }
-}
 
-typedef enum {
-    PAD_LEFT = 0,
-    PAD_RIGHT = 1,
-    PAD_BOTH = 2,
-    PAD_NONE = 3
-} PaddMode;
+    IppStatus ippsCopy(const Ipp8u *src, Ipp8u *dst, Ipp32s len)   { return ippsCopy_8u(src, dst, len); }
+    IppStatus ippsCopy(const Ipp16u *src, Ipp16u *dst, Ipp32s len) { return ippsCopy_16s((const Ipp16s *)src, (Ipp16s *)dst, len); }
+    IppStatus ippsCopy(const Ipp32u *src, Ipp32u *dst, Ipp32s len) { return ippsCopy_32s((const Ipp32s *)src, (Ipp32s *)dst, len); }
 
-template <class PixType> void PadOneLine_v3(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s lineCount, Ipp32s padding, PaddMode mode)
-{
-    PixType *ptr = startLine;
-    Ipp32s leftPos = 0;
-    Ipp32s rightPos = width - 1;
+    template <class PixType> void PadOnePix(PixType *frame, Ipp32s pitch, Ipp32s width, Ipp32s height)
+    {
+        PixType *ptr = frame;
+        for (Ipp32s i = 0; i < height; i++, ptr += pitch) {
+            ptr[-1] = ptr[0];
+            ptr[width] = ptr[width - 1];
+        }
 
-    if (mode == PAD_LEFT || mode == PAD_BOTH) {
-        // left
+        ptr = frame - 1;
+        ippsCopy(ptr, ptr - pitch, width + 2);
+        ptr = frame + height * pitch - 1;
+        ippsCopy(ptr - pitch, ptr, width + 2);
+    }
+    
+    void Frame::CopyFrameData(const mfxFrameSurface1 *in, Ipp8u have8bitCopy)
+    {
+        FrameData* out = m_origin;
+        IppiSize roi = { out->width, out->height };
+        mfxU16 InputBitDepthLuma = 8;
+        mfxU16 InputBitDepthChroma = 8;
+
+        if (in->Info.FourCC == MFX_FOURCC_P010 || in->Info.FourCC == MFX_FOURCC_P210) {
+            InputBitDepthLuma = 10;
+            InputBitDepthChroma = 10;
+        }
+
+        switch ((m_bdLumaFlag << 1) | (InputBitDepthLuma > 8)) {
+        case 0:
+            ippiCopy_8u_C1R(in->Data.Y, in->Data.Pitch, out->y, out->pitch_luma_bytes, roi);
+            break;
+        case 1:
+            ippiConvert_16u8u_C1R((Ipp16u*)in->Data.Y, in->Data.Pitch, out->y, out->pitch_luma_bytes, roi);
+            break;
+        case 2:
+            ippiConvert_8u16u_C1R(in->Data.Y, in->Data.Pitch, (Ipp16u*)out->y, out->pitch_luma_bytes, roi);
+            ippiLShiftC_16u_C1IR(m_bitDepthLuma - 8, (Ipp16u*)out->y, out->pitch_luma_bytes, roi);
+            break;
+        case 3:
+            ippiCopy_16u_C1R((Ipp16u*)in->Data.Y, in->Data.Pitch, (Ipp16u*)out->y, out->pitch_luma_bytes, roi);
+            if (have8bitCopy)
+                h265_ConvertShiftR((const Ipp16s *)out->y, out->pitch_luma_pix, m_luma_8bit->y, m_luma_8bit->pitch_luma_pix, roi.width, roi.height, 2);
+            break;
+        default:
+            VM_ASSERT(0);
+        }
+
+        roi.width <<= (m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV444);
+        roi.height >>= (m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420);
+
+        switch ((m_bdChromaFlag << 1) | (InputBitDepthChroma > 8)) {
+        case 0:
+            ippiCopy_8u_C1R(in->Data.UV, in->Data.Pitch, out->uv, out->pitch_chroma_bytes, roi);
+            break;
+        case 1:
+            ippiConvert_16u8u_C1R((Ipp16u*)in->Data.UV, in->Data.Pitch, out->uv, out->pitch_chroma_bytes, roi);
+            break;
+        case 2:
+            ippiConvert_8u16u_C1R(in->Data.UV, in->Data.Pitch, (Ipp16u*)out->uv, out->pitch_chroma_bytes, roi);
+            ippiLShiftC_16u_C1IR(m_bitDepthChroma - 8, (Ipp16u*)out->uv, out->pitch_chroma_bytes, roi);
+            break;
+        case 3:
+            ippiCopy_16u_C1R((Ipp16u*)in->Data.UV, in->Data.Pitch, (Ipp16u*)out->uv, out->pitch_chroma_bytes, roi);
+            break;
+        default:
+            VM_ASSERT(0);
+        }
+
+        // so far needed for gradient analysis only
+        (m_bdLumaFlag == 0)
+            ? PadOnePix((Ipp8u *)out->y, out->pitch_luma_pix, out->width, out->height)
+            : PadOnePix((Ipp16u *)out->y, out->pitch_luma_pix, out->width, out->height);
+        (m_bdChromaFlag == 0)
+            ? PadOnePix((Ipp16u *)out->uv, out->pitch_chroma_pix / 2, out->width / 2, out->height / 2)
+            : PadOnePix((Ipp32u *)out->uv, out->pitch_chroma_pix / 2, out->width / 2, out->height / 2);
+
+    }
+
+
+    template <class PixType> void PadOneLine_v2(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s lineCount, Ipp32s padding)
+    {
+        PixType *ptr = startLine;
+        Ipp32s leftPos = 0;
+        Ipp32s rightPos = width - 1;
+
+        // left/right
         for (Ipp32s i = 0; i < lineCount; i++, ptr += pitch) {
 
             for(Ipp32s padIdx = 1; padIdx <= padding; padIdx++) {
                 ptr[leftPos-padIdx] = ptr[leftPos];
-            }
-        }
-    }
-    if (mode == PAD_RIGHT || mode == PAD_BOTH) {
-        // right
-        for (Ipp32s i = 0; i < lineCount; i++, ptr += pitch) {
-
-            for(Ipp32s padIdx = 1; padIdx <= padding; padIdx++) {
                 ptr[rightPos+padIdx] = ptr[rightPos];
             }
         }
     }
-}
 
-//IppStatus ippsCopy(const Ipp8u *src, Ipp8u *dst, Ipp32s len)   { return ippsCopy_8u(src, dst, len); }
-//IppStatus ippsCopy(const Ipp16u *src, Ipp16u *dst, Ipp32s len) { return ippsCopy_16s((const Ipp16s *)src, (Ipp16s *)dst, len); }
-//IppStatus ippsCopy(const Ipp32u *src, Ipp32u *dst, Ipp32s len) { return ippsCopy_32s((const Ipp32s *)src, (Ipp32s *)dst, len); }
+    typedef enum {
+        PAD_LEFT = 0,
+        PAD_RIGHT = 1,
+        PAD_BOTH = 2,
+        PAD_NONE = 3
+    } PaddMode;
 
-template <class PixType> void PadOneLine_Top_v2(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s padding_w, Ipp32s padding_h)
-{
-    PixType* ptr = startLine - padding_w;
-    for (Ipp32s i = 1; i <= padding_h; i++) {
-        ippsCopy(ptr, ptr - i*pitch, width + 2*padding_w);
-    }
-}
-
-
-template <class PixType> void PadOneLine_Top_v3(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s padding_w, Ipp32s padding_h, PaddMode mode)
-{
-    PixType* ptr;
-
-    if (mode == PAD_LEFT || mode == PAD_BOTH)
-        ptr = startLine - padding_w;
-    else
-        ptr = startLine;
-
-    if (mode == PAD_LEFT || mode == PAD_RIGHT)
-        width += padding_w;
-    else if (mode == PAD_BOTH)
-        width += 2*padding_w;
-
-    for (Ipp32s i = 1; i <= padding_h; i++) {
-        ippsCopy(ptr, ptr - i*pitch, width);
-    }
-}
-
-template <class PixType> void PadOneLine_Bottom_v2(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s padding_w, Ipp32s padding_h)
-{
-    PixType* ptr = startLine - padding_w;
-
-    for (Ipp32s i = 1; i <= padding_h; i++) {
-        ippsCopy(ptr, ptr + i*pitch, width + 2*padding_w);
-    }
-}
-
-template <class PixType> void PadOneLine_Bottom_v3(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s padding_w, Ipp32s padding_h, PaddMode mode)
-{
-    PixType* ptr;
-
-    if (mode == PAD_LEFT || mode == PAD_BOTH)
-        ptr = startLine - padding_w;
-    else
-        ptr = startLine;
-
-    if (mode == PAD_LEFT || mode == PAD_RIGHT)
-        width += padding_w;
-    else if (mode == PAD_BOTH)
-        width += 2*padding_w;
-
-    for (Ipp32s i = 1; i <= padding_h; i++) {
-        ippsCopy(ptr, ptr + i*pitch, width);
-    }
-}
-
-void PadOneReconRow(H265Frame* frame, Ipp32u ctb_row, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs)
-{
-    H265Frame *reconstructFrame = frame;
-
-    Ipp8u bitDepth8 = (reconstructFrame->m_bitDepthLuma == 8) ? 1 : 0;
-    Ipp32s shift_w = reconstructFrame->m_chromaFormatIdc != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
-    Ipp32s shift_h = reconstructFrame->m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
-
-    // L/R Padding
+    template <class PixType> void PadOneLine_v3(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s lineCount, Ipp32s padding, PaddMode mode)
     {
-        //luma
-        Ipp8u *startLine = reconstructFrame->y + (ctb_row)*reconstructFrame->pitch_luma_bytes*maxCuSize;
-        (bitDepth8)
-            ? PadOneLine_v2((Ipp8u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, maxCuSize, reconstructFrame->padding)
-            : PadOneLine_v2((Ipp16u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, maxCuSize, reconstructFrame->padding);
+        PixType *ptr = startLine;
+        Ipp32s leftPos = 0;
+        Ipp32s rightPos = width - 1;
 
-        //Chroma
-        //startLine = reconstructFrame->uv + (ctb_row)*reconstructFrame->pitch_chroma_bytes* m_videoParam.MaxCUSize/2;
-        startLine = reconstructFrame->uv + (ctb_row)*reconstructFrame->pitch_chroma_bytes* (maxCuSize >> shift_h);
-        (bitDepth8) 
-            ? PadOneLine_v2((Ipp16u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, maxCuSize >> shift_h, reconstructFrame->padding >> shift_w)
-            : PadOneLine_v2((Ipp32u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, maxCuSize >> shift_h, reconstructFrame->padding >> shift_w);
-    }
+        if (mode == PAD_LEFT || mode == PAD_BOTH) {
+            // left
+            for (Ipp32s i = 0; i < lineCount; i++, ptr += pitch) {
 
-    //first line: top padding
-    if (ctb_row == 0) {
-        Ipp8u *startLine = reconstructFrame->y;
-        (bitDepth8)
-            ? PadOneLine_Top_v2((Ipp8u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, reconstructFrame->padding, reconstructFrame->padding)
-            : PadOneLine_Top_v2((Ipp16u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, reconstructFrame->padding, reconstructFrame->padding);
+                for(Ipp32s padIdx = 1; padIdx <= padding; padIdx++) {
+                    ptr[leftPos-padIdx] = ptr[leftPos];
+                }
+            }
+        }
+        if (mode == PAD_RIGHT || mode == PAD_BOTH) {
+            // right
+            for (Ipp32s i = 0; i < lineCount; i++, ptr += pitch) {
 
-        startLine = reconstructFrame->uv;
-        (bitDepth8)
-            ? PadOneLine_Top_v2((Ipp16u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h)
-            : PadOneLine_Top_v2((Ipp32u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h);
-    }
-
-    // last line: bottom padding
-    if (ctb_row == PicHeightInCtbs - 1) {
-        Ipp8u *startLine = reconstructFrame->y + (reconstructFrame->height - 1)*reconstructFrame->pitch_luma_bytes;
-        (bitDepth8)
-            ? PadOneLine_Bottom_v2((Ipp8u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, reconstructFrame->padding, reconstructFrame->padding)
-            : PadOneLine_Bottom_v2((Ipp16u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, reconstructFrame->padding, reconstructFrame->padding);
-
-        startLine = reconstructFrame->uv + ((reconstructFrame->height >> shift_h) - 1)*reconstructFrame->pitch_chroma_bytes;
-        (bitDepth8)
-            ? PadOneLine_Bottom_v2((Ipp16u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h)
-            : PadOneLine_Bottom_v2((Ipp32u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h);
-    }
-}
-
-void PadOneReconCtu(H265Frame* frame, Ipp32u ctb_row, Ipp32u ctb_col, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, Ipp32u PicWidthInCtbs)
-{
-    H265Frame *reconstructFrame = frame;
-
-    Ipp8u bitDepth8 = (reconstructFrame->m_bitDepthLuma == 8) ? 1 : 0;
-    Ipp32s shift_w = reconstructFrame->m_chromaFormatIdc != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
-    Ipp32s shift_h = reconstructFrame->m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
-
-    PaddMode mode = PicWidthInCtbs == 1 ? PAD_BOTH : ctb_col == 0 ? PAD_LEFT : ctb_col == PicWidthInCtbs - 1 ? PAD_RIGHT : PAD_NONE;
-
-    if (mode != PAD_NONE) {
-        // L/R Padding
-        //luma
-        Ipp8u *startLine = reconstructFrame->y + (ctb_row)*reconstructFrame->pitch_luma_bytes*maxCuSize;
-        (bitDepth8)
-            ? PadOneLine_v3((Ipp8u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, maxCuSize, reconstructFrame->padding, mode)
-            : PadOneLine_v3((Ipp16u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, maxCuSize, reconstructFrame->padding, mode);
-
-        //Chroma
-        //startLine = reconstructFrame->uv + (ctb_row)*reconstructFrame->pitch_chroma_bytes* m_videoParam.MaxCUSize/2;
-        startLine = reconstructFrame->uv + (ctb_row)*reconstructFrame->pitch_chroma_bytes* (maxCuSize >> shift_h);
-        (bitDepth8) 
-            ? PadOneLine_v3((Ipp16u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, maxCuSize >> shift_h, reconstructFrame->padding >> shift_w, mode)
-            : PadOneLine_v3((Ipp32u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, maxCuSize >> shift_h, reconstructFrame->padding >> shift_w, mode);
-    }
-
-    //first line: top padding
-    if (ctb_row == 0) {
-        Ipp8u *startLine = reconstructFrame->y;
-        Ipp32u width = IPP_MIN(maxCuSize, reconstructFrame->width - ctb_col * maxCuSize);
-        (bitDepth8)
-            ? PadOneLine_Top_v3((Ipp8u*)startLine + ctb_col * maxCuSize, reconstructFrame->pitch_luma_pix, width, reconstructFrame->padding, reconstructFrame->padding, mode)
-            : PadOneLine_Top_v3((Ipp16u*)startLine + ctb_col * maxCuSize, reconstructFrame->pitch_luma_pix, width, reconstructFrame->padding, reconstructFrame->padding, mode);
-
-        startLine = reconstructFrame->uv;
-        (bitDepth8)
-            ? PadOneLine_Top_v3((Ipp16u *)startLine + ctb_col * (maxCuSize >> shift_w), reconstructFrame->pitch_chroma_pix/2, width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h, mode)
-            : PadOneLine_Top_v3((Ipp32u *)startLine + ctb_col * (maxCuSize >> shift_w), reconstructFrame->pitch_chroma_pix/2, width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h, mode);
-    }
-
-    // last line: bottom padding
-    if (ctb_row == PicHeightInCtbs - 1) {
-        Ipp8u *startLine = reconstructFrame->y + (reconstructFrame->height - 1)*reconstructFrame->pitch_luma_bytes;
-        Ipp32u width = IPP_MIN(maxCuSize, reconstructFrame->width - ctb_col * maxCuSize);
-        (bitDepth8)
-            ? PadOneLine_Bottom_v3((Ipp8u*)startLine + ctb_col * maxCuSize, reconstructFrame->pitch_luma_pix, width, reconstructFrame->padding, reconstructFrame->padding, mode)
-            : PadOneLine_Bottom_v3((Ipp16u*)startLine + ctb_col * maxCuSize, reconstructFrame->pitch_luma_pix, width, reconstructFrame->padding, reconstructFrame->padding, mode);
-
-        startLine = reconstructFrame->uv + ((reconstructFrame->height >> shift_h) - 1)*reconstructFrame->pitch_chroma_bytes;
-        (bitDepth8)
-            ? PadOneLine_Bottom_v3((Ipp16u *)startLine + ctb_col * (maxCuSize >> shift_w), reconstructFrame->pitch_chroma_pix/2, width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h, mode)
-            : PadOneLine_Bottom_v3((Ipp32u *)startLine + ctb_col * (maxCuSize >> shift_w), reconstructFrame->pitch_chroma_pix/2, width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h, mode);
-    }
-}
-
-static void ExpandPlane(Ipp8u elem_shift, Ipp8u *ptr, Ipp32s pitch_bytes, Ipp32s width, Ipp32s height, Ipp32s padding_w, Ipp32s padding_h) {
-    Ipp8u *src = ptr;
-    Ipp8u *dst = src - pitch_bytes;
-    for (Ipp32s y = 0; y < padding_h; y++, dst -= pitch_bytes)
-        ippsCopy_8u(src, dst, width<<elem_shift);
-
-    src = ptr + (height - 1) * pitch_bytes;
-    dst = src + pitch_bytes;
-    for (Ipp32s y = 0; y < padding_h; y++, dst += pitch_bytes)
-        ippsCopy_8u(src, dst, width<<elem_shift);
-
-    Ipp8u * p0 = ptr - padding_h * pitch_bytes;
-    if (elem_shift == 0) {
-        for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
-            ippsSet_8u(*p0, p0 - padding_w, padding_w);
-    } else if (elem_shift == 1) {
-        for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
-            ippsSet_16s(*(Ipp16s*)p0, (Ipp16s*)p0 - padding_w, padding_w);
-    } else if (elem_shift == 2) {
-        for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
-            ippsSet_32s(*(Ipp32s*)p0, (Ipp32s*)p0 - padding_w, padding_w);
-    }
-
-    p0 = ptr + ((width - 1) << elem_shift) - padding_h * pitch_bytes;
-    if (elem_shift == 0) {
-        for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
-            ippsSet_8u(*p0, p0 + 1, padding_w);
-    } else if (elem_shift == 1) {
-        for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
-            ippsSet_16s(*(Ipp16s*)p0, (Ipp16s*)p0 + 1, padding_w);
-    } else if (elem_shift == 2) {
-        for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
-            ippsSet_32s(*(Ipp32s*)p0, (Ipp32s*)p0 + 1, padding_w);
+                for(Ipp32s padIdx = 1; padIdx <= padding; padIdx++) {
+                    ptr[rightPos+padIdx] = ptr[rightPos];
+                }
+            }
         }
     }
 
-    void H265Frame::doPadding()
+    //IppStatus ippsCopy(const Ipp8u *src, Ipp8u *dst, Ipp32s len)   { return ippsCopy_8u(src, dst, len); }
+    //IppStatus ippsCopy(const Ipp16u *src, Ipp16u *dst, Ipp32s len) { return ippsCopy_16s((const Ipp16s *)src, (Ipp16s *)dst, len); }
+    //IppStatus ippsCopy(const Ipp32u *src, Ipp32u *dst, Ipp32s len) { return ippsCopy_32s((const Ipp32s *)src, (Ipp32s *)dst, len); }
+
+    template <class PixType> void PadOneLine_Top_v2(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s padding_w, Ipp32s padding_h)
     {
-        if (!m_bdLumaFlag) {
-            ippiExpandPlane_H264_8u_C1R(y, width, height, pitch_luma_bytes, padding, IPPVC_FRAME);
+        PixType* ptr = startLine - padding_w;
+        for (Ipp32s i = 1; i <= padding_h; i++) {
+            ippsCopy(ptr, ptr - i*pitch, width + 2*padding_w);
+        }
+    }
+
+
+    template <class PixType> void PadOneLine_Top_v3(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s padding_w, Ipp32s padding_h, PaddMode mode)
+    {
+        PixType* ptr;
+
+        if (mode == PAD_LEFT || mode == PAD_BOTH)
+            ptr = startLine - padding_w;
+        else
+            ptr = startLine;
+
+        if (mode == PAD_LEFT || mode == PAD_RIGHT)
+            width += padding_w;
+        else if (mode == PAD_BOTH)
+            width += 2*padding_w;
+
+        for (Ipp32s i = 1; i <= padding_h; i++) {
+            ippsCopy(ptr, ptr - i*pitch, width);
+        }
+    }
+
+    template <class PixType> void PadOneLine_Bottom_v2(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s padding_w, Ipp32s padding_h)
+    {
+        PixType* ptr = startLine - padding_w;
+
+        for (Ipp32s i = 1; i <= padding_h; i++) {
+            ippsCopy(ptr, ptr + i*pitch, width + 2*padding_w);
+        }
+    }
+
+    template <class PixType> void PadOneLine_Bottom_v3(PixType *startLine, Ipp32s pitch, Ipp32s width, Ipp32s padding_w, Ipp32s padding_h, PaddMode mode)
+    {
+        PixType* ptr;
+
+        if (mode == PAD_LEFT || mode == PAD_BOTH)
+            ptr = startLine - padding_w;
+        else
+            ptr = startLine;
+
+        if (mode == PAD_LEFT || mode == PAD_RIGHT)
+            width += padding_w;
+        else if (mode == PAD_BOTH)
+            width += 2*padding_w;
+
+        for (Ipp32s i = 1; i <= padding_h; i++) {
+            ippsCopy(ptr, ptr + i*pitch, width);
+        }
+    }
+    void PadOneReconRow(H265Enc::FrameData* frame, Ipp32u ctb_row, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, const H265VideoParam & par)
+    {
+        Ipp8u bitDepth8 = (par.bitDepthLuma == 8) ? 1 : 0;
+        Ipp32s shift_w = par.chromaFormatIdc != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
+        Ipp32s shift_h = par.chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
+
+        // L/R Padding
+        {
+            //luma
+            Ipp8u *startLine = frame->y + (ctb_row)*frame->pitch_luma_bytes*maxCuSize;
+            (bitDepth8)
+                ? PadOneLine_v2((Ipp8u*)startLine, frame->pitch_luma_pix, frame->width, maxCuSize, frame->padding)
+                : PadOneLine_v2((Ipp16u*)startLine, frame->pitch_luma_pix, frame->width, maxCuSize, frame->padding);
+
+            //Chroma
+            //startLine = frame->uv + (ctb_row)*frame->pitch_chroma_bytes* m_videoParam.MaxCUSize/2;
+            startLine = frame->uv + (ctb_row)*frame->pitch_chroma_bytes* (maxCuSize >> shift_h);
+            (bitDepth8) 
+                ? PadOneLine_v2((Ipp16u *)startLine, frame->pitch_chroma_pix/2, frame->width >> shift_w, maxCuSize >> shift_h, frame->padding >> shift_w)
+                : PadOneLine_v2((Ipp32u *)startLine, frame->pitch_chroma_pix/2, frame->width >> shift_w, maxCuSize >> shift_h, frame->padding >> shift_w);
+        }
+
+        //first line: top padding
+        if (ctb_row == 0) {
+            Ipp8u *startLine = frame->y;
+            (bitDepth8)
+                ? PadOneLine_Top_v2((Ipp8u*)startLine, frame->pitch_luma_pix, frame->width, frame->padding, frame->padding)
+                : PadOneLine_Top_v2((Ipp16u*)startLine, frame->pitch_luma_pix, frame->width, frame->padding, frame->padding);
+
+            startLine = frame->uv;
+            (bitDepth8)
+                ? PadOneLine_Top_v2((Ipp16u *)startLine, frame->pitch_chroma_pix/2, frame->width >> shift_w, frame->padding >> shift_w, frame->padding >> shift_h)
+                : PadOneLine_Top_v2((Ipp32u *)startLine, frame->pitch_chroma_pix/2, frame->width >> shift_w, frame->padding >> shift_w, frame->padding >> shift_h);
+        }
+
+        // last line: bottom padding
+        if (ctb_row == PicHeightInCtbs - 1) {
+            Ipp8u *startLine = frame->y + (frame->height - 1)*frame->pitch_luma_bytes;
+            (bitDepth8)
+                ? PadOneLine_Bottom_v2((Ipp8u*)startLine, frame->pitch_luma_pix, frame->width, frame->padding, frame->padding)
+                : PadOneLine_Bottom_v2((Ipp16u*)startLine, frame->pitch_luma_pix, frame->width, frame->padding, frame->padding);
+
+            startLine = frame->uv + ((frame->height >> shift_h) - 1)*frame->pitch_chroma_bytes;
+            (bitDepth8)
+                ? PadOneLine_Bottom_v2((Ipp16u *)startLine, frame->pitch_chroma_pix/2, frame->width >> shift_w, frame->padding >> shift_w, frame->padding >> shift_h)
+                : PadOneLine_Bottom_v2((Ipp32u *)startLine, frame->pitch_chroma_pix/2, frame->width >> shift_w, frame->padding >> shift_w, frame->padding >> shift_h);
+        }
+    }
+
+    void PadOneReconCtu(Frame* frame, Ipp32u ctb_row, Ipp32u ctb_col, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, Ipp32u PicWidthInCtbs)
+    {
+        FrameData *reconstructFrame = frame->m_recon;
+
+        Ipp8u bitDepth8 = (frame->m_bitDepthLuma == 8) ? 1 : 0;
+        Ipp32s shift_w = frame->m_chromaFormatIdc != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
+        Ipp32s shift_h = frame->m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
+
+        PaddMode mode = PicWidthInCtbs == 1 ? PAD_BOTH : ctb_col == 0 ? PAD_LEFT : ctb_col == PicWidthInCtbs - 1 ? PAD_RIGHT : PAD_NONE;
+
+        if (mode != PAD_NONE) {
+            // L/R Padding
+            //luma
+            Ipp8u *startLine = reconstructFrame->y + (ctb_row)*reconstructFrame->pitch_luma_bytes*maxCuSize;
+            (bitDepth8)
+                ? PadOneLine_v3((Ipp8u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, maxCuSize, reconstructFrame->padding, mode)
+                : PadOneLine_v3((Ipp16u*)startLine, reconstructFrame->pitch_luma_pix, reconstructFrame->width, maxCuSize, reconstructFrame->padding, mode);
+
+            //Chroma
+            //startLine = reconstructFrame->uv + (ctb_row)*reconstructFrame->pitch_chroma_bytes* m_videoParam.MaxCUSize/2;
+            startLine = reconstructFrame->uv + (ctb_row)*reconstructFrame->pitch_chroma_bytes* (maxCuSize >> shift_h);
+            (bitDepth8) 
+                ? PadOneLine_v3((Ipp16u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, maxCuSize >> shift_h, reconstructFrame->padding >> shift_w, mode)
+                : PadOneLine_v3((Ipp32u *)startLine, reconstructFrame->pitch_chroma_pix/2, reconstructFrame->width >> shift_w, maxCuSize >> shift_h, reconstructFrame->padding >> shift_w, mode);
+        }
+
+        //first line: top padding
+        if (ctb_row == 0) {
+            Ipp8u *startLine = reconstructFrame->y;
+            Ipp32u width = IPP_MIN(maxCuSize, reconstructFrame->width - ctb_col * maxCuSize);
+            (bitDepth8)
+                ? PadOneLine_Top_v3((Ipp8u*)startLine + ctb_col * maxCuSize, reconstructFrame->pitch_luma_pix, width, reconstructFrame->padding, reconstructFrame->padding, mode)
+                : PadOneLine_Top_v3((Ipp16u*)startLine + ctb_col * maxCuSize, reconstructFrame->pitch_luma_pix, width, reconstructFrame->padding, reconstructFrame->padding, mode);
+
+            startLine = reconstructFrame->uv;
+            (bitDepth8)
+                ? PadOneLine_Top_v3((Ipp16u *)startLine + ctb_col * (maxCuSize >> shift_w), reconstructFrame->pitch_chroma_pix/2, width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h, mode)
+                : PadOneLine_Top_v3((Ipp32u *)startLine + ctb_col * (maxCuSize >> shift_w), reconstructFrame->pitch_chroma_pix/2, width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h, mode);
+        }
+
+        // last line: bottom padding
+        if (ctb_row == PicHeightInCtbs - 1) {
+            Ipp8u *startLine = reconstructFrame->y + (reconstructFrame->height - 1)*reconstructFrame->pitch_luma_bytes;
+            Ipp32u width = IPP_MIN(maxCuSize, reconstructFrame->width - ctb_col * maxCuSize);
+            (bitDepth8)
+                ? PadOneLine_Bottom_v3((Ipp8u*)startLine + ctb_col * maxCuSize, reconstructFrame->pitch_luma_pix, width, reconstructFrame->padding, reconstructFrame->padding, mode)
+                : PadOneLine_Bottom_v3((Ipp16u*)startLine + ctb_col * maxCuSize, reconstructFrame->pitch_luma_pix, width, reconstructFrame->padding, reconstructFrame->padding, mode);
+
+            startLine = reconstructFrame->uv + ((reconstructFrame->height >> shift_h) - 1)*reconstructFrame->pitch_chroma_bytes;
+            (bitDepth8)
+                ? PadOneLine_Bottom_v3((Ipp16u *)startLine + ctb_col * (maxCuSize >> shift_w), reconstructFrame->pitch_chroma_pix/2, width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h, mode)
+                : PadOneLine_Bottom_v3((Ipp32u *)startLine + ctb_col * (maxCuSize >> shift_w), reconstructFrame->pitch_chroma_pix/2, width >> shift_w, reconstructFrame->padding >> shift_w, reconstructFrame->padding >> shift_h, mode);
+        }
+    }
+
+    static void ExpandPlane(Ipp8u elem_shift, Ipp8u *ptr, Ipp32s pitch_bytes, Ipp32s width, Ipp32s height, Ipp32s padding_w, Ipp32s padding_h) {
+        Ipp8u *src = ptr;
+        Ipp8u *dst = src - pitch_bytes;
+        for (Ipp32s y = 0; y < padding_h; y++, dst -= pitch_bytes)
+            ippsCopy_8u(src, dst, width<<elem_shift);
+
+        src = ptr + (height - 1) * pitch_bytes;
+        dst = src + pitch_bytes;
+        for (Ipp32s y = 0; y < padding_h; y++, dst += pitch_bytes)
+            ippsCopy_8u(src, dst, width<<elem_shift);
+
+        Ipp8u * p0 = ptr - padding_h * pitch_bytes;
+        if (elem_shift == 0) {
+            for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
+                ippsSet_8u(*p0, p0 - padding_w, padding_w);
+        } else if (elem_shift == 1) {
+            for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
+                ippsSet_16s(*(Ipp16s*)p0, (Ipp16s*)p0 - padding_w, padding_w);
+        } else if (elem_shift == 2) {
+            for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
+                ippsSet_32s(*(Ipp32s*)p0, (Ipp32s*)p0 - padding_w, padding_w);
+        }
+
+        p0 = ptr + ((width - 1) << elem_shift) - padding_h * pitch_bytes;
+        if (elem_shift == 0) {
+            for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
+                ippsSet_8u(*p0, p0 + 1, padding_w);
+        } else if (elem_shift == 1) {
+            for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
+                ippsSet_16s(*(Ipp16s*)p0, (Ipp16s*)p0 + 1, padding_w);
+        } else if (elem_shift == 2) {
+            for (Ipp32s y = 0; y < height + padding_h * 2; y++, p0 += pitch_bytes)
+                ippsSet_32s(*(Ipp32s*)p0, (Ipp32s*)p0 + 1, padding_w);
+        }
+    }
+
+    void Frame::doPadding()
+    {
+        /*if (!m_bdLumaFlag) {
+        ippiExpandPlane_H264_8u_C1R(y, width, height, pitch_luma_bytes, padding, IPPVC_FRAME);
         } else {
-            ExpandPlane(1, y, pitch_luma_bytes, width, height, padding, padding);
+        ExpandPlane(1, y, pitch_luma_bytes, width, height, padding, padding);
         }
 
         Ipp32s shift_w = m_chromaFormatIdc != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
         Ipp32s shift_h = m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
-        
-        if (!m_bdChromaFlag) {
-            ExpandPlane(1, uv, pitch_chroma_bytes, width >> shift_w, height >> shift_h, padding >> shift_w, padding >> shift_h);
-        } else {
-            ExpandPlane(2, uv, pitch_chroma_bytes, width >> shift_w, height >> shift_h, padding >> shift_w, padding >> shift_h);
-    }
-}
 
-    void Dump(const vm_char* fname, H265VideoParam *par, H265Frame* frame, TaskList & dpb )
+        if (!m_bdChromaFlag) {
+        ExpandPlane(1, uv, pitch_chroma_bytes, width >> shift_w, height >> shift_h, padding >> shift_w, padding >> shift_h);
+        } else {
+        ExpandPlane(2, uv, pitch_chroma_bytes, width >> shift_w, height >> shift_h, padding >> shift_w, padding >> shift_h);*/
+    }
+
+    void Dump(H265VideoParam *par, Frame* frame, FrameList & dpb )
     {
+        vm_char *fname = par->reconDumpFileName;
         Ipp32s frame_num = frame->m_encOrder;
         vm_file *f;
         mfxU8* fbuf = NULL;
@@ -535,15 +557,15 @@ static void ExpandPlane(Ipp8u elem_shift, Ipp8u *ptr, Ipp32s pitch_bytes, Ipp32s
         Ipp32s shift_h = frame->m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
         Ipp32s shift = 2 - shift_w - shift_h;
         Ipp32s plane_size = (W*H << bd_shift_luma) + (((W*H/2) << shift) << bd_shift_chroma);
-
-    if (!fname || !fname[0])
-        return;
-
+    
+        if (fname == 0)
+            return;
+    
         Ipp32s numlater = 0; // number of dumped frames with later POC
         if (frame->m_picCodeType == MFX_FRAMETYPE_B) {
-            for (TaskIter it = dpb.begin(); it != dpb.end(); it++ ) {
-                H265Frame *pFrm = (*it)->m_frameRecon;
-                if ( NULL == (*it)->m_frameOrigin && frame->m_poc < pFrm->m_poc)
+            for (FrameIter it = dpb.begin(); it != dpb.end(); it++ ) {
+                Frame *pFrm = (*it);
+                if ( NULL == (*it)->m_origin && frame->m_poc < pFrm->m_poc)
                     numlater++;
             }
         }
@@ -558,207 +580,124 @@ static void ExpandPlane(Ipp8u elem_shift, Ipp8u *ptr, Ipp32s pitch_bytes, Ipp32s
             f = vm_file_fopen(fname, frame_num ? VM_STRING("a+b") : VM_STRING("wb"));
             if (!f) return;
         }
-
-    if (f == NULL)
-        return;
-
-    int i;
-    mfxU8 *p = frame->y + ((par->CropLeft + par->CropTop * frame->pitch_luma_pix) << bd_shift_luma);
-    for (i = 0; i < H; i++) {
-        vm_file_fwrite(p, 1<<bd_shift_luma, W, f);
-        p += frame->pitch_luma_bytes;
-    }
-    // writing nv12 to yuv420
-    // maxlinesize = 4096
-    if (W <= 2048*2) { // else invalid dump
-        if (bd_shift_chroma) {
-            mfxU16 uvbuf[2048];
-            mfxU16 *p;
-            for (int part = 0; part <= 1; part++) {
-                p = (Ipp16u*)frame->uv + part + (par->CropLeft >> shift_w << 1) + (par->CropTop>>shift_h) * frame->pitch_chroma_pix;
-                for (i = 0; i < H >> shift_h; i++) {
-                    for (int j = 0; j < W>>shift_w; j++)
-                        uvbuf[j] = p[2*j];
-                    vm_file_fwrite(uvbuf, 2, W>>shift_w, f);
-                    p += frame->pitch_chroma_pix;
+    
+        if (f == NULL)
+            return;
+    
+        FrameData* recon = frame->m_recon;
+        int i;
+        mfxU8 *p = recon->y + ((par->CropLeft + par->CropTop * recon->pitch_luma_pix) << bd_shift_luma);
+        for (i = 0; i < H; i++) {
+            vm_file_fwrite(p, 1<<bd_shift_luma, W, f);
+            p += recon->pitch_luma_bytes;
+        }
+        // writing nv12 to yuv420
+        // maxlinesize = 4096
+        if (W <= 2048*2) { // else invalid dump
+            if (bd_shift_chroma) {
+                mfxU16 uvbuf[2048];
+                mfxU16 *p;
+                for (int part = 0; part <= 1; part++) {
+                    p = (Ipp16u*)recon->uv + part + (par->CropLeft >> shift_w << 1) + (par->CropTop>>shift_h) * recon->pitch_chroma_pix;
+                    for (i = 0; i < H >> shift_h; i++) {
+                        for (int j = 0; j < W>>shift_w; j++)
+                            uvbuf[j] = p[2*j];
+                        vm_file_fwrite(uvbuf, 2, W>>shift_w, f);
+                        p += recon->pitch_chroma_pix;
+                    }
                 }
-            }
-        } else {
-            mfxU8 uvbuf[2048];
-            for (int part = 0; part <= 1; part++) {
-                p = frame->uv + part + (par->CropLeft >> shift_w << 1) + (par->CropTop>>shift_h) * frame->pitch_chroma_pix;
-                for (i = 0; i < H >> shift_h; i++) {
-                    for (int j = 0; j < W>>shift_w; j++)
-                        uvbuf[j] = p[2*j];
-                    vm_file_fwrite(uvbuf, 1, W>>shift_w, f);
-                    p += frame->pitch_chroma_pix;
+            } else {
+                mfxU8 uvbuf[2048];
+                for (int part = 0; part <= 1; part++) {
+                    p = recon->uv + part + (par->CropLeft >> shift_w << 1) + (par->CropTop>>shift_h) * recon->pitch_chroma_pix;
+                    for (i = 0; i < H >> shift_h; i++) {
+                        for (int j = 0; j < W>>shift_w; j++)
+                            uvbuf[j] = p[2*j];
+                        vm_file_fwrite(uvbuf, 1, W>>shift_w, f);
+                        p += recon->pitch_chroma_pix;
+                    }
                 }
             }
         }
+    
+        if (fbuf) {
+            vm_file_fwrite(fbuf, 1, numlater*plane_size, f);
+            delete[] fbuf;
+        }
+        vm_file_fclose(f);
     }
 
-    if (fbuf) {
-        vm_file_fwrite(fbuf, 1, numlater*plane_size, f);
-        delete[] fbuf;
+    void Frame::Destroy()
+    {
+        if (mem)
+            H265_Free(mem);
+        mem = NULL;
     }
-    vm_file_fclose(f);
-}
 
-
-void H265Frame::Destroy()
-{
-    if (mem)
-        H265_Free(mem);
-    mem = NULL;
-
-    if (m_lowres) {
-        m_lowres->Destroy();
+    void Frame::ResetMemInfo()
+    {
+        m_origin = NULL;
+        m_recon = NULL;
+        m_luma_8bit = NULL;
         m_lowres = NULL;
-    }
-}
+        cu_data = NULL;
+        m_stats[0] = m_stats[1] = NULL;
 
-void H265Frame::ResetMemInfo()
-{
-    mem = NULL;
-    cu_data = NULL;
-    y = NULL;
-    uv = NULL;
-    y_8bit = NULL;
-    uv_8bit = NULL;
-
-    m_lowres = NULL;
-
-    width = 0;
-    height = 0;
-    padding = 0;
-    pitch_luma_pix = 0;
-    pitch_luma_bytes = 0;
-    pitch_chroma_pix = 0;
-    pitch_chroma_bytes = 0;
-    pitch_luma_bytes_8bit = 0;
-    pitch_chroma_bytes_8bit = 0;
-    m_bitDepthLuma = 0;
-    m_bdLumaFlag = 0;
-    m_bitDepthChroma = 0;
-    m_bdChromaFlag = 0;
-    m_chromaFormatIdc = 0;
-}
-
-void H265Frame::ResetEncInfo()
-{
-    m_timeStamp = 0;
-    m_picCodeType = 0;
-    m_RPSIndex = 0;
-
-    m_wasLookAheadProcessed = 0;
-    m_lookaheadRefCounter = 0;
-
-    m_pyramidLayer = 0;
-    m_miniGopCount = 0;
-    m_biFramesInMiniGop = 0;
-    m_frameOrder = 0;
-    m_frameOrderOfLastIdr = 0;
-    m_frameOrderOfLastIntra = 0;
-    m_frameOrderOfLastIntraInEncOrder = 0;
-    m_frameOrderOfLastAnchor = 0;
-    m_poc = 0;
-    m_encOrder = 0;
-    m_isShortTermRef = 0;
-    m_isLongTermRef = 0;
-    m_isIdrPic = 0;
-    m_isRef = 0;
-    memset(m_refPicList, 0, sizeof(m_refPicList));
-    memset(m_mapRefIdxL1ToL0, 0, sizeof(m_mapRefIdxL1ToL0));
-    m_allRefFramesAreFromThePast = 0;
-
-    m_sceneCut = 0;
-    m_metric = 0;
-
-    // persistence analysis
-    SC = 0.0;
-    TSC = 0.0;
-    avgsqrSCpp = 0.0;
-    avgTSC = 0.0;
-}
-
-void H265Frame::ResetCounters()
-{
-    m_codedRow = 0;
-    m_refCounter = 0;
-}
-
-    FramePtrIter FindFreeFrame(FramePtrList & queue)
-    {
-        FramePtrIter end = queue.end();
-        for (FramePtrIter i = queue.begin(); i != end; ++i)
-            if (vm_interlocked_cas32(&(*i)->m_refCounter, 1, 0) == 0)
-                return i;
-        return end;
+        mem = NULL;
     }
 
-    FramePtrIter GetFreeFrame(FramePtrList & queue, H265VideoParam *par)
+    void Frame::ResetEncInfo()
     {
-        FramePtrIter i = FindFreeFrame(queue);
-        if (i != queue.end())
-            return i;
+        m_timeStamp = 0;
+        m_picCodeType = 0;
+        m_RPSIndex = 0;
 
-        std::auto_ptr<H265Frame> newFrame(new H265Frame());
+        m_wasLookAheadProcessed = 0;
+        m_lookaheadRefCounter = 0;
 
-        // ------------------------------------------------
-        Ipp8u needExtData = (par->SceneCut || par->DeltaQpMode || par->AnalyzeCmplx) && !par->LowresFactor ? 1 : 0;
-        newFrame->Create(par, needExtData);
-        if (par->LowresFactor || par->SceneCut) {
-            H265VideoParam parLowres = *par;
+        m_pyramidLayer = 0;
+        m_miniGopCount = 0;
+        m_biFramesInMiniGop = 0;
+        m_frameOrder = 0;
+        m_frameOrderOfLastIdr = 0;
+        m_frameOrderOfLastIntra = 0;
+        m_frameOrderOfLastIntraInEncOrder = 0;
+        m_frameOrderOfLastAnchor = 0;
+        m_poc = 0;
+        m_encOrder = 0;
+        m_isShortTermRef = 0;
+        m_isLongTermRef = 0;
+        m_isIdrPic = 0;
+        m_isRef = 0;
+        memset(m_refPicList, 0, sizeof(m_refPicList));
+        memset(m_mapRefIdxL1ToL0, 0, sizeof(m_mapRefIdxL1ToL0));
+        m_allRefFramesAreFromThePast = 0;
 
-            // hack!!!
-            if (par->SceneCut && par->LowresFactor == 0) {
-                parLowres.LowresFactor = 1;
-            }
+        m_origin = NULL;
+        m_recon  = NULL;
+        m_lowres = NULL;
+        m_encOrder    = Ipp32u(-1);
+        m_frameOrder  = Ipp32u(-1);
+        m_timeStamp   = 0;
+        m_extParam = NULL;
+        m_statusReport = 0;
+        m_encIdx= -1;
+        m_dpbSize     = 0;
 
-            parLowres.Width  >>= parLowres.LowresFactor;
-            parLowres.Width = ((parLowres.Width + 7) >> 3) << 3;
-            parLowres.Height >>= parLowres.LowresFactor;
-            parLowres.Height = ((parLowres.Height + 7) >> 3) << 3;
-            parLowres.MaxCUSize = SIZE_BLK_LA;
-            parLowres.PicWidthInCtbs = (parLowres.Width + parLowres.MaxCUSize - 1) / parLowres.MaxCUSize;
-            parLowres.PicHeightInCtbs = (parLowres.Height + parLowres.MaxCUSize - 1) / parLowres.MaxCUSize;
-            std::auto_ptr<H265Frame> newLowres(new H265Frame());
-            Ipp8u needExtData = 1;
-            newLowres->Create(&parLowres, needExtData);
-            newFrame.get()->m_lowres = newLowres.release();
+        if (m_stats[0]) {
+            m_stats[0]->ResetAvgMetrics();
         }
-        // ------------------------------------------------
-        newFrame->AddRef();
-        queue.push_back(newFrame.release());
-        return --queue.end();
+        if (m_stats[1]) {
+            m_stats[1]->ResetAvgMetrics();
+        }
+
+        m_userSeiMessages = NULL;
+        m_numUserSeiMessages = 0;
     }
 
-    void H265Frame::CopyEncInfo(const H265Frame *src)
+    void Frame::ResetCounters()
     {
-        m_timeStamp = src->m_timeStamp;
-        m_picCodeType = src->m_picCodeType;
-        m_RPSIndex = src->m_RPSIndex;
-
-        m_wasLookAheadProcessed = src->m_wasLookAheadProcessed;
-        m_lookaheadRefCounter = src->m_lookaheadRefCounter;
-
-        m_pyramidLayer = src->m_pyramidLayer;
-        m_miniGopCount = src->m_miniGopCount;
-        m_biFramesInMiniGop = src->m_biFramesInMiniGop;
-        m_frameOrder = src->m_frameOrder;
-        m_frameOrderOfLastIdr = src->m_frameOrderOfLastIdr;
-        m_frameOrderOfLastIntra = src->m_frameOrderOfLastIntra;
-        m_frameOrderOfLastIntraInEncOrder = src->m_frameOrderOfLastIntraInEncOrder;
-        m_frameOrderOfLastAnchor = src->m_frameOrderOfLastAnchor;
-        m_poc = src->m_poc;
-        m_encOrder = src->m_encOrder;
-        m_isShortTermRef = src->m_isShortTermRef;
-        m_isLongTermRef = src->m_isLongTermRef;
-        m_isIdrPic = src->m_isIdrPic;
-        m_isRef = src->m_isRef;
-        small_memcpy(m_refPicList, src->m_refPicList, sizeof(m_refPicList));
-        small_memcpy(m_mapRefIdxL1ToL0, src->m_mapRefIdxL1ToL0, sizeof(m_mapRefIdxL1ToL0));
-        m_allRefFramesAreFromThePast = src->m_allRefFramesAreFromThePast;
+        m_codedRow = 0;
     }
 }
 

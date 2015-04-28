@@ -753,10 +753,9 @@ static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, const Ip
 template <typename PixType>
 template <class H265Bs>
 void H265CU<PixType>::CodeCoeffNxN(H265Bs *bs, H265CU<PixType>* pCU, CoeffsType* coeffs, Ipp32s abs_part_idx,
-                  Ipp32u width, EnumTextType type )
+                                   Ipp32u width, EnumTextType type )
 {
     const H265VideoParam *par = pCU->m_par;
-    const H265PicParameterSet *pps = par->cpps;
 
     if (width > par->MaxTrSize)
         width = par->MaxTrSize;
@@ -776,7 +775,7 @@ void H265CU<PixType>::CodeCoeffNxN(H265Bs *bs, H265CU<PixType>* pCU, CoeffsType*
     }
 #endif
 
-    if(pps->transform_skip_enabled_flag)
+    if (par->transformSkipEnabledFlag)
     {
         h265_code_transform_skip_flags( bs, pCU, abs_part_idx, width, type );
     }
@@ -848,7 +847,7 @@ void H265CU<PixType>::CodeCoeffNxN(H265Bs *bs, H265CU<PixType>* pCU, CoeffsType*
     if (pCU->m_data[abs_part_idx].flags.transquantBypassFlag)
         valid_flag = false;
     else
-        valid_flag = pps->sign_data_hiding_enabled_flag > 0;
+        valid_flag = par->SBHFlag;
 
     const Ipp32s  last_scan_set = scan_pos_last >> LOG2_SCAN_SET_SIZE;
     Ipp32u c1 = 1;
@@ -1422,7 +1421,7 @@ void H265CU<PixType>::EncodeCU(H265Bs *bs, Ipp32s abs_part_idx, Ipp32s depth, Ip
         //    setdQPFlag(true);
     }
 
-    if (m_par->cpps->transquant_bypass_enable_flag)
+    if (m_par->transquantBypassEnableFlag)
         h265_code_transquant_bypass_flag(bs, pCU, abs_part_idx );
 
     if(m_cslice->slice_type != I_SLICE)

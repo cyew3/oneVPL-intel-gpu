@@ -22,10 +22,10 @@ namespace H265Enc {
 template <typename PixType>
 bool H265CU<PixType>::CheckIdenticalMotion(const Ipp8s refIdx[2], const H265MV mvs[2]) const
 {
-    if (m_cslice->slice_type == B_SLICE && !m_par->cpps->weighted_bipred_flag) {
+    if (m_cslice->slice_type == B_SLICE && !m_par->weightedBipredFlag) {
         if (refIdx[0] >= 0 && refIdx[1] >= 0) {
-            H265Frame *refL0 = m_currFrame->m_refPicList[0].m_refFrames[refIdx[0]];
-            H265Frame *refL1 = m_currFrame->m_refPicList[1].m_refFrames[refIdx[1]];
+            Frame *refL0 = m_currFrame->m_refPicList[0].m_refFrames[refIdx[0]];
+            Frame *refL1 = m_currFrame->m_refPicList[1].m_refFrames[refIdx[1]];
             if (refL0 == refL1 && mvs[0] == mvs[1])
                 return true;
         }
@@ -130,7 +130,7 @@ void WriteAverageToPic(
 }
 
 template <typename PixType, EnumTextType PLANE_TYPE>
-PixType *GetRefPointer(H265Frame *refFrame, Ipp32s blockX, Ipp32s blockY, const H265MV &mv, Ipp32s chromaShiftH)
+PixType *GetRefPointer(FrameData *refFrame, Ipp32s blockX, Ipp32s blockY, const H265MV &mv, Ipp32s chromaShiftH)
 {
     return (PLANE_TYPE == TEXT_LUMA)
         ? (PixType*)refFrame->y  + blockX + (mv.mvx >> 2) + (blockY + (mv.mvy >> 2)) * refFrame->pitch_luma_pix
@@ -145,7 +145,7 @@ void H265CU<PixType>::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s pu
 {
     const Ipp32s isLuma = (PLANE_TYPE == TEXT_LUMA);
     RefPicList *refPicList = m_currFrame->m_refPicList;
-    H265Frame *ref = refPicList[listIdx].m_refFrames[refIdx[listIdx]];
+    FrameData *ref = refPicList[listIdx].m_refFrames[refIdx[listIdx]]->m_recon;
     Ipp32s listIdx2 = !listIdx;
 
     Ipp32s bitDepth, tap, dx, dy;
@@ -174,7 +174,7 @@ void H265CU<PixType>::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s pu
     PixType *src2 = NULL;
     if (eAddAverage == AVERAGE_FROM_PIC) {
         Ipp8s refIdx2 = refIdx[listIdx2];
-        H265Frame *ref2 = refPicList[listIdx2].m_refFrames[refIdx2];
+        FrameData *ref2 = refPicList[listIdx2].m_refFrames[refIdx2]->m_recon;
         srcPitch2 = isLuma ? ref2->pitch_luma_pix : ref2->pitch_chroma_pix;
         src2 = GetRefPointer<PixType, PLANE_TYPE>(ref2, (Ipp32s)m_ctbPelX + puX, (Ipp32s)m_ctbPelY + puY, mvs[listIdx2], m_par->chromaShiftH);
     }

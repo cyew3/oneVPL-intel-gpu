@@ -6,6 +6,7 @@
 //        Copyright (c) 2013 - 2014 Intel Corporation. All Rights Reserved.
 //
 
+#include "mfx_common.h"
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #ifndef __MFX_H265_SAO_FILTER_H__
@@ -14,16 +15,11 @@
 #include "mfx_h265_defs.h"
 #include "mfx_h265_bitstream.h"
 #include "mfx_h265_optimization.h"
+#include "mfx_h265_frame.h"
 
 #include <vector>
 
 namespace H265Enc {
-
-//#define MAX_SAO_TRUNCATED_BITDEPTH     (10)
-
-//#define SAO_ENCODE_ALLOW_USE_PREDEBLOCK (0)
-//
-//#define SAO_ENCODING_CHOICE              0  ///< I0184: picture early termination
 
 # define DISTORTION_PRECISION_ADJUSTMENT(x) (x)
 
@@ -99,43 +95,12 @@ enum SaoComponentIdx
   NUM_SAO_COMPONENTS
 };
 
-//---------------------------------------------------------
 // configuration of SAO algorithm:
-// how many components are used for SAO analysis: 1 - Y only, 2 - invalid, 3 - YUV
-#define NUM_USED_SAO_COMPONENTS (1)
+//1 - Y only, 2 - invalid, 3 - YUV
+#define NUM_USED_SAO_COMPONENTS (3)
 
 // enable/disable merge mode of SAO
-//#define SAO_MODE_MERGE_ENABLED  (1)
-
-// predeblocked statistics
-//#define MFX_HEVC_SAO_PREDEBLOCKED_ENABLED (1)
-//---------------------------------------------------------
-
-//struct SaoCtuStatistics //data structure for SAO statistics
-//{
-//  Ipp64s diff[MAX_NUM_SAO_CLASSES];
-//  Ipp64s count[MAX_NUM_SAO_CLASSES];
-//
-//  SaoCtuStatistics(){}
-//  ~SaoCtuStatistics(){}
-//
-//  void Reset()
-//  {
-//    memset(diff, 0, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
-//    memset(count, 0, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
-//  }
-//
-//  //const
-//  SaoCtuStatistics& operator=(const SaoCtuStatistics& src)
-//  {
-//    small_memcpy(diff, src.diff, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
-//    small_memcpy(count, src.count, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
-//
-//    return *this;
-//  }
-//
-//};
-
+#define SAO_MODE_MERGE_ENABLED  (1)
 
 struct SaoOffsetParam
 {
@@ -171,11 +136,11 @@ private:
 };
 
 
-class SaoEncodeFilter
+class SaoEstimator
 {
 public:
-     SaoEncodeFilter(void);
-     ~SaoEncodeFilter();
+     SaoEstimator(void);
+     ~SaoEstimator();
 
      void Init(
          int width,
@@ -183,34 +148,27 @@ public:
          int maxCUWidth,
          int maxDepth,
          int bitDepth,
-         int saoOpt);
+         int saoOpt,
+         int chromaFormat);
 
      void Close(void);
 
      template <typename PixType>
      void EstimateCtuSao(
-         mfxFrameData* orgYuv,
-         mfxFrameData* recYuv,
+         FrameData* origin,
+         FrameData* recon,
          bool* sliceEnabled,
          SaoCtuParam* saoParam);
 
      void ReconstructCtuSaoParam(SaoCtuParam& recParam);
 
-
 private:
     template <typename PixType>
-    void GetCtuSaoStatistics(
-        mfxFrameData* orgYuv,
-        mfxFrameData* recYuv);
+    void GetCtuSaoStatistics(FrameData* orgYuv, FrameData* recYuv);
 
-    void GetBestCtuSaoParam(
-        bool* sliceEnabled,
-        mfxFrameData* srcYuv,
-        SaoCtuParam* codedParam);
+    void GetBestCtuSaoParam(bool* sliceEnabled, SaoCtuParam* codedParam);
 
-    void GetMergeList(
-        int ctu,
-        SaoCtuParam* mergeList[2]);
+    void GetMergeList(int ctu, SaoCtuParam* mergeList[2]);
 
     void ModeDecision_Base(
         SaoCtuParam* mergeList[2],
@@ -236,82 +194,75 @@ public:
     // per stream param
     IppiSize m_frameSize;
     Ipp32s   m_maxCuSize;
-
     Ipp32s   m_numCTU_inWidth;
     Ipp32s   m_numCTU_inHeight;
     Ipp32s   m_numSaoModes;
-
     Ipp32s   m_bitDepth;
     Ipp32s   m_saoMaxOffsetQVal;
-
+    Ipp32s   m_chromaFormat;
     // work state
     MFX_HEVC_PP::SaoCtuStatistics    m_statData[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
     Ipp8u               m_ctxSAO[NUM_SAO_CABACSTATE_MARKERS][NUM_CABAC_CONTEXT];
-
-    MFX_HEVC_PP::SaoCtuStatistics    m_statData_predeblocked[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
-
-public:
     // per CTU param
     int  m_ctb_addr;
     int  m_ctb_pelx;
     int  m_ctb_pely;
-
     double   m_labmda[NUM_SAO_COMPONENTS];
     H265BsFake *m_bsf;
-
     MFX_HEVC_PP::CTBBorders m_borders;
-
-    Ipp8u* m_slice_ids;
-
+    const Ipp16u* m_slice_ids;
     // output
     SaoCtuParam* m_codedParams_TotalFrame;
 };
 
+
 template <typename PixType>
-class SaoDecodeFilter
+class SaoApplier
 {
 public:
-     SaoDecodeFilter(void);
-     ~SaoDecodeFilter();
+     SaoApplier();
+     ~SaoApplier();
 
-     void Init(
-         int maxCUWidth,
-         int maxDepth,
-         int bitDepth,
-         int num);
-
+     void Init(int maxCUWidth, int format, int maxDepth, int bitDepth, int num);
      void Close(void);
-
      void SetOffsetsLuma(SaoOffsetParam  &saoLCUParam, Ipp32s typeIdx, Ipp32s *offsetEo, PixType *offsetBo);
 
-//private:
+     void h265_ProcessSaoCuChroma(PixType* pRec, Ipp32s stride, Ipp32s saoType, PixType* tmpL, PixType* tmpU, Ipp32u maxCUWidth, 
+         Ipp32u maxCUHeight, Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEoCb, PixType* pOffsetBoCb, Ipp32s* pOffsetEoCr,
+         PixType* pOffsetBoCr, PixType* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY);
+
     static const int LUMA_GROUP_NUM = 32;
     static const int SAO_BO_BITS = 5;
-    static const int SAO_PRED_SIZE = 66;
-
-    Ipp32s   m_OffsetEo2[LUMA_GROUP_NUM];
-    Ipp32s   m_OffsetEoChroma[LUMA_GROUP_NUM];
-    Ipp32s   m_OffsetEo2Chroma[LUMA_GROUP_NUM];
+    static const int SAO_PRED_SIZE = 66;    
 
     Ipp32u   m_maxCuSize;
-
     Ipp32s   m_bitDepth;
+    Ipp32s   m_format;
 
     PixType   *m_ClipTable;
+    PixType   *m_ClipTableChroma;
     PixType   *m_ClipTableBase;
     PixType   *m_lumaTableBo;
+    PixType   *m_chromaTableBo;
 
     PixType *m_TmpU;
     PixType *m_TmpL;
 
+    PixType *m_TmpU_Chroma;
+    PixType *m_TmpL_Chroma;
+
+    Ipp32s   m_ctbCromaWidthInPix;
+    Ipp32s   m_ctbCromaHeightInPix;
+    Ipp32s   m_ctbCromaWidthInRow;
+    Ipp32s   m_ctbCromaHeightInRow;
+
+    Ipp32s m_inited;
+
 private:
-    SaoDecodeFilter(const SaoDecodeFilter& ){ /* do not create copies */ }
-    SaoDecodeFilter& operator=(const SaoDecodeFilter&){ return *this;}
-
+    SaoApplier(const SaoApplier& ){ /* do not create copies */ }
+    SaoApplier& operator=(const SaoApplier&){ return *this;}
 };
-
 } // namespace
 
 #endif // __MFX_H265_SAO_FILTER_H__
-
 #endif // (MFX_ENABLE_H265_VIDEO_ENCODE)

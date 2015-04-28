@@ -16,12 +16,10 @@
 #include <list>
 #include <vector>
 
-class MFXVideoENCODEH265;
-
 namespace H265Enc {
 
-    class H265Frame;
-    struct Task;
+    class H265Encoder;
+    class Frame;
     struct H265VideoParam;
 
     struct StatItem {
@@ -29,19 +27,21 @@ namespace H265Enc {
         Ipp32s frameOrder;
     };
 
-    class Lookahead
+    class Lookahead : public NonCopyable
     {
     public:
-        Lookahead(std::list<Task*> & inputQueue, H265VideoParam & par, MFXVideoENCODEH265 & enc);
+        Lookahead(H265Encoder & enc);
         ~Lookahead();
 
         Ipp32s GetDelay();
-        void DoLookaheadAnalysis(Task* curr);
+        void DoLookaheadAnalysis(Frame* in);
+        mfxStatus PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u ctb_row, Ipp32u ctb_col);
+        int SetFrame(Frame* in);
 
     private:
-        std::list<Task*> &m_inputQueue;
-        H265VideoParam& m_videoParam;
-        MFXVideoENCODEH265 & m_enc;// scenecut has right to modificate a GopStructure
+        std::list<Frame*> &m_inputQueue;
+        H265VideoParam &m_videoParam;
+        H265Encoder &m_enc;// scenecut has right to modificate a GopStructure
 
         enum {
             ALG_PIX_DIFF = 0,
@@ -55,19 +55,27 @@ namespace H265Enc {
             Ipp32s scaleFactor; // analysis will be done on (origW >> scaleFactor, origH >> scaleFactor) resolution
         } m_scdConfig;
 
-        void AnalyzeSceneCut_AndUpdateState(Task* in);
-        void AnalyzeContent(Task* in);
-        void AnalyzeComplexity(Task* in);
+        void AnalyzeSceneCut_AndUpdateState(Frame* in);
+        void AnalyzeContent(Frame* in);
+        void AnalyzeComplexity(Frame* in);
 
-        void DoPersistanceAnalysis(Task* curr);
-        void IPicDetermineQpMap(H265Frame *inFrame);
-        void PPicDetermineQpMap(H265Frame* inFrame, H265Frame *past_frame);
+        void DoPersistanceAnalysis(Frame* in);
+        void DetermineQpMap_IFrame(Frame* in);
+        void DetermineQpMap_PFrame(Frame* in, Frame* past);
 
-        H265Frame* m_cmplxPrevFrame;
+        Frame* m_cmplxPrevFrame;
         std::vector<Ipp8u> m_workBuf;
         std::vector<StatItem> m_slideWindowStat; // store metrics for SceneCut
         std::vector<Ipp32s> m_slideWindowPaq; // special win for Paq/Calq simplification. window size = 2*M+1, M = GopRefDist (numB + 1)
         std::vector<Ipp32s> m_slideWindowComplexity; // special win for Paq/Calq simplification. window size = 2*M+1, M = GopRefDist (numB + 1)
+
+        void BuildThreadingTaskModel(Ipp32s poc);
+        Ipp32s GetNumDownStreamDependencies(Ipp32s idx);
+
+    public:
+        Frame* m_frame;
+        std::vector<ThreadingTaskSpecifier> m_spec;
+        std::vector<ThreadingTask> m_threadingTaskStore;
     };
 
 } // namespace

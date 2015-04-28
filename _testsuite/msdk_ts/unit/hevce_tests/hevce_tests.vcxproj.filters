@@ -17,5 +17,31 @@
     <ClCompile Include="hevce_gop.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="hevce_query.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hevce_init.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hevce_common_api.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hevce_queryiosurf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hevce_mock_videocore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hevce_encodeframeasync.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="hevce_common_api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hevce_mock_videocore.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -104,11 +104,6 @@ template<class T> inline T AlignValue(T value, mfxU32 alignment)
     return static_cast<T>((value + alignment - 1) & ~(alignment - 1));
 }
 
-template<class T> inline void Zero(T & obj)
-{
-    memset(&obj, 0, sizeof(obj));
-}
-
 const char   ME_PROGRAM_NAME[] = "genx_h265_cmcode.isa";
 
 const mfxU32 SEARCHPATHSIZE    = 56;
