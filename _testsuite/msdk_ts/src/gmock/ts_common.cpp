@@ -134,6 +134,7 @@ void set_brc_params(tsExtBufType<mfxVideoParam>* p)
     {
         p->mfx.TargetKbps = p->mfx.Convergence = p->mfx.Accuracy = 0;
         p->mfx.ICQQuality = 0;
+        p->mfx.MaxKbps = p->mfx.TargetKbps = br;
 
         mfxExtCodingOption3* p_cod3 = (mfxExtCodingOption3*)p->GetExtBuffer(MFX_EXTBUFF_CODING_OPTION3);
         if (p_cod3)

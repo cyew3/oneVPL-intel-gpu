@@ -155,6 +155,7 @@ private:
     bool mbqp_on;
     mfxU32 mode;
     tsNoiseFiller m_reader;
+    //tsBitstreamWriter m_writer;
 public:
     TestSuite()
         : tsVideoEncoder(MFX_CODEC_AVC)
@@ -163,6 +164,7 @@ public:
         , mbqp_on(true)
         , mode(0)
         , m_reader()
+        //, m_writer("debug.264")
     {
         set_trace_level(0);
         srand(0);
@@ -261,7 +263,9 @@ public:
             set_buffer(bs.Data + bs.DataOffset, bs.DataLength+1);
 
         if (m_par.mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))
-            nFrames = 2;
+            nFrames *= 2;
+
+        //m_writer.ProcessBitstream(bs, nFrames);
 
         while (checked++ < nFrames)
         {
@@ -431,6 +435,8 @@ int TestSuite::RunTest(unsigned int id)
         {
             mbqp_on = false;
         }
+
+        tsSurfaceProcessor::m_max = 30; // to auto-drain buffered frames before reset
         EncodeFrames(30);
 
         if (tc.mode & RESET_ON || tc.mode & RESET_OFF)
@@ -439,9 +445,25 @@ int TestSuite::RunTest(unsigned int id)
             {
                 mfxExtCodingOption3& co3 = m_par;
                 co3.EnableMBQP = MFX_CODINGOPTION_ON;
+
+#if defined(_WIN32)
+                g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+#endif
             }
+            else if (tc.mode & RESET_OFF)
+            {
+                mfxExtCodingOption3& co3 = m_par;
+                co3.EnableMBQP = MFX_CODINGOPTION_OFF;
+            }
+
             mbqp_on = !mbqp_on;
+
+            tsSurfaceProcessor::m_cur = 0;
+            tsSurfaceProcessor::m_eos = false;
             Reset();
+            if (g_tsStatus.get() < 0)
+                return 0;
+
             EncodeFrames(30);
         }
     }
