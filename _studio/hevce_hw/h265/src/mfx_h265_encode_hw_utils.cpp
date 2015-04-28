@@ -365,6 +365,7 @@ MfxVideoParam::MfxVideoParam()
     , LCUSize         (DEFAULT_LCU_SIZE)
     , InsertHRDInfo   (false)
     , RawRef          (false)
+    , LowDelay        (false)
 {
     Zero(*(mfxVideoParam*)this);
     Zero(NumRefLX);
@@ -388,6 +389,7 @@ MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
     LCUSize          = par.LCUSize;
     InsertHRDInfo    = par.InsertHRDInfo;
     RawRef           = par.RawRef;
+    LowDelay         = par.LowDelay;
 }
 
 MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
@@ -471,6 +473,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
 
     InsertHRDInfo = false;
     RawRef        = false;
+    LowDelay = ((mfx.GopRefDist == 1) && !isTL() && (m_ext.DDI.NumActiveRefP == 0));
 
     m_slice.resize(0);
 

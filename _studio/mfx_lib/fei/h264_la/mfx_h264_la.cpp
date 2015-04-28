@@ -67,8 +67,8 @@ static mfxStatus InitEncoderParameters(mfxVideoParam *par_in, mfxVideoParam *par
     }
     par_enc->AsyncDepth = GetAsyncDeph(par_in);
     par_enc->IOPattern  = par_in->IOPattern;
-    par_enc->mfx.GopPicSize = GetGopSize(par_enc);
-    par_enc->mfx.GopRefDist = GetRefDist(par_enc);
+    par_enc->mfx.GopPicSize = GetGopSize(par_in);
+    par_enc->mfx.GopRefDist = GetRefDist(par_in);
     par_enc->mfx.RateControlMethod = MFX_RATECONTROL_LA;
     par_enc->mfx.NumRefFrame = 2;
     par_enc->mfx.FrameInfo = par_in->mfx.FrameInfo;  

@@ -405,6 +405,7 @@ public:
     mfxU32 LCUSize;
     bool   InsertHRDInfo;
     bool   RawRef;
+    bool   LowDelay;
 
     MfxVideoParam();
     MfxVideoParam(MfxVideoParam const & par);
@@ -423,7 +424,7 @@ public:
     mfxStatus GetExtBuffers(mfxVideoParam& par, bool query = false);
 
     bool isBPyramid() const { return m_ext.CO2.BRefType == MFX_B_REF_PYRAMID; }
-    bool isLowDelay() const { return mfx.GopRefDist == 1 && !isTL(); }
+    bool isLowDelay() const { return LowDelay; }
     bool isTL()       const { return NumTL() > 1; }
 
 private:
