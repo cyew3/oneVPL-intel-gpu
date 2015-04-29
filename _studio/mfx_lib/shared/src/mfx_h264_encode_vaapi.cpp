@@ -1783,9 +1783,10 @@ mfxStatus VAAPIEncoder::Execute(
             vaFeiFrameControl->len_sp = frameCtrl->LenSP;
             vaFeiFrameControl->max_len_sp = frameCtrl->MaxLenSP;
 
-            vaFeiFrameControl->distortion = m_vaFeiMBStatId[idxRecon];
-            vaFeiFrameControl->mv_data = m_vaFeiMVOutId[idxRecon];
-            vaFeiFrameControl->mb_code_data = m_vaFeiMCODEOutId[idxRecon];
+            vaFeiFrameControl->distortion = m_vaFeiMBStatId[2*idxRecon + fieldId];
+            vaFeiFrameControl->mv_data = m_vaFeiMVOutId[2*idxRecon + fieldId];
+            vaFeiFrameControl->mb_code_data = m_vaFeiMCODEOutId[2*idxRecon + fieldId];
+            mdprintf(stderr,"fieldId: = %d; idxRecon = %d; m_vaFeiMCODEOutId[] = %d\n",fieldId, idxRecon, m_vaFeiMCODEOutId[2*idxRecon + fieldId]);
             vaFeiFrameControl->qp = vaFeiMBQPId;
             vaFeiFrameControl->mb_ctrl = vaFeiMBControlId;
             vaFeiFrameControl->mb_input = frameCtrl->PerMBInput;
@@ -2372,9 +2373,9 @@ mfxStatus VAAPIEncoder::Execute(
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
         if (m_isENCPAK)
         {
-            currentFeedback.mv        = m_vaFeiMVOutId[idxRecon];
-            currentFeedback.mbstat    = m_vaFeiMBStatId[idxRecon];
-            currentFeedback.mbcode    = m_vaFeiMCODEOutId[idxRecon];
+            currentFeedback.mv        = m_vaFeiMVOutId[2*idxRecon + fieldId];
+            currentFeedback.mbstat    = m_vaFeiMBStatId[2*idxRecon + fieldId];
+            currentFeedback.mbcode    = m_vaFeiMCODEOutId[2*idxRecon + fieldId];
         }
 #endif
         m_feedbackCache.push_back( currentFeedback );
