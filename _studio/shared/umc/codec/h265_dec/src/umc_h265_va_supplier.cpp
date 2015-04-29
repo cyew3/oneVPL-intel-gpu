@@ -40,7 +40,7 @@ UMC::Status VATaskSupplier::Init(UMC::VideoDecoderParams *pInit)
     m_pMemoryAllocator = pInit->lpMemoryAllocator;
 
     pInit->numThreads = 1;
-    
+
     UMC::Status umsRes = TaskSupplier_H265::Init(pInit);
     if (umsRes != UMC::UMC_OK)
         return umsRes;
@@ -119,6 +119,9 @@ void VATaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
 
     MFXTaskSupplier_H265::CompleteFrame(pFrame);
 
+    if (H265DecoderFrameInfo::STATUS_FILLED != pFrame->GetAU()->GetStatus())
+        return;
+
     StartDecodingFrame(pFrame);
     EndDecodingFrame();
 }
@@ -133,7 +136,7 @@ UMC::Status VATaskSupplier::AllocateFrameData(H265DecoderFrame * pFrame, IppiSiz
     UMC::ColorFormat chroma_format_idc = pFrame->GetColorFormat();
     UMC::VideoDataInfo info;
     Ipp32s bit_depth = pSeqParamSet->need16bitOutput ? 10 : 8;
-    info.Init(dimensions.width, dimensions.height, chroma_format_idc, bit_depth);    
+    info.Init(dimensions.width, dimensions.height, chroma_format_idc, bit_depth);
 
     UMC::FrameMemID frmMID;
     UMC::Status sts = m_pFrameAllocator->Alloc(&frmMID, &info, 0);
