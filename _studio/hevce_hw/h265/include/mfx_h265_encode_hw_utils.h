@@ -354,7 +354,7 @@ public:
         if (!m_numTL)
             return 0;
 
-        for (i = 0; (frameOrder % (m_TL[m_numTL - 1].Scale / m_TL[i].Scale)) && i < m_numTL; i++);
+        for (i = 0; i < m_numTL && (frameOrder % (m_TL[m_numTL - 1].Scale / m_TL[i].Scale))  ; i++);
 
         return m_TL[i].TId;
     }

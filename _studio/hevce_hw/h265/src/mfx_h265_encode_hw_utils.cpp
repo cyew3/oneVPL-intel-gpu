@@ -2087,9 +2087,9 @@ void ConstructRPL(
                     {
                         mfxI32 i;
 
-                        for (i = 0; ((DPB[RPL[0][0]].m_poc - DPB[RPL[0][i]].m_poc) % par.NumRefLX[0]) == 0 && i < l0; i++);
-
-                        Remove(RPL[0], (i + 1 >= l0) ? 0 : i);
+                        for (i = 0; (i < l0) && (((DPB[RPL[0][0]].m_poc - DPB[RPL[0][i]].m_poc) % par.NumRefLX[0]) == 0) ; i++);
+                        
+                        Remove(RPL[0], (i >= l0) ? 0 : i);
                         l0--;
                     }
                 }
