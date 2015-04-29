@@ -52,8 +52,10 @@ UMC::Status va_to_umc_res(VAStatus va_res)
         break;
     case VA_STATUS_ERROR_INVALID_PARAMETER:
         umcRes = UMC::UMC_ERR_INVALID_PARAMS;
+        break;
     case VA_STATUS_ERROR_DECODING_ERROR:
         umcRes = UMC::UMC_ERR_INVALID_STREAM;
+        break;
     default:
         umcRes = UMC::UMC_ERR_FAILED;
         break;
