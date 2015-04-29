@@ -52,7 +52,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}}},
     {/* 7*/ MFX_ERR_NONE, 1 + frame_allocator::ALLOC_MAX, 0, 0},
     {/* 8*/ MFX_ERR_NONE, 1 + frame_allocator::ALLOC_MAX, 0, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/* 9*/ MFX_ERR_MEMORY_ALLOC, 1 + frame_allocator::ALLOC_MIN_MINUS_1, 0, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    //{/* 9*/ MFX_ERR_MEMORY_ALLOC, 1 + frame_allocator::ALLOC_MIN_MINUS_1, 0, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
     {/*10*/ MFX_ERR_NONE, 0, 0, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
     {/*11*/ MFX_ERR_NONE, 1 + frame_allocator::ALLOC_MAX, 0, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
     {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, 1 + frame_allocator::ALLOC_MIN_MINUS_1, 0, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},

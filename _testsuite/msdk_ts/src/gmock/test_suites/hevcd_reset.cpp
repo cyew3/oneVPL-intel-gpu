@@ -59,7 +59,12 @@ private:
             case SESSION   : base = (void**)&m_session;      break;
             case MFXVPAR   : base = (void**)&m_pPar;         break;
             case REPEAT    : base = (void**)&m_repeat;       break;
-            case ALLOCATOR : SetAllocator(
+            case ALLOCATOR :
+            {
+                if (m_pVAHandle && (c.par[0] != frame_allocator::SOFTWARE))
+                    SetAllocator(m_pVAHandle, true);
+                else
+                    SetAllocator(
                                  new frame_allocator(
                                  (frame_allocator::AllocatorType)    c.par[0], 
                                  (frame_allocator::AllocMode)        c.par[1], 
@@ -67,7 +72,10 @@ private:
                                  (frame_allocator::OpaqueAllocMode)  c.par[3]
                                  ), 
                                  false
-                             ); m_use_memid = true; break;
+                             );
+                m_use_memid = true;
+                break;
+            }
             case CLOSE_DEC : Close(); break;
             case EXT_BUF   : m_par.AddExtBuffer(c.par[0], c.par[1]); break;
             default: break;
