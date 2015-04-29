@@ -632,18 +632,45 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             VASurfaceID* ref_srf = (VASurfaceID*) (pRefSurf_1->hdl.first);
             m_pipelineParam[refIdx].backward_references = ref_srf;
         }
-        /* FRC case */
-        if ((pParams->refCount > 2) && (0 != pParams->bFRCEnable))
+        /* FRC Interpolated case */
+        if (0 != pParams->bFRCEnable)
         {
-            mfxDrvSurface* pRefSurf_frc1;
-            pRefSurf_frc1 = &(pParams->pRefSurfaces[1]);
-            m_refForFRC[0] = *(VASurfaceID*)(pRefSurf_frc1->hdl.first);
-            mfxDrvSurface* pRefSurf_frc2;
-            pRefSurf_frc2 = &(pParams->pRefSurfaces[2]);
-            m_refForFRC[1] = *(VASurfaceID*) (pRefSurf_frc2->hdl.first);
-            m_pipelineParam[refIdx].num_forward_references = 2;
+            if (30 == pParams->customRateData.customRate.FrameRateExtD)
+                m_pipelineParam[refIdx].num_forward_references = 2;
+            else if (24 == pParams->customRateData.customRate.FrameRateExtD)
+                m_pipelineParam[refIdx].num_forward_references = 3;
+
+            if (2 == pParams->refCount) /* may be End of Stream case */
+            {
+                mfxDrvSurface* pRefSurf_frc1;
+                pRefSurf_frc1 = &(pParams->pRefSurfaces[1]);
+                m_refForFRC[0] = *(VASurfaceID*)(pRefSurf_frc1->hdl.first);
+                m_refForFRC[2] = m_refForFRC[1] = m_refForFRC[0];
+            }
+            if (3 == pParams->refCount)
+            {
+                mfxDrvSurface* pRefSurf_frc1;
+                pRefSurf_frc1 = &(pParams->pRefSurfaces[1]);
+                m_refForFRC[0] = *(VASurfaceID*)(pRefSurf_frc1->hdl.first);
+                mfxDrvSurface* pRefSurf_frc2;
+                pRefSurf_frc2 = &(pParams->pRefSurfaces[2]);
+                m_refForFRC[1] = *(VASurfaceID*) (pRefSurf_frc2->hdl.first);
+            }
+            if (4 == pParams->refCount)
+            {
+                mfxDrvSurface* pRefSurf_frc1;
+                pRefSurf_frc1 = &(pParams->pRefSurfaces[1]);
+                m_refForFRC[0] = *(VASurfaceID*)(pRefSurf_frc1->hdl.first);
+                mfxDrvSurface* pRefSurf_frc2;
+                pRefSurf_frc2 = &(pParams->pRefSurfaces[2]);
+                m_refForFRC[1] = *(VASurfaceID*) (pRefSurf_frc2->hdl.first);
+                mfxDrvSurface* pRefSurf_frc3;
+                pRefSurf_frc3 = &(pParams->pRefSurfaces[3]);
+                m_refForFRC[2] = *(VASurfaceID*) (pRefSurf_frc3->hdl.first);
+            }
+            /* to pass ref list to pipeline */
             m_pipelineParam[refIdx].forward_references = m_refForFRC;
-        }
+        } /*if (0 != pParams->bFRCEnable)*/
 
         VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
         m_pipelineParam[refIdx].surface = *srf;
