@@ -87,7 +87,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
             proc = (mfxFunctionPointer)dlsym(loader->dlhandle, g_mfxFuncTable[i].name);
             /* NOTE: on Android very first call to dlsym may fail */
             if (!proc) proc = (mfxFunctionPointer)dlsym(loader->dlhandle, g_mfxFuncTable[i].name);
-            if (!proc) break;
+            //if (!proc) break;
             loader->table[i] = proc;
         }
         if (i < eFunctionsNum) {

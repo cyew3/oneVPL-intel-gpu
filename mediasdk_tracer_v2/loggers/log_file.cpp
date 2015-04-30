@@ -51,6 +51,7 @@ void LogFile::WriteLog(const std::string &log)
             if(str_stream.eof())
                 break;
         }
+        _file.flush();
     
 }
 
