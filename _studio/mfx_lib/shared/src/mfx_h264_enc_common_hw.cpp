@@ -4261,6 +4261,11 @@ void MfxHwH264Encode::SetDefaults(
             if (par.mfx.GopPicSize > 0 && par.mfx.GopPicSize <= par.mfx.GopRefDist)
                 par.mfx.GopRefDist = par.mfx.GopPicSize;
         }
+
+        if (par.mfx.RateControlMethod & MFX_RATECONTROL_LA_EXT)
+        {
+            par.mfx.GopRefDist = 3;        
+        }
     }
     if ((par.mfx.RateControlMethod & ( MFX_RATECONTROL_LA |MFX_RATECONTROL_LA_HRD|MFX_RATECONTROL_LA_EXT)) && (extOpt3->WinBRCMaxAvgKbps || extOpt3->WinBRCSize))
     {

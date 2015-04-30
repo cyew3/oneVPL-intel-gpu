@@ -1493,7 +1493,6 @@ mfxStatus VideoENC_LA::QueryFrameLA(mfxENCOutput *output)
     if (out)
     {
         MFX_CHECK(aux, MFX_ERR_NULL_PTR);
-        MFX_CHECK((m_OutputTasks.size() >= m_LaControl.LookAheadDepth) || (m_LAAsyncContext.bPreEncLastFrames && (m_OutputTasks.size() > 0)), MFX_ERR_UNDEFINED_BEHAVIOR);
                 
         sLASummaryTask frameForOutput = m_OutputTasks.front();
 
@@ -1502,7 +1501,7 @@ mfxStatus VideoENC_LA::QueryFrameLA(mfxENCOutput *output)
         //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, task_name);
 
         mfxU16 frameNum = (m_OutputTasks.size() > m_LaControl.LookAheadDepth) ? m_LaControl.LookAheadDepth : (mfxU16)m_OutputTasks.size();
-        frameNum = (frameNum>=m_LaControl.LookAheadDepth) ? frameNum - m_LaControl.DependencyDepth : frameNum;  
+        frameNum = (frameNum>=m_LaControl.DependencyDepth && !m_LAAsyncContext.bPreEncLastFrames) ? frameNum - m_LaControl.DependencyDepth : frameNum;  
 
          // summury MB data and copy into output structure           
 
