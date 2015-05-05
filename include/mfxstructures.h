@@ -272,7 +272,8 @@ typedef struct {
             mfxU16  ExtendedPicStruct;
             mfxU16  TimeStampCalc;
             mfxU16  SliceGroupsPresent;
-            mfxU16  reserved2[9];
+            mfxU16  MaxDecFrameBuffering;
+            mfxU16  reserved2[8];
         };
         struct {   /* JPEG Decoding Options */
             mfxU16  JPEGChromaFormat;
