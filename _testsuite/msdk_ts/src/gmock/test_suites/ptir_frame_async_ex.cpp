@@ -101,8 +101,12 @@ int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     const tc_struct& tc = test_case[id];
-    mfxU32 expected_ps[10] = {MFX_PICSTRUCT_PROGRESSIVE, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF,
-        MFX_PICSTRUCT_PROGRESSIVE, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF};
+    mfxU32 expected_ps[10] = {
+            MFX_PICSTRUCT_PROGRESSIVE, MFX_PICSTRUCT_FIELD_TFF,   MFX_PICSTRUCT_FIELD_TFF,
+              MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_PROGRESSIVE,
+              MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_TFF,   MFX_PICSTRUCT_FIELD_TFF,
+              MFX_PICSTRUCT_FIELD_TFF
+    };
 
     std::vector<mfxExtBuffer*> buffs;
 
@@ -111,6 +115,7 @@ int TestSuite::RunTest(unsigned int id)
     mfxPluginUID* ptir = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_VPP, MFX_MAKEFOURCC('P','T','I','R'));
     tsSession::Load(m_session, ptir, 1);
 
+    mfxExtVPPDeinterlacing di = {0};
     if (tc.mode == USE_EXT_BUF)
     {
         m_par.vpp.In.PicStruct = 0;
@@ -120,7 +125,6 @@ int TestSuite::RunTest(unsigned int id)
         m_par.vpp.Out.FrameRateExtN = 0;
         m_par.vpp.Out.FrameRateExtD = 0;
 
-        mfxExtVPPDeinterlacing di = {0};
         di.Header.BufferId = MFX_EXTBUFF_VPP_DEINTERLACING;
         di.Header.BufferSz = sizeof(mfxExtVPPDeinterlacing);
         SETPARS(&di, EXT_DI);
@@ -142,45 +146,13 @@ int TestSuite::RunTest(unsigned int id)
     if (tc.mode == USE_EXT_BUF)
         m_surf_in_processor = &stream;
 
-    bool isSW = !(!!(m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY));
-    m_spool_in.UseDefaultAllocator(isSW);
-    SetFrameAllocator(m_session, m_spool_in.GetAllocator());
-    m_spool_out.SetAllocator(m_spool_in.GetAllocator(), true);
+    CreateAllocators();
 
-    if (!m_is_handle_set)
-    {
-        mfxHDL hdl;
-        mfxHandleType type;
-        if (isSW)
-        {
-            if (!m_pVAHandle)
-            {
-                m_pVAHandle = new frame_allocator(
-                        TS_HW_ALLOCATOR_TYPE,
-                        frame_allocator::ALLOC_MAX,
-                        frame_allocator::ENABLE_ALL,
-                        frame_allocator::ALLOC_EMPTY);
-            }
-            m_pVAHandle->get_hdl(type, hdl);
-        }
-        else
-        {
-            m_spool_in.GetAllocator()->get_hdl(type, hdl);
-        }
-        SetHandle(m_session, type, hdl);
-    }
-
-    if (tc.mode == ALLOC_OPAQUE)
-    {
-        mfxExtOpaqueSurfaceAlloc& osa = m_par;
-        QueryIOSurf();
-        if (m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            m_spool_in.AllocOpaque(m_request[0], osa);
-        if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-            m_spool_out.AllocOpaque(m_request[1], osa);
-    }
+    SetFrameAllocator();
+    SetHandle();
 
     AllocSurfaces();
+
     Init(m_session, m_pPar);
 
     ///////////////////////////////////////////////////////////////////////////
