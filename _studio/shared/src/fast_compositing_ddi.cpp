@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2015 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -179,16 +179,15 @@ mfxStatus FastCompositingDDI::CreateDevice(VideoCORE * core, mfxVideoParam* par,
     MFX_CHECK_NULL_PTR1( core );
     par;
 
-    D3D9VideoCORE* hwCore = dynamic_cast<D3D9VideoCORE*>(core);
-
+    D3D9Interface *hwCore = QueryCoreInterface<D3D9Interface>(core);
     MFX_CHECK_NULL_PTR1( hwCore );
 
     IDirectXVideoDecoderService *pVideoService = NULL;
 
-    mfxStatus sts = hwCore->m_pAdapter.get()->GetD3DService(1920, 1080, &pVideoService, isTemporal);
+    mfxStatus sts = hwCore->GetD3DService(1920, 1080, &pVideoService, isTemporal);
     MFX_CHECK_STS(sts);
 
-    sts = Initialize(hwCore->m_pAdapter.get()->GetD3D9DeviceManager(), pVideoService);
+    sts = Initialize(hwCore->GetD3D9DeviceManager(), pVideoService);
 
     return sts;
 

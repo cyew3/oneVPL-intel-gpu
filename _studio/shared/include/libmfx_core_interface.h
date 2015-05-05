@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core_interface.h
 
@@ -63,8 +63,10 @@ MFX_GUID  MFXIEXTERNALLOC_GUID =
 { 0x3e273bfb, 0x5e28, 0x4643, { 0x9f, 0x1d, 0x25, 0x4b, 0x0, 0xb, 0xeb, 0x96 } };
 
 
-
-
+// {2AAFDAE8-F7BA-46ED-B277-B87E94F2D384}
+static const 
+MFX_GUID MFXICMEnabledCore_GUID =
+{ 0x2aafdae8, 0xf7ba, 0x46ed, { 0xb2, 0x77, 0xb8, 0x7e, 0x94, 0xf2, 0xd3, 0x84 } };
 
 
 
@@ -256,6 +258,17 @@ struct VDAAPIInterface
 };
 
 #endif
+
+struct CMEnabledCoreInterface
+{
+    static const MFX_GUID & getGuid()
+    {
+        return MFXICMEnabledCore_GUID;
+    }
+
+    virtual mfxStatus SetCmCopyStatus(bool enable) = 0;
+};
+
 
 #endif // __LIBMFX_CORE_INTERFACE_H__
 /* EOF */

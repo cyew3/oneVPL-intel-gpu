@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core.h
 
@@ -37,6 +37,9 @@ typedef interface IDirect3DDeviceManager9 IDirect3DDeviceManager9;
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
 class mfx_UMC_FrameAllocator;
+
+// Virtual table size for CommonCORE should be considered fixed.
+// Otherwise binary compatibility with already released plugins would be broken.
 
 class CommonCORE : public VideoCORE
 {
@@ -197,6 +200,9 @@ protected:
         }
     protected:
         T* m_ptr;
+    private:
+        s_ptr(s_ptr&);
+        void operator =(s_ptr &);
     };
     virtual mfxStatus          DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
     mfxFrameAllocator*         GetAllocatorAndMid(mfxMemId& mid);

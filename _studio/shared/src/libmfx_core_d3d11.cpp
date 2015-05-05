@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
 
 File Name: libmf_core_d3d.cpp
 
@@ -494,6 +494,20 @@ mfxStatus D3D11VideoCORE::ProcessRenderTargets(mfxFrameAllocRequest *request, mf
     return MFX_ERR_NONE;
 }
 
+mfxStatus D3D11VideoCORE::SetCmCopyStatus(bool enable)
+{
+    m_bCmCopyAllowed = enable;
+    if (!enable)
+    {
+        if (m_pCmCopy.get())
+        {
+            m_pCmCopy.get()->Release();
+        }
+        m_bCmCopy = false;
+    }
+    return MFX_ERR_NONE;
+}
+
 void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
 {
     // single instance
@@ -539,6 +553,14 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
             pCmDevice =  m_pCmCopy.get()->GetCmDevice<ID3D11Device>(m_pD11Device);
         }
         return (void*)pCmDevice;
+    }
+    else if (MFXICMEnabledCore_GUID == guid)
+    {
+        if (!m_pCmAdapter.get())
+        {
+            m_pCmAdapter.reset(new CMEnabledCoreAdapter(this));
+        }
+        return (void*)m_pCmAdapter.get();
     }
     else if (MFXIEXTERNALLOC_GUID == guid && m_bSetExtFrameAlloc)
         return &m_FrameAllocator.frameAllocator;

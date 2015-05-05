@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
 
 File Name: libmf_core_vaapi.cpp
 
@@ -690,7 +690,7 @@ VAAPIVideoCORE::GetVAService(
 
 } // mfxStatus VAAPIVideoCORE::GetVAService(...)
 
-void
+mfxStatus
 VAAPIVideoCORE::SetCmCopyStatus(bool enable)
 {
     m_bCmCopyAllowed = enable;
@@ -702,6 +702,7 @@ VAAPIVideoCORE::SetCmCopyStatus(bool enable)
         }
         m_bCmCopy = false;
     }
+    return MFX_ERR_NONE;
 } // mfxStatus VAAPIVideoCORE::SetCmCopyStatus(...)
 
 mfxStatus
@@ -1462,6 +1463,14 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
             pCmDevice =  m_pCmCopy.get()->GetCmDevice(m_Display);
         }
         return (void*)pCmDevice;
+    }
+    else if (MFXICMEnabledCore_GUID == guid)
+    {
+        if (!m_pCmAdapter.get())
+        {
+            m_pCmAdapter.reset(new CMEnabledCoreAdapter(this));
+        }
+        return (void*)m_pCmAdapter.get();
     }
     else if (MFXIHWMBPROCRATE_GUID == guid)
     {

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_session.cpp
 
@@ -986,6 +986,23 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
     }
 
     m_pOperatorCore = new OperatorCORE(m_pCORE.get());
+
+    if (MFX_PLATFORM_SOFTWARE == m_currentPlatform && MFX_GPUCOPY_ON == par.GPUCopy)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+    // By default CM Copy enabled on HW cores, so only need to handle explicit OFF value
+    if (MFX_GPUCOPY_OFF == par.GPUCopy)
+    {
+        CMEnabledCoreInterface* pCmCore = QueryCoreInterface<CMEnabledCoreInterface>(m_pCORE.get());
+        if (pCmCore)
+        {
+            mfxRes = pCmCore->SetCmCopyStatus(false);
+        }
+        if (MFX_ERR_NONE != mfxRes) {
+            return mfxRes;
+        }
+    }
 
     return MFX_ERR_NONE;
 } // mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par);

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core_d3d9.h
 
@@ -72,6 +72,22 @@ public:
         D3D9VideoCORE *m_pD3D9Core;
 
     };
+
+
+    class CMEnabledCoreAdapter : public CMEnabledCoreInterface
+    {
+    public:
+        CMEnabledCoreAdapter(D3D9VideoCORE *pD3D9Core) : m_pD3D9Core(pD3D9Core)
+        {
+        };
+        virtual mfxStatus SetCmCopyStatus(bool enable)
+        {
+            return m_pD3D9Core->SetCmCopyStatus(enable);
+        };
+    protected:
+        D3D9VideoCORE *m_pD3D9Core;
+    };
+
     virtual ~D3D9VideoCORE();
 
     virtual mfxStatus     SetHandle(mfxHandleType type, mfxHDL handle);
@@ -134,6 +150,8 @@ private:
     mfxStatus              GetIntelDataPrivateReport(const GUID guid, DXVA2_ConfigPictureDecode & config);
     void                   ReleaseHandle();
     mfxStatus              OnDeblockingInWinRegistry(mfxU32 codecId);
+    // this function should not be virtual
+    mfxStatus SetCmCopyStatus(bool enable);
 
     HANDLE                                     m_hDirectXHandle; // if m_pDirect3DDeviceManager was used
     std::auto_ptr<UMC::DXVA2Accelerator>       m_pVA;
@@ -158,9 +176,9 @@ private:
     bool m_bCmCopy;
     bool m_bCmCopyAllowed;
 
-    s_ptr<CmCopyWrapper, true> m_pCmCopy;
-public: // FIXME
-    std::auto_ptr<D3D9Adapter>            m_pAdapter;
+    s_ptr<CmCopyWrapper, true>            m_pCmCopy;
+    s_ptr<D3D9Adapter, true>              m_pAdapter;
+    s_ptr<CMEnabledCoreAdapter, true>     m_pCmAdapter;
 };
 
 #endif

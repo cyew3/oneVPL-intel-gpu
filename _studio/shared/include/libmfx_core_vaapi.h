@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core_vaapi.h
 
@@ -61,6 +61,21 @@ public:
         VAAPIVideoCORE *m_pVAAPICore;
     
     };
+
+    class CMEnabledCoreAdapter : public CMEnabledCoreInterface
+    {
+    public:
+        CMEnabledCoreAdapter(VAAPIVideoCORE *pVAAPICore): m_pVAAPICore(pVAAPICore)
+        {
+        };
+        virtual mfxStatus SetCmCopyStatus(bool enable)
+        {
+            return m_pVAAPICore->SetCmCopyStatus(enable);
+        };
+    protected:
+        VAAPIVideoCORE *m_pVAAPICore;
+    };
+
     virtual ~VAAPIVideoCORE();
 
     virtual mfxStatus     SetHandle(mfxHandleType type, mfxHDL handle);
@@ -96,7 +111,7 @@ public:
     mfxStatus              GetVAService(VADisplay *pVADisplay);
 
     // this function should not be virtual
-    void SetCmCopyStatus(bool enable);
+    mfxStatus SetCmCopyStatus(bool enable);
 
 protected:
     VAAPIVideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session = NULL);
@@ -121,9 +136,10 @@ protected:
     bool                                 m_bCmCopyAllowed;
     s_ptr<CmCopyWrapper, true>           m_pCmCopy;
 
-public: // aya: FIXME: private???   
+private:
 
-    std::auto_ptr<VAAPIAdapter>            m_pAdapter;
+    s_ptr<VAAPIAdapter, true>            m_pAdapter;
+    s_ptr<CMEnabledCoreAdapter, true>    m_pCmAdapter;
 };
 
 class PointerProxy

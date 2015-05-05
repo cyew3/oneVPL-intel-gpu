@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core_d3d11.h
 
@@ -71,6 +71,22 @@ class D3D11VideoCORE : public CommonCORE
     protected:
         D3D11VideoCORE *m_pD3D11Core;
     };
+
+    class CMEnabledCoreAdapter : public CMEnabledCoreInterface
+    {
+    public:
+        CMEnabledCoreAdapter(D3D11VideoCORE *pD3D11Core): m_pD3D11Core(pD3D11Core)
+        {
+        };
+        virtual mfxStatus SetCmCopyStatus(bool enable)
+        {
+            return m_pD3D11Core->SetCmCopyStatus(enable);
+        };
+    protected:
+        D3D11VideoCORE *m_pD3D11Core;
+    };
+
+
 public:
 
     virtual ~D3D11VideoCORE();
@@ -130,6 +146,8 @@ private:
     mfxStatus InternalCreateDevice();
     virtual mfxStatus DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
     mfxStatus ProcessRenderTargets(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxBaseWideFrameAllocator* pAlloc);
+    // this function should not be virtual
+    mfxStatus SetCmCopyStatus(bool enable);
     
     bool                                                           m_bUseExtAllocForHWFrames;
     s_ptr<mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator, true> m_pcHWAlloc; 
@@ -156,7 +174,8 @@ private:
     ComPtrCore<ID3D11VideoDecoder>       m_comptr;
     bool m_bCmCopy;
     bool m_bCmCopyAllowed;
-    s_ptr<CmCopyWrapper, true> m_pCmCopy;
+    s_ptr<CmCopyWrapper, true>           m_pCmCopy;
+    s_ptr<CMEnabledCoreAdapter, true>    m_pCmAdapter;
 };
 
 
