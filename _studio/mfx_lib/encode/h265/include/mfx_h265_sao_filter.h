@@ -149,23 +149,15 @@ public:
          int maxDepth,
          int bitDepth,
          int saoOpt,
+         int saoChroma,
          int chromaFormat);
 
      void Close(void);
 
-     template <typename PixType>
-     void EstimateCtuSao(
-         FrameData* origin,
-         FrameData* recon,
-         bool* sliceEnabled,
-         SaoCtuParam* saoParam);
-
      void ReconstructCtuSaoParam(SaoCtuParam& recParam);
 
-private:
     template <typename PixType>
     void GetCtuSaoStatistics(FrameData* orgYuv, FrameData* recYuv);
-
     void GetBestCtuSaoParam(bool* sliceEnabled, SaoCtuParam* codedParam);
 
     void GetMergeList(int ctu, SaoCtuParam* mergeList[2]);
@@ -190,7 +182,6 @@ private:
     }
 
 // SaoState
-public:
     // per stream param
     IppiSize m_frameSize;
     Ipp32s   m_maxCuSize;
@@ -200,6 +191,7 @@ public:
     Ipp32s   m_bitDepth;
     Ipp32s   m_saoMaxOffsetQVal;
     Ipp32s   m_chromaFormat;
+    Ipp32s   m_saoChroma;
     // work state
     MFX_HEVC_PP::SaoCtuStatistics    m_statData[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
     Ipp8u               m_ctxSAO[NUM_SAO_CABACSTATE_MARKERS][NUM_CABAC_CONTEXT];

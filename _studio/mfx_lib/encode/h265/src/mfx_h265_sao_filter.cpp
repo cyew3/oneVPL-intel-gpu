@@ -10,10 +10,11 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
+#include <math.h>
 #include "mfx_h265_sao_filter.h"
 #include "mfx_h265_dispatcher.h"
 #include "mfx_h265_ctb.h"
-#include <math.h>
+#include "mfx_h265_enc.h"
 
 namespace H265Enc {
 
@@ -182,7 +183,8 @@ void SaoEstimator::ReconstructCtuSaoParam(SaoCtuParam& recParam)
     SaoCtuParam* mergeList[2] = {NULL, NULL};
     GetMergeList(m_ctb_addr, mergeList);
 
-    for (int compIdx = 0; compIdx < NUM_USED_SAO_COMPONENTS; compIdx++) {
+    int compCount = m_saoChroma ? 3 : 1;
+    for (int compIdx = 0; compIdx < compCount; compIdx++) {
         SaoOffsetParam& offsetParam = recParam[compIdx];
 
         if ( SAO_MODE_ON == offsetParam.mode_idx ) {
@@ -196,13 +198,6 @@ void SaoEstimator::ReconstructCtuSaoParam(SaoCtuParam& recParam)
 
 }
 
-void SliceDecisionAlgorithm(bool* sliceEnabled, int picTempLayer)
-{
-    //(here could be implemented adaptive SAO)
-    for (int compIdx = 0; compIdx < NUM_USED_SAO_COMPONENTS; compIdx++) {
-        sliceEnabled[compIdx] = true;
-    }
-}
 
 // SAO Offset
 SaoOffsetParam::SaoOffsetParam()
@@ -275,7 +270,7 @@ SaoEstimator::~SaoEstimator()
     Close();
 }
 
-void SaoEstimator::Init(int width, int height, int maxCUWidth, int maxDepth, int bitDepth, int saoOpt, int chromaFormat)
+void SaoEstimator::Init(int width, int height, int maxCUWidth, int maxDepth, int bitDepth, int saoOpt, int saoChroma, int chromaFormat)
 {
     m_frameSize.width = width;
     m_frameSize.height= height;
@@ -285,6 +280,7 @@ void SaoEstimator::Init(int width, int height, int maxCUWidth, int maxDepth, int
     m_bitDepth = bitDepth;
     m_saoMaxOffsetQVal = (1<<(MIN(m_bitDepth,10)-5))-1;
     m_chromaFormat = chromaFormat;
+    m_saoChroma = saoChroma;
 
     m_numCTU_inWidth = (m_frameSize.width  + m_maxCuSize - 1) / m_maxCuSize;
     m_numCTU_inHeight= (m_frameSize.height + m_maxCuSize - 1) / m_maxCuSize;
@@ -295,17 +291,6 @@ void SaoEstimator::Init(int width, int height, int maxCUWidth, int maxDepth, int
 #endif
 }
 
-
-template <typename PixType>
-void SaoEstimator::EstimateCtuSao(  FrameData* origin, FrameData* recon, bool* sliceEnabled, SaoCtuParam* saoParam)
-{
-    GetCtuSaoStatistics<PixType>(origin, recon);
-
-    sliceEnabled[SAO_Y] = sliceEnabled[SAO_Cb] = sliceEnabled[SAO_Cr] = false;
-    int tmpDepth = 0;
-    SliceDecisionAlgorithm(sliceEnabled, tmpDepth); //adaptive SAO disabled now
-    GetBestCtuSaoParam(sliceEnabled, saoParam);
-}
 
 template <typename PixType>
 void SplitPlanes( PixType* in, Ipp32s inPitch, PixType* out1, Ipp32s outPitch1, PixType* out2, Ipp32s outPitch2, Ipp32s width, Ipp32s height)
@@ -341,6 +326,9 @@ void SaoEstimator::GetCtuSaoStatistics(FrameData* origin, FrameData* recon)
     PixType* orgBlk = (PixType*)origin->y;
 
     h265_GetCtuStatistics(compIdx, recBlk, recStride, orgBlk, orgStride, width, height, offset, m_borders, m_numSaoModes, m_statData[compIdx]);
+
+    if (m_saoChroma == 0)
+        return;
 
     const Ipp32s  planePitch = 64;
     const Ipp32s size = 64*64;
@@ -476,20 +464,17 @@ void SaoEstimator::ModeDecision_Base( SaoCtuParam* mergeList[2],  bool *sliceEna
     int shift = 2 * (m_bitDepth - 8);
     Ipp64f minCost = 0.0, cost = 0.0;
     int rate = 0, minRate = 0;
-    Ipp64s dist[NUM_SAO_COMPONENTS], modeDist[NUM_SAO_COMPONENTS];
+    Ipp64s dist[NUM_SAO_COMPONENTS] = {0};
+    Ipp64s modeDist[NUM_SAO_COMPONENTS] = {0};
     SaoOffsetParam testOffset[NUM_SAO_COMPONENTS];
-    int compIdx;
 
-    modeDist[SAO_Y]= modeDist[SAO_Cb] = modeDist[SAO_Cr] = 0;
-
-    bestParam[SAO_Y].mode_idx = SAO_MODE_OFF;
-    bestParam[SAO_Y].saoMaxOffsetQVal = m_saoMaxOffsetQVal;
+    int compIdx = SAO_Y;
+    bestParam[compIdx].mode_idx = SAO_MODE_OFF;
+    bestParam[compIdx].saoMaxOffsetQVal = m_saoMaxOffsetQVal;
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
     CodeSaoCtbParam(m_bsf, bestParam, sliceEnabled, mergeList[SAO_MERGE_LEFT] != NULL, mergeList[SAO_MERGE_ABOVE] != NULL, true);
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_MID], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
-
-    compIdx = SAO_Y;
     bestParam[compIdx].mode_idx = SAO_MODE_OFF;
 
     m_bsf->Reset();
@@ -529,16 +514,13 @@ void SaoEstimator::ModeDecision_Base( SaoCtuParam* mergeList[2],  bool *sliceEna
             }
         }
     }
-
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_MID], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
-    bool isChromaEnabled = (NUM_USED_SAO_COMPONENTS > 1); // ? true : false;
+    bool isChromaEnabled = sliceEnabled[1];
     Ipp64f chromaLambda = m_labmda[SAO_Cb];
-
     if ( isChromaEnabled ) {
         VM_ASSERT(m_labmda[SAO_Cb] == m_labmda[SAO_Cr]);
-        Ipp64f chromaLambda = m_labmda[SAO_Cb];
 
         m_bsf->Reset();
 
@@ -555,7 +537,7 @@ void SaoEstimator::ModeDecision_Base( SaoCtuParam* mergeList[2],  bool *sliceEna
         modeDist[SAO_Cb] = modeDist[SAO_Cr]= 0;
         minCost= chromaLambda*((Ipp64f)minRate);
 
-        for (Ipp32s type_idx = 0; type_idx < NUM_SAO_BASE_TYPES; type_idx++) {
+        for (Ipp32s type_idx = 0; type_idx < m_numSaoModes; type_idx++) {
             for (compIdx = SAO_Cb; compIdx < NUM_SAO_COMPONENTS; compIdx++) {
                 if (!sliceEnabled[compIdx]) {
                     testOffset[compIdx].mode_idx = SAO_MODE_OFF;
@@ -603,7 +585,6 @@ void SaoEstimator::ModeDecision_Base( SaoCtuParam* mergeList[2],  bool *sliceEna
     m_bsf->Reset();
     CodeSaoCtbParam(m_bsf, bestParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
     bestCost += (Ipp64f)GetNumWrittenBits();
-
 }
 
 
@@ -613,6 +594,7 @@ SaoApplier<PixType>::SaoApplier()
     m_ClipTable     = NULL;
     m_ClipTableBase = NULL;
     m_lumaTableBo   = NULL;
+    m_chromaTableBo = NULL;
     m_TmpU          = NULL;
     m_TmpL          = NULL;
     m_TmpU_Chroma   = NULL;
@@ -623,13 +605,17 @@ SaoApplier<PixType>::SaoApplier()
 template <typename PixType>
 void SaoApplier<PixType>::Close()
 {
-    if (m_ClipTableBase) {
-        delete [] m_ClipTableBase;
-        m_ClipTableBase = NULL;
-    }
     if (m_lumaTableBo) {
         delete [] m_lumaTableBo;
         m_lumaTableBo = NULL;
+    }
+    if (m_chromaTableBo) {
+        delete [] m_chromaTableBo;
+        m_chromaTableBo = NULL;
+    }
+    if (m_ClipTableBase) {
+        delete [] m_ClipTableBase;
+        m_ClipTableBase = NULL;
     }
     if (m_TmpU) {
         delete[] m_TmpU;
@@ -774,8 +760,13 @@ void H265CU<PixType>::EstimateCtuSao( H265BsFake *bs, SaoCtuParam* saoParam, Sao
     recon.pitch_luma_pix = this->m_pitchRecLuma;
     recon.pitch_chroma_pix = this->m_pitchRecChroma;
 
-    bool    sliceEnabled[NUM_SAO_COMPONENTS] = {false, false, false};
-    m_saoEst.EstimateCtuSao<PixType>( &origin, &recon, sliceEnabled, saoParam);
+    bool    sliceEnabled[NUM_SAO_COMPONENTS] = {true, true, true};
+    if (m_par->SAOChromaFlag == 0) {
+        sliceEnabled[1] = sliceEnabled[2] = false;
+    }
+
+    m_saoEst.GetCtuSaoStatistics<PixType>(&origin, &recon);
+    m_saoEst.GetBestCtuSaoParam(sliceEnabled, saoParam);
 
     // set slice param
     if ( !this->m_cslice->slice_sao_luma_flag ) {

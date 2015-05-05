@@ -505,7 +505,7 @@ void H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame *frame)
         slice->slice_sao_chroma_flag = false;
     } else {
         slice->slice_sao_luma_flag = true;
-        slice->slice_sao_chroma_flag = true;
+        slice->slice_sao_chroma_flag = m_videoParam.SAOChromaFlag ? true : false;
     }
 #endif
 } 
@@ -903,7 +903,8 @@ mfxStatus H265FrameEncoder::Init()
 
     if (m_videoParam.SAOFlag) {
         m_saoParam.resize(m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs);
-        for (Ipp32s compId = 0; compId < NUM_USED_SAO_COMPONENTS; compId++) {
+        Ipp32s compCount = m_videoParam.SAOChromaFlag ? 3 : 1;
+        for (Ipp32s compId = 0; compId < compCount; compId++) {
             m_saoApplier[compId].Init(m_videoParam.MaxCUSize, m_videoParam.chromaFormatIdc, 0, 
                 compId < 1 ? m_videoParam.bitDepthLuma : m_videoParam.bitDepthChroma,
                 (m_videoParam.PicWidthInCtbs + 1) * (m_videoParam.PicHeightInCtbs + 1));
@@ -931,7 +932,8 @@ void H265FrameEncoder::Close()
 
     if (m_videoParam.SAOFlag) {
         m_saoParam.resize(0);
-        for (Ipp32s compId = 0; compId < NUM_USED_SAO_COMPONENTS; compId++) {
+        Ipp32s compCount = m_videoParam.SAOChromaFlag ? 3 : 1;
+        for (Ipp32s compId = 0; compId < compCount; compId++) {
             m_saoApplier[compId].Close();
         }
     }
@@ -1598,6 +1600,12 @@ mfxStatus H265FrameEncoder::ApplySaoCtu(Ipp32u ctbRow, Ipp32u ctbCol)
         }
     }
     
+
+    if (m_videoParam.SAOChromaFlag == 0)
+        return MFX_ERR_NONE;
+
+
+    //Chroma
     compId = 1;
     {
         SaoApplier<PixType>* sao = (m_videoParam.bitDepthLuma == 8 )

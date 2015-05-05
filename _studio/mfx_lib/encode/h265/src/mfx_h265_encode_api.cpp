@@ -468,6 +468,7 @@ namespace {
             ext->RateControlDepth = 1;
             ext->LowresFactor = 1;
             ext->DeblockBorders = 1;
+            ext->SAOChroma = 1;
         }
 
         if (mfxExtCodingOption2 *ext = GetExtBuffer(*out)) {
@@ -689,6 +690,7 @@ namespace {
             wrnIncompatible = !CheckTriState(optHevc->AdaptiveRefs);
             wrnIncompatible = !CheckTriState(optHevc->FastCoeffCost);
             wrnIncompatible = !CheckTriState(optHevc->DeblockBorders);
+            wrnIncompatible = !CheckTriState(optHevc->SAOChroma);
 
             wrnIncompatible = !CheckSet(optHevc->IntraAngModes, CodecLimits::SUP_INTRA_ANG_MODE_I);
             wrnIncompatible = !CheckSet(optHevc->EnableCm, CodecLimits::SUP_ENABLE_CM);
@@ -1224,6 +1226,8 @@ namespace {
             optHevc.LowresFactor = defaultOptHevc.LowresFactor;
         if (optHevc.DeblockBorders == 0)
             optHevc.DeblockBorders = defaultOptHevc.DeblockBorders;
+        if (optHevc.SAOChroma == 0)
+            optHevc.SAOChroma = defaultOptHevc.SAOChroma;
     }
 
     mfxStatus CheckIoPattern(VideoCORE &core, const mfxVideoParam &param)

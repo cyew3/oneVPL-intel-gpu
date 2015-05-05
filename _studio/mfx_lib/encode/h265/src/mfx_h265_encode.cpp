@@ -150,6 +150,7 @@ namespace {
         intParam.FastCoeffCost = (optHevc.FastCoeffCost == ON);
         intParam.rdoqCGZFlag = (optHevc.RDOQuantCGZ == ON);
         intParam.SAOFlag = (optHevc.SAO == ON);
+        intParam.SAOChromaFlag = (optHevc.SAOChroma == ON);
         intParam.num_threads = mfx.NumThread;
         intParam.num_cand_0[0][2] = (Ipp8u)optHevc.IntraNumCand0_2;
         intParam.num_cand_0[0][3] = (Ipp8u)optHevc.IntraNumCand0_3;
@@ -592,11 +593,11 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
             if (m_videoParam.bitDepthLuma == 8) {
                 ((H265CU<Ipp8u>*)m_cu)[idx].m_saoEst.Init(m_videoParam.Width, m_videoParam.Height,
                     1 << m_videoParam.Log2MaxCUSize, m_videoParam.MaxCUDepth, m_videoParam.bitDepthLuma, 
-                    m_videoParam.saoOpt, m_videoParam.chromaFormatIdc);
+                    m_videoParam.saoOpt, m_videoParam.SAOChromaFlag, m_videoParam.chromaFormatIdc);
             } else {
                 ((H265CU<Ipp16u>*)m_cu)[idx].m_saoEst.Init(m_videoParam.Width, m_videoParam.Height,
                     1 << m_videoParam.Log2MaxCUSize, m_videoParam.MaxCUDepth, m_videoParam.bitDepthLuma,
-                    m_videoParam.saoOpt, m_videoParam.chromaFormatIdc);
+                    m_videoParam.saoOpt, m_videoParam.SAOChromaFlag, m_videoParam.chromaFormatIdc);
             }
         }
     }

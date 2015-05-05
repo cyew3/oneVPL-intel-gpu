@@ -178,9 +178,12 @@ using namespace H265Enc::MfxEnumShortAliases;
     //Filtering
 #ifdef AMT_SAO_MIN
     TU_OPT_ALL  (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, ON);
+    TU_OPT_ALL  (SAOChroma,                     ON,  ON,  ON,  ON,  OFF,  OFF, OFF);
 #else
-    TU_OPT_SW  (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, OFF);
-    TU_OPT_GACC(SAO,                           ON,  ON,  ON,  ON,  ON, OFF, OFF);
+    TU_OPT_SW  (SAO,                           ON,  ON,  ON,  ON,  ON,  ON,  OFF);
+    TU_OPT_SW  (SAOChroma,                     ON,  ON,  ON,  ON,  OFF,  OFF, OFF);
+    TU_OPT_GACC(SAO,                           ON,  ON,  ON,  ON,  ON,  OFF, OFF);
+    TU_OPT_GACC(SAOChroma,                     ON,  ON,  ON,  ON,  OFF,  OFF, OFF);
 #endif
     
 #ifdef AMT_SAO_MIN

@@ -79,8 +79,9 @@ namespace H265Enc {
         Ipp8u  RDOQFlag; // RDO Quantization
         Ipp8u  FastCoeffCost;   // Use estimator
         Ipp8u  rdoqChromaFlag; // RDOQ Chroma
-        Ipp8u  rdoqCGZFlag; // RDOQ Coeff Group Zero
-        Ipp8u  SAOFlag;  // Sample Adaptive Offset
+        Ipp8u  rdoqCGZFlag;  // RDOQ Coeff Group Zero
+        Ipp8u  SAOFlag;      // Sample Adaptive Offset (Luma only)
+        Ipp8u  SAOChromaFlag;// Sample Adaptive Offset for Chroma
         Ipp8u  WPPFlag; // Wavefront
         Ipp8u  fastSkip;
         Ipp8u  fastCbfMode;

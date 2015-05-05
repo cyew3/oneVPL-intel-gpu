@@ -240,8 +240,9 @@ typedef struct {
     mfxU16      RateControlDepth;   // RateControlDepth - 1 = how many analyzed _forward_ frames are required by BRC
     mfxU16      LowresFactor;       // > 0 => lookahead algorithms work with scaled frames
     mfxU16      DeblockBorders;     // tri-state, deblock borders
+    mfxU16      SAOChroma;          // on / off
 
-    mfxU16      reserved[45];       // 256 bytes total
+    mfxU16      reserved[44];       // 256 bytes total
 } mfxExtCodingOptionHEVC;
 
 #if defined (ADVANCED_REF)
