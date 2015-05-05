@@ -39,6 +39,9 @@
     <Filter Include="allocators">
       <UniqueIdentifier>{dcb691f6-20b2-4258-af9b-f9e87197595e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="hw_detect">
+      <UniqueIdentifier>{e704a682-2ac5-44e4-b283-84b827822a8e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\mfx_bitstream_buffer.cpp">
@@ -208,6 +211,9 @@
     </ClCompile>
     <ClCompile Include="src\mfx_bayer_reader.cpp">
       <Filter>readers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mf_hw_platform.cpp">
+      <Filter>hw_detect</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -699,6 +705,9 @@
     </ClInclude>
     <ClInclude Include="include\mfx_pcp.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mf_hw_platform.h">
+      <Filter>hw_detect</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

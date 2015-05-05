@@ -442,6 +442,7 @@
     <ClCompile Include="src\mfx_pipeline_utils.cpp" />
     <ClCompile Include="src\mfx_sysmem_allocator.cpp" />
     <ClCompile Include="src\mfx_timeout.cpp" />
+    <ClCompile Include="src\mf_hw_platform.cpp" />
     <ClCompile Include="src\trace_utils.cpp" />
     <ClCompile Include="src\mfx_burst_render.cpp" />
     <ClCompile Include="src\mfx_d3d11_device.cpp" />
@@ -553,6 +554,7 @@
     <ClInclude Include="include\mfx_virtualvpp_adapter.h" />
     <ClInclude Include="include\mfx_vpp.h" />
     <ClInclude Include="include\mfx_vpp_hw.h" />
+    <ClInclude Include="include\mf_hw_platform.h" />
     <ClInclude Include="include\trace_utils.h" />
     <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxdefs.h" />
     <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxjpeg.h" />

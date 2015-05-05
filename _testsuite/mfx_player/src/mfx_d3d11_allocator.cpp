@@ -22,6 +22,8 @@ Copyright(c) 2011 - 2012 Intel Corporation. All Rights Reserved.
 #include <functional>
 #include <iterator>
 
+#include "mf_hw_platform.h"
+
 #define D3DFMT_NV12 (DXGI_FORMAT)MAKEFOURCC('N','V','1','2')
 #define D3DFMT_YV12 (DXGI_FORMAT)MAKEFOURCC('Y','V','1','2')
 #define DXGI_FORMAT_BGGR MAKEFOURCC('I','R','W','0')
@@ -471,7 +473,15 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
         desc.ByteWidth           = request->Info.Width * request->Info.Height;
         desc.Usage               = D3D11_USAGE_STAGING;
-        desc.BindFlags           = 0;
+        // for Sofia P8 (h264 bitstream buf) must be allocated with D3D11_BIND_DECODER flag
+        if (IS_PLATFORM_SOFIA(HWPlatform::GetProductFamily()))
+        {
+            desc.BindFlags = D3D11_BIND_DECODER;
+        }
+        else
+        {
+            desc.BindFlags = 0;
+        }
         desc.CPUAccessFlags      = D3D11_CPU_ACCESS_READ;
         desc.MiscFlags           = 0;
         desc.StructureByteStride = 0;
