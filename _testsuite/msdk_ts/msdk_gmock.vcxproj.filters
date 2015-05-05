@@ -379,5 +379,8 @@
     <ClCompile Include="src\gmock\test_suites\avce_b_pyramid.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_start_new_sequence.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
