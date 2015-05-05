@@ -16,7 +16,7 @@ void check_eq(void* base, Field field, mfxU64 expected)
 
     if(expected != real)
     {
-        g_tsLog << "FAILED: expected " << field.name << "(" << real << ") == " << expected << "\n";
+        g_tsLog << "ERROR: FAILED: expected " << field.name << "(" << real << ") == " << expected << "\n";
         ADD_FAILURE();
     }
 }
@@ -28,7 +28,7 @@ void check_ne(void* base, Field field, mfxU64 expected)
 
     if(expected == real)
     {
-        g_tsLog << "FAILED: expected " << field.name << "(" << real << ") != " << expected << "\n";
+        g_tsLog << "ERROR: FAILED: expected " << field.name << "(" << real << ") != " << expected << "\n";
         ADD_FAILURE();
     }
 }
