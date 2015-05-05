@@ -134,6 +134,12 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
     return TRUE;
 }
 
+// external define from Dispatcher compiled with/MFX_DISPATCHER_EXPOSED_PREFIX
+extern "C"
+{
+    mfxStatus MFX_CDECL disp_MFXInitEx(mfxInitParam par, mfxSession *session);
+}
+
 mfxStatus TracerInit (mfxInitParam par, mfxSession *session)
 {
     DumpContext context;
@@ -161,7 +167,7 @@ mfxStatus TracerInit (mfxInitParam par, mfxSession *session)
         mfxStatus sts;
         msdk_analyzer_sink sink;
         is_loaded = true;
-        sts = _MFXInitEx(par, session);
+        sts = disp_MFXInitEx(par, session);
         if (sts != MFX_ERR_NONE)
         {
             Log::WriteLog(context.dump("ver", par.Version));

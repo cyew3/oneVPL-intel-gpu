@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2015 Intel Corporation. All Rights Reserved.
 
 File Name: main.cpp
 
@@ -28,8 +28,8 @@ File Name: main.cpp
 
 
 //external exposes
-extern mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfxSession *session);
-extern mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXClose)(mfxSession session);
+extern mfxStatus MFXInit(mfxIMPL impl, mfxVersion *pVer, mfxSession *session);
+extern mfxStatus MFXClose(mfxSession session);
 
 
 static HMODULE module;
@@ -179,7 +179,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *pVer, mfxSession *session) {
         msdk_analyzer_sink sink;
 
         //library will be loaded using dispatcher
-        sts = DISPATCHER_EXPOSED_PREFIX(MFXInit)(impl, pVer, &as->session);
+        sts = MFXInit(impl, pVer, &as->session);
 
         _tcscpy_s(gc.sdk_dll, sizeof(gc.sdk_dll) / sizeof(gc.sdk_dll[0]), sink.GetPath().c_str());
 
@@ -268,7 +268,7 @@ mfxStatus MFXClose(mfxSession session) {
 
     if (gc.use_dispatcher)
     {
-        sts = DISPATCHER_EXPOSED_PREFIX(MFXClose)(as->session);
+        sts = MFXClose(as->session);
     }else
     {
         mfxStatus (*pMFXClose)(mfxSession);

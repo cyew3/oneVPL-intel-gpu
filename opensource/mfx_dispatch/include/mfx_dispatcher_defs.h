@@ -83,10 +83,3 @@ inline std::wstring getWideString(const char * string)
 typedef void * mfxModuleHandle;
 
 typedef void (MFX_CDECL * mfxFunctionPointer)(void);
-
-
-#if !defined (MFX_DISPATCHER_EXPOSED_PREFIX)
-#define DISPATCHER_EXPOSED_PREFIX(fnc) fnc 
-#else
-#define DISPATCHER_EXPOSED_PREFIX(fnc) _##fnc 
-#endif

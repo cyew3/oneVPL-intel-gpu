@@ -279,7 +279,7 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
         }
         else
         {
-            mfxRes = DISPATCHER_EXPOSED_PREFIX(MFXQueryVersion)((mfxSession) this, &actualApiVersion);
+            mfxRes = MFXQueryVersion((mfxSession) this, &actualApiVersion);
             
             if (MFX_ERR_NONE != mfxRes)
             {

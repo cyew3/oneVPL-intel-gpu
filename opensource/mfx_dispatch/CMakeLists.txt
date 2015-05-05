@@ -95,11 +95,13 @@ endfunction( )
 
 make_static_library( mfx )
 
+set( defs "-DMFX_DISPATCHER_EXPOSED_PREFIX" )
+make_static_library( dispatch_shared )
+
 list(APPEND sources.plus
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_dispatcher_log.cpp
   )
 
 set( defs "-DMFX_DISPATCHER_LOG -DDXVA2DEVICE_LOG" )
-make_static_library( dispatch_trace  )
-
+make_static_library( dispatch_trace )
 
