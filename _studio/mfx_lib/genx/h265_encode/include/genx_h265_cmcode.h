@@ -15,9 +15,9 @@
 #pragma warning(disable: 4018)
 #pragma warning(disable: 4189)
 #pragma warning(disable: 4505)
-#include <cm.h>
-#include <genx_vme.h>
-#include <cmtl.h>
+#include <cm/cm.h>
+#include <cm/genx_vme.h>
+#include <cm/cmtl.h>
 #include "../include/utility_genx.h"
 
 using namespace cmut;

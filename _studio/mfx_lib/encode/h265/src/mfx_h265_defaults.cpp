@@ -104,6 +104,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     tab_##mode##_RateControlDepth[x],\
     tab_##mode##_LowresFactor[x],\
     tab_##mode##_DeblockBorders[x],\
+    tab_##mode##_SAOChroma[x],\
     }
 
     // Extended bit depth

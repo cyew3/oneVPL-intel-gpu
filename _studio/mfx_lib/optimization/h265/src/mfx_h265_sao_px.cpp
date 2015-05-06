@@ -783,7 +783,23 @@ namespace MFX_HEVC_PP
         }
 
     } // void GetCtuStatistics_Internal(...)
+
+
+    template <class T>
+    void H265_FASTCALL MAKE_NAME(h265_SplitChromaCtb)(const T *nv12, Ipp32s pitchNv12, T *u, Ipp32s pitchU, T *v, Ipp32s pitchV, Ipp32s width, Ipp32s height)
+    {
+        for (Ipp32s y = 0; y < height; y++, nv12 += pitchNv12, u += pitchU, v += pitchV) {
+            for (Ipp32s x = 0; x < width; x++) {
+                u[x] = nv12[2 * x];
+                v[x] = nv12[2 * x + 1];
+            }
+        }
+    }
+    template void H265_FASTCALL MAKE_NAME(h265_SplitChromaCtb)<Ipp8u>(const Ipp8u *nv12, Ipp32s pitchNv12, Ipp8u *u, Ipp32s pitchU, Ipp8u *v, Ipp32s pitchV, Ipp32s width, Ipp32s height);
+    template void H265_FASTCALL MAKE_NAME(h265_SplitChromaCtb)<Ipp16u>(const Ipp16u *nv12, Ipp32s pitchNv12, Ipp16u *u, Ipp32s pitchU, Ipp16u *v, Ipp32s pitchV, Ipp32s width, Ipp32s height);
+
 }; // namespace MFX_HEVC_PP
+
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) 
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)

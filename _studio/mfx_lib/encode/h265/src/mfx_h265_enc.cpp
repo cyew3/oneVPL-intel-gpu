@@ -798,9 +798,9 @@ H265FrameEncoder::H265FrameEncoder(H265Encoder& topEnc)
     , m_videoParam(topEnc.m_videoParam)
     , m_bsf(topEnc.m_bsf)
     , data_temp(topEnc.data_temp)
-    //, m_coeffWork(topEnc.m_coeffWork)
     , memBuf(NULL)
     , m_bs(NULL)
+    , m_saoParam(NULL)
     , m_context_array_wpp_enc(NULL)
     , m_context_array_wpp(NULL)
     , m_costStat(NULL)
@@ -834,38 +834,31 @@ mfxStatus H265FrameEncoder::Init()
         streamBufSize = (m_videoParam.Width * (m_videoParam.WPPFlag ? m_videoParam.MaxCUSize :
             ((m_videoParam.PicHeightInCtbs / m_videoParam.NumSlices + 1) * m_videoParam.MaxCUSize))) * bitPerPixel / 8 + DATA_ALIGN;
 
+
     Ipp32u memSize = 0;
     // m_bs
-    memSize += sizeof(H265BsReal)*(m_videoParam.num_bs_subsets + 1) + DATA_ALIGN; 
-    // m_bsf
-    //memSize += sizeof(H265BsFake)*m_videoParam.num_thread_structs + DATA_ALIGN;
+    memSize += sizeof(H265BsReal)*(m_videoParam.num_bs_subsets + 1) + DATA_ALIGN;    
     memSize += streamBufSize*m_videoParam.num_bs_subsets + streamBufSizeMain; // data of m_bs* and m_bsFake*
     memSize += sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT * m_videoParam.PicHeightInCtbs * 2; // cabac
-    // data_temp
-    //memSize += sizeof(H265CUData) * data_temp_size * m_videoParam.num_thread_structs + DATA_ALIGN;//for ModeDecision try different cu 
-
-    memSize += 0;//sizeofH265CU * m_videoParam.num_thread_structs + DATA_ALIGN;//cu
     // m_costStat
     memSize += numCtbs * sizeof(costStat) + DATA_ALIGN;
-
-    // coeffs
+    // coeffWork
     memSize += sizeof(CoeffsType) * (numCtbs << (m_videoParam.Log2MaxCUSize << 1)) * 6 / (2 + m_videoParam.chromaShift) + DATA_ALIGN;
+    // sao
+    if (m_videoParam.SAOFlag)
+        memSize += sizeof(SaoCtuParam) * m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs + DATA_ALIGN;
 
-    // end ------------------------------------------------
 
-    // [2] allocation
+    // allocation
     memBuf = (Ipp8u *)H265_Malloc(memSize);
     MFX_CHECK_STS_ALLOC(memBuf);
 
-    // [3] memory setting/mapping
-    Ipp8u *ptr = memBuf;
 
+    // memory setting/mapping
+    Ipp8u *ptr = memBuf;
     // m_bs
     m_bs = UMC::align_pointer<H265BsReal*>(ptr, DATA_ALIGN);
     ptr += sizeof(H265BsReal)*(m_videoParam.num_bs_subsets + 1) + DATA_ALIGN;
-    //// m_bsf
-    //m_bsf = UMC::align_pointer<H265BsFake*>(ptr, DATA_ALIGN);
-    //ptr += sizeof(H265BsFake)*(m_videoParam.num_thread_structs) + DATA_ALIGN;
 
     // m_bs data
     for (Ipp32u i = 0; i < m_videoParam.num_bs_subsets+1; i++) {
@@ -881,30 +874,25 @@ mfxStatus H265FrameEncoder::Init()
         m_bsf[i].Reset();
     }
 
-    // m_context_array_wpp
     m_context_array_wpp = ptr;
     ptr += sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT * m_videoParam.PicHeightInCtbs;
 
-    // m_context_array_wpp_sao
     m_context_array_wpp_enc = ptr;
     ptr += sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT * m_videoParam.PicHeightInCtbs;
 
-    // data_temp
-    //data_temp = UMC::align_pointer<H265CUData*>(ptr, DATA_ALIGN);
-    //ptr += sizeof(H265CUData) * data_temp_size * m_videoParam.num_thread_structs + DATA_ALIGN;
-
-    // m_costStat
     m_costStat = (costStat *)ptr;
     ptr += numCtbs * sizeof(costStat);
 
     m_coeffWork = UMC::align_pointer<CoeffsType*>(ptr, DATA_ALIGN);
     //ptr += sizeof(CoeffsType) * (numCtbs << (m_videoParam.Log2MaxCUSize << 1)) * 6 / (2 + m_videoParam.chromaShift) + DATA_ALIGN;
-    // ----------------------------------------------------
-  
-    //ippsZero_8u((Ipp8u*)data_temp, sizeof(H265CUData) * data_temp_size * m_videoParam.num_thread_structs);
+    
+    if (m_videoParam.SAOFlag) {
+        ptr += sizeof(CoeffsType) * (numCtbs << (m_videoParam.Log2MaxCUSize << 1)) * 6 / (2 + m_videoParam.chromaShift) + DATA_ALIGN;
+        m_saoParam = (SaoCtuParam*)ptr;
+    }
+
 
     if (m_videoParam.SAOFlag) {
-        m_saoParam.resize(m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs);
         Ipp32s compCount = m_videoParam.SAOChromaFlag ? 3 : 1;
         for (Ipp32s compId = 0; compId < compCount; compId++) {
             m_saoApplier[compId].Init(m_videoParam.MaxCUSize, m_videoParam.chromaFormatIdc, 0, 
@@ -933,7 +921,6 @@ void H265FrameEncoder::Close()
 {
 
     if (m_videoParam.SAOFlag) {
-        m_saoParam.resize(0);
         Ipp32s compCount = m_videoParam.SAOChromaFlag ? 3 : 1;
         for (Ipp32s compId = 0; compId < compCount; compId++) {
             m_saoApplier[compId].Close();
@@ -1944,7 +1931,9 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
         
         if (doSao) {
             m_bsf[bsf_id].CtxRestore(m_bs[bs_id].m_base.context_array);
-            EstimateCtuSao<PixType>(ithread, bs_id, bsf_id, ctb_addr, curr_slice_id);
+            // here should be slice lambda always
+            cu_ithread->m_rdLambda = m_frame->m_slices[curr_slice_id].rd_lambda_slice;
+            cu_ithread->EstimateSao(&m_bs[bs_id], m_saoParam);
         }
         
 #ifdef DEBUG_CABAC
@@ -2007,53 +1996,6 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
     return MFX_TASK_DONE;
 }
 
-
-template <typename PixType>
-void H265FrameEncoder::EstimateCtuSao(Ipp32s ithread, Ipp32s bs_id, Ipp32s bsf_id, Ipp32u ctb_addr, Ipp8u curr_slice)
-{
-    H265CU<PixType> *cu_ithread = (H265CU<PixType> *)m_topEnc.m_cu + ithread;
-
-#if defined(MFX_HEVC_SAO_PREDEBLOCKED_ENABLED)
-    Ipp32s left_addr  = cu[ithread].left_addr;
-    Ipp32s above_addr = cu[ithread].above_addr;
-    MFX_HEVC_PP::CTBBorders borders = {0};
-
-    borders.m_left = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
-    borders.m_top  = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
-
-    cu[ithread].GetStatisticsCtuSaoPredeblocked( borders );
-#endif
-    Ipp32s left_addr = cu_ithread->m_leftAddr;
-    Ipp32s above_addr = cu_ithread->m_aboveAddr;
-
-    MFX_HEVC_PP::CTBBorders borders = {0};
-
-//   workaround (better to rewrite optimized SAO estimate functions to use tmpU and tmpL)
-    borders.m_left  = 0;//(-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ] && cu[ithread].m_leftSameTile) ? 1 : m_videoParam.deblockBordersFlag;
-    borders.m_top = 0;//(-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ] && cu[ithread].m_aboveSameTile) ? 1 : m_videoParam.deblockBordersFlag;
-
-    // here should be slice lambda always
-    cu_ithread->m_rdLambda = m_frame->m_slices[curr_slice].rd_lambda_slice;
-
-    cu_ithread->EstimateCtuSao(&m_bsf[bsf_id], &m_saoParam[ctb_addr], &m_saoParam[0], borders, m_videoParam.m_slice_ids);
-
-    borders.m_left = (-1 == left_addr)  ? 0 : (m_videoParam.m_slice_ids[ctb_addr] == m_videoParam.m_slice_ids[left_addr] && cu_ithread->m_leftSameTile) ? 1 : 0;
-    borders.m_top  = (-1 == above_addr) ? 0 : (m_videoParam.m_slice_ids[ctb_addr] == m_videoParam.m_slice_ids[above_addr] && cu_ithread->m_aboveSameTile) ? 1 : 0;
-
-    bool leftMergeAvail  = borders.m_left > 0 ? true : false;
-    bool aboveMergeAvail = borders.m_top  > 0 ? true : false;
-
-    cu_ithread->EncodeSao(&m_bs[bs_id], 0, 0, 0, m_saoParam[ctb_addr], leftMergeAvail, aboveMergeAvail);
-    cu_ithread->m_saoEst.ReconstructCtuSaoParam(m_saoParam[ctb_addr]);
-}
-
-
-//template <typename PixType>
-//void H265FrameEncoder::PadOneReconCtu(Ipp32u ctb_row, Ipp32u ctb_col)
-//{
-//
-//    ::PadOneReconCtu(m_frame, ctb_row, ctb_col, m_videoParam.MaxCUSize, m_videoParam.PicHeightInCtbs, m_videoParam.PicWidthInCtbs);
-//}
 
 //inline 
 void H265Enc::AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstream)

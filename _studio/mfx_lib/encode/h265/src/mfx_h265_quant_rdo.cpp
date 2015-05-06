@@ -968,7 +968,7 @@ void RDOQuant<PixType>::DoAlgorithm(
         Ipp32s qp_rem = h265_qp_rem[QP];
         Ipp32s qp6 = h265_qp6[QP];
         Ipp32s scale = h265_quant_table_inv[qp_rem] * h265_quant_table_inv[qp_rem] * (1<<(qp6<<1));
-        Ipp64s rd_factor = (Ipp64s) (scale / m_lambda / 16 / (1<<DISTORTION_PRECISION_ADJUSTMENT(2*(m_bitDepth-8))) + 0.5);
+        Ipp64s rd_factor = (Ipp64s) (scale / m_lambda / 16 / (1<<(2*(m_bitDepth-8))) + 0.5);
         Ipp32s lastCG = -1;
 #ifdef AMT_SPEEDUP_RDOQ
         const Ipp32s last_scan_set = last_nz_subsetp1;

@@ -32,4 +32,6 @@ enum { PASSED, FAILED };
 const mfxI32 WIDTH  = 1920;
 const mfxI32 HEIGHT = 1080;
 const mfxI8 YUV_NAME[] = "C:/yuv/1080p/basketball_drive_1920x1080p_501.yuv";
+//const mfxI8 YUV_NAME[] = "C:/yuv/JCTVC-G1200/1080p/Kimono1_1920x1080p_240_24.yuv";  //Kimono is used to catch failure in TestRefineMeP32x32
+//const mfxI8 YUV_NAME[] = "C:/yuv/1080p/BasketballDrive_1920x1080p_500_50.yuv";
 

@@ -1518,7 +1518,7 @@ void CodeSaoCtbParam(
 
     if(!isLeftMerge && !isAboveMerge) //not merge mode
     {
-        for(int compIdx=0; compIdx < NUM_USED_SAO_COMPONENTS; compIdx++)
+        for(int compIdx=0; compIdx < NUM_SAO_COMPONENTS; compIdx++)
         {
             CodeSaoCtbOffsetParam(bs, compIdx, saoBlkParam[compIdx], sliceEnabled[compIdx]);
         }

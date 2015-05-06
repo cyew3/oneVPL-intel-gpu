@@ -320,6 +320,9 @@ namespace MFX_HEVC_PP
     template <class T> void H265_FASTCALL h265_DiffNv12_px  (const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
     template <class T> void H265_FASTCALL h265_DiffNv12_avx2(const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
 
+    template <class T> void H265_FASTCALL h265_SplitChromaCtb_px  (const T *nv12, Ipp32s pitchNv12, T *u, Ipp32s pitchU, T *v, Ipp32s pitchV, Ipp32s width, Ipp32s height);
+    template <class T> void H265_FASTCALL h265_SplitChromaCtb_avx2(const T *nv12, Ipp32s pitchNv12, T *u, Ipp32s pitchU, T *v, Ipp32s pitchV, Ipp32s width, Ipp32s height);
+
     // SATD
     Ipp32s H265_FASTCALL h265_SATD_4x4_8u_px  (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);
     Ipp32s H265_FASTCALL h265_SATD_4x4_8u_sse (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep);

@@ -10,6 +10,7 @@
 #undef min
 #undef max
 
+//#define PRINT_TICKS
 
 namespace utils {
 
@@ -349,8 +350,8 @@ TEST(optimization, SSE_avx2) {
 #undef PRINT_TICKS
 #endif // PRINT_TICKS
 
-    EXPECT_LE(utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp8u>, src1.get(), pitch1, src2.get(), pitch2, 16, 16),
-              utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp8u>,   src1.get(), pitch1, src2.get(), pitch2, 16, 16));
+    //EXPECT_LE(utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp8u>, src1.get(), pitch1, src2.get(), pitch2, 16, 16),
+    //          utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp8u>,   src1.get(), pitch1, src2.get(), pitch2, 16, 16));
 
     for (auto wh: dims) {
         std::ostringstream buf;
@@ -428,8 +429,8 @@ TEST(optimization, DiffNv12_avx2) {
         SCOPED_TRACE(buf.str().c_str());
         MFX_HEVC_PP::h265_DiffNv12_avx2(src.get(), pitchSrc, pred.get(), pitchPred, diff1Tst.get(), wh[0], diff2Tst.get(), wh[0], wh[0], wh[1]);
         MFX_HEVC_PP::h265_DiffNv12_px  (src.get(), pitchSrc, pred.get(), pitchPred, diff1Ref.get(), wh[0], diff2Ref.get(), wh[0], wh[0], wh[1]);
-        EXPECT_EQ(0, memcmp(diff1Tst.get(), diff1Ref.get(), wh[0] * wh[1]));
-        EXPECT_EQ(0, memcmp(diff2Tst.get(), diff2Ref.get(), wh[0] * wh[1]));
+        EXPECT_EQ(0, memcmp(diff1Tst.get(), diff1Ref.get(), sizeof(diff1Tst.get()[0]) * wh[0] * wh[1]));
+        EXPECT_EQ(0, memcmp(diff2Tst.get(), diff2Ref.get(), sizeof(diff2Tst.get()[0]) * wh[0] * wh[1]));
     }
 
     for (auto wh: dims) {
@@ -438,7 +439,69 @@ TEST(optimization, DiffNv12_avx2) {
         SCOPED_TRACE(buf.str().c_str());
         MFX_HEVC_PP::h265_DiffNv12_avx2(src_10b.get(), pitchSrc, pred_10b.get(), pitchPred, diff1Tst.get(), wh[0], diff2Tst.get(), wh[0], wh[0], wh[1]);
         MFX_HEVC_PP::h265_DiffNv12_px  (src_10b.get(), pitchSrc, pred_10b.get(), pitchPred, diff1Ref.get(), wh[0], diff2Ref.get(), wh[0], wh[0], wh[1]);
-        EXPECT_EQ(0, memcmp(diff1Tst.get(), diff1Ref.get(), wh[0] * wh[1]));
-        EXPECT_EQ(0, memcmp(diff2Tst.get(), diff2Ref.get(), wh[0] * wh[1]));
+        EXPECT_EQ(0, memcmp(diff1Tst.get(), diff1Ref.get(), sizeof(diff1Tst.get()[0]) * wh[0] * wh[1]));
+        EXPECT_EQ(0, memcmp(diff2Tst.get(), diff2Ref.get(), sizeof(diff2Tst.get()[0]) * wh[0] * wh[1]));
+    }
+}
+
+
+TEST(optimization, SplitChromaCtb_avx2) {
+    Ipp32s pitchSrc  = 256;
+
+    auto nv12 = utils::MakeAlignedPtr<unsigned char>(pitchSrc  * 64, utils::AlignAvx2);
+    auto uTst = utils::MakeAlignedPtr<unsigned char>(64 * 64, utils::AlignAvx2);
+    auto vTst = utils::MakeAlignedPtr<unsigned char>(64 * 64, utils::AlignAvx2);
+    auto uRef = utils::MakeAlignedPtr<unsigned char>(64 * 64, utils::AlignAvx2);
+    auto vRef = utils::MakeAlignedPtr<unsigned char>(64 * 64, utils::AlignAvx2);
+
+    auto nv12_10b = utils::MakeAlignedPtr<unsigned short>(pitchSrc  * 64, utils::AlignAvx2);
+    auto uTst_10b = utils::MakeAlignedPtr<unsigned short>(64 * 64, utils::AlignAvx2);
+    auto vTst_10b = utils::MakeAlignedPtr<unsigned short>(64 * 64, utils::AlignAvx2);
+    auto uRef_10b = utils::MakeAlignedPtr<unsigned short>(64 * 64, utils::AlignAvx2);
+    auto vRef_10b = utils::MakeAlignedPtr<unsigned short>(64 * 64, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+    utils::InitRandomBlock(rand, nv12.get(), pitchSrc, 128, 64, 0, 255);
+    utils::InitRandomBlock(rand, nv12_10b.get(), pitchSrc, 128, 64, 0, 1023);
+
+    Ipp32s dims[][2] = {
+        {16, 16}, {16, 32},
+        {32, 32}, {32, 64},
+        {64, 64}
+    };
+
+//#define PRINT_TICKS
+//#undef PRINT_TICKS
+#ifdef PRINT_TICKS
+    for (auto wh: dims) {
+        Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_avx2<Ipp8u>, nv12.get(), pitchSrc, uTst.get(), wh[0], vTst.get(), wh[0], wh[0], wh[1]);
+        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_px<Ipp8u>,   nv12.get(), pitchSrc, uRef.get(), wh[0], vRef.get(), wh[0], wh[0], wh[1]);
+        printf("%2dx%2d  8bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+
+        ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_avx2<Ipp16u>, nv12_10b.get(), pitchSrc, uTst_10b.get(), wh[0], vTst_10b.get(), wh[0], wh[0], wh[1]);
+        ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_px<Ipp16u>,   nv12_10b.get(), pitchSrc, uRef_10b.get(), wh[0], vRef_10b.get(), wh[0], wh[0], wh[1]);
+        printf("%2dx%2d 10bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    }
+#endif //PRINT_TICKS
+
+    for (auto wh: dims) {
+        std::ostringstream buf;
+        buf << "Testing " << wh[0] << "x" << wh[1] << " 8bit";
+        SCOPED_TRACE(buf.str().c_str());
+        MFX_HEVC_PP::h265_SplitChromaCtb_avx2(nv12.get(), pitchSrc, uTst.get(), wh[0], vTst.get(), wh[0], wh[0], wh[1]);
+        MFX_HEVC_PP::h265_SplitChromaCtb_px  (nv12.get(), pitchSrc, uRef.get(), wh[0], vRef.get(), wh[0], wh[0], wh[1]);
+        EXPECT_EQ(0, memcmp(uTst.get(), uRef.get(), sizeof(*uTst.get()) * wh[0] * wh[1]));
+        EXPECT_EQ(0, memcmp(vTst.get(), vRef.get(), sizeof(*vTst.get()) * wh[0] * wh[1]));
+    }
+
+    for (auto wh: dims) {
+        std::ostringstream buf;
+        buf << "Testing " << wh[0] << "x" << wh[1] << " 10bit";
+        SCOPED_TRACE(buf.str().c_str());
+        MFX_HEVC_PP::h265_SplitChromaCtb_avx2(nv12_10b.get(), pitchSrc, uTst_10b.get(), wh[0], vTst_10b.get(), wh[0], wh[0], wh[1]);
+        MFX_HEVC_PP::h265_SplitChromaCtb_px  (nv12_10b.get(), pitchSrc, uRef_10b.get(), wh[0], vRef_10b.get(), wh[0], wh[0], wh[1]);
+        EXPECT_EQ(0, memcmp(uTst_10b.get(), uRef_10b.get(), sizeof(*uTst_10b.get()) * wh[0] * wh[1]));
+        EXPECT_EQ(0, memcmp(vTst_10b.get(), vRef_10b.get(), sizeof(*vTst_10b.get()) * wh[0] * wh[1]));
     }
 }

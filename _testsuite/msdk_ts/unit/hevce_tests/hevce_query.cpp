@@ -270,6 +270,7 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(1, output.extCodingOptionHevc.RateControlDepth);
     EXPECT_EQ(1, output.extCodingOptionHevc.LowresFactor);
     EXPECT_EQ(1, output.extCodingOptionHevc.DeblockBorders);
+    EXPECT_EQ(1, output.extCodingOptionHevc.SAOChroma);
     // check if the rest of ExtCodingOptionHevc is zeroed
     EXPECT_EQ(true, IsZero(output.extCodingOptionHevc.reserved));
     EXPECT_EQ(41 * sizeof(mfxU16), sizeof(output.extCodingOptionHevc.reserved));
@@ -649,6 +650,7 @@ TEST_F(QueryTest, Mode2_Single) {
         TestOneFieldOk(input.extCodingOptionHevc.AdaptiveRefs, output.extCodingOptionHevc.AdaptiveRefs, supported);
         TestOneFieldOk(input.extCodingOptionHevc.FastCoeffCost, output.extCodingOptionHevc.FastCoeffCost, supported);
         TestOneFieldOk(input.extCodingOptionHevc.DeblockBorders, output.extCodingOptionHevc.DeblockBorders, supported);
+        TestOneFieldOk(input.extCodingOptionHevc.SAOChroma, output.extCodingOptionHevc.SAOChroma, supported);
         const Ipp16u unsupported[] = {1, 2, MFX_CODINGOPTION_ON|MFX_CODINGOPTION_OFF, 0xff, 0xffff};
         TestOneFieldErr(input.extCodingOptionHevc.AnalyzeChroma, output.extCodingOptionHevc.AnalyzeChroma, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
         TestOneFieldErr(input.extCodingOptionHevc.SignBitHiding, output.extCodingOptionHevc.SignBitHiding, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
@@ -675,6 +677,7 @@ TEST_F(QueryTest, Mode2_Single) {
         TestOneFieldErr(input.extCodingOptionHevc.AdaptiveRefs, output.extCodingOptionHevc.AdaptiveRefs, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
         TestOneFieldErr(input.extCodingOptionHevc.FastCoeffCost, output.extCodingOptionHevc.FastCoeffCost, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
         TestOneFieldErr(input.extCodingOptionHevc.DeblockBorders, output.extCodingOptionHevc.DeblockBorders, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
+        TestOneFieldErr(input.extCodingOptionHevc.SAOChroma, output.extCodingOptionHevc.SAOChroma, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
     { SCOPED_TRACE("Test SplitThresholdStrengthCUIntra, SplitThresholdStrengthTUIntra, SplitThresholdStrengthCUInter");
         const Ipp16u supported[] = {1, 2, 3};

@@ -256,9 +256,6 @@ namespace H265Enc {
 
         template <typename PixType>
         mfxStatus PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u ctb_row, Ipp32u ctb_col);
-
-        template <typename PixType>
-        void EstimateCtuSao(Ipp32s ithread, Ipp32s bs_id, Ipp32s bsf_id, Ipp32u ctb_addr, Ipp8u curr_slice);
     
         template <typename PixType>
         mfxStatus ApplySaoCtu(Ipp32u ctbRow, Ipp32u ctbCol);
@@ -278,7 +275,7 @@ namespace H265Enc {
         // perFrame
         Ipp8u *memBuf;// start ptr of frame encoder internal memory
         H265BsReal* m_bs;
-        std::vector<SaoCtuParam> m_saoParam;
+        SaoCtuParam* m_saoParam;
         CABAC_CONTEXT_H265 *m_context_array_wpp_enc;
         CABAC_CONTEXT_H265 *m_context_array_wpp;
         costStat *m_costStat;
@@ -290,7 +287,7 @@ namespace H265Enc {
         Ipp32u data_temp_size;
         Ipp32s m_numTasksPerCu;
 
-        DispatchSaoApplyFilter m_saoApplier[NUM_USED_SAO_COMPONENTS];
+        DispatchSaoApplyFilter m_saoApplier[NUM_SAO_COMPONENTS];
     };
 
     Ipp8s GetConstQp(Frame const & frame, H265VideoParam const & param);

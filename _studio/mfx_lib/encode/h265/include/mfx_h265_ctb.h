@@ -611,11 +611,8 @@ public:
                          Ipp32s curPixelRow, Ipp32s crossSliceBoundaryFlag,
                          Ipp32s crossTileBoundaryFlag, Ipp32s tcOffset, Ipp32s betaOffset,
                          Ipp32s dir);
-
-    void EstimateCtuSao(H265BsFake *bs, SaoCtuParam *saoParam, SaoCtuParam *saoParam_TotalFrame,
-                        const MFX_HEVC_PP::CTBBorders &borders, const Ipp16u *slice_ids);
-
-    void GetStatisticsCtuSaoPredeblocked(const MFX_HEVC_PP::CTBBorders &borders);
+            
+    void EstimateSao(H265BsReal* bs, SaoCtuParam* saoParam);
 
     void FillSubPart(Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trIdx, Ipp8u partSize, Ipp8u lumaDir,
                      Ipp8u qp);

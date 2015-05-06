@@ -18,6 +18,7 @@
 #if defined (MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 #include <immintrin.h>
+#include <assert.h>
 
 namespace MFX_HEVC_PP
 {
@@ -284,181 +285,114 @@ static void h265_sao_BO_sse(
 template <typename PixType>
 static void h265_GetCtuStatistics_Kernel(int compIdx, const PixType* recBlk, int recStride, const PixType* orgBlk, int orgStride, int width,
         int height, int shift,  const MFX_HEVC_PP::CTBBorders& borders, int numSaoModes, MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes)
-    {
-        Ipp16s signLineBuf1[64+1];
-        Ipp16s signLineBuf2[64+1];
+{
+    Ipp16s signLineBuf1[64+1];
+    Ipp16s signLineBuf2[64+1];
 
-        int x, startX, startY, endX, endY;
-        int firstLineStartX, firstLineEndX;
-        int edgeType;
-        Ipp64s *diff, *count;
+    int x, startX, startY, endX, endY;
+    int firstLineStartX, firstLineEndX;
+    int edgeType;
+    Ipp64s *diff, *count;
 
-        //const int compIdx = SAO_Y;
-        int skipLinesR = g_skipLinesR[compIdx];
-        int skipLinesB = g_skipLinesB[compIdx];
+    //const int compIdx = SAO_Y;
+    int skipLinesR = g_skipLinesR[compIdx];
+    int skipLinesB = g_skipLinesB[compIdx];
 
-        const PixType *recLine, *orgLine;
-        const PixType* recLineAbove;
-        const PixType* recLineBelow;
+    const PixType *recLine, *orgLine;
+    const PixType* recLineAbove;
+    const PixType* recLineBelow;
 
 
-        for (int typeIdx = 0; typeIdx < numSaoModes; typeIdx++)  { // numSaoModes!!!
-            SaoCtuStatistics &statsData = statsDataTypes[typeIdx];
-            statsData.Reset();
+    for (int typeIdx = 0; typeIdx < numSaoModes; typeIdx++)  { // numSaoModes!!!
+        SaoCtuStatistics &statsData = statsDataTypes[typeIdx];
+        statsData.Reset();
 
-            recLine = recBlk;
-            orgLine = orgBlk;
-            diff    = statsData.diff;
-            count   = statsData.count;
-            switch(typeIdx) {
-            case SAO_EO_0: {
-                startY = 0;
-                endY   = height - skipLinesB;
+        recLine = recBlk;
+        orgLine = orgBlk;
+        diff    = statsData.diff;
+        count   = statsData.count;
+        switch(typeIdx) {
+        case SAO_EO_0: {
+            startY = 0;
+            endY   = height - skipLinesB;
 
-                startX = borders.m_left ? 0 : 1;
-                endX   = width - skipLinesR;
+            startX = borders.m_left ? 0 : 1;
+            endX   = width - skipLinesR;
 
-                IppiRect roi = {startX, startY, endX-startX, endY-startY};
-                Ipp32s sse4_diff[8];
-                Ipp16s sse4_count[8];
+            IppiRect roi = {startX, startY, endX-startX, endY-startY};
+            Ipp32s sse4_diff[8];
+            Ipp16s sse4_count[8];
 
-                h265_sao_EO_general_avx2(recLine, recStride, orgLine, orgStride, roi, sse4_diff,
-                                         sse4_count, typeIdx);
+            h265_sao_EO_general_avx2(recLine, recStride, orgLine, orgStride, roi, sse4_diff,
+                                        sse4_count, typeIdx);
 
-                for(int idxType = 0; idxType < 5; idxType++) {
-                    diff[idxType]  = sse4_diff[idxType];
-                    count[idxType]  = sse4_count[idxType];
-                }
+            for(int idxType = 0; idxType < 5; idxType++) {
+                diff[idxType]  = sse4_diff[idxType];
+                count[idxType]  = sse4_count[idxType];
             }
-            break;
+        }
+        break;
 
-            case SAO_EO_1: {
-                if (0 == borders.m_top) {
-                    recLine += recStride;
-                    orgLine += orgStride;
-                }
-
-                startX = 0;
-                endX = width - skipLinesR;
-
-                startY = borders.m_top ? 0 : 1;
-                endY = height - skipLinesB;
-
-                IppiRect roi = {startX, startY, endX-startX, endY-startY};
-                Ipp32s sse4_diff[8];
-                Ipp16s sse4_count[8];
-
-                h265_sao_EO_general_avx2(recLine, recStride, orgLine, orgStride, roi,
-                                            sse4_diff, sse4_count, typeIdx);
-
-                for(int idxType = 0; idxType < 5; idxType++) {
-                    diff[idxType]  = sse4_diff[idxType];
-                    count[idxType]  = sse4_count[idxType];
-                }
+        case SAO_EO_1: {
+            if (0 == borders.m_top) {
+                recLine += recStride;
+                orgLine += orgStride;
             }
-            break;
 
-            case SAO_EO_2: {
-                bool isGeneralCase = (borders.m_top_left) || (!borders.m_top && borders.m_left) ||
-                       (borders.m_top && !borders.m_left) || (!borders.m_top && !borders.m_left);
+            startX = 0;
+            endX = width - skipLinesR;
 
-                if(isGeneralCase) {
-                    if(borders.m_top_left) {
-                        startX = 0;
-                        endX   = width - skipLinesR;
-                        startY = 0;
-                        endY = height - skipLinesB;
-                    }
-                    else if(!borders.m_top && borders.m_left) {
-                        startX = 0;
-                        endX   = width - skipLinesR;
-                        startY = 1;
-                        endY = height - skipLinesB;
-                        recLine  += recStride;
-                        orgLine  += orgStride;
-                    }
-                    else if( borders.m_top && !borders.m_left) {
-                        startX = 1;
-                        endX   = width - skipLinesR;
-                        startY = 0;
-                        endY = height - skipLinesB;
-                    }
-                    else if(!borders.m_top && !borders.m_left) {
-                        startX = 1;
-                        endX   = width - skipLinesR;
-                        startY = 1;
-                        endY = height - skipLinesB;
-                        recLine  += recStride;
-                        orgLine  += orgStride;
-                    }
+            startY = borders.m_top ? 0 : 1;
+            endY = height - skipLinesB;
 
-                    IppiRect roi = {startX, startY, endX-startX, endY-startY};
-                    Ipp32s sse4_diff[8];
-                    Ipp16s sse4_count[8];
+            IppiRect roi = {startX, startY, endX-startX, endY-startY};
+            Ipp32s sse4_diff[8];
+            Ipp16s sse4_count[8];
 
-                    h265_sao_EO_general_avx2(recLine, recStride, orgLine, orgStride, roi,
-                                             sse4_diff, sse4_count, typeIdx);
+            h265_sao_EO_general_avx2(recLine, recStride, orgLine, orgStride, roi,
+                                        sse4_diff, sse4_count, typeIdx);
 
-                    for(int idxType = 0; idxType < 5; idxType++) {
-                        diff[idxType]  = sse4_diff[idxType];
-                        count[idxType] = sse4_count[idxType];
-                    }
-                }
-                else {
-                    diff  +=2;
-                    count +=2;
-                    startX = borders.m_left ? 0 : 1 ;
+            for(int idxType = 0; idxType < 5; idxType++) {
+                diff[idxType]  = sse4_diff[idxType];
+                count[idxType]  = sse4_count[idxType];
+            }
+        }
+        break;
+
+        case SAO_EO_2: {
+            bool isGeneralCase = (borders.m_top_left) || (!borders.m_top && borders.m_left) ||
+                    (borders.m_top && !borders.m_left) || (!borders.m_top && !borders.m_left);
+
+            if(isGeneralCase) {
+                if(borders.m_top_left) {
+                    startX = 0;
                     endX   = width - skipLinesR;
-                    endY   = height - skipLinesB;
-
-                    //prepare 2nd line's upper sign
-                    Ipp16s *signUpLine, *signDownLine;
-                    signUpLine  = signLineBuf1;
-                    signDownLine= signLineBuf2;
-                    recLineBelow = recLine + recStride;
-                    for (x = startX; x < endX + 1; x++)
-                        signUpLine[x] = getSign(recLineBelow[x] - recLine[x-1]);
-
-                    //1st line
-                    recLineAbove = recLine - recStride;
-                    firstLineStartX = borders.m_top_left ? 0 : 1;
-                    firstLineEndX   = borders.m_top      ? endX : 1;
-
-                    for (x = firstLineStartX; x < firstLineEndX; x++) {
-                        edgeType = getSign(recLine[x] - recLineAbove[x-1]) - signUpLine[x+1];
-                        diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
-                        count[edgeType] ++;
-                    }
+                    startY = 0;
+                    endY = height - skipLinesB;
+                }
+                else if(!borders.m_top && borders.m_left) {
+                    startX = 0;
+                    endX   = width - skipLinesR;
+                    startY = 1;
+                    endY = height - skipLinesB;
                     recLine  += recStride;
                     orgLine  += orgStride;
-
+                }
+                else if( borders.m_top && !borders.m_left) {
+                    startX = 1;
+                    endX   = width - skipLinesR;
+                    startY = 0;
+                    endY = height - skipLinesB;
+                }
+                else if(!borders.m_top && !borders.m_left) {
+                    startX = 1;
+                    endX   = width - skipLinesR;
                     startY = 1;
-                    IppiRect roi = {startX, startY, endX-startX, endY-startY};
-                    Ipp32s sse4_diff[8];
-                    Ipp16s sse4_count[8];
-
-                    h265_sao_EO_general_avx2(recLine, recStride, orgLine, orgStride, roi,
-                                             sse4_diff, sse4_count, typeIdx);
-
-                    for(int idxType = 0; idxType < 5; idxType++) {
-                        diff[idxType - 2]  += sse4_diff[idxType];
-                        count[idxType - 2] += sse4_count[idxType];
-                    }
+                    endY = height - skipLinesB;
+                    recLine  += recStride;
+                    orgLine  += orgStride;
                 }
-            }
-            break;
 
-            case SAO_EO_3: {
-                startY = borders.m_top ? 0 : 1;
-                endY   = height - skipLinesB;
-                startX = borders.m_left ? 0 : 1;
-                endX   = width - skipLinesR;
-
-                if (!borders.m_top) {
-                    recLine += recStride;
-                    orgLine += orgStride;
-                }
-                        
                 IppiRect roi = {startX, startY, endX-startX, endY-startY};
                 Ipp32s sse4_diff[8];
                 Ipp16s sse4_count[8];
@@ -471,31 +405,142 @@ static void h265_GetCtuStatistics_Kernel(int compIdx, const PixType* recBlk, int
                     count[idxType] = sse4_count[idxType];
                 }
             }
-            break;
+            else {
+                diff  +=2;
+                count +=2;
+                startX = borders.m_left ? 0 : 1 ;
+                endX   = width - skipLinesR;
+                endY   = height - skipLinesB;
 
-            case SAO_BO: {
-                endX = width- skipLinesR;
-                endY = height- skipLinesB;
-                h265_sao_BO_sse(recLine, recStride, orgLine, orgStride, diff, count, endX, endY);
-            }
-            break;
+                //prepare 2nd line's upper sign
+                Ipp16s *signUpLine, *signDownLine;
+                signUpLine  = signLineBuf1;
+                signDownLine= signLineBuf2;
+                recLineBelow = recLine + recStride;
+                for (x = startX; x < endX + 1; x++)
+                    signUpLine[x] = getSign(recLineBelow[x] - recLine[x-1]);
 
-            default: {
-                VM_ASSERT(!"Not a supported SAO types\n");
-            }
+                //1st line
+                recLineAbove = recLine - recStride;
+                firstLineStartX = borders.m_top_left ? 0 : 1;
+                firstLineEndX   = borders.m_top      ? endX : 1;
+
+                for (x = firstLineStartX; x < firstLineEndX; x++) {
+                    edgeType = getSign(recLine[x] - recLineAbove[x-1]) - signUpLine[x+1];
+                    diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
+                    count[edgeType] ++;
+                }
+                recLine  += recStride;
+                orgLine  += orgStride;
+
+                startY = 1;
+                IppiRect roi = {startX, startY, endX-startX, endY-startY};
+                Ipp32s sse4_diff[8];
+                Ipp16s sse4_count[8];
+
+                h265_sao_EO_general_avx2(recLine, recStride, orgLine, orgStride, roi,
+                                            sse4_diff, sse4_count, typeIdx);
+
+                for(int idxType = 0; idxType < 5; idxType++) {
+                    diff[idxType - 2]  += sse4_diff[idxType];
+                    count[idxType - 2] += sse4_count[idxType];
+                }
             }
         }
-    }
+        break;
 
-    void MAKE_NAME(h265_GetCtuStatistics_8u)(SAOCU_ENCODE_PARAMETERS_LIST)
-    {
-        h265_GetCtuStatistics_Kernel<Ipp8u>(SAOCU_ENCODE_PARAMETERS_LIST_CALL);
-    }
+        case SAO_EO_3: {
+            startY = borders.m_top ? 0 : 1;
+            endY   = height - skipLinesB;
+            startX = borders.m_left ? 0 : 1;
+            endX   = width - skipLinesR;
 
-    void MAKE_NAME(h265_GetCtuStatistics_16u)(SAOCU_ENCODE_PARAMETERS_LIST_16U)
-    {
-        h265_GetCtuStatistics_Kernel<Ipp16u>(SAOCU_ENCODE_PARAMETERS_LIST_16U_CALL);
+            if (!borders.m_top) {
+                recLine += recStride;
+                orgLine += orgStride;
+            }
+                        
+            IppiRect roi = {startX, startY, endX-startX, endY-startY};
+            Ipp32s sse4_diff[8];
+            Ipp16s sse4_count[8];
+
+            h265_sao_EO_general_avx2(recLine, recStride, orgLine, orgStride, roi,
+                                        sse4_diff, sse4_count, typeIdx);
+
+            for(int idxType = 0; idxType < 5; idxType++) {
+                diff[idxType]  = sse4_diff[idxType];
+                count[idxType] = sse4_count[idxType];
+            }
+        }
+        break;
+
+        case SAO_BO: {
+            endX = width- skipLinesR;
+            endY = height- skipLinesB;
+            h265_sao_BO_sse(recLine, recStride, orgLine, orgStride, diff, count, endX, endY);
+        }
+        break;
+
+        default: {
+            VM_ASSERT(!"Not a supported SAO types\n");
+        }
+        }
     }
+}
+
+void MAKE_NAME(h265_GetCtuStatistics_8u)(SAOCU_ENCODE_PARAMETERS_LIST)
+{
+    h265_GetCtuStatistics_Kernel<Ipp8u>(SAOCU_ENCODE_PARAMETERS_LIST_CALL);
+}
+
+void MAKE_NAME(h265_GetCtuStatistics_16u)(SAOCU_ENCODE_PARAMETERS_LIST_16U)
+{
+    h265_GetCtuStatistics_Kernel<Ipp16u>(SAOCU_ENCODE_PARAMETERS_LIST_16U_CALL);
+}
+
+
+namespace SplitChromaCtbDetails {
+    ALIGN_DECL(32) static const Ipp8s shuffleTabs[2][32] = {
+        { 0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15, 0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15 }, // T=8u
+        { 0, 1, 4, 5, 8, 9, 12, 13, 2, 3, 6, 7, 10, 11, 14, 15, 0, 1, 4, 5, 8, 9, 12, 13, 2, 3, 6, 7, 10, 11, 14, 15 }  // T=16u
+    };
+
+    template <class T, Ipp32s width>
+    void Impl(const T *nv12, Ipp32s pitchNv12, T *u, Ipp32s pitchU, T *v, Ipp32s pitchV, Ipp32s height)
+    {
+        assert(width >= 16);
+        assert((width & 15) == 0);
+
+        Ipp32s wstep = 16 / sizeof(T);
+        __m256i shuffleTab = *(const __m256i *)shuffleTabs[sizeof(T) - 1];
+
+        for (Ipp32s y = 0; y < height; y++) {
+            for (Ipp32s x = 0; x < width; x += wstep, nv12 += 2 * wstep, u += wstep, v += wstep) {
+                __m256i src = _mm256_load_si256((const __m256i *)nv12);
+                src = _mm256_shuffle_epi8(src, shuffleTab);
+                src = _mm256_permute4x64_epi64(src, 0xD8);
+                _mm_store_si128((__m128i *)u, _mm256_castsi256_si128(src));
+                _mm_store_si128((__m128i *)v, _mm256_extracti128_si256(src, 1));
+            }
+
+            nv12 += pitchNv12 - 2*width;
+            u += pitchU - width;
+            v += pitchV - width;
+        }
+    }
+};
+
+template <class T>
+void H265_FASTCALL MAKE_NAME(h265_SplitChromaCtb)(const T *nv12, Ipp32s pitchNv12, T *u, Ipp32s pitchU, T *v, Ipp32s pitchV, Ipp32s width, Ipp32s height)
+{
+    if      (width == 16) SplitChromaCtbDetails::Impl<T,16>(nv12, pitchNv12, u, pitchU, v, pitchV, height);
+    else if (width == 32) SplitChromaCtbDetails::Impl<T,32>(nv12, pitchNv12, u, pitchU, v, pitchV, height);
+    else if (width == 64) SplitChromaCtbDetails::Impl<T,64>(nv12, pitchNv12, u, pitchU, v, pitchV, height);
+    else    assert(0);
+}
+template void H265_FASTCALL MAKE_NAME(h265_SplitChromaCtb)<Ipp8u>(const Ipp8u *nv12, Ipp32s pitchNv12, Ipp8u *u, Ipp32s pitchU, Ipp8u *v, Ipp32s pitchV, Ipp32s width, Ipp32s height);
+template void H265_FASTCALL MAKE_NAME(h265_SplitChromaCtb)<Ipp16u>(const Ipp16u *nv12, Ipp32s pitchNv12, Ipp16u *u, Ipp32s pitchU, Ipp16u *v, Ipp32s pitchV, Ipp32s width, Ipp32s height);
+
 };
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_AUTO) ...

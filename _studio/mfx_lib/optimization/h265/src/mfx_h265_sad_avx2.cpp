@@ -2422,6 +2422,8 @@ namespace DiffNv12Details {
         }
     }
 
+    ALIGN_DECL(32) static const Ipp8s shuffleTab[32] = { 0, 1, 4, 5, 8, 9, 12, 13, 2, 3, 6, 7, 10, 11, 14, 15, 0, 1, 4, 5, 8, 9, 12, 13, 2, 3, 6, 7, 10, 11, 14, 15 };
+
     template <class T, Ipp32s width, Ipp32s wstep>
     void Impl(const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s height)
     {
@@ -2435,9 +2437,7 @@ namespace DiffNv12Details {
                 __m256i s = Load<T, wstep>(src, pitchSrc);
                 __m256i p = Load<T, wstep>(pred, pitchPred);
                 __m256i d = _mm256_sub_epi16(s, p);
-                d = _mm256_shufflelo_epi16(d, 0xD8);
-                d = _mm256_shufflehi_epi16(d, 0xD8);
-                d = _mm256_shuffle_epi32(d, 0xD8);
+                d = _mm256_shuffle_epi8(d, *(__m256i *)shuffleTab);
                 d = _mm256_permute4x64_epi64(d, 0xD8);
                 Store<wstep>(diff1, pitchDiff1, diff2, pitchDiff2, d);
             }
@@ -2454,43 +2454,31 @@ template <class T>
 void H265_FASTCALL MAKE_NAME(h265_DiffNv12)(const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height)
 {
     if (width == 2)
-        return DiffNv12Details::ImplW2(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+        DiffNv12Details::ImplW2(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
     else if (width == 4)
-        return DiffNv12Details::Impl<T,4,4>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+        DiffNv12Details::Impl<T,4,4>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
     else if (width == 6 && height >= 4) {
         DiffNv12Details::Impl<T,4,4>(src,   pitchSrc, pred,   pitchPred, diff1,   pitchDiff1, diff2,   pitchDiff2, height);
         DiffNv12Details::ImplW2(src+8, pitchSrc, pred+8, pitchPred, diff1+4, pitchDiff1, diff2+4, pitchDiff2, height);
-        return;
     }
     else if (width == 8)
-        return DiffNv12Details::Impl<T,8,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+        DiffNv12Details::Impl<T,8,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
     else if (width == 12) {
         DiffNv12Details::Impl<T,8,8>(src,    pitchSrc, pred,    pitchPred, diff1,   pitchDiff1, diff2,   pitchDiff2, height);
         DiffNv12Details::Impl<T,4,4>(src+16, pitchSrc, pred+16, pitchPred, diff1+8, pitchDiff1, diff2+8, pitchDiff2, height);
-        return;
     }
     else if (width == 16)
-        return DiffNv12Details::Impl<T,16,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+        DiffNv12Details::Impl<T,16,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
     else if (width == 24)
-        return DiffNv12Details::Impl<T,24,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+        DiffNv12Details::Impl<T,24,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
     else if (width == 32)
-        return DiffNv12Details::Impl<T,32,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+        DiffNv12Details::Impl<T,32,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
     else if (width == 48)
-        return DiffNv12Details::Impl<T,48,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+        DiffNv12Details::Impl<T,48,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
     else if (width == 64)
-        return DiffNv12Details::Impl<T,64,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
-
-    for (Ipp32s j = 0; j < height; j++) {
-        for (Ipp32s i = 0; i < width; i++) {
-            diff1[i] = (Ipp16s)src[i*2+0] - pred[i*2+0];
-            diff2[i] = (Ipp16s)src[i*2+1] - pred[i*2+1];
-        }
-        diff1 += pitchDiff1;
-        diff2 += pitchDiff2;
-        src += pitchSrc;
-        pred += pitchPred;
-    }
-
+        DiffNv12Details::Impl<T,64,8>(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, height);
+    else
+        assert(0);
 }
 template void H265_FASTCALL MAKE_NAME(h265_DiffNv12)<Ipp8u> (const Ipp8u  *src, Ipp32s pitchSrc, const Ipp8u  *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
 template void H265_FASTCALL MAKE_NAME(h265_DiffNv12)<Ipp16u>(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);

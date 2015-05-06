@@ -430,17 +430,6 @@ H265Encoder::~H265Encoder()
         H265_Free(m_memBuf);
         m_memBuf = NULL;
     }
-
-    if (m_videoParam.SAOFlag) {
-
-        for(Ipp32u idx = 0; idx < m_videoParam.num_thread_structs; idx++) {
-            if (m_videoParam.bitDepthLuma == 8) {
-                ((H265CU<Ipp8u>*)m_cu)[idx].m_saoEst.Close();
-            } else {
-                ((H265CU<Ipp16u>*)m_cu)[idx].m_saoEst.Close();
-            }
-        }
-    }
 }
 
 
@@ -592,22 +581,6 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
 
         sliceRowStart += sliceHeight;
     }
-
-
-    if (m_videoParam.SAOFlag) {
-        for(Ipp32u idx = 0; idx < m_videoParam.num_thread_structs; idx++) {
-            if (m_videoParam.bitDepthLuma == 8) {
-                ((H265CU<Ipp8u>*)m_cu)[idx].m_saoEst.Init(m_videoParam.Width, m_videoParam.Height,
-                    1 << m_videoParam.Log2MaxCUSize, m_videoParam.MaxCUDepth, m_videoParam.bitDepthLuma, 
-                    m_videoParam.saoOpt, m_videoParam.SAOChromaFlag, m_videoParam.chromaFormatIdc);
-            } else {
-                ((H265CU<Ipp16u>*)m_cu)[idx].m_saoEst.Init(m_videoParam.Width, m_videoParam.Height,
-                    1 << m_videoParam.Log2MaxCUSize, m_videoParam.MaxCUDepth, m_videoParam.bitDepthLuma,
-                    m_videoParam.saoOpt, m_videoParam.SAOChromaFlag, m_videoParam.chromaFormatIdc);
-            }
-        }
-    }
-
 
     // AllocFrameEncoders()
     m_frameEncoder.resize(m_videoParam.m_framesInParallel);

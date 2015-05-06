@@ -21,14 +21,11 @@
 
 namespace H265Enc {
 
-# define DISTORTION_PRECISION_ADJUSTMENT(x) (x)
-
 #define NUM_SAO_BO_CLASSES_LOG2  5
 #define NUM_SAO_BO_CLASSES  (1<<NUM_SAO_BO_CLASSES_LOG2)
 
 #define NUM_SAO_EO_TYPES_LOG2 2
-
-#define MAX_NUM_SAO_CLASSES  32  //(NUM_SAO_EO_GROUPS > NUM_SAO_BO_GROUPS)?NUM_SAO_EO_GROUPS:NUM_SAO_BO_GROUPS
+#define MAX_NUM_SAO_CLASSES  32
 
 enum
 {
@@ -40,7 +37,6 @@ enum
 enum SaoCabacStateMarkers
 {
   SAO_CABACSTATE_BLK_CUR = 0,
-  SAO_CABACSTATE_BLK_NEXT,
   SAO_CABACSTATE_BLK_MID,
   SAO_CABACSTATE_BLK_TEMP,
   NUM_SAO_CABACSTATE_MARKERS
@@ -96,116 +92,45 @@ enum SaoComponentIdx
   NUM_SAO_COMPONENTS
 };
 
-// configuration of SAO algorithm:
-//1 - Y only, 2 - invalid, 3 - YUV
-#define NUM_USED_SAO_COMPONENTS (3)
-
 // enable/disable merge mode of SAO
 #define SAO_MODE_MERGE_ENABLED  (1)
 
 struct SaoOffsetParam
 {
-  SaoOffsetParam();
-  ~SaoOffsetParam();
-  void Reset();
-
-  //const
-  SaoOffsetParam& operator= (const SaoOffsetParam& src);
-
   int mode_idx;     //ON, OFF, MERGE
   int type_idx;     //EO_0, EO_90, EO_135, EO_45, BO. MERGE: left, above
   int typeAuxInfo; //BO: starting band index
   int offset[MAX_NUM_SAO_CLASSES];
   int saoMaxOffsetQVal;
+
+private:
+  SaoOffsetParam& operator= (const SaoOffsetParam& src);
 };
 
 
 struct SaoCtuParam
 {
-  SaoCtuParam();
-  ~SaoCtuParam();
-  void Reset();
-
-  //const
-  SaoCtuParam& operator= (const SaoCtuParam& src);
-
   SaoOffsetParam& operator[](int compIdx){ return m_offsetParam[compIdx];}
 
 private:
+  SaoCtuParam& operator= (const SaoCtuParam& src);
   SaoOffsetParam m_offsetParam[NUM_SAO_COMPONENTS];
-
 };
 
 
 class SaoEstimator
 {
 public:
-     SaoEstimator(void);
-     ~SaoEstimator();
+    void GetBestSao_RdoCost(bool* sliceEnabled, SaoCtuParam* mergeList[2], SaoCtuParam* codedParam);
+    void GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList[2], SaoCtuParam* codedParam);
 
-     void Init(
-         int width,
-         int height,
-         int maxCUWidth,
-         int maxDepth,
-         int bitDepth,
-         int saoOpt,
-         int saoChroma,
-         int chromaFormat);
-
-     void Close(void);
-
-     void ReconstructCtuSaoParam(SaoCtuParam& recParam);
-
-    template <typename PixType>
-    void GetCtuSaoStatistics(FrameData* orgYuv, FrameData* recYuv);
-    void GetBestCtuSaoParam(bool* sliceEnabled, SaoCtuParam* codedParam);
-
-    void GetMergeList(int ctu, SaoCtuParam* mergeList[2]);
-
-    void ModeDecision_Base(
-        SaoCtuParam* mergeList[2],
-        bool* sliceEnabled,
-        SaoCtuParam& bestParam,
-        double& bestCost,
-        int cabac);
-
-    void ModeDecision_Merge(
-        SaoCtuParam* mergeList[2],
-        bool* sliceEnabled,
-        SaoCtuParam& bestParam,
-        double& bestCost,
-        int cabac);
-
-    int GetNumWrittenBits( void )
-    {
-        int bits = m_bsf->GetNumBits(); return bits / 256;
-    }
-
-// SaoState
-    // per stream param
-    IppiSize m_frameSize;
-    Ipp32s   m_maxCuSize;
-    Ipp32s   m_numCTU_inWidth;
-    Ipp32s   m_numCTU_inHeight;
     Ipp32s   m_numSaoModes;
     Ipp32s   m_bitDepth;
     Ipp32s   m_saoMaxOffsetQVal;
-    Ipp32s   m_chromaFormat;
-    Ipp32s   m_saoChroma;
-    // work state
-    MFX_HEVC_PP::SaoCtuStatistics    m_statData[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
-    Ipp8u               m_ctxSAO[NUM_SAO_CABACSTATE_MARKERS][NUM_CABAC_CONTEXT];
-    // per CTU param
-    int  m_ctb_addr;
-    int  m_ctb_pelx;
-    int  m_ctb_pely;
-    double   m_labmda[NUM_SAO_COMPONENTS];
+    MFX_HEVC_PP::SaoCtuStatistics m_statData[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
+    Ipp8u    m_ctxSAO[NUM_SAO_CABACSTATE_MARKERS][NUM_CABAC_CONTEXT];
+    Ipp64f   m_labmda[NUM_SAO_COMPONENTS];
     H265BsFake *m_bsf;
-    MFX_HEVC_PP::CTBBorders m_borders;
-    const Ipp16u* m_slice_ids;
-    // output
-    SaoCtuParam* m_codedParams_TotalFrame;
 };
 
 
