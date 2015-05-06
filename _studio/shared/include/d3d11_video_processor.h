@@ -744,6 +744,7 @@ namespace MfxHwVideoProcessing
         mfxStatus QueryVarianceCaps(PREPROC_QUERY_VARIANCE_CAPS& varianceCaps);
         mfxStatus QueryVPE_AndExtCaps(void);
 
+        mfxStatus ExecuteCameraPipe(mfxExecuteParams *pParams);
 
         mfxStatus ExecuteBlt(
             ID3D11Texture2D *pOutputSurface,
@@ -765,10 +766,13 @@ namespace MfxHwVideoProcessing
         ID3D11VideoContext*                         m_pVideoContext;
 
         D3D11_VIDEO_PROCESSOR_CONTENT_DESC          m_videoProcessorDescr;
+        std::map<void *, D3D11_VIDEO_PROCESSOR_STREAM  *>  m_videoProcessorStreams;
+        std::map<void *, ID3D11VideoProcessorInputView *>  m_videoProcessorInputViews;
+        std::map<void *, ID3D11VideoProcessorOutputView*>  m_videoProcessorOutputViews;
 
         ID3D11VideoProcessor*                       m_pVideoProcessor;
         ID3D11VideoProcessorEnumerator*             m_pVideoProcessorEnum;
-
+        bool                                        m_CameraSet;
         ID3D11Resource*                             m_pOutputResource;
 
         std::vector<ID3D11VideoProcessorInputView*>   m_pInputView;// past + 1(cur) + future

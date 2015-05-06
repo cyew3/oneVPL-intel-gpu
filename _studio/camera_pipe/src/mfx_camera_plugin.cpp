@@ -825,9 +825,9 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                 {
                     vignetteset = true;
                     m_VignetteParams.bActive = true;
-                    m_VignetteParams.Height  = VignetteExtBufParams->Height;
-                    m_VignetteParams.Width   = VignetteExtBufParams->Width;
-                    m_VignetteParams.Stride  = VignetteExtBufParams->Pitch;
+                    m_VignetteParams.Height  = (mfxU16)VignetteExtBufParams->Height;
+                    m_VignetteParams.Width   = (mfxU16)VignetteExtBufParams->Width;
+                    m_VignetteParams.Stride  = (mfxU16)VignetteExtBufParams->Pitch;
                     m_VignetteParams.CmWidth  = m_VignetteParams.Width >> 2;
                     m_VignetteParams.CmStride = m_VignetteParams.Stride >> 2;
                     m_VignetteParams.pCorrectionMap  = (CameraPipeVignetteCorrectionElem *)VignetteExtBufParams->CorrectionMap;

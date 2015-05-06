@@ -214,7 +214,7 @@ D3D11VideoProcessor::D3D11VideoProcessor(void)
 {
     m_pVideoProcessor = NULL;
     m_pVideoProcessorEnum = NULL;
-
+    m_CameraSet = false;
     m_pDevice = NULL;
     m_pVideoDevice = NULL;
     m_pDeviceContext = NULL;
@@ -262,6 +262,9 @@ mfxStatus D3D11VideoProcessor::Init(
 
     m_pDeviceContext = pDeviceContext;
     m_pVideoContext = pVideoContext;
+    m_videoProcessorStreams.clear();
+    m_videoProcessorInputViews.clear();
+    m_videoProcessorOutputViews.clear();
 
     // [ reset all states ]
     memset(&m_varianceCaps, 0, sizeof(PREPROC_QUERY_VARIANCE_CAPS));
@@ -645,6 +648,23 @@ mfxStatus D3D11VideoProcessor::Close()
 {
     m_cachedReadyTaskIndex.clear();
 
+    std::map<void *, D3D11_VIDEO_PROCESSOR_STREAM *>::iterator itVPS;
+    for (itVPS = m_videoProcessorStreams.begin() ; itVPS != m_videoProcessorStreams.end(); itVPS++)
+    {
+        SAFE_DELETE(itVPS->second);
+    }
+
+    std::map<void *, ID3D11VideoProcessorInputView *>::iterator itVPIV;
+    for (itVPIV = m_videoProcessorInputViews.begin() ; itVPIV != m_videoProcessorInputViews.end(); itVPIV++)
+    {
+        SAFE_RELEASE(itVPIV->second);
+    }
+
+    std::map<void *, ID3D11VideoProcessorOutputView *>::iterator itVPOV;
+    for (itVPOV = m_videoProcessorOutputViews.begin() ; itVPOV != m_videoProcessorOutputViews.end(); itVPOV++)
+    {
+        SAFE_RELEASE(itVPOV->second);
+    }
 
     for(size_t refIdx = 0; refIdx > m_pInputView.size(); refIdx++ )
     {
@@ -1672,11 +1692,217 @@ mfxStatus D3D11VideoProcessor::CameraPipeSetWhitebalanceParams(CameraWhiteBalanc
     return MFX_ERR_NONE;
 }
 
+mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
+{
+    MFX_CHECK_NULL_PTR1(pParams);
+
+    mfxStatus    sts      = MFX_ERR_NONE;
+    HRESULT      hRes     = S_OK;
+    mfxFrameInfo *outInfo = &(pParams->targetSurface.frameInfo);
+    RECT         pRect    = {0};
+
+    if ( ! m_CameraSet )
+    {
+        // [1] target rectangle
+        pRect.top  = 0;
+        pRect.left = 0;
+        pRect.bottom = outInfo->Height;
+        pRect.right  = outInfo->Width;
+        SetOutputTargetRect(TRUE, &pRect);
+
+        // [2] destination cropping
+        pRect.top  = outInfo->CropY;
+        pRect.left = outInfo->CropX;
+        pRect.bottom = outInfo->CropH;
+        pRect.right  = outInfo->CropW;
+        pRect.bottom += outInfo->CropY;
+        pRect.right  += outInfo->CropX;
+        SetStreamDestRect(0, TRUE, &pRect);
+    
+        sts = CameraPipeActivate();
+        MFX_CHECK_STS(sts);
+
+        if ( pParams->bCameraBlackLevelCorrection )
+        {
+            sts = CameraPipeSetBlacklevelParams(&pParams->CameraBlackLevel);
+            MFX_CHECK_STS(sts);
+        }
+
+        if ( pParams->bCameraWhiteBalaceCorrection )
+        {
+            sts = CameraPipeSetWhitebalanceParams(&pParams->CameraWhiteBalance);
+            MFX_CHECK_STS(sts);
+        }
+
+        if ( pParams->bCCM )
+        {
+            sts = CameraPipeSetCCMParams(&pParams->CCMParams);
+            MFX_CHECK_STS(sts);
+        }
+
+        if ( pParams->bCameraHotPixelRemoval )
+        {
+            sts = CameraPipeSetHotPixelParams(&pParams->CameraHotPixel);
+            MFX_CHECK_STS(sts);
+        }
+
+        if ( pParams->bCameraGammaCorrection )
+        {
+            sts = CameraPipeSetForwardGammaParams(&pParams->CameraForwardGammaCorrection);
+            MFX_CHECK_STS(sts);
+        }
+
+        if ( pParams->bCameraVignetteCorrection )
+        {
+            sts = CameraPipeSetVignetteParams(&pParams->CameraVignetteCorrection);
+            MFX_CHECK_STS(sts);
+        }
+    }
+
+    mfxDrvSurface* pInputSample = &(pParams->pRefSurfaces[0]);
+    mfxHDL inputSurface;
+    inputSurface = pParams->pRefSurfaces[0].hdl.first;
+    MFX_CHECK_NULL_PTR1(inputSurface);
+
+    // Get video processor stream. Camera works with a single stream at the moment
+    std::map<void *, D3D11_VIDEO_PROCESSOR_STREAM *>::iterator it_stream;
+    D3D11_VIDEO_PROCESSOR_STREAM *videoProcessorStream;
+    it_stream = m_videoProcessorStreams.find(inputSurface);
+    if (m_videoProcessorStreams.end() == it_stream)
+    {
+        // Alocate new Video processor stream
+        videoProcessorStream = new D3D11_VIDEO_PROCESSOR_STREAM;
+        memset(videoProcessorStream, 0, sizeof(D3D11_VIDEO_PROCESSOR_STREAM));
+        m_videoProcessorStreams.insert(std::pair<void *, D3D11_VIDEO_PROCESSOR_STREAM *>(inputSurface, videoProcessorStream));
+        videoProcessorStream->Enable = TRUE;
+        videoProcessorStream->OutputIndex = PtrToUlong(pParams->targetSurface.hdl.second);
+        videoProcessorStream->InputFrameOrField = pParams->statusReportID;
+        SetStreamFrameFormat(0, D3D11PictureStructureMapping(pParams->pRefSurfaces[0].frameInfo.PicStruct));
+
+        // source cropping
+        mfxFrameInfo *inInfo = &(pInputSample->frameInfo);
+        pRect.top    = inInfo->CropY;
+        pRect.left   = inInfo->CropX;
+        pRect.bottom = inInfo->CropH;
+        pRect.right  = inInfo->CropW;
+        pRect.bottom += inInfo->CropY;
+        pRect.right  += inInfo->CropX;
+        SetStreamSourceRect(0, TRUE, &pRect);
+
+        pRect.top = outInfo->CropY;
+        pRect.left = outInfo->CropX;
+        pRect.bottom = outInfo->CropH + outInfo->CropY;
+        pRect.right  = outInfo->CropW + outInfo->CropX;
+        SetStreamDestRect(0, TRUE, &pRect);
+
+        D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
+        inColorSpace.Usage = 0;
+        inColorSpace.RGB_Range = 1;
+        inColorSpace.YCbCr_Matrix = 0;
+        inColorSpace.YCbCr_xvYCC = 0;
+        inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_UNDEFINED;
+        SetStreamColorSpace(0, &inColorSpace);
+
+        D3D11_VIDEO_PROCESSOR_COLOR_SPACE outColorSpace;
+        outColorSpace.Usage = 0;
+        outColorSpace.RGB_Range = 1;
+        outColorSpace.YCbCr_Matrix = 0;
+        outColorSpace.YCbCr_xvYCC = 0;
+        outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_UNDEFINED;
+        SetOutputColorSpace(&outColorSpace);
+    }
+    else
+    {
+        // re-use previously allocated
+        videoProcessorStream = it_stream->second;
+    }
+
+    
+
+    // Get Video process input view 
+    std::map<void *, ID3D11VideoProcessorInputView *>::iterator it_inputView;
+    it_inputView = m_videoProcessorInputViews.find(inputSurface);
+    ID3D11VideoProcessorInputView* pInputView = 0;
+
+    if ( it_inputView == m_videoProcessorInputViews.end() )
+    {
+        D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc;
+        inputDesc.ViewDimension        = D3D11_VPIV_DIMENSION_TEXTURE2D;
+        inputDesc.Texture2D.ArraySlice = PtrToUlong(pParams->pRefSurfaces[0].hdl.second);
+        inputDesc.FourCC               = BayerFourCC2FourCC(pParams->pRefSurfaces[0].frameInfo.FourCC);
+        inputDesc.Texture2D.MipSlice   = 0;
+        ID3D11Resource* pInputResource = (ID3D11Resource *) (ID3D11Texture2D *)inputSurface;
+    
+        hRes = m_pVideoDevice->CreateVideoProcessorInputView(
+                pInputResource,
+                m_pVideoProcessorEnum,
+                &inputDesc,
+                &pInputView);
+        CHECK_HRES(hRes);
+        m_videoProcessorInputViews.insert(std::pair<void *, ID3D11VideoProcessorInputView *>(inputSurface, pInputView));
+    }
+    else
+    {
+        pInputView = it_inputView->second;
+    }
+
+    videoProcessorStream->ppPastSurfaces   = 0;
+    videoProcessorStream->PastFrames       = pParams->bkwdRefCount;
+    videoProcessorStream->pInputSurface    = pInputView;
+    videoProcessorStream->ppFutureSurfaces = 0;
+    videoProcessorStream->FutureFrames     = pParams->fwdRefCount;
+
+    // Get Video process input view 
+    mfxHDL outputSurface = pParams->targetSurface.hdl.first;
+    std::map<void *, ID3D11VideoProcessorOutputView *>::iterator it_outputView;
+    it_outputView = m_videoProcessorOutputViews.find(outputSurface);
+    ID3D11VideoProcessorOutputView * outputView; 
+    if ( it_outputView == m_videoProcessorOutputViews.end() )
+    {
+        D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC outputDesc;
+        memset((void*)&outputDesc, 0, sizeof(outputDesc));
+        outputDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
+        outputDesc.Texture2DArray.ArraySize = 0;
+        outputDesc.Texture2DArray.MipSlice = 0;
+        outputDesc.Texture2DArray.FirstArraySlice = 0;
+
+        hRes = m_pVideoDevice->CreateVideoProcessorOutputView(
+            (ID3D11Resource *) pParams->targetSurface.hdl.first,
+            m_pVideoProcessorEnum,
+            &outputDesc,
+            &outputView);
+        CHECK_HRES(hRes);
+        m_videoProcessorOutputViews.insert(std::pair<void *, ID3D11VideoProcessorOutputView *>(outputSurface, outputView));
+    }
+    else
+    {
+        outputView = it_outputView->second;
+    }
+
+    hRes = VideoProcessorBlt(
+            outputView,
+            pParams->statusReportID,
+            1,
+            videoProcessorStream);
+    CHECK_HRES(hRes);
+
+    m_CameraSet = true;
+    return sts;
+}
+
 mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 {
 #ifdef DEBUG_DETAIL_INFO
     printf("\n\n---------- \n Submit Task::StatusID = %i \n----------\n\n", pParams->statusReportID);fflush(stderr);
 #endif
+
+    MFX_CHECK_NULL_PTR1(pParams);
+    if ( pParams->bCameraPipeEnabled )
+    {
+        // Camera pipe has its own execution flow that is optimized for perf and is 
+        // not 100% compatible with other types of VPP execution.
+        return ExecuteCameraPipe(pParams);
+    }
 
     mfxFrameInfo *outInfo = &(pParams->targetSurface.frameInfo);
 

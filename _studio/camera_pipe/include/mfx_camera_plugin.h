@@ -27,6 +27,7 @@ File Name: mfx_camera_plugin.h
 #include "mfx_camera_plugin_dx9.h"
 #endif
 
+#define MFX_CAMERA_DEFAULT_ASYNCDEPTH 3
 #define MAX_CAMERA_SUPPORTED_WIDTH  16280
 #define MAX_CAMERA_SUPPORTED_HEIGHT 15952
 

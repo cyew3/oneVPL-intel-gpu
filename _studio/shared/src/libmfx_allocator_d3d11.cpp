@@ -225,30 +225,29 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
         {
             Desc.BindFlags = 0;
         }
-
-        if ( DXGI_FORMAT_R16_TYPELESS == Desc.Format)
-        {
-            // R16 Bayer requires having special resource extension reflecting
-            // real Bayer format
-            Desc.MipLevels = 1;
-            Desc.ArraySize = 1;
-            Desc.SampleDesc.Count   = 1;
-            Desc.SampleDesc.Quality = 0;
-            Desc.Usage     = D3D11_USAGE_DEFAULT;
-            Desc.BindFlags = 0;
-            Desc.CPUAccessFlags = 0;// = D3D11_CPU_ACCESS_WRITE;
-            Desc.MiscFlags = 0;
-            RESOURCE_EXTENSION extnDesc;
-            ZeroMemory( &extnDesc, sizeof(RESOURCE_EXTENSION) );
-            memcpy_s( extnDesc.Key, sizeof(extnDesc.Key), RESOURCE_EXTENSION_KEY,16 );
-            extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
-            extnDesc.Type    = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
-            extnDesc.Data[0] = BayerFourCC2FormatFlag(request->Info.FourCC);
-            hr = SetResourceExtension(pSelf->m_pD11Device, &extnDesc);
-        }
-
         for (mfxU32 i = 0; i < maxNumFrames; i++)
         {
+            if ( DXGI_FORMAT_R16_TYPELESS == Desc.Format)
+            {
+                // R16 Bayer requires having special resource extension reflecting
+                // real Bayer format
+                Desc.MipLevels = 1;
+                Desc.ArraySize = 1;
+                Desc.SampleDesc.Count   = 1;
+                Desc.SampleDesc.Quality = 0;
+                Desc.Usage     = D3D11_USAGE_DEFAULT;
+                Desc.BindFlags = 0;
+                Desc.CPUAccessFlags = 0;// = D3D11_CPU_ACCESS_WRITE;
+                Desc.MiscFlags = 0;
+                RESOURCE_EXTENSION extnDesc;
+                ZeroMemory( &extnDesc, sizeof(RESOURCE_EXTENSION) );
+                memcpy_s( extnDesc.Key, sizeof(extnDesc.Key), RESOURCE_EXTENSION_KEY,16 );
+                extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
+                extnDesc.Type    = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
+                extnDesc.Data[0] = BayerFourCC2FormatFlag(request->Info.FourCC);
+                hr = SetResourceExtension(pSelf->m_pD11Device, &extnDesc);
+            }
+
             hr = pSelf->m_pD11Device->CreateTexture2D(&Desc, NULL, &pSelf->m_SrfPool[i]);
             if (FAILED(hr))
                 return MFX_ERR_MEMORY_ALLOC;

@@ -196,21 +196,16 @@ mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
 #endif
     MFX_CHECK_NULL_PTR1(pParam);
     mfxStatus sts = MFX_ERR_NONE;
-    mfxU16 ddiIndex = pParam->nDDIIndex;
+    mfxU32 ddiIndex = pParam->nDDIIndex;
     if ( m_executeParams.size() <= ddiIndex )
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-#ifdef CAMP_PIPE_ITT
-    __itt_task_begin(CamPipeDX11, __itt_null, __itt_null, DDIEXEC);
-#endif
+
     {
-        UMC::AutomaticUMCMutex guard(m_guard_exec);
+        // DDI execs
         sts = m_ddi->Execute(&m_executeParams[ddiIndex]);
     }
-#ifdef CAMP_PIPE_ITT
-    __itt_task_end(CamPipeDX11);
-#endif
 
     if ( m_systemMemOut )
     {

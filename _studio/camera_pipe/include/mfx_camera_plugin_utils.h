@@ -35,10 +35,14 @@ File Name: mfx_camera_plugin_utils.h
 #define  BAYER_GRBG  0x0002
 #define  BAYER_GBRG  0x0003
 
+#define  MFX_CAMERA_DEFAULT_ASYNCDEPTH 3
+
 // 2 hours of playing at 30fps
 #define CAMERA_FRAMES_TILL_HARD_RESET 2*108000
 
-#define MFX_CAMERA_DEFAULT_ASYNCDEPTH 3
+#define CHECK_HRES(hRes) \
+    if (FAILED(hRes))\
+    return MFX_ERR_DEVICE_FAILED;
 
 //#define CAMERA_DEBUG_PRINTF
 
@@ -387,8 +391,8 @@ struct AsyncParams
 
     mfxMemId inSurf2D;
     mfxMemId inSurf2DUP;
-    mfxU16   tileIDHorizontal;
-    mfxU16   tileIDVertical;
+    mfxU32   tileIDHorizontal;
+    mfxU32   tileIDVertical;
 
     CameraPipeDenoiseParams            DenoiseParams;
     CameraPipeHotPixelParams           HPParams;
@@ -406,9 +410,9 @@ struct AsyncParams
     mfxMemId outSurf2DUP;
 
     // DDI specific params
-    mfxU16 nDDIIndex;
-    mfxU16 surfInIndex;
-    mfxU16 surfOutIndex;
+    mfxU32 nDDIIndex;
+    mfxU32 surfInIndex;
+    mfxU32 surfOutIndex;
 
     void      *pEvent;
 };

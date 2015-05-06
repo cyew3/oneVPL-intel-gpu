@@ -663,6 +663,11 @@ public:
     ~DXVAHDVideoProcessor()    
     {
         delete [] m_cameraFGC.pSegment;
+        std::map<void *, DXVAHD_STREAM_DATA *>::iterator it;
+        for (it = m_Streams.begin() ; it != m_Streams.end(); it++)
+        {
+            SAFE_DELETE_ARRAY(it->second);
+        }
     };
 
     mfxStatus CreateDevice(VideoCORE *core, mfxVideoParam *par, bool temporary);
@@ -718,14 +723,14 @@ private:
     IDXVAHD_VideoProcessor  *m_pDXVAVideoProcessor;
     UINT                     m_uiVPExtGuidCount;
     dxvahddevicecaps         m_dxva_caps;
-    DXVAHD_CONTENT_DESC         m_videoDesc;
+    DXVAHD_CONTENT_DESC      m_videoDesc;
 
     VPE_VPREP_CAPS          m_vprepCaps;
     VPE_VPREP_VARIANCE_CAPS m_vprepVarianceCaps;
     VPE_GUID_INFO*          m_pVPEGuids;
     bool                    m_bIsSet;
     TForwardGamma           m_cameraFGC;
-
+    std::map<void *, DXVAHD_STREAM_DATA *> m_Streams;
 };
 
 class D3D9CameraProcessor: public CameraProcessor
@@ -733,15 +738,12 @@ class D3D9CameraProcessor: public CameraProcessor
 public:
     D3D9CameraProcessor()
     {
-        m_InSurfacePool  = new D39FrameAllocResponse();
-        m_OutSurfacePool = new D39FrameAllocResponse();
         m_ddi.reset(0);
     };
 
     ~D3D9CameraProcessor() {
-        m_core->FreeFrames(&m_InternalSurfes);
-        delete [] m_lock_map;
-        delete m_InSurfacePool;
+         m_inputSurf.clear();
+         m_outputSurf.clear();
     };
 
     virtual mfxStatus Init(CameraParams *CameraParams);
@@ -760,13 +762,8 @@ public:
 
     virtual mfxStatus Close()
     {
-         m_core->FreeFrames(&m_InternalSurfes);
         
-        if ( m_InSurfacePool )
-            delete m_InSurfacePool;
 
-        if ( m_OutSurfacePool )
-            delete m_OutSurfacePool;
  
         return MFX_ERR_NONE;
     }
@@ -813,10 +810,6 @@ private:
         return AcquireResource(pool, FindFreeResourceIndex(pool, index));
     }
 
-    D39FrameAllocResponse                          *m_InSurfacePool;
-    D39FrameAllocResponse                          *m_OutSurfacePool;
-    mfxFrameAllocResponse                            m_InternalSurfes;
-    mfxFrameAllocResponse                            m_OutputSurfs;
     bool                                             m_systemMemOut;
     CameraParams                                     m_CameraParams;
     UMC::Mutex                                       m_guard;
@@ -860,10 +853,14 @@ private:
     protected:
         T* m_ptr;
     };
+    struct s_InternalSurf {
+        IDirect3DSurface9 *surf;
+        bool               locked;
+        s_InternalSurf() {locked=false;};
+    };
     s_ptr<CmCopyWrapper, true>    m_pCmCopy;
     IDirect3DDeviceManager9      *m_pD3Dmanager;
-    IDirect3DSurface9           **m_inputSurf;
-    bool                         *m_lock_map;
-    IDirect3DSurface9      *m_outputSurf;
+    std::vector<s_InternalSurf>   m_inputSurf;
+    std::vector<s_InternalSurf>   m_outputSurf;
 
 };
