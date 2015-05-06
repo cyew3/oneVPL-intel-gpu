@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 
 **********************************************************************************/
 
@@ -150,6 +150,8 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     // we set version to 1.0 and later we will query actual version of the library which will got leaded
     initPar.Version.Major = 1;
     initPar.Version.Minor = 0;
+
+    initPar.GPUCopy = pParams->gpuCopy;
 
     init_ext_buffer(threadsPar);
 
