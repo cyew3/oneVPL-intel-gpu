@@ -597,6 +597,13 @@ enum {
     MFX_CONTENT_NON_VIDEO_SCREEN     = 2
 };
 
+/* PRefType */
+enum {
+    MFX_P_REF_DEFAULT = 0,
+    MFX_P_REF_SIMPLE  = 1,
+    MFX_P_REF_PYRAMID = 2
+};
+
 typedef struct {
     mfxExtBuffer Header;
 
@@ -630,7 +637,9 @@ typedef struct {
 
     mfxU16      ScenarioInfo;
     mfxU16      ContentInfo;
-    mfxU16      reserved[227];
+
+    mfxU16      PRefType;
+    mfxU16      reserved[226];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
