@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -108,27 +108,34 @@ mfxStatus BaseFrameAllocator::AllocFrames(mfxFrameAllocRequest *request, mfxFram
 
     if ( (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME) && (request->Type & MFX_MEMTYPE_FROM_DECODE) )
     {
+        bool foundInCache = false;
         // external decoder allocations
-        std::list<UniqueResponse>::iterator it =
-            std::find_if( m_ExtResponses.begin()
-                        , m_ExtResponses.end()
-                        , UniqueResponse (*response, request->Info.CropW, request->Info.CropH, 0));
-
-        if (it != m_ExtResponses.end())
+        std::list<UniqueResponse>::iterator 
+            it = m_ExtResponses.begin(),
+            et = m_ExtResponses.end();
+        UniqueResponse checker(*response, request->Info.CropW, request->Info.CropH, 0);
+        for (; it != et; ++it)
         {
-            // check if enough frames were allocated
-            if (request->NumFrameSuggested > it->NumFrameActual)
-                return MFX_ERR_MEMORY_ALLOC;
+            // same decoder and same size
+            if (request->AllocId == it->AllocId && checker(*it))
+            {
+                // check if enough frames were allocated
+                if (request->NumFrameSuggested > it->NumFrameActual)
+                    return MFX_ERR_MEMORY_ALLOC;
 
-            it->m_refCount++;
-            // return existing response
-            *response = (mfxFrameAllocResponse&)*it;
+                it->m_refCount++;
+                // return existing response
+                *response = (mfxFrameAllocResponse&)*it;
+                foundInCache = true;
+            }
         }
-        else
+
+        if (!foundInCache)
         {
             sts = AllocImpl(request, response);
             if (sts == MFX_ERR_NONE)
             {
+                response->AllocId = request->AllocId;
                 m_ExtResponses.push_back(UniqueResponse(*response, request->Info.CropW, request->Info.CropH, request->Type & MEMTYPE_FROM_MASK));
             }
         }
