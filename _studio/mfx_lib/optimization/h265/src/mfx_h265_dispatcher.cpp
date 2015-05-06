@@ -809,7 +809,11 @@ void SetTargetAVX2()
     g_dispatcher.h265_FilterPredictPels_Bilinear_16s = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_avx2;
     g_dispatcher.h265_PredictIntra_Planar_16s = &MFX_HEVC_PP::h265_PredictIntra_Planar_16s_avx2;
 
+#if defined( __INTEL_COMPILER )
     g_dispatcher.h265_AnalyzeGradient_8u = &MFX_HEVC_PP::h265_AnalyzeGradient_8u_avx2;
+#else
+    g_dispatcher.h265_AnalyzeGradient_8u = &MFX_HEVC_PP::h265_AnalyzeGradient_8u_sse;
+#endif
     g_dispatcher.h265_AnalyzeGradient_16u = &MFX_HEVC_PP::h265_AnalyzeGradient_px<Ipp16u, Ipp32u>;
 
     g_dispatcher.h265_ComputeRsCs_8u = &MFX_HEVC_PP::h265_ComputeRsCs_8u_sse;

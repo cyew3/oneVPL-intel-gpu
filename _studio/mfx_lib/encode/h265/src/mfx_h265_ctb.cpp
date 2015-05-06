@@ -20,6 +20,7 @@
 #include "mfx_h265_frame.h"
 #include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
+#include "math.h"
 
 #if defined(MFX_VA)
 #include "mfx_h265_enc_cm_utils.h"
@@ -1713,7 +1714,7 @@ Ipp8u H265CU<PixType>::GetAdaptiveIntraMinDepth(Ipp32s absPartIdx, Ipp32s depth,
         subSC[i] = GetSpatialComplexity(absPartIdx, depth, partAddr, depth+1, subSCpp[i]);
         if(subSC[i]>maxSC) maxSC = subSC[i];
         for(Ipp32s j=i-1; j>=0; j--) {
-            if(abs(subSCpp[i]-subSCpp[j])>delta_sc[IPP_MIN(subSC[i], subSC[j])]*(float)(1<<(m_par->bitDepthLumaShift*2))) {
+            if(fabsf(subSCpp[i]-subSCpp[j])>delta_sc[IPP_MIN(subSC[i], subSC[j])]*(float)(1<<(m_par->bitDepthLumaShift*2))) {
                 intraMinDepth = 1;
             }
         }

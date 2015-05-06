@@ -1545,6 +1545,10 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
             // to prevent SyncOnFrameCompletion hang
             if (!taskIsReencodeIndependent)
                 vm_interlocked_dec32(&th->m_threadingTaskRunning);
+            vm_mutex_lock(&th->m_critSect);
+            inputParam->m_doStage = 6;
+            vm_mutex_unlock(&th->m_critSect);
+            vm_cond_broadcast(&th->m_condVar);
             throw;
         }
 

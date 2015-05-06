@@ -420,11 +420,7 @@ void H265CU<PixType>::GetEdgeStrength(H265CUPtr *pcCUQptr,
 
 
 template <typename PixType>
-void H265CU<PixType>::SetEdgesCTU(H265CUPtr *curLCU,
-                                  Ipp32s width,
-                                  Ipp32s height,
-                                  Ipp32s x_inc,
-                                  Ipp32s y_inc)
+void H265CU<PixType>::SetEdgesCTU(H265CUPtr *curLCU, Ipp32s width, Ipp32s height, Ipp32s x_inc, Ipp32s y_inc)
 {
     Ipp32s curPixelColumn, curPixelRow;
     Ipp32s crossSliceBoundaryFlag, crossTileBoundaryFlag;
@@ -486,29 +482,15 @@ void H265CU<PixType>::SetEdgesCTU(H265CUPtr *curLCU,
 //  1
 
 template <typename PixType>
-void H265CU<PixType>::SetEdges(Ipp32s width,
-                      Ipp32s height)
+void H265CU<PixType>::SetEdges(Ipp32s width, Ipp32s height)
 {
-    Ipp32s maxCUSize = m_par->MaxCUSize;
-    Ipp32s curPixelColumn, curPixelRow;
-    Ipp32s crossSliceBoundaryFlag, crossTileBoundaryFlag;
-    Ipp32s tcOffset, betaOffset;
-    H265EdgeData edge;
-    Ipp32s dir;
-    Ipp32s i, j, e;
-
-    crossSliceBoundaryFlag = m_cslice->slice_loop_filter_across_slices_enabled_flag;
-    crossTileBoundaryFlag = m_par->NumTiles > 1 ? m_par->deblockBordersFlag : 0;
-    tcOffset = m_cslice->slice_tc_offset_div2 << 1;
-    betaOffset = m_cslice->slice_beta_offset_div2 << 1;
+    Ipp32s crossSliceBoundaryFlag = m_cslice->slice_loop_filter_across_slices_enabled_flag;
+    Ipp32s crossTileBoundaryFlag = m_par->NumTiles > 1 ? m_par->deblockBordersFlag : 0;
 
     H265CUPtr curLCU;
     curLCU.ctbData = m_data;
     curLCU.ctbAddr = m_ctbAddr;
     curLCU.absPartIdx = 0;
-
-//    if (m_ctbAddr == 7)
-//        printf("");
 
     SetEdgesCTU(&curLCU, width, height, 0, 0);
 
@@ -525,40 +507,22 @@ void H265CU<PixType>::SetEdges(Ipp32s width,
 template <typename PixType>
 void H265CU<PixType>::Deblock()
 {
-    Ipp32s maxCUSize = m_par->MaxCUSize;
     Ipp32s widthInSamples = m_region_border_right;
     Ipp32s heightInSamples = m_region_border_bottom;
-    Ipp32s width, height;
-    Ipp32s i, j;
-
-    width = widthInSamples - m_ctbPelX;
-
-    if (width > maxCUSize)
-    {
-        width = maxCUSize;
-    }
-
-    height = heightInSamples - m_ctbPelY;
-
-    if (height > maxCUSize)
-    {
-        height = maxCUSize;
-    }
+    Ipp32s width  = IPP_MIN(widthInSamples - m_ctbPelX,  m_par->MaxCUSize);
+    Ipp32s height = IPP_MIN(heightInSamples - m_ctbPelY, m_par->MaxCUSize);
 
     SetEdges(width, height);
 
-    for (j = 8; j <= height; j += 8)
-    {
-        for (i = 8; i <= width; i += 8)
-        {
+    Ipp32s i, j;
+    for (j = 8; j <= height; j += 8) {
+        for (i = 8; i <= width; i += 8) {
             DeblockOneCrossLuma(i, j);
         }
     }
 
-    for (j = (8 << m_par->chromaShiftH); j <= height; j += (8 << m_par->chromaShiftH))
-    {
-        for (i = (8 << m_par->chromaShiftW); i <= width; i += (8 << m_par->chromaShiftW))
-        {
+    for (j = (8 << m_par->chromaShiftH); j <= height; j += (8 << m_par->chromaShiftH)) {
+        for (i = (8 << m_par->chromaShiftW); i <= width; i += (8 << m_par->chromaShiftW)) {
             DeblockOneCrossChroma(i, j);
         }
     }

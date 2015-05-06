@@ -15,6 +15,7 @@
 #include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
 #include "ippi.h"
+#include "math.h"
 
 #if defined (MFX_VA)
 ///#include "mfx_h265_enc_cm_defs.h"
@@ -964,13 +965,13 @@ bool H265CU<PixType>::tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode 
                 for(Ipp32s c=0;c<widthCu; c++)
                     dc += (pSrc[r*m_pitchSrcLuma+c] - pred[r*widthCu+c]);
             dc/=(widthCu*widthCu);
-            dc=abs(dc);
+            dc=fabsf(dc);
         } else {
             for(Ipp32s r=0;r<widthCu; r++)
                 for(Ipp32s c=0;c<widthCu; c++)
                     dc += (m_srcTr[r*widthCu+c] - pred[r*widthCu+c]);
             dc/=(widthCu*widthCu);
-            dc=abs(dc);
+            dc=fabsf(dc);
         }
         IntraHad = modes[ic].satd;
         IntraHad -= dc*16*(widthCu/8)*(widthCu/8);

@@ -512,7 +512,7 @@ Ipp32s H265BRC::PredictFrameSize(H265VideoParam *video, Frame *frames[], Ipp32s 
         Ipp64f predBits0 = cmplx * 1000000 / q;
 
         if (mPrevCmplxLayer[0] > 0) {
-            w = abs(cmplx / mPrevCmplxLayer[0] - 1) * 0.1;
+            w = fabs(cmplx / mPrevCmplxLayer[0] - 1) * 0.1;
             if (w > 1)
                 w = 1;
             if (mPrevCmplxLayer[0] > BRC_MIN_CMPLX_LAYER_I)
@@ -819,7 +819,7 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
         frames[0]->m_CmplxQstep = pow(complx, BRC_QSTEP_COMPL_EXPONENT);
 
         if (prCmplx) {
-            r = abs(avCmplx / prCmplx - 1);
+            r = fabs(avCmplx / prCmplx - 1);
             w = r * 0.1;
             if (w > 1) w = 1;
             qScale = w * mQstepScale0 + (1 - w) * mQstepScale;
