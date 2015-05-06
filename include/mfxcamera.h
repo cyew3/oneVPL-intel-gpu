@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2014-2015 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -41,15 +41,18 @@ extern "C" {
 
 /* Camera Extended Buffer Ids */
 enum {
-    MFX_EXTBUF_CAM_GAMMA_CORRECTION        = MFX_MAKEFOURCC('C','G','A','M'),
-    MFX_EXTBUF_CAM_WHITE_BALANCE           = MFX_MAKEFOURCC('C','W','B','L'),
-    MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL       = MFX_MAKEFOURCC('C','H','P','R'),
-    MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION  = MFX_MAKEFOURCC('C','B','L','C'),
-    MFX_EXTBUF_CAM_VIGNETTE_CORRECTION     = MFX_MAKEFOURCC('C','V','G','T'),
-    MFX_EXTBUF_CAM_BAYER_DENOISE           = MFX_MAKEFOURCC('C','D','N','S'),
-    MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3    = MFX_MAKEFOURCC('C','C','3','3'),
-    MFX_EXTBUF_CAM_PADDING                 = MFX_MAKEFOURCC('C','P','A','D'),
-    MFX_EXTBUF_CAM_PIPECONTROL             = MFX_MAKEFOURCC('C','P','P','C')
+    MFX_EXTBUF_CAM_GAMMA_CORRECTION             = MFX_MAKEFOURCC('C','G','A','M'),
+    MFX_EXTBUF_CAM_WHITE_BALANCE                = MFX_MAKEFOURCC('C','W','B','L'),
+    MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL            = MFX_MAKEFOURCC('C','H','P','R'),
+    MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION       = MFX_MAKEFOURCC('C','B','L','C'),
+    MFX_EXTBUF_CAM_VIGNETTE_CORRECTION          = MFX_MAKEFOURCC('C','V','G','T'),
+    MFX_EXTBUF_CAM_BAYER_DENOISE                = MFX_MAKEFOURCC('C','D','N','S'),
+    MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3         = MFX_MAKEFOURCC('C','C','3','3'),
+    MFX_EXTBUF_CAM_PADDING                      = MFX_MAKEFOURCC('C','P','A','D'),
+    MFX_EXTBUF_CAM_PIPECONTROL                  = MFX_MAKEFOURCC('C','P','P','C'),
+    MFX_EXTBUF_CAM_FORWARD_GAMMA_CORRECTION     = MFX_MAKEFOURCC('C','F','G','C'),
+    MFX_EXTBUF_CAM_CSC_YUV_RGB                  = MFX_MAKEFOURCC('C','C','Y','R'),
+    MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION    = MFX_MAKEFOURCC('C','L','G','D')
 };
 
 typedef enum {
@@ -158,6 +161,43 @@ typedef struct {
     mfxU16          reserved1;
     mfxU32          reserved[5];
 } mfxExtCamPipeControl;
+
+typedef struct{
+    mfxU16 Pixel;
+    mfxU16 Red;
+    mfxU16 Green;
+    mfxU16 Blue;
+} mfxCamFwdGammaSegment;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16       reserved[19];
+    mfxU16       NumSegments;
+    union {
+        mfxCamFwdGammaSegment* Segment;
+        mfxU64 reserved1;
+    };
+} mfxExtCamFwdGamma;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxF32       PreOffset[3];
+    mfxF32       Matrix[3][3];
+    mfxF32       PostOffset[3];
+    mfxU16       reserved[30];
+} mfxExtCamCscYuvRgb;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxF32       a[3]; // [R, G, B]
+    mfxF32       b[3]; // [R, G, B]
+    mfxF32       c[3]; // [R, G, B]
+    mfxF32       d[3]; // [R, G, B]
+    mfxU16       reserved[36];
+} mfxExtCamLensGeomDistCorrection;
 
 #ifdef __cplusplus
 } // extern "C"
