@@ -95,6 +95,7 @@ mfxStatus MFXSplitter_Init(mfxDataIO *data_io, mfxSplitter *spl)
         ffmpeg_seek(hdl, 0, SEEK_SET);
         // Now we set the ProbeData-structure for av_probe_input_format:
 
+        memset(&probeData,0,sizeof(probeData));
         probeData.buf = data;
         probeData.buf_size = bufferSize;
         probeData.filename = "";
