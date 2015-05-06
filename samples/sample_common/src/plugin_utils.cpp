@@ -88,7 +88,11 @@ const mfxPluginUID & msdkGetPluginUID(mfxIMPL impl, msdkComponentType type, mfxU
             switch(uCodecid)
             {
             case MFX_CODEC_HEVC:
-                return MFX_PLUGINID_HEVCE_SW; // MFX_PLUGINID_HEVCD_SW for now
+#if defined(_WIN32) || defined(_WIN64)
+                return MFX_PLUGINID_HEVCE_HW;
+#else
+                return MFX_PLUGINID_HEVCE_SW; // There is no HW HEVC plug-in support on Linux yet
+#endif
             }
             break;
         case MSDK_VENC:
