@@ -4,46 +4,38 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 
 **********************************************************************************/
 
 #pragma once
 
-#if !defined(_WIN32) && !defined(_WIN64)
-
-#include "logger.h"
-#include <string>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <va/va.h>
-
-#define DCL_USE_DEPRECATED_OPENCL_1_1_APIS
-#include <CL/cl.h>
-#include <CL/opencl.h>
-#include <CL/va_ext.h>
+#if defined(_WIN32) || defined(_WIN64)
 
 #include "opencl_filter.h"
+#include "d3d11_allocator.h"
+#include <initguid.h>
+#include <guiddef.h>
 
-class OpenCLFilterVA : public OpenCLFilterBase
+class OpenCLFilterDX11 : public OpenCLFilterBase
 {
 public:
-    OpenCLFilterVA();
-    virtual ~OpenCLFilterVA();
+    OpenCLFilterDX11();
+    virtual ~OpenCLFilterDX11();
     virtual cl_int OCLInit(mfxHDL device);
 
-protected: // functions
-    virtual cl_int InitDevice();
+private:
     virtual cl_int InitSurfaceSharingExtension();
+    virtual cl_int InitDevice();
 
     virtual cl_mem CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly);
     virtual bool EnqueueAcquireSurfaces(cl_mem* surfaces, int nSurfaces);
     virtual bool EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces);
 
-protected: // variables
-    VADisplay m_vaDisplay;
-    VASurfaceID m_SharedSurfaces[c_shared_surfaces_num];
+    ID3D11Device*       m_pDevice;
+    ID3D11Texture2D*    m_pSharedSurfaces[c_shared_surfaces_num];
+
 };
 
-#endif // #if !defined(_WIN32) && !defined(_WIN64)
+#endif // #if defined(_WIN32) || defined(_WIN64)
+

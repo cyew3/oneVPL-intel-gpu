@@ -24,12 +24,6 @@ enum eTypeHandle
     DXVA2_DECODER       = 0x01
 };
 
-struct directxMemId
-{
-    IDirect3DSurface9* m_surface;
-    HANDLE m_handle;
-};
-
 struct D3DAllocatorParams : mfxAllocatorParams
 {
     IDirect3DDeviceManager9 *pManager;

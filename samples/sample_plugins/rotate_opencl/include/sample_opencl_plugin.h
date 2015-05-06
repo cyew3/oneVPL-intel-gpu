@@ -20,6 +20,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 #if defined(_WIN32) || defined(_WIN64)
 #include "opencl_filter_dx9.h"
+#include "opencl_filter_dx11.h"
 #else
 #include "opencl_filter_va.h"
 #endif
@@ -202,9 +203,9 @@ protected: // variables
     bool m_bIsOutOpaque;
 
 #if defined(_WIN32) || defined(_WIN64)
-    OpenCLFilterDX9 m_OpenCLFilter;
+    std::auto_ptr<OpenCLFilter> m_OpenCLFilter;
 #else
-    OpenCLFilterVA m_OpenCLFilter;
+    std::auto_ptr<OpenCLFilterVA> m_OpenCLFilter;
 #endif
     std::auto_ptr<OpenCLRotator180Context> m_pOpenCLRotator180Context;
     mfxHDL m_device;
@@ -222,6 +223,7 @@ protected: // variables
     DataChunk *m_pChunks;
 
     mfxU32 m_NumChunks;
+    mfxIMPL m_impl;
 };
 
 #endif // __SAMPLE_PLUGIN_H__

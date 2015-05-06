@@ -62,9 +62,21 @@ mfxStatus Rotate::PluginInit(mfxCoreInterface *core)
     m_pmfxCore = new mfxCoreInterface;
     MSDK_CHECK_POINTER(m_pmfxCore, MFX_ERR_MEMORY_ALLOC);
     *m_pmfxCore = *core;
+    mfxCoreParam par = {0};
+    sts = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &par);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    m_impl = par.Impl;
 
+    mfxHDL hdl = 0;
+    m_impl &= 0xf00;
 #if defined(_WIN32) || defined(_WIN64)
-    sts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, &m_device);
+    if (m_impl == MFX_IMPL_VIA_D3D9) {
+        sts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, &m_device);
+    } else if (m_impl == MFX_IMPL_VIA_D3D11){
+        sts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D11_DEVICE, &m_device);
+    } else {
+        hdl = 0;
+    }
 #else
     sts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_VA_DISPLAY, &m_device);
 #endif
@@ -187,7 +199,7 @@ mfxStatus Rotate::Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfx
     case 180:
         if (m_bOpenCLSurfaceSharing)
         {
-            m_pTasks[ind].pProcessor = new OpenCLFilterRotator180(&m_OpenCLFilter);
+            m_pTasks[ind].pProcessor = new OpenCLFilterRotator180(m_OpenCLFilter.get());
         }
         else
         {
@@ -327,18 +339,27 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
         // init OpenCLFilter
         cl_int error = CL_SUCCESS;
 
-        try
-        {
-            error = m_OpenCLFilter.AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV", MFX_FOURCC_NV12);
-            if (error) return MFX_ERR_DEVICE_FAILED;
-        }
-        catch(const std::exception& err)
-        {
-            std::cout << "Error: The AddKernel or readFile method throws an exception: " << err.what() << std::endl;
-            return MFX_ERR_DEVICE_FAILED;
-        }
 
-        error = m_OpenCLFilter.OCLInit(m_device);
+        int format = D3DFMT_NV12;
+#if defined(_WIN32) || defined(_WIN64)
+        if (m_impl == MFX_IMPL_VIA_D3D11) {
+             m_OpenCLFilter.reset(new OpenCLFilterDX11());
+             format = DXGI_FORMAT_NV12;
+        } else {
+            m_OpenCLFilter.reset(new OpenCLFilterDX9());
+            format = D3DFMT_NV12;
+        }
+        error = m_OpenCLFilter.get()->AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV", format);
+        if (error) return MFX_ERR_DEVICE_FAILED;
+
+        error = m_OpenCLFilter.get()->OCLInit(m_device);
+
+#else
+        m_OpenCLFilter.reset(new OpenCLFilterVA());
+        error = m_OpenCLFilter.get()->AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV", VA_RT_FORMAT_YUV420);
+        if (error) return MFX_ERR_DEVICE_FAILED;
+        error = m_OpenCLFilter.get()->OCLInit(m_device);
+#endif
         if (error)
         {
             error = CL_SUCCESS;
@@ -347,7 +368,7 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
         }
         else
         {
-            error = m_OpenCLFilter.SelectKernel(0);
+            error = m_OpenCLFilter->SelectKernel(0);
             if (error) return MFX_ERR_DEVICE_FAILED;
         }
     }

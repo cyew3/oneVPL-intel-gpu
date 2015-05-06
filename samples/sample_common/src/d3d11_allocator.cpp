@@ -367,7 +367,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         desc.Format = ConverColortFormat(request->Info.FourCC);
         desc.SampleDesc.Count = 1;
         desc.Usage = D3D11_USAGE_DEFAULT;
-        desc.MiscFlags = m_initParams.uncompressedResourceMiscFlags;
+        desc.MiscFlags = m_initParams.uncompressedResourceMiscFlags | D3D11_RESOURCE_MISC_SHARED;
 
         desc.BindFlags = D3D11_BIND_DECODER;
 
@@ -419,7 +419,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
             if (FAILED(hRes))
             {
-                printf("Create staging texture(%lld) failed hr = 0x%X\n", (long long)i, (unsigned int)hRes);
+                msdk_printf(MSDK_STRING("Create staging texture(%lld) failed hr = 0x%X\n"), (long long)i, (unsigned int)hRes);
                 return MFX_ERR_MEMORY_ALLOC;
             }
             newTexture.stagingTexture.push_back(pTexture2D);

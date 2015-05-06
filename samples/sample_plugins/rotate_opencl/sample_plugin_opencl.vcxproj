@@ -204,6 +204,7 @@
     <ClCompile Include="..\plugins_common_files\mfx_plugin_module.cpp" />
     <ClCompile Include="src\opencl_filter.cpp" />
     <ClCompile Include="src\opencl_filter_dx9.cpp" />
+    <ClCompile Include="src\opencl_filter_dx11.cpp" />
     <ClCompile Include="src\sample_opencl_plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -211,6 +212,7 @@
     <ClInclude Include="include\logger.h" />
     <ClInclude Include="include\opencl_filter.h" />
     <ClInclude Include="include\opencl_filter_dx9.h" />
+    <ClInclude Include="include\opencl_filter_dx11.h" />
     <ClInclude Include="include\sample_opencl_plugin.h" />
   </ItemGroup>
   <ItemGroup>

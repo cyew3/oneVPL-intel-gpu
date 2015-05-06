@@ -357,9 +357,9 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
     CComPtr<IDirect3DSurface9> pBackBuffer;
     hr = m_pD3DD9->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 
-    directxMemId* dxMemId = (directxMemId*)pSurface->Data.MemId;
+    mfxHDLPair* dxMemId = (mfxHDLPair*)pSurface->Data.MemId;
 
-    hr = m_pD3DD9->StretchRect(dxMemId->m_surface, NULL, pBackBuffer, NULL, D3DTEXF_LINEAR);
+    hr = m_pD3DD9->StretchRect((IDirect3DSurface9*)dxMemId->first, NULL, pBackBuffer, NULL, D3DTEXF_LINEAR);
     if (FAILED(hr))
     {
         return MFX_ERR_UNKNOWN;

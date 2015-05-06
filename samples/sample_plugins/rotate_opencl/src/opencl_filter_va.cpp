@@ -94,135 +94,39 @@ cl_int OpenCLFilterVA::InitDevice()
     return error;
 }
 
-cl_int OpenCLFilterVA::PrepareSharedSurfaces(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut)
+cl_mem OpenCLFilterVA::CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly)
 {
+    VASurfaceID* surf = NULL;
+    mfxStatus sts = m_pAlloc->GetHDL(m_pAlloc->pthis, mid, reinterpret_cast<mfxHDL*>(&surf));
+    if (sts) return 0;
+
     cl_int error = CL_SUCCESS;
-    int va_res = VA_STATUS_SUCCESS;
-    mfxStatus sts = MFX_ERR_NONE;
-    VASurfaceID* inputD3DSurf = NULL;
-    VASurfaceID* outputD3DSurf = NULL;
-
-    sts = m_pAlloc->GetHDL(m_pAlloc->pthis, pSurfIn, reinterpret_cast<mfxHDL*>(&inputD3DSurf));
-    if(MFX_ERR_NONE != sts) return CL_INVALID_VALUE;
-
-    sts = m_pAlloc->GetHDL(m_pAlloc->pthis, pSurfOut, reinterpret_cast<mfxHDL*>(&outputD3DSurf));
-    if(MFX_ERR_NONE != sts) return CL_INVALID_VALUE;
-
-    if(m_bInit) {
-        m_currentWidth = width;
-        m_currentHeight = height;
-
-        // Setup OpenCL buffers etc.
-        if(!m_clbuffer[0]) // Initialize OCL buffers in case of new workload
-        {
-            if(m_kernels[m_activeKernel].format == MFX_FOURCC_NV12)
-            {
-                // Associate the shared buffer with the kernel object
-                m_clbuffer[0] = clCreateFromVA_APIMediaSurfaceINTEL(m_clcontext, CL_MEM_READ_ONLY, inputD3DSurf, 0, &error);
-                if(error) {
-                    log.error() << "clCreateFromVA_APIMediaSurfaceINTEL failed. Error code: " << error << endl;
-                    return error;
-                }
-                m_clbuffer[1] = clCreateFromVA_APIMediaSurfaceINTEL(m_clcontext, CL_MEM_READ_ONLY, inputD3DSurf, 1, &error);
-                if(error) {
-                    log.error() << "clCreateFromVA_APIMediaSurfaceINTEL failed. Error code: " << error << endl;
-                    return error;
-                }
-                m_clbuffer[2] = clCreateFromVA_APIMediaSurfaceINTEL(m_clcontext, CL_MEM_WRITE_ONLY, outputD3DSurf, 0, &error);
-                if(error) {
-                    log.error() << "clCreateFromVA_APIMediaSurfaceINTEL failed. Error code: " << error << endl;
-                    return error;
-                }
-                m_clbuffer[3] = clCreateFromVA_APIMediaSurfaceINTEL(m_clcontext, CL_MEM_WRITE_ONLY, outputD3DSurf, 1, &error);
-                if(error) {
-                    log.error() << "clCreateFromVA_APIMediaSurfaceINTEL failed. Error code: " << error << endl;
-                    return error;
-                }
-
-                // Work sizes for Y plane
-                m_GlobalWorkSizeY[0] = m_currentWidth;
-                m_GlobalWorkSizeY[1] = m_currentHeight;
-                m_LocalWorkSizeY[0] = chooseLocalSize(m_GlobalWorkSizeY[0], 8);
-                m_LocalWorkSizeY[1] = chooseLocalSize(m_GlobalWorkSizeY[1], 8);
-                m_GlobalWorkSizeY[0] = m_LocalWorkSizeY[0]*(m_GlobalWorkSizeY[0]/m_LocalWorkSizeY[0]);
-                m_GlobalWorkSizeY[1] = m_LocalWorkSizeY[1]*(m_GlobalWorkSizeY[1]/m_LocalWorkSizeY[1]);
-
-                // Work size for UV plane
-                m_GlobalWorkSizeUV[0] = m_currentWidth/2;
-                m_GlobalWorkSizeUV[1] = m_currentHeight/2;
-                m_LocalWorkSizeUV[0] = chooseLocalSize(m_GlobalWorkSizeUV[0], 8);
-                m_LocalWorkSizeUV[1] = chooseLocalSize(m_GlobalWorkSizeUV[1], 8);
-                m_GlobalWorkSizeUV[0] = m_LocalWorkSizeUV[0]*(m_GlobalWorkSizeUV[0]/m_LocalWorkSizeUV[0]);
-                m_GlobalWorkSizeUV[1] = m_LocalWorkSizeUV[1]*(m_GlobalWorkSizeUV[1]/m_LocalWorkSizeUV[1]);
-
-                error = SetKernelArgs();
-                if (error) return error;
-            } else {
-                log.error() << "OpenCLFilter: Unsupported image format" << endl;
-                return CL_INVALID_VALUE;
-            }
-        }
-        return error;
+    cl_mem mem = clCreateFromVA_APIMediaSurfaceINTEL(m_clcontext, bIsReadOnly ? CL_MEM_READ_ONLY : CL_MEM_READ_WRITE,
+                                            surf, nView, &error);
+    if (error) {
+        log.error() << "clCreateFromVA_APIMediaSurfaceINTEL failed. Error code: " << error << endl;
+        return 0;
     }
-    else
-        return CL_DEVICE_NOT_FOUND;
+    return mem;
 }
 
-cl_int OpenCLFilterVA::ProcessSurface()
+
+bool OpenCLFilterVA::EnqueueAcquireSurfaces(cl_mem* surfaces, int nSurfaces)
 {
-    cl_int error = CL_SUCCESS;
-
-    if(!m_bInit)
-        error = CL_DEVICE_NOT_FOUND;
-
-    if(m_clbuffer[0] && CL_SUCCESS == error)
-    {
-        if(m_kernels[m_activeKernel].format == MFX_FOURCC_NV12)
-        {
-            cl_mem    surfaces[4] ={m_clbuffer[0],
-                                    m_clbuffer[1],
-                                    m_clbuffer[2],
-                                    m_clbuffer[3]};
-
-            error = clEnqueueAcquireVA_APIMediaSurfacesINTEL(m_clqueue,4,surfaces,0,NULL,NULL);
-            if(error) {
-                log.error() << "clEnqueueAcquireVA_APIMediaSurfacesINTEL failed. Error code: " << error << endl;
-                return error;
-            }
-
-            // enqueue kernels
-            error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelY, 2, NULL, m_GlobalWorkSizeY, m_LocalWorkSizeY, 0, NULL, NULL);
-            if(error) {
-                log.error() << "clEnqueueNDRangeKernel for Y plane failed. Error code: " << error << endl;
-                return error;
-            }
-            error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelUV, 2, NULL, m_GlobalWorkSizeUV, m_LocalWorkSizeUV, 0, NULL, NULL);
-            if(error) {
-                log.error() << "clEnqueueNDRangeKernel for UV plane failed. Error code: " << error << endl;
-                return error;
-            }
-
-            error = clEnqueueReleaseVA_APIMediaSurfacesINTEL(m_clqueue,4, surfaces,0,NULL,NULL);
-            if(error) {
-                log.error() << "clEnqueueReleaseVA_APIMediaSurfacesINTEL failed. Error code: " << error << endl;
-                return error;
-            }
-
-            // flush & finish the command queue
-            error = clFlush(m_clqueue);
-            if(error) {
-                log.error() << "clFlush failed. Error code: " << error << endl;
-                return error;
-            }
-
-            error = clFinish(m_clqueue);
-            if(error) {
-                log.error() << "clFinish failed. Error code: " << error << endl;
-                return error;
-            }
-        }
+    cl_int error = clEnqueueAcquireVA_APIMediaSurfacesINTEL(m_clqueue, nSurfaces, surfaces, 0, NULL, NULL);
+    if (error) {
+        log.error() << "clEnqueueAcquireVA_APIMediaSurfacesINTEL failed. Error code: " << error << endl;
+        return false;
     }
-    return error;
+}
+
+bool OpenCLFilterVA::EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces)
+{
+    cl_int error = clEnqueueReleaseVA_APIMediaSurfacesINTEL(m_clqueue, nSurfaces, surfaces, 0, NULL, NULL);
+    if (error) {
+        log.error() << "clEnqueueReleaseVA_APIMediaSurfacesINTEL failed. Error code: " << error << endl;
+        return false;
+    }
 }
 
 #endif // #if !defined(_WIN32) && !defined(_WIN64)

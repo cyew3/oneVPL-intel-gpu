@@ -925,13 +925,6 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
         InputParams.nAsyncDepth = 1;
     }
 
-    // Sample does not support user plugin with '-hw_d3d11'
-    if ((MFX_IMPL_VIA_D3D11 == MFX_IMPL_VIA_MASK(InputParams.libType)) && InputParams.nRotationAngle != 0)
-    {
-        PrintHelp(NULL, MSDK_STRING("Sample does not support user plugin with '-hw_d3d11'\n"));
-        return MFX_ERR_UNSUPPORTED;
-    }
-
     if (InputParams.bLABRC && !(InputParams.libType & MFX_IMPL_HARDWARE_ANY))
     {
         PrintHelp(NULL, MSDK_STRING("Look ahead BRC is supported only with -hw option!"));

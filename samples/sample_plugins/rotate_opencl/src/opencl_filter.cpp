@@ -287,7 +287,52 @@ cl_int OpenCLFilterBase::ProcessSurface(int width, int height, mfxMemId pSurfIn,
     return error;
 }
 
+cl_int OpenCLFilterBase::ProcessSurface()
+{
+    cl_int error = CL_SUCCESS;
 
+    if (!m_bInit)
+        error = CL_DEVICE_NOT_FOUND;
+
+    if (m_clbuffer[0] && CL_SUCCESS == error)
+    {
+        cl_mem    surfaces[4] = { m_clbuffer[0],
+            m_clbuffer[1],
+            m_clbuffer[2],
+            m_clbuffer[3] };
+
+        if (EnqueueAcquireSurfaces(surfaces, sizeof(surfaces)/sizeof(cl_mem)))
+            return CL_DEVICE_NOT_AVAILABLE;
+
+        // enqueue kernels
+        error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelY, 2, NULL, m_GlobalWorkSizeY, m_LocalWorkSizeY, 0, NULL, NULL);
+        if (error) {
+            log.error() << "clEnqueueNDRangeKernel for Y plane failed. Error code: " << error << endl;
+            return error;
+        }
+        error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelUV, 2, NULL, m_GlobalWorkSizeUV, m_LocalWorkSizeUV, 0, NULL, NULL);
+        if (error) {
+            log.error() << "clEnqueueNDRangeKernel for UV plane failed. Error code: " << error << endl;
+            return error;
+        }
+
+        if (EnqueueReleaseSurfaces(surfaces, sizeof(surfaces)/sizeof(cl_mem)))
+            return CL_DEVICE_NOT_AVAILABLE;
+
+        // flush & finish the command queue
+        error = clFlush(m_clqueue);
+        if (error) {
+            log.error() << "clFlush failed. Error code: " << error << endl;
+            return error;
+        }
+        error = clFinish(m_clqueue);
+        if (error) {
+            log.error() << "clFinish failed. Error code: " << error << endl;
+            return error;
+        }
+    }
+    return error;
+}
 
 std::string getPathToExe()
 {
@@ -332,4 +377,45 @@ std::string readFile(const char *filename)
     input.read(&program_source[0], program_source.size());
 
     return std::string(program_source.begin(), program_source.end());
+}
+
+cl_int OpenCLFilterBase::PrepareSharedSurfaces(int width, int height, mfxMemId surf_in, mfxMemId surf_out)
+{
+    if (!m_bInit)
+        return CL_DEVICE_NOT_FOUND;
+
+    m_currentWidth = width;
+    m_currentHeight = height;
+
+    // Setup OpenCL buffers etc.
+    if (!m_clbuffer[0]) // Initialize OCL buffers in case of new workload
+    {
+        // Associate the shared buffer with the kernel object
+        m_clbuffer[0] = CreateSharedSurface(surf_in, 0, true);
+        m_clbuffer[1] = CreateSharedSurface(surf_in, 1, true);
+        m_clbuffer[2] = CreateSharedSurface(surf_out, 0, false);
+        m_clbuffer[3] = CreateSharedSurface(surf_out, 1, false);
+        if (!m_clbuffer[0] || !m_clbuffer[1] || !m_clbuffer[2] || !m_clbuffer[3])
+            return CL_DEVICE_NOT_FOUND;
+
+        // Work sizes for Y plane
+        m_GlobalWorkSizeY[0] = m_currentWidth;
+        m_GlobalWorkSizeY[1] = m_currentHeight;
+        m_LocalWorkSizeY[0] = chooseLocalSize(m_GlobalWorkSizeY[0], 8);
+        m_LocalWorkSizeY[1] = chooseLocalSize(m_GlobalWorkSizeY[1], 8);
+        m_GlobalWorkSizeY[0] = m_LocalWorkSizeY[0] * (m_GlobalWorkSizeY[0] / m_LocalWorkSizeY[0]);
+        m_GlobalWorkSizeY[1] = m_LocalWorkSizeY[1] * (m_GlobalWorkSizeY[1] / m_LocalWorkSizeY[1]);
+
+        // Work size for UV plane
+        m_GlobalWorkSizeUV[0] = m_currentWidth / 2;
+        m_GlobalWorkSizeUV[1] = m_currentHeight / 2;
+        m_LocalWorkSizeUV[0] = chooseLocalSize(m_GlobalWorkSizeUV[0], 8);
+        m_LocalWorkSizeUV[1] = chooseLocalSize(m_GlobalWorkSizeUV[1], 8);
+        m_GlobalWorkSizeUV[0] = m_LocalWorkSizeUV[0] * (m_GlobalWorkSizeUV[0] / m_LocalWorkSizeUV[0]);
+        m_GlobalWorkSizeUV[1] = m_LocalWorkSizeUV[1] * (m_GlobalWorkSizeUV[1] / m_LocalWorkSizeUV[1]);
+
+        cl_int error = SetKernelArgs();
+        if (error) return error;
+    }
+    return CL_SUCCESS;
 }

@@ -26,9 +26,10 @@ public:
 protected: // functions
     virtual cl_int InitDevice();
     virtual cl_int InitSurfaceSharingExtension();
-    virtual cl_int PrepareSharedSurfaces(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut);
-    virtual cl_int ProcessSurface();
 
+    virtual cl_mem CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly);
+    virtual bool EnqueueAcquireSurfaces(cl_mem* surfaces, int nSurfaces);
+    virtual bool EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces);
 protected: // variables
     std::auto_ptr<SafeD3DDeviceManager> m_SafeD3DDeviceManager;
 

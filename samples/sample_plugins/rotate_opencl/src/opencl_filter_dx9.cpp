@@ -141,153 +141,39 @@ cl_int OpenCLFilterDX9::InitDevice()
     return error;
 }
 
-cl_int OpenCLFilterDX9::PrepareSharedSurfaces(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut)
+cl_mem OpenCLFilterDX9::CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly)
 {
+    mfxHDLPair* mid_pair = static_cast<mfxHDLPair*>(mid);
+
+    IDirect3DSurface9 *surf = (IDirect3DSurface9*)mid_pair->first;
+    HANDLE handle = mid_pair->second;
+
     cl_int error = CL_SUCCESS;
-    mfxStatus sts = MFX_ERR_NONE;
-    IDirect3DSurface9 *inputD3DSurf = NULL;
-    IDirect3DSurface9 *outputD3DSurf = NULL;
-    HANDLE inputD3DSurfHandle = NULL;
-    HANDLE outputD3DSurfHandle = NULL;
-
-#if 1
-    directxMemId* pDxInSurfMemId = static_cast<directxMemId*>(pSurfIn);
-    directxMemId* pDxOutSurfMemId = static_cast<directxMemId*>(pSurfOut);
-
-    inputD3DSurf = pDxInSurfMemId->m_surface;
-    outputD3DSurf = pDxOutSurfMemId->m_surface;
-    inputD3DSurfHandle = pDxInSurfMemId->m_handle;
-    outputD3DSurfHandle = pDxOutSurfMemId->m_handle;
-#else
-    sts = m_pAlloc->GetHDL(m_pAlloc->pthis, pSurfIn, reinterpret_cast<mfxHDL*>(&inputD3DSurf));
-    if(MFX_ERR_NONE != sts) return CL_INVALID_VALUE;
-
-    sts = m_pAlloc->GetHDL(m_pAlloc->pthis, pSurfOut, reinterpret_cast<mfxHDL*>(&outputD3DSurf));
-    if(MFX_ERR_NONE != sts) return CL_INVALID_VALUE;
-#endif
-
-    if(m_bInit)
-    {
-        m_currentWidth = width;
-        m_currentHeight = height;
-
-        //
-        // Setup OpenCL buffers etc.
-        //
-        if(!m_clbuffer[0]) // Initialize OCL buffers in case of new workload
-        {
-            if(m_kernels[m_activeKernel].format == MFX_FOURCC_NV12)
-            {
-                // Working on NV12 surfaces
-
-                // Associate the shared buffer with the kernel object
-                m_clbuffer[0] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext, CL_MEM_READ_ONLY, inputD3DSurf, inputD3DSurfHandle, 0, &error);
-                if(error) {
-                    log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
-                    return error;
-                }
-                m_clbuffer[1] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext, CL_MEM_READ_ONLY, inputD3DSurf, inputD3DSurfHandle, 1, &error);
-                if(error) {
-                    log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
-                    return error;
-                }
-                m_clbuffer[2] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext, CL_MEM_WRITE_ONLY, outputD3DSurf, outputD3DSurfHandle, 0, &error);
-                if(error) {
-                    log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
-                    return error;
-                }
-                m_clbuffer[3] = clCreateFromDX9MediaSurfaceINTEL(m_clcontext, CL_MEM_WRITE_ONLY, outputD3DSurf, outputD3DSurfHandle, 1, &error);
-                if(error) {
-                    log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
-                    return error;
-                }
-
-                // Work sizes for Y plane
-                m_GlobalWorkSizeY[0] = m_currentWidth;
-                m_GlobalWorkSizeY[1] = m_currentHeight;
-                m_LocalWorkSizeY[0] = chooseLocalSize(m_GlobalWorkSizeY[0], 8);
-                m_LocalWorkSizeY[1] = chooseLocalSize(m_GlobalWorkSizeY[1], 8);
-                m_GlobalWorkSizeY[0] = m_LocalWorkSizeY[0]*(m_GlobalWorkSizeY[0]/m_LocalWorkSizeY[0]);
-                m_GlobalWorkSizeY[1] = m_LocalWorkSizeY[1]*(m_GlobalWorkSizeY[1]/m_LocalWorkSizeY[1]);
-
-                // Work size for UV plane
-                m_GlobalWorkSizeUV[0] = m_currentWidth/2;
-                m_GlobalWorkSizeUV[1] = m_currentHeight/2;
-                m_LocalWorkSizeUV[0] = chooseLocalSize(m_GlobalWorkSizeUV[0], 8);
-                m_LocalWorkSizeUV[1] = chooseLocalSize(m_GlobalWorkSizeUV[1], 8);
-                m_GlobalWorkSizeUV[0] = m_LocalWorkSizeUV[0]*(m_GlobalWorkSizeUV[0]/m_LocalWorkSizeUV[0]);
-                m_GlobalWorkSizeUV[1] = m_LocalWorkSizeUV[1]*(m_GlobalWorkSizeUV[1]/m_LocalWorkSizeUV[1]);
-
-                error = SetKernelArgs();
-                if (error) return error;
-            }
-            else
-            {
-                log.error() << "OpenCLFilter: Unsupported image format" << endl;
-                return CL_INVALID_VALUE;
-            }
-        }
-
-        return error;
+    cl_mem mem = clCreateFromDX9MediaSurfaceINTEL(m_clcontext, bIsReadOnly ? CL_MEM_READ_ONLY : CL_MEM_READ_WRITE,
+                                                    surf, handle, nView, &error);
+    if (error) {
+        log.error() << "clCreateFromDX9MediaSurfaceINTEL failed. Error code: " << error << endl;
+        return 0;
     }
-    else
-        return CL_DEVICE_NOT_FOUND;
+    return mem;
 }
 
-cl_int OpenCLFilterDX9::ProcessSurface()
+bool OpenCLFilterDX9::EnqueueAcquireSurfaces(cl_mem* surfaces, int nSurfaces)
 {
-    cl_int error = CL_SUCCESS;
-
-    if(!m_bInit)
-        error = CL_DEVICE_NOT_FOUND;
-
-    if(m_clbuffer[0] && CL_SUCCESS == error)
-    {
-        if(m_kernels[m_activeKernel].format == MFX_FOURCC_NV12)
-        {
-            cl_mem    surfaces[4] ={m_clbuffer[0],
-                                    m_clbuffer[1],
-                                    m_clbuffer[2],
-                                    m_clbuffer[3]};
-
-            error = clEnqueueAcquireDX9ObjectsINTEL(m_clqueue, 4, surfaces, 0, NULL, NULL);
-            if(error) {
-                log.error() << "clEnqueueAcquireDX9ObjectsINTEL failed. Error code: " << error << endl;
-                return error;
-            }
-
-            error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelY, 2, NULL, m_GlobalWorkSizeY, m_LocalWorkSizeY, 0, NULL, NULL);
-            if(error) {
-                log.error() << "clEnqueueNDRangeKernel for Y plane failed. Error code: " << error << endl;
-                return error;
-            }
-
-            error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelUV, 2, NULL, m_GlobalWorkSizeUV, m_LocalWorkSizeUV, 0, NULL, NULL);
-            if(error) {
-                log.error() << "clEnqueueNDRangeKernel for UV plane failed. Error code: " << error << endl;
-                return error;
-            }
-
-            error = clEnqueueReleaseDX9ObjectsINTEL(m_clqueue,4, surfaces,0,NULL,NULL);
-            if(error) {
-                log.error() << "clEnqueueReleaseDX9ObjectsINTEL failed. Error code: " << error << endl;
-                return error;
-            }
-
-            // flush & finish the command queue
-            error = clFlush(m_clqueue);
-            if(error) {
-                log.error() << "clFlush failed. Error code: " << error << endl;
-                return error;
-            }
-            error = clFinish(m_clqueue);
-            if(error) {
-                log.error() << "clFinish failed. Error code: " << error << endl;
-                return error;
-            }
-        }
+    cl_int error = clEnqueueAcquireDX9ObjectsINTEL(m_clqueue, nSurfaces, surfaces, 0, NULL, NULL);
+    if (error) {
+        log.error() << "clEnqueueAcquireDX9ObjectsINTEL failed. Error code: " << error << endl;
+        return false;
     }
-    return error;
+}
+
+bool OpenCLFilterDX9::EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces)
+{
+    cl_int error = clEnqueueReleaseDX9ObjectsINTEL(m_clqueue, nSurfaces, surfaces, 0, NULL, NULL);
+    if (error) {
+        log.error() << "clEnqueueReleaseDX9ObjectsINTEL failed. Error code: " << error << endl;
+        return false;
+    }
 }
 
 #endif // #if defined(_WIN32) || defined(_WIN64)

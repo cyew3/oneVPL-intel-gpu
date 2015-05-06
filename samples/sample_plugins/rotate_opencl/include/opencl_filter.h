@@ -61,11 +61,14 @@ protected: // functions
     virtual cl_int BuildKernels();
     virtual cl_int SetKernelArgs();
     virtual cl_int ReleaseResources();
+    virtual cl_int ProcessSurface();
+    virtual cl_int PrepareSharedSurfaces(int width, int height, mfxMemId surf_in, mfxMemId surf_out);
 
     virtual cl_int InitDevice() = 0;
     virtual cl_int InitSurfaceSharingExtension() = 0; // vaapi, d3d9, d3d11, etc. specific
-    virtual cl_int PrepareSharedSurfaces(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut) = 0;
-    virtual cl_int ProcessSurface() = 0;
+    virtual bool   EnqueueAcquireSurfaces(cl_mem* surfaces, int nSurfaces) = 0;
+    virtual bool   EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces) = 0;
+    virtual cl_mem CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly) = 0;
 
     inline size_t chooseLocalSize(
         size_t globalSize, // frame width or height
