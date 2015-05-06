@@ -3311,7 +3311,7 @@ mfxU32 VMEBrc::Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 /*userDataLeng
     for (std::list<LaFrameData>::iterator it = start; it != m_laData.end(); ++it) 
         numFrames++;
 
-    numFrames = IPP_MIN(numFrames, m_lookAheadDep);
+    numFrames = IPP_MIN(numFrames, m_lookAhead);
 
     if (start != m_laData.end())
     {
@@ -3379,7 +3379,7 @@ mfxU8 VMEBrc::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/, mfxU32 encOrder)
     for(it = start;it != m_laData.end(); ++it) 
         numberOfFrames++;
 
-    numberOfFrames = IPP_MIN( numberOfFrames, m_lookAheadDep);
+    numberOfFrames = IPP_MIN( numberOfFrames, m_lookAhead);
 
 
     // fill totalEstRate

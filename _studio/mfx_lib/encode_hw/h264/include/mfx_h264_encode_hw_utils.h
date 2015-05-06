@@ -1511,7 +1511,6 @@ namespace MfxHwH264Encode
 
     protected:
         mfxU32  m_lookAhead;
-        mfxU32  m_lookAheadDep;
         mfxU16  m_LaScaleFactor;
         mfxU32  m_strength;
         mfxU32  m_totNumMb;
