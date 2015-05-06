@@ -185,6 +185,7 @@ Status FillVideoParam(const UMC_H264_DECODER::H264SeqParamSet * seq, mfxVideoPar
 
     par->mfx.CodecProfile = seq->profile_idc;
     par->mfx.CodecLevel = seq->level_idc;
+    par->mfx.MaxDecFrameBuffering = seq->vui.max_dec_frame_buffering;
 
     // video signal section
     mfxExtVideoSignalInfo * videoSignal = (mfxExtVideoSignalInfo *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VIDEO_SIGNAL_INFO);

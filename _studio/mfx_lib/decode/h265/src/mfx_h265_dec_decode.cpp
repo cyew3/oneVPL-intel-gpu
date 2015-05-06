@@ -713,9 +713,12 @@ mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
     if (hevcParam)
         dpbSize = CalculateDPBSize(par->mfx.CodecLevel, hevcParam->PicWidthInLumaSamples, hevcParam->PicHeightInLumaSamples);
     else
-        dpbSize = CalculateDPBSize(par->mfx.CodecLevel, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height);
+        dpbSize = CalculateDPBSize(par->mfx.CodecLevel, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height) + 1; //1 extra for avoid aligned size issue
 
-    mfxU32 numMin = dpbSize + 1 + asyncDepth + (hevcParam ? 0 : 1); //1 extra for avoid aligned size issue
+    if (par->mfx.MaxDecFrameBuffering && par->mfx.MaxDecFrameBuffering < dpbSize)
+        dpbSize = par->mfx.MaxDecFrameBuffering;
+    
+    mfxU32 numMin = dpbSize + 1 + asyncDepth;
     if (platform != MFX_PLATFORM_SOFTWARE && useDelayedDisplay) // equals if (m_useDelayedDisplay) - workaround
         numMin += NUMBER_OF_ADDITIONAL_FRAMES;
     request->NumFrameMin = (mfxU16)numMin;
