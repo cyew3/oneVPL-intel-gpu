@@ -413,6 +413,9 @@ namespace TranscodingSample
         // for setting MaxSliceSize
         mfxExtCodingOption2      m_CodingOption2;
 
+        // HEVC
+        mfxExtHEVCParam          m_ExtHEVCParam;
+
         // for opaque memory
         mfxExtOpaqueSurfaceAlloc m_EncOpaqueAlloc;
         mfxExtOpaqueSurfaceAlloc m_VppOpaqueAlloc;

@@ -181,6 +181,8 @@ protected:
     mfxExtCodingOption m_CodingOption;
     // for look ahead BRC configuration
     mfxExtCodingOption2 m_CodingOption2;
+    // HEVC
+    mfxExtHEVCParam m_ExtHEVCParam;
 
     // external parameters for each component are stored in a vector
     std::vector<mfxExtBuffer*> m_VppExtParams;

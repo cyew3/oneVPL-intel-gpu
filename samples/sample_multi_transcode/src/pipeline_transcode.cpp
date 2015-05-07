@@ -132,6 +132,9 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_VppDoNotUse.Header.BufferId = MFX_EXTBUFF_VPP_DONOTUSE;
     m_VppDoNotUse.Header.BufferSz = sizeof(mfxExtVPPDoNotUse);
 
+    m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_REGION;
+    m_ExtHEVCParam.Header.BufferSz = sizeof(mfxExtHEVCParam);
+
     m_EncOpaqueAlloc.Header.BufferId = m_VppOpaqueAlloc.Header.BufferId =
         m_DecOpaqueAlloc.Header.BufferId = m_PluginOpaqueAlloc.Header.BufferId =
         m_PreEncOpaqueAlloc.Header.BufferId =
@@ -1305,6 +1308,16 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
 
     m_mfxEncParams.mfx.TargetKbps = (mfxU16)(pInParams->nBitRate); // in Kbps
 
+    // In case of HEVC when height and/or width divided with 8 but not divided with 16
+    // add extended parameter to increase performance
+    if ( ( !((m_mfxEncParams.mfx.FrameInfo.CropW & 15 ) ^ 8 ) ||
+           !((m_mfxEncParams.mfx.FrameInfo.CropH & 15 ) ^ 8 ) ) &&
+             (m_mfxEncParams.mfx.CodecId == MFX_CODEC_HEVC) )
+    {
+        m_ExtHEVCParam.PicWidthInLumaSamples = m_mfxEncParams.mfx.FrameInfo.CropW;
+        m_ExtHEVCParam.PicHeightInLumaSamples = m_mfxEncParams.mfx.FrameInfo.CropH;
+        m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtHEVCParam);
+    }
 
     m_mfxEncParams.mfx.FrameInfo.CropX = 0;
     m_mfxEncParams.mfx.FrameInfo.CropY = 0;

@@ -401,6 +401,17 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
 
+    // In case of HEVC when height and/or width divided with 8 but not divided with 16
+    // add extended parameter to increase performance
+    if ( ( !((m_mfxEncParams.mfx.FrameInfo.CropW & 15 ) ^ 8 ) ||
+           !((m_mfxEncParams.mfx.FrameInfo.CropH & 15 ) ^ 8 ) ) &&
+             (m_mfxEncParams.mfx.CodecId == MFX_CODEC_HEVC) )
+    {
+        m_ExtHEVCParam.PicWidthInLumaSamples = m_mfxEncParams.mfx.FrameInfo.CropW;
+        m_ExtHEVCParam.PicHeightInLumaSamples = m_mfxEncParams.mfx.FrameInfo.CropH;
+        m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtHEVCParam);
+    }
+
     if (!m_EncExtParams.empty())
     {
         m_mfxEncParams.ExtParam = &m_EncExtParams[0]; // vector is stored linearly in memory
@@ -817,6 +828,10 @@ CEncodingPipeline::CEncodingPipeline()
     MSDK_ZERO_MEMORY(m_CodingOption2);
     m_CodingOption2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
     m_CodingOption2.Header.BufferSz = sizeof(m_CodingOption2);
+
+    MSDK_ZERO_MEMORY(m_ExtHEVCParam);
+    m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
+    m_ExtHEVCParam.Header.BufferSz = sizeof(m_ExtHEVCParam);
 
 #if D3D_SURFACES_SUPPORT
     m_hwdev = NULL;
