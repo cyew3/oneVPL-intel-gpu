@@ -411,6 +411,18 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.AVCTL);
 }
 
+mfxStatus MfxVideoParam::FillPar(mfxVideoParam& par, bool query)
+{
+        SyncCalculableToVideoParam();
+
+        par.mfx        = mfx;
+        par.AsyncDepth = AsyncDepth;
+        par.IOPattern  = IOPattern;
+        par.Protected  = Protected;
+
+        return GetExtBuffers(par, query);
+}
+
 mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
 {
     mfxStatus sts = MFX_ERR_NONE;

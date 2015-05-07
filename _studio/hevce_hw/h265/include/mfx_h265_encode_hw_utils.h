@@ -412,12 +412,13 @@ public:
     MfxVideoParam(mfxVideoParam const & par);
 
     MfxVideoParam & operator = (mfxVideoParam const &);
-    mfxVideoParam & operator = (MfxVideoParam const &);
 
     void SyncVideoToCalculableParam();
     void SyncCalculableToVideoParam();
     void SyncMfxToHeadersParam();
     void SyncHeadersToMfxParam();
+
+    mfxStatus FillPar(mfxVideoParam& par, bool query = false);
 
     void GetSliceHeader(Task const & task, Task const & prevTask, Slice & s) const;
 

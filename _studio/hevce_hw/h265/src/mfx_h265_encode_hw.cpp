@@ -320,10 +320,7 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         sts = CheckVideoParam(tmp, caps);
 
-        tmp.SyncCalculableToVideoParam();
-        *out = tmp;
-
-        tmp.GetExtBuffers(*out, true);
+        tmp.FillPar(*out, true);
     }
 
     return sts;
@@ -417,15 +414,7 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
 
-    mfxU16         NumExtParam = par->NumExtParam;
-    mfxExtBuffer** ExtParam    = par->ExtParam;
-
-    *par = m_vpar;
-
-    par->NumExtParam = NumExtParam;
-    par->ExtParam    = ExtParam;
-
-    sts = m_vpar.GetExtBuffers(*par);
+    m_vpar.FillPar(*par);
 
     return sts;
 }

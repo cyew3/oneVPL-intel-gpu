@@ -135,7 +135,7 @@ void FillSpsBuffer(
     sps.LocalSearch      = 0;
     sps.EarlySkip        = 0;
     sps.MBBRC            = IsOn(par.m_ext.CO2.MBBRC);
-    sps.ParallelBRC      = 0;
+    sps.ParallelBRC      = par.AsyncDepth > 1;
     sps.SliceSizeControl = 0;
 
     sps.UserMaxFrameSize = 0;
@@ -153,9 +153,26 @@ void FillSpsBuffer(
 
     if (sps.ParallelBRC)
     {
-        sps.NumOfBInGop[0]  = par.mfx.GopRefDist - 1;
-        sps.NumOfBInGop[1]  = 0;
-        sps.NumOfBInGop[2]  = 0;
+        if (!par.isBPyramid())
+        {
+            sps.NumOfBInGop[0]  = par.mfx.GopRefDist - 1;
+            sps.NumOfBInGop[1]  = 0;
+            sps.NumOfBInGop[2]  = 0;
+        }
+        else if (par.mfx.GopRefDist <=  8)
+        {
+            static UINT B[9]  = {0,0,1,1,1,1,1,1,1};
+            static UINT B1[9] = {0,0,0,1,2,2,2,2,2};
+            static UINT B2[9] = {0,0,0,0,0,1,2,3,4};
+
+            sps.NumOfBInGop[0]  = B[par.mfx.GopRefDist];
+            sps.NumOfBInGop[1]  = B1[par.mfx.GopRefDist];
+            sps.NumOfBInGop[2]  = B2[par.mfx.GopRefDist];  
+        }
+        else
+        {
+            assert(0);
+        }
     }
 
     sps.scaling_list_enable_flag           = par.m_sps.scaling_list_enabled_flag;
