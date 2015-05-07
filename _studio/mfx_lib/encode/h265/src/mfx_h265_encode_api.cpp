@@ -1469,16 +1469,18 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(
 {
     if (m_impl.get() == 0)
         return MFX_ERR_NOT_INITIALIZED;
-    if (bs == NULL || bs->Data == NULL || bs->MaxLength == 0)
-        return MFX_ERR_NULL_PTR;
     if (pEntryPoint == NULL)
         return MFX_ERR_NULL_PTR;
-    if (bs->MaxLength < bs->DataOffset + bs->DataLength)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
+    if (bs == NULL)
+        return MFX_ERR_NULL_PTR;
     Ipp32u maxFrameSizeInKB = m_mfxParam.mfx.BufferSizeInKB * MAX(1, m_mfxParam.mfx.BRCParamMultiplier);
     if (bs->MaxLength - bs->DataOffset - bs->DataLength < (Ipp64s)maxFrameSizeInKB * 1000)
         return MFX_ERR_NOT_ENOUGH_BUFFER;
+    if (bs->Data == NULL)
+        return MFX_ERR_NULL_PTR;
+    if (bs->MaxLength < bs->DataOffset + bs->DataLength)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     if (surface) { // check frame parameters
         if (surface->Info.ChromaFormat != m_mfxParam.mfx.FrameInfo.ChromaFormat)

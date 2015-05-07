@@ -65,14 +65,15 @@ TEST_F(RuntimeTest, ParamValidation) {
     mfxPayload payload = {};
     mfxPayload *payloadArr[1] = {};
 
-    { SCOPED_TRACE("Test bitstream.MaxLength==0");
-        bitstream.MaxLength = 0;
-        EXPECT_EQ(MFX_ERR_NULL_PTR, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
-        bitstream = goodBitstream;
-    }
     { SCOPED_TRACE("Test bitstream.Data==nullptr");
         bitstream.Data = nullptr;
         EXPECT_EQ(MFX_ERR_NULL_PTR, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
+        bitstream = goodBitstream;
+    }
+    { SCOPED_TRACE("Test bitstream.Data==nullptr && bitstream.MaxLength==0");
+        bitstream.Data = nullptr;
+        bitstream.MaxLength = 0;
+        EXPECT_EQ(MFX_ERR_NOT_ENOUGH_BUFFER, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
         bitstream = goodBitstream;
     }
     { SCOPED_TRACE("Test bitstream==nullptr");
