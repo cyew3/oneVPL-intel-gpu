@@ -339,9 +339,8 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
         // init OpenCLFilter
         cl_int error = CL_SUCCESS;
 
-
-        int format = D3DFMT_NV12;
 #if defined(_WIN32) || defined(_WIN64)
+        int format = D3DFMT_NV12;
         if (m_impl == MFX_IMPL_VIA_D3D11) {
              m_OpenCLFilter.reset(new OpenCLFilterDX11());
              format = DXGI_FORMAT_NV12;
