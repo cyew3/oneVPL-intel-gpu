@@ -236,6 +236,11 @@ struct sInputParams
     mfxF64 white_balance_G1;
     mfxF64 white_balance_R;
 
+    bool   bLens;
+    mfxF32 lens_a;
+    mfxF32 lens_b;
+    mfxF32 lens_c;
+    mfxF32 lens_d;
     bool   bCCM;
     mfxF64 CCM[3][3];
 
@@ -277,6 +282,7 @@ struct sInputParams
         bCCM          = false;
         bBayerDenoise = false;
         bVignette     = false;
+        bLens         = false;
 
         alphaValue = -1;
         resetInterval = 7;

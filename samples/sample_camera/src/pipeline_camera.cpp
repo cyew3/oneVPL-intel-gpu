@@ -188,6 +188,13 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
         m_ExtBuffers.push_back((mfxExtBuffer *)&m_CCM);
     }
 
+    if (pParams->bLens)
+    {
+        sts = AllocAndInitCamLens(pParams);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        m_ExtBuffers.push_back((mfxExtBuffer *)&m_Lens);
+    }
+
     m_PipeControl.Header.BufferId = MFX_EXTBUF_CAM_PIPECONTROL;
     m_PipeControl.Header.BufferSz = sizeof(m_PipeControl);
     m_PipeControl.RawFormat = (mfxU16)pParams->bayerType;
@@ -738,6 +745,10 @@ CCameraPipeline::CCameraPipeline()
     MSDK_ZERO_MEMORY(m_Vignette);
     m_Vignette.Header.BufferId = MFX_EXTBUF_CAM_VIGNETTE_CORRECTION;
     m_Vignette.Header.BufferSz = sizeof(m_Vignette);
+
+    MSDK_ZERO_MEMORY(m_Lens);
+    m_Lens.Header.BufferId = MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION;
+    m_Lens.Header.BufferSz = sizeof(m_Lens);
 }
 
 CCameraPipeline::~CCameraPipeline()
@@ -1006,6 +1017,23 @@ mfxStatus CCameraPipeline::AllocAndInitCamWhiteBalance(sInputParams *pParams)
     m_WhiteBalance.G1   = pParams->white_balance_G1;
     m_WhiteBalance.R    = pParams->white_balance_R;
 
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CCameraPipeline::AllocAndInitCamLens(sInputParams *pParams)
+{
+    m_Lens.a[0] = pParams->lens_a;
+    m_Lens.a[1] = pParams->lens_a;
+    m_Lens.a[2] = pParams->lens_a;
+    m_Lens.b[0] = pParams->lens_b;
+    m_Lens.b[1] = pParams->lens_b;
+    m_Lens.b[2] = pParams->lens_b;
+    m_Lens.c[0] = pParams->lens_c;
+    m_Lens.c[1] = pParams->lens_c;
+    m_Lens.c[2] = pParams->lens_c;
+    m_Lens.d[0] = pParams->lens_d;
+    m_Lens.d[1] = pParams->lens_d;
+    m_Lens.d[2] = pParams->lens_d;
     return MFX_ERR_NONE;
 }
 

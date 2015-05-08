@@ -1708,6 +1708,13 @@ msdk_opt_read(const msdk_char* string, mfxU32& value)
 }
 
 template<> mfxStatus
+msdk_opt_read(const msdk_char* string, mfxF32& value)
+{
+    msdk_char* stopCharacter;
+    value = (mfxF32)msdk_strtod(string, &stopCharacter);
+    return (msdk_strlen(stopCharacter) == 0)? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
+}
+template<> mfxStatus
 msdk_opt_read(const msdk_char* string, mfxF64& value)
 {
     msdk_char* stopCharacter;
@@ -1720,6 +1727,7 @@ mfxStatus msdk_opt_read(const msdk_char* string, mfxU8& value);
 mfxStatus msdk_opt_read(const msdk_char* string, mfxU16& value);
 mfxStatus msdk_opt_read(const msdk_char* string, mfxU32& value);
 mfxStatus msdk_opt_read(const msdk_char* string, mfxF64& value);
+mfxStatus msdk_opt_read(const msdk_char* string, mfxF32& value);
 
 template<> mfxStatus
 msdk_opt_read(const msdk_char* string, mfxI16& value)

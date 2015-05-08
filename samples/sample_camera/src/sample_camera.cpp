@@ -34,6 +34,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-bwb B G0 G1 R] / [-bayerWhiteBalance B G0 G1 R]   - bayer white balance\n"));
     msdk_printf(MSDK_STRING("   [-ccm n00 n01 ... n33 ]                             - color correction 3x3 matrix\n"));
     msdk_printf(MSDK_STRING("   [-vignette maskfile ]                               - enable vignette correction using mask from specified file\n"));
+    msdk_printf(MSDK_STRING("   [-lens a b c d ]                                    - enable lens geometry distortion correction\n"));
     msdk_printf(MSDK_STRING("   [-w width] / [-width width]                         - input width, default 4096\n"));
     msdk_printf(MSDK_STRING("   [-h height] / [-height height]                      - input height, default 2160\n"));
     msdk_printf(MSDK_STRING("   [-n numFrames] / [-numFramesToProcess numFrames]    - number of frames to process\n"));
@@ -203,6 +204,19 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_opt_read(strInput[++i], pParams->white_balance_G0);
             msdk_opt_read(strInput[++i], pParams->white_balance_G1);
             msdk_opt_read(strInput[++i], pParams->white_balance_R);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-lens")) )
+        {
+            if(i + 4 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -lens key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            pParams->bLens = true;
+            msdk_opt_read(strInput[++i], pParams->lens_a);
+            msdk_opt_read(strInput[++i], pParams->lens_b);
+            msdk_opt_read(strInput[++i], pParams->lens_c);
+            msdk_opt_read(strInput[++i], pParams->lens_d);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ccm")))
         {

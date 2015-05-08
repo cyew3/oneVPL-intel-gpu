@@ -89,6 +89,7 @@ protected:
     mfxExtCamBlackLevelCorrection m_BlackLevelCorrection;
     mfxExtCamWhiteBalance         m_WhiteBalance;
     mfxExtCamColorCorrection3x3   m_CCM;
+    mfxExtCamLensGeomDistCorrection m_Lens;
     mfxExtCamPipeControl     m_PipeControl;
     mfxExtCamPadding         m_Padding;
 
@@ -148,6 +149,7 @@ protected:
     virtual mfxStatus AllocAndInitCamGammaCorrection(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamWhiteBalance(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamCCM(sInputParams *pParams);
+    virtual mfxStatus AllocAndInitCamLens(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamBlackLevelCorrection(sInputParams *pParams);
     virtual mfxStatus AllocAndInitCamHotPixelRemoval(sInputParams *pParams);
     virtual void FreeCamGammaCorrection();
