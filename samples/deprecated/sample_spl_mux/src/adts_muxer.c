@@ -40,6 +40,8 @@ mfxStatus InitAdtsMuxer(AVCodecContext *inputCodecContext, adtsMuxer *mux)
     sts            = MFX_ERR_NONE;
 
     outMux = (_adtsMuxer*) av_malloc(sizeof(_adtsMuxer));
+    memset(outMux,0,sizeof(_adtsMuxer));
+
     if(!outMux)
     {
         return MFX_ERR_MEMORY_ALLOC;
@@ -79,7 +81,7 @@ mfxStatus InitAdtsMuxer(AVCodecContext *inputCodecContext, adtsMuxer *mux)
     {
         formatContext->oformat = outputFormat;
         formatContext->pb = outMux->ioContext;
-        formatContext->flags = AVFMT_FLAG_CUSTOM_IO;
+        formatContext->flags |= AVFMT_FLAG_CUSTOM_IO;
         outMux->formatContext = formatContext;
     }
     outMux->adtsStream = avformat_new_stream(outMux->formatContext, NULL);

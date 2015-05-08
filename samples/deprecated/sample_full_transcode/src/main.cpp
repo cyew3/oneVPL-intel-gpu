@@ -13,7 +13,6 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 #include "pipeline_manager.h"
 #include <iostream>
 #include <string>
-
 #ifdef UNICODE
     #include <clocale>
     #include <locale>
