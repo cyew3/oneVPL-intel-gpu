@@ -4300,7 +4300,7 @@ MfxFrameAllocResponse::~MfxFrameAllocResponse()
 {
     if (m_core)
     {
-        if (MFX_HW_D3D11  == m_core->GetVAType())
+        if (MFX_HW_D3D11  == m_core->GetVAType() && m_responseQueue.size())
         {
             for (size_t i = 0; i < m_responseQueue.size(); i++)
                 m_core->FreeFrames(&m_responseQueue[i]);
