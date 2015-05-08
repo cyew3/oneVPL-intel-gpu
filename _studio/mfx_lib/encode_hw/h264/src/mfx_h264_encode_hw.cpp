@@ -694,6 +694,7 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 ImplementationAvc::~ImplementationAvc()
 {
     DestroyDanglingCmResources();
+	m_core->FreeFrames(&m_opaqHren);
 }
 void ImplementationAvc::DestroyDanglingCmResources()
 {
