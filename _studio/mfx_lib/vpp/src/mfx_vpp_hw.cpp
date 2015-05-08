@@ -108,6 +108,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->bCameraHotPixelRemoval = false;
     pMfxExecuteParams->bCameraWhiteBalaceCorrection = false;
     pMfxExecuteParams->bCCM = false;
+    pMfxExecuteParams->bCameraLensCorrection = false;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 

@@ -1537,6 +1537,33 @@ mfxStatus D3D11VideoProcessor::CameraPipeSetBlacklevelParams(CameraBlackLevelPar
 
     camMode.Function     = VPE_FN_CP_BLACK_LEVEL_CORRECTION_PARAM;
     camMode.pBlackLevel  = &blcParams;
+    hRes =  SetOutputExtension(
+                    &(m_iface.guid),
+                    sizeof(camMode),
+                    &camMode);
+    if ( FAILED(hRes))
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D11VideoProcessor::CameraPipeSetLensParams(CameraLensCorrectionParams *params)
+{
+    HRESULT hRes;
+    CAMPIPE_MODE          camMode;
+    VPE_CP_LENS_GEOMENTRY_DISTORTION_CORRECTION  lensParams;
+    lensParams.bActive = 1;
+    for(int i = 0; i < 3; i++)
+    {
+        lensParams.a[i] = params->a[i];
+        lensParams.b[i] = params->b[i];
+        lensParams.c[i] = params->c[i];
+        lensParams.d[i] = params->d[i];
+    }
+    memset((PVOID) &camMode, 0, sizeof(camMode));
+    camMode.Function          = VPE_FN_LENS_GEOMETRY_DISTORTION_CORRECTION;
+    camMode.pLensCorrect  = &lensParams;
 
     hRes =  SetOutputExtension(
                     &(m_iface.guid),
@@ -1740,6 +1767,11 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
             MFX_CHECK_STS(sts);
         }
 
+        if ( pParams->bCameraLensCorrection )
+        {
+            sts = CameraPipeSetLensParams(&pParams->CameraLensCorrection);
+            MFX_CHECK_STS(sts);
+        }
         if ( pParams->bCameraHotPixelRemoval )
         {
             sts = CameraPipeSetHotPixelParams(&pParams->CameraHotPixel);

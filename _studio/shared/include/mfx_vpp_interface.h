@@ -133,6 +133,14 @@ namespace MfxHwVideoProcessing
         mfxF32 CCM[3][3];
     } CameraCCMParams;
 
+    typedef struct _CameraLensCorrectionParams
+    {
+        mfxF32 a[3];
+        mfxF32 b[3];
+        mfxF32 c[3];
+        mfxF32 d[3];
+    } CameraLensCorrectionParams;
+
     typedef struct _CameraForwardGammaCorrectionSeg
     {
         mfxU16 PixelValue;
@@ -281,6 +289,9 @@ namespace MfxHwVideoProcessing
 
         bool                     bCameraVignetteCorrection;
         CameraVignetteCorrectionParams     CameraVignetteCorrection;
+
+        bool                     bCameraLensCorrection;
+        CameraLensCorrectionParams         CameraLensCorrection;
     } mfxExecuteParams;
 
 

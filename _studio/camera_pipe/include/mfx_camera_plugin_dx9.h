@@ -704,6 +704,7 @@ private:
     HRESULT   SetCameraPipeWhiteBalance(CameraWhiteBalanceParams *params);
     HRESULT   SetCameraPipeForwardGamma(CameraForwardGammaCorrectionParams *params);
     HRESULT   SetCameraPipeColorCorrection(CameraCCMParams *params);
+    HRESULT   SetCameraPipeLensCorrection(CameraLensCorrectionParams *params);
     HRESULT   SetCameraPipeBlackLevelCorrection(CameraBlackLevelParams *params);
     HRESULT   SetCameraPipeVignetteCorrection(CameraVignetteCorrectionParams *params);
     HRESULT   SetCameraPipeHotPixel(CameraHotPixelRemovalParams *params);

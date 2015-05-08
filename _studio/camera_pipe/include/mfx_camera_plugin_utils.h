@@ -201,7 +201,8 @@ typedef struct _mfxCameraCaps
             mfxU32    bBayerDenoise                     : 1;
             mfxU32    bOutToARGB16                      : 1;
             mfxU32    bNoPadding                        : 1; // must be ON now, zero meaning that padding needs to be done
-            mfxU32    Reserved                          : 21;
+            mfxU32    bLensCorrection                   : 1;
+            mfxU32    Reserved                          : 20;
         };
         mfxU32      ModuleConfiguration;
     };
@@ -352,8 +353,14 @@ typedef struct _CameraPipeWhiteBalanceParams
     mfxF64      GreenBottomCorrection;
 } CameraPipeWhiteBalanceParams;
 
-
-
+typedef struct _CameraPipeLensCorrectionParams
+{
+    bool        bActive;
+    mfxF32      a[3];
+    mfxF32      b[3];
+    mfxF32      c[3];
+    mfxF32      d[3];
+} CameraPipeLensCorrectionParams;
 
 typedef struct _CameraPipe3x3ColorConversionParams
 {
@@ -402,6 +409,7 @@ struct AsyncParams
     CameraPipePaddingParams            PaddingParams;
     CameraPipeBlackLevelParams         BlackLevelParams;
     CameraPipe3x3ColorConversionParams CCMParams;
+    CameraPipeLensCorrectionParams     LensParams;
     CameraParams                       FrameSizeExtra;
     mfxCameraCaps                      Caps;
     mfxU32                             InputBitDepth;

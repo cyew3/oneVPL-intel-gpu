@@ -109,7 +109,6 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
     MFX_CHECK_STS(sts);
 
     // Turn on camera
-    tmpParams.bCameraPipeEnabled      = true;
     tmpParams.bCameraPipeEnabled = true;
 
     // [3] Fill in params
@@ -150,6 +149,17 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
         }
     }
 
+    if ( pParam->Caps.bLensCorrection )
+    {
+        tmpParams.bCameraLensCorrection = true;
+        for(int i = 0; i < 3; i++)
+        {
+            tmpParams.CameraLensCorrection.a[i] = pParam->LensParams.a[i];
+            tmpParams.CameraLensCorrection.b[i] = pParam->LensParams.b[i];
+            tmpParams.CameraLensCorrection.c[i] = pParam->LensParams.c[i];
+            tmpParams.CameraLensCorrection.d[i] = pParam->LensParams.d[i];
+        }
+    }
     if ( pParam->Caps.bForwardGammaCorrection )
     {
         tmpParams.bCameraGammaCorrection = true;

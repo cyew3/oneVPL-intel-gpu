@@ -314,6 +314,7 @@ void QueryCaps(mfxCameraCaps &caps)
     caps.bOutToARGB16  = 1;
     caps.bHotPixel     = 1;
     caps.bBayerDenoise = 1;
+    caps.bLensCorrection = 1;
 
     caps.InputMemoryOperationMode = MEM_GPUSHARED; //MEM_GPU;
     caps.OutputMemoryOperationMode = MEM_GPUSHARED; //MEM_GPU;
@@ -331,6 +332,7 @@ const mfxU32 g_TABLE_CAMERA_EXTBUFS [] =
     MFX_EXTBUF_CAM_BAYER_DENOISE,
     MFX_EXTBUFF_VPP_DENOISE,
     MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3,
+    MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION,
     MFX_EXTBUF_CAM_PADDING,
     MFX_EXTBUF_CAM_PIPECONTROL
 };
@@ -425,6 +427,10 @@ void ConvertCaps2ListDoUse(mfxCameraCaps& caps, std::vector<mfxU32>& list)
     if (caps.bBlackLevelCorrection)
     {
         list.push_back(MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION);
+    }
+    if (caps.bLensCorrection)
+    {
+        list.push_back(MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION);
     }
     if (caps.bVignetteCorrection)
     {
@@ -572,6 +578,25 @@ mfxStatus QueryExtBuf(mfxExtBuffer *extBuf, mfxU32 bitdepth, mfxU32 action)
                 for (i = 0; i < 3; i++)
                     for (j = 0; j < 3; j++)
                         cc3x3Buf->CCM[i][j] = (mfxF64)action;
+            }
+        }
+        break;
+    case MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION:
+        {
+            mfxExtCamLensGeomDistCorrection *lensBuf = (mfxExtCamLensGeomDistCorrection *)extBuf;
+            if (action >= MFX_CAM_QUERY_CHECK_RANGE)
+            {
+            }
+            else
+            {
+                mfxU32 i;
+                for (i = 0; i < 3; i++)
+                {
+                    lensBuf->a[i] = (mfxF32)action;
+                    lensBuf->b[i] = (mfxF32)action;
+                    lensBuf->c[i] = (mfxF32)action;
+                    lensBuf->d[i] = (mfxF32)action;
+                }
             }
         }
         break;

@@ -86,6 +86,7 @@ MFXCamera_Plugin::MFXCamera_Plugin(bool CreateByDispatcher)
     Zero(m_WBparams);
     Zero(m_HPParams);
     Zero(m_DenoiseParams);
+    Zero(m_LensParams);
 
     m_CameraProcessor   = 0;
     m_isInitialized     = false;
@@ -719,6 +720,7 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
     bool vignetteset     = false;
     bool hotpixelset     = false;
     bool denoiseset      = false;
+    bool lensset         = false;
 
     for (i = 0; i < par->NumExtParam; i++)
     {
@@ -861,6 +863,28 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                     m_CCMParams.CCM[2][2]  = CCMExtBufParams->CCM[2][2];
                 }
             }
+            else if (MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION == par->ExtParam[i]->BufferId)
+            {
+                m_Caps.bLensCorrection = 1;
+                mfxExtCamLensGeomDistCorrection* LensExtBufParams = (mfxExtCamLensGeomDistCorrection*)par->ExtParam[i];
+                if ( LensExtBufParams )
+                {
+                    lensset = true;
+                    m_LensParams.bActive = true;
+                    m_LensParams.a[0] = LensExtBufParams->a[0];
+                    m_LensParams.a[1] = LensExtBufParams->a[1];
+                    m_LensParams.a[2] = LensExtBufParams->a[2];
+                    m_LensParams.b[0] = LensExtBufParams->b[0];
+                    m_LensParams.b[1] = LensExtBufParams->b[1];
+                    m_LensParams.b[2] = LensExtBufParams->b[2];
+                    m_LensParams.c[0] = LensExtBufParams->c[0];
+                    m_LensParams.c[1] = LensExtBufParams->c[1];
+                    m_LensParams.c[2] = LensExtBufParams->c[2];
+                    m_LensParams.d[0] = LensExtBufParams->d[0];
+                    m_LensParams.d[1] = LensExtBufParams->d[1];
+                    m_LensParams.d[2] = LensExtBufParams->d[2];
+                }
+            }
             else if (MFX_EXTBUF_CAM_PADDING == par->ExtParam[i]->BufferId)
             {
                 //????
@@ -912,6 +936,9 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
         if (!denoiseset)
             sts = MFX_ERR_UNDEFINED_BEHAVIOR;
 
+    if (m_Caps.bLensCorrection)
+        if (!lensset)
+            sts = MFX_ERR_UNDEFINED_BEHAVIOR;
     return sts;
 }
 
@@ -1368,6 +1395,7 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
     pParams->PaddingParams    = m_PaddingParams;
     pParams->VignetteParams   = m_VignetteParams;
     pParams->WBparams         = m_WBparams;
+    pParams->LensParams       = m_LensParams;
 
     *mfxthreadtask = (mfxThreadTask*) pParams;
 #ifdef CAMP_PIPE_ITT

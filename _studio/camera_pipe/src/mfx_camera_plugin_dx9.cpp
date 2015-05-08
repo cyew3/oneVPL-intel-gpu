@@ -893,6 +893,31 @@ HRESULT DXVAHDVideoProcessor::SetCameraPipeColorCorrection(CameraCCMParams *para
 
     return hr;
 }
+HRESULT DXVAHDVideoProcessor::SetCameraPipeLensCorrection(CameraLensCorrectionParams *params)
+{
+    HRESULT hr = S_OK;
+    TCameraPipeMode_2_6 camMode;
+    memset((PVOID)&camMode, 0, sizeof(camMode));
+    TLensGeometryDistortionCorrection lensParams;
+    lensParams.bActive = 1;
+    for(int i = 0; i < 3; i++)
+    {
+        lensParams.a[i] = params->a[i];
+        lensParams.b[i] = params->b[i];
+        lensParams.c[i] = params->c[i];
+        lensParams.d[i] = params->d[i];
+    }
+
+    camMode.Function = VPE_FN_CP_LENS_GEOMETRY_DISTORTION_CORRECTION;
+    camMode.pLensCorrection = &lensParams;
+    DXVAHD_BLT_STATE_PRIVATE_DATA dxvahdPData;
+    memset((PVOID)&dxvahdPData, 0, sizeof(dxvahdPData));
+    dxvahdPData.Guid = DXVAHD_VPE_EXEC_GUID;
+    dxvahdPData.DataSize = sizeof(camMode);
+    dxvahdPData.pData = &camMode;
+    hr = GetSetOutputExtension(DXVAHD_BLT_STATE_PRIVATE, sizeof(dxvahdPData), &dxvahdPData, TRUE, FALSE);
+    return hr;
+}
 
 HRESULT DXVAHDVideoProcessor::SetCameraPipeForwardGamma(CameraForwardGammaCorrectionParams *params)
 {
@@ -1039,6 +1064,12 @@ mfxStatus DXVAHDVideoProcessor::Execute(MfxHwVideoProcessing::mfxExecuteParams *
     if ( executeParams->bCameraWhiteBalaceCorrection )
     {
         hr = SetCameraPipeWhiteBalance(&executeParams->CameraWhiteBalance);
+        CHECK_HRES(hr);
+    }
+
+    if ( executeParams->bCameraLensCorrection )
+    {
+        hr = SetCameraPipeLensCorrection(&executeParams->CameraLensCorrection);
         CHECK_HRES(hr);
     }
 
@@ -1359,6 +1390,18 @@ mfxStatus D3D9CameraProcessor::AsyncRoutine(AsyncParams *pParam)
             {
                 tmpParams.CCMParams.CCM[i][j] = (mfxF32)pParam->CCMParams.CCM[i][j];
             }
+        }
+    }
+
+    if ( pParam->Caps.bLensCorrection )
+    {
+        tmpParams.bCameraLensCorrection = true;
+        for(int i = 0; i < 3; i++)
+        {
+            tmpParams.CameraLensCorrection.a[i] = pParam->LensParams.a[i];
+            tmpParams.CameraLensCorrection.b[i] = pParam->LensParams.b[i];
+            tmpParams.CameraLensCorrection.c[i] = pParam->LensParams.c[i];
+            tmpParams.CameraLensCorrection.d[i] = pParam->LensParams.d[i];
         }
     }
 

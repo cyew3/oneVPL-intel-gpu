@@ -165,6 +165,7 @@ protected:
     CameraPipePaddingParams            m_PaddingParams;
     CameraPipeBlackLevelParams         m_BlackLevelParams;
     CameraPipe3x3ColorConversionParams m_CCMParams;
+    CameraPipeLensCorrectionParams     m_LensParams;
     CameraParams                       m_PipeParams;
 
     mfxU32                       m_InputBitDepth;
