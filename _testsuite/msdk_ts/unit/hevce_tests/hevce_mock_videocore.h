@@ -35,7 +35,7 @@ namespace ApiTestCommon {
         MOCK_METHOD1(IncreasePureReference, mfxStatus (mfxU16 &));
         MOCK_METHOD1(DecreasePureReference, mfxStatus (mfxU16 &));
         MOCK_METHOD2(GetVA, void (mfxHDL* phdl, mfxU16 type));
-        MOCK_METHOD3(CreateVA, mfxStatus (mfxVideoParam * , mfxFrameAllocRequest *, mfxFrameAllocResponse *));
+        MOCK_METHOD4(CreateVA, mfxStatus (mfxVideoParam * , mfxFrameAllocRequest *, mfxFrameAllocResponse *, UMC::FrameAllocator *));
         MOCK_METHOD0(GetAdapterNumber, mfxU32 (void));
         MOCK_METHOD1(GetVideoProcessing, void (mfxHDL* phdl));
         MOCK_METHOD1(CreateVideoProcessing, mfxStatus (mfxVideoParam *));
