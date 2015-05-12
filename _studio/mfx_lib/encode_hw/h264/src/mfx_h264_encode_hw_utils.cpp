@@ -4640,7 +4640,7 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
 
     if(IsOn(video.mfx.LowPower) && ctrl){
         //VDEnc can't encode low QPs
-        if(ctrl->QP < 10){
+        if(ctrl->QP != 0 && ctrl->QP < 10 ){
             ctrl->QP = 10;
         }
     }
