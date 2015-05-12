@@ -343,6 +343,7 @@ int TestSuite::RunTest(unsigned int id)
         expectedPar.mfx.CodecProfile    = m_par.mfx.CodecProfile;
         expectedPar.mfx.CodecLevel      = m_par.mfx.CodecLevel;
         expectedPar.mfx.DecodedOrder    = m_par.mfx.DecodedOrder;
+        expectedPar.mfx.MaxDecFrameBuffering = m_par.mfx.MaxDecFrameBuffering;
 
         if(memcmp(m_pPar, &expectedPar, sizeof(mfxVideoParam)))
         {

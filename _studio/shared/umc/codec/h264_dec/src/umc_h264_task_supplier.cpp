@@ -1307,10 +1307,6 @@ ViewItem & MVC_Extension::AllocateAndInitializeView(H264Slice * slice)
 
     ViewItem &viewRef = GetView(slice->GetSliceHeader()->nal_ext.mvc.view_id);
     viewRef.SetDPBSize(const_cast<H264SeqParamSet*>(slice->m_pSeqParamSet), m_level_idc);
-    viewRef.maxDecFrameBuffering = slice->m_pSeqParamSet->vui.max_dec_frame_buffering ?
-                                  slice->m_pSeqParamSet->vui.max_dec_frame_buffering :
-                                  viewRef.dpbSize;
-
     return viewRef;
 }
 
@@ -1346,7 +1342,7 @@ Status MVC_Extension::AllocateView(Ipp32s view_id)
             view.pPOCDec[i].reset(new POCDecoder());
         }
         view.viewId = view_id;
-        view.dpbSize = 16;
+        view.maxDecFrameBuffering = 16;
     }
     catch(...)
     {
@@ -2067,7 +2063,6 @@ ViewItem::ViewItem(const ViewItem &src)
         pPOCDec[i].reset(src.pPOCDec[i].release());
         MaxLongTermFrameIdx[i] = src.MaxLongTermFrameIdx[i];
     }
-    dpbSize = src.dpbSize;
     maxDecFrameBuffering = src.maxDecFrameBuffering;
 
 } // ViewItem::ViewItem(const ViewItem &src)
@@ -2124,7 +2119,6 @@ void ViewItem::Close(void)
     }
 
     viewId = (Ipp32u)INVALID_VIEW_ID;
-    dpbSize = 0;
     maxDecFrameBuffering = 1;
 } // void ViewItem::Close(void)
 
@@ -2154,7 +2148,7 @@ void ViewItem::SetDPBSize(H264SeqParamSet *pSps, Ipp8u & level_idc)
     Ipp8u level = level_idc ? level_idc : pSps->level_idc;
 
     // calculate the new DPB size value
-    dpbSize = CalculateDPBSize(level,
+    maxDecFrameBuffering = CalculateDPBSize(level,
                                pSps->frame_width_in_mbs * 16,
                                pSps->frame_height_in_mbs * 16,
                                pSps->num_ref_frames);
@@ -2168,12 +2162,14 @@ void ViewItem::SetDPBSize(H264SeqParamSet *pSps, Ipp8u & level_idc)
         pSps->level_idc = level;
     }
 
+    maxDecFrameBuffering = pSps->vui.max_dec_frame_buffering ? pSps->vui.max_dec_frame_buffering : maxDecFrameBuffering;
+
     // provide the new value to the DPBList
     for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++)
     {
         if (pDPB[i].get())
         {
-            pDPB[i]->SetDPBSize(dpbSize);
+            pDPB[i]->SetDPBSize(maxDecFrameBuffering);
         }
     }
 } // void ViewItem::SetDPBSize(const H264SeqParamSet *pSps)
@@ -2823,7 +2819,7 @@ H264DecoderFrame *TaskSupplier::GetFreeFrame(const H264Slice *pSlice)
     H264DBPList *pDPB = view.GetDPBList(0);
 
     // Traverse list for next disposable frame
-    if (pDPB->countAllFrames() >= view.dpbSize + m_DPBSizeEx)
+    if (pDPB->countAllFrames() >= view.maxDecFrameBuffering + m_DPBSizeEx)
         pFrame = pDPB->GetOldestDisposable();
 
     VM_ASSERT(!pFrame || pFrame->GetRefCounter() == 0);
@@ -2831,7 +2827,7 @@ H264DecoderFrame *TaskSupplier::GetFreeFrame(const H264Slice *pSlice)
     // Did we find one?
     if (NULL == pFrame)
     {
-        if (pDPB->countAllFrames() >= view.dpbSize + m_DPBSizeEx)
+        if (pDPB->countAllFrames() >= view.maxDecFrameBuffering + m_DPBSizeEx)
         {
             return 0;
         }
@@ -2991,10 +2987,6 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                 if (view)
                 {
                     view->SetDPBSize(&sps, m_level_idc);
-                    view->maxDecFrameBuffering = temp->vui.max_dec_frame_buffering ?
-                                                temp->vui.max_dec_frame_buffering :
-                                                view->dpbSize;
-
                     temp->vui.max_dec_frame_buffering = (Ipp8u)view->maxDecFrameBuffering;
 
                     if (m_TrickModeSpeed != 1)
@@ -3133,9 +3125,6 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     if (view)
                     {
                         view->SetDPBSize(&sps, m_level_idc);
-                        view->maxDecFrameBuffering = sps.vui.max_dec_frame_buffering ?
-                                                    sps.vui.max_dec_frame_buffering :
-                                                    view->dpbSize;
                     }
 
                     if (newResolution)
@@ -3175,9 +3164,6 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     if (view)
                     {
                         view->SetDPBSize(&sps, m_level_idc);
-                        view->maxDecFrameBuffering = sps.vui.max_dec_frame_buffering ?
-                                                    sps.vui.max_dec_frame_buffering :
-                                                    view->dpbSize;
                     }
 
                     if (newResolution)
@@ -3240,9 +3226,9 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
 
     if (dId == maxDId)
     {
-        if (frameNumGap > view.dpbSize)
+        if (frameNumGap > view.maxDecFrameBuffering)
         {
-            frameNumGap = view.dpbSize;
+            frameNumGap = view.maxDecFrameBuffering;
         }
     }
     else
@@ -3392,7 +3378,7 @@ bool TaskSupplier::IsWantToShowFrame(bool force)
         {
             H264DecoderFrame * pTmp;
 
-            pTmp = view.GetDPBList(0)->findOldestDisplayable(view.dpbSize);
+            pTmp = view.GetDPBList(0)->findOldestDisplayable(view.maxDecFrameBuffering);
             return !!pTmp;
         }
     }
@@ -3485,16 +3471,7 @@ H264DecoderFrame *TaskSupplier::GetAnyFrameToDisplay(bool force)
             // show oldest frame
             if (view.GetDPBList(0)->countNumDisplayable() > view.maxDecFrameBuffering || force)
             {
-                H264DecoderFrame *pTmp;
-
-                if (view.maxDecFrameBuffering)
-                {
-                    pTmp = view.GetDPBList(0)->findOldestDisplayable(view.dpbSize);
-                }
-                else
-                {
-                    pTmp = view.GetDPBList(0)->findFirstDisplayable();
-                }
+                H264DecoderFrame *pTmp = view.GetDPBList(0)->findOldestDisplayable(view.maxDecFrameBuffering);
 
                 if (pTmp)
                 {
@@ -3536,16 +3513,7 @@ void TaskSupplier::SetFrameDisplayed(Ipp32s poc)
     for (; iter != iter_end; iter++)
     {
         ViewItem &view = *iter;
-        H264DecoderFrame *pTmp;
-
-        if (view.maxDecFrameBuffering)
-        {
-            pTmp = view.GetDPBList(0)->findOldestDisplayable(view.dpbSize);
-        }
-        else
-        {
-            pTmp = view.GetDPBList(0)->findFirstDisplayable();
-        }
+        H264DecoderFrame *pTmp = view.GetDPBList(0)->findOldestDisplayable(view.maxDecFrameBuffering);
 
         if ((pTmp) &&
             (pTmp->PicOrderCnt(0, 3) == poc))

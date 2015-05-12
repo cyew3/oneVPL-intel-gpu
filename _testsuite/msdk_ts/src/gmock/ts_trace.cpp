@@ -209,6 +209,7 @@ tsTrace& tsTrace::operator<<(const mfxInfoMFX& p)
             else
             {
                 FIELD_T(mfxU16, DecodedOrder       )
+                FIELD_T(mfxU16, MaxDecFrameBuffering )
                 FIELD_T(mfxU16, ExtendedPicStruct  )
                 FIELD_T(mfxU16, TimeStampCalc      )
                 FIELD_T(mfxU16, SliceGroupsPresent )

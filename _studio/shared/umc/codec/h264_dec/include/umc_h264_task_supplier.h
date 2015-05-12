@@ -288,8 +288,6 @@ struct ViewItem
 
     bool m_isDisplayable;
 
-    // Size of DPB capacity in frames
-    Ipp32u dpbSize;
     // Maximum number frames used semultaneously
     Ipp32u maxDecFrameBuffering;
 

@@ -229,7 +229,7 @@ H264DecoderFrame * MFXTaskSupplier::GetFreeFrame(const H264Slice *pSlice)
     // Did we find one?
     if (NULL == pFrame)
     {
-        if (pDPB->countAllFrames() >= view.dpbSize + m_DPBSizeEx)
+        if (pDPB->countAllFrames() >= view.maxDecFrameBuffering + m_DPBSizeEx)
         {
             return 0;
         }
@@ -300,7 +300,7 @@ bool MFXTaskSupplier::CheckDecoding(bool should_additional_check, H264DecoderFra
             notDecoded++;
     }
 
-    if (count || (view.GetDPBList(0)->countAllFrames() < view.dpbSize + m_DPBSizeEx))
+    if (count || (view.GetDPBList(0)->countAllFrames() < view.maxDecFrameBuffering + m_DPBSizeEx))
         return true;
 
     if (!notDecoded)
