@@ -84,7 +84,7 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
     m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D());
 
     m_vInitPar = *par;
-    
+    m_vPar = m_vInitPar;
 
     if (0 == m_vInitPar.mfx.FrameInfo.FrameRateExtN || 0 == m_vInitPar.mfx.FrameInfo.FrameRateExtD)
     {
@@ -651,6 +651,9 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     {
         return MFX_ERR_MORE_DATA;
     }
+
+    if (surface_work->Data.Locked)
+        return MFX_ERR_MORE_SURFACE;
 
     m_index++;
     m_frameInfo.showFrame = 0;
