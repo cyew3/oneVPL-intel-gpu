@@ -683,8 +683,9 @@ namespace
         mfxU32 ffid = task.GetFirstField();
         bool isField = (task.GetPicStructForEncode() & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) != 0;
         bool isIPFieldPair = (task.m_type[ ffid] & MFX_FRAMETYPE_I) && (task.m_type[!ffid] & MFX_FRAMETYPE_P);
+        mfxExtAVCRefLists * advCtrl = GetExtBuffer(task.m_ctrl, fieldId);
 
-        if ((video.mfx.GopOptFlag & MFX_GOP_CLOSED) || task.m_frameOrderI < task.m_frameOrder)
+        if ((video.mfx.GopOptFlag & MFX_GOP_CLOSED) || (task.m_frameOrderI < task.m_frameOrder && !advCtrl))
         {
             // remove references to pictures prior to first I frame in decoding order
             // if gop is closed do it for all frames in gop
@@ -719,7 +720,6 @@ namespace
 
         mfxExtAVCRefListCtrl * ctrl = GetExtBuffer(task.m_ctrl);
 #if defined (ADVANCED_REF)
-        mfxExtAVCRefLists * advCtrl = GetExtBuffer(task.m_ctrl, fieldId);
         if (advCtrl && isField)
         {
             // check ref list control structure for interlaced case
