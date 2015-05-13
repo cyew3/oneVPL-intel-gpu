@@ -1523,13 +1523,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         m_feedbackCache.push_back(currentFeedback);
     }
 
-    if (m_primarySurface4Composition != NULL)
-    {
-        vaDestroySurfaces(m_vaDisplay,m_primarySurface4Composition,1);
-        free(m_primarySurface4Composition);
-        m_primarySurface4Composition = NULL;
-    }
-
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 
