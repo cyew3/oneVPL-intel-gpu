@@ -80,6 +80,10 @@ struct sInputParams
     mfxU32  fourcc;
     mfxU32  nFrames;
 
+#if defined(LIBVA_SUPPORT)
+    mfxI32  libvaBackend;
+#endif // defined(MFX_LIBVA_SUPPORT)
+
     msdk_char     strSrcFile[MSDK_MAX_FILENAME_LEN];
     msdk_char     strDstFile[MSDK_MAX_FILENAME_LEN];
     sPluginParams pluginParams;
@@ -235,6 +239,10 @@ protected: // variables
 
     CDecodeD3DRender         m_d3dRender;
 #endif
+
+#if defined(LIBVA_SUPPORT)
+    mfxI32                   m_libvaBackend;
+#endif // defined(MFX_LIBVA_SUPPORT)
 
 private:
     CDecodingPipeline(const CDecodingPipeline&);

@@ -104,6 +104,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     // set default implementation
     pParams->bUseHWLib = true;
+#if defined(LIBVA_SUPPORT)
+    pParams->libvaBackend = MFX_LIBVA_DRM;
+#endif
 
     for (mfxU8 i = 1; i < nArgNum; i++)
     {
@@ -187,6 +190,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->memType = D3D9_MEMORY;
             pParams->mode = MODE_RENDERING;
+            pParams->libvaBackend = MFX_LIBVA_X11;
         }
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-low_latency")))

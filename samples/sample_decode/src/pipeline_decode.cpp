@@ -31,6 +31,7 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 #if defined LIBVA_SUPPORT
 #include "vaapi_allocator.h"
 #include "vaapi_device.h"
+#include "vaapi_utils.h"
 #endif
 
 #pragma warning(disable : 4100)
@@ -324,6 +325,10 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // create device and allocator
+#if defined(LIBVA_SUPPORT)
+    m_libvaBackend = pParams->libvaBackend;
+#endif // defined(MFX_LIBVA_SUPPORT)
+
     sts = CreateAllocator();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -727,7 +732,7 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
         m_d3dRender.SetHWDevice(m_hwdev);
 #elif LIBVA_SUPPORT
     mfxStatus sts = MFX_ERR_NONE;
-    m_hwdev = CreateVAAPIDevice();
+    m_hwdev = CreateVAAPIDevice(m_libvaBackend);
 
     if (NULL == m_hwdev) {
         return MFX_ERR_MEMORY_ALLOC;

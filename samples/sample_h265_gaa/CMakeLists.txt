@@ -12,11 +12,5 @@ include_directories (
 
 list( APPEND LIBS_VARIANT sample_common )
 
-set(DEPENDENCIES ${skipping} _enable_sw libmfx dl pthread)
-make_executable( shortname sw )
-
-set(DEPENDENCIES ${skipping} libmfx libva-drm libdrm libva dl pthread)
-make_executable( shortname drm )
-
-set(DEPENDENCIES ${skipping} libmfx libva-x11 x11 libva dl pthread)
-make_executable( shortname x11 )
+set(DEPENDENCIES ${skipping} libmfx dl pthread)
+make_executable( shortname universal )

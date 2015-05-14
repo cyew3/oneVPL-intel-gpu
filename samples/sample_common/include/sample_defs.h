@@ -41,6 +41,19 @@ enum {
 #endif // #if defined(WIN32) && !defined(MFX_D3D11_SUPPORT)
 #endif // #if defined(WIN32) || defined(WIN64)
 
+
+#if defined(LIBVA_SUPPORT)
+
+enum LibVABackend
+{
+    MFX_LIBVA_AUTO,
+    MFX_LIBVA_DRM,
+    MFX_LIBVA_X11,
+    MFX_LIBVA_WAYLAND
+};
+
+#endif
+
 //affects win32 winnt version macro
 #include "vm/time_defs.h"
 #include "sample_utils.h"

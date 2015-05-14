@@ -90,7 +90,7 @@ function( get_target target name variant)
   else( )
     set( tname ${ARGV1} )
   endif( )
-  if( ARGV2 MATCHES none OR DEFINED USE_STRICT_NAME)
+  if( ARGV2 MATCHES none OR ARGV2 MATCHES universal OR DEFINED USE_STRICT_NAME)
     set( target ${tname} )
   else( )
    set( target ${tname}_${ARGV2} )
@@ -109,7 +109,9 @@ endfunction( )
 # Usage:
 #  make_library(shortname|<name> none|<variant> static|shared)
 #    - shortname|<name>: use folder name as library name or <name> specified by user
-#    - <variant>|none: build library in specified variant (with drm or x11 or wayland support, etc)
+#    - <variant>|none: build library in specified variant (with drm or x11 or wayland support, etc),
+#      universal - special variant which enables compilation flags required for all backends, but
+#      moves dependency to runtime instead of linktime 
 #    or without variant if none was specified
 #    - static|shared: build static or shared library
 #
@@ -121,7 +123,7 @@ function( make_library name variant type )
     set( folder ${ARGV0} )
   endif( )
 
-  configure_dependencies(${target} "${DEPENDENCIES}")
+  configure_dependencies(${target} "${DEPENDENCIES}" ${variant})
   if(SKIPPING MATCHES ${target} OR NOT_CONFIGURED MATCHES ${target})
     return()
   else()
@@ -149,7 +151,7 @@ function( make_library name variant type )
     endif( )
 
     foreach( lib ${LIBS_VARIANT} )
-      if(ARGV1 MATCHES none)
+      if(ARGV1 MATCHES none OR ARGV1 MATCHES universal)
         add_dependencies( ${target} ${lib} )
         target_link_libraries( ${target} ${lib} )
       else( )
@@ -188,7 +190,7 @@ function( make_executable name variant )
   get_target( target ${ARGV0} ${ARGV1} )
   get_folder( folder )
 
-  configure_dependencies(${target} "${DEPENDENCIES}")
+  configure_dependencies(${target} "${DEPENDENCIES}" ${variant})
   if(SKIPPING MATCHES ${target} OR NOT_CONFIGURED MATCHES ${target})
     return()
   else()
@@ -214,7 +216,7 @@ function( make_executable name variant )
   endif( )
 
   foreach( lib ${LIBS_VARIANT} )
-    if(ARGV1 MATCHES none)
+    if(ARGV1 MATCHES none OR ARGV1 MATCHES universal)
       add_dependencies( ${target} ${lib} )
       target_link_libraries( ${target} ${lib} )
     else( )
