@@ -1,3 +1,33 @@
+/* ****************************************************************************** *\
+
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+- Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+File Name: tracer_windows.cpp
+
+\* ****************************************************************************** */
+
 #if defined(_WIN32) || defined(_WIN64)
 
 #define MFX_DISPATCHER_LOG 1
@@ -104,6 +134,94 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
     return TRUE;
 }
 
+mfxStatus TracerInit (mfxInitParam par, mfxSession *session)
+{
+    DumpContext context;
+    context.context = DUMPCONTEXT_MFX;
+    if (!session) {
+        Log::WriteLog(context.dump("ver", par.Version));
+        Log::WriteLog(context.dump("session", *session));
+        Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NULL_PTR));
+        return MFX_ERR_NULL_PTR;
+    }
+
+    mfxLoader* loader = (mfxLoader*)calloc(1, sizeof(mfxLoader));
+    if (!loader) {
+        Log::WriteLog(context.dump("ver", par.Version));
+        Log::WriteLog(context.dump("session", *session));
+        Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_MEMORY_ALLOC));
+        return MFX_ERR_MEMORY_ALLOC;
+     }
+
+     Log::WriteLog("LoadLibrary: " + std::string(g_mfxlib));
+     HINSTANCE h_mfxdll = NULL;
+     h_mfxdll = LoadLibrary(g_mfxlib);
+     if (h_mfxdll == NULL){
+        //dispatcher
+        mfxStatus sts;
+        msdk_analyzer_sink sink;
+        is_loaded = true;
+        sts = _MFXInitEx(par, session);
+        if (sts != MFX_ERR_NONE)
+        {
+            Log::WriteLog(context.dump("ver", par.Version));
+            Log::WriteLog(context.dump("session", *session));
+            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
+            return MFX_ERR_NOT_FOUND;
+        }
+        is_loaded = false;
+        char libModuleName[MAX_PATH];
+
+        GetModuleFileName((HMODULE)(*(MFX_DISP_HANDLE**)(session))->hModule, libModuleName, MAX_PATH);
+        if (GetLastError() != 0)
+        {
+           Log::WriteLog("GetModuleFileName() reported  error! \n");
+
+           return MFX_ERR_NOT_FOUND;
+        }
+        g_mfxlib = new char[MAX_PATH];
+        strcpy(g_mfxlib, libModuleName);
+        h_mfxdll = LoadLibrary(g_mfxlib);
+    }
+    loader->dlhandle = h_mfxdll;
+
+    //Loading functions table
+    int i;
+    mfxFunctionPointer proc;
+    for (i = 0; i < eFunctionsNum; ++i) {
+        proc = (mfxFunctionPointer)GetProcAddress((HINSTANCE)loader->dlhandle, g_mfxFuncTable[i].name);
+        if (!proc){
+            Sleep(100);
+            proc = (mfxFunctionPointer)GetProcAddress((HINSTANCE)loader->dlhandle, g_mfxFuncTable[i].name);
+        }
+        //if (!proc) break;
+        if(proc) loader->table[i] = proc;
+    }
+    if (i < eFunctionsNum) {
+        Log::WriteLog(ToString(eFunctionsNum));
+        Log::WriteLog(ToString(i));
+        Log::WriteLog("FreeLibrary: MFX_ERR_NOT_FOUND");
+        FreeLibrary(h_mfxdll);
+        free(loader);
+        Log::WriteLog(context.dump("ver", par.Version));
+        Log::WriteLog(context.dump("session", *session));
+        Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
+        return MFX_ERR_NOT_FOUND;
+    }
+    // Initializing loaded library
+    mfxStatus mfx_res = (*(MFXInitPointer)loader->table[eMFXInit])(par.Implementation, &par.Version, &(loader->session));
+    if (MFX_ERR_NONE != mfx_res) {
+            FreeLibrary(h_mfxdll);
+            free(loader);
+            Log::WriteLog(context.dump("ver", par.Version));
+            Log::WriteLog(context.dump("session", *session));
+            Log::WriteLog(context.dump_mfxStatus("status", mfx_res));
+            return mfx_res;
+        }
+    *session = (mfxSession)loader;
+    return MFX_ERR_NONE;
+}
+
 
 mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
 {
@@ -112,118 +230,32 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
         return MFX_ERR_ABORTED;
     }
     try{
-        
-        
         DumpContext context;
         context.context = DUMPCONTEXT_MFX;
         Log::WriteLog(std::string("function: MFXInit(mfxIMPL impl=" + GetmfxIMPL(impl) + ", mfxVersion *ver=" + ToString(ver) + ", mfxSession *session=" + ToString(session) + ") +"));
-        if (!session) {
-            Log::WriteLog(context.dump("ver", *ver));
-            Log::WriteLog(context.dump("session", *session));
-            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NULL_PTR));
-            return MFX_ERR_NULL_PTR;
-        }
+        mfxInitParam par = {};
 
-        mfxLoader* loader = (mfxLoader*)calloc(1, sizeof(mfxLoader));
-        if (!loader) {
-            Log::WriteLog(context.dump("ver", *ver));
-            Log::WriteLog(context.dump("session", *session));
-            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_MEMORY_ALLOC));
-            return MFX_ERR_MEMORY_ALLOC;
+        par.Implementation = impl;
+        if (ver)
+        {
+            par.Version = *ver;
         }
-
-        Log::WriteLog("LoadLibrary: " + std::string(g_mfxlib));
-        HINSTANCE h_mfxdll = NULL;
-        h_mfxdll = LoadLibrary(g_mfxlib);
-        if (h_mfxdll == NULL){
-            //dispatcher
-            mfxInitParam par = {};
-            mfxStatus sts;
-             par.Implementation = impl;
-            if (ver)
-            {
-                par.Version = *ver;
-            }
-            else
-            {
-                par.Version.Major = DEFAULT_API_VERSION_MAJOR;
-                par.Version.Minor = DEFAULT_API_VERSION_MINOR;
-            }
-            par.ExternalThreads = 0;
-
-            msdk_analyzer_sink sink;
-            is_loaded = true;
-            sts = _MFXInitEx(par, session);
-            if (sts != MFX_ERR_NONE)
-            {
-                Log::WriteLog(context.dump("ver", *ver));
-                Log::WriteLog(context.dump("session", *session));
-                Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
-                return MFX_ERR_NOT_FOUND;
-            }
-            is_loaded = false;
-            char libModuleName[MAX_PATH];
-
-            GetModuleFileName((HMODULE)(*(MFX_DISP_HANDLE**)(session))->hModule, libModuleName, MAX_PATH);
-            if (GetLastError() != 0) 
-            {
-                Log::WriteLog("GetModuleFileName() reported  error! \n");
-                
-                return MFX_ERR_NOT_FOUND;
-            }
-            g_mfxlib = new char[MAX_PATH];
-            strcpy(g_mfxlib, libModuleName);
-            h_mfxdll = LoadLibrary(g_mfxlib);
+        else
+        {
+            par.Version.Major = DEFAULT_API_VERSION_MAJOR;
+            par.Version.Minor = DEFAULT_API_VERSION_MINOR;
         }
-               
-        loader->dlhandle = h_mfxdll;
-        
-        /* Loading functions table */
-        int i;
-        mfxFunctionPointer proc;
-        for (i = 0; i < eFunctionsNum; ++i) {
-            proc = (mfxFunctionPointer)GetProcAddress((HINSTANCE)loader->dlhandle, g_mfxFuncTable[i].name);
-            if (!proc){
-                Sleep(100);
-                proc = (mfxFunctionPointer)GetProcAddress((HINSTANCE)loader->dlhandle, g_mfxFuncTable[i].name);
-            }
-            //if (!proc) break;
-            if(proc) loader->table[i] = proc;
-        }
-        if (i < eFunctionsNum) {
-            Log::WriteLog(ToString(eFunctionsNum));
-            Log::WriteLog(ToString(i));
-            Log::WriteLog("FreeLibrary: MFX_ERR_NOT_FOUND");
-            FreeLibrary(h_mfxdll);
-            free(loader);
-            Log::WriteLog(context.dump("ver", *ver));
-            Log::WriteLog(context.dump("session", *session));
-            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
-            return MFX_ERR_NOT_FOUND;
-        }
-    
-        Log::WriteLog(context.dump("impl", impl));
-        Log::WriteLog(context.dump("ver", *ver));
-        Log::WriteLog(context.dump("session", loader->session));
-        /* Initializing loaded library */
+        par.ExternalThreads = 0;
         Timer t;
-        mfxStatus mfx_res = (*(MFXInitPointer)loader->table[eMFXInit])(impl, ver, &(loader->session));
+        mfxStatus sts = TracerInit(par, session);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXInit called");
-        if (MFX_ERR_NONE != mfx_res) {
-            FreeLibrary(h_mfxdll);
-            free(loader);
-            Log::WriteLog(context.dump("ver", *ver));
-            Log::WriteLog(context.dump("session", *session));
-            Log::WriteLog(context.dump_mfxStatus("status", mfx_res));
-            return mfx_res;
-        }
-        *session = (mfxSession)loader;
+
         Log::WriteLog(context.dump("impl", impl));
         Log::WriteLog(context.dump("ver", *ver));
-        Log::WriteLog(context.dump("session", loader->session));
-        Log::WriteLog(std::string("function: MFXInit(" + elapsed + ", " + context.dump_mfxStatus("status", mfx_res) + ") - \n\n"));
-        return MFX_ERR_NONE;
+        Log::WriteLog(context.dump("session", *session));
+        Log::WriteLog(std::string("function: MFXInit(" + elapsed + ", " + context.dump_mfxStatus("status", sts) + ") - \n\n"));
+        return sts;
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
@@ -267,78 +299,29 @@ mfxStatus MFXClose(mfxSession session)
 
 mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 {
+    if (is_loaded)
+    {
+        return MFX_ERR_ABORTED;
+    }
     try{
         DumpContext context;
         context.context = DUMPCONTEXT_MFX;
-        Log::WriteLog(std::string("function: MFXInitEx(mfxInitParam par= " + context.dump("par", par) + ", mfxSession *session=" + ToString(session) + ") +"));
-        if (!session) {
-            Log::WriteLog(context.dump("par", par));
-            Log::WriteLog(context.dump("session", *session));
-            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NULL_PTR));
-            return MFX_ERR_NULL_PTR;
-        }
-
-        mfxLoader* loader = (mfxLoader*)calloc(1, sizeof(mfxLoader));
-        if (!loader) {
-            Log::WriteLog(context.dump("par", par));
-            Log::WriteLog(context.dump("session", *session));
-            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_MEMORY_ALLOC));
-            return MFX_ERR_MEMORY_ALLOC;
-        }
-        loader->dlhandle = LoadLibrary(g_mfxlib);
-        if (!loader->dlhandle){
-            Log::WriteLog(context.dump("par", par));
-            Log::WriteLog(context.dump("session", *session));
-            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
-            return MFX_ERR_NOT_FOUND;
-        }
-        /* Loading functions table */
-        int i;
-        mfxFunctionPointer proc;
-        for (i = 0; i < eFunctionsNum; ++i) {
-            proc = (mfxFunctionPointer)GetProcAddress((HINSTANCE)loader->dlhandle, g_mfxFuncTable[i].name);
-            if (!proc){
-                Sleep(100);
-                proc = (mfxFunctionPointer)GetProcAddress((HINSTANCE)loader->dlhandle, g_mfxFuncTable[i].name);
-            }
-            if (!proc) break;
-            loader->table[i] = proc;
-        }
-        if (i < eFunctionsNum) {
-            FreeLibrary((HINSTANCE)loader->dlhandle);
-            free(loader);
-            Log::WriteLog(context.dump("par", par));
-            Log::WriteLog(context.dump("session", *session));
-            Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
-            return MFX_ERR_NOT_FOUND;
-        }
-
-        Log::WriteLog(context.dump("par", par));
-        Log::WriteLog(context.dump("session", loader->session));
-        /* Initializing loaded library */
+        Log::WriteLog(std::string("function: MFXInitEx(par.Implementation=" + GetmfxIMPL(par.Implementation) + " par.Versin="+ ToString(&par.Version) +", mfxSession *session=" + ToString(session) + ") +"));
         Timer t;
-        mfxStatus mfx_res = (*(MFXInitExPointer)loader->table[eMFXInitEx])(par, &(loader->session));
+        mfxStatus sts = TracerInit(par, session);
         std::string elapsed = TimeToString(t.GetTime());
         Log::WriteLog(">> MFXInitEx called");
-        if (MFX_ERR_NONE != mfx_res) {
-            FreeLibrary((HINSTANCE)loader->dlhandle);
-            free(loader);
-            Log::WriteLog(context.dump("par", par));
-            Log::WriteLog(context.dump("session", *session));
-            Log::WriteLog(context.dump_mfxStatus("status", mfx_res));
-            return mfx_res;
-        }
-        *session = (mfxSession)loader;
         Log::WriteLog(context.dump("par", par));
-        Log::WriteLog(context.dump("session", loader->session));
-        Log::WriteLog(std::string("function: MFXInit(" + elapsed + ", " + context.dump_mfxStatus("status", mfx_res) + ") - \n\n"));
-        return MFX_ERR_NONE;
+        Log::WriteLog(context.dump("session", *session));
+        Log::WriteLog(std::string("function: MFXInitEx(" + elapsed + ", " + context.dump_mfxStatus("status", sts) + ") - \n\n"));
+        return sts;
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';
         return MFX_ERR_ABORTED;
     }
 }
+
 
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
