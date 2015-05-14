@@ -1469,8 +1469,12 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
      * BUT (!) this surface should be from reconstruct surface pool which was passed to
      * component when vaCreateContext was called */
     m_pps.CurrPic.picture_id = m_reconQueue[0].surface;
-    m_pps.CurrPic.flags = VA_PICTURE_H264_SHORT_TERM_REFERENCE;
     mdprintf(stderr,"m_pps.CurrPic.picture_id = %d\n",m_pps.CurrPic.picture_id);
+    /* Driver select progressive / interlaced based on this field */
+    if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
+        m_pps.CurrPic.flags = TFIELD == fieldId ? VA_PICTURE_H264_TOP_FIELD : VA_PICTURE_H264_BOTTOM_FIELD;
+    else
+        m_pps.CurrPic.flags = 0;
 
     /* Need to allocated coded buffer
      */
@@ -2192,19 +2196,16 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     // Allocate all output buffer for MBCODE (Pak object cmds)
     if ((NULL != mbcodeout) && (VA_INVALID_ID == m_vaFeiMCODEOutId[fieldId]) )
     {
-        for( mfxU32 ii = 0; ii < m_vaFeiMCODEOutId.size(); ii++ )
-        {
-            vaSts = vaCreateBuffer(m_vaDisplay,
-                    m_vaContextEncode,
-                    (VABufferType)VAEncFEIModeBufferTypeIntel,
-                    sizeof (VAEncFEIModeBufferH264Intel)*mbcodeout->NumMBAlloc,
-                    //limitation from driver, num elements should be 1
-                    1,
-                    NULL, //will be mapped later
-                    &m_vaFeiMCODEOutId[fieldId]);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            mdprintf(stderr, "MCODE Out bufId=%d\n", m_vaFeiMCODEOutId[fieldId]);
-        }
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                m_vaContextEncode,
+                (VABufferType)VAEncFEIModeBufferTypeIntel,
+                sizeof (VAEncFEIModeBufferH264Intel)*mbcodeout->NumMBAlloc,
+                //limitation from driver, num elements should be 1
+                1,
+                NULL, //will be mapped later
+                &m_vaFeiMCODEOutId[fieldId]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        mdprintf(stderr, "MCODE Out bufId=%d\n", m_vaFeiMCODEOutId[fieldId]);
     }
     /* Copy input data into MB CODE buffer */
     if ( (mbcodeout != NULL) && (m_vaFeiMCODEOutId[fieldId] != VA_INVALID_ID) )
@@ -2422,8 +2423,12 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     mfxHDL recon_handle;
     mfxSts = m_core->GetExternalFrameHDL(out->OutSurface->Data.MemId, &recon_handle);
     m_pps.CurrPic.picture_id = *(VASurfaceID*) recon_handle; //id in the memory by ptr
-    m_pps.CurrPic.flags = VA_PICTURE_H264_SHORT_TERM_REFERENCE;
     mdprintf(stderr,"m_pps.CurrPic.picture_id = %d\n",m_pps.CurrPic.picture_id);
+    /* Driver select progressive / interlaced based on this field */
+    if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
+        m_pps.CurrPic.flags = TFIELD == fieldId ? VA_PICTURE_H264_TOP_FIELD : VA_PICTURE_H264_BOTTOM_FIELD;
+    else
+        m_pps.CurrPic.flags = 0;
 
     /* Need to allocated coded buffer
      */
