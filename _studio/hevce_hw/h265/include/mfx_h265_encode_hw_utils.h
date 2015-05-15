@@ -356,7 +356,7 @@ public:
 
         for (i = 0; i < m_numTL && (frameOrder % (m_TL[m_numTL - 1].Scale / m_TL[i].Scale))  ; i++);
 
-        return m_TL[i].TId;
+        return (i < m_numTL) ? m_TL[i].TId : 0;
     }
 
     mfxU8 HighestTId() const { return  m_TL[m_numTL - 1].TId; }

@@ -165,6 +165,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
         return MFX_ERR_MEMORY_ALLOC;
     
     m_locked.resize(req.NumFrameMin, 0);
+    if (m_locked.size() > 0) memset(&m_locked[0], 0, sizeof(m_locked[0]) * m_locked.size());
 
     m_core = core;
     m_numFrameActualReturnedByAllocFrames = NumFrameActual;
