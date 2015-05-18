@@ -943,19 +943,19 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
      * for 30i->30p mode application needs to drop this is second internal frame.
      * */
 
-    if ((pParams->refCount > 1) && (pParams->bFMDEnable == false) && (0 != pParams->iDeinterlacingAlgorithm))
-    {
-        vaSts = vaSyncSurface(m_vaDisplay,*outputSurface);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        m_bFakeOutputEnabled = true;
-
-        mfxStatus mfxSts = Execute_FakeOutput(pParams);
-
-        m_bFakeOutputEnabled = false;
-        if (mfxSts != MFX_ERR_NONE)
-            return mfxSts;
-    }
+//    if ((pParams->refCount > 1) && (pParams->bFMDEnable == false) && (0 != pParams->iDeinterlacingAlgorithm))
+//    {
+//        vaSts = vaSyncSurface(m_vaDisplay,*outputSurface);
+//        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+//
+//        m_bFakeOutputEnabled = true;
+//
+//        mfxStatus mfxSts = Execute_FakeOutput(pParams);
+//
+//        m_bFakeOutputEnabled = false;
+//        if (mfxSts != MFX_ERR_NONE)
+//            return mfxSts;
+//    }
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIVideoProcessing::Execute(FASTCOMP_BLT_PARAMS *pVideoCompositingBlt)
