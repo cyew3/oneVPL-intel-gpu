@@ -778,11 +778,20 @@ typedef struct _VAStatsStatistics16x16Intel
 
     unsigned int    sum_coef;
 
-    /** \brief DWORD 5 ~ 8, variance for block16x16 or block8x8 **/
-    unsigned int    variance[4];
-    /** \brief DWORD 9 ~ 12, pixel_average for block16x16 or block8x8 **/
-    unsigned int    pixel_average[4];
-} VAStatsStatistics16x16Intel;  // size is 52 bytes
+    /** \brief DWORD 5 flat info **/
+    unsigned int    mb_is_flat             : 1;
+    unsigned int    reserved1              : 31;
+
+    /** \brief DWORD 6 variance for block16x16**/
+    unsigned int    variance16x16;
+    /** \brief DWORD 7 ~ 10, variance for block8x8 **/
+    unsigned int    variance8x8[4];
+
+    /** \brief DWORD 11 pixel_average for block16x16 **/
+    unsigned int    pixel_average16x16;
+    /** \brief DWORD 12 ~ 15, pixel_average for block8x8 **/
+    unsigned int    pixel_average8x8[4];
+} VAStatsStatistics16x16Intel;  // size is 64 bytes
 
 
 #endif // __VAAPI_EXT_INTERFACE_H__
