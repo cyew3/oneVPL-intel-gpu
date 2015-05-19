@@ -135,7 +135,8 @@ void FillSpsBuffer(
     sps.LocalSearch      = 0;
     sps.EarlySkip        = 0;
     sps.MBBRC            = IsOn(par.m_ext.CO2.MBBRC);
-    sps.ParallelBRC      = par.AsyncDepth > 1;
+    sps.ParallelBRC      = (par.AsyncDepth > 1) && (par.mfx.GopRefDist > 1) && par.isBPyramid();
+
     sps.SliceSizeControl = 0;
 
     sps.UserMaxFrameSize = 0;
