@@ -502,34 +502,42 @@ CH264FrameReader::CH264FrameReader()
     MSDK_ZERO_MEMORY(m_lastBs);
 }
 
-int CH264FrameReader::FindSlice(mfxBitstream *pBS, int & pos2ndnalu)
+mfxU8* CH264FrameReader::Find001(mfxU8* beg, mfxU8* end)
+{
+    for (mfxU8* ptr = beg; ptr + 3 < end; ++ptr)
+    if (ptr[0] == 0 && ptr[1] == 0 && ptr[2] == 1)
+        return ptr;
+    return end;
+}
+
+int CH264FrameReader::FindFrame(mfxBitstream *pBS, int & pos2ndnalu)
 {
     int nNalu = 0;
-    size_t i = 0;
-    for (i = pBS->DataOffset; nNalu < 2 && i + 3 < pBS->DataOffset + pBS->DataLength; i++)
-    {
-        if (pBS->Data[i]   == 0 &&
-            pBS->Data[i+1] == 0 &&
-            pBS->Data[i+2] == 1 )
-        {
-            if (0 == nNalu)
-            {
-                int nType = pBS->Data[i+3] & 0x1F;
 
-                if (nType == 1 ||//slice
-                    nType == 5  )//IDR slice
-                    nNalu++;
-            }
-            else
-            {
-                //any backend nalu
-                nNalu ++;
-            }
-        }
-    }
-    if (nNalu == 2)
+    mfxU8* beg = pBS->Data + pBS->DataOffset;
+    mfxU8* end = pBS->Data + pBS->DataOffset + pBS->DataLength;
+    bool bNewFrame = false;
+    while ((beg = Find001(beg, end)) != end)
     {
-        pos2ndnalu = (int)i;
+        int nType = beg[3] & 0x1F;
+        if (nType == 1 || nType == 5)   // Slice or IDR Slice
+        {
+            nNalu++;
+            // reading slice header
+            BitstreamReader reader(beg + 4, end - beg + 4);
+            mfxU32 first_mb_in_slice = reader.GetUE();
+            if (bNewFrame && !first_mb_in_slice)
+            {
+                break;
+            }
+            bNewFrame = true;
+        }
+        beg += 3;
+    }
+
+    if (bNewFrame)
+    {
+        pos2ndnalu = beg - pBS->Data;
     }
     return nNalu;
 }
@@ -580,10 +588,10 @@ mfxStatus CH264FrameReader::ReadNextFrame(mfxBitstream *pBS)
     int nNalu;
     int pos2ndNaluStart = 0;
     //check nalu in input bs, it always=1 if decoder didnt take a frame
-    if ((nNalu = FindSlice(pBS, pos2ndNaluStart)) < 1)
+    if ((nNalu = FindFrame(pBS, pos2ndNaluStart)) < 1)
     {
         //copy nalu from internal buffer
-        if ((nNalu = FindSlice(&m_lastBs, pos2ndNaluStart)) < 2)
+        if ((nNalu = FindFrame(&m_lastBs, pos2ndNaluStart)) < 2)
         {
             mfxStatus sts = CSmplBitstreamReader::ReadNextFrame(&m_lastBs);
             if (MFX_ERR_MORE_DATA == sts)
@@ -600,7 +608,7 @@ mfxStatus CH264FrameReader::ReadNextFrame(mfxBitstream *pBS)
                 return MFX_ERR_MORE_DATA;
             }
             //buffer is to small to accept whole frame
-            MSDK_CHECK_NOT_EQUAL(FindSlice(&m_lastBs, pos2ndNaluStart) == 2, true, MFX_ERR_NOT_ENOUGH_BUFFER);
+            MSDK_CHECK_NOT_EQUAL(FindFrame(&m_lastBs, pos2ndNaluStart) >= 2, true, MFX_ERR_NOT_ENOUGH_BUFFER);
         }
         mfxU32 naluLen = pos2ndNaluStart-m_lastBs.DataOffset;
         mfxStatus sts = MoveMfxBitstream(pBS, &m_lastBs, naluLen);
@@ -1846,4 +1854,89 @@ mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat)
     }
 
     return sts;
+}
+
+BitstreamReader::BitstreamReader(void)
+{
+    m_pSource = NULL;
+    m_pEnd = NULL;
+    m_nBits = 0;
+    m_iReadyBits = 0;
+}
+
+BitstreamReader::BitstreamReader(mfxU8 *pStream, mfxU32 len)
+{
+    Init(pStream, len);
+}
+
+BitstreamReader::BitstreamReader(mfxBitstream* bits)
+{
+    Init(bits->Data, bits->DataLength);
+}
+
+void BitstreamReader::Init(mfxU8 *pStream, mfxU32 len)
+{
+    m_pSource = pStream;
+    m_pEnd = pStream + len;
+    m_nBits = 0;
+    m_iReadyBits = 0;
+}
+
+mfxU32 BitstreamReader::CopyBit(void)
+{
+    if (0 == m_iReadyBits)
+        Refresh();
+
+    return ((m_nBits >> (m_iReadyBits - 1)) & 1);
+}
+
+mfxU32 BitstreamReader::GetBit(void)
+{
+    if (0 == m_iReadyBits)
+        Refresh();
+
+    m_iReadyBits -= 1;
+    return ((m_nBits >> m_iReadyBits) & 1);
+}
+
+mfxU32 BitstreamReader::GetBits(mfxI32 iNum)
+{
+    if (iNum <= 24)
+    {
+        if (iNum > m_iReadyBits)
+            Refresh();
+
+        m_iReadyBits -= iNum;
+        return ((m_nBits >> m_iReadyBits) & ~(-1 << iNum));
+    }
+    else
+    {
+        return (GetBits(iNum - 16) << 16) + GetBits(16);
+    }
+}
+
+mfxU32 BitstreamReader::GetUE(void)
+{
+    mfxI32 iZeros;
+
+    // count leading zeros
+    iZeros = 0;
+    while (0 == CopyBit())
+    {
+        iZeros += 1;
+        GetBit();
+    }
+
+    // get value
+    return (GetBits(iZeros + 1) - 1);
+}
+
+void BitstreamReader::Refresh(void)
+{
+    while (24 > m_iReadyBits)
+    {
+        m_nBits = (m_nBits << 8) | m_pSource[0];
+        m_iReadyBits += 8;
+        m_pSource += 1;
+    }
 }

@@ -70,6 +70,42 @@ bool IsDecodeCodecSupported(mfxU32 codecFormat);
 bool IsEncodeCodecSupported(mfxU32 codecFormat);
 bool IsPluginCodecSupported(mfxU32 codecFormat);
 
+// Exp-Golomb bitstream reader
+class BitstreamReader
+{
+public:
+    // Default constructor
+    BitstreamReader(void);
+    BitstreamReader(mfxU8 *pStream, mfxU32 len);
+    BitstreamReader(mfxBitstream* bits);
+    // Destructor
+    virtual ~BitstreamReader(void) {}
+    // Initialize bit stream reader
+    void Init(mfxU8 *pStream, mfxU32 len = 0xffffffff);
+    // Copy next bit
+    mfxU32 CopyBit(void);
+    // Get bit (move pointer)
+    mfxU32 GetBit(void);
+    // Get bits (move pointer)
+    mfxU32 GetBits(mfxI32 iNum);
+    // Get unsigned integer Exp-Golomb-coded element (move pointer)
+    mfxU32 GetUE(void);
+
+
+protected:
+    // Refresh pre-read bits
+    virtual void Refresh(void);
+
+protected:
+    // pointer to source stream
+    mfxU8 *m_pSource;
+    mfxU8 *m_pEnd;
+    // pre-read stream bits
+    mfxU32 m_nBits;
+    // amount of pre-read bits
+    mfxI32 m_iReadyBits;
+};
+
 class CSmplYUVReader
 {
 public :
@@ -153,7 +189,8 @@ public:
 protected:
     //1 - means slice start indicator present
     //2 - means slice start and backend startcode present
-    int FindSlice(mfxBitstream *pBS, int & pos2ndnalu);
+    int FindFrame(mfxBitstream *pBS, int & pos2ndnalu);
+    mfxU8* Find001(mfxU8* beg, mfxU8* end);
 
 
     mfxBitstream m_lastBs;
