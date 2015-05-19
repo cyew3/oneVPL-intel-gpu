@@ -100,6 +100,7 @@ int test(unsigned int id)
     tc_struct tc = GetTestCase(id);
 
     enc.MFXInit();
+    enc.Load();
 
     QIOSpar par = {enc.m_session, &enc.m_par, &enc.m_request};
     enc.m_par.IOPattern  = tc.IOPattern;

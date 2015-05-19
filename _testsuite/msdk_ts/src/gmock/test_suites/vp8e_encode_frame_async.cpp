@@ -13,7 +13,7 @@ public:
     static const unsigned int n_cases;
 
 private:
-    typedef struct 
+    typedef struct
     {
         mfxSession          session;
         mfxEncodeCtrl*      pCtrl;
@@ -67,7 +67,7 @@ private:
 
     void set_par(tc_par& arg, EFApar* p)
     {
-        memcpy(GetP8(p, arg.p0) + arg.p1, &arg.p3, TS_MIN(4, arg.p2)); 
+        memcpy(GetP8(p, arg.p0) + arg.p1, &arg.p3, TS_MIN(4, arg.p2));
     }
 
     void close_encoder(tc_par& arg, EFApar* p)
@@ -93,7 +93,7 @@ private:
     }
 };
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_INVALID_HANDLE,     {}, {&TestSuite::set_par, EFA, offsetof(EFApar, session), sizeof(mfxSession), 0} },
     {/* 1*/ MFX_ERR_NONE,               {}, {&TestSuite::set_par, EFA, offsetof(EFApar, pCtrl),   sizeof(mfxEncodeCtrl*), 0} },
@@ -104,16 +104,16 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/* 6*/ MFX_ERR_NOT_ENOUGH_BUFFER,  {}, {&TestSuite::set_par, BS, offsetof(mfxBitstream, MaxLength), sizeof(mfxU32), 100} },
     {/* 7*/ MFX_ERR_UNDEFINED_BEHAVIOR, {}, {&TestSuite::set_par, BS, offsetof(mfxBitstream, DataOffset), sizeof(mfxU32), 0xFFFFFFFF} },
     {/* 8*/ MFX_ERR_UNDEFINED_BEHAVIOR, {}, {&TestSuite::set_par, SURF, (offsetof(mfxFrameSurface1, Data) + offsetof(mfxFrameData, Y)), sizeof(mfxU8*), 0} },
-    {/* 9*/ 
-            MFX_ERR_UNDEFINED_BEHAVIOR, 
-            {&TestSuite::set_par, MFX,   offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_VIDEO_MEMORY}, 
-            {&TestSuite::set_par, SURF, (offsetof(mfxFrameSurface1, Data) + offsetof(mfxFrameData, MemId)), sizeof(mfxMemId), 0} 
+    {/* 9*/
+            MFX_ERR_UNDEFINED_BEHAVIOR,
+            {&TestSuite::set_par, MFX,   offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_VIDEO_MEMORY},
+            {&TestSuite::set_par, SURF, (offsetof(mfxFrameSurface1, Data) + offsetof(mfxFrameData, MemId)), sizeof(mfxMemId), 0}
     },
     {/*10*/ MFX_ERR_NULL_PTR,  {}, {&TestSuite::set_par, BS, offsetof(mfxBitstream, Data), sizeof(mfxU8*), 0} },
-    {/*11*/ 
-            MFX_ERR_NONE, 
-            {&TestSuite::set_par, MFX,   offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 4}, 
-            {&TestSuite::async, 4} 
+    {/*11*/
+            MFX_ERR_NONE,
+            {&TestSuite::set_par, MFX,   offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 4},
+            {&TestSuite::async, 4}
     },
     {/*12*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_0}, {} },
     {/*13*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_1}, {} },
@@ -129,6 +129,9 @@ int TestSuite::RunTest(unsigned int id)
     TS_START;
     tc_struct tc = test_case[id];
 
+    MFXInit();
+    Load();
+
     if(tc.pre_init.set_par)
     {
         (this->*tc.pre_init.set_par)(tc.pre_init, 0);
@@ -138,7 +141,7 @@ int TestSuite::RunTest(unsigned int id)
     AllocBitstream();
 
     EFApar par = {m_session, m_pCtrl, GetSurface(), m_pBitstream, m_pSyncPoint};
-    
+
     if(tc.pre_encode.set_par)
     {
         (this->*tc.pre_encode.set_par)(tc.pre_encode, &par);

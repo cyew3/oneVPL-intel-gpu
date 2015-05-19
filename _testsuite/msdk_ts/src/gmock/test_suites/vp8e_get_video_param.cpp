@@ -40,7 +40,7 @@ private:
 
     static const tc_struct test_case[];
 
-    enum 
+    enum
     {
         GVP,
         MFX_IN,
@@ -57,17 +57,17 @@ private:
         default:        return 0;
         }
     }
-    
+
     void set_par(tc_par& arg)
     {
-        memcpy(GetP8(arg.p0) + arg.p1, &arg.p3, TS_MIN(4, arg.p2)); 
+        memcpy(GetP8(arg.p0) + arg.p1, &arg.p3, TS_MIN(4, arg.p2));
     }
 
     void close_encoder(tc_par&)
     {
         Close();
     }
-    
+
     void CBR(tc_par&)
     {
         m_par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
@@ -82,7 +82,7 @@ private:
         m_par.mfx.TargetKbps = 2000;
         m_par.mfx.MaxKbps = 3000;
     }
-    
+
     void COVP8(tc_par& arg)
     {
         tsExtBufType<mfxVideoParam>* par = ((arg.p0 == MFX_IN) ? &m_par : m_GVPpar.pPar);
@@ -92,7 +92,7 @@ private:
 };
 
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_INVALID_HANDLE,  {}, {&TestSuite::set_par, GVP, offsetof(GVPpar, session), sizeof(mfxSession), 0} },
     {/* 1*/ MFX_ERR_NOT_INITIALIZED, {}, {&TestSuite::close_encoder} },
@@ -124,22 +124,25 @@ int TestSuite::RunTest(unsigned int id)
     tsExtBufType<mfxVideoParam> par0;
     tc_struct tc = test_case[id];
     mfxExtVP8CodingOption* extco = 0;
-    
+
     if(tc.pre_init.set_par)
     {
         (this->*tc.pre_init.set_par)(tc.pre_init);
     }
 
+    MFXInit();
+    Load();
+
     Init();
 
     m_GVPpar.session = m_session;
     m_GVPpar.pPar    = &par0;
-    
+
     if(tc.post_init.set_par)
     {
         (this->*tc.post_init.set_par)(tc.post_init);
     }
-    
+
     extco = par0;
 
     g_tsStatus.expect(tc.sts);

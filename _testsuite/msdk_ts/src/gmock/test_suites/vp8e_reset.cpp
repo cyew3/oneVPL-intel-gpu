@@ -86,7 +86,7 @@ private:
 
 #define EXT_BUF_PAR(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_INVALID_HANDLE,  {}, 0, {&TestSuite::set_par, RESET_PAR, offsetof(ResetPar, session), sizeof(mfxSession), 0}, 0},
     {/* 1*/ MFX_ERR_NULL_PTR,        {}, 0, {&TestSuite::set_par, RESET_PAR, offsetof(ResetPar, pPar), sizeof(void*), 0}, 0},
@@ -94,23 +94,23 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/* 3*/ MFX_ERR_NONE,            {}, 0, {}, 0},
     {/* 4*/ MFX_ERR_NONE,            {}, 1, {}, 1},
     {/* 5*/ MFX_ERR_NONE, {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_VIDEO_MEMORY}, 1, {}, 1},
-    {/* 6*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 
-        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_VIDEO_MEMORY},  0, 
+    {/* 6*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_VIDEO_MEMORY},  0,
         {&TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_SYSTEM_MEMORY}, 0},
-    {/* 7*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 
-        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_SYSTEM_MEMORY}, 0, 
+    {/* 7*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_SYSTEM_MEMORY}, 0,
         {&TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_VIDEO_MEMORY},  0},
-    {/* 8*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 
-        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_OPAQUE_MEMORY}, 0, 
+    {/* 8*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_OPAQUE_MEMORY}, 0,
         {&TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_SYSTEM_MEMORY}, 0},
-    {/* 9*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 
-        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 3}, 0, 
+    {/* 9*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 3}, 0,
         {&TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 4}, 0},
-    {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 
-        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 4}, 0, 
+    {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 4}, 0,
         {&TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 3}, 0},
-    {/*11*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 
-        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_SYSTEM_MEMORY}, 0, 
+    {/*11*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_SYSTEM_MEMORY}, 0,
         {&TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_OPAQUE_MEMORY}, 0},
     {/*12*/ MFX_ERR_NONE, {&TestSuite::Size, MFX_INIT, 720, 480, 720, 480}, 1, {&TestSuite::Size, MFX_RESET, 720, 480, 704, 480}, 1},
     {/*13*/ MFX_ERR_NONE, {&TestSuite::Size, MFX_INIT, 720, 480, 720, 480}, 1, {&TestSuite::Size, MFX_RESET, 704, 480, 704, 480}, 1},
@@ -125,27 +125,27 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, {&TestSuite::Size, MFX_INIT, 720, 480, 720, 480}, 0, {&TestSuite::Size, MFX_RESET, 710, 480, 704, 480}, 0},
     {/*23*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {&TestSuite::Size, MFX_INIT, 720, 480, 720, 480}, 0, {&TestSuite::Size, MFX_RESET, 840, 480, 840, 480}, 0},
     {/*24*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {&TestSuite::Size, MFX_INIT, 720, 480, 720, 480}, 0, {&TestSuite::Size, MFX_RESET, 720, 496, 720, 496}, 0},
-    {/*25*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, {}, 0, {&TestSuite::set_par, MFX_RESET,  offsetof(mfxVideoParam, mfx) 
-                                                                          + offsetof(mfxInfoMFX, FrameInfo) 
+    {/*25*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, {}, 0, {&TestSuite::set_par, MFX_RESET,  offsetof(mfxVideoParam, mfx)
+                                                                          + offsetof(mfxInfoMFX, FrameInfo)
                                                                           + offsetof(mfxFrameInfo, PicStruct), sizeof(mfxU16), MFX_PICSTRUCT_FIELD_TFF}, 0},
-    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, {}, 0, {&TestSuite::set_par, MFX_RESET,  offsetof(mfxVideoParam, mfx) 
-                                                                     + offsetof(mfxInfoMFX, FrameInfo) 
+    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, {}, 0, {&TestSuite::set_par, MFX_RESET,  offsetof(mfxVideoParam, mfx)
+                                                                     + offsetof(mfxInfoMFX, FrameInfo)
                                                                      + offsetof(mfxFrameInfo, FourCC), sizeof(mfxU16), MFX_FOURCC_YV12}, 0},
-    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, {}, 0, {&TestSuite::set_par, MFX_RESET,  offsetof(mfxVideoParam, mfx) 
-                                                                     + offsetof(mfxInfoMFX, FrameInfo) 
+    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, {}, 0, {&TestSuite::set_par, MFX_RESET,  offsetof(mfxVideoParam, mfx)
+                                                                     + offsetof(mfxInfoMFX, FrameInfo)
                                                                      + offsetof(mfxFrameInfo, ChromaFormat), sizeof(mfxU16), MFX_CHROMAFORMAT_YUV444}, 0},
-    {/*28*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 
-        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_0}, 0, 
+    {/*28*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {&TestSuite::set_par, MFX_INIT,  offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_0}, 0,
         {&TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_3}, 0},
-    {/*29*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, {}, 0, 
+    {/*29*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, {}, 0,
         {&TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecLevel), sizeof(mfxU16), 1}, 0},
-    {/*30*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, {}, 0, 
+    {/*30*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, {}, 0,
         {&TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, GopRefDist), sizeof(mfxU16), 1}, 0},
-    {/*31*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, {}, 0, 
+    {/*31*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, {}, 0,
         {&TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, NumSlice), sizeof(mfxU16), 1}, 0},
-    {/*32*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, {}, 0, 
+    {/*32*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, {}, 0,
         {&TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, IdrInterval), sizeof(mfxU16), 1}, 0},
-    {/*33*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, {}, 0, 
+    {/*33*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, {}, 0,
         {&TestSuite::set_par, MFX_RESET, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, NumRefFrame), sizeof(mfxU16), 1}, 0},
     {/*34*/ MFX_ERR_INVALID_VIDEO_PARAM, {}, 0, {&TestSuite::ExtBuf, MFX_RESET, EXT_BUF_PAR(mfxExtCodingOption           )}, 0},
     {/*35*/ MFX_ERR_INVALID_VIDEO_PARAM, {}, 0, {&TestSuite::ExtBuf, MFX_RESET, EXT_BUF_PAR(mfxExtCodingOptionSPSPPS     )}, 0},
@@ -226,16 +226,19 @@ int TestSuite::RunTest(unsigned int id)
     tc_struct tc = test_case[id];
     BitstreamChecker bs_checker(reset_par);
     m_bs_processor = &bs_checker;
-        
+
     if(tc.pre_init.set_par)
     {
         (this->*tc.pre_init.set_par)(tc.pre_init);
     }
 
+    MFXInit();
+    Load();
+
     Init();
     GetVideoParam(m_session, &reset_par);
     EncodeFrames(tc.encode_before);
-    
+
     m_resetPar.session = m_session;
     m_resetPar.pPar    = &reset_par;
 
