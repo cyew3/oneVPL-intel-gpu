@@ -155,7 +155,12 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     Desc.Format = MFXtoDXGI(request->Info.FourCC);
     Desc.SampleDesc.Count = 1;
     Desc.Usage = D3D11_USAGE_DEFAULT;
-    Desc.BindFlags = D3D11_BIND_DECODER;
+    if((request->Type&MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET) && (request->Type & MFX_MEMTYPE_INTERNAL_FRAME))
+    {
+        Desc.BindFlags = D3D11_BIND_VIDEO_ENCODER;
+    }
+    else
+        Desc.BindFlags = D3D11_BIND_DECODER;
 
     //aya: P8 with 0
     if(request->Info.FourCC == MFX_FOURCC_P8)

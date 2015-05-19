@@ -341,7 +341,7 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
         else
         {
             // external allocator
-            if (m_bSetExtFrameAlloc && ! IsBayerFormat(temp_request.Info.FourCC))
+            if (m_bSetExtFrameAlloc && !(request->Type & MFX_MEMTYPE_INTERNAL_FRAME) && ! IsBayerFormat(temp_request.Info.FourCC))
             {
 
                 sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis,&temp_request, response);

@@ -923,6 +923,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame +
         m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE) +
         bParallelEncPak);
+    request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET|MFX_MEMTYPE_INTERNAL_FRAME;
     sts = m_rec.Alloc(m_core, request,bPanicModeSupport);
     MFX_CHECK_STS(sts);
 
