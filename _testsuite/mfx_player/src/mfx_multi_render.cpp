@@ -34,11 +34,11 @@ mfxStatus MFXMultiRender::RenderFrame( mfxFrameSurface1 *surface
     if (NULL == surface)
     {   
         _CollectionType  :: iterator it;
-        it = find_if( m_Renders.begin()
-                    , m_Renders.end()
-                    , Untill(mem_fun2(&MFXViewRender<_TView>::RenderFrame, surface, pCtrl), NoMfxErr()));
 
-        MFX_CHECK(it == m_Renders.end());
+        for (it = m_Renders.begin(); it != m_Renders.end(); it++)
+        {
+            MFX_CHECK_STS((*it)->RenderFrame(surface, pCtrl));
+        }
 
         //no gcc compliant code
         /*for each(MFXViewRender<_TView> * viewRender in m_Renders)
@@ -47,7 +47,7 @@ mfxStatus MFXMultiRender::RenderFrame( mfxFrameSurface1 *surface
         }*/
         return MFX_ERR_NONE;
     }
-    
+
     mfxStatus sts = MFX_ERR_NONE;
 
     _CollectionType::iterator it = 
@@ -68,9 +68,9 @@ mfxStatus MFXMultiRender::RenderFrame( mfxFrameSurface1 *surface
         {
             pRenderToView.reset(m_pTarget.get()->Clone());
         }
-        
+
         m_Renders.push_back(new MFXViewRender<_TView>(pRenderToView.release(), surface->Info.FrameId.ViewId));
-        
+
         _CollectionType::iterator it_end = m_Renders.end();
         it = --it_end;
     }
