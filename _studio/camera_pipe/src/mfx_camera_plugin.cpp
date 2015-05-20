@@ -1113,8 +1113,9 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
 #endif
     else
     {
-        // Fallback to SW in case there is appripriate HW-accel version found
+        // Fallback to SW in case there is no appripriate HW-accel version found
         m_CameraProcessor = new CPUCameraProcessor();
+        m_useSW = true;
     }
 
     m_CameraProcessor->SetCore(m_core);
@@ -1301,7 +1302,7 @@ mfxStatus MFXCamera_Plugin::CompleteCameraRoutine(void *pState, void *pParam, mf
     if (pParam)
         delete (AsyncParams *)pParam; // not safe !!! ???
 
-    return sts;
+     return sts;
 }
 
 mfxStatus MFXCamera_Plugin::CompleteCameraAsyncRoutine(AsyncParams *pParam)
