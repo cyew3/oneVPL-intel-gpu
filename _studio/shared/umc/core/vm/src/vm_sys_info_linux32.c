@@ -135,8 +135,8 @@ void vm_sys_info_get_cpu_name(vm_char *cpu_name)
   vm_string_sprintf( cpu_name, VM_STRING("%s %s"), k, s );
 #else
     FILE *pFile = NULL;
-    vm_char buf[PATH_MAX];
-    vm_char tmp_buf[PATH_MAX] = { 0 };
+    vm_char buf[_MAX_LEN];
+    vm_char tmp_buf[_MAX_LEN] = { 0 };
     size_t len;
 
     /* check error(s) */
@@ -147,16 +147,16 @@ void vm_sys_info_get_cpu_name(vm_char *cpu_name)
     if (!pFile)
         return;
 
-    while ((vm_file_fgets(buf, PATH_MAX, pFile)))
+    while ((vm_file_fgets(buf, _MAX_LEN, pFile)))
     {
         if (!vm_string_strncmp(buf, VM_STRING("vendor_id"), 9))
         {
-            vm_string_strncpy_s(tmp_buf, PATH_MAX, (vm_char*)(buf + 12), vm_string_strlen(buf) - 13);
+            vm_string_strncpy_s(tmp_buf, _MAX_LEN, (vm_char*)(buf + 12), vm_string_strlen(buf) - 13);
         }
         else if (!vm_string_strncmp(buf, VM_STRING("model name"), 10))
         {
             if ((len = vm_string_strlen(buf) - 14) > 8)
-                vm_string_strncpy_s(cpu_name, PATH_MAX, (vm_char *)(buf + 13), len);
+                vm_string_strncpy_s(cpu_name, _MAX_LEN, (vm_char *)(buf + 13), len);
             else
                 vm_string_sprintf(cpu_name, PATH_MAX, VM_STRING("%s"), tmp_buf);
         }

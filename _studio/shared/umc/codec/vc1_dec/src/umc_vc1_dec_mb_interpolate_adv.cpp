@@ -3044,6 +3044,8 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma1MV(VC1Context* pCo
         ippiInterpolateQPBilinear_VC1_8u_C1R(interp_params);
     }
 
+    interp_params->pDst = NULL;
+
     return VC1_OK;
 }
 
