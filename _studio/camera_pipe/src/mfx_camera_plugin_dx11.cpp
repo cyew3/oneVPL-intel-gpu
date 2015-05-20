@@ -187,8 +187,8 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
     }
 
     // [4] Copy DDI params to the async storage
-    memcpy(&m_executeParams[surfInIndex], &tmpParams, sizeof(MfxHwVideoProcessing::mfxExecuteParams));
-    memcpy(&m_executeSurf[surfInIndex]  , &tmpSurface, sizeof(mfxDrvSurface) );
+    memcpy_s(&m_executeParams[surfInIndex], sizeof(MfxHwVideoProcessing::mfxExecuteParams), &tmpParams, sizeof(MfxHwVideoProcessing::mfxExecuteParams));
+    memcpy_s(&m_executeSurf[surfInIndex]  , sizeof(mfxDrvSurface), &tmpSurface, sizeof(mfxDrvSurface) );
     m_executeParams[surfInIndex].pRefSurfaces = &m_executeSurf[surfInIndex];
     pParam->nDDIIndex    = surfInIndex;
     pParam->surfInIndex  = surfInIndex;

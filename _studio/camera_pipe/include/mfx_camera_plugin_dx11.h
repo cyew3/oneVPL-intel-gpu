@@ -171,6 +171,9 @@ protected:
 
 private:
 
+    // Do not allow copying of the object
+    D3D11CameraProcessor& operator=(const D3D11CameraProcessor&) {return *this; };
+
     mfxU32 FindFreeResourceIndex(
     D3D11FrameAllocResponse const & pool,
     mfxU32                        *index)

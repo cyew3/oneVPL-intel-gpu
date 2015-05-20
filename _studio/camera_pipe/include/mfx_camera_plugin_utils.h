@@ -429,7 +429,7 @@ class CameraProcessor
 {
 public:
     CameraProcessor(): m_core(0) {};
-    ~CameraProcessor() {};
+    virtual ~CameraProcessor() {};
     virtual mfxStatus Init(mfxVideoParam *par) = 0;
     virtual mfxStatus Init(CameraParams  *pipeParams) = 0;
     virtual mfxStatus Reset(mfxVideoParam *par, CameraParams *pipeParams) = 0;
