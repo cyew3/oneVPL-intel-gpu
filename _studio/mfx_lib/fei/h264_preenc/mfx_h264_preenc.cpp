@@ -241,7 +241,7 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
     for (mfxU32 f = 0; f <= task.m_fieldPicFlag; f++)
     {
         //fprintf(stderr,"handle=0x%x mid=0x%x\n", task.m_handleRaw, task.m_midRaw );
-        sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[0], m_sei);
+        sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[f], m_sei);
         if (sts != MFX_ERR_NONE)
                  return Error(sts);
     }
@@ -263,7 +263,7 @@ mfxStatus VideoENC_PREENC::Query(DdiTask& task)
     
     for (mfxU32 f = 0; f <= task.m_fieldPicFlag; f++)
     {
-        sts = m_ddi->QueryStatus(task, 0);
+        sts = m_ddi->QueryStatus(task, task.m_fid[f]);
         if (sts == MFX_WRN_DEVICE_BUSY)
             return MFX_TASK_BUSY;
         if (sts != MFX_ERR_NONE)
@@ -390,6 +390,7 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
             ? MFX_IOPATTERN_IN_SYSTEM_MEMORY
             : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
+    mfxStatus checkStatus = MfxHwH264Encode::CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
 
     m_free.resize(m_video.AsyncDepth);
     m_incoming.clear();

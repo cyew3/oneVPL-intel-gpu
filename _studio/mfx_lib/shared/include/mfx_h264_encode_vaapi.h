@@ -279,13 +279,12 @@ namespace MfxHwH264Encode
     protected:
         //helper functions
         mfxStatus CreatePREENCAccelerationService(MfxVideoParam const & par);
-        mfxStatus CreateENCPAKAccelerationService(MfxVideoParam const & par);
 
         mfxI32 m_codingFunction;
 
         VABufferID m_statParamsId;
-        VABufferID m_statMVId;
-        VABufferID m_statOutId;
+        std::vector<VABufferID> m_statMVId;
+        std::vector<VABufferID> m_statOutId;
 
         std::vector<ExtVASurface> m_statFeedbackCache;
         std::vector<ExtVASurface> m_inputQueue;
