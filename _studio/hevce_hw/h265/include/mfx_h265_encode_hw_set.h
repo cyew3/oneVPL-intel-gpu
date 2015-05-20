@@ -465,7 +465,7 @@ struct Slice
     mfxU32 pic_order_cnt_lsb;
     mfxU16 num_long_term_pics;
 
-    mfxI16 slice_qp_delta     : 6;
+    mfxI8  slice_qp_delta;
     mfxI16 slice_cb_qp_offset : 5;
     mfxI16 slice_cr_qp_offset : 5;
 

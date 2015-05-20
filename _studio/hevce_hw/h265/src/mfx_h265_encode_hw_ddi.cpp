@@ -359,8 +359,8 @@ void FillSliceBuffer(
         cs.collocated_from_l0_flag              = task.m_sh.collocated_from_l0_flag;
 
         cs.slice_qp_delta       = task.m_sh.slice_qp_delta;
-        cs.slice_cb_qp_offset   = task.m_sh.slice_cr_qp_offset;
-        cs.slice_cr_qp_offset   = task.m_sh.slice_cb_qp_offset;
+        cs.slice_cb_qp_offset   = task.m_sh.slice_cb_qp_offset;
+        cs.slice_cr_qp_offset   = task.m_sh.slice_cr_qp_offset;
         cs.beta_offset_div2     = task.m_sh.beta_offset_div2;
         cs.tc_offset_div2       = task.m_sh.tc_offset_div2;
 

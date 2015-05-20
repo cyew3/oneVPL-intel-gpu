@@ -1241,6 +1241,14 @@ void MfxVideoParam::SyncMfxToHeadersParam()
 
     m_pps.loop_filter_across_slices_enabled_flag      = 0;
     m_pps.deblocking_filter_control_present_flag      = 0;
+
+    if (m_ext.CO2.DisableDeblockingIdc)
+    {
+        m_pps.deblocking_filter_control_present_flag  = 1;
+        m_pps.deblocking_filter_disabled_flag = 1;
+        m_pps.deblocking_filter_override_enabled_flag = 0;
+    }
+    
     m_pps.scaling_list_data_present_flag              = 0;
     m_pps.lists_modification_present_flag             = 1;
     m_pps.log2_parallel_merge_level_minus2            = 0;
@@ -1557,13 +1565,17 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
     }
 
     if (mfx.RateControlMethod == MFX_RATECONTROL_CQP)
-        s.slice_qp_delta = task.m_qpY - (m_pps.init_qp_minus26 + 26);
+        s.slice_qp_delta = mfxI8(task.m_qpY - (m_pps.init_qp_minus26 + 26));
 
     if (m_pps.slice_chroma_qp_offsets_present_flag)
     {
         s.slice_cb_qp_offset = 0;
         s.slice_cr_qp_offset = 0;
     }
+
+     s.deblocking_filter_disabled_flag = m_pps.deblocking_filter_disabled_flag; //  needed for DDI
+     s.beta_offset_div2     = m_pps.beta_offset_div2; //  needed for DDI
+     s.tc_offset_div2       = m_pps.tc_offset_div2;   //  needed for DDI
 
     if (m_pps.deblocking_filter_override_enabled_flag)
         s.deblocking_filter_override_flag = 0;

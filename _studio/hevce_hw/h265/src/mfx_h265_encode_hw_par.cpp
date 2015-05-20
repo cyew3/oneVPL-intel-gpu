@@ -343,7 +343,7 @@ mfxU16 AddTileSlices(
         if (i != 0)
             par.m_slice[i - 1].NumLCU = par.m_slice[i].SegmentAddress - par.m_slice[i - 1].SegmentAddress;         
     }
-    if ((i > 1) && ((i - 1) < par.m_slice.size()))
+    if ((i > 0) && ((i - 1) < par.m_slice.size()))
     {
         par.m_slice[i - 1].NumLCU = par.m_slice[nSlicePrev].SegmentAddress + nLCU - par.m_slice[i - 1].SegmentAddress ; 
     }
