@@ -1,3 +1,12 @@
+/*//////////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2015 Intel Corporation. All Rights Reserved.
+//
+*/
 #include "dump.h"
 #include "../loggers/log.h"
 
@@ -106,8 +115,21 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
 
             str += prefix + ".SumOfCoef=" + ToString(_struct.MB[i].SumOfCoef) + "\n";
 
-            str += prefix + ".Variance=" + ToString(_struct.MB[i].Variance) + "\n";
-            str += prefix + ".PixelAverage=" + ToString(_struct.MB[i].PixelAverage) + "\n";
+            str += prefix + ".reserved2=" + ToString(_struct.MB[i].reserved2) + "\n";
+
+            str += prefix + ".Variance16x16=" + ToString(_struct.MB[i].Variance16x16) + "\n";
+
+            str += prefix + ".Variance8x8[0]=" + ToString(_struct.MB[i].Variance8x8[0]) + "\n";
+            str += prefix + ".Variance8x8[1]=" + ToString(_struct.MB[i].Variance8x8[1]) + "\n";
+            str += prefix + ".Variance8x8[2]=" + ToString(_struct.MB[i].Variance8x8[2]) + "\n";
+            str += prefix + ".Variance8x8[3]=" + ToString(_struct.MB[i].Variance8x8[3]) + "\n";
+
+            str += prefix + ".PixelAverage16x16=" + ToString(_struct.MB[i].PixelAverage16x16) + "\n";
+
+            str += prefix + ".PixelAverage8x8[0]=" + ToString(_struct.MB[i].PixelAverage8x8[0]) + "\n";
+            str += prefix + ".PixelAverage8x8[1]=" + ToString(_struct.MB[i].PixelAverage8x8[1]) + "\n";
+            str += prefix + ".PixelAverage8x8[2]=" + ToString(_struct.MB[i].PixelAverage8x8[2]) + "\n";
+            str += prefix + ".PixelAverage8x8[3]=" + ToString(_struct.MB[i].PixelAverage8x8[3]) + "\n";
         }
     }
 
