@@ -5141,9 +5141,9 @@ mfxStatus AllocatorAdapterRW::AllocFrames(mfxFrameAllocRequest *request, mfxFram
         for (mfxI32 i = 0; i < response->NumFrameActual; i++)
         {
             MidPair pair;
-            pair.first = (mfxMemId)(i + 1);
+            pair.first = (mfxMemId)(intptr_t)(i + 1);
             pair.second = response->mids[i];
-            response->mids[i] = (mfxMemId)(i + 1);
+            response->mids[i] = (mfxMemId)(intptr_t)(i + 1);
             m_mids.push_back(pair);
         }
     }
