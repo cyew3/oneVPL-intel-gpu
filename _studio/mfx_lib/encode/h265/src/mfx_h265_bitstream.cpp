@@ -11,6 +11,7 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "mfx_h265_bitstream.h"
+#include <immintrin.h>
 
 namespace H265Enc {
 

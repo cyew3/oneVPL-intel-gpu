@@ -1704,6 +1704,11 @@ void H265CU<PixType>::EncodeSao(
 
 } // template <class H265Bs> void EncodeSao( ... )
 
+template void CodeSaoCtbParam(H265BsReal *bs, SaoCtuParam& saoBlkParam, bool* sliceEnabled, bool leftMergeAvail, bool aboveMergeAvail, bool onlyEstMergeInfo);
+template void CodeSaoCtbParam(H265BsFake *bs, SaoCtuParam& saoBlkParam, bool* sliceEnabled, bool leftMergeAvail, bool aboveMergeAvail, bool onlyEstMergeInfo);
+template void CodeSaoCtbOffsetParam(H265BsReal *bs, int compIdx, SaoOffsetParam& ctbParam, bool sliceEnabled);
+template void CodeSaoCtbOffsetParam(H265BsFake *bs, int compIdx, SaoOffsetParam& ctbParam, bool sliceEnabled);
+
 template void H265CU<Ipp8u>::EncodeSao(H265BsReal *bs, Ipp32s abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
 template void H265CU<Ipp8u>::EncodeSao(H265BsFake *bs, Ipp32s abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
 template void H265CU<Ipp16u>::EncodeSao(H265BsReal *bs, Ipp32s abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );

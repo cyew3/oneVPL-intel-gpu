@@ -1825,4 +1825,6 @@ Ipp32u Hrd::GetAuCpbRemovalDelayMinus1(const Frame &pic) const
     return (pic.m_encOrder == 0) ? 0 : (pic.m_encOrder - prevBuffPeriodEncOrder) - 1;
 }
 
+template H265Enc::FrameData* H265Enc::Allocate(std::vector<H265Enc::FrameData*> & queue, H265VideoParam *par);
+
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE2
