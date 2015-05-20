@@ -4680,9 +4680,9 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.outFrameInfo.BitDepthChroma = 10;
                 m_inParams.isAllegroTest = true;
           }
-          else if (m_OptProc.Check(argv[0], VM_STRING("-hm"), VM_STRING("hm")))
+          else if (m_OptProc.Check(argv[0], VM_STRING("-hm_disable"), VM_STRING("hm_disable")))
           {
-                m_inParams.isHMTest = true;
+                m_inParams.isHMTest = false;
           }
           else if (m_OptProc.Check(argv[0], VM_STRING("-i:picstruct"), VM_STRING("Set picstruct for decoded frames"), OPT_INT_32))
           {
