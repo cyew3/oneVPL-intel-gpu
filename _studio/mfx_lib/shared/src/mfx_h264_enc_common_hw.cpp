@@ -1786,6 +1786,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
             par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
             par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
+            par.mfx.RateControlMethod != MFX_RATECONTROL_VCM &&
             par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
         {
             changed = true;
