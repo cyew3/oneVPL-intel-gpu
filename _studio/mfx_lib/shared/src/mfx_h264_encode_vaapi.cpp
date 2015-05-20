@@ -525,7 +525,7 @@ static mfxStatus SetROI(
             roi_Param->roi[i].roi_rectangle.x = task.m_roi[i].Left;
             roi_Param->roi[i].roi_rectangle.y = task.m_roi[i].Top;
             roi_Param->roi[i].roi_rectangle.width = task.m_roi[i].Right - task.m_roi[i].Left;
-            roi_Param->roi[i].roi_rectangle.height = task.m_roi[i].Top - task.m_roi[i].Bottom;
+            roi_Param->roi[i].roi_rectangle.height = task.m_roi[i].Bottom - task.m_roi[i].Top;
             roi_Param->roi[i].roi_value = task.m_roi[i].Priority;
         }
         roi_Param->max_delta_qp = 51;
