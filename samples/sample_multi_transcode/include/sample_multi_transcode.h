@@ -69,6 +69,8 @@ namespace TranscodingSample
         // need to work with HW pipeline
         mfxHandleType                        m_eDevType;
 
+        std::vector<sVppCompDstRect> m_VppDstRects;
+
     private:
         DISALLOW_COPY_AND_ASSIGN(Launcher);
 

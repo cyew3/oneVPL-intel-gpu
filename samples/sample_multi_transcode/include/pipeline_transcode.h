@@ -39,6 +39,8 @@
 #include "mfxjpeg.h"
 #include "mfxla.h"
 #include "mfxvp8.h"
+#include "hw_device.h"
+
 
 #include "plugin_loader.h"
 
@@ -52,13 +54,23 @@
 
 namespace TranscodingSample
 {
+    struct sVppCompDstRect
+    {
+        mfxU32 DstX;
+        mfxU32 DstY;
+        mfxU32 DstW;
+        mfxU32 DstH;
+    };
+
     extern mfxU32 MFX_STDCALL ThranscodeRoutine(void   *pObj);
 
     enum PipelineMode
     {
         Native = 0,        // means that pipeline is based depends on the cmd parameters (decode/encode/transcode)
         Sink,              // means that pipeline makes decode only and put data to shared buffer
-        Source             // means that pipeline makes vpp + encode and get data from shared buffer
+        Source,             // means that pipeline makes vpp + encode and get data from shared buffer
+        VPP_COMP,
+        VPP_COMP_ONLY
     };
 
     struct __sInputParams
@@ -89,8 +101,11 @@ namespace TranscodingSample
         mfxU16 nAsyncDepth; // asyncronous queue
 
         PipelineMode eMode;
+        PipelineMode eModeExt;
 
+        mfxU32 FrameNumberPreference; // how many surfaces user wants
         mfxU32 MaxFrameNumber; // maximum frames fro transcoding
+        mfxU32 numSurf4Comp;
 
         mfxU16 nSlices; // number of slices for encoder initialization
         mfxU16 nMaxSliceSize; //maximum size of slice
@@ -112,6 +127,16 @@ namespace TranscodingSample
         mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
         bool bEnableExtLA;
         bool bEnableBPyramid;
+
+        mfxU16 nVppCompDstX;
+        mfxU16 nVppCompDstY;
+        mfxU16 nVppCompDstW;
+        mfxU16 nVppCompDstH;
+        sVppCompDstRect* pVppCompDstRects;
+
+        bool bUseOpaqueMemory;
+        mfxU16 nRenderColorForamt; /*0 NV12 - default, 1 is ARGB*/
+        CHWDevice             *m_hwdev;
 
         bool bOpenCL;
     };
@@ -380,6 +405,8 @@ namespace TranscodingSample
 
         mfxU32                          m_numEncoders;
 
+        CHWDevice*             m_hwdev4Rendering;
+
         typedef std::vector<mfxFrameSurface1*> SurfPointersArray;
         SurfPointersArray  m_pSurfaceDecPool;
         SurfPointersArray  m_pSurfaceEncPool;
@@ -409,6 +436,8 @@ namespace TranscodingSample
         mfxExtMVCSeqDesc m_MVCSeqDesc;
         bool m_bOwnMVCSeqDescMemory; // true if the pipeline owns memory allocated for MVCSeqDesc structure fields
 
+        mfxExtVPPComposite m_VppCompParams;
+
         mfxExtLAControl          m_ExtLAControl;
         // for setting MaxSliceSize
         mfxExtCodingOption2      m_CodingOption2;
@@ -437,6 +466,7 @@ namespace TranscodingSample
 
         bool           m_bDecodeEnable;
         bool           m_bEncodeEnable;
+        mfxU32         m_nVPPCompEnable;
 
         bool           m_bUseOpaqueMemory; // indicates if opaque memory is used in the pipeline
 
@@ -448,6 +478,7 @@ namespace TranscodingSample
 
         std::auto_ptr<ExtendedBSStore>        m_pBSStore;
 
+        mfxU32                                m_FrameNumberPreference;
         mfxU32                                m_MaxFramesForTranscode;
 
         // pointer to already extended bs processor
