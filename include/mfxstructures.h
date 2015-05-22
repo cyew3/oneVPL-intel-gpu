@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2007-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2015 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -673,19 +673,19 @@ enum {
 
 /* Extended Buffer Ids */
 enum {
-    MFX_EXTBUFF_CODING_OPTION       =   MFX_MAKEFOURCC('C','D','O','P'),
-    MFX_EXTBUFF_CODING_OPTION_SPSPPS=   MFX_MAKEFOURCC('C','O','S','P'),
-    MFX_EXTBUFF_VPP_DONOTUSE        =   MFX_MAKEFOURCC('N','U','S','E'),
-    MFX_EXTBUFF_VPP_AUXDATA         =   MFX_MAKEFOURCC('A','U','X','D'),
-    MFX_EXTBUFF_VPP_DENOISE         =   MFX_MAKEFOURCC('D','N','I','S'),
-    MFX_EXTBUFF_VPP_SCENE_ANALYSIS  =   MFX_MAKEFOURCC('S','C','L','Y'),
-    MFX_EXTBUFF_VPP_SCENE_CHANGE    =   MFX_EXTBUFF_VPP_SCENE_ANALYSIS,
-    MFX_EXTBUFF_VPP_PROCAMP         =   MFX_MAKEFOURCC('P','A','M','P'),
-    MFX_EXTBUFF_VPP_DETAIL          =   MFX_MAKEFOURCC('D','E','T',' '),
-    MFX_EXTBUFF_VIDEO_SIGNAL_INFO   =   MFX_MAKEFOURCC('V','S','I','N'),
-    MFX_EXTBUFF_VPP_DOUSE           =   MFX_MAKEFOURCC('D','U','S','E'),
+    MFX_EXTBUFF_CODING_OPTION              = MFX_MAKEFOURCC('C','D','O','P'),
+    MFX_EXTBUFF_CODING_OPTION_SPSPPS       = MFX_MAKEFOURCC('C','O','S','P'),
+    MFX_EXTBUFF_VPP_DONOTUSE               = MFX_MAKEFOURCC('N','U','S','E'),
+    MFX_EXTBUFF_VPP_AUXDATA                = MFX_MAKEFOURCC('A','U','X','D'),
+    MFX_EXTBUFF_VPP_DENOISE                = MFX_MAKEFOURCC('D','N','I','S'),
+    MFX_EXTBUFF_VPP_SCENE_ANALYSIS         = MFX_MAKEFOURCC('S','C','L','Y'),
+    MFX_EXTBUFF_VPP_SCENE_CHANGE           = MFX_EXTBUFF_VPP_SCENE_ANALYSIS,
+    MFX_EXTBUFF_VPP_PROCAMP                = MFX_MAKEFOURCC('P','A','M','P'),
+    MFX_EXTBUFF_VPP_DETAIL                 = MFX_MAKEFOURCC('D','E','T',' '),
+    MFX_EXTBUFF_VIDEO_SIGNAL_INFO          = MFX_MAKEFOURCC('V','S','I','N'),
+    MFX_EXTBUFF_VPP_DOUSE                  = MFX_MAKEFOURCC('D','U','S','E'),
     MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION  = MFX_MAKEFOURCC('O','P','Q','S'),
-    MFX_EXTBUFF_AVC_REFLIST_CTRL       =   MFX_MAKEFOURCC('R','L','S','T'),
+    MFX_EXTBUFF_AVC_REFLIST_CTRL           = MFX_MAKEFOURCC('R','L','S','T'),
     MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION  = MFX_MAKEFOURCC('F','R','C',' '),
     MFX_EXTBUFF_PICTURE_TIMING_SEI         = MFX_MAKEFOURCC('P','T','S','E'),
     MFX_EXTBUFF_AVC_TEMPORAL_LAYERS        = MFX_MAKEFOURCC('A','T','M','L'),
@@ -713,7 +713,9 @@ enum {
     MFX_EXTBUFF_TIME_CODE                  = MFX_MAKEFOURCC('T','M','C','D'),
     MFX_EXTBUFF_HEVC_REGION                = MFX_MAKEFOURCC('2','6','5','R'),
     MFX_EXTBUFF_PRED_WEIGHT_TABLE          = MFX_MAKEFOURCC('E','P','W','T'),
-    MFX_EXTBUFF_TEMPORAL_LAYERS            = MFX_MAKEFOURCC('T','M','P','L')
+    MFX_EXTBUFF_TEMPORAL_LAYERS            = MFX_MAKEFOURCC('T','M','P','L'),
+    MFX_EXTBUFF_DIRTY_RECTANGLES           = MFX_MAKEFOURCC('D','R','O','I'),
+    MFX_EXTBUFF_MOVING_RECTANGLES          = MFX_MAKEFOURCC('M','R','O','I')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1113,19 +1115,11 @@ typedef struct {
     } In, Out;
 } mfxExtVPPVideoSignalInfo;
 
-/* ROIType */
-enum {
-    MFX_ROI         = 0,
-    MFX_DIRTY_RECT  = 1,
-    MFX_MOVE_RECT   = 2
-};
-
 typedef struct {
     mfxExtBuffer    Header;
 
     mfxU16  NumROI;
-    mfxU16  ROIType;
-    mfxU16  reserved1[10];
+    mfxU16  reserved1[11];
 
     struct  {
         mfxU32  Left;
@@ -1134,10 +1128,7 @@ typedef struct {
         mfxU32  Bottom;
 
         mfxI16  Priority;
-        mfxU16  reserved2[3];
-
-        mfxU32  SourcePointX;
-        mfxU32  SourcePointY;
+        mfxU16  reserved2[7];
     } ROI[256];
 } mfxExtEncoderROI;
 
@@ -1396,6 +1387,40 @@ typedef struct {
         mfxU16   reserved1[20];
     } Layer[8];
 } mfxExtTemporalLayers;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16  NumRect;
+    mfxU16  reserved1[11];
+
+    struct {
+        mfxU32  Left;
+        mfxU32  Top;
+        mfxU32  Right;
+        mfxU32  Bottom;
+
+        mfxU16  reserved2[8];
+    } Rect[256];
+} mfxExtDirtyRect;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16  NumRect;
+    mfxU16  reserved1[11];
+
+    struct {
+        mfxU32  DestLeft;
+        mfxU32  DestTop;
+        mfxU32  DestRight;
+        mfxU32  DestBottom;
+
+        mfxU32  SourceLeft;
+        mfxU32  SourceTop;
+        mfxU16  reserved2[4];
+    } Rect[256];
+} mfxExtMoveRect;
 
 #ifdef __cplusplus
 } // extern "C"
