@@ -524,7 +524,7 @@ int CH264FrameReader::FindFrame(mfxBitstream *pBS, int & pos2ndnalu)
         {
             nNalu++;
             // reading slice header
-            BitstreamReader reader(beg + 4, end - beg + 4);
+            BitstreamReader reader(beg + 4, (mfxU32)(end - beg + 4));
             mfxU32 first_mb_in_slice = reader.GetUE();
             if (bNewFrame && !first_mb_in_slice)
             {
@@ -537,7 +537,7 @@ int CH264FrameReader::FindFrame(mfxBitstream *pBS, int & pos2ndnalu)
 
     if (bNewFrame)
     {
-        pos2ndnalu = beg - pBS->Data;
+        pos2ndnalu = (int)(beg - pBS->Data);
     }
     return nNalu;
 }

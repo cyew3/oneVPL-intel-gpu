@@ -142,6 +142,7 @@ bool OpenCLFilterDX11::EnqueueAcquireSurfaces(cl_mem* surfaces, int nSurfaces)
         log.error() << "clEnqueueAcquireD3D11ObjectsKHR failed. Error code: " << error << endl;
         return false;
     }
+    return true;
 }
 
 bool OpenCLFilterDX11::EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces)
@@ -151,6 +152,7 @@ bool OpenCLFilterDX11::EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces)
         log.error() << "clEnqueueReleaseD3D11ObjectsKHR failed. Error code: " << error << endl;
         return false;
     }
+    return true;
 }
 
 #endif // #if defined(_WIN32) || defined(_WIN64)

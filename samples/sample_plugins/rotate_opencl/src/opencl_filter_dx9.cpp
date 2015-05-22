@@ -165,6 +165,7 @@ bool OpenCLFilterDX9::EnqueueAcquireSurfaces(cl_mem* surfaces, int nSurfaces)
         log.error() << "clEnqueueAcquireDX9ObjectsINTEL failed. Error code: " << error << endl;
         return false;
     }
+    return true;
 }
 
 bool OpenCLFilterDX9::EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces)
@@ -174,6 +175,7 @@ bool OpenCLFilterDX9::EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces)
         log.error() << "clEnqueueReleaseDX9ObjectsINTEL failed. Error code: " << error << endl;
         return false;
     }
+    return true;
 }
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
