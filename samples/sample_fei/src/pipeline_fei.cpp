@@ -1523,7 +1523,7 @@ mfxStatus CEncodingPipeline::Run()
             feiEncCtrl[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncFrameCtrl);
             feiEncCtrl[fieldId].MaxLenSP = 57;
             feiEncCtrl[fieldId].LenSP = 57;
-            feiEncCtrl[fieldId].SubMBPartMask = 0x77;
+            feiEncCtrl[fieldId].SubMBPartMask = 0;
             feiEncCtrl[fieldId].MultiPredL0 = 0;
             feiEncCtrl[fieldId].MultiPredL1 = 0;
             feiEncCtrl[fieldId].SubPelMode = 3;
@@ -1537,9 +1537,11 @@ mfxStatus CEncodingPipeline::Run()
             feiEncCtrl[fieldId].PerMBQp = MBQP;
             feiEncCtrl[fieldId].PerMBInput = MBCtrl;
             feiEncCtrl[fieldId].MBSizeCtrl = m_encpakParams.bMBSize;
+            //Note:
+            //(RefHeight x RefWidth) should not exceed 2048 for P frames and 1024 for B frames
             feiEncCtrl[fieldId].RefHeight = 40;
             feiEncCtrl[fieldId].RefWidth = 48;
-            feiEncCtrl[fieldId].SearchWindow = 1;
+            feiEncCtrl[fieldId].SearchWindow = 3;
 
             /* PPS */
             m_feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;;
@@ -2057,10 +2059,24 @@ mfxStatus CEncodingPipeline::Run()
                     pCurrentTask->mfxBS.NumExtParam = numExtOutParams;
                     pCurrentTask->mfxBS.ExtParam = &outBufs[0];
                 }
-                if(m_encpakParams.bPREENC)
+                if(m_encpakParams.bPREENC) {
                     sts = m_pmfxENCPAK->EncodeFrameAsync(ctr, eTask->in.InSurface, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
-                else
+                } else {
+                    // Reset the Ref window size for B frames
+                    int frame_type = GetFrameType(frameCount-1);
+                    for (fieldId = 0; fieldId < numOfFields; fieldId++) {
+                        if (frame_type & MFX_FRAMETYPE_B) {
+                            if (feiEncCtrl[fieldId].RefHeight * feiEncCtrl[fieldId].RefWidth > 1024) {
+                                feiEncCtrl[fieldId].RefHeight = 32;
+                                feiEncCtrl[fieldId].RefWidth= 32;
+                            }
+                        } else {
+                            feiEncCtrl[fieldId].RefWidth= 64;
+                            feiEncCtrl[fieldId].RefHeight = 32;
+                        }
+                    }
                     sts = m_pmfxENCPAK->EncodeFrameAsync(ctr, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+                }
 
                 if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
                 {
