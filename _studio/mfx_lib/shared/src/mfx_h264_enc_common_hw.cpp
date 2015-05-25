@@ -4061,6 +4061,7 @@ void MfxHwH264Encode::InheritDefaultValues(
     InheritOption(extOpt2Init->DisableVUI,      extOpt2Reset->DisableVUI);
     InheritOption(extOpt2Init->IntRefType,      extOpt2Reset->IntRefType);
     InheritOption(extOpt2Init->IntRefCycleSize, extOpt2Reset->IntRefCycleSize);
+    InheritOption(extOpt2Init->SkipFrame,       extOpt2Reset->SkipFrame);
 
     mfxExtCodingOption3 const * extOpt3Init  = GetExtBuffer(parInit);
     mfxExtCodingOption3 *       extOpt3Reset = GetExtBuffer(parReset);
@@ -4077,6 +4078,13 @@ void MfxHwH264Encode::InheritDefaultValues(
         InheritOption(parInit.mfx.MaxKbps,          parReset.mfx.MaxKbps);
         InheritOption(extOpt3Init->QVBRQuality,     extOpt3Reset->QVBRQuality);
     }
+
+    // special encoding modes should be continued after Reset (if new parameters allow this)
+    mfxExtSpecialEncodingModes const * extSpecModesInit  = GetExtBuffer(parInit);
+    mfxExtSpecialEncodingModes       * extSpecModesReset = GetExtBuffer(parReset);
+    // NumRefFrame can't be increased by Reset
+    // so WiDi WA for dummy frames is continued after Reset() w/o additional checks
+    InheritOption(extSpecModesInit->refDummyFramesForWiDi, extSpecModesReset->refDummyFramesForWiDi);
 
     parReset.SyncVideoToCalculableParam();
 
@@ -5094,6 +5102,10 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     if (extRefListCtrl && video.calcParam.numTemporalLayer > 0 && video.calcParam.lyncMode == 0)
         checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
+    mfxExtSpecialEncodingModes const * extSpecModes = GetExtBuffer(video);
+    if (extRefListCtrl && extSpecModes->refDummyFramesForWiDi)
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // no DPB and ref list manipulations allowed for WA WiDi mode
+
 #if defined (ADVANCED_REF)
     mfxExtAVCRefLists const * extRefLists = GetExtBuffer(*ctrl);
     if (extRefLists && video.calcParam.numTemporalLayer > 0 && video.calcParam.lyncMode == 0)
@@ -5932,26 +5944,27 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
         name = *opts;                           \
     m_extParam[NumExtParam++] = &name.Header;
 
-    CONSTRUCT_EXT_BUFFER(mfxExtCodingOption,        m_extOpt);
-    CONSTRUCT_EXT_BUFFER(mfxExtCodingOptionSPSPPS,  m_extOptSpsPps);
-    CONSTRUCT_EXT_BUFFER(mfxExtPAVPOption,          m_extOptPavp);
-    CONSTRUCT_EXT_BUFFER(mfxExtVideoSignalInfo,     m_extVideoSignal);
-    CONSTRUCT_EXT_BUFFER(mfxExtOpaqueSurfaceAlloc,  m_extOpaque);
-    CONSTRUCT_EXT_BUFFER(mfxExtMVCSeqDesc,          m_extMvcSeqDescr);
-    CONSTRUCT_EXT_BUFFER(mfxExtPictureTimingSEI,    m_extPicTiming);
-    CONSTRUCT_EXT_BUFFER(mfxExtAvcTemporalLayers,   m_extTempLayers);
-    CONSTRUCT_EXT_BUFFER(mfxExtSVCSeqDesc,          m_extSvcSeqDescr);
-    CONSTRUCT_EXT_BUFFER(mfxExtSVCRateControl,      m_extSvcRateCtrl);
-    CONSTRUCT_EXT_BUFFER(mfxExtCodingOptionDDI,     m_extOptDdi);
-    CONSTRUCT_EXT_BUFFER(mfxExtDumpFiles,           m_extDumpFiles);
-    CONSTRUCT_EXT_BUFFER(mfxExtSpsHeader,           m_extSps);
-    CONSTRUCT_EXT_BUFFER(mfxExtPpsHeader,           m_extPps);
-    CONSTRUCT_EXT_BUFFER(mfxExtCodingOption2,       m_extOpt2);
-    CONSTRUCT_EXT_BUFFER(mfxExtEncoderResetOption,  m_extEncResetOpt);
-    CONSTRUCT_EXT_BUFFER(mfxExtEncoderROI,          m_extEncRoi);
-    CONSTRUCT_EXT_BUFFER(mfxExtCodingOption3,       m_extOpt3);
-    CONSTRUCT_EXT_BUFFER(mfxExtChromaLocInfo,       m_extChromaLoc);
-    CONSTRUCT_EXT_BUFFER(mfxExtFeiParam,            m_extFeiParam);
+    CONSTRUCT_EXT_BUFFER(mfxExtCodingOption,         m_extOpt);
+    CONSTRUCT_EXT_BUFFER(mfxExtCodingOptionSPSPPS,   m_extOptSpsPps);
+    CONSTRUCT_EXT_BUFFER(mfxExtPAVPOption,           m_extOptPavp);
+    CONSTRUCT_EXT_BUFFER(mfxExtVideoSignalInfo,      m_extVideoSignal);
+    CONSTRUCT_EXT_BUFFER(mfxExtOpaqueSurfaceAlloc,   m_extOpaque);
+    CONSTRUCT_EXT_BUFFER(mfxExtMVCSeqDesc,           m_extMvcSeqDescr);
+    CONSTRUCT_EXT_BUFFER(mfxExtPictureTimingSEI,     m_extPicTiming);
+    CONSTRUCT_EXT_BUFFER(mfxExtAvcTemporalLayers,    m_extTempLayers);
+    CONSTRUCT_EXT_BUFFER(mfxExtSVCSeqDesc,           m_extSvcSeqDescr);
+    CONSTRUCT_EXT_BUFFER(mfxExtSVCRateControl,       m_extSvcRateCtrl);
+    CONSTRUCT_EXT_BUFFER(mfxExtCodingOptionDDI,      m_extOptDdi);
+    CONSTRUCT_EXT_BUFFER(mfxExtDumpFiles,            m_extDumpFiles);
+    CONSTRUCT_EXT_BUFFER(mfxExtSpsHeader,            m_extSps);
+    CONSTRUCT_EXT_BUFFER(mfxExtPpsHeader,            m_extPps);
+    CONSTRUCT_EXT_BUFFER(mfxExtCodingOption2,        m_extOpt2);
+    CONSTRUCT_EXT_BUFFER(mfxExtEncoderResetOption,   m_extEncResetOpt);
+    CONSTRUCT_EXT_BUFFER(mfxExtEncoderROI,           m_extEncRoi);
+    CONSTRUCT_EXT_BUFFER(mfxExtCodingOption3,        m_extOpt3);
+    CONSTRUCT_EXT_BUFFER(mfxExtChromaLocInfo,        m_extChromaLoc);
+    CONSTRUCT_EXT_BUFFER(mfxExtFeiParam,             m_extFeiParam);
+    CONSTRUCT_EXT_BUFFER(mfxExtSpecialEncodingModes, m_extSpecModes);
 #undef CONSTRUCT_EXT_BUFFER
 
     ExtParam = m_extParam;
@@ -7541,7 +7554,7 @@ mfxU32 HeaderPacker::WriteSlice(
                 assert(!"explicit weighted prediction for B slices is unsupported");
             }
         }
-        if (refPicFlag)
+        if (refPicFlag || task.m_nalRefIdc[fieldId])
         {
             WriteDecRefPicMarking(obs, task.m_decRefPicMrk[fieldId], idrPicFlag);
             mfxU32 storeRefBasePicFlag = 0;

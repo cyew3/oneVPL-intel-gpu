@@ -790,6 +790,14 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
     m_enabledSwBrc = bRateControlLA(m_video.mfx.RateControlMethod);
 
+    // enable special modes which W/A HW limitations and bugs
+    mfxExtSpecialEncodingModes *extSpecModes = GetExtBuffer(m_video);
+    extSpecModes->refDummyFramesForWiDi = 0;
+    if (isWiDi && m_video.mfx.NumRefFrame == 1)
+    {
+        extSpecModes->refDummyFramesForWiDi = 1;
+    }
+
     // need it for both ENCODE and ENC
     m_hrd.Setup(m_video);
 

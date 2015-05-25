@@ -56,13 +56,13 @@
 
 #if defined(MFX_VA_WIN)
 // this guid is used to identify that device creation is performed during Query or QueryIOSurf call
-static const GUID MSDK_Private_Guid_Encode_AVC_Query = 
+static const GUID MSDK_Private_Guid_Encode_AVC_Query =
 { 0x32560c63, 0xe3dc, 0x43c9, { 0xa8, 0x16, 0xda, 0x73, 0x36, 0x45, 0x89, 0xe9 } };
 // this guid is used to identify device creation for MVC BD/AVCHD dependent view
 static const GUID MSDK_Private_Guid_Encode_MVC_Dependent_View =
 { 0x68bebcda, 0xefff, 0x4858, { 0x8d, 0x65, 0x92, 0x28, 0xab, 0xc5, 0x8c, 0x4e } };
 // this guid is used to identify that device creation is performed during for low power encoder
-static const GUID MSDK_Private_Guid_Encode_AVC_LowPower_Query = 
+static const GUID MSDK_Private_Guid_Encode_AVC_LowPower_Query =
 { 0x6815aa23, 0xc93e, 0x4a71, { 0xae, 0x66, 0xb, 0x60, 0x5d, 0x3b, 0xc4, 0xd7 } };
 
 #else
@@ -80,6 +80,7 @@ namespace MfxHwH264Encode
     struct mfxExtSpsHeader;
     struct mfxExtSpsSvcHeader;
     struct mfxExtPpsHeader;
+    struct mfxExtSpecialEncodingModes;
 
     const mfxU16 CROP_UNIT_X[] = { 1, 2, 2, 1 };
     const mfxU16 CROP_UNIT_Y[] = { 1, 2, 1, 1 };
@@ -106,6 +107,7 @@ namespace MfxHwH264Encode
     static const mfxU32 MFX_EXTBUFF_SPS_HEADER     = MFX_MAKEFOURCC(0xff, 'S', 'P', 'S');
     static const mfxU32 MFX_EXTBUFF_SPS_SVC_HEADER = MFX_MAKEFOURCC(0xff, 'S', 'V', 'C');
     static const mfxU32 MFX_EXTBUFF_PPS_HEADER     = MFX_MAKEFOURCC(0xff, 'P', 'P', 'S');
+    static const mfxU32 MFX_EXTBUFF_SPECIAL_MODES  = MFX_MAKEFOURCC(0xff, 'S', 'P', 'M');
 
     static const mfxU16 MFX_FRAMETYPE_IPB     = MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B;
     static const mfxU16 MFX_FRAMETYPE_PB      = MFX_FRAMETYPE_P | MFX_FRAMETYPE_B;
@@ -206,6 +208,7 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtChromaLocInfo,        MFX_EXTBUFF_CHROMA_LOC_INFO          );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMBDisableSkipMap,     MFX_EXTBUFF_MB_DISABLE_SKIP_MAP      );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncodeCtrl,        MFX_EXTBUFF_AVC_ENCODE_CTRL          );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtSpecialEncodingModes, MFX_EXTBUFF_SPECIAL_MODES            );
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -235,7 +238,7 @@ namespace MfxHwH264Encode
         Zero(extBuf);
         extBuf.Header.BufferId = ExtBufTypeToId<mfxExtAVCRefListCtrl>::id;
         extBuf.Header.BufferSz = sizeof(mfxExtAVCRefListCtrl);
-        
+
         for (mfxU32 i = 0; i < 32; i++)
             extBuf.PreferredRefList[i].FrameOrder = mfxU32(MFX_FRAMEORDER_UNKNOWN);
         for (mfxU32 i = 0; i < 16; i++)
@@ -419,6 +422,17 @@ namespace MfxHwH264Encode
         mfxU8   sliceHeaderRestrictionFlag;
     };
 
+    struct mfxExtSpecialEncodingModes
+    {
+        mfxExtBuffer Header;
+
+        // WA for bug in WiDi receiver: it treats non-ref P-frame in bitstream as error and requests IDR
+        // in WA mode dummy frames should be marked as reference in output bitstream
+        // no other changes required in MSDK and driver logic
+        // requirements: WiDi is caller for MSDK; NumRefFrame = 1; no runtime DPB modifications allowed.
+        mfxU8   refDummyFramesForWiDi;
+    };
+
     union SliceGroupInfo
     {
         struct
@@ -523,7 +537,8 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-        mfxExtBuffer *              m_extParam[20];
+        mfxExtBuffer *              m_extParam[21];
+
         // external, documented
         mfxExtCodingOption          m_extOpt;
         mfxExtCodingOption2         m_extOpt2;
@@ -547,6 +562,7 @@ namespace MfxHwH264Encode
         mfxExtDumpFiles             m_extDumpFiles;
         mfxExtSpsHeader             m_extSps;
         mfxExtPpsHeader             m_extPps;
+        mfxExtSpecialEncodingModes  m_extSpecModes;
 
         std::vector<mfxMVCViewDependency> m_storageView;
         std::vector<mfxMVCOperationPoint> m_storageOp;
@@ -630,7 +646,7 @@ namespace MfxHwH264Encode
         ENCODE_CAPS & hwCaps,
         GUID guid,
         bool isWiDi = false,
-        mfxU32 width = 1920,  
+        mfxU32 width = 1920,
         mfxU32 height = 1088);
 
     mfxStatus QueryMbProcRate(
@@ -639,7 +655,7 @@ namespace MfxHwH264Encode
         mfxU32 (&mbPerSec)[16],
         GUID guid,
         bool isWiDi = false,
-        mfxU32 width = 1920,  
+        mfxU32 width = 1920,
         mfxU32 height = 1088);
 
     mfxStatus QueryInputTilingSupport(
@@ -813,7 +829,7 @@ namespace MfxHwH264Encode
             assert(p);
             return *(reinterpret_cast<T*>(p));
         }
-        
+
         template <typename T> friend mfxExtBufferRefProxy GetExtBufferRef(const T & par);
 
     protected:
@@ -826,7 +842,7 @@ namespace MfxHwH264Encode
         mfxExtBuffer ** m_extParam;
         mfxU32          m_numExtParam;
     };
-    
+
     template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
     {
         return mfxExtBufferRefProxy(par.ExtParam, par.NumExtParam);
@@ -838,7 +854,7 @@ namespace MfxHwH264Encode
     {
         return (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
     }
-    
+
     inline void ResetNumSliceIPB(mfxVideoParam &par)
     {
         mfxExtCodingOption3 * extOpt3 = GetExtBuffer(par);
@@ -846,7 +862,7 @@ namespace MfxHwH264Encode
             extOpt3->NumSliceI = extOpt3->NumSliceP = extOpt3->NumSliceB = par.mfx.NumSlice;
         }
     }
-    
+
     struct mfxExtBufferProxyField
     {
     public:
@@ -986,7 +1002,7 @@ namespace MfxHwH264Encode
             return mfxSts;
         }
 
-    
+
         enum { LOCK_NO, LOCK_INT, LOCK_EXT };
 
         mfxU32 Lock(bool external)
@@ -1316,8 +1332,8 @@ namespace MfxHwH264Encode
         std::vector<ENCODE_PACKEDHEADER_DATA> const & PackSlices(
             DdiTask const & task,
             mfxU32          fieldId);
-        
-   
+
+
 
         ENCODE_PACKEDHEADER_DATA const & PackSkippedSlice(
             DdiTask const & task,

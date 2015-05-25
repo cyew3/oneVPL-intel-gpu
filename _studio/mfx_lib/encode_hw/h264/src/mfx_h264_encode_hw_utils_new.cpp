@@ -1121,6 +1121,8 @@ namespace
             false == ValidateLtrForTemporalScalability(video, task))
             ctrl = 0; // requested changes in dpb conflict with temporal scalability. Ingore requested dpb changes
 
+        mfxExtSpecialEncodingModes const * extSpeModes = GetExtBuffer(video);
+
         if (type & MFX_FRAMETYPE_IDR)
         {
             bool currFrameIsLongTerm = false;
@@ -1130,7 +1132,8 @@ namespace
 
             marking.long_term_reference_flag = 0;
 
-            if (ctrl)
+            if (ctrl &&
+              extSpeModes->refDummyFramesForWiDi == 0)  // no explicit DBP modifications for WA WiDi mode
             {
                 for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
                 {
@@ -1177,7 +1180,8 @@ namespace
 
             // check longterm list
             // when frameOrder is sent first time corresponsing 'short-term' reference is marked 'long-term'
-            if (ctrl)
+            if (ctrl &&
+              extSpeModes->refDummyFramesForWiDi == 0) // no explicit DBP modifications for WA WiDi mode
             {
                 for (mfxU32 i = 0; i < 16 && ctrl->RejectedRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
                 {
@@ -1717,6 +1721,7 @@ void MfxHwH264Encode::ConfigureTask(
     mfxExtEncoderROI const &        extRoi         = GetExtBufferRef(video);
     mfxExtEncoderROI const *        extRoiRuntime  = GetExtBuffer(task.m_ctrl);
     mfxExtCodingOption3 const *     extOpt3        = GetExtBuffer(video);
+    mfxExtSpecialEncodingModes const *extSpecModes = GetExtBuffer(video);
 
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
@@ -1729,6 +1734,8 @@ void MfxHwH264Encode::ConfigureTask(
     mfxU8  prevRefPicFlag   = !!(prevTask.GetFrameType() & MFX_FRAMETYPE_REF);
     mfxU8  prevIdrPicFlag   = !!(prevTask.m_type[prevsfid] & MFX_FRAMETYPE_IDR);
 
+    mfxU8  frameNumIncrement = (prevRefPicFlag || prevTask.m_nalRefIdc[0]) ? 1 : 0;
+
     mfxU16 SkipMode = extOpt2Runtime ? extOpt2Runtime->SkipFrame : extOpt2.SkipFrame;
 
     task.m_frameOrderIdr = idrPicFlag ? task.m_frameOrder : prevTask.m_frameOrderIdr;
@@ -1738,7 +1745,7 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_encOrderI     = prevIFrameFlag ? prevTask.m_encOrder : prevTask.m_encOrderI;
 
 
-    task.m_frameNum = mfxU16((prevTask.m_frameNum + prevRefPicFlag) % FRAME_NUM_MAX);
+    task.m_frameNum = mfxU16((prevTask.m_frameNum + frameNumIncrement) % FRAME_NUM_MAX);
     if (idrPicFlag)
         task.m_frameNum = 0;
 
@@ -1806,6 +1813,11 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_insertPps[sfid] = task.m_insertSps[sfid] || IsOn(extOpt2.RepeatPPS);
     task.m_nalRefIdc[ffid] = task.m_reference[ffid];
     task.m_nalRefIdc[sfid] = task.m_reference[sfid];
+    if (extSpecModes->refDummyFramesForWiDi &&
+        task.m_ctrl.SkipFrame != 0 && SkipMode == MFX_SKIPFRAME_INSERT_DUMMY && task.SkipFlag())
+    {
+        task.m_nalRefIdc[ffid] = task.m_nalRefIdc[sfid] = 1;
+    }
 
 // process roi
     mfxExtEncoderROI const * pRoi = &extRoi;

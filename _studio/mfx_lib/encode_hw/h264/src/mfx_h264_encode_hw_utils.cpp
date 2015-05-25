@@ -1705,9 +1705,9 @@ mfxStatus TaskManager::AssignTask(
     DecideOnRefPicFlag(m_video, *toEncode); // check for temporal layers
     CreateAdditionalDpbCommands(m_video, m_recons, *toEncode); // for svc temporal layers
 
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
     if (toEncode->m_ctrl.SkipFrame != 0)
     {
-        mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
         toEncode->m_ctrl.SkipFrame = (extOpt2->SkipFrame) ? (1 + (IsProtectionPavp(m_video.Protected) || IsProtectionHdcp(m_video.Protected)) ) : 0;
 
         if (toEncode->SkipFlag() != 0)
@@ -1728,7 +1728,6 @@ mfxStatus TaskManager::AssignTask(
     toEncode->m_insertAud[ ffid] = IsOn(extOpt->AUDelimiter);
     toEncode->m_insertAud[!ffid] = IsOn(extOpt->AUDelimiter);
 
-    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
     mfxExtCodingOption3 const * extOpt3 = GetExtBuffer(m_video);
     toEncode->m_numMbPerSlice = extOpt2->NumMbPerSlice;
     toEncode->m_numSlice[ffid] = (toEncode->m_type[ffid] & MFX_FRAMETYPE_I) ? extOpt3->NumSliceI :
@@ -1755,6 +1754,13 @@ mfxStatus TaskManager::AssignTask(
         toEncode->m_insertPps[!ffid] = toEncode->m_insertSps[!ffid] || IsOn(extOpt2->RepeatPPS);
         toEncode->m_nalRefIdc[ ffid] = !!(toEncode->m_type[ ffid] & MFX_FRAMETYPE_REF);
         toEncode->m_nalRefIdc[!ffid] = !!(toEncode->m_type[!ffid] & MFX_FRAMETYPE_REF);
+
+        mfxExtSpecialEncodingModes const *extSpecModes = GetExtBuffer(m_video);
+        if (extSpecModes->refDummyFramesForWiDi &&
+            toEncode->m_ctrl.SkipFrame != 0 && extOpt2->SkipFrame == MFX_SKIPFRAME_INSERT_DUMMY && toEncode->SkipFlag())
+        {
+            toEncode->m_nalRefIdc[ ffid] = toEncode->m_nalRefIdc[!ffid] = 1;
+        }
     }
 
     toEncode->m_cqpValue[0] = GetQpValue(m_video, toEncode->m_ctrl, toEncode->m_type[0]);
@@ -2155,7 +2161,7 @@ void TaskManager::ConfirmTask(DdiTask & task)
 
     m_cpbRemoval++; // is incremented every frame (unlike frame_num)
 
-    if (task.GetFrameType() & MFX_FRAMETYPE_REF)
+    if (task.GetFrameType() & MFX_FRAMETYPE_REF || task.m_nalRefIdc[0])
     {
         m_frameNum = (m_frameNum + 1) % m_frameNumMax;
     }
