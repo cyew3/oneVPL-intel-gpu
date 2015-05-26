@@ -1,3 +1,33 @@
+/* ****************************************************************************** *\
+
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+- Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+File Name: dump_mfxstructures.cpp
+
+\* ****************************************************************************** */
+
 #include "dump.h"
 #include "../loggers/log.h"
 
@@ -123,16 +153,30 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(NumSliceP);
     DUMP_FIELD(NumSliceB);
 
-    DUMP_FIELD(WinBRCMaxAvgKbps);		
-    DUMP_FIELD(WinBRCSize);		
- 
+    DUMP_FIELD(WinBRCMaxAvgKbps);
+    DUMP_FIELD(WinBRCSize);
+
     DUMP_FIELD(QVBRQuality);
     DUMP_FIELD(EnableMBQP);
-    //DUMP_FIELD(reserved1); not exist in current master
+    DUMP_FIELD(IntRefCycleDist);
     DUMP_FIELD(DirectBiasAdjustment);          /* tri-state option */
     DUMP_FIELD(GlobalMotionBiasAdjustment);    /* tri-state option */
     DUMP_FIELD(MVCostScalingFactor);
     DUMP_FIELD(MBDisableSkipMap);              /* tri-state option */
+    DUMP_FIELD(WeightedPred);
+    DUMP_FIELD(WeightedBiPred);
+    DUMP_FIELD(AspectRatioInfoPresent);
+    DUMP_FIELD(OverscanInfoPresent);
+    DUMP_FIELD(OverscanAppropriate);
+    DUMP_FIELD(TimingInfoPresent);
+    DUMP_FIELD(BitstreamRestriction);
+    DUMP_FIELD(LowDelayHrd);
+    DUMP_FIELD(MotionVectorsOverPicBoundaries);
+    DUMP_FIELD(Log2MaxMvLengthHorizontal);
+    DUMP_FIELD(Log2MaxMvLengthVertical);
+    DUMP_FIELD(ScenarioInfo);
+    DUMP_FIELD(ContentInfo);
+    DUMP_FIELD(PRefType);
 
     DUMP_FIELD_RESERVED(reserved);
     return str;
@@ -173,7 +217,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtVppAuxDa
 std::string DumpContext::dump(const std::string structName, const mfxFrameAllocRequest &frameAllocRequest)
 {
     std::string str;
+    str += structName + ".AllocId=" + ToString(frameAllocRequest.AllocId) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(frameAllocRequest.reserved) + "\n";
+    str += structName + ".reserved3[]=" + DUMP_RESERVED_ARRAY(frameAllocRequest.reserved3) + "\n";
     str += dump(structName+".Info", frameAllocRequest.Info) + "\n";
     str += structName + ".Type=" + ToString(frameAllocRequest.Type) + "\n";
     str += structName + ".NumFrameMin=" + ToString(frameAllocRequest.NumFrameMin) + "\n";
@@ -182,11 +228,25 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameAllocR
     return str;
 }
 
+std::string DumpContext::dump(const std::string structName, const mfxFrameAllocResponse &frameAllocResponse)
+{
+    std::string str;
+    str += structName + ".AllocId=" + ToString(frameAllocResponse.AllocId) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(frameAllocResponse.reserved) + "\n";
+    if (frameAllocResponse.mids)
+        str += structName + ".mids=" + ToString(frameAllocResponse.mids) + "\n";
+    else
+        str += structName + ".mids=" + "NULL" + "\n";
+    str += structName + ".NumFrameActual=" + ToString(frameAllocResponse.NumFrameActual) + "\n";
+    str += structName + ".reserved2=" + ToString(frameAllocResponse.reserved2) + "\n";
+    return str;
+}
 
 std::string DumpContext::dump(const std::string structName, const mfxFrameData &frameData)
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(frameData.reserved) + "\n";
+    str += structName + ".MemType=" + ToString(frameData.MemType) + "\n";
     str += structName + ".PitchHigh=" + ToString(frameData.PitchHigh) + "\n";
     str += structName + ".TimeStamp=" + ToString(frameData.TimeStamp) + "\n";
     str += structName + ".FrameOrder=" + ToString(frameData.FrameOrder) + "\n";
@@ -303,6 +363,7 @@ std::string DumpContext::dump(const std::string structName, const mfxInfoMFX &mf
     str += structName + ".ExtendedPicStruct=" + ToString(mfx.ExtendedPicStruct) + "\n";
     str += structName + ".TimeStampCalc=" + ToString(mfx.TimeStampCalc) + "\n";
     str += structName + ".SliceGroupsPresent=" + ToString(mfx.SliceGroupsPresent) + "\n";
+    str += structName + ".MaxDecFrameBuffering=" + ToString(mfx.MaxDecFrameBuffering) + "\n";
     str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(mfx.reserved2) + "\n";
     str += structName + ".JPEGChromaFormat=" + ToString(mfx.JPEGChromaFormat) + "\n";
     str += structName + ".Rotation=" + ToString(mfx.Rotation) + "\n";
@@ -355,7 +416,7 @@ std::string DumpContext::dump(const std::string structName, const mfxVideoParam&
         str += dump(structName + ".vpp", videoParam.vpp) + "\n";
     }
     str += structName + ".Protected=" + ToString(videoParam.Protected) + "\n";
-    str += structName + ".IOPattern=" + ToString(videoParam.IOPattern) + "\n";
+    str += structName + ".IOPattern=" + GetIOPattern(videoParam.IOPattern) + "\n";
     str += dump_mfxExtParams(structName, videoParam) + "\n";
     str += structName + ".reserved2=" + ToString(videoParam.reserved2);
     return str;
@@ -389,6 +450,35 @@ std::string DumpContext::dump(const std::string structName, const mfxExtTimeCode
     str += structName + ".TimeCodeSeconds=" + ToString(ExtTimeCode.TimeCodeSeconds) + "\n";
     str += structName + ".TimeCodePictures=" + ToString(ExtTimeCode.TimeCodePictures) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtTimeCode.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtEncoderCapability &ExtEncoderCapability)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtEncoderCapability.Header) + "\n";
+    str += structName + ".MBPerSec=" + ToString(ExtEncoderCapability.MBPerSec) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtEncoderCapability.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtDirtyRect &ExtDirtyRect)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtDirtyRect.Header) + "\n";
+    str += structName + ".NumRect=" + ToString(ExtDirtyRect.NumRect) + "\n";
+    str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtDirtyRect.reserved1) + "\n";
+    str += structName + ".Rect=" + ToString(ExtDirtyRect.Rect) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtMoveRect &ExtMoveRect)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtMoveRect.Header) + "\n";
+    str += structName + ".NumRect=" + ToString(ExtMoveRect.NumRect) + "\n";
+    str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtMoveRect.reserved1) + "\n";
+    str += structName + ".Rect=" + ToString(ExtMoveRect.Rect) + "\n";
     return str;
 }
 
@@ -508,6 +598,72 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamPipeC
     return str;
 }
 
+std::string DumpContext::dump(const std::string structName, const mfxCamFwdGammaSegment &CamFwrGammaSegment)
+{
+    std::string str;
+    str += structName + ".Pixel=" + ToString(CamFwrGammaSegment.Pixel) + "\n";
+    str += structName + ".Red=" + ToString(CamFwrGammaSegment.Red) + "\n";
+    str += structName + ".Green=" + ToString(CamFwrGammaSegment.Green) + "\n";
+    str += structName + ".Blue=" + ToString(CamFwrGammaSegment.Blue) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCamFwdGamma &CamFwrGamma)
+{
+    std::string str;
+    str += dump(structName + ".Header=", CamFwrGamma.Header) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamFwrGamma.reserved) + "\n";
+    str += structName + ".NumSegments=" + ToString(CamFwrGamma.NumSegments) + "\n";
+    if (CamFwrGamma.Segment)
+    {
+        for (int i = 0; i <  CamFwrGamma.NumSegments; i++)
+        {
+            str += structName + dump((".Segment[" + ToString(i) + "]"), CamFwrGamma.Segment[i]) + "\n";
+        }
+    }
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCamCscYuvRgb &CamCscYuvRgb)
+{
+    std::string str;
+    str += dump(structName + ".Header=", CamCscYuvRgb.Header) + "\n";
+    str += structName + ".PreOffset[]=" + DUMP_RESERVED_ARRAY(CamCscYuvRgb.PreOffset) + "\n";
+    for (int i = 0; i < 3; i++)
+        str += structName + ".Matrix[" + ToString(i) + "][]=" + DUMP_RESERVED_ARRAY(CamCscYuvRgb.Matrix) + "\n";
+    str += structName + ".PostOffset[]=" + DUMP_RESERVED_ARRAY(CamCscYuvRgb.PostOffset) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamCscYuvRgb.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtCamLensGeomDistCorrection &CamLensGeomDistCorrection)
+{
+    std::string str;
+    str += dump(structName + ".Header=", CamLensGeomDistCorrection.Header) + "\n";
+    if (CamLensGeomDistCorrection.a)
+    {
+        for (int i = 0; i < 3; i++)
+            str += structName + ".a[" + ToString(i) + "]=" + ToString(CamLensGeomDistCorrection.a[i]) + "\n";
+    }
+    if (CamLensGeomDistCorrection.b)
+    {
+        for (int i = 0; i < 3; i++)
+            str += structName + ".b[" + ToString(i) + "]=" + ToString(CamLensGeomDistCorrection.b[i]) + "\n";
+    }
+    if (CamLensGeomDistCorrection.c)
+    {
+        for (int i = 0; i < 3; i++)
+            str += structName + ".c[" + ToString(i) + "]=" + ToString(CamLensGeomDistCorrection.c[i]) + "\n";
+    }
+    if (CamLensGeomDistCorrection.d)
+    {
+        for (int i = 0; i < 3; i++)
+            str += structName + ".d[" + ToString(i) + "]=" + ToString(CamLensGeomDistCorrection.d[i]) + "\n";
+    }
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamLensGeomDistCorrection.reserved) + "\n";
+    return str;
+}
+
 std::string DumpContext::dump(const std::string structName, const mfxExtAVCRefListCtrl &ExtAVCRefListCtrl)
 {
     std::string str;
@@ -569,7 +725,13 @@ std::string DumpContext::dump(const std::string structName, const mfxExtJPEGQuan
     str += dump(structName + ".Header=", ExtJPEGQuantTables.Header) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtJPEGQuantTables.reserved) + "\n";
     str += structName + ".NumTable=" + ToString(ExtJPEGQuantTables.NumTable) + "\n";
-    str += structName + ".Qm=" + ToString(ExtJPEGQuantTables.Qm) + "\n";
+    if (ExtJPEGQuantTables.Qm)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            str += structName + ".Qm[" + ToString(i) + "][]=" + DUMP_RESERVED_ARRAY(ExtJPEGQuantTables.Qm[i]) + "\n";
+        }
+    }
     return str;
 }
 
@@ -580,8 +742,36 @@ std::string DumpContext::dump(const std::string structName, const mfxExtJPEGHuff
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.reserved) + "\n";
     str += structName + ".NumDCTable=" + ToString(ExtJPEGHuffmanTables.NumDCTable) + "\n";
     str += structName + ".NumACTable=" + ToString(ExtJPEGHuffmanTables.NumACTable) + "\n";
-    str += structName + ".DCTables=" + ToString(ExtJPEGHuffmanTables.DCTables) + "\n";
-    str += structName + ".ACTables=" + ToString(ExtJPEGHuffmanTables.ACTables) + "\n";
+    if (ExtJPEGHuffmanTables.DCTables)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            if (ExtJPEGHuffmanTables.DCTables[i].Bits)
+                str += structName + ".DCTables[" + ToString(i) + "].Bits[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.DCTables[i].Bits) + "\n";
+            else
+                str += structName + ".DCTables[" + ToString(i) + "].Bits[]=" + "NULL" + "\n";
+
+            if (ExtJPEGHuffmanTables.DCTables[i].Values)
+                str += structName + ".DCTables[" + ToString(i) + "].Values[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.DCTables[i].Values) + "\n";
+            else
+                str += structName + ".DCTables[" + ToString(i) + "].Values[]=" + "NULL" + "\n";
+        }
+    }
+    if (ExtJPEGHuffmanTables.ACTables)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            if (ExtJPEGHuffmanTables.ACTables[i].Bits)
+                str += structName + ".ACTables[" + ToString(i) + "].Bits[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.ACTables[i].Bits) + "\n";
+            else
+                str += structName + ".ACTables[" + ToString(i) + "].Bits[]=" + "NULL" + "\n";
+
+            if (ExtJPEGHuffmanTables.ACTables[i].Values)
+                str += structName + ".ACTables[" + ToString(i) + "].Values[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.ACTables[i].Values) + "\n";
+            else
+                str += structName + ".ACTables[" + ToString(i) + "].Values[]=" + "NULL" + "\n";
+        }
+    }
     return str;
 }
 
@@ -853,6 +1043,39 @@ std::string DumpContext::dump(const std::string structName, const mfxExtHEVCPara
     str += dump(structName + ".Header=", ExtHEVCParam.Header) + "\n";
     str += structName + ".PicWidthInLumaSamples=" + ToString(ExtHEVCParam.PicWidthInLumaSamples) + "\n";
     str += structName + ".PicHeightInLumaSamples=" + ToString(ExtHEVCParam.PicHeightInLumaSamples) + "\n";
+    str += structName + ".GeneralConstraintFlags=" + ToString(ExtHEVCParam.GeneralConstraintFlags) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtHEVCParam.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtHEVCRegion &ExtHEVCRegion)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtHEVCRegion.Header) + "\n";
+    str += structName + ".RegionId=" + ToString(ExtHEVCRegion.RegionId) + "\n";
+    str += structName + ".RegionType=" + ToString(ExtHEVCRegion.RegionType) + "\n";
+    str += structName + ".RegionEncoding=" + ToString(ExtHEVCRegion.RegionEncoding) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtHEVCRegion.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtPredWeightTable &ExtPredWeightTable)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtPredWeightTable.Header) + "\n";
+    str += structName + ".LumaLog2WeightDenom=" + ToString(ExtPredWeightTable.LumaLog2WeightDenom) + "\n";
+    str += structName + ".ChromaLog2WeightDenom=" + ToString(ExtPredWeightTable.ChromaLog2WeightDenom) + "\n";
+    if (ExtPredWeightTable.LumaWeightFlag)
+        for (int i = 0; i < 2; i++)
+            str += structName + ".LumaWeightFlag[" + ToString(i) + "][]=" + DUMP_RESERVED_ARRAY(ExtPredWeightTable.LumaWeightFlag[i]) + "\n";
+    if (ExtPredWeightTable.ChromaWeightFlag)
+        for (int i = 0; i < 2; i++)
+            str += structName + ".ChromaWeightFlag[" + ToString(i) + "][]=" + DUMP_RESERVED_ARRAY(ExtPredWeightTable.ChromaWeightFlag[i]) + "\n";
+    if (ExtPredWeightTable.Weights)
+        for (int i = 0; i < 2; i++)
+            for (int j = 0; j < 32; j++)
+                for (int k = 0; k < 3; k++)
+                    str += structName + ".ChromaWeightFlag[" + ToString(i) + "][" + ToString(j) + "][" + ToString(k) + "][]=" + DUMP_RESERVED_ARRAY(ExtPredWeightTable.Weights[i][j][k]) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtPredWeightTable.reserved) + "\n";
     return str;
 }

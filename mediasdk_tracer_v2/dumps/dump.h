@@ -1,3 +1,33 @@
+/* ****************************************************************************** *\
+
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+- Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+File Name: dump.h
+
+\* ****************************************************************************** */
+
 #ifndef DUMP_H_
 #define DUMP_H_
 
@@ -23,6 +53,7 @@ std::string GetStatusString(mfxStatus sts);
 std::string GetmfxIMPL(mfxIMPL impl);
 std::string GetFourCC(mfxU32 fourcc);
 std::string GetCodecIdString (mfxU32 id);
+std::string GetIOPattern (mfxU32 io);
 
 #define GET_ARRAY_SIZE(x) sizeof(x)/sizeof(x[0])
 #define DUMP_RESERVED_ARRAY(r) dump_reserved_array(&(r[0]), GET_ARRAY_SIZE(r))
@@ -169,6 +200,15 @@ public:
                   case  MFX_EXTBUF_CAM_PIPECONTROL:
                     str += dump(name, *((mfxExtCamPipeControl*)_struct.ExtParam[i])) + "\n";
                     break;
+                  case  MFX_EXTBUF_CAM_FORWARD_GAMMA_CORRECTION:
+                    str += dump(name, *((mfxExtCamFwdGamma*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case  MFX_EXTBUF_CAM_CSC_YUV_RGB:
+                    str += dump(name, *((mfxExtCamCscYuvRgb*)_struct.ExtParam[i])) + "\n";
+                    break;
+                  case  MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION:
+                    str += dump(name, *((mfxExtCamLensGeomDistCorrection*)_struct.ExtParam[i])) + "\n";
+                    break;
                   case  MFX_EXTBUFF_LOOKAHEAD_CTRL:
                     str += dump(name, *((mfxExtLAControl*)_struct.ExtParam[i])) + "\n";
                     break;
@@ -238,11 +278,26 @@ public:
                  case  MFX_EXTBUFF_HEVC_PARAM:
                     str += dump(name, *((mfxExtHEVCParam*)_struct.ExtParam[i])) + "\n";
                     break;
+                 case  MFX_EXTBUFF_HEVC_REGION:
+                    str += dump(name, *((mfxExtHEVCRegion*)_struct.ExtParam[i])) + "\n";
+                    break;
                  case  MFX_EXTBUFF_DECODED_FRAME_INFO:
                     str += dump(name, *((mfxExtDecodedFrameInfo*)_struct.ExtParam[i])) + "\n";
                     break;
                  case  MFX_EXTBUFF_TIME_CODE:
                     str += dump(name, *((mfxExtTimeCode*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_PRED_WEIGHT_TABLE:
+                    str += dump(name, *((mfxExtPredWeightTable*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_ENCODER_CAPABILITY:
+                    str += dump(name, *((mfxExtEncoderCapability*)_struct.ExtParam[i])) + "\n";
+                    break;
+                 case  MFX_EXTBUFF_DIRTY_RECTANGLES:
+                    str += dump(name, *((mfxExtDirtyRect*)_struct.ExtParam[i])) + "\n";
+                    break;
+                case  MFX_EXTBUFF_MOVING_RECTANGLES:
+                    str += dump(name, *((mfxExtMoveRect*)_struct.ExtParam[i])) + "\n";
                     break;
                  default:
                     str += dump(name, *(_struct.ExtParam[i])) + "\n";
@@ -267,6 +322,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxPriority);
     DEFINE_DUMP_FUNCTION(mfxVersion);
     DEFINE_DUMP_FUNCTION(mfxSyncPoint);
+    DEFINE_DUMP_FUNCTION(mfxExtThreadsParam);
 
     //mfxenc
     DEFINE_DUMP_FUNCTION(mfxENCInput);
@@ -287,6 +343,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtEncoderResetOption);
     DEFINE_DUMP_FUNCTION(mfxExtVppAuxData);
     DEFINE_DUMP_FUNCTION(mfxFrameAllocRequest);
+    DEFINE_DUMP_FUNCTION(mfxFrameAllocResponse);
     DEFINE_DUMP_FUNCTION(mfxFrameData);
     DEFINE_DUMP_FUNCTION(mfxFrameId);
     DEFINE_DUMP_FUNCTION(mfxFrameInfo);
@@ -317,8 +374,13 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtVPPDeinterlacing);
     DEFINE_DUMP_FUNCTION(mfxExtHEVCTiles);
     DEFINE_DUMP_FUNCTION(mfxExtHEVCParam);
+    DEFINE_DUMP_FUNCTION(mfxExtHEVCRegion);
     DEFINE_DUMP_FUNCTION(mfxExtDecodedFrameInfo);
     DEFINE_DUMP_FUNCTION(mfxExtTimeCode);
+    DEFINE_DUMP_FUNCTION(mfxExtPredWeightTable);
+    DEFINE_DUMP_FUNCTION(mfxExtEncoderCapability);
+    DEFINE_DUMP_FUNCTION(mfxExtDirtyRect);
+    DEFINE_DUMP_FUNCTION(mfxExtMoveRect);
 
     //mfxsession
     DEFINE_DUMP_FUNCTION(mfxSession);
@@ -372,6 +434,10 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtCamColorCorrection3x3);
     DEFINE_DUMP_FUNCTION(mfxExtCamPadding);
     DEFINE_DUMP_FUNCTION(mfxExtCamPipeControl);
+    DEFINE_DUMP_FUNCTION(mfxCamFwdGammaSegment);
+    DEFINE_DUMP_FUNCTION(mfxExtCamFwdGamma);
+    DEFINE_DUMP_FUNCTION(mfxExtCamCscYuvRgb);
+    DEFINE_DUMP_FUNCTION(mfxExtCamLensGeomDistCorrection);
 
     //mfxjpeg
     DEFINE_DUMP_FUNCTION(mfxExtJPEGQuantTables);

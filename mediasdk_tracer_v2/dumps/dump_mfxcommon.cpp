@@ -83,6 +83,9 @@ std::string DumpContext::dump(const std::string structName, const mfxInitParam &
     DUMP_FIELD(ExternalThreads);
     DUMP_FIELD(NumExtParam);
     str += structName + ".ExtParam=" + ToHexFormatString(_struct.ExtParam) + "\n";
+    str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(_struct.reserved) + "\n";
+    str += dump(structName + ".GPUCopy=", _struct.GPUCopy) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(_struct.reserved) + "\n";
     DUMP_FIELD_RESERVED(reserved);
 
     return str;

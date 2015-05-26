@@ -162,11 +162,13 @@
     <ClCompile Include="dumps\dump_mfxcommon.cpp" />
     <ClCompile Include="dumps\dump_mfxdefs.cpp" />
     <ClCompile Include="dumps\dump_mfxenc.cpp" />
+    <ClCompile Include="dumps\dump_mfxfei.cpp" />
     <ClCompile Include="dumps\dump_mfxla.cpp" />
     <ClCompile Include="dumps\dump_mfxplugin.cpp" />
     <ClCompile Include="dumps\dump_mfxsession.cpp" />
     <ClCompile Include="dumps\dump_mfxstructures.cpp" />
     <ClCompile Include="dumps\dump_mfxvideo.cpp" />
+    <ClCompile Include="dumps\dump_mfxvp8.cpp" />
     <ClCompile Include="loggers\log.cpp" />
     <ClCompile Include="loggers\log_console.cpp" />
     <ClCompile Include="loggers\log_etw_events.cpp" />

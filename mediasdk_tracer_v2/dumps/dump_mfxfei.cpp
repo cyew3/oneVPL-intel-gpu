@@ -27,11 +27,13 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     DUMP_FIELD(MVPredictor);
     DUMP_FIELD(MBQp);
     DUMP_FIELD(FTEnable);
+    DUMP_FIELD(IntraPartMask);
     DUMP_FIELD(RefWidth);
     DUMP_FIELD(RefHeight);
     DUMP_FIELD(SearchWindow);
     DUMP_FIELD(DisableMVOutput);
     DUMP_FIELD(DisableStatisticsOutput);
+    DUMP_FIELD(Enable8x8Stat);
     DUMP_FIELD(PictureType);
     DUMP_FIELD_RESERVED(reserved);
 
@@ -161,6 +163,8 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncFr
     DUMP_FIELD(RefWidth);
     DUMP_FIELD(RefHeight);
     DUMP_FIELD(SearchWindow);
+    DUMP_FIELD(ColocatedMbDistortion);
+    DUMP_FIELD_RESERVED(reserved);
 
     return str;
 }
@@ -255,6 +259,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
 
     DUMP_FIELD(ForceToIntra);
     DUMP_FIELD(ForceToSkip);
+    DUMP_FIELD(ForceToNoneSkip);
     DUMP_FIELD(reserved1);
 
     DUMP_FIELD(reserved2);
@@ -322,6 +327,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
     DUMP_FIELD_RESERVED(InterDistortion);
     DUMP_FIELD(BestInterDistortion);
     DUMP_FIELD(BestIntraDistortion);
+    DUMP_FIELD(ColocatedMbDistortion);
+    DUMP_FIELD(reserved);
+    DUMP_FIELD_RESERVED(reserved1);
 
     return str;
 }

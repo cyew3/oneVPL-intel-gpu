@@ -1,3 +1,33 @@
+/* ****************************************************************************** *\
+
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+- Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+File Name: dump.cpp
+
+\* ****************************************************************************** */
+
 #include "dump.h"
 
 
@@ -32,7 +62,7 @@ static IdTable g_BufferIdTable[] =
     TABLE_ENTRY(MFX_EXTBUFF_CODING_OPTION3),
     TABLE_ENTRY(MFX_EXTBUFF_CODING_OPTION_SPSPPS),
 
-//    TABLE_ENTRY(MFX_EXTBUFF_DEC_VIDEO_PROCESSING),
+    TABLE_ENTRY(MFX_EXTBUFF_DEC_VIDEO_PROCESSING),
 
     TABLE_ENTRY(MFX_EXTBUFF_ENCODER_CAPABILITY),
     TABLE_ENTRY(MFX_EXTBUFF_ENCODED_FRAME_INFO),
@@ -87,6 +117,9 @@ static IdTable g_BufferIdTable[] =
     TABLE_ENTRY(MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3),
     TABLE_ENTRY(MFX_EXTBUF_CAM_PADDING),
     TABLE_ENTRY(MFX_EXTBUF_CAM_PIPECONTROL),
+    TABLE_ENTRY(MFX_EXTBUF_CAM_FORWARD_GAMMA_CORRECTION),
+    TABLE_ENTRY(MFX_EXTBUF_CAM_CSC_YUV_RGB),
+    TABLE_ENTRY(MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION),
     TABLE_ENTRY(MFX_EXTBUFF_LOOKAHEAD_CTRL),
     TABLE_ENTRY(MFX_EXTBUFF_LOOKAHEAD_STAT),
     TABLE_ENTRY(MFX_EXTBUFF_AVC_REFLIST_CTRL),
@@ -99,8 +132,13 @@ static IdTable g_BufferIdTable[] =
     TABLE_ENTRY(MFX_EXTBUFF_MVC_TARGET_VIEWS),
     TABLE_ENTRY(MFX_EXTBUFF_HEVC_TILES),
     TABLE_ENTRY(MFX_EXTBUFF_HEVC_PARAM),
+    TABLE_ENTRY(MFX_EXTBUFF_HEVC_REGION),
     TABLE_ENTRY(MFX_EXTBUFF_DECODED_FRAME_INFO),
-    TABLE_ENTRY(MFX_EXTBUFF_TIME_CODE)
+    TABLE_ENTRY(MFX_EXTBUFF_TIME_CODE),
+    TABLE_ENTRY(MFX_EXTBUFF_THREADS_PARAM),
+    TABLE_ENTRY(MFX_EXTBUFF_PRED_WEIGHT_TABLE),
+    TABLE_ENTRY(MFX_EXTBUFF_DIRTY_RECTANGLES),
+    TABLE_ENTRY(MFX_EXTBUFF_MOVING_RECTANGLES)
 };
 
 static IdTable tbl_impl[] = {
@@ -178,6 +216,15 @@ static IdTable tbl_codecid[] = {
     TABLE_ENTRY(MFX_CODEC_MPEG2),
     TABLE_ENTRY(MFX_CODEC_VC1),
     TABLE_ENTRY(MFX_CODEC_CAPTURE)
+};
+
+static IdTable tbl_iopattern[] = {
+    TABLE_ENTRY(MFX_IOPATTERN_IN_VIDEO_MEMORY),
+    TABLE_ENTRY(MFX_IOPATTERN_IN_SYSTEM_MEMORY),
+    TABLE_ENTRY(MFX_IOPATTERN_IN_OPAQUE_MEMORY),
+    TABLE_ENTRY(MFX_IOPATTERN_OUT_VIDEO_MEMORY),
+    TABLE_ENTRY(MFX_IOPATTERN_OUT_SYSTEM_MEMORY),
+    TABLE_ENTRY(MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
 };
 
 
@@ -273,6 +320,24 @@ std::string GetCodecIdString(mfxU32 id) {
     stream<<name;
     return stream.str();
 }
+
+std::string GetIOPattern(mfxU32 io) {
+
+    std::basic_stringstream<char> stream;
+    std::string name = "UNKNOWN";
+    for (int i = 0; i < (sizeof(tbl_iopattern) / sizeof(tbl_iopattern[0])); i++)
+    {
+        if (tbl_iopattern[i].id == io)
+        {
+            name = tbl_iopattern[i].str;
+            break;
+        }
+
+    }
+    stream<<name;
+    return stream.str();
+}
+
 
 //mfxcommon
 DEFINE_GET_TYPE_DEF(mfxBitstream);
