@@ -297,9 +297,9 @@ namespace MFX_VP8ENC
 
         if(m_ctrl.FrameType) 
         {
-            m_ctrl.GoldenCopyFlag  = frameParams.bGold ? 3 : frameParams.copyToGoldRef;
-            m_ctrl.AltRefCopyFlag  = frameParams.bAltRef ? 3 : frameParams.copyToAltRef;
-            m_ctrl.LastFrameUpdate = 1;
+            m_ctrl.GoldenCopyFlag  = frameParams.copyToGoldRef;
+            m_ctrl.AltRefCopyFlag  = frameParams.copyToAltRef;
+            m_ctrl.LastFrameUpdate = frameParams.bLastRef;
             m_ctrl.SignBiasGolden  = 0;
             m_ctrl.SignBiasAltRef  = 0;
 

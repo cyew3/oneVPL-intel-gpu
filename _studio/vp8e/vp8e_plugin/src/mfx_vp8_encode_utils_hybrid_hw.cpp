@@ -136,13 +136,15 @@ namespace MFX_VP8ENC
         pFrameParams->bIntra  = (frameOrder % par->mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? true: false;
         if (pFrameParams->bIntra)
         {
-            pFrameParams->bAltRef = 1; // refresh gold_ref with current frame only for key-frames
-            pFrameParams->bGold   = 1; // refresh alt_ref with current frame only for key-frames
+            pFrameParams->bLastRef      = 1; // refresh last_ref with current frame
+            pFrameParams->copyToGoldRef = 3; // refresh alt_ref with current frame
+            pFrameParams->copyToAltRef  = 3; // refresh gold_ref with current frame
         }
         else
         {
+            pFrameParams->bLastRef      = 1; // refresh last_ref with current frame
             pFrameParams->copyToGoldRef = 1; // copy every last_ref frame to gold_ref
-            pFrameParams->copyToAltRef = 2; // copy every gold_ref frame to alt_ref
+            pFrameParams->copyToAltRef  = 2; // copy every gold_ref frame to alt_ref
         }
         mfxExtVP8CodingOption *pExtVP8Opt = GetExtBuffer(*par);
         pFrameParams->LFType  = pExtVP8Opt->LoopFilterType;
@@ -510,7 +512,7 @@ namespace MFX_VP8ENC
         return MFX_ERR_NONE;       
     }
 
-    mfxStatus Task::SubmitTask (sFrameEx*  pRecFrame, sDpbVP8 &dpb, sFrameParams* pParams, sFrameEx* pRawLocalFrame)
+    mfxStatus Task::SubmitTask (sFrameEx*  pRecFrame, std::vector<sFrameEx*> &dpb, sFrameParams* pParams, sFrameEx* pRawLocalFrame)
     {
         MFX_CHECK(m_status == TASK_INITIALIZED, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK_NULL_PTR2(pRecFrame, pParams);
@@ -528,9 +530,9 @@ namespace MFX_VP8ENC
 
         if (!m_sFrameParams.bIntra)
         {
-            m_pRecRefFrames[REF_BASE] = dpb.m_refFrames[REF_BASE];
-            m_pRecRefFrames[REF_GOLD] = dpb.m_refFrames[REF_GOLD];
-            m_pRecRefFrames[REF_ALT]  = dpb.m_refFrames[REF_ALT];
+            m_pRecRefFrames[REF_BASE] = dpb[REF_BASE];
+            m_pRecRefFrames[REF_GOLD] = dpb[REF_GOLD];
+            m_pRecRefFrames[REF_ALT]  = dpb[REF_ALT];
         }
 
         MFX_CHECK_STS(LockSurface(m_pRecFrame,m_pCore));

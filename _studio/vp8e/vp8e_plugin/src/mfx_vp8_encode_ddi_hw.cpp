@@ -94,21 +94,32 @@ namespace MFX_VP8ENC
         MFX_CHECK(task.m_pRecFrame->idInPool < reconQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
         pps.reconstructed_frame = reconQueue[task.m_pRecFrame->idInPool].surface;
 
-        pps.ref_flags.value = 0; // use all references
-        if ( task.m_pRecRefFrames[REF_BASE])
+        pps.ref_flags.value = 0; // use all references by default
+
+        // use shorter names
+        sFrameEx *lastRef = task.m_pRecRefFrames[REF_BASE];
+        sFrameEx *goldRef = task.m_pRecRefFrames[REF_GOLD];
+        sFrameEx *altRef  = task.m_pRecRefFrames[REF_ALT];
+
+        if (lastRef)
         {
-            MFX_CHECK(task.m_pRecRefFrames[REF_BASE]->idInPool < reconQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
-            pps.ref_last_frame = reconQueue[task.m_pRecRefFrames[REF_BASE]->idInPool].surface;
+            MFX_CHECK(lastRef->idInPool < reconQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
+            pps.ref_last_frame = reconQueue[lastRef->idInPool].surface;
+            pps.ref_flags.bits.no_ref_last = 1; // don't use last ref as reference
         }
-        if ( task.m_pRecRefFrames[REF_GOLD])
+        if (goldRef)
         {
-            MFX_CHECK(task.m_pRecRefFrames[REF_GOLD]->idInPool < reconQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
-            pps.ref_gf_frame = reconQueue[task.m_pRecRefFrames[REF_GOLD]->idInPool].surface;
+            MFX_CHECK(goldRef->idInPool < reconQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
+            pps.ref_gf_frame = reconQueue[goldRef->idInPool].surface;
+            if (goldRef == lastRef)
+                pps.ref_flags.bits.no_ref_gf = 1; // don't use gold ref as reference
         }
-        if ( task.m_pRecRefFrames[REF_ALT])
+        if (altRef)
         {
-            MFX_CHECK(task.m_pRecRefFrames[REF_ALT]->idInPool < reconQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
-            pps.ref_arf_frame = reconQueue[task.m_pRecRefFrames[REF_ALT]->idInPool].surface;
+            MFX_CHECK(altRef->idInPool < reconQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
+            pps.ref_arf_frame = reconQueue[altRef->idInPool].surface;
+            if (altRef == lastRef || altRef == goldRef)
+                pps.ref_flags.bits.no_ref_arf = 1;  // don't use alt ref as reference
         }
 
         pps.pic_flags.bits.frame_type                      = (task.m_sFrameParams.bIntra) ? 0 : 1;
@@ -122,19 +133,20 @@ namespace MFX_VP8ENC
 
         if (pps.pic_flags.bits.frame_type)
         {
-            pps.pic_flags.bits.refresh_golden_frame = 0; 
-            pps.pic_flags.bits.refresh_alternate_frame = 0; 
-            pps.pic_flags.bits.copy_buffer_to_golden = 1;            
-            pps.pic_flags.bits.copy_buffer_to_alternate = 2; 
-            pps.pic_flags.bits.refresh_last = 1;                   
+            pps.pic_flags.bits.refresh_golden_frame = task.m_sFrameParams.copyToGoldRef == 3 ? 1 : 0;
+            pps.pic_flags.bits.refresh_alternate_frame = task.m_sFrameParams.copyToAltRef == 3 ? 1 : 0;
+            if (pps.pic_flags.bits.refresh_golden_frame == 0)
+                pps.pic_flags.bits.copy_buffer_to_golden = task.m_sFrameParams.copyToGoldRef;
+            if (pps.pic_flags.bits.refresh_alternate_frame == 0)
+                pps.pic_flags.bits.copy_buffer_to_alternate = task.m_sFrameParams.copyToAltRef;
+            pps.pic_flags.bits.refresh_last = task.m_sFrameParams.bLastRef ? 1 : 0;
         }  
 
         pps.pic_flags.bits.sign_bias_golden         = 0;
         pps.pic_flags.bits.sign_bias_alternate      = 0;
         pps.pic_flags.bits.mb_no_coeff_skip         = 1;
   
-        pps.sharpness_level          = task.m_sFrameParams.Sharpness;;
-
+        pps.sharpness_level          = task.m_sFrameParams.Sharpness;
 
         for (int i = 0; i < 4; i ++)
         {

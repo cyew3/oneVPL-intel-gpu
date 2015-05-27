@@ -39,13 +39,12 @@ namespace MFX_VP8ENC
     typedef struct _sFrameParams
     {
         mfxU8    bIntra;
-        mfxU8    bGold;
-        mfxU8    bAltRef;
+        mfxU8    bLastRef;
         mfxU8    LFType;    //Loop filter type [0, 1]
         mfxU8    LFLevel[4];   //Loop filter level [0,63], all segments
         mfxU8    Sharpness; //[0,7]
-        mfxU8    copyToGoldRef;
-        mfxU8    copyToAltRef;
+        mfxU8    copyToGoldRef; // 0 - no, 1 -last, 2 - alt, 3 -cur
+        mfxU8    copyToAltRef; // 0 - no, 1 -last, 2 - gold, 3 -cur
     } sFrameParams;
 
     enum eTaskStatus
@@ -80,6 +79,7 @@ namespace MFX_VP8ENC
         mfxFrameSurface1 *pSurface;
         mfxU32            idInPool;
         mfxU8             QP;
+        mfxU8             refCount;
     };
 
     inline mfxStatus LockSurface(sFrameEx*  pFrame, mfxCoreInterface* pCore)
@@ -406,14 +406,6 @@ namespace MFX_VP8ENC
         inline MfxFrameAllocResponse& GetFrameAllocReponse()  {return m_response;}
     };
 
-
-    typedef struct _sDpbVP8
-    {
-        sFrameEx* m_refFrames[REF_TOTAL];
-        mfxU8     m_refMap[REF_TOTAL];
-    } sDpbVP8;
-
-
     class Task
     {
     public:
@@ -469,7 +461,7 @@ namespace MFX_VP8ENC
                               mfxBitstream *pBitsteam,
                               mfxU32        frameOrder);
           virtual
-          mfxStatus SubmitTask (sFrameEx*  pRecFrame, sDpbVP8 &dpb, sFrameParams* pParams, sFrameEx* pRawLocalFrame);
+          mfxStatus SubmitTask (sFrameEx*  pRecFrame, std::vector<sFrameEx*> &dpb, sFrameParams* pParams, sFrameEx* pRawLocalFrame);
  
           inline mfxStatus CompleteTask ()
           {
@@ -546,7 +538,7 @@ namespace MFX_VP8ENC
         InternalFrames  m_ReconFrames;
 
         std::vector<TTask>  m_Tasks;
-        sDpbVP8             m_dpb;
+        std::vector<sFrameEx*> m_dpb;
 
         mfxU32              m_frameNum;
 
@@ -597,6 +589,8 @@ namespace MFX_VP8ENC
               sts = m_ReconFrames.Init(pCore, &request, m_bHWFrames);
               MFX_CHECK_STS(sts);
 
+              m_dpb.resize(REF_TOTAL);
+
               {
                   mfxU32 numTasks = CalcNumTasks(m_video);
                   m_Tasks.resize(numTasks);
@@ -614,7 +608,7 @@ namespace MFX_VP8ENC
           mfxStatus ReleaseDpbFrames()
           {
               for (mfxU8 refIdx = 0; refIdx < REF_TOTAL; refIdx ++)
-                  MFX_CHECK_STS(FreeSurface(m_dpb.m_refFrames[refIdx],m_pCore));
+                  MFX_CHECK_STS(FreeSurface(m_dpb[refIdx],m_pCore));
 
               return MFX_ERR_NONE;
           }
@@ -707,113 +701,74 @@ namespace MFX_VP8ENC
           inline
           mfxStatus UpdateDpb(sFrameParams *pParams, sFrameEx *pRecFrame)
           {
-              mfxU8   freeSurfCnt[REF_TOTAL] = {0, };
-              sDpbVP8 dpbBeforeUpdate = m_dpb;
-
-              // reset mapping of ref frames
-              m_dpb.m_refMap[REF_BASE] = m_dpb.m_refMap[REF_GOLD] = m_dpb.m_refMap[REF_ALT] = 0;
+              std::vector<sFrameEx*> curDpb  = m_dpb; // DPB before update
+              std::vector<sFrameEx*> &updDpb = m_dpb; // DPB after update
 
               if (pParams->bIntra)
               {
-                  m_dpb.m_refFrames[REF_BASE] = pRecFrame;
-                  m_dpb.m_refFrames[REF_GOLD] = pRecFrame;
-                  m_dpb.m_refFrames[REF_ALT] =  pRecFrame;
+                  if (curDpb[REF_BASE]) curDpb[REF_BASE]->refCount = 0;
+                  if (curDpb[REF_GOLD]) curDpb[REF_GOLD]->refCount = 0;
+                  if (curDpb[REF_ALT])  curDpb[REF_ALT]->refCount  = 0;
 
-                  // treat all references as free - they all were replaced with current frame
-                  freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_BASE]] ++;
-                  freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] ++;
-                  freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]]  ++;
+                  updDpb[REF_BASE] = updDpb[REF_GOLD] = updDpb[REF_ALT] = pRecFrame;
+                  pRecFrame->refCount = REF_TOTAL; // last, ref and alt at the same time
               }
               else
               {
-                  // refresh last_ref with current frame
-                  m_dpb.m_refFrames[REF_BASE] = pRecFrame;
-                  m_dpb.m_refMap[REF_BASE] = 0;
-                  // treat last_ref as free - it was replaced with current frame
-                  freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_BASE]] ++;
-
-                  if (pParams->bGold)
+                  if (pParams->bLastRef) // refresh last ref with current frame
                   {
-                      // refresh gold_ref with current frame
-                      m_dpb.m_refFrames[REF_GOLD] = pRecFrame;
-                      m_dpb.m_refMap[REF_GOLD] = 0;
-                      // treat gold_ref as free - it was replaced with current frame
-                      freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] ++;
-                  }
-                  else
-                  {
-                      if (pParams->copyToGoldRef == 1)
-                      {
-                          // replace gold_ref with last_ref
-                          m_dpb.m_refFrames[REF_GOLD] = dpbBeforeUpdate.m_refFrames[REF_BASE];                        
-                          // treat gold_ref as free - it was replaced with last_ref
-                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] ++;
-                          // treat last_ref as occupied - gold_ref was replaced with it
-                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_BASE]] = 0;
-                      }
-                      else if (pParams->copyToGoldRef == 2)
-                      {
-                          // replace gold_ref with alt_ref
-                          m_dpb.m_refFrames[REF_GOLD] = dpbBeforeUpdate.m_refFrames[REF_ALT];
-                          // treat gold_ref as free - it was replaced with alt_ref
-                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] ++;
-                          // treat alt_ref as occupied - gold_ref was replaced with it
-                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] = 0;
-                      }
-                      m_dpb.m_refMap[REF_GOLD] = 1;
+                      updDpb[REF_BASE] = pRecFrame;
+                      curDpb[REF_BASE]->refCount --;
+                      updDpb[REF_BASE]->refCount ++;
                   }
 
-                  if (pParams->bAltRef)
+                  if (pParams->copyToGoldRef) // replace gold ref
                   {
-                      // refresh alt_ref with current frame
-                      m_dpb.m_refFrames[REF_ALT] = pRecFrame;
-                      m_dpb.m_refMap[REF_ALT] = 0;
-                      // treat alt_ref as free - it was replaced with current frame
-                      freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] ++;
+                      curDpb[REF_GOLD]->refCount --;
+                      switch (pParams->copyToGoldRef)
+                      {
+                          case 1: // replace gold_ref with last_ref
+                              updDpb[REF_GOLD] = curDpb[REF_BASE];
+                              break;
+                          case 2: // replace gold_ref with alt_ref
+                              updDpb[REF_GOLD] = curDpb[REF_ALT];
+                              break;
+                          case 3: // refresh gold_ref with current frame
+                              updDpb[REF_GOLD] = pRecFrame;
+                              break;
+                          default: return MFX_ERR_UNDEFINED_BEHAVIOR;
+                      }
+                      updDpb[REF_GOLD]->refCount ++;
                   }
-                  else
-                  {
-                      if (pParams->copyToAltRef == 1)
-                      {
-                          // replace alt_ref with last_ref
-                          m_dpb.m_refFrames[REF_ALT] = dpbBeforeUpdate.m_refFrames[REF_BASE];
-                          // treat alt_ref as free - it was replaced with last_ref
-                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] ++;
-                          // treat last_ref as occupied - alt_ref was replaced with it
-                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_BASE]] = 0;
-                      }
-                      else if (pParams->copyToAltRef == 2)
-                      {
-                          // replace alt_ref with gold_ref
-                          m_dpb.m_refFrames[REF_ALT] = dpbBeforeUpdate.m_refFrames[REF_GOLD];
-                          // treat alt_ref as free - it was replaced with gold_ref
-                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] ++;
-                          // treat gold_ref as occupied - alt_ref was replaced with it
-                          freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] = 0;
-                      }
 
-                      if (m_dpb.m_refMap[REF_GOLD] == 0) // gold_ref was replaced with current frames
-                          m_dpb.m_refMap[REF_ALT] = 1;
-                      else
-                          m_dpb.m_refMap[REF_ALT] = (m_dpb.m_refFrames[REF_ALT] == m_dpb.m_refFrames[REF_GOLD]) ? 1 : 2;
+                  if (pParams->copyToAltRef) // replace alt ref
+                  {
+                      curDpb[REF_ALT]->refCount --;
+                      switch (pParams->copyToAltRef)
+                      {
+                          case 1: // replace alt_ref with last_ref
+                              updDpb[REF_ALT] = curDpb[REF_BASE];
+                              break;
+                          case 2: // replace alt_ref with gold_ref
+                              updDpb[REF_ALT] = curDpb[REF_GOLD];
+                              break;
+                          case 3: // refresh alt_ref with current frame
+                              updDpb[REF_ALT] = pRecFrame;
+                              break;
+                          default: return MFX_ERR_UNDEFINED_BEHAVIOR;
+                      }
+                      updDpb[REF_ALT]->refCount ++;
                   }
               }
 
-              if (m_dpb.m_refFrames[REF_GOLD] == dpbBeforeUpdate.m_refFrames[REF_GOLD])
-                  freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_GOLD]] = 0;
-              if (m_dpb.m_refFrames[REF_ALT] == dpbBeforeUpdate.m_refFrames[REF_ALT])
-                  freeSurfCnt[dpbBeforeUpdate.m_refMap[REF_ALT]] = 0;
-
-              // release reconstruct surfaces that didn't fit into updated dpb
+              // release reconstruct surfaces that aren't referenced anymore
               for (mfxU8 refIdx = 0; refIdx < REF_TOTAL; refIdx ++)
               {
-                  if (freeSurfCnt[dpbBeforeUpdate.m_refMap[refIdx]])
+                  if (curDpb[refIdx] && curDpb[refIdx]->refCount == 0)
                   {
-                      MFX_CHECK_STS(FreeSurface(dpbBeforeUpdate.m_refFrames[refIdx],m_pCore));
-                      freeSurfCnt[dpbBeforeUpdate.m_refMap[refIdx]] = 0; // reset counter to 0 to avoid second FreeSurface() call for same surface
+                      MFX_CHECK_STS(FreeSurface(curDpb[refIdx],m_pCore));
                   }
               }
-
               return MFX_ERR_NONE;
           }
 

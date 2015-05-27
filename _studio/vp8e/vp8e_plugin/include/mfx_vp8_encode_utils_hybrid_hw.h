@@ -63,7 +63,7 @@ namespace MFX_VP8ENC
               m_frameOrderOfPreviousFrame = 0;
           }
         virtual ~TaskHybridDDI() {}
-        virtual   mfxStatus SubmitTask (sFrameEx*  pRecFrame, sDpbVP8 &dpb, sFrameParams* pParams,  sFrameEx* pRawLocalFrame, 
+        virtual   mfxStatus SubmitTask (sFrameEx*  pRecFrame, std::vector<sFrameEx*> &dpb, sFrameParams* pParams,  sFrameEx* pRawLocalFrame,
                                         sDDIFrames *pDDIFrames)
         {
             /*printf("TaskHybridDDI::SubmitTask\n");*/
@@ -305,7 +305,8 @@ namespace MFX_VP8ENC
                                                         &ddi_frames);
             MFX_CHECK_STS(sts);
 
-            UpdateDpb(pParams, pRecFrame);
+            sts = UpdateDpb(pParams, pRecFrame);
+            MFX_CHECK_STS(sts);
 
             return sts;
         }
