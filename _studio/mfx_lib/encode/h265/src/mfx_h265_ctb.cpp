@@ -2572,7 +2572,8 @@ bool H265CU<PixType>::JoinCU(Ipp32s absPartIdx, Ipp32s depth)
         for (Ipp32s i = 1; i < 4 && skipped; i++, absPartIdxSplit += numParts) {
             skipped &= (m_data[absPartIdxSplit].depth==depth+1 && m_data[absPartIdxSplit].predMode==MODE_INTER && m_data[absPartIdxSplit].flags.skippedFlag)?1:0;
             if(!skipped                                        ||
-                refIdx[listIdx] != m_data[absPartIdxSplit].refIdx[listIdx] ||
+                refIdx[0] != m_data[absPartIdxSplit].refIdx[0] ||
+                refIdx[1] != m_data[absPartIdxSplit].refIdx[1] ||
                 mv[listIdx]     != m_data[absPartIdxSplit].mv[listIdx]     ) {
                     skipped=0;
             }
@@ -2583,6 +2584,7 @@ bool H265CU<PixType>::JoinCU(Ipp32s absPartIdx, Ipp32s depth)
         Ipp32s cuWidthInMinTU = (cuWidth >> m_par->QuadtreeTULog2MinSize);
         GetMergeCand(absPartIdx, PART_SIZE_2Nx2N, 0, cuWidthInMinTU, m_mergeCand);
         Ipp32s numRefLists = 1 + (m_cslice->slice_type == B_SLICE);
+        
         // setup merge flag and index
         for (Ipp8u i = 0; i < m_mergeCand[0].numCand; i++) {
             if (IsCandFound(refIdx, mv, m_mergeCand, i, numRefLists)) {
@@ -9510,8 +9512,7 @@ void H265CU<PixType>::EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s
     }
 #else
     if (cost && (m_par->AnalyseFlags & HEVC_COST_CHROMA)) {
-        *cost += TuSseNv12(pSrc + 0, m_pitchSrcChroma, pRec + 0, pitchRec, width, (m_par->bitDepthChromaShift << 1));
-        *cost += TuSseNv12(pSrc + 1, m_pitchSrcChroma, pRec + 1, pitchRec, width, (m_par->bitDepthChromaShift << 1));
+         *cost += TuSse(pSrc, m_pitchSrcChroma, pRec, pitchRec, width<<1, width, (m_par->bitDepthChromaShift << 1));
     }
     //kolya //WEIGHTED_CHROMA_DISTORTION (JCTVC-F386)
     if (m_par->IntraChromaRDO && cost)
