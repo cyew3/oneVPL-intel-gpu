@@ -115,7 +115,7 @@ namespace MFX_VP8ENC
 
     inline mfxU32 CalcNumTasks(mfxVideoParam const & video)
     {
-        return video.AsyncDepth + 1;
+        return video.AsyncDepth;
     }
 
     inline mfxU32 CalcNumSurfRawLocal(mfxVideoParam const & video, bool bHWImpl, bool bHWInput,bool bRawReference = false)
