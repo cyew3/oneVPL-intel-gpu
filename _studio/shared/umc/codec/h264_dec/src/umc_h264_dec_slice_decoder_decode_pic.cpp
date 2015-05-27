@@ -1064,6 +1064,9 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
                 Ipp32u fieldIdx = m_pCurrentFrame->GetNumberByParity(m_SliceHeader.bottom_field_flag);
                 Ipp32s curPOC = m_pCurrentFrame->PicOrderCnt(fieldIdx);
 
+                if (!m_pSeqParamSetMvcEx)
+                    continue;
+
                 // set current VO index
                 for (viewIdx = 0; viewIdx <= m_pSeqParamSetMvcEx->num_views_minus1; viewIdx += 1)
                 {
