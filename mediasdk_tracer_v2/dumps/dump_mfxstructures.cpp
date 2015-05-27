@@ -1079,3 +1079,47 @@ std::string DumpContext::dump(const std::string structName, const mfxExtPredWeig
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtPredWeightTable.reserved) + "\n";
     return str;
 }
+
+std::string DumpContext::dump(const std::string structName, const mfxExtVPPFrameRateConversion &ExtVPPFrameRateConversion)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtVPPFrameRateConversion.Header) + "\n";
+    str += structName + ".Algorithm=" + ToString(ExtVPPFrameRateConversion.Algorithm) + "\n";
+    str += structName + ".reserved=" + ToString(ExtVPPFrameRateConversion.reserved) + "\n";
+    str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(ExtVPPFrameRateConversion.reserved2) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtVPPImageStab &ExtVPPImageStab)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtVPPImageStab.Header) + "\n";
+    str += structName + ".Mode=" + ToString(ExtVPPImageStab.Mode) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtVPPImageStab.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtEncoderROI &ExtEncoderROI)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtEncoderROI.Header) + "\n";
+    str += structName + ".Mode=" + ToString(ExtEncoderROI.NumROI) + "\n";
+    str += structName + ".Mode=" + ToString(ExtEncoderROI.ROI) + "\n";
+    str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtEncoderROI.reserved1) + "\n";
+    return str;
+}
+
+//mfxprivate
+std::string DumpContext::dump(const std::string structName, const mfxExtAVCEncodeCtrl &ExtAVCEncodeCtrl)
+{
+    std::string str;
+    str += dump(structName + ".Header=", ExtAVCEncodeCtrl.Header) + "\n";
+    str += structName + ".deprecated[]=" + DUMP_RESERVED_ARRAY(ExtAVCEncodeCtrl.deprecated) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtAVCEncodeCtrl.reserved) + "\n";
+    str += structName + ".SkipCheck=" + ToString(ExtAVCEncodeCtrl.SkipCheck) + "\n";
+    str += structName + ".SkipThreshold[]=" + DUMP_RESERVED_ARRAY(ExtAVCEncodeCtrl.SkipThreshold) + "\n";
+    str += structName + ".LambdaValueFlag=" + ToString(ExtAVCEncodeCtrl.LambdaValueFlag) + "\n";
+    str += structName + ".LambdaValue[]=" + DUMP_RESERVED_ARRAY(ExtAVCEncodeCtrl.LambdaValue) + "\n";
+    str += structName + ".deprecated1[]=" + DUMP_RESERVED_ARRAY(ExtAVCEncodeCtrl.deprecated1) + "\n";
+    return str;
+}

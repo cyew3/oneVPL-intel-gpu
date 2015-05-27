@@ -46,6 +46,7 @@ File Name: dump.h
 #include "mfxcamera.h"
 #include "mfxjpeg.h"
 #include "mfxmvc.h"
+#include "mfxprivate.h"
 
 
 std::string pVoidToHexString(void* x);
@@ -299,6 +300,18 @@ public:
                 case  MFX_EXTBUFF_MOVING_RECTANGLES:
                     str += dump(name, *((mfxExtMoveRect*)_struct.ExtParam[i])) + "\n";
                     break;
+                case  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION:
+                    str += dump(name, *((mfxExtVPPFrameRateConversion*)_struct.ExtParam[i])) + "\n";
+                    break;
+                case  MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
+                    str += dump(name, *((mfxExtVPPImageStab*)_struct.ExtParam[i])) + "\n";
+                    break;
+                case  MFX_EXTBUFF_ENCODER_ROI:
+                    str += dump(name, *((mfxExtEncoderROI*)_struct.ExtParam[i])) + "\n";
+                    break;
+                case  MFX_EXTBUFF_AVC_ENCODE_CTRL:
+                    str += dump(name, *((mfxExtAVCEncodeCtrl*)_struct.ExtParam[i])) + "\n";
+                    break;
                  default:
                     str += dump(name, *(_struct.ExtParam[i])) + "\n";
                     break;
@@ -381,6 +394,9 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtEncoderCapability);
     DEFINE_DUMP_FUNCTION(mfxExtDirtyRect);
     DEFINE_DUMP_FUNCTION(mfxExtMoveRect);
+    DEFINE_DUMP_FUNCTION(mfxExtVPPFrameRateConversion);
+    DEFINE_DUMP_FUNCTION(mfxExtVPPImageStab);
+    DEFINE_DUMP_FUNCTION(mfxExtEncoderROI);
 
     //mfxsession
     DEFINE_DUMP_FUNCTION(mfxSession);
@@ -448,6 +464,9 @@ public:
     DEFINE_DUMP_FUNCTION(mfxMVCOperationPoint);
     DEFINE_DUMP_FUNCTION(mfxExtMVCSeqDesc);
     DEFINE_DUMP_FUNCTION(mfxExtMVCTargetViews);
+
+    //mfxprivate
+    DEFINE_DUMP_FUNCTION(mfxExtAVCEncodeCtrl);
 
 };
 #endif //DUMP_H_
