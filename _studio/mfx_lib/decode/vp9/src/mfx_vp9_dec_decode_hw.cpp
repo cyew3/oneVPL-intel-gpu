@@ -672,8 +672,14 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     }
 
     // possible system memory case. when external surface is enough, but internal is not.
-    if (!m_adaptiveMode && (m_vPar.mfx.FrameInfo.Width > m_vInitPar.mfx.FrameInfo.Width || m_vPar.mfx.FrameInfo.Height > m_vInitPar.mfx.FrameInfo.Height))
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    if (!m_adaptiveMode)
+    {
+        if (m_vPar.mfx.FrameInfo.Width > m_vInitPar.mfx.FrameInfo.Width || m_vPar.mfx.FrameInfo.Height > m_vInitPar.mfx.FrameInfo.Height)
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+        if (KEY_FRAME == m_frameInfo.frameType && (m_vPar.mfx.FrameInfo.Width != m_vInitPar.mfx.FrameInfo.Width || m_vPar.mfx.FrameInfo.Height != m_vInitPar.mfx.FrameInfo.Height))
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    }
 
     sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, false);
     MFX_CHECK_STS(sts);
