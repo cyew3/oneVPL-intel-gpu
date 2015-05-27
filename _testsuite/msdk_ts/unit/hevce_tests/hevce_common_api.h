@@ -29,8 +29,6 @@ namespace ApiTestCommon {
         return memcmp(&buffer1, &buffer2, sizeof(T));
     }
 
-    template <class T> void ExpectEqual(const T &expected, const T &actual);
-
     struct ParamSet {
         ParamSet();
         mfxExtOpaqueSurfaceAlloc extOpaqueSurfaceAlloc;
@@ -43,6 +41,15 @@ namespace ApiTestCommon {
         mfxExtBuffer            *extBuffers[10];
         mfxVideoParam            videoParam;
     };
+
+    template <class T> void ExpectEqual(const T &expected, const T &actual);
+    template <> void ExpectEqual<mfxInfoMFX>(const mfxInfoMFX &expected, const mfxInfoMFX &actual);
+    template <> void ExpectEqual<mfxExtHEVCRegion>(const mfxExtHEVCRegion &expected, const mfxExtHEVCRegion &actual);
+    template <> void ExpectEqual<mfxExtHEVCTiles>(const mfxExtHEVCTiles &expected, const mfxExtHEVCTiles &actual);
+    template <> void ExpectEqual<mfxExtOpaqueSurfaceAlloc>(const mfxExtOpaqueSurfaceAlloc &expected, const mfxExtOpaqueSurfaceAlloc &actual);
+    template <> void ExpectEqual<mfxExtDumpFiles>(const mfxExtDumpFiles &expected, const mfxExtDumpFiles &actual);
+    template <> void ExpectEqual<mfxExtCodingOptionHEVC>(const mfxExtCodingOptionHEVC &expected, const mfxExtCodingOptionHEVC &actual);
+    template <> void ExpectEqual<ParamSet>(const ParamSet &expected, const ParamSet &actual);
 
     void SetupParamSet(ParamSet &paramset);
     void CopyParamSet(ParamSet &dst, const ParamSet &src);
