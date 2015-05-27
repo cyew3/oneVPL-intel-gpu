@@ -45,8 +45,7 @@ int TestSuite::RunTest(unsigned int id)
 
     bool hw_surf = m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
-    UseDefaultAllocator(!hw_surf);
-    SetFrameAllocator(m_session, GetAllocator());
+    SetFrameAllocator(m_session, m_pVAHandle);
 
     Init(m_session, m_pPar);
 

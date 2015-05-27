@@ -170,6 +170,10 @@ int TestSuite::RunTest(unsigned int id)
 
     MFXInit();
 
+    bool hw_surf = m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY;
+    if (hw_surf)
+        SetFrameAllocator(m_session, m_pVAHandle);
+
     m_pPar->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     m_pPar->AsyncDepth = 1;
     // set up parameters for case
@@ -192,11 +196,28 @@ int TestSuite::RunTest(unsigned int id)
     mfxExtFeiEncFrameCtrl in_efc = {};
     if (tc.mode & IN_FRM_CTRL)
     {
-        in_efc.LenSP = 4;
-        in_efc.MaxLenSP = 8;
-
         in_efc.Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
         in_efc.Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
+        in_efc.MaxLenSP = 57;
+        in_efc.LenSP = 57;
+        in_efc.SubMBPartMask = 0x77;
+        in_efc.MultiPredL0 = 0;
+        in_efc.MultiPredL1 = 0;
+        in_efc.SubPelMode = 3;
+        in_efc.InterSAD = 2;
+        in_efc.IntraSAD = 2;
+        in_efc.DistortionType = 2;
+        in_efc.RepartitionCheckEnable = 0;
+        in_efc.AdaptiveSearch = 1;
+        in_efc.MVPredictor = 0;
+        in_efc.NumMVPredictors = 1; //always 4 predictors
+        in_efc.PerMBQp = 0;
+        in_efc.PerMBInput = 0;
+        in_efc.MBSizeCtrl = 0;
+        in_efc.RefHeight = 40;
+        in_efc.RefWidth = 48;
+        in_efc.SearchWindow = 1;
+
         SETPARS(&in_efc, EXT_FRM_CTRL);
         in_buffs.push_back((mfxExtBuffer*)&in_efc);
     }
@@ -208,6 +229,8 @@ int TestSuite::RunTest(unsigned int id)
         in_mvp.Header.BufferSz = sizeof(mfxExtFeiEncMVPredictors);
         in_mvp.MB = new mfxExtFeiEncMVPredictors::mfxMB[num_mb];
         in_buffs.push_back((mfxExtBuffer*)&in_mvp);
+        in_efc.MVPredictor = 1;
+        in_efc.NumMVPredictors = 1; //always 4 predictors
     }
 
     mfxExtFeiEncMBCtrl in_mbc = {};
@@ -217,6 +240,7 @@ int TestSuite::RunTest(unsigned int id)
         in_mbc.Header.BufferSz = sizeof(mfxExtFeiEncMBCtrl);
         in_mbc.MB = new mfxExtFeiEncMBCtrl::mfxMB[num_mb];
         in_buffs.push_back((mfxExtBuffer*)&in_mbc);
+        in_efc.PerMBInput = 1;
     }
     if (!in_buffs.empty())
     {
@@ -233,34 +257,59 @@ int TestSuite::RunTest(unsigned int id)
         out_mv.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
         out_mv.Header.BufferSz = sizeof(mfxExtFeiEncMV);
         out_mv.MB = new mfxExtFeiEncMV::mfxMB[num_mb];
+        out_mv.NumMBAlloc = num_mb;
         memset(out_mv.MB, 0, sizeof(mfxExtFeiEncMV::mfxMB));
         out_buffs.push_back((mfxExtBuffer*)&out_mv);
     }
+    mfxExtFeiEncMV orig_out_mv = {};
+    if (tc.mode & OUT_MV)
+    {
+        orig_out_mv.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
+        orig_out_mv.Header.BufferSz = sizeof(mfxExtFeiEncMV);
+        orig_out_mv.MB = new mfxExtFeiEncMV::mfxMB[num_mb];
+        orig_out_mv.NumMBAlloc = num_mb;
+        memcpy(orig_out_mv.MB, out_mv.MB,  out_mv.NumMBAlloc* sizeof(mfxExtFeiEncMV::mfxMB));
+    }
+
     mfxExtFeiEncMBStat out_mbstat = {};
     if (tc.mode & OUT_MB_STAT)
     {
         out_mbstat.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
         out_mbstat.Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
-        out_mbstat.MB = new mfxExtFeiEncMBStat::mfxMB[num_mb * (16*16 + 16 + 16)];
-        memset(out_mbstat.MB, 0, sizeof(mfxExtFeiEncMBStat::mfxMB) * (16*16 + 16 + 16));
+        out_mbstat.MB = new mfxExtFeiEncMBStat::mfxMB[num_mb];
+        out_mbstat.NumMBAlloc = num_mb;
+        memset(out_mbstat.MB, 0, sizeof(mfxExtFeiEncMBStat::mfxMB));
         out_buffs.push_back((mfxExtBuffer*)&out_mbstat);
     }
+    mfxExtFeiEncMBStat orig_out_mbstat = {};
+    if (tc.mode & OUT_MB_STAT)
+    {
+        orig_out_mbstat.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
+        orig_out_mbstat.Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
+        orig_out_mbstat.MB = new mfxExtFeiEncMBStat::mfxMB[num_mb];
+        orig_out_mbstat.NumMBAlloc = num_mb;
+        memcpy(orig_out_mbstat.MB, out_mbstat.MB, out_mbstat.NumMBAlloc * sizeof(mfxExtFeiEncMBStat::mfxMB));
+    }
+
     mfxExtFeiPakMBCtrl out_pakmb = {};
     if (tc.mode & OUT_MB_CTRL)
     {
         out_pakmb.Header.BufferId = MFX_EXTBUFF_FEI_PAK_CTRL;
         out_pakmb.Header.BufferSz = sizeof(mfxExtFeiPakMBCtrl);
         out_pakmb.MB = new mfxFeiPakMBCtrl[num_mb];
+        out_pakmb.NumMBAlloc = num_mb;
         memset(out_pakmb.MB, 0, sizeof(mfxFeiPakMBCtrl));
         out_buffs.push_back((mfxExtBuffer*)&out_pakmb);
     }
-
-    mfxExtFeiEncMV orig_out_mv = {};
-    memcpy(&orig_out_mv, &out_mv, sizeof(mfxExtFeiEncMV));
-    mfxExtFeiEncMBStat orig_out_mbstat = {};
-    memcpy(&orig_out_mbstat, &out_mbstat, sizeof(mfxExtFeiEncMBStat));
     mfxExtFeiPakMBCtrl orig_out_pakmb = {};
-    memcpy(&orig_out_pakmb, &out_pakmb, sizeof(mfxExtFeiPakMBCtrl));
+    if (tc.mode & OUT_MB_CTRL)
+    {
+        orig_out_pakmb.Header.BufferId = MFX_EXTBUFF_FEI_PAK_CTRL;
+        orig_out_pakmb.Header.BufferSz = sizeof(mfxExtFeiPakMBCtrl);
+        orig_out_pakmb.MB = new mfxFeiPakMBCtrl[num_mb];
+        orig_out_pakmb.NumMBAlloc = num_mb;
+        memcpy(orig_out_pakmb.MB, orig_out_pakmb.MB, out_pakmb.NumMBAlloc * sizeof(mfxFeiPakMBCtrl));
+    }
 
     if (!out_buffs.empty())
     {
@@ -273,18 +322,63 @@ int TestSuite::RunTest(unsigned int id)
 
     if (tc.mode & OUT_MV)
     {
-        EXPECT_NE(0, memcmp(&orig_out_mv, &out_mv, sizeof(mfxExtFeiEncMV)))
+        EXPECT_NE(0, memcmp(&orig_out_mv.MB, &out_mv.MB, out_mv.NumMBAlloc *sizeof(mfxExtFeiEncMV)))
                     << "ERROR: mfxExtFeiEncMV output should be changed";
     }
     if (tc.mode & OUT_MB_STAT)
     {
-        EXPECT_NE(0, memcmp(&orig_out_mbstat, &out_mbstat, sizeof(mfxExtFeiEncMBStat)))
+        EXPECT_NE(0, memcmp(&orig_out_mbstat.MB, &out_mbstat.MB, out_mbstat.NumMBAlloc * sizeof(mfxExtFeiEncMBStat)))
                     << "ERROR: mfxExtFeiEncMBStat output should be changed";
     }
     if (tc.mode & OUT_MB_CTRL)
     {
-        EXPECT_NE(0, memcmp(&orig_out_pakmb, &out_pakmb, sizeof(mfxExtFeiPakMBCtrl)))
+        EXPECT_NE(0, memcmp(&orig_out_pakmb.MB, &out_pakmb.MB, out_pakmb.NumMBAlloc * sizeof(mfxExtFeiPakMBCtrl)))
                     << "ERROR: mfxExtFeiEncMBStat output should be changed";
+    }
+
+    if (NULL != out_mv.MB)
+    {
+        delete out_mv.MB;
+        out_mv.MB = NULL;
+    }
+    if (NULL != orig_out_mv.MB)
+    {
+        delete orig_out_mv.MB;
+        orig_out_mv.MB = NULL;
+    }
+
+    if (NULL != out_mbstat.MB)
+    {
+        delete out_mbstat.MB;
+        out_mbstat.MB = NULL;
+    }
+    if (NULL != orig_out_mbstat.MB)
+    {
+        delete orig_out_mbstat.MB;
+        orig_out_mbstat.MB = NULL;
+    }
+
+    if (NULL != out_pakmb.MB)
+    {
+        delete out_pakmb.MB;
+        out_pakmb.MB = NULL;
+    }
+    if (NULL != orig_out_pakmb.MB)
+    {
+        delete orig_out_pakmb.MB;
+        orig_out_pakmb.MB = NULL;
+    }
+
+    if (NULL != in_mvp.MB)
+    {
+        delete in_mvp.MB;
+        in_mvp.MB = NULL;
+    }
+
+    if (NULL != in_mbc.MB)
+    {
+        delete in_mbc.MB;
+        in_mbc.MB = NULL;
     }
 
     TS_END;

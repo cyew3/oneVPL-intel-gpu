@@ -86,7 +86,8 @@ int TestSuite::RunTest(unsigned int id)
     SETPARS(m_pPar, MFXPAR);
 
     bool hw_surf = m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY;
-    if (hw_surf) SetFrameAllocator(m_session, GetAllocator());
+    if (hw_surf)
+        SetFrameAllocator(m_session, m_pVAHandle);
 
     if (tc.mode == NULL_PARAMS)
     {
