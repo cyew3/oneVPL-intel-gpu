@@ -1538,7 +1538,7 @@ mfxStatus  VideoVPPHW::Init(
         if (m_config.m_surfCount[VPP_OUT] != m_internalVidSurf[VPP_OUT].NumFrameActual)
         {
             sts = m_internalVidSurf[VPP_OUT].Alloc(m_pCore, request, par->vpp.Out.FourCC != MFX_FOURCC_YV12);
-            MFX_CHECK_STS(sts);
+            MFX_CHECK(MFX_ERR_NONE == sts, MFX_WRN_PARTIAL_ACCELERATION);
         }
 
         m_config.m_IOPattern |= MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
@@ -1557,7 +1557,7 @@ mfxStatus  VideoVPPHW::Init(
         if (m_config.m_surfCount[VPP_IN] != m_internalVidSurf[VPP_IN].NumFrameActual)
         {
             sts = m_internalVidSurf[VPP_IN].Alloc(m_pCore, request, par->vpp.In.FourCC != MFX_FOURCC_YV12);
-            MFX_CHECK_STS(sts);
+            MFX_CHECK(MFX_ERR_NONE == sts, MFX_WRN_PARTIAL_ACCELERATION);
         }
 
         m_config.m_IOPattern |= MFX_IOPATTERN_IN_SYSTEM_MEMORY;
