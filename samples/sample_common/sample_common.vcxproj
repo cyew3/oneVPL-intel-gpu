@@ -161,6 +161,12 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\abstract_splitter.h" />
+    <ClInclude Include="include\avc_bitstream.h" />
+    <ClInclude Include="include\avc_headers.h" />
+    <ClInclude Include="include\avc_nal_spl.h" />
+    <ClInclude Include="include\avc_spl.h" />
+    <ClInclude Include="include\avc_structures.h" />
     <ClInclude Include="include\base_allocator.h" />
     <ClInclude Include="include\d3d11_allocator.h" />
     <ClInclude Include="include\d3d11_device.h" />
@@ -186,6 +192,9 @@
     <ClInclude Include="include\vm\time_defs.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\avc_bitstream.cpp" />
+    <ClCompile Include="src\avc_nal_spl.cpp" />
+    <ClCompile Include="src\avc_spl.cpp" />
     <ClCompile Include="src\base_allocator.cpp" />
     <ClCompile Include="src\d3d11_allocator.cpp" />
     <ClCompile Include="src\d3d11_device.cpp" />

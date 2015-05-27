@@ -28,6 +28,12 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 #include "sample_types.h"
 
+#include "abstract_splitter.h"
+#include "avc_bitstream.h"
+#include "avc_spl.h"
+#include "avc_headers.h"
+#include "avc_nal_spl.h"
+
 // A macro to disallow the copy constructor and operator= functions
 // This should be used in the private: declarations for a class
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
@@ -69,42 +75,6 @@ enum {
 bool IsDecodeCodecSupported(mfxU32 codecFormat);
 bool IsEncodeCodecSupported(mfxU32 codecFormat);
 bool IsPluginCodecSupported(mfxU32 codecFormat);
-
-// Exp-Golomb bitstream reader
-class BitstreamReader
-{
-public:
-    // Default constructor
-    BitstreamReader(void);
-    BitstreamReader(mfxU8 *pStream, mfxU32 len);
-    BitstreamReader(mfxBitstream* bits);
-    // Destructor
-    virtual ~BitstreamReader(void) {}
-    // Initialize bit stream reader
-    void Init(mfxU8 *pStream, mfxU32 len = 0xffffffff);
-    // Copy next bit
-    mfxU32 CopyBit(void);
-    // Get bit (move pointer)
-    mfxU32 GetBit(void);
-    // Get bits (move pointer)
-    mfxU32 GetBits(mfxI32 iNum);
-    // Get unsigned integer Exp-Golomb-coded element (move pointer)
-    mfxU32 GetUE(void);
-
-
-protected:
-    // Refresh pre-read bits
-    virtual void Refresh(void);
-
-protected:
-    // pointer to source stream
-    mfxU8 *m_pSource;
-    mfxU8 *m_pEnd;
-    // pre-read stream bits
-    mfxU32 m_nBits;
-    // amount of pre-read bits
-    mfxI32 m_iReadyBits;
-};
 
 class CSmplYUVReader
 {
@@ -180,21 +150,32 @@ protected:
     bool      m_bInited;
 };
 
-//provides output bistream with at least 1 slice, reports about error
 class CH264FrameReader : public CSmplBitstreamReader
 {
 public:
     CH264FrameReader();
+    virtual ~CH264FrameReader();
+
+    /** Free resources.*/
+    virtual void      Close();
+    virtual mfxStatus Init(const msdk_char *strFileName);
     virtual mfxStatus ReadNextFrame(mfxBitstream *pBS);
-protected:
-    //1 - means slice start indicator present
-    //2 - means slice start and backend startcode present
-    int FindFrame(mfxBitstream *pBS, int & pos2ndnalu);
-    mfxU8* Find001(mfxU8* beg, mfxU8* end);
 
+private:
+    mfxBitstream *m_processedBS;
+    // input bit stream
+    std::auto_ptr<mfxBitstream>  m_originalBS;
 
-    mfxBitstream m_lastBs;
-    std::vector<mfxU8> m_bsBuffer;
+    mfxStatus PrepareNextFrame(mfxBitstream *in, mfxBitstream **out);
+
+    // is stream ended
+    bool m_isEndOfStream;
+
+    std::auto_ptr<AbstractSplitter> m_pNALSplitter;
+    FrameSplitterInfo *m_frame;
+    mfxU8 *m_plainBuffer;
+    mfxU32 m_plainBufferSize;
+    mfxBitstream m_outBS;
 };
 
 //provides output bistream with at least 1 frame, reports about error
