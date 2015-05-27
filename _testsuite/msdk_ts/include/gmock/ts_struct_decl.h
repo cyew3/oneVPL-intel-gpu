@@ -100,8 +100,9 @@ STRUCT(mfxFrameSurface1,
 )
 
 STRUCT(mfxInfoMFX,
-    FIELD_S(mfxFrameInfo, FrameInfo)
+    FIELD_T(mfxU16, LowPower          )
     FIELD_T(mfxU16, BRCParamMultiplier)
+    FIELD_S(mfxFrameInfo, FrameInfo   )
     FIELD_T(mfx4CC, CodecId           )
     FIELD_T(mfxU16, CodecProfile      )
     FIELD_T(mfxU16, CodecLevel        )

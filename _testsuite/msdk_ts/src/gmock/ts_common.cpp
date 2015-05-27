@@ -9,6 +9,7 @@ mfxVersion   g_tsVersion  = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
 mfxU32       g_tsTrace    = 1;
 tsPlugin     g_tsPlugin;
 tsStreamPool g_tsStreamPool;
+tsConfig     g_tsConfig = {0};
 
 bool operator == (const mfxFrameInfo& v1, const mfxFrameInfo& v2)
 {
@@ -153,6 +154,11 @@ void MFXVideoTest::SetUp()
     std::string platform = ENV("TS_PLATFORM", "auto");
     std::string trace    = ENV("TS_TRACE", "1");
     std::string plugins  = ENV("TS_PLUGINS", "");
+    std::string lowpower = ENV("TS_LOWPOWER", "");
+
+    g_tsConfig.lowpower = MFX_CODINGOPTION_UNKNOWN;
+    if      (lowpower ==  "ON") { g_tsConfig.lowpower =  MFX_CODINGOPTION_ON; }
+    else if (lowpower == "OFF") { g_tsConfig.lowpower = MFX_CODINGOPTION_OFF; }
 
     if(platform.size())
     {

@@ -138,8 +138,9 @@ tsTrace& tsTrace::operator<<(const mfxVideoParam& p)
 tsTrace& tsTrace::operator<<(const mfxInfoMFX& p)
 {
     STRUCT_BODY(mfxInfoMFX,
+        FIELD_T(mfxU16, LowPower          )
         FIELD_T(mfxU16, BRCParamMultiplier)
-        FIELD_S(mfxFrameInfo, FrameInfo)
+        FIELD_S(mfxFrameInfo, FrameInfo   )
         FIELD_T(mfx4CC, CodecId           )
         FIELD_T(mfxU16, CodecProfile      )
         FIELD_T(mfxU16, CodecLevel        )

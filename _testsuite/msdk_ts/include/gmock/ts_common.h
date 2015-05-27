@@ -13,6 +13,10 @@ typedef enum {
     , tsFAIL
 } tsRes;
 
+typedef struct {
+    mfxU32 lowpower;
+} tsConfig;
+
 class MFXVideoTest : public ::testing::TestWithParam<unsigned int> 
 { 
     void SetUp();
@@ -45,6 +49,7 @@ extern mfxU32       g_tsTrace;
 extern tsTrace      g_tsLog;
 extern tsPlugin     g_tsPlugin;
 extern tsStreamPool g_tsStreamPool;
+extern tsConfig     g_tsConfig;
 
 
 #define _TS_REG_TEST_SUITE(name, routine, n_cases, q_mode) \

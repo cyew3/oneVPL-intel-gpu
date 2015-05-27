@@ -20,6 +20,11 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     , m_uid(0)
 {
     m_par.mfx.CodecId = CodecId;
+    if (g_tsConfig.lowpower != MFX_CODINGOPTION_UNKNOWN)
+    {
+        m_par.mfx.LowPower = g_tsConfig.lowpower;
+    }
+
     if(m_default)
     {
         //TODO: add codec specific
@@ -61,6 +66,11 @@ tsVideoEncoder::tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId, bool useDefa
     , m_uid(0)
 {
     m_par.mfx.CodecId = CodecId;
+    if (g_tsConfig.lowpower != MFX_CODINGOPTION_UNKNOWN)
+    {
+        m_par.mfx.LowPower = g_tsConfig.lowpower;
+    }
+
     if(m_default)
     {
         m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
@@ -134,6 +144,11 @@ mfxStatus tsVideoEncoder::Init(mfxSession session, mfxVideoParam *par)
 
     if (par)
     {
+        if (g_tsConfig.lowpower != MFX_CODINGOPTION_UNKNOWN)
+        {
+            EXPECT_EQ(g_tsConfig.lowpower, par->mfx.LowPower)
+                << "ERROR: external configuration of LowPower doesn't equal to real value\n";
+        }
         EXPECT_EQ(0, memcmp(&orig_par, m_pPar, sizeof(mfxVideoParam)))
             << "ERROR: Input parameters must not be changed in Init()";
     }
