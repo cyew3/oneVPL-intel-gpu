@@ -243,7 +243,9 @@ mfxStatus MFX_VP8E_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest 
     MFX_CHECK(MFX_VP8ENC::CheckPattern(par->IOPattern), MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK(MFX_VP8ENC::CheckFrameSize(par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height),MFX_ERR_INVALID_VIDEO_PARAM);
 
-    in->Type = mfxU16((par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)? MFX_VP8ENC::MFX_MEMTYPE_SYS_EXT:MFX_VP8ENC::MFX_MEMTYPE_D3D_EXT) ;
+    in->Type = mfxU16((par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)? MFX_VP8ENC::MFX_MEMTYPE_SYS_EXT:
+        (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)?(MFX_VP8ENC::MFX_MEMTYPE_D3D_EXT | MFX_MEMTYPE_OPAQUE_FRAME):
+            MFX_VP8ENC::MFX_MEMTYPE_D3D_EXT);
 
     in->NumFrameMin =  (par->AsyncDepth ? par->AsyncDepth: 1)  + 1; // default AsyncDepth is 1
     in->NumFrameSuggested = in->NumFrameMin;
@@ -287,6 +289,13 @@ mfxStatus MFX_VP8E_Plugin::Init(mfxVideoParam *par)
 
     sts = m_ddi->CreateAccelerationService(m_video);
     MFX_CHECK_STS(sts);
+
+    if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+    {
+        mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(m_video);
+        sts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, extOpaq->In.NumSurface, extOpaq->In.Type, extOpaq->In.Surfaces);
+        MFX_CHECK(sts>=0,sts);
+    }
 
     mfxFrameAllocRequest reqMB     = {};
     mfxFrameAllocRequest reqDist   = {};
@@ -382,6 +391,13 @@ mfxStatus MFX_VP8E_Plugin::Close()
         delete m_pTaskManager;
         m_pTaskManager = 0;
     }
+
+    if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+    {
+        mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(m_video);
+        m_pmfxCore->UnmapOpaqueSurface(m_pmfxCore->pthis, extOpaq->In.NumSurface, extOpaq->In.Type, extOpaq->In.Surfaces);
+    }
+
     return MFX_ERR_NONE;
 }
 

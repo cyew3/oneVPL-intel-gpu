@@ -373,8 +373,17 @@ namespace MFX_VP8ENC
 
     mfxStatus Task::GetOriginalSurface(mfxFrameSurface1 *& pSurface, bool &bExternal)
     {
-        pSurface = m_pRawFrame->pSurface;
-        bExternal = true;        
+        if (m_bOpaqInput)
+        {
+            mfxStatus sts = m_pCore->GetRealSurface(m_pCore->pthis, m_pRawFrame->pSurface, &pSurface);
+            MFX_CHECK_STS(sts);
+            bExternal = false;
+        }
+        else
+        {
+            pSurface = m_pRawFrame->pSurface;
+            bExternal = true;
+        }
         return MFX_ERR_NONE;
     }
     mfxStatus Task::GetInputSurface(mfxFrameSurface1 *& pSurface, bool &bExternal)
@@ -386,7 +395,7 @@ namespace MFX_VP8ENC
         }
         else
         {
-             MFX_CHECK_STS(GetOriginalSurface(pSurface, bExternal)) ;      
+            MFX_CHECK_STS(GetOriginalSurface(pSurface, bExternal));
         }
         return MFX_ERR_NONE;
     }
