@@ -478,14 +478,11 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     }
     // default implementation
     InputParams.libType = MFX_IMPL_HARDWARE_ANY;
-    InputParams.bUseOpaqueMemory = true;
-    InputParams.eModeExt = Native;
 
     for (i = 0; i < argc; i++)
     {
         // process multi-character options
-        if ( (0 == msdk_strncmp(MSDK_STRING("-i::"), argv[i], msdk_strlen(MSDK_STRING("-i::")))) &&
-             (0 != msdk_strncmp(argv[i]+4, MSDK_STRING("source"), msdk_strlen(MSDK_STRING("source")))) )
+        if ( (0 == msdk_strncmp(MSDK_STRING("-i::"), argv[i], msdk_strlen(MSDK_STRING("-i::")))) && (0 != msdk_strncmp(argv[i]+4, MSDK_STRING("source"), msdk_strlen(MSDK_STRING("source")))) )
         {
             sts = StrFormatToCodecFormatFourCC(argv[i]+4, InputParams.DecodeId);
             if (sts != MFX_ERR_NONE)
@@ -516,8 +513,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 InputParams.bIsMVC = true;
             }
         }
-        else if ( (0 == msdk_strncmp(MSDK_STRING("-o::"), argv[i], msdk_strlen(MSDK_STRING("-o::")))) &&
-                  (0 != msdk_strncmp(argv[i]+4, MSDK_STRING("sink"), msdk_strlen(MSDK_STRING("sink")))) )
+        else if ( (0 == msdk_strncmp(MSDK_STRING("-o::"), argv[i], msdk_strlen(MSDK_STRING("-o::")))) && (0 != msdk_strncmp(argv[i]+4, MSDK_STRING("sink"), msdk_strlen(MSDK_STRING("sink")))) )
         {
             sts = StrFormatToCodecFormatFourCC(argv[i]+4, InputParams.EncodeId);
             if (sts != MFX_ERR_NONE)
@@ -692,87 +688,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
 
             InputParams.eMode = Sink;
-
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp")))
-        {
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            /* NB! numSurf4Comp should be equal to Number of decoding session */
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.numSurf4Comp))
-            {
-                PrintHelp(NULL, MSDK_STRING("-n \"%s\" is invalid"), argv[i]);
-                return MFX_ERR_UNSUPPORTED;
-            }
-            /* This is can init early */
-            if (InputParams.eModeExt == Native)
-                InputParams.eModeExt = VPP_COMP;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_only")))
-        {
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            /* NB! numSurf4Comp should be equal to Number of decoding session */
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.numSurf4Comp))
-            {
-                PrintHelp(NULL, MSDK_STRING("-n \"%s\" is invalid"), argv[i]);
-                return MFX_ERR_UNSUPPORTED;
-            }
-            /* This is can init early */
-            if (InputParams.eModeExt == Native)
-                InputParams.eModeExt = VPP_COMP_ONLY;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-ext_allocator")))
-        {
-            InputParams.bUseOpaqueMemory = false;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_dst_x")))
-        {
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nVppCompDstX))
-            {
-                PrintHelp(NULL, MSDK_STRING("-n \"%s\" is invalid"), argv[i]);
-                return MFX_ERR_UNSUPPORTED;
-            }
-            if (InputParams.eModeExt != VPP_COMP)
-                InputParams.eModeExt = VPP_COMP;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_dst_y")))
-        {
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nVppCompDstY))
-            {
-                PrintHelp(NULL, MSDK_STRING("-n \"%s\" is invalid"), argv[i]);
-                return MFX_ERR_UNSUPPORTED;
-            }
-            if (InputParams.eModeExt != VPP_COMP)
-                InputParams.eModeExt = VPP_COMP;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_dst_w")))
-        {
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nVppCompDstW))
-            {
-                PrintHelp(NULL, MSDK_STRING("-n \"%s\" is invalid"), argv[i]);
-                return MFX_ERR_UNSUPPORTED;
-            }
-            if (InputParams.eModeExt != VPP_COMP)
-                InputParams.eModeExt = VPP_COMP;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_dst_h")))
-        {
-            VAL_CHECK(i+1 == argc, i, argv[i]);
-            i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nVppCompDstH))
-            {
-                PrintHelp(NULL, MSDK_STRING("-n \"%s\" is invalid"), argv[i]);
-                return MFX_ERR_UNSUPPORTED;
-            }
-            if (InputParams.eModeExt != VPP_COMP)
-                InputParams.eModeExt = VPP_COMP;
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-n")))
         {
@@ -950,8 +865,7 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
         return MFX_ERR_UNSUPPORTED;
     };
 
-    if (0 == msdk_strlen(InputParams.strDstFile) &&
-       (InputParams.eMode == Source || InputParams.eMode == Native || InputParams.eMode == VPP_COMP))
+    if (0 == msdk_strlen(InputParams.strDstFile) && (InputParams.eMode == Source || InputParams.eMode == Native))
     {
         PrintHelp(NULL, MSDK_STRING("Destination file name not found"));
         return MFX_ERR_UNSUPPORTED;
@@ -959,8 +873,7 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
 
     if (MFX_CODEC_JPEG != InputParams.EncodeId && MFX_CODEC_MPEG2 != InputParams.EncodeId &&
         MFX_CODEC_AVC != InputParams.EncodeId && MFX_CODEC_HEVC != InputParams.EncodeId &&
-        MFX_CODEC_VP8 != InputParams.EncodeId && InputParams.eMode != Sink &&
-        InputParams.eModeExt != VPP_COMP)
+        MFX_CODEC_VP8 != InputParams.EncodeId && InputParams.eMode != Sink)
     {
         PrintHelp(NULL, MSDK_STRING("Unknown encoder\n"));
         return MFX_ERR_UNSUPPORTED;

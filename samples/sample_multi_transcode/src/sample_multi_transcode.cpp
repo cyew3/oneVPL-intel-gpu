@@ -93,19 +93,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     {
         m_pAllocParam.reset(new vaapiAllocatorParams);
         m_hwdev.reset(CreateVAAPIDevice());
-        /* The last param set in vector always describe VPP+ENCODE or Only VPP
-         * So, if we want to do rendering we need to do pass HWDev to CTranscodingPipeline */
-        if (m_InputParamsArray[m_InputParamsArray.size() -1].eModeExt == VPP_COMP_ONLY)
-        {
-            /* Rendering case */
-            sts = m_hwdev->Init(NULL, 1, MSDKAdapter::GetNumber() );
-            m_InputParamsArray[m_InputParamsArray.size() -1].m_hwdev = m_hwdev.get();
-        }
-        else /* NO RENDERING*/
-        {
-            sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber() );
-        }
-
+        sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber() );
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         sts = m_hwdev->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*)&hdl);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -122,27 +110,6 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     // each pair of source and sink has own safety buffer
     sts = CreateSafetyBuffers();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    /* Some trick ...
-     * as buffer from first decoder will be last in encode queue
-     * One more hint. Example you have 3 dec + 1 enc sessions
-     * (enc means vpp_comp call invoked. m_InputParamsArray.size() is 4.
-     * You don't need take vpp comp params from last one session as it is enc session.
-     * But you need process {2, 1, 0} sessions - totally 3.
-     * So, you need start from 2 and end at 0.
-     * */
-    mfxI32 jj = (mfxI32) m_InputParamsArray.size() -1 -1;
-    while (jj >= 0)
-    {
-        /* Save params for VPP composition */
-        sVppCompDstRect tempDstRect;
-        tempDstRect.DstX = m_InputParamsArray[jj].nVppCompDstX;
-        tempDstRect.DstY = m_InputParamsArray[jj].nVppCompDstY;
-        tempDstRect.DstW = m_InputParamsArray[jj].nVppCompDstW;
-        tempDstRect.DstH = m_InputParamsArray[jj].nVppCompDstH;
-        m_VppDstRects.push_back(tempDstRect);
-        jj--;
-    } ;
 
     // create sessions, allocators
     for (i = 0; i < m_InputParamsArray.size(); i++)
@@ -161,34 +128,15 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         pThreadPipeline->pBSProcessor = m_pExtBSProcArray.back();
         if (Sink == m_InputParamsArray[i].eMode)
         {
-            /* N_to_1 mode */
-            if ( (VPP_COMP == m_InputParamsArray[i].eModeExt) ||
-                 (VPP_COMP_ONLY == m_InputParamsArray[i].eModeExt) )
-            {
-                pBuffer = m_pBufferArray[BufCounter];
-                BufCounter++;
-            }
-            else /* 1_to_N mode*/
-            {
-                pBuffer = m_pBufferArray[m_pBufferArray.size()-1];
-            }
+            pBuffer = m_pBufferArray[m_pBufferArray.size()-1];
             pSinkPipeline = pThreadPipeline->pPipeline.get();
             sts = m_pExtBSProcArray.back()->Init(m_InputParamsArray[i].strSrcFile, NULL);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
         else if (Source == m_InputParamsArray[i].eMode)
         {
-            /* N_to_1 mode */
-            if ( (VPP_COMP == m_InputParamsArray[i].eModeExt) ||
-                 (VPP_COMP_ONLY == m_InputParamsArray[i].eModeExt) )
-            {
-                pBuffer = m_pBufferArray[m_pBufferArray.size()-1];
-            }
-            else /* 1_to_N mode*/
-            {
-                pBuffer = m_pBufferArray[BufCounter];
-                BufCounter++;
-            }
+            pBuffer = m_pBufferArray[BufCounter];
+            BufCounter++;
             sts = m_pExtBSProcArray.back()->Init(NULL, m_InputParamsArray[i].strDstFile);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
@@ -198,10 +146,6 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             pBuffer = NULL;
         }
-
-        /**/
-        /* Vector stored linearly in the memory !*/
-        m_InputParamsArray[i].pVppCompDstRects = &m_VppDstRects[0];
 
         // if session has VPP plus ENCODE only (-i::source option)
         // use decode source session as input
@@ -431,11 +375,11 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
         else if (Sink == m_InputParamsArray[i].eMode)
         {
             minAsyncDepth = m_InputParamsArray[i].nAsyncDepth;
-//            if (IsSinkPresence)
-//            {
-//                PrintHelp(NULL, MSDK_STRING("Error in par file. Only one source can be used"));
-//                return MFX_ERR_UNSUPPORTED;
-//            }
+            if (IsSinkPresence)
+            {
+                PrintHelp(NULL, MSDK_STRING("Error in par file. Only one source can be used"));
+                return MFX_ERR_UNSUPPORTED;
+            }
             IsSinkPresence = true;
 
             if (IsFirstInTopology)
@@ -509,26 +453,12 @@ mfxStatus Launcher::CreateSafetyBuffers()
 
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {
-        /* this is for 1 to N case*/
-        if ( (Source == m_InputParamsArray[i].eMode) &&
-             (Native == m_InputParamsArray[0].eModeExt) )
+        if (Source == m_InputParamsArray[i].eMode)
         {
             pBuffer = new SafetySurfaceBuffer(pPrevBuffer);
             pPrevBuffer = pBuffer;
             m_pBufferArray.push_back(pBuffer);
         }
-
-        /* And N_to_1 case: composition should be enabled!
-         * else it is logic error */
-        if ( (Source != m_InputParamsArray[i].eMode) &&
-                (VPP_COMP == m_InputParamsArray[0].eModeExt) )
-        {
-            pBuffer = new SafetySurfaceBuffer(pPrevBuffer);
-            pPrevBuffer = pBuffer;
-            m_pBufferArray.push_back(pBuffer);
-        }
-        //else
-        //    return MFX_ERR_INVALID_VIDEO_PARAM;
     }
     return MFX_ERR_NONE;
 
