@@ -29,8 +29,8 @@
 #endif // #if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
 
 #if defined(_DEBUG)
-#define mdprintf fprintf
-//#define mdprintf(...)
+//#define mdprintf fprintf
+#define mdprintf(...)
 #else
 #define mdprintf(...)
 #endif
@@ -265,7 +265,6 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     //preENC control
     VABufferID mvPredid = VA_INVALID_ID;
     VABufferID qpid = VA_INVALID_ID;
-    int numMB = m_sps.picture_height_in_mbs * m_sps.picture_width_in_mbs;
 
     //buffer for MV output
     //MFX_DESTROY_VABUFFER(statMVid, m_vaDisplay);
@@ -370,7 +369,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         vaSts = vaCreateBuffer(m_vaDisplay,
                 m_vaContextEncode,
                 (VABufferType)VAStatsMotionVectorBufferTypeIntel,
-                sizeof (VAMotionVectorIntel)*numMB * 16, //16 MV per MB
+                sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
                 1,
                 NULL, //should be mapped later
                 &m_statMVId[fieldId]);
@@ -384,6 +383,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     if (!m_statParams.disable_statistics_output){
         if (VA_INVALID_ID == m_statOutId[0])
         {
+            int numMB = m_sps.picture_height_in_mbs * m_sps.picture_width_in_mbs;
             vaSts = vaCreateBuffer(m_vaDisplay,
                     m_vaContextEncode,
                     (VABufferType)VAStatsStatisticsBufferTypeIntel,
@@ -502,7 +502,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     vaSts = vaCreateBuffer(m_vaDisplay,
             m_vaContextEncode,
             (VABufferType)VAStatsStatisticsParameterBufferTypeIntel,
-            sizeof (m_statParams)*numMB,
+            sizeof (m_statParams),
             1,
             &m_statParams,
             &statParamsId);
@@ -2563,10 +2563,9 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
             }
 
             task.m_bsDataLength[fieldId] = codedBufferSegment->size;
-            memcpy_s(task.m_bs->Data + task.m_bs->DataOffset, codedBufferSegment->size,
+            memcpy_s(task.m_bs->Data + task.m_bs->DataLength, codedBufferSegment->size,
                                      codedBufferSegment->buf, codedBufferSegment->size);
             task.m_bs->DataLength += codedBufferSegment->size;
-            task.m_bs->DataOffset += codedBufferSegment->size;
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaUnmapBuffer");
                 vaUnmapBuffer( m_vaDisplay, m_codedBufferId[fieldId] );
