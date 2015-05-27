@@ -10,13 +10,20 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "mfx_h265_frame.h"
-#include "mfx_h265_enc.h"
-//#include "mfx_h265_encode.h"
-#include "vm_file.h"
+#include <memory>
 #include "ippi.h"
 #include "ippvc.h"
-#include <memory>
+#include "vm_file.h"
+#include "mfx_h265_frame.h"
+#include "mfx_h265_enc.h"
+
+#ifndef MFX_VA
+#define H265FEI_AllocateInputSurface(...) (MFX_ERR_NONE)
+#define H265FEI_AllocateOutputSurface(...) (MFX_ERR_NONE)
+#define H265FEI_FreeSurface(...) (MFX_ERR_NONE)
+#define CM_ALIGNED_MALLOC(...) ((void *)NULL)
+#define CM_ALIGNED_FREE(...)
+#endif
 
 namespace H265Enc {
 
@@ -32,23 +39,23 @@ namespace H265Enc {
     }
 
 
-    void FrameData::Create(H265VideoParam *par)
+    void FrameData::Create(const FrameData::AllocInfo &allocInfo)
     {
-        padding = IPP_MAX(par->MaxCUSize, 16) + 16;
+        width = allocInfo.width;
+        height = allocInfo.height;
+        padding = allocInfo.padding;
 
-        width = par->Width;
-        height = par->Height;
-
-        Ipp32s m_bdLumaFlag = par->bitDepthLuma > 8;
-        Ipp32s m_bdChromaFlag = par->bitDepthChroma > 8;
-        Ipp32s m_chromaFormatIdc = par->chromaFormatIdc;
+        Ipp32s bdLumaFlag = allocInfo.bitDepthLu > 8;
+        Ipp32s bdChromaFlag = allocInfo.bitDepthCh > 8;
+        Ipp32s chromaPaddingW = padding;
+        Ipp32s chromaPaddingH = padding;
 
         pitch_luma_bytes = pitch_luma_pix = width + padding * 2;
 
         Ipp32s plane_size_luma = (width + padding * 2) * (height + padding * 2);
         Ipp32s plane_size_chroma;
 
-        switch (m_chromaFormatIdc) {
+        switch (allocInfo.chromaFormat) {
         case MFX_CHROMAFORMAT_YUV422:
             plane_size_chroma = plane_size_luma;
             pitch_chroma_pix = pitch_luma_pix;
@@ -56,6 +63,7 @@ namespace H265Enc {
         case MFX_CHROMAFORMAT_YUV444:
             plane_size_chroma = plane_size_luma << 1;
             pitch_chroma_pix = pitch_luma_pix << 1;
+            chromaPaddingW <<= 1;
             break;
         case MFX_CHROMAFORMAT_YUV400:
             plane_size_chroma = 0;
@@ -65,16 +73,17 @@ namespace H265Enc {
         case MFX_CHROMAFORMAT_YUV420:
             plane_size_chroma = plane_size_luma >> 1;
             pitch_chroma_pix = pitch_luma_pix;
+            chromaPaddingH >>= 1;
             break;
         }
 
         pitch_chroma_bytes = pitch_chroma_pix;
 
-        if (m_bdLumaFlag) {
+        if (bdLumaFlag) {
             plane_size_luma <<= 1;
             pitch_luma_bytes <<= 1;
         }
-        if (m_bdChromaFlag) {
+        if (bdChromaFlag) {
             plane_size_chroma <<= 1;
             pitch_chroma_bytes <<= 1;
         }
@@ -83,33 +92,28 @@ namespace H265Enc {
         plane_size_luma += 128;
         plane_size_chroma += 128;
 
-        Ipp32s len = (plane_size_luma + plane_size_chroma) + ALIGN_VALUE*3;
+        Ipp32s len = (plane_size_luma + plane_size_chroma) + ALIGN_VALUE * 3;
 
-        mem_plane = H265_Malloc(len);
-        if (!mem_plane)
-            throw std::exception();
+        mem = new mfxU8[len];
 
-        y = align_pointer<Ipp8u *> (mem_plane, ALIGN_VALUE);
-        uv = align_pointer<Ipp8u *> (y + plane_size_luma, ALIGN_VALUE);;
+        y = align_pointer<Ipp8u *> (mem, ALIGN_VALUE);
+        uv = align_pointer<Ipp8u *> (y + plane_size_luma, ALIGN_VALUE);
 
-        y += ((pitch_luma_pix + 1) * padding) << m_bdLumaFlag;
-        uv += ((pitch_chroma_pix * padding >> par->chromaShiftH) + (padding << par->chromaShiftWInv)) << m_bdChromaFlag;
+        y += ((pitch_luma_pix + 1) * padding) << bdLumaFlag;
+        uv += (pitch_chroma_pix * chromaPaddingH + chromaPaddingW) << bdChromaFlag;
     }
     
     void FrameData::Destroy()
     {
-        if (mem_plane) {
-            H265_Free(mem_plane);
-        }
-        mem_plane = NULL;
+        delete [] (mfxU8 *)mem;
+        mem = NULL;
     }
 
-
-    void Statistics::Create(H265VideoParam *par)
+    void Statistics::Create(const Statistics::AllocInfo &allocInfo)
     {
         // all algorithms designed for 8x8 (CsRs - 4x4)
-        Ipp32s width  = par->Width;
-        Ipp32s height = par->Height;
+        Ipp32s width  = allocInfo.width;
+        Ipp32s height = allocInfo.height;
         Ipp32s blkSize = SIZE_BLK_LA;
         Ipp32s PicWidthInBlk  = (width  + blkSize - 1) / blkSize;
         Ipp32s PicHeightInBlk = (height + blkSize - 1) / blkSize;
@@ -160,6 +164,54 @@ namespace H265Enc {
         qp_mask.resize(numBlk);
         coloc_futr.resize(numBlk);
         coloc_past.resize(numBlk);
+    }
+
+
+    void FeiInData::Create(const FeiInData::AllocInfo &allocInfo)
+    {
+        if (H265FEI_AllocateInputSurface(allocInfo.feiHdl, &m_handle) != MFX_ERR_NONE)
+            Throw(std::runtime_error("H265FEI_AllocateInputSurface failed"));
+
+        m_fei = allocInfo.feiHdl;
+    }
+
+    void FeiInData::Destroy()
+    {
+        if (m_fei && m_handle) {
+            H265FEI_FreeSurface(m_fei, m_handle);
+            m_handle = NULL;
+            m_fei = NULL;
+        }
+    }
+
+    void FeiOutData::Create(const FeiOutData::AllocInfo &allocInfo)
+    {
+        const mfxSurfInfoENC &info = allocInfo.allocInfo;
+
+        m_sysmem = (mfxU8 *)CM_ALIGNED_MALLOC(info.size, info.align);
+        if (!m_sysmem) {
+            Throw(std::runtime_error("CM_ALIGNED_MALLOC failed"));
+        }
+
+        if (H265FEI_AllocateOutputSurface(allocInfo.feiHdl, m_sysmem, const_cast<mfxSurfInfoENC *>(&info), &m_handle) != MFX_ERR_NONE) {
+            CM_ALIGNED_FREE(m_sysmem);
+            m_sysmem = NULL;
+            Throw(std::runtime_error("H265FEI_AllocateOutputSurface failed"));
+        }
+
+        m_pitch = (Ipp32s)info.pitch;
+        m_fei = allocInfo.feiHdl;
+    }
+
+    void FeiOutData::Destroy()
+    {
+        if (m_fei && m_handle && m_sysmem) {
+            H265FEI_FreeSurface(m_fei, m_handle);
+            CM_ALIGNED_FREE(m_sysmem);
+            m_sysmem = NULL;
+            m_handle = NULL;
+            m_fei = NULL;
+        }
     }
 
     void Frame::Create(H265VideoParam *par)
@@ -274,7 +326,6 @@ namespace H265Enc {
         (m_bdChromaFlag == 0)
             ? PadOnePix((Ipp16u *)out->uv, out->pitch_chroma_pix / 2, out->width / 2, out->height / 2)
             : PadOnePix((Ipp32u *)out->uv, out->pitch_chroma_pix / 2, out->width / 2, out->height / 2);
-
     }
 
 
@@ -386,11 +437,11 @@ namespace H265Enc {
             ippsCopy(ptr, ptr + i*pitch, width);
         }
     }
-    void PadOneReconRow(H265Enc::FrameData* frame, Ipp32u ctb_row, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, const H265VideoParam & par)
+    void PadOneReconRow(H265Enc::FrameData* frame, Ipp32u ctb_row, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, const FrameData::AllocInfo &allocInfo)
     {
-        Ipp8u bitDepth8 = (par.bitDepthLuma == 8) ? 1 : 0;
-        Ipp32s shift_w = par.chromaFormatIdc != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
-        Ipp32s shift_h = par.chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
+        Ipp8u bitDepth8 = (allocInfo.bitDepthLu == 8) ? 1 : 0;
+        Ipp32s shift_w = allocInfo.chromaFormat != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
+        Ipp32s shift_h = allocInfo.chromaFormat == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
 
         // L/R Padding
         {
@@ -679,9 +730,7 @@ namespace H265Enc {
         m_encOrder    = Ipp32u(-1);
         m_frameOrder  = Ipp32u(-1);
         m_timeStamp   = 0;
-        m_extParam = NULL;
-        m_statusReport = 0;
-        m_encIdx= -1;
+        m_encIdx      = -1;
         m_dpbSize     = 0;
 
         if (m_stats[0]) {
@@ -691,8 +740,28 @@ namespace H265Enc {
             m_stats[1]->ResetAvgMetrics();
         }
 
+        m_futureFrames.resize(0);
+
+        m_feiSyncPoint = NULL;
+        m_feiOrigin = NULL;
+        m_feiRecon = NULL;
+        Zero(m_feiIntraAngModes);
+        Zero(m_feiInterMv);
+        Zero(m_feiInterDist);
+
         m_userSeiMessages = NULL;
         m_numUserSeiMessages = 0;
+
+        m_ttEncComplete.InitEncComplete(0);
+        m_ttInitNewFrame.InitNewFrame(this, (mfxFrameSurface1 *)NULL, 0);
+        m_ttSubmitGpuCopySrc.InitGpuSubmit(this, MFX_FEI_H265_OP_GPU_COPY_SRC, 0);
+        m_ttSubmitGpuCopyRec.InitGpuSubmit(this, MFX_FEI_H265_OP_GPU_COPY_REF, 0);
+        m_ttSubmitGpuIntra.InitGpuSubmit(this, MFX_FEI_H265_OP_INTRA_MODE, 0);
+        for (Ipp32s i = 0; i < 4; i++)
+            m_ttSubmitGpuMe[i].InitGpuSubmit(this, MFX_FEI_H265_OP_INTER_ME, 0);
+        m_ttWaitGpuIntra.InitGpuWait(MFX_FEI_H265_OP_INTRA_MODE, 0);
+        for (Ipp32s i = 0; i < 4; i++)
+            m_ttWaitGpuMe[i].InitGpuWait(MFX_FEI_H265_OP_INTER_ME, 0);
     }
 
     void Frame::ResetCounters()

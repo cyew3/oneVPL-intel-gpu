@@ -490,7 +490,8 @@ struct RefPicList
 
 typedef enum {
     TT_INIT_NEW_FRAME,
-    TT_GPU,
+    TT_GPU_SUBMIT,
+    TT_GPU_WAIT,
     TT_ENCODE_CTU,
     TT_POST_PROC_CTU,
     TT_POST_PROC_ROW,
@@ -522,10 +523,11 @@ struct ThreadingTask
     ThreadingTaskSpecifier action;
 
     union {
-        H265FrameEncoder *fenc;     // for encode, postproc
+        H265FrameEncoder *fenc;     // for encode/postproc
         Lookahead *la;              // for lookahead
-        mfxFrameSurface1 *indata;   // for init-new-frame
-        Frame* frame;               // for gpu
+        Frame *frame;               // for gpu-submit/init-new-frame/enc-complete
+        void *syncpoint;            // for gpu-wait
+        void *ptr0;                 // reserved for zeroing
     };
     Ipp32s poc;                     // for all tasks, useful in debug
     union {
@@ -533,8 +535,14 @@ struct ThreadingTask
             Ipp32s col;             // for encode, postproc, lookahead
             Ipp32s row;             // for encode, postproc, lookahead
         };
-        Frame *outdata;             // for init-new-frame
-        Ipp32s isAhead;             // for gpu
+        struct {
+            Ipp32s feiOp;           // for gpu-submit/gpu-wait
+            Ipp16s listIdx;         // for gpu-submit/gpu-wait
+            Ipp16s refIdx;          // for gpu-submit/gpu-wait
+        };
+        mfxFrameSurface1 *indata;   // for init-new-frame
+
+        void *ptr1;                 // reserved for zeroing
     };
 
     volatile unsigned int numUpstreamDependencies;
@@ -547,25 +555,8 @@ struct ThreadingTask
     ThreadingTask *upstreamDependencies[MAX_NUM_DEPENDENCIES];
 #endif
 
-    void Init(ThreadingTaskSpecifier action_, Frame *frame_, Ipp32s isAhead_, Ipp32s poc_) {
-        action = action_;
-        frame = frame_;
-        isAhead = isAhead_;
-        poc = poc_;
-        numUpstreamDependencies = 0;
-        numDownstreamDependencies = 0;
-        finished = 0;
-    }
-    void Init(ThreadingTaskSpecifier action_, mfxFrameSurface1 *indata_, Frame *outdata_, Ipp32s poc_) {
-        action = action_;
-        indata = indata_;
-        outdata = outdata_;
-        poc = poc_;
-        numUpstreamDependencies = 0;
-        numDownstreamDependencies = 0;
-        finished = 0;
-    }
     void Init(ThreadingTaskSpecifier action_, Ipp32s row_, Ipp32s col_, Ipp32s poc_, Ipp32s numUpstreamDependencies_, Ipp32s numDownstreamDependencies_) {
+        assert(action_ != TT_GPU_SUBMIT && action_ != TT_GPU_WAIT && action_ != TT_INIT_NEW_FRAME);
         action = action_;
         row = row_;
         col = col_;
@@ -574,12 +565,59 @@ struct ThreadingTask
         numDownstreamDependencies = numDownstreamDependencies_;
         finished = 0;
     }
-    Ipp32s RedoIfRepack() {
-        return action == TT_ENCODE_CTU ||
-               action == TT_POST_PROC_CTU ||
-               action == TT_POST_PROC_ROW ||
-               action == TT_ENC_COMPLETE ||
-               action == TT_COMPLETE;
+
+    void InitGpuSubmit(Frame *frame_, Ipp32s feiOp_, Ipp32s poc_) {
+        action = TT_GPU_SUBMIT;
+        frame = frame_;
+        feiOp = feiOp_;
+        poc = poc_;
+        listIdx = 0;
+        refIdx = 0;
+        numUpstreamDependencies = 0;
+        numDownstreamDependencies = 0;
+        finished = 0;
+    }
+
+    void InitGpuWait(Ipp32s feiOp_, Ipp32s poc_) {
+        action = TT_GPU_WAIT;
+        feiOp = feiOp_;
+        poc = poc_;
+        listIdx = 0;
+        refIdx = 0;
+        syncpoint = NULL;
+        numUpstreamDependencies = 0;
+        numDownstreamDependencies = 0;
+        finished = 0;
+    }
+    
+    void InitNewFrame(Frame *frame_, mfxFrameSurface1 *indata_, Ipp32s poc_) {
+        action = TT_INIT_NEW_FRAME;
+        frame = frame_;
+        indata = indata_;
+        poc = poc_;
+        numUpstreamDependencies = 0;
+        numDownstreamDependencies = 0;
+        finished = 0;
+    }
+
+    void InitEncComplete(Ipp32s poc_) {
+        action = TT_ENC_COMPLETE;
+        poc = poc_;
+        ptr0 = NULL;
+        ptr1 = NULL;
+        numUpstreamDependencies = 0;
+        numDownstreamDependencies = 0;
+        finished = 0;
+    }
+
+    void InitComplete(Ipp32s poc_) {
+        action = TT_COMPLETE;
+        poc = poc_;
+        ptr0 = NULL;
+        ptr1 = NULL;
+        numUpstreamDependencies = 0;
+        numDownstreamDependencies = 0;
+        finished = 0;
     }
 };
 
@@ -602,6 +640,12 @@ template <class T> void Throw(const T &ex)
 {
     assert(!"exception");
     throw ex;
+}
+
+template <class T> void ThrowIf(bool cond, const T &ex)
+{
+    if (cond)
+        Throw(ex);
 }
 
 class NonCopyable
@@ -647,14 +691,14 @@ namespace MfxEnumShortAliases {
         const Ipp32s MAX_WIDTH        = 3840;
         const Ipp32s MAX_HEIGHT       = 2160;
         const Ipp32s SUP_ENABLE_CM[]  = { OFF, ON };
-#else // MFX_VA
+#else
         const Ipp32s MIN_TARGET_USAGE = 1;
         const Ipp32s MAX_TARGET_USAGE = 7;
         const Ipp32s MAX_GOP_REF_DIST = 16;
         const Ipp32s MAX_WIDTH        = 8192;
         const Ipp32s MAX_HEIGHT       = 4320;
         const Ipp32s SUP_ENABLE_CM[]  = { OFF };
-#endif // MFX_VA
+#endif
 
         const Ipp32s MAX_NUM_TILE_COLS      = 20;
         const Ipp32s MAX_NUM_TILE_ROWS      = 22;

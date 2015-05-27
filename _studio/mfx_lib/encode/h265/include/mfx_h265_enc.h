@@ -222,6 +222,8 @@ namespace H265Enc {
         Ipp32s m_framesInParallel; // 0, 1 - default. means no frame threading
         Ipp32s m_meSearchRangeY;   // = Func1 ( m_framesInParallel )
         Ipp32s m_lagBehindRefRows; // = Func2 ( m_framesInParallel ). How many ctb rows in ref frames have to be encoded
+
+        Ipp32s randomRepackThreshold;
     };
 
     class DispatchSaoApplyFilter
@@ -252,7 +254,7 @@ namespace H265Enc {
         void      Close();
 
         // Frame based API
-        mfxStatus SetEncodeFrame(Frame* frame, std::deque<ThreadingTask *> *m_pendingTasks);
+        void SetEncodeFrame(Frame* frame, std::deque<ThreadingTask *> *m_pendingTasks);
 
         template <typename PixType>
         mfxStatus PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u ctb_row, Ipp32u ctb_col);
@@ -289,9 +291,6 @@ namespace H265Enc {
 
         DispatchSaoApplyFilter m_saoApplier[NUM_SAO_COMPONENTS];
     };
-
-    Ipp8s GetConstQp(Frame const & frame, H265VideoParam const & param);
-    Ipp8s GetRateQp(Frame const & frame, H265VideoParam const & param, BrcIface* brc);
 
     void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, int qp, const Frame* currentFrame, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
     Ipp64f h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP);

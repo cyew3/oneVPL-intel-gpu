@@ -1118,22 +1118,6 @@ void DoInterAnalysis_OneRow(FrameData* curr, Statistics* currStat, FrameData* re
 }
 
 
-FrameIter  findOldestToLookAheadProcess(std::list<Frame*> & queue)
-{
-    if ( queue.empty() ) 
-        return queue.end();
-
-    for (FrameIter it = queue.begin(); it != queue.end(); it++ ) {
-
-        if ( !(*it)->wasLAProcessed() ) {
-            return it;
-        }
-    }
-
-    return queue.end();
-}
-
-
 template <class PixType>
 PixType AvgPixBlk(PixType* in, Ipp32s pitch, Ipp32s posx, Ipp32s posy, Ipp32s step)
 {
@@ -2065,22 +2049,6 @@ int Lookahead::SetFrame(Frame* in)
 //    
 //} // 
 
-void H265Encoder::OnLookaheadStarting()
-{
-    Frame* curr = NULL;
-    FrameIter it = findOldestToLookAheadProcess(m_inputQueue);
-
-    if (it != m_inputQueue.end()) {
-        curr = (*it);
-        curr->setWasLAProcessed(); // before run analyzer
-    }
-
-    if (m_la.get()->SetFrame(curr))
-        AddTaskDependency(&m_threadingTaskComplete, &(m_la.get()->m_threadingTaskStore.back()));
-
-} // 
-
-
 void H265Encoder::OnLookaheadCompletion()
 {
     if (m_la.get() == 0)
@@ -2095,29 +2063,6 @@ void H265Encoder::OnLookaheadCompletion()
     }
     m_lookaheadQueue.splice(m_lookaheadQueue.end(), m_inputQueue, m_inputQueue.begin(), itEnd);
 }
-
-void H265Encoder::RunLookahead()
-{
-    Frame* curr = NULL;
-    FrameIter it = findOldestToLookAheadProcess(m_inputQueue);
-
-    if (it != m_inputQueue.end()) {
-        curr = (*it);
-        curr->setWasLAProcessed(); // before run analyzer
-    }
-
-    m_la.get()->DoLookaheadAnalysis(curr);
-
-    // update 
-    FrameIter itEnd = m_inputQueue.begin();
-    for (itEnd; itEnd != m_inputQueue.end(); itEnd++) {
-        if ((*itEnd)->m_lookaheadRefCounter > 0) {
-            break;
-        }
-    }
-    m_lookaheadQueue.splice(m_lookaheadQueue.end(), m_inputQueue, m_inputQueue.begin(), itEnd);
-    
-} // 
 
 bool MetricIsGreater(const StatItem &l, const StatItem &r) { return (l.met > r.met); }
 
@@ -2875,72 +2820,6 @@ void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBr
         }
     }
 }
-//void Lookahead::SetFrame(Frame* in)
-//{
-//    m_frame = in;
-//
-//    if (m_frame == NULL && m_inputQueue.empty()) {
-//        return;
-//    }
-//
-//    BuildThreadingTaskModel(m_frame ? m_frame->m_poc : 0);
-//    m_enc.m_pendingTasks.push_back(&m_threadingTaskStore[0]);
-//}
-
-void Lookahead::DoLookaheadAnalysis(Frame* in)
-{
-    if (in && (m_videoParam.LowresFactor || m_videoParam.SceneCut)) {
-        if (in->m_bitDepthLuma == 8)
-            Scale<Ipp8u>(in->m_origin, in->m_lowres, 0, &m_workBuf[0]);
-        else
-            Scale<Ipp16u>(in->m_origin, in->m_lowres, 0, &m_workBuf[0]);
-        if (m_videoParam.DeltaQpMode > 0 || m_videoParam.AnalyzeCmplx) {
-            FrameData* frame = in->m_lowres;
-            Ipp32s blkSize = SIZE_BLK_LA;
-            Ipp32s heightInBlks = (frame->height + blkSize - 1) / blkSize;
-            for (Ipp32s row = 0; row < heightInBlks; row++) {
-                PadOneReconRow(frame, row, blkSize, heightInBlks, m_videoParam);
-            }
-        }
-    }
-
-    if (in && in->m_frameOrder > 0 && 
-        (m_videoParam.AnalyzeCmplx || m_videoParam.DeltaQpMode)) {
-        Frame* curr = in;
-        FrameIter it = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(in->m_frameOrder-1));
-        Frame* prev = (*it);
-        bool useLowres = m_videoParam.LowresFactor;
-        FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
-        Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
-        FrameData* framePrev = useLowres ? prev->m_lowres : prev->m_origin;
-        DoInterAnalysis(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0], &stat->m_mv[0], 0, 0, 0, curr->m_bitDepthLuma);
-        //WritePSAD(frame);
-        //WriteMV(frame);
-
-        if (m_videoParam.DeltaQpMode && useLowres) { // need refine for original resolution
-           /* if (in->m_frameOrder == 36) {
-                printf("\n stop \n");fflush(stderr);
-            }*/
-
-            FrameData* frame = curr->m_origin;
-            Statistics* originStat = curr->m_stats[0];
-            Statistics* lowresStat = curr->m_stats[1];
-            FrameData* framePrev = prev->m_origin;
-            DoInterAnalysis(frame, lowresStat, framePrev, &originStat->m_interSad[0], &originStat->m_interSatd[0], &originStat->m_mv[0], 1, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma);
-        }
-    }
-
-    if (m_videoParam.SceneCut) {
-        AnalyzeSceneCut_AndUpdateState(in);
-    }
-    if (m_videoParam.DeltaQpMode) {
-        AnalyzeContent(in);
-    }
-    if (m_videoParam.AnalyzeCmplx) {
-        AnalyzeComplexity(in);
-    }
-    
-} // 
 
 
 mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u ctb_row, Ipp32u ctb_col)
@@ -2962,7 +2841,7 @@ mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u 
                     Ipp32s blkSize = SIZE_BLK_LA;
                     Ipp32s heightInBlks = (frame->height + blkSize - 1) / blkSize;
                     for (Ipp32s row = 0; row < heightInBlks; row++) {
-                        PadOneReconRow(frame, row, blkSize, heightInBlks, m_videoParam);
+                        PadOneReconRow(frame, row, blkSize, heightInBlks, m_enc.m_frameDataLowresPool.GetAllocInfo());
                     }
                 }
             }

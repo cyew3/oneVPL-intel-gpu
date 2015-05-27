@@ -17,6 +17,8 @@
 
 #include "ippdefs.h"
 
+#include "umc_thread.h"
+
 #include "mfxdefs.h"
 #include "mfxvideo.h"
 #include "mfxvideo++int.h"
@@ -30,10 +32,7 @@ namespace H265Enc {
     class H265FrameEncoder;
     class H265BRC;
     class Lookahead;
-
-#if defined(MFX_VA)
-    class FeiContext;
-#endif
+    struct H265EncodeTaskInputParams;
 
     class Hrd
     {
@@ -83,8 +82,6 @@ namespace H265Enc {
         // ------ mfx level
         VideoCORE &m_core;
         H265Enc::H265VideoParam m_videoParam;
-        H265Enc::H265VideoParam m_videoParam_lowres;
-        H265Enc::H265VideoParam m_videoParam_8bit;
         Hrd m_hrd;
 
         mfxEncodeStat m_stat;
@@ -95,7 +92,6 @@ namespace H265Enc {
 
         mfxU32  m_frameCountSync; // counter for sync. part
         mfxU32  m_frameCountBufferedSync;
-        mfxU32  m_taskID;
 
         bool    m_useSysOpaq;
         bool    m_useVideoOpaq;
@@ -134,10 +130,7 @@ namespace H265Enc {
         vm_cond m_condVar;
         vm_mutex m_critSect;
         std::deque<ThreadingTask *> m_pendingTasks;
-        ThreadingTask   m_threadingTaskComplete;
-        ThreadingTask   m_threadingTaskInitNewFrame;
-        ThreadingTask   m_threadingTaskGpuCurr;
-        ThreadingTask   m_threadingTaskGpuNext;
+        ThreadingTask   m_ttComplete;
         volatile Ipp32u m_threadingTaskRunning;
         std::vector<Ipp32u> m_ithreadPool;
     
@@ -152,13 +145,19 @@ namespace H265Enc {
         std::list<Frame *> m_dpb;             // _global_ pool of frames: encoded reference frames + being encoded frames
         std::list<Frame *> m_actualDpb;       // reference frames for next frame to encode
 
-        // resources
-        std::vector<FrameData *> m_originPool;      // _global_ free (origin/recon/reference) pool
-        std::vector<FrameData *> m_originPool_8bit; // origin/recon in 8bit. used by fei in enc:p010 mode 
-        std::vector<FrameData *> m_lowresPool;
+        Frame *m_newFrame;
+        Frame *m_laFrame;
+        Frame *m_targetFrame;
 
-        std::vector<Statistics *> m_statsPool;      // pool of original statistics / per frame
-        std::vector<Statistics *> m_lowresStatsPool;// pool of lowres statistics / per frame
+        ObjectPool<FrameData>  m_frameDataPool;         // storage of full-sized original/reconstructed/reference pixel data
+        ObjectPool<FrameData>  m_frameData8bitPool;     // storage of full-sized original/reconstructed/reference 8bit pixel data for fei
+        ObjectPool<FrameData>  m_frameDataLowresPool;   // storage of lowres original pixel data for lookahead
+        ObjectPool<Statistics> m_statsPool;             // storage of full-sized statistics per frame
+        ObjectPool<Statistics> m_statsLowresPool;       // storage of lowres statistics per frame
+        ObjectPool<FeiInData>  m_feiInputPool;          // storage of origins/reconstructed/reference pixel data in GPU memory for fei
+        ObjectPool<FeiOutData> m_feiAngModesPool[4];    // storage of angular intra modes output by fei (4x4, 8x8, 16x16, 32x32)
+        ObjectPool<FeiOutData> m_feiInterMvPool[3];     // storage of motion vectors output by fei (8x8, 16x16, 32x32)
+        ObjectPool<FeiOutData> m_feiInterDistPool[3];   // storage of ME distortions output by fei (8x8, 16x16, 32x32)
     
         Ipp8u* m_memBuf;
         void *m_cu;
@@ -167,15 +166,26 @@ namespace H265Enc {
         Ipp16u *m_slice_ids;
         Segment *m_slices;
         // perCU (num_threads_structs)
-        H265BsFake* m_bsf;
+        H265BsFake *m_bsf;
         H265CUData *data_temp;
 
         BrcIface *m_brc;
         std::auto_ptr<Lookahead> m_la;
 
-#if defined(MFX_VA)
-        FeiContext *m_FeiCtx;
-#endif
+
+        static Ipp32u VM_THREAD_CALLCONVENTION FeiThreadRoutineStarter(void *p);
+        void FeiThreadRoutine();
+        void FeiThreadSubmit(ThreadingTask &task);
+        bool FeiThreadWait(Ipp32u timeout);
+        void *m_fei;
+        UMC::Thread m_feiThread;
+        Ipp32s m_pauseFeiThread;
+        Ipp32s m_stopFeiThread;
+        volatile Ipp32s m_feiThreadRunning;
+        std::deque<ThreadingTask *> m_feiSubmitTasks;
+        std::deque<ThreadingTask *> m_feiWaitTasks;
+        vm_cond m_feiCondVar;
+        vm_mutex m_feiCritSect;
 
         mfxStatus Init_Internal();
 
@@ -188,11 +198,10 @@ namespace H265Enc {
         void SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame* currentFrame);
 
         // ------ _global_ stages of Input Frame Control
-        mfxStatus AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, mfxBitstream *mfxBS);
+        Frame *AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, mfxBitstream *mfxBS);
 
-        // threading tasks
+        // new (incoming) frame
         void InitNewFrame(Frame *out, mfxFrameSurface1 *in);
-        void ProcessFrameOnGpu(const Frame *frame, Ipp32s isAhead);
 
         friend class H265Enc::Lookahead;
         friend class H265Enc::H265FrameEncoder;
@@ -201,7 +210,6 @@ namespace H265Enc {
         void RestoreGopCountersFromFrame(Frame *frame, bool bEncOrder);
 
         void ConfigureEncodeFrame(Frame *frame);
-        mfxStatus EnqueueFrameEncoder(int& encIdx);// find next frame and free encoder, bind them and return encIdx [-1(not found resources), or 0, ..., N-1]
         void OnEncodingQueried(Frame *encoded);
     
         // ------ Ref List Managment
@@ -214,10 +222,10 @@ namespace H265Enc {
         static mfxStatus TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
         static mfxStatus TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
 
-        void PrepareToEncode(void *pParam); // no threas safety. some preparation work (accept new input frame, configuration, fei, paq etc) in single thread mode!
-        mfxStatus SyncOnFrameCompletion(Frame* frame, mfxBitstream* mfxBs, void *pParam);
+        void PrepareToEncode(H265EncodeTaskInputParams *inputParam); // build dependency graph for all parallel frames
+        void EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam); // build dependency graph for one frames
+        mfxStatus SyncOnFrameCompletion(H265EncodeTaskInputParams *inputParam);
 
-        void RunLookahead();
         void OnLookaheadStarting(); // no threas safety. some preparation work in single thread mode!
         void OnLookaheadCompletion(); // no threas safety. some post work in single thread mode!
 

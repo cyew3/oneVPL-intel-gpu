@@ -21,10 +21,6 @@
 #include "mfx_h265_tables.h"
 #include "mfx_h265_frame.h"
 
-#if defined(MFX_VA)
-#include "mfx_h265_fei.h"
-#endif
-
 using namespace MFX_HEVC_PP;
 
 namespace H265Enc {
@@ -342,9 +338,13 @@ public:
     Ipp32s VerMin;
     const Ipp8u *m_logMvCostTable;
     costStat *m_costStat;
-#if defined(MFX_VA)
-    mfxFEIH265Output *feiOut;
-#endif
+
+    Ipp32u     *m_feiAngModes[4];
+    mfxI16Pair *m_feiInterMv[4][3];
+    Ipp32u     *m_feiInterDist[4][3];
+    Ipp32u      m_feiAngModesPitch[4];
+    Ipp32u      m_feiInterMvPitch[4][3];
+    Ipp32u      m_feiInterDistPitch[4][3];
 
     SaoEstimator m_saoEst;
 
@@ -857,10 +857,8 @@ public:
     Ipp32s MvCost1RefLog(Ipp16s mvx, Ipp16s mvy, const MvPredInfo<2> *predInfo) const;
 
     void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
-                H265BsFake *_bsf,
-                H265Slice *cslice, ThreadingTaskSpecifier stage, const Ipp8u *logMvCostTable, costStat* _costStat,
-                void *feiH265Out, const Frame* frame,
-                CoeffsType *m_coeffWork);
+                H265BsFake *_bsf, H265Slice *cslice, ThreadingTaskSpecifier stage, const Ipp8u *logMvCostTable,
+                costStat* _costStat, const Frame* frame, CoeffsType *m_coeffWork);
 
 #if defined(AMT_ICRA_OPT)
     //void CalcRsCs(void);

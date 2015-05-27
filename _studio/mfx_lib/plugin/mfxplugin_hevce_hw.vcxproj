@@ -741,9 +741,6 @@
     <ProjectReference Include="libmfxhw_plugin_hevce.vcxproj">
       <Project>{4d84ba81-eb2f-4183-8e95-c20fb271252c}</Project>
     </ProjectReference>
-    <ProjectReference Include="watermark.vcxproj">
-      <Project>{a404c552-193e-4a7b-b656-ba104d581869}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\mfx_hevc_enc_plugin.cpp" />

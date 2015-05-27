@@ -472,6 +472,7 @@ namespace {
             ext->LowresFactor = 1;
             ext->DeblockBorders = 1;
             ext->SAOChroma = 1;
+            ext->RepackProb = 1;
         }
 
         if (mfxExtCodingOption2 *ext = GetExtBuffer(*out)) {
@@ -908,9 +909,6 @@ namespace {
         if (tiles && (tiles->NumTileRows > 1 || tiles->NumTileColumns > 1) && optHevc && optHevc->FramesInParallel > 1) // either multi-tile or frame-threading
             optHevc->FramesInParallel = 1, wrnIncompatible = true;
 
-        if (optHevc && optHevc->EnableCm == ON && optHevc->FramesInParallel > 1) // no frame-threading in gacc yet
-            optHevc->FramesInParallel = 1, wrnIncompatible = true;
-
         if (mfx.NumSlice && region && region->RegionEncoding == MFX_HEVC_REGION_ENCODING_ON && region->RegionType == MFX_HEVC_REGION_SLICE && region->RegionId >= mfx.NumSlice) // RegionId < NumSlice
             region->RegionId = 0, errInvalidParam = true;
 
@@ -1005,8 +1003,9 @@ namespace {
             mfx.GopRefDist = mfx.GopPicSize ? IPP_MIN(mfx.GopPicSize, defaultGopRefDist) : defaultGopRefDist;
 
         if (optHevc.FramesInParallel == 0) {
-            if (par.AsyncDepth == 1 || mfx.NumSlice > 1 || numTile > 1 || optHevc.EnableCm == ON)
+            if (par.AsyncDepth == 1 || mfx.NumSlice > 1 || numTile > 1)
                 optHevc.FramesInParallel = 1;
+            else if (optHevc.EnableCm == ON) optHevc.FramesInParallel = 7; // need 7 frames for the best CPU/GPU parallelism
             else if (mfx.NumThread >= 48) optHevc.FramesInParallel = 8;
             else if (mfx.NumThread >= 32) optHevc.FramesInParallel = 7;
             else if (mfx.NumThread >= 16) optHevc.FramesInParallel = 5;
@@ -1414,7 +1413,6 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, m
     SetDefaultValues(tmp);
 
     mfxU16 buffering = tmp.mfx.GopRefDist                 // to reorder B frames
-        + (tmpExtBuffers.extOptHevc.EnableCm == ON)       // 1 frame lookahead for for GACC
         + (tmpExtBuffers.extOptHevc.FramesInParallel - 1) // for frame-threading
         + (tmp.AsyncDepth - 1);                           // for async mode
 

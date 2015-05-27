@@ -24,12 +24,12 @@
 #include "mfx_h265_enc_cm_fei.h"
 #include "mfx_h265_enc_cm_utils.h"
 
-/* enable interpolation for FEI plugin */
-#if defined AS_H265FEI_PLUGIN || defined SAVE_FEI_STATE
-#define ENABLE_INTERP_KERNELS
-#endif
+#undef MFX_TRACE_ENABLE
 
 namespace H265Enc {
+
+#define GET_INSURF(s)  (&((mfxFEIH265Surface *)(s))->sIn )
+#define GET_OUTSURF(s) ( ((mfxFEIH265Surface *)(s))->sOut.bufOut )
 
 template<class T> inline T AlignValue(T value, mfxU32 alignment)
 {
@@ -38,6 +38,35 @@ template<class T> inline T AlignValue(T value, mfxU32 alignment)
 }
 
 /* leave in same file to avoid difficulties with templates (T is arbitrary type) */
+template <class T>
+void GetDimensionsCmSurface2DUp(CmDevice *device, Ipp32u numElemInRow, Ipp32u numRows, CM_SURFACE_FORMAT format, mfxSurfInfoENC *surfInfo)
+{
+    Ipp32u numBytesInRow = numElemInRow * sizeof(T);
+
+    if (surfInfo) {
+        memset(surfInfo, 0, sizeof(mfxSurfInfoENC));
+
+        int res = CM_SUCCESS;
+        if ((res = device->GetSurface2DInfo(numBytesInRow, numRows, format, surfInfo->pitch, surfInfo->size)) != CM_SUCCESS) {
+            throw CmRuntimeError();
+        }
+        surfInfo->align = 0x1000;     // 4K aligned
+
+        /* save these in opaque data - needed later for call to CreateCmSurface2DUp() */
+        surfInfo->numBytesInRow = numBytesInRow;
+        surfInfo->numRows = numRows;
+    }
+}
+
+/* okay to pass NULL surfaceCpu (just skips it) */
+template <class T>
+void CreateCmSurface2DUpPreAlloc(CmDevice *device, Ipp32u numBytesInRow, Ipp32u numRows, CM_SURFACE_FORMAT format, T *&surfaceCpu, CmSurface2DUP *& surfaceGpu)
+{
+    if (surfaceCpu) {
+        surfaceGpu = CreateSurface(device, numBytesInRow, numRows, format, surfaceCpu);
+    }
+}
+
 template <class T>
 void CreateCmSurface2DUp(CmDevice *device, Ipp32u numElemInRow, Ipp32u numRows, CM_SURFACE_FORMAT format,
                          T *&surfaceCpu, CmSurface2DUP *& surfaceGpu, Ipp32u &pitch)
@@ -67,10 +96,134 @@ void DestroyCmSurface2DUp(CmDevice *device, void *surfaceCpu, CmSurface2DUP *sur
     CM_ALIGNED_FREE(surfaceCpu);
 }
 
+/* destroy CM surface but do not free system memory (allocated by calling app) */
+void DestroyCmSurface2DUpPreAlloc(CmDevice *device, CmSurface2DUP *surfaceGpu)
+{
+    if (surfaceGpu)
+    {
+        device->DestroySurface2DUP(surfaceGpu);
+    }
+}
+
 void DestroyCmBufferUp(CmDevice *device, void *bufferCpu, CmBufferUP *bufferGpu)
 {
     device->DestroyBufferUP(bufferGpu);
     CM_ALIGNED_FREE(bufferCpu);
+}
+
+static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxU32 width, mfxU32 height, mfxExtFEIH265Alloc *extAlloc)
+{
+    Ipp32s cmMvW[MFX_FEI_H265_BLK_MAX], cmMvH[MFX_FEI_H265_BLK_MAX];
+
+    mfxU32 k;
+    mfxU32 width32;
+    mfxU32 height32;
+    mfxU32 width2x;
+    mfxU32 height2x;
+    mfxU32 interpWidth;
+    mfxU32 interpHeight;
+
+    /* pad and align to 16 pixels */
+    width32  = AlignValue(width, 32);
+    height32 = AlignValue(height, 32);
+    width    = AlignValue(width, 16);
+    height   = AlignValue(height, 16);
+
+    width2x  = AlignValue(width / 2, 16);
+    height2x = AlignValue(height / 2, 16);
+
+    /* dimensions of output MV grid for each block size (width/height were aligned to multiple of 16) */
+    cmMvW[MFX_FEI_H265_BLK_16x16   ] = width / 16;      cmMvH[MFX_FEI_H265_BLK_16x16   ] = height / 16;
+    cmMvW[MFX_FEI_H265_BLK_16x8    ] = width / 16;      cmMvH[MFX_FEI_H265_BLK_16x8    ] = height /  8;
+    cmMvW[MFX_FEI_H265_BLK_8x16    ] = width /  8;      cmMvH[MFX_FEI_H265_BLK_8x16    ] = height / 16;
+    cmMvW[MFX_FEI_H265_BLK_8x8     ] = width /  8;      cmMvH[MFX_FEI_H265_BLK_8x8     ] = height /  8;
+    cmMvW[MFX_FEI_H265_BLK_32x32   ] = width2x / 16;    cmMvH[MFX_FEI_H265_BLK_32x32   ] = height2x / 16;
+    cmMvW[MFX_FEI_H265_BLK_32x16   ] = width2x / 16;    cmMvH[MFX_FEI_H265_BLK_32x16   ] = height2x /  8;
+    cmMvW[MFX_FEI_H265_BLK_16x32   ] = width2x /  8;    cmMvH[MFX_FEI_H265_BLK_16x32   ] = height2x / 16;
+
+    /* see test_interpolate_frame.cpp */
+    interpWidth  = width  + 2*MFX_FEI_H265_INTERP_BORDER;
+    interpHeight = height + 2*MFX_FEI_H265_INTERP_BORDER;
+
+    /* intra distortion */
+    GetDimensionsCmSurface2DUp<mfxFEIH265IntraDist>(device, width / 16, height / 16, CM_SURFACE_FORMAT_P8, &extAlloc->IntraDist);
+
+    /* intra modes */
+    GetDimensionsCmSurface2DUp<mfxI32>(device, width32 /  4, height32 /  4, CM_SURFACE_FORMAT_P8, &extAlloc->IntraMode[0]);
+    GetDimensionsCmSurface2DUp<mfxI32>(device, width32 /  8, height32 /  8, CM_SURFACE_FORMAT_P8, &extAlloc->IntraMode[1]);
+    GetDimensionsCmSurface2DUp<mfxI32>(device, width32 / 16, height32 / 16, CM_SURFACE_FORMAT_P8, &extAlloc->IntraMode[2]);
+    GetDimensionsCmSurface2DUp<mfxI32>(device, width32 / 32, height32 / 32, CM_SURFACE_FORMAT_P8, &extAlloc->IntraMode[3]);
+
+    /* inter distortion */
+    for (k = MFX_FEI_H265_BLK_32x32; k <=  MFX_FEI_H265_BLK_16x32; k++)
+        GetDimensionsCmSurface2DUp<mfxU32>(device, cmMvW[k] * 16, cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterDist[k]);
+    for (k = MFX_FEI_H265_BLK_16x16; k <= MFX_FEI_H265_BLK_8x8; k++)
+        GetDimensionsCmSurface2DUp<mfxU32>(device, cmMvW[k] * 1,  cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterDist[k]);
+
+    /* inter MV */
+    for (k = MFX_FEI_H265_BLK_32x32; k <=  MFX_FEI_H265_BLK_8x8; k++)
+        GetDimensionsCmSurface2DUp<mfxI16Pair>(device, cmMvW[k], cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterMV[k]);
+
+    /* interpolate */
+    GetDimensionsCmSurface2DUp<Ipp8u>(device, interpWidth, interpHeight, CM_SURFACE_FORMAT_P8, &extAlloc->Interpolate[0]);
+    GetDimensionsCmSurface2DUp<Ipp8u>(device, interpWidth, interpHeight, CM_SURFACE_FORMAT_P8, &extAlloc->Interpolate[1]);
+    GetDimensionsCmSurface2DUp<Ipp8u>(device, interpWidth, interpHeight, CM_SURFACE_FORMAT_P8, &extAlloc->Interpolate[2]);
+
+    return MFX_ERR_NONE;
+}
+
+/* allocate a single input surface (source or recon) or output surface */
+void * H265CmCtx::AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMem, mfxSurfInfoENC *surfInfo)
+{
+    mfxFEIH265Surface *s;
+
+    switch (surfaceType) {
+    case MFX_FEI_H265_SURFTYPE_INPUT:
+        s = new mfxFEIH265Surface();    // zero-init
+
+        s->surfaceType = MFX_FEI_H265_SURFTYPE_INPUT;
+        s->sIn.bufOrig     = CreateSurface(device, sourceWidth, sourceHeight, CM_SURFACE_FORMAT_NV12);
+        s->sIn.bufDown2x   = CreateSurface(device, width2x, height2x, CM_SURFACE_FORMAT_NV12);
+        s->sIn.bufDown4x   = CreateSurface(device, width4x, height4x, CM_SURFACE_FORMAT_NV12);
+        if (hmeLevel == HME_LEVEL_HIGH) {
+            s->sIn.bufDown8x = CreateSurface(device,  width8x,  height8x,  CM_SURFACE_FORMAT_NV12);
+            s->sIn.bufDown16x = CreateSurface(device, width16x, height16x, CM_SURFACE_FORMAT_NV12);
+        }
+        
+        return s;
+    case MFX_FEI_H265_SURFTYPE_OUTPUT:
+        s = new mfxFEIH265Surface();    // zero-init
+
+        s->surfaceType = MFX_FEI_H265_SURFTYPE_OUTPUT;
+        s->sOut.sysMem = (unsigned char *)sysMem;
+
+        CreateCmSurface2DUpPreAlloc(device, surfInfo->numBytesInRow, surfInfo->numRows, CM_SURFACE_FORMAT_P8, s->sOut.sysMem, s->sOut.bufOut);
+        
+        return s;
+    default:
+        return NULL;
+    }
+}
+
+mfxStatus H265CmCtx::FreeSurface(mfxFEIH265Surface *s)
+{
+    switch (s->surfaceType) {
+    case MFX_FEI_H265_SURFTYPE_INPUT:
+        device->DestroySurface(s->sIn.bufOrig);
+        device->DestroySurface(s->sIn.bufDown2x);
+        device->DestroySurface(s->sIn.bufDown4x);
+        if (s->sIn.bufDown8x)   device->DestroySurface(s->sIn.bufDown8x);
+        if (s->sIn.bufDown16x)  device->DestroySurface(s->sIn.bufDown16x);
+        break;
+    case MFX_FEI_H265_SURFTYPE_OUTPUT:
+        DestroyCmSurface2DUpPreAlloc(device, s->sOut.bufOut);
+        break;
+    default:
+        return MFX_ERR_INVALID_HANDLE;
+    }
+        
+    delete s;
+    return MFX_ERR_NONE;
 }
 
 ///* must correspond with public API! */
@@ -83,9 +236,6 @@ void DestroyCmBufferUp(CmDevice *device, void *bufferCpu, CmBufferUP *bufferGpu)
 
 mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
 {
-    Ipp32u i, j, k;
-    Ipp32s cmMvW[MFX_FEI_H265_BLK_MAX], cmMvH[MFX_FEI_H265_BLK_MAX];
-
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "AllocateCmResources");
 
     /* init member variables */
@@ -93,6 +243,8 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     height        = param->Height;
     numRefFrames  = param->NumRefFrames;
     numIntraModes = param->NumIntraModes;
+    bitDepth      = param->BitDepth;
+    targetUsage   = param->TargetUsage;
 
     /* basic parameter checking */
     if (param->Height == 0 || param->Width == 0 || param->NumRefFrames > MFX_FEI_H265_MAX_NUM_REF_FRAMES || param->NumIntraModes != 1) {
@@ -105,6 +257,14 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     } else {
         vmeMode = VME_MODE_SMALL;
     }
+
+    rectParts = (vmeMode == VME_MODE_REFINE);
+#if defined (AS_H265FEI_PLUGIN) || defined (SAVE_FEI_STATE)
+    rectParts = 1;  // to enable 16x32 and 32x16
+#endif  // (AS_H265FEI_PLUGIN)
+
+    sourceWidth = width;
+    sourceHeight = height;
 
     /* pad and align to 16 pixels */
     width32  = AlignValue(width, 32);
@@ -119,6 +279,11 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     height8x = AlignValue(height / 8, 16);
     width16x = AlignValue(width / 16, 16);
     height16x = AlignValue(height / 16, 16);
+
+    interpWidth  = width  + 2*MFX_FEI_H265_INTERP_BORDER;
+    interpHeight = height + 2*MFX_FEI_H265_INTERP_BORDER;
+    interpBlocksW = (interpWidth + 8 - 1) / 8;
+    interpBlocksH = (interpHeight + 8 - 1) / 8;
 
     if ((width >= 720) || (height >=576))   {
         hmeLevel = HME_LEVEL_HIGH;
@@ -175,124 +340,6 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
 
     device->CreateTask(task);
 
-    /* create surfaces for input (source) data, double buffer for max of one frame lookahead */
-    for (i = 0; i < FEI_DEPTH; i++) {
-        picBufInput[i].encOrder = -1;
-        picBufInput[i].bufOrig   = CreateSurface(device, param->Width, param->Height, CM_SURFACE_FORMAT_NV12);
-        picBufInput[i].bufDown2x = CreateSurface(device, width2x, height2x, CM_SURFACE_FORMAT_NV12);
-        picBufInput[i].bufDown4x = CreateSurface(device, width4x, height4x, CM_SURFACE_FORMAT_NV12);
-        if (hmeLevel == HME_LEVEL_HIGH) {
-            picBufInput[i].bufDown8x = CreateSurface(device, width8x, height8x, CM_SURFACE_FORMAT_NV12);
-            picBufInput[i].bufDown16x = CreateSurface(device, width16x, height16x, CM_SURFACE_FORMAT_NV12);
-        }
-
-        refBufMap[i] = -1;
-    }
-
-    /* see test_interpolate_frame.cpp */
-    interpWidth  = width  + 2*MFX_FEI_H265_INTERP_BORDER;
-    interpHeight = height + 2*MFX_FEI_H265_INTERP_BORDER;
-    interpBlocksW = (interpWidth + 8 - 1) / 8;
-    interpBlocksH = (interpHeight + 8 - 1) / 8;
-
-    /* create surfaces for reference data
-     * allocate numRefFrames + 1 surfaces for max of one frame lookahead
-     * (assume that ref frame list for frame N+1 has at most one new ref frame compared to list for frame N)
-     * also allocate 3 surfaces for each ref frame for the half-pel interpolated frames
-     */
-    for (i = 0; i < numRefBufs; i++) {
-        picBufRef[i].encOrder = -1;
-        picBufRef[i].bufOrig = CreateSurface(device, param->Width, param->Height, CM_SURFACE_FORMAT_NV12);
-        picBufRef[i].bufDown2x = CreateSurface(device, width2x, height2x, CM_SURFACE_FORMAT_NV12);
-        picBufRef[i].bufDown4x = CreateSurface(device, width4x, height4x, CM_SURFACE_FORMAT_NV12);
-        if (hmeLevel == HME_LEVEL_HIGH) {
-            picBufRef[i].bufDown8x = CreateSurface(device, width8x, height8x, CM_SURFACE_FORMAT_NV12);
-            picBufRef[i].bufDown16x = CreateSurface(device, width16x, height16x, CM_SURFACE_FORMAT_NV12);
-        }
-
-#ifdef ENABLE_INTERP_KERNELS
-        CreateCmSurface2DUp(device, interpWidth, interpHeight, CM_SURFACE_FORMAT_P8, um_interpolateData[i][0], picBufRef[i].bufHPelH, um_interpolatePitch);
-        CreateCmSurface2DUp(device, interpWidth, interpHeight, CM_SURFACE_FORMAT_P8, um_interpolateData[i][1], picBufRef[i].bufHPelV, um_interpolatePitch);
-        CreateCmSurface2DUp(device, interpWidth, interpHeight, CM_SURFACE_FORMAT_P8, um_interpolateData[i][2], picBufRef[i].bufHPelD, um_interpolatePitch);
-#endif
-    }
-
-    /* dimensions of output MV grid for each block size (width/height were aligned to multiple of 16)
-     * currently Cm kernels do not process non-square blocks < 16x16, but allocate surfaces anyway to avoid changing API (may be supported in future)
-     */
-    cmMvW[MFX_FEI_H265_BLK_16x16   ] = width / 16;      cmMvH[MFX_FEI_H265_BLK_16x16   ] = height / 16;
-    cmMvW[MFX_FEI_H265_BLK_16x8    ] = width / 16;      cmMvH[MFX_FEI_H265_BLK_16x8    ] = height /  8;
-    cmMvW[MFX_FEI_H265_BLK_8x16    ] = width /  8;      cmMvH[MFX_FEI_H265_BLK_8x16    ] = height / 16;
-    cmMvW[MFX_FEI_H265_BLK_8x8     ] = width /  8;      cmMvH[MFX_FEI_H265_BLK_8x8     ] = height /  8;
-    cmMvW[MFX_FEI_H265_BLK_8x4_US  ] = width /  8;      cmMvH[MFX_FEI_H265_BLK_8x4_US  ] = height /  4;
-    cmMvW[MFX_FEI_H265_BLK_4x8_US  ] = width /  4;      cmMvH[MFX_FEI_H265_BLK_4x8_US  ] = height /  8;
-    cmMvW[MFX_FEI_H265_BLK_32x32   ] = width2x / 16;    cmMvH[MFX_FEI_H265_BLK_32x32   ] = height2x / 16;
-    cmMvW[MFX_FEI_H265_BLK_32x16   ] = width2x / 16;    cmMvH[MFX_FEI_H265_BLK_32x16   ] = height2x /  8;
-    cmMvW[MFX_FEI_H265_BLK_16x32   ] = width2x /  8;    cmMvH[MFX_FEI_H265_BLK_16x32   ] = height2x / 16;
-    cmMvW[MFX_FEI_H265_BLK_64x64   ] = width4x / 16;    cmMvH[MFX_FEI_H265_BLK_64x64   ] = height4x / 16;
-    cmMvW[MFX_FEI_H265_BLK_128x128 ] = width8x / 16;    cmMvH[MFX_FEI_H265_BLK_128x128 ] = height8x / 16;
-    cmMvW[MFX_FEI_H265_BLK_256x256 ] = width16x / 16;   cmMvH[MFX_FEI_H265_BLK_256x256 ] = height16x / 16;
-
-    for (i = 0; i < FEI_DEPTH; i++) {
-        CreateCmSurface2DUp(device, width / 16, height / 16, CM_SURFACE_FORMAT_P8, um_mbIntraDist[i], mbIntraDist[i], um_intraPitch);
-
-        /* create surfaces for intra histograms (4x4 and 8x8) and distortion (16x16) */
-        // note: GradientAnalisys32x32Best treats blocks 32x32
-        CreateCmSurface2DUp(device, width32 /  4, height32 /  4, CM_SURFACE_FORMAT_P8,   um_mbIntraGrad4x4[i],   mbIntraGrad4x4[i],   um_pitchGrad4x4[i]);
-        CreateCmSurface2DUp(device, width32 /  8, height32 /  8, CM_SURFACE_FORMAT_P8,   um_mbIntraGrad8x8[i],   mbIntraGrad8x8[i],   um_pitchGrad8x8[i]);
-        CreateCmSurface2DUp(device, width32 / 16, height32 / 16, CM_SURFACE_FORMAT_P8, um_mbIntraGrad16x16[i], mbIntraGrad16x16[i], um_pitchGrad16x16[i]);
-        CreateCmSurface2DUp(device, width32 / 32, height32 / 32, CM_SURFACE_FORMAT_P8, um_mbIntraGrad32x32[i], mbIntraGrad32x32[i], um_pitchGrad32x32[i]);
-
-        /* create surfaces for inter motion vectors and distortion estimates */
-        for (j = 0; j < numRefFrames; j++) {
-            /* distortion estimates */
-            for (k = MFX_FEI_H265_BLK_32x32; k <=  MFX_FEI_H265_BLK_16x32; k++)
-                CreateCmSurface2DUp(device, cmMvW[k] * 16, cmMvH[k], CM_SURFACE_FORMAT_P8, um_distCpu[i][j][k], distGpu[i][j][k], um_pitchDist[k]);
-            for (k = MFX_FEI_H265_BLK_16x16; k < MFX_FEI_H265_BLK_MAX; k++) {
-                if (/*(k == MFX_FEI_H265_BLK_16x8) || (k == MFX_FEI_H265_BLK_8x16) || */(k == MFX_FEI_H265_BLK_8x4_US) || (k == MFX_FEI_H265_BLK_4x8_US))
-                    continue; // others are not used in tu7 now
-                CreateCmSurface2DUp(device, cmMvW[k] * 1, cmMvH[k], CM_SURFACE_FORMAT_P8, um_distCpu[i][j][k], distGpu[i][j][k], um_pitchDist[k]);
-            }
-
-            /* motion vectors */
-            for (k = 0; k < MFX_FEI_H265_BLK_MAX; k++) {
-                if (/*(k == MFX_FEI_H265_BLK_16x8) || (k == MFX_FEI_H265_BLK_8x16) || */(k == MFX_FEI_H265_BLK_8x4_US) || (k == MFX_FEI_H265_BLK_4x8_US))
-                    continue; // others are not used in tu7 now
-                if (HME_LEVEL_LOW) {
-                    if ((k == MFX_FEI_H265_BLK_256x256) || (k == MFX_FEI_H265_BLK_128x128) || (k == MFX_FEI_H265_BLK_64x64))
-                        continue;
-                } else
-                {   /* for HME_LEVEL_HIGH 16x, 8x and 4x MVs are not saved in Ime3tiers kernel now*/
-                    if ((k == MFX_FEI_H265_BLK_256x256) || (k == MFX_FEI_H265_BLK_128x128) || (k == MFX_FEI_H265_BLK_64x64))
-                        continue;
-                }
-                { // surfaces 256x256, 128x128 and 64x64 should be aligned to 256 to use Ime3tiers kernel
-                    mfxU32 w0 = cmMvW[k];
-                    mfxU32 h0 = cmMvH[k];
-/*
-                    if (k == MFX_FEI_H265_BLK_128x128) {
-                        w0 = width16x * 2;
-                        h0 = height16x * 2;
-                    } else if (k == MFX_FEI_H265_BLK_64x64) {
-                        w0 = width16x * 4;
-                        h0 = height16x * 4;
-                    }
-*/
-                    CreateCmSurface2DUp(device, w0, h0, CM_SURFACE_FORMAT_P8, um_mvCpu[i][j][k], mvGpu[i][j][k], um_pitchMv[k]);
-                }
-            }
-        }
-
-        /* allocate buffers to store top N angle candidates for 4x4, 8x8 intra */
-        um_mbIntraModeTop4[i]  = new mfxI16[numIntraModes * (width/4)  * (height/4)];
-        um_mbIntraModeTop8[i]  = new mfxI16[numIntraModes * (width/8)  * (height/8)];
-        um_mbIntraModeTop16[i] = new mfxI16[numIntraModes * (width/16) * (height/16)];
-        um_mbIntraModeTop32[i] = new mfxI16[numIntraModes * (width/32) * (height/32)];
-
-        if (!um_mbIntraModeTop4[i] || !um_mbIntraModeTop8[i] || !um_mbIntraModeTop16[i] || !um_mbIntraModeTop32[i])
-            return MFX_ERR_MEMORY_ALLOC;
-    }
-
     /* create Cm kernels */
     kernelDownSample2tiers = CreateKernel(device, program, "DownSampleMB2t", (void *)DownSampleMB2t);
     kernelDownSample4tiers = CreateKernel(device, program, "DownSampleMB4t", (void *)DownSampleMB4t);
@@ -348,218 +395,75 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         me16xControl->WriteSurface((mfxU8 *)&control, NULL);
     }
 
+    if (bitDepth > 8)
+        bitDepthBuffer = (mfxU8 *)CM_ALIGNED_MALLOC(width*height*2, 16);
+
     return MFX_ERR_NONE;
 }
 
+// TODO - update
 void H265CmCtx::FreeCmResources()
 {
-    Ipp32u i, j, k;
+    if (lastEventSaved != NULL && lastEventSaved != CM_NO_EVENT)
+        queue->DestroyEvent(lastEventSaved);
 
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "FreeCmResources");
-
-    device->DestroySurface(curbe);
-    device->DestroySurface(me1xControl);
-    device->DestroySurface(me2xControl);
-    device->DestroySurface(me4xControl);
-    if (hmeLevel == HME_LEVEL_HIGH) {
-        device->DestroySurface(me8xControl);
-        device->DestroySurface(me16xControl);
-    }
-
-    device->DestroyKernel(kernelDownSample2tiers);
-    device->DestroyKernel(kernelDownSample4tiers);
-    device->DestroyKernel(kernelMeIntra);
-    device->DestroyKernel(kernelGradient);
-    device->DestroyKernel(kernelMe16);
-    device->DestroyKernel(kernelMe32);
-    device->DestroyKernel(kernelRefine32x32);
-    device->DestroyKernel(kernelRefine32x16);
-    device->DestroyKernel(kernelRefine16x32);
-    device->DestroyKernel(kernelInterpolateFrame);
-    device->DestroyKernel(kernelIme);
-    device->DestroyKernel(kernelIme3tiers);
-
-    for (i = 0; i < FEI_DEPTH; i++) {
-        DestroyCmSurface2DUp(device, um_mbIntraDist[i], mbIntraDist[i]);
-        DestroyCmSurface2DUp(device,   um_mbIntraGrad4x4[i],   mbIntraGrad4x4[i]);
-        DestroyCmSurface2DUp(device,   um_mbIntraGrad8x8[i],   mbIntraGrad8x8[i]);
-        DestroyCmSurface2DUp(device, um_mbIntraGrad16x16[i], mbIntraGrad16x16[i]);
-        DestroyCmSurface2DUp(device, um_mbIntraGrad32x32[i], mbIntraGrad32x32[i]);
-
-        for (j = 0; j < numRefFrames; j++) {
-            for (k = 0; k < MFX_FEI_H265_BLK_MAX; k++) {
-                DestroyCmSurface2DUp(device, um_distCpu[i][j][k], distGpu[i][j][k]);
-                DestroyCmSurface2DUp(device, um_mvCpu[i][j][k], mvGpu[i][j][k]);
-            }
-        }
-
-        delete[] um_mbIntraModeTop4[i];
-        delete[] um_mbIntraModeTop8[i];
-        delete[] um_mbIntraModeTop16[i];
-        delete[] um_mbIntraModeTop32[i];
-    }
-
-    for (i = 0; i < FEI_DEPTH; i++) {
-        device->DestroySurface(picBufInput[i].bufOrig);
-        device->DestroySurface(picBufInput[i].bufDown2x);
-        device->DestroySurface(picBufInput[i].bufDown4x);
-        if (hmeLevel == HME_LEVEL_HIGH) {
-            device->DestroySurface(picBufInput[i].bufDown8x);
-            device->DestroySurface(picBufInput[i].bufDown16x);
-        }
-    }
-
-    for (i = 0; i < numRefBufs; i++) {
-        device->DestroySurface(picBufRef[i].bufOrig);
-        device->DestroySurface(picBufRef[i].bufDown2x);
-        device->DestroySurface(picBufRef[i].bufDown4x);
-        if (hmeLevel == HME_LEVEL_HIGH) {
-            device->DestroySurface(picBufRef[i].bufDown8x);
-            device->DestroySurface(picBufRef[i].bufDown16x);
-        }
-
-#ifdef ENABLE_INTERP_KERNELS
-        DestroyCmSurface2DUp(device, um_interpolateData[i][0], picBufRef[i].bufHPelH);
-        DestroyCmSurface2DUp(device, um_interpolateData[i][1], picBufRef[i].bufHPelV);
-        DestroyCmSurface2DUp(device, um_interpolateData[i][2], picBufRef[i].bufHPelD);
-#endif
-    }
-
+    if (bitDepthBuffer)
+        CM_ALIGNED_FREE(bitDepthBuffer);
+ 
     device->DestroyTask(task);
     device->DestroyProgram(program);
     ::DestroyCmDevice(device);
 }
 
-Ipp32s H265CmCtx::GetCurIdx(int encOrder)
+void H265CmCtx::ConvertBitDepth(void *inPtr, mfxU32 inBits, mfxU32 inPitch, void *outPtr, mfxU32 outBits)
 {
-    int idx, minIdx;
+    // TODO - arbitrary bit depths, add AVX2 code, eventually move to GPU
+    mfxU16 *in16;
+    mfxU8  *out08;
+    mfxU32 i, j;
+    mfxU32 rnd, shift;
 
-    //fprintf(stderr, "Frame POC = % 3d\n", frameIn->EncOrder);
-    //fprintf(stderr, "CURR: refBufMap = {% 3d, % 3d}, idx = % 2d --> ", refBufMap[0], refBufMap[1], curIdx);
+    in16 = (mfxU16 *)inPtr;
+    out08 = (mfxU8 *)outPtr;
 
-    /* check if frame is already in buffer, or if buffer has empty slots (startup) */
-    for (idx = 0; idx < FEI_DEPTH; idx++) {
-        if (refBufMap[idx] == encOrder || refBufMap[idx] == -1) {
-            refBufMap[idx] = encOrder;
-            return idx;
+    shift = (inBits - 8);
+    rnd = (1 << (shift - 1));
+
+    for (i = 0; i < height; i++) {
+        for (j = 0; j < width; j++) {
+            out08[i*width + j] = (mfxU8)((in16[i*inPitch/2 + j] + rnd) >> shift);
         }
     }
-
-    /* overwrite oldest frame */
-    minIdx = 0;
-    for (idx = 1; idx < FEI_DEPTH; idx++) {
-        if (refBufMap[idx] < refBufMap[minIdx])
-            minIdx = idx;
-    }
-
-    refBufMap[minIdx] = encOrder;
-    return minIdx;
 }
 
-/* return index of input or ref buffer, if not in buffer return -1 */
-Ipp32s H265CmCtx::GetGPUBuf(mfxFEIH265Input *feiIn, Ipp32s poc, Ipp32s getRef)
+/* copy new input frame to GPU (original and downsampled if needed) */
+mfxStatus H265CmCtx::CopyInputFrameToGPU(CmEvent **lastEvent, mfxHDL pInSurf, void *YPlane, mfxU32 YPitch, mfxU32 YBitDepth)
 {
-    Ipp32u i;
+    mfxFEIH265InputSurface *surf = GET_INSURF(pInSurf);
 
-    if (getRef) {
-        /* return reference buffer index */
-        for (i = 0; i < numRefBufs; i++) {
-            if (picBufRef[i].encOrder == poc)
-                return i;
-        }
-    } else {
-        /* return input buffer index */
-        for (i = 0; i < 2; i++) {
-///            if (picBufInput[i].picOrder == poc)
-                if (picBufInput[i].encOrder == poc)
-                return i;
-        }
+    if (YBitDepth > 8) {
+        ConvertBitDepth(YPlane, YBitDepth, YPitch, bitDepthBuffer, 8);
+        EnqueueCopyCPUToGPUStride(queue, surf->bufOrig, bitDepthBuffer, width, *lastEvent);
+        //(*lastEvent)->WaitForTaskFinished(0xffffffff);  // TODO - avoid multiple threads overwriting same tmp buffer (assign multiple bufs?)
+    } else if (YBitDepth == 8) {
+        EnqueueCopyCPUToGPUStride(queue, surf->bufOrig, YPlane, YPitch, *lastEvent);
     }
-
-    return -1;
-}
-
-/* add new input frame to buffer (original and downsampled if needed) */
-Ipp32s H265CmCtx::AddGPUBufInput(mfxFEIH265Input *feiIn, mfxFEIH265Frame *frameIn, int idx)
-{
-///    picBufInput[idx].picOrder = frameIn->PicOrder;
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "InputCpy/DS");
-
-    picBufInput[idx].encOrder = frameIn->EncOrder;
-    EnqueueCopyCPUToGPUStride(queue, picBufInput[idx].bufOrig, frameIn->YPlane, frameIn->YPitch, lastEvent[idx]);
 
     if (hmeLevel == HME_LEVEL_HIGH) {
-        SetKernelArg(kernelDownSample4tiers, picBufInput[idx].bufOrig, picBufInput[idx].bufDown2x, picBufInput[idx].bufDown4x,
-            picBufInput[idx].bufDown8x, picBufInput[idx].bufDown16x);
+        SetKernelArg(kernelDownSample4tiers, surf->bufOrig, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
         // output is by 16x16
-        EnqueueKernel(device, queue, kernelDownSample4tiers, width16x / 16, height16x / 16, lastEvent[idx]);
+        EnqueueKernel(device, queue, kernelDownSample4tiers, width16x / 16, height16x / 16, *lastEvent);
     } else {  // HME_LEVEL_LOW
-        SetKernelArg(kernelDownSample2tiers, picBufInput[idx].bufOrig, picBufInput[idx].bufDown2x, picBufInput[idx].bufDown4x);
+        SetKernelArg(kernelDownSample2tiers, surf->bufOrig, surf->bufDown2x, surf->bufDown4x);
         // output is by 8x8
-        EnqueueKernel(device, queue, task, kernelDownSample2tiers, width2x / 16, height2x / 16, lastEvent[idx]);
+        EnqueueKernel(device, queue, task, kernelDownSample2tiers, width2x / 16, height2x / 16, *lastEvent);
     }
 
-/*
-    if (vmeMode >= VME_MODE_LARGE) {
-        SetKernelArg(kernelDownSampleSrc, picBufInput[idx].bufOrig, picBufInput[idx].bufDown2x);
-        EnqueueKernel(device, queue, task, kernelDownSampleSrc, width / 16, height / 16, lastEvent[idx]);
-    }
-*/
-
-    return idx;
-}
-
-/* add new reference frame to buffer (original and downsampled if needed) */
-Ipp32s H265CmCtx::AddGPUBufRef(mfxFEIH265Input *feiIn, mfxFEIH265Frame *frameRef, int idx)
-{
-    Ipp32u i, minIdx;
-
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "RefCpy/DS");
-
-    /* at startup -1 means empty slot */
-    for (i = 0; i < numRefBufs; i++) {
-        if (picBufRef[i].encOrder == -1)
-            break;
-    }
-
-    /* if no empty slots in ref buffer, replace the oldest  */
-    if (i == numRefBufs) {
-        minIdx = 0;
-        for (i = 1; i < numRefBufs; i++) {
-            if (picBufRef[i].encOrder < picBufRef[minIdx].encOrder)
-                minIdx = i;
-        }
-        i = minIdx;
-    }
-    VM_ASSERT(i < numRefBufs);
-
-    picBufRef[i].encOrder = frameRef->EncOrder;
-    EnqueueCopyCPUToGPUStride(queue, picBufRef[i].bufOrig, frameRef->YPlane, frameRef->YPitch, lastEvent[idx]);
-
-    /* DownSample reference frame for HME */
-    if (hmeLevel == HME_LEVEL_HIGH) {
-        SetKernelArg(kernelDownSample4tiers, picBufRef[i].bufOrig, picBufRef[i].bufDown2x, picBufRef[i].bufDown4x,
-            picBufRef[i].bufDown8x, picBufRef[i].bufDown16x);
-        // output is by 16x16
-        EnqueueKernel(device, queue, kernelDownSample4tiers, width16x / 16, height16x / 16, lastEvent[idx]);
-    } else {  // HME_LEVEL_LOW
-        SetKernelArg(kernelDownSample2tiers, picBufRef[i].bufOrig, picBufRef[i].bufDown2x, picBufRef[i].bufDown4x);
-        // output is by 8x8
-        EnqueueKernel(device, queue, task, kernelDownSample2tiers, width2x / 16, height2x / 16, lastEvent[idx]);
-    }
-
-/*
-    if (vmeMode >= VME_MODE_LARGE) {
-        SetKernelArg(kernelDownSampleSrc, picBufRef[i].bufOrig, picBufRef[i].bufDown2x);
-        EnqueueKernel(device, queue, task, kernelDownSampleSrc, width / 16, height / 16, lastEvent[idx]);
-    }
-*/
-
-    return i;
+    return MFX_ERR_NONE;
 }
 
 /* common ME kernel */
-void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurface2DUP **mv, PicBufGpu *picBufInput, PicBufGpu *picBufRef)
+void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurface2DUP **mv, mfxFEIH265InputSurface *picBufInput, mfxFEIH265InputSurface *picBufRef)
 {
     SurfaceIndex *refs = NULL, *refs2x = NULL, *refs4x = NULL, *refs8x = NULL, *refs16x = NULL;
 
@@ -589,10 +493,6 @@ void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurfac
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Me32");
-        mfxI32 rectParts = (vmeMode == VME_MODE_REFINE);
-#if defined (AS_H265FEI_PLUGIN) || defined (SAVE_FEI_STATE)
-        rectParts = 1;  // to enable 16x32 and 32x16
-#endif  // (AS_H265FEI_PLUGIN)
         SetKernelArg(kernelMe32, me2xControl, *refs2x, mv[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_16x16],
             mv[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_16x32], rectParts);
         EnqueueKernel(device, queue, task, kernelMe32, width2x / 16, height2x / 16, *lastEvent);
@@ -623,10 +523,6 @@ void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurfac
     {
         /* always estimate 4x8, 8x4, ... 16x16 */
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Me16");
-        mfxI32 rectParts = (vmeMode == VME_MODE_REFINE);
-#if defined (AS_H265FEI_PLUGIN) || defined (SAVE_FEI_STATE)
-        rectParts = 1;  // to enable 16x8 and 8x16
-#endif  // (AS_H265FEI_PLUGIN)
         SetKernelArg(kernelMe16, me1xControl, *refs, dist[MFX_FEI_H265_BLK_16x16], dist[MFX_FEI_H265_BLK_16x8], dist[MFX_FEI_H265_BLK_8x16],
             dist[MFX_FEI_H265_BLK_8x8]/*, dist[MFX_FEI_H265_BLK_8x4_US], dist[MFX_FEI_H265_BLK_4x8_US]*/, mv[MFX_FEI_H265_BLK_16x16],
             mv[MFX_FEI_H265_BLK_16x8], mv[MFX_FEI_H265_BLK_8x16], mv[MFX_FEI_H265_BLK_8x8]/*, mv[MFX_FEI_H265_BLK_8x4_US], mv[MFX_FEI_H265_BLK_4x8_US]*/, rectParts);
@@ -642,176 +538,151 @@ void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurfac
     device->DestroyVmeSurfaceG7_5(refs);
 }
 
-mfxFEISyncPoint H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxFEIH265Output *feiOut)
+void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
 {
-    Ipp32s refIdx, bufIn, bufRef;
     mfxFEIH265Frame *frameIn;
+    mfxFEIH265InputSurface *surfInSrc;
+    mfxFEIH265InputSurface *surfInRef;
+    CmSurface2DUP *dist[MFX_FEI_H265_BLK_MAX], *mv[MFX_FEI_H265_BLK_MAX];
+    CmEvent * lastEvent;
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "RunVme");
 
     /* load current frame */
     frameIn = &(feiIn->FEIFrameIn);
-    if (!frameIn->YPlane)
-        return NULL;
+    //if (!frameIn->YPlane)
+    //    return NULL;        // TODO - probably this should go away since interpolate is on recon frames only - need to check elsewhere for NULL ptr
 
-    /* get index for set of GPU buffers */
-    curIdx = GetCurIdx(frameIn->EncOrder);
-
-    lastEvent[curIdx] = 0;
+    /* if set, don't call DestroyEvent() on the final event from previous call to ProcessFrameAsync() - leave it active for app to sync on then destroy manually */
+    if (saveSyncPoint) {
+        //fprintf(stderr, "skipping destroy, addr = 0x%p\n", lastEventSaved);
+        lastEvent = NULL;
+    } else {
+        //fprintf(stderr, "running destroy,  addr = 0x%p\n", lastEventSaved);
+        lastEvent = lastEventSaved;
+    }
 
     if (feiIn->FrameType == MFX_FRAMETYPE_I)        { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "  frame = I"); }
     else if (feiIn->FrameType == MFX_FRAMETYPE_P)   { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "  frame = P"); }
     else if (feiIn->FrameType == MFX_FRAMETYPE_B)   { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "  frame = B"); }
 
-    /* get index of input frame, add to buffer if it's not present (first time used) */
-    bufIn = 0;  // warning removal
-    if (feiIn->FEIOp) {
-///        bufIn = GetGPUBuf(feiIn, frameIn->PicOrder, 0);
-        bufIn = GetGPUBuf(feiIn, frameIn->EncOrder, 0);
-        //fprintf(stderr, "(I) poc = % 3d bufIn = % 2d  ", frameIn->PicOrder, bufIn);
-        if (bufIn < 0) {
-            //fprintf(stderr, " adding... ");
-            bufIn = AddGPUBufInput(feiIn, frameIn, curIdx);
-        }
-        //fprintf(stderr, " bufIn = % 2d\n", bufIn);
-    }
+    /* copy frames to GPU first if needed */
+    if (feiIn->FEIOp & MFX_FEI_H265_OP_GPU_COPY_SRC)
+        CopyInputFrameToGPU(&lastEvent, feiIn->FEIFrameIn.surfIn, feiIn->FEIFrameIn.YPlane, feiIn->FEIFrameIn.YPitch, feiIn->FEIFrameIn.YBitDepth);
+
+    if (feiIn->FEIOp & MFX_FEI_H265_OP_GPU_COPY_REF)
+        CopyInputFrameToGPU(&lastEvent, feiIn->FEIFrameRef.surfIn, feiIn->FEIFrameRef.YPlane, feiIn->FEIFrameRef.YPitch, feiIn->FEIFrameRef.YBitDepth);
+
+    surfInSrc = GET_INSURF(feiIn->FEIFrameIn.surfIn);
+    surfInRef = GET_INSURF(feiIn->FEIFrameRef.surfIn);
 
     if (feiIn->FEIOp & MFX_FEI_H265_OP_INTRA_MODE) {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Gradient");
-        SetKernelArg(kernelGradient, picBufInput[bufIn].bufOrig, mbIntraGrad4x4[curIdx], mbIntraGrad8x8[curIdx],
-            mbIntraGrad16x16[curIdx], mbIntraGrad32x32[curIdx], width);
-        EnqueueKernel(device, queue, task, kernelGradient, width32 / 32, height32 / 32, lastEvent[curIdx]);
+        SetKernelArg(kernelGradient, surfInSrc->bufOrig, GET_OUTSURF(feiOut->SurfIntraMode[0]), GET_OUTSURF(feiOut->SurfIntraMode[1]), GET_OUTSURF(feiOut->SurfIntraMode[2]), GET_OUTSURF(feiOut->SurfIntraMode[3]), width);
+        EnqueueKernel(device, queue, task, kernelGradient, width32 / 32, height32 / 32, lastEvent);
     }
 
     if ((feiIn->FEIOp & MFX_FEI_H265_OP_INTRA_DIST) && (feiIn->FrameType == MFX_FRAMETYPE_P || feiIn->FrameType == MFX_FRAMETYPE_B)) {
-        SurfaceIndex *refsIntra = CreateVmeSurfaceG75(device, picBufInput[bufIn].bufOrig, 0, 0, 0, 0);
-        SetKernelArg(kernelMeIntra, curbe, *refsIntra, picBufInput[bufIn].bufOrig, mbIntraDist[curIdx]);
-        EnqueueKernel(device, queue, task, kernelMeIntra, width / 16, height / 16, lastEvent[curIdx]);
+        SurfaceIndex *refsIntra = CreateVmeSurfaceG75(device, surfInSrc->bufOrig, 0, 0, 0, 0);
+        SetKernelArg(kernelMeIntra, curbe, *refsIntra, surfInSrc->bufOrig, GET_OUTSURF(feiOut->SurfIntraDist));
+        EnqueueKernel(device, queue, task, kernelMeIntra, width / 16, height / 16, lastEvent);
         device->DestroyVmeSurfaceG7_5(refsIntra);
     }
 
     /* process 1 ref frame */
     if ((feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME | MFX_FEI_H265_OP_INTERPOLATE)) && (feiIn->FrameType == MFX_FRAMETYPE_P || feiIn->FrameType == MFX_FRAMETYPE_B)) {
-        if ( feiIn->FEIFrameRef.YPlane ) {
+        //if ( feiIn->FEIFrameRef.YPlane )
+        {
             //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "RunVmeKernel - P/B");
-            refIdx = feiIn->RefIdx;
-            bufRef = GetGPUBuf(feiIn, feiIn->FEIFrameRef.EncOrder, 1);
-            if (bufRef < 0)
-                bufRef = AddGPUBufRef(feiIn, &feiIn->FEIFrameRef, curIdx);
-
             if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME)) {
                 //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "  InterME - P/B");
-                RunVmeKernel(&lastEvent[curIdx], distGpu[curIdx][refIdx], mvGpu[curIdx][refIdx], &picBufInput[bufIn], &picBufRef[bufRef]);
+                //for (Ipp32s k = MFX_FEI_H265_BLK_32x32; k <= MFX_FEI_H265_BLK_8x8; k++) {
+                //    dist[k] = GET_OUTSURF(feiOut->SurfInterDist[k]);
+                //    mv[k]   = GET_OUTSURF(feiOut->SurfInterMV[k]);
+                //}
+                dist[MFX_FEI_H265_BLK_32x16] = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_32x16 : MFX_FEI_H265_BLK_32x32]);
+                dist[MFX_FEI_H265_BLK_16x32] = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_16x32 : MFX_FEI_H265_BLK_32x32]);
+                dist[MFX_FEI_H265_BLK_32x32] = GET_OUTSURF(feiOut->SurfInterDist[MFX_FEI_H265_BLK_32x32]);
+                dist[MFX_FEI_H265_BLK_16x16] = GET_OUTSURF(feiOut->SurfInterDist[MFX_FEI_H265_BLK_16x16]);
+                dist[MFX_FEI_H265_BLK_16x8]  = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_16x8 : MFX_FEI_H265_BLK_16x16]);
+                dist[MFX_FEI_H265_BLK_8x16]  = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_8x16 : MFX_FEI_H265_BLK_16x16]);
+                dist[MFX_FEI_H265_BLK_8x8]   = GET_OUTSURF(feiOut->SurfInterDist[MFX_FEI_H265_BLK_8x8]);
+                mv[MFX_FEI_H265_BLK_32x16]   = GET_OUTSURF(feiOut->SurfInterMV[rectParts ? MFX_FEI_H265_BLK_32x16 : MFX_FEI_H265_BLK_32x32]);
+                mv[MFX_FEI_H265_BLK_16x32]   = GET_OUTSURF(feiOut->SurfInterMV[rectParts ? MFX_FEI_H265_BLK_16x32 : MFX_FEI_H265_BLK_32x32]);
+                mv[MFX_FEI_H265_BLK_32x32]   = GET_OUTSURF(feiOut->SurfInterMV[MFX_FEI_H265_BLK_32x32]);
+                mv[MFX_FEI_H265_BLK_16x16]   = GET_OUTSURF(feiOut->SurfInterMV[MFX_FEI_H265_BLK_16x16]);
+                mv[MFX_FEI_H265_BLK_16x8]    = GET_OUTSURF(feiOut->SurfInterMV[rectParts ? MFX_FEI_H265_BLK_16x8 : MFX_FEI_H265_BLK_16x16]);
+                mv[MFX_FEI_H265_BLK_8x16]    = GET_OUTSURF(feiOut->SurfInterMV[rectParts ? MFX_FEI_H265_BLK_8x16 : MFX_FEI_H265_BLK_16x16]);
+                mv[MFX_FEI_H265_BLK_8x8]     = GET_OUTSURF(feiOut->SurfInterMV[MFX_FEI_H265_BLK_8x8]);
+                RunVmeKernel(&lastEvent, dist, mv, surfInSrc, surfInRef);
             }
 
-#ifdef ENABLE_INTERP_KERNELS
             if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTERPOLATE)) {
                 //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "  Interpolate - P/B");
-
-                um_pInterpolateData[curIdx][refIdx][0] = um_interpolateData[bufRef][0];
-                um_pInterpolateData[curIdx][refIdx][1] = um_interpolateData[bufRef][1];
-                um_pInterpolateData[curIdx][refIdx][2] = um_interpolateData[bufRef][2];
-
-                SetKernelArg(kernelInterpolateFrame, picBufRef[bufRef].bufOrig, picBufRef[bufRef].bufHPelH, picBufRef[bufRef].bufHPelV, picBufRef[bufRef].bufHPelD);
-                EnqueueKernel(device, queue, task, kernelInterpolateFrame, interpBlocksW, interpBlocksH, lastEvent[curIdx]);
+                SetKernelArg(kernelInterpolateFrame, surfInRef->bufOrig, GET_OUTSURF(feiOut->SurfInterp[0]), GET_OUTSURF(feiOut->SurfInterp[1]), GET_OUTSURF(feiOut->SurfInterp[2]));
+                EnqueueKernel(device, queue, task, kernelInterpolateFrame, interpBlocksW, interpBlocksH, lastEvent);
             }
-#endif
         }
     }
 
-    /* allocate new sync object for current frame - will be freed in SyncCurrent() */
-    mfxSyncPoint syncPoint = new (_mfxSyncPoint);
+    saveSyncPoint = feiIn->SaveSyncPoint;
+    if (lastEvent)
+        lastEventSaved = lastEvent;
 
-    if (syncPoint) {
-        /* return NULL if memory alloc fails */
-        syncPoint->lastEvent = lastEvent[curIdx];
-        syncPoint->feiOut = feiOut;
-        syncPoint->curIdx = curIdx;
-        //fprintf(stderr, "Assigning sync point - ptr = 0x%p  lastEvent = 0x%p  feiOut = 0x%p  curIdx = %d)\n", syncPoint, syncPoint->lastEvent, syncPoint->feiOut, syncPoint->curIdx);
-    }
-
-    return syncPoint;
+    //fprintf(stderr, "Finish saved = %d, addr = 0x%p\n", saveSyncPoint, lastEventSaved);
+    return lastEventSaved;
 }
 
 /* assume wait time = -1 means wait forever (docs not clear) 
  * plugin uses const 0xFFFFFFFF (-1 signed) since CompleteFrameH265FEIRoutine() is blocking (scheduler waits for user specified time)
  */
-mfxStatus H265CmCtx::SyncCurrent(mfxSyncPoint syncp, mfxU32 wait)
+mfxStatus H265CmCtx::SyncCurrent(void *syncp, mfxU32 wait)
 {
-    mfxU32 j, k;
+    CmEvent * lastEvent = (CmEvent *)syncp;
 
-    if (!syncp)
+    if (!lastEvent)
         return MFX_ERR_NULL_PTR;
 
-    //fprintf(stderr, "SyncCurrent              - ptr = 0x%p  lastEvent = 0x%p  feiOut = 0x%p  curIdx = %d)\n", syncp, syncp->lastEvent, syncp->feiOut, syncp->curIdx);
+    //fprintf(stderr, "SyncCur:                 0x%p\n", lastEvent);
 
     /* wait for current frame to finish */
-    if (syncp->lastEvent) {
-        if (syncp->lastEvent->WaitForTaskFinished(wait) != CM_SUCCESS) {
-            return MFX_WRN_IN_EXECUTION;
-        }
-        queue->DestroyEvent(syncp->lastEvent);
+    CM_STATUS status = CM_STATUS_QUEUED;
+    if (lastEvent->GetStatus(status) != CM_SUCCESS)
+        return MFX_ERR_DEVICE_FAILED;
+    if (status == CM_STATUS_FINISHED)
+        return MFX_ERR_NONE;
+
+    if (wait == 0)
+        return MFX_WRN_IN_EXECUTION;
+
+    while (lastEvent->WaitForTaskFinished(1) != CM_SUCCESS) {
+        if (lastEvent->GetStatus(status) != CM_SUCCESS)
+            return MFX_ERR_DEVICE_FAILED;
+        if (status == CM_STATUS_FINISHED)
+            break;
     }
+    return MFX_ERR_NONE;
+}
 
-    syncp->lastEvent = NULL;
-    mfxFEIH265Output *feiOut = (mfxFEIH265Output *)(syncp->feiOut);
+/* destroy sync point which was not destroyed by subsequent call to ProcessFrameAsync() - call after SyncCurrent() */
+mfxStatus H265CmCtx::DestroySavedSyncPoint(void *syncp)
+{
+    CmEvent * lastEvent = (CmEvent *)syncp;
 
-    /* copy output parameters from current frame for SW encoder to use */
-    feiOut->PaddedWidth  = width;
-    feiOut->PaddedHeight = height;
+    if (!lastEvent)
+        return MFX_ERR_NULL_PTR;
 
-    /* scale pitch to units of mfxFEIH265IntraDist */
-    feiOut->IntraPitch     = um_intraPitch / sizeof(mfxFEIH265IntraDist);
-    feiOut->IntraDist      = um_mbIntraDist[syncp->curIdx];
+    if (lastEventSaved == lastEvent)
+        lastEventSaved = NULL;
 
-    /* scale pitch to relevant units */
-    for (k = 0; k < MFX_FEI_H265_BLK_MAX; k++) {
-        feiOut->PitchDist[k] = um_pitchDist[k] / sizeof(mfxU32);
-        feiOut->PitchMV[k]   = um_pitchMv[k] / sizeof(mfxI16Pair);
-    }
-
-    for (j = 0; j < numRefFrames; j++) {
-        for (k = 0; k < MFX_FEI_H265_BLK_MAX; k++) {
-            feiOut->Dist[j][k] = um_distCpu[syncp->curIdx][j][k];
-            feiOut->MV[j][k]   = um_mvCpu[syncp->curIdx][j][k];
-        }
-    }
-
-#ifdef ENABLE_INTERP_KERNELS
-    feiOut->InterpolateWidth  = interpWidth;
-    feiOut->InterpolateHeight = interpHeight;
-    feiOut->InterpolatePitch  = um_interpolatePitch;
-
-    for (mfxU32 i = 0; i < MFX_FEI_H265_MAX_NUM_REF_FRAMES; i++) {
-        for (j = 0; j < 3; j++) {
-            feiOut->Interp[i][j] = um_pInterpolateData[syncp->curIdx][i][j];
-        }
-    }
-#endif
-
-    feiOut->IntraMaxModes = numIntraModes;
-
-    feiOut->IntraModes4x4   = (mfxU32 *)um_mbIntraGrad4x4[syncp->curIdx];
-    feiOut->IntraModes8x8   = (mfxU32 *)um_mbIntraGrad8x8[syncp->curIdx];
-    feiOut->IntraModes16x16 = (mfxU32 *)um_mbIntraGrad16x16[syncp->curIdx];
-    feiOut->IntraModes32x32 = (mfxU32 *)um_mbIntraGrad32x32[syncp->curIdx];
-    feiOut->IntraPitch4x4   = um_pitchGrad4x4[syncp->curIdx] / sizeof(mfxU32);
-    feiOut->IntraPitch8x8   = um_pitchGrad8x8[syncp->curIdx] / sizeof(mfxU32);
-    feiOut->IntraPitch16x16 = um_pitchGrad16x16[syncp->curIdx] / sizeof(mfxU32);
-    feiOut->IntraPitch32x32 = um_pitchGrad32x32[syncp->curIdx] / sizeof(mfxU32);
-
-    /* free the sync object allocated at end of RunVME() */
-    delete syncp;
+    if (lastEvent != NULL && lastEvent != CM_NO_EVENT)
+        queue->DestroyEvent(lastEvent);
 
     return MFX_ERR_NONE;
 }
 
-/* from mfx_hevc_enc_plugin.h (only enable if DLL exports are needed) */
-#if 0 && (defined(_WIN32) || defined(_WIN64))
-#define MSDK_PLUGIN_API(ret_type) extern "C" __declspec(dllexport)  ret_type __cdecl
-#else
+/* from mfx_hevc_enc_plugin.h (not using DLL exports) */
 #define MSDK_PLUGIN_API(ret_type) extern "C"  ret_type
-#endif
 
 /* use C wrapper to support codecs which are C only */
 MSDK_PLUGIN_API(mfxStatus) H265FEI_Init(mfxFEIH265 *feih265, mfxFEIH265Param *param, void *core)
@@ -846,7 +717,7 @@ MSDK_PLUGIN_API(mfxStatus) H265FEI_Close(mfxFEIH265 feih265)
     return MFX_ERR_NONE;
 }
 
-MSDK_PLUGIN_API(mfxStatus) H265FEI_ProcessFrameAsync(mfxFEIH265 feih265, mfxFEIH265Input *in, mfxFEIH265Output *out, mfxFEISyncPoint *syncp)
+MSDK_PLUGIN_API(mfxStatus) H265FEI_ProcessFrameAsync(mfxFEIH265 feih265, mfxFEIH265Input *in, mfxExtFEIH265Output *out, mfxFEISyncPoint *syncp)
 {
     H265CmCtx *hcm = (H265CmCtx *)feih265;
 
@@ -868,6 +739,80 @@ MSDK_PLUGIN_API(mfxStatus) H265FEI_SyncOperation(mfxFEIH265 feih265, mfxFEISyncP
         return MFX_ERR_INVALID_HANDLE;
 
     return hcm->SyncCurrent((mfxSyncPoint)syncp, wait);
+}
+
+/* internal only - allow sync objects to be saved and synced on/destroyed out of order */
+MSDK_PLUGIN_API(mfxStatus) H265FEI_DestroySavedSyncPoint(mfxFEIH265 feih265, mfxFEISyncPoint syncp)
+{
+    H265CmCtx *hcm = (H265CmCtx *)feih265;
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "H265FEI_DestroySavedSyncPoint");
+
+    if (!hcm)
+        return MFX_ERR_INVALID_HANDLE;
+
+    return hcm->DestroySavedSyncPoint((mfxSyncPoint)syncp);
+}
+
+/* calculate dimensions for Cm output buffers (2DUp surfaces) 
+ * NOTE - this assumes the device does NOT yet exist (i.e. Init() hasn't been called)
+ */
+MSDK_PLUGIN_API(mfxStatus) H265FEI_GetSurfaceDimensions(void *core, mfxU32 width, mfxU32 height, mfxExtFEIH265Alloc *extAlloc)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "H265FEI_GetSurfaceDimensions");
+
+    if (!width || !height || !extAlloc)
+        return MFX_ERR_NULL_PTR;
+
+    CmDevice *device = CreateCmDevicePtr((VideoCORE *) core);
+    if (!device)
+        return MFX_ERR_UNSUPPORTED;
+
+    GetSurfaceDimensions(device, width, height, extAlloc);
+
+    ::DestroyCmDevice(device);
+
+    return MFX_ERR_NONE;
+}
+
+MSDK_PLUGIN_API(mfxStatus) H265FEI_AllocateInputSurface(mfxFEIH265 feih265, mfxHDL *pInSurf)
+{
+    H265CmCtx *hcm = (H265CmCtx *)feih265;
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "H265FEI_AllocateInputSurface");
+
+    if (!hcm)
+        return MFX_ERR_INVALID_HANDLE;
+
+    *pInSurf = hcm->AllocateSurface(MFX_FEI_H265_SURFTYPE_INPUT, NULL, NULL);
+
+    return MFX_ERR_NONE;
+}
+
+MSDK_PLUGIN_API(mfxStatus) H265FEI_AllocateOutputSurface(mfxFEIH265 feih265, mfxU8 *sysMem, mfxSurfInfoENC *surfInfo, mfxHDL *pOutSurf)
+{
+    H265CmCtx *hcm = (H265CmCtx *)feih265;
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "H265FEI_AllocateOutputSurface");
+
+    if (!hcm)
+        return MFX_ERR_INVALID_HANDLE;
+
+    *pOutSurf = hcm->AllocateSurface(MFX_FEI_H265_SURFTYPE_OUTPUT, sysMem, surfInfo);
+
+    return MFX_ERR_NONE;
+}
+
+MSDK_PLUGIN_API(mfxStatus) H265FEI_FreeSurface(mfxFEIH265 feih265, mfxHDL pSurf)
+{
+    H265CmCtx *hcm = (H265CmCtx *)feih265;
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "H265FEI_FreeSurface");
+
+    if (!hcm)
+        return MFX_ERR_INVALID_HANDLE;
+
+    return hcm->FreeSurface((mfxFEIH265Surface *)pSurf);
 }
 
 } // namespace

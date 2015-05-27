@@ -14,16 +14,7 @@
 
 #pragma warning(disable: 4351)
 
-/* generic declaration in mfxcommon.h, defined here */
-struct _mfxSyncPoint {
-    CmEvent *lastEvent;
-    void *feiOut;
-    mfxI32 curIdx;
-};
-
 namespace H265Enc {
-
-#define FEI_DEPTH   2   /* max number of frames in flight (curr, next) */
 
 enum H265VMEMode {
     VME_MODE_SMALL = 0,
@@ -49,42 +40,28 @@ typedef struct {
     CmSurface2DUP *bufHPelD;
 } PicBufGpu;
 
-/* internal - the public API only returns list of top modes now */
-typedef struct
-{
-    mfxU16 Histogram[MFX_FEI_H265_MAX_INTRA_MODES + 2];  /* 33 + 2 for DC and planar */
-    mfxU16 reserved[5];
-} MbIntraGrad;
-
 class H265CmCtx {
 
 private:
     /* internal helper functions */
-    Ipp32s GetCurIdx(int encOrder);
-    Ipp32s GetGPUBuf(mfxFEIH265Input *feiIn, Ipp32s poc, Ipp32s getRef);
-    Ipp32s AddGPUBufInput(mfxFEIH265Input *feiIn, mfxFEIH265Frame *frameIn, int idx);
-    Ipp32s AddGPUBufRef(mfxFEIH265Input *feiIn, mfxFEIH265Frame *frameRef, int idx);
-    void RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurface2DUP **mv, PicBufGpu *picBufInput, PicBufGpu *picBufRef);
+    void RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurface2DUP **mv, mfxFEIH265InputSurface *picBufInput, mfxFEIH265InputSurface *picBufRef);
+    void ConvertBitDepth(void *inPtr, mfxU32 inBits, mfxU32 inPitch, void *outPtr, mfxU32 outBits);
+    mfxStatus CopyInputFrameToGPU(CmEvent **lastEvent, mfxHDL pInSurf, void *YPlane, mfxU32 YPitch, mfxU32 YBitDepth);
 
     /* Cm elements */
-    CmDevice * device;
-    CmQueue * queue;
+    CmDevice  * device;
+    CmQueue   * queue;
     CmProgram * program;
-    CmTask * task;
-    CmSurface2DUP * mbIntraDist[FEI_DEPTH];
-    CmSurface2DUP * mbIntraGrad4x4[FEI_DEPTH];
-    CmSurface2DUP * mbIntraGrad8x8[FEI_DEPTH];
-    CmSurface2DUP * mbIntraGrad16x16[FEI_DEPTH];
-    CmSurface2DUP * mbIntraGrad32x32[FEI_DEPTH];
-    CmSurface2DUP * distGpu[FEI_DEPTH][MFX_FEI_H265_MAX_NUM_REF_FRAMES][MFX_FEI_H265_BLK_MAX];
-    CmSurface2DUP * mvGpu[FEI_DEPTH][MFX_FEI_H265_MAX_NUM_REF_FRAMES][MFX_FEI_H265_BLK_MAX];
+    CmTask    * task;
+    CmEvent   * lastEventSaved;
+    mfxU32      saveSyncPoint;
+
     CmBuffer * curbe;
     CmBuffer * me1xControl;
     CmBuffer * me2xControl;
     CmBuffer * me4xControl;
     CmBuffer * me8xControl;
     CmBuffer * me16xControl;
-    CmEvent * lastEvent[FEI_DEPTH];
 
     /* Cm kernels to load  */
     CmKernel * kernelDownSample2tiers;
@@ -100,42 +77,17 @@ private:
     CmKernel * kernelIme;
     CmKernel * kernelIme3tiers;
 
-    /* CPU-side: user-provided memory */
-    mfxU32                um_intraPitch;
-    mfxFEIH265IntraDist * um_mbIntraDist[FEI_DEPTH];
-    mfxI32    * um_mbIntraGrad4x4[FEI_DEPTH];
-    mfxI32    * um_mbIntraGrad8x8[FEI_DEPTH];
-    mfxI32    * um_mbIntraGrad16x16[FEI_DEPTH];
-    mfxI32    * um_mbIntraGrad32x32[FEI_DEPTH];
-    mfxU32      um_pitchGrad4x4[FEI_DEPTH];
-    mfxU32      um_pitchGrad8x8[FEI_DEPTH];
-    mfxU32      um_pitchGrad16x16[FEI_DEPTH];
-    mfxU32      um_pitchGrad32x32[FEI_DEPTH];
-
-    mfxU32         * um_distCpu[FEI_DEPTH][MFX_FEI_H265_MAX_NUM_REF_FRAMES][MFX_FEI_H265_BLK_MAX];
-    mfxI16Pair     * um_mvCpu[FEI_DEPTH][MFX_FEI_H265_MAX_NUM_REF_FRAMES][MFX_FEI_H265_BLK_MAX];
-    mfxU32           um_pitchDist[MFX_FEI_H265_BLK_MAX];
-    mfxU32           um_pitchMv[MFX_FEI_H265_BLK_MAX];
-
-    /* interpolated frames correspond to ref buffer, so need 1 extra for lookahead */
-    mfxU32           um_interpolatePitch;
-    mfxU8          * um_interpolateData[MFX_FEI_H265_MAX_NUM_REF_FRAMES+1][3];
-    mfxU8          * um_pInterpolateData[FEI_DEPTH][MFX_FEI_H265_MAX_NUM_REF_FRAMES+1][3];
-
-    mfxI16         * um_mbIntraModeTop4[FEI_DEPTH];
-    mfxI16         * um_mbIntraModeTop8[FEI_DEPTH];
-    mfxI16         * um_mbIntraModeTop16[FEI_DEPTH];
-    mfxI16         * um_mbIntraModeTop32[FEI_DEPTH];
-
-    /* internal buffers to track input and ref frames that have been uploaded to GPU (avoid redundant work) */
-    PicBufGpu picBufInput[FEI_DEPTH];
-    PicBufGpu picBufRef[MFX_FEI_H265_MAX_NUM_REF_FRAMES + 1];
-
     /* set once at init */
+    mfxU32 sourceWidth;
+    mfxU32 sourceHeight;
     mfxU32 width;
     mfxU32 height;
     mfxU32 numRefFrames;
-    mfxI32 numIntraModes;
+    mfxU32 numIntraModes;
+    mfxU32 bitDepth;
+    mfxU8 *bitDepthBuffer;
+    mfxU32 targetUsage;
+    mfxU32 rectParts;
 
     /* derived from initialization parameters */
     mfxU32 width32;
@@ -148,25 +100,26 @@ private:
     mfxU32 height8x;
     mfxU32 width16x;
     mfxU32 height16x;
+
     mfxU32 interpWidth;
     mfxU32 interpHeight;
     mfxU32 interpBlocksW;
     mfxU32 interpBlocksH;
+
     mfxU32 numRefBufs;
     H265VMEMode vmeMode;
     H265HMELevel hmeLevel;
 
-    /* state tracking for up to 2 frames (one lookahead) */
-    mfxI32 refBufMap[FEI_DEPTH];
-    mfxI32 curIdx;
-    struct _mfxSyncPoint m_syncPoint[FEI_DEPTH];
-
 public:
     /* called from C wrapper (public) */
+    void * AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMem, mfxSurfInfoENC *surfInfo);
+    mfxStatus FreeSurface(mfxFEIH265Surface *s);
+
     mfxStatus AllocateCmResources(mfxFEIH265Param *param, void *core);
     void FreeCmResources(void);
-    mfxFEISyncPoint RunVme(mfxFEIH265Input *feiIn, mfxFEIH265Output *feiOut);
-    mfxStatus SyncCurrent(mfxSyncPoint syncp, mfxU32 wait);
+    void * RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut);
+    mfxStatus SyncCurrent(void *syncp, mfxU32 wait);
+    mfxStatus DestroySavedSyncPoint(void *syncp);
 
     /* zero-init all state variables */
     H265CmCtx() :
@@ -174,20 +127,15 @@ public:
         queue(),
         program(),
         task(),
-        mbIntraDist(),
-        mbIntraGrad4x4(),
-        mbIntraGrad8x8(),
-        mbIntraGrad16x16(),
-        mbIntraGrad32x32(),
-        distGpu(),
-        mvGpu(),
+        lastEventSaved(),
+        saveSyncPoint(),
+
         curbe(),
         me1xControl(),
         me2xControl(),
         me4xControl(),
         me8xControl(),
         me16xControl(),
-        lastEvent(),
 
         kernelDownSample2tiers(),
         kernelDownSample4tiers(),
@@ -202,37 +150,13 @@ public:
         kernelIme(),
         kernelIme3tiers(),
 
-        um_intraPitch(),
-        um_mbIntraDist(),
-        um_mbIntraGrad4x4(),
-        um_mbIntraGrad8x8(),
-        um_mbIntraGrad16x16(),
-        um_mbIntraGrad32x32(),
-        um_pitchGrad4x4(),
-        um_pitchGrad8x8(),
-        um_pitchGrad16x16(),
-        um_pitchGrad32x32(),
-        um_distCpu(),
-        um_mvCpu(),
-        um_pitchDist(),
-        um_pitchMv(),
-
-        um_interpolatePitch(),
-        um_interpolateData(),
-        um_pInterpolateData(),
-
-        um_mbIntraModeTop4(),
-        um_mbIntraModeTop8(),
-        um_mbIntraModeTop16(),
-        um_mbIntraModeTop32(),
-
-        picBufInput(),
-        picBufRef(),
-
         width(),
         height(),
         numRefFrames(),
         numIntraModes(),
+        bitDepth(), 
+        bitDepthBuffer(),
+        targetUsage(),
 
         width32(),
         height32(),
@@ -250,11 +174,7 @@ public:
         interpBlocksH(),
         numRefBufs(),
         vmeMode(),
-        hmeLevel(),
-
-        refBufMap(),
-        curIdx(),
-        m_syncPoint()
+        hmeLevel()
     { }
 
     ~H265CmCtx() { }

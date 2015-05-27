@@ -248,8 +248,9 @@ typedef struct {
     mfxU16      LowresFactor;       // > 0 => lookahead algorithms work with scaled frames
     mfxU16      DeblockBorders;     // tri-state, deblock borders
     mfxU16      SAOChroma;          // on / off
+    mfxU16      RepackProb;         // percent of random repack probabiility, 0 - no random repacks
 
-    mfxU16      reserved[41];       // 256 bytes total} mfxExtCodingOptionHEVC;
+    mfxU16      reserved[40];       // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionHEVC;
 
 #if defined (ADVANCED_REF)

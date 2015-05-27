@@ -393,6 +393,7 @@
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -438,7 +439,6 @@
     <ClCompile Include="h265\src\mfx_h265_enc.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_api.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_enc_fei.cpp" />
     <ClCompile Include="h265\src\mfx_h265_frame.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interpred.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred.cpp" />
@@ -461,7 +461,6 @@
     <ClInclude Include="h265\include\mfx_h265_enc.h" />
     <ClInclude Include="h265\include\mfx_h265_encode.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_api.h" />
-    <ClInclude Include="h265\include\mfx_h265_enc_fei.h" />
     <ClInclude Include="h265\include\mfx_h265_frame.h" />
     <ClInclude Include="h265\include\mfx_h265_quant.h" />
     <ClInclude Include="h265\include\mfx_h265_quant_rdo.h" />

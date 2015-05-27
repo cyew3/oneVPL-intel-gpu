@@ -271,9 +271,10 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(1, output.extCodingOptionHevc.LowresFactor);
     EXPECT_EQ(1, output.extCodingOptionHevc.DeblockBorders);
     EXPECT_EQ(1, output.extCodingOptionHevc.SAOChroma);
+    EXPECT_EQ(1, output.extCodingOptionHevc.RepackProb);
     // check if the rest of ExtCodingOptionHevc is zeroed
     EXPECT_EQ(true, IsZero(output.extCodingOptionHevc.reserved));
-    EXPECT_EQ(41 * sizeof(mfxU16), sizeof(output.extCodingOptionHevc.reserved));
+    EXPECT_EQ(40 * sizeof(mfxU16), sizeof(output.extCodingOptionHevc.reserved)); // if fails here then new fields were added, need to add tests for these fields
 
     // check if ExtHevcTiles fields are set correctly
     EXPECT_EQ(1, output.extHevcTiles.NumTileRows);
@@ -878,6 +879,7 @@ TEST_F(QueryTest, Mode2_Single) {
 		TestOneFieldOk(input.extCodingOptionHevc.FramesInParallel, output.extCodingOptionHevc.FramesInParallel, supported);
 		TestOneFieldOk(input.extCodingOptionHevc.RateControlDepth, output.extCodingOptionHevc.RateControlDepth, supported);
 		TestOneFieldOk(input.extCodingOptionHevc.IntraMinDepthSC, output.extCodingOptionHevc.IntraMinDepthSC, supported);
+		TestOneFieldOk(input.extCodingOptionHevc.RepackProb, output.extCodingOptionHevc.RepackProb, supported);
     }
 
     // test ExtCodingOption2 field by field

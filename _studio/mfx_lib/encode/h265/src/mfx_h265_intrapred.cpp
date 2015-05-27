@@ -10,16 +10,12 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
+#include "math.h"
 #include "algorithm"
+#include "ippi.h"
 #include "mfx_h265_defs.h"
 #include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
-#include "ippi.h"
-#include "math.h"
-
-#if defined (MFX_VA)
-///#include "mfx_h265_enc_cm_defs.h"
-#endif // MFX_VA
 
 namespace H265Enc {
 
@@ -849,54 +845,28 @@ void SortLumaModesByCost(IntraLumaMode *modes, Ipp32s numCandInput, Ipp32s numCa
 template <typename PixType>
 void H265CU<PixType>::GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s puSize, Ipp8s *modes, Ipp32s numModes)
 {
-    VM_ASSERT(numModes <= 33);
-    VM_ASSERT(puSize >= 4);
-    VM_ASSERT(puSize <= 64);
-    VM_ASSERT(m_ctbPelX + xPu + puSize <= m_par->Width);
-    VM_ASSERT(m_ctbPelY + yPu + puSize <= m_par->Height);
-
-    Ipp32s histogram[35] = {};
+    assert(numModes <= 33);
+    assert(puSize >= 4);
+    assert(puSize <= 64);
+    assert(h265_log2m2[puSize] >= 0);
+    assert(m_ctbPelX + xPu + puSize <= m_par->Width);
+    assert(m_ctbPelY + yPu + puSize <= m_par->Height);
 
     if (m_par->enableCmFlag) {
-#ifdef MFX_VA
-
-        VM_ASSERT(numModes <= 1);
-
-        /* new - candidate angles calculated in FEI so just use directly */
-        Ipp32s i, x, y;
-        mfxU8 *line4, *line8, *line16, *line32;
-        xPu += m_ctbPelX;
-        yPu += m_ctbPelY;
-        switch (puSize) {
-        case 4:
-            x = xPu >> 2;   y = yPu >> 2;
-            for (i = 0; i < numModes; i++)
-                modes[i] = feiOut->IntraModes4x4[feiOut->IntraMaxModes*(y*feiOut->IntraPitch4x4 + x) + i];
-            break;
-        case 8:
-            x = xPu >> 3;   y = yPu >> 3;
-            for (i = 0; i < numModes; i++)
-                modes[i] = feiOut->IntraModes8x8[feiOut->IntraMaxModes*(y*feiOut->IntraPitch8x8 + x) + i];
-            break;
-        case 16:
-            x = xPu >> 4;   y = yPu >> 4;
-            for (i = 0; i < numModes; i++)
-                modes[i] = feiOut->IntraModes16x16[feiOut->IntraMaxModes*(y*feiOut->IntraPitch16x16 + x) + i];
-            break;
-        case 32:
-            x = xPu >> 5;   y = yPu >> 5;
-            for (i = 0; i < numModes; i++)
-                modes[i] = feiOut->IntraModes32x32[feiOut->IntraMaxModes*(y*feiOut->IntraPitch32x32 + x) + i];
-            break;
+        assert(numModes <= 1);
+        Ipp32s log2PuSize = h265_log2m2[puSize] + 2;
+        Ipp32s x = (m_ctbPelX + xPu) >> log2PuSize;
+        Ipp32s y = (m_ctbPelY + yPu) >> log2PuSize;
+        Ipp32s pitch = m_currFrame->m_feiIntraAngModes[log2PuSize-2]->m_pitch;
+        Ipp32u *feiAngModes = (Ipp32u *)(m_currFrame->m_feiIntraAngModes[log2PuSize-2]->m_sysmem + y * pitch) + x;
+        for (Ipp32s i = 0; i < numModes; i++) {
+            modes[i] = feiAngModes[i];
+            assert(modes[i] >= 2 && modes[i] <= 34);
         }
-
-        VM_ASSERT((modes[0] >= 2) && (modes[0] <=34));
-
-        return;
-
-#endif // MFX_VA
     }
     else {
+        Ipp32s histogram[35] = {};
+
         // all in units of 4x4 blocks
         if (puSize == 4) {
             Ipp32s pitch = 40 * m_par->MaxCUSize / 4;
@@ -913,14 +883,13 @@ void H265CU<PixType>::GetAngModesFromHistogram(Ipp32s xPu, Ipp32s yPu, Ipp32s pu
                     for (Ipp32s i = 0; i < 35; i++)
                         histogram[i] += histBlock[40 * x + i];
         }
-    }
 
-    for (Ipp32s i = 0; i < numModes; i++) {
-        Ipp32s mode = (Ipp32s)(std::max_element(histogram + 2, histogram + 35) - histogram);
-        modes[i] = mode;
-        histogram[mode] = -1;
+        for (Ipp32s i = 0; i < numModes; i++) {
+            Ipp32s mode = (Ipp32s)(std::max_element(histogram + 2, histogram + 35) - histogram);
+            modes[i] = mode;
+            histogram[mode] = -1;
+        }
     }
-
 }
 
 

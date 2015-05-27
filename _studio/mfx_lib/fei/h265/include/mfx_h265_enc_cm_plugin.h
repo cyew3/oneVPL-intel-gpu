@@ -25,9 +25,9 @@
 
 typedef struct
 {
-    mfxFEIH265Input   feiH265In;
-    mfxFEIH265Output *feiH265Out;
-    mfxFEISyncPoint   feiH265SyncPoint;
+    mfxFEIH265Input      feiH265In;
+    mfxExtFEIH265Output  feiH265Out;
+    mfxFEISyncPoint      feiH265SyncPoint;
 
 } sAsyncParams;
 
@@ -47,6 +47,12 @@ public:
     mfxStatus Reset(mfxVideoParam *par);
     virtual
     mfxStatus Close(void);
+    virtual
+    mfxStatus AllocateInputSurface(mfxHDL *surfIn);
+    virtual
+    mfxStatus AllocateOutputSurface(mfxU8 *sysMem, mfxSurfInfoENC *surfInfo, mfxHDL *surfOut);
+    virtual
+    mfxStatus FreeSurface(mfxHDL surf);
 
     static 
     mfxStatus Query(VideoCORE*, mfxVideoParam *in, mfxVideoParam *out);
@@ -65,7 +71,7 @@ public:
 
     mfxStatus ResetTaskCounters();
 
-    /* defined in public header mfx_h265_fei.h */
+    /* defined in internal header mfx_h265_fei.h */
     mfxFEIH265              m_feiH265;
     mfxFEIH265Param         m_feiH265Param;
     mfxFEIH265Input         m_feiH265In;

@@ -34,7 +34,6 @@ namespace H265Enc {
         ~Lookahead();
 
         Ipp32s GetDelay();
-        void DoLookaheadAnalysis(Frame* in);
         mfxStatus PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u ctb_row, Ipp32u ctb_col);
         int SetFrame(Frame* in);
 

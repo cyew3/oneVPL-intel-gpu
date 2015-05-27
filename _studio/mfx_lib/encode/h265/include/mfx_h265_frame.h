@@ -13,12 +13,14 @@
 #ifndef __MFX_H265_FRAME_H__
 #define __MFX_H265_FRAME_H__
 
+#include <memory>
 #include <list>
 #include <vector>
 #include "vm_interlocked.h"
 #include "umc_mutex.h"
 #include "mfx_h265_defs.h"
 #include "mfx_h265_set.h"
+#include "mfx_h265_fei.h"
 
 namespace H265Enc {
 
@@ -109,9 +111,10 @@ namespace H265Enc {
             m_metric = 0;
         }
 
+        struct AllocInfo { Ipp32s width, height; };
+        void Create(const AllocInfo &allocInfo);
         ~Statistics() { Destroy(); }
-        void Create(H265VideoParam *par);// {}
-        void Destroy();// {}
+        void Destroy();
     };
 
     struct H265CUData;
@@ -131,15 +134,43 @@ namespace H265Enc {
         FrameData()
         : y(NULL)
         , uv(NULL)
-        , mem_plane(NULL)
+        , mem(NULL)
         {}
         ~FrameData() { Destroy();}
 
-        void Create(H265VideoParam *par);
+        struct AllocInfo { Ipp32s width, height, padding, bitDepthLu, bitDepthCh, chromaFormat; };
+        void Create(const AllocInfo &allocInfo);
         void Destroy();
 
     private:
-        void *mem_plane;
+        void *mem;
+    };
+
+    struct FeiInData : public RefCounter
+    {
+        FeiInData() : m_fei(NULL), m_handle(NULL) {}
+        ~FeiInData() { Destroy(); }
+
+        struct AllocInfo { void *feiHdl; };
+        void Create(const AllocInfo &allocInfo);
+        void Destroy();
+
+        void *m_fei;
+        mfxHDL m_handle;
+    };
+
+    struct FeiOutData : public RefCounter
+    {
+        FeiOutData() : m_fei(NULL), m_handle(NULL), m_sysmem(NULL), m_pitch(0) {}
+        ~FeiOutData() { Destroy(); }
+        struct AllocInfo { void *feiHdl; mfxSurfInfoENC allocInfo; };
+        void Create(const AllocInfo &allocInfo);
+        void Destroy();
+
+        void *m_fei;
+        mfxHDL m_handle;
+        mfxU8 *m_sysmem;
+        Ipp32s m_pitch;
     };
 
     class Frame
@@ -189,8 +220,8 @@ namespace H265Enc {
         Ipp32u m_frameType;// full info for bs. m_frameType = m_codeType | isIDR ? | isRef ?
 
         std::vector<H265Slice> m_slices;
-        Frame* m_dpb[16];
-        Ipp32s     m_dpbSize;
+        Frame *m_dpb[16];
+        Ipp32s m_dpbSize;
 
         Ipp8s     m_sliceQpY;
         std::vector<Ipp8s> m_lcuQps; // array for LCU QPs
@@ -201,10 +232,16 @@ namespace H265Enc {
         // for (frame) threading
         volatile Ipp32s m_codedRow; // sync info in case of frame threading
         ThreadingTask *m_threadingTasks;
-        ThreadingTask  m_threadingTaskLast;
+        ThreadingTask  m_ttEncComplete;
+        ThreadingTask  m_ttInitNewFrame;
+        ThreadingTask  m_ttSubmitGpuCopySrc;
+        ThreadingTask  m_ttSubmitGpuCopyRec;
+        ThreadingTask  m_ttSubmitGpuIntra;
+        ThreadingTask  m_ttSubmitGpuMe[4];
+        ThreadingTask  m_ttWaitGpuIntra;
+        ThreadingTask  m_ttWaitGpuMe[4];
         Ipp32u m_numThreadingTasks;
         volatile Ipp32u m_numFinishedThreadingTasks;
-        volatile Ipp32u m_statusReport; // 0 - frame submitted to FrameEncoder (not run!!), 1 - FrameEncoder was run (resource assigned), 2 - frame ready, 7 - need repack
         Ipp32s m_encIdx; // we have "N" frameEncoders. this index indicates owner of the frame [0, ..., N-1]
         
         // complexity/content statistics
@@ -220,10 +257,15 @@ namespace H265Enc {
         Ipp64f m_complxSum;
         Ipp32s m_predBits;
         //Ipp64f m_cmplx;
-        std::vector<Frame*> m_futureFrames;
+        std::vector<Frame *> m_futureFrames;
 
-        // quick wa for GAAC
-        void*      m_extParam;
+        // FEI resources
+        FeiInData  *m_feiOrigin;
+        FeiInData  *m_feiRecon;
+        FeiOutData *m_feiIntraAngModes[4];
+        FeiOutData *m_feiInterMv[4][3];
+        FeiOutData *m_feiInterDist[4][3];
+        void *m_feiSyncPoint;
 
         mfxPayload **m_userSeiMessages;
         Ipp32u       m_numUserSeiMessages;
@@ -258,11 +300,61 @@ namespace H265Enc {
     typedef std::list<Frame*>::iterator   FrameIter;
 
     void Dump(H265VideoParam *par, Frame* frame, FrameList & dpb);
-    void PadOneReconRow(FrameData* frame, Ipp32u ctb_row, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, const H265VideoParam& par);
+    void PadOneReconRow(FrameData* frame, Ipp32u ctb_row, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, const FrameData::AllocInfo &allocInfo);
     void PadOneReconCtu(Frame* frame, Ipp32u ctb_row, Ipp32u ctb_col, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, Ipp32u PicWidthInCtbs);
 
-    template <class T> 
-    T* Allocate(typename std::vector<T*> & queue, H265VideoParam *par);
+    template <class T> class ObjectPool
+    {
+    public:
+        ObjectPool() {}
+        ~ObjectPool() { Destroy(); }
+
+        void Destroy() {
+            for (typename std::vector<T *>::iterator i = m_objects.begin(); i != m_objects.end(); ++i)
+                delete *i;
+            m_objects.resize(0);
+        }
+
+        void Init(const typename T::AllocInfo &allocInfo, Ipp32s numPrealloc)
+        {
+            assert(m_objects.size() == 0);
+            m_allocInfo = allocInfo;
+
+            for (Ipp32s i = 0; i < numPrealloc; i++)
+                Allocate();
+            for (typename std::vector<T*>::iterator i = m_objects.begin(); i != m_objects.end(); ++i)
+                (*i)->Release();
+
+        }
+
+        const typename T::AllocInfo &GetAllocInfo() const { return m_allocInfo; }
+
+        T *Allocate()
+        {
+            for (typename std::vector<T*>::iterator i = m_objects.begin(); i != m_objects.end(); ++i)
+                if (vm_interlocked_cas32(&(*i)->m_refCounter, 1, 0) == 0)
+                    return *i;
+
+            std::auto_ptr<T> newFrame(new T());
+            newFrame->Create(m_allocInfo);
+            newFrame->AddRef();
+            m_objects.push_back(newFrame.release());
+            //printf("\r%s: %d\n", __FUNCTION__, (int)m_objects.size());
+            return *(--m_objects.end());
+        }
+
+    protected:
+        std::vector<T *> m_objects;
+        typename T::AllocInfo m_allocInfo;
+    };
+
+    template <class T> void SafeRelease(T *&obj)
+    {
+        if (obj) {
+            obj->Release();
+            obj = NULL;
+        }
+    }
 
 } // namespace
 

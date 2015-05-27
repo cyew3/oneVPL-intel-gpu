@@ -16,23 +16,13 @@
 #include <math.h>
 #include <limits.h>
 #include <assert.h>
+#include <stdlib.h>
 #include <algorithm>
 
 #include "mfxdefs.h"
-#include "mfx_common_int.h"
 #include "mfx_task.h"
-#include "mfx_brc_common.h"
-#include "mfx_session.h"
-#include "mfx_tools.h"
-#include "vm_thread.h"
 #include "vm_interlocked.h"
-#include "vm_event.h"
 #include "vm_cond.h"
-#include "vm_sys_info.h"
-
-#include "umc_structures.h"
-
-#include "mfx_ext_buffers.h"
 
 #include "mfx_h265_encode.h"
 #include "mfx_h265_defs.h"
@@ -40,15 +30,71 @@
 #include "mfx_h265_frame.h"
 #include "mfx_h265_lookahead.h"
 #include "mfx_enc_common.h"
+#include "mfx_h265_fei.h"
 
-#if defined (MFX_VA)
-#include "mfx_h265_enc_fei.h"
-#endif // MFX_VA
+#ifndef MFX_VA
+#define H265FEI_Close(...) (MFX_ERR_NONE)
+#define H265FEI_GetSurfaceDimensions(...) (MFX_ERR_NONE)
+#define H265FEI_Init(...) (MFX_ERR_NONE)
+#define H265FEI_ProcessFrameAsync(...) (MFX_ERR_NONE)
+#define H265FEI_SyncOperation(...) (MFX_ERR_NONE)
+#define H265FEI_DestroySavedSyncPoint(...) (MFX_ERR_NONE)
+#endif
 
 using namespace H265Enc;
 using namespace H265Enc::MfxEnumShortAliases;
 
+#define TT_TRACE 0
+
 namespace {
+#if TT_TRACE
+    const char *TT_NAMES[] = {
+        "NEWF",
+        "SBMT",
+        "WAIT",
+        "ENC",
+        "PP",
+        "PP_ROW",
+        "ECOMP",
+        "HUB",
+        "LA_START",
+        "LA",
+        "LA_END",
+        "COMP"
+    };
+
+    const char *FEIOP_NAMES[] = {
+        "NOP",
+        "CPY_SRC",
+        "CPY_REF", "<unk03>",
+        "GRAD", "<unk05>", "<unk06>", "<unk07>",
+        "IDIST", "<unk09>", "<unk10>", "<unk11>", "<unk12>", "<unk13>", "<unk14>", "<unk15>",
+        "ME", "<unk17>", "<unk18>", "<unk19>", "<unk20>", "<unk21>", "<unk22>", "<unk23>", "<unk24>", "<unk25>", "<unk26>", "<unk27>", "<unk28>", "<unk29>", "<unk30>", "<unk31>",
+        "INTERP"
+    };
+
+    const char *NUMBERS[128] = {
+        "000", "001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012", "013", "014", "015",
+        "016", "017", "018", "019", "020", "021", "022", "023", "024", "025", "026", "027", "028", "029", "030", "031",
+        "032", "033", "034", "035", "036", "037", "038", "039", "040", "041", "042", "043", "044", "045", "046", "047",
+        "048", "049", "050", "051", "052", "053", "054", "055", "056", "057", "058", "059", "060", "061", "062", "063",
+        "064", "065", "066", "067", "068", "069", "070", "071", "072", "073", "074", "075", "076", "077", "078", "079",
+        "080", "081", "082", "083", "084", "085", "086", "087", "088", "089", "090", "091", "092", "093", "094", "095",
+        "096", "097", "098", "099", "100", "101", "102", "103", "104", "105", "106", "107", "108", "109", "110", "111",
+        "112", "113", "114", "115", "116", "117", "118", "119", "120", "121", "122", "123", "124", "125", "126", "127"
+    };
+#endif //TT_TRACE
+
+    const Ipp32s MYRAND_MAX = 0xffff;
+    Ipp32s myrand()
+    {
+        // feedback polynomial: x^16 + x^14 + x^13 + x^11 + 1
+        static Ipp16u val = 0xACE1u;
+        Ipp32u bit = ((val >> 0) ^ (val >> 2) ^ (val >> 3) ^ (val >> 5)) & 1;
+        val = (val >> 1) | (bit << 15);
+        return val;
+    }
+
     void ConvertToInternalParam(H265VideoParam &intParam, const mfxVideoParam &mfxParam)
     {
         const mfxInfoMFX &mfx = mfxParam.mfx;
@@ -60,6 +106,8 @@ namespace {
         const mfxExtHEVCParam &hevcParam = GetExtBuffer(mfxParam);
         mfxExtDumpFiles &dumpFiles = GetExtBuffer(mfxParam);
         const mfxExtCodingOption2 &opt2 = GetExtBuffer(mfxParam);
+
+        const Ipp32u maxCUSize = 1 << optHevc.Log2MaxCUSize;
 
         Zero(intParam);
         intParam.encodedOrder = (Ipp8u)mfxParam.mfx.EncodedOrder;
@@ -207,7 +255,7 @@ namespace {
         intParam.cuSplitThreshold = optHevc.CUSplitThreshold;
 
         intParam.MaxTrSize = 1 << intParam.QuadtreeTULog2MaxSize;
-        intParam.MaxCUSize = 1 << intParam.Log2MaxCUSize;
+        intParam.MaxCUSize = maxCUSize;
 
         intParam.enableCmFlag = (optHevc.EnableCm == ON);
         intParam.m_framesInParallel = optHevc.FramesInParallel;
@@ -216,6 +264,10 @@ namespace {
         // New thread model sets up post proc (deblock) as ref task dependency; no deblocking lag, encode is leading.
         intParam.m_lagBehindRefRows = 2;
         intParam.m_meSearchRangeY = intParam.m_lagBehindRefRows * intParam.MaxCUSize;
+        if (optHevc.EnableCm == ON) {
+            intParam.m_lagBehindRefRows = (hevcParam.PicHeightInLumaSamples + maxCUSize - 1) / maxCUSize + 1; // for GACC - PicHeightInCtbs+1
+            intParam.m_meSearchRangeY = intParam.m_lagBehindRefRows * maxCUSize;
+        }
 
         intParam.AddCUDepth  = 0;
         while ((intParam.MaxCUSize >> intParam.MaxCUDepth) > (1u << (intParam.QuadtreeTULog2MinSize + intParam.AddCUDepth)))
@@ -329,30 +381,81 @@ namespace {
         if (intParam.doDumpRecon)
             Copy(intParam.reconDumpFileName, dumpFiles.ReconFilename);
         intParam.inputVideoMem = (mfxParam.IOPattern == VIDMEM) || (mfxParam.IOPattern == OPAQMEM && opaq.In.Type != MFX_MEMTYPE_SYSTEM_MEMORY);
+
+        intParam.randomRepackThreshold = Ipp32s(optHevc.RepackProb / 100.0 * MYRAND_MAX);
     }
 
+
+    Ipp8s GetConstQp(const Frame &frame, const H265VideoParam &param, Ipp32s repackCounter)
+    {
+        Ipp8s sliceQpY;
+        switch (frame.m_picCodeType)
+        {
+        case MFX_FRAMETYPE_I:
+            sliceQpY = param.QPI;
+            break;
+        case MFX_FRAMETYPE_P:
+            if (param.BiPyramidLayers > 1 && param.longGop && frame.m_biFramesInMiniGop == 15)
+                sliceQpY = param.QPI;
+            else if (param.PGopPicSize > 1)
+                sliceQpY = param.QPP + frame.m_pyramidLayer;
+            else
+                sliceQpY = param.QPP;
+            break;
+        case MFX_FRAMETYPE_B:
+            if (param.BiPyramidLayers > 1 && param.longGop && frame.m_biFramesInMiniGop == 15)
+                sliceQpY = param.QPI + frame.m_pyramidLayer;
+            else if (param.BiPyramidLayers > 1)
+                sliceQpY = param.QPB + frame.m_pyramidLayer;
+            else
+                sliceQpY = param.QPB;
+            break;
+        default:
+            // Unsupported Picture Type
+            assert(0);
+            sliceQpY = param.QPI;
+            break;
+        }
+
+        sliceQpY += repackCounter;
+        if (sliceQpY > 51)
+            sliceQpY = 51;
+        return sliceQpY;
+    }
+
+
+    Ipp8s GetRateQp(const Frame &in, const H265VideoParam &param, BrcIface *brc)
+    {
+        if (brc == NULL)
+            return 51;
+
+        Frame *frames[128] = {(Frame*)&in};
+        Ipp32s framesCount = MIN(127, (Ipp32s)in.m_futureFrames.size());
+
+        for (Ipp32s frmIdx = 0; frmIdx < framesCount; frmIdx++)
+            frames[frmIdx+1] = in.m_futureFrames[frmIdx];
+
+        return brc->GetQP(const_cast<H265VideoParam *>(&param), frames, framesCount+1);
+    }
+
+
     struct Deleter { template <typename T> void operator ()(T* p) const { delete p; } };
+
+    Ipp32s blkSizeInternal2Fei[3] = { MFX_FEI_H265_BLK_8x8, MFX_FEI_H265_BLK_16x16, MFX_FEI_H265_BLK_32x32 };
+    Ipp32s blkSizeFei2Internal[12] = { -1, -1, -1, 2, -1, -1, 1, -1, -1, 0, -1, -1 };
 }; // anonimous namespace
 
 
 namespace H265Enc {
-
     struct H265EncodeTaskInputParams
     {
-        mfxEncodeCtrl *ctrl;
+        mfxEncodeCtrl    *ctrl;
         mfxFrameSurface1 *surface;
-        mfxBitstream *bs;
-
-        // for ParallelFrames > 1
-        Ipp32u m_taskID;
-        volatile Ipp32u m_doStage;
-        Frame* m_targetFrame;      // this frame has to be encoded completely. it is our expected output.
-        volatile Ipp32u m_threadCount;
-        volatile Ipp32u m_outputQueueSize; // to avoid mutex sync with list::size();
-        volatile Ipp32u m_reencode;        // BRC repack
-
-        // FEI
-        volatile Ipp32u m_doStageFEI;
+        mfxBitstream     *bs;
+        Frame            *m_targetFrame;  // this frame has to be encoded completely. it is our expected output.
+        volatile Ipp32u   m_doStage;
+        volatile Ipp32u   m_threadCount;
+        volatile Ipp32u   m_reencode;     // BRC repack
     };
 };
 
@@ -360,28 +463,27 @@ namespace H265Enc {
 H265Encoder::H265Encoder(VideoCORE &core)
     : m_core(core)
     , m_brc(NULL)
-#if defined (MFX_VA)
-    , m_FeiCtx(NULL)
-#endif (MFX_VA)
+    , m_fei(NULL)
 {
     m_videoParam.m_logMvCostTable = NULL;
     m_responseAux.mids = NULL;
     ippStaticInit();
     vm_cond_set_invalid(&m_condVar);
     vm_mutex_set_invalid(&m_critSect);
+    vm_cond_set_invalid(&m_feiCondVar);
+    vm_mutex_set_invalid(&m_feiCritSect);
     Zero(m_stat);
 }
 
 
 H265Encoder::~H265Encoder()
 {
-    // release resource of frame control
-    for_each(m_originPool.begin(), m_originPool.end(), Deleter());
-    m_originPool.resize(0);
-    for_each(m_originPool_8bit.begin(), m_originPool_8bit.end(), Deleter());
-    m_originPool_8bit.resize(0);
-    for_each(m_lowresPool.begin(), m_lowresPool.end(), Deleter());
-    m_lowresPool.resize(0);
+    vm_mutex_lock(&m_feiCritSect);
+    m_pauseFeiThread = 0;
+    m_stopFeiThread = 1;
+    vm_mutex_unlock(&m_feiCritSect);
+    vm_cond_signal(&m_feiCondVar);
+    m_feiThread.Close();
 
     for_each(m_free.begin(), m_free.end(), Deleter());
     m_free.resize(0);
@@ -392,12 +494,7 @@ H265Encoder::~H265Encoder()
     for_each(m_dpb.begin(), m_dpb.end(), Deleter());
     m_dpb.resize(0);
     // note: m_encodeQueue() & m_outputQueue() only "refer on tasks", not have real ptr. so we don't need to release ones
-
-    for_each(m_statsPool.begin(), m_statsPool.end(), Deleter());
-    m_statsPool.resize(0);
-    for_each(m_lowresStatsPool.begin(), m_lowresStatsPool.end(), Deleter());
-    m_lowresStatsPool.resize(0);
-    
+   
     delete m_brc;
 
     if (m_videoParam.m_logMvCostTable)
@@ -416,15 +513,24 @@ H265Encoder::~H265Encoder()
     if (m_responseAux.mids)
         m_core.FreeFrames(&m_responseAux);
 
-#if defined (MFX_VA)
-    if (m_FeiCtx)
-        delete m_FeiCtx;
-#endif // MFX_VA
+    // destory FEI resources
+    m_feiInputPool.Destroy();
+    for (Ipp32s i = 0; i < 4; i++)
+        m_feiAngModesPool[i].Destroy();
+    for (Ipp32s i = 0; i < 3; i++)
+        m_feiInterMvPool[i].Destroy();
+    for (Ipp32s i = 0; i < 3; i++)
+        m_feiInterDistPool[i].Destroy();
+    if (m_fei)
+        H265FEI_Close(m_fei);
     
     m_la.reset(0);
 
     vm_cond_destroy(&m_condVar);
     vm_mutex_destroy(&m_critSect);
+
+    vm_cond_destroy(&m_feiCondVar);
+    vm_mutex_destroy(&m_feiCritSect);
 
     if (m_memBuf) {
         H265_Free(m_memBuf);
@@ -591,43 +697,87 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
             return st;
     }
 
-
     if (vm_cond_init(&m_condVar) != VM_OK)
         return MFX_ERR_MEMORY_ALLOC;
     if (vm_mutex_init(&m_critSect) != VM_OK)
         return MFX_ERR_MEMORY_ALLOC;
+
+    if (m_videoParam.enableCmFlag) {
+        if (vm_cond_init(&m_feiCondVar) != VM_OK)
+            return MFX_ERR_MEMORY_ALLOC;
+        if (vm_mutex_init(&m_feiCritSect) != VM_OK)
+            return MFX_ERR_MEMORY_ALLOC;
+    }
     
     if (m_videoParam.SceneCut || m_videoParam.DeltaQpMode || m_videoParam.AnalyzeCmplx)
         m_la.reset(new Lookahead(*this));
 
-    // one more videoParam to simplify logic
+    FrameData::AllocInfo frameDataAllocInfo;
+    frameDataAllocInfo.width = m_videoParam.Width;
+    frameDataAllocInfo.height = m_videoParam.Height;
+    frameDataAllocInfo.padding = MAX(m_videoParam.MaxCUSize, 16) + 16;
+    frameDataAllocInfo.bitDepthLu = m_videoParam.bitDepthLuma;
+    frameDataAllocInfo.bitDepthCh = m_videoParam.bitDepthChroma;
+    frameDataAllocInfo.chromaFormat = m_videoParam.chromaFormatIdc;
+    m_frameDataPool.Init(frameDataAllocInfo, 0);
+
     if (m_la.get() && (m_videoParam.LowresFactor || m_videoParam.SceneCut)) {
-        m_videoParam_lowres = m_videoParam;
         // hack!!!
-        if (m_videoParam_lowres.SceneCut && m_videoParam_lowres.LowresFactor == 0) {
-            m_videoParam_lowres.LowresFactor = 1;
-        }
-        m_videoParam_lowres.Width  >>= m_videoParam_lowres.LowresFactor;
-        //m_videoParam_lowres.Width = ((m_videoParam_lowres.Width + 7) >> 3) << 3;
-        m_videoParam_lowres.Height >>= m_videoParam_lowres.LowresFactor;
-        //m_videoParam_lowres.Height = ((m_videoParam_lowres.Height + 7) >> 3) << 3;
-        m_videoParam_lowres.MaxCUSize = SIZE_BLK_LA;
-        m_videoParam_lowres.PicWidthInCtbs = (m_videoParam_lowres.Width + m_videoParam_lowres.MaxCUSize - 1) / m_videoParam_lowres.MaxCUSize;
-        m_videoParam_lowres.PicHeightInCtbs = (m_videoParam_lowres.Height + m_videoParam_lowres.MaxCUSize - 1) / m_videoParam_lowres.MaxCUSize;
+        Ipp32s lowresFactor = m_videoParam.LowresFactor;
+        if (m_videoParam.SceneCut && m_videoParam.LowresFactor == 0)
+            lowresFactor = 1;
+
+        frameDataAllocInfo.width = m_videoParam.Width >> lowresFactor;
+        frameDataAllocInfo.height = m_videoParam.Height >> lowresFactor;
+        frameDataAllocInfo.padding = MAX(SIZE_BLK_LA, 16) + 16;
+        frameDataAllocInfo.bitDepthLu = m_videoParam.bitDepthLuma;
+        frameDataAllocInfo.bitDepthCh = m_videoParam.bitDepthChroma;
+        frameDataAllocInfo.chromaFormat = m_videoParam.chromaFormatIdc;
+        m_frameDataLowresPool.Init(frameDataAllocInfo, 0);
     }
 
     m_have8bitCopyFlag = (m_videoParam.enableCmFlag && m_videoParam.bitDepthLuma > 8) ? 1 : 0;
     if (m_have8bitCopyFlag) {
-        m_videoParam_8bit = m_videoParam;
-        m_videoParam_8bit.bitDepthLuma = 8;
-        m_videoParam_8bit.bitDepthChroma = 8;
-        m_videoParam_8bit.chromaFormatIdc = MFX_CHROMAFORMAT_YUV420;
+        frameDataAllocInfo.width = m_videoParam.Width;
+        frameDataAllocInfo.height = m_videoParam.Height;
+        frameDataAllocInfo.padding = MAX(m_videoParam.MaxCUSize, 16) + 16;
+        frameDataAllocInfo.bitDepthLu = 8;
+        frameDataAllocInfo.bitDepthCh = 8;
+        frameDataAllocInfo.chromaFormat = MFX_CHROMAFORMAT_YUV420;
+        m_frameData8bitPool.Init(frameDataAllocInfo, 0);
     }
+
+    if (m_la.get()) {
+        if (m_videoParam.LowresFactor) {
+            Statistics::AllocInfo statsAllocInfo;
+            statsAllocInfo.width = m_videoParam.Width >> m_videoParam.LowresFactor;
+            statsAllocInfo.height = m_videoParam.Height >> m_videoParam.LowresFactor;
+            m_statsLowresPool.Init(statsAllocInfo, 0);
+        }
+        if (m_videoParam.DeltaQpMode || m_videoParam.LowresFactor == 0) {
+            Statistics::AllocInfo statsAllocInfo;
+            statsAllocInfo.width = m_videoParam.Width;
+            statsAllocInfo.height = m_videoParam.Height;
+            m_statsPool.Init(statsAllocInfo, 0);
+        }
+    }
+
+    m_stopFeiThread = 0;
+    m_pauseFeiThread = 0;
+    m_feiThreadRunning = 0;
+    if (m_videoParam.enableCmFlag) {
+        Ipp32s umcSts = m_feiThread.Create(H265Encoder::FeiThreadRoutineStarter, this);
+        if (umcSts != UMC::UMC_OK)
+            return MFX_ERR_MEMORY_ALLOC;
+    }
+
+    m_newFrame = NULL;
+    m_laFrame = NULL;
+    m_targetFrame = NULL;
 
     m_threadingTaskRunning = 0;
     m_frameCountSync = 0;
     m_frameCountBufferedSync = 0;
-    m_taskID = 0;
 
     m_ithreadPool.resize(m_videoParam.num_thread_structs, 0);
     return MFX_ERR_NONE;
@@ -663,8 +813,6 @@ mfxStatus H265Encoder::Init_Internal()
     m_lastTimeStamp = (mfxU64)MFX_TIMESTAMP_UNKNOWN;
     m_lastEncOrder = -1;
 
-    //m_frameCountEncoded = 0;
-
     memset(m_videoParam.cu_split_threshold_cu, 0, 52 * 2 * MAX_TOTAL_DEPTH * sizeof(Ipp64f));
     memset(m_videoParam.cu_split_threshold_tu, 0, 52 * 2 * MAX_TOTAL_DEPTH * sizeof(Ipp64f));
 
@@ -688,10 +836,49 @@ mfxStatus H265Encoder::Init_Internal()
         }
     }
 
-#if defined (MFX_VA)
-    if (m_videoParam.enableCmFlag)
-        m_FeiCtx = new FeiContext(&m_videoParam, &m_core);
-#endif // MFX_VA
+
+    if (m_videoParam.enableCmFlag) {
+        mfxFEIH265Param feiParams = {};
+        feiParams.Width = m_videoParam.Width;
+        feiParams.Height = m_videoParam.Height;
+        feiParams.MaxCUSize = m_videoParam.MaxCUSize;
+        feiParams.MPMode = m_videoParam.partModes;
+        feiParams.NumRefFrames = m_videoParam.MaxDecPicBuffering;
+        feiParams.BitDepth = 8;
+        feiParams.TargetUsage = 0;
+        feiParams.NumIntraModes = 1;
+
+        mfxExtFEIH265Alloc feiAlloc = {};
+        mfxStatus sts = H265FEI_GetSurfaceDimensions(&m_core, m_videoParam.Width, m_videoParam.Height, &feiAlloc);
+        if (sts != MFX_ERR_NONE)
+            return sts;
+
+        sts = H265FEI_Init(&m_fei, &feiParams, &m_core);
+        if (sts != MFX_ERR_NONE)
+            return sts;
+
+        FeiInData::AllocInfo feiInAllocInfo;
+        feiInAllocInfo.feiHdl = m_fei;
+        m_feiInputPool.Init(feiInAllocInfo, 2 * m_videoParam.m_framesInParallel + m_videoParam.MaxDecPicBuffering);
+
+        FeiOutData::AllocInfo feiOutAllocInfo;
+        feiOutAllocInfo.feiHdl = m_fei;
+        for (Ipp32s blksize = 0; blksize < 4; blksize++) {
+            feiOutAllocInfo.allocInfo = feiAlloc.IntraMode[blksize];
+            m_feiAngModesPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel);
+        }
+        Ipp32s maxNumRefs = MAX(m_videoParam.MaxRefIdxP[0] + m_videoParam.MaxRefIdxP[1], m_videoParam.MaxRefIdxB[0] + m_videoParam.MaxRefIdxB[1]);
+        for (Ipp32s blksize = 0; blksize < 3; blksize++) {
+            Ipp32s feiBlkSizeIdx = blkSizeInternal2Fei[blksize];
+
+            feiOutAllocInfo.allocInfo = feiAlloc.InterMV[feiBlkSizeIdx];
+            m_feiInterMvPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel * maxNumRefs);
+
+            feiOutAllocInfo.allocInfo = feiAlloc.InterDist[feiBlkSizeIdx];
+            m_feiInterDistPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel * maxNumRefs);
+        }
+    }
+
 
     MFX_HEVC_PP::InitDispatcher(m_videoParam.cpuFeature);
 
@@ -854,8 +1041,10 @@ Frame* FindOldestOutputTask(FrameList & encodeQueue)
 //              H265Encoder
 // --------------------------------------------------------
 
-mfxStatus H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, mfxBitstream *mfxBS)
+Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, mfxBitstream *mfxBS)
 {
+    Frame *inputFrame = NULL;
+
     if (surface) {
         if (m_free.empty()) {
             Frame *newFrame = new Frame;
@@ -865,8 +1054,7 @@ mfxStatus H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctr
         m_free.front()->ResetEncInfo();
         m_free.front()->m_timeStamp = surface->Data.TimeStamp;
         m_inputQueue.splice(m_inputQueue.end(), m_free, m_free.begin());
-        Frame *inputFrame = m_inputQueue.back();
-        assert(inputFrame);
+        inputFrame = m_inputQueue.back();
 
         if (ctrl && ctrl->Payload && ctrl->NumPayload > 0) {
             inputFrame->m_userSeiMessages = ctrl->Payload;
@@ -874,21 +1062,21 @@ mfxStatus H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctr
         }
 
         if (m_videoParam.encodedOrder) {
-            MFX_CHECK_NULL_PTR1(inputFrame);
-            MFX_CHECK_NULL_PTR1(ctrl);
+            ThrowIf(!inputFrame, std::runtime_error(""));
+            ThrowIf(!ctrl, std::runtime_error(""));
 
             inputFrame->m_picCodeType = ctrl->FrameType;
 
             if (m_brc && m_brc->IsVMEBRC()) {
                 const mfxExtLAFrameStatistics *vmeData = (mfxExtLAFrameStatistics *)GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam,MFX_EXTBUFF_LOOKAHEAD_STAT);                
-                MFX_CHECK_NULL_PTR1(vmeData);
+                ThrowIf(!vmeData, std::runtime_error(""));
                 mfxStatus sts = m_brc->SetFrameVMEData(vmeData, m_videoParam.Width, m_videoParam.Height);
-                MFX_CHECK_STS(sts);
+                ThrowIf(sts != MFX_ERR_NONE, std::runtime_error(""));
                 mfxLAFrameInfo *pInfo = &vmeData->FrameStat[0];  
                 inputFrame->m_picCodeType = pInfo->FrameType;
                 inputFrame->m_frameOrder = pInfo->FrameDisplayOrder; 
                 inputFrame->m_pyramidLayer = pInfo->Layer;
-                MFX_CHECK(inputFrame->m_pyramidLayer < m_videoParam.BiPyramidLayers, MFX_ERR_UNDEFINED_BEHAVIOR);
+                ThrowIf(inputFrame->m_pyramidLayer >= m_videoParam.BiPyramidLayers, std::runtime_error(""));
             }
 
             if (!(inputFrame->m_picCodeType & MFX_FRAMETYPE_B)) {
@@ -898,21 +1086,8 @@ mfxStatus H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctr
             }
         }
 
-#ifdef MFX_ENABLE_WATERMARK
-        // TODO: find appropriate H265FrameEncoder with m_watermark
-        // m_watermark->Apply(inputFrame->y, inputFrame->uv, inputFrame->pitch_luma, surface->Info.Width, surface->Info.Height);
-        return MFX_ERR_UNSUPPORTED;
-#endif
-
         ConfigureInputFrame(inputFrame, !!m_videoParam.encodedOrder);
         UpdateGopCounters(inputFrame, !!m_videoParam.encodedOrder);
-
-        m_threadingTaskInitNewFrame.Init(TT_INIT_NEW_FRAME, surface, inputFrame, inputFrame->m_frameOrder);
-        AddTaskDependency(&m_threadingTaskComplete, &m_threadingTaskInitNewFrame); // INIT_NEW_FRAME -> COMPLETE
-        m_pendingTasks.push_back(&m_threadingTaskInitNewFrame);
-    } else {
-        m_threadingTaskInitNewFrame.indata = NULL;
-        m_threadingTaskInitNewFrame.outdata = NULL;
     }
     
     std::list<Frame*> & inputQueue = m_la.get() ? m_lookaheadQueue : m_inputQueue;
@@ -931,100 +1106,150 @@ mfxStatus H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctr
 
         m_dpb.splice(m_dpb.end(), m_reorderedQueue, m_reorderedQueue.begin());
         m_encodeQueue.push_back(m_dpb.back());
+
+        if (m_brc && m_videoParam.AnalyzeCmplx > 0) {
+            Ipp32s laDepth = m_videoParam.RateControlDepth - 1;
+            for (std::list<Frame *>::reverse_iterator i = ++m_encodeQueue.rbegin(); i != m_encodeQueue.rend() && laDepth > 0; ++i, --laDepth)
+                (*i)->m_futureFrames.push_back(m_encodeQueue.back());
+        }
     }
 
-    if (!mfxBS)
-        return MFX_ERR_NONE;
-
-    return MFX_ERR_NONE;
+    return inputFrame;
 }
 
-mfxStatus H265Encoder::EnqueueFrameEncoder(int& encIdx)
+void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
 {
-    if (m_encodeQueue.empty()) {
-        encIdx = -1;
-        return MFX_ERR_MORE_DATA;
-    }
+    Frame *frame = m_encodeQueue.front();
 
-    for (encIdx = 0; encIdx < (int)m_frameEncoder.size(); encIdx++) {
-        if (m_frameEncoder[encIdx]->IsFree()) {
-            break;
+    if (frame->m_encIdx < 0) {
+        for (size_t encIdx = 0; encIdx < m_frameEncoder.size(); encIdx++) {
+            if (m_frameEncoder[encIdx]->IsFree()) {
+                frame->m_encIdx = encIdx;
+                m_frameEncoder[encIdx]->SetFree(false);
+                break;
+            }
         }
+        ThrowIf(frame->m_encIdx < 0, std::runtime_error(""));
     }
 
-    if (encIdx == (int)m_frameEncoder.size()) {
-        encIdx = -1; // not found
-        return MFX_TASK_BUSY;
-    }
-
-    //accusition resiources
-    m_frameEncoder[encIdx]->SetFree(false);
-
-    // OK, start binding
-    //m_encodeQueue.splice(m_encodeQueue.end(), m_lookaheadQueue, m_lookaheadQueue.begin());
-    VM_ASSERT(m_encodeQueue.size() >= 1);
-
-    // lasy initialization of frame
-    Frame* frame = m_encodeQueue.front();
-
-    frame->m_encIdx = encIdx;
-
-#if defined (MFX_VA)
     if (m_videoParam.enableCmFlag) {
-        frame->m_extParam = static_cast<void*>( m_FeiCtx );
-    }
-#endif
+        frame->m_ttSubmitGpuCopySrc.numDownstreamDependencies = 0;
+        frame->m_ttSubmitGpuCopySrc.numUpstreamDependencies = 0;
+        frame->m_ttSubmitGpuCopySrc.finished = 0;
+        frame->m_ttSubmitGpuCopySrc.poc = frame->m_frameOrder;
+        if (!frame->m_feiOrigin)
+            frame->m_feiOrigin = m_feiInputPool.Allocate();
+        if (!frame->m_ttInitNewFrame.finished)
+            AddTaskDependency(&frame->m_ttSubmitGpuCopySrc, &frame->m_ttInitNewFrame); // GPU_SUBMIT_COPY_SRC <- INIT_NEW_FRAME
 
-    if ( m_brc && m_videoParam.AnalyzeCmplx > 0 ) {
-        Ipp32s framesCount = IPP_MIN((size_t)m_videoParam.RateControlDepth - 1, m_encodeQueue.size()-1);
-        frame->m_futureFrames.resize(0);
-        FrameIter it = m_encodeQueue.begin();
-        it++;
-        for (Ipp32s frmIdx = 0; frmIdx < framesCount; frmIdx++ ) {
-            frame->m_futureFrames.push_back( (*it) );
-            if ( frmIdx+1 < framesCount )
-                it++;
+        if (frame->m_slices[0].sliceIntraAngMode == INTRA_ANG_MODE_GRADIENT) {
+            frame->m_ttSubmitGpuIntra.numDownstreamDependencies = 0;
+            frame->m_ttSubmitGpuIntra.numUpstreamDependencies = 0;
+            frame->m_ttSubmitGpuIntra.finished = 0;
+            frame->m_ttSubmitGpuIntra.poc = frame->m_frameOrder;
+            for (Ipp32s i = 0; i < 4; i++)
+                if (!frame->m_feiIntraAngModes[i])
+                   frame->m_feiIntraAngModes[i] = m_feiAngModesPool[i].Allocate();
+            AddTaskDependency(&frame->m_ttSubmitGpuIntra, &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_INTRA <- GPU_SUBMIT_COPY_SRC
+
+            frame->m_ttWaitGpuIntra.numDownstreamDependencies = 0;
+            frame->m_ttWaitGpuIntra.numUpstreamDependencies = 0;
+            frame->m_ttWaitGpuIntra.finished = 0;
+            frame->m_ttWaitGpuIntra.poc = frame->m_frameOrder;
+            frame->m_ttWaitGpuIntra.syncpoint = NULL;
+            AddTaskDependency(&frame->m_ttWaitGpuIntra, &frame->m_ttSubmitGpuIntra); // GPU_WAIT_INTRA <- GPU_SUBMIT_INTRA
+        }
+
+        for (Ipp32s i = 0; i < 2; i++) {
+            const RefPicList &list = frame->m_refPicList[i];
+            for (Ipp32s j = 0; j < list.m_refFramesCount; j++) {
+                if (i == 1 && frame->m_mapRefIdxL1ToL0[j] != -1)
+                    continue;
+
+                Frame *ref = list.m_refFrames[j];
+                Ipp32s uniqRefIdx = frame->m_mapListRefUnique[i][j];
+
+                frame->m_ttSubmitGpuMe[uniqRefIdx].numDownstreamDependencies = 0;
+                frame->m_ttSubmitGpuMe[uniqRefIdx].numUpstreamDependencies = 0;
+                frame->m_ttSubmitGpuMe[uniqRefIdx].finished = 0;
+                frame->m_ttSubmitGpuMe[uniqRefIdx].poc = frame->m_frameOrder;
+                frame->m_ttSubmitGpuMe[uniqRefIdx].listIdx = i;
+                frame->m_ttSubmitGpuMe[uniqRefIdx].refIdx = j;
+                for (Ipp32s blksize = 0; blksize < 3; blksize++) {
+                    if (!frame->m_feiInterMv[uniqRefIdx][blksize])
+                        frame->m_feiInterMv[uniqRefIdx][blksize] = m_feiInterMvPool[blksize].Allocate();
+                    if (!frame->m_feiInterDist[uniqRefIdx][blksize])
+                        frame->m_feiInterDist[uniqRefIdx][blksize] = m_feiInterDistPool[blksize].Allocate();
+                }
+                AddTaskDependency(&frame->m_ttSubmitGpuMe[uniqRefIdx], &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_ME <- GPU_SUBMIT_COPY_SRC
+
+                frame->m_ttWaitGpuMe[uniqRefIdx].numDownstreamDependencies = 0;
+                frame->m_ttWaitGpuMe[uniqRefIdx].numUpstreamDependencies = 0;
+                frame->m_ttWaitGpuMe[uniqRefIdx].finished = 0;
+                frame->m_ttWaitGpuMe[uniqRefIdx].syncpoint = NULL;
+                frame->m_ttWaitGpuMe[uniqRefIdx].poc = frame->m_frameOrder;
+                AddTaskDependency(&frame->m_ttWaitGpuMe[uniqRefIdx], &frame->m_ttSubmitGpuMe[uniqRefIdx]); // GPU_WAIT_ME <- GPU_SUBMIT_ME
+            }
+        }
+
+        if (frame->m_isRef) {
+            frame->m_ttSubmitGpuCopyRec.numDownstreamDependencies = 0;
+            frame->m_ttSubmitGpuCopyRec.numUpstreamDependencies = 0;
+            frame->m_ttSubmitGpuCopyRec.finished = 0;
+            frame->m_ttSubmitGpuCopyRec.poc = frame->m_frameOrder;
+            if (!frame->m_feiRecon)
+                frame->m_feiRecon = m_feiInputPool.Allocate();
         }
     }
 
-    if( m_brc ) {
-        frame->m_sliceQpY = GetRateQp(*frame, m_videoParam, m_brc);
-    } else {
-        frame->m_sliceQpY = GetConstQp(*frame, m_videoParam);
-    }
+    frame->m_sliceQpY = (m_brc)
+        ? GetRateQp(*frame, m_videoParam, m_brc)
+        : GetConstQp(*frame, m_videoParam, inputParam->m_reencode);
 
     Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
     memset(&frame->m_lcuQps[0], frame->m_sliceQpY, sizeof(frame->m_sliceQpY)*numCtb);
-    if (m_videoParam.RegionIdP1 > 0) {
-//        memset(task->m_recon->cu_data, 0, sizeof(H265CUData) * (numCtb << m_videoParam.Log2NumPartInCU));
-//        memset(task->m_recon->y, 0, m_videoParam.Height * task->m_recon->pitch_luma_bytes);
-//        memset(task->m_recon->uv, 0, m_videoParam.Height / 2 * task->m_recon->pitch_chroma_bytes);
+    if (m_videoParam.RegionIdP1 > 0)
         for (Ipp32s i = 0; i < numCtb << m_videoParam.Log2NumPartInCU; i++)
             frame->cu_data[i].predMode = MODE_INTRA;
-    }
 
     // setup slices
     H265Slice *currSlices = &frame->m_slices[0];
     for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
         (currSlices + i)->slice_qp_delta = frame->m_sliceQpY - m_pps.init_qp;
-        SetAllLambda(m_videoParam, (currSlices + i), frame->m_sliceQpY, frame );
+        SetAllLambda(m_videoParam, (currSlices + i), frame->m_sliceQpY, frame);
     }
     
     if (m_videoParam.DeltaQpMode && m_videoParam.UseDQP)
         ApplyDeltaQp(frame, m_videoParam, m_brc ? 1 : 0);
     
-    // repack doesn't change downstream dependencies of m_threadingTaskLast
-    frame->m_threadingTaskLast.numDownstreamDependencies = 0;
-    mfxStatus sts = m_frameEncoder[encIdx]->SetEncodeFrame(frame, &m_pendingTasks);
-    MFX_CHECK_STS(sts);
+    frame->m_ttEncComplete.numDownstreamDependencies = 0;
+    frame->m_ttEncComplete.numUpstreamDependencies = 1; // decremented when frame becomes a target frame
+    frame->m_ttEncComplete.finished = 0;
+    frame->m_ttEncComplete.poc = frame->m_frameOrder;
+
+    m_frameEncoder[frame->m_encIdx]->SetEncodeFrame(frame, &m_pendingTasks);
+
+    if (m_videoParam.enableCmFlag) {
+        // the following modifications should be guarded by m_feiCritSect
+        // because finished, numDownstreamDependencies and downstreamDependencies[]
+        // may be accessed from FeiThreadRoutine()
+        vm_mutex_lock(&m_feiCritSect);
+        if (frame->m_ttSubmitGpuCopySrc.numUpstreamDependencies == 0) {
+            m_feiSubmitTasks.push_back(&frame->m_ttSubmitGpuCopySrc); // GPU_COPY_SRC is independent
+            vm_cond_signal(&m_feiCondVar);
+        }
+        for (Ipp32s i = 0; i < frame->m_numRefUnique; i++) {
+            Ipp32s listIdx = frame->m_ttSubmitGpuMe[i].listIdx;
+            Ipp32s refIdx = frame->m_ttSubmitGpuMe[i].refIdx;
+            Frame *ref = frame->m_refPicList[listIdx].m_refFrames[refIdx];
+            if (!ref->m_ttSubmitGpuCopyRec.finished)
+                AddTaskDependency(&frame->m_ttSubmitGpuMe[i], &ref->m_ttSubmitGpuCopyRec); // GPU_SUBMIT_ME <- GPU_COPY_REF
+        }
+        vm_mutex_unlock(&m_feiCritSect);
+    }
+
     m_outputQueue.splice(m_outputQueue.end(), m_encodeQueue, m_encodeQueue.begin());
-
-    vm_interlocked_cas32( &(m_outputQueue.back()->m_statusReport), 1, 0);
-    //printf("\n submitted encOrder %i \n", task->m_encOrder);fflush(stderr);
-
-    return MFX_ERR_NONE;
-
-} // 
+}
 
 
 mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, MFX_ENTRY_POINT &entryPoint)
@@ -1040,7 +1265,6 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
     Ipp32s buffering = 0;
     buffering += m_videoParam.GopRefDist - 1;
     buffering += m_videoParam.m_framesInParallel - 1;
-    buffering += !!m_videoParam.enableCmFlag;
     if (m_videoParam.SceneCut || m_videoParam.AnalyzeCmplx || m_videoParam.DeltaQpMode) {
         buffering += 1;
         if (m_videoParam.SceneCut)     buffering += 10 + 1 + 1;
@@ -1068,14 +1292,12 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
     H265EncodeTaskInputParams *m_pTaskInputParams = (H265EncodeTaskInputParams*)H265_Malloc(sizeof(H265EncodeTaskInputParams));
     // MFX_ERR_MORE_DATA_RUN_TASK means that frame will be buffered and will be encoded later. 
     // Output bitstream isn't required for this task. it is marker for TaskRoutine() and TaskComplete()
-    m_pTaskInputParams->bs = (status == MFX_ERR_MORE_DATA_RUN_TASK) ? 0 : bs;
+    m_pTaskInputParams->bs = (status == (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK) ? 0 : bs;
     m_pTaskInputParams->ctrl = ctrl;
     m_pTaskInputParams->surface = surface;
-    m_pTaskInputParams->m_taskID = m_taskID++;
     m_pTaskInputParams->m_doStage = 0;
     m_pTaskInputParams->m_targetFrame = NULL;
     m_pTaskInputParams->m_threadCount = 0;
-    m_pTaskInputParams->m_outputQueueSize = 0;
     m_pTaskInputParams->m_reencode = 0;
 
     entryPoint.pRoutine = TaskRoutine;
@@ -1096,158 +1318,118 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
 #endif
 #define x86_pause() _mm_pause()
 
-struct isEncodeTask
+mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputParam)
 {
-    isEncodeTask(){}
-
-    template<typename T>
-    bool operator()(const T& l)
-    {
-        return ( ((*l).action == TT_ENCODE_CTU) || ((*l).action == TT_POST_PROC_CTU) || ((*l).action == TT_POST_PROC_ROW));
-    }
-};
-mfxStatus H265Encoder::SyncOnFrameCompletion(Frame *frame, mfxBitstream *mfxBs, void *pParam)
-{
-    H265EncodeTaskInputParams *inputParam = (H265EncodeTaskInputParams *)pParam;
-//    Ipp32u statusReport;
-
+    Frame *frame = inputParam->m_targetFrame;
+    mfxBitstream *mfxBs = inputParam->bs;
+    
     vm_mutex_lock(&m_critSect);
-    vm_interlocked_cas32( &(inputParam->m_doStage), 5, 4);
+    vm_interlocked_cas32(&(inputParam->m_doStage), 5, 4);
     vm_mutex_unlock(&m_critSect);
-    vm_interlocked_cas32( &(frame->m_statusReport), 2, 1);
      
-//    if (statusReport == 1)
-    {
-        H265FrameEncoder *frameEnc = m_frameEncoder[frame->m_encIdx];
-        Ipp32s overheadBytes = 0;
-        mfxBitstream* bs = mfxBs;
-        mfxU32 initialDataLength = bs->DataLength;
-        Ipp32s bs_main_id = m_videoParam.num_bs_subsets;
-        Ipp8u *pbs0;
-        Ipp32u bitOffset0;
-        //Ipp32s overheadBytes0 = overheadBytes;
-        H265Bs_GetState(&frameEnc->m_bs[bs_main_id], &pbs0, &bitOffset0);
-        Ipp32u dataLength0 = mfxBs->DataLength;
-        Ipp32s overheadBytes0 = overheadBytes;
+    H265FrameEncoder *frameEnc = m_frameEncoder[frame->m_encIdx];
+    Ipp32s overheadBytes = 0;
+    mfxBitstream* bs = mfxBs;
+    mfxU32 initialDataLength = bs->DataLength;
+    Ipp32s bs_main_id = m_videoParam.num_bs_subsets;
+    Ipp8u *pbs0;
+    Ipp32u bitOffset0;
+    //Ipp32s overheadBytes0 = overheadBytes;
+    H265Bs_GetState(&frameEnc->m_bs[bs_main_id], &pbs0, &bitOffset0);
+    Ipp32u dataLength0 = mfxBs->DataLength;
+    Ipp32s overheadBytes0 = overheadBytes;
 
-        overheadBytes = frameEnc->GetOutputData(bs);
+    overheadBytes = frameEnc->GetOutputData(bs);
 
-        // BRC
-        if (m_brc) {
-            const Ipp32s min_qp = 1;
-            Ipp32s frameBytes = bs->DataLength - initialDataLength;
-            mfxBRCStatus brcSts = m_brc->PostPackFrame(&m_videoParam, frame->m_sliceQpY, frame, frameBytes << 3, overheadBytes << 3, inputParam->m_reencode ? 1 : 0);
-//            inputParam->m_reencode = 0;
+    // BRC
+    if (m_brc || m_videoParam.randomRepackThreshold) {
+        const Ipp32s min_qp = 1;
+        Ipp32s frameBytes = bs->DataLength - initialDataLength;
+        mfxBRCStatus brcSts = m_brc ? m_brc->PostPackFrame(&m_videoParam, frame->m_sliceQpY, frame, frameBytes << 3, overheadBytes << 3, inputParam->m_reencode ? 1 : 0)
+                                    : (myrand() < m_videoParam.randomRepackThreshold ? MFX_BRC_ERR_BIG_FRAME : MFX_BRC_OK);
 
-            if (brcSts != MFX_BRC_OK ) {
-                if ((brcSts & MFX_BRC_ERR_SMALL_FRAME) && (frame->m_sliceQpY < min_qp))
-                    brcSts |= MFX_BRC_NOT_ENOUGH_BUFFER;
-                if (brcSts == MFX_BRC_ERR_BIG_FRAME && frame->m_sliceQpY == 51)
-                    brcSts |= MFX_BRC_NOT_ENOUGH_BUFFER;
+        if (brcSts != MFX_BRC_OK ) {
+            if ((brcSts & MFX_BRC_ERR_SMALL_FRAME) && (frame->m_sliceQpY < min_qp))
+                brcSts |= MFX_BRC_NOT_ENOUGH_BUFFER;
+            if (brcSts == MFX_BRC_ERR_BIG_FRAME && frame->m_sliceQpY == 51)
+                brcSts |= MFX_BRC_NOT_ENOUGH_BUFFER;
 
-                if (!(brcSts & MFX_BRC_NOT_ENOUGH_BUFFER)) {
-                    bs->DataLength = dataLength0;
-                    H265Bs_SetState(&frameEnc->m_bs[bs_main_id], pbs0, bitOffset0);
-                    overheadBytes = overheadBytes0;
+            if (!(brcSts & MFX_BRC_NOT_ENOUGH_BUFFER)) {
+                bs->DataLength = dataLength0;
+                H265Bs_SetState(&frameEnc->m_bs[bs_main_id], pbs0, bitOffset0);
+                overheadBytes = overheadBytes0;
 
-                    // [1] wait completion of all running tasks
-                    while (m_threadingTaskRunning > 1) thread_sleep(0);
-
-                    FrameIter tit = m_outputQueue.begin();
-
-                    // [2] re-init via BRC
-                    // encodeQueue -> outputQueue
-                    std::list<Frame*> listQueue[] = {m_outputQueue};//, m_encodeQueue};
-                    Ipp32s numCtb = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
-                    Ipp32s qIdxCnt = 1;
-
-                    for (Ipp32s qIdx = 0; qIdx < qIdxCnt; qIdx++) {
-                        std::list<Frame*> & queue = listQueue[qIdx];
-                        for (tit = queue.begin(); tit != queue.end(); tit++) {
-                            
-                            (*tit)->m_sliceQpY = GetRateQp( **tit, m_videoParam, m_brc);
-                            memset(& (*tit)->m_lcuQps[0], (*tit)->m_sliceQpY, sizeof((*tit)->m_sliceQpY)*numCtb);
-
-                            H265Slice *currSlices = &((*tit)->m_slices[0]);
-                            for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
-                                (currSlices + i)->slice_qp_delta = (*tit)->m_sliceQpY - m_pps.init_qp;
-                                SetAllLambda(m_videoParam, (currSlices + i), (*tit)->m_sliceQpY, (*tit));
-                            }
-
-                            if (m_videoParam.DeltaQpMode && m_videoParam.UseDQP) {
-                                ApplyDeltaQp(*tit, m_videoParam, 1);
-                            }
-                        }
-                    }
-
-                    // [3] reset encoded data
-                    for (FrameIter i = m_outputQueue.begin(); i != m_outputQueue.end(); i++)
-                        (*i)->m_codedRow = 0;
-
-                   //m_pendingTasks.clear();
-                    m_pendingTasks.erase(std::remove_if(m_pendingTasks.begin(), m_pendingTasks.end(), isEncodeTask()), m_pendingTasks.end());
-
-                    tit = m_outputQueue.begin();
-                    for (size_t taskIdx = 0; taskIdx < m_outputQueue.size(); taskIdx++) { // <- issue with Size()!!!
-
-                        if ((*tit)->m_statusReport == 1 || taskIdx == 0) {
-                            m_frameEncoder[ (*tit)->m_encIdx ]->SetEncodeFrame( (*tit), &m_pendingTasks );
-                        }
-                        if (taskIdx + 1 < m_outputQueue.size())
-                            tit++;
-                    }
-
-                    vm_interlocked_inc32(&inputParam->m_reencode);
-                    vm_interlocked_cas32( &(frame->m_statusReport), 1, 2); // signal to restart!!!
-                    vm_interlocked_cas32( &(inputParam->m_doStage), 4, 5); // signal to restart!!!
-
-                    if (m_videoParam.num_threads > 1)
-                        vm_cond_broadcast(&m_condVar);
-
-                    return MFX_TASK_WORKING; // recode!!!
-
-                } else if (brcSts & MFX_BRC_ERR_SMALL_FRAME) {
-
-                    Ipp32s maxSize, minSize, bitsize = frameBytes << 3;
-                    Ipp8u *p = mfxBs->Data + mfxBs->DataOffset + mfxBs->DataLength;
-                    m_brc->GetMinMaxFrameSize(&minSize, &maxSize);
-
-                    // put rbsp_slice_segment_trailing_bits() which is a sequence of cabac_zero_words
-                    Ipp32s numTrailingBytes = IPP_MAX(0, ((minSize + 7) >> 3) - frameBytes);
-                    Ipp32s maxCabacZeroWords = (mfxBs->MaxLength - frameBytes) / 3;
-                    Ipp32s numCabacZeroWords = IPP_MIN(maxCabacZeroWords, (numTrailingBytes + 2) / 3);
-
-                    for (Ipp32s i = 0; i < numCabacZeroWords; i++) {
-                        *p++ = 0x00;
-                        *p++ = 0x00;
-                        *p++ = 0x03;
-                    }
-                    bitsize += numCabacZeroWords * 24;
-
-                    m_brc->PostPackFrame(&m_videoParam,  frame->m_sliceQpY, frame, bitsize, (overheadBytes << 3) + bitsize - (frameBytes << 3), 1);
-                    mfxBs->DataLength += (bitsize >> 3) - frameBytes;
-
-                } else {
-                    //return MFX_ERR_NOT_ENOUGH_BUFFER;
+                if (m_videoParam.enableCmFlag) {
+                    vm_mutex_lock(&m_feiCritSect);
+                    m_pauseFeiThread = 1;
+                    vm_mutex_unlock(&m_feiCritSect);
+                    while (m_feiThreadRunning) thread_sleep(0);
+                    m_feiSubmitTasks.resize(0);
+                    m_feiWaitTasks.resize(0);
                 }
+
+                while (m_threadingTaskRunning > 1) thread_sleep(0);
+                m_pendingTasks.resize(0);
+                m_encodeQueue.splice(m_encodeQueue.begin(), m_outputQueue);
+
+                PrepareToEncode(inputParam);
+
+                if (m_videoParam.enableCmFlag) {
+                    vm_mutex_lock(&m_feiCritSect);
+                    m_pauseFeiThread = 0;
+                    vm_mutex_unlock(&m_feiCritSect);
+                    vm_cond_signal(&m_feiCondVar);
+                }
+
+                vm_interlocked_inc32(&inputParam->m_reencode);
+                vm_interlocked_cas32(&(inputParam->m_doStage), 4, 5); // signal to restart!!!
+
+                if (m_videoParam.num_threads > 1)
+                    vm_cond_broadcast(&m_condVar);
+
+                return MFX_TASK_WORKING; // recode!!!
+
+            } else if (brcSts & MFX_BRC_ERR_SMALL_FRAME) {
+
+                Ipp32s maxSize, minSize, bitsize = frameBytes << 3;
+                Ipp8u *p = mfxBs->Data + mfxBs->DataOffset + mfxBs->DataLength;
+                m_brc->GetMinMaxFrameSize(&minSize, &maxSize);
+
+                // put rbsp_slice_segment_trailing_bits() which is a sequence of cabac_zero_words
+                Ipp32s numTrailingBytes = IPP_MAX(0, ((minSize + 7) >> 3) - frameBytes);
+                Ipp32s maxCabacZeroWords = (mfxBs->MaxLength - frameBytes) / 3;
+                Ipp32s numCabacZeroWords = IPP_MIN(maxCabacZeroWords, (numTrailingBytes + 2) / 3);
+
+                for (Ipp32s i = 0; i < numCabacZeroWords; i++) {
+                    *p++ = 0x00;
+                    *p++ = 0x00;
+                    *p++ = 0x03;
+                }
+                bitsize += numCabacZeroWords * 24;
+
+                m_brc->PostPackFrame(&m_videoParam,  frame->m_sliceQpY, frame, bitsize, (overheadBytes << 3) + bitsize - (frameBytes << 3), 1);
+                mfxBs->DataLength += (bitsize >> 3) - frameBytes;
+
+            } else {
+                //return MFX_ERR_NOT_ENOUGH_BUFFER;
             }
         }
-
-        if (m_videoParam.num_threads > 1)
-            vm_cond_broadcast(&m_condVar);
-
-        // bs update on completion stage
-        vm_interlocked_cas32( &(frame->m_statusReport), 1, 2);
-        vm_interlocked_cas32( &(inputParam->m_doStage), 4, 5);
-
-        if (m_videoParam.hrdPresentFlag)
-            m_hrd.Update((bs->DataLength - initialDataLength) * 8, *frame);
-
-        MfxAutoMutex guard(m_statMutex);
-        m_stat.NumCachedFrame--;
-        m_stat.NumFrame++;
-        m_stat.NumBit += (bs->DataLength - initialDataLength) * 8;
     }
+
+    if (m_videoParam.num_threads > 1)
+        vm_cond_broadcast(&m_condVar);
+
+    // bs update on completion stage
+    vm_interlocked_cas32(&(inputParam->m_doStage), 4, 5);
+
+    if (m_videoParam.hrdPresentFlag)
+        m_hrd.Update((bs->DataLength - initialDataLength) * 8, *frame);
+
+    MfxAutoMutex guard(m_statMutex);
+    m_stat.NumCachedFrame--;
+    m_stat.NumFrame++;
+    m_stat.NumBit += (bs->DataLength - initialDataLength) * 8;
+
     return MFX_TASK_DONE;
 }
 
@@ -1268,129 +1450,103 @@ private:
     volatile Ipp32u * m_arg;
 };
 
-//single sthread only!!!
-void H265Encoder::PrepareToEncode(void *pParam)
-{
-    H265EncodeTaskInputParams *inputParam = (H265EncodeTaskInputParams*)pParam;
 
-    m_threadingTaskComplete.Init(TT_COMPLETE, 0, 0, 0, 0, 0);
-    m_threadingTaskInitNewFrame.Init(TT_INIT_NEW_FRAME, (mfxFrameSurface1 *)NULL, (Frame *)NULL, 0);
-    m_threadingTaskGpuCurr.Init(TT_GPU, (Frame *)NULL, 0, 0);
-    m_threadingTaskGpuNext.Init(TT_GPU, (Frame *)NULL, 0, 0);
-
-    AcceptFrame(inputParam->surface, inputParam->ctrl, inputParam->bs);
-    vm_interlocked_cas32(&inputParam->m_doStage, 2, 1);
-
-    if (NULL == inputParam->bs) {
-        if (m_la.get()) {
-            OnLookaheadStarting();
-
-            if (m_threadingTaskInitNewFrame.outdata && m_threadingTaskInitNewFrame.outdata == m_la->m_frame )
-                AddTaskDependency(&m_la->m_threadingTaskStore[0], &m_threadingTaskInitNewFrame); // INIT_NEW_FRAME -> LA_START
-            else
-                m_pendingTasks.push_back(&m_la->m_threadingTaskStore[0]); // LA_START is independent
-        }
-
-        if (m_threadingTaskComplete.numUpstreamDependencies == 0)
-            m_pendingTasks.push_front(&m_threadingTaskComplete);
-
-        vm_mutex_lock(&m_critSect);
-        vm_interlocked_cas32(&inputParam->m_doStage, 4, 2);
-        vm_mutex_unlock(&m_critSect);
-
-        for (int c = 0, taskCount = m_pendingTasks.size(); c < taskCount; c++)
-            vm_cond_signal(&m_condVar);
-
-        m_core.INeedMoreThreadsInside(this);
-        return;
-    }
-
-    Ipp32s stage = vm_interlocked_cas32( &inputParam->m_doStage, 3, 2);
-    //if (stage == 2)
+namespace {
+    Frame *FindFrameForLookaheadProcessing(std::list<Frame *> &queue)
     {
-        if (m_videoParam.enableCmFlag) {
-            Frame *firstToEncode = NULL;
-            Frame *nextToEncode = NULL;
-            if (!m_outputQueue.empty()) {
-                firstToEncode = *m_outputQueue.begin();
-                if (m_outputQueue.size() > 1)
-                    nextToEncode = *++m_outputQueue.begin();
-                else if (!m_encodeQueue.empty())
-                    nextToEncode = *m_encodeQueue.begin();
-            } else if (!m_encodeQueue.empty()) {
-                firstToEncode = *m_encodeQueue.begin();
-                if (m_encodeQueue.size() > 1)
-                    nextToEncode = *++m_encodeQueue.begin();
-            }
-
-            if (firstToEncode) {
-                m_threadingTaskGpuCurr.action = TT_GPU;
-                m_threadingTaskGpuCurr.frame = firstToEncode;
-                m_threadingTaskGpuCurr.isAhead = 0;
-                m_threadingTaskGpuCurr.poc = firstToEncode->m_frameOrder;
-
-                if (m_threadingTaskInitNewFrame.outdata && m_threadingTaskInitNewFrame.outdata == m_threadingTaskGpuCurr.frame)
-                    AddTaskDependency(&m_threadingTaskGpuCurr, &m_threadingTaskInitNewFrame); // INIT_NEW_FRAME -> GPU(curr)
-                if (m_threadingTaskGpuCurr.numUpstreamDependencies == 0)
-                    m_pendingTasks.push_back(&m_threadingTaskGpuCurr); // GPU(curr) is independent
-            }
-
-            if (nextToEncode) {
-                m_threadingTaskGpuNext.action = TT_GPU;
-                m_threadingTaskGpuNext.frame = nextToEncode;
-                m_threadingTaskGpuNext.isAhead = 1;
-                m_threadingTaskGpuNext.poc = nextToEncode->m_frameOrder;
-
-                if (m_threadingTaskGpuCurr.frame)
-                    AddTaskDependency(&m_threadingTaskGpuNext, &m_threadingTaskGpuCurr); // GPU(curr) -> GPU(next)
-                if (m_threadingTaskInitNewFrame.outdata && m_threadingTaskInitNewFrame.outdata == m_threadingTaskGpuNext.frame)
-                    AddTaskDependency(&m_threadingTaskGpuNext, &m_threadingTaskInitNewFrame); // INIT_NEW_FRAME -> GPU(next)
-                if (m_threadingTaskGpuNext.numUpstreamDependencies == 0)
-                    m_pendingTasks.push_back(&m_threadingTaskGpuNext); // GPU(next) is independent
-            }
-        }
-
-        while (m_outputQueue.size() < (size_t)m_videoParam.m_framesInParallel && !m_encodeQueue.empty()) {
-            int encIdx = 0;
-            EnqueueFrameEncoder(encIdx);
-        }
-
-        FrameIter it = m_outputQueue.begin();
-        inputParam->m_targetFrame    = (*it);
-        inputParam->m_outputQueueSize = m_outputQueue.size();
-
-        int finished_ini = inputParam->m_targetFrame->m_threadingTaskLast.finished;
-        inputParam->m_targetFrame->m_threadingTaskLast.finished = 0;
-        AddTaskDependency(&m_threadingTaskComplete, &(inputParam->m_targetFrame->m_threadingTaskLast)); // ENC_COMPLETE -> COMPLETE
-        m_threadingTaskComplete.poc = inputParam->m_targetFrame->m_poc;
-
-        if (m_la.get()) {
-            OnLookaheadStarting();
-            if (m_threadingTaskInitNewFrame.outdata && m_threadingTaskInitNewFrame.outdata == m_la->m_frame )
-                AddTaskDependency(&m_la->m_threadingTaskStore[0], &m_threadingTaskInitNewFrame); // INIT_NEW_FRAME -> LA_START
-            else
-                m_pendingTasks.push_back(&m_la->m_threadingTaskStore[0]); // LA_START is independent
-        }
-
-        if (m_threadingTaskComplete.numUpstreamDependencies == 0) {
-            m_pendingTasks.push_front(&m_threadingTaskComplete);
-        } else if ((*it)->m_threadingTaskLast.numUpstreamDependencies == 0 && finished_ini == 1) {
-            m_pendingTasks.push_front(&(inputParam->m_targetFrame->m_threadingTaskLast));
-        }
-
-        vm_mutex_lock(&m_critSect);
-        vm_interlocked_cas32( &inputParam->m_doStage, 4, 3);
-        vm_mutex_unlock(&m_critSect);
-
-        int c, taskCount = m_pendingTasks.size();
-        for (c = 0; c < taskCount; c++)
-            vm_cond_signal(&m_condVar);
-
-        m_core.INeedMoreThreadsInside(this);
+        for (FrameIter it = queue.begin(); it != queue.end(); it++)
+            if (!(*it)->wasLAProcessed())
+                return (*it);
+        return NULL;
     }
+};
+
+
+void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
+{
+    // Set up qp and task dependencies.
+    // Frames:
+    //   newFrame    - frame to be allocated and copied from mfxFrameSurface1
+    //   laFrame     - frame to be processed by look-ahead
+    //   encFrame    - frame are being encoded (one of FramesInParallel frames)
+    //   targetFrame - oldest frame of encFrame-s
+    //   ref         - references frame used by one of encFrame-s, may be finished (then resides in m_dpb) or not (then resides in both m_outputQueue and m_dpb)
+    //
+    // Frame relations:
+    //   laFrame may be newFrame
+    //   laFrame may not be one of encFrame-s
+    //   encFrame may be newFrame
+    //   encFrame may be laFrame (only in case of low-delay encoding)
+    //   targetFrame is one of encFrame-s
+    //   ref may be one of encFrame-s
+    //
+    // Tasks dependencies:
+    //   global.COMPLETE                  <- targetFrame.ENC_COMPLETE
+    //   global.COMPLETE                  <- laFrame.TT_PREENC_END
+    //   global.COMPLETE                  <- newFrame.INIT_NEW_FRAME
+    //   laFrame.TT_PREENC_START          <- laFrame.INIT_NEW_FRAME
+    //   encFrame.GPU_SUBMIT_COPY_SRC     <- encFrame.INIT_NEW_FRAME
+    //   encFrame.GPU_SUBMIT_INTRA        <- encFrame.GPU_SUBMIT_COPY_SRC
+    //   encFrame.GPU_WAIT_INTRA          <- encFrame.GPU_SUBMIT_INTRA
+    //   encFrame.GPU_SUBMIT_ME[ref]      <- encFrame.GPU_SUBMIT_COPY_SRC
+    //   encFrame.GPU_SUBMIT_ME[ref]      <- ref.GPU_SUBMIT_COPY_REF
+    //   encFrame.GPU_WAIT_ME[ref]        <- encFrame.GPU_SUBMIT_ME[ref]
+    //   encFrame.ENCODE_CTU[row, 0]      <- ref.POST_PROC_CTU[row + lag, lastCol] (or ref.POST_PROC_ROW[row + lag] or ref.ENCODE_CTU[row + lag, lastCol])
+    //   encFrame.ENCODE_CTU[0, 0]        <- encFrame.INIT_NEW_FRAME
+    //   encFrame.ENCODE_CTU[0, 0]        <- encFrame.GPU_WAIT_INTRA
+    //   encFrame.ENCODE_CTU[0, 0]        <- encFrame.GPU_WAIT_ME[ref]
+    //   encFrame.ENCODE_CTU[row, col]    <- encFrame.ENCODE_CTU[row, col - 1]
+    //   encFrame.ENCODE_CTU[row, col]    <- encFrame.ENCODE_CTU[row - 1, col + 1]
+    //   encFrame.POST_PROC_CTU[row, col] <- encFrame.POST_PROC_CTU[row, col - 1]
+    //   encFrame.POST_PROC_CTU[row, col] <- encFrame.POST_PROC_CTU[row - 1, col + 1]
+    //   encFrame.POST_PROC_ROW[row]      <- encFrame.POST_PROC_ROW[row - 1]
+    //   encFrame.POST_PROC_CTU[row, col] <- encFrame.ENCODE_CTU[row, col]
+    //   encFrame.POST_PROC_CTU[row, col] <- encFrame.ENCODE_CTU[row, col + 1]
+    //   encFrame.POST_PROC_CTU[row, col] <- encFrame.ENCODE_CTU[row + 1, col]
+    //   encFrame.POST_PROC_CTU[row, col] <- encFrame.ENCODE_CTU[row + 1, col + 1]
+    //   encFrame.ENC_COMPLETE            <- encFrame.POST_PROC_CTU[lastRow, lastCol] (or encFrame.POST_PROC_ROW[lastRow] or encFrame.ENCODE_CTU[lastRow, lastCol])
+    //   encFrame.GPU_SUBMIT_COPY_REF     <- encFrame.POST_PROC_CTU[lastRow, lastCol] (or encFrame.POST_PROC_ROW[lastRow] or encFrame.ENCODE_CTU[lastRow, lastCol])
+    //
+    // May be finished and should not be rerun in case of repack:
+    //    newFrame.INIT_NEW_FRAME
+    //    laFrame.TT_PREENC_END (if finished don't reenqueue TT_PREENC_START, TT_PREENC_ROUTINE and TT_PREENC_END, otherwise reenqueue all of them
+
+    m_ttComplete.InitComplete(-1);
+
+    if (m_newFrame && !m_newFrame->m_ttInitNewFrame.finished) {
+        m_newFrame->m_ttInitNewFrame.InitNewFrame(m_newFrame, inputParam->surface, m_newFrame->m_frameOrder);
+        AddTaskDependency(&m_ttComplete, &m_newFrame->m_ttInitNewFrame); // COMPLETE <- INIT_NEW_FRAME
+    }
+
+    if (m_la.get() && !m_la->m_threadingTaskStore.back().finished) {
+        if (m_la->SetFrame(m_laFrame) == 1) {
+            AddTaskDependency(&m_ttComplete, &m_la->m_threadingTaskStore.back()); // COMPLETE <- TT_PREENC_END
+            if (m_laFrame && !m_laFrame->m_ttInitNewFrame.finished)
+                AddTaskDependency(&m_la->m_threadingTaskStore.front(), &m_la->m_frame->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
+        }
+    }
+
+    if (inputParam->bs) {
+        while (m_outputQueue.size() < (size_t)m_videoParam.m_framesInParallel && !m_encodeQueue.empty())
+            EnqueueFrameEncoder(inputParam);
+        inputParam->m_targetFrame = *m_outputQueue.begin();
+        m_ttComplete.poc = inputParam->m_targetFrame->m_frameOrder;
+        AddTaskDependency(&m_ttComplete, &inputParam->m_targetFrame->m_ttEncComplete); // COMPLETE <- ENC_COMPLETE
+    }
+
+    vm_mutex_lock(&m_critSect);
+    if (m_newFrame && !m_newFrame->m_ttInitNewFrame.finished && m_newFrame->m_ttInitNewFrame.numUpstreamDependencies == 0)
+        m_pendingTasks.push_back(&m_newFrame->m_ttInitNewFrame); // INIT_NEW_FRAME is independent
+    if (m_la.get() && !m_la->m_threadingTaskStore.front().finished && m_la->m_threadingTaskStore.front().numUpstreamDependencies == 0)
+        m_pendingTasks.push_back(&m_la->m_threadingTaskStore.front()); // LA_START is independent
+    if (m_ttComplete.numUpstreamDependencies == 0)
+        m_pendingTasks.push_front(&m_ttComplete); // COMPLETE's dependencies are already resolved
+    if (inputParam->bs && vm_interlocked_dec32(&inputParam->m_targetFrame->m_ttEncComplete.numUpstreamDependencies) == 0)
+        m_pendingTasks.push_front(&inputParam->m_targetFrame->m_ttEncComplete); // targetFrame.ENC_COMPLETE's dependencies are already resolved
+    vm_mutex_unlock(&m_critSect);
 }
 
-//!!! THREADING - MASTER FUNCTION!!!
+
 mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
     H265ENC_UNREFERENCED_PARAMETER(threadNumber);
@@ -1404,38 +1560,47 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
     H265EncodeTaskInputParams *inputParam = (H265EncodeTaskInputParams*)pParam;
     mfxStatus sts = MFX_ERR_NONE;    
 
-    // [single thread] :: prepare to encode (accept new frame, configuration, paq etc)
-    Ipp32s stage = vm_interlocked_cas32( &inputParam->m_doStage, 1, 0);
+    Ipp32s stage = vm_interlocked_cas32(&inputParam->m_doStage, 1, 0);
     if (0 == stage) {
-        th->PrepareToEncode(pParam);// here <m_doStage> will be switched ->2->3->4 consequentially
-    }
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "PrepareToEncode");
+        th->m_newFrame = th->AcceptFrame(inputParam->surface, inputParam->ctrl, inputParam->bs);
+        if (th->m_la.get()) {
+            th->m_laFrame = FindFrameForLookaheadProcessing(th->m_inputQueue);
+            th->m_la->m_threadingTaskStore.back().finished = 0;
+        }
 
-    // early termination if no external bs 
-    //if (NULL == inputParam->bs && th->m_la.get() == 0) {
-    //    return MFX_TASK_DONE;
-    //} 
+        th->PrepareToEncode(inputParam);
+
+        vm_mutex_lock(&th->m_critSect);
+        inputParam->m_doStage = 4;
+        Ipp32s numPendingTasks = th->m_pendingTasks.size();
+        vm_mutex_unlock(&th->m_critSect);
+        while (numPendingTasks--)
+            vm_cond_signal(&th->m_condVar);
+        th->m_core.INeedMoreThreadsInside(th);
+    }
 
     // global thread count control
-    Ipp32u newThreadCount = vm_interlocked_inc32( &inputParam->m_threadCount );
-    OnExitHelperRoutine onExitHelper( &inputParam->m_threadCount );
-    if (newThreadCount > th->m_videoParam.num_threads) {
+    Ipp32u newThreadCount = vm_interlocked_inc32(&inputParam->m_threadCount);
+    OnExitHelperRoutine onExitHelper(&inputParam->m_threadCount);
+    if (newThreadCount > th->m_videoParam.num_threads)
         return MFX_TASK_BUSY;
-    }
+
+#if TT_TRACE
+    char mainname[256] = "TaskRoutine ";
+    if (inputParam->m_targetFrame)
+        strcat(mainname, NUMBERS[inputParam->m_targetFrame->m_frameOrder & 0x7f]);
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, mainname);
+#endif // TT_TRACE
 
     ThreadingTask *taskNext = NULL;
     Ipp32u reencodeCounter = 0;
     while (true) {
-        Ipp8u taskNextIsReencodeIndependent = 0;
-        if (taskNext && !taskNext->RedoIfRepack()) {
-            taskNextIsReencodeIndependent = 1;
-        }
         vm_mutex_lock(&th->m_critSect);
         while (1) {
-            if (taskNext && !taskNextIsReencodeIndependent && reencodeCounter != inputParam->m_reencode)
+            if (taskNext && reencodeCounter != inputParam->m_reencode)
                 taskNext = NULL;
             if (inputParam->m_doStage == 4 && (taskNext || th->m_pendingTasks.size()))
-                break;
-            if (inputParam->m_doStage == 5 && taskNext && taskNextIsReencodeIndependent)
                 break;
             if (inputParam->m_doStage >= 6)
                 break;
@@ -1444,26 +1609,35 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
         }
         
         if (inputParam->m_doStage >= 6) {
-            if (taskNext) {
+            if (taskNext)
                 th->m_pendingTasks.push_back(taskNext);
-            }
             vm_mutex_unlock(&th->m_critSect);
             break;
         }
 
         ThreadingTask *task = NULL;
-        Ipp8u taskIsReencodeIndependent;
         if (taskNext) {
             task = taskNext;
-            taskIsReencodeIndependent = taskNextIsReencodeIndependent;
         } else {
-            task = th->m_pendingTasks.front();
-            th->m_pendingTasks.pop_front();
-            taskIsReencodeIndependent = !task->RedoIfRepack();
+            std::deque<ThreadingTask *>::iterator t = th->m_pendingTasks.begin();
+            if (th->m_videoParam.enableCmFlag) {
+                if ((*t)->action == TT_ENCODE_CTU || (*t)->action == TT_POST_PROC_CTU || (*t)->action == TT_POST_PROC_ROW) {
+                    std::deque<ThreadingTask *>::iterator i = t;
+                    for (std::deque<ThreadingTask *>::iterator i = ++th->m_pendingTasks.begin(); i != th->m_pendingTasks.end(); ++i) {
+                        if ((*i)->action == TT_ENCODE_CTU || (*i)->action == TT_POST_PROC_CTU || (*i)->action == TT_POST_PROC_ROW) {
+                            if ((*i)->fenc->m_frame->m_isRef && !(*t)->fenc->m_frame->m_isRef)
+                                t = i;
+                            else if ((*i)->fenc->m_frame->m_isRef == (*t)->fenc->m_frame->m_isRef && (*i)->fenc->m_frame->m_encOrder < (*t)->fenc->m_frame->m_encOrder)
+                                t = i;
+                        }
+                    }
+                }
+            }
+            task = *t;
+            th->m_pendingTasks.erase(t);
         }
 
-        if (!taskIsReencodeIndependent)
-            vm_interlocked_inc32(&th->m_threadingTaskRunning);
+        vm_interlocked_inc32(&th->m_threadingTaskRunning);
 
         taskNext = NULL;
         vm_mutex_unlock(&th->m_critSect);
@@ -1473,20 +1647,25 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
 
         Ipp32s distBest;
 
+#if TT_TRACE
+        char ttname[256] = "";
+        strcat(ttname, TT_NAMES[task->action]);
+        strcat(ttname, " ");
+        strcat(ttname, NUMBERS[task->poc & 0x7f]);
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, ttname);
+#endif // TT_TRACE
+
         sts = MFX_TASK_DONE;
         try {
             switch (task->action) {
             case TT_INIT_NEW_FRAME:
-                th->InitNewFrame(task->outdata, task->indata);
-                break;
-            case TT_GPU:
-                th->ProcessFrameOnGpu(task->frame, task->isAhead);
+                th->InitNewFrame(task->frame, task->indata);
                 break;
             case TT_PREENC_START:
             case TT_PREENC_ROUTINE:
             case TT_PREENC_END:
             case TT_HUB:
-                sts = task->la->PerformThreadingTask(task->action, task->row, task->col);
+                task->la->PerformThreadingTask(task->action, task->row, task->col);
                 break;
             case TT_ENCODE_CTU:
             case TT_POST_PROC_CTU:
@@ -1496,13 +1675,14 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
                     task->fenc->PerformThreadingTask<Ipp8u>(task->action, task->row, task->col);
                 if (sts != MFX_TASK_DONE) {
                     // shouldn't happen
-                    VM_ASSERT_(0);
+                    assert(0);
                 }
                 break;
             case TT_ENC_COMPLETE:
-                if (task->numDownstreamDependencies)
-                {
-                    sts = th->SyncOnFrameCompletion(inputParam->m_targetFrame, inputParam->bs, inputParam);
+                sts = th->SyncOnFrameCompletion(inputParam);
+                if (sts != MFX_TASK_DONE) {
+                    vm_interlocked_dec32(&th->m_threadingTaskRunning);
+                    continue;
                 }
                 break;
             case TT_COMPLETE:
@@ -1512,12 +1692,12 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
                 vm_cond_broadcast(&th->m_condVar);
                 break;
             default:
+                assert(0);
                 break;
             }
         } catch (...) {
             // to prevent SyncOnFrameCompletion hang
-            if (!taskIsReencodeIndependent)
-                vm_interlocked_dec32(&th->m_threadingTaskRunning);
+            vm_interlocked_dec32(&th->m_threadingTaskRunning);
             vm_mutex_lock(&th->m_critSect);
             inputParam->m_doStage = 6;
             vm_mutex_unlock(&th->m_critSect);
@@ -1525,11 +1705,9 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
             throw;
         }
 
-        if (sts != MFX_TASK_DONE) {
-            if (!taskIsReencodeIndependent)
-                vm_interlocked_dec32(&th->m_threadingTaskRunning);
-            continue;
-        }
+#if TT_TRACE
+        MFX_AUTO_TRACE_STOP();
+#endif // TT_TRACE
 
         task->finished = 1;
 
@@ -1538,29 +1716,31 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
         for (int i = 0; i < task->numDownstreamDependencies; i++) {
             ThreadingTask *taskDep = task->downstreamDependencies[i];
             if (vm_interlocked_dec32(&taskDep->numUpstreamDependencies) == 0) {
-                if (taskDep->action != TT_COMPLETE &&
-                    taskDep->action != TT_ENC_COMPLETE &&
-                    taskDep->poc != task->poc) {
+                if (taskDep->action == TT_GPU_SUBMIT) {
+                    vm_mutex_lock(&th->m_feiCritSect);
+                    th->m_feiSubmitTasks.push_back(taskDep);
+                    vm_mutex_unlock(&th->m_feiCritSect);
+                    vm_cond_signal(&th->m_feiCondVar);
+                } else if (taskDep->action != TT_COMPLETE &&
+                           taskDep->action != TT_ENC_COMPLETE &&
+                           taskDep->poc != task->poc) {
                     taskDepAll[taskCount++] = taskDep;
-                    continue;
-                }
+                } else {
+                    Ipp32s dist = (abs(task->row - taskDep->row) << 8) + abs(task->col - taskDep->col) + 3;
+                    if (dist == ((1 << 8) + 1) && task->action == TT_ENCODE_CTU && taskDep->action == TT_POST_PROC_CTU)
+                        dist = 2;
+                    else if (taskDep->action == TT_ENC_COMPLETE)
+                        dist = 0;
+                    else if (taskDep->action == TT_COMPLETE)
+                        dist = 1;
 
-                Ipp32s dist = (abs(task->row - taskDep->row) << 8) + abs(task->col - taskDep->col) + 3;
-                if (dist == ((1 << 8) + 1) && task->action == TT_ENCODE_CTU && taskDep->action == TT_POST_PROC_CTU)
-                    dist = 2;
-                else if (taskDep->action == TT_ENC_COMPLETE)
-                    dist = 0;
-                else if (taskDep->action == TT_COMPLETE)
-                    dist = 1;
-
-                if (distBest < 0 || dist < distBest) {
-                    distBest = dist;
-                    if (taskNext) {
-                        taskDepAll[taskCount++] = taskNext;
-                    }
-                    taskNext = taskDep;
-                } else {                 
-                    taskDepAll[taskCount++] = taskDep;
+                    if (distBest < 0 || dist < distBest) {
+                        distBest = dist;
+                        if (taskNext)
+                            taskDepAll[taskCount++] = taskNext;
+                        taskNext = taskDep;
+                    } else
+                        taskDepAll[taskCount++] = taskDep;
                 }
             }
         }
@@ -1577,8 +1757,7 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
         }
 
         reencodeCounter = inputParam->m_reencode;
-        if (!taskIsReencodeIndependent)
-            vm_interlocked_dec32(&th->m_threadingTaskRunning);
+        vm_interlocked_dec32(&th->m_threadingTaskRunning);
     }
 
     return MFX_TASK_DONE;
@@ -1602,6 +1781,8 @@ mfxStatus H265Encoder::TaskCompleteProc(void *pState, void *pParam, mfxStatus ta
         th->OnEncodingQueried(coded); // remove coded frame from encodeQueue (outputQueue) and clean (release) dpb.
         frameEnc->SetFree(true);
     }
+    if (th->m_laFrame)
+        th->m_laFrame->setWasLAProcessed();
     th->OnLookaheadCompletion();
 
     H265_Free(pParam);
@@ -1610,32 +1791,18 @@ mfxStatus H265Encoder::TaskCompleteProc(void *pState, void *pParam, mfxStatus ta
 }
 
 
-template <class T>
-T* H265Enc::Allocate(typename std::vector<T*> & queue, H265VideoParam *par)
-{
-    for (typename std::vector<T*>::iterator i = queue.begin(); i != queue.end(); ++i)
-        if (vm_interlocked_cas32(&(*i)->m_refCounter, 1, 0) == 0)
-            return *i;
-
-    std::auto_ptr<T> newFrame(new T());
-    newFrame->Create(par);
-    newFrame->AddRef();
-    queue.push_back(newFrame.release());
-    return *(--queue.end());
-}
-
 void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *in)
 {
     bool locked = false;
     if (m_videoParam.inputVideoMem) { // copy from d3d to internal frame in system memory
         mfxStatus st = m_core.LockFrame(m_auxInput.Data.MemId, &m_auxInput.Data);
         if (st != MFX_ERR_NONE)
-            throw std::runtime_error("LockFrame failed");
+            Throw(std::runtime_error("LockFrame failed"));
 
         st = m_core.DoFastCopyWrapper(&m_auxInput, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
                                       in, MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
         if (st != MFX_ERR_NONE)
-            throw std::runtime_error("FastCopy failed");
+            Throw(std::runtime_error("FastCopy failed"));
 
         m_core.DecreaseReference(&in->Data); // do it here
         m_auxInput.Data.FrameOrder = in->Data.FrameOrder;
@@ -1644,49 +1811,45 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *in)
     } else if (in->Data.Y == 0) {
         mfxStatus st = m_core.LockExternalFrame(in->Data.MemId, &in->Data);
         if (st != MFX_ERR_NONE)
-            throw std::runtime_error("LockExternalFrame failed");
+            Throw(std::runtime_error("LockExternalFrame failed"));
         locked = true;
     }
 
     // attach original surface to frame
-    out->m_origin = Allocate<FrameData>(m_originPool, &m_videoParam);
+    out->m_origin = m_frameDataPool.Allocate();
     
     // attach 8bit version of original surface to frame
-    if (m_have8bitCopyFlag) {
-        out->m_luma_8bit = Allocate<FrameData>(m_originPool_8bit, &m_videoParam_8bit);
-    }
+    if (m_have8bitCopyFlag)
+        out->m_luma_8bit = m_frameData8bitPool.Allocate();
 
-    // light configure
     out->CopyFrameData(in, m_have8bitCopyFlag);
 
     // attach lowres surface to frame
-    if (m_la.get() && (m_videoParam.LowresFactor || m_videoParam.SceneCut)) {
-        out->m_lowres = Allocate<FrameData>(m_lowresPool, &m_videoParam_lowres);
-    }
+    if (m_la.get() && (m_videoParam.LowresFactor || m_videoParam.SceneCut))
+        out->m_lowres = m_frameDataLowresPool.Allocate();
 
-    if (m_videoParam.DeltaQpMode > 0 || m_videoParam.AnalyzeCmplx) {
-        FrameData* frame = m_videoParam.LowresFactor ? out->m_lowres : out->m_origin;
-        Ipp32s blkSize = m_videoParam.LowresFactor ? SIZE_BLK_LA : m_videoParam.MaxCUSize;
-        Ipp32s heightInBlks = (frame->height + blkSize - 1) / blkSize;
+    if ((m_videoParam.DeltaQpMode > 0 || m_videoParam.AnalyzeCmplx) && m_videoParam.LowresFactor == 0) {
+        Ipp32s blkSize = m_videoParam.MaxCUSize;
+        Ipp32s heightInBlks = (m_videoParam.Height + blkSize - 1) / blkSize;
         for (Ipp32s row = 0; row < heightInBlks; row++) {
-            PadOneReconRow(frame, row, blkSize, heightInBlks, m_videoParam.LowresFactor ? m_videoParam_lowres : m_videoParam);
+            PadOneReconRow(out->m_origin, row, blkSize, heightInBlks, m_frameDataPool.GetAllocInfo());
         }
     }
 
     // attach statistics to frame
     if (m_la.get()) {
         if (m_videoParam.LowresFactor) {
-            out->m_stats[1] = Allocate<Statistics>(m_lowresStatsPool, &m_videoParam_lowres);
+            out->m_stats[1] = m_statsLowresPool.Allocate();
             out->m_stats[1]->ResetAvgMetrics();
         }
         if (m_videoParam.DeltaQpMode || m_videoParam.LowresFactor == 0) {
-            out->m_stats[0] = Allocate<Statistics>(m_statsPool, &m_videoParam);
+            out->m_stats[0] = m_statsPool.Allocate();
             out->m_stats[0]->ResetAvgMetrics();
         }
     }
 
     // each new frame should be analysed by lookahead algorithms family.
-    Ipp32u ownerCount =  (m_videoParam.DeltaQpMode ? 1 : 0) + (m_videoParam.SceneCut ? 1 : 0) + (m_videoParam.AnalyzeCmplx ? 1 : 0);
+    Ipp32u ownerCount = (m_videoParam.DeltaQpMode ? 1 : 0) + (m_videoParam.SceneCut ? 1 : 0) + (m_videoParam.AnalyzeCmplx ? 1 : 0);
     out->m_lookaheadRefCounter = ownerCount;
 
     if (m_videoParam.inputVideoMem) {
@@ -1699,19 +1862,206 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *in)
 }
 
 
-void H265Encoder::ProcessFrameOnGpu(const Frame *frame_, Ipp32s isAhead)
+Ipp32u VM_THREAD_CALLCONVENTION H265Encoder::FeiThreadRoutineStarter(void *p)
 {
-    Frame *frame = const_cast<Frame *>(frame_);
-#ifdef MFX_VA
-    if (!isAhead) {
-        m_FeiCtx->feiInIdx = 1 - m_FeiCtx->feiInIdx;
-        m_FeiCtx->ProcessFrameFEI(1 - m_FeiCtx->feiInIdx, frame, frame->m_slices.data(), frame->m_dpb, frame->m_dpbSize, 1);
-    } else {
-        m_FeiCtx->ProcessFrameFEI(m_FeiCtx->feiInIdx, frame, frame->m_slices.data(), frame->m_dpb, frame->m_dpbSize, 0);
-    }
-#endif // MFX_VA
+    ((H265Encoder *)p)->FeiThreadRoutine();
+    return 0;
 }
 
+
+void H265Encoder::FeiThreadRoutine()
+{
+    try {
+        while (true) {
+            ThreadingTask *task = NULL;
+
+            vm_mutex_lock(&m_feiCritSect);
+
+            while (m_stopFeiThread == 0 && (m_pauseFeiThread == 1 || m_feiSubmitTasks.empty() && m_feiWaitTasks.empty()))
+                vm_cond_wait(&m_feiCondVar, &m_feiCritSect);
+
+            if (m_stopFeiThread) {
+                vm_mutex_unlock(&m_feiCritSect);
+                break;
+            }
+
+            if (!m_feiSubmitTasks.empty()) {
+                std::deque<ThreadingTask *>::iterator t = m_feiSubmitTasks.begin();
+                std::deque<ThreadingTask *>::iterator i = ++m_feiSubmitTasks.begin();
+                std::deque<ThreadingTask *>::iterator e = m_feiSubmitTasks.end();
+                for (; i != e; ++i) {
+                    //if ((*t)->frame->m_isRef == (*i)->frame->m_isRef) {
+                        if ((*t)->frame->m_encOrder > (*i)->frame->m_encOrder)
+                            t = i;
+                    //} else if ((*t)->frame->m_isRef < (*i)->frame->m_isRef) {
+                    //    t = i;
+                    //}
+                }
+                task = (*t);
+                m_feiSubmitTasks.erase(t);
+            }
+
+            m_feiThreadRunning = 1;
+            vm_mutex_unlock(&m_feiCritSect);
+
+            if (task) {
+                while (m_feiWaitTasks.size() > 1)
+                    if (!FeiThreadWait(0))
+                        break;
+                FeiThreadSubmit(*task);
+            } else {
+                assert(!m_feiWaitTasks.empty());
+                if (!FeiThreadWait(2000))
+                    Throw(std::runtime_error(""));
+            }
+            m_feiThreadRunning = 0;
+        }
+    } catch (...) {
+        assert(!"FeiThreadRoutine failed with exception");
+        m_feiThreadRunning = 0;
+        return;
+    }
+}
+
+
+void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
+{
+#if TT_TRACE
+    char ttname[256] = "Submit ";
+    strcat(ttname, FEIOP_NAMES[task.feiOp]);
+    strcat(ttname, " ");
+    strcat(ttname, NUMBERS[task.poc & 0x7f]);
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, ttname);
+#endif // TT_TRACE
+
+    assert(task.action == TT_GPU_SUBMIT);
+    assert(task.finished == 0);
+
+    mfxFEIH265Input in = {};
+    mfxExtFEIH265Output out = {};
+
+    in.FrameType = task.frame->m_picCodeType;
+    in.FEIOp = task.feiOp;
+    in.SaveSyncPoint = 1;
+
+    if (task.feiOp == MFX_FEI_H265_OP_GPU_COPY_SRC) {
+        FrameData *originData = (m_videoParam.bitDepthLuma == 8) ? task.frame->m_origin : task.frame->m_luma_8bit;
+        in.FEIFrameIn.PicOrder = task.frame->m_frameOrder;
+        in.FEIFrameIn.EncOrder = task.frame->m_encOrder;
+        in.FEIFrameIn.surfIn = task.frame->m_feiOrigin->m_handle;
+        in.FEIFrameIn.YPlane = originData->y;
+        in.FEIFrameIn.YPitch = originData->pitch_luma_bytes;
+        in.FEIFrameIn.YBitDepth = 8;
+        in.SaveSyncPoint = 0;
+
+    } else if (task.feiOp == MFX_FEI_H265_OP_GPU_COPY_REF) {
+        FrameData *refData = (m_videoParam.bitDepthLuma == 8) ? task.frame->m_recon : task.frame->m_luma_8bit;
+        in.FEIFrameRef.PicOrder = task.frame->m_frameOrder;
+        in.FEIFrameRef.EncOrder = task.frame->m_encOrder;
+        in.FEIFrameRef.surfIn = task.frame->m_feiRecon->m_handle;
+        in.FEIFrameRef.YPlane = refData->y;
+        in.FEIFrameRef.YPitch = refData->pitch_luma_bytes;
+        in.FEIFrameRef.YBitDepth = 8;
+        in.SaveSyncPoint = 0;
+
+    } else if (task.feiOp == MFX_FEI_H265_OP_INTRA_MODE) {
+        in.FEIFrameIn.PicOrder = task.frame->m_frameOrder;
+        in.FEIFrameIn.EncOrder = task.frame->m_encOrder;
+        in.FEIFrameIn.surfIn = task.frame->m_feiOrigin->m_handle;
+        for (Ipp32s i = 0; i < 4; i++)
+            out.SurfIntraMode[i] = task.frame->m_feiIntraAngModes[i]->m_handle;
+
+    } else if (task.feiOp == MFX_FEI_H265_OP_INTER_ME) {
+        Frame *ref = task.frame->m_refPicList[task.listIdx].m_refFrames[task.refIdx];
+        in.FEIFrameIn.PicOrder = task.frame->m_frameOrder;
+        in.FEIFrameIn.EncOrder = task.frame->m_encOrder;
+        in.FEIFrameIn.surfIn = task.frame->m_feiOrigin->m_handle;
+        in.FEIFrameRef.PicOrder = ref->m_frameOrder;
+        in.FEIFrameRef.EncOrder = ref->m_encOrder;
+        in.FEIFrameRef.surfIn = ref->m_feiRecon->m_handle;
+
+        Ipp32s uniqRefIdx = task.frame->m_mapListRefUnique[task.listIdx][task.refIdx];
+        for (Ipp32s blksize = 0; blksize < 3; blksize++) {
+            Ipp32s feiBlkIdx = blkSizeInternal2Fei[blksize];
+            out.SurfInterMV[feiBlkIdx] = task.frame->m_feiInterMv[uniqRefIdx][blksize]->m_handle;
+            out.SurfInterDist[feiBlkIdx] = task.frame->m_feiInterDist[uniqRefIdx][blksize]->m_handle;
+        }
+
+    } else {
+        Throw(std::runtime_error(""));
+    }
+
+    mfxFEISyncPoint syncpoint;
+    if (H265FEI_ProcessFrameAsync(m_fei, &in, &out, &syncpoint) != MFX_ERR_NONE)
+        Throw(std::runtime_error(""));
+
+    // the following modifications should be guarded by m_feiCritSect
+    // because finished, numDownstreamDependencies and downstreamDependencies[]
+    // may be accessed from PrepareToEncode()
+    vm_mutex_lock(&m_feiCritSect);
+    task.finished = 1;
+
+    for (Ipp32s i = 0; i < task.numDownstreamDependencies; i++) {
+        ThreadingTask *taskDep = task.downstreamDependencies[i];
+        if (vm_interlocked_dec32(&taskDep->numUpstreamDependencies) == 0) {
+            if (taskDep->action == TT_GPU_SUBMIT) {
+                m_feiSubmitTasks.push_back(taskDep);
+            } else if (taskDep->action == TT_GPU_WAIT) {
+                assert(taskDep->finished == 0);
+                assert(taskDep->syncpoint == NULL);
+                assert(in.SaveSyncPoint == 1);
+                taskDep->syncpoint = syncpoint;
+                m_feiWaitTasks.push_back(taskDep);
+            } else {
+                Throw(std::runtime_error(""));
+            }
+        }
+    }
+    vm_mutex_unlock(&m_feiCritSect);
+}
+
+bool H265Encoder::FeiThreadWait(Ipp32u timeout)
+{
+    ThreadingTask *task = m_feiWaitTasks.front();
+
+#if TT_TRACE
+    char ttname[256] = "";
+    strcat(ttname, timeout ? "Wait " : "GetStatus ");
+    strcat(ttname, FEIOP_NAMES[task->feiOp]);
+    strcat(ttname, " ");
+    strcat(ttname, NUMBERS[task->poc & 0x7f]);
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, ttname);
+#endif // TT_TRACE
+
+    mfxStatus sts = H265FEI_SyncOperation(m_fei, task->syncpoint, timeout);
+    if (sts == MFX_WRN_IN_EXECUTION)
+        return false;
+    if (sts != MFX_ERR_NONE)
+        Throw(std::runtime_error(""));
+
+    H265FEI_DestroySavedSyncPoint(m_fei, task->syncpoint);
+    task->syncpoint = NULL;
+
+    m_feiWaitTasks.pop_front();
+
+    // the following modifications should be guarded by m_critSect
+    // because finished, numDownstreamDependencies and downstreamDependencies[]
+    // may be accessed from PrepareToEncode() and TaskRoutine()
+    vm_mutex_lock(&m_critSect);
+    task->finished = 1;
+    for (Ipp32s i = 0; i < task->numDownstreamDependencies; i++) {
+        ThreadingTask *taskDep = task->downstreamDependencies[i];
+        assert(taskDep->action != TT_GPU_SUBMIT && taskDep->action != TT_GPU_WAIT);
+        if (vm_interlocked_dec32(&taskDep->numUpstreamDependencies) == 0) {
+            m_pendingTasks.push_back(taskDep);
+            vm_cond_signal(&m_condVar);
+        }
+    }
+    vm_mutex_unlock(&m_critSect);
+
+    return true;
+}
+ 
 
 void Hrd::Init(const H265SeqParameterSet &sps, Ipp32u initialDelayInBits)
 {
@@ -1801,7 +2151,5 @@ Ipp32u Hrd::GetAuCpbRemovalDelayMinus1(const Frame &pic) const
 {
     return (pic.m_encOrder == 0) ? 0 : (pic.m_encOrder - prevBuffPeriodEncOrder) - 1;
 }
-
-template H265Enc::FrameData* H265Enc::Allocate(std::vector<H265Enc::FrameData*> & queue, H265VideoParam *par);
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE2

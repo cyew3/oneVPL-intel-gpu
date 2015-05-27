@@ -12,7 +12,8 @@
 
 #include <limits.h> /* for INT_MAX on Linux/Android */
 #include <algorithm>
-
+#include <math.h>
+#include <assert.h>
 #include "ippi.h"
 #include "ippvc.h"
 #include "ippdc.h"
@@ -20,22 +21,8 @@
 #include "mfx_h265_frame.h"
 #include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
-#include "math.h"
 
-#if defined(MFX_VA)
-#include "mfx_h265_enc_cm_utils.h"
-#include "mfx_h265_fei.h"
-#endif
-
-#if defined(MEMOIZE_SUBPEL_TEST) || defined(MEMOIZE_BIPRED_TEST) || defined(MEMOIZE_CAND_TEST) || defined(MEMOIZE_CAND_SUBPEL_TEST) || defined(MEMOIZE_SUBPEL_RECON_TEST)
-#include <assert.h>
-#endif
 namespace H265Enc {
-
-#define NO_TRANSFORM_SPLIT_INTRAPRED_STAGE1 0
-
-#define SWAP_REC_IDX(a,b) {Ipp8u tmp=a; a=b; b=tmp;}
-#define NEXT_REC_IDX(cudata) (3 ^ (cudata).curRecIdx ^ (cudata).bestRecIdx)
 
 #if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
 FILE *fp_cu = NULL, *fp_tu = NULL;
@@ -1118,7 +1105,6 @@ void H265CU<PixType>::InitCu(
                     ThreadingTaskSpecifier stage, 
                     const Ipp8u *logMvCostTable,
                     costStat* _costStat,
-                    void *feiH265Out, 
                     const Frame* frame,
                     CoeffsType *m_coeffWork) 
 {
@@ -1128,10 +1114,7 @@ void H265CU<PixType>::InitCu(
 
     m_cslice = _cslice;
     m_costStat = _costStat;
-#if defined(MFX_VA)
-    VM_ASSERT(feiH265Out);
-    feiOut = (mfxFEIH265Output *)feiH265Out;
-#endif
+
     m_bsf = _bsf;
     m_logMvCostTable = logMvCostTable + (1 << 15);
     m_data = _data;
@@ -5186,11 +5169,7 @@ void H265CU<PixType>::MeCu(Ipp32s absPartIdx, Ipp8u depth)
 
 #ifdef AMT_ICRA_OPT
     const H265CUData *dataBestInterPreAMP = StoredCuData(depth)+absPartIdx;
-#if defined (MFX_VA)
     if(m_par->FastAMPRD>=2 && !m_par->enableCmFlag && (dataBestInterPreAMP->flags.skippedFlag!=1 && dataBestInterPreAMP->cbf[0]))
-#else
-    if(m_par->FastAMPRD>=2 && (dataBestInterPreAMP->flags.skippedFlag!=1 && dataBestInterPreAMP->cbf[0]))
-#endif
     {
         FastCheckAMP(absPartIdx, depth, &meInfo2Nx2N);
     } else
@@ -7981,12 +7960,8 @@ Ipp32s H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx, bool doME)
 void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
 #endif
 {
-
-#if defined (MFX_VA)
-    if (m_par->enableCmFlag) {
+    if (m_par->enableCmFlag)
         return MePuGacc(meInfos, partIdx);
-    }
-#endif // MFX_VA
 
     H265MEInfo *meInfo = meInfos + partIdx;
 #ifdef MEMOIZE_SUBPEL
@@ -8332,28 +8307,20 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
 #endif
 }
 
-#if defined(MFX_VA)
 
-/* helper function */
-/* should match fei part */
-Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh)
-{
-    const Ipp32s MAX_PU_WIDTH = 64;
-    const Ipp32s MAX_PU_HEIGHT = 64;
-    enum { IDX4, IDX8, IDX16, IDX32, IDX_MAX };
-    static const Ipp8s tab_wh2Idx[MAX_PU_WIDTH >> 2] = { IDX4, IDX8, -1, IDX16, -1, -1, -1, IDX32, -1, -1, -1, -1, -1, -1, -1, -1 };
-    static const Ipp8s tab_lookUpPuSize[IDX_MAX][IDX_MAX] = {
-        //H=       4                            8                        16                      32
-        {                      -1,  MFX_FEI_H265_BLK_4x8_US,                       -1,                       -1 }, //W=4
-        { MFX_FEI_H265_BLK_8x4_US,     MFX_FEI_H265_BLK_8x8,    MFX_FEI_H265_BLK_8x16,                       -1 }, //W=8
-        {                      -1,    MFX_FEI_H265_BLK_16x8,   MFX_FEI_H265_BLK_16x16,   MFX_FEI_H265_BLK_16x32 }, //W=16
-        {                      -1,                       -1,   MFX_FEI_H265_BLK_32x16,   MFX_FEI_H265_BLK_32x32 }, //W=32
-    };
+namespace {
+    /* helper function */
+    /* should match fei part */
+    Ipp32s GetPuSize(Ipp32s puw, Ipp32s puh)
+    {
+        if ((puw | puh) == 8)       return 0;
+        else if ((puw | puh) == 16) return 1;
+        else if ((puw | puh) == 32) return 2;
+        assert("unsupported PU size");
+        return 0;
+    }
+};
 
-    return tab_lookUpPuSize[tab_wh2Idx[puw / 4 - 1]][tab_wh2Idx[puh / 4 - 1]];
-}
-
-#endif
 
 template <typename PixType>
 #ifdef AMT_ICRA_OPT
@@ -8362,7 +8329,6 @@ Ipp32s H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
 void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
 #endif
 {
-#ifdef MFX_VA
     H265MEInfo *meInfo = meInfos + partIdx;
     Ipp32s lastPredIdx = (partIdx == 0) ? 0 : meInfos[partIdx - 1].interDir - 1;
 
@@ -8370,9 +8336,6 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
     Ipp32s y = (m_ctbPelY + meInfo->posy) / meInfo->height;
     Ipp32s puSize = GetPuSize(meInfo->width, meInfo->height);
 
-    Ipp32s pitchDist = (Ipp32s)feiOut->PitchDist[puSize];
-    Ipp32s pitchMv = (Ipp32s)feiOut->PitchMV[puSize];
-    
     Ipp32u numParts = (m_par->NumPartInCU >> (meInfo->depth << 1));
     Ipp32s partAddr = meInfo->absPartIdx &  (numParts - 1);
     Ipp32s curPUidx = (meInfo->splitMode == PART_SIZE_NxN) ? (partAddr / (numParts >> 2)) : !!partAddr;
@@ -8392,9 +8355,6 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
         Ipp32s numRefIdx = m_cslice->num_ref_idx[list];
 
         for (Ipp8s refIdx = 0; refIdx < numRefIdx; refIdx++) {
-
-            // refIdxes from L0 and L1 are in common array
-            Ipp8s feiRefIdx = list * m_cslice->num_ref_idx[0] + refIdx;
 
             costRefBest[list][refIdx] = INT_MAX;
             if (list == 1) { // TODO: use pre-build table of duplicates instead of std::find
@@ -8416,8 +8376,12 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
                 }
             }
 
-            mfxI16Pair cmMv = feiOut->MV[feiRefIdx][puSize][y * pitchMv + x];
-            mfxU32 *cmDist = feiOut->Dist[feiRefIdx][puSize] + y * pitchDist;
+            Ipp32s uniqRefIdx = m_currFrame->m_mapListRefUnique[list][refIdx];
+            Ipp32s pitchDist = m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_pitch;
+            Ipp32s pitchMv = m_currFrame->m_feiInterMv[uniqRefIdx][puSize]->m_pitch;
+
+            mfxI16Pair cmMv = ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize]->m_sysmem + y * pitchMv))[x];
+            Ipp32u *cmDist = (Ipp32u *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_sysmem + y * pitchDist);
 
             H265MV mvBest = { 0, 0 };
             Ipp32s costBest = INT_MAX;
@@ -8528,7 +8492,7 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
             bestMergeCost = MatchingMetricBiPredPuMemCand(src, meInfo, refIdx, mv, useHadamard);
         } else {
             Ipp32s listIdx = (refIdx[1] >= 0);
-            Frame *ref = m_currFrame->m_refPicList[listIdx].m_refFrames[refIdx[listIdx]];
+            FrameData *ref = m_currFrame->m_refPicList[listIdx].m_refFrames[refIdx[listIdx]]->m_recon;
             bestMergeCost = MatchingMetricPuMemSCand(src, meInfo, listIdx, refIdx, mv + listIdx, ref, useHadamard);
         }
 
@@ -8590,11 +8554,6 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
 #ifdef AMT_ICRA_OPT
     return retCost;
 #endif
-#else // MFX_VA
-#ifdef AMT_ICRA_OPT
-    return INT_MAX;
-#endif
-#endif // MFX_VA
 }
 
 

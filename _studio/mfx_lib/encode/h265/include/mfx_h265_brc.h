@@ -340,8 +340,6 @@ protected:
     Ipp64f mEstCnt[8];
     Ipp64f mLayerTarget[8];
 
-    Ipp64f mPrevQstep;
-
     std::vector<mfxBRC_FrameData> mMiniGopFrames;
     Ipp32s mEncOrderCoded;
 

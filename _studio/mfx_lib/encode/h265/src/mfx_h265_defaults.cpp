@@ -105,6 +105,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     tab_##mode##_LowresFactor[x],\
     tab_##mode##_DeblockBorders[x],\
     tab_##mode##_SAOChroma[x],\
+    tab_##mode##_RepackProb[x],\
     }
 
     // Extended bit depth
@@ -374,6 +375,8 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_ALL (SceneCut,                       0,   0,   0,   0,   0,   0,   0);
     TU_OPT_ALL (RateControlDepth,               0,   0,   0,   0,   0,   0,   0);
     TU_OPT_ALL (LowresFactor,                   0,   0,   0,   0,   0,   0,   0);
+
+    TU_OPT_ALL (RepackProb,                     0,   0,   0,   0,   0,   0,   0);
 
 
 namespace H265Enc {

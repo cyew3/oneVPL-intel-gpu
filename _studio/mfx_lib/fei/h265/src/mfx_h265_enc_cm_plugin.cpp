@@ -51,6 +51,10 @@ mfxStatus VideoENC_H265FEI::Init(mfxVideoParam *par)
     m_feiH265Param.MPMode        = pParams->MPMode;
     m_feiH265Param.NumIntraModes = pParams->NumIntraModes;
 
+    // TODO - validate bounds
+    m_feiH265Param.BitDepth      = pParams->BitDepth;
+    m_feiH265Param.TargetUsage   = pParams->TargetUsage;
+
     /* validate parameters - update these limits as necessary in future versions */
     MFX_CHECK ((m_feiH265Param.Width > 0)         && (m_feiH265Param.Height > 0),     MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK ((m_feiH265Param.Width <= 4088)     && (m_feiH265Param.Height) <= 4088, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -87,7 +91,45 @@ mfxStatus VideoENC_H265FEI::Close()
         err = H265FEI_Close(m_feiH265);
     m_feiH265 = 0;
 
-    return MFX_ERR_NONE;
+    return err;
+}
+
+mfxStatus VideoENC_H265FEI::AllocateInputSurface(mfxHDL *surfIn)
+{
+    mfxStatus err = MFX_ERR_NONE;
+
+    MFX_CHECK_NULL_PTR1(surfIn);
+
+    if (m_feiH265)
+        err = H265FEI_AllocateInputSurface(m_feiH265, surfIn);
+
+    return err;
+}
+
+mfxStatus VideoENC_H265FEI::AllocateOutputSurface(mfxU8 *sysMem, mfxSurfInfoENC *surfInfo, mfxHDL *surfOut)
+{
+    mfxStatus err = MFX_ERR_NONE;
+
+    MFX_CHECK_NULL_PTR1(sysMem);
+    MFX_CHECK_NULL_PTR1(surfInfo);
+    MFX_CHECK_NULL_PTR1(surfOut);
+
+    if (m_feiH265)
+        err = H265FEI_AllocateOutputSurface(m_feiH265, sysMem, surfInfo, surfOut);
+
+    return err;
+}
+
+mfxStatus VideoENC_H265FEI::FreeSurface(mfxHDL surf)
+{
+    mfxStatus err = MFX_ERR_NONE;
+
+    MFX_CHECK_NULL_PTR1(surf);
+
+    if (m_feiH265)
+        err = H265FEI_FreeSurface(m_feiH265, surf);
+
+    return err;
 }
 
 /* TODO - anything to do here? */
@@ -115,7 +157,7 @@ static mfxStatus SubmitFrameH265FEIRoutine(void *pState, void *pParam, mfxU32 /*
     VideoENC_H265FEI *pFEI = (VideoENC_H265FEI *)pState;
     sAsyncParams *out = (sAsyncParams *)pParam;
  
-    H265FEI_ProcessFrameAsync(pFEI->m_feiH265, &(out->feiH265In), out->feiH265Out, &(out->feiH265SyncPoint));
+    H265FEI_ProcessFrameAsync(pFEI->m_feiH265, &(out->feiH265In), &(out->feiH265Out), &(out->feiH265SyncPoint));
 
     return tskRes;
 
@@ -174,8 +216,9 @@ mfxStatus VideoENC_H265FEI::RunFrameVmeENCCheck(mfxENCInput *input, mfxENCOutput
     if (input->InSurface) {
         sp->feiH265In.FEIFrameIn.EncOrder = input->InSurface->Data.FrameOrder;
         sp->feiH265In.FEIFrameIn.PicOrder = input->InSurface->Data.FrameOrder;      // unused in FEI core currently, but leave field if needed later
-        sp->feiH265In.FEIFrameIn.YPitch   = input->InSurface->Data.Pitch;
+        sp->feiH265In.FEIFrameIn.YPitch   = input->InSurface->Data.PitchLow + ((mfxU32)(input->InSurface->Data.PitchHigh) << 16);
         sp->feiH265In.FEIFrameIn.YPlane   = input->InSurface->Data.Y;
+        sp->feiH265In.FEIFrameIn.YBitDepth = input->InSurface->Info.BitDepthLuma;
         MFX_CHECK_NULL_PTR1(sp->feiH265In.FEIFrameIn.YPlane);
     } 
 
@@ -183,12 +226,13 @@ mfxStatus VideoENC_H265FEI::RunFrameVmeENCCheck(mfxENCInput *input, mfxENCOutput
         MFX_CHECK_NULL_PTR1(input->L0Surface[0]);
         sp->feiH265In.FEIFrameRef.EncOrder = input->L0Surface[0]->Data.FrameOrder;
         sp->feiH265In.FEIFrameRef.PicOrder = input->L0Surface[0]->Data.FrameOrder;
-        sp->feiH265In.FEIFrameRef.YPitch   = input->L0Surface[0]->Data.Pitch;
+        sp->feiH265In.FEIFrameRef.YPitch   = input->L0Surface[0]->Data.PitchLow + ((mfxU32)(input->L0Surface[0]->Data.PitchHigh) << 16);
         sp->feiH265In.FEIFrameRef.YPlane   = input->L0Surface[0]->Data.Y;
+        sp->feiH265In.FEIFrameRef.YBitDepth = input->L0Surface[0]->Info.BitDepthLuma;
         MFX_CHECK_NULL_PTR1(sp->feiH265In.FEIFrameRef.YPlane);
     }
 
-    /* copy pointers to user-allocated FEIInput, FEIOutput structs into params struct */ 
+    /* copy parameters from input/output mfxExtBufs into params struct */ 
     mfxExtFEIH265Input  *pIn  = (mfxExtFEIH265Input *)  GetExtBuffer(input->ExtParam,  input->NumExtParam,  MFX_EXTBUFF_FEI_H265_INPUT);
     mfxExtFEIH265Output *pOut = (mfxExtFEIH265Output *) GetExtBuffer(output->ExtParam, output->NumExtParam, MFX_EXTBUFF_FEI_H265_OUTPUT);
 
@@ -197,18 +241,15 @@ mfxStatus VideoENC_H265FEI::RunFrameVmeENCCheck(mfxENCInput *input, mfxENCOutput
 
     sp->feiH265In.FEIOp     = pIn->FEIOp;
     sp->feiH265In.FrameType = pIn->FrameType;
-    sp->feiH265In.RefIdx    = pIn->RefIdx;
 
-    /* we save a pointer to the mfxFEIH265Output struct allocated by the user */
-    sp->feiH265Out = pOut->feiOut;
+    sp->feiH265In.FEIFrameIn.surfIn  = pIn->SurfInSrc;
+    sp->feiH265In.FEIFrameRef.surfIn = pIn->SurfInRec;
 
-    MFX_CHECK_NULL_PTR1(pOut->feiOut);
+    /* save a local copy of the mfxExtFEIH265Output struct allocated by the user (need copy since this operates asynchronously with FEI core) */
+    sp->feiH265Out = *pOut;
 
     /* basic error checking */
     if (sp->feiH265In.FrameType != MFX_FRAMETYPE_I && sp->feiH265In.FrameType != MFX_FRAMETYPE_P && sp->feiH265In.FrameType != MFX_FRAMETYPE_B)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-
-    if (sp->feiH265In.RefIdx >= m_feiH265Param.NumRefFrames)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     pEntryPoints[0].pRoutine = &SubmitFrameH265FEIRoutine;
@@ -262,6 +303,9 @@ mfxStatus VideoENC_H265FEI::Query(VideoCORE* pCore, mfxVideoParam *in, mfxVideoP
         pParams->MaxCUSize = 1;
         pParams->MPMode = 1;
         pParams->NumIntraModes = 1;
+
+        pParams->BitDepth = 1;
+        pParams->TargetUsage = 1;
     }
     else
     {
@@ -281,7 +325,7 @@ mfxStatus VideoENC_H265FEI::Query(VideoCORE* pCore, mfxVideoParam *in, mfxVideoP
         /* currently input frames are in system memory */
         mfxU32 inPattern = in->IOPattern & MFX_IOPATTERN_IN_MASK;
         MFX_CHECK(inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY, MFX_ERR_INVALID_VIDEO_PARAM);
-        memset (&out->mfx,0,sizeof(out->mfx));
+        memset(&out->mfx, 0, sizeof(out->mfx));
 
         out->mfx.CodecId          = in->mfx.CodecId;
         out->mfx.NumRefFrame      = in->mfx.NumRefFrame;
@@ -296,8 +340,21 @@ mfxStatus VideoENC_H265FEI::Query(VideoCORE* pCore, mfxVideoParam *in, mfxVideoP
         pParams_out->MPMode        = pParams_in->MPMode;
         pParams_out->NumIntraModes = pParams_in->NumIntraModes;
 
+        pParams_out->BitDepth      = pParams_in->BitDepth;
+        pParams_out->TargetUsage   = pParams_in->TargetUsage;
+
+
         MFX_CHECK ((pParams_out->MPMode >= 1) && (pParams_out->MPMode <= 3), MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK ((pParams_out->NumIntraModes == 1), MFX_ERR_INVALID_VIDEO_PARAM);
+
+        /* fill out extBuf with required surface dimensions so user can allocate memory */
+        mfxExtFEIH265Alloc *pAlloc_in  = (mfxExtFEIH265Alloc *)GetExtBuffer(in->ExtParam,  in->NumExtParam, MFX_EXTBUFF_FEI_H265_ALLOC);
+        mfxExtFEIH265Alloc *pAlloc_out = (mfxExtFEIH265Alloc *)GetExtBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_FEI_H265_ALLOC);
+
+        MFX_CHECK_NULL_PTR1(pAlloc_in);
+        MFX_CHECK_NULL_PTR1(pAlloc_out);
+
+        H265FEI_GetSurfaceDimensions(pCore, out->mfx.FrameInfo.Width, out->mfx.FrameInfo.Height, pAlloc_out);
     }
 
     return MFX_ERR_NONE;
