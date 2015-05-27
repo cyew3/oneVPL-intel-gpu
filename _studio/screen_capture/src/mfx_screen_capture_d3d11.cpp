@@ -279,6 +279,11 @@ mfxStatus D3D11_Capturer::Destroy()
 {
     bool error = false;
     //m_pD11Device.Release(); //controlled by the application
+
+#if defined(ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE)
+    ResetInternalSurfaces(0,0);
+#endif
+
     try{
         m_pD11Context.Release();
     } catch (...) {
@@ -465,7 +470,16 @@ mfxStatus D3D11_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_wo
     dec_ext.PrivateInputDataSize = sizeof(desktop_execute);
 
     hr = m_pD11VideoContext->DecoderExtension(m_pDecoder, &dec_ext);
-    if (FAILED(hr))    return MFX_ERR_DEVICE_FAILED;
+    if (FAILED(hr))
+    {
+#if defined(ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE)
+        if(pOwnMfxSurf)
+        {
+            m_pmfxCore->DecreaseReference(m_pmfxCore->pthis,&pOwnMfxSurf->Data);
+        }
+#endif
+        return MFX_ERR_DEVICE_FAILED;
+    }
 
 #if defined(ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE)
     if(m_bImplicitResizeWA)

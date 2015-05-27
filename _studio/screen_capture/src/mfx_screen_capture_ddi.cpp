@@ -237,6 +237,12 @@ mfxStatus OwnResizeFilter::Init(const mfxFrameInfo& in, const mfxFrameInfo& out)
             return MFX_ERR_MEMORY_ALLOC;
         }
 
+        if(pInitBuffer)
+        {
+            delete[] pInitBuffer;
+            pInitBuffer = 0;
+        }
+
         return MFX_ERR_NONE;
     }
     else if(MFX_FOURCC_RGB4 == in.FourCC || DXGI_FORMAT_AYUV == in.FourCC)
@@ -325,6 +331,12 @@ mfxStatus OwnResizeFilter::Init(const mfxFrameInfo& in, const mfxFrameInfo& out)
             delete[] pInitBuffer;
             pInitBuffer = 0;
             return MFX_ERR_MEMORY_ALLOC;
+        }
+
+        if(pInitBuffer)
+        {
+            delete[] pInitBuffer;
+            pInitBuffer = 0;
         }
 
         return MFX_ERR_NONE;

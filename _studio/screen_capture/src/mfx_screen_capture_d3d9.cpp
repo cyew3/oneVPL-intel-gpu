@@ -333,26 +333,15 @@ mfxStatus D3D9_Capturer::CheckCapabilities(mfxVideoParam const & in, mfxVideoPar
 
 mfxStatus D3D9_Capturer::Destroy()
 {
-    HRESULT hr;
     bool error = false;
 
-    DXVA2_DecodeExecuteParams dec_exec = {0};
-    DXVA2_DecodeExtensionData dec_ext =  {0};
-    dec_exec.pExtensionData = &dec_ext;
-
-    dec_ext.Function = AUXDEV_DESTROY_ACCEL_SERVICE;
-    GUID GetDesktopScreenGUID = GUID_NULL;
-    dec_ext.pPrivateInputData = &GetDesktopScreenGUID;
-    dec_ext.PrivateInputDataSize = sizeof(GetDesktopScreenGUID);
+#if defined(ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE)
+    ResetInternalSurfaces(0,0);
+#endif
 
     if(m_pDecoder)
     {
         try{
-            hr = m_pDecoder->Execute(&dec_exec);
-            if(FAILED(hr))
-                error = true;
-            //not sure about correct closing the device, let's ignore error
-            error = false;
             m_pDecoder.Release();
         } catch (...) {
             error = true;
@@ -538,7 +527,15 @@ mfxStatus D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_wor
 
     hr = m_pDecoder->Execute(&dec_exec);
     if (FAILED(hr))
+    {
+#if defined(ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE)
+        if(pOwnMfxSurf)
+        {
+            m_pmfxCore->DecreaseReference(m_pmfxCore->pthis,&pOwnMfxSurf->Data);
+        }
+#endif
         return MFX_ERR_DEVICE_FAILED;
+    }
 
 #if defined(ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE)
     if(m_bImplicitResizeWA)
