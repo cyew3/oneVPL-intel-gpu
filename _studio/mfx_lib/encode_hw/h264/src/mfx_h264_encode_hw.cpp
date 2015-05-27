@@ -2202,7 +2202,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             m_baseLayerOrder ++;
         }
 
-        if(m_isENCPAK){ //temp find better way
+        if ((m_isENCPAK) && (NULL != bs))
+        { //temp find better way
             mfxExtFeiEncMBStat* mbstat = NULL;
             mfxExtFeiEncMV* mvout = NULL;
             mfxExtFeiPakMBCtrl* mbcode = NULL;
