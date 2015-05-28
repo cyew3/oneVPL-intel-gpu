@@ -618,7 +618,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamFwdGa
     {
         for (int i = 0; i <  CamFwrGamma.NumSegments; i++)
         {
-            str += structName + dump((".Segment[" + ToString(i) + "]"), CamFwrGamma.Segment[i]) + "\n";
+            str += dump((structName + ".Segment[" + ToString(i) + "]"), CamFwrGamma.Segment[i]) + "\n";
         }
     }
     return str;
