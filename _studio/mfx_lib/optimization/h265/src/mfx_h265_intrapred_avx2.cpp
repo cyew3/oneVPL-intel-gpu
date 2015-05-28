@@ -117,8 +117,8 @@ static inline void PredAngle_16x16_8u_AVX2(Ipp8u *pSrc, Ipp8u *pDst, Ipp32s dstP
         iFact = pos & 31;
 
         // process i = 0..15
-        y0 = _mm256_cvtepu8_epi16(*(__m128i *)&pSrc[iIdx+1]);
-        y1 = _mm256_cvtepu8_epi16(*(__m128i *)&pSrc[iIdx+2]);
+        y0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)&pSrc[iIdx+1]));
+        y1 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)&pSrc[iIdx+2]));
 
         y1 = _mm256_sub_epi16(y1, y0);
         y1 = _mm256_mullo_epi16(y1, _mm256_set1_epi16(iFact));
@@ -148,8 +148,8 @@ static inline void PredAngle_32x32_8u_AVX2(Ipp8u *pSrc, Ipp8u *pDst, Ipp32s dstP
 
         for (int i = 0; i < 32; i += 16)
         {
-            y0 = _mm256_cvtepu8_epi16(*(__m128i *)&pSrc[iIdx+1+i]);
-            y1 = _mm256_cvtepu8_epi16(*(__m128i *)&pSrc[iIdx+2+i]);
+            y0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)&pSrc[iIdx+1+i]));
+            y1 = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)&pSrc[iIdx+2+i]));
 
             y1 = _mm256_sub_epi16(y1, y0);
             y1 = _mm256_mullo_epi16(y1, _mm256_set1_epi16(iFact));
@@ -966,8 +966,8 @@ static inline void PredAngle_8x8(Ipp8u *pSrc1, Ipp8u *pSrc2, Ipp8u *pDst1, Ipp8u
     iIdx = ((iIdx+16) % 16); \
     f0 = _mm256_load_si256((__m256i *)tab_frac[iFact]); \
         \
-    t0 = _mm256_permute2x128_si256(mm256(_mm_load_si128((__m128i *)&pSrc1[iIdx+0])), mm256(_mm_load_si128((__m128i *)&pSrc2[iIdx+0])), 0x20); \
-    r1 = _mm256_permute2x128_si256(mm256(_mm_load_si128((__m128i *)&pSrc1[iIdx+1])), mm256(_mm_load_si128((__m128i *)&pSrc2[iIdx+1])), 0x20); \
+    t0 = _mm256_permute2x128_si256(mm256(_mm_loadu_si128((__m128i *)&pSrc1[iIdx+0])), mm256(_mm_loadu_si128((__m128i *)&pSrc2[iIdx+0])), 0x20); \
+    r1 = _mm256_permute2x128_si256(mm256(_mm_loadu_si128((__m128i *)&pSrc1[iIdx+1])), mm256(_mm_loadu_si128((__m128i *)&pSrc2[iIdx+1])), 0x20); \
     r0 = _mm256_unpacklo_epi8(t0, r1); \
     r1 = _mm256_unpackhi_epi8(t0, r1); \
         \
