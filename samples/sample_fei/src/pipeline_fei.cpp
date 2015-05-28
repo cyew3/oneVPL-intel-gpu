@@ -1542,7 +1542,7 @@ mfxStatus CEncodingPipeline::Run()
             feiEncCtrl[fieldId].SearchWindow = 1;
 
             /* PPS */
-            m_feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;;
+            m_feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;
             m_feiPPS[fieldId].Header.BufferSz = sizeof(mfxExtFeiPPS);
             m_feiPPS[fieldId].Pack = m_encpakParams.bPassHeaders ? 1 : 0;
 
@@ -1551,9 +1551,9 @@ mfxStatus CEncodingPipeline::Run()
 
             m_feiPPS[fieldId].FrameNum = 0;
 
-            m_feiPPS[fieldId].PicInitQP = 26;;
-            m_feiPPS[fieldId].NumRefIdxL0Active = -1;
-            m_feiPPS[fieldId].NumRefIdxL1Active = -1;
+            m_feiPPS[fieldId].PicInitQP = 26;
+            m_feiPPS[fieldId].NumRefIdxL0Active = (mfxU16)-1;
+            m_feiPPS[fieldId].NumRefIdxL1Active = (mfxU16)-1;
 
             m_feiPPS[fieldId].ChromaQPIndexOffset = 0;
             m_feiPPS[fieldId].SecondChromaQPIndexOffset = 0;
@@ -2136,7 +2136,7 @@ mfxStatus CEncodingPipeline::Run()
             }
 
             for (;;)
-{
+            {
                 //Add output buffers
                 if (numExtOutParams > 0) {
                     pCurrentTask->mfxBS.NumExtParam = numExtOutParams;
