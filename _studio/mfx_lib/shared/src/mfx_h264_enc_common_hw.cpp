@@ -4805,6 +4805,7 @@ void MfxHwH264Encode::SetDefaults(
     {
         mfxFrameInfo const & fi = par.mfx.FrameInfo;
 
+
         extSps->nalRefIdc                       = par.calcParam.lyncMode ? 3 : 1;
         extSps->nalUnitType                     = 7;
         extSps->profileIdc                      = mfxU8(par.mfx.CodecProfile & MASK_PROFILE_IDC);
@@ -4842,7 +4843,11 @@ void MfxHwH264Encode::SetDefaults(
         extSps->direct8x8InferenceFlag          = 1;
 
         mfxU16 cropUnitX = CROP_UNIT_X[fi.ChromaFormat];
-        mfxU16 cropUnitY = CROP_UNIT_Y[fi.ChromaFormat] * (2 - extSps->frameMbsOnlyFlag);
+        //Hack!!!! Fix cropping for ARGB and YUY2 formats, need to redesign in case real 444 or 422 support in AVC.
+        mfxU16 croma_format = fi.ChromaFormat;
+        if(croma_format == MFX_CHROMAFORMAT_YUV444 || croma_format == MFX_CHROMAFORMAT_YUV422)
+            croma_format = MFX_CHROMAFORMAT_YUV420;
+        mfxU16 cropUnitY = CROP_UNIT_Y[croma_format] * (2 - extSps->frameMbsOnlyFlag);
 
         extSps->frameCropLeftOffset   = (fi.CropX / cropUnitX);
         extSps->frameCropRightOffset  = (fi.Width - fi.CropW - fi.CropX) / cropUnitX;
