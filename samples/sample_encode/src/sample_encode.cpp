@@ -13,6 +13,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include <memory>
 #include "pipeline_encode.h"
 #include "pipeline_user.h"
+#include "pipeline_region_encode.h"
 #include <stdarg.h>
 #include <string>
 
@@ -24,6 +25,8 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
         return MFX_ERR_UNSUPPORTED;\
     } \
 }
+
+void RecDump(const sInputParams& Params);
 
 void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 {
@@ -72,6 +75,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-num_slice]             - number of slices in each video frame. 0 by default.\n"));
     msdk_printf(MSDK_STRING("                              If num_slice equals zero, the encoder may choose any slice partitioning allowed by the codec standard.\n"));
     msdk_printf(MSDK_STRING("   [-mss]                   - maximum slice size in bytes. Supported only with -hw and h264 codec. This option is not compatible with -num_slice option.\n"));
+    msdk_printf(MSDK_STRING("   [-re]                    - enable region encode mode.\n"));
+    msdk_printf(MSDK_STRING("   [-d]                     - record dump file name.\n"));
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
@@ -303,6 +308,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 #endif
             pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-re")))
+        {
+            pParams->UseRegionEncode = true;
+        }
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -373,6 +382,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-i' expects an argument\n"));
+                }
+                break;
+            case MSDK_CHAR('d'):
+                if (++i < nArgNum) {
+                    msdk_opt_read(strInput[i], pParams->recDumpFile);
+                }
+                else {
+                    msdk_printf(MSDK_STRING("error: option '-d' expects an argument\n"));
                 }
                 break;
             case MSDK_CHAR('o'):
@@ -610,7 +627,16 @@ int main(int argc, char *argv[])
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
-    pPipeline.reset((Params.nRotationAngle) ? new CUserPipeline : new CEncodingPipeline);
+	// Choosing which pipeline to use
+    if(Params.UseRegionEncode)
+    {
+        pPipeline.reset(new CRegionEncodingPipeline());
+    }
+    else
+    {
+        pPipeline.reset((Params.nRotationAngle) ? new CUserPipeline : new CEncodingPipeline);
+    }
+
 
     MSDK_CHECK_POINTER(pPipeline.get(), MFX_ERR_MEMORY_ALLOC);
 
@@ -649,7 +675,78 @@ int main(int argc, char *argv[])
     }
 
     pPipeline->Close();
+
+
+    //if(Params.UseRegionEncode)
+    //{
+    //    RecDump(Params);
+    //}
+
     msdk_printf(MSDK_STRING("\nProcessing finished\n"));
 
     return 0;
+}
+
+void RecDump(const sInputParams& Params)
+{
+    #if defined(_WIN32) || defined(_WIN64)
+    FILE *recDump = _wfopen(Params.recDumpFile, MSDK_STRING("wb"));
+#else
+    FILE *recDump = fopen(Params.recDumpFile, "wb");
+#endif
+    FILE **recDumps = new FILE*[Params.nNumSlice];
+    int *start = new int[Params.nNumSlice];
+    int *len = new int[Params.nNumSlice];
+
+    int Log2MaxCUSize = Params.nTargetUsage <= 2 ? 6 : 5;
+    int MaxCUSize = 1 << Log2MaxCUSize;
+    int PicHeightInCtbs = (Params.nHeight + MaxCUSize - 1) / MaxCUSize;
+
+    int sliceRowStart = 0;
+    for (int regId = 0; regId < Params.nNumSlice; regId++) {
+        int sliceHeight = ((regId + 1) * PicHeightInCtbs) / Params.nNumSlice -
+        (regId * PicHeightInCtbs / Params.nNumSlice);
+
+        start[regId] = (sliceRowStart << Log2MaxCUSize);
+        len[regId] = (sliceHeight << Log2MaxCUSize);
+        if (start[regId] + len[regId] >= Params.nHeight)
+            len[regId] = Params.nHeight - start[regId];
+        start[regId] *= Params.nWidth;
+        len[regId] *= Params.nWidth;
+
+        sliceRowStart += sliceHeight;
+
+        char filename[50];
+        sprintf(filename, "recdump_%d.yuv", regId);
+        recDumps[regId] = fopen(filename,"rb");
+    }
+    int framelen = Params.nWidth * Params.nHeight;
+    mfxU8 *buf = new mfxU8[framelen];
+
+    int exitFlag = 0;
+    do {
+        for (int cc = 0; cc < 3; cc++) {
+            for (int regId = 0; regId < Params.nNumSlice; regId++) {
+#define ccdiv ((cc > 0) ? 4 : 1)
+                if (fread(buf, 1, framelen / ccdiv, recDumps[regId]) == 0) {
+                    exitFlag = 1;
+                    break;
+                }
+                fwrite(buf+start[regId] / ccdiv,1,len[regId] / ccdiv,recDump);
+            }
+        }
+    } while (!exitFlag);
+
+    fclose(recDump);
+    for (int regId = 0; regId < Params.nNumSlice; regId++) {
+        char filename[50];
+        sprintf(filename, "recdump_%d.yuv", regId);
+        fclose(recDumps[regId]);
+        remove(filename);
+    }
+
+    delete[] recDumps;
+    delete[] buf;
+    delete[] start;
+    delete[] len;
 }

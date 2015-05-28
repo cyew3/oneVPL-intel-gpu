@@ -28,6 +28,27 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 #include "plugin_loader.h"
 
+/* obtain the clock tick of an uninterrupted master clock */
+msdk_tick time_get_tick(void)
+{
+    return msdk_time_get_tick();/*
+    LARGE_INTEGER t1;
+
+    QueryPerformanceCounter(&t1);
+    return t1.QuadPart;*/
+
+} /* vm_tick vm_time_get_tick(void) */
+
+/* obtain the clock resolution */
+msdk_tick time_get_frequency(void)
+{
+    return msdk_time_get_frequency();/*
+    LARGE_INTEGER t1;
+
+    QueryPerformanceFrequency(&t1);
+    return t1.QuadPart;*/
+
+} /* vm_tick vm_time_get_frequency(void) */
 
 CEncTaskPool::CEncTaskPool()
 {
@@ -83,7 +104,7 @@ mfxStatus CEncTaskPool::Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter*
     return MFX_ERR_NONE;
 }
 
-mfxStatus CEncTaskPool::SynchronizeFirstTask()
+mfxStatus CEncTaskPool::SynchronizeFirstTask(mfxI64 *time)
 {
     MSDK_CHECK_POINTER(m_pTasks, MFX_ERR_NOT_INITIALIZED);
     MSDK_CHECK_POINTER(m_pmfxSession, MFX_ERR_NOT_INITIALIZED);
@@ -94,6 +115,8 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
     if (NULL != m_pTasks[m_nTaskBufferStart].EncSyncP)
     {
         sts = m_pmfxSession->SyncOperation(m_pTasks[m_nTaskBufferStart].EncSyncP, MSDK_WAIT_INTERVAL);
+        if (time)
+            *time = time_get_tick();
 
         if (MFX_ERR_NONE == sts)
         {
@@ -505,7 +528,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
     sts = m_hwdev->Init(
         window,
         0,
-        MSDKAdapter::GetNumber(m_mfxSession));
+        MSDKAdapter::GetNumber(GetFirstSession()));
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 #elif LIBVA_SUPPORT
@@ -514,7 +537,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
-    sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(m_mfxSession));
+    sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(GetFirstSession()));
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 #endif
     return MFX_ERR_NONE;
@@ -531,7 +554,7 @@ mfxStatus CEncodingPipeline::ResetDevice()
 
 mfxStatus CEncodingPipeline::AllocFrames()
 {
-    MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_NOT_INITIALIZED);
+    MSDK_CHECK_POINTER(GetFirstEncoder(), MFX_ERR_NOT_INITIALIZED);
 
     mfxStatus sts = MFX_ERR_NONE;
     mfxFrameAllocRequest EncRequest;
@@ -549,7 +572,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
     // To achieve better performance we provide extra surfaces.
     // 1 extra surface at input allows to get 1 extra output.
 
-    sts = m_pmfxENC->QueryIOSurf(&m_mfxEncParams, &EncRequest);
+    sts = GetFirstEncoder()->QueryIOSurf(&m_mfxEncParams, &EncRequest);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     if (EncRequest.NumFrameSuggested < m_mfxEncParams.AsyncDepth)
@@ -1164,13 +1187,13 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
 mfxStatus CEncodingPipeline::AllocateSufficientBuffer(mfxBitstream* pBS)
 {
     MSDK_CHECK_POINTER(pBS, MFX_ERR_NULL_PTR);
-    MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_NOT_INITIALIZED);
+    MSDK_CHECK_POINTER(GetFirstEncoder(), MFX_ERR_NOT_INITIALIZED);
 
     mfxVideoParam par;
     MSDK_ZERO_MEMORY(par);
 
     // find out the required buffer size
-    mfxStatus sts = m_pmfxENC->GetVideoParam(&par);
+    mfxStatus sts = GetFirstEncoder()->GetVideoParam(&par);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // reallocate bigger buffer for output
@@ -1187,19 +1210,12 @@ mfxStatus CEncodingPipeline::GetFreeTask(sTask **ppTask)
     sts = m_TaskPool.GetFreeTask(ppTask);
     if (MFX_ERR_NOT_FOUND == sts)
     {
-        sts = SynchronizeFirstTask();
+        sts = m_TaskPool.SynchronizeFirstTask(NULL);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         // try again
         sts = m_TaskPool.GetFreeTask(ppTask);
     }
-
-    return sts;
-}
-
-mfxStatus CEncodingPipeline::SynchronizeFirstTask()
-{
-    mfxStatus sts = m_TaskPool.SynchronizeFirstTask();
 
     return sts;
 }
@@ -1481,7 +1497,7 @@ mfxStatus CEncodingPipeline::Run()
     // synchronize all tasks that are left in task pool
     while (MFX_ERR_NONE == sts)
     {
-        sts = m_TaskPool.SynchronizeFirstTask();
+        sts = m_TaskPool.SynchronizeFirstTask(NULL);
     }
 
     // MFX_ERR_NOT_FOUND is the correct status to exit the loop with
@@ -1520,7 +1536,7 @@ void CEncodingPipeline::PrintInfo()
     msdk_printf(MSDK_STRING("Memory type\t%s\n"), sMemType);
 
     mfxIMPL impl;
-    m_mfxSession.QueryIMPL(&impl);
+    GetFirstSession().QueryIMPL(&impl);
 
     const msdk_char* sImpl = (MFX_IMPL_VIA_D3D11 == MFX_IMPL_VIA_MASK(impl)) ? MSDK_STRING("hw_d3d11")
                      : (MFX_IMPL_HARDWARE & impl)  ? MSDK_STRING("hw")
@@ -1528,7 +1544,7 @@ void CEncodingPipeline::PrintInfo()
     msdk_printf(MSDK_STRING("Media SDK impl\t\t%s\n"), sImpl);
 
     mfxVersion ver;
-    m_mfxSession.QueryVersion(&ver);
+    GetFirstSession().QueryVersion(&ver);
     msdk_printf(MSDK_STRING("Media SDK version\t%d.%d\n"), ver.Major, ver.Minor);
 
     msdk_printf(MSDK_STRING("\n"));

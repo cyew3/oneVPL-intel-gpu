@@ -36,6 +36,9 @@
 
 #include "plugin_loader.h"
 
+msdk_tick time_get_tick(void);
+msdk_tick time_get_frequency(void);
+
 enum {
     MVC_DISABLED          = 0x0,
     MVC_ENABLED           = 0x1,
@@ -70,6 +73,7 @@ struct sInputParams
     bool bUseHWLib; // true if application wants to use HW MSDK library
 
     msdk_char strSrcFile[MSDK_MAX_FILENAME_LEN];
+    msdk_char recDumpFile[MSDK_MAX_FILENAME_LEN];
 
     sPluginParams pluginParams;
 
@@ -90,6 +94,7 @@ struct sInputParams
     mfxU16 nQPB;
 
     mfxU16 nNumSlice;
+    bool UseRegionEncode;
 };
 
 struct sTask
@@ -114,7 +119,7 @@ public:
 
     virtual mfxStatus Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter* pWriter, mfxU32 nPoolSize, mfxU32 nBufferSize, CSmplBitstreamWriter *pOtherWriter = NULL);
     virtual mfxStatus GetFreeTask(sTask **ppTask);
-    virtual mfxStatus SynchronizeFirstTask();
+    virtual mfxStatus SynchronizeFirstTask(mfxI64 *time);
     virtual void Close();
 
 protected:
@@ -215,7 +220,8 @@ protected:
     virtual mfxStatus AllocateSufficientBuffer(mfxBitstream* pBS);
 
     virtual mfxStatus GetFreeTask(sTask **ppTask);
-    virtual mfxStatus SynchronizeFirstTask();
+    virtual MFXVideoSession& GetFirstSession(){return m_mfxSession;}
+    virtual MFXVideoENCODE* GetFirstEncoder(){return m_pmfxENC;}
 };
 
 #endif // __PIPELINE_ENCODE_H__
