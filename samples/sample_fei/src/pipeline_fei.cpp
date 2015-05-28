@@ -843,6 +843,9 @@ void CEncodingPipeline::DeleteAllocator()
 CEncodingPipeline::CEncodingPipeline()
 {
     //m_pUID = NULL;
+    m_pmfxPREENC = NULL;
+    m_pmfxENC = NULL;
+    m_pmfxPAK = NULL;
     m_pmfxENCPAK = NULL;
     m_pmfxVPP = NULL;
     m_pMFXAllocator = NULL;
@@ -850,6 +853,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_memType = D3D9_MEMORY; //only hw memory is supported
     m_bExternalAlloc = false;
     m_pEncSurfaces = NULL;
+    m_pReconSurfaces = NULL;
     m_pVppSurfaces = NULL;
     m_nAsyncDepth = 0;
 
@@ -1542,7 +1546,7 @@ mfxStatus CEncodingPipeline::Run()
             feiEncCtrl[fieldId].SearchWindow = 1;
 
             /* PPS */
-            m_feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;
+            m_feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;;
             m_feiPPS[fieldId].Header.BufferSz = sizeof(mfxExtFeiPPS);
             m_feiPPS[fieldId].Pack = m_encpakParams.bPassHeaders ? 1 : 0;
 
@@ -1552,8 +1556,8 @@ mfxStatus CEncodingPipeline::Run()
             m_feiPPS[fieldId].FrameNum = 0;
 
             m_feiPPS[fieldId].PicInitQP = 26;
-            m_feiPPS[fieldId].NumRefIdxL0Active = (mfxU16)-1;
-            m_feiPPS[fieldId].NumRefIdxL1Active = (mfxU16)-1;
+            m_feiPPS[fieldId].NumRefIdxL0Active = 0;
+            m_feiPPS[fieldId].NumRefIdxL1Active = 0;
 
             m_feiPPS[fieldId].ChromaQPIndexOffset = 0;
             m_feiPPS[fieldId].SecondChromaQPIndexOffset = 0;
