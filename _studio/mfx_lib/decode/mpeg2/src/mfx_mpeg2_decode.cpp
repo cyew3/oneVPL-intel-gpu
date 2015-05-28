@@ -2892,7 +2892,9 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
            
             if (0 <= display_index)
             {
-                GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+                mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+                if (sts < MFX_ERR_NONE)
+                    return sts;
             }
 
             if ((true == IsField && !(dec_field_count & 1)) || false == IsField)
@@ -3022,7 +3024,9 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             {
                 if (false == m_isDecodedOrder && ((true == IsField && !(dec_field_count & 1)) || false == IsField))
                 {
-                    GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+                    mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+                    if (sts < MFX_ERR_NONE)
+                        return sts;
 
                     pEntryPoint->requiredNumThreads = m_NumThreads;
                     pEntryPoint->pRoutine = VideoDECODEMPEG2::TaskRoutine;
@@ -3302,7 +3306,9 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
             if (0 <= display_index)
             {
-                GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+                mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+                if (sts < MFX_ERR_NONE)
+                    return sts;
 
                 if (true == m_isDecodedOrder)
                 {
@@ -3446,7 +3452,9 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                 if (false == m_isDecodedOrder)
                 {
                     last_timestamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
-                    GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+                    mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+                    if (sts < MFX_ERR_NONE)
+                        return sts;
 
                     (*surface_disp)->Data.TimeStamp = last_timestamp;
                     memset(&m_task_param[m_task_num],0,sizeof(MParam));
