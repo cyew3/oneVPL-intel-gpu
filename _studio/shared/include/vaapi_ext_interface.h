@@ -343,6 +343,15 @@ typedef struct _VAEncQpBufferH264 {
     unsigned char qp_y;
 } VAEncQpBufferH264;
 
+#define VA_CONFIG_ATTRIB_FEI_INTERFACE_REV_INTEL  011
+
+/**
+     * \brief FEI interface Revision attribute. Read-only.
+     *
+     * This attribute exposes a version number for both VAEntrypointStatistics entry and VAEntrypointEncFEIIntel entry
+     * point. The attribute value is used by MSDK team to track va FEI interface change version
+     */
+#define VAConfigAttribFeiInterfaceRevIntel        1004
 
 /**
  * \brief Intel specific attribute definitions

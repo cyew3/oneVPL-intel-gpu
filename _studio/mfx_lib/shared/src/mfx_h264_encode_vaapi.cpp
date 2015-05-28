@@ -1164,7 +1164,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     }
 
     // Configuration
-    VAConfigAttrib attrib[3];
+    VAConfigAttrib attrib[4];
     mfxI32 numAttrib = 0;
     mfxU32 flag = VA_PROGRESSIVE;
 
@@ -1176,6 +1176,8 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     if ( m_isENCPAK )
     {
             attrib[2].type = (VAConfigAttribType) VAConfigAttribEncFunctionTypeIntel;
+            numAttrib++;
+            attrib[3].type = (VAConfigAttribType) VAConfigAttribFeiInterfaceRevIntel;
             numAttrib++;
     }
 #endif
@@ -1209,7 +1211,13 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         }else{
             attrib[2].value = VA_ENC_FUNCTION_ENC_PAK_INTEL;
         }
-    }
+        if (VA_CONFIG_ATTRIB_FEI_INTERFACE_REV_INTEL != attrib[3].value)
+        {
+            /* DDI version in MSDk and in driver mismatched
+             * This is fatal error */
+            return MFX_ERR_DEVICE_FAILED;
+        }
+    } //if(m_isENCPAK){
 
     attrib[0].value = VA_RT_FORMAT_YUV420;
     attrib[1].value = vaRCType;
