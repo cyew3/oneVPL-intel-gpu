@@ -86,18 +86,18 @@ namespace utils {
                 block[c] = dist(randEngine);
     }
 
-    template <typename Func, typename... Args> mfxI64 GetMinTicks(int number, Func func, Args&&... args)
-    {
-        mfxI64 fastest = std::numeric_limits<mfxI64>::max();
-        for (int i = 0; i < number; i++) {
-            mfxI64 start = _rdtsc();
-            func(args...);
-            mfxI64 stop = _rdtsc();
-            mfxI64 ticks = stop - start;
-            fastest = std::min(fastest, ticks);
-        }
-        return fastest;
-    }
+    //template <typename Func, typename... Args> mfxI64 GetMinTicks(int number, Func func, Args&&... args)
+    //{
+    //    mfxI64 fastest = std::numeric_limits<mfxI64>::max();
+    //    for (int i = 0; i < number; i++) {
+    //        mfxI64 start = _rdtsc();
+    //        func(args...);
+    //        mfxI64 stop = _rdtsc();
+    //        mfxI64 ticks = stop - start;
+    //        fastest = std::min(fastest, ticks);
+    //    }
+    //    return fastest;
+    //}
 };
 
 
@@ -116,8 +116,8 @@ TEST(optimization, SAD_avx2) {
     utils::InitRandomBlock(rand, refGeneral.get(), pitch, 65, 64, 0, 255);
     utils::InitRandomBlock(rand, refSpecial.get(), 64, 64, 64, 0, 255);
 
-    EXPECT_LE(utils::GetMinTicks(1000, MFX_HEVC_PP::SAD_32x32_avx2, src.get(), refSpecial.get(), pitch),
-              utils::GetMinTicks(1000, MFX_HEVC_PP::SAD_32x32_px,   src.get(), refSpecial.get(), pitch));
+    //EXPECT_LE(utils::GetMinTicks(1000, MFX_HEVC_PP::SAD_32x32_avx2, src.get(), refSpecial.get(), pitch),
+    //          utils::GetMinTicks(1000, MFX_HEVC_PP::SAD_32x32_px,   src.get(), refSpecial.get(), pitch));
 
     EXPECT_EQ(MFX_HEVC_PP::SAD_4x4_avx2  (src.get(), refSpecial.get(), pitch), MFX_HEVC_PP::SAD_4x4_px  (src.get(), refSpecial.get(), pitch));
     EXPECT_EQ(MFX_HEVC_PP::SAD_4x8_avx2  (src.get(), refSpecial.get(), pitch), MFX_HEVC_PP::SAD_4x8_px  (src.get(), refSpecial.get(), pitch));
@@ -190,8 +190,8 @@ TEST(optimization, SAD_sse4) {
     utils::InitRandomBlock(rand, refGeneral.get(), pitch, 65, 64, 0, 255);
     utils::InitRandomBlock(rand, refSpecial.get(), 64, 64, 64, 0, 255);
 
-    EXPECT_LE(utils::GetMinTicks(1000, MFX_HEVC_PP::SAD_32x32_sse, src.get(), refSpecial.get(), pitch),
-              utils::GetMinTicks(1000, MFX_HEVC_PP::SAD_32x32_px,  src.get(), refSpecial.get(), pitch));
+    //EXPECT_LE(utils::GetMinTicks(1000, MFX_HEVC_PP::SAD_32x32_sse, src.get(), refSpecial.get(), pitch),
+    //          utils::GetMinTicks(1000, MFX_HEVC_PP::SAD_32x32_px,  src.get(), refSpecial.get(), pitch));
 
     EXPECT_EQ(MFX_HEVC_PP::SAD_4x4_sse  (src.get(), refSpecial.get(), pitch), MFX_HEVC_PP::SAD_4x4_px  (src.get(), refSpecial.get(), pitch));
     EXPECT_EQ(MFX_HEVC_PP::SAD_4x8_sse  (src.get(), refSpecial.get(), pitch), MFX_HEVC_PP::SAD_4x8_px  (src.get(), refSpecial.get(), pitch));
@@ -264,8 +264,8 @@ TEST(optimization, SAD_ssse3) {
     utils::InitRandomBlock(rand, refGeneral.get(), pitch, 65, 64, 0, 255);
     utils::InitRandomBlock(rand, refSpecial.get(), 64, 64, 64, 0, 255);
 
-    EXPECT_LE(utils::GetMinTicks(1000, MFX_HEVC_PP::SAD_32x32_ssse3, src.get(), refSpecial.get(), pitch),
-              utils::GetMinTicks(1000, MFX_HEVC_PP::SAD_32x32_px,    src.get(), refSpecial.get(), pitch));
+    //EXPECT_LE(utils::GetMinTicks(1000, MFX_HEVC_PP::SAD_32x32_ssse3, src.get(), refSpecial.get(), pitch),
+    //          utils::GetMinTicks(1000, MFX_HEVC_PP::SAD_32x32_px,    src.get(), refSpecial.get(), pitch));
 
     EXPECT_EQ(MFX_HEVC_PP::SAD_4x4_ssse3  (src.get(), refSpecial.get(), pitch), MFX_HEVC_PP::SAD_4x4_px  (src.get(), refSpecial.get(), pitch));
     EXPECT_EQ(MFX_HEVC_PP::SAD_4x8_ssse3  (src.get(), refSpecial.get(), pitch), MFX_HEVC_PP::SAD_4x8_px  (src.get(), refSpecial.get(), pitch));

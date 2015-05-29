@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include <algorithm>
 
 #include "hevce_common_api.h"
 

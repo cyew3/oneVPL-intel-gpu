@@ -181,9 +181,9 @@ TEST_F(RuntimeTest, NullNativeSurface) {
     encoder.Close();
 
     EXPECT_CALL(core, AllocFrames(_,_,_,_))
-        .WillOnce(Invoke(&core, MockVideoCORE::AllocFramesImpl2));
+        .WillOnce(Invoke(&core, &MockVideoCORE::AllocFramesImpl2));
     EXPECT_CALL(core, FreeFrames(_,_))
-        .WillOnce(Invoke(&core, MockVideoCORE::FreeFramesImpl));
+        .WillOnce(Invoke(&core, &MockVideoCORE::FreeFramesImpl));
     EXPECT_CALL(core, GetNativeSurface(_,_))
         .WillOnce(Return(nullptr));
 

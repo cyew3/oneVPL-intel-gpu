@@ -199,7 +199,7 @@ TEST_F(InitTest, ExternalAllocator_Requirement) {
 TEST_F(InitTest, OpaqueMemory) {
     InitParamSetMandated(input);
     input.videoParam.IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY;
-    input.extOpaqueSurfaceAlloc.In.NumSurface = 1; 
+    input.extOpaqueSurfaceAlloc.In.NumSurface = 1;
     input.extOpaqueSurfaceAlloc.In.Surfaces = (mfxFrameSurface1 **)0x88888888;
 
     // should with OPAQMEM
@@ -209,14 +209,14 @@ TEST_F(InitTest, OpaqueMemory) {
         input.extOpaqueSurfaceAlloc.In.Type = type;
         EXPECT_CALL(core, IsExternalFrameAllocator()).WillRepeatedly(Return(true));
         if (type == MFX_MEMTYPE_SYSTEM_MEMORY) {
-            EXPECT_CALL(core, AllocFrames(_,_,_,_)).WillOnce(Invoke(&core, MockVideoCORE::AllocFramesImpl2));
-            EXPECT_CALL(core, FreeFrames(_,_)).WillOnce(Invoke(&core, MockVideoCORE::FreeFramesImpl));
+            EXPECT_CALL(core, AllocFrames(_,_,_,_)).WillOnce(Invoke(&core, &MockVideoCORE::AllocFramesImpl2));
+            EXPECT_CALL(core, FreeFrames(_,_)).WillOnce(Invoke(&core, &MockVideoCORE::FreeFramesImpl));
         } else {
-            EXPECT_CALL(core, AllocFrames(_,_,_,_)).WillOnce(Invoke(&core, MockVideoCORE::AllocFramesImpl2));
-            EXPECT_CALL(core, AllocFrames(_,_,_)).WillOnce(Invoke(&core, MockVideoCORE::AllocFramesImpl1));
+            EXPECT_CALL(core, AllocFrames(_,_,_,_)).WillOnce(Invoke(&core, &MockVideoCORE::AllocFramesImpl2));
+            EXPECT_CALL(core, AllocFrames(_,_,_)).WillOnce(Invoke(&core, &MockVideoCORE::AllocFramesImpl1));
             EXPECT_CALL(core, FreeFrames(_,_))
-                .WillOnce(Invoke(&core, MockVideoCORE::FreeFramesImpl))
-                .WillOnce(Invoke(&core, MockVideoCORE::FreeFramesImpl));
+                .WillOnce(Invoke(&core, &MockVideoCORE::FreeFramesImpl))
+                .WillOnce(Invoke(&core, &MockVideoCORE::FreeFramesImpl));
         }
         EXPECT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
         EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
@@ -229,16 +229,16 @@ TEST_F(InitTest, OpaqueMemory) {
 
     // should still fail without zero In.Type
     input.extOpaqueSurfaceAlloc.In.Type = 0;
-    EXPECT_EQ(MFX_ERR_INVALID_VIDEO_PARAM, encoder.Init(&input.videoParam)); 
+    EXPECT_EQ(MFX_ERR_INVALID_VIDEO_PARAM, encoder.Init(&input.videoParam));
     input.extOpaqueSurfaceAlloc.In.Type = MFX_MEMTYPE_SYSTEM_MEMORY;
 
     // should still fail with In.NumSurfaces == 0
-    input.extOpaqueSurfaceAlloc.In.NumSurface = 0; 
+    input.extOpaqueSurfaceAlloc.In.NumSurface = 0;
     EXPECT_EQ(MFX_ERR_INVALID_VIDEO_PARAM, encoder.Init(&input.videoParam));
-    input.extOpaqueSurfaceAlloc.In.NumSurface = 1; 
+    input.extOpaqueSurfaceAlloc.In.NumSurface = 1;
 
     // should still fail without In.Surfaces = nullptr
-    input.extOpaqueSurfaceAlloc.In.Surfaces = nullptr; 
+    input.extOpaqueSurfaceAlloc.In.Surfaces = nullptr;
     EXPECT_EQ(MFX_ERR_INVALID_VIDEO_PARAM, encoder.Init(&input.videoParam));
     input.extOpaqueSurfaceAlloc.In.Surfaces = (mfxFrameSurface1 **)0x88888888;
 
@@ -270,7 +270,11 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     input.videoParam.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
     ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
 
+#if (defined(__WIN32) || defined(__WIN64))
     __declspec(align(32)) Ipp8u data[64*64*3/2] = {};
+#else
+    __attribute__ ((aligned(32))) Ipp8u data[64*64*3/2] = {};
+#endif
     mfxFrameSurface1 surfaces[10];
     for (auto &surf: surfaces) {
         surf.Info = input.videoParam.mfx.FrameInfo;
@@ -280,7 +284,7 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     }
 
     ParamSet output;
-    mfxExtCodingOptionSPSPPS extSpsPps = MakeExtBuffer<mfxExtCodingOptionSPSPPS>(); 
+    mfxExtCodingOptionSPSPPS extSpsPps = MakeExtBuffer<mfxExtCodingOptionSPSPPS>();
     Ipp8u sps[1024], pps[1024];
     extSpsPps.SPSBuffer = sps;
     extSpsPps.PPSBuffer = pps;

@@ -5,14 +5,14 @@
 
 namespace ApiTestCommon {
     template<class T> struct ExtBufInfo;
-    template<> struct ExtBufInfo<mfxExtOpaqueSurfaceAlloc> { enum { id = MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, sz =   80 }; };
-    template<> struct ExtBufInfo<mfxExtCodingOptionHEVC>   { enum { id = MFX_EXTBUFF_HEVCENC,                   sz =  260 }; };
-    template<> struct ExtBufInfo<mfxExtDumpFiles>          { enum { id = MFX_EXTBUFF_DUMP,                      sz = 1572 }; };
-    template<> struct ExtBufInfo<mfxExtHEVCTiles>          { enum { id = MFX_EXTBUFF_HEVC_TILES,                sz =  160 }; };
-    template<> struct ExtBufInfo<mfxExtHEVCParam>          { enum { id = MFX_EXTBUFF_HEVC_PARAM,                sz =  256 }; };
-    template<> struct ExtBufInfo<mfxExtHEVCRegion>         { enum { id = MFX_EXTBUFF_HEVC_REGION,               sz =   64 }; };
-    template<> struct ExtBufInfo<mfxExtCodingOption2>      { enum { id = MFX_EXTBUFF_CODING_OPTION2,            sz =   68 }; };
-    template<> struct ExtBufInfo<mfxExtCodingOptionSPSPPS> { enum { id = MFX_EXTBUFF_CODING_OPTION_SPSPPS,      sz =   0  }; };
+    template<> struct ExtBufInfo<mfxExtOpaqueSurfaceAlloc> { enum { id = MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, sz =  sizeof(mfxExtOpaqueSurfaceAlloc) }; };
+    template<> struct ExtBufInfo<mfxExtCodingOptionHEVC>   { enum { id = MFX_EXTBUFF_HEVCENC,                   sz =  sizeof(mfxExtCodingOptionHEVC) }; };
+    template<> struct ExtBufInfo<mfxExtDumpFiles>          { enum { id = MFX_EXTBUFF_DUMP,                      sz =  sizeof(mfxExtDumpFiles) }; };
+    template<> struct ExtBufInfo<mfxExtHEVCTiles>          { enum { id = MFX_EXTBUFF_HEVC_TILES,                sz =  sizeof(mfxExtHEVCTiles) }; };
+    template<> struct ExtBufInfo<mfxExtHEVCParam>          { enum { id = MFX_EXTBUFF_HEVC_PARAM,                sz =  sizeof(mfxExtHEVCParam) }; };
+    template<> struct ExtBufInfo<mfxExtHEVCRegion>         { enum { id = MFX_EXTBUFF_HEVC_REGION,               sz =  sizeof(mfxExtHEVCRegion) }; };
+    template<> struct ExtBufInfo<mfxExtCodingOption2>      { enum { id = MFX_EXTBUFF_CODING_OPTION2,            sz =  sizeof(mfxExtCodingOption2) }; };
+    template<> struct ExtBufInfo<mfxExtCodingOptionSPSPPS> { enum { id = MFX_EXTBUFF_CODING_OPTION_SPSPPS,      sz =  sizeof(mfxExtCodingOptionSPSPPS) }; };
 
     template <class T> T MakeExtBuffer() {
         T extBuffer = {};
