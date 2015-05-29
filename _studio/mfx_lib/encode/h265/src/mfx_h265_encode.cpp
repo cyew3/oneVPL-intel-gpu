@@ -1416,14 +1416,14 @@ mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputPar
         }
     }
 
-    if (m_videoParam.num_threads > 1)
-        vm_cond_broadcast(&m_condVar);
-
     // bs update on completion stage
     vm_interlocked_cas32(&(inputParam->m_doStage), 4, 5);
 
     if (m_videoParam.hrdPresentFlag)
         m_hrd.Update((bs->DataLength - initialDataLength) * 8, *frame);
+
+    if (m_videoParam.num_threads > 1)
+        vm_cond_broadcast(&m_condVar);
 
     MfxAutoMutex guard(m_statMutex);
     m_stat.NumCachedFrame--;
