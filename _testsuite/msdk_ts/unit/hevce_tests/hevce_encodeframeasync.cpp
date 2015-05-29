@@ -25,6 +25,8 @@ protected:
         input.videoParam.mfx.FrameInfo.Height = 64;
         input.videoParam.mfx.BufferSizeInKB = 5;
         input.videoParam.mfx.TargetKbps = 20;
+        input.extCodingOption2.AdaptiveI = OFF;
+        input.extCodingOptionHevc.AnalyzeCmplx = 1; // off
         core.SetParamSet(input);
         if (encoder.Init(&input.videoParam) != MFX_ERR_NONE)
             throw std::exception();

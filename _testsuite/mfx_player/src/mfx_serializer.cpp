@@ -167,6 +167,8 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(Trellis);
     SERIALIZE_INT(RepeatPPS);
     SERIALIZE_INT(BRefType);
+    SERIALIZE_INT(AdaptiveI);
+    SERIALIZE_INT(AdaptiveB);
     SERIALIZE_INT(NumMbPerSlice);
     SERIALIZE_INT(SkipFrame);
     SERIALIZE_INT(MinQPI);
@@ -315,7 +317,6 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(IntraMinDepthSC);
     SERIALIZE_INT(InterMinDepthSTC);
     SERIALIZE_INT(MotionPartitionDepth);
-    SERIALIZE_INT(SceneCut);
     SERIALIZE_INT(AnalyzeCmplx);
     SERIALIZE_INT(RateControlDepth);
     SERIALIZE_INT(LowresFactor);

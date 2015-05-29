@@ -261,8 +261,8 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     input.videoParam.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     input.videoParam.AsyncDepth = 1;
     input.videoParam.mfx.GopPicSize = 1;
-    input.videoParam.mfx.FrameInfo.Width = 32;
-    input.videoParam.mfx.FrameInfo.Height = 32;
+    input.videoParam.mfx.FrameInfo.Width = 64;
+    input.videoParam.mfx.FrameInfo.Height = 64;
     input.videoParam.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
     input.videoParam.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     input.videoParam.mfx.FrameInfo.FrameRateExtN = 30;
@@ -270,13 +270,13 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     input.videoParam.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
     ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
 
-    __declspec(align(32)) Ipp8u data[32*32*3/2] = {};
+    __declspec(align(32)) Ipp8u data[64*64*3/2] = {};
     mfxFrameSurface1 surfaces[10];
     for (auto &surf: surfaces) {
         surf.Info = input.videoParam.mfx.FrameInfo;
         surf.Data.Y = data;
-        surf.Data.UV = data + 32*32;
-        surf.Data.Pitch = 32;
+        surf.Data.UV = data + 64*64;
+        surf.Data.Pitch = 64;
     }
 
     ParamSet output;
@@ -290,7 +290,7 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     output.videoParam.NumExtParam = 1;
     EXPECT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
 
-    Ipp8u bsData[1024];
+    Ipp8u bsData[8192];
     mfxBitstream bs = {};
     bs.Data = bsData;
     bs.MaxLength = sizeof(bsData);
@@ -307,7 +307,6 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     EXPECT_CALL(core, DecreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
     EXPECT_CALL(core, INeedMoreThreadsInside(_)).WillOnce(Return());
     ASSERT_EQ(MFX_ERR_NONE, entrypoint.pRoutine(entrypoint.pState, entrypoint.pParam, 0, 0));
-    return;
 
     auto nals = SplitNals(bs.Data, bs.Data + bs.DataLength);
     for (auto &nal: nals) {
@@ -396,7 +395,7 @@ TEST_F(InitTest, Default_QPI_QPP_QPB) {
     ParamSet output;
     InitParamSetMandated(input);
     input.videoParam.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
-    Ipp32u configs[][6] = { {0,0,0, 30,31,31}, {20,0,0, 20,21,21}, {0,15,0, 14,15,15}, {0,0,25, 24,25,25}, {10,20,0, 10,20,20}, {35,0,40, 35,36,40}, {50,0,40, 50,51,40}, {33,31,22, 33,31,22} };
+    Ipp32u configs[][6] = { {0,0,0, 30,31,31}, {20,0,0, 20,21,21}, {0,15,0, 14,15,15}, {0,0,25, 24,25,25}, {10,20,0, 10,20,20}, {35,0,40, 35,36,40}, {50,0,40, 50,51,40}, {33,31,22, 33,31,22}, {51,0,0, 51,51,51} };
     for (auto c: configs) {
         input.videoParam.mfx.QPI = c[0];
         input.videoParam.mfx.QPP = c[1];
@@ -465,5 +464,59 @@ TEST_F(InitTest, Default_DiableVUI) {
             else
                 EXPECT_EQ(state, output.extCodingOption2.DisableVUI);
         }
+    }
+}
+
+TEST_F(InitTest, Default_AdaptiveI) {
+    ParamSet output;
+    InitParamSetMandated(input);
+    Ipp32u rcMethods[] = {CBR, VBR, AVBR, LA_EXT, CQP};
+    Ipp32u gopOptFlags[] = {0, MFX_GOP_STRICT};
+    for (auto rcm: rcMethods) {
+        input.videoParam.mfx.RateControlMethod = rcm;
+        for (auto gof: gopOptFlags) {
+            input.videoParam.mfx.GopOptFlag = gof;
+            ASSERT_LE(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+            ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+            EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
+            if (gof == MFX_GOP_STRICT)
+                EXPECT_EQ(OFF, output.extCodingOption2.AdaptiveI);
+            else if (rcm == CBR || rcm == VBR || rcm == AVBR)
+                EXPECT_EQ(ON, output.extCodingOption2.AdaptiveI);
+            else
+                EXPECT_EQ(OFF, output.extCodingOption2.AdaptiveI);
+        }
+    }
+}
+
+TEST_F(InitTest, Default_AnalyzeCmplx) {
+    ParamSet output;
+    InitParamSetMandated(input);
+    Ipp32u rcMethods[] = {CBR, VBR, AVBR, LA_EXT, CQP};
+    for (auto rcm: rcMethods) {
+        input.videoParam.mfx.RateControlMethod = rcm;
+        ASSERT_LE(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+        EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
+        if (rcm == CBR || rcm == VBR || rcm == AVBR)
+            EXPECT_EQ(2, output.extCodingOptionHevc.AnalyzeCmplx);
+        else
+            EXPECT_EQ(1, output.extCodingOptionHevc.AnalyzeCmplx);
+        EXPECT_EQ(3, output.extCodingOptionHevc.LowresFactor);
+    }
+}
+
+TEST_F(InitTest, Default_RateControlDepth_LowresFactor) {
+    ParamSet output;
+    InitParamSetMandated(input);
+    Ipp32u configs[][3] = {{1,8,0}, {2,1,2}, {2,8,9}};
+    for (auto p: configs) {
+        input.extCodingOptionHevc.AnalyzeCmplx = p[0];
+        input.videoParam.mfx.GopRefDist = p[1];
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+        EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
+        EXPECT_EQ(p[2], output.extCodingOptionHevc.RateControlDepth);
+        EXPECT_EQ(3, output.extCodingOptionHevc.LowresFactor);
     }
 }

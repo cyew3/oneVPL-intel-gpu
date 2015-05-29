@@ -221,10 +221,10 @@ namespace {
         intParam.num_cand_2[5] = (Ipp8u)optHevc.IntraNumCand2_5;
         intParam.num_cand_2[6] = (Ipp8u)optHevc.IntraNumCand2_6;
 
-        intParam.LowresFactor = optHevc.LowresFactor;
+        intParam.LowresFactor = optHevc.LowresFactor - 1;
         intParam.DeltaQpMode = optHevc.DeltaQpMode;
-        intParam.SceneCut = optHevc.SceneCut;
-        intParam.AnalyzeCmplx = optHevc.AnalyzeCmplx;
+        intParam.SceneCut = (opt2.AdaptiveI == ON);
+        intParam.AnalyzeCmplx = optHevc.AnalyzeCmplx - 1;
         intParam.RateControlDepth = optHevc.RateControlDepth;
         intParam.TryIntra = optHevc.TryIntra;
         intParam.FastAMPSkipME = optHevc.FastAMPSkipME;

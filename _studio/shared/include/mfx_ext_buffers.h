@@ -242,10 +242,10 @@ typedef struct {
     mfxU16      IntraMinDepthSC;    // 0-default, 1+ use given
     mfxU16      InterMinDepthSTC;   // 0-default, 1+ use given
     mfxU16      MotionPartitionDepth;   // 0-default, 1+ use given
-    mfxU16      SceneCut;           // detect scene change and insert IDR frame
-    mfxU16      AnalyzeCmplx;       // analyze frame complexity (need for BRC)
-    mfxU16      RateControlDepth;   // RateControlDepth - 1 = how many analyzed _forward_ frames are required by BRC
-    mfxU16      LowresFactor;       // > 0 => lookahead algorithms work with scaled frames
+    mfxU16      reserved1;          // 
+    mfxU16      AnalyzeCmplx;       // 0-default, 1-off, 2-on
+    mfxU16      RateControlDepth;   // how many frames analyzed by BRC including current frame
+    mfxU16      LowresFactor;       // downscale factor for analyze complexity: 0-default 1-fullsize 2-halfsize 3-quartersize
     mfxU16      DeblockBorders;     // tri-state, deblock borders
     mfxU16      SAOChroma;          // on / off
     mfxU16      RepackProb;         // percent of random repack probabiility, 0 - no random repacks

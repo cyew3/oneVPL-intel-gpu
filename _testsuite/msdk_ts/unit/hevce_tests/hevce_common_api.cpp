@@ -170,13 +170,13 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOptionHevc.IntraMinDepthSC = 11;
     paramset.extCodingOptionHevc.InterMinDepthSTC = 6;
     paramset.extCodingOptionHevc.MotionPartitionDepth = 3;
-    paramset.extCodingOptionHevc.SceneCut = 0;
-    paramset.extCodingOptionHevc.AnalyzeCmplx = 0;
-    paramset.extCodingOptionHevc.RateControlDepth = 0;
-    paramset.extCodingOptionHevc.LowresFactor = 0;
+    paramset.extCodingOptionHevc.AnalyzeCmplx = 1;
+    paramset.extCodingOptionHevc.RateControlDepth = 9;
+    paramset.extCodingOptionHevc.LowresFactor = 3;
     paramset.extCodingOptionHevc.DeblockBorders = MFX_CODINGOPTION_ON;
     paramset.extCodingOptionHevc.SAOChroma = MFX_CODINGOPTION_OFF;
     paramset.extCodingOption2.DisableVUI = MFX_CODINGOPTION_ON;
+    paramset.extCodingOption2.AdaptiveI = MFX_CODINGOPTION_ON;
 }
 
 void ApiTestCommon::InitParamSetCorrectable(ParamSet &input, ParamSet &expectedOutput) {
@@ -270,12 +270,12 @@ void ApiTestCommon::InitParamSetCorrectable(ParamSet &input, ParamSet &expectedO
     SETUP(extCodingOptionHevc.AdaptiveRefs, 100, 0);
     SETUP(extCodingOptionHevc.FastCoeffCost, 100, 0);
     SETUP(extCodingOptionHevc.NumRefFrameB, 100, 0);
-    SETUP(extCodingOptionHevc.SceneCut, 100, 0);
     SETUP(extCodingOptionHevc.AnalyzeCmplx, 100, 0);
     SETUP(extCodingOptionHevc.LowresFactor, 100, 0);
     SETUP(extCodingOptionHevc.DeblockBorders, 100, 0);
     SETUP(extHevcParam.GeneralConstraintFlags, Ipp64u(-1), 0);
     SETUP(extCodingOption2.DisableVUI, 100, 0);
+    SETUP(extCodingOption2.AdaptiveI, 100, 0);
 #undef SETUP
 }
 
@@ -449,7 +449,6 @@ template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOptionHEVC>(const mfxExt
     EXPECT(FastCoeffCost);
     EXPECT(NumRefFrameB);
     EXPECT(IntraMinDepthSC);
-    EXPECT(SceneCut);
     EXPECT(AnalyzeCmplx);
     EXPECT(RateControlDepth);
     EXPECT(LowresFactor);

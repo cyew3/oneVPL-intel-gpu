@@ -326,6 +326,9 @@ namespace {
     bool IsCbrOrVbr(Ipp32s rateControlMethod) {
         return rateControlMethod == CBR || rateControlMethod == VBR;
     }
+    bool IsCbrOrVbrOrAvbr(Ipp32s rateControlMethod) {
+        return rateControlMethod == CBR || rateControlMethod == VBR || rateControlMethod == AVBR;
+    }
 
 
     void MarkConfigurableParams(mfxVideoParam *out)
@@ -467,7 +470,6 @@ namespace {
             ext->InterMinDepthSTC = 1;
             ext->MotionPartitionDepth = 1;
             ext->AnalyzeCmplx = 1;
-            ext->SceneCut = 1;
             ext->RateControlDepth = 1;
             ext->LowresFactor = 1;
             ext->DeblockBorders = 1;
@@ -489,7 +491,7 @@ namespace {
             ext->Trellis = 0;
             ext->RepeatPPS = 0;
             ext->BRefType = 0;
-            ext->AdaptiveI = 0;
+            ext->AdaptiveI = 1;
             ext->AdaptiveB = 0;
             ext->LookAheadDS = 0;
             ext->NumMbPerSlice = 0;
@@ -666,9 +668,8 @@ namespace {
             wrnIncompatible = !CheckMax(optHevc->PatternSubPel, 6);
             wrnIncompatible = !CheckMax(optHevc->DeltaQpMode, 3);
             wrnIncompatible = !CheckMax(optHevc->NumRefFrameB, 16);
-            wrnIncompatible = !CheckMax(optHevc->SceneCut, 1);
-            wrnIncompatible = !CheckMax(optHevc->AnalyzeCmplx, 1);
-            wrnIncompatible = !CheckMax(optHevc->LowresFactor, 2);
+            wrnIncompatible = !CheckMax(optHevc->AnalyzeCmplx, 2);
+            wrnIncompatible = !CheckMax(optHevc->LowresFactor, 3);
 
             wrnIncompatible = !CheckTriState(optHevc->AnalyzeChroma);
             wrnIncompatible = !CheckTriState(optHevc->SignBitHiding);
@@ -705,8 +706,10 @@ namespace {
             wrnIncompatible = !CheckSet(optHevc->IntraAngModesBnonRef, CodecLimits::SUP_INTRA_ANG_MODE);
         }
 
-        if (opt2)
+        if (opt2) {
+            wrnIncompatible = !CheckTriState(opt2->AdaptiveI);
             wrnIncompatible = !CheckTriState(opt2->DisableVUI);
+        }
 
         // check combinations
 
@@ -938,6 +941,9 @@ namespace {
         if (optHevc && optHevc->ForceNumThread && mfx.NumThread) // ForceNumThread != NumThread
             wrnIncompatible = !CheckEq(mfx.NumThread, optHevc->ForceNumThread);
 
+        if ((mfx.GopOptFlag & MFX_GOP_STRICT) && opt2 && opt2->AdaptiveI)
+            wrnIncompatible = !CheckEq(opt2->AdaptiveI, OFF);
+
         if      (errInvalidParam) return MFX_ERR_INVALID_VIDEO_PARAM;
         else if (errUnsupported)  return MFX_ERR_UNSUPPORTED;
         else if (wrnIncompatible) return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -1053,7 +1059,7 @@ namespace {
                 if (mfx.QPI == 0)
                     mfx.QPI = mfx.QPP ? (mfx.QPP - 1) : mfx.QPB ? (mfx.QPB - 1) : 30;
                 if (mfx.QPP == 0)
-                    mfx.QPP = mfx.QPI + 1;
+                    mfx.QPP = MIN(51, mfx.QPI + 1);
                 if (mfx.QPB == 0)
                     mfx.QPB = mfx.QPP;
             }
@@ -1078,6 +1084,15 @@ namespace {
 
         if (opt2.DisableVUI == 0)
             opt2.DisableVUI = OFF;
+
+        if (opt2.AdaptiveI == 0) {
+            if (mfx.GopOptFlag & MFX_GOP_STRICT)
+                opt2.AdaptiveI = OFF;
+            else if (IsCbrOrVbrOrAvbr(mfx.RateControlMethod))
+                opt2.AdaptiveI = ON;
+            else
+                opt2.AdaptiveI = OFF;
+        }
 
         if (optHevc.Log2MaxCUSize == 0) {
             optHevc.Log2MaxCUSize = defaultOptHevc.Log2MaxCUSize;
@@ -1232,14 +1247,13 @@ namespace {
             optHevc.InterMinDepthSTC = defaultOptHevc.InterMinDepthSTC;
         if (optHevc.MotionPartitionDepth == 0)
             optHevc.MotionPartitionDepth = defaultOptHevc.MotionPartitionDepth;
-        if (optHevc.SceneCut == 0)
-            optHevc.SceneCut = defaultOptHevc.SceneCut;
         if (optHevc.AnalyzeCmplx == 0)
-            optHevc.AnalyzeCmplx = defaultOptHevc.AnalyzeCmplx;
+            optHevc.AnalyzeCmplx = IsCbrOrVbrOrAvbr(mfx.RateControlMethod) ? 2 : 1;
         if (optHevc.RateControlDepth == 0)
-            optHevc.RateControlDepth = (optHevc.AnalyzeCmplx) ? (mfx.GopRefDist + 1) : defaultOptHevc.RateControlDepth;
+            if (optHevc.AnalyzeCmplx == 2)
+                optHevc.RateControlDepth = mfx.GopRefDist + 1;
         if (optHevc.LowresFactor == 0)
-            optHevc.LowresFactor = defaultOptHevc.LowresFactor;
+            optHevc.LowresFactor = 3;
         if (optHevc.DeblockBorders == 0)
             optHevc.DeblockBorders = defaultOptHevc.DeblockBorders;
         if (optHevc.SAOChroma == 0)

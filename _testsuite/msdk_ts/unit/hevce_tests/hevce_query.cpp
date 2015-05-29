@@ -265,7 +265,6 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(1, output.extCodingOptionHevc.IntraMinDepthSC);
     EXPECT_EQ(1, output.extCodingOptionHevc.InterMinDepthSTC);
     EXPECT_EQ(1, output.extCodingOptionHevc.MotionPartitionDepth);
-    EXPECT_EQ(1, output.extCodingOptionHevc.SceneCut);
     EXPECT_EQ(1, output.extCodingOptionHevc.AnalyzeCmplx);
     EXPECT_EQ(1, output.extCodingOptionHevc.RateControlDepth);
     EXPECT_EQ(1, output.extCodingOptionHevc.LowresFactor);
@@ -306,7 +305,7 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(0, output.extCodingOption2.Trellis);
     EXPECT_EQ(0, output.extCodingOption2.RepeatPPS);
     EXPECT_EQ(0, output.extCodingOption2.BRefType);
-    EXPECT_EQ(0, output.extCodingOption2.AdaptiveI);
+    EXPECT_EQ(1, output.extCodingOption2.AdaptiveI);
     EXPECT_EQ(0, output.extCodingOption2.AdaptiveB);
     EXPECT_EQ(0, output.extCodingOption2.LookAheadDS);
     EXPECT_EQ(0, output.extCodingOption2.NumMbPerSlice);
@@ -837,37 +836,16 @@ TEST_F(QueryTest, Mode2_Single) {
         const Ipp16u unsupported[] = {17, 100, 0xffff};
         TestOneFieldErr(input.extCodingOptionHevc.NumRefFrameB, output.extCodingOptionHevc.NumRefFrameB, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
-    { SCOPED_TRACE("Test IntraMinDepthSC");
-        const Ipp16u supported[] = {1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946, 17711, 28657, 46368, 0xffff};
-        TestOneFieldOk(input.extCodingOptionHevc.IntraMinDepthSC, output.extCodingOptionHevc.IntraMinDepthSC, supported);
-        // no unsupported values
-    }
-    { SCOPED_TRACE("Test InterMinDepthSTC");
-        const Ipp16u supported[] = {1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946, 17711, 28657, 46368, 0xffff};
-        TestOneFieldOk(input.extCodingOptionHevc.InterMinDepthSTC, output.extCodingOptionHevc.InterMinDepthSTC, supported);
-        // no unsupported values
-    }
-    { SCOPED_TRACE("Test MotionPartitionDepth");
-        const Ipp16u supported[] = {1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946, 17711, 28657, 46368, 0xffff};
-        TestOneFieldOk(input.extCodingOptionHevc.MotionPartitionDepth, output.extCodingOptionHevc.MotionPartitionDepth, supported);
-        // no unsupported values
-    }
-    { SCOPED_TRACE("Test SceneCut");
-        const Ipp16u supported[] = {0, 1};
-        TestOneFieldOk(input.extCodingOptionHevc.SceneCut, output.extCodingOptionHevc.SceneCut, supported);
-        const Ipp16u unsupported[] = {2, 3, 0xff, 0xffff};
-        TestOneFieldErr(input.extCodingOptionHevc.SceneCut, output.extCodingOptionHevc.SceneCut, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
-    }
     { SCOPED_TRACE("Test AnalyzeCmplx");
-        const Ipp16u supported[] = {0, 1};
+        const Ipp16u supported[] = {1, 2};
         TestOneFieldOk(input.extCodingOptionHevc.AnalyzeCmplx, output.extCodingOptionHevc.AnalyzeCmplx, supported);
-        const Ipp16u unsupported[] = {2, 3, 0xff, 0xffff};
+        const Ipp16u unsupported[] = {3, 4, 0xff, 0xffff};
         TestOneFieldErr(input.extCodingOptionHevc.AnalyzeCmplx, output.extCodingOptionHevc.AnalyzeCmplx, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
     { SCOPED_TRACE("Test LowresFactor");
-        const Ipp16u supported[] = {0, 1, 2};
+        const Ipp16u supported[] = {1, 2, 3};
         TestOneFieldOk(input.extCodingOptionHevc.LowresFactor, output.extCodingOptionHevc.LowresFactor, supported);
-        const Ipp16u unsupported[] = {3, 4, 0xff, 0xffff};
+        const Ipp16u unsupported[] = {4, 5, 0xff, 0xffff};
         TestOneFieldErr(input.extCodingOptionHevc.LowresFactor, output.extCodingOptionHevc.LowresFactor, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
     { SCOPED_TRACE("Test all fields w/o limits");
@@ -879,6 +857,9 @@ TEST_F(QueryTest, Mode2_Single) {
 		TestOneFieldOk(input.extCodingOptionHevc.FramesInParallel, output.extCodingOptionHevc.FramesInParallel, supported);
 		TestOneFieldOk(input.extCodingOptionHevc.RateControlDepth, output.extCodingOptionHevc.RateControlDepth, supported);
 		TestOneFieldOk(input.extCodingOptionHevc.IntraMinDepthSC, output.extCodingOptionHevc.IntraMinDepthSC, supported);
+        TestOneFieldOk(input.extCodingOptionHevc.MotionPartitionDepth, output.extCodingOptionHevc.MotionPartitionDepth, supported);
+        TestOneFieldOk(input.extCodingOptionHevc.InterMinDepthSTC, output.extCodingOptionHevc.InterMinDepthSTC, supported);
+        TestOneFieldOk(input.extCodingOptionHevc.IntraMinDepthSC, output.extCodingOptionHevc.IntraMinDepthSC, supported);
 		TestOneFieldOk(input.extCodingOptionHevc.RepackProb, output.extCodingOptionHevc.RepackProb, supported);
     }
 
@@ -894,6 +875,13 @@ TEST_F(QueryTest, Mode2_Single) {
         TestOneFieldOk(input.extCodingOption2.DisableVUI, output.extCodingOption2.DisableVUI, supported);
         const Ipp16u unsupported[] = {1, 2, MFX_CODINGOPTION_ON|MFX_CODINGOPTION_OFF, 0xff, 0xffff};
         TestOneFieldErr(input.extCodingOption2.DisableVUI, output.extCodingOption2.DisableVUI, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
+    }
+
+    { SCOPED_TRACE("Test AdaptiveI");
+        const Ipp16u supported[] = {MFX_CODINGOPTION_ON, MFX_CODINGOPTION_OFF};
+        TestOneFieldOk(input.extCodingOption2.AdaptiveI, output.extCodingOption2.AdaptiveI, supported);
+        const Ipp16u unsupported[] = {1, 2, MFX_CODINGOPTION_ON|MFX_CODINGOPTION_OFF, 0xff, 0xffff};
+        TestOneFieldErr(input.extCodingOption2.AdaptiveI, output.extCodingOption2.AdaptiveI, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
 
     // test ExtDumpFiles
@@ -2966,5 +2954,28 @@ TEST_F(QueryTest, Conflicts_NumThread_ne_ForceNumThread) {
         EXPECT_EQ(p[1], input.extCodingOptionHevc.ForceNumThread);
         EXPECT_EQ(0, output.videoParam.mfx.NumThread);
         EXPECT_EQ(p[1], output.extCodingOptionHevc.ForceNumThread);
+    }
+}
+
+TEST_F(QueryTest, Conflicts_AdaptiveI_and_StrictGOP) {
+    Ipp32u ok[][2] = { {OFF, MFX_GOP_STRICT}, {OFF, 0}, {ON, 0} };
+    for (auto p: ok) {
+        input.extCodingOption2.AdaptiveI = p[0];
+        input.videoParam.mfx.GopOptFlag = p[1];
+        EXPECT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+        EXPECT_EQ(p[0], input.extCodingOption2.AdaptiveI);
+        EXPECT_EQ(p[1], input.videoParam.mfx.GopOptFlag);
+        EXPECT_EQ(p[0], output.extCodingOption2.AdaptiveI);
+        EXPECT_EQ(p[1], output.videoParam.mfx.GopOptFlag);
+    }
+    Ipp32u warning[][2] = { {ON, MFX_GOP_STRICT} };
+    for (auto p: warning) {
+        input.extCodingOption2.AdaptiveI = p[0];
+        input.videoParam.mfx.GopOptFlag = p[1];
+        EXPECT_EQ(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+        EXPECT_EQ(p[0], input.extCodingOption2.AdaptiveI);
+        EXPECT_EQ(p[1], input.videoParam.mfx.GopOptFlag);
+        EXPECT_EQ(0, output.extCodingOption2.AdaptiveI);
+        EXPECT_EQ(p[1], output.videoParam.mfx.GopOptFlag);
     }
 }
