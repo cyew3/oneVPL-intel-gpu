@@ -1,10 +1,28 @@
 /* ****************************************************************************** *\
 
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+- Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 File Name: exports.cpp
 
@@ -24,7 +42,7 @@ File Name: exports.cpp
 
 
 
-#define SDK_ANALYZER_EXPORT(type) extern "C" __declspec(dllexport) type  __stdcall 
+#define SDK_ANALYZER_EXPORT(type) extern "C" __declspec(dllexport) type  __stdcall
 
 #ifdef _WIN64
 #define FUNCTION(name) name
@@ -41,8 +59,8 @@ SDK_ANALYZER_EXPORT(void) msdk_analyzer_dll()
 
 SDK_ANALYZER_EXPORT(void) convert_etl_to_text(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow)
 {
-    //
-    
+//
+
 }
 
 
@@ -51,7 +69,7 @@ LPFN_ISWOW64PROCESS fnIsWow64Process;
 
 
 
-struct KeyData 
+struct KeyData
 {
     bool   bCreateNew;
     TCHAR  valueName[32];
@@ -85,7 +103,7 @@ void SetValues(HKEY key, KeyData *values, int nValues)
 
         if (bKeyMissed)
         {
-            RegSetValueEx(key, 
+            RegSetValueEx(key,
                 values[nKey].valueName,
                 0,
                 values[nKey].dwType,
@@ -111,12 +129,12 @@ DWORD Reg(HKEY key, TCHAR* dll_name, TCHAR* analyzer_key, TCHAR* install_dir, TC
    mfxU32 vendorID = bSoftwareDevice ? 0 : device.GetVendorID();
 
    TCHAR adapter_number[6];
-        
-   
+
+
    HKEY key2;
 
- 
-        //we need to create keys 
+
+        //we need to create keys
         DWORD dwDisposistion;
         if (is_64from32)
         {
@@ -135,12 +153,13 @@ DWORD Reg(HKEY key, TCHAR* dll_name, TCHAR* analyzer_key, TCHAR* install_dir, TC
             }
         }
 
-   
-   TCHAR sdk_analyzer_path[1024];
-   strcpy(sdk_analyzer_path, install_dir);
-   strcat(sdk_analyzer_path, dll_name);
-   
-   KeyData keysToAdd[] = 
+
+   int length = strlen(install_dir) + strlen(dll_name);
+   TCHAR *sdk_analyzer_path = new TCHAR[length + 3];
+   strcpy_s(sdk_analyzer_path, (length + 3), install_dir);
+   strcat_s(sdk_analyzer_path, (length + 3), dll_name);
+
+   KeyData keysToAdd[] =
    {
       {true, _T("APIVersion"), REG_DWORD, 0x100,0},
       {true, _T("Merit"), REG_DWORD, 0x7ffffffe, 0},
@@ -148,12 +167,12 @@ DWORD Reg(HKEY key, TCHAR* dll_name, TCHAR* analyzer_key, TCHAR* install_dir, TC
    };
 
    SetValues(key2, keysToAdd, sizeof(keysToAdd)/sizeof(keysToAdd[0]));
-   
-   DWORD start = 0;
 
-   TCHAR sdk_config_path[1024];
-   strcpy(sdk_config_path, conf_path);
-   
+   DWORD start = 0;
+   length = strlen(conf_path);
+   TCHAR *sdk_config_path = new TCHAR[length + 2];
+   strcpy_s(sdk_config_path, (length + 2), conf_path);
+
    RegSetValueEx(key2, _T("DeviceId"),0,REG_DWORD,(BYTE*)&deviceID,sizeof(deviceID));
    RegSetValueEx(key2, _T("VendorId"),0,REG_DWORD,(BYTE*)&vendorID,sizeof(vendorID));
    RegSetValueEx(key2, _T("_start"),0,REG_DWORD,(BYTE*)&start,sizeof(DWORD));
@@ -161,17 +180,20 @@ DWORD Reg(HKEY key, TCHAR* dll_name, TCHAR* analyzer_key, TCHAR* install_dir, TC
 
    RegCloseKey(key2);
 
+   delete[] sdk_analyzer_path;
+   delete[] sdk_config_path;
+
    return 1;
 }
 
 SDK_ANALYZER_EXPORT(UINT) FUNCTION(uninstall)();
 SDK_ANALYZER_EXPORT(UINT) FUNCTION(install)(TCHAR *installDir,
                                   TCHAR *appdata,
-                                  TCHAR *confPath) 
+                                  TCHAR *confPath)
 {
-   
+
     FUNCTION(uninstall)();
-    
+
 
     TCHAR msdk_analyzers_key[32] = _T("tracer");
 #ifdef _DEBUG
@@ -186,13 +208,13 @@ SDK_ANALYZER_EXPORT(UINT) FUNCTION(install)(TCHAR *installDir,
         TCHAR msdk_analyzers_dll_32[32] = _T("\\mfx-tracer_32.dll");
 #endif
 
-   TCHAR *current_msdk_analyzer = new TCHAR[32];
+   TCHAR *current_msdk_analyzer;
 #ifdef _WIN64
         current_msdk_analyzer = msdk_analyzers_dll;
 #else
         current_msdk_analyzer = msdk_analyzers_dll_32;
 #endif
-   
+
 #ifndef _WIN64
    HKEY key_;
    if (ERROR_SUCCESS!=RegCreateKeyEx(HKEY_LOCAL_MACHINE
@@ -203,20 +225,20 @@ SDK_ANALYZER_EXPORT(UINT) FUNCTION(install)(TCHAR *installDir,
         ,KEY_CREATE_SUB_KEY | KEY_QUERY_VALUE | KEY_SET_VALUE | KEY_WOW64_64KEY
         ,NULL
         ,&key_
-        ,NULL))  
+        ,NULL))
     {
         return 0;
     }
-    
+
     if (!Reg(key_, msdk_analyzers_dll, msdk_analyzers_key, installDir, installDir, true))
     {
         RegCloseKey(key_);
         return 0;
     }
-    
+
     RegCloseKey(key_);
 #endif
-        
+
     HKEY key;
     if (ERROR_SUCCESS!=RegCreateKeyEx(HKEY_LOCAL_MACHINE
         ,_T("Software\\Intel\\MediaSDK\\Dispatch\\")
@@ -226,7 +248,7 @@ SDK_ANALYZER_EXPORT(UINT) FUNCTION(install)(TCHAR *installDir,
         ,KEY_CREATE_SUB_KEY | KEY_QUERY_VALUE | KEY_SET_VALUE
         ,NULL
         ,&key
-        ,NULL))  
+        ,NULL))
     {
         return 0;
     }
@@ -236,21 +258,20 @@ SDK_ANALYZER_EXPORT(UINT) FUNCTION(install)(TCHAR *installDir,
         RegCloseKey(key);
         return 0;
     }
-    
+
     RegCloseKey(key);
 
 
-    //run_shared_memory_server();
-   
-   return 1;
+    //run_shared_memory_server();*/
+    return 1;
 }
 
 SDK_ANALYZER_EXPORT(UINT) FUNCTION(uninstall)()
 {
-    
+
 #ifndef _WIN64
     HKEY key_;
-    if (ERROR_SUCCESS!=RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Intel\\MediaSDK\\Dispatch\\"), 0, KEY_ALL_ACCESS | KEY_WOW64_64KEY, &key_)) 
+    if (ERROR_SUCCESS!=RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Intel\\MediaSDK\\Dispatch\\"), 0, KEY_ALL_ACCESS | KEY_WOW64_64KEY, &key_))
     {
         return 0;
     }
@@ -259,7 +280,7 @@ SDK_ANALYZER_EXPORT(UINT) FUNCTION(uninstall)()
     RegCloseKey(key_);
 #endif
     HKEY key;
-    if (ERROR_SUCCESS!=RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Intel\\MediaSDK\\Dispatch\\"), 0, KEY_ALL_ACCESS, &key)) 
+    if (ERROR_SUCCESS!=RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Intel\\MediaSDK\\Dispatch\\"), 0, KEY_ALL_ACCESS, &key))
     {
         return 0;
     }
@@ -276,7 +297,7 @@ SDK_ANALYZER_EXPORT(VOID) FUNCTION(start)()
     DWORD start_flag = 1;
 #ifndef _WIN64
     HKEY key_;
-    if (ERROR_SUCCESS!=RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), 0, KEY_ALL_ACCESS | KEY_WOW64_64KEY, &key_)) 
+    if (ERROR_SUCCESS!=RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), 0, KEY_ALL_ACCESS | KEY_WOW64_64KEY, &key_))
     {
         return;
     }
@@ -285,7 +306,7 @@ SDK_ANALYZER_EXPORT(VOID) FUNCTION(start)()
     RegCloseKey(key_);
 #endif
     HKEY key;
-    if (ERROR_SUCCESS!=RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), 0, KEY_ALL_ACCESS, &key)) 
+    if (ERROR_SUCCESS!=RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), 0, KEY_ALL_ACCESS, &key))
     {
         return;
     }
@@ -299,7 +320,7 @@ SDK_ANALYZER_EXPORT(VOID) FUNCTION(stop)()
     DWORD start_flag = 0;
 #ifndef _WIN64
     HKEY key_;
-    if (ERROR_SUCCESS!=RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), 0, KEY_ALL_ACCESS | KEY_WOW64_64KEY, &key_)) 
+    if (ERROR_SUCCESS!=RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), 0, KEY_ALL_ACCESS | KEY_WOW64_64KEY, &key_))
     {
         return;
     }
@@ -308,14 +329,14 @@ SDK_ANALYZER_EXPORT(VOID) FUNCTION(stop)()
     RegCloseKey(key_);
 #endif
     HKEY key;
-    if (ERROR_SUCCESS!=RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), 0, KEY_ALL_ACCESS, &key)) 
+    if (ERROR_SUCCESS!=RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), 0, KEY_ALL_ACCESS, &key))
     {
         return;
     }
 
     RegSetValueEx(key, _T("_start"),0,REG_DWORD,(BYTE*)&start_flag,sizeof(DWORD));
     RegCloseKey(key);
-      
+
 }
 
 #endif

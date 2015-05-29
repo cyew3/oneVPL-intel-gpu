@@ -1,3 +1,33 @@
+/* ****************************************************************************** *\
+
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+- Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+File Name: mfx_video_decode.cpp
+
+\* ****************************************************************************** */
+
 #include <exception>
 #include <iostream>
 
@@ -339,9 +369,17 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
         {
             DumpContext context;
             context.context = DUMPCONTEXT_MFX;
-            TracerSyncPoint * sp = new TracerSyncPoint();
-            sp->syncPoint = (*syncp);
-            sp->component = DECODE;
+            TracerSyncPoint sp;
+            if (syncp)
+            {
+                sp.syncPoint = (*syncp);
+            }
+            else
+            {
+                sp.syncPoint = NULL;
+            }
+
+            sp.component = DECODE;
             Log::WriteLog("function: MFXVideoDECODE_DecodeFrameAsync(mfxSession session=" + ToString(session) + ", mfxBitstream *bs=" + ToString(bs) + ", mfxFrameSurface1 *surface_work=" + ToString(surface_work) + ", mfxFrameSurface1 **surface_out=" + ToString(surface_out) + ", mfxSyncPoint *syncp=" + ToString(syncp) + ") +");
             mfxLoader *loader = (mfxLoader*) session;
 
@@ -354,39 +392,48 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
             Log::WriteLog(context.dump("session", session));
             if(bs) Log::WriteLog(context.dump("bs", *bs));
             Log::WriteLog(context.dump("surface_work", *surface_work));
-            if(surface_out && (*surface_out))
-                Log::WriteLog(context.dump("surface_out", (**surface_out)));
+            if(surface_out && (*surface_out)) Log::WriteLog(context.dump("surface_out", (**surface_out)));
             if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
-            
-            sp->timer.Restart();
+
+            sp.timer.Restart();
             Timer t;
-            mfxStatus status = (*(fMFXVideoDECODE_DecodeFrameAsync) proc) (session, bs, surface_work, surface_out, &sp->syncPoint);
+            mfxStatus status;
+            if (syncp) {
+                status = (*(fMFXVideoDECODE_DecodeFrameAsync) proc) (session, bs, surface_work, surface_out, &sp.syncPoint);
+            }
+            else {
+                status = (*(fMFXVideoDECODE_DecodeFrameAsync) proc) (session, bs, surface_work, surface_out, NULL);
+            }
             std::string elapsed = TimeToString(t.GetTime());
 
-            *syncp = (mfxSyncPoint)sp;
-            if (!sp->syncPoint) {
-                delete sp;
-                *syncp=NULL;
+            if (syncp) {
+                if (!sp.syncPoint) {
+                    *syncp=NULL;
+                }
+                else {
+                    *syncp = (mfxSyncPoint)sp.syncPoint;
+                }
             }
+
             Log::WriteLog(">> MFXVideoDECODE_DecodeFrameAsync called");
             Log::WriteLog(context.dump("session", session));
             if(bs) Log::WriteLog(context.dump("bs", *bs));
             Log::WriteLog(context.dump("surface_work", *surface_work));
             if(surface_out && (*surface_out))
                Log::WriteLog(context.dump("surface_out", (**surface_out)));
-            Log::WriteLog(context.dump("syncp", sp->syncPoint));
+            Log::WriteLog(context.dump("syncp", sp.syncPoint));
             Log::WriteLog("function: MFXVideoDECODE_DecodeFrameAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
-            
+
             return status;
         }
         else // call without logging
         {
             DumpContext context;
             context.context = DUMPCONTEXT_MFX;
-            TracerSyncPoint * sp = new TracerSyncPoint();
-            sp->syncPoint = (*syncp);
-            sp->component = DECODE;
-            
+            TracerSyncPoint sp;
+            sp.syncPoint = (*syncp);
+            sp.component = DECODE;
+
             mfxLoader *loader = (mfxLoader*) session;
 
             if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -395,19 +442,27 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
             if (!proc) return MFX_ERR_INVALID_HANDLE;
 
             session = loader->session;
-            
-                        
-            mfxStatus status = (*(fMFXVideoDECODE_DecodeFrameAsync) proc) (session, bs, surface_work, surface_out, &sp->syncPoint);
-            
-            *syncp = (mfxSyncPoint)sp;
-            if (!sp->syncPoint) {
-                delete sp;
-                *syncp=NULL;
+
+            mfxStatus status;
+            if (syncp) {
+                status = (*(fMFXVideoDECODE_DecodeFrameAsync) proc) (session, bs, surface_work, surface_out, &sp.syncPoint);
             }
-            
+            else {
+                status = (*(fMFXVideoDECODE_DecodeFrameAsync) proc) (session, bs, surface_work, surface_out, NULL);
+            }
+
+            if (syncp) {
+                if (!sp.syncPoint) {
+                    *syncp=NULL;
+                }
+                else {
+                    *syncp = (mfxSyncPoint)sp.syncPoint;
+                }
+            }
+
             return status;
         }
-        
+
     }
     catch (std::exception& e){
         std::cerr << "Exception: " << e.what() << '\n';

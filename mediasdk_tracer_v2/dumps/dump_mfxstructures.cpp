@@ -45,7 +45,7 @@ std::string DumpContext::dump(const std::string structName, const mfxDecodeStat 
 std::string DumpContext::dump(const std::string structName, const mfxEncodeCtrl &EncodeCtrl)
 {
     std::string str;
-    str += dump(structName + ".Header=", EncodeCtrl.Header) + "\n";
+    str += dump(structName + ".Header", EncodeCtrl.Header) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(EncodeCtrl.reserved) + "\n";
     str += structName + ".SkipFrame=" + ToString(EncodeCtrl.SkipFrame) + "\n";
     str += structName + ".QP=" + ToString(EncodeCtrl.QP) + "\n";
@@ -434,7 +434,7 @@ std::string DumpContext::dump(const std::string structName, const mfxVPPStat &vp
 std::string DumpContext::dump(const std::string structName, const mfxExtDecodedFrameInfo &ExtDecodedFrameInfo)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtDecodedFrameInfo.Header) + "\n";
+    str += dump(structName + ".Header", ExtDecodedFrameInfo.Header) + "\n";
     str += structName + ".FrameType=" + ToString(ExtDecodedFrameInfo.FrameType) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtDecodedFrameInfo.reserved) + "\n";
     return str;
@@ -443,7 +443,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtDecodedF
 std::string DumpContext::dump(const std::string structName, const mfxExtTimeCode &ExtTimeCode)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtTimeCode.Header) + "\n";
+    str += dump(structName + ".Header", ExtTimeCode.Header) + "\n";
     str += structName + ".DropFrameFlag=" + ToString(ExtTimeCode.DropFrameFlag) + "\n";
     str += structName + ".TimeCodeHours=" + ToString(ExtTimeCode.TimeCodeHours) + "\n";
     str += structName + ".TimeCodeMinutes=" + ToString(ExtTimeCode.TimeCodeMinutes) + "\n";
@@ -456,7 +456,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtTimeCode
 std::string DumpContext::dump(const std::string structName, const mfxExtEncoderCapability &ExtEncoderCapability)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtEncoderCapability.Header) + "\n";
+    str += dump(structName + ".Header", ExtEncoderCapability.Header) + "\n";
     str += structName + ".MBPerSec=" + ToString(ExtEncoderCapability.MBPerSec) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtEncoderCapability.reserved) + "\n";
     return str;
@@ -465,7 +465,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtEncoderC
 std::string DumpContext::dump(const std::string structName, const mfxExtDirtyRect &ExtDirtyRect)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtDirtyRect.Header) + "\n";
+    str += dump(structName + ".Header", ExtDirtyRect.Header) + "\n";
     str += structName + ".NumRect=" + ToString(ExtDirtyRect.NumRect) + "\n";
     str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtDirtyRect.reserved1) + "\n";
     str += structName + ".Rect=" + ToString(ExtDirtyRect.Rect) + "\n";
@@ -475,7 +475,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtDirtyRec
 std::string DumpContext::dump(const std::string structName, const mfxExtMoveRect &ExtMoveRect)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtMoveRect.Header) + "\n";
+    str += dump(structName + ".Header", ExtMoveRect.Header) + "\n";
     str += structName + ".NumRect=" + ToString(ExtMoveRect.NumRect) + "\n";
     str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtMoveRect.reserved1) + "\n";
     str += structName + ".Rect=" + ToString(ExtMoveRect.Rect) + "\n";
@@ -486,7 +486,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtMoveRect
 std::string DumpContext::dump(const std::string structName, const mfxExtCamGammaCorrection &CamGammaCorrection)
 {
     std::string str;
-    str += dump(structName + ".Header=", CamGammaCorrection.Header) + "\n";
+    str += dump(structName + ".Header", CamGammaCorrection.Header) + "\n";
     str += structName + ".Mode=" + ToString(CamGammaCorrection.Mode) + "\n";
     str += structName + ".reserved1=" + ToString(CamGammaCorrection.reserved1) + "\n";
     str += structName + ".GammaValue=" + ToString(CamGammaCorrection.GammaValue) + "\n";
@@ -501,7 +501,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamGamma
 std::string DumpContext::dump(const std::string structName, const mfxExtCamWhiteBalance &CamWhiteBalance)
 {
     std::string str;
-    str += dump(structName + ".Header=", CamWhiteBalance.Header) + "\n";
+    str += dump(structName + ".Header", CamWhiteBalance.Header) + "\n";
     str += structName + ".Mode=" + ToString(CamWhiteBalance.Mode) + "\n";
     str += structName + ".R=" + ToString(CamWhiteBalance.R) + "\n";
     str += structName + ".G0=" + ToString(CamWhiteBalance.G0) + "\n";
@@ -514,7 +514,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamWhite
 std::string DumpContext::dump(const std::string structName, const mfxExtCamHotPixelRemoval &CamHotPixelRemoval)
 {
     std::string str;
-    str += dump(structName + ".Header=", CamHotPixelRemoval.Header) + "\n";
+    str += dump(structName + ".Header", CamHotPixelRemoval.Header) + "\n";
     str += structName + ".PixelThresholdDifference=" + ToString(CamHotPixelRemoval.PixelThresholdDifference) + "\n";
     str += structName + ".PixelCountThreshold=" + ToString(CamHotPixelRemoval.PixelCountThreshold) + "\n";
     return str;
@@ -523,7 +523,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamHotPi
 std::string DumpContext::dump(const std::string structName, const mfxExtCamBlackLevelCorrection &CamBlackLevelCorrection)
 {
     std::string str;
-    str += dump(structName + ".Header=", CamBlackLevelCorrection.Header) + "\n";
+    str += dump(structName + ".Header", CamBlackLevelCorrection.Header) + "\n";
     str += structName + ".R=" + ToString(CamBlackLevelCorrection.R) + "\n";
     str += structName + ".G0=" + ToString(CamBlackLevelCorrection.G0) + "\n";
     str += structName + ".B=" + ToString(CamBlackLevelCorrection.B) + "\n";
@@ -546,7 +546,7 @@ std::string DumpContext::dump(const std::string structName, const mfxCamVignette
 std::string DumpContext::dump(const std::string structName, const mfxExtCamVignetteCorrection &CamVignetteCorrection)
 {
     std::string str;
-    str += dump(structName + ".Header=", CamVignetteCorrection.Header) + "\n";
+    str += dump(structName + ".Header", CamVignetteCorrection.Header) + "\n";
     str += structName + ".Width=" + ToString(CamVignetteCorrection.Width) + "\n";
     str += structName + ".Height=" + ToString(CamVignetteCorrection.Height) + "\n";
     str += structName + ".Pitch=" + ToString(CamVignetteCorrection.Pitch) + "\n";
@@ -561,7 +561,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamVigne
 std::string DumpContext::dump(const std::string structName, const mfxExtCamBayerDenoise &CamBayerDenoise)
 {
     std::string str;
-    str += dump(structName + ".Header=", CamBayerDenoise.Header) + "\n";
+    str += dump(structName + ".Header", CamBayerDenoise.Header) + "\n";
     str += structName + ".Threshold=" + ToString(CamBayerDenoise.Threshold) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamBayerDenoise.reserved) + "\n";
     return str;
@@ -570,7 +570,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamBayer
 std::string DumpContext::dump(const std::string structName, const mfxExtCamColorCorrection3x3 &CamColorCorrection3x3)
 {
     std::string str;
-    str += dump(structName + ".Header=", CamColorCorrection3x3.Header) + "\n";
+    str += dump(structName + ".Header", CamColorCorrection3x3.Header) + "\n";
     str += structName + ".CCM=" + ToString(CamColorCorrection3x3.CCM) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamColorCorrection3x3.reserved) + "\n";
     return str;
@@ -579,7 +579,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamColor
 std::string DumpContext::dump(const std::string structName, const mfxExtCamPadding &CamPadding)
 {
     std::string str;
-    str += dump(structName + ".Header=", CamPadding.Header) + "\n";
+    str += dump(structName + ".Header", CamPadding.Header) + "\n";
     str += structName + ".Top=" + ToString(CamPadding.Top) + "\n";
     str += structName + ".Bottom=" + ToString(CamPadding.Bottom) + "\n";
     str += structName + ".Left=" + ToString(CamPadding.Left) + "\n";
@@ -591,7 +591,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamPaddi
 std::string DumpContext::dump(const std::string structName, const mfxExtCamPipeControl &CamPipeControl)
 {
     std::string str;
-    str += dump(structName + ".Header=", CamPipeControl.Header) + "\n";
+    str += dump(structName + ".Header", CamPipeControl.Header) + "\n";
     str += structName + ".RawFormat=" + ToString(CamPipeControl.RawFormat) + "\n";
     str += structName + ".reserved1=" + ToString(CamPipeControl.reserved1) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamPipeControl.reserved) + "\n";
@@ -611,7 +611,7 @@ std::string DumpContext::dump(const std::string structName, const mfxCamFwdGamma
 std::string DumpContext::dump(const std::string structName, const mfxExtCamFwdGamma &CamFwrGamma)
 {
     std::string str;
-    str += dump(structName + ".Header=", CamFwrGamma.Header) + "\n";
+    str += dump(structName + ".Header", CamFwrGamma.Header) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamFwrGamma.reserved) + "\n";
     str += structName + ".NumSegments=" + ToString(CamFwrGamma.NumSegments) + "\n";
     if (CamFwrGamma.Segment)
@@ -627,7 +627,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamFwdGa
 std::string DumpContext::dump(const std::string structName, const mfxExtCamCscYuvRgb &CamCscYuvRgb)
 {
     std::string str;
-    str += dump(structName + ".Header=", CamCscYuvRgb.Header) + "\n";
+    str += dump(structName + ".Header", CamCscYuvRgb.Header) + "\n";
     str += structName + ".PreOffset[]=" + DUMP_RESERVED_ARRAY(CamCscYuvRgb.PreOffset) + "\n";
     for (int i = 0; i < 3; i++)
         str += structName + ".Matrix[" + ToString(i) + "][]=" + DUMP_RESERVED_ARRAY(CamCscYuvRgb.Matrix) + "\n";
@@ -639,7 +639,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamCscYu
 std::string DumpContext::dump(const std::string structName, const mfxExtCamLensGeomDistCorrection &CamLensGeomDistCorrection)
 {
     std::string str;
-    str += dump(structName + ".Header=", CamLensGeomDistCorrection.Header) + "\n";
+    str += dump(structName + ".Header", CamLensGeomDistCorrection.Header) + "\n";
     if (CamLensGeomDistCorrection.a)
     {
         for (int i = 0; i < 3; i++)
@@ -667,7 +667,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamLensG
 std::string DumpContext::dump(const std::string structName, const mfxExtAVCRefListCtrl &ExtAVCRefListCtrl)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtAVCRefListCtrl.Header) + "\n";
+    str += dump(structName + ".Header", ExtAVCRefListCtrl.Header) + "\n";
     str += structName + ".NumRefIdxL0Active=" + ToString(ExtAVCRefListCtrl.NumRefIdxL0Active) + "\n";
     str += structName + ".NumRefIdxL1Active=" + ToString(ExtAVCRefListCtrl.NumRefIdxL1Active) + "\n";
     str += structName + ".PreferredRefList=" + ToString(ExtAVCRefListCtrl.PreferredRefList) + "\n";
@@ -681,7 +681,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAVCRefLi
 std::string DumpContext::dump(const std::string structName, const mfxExtAvcTemporalLayers &ExtAvcTemporalLayers)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtAvcTemporalLayers.Header) + "\n";
+    str += dump(structName + ".Header", ExtAvcTemporalLayers.Header) + "\n";
     str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtAvcTemporalLayers.reserved1) + "\n";
     str += structName + ".reserved2=" + ToString(ExtAvcTemporalLayers.reserved2) + "\n";
     str += structName + ".BaseLayerPID=" + ToString(ExtAvcTemporalLayers.BaseLayerPID) + "\n";
@@ -692,7 +692,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAvcTempo
 std::string DumpContext::dump(const std::string structName, const mfxExtAVCEncodedFrameInfo &ExtAVCEncodedFrameInfo)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtAVCEncodedFrameInfo.Header) + "\n";
+    str += dump(structName + ".Header", ExtAVCEncodedFrameInfo.Header) + "\n";
     str += structName + ".FrameOrder=" + ToString(ExtAVCEncodedFrameInfo.FrameOrder) + "\n";
     str += structName + ".PicStruct=" + ToString(ExtAVCEncodedFrameInfo.PicStruct) + "\n";
     str += structName + ".LongTermIdx=" + ToString(ExtAVCEncodedFrameInfo.LongTermIdx) + "\n";
@@ -709,7 +709,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAVCEncod
 std::string DumpContext::dump(const std::string structName, const mfxExtAVCRefLists &ExtAVCRefLists)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtAVCRefLists.Header) + "\n";
+    str += dump(structName + ".Header", ExtAVCRefLists.Header) + "\n";
     str += structName + ".NumRefIdxL0Active=" + ToString(ExtAVCRefLists.NumRefIdxL0Active) + "\n";
     str += structName + ".NumRefIdxL1Active=" + ToString(ExtAVCRefLists.NumRefIdxL1Active) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtAVCRefLists.reserved) + "\n";
@@ -722,7 +722,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAVCRefLi
 std::string DumpContext::dump(const std::string structName, const mfxExtJPEGQuantTables &ExtJPEGQuantTables)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtJPEGQuantTables.Header) + "\n";
+    str += dump(structName + ".Header", ExtJPEGQuantTables.Header) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtJPEGQuantTables.reserved) + "\n";
     str += structName + ".NumTable=" + ToString(ExtJPEGQuantTables.NumTable) + "\n";
     if (ExtJPEGQuantTables.Qm)
@@ -738,7 +738,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtJPEGQuan
 std::string DumpContext::dump(const std::string structName, const mfxExtJPEGHuffmanTables &ExtJPEGHuffmanTables)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtJPEGHuffmanTables.Header) + "\n";
+    str += dump(structName + ".Header", ExtJPEGHuffmanTables.Header) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtJPEGHuffmanTables.reserved) + "\n";
     str += structName + ".NumDCTable=" + ToString(ExtJPEGHuffmanTables.NumDCTable) + "\n";
     str += structName + ".NumACTable=" + ToString(ExtJPEGHuffmanTables.NumACTable) + "\n";
@@ -805,7 +805,7 @@ std::string DumpContext::dump(const std::string structName, const mfxMVCOperatio
 std::string DumpContext::dump(const std::string structName, const mfxExtMVCSeqDesc &ExtMVCSeqDesc)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtMVCSeqDesc.Header) + "\n";
+    str += dump(structName + ".Header", ExtMVCSeqDesc.Header) + "\n";
     str += structName + ".NumView=" + ToString(ExtMVCSeqDesc.NumView) + "\n";
     if (ExtMVCSeqDesc.View)
     {
@@ -828,7 +828,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtMVCSeqDe
 std::string DumpContext::dump(const std::string structName, const mfxExtMVCTargetViews &ExtMVCTargetViews)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtMVCTargetViews.Header) + "\n";
+    str += dump(structName + ".Header", ExtMVCTargetViews.Header) + "\n";
     str += structName + ".TemporalId=" + ToString(ExtMVCTargetViews.TemporalId) + "\n";
     str += structName + ".NumView=" + ToString(ExtMVCTargetViews.NumView) + "\n";
     str += structName + ".ViewId[]=" + DUMP_RESERVED_ARRAY(ExtMVCTargetViews.ViewId) + "\n";
@@ -838,7 +838,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtMVCTarge
 std::string DumpContext::dump(const std::string structName, const mfxExtOpaqueSurfaceAlloc &ExtOpaqueSurfaceAlloc)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtOpaqueSurfaceAlloc.Header) + "\n";
+    str += dump(structName + ".Header", ExtOpaqueSurfaceAlloc.Header) + "\n";
     str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtOpaqueSurfaceAlloc.reserved1) + "\n";
     str += structName + ".In.NumSurface=" + ToString(ExtOpaqueSurfaceAlloc.In.NumSurface) + "\n";
     str += structName + ".In.Surfaces=" + ToHexFormatString(ExtOpaqueSurfaceAlloc.In.Surfaces) + "\n";
@@ -855,7 +855,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtOpaqueSu
 std::string DumpContext::dump(const std::string structName, const mfxExtVPPDenoise &ExtVPPDenoise)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtVPPDenoise.Header) + "\n";
+    str += dump(structName + ".Header", ExtVPPDenoise.Header) + "\n";
     str += structName + ".DenoiseFactor=" + ToString(ExtVPPDenoise.DenoiseFactor) + "\n";
     return str;
 }
@@ -863,7 +863,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtVPPDenoi
 std::string DumpContext::dump(const std::string structName, const mfxExtVPPDetail &ExtVPPDetail)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtVPPDetail.Header) + "\n";
+    str += dump(structName + ".Header", ExtVPPDetail.Header) + "\n";
     str += structName + ".DetailFactor=" + ToString(ExtVPPDetail.DetailFactor) + "\n";
     return str;
 }
@@ -871,7 +871,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtVPPDetai
 std::string DumpContext::dump(const std::string structName, const mfxExtVPPProcAmp &ExtVPPProcAmp)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtVPPProcAmp.Header) + "\n";
+    str += dump(structName + ".Header", ExtVPPProcAmp.Header) + "\n";
     str += structName + ".Brightness=" + ToString(ExtVPPProcAmp.Brightness) + "\n";
     str += structName + ".Contrast=" + ToString(ExtVPPProcAmp.Contrast) + "\n";
     str += structName + ".Hue=" + ToString(ExtVPPProcAmp.Hue) + "\n";
@@ -882,7 +882,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtVPPProcA
 std::string DumpContext::dump(const std::string structName, const mfxExtCodingOptionSPSPPS &ExtCodingOptionSPSPPS)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtCodingOptionSPSPPS.Header) + "\n";
+    str += dump(structName + ".Header", ExtCodingOptionSPSPPS.Header) + "\n";
     str += structName + ".SPSBuffer=" + ToHexFormatString(ExtCodingOptionSPSPPS.SPSBuffer) + "\n";
     str += structName + ".PPSBuffer=" + ToHexFormatString(ExtCodingOptionSPSPPS.PPSBuffer) + "\n";
     str += structName + ".SPSBufSize=" + ToString(ExtCodingOptionSPSPPS.SPSBufSize) + "\n";
@@ -895,7 +895,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
 std::string DumpContext::dump(const std::string structName, const mfxExtVideoSignalInfo &ExtVideoSignalInfo)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtVideoSignalInfo.Header) + "\n";
+    str += dump(structName + ".Header", ExtVideoSignalInfo.Header) + "\n";
     str += structName + ".VideoFormat=" + ToString(ExtVideoSignalInfo.VideoFormat) + "\n";
     str += structName + ".VideoFullRange=" + ToString(ExtVideoSignalInfo.VideoFullRange) + "\n";
     str += structName + ".ColourDescriptionPresent=" + ToString(ExtVideoSignalInfo.ColourDescriptionPresent) + "\n";
@@ -908,7 +908,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtVideoSig
 std::string DumpContext::dump(const std::string structName, const mfxExtVPPDoUse &ExtVPPDoUse)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtVPPDoUse.Header) + "\n";
+    str += dump(structName + ".Header", ExtVPPDoUse.Header) + "\n";
     str += structName + ".NumAlg=" + ToString(ExtVPPDoUse.NumAlg) + "\n";
     str += structName + ".AlgList=" + ToHexFormatString(ExtVPPDoUse.AlgList) + "\n";
     return str;
@@ -934,7 +934,7 @@ std::string DumpContext::dump(const std::string structName, const mfxVPPCompInpu
 std::string DumpContext::dump(const std::string structName, const mfxExtVPPComposite &ExtVPPComposite)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtVPPComposite.Header) + "\n";
+    str += dump(structName + ".Header", ExtVPPComposite.Header) + "\n";
     str += structName + ".Y=" + ToString(ExtVPPComposite.Y) + "\n";
     str += structName + ".R=" + ToString(ExtVPPComposite.R) + "\n";
     str += structName + ".U=" + ToString(ExtVPPComposite.U) + "\n";
@@ -950,7 +950,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtVPPCompo
 std::string DumpContext::dump(const std::string structName, const mfxExtVPPVideoSignalInfo &ExtVPPVideoSignalInfo)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtVPPVideoSignalInfo.Header) + "\n";
+    str += dump(structName + ".Header", ExtVPPVideoSignalInfo.Header) + "\n";
     str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtVPPVideoSignalInfo.reserved1) + "\n";
     str += structName + ".In.TransferMatrix=" + ToString(ExtVPPVideoSignalInfo.In.TransferMatrix) + "\n";
     str += structName + ".In.NominalRange=" + ToString(ExtVPPVideoSignalInfo.In.NominalRange) + "\n";
@@ -964,7 +964,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtVPPVideo
 std::string DumpContext::dump(const std::string structName, const mfxExtVPPDeinterlacing &ExtVPPDeinterlacing)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtVPPDeinterlacing.Header) + "\n";
+    str += dump(structName + ".Header", ExtVPPDeinterlacing.Header) + "\n";
     str += structName + ".Mode=" + ToString(ExtVPPDeinterlacing.Mode) + "\n";
     str += structName + ".TelecinePattern=" + ToString(ExtVPPDeinterlacing.TelecinePattern) + "\n";
     str += structName + ".TelecineLocation=" + ToString(ExtVPPDeinterlacing.TelecineLocation) + "\n";
@@ -976,7 +976,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtVPPDeint
 std::string DumpContext::dump(const std::string structName, const mfxExtPictureTimingSEI &ExtPictureTimingSEI)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtPictureTimingSEI.Header) + "\n";
+    str += dump(structName + ".Header", ExtPictureTimingSEI.Header) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtPictureTimingSEI.reserved) + "\n";
     str += structName + ".TimeStamp[0].ClockTimestampFlag=" + ToString(ExtPictureTimingSEI.TimeStamp[0].ClockTimestampFlag) + "\n";
     str += structName + ".TimeStamp[0].CtType=" + ToString(ExtPictureTimingSEI.TimeStamp[0].CtType) + "\n";
@@ -1030,7 +1030,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtPictureT
 std::string DumpContext::dump(const std::string structName, const mfxExtHEVCTiles &ExtHEVCTiles)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtHEVCTiles.Header) + "\n";
+    str += dump(structName + ".Header", ExtHEVCTiles.Header) + "\n";
     str += structName + ".NumTileRows=" + ToString(ExtHEVCTiles.NumTileRows) + "\n";
     str += structName + ".NumTileColumns=" + ToString(ExtHEVCTiles.NumTileColumns) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtHEVCTiles.reserved) + "\n";
@@ -1040,7 +1040,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtHEVCTile
 std::string DumpContext::dump(const std::string structName, const mfxExtHEVCParam &ExtHEVCParam)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtHEVCParam.Header) + "\n";
+    str += dump(structName + ".Header", ExtHEVCParam.Header) + "\n";
     str += structName + ".PicWidthInLumaSamples=" + ToString(ExtHEVCParam.PicWidthInLumaSamples) + "\n";
     str += structName + ".PicHeightInLumaSamples=" + ToString(ExtHEVCParam.PicHeightInLumaSamples) + "\n";
     str += structName + ".GeneralConstraintFlags=" + ToString(ExtHEVCParam.GeneralConstraintFlags) + "\n";
@@ -1051,7 +1051,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtHEVCPara
 std::string DumpContext::dump(const std::string structName, const mfxExtHEVCRegion &ExtHEVCRegion)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtHEVCRegion.Header) + "\n";
+    str += dump(structName + ".Header", ExtHEVCRegion.Header) + "\n";
     str += structName + ".RegionId=" + ToString(ExtHEVCRegion.RegionId) + "\n";
     str += structName + ".RegionType=" + ToString(ExtHEVCRegion.RegionType) + "\n";
     str += structName + ".RegionEncoding=" + ToString(ExtHEVCRegion.RegionEncoding) + "\n";
@@ -1062,7 +1062,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtHEVCRegi
 std::string DumpContext::dump(const std::string structName, const mfxExtPredWeightTable &ExtPredWeightTable)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtPredWeightTable.Header) + "\n";
+    str += dump(structName + ".Header", ExtPredWeightTable.Header) + "\n";
     str += structName + ".LumaLog2WeightDenom=" + ToString(ExtPredWeightTable.LumaLog2WeightDenom) + "\n";
     str += structName + ".ChromaLog2WeightDenom=" + ToString(ExtPredWeightTable.ChromaLog2WeightDenom) + "\n";
     if (ExtPredWeightTable.LumaWeightFlag)
@@ -1083,7 +1083,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtPredWeig
 std::string DumpContext::dump(const std::string structName, const mfxExtVPPFrameRateConversion &ExtVPPFrameRateConversion)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtVPPFrameRateConversion.Header) + "\n";
+    str += dump(structName + ".Header", ExtVPPFrameRateConversion.Header) + "\n";
     str += structName + ".Algorithm=" + ToString(ExtVPPFrameRateConversion.Algorithm) + "\n";
     str += structName + ".reserved=" + ToString(ExtVPPFrameRateConversion.reserved) + "\n";
     str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(ExtVPPFrameRateConversion.reserved2) + "\n";
@@ -1093,7 +1093,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtVPPFrame
 std::string DumpContext::dump(const std::string structName, const mfxExtVPPImageStab &ExtVPPImageStab)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtVPPImageStab.Header) + "\n";
+    str += dump(structName + ".Header", ExtVPPImageStab.Header) + "\n";
     str += structName + ".Mode=" + ToString(ExtVPPImageStab.Mode) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtVPPImageStab.reserved) + "\n";
     return str;
@@ -1102,7 +1102,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtVPPImage
 std::string DumpContext::dump(const std::string structName, const mfxExtEncoderROI &ExtEncoderROI)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtEncoderROI.Header) + "\n";
+    str += dump(structName + ".Header", ExtEncoderROI.Header) + "\n";
     str += structName + ".Mode=" + ToString(ExtEncoderROI.NumROI) + "\n";
     str += structName + ".Mode=" + ToString(ExtEncoderROI.ROI) + "\n";
     str += structName + ".reserved1[]=" + DUMP_RESERVED_ARRAY(ExtEncoderROI.reserved1) + "\n";
@@ -1113,7 +1113,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtEncoderR
 std::string DumpContext::dump(const std::string structName, const mfxExtAVCEncodeCtrl &ExtAVCEncodeCtrl)
 {
     std::string str;
-    str += dump(structName + ".Header=", ExtAVCEncodeCtrl.Header) + "\n";
+    str += dump(structName + ".Header", ExtAVCEncodeCtrl.Header) + "\n";
     str += structName + ".deprecated[]=" + DUMP_RESERVED_ARRAY(ExtAVCEncodeCtrl.deprecated) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtAVCEncodeCtrl.reserved) + "\n";
     str += structName + ".SkipCheck=" + ToString(ExtAVCEncodeCtrl.SkipCheck) + "\n";

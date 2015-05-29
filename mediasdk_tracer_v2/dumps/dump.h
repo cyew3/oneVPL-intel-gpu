@@ -142,7 +142,7 @@ public:
     std::string dump(const std::string structName, const T *_struct)
     {
         std::string str = get_type<T>();
-        str += "* " + structName + "=" + ToString(_struct) + "\n";
+        str += "* " + structName + "=" + ToHexFormatString(_struct) + "\n";
         if (_struct) str += dump("  " + structName, *_struct);
         return str;
     }

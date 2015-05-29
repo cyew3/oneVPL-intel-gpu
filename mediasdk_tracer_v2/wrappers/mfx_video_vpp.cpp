@@ -1,3 +1,33 @@
+/* ****************************************************************************** *\
+
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+- Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+File Name: mfx_video_vpp.cpp
+
+\* ****************************************************************************** */
+
 #include <exception>
 #include <iostream>
 
@@ -239,9 +269,14 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
         {
             DumpContext context;
             context.context = DUMPCONTEXT_VPP;
-            TracerSyncPoint * sp = new TracerSyncPoint();
-            sp->syncPoint = (*syncp);
-            sp->component = VPP;
+            TracerSyncPoint sp;
+            if (syncp) {
+                sp.syncPoint = (*syncp);
+            }
+            else {
+                sp.syncPoint = NULL;
+            }
+            sp.component = VPP;
 
             Log::WriteLog("function: MFXVideoVPP_RunFrameVPPAsync(mfxSession session=" + ToString(session) + ", mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp) +");
             mfxLoader *loader = (mfxLoader*) session;
@@ -257,32 +292,50 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
             if(out) Log::WriteLog(context.dump("out", *out));
             if(aux) Log::WriteLog(context.dump("aux", *aux));
             if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
-        
-            sp->timer.Restart();
+
+            sp.timer.Restart();
             Timer t;
-            mfxStatus status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, &sp->syncPoint);
+            mfxStatus status;
+            if (syncp) {
+                status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, &sp.syncPoint);
+            }
+            else {
+                status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, NULL);
+            }
             std::string elapsed = TimeToString(t.GetTime());
 
-            *syncp = (mfxSyncPoint)sp;
+            if (syncp) {
+                if (!sp.syncPoint) {
+                    *syncp=NULL;
+                }
+                else {
+                    *syncp = (mfxSyncPoint)sp.syncPoint;
+                }
+            }
 
             Log::WriteLog(">> MFXVideoVPP_RunFrameVPPAsync called");
             Log::WriteLog(context.dump("session", session));
             if(in) Log::WriteLog(context.dump("in", *in));
             if(out) Log::WriteLog(context.dump("out", *out));
             if(aux) Log::WriteLog(context.dump("aux", *aux));
-            Log::WriteLog(context.dump("syncp", sp->syncPoint));
+            Log::WriteLog(context.dump("syncp", sp.syncPoint));
             Log::WriteLog("function: MFXVideoVPP_RunFrameVPPAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
-        
+
             return status;
         }
         else // call withot logging
         {
             DumpContext context;
             context.context = DUMPCONTEXT_VPP;
-            TracerSyncPoint * sp = new TracerSyncPoint();
-            sp->syncPoint = (*syncp);
-            sp->component = VPP;
-                        
+            TracerSyncPoint sp;
+            if (syncp) {
+                sp.syncPoint = (*syncp);
+            }
+            else {
+                sp.syncPoint = NULL;
+            }
+            sp.component = VPP;
+
             mfxLoader *loader = (mfxLoader*) session;
 
             if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -291,11 +344,24 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
             if (!proc) return MFX_ERR_INVALID_HANDLE;
 
             session = loader->session;
-            
-            mfxStatus status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, &sp->syncPoint);
-            
-            *syncp = (mfxSyncPoint)sp;
-                        
+
+            mfxStatus status;
+            if (syncp) {
+                status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, &sp.syncPoint);
+            }
+            else {
+                status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, NULL);
+            }
+
+            if (syncp) {
+                if (!sp.syncPoint) {
+                    *syncp=NULL;
+                }
+                else {
+                    *syncp = (mfxSyncPoint)sp.syncPoint;
+                }
+            }
+
             return status;
         }
     }
@@ -312,9 +378,14 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
         {
             DumpContext context;
             context.context = DUMPCONTEXT_VPP;
-            TracerSyncPoint * sp = new TracerSyncPoint();
-            sp->syncPoint = (*syncp);
-            sp->component = VPP;
+            TracerSyncPoint sp;
+            if (syncp) {
+                sp.syncPoint = (*syncp);
+            }
+            else {
+                sp.syncPoint = NULL;
+            }
+            sp.component = VPP;
             Log::WriteLog("function: MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session=" + ToString(session) + ", mfxFrameSurface1 *in, mfxFrameSurface1 *work, mfxExtVppAuxData *aux, mfxSyncPoint *syncp) +");
             mfxLoader *loader = (mfxLoader*) session;
 
@@ -330,33 +401,51 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
             if (out && (*out))
                 Log::WriteLog(context.dump("out", **out));
             if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
-         
-            sp->timer.Restart();
+
+            sp.timer.Restart();
             Timer t;
-            mfxStatus status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, &sp->syncPoint);
+            mfxStatus status;
+            if (syncp) {
+                status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, &sp.syncPoint);
+            }
+            else {
+                status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, NULL);
+            }
             std::string elapsed = TimeToString(t.GetTime());
 
-            *syncp = (mfxSyncPoint)sp;
-         
+            if (syncp) {
+                if (!sp.syncPoint) {
+                    *syncp=NULL;
+                }
+                else {
+                    *syncp = (mfxSyncPoint)sp.syncPoint;
+                }
+            }
+
             Log::WriteLog(">> MFXVideoVPP_RunFrameVPPAsyncEx called");
             Log::WriteLog(context.dump("session", session));
             if(in) Log::WriteLog(context.dump("in", *in));
             if(work) Log::WriteLog(context.dump("work", *work));
             if (out && (*out))
                 Log::WriteLog(context.dump("out", **out));
-            Log::WriteLog(context.dump("syncp", sp->syncPoint));
+            Log::WriteLog(context.dump("syncp", sp.syncPoint));
             Log::WriteLog("function: MFXVideoVPP_RunFrameVPPAsyncEx(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
-            
+
             return status;
         }
         else //call without logging
         {
             DumpContext context;
             context.context = DUMPCONTEXT_VPP;
-            TracerSyncPoint * sp = new TracerSyncPoint();
-            sp->syncPoint = (*syncp);
-            sp->component = VPP;
-            
+            TracerSyncPoint sp;
+            if (syncp) {
+                sp.syncPoint = (*syncp);
+            }
+            else {
+                sp.syncPoint = NULL;
+            }
+            sp.component = VPP;
+
             mfxLoader *loader = (mfxLoader*) session;
 
             if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -365,11 +454,24 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
             if (!proc) return MFX_ERR_INVALID_HANDLE;
 
             session = loader->session;
-            
-            mfxStatus status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, &sp->syncPoint);
-            
-            *syncp = (mfxSyncPoint)sp;
-                     
+
+            mfxStatus status;
+            if (syncp) {
+                status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, &sp.syncPoint);
+            }
+            else {
+                status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, NULL);
+            }
+
+            if (syncp) {
+                if (!sp.syncPoint) {
+                    *syncp=NULL;
+                }
+                else {
+                    *syncp = (mfxSyncPoint)sp.syncPoint;
+                }
+            }
+
             return status;
         }
     }

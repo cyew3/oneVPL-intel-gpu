@@ -1,3 +1,33 @@
+/* ****************************************************************************** *\
+
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+- Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+File Name: mfx_video_encode.cpp
+
+\* ****************************************************************************** */
+
 #include <exception>
 #include <iostream>
 
@@ -240,9 +270,14 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
         {
             DumpContext context;
             context.context = DUMPCONTEXT_MFX;
-            TracerSyncPoint * sp = new TracerSyncPoint();
-            sp->syncPoint = (*syncp);
-            sp->component = ENCODE;
+            TracerSyncPoint sp;
+            if (syncp) {
+                sp.syncPoint = (*syncp);
+            }
+            else {
+                sp.syncPoint = NULL;
+            }
+            sp.component = ENCODE;
             Log::WriteLog("function: MFXVideoENCODE_EncodeFrameAsync(mfxSession session=" + ToString(session) + ", mfxEncodeCtrl *ctrl=" + ToString(ctrl) + ", mfxFrameSurface1 *surface=" + ToString(surface) + ", mfxBitstream *bs=" + ToString(bs) + ", mfxSyncPoint *syncp=" + ToString(syncp) + ") +");
             mfxLoader *loader = (mfxLoader*) session;
 
@@ -257,35 +292,49 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
             if(surface) Log::WriteLog(context.dump("surface", *surface));
             if(bs) Log::WriteLog(context.dump("bs", *bs));
             if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
-        
-            sp->timer.Restart();
+
+            sp.timer.Restart();
             Timer t;
-            mfxStatus status = (*(fMFXVideoENCODE_EncodeFrameAsync) proc) (session, ctrl, surface, bs, &sp->syncPoint);
+            mfxStatus status;
+            if(syncp) {
+                status = (*(fMFXVideoENCODE_EncodeFrameAsync) proc) (session, ctrl, surface, bs, &sp.syncPoint);
+            }
+            else {
+                status = (*(fMFXVideoENCODE_EncodeFrameAsync) proc) (session, ctrl, surface, bs, NULL);
+            }
             std::string elapsed = TimeToString(t.GetTime());
 
-            *syncp = (mfxSyncPoint)sp;
-            if (!sp->syncPoint) {
-                delete sp;
-                *syncp=NULL;
+            if (syncp) {
+                if (!sp.syncPoint) {
+                    *syncp=NULL;
+                }
+                else {
+                    *syncp = (mfxSyncPoint)sp.syncPoint;
+                }
             }
-        
+
             Log::WriteLog(">> MFXVideoENCODE_EncodeFrameAsync called");
             Log::WriteLog(context.dump("session", session));
             if(ctrl) Log::WriteLog(context.dump("ctrl", *ctrl));
             if(surface) Log::WriteLog(context.dump("surface", *surface));
             if(bs) Log::WriteLog(context.dump("bs", *bs));
-            Log::WriteLog(context.dump("syncp", sp->syncPoint));
+            Log::WriteLog(context.dump("syncp", sp.syncPoint));
             Log::WriteLog("function: MFXVideoENCODE_EncodeFrameAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
-            
+
             return status;
         }
         else // call without loging
         {
             DumpContext context;
             context.context = DUMPCONTEXT_MFX;
-            TracerSyncPoint * sp = new TracerSyncPoint();
-            sp->syncPoint = (*syncp);
-            sp->component = ENCODE;
+            TracerSyncPoint sp;
+            if (syncp) {
+                sp.syncPoint = (*syncp);
+            }
+            else {
+                sp.syncPoint = NULL;
+            }
+            sp.component = ENCODE;
             mfxLoader *loader = (mfxLoader*) session;
 
             if (!loader) return MFX_ERR_INVALID_HANDLE;
@@ -294,15 +343,24 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
             if (!proc) return MFX_ERR_INVALID_HANDLE;
 
             session = loader->session;
-            
-            mfxStatus status = (*(fMFXVideoENCODE_EncodeFrameAsync) proc) (session, ctrl, surface, bs, &sp->syncPoint);
-            
-            *syncp = (mfxSyncPoint)sp;
-            if (!sp->syncPoint) {
-                delete sp;
-                *syncp=NULL;
+
+            mfxStatus status;
+            if(syncp) {
+                status = (*(fMFXVideoENCODE_EncodeFrameAsync) proc) (session, ctrl, surface, bs, &sp.syncPoint);
             }
-                    
+            else {
+                status = (*(fMFXVideoENCODE_EncodeFrameAsync) proc) (session, ctrl, surface, bs, NULL);
+            }
+
+            if (syncp) {
+                if (!sp.syncPoint) {
+                    *syncp=NULL;
+                }
+                else {
+                    *syncp = (mfxSyncPoint)sp.syncPoint;
+                }
+            }
+
             return status;
         }
     }
