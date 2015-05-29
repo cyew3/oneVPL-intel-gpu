@@ -650,7 +650,11 @@ mfxStatus CDecodingPipeline::AllocFrames()
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    if (Request.NumFrameSuggested < m_mfxVideoParams.AsyncDepth)
+    mfxIMPL impl = 0;
+    sts = m_mfxSession.QueryIMPL(&impl);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    if ((Request.NumFrameSuggested < m_mfxVideoParams.AsyncDepth) &&
+        (impl & MFX_IMPL_HARDWARE_ANY))
         return MFX_ERR_MEMORY_ALLOC;
 
     nSurfNum = MSDK_MAX(Request.NumFrameSuggested, 1);
