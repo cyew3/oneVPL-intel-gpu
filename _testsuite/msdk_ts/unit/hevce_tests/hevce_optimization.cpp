@@ -16,6 +16,24 @@ namespace utils {
 
     enum { AlignAvx2 = 32, AlignSse4 = 16, AlignMax = AlignAvx2 };
 
+    // it seems that gcc doesn't support std::align
+    // used implementation of std::align from MS STL
+    void *myalign(size_t alignment, size_t size, void *&ptr, size_t &space)
+	{
+	    size_t offset = alignment == 0 ? 0 : (size_t)((uintptr_t)ptr & (alignment - 1));
+	    if (0 < offset)
+		    offset = alignment - offset;	// number of bytes to skip
+	    if (ptr == 0 || space < offset || space - offset < size)
+		    return 0;
+	    else
+		{	// enough room, update
+		    char *ans = (char *)ptr + offset;
+		    ptr = (void *)(ans + size);
+		    space -= offset + size;
+		    return ((void *)ans);
+		}
+	}
+
     void *AlignedMalloc(size_t size, size_t align)
     {
         align = std::max(align, sizeof(void *));
@@ -25,7 +43,7 @@ namespace utils {
             throw std::bad_alloc();
         size_t space = allocsize - sizeof(void *);
         void *alignedPtr = (char *)ptr + sizeof(void *);
-        alignedPtr = std::align(align, size, alignedPtr, space);
+        alignedPtr = myalign(align, size, alignedPtr, space);
         if (alignedPtr == nullptr) {
             free(ptr);
             throw std::bad_alloc();
