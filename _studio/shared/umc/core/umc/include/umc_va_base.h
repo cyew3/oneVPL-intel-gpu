@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006 - 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006 - 2015 Intel Corporation. All Rights Reserved.
 */
 
 #ifndef __UMC_VA_BASE_H__
@@ -300,10 +300,10 @@ public:
         m_HWPlatform(VA_HW_UNKNOWN),
         m_protectedVA(0),
         m_videoProcessingVA(0),
+        m_allocator(0),
         m_bH264ShortSlice(false),
         m_bH264MVCSupport(false),
-        m_isUseStatuReport(true),
-        m_allocator(0)
+        m_isUseStatuReport(true)
     {
     }
 

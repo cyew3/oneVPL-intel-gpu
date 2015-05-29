@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2015 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -18,7 +18,7 @@
 #include "umc_h264_segment_decoder_dxva.h"
 #include "umc_h264_task_supplier.h"
 #include "mfx_trace.h"
-
+#include "mfxstructures.h"
 #ifdef UMC_VA_DXVA
 #include "umc_va_dxva2_protected.h"
 #endif
@@ -349,10 +349,14 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
         if (sts != UMC_OK)
             throw h264_exception(sts);
 
-        if(VA_STATUS_ERROR_DECODING_ERROR == surfErr)
+        if(MFX_CORRUPTION_MAJOR == surfErr)
         {
             au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
         }
+        else if(MFX_CORRUPTION_MINOR == surfErr)
+        {
+            au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MINOR);
+        } 
         au->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
         CompleteFrame(au->m_pFrame);
     }

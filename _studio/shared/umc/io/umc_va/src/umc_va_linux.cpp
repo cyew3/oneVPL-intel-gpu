@@ -3,7 +3,7 @@
  *     This software is supplied under the terms of a license agreement or
  *     nondisclosure agreement with Intel Corporation and may not be copied
  *     or disclosed except in accordance with the terms of that agreement.
- *          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
+ *          Copyright(c) 2006-2015 Intel Corporation. All Rights Reserved.
  *
  */
 
@@ -11,12 +11,17 @@
 
 #ifdef UMC_VA_LINUX
 
+#if !defined(NDEBUG)
+# include <cstdio>
+#endif
+
 #include "umc_va_linux.h"
 #include "umc_va_linux_protected.h"
 #include "umc_va_video_processing.h"
 #include "vm_file.h"
 #include "mfx_trace.h"
 #include "umc_frame_allocator.h"
+#include "mfxstructures.h"
 
 #define UMC_VA_NUM_OF_COMP_BUFFERS 8
 
@@ -540,12 +545,12 @@ Status LinuxVideoAccelerator::Close(void)
     }
     if (NULL != m_dpy)
     {
-        if (-1 != m_context && !(m_pKeepVAState && *m_pKeepVAState))
+        if ((-1 != (int)m_context) && !(m_pKeepVAState && *m_pKeepVAState))
         {
             vaDestroyContext(m_dpy, m_context);
             m_context = -1;
         }
-        if (-1 != m_config_id && !(m_pKeepVAState && *m_pKeepVAState))
+        if ((-1 != (int)m_config_id) && !(m_pKeepVAState && *m_pKeepVAState))
         {
             vaDestroyConfig(m_dpy,m_config_id);
             m_config_id  = -1;
@@ -904,9 +909,9 @@ Ipp32s LinuxVideoAccelerator::GetSurfaceID(Ipp32s idx)
     return *surface;
 }
 
-VAStatus LinuxVideoAccelerator::GetDecodingError()
+Status LinuxVideoAccelerator::GetDecodingError()
 {
-    VAStatus error = VA_STATUS_SUCCESS;
+    Status error = 0;
 
 #ifndef ANDROID
     // NOTE: at the moment there is no such support for Android, so no need to execute...
@@ -932,13 +937,17 @@ VAStatus LinuxVideoAccelerator::GetDecodingError()
                 {
                     if (VADecodeMBError == pVaDecErr[i].decode_error_type)
                     {
-                        error = VA_STATUS_ERROR_DECODING_ERROR;
+                        error = MFX_CORRUPTION_MAJOR; // beh expect MAJOR, not MINOR;
+                    }
+                    else
+                    {
+                        error = MFX_CORRUPTION_MAJOR;
                     }
                 }
             }
             else
             {
-                error = VA_STATUS_ERROR_DECODING_ERROR;
+                error = MFX_CORRUPTION_MAJOR;
             }
         }
     }
@@ -1001,15 +1010,17 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
         return sts;
 
     VASurfaceStatus surface_status;
-    VAStatus va_status = vaQuerySurfaceStatus(m_dpy, *surface, &surface_status);
 
+    VAStatus va_status = vaQuerySurfaceStatus(m_dpy, *surface, &surface_status);
+    VAStatus va_sts;
     if ((VA_STATUS_SUCCESS == va_status) && (VASurfaceReady == surface_status))
     {
         // handle decoding errors
-        VAStatus va_sts = vaSyncSurface(m_dpy, *surface);
+        va_sts = vaSyncSurface(m_dpy, *surface);
+
         if ((VA_STATUS_ERROR_DECODING_ERROR == va_sts) && (NULL != error))
         {
-            *(VAStatus*)error = GetDecodingError();
+            *(Status*)error = GetDecodingError();
         }
     }
 
@@ -1019,6 +1030,7 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
     }
 
     Status umcRes = va_to_umc_res(va_status); // OK or not
+
     return umcRes;
 }
 
@@ -1040,7 +1052,8 @@ Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex, void * error)
         va_sts = vaSyncSurface(m_dpy, *surface);
         if ((VA_STATUS_ERROR_DECODING_ERROR == va_sts) && (NULL != error))
         {
-            *(VAStatus*)error = GetDecodingError();
+            *(Status*)error = GetDecodingError();
+            return UMC_OK;
         }
 
         umcRes = va_to_umc_res(va_sts);

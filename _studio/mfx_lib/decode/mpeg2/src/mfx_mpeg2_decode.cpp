@@ -3747,43 +3747,31 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface)
 #endif
 
 #ifdef UMC_VA_LINUX
-#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     UMC::VideoAccelerator *va;
     m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
 
     UMC::Status sts = UMC::UMC_OK;
-
-    int index = m_implUmc.pack_w.va_index;
-    sts = va->SyncTask(index);
-    if (sts != UMC::UMC_OK)
-        return MFX_ERR_DEVICE_FAILED;
-#else
-    UMC::VideoAccelerator *va;
-    m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
-
-    UMC::Status sts = UMC::UMC_OK;
-    VASurfaceStatus surfSts = VASurfaceSkipped;
     VAStatus        surfErr = VA_STATUS_SUCCESS;
 
     int index = m_implUmc.pack_w.va_index;
+
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+
+    sts = va->SyncTask(index, &surfErr);
+    if (sts != UMC::UMC_OK)
+        return MFX_ERR_DEVICE_FAILED;
+#else
+    VASurfaceStatus surfSts = VASurfaceSkipped;
+
     sts = va->QueryTaskStatus(index, &surfSts, &surfErr);
     if (sts != UMC::UMC_OK)
         return MFX_ERR_DEVICE_FAILED;
-/*
-    switch (surfSts)
-    {
-        case VASurfaceReady:
-            for (i = 0; i < DPB; i++)
-                if(mid[i] >= 0)
-            break;
-        case VASurfaceRendering:
-            break;
-        default:
-            break;
-    }
-*/
+
 #endif // #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-#endif
+
+    displaySurface->Data.Corrupted = surfErr;
+
+#endif // UMC_VA_LINUX
 
     return MFX_ERR_NONE;
 }
