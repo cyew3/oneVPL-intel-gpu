@@ -180,7 +180,7 @@ mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfx
                 sp.syncPoint = syncp;
 
                 Log::WriteLog("function: MFXVideoCORE_SyncOperation(mfxSession session=" + ToString(session) + ", mfxSyncPoint syncp=" + ToString(syncp) + ", mfxU32 wait=" + ToString(wait) + ") +");
-                sp.component == ENCODE ? Log::WriteLog("SyncOperation(ENCODE," + TimeToString(sp.timer.GetTime()) + ")") : (sp.component == DECODE ? Log::WriteLog("SyncOperation(DECODE, " + ToString(sp.timer.GetTime()) + " sec)") : Log::WriteLog("SyncOperation(VPP, "  + ToString(sp.timer.GetTime()) + " sec)"));
+                //sp.component == ENCODE ? Log::WriteLog("SyncOperation(ENCODE," + TimeToString(sp.timer.GetTime()) + ")") : (sp.component == DECODE ? Log::WriteLog("SyncOperation(DECODE, " + ToString(sp.timer.GetTime()) + " sec)") : Log::WriteLog("SyncOperation(VPP, "  + ToString(sp.timer.GetTime()) + " sec)"));
             }
             else {
                 // already synced

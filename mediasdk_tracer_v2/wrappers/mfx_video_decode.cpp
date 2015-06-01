@@ -431,7 +431,14 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
             DumpContext context;
             context.context = DUMPCONTEXT_MFX;
             TracerSyncPoint sp;
-            sp.syncPoint = (*syncp);
+            if (syncp)
+            {
+                sp.syncPoint = (*syncp);
+            }
+            else
+            {
+                sp.syncPoint = NULL;
+            }
             sp.component = DECODE;
 
             mfxLoader *loader = (mfxLoader*) session;
