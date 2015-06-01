@@ -1425,6 +1425,8 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
             return MFX_WRN_PARTIAL_ACCELERATION;
         break;
     case MFX_CODEC_JPEG:
+        if (par->mfx.FrameInfo.Width > 8192 || par->mfx.FrameInfo.Height > 8192)
+            return MFX_WRN_PARTIAL_ACCELERATION;
         break;
     case MFX_CODEC_VP8:
         if (m_HWType < MFX_HW_CHV)
@@ -1442,7 +1444,7 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
     }
     else
     {
-        if (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096)
+        if (MFX_CODEC_JPEG != par->mfx.CodecId && (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096))
             return MFX_WRN_PARTIAL_ACCELERATION;
     }
 
