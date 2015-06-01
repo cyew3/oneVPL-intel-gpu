@@ -32,8 +32,6 @@ mfxStatus CRegionEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 {
     CEncodingPipeline::InitMfxEncParams(pInParams);
     m_mfxEncParams.mfx.TargetKbps              = pInParams->nBitRate / pInParams->nNumSlice; // in Kbps
-   
-    //m_EncExtParams.push_back((mfxExtBuffer *)&m_DumpFiles);
 
     if (m_mfxEncParams.mfx.NumSlice > 1 && MFX_CODEC_HEVC == pInParams->CodecId)
     {
@@ -209,11 +207,6 @@ CRegionEncodingPipeline::CRegionEncodingPipeline() : CEncodingPipeline()
     MSDK_ZERO_MEMORY(m_HEVCRegion);
     m_HEVCRegion.Header.BufferId = MFX_EXTBUFF_HEVC_REGION;
     m_HEVCRegion.Header.BufferSz = sizeof(m_HEVCRegion);
-
-    MSDK_ZERO_MEMORY(m_DumpFiles);
-    m_DumpFiles.Header.BufferId = MFX_EXTBUFF_DUMP;
-    m_DumpFiles.Header.BufferSz = sizeof(m_DumpFiles);
-
 }
 
 CRegionEncodingPipeline::~CRegionEncodingPipeline()
@@ -372,7 +365,7 @@ void CRegionEncodingPipeline::Close()
     DeleteFrames();
 
     m_resources.CloseAndDeleteEverything();
-    
+
     m_FileReader.Close();
     FreeFileWriters();
 
@@ -404,7 +397,7 @@ mfxStatus CRegionEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
     // free allocated frames
     DeleteFrames();
 
-    for(int i = 0; i < m_resources.GetSize(); i++) 
+    for(int i = 0; i < m_resources.GetSize(); i++)
     {
         m_resources[i].TaskPool.Close();
     }
@@ -415,11 +408,7 @@ mfxStatus CRegionEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
     for (int regId = 0; regId < m_resources.GetSize(); regId++) {
         if (m_resources.GetSize() > 1)
             m_HEVCRegion.RegionId = regId;
-#if defined(_WIN32) || defined(_WIN64)
-        wsprintf(m_DumpFiles.ReconFilename, MSDK_STRING("recdump_%d.yuv"), regId);
-#else
-        sprintf(m_DumpFiles.ReconFilename, "recdump_%d.yuv", regId);
-#endif
+
         sts = m_resources[regId].pEncoder->Init(&m_mfxEncParams);
         if (MFX_WRN_PARTIAL_ACCELERATION == sts)
         {
@@ -532,7 +521,7 @@ mfxStatus CRegionEncodingPipeline::Run()
         }
 
         timeCurMax = 0;
-        for (int regId = 0; regId < m_resources.GetSize(); regId++) 
+        for (int regId = 0; regId < m_resources.GetSize(); regId++)
         {
             // get a pointer to a free task (bit stream and sync point for encoder)
             sts = m_resources[regId].TaskPool.GetFreeTask(&pCurrentTask);
@@ -586,7 +575,7 @@ mfxStatus CRegionEncodingPipeline::Run()
     while (MFX_ERR_NONE <= sts)
     {
         timeCurMax = 0;
-        for (int regId = 0; regId < m_resources.GetSize(); regId++) 
+        for (int regId = 0; regId < m_resources.GetSize(); regId++)
         {
             // get a free task (bit stream and sync point for encoder)
             sts = m_resources[regId].TaskPool.GetFreeTask(&pCurrentTask);

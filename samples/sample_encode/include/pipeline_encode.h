@@ -73,7 +73,6 @@ struct sInputParams
     bool bUseHWLib; // true if application wants to use HW MSDK library
 
     msdk_char strSrcFile[MSDK_MAX_FILENAME_LEN];
-    msdk_char recDumpFile[MSDK_MAX_FILENAME_LEN];
 
     sPluginParams pluginParams;
 

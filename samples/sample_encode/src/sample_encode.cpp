@@ -26,8 +26,6 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
     } \
 }
 
-void RecDump(const sInputParams& Params);
-
 void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 {
     msdk_printf(MSDK_STRING("Encoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
@@ -76,7 +74,6 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("                              If num_slice equals zero, the encoder may choose any slice partitioning allowed by the codec standard.\n"));
     msdk_printf(MSDK_STRING("   [-mss]                   - maximum slice size in bytes. Supported only with -hw and h264 codec. This option is not compatible with -num_slice option.\n"));
     msdk_printf(MSDK_STRING("   [-re]                    - enable region encode mode.\n"));
-    msdk_printf(MSDK_STRING("   [-d]                     - record dump file name.\n"));
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
@@ -384,14 +381,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                     msdk_printf(MSDK_STRING("error: option '-i' expects an argument\n"));
                 }
                 break;
-            case MSDK_CHAR('d'):
-                if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], pParams->recDumpFile);
-                }
-                else {
-                    msdk_printf(MSDK_STRING("error: option '-d' expects an argument\n"));
-                }
-                break;
             case MSDK_CHAR('o'):
                 if (++i < nArgNum) {
                     pParams->dstFileBuff.push_back(strInput[i]);
@@ -676,77 +665,7 @@ int main(int argc, char *argv[])
 
     pPipeline->Close();
 
-
-    //if(Params.UseRegionEncode)
-    //{
-    //    RecDump(Params);
-    //}
-
     msdk_printf(MSDK_STRING("\nProcessing finished\n"));
 
     return 0;
-}
-
-void RecDump(const sInputParams& Params)
-{
-    #if defined(_WIN32) || defined(_WIN64)
-    FILE *recDump = _wfopen(Params.recDumpFile, MSDK_STRING("wb"));
-#else
-    FILE *recDump = fopen(Params.recDumpFile, "wb");
-#endif
-    FILE **recDumps = new FILE*[Params.nNumSlice];
-    int *start = new int[Params.nNumSlice];
-    int *len = new int[Params.nNumSlice];
-
-    int Log2MaxCUSize = Params.nTargetUsage <= 2 ? 6 : 5;
-    int MaxCUSize = 1 << Log2MaxCUSize;
-    int PicHeightInCtbs = (Params.nHeight + MaxCUSize - 1) / MaxCUSize;
-
-    int sliceRowStart = 0;
-    for (int regId = 0; regId < Params.nNumSlice; regId++) {
-        int sliceHeight = ((regId + 1) * PicHeightInCtbs) / Params.nNumSlice -
-        (regId * PicHeightInCtbs / Params.nNumSlice);
-
-        start[regId] = (sliceRowStart << Log2MaxCUSize);
-        len[regId] = (sliceHeight << Log2MaxCUSize);
-        if (start[regId] + len[regId] >= Params.nHeight)
-            len[regId] = Params.nHeight - start[regId];
-        start[regId] *= Params.nWidth;
-        len[regId] *= Params.nWidth;
-
-        sliceRowStart += sliceHeight;
-
-        char filename[50];
-        sprintf(filename, "recdump_%d.yuv", regId);
-        recDumps[regId] = fopen(filename,"rb");
-    }
-    int framelen = Params.nWidth * Params.nHeight;
-    mfxU8 *buf = new mfxU8[framelen];
-
-    int exitFlag = 0;
-    do {
-        for (int cc = 0; cc < 3; cc++) {
-            for (int regId = 0; regId < Params.nNumSlice; regId++) {
-#define ccdiv ((cc > 0) ? 4 : 1)
-                if (fread(buf, 1, framelen / ccdiv, recDumps[regId]) == 0) {
-                    exitFlag = 1;
-                    break;
-                }
-                fwrite(buf+start[regId] / ccdiv,1,len[regId] / ccdiv,recDump);
-            }
-        }
-    } while (!exitFlag);
-
-    fclose(recDump);
-    for (int regId = 0; regId < Params.nNumSlice; regId++) {
-        char filename[50];
-        sprintf(filename, "recdump_%d.yuv", regId);
-        fclose(recDumps[regId]);
-        remove(filename);
-    }
-
-    delete[] recDumps;
-    delete[] buf;
-    delete[] start;
-    delete[] len;
 }

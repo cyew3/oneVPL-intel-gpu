@@ -15,23 +15,6 @@
 
 #include "pipeline_encode.h"
 
-#define MFX_EXTBUFF_DUMP MFX_MAKEFOURCC('D','U','M','P')
-enum
-{
-    MFX_MAX_PATH                = 260
-};
-
-typedef struct {
-    mfxExtBuffer Header;
-
-    msdk_char MBFilename[MFX_MAX_PATH];
-    mfxU32  MBFileOperation;
-
-    msdk_char ReconFilename[MFX_MAX_PATH];
-    msdk_char InputFramesFilename[MFX_MAX_PATH];
-
-} mfxExtDumpFiles;
-
 class CMSDKResource
 {
 public:
@@ -60,9 +43,9 @@ public:
     {
         delete[] m_resources;
     }
-    
+
     CMSDKResource& operator[](int index){return m_resources[index];}
-    
+
     int GetSize(){return size;}
 
     mfxStatus Init(int size,mfxIMPL impl, mfxVersion *pVer)
@@ -70,7 +53,7 @@ public:
         MSDK_CHECK_NOT_EQUAL(m_resources, NULL , MFX_ERR_INVALID_HANDLE);
         this->size=size;
         m_resources = new CMSDKResource[size];
-        for (int i = 0; i < size; i++) 
+        for (int i = 0; i < size; i++)
         {
             mfxStatus sts = m_resources[i].Session.Init(impl, pVer);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -80,7 +63,7 @@ public:
 
     mfxStatus InitTaskPools(CSmplBitstreamWriter* pWriter, mfxU32 nPoolSize, mfxU32 nBufferSize, CSmplBitstreamWriter *pOtherWriter = NULL)
     {
-        for (int i = 0; i < size; i++) 
+        for (int i = 0; i < size; i++)
         {
             mfxStatus sts = m_resources[i].TaskPool.Init(&m_resources[i].Session,pWriter,nPoolSize,nBufferSize,pOtherWriter);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -90,7 +73,7 @@ public:
 
     mfxStatus CreateEncoders()
     {
-        for (int i = 0; i < size; i++) 
+        for (int i = 0; i < size; i++)
         {
             MFXVideoENCODE* pEnc = new MFXVideoENCODE(m_resources[i].Session);
             MSDK_CHECK_POINTER(pEnc, MFX_ERR_MEMORY_ALLOC);
@@ -101,20 +84,20 @@ public:
 
     mfxStatus CreatePlugins(mfxPluginUID pluginGUID, mfxChar* pluginPath)
     {
-        for (int i = 0; i < size; i++) 
+        for (int i = 0; i < size; i++)
         {
             MFXPlugin* pPlugin = LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_resources[i].Session, pluginGUID, 1, pluginPath, pluginPath? (mfxU32)strlen(pluginPath) : 0);
-            if (pPlugin == NULL) 
+            if (pPlugin == NULL)
             {
                 return MFX_ERR_UNSUPPORTED;
-            }  
+            }
             m_resources[i].pPlugin=pPlugin;
         }
         return MFX_ERR_NONE;
     }
 
     void CloseAndDeleteEverything()
-    {    
+    {
         for(int i = 0; i < size; i++)
         {
             m_resources[i].TaskPool.Close();
@@ -123,7 +106,7 @@ public:
             m_resources[i].Session.Close();
         }
     }
-    
+
 
 protected:
     CMSDKResource* m_resources;
@@ -153,15 +136,12 @@ protected:
 
     mfxExtHEVCRegion m_HEVCRegion;
 
-    // for dump recon
-    mfxExtDumpFiles m_DumpFiles;
-
     virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
 
     virtual mfxStatus CreateAllocator();
 
     virtual mfxStatus GetFreeTask(sTask **ppTask, int index);
-    
+
     virtual MFXVideoSession& GetFirstSession(){return m_resources[0].Session;}
     virtual MFXVideoENCODE* GetFirstEncoder(){return m_resources[0].pEncoder;}
 };
