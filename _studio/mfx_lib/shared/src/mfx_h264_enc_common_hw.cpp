@@ -787,7 +787,10 @@ namespace
         if (platform == MFX_HW_IVB || platform == MFX_HW_VLV)
             return 1;
         else if (platform == MFX_HW_SOFIA)
-            return 1; // current SoFIA 3G HW supports 1 active ref only. TODO: switch to 2 refs when LTE HW will arrive
+        {
+            mfxU16 const DEFAULT_BY_TU[] = { 0, 2, 2, 2, 2, 2, 1, 1 };
+            return DEFAULT_BY_TU[targetUsage];
+        }
         else if (!isLowPower)
         {
             mfxU16 const DEFAULT_BY_TU[] = { 0, 8, 6, 4, 3, 2, 1, 1 };
