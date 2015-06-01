@@ -37,6 +37,7 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 #include "mfxvideo++.h"
 
 #include "plugin_loader.h"
+#include "general_allocator.h"
 
 enum MemType {
     SYSTEM_MEMORY = 0x00,
@@ -68,6 +69,7 @@ struct sInputParams
     mfxU32  nWallTimeout; //timeout for -wall option
     mfxU32  numViews; // number of views for Multi-View Codec
     mfxU32  nRotation; // rotation for Motion JPEG Codec
+    mfxU32  outFourcc; // color format of VPP output
     mfxU16  nAsyncDepth; // asyncronous queue
     mfxU16  gpuCopy; // GPU Copy mode (three-state option)
     mfxU16  nThreadsNum;
@@ -154,6 +156,9 @@ protected: // functions
 
     virtual void AttachExtParam();
 
+    virtual mfxStatus InitVppParams();
+    virtual mfxStatus AllocAndInitVppDoNotUse();
+
     virtual mfxStatus CreateAllocator();
     virtual mfxStatus CreateHWDevice();
     virtual mfxStatus AllocFrames();
@@ -175,7 +180,6 @@ protected: // functions
 
     static unsigned int MFX_STDCALL DeliverThreadFunc(void* ctx);
 
-
 protected: // variables
     CSmplYUVWriter          m_FileWriter;
     std::auto_ptr<CSmplBitstreamReader>  m_FileReader;
@@ -183,18 +187,23 @@ protected: // variables
 
     MFXVideoSession         m_mfxSession;
     MFXVideoDECODE*         m_pmfxDEC;
+    MFXVideoVPP*            m_pmfxVPP;
     mfxVideoParam           m_mfxVideoParams;
+    mfxVideoParam           m_mfxVppVideoParams;
     std::auto_ptr<MFXVideoUSER>  m_pUserModule;
     std::auto_ptr<MFXPlugin> m_pPlugin;
     std::vector<mfxExtBuffer *> m_ExtBuffers;
 
-    MFXFrameAllocator*      m_pMFXAllocator;
+    GeneralAllocator*       m_pGeneralAllocator;
     mfxAllocatorParams*     m_pmfxAllocatorParams;
     MemType                 m_memType;      // memory type of surfaces to use
     bool                    m_bExternalAlloc; // use memory allocator as external for Media SDK
+    bool                    m_bDecOutSysmem; // use system memory between Decoder and VPP, if false - video memory
     mfxFrameAllocResponse   m_mfxResponse; // memory allocation response for decoder
+    mfxFrameAllocResponse   m_mfxVppResponse;   // memory allocation response for vpp
 
     msdkFrameSurface*       m_pCurrentFreeSurface; // surface detached from free surfaces array
+    msdkFrameSurface*       m_pCurrentFreeVppSurface; // VPP surface detached from free VPP surfaces array
     msdkOutputSurface*      m_pCurrentFreeOutputSurface; // surface detached from free output surfaces array
     msdkOutputSurface*      m_pCurrentOutputSurface; // surface detached from output surfaces array
 
@@ -208,13 +217,18 @@ protected: // variables
     bool                    m_bIsExtBuffers; // indicates if external buffers were allocated
     bool                    m_bIsVideoWall; // indicates special mode: decoding will be done in a loop
     bool                    m_bIsCompleteFrame;
+    mfxU32                  m_fourcc; // color format of vpp out, i420 by default
     bool                    m_bPrintLatency;
 
     mfxU32                  m_nTimeout; // enables timeout for video playback, measured in seconds
     mfxU32                  m_nMaxFps; // limit of fps, if isn't specified equal 0.
     mfxU32                  m_nFrames; //limit number of output frames
 
+    bool                    m_bVppIsUsed;
     std::vector<msdk_tick>  m_vLatency;
+
+    mfxExtVPPDoNotUse       m_VppDoNotUse;      // for disabling VPP algorithms
+    mfxExtBuffer*           m_VppExtParams[2];
 
     CHWDevice               *m_hwdev;
 #if D3D_SURFACES_SUPPORT
