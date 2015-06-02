@@ -802,7 +802,7 @@ namespace {
             mfx.NumSlice = 1, wrnIncompatible = true;
 
         if (picHeight && mfx.NumSlice) // NumSlice < CTB lines for min possible CTBSize
-            wrnIncompatible = !CheckMaxSat(mfx.NumSlice, (picHeight + 31) >> 5);
+            wrnIncompatible = !CheckMaxSat(mfx.NumSlice, (picHeight + 63) >> 6);
 
         if (picHeight && mfx.NumSlice && optHevc && optHevc->Log2MaxCUSize) // NumSlice < CTB lines for given CTBSize
             wrnIncompatible = !CheckMaxSat(mfx.NumSlice, (picHeight + (1 << optHevc->Log2MaxCUSize) - 1) >> optHevc->Log2MaxCUSize);

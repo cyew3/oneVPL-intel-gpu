@@ -549,7 +549,7 @@ struct ThreadingTask
     int numDownstreamDependencies;
     ThreadingTask *downstreamDependencies[MAX_NUM_DEPENDENCIES];
 
-    volatile int finished;
+    volatile Ipp32u finished;
     // very useful for debug
 #ifdef DEBUG_NTM
     ThreadingTask *upstreamDependencies[MAX_NUM_DEPENDENCIES];
@@ -704,7 +704,7 @@ namespace MfxEnumShortAliases {
         const Ipp32s MAX_NUM_TILE_ROWS      = 22;
         const Ipp32s MIN_TILE_WIDTH         = 256;
         const Ipp32s MIN_TILE_HEIGHT        = 64;
-        const Ipp32s MAX_NUM_SLICE          = (MAX_HEIGHT + 31) >> 5;
+        const Ipp32s MAX_NUM_SLICE          = (MAX_HEIGHT + 63) >> 6;
         const Ipp32s SUP_GOP_OPT_FLAG[]     = { MFX_GOP_CLOSED, MFX_GOP_STRICT, MFX_GOP_CLOSED|MFX_GOP_STRICT };
         const Ipp32s SUP_PROFILE[]          = { MAIN, MAIN10, REXT };
         const Ipp32s SUP_LEVEL[]            = { M10, M20, M21, M30, M31, M40, M41, M50, M51, M52, M60, M61, M62, H40, H41, H50, H51, H52, H60, H61, H62 };

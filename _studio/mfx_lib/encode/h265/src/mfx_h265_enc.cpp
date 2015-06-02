@@ -1906,14 +1906,14 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 
 
 //inline 
-void H265Enc::AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstream)
+void H265Enc::AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstream, ObjectPool<ThreadingTask> *ttHubPool)
 {
     // if dep num exceeded
-    assert(upstream->numDownstreamDependencies < MAX_NUM_DEPENDENCIES);
     assert(upstream->finished == 0);
     assert(downstream->finished == 0);
 
 #ifdef DEBUG_NTM
+    char after_all_changes_need_to_rethink_this_part[-1];
     // if dep num exceeded
     assert(downstream->numUpstreamDependencies < MAX_NUM_DEPENDENCIES);
     // if try to add dependency on already finished task
@@ -1921,8 +1921,19 @@ void H265Enc::AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstre
     downstream->upstreamDependencies[downstream->numUpstreamDependencies] = upstream;
 #endif
 
-    downstream->numUpstreamDependencies ++;
-    upstream->downstreamDependencies[upstream->numDownstreamDependencies++] = downstream;
+    if (ttHubPool && upstream->numDownstreamDependencies == MAX_NUM_DEPENDENCIES) {
+        assert(MAX_NUM_DEPENDENCIES > 1);
+        ThreadingTask *hub = ttHubPool->Allocate();
+        Copy(hub->downstreamDependencies, upstream->downstreamDependencies);
+        hub->numDownstreamDependencies = upstream->numDownstreamDependencies;
+        upstream->numDownstreamDependencies = 0;
+        AddTaskDependency(hub, upstream, NULL);
+        AddTaskDependency(downstream, upstream, NULL);
+    } else {
+        assert(upstream->numDownstreamDependencies < MAX_NUM_DEPENDENCIES);
+        downstream->numUpstreamDependencies++;
+        upstream->downstreamDependencies[upstream->numDownstreamDependencies++] = downstream;
+    }
 }
 
 // no thread safe !!!
@@ -2037,12 +2048,12 @@ void H265FrameEncoder::SetEncodeFrame(Frame* frame, std::deque<ThreadingTask *> 
 
             if (ctb_col == regionCtbColFirst && ctb_row == regionCtbRowFirst) {
                 if (!frame->m_ttInitNewFrame.finished)
-                    AddTaskDependency(task_enc, &frame->m_ttInitNewFrame); // ENCODE_CTU(0,0) <- INIT_NEW_FRAME
+                    AddTaskDependency(task_enc, &frame->m_ttInitNewFrame, &m_topEnc.m_ttHubPool); // ENCODE_CTU(0,0) <- INIT_NEW_FRAME
                 if (m_videoParam.enableCmFlag) {
                     if (frame->m_slices[0].sliceIntraAngMode == INTRA_ANG_MODE_GRADIENT)
-                        AddTaskDependency(task_enc, &frame->m_ttWaitGpuIntra); // ENCODE_CTU(0,0) <- GPU_INTRA
+                        AddTaskDependency(task_enc, &frame->m_ttWaitGpuIntra, &m_topEnc.m_ttHubPool); // ENCODE_CTU(0,0) <- GPU_INTRA
                     for (Ipp32s i = 0; i < frame->m_numRefUnique; i++)
-                        AddTaskDependency(task_enc, &frame->m_ttWaitGpuMe[i]); // ENCODE_CTU(0,0) <- GPU_ME(allrefs)
+                        AddTaskDependency(task_enc, &frame->m_ttWaitGpuMe[i], &m_topEnc.m_ttHubPool); // ENCODE_CTU(0,0) <- GPU_ME(allrefs)
                 }
                 if (task_enc->numUpstreamDependencies == 0) {
                     vm_mutex_lock(&m_topEnc.m_critSect);

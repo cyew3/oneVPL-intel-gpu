@@ -1817,7 +1817,7 @@ TEST_F(QueryTest, Conflicts_NumRefFrameB_gt_NumRefFrame) {
 }
 
 TEST_F(QueryTest, Conflicts_multi_slice_and_multi_tile_at_once) {
-    Ipp32u ok[][3] = { {1, 1, 1}, {1, 1, 2}, {1, 2, 1}, {1, 4, 8}, {1, 22, 20}, {2, 1, 1}, {4, 1, 1}, {100, 1, 1} };
+    Ipp32u ok[][3] = { {1, 1, 1}, {1, 1, 2}, {1, 2, 1}, {1, 4, 8}, {1, 22, 20}, {2, 1, 1}, {4, 1, 1}, {68, 1, 1} };
     for (auto p: ok) {
         input.videoParam.mfx.NumSlice = p[0];
         input.extHevcTiles.NumTileRows = p[1];
@@ -1846,8 +1846,8 @@ TEST_F(QueryTest, Conflicts_multi_slice_and_multi_tile_at_once) {
 }
 
 TEST_F(QueryTest, Conflicts_NumSlice_gt_MAX_number_of_CTB_rows) {
-    Ipp32u ok[][3] = { {2160, 184, 6}, {176, 0, 6}, {2160, 248, 8}, {240, 240, 8}, {2160, 488, 16}, {480, 480, 15}, {720, 712, 23}, {720, 0, 23},
-                       {1072, 0, 34}, {1088, 1088, 34}, {1088, 1080, 34}, {2176, 2168, 68}, {2160, 2152, 68}, {4320, 4312, 135} };
+    Ipp32u ok[][3] = { {2160, 184, 3}, {176, 0, 3}, {2160, 248, 4}, {240, 240, 4}, {2160, 488, 8}, {480, 480, 8}, {720, 712, 12}, {720, 0, 12},
+                       {1072, 0, 17}, {1088, 1088, 17}, {1088, 1080, 17}, {2176, 2168, 34}, {2160, 2152, 34}, {4320, 4312, 68} };
     for (auto p: ok) {
         input.videoParam.mfx.FrameInfo.Height = p[0];
         input.extHevcParam.PicHeightInLumaSamples = p[1];
@@ -1859,7 +1859,7 @@ TEST_F(QueryTest, Conflicts_NumSlice_gt_MAX_number_of_CTB_rows) {
         EXPECT_EQ(p[0], output.videoParam.mfx.FrameInfo.Height);
         EXPECT_EQ(p[1], output.extHevcParam.PicHeightInLumaSamples);
         EXPECT_EQ(p[2], output.videoParam.mfx.NumSlice);
-        if (p[2] < 135) {
+        if (p[2] < 68) {
             input.videoParam.mfx.NumSlice = p[2]+1;
             EXPECT_EQ(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
             EXPECT_EQ(p[2]+1, input.videoParam.mfx.NumSlice);
@@ -1882,7 +1882,7 @@ TEST_F(QueryTest, Conflicts_NumSlice_gt_MAX_number_of_CTB_rows) {
 }
 
 TEST_F(QueryTest, Conflicts_NumSlice_gt_number_of_CTB_rows) {
-    Ipp32u configs[][4] = { {2160, 184, 5, 6}, {176, 176, 5, 6}, {2160, 184, 6, 3}, {176, 176, 6, 3}, {2160, 728, 5, 23}, {720, 720, 5, 23}, {2160, 712, 6, 12}, {720, 720, 6, 12} }; // Height, Log2MaxCuSize, max NumSlice
+    Ipp32u configs[][4] = { {2160, 184, 5, 3}, {176, 176, 5, 3}, {2160, 184, 6, 3}, {176, 176, 6, 3}, {2160, 728, 5, 12}, {720, 720, 5, 12}, {2160, 712, 6, 12}, {720, 720, 6, 12} }; // Height, Log2MaxCuSize, max NumSlice
     for (auto p: configs) {
         input.videoParam.mfx.FrameInfo.Height = p[0];
         input.extHevcParam.PicHeightInLumaSamples = p[1];
@@ -1915,7 +1915,7 @@ TEST_F(QueryTest, Conflicts_NumSlice_gt_number_of_CTB_rows) {
 
 TEST_F(QueryTest, Conflicts_NumSlice_too_large_for_Level) {
     Ipp32u ok[][3] = {
-        {1, 16, M10}, {1, 16, M20}, {17, 20, M21}, {21, 30, M30}, {31, 40, M31}, {41, 75, M40}, {41, 75, M41} };
+        {1, 16, M10}, {1, 16, M20}, {17, 20, M21}, {21, 30, M30}, {31, 40, M31}, {41, 68, M40}, {41, 68, M41} };
         //{76, 200, M50}, {76, 200, M51}, {76, 200, M52}, {201, 600, M60}, {201, 600, M61}, {201, 600, M62},
         //{41, 75, H40}, {41, 75, H41}, {76, 200, H50}, {76, 200, H51}, {76, 200, H52}, {201, 600, H60}, {201, 600, H61}, {201, 600, H62} };
     for (auto p: ok) {
@@ -1940,8 +1940,8 @@ TEST_F(QueryTest, Conflicts_NumSlice_too_large_for_Level) {
         EXPECT_EQ(p[2], output.videoParam.mfx.CodecLevel);
     }
     Ipp32u warning[][3] = {
-        {17, M10, M21}, {21, M10, M30}, {31, M10, M31}, {41, M10, M40}, {76, M10, M50}, {76, H40, H50} };
-        //, {201, M10, M60}, {201, H41, H60} };
+        {17, M10, M21}, {21, M10, M30}, {31, M10, M31}, {41, M10, M40} };
+        //, {76, M10, M50}, {76, H40, H50}, {201, M10, M60}, {201, H41, H60} };
     for (auto p: warning) {
         input.videoParam.mfx.NumSlice = p[0];
         input.videoParam.mfx.CodecLevel = p[1];

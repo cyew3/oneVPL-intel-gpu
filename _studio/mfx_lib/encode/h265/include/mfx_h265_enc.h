@@ -295,7 +295,7 @@ namespace H265Enc {
     void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, int qp, const Frame* currentFrame, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
     Ipp64f h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP);
     void ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBrc = 0);
-    void AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstream);
+    void AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstream, ObjectPool<ThreadingTask> *ttHubPool = NULL);
 
     class H265BsReal;
     void PutSPS(H265BsReal *bs, const H265SeqParameterSet &sps, const H265ProfileLevelSet &profileLevel);

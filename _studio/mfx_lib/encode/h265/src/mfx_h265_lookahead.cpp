@@ -2257,7 +2257,7 @@ void Lookahead::AnalyzeComplexity(Frame* input)
         // hack for BRC
         if (in->m_stats[0]) {
             in->m_stats[0]->m_avgBestSatd = stat->m_avgBestSatd;
-			in->m_stats[0]->m_avgIntraSatd = stat->m_avgIntraSatd;
+            in->m_stats[0]->m_avgIntraSatd = stat->m_avgIntraSatd;
         }
         if (in->m_stats[1]) {
             in->m_stats[1]->m_avgBestSatd = stat->m_avgBestSatd;
@@ -2275,7 +2275,7 @@ void Lookahead::AnalyzeComplexity(Frame* input)
             } else {
                 in->m_stats[1]->m_avgBestSatd /= tabCorrFactor[useLowres];
                 in->m_stats[1]->m_avgIntraSatd /= tabCorrFactor[useLowres];
-		    }
+            }
         }
         /*{
             Frame* frames[1] = {in->m_origin};
@@ -2537,6 +2537,9 @@ Lookahead::Lookahead(H265Encoder & enc)
 
     }
     m_cmplxPrevFrame = NULL;
+
+    // to prevent multiple PREENC_START per frame
+    m_lastAcceptedFrame = NULL;
 
     // buffer for IPP downscale
     if (m_videoParam.LowresFactor || m_scdConfig.scaleFactor) {
@@ -2830,6 +2833,11 @@ mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u 
     switch (action) {
     case TT_PREENC_START:
         {
+            // do this stage only once per frame
+            if ((m_lastAcceptedFrame && in) && (m_lastAcceptedFrame->m_frameOrder == in->m_frameOrder)) {
+                break;
+            }
+
             if (in && (m_videoParam.LowresFactor || m_videoParam.SceneCut)) {
                 if (in->m_bitDepthLuma == 8)
                     Scale<Ipp8u>(in->m_origin, in->m_lowres, 0, &m_workBuf[0]);
@@ -2848,6 +2856,9 @@ mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u 
             if (m_videoParam.SceneCut) {
                 AnalyzeSceneCut_AndUpdateState(in);
             }
+
+            m_lastAcceptedFrame = in;
+
             break;
         }
 

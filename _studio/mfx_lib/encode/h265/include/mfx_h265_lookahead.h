@@ -73,6 +73,7 @@ namespace H265Enc {
 
     public:
         Frame* m_frame;
+        Frame* m_lastAcceptedFrame;
         std::vector<ThreadingTaskSpecifier> m_spec;
         std::vector<ThreadingTask> m_threadingTaskStore;
     };

@@ -339,7 +339,6 @@ namespace H265Enc {
             newFrame->Create(m_allocInfo);
             newFrame->AddRef();
             m_objects.push_back(newFrame.release());
-            //printf("\r%s: %d\n", __FUNCTION__, (int)m_objects.size());
             return *(--m_objects.end());
         }
 
@@ -347,6 +346,46 @@ namespace H265Enc {
         std::vector<T *> m_objects;
         typename T::AllocInfo m_allocInfo;
     };
+
+    // temp fix, TODO generalize later
+    template <> class ObjectPool<ThreadingTask>
+    {
+    public:
+        ObjectPool() {}
+        ~ObjectPool() { Destroy(); }
+        void Destroy() {
+            for (std::vector<ThreadingTask *>::iterator i = m_objects.begin(); i != m_objects.end(); ++i)
+                delete *i;
+            m_objects.resize(0);
+        }
+        ThreadingTask *Allocate()
+        {
+            for (std::vector<ThreadingTask *>::iterator i = m_objects.begin(); i != m_objects.end(); ++i) {
+                if (vm_interlocked_cas32(&(*i)->finished, 0, 1) == 1) {
+                    (*i)->action = TT_HUB;
+                    (*i)->finished = 0;
+                    (*i)->numDownstreamDependencies = 0;
+                    (*i)->numUpstreamDependencies = 0;
+                    return *i;
+                }
+            }
+            std::auto_ptr<ThreadingTask> newHub(new ThreadingTask());
+            newHub->action = TT_HUB;
+            newHub->finished = 0;
+            newHub->numDownstreamDependencies = 0;
+            newHub->numUpstreamDependencies = 0;
+            m_objects.push_back(newHub.release());
+            return *(--m_objects.end());
+        }
+        void ReleaseAll()
+        {
+            for (std::vector<ThreadingTask *>::iterator i = m_objects.begin(); i != m_objects.end(); ++i)
+                (*i)->finished = 1;
+        }
+    protected:
+        std::vector<ThreadingTask *> m_objects;
+    };
+
 
     template <class T> void SafeRelease(T *&obj)
     {

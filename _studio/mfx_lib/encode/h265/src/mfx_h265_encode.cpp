@@ -149,19 +149,21 @@ namespace {
         intParam.GopClosedFlag = !!(mfx.GopOptFlag & MFX_GOP_CLOSED);
         intParam.GopStrictFlag = !!(mfx.GopOptFlag & MFX_GOP_STRICT);
         intParam.BiPyramidLayers = (optHevc.BPyramid == ON) ? (H265_CeilLog2(intParam.GopRefDist) + 1) : 1;
-        intParam.longGop = (optHevc.BPyramid == ON && intParam.GopRefDist == 16 && mfx.NumRefFrame == 5);
+
+        const Ipp32s numRefFrame = MIN(4, mfx.NumRefFrame);
+        intParam.longGop = (optHevc.BPyramid == ON && intParam.GopRefDist == 16 && numRefFrame == 5);
         intParam.GeneralizedPB = (optHevc.GPB == ON);
         intParam.AdaptiveRefs = (optHevc.AdaptiveRefs == ON);
         intParam.NumRefFrameB  = optHevc.NumRefFrameB;
         if (intParam.NumRefFrameB < 2) 
-            intParam.NumRefFrameB = mfx.NumRefFrame;
+            intParam.NumRefFrameB = numRefFrame;
         
         intParam.IntraMinDepthSC = (Ipp8u)optHevc.IntraMinDepthSC - 1;
         intParam.InterMinDepthSTC = (Ipp8u)optHevc.InterMinDepthSTC - 1;
         intParam.MotionPartitionDepth = (Ipp8u)optHevc.MotionPartitionDepth - 1;
-        intParam.MaxDecPicBuffering = MAX(mfx.NumRefFrame, intParam.BiPyramidLayers);
-        intParam.MaxRefIdxP[0] = mfx.NumRefFrame;
-        intParam.MaxRefIdxP[1] = intParam.GeneralizedPB ? mfx.NumRefFrame : 0;
+        intParam.MaxDecPicBuffering = MAX(numRefFrame, intParam.BiPyramidLayers);
+        intParam.MaxRefIdxP[0] = numRefFrame;
+        intParam.MaxRefIdxP[1] = intParam.GeneralizedPB ? numRefFrame : 0;
         intParam.MaxRefIdxB[0] = 0;
         intParam.MaxRefIdxB[1] = 0;
 
@@ -171,11 +173,11 @@ namespace {
                 intParam.MaxRefIdxB[1] = 2;
             }
             else if (intParam.BiPyramidLayers > 1) {
-                Ipp16u NumRef = IPP_MIN(intParam.NumRefFrameB, mfx.NumRefFrame);
+                Ipp16u NumRef = IPP_MIN(intParam.NumRefFrameB, numRefFrame);
                 intParam.MaxRefIdxB[0] = (NumRef + 1) / 2;
                 intParam.MaxRefIdxB[1] = IPP_MAX(1, (NumRef + 0) / 2);
             } else {
-                intParam.MaxRefIdxB[0] = mfx.NumRefFrame - 1;
+                intParam.MaxRefIdxB[0] = numRefFrame - 1;
                 intParam.MaxRefIdxB[1] = 1;
             }
         }
@@ -1365,13 +1367,16 @@ mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputPar
                     vm_mutex_unlock(&m_feiCritSect);
                     while (m_feiThreadRunning) thread_sleep(0);
                     m_feiSubmitTasks.resize(0);
+                    for (std::deque<ThreadingTask *>::iterator i = m_feiWaitTasks.begin(); i != m_feiWaitTasks.end(); ++i)
+                        H265FEI_DestroySavedSyncPoint(m_fei, (*i)->syncpoint);
                     m_feiWaitTasks.resize(0);
                 }
 
                 while (m_threadingTaskRunning > 1) thread_sleep(0);
                 m_pendingTasks.resize(0);
                 m_encodeQueue.splice(m_encodeQueue.begin(), m_outputQueue);
-
+                m_ttHubPool.ReleaseAll();
+                
                 PrepareToEncode(inputParam);
 
                 if (m_videoParam.enableCmFlag) {
@@ -1664,8 +1669,9 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
             case TT_PREENC_START:
             case TT_PREENC_ROUTINE:
             case TT_PREENC_END:
-            case TT_HUB:
                 task->la->PerformThreadingTask(task->action, task->row, task->col);
+                break;
+            case TT_HUB:
                 break;
             case TT_ENCODE_CTU:
             case TT_POST_PROC_CTU:
