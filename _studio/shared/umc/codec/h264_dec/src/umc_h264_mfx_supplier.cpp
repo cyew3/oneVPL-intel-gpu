@@ -1228,6 +1228,9 @@ UMC::Status MFX_Utility::FillVideoParamMVCEx(UMC::TaskSupplier * supplier, ::mfx
         return UMC::UMC_OK;
     par->mfx.CodecProfile = seqMVC->profile_idc;
     par->mfx.CodecLevel = (mfxU16)supplier->GetLevelIDC();
+    mfxU16 maxDecPicBuffering = seqMVC->vui.bitstream_restriction_flag ? seqMVC->vui.max_dec_frame_buffering : 0;;
+    if (par->mfx.MaxDecFrameBuffering && maxDecPicBuffering)
+        par->mfx.MaxDecFrameBuffering = IPP_MAX(maxDecPicBuffering, par->mfx.MaxDecFrameBuffering);
 
     if (!points)
         return UMC::UMC_OK;

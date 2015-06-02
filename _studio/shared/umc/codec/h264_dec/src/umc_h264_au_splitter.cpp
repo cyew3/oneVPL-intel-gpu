@@ -511,43 +511,6 @@ SetOfSlices * AccessUnit::GetLayerBySlice(H264Slice * slice)
     return 0;
 }
 
-#if 0
-static bool IsNeedSPSInvalidate(const H264SeqParamSet *old_sps, const H264SeqParamSet *new_sps)
-{
-    if (!old_sps || !new_sps)
-        return false;
-
-    //if (new_sps->no_output_of_prior_pics_flag)
-      //  return true;
-
-    if (old_sps->frame_width_in_mbs != new_sps->frame_width_in_mbs)
-        return true;
-
-    if (old_sps->frame_height_in_mbs != new_sps->frame_height_in_mbs)
-        return true;
-
-    //if (old_sps->max_dec_frame_buffering != new_sps->max_dec_frame_buffering)
-      //  return true;
-
-    /*if (old_sps->frame_cropping_rect_bottom_offset != new_sps->frame_cropping_rect_bottom_offset)
-        return true;
-
-    if (old_sps->frame_cropping_rect_left_offset != new_sps->frame_cropping_rect_left_offset)
-        return true;
-
-    if (old_sps->frame_cropping_rect_right_offset != new_sps->frame_cropping_rect_right_offset)
-        return true;
-
-    if (old_sps->frame_cropping_rect_top_offset != new_sps->frame_cropping_rect_top_offset)
-        return true;
-
-    if (old_sps->aspect_ratio_idc != new_sps->aspect_ratio_idc)
-        return true; */
-
-    return false;
-}
-#endif
-
 AU_Splitter::AU_Splitter(H264_Heap_Objects *objectHeap)
     : m_Headers(objectHeap)
     , m_objHeap(objectHeap)
