@@ -804,6 +804,11 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
         //back original sleep
         if (m_hwTaskDone.handle)
             m_zero_thread_wait = 15;
+        else
+        {
+            delete m_pdx11event;
+            m_pdx11event = 0;
+        }
 
         if (m_param.flags != MFX_SINGLE_THREAD)
             StartWakeUpThread();
