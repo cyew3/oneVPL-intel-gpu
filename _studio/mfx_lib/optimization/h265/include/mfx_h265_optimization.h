@@ -603,14 +603,14 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_CopyWeighted_S16U16, void, h265_CopyWeighted_S16U16, (Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma) );
         HEVCPP_API( PTR_CopyWeightedBidi_S16U16, void, h265_CopyWeightedBidi_S16U16, (Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma) );
 
-        Ipp32s (* h265_SSE_8u) (const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp32s,Ipp32s);
-        Ipp32s (* h265_SSE_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp32s,Ipp32s);
+        Ipp32s (H265_FASTCALL * h265_SSE_8u) (const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp32s,Ipp32s);
+        Ipp32s (H265_FASTCALL * h265_SSE_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp32s,Ipp32s);
 
-        void (* h265_DiffNv12_8u) (const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp16s*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s,Ipp32s);
-        void (* h265_DiffNv12_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp16s*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s,Ipp32s);
+        void (H265_FASTCALL* h265_DiffNv12_8u) (const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp16s*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s,Ipp32s);
+        void (H265_FASTCALL* h265_DiffNv12_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp16s*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s,Ipp32s);
 
-        void (* h265_SplitChromaCtb_8u)(const Ipp8u*,Ipp32s,Ipp8u*,Ipp32s,Ipp8u*,Ipp32s,Ipp32s,Ipp32s);
-        void (* h265_SplitChromaCtb_16u)(const Ipp16u*,Ipp32s,Ipp16u*,Ipp32s,Ipp16u*,Ipp32s,Ipp32s,Ipp32s);
+        void (H265_FASTCALL* h265_SplitChromaCtb_8u)(const Ipp8u*,Ipp32s,Ipp8u*,Ipp32s,Ipp8u*,Ipp32s,Ipp32s,Ipp32s);
+        void (H265_FASTCALL* h265_SplitChromaCtb_16u)(const Ipp16u*,Ipp32s,Ipp16u*,Ipp32s,Ipp16u*,Ipp32s,Ipp32s,Ipp32s);
 
         // [SATD]
         HEVCPP_API( PTR_SATD_8u, Ipp32s, h265_SATD_4x4_8u, (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep));

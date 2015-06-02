@@ -861,7 +861,10 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegmentCABAC_Single_H265(Ipp3
                 if (end_of_row)
                 {
                     Ipp32u uVal = m_pBitStream->DecodeTerminatingBit_CABAC();
-                    VM_ASSERT(uVal);
+                    if (!uVal)
+                    {
+                        m_pSlice->m_bError = true;
+                    }
                 }
 
                 if (CUX == 1)

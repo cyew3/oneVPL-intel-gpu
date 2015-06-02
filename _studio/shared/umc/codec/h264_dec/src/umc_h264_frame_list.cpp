@@ -789,6 +789,8 @@ H264DecoderFrame *H264DBPList::findShortTermPic(Ipp32s  picNum, Ipp32s * field)
         {
             if ((pCurr->isShortTermRef() == 3) && (pCurr->PicNum(0) == picNum))
             {
+                if (field)
+                    *field = 0;
                 return pCurr;
             }
         }
@@ -826,6 +828,8 @@ H264DecoderFrame *H264DBPList::findLongTermPic(Ipp32s  picNum, Ipp32s * field)
         {
             if ((pCurr->isLongTermRef() == 3) && (pCurr->LongTermPicNum(0) == picNum))
             {
+                if (field)
+                    *field = 0;
                 return pCurr;
             }
         }
@@ -833,13 +837,15 @@ H264DecoderFrame *H264DBPList::findLongTermPic(Ipp32s  picNum, Ipp32s * field)
         {
             if (pCurr->isLongTermRef(0) && (pCurr->LongTermPicNum(0) == picNum))
             {
-                *field = 0;
+                if (field)
+                    *field = 0;
                 return pCurr;
             }
 
             if (pCurr->isLongTermRef(1) && (pCurr->LongTermPicNum(1) == picNum))
             {
-                *field = 1;
+                if (field)
+                    *field = 1;
                 return pCurr;
             }
         }

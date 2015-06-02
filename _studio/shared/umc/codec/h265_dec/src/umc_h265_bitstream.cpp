@@ -726,6 +726,10 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     {
         rps = rpsList->getReferencePictureSet(i);
         parseShortTermRefPicSet(pcSPS, rps, i);
+
+        if (((Ipp32u)rps->getNumberOfNegativePictures() > pcSPS->sps_max_dec_pic_buffering[pcSPS->sps_max_sub_layers - 1]) ||
+            ((Ipp32u)rps->getNumberOfPositivePictures() > pcSPS->sps_max_dec_pic_buffering[pcSPS->sps_max_sub_layers - 1] - (Ipp32u)rps->getNumberOfNegativePictures()))
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
     }
 
     pcSPS->long_term_ref_pics_present_flag = Get1Bit();
@@ -1300,6 +1304,18 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 ReferencePictureSet* rps = pSlice->getRPS();
                 parseShortTermRefPicSet(sps, rps, sps->getRPSList()->getNumberOfReferencePictureSets());
 
+                if (((Ipp32u)rps->getNumberOfNegativePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1]) ||
+                    ((Ipp32u)rps->getNumberOfPositivePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1] - (Ipp32u)rps->getNumberOfNegativePictures()))
+                {
+                    pSlice->m_bError = true;
+                    if (sliceHdr->slice_type != I_SLICE)
+                        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+                    rps->num_negative_pics = 0;
+                    rps->num_positive_pics = 0;
+                    rps->num_pics = 0;
+                }
+
                 sliceHdr->wNumBitsForShortTermRPSInSlice = (Ipp32s)(BitsDecoded() - bitsDecoded);
             }
             else // reference to ST ref pic set in PPS
@@ -1308,13 +1324,19 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 while ((Ipp32u)(1 << numBits) < sps->getRPSList()->getNumberOfReferencePictureSets())
                     numBits++;
 
+                sliceHdr->wNumBitsForShortTermRPSInSlice = 0;
+
                 Ipp32u short_term_ref_pic_set_idx = numBits > 0 ? GetBits(numBits) : 0;
                 if (short_term_ref_pic_set_idx >= sps->getRPSList()->getNumberOfReferencePictureSets())
-                    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-                *pSlice->getRPS() = *sps->getRPSList()->getReferencePictureSet(short_term_ref_pic_set_idx);
-
-                sliceHdr->wNumBitsForShortTermRPSInSlice = 0;
+                {
+                    pSlice->m_bError = true;
+                    if (sliceHdr->slice_type != I_SLICE)
+                        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+                }
+                else
+                {
+                    *pSlice->getRPS() = *sps->getRPSList()->getReferencePictureSet(short_term_ref_pic_set_idx);
+                }
             }
 
             if (sps->long_term_ref_pics_present_flag)
@@ -1898,8 +1920,7 @@ void H265Bitstream::parseShortTermRefPicSet(const H265SeqParamSet* sps, Referenc
         rps->num_negative_pics = GetVLCElementU();
         rps->num_positive_pics = GetVLCElementU();
 
-        if (((Ipp32u)rps->getNumberOfNegativePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1]) ||
-            ((Ipp32u)rps->getNumberOfPositivePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1] - (Ipp32u)rps->getNumberOfNegativePictures()))
+        if (rps->num_negative_pics >= MAX_NUM_REF_PICS || rps->num_positive_pics >= MAX_NUM_REF_PICS || (rps->num_positive_pics + rps->num_negative_pics) >= MAX_NUM_REF_PICS)
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         Ipp32s prev = 0;

@@ -750,425 +750,220 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
     Ipp32s picViewIdxLXPred = -1;
     H264DBPList *pDecoderFrameList = GetDPB(views, m_SliceHeader.nal_ext.mvc.view_id, dIdIndex);
 
+    Ipp32s pocForce = bIsFieldSlice ? 0 : 3;
+    
     // Reference: Reordering process for reference picture lists, 8.2.4.3
-    if (!bIsFieldSlice)
+    picNumCurr = m_pCurrentFrame->PicNum(m_pCurrentFrame->GetNumberByParity(m_SliceHeader.bottom_field_flag), pocForce);
+    picNumPred = picNumCurr;
+
+    for (i=0; i<pReorderInfo->num_entries; i++)
     {
-        picNumCurr = m_pCurrentFrame->PicNum(0,3);
-        picNumPred = picNumCurr;
-
-        for (i=0; i<pReorderInfo->num_entries; i++)
+        if (pReorderInfo->reordering_of_pic_nums_idc[i] < 2)
         {
-            if (pReorderInfo->reordering_of_pic_nums_idc[i] < 2)
+            // short-term reorder
+            if (pReorderInfo->reordering_of_pic_nums_idc[i] == 0)
             {
-                // short-term reorder
-                if (pReorderInfo->reordering_of_pic_nums_idc[i] == 0)
-                {
-                    picNumNoWrap = picNumPred - pReorderInfo->reorder_value[i];
-                    if (picNumNoWrap < 0)
-                        picNumNoWrap += MaxPicNum;
-                }
-                else
-                {
-                    picNumNoWrap = picNumPred + pReorderInfo->reorder_value[i];
-                    if (picNumNoWrap >= MaxPicNum)
-                        picNumNoWrap -= MaxPicNum;
-                }
-                picNumPred = picNumNoWrap;
-
-                picNum = picNumNoWrap;
-                if (picNum > picNumCurr)
-                    picNum -= MaxPicNum;
-
-                H264DecoderFrame* pFrame = pDecoderFrameList->findShortTermPic(picNum, 0);
-
-                for (Ipp32u k = NumRefActive; k > i; k--)
-                {
-                    pRefPicList[k] = pRefPicList[k - 1];
-                    pFields[k] = pFields[k - 1];
-                }
-
-                // Place picture with picNum on list, shifting pictures
-                // down by one while removing any duplication of picture with picNum.
-                pRefPicList[i] = pFrame;
-                pFields[i].field = 0;
-                pFields[i].isShortReference = 1;
-                Ipp32s refIdxLX = i + 1;
-
-                for(Ipp32u kk = i + 1; kk <= NumRefActive; kk++)
-                {
-                    if (pRefPicList[kk])
-                    {
-                        if (!(pRefPicList[kk]->isShortTermRef(pRefPicList[kk]->GetNumberByParity(pFields[kk].field)) &&
-                            pRefPicList[kk]->PicNum(pRefPicList[kk]->GetNumberByParity(pFields[kk].field), 1) == picNum))
-                        {
-                            pRefPicList[refIdxLX] = pRefPicList[kk];
-                            pFields[refIdxLX] = pFields[kk];
-                            refIdxLX++;
-                        }
-                    }
-                }
-            }    // short-term reorder
-            else if (2 == pReorderInfo->reordering_of_pic_nums_idc[i])
+                picNumNoWrap = picNumPred - pReorderInfo->reorder_value[i];
+                if (picNumNoWrap < 0)
+                    picNumNoWrap += MaxPicNum;
+            }
+            else
             {
-                // long term reorder
-                picNum = pReorderInfo->reorder_value[i];
+                picNumNoWrap = picNumPred + pReorderInfo->reorder_value[i];
+                if (picNumNoWrap >= MaxPicNum)
+                    picNumNoWrap -= MaxPicNum;
+            }
+            picNumPred = picNumNoWrap;
 
-                H264DecoderFrame* pFrame = pDecoderFrameList->findLongTermPic(picNum, 0);
+            picNum = picNumNoWrap;
+            if (picNum > picNumCurr)
+                picNum -= MaxPicNum;
 
-                for (Ipp32u k = NumRefActive; k > i; k--)
-                {
-                    pRefPicList[k] = pRefPicList[k - 1];
-                    pFields[k] = pFields[k - 1];
-                }
+            Ipp32s frameField;
+            H264DecoderFrame* pFrame = pDecoderFrameList->findShortTermPic(picNum, &frameField);
 
-                // Place picture with picNum on list, shifting pictures
-                // down by one while removing any duplication of picture with picNum.
-                pRefPicList[i] = pFrame;
-                pFields[i].field = 0;
-                pFields[i].isShortReference = 0;
-                Ipp32s refIdxLX = i + 1;
-
-                for(Ipp32u kk = i + 1; kk <= NumRefActive; kk++)
-                {
-                    if (pRefPicList[kk])
-                    {
-                        if (!(pRefPicList[kk]->isLongTermRef(pRefPicList[kk]->GetNumberByParity(pFields[kk].field)) &&
-                            pRefPicList[kk]->LongTermPicNum(pRefPicList[kk]->GetNumberByParity(pFields[kk].field), 1) == picNum))
-                        {
-                            pRefPicList[refIdxLX] = pRefPicList[kk];
-                            pFields[refIdxLX] = pFields[kk];
-                            refIdxLX++;
-                        }
-                    }
-                }
-            }    // long term reorder
-            // MVC reordering
-            else if ((4 == pReorderInfo->reordering_of_pic_nums_idc[i]) ||
-                     (5 == pReorderInfo->reordering_of_pic_nums_idc[i]))
+            for (Ipp32u k = NumRefActive; k > i; k--)
             {
-                Ipp32s abs_diff_view_idx = pReorderInfo->reorder_value[i];
-                Ipp32s maxViewIdx;
-                Ipp32u currVOIdx = 0, viewIdx;
-                Ipp32s targetViewID;
+                pRefPicList[k] = pRefPicList[k - 1];
+                pFields[k] = pFields[k - 1];
+            }
 
-                if (!m_pSeqParamSetMvcEx)
-                    continue;
+            // Place picture with picNum on list, shifting pictures
+            // down by one while removing any duplication of picture with picNum.
+            pRefPicList[i] = pFrame;
+            pFields[i].field = (char) (pFrame ? pFrame->m_bottom_field_flag[frameField] : 0);
+            pFields[i].isShortReference = 1;
+            Ipp32s refIdxLX = i + 1;
 
-                Ipp32u picViewIdxLX;
-                H264DecoderFrame* pFrame = NULL;
-                Ipp32s curPOC = m_pCurrentFrame->PicOrderCnt(0, 3);
-
-                // set current VO index
-                for (viewIdx = 0; viewIdx <= m_pSeqParamSetMvcEx->num_views_minus1; viewIdx += 1)
+            for(Ipp32u kk = i + 1; kk <= NumRefActive; kk++)
+            {
+                if (pRefPicList[kk])
                 {
-                    if (m_SliceHeader.nal_ext.mvc.view_id == m_pSeqParamSetMvcEx->viewInfo[viewIdx].view_id)
+                    if (!(pRefPicList[kk]->isShortTermRef(pRefPicList[kk]->GetNumberByParity(pFields[kk].field)) &&
+                        pRefPicList[kk]->PicNum(pRefPicList[kk]->GetNumberByParity(pFields[kk].field), 1) == picNum))
                     {
-                        currVOIdx = viewIdx;
-                        break;
-                    }
-                }
-
-                const H264ViewRefInfo &viewInfo = m_pSeqParamSetMvcEx->viewInfo[currVOIdx];
-
-                // get the maximum number of reference
-                if (m_SliceHeader.nal_ext.mvc.anchor_pic_flag)
-                {
-                    maxViewIdx = viewInfo.num_anchor_refs_lx[listNum];
-                }
-                else
-                {
-                    maxViewIdx = viewInfo.num_non_anchor_refs_lx[listNum];
-                }
-
-                // get the index of view reference
-                if (4 == pReorderInfo->reordering_of_pic_nums_idc[i])
-                {
-                    if (picViewIdxLXPred - abs_diff_view_idx < 0)
-                    {
-                        picViewIdxLX = picViewIdxLXPred - abs_diff_view_idx + maxViewIdx;
-                    }
-                    else
-                    {
-                        picViewIdxLX = picViewIdxLXPred - abs_diff_view_idx;
-                    }
-                }
-                else
-                {
-                    if (picViewIdxLXPred + abs_diff_view_idx >= maxViewIdx)
-                    {
-                        picViewIdxLX = picViewIdxLXPred + abs_diff_view_idx - maxViewIdx;
-                    }
-                    else
-                    {
-                        picViewIdxLX = picViewIdxLXPred + abs_diff_view_idx;
-                    }
-                }
-                picViewIdxLXPred = picViewIdxLX;
-
-                // get the target view
-                if (m_SliceHeader.nal_ext.mvc.anchor_pic_flag)
-                {
-                    targetViewID = viewInfo.anchor_refs_lx[listNum][picViewIdxLX];
-                }
-                else
-                {
-                    targetViewID = viewInfo.non_anchor_refs_lx[listNum][picViewIdxLX];
-                }
-                ViewList::iterator iter = views.begin();
-                ViewList::iterator iter_end = views.end();
-                for (; iter != iter_end; ++iter)
-                {
-                    if (targetViewID == iter->viewId)
-                    {
-                        pFrame = iter->GetDPBList(dIdIndex)->findInterViewRef(m_pCurrentFrame->m_auIndex, m_SliceHeader.bottom_field_flag);
-                        break;
-                    }
-                }
-                // corresponding frame is found
-                if (!pFrame)
-                    continue;
-
-                // make some space to insert the reference
-                for (Ipp32u k = NumRefActive; k > i; k--)
-                {
-                    pRefPicList[k] = pRefPicList[k - 1];
-                    pFields[k] = pFields[k - 1];
-                }
-
-                // Place picture with picNum on list, shifting pictures
-                // down by one while removing any duplication of picture with cuuPOC.
-                pRefPicList[i] = pFrame;
-                pFields[i].field = 0;
-                pFields[i].isShortReference = 1;
-                Ipp32u refIdxLX = i + 1;
-
-                for (Ipp32u kk = i + 1; kk <= NumRefActive; kk++)
-                {
-                    if (pRefPicList[kk])
-                    {
-                        if ((pRefPicList[kk]->m_viewId != targetViewID) ||
-                            (pRefPicList[kk]->PicOrderCnt(0, 3) != curPOC))
-                        {
-                            pRefPicList[refIdxLX] = pRefPicList[kk];
-                            pFields[refIdxLX] = pFields[kk];
-                            refIdxLX++;
-                        }
+                        pRefPicList[refIdxLX] = pRefPicList[kk];
+                        pFields[refIdxLX] = pFields[kk];
+                        refIdxLX++;
                     }
                 }
             }
-        }    // for i
-    }
-    else
-    {
-        picNumCurr = m_pCurrentFrame->PicNum(m_pCurrentFrame->GetNumberByParity(m_SliceHeader.bottom_field_flag));
-        picNumPred = picNumCurr;
-
-        for (i=0; i<pReorderInfo->num_entries; i++)
+        }    // short-term reorder
+        else if (2 == pReorderInfo->reordering_of_pic_nums_idc[i])
         {
-            if (pReorderInfo->reordering_of_pic_nums_idc[i] < 2)
+            // long term reorder
+            picNum = pReorderInfo->reorder_value[i];
+
+            Ipp32s frameField;
+            H264DecoderFrame* pFrame = pDecoderFrameList->findLongTermPic(picNum, &frameField);
+
+            for (Ipp32u k = NumRefActive; k > i; k--)
             {
-                // short-term reorder
-                if (pReorderInfo->reordering_of_pic_nums_idc[i] == 0)
-                {
-                    picNumNoWrap = picNumPred - pReorderInfo->reorder_value[i];
-                    if (picNumNoWrap < 0)
-                        picNumNoWrap += MaxPicNum;
-                }
-                else
-                {
-                    picNumNoWrap = picNumPred + pReorderInfo->reorder_value[i];
-                    if (picNumNoWrap >= MaxPicNum)
-                        picNumNoWrap -= MaxPicNum;
-                }
-                picNumPred = picNumNoWrap;
+                pRefPicList[k] = pRefPicList[k - 1];
+                pFields[k] = pFields[k - 1];
+            }
 
-                picNum = picNumNoWrap;
-                if (picNum > picNumCurr)
-                    picNum -= MaxPicNum;
+            // Place picture with picNum on list, shifting pictures
+            // down by one while removing any duplication of picture with picNum.
+            pRefPicList[i] = pFrame;
+            pFields[i].field = (char) (pFrame ? pFrame->m_bottom_field_flag[frameField] : 0);
+            pFields[i].isShortReference = 0;
+            Ipp32s refIdxLX = i + 1;
 
-                Ipp32s frameField;
-                H264DecoderFrame* pFrame = pDecoderFrameList->findShortTermPic(picNum, &frameField);
-
-                for (Ipp32u k = NumRefActive; k > i; k--)
-                {
-                    pRefPicList[k] = pRefPicList[k - 1];
-                    pFields[k] = pFields[k - 1];
-                }
-
-                // Place picture with picNum on list, shifting pictures
-                // down by one while removing any duplication of picture with picNum.
-                pRefPicList[i] = pFrame;
-                pFields[i].field = (char) (pFrame ? pFrame->m_bottom_field_flag[frameField] : 0);
-                pFields[i].isShortReference = 1;
-                Ipp32s refIdxLX = i + 1;
-
-                for(Ipp32u kk = i + 1; kk <= NumRefActive; kk++)
-                {
-                    if (pRefPicList[kk])
-                    {
-                        if (!(pRefPicList[kk]->isShortTermRef(pRefPicList[kk]->GetNumberByParity(pFields[kk].field)) &&
-                            pRefPicList[kk]->PicNum(pRefPicList[kk]->GetNumberByParity(pFields[kk].field), 1) == picNum))
-                        {
-                            pRefPicList[refIdxLX] = pRefPicList[kk];
-                            pFields[refIdxLX] = pFields[kk];
-                            refIdxLX++;
-                        }
-                    }
-                }
-            }    // short term reorder
-            else if (2 == pReorderInfo->reordering_of_pic_nums_idc[i])
+            for(Ipp32u kk = i + 1; kk <= NumRefActive; kk++)
             {
-                // long term reorder
-                picNum = pReorderInfo->reorder_value[i];
-
-                Ipp32s frameField;
-                H264DecoderFrame* pFrame = pDecoderFrameList->findLongTermPic(picNum, &frameField);
-
-                for (Ipp32u k = NumRefActive; k > i; k--)
+                if (pRefPicList[kk])
                 {
-                    pRefPicList[k] = pRefPicList[k - 1];
-                    pFields[k] = pFields[k - 1];
-                }
-
-                // Place picture with picNum on list, shifting pictures
-                // down by one while removing any duplication of picture with picNum.
-                pRefPicList[i] = pFrame;
-                pFields[i].field = (char) (pFrame ? pFrame->m_bottom_field_flag[frameField] : 0);
-                pFields[i].isShortReference = 0;
-                Ipp32s refIdxLX = i + 1;
-
-                for(Ipp32u kk = i + 1; kk <= NumRefActive; kk++)
-                {
-                    if (pRefPicList[kk])
+                    if (!(pRefPicList[kk]->isLongTermRef(pRefPicList[kk]->GetNumberByParity(pFields[kk].field)) &&
+                        pRefPicList[kk]->LongTermPicNum(pRefPicList[kk]->GetNumberByParity(pFields[kk].field), 1) == picNum))
                     {
-                        if (!(pRefPicList[kk]->isLongTermRef(pRefPicList[kk]->GetNumberByParity(pFields[kk].field)) &&
-                            pRefPicList[kk]->LongTermPicNum(pRefPicList[kk]->GetNumberByParity(pFields[kk].field), 1) == picNum))
-                        {
-                            pRefPicList[refIdxLX] = pRefPicList[kk];
-                            pFields[refIdxLX] = pFields[kk];
-                            refIdxLX++;
-                        }
-                    }
-                }
-            }    // long term reorder
-            // MVC reordering
-            else if ((4 == pReorderInfo->reordering_of_pic_nums_idc[i]) ||
-                     (5 == pReorderInfo->reordering_of_pic_nums_idc[i]))
-            {
-                Ipp32s abs_diff_view_idx = pReorderInfo->reorder_value[i];
-                Ipp32s maxViewIdx;
-                Ipp32u currVOIdx = 0, viewIdx;
-                Ipp32s targetViewID;
-                Ipp32u picViewIdxLX;
-                H264DecoderFrame* pFrame = NULL;
-                Ipp32u fieldIdx = m_pCurrentFrame->GetNumberByParity(m_SliceHeader.bottom_field_flag);
-                Ipp32s curPOC = m_pCurrentFrame->PicOrderCnt(fieldIdx);
-
-                if (!m_pSeqParamSetMvcEx)
-                    continue;
-
-                // set current VO index
-                for (viewIdx = 0; viewIdx <= m_pSeqParamSetMvcEx->num_views_minus1; viewIdx += 1)
-                {
-                    if (m_SliceHeader.nal_ext.mvc.view_id == m_pSeqParamSetMvcEx->viewInfo[viewIdx].view_id)
-                    {
-                        currVOIdx = viewIdx;
-                        break;
-                    }
-                }
-
-                const H264ViewRefInfo &viewInfo = m_pSeqParamSetMvcEx->viewInfo[currVOIdx];
-
-                // get the maximum number of reference
-                if (m_SliceHeader.nal_ext.mvc.anchor_pic_flag)
-                {
-                    maxViewIdx = viewInfo.num_anchor_refs_lx[listNum];
-                }
-                else
-                {
-                    maxViewIdx = viewInfo.num_non_anchor_refs_lx[listNum];
-                }
-
-                // get the index of view reference
-                if (4 == pReorderInfo->reordering_of_pic_nums_idc[i])
-                {
-                    if (picViewIdxLXPred - abs_diff_view_idx < 0)
-                    {
-                        picViewIdxLX = picViewIdxLXPred - abs_diff_view_idx + maxViewIdx;
-                    }
-                    else
-                    {
-                        picViewIdxLX = picViewIdxLXPred - abs_diff_view_idx;
-                    }
-                }
-                else
-                {
-                    if (picViewIdxLXPred + abs_diff_view_idx >= maxViewIdx)
-                    {
-                        picViewIdxLX = picViewIdxLXPred + abs_diff_view_idx - maxViewIdx;
-                    }
-                    else
-                    {
-                        picViewIdxLX = picViewIdxLXPred + abs_diff_view_idx;
-                    }
-                }
-                picViewIdxLXPred = picViewIdxLX;
-
-                // get the target view
-                if (m_SliceHeader.nal_ext.mvc.anchor_pic_flag)
-                {
-                    targetViewID = viewInfo.anchor_refs_lx[listNum][picViewIdxLX];
-                }
-                else
-                {
-                    targetViewID = viewInfo.non_anchor_refs_lx[listNum][picViewIdxLX];
-                }
-                ViewList::iterator iter = views.begin();
-                ViewList::iterator iter_end = views.end();
-                for (; iter != iter_end; ++iter)
-                {
-                    if (targetViewID == iter->viewId)
-                    {
-                        pFrame = iter->GetDPBList(dIdIndex)->findInterViewRef(m_pCurrentFrame->m_auIndex, m_SliceHeader.bottom_field_flag);
-                        break;
-                    }
-                }
-                // corresponding frame is found
-                if (!pFrame)
-                    continue;
-
-                // make some space to insert the reference
-                for (Ipp32u k = NumRefActive; k > i; k--)
-                {
-                    pRefPicList[k] = pRefPicList[k - 1];
-                    pFields[k] = pFields[k - 1];
-                }
-
-                // Place picture with picNum on list, shifting pictures
-                // down by one while removing any duplication of picture with cuuPOC.
-                pRefPicList[i] = pFrame;
-                pFields[i].field = m_SliceHeader.bottom_field_flag;
-                pFields[i].isShortReference = 1;
-                Ipp32u refIdxLX = i + 1;
-
-                for (Ipp32u kk = i + 1; kk <= NumRefActive; kk++)
-                {
-                    if (pRefPicList[kk])
-                    {
-                        Ipp32u refFieldIdx = pRefPicList[kk]->GetNumberByParity(m_SliceHeader.bottom_field_flag);
-
-                        if ((pRefPicList[kk]->m_viewId != targetViewID) ||
-                            (pRefPicList[kk]->PicOrderCnt(refFieldIdx) != curPOC))
-                        {
-                            pRefPicList[refIdxLX] = pRefPicList[kk];
-                            pFields[refIdxLX] = pFields[kk];
-                            refIdxLX++;
-                        }
+                        pRefPicList[refIdxLX] = pRefPicList[kk];
+                        pFields[refIdxLX] = pFields[kk];
+                        refIdxLX++;
                     }
                 }
             }
-        }    // for i
-    }
+        }    // long term reorder
+        // MVC reordering
+        else if ((4 == pReorderInfo->reordering_of_pic_nums_idc[i]) ||
+                    (5 == pReorderInfo->reordering_of_pic_nums_idc[i]))
+        {
+            Ipp32s abs_diff_view_idx = pReorderInfo->reorder_value[i];
+            Ipp32s maxViewIdx;
+            Ipp32u currVOIdx = 0, viewIdx;
+            Ipp32s targetViewID;
+
+            if (!m_pSeqParamSetMvcEx)
+            {
+                m_pCurrentFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
+                continue;
+            }
+
+            Ipp32u picViewIdxLX;
+            H264DecoderFrame* pFrame = NULL;
+            Ipp32s curPOC = m_pCurrentFrame->PicOrderCnt(m_pCurrentFrame->GetNumberByParity(m_SliceHeader.bottom_field_flag), pocForce);
+
+            // set current VO index
+            for (viewIdx = 0; viewIdx <= m_pSeqParamSetMvcEx->num_views_minus1; viewIdx += 1)
+            {
+                if (m_SliceHeader.nal_ext.mvc.view_id == m_pSeqParamSetMvcEx->viewInfo[viewIdx].view_id)
+                {
+                    currVOIdx = viewIdx;
+                    break;
+                }
+            }
+
+            const H264ViewRefInfo &viewInfo = m_pSeqParamSetMvcEx->viewInfo[currVOIdx];
+
+            // get the maximum number of reference
+            if (m_SliceHeader.nal_ext.mvc.anchor_pic_flag)
+            {
+                maxViewIdx = viewInfo.num_anchor_refs_lx[listNum];
+            }
+            else
+            {
+                maxViewIdx = viewInfo.num_non_anchor_refs_lx[listNum];
+            }
+
+            // get the index of view reference
+            if (4 == pReorderInfo->reordering_of_pic_nums_idc[i])
+            {
+                if (picViewIdxLXPred - abs_diff_view_idx < 0)
+                {
+                    picViewIdxLX = picViewIdxLXPred - abs_diff_view_idx + maxViewIdx;
+                }
+                else
+                {
+                    picViewIdxLX = picViewIdxLXPred - abs_diff_view_idx;
+                }
+            }
+            else
+            {
+                if (picViewIdxLXPred + abs_diff_view_idx >= maxViewIdx)
+                {
+                    picViewIdxLX = picViewIdxLXPred + abs_diff_view_idx - maxViewIdx;
+                }
+                else
+                {
+                    picViewIdxLX = picViewIdxLXPred + abs_diff_view_idx;
+                }
+            }
+            picViewIdxLXPred = picViewIdxLX;
+
+            // get the target view
+            if (m_SliceHeader.nal_ext.mvc.anchor_pic_flag)
+            {
+                targetViewID = viewInfo.anchor_refs_lx[listNum][picViewIdxLX];
+            }
+            else
+            {
+                targetViewID = viewInfo.non_anchor_refs_lx[listNum][picViewIdxLX];
+            }
+            ViewList::iterator iter = views.begin();
+            ViewList::iterator iter_end = views.end();
+            for (; iter != iter_end; ++iter)
+            {
+                if (targetViewID == iter->viewId)
+                {
+                    pFrame = iter->GetDPBList(dIdIndex)->findInterViewRef(m_pCurrentFrame->m_auIndex, m_SliceHeader.bottom_field_flag);
+                    break;
+                }
+            }
+            // corresponding frame is found
+            if (!pFrame)
+                continue;
+
+            // make some space to insert the reference
+            for (Ipp32u k = NumRefActive; k > i; k--)
+            {
+                pRefPicList[k] = pRefPicList[k - 1];
+                pFields[k] = pFields[k - 1];
+            }
+
+            // Place picture with picNum on list, shifting pictures
+            // down by one while removing any duplication of picture with cuuPOC.
+            pRefPicList[i] = pFrame;
+            pFields[i].field = m_SliceHeader.bottom_field_flag;
+            pFields[i].isShortReference = 1;
+            Ipp32u refIdxLX = i + 1;
+
+            for (Ipp32u kk = i + 1; kk <= NumRefActive; kk++)
+            {
+                if (pRefPicList[kk])
+                {
+                    Ipp32u refFieldIdx = pRefPicList[kk]->GetNumberByParity(m_SliceHeader.bottom_field_flag);
+
+                    if ((pRefPicList[kk]->m_viewId != targetViewID) ||
+                        (pRefPicList[kk]->PicOrderCnt(refFieldIdx, pocForce) != curPOC))
+                    {
+                        pRefPicList[refIdxLX] = pRefPicList[kk];
+                        pFields[refIdxLX] = pFields[kk];
+                        refIdxLX++;
+                    }
+                }
+            }
+        }
+    }    // for i
 } // void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
 
 } // namespace UMC
