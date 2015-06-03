@@ -355,6 +355,9 @@
     <ClCompile Include="src\gmock\test_suites\screen_capture_decode_header.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_query.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\threading_mfxinitex.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
