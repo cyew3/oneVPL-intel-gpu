@@ -466,8 +466,8 @@ struct Slice
     mfxU16 num_long_term_pics;
 
     mfxI8  slice_qp_delta;
-    mfxI16 slice_cb_qp_offset : 5;
-    mfxI16 slice_cr_qp_offset : 5;
+    mfxI16 slice_cb_qp_offset : 6;
+    mfxI16 slice_cr_qp_offset : 6;
 
     mfxU8  deblocking_filter_override_flag        : 1;
     mfxU8  deblocking_filter_disabled_flag        : 1;

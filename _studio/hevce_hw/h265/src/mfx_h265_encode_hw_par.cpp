@@ -779,6 +779,12 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
         par.MaxKbps = par.TargetKbps;
         changed ++;
     }
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        changed += CheckRangeDflt(par.mfx.QPI, 1, 51, 0);
+        changed += CheckRangeDflt(par.mfx.QPP, 1, 51, 0);
+        changed += CheckRangeDflt(par.mfx.QPB, 1, 51, 0);    
+    }
 
     if (par.BufferSizeInKB != 0)
     {
@@ -944,9 +950,9 @@ void SetDefaults(
         if (!par.mfx.QPI)
             par.mfx.QPI = 26;
         if (!par.mfx.QPP)
-            par.mfx.QPP = 26;
+            par.mfx.QPP = (mfxU16) Min (par.mfx.QPI + 2, 51);            
         if (!par.mfx.QPB)
-            par.mfx.QPB = 26;
+            par.mfx.QPB = (mfxU16) Min (par.mfx.QPP + 2, 51); 
 
         if (!par.BufferSizeInKB)
             par.BufferSizeInKB = Min(maxBuf, mfxU32(rawBits / 8000));

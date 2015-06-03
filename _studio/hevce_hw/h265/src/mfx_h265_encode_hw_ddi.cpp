@@ -86,7 +86,7 @@ mfxStatus CheckHeaders(
         && par.m_sps.bit_depth_chroma_minus8 == 0
         && par.m_sps.chroma_format_idc == 1
         && par.m_sps.separate_colour_plane_flag == 0
-        && par.m_pps.cu_qp_delta_enabled_flag == 1))
+        /* && par.m_pps.cu_qp_delta_enabled_flag == 1*/))
         return MFX_ERR_UNSUPPORTED;
 
     if (   par.m_sps.pic_width_in_luma_samples > caps.MaxPicWidth

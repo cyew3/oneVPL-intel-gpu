@@ -82,8 +82,8 @@ enum
     IDX_INVALID         = 0xFF,
     HW_SURF_ALIGN_W     = 32,
     HW_SURF_ALIGN_H     = 32,
-    CODED_PIC_ALIGN_W   = 8,
-    CODED_PIC_ALIGN_H   = 8,
+    CODED_PIC_ALIGN_W   = 16,
+    CODED_PIC_ALIGN_H   = 16,
     DEFAULT_LCU_SIZE    = 32,
     MAX_SLICES          = 200,
     DEFAULT_LTR_INTERVAL= 16

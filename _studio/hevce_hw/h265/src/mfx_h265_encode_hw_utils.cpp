@@ -347,8 +347,8 @@ namespace ExtBuffer
     {
         if (!Construct<mfxVideoParam, mfxExtHEVCParam>(par, buf))
         {
-            buf.PicWidthInLumaSamples  = Align(Max(par.mfx.FrameInfo.Width,  par.mfx.FrameInfo.CropW), CODED_PIC_ALIGN_W);
-            buf.PicHeightInLumaSamples = Align(Max(par.mfx.FrameInfo.Height, par.mfx.FrameInfo.CropH), CODED_PIC_ALIGN_H);
+            buf.PicWidthInLumaSamples  = Align(par.mfx.FrameInfo.CropW > 0 ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width, CODED_PIC_ALIGN_W);
+            buf.PicHeightInLumaSamples = Align(par.mfx.FrameInfo.CropH > 0 ? par.mfx.FrameInfo.CropH: par.mfx.FrameInfo.Height, CODED_PIC_ALIGN_H);
 
             return false;
         }
@@ -1206,7 +1206,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     m_pps.init_qp_minus26                       = 0;
     m_pps.constrained_intra_pred_flag           = 0;
     m_pps.transform_skip_enabled_flag           = 0;
-    m_pps.cu_qp_delta_enabled_flag              = 1;
+    m_pps.cu_qp_delta_enabled_flag              = (mfx.RateControlMethod == MFX_RATECONTROL_CQP) ? 0 : 1;
 
     if (mfx.RateControlMethod == MFX_RATECONTROL_CQP)
         m_pps.init_qp_minus26 = (mfx.GopRefDist == 1 ? mfx.QPP : mfx.QPB) - 26;

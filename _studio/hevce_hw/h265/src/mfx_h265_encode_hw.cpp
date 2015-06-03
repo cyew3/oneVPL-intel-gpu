@@ -116,18 +116,19 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     m_ddi.reset( CreatePlatformH265Encoder(&m_core) );
     MFX_CHECK(m_ddi.get(), MFX_ERR_DEVICE_FAILED);
 
+    m_vpar = *par;
+
     sts = m_ddi->CreateAuxilliaryDevice(
         &m_core,
         GetGUID(*par),
-        par->mfx.FrameInfo.Width,
-        par->mfx.FrameInfo.Height);
+        m_vpar.m_ext.HEVCParam.PicWidthInLumaSamples,
+        m_vpar.m_ext.HEVCParam.PicHeightInLumaSamples);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);
 
     sts = m_ddi->QueryEncodeCaps(m_caps);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);
     
-    m_vpar = *par;
-
+    
     mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
 
     sts = LoadSPSPPS(m_vpar, pSPSPPS);
