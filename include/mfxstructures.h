@@ -639,7 +639,10 @@ typedef struct {
     mfxU16      ContentInfo;
 
     mfxU16      PRefType;
-    mfxU16      reserved[226];
+    mfxU16      FadeDetection;            /* tri-state option */
+    mfxI16      DeblockingAlphaTcOffset;  /* -12..12 (slice_alpha_c0_offset_div2 << 1) */
+    mfxI16      DeblockingBetaOffset;     /* -12..12 (slice_beta_offset_div2 << 1) */
+    mfxU16      reserved[223];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
@@ -715,7 +718,9 @@ enum {
     MFX_EXTBUFF_PRED_WEIGHT_TABLE          = MFX_MAKEFOURCC('E','P','W','T'),
     MFX_EXTBUFF_TEMPORAL_LAYERS            = MFX_MAKEFOURCC('T','M','P','L'),
     MFX_EXTBUFF_DIRTY_RECTANGLES           = MFX_MAKEFOURCC('D','R','O','I'),
-    MFX_EXTBUFF_MOVING_RECTANGLES          = MFX_MAKEFOURCC('M','R','O','I')
+    MFX_EXTBUFF_MOVING_RECTANGLES          = MFX_MAKEFOURCC('M','R','O','I'),
+    MFX_EXTBUFF_AVC_SCALING_MATRIX         = MFX_MAKEFOURCC('A','V','S','M'),
+    MFX_EXTBUFF_MPEG2_QUANT_MATRIX         = MFX_MAKEFOURCC('M','2','Q','M')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1421,6 +1426,42 @@ typedef struct {
         mfxU16  reserved2[4];
     } Rect[256];
 } mfxExtMoveRect;
+
+/* ScalingMatrixType */
+enum {
+    MFX_SCALING_MATRIX_SPS = 0,
+    MFX_SCALING_MATRIX_PPS = 1
+};
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 Type;
+    mfxU16 reserved[5];
+
+    /* [4x4_Intra_Y,  4x4_Intra_Cb, 4x4_Intra_Cr, 
+        4x4_Inter_Y,  4x4_Inter_Cb, 4x4_Inter_Cr, 
+        8x8_Intra_Y,  8x8_Inter_Y,  8x8_Intra_Cb, 
+        8x8_Inter_Cb, 8x8_Intra_Cr, 8x8_Inter_Cr] */
+    mfxU8  ScalingListPresent[12];
+
+    /* [Intra_Y,  Intra_Cb, Intra_Cr,
+        Inter_Y,  Inter_Cb, Inter_Cr] */
+    mfxU8  ScalingList4x4[6][16];
+
+    /* [Intra_Y,  Inter_Y,  Intra_Cb,
+        Inter_Cb, Intra_Cr, Inter_Cr] */
+    mfxU8  ScalingList8x8[6][64];
+} mfxExtAVCScalingMatrix;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 reserved[28];
+
+    mfxU8  LoadMatrix[4]; // [LumaIntra, LumaInter, ChromaIntra, ChromaInter]
+    mfxU8  Matrix[4][64]; // [LumaIntra, LumaInter, ChromaIntra, ChromaInter]
+} mfxExtMPEG2QuantMatrix;
 
 #ifdef __cplusplus
 } // extern "C"
