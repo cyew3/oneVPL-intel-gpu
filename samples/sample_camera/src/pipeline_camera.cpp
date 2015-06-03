@@ -228,7 +228,7 @@ mfxStatus CCameraPipeline::CreateHWDevice()
         window = m_d3dRender.GetWindowHandle();
 
 #if MFX_D3D11_SUPPORT
-    if (D3D9_MEMORY != m_memType)
+    if (D3D11 == m_accelType)
         m_hwdev = new CD3D11Device();
     else
 #endif // #if MFX_D3D11_SUPPORT
@@ -507,31 +507,22 @@ mfxStatus CCameraPipeline::CreateAllocator()
     m_bExternalAllocOut = false;
     m_bExternalAllocIn = false;
 
-    if (m_memType != SYSTEM_MEMORY || m_bIsRender)
-    {
-#if D3D_SURFACES_SUPPORT
-        sts = CreateHWDevice();
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    sts = CreateHWDevice();
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-        // provide device manager to MediaSDK
-        //mfxHDL hdl = NULL;
-        mfxHandleType hdl_t =
-#if MFX_D3D11_SUPPORT
-            D3D9_MEMORY != m_memType ? MFX_HANDLE_D3D11_DEVICE :
-#endif // #if MFX_D3D11_SUPPORT
-            MFX_HANDLE_D3D9_DEVICE_MANAGER;
+    // provide device manager to MediaSDK
+    //mfxHDL hdl = NULL;
+    mfxHandleType hdl_t =  D3D11 == m_accelType ? MFX_HANDLE_D3D11_DEVICE : MFX_HANDLE_D3D9_DEVICE_MANAGER;
 
-        sts = m_hwdev->GetHandle(hdl_t, &hdl);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        sts = m_mfxSession.SetHandle(hdl_t, hdl);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    }
+    sts = m_hwdev->GetHandle(hdl_t, &hdl);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    sts = m_mfxSession.SetHandle(hdl_t, hdl);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    if (m_memType != SYSTEM_MEMORY)
+    if (m_memTypeIn != SYSTEM_MEMORY || m_memTypeOut != SYSTEM_MEMORY)
     {
         // create D3D allocator
-#if MFX_D3D11_SUPPORT
-        if (D3D11_MEMORY == m_memType)
+        if (D3D11_MEMORY == m_memTypeIn || D3D11_MEMORY == m_memTypeOut)
         {
             m_pMFXd3dAllocator = new D3D11FrameAllocator;
             MSDK_CHECK_POINTER(m_pMFXd3dAllocator, MFX_ERR_MEMORY_ALLOC);
@@ -542,8 +533,8 @@ mfxStatus CCameraPipeline::CreateAllocator()
 
             m_pmfxd3dAllocatorParams = pd3dAllocParams;
         }
-        else
-#endif // #if MFX_D3D11_SUPPORT
+
+        if (D3D9_MEMORY == m_memTypeIn || D3D9_MEMORY == m_memTypeOut)
         {
             m_pMFXd3dAllocator = new D3DFrameAllocator;
             MSDK_CHECK_POINTER(m_pMFXd3dAllocator, MFX_ERR_MEMORY_ALLOC);
@@ -555,13 +546,15 @@ mfxStatus CCameraPipeline::CreateAllocator()
             m_pmfxd3dAllocatorParams = pd3dAllocParams;
         }
 
-        if (m_memTypeIn != SYSTEM_MEMORY) {
+        if (m_memTypeIn != SYSTEM_MEMORY)
+        {
             m_pMFXAllocatorIn = m_pMFXd3dAllocator;
             m_pmfxAllocatorParamsIn = m_pmfxd3dAllocatorParams;
             m_bExternalAllocIn = true;
         }
 
-        if (m_memTypeOut != SYSTEM_MEMORY) {
+        if (m_memTypeOut != SYSTEM_MEMORY)
+        {
             m_pMFXAllocatorOut = m_pMFXd3dAllocator;
             m_pmfxAllocatorParamsOut = m_pmfxd3dAllocatorParams;
             m_bExternalAllocOut = true;
@@ -573,7 +566,6 @@ mfxStatus CCameraPipeline::CreateAllocator()
         Call SetAllocator to pass allocator to mediasdk */
         sts = m_mfxSession.SetFrameAllocator(m_pMFXd3dAllocator);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-#endif
     }
 
     if (m_memTypeIn == SYSTEM_MEMORY || m_memTypeOut == SYSTEM_MEMORY)
@@ -602,8 +594,7 @@ mfxStatus CCameraPipeline::CreateAllocator()
         We use system memory allocator simply as a memory manager for application*/
     }
 
-#if D3D_SURFACES_SUPPORT
-    if (m_memType == SYSTEM_MEMORY && m_bIsRender) {
+    if (m_memTypeOut == SYSTEM_MEMORY && m_bIsRender) {
 #if MFX_D3D11_SUPPORT
         m_pMFXd3dAllocator = new D3D11FrameAllocator;
         MSDK_CHECK_POINTER(m_pMFXd3dAllocator, MFX_ERR_MEMORY_ALLOC);
@@ -627,7 +618,6 @@ mfxStatus CCameraPipeline::CreateAllocator()
         sts = m_mfxSession.SetFrameAllocator(m_pMFXd3dAllocator);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
-#endif
     // initialize memory allocator(s)
     sts = m_pMFXAllocatorIn->Init(m_pmfxAllocatorParamsIn);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -690,9 +680,9 @@ CCameraPipeline::CCameraPipeline()
     m_pmfxsysAllocatorParams = NULL;
     m_pmfxAllocatorParamsIn = NULL;
     m_pmfxAllocatorParamsOut = NULL;
-    m_memType = SYSTEM_MEMORY;
+    m_accelType = D3D9;
     m_memTypeIn = SYSTEM_MEMORY;
-    m_memTypeOut = UNDEFINED_MEMORY;
+    m_memTypeOut = SYSTEM_MEMORY;
     m_bExternalAllocIn = false;
     m_bExternalAllocOut = false;
     m_pmfxSurfacesIn = m_pmfxSurfacesOut = NULL;
@@ -804,23 +794,18 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
     pParams->frameInfo[VPP_IN].FourCC = MFX_FOURCC_R16;
 
     // set memory type
-    m_memTypeIn  = pParams->memTypeIn;
-    m_memTypeOut = pParams->memTypeOut;
 
-    if (m_memTypeOut == UNDEFINED_MEMORY) {
-        if (pParams->bRendering) {
-#if MFX_D3D11_SUPPORT
-            m_memTypeOut  = D3D11_MEMORY;
-#else
+    m_memTypeIn  = SYSTEM_MEMORY;
+    m_memTypeOut = SYSTEM_MEMORY;
+    m_accelType  = pParams->accelType;
+    if ( pParams->accelType == D3D9 && pParams->memTypeOut == VIDEO)
+    {
             m_memTypeOut  = D3D9_MEMORY;
-#endif
-        } else
-            m_memTypeOut  = SYSTEM_MEMORY;
     }
-
-    m_memType = (MemType)((m_memTypeIn | m_memTypeOut) & (UNDEFINED_MEMORY - 1));
-    if (m_memType & D3D11_MEMORY)
-        m_memType = D3D11_MEMORY;
+    else if ( pParams->accelType == D3D11 && pParams->memTypeOut == VIDEO)
+    {
+        m_memTypeOut = D3D11_MEMORY;
+    }
 
     // API version
     mfxVersion version =  {10, MFX_VERSION_MAJOR};
@@ -832,16 +817,10 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
 
         // if d3d11 surfaces are used ask the library to run acceleration through D3D11
         // feature may be unsupported due to OS or MSDK API version
-        if (D3D11_MEMORY == m_memType)
+        if (D3D11 == pParams->accelType)
             impl |= MFX_IMPL_VIA_D3D11;
-        else if (D3D9_MEMORY == m_memType)
+        else if (D3D9 == pParams->accelType)
             impl |= MFX_IMPL_VIA_D3D9;
-        else if (pParams->bRendering)
-#if MFX_D3D11_SUPPORT
-            impl |= MFX_IMPL_VIA_D3D11;
-#else
-            impl |= MFX_IMPL_VIA_D3D9;
-#endif
 
         sts = m_mfxSession.Init(impl, &version);
 
@@ -1190,10 +1169,6 @@ mfxStatus CCameraPipeline::Reset(sInputParams *pParams)
     m_alphaValue = pParams->alphaValue;
     m_BayerType = pParams->bayerType;
 
-    if (pParams->memTypeIn == UNDEFINED_MEMORY)
-        pParams->memTypeIn = m_memTypeIn;
-    if (pParams->memTypeOut == UNDEFINED_MEMORY)
-        pParams->memTypeOut = m_memTypeOut;
 
     if (m_memTypeIn != pParams->memTypeIn || m_memTypeOut != pParams->memTypeOut)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
@@ -1466,7 +1441,7 @@ mfxStatus CCameraPipeline::Run()
                 if (m_memTypeOut == SYSTEM_MEMORY) {
                     // slow tmp solution !!! kta
 #if MFX_D3D11_SUPPORT
-                    if (m_memType == D3D9_MEMORY)
+                    if (m_accelType == D3D9)
                         sts = m_pMFXd3dAllocator->Lock(m_pMFXd3dAllocator->pthis, m_pmfxSurfacesAux->Data.MemId, &m_pmfxSurfacesAux->Data);
                     else
                         sts = m_pMFXd3dAllocator->Lock(m_pMFXd3dAllocator->pthis, MFXReadWriteMid(m_pmfxSurfacesAux->Data.MemId, MFXReadWriteMid::write), &m_pmfxSurfacesAux->Data);
@@ -1477,7 +1452,7 @@ mfxStatus CCameraPipeline::Run()
                         for (int i = 0; i < ppOutSurf[asdepth]->Info.CropH; i++)
                             memcpy_s(m_pmfxSurfacesAux->Data.B + i * m_pmfxSurfacesAux->Data.Pitch, m_pmfxSurfacesAux->Data.Pitch, ppOutSurf[asdepth]->Data.B + i*ppOutSurf[asdepth]->Data.Pitch, ppOutSurf[asdepth]->Info.CropW*4);
                     }
-                    if (m_memType == D3D9_MEMORY)
+                    if (m_accelType == D3D9)
                         sts = m_pMFXd3dAllocator->Unlock(m_pMFXd3dAllocator->pthis, m_pmfxSurfacesAux->Data.MemId, &m_pmfxSurfacesAux->Data);
                     else
                         sts = m_pMFXd3dAllocator->Unlock(m_pMFXd3dAllocator->pthis, MFXReadWriteMid(m_pmfxSurfacesAux->Data.MemId, MFXReadWriteMid::write), &m_pmfxSurfacesAux->Data);
@@ -1673,7 +1648,7 @@ mfxStatus CCameraPipeline::Run()
 
                 if (m_memTypeOut == SYSTEM_MEMORY) {
 #if MFX_D3D11_SUPPORT
-                    if (m_memType == D3D9_MEMORY)
+                    if (m_accelType == D3D9)
                         sts = m_pMFXd3dAllocator->Lock(m_pMFXd3dAllocator->pthis, m_pmfxSurfacesAux->Data.MemId, &m_pmfxSurfacesAux->Data);
                     else
                         sts = m_pMFXd3dAllocator->Lock(m_pMFXd3dAllocator->pthis, MFXReadWriteMid(m_pmfxSurfacesAux->Data.MemId, MFXReadWriteMid::write), &m_pmfxSurfacesAux->Data);
@@ -1685,7 +1660,7 @@ mfxStatus CCameraPipeline::Run()
                             memcpy_s(m_pmfxSurfacesAux->Data.B + i * m_pmfxSurfacesAux->Data.Pitch, m_pmfxSurfacesAux->Data.Pitch, ppOutSurf[tail_asdepth]->Data.B + i*ppOutSurf[tail_asdepth]->Data.Pitch, ppOutSurf[tail_asdepth]->Info.CropW*4);
                     }
 
-                    if (m_memType == D3D9_MEMORY)
+                    if (m_accelType == D3D9)
                         sts = m_pMFXd3dAllocator->Unlock(m_pMFXd3dAllocator->pthis, m_pmfxSurfacesAux->Data.MemId, &m_pmfxSurfacesAux->Data);
                     else
                         sts = m_pMFXd3dAllocator->Unlock(m_pMFXd3dAllocator->pthis, MFXReadWriteMid(m_pmfxSurfacesAux->Data.MemId, MFXReadWriteMid::write), &m_pmfxSurfacesAux->Data);
@@ -1805,10 +1780,14 @@ void CCameraPipeline::PrintInfo()
     //mfxF64 dFrameRate = CalculateFrameRate(Info.FrameRateExtN, Info.FrameRateExtD);
     //msdk_printf(MSDK_STRING("Frame rate\t%.2f\n"), dFrameRate);
 
-    const msdk_char* sMemType = m_memType == D3D9_MEMORY  ? MSDK_STRING("d3d")
-                             : (m_memType == D3D11_MEMORY ? MSDK_STRING("d3d11")
+    const msdk_char* sMemTypeIn = m_memTypeIn == D3D9_MEMORY  ? MSDK_STRING("d3d")
+                             : (m_memTypeIn == D3D11_MEMORY ? MSDK_STRING("d3d11")
                                                           : MSDK_STRING("system"));
-    msdk_printf(MSDK_STRING("Memory type\t\t%s\n"), sMemType);
+    msdk_printf(MSDK_STRING("Input memory type\t\t%s\n"), sMemTypeIn);
+    const msdk_char* sMemTypeOut = m_memTypeOut == D3D9_MEMORY  ? MSDK_STRING("d3d")
+                             : (m_memTypeOut == D3D11_MEMORY ? MSDK_STRING("d3d11")
+                                                          : MSDK_STRING("system"));
+    msdk_printf(MSDK_STRING("Output memory type\t\t%s\n"), sMemTypeOut);
 
     mfxIMPL impl;
     m_mfxSession.QueryIMPL(&impl);

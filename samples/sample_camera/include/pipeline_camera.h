@@ -104,9 +104,9 @@ protected:
     mfxAllocatorParams*     m_pmfxAllocatorParamsIn;
     MFXFrameAllocator*      m_pMFXAllocatorOut;
     mfxAllocatorParams*     m_pmfxAllocatorParamsOut;
-    MemType                 m_memType;         // memory type of surfaces to use
-    MemType                 m_memTypeIn;         // memory type of surfaces to use
-    MemType                 m_memTypeOut;         // memory type of surfaces to use
+    MemType                 m_memTypeOut;         // memory type of output surfaces to use
+    MemType                 m_memTypeIn;          // memory type of input surfaces to use
+    AccelType               m_accelType;
     bool                    m_bExternalAllocIn;  // use memory allocator as external for Media SDK
     bool                    m_bExternalAllocOut;  // use memory allocator as external for Media SDK
     mfxFrameSurface1*       m_pmfxSurfacesIn; // frames array

@@ -116,6 +116,16 @@ template<>struct mfx_ext_buffer_id<mfxExtCamVignetteCorrection>{
 #define CAM_SAMPLE_ASYNC_DEPTH 4
 #define CAM_SAMPLE_NUM_BMP_FILES 20
 
+enum AccelType {
+    D3D9   = 0x01,
+    D3D11  = 0x02
+};
+
+enum MemoryType {
+    SYSTEM   = 0x01,
+    VIDEO    = 0x02
+};
+
 enum MemType {
     SYSTEM_MEMORY = 0x00,
     D3D9_MEMORY   = 0x01,
@@ -196,9 +206,9 @@ struct sInputParams
     mfxU32  bayerType;
     bool    bOutput; // if renderer is enabled, possibly no need in output file
     mfxI32  maxNumBmpFiles;
-    MemType memType;
-    MemType memTypeIn;
-    MemType memTypeOut;
+    AccelType   accelType;
+    MemoryType  memTypeIn;
+    MemoryType  memTypeOut;
     mfxU32  CameraPluginVersion;
     bool    bRendering; // true if d3d rendering is in use
     mfxI32  asyncDepth;
@@ -272,8 +282,9 @@ struct sInputParams
         frameInfo[VPP_OUT].FourCC = MFX_FOURCC_RGB4;
         asyncDepth = CAM_SAMPLE_ASYNC_DEPTH;
         maxNumBmpFiles = CAM_SAMPLE_NUM_BMP_FILES;
-        memTypeIn = SYSTEM_MEMORY;
-        memTypeOut = UNDEFINED_MEMORY;
+        memTypeIn  = SYSTEM;
+        memTypeOut = VIDEO;
+        accelType  = D3D9;
         bitDepth = 10;
         bGamma = true;
         bHP           = false;
