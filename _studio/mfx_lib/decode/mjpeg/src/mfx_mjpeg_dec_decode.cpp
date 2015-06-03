@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2015 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -214,6 +214,7 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
     {
         if (m_platform != MFX_PLATFORM_SOFTWARE && !useInternal)
         {
+            request.AllocId = par->AllocId;
             mfxSts = m_core->AllocFrames(&request, &m_response,false);
         }
     }

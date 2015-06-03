@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2015 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -232,6 +232,8 @@ mfxStatus VideoDECODEVP9::Init(mfxVideoParam *params)
                     mfxFrameAllocRequest trequest = m_request;
                     trequest.Type =  (mfxU16)p_opq_ext->Out.Type;
                     trequest.NumFrameMin = trequest.NumFrameSuggested = (mfxU16)p_opq_ext->Out.NumSurface;
+                    
+                    trequest.AllocId = params->AllocId;
 
                     sts = m_core->AllocFrames(&trequest,
                                                 &m_opaque_response,
@@ -256,6 +258,8 @@ mfxStatus VideoDECODEVP9::Init(mfxVideoParam *params)
         }
         else
         {
+            m_request.AllocId = params->AllocId;
+
             sts = m_core->AllocFrames(&m_request, &m_response);
             MFX_CHECK_STS(sts);
         }

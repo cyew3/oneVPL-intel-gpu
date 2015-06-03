@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2015 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -25,6 +25,7 @@
 #include "mfx_enc_common.h"
 
 #if defined(MFX_VA)
+#include "umc_va_base.h"
 #include "umc_h264_va_supplier.h"
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_linux_protected.h"
@@ -354,6 +355,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     {
         if (m_platform != MFX_PLATFORM_SOFTWARE && !useInternal)
         {
+            request.AllocId = par->AllocId;
             mfxSts = m_core->AllocFrames(&request, &m_response, false);
         }
     }

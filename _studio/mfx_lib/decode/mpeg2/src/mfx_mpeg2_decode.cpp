@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_mpeg2_decode.cpp
 
@@ -703,6 +703,7 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
         else
         {
             bool isNeedCopy = ((MFX_IOPATTERN_OUT_SYSTEM_MEMORY & IOPattern) && (allocRequest.Type & MFX_MEMTYPE_INTERNAL_FRAME)) || ((MFX_IOPATTERN_OUT_VIDEO_MEMORY & IOPattern) && (m_isSWImpl));
+            allocRequest.AllocId = par->AllocId;
             mfxSts = m_pCore->AllocFrames(&allocRequest, &allocResponse, isNeedCopy);
             if(mfxSts)
                 return MFX_ERR_INVALID_VIDEO_PARAM;

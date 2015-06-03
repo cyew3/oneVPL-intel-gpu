@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2015 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -137,6 +137,8 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
     sts = QueryIOSurfInternal(m_platform, &m_video_params, &request);
     MFX_CHECK_STS(sts);
+
+    request.AllocId = p_video_param->AllocId;
     sts = m_p_core->AllocFrames(&request, &m_response, false);
     MFX_CHECK_STS(sts);
 
