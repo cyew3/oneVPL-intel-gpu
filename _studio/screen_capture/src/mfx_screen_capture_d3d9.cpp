@@ -578,6 +578,9 @@ mfxStatus D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_wor
 
 mfxStatus D3D9_Capturer::QueryStatus(std::list<DESKTOP_QUERY_STATUS_PARAMS>& StatusList)
 {
+    if(StatusList.size())
+        StatusList.clear();
+
     HRESULT hr;
     DXVA2_DecodeExecuteParams dec_exec = {0};
     DXVA2_DecodeExtensionData dec_ext =  {0};

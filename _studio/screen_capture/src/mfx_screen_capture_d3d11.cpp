@@ -515,6 +515,9 @@ mfxStatus D3D11_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_wo
 
 mfxStatus D3D11_Capturer::QueryStatus(std::list<DESKTOP_QUERY_STATUS_PARAMS>& StatusList)
 {
+    if(StatusList.size())
+        StatusList.clear();
+
     HRESULT hr;
     D3D11_VIDEO_DECODER_EXTENSION dec_ext =  {0};
     DESKTOP_PARAM_STRUCT_SIZE param_size = {0};

@@ -523,6 +523,8 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
 
 mfxStatus SW_D3D9_Capturer::QueryStatus(std::list<DESKTOP_QUERY_STATUS_PARAMS>& StatusList)
 {
+    if(StatusList.size())
+        StatusList.clear();
 
     StatusList = m_IntStatusList;
     m_IntStatusList.clear();
