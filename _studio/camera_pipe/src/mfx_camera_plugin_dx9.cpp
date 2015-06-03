@@ -481,10 +481,11 @@ mfxStatus DXVAHDVideoProcessor::CreateDevice(VideoCORE *core, mfxVideoParam *par
         hr = m_pD3Dmanager->LockDevice(DirectXHandle, &(IDirect3DDevice9 *)m_pD3DDevice, true);
     }
     else
-        {
+    {
+        return MFX_ERR_UNSUPPORTED;
         // No device handle provided from app? Forget about video out :(
-        sts = CreateInternalDevice();
-        MFX_CHECK_STS(sts);
+        //sts = CreateInternalDevice();
+        //MFX_CHECK_STS(sts);
     }
     memset((PVOID)&m_dxva_caps, 0, sizeof(m_dxva_caps));
     m_videoDesc.InputFrameFormat = DXVAHD_FRAME_FORMAT_PROGRESSIVE    ;
@@ -1433,7 +1434,12 @@ mfxStatus D3D9CameraProcessor::AsyncRoutine(AsyncParams *pParam)
     tmpParams.statusReportID = surfInIndex;
 
     memcpy_s(&m_executeParams[surfInIndex], sizeof(MfxHwVideoProcessing::mfxExecuteParams), &tmpParams, sizeof(MfxHwVideoProcessing::mfxExecuteParams));
-    memcpy_s(&m_executeSurf[surfInIndex], sizeof(MfxHwVideoProcessing::mfxDrvSurface), &tmpSurf, sizeof(MfxHwVideoProcessing::mfxDrvSurface));
+    m_executeSurf[surfInIndex].bExternal = tmpSurf.bExternal;
+    m_executeSurf[surfInIndex].endTimeStamp = tmpSurf.endTimeStamp;
+    memcpy_s(&m_executeSurf[surfInIndex].frameInfo, sizeof(mfxFrameInfo), &tmpSurf.frameInfo, sizeof(mfxFrameInfo));
+    m_executeSurf[surfInIndex].hdl = tmpSurf.hdl;
+    m_executeSurf[surfInIndex].memId = tmpSurf.memId;
+    m_executeSurf[surfInIndex].startTimeStamp = tmpSurf.startTimeStamp;
 
     m_executeParams[surfInIndex].pRefSurfaces = &m_executeSurf[surfInIndex];
     
@@ -1455,7 +1461,7 @@ mfxStatus D3D9CameraProcessor::CompleteRoutine(AsyncParams * pParam)
     mfxU32 outIndex = pParam->surfOutIndex;
 
     { // DDI execution 
-    sts = m_ddi->Execute(&m_executeParams[inIndex]);
+        sts = m_ddi->Execute(&m_executeParams[inIndex]);
         MFX_CHECK_STS(sts);
     }
 
