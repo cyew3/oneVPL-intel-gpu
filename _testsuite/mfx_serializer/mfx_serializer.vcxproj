@@ -1,0 +1,259 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E2A5ABAE-F0A8-485C-BA1D-4F3D6567073A}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>serializer</RootNamespace>
+    <ProjectName>mfx_serializer</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>..\..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>..\..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\..\..\build\win_$(PlatformName)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>mfx_pipeline_d.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\aliasmanager.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\anchor.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\binary.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\contrib\anchordict.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\contrib\graphbuilder.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\conversion.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\dll.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\emitfromevents.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\emitter.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\emittermanip.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\eventhandler.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\exceptions.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\iterator.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\ltnode.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\mark.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\node.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\nodeimpl.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\nodereadimpl.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\nodeutil.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\noncopyable.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\null.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\ostream.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\parser.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\stlemitter.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\stlnode.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\traits.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\include\yaml-cpp\yaml.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\collectionstack.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\contrib\graphbuilderadapter.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\directives.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\emitterstate.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\emitterutils.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\exp.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\indentation.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\iterpriv.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\nodebuilder.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\nodeownership.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\ptr_stack.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\ptr_vector.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\regex.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\regeximpl.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\scanner.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\scanscalar.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\scantag.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\setting.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\singledocparser.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\stream.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\streamcharsource.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\stringsource.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\tag.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\token.h" />
+    <ClInclude Include="include\hash_array.h" />
+    <ClInclude Include="include\mfx_serializer.h" />
+    <ClInclude Include="include\mfx_serial_formater.h" />
+    <ClInclude Include="include\mfx_serial_utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\aliasmanager.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\binary.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\contrib\graphbuilder.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\contrib\graphbuilderadapter.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\conversion.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\directives.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\emitfromevents.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\emitter.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\emitterstate.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\emitterutils.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\exp.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\iterator.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\node.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\nodebuilder.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\nodeownership.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\null.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\ostream.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\parser.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\regex.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\scanner.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\scanscalar.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\scantag.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\scantoken.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\simplekey.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\singledocparser.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\stream.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-contrib\yaml-cpp\src\tag.cpp" />
+    <ClCompile Include="src\mfx_serializer.cpp" />
+    <ClCompile Include="src\mfx_serial_utils.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
