@@ -1090,6 +1090,14 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
 
         ConfigureInputFrame(inputFrame, !!m_videoParam.encodedOrder);
         UpdateGopCounters(inputFrame, !!m_videoParam.encodedOrder);
+    } else {
+        // tmp fix for short sequences
+        if (m_la.get()) {
+            if (m_videoParam.AnalyzeCmplx)
+                for (std::list<Frame *>::iterator i = m_inputQueue.begin(); i != m_inputQueue.end(); ++i)
+                    m_la->AverageComplexity(*i);
+            m_lookaheadQueue.splice(m_lookaheadQueue.end(), m_inputQueue);
+        }
     }
     
     std::list<Frame*> & inputQueue = m_la.get() ? m_lookaheadQueue : m_inputQueue;
@@ -1102,7 +1110,7 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
         }
     }
 
-    if (!m_reorderedQueue.empty()) {
+    while (!m_reorderedQueue.empty()) {
         ConfigureEncodeFrame(m_reorderedQueue.front());
         m_lastEncOrder = m_reorderedQueue.front()->m_encOrder;
 
@@ -1523,7 +1531,7 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
         AddTaskDependency(&m_ttComplete, &m_newFrame->m_ttInitNewFrame); // COMPLETE <- INIT_NEW_FRAME
     }
 
-    if (m_la.get() && !m_la->m_threadingTaskStore.back().finished) {
+    if (m_laFrame && !m_la->m_threadingTaskStore.back().finished) {
         if (m_la->SetFrame(m_laFrame) == 1) {
             AddTaskDependency(&m_ttComplete, &m_la->m_threadingTaskStore.back()); // COMPLETE <- TT_PREENC_END
             if (m_laFrame && !m_laFrame->m_ttInitNewFrame.finished)
@@ -1542,7 +1550,7 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
     vm_mutex_lock(&m_critSect);
     if (m_newFrame && !m_newFrame->m_ttInitNewFrame.finished && m_newFrame->m_ttInitNewFrame.numUpstreamDependencies == 0)
         m_pendingTasks.push_back(&m_newFrame->m_ttInitNewFrame); // INIT_NEW_FRAME is independent
-    if (m_la.get() && !m_la->m_threadingTaskStore.front().finished && m_la->m_threadingTaskStore.front().numUpstreamDependencies == 0)
+    if (m_laFrame && !m_la->m_threadingTaskStore.front().finished && m_la->m_threadingTaskStore.front().numUpstreamDependencies == 0)
         m_pendingTasks.push_back(&m_la->m_threadingTaskStore.front()); // LA_START is independent
     if (m_ttComplete.numUpstreamDependencies == 0)
         m_pendingTasks.push_front(&m_ttComplete); // COMPLETE's dependencies are already resolved

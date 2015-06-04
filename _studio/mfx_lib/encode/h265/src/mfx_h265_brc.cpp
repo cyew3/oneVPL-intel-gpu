@@ -491,6 +491,7 @@ static const Ipp64f brc_qstep_factor[8] = {pow(2., -1./6.), 1., pow(2., 1./6.), 
 static const Ipp64f minQstep = QP2Qstep(1);
 static const Ipp64f maxQstep = QP2Qstep(51);
 static const Ipp64f maxQstepChange = pow(2, 0.5);
+static const Ipp64f predCoef = 1000000. / (1920 * 1080);
 
 Ipp32s H265BRC::PredictFrameSize(H265VideoParam *video, Frame *frames[], Ipp32s qp, mfxBRC_FrameData *refFrData)
 {
@@ -508,7 +509,7 @@ Ipp32s H265BRC::PredictFrameSize(H265VideoParam *video, Frame *frames[], Ipp32s 
     if (frames[0]->m_picCodeType == MFX_FRAMETYPE_I) 
     {
         Ipp64f w;
-        Ipp64f predBits0 = cmplx * 1000000 / q;
+        Ipp64f predBits0 = cmplx * predCoef * mParams.width * mParams.height / q;
 
         if (mPrevCmplxLayer[0] > 0) {
             w = fabs(cmplx / mPrevCmplxLayer[0] - 1) * 0.1;
@@ -830,7 +831,6 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
             mCmplxRate *= qScale / mQstepScale;
             brc_fprintf("prCmplx %d %.3f %.3f %.1f %.3f %.3f \n", frames[0]->m_encOrder, avCmplx , prCmplx,  mCmplxRate , mQstepScale, qScale);
             mQstepScale = qScale;
-
         }
 
         Ipp64f q = frames[0]->m_CmplxQstep * mQstepScale;
@@ -867,7 +867,7 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
 
                 if (mPrevQstepLayer[layer] <= 0  && frames[0]->m_encOrder == 0) {
                     Ipp64f qi = QP2Qstep(qp);
-                    predbits = frames[0]->m_stats[mLowres]->m_avgBestSatd * 1000000 / qi;
+                    predbits = frames[0]->m_stats[mLowres]->m_avgBestSatd * predCoef * mParams.width * mParams.height / qi;
                     refFrameData.qp = qp;
                     refFrameData.encOrder = -1;
                 } else {
@@ -1261,17 +1261,16 @@ mfxBRCStatus H265BRC::UpdateAndCheckHRD(Ipp32s frameBits, Ipp64f inputBitsPerFra
 mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame *pFrame, Ipp32s totalFrameBits, Ipp32s overheadBits, Ipp32s repack)
 {
     mfxBRCStatus Sts = MFX_ERR_NONE;
+    if (mBitrate == 0)
+        return Sts;
+    if (!pFrame)
+        return MFX_ERR_NULL_PTR;
+
     Ipp32s bitsEncoded = totalFrameBits - overheadBits;
     Ipp64f e2pe;
     Ipp32s qp, qpprev;
     Ipp32u prevFrameType = mPicType;
     Ipp32u picType = pFrame->m_picCodeType;
-
-    if (mBitrate == 0)
-        return Sts;
-
-    if (!pFrame)
-        return MFX_ERR_NULL_PTR;
 
     mPoc = pFrame->m_poc;
 

@@ -524,3 +524,21 @@ TEST_F(InitTest, Default_RateControlDepth_LowresFactor) {
         EXPECT_EQ(3, output.extCodingOptionHevc.LowresFactor);
     }
 }
+
+TEST_F(InitTest, Default_FramesInParallel) {
+    ParamSet output;
+    InitParamSetMandated(input);
+    Ipp32u configs[][4] = {{2,0,0,0}, {0,2,1,0}, {0,1,2,0}, {0,0,0,1}};
+    input.videoParam.mfx.FrameInfo.Width = 512;
+    input.videoParam.mfx.FrameInfo.Height = 128;
+    for (auto p: configs) {
+        input.videoParam.mfx.NumSlice = p[0];
+        input.extHevcTiles.NumTileRows = p[1];
+        input.extHevcTiles.NumTileColumns = p[2];
+        input.videoParam.AsyncDepth = p[3];
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+        EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
+        EXPECT_EQ(1, output.extCodingOptionHevc.FramesInParallel);
+    }
+}

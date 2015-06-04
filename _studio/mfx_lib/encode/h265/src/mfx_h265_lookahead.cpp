@@ -2202,6 +2202,65 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState(Frame* in)
 //    }
 //}
 
+void Lookahead::AverageComplexity(Frame *in)
+{
+    Ipp8u useLowres = m_videoParam.LowresFactor;
+    FrameData* frame = useLowres ? in->m_lowres : in->m_origin;
+    Statistics* stat = in->m_stats[useLowres ? 1 : 0];
+
+    Ipp64s sumSatd = 0;
+    Ipp64s sumSatdIntra = 0;
+    Ipp64s sumSatdInter = 0;
+    Ipp32s intraBlkCount = 0;
+    if (in->m_frameOrder > 0 && in->m_picCodeType != MFX_FRAMETYPE_I) {
+        Ipp32s blkCount = (Ipp32s)stat->m_intraSatd.size();
+            
+        for (Ipp32s blk = 0; blk < blkCount; blk++) {
+            sumSatd += IPP_MIN(stat->m_intraSatd[blk], stat->m_interSatd[blk]);
+            if( stat->m_intraSatd[blk] <= stat->m_interSatd[blk] ) {
+                intraBlkCount++;
+            }
+
+            sumSatdIntra += stat->m_intraSatd[blk];
+            sumSatdInter += stat->m_interSatd[blk];
+        }
+        stat->m_intraRatio = (Ipp32f)intraBlkCount / blkCount;
+
+    } else {
+        sumSatd = std::accumulate(stat->m_intraSatd.begin(), stat->m_intraSatd.end(), 0);
+        stat->m_intraRatio = 1.f;
+        sumSatdIntra = sumSatd;
+    }
+
+    // store metric in frame
+    Ipp32s resolution = frame->width * frame->height;
+    stat->m_avgBestSatd = (Ipp32f)sumSatd / (resolution);
+    stat->m_avgIntraSatd = (Ipp32f)sumSatdIntra / (resolution);
+
+    // hack for BRC
+    if (in->m_stats[0]) {
+        in->m_stats[0]->m_avgBestSatd = stat->m_avgBestSatd / (1 << m_videoParam.bitDepthLumaShift);
+        in->m_stats[0]->m_avgIntraSatd = stat->m_avgIntraSatd / (1 << m_videoParam.bitDepthLumaShift);
+    }
+    if (in->m_stats[1]) {
+        in->m_stats[1]->m_avgBestSatd = stat->m_avgBestSatd / (1 << m_videoParam.bitDepthLumaShift);
+        in->m_stats[1]->m_avgIntraSatd = stat->m_avgIntraSatd / (1 << m_videoParam.bitDepthLumaShift);
+    }
+
+    if (useLowres) {
+        useLowres--;
+        useLowres = Saturate(0, 1, useLowres);
+        Ipp32f tabCorrFactor[] = {1.5f, 2.f};
+        if (in->m_stats[0]) {
+            in->m_stats[0]->m_avgBestSatd /= tabCorrFactor[useLowres];
+            in->m_stats[0]->m_avgIntraSatd /= tabCorrFactor[useLowres];
+        } else {
+            in->m_stats[1]->m_avgBestSatd /= tabCorrFactor[useLowres];
+            in->m_stats[1]->m_avgIntraSatd /= tabCorrFactor[useLowres];
+        }
+    }
+}
+
 void Lookahead::AnalyzeComplexity(Frame* input)
 {
     // capture data
@@ -2217,66 +2276,7 @@ void Lookahead::AnalyzeComplexity(Frame* input)
 
     if (doAnalysis) {
         FrameIter curr = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(frameOrderCentral));
-        Frame* in = *curr;
-        Ipp8u useLowres = m_videoParam.LowresFactor;
-        FrameData* frame = useLowres ? in->m_lowres : in->m_origin;
-        Statistics* stat = in->m_stats[useLowres ? 1 : 0];
-        /*(in->m_bitDepthLuma == 8)
-            ? DoIntraAnalysis<Ipp8u>(frame, &stat->m_intraSatd[0])
-            : DoIntraAnalysis<Ipp16u>(frame, &stat->m_intraSatd[0]);*/
-
-        Ipp64s sumSatd = 0;
-        Ipp64s sumSatdIntra = 0;
-        Ipp64s sumSatdInter = 0;
-        Ipp32s intraBlkCount = 0;
-        if (in->m_frameOrder > 0 && in->m_picCodeType != MFX_FRAMETYPE_I) {
-            Ipp32s blkCount = (Ipp32s)stat->m_intraSatd.size();
-            
-            for (Ipp32s blk = 0; blk < blkCount; blk++) {
-                sumSatd += IPP_MIN(stat->m_intraSatd[blk], stat->m_interSatd[blk]);
-                if( stat->m_intraSatd[blk] <= stat->m_interSatd[blk] ) {
-                    intraBlkCount++;
-                }
-
-                sumSatdIntra += stat->m_intraSatd[blk];
-                sumSatdInter += stat->m_interSatd[blk];
-            }
-            stat->m_intraRatio = (Ipp32f)intraBlkCount / blkCount;
-
-        } else {
-            sumSatd =std::accumulate(stat->m_intraSatd.begin(), stat->m_intraSatd.end(), 0);
-            stat->m_intraRatio = 1.f;
-            sumSatdIntra = sumSatd;
-        }
-
-        // store metric in frame
-        Ipp32s resolution = frame->width * frame->height;
-        stat->m_avgBestSatd = (Ipp32f)sumSatd / (resolution);
-        stat->m_avgIntraSatd = (Ipp32f)sumSatdIntra / (resolution);
-
-        // hack for BRC
-        if (in->m_stats[0]) {
-            in->m_stats[0]->m_avgBestSatd = stat->m_avgBestSatd;
-            in->m_stats[0]->m_avgIntraSatd = stat->m_avgIntraSatd;
-        }
-        if (in->m_stats[1]) {
-            in->m_stats[1]->m_avgBestSatd = stat->m_avgBestSatd;
-            in->m_stats[1]->m_avgIntraSatd = stat->m_avgIntraSatd;
-        }
-
-
-        if (useLowres) {
-            useLowres--;
-            useLowres = Saturate(0, 1, useLowres);
-            Ipp32f tabCorrFactor[] = {1.5f, 2.f};
-            if (in->m_stats[0]) {
-                in->m_stats[0]->m_avgBestSatd /= tabCorrFactor[useLowres];
-                in->m_stats[0]->m_avgIntraSatd /= tabCorrFactor[useLowres];
-            } else {
-                in->m_stats[1]->m_avgBestSatd /= tabCorrFactor[useLowres];
-                in->m_stats[1]->m_avgIntraSatd /= tabCorrFactor[useLowres];
-            }
-        }
+        AverageComplexity(*curr);
         /*{
             Frame* frames[1] = {in->m_origin};
             WriteCmplx(frames, 1);

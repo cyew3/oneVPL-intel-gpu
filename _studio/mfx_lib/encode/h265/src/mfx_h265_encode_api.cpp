@@ -912,6 +912,9 @@ namespace {
         if (tiles && (tiles->NumTileRows > 1 || tiles->NumTileColumns > 1) && optHevc && optHevc->FramesInParallel > 1) // either multi-tile or frame-threading
             optHevc->FramesInParallel = 1, wrnIncompatible = true;
 
+        if (optHevc && optHevc->EnableCm == ON && optHevc->FramesInParallel > 8) // no more than 8 parallel frames in gacc
+            optHevc->FramesInParallel = 8, wrnIncompatible = true;
+
         if (mfx.NumSlice && region && region->RegionEncoding == MFX_HEVC_REGION_ENCODING_ON && region->RegionType == MFX_HEVC_REGION_SLICE && region->RegionId >= mfx.NumSlice) // RegionId < NumSlice
             region->RegionId = 0, errInvalidParam = true;
 
@@ -1006,25 +1009,29 @@ namespace {
         const Ipp32s numTile = tiles.NumTileRows * tiles.NumTileColumns;
 
         if (mfx.GopRefDist == 0)
-            mfx.GopRefDist = mfx.GopPicSize ? IPP_MIN(mfx.GopPicSize, defaultGopRefDist) : defaultGopRefDist;
+            mfx.GopRefDist = mfx.GopPicSize ? MIN(mfx.GopPicSize, defaultGopRefDist) : defaultGopRefDist;
 
         if (optHevc.FramesInParallel == 0) {
             if (par.AsyncDepth == 1 || mfx.NumSlice > 1 || numTile > 1)
                 optHevc.FramesInParallel = 1;
-            else if (optHevc.EnableCm == ON) optHevc.FramesInParallel = 7; // need 7 frames for the best CPU/GPU parallelism
-            else if (mfx.NumThread >= 48) optHevc.FramesInParallel = 8;
-            else if (mfx.NumThread >= 32) optHevc.FramesInParallel = 7;
-            else if (mfx.NumThread >= 16) optHevc.FramesInParallel = 5;
-            else if (mfx.NumThread >=  8) optHevc.FramesInParallel = 3;
-            else if (mfx.NumThread >=  4) optHevc.FramesInParallel = 2;
-            else                          optHevc.FramesInParallel = 1;
+            else if (optHevc.EnableCm == ON)
+                optHevc.FramesInParallel = 7; // need 7 frames for the best CPU/GPU parallelism
+            else {
+                if      (mfx.NumThread >= 48) optHevc.FramesInParallel = 8;
+                else if (mfx.NumThread >= 32) optHevc.FramesInParallel = 7;
+                else if (mfx.NumThread >= 16) optHevc.FramesInParallel = 5;
+                else if (mfx.NumThread >=  8) optHevc.FramesInParallel = 3;
+                else if (mfx.NumThread >=  4) optHevc.FramesInParallel = 2;
+                else                          optHevc.FramesInParallel = 1;
 #ifdef AMT_VQ_TU
-            Ipp32s size = defaultOptHevc.Log2MaxCUSize;
-            Ipp32f wppEff = IPP_MIN((mfx.FrameInfo.Height+(1<<(size-1)))>>size,
-                                    (mfx.FrameInfo.Width+(1<<(size-1)))>>size)/2.75;
-            Ipp32f frameMult = IPP_MAX(1.0, IPP_MIN((Ipp32f)mfx.NumThread/(Ipp32f)wppEff, 4.0));
-            if (mfx.NumThread >=  4) optHevc.FramesInParallel = IPP_MIN((optHevc.FramesInParallel*frameMult+0.5), 8);
+                Ipp32s size = defaultOptHevc.Log2MaxCUSize;
+                Ipp32f wppEff = MIN((mfx.FrameInfo.Height + (1 << (size - 1))) >> size,
+                                    (mfx.FrameInfo.Width  + (1 << (size - 1))) >> size) / 2.75;
+                Ipp32f frameMult = MAX(1.0, MIN((Ipp32f)mfx.NumThread / (Ipp32f)wppEff, 4.0));
+                if (mfx.NumThread >= 4)
+                    optHevc.FramesInParallel = MIN((optHevc.FramesInParallel * frameMult + 0.5), 8);
 #endif
+            }
         }
 
         if (optHevc.WPP == 0)
@@ -1330,6 +1337,9 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam * par)
     m_mfxParam.ExtParam = m_extBuffers.extParamAll;
 
     CopyParam(m_mfxParam, *par);
+
+    if (m_extBuffers.extOptHevc.EnableCm == 0)
+        m_extBuffers.extOptHevc.EnableCm = DEFAULT_ENABLE_CM;
 
     mfxStatus paramCheckStatus = CheckParam(m_mfxParam);
     if (paramCheckStatus < MFX_ERR_NONE)
