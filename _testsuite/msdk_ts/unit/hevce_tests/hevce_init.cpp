@@ -270,7 +270,7 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     input.videoParam.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
     ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
 
-#if (defined(__WIN32) || defined(__WIN64))
+#if (defined(_WIN32) || defined(_WIN64))
     __declspec(align(32)) Ipp8u data[64*64*3/2] = {};
 #else
     __attribute__ ((aligned(32))) Ipp8u data[64*64*3/2] = {};
