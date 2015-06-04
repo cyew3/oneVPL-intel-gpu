@@ -28,6 +28,9 @@ void vppDefaultInitParams( sInputParams* pParams )
     pParams->inFrameInfo[i]  = defaultOwnFrameInfo;
   pParams->outFrameInfo = defaultOwnFrameInfo;
 
+  pParams->outFrameInfo.nHeight = pParams->outFrameInfo.nWidth =
+      pParams->outFrameInfo.CropH = pParams->outFrameInfo.CropW = NOT_INIT_VALUE;
+
   // Video Enhancement Algorithms
   pParams->denoiseParam     = defaultDenoiseParam;
   pParams->detailParam      = defaultDetailParam;
