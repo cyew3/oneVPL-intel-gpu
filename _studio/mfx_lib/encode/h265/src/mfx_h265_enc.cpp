@@ -1792,6 +1792,16 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 #endif
             }
 
+            if (m_frame->m_isRef || pars->doDumpRecon) {
+                PadOneReconCtu(m_frame, ctb_row, ctb_col, m_videoParam.MaxCUSize, m_videoParam.PicHeightInCtbs, m_videoParam.PicWidthInCtbs);
+                if (m_videoParam.enableCmFlag && (m_frame->m_bitDepthLuma > 8)) {
+                    mfxI16 *recLuma10bit = (mfxI16 *)(m_frame->m_recon->y) + (ctb_row * m_frame->m_recon->pitch_luma_pix  + ctb_col) * m_videoParam.MaxCUSize;
+                    mfxU8 *recLuma8bit = m_frame->m_luma_8bit->y + (ctb_row * m_frame->m_luma_8bit->pitch_luma_bytes + ctb_col) * m_videoParam.MaxCUSize;
+                    h265_ConvertShiftR(recLuma10bit, m_frame->m_recon->pitch_luma_pix,
+                        recLuma8bit, m_frame->m_recon->pitch_luma_pix, m_videoParam.MaxCUSize, m_videoParam.MaxCUSize, 2);
+                }
+            }
+
             // for frame threading (no slices, no tiles)
             if (ctb_col == pars->PicWidthInCtbs - 1)
                 vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *> (&(m_frame->m_codedRow)));
