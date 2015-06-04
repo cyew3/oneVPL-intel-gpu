@@ -1052,7 +1052,7 @@ mfxStatus CCameraPipeline::AllocAndInitVignetteCorrection(sInputParams *pParams)
 #else
         nBytesRead = (mfxU32)fread((mfxU8 *)m_Vignette.CorrectionMap + i * m_Vignette.Pitch, 1, m_Vignette.Width, maskFile);
 #endif
-         IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, m_Vignette.Width, MFX_ERR_MORE_DATA);
+         IOSTREAM_CHECK_NOT_EQUAL_SAFE(nBytesRead, m_Vignette.Width, MFX_ERR_MORE_DATA,fclose(maskFile));
     }
     fclose(maskFile);
     return MFX_ERR_NONE;

@@ -112,6 +112,7 @@ template<>struct mfx_ext_buffer_id<mfxExtCamVignetteCorrection>{
 // we introduce new macros without error message (returned status only)
 // it allows to remove final error message due to EOF
 #define IOSTREAM_CHECK_NOT_EQUAL(P, X, ERR)          {if ((X) != (P)) {return ERR;}}
+#define IOSTREAM_CHECK_NOT_EQUAL_SAFE(P, X, ERR,CLEANUP)          {if ((X) != (P)) {CLEANUP;return ERR;}}
 
 #define CAM_SAMPLE_ASYNC_DEPTH 4
 #define CAM_SAMPLE_NUM_BMP_FILES 20
