@@ -70,8 +70,10 @@ typedef enum {
     IGFX_BROADWELL,
     IGFX_CHERRYVIEW,
     IGFX_SKYLAKE,
-    IGFX_WILLOWVIEW,//Need to delete WLW if driver doesn't contain
-    IGFX_BROXTON,
+    IGFX_KABYLAKE,
+    IGFX_WILLOWVIEW,
+    IGFX_BROXTON, 
+    IGFX_GEMINILAKE,    
     IGFX_CANNONLAKE,
     IGFX_GENNEXT,
     IGFX_SOFIA_LTE1 = 1001,
