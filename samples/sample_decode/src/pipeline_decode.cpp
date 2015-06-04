@@ -1145,11 +1145,10 @@ mfxStatus CDecodingPipeline::RunDecoding()
             msdk_printf(MSDK_STRING("DeliverOutput return error = %d\n"),m_error);
             break;
         }
-        if (pBitstream && ((MFX_ERR_MORE_DATA == sts) || m_bIsCompleteFrame)) {
+        if (pBitstream && ((MFX_ERR_MORE_DATA == sts) || (m_bIsCompleteFrame && !pBitstream->DataLength))) {
             CAutoTimer timer_fread(m_tick_fread);
-            sts = !pBitstream->DataLength ?
-                m_FileReader->ReadNextFrame(pBitstream) // read more data to input bit stream
-                : MFX_ERR_NONE;
+            sts = m_FileReader->ReadNextFrame(pBitstream); // read more data to input bit stream
+              
 
             if (MFX_ERR_MORE_DATA == sts) {
                 if (!m_bIsVideoWall) {
