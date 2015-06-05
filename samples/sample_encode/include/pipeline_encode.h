@@ -118,7 +118,7 @@ public:
 
     virtual mfxStatus Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter* pWriter, mfxU32 nPoolSize, mfxU32 nBufferSize, CSmplBitstreamWriter *pOtherWriter = NULL);
     virtual mfxStatus GetFreeTask(sTask **ppTask);
-    virtual mfxStatus SynchronizeFirstTask(mfxI64 *time);
+    virtual mfxStatus SynchronizeFirstTask();
     virtual void Close();
 
 protected:

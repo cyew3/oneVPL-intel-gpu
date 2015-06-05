@@ -428,7 +428,7 @@ mfxStatus CUserPipeline::Run()
     // synchronize all tasks that are left in task pool
     while (MFX_ERR_NONE == sts)
     {
-        sts = m_TaskPool.SynchronizeFirstTask(NULL);
+        sts = m_TaskPool.SynchronizeFirstTask();
     }
 
     // MFX_ERR_NOT_FOUND is the correct status to exit the loop with,

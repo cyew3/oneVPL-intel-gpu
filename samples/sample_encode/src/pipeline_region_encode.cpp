@@ -28,6 +28,90 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 #include "plugin_loader.h"
 
+mfxStatus CResourcesPool::GetFreeTask(int resourceNum,sTask **ppTask)
+{
+    // get a pointer to a free task (bit stream and sync point for encoder)
+    mfxStatus sts = m_resources[resourceNum].TaskPool.GetFreeTask(ppTask);
+    if (MFX_ERR_NOT_FOUND == sts)
+    {
+        // We should syncrhonize every first task in all task pools to write regions (slices) into destination in correct order
+        for(int i=0; i < size; i++)
+        {
+            sts = m_resources[i].TaskPool.SynchronizeFirstTask();
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        }
+
+        // try again
+        sts = m_resources[resourceNum].TaskPool.GetFreeTask(ppTask);
+    }
+
+    return sts;
+}
+
+mfxStatus CResourcesPool::Init(int size,mfxIMPL impl, mfxVersion *pVer)
+{
+    MSDK_CHECK_NOT_EQUAL(m_resources, NULL , MFX_ERR_INVALID_HANDLE);
+    this->size=size;
+    m_resources = new CMSDKResource[size];
+    for (int i = 0; i < size; i++)
+    {
+        mfxStatus sts = m_resources[i].Session.Init(impl, pVer);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CResourcesPool::InitTaskPools(CSmplBitstreamWriter* pWriter, mfxU32 nPoolSize, mfxU32 nBufferSize, CSmplBitstreamWriter *pOtherWriter)
+{
+    for (int i = 0; i < size; i++)
+    {
+        mfxStatus sts = m_resources[i].TaskPool.Init(&m_resources[i].Session,pWriter,nPoolSize,nBufferSize,pOtherWriter);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CResourcesPool::CreateEncoders()
+{
+    for (int i = 0; i < size; i++)
+    {
+        MFXVideoENCODE* pEnc = new MFXVideoENCODE(m_resources[i].Session);
+        MSDK_CHECK_POINTER(pEnc, MFX_ERR_MEMORY_ALLOC);
+        m_resources[i].pEncoder=pEnc;
+    }
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CResourcesPool::CreatePlugins(mfxPluginUID pluginGUID, mfxChar* pluginPath)
+{
+    for (int i = 0; i < size; i++)
+    {
+        MFXPlugin* pPlugin = pluginPath ? 
+            LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_resources[i].Session, pluginGUID, 1, pluginPath, (mfxU32)strlen(pluginPath)):
+            LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_resources[i].Session, pluginGUID, 1);
+
+        if (pPlugin == NULL)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+        m_resources[i].pPlugin=pPlugin;
+    }
+    return MFX_ERR_NONE;
+}
+
+void CResourcesPool::CloseAndDeleteEverything()
+{
+    for(int i = 0; i < size; i++)
+    {
+        m_resources[i].TaskPool.Close();
+        MSDK_SAFE_DELETE(m_resources[i].pEncoder);
+        MSDK_SAFE_DELETE(m_resources[i].pPlugin);
+        m_resources[i].Session.Close();
+    }
+}
+
+//------------------- Pipeline -----------------------------------------------------------------------------
+
 mfxStatus CRegionEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 {
     CEncodingPipeline::InitMfxEncParams(pInParams);
@@ -438,26 +522,12 @@ mfxStatus CRegionEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
     return MFX_ERR_NONE;
 }
 
-mfxStatus CRegionEncodingPipeline::GetFreeTask(sTask **ppTask, int index)
-{
-    mfxStatus sts = MFX_ERR_NONE;
-
-    sts = m_resources[index].TaskPool.GetFreeTask(ppTask);
-    if (MFX_ERR_NOT_FOUND == sts)
-    {
-        sts = m_resources[index].TaskPool.SynchronizeFirstTask(NULL);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-        // try again
-        sts = m_resources[index].TaskPool.GetFreeTask(ppTask);
-    }
-
-    return sts;
-}
-
 mfxStatus CRegionEncodingPipeline::Run()
 {
-    mfxI64 timeCurStart, timeCurEnd, timeCurMax, nFrames = 0;
+    mfxI64 timeCurStart=0;
+    mfxI64 timeCurEnd=0;
+    mfxI64 timeCurMax;
+    mfxI64 nFrames = 0;
 
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -465,7 +535,6 @@ mfxStatus CRegionEncodingPipeline::Run()
 
     sTask *pCurrentTask = NULL; // a pointer to the current task
     mfxU16 nEncSurfIdx = 0;     // index of free surface for encoder input (vpp output)
-    mfxU16 nVppSurfIdx = 0;     // index of free surface for vpp input
 
 //    mfxSyncPoint VppSyncPoint = NULL; // a sync point associated with an asynchronous vpp call
     bool bVppMultipleOutput = false;  // this flag is true if VPP produces more frames at output
@@ -489,15 +558,6 @@ mfxStatus CRegionEncodingPipeline::Run()
         pSurf = &m_pEncSurfaces[nEncSurfIdx];
         if (!bVppMultipleOutput)
         {
-            // if vpp is enabled find free surface for vpp input and point pSurf to vpp surface
-            if (m_pmfxVPP)
-            {
-                nVppSurfIdx = GetFreeSurface(m_pVppSurfaces, m_VppResponse.NumFrameActual);
-                MSDK_CHECK_ERROR(nVppSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
-
-                pSurf = &m_pVppSurfaces[nVppSurfIdx];
-            }
-
             // load frame from file to surface data
             // if we share allocator with Media SDK we need to call Lock to access surface data and...
             if (m_bExternalAlloc)
@@ -524,7 +584,7 @@ mfxStatus CRegionEncodingPipeline::Run()
         for (int regId = 0; regId < m_resources.GetSize(); regId++)
         {
             // get a pointer to a free task (bit stream and sync point for encoder)
-            sts = m_resources[regId].TaskPool.GetFreeTask(&pCurrentTask);
+            sts = m_resources.GetFreeTask(regId,&pCurrentTask);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             for (;;)
@@ -556,7 +616,8 @@ mfxStatus CRegionEncodingPipeline::Run()
                     break;
                 }
             }
-            sts = m_resources[regId].TaskPool.SynchronizeFirstTask(&timeCurEnd);
+
+            timeCurEnd = time_get_tick();
             if (timeCurMax < (timeCurEnd - timeCurStart))
                 timeCurMax = timeCurEnd - timeCurStart;
         }
@@ -617,7 +678,7 @@ mfxStatus CRegionEncodingPipeline::Run()
             // exit in case of other errors
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-            sts = m_resources[regId].TaskPool.SynchronizeFirstTask(&timeCurEnd);
+            timeCurEnd = time_get_tick();
             if (timeCurMax < (timeCurEnd - timeCurStart))
                 timeCurMax = timeCurEnd - timeCurStart;
         }

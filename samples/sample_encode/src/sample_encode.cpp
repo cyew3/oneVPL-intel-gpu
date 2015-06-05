@@ -73,7 +73,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-num_slice]             - number of slices in each video frame. 0 by default.\n"));
     msdk_printf(MSDK_STRING("                              If num_slice equals zero, the encoder may choose any slice partitioning allowed by the codec standard.\n"));
     msdk_printf(MSDK_STRING("   [-mss]                   - maximum slice size in bytes. Supported only with -hw and h264 codec. This option is not compatible with -num_slice option.\n"));
-    msdk_printf(MSDK_STRING("   [-re]                    - enable region encode mode.\n"));
+    msdk_printf(MSDK_STRING("   [-re]                    - enable region encode mode. Works only with h265 encoder\n"));
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
@@ -597,6 +597,23 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (pParams->nRateControlMethod == 0)
     {
         pParams->nRateControlMethod = MFX_RATECONTROL_CBR;
+    }
+
+    if(pParams->UseRegionEncode)
+    {
+        if(pParams->CodecId != MFX_CODEC_HEVC)
+        {
+            msdk_printf(MSDK_STRING("Region encode option is compatible with h265(HEVC) encoder only.\nRegion encoding is disabled\n"));
+            pParams->UseRegionEncode=false;
+        }
+        if (pParams->nWidth  != pParams->nDstWidth ||
+            pParams->nHeight != pParams->nDstHeight ||
+            pParams->nRotationAngle!=0)
+
+        {
+            msdk_printf(MSDK_STRING("Region encode option is not compatible with VPP processing.\nRegion encoding is disabled\n"));
+            pParams->UseRegionEncode=false;
+        }
     }
 
     return MFX_ERR_NONE;

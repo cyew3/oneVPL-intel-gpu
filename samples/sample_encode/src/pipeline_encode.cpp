@@ -104,7 +104,7 @@ mfxStatus CEncTaskPool::Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter*
     return MFX_ERR_NONE;
 }
 
-mfxStatus CEncTaskPool::SynchronizeFirstTask(mfxI64 *time)
+mfxStatus CEncTaskPool::SynchronizeFirstTask()
 {
     MSDK_CHECK_POINTER(m_pTasks, MFX_ERR_NOT_INITIALIZED);
     MSDK_CHECK_POINTER(m_pmfxSession, MFX_ERR_NOT_INITIALIZED);
@@ -115,8 +115,6 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask(mfxI64 *time)
     if (NULL != m_pTasks[m_nTaskBufferStart].EncSyncP)
     {
         sts = m_pmfxSession->SyncOperation(m_pTasks[m_nTaskBufferStart].EncSyncP, MSDK_WAIT_INTERVAL);
-        if (time)
-            *time = time_get_tick();
 
         if (MFX_ERR_NONE == sts)
         {
@@ -1210,7 +1208,7 @@ mfxStatus CEncodingPipeline::GetFreeTask(sTask **ppTask)
     sts = m_TaskPool.GetFreeTask(ppTask);
     if (MFX_ERR_NOT_FOUND == sts)
     {
-        sts = m_TaskPool.SynchronizeFirstTask(NULL);
+        sts = m_TaskPool.SynchronizeFirstTask();
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         // try again
@@ -1497,7 +1495,7 @@ mfxStatus CEncodingPipeline::Run()
     // synchronize all tasks that are left in task pool
     while (MFX_ERR_NONE == sts)
     {
-        sts = m_TaskPool.SynchronizeFirstTask(NULL);
+        sts = m_TaskPool.SynchronizeFirstTask();
     }
 
     // MFX_ERR_NOT_FOUND is the correct status to exit the loop with
