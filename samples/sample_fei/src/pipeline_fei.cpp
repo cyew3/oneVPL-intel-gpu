@@ -1411,6 +1411,8 @@ mfxStatus CEncodingPipeline::Run()
                     exit(-1);
                 }
 
+                fseek(fmv, 0, SEEK_SET);
+                fread(mvPreds[fieldId].MB, sizeof(mvPreds[fieldId].MB[0])*numMB, 1, fmv);
                 fclose(fmv);
             }
 
