@@ -165,9 +165,11 @@ enum eMFXHWType
     
     MFX_HW_BXT       = 0x1000000,
 
-    MFX_HW_CNL       = 0x1100000,
+    MFX_HW_KBL       = 0x1100000,
 
-    MFX_HW_SOFIA     = 0x1200000,
+    MFX_HW_CNL       = 0x1200000,
+
+    MFX_HW_SOFIA     = 0x1300000,
 };
 
 #ifdef MFX_DEBUG_TOOLS

@@ -100,9 +100,10 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_LAKE;
     case IGFX_VALLEYVIEW:
         return MFX_HW_VLV;
-
     case IGFX_SKYLAKE:
         return MFX_HW_SCL;
+    case IGFX_KABYLAKE:
+        return MFX_HW_KBL;
     case IGFX_BROADWELL:
         return MFX_HW_BDW;
     case IGFX_CHERRYVIEW:
