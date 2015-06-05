@@ -1260,6 +1260,14 @@ mfxStatus CDecodingPipeline::RunDecoding()
                     // output is not available
                     sts = MFX_ERR_MORE_SURFACE;
                 }
+            } else if ((MFX_ERR_MORE_DATA == sts) && pBitstream) {
+                if (m_bIsCompleteFrame && pBitstream->DataLength)
+                {
+                    // In low_latency mode decoder have to process bitstream completely
+                    msdk_printf(MSDK_STRING("error: Incorrect decoder behavior in low latency mode (bitstream length is not equal to 0 after decoding)\n"));
+                    sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+                    continue;
+                }
             } else if ((MFX_ERR_MORE_DATA == sts) && !pBitstream) {
                 // that's it - we reached end of stream; now we need to render bufferred data...
                 do {
