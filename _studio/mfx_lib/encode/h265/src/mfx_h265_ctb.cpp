@@ -2058,16 +2058,21 @@ void CopySubPartTo_(H265CUData *dst, const H265CUData *src, Ipp32s absPartIdx, I
 template <typename PixType>
 void H265CU<PixType>::GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth)
 {
-    Ipp32s width  = (Ipp8u)(m_par->MaxCUSize>>partDepth);
-    Ipp32s height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
-    Ipp32s posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
-    Ipp32s posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u width  = (Ipp8u)(m_par->MaxCUSize>>partDepth);
+    Ipp32u height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
+    Ipp32u posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
     Ipp32s Rs2=0;
     Ipp32s Cs2=0;
     Ipp32s bP = MAX_CU_SIZE>>2;
-    
-    for(Ipp32s i=posy/4; i<(posy+height)/4; i++) {
-        for(Ipp32s j=posx/4; j<(posx+width)/4; j++) {
+
+    if (m_ctbPelX + posx + width > m_par->Width)
+        width = m_par->Width - posx - m_ctbPelX;
+    if (m_ctbPelY + posy + height > m_par->Height)
+        height = m_par->Height - posy - m_ctbPelY;
+
+    for(Ipp32u i=posy/4; i<(posy+height)/4; i++) {
+        for(Ipp32u j=posx/4; j<(posx+width)/4; j++) {
             Rs2 += m_lcuRs[i*bP+j];
             Cs2 += m_lcuCs[i*bP+j];
         }
@@ -2093,16 +2098,21 @@ void H265CU<PixType>::GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp3
 template <typename PixType>
 Ipp32s H265CU<PixType>::GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, Ipp32f& SCpp) const
 {
-    Ipp32s width  = (Ipp8u)(m_par->MaxCUSize>>partDepth);
-    Ipp32s height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
-    Ipp32s posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
-    Ipp32s posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u width  = (Ipp8u)(m_par->MaxCUSize>>partDepth);
+    Ipp32u height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
+    Ipp32u posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
     Ipp32s Rs2=0;
     Ipp32s Cs2=0;
     Ipp32s bP = MAX_CU_SIZE>>2;
-    
-    for(Ipp32s i=posy/4; i<(posy+height)/4; i++) {
-        for(Ipp32s j=posx/4; j<(posx+width)/4; j++) {
+
+    if (m_ctbPelX + posx + width > m_par->Width)
+        width = m_par->Width - posx - m_ctbPelX;
+    if (m_ctbPelY + posy + height > m_par->Height)
+        height = m_par->Height - posy - m_ctbPelY;
+
+    for(Ipp32u i=posy/4; i<(posy+height)/4; i++) {
+        for(Ipp32u j=posx/4; j<(posx+width)/4; j++) {
             Rs2 += m_lcuRs[i*bP+j];
             Cs2 += m_lcuCs[i*bP+j];
         }
@@ -2126,10 +2136,15 @@ Ipp32s H265CU<PixType>::GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ip
 template <typename PixType>
 Ipp32s H265CU<PixType>::GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth)
 {
-    Ipp32s width  = (Ipp8u)(m_par->MaxCUSize>>partDepth);
-    Ipp32s height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
-    Ipp32s posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
-    Ipp32s posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u width  = (Ipp8u)(m_par->MaxCUSize>>partDepth);
+    Ipp32u height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
+    Ipp32u posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
+
+    if (m_ctbPelX + posx + width > m_par->Width)
+        width = m_par->Width - posx - m_ctbPelX;
+    if (m_ctbPelY + posy + height > m_par->Height)
+        height = m_par->Height - posy - m_ctbPelY;
 
     float SCpp = m_SCpp[depth][absPartIdx];
 
@@ -2150,16 +2165,22 @@ Ipp32s H265CU<PixType>::GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s de
 template <typename PixType>
 Ipp32s H265CU<PixType>::GetSpatioTemporalComplexityColocated(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, FrameData *ref) const
 {
-    Ipp32s width  = (Ipp8u)(m_par->MaxCUSize>>partDepth);
-    Ipp32s height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
-    Ipp32s posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
-    Ipp32s posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u width  = (Ipp8u)(m_par->MaxCUSize>>partDepth);
+    Ipp32u height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
+    Ipp32u posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
 
     Ipp32s Rs2=0;
     Ipp32s Cs2=0;
     Ipp32s bP = MAX_CU_SIZE>>2;
-    for(Ipp32s i=posy/4; i<(posy+height)/4; i++) {
-        for(Ipp32s j=posx/4; j<(posx+width)/4; j++) {
+
+    if (m_ctbPelX + posx + width > m_par->Width)
+        width = m_par->Width - posx - m_ctbPelX;
+    if (m_ctbPelY + posy + height > m_par->Height)
+        height = m_par->Height - posy - m_ctbPelY;
+
+    for(Ipp32u i=posy/4; i<(posy+height)/4; i++) {
+        for(Ipp32u j=posx/4; j<(posx+width)/4; j++) {
             Rs2 += m_lcuRs[i*bP+j];
             Cs2 += m_lcuCs[i*bP+j];
         }
@@ -2189,15 +2210,21 @@ Ipp32s H265CU<PixType>::GetSpatioTemporalComplexityColocated(Ipp32s absPartIdx, 
 template <typename PixType>
 Ipp32s H265CU<PixType>::GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, Ipp32s& scVal)
 {
-    Ipp32s width  = (Ipp8u)(m_par->MaxCUSize>>partDepth);
-    Ipp32s height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
-    Ipp32s posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
-    Ipp32s posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u width  = (Ipp8u)(m_par->MaxCUSize>>partDepth);
+    Ipp32u height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
+    Ipp32u posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
     Ipp32s Rs2=0;
     Ipp32s Cs2=0;
     Ipp32s bP = MAX_CU_SIZE>>2;
-    for(Ipp32s i=posy/4; i<(posy+height)/4; i++) {
-        for(Ipp32s j=posx/4; j<(posx+width)/4; j++) {
+
+    if (m_ctbPelX + posx + width > m_par->Width)
+        width = m_par->Width - posx - m_ctbPelX;
+    if (m_ctbPelY + posy + height > m_par->Height)
+        height = m_par->Height - posy - m_ctbPelY;
+
+    for(Ipp32u i=posy/4; i<(posy+height)/4; i++) {
+        for(Ipp32u j=posx/4; j<(posx+width)/4; j++) {
             Rs2 += m_lcuRs[i*bP+j];
             Cs2 += m_lcuCs[i*bP+j];
         }
