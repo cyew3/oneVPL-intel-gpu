@@ -154,12 +154,12 @@ template void MAKE_NAME(h265_AnalyzeGradient)<Ipp16u, Ipp32u>(const Ipp16u *src,
 #define MAX_CU_SIZE 64
 
 template <class PixType>
-void MAKE_NAME(h265_ComputeRsCs)(const PixType *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu)
+void MAKE_NAME(h265_ComputeRsCs)(const PixType *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height)
 {
     Ipp32s bP = MAX_CU_SIZE>>2;
-    for(Ipp32s i=0; i<widthCu; i+=4)
+    for(Ipp32s i=0; i<height; i+=4)
     {
-        for(Ipp32s j=0; j<widthCu; j+=4)
+        for(Ipp32s j=0; j<width; j+=4)
         {
             Ipp32s Rs=0;
             Ipp32s Cs=0;
@@ -180,8 +180,8 @@ void MAKE_NAME(h265_ComputeRsCs)(const PixType *ySrc, Ipp32s pitchSrc, Ipp32s *l
     }
 }
 
-template void MAKE_NAME(h265_ComputeRsCs)<Ipp8u> (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu);
-template void MAKE_NAME(h265_ComputeRsCs)<Ipp16u>(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu);
+template void MAKE_NAME(h265_ComputeRsCs)<Ipp8u> (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height);
+template void MAKE_NAME(h265_ComputeRsCs)<Ipp16u>(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height);
 
 }; // namespace MFX_HEVC_PP
 

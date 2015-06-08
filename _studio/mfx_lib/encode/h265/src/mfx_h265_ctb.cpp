@@ -1252,7 +1252,13 @@ void H265CU<PixType>::InitCu(
         m_STC[0][0]     = 2;
         m_mvdMax  = 128;
         m_mvdCost = 60;
-        h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs, m_par->MaxCUSize);
+        if ((m_ctbPelX + m_par->MaxCUSize) > m_par->Width || (m_ctbPelY + m_par->MaxCUSize) > m_par->Height) {
+            Ipp32s height = (m_ctbPelY + m_par->MaxCUSize > m_par->Height) ? (m_par->Height- m_ctbPelY) : m_par->MaxCUSize;
+            Ipp32s width  = (m_ctbPelX + m_par->MaxCUSize  > m_par->Width) ? (m_par->Width - m_ctbPelX) : m_par->MaxCUSize;
+            h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs, width, height);
+        } else {
+            h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs, m_par->MaxCUSize, m_par->MaxCUSize);
+        }
         GetSpatialComplexity(0, 0, 0, 0);
 #endif
         m_intraMinDepth = 0;
@@ -1717,10 +1723,18 @@ Ipp8u H265CU<PixType>::GetAdaptiveIntraMinDepth(Ipp32s absPartIdx, Ipp32s depth,
 template <typename PixType>
 void H265CU<PixType>::GetAdaptiveMinDepth(Ipp32s absPartIdx, Ipp32s depth)
 {
+    Ipp32u width  = (Ipp8u)(m_par->MaxCUSize>>depth);
+    Ipp32u height = (Ipp8u)(m_par->MaxCUSize>>depth);
+    Ipp32u posx  = ((h265_scan_z2r4[absPartIdx] & 15) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u posy  = ((h265_scan_z2r4[absPartIdx] >> 4) << m_par->QuadtreeTULog2MinSize);
     m_intraMinDepth = 0;
 #ifdef AMT_ADAPTIVE_INTRA_DEPTH
-    Ipp32s maxSC;
-    m_intraMinDepth = GetAdaptiveIntraMinDepth(absPartIdx, depth, maxSC);
+    Ipp32s maxSC=m_SCid[depth][absPartIdx];
+    if ((m_ctbPelX + posx + width) > m_par->Width || (m_ctbPelY + posy + height) > m_par->Height) {
+        m_intraMinDepth = 1;
+    } else {
+        m_intraMinDepth = GetAdaptiveIntraMinDepth(absPartIdx, depth, maxSC);
+    }
 #endif
     if (m_cslice->num_ref_idx[0] == 0 && m_cslice->num_ref_idx[1] == 0) {
         m_adaptMinDepth = m_intraMinDepth;
@@ -2058,41 +2072,9 @@ void CopySubPartTo_(H265CUData *dst, const H265CUData *src, Ipp32s absPartIdx, I
 template <typename PixType>
 void H265CU<PixType>::GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth)
 {
-    Ipp32u width  = (Ipp8u)(m_par->MaxCUSize>>partDepth);
-    Ipp32u height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
-    Ipp32u posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
-    Ipp32u posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
-    Ipp32s Rs2=0;
-    Ipp32s Cs2=0;
-    Ipp32s bP = MAX_CU_SIZE>>2;
-
-    if (m_ctbPelX + posx + width > m_par->Width)
-        width = m_par->Width - posx - m_ctbPelX;
-    if (m_ctbPelY + posy + height > m_par->Height)
-        height = m_par->Height - posy - m_ctbPelY;
-
-    for(Ipp32u i=posy/4; i<(posy+height)/4; i++) {
-        for(Ipp32u j=posx/4; j<(posx+width)/4; j++) {
-            Rs2 += m_lcuRs[i*bP+j];
-            Cs2 += m_lcuCs[i*bP+j];
-        }
-    }
-    float Rs2pp=(float)Rs2;
-    float Cs2pp=(float)Cs2;
-    Rs2pp/=((width/4)*(height/4));
-    Cs2pp/=((width/4)*(height/4));
-
-    float SCpp = Rs2pp+Cs2pp;
-    static float lmt_sc2[10]   =   {16.0, 81.0, 225.0, 529.0, 1024.0, 1764.0, 2809.0, 4225.0, 6084.0, (float)INT_MAX}; // lower limit of SFM(Rs,Cs) range for spatial classification
-    Ipp32s scVal = 5;
-    for(Ipp32s i = 0;i<10;i++) {
-        if(SCpp < lmt_sc2[i]*(float)(1<<(m_par->bitDepthLumaShift*2)))  {
-            scVal   =   i;
-            break;
-        }
-    }
+    float SCpp = 0;
+    m_SCid[depth][absPartIdx] = GetSpatialComplexity(absPartIdx, depth, partAddr, partDepth, SCpp);
     m_SCpp[depth][absPartIdx] = SCpp;
-    m_SCid[depth][absPartIdx] = scVal;
 }
 
 template <typename PixType>
@@ -8783,19 +8765,19 @@ bool H265CU<PixType>::EncAndRecLuma(Ipp32s absPartIdx, Ipp32s offset, Ipp8u dept
 
 template <typename PixType>
 void H265CU<PixType>::EncAndRecChromaUpdate(Ipp32s absPartIdx, Ipp32s offset, Ipp8u depth, bool interMod) {
+    Ipp32u lPel = m_ctbPelX + ((h265_scan_z2r4[absPartIdx] & 15) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u tPel = m_ctbPelY + ((h265_scan_z2r4[absPartIdx] >> 4) << m_par->QuadtreeTULog2MinSize);
+    if (lPel >= m_par->Width || tPel >= m_par->Height)
+        return;
+
     H265CUData *data = m_data + absPartIdx;
     Ipp32s depthMax = data->depth + data->trIdx;
     Ipp32u numParts = ( m_par->NumPartInCU >> (depth<<1) )>>2;
     Ipp32s width = data->size >> data->trIdx << (depthMax - depth);
     Ipp32s cuWidth = width;
     if (m_par->chromaFormatIdc != MFX_CHROMAFORMAT_YUV444)
-        width >>= 1;    
+        width >>= 1;
 
-    Ipp32u lPel = m_ctbPelX + ((h265_scan_z2r4[absPartIdx] & 15) << m_par->QuadtreeTULog2MinSize);
-    Ipp32u tPel = m_ctbPelY + ((h265_scan_z2r4[absPartIdx] >> 4) << m_par->QuadtreeTULog2MinSize);
-    if (lPel >= m_par->Width || tPel >= m_par->Height)
-        return;
-    
     if (depth == data->depth && data->predMode == MODE_INTER) {
         if(!interMod || (m_par->AnalyseFlags & HEVC_COST_CHROMA)) return;
         m_interPredC = m_interPredSavedC[depth][absPartIdx];

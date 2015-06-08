@@ -365,9 +365,8 @@ void MAKE_NAME(h265_AnalyzeGradient_8u)(const Ipp8u *src, Ipp32s pitch, Ipp16u *
 
 #define MAX_CU_SIZE 64
 
-void MAKE_NAME(h265_ComputeRsCs_8u)(const unsigned char *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu)
+void MAKE_NAME(h265_ComputeRsCs_8u)(const unsigned char *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height)
 {
-    Ipp32s cuSize = widthCu;
     Ipp32s cuPitch = MAX_CU_SIZE >> 2;
     Ipp32s i, j, k1, k2;
     Ipp32s p2 = pitchSrc << 1;
@@ -380,11 +379,11 @@ void MAKE_NAME(h265_ComputeRsCs_8u)(const unsigned char *ySrc, Ipp32s pitchSrc, 
     __m128i xmm10, xmm11, xmm12, xmm13, xmm14;
 
     k1 = 0;
-    for(i = 0; i < cuSize; i += 4)
+    for(i = 0; i < height; i += 4)
     { 
         k2 = k1;
         pSrc = pSrcG;
-        for(j = 0; j < cuSize; j += 8)
+        for(j = 0; j < width; j += 8)
         {
             xmm5  = _mm_loadu_si128((__m128i *)&pSrc[0]); 
             xmm7  = _mm_loadu_si128((__m128i *)&pSrc[pitchSrc]); 
@@ -460,9 +459,8 @@ void MAKE_NAME(h265_ComputeRsCs_8u)(const unsigned char *ySrc, Ipp32s pitchSrc, 
     }
 }
 
-void MAKE_NAME(h265_ComputeRsCs_16u)(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s widthCu)
+void MAKE_NAME(h265_ComputeRsCs_16u)(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height)
 {
-    Ipp32s cuSize = widthCu;
     Ipp32s cuPitch = MAX_CU_SIZE >> 2;
     Ipp32s i, j, k1, k2;
     Ipp32s p2 = pitchSrc << 1;
@@ -475,11 +473,11 @@ void MAKE_NAME(h265_ComputeRsCs_16u)(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s
     __m128i xmm10, xmm11, xmm12, xmm13, xmm14;
 
     k1 = 0;
-    for(i = 0; i < cuSize; i += 4)
+    for(i = 0; i < height; i += 4)
     { 
         k2 = k1;
         pSrc = pSrcG;
-        for(j = 0; j < cuSize; j += 8)
+        for(j = 0; j < width; j += 8)
         {
             xmm7  = _mm_loadu_si128((__m128i *)&pSrc[pitchSrc]); 
             xmm9  = _mm_loadu_si128((__m128i *)&pSrc[p2]); 
