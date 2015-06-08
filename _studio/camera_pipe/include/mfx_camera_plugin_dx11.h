@@ -120,8 +120,8 @@ public:
     D3D11CameraProcessor()
     {
         m_ddi.reset(0);
-        m_executeParams.resize(0);
-        m_executeSurf.resize(0);
+        m_executeParams = 0;
+        m_executeSurf   = 0;
         m_InSurfacePool  = new D3D11FrameAllocResponse();
         m_OutSurfacePool = new D3D11FrameAllocResponse();
     };
@@ -129,9 +129,10 @@ public:
     ~D3D11CameraProcessor() {
         m_InSurfacePool->Free(m_core);
         m_OutSurfacePool->Free(m_core);
-        m_executeParams.resize(0);
-        m_executeSurf.resize(0);
-        delete m_InSurfacePool;
+        if (m_executeParams )
+            delete [] m_executeParams;
+        if (m_executeSurf)
+            delete [] m_executeSurf;
     };
 
     virtual mfxStatus Init(CameraParams *CameraParams);
@@ -152,11 +153,7 @@ public:
     {
         m_InSurfacePool->Free(m_core);
         m_OutSurfacePool->Free(m_core);
-        if (m_InSurfacePool)
-            delete m_InSurfacePool;
 
-        if (m_OutSurfacePool)
-            delete m_InSurfacePool;
         return MFX_ERR_NONE;
     }
 
@@ -207,8 +204,8 @@ private:
 
 
     std::auto_ptr<D3D11VideoProcessor>               m_ddi;
-    std::vector<MfxHwVideoProcessing::mfxExecuteParams>  m_executeParams;
-    std::vector<MfxHwVideoProcessing::mfxDrvSurface> m_executeSurf;
+    MfxHwVideoProcessing::mfxExecuteParams          *m_executeParams;
+    MfxHwVideoProcessing::mfxDrvSurface             *m_executeSurf;
 
     D3D11FrameAllocResponse                          *m_InSurfacePool;
     D3D11FrameAllocResponse                          *m_OutSurfacePool;

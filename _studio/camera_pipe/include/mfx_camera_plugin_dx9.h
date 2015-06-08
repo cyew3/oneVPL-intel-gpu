@@ -740,11 +740,17 @@ public:
     D3D9CameraProcessor()
     {
         m_ddi.reset(0);
+        m_executeParams = 0;
+        m_executeSurf   = 0;
     };
 
     ~D3D9CameraProcessor() {
          m_inputSurf.clear();
          m_outputSurf.clear();
+         if (m_executeParams )
+            delete [] m_executeParams;
+         if (m_executeSurf)
+            delete [] m_executeSurf;
     };
 
     virtual mfxStatus Init(CameraParams *CameraParams);
@@ -818,8 +824,8 @@ private:
     CameraParams                                     m_CameraParams;
     UMC::Mutex                                       m_guard;
     mfxU16                                           m_AsyncDepth;
-    std::vector<MfxHwVideoProcessing::mfxExecuteParams>  m_executeParams;
-    std::vector<MfxHwVideoProcessing::mfxDrvSurface> m_executeSurf;
+    MfxHwVideoProcessing::mfxExecuteParams          *m_executeParams;
+    MfxHwVideoProcessing::mfxDrvSurface             *m_executeSurf;
     std::auto_ptr<DXVAHDVideoProcessor>              m_ddi;
 
     template <class T, bool isSingle>

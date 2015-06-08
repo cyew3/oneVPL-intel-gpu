@@ -466,7 +466,6 @@ mfxStatus DXVAHDVideoProcessor::CreateInternalDevice()
 
 mfxStatus DXVAHDVideoProcessor::CreateDevice(VideoCORE *core, mfxVideoParam *par, bool temporary)
 {
-    mfxStatus sts;
     HRESULT   hr;
     UNREFERENCED_PARAMETER(par);
     UNREFERENCED_PARAMETER(temporary);
@@ -483,9 +482,6 @@ mfxStatus DXVAHDVideoProcessor::CreateDevice(VideoCORE *core, mfxVideoParam *par
     else
     {
         return MFX_ERR_UNSUPPORTED;
-        // No device handle provided from app? Forget about video out :(
-        //sts = CreateInternalDevice();
-        //MFX_CHECK_STS(sts);
     }
     memset((PVOID)&m_dxva_caps, 0, sizeof(m_dxva_caps));
     m_videoDesc.InputFrameFormat = DXVAHD_FRAME_FORMAT_PROGRESSIVE    ;
@@ -1302,11 +1298,16 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
     m_AsyncDepth = CameraParams->par.AsyncDepth;
     m_AsyncDepth = m_AsyncDepth == 0 ? 1 : m_AsyncDepth;
 
-    // Camera Pipe expects a system memory as input. Need to allocate
-    m_executeParams.resize(m_AsyncDepth);
-    m_executeSurf.resize( m_AsyncDepth );
+    if ( m_executeParams )
+        delete [] m_executeParams; 
+    if ( m_executeSurf )
+        delete [] m_executeSurf;
+    m_executeParams = (MfxHwVideoProcessing::mfxExecuteParams *)malloc(sizeof(MfxHwVideoProcessing::mfxExecuteParams)*m_AsyncDepth);
+    ZeroMemory(m_executeParams, sizeof(MfxHwVideoProcessing::mfxExecuteParams)*m_AsyncDepth);
+    m_executeSurf   = (MfxHwVideoProcessing::mfxDrvSurface *)malloc(sizeof(MfxHwVideoProcessing::mfxDrvSurface)*m_AsyncDepth);
+    ZeroMemory(m_executeParams, sizeof(MfxHwVideoProcessing::mfxDrvSurface)*m_AsyncDepth);
+    
     m_outputSurf.resize(0);
-
     // Directly create DXVAHD surfaces that will be used as input for Blt
     m_inputSurf.resize(m_AsyncDepth);
     for(int i = 0; i < m_AsyncDepth; i++)
@@ -1340,109 +1341,100 @@ mfxStatus D3D9CameraProcessor::AsyncRoutine(AsyncParams *pParam)
     m_core->IncreaseReference(&(pParam->surf_out->Data));
     m_core->IncreaseReference(&(pParam->surf_in->Data));
 
-    MfxHwVideoProcessing::mfxExecuteParams tmpParams = {0};
     MfxHwVideoProcessing::mfxDrvSurface    tmpSurf   = {0};
     
-    // [1] Make required actions for the input surface
     mfxU32 surfInIndex;
     sts = PreWorkInSurface(pParam->surf_in, &surfInIndex, &tmpSurf);
     MFX_CHECK_STS(sts);
-
-    // [2] Make required actions for the output surface
+    ZeroMemory(&m_executeParams[surfInIndex], sizeof(MfxHwVideoProcessing::mfxExecuteParams));
+    
     mfxU32 surfOutIndex = 0;
-    sts = PreWorkOutSurface(pParam->surf_out, &surfOutIndex, &tmpParams);
+    sts = PreWorkOutSurface(pParam->surf_out, &surfOutIndex, &m_executeParams[surfInIndex]);
     MFX_CHECK_STS(sts);
     
-    // Turn on camera
-    tmpParams.bCameraPipeEnabled      = true;
-
-    // [3] Fill in params
+    m_executeParams[surfInIndex].bCameraPipeEnabled      = true;
     if ( pParam->Caps.bBlackLevelCorrection )
     {
-        tmpParams.bCameraBlackLevelCorrection = true;
-        tmpParams.CameraBlackLevel.uB  = (mfxU32)pParam->BlackLevelParams.BlueLevel;
-        tmpParams.CameraBlackLevel.uG0 = (mfxU32)pParam->BlackLevelParams.GreenBottomLevel;
-        tmpParams.CameraBlackLevel.uG1 = (mfxU32)pParam->BlackLevelParams.GreenTopLevel;
-        tmpParams.CameraBlackLevel.uR  = (mfxU32)pParam->BlackLevelParams.RedLevel;
+        m_executeParams[surfInIndex].bCameraBlackLevelCorrection = true;
+        m_executeParams[surfInIndex].CameraBlackLevel.uB  = (mfxU32)pParam->BlackLevelParams.BlueLevel;
+        m_executeParams[surfInIndex].CameraBlackLevel.uG0 = (mfxU32)pParam->BlackLevelParams.GreenBottomLevel;
+        m_executeParams[surfInIndex].CameraBlackLevel.uG1 = (mfxU32)pParam->BlackLevelParams.GreenTopLevel;
+        m_executeParams[surfInIndex].CameraBlackLevel.uR  = (mfxU32)pParam->BlackLevelParams.RedLevel;
     }
 
     if ( pParam->Caps.bWhiteBalance )
     {
-        tmpParams.bCameraWhiteBalaceCorrection = true;
-        tmpParams.CameraWhiteBalance.fB  = (mfxF32)pParam->WBparams.BlueCorrection;
-        tmpParams.CameraWhiteBalance.fG0 = (mfxF32)pParam->WBparams.GreenBottomCorrection;
-        tmpParams.CameraWhiteBalance.fG1 = (mfxF32)pParam->WBparams.GreenTopCorrection;
-        tmpParams.CameraWhiteBalance.fR  = (mfxF32)pParam->WBparams.RedCorrection;
+        m_executeParams[surfInIndex].bCameraWhiteBalaceCorrection = true;
+        m_executeParams[surfInIndex].CameraWhiteBalance.fB  = (mfxF32)pParam->WBparams.BlueCorrection;
+        m_executeParams[surfInIndex].CameraWhiteBalance.fG0 = (mfxF32)pParam->WBparams.GreenBottomCorrection;
+        m_executeParams[surfInIndex].CameraWhiteBalance.fG1 = (mfxF32)pParam->WBparams.GreenTopCorrection;
+        m_executeParams[surfInIndex].CameraWhiteBalance.fR  = (mfxF32)pParam->WBparams.RedCorrection;
     }
 
     if ( pParam->Caps.bHotPixel )
     {
-        tmpParams.bCameraHotPixelRemoval = true;
-        tmpParams.CameraHotPixel.uPixelCountThreshold = pParam->HPParams.PixelCountThreshold;
-        tmpParams.CameraHotPixel.uPixelThresholdDifference = pParam->HPParams.PixelThresholdDifference;
+        m_executeParams[surfInIndex].bCameraHotPixelRemoval = true;
+        m_executeParams[surfInIndex].CameraHotPixel.uPixelCountThreshold = pParam->HPParams.PixelCountThreshold;
+        m_executeParams[surfInIndex].CameraHotPixel.uPixelThresholdDifference = pParam->HPParams.PixelThresholdDifference;
     }
 
     if ( pParam->Caps.bColorConversionMatrix )
     {
-        tmpParams.bCCM = true;
+        m_executeParams[surfInIndex].bCCM = true;
         for(int i = 0; i < 3; i++)
         {
             for(int j = 0; j < 3; j++)
             {
-                tmpParams.CCMParams.CCM[i][j] = (mfxF32)pParam->CCMParams.CCM[i][j];
+                m_executeParams[surfInIndex].CCMParams.CCM[i][j] = (mfxF32)pParam->CCMParams.CCM[i][j];
             }
         }
     }
 
     if ( pParam->Caps.bLensCorrection )
     {
-        tmpParams.bCameraLensCorrection = true;
+        m_executeParams[surfInIndex].bCameraLensCorrection = true;
         for(int i = 0; i < 3; i++)
         {
-            tmpParams.CameraLensCorrection.a[i] = pParam->LensParams.a[i];
-            tmpParams.CameraLensCorrection.b[i] = pParam->LensParams.b[i];
-            tmpParams.CameraLensCorrection.c[i] = pParam->LensParams.c[i];
-            tmpParams.CameraLensCorrection.d[i] = pParam->LensParams.d[i];
+            m_executeParams[surfInIndex].CameraLensCorrection.a[i] = pParam->LensParams.a[i];
+            m_executeParams[surfInIndex].CameraLensCorrection.b[i] = pParam->LensParams.b[i];
+            m_executeParams[surfInIndex].CameraLensCorrection.c[i] = pParam->LensParams.c[i];
+            m_executeParams[surfInIndex].CameraLensCorrection.d[i] = pParam->LensParams.d[i];
         }
     }
 
     if ( pParam->Caps.bForwardGammaCorrection )
     {
-        tmpParams.bCameraGammaCorrection = true;
+        m_executeParams[surfInIndex].bCameraGammaCorrection = true;
         for(int i = 0; i < 64; i++)
         {
-            tmpParams.CameraForwardGammaCorrection.Segment[i].PixelValue = pParam->GammaParams.gamma_lut.gammaPoints[i];
-            tmpParams.CameraForwardGammaCorrection.Segment[i].BlueChannelCorrectedValue  = pParam->GammaParams.gamma_lut.gammaCorrect[i];
-            tmpParams.CameraForwardGammaCorrection.Segment[i].GreenChannelCorrectedValue = pParam->GammaParams.gamma_lut.gammaCorrect[i];
-            tmpParams.CameraForwardGammaCorrection.Segment[i].RedChannelCorrectedValue   = pParam->GammaParams.gamma_lut.gammaCorrect[i];
+            m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].PixelValue = pParam->GammaParams.gamma_lut.gammaPoints[i];
+            m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].BlueChannelCorrectedValue  = pParam->GammaParams.gamma_lut.gammaCorrect[i];
+            m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].GreenChannelCorrectedValue = pParam->GammaParams.gamma_lut.gammaCorrect[i];
+            m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].RedChannelCorrectedValue   = pParam->GammaParams.gamma_lut.gammaCorrect[i];
         }
     }
 
     if ( pParam->Caps.bVignetteCorrection )
     {
         MFX_CHECK_NULL_PTR1(pParam->VignetteParams.pCorrectionMap);
-        tmpParams.bCameraVignetteCorrection = 1;
-        tmpParams.CameraVignetteCorrection.Height = pParam->VignetteParams.Height;
-        tmpParams.CameraVignetteCorrection.Width  = pParam->VignetteParams.Width;
-        tmpParams.CameraVignetteCorrection.Stride = pParam->VignetteParams.Stride;
-        tmpParams.CameraVignetteCorrection.pCorrectionMap = (CameraVignetteCorrectionElem *)pParam->VignetteParams.pCorrectionMap;
+        m_executeParams[surfInIndex].bCameraVignetteCorrection = 1;
+        m_executeParams[surfInIndex].CameraVignetteCorrection.Height = pParam->VignetteParams.Height;
+        m_executeParams[surfInIndex].CameraVignetteCorrection.Width  = pParam->VignetteParams.Width;
+        m_executeParams[surfInIndex].CameraVignetteCorrection.Stride = pParam->VignetteParams.Stride;
+        m_executeParams[surfInIndex].CameraVignetteCorrection.pCorrectionMap = (CameraVignetteCorrectionElem *)pParam->VignetteParams.pCorrectionMap;
     }
-    
 
-    tmpParams.refCount       = 1;
-    tmpParams.bkwdRefCount   = tmpParams.fwdRefCount = 0;
-    tmpParams.statusReportID = surfInIndex;
-
-    memcpy_s(&m_executeParams[surfInIndex], sizeof(MfxHwVideoProcessing::mfxExecuteParams), &tmpParams, sizeof(MfxHwVideoProcessing::mfxExecuteParams));
+    m_executeParams[surfInIndex].refCount       = 1;
+    m_executeParams[surfInIndex].bkwdRefCount   = m_executeParams[surfInIndex].fwdRefCount = 0;
+    m_executeParams[surfInIndex].statusReportID = surfInIndex;
     m_executeSurf[surfInIndex].bExternal = tmpSurf.bExternal;
     m_executeSurf[surfInIndex].endTimeStamp = tmpSurf.endTimeStamp;
     memcpy_s(&m_executeSurf[surfInIndex].frameInfo, sizeof(mfxFrameInfo), &tmpSurf.frameInfo, sizeof(mfxFrameInfo));
     m_executeSurf[surfInIndex].hdl = tmpSurf.hdl;
     m_executeSurf[surfInIndex].memId = tmpSurf.memId;
     m_executeSurf[surfInIndex].startTimeStamp = tmpSurf.startTimeStamp;
-
     m_executeParams[surfInIndex].pRefSurfaces = &m_executeSurf[surfInIndex];
-    
+
     pParam->surfInIndex = surfInIndex;
     pParam->surfOutIndex = surfOutIndex;
 
