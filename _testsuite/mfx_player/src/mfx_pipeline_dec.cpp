@@ -1730,6 +1730,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         || MFX_FOURCC_P210    == m_inParams.outFrameInfo.FourCC
         || MFX_FOURCC_NV16    == m_inParams.outFrameInfo.FourCC
         || MFX_FOURCC_NV12    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_YUY2    == m_inParams.outFrameInfo.FourCC
         || MFX_FOURCC_A2RGB10 == m_inParams.outFrameInfo.FourCC
         ) {
             m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_inParams.outFrameInfo.FourCC;
