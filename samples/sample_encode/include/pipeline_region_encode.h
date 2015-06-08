@@ -58,7 +58,7 @@ public:
 
 protected:
     CResourcesPool(const CResourcesPool& src){(void)src;}
-    CResourcesPool& operator= (const CResourcesPool& src){(void)src;}
+    CResourcesPool& operator= (const CResourcesPool& src){(void)src;return *this;}
     CMSDKResource* m_resources;
     int size;
 };
