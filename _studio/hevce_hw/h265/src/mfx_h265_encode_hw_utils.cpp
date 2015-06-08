@@ -366,7 +366,6 @@ MfxVideoParam::MfxVideoParam()
     , LCUSize         (DEFAULT_LCU_SIZE)
     , InsertHRDInfo   (false)
     , RawRef          (false)
-    , LowDelay        (false)
 {
     Zero(*(mfxVideoParam*)this);
     Zero(NumRefLX);
@@ -390,7 +389,6 @@ MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
     LCUSize          = par.LCUSize;
     InsertHRDInfo    = par.InsertHRDInfo;
     RawRef           = par.RawRef;
-    LowDelay         = par.LowDelay;
 }
 
 MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
@@ -408,6 +406,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.HEVCTiles);
     ExtBuffer::Construct(par, m_ext.Opaque);
     ExtBuffer::Construct(par, m_ext.CO2);
+    ExtBuffer::Construct(par, m_ext.CO3);
     ExtBuffer::Construct(par, m_ext.DDI);
     ExtBuffer::Construct(par, m_ext.AVCTL);
 }
@@ -432,6 +431,7 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.HEVCTiles);
     ExtBuffer::Set(par, m_ext.Opaque);
     ExtBuffer::Set(par, m_ext.CO2);
+    ExtBuffer::Set(par, m_ext.CO3);
     ExtBuffer::Set(par, m_ext.DDI);
     ExtBuffer::Set(par, m_ext.AVCTL);
 
@@ -486,7 +486,6 @@ void MfxVideoParam::SyncVideoToCalculableParam()
 
     InsertHRDInfo = false;
     RawRef        = false;
-    LowDelay = ((mfx.GopRefDist == 1) && !isTL() && (m_ext.DDI.NumActiveRefP == 0));
 
     m_slice.resize(0);
 
@@ -1208,11 +1207,17 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     m_pps.transform_skip_enabled_flag           = 0;
     m_pps.cu_qp_delta_enabled_flag              = (mfx.RateControlMethod == MFX_RATECONTROL_CQP) ? 0 : 1;
 
-    if (mfx.RateControlMethod == MFX_RATECONTROL_CQP)
-        m_pps.init_qp_minus26 = (mfx.GopRefDist == 1 ? mfx.QPP : mfx.QPB) - 26;
-
     m_pps.cb_qp_offset                          = 0;
     m_pps.cr_qp_offset                          = 0;
+    m_pps.slice_chroma_qp_offsets_present_flag  = 0;
+
+    if (mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        m_pps.init_qp_minus26 = (mfx.GopRefDist == 1 ? mfx.QPP : mfx.QPB) - 26;
+        // m_pps.cb_qp_offset = -1;
+        // m_pps.cr_qp_offset = -1;
+    }
+
     m_pps.slice_chroma_qp_offsets_present_flag  = 0;
     m_pps.weighted_pred_flag                    = 0;
     m_pps.weighted_bipred_flag                  = 0;
@@ -2114,7 +2119,7 @@ void ConstructRPL(
 
                         for (i = 0; (i < l0) && (((DPB[RPL[0][0]].m_poc - DPB[RPL[0][i]].m_poc) % par.NumRefLX[0]) == 0) ; i++);
                         
-                        Remove(RPL[0], (i >= l0) ? 0 : i);
+                        Remove(RPL[0], (i >= l0 - 1) ? 0 : i);
                         l0--;
                     }
                 }
@@ -2323,11 +2328,15 @@ void ConfigureTask(
     if (isB)
     {
         task.m_qpY = (mfxU8)par.mfx.QPB;
+        // if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isBPyramid() && (isRef) )
+        //    task.m_qpY = (mfxU8)((par.mfx.QPB + par.mfx.QPP + 1)/2);
     }
     else if (isP)
     {
         // encode P as GPB
         task.m_qpY = (mfxU8)par.mfx.QPP;
+        // if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isLowDelay() && ((task.m_poc - prevTask.m_lastIPoc) % par.NumRefLX[0]) == 0)
+        //    task.m_qpY = (mfxU8)((par.mfx.QPP + par.mfx.QPI + 1)/2);
         task.m_frameType &= ~MFX_FRAMETYPE_P;
         task.m_frameType |= MFX_FRAMETYPE_B;
         task.m_ldb = true;

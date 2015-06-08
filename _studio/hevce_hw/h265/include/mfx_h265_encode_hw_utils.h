@@ -392,6 +392,7 @@ public:
         mfxExtHEVCTiles             HEVCTiles;
         mfxExtOpaqueSurfaceAlloc    Opaque;
         mfxExtCodingOption2         CO2;
+        mfxExtCodingOption3         CO3;
         mfxExtCodingOptionDDI       DDI;
         mfxExtAvcTemporalLayers     AVCTL;
     } m_ext;
@@ -405,7 +406,6 @@ public:
     mfxU32 LCUSize;
     bool   InsertHRDInfo;
     bool   RawRef;
-    bool   LowDelay;
 
     MfxVideoParam();
     MfxVideoParam(MfxVideoParam const & par);
@@ -425,7 +425,7 @@ public:
     mfxStatus GetExtBuffers(mfxVideoParam& par, bool query = false);
 
     bool isBPyramid() const { return m_ext.CO2.BRefType == MFX_B_REF_PYRAMID; }
-    bool isLowDelay() const { return LowDelay; }
+    bool isLowDelay() const { return ((m_ext.CO3.PRefType == MFX_P_REF_PYRAMID) && !isTL()); }
     bool isTL()       const { return NumTL() > 1; }
 
 private:

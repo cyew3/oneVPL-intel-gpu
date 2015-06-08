@@ -13,7 +13,7 @@
 namespace MfxHwH265Encode
 {
 
-mfxStatus CheckVideoParam(MfxVideoParam & par, ENCODE_CAPS_HEVC const & caps);
+mfxStatus CheckVideoParam(MfxVideoParam & par, ENCODE_CAPS_HEVC const & caps, bool bInit = false);
 void      SetDefaults    (MfxVideoParam & par, ENCODE_CAPS_HEVC const & hwCaps);
 
 Plugin::Plugin(bool CreateByDispatcher)
@@ -134,7 +134,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     sts = LoadSPSPPS(m_vpar, pSPSPPS);
     MFX_CHECK_STS(sts);
 
-    qsts = CheckVideoParam(m_vpar, m_caps);
+    qsts = CheckVideoParam(m_vpar, m_caps, true);
     MFX_CHECK(qsts >= MFX_ERR_NONE, qsts);
 
     SetDefaults(m_vpar, m_caps);
@@ -425,7 +425,14 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     mfxStatus sts = MFX_ERR_NONE;
     Task* task = 0;
     
-    //TODO: check par here
+    if (surface)
+    {
+        MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(surface->Data.Pitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(surface->Info.Width  >=  m_vpar.mfx.FrameInfo.Width, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(surface->Info.Height >=  m_vpar.mfx.FrameInfo.Height, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+
 
     if (surface)
     {

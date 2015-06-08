@@ -668,7 +668,7 @@ mfxU16 minRefForPyramid(mfxU16 GopRefDist)
     return (GopRefDist - 1) / 2 + 2;
 }
 
-mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
+mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, bool bInit = false)
 {
     mfxU32 unsupported = 0, changed = 0, incompatible = 0;
     mfxStatus sts = MFX_ERR_NONE;
@@ -685,9 +685,17 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
         maxBuf = GetMaxCpbInKBByLevel(par);
         maxDPB = (mfxU16)GetMaxDpbSizeByLevel(par);
     }
+    if (bInit)
+    {
+        unsupported     += CheckMin(par.mfx.FrameInfo.Width,  Align(par.mfx.FrameInfo.Width, par.LCUSize));
+        unsupported     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height, par.LCUSize));
+    }
+    else
+    {
+        changed     += CheckMin(par.mfx.FrameInfo.Width, Align(par.mfx.FrameInfo.Width, par.LCUSize));
+        changed     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height, par.LCUSize));    
+    }
 
-    changed     += CheckMin(par.mfx.FrameInfo.Width, Align(par.mfx.FrameInfo.Width, par.LCUSize));
-    changed     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height, par.LCUSize));
     unsupported += CheckMax(par.mfx.FrameInfo.Width, caps.MaxPicWidth);
     unsupported += CheckMax(par.mfx.FrameInfo.Height, caps.MaxPicHeight);
 
@@ -818,11 +826,17 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps)
     changed += CheckOption(par.mfx.NumSlice, MakeSlices(par, caps.SliceStructure), 0);
 
     if (   par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID
-        && (   minRefForPyramid(par.mfx.GopRefDist) > 16
+        && ( par.mfx.GopRefDist < 2  
+            || minRefForPyramid(par.mfx.GopRefDist) > 16   
             || (par.mfx.NumRefFrame && minRefForPyramid(par.mfx.GopRefDist) > par.mfx.NumRefFrame)))
     {
         par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
         changed ++;
+    }
+    if (par.m_ext.CO3.PRefType == MFX_P_REF_PYRAMID &&  par.mfx.GopRefDist > 1)
+    {
+        par.m_ext.CO3.PRefType = MFX_P_REF_DEFAULT;
+        changed ++;    
     }
 
     {
@@ -1056,6 +1070,15 @@ void SetDefaults(
         else
             par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
     }
+    if (par.m_ext.CO3.PRefType == MFX_P_REF_DEFAULT)
+    {
+        if (par.mfx.GopRefDist == 1 && par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+            par.m_ext.CO3.PRefType = MFX_P_REF_PYRAMID;
+        else if (par.mfx.GopRefDist == 1)
+            par.m_ext.CO3.PRefType = MFX_P_REF_SIMPLE;
+    }
+
+
 }
 
 } //namespace MfxHwH265Encode
