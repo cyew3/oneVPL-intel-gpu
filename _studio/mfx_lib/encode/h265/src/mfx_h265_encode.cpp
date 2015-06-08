@@ -1207,6 +1207,13 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             frame->m_ttSubmitGpuCopyRec.poc = frame->m_frameOrder;
             if (!frame->m_feiRecon)
                 frame->m_feiRecon = m_feiInputPool.Allocate();
+
+            frame->m_ttWaitGpuCopyRec.numDownstreamDependencies = 0;
+            frame->m_ttWaitGpuCopyRec.numUpstreamDependencies = 0;
+            frame->m_ttWaitGpuCopyRec.finished = 0;
+            frame->m_ttWaitGpuCopyRec.poc = frame->m_frameOrder;
+            frame->m_ttWaitGpuCopyRec.syncpoint = NULL;
+            AddTaskDependency(&frame->m_ttWaitGpuCopyRec, &frame->m_ttSubmitGpuCopyRec); // GPU_WAIT_COPY_REC <- GPU_SUBMIT_COPY_REC
         }
     }
 
@@ -1546,6 +1553,8 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
     }
 
     vm_mutex_lock(&m_critSect);
+    if (m_videoParam.enableCmFlag && inputParam->m_targetFrame && inputParam->m_targetFrame->m_isRef && !inputParam->m_targetFrame->m_ttWaitGpuCopyRec.finished)
+        AddTaskDependency(&m_ttComplete, &inputParam->m_targetFrame->m_ttWaitGpuCopyRec); // COMPLETE <- GPU_WAIT_COPY_REC
     if (m_newFrame && !m_newFrame->m_ttInitNewFrame.finished && m_newFrame->m_ttInitNewFrame.numUpstreamDependencies == 0)
         m_pendingTasks.push_back(&m_newFrame->m_ttInitNewFrame); // INIT_NEW_FRAME is independent
     if (m_laFrame && !m_la->m_threadingTaskStore.front().finished && m_la->m_threadingTaskStore.front().numUpstreamDependencies == 0)
@@ -1974,7 +1983,6 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
         in.FEIFrameRef.YPlane = refData->y;
         in.FEIFrameRef.YPitch = refData->pitch_luma_bytes;
         in.FEIFrameRef.YBitDepth = 8;
-        in.SaveSyncPoint = 0;
 
     } else if (task.feiOp == MFX_FEI_H265_OP_INTRA_MODE) {
         in.FEIFrameIn.PicOrder = task.frame->m_frameOrder;
