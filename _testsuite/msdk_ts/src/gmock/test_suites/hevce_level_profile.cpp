@@ -75,7 +75,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 96},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 3},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2},
        },
     },
     // wrong slices
@@ -127,7 +127,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 288},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 8},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 5},
        },
     },
     // wrong slices
@@ -179,7 +179,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 368},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 12},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 6},
        },
     },
     // wrong slices
@@ -190,7 +190,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 368},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 40},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 34},
        },
     },
 
@@ -231,7 +231,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 544},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 16},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 9},
        },
     },
     // wrong slices
@@ -242,7 +242,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 544},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 40},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 34},
        },
     },
 
@@ -283,7 +283,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 720},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 22},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 12},
        },
     },
     // wrong slices
@@ -294,7 +294,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 720},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 50},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 34},
        },
     },
 
@@ -335,7 +335,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 34},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 17},
        },
     },
     // wrong slices
@@ -346,7 +346,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 80},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 34},
        },
     },
 
@@ -387,7 +387,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 34},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 17},
        },
     },
     // wrong slices
@@ -398,7 +398,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 80},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 34},
        },
     },
 
@@ -439,7 +439,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2160},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 68},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 34},
        },
     },
     // wrong slices
@@ -491,7 +491,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2160},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 68},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 34},
        },
     },
     // wrong slices
@@ -543,7 +543,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2160},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 68},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 34},
        },
     },
     // wrong slices
@@ -595,7 +595,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4320},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 134},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 68},
        },
     },
     // wrong slices
@@ -647,7 +647,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4320},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 134},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 68},
        },
     },
     // wrong slices
@@ -699,7 +699,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4320},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 134},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 68},
        },
     },
     // wrong slices
