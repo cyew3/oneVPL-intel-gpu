@@ -301,7 +301,7 @@ cl_int OpenCLFilterBase::ProcessSurface()
             m_clbuffer[2],
             m_clbuffer[3] };
 
-        if (EnqueueAcquireSurfaces(surfaces, sizeof(surfaces)/sizeof(cl_mem)))
+        if (!EnqueueAcquireSurfaces(surfaces, sizeof(surfaces)/sizeof(cl_mem)))
             return CL_DEVICE_NOT_AVAILABLE;
 
         // enqueue kernels
@@ -316,7 +316,7 @@ cl_int OpenCLFilterBase::ProcessSurface()
             return error;
         }
 
-        if (EnqueueReleaseSurfaces(surfaces, sizeof(surfaces)/sizeof(cl_mem)))
+        if (!EnqueueReleaseSurfaces(surfaces, sizeof(surfaces)/sizeof(cl_mem)))
             return CL_DEVICE_NOT_AVAILABLE;
 
         // flush & finish the command queue

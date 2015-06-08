@@ -68,11 +68,11 @@ mfxStatus Rotate::PluginInit(mfxCoreInterface *core)
     m_impl = par.Impl;
 
     mfxHDL hdl = 0;
-    m_impl &= 0xf00;
 #if defined(_WIN32) || defined(_WIN64)
-    if (m_impl == MFX_IMPL_VIA_D3D9) {
+    if (MFX_IMPL_VIA_MASK(m_impl) == MFX_IMPL_VIA_D3D9) {
         sts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, &m_device);
-    } else if (m_impl == MFX_IMPL_VIA_D3D11){
+    }
+    else if (MFX_IMPL_VIA_MASK(m_impl) == MFX_IMPL_VIA_D3D11) {
         sts = m_pmfxCore->GetHandle(m_pmfxCore->pthis, MFX_HANDLE_D3D11_DEVICE, &m_device);
     } else {
         hdl = 0;
@@ -341,7 +341,7 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
 
 #if defined(_WIN32) || defined(_WIN64)
         int format = D3DFMT_NV12;
-        if (m_impl == MFX_IMPL_VIA_D3D11) {
+        if (MFX_IMPL_VIA_MASK(m_impl) == MFX_IMPL_VIA_D3D11) {
              m_OpenCLFilter.reset(new OpenCLFilterDX11());
              format = DXGI_FORMAT_NV12;
         } else {
