@@ -2137,7 +2137,7 @@ void H265FrameEncoder::SetEncodeFrame(Frame* frame, std::deque<ThreadingTask *> 
             if (ctb_row == regionCtbRowLast && ctb_col == regionCtbColLast) {
                 AddTaskDependency(&m_frame->m_ttEncComplete, m_frame->m_doPostProc ? task_pp : task_enc);
                 if (m_videoParam.enableCmFlag && frame->m_isRef)
-                    AddTaskDependency(&m_frame->m_ttSubmitGpuCopyRec, task_pp);
+                    AddTaskDependency(&m_frame->m_ttSubmitGpuCopyRec, m_frame->m_doPostProc ? task_pp : task_enc);
             }
 
             ctb_addr ++;

@@ -541,6 +541,16 @@ void H265Enc::PutPPS(H265BsReal *bs, const H265PicParameterSet &pps)
 }
 
 
+mfxU32 H265BsReal::WriteNAL(Ipp8u *dst, Ipp32u dstBufSize, Ipp8u startPicture, Ipp32u nalUnitType)
+{
+    mfxBitstream dstBs = {};
+    dstBs.Data = dst;
+    dstBs.MaxLength = dstBufSize;
+    H265NALUnit nal = {};
+    nal.nal_unit_type = nalUnitType;
+    return WriteNAL(&dstBs, startPicture, &nal);
+}
+
 mfxU32 H265BsReal::WriteNAL(mfxBitstream *dst,
                             Ipp8u startPicture,
                             H265NALUnit *nal)

@@ -157,6 +157,7 @@ public:
     void WriteTrailingBits();
     void ByteAlignWithZeros();
     void ByteAlignWithOnes();
+    mfxU32 WriteNAL(Ipp8u *dst, Ipp32u dstBufSize, Ipp8u startPicture, Ipp32u nalUnitType);
     mfxU32 WriteNAL(mfxBitstream *dst, Ipp8u startPicture, H265NALUnit *nal);
 
     void EncodeSingleBin_CABAC(CABAC_CONTEXT_H265 *ctx, Ipp32u code);

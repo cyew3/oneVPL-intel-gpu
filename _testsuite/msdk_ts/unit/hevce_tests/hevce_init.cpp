@@ -292,6 +292,28 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     extSpsPps.PPSBufSize = sizeof(pps);
     output.extBuffers[0] = &extSpsPps.Header;
     output.videoParam.NumExtParam = 1;
+
+    { SCOPED_TRACE("Test extSpsPps.SPSBuffer==nullptr");
+        extSpsPps.SPSBuffer = nullptr;
+        EXPECT_EQ(MFX_ERR_NULL_PTR, encoder.GetVideoParam(&output.videoParam));
+        extSpsPps.SPSBuffer = sps;
+    }
+    { SCOPED_TRACE("Test extSpsPps.PPSBuffer==nullptr");
+        extSpsPps.PPSBuffer = nullptr;
+        EXPECT_EQ(MFX_ERR_NULL_PTR, encoder.GetVideoParam(&output.videoParam));
+        extSpsPps.PPSBuffer = pps;
+    }
+    { SCOPED_TRACE("Test small extSpsPps.SPSBufSize");
+        extSpsPps.SPSBufSize = 4;
+        EXPECT_EQ(MFX_ERR_NOT_ENOUGH_BUFFER, encoder.GetVideoParam(&output.videoParam));
+        extSpsPps.SPSBufSize = sizeof(sps);
+    }
+    { SCOPED_TRACE("Test small extSpsPps.PPSBufSize");
+        extSpsPps.PPSBufSize = 4;
+        EXPECT_EQ(MFX_ERR_NOT_ENOUGH_BUFFER, encoder.GetVideoParam(&output.videoParam));
+        extSpsPps.PPSBufSize = sizeof(pps);
+    }
+
     EXPECT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
 
     Ipp8u bsData[8192];
@@ -315,14 +337,14 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     auto nals = SplitNals(bs.Data, bs.Data + bs.DataLength);
     for (auto &nal: nals) {
         if (nal.type == H265Enc::NAL_SPS) {
-            auto spsFromBitstream = ExtractRbsp(nal.start, nal.end);
-            EXPECT_EQ(spsFromBitstream.size(), extSpsPps.SPSBufSize);
-            EXPECT_TRUE(std::equal(spsFromBitstream.begin(), spsFromBitstream.end(), extSpsPps.SPSBuffer));
+            SCOPED_TRACE("Testing SPS");
+            EXPECT_EQ(Ipp32u(nal.end - nal.start), extSpsPps.SPSBufSize);
+            EXPECT_TRUE(std::equal(nal.start, nal.end, extSpsPps.SPSBuffer));
         }
         if (nal.type == H265Enc::NAL_PPS) {
-            auto ppsFromBitstream = ExtractRbsp(nal.start, nal.end);
-            EXPECT_EQ(ppsFromBitstream.size(), extSpsPps.PPSBufSize);
-            EXPECT_TRUE(std::equal(ppsFromBitstream.begin(), ppsFromBitstream.end(), extSpsPps.PPSBuffer));
+            SCOPED_TRACE("Testing PPS");
+            EXPECT_EQ(Ipp32u(nal.end - nal.start), extSpsPps.PPSBufSize);
+            EXPECT_TRUE(std::equal(nal.start, nal.end, extSpsPps.PPSBuffer));
         }
     }
 }

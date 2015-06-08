@@ -1457,17 +1457,10 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, m
 
 mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par)
 {
-    if (m_impl.get() == NULL)
+    if (m_impl.get() == 0)
         return MFX_ERR_NOT_INITIALIZED;
-    if (par == NULL)
-        return MFX_ERR_NULL_PTR;
-
-    mfxStatus st = CheckExtBuffers(par->ExtParam, par->NumExtParam);
-    if (st != MFX_ERR_NONE)
-        return st;
-
-    return MFX_ERR_UNSUPPORTED;
-    //return m_impl->Reset(*par);
+    Close();
+    return Init(par);
 }
 
 
@@ -1480,10 +1473,14 @@ mfxStatus MFXVideoENCODEH265::GetVideoParam(mfxVideoParam *par)
 
     if (mfxExtCodingOptionSPSPPS *spspps = GetExtBuffer(*par)) {
         // check that SPS/PPS buffers have enough space
-        if (spspps->SPSBuffer && spspps->SPSBufSize < m_extBuffers.extSpsPps.SPSBufSize)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        if (spspps->PPSBuffer && spspps->PPSBufSize < m_extBuffers.extSpsPps.PPSBufSize)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+        if (spspps->SPSBuffer == NULL)
+            return MFX_ERR_NULL_PTR;
+        if (spspps->PPSBuffer == NULL)
+            return MFX_ERR_NULL_PTR;
+        if (spspps->SPSBufSize < m_extBuffers.extSpsPps.SPSBufSize)
+            return MFX_ERR_NOT_ENOUGH_BUFFER;
+        if (spspps->PPSBufSize < m_extBuffers.extSpsPps.PPSBufSize)
+            return MFX_ERR_NOT_ENOUGH_BUFFER;
     }
 
     CopyParam(*par, m_mfxParam);

@@ -587,24 +587,22 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
     SetPPS();
     SetSeiAps();
 
+    Ipp8u tmpbuf[1024];
     H265BsReal bs;
-    bs.m_base.m_pbsBase = m_spsBuf;
-    bs.m_base.m_maxBsSize = sizeof(m_spsBuf);
+
+    bs.m_base.m_pbsBase = tmpbuf;
+    bs.m_base.m_maxBsSize = sizeof(tmpbuf);
     bs.Reset();
-    bs.PutBits(0, 24);
-    bs.PutBits((1 << 16) | (NAL_SPS << 9) | 1, 24);
     PutSPS(&bs, m_sps, m_profile_level);
     bs.WriteTrailingBits();
-    m_spsBufSize = H265Bs_GetBsSize(&bs);
+    m_spsBufSize = bs.WriteNAL(m_spsBuf, sizeof(m_spsBuf), 0, NAL_SPS);
 
-    bs.m_base.m_pbsBase = m_ppsBuf;
-    bs.m_base.m_maxBsSize = sizeof(m_ppsBuf);
+    bs.m_base.m_pbsBase = tmpbuf;
+    bs.m_base.m_maxBsSize = sizeof(tmpbuf);
     bs.Reset();
-    bs.PutBits(0, 24);
-    bs.PutBits((1 << 16) | (NAL_PPS << 9) | 1, 24);
     PutPPS(&bs, m_pps);
     bs.WriteTrailingBits();
-    m_ppsBufSize = H265Bs_GetBsSize(&bs);
+    m_ppsBufSize = bs.WriteNAL(m_ppsBuf, sizeof(m_ppsBuf), 0, NAL_PPS);
 
     if (m_videoParam.hrdPresentFlag)
         m_hrd.Init(m_sps, m_videoParam.initDelay);
