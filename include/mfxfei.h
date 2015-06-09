@@ -43,7 +43,7 @@ typedef struct {
 
     mfxU16    Qp;
     mfxU16    LenSP;
-    mfxU16    MaxLenSP;
+    mfxU16    SearchPath;
     mfxU16    SubMBPartMask;
     mfxU16    SubPelMode;
     mfxU16    InterSAD;
@@ -128,7 +128,7 @@ typedef struct {
 typedef struct {
     mfxExtBuffer    Header;
 
-    mfxU16    MaxLenSP;
+    mfxU16    SearchPath;
     mfxU16    LenSP;
     mfxU16    SubMBPartMask;
     mfxU16    IntraPartMask;
