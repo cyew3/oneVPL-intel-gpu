@@ -1394,7 +1394,6 @@ mfxStatus CEncodingPipeline::Run()
             //inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & preENCCtr;
 
             if (preENCCtr[fieldId].MVPredictor) {
-                preENCCtr[fieldId].MVPredictor = 0;
                 mvPreds[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV_PRED;
                 mvPreds[fieldId].Header.BufferSz = sizeof (mfxExtFeiPreEncMVPredictors);
                 mvPreds[fieldId].NumMBAlloc = numMB;
