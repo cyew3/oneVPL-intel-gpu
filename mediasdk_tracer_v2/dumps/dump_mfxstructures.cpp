@@ -405,6 +405,7 @@ std::string DumpContext::dump(const std::string structName, const mfxSkipMode &s
 std::string DumpContext::dump(const std::string structName, const mfxVideoParam& videoParam)
 {
     std::string str;
+    str += structName + ".AllocId=" + ToString(videoParam.AllocId) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(videoParam.reserved) + "\n";
     str += structName + ".AsyncDepth=" + ToString(videoParam.AsyncDepth) + "\n";
     if(context == DUMPCONTEXT_MFX)

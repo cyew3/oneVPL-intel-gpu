@@ -298,7 +298,8 @@ typedef struct {
 } mfxInfoVPP;
 
 typedef struct {
-    mfxU32  reserved[3];
+    mfxU32  AllocId;
+    mfxU32  reserved[2];
     mfxU16  reserved3;
     mfxU16  AsyncDepth;
 
