@@ -91,6 +91,7 @@
 
 #ifndef MFX_VA
 #define AMT_VQ_TUNE
+#define AMT_REF_SCALABLE
 #endif
 #ifdef AMT_VQ_TUNE
 #if defined(AMT_ADAPTIVE_TU_DEPTH) && defined(AMT_ALT_ENCODE)
@@ -102,7 +103,6 @@
 #endif
 #define AMT_VQ_TU
 #endif
-
 #endif
 
 

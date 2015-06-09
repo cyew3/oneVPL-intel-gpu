@@ -249,8 +249,9 @@ typedef struct {
     mfxU16      DeblockBorders;     // tri-state, deblock borders
     mfxU16      SAOChroma;          // on / off
     mfxU16      RepackProb;         // percent of random repack probabiility, 0 - no random repacks
+    mfxU16      NumRefLayers;       // 0-1-default, 2+ use given
 
-    mfxU16      reserved[40];       // 256 bytes total} mfxExtCodingOptionHEVC;
+    mfxU16      reserved[39];       // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionHEVC;
 
 #if defined (ADVANCED_REF)

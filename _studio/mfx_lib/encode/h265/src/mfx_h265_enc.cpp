@@ -2039,8 +2039,12 @@ void H265FrameEncoder::SetEncodeFrame(Frame* frame, std::deque<ThreadingTask *> 
                     for (int refIdx = 0; refIdx < slice->num_ref_idx[list]; refIdx++) {
                         if (list == 1 && m_frame->m_mapRefIdxL1ToL0[refIdx] > -1)
                             continue;
-                        Frame *ref = refList->m_refFrames[refIdx];
 
+                        Frame *ref = refList->m_refFrames[refIdx];
+#ifdef AMT_REF_SCALABLE
+                        if(refIdx && m_videoParam.BiPyramidLayers == 4 && ref->m_pyramidLayer>m_videoParam.refLayerLimit[m_frame->m_pyramidLayer]) 
+                            continue;
+#endif
                         Ipp32u refRow = ctb_row + refRowLag;
                         if (refRow > endRow && ctb_row == regionCtbRowFirst && ctb_col == regionCtbColFirst)
                             refRow = endRow;

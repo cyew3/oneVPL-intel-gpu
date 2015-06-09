@@ -106,6 +106,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     tab_##mode##_DeblockBorders[x],\
     tab_##mode##_SAOChroma[x],\
     tab_##mode##_RepackProb[x],\
+    tab_##mode##_NumRefLayers[x],\
     }
 
     // Extended bit depth
@@ -363,7 +364,11 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_ALL (BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
 
     TU_OPT_ALL (AdaptiveRefs,                  ON,  ON,  ON,  ON,  ON,  ON,  ON);
+#ifdef AMT_REF_SCALABLE
+    TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON,  ON,  ON);
+#else
     TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON,  ON,  OFF);
+#endif
 
     TU_OPT_SW  (NumRefFrameB,                   0,   0,   3,   3,   2,   2,   2);
     TU_OPT_GACC(NumRefFrameB,                   0,   0,   0,   0,   0,   0,   0);
@@ -377,6 +382,8 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_ALL (LowresFactor,                   0,   0,   0,   0,   0,   0,   0);
 
     TU_OPT_ALL (RepackProb,                     0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_SW  (NumRefLayers,                   2,   2,   3,   3,   4,   4,   4);
+    TU_OPT_GACC(NumRefLayers,                   0,   0,   0,   0,   0,   0,   0);
 
 
 namespace H265Enc {

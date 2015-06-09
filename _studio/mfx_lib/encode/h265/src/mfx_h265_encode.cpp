@@ -157,6 +157,9 @@ namespace {
         intParam.NumRefFrameB  = optHevc.NumRefFrameB;
         if (intParam.NumRefFrameB < 2) 
             intParam.NumRefFrameB = numRefFrame;
+        intParam.NumRefLayers  = optHevc.NumRefLayers;
+        if (intParam.NumRefLayers < 2) 
+            intParam.NumRefLayers = 2;
         
         intParam.IntraMinDepthSC = (Ipp8u)optHevc.IntraMinDepthSC - 1;
         intParam.InterMinDepthSTC = (Ipp8u)optHevc.InterMinDepthSTC - 1;
@@ -204,6 +207,24 @@ namespace {
         intParam.SAOFlag = (optHevc.SAO == ON);
         intParam.SAOChromaFlag = (optHevc.SAOChroma == ON);
         intParam.num_threads = mfx.NumThread;
+
+        if(intParam.NumRefLayers==4) {
+            intParam.refLayerLimit[0] = 0;
+            intParam.refLayerLimit[1] = 1;
+            intParam.refLayerLimit[2] = 1;
+            intParam.refLayerLimit[3] = 2;
+        } else if(intParam.NumRefLayers==3) {
+            intParam.refLayerLimit[0] = 1;
+            intParam.refLayerLimit[1] = 1;
+            intParam.refLayerLimit[2] = 1;
+            intParam.refLayerLimit[3] = 2;
+        } else {
+            intParam.refLayerLimit[0] = 4;
+            intParam.refLayerLimit[1] = 4;
+            intParam.refLayerLimit[2] = 4;
+            intParam.refLayerLimit[3] = 4;
+        }
+
         intParam.num_cand_0[0][2] = (Ipp8u)optHevc.IntraNumCand0_2;
         intParam.num_cand_0[0][3] = (Ipp8u)optHevc.IntraNumCand0_3;
         intParam.num_cand_0[0][4] = (Ipp8u)optHevc.IntraNumCand0_4;

@@ -296,6 +296,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(DeblockBorders,           OPT_TRI_STATE,  "on/off deblock borders"),
         HANDLE_HEVC_OPTION(SAOChroma,                OPT_TRI_STATE,  "on/off SAO for Chroma"),
         HANDLE_HEVC_OPTION(RepackProb,               OPT_UINT_16,    "percent of random repack probabiility, 0 - no random repacks"),
+        HANDLE_HEVC_OPTION(NumRefLayers,             OPT_UINT_16,    "Reference Frames Layers used for B Frames in Pyramid"),
 
 
         HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "number of tile columns (1 - default)"),

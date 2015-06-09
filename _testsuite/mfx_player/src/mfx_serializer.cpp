@@ -323,6 +323,7 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(DeblockBorders);
     SERIALIZE_INT(SAOChroma);
     SERIALIZE_INT(RepackProb);
+    SERIALIZE_INT(NumRefLayers);
 }
 
 void MFXStructureRef <mfxExtHEVCTiles>::ConstructValues() const

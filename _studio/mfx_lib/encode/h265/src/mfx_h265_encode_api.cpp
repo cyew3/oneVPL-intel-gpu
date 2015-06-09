@@ -475,6 +475,7 @@ namespace {
             ext->DeblockBorders = 1;
             ext->SAOChroma = 1;
             ext->RepackProb = 1;
+            ext->NumRefLayers = 1;
         }
 
         if (mfxExtCodingOption2 *ext = GetExtBuffer(*out)) {
@@ -668,6 +669,7 @@ namespace {
             wrnIncompatible = !CheckMax(optHevc->PatternSubPel, 6);
             wrnIncompatible = !CheckMax(optHevc->DeltaQpMode, 3);
             wrnIncompatible = !CheckMax(optHevc->NumRefFrameB, 16);
+            wrnIncompatible = !CheckMax(optHevc->NumRefLayers, 4);
             wrnIncompatible = !CheckMax(optHevc->AnalyzeCmplx, 2);
             wrnIncompatible = !CheckMax(optHevc->LowresFactor, 3);
 
@@ -1004,7 +1006,13 @@ namespace {
             optHevc.EnableCm = DEFAULT_ENABLE_CM;
 
         const mfxExtCodingOptionHEVC &defaultOptHevc = (optHevc.EnableCm == OFF ? tab_defaultOptHevcSw : tab_defaultOptHevcGacc)[mfx.TargetUsage];
-        const Ipp8u defaultNumRefFrame = (optHevc.EnableCm == OFF ? tab_defaultNumRefFrameSw : tab_defaultNumRefFrameGacc)[mfx.TargetUsage];
+        Ipp8u defaultNumRefFrame = (optHevc.EnableCm == OFF ? tab_defaultNumRefFrameSw : tab_defaultNumRefFrameGacc)[mfx.TargetUsage];
+#ifdef AMT_REF_SCALABLE
+        if (optHevc.NumRefLayers == 0)
+            optHevc.NumRefLayers = defaultOptHevc.NumRefLayers;
+        
+        if(optHevc.NumRefLayers==4 && optHevc.BPyramid!=OFF) defaultNumRefFrame =  4;
+#endif
         const Ipp8u defaultGopRefDist = tab_defaultGopRefDist[mfx.TargetUsage];
         const Ipp32s numTile = tiles.NumTileRows * tiles.NumTileColumns;
 
@@ -1029,7 +1037,7 @@ namespace {
                                     (mfx.FrameInfo.Width  + (1 << (size - 1))) >> size) / 2.75;
                 Ipp32f frameMult = MAX(1.0, MIN((Ipp32f)mfx.NumThread / (Ipp32f)wppEff, 4.0));
                 if (mfx.NumThread >= 4)
-                    optHevc.FramesInParallel = MIN((optHevc.FramesInParallel * frameMult + 0.5), 8);
+                    optHevc.FramesInParallel = MIN((optHevc.FramesInParallel * frameMult + 0.5), 16);
 #endif
             }
         }

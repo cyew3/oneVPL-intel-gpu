@@ -104,6 +104,8 @@ namespace H265Enc {
         Ipp8u  SkipCandRD;       // on: Do Full RD /off : do Fast decision 
         Ipp8u  AdaptiveRefs;     // on: Adaptive Search for best ref
         Ipp8u  NumRefFrameB;     // 0,1-default, 2+ Use Given
+        Ipp8u  NumRefLayers;
+        Ipp8u  refLayerLimit[4];
         Ipp8u  IntraMinDepthSC;  // Spatial complexity for Intra min depth 1 [0-11] 0-default, 1-11 (1-Always, 11-Never)
         Ipp8u  InterMinDepthSTC; // Spatio-Temporal complexity for Inter min depth 1 [0-4] 0-default, 1-6 (1-Always, 6-Never)
         Ipp8u  MotionPartitionDepth; // MotionPartitionDepth depth [0-6] 0-default, 1-6 (1-Never, 6-Always)
