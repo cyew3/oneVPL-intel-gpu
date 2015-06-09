@@ -470,7 +470,7 @@ typedef struct _VAEncMiscParameterFEIFrameControlH264Intel {
     unsigned int      num_mv_predictors;
 
     /** \brief control parameters */
-    unsigned int      max_len_sp                : 8;
+    unsigned int      search_path                : 8;
     unsigned int      len_sp                    : 8;
     unsigned int      reserved0                 : 16;
 
@@ -493,8 +493,8 @@ typedef struct _VAEncMiscParameterFEIFrameControlH264Intel {
 
     unsigned int      ref_width                 : 8;
     unsigned int      ref_height                : 8;
-    unsigned int      search_window             : 3;
-    unsigned int      reserved2                 : 13;
+    unsigned int      search_window             : 4;
+    unsigned int      reserved2                 : 12;
 } VAEncMiscParameterFEIFrameControlH264Intel;
 
 
@@ -708,7 +708,7 @@ typedef struct _VAStatsStatisticsParameter16x16Intel
 
     unsigned int    frame_qp                    : 8;
     unsigned int    len_sp                      : 8;
-    unsigned int    max_len_sp                  : 8;
+    unsigned int    search_path                  : 8;
     unsigned int    reserved0                   : 8;
 
     unsigned int    sub_mb_part_mask            : 7;
@@ -736,8 +736,8 @@ typedef struct _VAStatsStatisticsParameter16x16Intel
 
     unsigned int    ref_width                   : 8;
     unsigned int    ref_height                  : 8;
-    unsigned int    search_window               : 3;
-    unsigned int    reserved2                   : 13;
+    unsigned int    search_window               : 4;
+    unsigned int    reserved2                   : 12;
 
     /** \brief MVOutput. When set to 1, MV output is NOT provided */
     unsigned int    disable_mv_output           : 1;

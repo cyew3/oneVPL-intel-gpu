@@ -445,7 +445,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     m_statParams.inter_sad = feiCtrl->InterSAD;
     m_statParams.intra_sad = feiCtrl->IntraSAD;
     m_statParams.len_sp = feiCtrl->LenSP;
-    m_statParams.max_len_sp = feiCtrl->MaxLenSP;
+    m_statParams.search_path = feiCtrl->SearchPath;
     m_statParams.outputs = &outBuffers[0]; //bufIDs for outputs
     m_statParams.sub_pel_mode = feiCtrl->SubPelMode;
     m_statParams.sub_mb_part_mask = feiCtrl->SubMBPartMask;
@@ -476,7 +476,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     fprintf(stderr, "qp=%d\n", m_statParams.qp);
     fprintf(stderr, "frame_qp=%d\n", m_statParams.frame_qp);
     fprintf(stderr, "len_sp=%d\n", m_statParams.len_sp);
-    fprintf(stderr, "max_len_sp=%d\n", m_statParams.max_len_sp);
+    fprintf(stderr, "search_path=%d\n", m_statParams.search_path);
     fprintf(stderr, "reserved0=%d\n", m_statParams.reserved0);
     fprintf(stderr, "sub_mb_part_mask=%d\n", m_statParams.sub_mb_part_mask);
     fprintf(stderr, "sub_pel_mode=%d\n", m_statParams.sub_pel_mode);
@@ -1207,7 +1207,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         vaFeiFrameControl->intra_sad = frameCtrl->AdaptiveSearch;
         vaFeiFrameControl->intra_sad = frameCtrl->IntraSAD;
         vaFeiFrameControl->len_sp = frameCtrl->LenSP;
-        vaFeiFrameControl->max_len_sp = frameCtrl->MaxLenSP;
+        vaFeiFrameControl->search_path = frameCtrl->SearchPath;
 
         vaFeiFrameControl->distortion = m_vaFeiMBStatId[fieldId];
         vaFeiFrameControl->mv_data = m_vaFeiMVOutId[fieldId];
@@ -2165,7 +2165,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         vaFeiFrameControl->intra_sad = frameCtrl->AdaptiveSearch;
         vaFeiFrameControl->intra_sad = frameCtrl->IntraSAD;
         vaFeiFrameControl->len_sp = frameCtrl->LenSP;
-        vaFeiFrameControl->max_len_sp = frameCtrl->MaxLenSP;
+        vaFeiFrameControl->search_path = frameCtrl->SearchPath;
 
         vaFeiFrameControl->distortion = VA_INVALID_ID;//m_vaFeiMBStatId[fieldId];
         vaFeiFrameControl->mv_data = m_vaFeiMVOutId[fieldId];

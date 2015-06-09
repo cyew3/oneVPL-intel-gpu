@@ -1781,7 +1781,7 @@ mfxStatus VAAPIEncoder::Execute(
             vaFeiFrameControl->intra_sad = frameCtrl->AdaptiveSearch;
             vaFeiFrameControl->intra_sad = frameCtrl->IntraSAD;
             vaFeiFrameControl->len_sp = frameCtrl->LenSP;
-            vaFeiFrameControl->max_len_sp = frameCtrl->MaxLenSP;
+            vaFeiFrameControl->search_path = frameCtrl->SearchPath;
 
             vaFeiFrameControl->distortion = m_vaFeiMBStatId[2*idxRecon + fieldId];
             vaFeiFrameControl->mv_data = m_vaFeiMVOutId[2*idxRecon + fieldId];
