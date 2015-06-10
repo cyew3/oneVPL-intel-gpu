@@ -441,7 +441,7 @@ mfxStatus D3D11Encoder::Execute(
     // update pps and slice structures
     {
         size_t slice_size_old = m_slice.size();
-        FillVaringPartOfPpsBuffer(task, fieldId, m_pps);
+        FillVaringPartOfPpsBuffer(task, fieldId, m_pps, m_dirtyRects, m_movingRects);
 
         if (task.m_SliceInfo.size())
             FillVaringPartOfSliceBufferSizeLimited(m_caps, task, fieldId, m_sps, m_pps, m_slice);

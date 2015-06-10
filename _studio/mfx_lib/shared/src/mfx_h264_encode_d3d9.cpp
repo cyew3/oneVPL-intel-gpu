@@ -227,7 +227,9 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
 void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     DdiTask const &                      task,
     mfxU32                               fieldId,
-    ENCODE_SET_PICTURE_PARAMETERS_H264 & pps)
+    ENCODE_SET_PICTURE_PARAMETERS_H264 & pps,
+    std::vector<ENCODE_RECT> &           dirtyRects,
+    std::vector<MOVE_RECT> &             movingRects)
 {
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(task.m_ctrl);
     mfxExtAVCEncoderWiDiUsage const * extWiDi = GetExtBuffer(task.m_ctrl);
@@ -292,6 +294,48 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
         }
         pps.MaxDeltaQp = 51;
         pps.MinDeltaQp = -51;
+    }
+
+    // dirty rectangles
+    if (task.m_numDirtyRect)
+    {
+        dirtyRects.resize(task.m_numDirtyRect);
+        for (i = 0; i < task.m_numDirtyRect; i ++)
+        {
+            dirtyRects[i].Left   = (mfxU16)task.m_dirtyRect[i].Left;
+            dirtyRects[i].Top    = (mfxU16)task.m_dirtyRect[i].Top;
+            dirtyRects[i].Right  = (mfxU16)task.m_dirtyRect[i].Right;
+            dirtyRects[i].Bottom = (mfxU16)task.m_dirtyRect[i].Bottom;
+        }
+        pps.NumDirtyRects = (mfxU8)task.m_numDirtyRect;
+        pps.pDirtyRect = &(dirtyRects[0]);
+    }
+    else
+    {
+        pps.NumDirtyRects = 0;
+        pps.pDirtyRect = 0;
+    }
+
+    // moving rectangles
+    if (task.m_numMovingRect)
+    {
+        movingRects.resize(task.m_numMovingRect);
+        for (i = 0; i < task.m_numMovingRect; i ++)
+        {
+            movingRects[i].DestRect.Left   = (mfxU16)task.m_movingRect[i].DestLeft;
+            movingRects[i].DestRect.Top    = (mfxU16)task.m_movingRect[i].DestTop;
+            movingRects[i].DestRect.Right  = (mfxU16)task.m_movingRect[i].DestRight;
+            movingRects[i].DestRect.Bottom = (mfxU16)task.m_movingRect[i].DestBottom;
+            movingRects[i].SourcePointX    = (mfxU16)task.m_movingRect[i].SourceLeft;
+            movingRects[i].SourcePointY    = (mfxU16)task.m_movingRect[i].SourceTop;
+        }
+        pps.NumMoveRects = (mfxU8)task.m_numMovingRect;
+        pps.pMoveRect = &(movingRects[0]);
+    }
+    else
+    {
+        pps.NumMoveRects = 0;
+        pps.pMoveRect = 0;
     }
 
     pps.BRCMaxQp = task.m_maxQP;
@@ -1277,7 +1321,7 @@ mfxStatus D3D9Encoder::Execute(
 
     {
         size_t slice_size_old = m_slice.size();
-        FillVaringPartOfPpsBuffer(task, fieldId, m_pps);
+        FillVaringPartOfPpsBuffer(task, fieldId, m_pps, m_dirtyRects, m_movingRects);
 
         if (task.m_SliceInfo.size())
             FillVaringPartOfSliceBufferSizeLimited(m_caps, task, fieldId, m_sps, m_pps, m_slice);

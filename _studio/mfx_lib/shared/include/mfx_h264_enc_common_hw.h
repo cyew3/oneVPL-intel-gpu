@@ -209,6 +209,8 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMBDisableSkipMap,     MFX_EXTBUFF_MB_DISABLE_SKIP_MAP      );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncodeCtrl,        MFX_EXTBUFF_AVC_ENCODE_CTRL          );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtSpecialEncodingModes, MFX_EXTBUFF_SPECIAL_MODES            );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtDirtyRect,            MFX_EXTBUFF_DIRTY_RECTANGLES         );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtMoveRect,             MFX_EXTBUFF_MOVING_RECTANGLES        );
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -515,6 +517,23 @@ namespace MfxHwH264Encode
         mfxI16  Priority;
     };
 
+    struct mfxRectDesc{
+        mfxU32  Left;
+        mfxU32  Top;
+        mfxU32  Right;
+        mfxU32  Bottom;
+    };
+
+    struct mfxMovingRectDesc{
+        mfxU32  DestLeft;
+        mfxU32  DestTop;
+        mfxU32  DestRight;
+        mfxU32  DestBottom;
+
+        mfxU32  SourceLeft;
+        mfxU32  SourceTop;
+    };
+
     class MfxVideoParam : public mfxVideoParam
     {
     public:
@@ -537,7 +556,7 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-        mfxExtBuffer *              m_extParam[21];
+        mfxExtBuffer *              m_extParam[23];
 
         // external, documented
         mfxExtCodingOption          m_extOpt;
@@ -556,6 +575,8 @@ namespace MfxHwH264Encode
         mfxExtEncoderROI            m_extEncRoi;
         mfxExtFeiParam              m_extFeiParam;
         mfxExtChromaLocInfo         m_extChromaLoc;
+        mfxExtDirtyRect             m_extDirtyRect;
+        mfxExtMoveRect              m_extMoveRect;
 
         // internal, not documented
         mfxExtCodingOptionDDI       m_extOptDdi;
@@ -703,9 +724,18 @@ namespace MfxHwH264Encode
     mfxStatus CheckForAllowedH264SpecViolations(
         MfxVideoParam const & par);
 
+    mfxStatus CheckAndFixRectQueryLike(
+        MfxVideoParam const & par,
+        mfxRectDesc *         rect);
+
     mfxStatus CheckAndFixRoiQueryLike(
         MfxVideoParam const & par,
         mfxRoiDesc *          roi);
+
+    mfxStatus CheckAndFixMovingRectQueryLike(
+        MfxVideoParam const & par,
+        mfxMovingRectDesc *   rect);
+
 
     mfxStatus CheckVideoParam(
         MfxVideoParam &     par,
