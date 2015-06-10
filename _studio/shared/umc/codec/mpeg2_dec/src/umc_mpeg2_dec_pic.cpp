@@ -51,6 +51,11 @@ Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, IppVideoContext* vi
 {
   Ipp32u code;
   //m_IsUserDataPresent = false;
+  bool prev_of_m_FirstHeaderAfterSequenceHeaderParsed = m_FirstHeaderAfterSequenceHeaderParsed;
+  if (sequenceHeader.is_decoded && startcode != SEQUENCE_HEADER_CODE)
+  {
+     m_FirstHeaderAfterSequenceHeaderParsed = true;
+  }
 
   switch(startcode) {
     case SEQUENCE_HEADER_CODE:
@@ -76,6 +81,11 @@ Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, IppVideoContext* vi
       switch(code) {
         case SEQUENCE_EXTENSION_ID:
           {
+            if (sequenceHeader.is_decoded && prev_of_m_FirstHeaderAfterSequenceHeaderParsed)
+            {
+                return UMC_ERR_INVALID_STREAM;
+            }
+
             Ipp32u bit_rate_extension, chroma_format;
             GET_BITS32(video->bs, code)
             sequenceHeader.profile                          = (code >> 24) & 0x7;//ignore escape bit
@@ -340,7 +350,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
             UNGET_BITS_32(video->bs)
             return (UMC_ERR_NOT_ENOUGH_DATA);
         }
-
+        m_FirstHeaderAfterSequenceHeaderParsed = false;
         GET_BITS32(video->bs, code)
         frame_rate_code = code  & ((1 << 4) - 1);
         m_ClipInfo.clip_info.height    = (code >> 8) & ((1 << 12) - 1);

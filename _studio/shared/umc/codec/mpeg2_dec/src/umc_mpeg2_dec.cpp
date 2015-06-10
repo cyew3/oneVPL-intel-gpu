@@ -552,6 +552,7 @@ Status MPEG2VideoDecoderBase::Init(BaseCodecParams *pInit)
     sequenceHeader.stream_time = 0;
     m_SkipLevel = SKIP_NONE;
     m_IsSHDecoded = false;
+    m_FirstHeaderAfterSequenceHeaderParsed = false;
     m_IsDataFirst = true;
     m_InputTime = -1.;
 

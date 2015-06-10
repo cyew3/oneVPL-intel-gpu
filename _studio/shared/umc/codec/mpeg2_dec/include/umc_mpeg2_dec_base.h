@@ -501,6 +501,7 @@ public:
         Ipp32s                    m_nNumberOfAllocatedThreads;
         bool                      m_IsFrameSkipped;
         bool                      m_IsSHDecoded;
+        bool                      m_FirstHeaderAfterSequenceHeaderParsed;
         bool                      m_IsDataFirst;
         bool                      m_IsLastFrameProcessed;
         bool                      m_isFrameRateFromInit;
