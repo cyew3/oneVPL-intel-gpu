@@ -633,7 +633,7 @@ int main(int argc, char *argv[])
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
-	// Choosing which pipeline to use
+    // Choosing which pipeline to use
     if(Params.UseRegionEncode)
     {
         pPipeline.reset(new CRegionEncodingPipeline());
