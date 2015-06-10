@@ -150,7 +150,7 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
     }
 
     if (!isRequestedGuidPresent)
-        return MFX_ERR_NOT_FOUND;
+        //return MFX_ERR_NOT_FOUND;
 
     if (!isIntelGuidPresent) // if no required GUID - no acceleration at all
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -168,7 +168,6 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
-
     for (mfxU32 k = 0; k < cConfigurations; k++)
     {
         if (pConfig[k].guidConfigBitstreamEncryption == guid)
@@ -178,7 +177,24 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
             {
                 CoTaskMemFree(pConfig);
             }
-            return MFX_ERR_NONE;
+            if (guid == DXVA2_Intel_Encode_AVC && config.ConfigSpatialResid8 != AVC_D3D9_DDI_VERSION)
+            {
+                return MFX_WRN_PARTIAL_ACCELERATION;
+            }
+            else if (guid == DXVA2_Intel_Encode_MPEG2 && config.ConfigSpatialResid8 != INTEL_MPEG2_ENCODE_DDI_VERSION)
+            {
+                return  MFX_WRN_PARTIAL_ACCELERATION;
+            }
+            else if (guid == DXVA2_Intel_Encode_JPEG  && config.ConfigSpatialResid8 != INTEL_MJPEG_ENCODE_DDI_VERSION)
+            {
+                return  MFX_WRN_PARTIAL_ACCELERATION;
+            }/*
+            else if (guid == DXVA2_Intel_Encode_HEVC_Main)
+            {
+                m_HEVCEncodeDDIVersion = video_config.ConfigSpatialResid8;
+            }*/
+            else
+                 return  MFX_ERR_NONE;
         }
     }
     
@@ -194,7 +210,7 @@ mfxStatus D3D9VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, bo
 {
     if (!par)
         return MFX_WRN_PARTIAL_ACCELERATION;
-
+    mfxStatus sts = MFX_ERR_NONE;
     if (!m_pDirectXVideoService)
     {
         mfxStatus sts = InternalInit();
@@ -213,33 +229,24 @@ mfxStatus D3D9VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, bo
 
         if (isEncoder)
         {
-            return auxDevice.IsAccelerationServiceExist(guid);
+            sts = auxDevice.IsAccelerationServiceExist(guid);
         }
     }
-
+    if (sts != MFX_ERR_NONE)
+        return MFX_WRN_PARTIAL_ACCELERATION;
     DXVA2_ConfigPictureDecode config;
-    mfxStatus sts = GetIntelDataPrivateReport(guid, config);
+    sts = GetIntelDataPrivateReport(guid, config);
 
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
-    if (sts == MFX_ERR_NONE)
+    if (sts == MFX_ERR_NONE && !isEncoder)
     {
         return CheckIntelDataPrivateReport<DXVA2_ConfigPictureDecode>(&config, par); 
     }
-
-    if (MFX_HW_LAKE == m_HWType || MFX_HW_SNB == m_HWType)
-    {
-        if (par->mfx.FrameInfo.Width  > 1920 || par->mfx.FrameInfo.Height > 1200)
-            return MFX_WRN_PARTIAL_ACCELERATION;
-    }
     else
-    {
-        if (par->mfx.FrameInfo.Width  > 4096 || par->mfx.FrameInfo.Height > 4096)
-            return MFX_WRN_PARTIAL_ACCELERATION;
-    }
+        return sts;
 
-    return MFX_ERR_NONE;
 }
 
 D3D9VideoCORE::D3D9VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session)

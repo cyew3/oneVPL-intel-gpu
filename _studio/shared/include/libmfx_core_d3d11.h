@@ -20,6 +20,7 @@ File Name: libmfx_core_d3d11.h
 
 
 #include "libmfx_core.h"
+#include "encoding_ddi.h"
 #include "libmfx_allocator_d3d11.h"
 
 #include <d3d11.h>

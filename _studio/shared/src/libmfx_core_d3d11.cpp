@@ -140,7 +140,25 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
         if (video_config.guidConfigBitstreamEncryption == guid)
         {
             memcpy_s(&config, sizeof(config), &video_config, sizeof(D3D11_VIDEO_DECODER_CONFIG));
-            return MFX_ERR_NONE;
+            
+            if (guid == DXVA2_Intel_Encode_AVC && video_config.ConfigSpatialResid8 != INTEL_AVC_ENCODE_DDI_VERSION)
+            {
+                return MFX_WRN_PARTIAL_ACCELERATION;
+            }
+            else if (guid == DXVA2_Intel_Encode_MPEG2 && video_config.ConfigSpatialResid8 != INTEL_MPEG2_ENCODE_DDI_VERSION)
+            {
+                return  MFX_WRN_PARTIAL_ACCELERATION;
+            }
+            else if (guid == DXVA2_Intel_Encode_JPEG  && video_config.ConfigSpatialResid8 != INTEL_MJPEG_ENCODE_DDI_VERSION)
+            {
+                return  MFX_WRN_PARTIAL_ACCELERATION;
+            }/*
+            else if (guid == DXVA2_Intel_Encode_HEVC_Main)
+            {
+                m_HEVCEncodeDDIVersion = video_config.ConfigSpatialResid8;
+            }*/
+            else
+                 return  MFX_ERR_NONE;
         }
     }
 
@@ -341,8 +359,9 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
         else
         {
             // external allocator
+            bool useEncodeBindFlag = (request->Type & (MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET)) && GetHWType()==MFX_HW_SCL;
             //Temporal solution for SKL only to allocate frames with encoder bind flag using internal allocator
-            if (m_bSetExtFrameAlloc && (GetHWType()==MFX_HW_SCL && !(request->Type & MFX_MEMTYPE_INTERNAL_FRAME)) && ! IsBayerFormat(temp_request.Info.FourCC))
+            if (m_bSetExtFrameAlloc && ! IsBayerFormat(temp_request.Info.FourCC) && !useEncodeBindFlag)
             {
 
                 sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis,&temp_request, response);
