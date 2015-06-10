@@ -26,9 +26,9 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("Only AVC is supported for FEI encoding.\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
-    msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
+    msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom field first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
-    msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (Kbits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
+    msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (KBits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
     msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n"));
     msdk_printf(MSDK_STRING("   [-q quality] - quality parameter for JPEG encoder. In range [1,100]. 100 is the best quality. \n"));
     msdk_printf(MSDK_STRING("   [-n number] - number of frames to process\n"));
@@ -49,7 +49,16 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-mbcode file] - file to output per MB information (structure mfxExtFeiPakMBCtrl) for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbstat file] - file to output per MB distortions for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbqp file] - file to input per MB QPs the same for each frame\n"));
-    msdk_printf(MSDK_STRING("   [-pass_headrers] - pass SPS, PPS and Slice headers to Media SDK instead of default one\n"));
+    msdk_printf(MSDK_STRING("   [-pass_headers] - pass SPS, PPS and Slice headers to Media SDK instead of default one\n"));
+    msdk_printf(MSDK_STRING("   [-8x8stat] - set 8x8 block for statistic report, default is 16x16 (PREENC only)\n"));
+    msdk_printf(MSDK_STRING("   [-search_window value] - specifies one of the predefined search path and window size. In range [1,8] (0 is default).\n"));
+    msdk_printf(MSDK_STRING("   					     If non-zero value specified: -ref_window_w / _h, -len_sp, -max_len_sp are ignored\n"));
+    msdk_printf(MSDK_STRING("   [-ref_window_w width] - width of search region (should be multiple of 4), maximum allowed search window w*h is 2048 for\n"));
+    msdk_printf(MSDK_STRING("   				 		one direction and 1048 for bidirectional search\n"));
+    msdk_printf(MSDK_STRING("   [-ref_window_h height] - height of search region (should be multiple of 4), maximum allowed is 32\n"));
+    msdk_printf(MSDK_STRING("   [-len_sp length] - defines number of search units in search path. In range [1,63]\n"));
+    msdk_printf(MSDK_STRING("   [-search_path value] - defines shape of search path. In range [1,2]\n"));
+    msdk_printf(MSDK_STRING("   [-sub_mb_part_mask mask_hex] - specifies which partitions should be excluded from search. 0x00 - enable all (default is 0x77)\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -221,10 +230,44 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->memType = D3D11_MEMORY;
         }
 #endif
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pass_headrers")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pass_headers")))
+        {
+            //i++;
+            pParams->bPassHeaders = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-8x8stat")))
+        {
+            pParams->Enable8x8Stat = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-search_window")))
         {
             i++;
-            pParams->bPassHeaders = true;
+            pParams->SearchWindow = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ref_window_w")))
+        {
+            i++;
+            pParams->RefWidth = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ref_window_h")))
+        {
+            i++;
+            pParams->RefHeight = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-len_sp")))
+        {
+            i++;
+            pParams->LenSP = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-search_path")))
+        {
+            i++;
+            pParams->SearchPath = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sub_mb_part_mask")))
+        {
+            i++;
+            pParams->SubMBPartMask = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 16);
         }
         else // 1-character options
         {
@@ -334,7 +377,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     mfxU32 nviews = (mfxU32)pParams->srcFileBuff.size();
     if ((nviews <= 1) || (nviews > 2))
     {
-            pParams->numViews = 1;
+        pParams->numViews = 1;
     }
     else
     {
@@ -398,12 +441,43 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if (pParams->SearchWindow < 0 || pParams->SearchWindow > 8)
+    {
+        PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -search_window parameter, must be in range [0, 8]!"));
+        return MFX_ERR_UNSUPPORTED; // valid values 0-8
+    }
+
+    bool bEnableBiPred = (pParams->bENCPAK || pParams->bENCoPAKo || pParams->bOnlyENC) && (pParams->refDist > 1);
+
+    if (pParams->RefHeight <= 0 || pParams->RefWidth <= 0 || pParams->RefHeight % 4 != 0 || pParams->RefWidth % 4 != 0 ||
+    		pParams->RefHeight * pParams->RefWidth > (bEnableBiPred ? 1024 : 2048)){
+        PrintHelp(strInput[0], MSDK_STRING("Unsupported value of search window size. -ref_window_h, -ref_window_w parameters, must be multiple of 4!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->LenSP < 1 || pParams->LenSP > 63)
+    {
+        PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -len_sp parameter, must be in range [1, 63]!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->SearchPath < 1 || pParams->SearchPath > 2)
+    {
+        PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -search_path parameter, must be in range [1, 2]!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->SubMBPartMask >= 0x7f ){
+    	PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -sub_mb_part_mask parameter, 0x7f disables all partitions!"));
+    	return MFX_ERR_UNSUPPORTED;
+    }
+
     // not all options are supported if rotate plugin is enabled
     if (pParams->nRotationAngle == 180 && (
         MFX_PICSTRUCT_PROGRESSIVE != pParams->nPicStruct ||
         pParams->nDstWidth != pParams->nWidth ||
         pParams->nDstHeight != pParams->nHeight ||
-        pParams->memType & D3D11_MEMORY ||
+        (pParams->memType & D3D11_MEMORY) ||
         pParams->bLABRC ||
         pParams->nLADepth))
     {
@@ -436,21 +510,28 @@ int main(int argc, char *argv[])
     Params.nNumFrames = 0; //unlimited
     Params.refDist = 1; //only I frames
     Params.gopSize = 1; //only I frames
-    Params.bENCPAK = false; //default value
+    Params.bENCPAK   = false; //default value
     Params.bENCoPAKo = false; //default value
-    Params.bOnlyENC = false; //default value
-    Params.bOnlyPAK = false; //default value
-    Params.bPREENC = false; //default value
-    Params.mvinFile = NULL;
-    Params.mvoutFile = NULL;
-    Params.mbctrinFile = NULL;
+    Params.bOnlyENC  = false; //default value
+    Params.bOnlyPAK  = false; //default value
+    Params.bPREENC   = false; //default value
+    Params.Enable8x8Stat = false; //default value
+    Params.mvinFile      = NULL;
+    Params.mvoutFile     = NULL;
+    Params.mbctrinFile   = NULL;
     Params.mbstatoutFile = NULL;
     Params.mbcodeoutFile = NULL;
-    Params.mbQpFile = NULL;
+    Params.mbQpFile      = NULL;
     Params.bMBSize = false;
     Params.memType = D3D9_MEMORY; //only HW memory is supported
     Params.QP = 26; //default qp value
     Params.bUseHWLib = true;
+    Params.SearchWindow  = 0;
+    Params.RefWidth      = 32;//48;
+    Params.RefHeight     = 32;//40;
+    Params.LenSP		 = 57;
+    Params.SearchPath	 = 1;
+    Params.SubMBPartMask = 0x77;
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
@@ -458,7 +539,7 @@ int main(int argc, char *argv[])
     sts = CheckOptions(&Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
-    pPipeline.reset((Params.nRotationAngle) ? new CUserPipeline : new CEncodingPipeline);
+    pPipeline.reset((Params.nRotationAngle) ? (CEncodingPipeline*)new CUserPipeline : new CEncodingPipeline);
 
     MSDK_CHECK_POINTER(pPipeline.get(), MFX_ERR_MEMORY_ALLOC);
 

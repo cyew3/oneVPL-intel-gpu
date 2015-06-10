@@ -71,6 +71,13 @@ struct sInputParams
     mfxU16 numSlices;
     mfxU16 numRef;
 
+    mfxU16 SearchWindow;
+    mfxU16 LenSP;
+    mfxU16 SearchPath;
+    mfxU16 RefWidth;
+    mfxU16 RefHeight;
+    mfxU16 SubMBPartMask;
+
     mfxU32 numViews; // number of views for Multi-View Codec
 
     mfxU16 nDstWidth; // destination picture width, specified if resizing required
@@ -96,6 +103,7 @@ struct sInputParams
     bool bPREENC;
     bool bMBSize;
     bool bPassHeaders;
+    bool Enable8x8Stat;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;

@@ -1379,18 +1379,19 @@ mfxStatus CEncodingPipeline::Run()
             preENCCtr[fieldId].DisableStatisticsOutput = disableMBoutput;
             preENCCtr[fieldId].FTEnable = 1;//0;
             preENCCtr[fieldId].AdaptiveSearch = 1;
-            preENCCtr[fieldId].LenSP = 57;
+            preENCCtr[fieldId].LenSP = m_encpakParams.LenSP;//57;
             preENCCtr[fieldId].MBQp = enableMBQP;
             preENCCtr[fieldId].MVPredictor = enableMVpredictor;
-            preENCCtr[fieldId].RefHeight = 40;
-            preENCCtr[fieldId].RefWidth = 48;
+            preENCCtr[fieldId].RefHeight = m_encpakParams.RefHeight;//40;
+            preENCCtr[fieldId].RefWidth = m_encpakParams.RefWidth;//48;
             preENCCtr[fieldId].SubPelMode = 3;
-            preENCCtr[fieldId].SearchWindow = 0;
-            preENCCtr[fieldId].MaxLenSP = 57;
+            preENCCtr[fieldId].SearchWindow = m_encpakParams.SearchWindow;//0;
+            preENCCtr[fieldId].SearchPath = m_encpakParams.SearchPath;
             preENCCtr[fieldId].Qp = m_encpakParams.QP;
             preENCCtr[fieldId].InterSAD = 2;
             preENCCtr[fieldId].IntraSAD = 2;
-            preENCCtr[fieldId].SubMBPartMask = 0;//0x77;
+            preENCCtr[fieldId].SubMBPartMask = m_encpakParams.SubMBPartMask;//0;//0x77;
+            preENCCtr[fieldId].Enable8x8Stat = m_encpakParams.Enable8x8Stat;
 
             //inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & preENCCtr;
 
@@ -1527,7 +1528,7 @@ mfxStatus CEncodingPipeline::Run()
             memset(&feiEncCtrl[fieldId], 0, sizeof (mfxExtFeiEncFrameCtrl));
             feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
             feiEncCtrl[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncFrameCtrl);
-            feiEncCtrl[fieldId].MaxLenSP = 57;
+            feiEncCtrl[fieldId].SearchPath = 1;
             feiEncCtrl[fieldId].LenSP = 57;
             feiEncCtrl[fieldId].SubMBPartMask = 0x77;
             feiEncCtrl[fieldId].MultiPredL0 = 0;
@@ -1548,7 +1549,7 @@ mfxStatus CEncodingPipeline::Run()
             feiEncCtrl[fieldId].SearchWindow = 1;
 
             /* PPS */
-            m_feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;;
+            m_feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;
             m_feiPPS[fieldId].Header.BufferSz = sizeof(mfxExtFeiPPS);
             m_feiPPS[fieldId].Pack = m_encpakParams.bPassHeaders ? 1 : 0;
 
@@ -2627,7 +2628,7 @@ void CEncodingPipeline::PrintInfo()
     msdk_printf(MSDK_STRING("\nInput file format\t%s\n"), ColorFormatToStr(m_FileReader.m_ColorFormat));
     msdk_printf(MSDK_STRING("Output video\t\t%s\n"), CodecIdToStr(m_mfxEncParams.mfx.CodecId).c_str());
 
-    mfxFrameInfo SrcPicInfo = m_mfxVppParams.vpp.In;
+    mfxFrameInfo SrcPicInfo = /*m_mfxVppParams*/m_mfxEncParams.vpp.In;
     mfxFrameInfo DstPicInfo = m_mfxEncParams.mfx.FrameInfo;
 
     msdk_printf(MSDK_STRING("Source picture:\n"));
@@ -2639,7 +2640,7 @@ void CEncodingPipeline::PrintInfo()
     msdk_printf(MSDK_STRING("\tCrop X,Y,W,H\t%d,%d,%d,%d\n"), DstPicInfo.CropX, DstPicInfo.CropY, DstPicInfo.CropW, DstPicInfo.CropH);
 
     msdk_printf(MSDK_STRING("Frame rate\t%.2f\n"), DstPicInfo.FrameRateExtN * 1.0 / DstPicInfo.FrameRateExtD);
-    msdk_printf(MSDK_STRING("Bit rate(Kbps)\t%d\n"), m_mfxEncParams.mfx.TargetKbps);
+    msdk_printf(MSDK_STRING("Bit rate(KBps)\t%d\n"), m_mfxEncParams.mfx.TargetKbps);
     msdk_printf(MSDK_STRING("Target usage\t%s\n"), TargetUsageToStr(m_mfxEncParams.mfx.TargetUsage));
 
     const msdk_char* sMemType = m_memType == D3D9_MEMORY  ? MSDK_STRING("d3d")
