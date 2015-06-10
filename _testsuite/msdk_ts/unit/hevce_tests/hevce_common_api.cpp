@@ -175,6 +175,7 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOptionHevc.LowresFactor = 3;
     paramset.extCodingOptionHevc.DeblockBorders = MFX_CODINGOPTION_ON;
     paramset.extCodingOptionHevc.SAOChroma = MFX_CODINGOPTION_OFF;
+    paramset.extCodingOptionHevc.NumRefLayers = 2;
     paramset.extCodingOption2.DisableVUI = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.AdaptiveI = MFX_CODINGOPTION_ON;
 }
