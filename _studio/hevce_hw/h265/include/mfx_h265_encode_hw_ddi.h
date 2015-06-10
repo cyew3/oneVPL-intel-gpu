@@ -181,7 +181,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
             UINT    cu_qp_delta_enabled_flag                : 1;    // [0..1]
             UINT    weighted_pred_flag                      : 1;    // [0..1]
             UINT    weighted_bipred_flag                    : 1;    // [0..1]
-            UINT    bEnableGPUWeightedPrediction            : 1;    // [0..1]
+            
             //  loop filter flags
             UINT    loop_filter_across_slices_flag          : 1;    // [0]
             UINT    loop_filter_across_tiles_flag           : 1;    // [0]
@@ -195,6 +195,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
             UINT    bScreenContent                          : 1;    // [0..1]
             UINT    bEnableRollingIntraRefresh              : 2;    // [0..2]
             UINT    no_output_of_prior_pics_flag            : 1;    // [0..1]
+            UINT    bEnableGPUWeightedPrediction            : 1;    // [0..1]
             UINT    reservedbits                            : 8;
         }/*fields*/;
         UINT    PicFlags;

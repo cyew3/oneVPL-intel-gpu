@@ -262,8 +262,16 @@ void FillPpsBuffer(
 
     pps.LcuMaxBitsizeAllowed       = 0;
     pps.bUseRawPicForRef           = 0;
-    pps.bScreenContent             = (par.mfx.FrameInfo.Height >= 720) ? 0 : 1;
     pps.NumSlices                  = par.mfx.NumSlice;
+
+    if (par.mfx.FrameInfo.Height <= 576 && 
+        par.mfx.FrameInfo.Width <= 736 && 
+        par.mfx.RateControlMethod == MFX_RATECONTROL_CQP &&
+        par.mfx.QPP < 32)
+    {
+        pps.bScreenContent = 1;
+    }
+
 }
 
 void FillPpsBuffer(
