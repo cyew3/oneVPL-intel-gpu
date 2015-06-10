@@ -18,7 +18,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD(Qp);
     DUMP_FIELD(LenSP);
-    DUMP_FIELD(MaxLenSP);
+    //DUMP_FIELD(SearchPath); SearchPath define in processenv.h
     DUMP_FIELD(SubMBPartMask);
     DUMP_FIELD(SubPelMode);
     DUMP_FIELD(InterSAD);
@@ -143,7 +143,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncFr
 {
     std::string str;
 
-    DUMP_FIELD(MaxLenSP);
+    //DUMP_FIELD(SearchPath); SearchPath define in processenv.h
     DUMP_FIELD(LenSP);
     DUMP_FIELD(SubMBPartMask);
     DUMP_FIELD(IntraPartMask);
