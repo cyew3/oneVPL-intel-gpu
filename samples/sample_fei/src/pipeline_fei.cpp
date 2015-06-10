@@ -1382,7 +1382,7 @@ mfxStatus CEncodingPipeline::Run()
             preENCCtr[fieldId].RefWidth = 48;
             preENCCtr[fieldId].SubPelMode = 3;
             preENCCtr[fieldId].SearchWindow = 0;
-            preENCCtr[fieldId].MaxLenSP = 57;
+            preENCCtr[fieldId].SearchPath = 2;
             preENCCtr[fieldId].Qp = m_encpakParams.QP;
             preENCCtr[fieldId].InterSAD = 2;
             preENCCtr[fieldId].IntraSAD = 2;
@@ -1521,7 +1521,7 @@ mfxStatus CEncodingPipeline::Run()
             memset(&feiEncCtrl[fieldId], 0, sizeof (mfxExtFeiEncFrameCtrl));
             feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
             feiEncCtrl[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncFrameCtrl);
-            feiEncCtrl[fieldId].MaxLenSP = 57;
+            feiEncCtrl[fieldId].SearchPath = 2;
             feiEncCtrl[fieldId].LenSP = 57;
             feiEncCtrl[fieldId].SubMBPartMask = 0;
             feiEncCtrl[fieldId].MultiPredL0 = 0;
