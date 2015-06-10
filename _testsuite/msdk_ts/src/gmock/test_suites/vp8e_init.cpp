@@ -1,9 +1,9 @@
 #include "ts_encoder.h"
 
-namespace 
+namespace
 {
 
-typedef struct 
+typedef struct
 {
     mfxSession      session;
     mfxVideoParam*  pPar;
@@ -53,8 +53,7 @@ void CBR(tsVideoEncoder& enc, InitPar&, mfxU32 p0, mfxU32 p1, mfxU32 p2)
 {
     enc.m_par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
     enc.m_par.mfx.InitialDelayInKB  = p0;
-    enc.m_par.mfx.TargetKbps        = p1;
-    enc.m_par.mfx.MaxKbps           = p2;
+    enc.m_par.mfx.TargetKbps        = enc.m_par.mfx.MaxKbps = p1;
 }
 void VBR(tsVideoEncoder& enc, InitPar&, mfxU32 p0, mfxU32 p1, mfxU32 p2)
 {
@@ -89,7 +88,7 @@ void COVP8(tsVideoEncoder& enc, InitPar&, mfxU32 p0, mfxU32 p1, mfxU32 p2)
 }
 
 
-typedef struct 
+typedef struct
 {
     mfxStatus   sts;
     callback    set_par;
@@ -103,19 +102,20 @@ typedef struct
 #define MFX_OFFSET(field)        (offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, field))
 #define EXT_BUF_PAR(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
-tc_struct test_case[] = 
+tc_struct test_case[] =
 {
     {// 0
         MFX_ERR_INVALID_HANDLE,
-        zero_session, 
+        zero_session,
     },
     {// 1
         MFX_ERR_NULL_PTR,
-        zero_param, 
+        zero_param,
     },
     {// 2
         MFX_ERR_NONE,
     },
+    // supported fourcc: NV12
     {// 3
         MFX_ERR_INVALID_VIDEO_PARAM,
         FourCC, MFX_FOURCC_YV12
@@ -154,11 +154,13 @@ tc_struct test_case[] =
     },
     {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, set_par, FRAME_INFO_OFFSET(Width),  sizeof(mfxU16), 720 + 8 },
     {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, set_par, FRAME_INFO_OFFSET(Height), sizeof(mfxU16), 480 + 8 },
+    // supported chroma format: YUV420
     {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, set_par, FRAME_INFO_OFFSET(ChromaFormat), sizeof(mfxU16), MFX_CHROMAFORMAT_MONOCHROME },
     {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, set_par, FRAME_INFO_OFFSET(ChromaFormat), sizeof(mfxU16), MFX_CHROMAFORMAT_YUV422 },
     {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, set_par, FRAME_INFO_OFFSET(ChromaFormat), sizeof(mfxU16), MFX_CHROMAFORMAT_YUV444 },
     {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, set_par, FRAME_INFO_OFFSET(ChromaFormat), sizeof(mfxU16), MFX_CHROMAFORMAT_YUV411 },
     {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, set_par, FRAME_INFO_OFFSET(ChromaFormat), sizeof(mfxU16), MFX_CHROMAFORMAT_YUV422V },
+    // supported ext buffers: mfxExtOpaqueSurfaceAlloc, mfxExtVP8CodingOption, mfxExtEncoderROI
     {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, EXT_BUF_PAR(mfxExtCodingOption           ), },
     {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, EXT_BUF_PAR(mfxExtCodingOptionSPSPPS     ), },
     {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, EXT_BUF_PAR(mfxExtVPPDoNotUse            ), },
@@ -179,43 +181,39 @@ tc_struct test_case[] =
     {/*36*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, EXT_BUF_PAR(mfxExtAVCEncodedFrameInfo    ), },
     {/*37*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, EXT_BUF_PAR(mfxExtVPPComposite           ), },
     {/*38*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, EXT_BUF_PAR(mfxExtVPPVideoSignalInfo     ), },
-    {/*39*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, EXT_BUF_PAR(mfxExtEncoderROI             ), },
+    {/*39*/ MFX_ERR_NONE,                ext_buf, EXT_BUF_PAR(mfxExtEncoderROI             ), },
     {/*40*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, EXT_BUF_PAR(mfxExtVPPDeinterlacing       ), },
-    {/*41*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, EXT_BUF_PAR(mfxExtMVCSeqDesc             ), },
-    {/*42*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, EXT_BUF_PAR(mfxExtMVCTargetViews         ), },
-    {/*43*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, EXT_BUF_PAR(mfxExtJPEGQuantTables        ), },
-    {/*44*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, EXT_BUF_PAR(mfxExtJPEGHuffmanTables      ), },
-    {/*45*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, 0, 0,                                       },
-    {/*46*/ MFX_ERR_NONE,                     CBR,  0, 5000,    0, },
-    {/*47*/ MFX_ERR_NONE,                     VBR,  0, 5000, 6000, },
-    {/*48*/ MFX_ERR_NONE,                     VBR,  0, 5000,    0, },
-    {/*49*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, VBR,  0, 5000, 4000, },
-    {/*50*/ MFX_ERR_NONE,                     CQP, 63,   63,    0, },
-    {/*51*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CQP, 63,   63,   63, },
-    {/*52*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CQP, 64,   63,    0, },
-    {/*53*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CQP, 63,   64,    0, },
-    {/*54*/ MFX_ERR_INVALID_VIDEO_PARAM, set_par, MFX_OFFSET(RateControlMethod),  sizeof(mfxU16), MFX_RATECONTROL_LA     },
-    {/*55*/ MFX_ERR_INVALID_VIDEO_PARAM, set_par, MFX_OFFSET(RateControlMethod),  sizeof(mfxU16), MFX_RATECONTROL_ICQ    },
-    {/*56*/ MFX_ERR_INVALID_VIDEO_PARAM, set_par, MFX_OFFSET(RateControlMethod),  sizeof(mfxU16), MFX_RATECONTROL_VCM    },
-    {/*57*/ MFX_ERR_INVALID_VIDEO_PARAM, set_par, MFX_OFFSET(RateControlMethod),  sizeof(mfxU16), MFX_RATECONTROL_LA_ICQ },
-    {/*58*/ MFX_ERR_INVALID_VIDEO_PARAM, set_par, MFX_OFFSET(RateControlMethod),  sizeof(mfxU16), 0                      },
-    {/*59*/ MFX_ERR_NONE,                     set_par, MFX_OFFSET(CodecProfile),  sizeof(mfxU16), MFX_PROFILE_VP8_0 },
-    {/*60*/ MFX_ERR_NONE,                     set_par, MFX_OFFSET(CodecProfile),  sizeof(mfxU16), MFX_PROFILE_VP8_1 },
-    {/*61*/ MFX_ERR_NONE,                     set_par, MFX_OFFSET(CodecProfile),  sizeof(mfxU16), MFX_PROFILE_VP8_2 },
-    {/*62*/ MFX_ERR_NONE,                     set_par, MFX_OFFSET(CodecProfile),  sizeof(mfxU16), MFX_PROFILE_VP8_3 },
-    {/*63*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(CodecProfile),  sizeof(mfxU16), MFX_PROFILE_VP8_3 + 1 },
-    {/*64*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(CodecLevel),  sizeof(mfxU16), 1 },
-    {/*65*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(GopRefDist),  sizeof(mfxU16), 1 },
-    {/*66*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(IdrInterval), sizeof(mfxU16), 1 },
-    {/*67*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(NumRefFrame), sizeof(mfxU16), 1 },
-    {/*68*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(NumSlice),    sizeof(mfxU16), 1 },
-    {/*69*/ MFX_ERR_NONE,                     set_par, FRAME_INFO_OFFSET(PicStruct),     sizeof(mfxU16), MFX_PICSTRUCT_PROGRESSIVE },
-    {/*70*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, FRAME_INFO_OFFSET(PicStruct),     sizeof(mfxU16), MFX_PICSTRUCT_FIELD_TFF },
-    {/*71*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, FRAME_INFO_OFFSET(FrameRateExtN), sizeof(mfxU16), 181 },
-    {/*72*/ MFX_ERR_NONE,                     AR,  1, 1, },
-    {/*73*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, AR,  1, 2, },
-    {/*74*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, AR,  2, 1, },
-    {/*75*/ MFX_ERR_NONE, set_par, MFX_OFFSET(EncodedOrder), sizeof(mfxU16), 1 }
+    {/*41*/ MFX_ERR_INVALID_VIDEO_PARAM, ext_buf, 0, 0,                                       },
+    {/*42*/ MFX_ERR_NONE,                     CBR,  0, 5000,    0, },
+    {/*43*/ MFX_ERR_NONE,                     VBR,  0, 5000, 6000, },
+    {/*44*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, VBR,  0, 5000, 4000, },
+    // valid values for CQP: 0-127, no B frames - QPB = 0
+    {/*45*/ MFX_ERR_NONE,                     CQP, 127, 127,   0, },
+    {/*46*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CQP,  63,  63,  63, },
+    {/*47*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CQP, 128,  63,   0, },
+    {/*48*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CQP,  63, 128,   0, },
+    {/*49*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(RateControlMethod),  sizeof(mfxU16), MFX_RATECONTROL_LA     },
+    {/*50*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(RateControlMethod),  sizeof(mfxU16), MFX_RATECONTROL_ICQ    },
+    {/*51*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(RateControlMethod),  sizeof(mfxU16), MFX_RATECONTROL_VCM    },
+    {/*52*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(RateControlMethod),  sizeof(mfxU16), MFX_RATECONTROL_LA_ICQ },
+    {/*53*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(RateControlMethod),  sizeof(mfxU16), 0                      },
+    {/*54*/ MFX_ERR_NONE,                     set_par, MFX_OFFSET(CodecProfile),  sizeof(mfxU16), MFX_PROFILE_VP8_0 },
+    {/*55*/ MFX_ERR_NONE,                     set_par, MFX_OFFSET(CodecProfile),  sizeof(mfxU16), MFX_PROFILE_VP8_1 },
+    {/*56*/ MFX_ERR_NONE,                     set_par, MFX_OFFSET(CodecProfile),  sizeof(mfxU16), MFX_PROFILE_VP8_2 },
+    {/*57*/ MFX_ERR_NONE,                     set_par, MFX_OFFSET(CodecProfile),  sizeof(mfxU16), MFX_PROFILE_VP8_3 },
+    {/*58*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(CodecProfile),  sizeof(mfxU16), MFX_PROFILE_VP8_3 + 1 },
+    {/*59*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(CodecLevel),  sizeof(mfxU16), 1 },
+    {/*60*/ MFX_ERR_NONE,                     set_par, MFX_OFFSET(GopRefDist),  sizeof(mfxU16), 1 },
+    {/*61*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(IdrInterval), sizeof(mfxU16), 1 },
+    {/*62*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(NumRefFrame), sizeof(mfxU16), 1 },
+    {/*63*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, MFX_OFFSET(NumSlice),    sizeof(mfxU16), 1 },
+    {/*64*/ MFX_ERR_NONE,                     set_par, FRAME_INFO_OFFSET(PicStruct),     sizeof(mfxU16), MFX_PICSTRUCT_PROGRESSIVE },
+    {/*65*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, FRAME_INFO_OFFSET(PicStruct),     sizeof(mfxU16), MFX_PICSTRUCT_FIELD_TFF },
+    {/*66*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, set_par, FRAME_INFO_OFFSET(FrameRateExtN), sizeof(mfxU16), 181 },
+    {/*67*/ MFX_ERR_NONE,                     AR,  1, 1, },
+    {/*68*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, AR,  1, 2, },
+    {/*69*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, AR,  2, 1, },
+    {/*70*/ MFX_ERR_NONE, set_par, MFX_OFFSET(EncodedOrder), sizeof(mfxU16), 1 }
 };
 
 int test(unsigned int id)
@@ -230,7 +228,7 @@ int test(unsigned int id)
         enc.Load();
 
     InitPar par = {enc.m_session, &enc.m_par};
-    
+
     if(tc.set_par)
     {
         (*tc.set_par)(enc, par, tc.p0, tc.p1, tc.p2);
@@ -239,7 +237,7 @@ int test(unsigned int id)
     g_tsStatus.expect(tc.sts);
     enc.Init(par.session, par.pPar);
 
-    
+
     TS_END;
     return 0;
 }
