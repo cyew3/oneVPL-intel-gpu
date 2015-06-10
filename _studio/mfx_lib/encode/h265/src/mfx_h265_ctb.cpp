@@ -2619,15 +2619,14 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
         FillSubPartCuQp_(m_data, m_par->NumPartInCU, m_lcuQps[m_ctbAddr]);
     }
 
+    Ipp32u left = m_ctbPelX + ((h265_scan_z2r4[absPartIdx] & 15) << m_par->QuadtreeTULog2MinSize);
+    Ipp32u top  = m_ctbPelY + ((h265_scan_z2r4[absPartIdx] >> 4) << m_par->QuadtreeTULog2MinSize);
+    if (left >= m_par->Width || top >= m_par->Height)
+        return CostType(0); // CU is out of picture
+
     // get split mode
     Ipp8u splitMode = SPLIT_NONE;
     if (depth < m_par->MaxCUDepth - m_par->AddCUDepth) {
-        Ipp32u left = m_ctbPelX + ((h265_scan_z2r4[absPartIdx] & 15) << m_par->QuadtreeTULog2MinSize);
-        Ipp32u top  = m_ctbPelY + ((h265_scan_z2r4[absPartIdx] >> 4) << m_par->QuadtreeTULog2MinSize);
-        if (left >= m_par->Width || top >= m_par->Height) {
-            return CostType(0); // CU is out of picture
-        }
-
         Ipp32u right = left + (m_par->MaxCUSize >> depth) - 1;
         Ipp32u bottom = top + (m_par->MaxCUSize >> depth) - 1;
         if (right >= m_par->Width || bottom >= m_par->Height ||
