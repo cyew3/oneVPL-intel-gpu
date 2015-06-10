@@ -496,7 +496,7 @@ STRUCT(mfxExtFeiParam,
 
 STRUCT(mfxExtFeiEncFrameCtrl,
     FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU16,       MaxLenSP)
+    FIELD_T(mfxU16,       SearchPath)
     FIELD_T(mfxU16,       LenSP)
     FIELD_T(mfxU16,       SubMBPartMask)
     FIELD_T(mfxU16,       IntraPartMask)

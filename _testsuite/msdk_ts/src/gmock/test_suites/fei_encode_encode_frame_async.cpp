@@ -54,16 +54,16 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 {
     // LenSP/MaxLenSP
     {/*00*/ MFX_ERR_NONE, IN_FRM_CTRL|OUT_ALL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 1},
-                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MaxLenSP, 14}}
+                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SearchPath, 14}}
     },
     {/*01*/ MFX_ERR_NONE, IN_FRM_CTRL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 63},
-                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MaxLenSP, 63}}
+                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SearchPath, 63}}
     },
     {/*02*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 64},
-                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MaxLenSP, 64}}
+                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SearchPath, 64}}
     },
     {/*03*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL, {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 16},
-                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MaxLenSP, 10}}
+                                        {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SearchPath, 10}}
     },
 
     // SubMBPartMask
@@ -198,7 +198,7 @@ int TestSuite::RunTest(unsigned int id)
     {
         in_efc.Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
         in_efc.Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
-        in_efc.MaxLenSP = 57;
+        in_efc.SearchPath = 57;
         in_efc.LenSP = 57;
         in_efc.SubMBPartMask = 0x77;
         in_efc.MultiPredL0 = 0;
