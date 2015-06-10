@@ -759,7 +759,10 @@ namespace MfxHwH264Encode
     typedef FixedArray<mfxU8, 33>      ArrayU8x33;
     typedef FixedArray<PairU32, 16>    ArrayPairU32x16;
     typedef FixedArray<RefListMod, 32> ArrayRefListMod;
-    typedef FixedArray<mfxRoiDesc, 256> ArrayRoi;
+
+    typedef FixedArray<mfxRoiDesc, 256>        ArrayRoi;
+    typedef FixedArray<mfxRectDesc, 256>       ArrayRect;
+    typedef FixedArray<mfxMovingRectDesc, 256> ArrayMovingRect;
 
     struct ArrayDpbFrame : public FixedArray<DpbFrame, 16>
     {
@@ -994,8 +997,12 @@ namespace MfxHwH264Encode
         mfxU16  m_numMbPerSlice;
         PairU16 m_numSlice;
 
-        ArrayRoi m_roi;
-        mfxU16   m_numRoi;
+        ArrayRoi        m_roi;
+        mfxU16          m_numRoi;
+        ArrayRect       m_dirtyRect;
+        mfxU16          m_numDirtyRect;
+        ArrayMovingRect m_movingRect;
+        mfxU16          m_numMovingRect;
 
         mfxU32  m_did;                  // dependency_id
         mfxU32  m_qid;                  // quality_id
