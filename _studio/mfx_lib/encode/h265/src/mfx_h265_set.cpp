@@ -209,9 +209,13 @@ namespace {
                     if (sh.slice_type == B_SLICE)
                         H265Bs_PutVLCCode(bs, sh.num_ref_idx[1] - 1);
                 }
-                if (pps.lists_modification_present_flag) {
-                    // ref_pic_list_modification( )
-                    VM_ASSERT(0);
+                if (pps.lists_modification_present_flag && sh.CeilLog2NumPocTotalCurr > 0) {
+                    for (Ipp32s list = 0; list <= (sh.slice_type == B_SLICE); list++) {
+                        H265Bs_PutBit(bs, sh.ref_pic_list_modification_flag[list]);
+                        if (sh.ref_pic_list_modification_flag[list])
+                            for (Ipp32s i = 0; i < sh.num_ref_idx[list]; i++)
+                                H265Bs_PutBits(bs, sh.list_entry[list][i], sh.CeilLog2NumPocTotalCurr);
+                    }
                 }
                 if (sh.slice_type == B_SLICE)
                     H265Bs_PutBit(bs, sh.mvd_l1_zero_flag);

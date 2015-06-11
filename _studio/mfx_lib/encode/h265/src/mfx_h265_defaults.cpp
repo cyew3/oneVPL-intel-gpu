@@ -137,10 +137,10 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_SW  (QuadtreeTUMaxDepthInterRD,      3,   3,   2,   2,   2,   1,   1);
 #endif
 
-    TU_OPT_GACC(Log2MaxCUSize,                  5,   5,   5,   5,   5,   5,   5);
-    TU_OPT_GACC(MaxCUDepth,                     3,   3,   3,   3,   3,   3,   3);
-    TU_OPT_GACC(QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   2,   1,   1);
-    TU_OPT_GACC(QuadtreeTUMaxDepthInter,        3,   3,   2,   2,   2,   1,   1);
+    TU_OPT_GACC(Log2MaxCUSize,                  6,   6,   6,   6,   6,   6,   6);
+    TU_OPT_GACC(MaxCUDepth,                     4,   4,   4,   4,   4,   4,   4);
+    TU_OPT_GACC(QuadtreeTUMaxDepthIntra,        4,   3,   2,   2,   2,   2,   2);
+    TU_OPT_GACC(QuadtreeTUMaxDepthInter,        3,   3,   2,   2,   2,   2,   2);
     TU_OPT_GACC(QuadtreeTUMaxDepthInterRD,      3,   3,   2,   2,   2,   1,   1);
     TU_OPT_ALL (TUSplitIntra,                   1,   1,   3,   3,   3,   3,   3);
 
@@ -152,7 +152,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_ALL (MinCUDepthAdapt,              OFF, OFF, OFF,  ON,  ON,  ON,  ON);
 #endif
     TU_OPT_SW  (MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON,  ON);
-    TU_OPT_GACC(MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON,  OFF);
+    TU_OPT_GACC(MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON,  ON);
 #ifdef AMT_THRESHOLDS
 #ifdef AMT_VQ_TUNE
     TU_OPT_SW  (CUSplitThreshold,               0,   0,   0,   0,   0,   0,   0);
@@ -162,7 +162,7 @@ using namespace H265Enc::MfxEnumShortAliases;
 #else
     TU_OPT_SW  (CUSplitThreshold,               0,  64, 128, 192, 192, 224, 256);
 #endif
-    TU_OPT_GACC(CUSplitThreshold,               0,   0,   0,  64, 192, 224, 240);
+    TU_OPT_GACC(CUSplitThreshold,               0,   0,   0,   0,   0,   0,   0);
     TU_OPT_SW  (PartModes,                      3,   2,   2,   1,   1,   1,   1);
     TU_OPT_GACC(PartModes,                      1,   1,   1,   1,   1,   1,   1);
     TU_OPT_SW  (FastSkip,                     OFF, OFF, OFF, OFF, OFF,  ON,  ON);
@@ -183,9 +183,9 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_GACC(SplitThresholdStrengthCUInter,  1,   2,   2,   3,   3,   3,   3);
 #ifdef AMT_VQ_TU
     TU_OPT_SW  (SplitThresholdTabIndex       ,  1,   1,   1,   1,   1,   1,   1); //Tab1 + strength 3 - fastest combination
-    TU_OPT_GACC(SplitThresholdTabIndex       ,  1,   1,   1,   2,   2,   2,   2); 
+    TU_OPT_GACC(SplitThresholdTabIndex       ,  1,   1,   1,   1,   1,   1,   1); 
 #else
-    TU_OPT_ALL (SplitThresholdTabIndex       ,  1,   1,   1,   2,   2,   2,   2); //Tab1 + strength 3 - fastest combination
+    TU_OPT_ALL (SplitThresholdTabIndex       ,  1,   1,   1,   1,   1,   1,   1); //Tab1 + strength 3 - fastest combination
 #endif
 
     //Chroma analysis
@@ -212,7 +212,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     
 #ifdef AMT_SAO_MIN
     TU_OPT_SW  (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
-    TU_OPT_GACC(SaoOpt,                         1,   1,   2,   2,   2,   2,   3);
+    TU_OPT_GACC(SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
 #else
     TU_OPT_ALL (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
 #endif
@@ -298,13 +298,13 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_GACC(IntraNumCand0_3,                1,   1,   1,   1,   1,   1,   1);
     TU_OPT_GACC(IntraNumCand0_4,                1,   1,   1,   1,   1,   1,   1);
     TU_OPT_GACC(IntraNumCand0_5,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand0_6,                1,   1,   1,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand1_2,                6,   6,   4,   2,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand1_3,                6,   6,   4,   2,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand0_6,                0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_GACC(IntraNumCand1_2,                6,   6,   4,   2,   2,   1,   1);
+    TU_OPT_GACC(IntraNumCand1_3,                6,   6,   4,   2,   2,   2,   2);
     TU_OPT_GACC(IntraNumCand1_4,                4,   3,   2,   1,   1,   1,   1);
     TU_OPT_GACC(IntraNumCand1_5,                4,   3,   2,   1,   1,   1,   1);
     TU_OPT_GACC(IntraNumCand1_6,                4,   3,   2,   1,   1,   1,   1);
-    TU_OPT_GACC(IntraNumCand2_2,                3,   3,   2,   2,   1,   1,   1);
+    TU_OPT_GACC(IntraNumCand2_2,                3,   3,   2,   1,   1,   1,   1);
     TU_OPT_GACC(IntraNumCand2_3,                3,   3,   2,   1,   1,   1,   1);
     TU_OPT_GACC(IntraNumCand2_4,                2,   2,   1,   1,   1,   1,   1);
     TU_OPT_GACC(IntraNumCand2_5,                2,   2,   1,   1,   1,   1,   1);
@@ -328,7 +328,7 @@ using namespace H265Enc::MfxEnumShortAliases;
 #else
     TU_OPT_SW  (HadamardMe,                     2,   2,   2,   2,   2,   1,   1);
 #endif
-    TU_OPT_GACC(HadamardMe,                     2,   2,   2,   2,   2,   1,   1);
+    TU_OPT_GACC(HadamardMe,                     2,   2,   2,   2,   2,   2,   2);
     TU_OPT_ALL (PatternIntPel,                  1,   1,   1,   1,   1,   1,   1);
 #ifdef AMT_FAST_SUBPEL_SEARCH
     TU_OPT_SW  (PatternSubPel,                  3,   3,   3,   3,   6,   6,   6); //4 -dia subpel search; 3- square; 6- fast box + dia orth (see enum SUBPEL_*)
@@ -360,7 +360,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_ALL (FramesInParallel,               0,   0,   0,   0,   0,   0,   0);
     //GOP structure, reference options
 
-    TU_OPT_GACC(GPB,                           ON,  ON,  ON,  ON,  ON,  ON, OFF);
+    TU_OPT_GACC(GPB,                           ON,  ON,  ON,  ON,  ON,  ON,  ON);
     TU_OPT_ALL (BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
 
     TU_OPT_ALL (AdaptiveRefs,                  ON,  ON,  ON,  ON,  ON,  ON,  ON);
@@ -371,7 +371,7 @@ using namespace H265Enc::MfxEnumShortAliases;
 #endif
 
     TU_OPT_SW  (NumRefFrameB,                   0,   0,   3,   3,   2,   2,   2);
-    TU_OPT_GACC(NumRefFrameB,                   0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_GACC(NumRefFrameB,                   0,   0,   3,   3,   2,   2,   2);
     TU_OPT_ALL (IntraMinDepthSC,               11,  11,  11,   6,   6,   3,   3);
     TU_OPT_ALL (InterMinDepthSTC,               6,   6,   3,   3,   2,   2,   2);
     TU_OPT_ALL (MotionPartitionDepth,           6,   6,   3,   1,   1,   1,   1);
@@ -383,7 +383,7 @@ using namespace H265Enc::MfxEnumShortAliases;
 
     TU_OPT_ALL (RepackProb,                     0,   0,   0,   0,   0,   0,   0);
     TU_OPT_SW  (NumRefLayers,                   2,   2,   3,   3,   4,   4,   4);
-    TU_OPT_GACC(NumRefLayers,                   0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_GACC(NumRefLayers,                   2,   2,   3,   3,   4,   4,   4);
 
 
 namespace H265Enc {

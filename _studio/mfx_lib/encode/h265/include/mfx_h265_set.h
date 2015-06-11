@@ -66,11 +66,11 @@ namespace H265Enc {
         Ipp32s delta_idx;
         Ipp8u  delta_rps_sign;
         Ipp32s abs_delta_rps;
-        Ipp8u  use_delta_flag[MAX_NUM_REF_FRAMES];
+        Ipp8u  use_delta_flag[MAX_DPB_SIZE];
         Ipp8u  num_negative_pics;
         Ipp8u  num_positive_pics;
-        Ipp32s delta_poc[MAX_NUM_REF_FRAMES]; /* negative+positive */
-        Ipp8u  used_by_curr_pic_flag[MAX_NUM_REF_FRAMES]; /* negative+positive */
+        Ipp32s delta_poc[MAX_DPB_SIZE];             // negative + positive
+        Ipp8u  used_by_curr_pic_flag[MAX_DPB_SIZE]; // negative + positive
     };
 
     struct H265SeqParameterSet
@@ -238,30 +238,25 @@ namespace H265Enc {
         Ipp32u num_entry_point_offsets;
         Ipp32u offset_len;
         Ipp32u entry_point_offset[MAX_NUM_ENTRY_POINT_OFFSETS];
-        Ipp16s weights[9][MAX_NUM_REF_FRAMES][MAX_NUM_REF_FRAMES];
-        Ipp16s offsets[9][MAX_NUM_REF_FRAMES][MAX_NUM_REF_FRAMES];
+        Ipp16s weights[6][MAX_NUM_ACTIVE_REFS];
+        Ipp16s offsets[6][MAX_NUM_ACTIVE_REFS];
         Ipp8u  luma_log2_weight_denom;             // luma weighting denominator
         Ipp8u  chroma_log2_weight_denom;           // chroma weighting denominator
+        Ipp32u list_entry[2][MAX_NUM_ACTIVE_REFS];
+        Ipp8u  ref_pic_list_modification_flag[2];
     };
 
     struct H265Slice : public H265SliceHeader
     {
         Ipp32s DependentSliceCurStartCUAddr;
         Ipp32s DependentSliceCurEndCUAddr;
+        Ipp32s CeilLog2NumPocTotalCurr;
 
         Ipp8u  NalUnitType;
         Ipp32s slice_num;
         Ipp32u slice_address_last_ctb;
         Ipp32u row_first;
         Ipp32u row_last;
-
-        Ipp32s m_NumRefsInL0List;
-        Ipp32s m_NumRefsInL1List;
-        Ipp32u list_entry_l0[MAX_NUM_REF_FRAMES];
-        Ipp32u list_entry_l1[MAX_NUM_REF_FRAMES];
-        Ipp8u  m_ref_pic_list_modification_flag_l0;
-        Ipp8u  m_ref_pic_list_modification_flag_l1;
-
         Ipp8u  rd_opt_flag;
         Ipp64f rd_lambda_slice;
         Ipp64f rd_lambda_inter_slice;

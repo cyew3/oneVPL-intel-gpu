@@ -222,6 +222,8 @@ namespace H265Enc {
         std::vector<H265Slice> m_slices;
         Frame *m_dpb[16];
         Ipp32s m_dpbSize;
+        Ipp32s m_numPocTotalCurr; // NumPocTotalCurr from spec
+        Ipp32s m_ceilLog2NumPocTotalCurr; // Ceil(Log2(NumPocTotalCurr))
 
         Ipp8s     m_sliceQpY;
         std::vector<Ipp8s> m_lcuQps; // array for LCU QPs

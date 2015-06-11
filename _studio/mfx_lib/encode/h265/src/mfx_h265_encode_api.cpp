@@ -1006,15 +1006,18 @@ namespace {
             optHevc.EnableCm = DEFAULT_ENABLE_CM;
 
         const mfxExtCodingOptionHEVC &defaultOptHevc = (optHevc.EnableCm == OFF ? tab_defaultOptHevcSw : tab_defaultOptHevcGacc)[mfx.TargetUsage];
+        const Ipp8u defaultGopRefDist = tab_defaultGopRefDist[mfx.TargetUsage];
+        const Ipp32s numTile = tiles.NumTileRows * tiles.NumTileColumns;
+
         Ipp8u defaultNumRefFrame = (optHevc.EnableCm == OFF ? tab_defaultNumRefFrameSw : tab_defaultNumRefFrameGacc)[mfx.TargetUsage];
 #ifdef AMT_REF_SCALABLE
         if (optHevc.NumRefLayers == 0)
             optHevc.NumRefLayers = defaultOptHevc.NumRefLayers;
-        
-        if(optHevc.NumRefLayers==4 && optHevc.BPyramid!=OFF) defaultNumRefFrame =  4;
+        if (optHevc.BPyramid == 0)
+            optHevc.BPyramid = defaultOptHevc.BPyramid;
+        if (optHevc.NumRefLayers == 4 && optHevc.BPyramid == ON)
+            defaultNumRefFrame =  4;
 #endif
-        const Ipp8u defaultGopRefDist = tab_defaultGopRefDist[mfx.TargetUsage];
-        const Ipp32s numTile = tiles.NumTileRows * tiles.NumTileColumns;
 
         if (mfx.GopRefDist == 0)
             mfx.GopRefDist = mfx.GopPicSize ? MIN(mfx.GopPicSize, defaultGopRefDist) : defaultGopRefDist;
@@ -1184,8 +1187,6 @@ namespace {
             optHevc.IntraAngModes = defaultOptHevc.IntraAngModes;
         if (optHevc.EnableCm == 0)
             optHevc.EnableCm = defaultOptHevc.EnableCm;
-        if (optHevc.BPyramid == 0)
-            optHevc.BPyramid = defaultOptHevc.BPyramid;
         if (optHevc.FastPUDecision == 0)
             optHevc.FastPUDecision = defaultOptHevc.FastPUDecision;
         if (optHevc.HadamardMe == 0)

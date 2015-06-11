@@ -64,7 +64,7 @@ void h265_write_ep_ex_golomb(H265Bs *bs,  Ipp32u symbol, Ipp32u count )
     bins = (bins << count) | symbol;
     num_bins += count;
 
-    VM_ASSERT( num_bins <= 32 );
+    assert( num_bins <= 32 );
     bs->EncodeBinsEP_CABAC(bins, num_bins);
 }
 
@@ -175,7 +175,7 @@ void h265_code_part_size(H265Bs *bs, H265CU<PixType>* pCU, Ipp32s abs_part_idx, 
         }
         break;
     default:
-        VM_ASSERT(0);
+        assert(0);
     }
 }
 
@@ -251,7 +251,7 @@ void h265_code_split_flag(H265Bs *bs, H265CU<PixType>* pCU, Ipp32s abs_part_idx,
     Ipp32u ctx = pCU->GetCtxSplitFlag(abs_part_idx, depth);
     Ipp32u split_flag = (pCU->m_data[abs_part_idx].depth > depth) ? 1 : 0;
 
-    VM_ASSERT(ctx < 3);
+    assert(ctx < 3);
     bs->EncodeSingleBin_CABAC(CTX(bs,SPLIT_CODING_UNIT_FLAG_HEVC)+ctx,split_flag);
 }
 
@@ -358,7 +358,7 @@ static void h265_code_intradir_chroma(H265Bs *bs, H265CU<PixType>* pCU, Ipp32s a
                 break;
             }
         }
-        VM_ASSERT(i < NUM_CHROMA_MODE - 1);
+        assert(i < NUM_CHROMA_MODE - 1);
         bs->EncodeSingleBin_CABAC(CTX(bs,INTRA_CHROMA_PRED_MODE_HEVC),1);
         bs->EncodeBinsEP_CABAC(intra_dir_chroma, 2);
     }
@@ -1043,8 +1043,8 @@ void h265_encode_qp(H265Bs *bs, H265CU* pCU, Ipp32s qp_bd_offset_y, Ipp32s abs_p
 
             bs->EncodeBinEP_CABAC(sign);
 
-            VM_ASSERT(iDQp >= -(26+(qp_bd_offset_y/2)));
-            VM_ASSERT(iDQp <=  (25+(qp_bd_offset_y/2)));
+            assert(iDQp >= -(26+(qp_bd_offset_y/2)));
+            assert(iDQp <=  (25+(qp_bd_offset_y/2)));
 
             Ipp32u max_abs_dqp_m1 = 24 + (qp_bd_offset_y/2) + (sign);
             Ipp32u abs_dqp_m1 = (Ipp32u)((iDQp > 0)? iDQp  : (-iDQp)) - 1;
@@ -1086,7 +1086,7 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
     if( m_data[abs_part_idx].predMode == MODE_INTRA &&
         m_data[abs_part_idx].partSize == PART_SIZE_NxN && depth == m_data[abs_part_idx].depth )
     {
-        VM_ASSERT( subdiv );
+        assert( subdiv );
     }
     else if (m_data[abs_part_idx].predMode == MODE_INTER &&
         (m_data[abs_part_idx].partSize != PART_SIZE_2Nx2N) &&
@@ -1096,29 +1096,29 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
         if (Log2TrafoSize > H265Enc::GetQuadtreeTuLog2MinSizeInCu(m_par, m_par->Log2MaxCUSize - m_data[abs_part_idx].depth,
             m_data[abs_part_idx].partSize, m_data[abs_part_idx].predMode))
         {
-            VM_ASSERT( subdiv );
+            assert( subdiv );
         }
         else
         {
-            VM_ASSERT(!subdiv );
+            assert(!subdiv );
         }
     }
     else if (Log2TrafoSize > m_par->QuadtreeTULog2MaxSize)
     {
-        VM_ASSERT( subdiv );
+        assert( subdiv );
     }
     else if (Log2TrafoSize == m_par->QuadtreeTULog2MinSize)
     {
-        VM_ASSERT( !subdiv );
+        assert( !subdiv );
     }
     else if (Log2TrafoSize == H265Enc::GetQuadtreeTuLog2MinSizeInCu(m_par, m_par->Log2MaxCUSize - m_data[abs_part_idx].depth,
             m_data[abs_part_idx].partSize, m_data[abs_part_idx].predMode))
     {
-        VM_ASSERT( !subdiv );
+        assert( !subdiv );
     }
     else
     {
-        VM_ASSERT( Log2TrafoSize > H265Enc::GetQuadtreeTuLog2MinSizeInCu(m_par, m_par->Log2MaxCUSize - m_data[abs_part_idx].depth,
+        assert( Log2TrafoSize > H265Enc::GetQuadtreeTuLog2MinSizeInCu(m_par, m_par->Log2MaxCUSize - m_data[abs_part_idx].depth,
             m_data[abs_part_idx].partSize, m_data[abs_part_idx].predMode) );
         bs->EncodeSingleBin_CABAC(CTX(bs,TRANS_SUBDIV_FLAG_HEVC) + 5 - Log2TrafoSize, subdiv);
     }
@@ -1159,8 +1159,9 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
     }
     else if(Log2TrafoSize == 2)
     {
-        VM_ASSERT( GetCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur ) == GetCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur - 1 ) );
-        VM_ASSERT( GetCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur ) == GetCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur - 1 ) );
+        Ipp32s abs_part_idx_0 = abs_part_idx & ~part_num_mask;
+        assert( GetCbf( abs_part_idx_0, TEXT_CHROMA_U, tr_depth_cur ) == GetCbf( abs_part_idx_0, TEXT_CHROMA_U, tr_depth_cur - 1 ) );
+        assert( GetCbf( abs_part_idx_0, TEXT_CHROMA_V, tr_depth_cur ) == GetCbf( abs_part_idx_0, TEXT_CHROMA_V, tr_depth_cur - 1 ) );
     }
 
     if (subdiv)
@@ -1192,7 +1193,7 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
         if (m_data[abs_part_idx].predMode != MODE_INTRA && depth == m_data[abs_part_idx].depth &&
             !GetCbf( abs_part_idx, TEXT_CHROMA_U, 0 ) && !GetCbf( abs_part_idx, TEXT_CHROMA_V, 0 ) && (Log2TrafoSize == 2 || (!cbfU1 && !cbfV1)))
         {
-            VM_ASSERT( GetCbf( abs_part_idx, TEXT_LUMA, 0 ) );
+            assert( GetCbf( abs_part_idx, TEXT_LUMA, 0 ) );
         }
         else
         {
@@ -1303,7 +1304,7 @@ void h265_encode_PU_inter(H265Bs *bs, H265CU<PixType>* pCU, Ipp32s abs_part_idx)
   Ipp8u part_size = pCU->m_data[abs_part_idx].partSize;
   Ipp32u num_PU = (part_size == PART_SIZE_2Nx2N ? 1 : (part_size == PART_SIZE_NxN ? 4 : 2));
   Ipp32u depth = pCU->m_data[abs_part_idx].depth;
-  VM_ASSERT(part_size < PART_SIZE_NONE);
+  assert(part_size < PART_SIZE_NONE);
   Ipp32u offset = (h265_PU_offset[part_size] << ((pCU->m_par->MaxCUDepth - depth) << 1)) >> 4;
 
   Ipp32u sub_part_idx = abs_part_idx;
@@ -1616,7 +1617,7 @@ void CodeSaoCtbOffsetParam(H265Bs *bs, int compIdx, SaoOffsetParam& ctbParam, bo
         }
         else
         {
-            VM_ASSERT(ctbParam.type_idx < SAO_TYPE_BO); //EO
+            assert(ctbParam.type_idx < SAO_TYPE_BO); //EO
             code = 2;
         }
         h265_code_sao_type_idx(bs, code);
@@ -1662,7 +1663,7 @@ void CodeSaoCtbOffsetParam(H265Bs *bs, int compIdx, SaoOffsetParam& ctbParam, bo
         {
             if(compIdx == SAO_Y || compIdx == SAO_Cb)
             {
-                VM_ASSERT(ctbParam.type_idx - SAO_TYPE_EO_0 >=0);
+                assert(ctbParam.type_idx - SAO_TYPE_EO_0 >=0);
                 h265_code_sao_uflc(bs, ctbParam.type_idx - SAO_TYPE_EO_0, NUM_SAO_EO_TYPES_LOG2);
             }
         }

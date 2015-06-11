@@ -12,6 +12,7 @@
 
 #include <math.h>
 #include <assert.h>
+#include <numeric>
 #include <algorithm>
 #include <utility>
 
@@ -396,6 +397,7 @@ void H265Encoder::SetPPS()
     m_pps.pps_deblocking_filter_disabled_flag = !m_videoParam.deblockingFlag;
     m_pps.pps_beta_offset_div2 = 0;
     m_pps.pps_tc_offset_div2 = 0;
+    m_pps.lists_modification_present_flag = 1;
     m_pps.log2_parallel_merge_level = m_videoParam.log2ParallelMergeLevel;
 }
 
@@ -501,6 +503,15 @@ void H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame *frame)
     } else {
         slice->slice_sao_luma_flag = true;
         slice->slice_sao_chroma_flag = m_videoParam.SAOChromaFlag ? true : false;
+    }
+
+    slice->CeilLog2NumPocTotalCurr = frame->m_ceilLog2NumPocTotalCurr;
+    for (Ipp32s l = 0; l < 2; l++) {
+        slice->ref_pic_list_modification_flag[l] = frame->m_refPicList[l].m_listModFlag;
+        if (frame->m_refPicList[l].m_listModFlag) {
+            for (Ipp32s r = 0; r < frame->m_refPicList[l].m_refFramesCount; r++)
+                slice->list_entry[l][r] = frame->m_refPicList[l].m_listMod[r];
+        }
     }
 } 
 
@@ -1052,8 +1063,64 @@ void H265Encoder::RestoreGopCountersFromFrame(Frame *frame, bool bEncOrder)
     m_miniGopCount = frame->m_miniGopCount - !(frame->m_picCodeType == MFX_FRAMETYPE_B);
 }
 
-bool PocIsLess(const Frame *f1, const Frame *f2) { return f1->m_poc < f2->m_poc; }
-bool PocIsGreater(const Frame *f1, const Frame *f2) { return f1->m_poc > f2->m_poc; }
+namespace {
+    bool PocIsLess(const Frame *f1, const Frame *f2) { return f1->m_poc < f2->m_poc; }
+    bool PocIsGreater(const Frame *f1, const Frame *f2) { return f1->m_poc > f2->m_poc; }
+
+    void ModifyRefList(const H265Enc::H265VideoParam &par, Frame &currFrame, Ipp32s listIdx)
+    {
+        RefPicList &list = currFrame.m_refPicList[listIdx];
+        Frame **refs = list.m_refFrames;
+        Ipp8s *mod = list.m_listMod;
+        Ipp8s *pocs = list.m_deltaPoc;
+        Ipp8u *lterms = list.m_isLongTermRef;
+
+        list.m_listModFlag = 0;
+        for (Ipp32s i = 0; i < list.m_refFramesCount; i++)
+            mod[i] = i;
+
+        if (par.AdaptiveRefs) {
+            // stable sort by pyramidLayer
+            for (Ipp32s i = 2; i < list.m_refFramesCount; i++) {
+                Ipp32s layerI = refs[i]->m_pyramidLayer;
+                Ipp32s j = i;
+                while (j > 1 && refs[j-1]->m_pyramidLayer > layerI) j--;
+                if (j < i) {
+                    std::rotate(refs + j, refs + i, refs + i + 1);
+                    std::rotate(mod + j, mod + i, mod + i + 1);
+                    std::rotate(pocs + j, pocs + i, pocs + i + 1);
+                    std::rotate(lterms + j, lterms + i, lterms + i + 1);
+                    list.m_listModFlag = 1;
+                }
+            }
+
+            // cut ref lists for non-ref frames
+            if (!currFrame.m_isRef && list.m_refFramesCount > 1) {
+                Ipp32s layer0 = refs[0]->m_pyramidLayer;
+                for (Ipp32s i = 1; i < list.m_refFramesCount; i++) {
+                    if (refs[i]->m_pyramidLayer >= layer0) {
+                        list.m_refFramesCount = i;
+                        break;
+                    }
+                }
+            }
+
+#ifdef AMT_REF_SCALABLE
+            if (par.BiPyramidLayers == 4) {
+                // list is already sorted by m_pyramidLayer (ascending)
+                Ipp32s refLayerLimit = par.refLayerLimit[currFrame.m_pyramidLayer];
+                for (Ipp32s i = 1; i < list.m_refFramesCount; i++) {
+                    if (refs[i]->m_pyramidLayer > refLayerLimit) {
+                        list.m_refFramesCount = i;
+                        break;
+                    }
+                }
+            }
+#endif // AMT_REF_SCALABLE
+        }
+    }
+}
+
 
 void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
 {
@@ -1111,8 +1178,8 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
     }
 
     // create RPS syntax
-    //    Ipp32s numL0 = currFrame->m_refPicList[0].m_refFramesCount;
-    //    Ipp32s numL1 = currFrame->m_refPicList[1].m_refFramesCount;
+    // Ipp32s numL0 = currFrame->m_refPicList[0].m_refFramesCount;
+    // Ipp32s numL1 = currFrame->m_refPicList[1].m_refFramesCount;
     rps->inter_ref_pic_set_prediction_flag = 0;
     rps->num_negative_pics = numStBefore;
     rps->num_positive_pics = numStAfter;
@@ -1130,6 +1197,12 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
         rps->used_by_curr_pic_flag[numStBefore + i] = (currFrame->m_picCodeType != MFX_FRAMETYPE_I);
         deltaPocPred = dpoc1[i];
     }
+
+    currFrame->m_numPocTotalCurr = std::accumulate(rps->used_by_curr_pic_flag, rps->used_by_curr_pic_flag + numStBefore + numStAfter, 0);
+    currFrame->m_ceilLog2NumPocTotalCurr = H265_CeilLog2(currFrame->m_numPocTotalCurr);
+
+    ModifyRefList(m_videoParam, *currFrame, 0);
+    ModifyRefList(m_videoParam, *currFrame, 1);
 }
 
 
@@ -1155,6 +1228,17 @@ void H265Encoder::ConfigureEncodeFrame(Frame* frame)
     currFrame->m_frameOrderOfLastIntraInEncOrder = m_frameOrderOfLastIntraInEncOrder;
     if (currFrame->m_picCodeType == MFX_FRAMETYPE_I)
         m_frameOrderOfLastIntraInEncOrder = currFrame->m_frameOrder;
+
+    // setup ref flags
+    currFrame->m_isLongTermRef = 0;
+    currFrame->m_isShortTermRef = 1;
+    if (currFrame->m_picCodeType == MFX_FRAMETYPE_B) {
+        if (m_videoParam.BiPyramidLayers > 1) {
+            if (currFrame->m_pyramidLayer == m_videoParam.BiPyramidLayers - 1)
+                currFrame->m_isShortTermRef = 0;
+        }
+    }
+    currFrame->m_isRef = currFrame->m_isShortTermRef | currFrame->m_isLongTermRef;
 
     // create reference lists and RPS syntax
     H265ShortTermRefPicSet rps = {0};
@@ -1202,17 +1286,6 @@ void H265Encoder::ConfigureEncodeFrame(Frame* frame)
     for (Ipp32s i = 0; i < numRefIdx1 && currFrame->m_allRefFramesAreFromThePast; i++)
         if (currFrame->m_refPicList[1].m_deltaPoc[i] < 0)
             currFrame->m_allRefFramesAreFromThePast = false;
-
-    // setup ref flags
-    currFrame->m_isLongTermRef = 0;
-    currFrame->m_isShortTermRef = 1;
-    if (currFrame->m_picCodeType == MFX_FRAMETYPE_B) {
-        if (m_videoParam.BiPyramidLayers > 1) {
-            if (currFrame->m_pyramidLayer == m_videoParam.BiPyramidLayers - 1)
-                currFrame->m_isShortTermRef = 0;
-        }
-    }
-    currFrame->m_isRef = currFrame->m_isShortTermRef | currFrame->m_isLongTermRef;
 
     // setup slices
     bool doSao = false;
@@ -2041,10 +2114,10 @@ void H265FrameEncoder::SetEncodeFrame(Frame* frame, std::deque<ThreadingTask *> 
                             continue;
 
                         Frame *ref = refList->m_refFrames[refIdx];
-#ifdef AMT_REF_SCALABLE
-                        if(refIdx && m_videoParam.BiPyramidLayers == 4 && ref->m_pyramidLayer>m_videoParam.refLayerLimit[m_frame->m_pyramidLayer]) 
-                            continue;
-#endif
+//#ifdef AMT_REF_SCALABLE
+//                        if(refIdx && m_videoParam.BiPyramidLayers == 4 && ref->m_pyramidLayer>m_videoParam.refLayerLimit[m_frame->m_pyramidLayer]) 
+//                            continue;
+//#endif
                         Ipp32u refRow = ctb_row + refRowLag;
                         if (refRow > endRow && ctb_row == regionCtbRowFirst && ctb_col == regionCtbColFirst)
                             refRow = endRow;

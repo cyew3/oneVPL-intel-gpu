@@ -71,6 +71,8 @@
 #define AMT_FAST_SUBPEL_SEED
 #ifndef MFX_VA
 #define AMT_ALT_FAST_SKIP
+#else
+#define AMT_ALT_FAST_SKIP
 #endif
 #endif
 
@@ -92,7 +94,12 @@
 #ifndef MFX_VA
 #define AMT_VQ_TUNE
 #define AMT_REF_SCALABLE
+#else
+#define AMT_VQ_TUNE
+#define AMT_ADAPTIVE_INTER_DEPTH
+#define AMT_REF_SCALABLE
 #endif
+
 #ifdef AMT_VQ_TUNE
 #if defined(AMT_ADAPTIVE_TU_DEPTH) && defined(AMT_ALT_ENCODE)
 #define AMT_ADAPTIVE_INTER_DEPTH
@@ -204,7 +211,10 @@ extern int DEBUG_CABAC_PRINT;
 #define NUM_CAND_MAX_1 36
 #define NUM_CAND_MAX_2 36
 
-#define MAX_NUM_REF_FRAMES  32
+enum {
+    MAX_NUM_ACTIVE_REFS = 15,
+    MAX_DPB_SIZE = 16
+};
 
 #define HEVC_ANALYSE_CHROMA                    (1 << 0)
 #define HEVC_COST_CHROMA                       (1 << 1)
@@ -480,11 +490,13 @@ class Frame;
 
 struct RefPicList
 {
-    Frame *m_refFrames[MAX_NUM_REF_FRAMES + 1];
-    Ipp8s m_deltaPoc[MAX_NUM_REF_FRAMES + 1];
-    Ipp8u m_isLongTermRef[MAX_NUM_REF_FRAMES + 1];
+    Frame *m_refFrames[MAX_NUM_ACTIVE_REFS];
+    Ipp8s m_deltaPoc[MAX_NUM_ACTIVE_REFS];
+    Ipp8u m_isLongTermRef[MAX_NUM_ACTIVE_REFS];
     // extra details for frame threading
     Ipp32s m_refFramesCount; // number of reference frames in m_refFrames[]. must be the MAX (slice[sliceIdx]->num_ref_idx[ listIdx ], ...)
+    Ipp32s m_listModFlag;
+    Ipp8s m_listMod[MAX_NUM_ACTIVE_REFS];
 };
 
 
