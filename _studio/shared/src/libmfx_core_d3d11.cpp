@@ -165,7 +165,7 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
     return MFX_WRN_PARTIAL_ACCELERATION;
 }
 
-mfxStatus D3D11VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, bool)
+mfxStatus D3D11VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncode)
 {
     if (!par)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -184,12 +184,16 @@ mfxStatus D3D11VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, b
     if (sts < MFX_ERR_NONE || sts == MFX_WRN_PARTIAL_ACCELERATION)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
-    if (sts == MFX_ERR_NONE)
+    if (sts == MFX_ERR_NONE && !isEncode)
     {
         return CheckIntelDataPrivateReport<D3D11_VIDEO_DECODER_CONFIG>(&config, par);
     }
+    else
+    {
+        return MFX_ERR_NONE;
+    }
 
-    if (MFX_HW_LAKE == m_HWType || MFX_HW_SNB == m_HWType)
+   /* if (MFX_HW_LAKE == m_HWType || MFX_HW_SNB == m_HWType)
     {
         if (par->mfx.FrameInfo.Width  > 1920 || par->mfx.FrameInfo.Height > 1200)
             return MFX_WRN_PARTIAL_ACCELERATION;
@@ -200,7 +204,7 @@ mfxStatus D3D11VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, b
             return MFX_WRN_PARTIAL_ACCELERATION;
     }
 
-    return MFX_ERR_NONE;
+    return MFX_ERR_NONE;*/
 }
 // DX11 support
 
