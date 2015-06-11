@@ -77,6 +77,8 @@ struct sInputParams
     mfxU16 RefWidth;
     mfxU16 RefHeight;
     mfxU16 SubMBPartMask;
+    mfxU16 SubPelMode;
+    mfxU16 IntraPartMask;
 
     mfxU32 numViews; // number of views for Multi-View Codec
 

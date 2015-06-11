@@ -59,6 +59,8 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-len_sp length] - defines number of search units in search path. In range [1,63]\n"));
     msdk_printf(MSDK_STRING("   [-search_path value] - defines shape of search path. In range [1,2]\n"));
     msdk_printf(MSDK_STRING("   [-sub_mb_part_mask mask_hex] - specifies which partitions should be excluded from search. 0x00 - enable all (default is 0x77)\n"));
+    msdk_printf(MSDK_STRING("   [-sub_pel_mode mode_hex] - specifies sub pixel precision for motion estimation 0x00-0x01-0x03 integer-half-quarter (default is 0)\n"));
+    msdk_printf(MSDK_STRING("   [-intra_part_mask mask_hex] - specifies what blocks and sub-blocks partitions are enabled for intra prediction (default is 0)\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -269,6 +271,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             i++;
             pParams->SubMBPartMask = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 16);
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sub_pel_mode")))
+        {
+            i++;
+            pParams->SubPelMode = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 16);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-intra_part_mask")))
+        {
+            i++;
+            pParams->IntraPartMask = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 16);
+        }
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -472,6 +484,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     	return MFX_ERR_UNSUPPORTED;
     }
 
+    if (pParams->SubPelMode != 0x00 && pParams->SubPelMode != 0x01 && pParams->SubPelMode != 0x03){
+       	PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -sub_pel_mode parameter, must be 0x00/0x01/0x03!"));
+      	return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->IntraPartMask >= 0x07){
+        PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -inra_part_mask parameter, 0x07 disables all partitions!"));
+       	return MFX_ERR_UNSUPPORTED;
+    }
+
     // not all options are supported if rotate plugin is enabled
     if (pParams->nRotationAngle == 180 && (
         MFX_PICSTRUCT_PROGRESSIVE != pParams->nPicStruct ||
@@ -532,6 +554,8 @@ int main(int argc, char *argv[])
     Params.LenSP		 = 57;
     Params.SearchPath	 = 1;
     Params.SubMBPartMask = 0x77;
+    Params.IntraPartMask = 0x00;
+    Params.SubPelMode    = 0x03;
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
