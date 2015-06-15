@@ -239,6 +239,9 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(H265Task * task)
             return;
         }
 
+        if (startMb > task->m_iFirstMB)
+            startMb--;
+
         for (Ipp32s i = startMb; i < endMb; i++)
         {
             Ipp32s rsCUAddr = pCurrentFrame->m_CodingData->getCUOrderMap(i);
@@ -246,6 +249,21 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(H265Task * task)
             cu->initCU(this, rsCUAddr);
             cu->setCbfSubParts(0, 0, 0, 0, 0);
             cu->m_Frame = 0;
+
+            Ipp32s CUX = (cu->m_CUPelX >> m_pSeqParamSet->log2_min_transform_block_size);
+            Ipp32s CUY = (cu->m_CUPelY >> m_pSeqParamSet->log2_min_transform_block_size);
+
+            H265MVInfo *colInfo = pCurrentFrame->m_CodingData->m_colocatedInfo + CUY * m_pSeqParamSet->NumPartitionsInFrameWidth + CUX;
+
+            for (Ipp32u k = 0; k < m_pSeqParamSet->NumPartitionsInCUSize; k++)
+            {
+                for (Ipp32u j = 0; j < m_pSeqParamSet->NumPartitionsInCUSize; j++)
+                {
+                    colInfo[j].m_refIdx[REF_PIC_LIST_0] = -1;
+                    colInfo[j].m_refIdx[REF_PIC_LIST_1] = -1;
+                }
+                colInfo += m_pSeqParamSet->NumPartitionsInFrameWidth;
+            }
         }
 
         H265DecoderFrame * refFrame = pCurrentFrame->GetRefPicList(m_pSlice->GetSliceNum(), 0)->m_refPicList[0].refFrame;
