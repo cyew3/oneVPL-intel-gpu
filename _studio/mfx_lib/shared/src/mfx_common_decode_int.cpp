@@ -56,6 +56,7 @@ mfxStatus ConvertUMCStatusToMfx(UMC::Status status)
 {
     switch((UMC::eUMC_VA_Status)status)
     {
+    case UMC::UMC_ERR_FRAME_LOCKED:
     case UMC::UMC_ERR_DEVICE_FAILED:
         return MFX_ERR_DEVICE_FAILED;
     case UMC::UMC_ERR_DEVICE_LOST:
