@@ -61,6 +61,10 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-sub_mb_part_mask mask_hex] - specifies which partitions should be excluded from search. 0x00 - enable all (default is 0x77)\n"));
     msdk_printf(MSDK_STRING("   [-sub_pel_mode mode_hex] - specifies sub pixel precision for motion estimation 0x00-0x01-0x03 integer-half-quarter (default is 0)\n"));
     msdk_printf(MSDK_STRING("   [-intra_part_mask mask_hex] - specifies what blocks and sub-blocks partitions are enabled for intra prediction (default is 0)\n"));
+    msdk_printf(MSDK_STRING("   [-intra_SAD] - specifies intra distortion adjustment. 0x00 - none, 0x02 - Haar transform (default)\n"));
+    msdk_printf(MSDK_STRING("   [-inter_SAD] - specifies inter distortion adjustment. 0x00 - none, 0x02 - Haar transform (default)\n"));
+    msdk_printf(MSDK_STRING("   [-adaptive_search] - enables adaptive search\n"));
+    msdk_printf(MSDK_STRING("   [-forward_trasform] - enables forward transform. Additional stat is calculated and reported to mfxExtFeiPreEncMBStat. QP required\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -241,6 +245,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->Enable8x8Stat = true;
         }
+		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-forward_trasform")))
+		{
+		    pParams->FTEnable = true;
+		}
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-adaptive_search")))
+        {
+            pParams->AdaptiveSearch = true;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-search_window")))
         {
             i++;
@@ -280,6 +292,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             i++;
             pParams->IntraPartMask = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 16);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-intra_SAD")))
+        {
+            i++;
+            pParams->IntraSAD = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 16);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-inter_SAD")))
+        {
+            i++;
+            pParams->InterSAD = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 16);
         }
         else // 1-character options
         {
@@ -494,6 +516,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
        	return MFX_ERR_UNSUPPORTED;
     }
 
+    if (pParams->IntraSAD != 0x02 && pParams->IntraSAD != 0x00){
+        PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -intra_SAD, must be 0x00 or 0x02!"));
+       	return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->InterSAD != 0x02 && pParams->InterSAD != 0x00){
+        PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -inter_SAD, must be 0x00 or 0x02!"));
+       	return MFX_ERR_UNSUPPORTED;
+    }
+
     // not all options are supported if rotate plugin is enabled
     if (pParams->nRotationAngle == 180 && (
         MFX_PICSTRUCT_PROGRESSIVE != pParams->nPicStruct ||
@@ -537,7 +569,9 @@ int main(int argc, char *argv[])
     Params.bOnlyENC  = false; //default value
     Params.bOnlyPAK  = false; //default value
     Params.bPREENC   = false; //default value
-    Params.Enable8x8Stat = false; //default value
+    Params.Enable8x8Stat  = false;
+    Params.FTEnable       = false;
+    Params.AdaptiveSearch = false;
     Params.mvinFile      = NULL;
     Params.mvoutFile     = NULL;
     Params.mbctrinFile   = NULL;
@@ -556,6 +590,8 @@ int main(int argc, char *argv[])
     Params.SubMBPartMask = 0x77;
     Params.IntraPartMask = 0x00;
     Params.SubPelMode    = 0x03;
+    Params.IntraSAD		 = 0x02;
+    Params.InterSAD		 = 0x02;
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);

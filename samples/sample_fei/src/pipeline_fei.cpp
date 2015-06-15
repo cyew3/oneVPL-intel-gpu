@@ -1377,8 +1377,8 @@ mfxStatus CEncodingPipeline::Run()
             preENCCtr[fieldId].PictureType = m_mfxEncParams.mfx.FrameInfo.PicStruct;
             preENCCtr[fieldId].DisableMVOutput         = disableMVoutput;
             preENCCtr[fieldId].DisableStatisticsOutput = disableMBoutput;
-            preENCCtr[fieldId].FTEnable = 1;//0;
-            preENCCtr[fieldId].AdaptiveSearch = 1;
+            preENCCtr[fieldId].FTEnable       = m_encpakParams.FTEnable;//1;//0;
+            preENCCtr[fieldId].AdaptiveSearch = m_encpakParams.AdaptiveSearch;//1;
             preENCCtr[fieldId].LenSP = m_encpakParams.LenSP;//57;
             preENCCtr[fieldId].MBQp = enableMBQP;
             preENCCtr[fieldId].MVPredictor = enableMVpredictor;
@@ -1388,8 +1388,8 @@ mfxStatus CEncodingPipeline::Run()
             preENCCtr[fieldId].SearchWindow = m_encpakParams.SearchWindow;//0;
             preENCCtr[fieldId].SearchPath   = m_encpakParams.SearchPath;
             preENCCtr[fieldId].Qp = m_encpakParams.QP;
-            preENCCtr[fieldId].InterSAD = 2;
-            preENCCtr[fieldId].IntraSAD = 2;
+            preENCCtr[fieldId].IntraSAD = m_encpakParams.IntraSAD;//2;
+            preENCCtr[fieldId].InterSAD = m_encpakParams.InterSAD;//2;
             preENCCtr[fieldId].SubMBPartMask = m_encpakParams.SubMBPartMask;//0;//0x77;
             preENCCtr[fieldId].IntraPartMask = m_encpakParams.IntraPartMask;//0
             preENCCtr[fieldId].Enable8x8Stat = m_encpakParams.Enable8x8Stat;
@@ -1397,7 +1397,6 @@ mfxStatus CEncodingPipeline::Run()
             //inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & preENCCtr;
 
             if (preENCCtr[fieldId].MVPredictor) {
-                preENCCtr[fieldId].MVPredictor = 0;
                 mvPreds[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV_PRED;
                 mvPreds[fieldId].Header.BufferSz = sizeof (mfxExtFeiPreEncMVPredictors);
                 mvPreds[fieldId].NumMBAlloc = numMB;

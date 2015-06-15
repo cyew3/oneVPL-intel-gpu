@@ -79,6 +79,8 @@ struct sInputParams
     mfxU16 SubMBPartMask;
     mfxU16 SubPelMode;
     mfxU16 IntraPartMask;
+    mfxU16 IntraSAD;
+    mfxU16 InterSAD;
 
     mfxU32 numViews; // number of views for Multi-View Codec
 
@@ -106,6 +108,8 @@ struct sInputParams
     bool bMBSize;
     bool bPassHeaders;
     bool Enable8x8Stat;
+    bool AdaptiveSearch;
+    bool FTEnable;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;
