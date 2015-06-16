@@ -109,6 +109,15 @@ namespace {
         dst->PPSId = src->PPSId;
     }
 
+    void CopyVps(mfxExtCodingOptionVPS *dst, const mfxExtCodingOptionVPS *src)
+    {
+        if (dst->VPSBuffer && src->VPSBuffer) {
+            memmove_s(dst->VPSBuffer, dst->VPSBufSize, src->VPSBuffer, src->VPSBufSize);
+            dst->VPSBufSize = src->VPSBufSize;
+        }
+        dst->VPSId = src->VPSId;
+    }
+
     void CopyParam(mfxVideoParam &dst, const mfxVideoParam &src)
     {
         dst.AsyncDepth = src.AsyncDepth;
@@ -120,6 +129,8 @@ namespace {
                 if (mfxExtBuffer *d = GetExtBufferById(dst.ExtParam, dst.NumExtParam, src.ExtParam[i]->BufferId)) {
                     if (src.ExtParam[i]->BufferId == MFX_EXTBUFF_CODING_OPTION_SPSPPS)
                         CopySpsPps((mfxExtCodingOptionSPSPPS *)d, (mfxExtCodingOptionSPSPPS *)src.ExtParam[i]);
+                    else if (src.ExtParam[i]->BufferId == MFX_EXTBUFF_CODING_OPTION_VPS)
+                        CopyVps((mfxExtCodingOptionVPS *)d, (mfxExtCodingOptionVPS*)src.ExtParam[i]);
                     else
                         memmove_s(d, d->BufferSz, src.ExtParam[i], src.ExtParam[i]->BufferSz);
                 }
@@ -478,6 +489,35 @@ namespace {
             ext->NumRefLayers = 1;
         }
 
+        if (mfxExtCodingOption *ext = GetExtBuffer(*out)) {
+            InitExtBuffer0(*ext);
+            ext->RateDistortionOpt    = 0;
+            ext->MECostType           = 0;
+            ext->MESearchType         = 0;
+            ext->MVSearchWindow.x     = 0;
+            ext->MVSearchWindow.y     = 0;
+            ext->EndOfSequence        = 0;
+            ext->FramePicture         = 0;
+            ext->CAVLC                = 0;
+            ext->RecoveryPointSEI     = 0;
+            ext->ViewOutput           = 0;
+            ext->NalHrdConformance    = 0;
+            ext->SingleSeiNalUnit     = 0;
+            ext->VuiVclHrdParameters  = 0;
+            ext->RefPicListReordering = 0;
+            ext->ResetRefList         = 0;
+            ext->RefPicMarkRep        = 0;
+            ext->FieldOutput          = 0;
+            ext->IntraPredBlockSize   = 0;
+            ext->InterPredBlockSize   = 0;
+            ext->MVPrecision          = 0;
+            ext->MaxDecFrameBuffering = 0;
+            ext->AUDelimiter          = 1;
+            ext->EndOfStream          = 0;
+            ext->PicTimingSEI         = 0;
+            ext->VuiNalHrdParameters  = 0;
+        }
+
         if (mfxExtCodingOption2 *ext = GetExtBuffer(*out)) {
             InitExtBuffer0(*ext);
             ext->IntRefType = 0;
@@ -536,6 +576,7 @@ namespace {
         mfxExtHEVCRegion *region = GetExtBuffer(par);
         mfxExtHEVCTiles *tiles = GetExtBuffer(par);
         mfxExtHEVCParam *hevcParam = GetExtBuffer(par);
+        mfxExtCodingOption *opt = GetExtBuffer(par);
         mfxExtCodingOption2 *opt2 = GetExtBuffer(par);
 
         // check pairs (error is expected behavior)
@@ -706,6 +747,10 @@ namespace {
             wrnIncompatible = !CheckSet(optHevc->IntraAngModesP, CodecLimits::SUP_INTRA_ANG_MODE);
             wrnIncompatible = !CheckSet(optHevc->IntraAngModesBRef, CodecLimits::SUP_INTRA_ANG_MODE);
             wrnIncompatible = !CheckSet(optHevc->IntraAngModesBnonRef, CodecLimits::SUP_INTRA_ANG_MODE);
+        }
+
+        if (opt) {
+            wrnIncompatible = !CheckTriState(opt->AUDelimiter);
         }
 
         if (opt2) {
@@ -965,6 +1010,7 @@ namespace {
         mfxExtHEVCTiles &tiles = GetExtBuffer(par);
         mfxExtCodingOptionHEVC &optHevc = GetExtBuffer(par);
         mfxExtHEVCParam &hevcParam = GetExtBuffer(par);
+        mfxExtCodingOption &opt = GetExtBuffer(par);
         mfxExtCodingOption2 &opt2 = GetExtBuffer(par);
 
         if (hevcParam.PicWidthInLumaSamples == 0)
@@ -1099,6 +1145,9 @@ namespace {
                 CheckMinTierLevel(mfx.CodecLevel, GetMinTierLevelForBitrateInKbps(mfx.CodecProfile, br));
             }
         }
+
+        if (opt.AUDelimiter == 0)
+            opt.AUDelimiter = ON;
 
         if (opt2.DisableVUI == 0)
             opt2.DisableVUI = OFF;
@@ -1371,6 +1420,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam * par)
         return sts;
     }
 
+    m_extBuffers.extVps.VPSBuffer    = const_cast<Ipp8u*>(m_impl->GetVps(m_extBuffers.extVps.VPSBufSize));
     m_extBuffers.extSpsPps.SPSBuffer = const_cast<Ipp8u*>(m_impl->GetSps(m_extBuffers.extSpsPps.SPSBufSize));
     m_extBuffers.extSpsPps.PPSBuffer = const_cast<Ipp8u*>(m_impl->GetPps(m_extBuffers.extSpsPps.PPSBufSize));
 
@@ -1492,6 +1542,14 @@ mfxStatus MFXVideoENCODEH265::GetVideoParam(mfxVideoParam *par)
             return MFX_ERR_NOT_ENOUGH_BUFFER;
     }
 
+    if (mfxExtCodingOptionVPS *vps = GetExtBuffer(*par)) {
+        // check that VPS buffer have enough space
+        if (vps->VPSBuffer == NULL)
+            return MFX_ERR_NULL_PTR;
+        if (vps->VPSBufSize < m_extBuffers.extVps.VPSBufSize)
+            return MFX_ERR_NOT_ENOUGH_BUFFER;
+    }
+
     CopyParam(*par, m_mfxParam);
     return MFX_ERR_NONE;
 }
@@ -1609,8 +1667,10 @@ ExtBuffers::ExtBuffers()
     extParamAll[count++] = &extTiles.Header;
     extParamAll[count++] = &extRegion.Header;
     extParamAll[count++] = &extHevcParam.Header;
+    extParamAll[count++] = &extOpt.Header;
     extParamAll[count++] = &extOpt2.Header;
     extParamAll[count++] = &extSpsPps.Header;
+    extParamAll[count++] = &extVps.Header;
     assert(NUM_EXT_PARAM == count);
 }
 
@@ -1622,8 +1682,10 @@ void ExtBuffers::CleanUp()
     InitExtBuffer(extTiles);
     InitExtBuffer(extRegion);
     InitExtBuffer(extHevcParam);
+    InitExtBuffer(extOpt);
     InitExtBuffer(extOpt2);
     InitExtBuffer(extSpsPps);
+    InitExtBuffer(extVps);
 }
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

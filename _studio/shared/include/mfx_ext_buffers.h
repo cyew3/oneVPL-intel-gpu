@@ -254,6 +254,7 @@ typedef struct {
     mfxU16      reserved[39];       // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionHEVC;
 
+
 #if defined (ADVANCED_REF)
 
 #define MFX_EXTBUFF_AVC_REFLISTS MFX_MAKEFOURCC('R','L','T','S')

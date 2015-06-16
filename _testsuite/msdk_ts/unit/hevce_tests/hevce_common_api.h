@@ -11,8 +11,10 @@ namespace ApiTestCommon {
     template<> struct ExtBufInfo<mfxExtHEVCTiles>          { enum { id = MFX_EXTBUFF_HEVC_TILES,                sz =  sizeof(mfxExtHEVCTiles) }; };
     template<> struct ExtBufInfo<mfxExtHEVCParam>          { enum { id = MFX_EXTBUFF_HEVC_PARAM,                sz =  sizeof(mfxExtHEVCParam) }; };
     template<> struct ExtBufInfo<mfxExtHEVCRegion>         { enum { id = MFX_EXTBUFF_HEVC_REGION,               sz =  sizeof(mfxExtHEVCRegion) }; };
+    template<> struct ExtBufInfo<mfxExtCodingOption>       { enum { id = MFX_EXTBUFF_CODING_OPTION,             sz =  sizeof(mfxExtCodingOption) }; };
     template<> struct ExtBufInfo<mfxExtCodingOption2>      { enum { id = MFX_EXTBUFF_CODING_OPTION2,            sz =  sizeof(mfxExtCodingOption2) }; };
     template<> struct ExtBufInfo<mfxExtCodingOptionSPSPPS> { enum { id = MFX_EXTBUFF_CODING_OPTION_SPSPPS,      sz =  sizeof(mfxExtCodingOptionSPSPPS) }; };
+    template<> struct ExtBufInfo<mfxExtCodingOptionVPS>    { enum { id = MFX_EXTBUFF_CODING_OPTION_VPS,         sz =  sizeof(mfxExtCodingOptionVPS) }; };
 
     template <class T> T MakeExtBuffer() {
         T extBuffer = {};
@@ -37,6 +39,7 @@ namespace ApiTestCommon {
         mfxExtHEVCTiles          extHevcTiles;
         mfxExtHEVCParam          extHevcParam;
         mfxExtHEVCRegion         extHevcRegion;
+        mfxExtCodingOption       extCodingOption;
         mfxExtCodingOption2      extCodingOption2;
         mfxExtBuffer            *extBuffers[10];
         mfxVideoParam            videoParam;
@@ -49,6 +52,8 @@ namespace ApiTestCommon {
     template <> void ExpectEqual<mfxExtOpaqueSurfaceAlloc>(const mfxExtOpaqueSurfaceAlloc &expected, const mfxExtOpaqueSurfaceAlloc &actual);
     template <> void ExpectEqual<mfxExtDumpFiles>(const mfxExtDumpFiles &expected, const mfxExtDumpFiles &actual);
     template <> void ExpectEqual<mfxExtCodingOptionHEVC>(const mfxExtCodingOptionHEVC &expected, const mfxExtCodingOptionHEVC &actual);
+    template <> void ExpectEqual<mfxExtCodingOption>(const mfxExtCodingOption &expected, const mfxExtCodingOption &actual);
+    template <> void ExpectEqual<mfxExtCodingOption2>(const mfxExtCodingOption2 &expected, const mfxExtCodingOption2 &actual);
     template <> void ExpectEqual<ParamSet>(const ParamSet &expected, const ParamSet &actual);
 
     void SetupParamSet(ParamSet &paramset);

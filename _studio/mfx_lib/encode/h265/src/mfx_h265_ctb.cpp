@@ -16,7 +16,7 @@
 #include <assert.h>
 #include "ippi.h"
 #include "ippvc.h"
-#include "ippdc.h"
+//#include "ippdc.h"
 #include "mfx_h265_ctb.h"
 #include "mfx_h265_frame.h"
 #include "mfx_h265_enc.h"
@@ -10975,7 +10975,7 @@ template<>
 Ipp32u CheckSum<Ipp8u>(const Ipp8u *buf, Ipp32s size, Ipp32u initialSum)
 {
     Ipp32u sum = initialSum;
-    ippsCRC32_8u(buf, size, &sum);
+    //ippsCRC32_8u(buf, size, &sum);
     return sum;
 }
 

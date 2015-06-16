@@ -105,6 +105,7 @@ namespace {
         const mfxExtHEVCTiles &tiles = GetExtBuffer(mfxParam);
         const mfxExtHEVCParam &hevcParam = GetExtBuffer(mfxParam);
         mfxExtDumpFiles &dumpFiles = GetExtBuffer(mfxParam);
+        const mfxExtCodingOption &opt = GetExtBuffer(mfxParam);
         const mfxExtCodingOption2 &opt2 = GetExtBuffer(mfxParam);
 
         const Ipp32u maxCUSize = 1 << optHevc.Log2MaxCUSize;
@@ -348,6 +349,8 @@ namespace {
             intParam.MinCuDQPSize = intParam.MaxCUSize;
 
         intParam.NumMinTUInMaxCU = intParam.MaxCUSize >> intParam.QuadtreeTULog2MinSize;
+
+        intParam.writeAud = (opt.AUDelimiter == ON);
 
         intParam.FrameRateExtN = fi.FrameRateExtN;
         intParam.FrameRateExtD = fi.FrameRateExtD;
@@ -610,6 +613,13 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
 
     Ipp8u tmpbuf[1024];
     H265BsReal bs;
+
+    bs.m_base.m_pbsBase = tmpbuf;
+    bs.m_base.m_maxBsSize = sizeof(tmpbuf);
+    bs.Reset();
+    PutVPS(&bs, m_vps, m_profile_level);
+    bs.WriteTrailingBits();
+    m_vpsBufSize = bs.WriteNAL(m_vpsBuf, sizeof(m_vpsBuf), 0, NAL_VPS);
 
     bs.m_base.m_pbsBase = tmpbuf;
     bs.m_base.m_maxBsSize = sizeof(tmpbuf);

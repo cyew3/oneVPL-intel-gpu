@@ -15,7 +15,7 @@
 
 #include "mfx_h265_optimization.h"
 #include "mfx_h265_dispatcher.h"
-#include "ipp.h"
+//#include "ipp.h"
 
 using namespace MFX_HEVC_PP;
 

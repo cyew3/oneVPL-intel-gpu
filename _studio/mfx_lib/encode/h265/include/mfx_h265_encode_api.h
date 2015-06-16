@@ -31,9 +31,11 @@ namespace H265Enc {
         mfxExtHEVCTiles          extTiles;
         mfxExtHEVCRegion         extRegion;
         mfxExtHEVCParam          extHevcParam;
+        mfxExtCodingOption       extOpt;
         mfxExtCodingOption2      extOpt2;
         mfxExtCodingOptionSPSPPS extSpsPps;
-        mfxExtBuffer            *extParamAll[8];
+        mfxExtCodingOptionVPS    extVps;
+        mfxExtBuffer            *extParamAll[10];
 
         static const size_t NUM_EXT_PARAM;
     };

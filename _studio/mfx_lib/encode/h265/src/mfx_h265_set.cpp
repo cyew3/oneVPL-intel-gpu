@@ -68,53 +68,10 @@ namespace {
         }
     }
 
-    void PutVPS(H265BsReal *bs, const H265VidParameterSet &vps, const H265ProfileLevelSet &profileLevel)
+    void PutAUD(H265BsReal *bs, Ipp32s sliceType)
     {
-        Ipp32s i, j;
-
-        H265Bs_PutBits(bs, vps.vps_video_parameter_set_id, 4);
-        H265Bs_PutBits(bs, 3, 2); // reserved
-        H265Bs_PutBits(bs, vps.vps_max_layers - 1, 6);
-        H265Bs_PutBits(bs, vps.vps_max_sub_layers - 1, 3);
-        H265Bs_PutBit(bs, vps.vps_temporal_id_nesting_flag);
-        H265Bs_PutBits(bs, 0xffff, 16); // reserved
-
-        PutProfileLevel(bs, 1, vps.vps_max_sub_layers, profileLevel);
-
-        H265Bs_PutBit(bs, vps.vps_sub_layer_ordering_info_present_flag);
-
-        for(i = (vps.vps_sub_layer_ordering_info_present_flag ? 0 : vps.vps_max_sub_layers - 1 );
-                i <= vps.vps_max_sub_layers - 1; i++) {
-            H265Bs_PutVLCCode(bs, vps.vps_max_dec_pic_buffering[i]);
-            H265Bs_PutVLCCode(bs, vps.vps_max_num_reorder_pics[i]);
-            H265Bs_PutVLCCode(bs, vps.vps_max_latency_increase[i]);
-        }
-
-        H265Bs_PutBits(bs, vps.vps_max_layer_id, 6);
-        H265Bs_PutVLCCode(bs, vps.vps_num_layer_sets - 1);
-        for (i = 1; i <= vps.vps_num_layer_sets - 1; i++)
-            for (j = 0; j <= vps.vps_max_layer_id; j++) {
-                //layer_id_included_flag[ i ][ j ]
-                VM_ASSERT(0);
-            }
-
-        H265Bs_PutBit(bs, vps.vps_timing_info_present_flag);
-        if (vps.vps_timing_info_present_flag) {
-            PUTBITS_32(vps.vps_num_units_in_tick);
-            PUTBITS_32(vps.vps_time_scale);
-            H265Bs_PutBit(bs, vps.vps_poc_proportional_to_timing_flag);
-            if (vps.vps_poc_proportional_to_timing_flag) {
-                VM_ASSERT(0);
-            }
-            H265Bs_PutVLCCode(bs, vps.vps_num_hrd_parameters);
-            if (vps.vps_num_hrd_parameters) {
-                VM_ASSERT(0);
-            }
-        }
-        H265Bs_PutBit(bs, vps.vps_extension_flag);
-        if (vps.vps_extension_flag) {
-            VM_ASSERT(0);
-        }
+        Ipp32s picType = (sliceType == I_SLICE ? 0 : sliceType == P_SLICE ? 1 : 2);
+        H265Bs_PutBits(bs, picType, 3);
     }
 
     void PutShortTermRefPicSet(H265BsReal *bs, const H265SeqParameterSet &sps, const H265ShortTermRefPicSet &rps, Ipp32s idx)
@@ -338,6 +295,56 @@ namespace {
             bs->WriteTrailingBits();
     }
 } // anonimous namespace
+
+
+void H265Enc::PutVPS(H265BsReal *bs, const H265VidParameterSet &vps, const H265ProfileLevelSet &profileLevel)
+{
+    Ipp32s i, j;
+
+    H265Bs_PutBits(bs, vps.vps_video_parameter_set_id, 4);
+    H265Bs_PutBits(bs, 3, 2); // reserved
+    H265Bs_PutBits(bs, vps.vps_max_layers - 1, 6);
+    H265Bs_PutBits(bs, vps.vps_max_sub_layers - 1, 3);
+    H265Bs_PutBit(bs, vps.vps_temporal_id_nesting_flag);
+    H265Bs_PutBits(bs, 0xffff, 16); // reserved
+
+    PutProfileLevel(bs, 1, vps.vps_max_sub_layers, profileLevel);
+
+    H265Bs_PutBit(bs, vps.vps_sub_layer_ordering_info_present_flag);
+
+    for(i = (vps.vps_sub_layer_ordering_info_present_flag ? 0 : vps.vps_max_sub_layers - 1 );
+            i <= vps.vps_max_sub_layers - 1; i++) {
+        H265Bs_PutVLCCode(bs, vps.vps_max_dec_pic_buffering[i]);
+        H265Bs_PutVLCCode(bs, vps.vps_max_num_reorder_pics[i]);
+        H265Bs_PutVLCCode(bs, vps.vps_max_latency_increase[i]);
+    }
+
+    H265Bs_PutBits(bs, vps.vps_max_layer_id, 6);
+    H265Bs_PutVLCCode(bs, vps.vps_num_layer_sets - 1);
+    for (i = 1; i <= vps.vps_num_layer_sets - 1; i++)
+        for (j = 0; j <= vps.vps_max_layer_id; j++) {
+            //layer_id_included_flag[ i ][ j ]
+            VM_ASSERT(0);
+        }
+
+    H265Bs_PutBit(bs, vps.vps_timing_info_present_flag);
+    if (vps.vps_timing_info_present_flag) {
+        PUTBITS_32(vps.vps_num_units_in_tick);
+        PUTBITS_32(vps.vps_time_scale);
+        H265Bs_PutBit(bs, vps.vps_poc_proportional_to_timing_flag);
+        if (vps.vps_poc_proportional_to_timing_flag) {
+            VM_ASSERT(0);
+        }
+        H265Bs_PutVLCCode(bs, vps.vps_num_hrd_parameters);
+        if (vps.vps_num_hrd_parameters) {
+            VM_ASSERT(0);
+        }
+    }
+    H265Bs_PutBit(bs, vps.vps_extension_flag);
+    if (vps.vps_extension_flag) {
+        VM_ASSERT(0);
+    }
+}
 
 
 void H265Enc::PutSPS(H265BsReal *bs, const H265SeqParameterSet &sps, const H265ProfileLevelSet &profileLevel)
@@ -684,6 +691,14 @@ Ipp32s H265FrameEncoder::WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s bs_
     nal.nuh_temporal_id = 0;
 
     Ipp32s overheadBytes = 0;
+
+    if (m_videoParam.writeAud) {
+        PutAUD(&m_bs[bs_main_id], m_frame->m_slices[0].slice_type);
+        m_bs[bs_main_id].WriteTrailingBits();
+        nal.nal_unit_type = NAL_AUD;
+        overheadBytes += m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
+    }
+
     if (m_frame->m_isIdrPic) {
         PutVPS(&m_bs[bs_main_id], m_topEnc.m_vps, m_topEnc.m_profile_level);
         m_bs[bs_main_id].WriteTrailingBits();

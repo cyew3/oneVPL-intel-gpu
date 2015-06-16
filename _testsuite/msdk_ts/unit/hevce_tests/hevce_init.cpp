@@ -315,6 +315,10 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     }
 
     EXPECT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+    ASSERT_EQ((Ipp8u*)sps, extSpsPps.SPSBuffer); // check that app's pointer is not changed by GetVideoParam
+    ASSERT_EQ((Ipp8u*)pps, extSpsPps.PPSBuffer); // check that app's pointer is not changed by GetVideoParam
+    ASSERT_GE(sizeof(sps), extSpsPps.SPSBufSize); // check that app's buffer size is not changed by GetVideoParam
+    ASSERT_GE(sizeof(pps), extSpsPps.PPSBufSize); // check that app's buffer size is not changed by GetVideoParam
 
     Ipp8u bsData[8192];
     mfxBitstream bs = {};
@@ -345,6 +349,83 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
             SCOPED_TRACE("Testing PPS");
             EXPECT_EQ(Ipp32u(nal.end - nal.start), extSpsPps.PPSBufSize);
             EXPECT_TRUE(std::equal(nal.start, nal.end, extSpsPps.PPSBuffer));
+        }
+    }
+}
+
+TEST_F(InitTest, GetVideoParam_Vps) {
+    input.videoParam.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+    input.videoParam.AsyncDepth = 1;
+    input.videoParam.mfx.GopPicSize = 1;
+    input.videoParam.mfx.FrameInfo.Width = 64;
+    input.videoParam.mfx.FrameInfo.Height = 64;
+    input.videoParam.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+    input.videoParam.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    input.videoParam.mfx.FrameInfo.FrameRateExtN = 30;
+    input.videoParam.mfx.FrameInfo.FrameRateExtD = 1;
+    input.videoParam.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
+    ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+
+#if (defined(_WIN32) || defined(_WIN64))
+    __declspec(align(32)) Ipp8u data[64*64*3/2] = {};
+#else
+    __attribute__ ((aligned(32))) Ipp8u data[64*64*3/2] = {};
+#endif
+    mfxFrameSurface1 surfaces[10];
+    for (auto &surf: surfaces) {
+        surf.Info = input.videoParam.mfx.FrameInfo;
+        surf.Data.Y = data;
+        surf.Data.UV = data + 64*64;
+        surf.Data.Pitch = 64;
+    }
+
+    ParamSet output;
+    mfxExtCodingOptionVPS extVps = MakeExtBuffer<mfxExtCodingOptionVPS>();
+    Ipp8u vps[1024];
+    extVps.VPSBuffer = vps;
+    extVps.VPSBufSize = sizeof(vps);
+    output.extBuffers[0] = &extVps.Header;
+    output.videoParam.NumExtParam = 1;
+
+    { SCOPED_TRACE("Test extVps.VPSBuffer==nullptr");
+        extVps.VPSBuffer = nullptr;
+        EXPECT_EQ(MFX_ERR_NULL_PTR, encoder.GetVideoParam(&output.videoParam));
+        extVps.VPSBuffer = vps;
+    }
+    { SCOPED_TRACE("Test small extVps.VPSBufSize");
+        extVps.VPSBufSize = 4;
+        EXPECT_EQ(MFX_ERR_NOT_ENOUGH_BUFFER, encoder.GetVideoParam(&output.videoParam));
+        extVps.VPSBufSize = sizeof(vps);
+    }
+
+    EXPECT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+    ASSERT_EQ((Ipp8u*)vps, extVps.VPSBuffer); // check that app's pointer is not changed by GetVideoParam
+    ASSERT_GE(sizeof(vps), extVps.VPSBufSize); // check that app's buffer size is not changed by GetVideoParam
+
+    Ipp8u bsData[8192];
+    mfxBitstream bs = {};
+    bs.Data = bsData;
+    bs.MaxLength = sizeof(bsData);
+
+    mfxFrameSurface1 *reorder = nullptr;
+    mfxFrameSurface1 *surf = surfaces;
+    MFX_ENTRY_POINT entrypoint = {};
+    EXPECT_CALL(core, IncreaseReference(_,_)).WillRepeatedly(Return(MFX_ERR_NONE));
+    mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+    while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0]))
+        sts = encoder.EncodeFrameCheck(nullptr, surf++, &bs, &reorder, nullptr, &entrypoint);
+    ASSERT_EQ(MFX_ERR_NONE, sts);
+
+    EXPECT_CALL(core, DecreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
+    EXPECT_CALL(core, INeedMoreThreadsInside(_)).WillOnce(Return());
+    ASSERT_EQ(MFX_ERR_NONE, entrypoint.pRoutine(entrypoint.pState, entrypoint.pParam, 0, 0));
+
+    auto nals = SplitNals(bs.Data, bs.Data + bs.DataLength);
+    for (auto &nal: nals) {
+        if (nal.type == H265Enc::NAL_VPS) {
+            SCOPED_TRACE("Testing VPS");
+            EXPECT_EQ(Ipp32u(nal.end - nal.start), extVps.VPSBufSize);
+            EXPECT_TRUE(std::equal(nal.start, nal.end, extVps.VPSBuffer));
         }
     }
 }
@@ -490,6 +571,22 @@ TEST_F(InitTest, Default_DiableVUI) {
             else
                 EXPECT_EQ(state, output.extCodingOption2.DisableVUI);
         }
+    }
+}
+
+TEST_F(InitTest, Default_AUDelimiter) {
+    ParamSet output;
+    InitParamSetMandated(input);
+    input.extCodingOption.AUDelimiter = 0;
+    Ipp32u rcMethods[] = {CBR, VBR, AVBR, LA_EXT, CQP};
+    for (auto rcm: rcMethods) {
+        input.videoParam.mfx.RateControlMethod = rcm;
+        if (rcm == CQP)
+            input.videoParam.mfx.TargetKbps = 0;
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+        EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
+        EXPECT_EQ(ON, output.extCodingOption.AUDelimiter);
     }
 }
 

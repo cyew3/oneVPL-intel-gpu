@@ -124,6 +124,7 @@ TEST_F(QueryTest, Mode1_Main) {
     FillExtBufferFF(output.extHevcTiles);
     FillExtBufferFF(output.extHevcRegion);
     FillExtBufferFF(output.extHevcParam);
+    FillExtBufferFF(output.extCodingOption);
     FillExtBufferFF(output.extCodingOption2);
 
     // save original ExtOpaqueSurfaceAlloc
@@ -185,6 +186,7 @@ TEST_F(QueryTest, Mode1_Main) {
     CheckExtBufHeader(output.extHevcTiles);
     CheckExtBufHeader(output.extHevcRegion);
     CheckExtBufHeader(output.extHevcParam);
+    CheckExtBufHeader(output.extCodingOption);
     CheckExtBufHeader(output.extCodingOption2);
     
     // check if ExtCodingOptionHevc fields are set correctly
@@ -293,6 +295,31 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(1, output.extHevcRegion.RegionType);
     EXPECT_EQ(1, output.extHevcRegion.RegionEncoding);
     EXPECT_EQ(true, IsZero(output.extHevcRegion.reserved));
+
+    // check if ExtCodingOption2 fields are set correctly
+    EXPECT_EQ(0, output.extCodingOption.RateDistortionOpt);
+    EXPECT_EQ(0, output.extCodingOption.MECostType);
+    EXPECT_EQ(0, output.extCodingOption.MESearchType);
+    EXPECT_EQ(0, output.extCodingOption.MVSearchWindow.x);
+    EXPECT_EQ(0, output.extCodingOption.MVSearchWindow.y);
+    EXPECT_EQ(0, output.extCodingOption.EndOfSequence);
+    EXPECT_EQ(0, output.extCodingOption.FramePicture);
+    EXPECT_EQ(0, output.extCodingOption.CAVLC);
+    EXPECT_EQ(0, output.extCodingOption.RecoveryPointSEI);
+    EXPECT_EQ(0, output.extCodingOption.ViewOutput);
+    EXPECT_EQ(0, output.extCodingOption.NalHrdConformance);
+    EXPECT_EQ(0, output.extCodingOption.SingleSeiNalUnit);
+    EXPECT_EQ(0, output.extCodingOption.VuiVclHrdParameters);
+    EXPECT_EQ(0, output.extCodingOption.RefPicListReordering);
+    EXPECT_EQ(0, output.extCodingOption.ResetRefList);
+    EXPECT_EQ(0, output.extCodingOption.RefPicMarkRep);
+    EXPECT_EQ(0, output.extCodingOption.FieldOutput);
+    EXPECT_EQ(0, output.extCodingOption.IntraPredBlockSize);
+    EXPECT_EQ(0, output.extCodingOption.InterPredBlockSize);
+    EXPECT_EQ(0, output.extCodingOption.MVPrecision);
+    EXPECT_EQ(0, output.extCodingOption.MaxDecFrameBuffering);
+    EXPECT_EQ(1, output.extCodingOption.AUDelimiter);
+    EXPECT_EQ(0, output.extCodingOption.EndOfStream);
 
     // check if ExtCodingOption2 fields are set correctly
     EXPECT_EQ(0, output.extCodingOption2.IntRefType);
@@ -869,6 +896,20 @@ TEST_F(QueryTest, Mode2_Single) {
         TestOneFieldOk(input.extCodingOptionHevc.InterMinDepthSTC, output.extCodingOptionHevc.InterMinDepthSTC, supported);
         TestOneFieldOk(input.extCodingOptionHevc.IntraMinDepthSC, output.extCodingOptionHevc.IntraMinDepthSC, supported);
 		TestOneFieldOk(input.extCodingOptionHevc.RepackProb, output.extCodingOptionHevc.RepackProb, supported);
+    }
+
+    // test ExtCodingOption field by field
+    input.extCodingOption = MakeExtBuffer<mfxExtCodingOption>();
+    input.videoParam.NumExtParam = 1;
+    input.videoParam.ExtParam[0] = &input.extCodingOption.Header;
+    output.videoParam.NumExtParam = 1;
+    output.videoParam.ExtParam[0] = &output.extCodingOption.Header;
+
+    { SCOPED_TRACE("Test AUDelimiter");
+        const Ipp16u supported[] = {MFX_CODINGOPTION_ON, MFX_CODINGOPTION_OFF};
+        TestOneFieldOk(input.extCodingOption.AUDelimiter, output.extCodingOption.AUDelimiter, supported);
+        const Ipp16u unsupported[] = {1, 2, MFX_CODINGOPTION_ON|MFX_CODINGOPTION_OFF, 0xff, 0xffff};
+        TestOneFieldErr(input.extCodingOption.AUDelimiter, output.extCodingOption.AUDelimiter, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
 
     // test ExtCodingOption2 field by field

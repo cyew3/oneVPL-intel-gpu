@@ -2569,9 +2569,9 @@ Lookahead::Lookahead(H265Encoder & enc)
         dstRect.height = ((dstRect.height + (SIZE_BLK_LA-1))  >> 3) << 3;
         dstRect.width = ((dstRect.width + (SIZE_BLK_LA-1))  >> 3) << 3;
 
-        Ipp32s bufSize;
-        ippiResizeGetBufSize( srcRect, dstRect, 1, IPPI_INTER_NN, &bufSize);
-        m_workBuf.resize(bufSize);
+        //Ipp32s bufSize;
+        //ippiResizeGetBufSize( srcRect, dstRect, 1, IPPI_INTER_NN, &bufSize);
+        //m_workBuf.resize(bufSize);
     }
 
     // in case of graph threading we use hub approach

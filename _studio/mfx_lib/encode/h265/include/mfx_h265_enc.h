@@ -201,6 +201,7 @@ namespace H265Enc {
 
         // set
         Ipp8u vuiParametersPresentFlag;
+        Ipp8u writeAud;
 
         Segment *m_tiles;//start/end adress
         Ipp16u *m_tile_ids;
@@ -300,6 +301,7 @@ namespace H265Enc {
     void AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstream, ObjectPool<ThreadingTask> *ttHubPool = NULL);
 
     class H265BsReal;
+    void PutVPS(H265BsReal *bs, const H265VidParameterSet &vps, const H265ProfileLevelSet &profileLevel);
     void PutSPS(H265BsReal *bs, const H265SeqParameterSet &sps, const H265ProfileLevelSet &profileLevel);
     void PutPPS(H265BsReal *bs, const H265PicParameterSet &pps);
 

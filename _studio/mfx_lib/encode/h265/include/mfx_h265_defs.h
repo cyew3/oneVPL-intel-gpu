@@ -738,8 +738,10 @@ namespace MfxEnumShortAliases {
     template<> struct Type2Id<mfxExtHEVCTiles>          { enum { id = MFX_EXTBUFF_HEVC_TILES }; };
     template<> struct Type2Id<mfxExtHEVCRegion>         { enum { id = MFX_EXTBUFF_HEVC_REGION }; };
     template<> struct Type2Id<mfxExtHEVCParam>          { enum { id = MFX_EXTBUFF_HEVC_PARAM }; };
+    template<> struct Type2Id<mfxExtCodingOption>       { enum { id = MFX_EXTBUFF_CODING_OPTION }; };
     template<> struct Type2Id<mfxExtCodingOption2>      { enum { id = MFX_EXTBUFF_CODING_OPTION2 }; };
     template<> struct Type2Id<mfxExtCodingOptionSPSPPS> { enum { id = MFX_EXTBUFF_CODING_OPTION_SPSPPS }; };
+    template<> struct Type2Id<mfxExtCodingOptionVPS>    { enum { id = MFX_EXTBUFF_CODING_OPTION_VPS }; };
 
     template <class T> struct RemoveConst          { typedef T type; };
     template <class T> struct RemoveConst<const T> { typedef T type; };

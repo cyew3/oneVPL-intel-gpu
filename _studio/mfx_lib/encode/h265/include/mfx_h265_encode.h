@@ -67,6 +67,7 @@ namespace H265Enc {
         mfxStatus Init(const mfxVideoParam &par);
         mfxStatus Reset(const mfxVideoParam &par);
 
+        const Ipp8u *GetVps(Ipp16u &size) const { size = m_vpsBufSize; return m_vpsBuf; }
         const Ipp8u *GetSps(Ipp16u &size) const { size = m_spsBufSize; return m_spsBuf; }
         const Ipp8u *GetPps(Ipp16u &size) const { size = m_ppsBufSize; return m_ppsBuf; }
 
@@ -106,8 +107,10 @@ namespace H265Enc {
         H265SeqParameterSet m_sps;
         H265PicParameterSet m_pps;
         ActiveParameterSets m_seiAps;
+        Ipp8u m_vpsBuf[1024];
         Ipp8u m_spsBuf[1024];
         Ipp8u m_ppsBuf[1024];
+        Ipp16u m_vpsBufSize;
         Ipp16u m_spsBufSize;
         Ipp16u m_ppsBufSize;
 
