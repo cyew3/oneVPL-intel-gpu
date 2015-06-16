@@ -229,6 +229,7 @@ struct sInputParams
     mfxU16 hp_num;
 
     bool   bGamma;
+    bool   b3DLUTGamma;
     bool   bExternalGammaLUT;
     mfxU16 gamma_point[64];
     mfxU16 gamma_corrected[64];
@@ -288,6 +289,7 @@ struct sInputParams
         accelType  = D3D9;
         bitDepth = 10;
         bGamma = true;
+        b3DLUTGamma   = false;
         bHP           = false;
         bBlackLevel   = false;
         bWhiteBalance = false;

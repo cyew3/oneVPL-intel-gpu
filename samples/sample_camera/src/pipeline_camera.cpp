@@ -139,11 +139,20 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
     else
         m_mfxVideoParams.AsyncDepth = CAM_SAMPLE_ASYNC_DEPTH;
 
+    b_3DLUT_Gamma = false;
     if (pParams->bGamma)
     {
         sts = AllocAndInitCamGammaCorrection(pParams);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        m_ExtBuffers.push_back((mfxExtBuffer *)&m_GammaCorrection);
+        if ( pParams->b3DLUTGamma )
+        {
+            b_3DLUT_Gamma = true;
+            m_ExtBuffers.push_back((mfxExtBuffer *)&m_3DLUT_GammaCorrection);
+        }
+        else
+        {
+            m_ExtBuffers.push_back((mfxExtBuffer *)&m_GammaCorrection);
+        }
     }
 
     if (pParams->bVignette)
@@ -712,6 +721,10 @@ CCameraPipeline::CCameraPipeline()
     m_GammaCorrection.Header.BufferId = MFX_EXTBUF_CAM_GAMMA_CORRECTION;
     m_GammaCorrection.Header.BufferSz = sizeof(m_GammaCorrection);
 
+    MSDK_ZERO_MEMORY(m_3DLUT_GammaCorrection);
+    m_3DLUT_GammaCorrection.Header.BufferId = MFX_EXTBUF_CAM_FORWARD_GAMMA_CORRECTION;
+    m_3DLUT_GammaCorrection.Header.BufferSz = sizeof(m_3DLUT_GammaCorrection);
+
     MSDK_ZERO_MEMORY(m_BlackLevelCorrection);
     m_BlackLevelCorrection.Header.BufferId = MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION;
     m_BlackLevelCorrection.Header.BufferSz = sizeof(m_BlackLevelCorrection);
@@ -878,7 +891,8 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    if (pParams->bGamma) {
+    if (pParams->bGamma)
+    {
         pParams->gamma_mode = MFX_CAM_GAMMA_LUT; // tmp ??? kta
         if (pParams->gamma_mode == MFX_CAM_GAMMA_LUT && ! pParams->bExternalGammaLUT)  {
             for (int i = 0; i < 64; i++) {
@@ -1065,16 +1079,33 @@ void  CCameraPipeline::FreeVignetteCorrection()
 
 mfxStatus CCameraPipeline::AllocAndInitCamGammaCorrection(sInputParams *pParams)
 {
-    m_GammaCorrection.Mode = pParams->gamma_mode;
-    if (m_GammaCorrection.Mode == MFX_CAM_GAMMA_LUT) {
-        m_GammaCorrection.NumPoints = 64;
-        //m_GammaCorrection.GammaPoint = new mfxU16[m_GammaCorrection.GammaLUT.NumPoints];
-        //m_GammaCorrection.GammaCorrected = new mfxU16[m_GammaCorrection.GammaLUT.NumPoints];
-        MSDK_MEMCPY(m_GammaCorrection.GammaPoint, pParams->gamma_point, m_GammaCorrection.NumPoints*sizeof(mfxU16));
-        MSDK_MEMCPY(m_GammaCorrection.GammaCorrected, pParams->gamma_corrected, m_GammaCorrection.NumPoints*sizeof(mfxU16));
-    } else if (m_GammaCorrection.Mode == MFX_CAM_GAMMA_VALUE) {
-        m_GammaCorrection.GammaValue = pParams->gamma_value;
-        //m_GammaCorrection.GammaPoint = m_GammaCorrection.GammaCorrected = 0;
+    if ( pParams->b3DLUTGamma )
+    {
+        m_3DLUT_GammaCorrection.NumSegments = 64;
+        m_3DLUT_GammaCorrection.Segment = new mfxCamFwdGammaSegment[64];
+        MSDK_CHECK_POINTER(m_3DLUT_GammaCorrection.Segment, MFX_ERR_ABORTED);
+        for ( int i = 0; i < 64; i++)
+        {
+            // Use the same curve for R/G/B
+            m_3DLUT_GammaCorrection.Segment[i].Pixel = pParams->gamma_point[i];
+            m_3DLUT_GammaCorrection.Segment[i].Red   = pParams->gamma_corrected[i];
+            m_3DLUT_GammaCorrection.Segment[i].Green = pParams->gamma_corrected[i];
+            m_3DLUT_GammaCorrection.Segment[i].Blue  = pParams->gamma_corrected[i];
+        }
+    }
+    else
+    {
+        m_GammaCorrection.Mode = pParams->gamma_mode;
+        if (m_GammaCorrection.Mode == MFX_CAM_GAMMA_LUT)
+        {
+            m_GammaCorrection.NumPoints = 64;
+            MSDK_MEMCPY(m_GammaCorrection.GammaPoint, pParams->gamma_point, m_GammaCorrection.NumPoints*sizeof(mfxU16));
+            MSDK_MEMCPY(m_GammaCorrection.GammaCorrected, pParams->gamma_corrected, m_GammaCorrection.NumPoints*sizeof(mfxU16));
+        }
+        else if (m_GammaCorrection.Mode == MFX_CAM_GAMMA_VALUE)
+        {
+            m_GammaCorrection.GammaValue = pParams->gamma_value;
+        }
     }
 
     return MFX_ERR_NONE;
@@ -1082,8 +1113,11 @@ mfxStatus CCameraPipeline::AllocAndInitCamGammaCorrection(sInputParams *pParams)
 
 void  CCameraPipeline::FreeCamGammaCorrection()
 {
-    //MSDK_SAFE_DELETE(m_GammaCorrection.GammaLUT.GammaPoint);
-    //MSDK_SAFE_DELETE(m_GammaCorrection.GammaLUT.GammaCorrected);
+    if (b_3DLUT_Gamma)
+    {
+        if ( m_3DLUT_GammaCorrection.Segment )
+            delete [] m_3DLUT_GammaCorrection.Segment;
+    }
 }
 
 void CCameraPipeline::Close()
@@ -1095,7 +1129,7 @@ void CCameraPipeline::Close()
     DeleteFrames();
 
     FreeVignetteCorrection();
-    //FreeCamGammaCorrection();
+    FreeCamGammaCorrection();
     m_ExtBuffers.clear();
 
     m_pCamera_plugin.reset();

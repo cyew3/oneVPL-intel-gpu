@@ -24,6 +24,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-b bitDepth] / [-bitDepth bitDepth]                - set bit depth, default 10 \n"));
     msdk_printf(MSDK_STRING("   [-f format] / [-format format]                      - input Bayer format: rggb, bggr, grbg or gbrg\n"));
     msdk_printf(MSDK_STRING("   [-of format] / [-outFormat format]                  - output format: of argb16 or 16 meaning 16 bit ARGB, 8 bit ARGB otherwise\n"));
+    msdk_printf(MSDK_STRING("   [-3DLUT_gamma]                                      - use 3D LUT gamma correction\n"));
     msdk_printf(MSDK_STRING("   [-ng] / [-noGamma]                                  - no gamma correction\n"));
     msdk_printf(MSDK_STRING("   [-gamma_points]                                     - set specific gamma points (64 points expected)\n"));
     msdk_printf(MSDK_STRING("   [-gamma_corrected]                                  - set specific gamma corrected values (64 values expected)\n"));
@@ -187,6 +188,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ng")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-noGamma")))
         {
             pParams->bGamma = false;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-3DLUT_gamma")))
+        {
+            pParams->b3DLUTGamma = false;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bdn")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-bayerDenoise")))
         {
