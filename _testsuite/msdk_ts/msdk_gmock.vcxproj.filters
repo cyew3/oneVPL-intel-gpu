@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -32,6 +32,9 @@
     </Filter>
     <Filter Include="Source Files\test_suites\hevce_gaa">
       <UniqueIdentifier>{ce058276-58f8-43fb-98b5-df7a6e4563d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\test_suites\screen_capture">
+      <UniqueIdentifier>{2e76f249-1360-4c7d-82da-1e8e3e28daec}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -343,18 +346,6 @@
     <ClCompile Include="src\gmock\test_suites\mjpegd_tables.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\screen_capture_init.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\screen_capture_decode_frame_async.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\screen_capture_close.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\screen_capture_decode_header.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_query.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
@@ -362,12 +353,6 @@
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_frc_interp.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\screen_capture_query_io_surf.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\screen_capture_query.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_fieldcopy.cpp">
@@ -387,6 +372,24 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_start_new_sequence.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\screen_capture_close.cpp">
+      <Filter>Source Files\test_suites\screen_capture</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\screen_capture_decode_frame_async.cpp">
+      <Filter>Source Files\test_suites\screen_capture</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\screen_capture_decode_header.cpp">
+      <Filter>Source Files\test_suites\screen_capture</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\screen_capture_init.cpp">
+      <Filter>Source Files\test_suites\screen_capture</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\screen_capture_query.cpp">
+      <Filter>Source Files\test_suites\screen_capture</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\screen_capture_query_io_surf.cpp">
+      <Filter>Source Files\test_suites\screen_capture</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

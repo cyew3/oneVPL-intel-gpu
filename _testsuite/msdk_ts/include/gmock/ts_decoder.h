@@ -66,6 +66,7 @@ public:
     mfxStatus DecodeFrames(mfxU32 n);
 
     mfxStatus Load();
+    mfxStatus UnLoad();
 
     void SetPar4_DecodeFrameAsync();
 };
