@@ -185,7 +185,6 @@ public:
 
     struct SEI_Message
     {
-        H264DecoderFrame * frame;
         size_t             msg_size;
         size_t             offset;
         Ipp8u            * data;
@@ -193,16 +192,19 @@ public:
         SEI_TYPE           type;
         Ipp32s             isUsed;
         Ipp32s             auID;
+        Ipp32s             inputID;
+        H264DecoderFrame * frame;
 
         SEI_Message()
-            : frame(0)
-            , msg_size(0)
+            : msg_size(0)
             , offset(0)
             , data(0)
             , timestamp(0)
             , type(SEI_RESERVED)
             , isUsed(0)
             , auID(0)
+            , inputID(0)
+            , frame(0)
         {
         }
     };

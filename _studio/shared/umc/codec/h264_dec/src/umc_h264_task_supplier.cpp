@@ -1970,7 +1970,7 @@ const SEI_Storer::SEI_Message * SEI_Storer::GetPayloadMessage()
     {
         if (m_payloads[i].isUsed > 1)
         {
-            if (!msg || msg->isUsed > m_payloads[i].isUsed)
+            if (!msg || msg->isUsed > m_payloads[i].isUsed || msg->inputID > m_payloads[i].inputID)
             {
                 msg = &m_payloads[i];
             }
@@ -1978,7 +1978,12 @@ const SEI_Storer::SEI_Message * SEI_Storer::GetPayloadMessage()
     }
 
     if (msg)
+    {
         msg->isUsed = 0;
+        msg->frame = 0;
+        msg->auID = 0;
+        msg->inputID = 0;
+    }
 
     return msg;
 }
@@ -2030,13 +2035,12 @@ SEI_Storer::SEI_Message* SEI_Storer::AddMessage(UMC::MediaDataEx *nalUnit, SEI_T
         freeSlot = m_payloads.size() - 1;
     }
 
-    m_payloads[freeSlot] = m_payloads.back();
-    freeSlot = m_payloads.size() - 1;
     m_payloads[freeSlot].msg_size = sz;
     m_payloads[freeSlot].offset = m_offset;
     m_payloads[freeSlot].timestamp = 0;
     m_payloads[freeSlot].frame = 0;
     m_payloads[freeSlot].isUsed = 1;
+    m_payloads[freeSlot].inputID = m_lastUsed++;
     m_payloads[freeSlot].data = &(m_data.front()) + m_offset;
     m_payloads[freeSlot].type = type;
     m_payloads[freeSlot].auID = auIndex;
