@@ -1528,25 +1528,25 @@ mfxStatus CEncodingPipeline::Run()
             memset(&feiEncCtrl[fieldId], 0, sizeof (mfxExtFeiEncFrameCtrl));
             feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
             feiEncCtrl[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncFrameCtrl);
-            feiEncCtrl[fieldId].SearchPath = 1;
-            feiEncCtrl[fieldId].LenSP = 57;
-            feiEncCtrl[fieldId].SubMBPartMask = 0x77;
+            feiEncCtrl[fieldId].SearchPath = m_encpakParams.SearchPath;//1;
+            feiEncCtrl[fieldId].LenSP = m_encpakParams.LenSP;//57;
+            feiEncCtrl[fieldId].SubMBPartMask = m_encpakParams.SubMBPartMask;//0x77;
             feiEncCtrl[fieldId].MultiPredL0 = 0;
             feiEncCtrl[fieldId].MultiPredL1 = 0;
-            feiEncCtrl[fieldId].SubPelMode = 3;
-            feiEncCtrl[fieldId].InterSAD = 2;
-            feiEncCtrl[fieldId].IntraSAD = 2;
+            feiEncCtrl[fieldId].SubPelMode = m_encpakParams.SubPelMode;//3;
+            feiEncCtrl[fieldId].InterSAD = m_encpakParams.InterSAD;//2;
+            feiEncCtrl[fieldId].IntraSAD = m_encpakParams.IntraSAD;//2;
             feiEncCtrl[fieldId].DistortionType = 2;
             feiEncCtrl[fieldId].RepartitionCheckEnable = 0;
-            feiEncCtrl[fieldId].AdaptiveSearch = 1;
+            feiEncCtrl[fieldId].AdaptiveSearch = m_encpakParams.AdaptiveSearch;//1;
             feiEncCtrl[fieldId].MVPredictor = MVPredictors;
             feiEncCtrl[fieldId].NumMVPredictors = 1; //always 4 predictors
             feiEncCtrl[fieldId].PerMBQp = MBQP;
             feiEncCtrl[fieldId].PerMBInput = MBCtrl;
             feiEncCtrl[fieldId].MBSizeCtrl = m_encpakParams.bMBSize;
-            feiEncCtrl[fieldId].RefHeight = 40;
-            feiEncCtrl[fieldId].RefWidth = 48;
-            feiEncCtrl[fieldId].SearchWindow = 1;
+            feiEncCtrl[fieldId].RefHeight = m_encpakParams.RefHeight;//40;
+            feiEncCtrl[fieldId].RefWidth = m_encpakParams.RefWidth;//48;
+            feiEncCtrl[fieldId].SearchWindow = m_encpakParams.SearchWindow;//1;
 
             /* PPS */
             m_feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;
