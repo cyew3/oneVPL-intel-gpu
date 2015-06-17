@@ -1,6 +1,6 @@
 /*********************************************************************************
 
-Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -89,9 +89,6 @@ FUNCTION(mfxStatus, MFXGetPriority, (mfxSession session, mfxPriority *priority),
 FUNCTION(mfxStatus, MFXVideoUSER_Register, (mfxSession session, mfxU32 type, const mfxPlugin *par), (session, type, par))
 FUNCTION(mfxStatus, MFXVideoUSER_Unregister, (mfxSession session, mfxU32 type), (session, type))
 FUNCTION(mfxStatus, MFXVideoUSER_ProcessFrameAsync, (mfxSession session, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp), (session, in, in_num, out, out_num, syncp))
-
-FUNCTION(mfxStatus, MFXAudioUSER_Register, (mfxSession session, mfxU32 type, const mfxPlugin *par), (session, type, par))
-FUNCTION(mfxStatus, MFXAudioUSER_Unregister, (mfxSession session, mfxU32 type), (session, type))
 
 /*
  * API version 1.10 functions
