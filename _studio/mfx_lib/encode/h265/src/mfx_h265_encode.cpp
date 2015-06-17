@@ -1116,6 +1116,7 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
                 for (std::list<Frame *>::iterator i = m_inputQueue.begin(); i != m_inputQueue.end(); ++i)
                     m_la->AverageComplexity(*i);
             m_lookaheadQueue.splice(m_lookaheadQueue.end(), m_inputQueue);
+            m_la->ResetState();
         }
     }
     

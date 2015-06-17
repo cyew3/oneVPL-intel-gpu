@@ -37,6 +37,7 @@ namespace H265Enc {
         mfxStatus PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u ctb_row, Ipp32u ctb_col);
         int SetFrame(Frame* in);
         void AverageComplexity(Frame *in);
+        void ResetState();
 
     private:
         std::list<Frame*> &m_inputQueue;

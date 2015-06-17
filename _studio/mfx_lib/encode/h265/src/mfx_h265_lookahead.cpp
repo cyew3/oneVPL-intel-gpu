@@ -2082,28 +2082,30 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState(Frame* in)
 
         if (in->m_frameOrder > 0) {
             FrameIter it = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(in->m_frameOrder-1));
-            Frame* prev = (*it);
+            if (it != m_inputQueue.end()) {
+                Frame* prev = (*it);
            
-            FrameData* currFrame = isLowres ? in->m_lowres : in->m_origin;
-            FrameData* prevFrame = isLowres ? prev->m_lowres : prev->m_origin;
+                FrameData* currFrame = isLowres ? in->m_lowres : in->m_origin;
+                FrameData* prevFrame = isLowres ? prev->m_lowres : prev->m_origin;
 
-            Ipp32s bitDepth8 = (in->m_bitDepthLuma == 8) ? 1 : 0;
+                Ipp32s bitDepth8 = (in->m_bitDepthLuma == 8) ? 1 : 0;
 
-            if (m_scdConfig.algorithm == ALG_HIST_DIFF) {
-                metric = bitDepth8 
-                    ? CalcHistDiff<Ipp8u>(prevFrame, currFrame, 0)
-                    : CalcHistDiff<Ipp16u>(prevFrame, currFrame, 0);
-            } else {
-                metric = bitDepth8 
-                ? CalcPixDiff<Ipp8u>(prevFrame, currFrame, 0)
-                : CalcPixDiff<Ipp16u>(prevFrame, currFrame, 0);
+                if (m_scdConfig.algorithm == ALG_HIST_DIFF) {
+                    metric = bitDepth8 
+                        ? CalcHistDiff<Ipp8u>(prevFrame, currFrame, 0)
+                        : CalcHistDiff<Ipp16u>(prevFrame, currFrame, 0);
+                } else {
+                    metric = bitDepth8 
+                    ? CalcPixDiff<Ipp8u>(prevFrame, currFrame, 0)
+                    : CalcPixDiff<Ipp16u>(prevFrame, currFrame, 0);
+                }
+
+                // store metric in frame
+                if (in->m_stats[0])
+                    in->m_stats[0]->m_metric =  metric;
+                if (in->m_stats[1])
+                    in->m_stats[1]->m_metric =  metric;
             }
-
-            // store metric in frame
-            if (in->m_stats[0])
-                in->m_stats[0]->m_metric =  metric;
-            if (in->m_stats[1])
-                in->m_stats[1]->m_metric =  metric;
         }
         // store statistics
         m_slideWindowStat[ lastpos ].met = metric;
@@ -2117,64 +2119,68 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState(Frame* in)
     StatItem peaks[2] = {0};
     if (doAnalysis) {
         FrameIter curr = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(frameOrderCentral));
-        // reset
-        if ((*curr)->m_stats[0])
-            (*curr)->m_stats[0]->m_sceneCut = 0;
-        if ((*curr)->m_stats[1])
-            (*curr)->m_stats[1]->m_sceneCut = 0;
-
-        std::partial_sort_copy(m_slideWindowStat.begin(), m_slideWindowStat.end(), peaks, peaks+2, MetricIsGreater);
-        Ipp64s metric = ( (*curr)->m_stats[1] ) ? (*curr)->m_stats[1]->m_metric : (*curr)->m_stats[0]->m_metric;
-        bool scd = (metric == peaks[0].met) && (peaks[0].met > m_scdConfig.N*peaks[1].met);        
-
-        if (scd) {
+        if (curr != m_inputQueue.end())  {
+            // reset
             if ((*curr)->m_stats[0])
-                (*curr)->m_stats[0]->m_sceneCut = 1;
+                (*curr)->m_stats[0]->m_sceneCut = 0;
             if ((*curr)->m_stats[1])
-                (*curr)->m_stats[1]->m_sceneCut = 1;
-        }
+                (*curr)->m_stats[1]->m_sceneCut = 0;
 
-        if (scd && !(*curr)->m_isIdrPic) {
-            Frame* frame = (*curr);
+            std::partial_sort_copy(m_slideWindowStat.begin(), m_slideWindowStat.end(), peaks, peaks+2, MetricIsGreater);
+            Ipp64s metric = ( (*curr)->m_stats[1] ) ? (*curr)->m_stats[1]->m_metric : (*curr)->m_stats[0]->m_metric;
+            bool scd = (metric == peaks[0].met) && (peaks[0].met > m_scdConfig.N*peaks[1].met);        
 
-            // restore global state
-            m_enc.RestoreGopCountersFromFrame(frame, !!m_videoParam.encodedOrder);
-
-            // light configure
-            frame->m_isIdrPic = true;
-            frame->m_picCodeType = MFX_FRAMETYPE_I;
-            frame->m_poc = 0;
-
-            if (m_videoParam.PGopPicSize > 1) {
-                //const Ipp8u PGOP_LAYERS[PGOP_PIC_SIZE] = { 0, 2, 1, 2 };
-                frame->m_RPSIndex = 0;
-                frame->m_pyramidLayer = 0;//PGOP_LAYERS[frame->m_RPSIndex];
+            if (scd) {
+                if ((*curr)->m_stats[0])
+                    (*curr)->m_stats[0]->m_sceneCut = 1;
+                if ((*curr)->m_stats[1])
+                    (*curr)->m_stats[1]->m_sceneCut = 1;
             }
+
+            if (scd && !(*curr)->m_isIdrPic) {
+                Frame* frame = (*curr);
+
+                // restore global state
+                m_enc.RestoreGopCountersFromFrame(frame, !!m_videoParam.encodedOrder);
+
+                // light configure
+                frame->m_isIdrPic = true;
+                frame->m_picCodeType = MFX_FRAMETYPE_I;
+                frame->m_poc = 0;
+
+                if (m_videoParam.PGopPicSize > 1) {
+                    //const Ipp8u PGOP_LAYERS[PGOP_PIC_SIZE] = { 0, 2, 1, 2 };
+                    frame->m_RPSIndex = 0;
+                    frame->m_pyramidLayer = 0;//PGOP_LAYERS[frame->m_RPSIndex];
+                }
             
-            m_enc.UpdateGopCounters(frame, !!m_videoParam.encodedOrder);
-
-            if (frame->m_stats[1])
-                frame->m_stats[1]->m_sceneCut = 1;
-            if (frame->m_stats[0])
-                frame->m_stats[0]->m_sceneCut = 1;
-
-            // we need update all frames in inputQueue after Idr insertion to propogate SceneCut (frame type change) effect
-            FrameIter it = curr;
-            it++;
-            for (it; it != m_inputQueue.end(); it++) {
-                frame = (*it);
-                m_enc.ConfigureInputFrame(frame, !!m_videoParam.encodedOrder);
                 m_enc.UpdateGopCounters(frame, !!m_videoParam.encodedOrder);
-            }
-        }
-        
-        FrameIter prev = curr;
-        prev--;
-        (*prev)->m_lookaheadRefCounter--;
 
-        bool isEos = (m_slideWindowStat[centralPos + 1].frameOrder == -1);
-        if (isEos) {
-            (*curr)->m_lookaheadRefCounter--;
+                if (frame->m_stats[1])
+                    frame->m_stats[1]->m_sceneCut = 1;
+                if (frame->m_stats[0])
+                    frame->m_stats[0]->m_sceneCut = 1;
+
+                // we need update all frames in inputQueue after Idr insertion to propogate SceneCut (frame type change) effect
+                FrameIter it = curr;
+                it++;
+                for (it; it != m_inputQueue.end(); it++) {
+                    frame = (*it);
+                    m_enc.ConfigureInputFrame(frame, !!m_videoParam.encodedOrder);
+                    m_enc.UpdateGopCounters(frame, !!m_videoParam.encodedOrder);
+                }
+            }
+        
+            if (curr != m_inputQueue.begin()) {
+                FrameIter prev = curr;
+                prev--;
+                (*prev)->m_lookaheadRefCounter--;
+            }
+
+            bool isEos = (m_slideWindowStat[centralPos + 1].frameOrder == -1);
+            if (isEos) {
+                (*curr)->m_lookaheadRefCounter--;
+            }
         }
     }
 
@@ -2201,6 +2207,19 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState(Frame* in)
 //        fclose(fp);
 //    }
 //}
+
+void Lookahead::ResetState()
+{
+    if (m_videoParam.SceneCut > 0) {
+        StatItem initVal = {0, -1};
+        std::fill(m_slideWindowStat.begin(), m_slideWindowStat.end(), initVal);
+    }
+    if (m_videoParam.AnalyzeCmplx) {
+        std::fill(m_slideWindowComplexity.begin(), m_slideWindowComplexity.end(), -1);
+    }
+    m_cmplxPrevFrame = NULL;
+    m_lastAcceptedFrame = NULL;
+}
 
 void Lookahead::AverageComplexity(Frame *in)
 {
@@ -2285,7 +2304,8 @@ void Lookahead::AnalyzeComplexity(Frame* input)
         // update history in case of delay
         if (frameOrderCentral > 0 && m_slideWindowComplexity.size() > 1) {
             FrameIter it = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(frameOrderCentral-1));
-            (*it)->m_lookaheadRefCounter--;
+            if (it != m_inputQueue.end())
+                (*it)->m_lookaheadRefCounter--;
         }
 
         if (m_slideWindowComplexity.size() > 1) {
@@ -2868,19 +2888,21 @@ mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u 
                 (m_videoParam.AnalyzeCmplx || m_videoParam.DeltaQpMode)) {
                     Frame* curr = in;
                     FrameIter it = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(in->m_frameOrder-1));
-                    Frame* prev = (*it);
-                    bool useLowres = m_videoParam.LowresFactor;
-                    FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
-                    Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
-                    FrameData* framePrev = useLowres ? prev->m_lowres : prev->m_origin;
-                    DoInterAnalysis_OneRow(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0], &stat->m_mv[0], 0, 0, 0, curr->m_bitDepthLuma, ctb_row);
+                    if (it != m_inputQueue.end()) {
+                        Frame* prev = (*it);
+                        bool useLowres = m_videoParam.LowresFactor;
+                        FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
+                        Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
+                        FrameData* framePrev = useLowres ? prev->m_lowres : prev->m_origin;
+                        DoInterAnalysis_OneRow(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0], &stat->m_mv[0], 0, 0, 0, curr->m_bitDepthLuma, ctb_row);
 
-                    if (m_videoParam.DeltaQpMode && useLowres) { // need refine for original resolution
-                        FrameData* frame = curr->m_origin;
-                        Statistics* originStat = curr->m_stats[0];
-                        Statistics* lowresStat = curr->m_stats[1];
-                        FrameData* framePrev = prev->m_origin;
-                        DoInterAnalysis_OneRow(frame, lowresStat, framePrev, &originStat->m_interSad[0], &originStat->m_interSatd[0], &originStat->m_mv[0], 1, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, ctb_row);//aya: fixme!!!
+                        if (m_videoParam.DeltaQpMode && useLowres) { // need refine for original resolution
+                            FrameData* frame = curr->m_origin;
+                            Statistics* originStat = curr->m_stats[0];
+                            Statistics* lowresStat = curr->m_stats[1];
+                            FrameData* framePrev = prev->m_origin;
+                            DoInterAnalysis_OneRow(frame, lowresStat, framePrev, &originStat->m_interSad[0], &originStat->m_interSatd[0], &originStat->m_mv[0], 1, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, ctb_row);//aya: fixme!!!
+                        }
                     }
             }
 
