@@ -13,7 +13,7 @@ File Name: libmf_core_hw.cpp
 #include "mfx_common.h"
 
 #include <atlbase.h>
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA_WIN) && defined (MFX_D3D9_ENABLED)
 
 #include "umc_va_dxva2.h"
 #include "libmfx_core_d3d9.h"

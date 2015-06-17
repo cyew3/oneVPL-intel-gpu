@@ -37,9 +37,11 @@ VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type,
     {
     case MFX_HW_NO:
         return new CommonCORE(numThreadsAvailable, session);
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA_WIN) 
+#if defined(MFX_D3D9_ENABLED)
     case MFX_HW_D3D9:
         return new D3D9VideoCORE(adapterNum, numThreadsAvailable, session);
+#endif
 #if defined (MFX_D3D11_ENABLED)
     case MFX_HW_D3D11:
         return new D3D11VideoCORE(adapterNum, numThreadsAvailable, session);

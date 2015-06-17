@@ -19,6 +19,7 @@ File Name: mfx_camera_plugin_dx9.h
 #include <ippi.h>
 
 #define MFX_VA_WIN
+#define MFX_D3D9_ENABLED
 #define MFX_ENABLE_VPP
 
 #include "libmfx_core.h"

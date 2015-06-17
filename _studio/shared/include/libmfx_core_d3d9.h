@@ -10,7 +10,7 @@ File Name: libmfx_core_d3d9.h
 
 \* ****************************************************************************** */
 #include "mfx_common.h"
-#if defined  (MFX_VA_WIN)
+#if defined  (MFX_VA_WIN) && defined (MFX_D3D9_ENABLED)
 #ifndef __LIBMFX_CORE__D3D9_H__
 #define __LIBMFX_CORE__D3D9_H__
 
