@@ -1,172 +1,69 @@
 #include "ts_encoder.h"
 #include "ts_parser.h"
+#include "ts_struct.h"
 
-namespace
+namespace vp8e_encode_frame_async
 {
-
-class TestSuite : tsVideoEncoder
+class TestSuite : public tsVideoEncoder, public tsBitstreamProcessor
 {
-public:
-    TestSuite() : tsVideoEncoder(MFX_CODEC_VP8) {}
-    ~TestSuite() {}
-    int RunTest(unsigned int id);
-    static const unsigned int n_cases;
-
 private:
-    typedef struct
+public:
+    TestSuite()
+        : tsVideoEncoder(MFX_CODEC_VP8)
     {
-        mfxSession          session;
-        mfxEncodeCtrl*      pCtrl;
-        mfxFrameSurface1*   pSurf;
-        mfxBitstream*       pBs;
-        mfxSyncPoint*       pSP;
-    } EFApar;
+        srand(0);
+        m_bs_processor = this;
+    }
 
-    struct tc_par;
-    typedef void (TestSuite::*callback)(tc_par&, EFApar*);
+    ~TestSuite() {}
 
-    struct tc_par
+    enum
     {
-        callback set_par;
-        mfxU32   p0;
-        mfxU32   p1;
-        mfxU32   p2;
-        mfxU32   p3;
+        PRE_INIT = 1
+        , SURF
+        , BS
+        , MFX
+        , NULL_SESSION
+        , NULL_CTRL
+        , NULL_SURFACE
+        , NULL_BITSTREAM
+        , NULL_SP
+        , CLOSE_ENC
+        , ASYNC
     };
+
+    static const unsigned int n_cases;
+    int RunTest(unsigned int id);
 
     struct tc_struct
     {
         mfxStatus sts;
-        tc_par pre_init;
-        tc_par pre_encode;
+
+        mfxU32 preInitMode;
+        struct pre_init
+        {
+            mfxU32 ext_type;
+            const  tsStruct::Field* f;
+            mfxU32 v;
+        } set_par[MAX_NPARS];
+
+        mfxU32 preEncMode;
+        struct pre_encode
+         {
+             mfxU32 ext_type;
+             const  tsStruct::Field* f;
+             mfxU32 v;
+         } set_par_pre_encode[MAX_NPARS];
     };
 
     static const tc_struct test_case[];
 
-    enum
+    mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
-          EFA = 0
-        , CTRL
-        , SURF
-        , BS
-        , MFX
-    };
-
-    mfxU8* GetP8(EFApar* efa, mfxU32 par_id)
-    {
-        switch(par_id)
-        {
-        case EFA:   return (mfxU8*)efa;
-        case CTRL:  return (mfxU8*)efa->pCtrl;
-        case SURF:  return (mfxU8*)efa->pSurf;
-        case BS:    return (mfxU8*)efa->pBs;
-        case MFX:   return (mfxU8*)m_pPar;
-        default:    return 0;
-        }
-    }
-
-    void set_par(tc_par& arg, EFApar* p)
-    {
-        memcpy(GetP8(p, arg.p0) + arg.p1, &arg.p3, TS_MIN(4, arg.p2));
-    }
-
-    void close_encoder(tc_par& arg, EFApar* p)
-    {
-        Close();
-    }
-
-    void async(tc_par& arg, EFApar* p)
-    {
-        for(mfxI32 i = 1; i < (mfxI32)arg.p0; i ++)
-        {
-            EncodeFrameAsync();
-            if(g_tsStatus.get() == MFX_ERR_MORE_DATA)
-                i --;
-            else g_tsStatus.check();
-        }
-    }
-
-    void COVP8(tc_par& arg, EFApar* p)
-    {
-        mfxExtVP8CodingOption& co = m_par;
-        co.EnableMultipleSegments = arg.p2;
-    }
-};
-
-const TestSuite::tc_struct TestSuite::test_case[] =
-{
-    {/* 0*/ MFX_ERR_INVALID_HANDLE,     {}, {&TestSuite::set_par, EFA, offsetof(EFApar, session), sizeof(mfxSession), 0} },
-    {/* 1*/ MFX_ERR_NONE,               {}, {&TestSuite::set_par, EFA, offsetof(EFApar, pCtrl),   sizeof(mfxEncodeCtrl*), 0} },
-    {/* 2*/ MFX_ERR_MORE_DATA,          {}, {&TestSuite::set_par, EFA, offsetof(EFApar, pSurf),   sizeof(mfxFrameSurface1*), 0} },
-    {/* 3*/ MFX_ERR_NULL_PTR,           {}, {&TestSuite::set_par, EFA, offsetof(EFApar, pBs),     sizeof(mfxBitstream*), 0} },
-    {/* 4*/ MFX_ERR_NULL_PTR,           {}, {&TestSuite::set_par, EFA, offsetof(EFApar, pSP),     sizeof(mfxSyncPoint*), 0} },
-    {/* 5*/ MFX_ERR_NOT_INITIALIZED,    {}, {&TestSuite::close_encoder} },
-    {/* 6*/ MFX_ERR_NOT_ENOUGH_BUFFER,  {}, {&TestSuite::set_par, BS, offsetof(mfxBitstream, MaxLength), sizeof(mfxU32), 100} },
-    {/* 7*/ MFX_ERR_UNDEFINED_BEHAVIOR, {}, {&TestSuite::set_par, BS, offsetof(mfxBitstream, DataOffset), sizeof(mfxU32), 0xFFFFFFFF} },
-    {/* 8*/ MFX_ERR_UNDEFINED_BEHAVIOR, {}, {&TestSuite::set_par, SURF, (offsetof(mfxFrameSurface1, Data) + offsetof(mfxFrameData, Y)), sizeof(mfxU8*), 0} },
-    {/* 9*/
-            MFX_ERR_UNDEFINED_BEHAVIOR,
-            {&TestSuite::set_par, MFX,   offsetof(mfxVideoParam, IOPattern), sizeof(mfxU16), MFX_IOPATTERN_IN_VIDEO_MEMORY},
-            {&TestSuite::set_par, SURF, (offsetof(mfxFrameSurface1, Data) + offsetof(mfxFrameData, MemId)), sizeof(mfxMemId), 0}
-    },
-    {/*10*/ MFX_ERR_NULL_PTR,  {}, {&TestSuite::set_par, BS, offsetof(mfxBitstream, Data), sizeof(mfxU8*), 0} },
-    {/*11*/
-            MFX_ERR_NONE,
-            {&TestSuite::set_par, MFX,   offsetof(mfxVideoParam, AsyncDepth), sizeof(mfxU16), 4},
-            {&TestSuite::async, 4}
-    },
-    {/*12*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_0}, {} },
-    {/*13*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_1}, {} },
-    {/*14*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_2}, {} },
-    {/*15*/ MFX_ERR_NONE,{&TestSuite::set_par, MFX, offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, CodecProfile), sizeof(mfxU16), MFX_PROFILE_VP8_3}, {} }
-};
-
-const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
-
-
-int TestSuite::RunTest(unsigned int id)
-{
-    TS_START;
-    tc_struct tc = test_case[id];
-
-    MFXInit();
-    Load();
-
-    if(tc.pre_init.set_par)
-    {
-        (this->*tc.pre_init.set_par)(tc.pre_init, 0);
-    }
-
-    AllocSurfaces();
-    AllocBitstream();
-
-    EFApar par = {m_session, m_pCtrl, GetSurface(), m_pBitstream, m_pSyncPoint};
-
-    if(tc.pre_encode.set_par)
-    {
-        (this->*tc.pre_encode.set_par)(tc.pre_encode, &par);
-    }
-
-    g_tsStatus.expect(tc.sts);
-    for(;;)
-    {
-        EncodeFrameAsync(par.session, par.pCtrl, par.pSurf, par.pBs, par.pSP);
-
-        if(g_tsStatus.get() == MFX_ERR_MORE_DATA && par.pSurf && g_tsStatus.m_expected >= 0)
-        {
-            par.pSurf = GetSurface();
-            continue;
-        }
-        break;
-    }
-    g_tsStatus.check();
-
-    if(g_tsStatus.get() >= 0)
-    {
-        SyncOperation();
         tsParserVP8 p(m_bitstream);
+        //wr.ProcessBitstream(m_bitstream, 1);
 
-        for(mfxU32 i = 0; i < m_par.AsyncDepth; i++)
+        for (mfxU32 i = 0; i < nFrames; i++)
         {
             tsParserVP8::UnitType& hdr = p.ParseOrDie();
 
@@ -180,15 +77,188 @@ int TestSuite::RunTest(unsigned int id)
 
             if((mfxExtVP8CodingOption*)m_par)
             {
-                mfxExtVP8CodingOption& co = m_par;
-                if(co.EnableMultipleSegments)
+                mfxExtVP8CodingOption* co =
+                        (mfxExtVP8CodingOption*)m_par.GetExtBuffer(MFX_EXTBUFF_VP8_CODING_OPTION);
+                if(co->EnableMultipleSegments)
                 {
-                    EXPECT_EQ(mfxU32(co.EnableMultipleSegments == MFX_CODINGOPTION_ON), hdr.udc->fh.segmentation_enabled);
+                    EXPECT_EQ(mfxU32(co->EnableMultipleSegments == MFX_CODINGOPTION_ON),
+                              hdr.udc->fh.segmentation_enabled);
                 }
             }
         }
 
+        return MFX_ERR_NONE;
     }
+
+    mfxStatus EncodeFrames2(mfxU32 n)
+    {
+        mfxU32 encoded = 0;
+        mfxU32 submitted = 0;
+        mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
+        mfxSyncPoint sp;
+
+        async = TS_MIN(n, async - 1);
+
+        while(encoded < n)
+        {
+            if(MFX_ERR_MORE_DATA == EncodeFrameAsync())
+            {
+                if(!m_pSurf)
+                {
+                    if(submitted)
+                    {
+                        encoded += submitted;
+                        SyncOperation(sp);
+                    }
+                    break;
+                }
+                continue;
+            }
+
+            if (g_tsStatus.m_expected != MFX_ERR_NONE) {
+                return g_tsStatus.m_expected;
+            }
+
+            g_tsStatus.check();TS_CHECK_MFX;
+            sp = m_syncpoint;
+
+            if(++submitted >= async)
+            {
+                SyncOperation();TS_CHECK_MFX;
+                encoded += submitted;
+                submitted = 0;
+                async = TS_MIN(async, (n - encoded));
+            }
+        }
+
+        g_tsLog << encoded << " FRAMES ENCODED\n";
+
+        return g_tsStatus.get();
+    }
+};
+
+const TestSuite::tc_struct TestSuite::test_case[] =
+{
+    {/* 0*/
+     // Before calling any SDK functions, the application must create an SDK session.
+     MFX_ERR_INVALID_HANDLE, 0, {}, NULL_SESSION, {} },
+    {/* 1*/ MFX_ERR_NONE, 0, {}, NULL_CTRL, {}},
+    {/* 2*/
+     // Not enough surfaces.
+     MFX_ERR_MORE_DATA, 0, {}, NULL_SURFACE, {} },
+    {/* 3*/
+     // Bitstream pointer is NULL.
+     MFX_ERR_NULL_PTR, 0, {}, NULL_BITSTREAM, {} },
+    {/* 4*/
+     //Sync Point pointer is NULL.
+     MFX_ERR_NULL_PTR, 0, {}, NULL_SP, {} },
+    {/* 5*/
+     // Closed encoder, then trying to call EncodeFrames().
+     MFX_ERR_NOT_INITIALIZED, 0, {}, CLOSE_ENC, {} },
+    {/* 6*/
+     //Allocated bitstream buffer size is insufficient.
+     MFX_ERR_NOT_ENOUGH_BUFFER, 0, {}, BS, {BS, &tsStruct::mfxBitstream.MaxLength, 100} },
+    {/* 7*/
+     // Next reading/writing position may not be equal to -1.
+     MFX_ERR_UNDEFINED_BEHAVIOR, 0, {}, BS, {BS,  &tsStruct::mfxBitstream.DataOffset, 0xFFFFFFFF} },
+    {/* 8*/
+     // The application has to specify Y pointer.
+     MFX_ERR_UNDEFINED_BEHAVIOR, 0, {}, SURF, {SURF, &tsStruct::mfxFrameSurface1.Data.Y, 0} },
+    {/* 9*/
+     // Memory ID of the data buffers may not be equal to 0.
+     MFX_ERR_UNDEFINED_BEHAVIOR,
+     PRE_INIT, { MFX, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY},
+     SURF, { SURF, &tsStruct::mfxFrameSurface1.Data.MemId, 0} },
+    {/*10*/
+     // Bitstream buffer pointer is 0.
+     MFX_ERR_NULL_PTR, 0, {}, BS, {BS, &tsStruct::mfxBitstream.Data, 0} },
+    {/*11*/ MFX_ERR_NONE, PRE_INIT, {MFX, &tsStruct::mfxVideoParam.AsyncDepth, 4}, ASYNC, { ASYNC, 0, 4} },
+    {/*12*/ MFX_ERR_NONE, PRE_INIT, { MFX, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_VP8_0}, 0, {} },
+    {/*13*/ MFX_ERR_NONE, PRE_INIT, { MFX, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_VP8_1}, 0, {} },
+    {/*14*/ MFX_ERR_NONE, PRE_INIT, { MFX, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_VP8_2}, 0, {} },
+    {/*15*/ MFX_ERR_NONE, PRE_INIT, { MFX, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_VP8_3}, 0, {} }
+};
+
+const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
+
+int TestSuite::RunTest(unsigned int id)
+{
+    TS_START;
+    tc_struct tc = test_case[id];
+
+    MFXInit();
+    Load();
+
+    m_par.AsyncDepth = 1;
+    m_par.mfx.CodecProfile = MFX_PROFILE_VP8_0;
+
+    //tsBitstreamWriter wr("0000.vp8");
+    if(tc.preInitMode == PRE_INIT)
+        SETPARS(m_pPar, MFX);
+
+    Init();
+
+    AllocSurfaces();
+    AllocBitstream();
+
+    mfxSession tmp_session = m_session;
+    if (tc.preEncMode == NULL_SESSION)
+        m_session = 0;
+    else if (tc.preEncMode == NULL_CTRL)
+        m_pCtrl = 0;
+    else if (tc.preEncMode == NULL_SURFACE)
+        m_pSurf = 0;
+    else if (tc.preEncMode == NULL_BITSTREAM)
+        m_pBitstream = 0;
+    else if (tc.preEncMode == NULL_SP)
+        m_pSyncPoint = 0;
+    else if (tc.preEncMode == CLOSE_ENC)
+    {
+        Close();
+        m_default = false;
+    }
+
+    if (tc.preEncMode == BS)
+    {
+        for(mfxU32 i = 0; i < MAX_NPARS; i++)
+        {
+            if(tc.set_par_pre_encode[i].f && tc.set_par_pre_encode[i].ext_type == BS)
+            {
+                tsStruct::set(m_pBitstream, *tc.set_par_pre_encode[i].f, tc.set_par_pre_encode[i].v);
+            }
+        }
+    }
+
+    if (tc.preEncMode == SURF)
+    {
+        m_default = false;
+        m_pSurf = GetSurface();
+        for(mfxU32 i = 0; i < MAX_NPARS; i++)
+        {
+            if(tc.set_par_pre_encode[i].f && tc.set_par_pre_encode[i].ext_type == SURF)
+            {
+                tsStruct::set(m_pSurf, *tc.set_par_pre_encode[i].f, tc.set_par_pre_encode[i].v);
+            }
+        }
+    }
+    g_tsStatus.expect(tc.sts);
+
+    if (tc.preEncMode == ASYNC)
+    {
+        for(mfxI32 i = 1; i < tc.set_par_pre_encode[0].v; i ++)
+        {
+            EncodeFrameAsync();
+            if(g_tsStatus.get() == MFX_ERR_MORE_DATA)
+                i --;
+            else g_tsStatus.check();
+        }
+    }
+    else
+        EncodeFrames2(1);
+
+    if (tc.preEncMode == NULL_SESSION)
+        m_session = tmp_session;
+    g_tsStatus.expect(MFX_ERR_NONE);
 
     TS_END;
     return 0;

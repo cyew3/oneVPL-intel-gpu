@@ -482,7 +482,9 @@ STRUCT(mfxExtVPPDeinterlacing,
 
 STRUCT(mfxExtVP8CodingOption,
     FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU16, EnableMultipleSegments )
+    FIELD_T(mfxU16, Version)
+    FIELD_T(mfxU16, EnableMultipleSegments)
+    FIELD_T(mfxU16, LoopFilterType)
 )
 
 STRUCT(mfxPluginUID,
