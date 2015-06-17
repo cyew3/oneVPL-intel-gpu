@@ -748,9 +748,9 @@ public:
          m_inputSurf.clear();
          m_outputSurf.clear();
          if (m_executeParams )
-            delete [] m_executeParams;
+            free(m_executeParams);
          if (m_executeSurf)
-            delete [] m_executeSurf;
+            free(m_executeSurf);
     };
 
     virtual mfxStatus Init(CameraParams *CameraParams);

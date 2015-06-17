@@ -1299,9 +1299,9 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
     m_AsyncDepth = m_AsyncDepth == 0 ? 1 : m_AsyncDepth;
 
     if ( m_executeParams )
-        delete [] m_executeParams; 
+        free(m_executeParams); 
     if ( m_executeSurf )
-        delete [] m_executeSurf;
+        free(m_executeSurf);
     m_executeParams = (MfxHwVideoProcessing::mfxExecuteParams *)malloc(sizeof(MfxHwVideoProcessing::mfxExecuteParams)*m_AsyncDepth);
     ZeroMemory(m_executeParams, sizeof(MfxHwVideoProcessing::mfxExecuteParams)*m_AsyncDepth);
     m_executeSurf   = (MfxHwVideoProcessing::mfxDrvSurface *)malloc(sizeof(MfxHwVideoProcessing::mfxDrvSurface)*m_AsyncDepth);
