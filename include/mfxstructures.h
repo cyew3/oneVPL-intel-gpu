@@ -111,7 +111,9 @@ enum {
     MFX_FOURCC_BGR4         = MFX_MAKEFOURCC('B','G','R','4'),   /* ABGR in that order, A channel is 8 MSBs */
     MFX_FOURCC_A2RGB10      = MFX_MAKEFOURCC('R','G','1','0'),   /* ARGB in that order, A channel is two MSBs */
     MFX_FOURCC_ARGB16       = MFX_MAKEFOURCC('R','G','1','6'),   /* ARGB in that order, 64 bits, A channel is 16 MSBs */
-    MFX_FOURCC_R16          = MFX_MAKEFOURCC('R','1','6','U') 
+    MFX_FOURCC_R16          = MFX_MAKEFOURCC('R','1','6','U'),
+    MFX_FOURCC_AYUV         = MFX_MAKEFOURCC('A','Y','U','V'),   /* YUV 4:4:4, AYUV in that order, A channel is 8 MSBs */
+    MFX_FOURCC_AYUV_RGB4    = MFX_MAKEFOURCC('A','V','U','Y')    /* ARGB in that order, A channel is 8 MSBs stored in AYUV surface*/
 };
 
 /* PicStruct */
@@ -721,7 +723,8 @@ enum {
     MFX_EXTBUFF_DIRTY_RECTANGLES           = MFX_MAKEFOURCC('D','R','O','I'),
     MFX_EXTBUFF_MOVING_RECTANGLES          = MFX_MAKEFOURCC('M','R','O','I'),
     MFX_EXTBUFF_AVC_SCALING_MATRIX         = MFX_MAKEFOURCC('A','V','S','M'),
-    MFX_EXTBUFF_MPEG2_QUANT_MATRIX         = MFX_MAKEFOURCC('M','2','Q','M')
+    MFX_EXTBUFF_MPEG2_QUANT_MATRIX         = MFX_MAKEFOURCC('M','2','Q','M'),
+    MFX_EXTBUFF_CODING_OPTION_VPS          = MFX_MAKEFOURCC('C','O','V','P')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -907,6 +910,19 @@ typedef struct {
     mfxU16          SPSId;
     mfxU16          PPSId;
 } mfxExtCodingOptionSPSPPS;
+
+typedef struct {
+    mfxExtBuffer    Header;
+
+    union {
+        mfxU8       *VPSBuffer;
+        mfxU64      reserved1;
+    };
+    mfxU16          VPSBufSize;
+    mfxU16          VPSId;
+
+    mfxU16          reserved[6];
+} mfxExtCodingOptionVPS;
 
 typedef struct {
     mfxExtBuffer    Header;
