@@ -777,6 +777,19 @@ void MPEG2VideoDecoderBase::sequence_scalable_extension(int task_num)
     }
 }
 
+bool MPEG2VideoDecoderBase::PictureStructureValid(Ipp32u picture_structure)
+{
+    switch (picture_structure)
+    {
+        case FRAME_PICTURE:
+        case TOP_FIELD:
+        case BOTTOM_FIELD:
+            return true;
+    }
+
+    return false;
+}
+
 // compute and store PT for input, return PT of the frame to be out
 // called after field_buffer_index switching
 // when FLAG_VDEC_REORDER isn't set, time can be wrong
@@ -1130,12 +1143,22 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
         return UMC_OK;
     }
 
-    if (PictureHeader[task_num].progressive_frame && PictureHeader[task_num].picture_structure != FRAME_PICTURE)
     {
         // Bitstream error, not clear picture type
         // Skipping picture because wrong picture type (frame or field) can take decoder to unrecoverable state
-        m_IsFrameSkipped = true;
-        return UMC_OK;
+
+        if (!PictureStructureValid(PictureHeader[task_num].picture_structure))
+        {
+            m_IsFrameSkipped = true;
+            return UMC_OK;
+        }
+
+        // The check below is from progressive_frame field description in 6.3.10 part of MPEG2 standard
+        if (PictureHeader[task_num].progressive_frame && PictureHeader[task_num].picture_structure != FRAME_PICTURE)
+        {
+            m_IsFrameSkipped = true;
+            return UMC_OK;
+        }
     }
 
     if (PictureHeader[task_num].picture_structure == FRAME_PICTURE

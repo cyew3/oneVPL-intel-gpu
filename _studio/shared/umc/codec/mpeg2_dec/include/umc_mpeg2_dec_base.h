@@ -516,16 +516,13 @@ public:
 
        // THREAD_ID*                 m_lpThreadsID;
         //MediaDataEx::_MediaDataEx* m_pStartCodesData;
+        //MPEG2_VIRTUAL Status    DecodeBegin(Ipp64f time, sVideoStreamInfo * info);
+        //Status                  Macroblock_444(IppVideoContext *video) { return UMC_ERR_INVALID_STREAM; }
 
         Status                  ThreadingSetup(Ipp32s maxThreads);
-
         bool                    DeleteTables();
-
-        //MPEG2_VIRTUAL Status    DecodeBegin(Ipp64f time, sVideoStreamInfo * info);
-
         MPEG2_VIRTUAL void      CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time, bool * isOriginal, int task_num, bool buffered);
-
-        //Status                  Macroblock_444(IppVideoContext *video) { return UMC_ERR_INVALID_STREAM; }
+        bool                    PictureStructureValid(Ipp32u picture_structure);
 
         Status                  DecodeSlice_FrameI_420(IppVideoContext *video, int task_num);
         Status                  DecodeSlice_FrameI_422(IppVideoContext *video, int task_num);
