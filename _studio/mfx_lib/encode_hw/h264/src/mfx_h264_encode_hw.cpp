@@ -294,7 +294,7 @@ mfxStatus ImplementationAvc::Query(
 
     // "in" parameters should uniquely identify one of 4 Query operation modes (see MSDK spec for details)
     mfxU8 queryMode = DetermineQueryMode(in);
-    sts = core->IsGuidSupported(DXVA2_Intel_Encode_AVC,in,true);
+    sts = core->IsGuidSupported(DXVA2_Intel_Encode_AVC,out,true);
     if (sts != MFX_ERR_NONE){
         return MFX_ERR_DEVICE_FAILED;
     }
