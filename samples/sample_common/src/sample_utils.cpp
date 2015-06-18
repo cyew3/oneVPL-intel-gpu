@@ -24,6 +24,36 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 msdk_tick CTimer::frequency = 0;
 
+mfxStatus CopyBitstream2(mfxBitstream *dest, mfxBitstream *src)
+{
+    if (!dest || !src)
+        return MFX_ERR_NULL_PTR;
+
+    if (!dest->DataLength)
+    {
+        dest->DataOffset = 0;
+    }
+    else
+    {
+        memmove(dest->Data, dest->Data + dest->DataOffset, dest->DataLength);
+        dest->DataOffset = 0;
+    }
+
+    if (src->DataLength > dest->MaxLength - dest->DataLength - dest->DataOffset)
+        return MFX_ERR_NOT_ENOUGH_BUFFER;
+
+    MSDK_MEMCPY_BITSTREAM(*dest, dest->DataOffset, src->Data, src->DataLength);
+    dest->DataLength = src->DataLength;
+
+    dest->DataFlag = src->DataFlag;
+
+    //common Extended buffer will be for src and dest bit streams
+    dest->EncryptedData = src->EncryptedData;
+
+    return MFX_ERR_NONE;
+}
+
+
 CSmplYUVReader::CSmplYUVReader()
 {
     m_bInited = false;
@@ -497,126 +527,6 @@ mfxStatus CSmplBitstreamReader::ReadNextFrame(mfxBitstream *pBS)
     return MFX_ERR_NONE;
 }
 
-CH264FrameReader::CH264FrameReader()
-{
-    MSDK_ZERO_MEMORY(m_lastBs);
-}
-
-mfxU8* CH264FrameReader::Find001(mfxU8* beg, mfxU8* end)
-{
-    for (mfxU8* ptr = beg; ptr + 3 < end; ++ptr)
-    if (ptr[0] == 0 && ptr[1] == 0 && ptr[2] == 1)
-        return ptr;
-    return end;
-}
-
-int CH264FrameReader::FindFrame(mfxBitstream *pBS, int & pos2ndnalu)
-{
-    int nNalu = 0;
-
-    mfxU8* beg = pBS->Data + pBS->DataOffset;
-    mfxU8* end = pBS->Data + pBS->DataOffset + pBS->DataLength;
-    bool bNewFrame = false;
-    while ((beg = Find001(beg, end)) != end)
-    {
-        int nType = beg[3] & 0x1F;
-        if (nType == 1 || nType == 5)   // Slice or IDR Slice
-        {
-            nNalu++;
-            // reading slice header
-            BitstreamReader reader(beg + 4, (mfxU32)(end - beg + 4));
-            mfxU32 first_mb_in_slice = reader.GetUE();
-            if (bNewFrame && !first_mb_in_slice)
-            {
-                break;
-            }
-            bNewFrame = true;
-        }
-        beg += 3;
-    }
-
-    if (bNewFrame)
-    {
-        pos2ndnalu = (int)(beg - pBS->Data);
-    }
-    return nNalu;
-}
-
-inline bool isPathDelimiter(msdk_char c)
-{
-    return c == '/' || c == '\\';
-}
-
-mfxStatus MoveMfxBitstream(mfxBitstream *pTarget, mfxBitstream *pSrc, mfxU32 nBytes)
-{
-    MSDK_CHECK_POINTER(pTarget, MFX_ERR_NULL_PTR);
-    MSDK_CHECK_POINTER(pSrc, MFX_ERR_NULL_PTR);
-
-    mfxU32 nFreeSpaceTail = pTarget->MaxLength - pTarget->DataOffset - pTarget->DataLength;
-    mfxU32 nFreeSpace = pTarget->MaxLength - pTarget->DataLength;
-
-    MSDK_CHECK_NOT_EQUAL(pSrc->DataLength >= nBytes, true, MFX_ERR_MORE_DATA);
-    MSDK_CHECK_NOT_EQUAL(nFreeSpace >= nBytes, true, MFX_ERR_NOT_ENOUGH_BUFFER);
-
-    if (nFreeSpaceTail < nBytes)
-    {
-        memmove(pTarget->Data, pTarget->Data + pTarget->DataOffset,  pTarget->DataLength);
-        pTarget->DataOffset = 0;
-    }
-    MSDK_MEMCPY_BITSTREAM(*pTarget, pTarget->DataOffset, pSrc->Data + pSrc->DataOffset, nBytes);
-    pTarget->DataLength += nBytes;
-    pSrc->DataLength -= nBytes;
-    pSrc->DataOffset += nBytes;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus CH264FrameReader::ReadNextFrame(mfxBitstream *pBS)
-{
-    MSDK_CHECK_POINTER(pBS, MFX_ERR_NULL_PTR);
-    pBS->DataFlag = MFX_BITSTREAM_COMPLETE_FRAME;
-
-    if (m_lastBs.Data == NULL)
-    {
-        //alloc same bitstream
-        m_bsBuffer.resize(pBS->MaxLength);
-        m_lastBs.Data =  &m_bsBuffer.front();
-        m_lastBs.MaxLength = pBS->MaxLength;
-    }
-
-    //checking for available nalu
-    int nNalu;
-    int pos2ndNaluStart = 0;
-    //check nalu in input bs, it always=1 if decoder didnt take a frame
-    if ((nNalu = FindFrame(pBS, pos2ndNaluStart)) < 1)
-    {
-        //copy nalu from internal buffer
-        if ((nNalu = FindFrame(&m_lastBs, pos2ndNaluStart)) < 2)
-        {
-            mfxStatus sts = CSmplBitstreamReader::ReadNextFrame(&m_lastBs);
-            if (MFX_ERR_MORE_DATA == sts)
-            {
-                //lets feed last nalu if present
-                if (nNalu == 1)
-                {
-                    sts = MoveMfxBitstream(pBS, &m_lastBs, m_lastBs.DataLength);
-                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-                    return MFX_ERR_NONE;
-                }
-
-                return MFX_ERR_MORE_DATA;
-            }
-            //buffer is to small to accept whole frame
-            MSDK_CHECK_NOT_EQUAL(FindFrame(&m_lastBs, pos2ndNaluStart) >= 2, true, MFX_ERR_NOT_ENOUGH_BUFFER);
-        }
-        mfxU32 naluLen = pos2ndNaluStart-m_lastBs.DataOffset;
-        mfxStatus sts = MoveMfxBitstream(pBS, &m_lastBs, naluLen);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    }
-
-    return MFX_ERR_NONE;
-}
 
 bool CJPEGFrameReader::SOImarkerIsFound(mfxBitstream *pBS)
 {
@@ -1864,87 +1774,154 @@ mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat)
     return sts;
 }
 
-BitstreamReader::BitstreamReader(void)
+CH264FrameReader::CH264FrameReader()
+: CSmplBitstreamReader()
+, m_isEndOfStream(false)
+, m_processedBS(0)
+, m_plainBuffer(0)
+, m_plainBufferSize(0)
 {
-    m_pSource = NULL;
-    m_pEnd = NULL;
-    m_nBits = 0;
-    m_iReadyBits = 0;
 }
 
-BitstreamReader::BitstreamReader(mfxU8 *pStream, mfxU32 len)
+CH264FrameReader::~CH264FrameReader()
 {
-    Init(pStream, len);
 }
 
-BitstreamReader::BitstreamReader(mfxBitstream* bits)
+void CH264FrameReader::Close()
 {
-    Init(bits->Data, bits->DataLength);
-}
+    WipeMfxBitstream(m_originalBS.get());
+    CSmplBitstreamReader::Close();
 
-void BitstreamReader::Init(mfxU8 *pStream, mfxU32 len)
-{
-    m_pSource = pStream;
-    m_pEnd = pStream + len;
-    m_nBits = 0;
-    m_iReadyBits = 0;
-}
-
-mfxU32 BitstreamReader::CopyBit(void)
-{
-    if (0 == m_iReadyBits)
-        Refresh();
-
-    return ((m_nBits >> (m_iReadyBits - 1)) & 1);
-}
-
-mfxU32 BitstreamReader::GetBit(void)
-{
-    if (0 == m_iReadyBits)
-        Refresh();
-
-    m_iReadyBits -= 1;
-    return ((m_nBits >> m_iReadyBits) & 1);
-}
-
-mfxU32 BitstreamReader::GetBits(mfxI32 iNum)
-{
-    if (iNum <= 24)
+    if (NULL != m_plainBuffer)
     {
-        if (iNum > m_iReadyBits)
-            Refresh();
-
-        m_iReadyBits -= iNum;
-        return ((m_nBits >> m_iReadyBits) & ~(-1 << iNum));
-    }
-    else
-    {
-        return (GetBits(iNum - 16) << 16) + GetBits(16);
+        free(m_plainBuffer);
+        m_plainBuffer = NULL;
+        m_plainBufferSize = 0;
     }
 }
 
-mfxU32 BitstreamReader::GetUE(void)
+mfxStatus CH264FrameReader::Init(const msdk_char *strFileName)
 {
-    mfxI32 iZeros;
+    mfxStatus sts = MFX_ERR_NONE;
 
-    // count leading zeros
-    iZeros = 0;
-    while (0 == CopyBit())
-    {
-        iZeros += 1;
-        GetBit();
-    }
+    sts = CSmplBitstreamReader::Init(strFileName);
+    if (sts != MFX_ERR_NONE)
+        return sts;
 
-    // get value
-    return (GetBits(iZeros + 1) - 1);
+    m_isEndOfStream = false;
+    m_processedBS = NULL;
+
+    m_originalBS.reset(new mfxBitstream());
+    sts = InitMfxBitstream(m_originalBS.get(), 1024 * 1024);
+    if (sts != MFX_ERR_NONE)
+        return sts;
+
+    m_pNALSplitter.reset(new ProtectedLibrary::AVC_Spl());
+
+    m_frame = 0;
+    m_plainBuffer = 0;
+    m_plainBufferSize = 0;
+
+    return sts;
 }
 
-void BitstreamReader::Refresh(void)
+mfxStatus CH264FrameReader::ReadNextFrame(mfxBitstream *pBS)
 {
-    while (24 > m_iReadyBits)
+    mfxStatus sts = MFX_ERR_NONE;
+    pBS->DataFlag = MFX_BITSTREAM_COMPLETE_FRAME;
+    //read bit stream from source
+    while (!m_originalBS->DataLength)
     {
-        m_nBits = (m_nBits << 8) | m_pSource[0];
-        m_iReadyBits += 8;
-        m_pSource += 1;
+        sts = CSmplBitstreamReader::ReadNextFrame(m_originalBS.get());
+        if (sts != MFX_ERR_NONE && sts != MFX_ERR_MORE_DATA)
+            return sts;
+        if (sts == MFX_ERR_MORE_DATA)
+        {
+            m_isEndOfStream = true;
+            break;
+        }
     }
+
+    do
+    {
+        sts = PrepareNextFrame(m_isEndOfStream ? NULL : m_originalBS.get(), &m_processedBS);
+
+        if (sts == MFX_ERR_MORE_DATA)
+        {
+            if (m_isEndOfStream)
+            {
+                break;
+            }
+
+            sts = CSmplBitstreamReader::ReadNextFrame(m_originalBS.get());
+            if (sts == MFX_ERR_MORE_DATA)
+                m_isEndOfStream = true;
+            continue;
+        }
+        else if (MFX_ERR_NONE != sts)
+            return sts;
+
+    } while (MFX_ERR_NONE != sts);
+
+    // get output stream
+    if (NULL != m_processedBS)
+    {
+        mfxStatus copySts = CopyBitstream2(
+            pBS,
+            m_processedBS);
+        if (copySts < MFX_ERR_NONE)
+            return copySts;
+        m_processedBS = NULL;
+    }
+
+    return sts;
+}
+
+mfxStatus CH264FrameReader::PrepareNextFrame(mfxBitstream *in, mfxBitstream **out)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (NULL == out)
+        return MFX_ERR_NULL_PTR;
+
+    *out = NULL;
+
+    // get frame if it is not ready yet
+    if (NULL == m_frame)
+    {
+        sts = m_pNALSplitter->GetFrame(in, &m_frame);
+        if (sts != MFX_ERR_NONE)
+            return sts;
+    }
+
+    if (m_plainBufferSize < m_frame->DataLength)
+    {
+        if (NULL != m_plainBuffer)
+        {
+            free(m_plainBuffer);
+            m_plainBuffer = NULL;
+            m_plainBufferSize = 0;
+        }
+        m_plainBuffer = (mfxU8*)malloc(m_frame->DataLength);
+        if (NULL == m_plainBuffer)
+            return MFX_ERR_MEMORY_ALLOC;
+        m_plainBufferSize = m_frame->DataLength;
+    }
+
+    MSDK_MEMCPY_BUF(m_plainBuffer, 0, m_plainBufferSize, m_frame->Data, m_frame->DataLength);
+
+    memset(&m_outBS, 0, sizeof(mfxBitstream));
+    m_outBS.Data = m_plainBuffer;
+    m_outBS.DataOffset = 0;
+    m_outBS.DataLength = m_frame->DataLength;
+    m_outBS.MaxLength = m_frame->DataLength;
+    m_outBS.DataFlag = MFX_BITSTREAM_COMPLETE_FRAME;
+    m_outBS.TimeStamp = m_frame->TimeStamp;
+
+    m_pNALSplitter->ResetCurrentState();
+    m_frame = NULL;
+
+    *out = &m_outBS;
+
+    return sts;
 }

@@ -13,6 +13,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #include <memory>
 #include "pipeline_encode.h"
 #include "pipeline_user.h"
+#include "pipeline_region_encode.h"
 #include <stdarg.h>
 #include <string>
 
@@ -72,6 +73,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-num_slice]             - number of slices in each video frame. 0 by default.\n"));
     msdk_printf(MSDK_STRING("                              If num_slice equals zero, the encoder may choose any slice partitioning allowed by the codec standard.\n"));
     msdk_printf(MSDK_STRING("   [-mss]                   - maximum slice size in bytes. Supported only with -hw and h264 codec. This option is not compatible with -num_slice option.\n"));
+    msdk_printf(MSDK_STRING("   [-re]                    - enable region encode mode. Works only with h265 encoder\n"));
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
@@ -302,6 +304,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_opt_read(strInput[i], pParams->pluginParams.strPluginPath);
 #endif
             pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-re")))
+        {
+            pParams->UseRegionEncode = true;
         }
         else // 1-character options
         {
@@ -593,6 +599,23 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->nRateControlMethod = MFX_RATECONTROL_CBR;
     }
 
+    if(pParams->UseRegionEncode)
+    {
+        if(pParams->CodecId != MFX_CODEC_HEVC)
+        {
+            msdk_printf(MSDK_STRING("Region encode option is compatible with h265(HEVC) encoder only.\nRegion encoding is disabled\n"));
+            pParams->UseRegionEncode=false;
+        }
+        if (pParams->nWidth  != pParams->nDstWidth ||
+            pParams->nHeight != pParams->nDstHeight ||
+            pParams->nRotationAngle!=0)
+
+        {
+            msdk_printf(MSDK_STRING("Region encode option is not compatible with VPP processing.\nRegion encoding is disabled\n"));
+            pParams->UseRegionEncode=false;
+        }
+    }
+
     return MFX_ERR_NONE;
 }
 
@@ -610,7 +633,16 @@ int main(int argc, char *argv[])
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
-    pPipeline.reset((Params.nRotationAngle) ? new CUserPipeline : new CEncodingPipeline);
+	// Choosing which pipeline to use
+    if(Params.UseRegionEncode)
+    {
+        pPipeline.reset(new CRegionEncodingPipeline());
+    }
+    else
+    {
+        pPipeline.reset((Params.nRotationAngle) ? new CUserPipeline : new CEncodingPipeline);
+    }
+
 
     MSDK_CHECK_POINTER(pPipeline.get(), MFX_ERR_MEMORY_ALLOC);
 
@@ -649,6 +681,7 @@ int main(int argc, char *argv[])
     }
 
     pPipeline->Close();
+
     msdk_printf(MSDK_STRING("\nProcessing finished\n"));
 
     return 0;

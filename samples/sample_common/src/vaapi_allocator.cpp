@@ -290,9 +290,10 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     vaapiMemId* vaapi_mid = (vaapiMemId*)mid;
     mfxU8* pBuffer = 0;
     VASurfaceAttrib attrib;
-    mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mid->m_fourcc);
 
     if (!vaapi_mid || !(vaapi_mid->m_surface)) return MFX_ERR_INVALID_HANDLE;
+
+    mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mid->m_fourcc);
 
     if (MFX_FOURCC_P8 == mfx_fourcc)   // bitstream processing
     {

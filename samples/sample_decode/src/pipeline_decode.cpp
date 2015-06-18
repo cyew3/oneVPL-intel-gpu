@@ -650,7 +650,11 @@ mfxStatus CDecodingPipeline::AllocFrames()
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    if (Request.NumFrameSuggested < m_mfxVideoParams.AsyncDepth)
+    mfxIMPL impl = 0;
+    sts = m_mfxSession.QueryIMPL(&impl);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    if ((Request.NumFrameSuggested < m_mfxVideoParams.AsyncDepth) &&
+        (impl & MFX_IMPL_HARDWARE_ANY))
         return MFX_ERR_MEMORY_ALLOC;
 
     nSurfNum = MSDK_MAX(Request.NumFrameSuggested, 1);
@@ -1141,9 +1145,10 @@ mfxStatus CDecodingPipeline::RunDecoding()
             msdk_printf(MSDK_STRING("DeliverOutput return error = %d\n"),m_error);
             break;
         }
-        if (pBitstream && ((MFX_ERR_MORE_DATA == sts) || m_bIsCompleteFrame)) {
+        if (pBitstream && ((MFX_ERR_MORE_DATA == sts) || (m_bIsCompleteFrame && !pBitstream->DataLength))) {
             CAutoTimer timer_fread(m_tick_fread);
             sts = m_FileReader->ReadNextFrame(pBitstream); // read more data to input bit stream
+              
 
             if (MFX_ERR_MORE_DATA == sts) {
                 if (!m_bIsVideoWall) {
@@ -1254,6 +1259,14 @@ mfxStatus CDecodingPipeline::RunDecoding()
                 } else {
                     // output is not available
                     sts = MFX_ERR_MORE_SURFACE;
+                }
+            } else if ((MFX_ERR_MORE_DATA == sts) && pBitstream) {
+                if (m_bIsCompleteFrame && pBitstream->DataLength)
+                {
+                    // In low_latency mode decoder have to process bitstream completely
+                    msdk_printf(MSDK_STRING("error: Incorrect decoder behavior in low latency mode (bitstream length is not equal to 0 after decoding)\n"));
+                    sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+                    continue;
                 }
             } else if ((MFX_ERR_MORE_DATA == sts) && !pBitstream) {
                 // that's it - we reached end of stream; now we need to render bufferred data...

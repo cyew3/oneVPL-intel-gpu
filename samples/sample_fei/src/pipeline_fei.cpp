@@ -1544,6 +1544,8 @@ mfxStatus CEncodingPipeline::Run()
             feiEncCtrl[fieldId].PerMBQp = MBQP;
             feiEncCtrl[fieldId].PerMBInput = MBCtrl;
             feiEncCtrl[fieldId].MBSizeCtrl = m_encpakParams.bMBSize;
+            //Note:
+            //(RefHeight x RefWidth) should not exceed 2048 for P frames and 1024 for B frames
             feiEncCtrl[fieldId].RefHeight = m_encpakParams.RefHeight;//40;
             feiEncCtrl[fieldId].RefWidth = m_encpakParams.RefWidth;//48;
             feiEncCtrl[fieldId].SearchWindow = m_encpakParams.SearchWindow;//1;
@@ -2064,10 +2066,24 @@ mfxStatus CEncodingPipeline::Run()
                     pCurrentTask->mfxBS.NumExtParam = numExtOutParams;
                     pCurrentTask->mfxBS.ExtParam = &outBufs[0];
                 }
-                if(m_encpakParams.bPREENC)
+                if(m_encpakParams.bPREENC) {
                     sts = m_pmfxENCPAK->EncodeFrameAsync(ctr, eTask->in.InSurface, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
-                else
+                } else {
+                    // Reset the Ref window size for B frames
+                    int frame_type = GetFrameType(frameCount-1);
+                    for (fieldId = 0; fieldId < numOfFields; fieldId++) {
+                        if (frame_type & MFX_FRAMETYPE_B) {
+                            if (feiEncCtrl[fieldId].RefHeight * feiEncCtrl[fieldId].RefWidth > 1024) {
+                                feiEncCtrl[fieldId].RefHeight = 32;
+                                feiEncCtrl[fieldId].RefWidth= 32;
+                            }
+                        } else {
+                            feiEncCtrl[fieldId].RefWidth= 64;
+                            feiEncCtrl[fieldId].RefHeight = 32;
+                        }
+                    }
                     sts = m_pmfxENCPAK->EncodeFrameAsync(ctr, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+                }
 
                 if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
                 {

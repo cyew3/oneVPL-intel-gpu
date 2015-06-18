@@ -45,14 +45,12 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("       Only params listed above are supported, if a param is not set here, the originally set value is used. \n"));
     msdk_printf(MSDK_STRING("       There can be any number of resets, applied in order of appearance in the command line, \n"));
     msdk_printf(MSDK_STRING("           after resetInterval frames are processed with the current params  \n"));
-    msdk_printf(MSDK_STRING("   [-sys]                                              - output to system memory\n"));
+    msdk_printf(MSDK_STRING("   [-imem]                                              - input memory type (sys|video). Default is system\n"));
 #if D3D_SURFACES_SUPPORT
-    msdk_printf(MSDK_STRING("   [-d3d]                                              - output to d3d9 surfaces\n"));
-    msdk_printf(MSDK_STRING("   [-d3d11]                                            - output to d3d11 surfaces\n"));
-    msdk_printf(MSDK_STRING("   [-d3di]                                             - input in d3d9 surfaces\n"));
-    msdk_printf(MSDK_STRING("   [-d3d11i]                                           - input in to d3d11 surfaces\n"));
-    msdk_printf(MSDK_STRING("   [-r]  / [-render]                                   - render output in a separate window \n"));
-    msdk_printf(MSDK_STRING("   [-wall w h n m f t tmo]                             - same as -r, and positioned rendering window in a particular cell on specific monitor \n"));
+    msdk_printf(MSDK_STRING("   [-omem]                                              - output memory type (sys|video). Default is system\n"));
+    msdk_printf(MSDK_STRING("   [-accel]                                             - type of acceleration device (d3d9|d3d11). Default is d3d9\n"));
+    msdk_printf(MSDK_STRING("   [-r]  / [-render]                                    - render output in a separate window \n"));
+    msdk_printf(MSDK_STRING("   [-wall w h n m f t tmo]                              - same as -r, and positioned rendering window in a particular cell on specific monitor \n"));
     msdk_printf(MSDK_STRING("       w               - number of columns of video windows on selected monitor\n"));
     msdk_printf(MSDK_STRING("       h               - number of rows of video windows on selected monitor\n"));
     msdk_printf(MSDK_STRING("       n(0,.,w*h-1)    - order of video window in table that will be rendered\n"));
@@ -107,40 +105,72 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             msdk_opt_read(strInput[++i], pParams->CameraPluginVersion);
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hw")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-accel")))
         {
-            //pParams->bUseHWLib = true;
-            // no SW anyway
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -accel key"));
+                return MFX_ERR_UNSUPPORTED;
         }
-#if D3D_SURFACES_SUPPORT
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3do")))
+
+            if (0 == msdk_strcmp(strInput[i+1], MSDK_STRING("d3d9")))
         {
-            pParams->memTypeOut = D3D9_MEMORY;
+                pParams->accelType = D3D9;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d11")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d11o")))
+            else if (0 == msdk_strcmp(strInput[i+1], MSDK_STRING("d3d11")))
         {
-#if MFX_D3D11_SUPPORT
-            pParams->memTypeOut  = D3D11_MEMORY;
-#else
-            pParams->memTypeIn = pParams->memTypeOut  = D3D9_MEMORY;
-#endif
+                pParams->accelType = D3D11;
+            }
+            else
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Unsupported value for -accel key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            i++;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3di")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-imem")))
         {
-            pParams->memTypeIn = D3D9_MEMORY;
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -imem key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (0 == msdk_strcmp(strInput[i+1], MSDK_STRING("system")))
+            {
+                pParams->memTypeIn = SYSTEM;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d11i")))
+            else if (0 == msdk_strcmp(strInput[i+1], MSDK_STRING("video")))
         {
-#if MFX_D3D11_SUPPORT
-            pParams->memTypeIn = D3D11_MEMORY;
-#else
-            pParams->memTypeIn = D3D9_MEMORY;
-#endif
+                pParams->memTypeIn = VIDEO;
+            }
+            else
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Unsupported value for -imem key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            i++;
         }
-#endif
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sys")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-syso")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-omem")))
         {
-            pParams->memTypeOut = SYSTEM_MEMORY;
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -omem key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (0 == msdk_strcmp(strInput[i+1], MSDK_STRING("system")))
+            {
+                pParams->memTypeOut = SYSTEM;
+        }
+            else if (0 == msdk_strcmp(strInput[i+1], MSDK_STRING("video")))
+        {
+                pParams->memTypeOut = VIDEO;
+            }
+            else
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Unsupported value for -omem key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            i++;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-r")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-render")))
         {
@@ -481,7 +511,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -wall key"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            pParams->memType = D3D9_MEMORY;
             pParams->bRendering = true;
 
             msdk_opt_read(strInput[++i], pParams->nWallW);

@@ -118,6 +118,7 @@ bool OpenCLFilterVA::EnqueueAcquireSurfaces(cl_mem* surfaces, int nSurfaces)
         log.error() << "clEnqueueAcquireVA_APIMediaSurfacesINTEL failed. Error code: " << error << endl;
         return false;
     }
+    return true;
 }
 
 bool OpenCLFilterVA::EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces)
@@ -127,6 +128,7 @@ bool OpenCLFilterVA::EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces)
         log.error() << "clEnqueueReleaseVA_APIMediaSurfacesINTEL failed. Error code: " << error << endl;
         return false;
     }
+    return true;
 }
 
 #endif // #if !defined(_WIN32) && !defined(_WIN64)

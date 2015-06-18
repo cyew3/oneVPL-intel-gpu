@@ -19,6 +19,12 @@
     <Filter Include="Source Files\vm">
       <UniqueIdentifier>{06237e77-a544-4805-92e6-f1f423ddffe4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\low_latency">
+      <UniqueIdentifier>{62f8a32a-1cb1-46b6-b781-135ec4caa574}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\low_latency">
+      <UniqueIdentifier>{3c903c0c-e0bf-4377-85fe-2d94cf2d3c14}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\base_allocator.h">
@@ -90,6 +96,24 @@
     <ClInclude Include="include\vm\time_defs.h">
       <Filter>Header Files\vm</Filter>
     </ClInclude>
+    <ClInclude Include="include\abstract_splitter.h">
+      <Filter>Header Files\low_latency</Filter>
+    </ClInclude>
+    <ClInclude Include="include\avc_bitstream.h">
+      <Filter>Header Files\low_latency</Filter>
+    </ClInclude>
+    <ClInclude Include="include\avc_headers.h">
+      <Filter>Header Files\low_latency</Filter>
+    </ClInclude>
+    <ClInclude Include="include\avc_nal_spl.h">
+      <Filter>Header Files\low_latency</Filter>
+    </ClInclude>
+    <ClInclude Include="include\avc_spl.h">
+      <Filter>Header Files\low_latency</Filter>
+    </ClInclude>
+    <ClInclude Include="include\avc_structures.h">
+      <Filter>Header Files\low_latency</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\base_allocator.cpp">
@@ -139,6 +163,15 @@
     </ClCompile>
     <ClCompile Include="src\vm\time.cpp">
       <Filter>Source Files\vm</Filter>
+    </ClCompile>
+    <ClCompile Include="src\avc_bitstream.cpp">
+      <Filter>Source Files\low_latency</Filter>
+    </ClCompile>
+    <ClCompile Include="src\avc_nal_spl.cpp">
+      <Filter>Source Files\low_latency</Filter>
+    </ClCompile>
+    <ClCompile Include="src\avc_spl.cpp">
+      <Filter>Source Files\low_latency</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -40,12 +40,13 @@ mfxStatus InitAdtsMuxer(AVCodecContext *inputCodecContext, adtsMuxer *mux)
     sts            = MFX_ERR_NONE;
 
     outMux = (_adtsMuxer*) av_malloc(sizeof(_adtsMuxer));
-    memset(outMux,0,sizeof(_adtsMuxer));
 
     if(!outMux)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
+
+    memset(outMux,0,sizeof(_adtsMuxer));
 
     bufferSize = 4*1024;
     contextBuffer = (mfxU8*) av_malloc(bufferSize);

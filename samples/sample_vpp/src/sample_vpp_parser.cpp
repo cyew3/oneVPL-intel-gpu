@@ -649,6 +649,14 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
 #endif
         }
     }
+    if (NOT_INIT_VALUE == pParams->outFrameInfo.nWidth)
+    {
+        pParams->outFrameInfo.nWidth = pParams->outFrameInfo.CropW = pParams->inFrameInfo[VPP_IN].nWidth;
+    }
+    if (NOT_INIT_VALUE == pParams->outFrameInfo.nHeight)
+    {
+        pParams->outFrameInfo.nHeight = pParams->outFrameInfo.CropH = pParams->inFrameInfo[VPP_IN].nHeight;
+    }
     if (NOT_INIT_VALUE == pParams->inFrameInfo[VPP_IN].CropW)
     {
         pParams->inFrameInfo[VPP_IN].CropW = pParams->inFrameInfo[VPP_IN].nWidth;

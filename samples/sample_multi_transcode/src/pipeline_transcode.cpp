@@ -132,7 +132,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_VppDoNotUse.Header.BufferId = MFX_EXTBUFF_VPP_DONOTUSE;
     m_VppDoNotUse.Header.BufferSz = sizeof(mfxExtVPPDoNotUse);
 
-    m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_REGION;
+    m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
     m_ExtHEVCParam.Header.BufferSz = sizeof(mfxExtHEVCParam);
 
     m_EncOpaqueAlloc.Header.BufferId = m_VppOpaqueAlloc.Header.BufferId =
@@ -1858,6 +1858,7 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
         mfxFrameAllocRequest EncRequest;
 
         MSDK_ZERO_MEMORY(EncRequest);
+
         sts = m_pmfxENC.get()->QueryIOSurf(&m_mfxEncParams, &EncRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
