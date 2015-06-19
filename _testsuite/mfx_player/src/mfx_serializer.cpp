@@ -178,6 +178,7 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(MinQPB);
     SERIALIZE_INT(MaxQPB);
     SERIALIZE_INT(FixedFrameRate);
+    SERIALIZE_INT(DisableDeblockingIdc);
     SERIALIZE_INT(DisableVUI);
     SERIALIZE_INT(BufferingPeriodSEI);
     SERIALIZE_INT(UseRawRef);
