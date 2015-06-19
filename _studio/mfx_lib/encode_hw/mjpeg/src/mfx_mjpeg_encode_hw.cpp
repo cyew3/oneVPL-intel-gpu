@@ -724,7 +724,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
         MFX_CHECK_STS(checkSts);
     }
 
-    m_pCore->IncreaseReference(&surface->Data);
     task->surface = surface;
     task->bs      = bs;
     task->m_statusReportNumber = m_counter++;
@@ -875,8 +874,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineQueryFrame(
 
     sts = enc.m_ddi->UpdateBitstream(enc.m_bitstream.mids[task.m_idx], task);
     MFX_CHECK_STS(sts);
-
-    enc.m_pCore->DecreaseReference(&(task.surface->Data));
 
     return enc.m_TaskManager.RemoveTask(task);
 }
