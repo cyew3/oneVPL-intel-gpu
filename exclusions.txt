@@ -1,2 +1,6 @@
 \_build\
 \deprecated\
+\sample_camera\
+\tutorial_multisession\
+\mock_encoder_plugin\
+\sample_fei\

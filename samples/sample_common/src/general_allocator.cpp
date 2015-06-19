@@ -114,11 +114,13 @@ mfxStatus GeneralAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAll
     if ((request->Type & MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET || request->Type & MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET) && m_D3DAllocator.get())
     {
         sts = m_D3DAllocator.get()->Alloc(m_D3DAllocator.get(), request, response);
+        MSDK_CHECK_NOT_EQUAL(MFX_ERR_NONE, sts, sts);
         StoreFrameMids(true, response);
     }
     else
     {
         sts = m_SYSAllocator.get()->Alloc(m_SYSAllocator.get(), request, response);
+        MSDK_CHECK_NOT_EQUAL(MFX_ERR_NONE, sts, sts);
         StoreFrameMids(false, response);
     }
     return sts;

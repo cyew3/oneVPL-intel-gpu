@@ -25,8 +25,8 @@
 ##  Content: Intel(R) Media SDK Samples projects creation and build
 ##******************************************************************************
 
-find_path( OPENCL_INCLUDE opencl.h PATHS /usr/include/CL)
-find_library( OPENCL_LIBRARY libOpenCL.so PATHS /usr/lib )
+find_path( OPENCL_INCLUDE opencl.h PATHS /usr/include/CL /opt/intel/opencl/include/CL/)
+find_library( OPENCL_LIBRARY libOpenCL.so PATHS /usr/lib /opt/intel/opencl/)
 
 set( OCL_LIBS "" )
 

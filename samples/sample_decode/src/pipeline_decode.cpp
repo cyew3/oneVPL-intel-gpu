@@ -1148,7 +1148,6 @@ mfxStatus CDecodingPipeline::RunDecoding()
         if (pBitstream && ((MFX_ERR_MORE_DATA == sts) || (m_bIsCompleteFrame && !pBitstream->DataLength))) {
             CAutoTimer timer_fread(m_tick_fread);
             sts = m_FileReader->ReadNextFrame(pBitstream); // read more data to input bit stream
-              
 
             if (MFX_ERR_MORE_DATA == sts) {
                 if (!m_bIsVideoWall) {
