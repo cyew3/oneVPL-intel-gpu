@@ -724,7 +724,8 @@ enum {
     MFX_EXTBUFF_MOVING_RECTANGLES          = MFX_MAKEFOURCC('M','R','O','I'),
     MFX_EXTBUFF_AVC_SCALING_MATRIX         = MFX_MAKEFOURCC('A','V','S','M'),
     MFX_EXTBUFF_MPEG2_QUANT_MATRIX         = MFX_MAKEFOURCC('M','2','Q','M'),
-    MFX_EXTBUFF_CODING_OPTION_VPS          = MFX_MAKEFOURCC('C','O','V','P')
+    MFX_EXTBUFF_CODING_OPTION_VPS          = MFX_MAKEFOURCC('C','O','V','P'),
+    MFX_EXTBUFF_VPP_ROTATION               = MFX_MAKEFOURCC('R','O','T',' ')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1481,6 +1482,13 @@ typedef struct {
     mfxU8  LoadMatrix[4]; // [LumaIntra, LumaInter, ChromaIntra, ChromaInter]
     mfxU8  Matrix[4][64]; // [LumaIntra, LumaInter, ChromaIntra, ChromaInter]
 } mfxExtMPEG2QuantMatrix;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 Angle;
+    mfxU16 reserved[11];
+} mfxExtVPPRotation;
 
 #ifdef __cplusplus
 } // extern "C"
