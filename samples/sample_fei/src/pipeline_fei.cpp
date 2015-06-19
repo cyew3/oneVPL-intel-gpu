@@ -1529,21 +1529,22 @@ mfxStatus CEncodingPipeline::Run()
             feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
             feiEncCtrl[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncFrameCtrl);
             feiEncCtrl[fieldId].SearchPath = m_encpakParams.SearchPath;//1;
-            feiEncCtrl[fieldId].LenSP = m_encpakParams.LenSP;//57;
+            feiEncCtrl[fieldId].LenSP      = m_encpakParams.LenSP;//57;
             feiEncCtrl[fieldId].SubMBPartMask = m_encpakParams.SubMBPartMask;//0x77;
-            feiEncCtrl[fieldId].MultiPredL0 = 0;
-            feiEncCtrl[fieldId].MultiPredL1 = 0;
+            feiEncCtrl[fieldId].MultiPredL0 = m_encpakParams.MultiPredL0;
+            feiEncCtrl[fieldId].MultiPredL1 = m_encpakParams.MultiPredL1;
             feiEncCtrl[fieldId].SubPelMode = m_encpakParams.SubPelMode;//3;
             feiEncCtrl[fieldId].InterSAD = m_encpakParams.InterSAD;//2;
             feiEncCtrl[fieldId].IntraSAD = m_encpakParams.IntraSAD;//2;
-            feiEncCtrl[fieldId].DistortionType = 2;
-            feiEncCtrl[fieldId].RepartitionCheckEnable = 0;
+            feiEncCtrl[fieldId].DistortionType = m_encpakParams.DistortionType;
+            feiEncCtrl[fieldId].RepartitionCheckEnable = m_encpakParams.RepartitionCheckEnable;
             feiEncCtrl[fieldId].AdaptiveSearch = m_encpakParams.AdaptiveSearch;//1;
             feiEncCtrl[fieldId].MVPredictor = MVPredictors;
-            feiEncCtrl[fieldId].NumMVPredictors = 1; //always 4 predictors
+            feiEncCtrl[fieldId].NumMVPredictors = m_encpakParams.NumMVPredictors; //always 4 predictors
             feiEncCtrl[fieldId].PerMBQp = MBQP;
             feiEncCtrl[fieldId].PerMBInput = MBCtrl;
             feiEncCtrl[fieldId].MBSizeCtrl = m_encpakParams.bMBSize;
+            feiEncCtrl[fieldId].ColocatedMbDistortion = m_encpakParams.ColocatedMbDistortion;
             //Note:
             //(RefHeight x RefWidth) should not exceed 2048 for P frames and 1024 for B frames
             feiEncCtrl[fieldId].RefHeight = m_encpakParams.RefHeight;//40;

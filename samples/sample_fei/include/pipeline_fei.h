@@ -81,6 +81,7 @@ struct sInputParams
     mfxU16 IntraPartMask;
     mfxU16 IntraSAD;
     mfxU16 InterSAD;
+    mfxU16 NumMVPredictors;
 
     mfxU32 numViews; // number of views for Multi-View Codec
 
@@ -110,6 +111,11 @@ struct sInputParams
     bool Enable8x8Stat;
     bool AdaptiveSearch;
     bool FTEnable;
+    bool RepartitionCheckEnable;
+    bool MultiPredL0;
+    bool MultiPredL1;
+    bool DistortionType;
+    bool ColocatedMbDistortion;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;

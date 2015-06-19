@@ -45,7 +45,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-mbctrl file] - use the input to set MB control for FEI (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mbsize] - with this options size control fields will be used from MB control structure (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mvin file] - use this input to set MV predictor for FEI\n"));
-    msdk_printf(MSDK_STRING("   [-mvout file] - use this input to set MV predictor for FEI\n"));
+    msdk_printf(MSDK_STRING("   [-mvout file] - use this to output MV predictors\n"));
     msdk_printf(MSDK_STRING("   [-mbcode file] - file to output per MB information (structure mfxExtFeiPakMBCtrl) for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbstat file] - file to output per MB distortions for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbqp file] - file to input per MB QPs the same for each frame\n"));
@@ -64,7 +64,14 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-intra_SAD] - specifies intra distortion adjustment. 0x00 - none, 0x02 - Haar transform (default)\n"));
     msdk_printf(MSDK_STRING("   [-inter_SAD] - specifies inter distortion adjustment. 0x00 - none, 0x02 - Haar transform (default)\n"));
     msdk_printf(MSDK_STRING("   [-adaptive_search] - enables adaptive search\n"));
-    msdk_printf(MSDK_STRING("   [-forward_trasform] - enables forward transform. Additional stat is calculated and reported to mfxExtFeiPreEncMBStat. QP required\n"));
+    msdk_printf(MSDK_STRING("   [-forward_trasform] - enables forward transform. Additional stat is calculated and reported, QP required (PREENC only)\n"));
+    msdk_printf(MSDK_STRING("   [-repartition_check] - enables additional sub pixel and bidirectional refinements (ENC)\n"));
+    msdk_printf(MSDK_STRING("   [-multi_pred_l0] - MVs from neighbor MBs will be used as predictors for L0 prediction list (ENC)\n"));
+    msdk_printf(MSDK_STRING("   [-multi_pred_l1] - MVs from neighbor MBs will be used as predictors for L1 prediction list (ENC)\n"));
+    msdk_printf(MSDK_STRING("   [-adjust_distortion] - if enabled adds a cost adjustment to distortion, default is RAW distortion (ENC)\n"));
+    msdk_printf(MSDK_STRING("   [-n_mvpredictors num] - number of MV predictors, up to 4 is supported (default is 1) (ENC)\n"));
+    msdk_printf(MSDK_STRING("   [-colocated_mb_distortion] - provides the distortion between the current and the co-located MB. It has performance impact(ENC)\n"));
+    msdk_printf(MSDK_STRING("   							 do not use it, unless it is necessary\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -253,6 +260,26 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->AdaptiveSearch = true;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-repartition_check")))
+        {
+            pParams->RepartitionCheckEnable = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-multi_pred_l0")))
+        {
+            pParams->MultiPredL0 = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-multi_pred_l1")))
+        {
+            pParams->MultiPredL1 = true;
+        }
+		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-adjust_distortion")))
+		{
+		    pParams->DistortionType = true;
+		}
+		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-colocated_mb_distortion")))
+		{
+		    pParams->ColocatedMbDistortion = true;
+		}
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-search_window")))
         {
             i++;
@@ -303,6 +330,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             i++;
             pParams->InterSAD = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 16);
         }
+		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_mvpredictors")))
+		{
+		    i++;
+		    pParams->NumMVPredictors = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+		}
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -526,6 +558,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
        	return MFX_ERR_UNSUPPORTED;
     }
 
+    if (pParams->NumMVPredictors < 0 || pParams->NumMVPredictors > 4){
+        PrintHelp(strInput[0], MSDK_STRING("Unsupported value number of MV predictors!"));
+       	return MFX_ERR_UNSUPPORTED;
+    }
+
     // not all options are supported if rotate plugin is enabled
     if (pParams->nRotationAngle == 180 && (
         MFX_PICSTRUCT_PROGRESSIVE != pParams->nPicStruct ||
@@ -572,6 +609,10 @@ int main(int argc, char *argv[])
     Params.Enable8x8Stat  = false;
     Params.FTEnable       = false;
     Params.AdaptiveSearch = false;
+    Params.RepartitionCheckEnable = false;
+    Params.MultiPredL0 = false;
+    Params.MultiPredL1 = false;
+    Params.ColocatedMbDistortion = false;
     Params.mvinFile      = NULL;
     Params.mvoutFile     = NULL;
     Params.mbctrinFile   = NULL;
@@ -582,16 +623,17 @@ int main(int argc, char *argv[])
     Params.memType = D3D9_MEMORY; //only HW memory is supported
     Params.QP = 26; //default qp value
     Params.bUseHWLib = true;
-    Params.SearchWindow  = 0;
-    Params.RefWidth      = 32;//48;
-    Params.RefHeight     = 32;//40;
-    Params.LenSP		 = 57;
-    Params.SearchPath	 = 1;
-    Params.SubMBPartMask = 0x77;
-    Params.IntraPartMask = 0x00;
-    Params.SubPelMode    = 0x03;
-    Params.IntraSAD		 = 0x02;
-    Params.InterSAD		 = 0x02;
+    Params.SearchWindow    = 0;
+    Params.RefWidth        = 32;//48;
+    Params.RefHeight       = 32;//40;
+    Params.LenSP		   = 57;
+    Params.SearchPath	   = 1;
+    Params.SubMBPartMask   = 0x77;
+    Params.IntraPartMask   = 0x00;
+    Params.SubPelMode      = 0x03;
+    Params.IntraSAD		   = 0x02;
+    Params.InterSAD		   = 0x02;
+    Params.NumMVPredictors = 1;
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
