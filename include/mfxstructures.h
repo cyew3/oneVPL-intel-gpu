@@ -1483,6 +1483,14 @@ typedef struct {
     mfxU8  Matrix[4][64]; // [LumaIntra, LumaInter, ChromaIntra, ChromaInter]
 } mfxExtMPEG2QuantMatrix;
 
+/* Angle */
+enum {
+    MFX_ANGLE_0     =   0,
+    MFX_ANGLE_90    =  90,
+    MFX_ANGLE_180   = 180,
+    MFX_ANGLE_270   = 270
+};
+
 typedef struct {
     mfxExtBuffer Header;
 
