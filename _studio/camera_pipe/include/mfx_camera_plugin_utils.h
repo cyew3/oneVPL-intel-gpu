@@ -206,6 +206,7 @@ typedef struct _mfxCameraCaps
         };
         mfxU32      ModuleConfiguration;
     };
+    bool          bGamma3DLUT;
     mfxU32        FrameSurfWidth                    :16;
     mfxU32        FrameSurfHeight                   :16;
     mfxU32        BayerPatternType                  :16;
@@ -244,8 +245,8 @@ typedef struct
 
 typedef struct
 {
-    CameraGammaLut  gamma_lut; // will not be exposed externally (???)
-    mfxF64          gamma_value; // 2.2, 1.8 etc
+    mfxU16                 NumSegments;
+    mfxCamFwdGammaSegment  Segment[1024];
 } CameraPipeForwardGammaParams;
 
 

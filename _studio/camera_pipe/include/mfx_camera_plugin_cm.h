@@ -334,7 +334,9 @@ public:
                                   int bitDepth,
                                   mfxU32 task_bufId = 0);
 
-    void CreateTask_GammaAndCCM(CmSurface2D  *correcSurf,
+    void CreateTask_GammaAndCCM( CmSurface2D *correctSurfR,
+                                 CmSurface2D *correctSurfG,
+                                 CmSurface2D *correctSurfB,
                                  CmSurface2D *pointSurf,
                                  CmSurface2D *redSurf,
                                  CmSurface2D *greenSurf,
@@ -342,12 +344,16 @@ public:
                                  CameraPipe3x3ColorConversionParams *ccm,
                                  SurfaceIndex outSurfIndex,
                                  mfxU32 bitDepth,
-                                 SurfaceIndex *LUTIndex,
+                                 SurfaceIndex *LUTIndex_R,
+                                 SurfaceIndex *LUTIndex_G,
+                                 SurfaceIndex *LUTIndex_B,
                                  int BayerType,
                                  int argb8out,
                                  mfxU32 task_bufId = 0);
 
-    void CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
+    void CreateTask_GammaAndCCM( CmSurface2D *correctSurfR,
+                                 CmSurface2D *correctSurfG,
+                                 CmSurface2D *correctSurfB,
                                  CmSurface2D *pointSurf,
                                  CmSurface2D *redSurf,
                                  CmSurface2D *greenSurf,
@@ -355,7 +361,9 @@ public:
                                  CameraPipe3x3ColorConversionParams *ccm,
                                  CmSurface2D *outSurf,
                                  mfxU32 bitDepth,
-                                 SurfaceIndex *LUTIndex,
+                                 SurfaceIndex *LUTIndex_R,
+                                 SurfaceIndex *LUTIndex_G,
+                                 SurfaceIndex *LUTIndex_B,
                                  int BayerType,
                                  int argb8out,
                                  mfxU32 task_bufId = 0);
@@ -499,7 +507,9 @@ public:
     {
         m_cmSurfIn         = 0;
         m_gammaPointSurf   = 0;
-        m_gammaCorrectSurf = 0;
+        m_gammaCorrectSurfR= 0;
+        m_gammaCorrectSurfG= 0;
+        m_gammaCorrectSurfB= 0;
         m_gammaOutSurf     = 0;
         m_paddedSurf       = 0;
         m_dnrSurf          = 0;
@@ -507,7 +517,9 @@ public:
         m_correctedSurf    = 0;
         m_vignetteMaskSurf = 0;
         m_avgFlagSurf      = 0;
-        m_LUTSurf          = 0;
+        m_LUTSurf_R        = 0;
+        m_LUTSurf_G        = 0;
+        m_LUTSurf_B        = 0;
         m_vignette_4x4     = 0;
 
         m_activeThreadCount = 0;
@@ -553,9 +565,12 @@ public:
 
         if (m_avgFlagSurf)
             m_cmDevice->DestroySurface(m_avgFlagSurf);
-        if (m_gammaCorrectSurf)
-            m_cmDevice->DestroySurface(m_gammaCorrectSurf);
-
+        if (m_gammaCorrectSurfR)
+            m_cmDevice->DestroySurface(m_gammaCorrectSurfR);
+        if (m_gammaCorrectSurfG)
+            m_cmDevice->DestroySurface(m_gammaCorrectSurfG);
+        if (m_gammaCorrectSurfB)
+            m_cmDevice->DestroySurface(m_gammaCorrectSurfB);
         if (m_gammaPointSurf)
             m_cmDevice->DestroySurface(m_gammaPointSurf);
 
@@ -603,13 +618,17 @@ private:
     CmSurface2D         *m_dnrSurf;
     CmSurface2D         *m_correctedSurf;
     CmSurface2D         *m_denoiseSurf;
-    CmSurface2D         *m_gammaCorrectSurf;
+    CmSurface2D         *m_gammaCorrectSurfR;
+    CmSurface2D         *m_gammaCorrectSurfG;
+    CmSurface2D         *m_gammaCorrectSurfB;
     CmSurface2D         *m_gammaPointSurf;
     CmSurface2D         *m_gammaOutSurf;
     CmSurface2D         *m_avgFlagSurf;
     CmSurface2D         *m_vignetteMaskSurf;
     CmSurface2D         *m_vignette_4x4;
-    CmBuffer            *m_LUTSurf;
+    CmBuffer            *m_LUTSurf_R;
+    CmBuffer            *m_LUTSurf_G;
+    CmBuffer            *m_LUTSurf_B;
 
     MfxFrameAllocResponse   m_raw16padded;
     MfxFrameAllocResponse   m_raw16aligned;

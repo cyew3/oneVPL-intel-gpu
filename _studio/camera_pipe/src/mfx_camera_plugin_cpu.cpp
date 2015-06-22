@@ -1088,8 +1088,7 @@ int CPUCameraProcessor::CPU_CCM(unsigned short* R_i, unsigned short* G_i, unsign
 int CPUCameraProcessor::CPU_Gamma_SKL(unsigned short* R_i, unsigned short* G_i, unsigned short* B_i,
                   //unsigned short* R_o, unsigned short* G_o, unsigned short* B_o,
                   int framewidth, int frameheight, int bitDepth,
-                  unsigned short* Correct,         // Pointer to 64 Words
-                  unsigned short* Point)           // Pointer to 64 Words
+                  mfxCamFwdGammaSegment* gamma_segment)
 {
     int SrcPrecision = bitDepth;
     int outputprec = bitDepth;
@@ -1152,34 +1151,34 @@ int CPUCameraProcessor::CPU_Gamma_SKL(unsigned short* R_i, unsigned short* G_i, 
                 //    Interpolation = ( (((OrgValue-(init_gamma_point[Index]<<PWLShift))*init_gamma_slope[Index])>>PWLF_prec) + (init_gamma_bias[Index]<<PWLShift));
                 if( i < (NUM_CONTROL_POINTS_SKL - 1) )
                 {
-                    if((Point[i] <= in_R) && (in_R < Point[i+1]))
+                    if((gamma_segment[i].Pixel <= in_R) && (in_R < gamma_segment[i+1].Pixel))
                     {
-                        divide = ((Point[i+1] - Point[i]) == 0)? 1 : (Point[i+1] - Point[i]);
-                        Interpolation_R = Correct[i] + (Correct[i+1] - Correct[i]) * (in_R - Point[i]) / divide;
+                        divide = ((gamma_segment[i+1].Pixel - gamma_segment[i].Pixel) == 0)? 1 : (gamma_segment[i+1].Pixel - gamma_segment[i].Pixel);
+                        Interpolation_R = gamma_segment[i].Red + (gamma_segment[i+1].Red - gamma_segment[i].Red) * (in_R - gamma_segment[i].Pixel) / divide;
                         r_ind = i;
                     }
-                    if((Point[i] <= in_G) && (in_G < Point[i+1]))
+                    if((gamma_segment[i].Pixel <= in_G) && (in_G < gamma_segment[i+1].Pixel))
                     {
-                        divide = ((Point[i+1] - Point[i]) == 0)? 1 : (Point[i+1] - Point[i]);
-                        Interpolation_G = Correct[i] + (Correct[i+1] - Correct[i]) * (in_G - Point[i]) / divide;
+                        divide = ((gamma_segment[i+1].Pixel - gamma_segment[i].Pixel) == 0)? 1 : (gamma_segment[i+1].Pixel - gamma_segment[i].Pixel);
+                        Interpolation_G = gamma_segment[i].Green + (gamma_segment[i+1].Green - gamma_segment[i].Green) * (in_G - gamma_segment[i].Pixel) / divide;
                         g_ind = i;
                     }
-                    if((Point[i] <= in_B) && (in_B < Point[i+1]))
+                    if((gamma_segment[i].Pixel <= in_B) && (in_B < gamma_segment[i+1].Pixel))
                     {
-                        divide = ((Point[i+1] - Point[i]) == 0)? 1 : (Point[i+1] - Point[i]);
-                        Interpolation_B = Correct[i] + (Correct[i+1] - Correct[i]) * (in_B - Point[i]) / divide;
+                        divide = ((gamma_segment[i+1].Pixel - gamma_segment[i].Pixel) == 0)? 1 : (gamma_segment[i+1].Pixel - gamma_segment[i].Pixel);
+                        Interpolation_B = gamma_segment[i].Blue + (gamma_segment[i+1].Blue - gamma_segment[i].Blue) * (in_B - gamma_segment[i].Pixel) / divide;
                         b_ind = i;
                     }
                 }
                 else // i == (NUM_CONTROL_POINTS - 1)
                 {
-                    divide = ((max_output_level - Point[i]) == 0)? 1 : (max_output_level - Point[i]);
-                    if(Point[NUM_CONTROL_POINTS_SKL - 1] <= in_R)
-                        Interpolation_R = Correct[i] + (max_output_level - Correct[i]) * (in_R - Point[i]) / divide;
-                    if(Point[NUM_CONTROL_POINTS_SKL - 1] <= in_G)
-                        Interpolation_G = Correct[i] + (max_output_level - Correct[i]) * (in_G - Point[i]) / divide;
-                    if(Point[NUM_CONTROL_POINTS_SKL - 1] <= in_B)
-                        Interpolation_B = Correct[i] + (max_output_level - Correct[i]) * (in_B - Point[i]) / divide;
+                    divide = ((max_output_level - gamma_segment[i].Pixel) == 0)? 1 : (max_output_level - gamma_segment[i].Pixel);
+                    if(gamma_segment[NUM_CONTROL_POINTS_SKL - 1].Pixel <= in_R)
+                        Interpolation_R = gamma_segment[i].Red + (max_output_level - gamma_segment[i].Red) * (in_R - gamma_segment[i].Pixel) / divide;
+                    if(gamma_segment[NUM_CONTROL_POINTS_SKL - 1].Pixel <= in_G)
+                        Interpolation_G = gamma_segment[i].Green + (max_output_level - gamma_segment[i].Green) * (in_G - gamma_segment[i].Pixel) / divide;
+                    if(gamma_segment[NUM_CONTROL_POINTS_SKL - 1].Pixel <= in_B)
+                        Interpolation_B = gamma_segment[i].Blue + (max_output_level - gamma_segment[i].Blue) * (in_B - gamma_segment[i].Pixel) / divide;
                 }
             }
 

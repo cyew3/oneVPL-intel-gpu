@@ -169,7 +169,7 @@ public:
         {
             m_cmi.cpu_status = CPU_Gamma_SKL( (unsigned short*)m_cmi.cpu_R_fgc_in, (unsigned short*)m_cmi.cpu_G_fgc_in, (unsigned short*)m_cmi.cpu_B_fgc_in,
                                              m_Params.TileInfo.CropW, m_Params.TileInfo.CropH, m_Params.BitDepth,
-                                             pParam->GammaParams.gamma_lut.gammaCorrect, pParam->GammaParams.gamma_lut.gammaPoints);
+                                             pParam->GammaParams.Segment);
 
         }
         if (m_Params.TileInfo.FourCC == MFX_FOURCC_ARGB16)
@@ -218,8 +218,7 @@ protected:
 
     int CPU_Gamma_SKL(unsigned short* R_i, unsigned short* G_i, unsigned short* B_i,
                       int framewidth, int frameheight, int bitDepth,
-                      unsigned short* Correct,         // Pointer to 64 Words
-                      unsigned short* Point);          // Pointer to 64 Words
+                      mfxCamFwdGammaSegment* gamma_segment);          // Pointer to 64 Words
 
     int CPU_ARGB8Interleave(unsigned char* ARGB8, int OutWidth, int OutHeight, int OutPitch, int BitDepth, int BayerType,
                             short* R, short* G, short* B);

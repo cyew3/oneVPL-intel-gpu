@@ -739,9 +739,32 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                         m_Caps.BayerPatternType = MFX_CAM_BAYER_BGGR;
                 }
             }
+            else if (MFX_EXTBUF_CAM_FORWARD_GAMMA_CORRECTION == par->ExtParam[i]->BufferId)
+            {
+                m_Caps.bForwardGammaCorrection = 1;
+                m_Caps.bGamma3DLUT             = true;
+                mfxExtCamFwdGamma* gammaExtBufParams = (mfxExtCamFwdGamma*)par->ExtParam[i];
+
+                if (gammaExtBufParams && gammaExtBufParams->Segment)
+                {
+                    if (gammaExtBufParams->NumSegments == MFX_CAM_GAMMA_NUM_POINTS_SKL) // only 64-point gamma is currently supported
+                    {
+                        gammaset = true;
+                        m_GammaParams.NumSegments = MFX_CAM_GAMMA_NUM_POINTS_SKL;
+                        for (int i = 0; i < MFX_CAM_GAMMA_NUM_POINTS_SKL; i++)
+                        {
+                            m_GammaParams.Segment[i].Pixel = gammaExtBufParams->Segment[i].Pixel;
+                            m_GammaParams.Segment[i].Green = gammaExtBufParams->Segment[i].Green;
+                            m_GammaParams.Segment[i].Red   = gammaExtBufParams->Segment[i].Red;
+                            m_GammaParams.Segment[i].Blue  = gammaExtBufParams->Segment[i].Blue;
+                        }
+                    }
+                }
+            }
             else if (MFX_EXTBUF_CAM_GAMMA_CORRECTION == par->ExtParam[i]->BufferId)
             {
                 m_Caps.bForwardGammaCorrection = 1;
+                m_Caps.bGamma3DLUT             = false;
                 mfxExtCamGammaCorrection* gammaExtBufParams = (mfxExtCamGammaCorrection*)par->ExtParam[i];
 
                 if (gammaExtBufParams && (gammaExtBufParams->Mode == MFX_CAM_GAMMA_LUT || gammaExtBufParams->Mode == MFX_CAM_GAMMA_VALUE))
@@ -753,17 +776,15 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                             gammaExtBufParams->NumPoints == MFX_CAM_GAMMA_NUM_POINTS_SKL) // only 64-point gamma is currently supported
                         {
                             gammaset = true;
-                            m_GammaParams.gamma_lut.gammaPoints = gammaExtBufParams->GammaPoint;
-                            m_GammaParams.gamma_lut.gammaCorrect = gammaExtBufParams->GammaCorrected;
-                            m_GammaParams.gamma_lut.numPoints = gammaExtBufParams->NumPoints;
+                            m_GammaParams.NumSegments = MFX_CAM_GAMMA_NUM_POINTS_SKL;
+                            for (int i = 0; i < MFX_CAM_GAMMA_NUM_POINTS_SKL; i++)
+                            {
+                                m_GammaParams.Segment[i].Pixel = gammaExtBufParams->GammaPoint[i];
+                                m_GammaParams.Segment[i].Green = gammaExtBufParams->GammaCorrected[i];
+                                m_GammaParams.Segment[i].Red   = gammaExtBufParams->GammaCorrected[i];
+                                m_GammaParams.Segment[i].Blue  = gammaExtBufParams->GammaCorrected[i];
+                            }
                         }
-                    }
-                    else
-                    {
-                        m_GammaParams.gamma_value = gammaExtBufParams->GammaValue;
-                        m_GammaParams.gamma_lut.gammaPoints = m_GammaParams.gamma_lut.gammaCorrect = 0;
-                        if (m_GammaParams.gamma_value > 0)
-                            gammaset = true;
                     }
                 }
             }

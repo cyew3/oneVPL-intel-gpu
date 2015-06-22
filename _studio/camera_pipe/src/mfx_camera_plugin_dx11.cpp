@@ -168,10 +168,10 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
         m_executeParams[surfInIndex].bCameraGammaCorrection = true;
         for(int i = 0; i < 64; i++)
         {
-            m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].PixelValue = pParam->GammaParams.gamma_lut.gammaPoints[i]                  << shift;
-            m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].BlueChannelCorrectedValue  = pParam->GammaParams.gamma_lut.gammaCorrect[i] << shift;
-            m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].GreenChannelCorrectedValue = pParam->GammaParams.gamma_lut.gammaCorrect[i] << shift;
-            m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].RedChannelCorrectedValue   = pParam->GammaParams.gamma_lut.gammaCorrect[i] << shift;
+            m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].PixelValue = pParam->GammaParams.Segment[i].Pixel                 << shift;
+            m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].BlueChannelCorrectedValue  = pParam->GammaParams.Segment[i].Blue  << shift;
+            m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].GreenChannelCorrectedValue = pParam->GammaParams.Segment[i].Green << shift;
+            m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].RedChannelCorrectedValue   = pParam->GammaParams.Segment[i].Red   << shift;
         }
     }
 

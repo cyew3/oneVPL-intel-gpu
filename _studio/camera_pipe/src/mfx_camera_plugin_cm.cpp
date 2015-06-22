@@ -603,16 +603,14 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
                                 (int)pParam->Caps.BayerPatternType);
 
         m_cmCtx->CreateTask_DecideAverage(redAvgSurf,
-                                            greenAvgSurf,
-                                            blueAvgSurf,
-                                            avgFlagSurf,
-                                            redOutSurf,
-                                            greenOutSurf,
-                                            blueOutSurf,
-                                            (int)pParam->Caps.BayerPatternType,
-                                            pParam->InputBitDepth);
-
-
+                                          greenAvgSurf,
+                                          blueAvgSurf,
+                                          avgFlagSurf,
+                                          redOutSurf,
+                                          greenOutSurf,
+                                          blueOutSurf,
+                                          (int)pParam->Caps.BayerPatternType,
+                                          pParam->InputBitDepth);
 
         if (pParam->Caps.OutputMemoryOperationMode == MEM_GPUSHARED && !pParam->outSurf2DUP)
         {
@@ -633,11 +631,17 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
 
         if (pParam->Caps.bForwardGammaCorrection)
         {
-            SurfaceIndex *LUTIndex = NULL;
-            m_LUTSurf->GetIndex(LUTIndex);
+            SurfaceIndex *LUTIndex_R = NULL;
+            m_LUTSurf_R->GetIndex(LUTIndex_R);
+            SurfaceIndex *LUTIndex_G = NULL;
+            m_LUTSurf_G->GetIndex(LUTIndex_G);
+            SurfaceIndex *LUTIndex_B = NULL;
+            m_LUTSurf_B->GetIndex(LUTIndex_B);
 
             if (pOutputSurfaceIndex)
-                m_cmCtx->CreateTask_GammaAndCCM(m_gammaCorrectSurf,
+                m_cmCtx->CreateTask_GammaAndCCM(m_gammaCorrectSurfR,
+                                                m_gammaCorrectSurfG,
+                                                m_gammaCorrectSurfB,
                                                 m_gammaPointSurf,
                                                 redOutSurf,
                                                 greenOutSurf,
@@ -645,11 +649,13 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
                                                 (pParam->Caps.bColorConversionMatrix ? &pParam->CCMParams : NULL),
                                                 *pOutputSurfaceIndex,
                                                 pParam->InputBitDepth,
-                                                LUTIndex,
+                                                LUTIndex_R, LUTIndex_B, LUTIndex_G,
                                                 (int)pParam->Caps.BayerPatternType,
                                                 pParam->Caps.bOutToARGB16 ? 0 : 1);
             else
-                m_cmCtx->CreateTask_GammaAndCCM(m_gammaCorrectSurf,
+                m_cmCtx->CreateTask_GammaAndCCM(m_gammaCorrectSurfR,
+                                                m_gammaCorrectSurfG,
+                                                m_gammaCorrectSurfB,
                                                 m_gammaPointSurf,
                                                 redOutSurf,
                                                 greenOutSurf,
@@ -657,7 +663,7 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
                                                 (pParam->Caps.bColorConversionMatrix ? &pParam->CCMParams : NULL),
                                                 m_gammaOutSurf,
                                                 pParam->InputBitDepth,
-                                                LUTIndex,
+                                                LUTIndex_R, LUTIndex_B, LUTIndex_G,
                                                 (int)pParam->Caps.BayerPatternType,
                                                 pParam->Caps.bOutToARGB16 ? 0 : 1);
 
@@ -821,18 +827,38 @@ mfxStatus CMCameraProcessor::Reset(mfxVideoParam *par, CameraParams *pipeParams)
     // will need to check numPoints as well when different LUT sizes are supported
     if (pipeParams->Caps.bForwardGammaCorrection || pipeParams->Caps.bColorConversionMatrix)
     {
-        if (!m_gammaCorrectSurf)
-            m_gammaCorrectSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
+        if (!m_gammaCorrectSurfR)
+            m_gammaCorrectSurfR = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
+        if (!m_gammaCorrectSurfG)
+            m_gammaCorrectSurfG = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
+        if (!m_gammaCorrectSurfB)
+            m_gammaCorrectSurfB = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
+        
         if (!m_gammaPointSurf)
             m_gammaPointSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
 
-        MFX_CHECK_NULL_PTR2(m_gammaCorrectSurf, m_gammaPointSurf)
+        MFX_CHECK_NULL_PTR1(m_gammaCorrectSurfR);
+        MFX_CHECK_NULL_PTR1(m_gammaCorrectSurfG);
+        MFX_CHECK_NULL_PTR1(m_gammaCorrectSurfB);
+        MFX_CHECK_NULL_PTR1(m_gammaPointSurf)
 
-        mfxU8 *pGammaPts = (mfxU8 *)pipeParams->GammaParams.gamma_lut.gammaPoints;
-        mfxU8 *pGammaCor = (mfxU8 *)pipeParams->GammaParams.gamma_lut.gammaCorrect;
+        mfxU16 GammaPts[MFX_CAM_GAMMA_NUM_POINTS_SKL];
+        for(int i = 0; i < MFX_CAM_GAMMA_NUM_POINTS_SKL; i++)
+            GammaPts[i] = pipeParams->GammaParams.Segment[i].Pixel;
+        m_gammaPointSurf->WriteSurface((unsigned char *)GammaPts, NULL);
 
-        m_gammaCorrectSurf->WriteSurface(pGammaCor, NULL);
-        m_gammaPointSurf->WriteSurface((unsigned char *)pGammaPts, NULL);
+        mfxU16 GammaCor[MFX_CAM_GAMMA_NUM_POINTS_SKL];
+        for(int i = 0; i < MFX_CAM_GAMMA_NUM_POINTS_SKL; i++)
+            GammaCor[i] = pipeParams->GammaParams.Segment[i].Red;
+        m_gammaCorrectSurfR->WriteSurface((unsigned char *)GammaCor, NULL);
+
+        for(int i = 0; i < MFX_CAM_GAMMA_NUM_POINTS_SKL; i++)
+            GammaCor[i] = pipeParams->GammaParams.Segment[i].Green;
+        m_gammaCorrectSurfG->WriteSurface((unsigned char *)GammaCor, NULL);
+
+        for(int i = 0; i < MFX_CAM_GAMMA_NUM_POINTS_SKL; i++)
+            GammaCor[i] = pipeParams->GammaParams.Segment[i].Blue;
+        m_gammaCorrectSurfB->WriteSurface((unsigned char *)GammaCor, NULL);
 
     }
 
@@ -971,11 +997,12 @@ mfxStatus CMCameraProcessor::AllocateInternalSurfaces()
 
     if (m_Params.Caps.bColorConversionMatrix || m_Params.Caps.bForwardGammaCorrection )
     {
-        // in case of 16bit output kernel need LUT srface, even it's not used.
-        // Why such size? Copy-paste from VPG example.
-        // TODO: need to check how to calculate size properly
-        m_LUTSurf = CreateBuffer(m_cmDevice, 65536 * 4);
-        MFX_CHECK_NULL_PTR1(m_LUTSurf);
+        m_LUTSurf_R = CreateBuffer(m_cmDevice, 65536 * 4);
+        m_LUTSurf_G = CreateBuffer(m_cmDevice, 65536 * 4);
+        m_LUTSurf_B = CreateBuffer(m_cmDevice, 65536 * 4);
+        MFX_CHECK_NULL_PTR1(m_LUTSurf_R);
+        MFX_CHECK_NULL_PTR1(m_LUTSurf_G);
+        MFX_CHECK_NULL_PTR1(m_LUTSurf_B);
     }
 
     if (m_Params.Caps.bVignetteCorrection || m_Params.Caps.bBlackLevelCorrection || m_Params.Caps.bWhiteBalance )
@@ -1003,25 +1030,39 @@ mfxStatus CMCameraProcessor::AllocateInternalSurfaces()
 
     if (m_Params.Caps.bForwardGammaCorrection || m_Params.Caps.bColorConversionMatrix)
     {
-        m_gammaCorrectSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
-        m_gammaPointSurf   = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
-        MFX_CHECK_NULL_PTR2(m_gammaCorrectSurf, m_gammaPointSurf)
+        m_gammaCorrectSurfR = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
+        m_gammaCorrectSurfG = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
+        m_gammaCorrectSurfB = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
+        m_gammaPointSurf    = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
+        MFX_CHECK_NULL_PTR1(m_gammaCorrectSurfR);
+        MFX_CHECK_NULL_PTR1(m_gammaCorrectSurfG);
+        MFX_CHECK_NULL_PTR1(m_gammaCorrectSurfB);
+        MFX_CHECK_NULL_PTR1(m_gammaPointSurf)
     }
 
     if (m_Params.Caps.bForwardGammaCorrection)
     {
-        MFX_CHECK_NULL_PTR2(m_gammaCorrectSurf, m_gammaPointSurf)
+        MFX_CHECK_NULL_PTR1(m_gammaCorrectSurfR);
+        MFX_CHECK_NULL_PTR1(m_gammaCorrectSurfG);
+        MFX_CHECK_NULL_PTR1(m_gammaCorrectSurfB);
+        MFX_CHECK_NULL_PTR1(m_gammaPointSurf)
+        mfxU16 GammaPts[MFX_CAM_GAMMA_NUM_POINTS_SKL];
+        for(int i = 0; i < MFX_CAM_GAMMA_NUM_POINTS_SKL; i++)
+            GammaPts[i] = m_Params.GammaParams.Segment[i].Pixel;
+        m_gammaPointSurf->WriteSurface((unsigned char *)GammaPts, NULL);
 
-        mfxU8 *pGammaPts = (mfxU8 *)m_Params.GammaParams.gamma_lut.gammaPoints;
-        mfxU8 *pGammaCor = (mfxU8 *)m_Params.GammaParams.gamma_lut.gammaCorrect;
+        mfxU16 GammaCor[MFX_CAM_GAMMA_NUM_POINTS_SKL];
+        for(int i = 0; i < MFX_CAM_GAMMA_NUM_POINTS_SKL; i++)
+            GammaCor[i] = m_Params.GammaParams.Segment[i].Red;
+        m_gammaCorrectSurfR->WriteSurface((unsigned char *)GammaCor, NULL);
 
-        if (!pGammaPts || !pGammaCor)
-        {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
+        for(int i = 0; i < MFX_CAM_GAMMA_NUM_POINTS_SKL; i++)
+            GammaCor[i] = m_Params.GammaParams.Segment[i].Green;
+        m_gammaCorrectSurfG->WriteSurface((unsigned char *)GammaCor, NULL);
 
-        m_gammaCorrectSurf->WriteSurface(pGammaCor, NULL);
-        m_gammaPointSurf->WriteSurface(pGammaPts, NULL);
+        for(int i = 0; i < MFX_CAM_GAMMA_NUM_POINTS_SKL; i++)
+            GammaCor[i] = m_Params.GammaParams.Segment[i].Blue;
+        m_gammaCorrectSurfB->WriteSurface((unsigned char *)GammaCor, NULL);
     }
 
     if (m_Params.Caps.InputMemoryOperationMode == MEM_GPUSHARED) // need to allocate inputSurf in case the output memory is not 4k aligned
@@ -1109,9 +1150,15 @@ mfxStatus CMCameraProcessor::ReallocateInternalSurfaces(mfxVideoParam &newParam,
 
     if (m_Params.Caps.bForwardGammaCorrection || m_Params.Caps.bColorConversionMatrix)
     {
-        if ( ! m_LUTSurf )
-            m_LUTSurf = CreateBuffer(m_cmDevice, 65536 * 4);
-        MFX_CHECK_NULL_PTR1(m_LUTSurf);
+        if ( ! m_LUTSurf_R )
+            m_LUTSurf_R = CreateBuffer(m_cmDevice, 65536 * 4);
+        MFX_CHECK_NULL_PTR1(m_LUTSurf_R);
+        if ( ! m_LUTSurf_G )
+            m_LUTSurf_G = CreateBuffer(m_cmDevice, 65536 * 4);
+        MFX_CHECK_NULL_PTR1(m_LUTSurf_G);
+        if ( ! m_LUTSurf_B )
+            m_LUTSurf_B = CreateBuffer(m_cmDevice, 65536 * 4);
+        MFX_CHECK_NULL_PTR1(m_LUTSurf_B);
     }
 
     if (vSliceWidth > m_Params.vSliceWidth || paddedFrameHeight > m_Params.TileHeightPadded)
@@ -1511,15 +1558,33 @@ void CmContext::CreateCameraKernels()
     {
         if ( m_caps.bColorConversionMatrix )
         {
-            kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
-            // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
-            kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
+            if ( m_caps.bGamma3DLUT )
+            {
+                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA_3D), NULL);
+                // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
+                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA_3D), NULL);
+            }
+            else
+            {
+                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
+                // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
+                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
+            }
         }
         else
         {
-            kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_ARGB_OUT), NULL);
-            // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
-            kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_ARGB_OUT), NULL);
+            if ( m_caps.bGamma3DLUT )
+            {
+                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_3D_ONLY_ARGB_OUT), NULL);
+                // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
+                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_3D_ONLY_ARGB_OUT), NULL);
+            }
+            else
+            {
+                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_ARGB_OUT), NULL);
+                // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
+                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_ARGB_OUT), NULL);
+            }
         }
 
         // Gamma related kernels may create output.
@@ -2359,7 +2424,9 @@ void CmContext::CreateTask_DecideAverage(CmSurface2D *redAvgSurf,
 
 #define NEW_GAMMA_THREADS
 
-void CmContext::CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
+void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurfR,
+                                       CmSurface2D *correctSurfG,
+                                       CmSurface2D *correctSurfB,
                                        CmSurface2D  *pointSurf,
                                        CmSurface2D  *redSurf,
                                        CmSurface2D  *greenSurf,
@@ -2367,7 +2434,9 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
                                        CameraPipe3x3ColorConversionParams  *ccm,
                                        CmSurface2D  *outSurf,
                                        mfxU32       bitDepth,
-                                       SurfaceIndex *LUTIndex,
+                                       SurfaceIndex *LUTIndex_R,
+                                       SurfaceIndex *LUTIndex_G,
+                                       SurfaceIndex *LUTIndex_B,
                                        int BayerType,
                                        int argb8out,
                                        mfxU32)
@@ -2378,45 +2447,51 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
 
     kernel_FwGamma1->SetThreadCount(m_NumEuPerSubSlice * (m_MaxNumOfThreadsPerGroup / m_NumEuPerSubSlice) * 4);
 
-    kernel_FwGamma1->SetKernelArg(0, sizeof(SurfaceIndex), &GetIndex(correctSurf));
-    kernel_FwGamma1->SetKernelArg(1, sizeof(SurfaceIndex), &GetIndex(pointSurf)  );
+    kernel_FwGamma1->SetKernelArg(0, sizeof(SurfaceIndex), &GetIndex(correctSurfR));
+    kernel_FwGamma1->SetKernelArg(1, sizeof(SurfaceIndex), &GetIndex(correctSurfG));
+    kernel_FwGamma1->SetKernelArg(2, sizeof(SurfaceIndex), &GetIndex(correctSurfB));
+    kernel_FwGamma1->SetKernelArg(3, sizeof(SurfaceIndex), &GetIndex(pointSurf)  );
     mfxU32 height = (mfxU32)m_video.TileHeight;
 
     if( BayerType == BAYER_BGGR || BayerType == BAYER_GRBG )
     {
-        kernel_FwGamma1->SetKernelArg(2, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
-        kernel_FwGamma1->SetKernelArg(3, sizeof(SurfaceIndex), &GetIndex(greenSurf));
-        kernel_FwGamma1->SetKernelArg(4, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
+        kernel_FwGamma1->SetKernelArg(4, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
+        kernel_FwGamma1->SetKernelArg(5, sizeof(SurfaceIndex), &GetIndex(greenSurf));
+        kernel_FwGamma1->SetKernelArg(6, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
     }
     else
     {
-        kernel_FwGamma1->SetKernelArg(2, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
-        kernel_FwGamma1->SetKernelArg(3, sizeof(SurfaceIndex), &GetIndex(greenSurf));
-        kernel_FwGamma1->SetKernelArg(4, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
+        kernel_FwGamma1->SetKernelArg(4, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
+        kernel_FwGamma1->SetKernelArg(5, sizeof(SurfaceIndex), &GetIndex(greenSurf));
+        kernel_FwGamma1->SetKernelArg(6, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
     }
 
-    kernel_FwGamma1->SetKernelArg(6, sizeof(int), &threadsheight      );
-    kernel_FwGamma1->SetKernelArg(7, sizeof(int), &bitDepth           );
-    kernel_FwGamma1->SetKernelArg(8, sizeof(int), &framewidth_in_bytes);
-    kernel_FwGamma1->SetKernelArg(9, sizeof(int), &height             );
+    kernel_FwGamma1->SetKernelArg(8, sizeof(int), &threadsheight      );
+    kernel_FwGamma1->SetKernelArg(9, sizeof(int), &bitDepth           );
+    kernel_FwGamma1->SetKernelArg(10, sizeof(int), &framewidth_in_bytes);
+    kernel_FwGamma1->SetKernelArg(11, sizeof(int), &height             );
 
     if ( ccm )
     {
         for(int k = 0; k < 3; k++)
             for(int z = 0; z < 3; z++)
                 m_ccm(k*3 + z) = (float)ccm->CCM[k][z];
-        kernel_FwGamma1->SetKernelArg( 5, m_ccm.get_size_data(), m_ccm.get_addr_data());
-        kernel_FwGamma1->SetKernelArg(10, sizeof(SurfaceIndex), LUTIndex);
-        kernel_FwGamma1->SetKernelArg(11, sizeof(int),          &argb8out);
-        kernel_FwGamma1->SetKernelArg(12, sizeof(SurfaceIndex), &GetIndex(outSurf));
-        kernel_FwGamma1->SetKernelArg(13, sizeof(int),         &BayerType);
+        kernel_FwGamma1->SetKernelArg( 7, m_ccm.get_size_data(), m_ccm.get_addr_data());
+        kernel_FwGamma1->SetKernelArg(12, sizeof(SurfaceIndex), LUTIndex_R);
+        kernel_FwGamma1->SetKernelArg(13, sizeof(SurfaceIndex), LUTIndex_G);
+        kernel_FwGamma1->SetKernelArg(14, sizeof(SurfaceIndex), LUTIndex_B);
+        kernel_FwGamma1->SetKernelArg(15, sizeof(int),          &argb8out);
+        kernel_FwGamma1->SetKernelArg(16, sizeof(SurfaceIndex), &GetIndex(outSurf));
+        kernel_FwGamma1->SetKernelArg(17, sizeof(int),         &BayerType);
     }
     else
     {
-        kernel_FwGamma1->SetKernelArg( 5, sizeof(SurfaceIndex), &GetIndex(outSurf));
-        kernel_FwGamma1->SetKernelArg(10, sizeof(int),          &BayerType);
-        kernel_FwGamma1->SetKernelArg(11, sizeof(int),          &argb8out);
-        kernel_FwGamma1->SetKernelArg(12, sizeof(SurfaceIndex), LUTIndex );
+        kernel_FwGamma1->SetKernelArg( 7, sizeof(SurfaceIndex), &GetIndex(outSurf));
+        kernel_FwGamma1->SetKernelArg(12, sizeof(int),          &BayerType);
+        kernel_FwGamma1->SetKernelArg(13, sizeof(int),          &argb8out);
+        kernel_FwGamma1->SetKernelArg(14, sizeof(SurfaceIndex), LUTIndex_R);
+        kernel_FwGamma1->SetKernelArg(15, sizeof(SurfaceIndex), LUTIndex_G);
+        kernel_FwGamma1->SetKernelArg(16, sizeof(SurfaceIndex), LUTIndex_B);
     }
 
     task_FwGamma->Reset();
@@ -2426,7 +2501,9 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D  *correctSurf,
 }
 
 
-void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurf,
+void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurfR,
+                                       CmSurface2D *correctSurfG,
+                                       CmSurface2D *correctSurfB,
                                        CmSurface2D *pointSurf,
                                        CmSurface2D *redSurf,
                                        CmSurface2D *greenSurf,
@@ -2434,7 +2511,9 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurf,
                                        CameraPipe3x3ColorConversionParams *ccm,
                                        SurfaceIndex outSurfIndex,
                                        mfxU32 bitDepth,
-                                       SurfaceIndex *LUTIndex,
+                                       SurfaceIndex *LUTIndex_R,
+                                       SurfaceIndex *LUTIndex_G,
+                                       SurfaceIndex *LUTIndex_B,
                                        int BayerType,
                                        int argb8out,
                                        mfxU32)
@@ -2446,44 +2525,50 @@ void CmContext::CreateTask_GammaAndCCM(CmSurface2D *correctSurf,
     kernel_FwGamma->SetThreadCount(m_NumEuPerSubSlice * (m_MaxNumOfThreadsPerGroup / m_NumEuPerSubSlice) * 4);
 
     mfxU32 height = (mfxU32)m_video.TileHeight;
-    kernel_FwGamma->SetKernelArg(0, sizeof(SurfaceIndex), &GetIndex(correctSurf));
-    kernel_FwGamma->SetKernelArg(1, sizeof(SurfaceIndex), &GetIndex(pointSurf)  );
+    kernel_FwGamma->SetKernelArg(0, sizeof(SurfaceIndex), &GetIndex(correctSurfR));
+    kernel_FwGamma->SetKernelArg(1, sizeof(SurfaceIndex), &GetIndex(correctSurfG));
+    kernel_FwGamma->SetKernelArg(2, sizeof(SurfaceIndex), &GetIndex(correctSurfB));
+    kernel_FwGamma->SetKernelArg(3, sizeof(SurfaceIndex), &GetIndex(pointSurf)  );
 
     if( BayerType == BAYER_BGGR || BayerType == BAYER_GRBG )
     {
-        kernel_FwGamma->SetKernelArg(2, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
-        kernel_FwGamma->SetKernelArg(3, sizeof(SurfaceIndex), &GetIndex(greenSurf));
-        kernel_FwGamma->SetKernelArg(4, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
+        kernel_FwGamma->SetKernelArg(4, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
+        kernel_FwGamma->SetKernelArg(5, sizeof(SurfaceIndex), &GetIndex(greenSurf));
+        kernel_FwGamma->SetKernelArg(6, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
     }
     else
     {
-        kernel_FwGamma->SetKernelArg(2, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
-        kernel_FwGamma->SetKernelArg(3, sizeof(SurfaceIndex), &GetIndex(greenSurf));
-        kernel_FwGamma->SetKernelArg(4, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
+        kernel_FwGamma->SetKernelArg(4, sizeof(SurfaceIndex), &GetIndex(blueSurf) );
+        kernel_FwGamma->SetKernelArg(5, sizeof(SurfaceIndex), &GetIndex(greenSurf));
+        kernel_FwGamma->SetKernelArg(6, sizeof(SurfaceIndex), &GetIndex(redSurf)  );
     }
 
-    kernel_FwGamma->SetKernelArg(6, sizeof(int), &threadsheight      );
-    kernel_FwGamma->SetKernelArg(7, sizeof(int), &bitDepth           );
-    kernel_FwGamma->SetKernelArg(8, sizeof(int), &framewidth_in_bytes);
-    kernel_FwGamma->SetKernelArg(9, sizeof(int), &height             );
+    kernel_FwGamma->SetKernelArg(8,  sizeof(int), &threadsheight      );
+    kernel_FwGamma->SetKernelArg(9,  sizeof(int), &bitDepth           );
+    kernel_FwGamma->SetKernelArg(10, sizeof(int), &framewidth_in_bytes);
+    kernel_FwGamma->SetKernelArg(11, sizeof(int), &height             );
 
     if ( ccm )
     {
         for(int k = 0; k < 3; k++)
             for(int z = 0; z < 3; z++)
                 m_ccm(k*3 + z) = (float)ccm->CCM[k][z];
-        kernel_FwGamma->SetKernelArg( 5, m_ccm.get_size_data(), m_ccm.get_addr_data());
-        kernel_FwGamma->SetKernelArg(10, sizeof(SurfaceIndex), LUTIndex);
-        kernel_FwGamma->SetKernelArg(11, sizeof(int),          &argb8out);
-        kernel_FwGamma->SetKernelArg(12, sizeof(SurfaceIndex), &outSurfIndex);
-        kernel_FwGamma->SetKernelArg(13, sizeof(int),         &BayerType);
+        kernel_FwGamma->SetKernelArg( 7, m_ccm.get_size_data(), m_ccm.get_addr_data());
+        kernel_FwGamma->SetKernelArg(12, sizeof(SurfaceIndex), LUTIndex_R);
+        kernel_FwGamma->SetKernelArg(13, sizeof(SurfaceIndex), LUTIndex_G);
+        kernel_FwGamma->SetKernelArg(14, sizeof(SurfaceIndex), LUTIndex_B);
+        kernel_FwGamma->SetKernelArg(15, sizeof(int),          &argb8out);
+        kernel_FwGamma->SetKernelArg(16, sizeof(SurfaceIndex), &outSurfIndex);
+        kernel_FwGamma->SetKernelArg(17, sizeof(int),         &BayerType);
     }
     else
     {
-        kernel_FwGamma->SetKernelArg( 5, sizeof(SurfaceIndex), &outSurfIndex);
-        kernel_FwGamma->SetKernelArg(10, sizeof(int),         &BayerType);
-        kernel_FwGamma->SetKernelArg(11, sizeof(int),          &argb8out);
-        kernel_FwGamma->SetKernelArg(12, sizeof(SurfaceIndex), LUTIndex );
+        kernel_FwGamma->SetKernelArg( 7, sizeof(SurfaceIndex), &outSurfIndex);
+        kernel_FwGamma->SetKernelArg(12, sizeof(int),         &BayerType);
+        kernel_FwGamma->SetKernelArg(13, sizeof(int),          &argb8out);
+        kernel_FwGamma->SetKernelArg(14, sizeof(SurfaceIndex), LUTIndex_R );
+        kernel_FwGamma->SetKernelArg(15, sizeof(SurfaceIndex), LUTIndex_G );
+        kernel_FwGamma->SetKernelArg(16, sizeof(SurfaceIndex), LUTIndex_B );
     }
 
     task_FwGamma->Reset();
@@ -2634,15 +2719,33 @@ void CmContext::Reset(
         // Create gamma and ccm related kernels/tasks if they are not created yet
         if ( pCaps->bColorConversionMatrix )
         {
-            kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
-            // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
-            kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
+            if ( pCaps->bGamma3DLUT )
+            {
+                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA_3D), NULL);
+                // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
+                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA_3D), NULL);
+            }
+            else
+            {
+                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
+                // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
+                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(CCM_AND_GAMMA), NULL);
+            }
         }
         else
         {
-            kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_ARGB_OUT), NULL);
-            // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
-            kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_ARGB_OUT), NULL);
+            if ( pCaps->bGamma3DLUT )
+            {
+                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_3D_ONLY_ARGB_OUT), NULL);
+                // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
+                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_3D_ONLY_ARGB_OUT), NULL);
+            }
+            else
+            {
+                kernel_FwGamma  = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_ARGB_OUT), NULL);
+                // Workaround - otherwise if gamma_argb8 is run with 2DUP out first, and then - with 2D, Enqueue never returns (CM bug)
+                kernel_FwGamma1 = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(GAMMA_ONLY_ARGB_OUT), NULL);
+            }
         }
 
         // Gamma related kernels may create output.
