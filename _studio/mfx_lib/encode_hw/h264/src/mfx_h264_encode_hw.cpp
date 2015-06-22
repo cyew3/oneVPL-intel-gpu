@@ -929,7 +929,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         bParallelEncPak);
     request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
     //For MMCD encoder bind flag is required, panic mode using reconstruct frame copy for refframe skipping proper way, where no warranty that compressed frame will be processed propar way.
-    if(!bPanicModeSupport)
+    if(!bPanicModeSupport && !IsOn(par->mfx.LowPower))
         request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET;
     sts = m_rec.Alloc(m_core, request,bPanicModeSupport);
     MFX_CHECK_STS(sts);
