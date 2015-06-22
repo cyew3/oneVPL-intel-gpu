@@ -4,9 +4,9 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2015 Intel Corporation. All Rights Reserved.
 
-File Name: 
+File Name: Program.cs
 
 \* ****************************************************************************** */
 
@@ -60,6 +60,7 @@ namespace msdk_analyzer
             }
             catch
             {
+                globalLock.Dispose();
             }
             try
             {
@@ -67,15 +68,13 @@ namespace msdk_analyzer
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
 
-                
-                
                 UInt32 sts = MsdkAnalyzerCpp.install(Path.GetDirectoryName(Application.ExecutablePath)
                                         , Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + _PATH.TRACER_PATH + _PATH.TRACER_LOG
                                         , Path.GetDirectoryName(Application.ExecutablePath));
                 if (sts == 0)
                 {
                     MessageBox.Show("ERROR: install error", "ERROR");
-                    
+
                 }
                 else
                 {

@@ -37,7 +37,6 @@ File Name: tracer_windows.cpp
 #include <iostream>
 #include "tracer.h"
 #include "mfx_dispatcher.h"
-#include "mfxstructures.h"
 #include "mfx_dispatcher_log.h"
 #include "../tools/shared_mem_server.h"
 
@@ -203,17 +202,6 @@ mfxStatus TracerInit (mfxInitParam par, mfxSession *session)
         }
         //if (!proc) break;
         if(proc) loader->table[i] = proc;
-    }
-    if (i < eFunctionsNum) {
-        Log::WriteLog(ToString(eFunctionsNum));
-        Log::WriteLog(ToString(i));
-        Log::WriteLog("FreeLibrary: MFX_ERR_NOT_FOUND");
-        FreeLibrary(h_mfxdll);
-        Log::WriteLog(context.dump("ver", par.Version));
-        Log::WriteLog(context.dump("session", *session));
-        Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_NOT_FOUND));
-        free(loader);
-        return MFX_ERR_NOT_FOUND;
     }
     // Initializing loaded library
     mfxStatus mfx_res = (*(MFXInitPointer)loader->table[eMFXInit])(par.Implementation, &par.Version, &(loader->session));

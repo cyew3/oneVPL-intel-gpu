@@ -8,7 +8,6 @@
 //
 */
 #include "dump.h"
-#include "../loggers/log.h"
 
 
 std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEncCtrl &_struct)
@@ -18,7 +17,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD(Qp);
     DUMP_FIELD(LenSP);
-    //DUMP_FIELD(SearchPath); SearchPath define in processenv.h
+    DUMP_FIELD(SearchPath);
     DUMP_FIELD(SubMBPartMask);
     DUMP_FIELD(SubPelMode);
     DUMP_FIELD(InterSAD);
@@ -71,23 +70,22 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD_RESERVED(reserved);
     DUMP_FIELD(NumMBAlloc);
-    if (_struct.MB && Log::GetLogLevel() == LOG_LEVEL_FULL)
+    if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
         for (int i = 0; i < _struct.NumMBAlloc; i++)
         {
-            str += "{\n";
-            for (int j = 0; j < GET_ARRAY_SIZE(_struct.MB[i].MV); j++)
-            {
+             str += "{\n";
+             for (int j = 0; j < GET_ARRAY_SIZE(_struct.MB[i].MV); j++)
+             {
                 str += "{ L0: {" + ToString(_struct.MB[i].MV[j][0].x) + "," + ToString(_struct.MB[i].MV[j][0].y)
                     + "}, L1: {" + ToString(_struct.MB[i].MV[j][1].x) + "," + ToString(_struct.MB[i].MV[j][1].y)
                     + "}}, ";
-            }
-            str += "}\n";
+             }
+             str += "}\n";
         }
         str += "}\n";
     }
-
     return str;
 }
 
@@ -99,43 +97,34 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD_RESERVED(reserved0);
     DUMP_FIELD(NumMBAlloc);
-    if (_struct.MB && Log::GetLogLevel() == LOG_LEVEL_FULL)
+    if (_struct.MB)
     {
         for (int i = 0; i < _struct.NumMBAlloc; i++)
         {
-            std::string prefix = structName + ".MB[" + ToString(i) + "]";
-            str += prefix + ".Inter[0].BestDistortion=" + ToString(_struct.MB[i].Inter[0].BestDistortion) + "\n";
-            str += prefix + ".Inter[0].Mode=" + ToString(_struct.MB[i].Inter[0].Mode) + "\n";
-            str += prefix + ".Inter[1].BestDistortion=" + ToString(_struct.MB[i].Inter[1].BestDistortion) + "\n";
-            str += prefix + ".Inter[1].Mode=" + ToString(_struct.MB[i].Inter[1].Mode) + "\n";
-
-            str += prefix + ".BestIntraDistortion=" + ToString(_struct.MB[i].BestIntraDistortion) + "\n";
-            str += prefix + ".IntraMode=" + ToString(_struct.MB[i].IntraMode) + "\n";
-
-            str += prefix + ".NumOfNonZeroCoef=" + ToString(_struct.MB[i].NumOfNonZeroCoef) + "\n";
-            str += prefix + ".reserved1=" + ToString(_struct.MB[i].reserved1) + "\n";
-
-            str += prefix + ".SumOfCoef=" + ToString(_struct.MB[i].SumOfCoef) + "\n";
-
-            str += prefix + ".reserved2=" + ToString(_struct.MB[i].reserved2) + "\n";
-
-            str += prefix + ".Variance16x16=" + ToString(_struct.MB[i].Variance16x16) + "\n";
-
-            str += prefix + ".Variance8x8[0]=" + ToString(_struct.MB[i].Variance8x8[0]) + "\n";
-            str += prefix + ".Variance8x8[1]=" + ToString(_struct.MB[i].Variance8x8[1]) + "\n";
-            str += prefix + ".Variance8x8[2]=" + ToString(_struct.MB[i].Variance8x8[2]) + "\n";
-            str += prefix + ".Variance8x8[3]=" + ToString(_struct.MB[i].Variance8x8[3]) + "\n";
-
-            str += prefix + ".PixelAverage16x16=" + ToString(_struct.MB[i].PixelAverage16x16) + "\n";
-
-            str += prefix + ".PixelAverage8x8[0]=" + ToString(_struct.MB[i].PixelAverage8x8[0]) + "\n";
-            str += prefix + ".PixelAverage8x8[1]=" + ToString(_struct.MB[i].PixelAverage8x8[1]) + "\n";
-            str += prefix + ".PixelAverage8x8[2]=" + ToString(_struct.MB[i].PixelAverage8x8[2]) + "\n";
-            str += prefix + ".PixelAverage8x8[3]=" + ToString(_struct.MB[i].PixelAverage8x8[3]) + "\n";
-        }
-    }
-
-    return str;
+           std::string prefix = structName + ".MB[" + ToString(i) + "]";
+           str += prefix + ".Inter[0].BestDistortion=" + ToString(_struct.MB[i].Inter[0].BestDistortion) + "\n";
+           str += prefix + ".Inter[0].Mode=" + ToString(_struct.MB[i].Inter[0].Mode) + "\n";
+           str += prefix + ".Inter[1].BestDistortion=" + ToString(_struct.MB[i].Inter[1].BestDistortion) + "\n";
+           str += prefix + ".Inter[1].Mode=" + ToString(_struct.MB[i].Inter[1].Mode) + "\n";
+           str += prefix + ".BestIntraDistortion=" + ToString(_struct.MB[i].BestIntraDistortion) + "\n";
+           str += prefix + ".IntraMode=" + ToString(_struct.MB[i].IntraMode) + "\n";
+           str += prefix + ".NumOfNonZeroCoef=" + ToString(_struct.MB[i].NumOfNonZeroCoef) + "\n";
+           str += prefix + ".reserved1=" + ToString(_struct.MB[i].reserved1) + "\n";
+           str += prefix + ".SumOfCoef=" + ToString(_struct.MB[i].SumOfCoef) + "\n";
+           str += prefix + ".reserved2=" + ToString(_struct.MB[i].reserved2) + "\n";
+           str += prefix + ".Variance16x16=" + ToString(_struct.MB[i].Variance16x16) + "\n";
+           str += prefix + ".Variance8x8[0]=" + ToString(_struct.MB[i].Variance8x8[0]) + "\n";
+           str += prefix + ".Variance8x8[1]=" + ToString(_struct.MB[i].Variance8x8[1]) + "\n";
+           str += prefix + ".Variance8x8[2]=" + ToString(_struct.MB[i].Variance8x8[2]) + "\n";
+           str += prefix + ".Variance8x8[3]=" + ToString(_struct.MB[i].Variance8x8[3]) + "\n";
+           str += prefix + ".PixelAverage16x16=" + ToString(_struct.MB[i].PixelAverage16x16) + "\n";
+           str += prefix + ".PixelAverage8x8[0]=" + ToString(_struct.MB[i].PixelAverage8x8[0]) + "\n";
+           str += prefix + ".PixelAverage8x8[1]=" + ToString(_struct.MB[i].PixelAverage8x8[1]) + "\n";
+           str += prefix + ".PixelAverage8x8[2]=" + ToString(_struct.MB[i].PixelAverage8x8[2]) + "\n";
+           str += prefix + ".PixelAverage8x8[3]=" + ToString(_struct.MB[i].PixelAverage8x8[3]) + "\n";
+       }
+   }
+   return str;
 }
 
 
@@ -143,7 +132,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncFr
 {
     std::string str;
 
-    //DUMP_FIELD(SearchPath); SearchPath define in processenv.h
+    DUMP_FIELD(SearchPath);
     DUMP_FIELD(LenSP);
     DUMP_FIELD(SubMBPartMask);
     DUMP_FIELD(IntraPartMask);
@@ -177,7 +166,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMV
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD_RESERVED(reserved);
     DUMP_FIELD(NumMBAlloc);
-    if (_struct.MB && Log::GetLogLevel() == LOG_LEVEL_FULL)
+    if (_struct.MB)
     {
         str +=  structName + ".MB[]={\n";
         for (int i = 0; i < _struct.NumMBAlloc; i++)
@@ -186,7 +175,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMV
         }
         str += "}\n";
     }
-
     return str;
 }
 
@@ -224,11 +212,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncQP
     DUMP_FIELD_RESERVED(reserved);
     DUMP_FIELD(NumQPAlloc); /* size of allocated memory in number of QPs value*/
 
-    if (_struct.QP && Log::GetLogLevel() == LOG_LEVEL_FULL)
-    {
-        str += structName + ".QP[]=" + dump_reserved_array(_struct.QP, _struct.NumQPAlloc) + "\n";
-    }
-
+    str += structName + ".QP[]=" + dump_reserved_array(_struct.QP, _struct.NumQPAlloc) + "\n";
     return str;
 }
 
@@ -240,7 +224,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD_RESERVED(reserved);
     DUMP_FIELD(NumMBAlloc);
-    if (_struct.MB && Log::GetLogLevel() == LOG_LEVEL_FULL)
+    if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
         for (int i = 0; i < _struct.NumMBAlloc; i++)
@@ -249,7 +233,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
         }
         str += "}\n";
     }
-
     return str;
 }
 
@@ -279,7 +262,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMV
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD_RESERVED(reserved);
     DUMP_FIELD(NumMBAlloc);
-    if (_struct.MB && Log::GetLogLevel() == LOG_LEVEL_FULL)
+    if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
         for (int i = 0; i < _struct.NumMBAlloc; i++)
@@ -287,15 +270,14 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMV
             str += "{\n";
             for (int j = 0; j < GET_ARRAY_SIZE(_struct.MB[i].MV); j++)
             {
-                str += "{ L0: {" + ToString(_struct.MB[i].MV[j][0].x) + "," + ToString(_struct.MB[i].MV[j][0].y)
-                    + "}, L1: {" + ToString(_struct.MB[i].MV[j][1].x) + "," + ToString(_struct.MB[i].MV[j][1].y)
-                    + "}}, ";
+                 str += "{ L0: {" + ToString(_struct.MB[i].MV[j][0].x) + "," + ToString(_struct.MB[i].MV[j][0].y)
+                     + "}, L1: {" + ToString(_struct.MB[i].MV[j][1].x) + "," + ToString(_struct.MB[i].MV[j][1].y)
+                     + "}}, ";
             }
             str += "}\n";
         }
         str += "}\n";
     }
-
     return str;
 }
 
@@ -307,7 +289,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD_RESERVED(reserved);
     DUMP_FIELD(NumMBAlloc);
-    if (_struct.MB && Log::GetLogLevel() == LOG_LEVEL_FULL)
+    if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
         for (int i = 0; i < _struct.NumMBAlloc; i++)
@@ -316,7 +298,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
         }
         str += "}\n";
     }
-
     return str;
 }
 
@@ -411,7 +392,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPakMB
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD_RESERVED(reserved);
     DUMP_FIELD(NumMBAlloc);
-    if (_struct.MB && Log::GetLogLevel() == LOG_LEVEL_FULL)
+    if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
         for (int i = 0; i < _struct.NumMBAlloc; i++)
@@ -420,7 +401,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPakMB
         }
         str += "}\n";
     }
-
     return str;
 }
 
@@ -451,30 +431,35 @@ std::string DumpContext::dump(const std::string structName, const mfxPAKInput &_
         str += structName + ".InSurface=NULL\n";
     }
     DUMP_FIELD(NumFrameL0);
-    for (int i = 0; i < _struct.NumFrameL0; i++)
+    if (_struct.L0Surface)
     {
-        if (_struct.L0Surface[i])
+        for (int i = 0; i < _struct.NumFrameL0; i++)
         {
-            str += dump(structName + ".L0Surface[" + ToString(i) + "]", *_struct.L0Surface[i]) + "\n";
-        }
-        else
-        {
-            str += structName + ".L0Surface[" + ToString(i) + "]=NULL\n";
+            if (_struct.L0Surface[i])
+            {
+                str += dump(structName + ".L0Surface[" + ToString(i) + "]", *_struct.L0Surface[i]) + "\n";
+            }
+            else
+            {
+                str += structName + ".L0Surface[" + ToString(i) + "]=NULL\n";
+            }
         }
     }
     DUMP_FIELD(NumFrameL1);
-    for (int i = 0; i < _struct.NumFrameL1; i++)
+    if (_struct.L1Surface)
     {
-        if (_struct.L1Surface[i])
+        for (int i = 0; i < _struct.NumFrameL1; i++)
         {
-            str += dump(structName + ".L1Surface[" + ToString(i) + "]", *_struct.L1Surface[i]) + "\n";
-        }
-        else
-        {
-            str += structName + ".L1Surface[" + ToString(i) + "]=NULL\n";
+            if (_struct.L1Surface[i])
+            {
+                str += dump(structName + ".L1Surface[" + ToString(i) + "]", *_struct.L1Surface[i]) + "\n";
+            }
+            else
+            {
+                str += structName + ".L1Surface[" + ToString(i) + "]=NULL\n";
+            }
         }
     }
-
     str += dump_mfxExtParams(structName, _struct) + "\n";
 
     return str;

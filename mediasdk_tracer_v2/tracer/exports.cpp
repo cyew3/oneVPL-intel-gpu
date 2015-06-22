@@ -30,12 +30,8 @@ File Name: exports.cpp
 
 #if defined(_WIN32) || defined(_WIN64)
 
-#include <string>
-#include <sstream>
-#include <vector>
 #include <mfx_dxva2_device.h>
 #include <tchar.h>
-#include "../loggers/log.h"
 
 #include <Shlwapi.h>
 #pragma comment(lib, "Shlwapi.lib")
@@ -135,7 +131,6 @@ DWORD Reg(HKEY key, TCHAR* dll_name, TCHAR* analyzer_key, TCHAR* install_dir, TC
 
 
         //we need to create keys
-        DWORD dwDisposistion;
         if (is_64from32)
         {
             if (ERROR_SUCCESS != RegCreateKeyEx(key, analyzer_key, 0, NULL, 0, KEY_CREATE_SUB_KEY | KEY_QUERY_VALUE | KEY_SET_VALUE | KEY_WOW64_64KEY, NULL, &key2, NULL))

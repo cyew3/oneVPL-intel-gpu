@@ -33,7 +33,6 @@ File Name: mfx_core.cpp
 
 #include "../loggers/timer.h"
 #include "../tracer/functions_table.h"
-#include "mfx_structures.h"
 
 
 
