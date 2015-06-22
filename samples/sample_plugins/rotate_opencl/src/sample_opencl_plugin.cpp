@@ -340,22 +340,19 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
         cl_int error = CL_SUCCESS;
 
 #if defined(_WIN32) || defined(_WIN64)
-        int format = D3DFMT_NV12;
         if (MFX_IMPL_VIA_MASK(m_impl) == MFX_IMPL_VIA_D3D11) {
              m_OpenCLFilter.reset(new OpenCLFilterDX11());
-             format = DXGI_FORMAT_NV12;
         } else {
             m_OpenCLFilter.reset(new OpenCLFilterDX9());
-            format = D3DFMT_NV12;
         }
-        error = m_OpenCLFilter.get()->AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV", format);
+        error = m_OpenCLFilter.get()->AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV");
         if (error) return MFX_ERR_DEVICE_FAILED;
 
         error = m_OpenCLFilter.get()->OCLInit(m_device);
 
 #else
         m_OpenCLFilter.reset(new OpenCLFilterVA());
-        error = m_OpenCLFilter.get()->AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV", VA_RT_FORMAT_YUV420);
+        error = m_OpenCLFilter.get()->AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV");
         if (error) return MFX_ERR_DEVICE_FAILED;
         error = m_OpenCLFilter.get()->OCLInit(m_device);
 #endif
