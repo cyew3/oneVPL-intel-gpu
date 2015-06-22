@@ -314,6 +314,51 @@ public:
                     case  MFX_EXTBUFF_AVC_ENCODE_CTRL:
                         str += dump(name, *((mfxExtAVCEncodeCtrl*)_struct.ExtParam[i])) + "\n";
                         break;
+                    case  MFX_EXTBUFF_FEI_PARAM:
+                        str += dump(name, *((mfxExtFeiParam*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_PREENC_CTRL:
+                        str += dump(name, *((mfxExtFeiPreEncCtrl*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_PREENC_MV_PRED:
+                        str += dump(name, *((mfxExtFeiPreEncMVPredictors*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_PREENC_QP:
+                        str += dump(name, *((mfxExtFeiEncQP*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_PREENC_MV:
+                        str += dump(name, *((mfxExtFeiPreEncMV*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_PREENC_MB:
+                        str += dump(name, *((mfxExtFeiPreEncMBStat*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_ENC_CTRL:
+                        str += dump(name, *((mfxExtFeiEncFrameCtrl*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_ENC_MV_PRED:
+                        str += dump(name, *((mfxExtFeiEncMVPredictors*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_ENC_MB:
+                        str += dump(name, *((mfxExtFeiEncMBCtrl*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_ENC_MV:
+                        str += dump(name, *((mfxExtFeiEncMV*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_ENC_MB_STAT:
+                        str += dump(name, *((mfxExtFeiEncMBStat*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_PAK_CTRL:
+                        str += dump(name, *((mfxFeiPakMBCtrl*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_SPS:
+                        str += dump(name, *((mfxExtFeiSPS*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_PPS:
+                        str += dump(name, *((mfxExtFeiPPS*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_FEI_SLICE:
+                        str += dump(name, *((mfxExtFeiSliceHeader*)_struct.ExtParam[i])) + "\n";
+                        break;
                      default:
                         str += dump(name, *(_struct.ExtParam[i])) + "\n";
                         break;
