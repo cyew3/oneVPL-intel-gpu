@@ -1,3 +1,33 @@
+/* ****************************************************************************** *\
+
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+- Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+File Name: mfx_video_enc.cpp
+
+\* ****************************************************************************** */
+
 #include <exception>
 #include <iostream>
 
@@ -189,6 +219,17 @@ mfxStatus MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mfx
         {
             DumpContext context;
             context.context = DUMPCONTEXT_MFX;
+            TracerSyncPoint sp;
+            if (syncp)
+            {
+                sp.syncPoint = (*syncp);
+            }
+            else
+            {
+                sp.syncPoint = NULL;
+            }
+
+            sp.component = ENC;
             Log::WriteLog("function: MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp) +");
             mfxLoader *loader = (mfxLoader*) session;
 
@@ -201,28 +242,34 @@ mfxStatus MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mfx
             Log::WriteLog(context.dump("session", session));
             if (in) Log::WriteLog(context.dump("in", *in));
             if (out) Log::WriteLog(context.dump("out", *out));
-            Log::WriteLog(context.dump("syncp", *syncp));
-        
+            Log::WriteLog(context.dump("syncp", sp.syncPoint));
+
             Timer t;
             mfxStatus status = (*(fMFXVideoENC_ProcessFrameAsync) proc)(session, in, out, syncp);
             std::string elapsed = TimeToString(t.GetTime());
-        
+
+            if (syncp) {
+                sp.syncPoint = (*syncp);
+            }
+            else {
+                sp.syncPoint = NULL;
+            }
             Log::WriteLog(">> MFXVideoENC_ProcessFrameAsync called");
 
             Log::WriteLog(context.dump("session", session));
             if (in) Log::WriteLog(context.dump("in", *in));
             if (out) Log::WriteLog(context.dump("out", *out));
-            Log::WriteLog(context.dump("syncp", *syncp));
+            Log::WriteLog(context.dump("syncp", sp.syncPoint));
 
             Log::WriteLog("function: MFXVideoENC_ProcessFrameAsync(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
-          
+
             return status;
         }
         else // call without logging
         {
             DumpContext context;
             context.context = DUMPCONTEXT_MFX;
-            
+
             mfxLoader *loader = (mfxLoader*) session;
 
             if (!loader) return MFX_ERR_INVALID_HANDLE;

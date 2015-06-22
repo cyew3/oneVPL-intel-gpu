@@ -155,167 +155,170 @@ public:
 
         str += structName + ".NumExtParam=" + ToString(_struct.NumExtParam) + "\n";
         str += structName + ".ExtParam=" + ToString(_struct.ExtParam) + "\n";
-        for (mfxU16 i = 0; i < _struct.NumExtParam; ++i)
-        {
-            name = structName + ".ExtParam[" + ToString(i) + "]";
-            str += name + "=" + ToString(_struct.ExtParam[i]) + "\n";
-            if (_struct.ExtParam[i]) {
-                switch (_struct.ExtParam[i]->BufferId)
+        if (_struct.ExtParam) {
+            for (mfxU16 i = 0; i < _struct.NumExtParam; ++i)
+            {
+                if (_struct.ExtParam[i])
                 {
-                  case MFX_EXTBUFF_CODING_OPTION:
-                    str += dump(name, *((mfxExtCodingOption*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case MFX_EXTBUFF_CODING_OPTION2:
-                    str += dump(name, *((mfxExtCodingOption2*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case MFX_EXTBUFF_CODING_OPTION3:
-                    str += dump(name, *((mfxExtCodingOption3*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case MFX_EXTBUFF_ENCODER_RESET_OPTION:
-                    str += dump(name, *((mfxExtEncoderResetOption*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUF_CAM_GAMMA_CORRECTION:
-                    str += dump(name, *((mfxExtCamGammaCorrection*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUF_CAM_WHITE_BALANCE:
-                    str += dump(name, *((mfxExtCamWhiteBalance*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL:
-                    str += dump(name, *((mfxExtCamHotPixelRemoval*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION:
-                    str += dump(name, *((mfxExtCamBlackLevelCorrection*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUF_CAM_VIGNETTE_CORRECTION:
-                    str += dump(name, *((mfxExtCamVignetteCorrection*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUF_CAM_BAYER_DENOISE:
-                    str += dump(name, *((mfxExtCamBayerDenoise*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3:
-                    str += dump(name, *((mfxExtCamColorCorrection3x3*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUF_CAM_PADDING:
-                    str += dump(name, *((mfxExtCamPadding*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUF_CAM_PIPECONTROL:
-                    str += dump(name, *((mfxExtCamPipeControl*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUF_CAM_FORWARD_GAMMA_CORRECTION:
-                    str += dump(name, *((mfxExtCamFwdGamma*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUF_CAM_CSC_YUV_RGB:
-                    str += dump(name, *((mfxExtCamCscYuvRgb*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION:
-                    str += dump(name, *((mfxExtCamLensGeomDistCorrection*)_struct.ExtParam[i])) + "\n";
-                    break;
-                  case  MFX_EXTBUFF_LOOKAHEAD_CTRL:
-                    str += dump(name, *((mfxExtLAControl*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_LOOKAHEAD_STAT:
-                    str += dump(name, *((mfxExtLAFrameStatistics*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_AVC_REFLIST_CTRL:
-                    str += dump(name, *((mfxExtAVCRefListCtrl*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_AVC_TEMPORAL_LAYERS:
-                    str += dump(name, *((mfxExtAvcTemporalLayers*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_ENCODED_FRAME_INFO:
-                    str += dump(name, *((mfxExtAVCEncodedFrameInfo*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_AVC_REFLISTS:
-                    str += dump(name, *((mfxExtAVCRefLists*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_JPEG_QT:
-                    str += dump(name, *((mfxExtJPEGQuantTables*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_JPEG_HUFFMAN:
-                    str += dump(name, *((mfxExtJPEGHuffmanTables*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_MVC_SEQ_DESC:
-                    str += dump(name, *((mfxExtMVCSeqDesc*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_MVC_TARGET_VIEWS:
-                    str += dump(name, *((mfxExtMVCTargetViews*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION:
-                    str += dump(name, *((mfxExtOpaqueSurfaceAlloc*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_VPP_DENOISE:
-                    str += dump(name, *((mfxExtVPPDenoise*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_VPP_DETAIL:
-                    str += dump(name, *((mfxExtVPPDetail*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_VPP_PROCAMP:
-                    str += dump(name, *((mfxExtVPPProcAmp*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_CODING_OPTION_SPSPPS:
-                    str += dump(name, *((mfxExtCodingOptionSPSPPS*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_VIDEO_SIGNAL_INFO:
-                    str += dump(name, *((mfxExtVideoSignalInfo*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_VPP_DOUSE:
-                    str += dump(name, *((mfxExtVPPDoUse*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_PICTURE_TIMING_SEI:
-                    str += dump(name, *((mfxExtPictureTimingSEI*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_VPP_COMPOSITE:
-                    str += dump(name, *((mfxExtVPPComposite*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
-                    str += dump(name, *((mfxExtVPPVideoSignalInfo*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_VPP_DEINTERLACING:
-                    str += dump(name, *((mfxExtVPPDeinterlacing*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_HEVC_TILES:
-                    str += dump(name, *((mfxExtHEVCTiles*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_HEVC_PARAM:
-                    str += dump(name, *((mfxExtHEVCParam*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_HEVC_REGION:
-                    str += dump(name, *((mfxExtHEVCRegion*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_DECODED_FRAME_INFO:
-                    str += dump(name, *((mfxExtDecodedFrameInfo*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_TIME_CODE:
-                    str += dump(name, *((mfxExtTimeCode*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_PRED_WEIGHT_TABLE:
-                    str += dump(name, *((mfxExtPredWeightTable*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_ENCODER_CAPABILITY:
-                    str += dump(name, *((mfxExtEncoderCapability*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 case  MFX_EXTBUFF_DIRTY_RECTANGLES:
-                    str += dump(name, *((mfxExtDirtyRect*)_struct.ExtParam[i])) + "\n";
-                    break;
-                case  MFX_EXTBUFF_MOVING_RECTANGLES:
-                    str += dump(name, *((mfxExtMoveRect*)_struct.ExtParam[i])) + "\n";
-                    break;
-                case  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION:
-                    str += dump(name, *((mfxExtVPPFrameRateConversion*)_struct.ExtParam[i])) + "\n";
-                    break;
-                case  MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
-                    str += dump(name, *((mfxExtVPPImageStab*)_struct.ExtParam[i])) + "\n";
-                    break;
-                case  MFX_EXTBUFF_ENCODER_ROI:
-                    str += dump(name, *((mfxExtEncoderROI*)_struct.ExtParam[i])) + "\n";
-                    break;
-                case  MFX_EXTBUFF_AVC_ENCODE_CTRL:
-                    str += dump(name, *((mfxExtAVCEncodeCtrl*)_struct.ExtParam[i])) + "\n";
-                    break;
-                 default:
-                    str += dump(name, *(_struct.ExtParam[i])) + "\n";
-                    break;
-                };
+                    name = structName + ".ExtParam[" + ToString(i) + "]";
+                    str += name + "=" + ToString(_struct.ExtParam[i]) + "\n";
+                    switch (_struct.ExtParam[i]->BufferId)
+                    {
+                      case MFX_EXTBUFF_CODING_OPTION:
+                        str += dump(name, *((mfxExtCodingOption*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case MFX_EXTBUFF_CODING_OPTION2:
+                        str += dump(name, *((mfxExtCodingOption2*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case MFX_EXTBUFF_CODING_OPTION3:
+                        str += dump(name, *((mfxExtCodingOption3*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case MFX_EXTBUFF_ENCODER_RESET_OPTION:
+                        str += dump(name, *((mfxExtEncoderResetOption*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUF_CAM_GAMMA_CORRECTION:
+                        str += dump(name, *((mfxExtCamGammaCorrection*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUF_CAM_WHITE_BALANCE:
+                        str += dump(name, *((mfxExtCamWhiteBalance*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL:
+                        str += dump(name, *((mfxExtCamHotPixelRemoval*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION:
+                        str += dump(name, *((mfxExtCamBlackLevelCorrection*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUF_CAM_VIGNETTE_CORRECTION:
+                        str += dump(name, *((mfxExtCamVignetteCorrection*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUF_CAM_BAYER_DENOISE:
+                        str += dump(name, *((mfxExtCamBayerDenoise*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3:
+                        str += dump(name, *((mfxExtCamColorCorrection3x3*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUF_CAM_PADDING:
+                        str += dump(name, *((mfxExtCamPadding*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUF_CAM_PIPECONTROL:
+                        str += dump(name, *((mfxExtCamPipeControl*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUF_CAM_FORWARD_GAMMA_CORRECTION:
+                        str += dump(name, *((mfxExtCamFwdGamma*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUF_CAM_CSC_YUV_RGB:
+                        str += dump(name, *((mfxExtCamCscYuvRgb*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION:
+                        str += dump(name, *((mfxExtCamLensGeomDistCorrection*)_struct.ExtParam[i])) + "\n";
+                        break;
+                      case  MFX_EXTBUFF_LOOKAHEAD_CTRL:
+                        str += dump(name, *((mfxExtLAControl*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_LOOKAHEAD_STAT:
+                        str += dump(name, *((mfxExtLAFrameStatistics*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_AVC_REFLIST_CTRL:
+                        str += dump(name, *((mfxExtAVCRefListCtrl*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_AVC_TEMPORAL_LAYERS:
+                        str += dump(name, *((mfxExtAvcTemporalLayers*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_ENCODED_FRAME_INFO:
+                        str += dump(name, *((mfxExtAVCEncodedFrameInfo*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_AVC_REFLISTS:
+                        str += dump(name, *((mfxExtAVCRefLists*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_JPEG_QT:
+                        str += dump(name, *((mfxExtJPEGQuantTables*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_JPEG_HUFFMAN:
+                        str += dump(name, *((mfxExtJPEGHuffmanTables*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_MVC_SEQ_DESC:
+                        str += dump(name, *((mfxExtMVCSeqDesc*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_MVC_TARGET_VIEWS:
+                        str += dump(name, *((mfxExtMVCTargetViews*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION:
+                        str += dump(name, *((mfxExtOpaqueSurfaceAlloc*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_VPP_DENOISE:
+                        str += dump(name, *((mfxExtVPPDenoise*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_VPP_DETAIL:
+                        str += dump(name, *((mfxExtVPPDetail*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_VPP_PROCAMP:
+                        str += dump(name, *((mfxExtVPPProcAmp*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_CODING_OPTION_SPSPPS:
+                        str += dump(name, *((mfxExtCodingOptionSPSPPS*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_VIDEO_SIGNAL_INFO:
+                        str += dump(name, *((mfxExtVideoSignalInfo*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_VPP_DOUSE:
+                        str += dump(name, *((mfxExtVPPDoUse*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_PICTURE_TIMING_SEI:
+                        str += dump(name, *((mfxExtPictureTimingSEI*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_VPP_COMPOSITE:
+                        str += dump(name, *((mfxExtVPPComposite*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
+                        str += dump(name, *((mfxExtVPPVideoSignalInfo*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_VPP_DEINTERLACING:
+                        str += dump(name, *((mfxExtVPPDeinterlacing*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_HEVC_TILES:
+                        str += dump(name, *((mfxExtHEVCTiles*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_HEVC_PARAM:
+                        str += dump(name, *((mfxExtHEVCParam*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_HEVC_REGION:
+                        str += dump(name, *((mfxExtHEVCRegion*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_DECODED_FRAME_INFO:
+                        str += dump(name, *((mfxExtDecodedFrameInfo*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_TIME_CODE:
+                        str += dump(name, *((mfxExtTimeCode*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_PRED_WEIGHT_TABLE:
+                        str += dump(name, *((mfxExtPredWeightTable*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_ENCODER_CAPABILITY:
+                        str += dump(name, *((mfxExtEncoderCapability*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     case  MFX_EXTBUFF_DIRTY_RECTANGLES:
+                        str += dump(name, *((mfxExtDirtyRect*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_MOVING_RECTANGLES:
+                        str += dump(name, *((mfxExtMoveRect*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION:
+                        str += dump(name, *((mfxExtVPPFrameRateConversion*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
+                        str += dump(name, *((mfxExtVPPImageStab*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_ENCODER_ROI:
+                        str += dump(name, *((mfxExtEncoderROI*)_struct.ExtParam[i])) + "\n";
+                        break;
+                    case  MFX_EXTBUFF_AVC_ENCODE_CTRL:
+                        str += dump(name, *((mfxExtAVCEncodeCtrl*)_struct.ExtParam[i])) + "\n";
+                        break;
+                     default:
+                        str += dump(name, *(_struct.ExtParam[i])) + "\n";
+                        break;
+                    };
+                }
             }
         }
         return str;

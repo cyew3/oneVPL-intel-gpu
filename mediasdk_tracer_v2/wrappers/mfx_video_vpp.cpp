@@ -291,26 +291,19 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
             if(in) Log::WriteLog(context.dump("in", *in));
             if(out) Log::WriteLog(context.dump("out", *out));
             if(aux) Log::WriteLog(context.dump("aux", *aux));
-            if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
+            Log::WriteLog(context.dump("syncp", sp.syncPoint));
 
             sp.timer.Restart();
             Timer t;
-            mfxStatus status;
-            if (syncp) {
-                status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, &sp.syncPoint);
-            }
-            else {
-                status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, NULL);
-            }
+            mfxStatus status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, syncp);
+
             std::string elapsed = TimeToString(t.GetTime());
 
             if (syncp) {
-                if (!sp.syncPoint) {
-                    *syncp=NULL;
-                }
-                else {
-                    *syncp = (mfxSyncPoint)sp.syncPoint;
-                }
+                sp.syncPoint = (*syncp);
+            }
+            else {
+                sp.syncPoint = NULL;
             }
 
             Log::WriteLog(">> MFXVideoVPP_RunFrameVPPAsync called");
@@ -327,14 +320,6 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
         {
             DumpContext context;
             context.context = DUMPCONTEXT_VPP;
-            TracerSyncPoint sp;
-            if (syncp) {
-                sp.syncPoint = (*syncp);
-            }
-            else {
-                sp.syncPoint = NULL;
-            }
-            sp.component = VPP;
 
             mfxLoader *loader = (mfxLoader*) session;
 
@@ -345,22 +330,7 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
 
             session = loader->session;
 
-            mfxStatus status;
-            if (syncp) {
-                status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, &sp.syncPoint);
-            }
-            else {
-                status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, NULL);
-            }
-
-            if (syncp) {
-                if (!sp.syncPoint) {
-                    *syncp=NULL;
-                }
-                else {
-                    *syncp = (mfxSyncPoint)sp.syncPoint;
-                }
-            }
+            mfxStatus status = (*(fMFXVideoVPP_RunFrameVPPAsync) proc) (session, in, out, aux, syncp);
 
             return status;
         }
@@ -398,36 +368,33 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
             Log::WriteLog(context.dump("session", session));
             if(in) Log::WriteLog(context.dump("in", *in));
             if(work) Log::WriteLog(context.dump("work", *work));
-            if (out && (*out))
-                Log::WriteLog(context.dump("out", **out));
-            if(syncp) Log::WriteLog(context.dump("syncp", *syncp));
+            if (out) {
+                if (*out)
+                    Log::WriteLog(context.dump("out", **out));
+            }
+            Log::WriteLog(context.dump("syncp", sp.syncPoint));
 
             sp.timer.Restart();
             Timer t;
-            mfxStatus status;
-            if (syncp) {
-                status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, &sp.syncPoint);
-            }
-            else {
-                status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, NULL);
-            }
+            mfxStatus status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, syncp);
+
             std::string elapsed = TimeToString(t.GetTime());
 
             if (syncp) {
-                if (!sp.syncPoint) {
-                    *syncp=NULL;
-                }
-                else {
-                    *syncp = (mfxSyncPoint)sp.syncPoint;
-                }
+                sp.syncPoint = (*syncp);
+            }
+            else {
+                sp.syncPoint = NULL;
             }
 
             Log::WriteLog(">> MFXVideoVPP_RunFrameVPPAsyncEx called");
             Log::WriteLog(context.dump("session", session));
             if(in) Log::WriteLog(context.dump("in", *in));
             if(work) Log::WriteLog(context.dump("work", *work));
-            if (out && (*out))
-                Log::WriteLog(context.dump("out", **out));
+            if (out) {
+                if (*out)
+                    Log::WriteLog(context.dump("out", **out));
+            }
             Log::WriteLog(context.dump("syncp", sp.syncPoint));
             Log::WriteLog("function: MFXVideoVPP_RunFrameVPPAsyncEx(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
 
@@ -437,14 +404,6 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
         {
             DumpContext context;
             context.context = DUMPCONTEXT_VPP;
-            TracerSyncPoint sp;
-            if (syncp) {
-                sp.syncPoint = (*syncp);
-            }
-            else {
-                sp.syncPoint = NULL;
-            }
-            sp.component = VPP;
 
             mfxLoader *loader = (mfxLoader*) session;
 
@@ -455,22 +414,7 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
 
             session = loader->session;
 
-            mfxStatus status;
-            if (syncp) {
-                status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, &sp.syncPoint);
-            }
-            else {
-                status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, NULL);
-            }
-
-            if (syncp) {
-                if (!sp.syncPoint) {
-                    *syncp=NULL;
-                }
-                else {
-                    *syncp = (mfxSyncPoint)sp.syncPoint;
-                }
-            }
+            mfxStatus status = (*(fMFXVideoVPP_RunFrameVPPAsyncEx) proc) (session, in, work, out, syncp);
 
             return status;
         }
