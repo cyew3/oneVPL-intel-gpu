@@ -2810,14 +2810,15 @@ mfxStatus ConfigureExecuteParams(
                             mfxU32 framesCount = (rateData->bkwdRefCount + 1 + rateData->fwdRefCount);
                             config.m_surfCount[VPP_IN]  = (mfxU16)IPP_MAX(framesCount, config.m_surfCount[VPP_IN]);
                             config.m_surfCount[VPP_OUT] = (mfxU16)IPP_MAX(rateData->outputIndexCountPerCycle, config.m_surfCount[VPP_OUT]);
-                            if (videoParam.vpp.In.FrameRateExtN == 30)
+                            /* case 30->60, or (1->2) */
+                            if (20 == floor(10*mfxRatio))
                             {
                                 config.m_surfCount[VPP_IN]  = 3;
                                 config.m_extConfig.customRateData.fwdRefCount = 2;
                                 config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 1;
                                 config.m_extConfig.customRateData.outputIndexCountPerCycle  = 2;
                             }
-                            else if (videoParam.vpp.In.FrameRateExtN == 24)
+                            else /* case 24->60 or (2->5)*/
                             {
                                 config.m_surfCount[VPP_IN]  = 4;
                                 config.m_extConfig.customRateData.fwdRefCount = 3;
