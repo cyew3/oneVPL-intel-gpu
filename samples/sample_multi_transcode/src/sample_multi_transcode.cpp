@@ -131,7 +131,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     * But you need process {2, 1, 0} sessions - totally 3.
     * So, you need start from 2 and end at 0.
     * */
-    mfxI32 jj = m_InputParamsArray.size() - 1 - 1;
+    mfxI32 jj = (mfxI32)m_InputParamsArray.size() - 1 - 1;
     while (jj >= 0)
     {
         /* Save params for VPP composition */
