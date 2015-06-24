@@ -16,11 +16,11 @@
 /////////////////////////////////////////////////////////
 // ENABLE_HEVC
 // Disable HEVC plugins
-#undef AS_HEVCE_PLUGIN
-#undef AS_HEVCD_PLUGIN
+//#undef AS_HEVCE_PLUGIN
+//#undef AS_HEVCD_PLUGIN
 
 #define MFX_ENABLE_H264_VIDEO_DECODE
-#define MFX_ENABLE_H265_VIDEO_DECODE
+//#define MFX_ENABLE_H265_VIDEO_DECODE
 
 // h264
 //#define MFX_ENABLE_H264_VIDEO_DECODE
