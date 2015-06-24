@@ -2861,7 +2861,8 @@ mfxStatus ConfigureExecuteParams(
 #if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
             case MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
             {
-                if(caps.uIStabFilter)
+                //DISABLE IMAGE_STABILIZATION
+                /*if(caps.uIStabFilter)
                 {
                     executeParams.bImgStabilizationEnable = true;
                     executeParams.istabMode               = MFX_IMAGESTAB_MODE_BOXING;
@@ -2875,10 +2876,10 @@ mfxStatus ConfigureExecuteParams(
                             executeParams.istabMode = extIStab->Mode;
 
                             // aya: all checks provided on high level
-                            /*if( extIStab->Mode != MFX_IMAGESTAB_MODE_UPSCALE && extIStab->Mode != MFX_IMAGESTAB_MODE_BOXING )
-                            {
-                                return MFX_ERR_INVALID_VIDEO_PARAM;
-                            }*/
+                                //if( extIStab->Mode != MFX_IMAGESTAB_MODE_UPSCALE && extIStab->Mode != MFX_IMAGESTAB_MODE_BOXING )
+                                //{
+                                //   return MFX_ERR_INVALID_VIDEO_PARAM;
+                                //}
                         }
                     }
                 }
@@ -2886,7 +2887,8 @@ mfxStatus ConfigureExecuteParams(
                 {
                     executeParams.bImgStabilizationEnable = false;
                     //bIsPartialAccel = true;
-                }
+                }*/
+                executeParams.bImgStabilizationEnable = false;
                 // no SW Fall Back
 
                 break;
