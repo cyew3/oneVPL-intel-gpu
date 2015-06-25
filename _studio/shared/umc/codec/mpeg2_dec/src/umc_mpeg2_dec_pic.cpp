@@ -1130,15 +1130,6 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
         return UMC_OK;
     }
 
-    if (PictureHeader[task_num].progressive_frame)
-        if (PictureHeader[task_num].picture_structure != FRAME_PICTURE || PictureHeader[task_num].frame_pred_frame_dct != 1)
-        {
-            // Bitstream error, not clear picture type
-            // Skipping picture because wrong picture type (frame or field) can take decoder to unrecoverable state
-            m_IsFrameSkipped = true;
-            return UMC_OK;
-        }
-
     if (PictureHeader[task_num].picture_structure == FRAME_PICTURE
         || frame_buffer.field_buffer_index[task_num] == 0)
     {
