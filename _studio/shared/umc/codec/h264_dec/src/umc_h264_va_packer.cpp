@@ -1341,7 +1341,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
         }
     }
 
-    if (pSliceHeader->disable_deblocking_filter_idc_from_stream != DEBLOCK_FILTER_OFF)
+    if (pSliceHeader->disable_deblocking_filter_idc != DEBLOCK_FILTER_OFF)
     {
         sliceParams->slice_alpha_c0_offset_div2 = (CHAR)(pSliceHeader->slice_alpha_c0_offset / 2);
         sliceParams->slice_beta_offset_div2 = (CHAR)(pSliceHeader->slice_beta_offset / 2);
@@ -1447,7 +1447,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
     }
 
     sliceParams->slice_qs_delta = (CHAR)pSliceHeader->slice_qs_delta;
-    sliceParams->disable_deblocking_filter_idc =  (UCHAR)pSliceHeader->disable_deblocking_filter_idc_from_stream;
+    sliceParams->disable_deblocking_filter_idc =  (UCHAR)pSliceHeader->disable_deblocking_filter_idc;
 
     sliceParams->slice_qp_delta = (CHAR)pSliceHeader->slice_qp_delta;
     sliceParams->redundant_pic_cnt = (UCHAR)pSliceHeader->redundant_pic_cnt;
@@ -1931,7 +1931,7 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
     pSlice_H264->direct_spatial_mv_pred_flag = (unsigned char)pSliceHeader->direct_spatial_mv_pred_flag;
     pSlice_H264->cabac_init_idc = (unsigned char)(pSliceHeader->cabac_init_idc);
     pSlice_H264->slice_qp_delta = (char)pSliceHeader->slice_qp_delta;
-    pSlice_H264->disable_deblocking_filter_idc = (unsigned char)pSliceHeader->disable_deblocking_filter_idc_from_stream;
+    pSlice_H264->disable_deblocking_filter_idc = (unsigned char)pSliceHeader->disable_deblocking_filter_idc;
     pSlice_H264->luma_log2_weight_denom = (unsigned char)pSliceHeader->luma_log2_weight_denom;
     pSlice_H264->chroma_log2_weight_denom = (unsigned char)pSliceHeader->chroma_log2_weight_denom;
 
@@ -1968,7 +1968,7 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
         }
     }
 
-    if (pSliceHeader->disable_deblocking_filter_idc_from_stream != DEBLOCK_FILTER_OFF)
+    if (pSliceHeader->disable_deblocking_filter_idc != DEBLOCK_FILTER_OFF)
     {
         pSlice_H264->slice_alpha_c0_offset_div2 = (char)(pSliceHeader->slice_alpha_c0_offset / 2);
         pSlice_H264->slice_beta_offset_div2 = (char)(pSliceHeader->slice_beta_offset / 2);

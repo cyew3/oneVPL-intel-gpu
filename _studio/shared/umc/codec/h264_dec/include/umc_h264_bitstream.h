@@ -149,11 +149,6 @@ class Headers;
 // Just put it to 0 to switch fast CABAC decoding off.
 #define CABAC_MAGIC_BITS 16
 
-#ifdef STORE_CABAC_BITS
-extern FILE *cabac_bits;
-extern Ipp32s sym_cnt;
-#endif
-
 #define NUM_BLOCK_TYPES        8
 #define NUM_MB_TYPE_CTX       11
 #define NUM_BLOCK_TYPE_CTX     9

@@ -1069,21 +1069,18 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlockMBAFF(I
         // the current reference index, use owning it partition
         {
             Ipp32s curFldFlag = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
-            Ipp32s fldFlagA = GetMBFieldDecodingFlag(m_gmbinfo->mbs[mbAddrA.mb_num]);
-            Ipp32s fldFlagB = GetMBFieldDecodingFlag(m_gmbinfo->mbs[mbAddrB.mb_num]);
-            Ipp32s fldFlagC = GetMBFieldDecodingFlag(m_gmbinfo->mbs[mbAddrC.mb_num]);
             Ipp32s curRefIdx = m_cur_mb.GetRefIdx(iListNum, 0);
             Ipp32s refIdxA, refIdxB, refIdxC;
             Ipp32s iEqual;
 
             refIdxA = (-1 != mbAddrA.mb_num) ?
-                      ((GetReferenceIndex(m_gmbinfo, iListNum, mbAddrA.mb_num, mbAddrA.block_num) << curFldFlag) >> fldFlagA) :
+                      ((GetReferenceIndex(m_gmbinfo, iListNum, mbAddrA.mb_num, mbAddrA.block_num) << curFldFlag) >> GetMBFieldDecodingFlag(m_gmbinfo->mbs[mbAddrA.mb_num])) :
                       (-1);
             refIdxB = (-1 != mbAddrB.mb_num) ?
-                      ((GetReferenceIndex(m_gmbinfo, iListNum, mbAddrB.mb_num, mbAddrB.block_num) << curFldFlag) >> fldFlagB) :
+                      ((GetReferenceIndex(m_gmbinfo, iListNum, mbAddrB.mb_num, mbAddrB.block_num) << curFldFlag) >> GetMBFieldDecodingFlag(m_gmbinfo->mbs[mbAddrB.mb_num])) :
                       (-1);
             refIdxC = (-1 != mbAddrC.mb_num) ?
-                      ((GetReferenceIndex(m_gmbinfo, iListNum, mbAddrC.mb_num, mbAddrC.block_num) << curFldFlag) >> fldFlagC) :
+                      ((GetReferenceIndex(m_gmbinfo, iListNum, mbAddrC.mb_num, mbAddrC.block_num) << curFldFlag) >> GetMBFieldDecodingFlag(m_gmbinfo->mbs[mbAddrC.mb_num])) :
                       (-1);
 
             iEqual = 0;

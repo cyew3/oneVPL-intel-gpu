@@ -113,15 +113,6 @@ public:
                                                     sNumCoeff,
                                                     &pCurCoeffs,
                                                     bf);
-    #ifdef STORE_VLC
-                FILE *fp=fopen(__VLC_FILE__,"a+t");
-                if (fp)
-                {
-                    fprintf(fp,"I4 L %d %d\n",uNC,sNumCoeff);
-                    fclose(fp);
-                }
-    #endif
-
                 //copy coeffs from tempbuffer
                 for (Ipp32s i=0;i<16;i++)
                 {
@@ -170,15 +161,6 @@ public:
                         VM_ASSERT(false);
                         throw h264_exception(UMC_ERR_INVALID_STREAM);
                     };
-
-#ifdef STORE_VLC
-                    FILE *fp=fopen(__VLC_FILE__,"a+t");
-                    if (fp)
-                    {
-                        fprintf(fp,"I4 CDC %d %d\n",0,sNumCoeff);
-                        fclose(fp);
-                    }
-#endif
 
                     sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[uBlock - FIRST_DC_CHROMA] |= (sNumCoeff ? 1 : 0);
                 }
@@ -290,15 +272,6 @@ public:
                         sNumCoeff,
                         (CoeffsPtr*)&sd->m_pCoeffBlocksWrite,
                         bf);
-
-        #ifdef STORE_VLC
-                    FILE *fp=fopen(__VLC_FILE__,"a+t");
-                    if (fp)
-                    {
-                        fprintf(fp,"I4 CAC %d %d\n",uNC,sNumCoeff);
-                        fclose(fp);
-                    }
-        #endif
 
                     sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[uBlock >= (FIRST_AC_CHROMA + 4*colorFactor)]
                         |= (sNumCoeff ? uBlockBit : 0);

@@ -1222,6 +1222,13 @@ void TaskBroker::AddPerformedTask(H264Task *pTask)
             //if (DEBLOCK_FILTER_ON_NO_SLICE_EDGES == pSlice->GetSliceHeader()->disable_deblocking_filter_idc)
                 //m_bDoFrameDeblocking = false; // DEBUG : ADB
 
+            // error handling
+            pSlice->m_iMaxMB = pTask->m_iMaxMB;
+            if (pTask->m_bError)
+            {
+                pSlice->m_bError = true;
+            }
+
             if (false == pSlice->m_bDeblocked)
                 pSlice->m_bDeblocked = pSlice->m_bPrevDeblocked;
         }

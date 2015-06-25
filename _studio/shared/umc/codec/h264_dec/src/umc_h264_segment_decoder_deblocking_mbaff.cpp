@@ -262,17 +262,12 @@ void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
     Ipp32s nCurrMB_X, nCurrMB_Y;
     const H264SliceHeader *pHeader;
     Ipp32s nFieldMacroblockMode;
-    Ipp32s disable_deblocking_filter_idc;
-    Ipp32s disable_deblocking_filter_idc_from_stream;
 
     // load slice header
     pHeader = (m_bFrameDeblocking) ?
             (m_pCurrentFrame->GetAU(m_field_index)->GetSliceByNumber(m_gmbinfo->mbs[m_CurMBAddr].slice_id)->GetSliceHeader()) :
             (m_pSliceHeader);
  
-    disable_deblocking_filter_idc = pHeader->disable_deblocking_filter_idc;
-    disable_deblocking_filter_idc_from_stream = pHeader->disable_deblocking_filter_idc_from_stream;
-
     Ipp32s pixel_luma_sz    = bit_depth_luma > 8 ? 2 : 1;
     Ipp32s pixel_chroma_sz  = bit_depth_chroma > 8 ? 2 : 1;
 
@@ -306,7 +301,7 @@ void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
     m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING] = nCurrMB_X;
     m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] = (nFieldMacroblockMode) ? (1 < nCurrMB_Y) : (nCurrMB_Y);
 
-    if (DEBLOCK_FILTER_ON_NO_SLICE_EDGES == disable_deblocking_filter_idc)
+    if (DEBLOCK_FILTER_ON_NO_SLICE_EDGES == pHeader->disable_deblocking_filter_idc)
     {
         // don't filter at slice boundaries
         if (m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING])
@@ -318,9 +313,8 @@ void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
 
         if (m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING])
         {
-            if (m_gmbinfo->mbs[m_CurMBAddr].slice_id !=
-                m_gmbinfo->mbs[m_CurMBAddr - mb_width * 2].slice_id
-                && !(!nFieldMacroblockMode && (m_CurMBAddr & 1)))
+            if (!(!nFieldMacroblockMode && (m_CurMBAddr & 1)) && m_gmbinfo->mbs[m_CurMBAddr].slice_id !=
+                m_gmbinfo->mbs[m_CurMBAddr - mb_width * 2].slice_id)
                 m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] = 0;
         }
     }

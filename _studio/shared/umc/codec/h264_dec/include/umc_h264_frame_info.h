@@ -271,7 +271,6 @@ public:
             pSlice->m_bDebVacant = 0;
             pSlice->m_iCurMBToDeb = pSlice->m_iMaxMB;
             pSlice->GetSliceHeader()->disable_deblocking_filter_idc = DEBLOCK_FILTER_OFF;
-            pSlice->GetSliceHeader()->disable_deblocking_filter_idc_from_stream = DEBLOCK_FILTER_OFF;
         }
     }
 

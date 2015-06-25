@@ -27,6 +27,26 @@ using namespace UMC_H264_DECODER;
 
 namespace UMC
 {
+
+#ifdef STORE_CABAC_BITS
+inline void PRINT_CABAC_VALUES(int val, int range)
+{
+    static FILE* cabac_bits = 0;
+    static int m_c = 0;
+    if (!cabac_bits)
+    {
+        cabac_bits = fopen("D:\\msdk_cabac.log", "w+t");
+    }
+    fprintf(cabac_bits, "%d: coding bin value %d, range = [%d]\n", m_c++, val, range);
+    fflush(cabac_bits);
+}
+#else
+inline void PRINT_CABAC_VALUES(int, int)
+{
+
+}
+#endif
+    
 inline bool H264BaseBitstream::IsBSLeft()
 {
     size_t bitsDecoded = BitsDecoded();
@@ -234,10 +254,6 @@ Ipp32u H264Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
     Ipp32u pState = context_array[ctxIdx].pStateIdxAndVal;
     Ipp32u binVal;
 
-#if defined(STORE_CABAC_BITS) && !defined(CABAC_DECORER_COMP)
-    Ipp8u preState = context_array[ctxIdx].pStateIdxAndVal;
-#endif
-
     codIRangeLPS = rangeTabLPS[pState][(codIRange >> (6 + CABAC_MAGIC_BITS)) - 4];
     codIRange -= codIRangeLPS << CABAC_MAGIC_BITS;
 
@@ -329,20 +345,7 @@ Ipp32u H264Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
     }
 
 #ifdef STORE_CABAC_BITS
-    sym_cnt++;
-
-    if (cabac_bits==NULL) cabac_bits=fopen(__CABAC_FILE__,"w+t");
-    if (cabac_bits)
-#ifdef CABAC_DECORER_COMP
-        fprintf(cabac_bits,"sb %d %d %d %d %d\n",
-        ctxIdx,
-        codIRange>>CABAC_MAGIC_BITS,
-        codIOffset>>CABAC_MAGIC_BITS,
-        binVal,sym_cnt);
-#else
-        fprintf(cabac_bits,"sb %d %d %d %d %d %d %d\n",ctxIdx,preState>>1,preState&1,context_array[ctxIdx].pStateIdxAndVal>>1,context_array[ctxIdx].pStateIdxAndVal&1,binVal,sym_cnt);
-#endif
-    fflush(cabac_bits);
+    PRINT_CABAC_VALUES(binVal, codIRange>>CABAC_MAGIC_BITS);
 #endif
 
     m_lcodIOffset = codIOffset;
@@ -385,21 +388,6 @@ Ipp32u H264Bitstream::DecodeSymbolEnd_CABAC(void)
 
     }
 
-#ifdef STORE_CABAC_BITS
-    sym_cnt++;
-
-    if (cabac_bits==NULL) cabac_bits=fopen(__CABAC_FILE__,"w+t");
-    if (cabac_bits)
-#ifdef CABAC_DECORER_COMP
-        fprintf(cabac_bits,"fsb %d %d %d %d\n",m_lcodIRange>>CABAC_MAGIC_BITS,
-                                               m_lcodIOffset>>CABAC_MAGIC_BITS,
-                                               binVal,sym_cnt);
-#else
-    fprintf(cabac_bits,"fsb %d %d\n",binVal,sym_cnt);
-#endif
-    fflush(cabac_bits);
-#endif
-
     return binVal;
 
 } //Ipp32s H264Bitstream::DecodeSymbolEnd_CABAC(void)
@@ -428,20 +416,6 @@ Ipp32u H264Bitstream::DecodeBypass_CABAC(void)
     {
         binVal = 0;
     }
-
-#ifdef STORE_CABAC_BITS
-    sym_cnt++;
-    if (cabac_bits==NULL) cabac_bits=fopen(__CABAC_FILE__,"w+t");
-    if (cabac_bits)
-#ifdef CABAC_DECORER_COMP
-        fprintf(cabac_bits,"bp %d %d %d %d\n",m_lcodIRange>>CABAC_MAGIC_BITS,
-                                              m_lcodIOffset>>CABAC_MAGIC_BITS,
-                                              binVal,sym_cnt);
-#else
-    fprintf(cabac_bits,"bp %d %d\n",binVal,sym_cnt);
-#endif
-    fflush(cabac_bits);
-#endif
 
     return binVal;
 
@@ -472,19 +446,6 @@ Ipp32s H264Bitstream::DecodeBypassSign_CABAC(Ipp32s val)
     {
         binVal = val;
     }
-#ifdef STORE_CABAC_BITS
-    sym_cnt++;
-    if (cabac_bits==NULL) cabac_bits=fopen(__CABAC_FILE__,"w+t");
-    if (cabac_bits)
-#ifdef CABAC_DECORER_COMP
-        fprintf(cabac_bits,"bp %d %d %d %d\n",m_lcodIRange>>CABAC_MAGIC_BITS,
-                                              m_lcodIOffset>>CABAC_MAGIC_BITS,
-                                              binVal<0,sym_cnt);
-#else
-    fprintf(cabac_bits,"bp %d %d\n",binVal<0,sym_cnt);
-#endif
-    fflush(cabac_bits);
-#endif
 
     return binVal;
 

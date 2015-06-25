@@ -32,13 +32,7 @@ T Clip3(T Min, T Max, T Value)
 } //T Clip3(T Min, T Max, T Value)
 
 static
-void InitializeContext(CABAC_CONTEXT *pContext, Ipp16s m, Ipp16s n, Ipp32s SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                       , Ipp32s ctxIdx
-#endif
-#endif
-                       )
+void InitializeContext(CABAC_CONTEXT *pContext, Ipp16s m, Ipp16s n, Ipp32s SliceQPy)
 {
     Ipp32s preCtxState;
 
@@ -51,14 +45,6 @@ void InitializeContext(CABAC_CONTEXT *pContext, Ipp16s m, Ipp16s n, Ipp32s Slice
     {
         pContext->pStateIdxAndVal = Ipp8u((preCtxState - 64) * 2 + 1);
     }
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-    if(cabac_bits==NULL) cabac_bits=fopen(__CABAC_FILE__,"w+t");
-    if(cabac_bits)
-        fprintf(cabac_bits,"ctx_ini %d %d %d\n",ctxIdx,pContext->pStateIdx,pContext->valMPS);
-#endif
-#endif
-
 } // void InitializeContext(CABAC_CONTEXT *pContext, Ipp8s m, Ipp8s n, Ipp8u SliceQPy)
 
 typedef struct INITIALIZE_VALUES
@@ -1084,13 +1070,7 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_0_10[l - 0].m,
                           M_and_N_for_ctxIdx_0_10[l - 0].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initialize context(s) for mb_qp_delta &
@@ -1101,13 +1081,7 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_60_69[l - 60].m,
                           M_and_N_for_ctxIdx_60_69[l - 60].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initialize context(s) for mb_field_decoding_flag &
@@ -1118,13 +1092,7 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_70_104_intra[l - 70].m,
                           M_and_N_for_ctxIdx_70_104_intra[l - 70].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initalize context(s) for significant_coeff_flag[] (frame coded)
@@ -1133,13 +1101,7 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_105_165_intra[l - 105].m,
                           M_and_N_for_ctxIdx_105_165_intra[l - 105].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initalize context(s) for last_significant_coeff_flag[] (frame coded)
@@ -1148,13 +1110,7 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_166_226_intra[l - 166].m,
                           M_and_N_for_ctxIdx_166_226_intra[l - 166].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initalize context(s) for coeff_abs_level_minus1[]
@@ -1163,13 +1119,7 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_227_275_intra[l - 227].m,
                           M_and_N_for_ctxIdx_227_275_intra[l - 227].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // ctxIdx equal to 276 is associated the end_of_slice_flag
@@ -1183,13 +1133,7 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_277_337_intra[l - 277].m,
                           M_and_N_for_ctxIdx_277_337_intra[l - 277].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initalize context(s) for last_significant_coeff_flag[] (field coded)
@@ -1198,13 +1142,7 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_338_398_intra[l - 338].m,
                           M_and_N_for_ctxIdx_338_398_intra[l - 338].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     for (l = 399; l <= 401; l += 1)
@@ -1212,13 +1150,7 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_399_401_intra[l - 399].m,
                           M_and_N_for_ctxIdx_399_401_intra[l - 399].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     for (l = 402; l <= 459; l += 1)
@@ -1226,13 +1158,7 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_402_459_intra[l - 402].m,
                           M_and_N_for_ctxIdx_402_459_intra[l - 402].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     for (l = 460; l <= 462; l += 1)
@@ -1240,13 +1166,7 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_1024_1026_intra[l - 460].m,
                           M_and_N_for_ctxIdx_1024_1026_intra[l - 460].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-            , l
-#endif
-#endif
-            );
+                          SliceQPy);
     }
 
 } // void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
@@ -1266,13 +1186,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_11_23[l - 11][cabac_init_idc].m,
                           M_and_N_for_ctxIdx_11_23[l - 11][cabac_init_idc].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initialize context(s) for mb_skip_flag & mb_type (B slices)
@@ -1282,13 +1196,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_24_39[l - 24][cabac_init_idc].m,
                           M_and_N_for_ctxIdx_24_39[l - 24][cabac_init_idc].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initialize context(s) for mvd_10 & mvd_11
@@ -1297,13 +1205,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_40_53[l - 40][cabac_init_idc].m,
                           M_and_N_for_ctxIdx_40_53[l - 40][cabac_init_idc].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initialize context(s) for ref_idx_10 & ref_idx_11
@@ -1312,13 +1214,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_54_59[l - 54][cabac_init_idc].m,
                           M_and_N_for_ctxIdx_54_59[l - 54][cabac_init_idc].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initialize context(s) for mb_qp_delta &
@@ -1329,13 +1225,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_60_69[l - 60].m,
                           M_and_N_for_ctxIdx_60_69[l - 60].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initalize context(s) for mb_field_decoding_flag &
@@ -1346,13 +1236,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_70_104_inter[l - 70][cabac_init_idc].m,
                           M_and_N_for_ctxIdx_70_104_inter[l - 70][cabac_init_idc].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initalize context(s) for significant_coeff_flag[] (frame coded)
@@ -1361,13 +1245,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_105_165_inter[l - 105][cabac_init_idc].m,
                           M_and_N_for_ctxIdx_105_165_inter[l - 105][cabac_init_idc].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initalize context(s) for last_significant_coeff_flag[] (frame coded)
@@ -1376,13 +1254,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_166_226_inter[l - 166][cabac_init_idc].m,
                           M_and_N_for_ctxIdx_166_226_inter[l - 166][cabac_init_idc].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initalize context(s) for coeff_abs_level_minus1[]
@@ -1391,13 +1263,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_227_275_inter[l - 227][cabac_init_idc].m,
                           M_and_N_for_ctxIdx_227_275_inter[l - 227][cabac_init_idc].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initalize context(s) for significant_coeff_flag[] (field coded)
@@ -1406,13 +1272,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_277_337_inter[l - 277][cabac_init_idc].m,
                           M_and_N_for_ctxIdx_277_337_inter[l - 277][cabac_init_idc].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     // Initalize context(s) for last_significant_coeff_flag[] (field coded)
@@ -1421,13 +1281,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_338_398_inter[l - 338][cabac_init_idc].m,
                           M_and_N_for_ctxIdx_338_398_inter[l - 338][cabac_init_idc].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     for (l = 399; l <= 401; l += 1)
@@ -1435,13 +1289,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_399_401_inter[l - 399][cabac_init_idc].m,
                           M_and_N_for_ctxIdx_399_401_inter[l - 399][cabac_init_idc].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     for (l = 402; l <= 459; l += 1)
@@ -1449,13 +1297,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_402_459_inter[l - 402][cabac_init_idc].m,
                           M_and_N_for_ctxIdx_402_459_inter[l - 402][cabac_init_idc].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-                          , l
-#endif
-#endif
-                          );
+                          SliceQPy);
     }
 
     for (l = 460; l <= 462; l += 1)
@@ -1463,13 +1305,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_1024_1026_inter[l - 460].m,
                           M_and_N_for_ctxIdx_1024_1026_inter[l - 460].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-            , l
-#endif
-#endif
-            );
+                          SliceQPy);
     }
 
     for (l = 463; l <= 466; l += 1)
@@ -1477,13 +1313,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
         InitializeContext(context_array + l,
                           M_and_N_for_ctxIdx_1027_1030[l - 463].m,
                           M_and_N_for_ctxIdx_1027_1030[l - 463].n,
-                          SliceQPy
-#ifdef STORE_CABAC_BITS
-#ifdef CABAC_CONTEXTS_COMP
-            , l
-#endif
-#endif
-            );
+                          SliceQPy);
     }
 
 } // void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
@@ -1528,11 +1358,6 @@ void H264Bitstream::TerminateDecode_CABAC(void)
     AlignPointerRight();
 
 } // void H264Bitstream::TerminateDecode_CABAC(void)
-
-#ifdef STORE_CABAC_BITS
-FILE *cabac_bits;
-Ipp32s sym_cnt;
-#endif
 
 } // namespace UMC
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

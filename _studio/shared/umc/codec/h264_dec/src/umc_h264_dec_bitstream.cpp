@@ -1925,19 +1925,11 @@ Status H264HeadersBitstream::GetSliceHeaderPart3(
     if (pps->deblocking_filter_variables_present_flag)
     {
         // deblock filter flag and offsets
-        hdr->disable_deblocking_filter_idc_from_stream = GetVLCElement(false);
-        if (hdr->nal_unit_type != NAL_UT_CODED_SLICE_EXTENSION)
-        {
-            if (hdr->disable_deblocking_filter_idc_from_stream > DEBLOCK_FILTER_ON_NO_SLICE_EDGES)
-                return UMC_ERR_INVALID_STREAM;
-        }
-        else
-        {
-            if (hdr->disable_deblocking_filter_idc_from_stream > DEBLOCK_FILTER_ON_2_PASS_NO_CHROMA)
-                return UMC_ERR_INVALID_STREAM;
-        }
+        hdr->disable_deblocking_filter_idc = GetVLCElement(false);
+        if (hdr->disable_deblocking_filter_idc > DEBLOCK_FILTER_ON_NO_SLICE_EDGES)
+            return UMC_ERR_INVALID_STREAM;
 
-        if (hdr->disable_deblocking_filter_idc_from_stream != DEBLOCK_FILTER_OFF)
+        if (hdr->disable_deblocking_filter_idc != DEBLOCK_FILTER_OFF)
         {
             hdr->slice_alpha_c0_offset = GetVLCElement(true)<<1;
             hdr->slice_beta_offset = GetVLCElement(true)<<1;
@@ -1957,17 +1949,6 @@ Status H264HeadersBitstream::GetSliceHeaderPart3(
             // set filter offsets to max values to disable filter
             hdr->slice_alpha_c0_offset = (Ipp8s)(0 - QP_MAX);
             hdr->slice_beta_offset = (Ipp8s)(0 - QP_MAX);
-        }
-
-        hdr->disable_deblocking_filter_idc = hdr->disable_deblocking_filter_idc_from_stream;
-
-        if (hdr->disable_deblocking_filter_idc == DEBLOCK_FILTER_ON_NO_CHROMA)
-        {
-            hdr->disable_deblocking_filter_idc = DEBLOCK_FILTER_ON;
-        }
-        else if (hdr->disable_deblocking_filter_idc > DEBLOCK_FILTER_ON_NO_SLICE_EDGES)
-        {
-            hdr->disable_deblocking_filter_idc = DEBLOCK_FILTER_ON_NO_SLICE_EDGES;
         }
     }
 
@@ -2508,10 +2489,6 @@ Ipp32u H264Bitstream::DecodeSingleBinOnes_CABAC(Ipp32u ctxIdx,
     Ipp32u codIRangeLPS;
     Ipp32u binVal;
 
-#if defined(STORE_CABAC_BITS) && !defined(CABAC_DECORER_COMP)
-    Ipp8u preState = context_array[ctxIdx].pStateIdxAndVal;
-#endif
-
     do
     {
         binIdx += 1;
@@ -2552,19 +2529,7 @@ Ipp32u H264Bitstream::DecodeSingleBinOnes_CABAC(Ipp32u ctxIdx,
         }
 
 #ifdef STORE_CABAC_BITS
-        sym_cnt++;
-        if(cabac_bits==NULL) cabac_bits=fopen(__CABAC_FILE__,"w+t");
-        if(cabac_bits)
-#ifdef CABAC_DECORER_COMP
-            fprintf(cabac_bits,"sb %d %d %d %d %d\n",ctxIdx,
-            codIRange>>CABAC_MAGIC_BITS,
-            codIOffset>>CABAC_MAGIC_BITS,
-            binVal,sym_cnt);
-#else
-            fprintf(cabac_bits,"sb %d %d %d %d %d %d %d\n",ctxIdx,preStateIdx,prevalMPS,pStateIdx,valMPS,binVal,sym_cnt);
-            preStateIdx = pStateIdx;
-            prevalMPS = valMPS;
-#endif
+        PRINT_CABAC_VALUES(binVal, codIRange>>CABAC_MAGIC_BITS);
 #endif
 
     } while (binVal && (binIdx < 14));
@@ -2604,20 +2569,6 @@ Ipp32u H264Bitstream::DecodeBypassOnes_CABAC(void)
         binCount += binVal;
         // conditionally subtract range from offset
         codIOffset -= codIRange & mask;
-
-#ifdef STORE_CABAC_BITS
-        sym_cnt++;
-        if(cabac_bits==NULL) cabac_bits=fopen(__CABAC_FILE__,"w+t");
-        if(cabac_bits)
-#ifdef CABAC_DECORER_COMP
-            fprintf(cabac_bits,"bp %d %d %d %d\n",
-            codIRange>>CABAC_MAGIC_BITS,
-            codIOffset>>CABAC_MAGIC_BITS,
-            binVal,sym_cnt);
-#else
-        fprintf(cabac_bits,"bp %d %d\n",binVal,sym_cnt);
-#endif
-#endif
     } while(binVal);
 
     m_lcodIOffset = codIOffset;
@@ -2824,20 +2775,6 @@ Ipp32s H264Bitstream::DecodeSignedLevel_CABAC(Ipp32u ctxIdxOffset,
         lcodIOffset -= lcodIRange & mask;
 
         m_lcodIOffset = lcodIOffset;
-
-#ifdef STORE_CABAC_BITS
-        sym_cnt++;
-        if(cabac_bits==NULL) cabac_bits=fopen(__CABAC_FILE__,"w+t");
-        if(cabac_bits)
-#ifdef CABAC_DECORER_COMP
-            fprintf(cabac_bits,"bp %d %d %d %d\n",
-            m_lcodIRange>>CABAC_MAGIC_BITS,
-            m_lcodIOffset>>CABAC_MAGIC_BITS,
-            -mask,sym_cnt);
-#else
-        fprintf(cabac_bits,"bp %d %d\n",-mask,sym_cnt);
-#endif
-#endif
     }
 
     return binIdx;
@@ -2927,20 +2864,6 @@ Ipp32s H264Bitstream::DecodeSingleSignedLevel_CABAC(Ipp32u ctxIdxOffset)
         lcodIOffset -= lcodIRange & mask;
 
         m_lcodIOffset = lcodIOffset;
-
-#ifdef STORE_CABAC_BITS
-        sym_cnt++;
-        if(cabac_bits==NULL) cabac_bits=fopen(__CABAC_FILE__,"w+t");
-        if(cabac_bits)
-#ifdef CABAC_DECORER_COMP
-            fprintf(cabac_bits,"bp %d %d %d %d\n",
-            m_lcodIRange>>CABAC_MAGIC_BITS,
-            m_lcodIOffset>>CABAC_MAGIC_BITS,
-            -mask,sym_cnt);
-#else
-        fprintf(cabac_bits,"bp %d %d\n",-mask,sym_cnt);
-#endif
-#endif
     }
 
     return binIdx;

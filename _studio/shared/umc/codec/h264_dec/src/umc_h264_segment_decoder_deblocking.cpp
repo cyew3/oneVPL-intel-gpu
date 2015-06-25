@@ -489,9 +489,6 @@ void H264SegmentDecoder::ResetDeblockingVariables()
 {
     H264Slice *pSlice;
     const H264SliceHeader *pHeader;
-    Ipp32s disable_deblocking_filter_idc;
-    Ipp32s disable_deblocking_filter_idc_from_stream;
-
 
     if (m_bFrameDeblocking) {
         pSlice = m_pCurrentFrame->GetAU(m_pCurrentFrame->GetNumberByParity(m_field_index))->GetSliceByNumber(m_gmbinfo->mbs[m_CurMBAddr].slice_id);
@@ -500,9 +497,6 @@ void H264SegmentDecoder::ResetDeblockingVariables()
         pSlice = m_pSlice;
         pHeader = m_pSliceHeader;
     }
-
-    disable_deblocking_filter_idc = pHeader->disable_deblocking_filter_idc;
-    disable_deblocking_filter_idc_from_stream = pHeader->disable_deblocking_filter_idc_from_stream;
 
     if (m_isSliceGroups)
     {
@@ -566,7 +560,7 @@ void H264SegmentDecoder::ResetDeblockingVariables()
     m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING] = (m_CurMB_X != 0);
     m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] = (m_CurMB_Y != 0);
 
-    if (DEBLOCK_FILTER_ON_NO_SLICE_EDGES == disable_deblocking_filter_idc)
+    if (DEBLOCK_FILTER_ON_NO_SLICE_EDGES == pHeader->disable_deblocking_filter_idc)
     {
         // don't filter at slice boundaries
         if (m_CurMB_X)

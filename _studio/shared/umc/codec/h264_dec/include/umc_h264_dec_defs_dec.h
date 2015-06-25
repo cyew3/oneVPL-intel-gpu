@@ -49,13 +49,6 @@ namespace UMC
 #define ABSOWN(x) ((x) > 0 ? (x) : (-(x)))
 
 //#define STORE_CABAC_BITS
-//#define CABAC_DECORER_COMP
-//#define CABAC_CONTEXTS_COMP
-//#define STORE_VLC
-
-#define __VLC_FILE__ "d:\\vlc.ipp"
-#define __CABAC_FILE__ "d:\\cabac.tst"
-#define __PICLIST_FILE__ "d:\\piclist.ipp"
 
 // NAL unit definitions
 enum
@@ -1024,7 +1017,6 @@ struct H264SliceHeader
     Ipp8u         sp_for_switch_flag;                   // SP slice decoding control
     Ipp32s        slice_qs_delta;                       // to calculate default SP,SI slice QS
     Ipp32u        disable_deblocking_filter_idc;       // deblock filter control, 0=filter all edges
-    Ipp32u        disable_deblocking_filter_idc_from_stream; // deblock filter control, 0=filter all edges
     Ipp32s        slice_alpha_c0_offset;               // deblock filter c0, alpha table offset
     Ipp32s        slice_beta_offset;                   // deblock filter beta table offset
     H264DecoderMBAddr first_mb_in_slice;
