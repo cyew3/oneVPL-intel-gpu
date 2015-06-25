@@ -208,13 +208,12 @@ cl_int OpenCLFilterBase::BuildKernels()
     return error;
 }
 
-cl_int OpenCLFilterBase::AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name, mfxU32 format)
+cl_int OpenCLFilterBase::AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name)
 {
     OCL_YUV_kernel kernel;
     kernel.program_source = std::string(filename);
     kernel.kernelY_FuncName = std::string(kernelY_name);
     kernel.kernelUV_FuncName = std::string(kernelUV_name);
-    kernel.format = format;
     kernel.clprogram = 0;
     kernel.clkernelY = kernel.clkernelUV = 0;
     m_kernels.push_back(kernel);
@@ -223,23 +222,15 @@ cl_int OpenCLFilterBase::AddKernel(const char* filename, const char* kernelY_nam
 
 cl_int OpenCLFilterBase::SelectKernel(unsigned kNo)
 {
-    if(m_bInit)
-    {
-        if(kNo < m_kernels.size())
-        {
-            if(m_kernels[m_activeKernel].format != m_kernels[kNo].format)
-                ReleaseResources(); // Kernel format changed, OCL buffers must be released & recreated
-
-            m_activeKernel = kNo;
-
-            return CL_SUCCESS;
-        }
-        else {
-            return CL_INVALID_PROGRAM;
-        }
-    }
-    else
+    if (!m_bInit)
         return CL_DEVICE_NOT_FOUND;
+
+    if (kNo >= m_kernels.size())
+        return CL_INVALID_PROGRAM;
+
+    m_activeKernel = kNo;
+
+    return CL_SUCCESS;
 }
 
 cl_int OpenCLFilterBase::SetKernelArgs()

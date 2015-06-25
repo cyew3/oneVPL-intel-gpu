@@ -86,7 +86,7 @@ mfxStatus CResourcesPool::CreatePlugins(mfxPluginUID pluginGUID, mfxChar* plugin
 {
     for (int i = 0; i < size; i++)
     {
-        MFXPlugin* pPlugin = pluginPath ? 
+        MFXPlugin* pPlugin = pluginPath ?
             LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_resources[i].Session, pluginGUID, 1, pluginPath, (mfxU32)strlen(pluginPath)):
             LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_resources[i].Session, pluginGUID, 1);
 

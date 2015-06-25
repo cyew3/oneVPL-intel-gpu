@@ -1354,7 +1354,10 @@ mfxStatus CEncodingPipeline::Run()
          (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF) )
     {
         numOfFields = 2;
-        numMB = numMB/2;
+        // For interlaced mode, may need an extra MB vertically
+        // For example if the progressive mode has 45 MB vertically
+        // The interlace should have 23 MB for each field
+        numMB = widthMB/16 * (((heightMB/16)+1) / 2);
     }
 
     if (m_encpakParams.bPREENC) {

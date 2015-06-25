@@ -365,6 +365,22 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i420")))
+        {
+            pParams->fourcc = MFX_FOURCC_NV12;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-rgb4")))
+        {
+            pParams->fourcc = MFX_FOURCC_RGB4;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-p010")))
+        {
+            pParams->fourcc = MFX_FOURCC_P010;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-a2rgb10")))
+        {
+            pParams->fourcc = MFX_FOURCC_A2RGB10;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-path")))
         {
             i++;
@@ -486,8 +502,8 @@ int _tmain(int argc, TCHAR *argv[])
 int main(int argc, char *argv[])
 #endif
 {
-    sInputParams        Params; // input parameters from command line
-    CDecodingPipeline   Pipeline;    // pipeline for decoding, includes input file reader, decoder and output file writer
+    sInputParams        Params;   // input parameters from command line
+    CDecodingPipeline   Pipeline; // pipeline for decoding, includes input file reader, decoder and output file writer
 
     mfxStatus sts = MFX_ERR_NONE; // return value check
 

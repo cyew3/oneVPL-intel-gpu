@@ -24,7 +24,6 @@ typedef struct {
     std::string program_source;
     std::string kernelY_FuncName;
     std::string kernelUV_FuncName;
-    mfxU32      format;
     cl_program  clprogram;
     cl_kernel   clkernelY;
     cl_kernel   clkernelUV;
@@ -38,7 +37,7 @@ public:
     virtual mfxStatus SetAllocator(mfxFrameAllocator *pAlloc) = 0;
 
     virtual cl_int OCLInit(mfxHDL pD3DDeviceManager) = 0;
-    virtual cl_int AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name, mfxU32 format) = 0;
+    virtual cl_int AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name) = 0;
     virtual cl_int SelectKernel(unsigned kNo) = 0;
     virtual cl_int ProcessSurface(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut) = 0;
 };
@@ -52,7 +51,7 @@ public:
     virtual mfxStatus SetAllocator(mfxFrameAllocator *pAlloc);
 
     virtual cl_int OCLInit(mfxHDL device);
-    virtual cl_int AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name, mfxU32 format);
+    virtual cl_int AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name);
     virtual cl_int SelectKernel(unsigned kNo); // cl
     virtual cl_int ProcessSurface(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut);
 
