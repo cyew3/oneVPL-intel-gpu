@@ -53,6 +53,10 @@ enum MemType {
     D3D11_MEMORY  = 0x02,
 };
 
+#define PREENC_ALLOC 1
+#define PAK_ALLOC    2
+
+
 struct sInputParams
 {
     mfxU16 nTargetUsage;
