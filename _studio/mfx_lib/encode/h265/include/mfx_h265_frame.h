@@ -259,7 +259,7 @@ namespace H265Enc {
         Ipp32s m_totComplxCnt;
         Ipp64f m_complxSum;
         Ipp32s m_predBits;
-        //Ipp64f m_cmplx;
+        Ipp64f m_cmplx;
         std::vector<Frame *> m_futureFrames;
 
         // FEI resources
