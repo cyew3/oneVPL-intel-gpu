@@ -12,6 +12,11 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h264_preenc )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h265/include )
 
+set( ENABLE_HEVC FALSE )
+
+if ( (CMAKE_C_COMPILER MATCHES icc) OR ENABLE_HEVC_ON_GCC )
+  set(ENABLE_HEVC TRUE)
+endif()
 
 list( APPEND umc_dirs
   common
@@ -19,8 +24,11 @@ list( APPEND umc_dirs
   mpeg2_dec mpeg2_enc
   vc1_common vc1_dec vc1_spl
   h264_dec h264_enc
-  h265_dec
   jpeg_common jpeg_dec jpeg_enc)
+
+if ( ENABLE_HEVC )
+  list( APPEND umc_dirs h265_dec )
+endif()
 
 foreach( dir ${umc_dirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/${dir}/include )
@@ -65,34 +73,7 @@ endforeach( )
 # Plugins section
 # =============================================================================
 
-set (HEVC_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - HEVC Decode and Encode")
-set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC Software Decode Plug-in")
-set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC Hardware Decode Plug-in")
-set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC Software Encode Plug-in")
-set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC GPU Accelerated Encode Plug-in")
-
-  if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
-    set( hevc_version 0.0.000.0000 )
-  else( )
-    set( hevc_version $ENV{MFX_HEVC_VERSION} )
-  endif( )
-
-  if( Linux OR Darwin )
-    execute_process(
-      COMMAND echo
-      COMMAND cut -f 1 -d.
-      COMMAND date "+.%-y.%-m.%-d"
-      OUTPUT_VARIABLE cur_date
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-    string( SUBSTRING ${hevc_version} 0 1 ver )
-
-    set(hevc_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${hevc_version}\"\\\"")
-  endif( )
-
-
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
-
   list( APPEND plugin_common_sources
     ${prefix}/mfx_check_hardware_support.cpp
     ${prefix}/mfx_common_int.cpp
@@ -135,6 +116,34 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../scheduler/src )
     ${prefix}/mfx_scheduler_core_thread.cpp
   )
 endforeach()
+
+# hevc_version used by almost all plugins TODO: remove this dependency, vesrions have to be independent
+if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
+  set( hevc_version 0.0.000.0000 )
+else( )
+  set( hevc_version $ENV{MFX_HEVC_VERSION} )
+endif( )
+
+if (ENABLE_HEVC)
+
+set (HEVC_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - HEVC Decode and Encode")
+set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC Software Decode Plug-in")
+set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC Hardware Decode Plug-in")
+set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC Software Encode Plug-in")
+set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC GPU Accelerated Encode Plug-in")
+
+  if( Linux OR Darwin )
+    execute_process(
+      COMMAND echo
+      COMMAND cut -f 1 -d.
+      COMMAND date "+.%-y.%-m.%-d"
+      OUTPUT_VARIABLE cur_date
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+    string( SUBSTRING ${hevc_version} 0 1 ver )
+
+    set(hevc_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${hevc_version}\"\\\"")
+  endif( )
 
 # HEVC
 
@@ -298,6 +307,8 @@ foreach( variant sw hw )
 
 endforeach()
 set( defs "" )
+
+endif() # ENABLE_HEVC
 
 # =============================================================================
 # 1toN Lookahead

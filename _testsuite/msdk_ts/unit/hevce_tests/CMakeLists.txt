@@ -2,6 +2,15 @@ mfx_include_dirs( )
 ###################################################################################################
 # hevce_tests
 
+
+set( ENABLE_HEVC FALSE )
+
+if ( (CMAKE_C_COMPILER MATCHES icc) OR ENABLE_HEVC_ON_GCC )
+  set(ENABLE_HEVC TRUE)
+endif()
+
+if ( ENABLE_HEVC )
+
 ###################################################################################################
 # Includes
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
@@ -50,3 +59,5 @@ list( APPEND LIBS_SUFFIX gmock )
 ###################################################################################################
 # Target
 make_executable( hevce_tests none )
+
+endif() # ENABLE_HEVC
