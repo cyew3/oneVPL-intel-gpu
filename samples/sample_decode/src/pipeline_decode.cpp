@@ -744,15 +744,52 @@ mfxStatus CDecodingPipeline::AllocFrames()
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    // respecify memory type between Decoder and VPP
-    m_mfxVideoParams.IOPattern = (mfxU16)( m_bDecOutSysmem ?
-            MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
-            MFX_IOPATTERN_OUT_VIDEO_MEMORY);
+    if (m_bVppIsUsed)
+    {
+        // respecify memory type between Decoder and VPP
+        m_mfxVideoParams.IOPattern = (mfxU16)( m_bDecOutSysmem ?
+                MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
+                MFX_IOPATTERN_OUT_VIDEO_MEMORY);
 
-    // recalculate number of surfaces required for decoder
-    sts = m_pmfxDEC->QueryIOSurf(&m_mfxVideoParams, &Request);
-    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        // recalculate number of surfaces required for decoder
+        sts = m_pmfxDEC->QueryIOSurf(&m_mfxVideoParams, &Request);
+        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+
+        sts = InitVppParams();
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        sts = m_pmfxVPP->Query(&m_mfxVppVideoParams, &m_mfxVppVideoParams);
+        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        // VppRequest[0] for input frames request, VppRequest[1] for output frames request
+        sts = m_pmfxVPP->QueryIOSurf(&m_mfxVppVideoParams, VppRequest);
+        if (MFX_WRN_PARTIAL_ACCELERATION == sts) {
+            msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
+            MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        }
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        if ((VppRequest[0].NumFrameSuggested < m_mfxVppVideoParams.AsyncDepth) ||
+            (VppRequest[1].NumFrameSuggested < m_mfxVppVideoParams.AsyncDepth))
+            return MFX_ERR_MEMORY_ALLOC;
+
+
+        // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
+        // The number of surfaces shared by vpp input and decode output
+        nSurfNum = Request.NumFrameSuggested + VppRequest[0].NumFrameSuggested - m_mfxVideoParams.AsyncDepth + 1;
+
+        // The number of surfaces for vpp output
+        nVppSurfNum = VppRequest[1].NumFrameSuggested;
+
+        // prepare allocation request
+        Request.NumFrameSuggested = Request.NumFrameMin = nSurfNum;
+
+        // surfaces are shared between vpp input and decode output
+        Request.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_VPPIN;
+    }
 
     mfxIMPL impl = 0;
     sts = m_mfxSession.QueryIMPL(&impl);
@@ -761,45 +798,9 @@ mfxStatus CDecodingPipeline::AllocFrames()
         (impl & MFX_IMPL_HARDWARE_ANY))
         return MFX_ERR_MEMORY_ALLOC;
 
-    if (m_bVppIsUsed)
-    {
-        sts = InitVppParams();
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    sts = m_pmfxVPP->Query(&m_mfxVppVideoParams, &m_mfxVppVideoParams);
-    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    // VppRequest[0] for input frames r;equest, VppRequest[1] for output frames request
-    sts = m_pmfxVPP->QueryIOSurf(&m_mfxVppVideoParams, VppRequest);
-    if (MFX_WRN_PARTIAL_ACCELERATION == sts) {
-        msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
-        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
-    }
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    if ((VppRequest[0].NumFrameSuggested < m_mfxVppVideoParams.AsyncDepth) ||
-        (VppRequest[1].NumFrameSuggested < m_mfxVppVideoParams.AsyncDepth))
-        return MFX_ERR_MEMORY_ALLOC;
-    }
-
-    // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
-    // The number of surfaces shared by vpp input and decode output
-    nSurfNum = Request.NumFrameSuggested + VppRequest[0].NumFrameSuggested - m_mfxVideoParams.AsyncDepth + 1;
-
-    // The number of surfaces for vpp output
-    nVppSurfNum = VppRequest[1].NumFrameSuggested;
-
-    // prepare allocation request
-    Request.NumFrameSuggested = Request.NumFrameMin = nSurfNum;
-
-    // surfaces are shared between vpp input and decode output
-    Request.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_VPPIN;
-
     Request.Type |= (m_bDecOutSysmem) ?
-            MFX_MEMTYPE_SYSTEM_MEMORY
-            : MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
-
+        MFX_MEMTYPE_SYSTEM_MEMORY
+        : MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
     // alloc frames for decoder
     sts = m_pGeneralAllocator->Alloc(m_pGeneralAllocator->pthis, &Request, &m_mfxResponse);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
