@@ -433,7 +433,7 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     request.Type = MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
     request.NumFrameMin = m_video.mfx.GopRefDist*2;
     request.NumFrameSuggested = request.NumFrameMin + m_video.AsyncDepth;
-    //request.reserved[0] = par->reserved[0];
+    request.AllocId = par->AllocId;
 
     sts = m_core->AllocFrames(&request, &m_raw);
     //sts = m_raw.Alloc(m_core, request);

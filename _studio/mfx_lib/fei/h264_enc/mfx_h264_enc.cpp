@@ -430,6 +430,7 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
     //request.NumFrameSuggested = request.NumFrameMin + m_video.AsyncDepth;
     request.NumFrameMin = 1;
     request.NumFrameSuggested = 1;
+    request.AllocId = par->AllocId;
 
     sts = m_core->AllocFrames(&request, &m_raw);
     MFX_CHECK_STS(sts);

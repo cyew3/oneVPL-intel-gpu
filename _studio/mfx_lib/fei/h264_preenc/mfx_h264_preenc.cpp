@@ -373,6 +373,7 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     request.NumFrameSuggested = 1;//m_video.AsyncDepth;
     request.Info.Width = 16;
     request.Info.Height = 16;
+    request.AllocId = par->AllocId;
 
     sts = m_core->AllocFrames(&request, &m_raw);
     //sts = m_raw.Alloc(m_core, request);
