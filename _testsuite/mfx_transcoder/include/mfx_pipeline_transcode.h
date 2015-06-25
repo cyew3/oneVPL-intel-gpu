@@ -87,8 +87,6 @@ protected:
     MFXExtBufferPtr<mfxExtHEVCParam> m_extHEVCParam;
     MFXExtBufferPtr<mfxExtVP8CodingOption>  m_extVP8CodingOptions;
     MFXExtBufferPtr<mfxExtEncoderROI>  m_extEncoderRoi;
-    MFXExtBufferPtr<mfxExtDirtyRect>  m_extDirtyRect;
-    MFXExtBufferPtr<mfxExtMoveRect>  m_extMoveRect;
 
     //lync support
     MFXExtBufferPtr<mfxExtCodingOptionSPSPPS> m_extCodingOptionsSPSPPS;

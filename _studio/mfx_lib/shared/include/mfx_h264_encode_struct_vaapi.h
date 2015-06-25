@@ -541,11 +541,7 @@ typedef struct tagENCODE_CAPS
             UINT    LumaWeightedPred        : 1;
             UINT    ChromaWeightedPred      : 1;
             UINT    QVBRBRCSupport          : 1;
-            UINT    SliceLevelReportSupport : 1;
-            UINT    HMEOffsetSupport        : 1;
-            UINT    DirtyRectSupport        : 1;
-            UINT    MoveRectSupport         : 1;
-            UINT                            : 22;
+            UINT                            : 26;
         };
         UINT      CodingLimits2;
     };

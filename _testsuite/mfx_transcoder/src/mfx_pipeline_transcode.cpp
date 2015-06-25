@@ -121,10 +121,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 , m_extHEVCParam(new mfxExtHEVCParam())
 , m_extVP8CodingOptions(new mfxExtVP8CodingOption())
 , m_extEncoderRoi(new mfxExtEncoderROI())
-, m_extDirtyRect(new mfxExtDirtyRect())
-, m_extMoveRect(new mfxExtMoveRect())
-, m_extCodingOptionsSPSPPS(new mfxExtCodingOptionSPSPPS())
 , m_extAvcTemporalLayers(new mfxExtAvcTemporalLayers())
+, m_extCodingOptionsSPSPPS(new mfxExtCodingOptionSPSPPS())
 , m_extEncoderCapability(new mfxExtEncoderCapability())
 , m_extEncoderReset(new mfxExtEncoderResetOption())
 , m_pEncoder()
@@ -1152,42 +1150,6 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             }
             argv--;
         }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-dirty_rect"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
-        {
-            MFX_CHECK(1 + argv < argvEnd);
-            argv ++;
-            MFX_PARSE_INT(m_extDirtyRect->NumRect, argv[0]);
-            MFX_CHECK(m_extDirtyRect->NumRect * 4 + argv < argvEnd);
-            argv ++;
-            for (mfxU8 i = 0; i < m_extDirtyRect->NumRect; i ++)
-            {
-                MFX_PARSE_INT(m_extDirtyRect->Rect[i].Left, argv[0]);
-                MFX_PARSE_INT(m_extDirtyRect->Rect[i].Top, argv[1]);
-                MFX_PARSE_INT(m_extDirtyRect->Rect[i].Right, argv[2]);
-                MFX_PARSE_INT(m_extDirtyRect->Rect[i].Bottom, argv[3]);
-                argv += 4;
-            }
-            argv--;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-moving_rect"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
-        {
-            MFX_CHECK(1 + argv < argvEnd);
-            argv ++;
-            MFX_PARSE_INT(m_extMoveRect->NumRect, argv[0]);
-            MFX_CHECK(m_extMoveRect->NumRect * 6 + argv < argvEnd);
-            argv ++;
-            for (mfxU8 i = 0; i < m_extMoveRect->NumRect; i ++)
-            {
-                MFX_PARSE_INT(m_extMoveRect->Rect[i].DestLeft, argv[0]);
-                MFX_PARSE_INT(m_extMoveRect->Rect[i].DestTop, argv[1]);
-                MFX_PARSE_INT(m_extMoveRect->Rect[i].DestRight, argv[2]);
-                MFX_PARSE_INT(m_extMoveRect->Rect[i].DestBottom, argv[3]);
-                MFX_PARSE_INT(m_extMoveRect->Rect[i].SourceLeft, argv[4]);
-                MFX_PARSE_INT(m_extMoveRect->Rect[i].SourceTop, argv[5]);
-                argv += 6;
-            }
-            argv--;
-        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-enc_frame_info"), VM_STRING("shows encoded picture info from mfxExtAVCEncodedFrameInfo structure, for particular frame, for ranges of frames, or for every frame"), OPT_SPECIAL
         , VM_STRING("[first [last]]"))) {
             int firstFrame = 0;
@@ -1587,12 +1549,6 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_extEncoderRoi.IsZero())
         m_components[eREN].m_extParams.push_back(m_extEncoderRoi);
-
-    if (!m_extDirtyRect.IsZero())
-        m_components[eREN].m_extParams.push_back(m_extDirtyRect);
-
-    if (!m_extMoveRect.IsZero())
-        m_components[eREN].m_extParams.push_back(m_extMoveRect);
 
     if (!m_extCodingOptionsSPSPPS.IsZero())
         m_components[eREN].m_extParams.push_back(m_extCodingOptionsSPSPPS);

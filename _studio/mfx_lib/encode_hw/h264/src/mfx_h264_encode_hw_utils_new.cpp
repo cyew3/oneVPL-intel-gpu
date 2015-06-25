@@ -1722,10 +1722,6 @@ void MfxHwH264Encode::ConfigureTask(
     mfxExtEncoderROI const *        extRoiRuntime  = GetExtBuffer(task.m_ctrl);
     mfxExtCodingOption3 const *     extOpt3        = GetExtBuffer(video);
     mfxExtSpecialEncodingModes const *extSpecModes = GetExtBuffer(video);
-    mfxExtDirtyRect const *    extDirtyRect        = GetExtBuffer(video);
-    mfxExtDirtyRect const *    extDirtyRectRuntime = GetExtBuffer(task.m_ctrl);
-    mfxExtMoveRect const *     extMoveRect         = GetExtBuffer(video);
-    mfxExtMoveRect const *     extMoveRectRuntime  = GetExtBuffer(task.m_ctrl);
 
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
@@ -1848,52 +1844,6 @@ void MfxHwH264Encode::ConfigureTask(
             }
             else
                 task.m_numRoi ++;
-        }
-    }
-
-    mfxExtDirtyRect const * pDirtyRect = extDirtyRectRuntime ? extDirtyRectRuntime : extDirtyRect;
-
-    task.m_numDirtyRect = 0;
-
-    if (pDirtyRect && pDirtyRect->NumRect)
-    {
-        mfxU16 numRect = pDirtyRect->NumRect <= task.m_dirtyRect.Capacity() ? pDirtyRect->NumRect : (mfxU16)task.m_dirtyRect.Capacity();
-
-        for (mfxU16 i = 0; i < numRect; i ++)
-        {
-            task.m_dirtyRect[task.m_numDirtyRect] = *((mfxRectDesc*)&(pDirtyRect->Rect[i]));
-            if (extDirtyRectRuntime)
-            {
-                // check runtime dirty rectangle
-                mfxStatus sts = CheckAndFixRectQueryLike(video, &(task.m_dirtyRect[task.m_numDirtyRect]));
-                if (sts != MFX_ERR_UNSUPPORTED)
-                    task.m_numDirtyRect ++;
-            }
-            else
-                task.m_numDirtyRect ++;
-        }
-    }
-
-    mfxExtMoveRect const * pMoveRect = extMoveRectRuntime ? extMoveRectRuntime : extMoveRect;
-
-    task.m_numMovingRect = 0;
-
-    if (pMoveRect && pMoveRect->NumRect)
-    {
-        mfxU16 numRect = pMoveRect->NumRect <= task.m_movingRect.Capacity() ? pMoveRect->NumRect : (mfxU16)task.m_movingRect.Capacity();
-
-        for (mfxU16 i = 0; i < numRect; i ++)
-        {
-            task.m_movingRect[task.m_numMovingRect] = *((mfxMovingRectDesc*)&(pMoveRect->Rect[i]));
-            if (extMoveRectRuntime)
-            {
-                // check runtime moving rectangle
-                mfxStatus sts = CheckAndFixMovingRectQueryLike(video, &(task.m_movingRect[task.m_numMovingRect]));
-                if (sts != MFX_ERR_UNSUPPORTED)
-                    task.m_numMovingRect ++;
-            }
-            else
-                task.m_numMovingRect ++;
         }
     }
 

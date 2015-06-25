@@ -1406,8 +1406,6 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_ENCODER_ROI
         || id == MFX_EXTBUFF_CODING_OPTION3
         || id == MFX_EXTBUFF_CHROMA_LOC_INFO
-        || id == MFX_EXTBUFF_DIRTY_RECTANGLES
-        || id == MFX_EXTBUFF_MOVING_RECTANGLES
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || id == MFX_EXTBUFF_FEI_PARAM
 #endif
@@ -1680,49 +1678,40 @@ private:
     bool m_val;
 };
 
-mfxStatus MfxHwH264Encode::CheckAndFixRectQueryLike(
-    MfxVideoParam const & par,
-    mfxRectDesc *         rect)
-{
-    mfxStatus checkSts = MFX_ERR_NONE;
-
-    // check that rectangle is aligned to MB, correct it if not
-    if (!CheckMbAlignment(rect->Left))   checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    if (!CheckMbAlignment(rect->Right))  checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    if (!CheckMbAlignment(rect->Top))    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    if (!CheckMbAlignment(rect->Bottom)) checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-
-    // check that rectangle dimensions don't conflict with each other and don't exceed frame size
-    if (par.mfx.FrameInfo.Width)
-    {
-        if(!CheckRangeDflt(rect->Left, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width -16), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
-        if(!CheckRangeDflt(rect->Right, mfxU32(rect->Left + 16), mfxU32(par.mfx.FrameInfo.Width), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
-    }
-    else if(rect->Right && rect->Right < (rect->Left + 16))
-        {
-            checkSts = MFX_ERR_UNSUPPORTED;
-            rect->Right = 0;
-        }
-
-    if (par.mfx.FrameInfo.Height)
-    {
-        if(!CheckRangeDflt(rect->Top, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height -16), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
-        if(!CheckRangeDflt(rect->Bottom, mfxU32(rect->Top + 16), mfxU32(par.mfx.FrameInfo.Height), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
-    }
-    else if(rect->Bottom && rect->Bottom < (rect->Top + 16))
-        {
-            checkSts = MFX_ERR_UNSUPPORTED;
-            rect->Bottom = 0;
-        }
-
-    return checkSts;
-}
-
 mfxStatus MfxHwH264Encode::CheckAndFixRoiQueryLike(
     MfxVideoParam const & par,
     mfxRoiDesc *          roi)
 {
-    mfxStatus checkSts = CheckAndFixRectQueryLike(par, (mfxRectDesc*)roi);
+    mfxStatus checkSts = MFX_ERR_NONE;
+
+    // check that ROI is aligned to MB, correct it if not
+    if (!CheckMbAlignment(roi->Left))   checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignment(roi->Right))  checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignment(roi->Top))    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignment(roi->Bottom)) checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+
+    if (par.mfx.FrameInfo.Width)
+    {
+        // check that ROI dimensions don't conflict with each other and don't exceed frame size
+        if(!CheckRangeDflt(roi->Left, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width -16), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+        if(!CheckRangeDflt(roi->Right, mfxU32(roi->Left + 16), mfxU32(par.mfx.FrameInfo.Width), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+    }
+    else if(roi->Right && roi->Right < (roi->Left + 16))
+        {
+            checkSts = MFX_ERR_UNSUPPORTED;
+            roi->Right = 0;
+        }
+
+    if (par.mfx.FrameInfo.Height)
+    {
+        if(!CheckRangeDflt(roi->Top, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height -16), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+        if(!CheckRangeDflt(roi->Bottom, mfxU32(roi->Top + 16), mfxU32(par.mfx.FrameInfo.Height), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+    }
+    else if(roi->Bottom && roi->Bottom < (roi->Top + 16))
+        {
+            checkSts = MFX_ERR_UNSUPPORTED;
+            roi->Bottom = 0;
+        }
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
@@ -1734,22 +1723,7 @@ mfxStatus MfxHwH264Encode::CheckAndFixRoiQueryLike(
             checkSts = MFX_ERR_UNSUPPORTED;
     }
 
-    return checkSts;
-}
-
-mfxStatus MfxHwH264Encode::CheckAndFixMovingRectQueryLike(
-    MfxVideoParam const & par,
-    mfxMovingRectDesc *   rect)
-{
-    mfxStatus checkSts = CheckAndFixRectQueryLike(par, (mfxRectDesc*)rect);
-
-    if (par.mfx.FrameInfo.Width)
-        if(!CheckRangeDflt(rect->SourceLeft, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width - 1), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
-
-    if (par.mfx.FrameInfo.Height)
-        if(!CheckRangeDflt(rect->SourceTop, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height - 1), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
-
-    return checkSts;
+        return checkSts;
 }
 
 //typedef bool Bool;
@@ -1764,23 +1738,21 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     Bool changed(false);
     Bool warning(false);
 
-    mfxExtCodingOption *       extOpt       = GetExtBuffer(par);
-    mfxExtCodingOptionDDI *    extDdi       = GetExtBuffer(par);
-    mfxExtPAVPOption *         extPavp      = GetExtBuffer(par);
-    mfxExtVideoSignalInfo *    extVsi       = GetExtBuffer(par);
-    mfxExtCodingOptionSPSPPS * extBits      = GetExtBuffer(par);
-    mfxExtPictureTimingSEI *   extPt        = GetExtBuffer(par);
-    mfxExtSpsHeader *          extSps       = GetExtBuffer(par);
-    mfxExtPpsHeader *          extPps       = GetExtBuffer(par);
-    mfxExtMVCSeqDesc *         extMvc       = GetExtBuffer(par);
-    mfxExtAvcTemporalLayers *  extTemp      = GetExtBuffer(par);
-    mfxExtSVCSeqDesc *         extSvc       = GetExtBuffer(par);
-    mfxExtCodingOption2 *      extOpt2      = GetExtBuffer(par);
-    mfxExtEncoderROI *         extRoi       = GetExtBuffer(par);
-    mfxExtCodingOption3 *      extOpt3      = GetExtBuffer(par);
-    mfxExtChromaLocInfo *      extCli       = GetExtBuffer(par);
-    mfxExtDirtyRect  *         extDirtyRect = GetExtBuffer(par);
-    mfxExtMoveRect *           extMoveRect  = GetExtBuffer(par);
+    mfxExtCodingOption *       extOpt  = GetExtBuffer(par);
+    mfxExtCodingOptionDDI *    extDdi  = GetExtBuffer(par);
+    mfxExtPAVPOption *         extPavp = GetExtBuffer(par);
+    mfxExtVideoSignalInfo *    extVsi  = GetExtBuffer(par);
+    mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
+    mfxExtPictureTimingSEI *   extPt   = GetExtBuffer(par);
+    mfxExtSpsHeader *          extSps  = GetExtBuffer(par);
+    mfxExtPpsHeader *          extPps  = GetExtBuffer(par);
+    mfxExtMVCSeqDesc *         extMvc  = GetExtBuffer(par);
+    mfxExtAvcTemporalLayers *  extTemp = GetExtBuffer(par);
+    mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(par);
+    mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
+    mfxExtEncoderROI *         extRoi  = GetExtBuffer(par);
+    mfxExtCodingOption3 *      extOpt3 = GetExtBuffer(par);
+    mfxExtChromaLocInfo *      extCli  = GetExtBuffer(par);
 
     // check hw capabilities
     if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
@@ -3571,35 +3543,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
     }
 
-    if (extDirtyRect->NumRect && hwCaps.DirtyRectSupport == 0)
-    {
-        unsupported = true;
-        extDirtyRect->NumRect = 0;
-    }
-
-    for (mfxU16 i = 0; i < extDirtyRect->NumRect; i++)
-    {
-        mfxStatus sts = CheckAndFixRectQueryLike(par, (mfxRectDesc*)(&(extDirtyRect->Rect[i])));
-        if (sts < MFX_ERR_NONE)
-            unsupported = true;
-        else if (sts != MFX_ERR_NONE)
-            changed = true;
-    }
-
-    if (extMoveRect->NumRect && hwCaps.MoveRectSupport == 0)
-    {
-        unsupported = true;
-        extMoveRect->NumRect = 0;
-    }
-
-    for (mfxU16 i = 0; i < extMoveRect->NumRect; i++)
-    {
-        mfxStatus sts = CheckAndFixMovingRectQueryLike(par, (mfxMovingRectDesc*)(&(extMoveRect->Rect[i])));
-        if (sts < MFX_ERR_NONE)
-            unsupported = true;
-        else if (sts != MFX_ERR_NONE)
-            changed = true;
-    }
 
     if (!CheckRangeDflt(extOpt2->SkipFrame, 0, 3, 0)) changed = true;
 
@@ -6030,8 +5973,6 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtChromaLocInfo,        m_extChromaLoc);
     CONSTRUCT_EXT_BUFFER(mfxExtFeiParam,             m_extFeiParam);
     CONSTRUCT_EXT_BUFFER(mfxExtSpecialEncodingModes, m_extSpecModes);
-    CONSTRUCT_EXT_BUFFER(mfxExtDirtyRect,            m_extDirtyRect);
-    CONSTRUCT_EXT_BUFFER(mfxExtMoveRect,             m_extMoveRect);
 #undef CONSTRUCT_EXT_BUFFER
 
     ExtParam = m_extParam;

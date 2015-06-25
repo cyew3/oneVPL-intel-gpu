@@ -99,9 +99,7 @@ namespace MfxHwH264Encode
     void FillVaringPartOfPpsBuffer(
         DdiTask const &                      task,
         mfxU32                               fieldId,
-        ENCODE_SET_PICTURE_PARAMETERS_H264 & pps,
-        std::vector<ENCODE_RECT> &           dirtyRects,
-        std::vector<MOVE_RECT> &             movingRects);
+        ENCODE_SET_PICTURE_PARAMETERS_H264 & pps);
 
     void FillConstPartOfSliceBuffer(
         MfxVideoParam const &                       par,
@@ -290,9 +288,6 @@ namespace MfxHwH264Encode
         mfxU8                m_numSkipFrames;
         mfxU32               m_sizeSkipFrames;
         mfxU32               m_skipMode;
-
-        std::vector<ENCODE_RECT> m_dirtyRects;
-        std::vector<MOVE_RECT>   m_movingRects;
     };
 
     class D3D9SvcEncoder : public DriverEncoder
