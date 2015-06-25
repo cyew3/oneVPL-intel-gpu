@@ -791,7 +791,7 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
             // Place picture with picNum on list, shifting pictures
             // down by one while removing any duplication of picture with picNum.
             pRefPicList[i] = pFrame;
-            pFields[i].field = (char) (pFrame ? pFrame->m_bottom_field_flag[frameField] : 0);
+            pFields[i].field = (char) ((pFrame && bIsFieldSlice) ? pFrame->m_bottom_field_flag[frameField] : 0);
             pFields[i].isShortReference = 1;
             Ipp32s refIdxLX = i + 1;
 
@@ -826,7 +826,7 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
             // Place picture with picNum on list, shifting pictures
             // down by one while removing any duplication of picture with picNum.
             pRefPicList[i] = pFrame;
-            pFields[i].field = (char) (pFrame ? pFrame->m_bottom_field_flag[frameField] : 0);
+            pFields[i].field = (char) ((pFrame && bIsFieldSlice) ? pFrame->m_bottom_field_flag[frameField] : 0);
             pFields[i].isShortReference = 0;
             Ipp32s refIdxLX = i + 1;
 

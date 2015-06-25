@@ -294,8 +294,6 @@ mfxStatus VideoDECODEVP8_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
 
 mfxStatus VideoDECODEVP8_HW::QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *p_params, mfxFrameAllocRequest *p_request)
 {
-    p_request->Info = p_params->mfx.FrameInfo;
-
     p_request->NumFrameMin = mfxU16 (4);
 
     p_request->NumFrameMin += p_params->AsyncDepth ? p_params->AsyncDepth : MFX_AUTO_ASYNC_DEPTH_VALUE;
@@ -341,6 +339,8 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
+
+    p_request->Info = p_params.mfx.FrameInfo;
 
     if(p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {
