@@ -813,7 +813,7 @@ namespace
             else if (task.m_type[fieldId] & MFX_FRAMETYPE_B)
             {
                 ArrayU8x33 backupList0 = list0;
-                mfxU8 save1 = list1[0];
+                ArrayU8x33 backupList1 = list1;
 
                 list0.Erase(
                     std::remove_if(list0.Begin(), list0.End(), RefPocIsGreaterThan(dpb, task.GetPoc(fieldId))),
@@ -827,13 +827,20 @@ namespace
                 if (list0.Size() == 0)
                     list0.PushBack(backupList0[0]);
                 if (list1.Size() == 0)
-                    list1.PushBack(save1);
+                    list1.PushBack(backupList1[0]);
 
                 if (isField && (0 > GetIdxOfFirstSameParity(list0, fieldId)))
                 {
                     // revert optimization of L0 if all fields of same parity were removed from the list
                     // it's required since driver doesn't support field of opposite parity at 1st place in ref list
                     list0 = backupList0;
+                }
+
+                if (isField && (0 > GetIdxOfFirstSameParity(list1, fieldId)))
+                {
+                    // revert optimization of L1 if all fields of same parity were removed from the list
+                    // it's required since driver doesn't support field of opposite parity at 1st place in ref list
+                    list1 = backupList1;
                 }
             }
 
@@ -864,12 +871,6 @@ namespace
                 std::sort(list0.Begin(), list0.End(), RefPocIsGreater(dpb));
             }
 
-            // cut ref pic lists according to user's limitations
-            if (numActiveRefL0 > 0 && list0.Size() > numActiveRefL0)
-                list0.Resize(numActiveRefL0);
-            if (numActiveRefL1 > 0 && list1.Size() > numActiveRefL1)
-                list1.Resize(numActiveRefL1);
-
             if (isField && isIPFieldPair == false)
             {
                 // after modification of ref list L0 it could happen that 1st entry of the list has opposite parity to current field
@@ -884,7 +885,29 @@ namespace
                 {
                     assert(!"No field of same parity for reference");
                 }
+
+                if (task.m_type[fieldId] & MFX_FRAMETYPE_B)
+                {
+                    // after modification of ref list L1 it could happen that 1st entry of the list has opposite parity to current field
+                    // driver doesn't support this, and MSDK performs WA and places field of same parity to 1st place
+                    idxOf1stSameParity = GetIdxOfFirstSameParity(list1, fieldId);
+                    if (idxOf1stSameParity > 0)
+                    {
+                        std::swap(list1[0], list1[idxOf1stSameParity]);
+                        list1.Resize(1);
+                    }
+                    else if (idxOf1stSameParity < 0)
+                    {
+                        assert(!"No field of same parity for reference");
+                    }
+                }
             }
+
+            // cut ref pic lists according to user's limitations
+            if (numActiveRefL0 > 0 && list0.Size() > numActiveRefL0)
+                list0.Resize(numActiveRefL0);
+            if (numActiveRefL1 > 0 && list1.Size() > numActiveRefL1)
+                list1.Resize(numActiveRefL1);
         }
 
         initList0.Resize(list0.Size());
