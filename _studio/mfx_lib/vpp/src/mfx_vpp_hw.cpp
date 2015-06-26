@@ -1720,7 +1720,7 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
             if (par->vpp.In.Width > caps.uMaxWidth  || par->vpp.In.Height  > caps.uMaxHeight ||
                 par->vpp.Out.Width > caps.uMaxWidth || par->vpp.Out.Height > caps.uMaxHeight)
             {
-                return MFX_WRN_PARTIAL_ACCELERATION;
+                return MFX_ERR_INVALID_VIDEO_PARAM;
             }
 
             m_config.m_IOPattern = 0;
@@ -1733,6 +1733,7 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
             {
                 sts = MFX_ERR_NONE;
             }
+            MFX_CHECK_STS(sts);
         }
 
     }
@@ -2905,6 +2906,13 @@ mfxStatus ConfigureExecuteParams(
                     {
                         mfxExtVPPComposite* extComp = (mfxExtVPPComposite*) videoParam.ExtParam[i];
                         StreamCount = extComp->NumInputStream;
+
+                        if (!executeParams.dstRects.empty())
+                        {
+                            if (executeParams.dstRects.size() < StreamCount)
+                                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                        }
+
                         if (executeParams.dstRects.size() != StreamCount)
                         {
                             executeParams.dstRects.clear();

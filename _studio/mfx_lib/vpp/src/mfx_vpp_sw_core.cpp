@@ -1594,18 +1594,12 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
-        //return (MFX_ERR_NONE == sts) ? MFX_ERR_NONE : MFX_WRN_PARTIAL_ACCELERATION;
-        if( MFX_ERR_NONE != sts )
-        {
-            return MFX_WRN_PARTIAL_ACCELERATION;
-        }
-        else
-        {
-            bool bCorrectionEnable = false;
-            sts = CheckPlatformLimitations(m_core, *par, bCorrectionEnable);
+        MFX_CHECK_STS(sts);
 
-            return sts;
-        }
+        bool bCorrectionEnable = false;
+        sts = CheckPlatformLimitations(m_core, *par, bCorrectionEnable);
+
+        return sts;
     }
     else
     {
