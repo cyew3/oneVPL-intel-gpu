@@ -171,13 +171,13 @@ namespace MPEG2EncoderHW
          {
              mfxStatus sts = MFX_ERR_NONE;
 
-             Ipp32s scale_type = 0; 
-             Ipp32s scale_code = 0;
-             QuantIntoScaleTypeAndCode(qp, scale_type, scale_code);
-             pIntTask->m_FrameParams.QuantScaleType = (Ipp8u)scale_type;
+//             Ipp32s scale_type = 0; 
+//             Ipp32s scale_code = 0;
+//             QuantIntoScaleTypeAndCode(qp, scale_type, scale_code);
+//             pIntTask->m_FrameParams.QuantScaleType = (Ipp8u)scale_type;
              m_pExecuteBuffers->m_SkipFrame = (mfxU8)pIntTask->m_sEncodeInternalParams.SkipFrame;
 
-             sts = SubmitFrame(&pIntTask->m_FrameParams, &pIntTask->m_Frames, pUserData, userDataLen, (mfxU8)scale_code, mbqp, numMB);
+             sts = SubmitFrame(&pIntTask->m_FrameParams, &pIntTask->m_Frames, pUserData, userDataLen, qp, mbqp, numMB);
              MFX_CHECK_STS (sts);
              pIntTask->m_FeedbackNumber       = m_pExecuteBuffers->m_pps.StatusReportFeedbackNumber;
              pIntTask->m_BitstreamFrameNumber = (mfxU32)m_pExecuteBuffers->m_idxBs;
