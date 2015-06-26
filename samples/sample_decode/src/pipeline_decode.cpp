@@ -154,7 +154,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     if (m_bVppIsUsed)
         m_bDecOutSysmem = pParams->bUseHWLib ? false : true;
     else
-        m_bDecOutSysmem = pParams->memType == MFX_MEMTYPE_SYSTEM_MEMORY;
+        m_bDecOutSysmem = pParams->memType == SYSTEM_MEMORY;
 
     m_nMaxFps = pParams->nMaxFPS;
     m_nFrames = pParams->nFrames ? pParams->nFrames : MFX_INFINITE;
