@@ -1055,7 +1055,7 @@ Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex, void * error)
             *(Status*)error = GetDecodingError();
             return UMC_OK;
         }
-
+        va_sts = VA_STATUS_SUCCESS;
         umcRes = va_to_umc_res(va_sts);
     }
 
