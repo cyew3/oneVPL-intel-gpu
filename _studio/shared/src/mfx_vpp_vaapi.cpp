@@ -54,6 +54,7 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
 , m_denoiseFilterID(VA_INVALID_ID)
 , m_detailFilterID(VA_INVALID_ID)
 , m_deintFilterID(VA_INVALID_ID)
+, m_procampFilterID(VA_INVALID_ID)
 , m_frcFilterID(VA_INVALID_ID)
 , m_refCountForADI(0)
 , m_bFakeOutputEnabled(false)
@@ -68,6 +69,7 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
     memset( (void*)&m_detailCaps, 0, sizeof(m_detailCaps));
     memset( (void*)&m_deinterlacingCaps, 0, sizeof(m_deinterlacingCaps));
     memset( (void*)&m_frcCaps, 0, sizeof(m_frcCaps));
+    memset( (void*)&m_procampCaps, 0, sizeof(m_procampCaps));
 
     m_cachedReadyTaskIndex.clear();
     m_feedbackCache.clear();
@@ -144,6 +146,11 @@ mfxStatus VAAPIVideoProcessing::Close(void)
         vaDestroyBuffer(m_vaDisplay, m_detailFilterID);
     }
 
+    if( VA_INVALID_ID != m_procampFilterID )
+    {
+        vaDestroyBuffer(m_vaDisplay, m_procampFilterID);
+    }
+
     if( VA_INVALID_ID != m_deintFilterID )
     {
         vaDestroyBuffer(m_vaDisplay, m_deintFilterID);
@@ -159,9 +166,11 @@ mfxStatus VAAPIVideoProcessing::Close(void)
 
     m_denoiseFilterID   = VA_INVALID_ID;
     m_deintFilterID     = VA_INVALID_ID;
+    m_procampFilterID   = VA_INVALID_ID;
 
     memset( (void*)&m_denoiseCaps, 0, sizeof(m_denoiseCaps));
     memset( (void*)&m_detailCaps, 0, sizeof(m_detailCaps));
+    memset( (void*)&m_procampCaps,  0, sizeof(m_procampCaps));
     memset( (void*)&m_deinterlacingCaps, 0, sizeof(m_deinterlacingCaps));
 
     return MFX_ERR_NONE;
@@ -260,6 +269,13 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
     mfxU32 num_frc_caps = 1;
 
     vaSts = vaQueryVideoProcFilters(m_vaDisplay, m_vaContextVPP, filters, &num_filters);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    mfxU32 num_procamp_caps = VAProcColorBalanceCount;
+    vaSts = vaQueryVideoProcFilterCaps(m_vaDisplay,
+                               m_vaContextVPP,
+                               VAProcFilterColorBalance,
+                               &m_procampCaps, &num_procamp_caps);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     mfxU32 num_denoise_caps = 1;
@@ -505,6 +521,75 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             m_filterBufs[m_numFilterBufs++] = m_deintFilterID;
+        }
+    }
+
+    if (VA_INVALID_ID == m_procampFilterID)
+    {
+        if ( pParams->bEnableProcAmp )
+        {
+            VAProcFilterParameterBufferColorBalance procamp[4];
+
+            procamp[0].type   = VAProcFilterColorBalance;
+            procamp[0].attrib = VAProcColorBalanceBrightness;
+            procamp[0].value  = 0;
+
+            if ( pParams->Brightness)
+            {
+                procamp[0].value = convertValue(-100,
+                                100,
+                                m_procampCaps[VAProcColorBalanceBrightness-1].range.min_value,
+                                m_procampCaps[VAProcColorBalanceBrightness-1].range.max_value,
+                                pParams->Brightness);
+            }
+
+            procamp[1].type   = VAProcFilterColorBalance;
+            procamp[1].attrib = VAProcColorBalanceContrast;
+            procamp[1].value  = 1;
+
+            if ( pParams->Contrast)
+            {
+                procamp[1].value = convertValue(0,
+                                10,
+                                m_procampCaps[VAProcColorBalanceContrast-1].range.min_value,
+                                m_procampCaps[VAProcColorBalanceContrast-1].range.max_value,
+                                pParams->Contrast);
+            }
+
+            procamp[2].type   = VAProcFilterColorBalance;
+            procamp[2].attrib = VAProcColorBalanceHue;
+            procamp[2].value  = 0;
+
+            if ( pParams->Hue)
+            {
+                procamp[2].value = convertValue(-180,
+                                180,
+                                m_procampCaps[VAProcColorBalanceHue-1].range.min_value,
+                                m_procampCaps[VAProcColorBalanceHue-1].range.max_value,
+                                pParams->Hue);
+            }
+
+            procamp[3].type   = VAProcFilterColorBalance;
+            procamp[3].attrib = VAProcColorBalanceSaturation;
+            procamp[3].value  = 1;
+
+            if ( pParams->Saturation)
+            {
+                procamp[3].value = convertValue(0,
+                                10,
+                                m_procampCaps[VAProcColorBalanceSaturation-1].range.min_value,
+                                m_procampCaps[VAProcColorBalanceSaturation-1].range.max_value,
+                                pParams->Saturation);
+            }
+
+            vaSts = vaCreateBuffer((void*)m_vaDisplay,
+                                          m_vaContextVPP,
+                                          VAProcFilterParameterBufferType,
+                                          sizeof(procamp), 4,
+                                          &procamp, &m_procampFilterID);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            m_filterBufs[m_numFilterBufs++] = m_procampFilterID;
         }
     }
 
