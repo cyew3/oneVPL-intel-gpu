@@ -217,8 +217,14 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
         {
             MFX_CHECK_POINTER(hwDevice);
 #ifdef D3D_SURFACES_SUPPORT
+
+            if (pRequest->Info.FourCC == MFX_FOURCC_RGB4 && pRequest->Type & MFX_MEMTYPE_FROM_VPPOUT )
+            {
+                /* VideoProcessBlt that is used in Raw Accelerator requires PROCESSOR_TARGET surfaces as out */
+                pRequest->Type |= MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
+            }
             /* if pRequest->Type doesn't specify flags the use default MFX_MEMTYPE_DXVA2_DECODER_TARGET*/
-            if ( ( pRequest->Type & (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_DXVA2_DECODER_TARGET)) == 0)
+            else if ( ( pRequest->Type & (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_DXVA2_DECODER_TARGET)) == 0)
             {
                 pRequest->Type |= MFX_MEMTYPE_DXVA2_DECODER_TARGET;
             }
