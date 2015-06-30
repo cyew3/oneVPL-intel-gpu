@@ -144,10 +144,18 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         }
     }
 
-    if(pParams->fourcc)
-    {
-        m_bVppIsUsed = true;
+    if (pParams->fourcc)
         m_fourcc = pParams->fourcc;
+
+    // JPEG and Capture decoders can provide output in nv12 and rgb4 formats
+    if ((pParams->videoType == MFX_CODEC_JPEG) ||
+        ((pParams->videoType == MFX_CODEC_CAPTURE)) )
+    {
+        m_bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12) && (m_fourcc != MFX_FOURCC_RGB4);
+    }
+    else
+    {
+        m_bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12);
     }
 
     m_memType = pParams->memType;
@@ -476,7 +484,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         m_mfxVideoParams.mfx.FrameInfo.Height = MSDK_ALIGN32(pParams->height);
         m_mfxVideoParams.mfx.FrameInfo.CropW = pParams->width;
         m_mfxVideoParams.mfx.FrameInfo.CropH = pParams->height;
-        m_mfxVideoParams.mfx.FrameInfo.FourCC = pParams->fourcc;
+        m_mfxVideoParams.mfx.FrameInfo.FourCC = m_bVppIsUsed ? MFX_FOURCC_NV12 : pParams->fourcc;
         if (!m_mfxVideoParams.mfx.FrameInfo.FourCC)
             m_mfxVideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
         if (!m_mfxVideoParams.mfx.FrameInfo.ChromaFormat)
@@ -584,6 +592,13 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    // Videoparams for RGB4 JPEG decoder output
+    if ((pParams->fourcc == MFX_FOURCC_RGB4) && (pParams->videoType == MFX_CODEC_JPEG))
+    {
+        m_mfxVideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_RGB4;
+        m_mfxVideoParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+    }
 
     // If MVC mode we need to detect number of views in stream
     if (m_bIsMVC)
@@ -1557,7 +1572,14 @@ void CDecodingPipeline::PrintInfo()
 {
     msdk_printf(MSDK_STRING("Decoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
     msdk_printf(MSDK_STRING("\nInput video\t%s\n"), CodecIdToStr(m_mfxVideoParams.mfx.CodecId).c_str());
-    msdk_printf(MSDK_STRING("Output format\t%s\n"), MSDK_STRING("YUV420"));
+    if (m_bVppIsUsed)
+    {
+        msdk_printf(MSDK_STRING("Output format\t%s (using vpp)\n"), CodecIdToStr(m_mfxVppVideoParams.vpp.Out.FourCC).c_str());
+    }
+    else
+    {
+        msdk_printf(MSDK_STRING("Output format\t%s\n"), CodecIdToStr(m_mfxVideoParams.mfx.FrameInfo.FourCC).c_str());
+    }
 
     mfxFrameInfo Info = m_mfxVideoParams.mfx.FrameInfo;
     msdk_printf(MSDK_STRING("Resolution\t%dx%d\n"), Info.Width, Info.Height);

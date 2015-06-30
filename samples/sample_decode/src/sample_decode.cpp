@@ -56,8 +56,14 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("Screen capture parameters:\n"));
     msdk_printf(MSDK_STRING("   [-w]                      - screen resolution width\n"));
     msdk_printf(MSDK_STRING("   [-h]                      - screen resolution height\n"));
-    msdk_printf(MSDK_STRING("   [-fourcc]                 - output fourcc format\n"));
-    msdk_printf(MSDK_STRING("   Supported fourcc: nv12(default), rgb4\n\n"));
+    msdk_printf(MSDK_STRING("\n"));
+    msdk_printf(MSDK_STRING("Output format parameters:\n"));
+    msdk_printf(MSDK_STRING("   [-i420]                   - by default\n"));
+    msdk_printf(MSDK_STRING("   [-rgb4]\n"));
+    msdk_printf(MSDK_STRING("   [-p010]\n"));
+    msdk_printf(MSDK_STRING("   [-a2rgb10]\n"));
+    msdk_printf(MSDK_STRING("\n"));
+
 #endif
 #if defined(LIBVA_SUPPORT)
     msdk_printf(MSDK_STRING("   [-vaapi]                  - work with vaapi surfaces\n"));
@@ -345,23 +351,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nFrames))
             {
                 PrintHelp(strInput[0], MSDK_STRING("rendering frame rate is invalid"));
-                return MFX_ERR_UNSUPPORTED;
-            }
-        } else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-fourcc")))
-        {
-            if(i + 1 >= nArgNum)
-            {
-                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -n key"));
-                return MFX_ERR_UNSUPPORTED;
-            }
-            ++i;
-            if (0 == msdk_strcmp(strInput[i], MSDK_STRING("nv12")))
-                pParams->fourcc = MFX_FOURCC_NV12;
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("rgb4")))
-                pParams->fourcc = MFX_FOURCC_RGB4;
-            else
-            {
-                PrintHelp(strInput[0], MSDK_STRING("Specified fourcc is unsupported or unknown"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }

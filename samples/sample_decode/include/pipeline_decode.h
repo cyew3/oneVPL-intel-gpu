@@ -69,7 +69,6 @@ struct sInputParams
     mfxU32  nWallTimeout; //timeout for -wall option
     mfxU32  numViews; // number of views for Multi-View Codec
     mfxU32  nRotation; // rotation for Motion JPEG Codec
-    mfxU32  outFourcc; // color format of VPP output
     mfxU16  nAsyncDepth; // asyncronous queue
     mfxU16  gpuCopy; // GPU Copy mode (three-state option)
     mfxU16  nThreadsNum;
