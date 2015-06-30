@@ -376,6 +376,7 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
     mfxU32 nLCU   = nCol * nRow;
     mfxU32 nSlice = Min(Min<mfxU32>(nLCU, MAX_SLICES), Max<mfxU32>(par.mfx.NumSlice, 1));
 
+    par.m_slice.resize(0);
     if (par.m_ext.CO2.NumMbPerSlice != 0)
         nSlice = CeilDiv(nLCU / nTile, par.m_ext.CO2.NumMbPerSlice) * nTile;
 
@@ -826,7 +827,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     changed += CheckOption(par.mfx.NumSlice, MakeSlices(par, caps.SliceStructure), 0);
 
     if (   par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID
-        && ( par.mfx.GopRefDist < 2  
+           && par.mfx.GopRefDist > 0
+           && ( par.mfx.GopRefDist < 2  
             || minRefForPyramid(par.mfx.GopRefDist) > 16   
             || (par.mfx.NumRefFrame && minRefForPyramid(par.mfx.GopRefDist) > par.mfx.NumRefFrame)))
     {
