@@ -734,6 +734,7 @@ int TestSuite::RunTest(unsigned int id)
     Load();
 
     g_tsStatus.expect(tc.sts);
+    bool skip = false;
 
     if (m_loaded)
     {
@@ -741,12 +742,15 @@ int TestSuite::RunTest(unsigned int id)
         {
             if (m_par.mfx.FrameInfo.Width > 3840 || m_par.mfx.FrameInfo.Height > 2160)
             {
-                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                g_tsStatus.expect(MFX_ERR_NONE);    // for destructor (close/unload/etc.)
+                skip = true;
+                g_tsLog << "Case skipped. GACC doesn't support width > 3840 and height > 2160 \n";
             }
         }
     }
 
-    Init();
+    if (!skip)
+        Init();
 
     TS_END;
     return 0;
