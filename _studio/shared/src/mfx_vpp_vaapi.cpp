@@ -547,7 +547,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             procamp[1].attrib = VAProcColorBalanceContrast;
             procamp[1].value  = 1;
 
-            if ( pParams->Contrast)
+            if ( pParams->Contrast != 1 )
             {
                 procamp[1].value = convertValue(0,
                                 10,
@@ -573,7 +573,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             procamp[3].attrib = VAProcColorBalanceSaturation;
             procamp[3].value  = 1;
 
-            if ( pParams->Saturation)
+            if ( pParams->Saturation != 1 )
             {
                 procamp[3].value = convertValue(0,
                                 10,
