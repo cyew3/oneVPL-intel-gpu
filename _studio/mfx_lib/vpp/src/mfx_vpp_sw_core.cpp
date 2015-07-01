@@ -931,6 +931,7 @@ mfxStatus VideoVPPSW::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVppCa
         caps.uFrameRateConversion= 1; // "1" means general FRC is supported. "Interpolation" modes descibed by caps.frcCaps
         caps.uDeinterlacing      = 1; // "1" means general deinterlacing is supported
         caps.uVideoSignalInfo    = 1; // "1" means general VSI is supported
+        caps.uRotation           = 1;
         if (sts >= MFX_ERR_NONE)
            return sts;
     }
@@ -1758,6 +1759,11 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
     if(caps.uVariance)
     {
         list.push_back(MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION);
+    }
+
+    if(caps.uRotation)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_ROTATION);
     }
 
     /* FIELD Copy is always present*/

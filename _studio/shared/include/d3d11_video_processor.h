@@ -717,6 +717,7 @@ namespace MfxHwVideoProcessing
         void SetStreamPixelAspectRatio(UINT StreamIndex, BOOL Enable, DXGI_RATIONAL *pSourceAspectRatio, DXGI_RATIONAL *pDestinationAspectRatio);
         void SetStreamAutoProcessingMode(UINT StreamIndex, BOOL Enable);
         void SetStreamFilter(UINT StreamIndex, D3D11_VIDEO_PROCESSOR_FILTER Filter, BOOL Enable, int Level);
+        void SetStreamRotation(UINT StreamIndex, BOOL Enable, int rotation);
 
         HRESULT SetOutputExtension(const GUID* pExtensionGuid, UINT DataSize, void* pData);
         HRESULT SetStreamExtension(UINT StreamIndex, const GUID* pExtensionGuid, UINT DataSize, void* pData);

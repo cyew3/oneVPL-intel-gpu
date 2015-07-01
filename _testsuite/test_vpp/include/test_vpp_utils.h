@@ -138,6 +138,7 @@ struct sInputParams
     mfxU16   asyncNum;
     mfxU32   vaType;
 
+    mfxU16   rotate;
 
     bool     bPartialAccel;
 
@@ -361,6 +362,7 @@ struct sAppResources
     mfxExtVPPProcAmp    procampConfig;
     mfxExtVPPDetail     detailConfig;
     mfxExtVPPDenoise    denoiseConfig;
+    mfxExtVPPRotation   rotationConfig;
     mfxExtVPPFrameRateConversion    frcConfig;
     mfxExtVPPDeinterlacing deinterlaceConfig;
 

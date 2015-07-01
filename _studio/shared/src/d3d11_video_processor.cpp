@@ -1149,6 +1149,13 @@ void D3D11VideoProcessor::SetStreamFilter(UINT StreamIndex, D3D11_VIDEO_PROCESSO
 
 } // void D3D11VideoProcessor::SetStreamFilter(UINT StreamIndex, D3D11_VIDEO_PROCESSOR_FILTER Filter, BOOL Enable, int Level)
 
+void D3D11VideoProcessor::SetStreamRotation(UINT StreamIndex, BOOL Enable, int rotation)
+{
+
+    m_pVideoContext->VideoProcessorSetStreamRotation(m_pVideoProcessor, StreamIndex, Enable, (D3D11_VIDEO_PROCESSOR_ROTATION)rotation);
+
+}
+
 HRESULT D3D11VideoProcessor::SetStreamExtension(UINT StreamIndex, const GUID* pExtensionGuid, UINT DataSize, void* pData)
 {
 
@@ -2022,6 +2029,24 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             TRUE,
             (int)(pParams->Contrast*m_multiplier.contrast));
     }
+    if(pParams->rotation)
+    {
+        int angle;
+        switch(pParams->rotation){
+            case MFX_ANGLE_90:
+                angle = (int)D3D11_VIDEO_PROCESSOR_ROTATION_90;break;
+            case MFX_ANGLE_180:
+                angle = (int)D3D11_VIDEO_PROCESSOR_ROTATION_180;break;
+            case MFX_ANGLE_270:
+                angle = (int)D3D11_VIDEO_PROCESSOR_ROTATION_270;break;
+            default:
+                angle = 0;
+        }
+        SetStreamRotation(
+            0,
+            TRUE,
+            angle);
+    }
 
     // [5] Detail
     if (pParams->detailFactor > 0)
@@ -2632,6 +2657,10 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
         caps.uFieldWeavingControl = 1;
     }
 
+    //if( TRUE == m_vpreCaps.)
+    //{
+    caps.uRotation = 1;
+    //}
     // [FRC]
     size_t rateDataCount = m_customRateData.size();
     // aya: wo

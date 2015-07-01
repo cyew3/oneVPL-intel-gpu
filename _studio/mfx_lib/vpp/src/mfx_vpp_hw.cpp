@@ -109,6 +109,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->bCameraWhiteBalaceCorrection = false;
     pMfxExecuteParams->bCCM = false;
     pMfxExecuteParams->bCameraLensCorrection = false;
+    pMfxExecuteParams->rotation = 0;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 
@@ -2689,7 +2690,22 @@ mfxStatus ConfigureExecuteParams(
 
                 break;
             }
+            case MFX_EXTBUFF_VPP_ROTATION:
+            {
+                if (caps.uRotation)
+                {
+                    for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+                    {
+                        if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_ROTATION)
+                        {
+                            mfxExtVPPRotation *extRotate = (mfxExtVPPRotation*) videoParam.ExtParam[i];
+                            executeParams.rotation = extRotate->Angle;
+                        }
+                    }
+                }
 
+                break;
+            }
             case MFX_EXTBUFF_VPP_DETAIL:
             {
                 if(caps.uDetailFilter)

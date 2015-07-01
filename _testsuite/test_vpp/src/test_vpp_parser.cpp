@@ -76,7 +76,7 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-vanalysis]        - enable video analysis algorithm \n"));
     vm_string_printf(VM_STRING("   [-variance]         - enable variance report algorithm \n"));
     vm_string_printf(VM_STRING("   [-idetect]          - enable picstruct detection algorithm \n"));
-
+    vm_string_printf(VM_STRING("   [-rotate (angle)]   - enable rotation. Supported angles: 0, 90, 180, 270.\n"));
     vm_string_printf(VM_STRING("   [-denoise (level)]  - enable denoise algorithm. Level is optional \n"));
     vm_string_printf(VM_STRING("                         range of  noise level is [0, 100]\n"));
     vm_string_printf(VM_STRING("   [-detail  (level)]  - enable detail enhancement algorithm. Level is optional \n"));
@@ -508,7 +508,13 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-vanalysis")))
             {
-                pParams->vaParam.mode = VPP_FILTER_ENABLED_DEFAULT;                        
+                pParams->vaParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-rotate")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->rotate);
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-variance")))
             {
@@ -951,6 +957,12 @@ bool CheckInputParams(vm_char* strInput[], sInputParams* pParams )
     if (0 == pParams->asyncNum)
     {
         vppPrintHelp(strInput[0], VM_STRING("Incompatible parameters: [ayncronous number must exceed 0]\n"));
+        return false;
+    }
+
+    if (pParams->rotate != 0 && pParams->rotate != 90 && pParams->rotate != 180 && pParams->rotate != 270)
+    {
+        vppPrintHelp(strInput[0], VM_STRING("Invalid -rotate parameter: supported values 0, 90, 180, 270\n"));
         return false;
     }
 

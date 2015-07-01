@@ -931,6 +931,13 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_ROTATION:
+            {
+                inputFramesCount[filterIndex]  = 1;
+                outputFramesCount[filterIndex] = 1;
+                break;
+            }
+
             case (mfxU32)MFX_EXTBUFF_VPP_DEINTERLACING:
             {
                 break;

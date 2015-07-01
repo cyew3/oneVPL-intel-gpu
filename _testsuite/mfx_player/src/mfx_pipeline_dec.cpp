@@ -304,6 +304,12 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
     if (m_inParams.bUseVPP)
     {
         m_components[eVPP].m_params.vpp.In  = m_components[eDEC].m_params.mfx.FrameInfo;
+        if ( m_components[eVPP].m_rotate == 270 || m_components[eVPP].m_rotate == 90 )
+        {
+            std::swap(m_components[eREN].m_params.mfx.FrameInfo.Width, m_components[eREN].m_params.mfx.FrameInfo.Height);
+            std::swap(m_components[eREN].m_params.mfx.FrameInfo.CropW, m_components[eREN].m_params.mfx.FrameInfo.CropH);
+        }
+
         m_components[eVPP].m_params.vpp.Out = m_components[eREN].m_params.mfx.FrameInfo;
         if ( m_components[eVPP].m_params.vpp.In.FourCC == MFX_FOURCC_R16 )
         {
@@ -311,7 +317,7 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
             m_components[eVPP].m_params.vpp.In.ChromaFormat  = MFX_CHROMAFORMAT_MONOCHROME;
             m_components[eVPP].m_params.vpp.Out.FourCC       = m_components[eREN].m_params.mfx.FrameInfo.FourCC;
             m_components[eVPP].m_params.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-    }
+        }
     }
     //overwriting vpp output picstruct if -vpp:picstruct  happened
     if (m_components[eVPP].m_bOverPS)
@@ -960,6 +966,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_components[eVPP].m_zoomy);
     ENABLE_VPP(m_components[eVPP].m_params.vpp.Out.CropW);
     ENABLE_VPP(m_components[eVPP].m_params.vpp.Out.CropH);
+    ENABLE_VPP(m_components[eVPP].m_rotate)
     ENABLE_VPP(dec_info.FourCC != enc_info.FourCC);
     ENABLE_VPP(m_components[eDEC].m_bufType != m_components[eREN].m_bufType)
     ENABLE_VPP(m_components[eDEC].m_params.mfx.FrameInfo.Shift != m_components[eREN].m_params.mfx.FrameInfo.Shift);
@@ -1027,8 +1034,12 @@ mfxStatus MFXDecPipeline::CreateVPP()
             PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), VM_STRING(""), VPP_MFX_NATIVE, NULL));
     }
     MFX_CHECK_WITH_ERR(m_pVPP, MFX_ERR_MEMORY_ALLOC);
-
-
+    if(m_components[eVPP].m_rotate)
+    {
+        m_components[eVPP].m_extParams.push_back(new mfxExtVPPRotation());
+        MFXExtBufferPtr<mfxExtVPPRotation> pRotate(m_components[eVPP].m_extParams);
+        pRotate->Angle = m_components[eVPP].m_rotate;
+    }
     //turnoff default filter if they are not present in cmd line
     if ( ! m_inParams.bUseCameraPipe && ! m_inParams.bExtVppApi )
     {
@@ -4412,6 +4423,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_BOOL_OPTION(m_inParams.m_bNowWidowHeader,  VM_STRING("-no_window_title"), VM_STRING("creates rendering window without title bar"));
             else HANDLE_INT_OPTION(m_inParams.m_nMonitor, VM_STRING("-monitor"), VM_STRING("monitor identificator on which to create rendering window"))
             else HANDLE_INT_OPTION(m_inParams.nRotation, VM_STRING("-rotation"), VM_STRING("rotate picture clockwise. only for jpeg decoder"))
+            else HANDLE_INT_OPTION(m_components[eVPP].m_rotate, VM_STRING("-rotate"), VM_STRING("insert vpp into pipeline only if rotation required"))
             else if (m_OptProc.Check(argv[0], VM_STRING("-camera"), VM_STRING("use camera pipe"), OPT_BOOL))
             {
                 m_inParams.bUseCameraPipe = true;

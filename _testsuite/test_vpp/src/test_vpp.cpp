@@ -115,6 +115,7 @@ void vppDefaultInitParams( sInputParams* pParams )
     pParams->ptsCheck     = false;
     pParams->ptsFR        = 0;
     pParams->vaType       = ALLOC_IMPL_VIA_SYS;
+    pParams->rotate       = 0;
 
     // Optional video processing features
     pParams->denoiseParam = defaultDenoiseParam;

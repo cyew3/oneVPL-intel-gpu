@@ -129,6 +129,14 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->deinterlaceConfig);
     }
+    if( 0 != pParams->rotate )
+    {
+        pResources->rotationConfig.Header.BufferId = MFX_EXTBUFF_VPP_ROTATION;
+        pResources->rotationConfig.Header.BufferSz = sizeof(mfxExtVPPRotation);
+        pResources->rotationConfig.Angle           = pParams->rotate;
+
+        pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->rotationConfig);
+    }
     //if( VPP_FILTER_ENABLED_CONFIGURED == pParams->gamutParam.mode )
     //{
     //    pResources->gamutConfig.Header.BufferId = MFX_EXTBUFF_VPP_GAMUT_MAPPING;

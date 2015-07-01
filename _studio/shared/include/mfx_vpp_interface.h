@@ -208,6 +208,8 @@ namespace MfxHwVideoProcessing
 
         mfxU32 uFieldWeavingControl;
 
+        mfxU32 uRotation;
+
     }   mfxVppCaps;
 
 
@@ -292,6 +294,8 @@ namespace MfxHwVideoProcessing
 
         bool                     bCameraLensCorrection;
         CameraLensCorrectionParams         CameraLensCorrection;
+
+        int         rotation;
     } mfxExecuteParams;
 
 

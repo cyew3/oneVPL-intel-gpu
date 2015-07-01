@@ -143,6 +143,7 @@ public:
     //vppParams
     mfxF64                         m_zoomx;
     mfxF64                         m_zoomy;
+    mfxU16                         m_rotate;
     MFXExtBufferVector             m_extParams;
 
 

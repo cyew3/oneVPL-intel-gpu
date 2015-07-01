@@ -45,6 +45,7 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION,
     MFX_EXTBUFF_VPP_IMAGE_STABILIZATION,
     MFX_EXTBUFF_VPP_COMPOSITE,
+    MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION,
     MFX_EXTBUFF_VPP_VARIANCE_REPORT,
     MFX_EXTBUFF_VPP_DEINTERLACING,
@@ -62,6 +63,7 @@ const mfxU32 g_TABLE_CONFIG [] =
     MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION,
     MFX_EXTBUFF_VPP_IMAGE_STABILIZATION,
     MFX_EXTBUFF_VPP_COMPOSITE,
+    MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_DEINTERLACING,
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING
@@ -81,6 +83,7 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     MFX_EXTBUFF_VPP_DENOISE,
     MFX_EXTBUFF_VPP_PROCAMP,
     MFX_EXTBUFF_VPP_DETAIL,
+    MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION,
     MFX_EXTBUFF_VPP_IMAGE_STABILIZATION,
     MFX_EXTBUFF_VPP_COMPOSITE,
@@ -939,6 +942,14 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 OutputDebugStringA(cStr);
                 break;
             }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_ROTATION:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_ROTATION");
+                OutputDebugStringA(cStr);
+                break;
+            }
+
             default:
             {
             }
@@ -1246,7 +1257,12 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         newList[index] = MFX_EXTBUFF_VPP_LSHIFT_OUT;
         index++;
     }
-
+    
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_ROTATION ) )
+    {
+        newList[index] = MFX_EXTBUFF_VPP_ROTATION;
+        index++;
+    }
     // [1] update
     for( index = 0; index < (mfxU32)pipelineList.size(); index++ )
     {
@@ -1575,6 +1591,15 @@ mfxStatus GetPipelineList(
         if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_30i60p ) && !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_ITC ) )
         {
             pipelineList.push_back( MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION );
+        }
+    }
+
+    /* ROTATION FILTER */
+    if( IsFilterFound( &configList[0], configCount, MFX_EXTBUFF_VPP_ROTATION ) && !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_ROTATION) )
+    {
+        if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_ROTATION ) )
+        {
+            pipelineList.push_back( MFX_EXTBUFF_VPP_ROTATION );
         }
     }
 
