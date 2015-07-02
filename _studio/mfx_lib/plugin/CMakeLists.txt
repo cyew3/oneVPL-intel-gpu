@@ -192,7 +192,6 @@ foreach( variant sw hw)
     ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
-    va
     )
   
   if(${variant} MATCHES hw)
