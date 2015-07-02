@@ -54,6 +54,7 @@ public:
         , m_fAverageAsync()
         , m_zoomx()
         , m_zoomy()
+        , m_rotate(0)
         , m_pAllocator()
         , m_nStartSearch()
         , m_nSelectAlgo(USE_FIRST)
