@@ -1019,11 +1019,11 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    if(pParams->bENCPAK){
+    //if(pParams->bENCPAK){
         // create encoder
         m_pmfxENCPAK = new MFXVideoENCODE(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxENCPAK, MFX_ERR_MEMORY_ALLOC);
-    }
+    //}
 
     if(pParams->bPREENC){
         // create encoder
