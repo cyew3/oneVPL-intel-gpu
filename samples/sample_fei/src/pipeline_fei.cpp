@@ -1473,21 +1473,21 @@ mfxStatus CEncodingPipeline::Run()
                     exit(-1);
                 }
             } // if (!preENCCtr.DisableStatisticsOutput)
-        } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
 
-        // Let's count all control and Ext buffers...
-        inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & preENCCtr;
-        if (preENCCtr[fieldId].MVPredictor)
-            inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & mvPreds;
-        if (preENCCtr[fieldId].MBQp)
-            inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & qps;
-        if (!preENCCtr[fieldId].DisableMVOutput)
-            outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mvs;
-        if (!preENCCtr[fieldId].DisableStatisticsOutput)
-        {
-            outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mbdata;
-            outBufsPreEncI[0] = (mfxExtBuffer*) & mbdata; //special case for I frames
-        }
+            // Let's count all control and Ext buffers...
+            inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & preENCCtr;
+            if (preENCCtr[fieldId].MVPredictor)
+                inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & mvPreds;
+            if (preENCCtr[fieldId].MBQp)
+                inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & qps;
+            if (!preENCCtr[fieldId].DisableMVOutput)
+                outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mvs;
+            if (!preENCCtr[fieldId].DisableStatisticsOutput)
+            {
+                outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mbdata;
+                outBufsPreEncI[0] = (mfxExtBuffer*) & mbdata; //special case for I frames
+            }
+        } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
     } // if (m_encpakParams.bPREENC) {
 
     if ((m_encpakParams.bENCPAK)  || (m_encpakParams.bENCoPAKo)||
@@ -1846,11 +1846,11 @@ mfxStatus CEncodingPipeline::Run()
 
             for (fieldId = 0; fieldId < numOfFields; fieldId++)
             {
-                mfxExtFeiEncMVPredictors* pMvPredBuf=NULL;
+                mfxExtFeiPreEncMVPredictors* pMvPredBuf=NULL;
                 mfxExtFeiEncQP*  pMbQP = NULL;
                 for(int i=0; i<eTask->in.NumExtParam; i++){
-                    if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED && feiEncMVPredictors){
-                        pMvPredBuf = &((mfxExtFeiEncMVPredictors*)(eTask->in.ExtParam[i]))[fieldId];
+                    if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV_PRED && feiEncMVPredictors){
+                        pMvPredBuf = &((mfxExtFeiPreEncMVPredictors*)(eTask->in.ExtParam[i]))[fieldId];
                         fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
                     }
                     if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP && feiEncMbQp){
@@ -2256,11 +2256,11 @@ mfxStatus CEncodingPipeline::Run()
 
                 for (fieldId = 0; fieldId < numOfFields; fieldId++)
                 {
-                    mfxExtFeiEncMVPredictors* pMvPredBuf=NULL;
+                    mfxExtFeiPreEncMVPredictors* pMvPredBuf=NULL;
                     mfxExtFeiEncQP*  pMbQP = NULL;
                     for(int i=0; i<eTask->in.NumExtParam; i++){
-                        if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED && feiEncMVPredictors){
-                            pMvPredBuf = &((mfxExtFeiEncMVPredictors*)(eTask->in.ExtParam[i]))[fieldId];
+                        if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV_PRED && feiEncMVPredictors){
+                            pMvPredBuf = &((mfxExtFeiPreEncMVPredictors*)(eTask->in.ExtParam[i]))[fieldId];
                             fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
                         }
                         if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP && feiEncMbQp){
