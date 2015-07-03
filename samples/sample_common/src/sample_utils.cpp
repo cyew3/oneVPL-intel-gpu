@@ -619,6 +619,9 @@ mfxStatus CIVFFrameReader::Init(const msdk_char *strFileName)
 mfxStatus CIVFFrameReader::ReadNextFrame(mfxBitstream *pBS)
 {
     MSDK_CHECK_POINTER(pBS, MFX_ERR_NULL_PTR);
+
+    memmove(pBS->Data, pBS->Data + pBS->DataOffset, pBS->DataLength);
+    pBS->DataOffset = 0;
     pBS->DataFlag = MFX_BITSTREAM_COMPLETE_FRAME;
 
     /*bytes pos-(pos+3)                       size of frame in bytes (not including the 12-byte header)
