@@ -2454,8 +2454,10 @@ void MfxHwH264Encode::PrepareSeiMessage(
     mfxExtAvcSeiRecPoint &  msg)
 {
     mfxExtCodingOption2 * extOpt2 = GetExtBuffer(par);
+    mfxU32 numTL = par.calcParam.numTemporalLayer;
     if (extOpt2->IntRefType)
-        msg.recovery_frame_cnt = extOpt2->IntRefCycleSize - 1;
+        // following calculation assumes that for multiple temporal layers last layer is always non-reference
+        msg.recovery_frame_cnt = (extOpt2->IntRefCycleSize - 1) << (numTL > 2 ? (numTL >> 1) : 0);
     else
         msg.recovery_frame_cnt = par.mfx.GopPicSize;
     msg.exact_match_flag = 1;
