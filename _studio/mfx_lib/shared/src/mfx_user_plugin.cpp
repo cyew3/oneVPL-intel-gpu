@@ -198,8 +198,9 @@ mfxTaskThreadingPolicy VideoUSERPlugin::GetThreadingPolicy(void)
     case MFX_THREADPOLICY_PARALLEL:
         threadingPolicy = MFX_TASK_THREADING_INTER;
         break;
-
-        // MFX_THREADPOLICY_SERIAL is the default threading mode
+    case  MFX_THREADPOLICY_SERIAL:
+        threadingPolicy = m_param.MaxThreadNum > 1 ?  MFX_TASK_THREADING_INTRA : MFX_TASK_THREADING_DEDICATED ;
+        break;
     default:
         threadingPolicy = MFX_TASK_THREADING_INTRA;
         break;

@@ -666,7 +666,7 @@ bool CheckTU(mfxU8 support, mfxU16& tu)
 mfxU16 minRefForPyramid(mfxU16 GopRefDist)
 {
     assert(GopRefDist > 0);
-    return (GopRefDist - 1) / 2 + 2;
+    return (GopRefDist - 1) / 2 + 3;
 }
 
 mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, bool bInit = false)
@@ -1026,16 +1026,32 @@ void SetDefaults(
         else
             par.mfx.GopRefDist = Min<mfxU16>(par.mfx.GopPicSize - 1, 4);
     }
+    
+    if (par.m_ext.CO2.BRefType == MFX_B_REF_UNKNOWN)
+    {
+        if (par.mfx.GopRefDist > 3 && ((minRefForPyramid(par.mfx.GopRefDist) <= par.mfx.NumRefFrame) || par.mfx.NumRefFrame ==0))
+            par.m_ext.CO2.BRefType = MFX_B_REF_PYRAMID;
+        else
+            par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
+    }
+
+    if (par.m_ext.CO3.PRefType == MFX_P_REF_DEFAULT)
+    {
+        if (par.mfx.GopRefDist == 1 && par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+            par.m_ext.CO3.PRefType = MFX_P_REF_PYRAMID;
+        else if (par.mfx.GopRefDist == 1)
+            par.m_ext.CO3.PRefType = MFX_P_REF_SIMPLE;
+    }
 
     if (!par.mfx.NumRefFrame)
     {
-        par.mfx.NumRefFrame = par.isBPyramid() ? mfxU16((par.mfx.GopRefDist - 1) / 2 + 2) : (par.NumRefLX[0] + (par.mfx.GopRefDist > 1) * par.NumRefLX[1]);
+        par.mfx.NumRefFrame = par.isBPyramid() ? mfxU16(minRefForPyramid(par.mfx.GopRefDist)) : (par.NumRefLX[0] + (par.mfx.GopRefDist > 1) * par.NumRefLX[1]);
         par.mfx.NumRefFrame = Max(mfxU16(par.NumTL() - 1), par.mfx.NumRefFrame);
         par.mfx.NumRefFrame = Min(maxDPB, par.mfx.NumRefFrame);
     }
     else
     {
-        while (par.NumRefLX[0] + par.NumRefLX[1] > par.mfx.NumRefFrame)
+        while (par.NumRefLX[0] + par    .NumRefLX[1] > par.mfx.NumRefFrame)
         {
             if (   par.mfx.GopRefDist == 1 && par.NumRefLX[1] == 1
                 && par.NumRefLX[0] + par.NumRefLX[1] == par.mfx.NumRefFrame + 1)
@@ -1065,20 +1081,7 @@ void SetDefaults(
     if (!par.mfx.CodecLevel)
         CorrectLevel(par, false);
 
-    if (par.m_ext.CO2.BRefType == MFX_B_REF_UNKNOWN)
-    {
-        if (par.mfx.GopRefDist > 3 && minRefForPyramid(par.mfx.GopRefDist) <= par.mfx.NumRefFrame)
-            par.m_ext.CO2.BRefType = MFX_B_REF_PYRAMID;
-        else
-            par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
-    }
-    if (par.m_ext.CO3.PRefType == MFX_P_REF_DEFAULT)
-    {
-        if (par.mfx.GopRefDist == 1 && par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
-            par.m_ext.CO3.PRefType = MFX_P_REF_PYRAMID;
-        else if (par.mfx.GopRefDist == 1)
-            par.m_ext.CO3.PRefType = MFX_P_REF_SIMPLE;
-    }
+
 
 
 }
