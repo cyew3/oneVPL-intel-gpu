@@ -2094,6 +2094,30 @@ mfxStatus CEncodingPipeline::Run()
                     pCurrentTask->mfxBS.NumExtParam = numExtOutParams;
                     pCurrentTask->mfxBS.ExtParam = &outBufs[0];
                 }
+
+                /* Load input Buffer for FEI ENCODE and FEI ENC */
+                for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                {
+                    mfxExtFeiEncMVPredictors* pMvPredBuf=NULL;
+                    mfxExtFeiEncMBCtrl* pMbEncCtrl = NULL;
+                    mfxExtFeiEncQP*  pMbQP = NULL;
+                    for(int i=0; i<eTask->in.NumExtParam; i++){
+                        if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED && feiEncMVPredictors && !m_encpakParams.bPREENC){
+                            pMvPredBuf = &((mfxExtFeiEncMVPredictors*)(eTask->in.ExtParam[i]))[fieldId];
+                            fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
+                        }
+                        if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB && feiEncMBCtrl){
+                            pMbEncCtrl = &((mfxExtFeiEncMBCtrl*)(eTask->in.ExtParam[i]))[fieldId];
+                            fread(pMbEncCtrl->MB, sizeof(pMbEncCtrl->MB[0])*pMbEncCtrl->NumMBAlloc, 1, pEncMBs);
+                        }
+                        if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP && feiEncMbQp){
+                            pMbQP = &((mfxExtFeiEncQP*)(eTask->in.ExtParam[i]))[fieldId];
+                            fseek(pPerMbQP, (frameCount-1)*pMbQP->NumQPAlloc * numOfFields + pMbQP->NumQPAlloc * fieldId, SEEK_SET);
+                            fread(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, pPerMbQP);
+                        }
+                    } //
+                } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+
                 if(m_encpakParams.bPREENC) {
                     sts = m_pmfxENCPAK->EncodeFrameAsync(ctr, eTask->in.InSurface, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
                 } else {
@@ -2638,6 +2662,12 @@ mfxStatus CEncodingPipeline::Run()
             fclose(mbcodeout);
         if(mvENCPAKout != NULL)
             fclose(mvENCPAKout);
+        if(pMvPred != NULL)
+            fclose(pMvPred);
+        if(pEncMBs != NULL)
+            fclose(pEncMBs);
+        if (pPerMbQP != NULL)
+            fclose(pPerMbQP);
     }
 
     if (m_encpakParams.bPREENC)
