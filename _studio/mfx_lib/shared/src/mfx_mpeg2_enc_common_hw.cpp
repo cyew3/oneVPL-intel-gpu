@@ -715,8 +715,8 @@ mfxStatus ExecuteBuffers::InitSliceParameters(mfxU8 qp, mfxU16 scale_type, mfxU8
         pDDISlice->FirstMbY                       = (mfxU16)i;
         pDDISlice->NumMbsForSlice                 = numMBSlice;
         pDDISlice->IntraSlice                     = intra; 
-        //pDDISlice->quantiser_scale_code           = isMBQP ? mbqp[i*numMBSlice] : qp;
-        pDDISlice->quantiser_scale_code           = qp;
+        pDDISlice->quantiser_scale_code           = isMBQP ? mbqp[i*numMBSlice] : qp;
+        //pDDISlice->quantiser_scale_code           = qp;
     }
 
     return MFX_ERR_NONE;
