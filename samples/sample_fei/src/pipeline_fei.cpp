@@ -1228,7 +1228,7 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
 
         pakParams.NumExtParam = 1;
         pakParams.ExtParam    = buf;
-        pakParams.AllocId     = m_pmfxPREENC ? PAK_ALLOC : PREENC_ALLOC;
+        pakParams.AllocId     = PAK_ALLOC;//m_pmfxPREENC ? PAK_ALLOC : PREENC_ALLOC;
 
         sts = m_pmfxPAK->Init(&pakParams);
         if (MFX_WRN_PARTIAL_ACCELERATION == sts)
@@ -1768,13 +1768,13 @@ mfxStatus CEncodingPipeline::Run()
         if(m_pmfxPAK)
         {
             nReconSurfIdx = GetFreeSurface(m_pReconSurfaces, m_ReconResponse.NumFrameActual);
-            MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
+            MSDK_CHECK_ERROR(nReconSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
             pReconSurf = &m_pReconSurfaces[nReconSurfIdx];
         }
 //        else
 //        {
 //            nReconSurfIdx = GetFreeSurface(m_pEncSurfaces, m_EncResponse.NumFrameActual);
-//            MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
+//            MSDK_CHECK_ERROR(nReconSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
 //            pReconSurf = &m_pEncSurfaces[nReconSurfIdx];
 //        }
 
@@ -2857,7 +2857,7 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
                     eTask->inPAK.NumFrameL0 = eTask->inPAK.NumFrameL1 = 0;
                     eTask->inPAK.L0Surface = eTask->inPAK.L1Surface = NULL;
                     /*insert SPS if we have IDR frame */
-                    if (eTask->frameType & MFX_FRAMETYPE_IDR)
+                    //if (eTask->frameType & MFX_FRAMETYPE_IDR)
 
                     eTask->inPAK.NumExtParam = numExtOutParams;
                     eTask->inPAK.ExtParam = outBufs;
