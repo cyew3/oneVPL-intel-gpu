@@ -823,12 +823,14 @@ namespace MfxHwVideoProcessing
             bool m_advancedDIEnable;
             bool m_denoiseEnable;
             bool m_detailEnable;
+            bool m_rotation;
 
             Caps()
                 : m_procAmpEnable(false)
                 //, m_deinterlaceEnable(false)
                 , m_denoiseEnable(false)
                 , m_detailEnable(false)
+                , m_rotation(false)
             {   }
         } m_caps;
         class D3D11Frc

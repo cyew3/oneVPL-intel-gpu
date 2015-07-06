@@ -765,6 +765,11 @@ mfxStatus D3D11VideoProcessor::QueryVideoProcessorCaps(void)
         OutputDebugStringA(cStr);
 #endif
 
+        if (D3D11_VIDEO_PROCESSOR_FEATURE_CAPS_ROTATION & videoProcessorCaps.FeatureCaps)
+        {
+            m_caps.m_rotation = true;
+        }
+
         D3D11_VIDEO_PROCESSOR_FILTER_RANGE range;
         const mfxF32 EPSILA = 0.000000001f;
 
@@ -2619,7 +2624,7 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
     caps.uAdvancedDI    = m_caps.m_advancedDIEnable;
     caps.uDetailFilter  = m_caps.m_detailEnable;
     caps.uProcampFilter = m_caps.m_procAmpEnable;
-
+    caps.uRotation      = m_caps.m_rotation;
     caps.uIStabFilter   = m_vpreCaps.bIS;
     caps.uVariance      = m_vpreCaps.bVariance;
     if(caps.uVariance)
@@ -2657,10 +2662,6 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
         caps.uFieldWeavingControl = 1;
     }
 
-    //if( TRUE == m_vpreCaps.)
-    //{
-    caps.uRotation = 1;
-    //}
     // [FRC]
     size_t rateDataCount = m_customRateData.size();
     // aya: wo

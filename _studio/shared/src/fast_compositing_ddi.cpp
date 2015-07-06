@@ -581,10 +581,12 @@ mfxStatus FastCompositingDDI::QueryVarianceCaps(
 
 mfxStatus FastCompositingDDI::QueryCapabilities(mfxVppCaps& caps)
 {
-    memset( (void*)&caps, 0, sizeof(mfxVppCaps));  
+    memset( (void*)&caps, 0, sizeof(mfxVppCaps));
 
     caps.uMaxWidth = (mfxU32)m_caps.sPrimaryVideoCaps.iMaxWidth;
     caps.uMaxHeight = (mfxU32)m_caps.sPrimaryVideoCaps.iMaxHeight;
+
+    caps.uRotation  = 0; // FastComposing DDI doesn't support rotation.
 
     if(TRUE == m_caps.sPrimaryVideoCaps.bAdvancedDI)
     {

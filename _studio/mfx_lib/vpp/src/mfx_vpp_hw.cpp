@@ -2664,6 +2664,10 @@ mfxStatus ConfigureExecuteParams(
                         }
                     }
                 }
+                else
+                {
+                    bIsFilterSkipped = true;
+                }
 
                 break;
             }
