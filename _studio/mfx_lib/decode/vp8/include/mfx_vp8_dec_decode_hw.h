@@ -97,9 +97,9 @@ public:
         m_range(0),
         m_value(0),
         m_bitcount(0),
+        m_pos(0),
         m_input(0),
-        m_input_size(0),
-        m_pos(0)
+        m_input_size(0)
     {}
 
     MFX_VP8_BoolDecoder(Ipp8u *pBitStream, Ipp32s dataSize)

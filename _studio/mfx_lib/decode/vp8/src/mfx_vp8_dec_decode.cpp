@@ -117,12 +117,12 @@ VideoDECODEVP8::VideoDECODEVP8(VideoCORE *p_core, mfxStatus *p_sts)
     ,m_is_initialized(false)
     ,m_is_image_available(false)
     ,m_is_opaque_memory(false)
-    ,m_platform(MFX_PLATFORM_SOFTWARE)
-    ,m_p_video_accelerator(0)
     ,m_curr_decode_index(0)
     ,m_curr_display_index(0)
     ,m_num_output_frames(0)
     ,m_in_framerate(0)
+    ,m_platform(MFX_PLATFORM_SOFTWARE)
+    ,m_p_video_accelerator(0)
 {
     memset(&m_bs.Data, 0, sizeof(m_bs.Data));
 

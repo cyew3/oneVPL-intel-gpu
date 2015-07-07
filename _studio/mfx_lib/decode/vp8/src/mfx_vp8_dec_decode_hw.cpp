@@ -277,7 +277,7 @@ mfxStatus VideoDECODEVP8_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
 
     eMFXHWType type = p_core->GetHWType();
 
-    #ifdef MFX_VA_WIN
+#ifdef MFX_VA_WIN
 
     if (p_core->IsGuidSupported(sDXVA_Intel_ModeVP8_VLD, p_in) != MFX_ERR_NONE)
     {
@@ -286,7 +286,7 @@ mfxStatus VideoDECODEVP8_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
 
     // todo : VA API alternative?!
 
-    #endif
+#endif
 
     return MFX_VP8_Utility::Query(p_core, p_in, p_out, type);
 
@@ -298,6 +298,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *p_
 
     p_request->NumFrameMin += p_params->AsyncDepth ? p_params->AsyncDepth : MFX_AUTO_ASYNC_DEPTH_VALUE;
     p_request->NumFrameSuggested = p_request->NumFrameMin;
+    p_request->Info = p_params->mfx.FrameInfo;
 
 
     if(p_params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
@@ -353,7 +354,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
         sts = QueryIOSurfInternal(platform, p_video_param, p_request);
     }
 
-    #ifdef MFX_VA_WIN
+#ifdef MFX_VA_WIN
 
     if (p_core->IsGuidSupported(sDXVA_Intel_ModeVP8_VLD, p_video_param) != MFX_ERR_NONE)
     {
@@ -361,7 +362,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
     }
     // todo : VA API alternative ?
 
-    #endif
+#endif
 
     return sts;
 
