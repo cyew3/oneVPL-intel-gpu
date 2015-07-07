@@ -65,6 +65,7 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
     for(int i = 0; i < VAProcFilterCount; i++)
         m_filterBufs[i] = VA_INVALID_ID;
 
+    memset( (void*)&m_pipelineCaps, 0, sizeof(m_pipelineCaps));
     memset( (void*)&m_denoiseCaps, 0, sizeof(m_denoiseCaps));
     memset( (void*)&m_detailCaps, 0, sizeof(m_detailCaps));
     memset( (void*)&m_deinterlacingCaps, 0, sizeof(m_deinterlacingCaps));
@@ -168,6 +169,7 @@ mfxStatus VAAPIVideoProcessing::Close(void)
     m_deintFilterID     = VA_INVALID_ID;
     m_procampFilterID   = VA_INVALID_ID;
 
+    memset( (void*)&m_pipelineCaps, 0, sizeof(m_pipelineCaps));
     memset( (void*)&m_denoiseCaps, 0, sizeof(m_denoiseCaps));
     memset( (void*)&m_detailCaps, 0, sizeof(m_detailCaps));
     memset( (void*)&m_procampCaps,  0, sizeof(m_procampCaps));
@@ -368,6 +370,20 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
                     break;
             }
         }
+    }
+
+    memset(&m_pipelineCaps,  0, sizeof(VAProcPipelineCaps));
+    vaSts = vaQueryVideoProcPipelineCaps(m_vaDisplay,
+                                 m_vaContextVPP,
+                                 NULL,
+                                 0,
+                                 &m_pipelineCaps);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    if (m_pipelineCaps.rotation_flags & (1 << VA_ROTATION_90 ) &&
+        m_pipelineCaps.rotation_flags & (1 << VA_ROTATION_180) &&
+        m_pipelineCaps.rotation_flags & (1 << VA_ROTATION_270))
+    {
+        caps.uRotation = 1;
     }
 
     caps.uMaxWidth  = 4096;
@@ -759,6 +775,28 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
         VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
         m_pipelineParam[refIdx].surface = *srf;
+
+        switch (pParams->rotation)
+        {
+        case MFX_ANGLE_90:
+            if ( m_pipelineCaps.rotation_flags & (1 << VA_ROTATION_90))
+            {
+                m_pipelineParam[refIdx].rotation_state = VA_ROTATION_90;
+            }
+            break;
+        case MFX_ANGLE_180:
+            if ( m_pipelineCaps.rotation_flags & (1 << VA_ROTATION_180))
+            {
+                m_pipelineParam[refIdx].rotation_state = VA_ROTATION_180;
+            }
+            break;
+        case MFX_ANGLE_270:
+            if ( m_pipelineCaps.rotation_flags & (1 << VA_ROTATION_270))
+            {
+                m_pipelineParam[refIdx].rotation_state = VA_ROTATION_270;
+            }
+            break;
+        }
 
         // source cropping
         mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);

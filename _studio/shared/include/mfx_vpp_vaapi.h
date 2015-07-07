@@ -77,6 +77,7 @@ namespace MfxHwVideoProcessing
         VAProcFilterCap m_denoiseCaps;
         VAProcFilterCap m_detailCaps;
 
+        VAProcPipelineCaps           m_pipelineCaps;
         VAProcFilterCapColorBalance  m_procampCaps[VAProcColorBalanceCount];
         VAProcFilterCapDeinterlacing m_deinterlacingCaps[VAProcDeinterlacingCount];
         VAProcFilterCapFrameRateConversion m_frcCaps[2]; /* only two modes, 24p->60p and 30p->60p */
