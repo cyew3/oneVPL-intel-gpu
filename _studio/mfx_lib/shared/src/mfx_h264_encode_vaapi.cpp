@@ -1177,8 +1177,8 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     {
             attrib[2].type = (VAConfigAttribType) VAConfigAttribEncFunctionTypeIntel;
             numAttrib++;
-            attrib[3].type = (VAConfigAttribType) VAConfigAttribFeiInterfaceRevIntel;
-            numAttrib++;
+            //attrib[3].type = (VAConfigAttribType) VAConfigAttribFeiInterfaceRevIntel;
+            //numAttrib++;
     }
 #endif
     vaSts = vaGetConfigAttributes(m_vaDisplay,
@@ -1211,12 +1211,12 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         }else{
             attrib[2].value = VA_ENC_FUNCTION_ENC_PAK_INTEL;
         }
-        if (VA_CONFIG_ATTRIB_FEI_INTERFACE_REV_INTEL != attrib[3].value)
-        {
-            /* DDI version in MSDk and in driver mismatched
-             * This is fatal error */
-            return MFX_ERR_DEVICE_FAILED;
-        }
+//        if (VA_CONFIG_ATTRIB_FEI_INTERFACE_REV_INTEL != attrib[3].value)
+//        {
+//            /* DDI version in MSDk and in driver mismatched
+//             * This is fatal error */
+//            return MFX_ERR_DEVICE_FAILED;
+//        }
     } //if(m_isENCPAK){
 
     attrib[0].value = VA_RT_FORMAT_YUV420;
