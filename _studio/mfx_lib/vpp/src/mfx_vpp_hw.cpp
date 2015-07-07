@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -1589,27 +1589,7 @@ mfxStatus  VideoVPPHW::Init(
     MFX_CHECK_STS(sts);
 
     //-----------------------------------------------------
-    // [6] temporary hack: disable GPU Copy on Linux if composition is in pipeline
-    //-----------------------------------------------------
-#ifdef MFX_VA_LINUX
-    bool foundCompositionFilter = false;
-    for(mfxU16 bufIndex = 0; bufIndex < par->NumExtParam; bufIndex++)
-    {
-        if (MFX_EXTBUFF_VPP_COMPOSITE == par->ExtParam[bufIndex]->BufferId)
-        {
-            foundCompositionFilter = true;
-            break;
-        }
-    }
-
-    if (foundCompositionFilter)
-    {
-        dynamic_cast<VAAPIVideoCORE&>(*m_pCore).SetCmCopyStatus(false);
-    }
-#endif
-
-    //-----------------------------------------------------
-    // [7]  cm device
+    // [6]  cm device
     //-----------------------------------------------------
 #if defined(MFX_VA)
     if(m_pCmDevice) {
