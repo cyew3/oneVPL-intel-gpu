@@ -111,6 +111,8 @@ private:
                 nativeSurface->Data.TimeStamp = surface->Data.TimeStamp;
                 //nativeSurface->Data.Corrupted = surface->Data.Corrupted;
                 //nativeSurface->Data.DataFlag = surface->Data.DataFlag;
+                nativeSurface->Data.NumExtParam = surface->Data.NumExtParam;
+                nativeSurface->Data.ExtParam = surface->Data.ExtParam;
                 nativeSurface->Info = surface->Info;
             }
 
