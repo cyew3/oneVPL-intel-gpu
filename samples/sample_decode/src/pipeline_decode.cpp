@@ -593,6 +593,17 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    if (!m_mfxVideoParams.mfx.FrameInfo.FrameRateExtN || !m_mfxVideoParams.mfx.FrameInfo.FrameRateExtD) {
+        msdk_printf(MSDK_STRING("pretending that stream is 30fps one\n"));
+        m_mfxVideoParams.mfx.FrameInfo.FrameRateExtN = 30;
+        m_mfxVideoParams.mfx.FrameInfo.FrameRateExtD = 1;
+    }
+    if (!m_mfxVideoParams.mfx.FrameInfo.AspectRatioW || !m_mfxVideoParams.mfx.FrameInfo.AspectRatioH) {
+        msdk_printf(MSDK_STRING("pretending that aspect ratio is 1:1\n"));
+        m_mfxVideoParams.mfx.FrameInfo.AspectRatioW = 1;
+        m_mfxVideoParams.mfx.FrameInfo.AspectRatioH = 1;
+    }
+
     // Videoparams for RGB4 JPEG decoder output
     if ((pParams->fourcc == MFX_FOURCC_RGB4) && (pParams->videoType == MFX_CODEC_JPEG))
     {
