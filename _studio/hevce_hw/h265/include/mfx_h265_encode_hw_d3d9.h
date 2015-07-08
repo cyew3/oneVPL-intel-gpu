@@ -7,11 +7,79 @@
 //
 #pragma once
 
+#include "auxiliary_device.h"
 #include "mfx_h265_encode_hw_ddi.h"
 #include "mfx_h265_encode_hw_ddi_trace.h"
 
 namespace MfxHwH265Encode
 {
+
+class AuxiliaryDevice : public ::AuxiliaryDevice
+{
+public:
+    using ::AuxiliaryDevice::Execute;
+
+    template <typename T, typename U>
+    HRESULT Execute(mfxU32 func, T& in, U& out)
+    {
+        return ::AuxiliaryDevice::Execute(func, &in, sizeof(in), &out, sizeof(out));
+    }
+
+    template <typename T>
+    HRESULT Execute(mfxU32 func, T& in, void*)
+    {
+        return ::AuxiliaryDevice::Execute(func, &in, sizeof(in), 0, 0);
+    }
+
+    template <typename U>
+    HRESULT Execute(mfxU32 func, void*, U& out)
+    {
+        return ::AuxiliaryDevice::Execute(func, 0, 0, &out, sizeof(out));
+    }
+};
+
+void FillSpsBuffer(
+    MfxVideoParam const & par,
+    ENCODE_CAPS_HEVC const & /*caps*/,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC & sps);
+
+void FillPpsBuffer(
+    MfxVideoParam const & par,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps);
+
+void FillPpsBuffer(
+    Task const & task,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps);
+
+void FillSliceBuffer(
+    MfxVideoParam const & par,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & sps,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
+    std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice);
+
+void FillSliceBuffer(
+    Task const & task,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & /*sps*/,
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
+    std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice);
+
+class CachedFeedback
+{
+public:
+    typedef ENCODE_QUERY_STATUS_PARAMS Feedback;
+    typedef std::vector<Feedback> FeedbackStorage;
+
+    void Reset(mfxU32 cacheSize);
+
+    mfxStatus Update(FeedbackStorage const & update);
+
+    const Feedback * Hit(mfxU32 feedbackNumber) const;
+
+    mfxStatus Remove(mfxU32 feedbackNumber);
+
+private:
+    FeedbackStorage m_cache;
+};
 
 class D3D9Encoder : public DriverEncoder, DDIHeaderPacker, DDITracer
 {
@@ -35,7 +103,7 @@ public:
     virtual
     mfxStatus Reset(
         MfxVideoParam const & par);
-    
+
     virtual
     mfxStatus Register(
         mfxFrameAllocResponse & response,
@@ -43,7 +111,7 @@ public:
 
     virtual
     mfxStatus Execute(
-        Task const &task, 
+        Task const &task,
         mfxHDL surface);
 
     virtual
@@ -54,7 +122,7 @@ public:
     virtual
     mfxStatus QueryEncodeCaps(
         ENCODE_CAPS_HEVC & caps);
-        
+
 
     virtual
     mfxStatus QueryStatus(
@@ -72,7 +140,7 @@ private:
     mfxU32               m_height;
     ENCODE_CAPS_HEVC     m_caps;
     ENCODE_ENC_CTRL_CAPS m_capsQuery;
-    ENCODE_ENC_CTRL_CAPS m_capsGet;  
+    ENCODE_ENC_CTRL_CAPS m_capsGet;
     bool                 m_infoQueried;
 
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC         m_sps;

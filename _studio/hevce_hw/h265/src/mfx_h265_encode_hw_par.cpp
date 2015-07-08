@@ -13,7 +13,7 @@
 namespace MfxHwH265Encode
 {
 
-const mfxU32 TableA1[][6] = 
+const mfxU32 TableA1[][6] =
 {
 //  Level   |MaxLumaPs |    MaxCPB    | MaxSlice  | MaxTileRows | MaxTileCols
 //                                      Segments  |
@@ -33,7 +33,7 @@ const mfxU32 TableA1[][6] =
 /*  6.2 */ {35651584,   240000, 800000,       600,           22,          20},
 };
 
-const mfxU32 TableA2[][4] = 
+const mfxU32 TableA2[][4] =
 {
 //  Level   | MaxLumaSr |      MaxBR   | MinCr
 /*  1    */ {    552960,    128,    128,    2},
@@ -53,7 +53,7 @@ const mfxU32 TableA2[][4] =
 
 const mfxU16 MaxLidx = (sizeof(TableA1) / sizeof(TableA1[0]));
 
-const mfxU16 LevelIdxToMfx[] = 
+const mfxU16 LevelIdxToMfx[] =
 {
     MFX_LEVEL_HEVC_1 ,
     MFX_LEVEL_HEVC_2 ,
@@ -117,7 +117,7 @@ mfxU32 GetMaxDpbSize(mfxU32 PicSizeInSamplesY, mfxU32 MaxLumaPs, mfxU32 maxDpbPi
 mfxStatus CheckProfile(mfxVideoParam& par)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    
+
     switch (par.mfx.CodecProfile)
     {
     case 0:
@@ -148,8 +148,8 @@ mfxStatus CheckProfile(mfxVideoParam& par)
 mfxU32 GetMaxDpbSizeByLevel(MfxVideoParam const & par)
 {
     assert(par.mfx.CodecLevel != 0);
-    
-    mfxU32 MaxLumaPs         = TableA1[LevelIdx(par.mfx.CodecLevel)][0]; 
+
+    mfxU32 MaxLumaPs         = TableA1[LevelIdx(par.mfx.CodecLevel)][0];
     mfxU32 PicSizeInSamplesY = (mfxU32)par.m_ext.HEVCParam.PicWidthInLumaSamples * par.m_ext.HEVCParam.PicHeightInLumaSamples;
 
     return GetMaxDpbSize(PicSizeInSamplesY, MaxLumaPs, 6);
@@ -205,10 +205,10 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool query)
         mfxU32 MaxBR       = TableA2[lidx][1+tidx];
         //mfxU32 MinCR       = TableA2[lidx][3];
         mfxU32 MaxDpbSize  = GetMaxDpbSize(PicSizeInSamplesY, MaxLumaPs, 6);
-        
+
         if (   PicSizeInSamplesY > MaxLumaPs
-            || par.m_ext.HEVCParam.PicWidthInLumaSamples > sqrt(MaxLumaPs * 8)
-            || par.m_ext.HEVCParam.PicHeightInLumaSamples > sqrt(MaxLumaPs * 8)
+            || par.m_ext.HEVCParam.PicWidthInLumaSamples > sqrt((mfxF64)MaxLumaPs * 8)
+            || par.m_ext.HEVCParam.PicHeightInLumaSamples > sqrt((mfxF64)MaxLumaPs * 8)
             || (mfxU32)par.mfx.NumRefFrame + 1 > MaxDpbSize
             || par.m_ext.HEVCTiles.NumTileColumns > MaxTileCols
             || par.m_ext.HEVCTiles.NumTileRows > MaxTileRows
@@ -255,7 +255,7 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool query)
 }
 
 mfxU16 AddTileSlices(
-    MfxVideoParam& par, 
+    MfxVideoParam& par,
     mfxU32 SliceStructure,
     mfxU32 nCol,
     mfxU32 nRow,
@@ -285,7 +285,7 @@ mfxU16 AddTileSlices(
 
             while (((r0 & (r0 - 1)) || (nRow % r0)) && r0 < nRow)
                 r0 ++;
-            
+
             while (((r1 & (r1 - 1)) || (nRow % r1)) && r1)
                 r1 --;
 
@@ -306,7 +306,7 @@ mfxU16 AddTileSlices(
     }
 
     par.m_slice.resize(nSlicePrev + nSlice);
- 
+
     /*
     mfxU32 f = (nSlice < 2 || (nLCU % nSlice == 0)) ? 0 : (nLCU % nSlice);
     bool   s = false;
@@ -332,20 +332,20 @@ mfxU16 AddTileSlices(
 
     */
     mfxF64 k = (mfxF64)nLCU / (mfxF64) nSlice;
-    
+
     mfxU32 i = nSlicePrev;
     for ( ; i < par.m_slice.size(); i ++)
     {
         //par.m_slice[i].NumLCU = (i == nSlicePrev + nSlice-1) ? nLCU : nLcuPerSlice + s * (f && i % f == 0) - !s * (f && i % f == 0);
         //par.m_slice[i].SegmentAddress = (i > 0) ? (par.m_slice[i-1].SegmentAddress + par.m_slice[i-1].NumLCU) : 0;
-        
+
         par.m_slice[i].SegmentAddress = (mfxU32)(k*(mfxF64)i);
         if (i != 0)
-            par.m_slice[i - 1].NumLCU = par.m_slice[i].SegmentAddress - par.m_slice[i - 1].SegmentAddress;         
+            par.m_slice[i - 1].NumLCU = par.m_slice[i].SegmentAddress - par.m_slice[i - 1].SegmentAddress;
     }
     if ((i > 0) && ((i - 1) < par.m_slice.size()))
     {
-        par.m_slice[i - 1].NumLCU = par.m_slice[nSlicePrev].SegmentAddress + nLCU - par.m_slice[i - 1].SegmentAddress ; 
+        par.m_slice[i - 1].NumLCU = par.m_slice[nSlicePrev].SegmentAddress + nLCU - par.m_slice[i - 1].SegmentAddress ;
     }
 
     return (mfxU16)nSlice;
@@ -401,10 +401,10 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
 
     for (mfxU32 j = 0; j < nTRow; j ++)
         rowHeight[j] = ((j + 1) * nRow) / nTRow - (j * nRow) / nTRow;
-    
+
     for (mfxU32 i = 0; i < nTCol; i ++)
         colBd[i + 1] = colBd[i] + colWidth[i];
-    
+
     for (mfxU32 j = 0; j < nTRow; j ++)
         rowBd[j + 1] = rowBd[j] + rowHeight[j];
 
@@ -694,7 +694,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     else
     {
         changed     += CheckMin(par.mfx.FrameInfo.Width, Align(par.mfx.FrameInfo.Width, par.LCUSize));
-        changed     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height, par.LCUSize));    
+        changed     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height, par.LCUSize));
     }
 
     unsupported += CheckMax(par.mfx.FrameInfo.Width, caps.MaxPicWidth);
@@ -716,10 +716,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         unsupported ++;
     }
 
-    unsupported += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, MAX_NUM_TILE_COLUMNS);
-    unsupported += CheckMax(par.m_ext.HEVCTiles.NumTileRows, MAX_NUM_TILE_ROWS);
+    unsupported += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, (mfxU32)MAX_NUM_TILE_COLUMNS);
+    unsupported += CheckMax(par.m_ext.HEVCTiles.NumTileRows, (mfxU32)MAX_NUM_TILE_ROWS);
 
-    changed += CheckMax(par.mfx.TargetUsage, MFX_TARGETUSAGE_BEST_SPEED);
+    changed += CheckMax(par.mfx.TargetUsage, (mfxU32)MFX_TARGETUSAGE_BEST_SPEED);
 
     if (par.mfx.TargetUsage && caps.TUSupport)
         changed += CheckTU(caps.TUSupport, par.mfx.TargetUsage);
@@ -729,17 +729,17 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     unsupported += CheckOption(par.Protected, 0);
 
     changed += CheckOption(par.IOPattern
-        , MFX_IOPATTERN_IN_VIDEO_MEMORY
-        , MFX_IOPATTERN_IN_SYSTEM_MEMORY
-        , MFX_IOPATTERN_IN_OPAQUE_MEMORY
+        , (mfxU32)MFX_IOPATTERN_IN_VIDEO_MEMORY
+        , (mfxU32)MFX_IOPATTERN_IN_SYSTEM_MEMORY
+        , (mfxU32)MFX_IOPATTERN_IN_OPAQUE_MEMORY
         , 0);
 
     unsupported += CheckOption(par.mfx.RateControlMethod
         , 0
-        , MFX_RATECONTROL_CBR
-        , MFX_RATECONTROL_VBR
-        , MFX_RATECONTROL_CQP
-        , MFX_RATECONTROL_ICQ
+        , (mfxU32)MFX_RATECONTROL_CBR
+        , (mfxU32)MFX_RATECONTROL_VBR
+        , (mfxU32)MFX_RATECONTROL_CQP
+        , (mfxU32)MFX_RATECONTROL_ICQ
         , caps.VCMBitRateControl ? MFX_RATECONTROL_VCM : 0);
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
@@ -748,7 +748,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     changed += CheckTriStateOption(par.m_ext.CO2.MBBRC);
 
     if (caps.MBBRCSupport == 0 || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
-        changed += CheckOption(par.m_ext.CO2.MBBRC, MFX_CODINGOPTION_OFF, 0);
+        changed += CheckOption(par.m_ext.CO2.MBBRC, (mfxU32)MFX_CODINGOPTION_OFF, 0);
 
     changed += CheckOption(par.mfx.FrameInfo.PicStruct, (mfxU16)MFX_PICSTRUCT_PROGRESSIVE, 0);
 
@@ -765,7 +765,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 
     unsupported += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420, 0);
-    unsupported += CheckOption(par.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12, 0);
+    unsupported += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_NV12, 0);
 
     if ((par.mfx.FrameInfo.FrameRateExtN == 0) !=
         (par.mfx.FrameInfo.FrameRateExtD == 0))
@@ -792,7 +792,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {
         changed += CheckRangeDflt(par.mfx.QPI, 1, 51, 0);
         changed += CheckRangeDflt(par.mfx.QPP, 1, 51, 0);
-        changed += CheckRangeDflt(par.mfx.QPB, 1, 51, 0);    
+        changed += CheckRangeDflt(par.mfx.QPB, 1, 51, 0);
     }
 
     if (par.BufferSizeInKB != 0)
@@ -823,13 +823,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
         changed += CheckRange(par.m_ext.CO2.NumMbPerSlice, 0, nLCU / nTile);
     }
-    
+
     changed += CheckOption(par.mfx.NumSlice, MakeSlices(par, caps.SliceStructure), 0);
 
     if (   par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID
            && par.mfx.GopRefDist > 0
-           && ( par.mfx.GopRefDist < 2  
-            || minRefForPyramid(par.mfx.GopRefDist) > 16   
+           && ( par.mfx.GopRefDist < 2
+            || minRefForPyramid(par.mfx.GopRefDist) > 16
             || (par.mfx.NumRefFrame && minRefForPyramid(par.mfx.GopRefDist) > par.mfx.NumRefFrame)))
     {
         par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
@@ -838,7 +838,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (par.m_ext.CO3.PRefType == MFX_P_REF_PYRAMID &&  par.mfx.GopRefDist > 1)
     {
         par.m_ext.CO3.PRefType = MFX_P_REF_DEFAULT;
-        changed ++;    
+        changed ++;
     }
 
     {
@@ -867,7 +867,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 
     sts = CheckProfile(par);
-        
+
     if (sts >= MFX_ERR_NONE)
         sts = CorrectLevel(par, true);
 
@@ -900,7 +900,7 @@ void SetDefaults(
         maxBuf = GetMaxCpbInKBByLevel(par);
         maxDPB = (mfxU16)GetMaxDpbSizeByLevel(par);
     }
-    
+
     if (!par.AsyncDepth)
         par.AsyncDepth = 5;
 
@@ -945,7 +945,7 @@ void SetDefaults(
 
     if (!par.mfx.FrameInfo.AspectRatioH)
         par.mfx.FrameInfo.AspectRatioH = 1;
-    
+
     if (!par.mfx.FrameInfo.PicStruct)
         par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
@@ -966,9 +966,9 @@ void SetDefaults(
         if (!par.mfx.QPI)
             par.mfx.QPI = 26;
         if (!par.mfx.QPP)
-            par.mfx.QPP = (mfxU16) Min (par.mfx.QPI + 2, 51);            
+            par.mfx.QPP = (mfxU16) Min (par.mfx.QPI + 2, 51);
         if (!par.mfx.QPB)
-            par.mfx.QPB = (mfxU16) Min (par.mfx.QPP + 2, 51); 
+            par.mfx.QPB = (mfxU16) Min (par.mfx.QPP + 2, 51);
 
         if (!par.BufferSizeInKB)
             par.BufferSizeInKB = Min(maxBuf, mfxU32(rawBits / 8000));
@@ -1000,7 +1000,7 @@ void SetDefaults(
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ && !par.mfx.ICQQuality)
         par.mfx.ICQQuality = 26;
-    
+
     /*if (!par.mfx.GopOptFlag)
         par.mfx.GopOptFlag = MFX_GOP_CLOSED;*/
 
@@ -1009,7 +1009,7 @@ void SetDefaults(
 
     if (!par.NumRefLX[0] && par.m_ext.DDI.NumActiveRefBL0)
         par.NumRefLX[0] = par.m_ext.DDI.NumActiveRefBL0;
-    
+
     if (!par.NumRefLX[1] && par.m_ext.DDI.NumActiveRefBL1)
         par.NumRefLX[1] = par.m_ext.DDI.NumActiveRefBL1;
 

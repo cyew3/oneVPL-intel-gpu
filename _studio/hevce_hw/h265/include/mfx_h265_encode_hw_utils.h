@@ -142,7 +142,7 @@ public:
         MFXCoreInterface *     core,
         mfxFrameAllocRequest & req,
         bool                   isCopyRequired);
-    
+
     mfxU32 Lock(mfxU32 idx);
 
     void Unlock();
@@ -170,7 +170,7 @@ private:
     std::vector<mfxMemId>              m_mids;
     std::vector<mfxU32>                m_locked;
     bool m_isExternal;
-}; 
+};
 
 typedef struct _DpbFrame
 {
@@ -232,6 +232,18 @@ typedef struct _Task : DpbFrame
 
 typedef std::list<Task> TaskList;
 
+template <typename T>
+struct remove_const
+{
+    typedef T type;
+};
+
+template <typename T>
+struct remove_const<const T>
+{
+    typedef T type;
+};
+
 namespace ExtBuffer
 {
     template<class T> struct Map { enum { Id = 0, Sz = 0 }; };
@@ -265,7 +277,7 @@ namespace ExtBuffer
         {
             if (m_b)
                 for (mfxU16 i = 0; i < m_n; i ++)
-                    if (m_b[i] && m_b[i]->BufferId == Map< std::remove_const<T>::type >::Id)
+                    if (m_b[i] && m_b[i]->BufferId == Map<remove_const<T> >::Id)
                         return (T*)m_b[i];
             return 0;
         }
@@ -386,7 +398,7 @@ public:
     };
     std::vector<SliceInfo> m_slice;
 
-    struct 
+    struct
     {
         mfxExtHEVCParam             HEVCParam;
         mfxExtHEVCTiles             HEVCTiles;
@@ -577,5 +589,5 @@ mfxStatus CopyRawSurfaceToVideoMemory(
     MFXCoreInterface &    core,
     MfxVideoParam const & video,
     Task const &          task);
-    
+
 }; //namespace MfxHwH265Encode

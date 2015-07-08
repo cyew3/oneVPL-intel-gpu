@@ -8,8 +8,8 @@
 
 #pragma once
 
+#include "mfx_h264_encode_struct_vaapi.h"
 #include "encoding_ddi.h"
-#include "auxiliary_device.h"
 #include "mfxplugin++.h"
 
 #include "mfx_h265_encode_hw_utils.h"
@@ -41,9 +41,9 @@ GUID GetGUID(MfxVideoParam const & par);
 
 typedef struct tagENCODE_CAPS_HEVC
 {
-    union 
+    union
     {
-        struct 
+        struct
         {
             UINT    CodingLimitSet              : 1;
             UINT    BitDepth8Only               : 1;
@@ -120,7 +120,7 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
     USHORT  AVBRAccuracy;
     USHORT  AVBRConvergence;
     UCHAR   CRFQualityFactor;   // [1..51]
-    
+
     UINT    NumOfBInGop[3];
 
     union
@@ -137,7 +137,7 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
             UINT    tiles_fixed_structure_flag          : 1;    // [0]
             UINT    chroma_format_idc                   : 2;    // [1]
             UINT    separate_colour_plane_flag          : 1;    // [0]
-            UINT    ReservedBits                        : 21;   // [0]
+            UINT    ReservedBits2                       : 21;   // [0]
         }/*fields*/;
         UINT    EncodeTools;
     }/*EncodeTools*/;
@@ -158,8 +158,8 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
 {
-    ENCODE_PICENTRY     CurrOriginalPic; 
-    ENCODE_PICENTRY     CurrReconstructedPic; 
+    ENCODE_PICENTRY     CurrOriginalPic;
+    ENCODE_PICENTRY     CurrReconstructedPic;
     UCHAR               CollocatedRefPicIndex;    // [0..14, 0xFF]
     ENCODE_PICENTRY     RefFrameList[15];
     INT                 CurrPicOrderCnt;
@@ -181,7 +181,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
             UINT    cu_qp_delta_enabled_flag                : 1;    // [0..1]
             UINT    weighted_pred_flag                      : 1;    // [0..1]
             UINT    weighted_bipred_flag                    : 1;    // [0..1]
-            
+
             //  loop filter flags
             UINT    loop_filter_across_slices_flag          : 1;    // [0]
             UINT    loop_filter_across_tiles_flag           : 1;    // [0]
@@ -241,7 +241,7 @@ typedef struct tagENCODE_SET_SLICE_HEADER_HEVC
             UINT    slice_sao_luma_flag                     : 1;    // [0..1]
             UINT    slice_sao_chroma_flag                   : 1;    // [0..1]
             UINT    mvd_l1_zero_flag                        : 1;    // [0]
-            UINT    cabac_init_flag                         : 1;    
+            UINT    cabac_init_flag                         : 1;
             UINT    slice_deblocking_filter_disable_flag    : 1;
             UINT    collocated_from_l0_flag                 : 1;    // [0..1]
             UINT    reserved                                : 21;
@@ -285,35 +285,10 @@ typedef struct tagENCODE_SET_CUDATA_HEVC
 } ENCODE_SET_CUDATA_HEVC;
 
 class DriverEncoder;
-    
+
 DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core);
 mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps);
 mfxStatus CheckHeaders(MfxVideoParam const & par, ENCODE_CAPS_HEVC const & caps);
-
-void FillSpsBuffer(
-    MfxVideoParam const & par, 
-    ENCODE_CAPS_HEVC const & /*caps*/,
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC & sps);
-
-void FillPpsBuffer(
-    MfxVideoParam const & par,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps);
-
-void FillPpsBuffer(
-    Task const & task,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps);
-
-void FillSliceBuffer(
-    MfxVideoParam const & par,
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & sps,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
-    std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice);
-
-void FillSliceBuffer(
-    Task const & task,
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & /*sps*/,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
-    std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice);
 
 enum
 {
@@ -326,7 +301,7 @@ public:
 
     virtual ~DriverEncoder(){}
 
-    virtual 
+    virtual
     mfxStatus CreateAuxilliaryDevice(
                     MFXCoreInterface * core,
                     GUID        guid,
@@ -341,14 +316,14 @@ public:
     mfxStatus Reset(
         MfxVideoParam const & par) = 0;
 
-    virtual 
+    virtual
     mfxStatus Register(
         mfxFrameAllocResponse & response,
         D3DDDIFORMAT            type) = 0;
 
-    virtual 
+    virtual
     mfxStatus Execute(
-        Task const &task, 
+        Task const &task,
         mfxHDL surface) = 0;
 
     virtual
@@ -362,54 +337,12 @@ public:
 
 
     virtual
-    mfxStatus QueryStatus( 
+    mfxStatus QueryStatus(
         Task & task ) = 0;
 
     virtual
     mfxStatus Destroy() = 0;
 
-};
-
-class AuxiliaryDevice : public ::AuxiliaryDevice
-{
-public:
-    using ::AuxiliaryDevice::Execute;
-
-    template <typename T, typename U>
-    HRESULT Execute(mfxU32 func, T& in, U& out)
-    {
-        return ::AuxiliaryDevice::Execute(func, &in, sizeof(in), &out, sizeof(out));
-    }
-
-    template <typename T>
-    HRESULT Execute(mfxU32 func, T& in, void*)
-    {
-        return ::AuxiliaryDevice::Execute(func, &in, sizeof(in), 0, 0);
-    }
-
-    template <typename U>
-    HRESULT Execute(mfxU32 func, void*, U& out)
-    {
-        return ::AuxiliaryDevice::Execute(func, 0, 0, &out, sizeof(out));
-    }
-};
-
-class CachedFeedback
-{
-public:
-    typedef ENCODE_QUERY_STATUS_PARAMS Feedback;
-    typedef std::vector<Feedback> FeedbackStorage;
-
-    void Reset(mfxU32 cacheSize);
-
-    mfxStatus Update(FeedbackStorage const & update);
-
-    const Feedback * Hit(mfxU32 feedbackNumber) const;
-
-    mfxStatus Remove(mfxU32 feedbackNumber);
-
-private:
-    FeedbackStorage m_cache;
 };
 
 class DDIHeaderPacker

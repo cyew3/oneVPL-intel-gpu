@@ -6,6 +6,7 @@
 //          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 //
 
+#include "mfx_h265_encode_hw_d3d9.h"
 #include "mfx_h265_encode_hw_d3d11.h"
 
 

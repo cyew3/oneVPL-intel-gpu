@@ -7,6 +7,7 @@
 //
 #pragma once
 
+#include "auxiliary_device.h"
 #include "mfx_h265_encode_hw_ddi.h"
 #include <d3d11.h>
 #include <atlbase.h>
@@ -36,7 +37,7 @@ public:
     virtual
     mfxStatus Reset(
         MfxVideoParam const & par);
-    
+
     virtual
     mfxStatus Register(
         mfxFrameAllocResponse & response,
@@ -44,7 +45,7 @@ public:
 
     virtual
     mfxStatus Execute(
-        Task const &task, 
+        Task const &task,
         mfxHDL surface);
 
     virtual
@@ -55,7 +56,7 @@ public:
     virtual
     mfxStatus QueryEncodeCaps(
         ENCODE_CAPS_HEVC & caps);
-        
+
 
     virtual
     mfxStatus QueryStatus(
