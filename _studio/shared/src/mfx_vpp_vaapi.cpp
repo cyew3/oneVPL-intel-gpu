@@ -487,46 +487,31 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
              * Bottom field at this moment. Third iteration again TFF... and etc.
              * if APP set "-spic 2" which is means MFX_PICSTRUCT_FIELD_BFF all is vice versa.
              *  */
-            if ( (pParams->bFMDEnable == true) && /* For 30i->60p mode only */
-                 (pParams->refCount > 1) )     /* If reference frame present */
+            if ((pParams->bFMDEnable == true) && (pParams->refCount > 1))
             {
-                /* TFF */
-                if ( (((m_refCountForADI+1))%2 == 1) &&
-                     (pRefSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF))
+                if (0 == (m_refCountForADI%2) )
                 {
-                    if (deint.flags == 0)
-                        deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
-                    else if (deint.flags == VA_DEINTERLACING_BOTTOM_FIELD_FIRST)
+                    if (MFX_PICSTRUCT_FIELD_TFF == pRefSurf_frameInfo->frameInfo.PicStruct)
                         deint.flags = 0;
+                    else /**/
+                        deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
                 }
-                /* BFF */
-                if ( (((m_refCountForADI+1))%2 == 0) &&
-                     (pRefSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF))
+                else
                 {
-                    if (deint.flags == 0)
+                    if (MFX_PICSTRUCT_FIELD_TFF == pRefSurf_frameInfo->frameInfo.PicStruct)
                         deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
-                    else if (deint.flags == VA_DEINTERLACING_BOTTOM_FIELD)
-                        deint.flags = 0;
+                    else /**/
+                        deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
                 }
-            } //  if (pParams->bFMDEnable == true) /* For 30i->60p mode only*/
+            } //  if ((pParams->bFMDEnable == true) && (pParams->refCount > 1)) /* For 30i->60p mode only*/
 
-            if ( (pParams->bFMDEnable == false) && /*For 30i->30p only, but not for 30i->60p! */
-                 (pParams->refCount > 1) && /* ADI with references and ... */
-                 (pRefSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF)) /* for TFF*/
-            {
-                /* AL: Looks like this is the drivers's bug
-                 * Else I don't know how to explain what is the best quality for TFF with _BOTTOM_ flag
-                 */
-                deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
-            }
-
-            /* Default properties is TFF,
-             * so if you want BFF you need to change it */
+            /* 30i->30p BFF case */
             if ( (pParams->bFMDEnable == false) && /* For 30i->30p only, but not for 30i->60p! */
                  (pParams->refCount > 1) && /* ADI with references and ... */
                  (pRefSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)) /* for BFF*/
             {
-                deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
+                /*flag VA_DEINTERLACING_BOTTOM_FIELD_FIRST is unofficial recommendation from VPG*/
+                deint.flags = VA_DEINTERLACING_BOTTOM_FIELD | VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
             }
 
             vaSts = vaCreateBuffer(m_vaDisplay,
@@ -729,7 +714,11 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             m_refCountForADI++;
             m_pipelineParam[refIdx].num_backward_references = 1;
             mfxDrvSurface* pRefSurf_1;
-            pRefSurf_1 = &(pParams->pRefSurfaces[1]);
+            /*in pRefSurfaces
+             * first is backward references
+             * then current src surface
+             * and only after this is forward references then */
+            pRefSurf_1 = &(pParams->pRefSurfaces[0]);
             VASurfaceID* ref_srf = (VASurfaceID*) (pRefSurf_1->hdl.first);
             m_pipelineParam[refIdx].backward_references = ref_srf;
         }
@@ -773,7 +762,9 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             m_pipelineParam[refIdx].forward_references = m_refForFRC;
         } /*if (0 != pParams->bFRCEnable)*/
 
-        VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
+        mfxDrvSurface* pSrcInputSurf;
+        pSrcInputSurf = &pRefSurf[pParams->bkwdRefCount];
+        VASurfaceID* srf = (VASurfaceID*)(pSrcInputSurf->hdl.first);
         m_pipelineParam[refIdx].surface = *srf;
 
         switch (pParams->rotation)

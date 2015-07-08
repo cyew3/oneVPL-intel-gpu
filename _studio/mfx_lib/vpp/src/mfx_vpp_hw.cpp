@@ -630,26 +630,7 @@ mfxStatus ResMngr::DoMode30i60p(
             return MFX_ERR_NONE;
         }
         else
-        {
-            //return MFX_ERR_MORE_DATA;
-
-            //assert()
-            if(m_surfQueue.size() > 0)
-            {
-                *intSts = MFX_ERR_NONE;
-                m_outputIndexCountPerCycle = 1;
-                m_bkwdRefCount = 0;
-                m_outputIndex  = 0; // marker task end;
-
-                m_pSubResource =  CreateSubResourceForMode30i60p();
-
-                return MFX_ERR_NONE;
-            }
-            else
-            {
-                return MFX_ERR_MORE_DATA;
-            }
-        }
+            return MFX_ERR_MORE_DATA;
     }
 
 } // mfxStatus ResMngr::DoMode30i60p(...)
