@@ -289,7 +289,6 @@ namespace H265Enc {
         void Create(H265VideoParam *par);
         void Destroy();
         void CopyFrameData(const mfxFrameSurface1 *in, Ipp8u have8bitCopy);
-        void doPadding();
 
         void ResetMemInfo();
         void ResetEncInfo();
