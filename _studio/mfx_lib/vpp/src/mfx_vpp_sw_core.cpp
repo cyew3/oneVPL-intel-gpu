@@ -1768,6 +1768,8 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
 
     /* FIELD Copy is always present*/
     list.push_back(MFX_EXTBUFF_VPP_FIELD_PROCESSING);
+    /* Composition is always present*/
+    list.push_back(MFX_EXTBUFF_VPP_COMPOSITE);
 
 } // void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<mfxU32> list)
 
