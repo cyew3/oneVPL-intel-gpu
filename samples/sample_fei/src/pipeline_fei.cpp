@@ -351,6 +351,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.AsyncDepth = 1;  //current limitation
     m_mfxEncParams.mfx.GopRefDist = pInParams->refDist > 0 ? pInParams->refDist : 1;
     m_mfxEncParams.mfx.GopPicSize = pInParams->gopSize > 0 ? pInParams->gopSize : 1;
+    m_mfxEncParams.mfx.IdrInterval = pInParams->nIdrInterval;
 
     /* Multi references and multi slices*/
     if (pInParams->numRef == 0)
@@ -372,9 +373,10 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
     // configure the depth of the look ahead BRC if specified in command line
-    if (pInParams->nLADepth)
+    if (pInParams->nLADepth || pInParams->bRefType)
     {
         m_CodingOption2.LookAheadDepth = pInParams->nLADepth;
+        m_CodingOption2.BRefType = pInParams->bRefType;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
 

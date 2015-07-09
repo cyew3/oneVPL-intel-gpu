@@ -27,6 +27,8 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("Options: \n"));
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
+    msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
+    msdk_printf(MSDK_STRING("   [-ii idrInterval] - idr interval, default 0 means every I is an IDR, 1 means every other I frame is an IDR etc\n"));
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (Kbits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
     msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n"));
@@ -182,6 +184,18 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bff")))
         {
             pParams->nPicStruct = MFX_PICSTRUCT_FIELD_BFF;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bref")))
+        {
+            pParams->bRefType = MFX_B_REF_PYRAMID;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ii")))
+        {
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nIdrInterval))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("IdrInterval is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-angle")))
         {
@@ -451,6 +465,7 @@ int main(int argc, char *argv[])
     Params.memType = D3D9_MEMORY; //only HW memory is supported
     Params.QP = 26; //default qp value
     Params.bUseHWLib = true;
+    Params.bRefType = MFX_B_REF_OFF; //default set to off
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);

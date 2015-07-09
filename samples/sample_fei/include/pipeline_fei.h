@@ -70,6 +70,8 @@ struct sInputParams
     mfxU8  QP;
     mfxU16 numSlices;
     mfxU16 numRef;
+    mfxU16 bRefType;
+    mfxU16 nIdrInterval;
 
     mfxU32 numViews; // number of views for Multi-View Codec
 
