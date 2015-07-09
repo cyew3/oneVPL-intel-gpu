@@ -38,6 +38,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->iDeinterlacingAlgorithm = 0;
     pMfxExecuteParams->bFMDEnable = 0;
     pMfxExecuteParams->bDenoiseAutoAdjust = 0;
+    pMfxExecuteParams->bDetailAutoAdjust = 0;
     pMfxExecuteParams->denoiseFactor = 0;
     pMfxExecuteParams->detailFactor = 0;
     pMfxExecuteParams->iTargetInterlacingMode = 0;
@@ -55,6 +56,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->iBackgroundColor = 0;
     pMfxExecuteParams->statusReportID = 0;
     pMfxExecuteParams->bFieldWeaving = false;
+    pMfxExecuteParams->iFieldProcessingMode = 0;
     pMfxExecuteParams->bCameraPipeEnabled = false;
     pMfxExecuteParams->bCameraBlackLevelCorrection =false;
     pMfxExecuteParams->bCameraGammaCorrection = false;
@@ -62,6 +64,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->bCameraWhiteBalaceCorrection = false;
     pMfxExecuteParams->bCCM = false;
     pMfxExecuteParams->bCameraLensCorrection = false;
+    pMfxExecuteParams->rotation = 0;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 
