@@ -41,6 +41,7 @@ File Name: mfx_serializer.cpp
     SerializeArrayOfPODs(#fieldname, m_pStruct->fieldname, num)
 
 #define DESERIALIZE_POD_ARRAY(fieldname, num)\
+    InitializePointer(m_pStruct->fieldname, num);\
     DeSerializeArrayOfPODs(values_map[#fieldname], m_pStruct->fieldname, num)
 
 #define SERIALIZE_STRUCT(fieldname)\
@@ -53,6 +54,7 @@ File Name: mfx_serializer.cpp
     SerializeArrayOfStructs(#fieldname, m_pStruct->fieldname, num)
 
 #define DESERIALIZE_STRUCTS_ARRAY(fieldname, num)\
+    InitializePointer(m_pStruct->fieldname, num);\
     DeSerializeArrayOfStructs(values_map, #fieldname, m_pStruct->fieldname, num)
 
 #define SERIALIZE_TIMESTAMP(fieldname)\
@@ -75,7 +77,19 @@ File Name: mfx_serializer.cpp
 
 //////////////////////////////////////////////////////////////////////////
 
-void   MFXStructureRef <mfxMVCViewDependency>::ConstructValues() const
+void MFXStructureRef <mfxStatus>::ConstructValues() const
+{
+    m_values_map[""] = GetMFXStatusString(*m_pStruct);
+}
+
+bool MFXStructureRef <mfxStatus>::DeSerialize(hash_array<std::string, std::string> values_map)
+{
+    *m_pStruct = (mfxStatus)GetMFXStatusCode(values_map[""]);
+
+    return true;
+}
+
+void MFXStructureRef <mfxMVCViewDependency>::ConstructValues() const
 {
     SERIALIZE_INT(ViewId);
     SERIALIZE_INT(NumAnchorRefsL0);
@@ -88,7 +102,7 @@ void   MFXStructureRef <mfxMVCViewDependency>::ConstructValues() const
     SERIALIZE_POD_ARRAY(NonAnchorRefL1,m_pStruct->NumNonAnchorRefsL1);
 }
 
-bool   MFXStructureRef <mfxMVCViewDependency>::DeSerialize(hash_array<std::string, std::string> values_map)
+bool MFXStructureRef <mfxMVCViewDependency>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
     DESERIALIZE_INT(ViewId);
     DESERIALIZE_INT(NumAnchorRefsL0);
@@ -108,6 +122,8 @@ void MFXStructureRef <mfxMVCOperationPoint>::ConstructValues() const
     SERIALIZE_INT(TemporalId);
     SERIALIZE_INT(LevelIdc);
     SERIALIZE_INT(NumViews);
+    SERIALIZE_INT(NumTargetViews);
+
     SERIALIZE_POD_ARRAY(TargetViewId, m_pStruct->NumTargetViews);
 }
 
@@ -118,8 +134,6 @@ bool MFXStructureRef <mfxMVCOperationPoint>::DeSerialize(hash_array<std::string,
     DESERIALIZE_INT(NumViews);
     DESERIALIZE_INT(NumTargetViews);
 
-    m_pStruct->TargetViewId = new mfxU16[m_pStruct->NumTargetViews];
-    memset(m_pStruct->TargetViewId, 0, sizeof(mfxU16)*m_pStruct->NumTargetViews);
     DESERIALIZE_POD_ARRAY(TargetViewId, m_pStruct->NumTargetViews);
 
     return true;
@@ -152,20 +166,14 @@ bool MFXStructureRef <mfxExtMVCSeqDesc>::DeSerialize(hash_array<std::string, std
 
     DESERIALIZE_INT(NumView);
     DESERIALIZE_INT(NumViewAlloc);
-    m_pStruct->View = new mfxMVCViewDependency[m_pStruct->NumView];
-    memset(m_pStruct->View, 0, sizeof(mfxMVCViewDependency)*m_pStruct->NumView);
     DESERIALIZE_STRUCTS_ARRAY(View, m_pStruct->NumView);
 
     DESERIALIZE_INT(NumViewId);
     DESERIALIZE_INT(NumViewIdAlloc);
-    m_pStruct->ViewId = new mfxU16[m_pStruct->NumViewId];
-    memset(m_pStruct->ViewId, 0, sizeof(mfxU16)*m_pStruct->NumViewId);
     DESERIALIZE_POD_ARRAY(ViewId, m_pStruct->NumViewId);
 
     DESERIALIZE_INT(NumOP);
     DESERIALIZE_INT(NumOPAlloc);
-    m_pStruct->OP = new mfxMVCOperationPoint[m_pStruct->NumOP];
-    memset(m_pStruct->OP, 0, sizeof(mfxMVCOperationPoint)*m_pStruct->NumOP);
     DESERIALIZE_STRUCTS_ARRAY(OP, m_pStruct->NumOP);
 
     DESERIALIZE_INT(NumRefsTotal);
@@ -178,11 +186,11 @@ void MFXStructureRef <mfxVideoParam>::ConstructValues() const
     SERIALIZE_INT(AsyncDepth);
     if (m_flags & SerialFlags::VPP)
     {
-        SerializeStruct("vpp.", m_pStruct->vpp);
+        SERIALIZE_STRUCT(vpp);
     }
     else
     {
-        SerializeStruct("mfx.", m_pStruct->mfx);
+        SERIALIZE_STRUCT(mfx);
     }
     SERIALIZE_INT(Protected);
     SERIALIZE_INT(IOPattern);
@@ -199,19 +207,16 @@ bool MFXStructureRef <mfxVideoParam>::DeSerialize(hash_array<std::string, std::s
     DESERIALIZE_INT(AsyncDepth);
     if (UNION_FOUND(vpp))
     {
-        DeSerializeStruct(values_map, "vpp.", m_pStruct->vpp);
+        DESERIALIZE_STRUCT(vpp);
     }
     else
     {
-        DeSerializeStruct(values_map, "mfx.", m_pStruct->mfx);
+        DESERIALIZE_STRUCT(mfx);
     }
     DESERIALIZE_INT(Protected);
     DESERIALIZE_INT(IOPattern);
 
     DESERIALIZE_INT(NumExtParam);
-
-    m_pStruct->ExtParam = new mfxExtBuffer*[m_pStruct->NumExtParam];
-    memset(m_pStruct->ExtParam, 0, sizeof(mfxExtBuffer*) * m_pStruct->NumExtParam);
 
     hash_array<std::string, std::string>::const_iterator it;
     std::vector<std::string> ExtBufNames;
@@ -228,12 +233,12 @@ bool MFXStructureRef <mfxVideoParam>::DeSerialize(hash_array<std::string, std::s
     if (ExtBufNames.size() != m_pStruct->NumExtParam)
         return false;
 
+    InitializePointer(m_pStruct->ExtParam, m_pStruct->NumExtParam);
+
     for (int i = 0; i < m_pStruct->NumExtParam; i++) {
         DeSerializeSingleElement(values_map[ExtBufNames[i] + "Header.BufferSz"], BufferSz);
 
-        m_pStruct->ExtParam[i] = (mfxExtBuffer*)new mfxU8[BufferSz];
-        memset(m_pStruct->ExtParam[i], 0, BufferSz);
-
+        InitializePointer(m_pStruct->ExtParam[i], BufferSz/sizeof(mfxExtBuffer) + 1); // due to BufferSz shows size in bytes, we need to devide is by sizeof(mfxExtBuffer) due to template function
         DeSerializeStruct(values_map, ExtBufNames[i], *m_pStruct->ExtParam[i]);
     }
 
@@ -536,8 +541,7 @@ bool MFXStructureRef <mfxBitstream>::DeSerialize(hash_array<std::string, std::st
     DESERIALIZE_TIMESTAMP(DecodeTimeStamp);
     DESERIALIZE_TIMESTAMP(TimeStamp);
 
-    m_pStruct->Data = new mfxU8[m_pStruct->DataLength + 1];
-    memset(m_pStruct->Data, 0, m_pStruct->DataLength + 1);
+    InitializePointer(m_pStruct->Data, m_pStruct->DataLength + 1);
 
     GetMFXRawDataValues( m_pStruct->Data, values_map["Data"]);
     m_pStruct->PicStruct = (mfxU16) GetMFXPicStructCode(values_map["PicStruct"]);
@@ -956,6 +960,70 @@ bool MFXStructureRef <mfxExtHEVCParam>::DeSerialize(hash_array<std::string, std:
     return true;
 }
 
+void MFXStructureRef <mfxVPPCompInputStream>::ConstructValues() const
+{
+    SERIALIZE_INT(DstX);
+    SERIALIZE_INT(DstY);
+    SERIALIZE_INT(DstW);
+    SERIALIZE_INT(DstH);
+
+    SERIALIZE_INT(LumaKeyEnable);
+    SERIALIZE_INT(LumaKeyMin);
+    SERIALIZE_INT(LumaKeyMax);
+
+    SERIALIZE_INT(GlobalAlphaEnable);
+    SERIALIZE_INT(GlobalAlpha);
+
+    SERIALIZE_INT(PixelAlphaEnable);
+}
+
+bool MFXStructureRef <mfxVPPCompInputStream>::DeSerialize(hash_array<std::string, std::string> values_map)
+{
+    DESERIALIZE_INT(DstX);
+    DESERIALIZE_INT(DstY);
+    DESERIALIZE_INT(DstW);
+    DESERIALIZE_INT(DstH);
+
+    DESERIALIZE_INT(LumaKeyEnable);
+    DESERIALIZE_INT(LumaKeyMin);
+    DESERIALIZE_INT(LumaKeyMax);
+
+    DESERIALIZE_INT(GlobalAlphaEnable);
+    DESERIALIZE_INT(GlobalAlpha);
+
+    DESERIALIZE_INT(PixelAlphaEnable);
+
+    return true;
+}
+
+void MFXStructureRef <mfxExtVPPComposite>::ConstructValues() const
+{
+    SERIALIZE_INT(Header.BufferSz);
+    SERIALIZE_INT(Header.BufferId);
+
+    SERIALIZE_INT(Y);
+    SERIALIZE_INT(U);
+    SERIALIZE_INT(V);
+
+    SERIALIZE_INT(NumInputStream);
+    SERIALIZE_STRUCTS_ARRAY(InputStream, m_pStruct->NumInputStream);
+}
+
+bool MFXStructureRef <mfxExtVPPComposite>::DeSerialize(hash_array<std::string, std::string> values_map)
+{
+    DESERIALIZE_INT(Header.BufferSz);
+    DESERIALIZE_INT(Header.BufferId);
+
+    DESERIALIZE_INT(Y);
+    DESERIALIZE_INT(U);
+    DESERIALIZE_INT(V);
+
+    DESERIALIZE_INT(NumInputStream);
+    DESERIALIZE_STRUCTS_ARRAY(InputStream, m_pStruct->NumInputStream);
+
+    return true;
+}
+
 void MFXStructureRef <mfxExtBuffer>::ConstructValues() const {
     switch (m_pStruct->BufferId)
     {
@@ -1009,6 +1077,10 @@ void MFXStructureRef <mfxExtBuffer>::ConstructValues() const {
         }
         case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION :{
             SerializeStruct("VPP_FRC.", *(mfxExtVPPFrameRateConversion*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_VPP_COMPOSITE :{
+            SerializeStruct("VPP_COMP.", *(mfxExtVPPComposite*)m_pStruct);
             break;
         }
         default :
@@ -1074,6 +1146,10 @@ bool MFXStructureRef <mfxExtBuffer>::DeSerialize(hash_array<std::string, std::st
         }
         case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION :{
             DeSerializeStruct(values_map, "", *(mfxExtVPPFrameRateConversion*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_VPP_COMPOSITE :{
+            DeSerializeStruct(values_map, "", *(mfxExtVPPComposite*)m_pStruct);
             break;
         }
         default :

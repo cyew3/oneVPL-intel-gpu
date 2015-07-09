@@ -90,7 +90,8 @@ static CodeStringTable StringsOfStatus[] =
     DEFINE_CODE(MFX_ERR_UNDEFINED_BEHAVIOR      ),
     DEFINE_CODE(MFX_ERR_DEVICE_FAILED           ),
     DEFINE_CODE(MFX_ERR_MORE_BITSTREAM          ),
-
+    DEFINE_CODE(MFX_ERR_INCOMPATIBLE_AUDIO_PARAM),
+    DEFINE_CODE(MFX_ERR_INVALID_AUDIO_PARAM     ),
 
     DEFINE_CODE(MFX_WRN_IN_EXECUTION            ),
     DEFINE_CODE(MFX_WRN_DEVICE_BUSY             ),
@@ -99,6 +100,12 @@ static CodeStringTable StringsOfStatus[] =
     DEFINE_CODE(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM),
     DEFINE_CODE(MFX_WRN_VALUE_NOT_CHANGED       ),
     DEFINE_CODE(MFX_WRN_OUT_OF_RANGE            ),
+    DEFINE_CODE(MFX_WRN_FILTER_SKIPPED          ),
+    DEFINE_CODE(MFX_WRN_INCOMPATIBLE_AUDIO_PARAM),
+
+    DEFINE_CODE(MFX_TASK_DONE                   ),
+    DEFINE_CODE(MFX_TASK_WORKING                ),
+    DEFINE_CODE(MFX_TASK_BUSY                   ),
 };
 
 static CodeStringTable StringsOfImpl[] = {

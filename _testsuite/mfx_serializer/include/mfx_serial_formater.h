@@ -87,11 +87,18 @@ namespace Formater
 
             m_out << YAML::BeginMap;
             m_out << YAML::Key << m_struct_name.c_str();
-            m_out << YAML::Value << YAML::BeginMap;
-
-            build_yaml();
-
-            m_out << YAML::EndMap;
+            m_out << YAML::Value;
+            
+            if ((elements.size() == 1) && (m_it->first == ""))
+            {
+                m_out << m_it->second;
+            }
+            else
+            {
+                m_out << YAML::BeginMap;
+                build_yaml();
+                m_out << YAML::EndMap;
+            }
 
             return m_out.c_str();
         }
@@ -99,24 +106,28 @@ namespace Formater
     private:
         void build_yaml()
         {
-            std::string prefix, cur_prefix, param;
+            std::string prefix, cur_prefix, key;
 
             while (m_it != m_elements.end())
             {
                 if (m_it->first.rfind(".") == std::string::npos)
                 {
                     cur_prefix = "";
-                    param      = m_it->first;
+                    key        = m_it->first;
                 }
                 else
                 {
                     cur_prefix = m_it->first.substr(0, m_it->first.rfind(".") + 1);
-                    param      = m_it->first.substr(   m_it->first.rfind(".") + 1);
+                    key        = m_it->first.substr(   m_it->first.rfind(".") + 1);
                 }
 
-                if (cur_prefix == prefix)
+                if (cur_prefix.find("[0]") != std::string::npos) 
                 {
-                    push_value(param, m_it->second);
+                    save_complex_sequence(cur_prefix.substr(0, cur_prefix.find("[0]")));
+                }
+                else if (cur_prefix == prefix)
+                {
+                    push_value(key, m_it->second);
                     m_it++;
                 }
                 else
@@ -126,33 +137,24 @@ namespace Formater
             }
         };
 
-        void push_value(std::string param, std::string value)
+        void push_value(std::string key, std::string value)
         {
-            std::vector<mfxI32> values;
-            size_t start = 0, end = 0;
-
-            m_out << YAML::Key << param;
-            if (value.find(",") == std::string::npos)
+            if (value.find(",") != std::string::npos)
             {
-                m_out << YAML::Value << value.c_str();
+                m_out << YAML::Key << key;
+                save_simple_sequence(value);
             }
-            else
+            else 
             {
-                values.clear(); start = 0, end = 0;
-                while ((end = value.find(",", start)) != std::string::npos)
-                {
-                    values.push_back(atoi(value.substr(start, end - start).c_str()));
-                    start = end + 1;
-                }
-                values.push_back(atoi(value.substr(start).c_str()));
-
-                m_out << YAML::Value << YAML::Flow << values;
+                m_out << YAML::Key   << key;
+                m_out << YAML::Value << value;
             }
         }
 
         void align_position(std::string & prefix, const std::string & cur_prefix)
         {
             std::string field;
+
             if (cur_prefix.find(prefix) != std::string::npos)
             {
                 while (prefix != cur_prefix)
@@ -175,6 +177,59 @@ namespace Formater
                         prefix = prefix.substr(0, prefix.rfind(".", prefix.size() - 2) + 1);
                 }
             }
+        }
+
+        void save_simple_sequence(std::string value)
+        {
+            std::vector<mfxI32> values;
+            size_t start = 0, end = 0;
+
+            while ((end = value.find(",", start)) != std::string::npos)
+            {
+                values.push_back(atoi(value.substr(start, end - start).c_str()));
+                start = end + 1;
+            }
+            values.push_back(atoi(value.substr(start).c_str()));
+
+            m_out << YAML::Value << YAML::Flow << values;
+        }
+
+        void save_complex_sequence(std::string prefix)
+        {
+            m_out << YAML::Key << prefix;
+            m_out << YAML::Value << YAML::BeginSeq << YAML::BeginMap;
+            std::string seq_key, seq_value, idx, next_idx;
+
+            idx = m_it->first.substr(m_it->first.find("[") + 1, m_it->first.find("]") - m_it->first.find("[") - 1);
+
+            while(1)
+            {
+                seq_key   = m_it->first.substr(m_it->first.rfind(".") + 1);
+                seq_value = m_it->second;
+                m_out << YAML::Key << seq_key;
+
+                if (seq_value.find(",") != std::string::npos)
+                {
+                    save_simple_sequence(seq_value);
+                }
+                else 
+                {
+                    m_out << YAML::Value << seq_value;
+                }
+
+                m_it++;
+                if (m_it->first.find("[") == std::string::npos) break;
+
+                next_idx = m_it->first.substr(m_it->first.find("[") + 1, m_it->first.find("]") - m_it->first.find("[") - 1);
+
+                if (idx != next_idx)
+                {
+                    m_out << YAML::EndMap << YAML::BeginMap;
+                    idx = next_idx;
+                }
+            }
+
+            m_out << YAML::EndMap << YAML::EndSeq;
         }
     };
 
@@ -257,7 +312,7 @@ namespace DeFormater
     private:
         std::string m_struct_name;
     public:
-        Yaml(const std::string & struct_name)
+        Yaml(const std::string & struct_name = "UNNAMED")
             : m_struct_name(struct_name)
         {}
 
@@ -271,7 +326,20 @@ namespace DeFormater
 
             parser.GetNextDocument(doc);
 
-            read_yaml(doc[m_struct_name], elements, "");
+            if (doc.FindValue(m_struct_name))
+            {
+                switch (doc[m_struct_name].Type())
+                {
+                case (YAML::NodeType::Scalar):
+                    doc[m_struct_name].GetScalar(elements[""]);
+                    break;
+                case (YAML::NodeType::Map):
+                    read_yaml(doc[m_struct_name], elements, "");
+                    break;
+                default:
+                    break;
+                }
+            }
 
             return elements;
         }
@@ -279,7 +347,9 @@ namespace DeFormater
     private:
         void read_yaml(const YAML::Node& node, hash_array<std::string,std::string>& hash, std::string prefix)
         {
-            std::string key, value, int_value;
+            std::string key, value;
+
+            YAML::NodeType::value type = node.Type();
 
             for(YAML::Iterator it=node.begin();it!=node.end();++it) {
                 key.erase(); value.erase();
@@ -293,13 +363,22 @@ namespace DeFormater
                     hash[prefix.empty() ? key : prefix + "." + key] = value;
                     break;
                 case (YAML::NodeType::Sequence):
-                    for (int i = 0; i < (int) node[key].size(); i++)
+
+                    if (node[key].size() > 0)
                     {
-                        node[key][i] >> int_value;
-                        value += value.empty() ? int_value : ',' + int_value;
+                        switch(node[key][0].Type())
+                        {
+                        case (YAML::NodeType::Scalar):
+                            read_simple_sequence(node[key], hash, prefix.empty() ? key : prefix + "." + key); //int array case
+                            break;
+                        case (YAML::NodeType::Map):
+                            read_complex_sequence(node[key], hash, prefix.empty() ? key : prefix + "." + key); //structs array case
+                            break;
+                        default:
+                            return;
+                        }
                     }
 
-                    hash[prefix.empty() ? key : prefix + "." + key] = value;
                     break;
                 case (YAML::NodeType::Map):
                     read_yaml(node[key], hash, prefix.empty() ? key : prefix + "." + key);
@@ -307,6 +386,47 @@ namespace DeFormater
                 default:
                     return;
                 }
+            }
+        }
+
+        void read_simple_sequence(const YAML::Node& node, hash_array<std::string,std::string>& hash, std::string prefix)
+        {
+            std::string seq_value, int_value;
+
+            for (int i = 0; i < (int) node.size(); i++)
+            {
+                node[i] >> int_value;
+                seq_value += seq_value.empty() ? int_value : ',' + int_value;
+            }
+
+            hash[prefix] = seq_value;
+        }
+
+        void read_complex_sequence(const YAML::Node& node, hash_array<std::string,std::string>& hash, std::string prefix)
+        {
+            std::string seq_key, seq_value;
+            std::stringstream idx;
+
+            for (int i = 0; i < (int) node.size(); i++)
+            {
+                idx << "[" << i << "]";
+                for(YAML::Iterator it=node[i].begin();it!=node[i].end();++it) {
+                    it.first() >> seq_key;
+
+                    switch(it.second().Type())
+                    {
+                    case (YAML::NodeType::Scalar):
+                        it.second() >> seq_value;
+                        hash[prefix + idx.str() + '.' + seq_key] = seq_value;
+                        break;
+                    case (YAML::NodeType::Sequence):
+                        read_simple_sequence(node[i][seq_key], hash, prefix + idx.str() + '.' + seq_key); //int array case
+                        break;
+                    default:
+                        return;
+                    }
+                }
+                idx.str("");
             }
         }
     };

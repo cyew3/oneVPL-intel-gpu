@@ -64,11 +64,7 @@ public:
         ConstructValues();
         return fmt(m_values_map);
     }
-    std::string Serialize() const
-    {
-        Formater::SimpleString frmt;
-        return Serialize(frmt);
-    }
+
     template <class _Formater>
     bool DeSerialize(hash_array<std::string, std::string> values_map)
     {
@@ -76,6 +72,22 @@ public:
     }
 
 protected:
+    template <class _ObjType>
+    void InitializePointer(_ObjType* &ptr, mfxU32 num)
+    {
+        if (!ptr && num > 0)
+        {
+            ptr = new _ObjType[num];
+            memset(ptr, 0, sizeof(_ObjType) * num);
+        }
+    }
+
+    template <class _ObjType>
+    void InitializePointer(_ObjType ptr, mfxU32 num) //overloaded function for static arrays (removal leads to compilation fail)
+    {
+        return; // do nothing
+    }
+
     template <class _IntType>
     void SerializeSingleElement(const std::string & str, const _IntType & cRefValue) const
     {
@@ -101,8 +113,8 @@ protected:
         return !refStream.fail();
     }
 
-    template <class ElementType>
-    void SerializeArrayOfPODs(const std::string & str, ElementType * pArray, int nElements) const
+    template <class _ElementType>
+    void SerializeArrayOfPODs(const std::string & str, _ElementType * pArray, int nElements) const
     {
         std::stringstream stream;
 
@@ -114,8 +126,8 @@ protected:
             m_values_map[str] = "empty";
     }
 
-    template <class ElementType>
-    void DeSerializeArrayOfPODs(const std::string & str, ElementType * pArray, int nElements) const
+    template <class _ElementType>
+    void DeSerializeArrayOfPODs(const std::string & str, _ElementType * pArray, int nElements) const
     {
         if (nElements == 0)
             return;
@@ -373,8 +385,22 @@ protected:
 template<class T>
 std::string CompareStructs(T & input1, T & input2, int flags = 0)
 {
-    return MFXStructuresPair<T>(MFXStructureRef<T>(input1, flags), MFXStructureRef<T>(input2, flags)).Serialize();;
+    return MFXStructuresPair<T>(MFXStructureRef<T>(input1, flags), MFXStructureRef<T>(input2, flags)).Serialize(Formater::SimpleString());
 }
+
+template<>
+class MFXStructureRef <mfxStatus>
+    : public MFXStructureBase<mfxStatus>
+{
+public:
+    MFXStructureRef(mfxStatus & refStruct, int flags = 0)
+        : MFXStructureBase<mfxStatus>(refStruct, flags)
+    {
+    }
+    virtual bool DeSerialize(hash_array<std::string, std::string> values_map);
+protected:
+    virtual void ConstructValues () const;
+};
 
 template<>
 class MFXStructureRef <mfxExtBuffer>
@@ -389,8 +415,6 @@ public:
 protected:
     virtual void ConstructValues () const;
 };
-
-
 
 template<>
 class MFXStructureRef <mfxMVCViewDependency>
@@ -764,22 +788,33 @@ protected:
     virtual void ConstructValues () const;
 };
 
-template <class T>
-class DeSerializeHelper : public MFXStructureRef<T>
+template<>
+class MFXStructureRef <mfxVPPCompInputStream>
+    : public MFXStructureBase<mfxVPPCompInputStream>
 {
 public:
-    DeSerializeHelper(T & Struct, int flags = 0)
-        : MFXStructureRef<T>(Struct, flags)
+    MFXStructureRef(mfxVPPCompInputStream & refStruct, int flags = 0)
+        : MFXStructureBase<mfxVPPCompInputStream>(refStruct, flags)
     {
     }
-
-    template <class _Formater>
-    bool DeSerialize(std::string & input, _Formater & fmt)
-    {
-        return MFXStructureRef<T>::DeSerialize(fmt(input));
-    }
+    virtual bool DeSerialize(hash_array<std::string, std::string> values_map);
+protected:
+    virtual void ConstructValues () const;
 };
 
+template<>
+class MFXStructureRef <mfxExtVPPComposite>
+    : public MFXStructureBase<mfxExtVPPComposite>
+{
+public:
+    MFXStructureRef(mfxExtVPPComposite & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtVPPComposite>(refStruct, flags)
+    {
+    }
+    virtual bool DeSerialize(hash_array<std::string, std::string> values_map);
+protected:
+    virtual void ConstructValues () const;
+};
 //////////////////////////////////////////////////////////////////////////
 //API
 
@@ -796,9 +831,9 @@ template<class T>
 bool DeSerializeFromList(T & output_to_be_deserialized, const std::string struct_name, const std::string file_name)
 {
     std::string input_string(UploadSerialiedStructures(file_name));
-    DeSerializeHelper<T> sStruct(output_to_be_deserialized);
+    MFXStructureRef<T> sStruct(output_to_be_deserialized);
     DeFormater::SimpleString dfrmt(struct_name + ".");
-    return sStruct.DeSerialize(input_string, dfrmt);
+    return sStruct.DeSerialize(dfrmt(input_string));
 }
 
 template<class T>
@@ -814,7 +849,7 @@ template<class T>
 bool DeSerializeFromYaml(T & output_to_be_deserialized, const std::string struct_name, const std::string file_name)
 {
     std::string input_string(UploadSerialiedStructures(file_name));
-    DeSerializeHelper<T> sStruct(output_to_be_deserialized);
+    MFXStructureRef<T> sStruct(output_to_be_deserialized);
     DeFormater::Yaml dfrmt(struct_name);
-    return sStruct.DeSerialize(input_string, dfrmt);
+    return sStruct.DeSerialize(dfrmt(input_string));
 }
