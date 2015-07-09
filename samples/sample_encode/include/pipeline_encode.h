@@ -62,6 +62,12 @@ struct sInputParams
     mfxF64 dFrameRate;
     mfxU16 nBitRate;
     mfxU16 MVC_flags;
+    mfxU16 nGopPicSize;
+    mfxU16 nGopRefDist;
+    mfxU16 nNumRefFrame;
+    mfxU16 nBRefType;
+    mfxU16 nIdrInterval;
+
     mfxU16 nQuality; // quality parameter for JPEG encoder
 
     mfxU32 numViews; // number of views for Multi-View Codec

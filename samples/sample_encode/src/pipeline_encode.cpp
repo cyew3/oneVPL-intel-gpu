@@ -358,6 +358,11 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.TargetUsage             = pInParams->nTargetUsage; // trade-off between quality and speed
     m_mfxEncParams.mfx.TargetKbps              = pInParams->nBitRate; // in Kbps
     m_mfxEncParams.mfx.RateControlMethod       = pInParams->nRateControlMethod;
+    m_mfxEncParams.mfx.GopRefDist = pInParams->nGopRefDist;
+    m_mfxEncParams.mfx.GopPicSize = pInParams->nGopPicSize;
+    m_mfxEncParams.mfx.NumRefFrame = pInParams->nNumRefFrame > 0?pInParams->nNumRefFrame : 1;
+    m_mfxEncParams.mfx.IdrInterval = pInParams->nIdrInterval;
+
     if (m_mfxEncParams.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
         m_mfxEncParams.mfx.QPI = pInParams->nQPI;
@@ -415,12 +420,14 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
     // configure the depth of the look ahead BRC if specified in command line
-    if (pInParams->nLADepth || pInParams->nMaxSliceSize)
+    if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nBRefType)
     {
         m_CodingOption2.LookAheadDepth = pInParams->nLADepth;
         m_CodingOption2.MaxSliceSize   = pInParams->nMaxSliceSize;
+        m_CodingOption2.BRefType = pInParams->nBRefType;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
+
 
     // In case of HEVC when height and/or width divided with 8 but not divided with 16
     // add extended parameter to increase performance
@@ -1526,6 +1533,10 @@ void CEncodingPipeline::PrintInfo()
 
     msdk_printf(MSDK_STRING("Frame rate\t%.2f\n"), DstPicInfo.FrameRateExtN * 1.0 / DstPicInfo.FrameRateExtD);
     msdk_printf(MSDK_STRING("Bit rate(Kbps)\t%d\n"), m_mfxEncParams.mfx.TargetKbps);
+    msdk_printf(MSDK_STRING("Gop size\t%d\n"), m_mfxEncParams.mfx.GopPicSize);
+    msdk_printf(MSDK_STRING("Ref dist\t%d\n"), m_mfxEncParams.mfx.GopRefDist);
+    msdk_printf(MSDK_STRING("Ref number\t%d\n"), m_mfxEncParams.mfx.NumRefFrame);
+    msdk_printf(MSDK_STRING("Idr Interval\t%d\n"), m_mfxEncParams.mfx.IdrInterval);
     msdk_printf(MSDK_STRING("Target usage\t%s\n"), TargetUsageToStr(m_mfxEncParams.mfx.TargetUsage));
 
     const msdk_char* sMemType = m_memType == D3D9_MEMORY  ? MSDK_STRING("d3d")

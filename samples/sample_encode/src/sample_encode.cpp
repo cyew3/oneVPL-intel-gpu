@@ -49,10 +49,15 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("Options: \n"));
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
+    msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
+    msdk_printf(MSDK_STRING("   [-ii idrInterval] - idr interval, default 0 means every I is an IDR, 1 means every other I frame is an IDR etc\n"));
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (Kbits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
     msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n"));
     msdk_printf(MSDK_STRING("   [-q quality] - mandatory quality parameter for JPEG encoder. In range [1,100]. 100 is the best quality. \n"));
+    msdk_printf(MSDK_STRING("   [-r distance] - Distance between I- or P- key frames (1 means no B-frames) \n"));
+    msdk_printf(MSDK_STRING("   [-g size] - GOP size (default 256)\n"));
+    msdk_printf(MSDK_STRING("   [-x numRefs]   - number of reference frames\n"));
     msdk_printf(MSDK_STRING("   [-la] - use the look ahead bitrate control algorithm (LA BRC) (by default constant bitrate control method is used)\n"));
     msdk_printf(MSDK_STRING("           for H.264, H.265 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("   [-lad depth] - depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100].\n"));
@@ -178,6 +183,18 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bff")))
         {
             pParams->nPicStruct = MFX_PICSTRUCT_FIELD_BFF;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bref")))
+        {
+            pParams->nBRefType = MFX_B_REF_PYRAMID;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ii")))
+        {
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nIdrInterval))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("IdrInterval is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-angle")))
         {
@@ -367,6 +384,42 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-b' expects an argument\n"));
+                }
+                break;
+            case MSDK_CHAR('x'):
+                if (++i < nArgNum) {
+                    if (MFX_ERR_NONE != msdk_opt_read(strInput[i], pParams->nNumRefFrame))
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Ref Num is invalid"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
+                }
+                else {
+                    msdk_printf(MSDK_STRING("error: option '-x' expects an argument\n"));
+                }
+                break;
+            case MSDK_CHAR('g'):
+                if (++i < nArgNum) {
+                    if (MFX_ERR_NONE != msdk_opt_read(strInput[i], pParams->nGopPicSize))
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Gop Size is invalid"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
+                }
+                else {
+                    msdk_printf(MSDK_STRING("error: option '-g' expects an argument\n"));
+                }
+                break;
+            case MSDK_CHAR('r'):
+                if (++i < nArgNum) {
+                    if (MFX_ERR_NONE != msdk_opt_read(strInput[i], pParams->nGopRefDist))
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Ref Dist is invalid"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
+                }
+                else {
+                    msdk_printf(MSDK_STRING("error: option '-r' expects an argument\n"));
                 }
                 break;
             case MSDK_CHAR('i'):
