@@ -119,7 +119,7 @@ using namespace std;
 //////////////////////////////////////////////////////////////////////////
 
 MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
-    : m_RenderType(MFX_SCREEN_RENDER)
+    : m_RenderType(MFX_NO_RENDER)
     //, m_d3dDeviceManagerSpy()
     , m_pSpl()
     , m_pVPP()
@@ -522,7 +522,10 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     MFX_CHECK_STS_SET_ERR(CreateCore(), PE_INIT_CORE);
     TIME_PRINT(VM_STRING("CreateCore"));
 
-    MFX_CHECK_STS(BuildMFXPart());
+
+	
+	
+	MFX_CHECK_STS(BuildMFXPart());
 
     MFX_CHECK_STS_SET_ERR(WriteParFile(), PE_PAR_FILE);
 
@@ -2361,7 +2364,7 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
         if (NULL == va_dpy)
         {
             ComponentParams &cparams = m_components[eDEC].m_bufType == MFX_BUF_HW ? m_components[eDEC] : m_components[eREN];
-            m_pHWDevice.reset(CreateVAAPIDevice());
+	        m_pHWDevice.reset(CreateVAAPIDevice((m_RenderType & MFX_SCREEN_RENDER) ? MFX_LIBVA_X11 : MFX_LIBVA_DRM));
 
             MFX_CHECK_STS(m_pHWDevice->Init(0, NULL, !m_inParams.bFullscreen, 0, 1, NULL));
             MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL *)&va_dpy));

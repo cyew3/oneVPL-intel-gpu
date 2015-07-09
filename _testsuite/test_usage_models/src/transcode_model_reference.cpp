@@ -723,6 +723,9 @@ mfxStatus TranscodeModelReference::CreateAllocator( mfxU16 IOPattern )
 #if !defined (LIBVA_SUPPORT)
     if( IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY) )
     {
+#else
+        m_allocator.pLibVA = CreateLibVA(MFX_LIBVA_DRM);
+        MSDK_CHECK_POINTER(m_allocator.pLibVA, MFX_ERR_NULL_PTR);
 #endif
         sts = CreateEnvironmentHw( &m_allocator );
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -735,6 +738,12 @@ mfxStatus TranscodeModelReference::CreateAllocator( mfxU16 IOPattern )
     return sts;
     
 } // mfxStatus TranscodeModelReference::CreateAllocator( mfxU16 IOPattern )
+
+void TranscodeModelReference::DestroyAllocator(void)
+{ 
+    MSDK_SAFE_DELETE(m_allocator.pMfxAllocator);
+    MSDK_SAFE_DELETE(m_allocator.pLibVA);
+}// void TranscodeModelReference::DestroyAllocator(void)
 
 
 mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )

@@ -42,26 +42,21 @@ list( APPEND sources ${srcs})
 add_definitions( -D_VARIADIC_MAX=10 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
-foreach( variant sw x11 drm )
-  check_variant( ${variant} configured )
-  set( LIBS "" )
-  set( LIBS_SUFFIX "" )
-  if ( configured )
-    list( APPEND LIBS
-      dispatch_trace
-      bs_parser
-      dl
-#      ippvc_l ippcc_l ippi_l ipps_l ippcore_l
-      ippi_l ippdc_l ipps_l ippcore_l
-      sample_common_${variant}
-      pthread
-      mfx_serializer
-    )
-    list( APPEND LIBS_SUFFIX gmock )
+set( LIBS "" )
+set( LIBS_SUFFIX "" )
 
-    make_executable( msdk_gmock ${variant} )
-  endif()
-endforeach()
+list( APPEND LIBS
+	dispatch_trace
+	bs_parser
+	dl
+#      ippvc_l ippcc_l ippi_l ipps_l ippcore_l
+	ippi_l ippdc_l ipps_l ippcore_l
+	sample_common
+	pthread
+	mfx_serializer
+)
+list( APPEND LIBS_SUFFIX gmock )
+make_executable( msdk_gmock universal )
 
 # =============================================================================
 # msdk_ts application
@@ -91,23 +86,17 @@ list(APPEND sources
 
 add_definitions( -DUSE_SAMPLE_ALLOCATOR=1 )
 
-foreach( variant sw x11 drm )
-  check_variant( ${variant} configured )
-  set( LIBS "" )
-  if ( configured )
-    list( APPEND LIBS
-      dispatch_trace
-      umc_core_merged
-      bs_parser
-      dl
-      ippvc_l ippcc_l ippi_l ipps_l ippcore_l
-      sample_common_${variant}
-      pthread
-    )
-
-    make_executable( msdk_ts ${variant} )
-  endif()
-endforeach()
+set( LIBS "" )
+list( APPEND LIBS
+	dispatch_trace
+	umc_core_merged
+	bs_parser
+	dl
+	ippvc_l ippcc_l ippi_l ipps_l ippcore_l
+	sample_common
+	pthread
+)
+make_executable( msdk_ts universal )
 
 # =============================================================================
 # msdk_ts_dll library
@@ -173,22 +162,16 @@ list(APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/src/debug_output.cpp
 )
 
-foreach( variant sw x11 drm)
-  check_variant( ${variant} configured )
-  set( LIBS "" )
-  if ( configured )
-    list( APPEND LIBS
-      dispatch_trace
-      umc_core_merged
-      bs_parser
-      dl
-      pthread
-      ippvc_l ippcc_l ippi_l ipps_l ippcore_l
-      sample_common_${variant}
-      ${PERL_LIBRARY}
-    )
-
-    make_library( msdk_ts_dll ${variant} shared )
-  endif()
-endforeach()
+set( LIBS "" )
+list( APPEND LIBS
+	dispatch_trace
+	umc_core_merged
+	bs_parser
+	dl
+	pthread
+	ippvc_l ippcc_l ippi_l ipps_l ippcore_l
+	sample_common
+	${PERL_LIBRARY}
+)
+make_library( msdk_ts_dll universal shared )
 

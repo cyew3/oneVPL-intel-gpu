@@ -104,6 +104,7 @@ private:
   #include <unistd.h>
 #endif //#if defined(LIBVA_DRM_SUPPORT)
 
+/*
 class LinDisplayHolder
 {
 public:
@@ -124,7 +125,7 @@ private:
     int m_fd;
 #endif
     mfxHDL va_display;
-};
+};*/
 #endif //defined(LIBVA_SUPPORT)
 #endif //(defined(LINUX32) || defined(LINUX64))
 

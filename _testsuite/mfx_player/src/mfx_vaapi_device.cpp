@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -12,20 +12,66 @@ Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
 
 #include "mfx_vaapi_device.h"
 
-#if defined(LIBVA_DRM_SUPPORT)
-    static DRMLibVA g_LibVA;
-#elif defined(LIBVA_X11_SUPPORT)
-    static X11LibVA g_LibVA;
-#endif
-
-IHWDevice* CreateVAAPIDevice(void)
+IHWDevice* CreateVAAPIDevice(int type)
 {
+    IHWDevice * device = 0;
+
+    switch (type)
+    {
+    case MFX_LIBVA_DRM:
 #if defined(LIBVA_DRM_SUPPORT)
-    return new MFXVAAPIDeviceDRM(&g_LibVA);
-#elif defined(LIBVA_X11_SUPPORT)
-    return new MFXVAAPIDeviceX11(&g_LibVA);
+        try
+        {
+            device = new MFXVAAPIDeviceDRM();
+        }
+        catch (std::exception&)
+        {
+            device = 0;
+        }
 #endif
+        break;
+    case MFX_LIBVA_X11:
+#if defined(LIBVA_X11_SUPPORT)
+        try
+        {
+            device = new MFXVAAPIDeviceX11();
+        }
+        catch (std::exception&)
+        {
+            device = 0;
+        }
+#endif
+        break;
+    case MFX_LIBVA_AUTO:
+#if defined(LIBVA_X11_SUPPORT)
+        try
+        {
+            device = new MFXVAAPIDeviceX11();
+        }
+        catch (std::exception&)
+        {
+            device = 0;
+        }
+#endif
+#if defined(LIBVA_DRM_SUPPORT)
+        if (!device)
+        {
+            try
+            {
+                device = new MFXVAAPIDeviceDRM();
+            }
+            catch (std::exception&)
+            {
+                device = 0;
+            }
+        }
+#endif
+        break;
+    } // switch(type)
+
+    return device;
 }
+
 
 #if defined(LIBVA_X11_SUPPORT)
 
@@ -74,10 +120,12 @@ mfxStatus MFXVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAl
     vaapiMemId * memId = (vaapiMemId*)(pSurface->Data.MemId);
     if (!memId || !memId->m_surface) return sts;
     VASurfaceID surface = *memId->m_surface;
-
-    XResizeWindow((Display*)(m_pX11LibVA ? m_pX11LibVA->GetXDisplay() : NULL), m_draw, pSurface->Info.CropW, pSurface->Info.CropH);
-
-    va_res = vaPutSurface(m_pX11LibVA ? m_pX11LibVA->GetVADisplay() : NULL,
+    
+    MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
+    x11lib.XResizeWindow((Display*)(m_pX11LibVA ? m_pX11LibVA->GetXDisplay() : NULL), m_draw, pSurface->Info.CropW, pSurface->Info.CropH);
+    
+    MfxLoader::VA_X11Proxy & vax11lib = m_X11LibVA.GetVAX11();
+    vax11lib.vaPutSurface(m_pX11LibVA ? m_pX11LibVA->GetVADisplay() : NULL,
                       surface,
                       m_draw,
                       pSurface->Info.CropX,
@@ -93,7 +141,7 @@ mfxStatus MFXVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAl
                       VA_FRAME_PICTURE);
 
     sts = va_to_mfx_status(va_res);
-    XSync((Display*)(m_pX11LibVA ? m_pX11LibVA->GetXDisplay() : NULL), False);
+    x11lib.XSync((Display*)(m_pX11LibVA ? m_pX11LibVA->GetXDisplay() : NULL), False);
   return MFX_ERR_NONE;
 }
 

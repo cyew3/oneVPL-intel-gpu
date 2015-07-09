@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2015 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -17,7 +17,7 @@ Copyright(c) 2013 Intel Corporation. All Rights Reserved.
 #include "vaapi_utils_android.h"
 #endif
 
-CHWDevice* CreateVAAPIDevice(void);
+CHWDevice* CreateVAAPIDevice(int type = MFX_LIBVA_DRM);
 
 #if defined(LIBVA_DRM_SUPPORT)
 /** VAAPI DRM implementation. */
@@ -49,8 +49,9 @@ protected:
     DRMLibVA m_DRMLibVA;
 };
 
-#elif defined(LIBVA_X11_SUPPORT)
+#endif //#if defined(LIBVA_DRM_SUPPORT)
 
+#if defined(LIBVA_X11_SUPPORT)
 /** VAAPI X11 implementation. */
 class CVAAPIDeviceX11 : public CHWDevice
 {
@@ -75,7 +76,9 @@ protected:
     X11LibVA m_X11LibVA;
 };
 
-#elif defined(LIBVA_ANDROID_SUPPORT)
+#endif //#if defined(LIBVA_X11_SUPPORT)
+
+#if defined(LIBVA_ANDROID_SUPPORT)
 
 /** VAAPI Android implementation. */
 class CVAAPIDeviceAndroid : public CHWDevice
@@ -106,5 +109,5 @@ public:
 protected:
     AndroidLibVA m_AndroidLibVA;
 };
-#endif
+#endif //#if defined(LIBVA_ANDROID_SUPPORT)
 #endif //#if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT) || defined(LIBVA_ANDROID_SUPPORT)

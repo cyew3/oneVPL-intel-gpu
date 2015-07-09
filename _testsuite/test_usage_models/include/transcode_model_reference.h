@@ -102,7 +102,7 @@ private:
     bool               m_bVPPEnable;
 
     mfxStatus CreateAllocator( mfxU16 IOPattern );
-    void DestroyAllocator( void ) { delete m_allocator.pMfxAllocator; m_allocator.pMfxAllocator = NULL; }
+    void DestroyAllocator(void);
 
 protected:
     TUMSurfacesManager m_dec2vppSurfManager; // container/manager of available memory for surfaces btw dec&vpp

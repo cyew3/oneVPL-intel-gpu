@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2015 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_usage_models_allocator.h"
@@ -26,6 +26,12 @@
 #endif //#if defined(LIBVA_DRM_SUPPORT)
 #endif //#if defined(LIBVA_SUPPORT)
 #endif // LINUX
+
+
+#include <dlfcn.h>
+#include <stdexcept>
+
+
 
 GeneralAllocator::GeneralAllocator() 
 {
@@ -223,136 +229,6 @@ mfxStatus CreateDeviceManager(IDirect3DDeviceManager9** ppManager)
 } // mfxStatus CreateDeviceManager(IDirect3DDeviceManager9** ppManager)
 #endif
 
-#if defined(LIBVA_SUPPORT)
-
-namespace {
-    mfxHDL g_va_display = 0;
-    mfxHDL g_x_display = 0;
-    int g_pci_fd = -1;
-}
-
-mfxStatus CloseVADisplay()
-{
-    VAStatus va_res = VA_STATUS_SUCCESS;
-    if (!g_va_display)
-    {
-        msdk_fprintf(stderr, MSDK_STRING("Failed to find opened VA display\n"));
-#if defined(LIBVA_X11_SUPPORT)
-        if (g_x_display)
-        {
-            msdk_fprintf(stderr, MSDK_STRING("CloseVADisplay(): X Display =  %d\n"), g_x_display);
-            XCloseDisplay ((Display*) g_x_display);            
-            msdk_fprintf(stderr, MSDK_STRING("However, X display %d was found and closed\n"), g_x_display);
-            g_x_display = 0;
-        }
-#endif
-        return MFX_ERR_NOT_INITIALIZED;
-    }
-
-    msdk_fprintf(stderr, MSDK_STRING("CloseVADisplay(): VA_Display %d\n"), g_va_display);
-    va_res = vaTerminate(g_va_display);
-    g_va_display = NULL;
-    if (va_res)
-    {
-#if defined(LIBVA_X11_SUPPORT)
-        if (!g_x_display)
-        {
-            msdk_fprintf(stderr, MSDK_STRING("VA display was found and terminated with error\nX display was not found!\n"));
-        }
-        else
-        {
-            msdk_fprintf(stderr, MSDK_STRING("CloseVADisplay(): X Display = %d\n"), g_x_display);
-            XCloseDisplay ((Display*) g_x_display);
-        }
-        g_x_display = 0;
-#endif
-#if defined(LIBVA_DRM_SUPPORT)
-        if (g_pci_fd >= 0)
-        {
-            close(g_pci_fd);
-            g_pci_fd = -1;
-        }
-#endif
-        msdk_fprintf(stderr, MSDK_STRING("vaTerminate returns error %d\n"), va_res);
-        return MFX_ERR_NOT_INITIALIZED;
-    }
-#if defined(LIBVA_X11_SUPPORT)
-    if (!g_x_display)
-    {
-        msdk_fprintf(stderr, MSDK_STRING("VA display was found and closed, but x display was not found\n"));
-    }
-    else
-    {
-        msdk_fprintf(stderr, MSDK_STRING("CloseVADisplay(): X Display = %d\n"), g_x_display);
-        XCloseDisplay ((Display*) g_x_display);
-    }
-    g_x_display = 0;
-#endif
-    return MFX_ERR_NONE;
-}
-
-mfxHDL GetVADisplay()
-{
-#if defined(LIBVA_X11_SUPPORT)
-    mfxI8* currentDisplay = getenv("DISPLAY");
-#endif
-
-    if (g_va_display)
-    {
-#if defined(LIBVA_X11_SUPPORT)
-        if (!g_x_display)
-            msdk_fprintf(stderr, MSDK_STRING("Warning: VA is initialised, but X display was not opened\n"));
-#endif
-        return (mfxHDL*) g_va_display;
-    }
-#if defined(LIBVA_X11_SUPPORT)
-    if (!g_x_display)
-    {
-        if (currentDisplay)
-            g_x_display = XOpenDisplay(currentDisplay);
-        else
-            g_x_display = XOpenDisplay(VAAPI_X_DEFAULT_DISPLAY);
-        if (!g_x_display)
-        {
-            msdk_fprintf(stderr, MSDK_STRING("Failed to XOpenDisplay, NULL pointer was returned\n"));
-            return NULL;
-        }
-        msdk_fprintf(stderr, MSDK_STRING("XOpenDisplay: Display opened\n"));
-        msdk_fprintf(stderr, MSDK_STRING("x_display = %d\n"), g_x_display);
-    }
-    g_va_display = vaGetDisplay(VAAPI_GET_X_DISPLAY(g_x_display));
-#endif
-#if defined(LIBVA_DRM_SUPPORT)    
-    if (g_pci_fd < 0 )
-    {
-        g_pci_fd = open("/dev/dri/card0", O_RDWR);
-        if ( g_pci_fd < 0 )
-        {
-            msdk_fprintf(stderr, MSDK_STRING("Failed to open /dev/dri/card0\n"));
-            return 0;
-        }
-    }
-    g_va_display = vaGetDisplayDRM(g_pci_fd);
-#endif
-    if (!g_va_display)
-    {
-        msdk_fprintf(stderr, MSDK_STRING("Warning: vaGetDisplay(DRM) returned NULL pointer\n"));
-    }
-    msdk_fprintf(stderr, MSDK_STRING("GetVADisplay() got display %d\n"), g_va_display);
-
-    mfxI32 v_minor, v_major;
-    VAStatus va_res = VA_STATUS_SUCCESS;
-    va_res = vaInitialize(g_va_display, &v_minor, &v_major);
-    if (va_res)
-    {
-        msdk_fprintf(stderr, MSDK_STRING("Failed to vaInitialize, returned error %d\n"), va_res);
-        return 0;
-    }
-    msdk_fprintf(stderr, MSDK_STRING("libVA version  %d.%d\n"), v_major, v_minor);
-    return (mfxHDL*) g_va_display;
-}
-
-#endif
 
 mfxStatus CreateEnvironmentHw( sMemoryAllocator* pAllocator )
 {
@@ -370,11 +246,12 @@ mfxStatus CreateEnvironmentHw( sMemoryAllocator* pAllocator )
     pd3dAllocParams->pManager    = pAllocator->pd3dDeviceManager;
     pAllocator->pAllocatorParams = pd3dAllocParams;
 
-#elif defined(LIBVA_SUPPORT)    
+#elif defined(LIBVA_SUPPORT)
+    MSDK_CHECK_POINTER(pAllocator->pLibVA, MFX_ERR_NULL_PTR);
     vaapiAllocatorParams *params = new vaapiAllocatorParams;
-    params->m_dpy = GetVADisplay();
+    params->m_dpy = pAllocator->pLibVA->GetVADisplay();
     pAllocator->pAllocatorParams = params;
-    pAllocator->va_display = g_va_display;
+    pAllocator->va_display = params->m_dpy;
 #endif
 
     return sts;

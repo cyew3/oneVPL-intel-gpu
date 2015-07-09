@@ -52,6 +52,8 @@ function( check_variant variant configured )
     set( configured 1 )
   elseif( ${ARGV0} MATCHES x11 AND PKG_X11_FOUND AND PKG_LIBVA_FOUND AND PKG_LIBVA_X11_FOUND )
     set( configured 1 )
+  elseif( ${ARGV0} MATCHES universal AND PKG_X11_FOUND AND PKG_LIBVA_FOUND AND PKG_LIBVA_X11_FOUND AND PKG_LIBDRM_FOUND AND PKG_LIBVA_DRM_FOUND )
+    set( configured 1 )
   endif( )
 
   set( ${ARGV1} ${configured} PARENT_SCOPE )
@@ -94,11 +96,16 @@ function( configure_build_variant_linux target variant )
     append_property( ${ARGV0} COMPILE_FLAGS "-DMFX_VA" )
     append_property( ${ARGV0} COMPILE_FLAGS "${PKG_LIBVA_CFLAGS}" ) 
     foreach(libpath ${PKG_LIBVA_LIBRARY_DIRS} )
-      append_property( ${ARGV0} LINK_FLAGS "-L${libpath}" )
+     append_property( ${ARGV0} LINK_FLAGS "-L${libpath}" )
     endforeach()
     #append_property( ${ARGV0} LINK_FLAGS "${PKG_LIBVA_LDFLAGS_OTHER}" )
  
     target_link_libraries( ${ARGV0} va ${MDF_LIBS} )
+
+  elseif( ARGV1 MATCHES universal ) 
+  
+    append_property( ${ARGV0} COMPILE_FLAGS "-DMFX_VA -DLIBVA_SUPPORT -DLIBVA_DRM_SUPPORT -DLIBVA_X11_SUPPORT" )
+    append_property( ${ARGV0} COMPILE_FLAGS "${PKG_LIBDRM_CFLAGS} ${PKG_LIBVA_CFLAGS} ${PKG_LIBVA_DRM_CFLAGS} ${PKG_LIBVA_X11_CFLAGS} ${PKG_X11_CFLAGS}" )
 
   elseif( ARGV1 MATCHES drm )
     append_property( ${ARGV0} COMPILE_FLAGS "-DLIBVA_SUPPORT -DLIBVA_DRM_SUPPORT" )
@@ -154,7 +161,7 @@ endfunction( )
 if( Linux )
   find_package(PkgConfig REQUIRED)
 
-  # optional:
+  # required:
   pkg_check_modules(PKG_LIBDRM libdrm)
   pkg_check_modules(PKG_LIBVA libva>=0.33)
   pkg_check_modules(PKG_LIBVA_X11 libva-x11>=0.33)

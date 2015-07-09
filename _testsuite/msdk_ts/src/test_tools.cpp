@@ -7,6 +7,8 @@
 #include "test_sample_allocator.h"
 #include "mfx_plugin_loader.h"
 
+
+
 msdk_ts_BLOCK(t_AllocSurfPool){
     mfxFrameAllocRequest& request = var_old<mfxFrameAllocRequest>("request");
     FrameSurfPool& pool = var_new<FrameSurfPool>("surf_pool");
@@ -885,10 +887,16 @@ msdk_ts_BLOCK(t_GetAllocatedBuffers){
 #if (defined(LINUX32) || defined(LINUX64))
 #if defined(LIBVA_SUPPORT)
 msdk_ts_BLOCK(t_GetVA){
-    LinDisplayHolder& va_holder  = var_old_or_new<LinDisplayHolder>("va_holder");
-    mfxHDL& va_display = var_old_or_new<mfxHDL>("va_display");
+	if (!is_defined("va_holder"))
+	{
+		var_new<CLibVA>("va_holder", CreateLibVA());
+	}
+    CLibVA& clib_va = var_old<CLibVA>("va_holder");
 
-    va_display = va_holder.GetVADisplayHandle();
+
+	mfxHDL& va_display = var_old_or_new<mfxHDL>("va_display");
+
+    va_display = clib_va.GetVADisplay();
     CHECK(va_display, "Failed to Initialize libVA");
 
     return msdk_ts::resOK;

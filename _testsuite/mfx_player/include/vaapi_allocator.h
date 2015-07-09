@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -17,17 +17,23 @@ Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 #include <va/va.h>
 
 #include "mfx_base_allocator.h"
+#include "vaapi_utils.h"
 
 // VAAPI Allocator internal Mem ID
 struct vaapiMemId
 {
     VASurfaceID* m_surface;
     VAImage      m_image;
-    // variables for VAAPI Allocator inernal color convertion
+    // variables for VAAPI Allocator internal color conversion
     unsigned int m_fourcc;
     mfxU8*       m_sys_buffer;
     mfxU8*       m_va_buffer;
 };
+
+namespace MfxLoader
+{
+	class VA_Proxy;
+}
 
 struct vaapiAllocatorParams : mfxAllocatorParams
 {
@@ -56,6 +62,7 @@ protected:
     virtual mfxStatus AllocImpl(mfxFrameSurface1 *surface);
 
     VADisplay m_dpy;
+	MfxLoader::VA_Proxy * m_libva;
     bool      m_bAdaptivePlayback;
     mfxU32    m_Width;
     mfxU32    m_Height;

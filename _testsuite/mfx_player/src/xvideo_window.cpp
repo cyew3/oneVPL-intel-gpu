@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -15,6 +15,10 @@ File Name: .h
 
 #include "mfx_pipeline_defs.h"
 #include "xvideo_window.h"
+#include "vaapi_utils.h"
+
+#include "vaapi_utils_drm.h"
+#include "vaapi_utils_x11.h"
 
 XVideoWindow::XVideoWindow()
 {
@@ -23,13 +27,15 @@ XVideoWindow::XVideoWindow()
 
 bool XVideoWindow::Initialize(const InitParams &refInit)
 {
+	X11LibVA m_X11LibVA;
+	MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
 
     char* currentDisplay = getenv("DISPLAY");
     m_px11Display = NULL;
     if (currentDisplay)
-        m_px11Display = XOpenDisplay(currentDisplay);
+        m_px11Display = x11lib.XOpenDisplay(currentDisplay);
     else
-        m_px11Display = XOpenDisplay(VAAPI_X_DEFAULT_DISPLAY);
+        m_px11Display = x11lib.XOpenDisplay(VAAPI_X_DEFAULT_DISPLAY);
 
     mfxU32 ScreenNumber = DefaultScreen(m_px11Display);
     mfxU32 displayWidth = DisplayWidth(m_px11Display, ScreenNumber);
@@ -48,7 +54,7 @@ bool XVideoWindow::Initialize(const InitParams &refInit)
         y = h * (refInit.nPosition / refInit.nY) /*+ m_RectWindow.top*/;
     }
 
-    m_Hwnd = XCreateSimpleWindow(m_px11Display,
+    m_Hwnd = x11lib.XCreateSimpleWindow(m_px11Display,
                             RootWindow(m_px11Display, ScreenNumber),
                             x,
                             y,
@@ -63,8 +69,8 @@ bool XVideoWindow::Initialize(const InitParams &refInit)
         return false;
     }
 
-    XMapWindow(m_px11Display, m_Hwnd);
-    XSync(m_px11Display, False);
+    x11lib.XMapWindow(m_px11Display, m_Hwnd);
+    x11lib.XSync(m_px11Display, False);
 
     return true;
 }

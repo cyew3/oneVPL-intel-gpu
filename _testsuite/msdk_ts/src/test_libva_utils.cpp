@@ -1,4 +1,4 @@
-#include "test_common.h"
+/*#include "test_common.h"
 
 #if defined(LINUX32) || defined (LINUX64)
 #if defined(LIBVA_SUPPORT)
@@ -209,3 +209,4 @@ mfxStatus LinDisplayHolder::CloseVADisplay()
 #endif //defined(LIBVA_DRM_SUPPORT)
 #endif //defined(LIBVA_SUPPORT)
 #endif //defined(LINUX32) || defined (LINUX64)
+*/

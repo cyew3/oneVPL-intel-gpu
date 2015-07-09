@@ -415,7 +415,8 @@ int main(int argc, vm_char *argv[])
     CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to init YUV writer\n")); WipeResources(&Resources);});
 
 #ifdef LIBVA_SUPPORT
-    allocator.libvaKeeper.reset(CreateLibVA());
+    if(!(Params.ImpLib & MFX_IMPL_SOFTWARE))
+        allocator.libvaKeeper.reset(CreateLibVA());
 #endif
 
     //prepare mfxParams

@@ -18,20 +18,10 @@ list( APPEND sources ${srcs})
 
 list( REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_transcoder.cpp)
 
-foreach( variant sw drm x11 )
-  check_variant( ${variant} configured )
-  if( configured )
-    make_library( mfx_trans_pipeline ${variant} static )
-  endif( )
-endforeach( )
+make_library( mfx_trans_pipeline universal static )
 
 set( defs "-DLUCAS_DLL" )
-foreach( variant sw drm x11 )
-  check_variant( ${variant} configured )
-  if( configured )
-    make_library( mfx_trans_pipeline_lucas ${variant} static )
-  endif( )
-endforeach( )
+make_library( mfx_trans_pipeline_lucas universal static )
 
 # =============================================================================
 
@@ -40,49 +30,39 @@ set( sources "" )
 set( sources.plus "" )
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_transcoder.cpp)
 
-foreach( variant sw drm x11 )
-  check_variant( ${variant} configured )
-  if( configured )
-    set( LIBS "" )
-    list( APPEND LIBS
-        mfx_trans_pipeline_${variant}
-        mfx_pipeline_${variant}
+set( LIBS "" )
+list( APPEND LIBS
+	mfx_trans_pipeline
+	mfx_pipeline
 #        vpp_plugin
-        shared_utils
-#        sample_common_${variant}
-        umc_splmux_merged
-        umc_io_merged_sw
-        umc_core_merged
-        ${ITT_LIBS}
-        dispatch_trace
-        sample_spl_mux_dispatcher
-        ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
-        pthread dl
-    )
-    make_executable( mfx_transcoder ${variant} static )
-  endif( )
-endforeach( )
+	shared_utils
+#        sample_common
+	umc_splmux_merged
+	umc_io_merged_sw
+	umc_core_merged
+	${ITT_LIBS}
+	dispatch_trace
+	sample_spl_mux_dispatcher
+	ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
+	pthread dl
+)
+make_executable( mfx_transcoder universal static )
 
 set( defs "-DLUCAS_DLL" )
-foreach( variant sw drm x11 )
-  check_variant( ${variant} configured )
-  if( configured )
-    set( LIBS "" )
-    list( APPEND LIBS
-        mfx_trans_pipeline_lucas_${variant}
-        mfx_pipeline_lucas_${variant}
+set( LIBS "" )
+list( APPEND LIBS
+	mfx_trans_pipeline_lucas
+	mfx_pipeline_lucas
 #        vpp_plugin
-        shared_utils_lucas
+	shared_utils_lucas
 #        sample_common_${variant}
-        umc_splmux_merged
-        umc_io_merged_sw
-        umc_core_merged
-        ${ITT_LIBS}
-        dispatch_trace
-        sample_spl_mux_dispatcher
-        ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
-        pthread dl
-    )
-    make_library( mfx_transcoder_lucas ${variant} shared )
-  endif( )
-endforeach( )
+	umc_splmux_merged
+	umc_io_merged_sw
+	umc_core_merged
+	${ITT_LIBS}
+	dispatch_trace
+	sample_spl_mux_dispatcher
+	ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
+	pthread dl
+)
+make_library( mfx_transcoder_lucas universal shared )

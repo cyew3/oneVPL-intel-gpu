@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2015 Intel Corporation. All Rights Reserved.
 //
 
 #define ENABLE_OUTPUT    // Disabling this flag removes all YUV file writing
@@ -30,6 +30,7 @@
 #include <fstream>
 #include <sstream>
 #include "common_utils.h"
+//#include "vaapi_utils.h"
 #include <string>
 #include <algorithm>
 #include <functional>
@@ -37,7 +38,7 @@
 #include <memory>
 #include <locale>
 #include <stdexcept>
-
+#include <dlfcn.h>
 
 #if ! defined(_WIN32) && ! defined(_WIN64)
   #include <fcntl.h>
@@ -48,6 +49,140 @@
 
 
 using namespace std;
+
+#ifdef LIBVA_SUPPORT
+namespace MfxLoader
+{
+
+    class SimpleLoader
+    {
+    public:
+        SimpleLoader(const char * name);
+
+        void * GetFunction(const char * name);
+
+        ~SimpleLoader();
+
+    private:
+        SimpleLoader(SimpleLoader&);
+        void operator=(SimpleLoader&);
+
+        void * so_handle;
+    };
+    
+    SimpleLoader::SimpleLoader(const char * name)
+    {
+        so_handle = dlopen(name, RTLD_GLOBAL | RTLD_NOW);
+    }
+  
+    void * SimpleLoader::GetFunction(const char * name)
+    {
+        void * fn_ptr = dlsym(so_handle, name);
+        if (!fn_ptr)
+            throw std::runtime_error("Can't find function");
+        return fn_ptr;
+    }
+  
+    SimpleLoader::~SimpleLoader()
+    {
+        dlclose(so_handle);
+    }
+   
+    #define SIMPLE_LOADER_STRINGIFY1( x) #x
+    #define SIMPLE_LOADER_STRINGIFY(x) SIMPLE_LOADER_STRINGIFY1(x)
+    #define SIMPLE_LOADER_DECORATOR1(fun,suffix) fun ## _ ## suffix
+    #define SIMPLE_LOADER_DECORATOR(fun,suffix) SIMPLE_LOADER_DECORATOR1(fun,suffix)
+
+
+    // Following macro applied on vaInitialize will give:  vaInitialize((vaInitialize_type)lib.GetFunction("vaInitialize"))
+    #define SIMPLE_LOADER_FUNCTION(name) name( (SIMPLE_LOADER_DECORATOR(name, type)) lib.GetFunction(SIMPLE_LOADER_STRINGIFY(name)) )
+
+    class VA_Proxy
+    {
+    private:
+        SimpleLoader lib; // should appear first in member list
+
+    public:
+        typedef VAStatus (*vaInitialize_type)(VADisplay, int *, int *);
+        typedef VAStatus (*vaTerminate_type)(VADisplay);
+        typedef VAStatus (*vaCreateSurfaces_type)(VADisplay, unsigned int,
+            unsigned int, unsigned int, VASurfaceID *, unsigned int,
+            VASurfaceAttrib *, unsigned int);
+        typedef VAStatus (*vaDestroySurfaces_type)(VADisplay, VASurfaceID *, int);
+        typedef VAStatus (*vaCreateBuffer_type)(VADisplay, VAContextID,
+            VABufferType, unsigned int, unsigned int, void *, VABufferID *);
+        typedef VAStatus (*vaDestroyBuffer_type)(VADisplay, VABufferID);
+        typedef VAStatus (*vaMapBuffer_type)(VADisplay, VABufferID, void **pbuf);
+        typedef VAStatus (*vaUnmapBuffer_type)(VADisplay, VABufferID);
+        typedef VAStatus (*vaDeriveImage_type)(VADisplay, VASurfaceID, VAImage *);
+        typedef VAStatus (*vaDestroyImage_type)(VADisplay, VAImageID);
+
+
+        VA_Proxy();
+        ~VA_Proxy();
+
+        const vaInitialize_type      vaInitialize;
+        const vaTerminate_type       vaTerminate;
+        const vaCreateSurfaces_type  vaCreateSurfaces;
+        const vaDestroySurfaces_type vaDestroySurfaces;
+        const vaCreateBuffer_type    vaCreateBuffer;
+        const vaDestroyBuffer_type   vaDestroyBuffer;
+        const vaMapBuffer_type       vaMapBuffer;
+        const vaUnmapBuffer_type     vaUnmapBuffer;
+        const vaDeriveImage_type     vaDeriveImage;
+        const vaDestroyImage_type    vaDestroyImage;
+    };
+
+    VA_Proxy::VA_Proxy()
+    : lib("libva.so")
+    , SIMPLE_LOADER_FUNCTION(vaInitialize)
+    , SIMPLE_LOADER_FUNCTION(vaTerminate)
+    , SIMPLE_LOADER_FUNCTION(vaCreateSurfaces)
+    , SIMPLE_LOADER_FUNCTION(vaDestroySurfaces)
+    , SIMPLE_LOADER_FUNCTION(vaCreateBuffer)
+    , SIMPLE_LOADER_FUNCTION(vaDestroyBuffer)
+    , SIMPLE_LOADER_FUNCTION(vaMapBuffer)
+    , SIMPLE_LOADER_FUNCTION(vaUnmapBuffer)
+    , SIMPLE_LOADER_FUNCTION(vaDeriveImage)
+    , SIMPLE_LOADER_FUNCTION(vaDestroyImage)
+    {
+    }
+
+    VA_Proxy::~VA_Proxy()
+    {}
+
+
+    //#if defined(LIBVA_DRM_SUPPORT)
+    class VA_DRMProxy
+    {
+    private:
+        SimpleLoader lib; // should appear first in member list
+
+    public:
+        typedef VADisplay (*vaGetDisplayDRM_type)(int);
+
+
+        VA_DRMProxy();
+        ~VA_DRMProxy();
+
+        const vaGetDisplayDRM_type vaGetDisplayDRM;
+    };
+    
+    VA_DRMProxy::VA_DRMProxy()
+    : lib("libva-drm.so")
+    , SIMPLE_LOADER_FUNCTION(vaGetDisplayDRM)
+    {
+    }
+
+    VA_DRMProxy::~VA_DRMProxy()
+    {}
+    //#endif
+    
+    
+} // namespace MfxLoader
+#endif // #ifdef LIBVA_SUPPORT
+
+bool isActivatedSW = false;
 
 typedef struct {
     char* pStreamName;
@@ -215,6 +350,12 @@ ProgramArguments ParseInputString(const vector<string> &args)
 
     if (find(args.begin(), args.end(), "-d3d11") != args.end())
         pa.impl |= MFX_IMPL_VIA_D3D11;
+    
+    if (find(args.begin(), args.end(), "-sw") != args.end())
+    {
+        isActivatedSW = true;
+        pa.impl |= MFX_IMPL_SOFTWARE;
+    }
 
     return pa;
 }
@@ -230,6 +371,7 @@ void PrintHelp(ostream &out)
     out << "-reset_par <filename> path to the parameters file" << endl;
     out << "-reset_start index if the start frame for reset" << endl;
     out << "-d3d11 flag enables MFX_IMPL_VIA_D3D11 implementation"<< endl;
+    out << "-sw flag enables MFX_IMPL_SOFTWARE implementation"<< endl;
 }
 
 // trim from start
@@ -722,8 +864,6 @@ protected:
         return MFX_ERR_NONE;
     }
 
-
-
 private:
     int                 m_nStreams;
     map<string, string> m_Params[MAX_INPUT_STREAMS];
@@ -749,6 +889,15 @@ private:
 
 int main(int argc, char *argv[])
 {
+#if !defined(_WIN32) && !defined(_WIN64)
+    std::auto_ptr<MfxLoader::VA_Proxy> m_libva;
+    std::auto_ptr<MfxLoader::VA_DRMProxy> m_vadrmlib;
+
+    int m_card_fd = 0, major_version = 0, minor_version = 0;
+    VADisplay m_va_display;
+    VAStatus va_res;
+#endif
+
     mfxStatus sts = MFX_ERR_NONE;
     ProgramArguments pa;
 
@@ -758,10 +907,18 @@ int main(int argc, char *argv[])
     {
         pa = ParseInputString(args);
     }
+
+
     catch (const std::exception &e)
     {
         cout << "Troubles: " << e.what() << endl;
         PrintHelp(cout);
+    }
+
+    if(!isActivatedSW)
+    {
+        m_libva.reset(new MfxLoader::VA_Proxy);
+        m_vadrmlib.reset(new MfxLoader::VA_DRMProxy);
     }
 
     Composition composition(&pa);
@@ -785,40 +942,40 @@ int main(int argc, char *argv[])
     /*For Linux, it is required to set libVA display handle
      * (see sample_common for more details*/
 #if !(defined(_WIN32) || defined(_WIN64))
-    int m_card_fd =0, major_version = 0, minor_version = 0;
-    VADisplay m_va_display;
-    VAStatus va_res;
-    m_card_fd = open("/dev/dri/card0", O_RDWR);
+    if (!isActivatedSW)
+    {
+        m_card_fd = open("/dev/dri/card0", O_RDWR);
 
-    if (m_card_fd < 0)
-    {
-        sts = MFX_ERR_NOT_INITIALIZED;
-        return sts;
-    }
-    if (MFX_ERR_NONE == sts)
-    {
-        m_va_display = vaGetDisplayDRM(m_card_fd);
-        if (!m_va_display)
+        if (m_card_fd < 0)
         {
-            close(m_card_fd);
-            m_card_fd = -1;
-            sts = MFX_ERR_NULL_PTR;
-            return sts;
-        }
-    }
-    if (MFX_ERR_NONE == sts)
-    {
-        va_res = vaInitialize(m_va_display, &major_version, &minor_version);
-        if (VA_STATUS_SUCCESS != va_res)
-        {
-            close(m_card_fd);
-            m_card_fd = -1;
             sts = MFX_ERR_NOT_INITIALIZED;
             return sts;
         }
+        if (MFX_ERR_NONE == sts)
+        {
+            m_va_display = m_vadrmlib->vaGetDisplayDRM(m_card_fd);
+            if (!m_va_display)
+            {
+                close(m_card_fd);
+                m_card_fd = -1;
+                sts = MFX_ERR_NULL_PTR;
+                return sts;
+            }
+        }
+        if (MFX_ERR_NONE == sts)
+        {
+            va_res = m_libva->vaInitialize(m_va_display, &major_version, &minor_version);
+            if (VA_STATUS_SUCCESS != va_res)
+            {
+                close(m_card_fd);
+                m_card_fd = -1;
+                sts = MFX_ERR_NOT_INITIALIZED;
+                return sts;
+            }
+        }
+        sts = mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, m_va_display);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
-    sts = mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, m_va_display);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 #endif
 
     // Create Media SDK VPP component
@@ -1086,14 +1243,16 @@ int main(int argc, char *argv[])
     fclose(fSink);
 
 #if !(defined(_WIN32) || defined(_WIN64))
-
-    if (m_va_display)
+    if(!isActivatedSW)
     {
-        vaTerminate(m_va_display);
-    }
-    if (m_card_fd >= 0)
-    {
-        close(m_card_fd);
+        if (m_va_display)
+        {
+            m_libva->vaTerminate(m_va_display);
+        }
+        if (m_card_fd >= 0)
+        {
+            close(m_card_fd);
+        }
     }
 #endif
 

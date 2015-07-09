@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -16,26 +16,22 @@ File Name: .h
 #if (defined(LINUX32) || defined(LINUX64)) && !defined(ANDROID)
 #if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT)
 
-#include "vaapi_utils.h"
-#include "vaapi_utils_drm.h"
-#include "vaapi_utils_x11.h"
+//#include "vaapi_utils.h"
+
+
 
 #include "mfx_ihw_device.h"
 #include "vaapi_allocator.h"
 #include <va/va.h>
 
+
 #if defined(LIBVA_DRM_SUPPORT)
+#include "vaapi_utils_drm.h"
 class MFXVAAPIDeviceDRM : public IHWDevice
 {
 public:
-    MFXVAAPIDeviceDRM(DRMLibVA *pDRMLibVA):
-        m_pDRMLibVA(pDRMLibVA) 
-        {
-            if (!m_pDRMLibVA)
-            {
-                throw std::bad_alloc();
-            }
-        }
+
+	MFXVAAPIDeviceDRM() : m_pDRMLibVA(&pDRMLibVA) {}
 
     virtual ~MFXVAAPIDeviceDRM() { }
 
@@ -62,25 +58,22 @@ public:
 
 protected:
     DRMLibVA *m_pDRMLibVA;
+	DRMLibVA pDRMLibVA;
 };
 #endif
 
 #if defined(LIBVA_X11_SUPPORT)
+#include "vaapi_utils_x11.h"
 #include <va/va_x11.h>
 #include <X11/Xlib.h>
 
 class MFXVAAPIDeviceX11 : public IHWDevice
 {
 public:
-    MFXVAAPIDeviceX11(X11LibVA *pX11LibVA): 
-        m_draw(0),
-        m_pX11LibVA(pX11LibVA)
-    {
-        if (!m_pX11LibVA)
-        {
-            throw std::bad_alloc();
-        }
-    }
+	MFXVAAPIDeviceX11()
+		: m_draw(0),
+		m_pX11LibVA(&m_X11LibVA){}
+
     virtual ~MFXVAAPIDeviceX11() { }
 
     virtual mfxStatus Init( mfxU32 nAdapter
@@ -98,10 +91,11 @@ public:
 private:
     Window m_draw;
     X11LibVA *m_pX11LibVA;
+	X11LibVA m_X11LibVA;
 };
 #endif
 
-IHWDevice* CreateVAAPIDevice(void);
+IHWDevice* CreateVAAPIDevice(int type = MFX_LIBVA_DRM);
 
 
 #endif // #if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT)

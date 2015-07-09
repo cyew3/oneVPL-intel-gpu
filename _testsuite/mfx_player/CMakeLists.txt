@@ -22,20 +22,10 @@ list( APPEND sources ${srcs})
 
 list( REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_player.cpp)
 
-foreach( variant sw drm x11 )
-  check_variant( ${variant} configured )
-  if( configured )
-    make_library( mfx_pipeline ${variant} static )
-  endif( )
-endforeach( )
+make_library( mfx_pipeline universal static )
 
 set( defs "-DLUCAS_DLL" )
-foreach( variant sw drm x11 )
-  check_variant( ${variant} configured )
-  if( configured )
-    make_library( mfx_pipeline_lucas ${variant} static )
-  endif( )
-endforeach( )
+make_library( mfx_pipeline_lucas universal static )
 
 # =============================================================================
 
@@ -44,45 +34,35 @@ set( sources "" )
 set( sources.plus "" )
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_player.cpp)
 
-foreach( variant sw drm x11 )
-  check_variant( ${variant} configured )
-  if( configured )
-    set( LIBS "" )
-    list( APPEND LIBS
-        mfx_pipeline_${variant}
+set( LIBS "" )
+list( APPEND LIBS
+	mfx_pipeline
 #        vpp_plugin
-        shared_utils_lucas
-        umc_splmux_merged
-        umc_io_merged_sw
-        umc_core_merged
-        ${ITT_LIBS}
-        dispatch_trace
-        sample_spl_mux_dispatcher
-        ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
-        pthread dl
-    )
-    make_executable( mfx_player ${variant} static )
-  endif( )
-endforeach( )
+	shared_utils_lucas
+	umc_splmux_merged
+	umc_io_merged_sw
+	umc_core_merged
+	${ITT_LIBS}
+	dispatch_trace
+	sample_spl_mux_dispatcher
+	ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
+	pthread dl
+)
+make_executable( mfx_player universal static )
 
 set( defs "-DLUCAS_DLL" )
-foreach( variant sw drm x11 )
-  check_variant( ${variant} configured )
-  if( configured )
-    set( LIBS "" )
-    list( APPEND LIBS
-        mfx_pipeline_lucas_${variant}
+set( LIBS "" )
+list( APPEND LIBS
+	mfx_pipeline_lucas
 #        vpp_plugin
-        shared_utils
-        umc_splmux_merged
-        umc_io_merged_sw
-        umc_core_merged
-        ${ITT_LIBS}
-        dispatch_trace
-        sample_spl_mux_dispatcher
-        ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
-        pthread dl
-    )
-    make_library( mfx_player_lucas ${variant} shared )
-  endif( )
-endforeach( )
+	shared_utils
+	umc_splmux_merged
+	umc_io_merged_sw
+	umc_core_merged
+	${ITT_LIBS}
+	dispatch_trace
+	sample_spl_mux_dispatcher
+	ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
+	pthread dl
+)
+make_library( mfx_player_lucas universal shared )

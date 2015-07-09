@@ -13,16 +13,11 @@ file( GLOB_RECURSE srcs2 "${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp")
 list( APPEND sources ${srcs})
 list( APPEND sources ${srcs2})
 
-foreach( variant sw drm )
-  check_variant( ${variant} configured )
-  if( configured )
-    set (CMAKE_CXX_FLAGS "-std=c++0x")
-    set( LIBS "" )
-    list( APPEND LIBS
-        mfx
-        pthread
-        dl
-    )
-    make_executable( test_comp ${variant} )
-  endif( )
-endforeach( )
+set (CMAKE_CXX_FLAGS "-std=c++0x")
+set( LIBS "" )
+list( APPEND LIBS
+	mfx
+	pthread
+	dl
+)
+make_executable( test_comp universal )
