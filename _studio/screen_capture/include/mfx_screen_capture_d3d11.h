@@ -27,7 +27,7 @@ public:
     D3D11_Capturer(mfxCoreInterface* _core);
     virtual ~D3D11_Capturer();
 
-    virtual mfxStatus CreateVideoAccelerator(mfxVideoParam const & par);
+    virtual mfxStatus CreateVideoAccelerator(mfxVideoParam const & par, const mfxU32 dispIndex = 0);
     virtual mfxStatus QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out);
     virtual mfxStatus CheckCapabilities(mfxVideoParam const & in, mfxVideoParam* out);
     virtual mfxStatus Destroy();

@@ -33,8 +33,11 @@ D3D11_Capturer::~D3D11_Capturer()
     Destroy();
 }
 
-mfxStatus D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
+mfxStatus D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, const mfxU32 dispIndex)
 {
+    if(dispIndex)
+        return MFX_ERR_UNSUPPORTED;
+
     HRESULT hres;
     D3D11_VIDEO_DECODER_DESC video_desc;
     mfxStatus mfxRes = MFX_ERR_NONE;
@@ -243,7 +246,7 @@ mfxStatus D3D11_Capturer::CheckCapabilities(mfxVideoParam const & in, mfxVideoPa
             }
         }
         else if((desktop_format[i].DesktopFormat == DXGI_FORMAT_B8G8R8A8_UNORM && 
-                (MFX_FOURCC_RGB4 == in.mfx.FrameInfo.FourCC || DXGI_FORMAT_AYUV == in.mfx.FrameInfo.FourCC)))
+                (MFX_FOURCC_RGB4 == in.mfx.FrameInfo.FourCC || DXGI_FORMAT_AYUV == in.mfx.FrameInfo.FourCC || MFX_FOURCC_AYUV_RGB4 == in.mfx.FrameInfo.FourCC)))
         {
             if (height <= desktop_format[i].MaxHeight &&
                 width <= desktop_format[i].MaxWidth)

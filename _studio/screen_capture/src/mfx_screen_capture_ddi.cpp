@@ -80,6 +80,7 @@ DXGI_FORMAT MfxFourccToDxgiFormat(const mfxU32& fourcc)
         case MFX_FOURCC_NV12:
             return DXGI_FORMAT_NV12;
         case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_AYUV_RGB4:
         case DXGI_FORMAT_AYUV:
             return DXGI_FORMAT_B8G8R8A8_UNORM;
         default:
@@ -245,7 +246,7 @@ mfxStatus OwnResizeFilter::Init(const mfxFrameInfo& in, const mfxFrameInfo& out)
 
         return MFX_ERR_NONE;
     }
-    else if(MFX_FOURCC_RGB4 == in.FourCC || DXGI_FORMAT_AYUV == in.FourCC)
+    else if(MFX_FOURCC_RGB4 == in.FourCC || DXGI_FORMAT_AYUV == in.FourCC || MFX_FOURCC_AYUV_RGB4 == in.FourCC)
     {
         IppStatus sts     = ippStsNotSupportedModeErr;
         IppiSize  srcSize = {0,  0};

@@ -40,6 +40,9 @@
       <Filter>libmfxsw VPP</Filter>
     </ClInclude>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="include\mfx_screen_capture_dirty_rect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\mfx_screen_capture_plugin.cpp">
@@ -62,6 +65,9 @@
     </ClCompile>
     <ClCompile Include="..\mfx_lib\vpp\src\mfx_color_space_conversion_vpp.cpp">
       <Filter>libmfxsw VPP</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_screen_capture_dirty_rect.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

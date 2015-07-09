@@ -17,6 +17,7 @@ File Name: mfx_screen_capture_plugin.h
 #include <memory>
 #include "mfxplugin++.h"
 #include "mfx_screen_capture_ddi.h"
+#include "mfx_screen_capture_dirty_rect.h"
 
 namespace MfxCapture
 {
@@ -122,8 +123,11 @@ protected:
     mfxStatus CheckOpaqBuffer(const mfxVideoParam& par, mfxVideoParam* pParOut, const mfxExtOpaqueSurfaceAlloc& opaqAlloc, mfxExtOpaqueSurfaceAlloc* pOpaqAllocOut);
     mfxFrameSurface1* GetFreeInternalSurface();
 
+    mfxVersion          m_libmfxVer;
     mfxVideoParam       m_CurrentPar;
+    mfxExtScreenCaptureParam m_CurExtPar;
     mfxVideoParam       m_InitPar; //for Reset() func impl
+    mfxExtScreenCaptureParam m_InitExtPar;
     mfxCoreInterface*   m_pmfxCore;
     mfxPluginParam      m_PluginParam;
     mfxFrameAllocResponse m_response;
@@ -132,14 +136,23 @@ protected:
     bool                m_createdByDispatcher;
     bool                m_inited;
 
+    bool                m_bDirtyRect;
+    mfxU32              m_DisplayIndex;
+
     mfxU32              m_StatusReportFeedbackNumber;
 
     std::auto_ptr<Capturer>         m_pCapturer;
     std::auto_ptr<Capturer>         m_pFallbackCapturer;
 
+    std::auto_ptr<CpuDirtyRectFilter>         m_pDirtyRectAnalyzer;
+    mfxFrameSurface1*               prevSurface;
+
     std::list<DESKTOP_QUERY_STATUS_PARAMS> m_StatusList;
 
 };
+
+template<typename T>
+T* GetExtendedBuffer(const mfxU32& BufferId, const mfxVideoParam* par);
 
 #if defined(_WIN32) || defined(_WIN64)
 #define MSDK_PLUGIN_API(ret_type) extern "C" __declspec(dllexport)  ret_type __cdecl

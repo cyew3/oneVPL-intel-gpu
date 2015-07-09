@@ -33,8 +33,11 @@ D3D9_Capturer::~D3D9_Capturer()
     Destroy();
 }
 
-mfxStatus D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
+mfxStatus D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, const mfxU32 dispIndex)
 {
+    if(dispIndex)
+        return MFX_ERR_UNSUPPORTED;
+
     HRESULT hres;
 
     mfxStatus mfxRes = MFX_ERR_NONE;

@@ -27,7 +27,8 @@ SW_D3D9_Capturer::SW_D3D9_Capturer(mfxCoreInterface* _core)
     m_width (0),
     m_height(0),
     m_CropW (0),
-    m_CropH (0)
+    m_CropH (0),
+    m_DisplayIndex(0)
 {
     Mode = SW_D3D9;
     memset(&m_core_par, 0, sizeof(m_core_par));
@@ -38,7 +39,7 @@ SW_D3D9_Capturer::~SW_D3D9_Capturer()
     Destroy();
 }
 
-mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
+mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, const mfxU32 dispIndex)
 {
     HRESULT hres;
 
@@ -54,6 +55,12 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
         MFX_IMPL_VIA_D3D9 != (m_core_par.Impl & 0xF00))
         m_bOwnDevice = true;
 
+    if(dispIndex && 1 != dispIndex)
+    {
+        m_DisplayIndex = dispIndex - 1;
+        m_bOwnDevice = true;
+    }
+
     if(!m_bOwnDevice)
     {
         mfxRes = AttachToLibraryDevice();
@@ -63,7 +70,7 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
 
     if(m_bOwnDevice)
     {
-        mfxRes = CreateDeviceManager();
+        mfxRes = CreateDeviceManager(m_DisplayIndex);
         MFX_CHECK_STS(mfxRes);
     }
 
@@ -156,7 +163,7 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par)
                 }
             }
         }
-        else if(MFX_FOURCC_RGB4 == par.mfx.FrameInfo.FourCC || DXGI_FORMAT_AYUV == par.mfx.FrameInfo.FourCC )
+        else if(MFX_FOURCC_RGB4 == par.mfx.FrameInfo.FourCC || DXGI_FORMAT_AYUV == par.mfx.FrameInfo.FourCC || MFX_FOURCC_AYUV_RGB4 == par.mfx.FrameInfo.FourCC)
         {
             in.FourCC = MFX_FOURCC_RGB4;
             in.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
@@ -260,9 +267,10 @@ mfxStatus SW_D3D9_Capturer::QueryVideoAccelerator(mfxVideoParam const & in, mfxV
 
 mfxStatus SW_D3D9_Capturer::CheckCapabilities(mfxVideoParam const & in, mfxVideoParam* out)
 {
-    if(!(MFX_FOURCC_NV12  == in.mfx.FrameInfo.FourCC ||
-         MFX_FOURCC_RGB4  == in.mfx.FrameInfo.FourCC ||
-         DXGI_FORMAT_AYUV == in.mfx.FrameInfo.FourCC ))
+    if(!(MFX_FOURCC_NV12      == in.mfx.FrameInfo.FourCC ||
+         MFX_FOURCC_RGB4      == in.mfx.FrameInfo.FourCC ||
+         MFX_FOURCC_AYUV_RGB4 == in.mfx.FrameInfo.FourCC ||
+         DXGI_FORMAT_AYUV     == in.mfx.FrameInfo.FourCC ))
     {
         if(out) out->mfx.FrameInfo.FourCC = 0;
         return MFX_ERR_UNSUPPORTED;
@@ -393,7 +401,7 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
     bool unlock = false;
 
     //Copy Frame
-    if(MFX_FOURCC_RGB4 == surface_work->Info.FourCC || DXGI_FORMAT_AYUV == surface_work->Info.FourCC)
+    if(MFX_FOURCC_RGB4 == surface_work->Info.FourCC || DXGI_FORMAT_AYUV == surface_work->Info.FourCC || MFX_FOURCC_AYUV_RGB4 == surface_work->Info.FourCC)
     {
         //mfxRes = MFX_ERR_UNKNOWN;
         //if(m_bFastCopy && m_pFastCopy.get())
@@ -405,11 +413,12 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
 
         //if(mfxRes || !m_bFastCopy)
         //{
-            unlock = surface_work->Data.Y ? false : true;
+            unlock = surface_work->Data.B ? false : true;
             if(unlock)
             {
                 mfxRes = m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, surface_work->Data.MemId, &surface_work->Data);
-                if(mfxRes) return MFX_ERR_LOCK_MEMORY;
+                if(mfxRes)
+                    return MFX_ERR_LOCK_MEMORY;
             }
 
             if(/*m_bResize*/pSurf->Info.CropH != CropH || pSurf->Info.CropW != CropW)
@@ -449,7 +458,8 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
         if(unlock)
         {
             mfxRes = m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, surface_work->Data.MemId, &surface_work->Data);
-            if(mfxRes) return MFX_ERR_LOCK_MEMORY;
+            if(mfxRes)
+                return MFX_ERR_LOCK_MEMORY;
         }
 
         if(/*m_bResize*/pSurf->Info.CropH != CropH || pSurf->Info.CropW != CropW)
@@ -507,7 +517,8 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
     if(unlock)
     {
         mfxRes = m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, surface_work->Data.MemId, &surface_work->Data);
-        if(mfxRes) return MFX_ERR_LOCK_MEMORY;
+        if(mfxRes)
+            return MFX_ERR_LOCK_MEMORY;
     }
 
     DESKTOP_QUERY_STATUS_PARAMS status;
@@ -578,7 +589,7 @@ mfxStatus SW_D3D9_Capturer::AttachToLibraryDevice()
     return MFX_ERR_NONE;
 }
 
-mfxStatus SW_D3D9_Capturer::CreateDeviceManager()
+mfxStatus SW_D3D9_Capturer::CreateDeviceManager(const UINT AdapterID)
 {
     m_pD3D.Attach(Direct3DCreate9(D3D_SDK_VERSION));
 
@@ -605,19 +616,19 @@ mfxStatus SW_D3D9_Capturer::CreateDeviceManager()
     d3dParams.BackBufferHeight = 0;
 
     HRESULT hr = m_pD3D->CreateDevice(
-        D3DADAPTER_DEFAULT,
+        /*D3DADAPTER_DEFAULT*/AdapterID,
         D3DDEVTYPE_HAL,
         window,
         D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED | D3DCREATE_FPU_PRESERVE,
         &d3dParams,
         &m_pDirect3DDevice);
     if (FAILED(hr) || !m_pDirect3DDevice)
-        return MFX_ERR_NULL_PTR;
+        return MFX_ERR_DEVICE_FAILED;
 
     UINT resetToken = 0;
     hr = DXVA2CreateDirect3DDeviceManager9(&resetToken, &m_pDirect3DDeviceManager);
     if (FAILED(hr) || !m_pDirect3DDeviceManager)
-        return MFX_ERR_NULL_PTR;
+        return MFX_ERR_DEVICE_FAILED;
 
     hr = m_pDirect3DDeviceManager->ResetDevice(m_pDirect3DDevice, resetToken);
     if (FAILED(hr))

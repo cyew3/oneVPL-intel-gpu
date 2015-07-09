@@ -30,7 +30,7 @@ public:
     SW_D3D9_Capturer(mfxCoreInterface* _core);
     virtual ~SW_D3D9_Capturer();
 
-    virtual mfxStatus CreateVideoAccelerator(mfxVideoParam const & par);
+    virtual mfxStatus CreateVideoAccelerator(mfxVideoParam const & par, const mfxU32 dispIndex = 0);
     virtual mfxStatus QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out);
     virtual mfxStatus CheckCapabilities(mfxVideoParam const & in, mfxVideoParam* out);
     virtual mfxStatus Destroy();
@@ -44,7 +44,7 @@ protected:
     mfxCoreInterface*                m_pmfxCore;
     mfxCoreParam                     m_core_par;
 
-    mfxStatus CreateDeviceManager();
+    mfxStatus CreateDeviceManager(const UINT AdapterID = D3DADAPTER_DEFAULT);
     mfxStatus AttachToLibraryDevice();
 
     std::auto_ptr<MFXVideoVPPColorSpaceConversion> m_pColorConverter;
@@ -65,6 +65,8 @@ protected:
     mfxU32 m_height;
     mfxU32 m_CropW;
     mfxU32 m_CropH;
+
+    mfxU32 m_DisplayIndex;
 
     bool                                         m_bOwnDevice;
     CComPtr<IDirect3D9                 >         m_pD3D;

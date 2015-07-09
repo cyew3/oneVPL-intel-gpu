@@ -81,6 +81,7 @@ struct AsyncParams
     mfxFrameSurface1 *surface_out;
     mfxFrameSurface1 *real_surface;
     mfxU32 StatusReportFeedbackNumber;
+    mfxExtDirtyRect  *ext_rect;
     bool rt_fallback;
 };
 
@@ -99,7 +100,7 @@ public:
     virtual ~Capturer(){}
 
     virtual
-    mfxStatus CreateVideoAccelerator(mfxVideoParam const & par) = 0;
+    mfxStatus CreateVideoAccelerator(mfxVideoParam const & par, const mfxU32 dispIndex = 0) = 0;
 
     virtual
     mfxStatus QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out) = 0;

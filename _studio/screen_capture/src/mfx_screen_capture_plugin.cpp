@@ -41,10 +41,13 @@ MFXScreenCapture_Plugin::MFXScreenCapture_Plugin(bool CreateByDispatcher)
 {
     m_pmfxCore = 0;
     memset(&m_PluginParam, 0, sizeof(mfxPluginParam));
-    memset(&m_CurrentPar, 0, sizeof(mfxVideoParam));
-    memset(&m_InitPar, 0, sizeof(mfxVideoParam));
-    memset(&m_OpaqAlloc, 0, sizeof(mfxExtOpaqueSurfaceAlloc));
-    memset(&m_response, 0, sizeof(mfxFrameAllocResponse));
+    memset(&m_CurrentPar,  0, sizeof(mfxVideoParam));
+    memset(&m_CurExtPar,   0, sizeof(mfxExtScreenCaptureParam));
+    memset(&m_InitPar,     0, sizeof(mfxVideoParam));
+    memset(&m_InitExtPar,  0, sizeof(mfxExtScreenCaptureParam));
+    memset(&m_OpaqAlloc,   0, sizeof(mfxExtOpaqueSurfaceAlloc));
+    memset(&m_response,    0, sizeof(mfxFrameAllocResponse));
+    memset(&m_libmfxVer,   0, sizeof(mfxVersion));
 
     m_inited = false;
 
@@ -59,6 +62,7 @@ MFXScreenCapture_Plugin::MFXScreenCapture_Plugin(bool CreateByDispatcher)
     m_createdByDispatcher = CreateByDispatcher;
     m_StatusReportFeedbackNumber = 0;
 
+    m_bDirtyRect = false;
 }
 
 MFXScreenCapture_Plugin::~MFXScreenCapture_Plugin()
@@ -125,25 +129,30 @@ mfxStatus MFXScreenCapture_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAlloc
         if (MFX_ERR_NONE != mfxRes)
             return mfxRes;
         if((MFX_IMPL_VIA_D3D11 == (param.Impl & 0x0F00)) && !(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
-            FourCC = DXGI_FORMAT_AYUV;
+            FourCC = (m_libmfxVer.Minor > 15 ) ? MFX_FOURCC_AYUV_RGB4 : DXGI_FORMAT_AYUV;
         else
             FourCC = MFX_FOURCC_RGB4;
     }
     else if(DXGI_FORMAT_AYUV == par->mfx.FrameInfo.FourCC)
         FourCC = DXGI_FORMAT_AYUV;
+    else if(MFX_FOURCC_AYUV_RGB4 == par->mfx.FrameInfo.FourCC)
+        FourCC = MFX_FOURCC_AYUV_RGB4;
     else
         return MFX_ERR_UNSUPPORTED;
 
     out->Info = par->mfx.FrameInfo;
     out->Info.FourCC = FourCC;
 
+    const mfxExtScreenCaptureParam* extPar = GetExtendedBuffer<mfxExtScreenCaptureParam>(MFX_EXTBUFF_SCREEN_CAPTURE_PARAM, par);
+    const mfxU16 EnableDirtyRect = extPar ? extPar->EnableDirtyRect : 0;
+
     if (par->AsyncDepth)
     {
-        out->NumFrameMin = out->NumFrameSuggested = par->AsyncDepth;
+        out->NumFrameMin = out->NumFrameSuggested = EnableDirtyRect ? (2 * par->AsyncDepth) : par->AsyncDepth;
     }
     else
     {
-        out->NumFrameMin = out->NumFrameSuggested = 1; //default value 
+        out->NumFrameMin = out->NumFrameSuggested = EnableDirtyRect ? 2 : 1; //default value
     }
 
     if (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) 
@@ -181,7 +190,7 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
     {
         mfxHandleType type = (MFX_IMPL_VIA_D3D11 == (param.Impl & 0x0F00)) ? MFX_HANDLE_D3D11_DEVICE : MFX_HANDLE_D3D9_DEVICE_MANAGER;
         mfxHDL handle = 0;
-        mfxRes = m_pmfxCore->GetHandle(m_pmfxCore->pthis, type, &handle);
+        mfxRes = m_pmfxCore->CreateAccelerationDevice(m_pmfxCore->pthis, type, &handle);
         switch (mfxRes)
         {
             case MFX_ERR_NONE:
@@ -205,6 +214,19 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     else if(MFX_ERR_NONE != mfxRes)
         return mfxRes;
+
+    mfxExtScreenCaptureParam* ExtPar = GetExtendedBuffer<mfxExtScreenCaptureParam>(MFX_EXTBUFF_SCREEN_CAPTURE_PARAM, par);
+    if(ExtPar)
+    {
+        m_CurExtPar = m_InitExtPar = *ExtPar;
+        if(m_CurExtPar.EnableDirtyRect)
+            m_bDirtyRect = true;
+        if(m_CurExtPar.DisplayIndex)
+        {
+            //display selection thrlough getDesktop.ddi is unsupported now
+            fallback = true;
+        }
+    }
 
     m_CurrentPar = m_InitPar;
     m_inited = true;
@@ -286,6 +308,19 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
         m_InitPar.mfx.FrameInfo.CropW = m_InitPar.mfx.FrameInfo.Width;
     if(!m_InitPar.mfx.FrameInfo.PicStruct)
         m_InitPar.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
+    if(m_bDirtyRect)
+    {
+        bool isSystem = false;
+        if((par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY || m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && !isSW(m_pCapturer.get()))
+        {
+            isSystem = true;
+        }
+        m_pDirtyRectAnalyzer.reset(new CpuDirtyRectFilter(m_pmfxCore, isSystem, par));
+
+        fallback = true;
+
+    }
 
     if(fallback && mfxRes >= MFX_ERR_NONE) //fallback status is more important than warning
         mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
@@ -445,6 +480,11 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
                             out.IOPattern = 0;
                         }
                     }
+                    else if( in.ExtParam[i]->BufferId == MFX_EXTBUFF_SCREEN_CAPTURE_PARAM &&
+                        in.ExtParam[i]->BufferSz == sizeof(mfxExtScreenCaptureParam))
+                    {
+                        ;//
+                    }
                     else
                     {
                         error = true; //unknown ext buffer
@@ -464,6 +504,11 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
                             out.IOPattern = 0;
                             error = true;
                         }
+                    }
+                    else if( out.ExtParam[i]->BufferId == MFX_EXTBUFF_SCREEN_CAPTURE_PARAM &&
+                        out.ExtParam[i]->BufferSz == sizeof(mfxExtScreenCaptureParam))
+                    {
+                        ;//
                     }
                     else
                     {
@@ -548,31 +593,6 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         out.mfx.FrameInfo.CropW = 0;
         error = true;
     }
-    //scaling in case of RGB32 is not supported due to the driver bug
-    //if(in.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 || in.mfx.FrameInfo.FourCC == DXGI_FORMAT_AYUV)
-    //{
-    //    mfxU16 monitorW = (mfxU16) GetSystemMetrics(SM_CXSCREEN);
-    //    mfxU16 monitorH = (mfxU16) GetSystemMetrics(SM_CYSCREEN);
-    //    mfxU16 userW = in.mfx.FrameInfo.CropX + in.mfx.FrameInfo.CropW;
-    //    mfxU16 userH = in.mfx.FrameInfo.CropY + in.mfx.FrameInfo.CropH;
-    //    userW = userW ? userW : in.mfx.FrameInfo.Width;
-    //    userH = userH ? userH : in.mfx.FrameInfo.Height;
-    //    if(monitorH && monitorW)
-    //    {
-    //        if(monitorW != userW)
-    //        {
-    //            out.mfx.FrameInfo.Width = 0;
-    //            out.mfx.FrameInfo.CropW = 0;
-    //            error = true;
-    //        }
-    //        if(monitorH != userH)
-    //        {
-    //            out.mfx.FrameInfo.Height = 0;
-    //            out.mfx.FrameInfo.CropH = 0;
-    //            error = true;
-    //        }
-    //    }
-    //}
 
     //Crops should be ignored on init
     if(in.mfx.FrameInfo.CropY)
@@ -605,7 +625,8 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         out.mfx.FrameInfo.Height = 0;
         error = true;
     }
-    if(!(in.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 || in.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 || in.mfx.FrameInfo.FourCC == DXGI_FORMAT_AYUV) )
+    if(!(in.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 || in.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 
+        || in.mfx.FrameInfo.FourCC == DXGI_FORMAT_AYUV || in.mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV_RGB4) )
     {
         out.mfx.FrameInfo.FourCC = 0;
         error = true;
@@ -621,6 +642,11 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         error = true;
     }
     if(in.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 && in.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
+    {
+        out.mfx.FrameInfo.ChromaFormat = 0;
+        error = true;
+    }
+    if(in.mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV_RGB4 && in.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
     {
         out.mfx.FrameInfo.ChromaFormat = 0;
         error = true;
@@ -656,9 +682,28 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
 
     if(onInit)
     {
+        m_DisplayIndex = 0;
+        mfxExtScreenCaptureParam* ExtPar = GetExtendedBuffer<mfxExtScreenCaptureParam>(MFX_EXTBUFF_SCREEN_CAPTURE_PARAM, &in);
+        if(ExtPar)
+        {
+            m_CurExtPar = m_InitExtPar = *ExtPar;
+            if(m_CurExtPar.EnableDirtyRect)
+            {
+                fallback = true;
+                m_bDirtyRect = true;
+            }
+            if(m_CurExtPar.DisplayIndex)
+            {
+                //display selection thrlough getDesktop.ddi is unsupported now
+                //fallback = true;
+                m_DisplayIndex = m_CurExtPar.DisplayIndex;
+            }
+        }
+
+
         m_pCapturer.reset( CreatePlatformCapturer(m_pmfxCore) );
         if(m_pCapturer.get())
-            mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in);
+            mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in, m_DisplayIndex);
         else
             mfxRes = MFX_ERR_MEMORY_ALLOC;
         if(mfxRes)
@@ -667,7 +712,7 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
             m_pCapturer.reset( CreateSWCapturer(m_pmfxCore) );
             if(!m_pCapturer.get())
                 return MFX_ERR_MEMORY_ALLOC;
-            mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in);
+            mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in, m_DisplayIndex);
         }
         MFX_CHECK_STS(mfxRes);
 
@@ -679,7 +724,7 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
             m_pCapturer.reset( CreateSWCapturer(m_pmfxCore) );
             if(!m_pCapturer.get())
                 return MFX_ERR_MEMORY_ALLOC;
-            mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in);
+            mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in, m_DisplayIndex);
             MFX_CHECK_STS(mfxRes);
 
             mfxRes = m_pCapturer.get()->CheckCapabilities(in, &out);
@@ -690,7 +735,7 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         m_pFallbackCapturer.reset( CreateSWCapturer(m_pmfxCore) );
         if(m_pFallbackCapturer.get())
         {
-            m_pFallbackCapturer.get()->CreateVideoAccelerator(in);
+            m_pFallbackCapturer.get()->CreateVideoAccelerator(in, m_DisplayIndex);
             m_pCapturer.get()->CheckCapabilities(in, &out);
         }
 #endif
@@ -744,10 +789,6 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
     if (!surface_work || !surface_out)
         return MFX_ERR_NULL_PTR;
 
-    //only external surfaces are supported for now
-    //if (!surface_work->Data.MemId)
-    //    return MFX_ERR_UNSUPPORTED;
-
     if (surface_work->Data.Locked)
         return MFX_ERR_LOCK_MEMORY;
 
@@ -778,6 +819,18 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
 
     bool rt_fallback = false;
     mfxRes = DecodeFrameSubmit(real_surface, rt_fallback, ext_surface);
+    if(m_bDirtyRect)
+    {
+        mfxExtDirtyRect* extDirtyRect = 0;
+        if(m_bDirtyRect)
+            extDirtyRect = GetExtendedBuffer<mfxExtDirtyRect>(MFX_EXTBUFF_DIRTY_RECTANGLES, surface_work);
+        if(!prevSurface)
+        {
+            prevSurface = surface_work;
+            return MFX_ERR_MORE_SURFACE;
+        }
+    }
+
     if (MFX_ERR_NONE <= mfxRes)
     {
         //surface_work->Info.CropH = m_CurrentPar.mfx.FrameInfo.Height;
@@ -796,6 +849,7 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
         surface_work->Data.DataFlag = 0;
         *surface_out = surface_work;
     }
+
     return mfxRes;
 }
 
@@ -916,7 +970,42 @@ mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfx
         MFX_CHECK_STS(mfxRes);
     }
 
-    mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->surface_out->Data);
+    if(m_bDirtyRect)
+    {
+        mfxFrameSurface1* surface_work = pAsyncParam->surface_out;
+
+        mfxExtDirtyRect* extDirtyRect = 0;
+        if(m_bDirtyRect)
+            extDirtyRect = GetExtendedBuffer<mfxExtDirtyRect>(MFX_EXTBUFF_DIRTY_RECTANGLES, surface_work);
+        if(!prevSurface)
+        {
+            prevSurface = surface_work;
+            return MFX_ERR_MORE_SURFACE;
+        }
+        else
+        {
+            if(extDirtyRect)
+            {
+                m_pDirtyRectAnalyzer.get()->RunFrameVPP(*prevSurface, *surface_work);
+
+                //Decoder-like behavior. Application must not change the previous surface.
+                mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &prevSurface->Data);
+                MFX_CHECK_STS(mfxRes);
+                prevSurface = surface_work;
+
+                /* Not a decoder-like behavior. Copy the previous surface into the internally cached surface.
+                    Application may do whatever possible with free-ed surface
+                    In case of video memory will lead to system hang  
+                */
+                //mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, prevSurface, surface_work);
+                MFX_CHECK_STS(mfxRes);
+            }
+        }
+    }
+    else
+    {
+        mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->surface_out->Data);
+    }
 
     return mfxRes;
 }
@@ -930,7 +1019,7 @@ mfxStatus MFXScreenCapture_Plugin::CheckFrameInfo(const mfxFrameInfo& info)
     if ((MFX_FOURCC_NV12 == m_CurrentPar.mfx.FrameInfo.FourCC) && (MFX_FOURCC_NV12 != info.FourCC))
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     if ( (MFX_FOURCC_RGB4 == m_CurrentPar.mfx.FrameInfo.FourCC) && 
-         !(MFX_FOURCC_RGB4 == info.FourCC || DXGI_FORMAT_AYUV == info.FourCC)
+        !(MFX_FOURCC_RGB4 == info.FourCC || DXGI_FORMAT_AYUV == info.FourCC || MFX_FOURCC_AYUV_RGB4 == info.FourCC)
        )
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     if (info.ChromaFormat < m_CurrentPar.mfx.FrameInfo.ChromaFormat)
@@ -950,8 +1039,16 @@ mfxStatus MFXScreenCapture_Plugin::GetVideoParam(mfxVideoParam *par)
     par->Protected = m_CurrentPar.Protected;
     par->mfx = m_CurrentPar.mfx;
 
-    return MFX_ERR_NONE;
+    mfxExtScreenCaptureParam* extPar = GetExtendedBuffer<mfxExtScreenCaptureParam>(MFX_EXTBUFF_SCREEN_CAPTURE_PARAM, par);
+    if(extPar)
+    {
+        extPar->DisplayIndex        = m_CurExtPar.DisplayIndex       ;
+        extPar->EnableDirtyRect     = m_CurExtPar.EnableDirtyRect    ;
+        extPar->EnableCursorCapture = m_CurExtPar.EnableCursorCapture;
+        memcpy_s(&extPar->reserved,sizeof(m_CurExtPar.reserved),&m_CurExtPar.reserved,sizeof(m_CurExtPar.reserved));
+    }
 
+    return MFX_ERR_NONE;
 }
 
 mfxFrameSurface1* MFXScreenCapture_Plugin::GetFreeInternalSurface()
@@ -1001,6 +1098,24 @@ mfxStatus MFXScreenCapture_Plugin::CheckOpaqBuffer(const mfxVideoParam& par, mfx
     else
         return MFX_ERR_NONE;
 } // mfxStatus CheckOpaqMode
+
+template<typename T>
+T* GetExtendedBuffer(const mfxU32& BufferId, const mfxVideoParam* par)
+{
+    if(!par || !BufferId)
+        return 0;
+    if(!par->NumExtParam || !par->ExtParam)
+        return 0;
+    for(mfxU32 i = 0; i < par->NumExtParam; ++i)
+    {
+        if(!par->ExtParam[i])
+            continue;
+        if(BufferId == par->ExtParam[i]->BufferId && sizeof(T) == par->ExtParam[i]->BufferSz)
+            return (T*) par->ExtParam[i];
+    }
+
+    return 0;
+}
 
 }
 

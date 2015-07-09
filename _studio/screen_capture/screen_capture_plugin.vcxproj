@@ -24,6 +24,7 @@
     <ClInclude Include="include\mfx_screen_capture_d3d11.h" />
     <ClInclude Include="include\mfx_screen_capture_d3d9.h" />
     <ClInclude Include="include\mfx_screen_capture_ddi.h" />
+    <ClInclude Include="include\mfx_screen_capture_dirty_rect.h" />
     <ClInclude Include="include\mfx_screen_capture_plugin.h" />
     <ClInclude Include="include\mfx_screen_capture_sw_d3d11.h" />
     <ClInclude Include="include\mfx_screen_capture_sw_d3d9.h" />
@@ -34,6 +35,7 @@
     <ClCompile Include="src\mfx_screen_capture_d3d11.cpp" />
     <ClCompile Include="src\mfx_screen_capture_d3d9.cpp" />
     <ClCompile Include="src\mfx_screen_capture_ddi.cpp" />
+    <ClCompile Include="src\mfx_screen_capture_dirty_rect.cpp" />
     <ClCompile Include="src\mfx_screen_capture_plugin.cpp" />
     <ClCompile Include="src\mfx_screen_capture_sw_d3d11.cpp" />
     <ClCompile Include="src\mfx_screen_capture_sw_d3d9.cpp" />
