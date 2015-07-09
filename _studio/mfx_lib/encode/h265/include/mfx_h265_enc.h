@@ -213,7 +213,9 @@ namespace H265Enc {
         Ipp16u tileRowHeightMax;
 
         Ipp8u   doDumpRecon;
+        Ipp8u   doDumpSource;
         vm_char reconDumpFileName[MFX_MAX_PATH];
+        vm_char sourceDumpFileName[MFX_MAX_PATH];
         Ipp8u   inputVideoMem;
 
         Segment *m_slices;//start/end adress

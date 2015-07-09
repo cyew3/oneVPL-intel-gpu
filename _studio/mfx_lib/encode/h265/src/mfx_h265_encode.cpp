@@ -23,6 +23,7 @@
 #include "mfx_task.h"
 #include "vm_interlocked.h"
 #include "vm_cond.h"
+#include "vm_file.h"
 
 #include "mfx_h265_encode.h"
 #include "mfx_h265_defs.h"
@@ -406,6 +407,11 @@ namespace {
         intParam.doDumpRecon = (dumpFiles.ReconFilename[0] != 0);
         if (intParam.doDumpRecon)
             Copy(intParam.reconDumpFileName, dumpFiles.ReconFilename);
+
+        intParam.doDumpSource = (dumpFiles.InputFramesFilename[0] != 0);
+        if (intParam.doDumpSource)
+            Copy(intParam.sourceDumpFileName, dumpFiles.InputFramesFilename);
+
         intParam.inputVideoMem = (mfxParam.IOPattern == VIDMEM) || (mfxParam.IOPattern == OPAQMEM && opaq.In.Type != MFX_MEMTYPE_SYSTEM_MEMORY);
 
         intParam.randomRepackThreshold = Ipp32s(optHevc.RepackProb / 100.0 * MYRAND_MAX);
@@ -1866,6 +1872,26 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *in)
         if (st != MFX_ERR_NONE)
             Throw(std::runtime_error("LockExternalFrame failed"));
         locked = true;
+    }
+
+    if (m_videoParam.doDumpSource && m_videoParam.fourcc == MFX_FOURCC_NV12) {
+        if (vm_file *f = vm_file_fopen(m_videoParam.sourceDumpFileName, (out->m_frameOrder == 0) ? VM_STRING("wb") : VM_STRING("ab"))) {
+            Ipp32s luW = m_videoParam.Width - m_videoParam.CropLeft - m_videoParam.CropRight;
+            Ipp32s luH = m_videoParam.Height - m_videoParam.CropTop - m_videoParam.CropBottom;
+            Ipp32s luPitch = in->Data.Pitch;
+            Ipp8u *luPtr = in->Data.Y + (m_videoParam.CropTop * luPitch + m_videoParam.CropLeft);
+            for (Ipp32s y = 0; y < luH; y++, luPtr += luPitch)
+                vm_file_fwrite(luPtr, 1, luW, f);
+
+            Ipp32s chW = luW;
+            Ipp32s chH = luH >> 1;
+            Ipp32s chPitch = in->Data.Pitch;
+            Ipp8u *chPtr = in->Data.UV + (m_videoParam.CropTop / 2 * chPitch + m_videoParam.CropLeft);
+            for (Ipp32s y = 0; y < chH; y++, chPtr += chPitch)
+                vm_file_fwrite(chPtr, 1, chW, f);
+
+            vm_file_fclose(f);
+        }
     }
 
     // attach original surface to frame

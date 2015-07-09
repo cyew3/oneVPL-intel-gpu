@@ -578,6 +578,7 @@ namespace {
         mfxExtHEVCParam *hevcParam = GetExtBuffer(par);
         mfxExtCodingOption *opt = GetExtBuffer(par);
         mfxExtCodingOption2 *opt2 = GetExtBuffer(par);
+        mfxExtDumpFiles *dumpFiles = GetExtBuffer(par);
 
         // check pairs (error is expected behavior)
         if (!fi.FrameRateExtN != !fi.FrameRateExtD)
@@ -993,6 +994,18 @@ namespace {
 
         if ((mfx.GopOptFlag & MFX_GOP_STRICT) && opt2 && opt2->AdaptiveI)
             wrnIncompatible = !CheckEq(opt2->AdaptiveI, OFF);
+
+        if (dumpFiles) {
+            size_t MAXLEN = sizeof(dumpFiles->ReconFilename) / sizeof(dumpFiles->ReconFilename[0]);
+            vm_char *pzero = std::find(dumpFiles->ReconFilename, dumpFiles->ReconFilename + MAXLEN, 0);
+            if (pzero == dumpFiles->ReconFilename + MAXLEN)
+                dumpFiles->ReconFilename[0] = 0, wrnIncompatible = true; // too long name
+
+            MAXLEN = sizeof(dumpFiles->InputFramesFilename) / sizeof(dumpFiles->InputFramesFilename[0]);
+            pzero = std::find(dumpFiles->InputFramesFilename, dumpFiles->InputFramesFilename + MAXLEN, 0);
+            if (pzero == dumpFiles->InputFramesFilename + MAXLEN)
+                dumpFiles->InputFramesFilename[0] = 0, wrnIncompatible = true; // too long name
+        }
 
         if      (errInvalidParam) return MFX_ERR_INVALID_VIDEO_PARAM;
         else if (errUnsupported)  return MFX_ERR_UNSUPPORTED;

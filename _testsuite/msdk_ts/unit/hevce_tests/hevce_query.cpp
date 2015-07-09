@@ -957,24 +957,36 @@ TEST_F(QueryTest, Mode2_Single) {
     memcpy(name4 + vm_string_strlen(pattern) + 1, pattern, sizeof(pattern));
 
     memcpy(input.extDumpFiles.ReconFilename, name1, sizeof(name1));
+    memcpy(input.extDumpFiles.InputFramesFilename, name1, sizeof(name1));
     EXPECT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
     EXPECT_EQ(0, memcmp(input.extDumpFiles.ReconFilename, name1, sizeof(name1)));
     EXPECT_EQ(0, memcmp(output.extDumpFiles.ReconFilename, name1, sizeof(name1)));
+    EXPECT_EQ(0, memcmp(input.extDumpFiles.InputFramesFilename, name1, sizeof(name1)));
+    EXPECT_EQ(0, memcmp(output.extDumpFiles.InputFramesFilename, name1, sizeof(name1)));
 
     memcpy(input.extDumpFiles.ReconFilename, name2, sizeof(name2));
+    memcpy(input.extDumpFiles.InputFramesFilename, name2, sizeof(name2));
     EXPECT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
     EXPECT_EQ(0, memcmp(input.extDumpFiles.ReconFilename, name2, sizeof(name2)));
     EXPECT_EQ(0, memcmp(output.extDumpFiles.ReconFilename, name2, sizeof(name2)));
+    EXPECT_EQ(0, memcmp(input.extDumpFiles.InputFramesFilename, name2, sizeof(name2)));
+    EXPECT_EQ(0, memcmp(output.extDumpFiles.InputFramesFilename, name2, sizeof(name2)));
 
     memcpy(input.extDumpFiles.ReconFilename, name3, sizeof(name3));
-    EXPECT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+    memcpy(input.extDumpFiles.InputFramesFilename, name3, sizeof(name3));
+    EXPECT_EQ(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
     EXPECT_EQ(0, memcmp(input.extDumpFiles.ReconFilename, name3, sizeof(name3)));
-    EXPECT_EQ(0, memcmp(output.extDumpFiles.ReconFilename, name3, sizeof(name3) - sizeof(vm_char))); // last char should be ignored
+    EXPECT_EQ(0, output.extDumpFiles.ReconFilename[0]); // output name should be trunkated to null-string
+    EXPECT_EQ(0, memcmp(input.extDumpFiles.InputFramesFilename, name3, sizeof(name3)));
+    EXPECT_EQ(0, output.extDumpFiles.InputFramesFilename[0]); // output name should be trunkated to null-string
 
     memcpy(input.extDumpFiles.ReconFilename, name4, sizeof(name4));
+    memcpy(input.extDumpFiles.InputFramesFilename, name4, sizeof(name4));
     EXPECT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
     EXPECT_EQ(0, memcmp(input.extDumpFiles.ReconFilename, name4, sizeof(name4)));
     EXPECT_EQ(0, memcmp(output.extDumpFiles.ReconFilename, pattern, sizeof(pattern)));
+    EXPECT_EQ(0, memcmp(input.extDumpFiles.InputFramesFilename, name4, sizeof(name4)));
+    EXPECT_EQ(0, memcmp(output.extDumpFiles.InputFramesFilename, pattern, sizeof(pattern)));
 }
 
 TEST_F(QueryTest, Conflicts_framerate_too_high) {
