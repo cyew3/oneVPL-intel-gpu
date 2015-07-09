@@ -65,7 +65,6 @@ namespace H265Enc {
         void DetermineQpMap_PFrame(Frame* in, Frame* past);
 
         Frame* m_cmplxPrevFrame;
-        std::vector<Ipp8u> m_workBuf;
         std::vector<StatItem> m_slideWindowStat; // store metrics for SceneCut
         std::vector<Ipp32s> m_slideWindowPaq; // special win for Paq/Calq simplification. window size = 2*M+1, M = GopRefDist (numB + 1)
         std::vector<Ipp32s> m_slideWindowComplexity; // special win for Paq/Calq simplification. window size = 2*M+1, M = GopRefDist (numB + 1)

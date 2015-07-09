@@ -1153,7 +1153,7 @@ PixType NearestPixBlk(PixType* in, Ipp32s pitch, Ipp32s posx, Ipp32s posy, Ipp32
 
 
 template <class PixType>
-Ipp64s Scale(FrameData* in, FrameData* out, Ipp32s planeIdx, Ipp8u* workBuf)
+Ipp64s Scale(FrameData* in, FrameData* out, Ipp32s planeIdx)
 {
     const PixType *pixIn = (const PixType *)in->y;
     PixType *pixOut = (PixType *)out->y;
@@ -1173,39 +1173,6 @@ Ipp64s Scale(FrameData* in, FrameData* out, Ipp32s planeIdx, Ipp8u* workBuf)
             pixOut[ y*pitchOut + x] = NearestPixBlk( pixIn, pitchIn, x, y, step);
         }
     }
-
-    ///* tune part */
-    //IppiSize  srcSize = {widthOrig,  heightOrig};
-    //IppiSize  dstSize = {widthOut, heightOut};
-    //mfxF64    xFactor = 0.0, yFactor = 0.0;
-    //mfxF64    xShift = 0.0, yShift = 0.0;
-    //IppiRect  srcRect, dstRect;
-
-    //mfxI32 interpolation;
-    //xFactor = (mfxF64)widthOut  / (mfxF64)widthOrig;
-    //yFactor = (mfxF64)heightOut / (mfxF64)heightOrig;
-
-    //interpolation = IPPI_INTER_NN;
-
-    //srcRect.x = 0;
-    //srcRect.y = 0;
-    //srcRect.height = srcSize.height;
-    //srcRect.width  = srcSize.width;
-
-    //dstRect.x = 0;
-    //dstRect.y = 0;
-    //dstRect.height = dstSize.height;
-    //dstRect.width  = dstSize.width;
-
-    //xShift = 0.0, yShift = 0.0;
-
-    //if (sizeof(PixType) == 1) {
-    //    ippiResizeSqrPixel_8u_C1R((const Ipp8u*)pixIn, srcSize, pitchIn, srcRect, (Ipp8u*)pixOut, pitchOut, dstRect,
-    //        xFactor, yFactor, xShift, yShift, interpolation, &workBuf[0]);
-    //} else {
-    //    ippiResizeSqrPixel_16u_C1R((const Ipp16u*)pixIn, srcSize, pitchIn, srcRect, (Ipp16u*)pixOut, pitchOut, dstRect,
-    //        xFactor, yFactor, xShift, yShift, interpolation, &workBuf[0]);
-    //}
 
     return 0;
 }
@@ -1242,19 +1209,21 @@ Ipp64s CalcPixDiff(Frame *prev, Frame *curr, Ipp32s planeIdx)
 template <class PixType>
 void BuildHistLuma(const PixType *pix, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s bitDepth, Ipp64s *hist)
 {
+    const Ipp32s binMask = (1 << bitDepth) - 1;
     memset(hist, 0, (1 << bitDepth) * sizeof(hist[0]));
     for (Ipp32s y = 0; y < height; y++, pix += pitch)
         for (Ipp32s x = 0; x < width; x++)
-            hist[pix[x]]++;
+            hist[pix[x] & binMask]++;
 }
 
 template <class PixType>
 void BuildHistChroma(const PixType *pix, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s bitDepth, Ipp64s *hist)
 {
+    const Ipp32s binMask = (1 << bitDepth) - 1;
     memset(hist, 0, (1 << bitDepth) * sizeof(hist[0]));
     for (Ipp32s y = 0; y < height; y++, pix += pitch)
         for (Ipp32s x = 0; x < width * 2; x += 2)
-            hist[pix[x]]++;
+            hist[pix[x] & binMask]++;
 }
 
 template <class PixType, class Frame>
@@ -2568,10 +2537,6 @@ Lookahead::Lookahead(H265Encoder & enc)
         IppiRect  dstRect = {0, 0, m_videoParam.Width >> scaleFactor, m_videoParam.Height >> scaleFactor};
         dstRect.height = ((dstRect.height + (SIZE_BLK_LA-1))  >> 3) << 3;
         dstRect.width = ((dstRect.width + (SIZE_BLK_LA-1))  >> 3) << 3;
-
-        //Ipp32s bufSize;
-        //ippiResizeGetBufSize( srcRect, dstRect, 1, IPPI_INTER_NN, &bufSize);
-        //m_workBuf.resize(bufSize);
     }
 
     // in case of graph threading we use hub approach
@@ -2590,7 +2555,6 @@ Lookahead::Lookahead(H265Encoder & enc)
 
 Lookahead::~Lookahead()
 {
-    m_workBuf.resize(0);
     m_slideWindowStat.resize(0);
     m_slideWindowPaq.resize(0);
     m_cmplxPrevFrame = NULL;
@@ -2860,9 +2824,9 @@ mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u 
 
             if (in && (m_videoParam.LowresFactor || m_videoParam.SceneCut)) {
                 if (in->m_bitDepthLuma == 8)
-                    Scale<Ipp8u>(in->m_origin, in->m_lowres, 0, &m_workBuf[0]);
+                    Scale<Ipp8u>(in->m_origin, in->m_lowres, 0);
                 else
-                    Scale<Ipp16u>(in->m_origin, in->m_lowres, 0, &m_workBuf[0]);
+                    Scale<Ipp16u>(in->m_origin, in->m_lowres, 0);
 
                 if (m_videoParam.DeltaQpMode > 0 || m_videoParam.AnalyzeCmplx) {
                     FrameData* frame = in->m_lowres;
