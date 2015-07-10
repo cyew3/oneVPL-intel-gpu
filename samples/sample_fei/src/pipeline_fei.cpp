@@ -1353,11 +1353,12 @@ mfxStatus CEncodingPipeline::Run()
     feiEncMBCode[0].MB = NULL;
     feiEncMBCode[1].MB = NULL;
 
-    numExtInParams = 0;
-    numExtOutParams = 0;
+    numExtInParams   = 0;
+    numExtOutParams  = 0;
+    //numExtOutParamsI = 0;
 
     numExtOutParamsPreEnc = 0;
-    numExtInParamsPreEnc = 0;
+    numExtInParamsPreEnc  = 0;
 
     /* if TFF or BFF*/
     if ( (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
@@ -1374,8 +1375,8 @@ mfxStatus CEncodingPipeline::Run()
         inputTasks.clear();  //for reordering
 
         //setup control structures
-        bool disableMVoutput = m_encpakParams.mvoutFile == NULL && !m_encpakParams.bENCPAK;
-        bool disableMBoutput = (m_encpakParams.mbstatoutFile == NULL) || m_encpakParams.bENCPAK; //couple with ENC+PAK
+        bool disableMVoutput = m_encpakParams.mvoutFile == NULL && !(m_encpakParams.bENCPAK || m_encpakParams.bENCoPAKo);
+        bool disableMBoutput = (m_encpakParams.mbstatoutFile == NULL) || m_encpakParams.bENCPAK || m_encpakParams.bENCoPAKo; //couple with ENC+PAK
         bool enableMVpredictor = m_encpakParams.mvinFile != NULL;
         bool enableMBQP = m_encpakParams.mbQpFile != NULL;
 
@@ -1445,10 +1446,11 @@ mfxStatus CEncodingPipeline::Run()
                 mvs[fieldId].Header.BufferSz = sizeof (mfxExtFeiPreEncMV);
                 mvs[fieldId].NumMBAlloc = numMB;
                 mvs[fieldId].MB = new mfxExtFeiPreEncMV::mfxMB [numMB];
+                memset(mvs[fieldId].MB, 0, sizeof(mvs[fieldId].MB[0])*mvs[fieldId].NumMBAlloc);
                 //outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mvs;
 
                 if (m_encpakParams.mvoutFile != NULL &&
-                        !m_encpakParams.bENCPAK) {
+                        !(m_encpakParams.bENCPAK || m_encpakParams.bENCoPAKo)) {
                     printf("Using MV output file: %s\n", m_encpakParams.mvoutFile);
                     MSDK_FOPEN(mvout,m_encpakParams.mvoutFile, MSDK_CHAR("wb"));
                     if (mvout == NULL) {
@@ -1638,51 +1640,51 @@ mfxStatus CEncodingPipeline::Run()
             //Open output files if any
             //distortion buffer have to be always provided - current limitation
             if(MBStatOut){
-            feiEncMbStat[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
-            feiEncMbStat[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
-            feiEncMbStat[fieldId].NumMBAlloc = numMB;
-            feiEncMbStat[fieldId].MB = new mfxExtFeiEncMBStat::mfxMB [numMB];
-            //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMbStat;
-                printf("Use MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
-                MSDK_FOPEN(mbstatout,m_encpakParams.mbstatoutFile, MSDK_CHAR("wb"));
-                if ( mbstatout == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbstatoutFile);
-                    exit(-1);
-                }
+                feiEncMbStat[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
+                feiEncMbStat[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
+                feiEncMbStat[fieldId].NumMBAlloc = numMB;
+                feiEncMbStat[fieldId].MB = new mfxExtFeiEncMBStat::mfxMB [numMB];
+                //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMbStat;
+                    printf("Use MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
+                    MSDK_FOPEN(mbstatout,m_encpakParams.mbstatoutFile, MSDK_CHAR("wb"));
+                    if ( mbstatout == NULL) {
+                        fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbstatoutFile);
+                        exit(-1);
+                    }
             }
             //distortion buffer have to be always provided - current limitation
             if(MVOut){
-            feiEncMV[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
-            feiEncMV[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMV);
-            feiEncMV[fieldId].NumMBAlloc = numMB;
-            feiEncMV[fieldId].MB = new mfxExtFeiEncMV::mfxMB [numMB];
-            //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMV;
-                printf("Use MV output file: %s\n", m_encpakParams.mvoutFile);
-                if (m_encpakParams.bOnlyPAK)
-                    MSDK_FOPEN(mvENCPAKout,m_encpakParams.mvoutFile, MSDK_CHAR("rb"));
-                else /*for all other cases need to wtite into this file*/
-                    MSDK_FOPEN(mvENCPAKout,m_encpakParams.mvoutFile, MSDK_CHAR("wb"));
-                if ( mvENCPAKout == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvoutFile);
-                    exit(-1);
-                }
+                feiEncMV[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
+                feiEncMV[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMV);
+                feiEncMV[fieldId].NumMBAlloc = numMB;
+                feiEncMV[fieldId].MB = new mfxExtFeiEncMV::mfxMB [numMB];
+                //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMV;
+                    printf("Use MV output file: %s\n", m_encpakParams.mvoutFile);
+                    if (m_encpakParams.bOnlyPAK)
+                        MSDK_FOPEN(mvENCPAKout,m_encpakParams.mvoutFile, MSDK_CHAR("rb"));
+                    else /*for all other cases need to wtite into this file*/
+                        MSDK_FOPEN(mvENCPAKout,m_encpakParams.mvoutFile, MSDK_CHAR("wb"));
+                    if ( mvENCPAKout == NULL) {
+                        fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvoutFile);
+                        exit(-1);
+                    }
             }
             //distortion buffer have to be always provided - current limitation
             if(MBCodeOut){
-            feiEncMBCode[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PAK_CTRL;
-            feiEncMBCode[fieldId].Header.BufferSz = sizeof(mfxExtFeiPakMBCtrl);
-            feiEncMBCode[fieldId].NumMBAlloc = numMB;
-            feiEncMBCode[fieldId].MB = new mfxFeiPakMBCtrl [numMB];
-            //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMBCode;
-                printf("Use MB code output file: %s\n", m_encpakParams.mbcodeoutFile);
-                if (m_encpakParams.bOnlyPAK)
-                    MSDK_FOPEN(mbcodeout,m_encpakParams.mbcodeoutFile, MSDK_CHAR("rb"));
-                else
-                    MSDK_FOPEN(mbcodeout,m_encpakParams.mbcodeoutFile, MSDK_CHAR("wb"));
-                if ( mbcodeout == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbcodeoutFile);
-                    exit(-1);
-                }
+                feiEncMBCode[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PAK_CTRL;
+                feiEncMBCode[fieldId].Header.BufferSz = sizeof(mfxExtFeiPakMBCtrl);
+                feiEncMBCode[fieldId].NumMBAlloc = numMB;
+                feiEncMBCode[fieldId].MB = new mfxFeiPakMBCtrl [numMB];
+                //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMBCode;
+                    printf("Use MB code output file: %s\n", m_encpakParams.mbcodeoutFile);
+                    if (m_encpakParams.bOnlyPAK)
+                        MSDK_FOPEN(mbcodeout,m_encpakParams.mbcodeoutFile, MSDK_CHAR("rb"));
+                    else
+                        MSDK_FOPEN(mbcodeout,m_encpakParams.mbcodeoutFile, MSDK_CHAR("wb"));
+                    if ( mbcodeout == NULL) {
+                        fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbcodeoutFile);
+                        exit(-1);
+                    }
             } // if(MBCodeOut){
         } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
 
@@ -1699,12 +1701,16 @@ mfxStatus CEncodingPipeline::Run()
         feiCtrl.NumExtParam = numExtInParams;
         feiCtrl.ExtParam = &inBufs[0];
 
-        if(MBStatOut)
-            outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMbStat;
+        if(MBStatOut){
+            outBufs[numExtOutParams++]   = (mfxExtBuffer*) &feiEncMbStat;
+            //outBufsI[numExtOutParamsI++] = (mfxExtBuffer*) &feiEncMbStat;
+        }
         if(MVOut)
             outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMV;
-        if(MBCodeOut)
-            outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMBCode;
+        if(MBCodeOut)//{
+            outBufs[numExtOutParams++]   = (mfxExtBuffer*) &feiEncMBCode;
+            //outBufsI[numExtOutParamsI++] = (mfxExtBuffer*) &feiEncMBCode;
+        //}
     } // if (m_encpakParams.bENCPAK) {
 
     // Since in sample we support just 2 views
@@ -1833,7 +1839,7 @@ mfxStatus CEncodingPipeline::Run()
         }
 
         if (m_encpakParams.bPREENC) {
-            pSurf->Data.Locked = 1;
+            pSurf->Data.Locked++;
             eTask->in.InSurface = pSurf;
 
             inputTasks.push_back(eTask); //inputTasks in display order
@@ -1891,8 +1897,8 @@ mfxStatus CEncodingPipeline::Run()
             }
 
             eTask->encoded = 1;
-            if ( (mfxU32)(this->m_refDist * 2) == inputTasks.size()) {
-                inputTasks.front()->in.InSurface->Data.Locked = 0;
+            if ( (mfxU32)(this->m_refDist * ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC)? 4 : 2)) == inputTasks.size()) {
+                inputTasks.front()->in.InSurface->Data.Locked--;
                 delete inputTasks.front();
                 //remove prevTask
                 inputTasks.pop_front();
@@ -1911,7 +1917,7 @@ mfxStatus CEncodingPipeline::Run()
                 //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             }
 
-            if(m_encpakParams.bENCPAK) {
+            if(m_encpakParams.bENCPAK || m_encpakParams.bENCoPAKo) {
                 ctr->FrameType = eTask->frameType;
                 //m_pEncSurfaces[nEncSurfIdx].Data.FrameOrder = eTask->frameDisplayOrder;
                 eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
@@ -2046,7 +2052,7 @@ mfxStatus CEncodingPipeline::Run()
             }
 
             eTask->encoded = 1;
-            if ( (mfxU32)(this->m_refDist * 2) == inputTasks.size()) {
+            if ( (mfxU32)(this->m_refDist * (m_encpakParams.bPREENC? 4: 2)) == inputTasks.size()) {
                 inputTasks.front()->in.InSurface->Data.Locked--;
                 if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
                 {

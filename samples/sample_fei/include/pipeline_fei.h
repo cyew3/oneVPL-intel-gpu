@@ -298,9 +298,10 @@ protected:
     mfxExtFeiPakMBCtrl feiEncMBCode[2];
 
     mfxU16 numExtInParams;
-    mfxU16 numExtOutParams;
+    mfxU16 numExtOutParams;//, numExtOutParamsI;
     mfxExtBuffer * inBufs[4 + 3]; // 4 general + 3 for SPS, PPS and Slice header
     mfxExtBuffer * outBufs[4 + 3];
+    //mfxExtBuffer * outBufsI[4 + 3];
 
     mfxU16 numExtOutParamsPreEnc;
     mfxU16 numExtInParamsPreEnc;
