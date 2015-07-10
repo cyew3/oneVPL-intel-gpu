@@ -706,3 +706,8 @@ STRUCT(mfxExtVPPFieldProcessing,
     FIELD_T(mfxU16      , InField)
     FIELD_T(mfxU16      , OutField)
 )
+
+STRUCT(mfxExtVPPRotation,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16      , Angle)
+)

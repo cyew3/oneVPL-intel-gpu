@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -275,6 +275,7 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_res_change.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_rotate.cpp" />
     <ClCompile Include="src\gmock\test_suites\plugin_load_unload.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8d_init.cpp" />
