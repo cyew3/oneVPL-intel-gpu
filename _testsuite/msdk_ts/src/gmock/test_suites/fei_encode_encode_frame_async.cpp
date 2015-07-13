@@ -154,7 +154,21 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*28*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL,
             {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.PerMBInput, 1}},
     {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, IN_FRM_CTRL,
-            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MBSizeCtrl, 1}}
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.MBSizeCtrl, 1}},
+    {/*30*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, IN_FRM_CTRL,
+           {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SearchWindow, 1},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RefHeight, 32},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RefWidth, 32},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 10},
+            {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SearchPath, 10}},
+    },
+    {/*31*/ MFX_ERR_NONE, IN_FRM_CTRL,
+              {{EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SearchWindow, 1},
+               {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RefHeight, 0},
+               {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.RefWidth, 0},
+               {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.LenSP, 0},
+               {EXT_FRM_CTRL, &tsStruct::mfxExtFeiEncFrameCtrl.SearchPath, 0}},
+    }
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -216,7 +230,7 @@ int TestSuite::RunTest(unsigned int id)
         in_efc.MBSizeCtrl = 0;
         in_efc.RefHeight = 40;
         in_efc.RefWidth = 48;
-        in_efc.SearchWindow = 1;
+        in_efc.SearchWindow = 0;
 
         SETPARS(&in_efc, EXT_FRM_CTRL);
         in_buffs.push_back((mfxExtBuffer*)&in_efc);
@@ -317,8 +331,21 @@ int TestSuite::RunTest(unsigned int id)
         m_bitstream.NumExtParam = (mfxU16)out_buffs.size();
     }
 
-    EncodeFrames(n, true);
-    //g_tsStatus.check();
+    g_tsStatus.expect(tc.sts);
+    mfxStatus st;
+    if (tc.sts == MFX_ERR_NONE) {
+        EncodeFrames(n, true);
+    } else {
+        m_pSurf = GetSurface();
+        st = EncodeFrameAsync(m_session, m_pCtrl, m_pSurf, m_pBitstream, m_pSyncPoint);
+        while (st == MFX_ERR_MORE_DATA)
+        {
+            m_pSurf = GetSurface();
+            st = EncodeFrameAsync(m_session, m_pCtrl, m_pSurf, m_pBitstream, m_pSyncPoint);
+        }
+    }
+
+    g_tsStatus.expect(MFX_ERR_NONE);
 
     if (tc.mode & OUT_MV)
     {
