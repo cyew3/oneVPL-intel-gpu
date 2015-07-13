@@ -11,9 +11,11 @@ include_directories (
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/gtest/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/yaml-cpp/include
 # ${CMAKE_HOME_DIRECTORY}/include #included by CMake
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/gmock
-   ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/gmock
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_testsuite/mfx_serializer/include
 )
 
 list(APPEND sources
@@ -53,6 +55,7 @@ foreach( variant sw x11 drm )
       ippi_l ippdc_l ipps_l ippcore_l
       sample_common_${variant}
       pthread
+      mfx_serializer
     )
     list( APPEND LIBS_SUFFIX gmock )
 
