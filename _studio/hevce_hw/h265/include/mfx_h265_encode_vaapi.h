@@ -35,8 +35,6 @@ do {                                               \
     }                                              \
 } while (0)
 
-#define VAConfigAttribInputTiling  -1  // Inform the app what kind of tiling format supported by driver
-
 namespace MfxHwH265Encode
 {
 
@@ -72,10 +70,9 @@ mfxStatus SetFrameRate(
         VASurfaceID surface;
         mfxU32 number;
         mfxU32 idxBs;
-        mfxU32 size;
     } ExtVASurface;
 
-    class VAAPIEncoder : public DriverEncoder
+    class VAAPIEncoder : public DriverEncoder, DDIHeaderPacker
     {
     public:
         VAAPIEncoder();
@@ -98,7 +95,6 @@ mfxStatus SetFrameRate(
         mfxStatus Reset(
             MfxVideoParam const & par);
 
-        // empty  for Lin
         virtual
         mfxStatus Register(
             mfxMemId memId,
@@ -115,7 +111,6 @@ mfxStatus SetFrameRate(
             Task            const & task,
             mfxHDL          surface);
 
-        // recomendation from HW
         virtual
         mfxStatus QueryCompBufferInfo(
             D3DDDIFORMAT type,
@@ -138,8 +133,8 @@ mfxStatus SetFrameRate(
             bool        isTemporal);
 
     protected:
-        VAAPIEncoder(const VAAPIEncoder&); // no implementation
-        VAAPIEncoder& operator=(const VAAPIEncoder&); // no implementation
+        VAAPIEncoder(const VAAPIEncoder&);
+        VAAPIEncoder& operator=(const VAAPIEncoder&);
 
         void FillSps(MfxVideoParam const & par, VAEncSequenceParameterBufferHEVC & sps);
 
@@ -150,7 +145,6 @@ mfxStatus SetFrameRate(
         VAContextID  m_vaContextEncode;
         VAConfigID   m_vaConfig;
 
-        // encode params (extended structures)
         VAEncSequenceParameterBufferHEVC m_sps;
         VAEncPictureParameterBufferHEVC  m_pps;
         std::vector<VAEncSliceParameterBufferHEVC> m_slice;
@@ -158,18 +152,17 @@ mfxStatus SetFrameRate(
         // encode buffer to send vaRender()
         VABufferID m_spsBufferId;
         VABufferID m_hrdBufferId;
-        VABufferID m_rateParamBufferId; // VAEncMiscParameterRateControl
-        VABufferID m_frameRateId; // VAEncMiscParameterFrameRate
-        VABufferID m_maxFrameSizeId; // VAEncMiscParameterFrameRate
+        VABufferID m_rateParamBufferId;
+        VABufferID m_frameRateId;
         VABufferID m_ppsBufferId;
-        VABufferID m_mbqpBufferId;
-        VABufferID m_mbNoSkipBufferId;
         std::vector<VABufferID> m_sliceBufferId;
 
         VABufferID m_packedAudHeaderBufferId;
         VABufferID m_packedAudBufferId;
         VABufferID m_packedSpsHeaderBufferId;
         VABufferID m_packedSpsBufferId;
+        VABufferID m_packedVpsHeaderBufferId;
+        VABufferID m_packedVpsBufferId;
         VABufferID m_packedPpsHeaderBufferId;
         VABufferID m_packedPpsBufferId;
         VABufferID m_packedSeiHeaderBufferId;
@@ -185,8 +178,6 @@ mfxStatus SetFrameRate(
 
         mfxU32 m_width;
         mfxU32 m_height;
-        mfxU32 m_userMaxFrameSize;
-        mfxU32 m_mbbrc;
         ENCODE_CAPS m_caps;
 
         static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 26 + 5;
