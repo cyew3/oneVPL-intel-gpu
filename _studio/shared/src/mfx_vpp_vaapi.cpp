@@ -505,13 +505,25 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                 }
             } //  if ((pParams->bFMDEnable == true) && (pParams->refCount > 1)) /* For 30i->60p mode only*/
 
+
+            /* 30i->30p TFF case */
+            if ( (pParams->bFMDEnable == false) && /* For 30i->30p only, but not for 30i->60p! */
+                 (pParams->refCount > 1) && /* ADI with references and ... */
+                 (pRefSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF)) /* for TFF*/
+            {
+                /* AL: Looks like this is the drivers's bug
+                 * Else I don't know how to explain what is the best quality for TFF with _BOTTOM_ flag
+                 */
+                deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
+            }
+
             /* 30i->30p BFF case */
             if ( (pParams->bFMDEnable == false) && /* For 30i->30p only, but not for 30i->60p! */
                  (pParams->refCount > 1) && /* ADI with references and ... */
                  (pRefSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)) /* for BFF*/
             {
                 /*flag VA_DEINTERLACING_BOTTOM_FIELD_FIRST is unofficial recommendation from VPG*/
-                deint.flags = VA_DEINTERLACING_BOTTOM_FIELD | VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
+                deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
             }
 
             vaSts = vaCreateBuffer(m_vaDisplay,
@@ -717,8 +729,15 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             /*in pRefSurfaces
              * first is backward references
              * then current src surface
-             * and only after this is forward references then */
-            pRefSurf_1 = &(pParams->pRefSurfaces[0]);
+             * and only after this is forward references
+             * */
+            /*+WA: 30i->30p and 30i->60p should have different references
+             * This is at least incorrect behavior, honestly bug.
+             * Issue should be investigated!!! */
+            if (pParams->bFMDEnable)
+                pRefSurf_1 = &(pParams->pRefSurfaces[0]);
+            else
+                pRefSurf_1 = &(pParams->pRefSurfaces[1]);
             VASurfaceID* ref_srf = (VASurfaceID*) (pRefSurf_1->hdl.first);
             m_pipelineParam[refIdx].backward_references = ref_srf;
         }
@@ -763,7 +782,13 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         } /*if (0 != pParams->bFRCEnable)*/
 
         mfxDrvSurface* pSrcInputSurf;
-        pSrcInputSurf = &pRefSurf[pParams->bkwdRefCount];
+        /*+WA: 30i->30p and 30i->60p should have different references
+         * This is at least incorrect behavior, honestly bug.
+         * Issue should be investigated!!! */
+        if (pParams->bFMDEnable)
+            pSrcInputSurf = &pRefSurf[pParams->bkwdRefCount];
+        else
+            pSrcInputSurf = &pRefSurf[0];
         VASurfaceID* srf = (VASurfaceID*)(pSrcInputSurf->hdl.first);
         m_pipelineParam[refIdx].surface = *srf;
 
