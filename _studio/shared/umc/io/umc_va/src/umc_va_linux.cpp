@@ -293,26 +293,22 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     LinuxVideoAcceleratorParams* pParams = DynamicCast<LinuxVideoAcceleratorParams>(pInfo);
     Ipp32s width = 0, height = 0;
 
-    m_allocator = pParams->m_allocator;
-
-    if (!m_allocator)
-        return UMC_ERR_NULL_PTR;
-
     // checking errors in input parameters
     if ((UMC_OK == umcRes) && (NULL == pParams))
-        umcRes = UMC_ERR_NULL_PTR;
-    if ((UMC_OK == umcRes) && (NULL == pParams->m_pVideoStreamInfo))
-        umcRes = UMC_ERR_INVALID_PARAMS;
-    if ((UMC_OK == umcRes) && (NULL == pParams->m_Display))
-        umcRes = UMC_ERR_INVALID_PARAMS;
-    if ((UMC_OK == umcRes) && (NULL == pParams->m_pConfigId))
-        umcRes = UMC_ERR_INVALID_PARAMS;
-    if ((UMC_OK == umcRes) && (NULL == pParams->m_pContext))
-        umcRes = UMC_ERR_INVALID_PARAMS;
-    if ((UMC_OK == umcRes) && (NULL == pParams->m_pKeepVAState))
-        umcRes = UMC_ERR_INVALID_PARAMS;
-    if ((UMC_OK == umcRes) && (pParams->m_iNumberSurfaces < 0))
-        umcRes = UMC_ERR_INVALID_PARAMS;
+        return UMC_ERR_NULL_PTR;
+
+    m_allocator = pParams->m_allocator;
+
+    if ((NULL == m_allocator) ||
+        (NULL == pParams->m_pVideoStreamInfo) ||
+        (NULL == pParams->m_Display) ||
+        (NULL == pParams->m_pConfigId) ||
+        (NULL == pParams->m_pContext) ||
+        (NULL == pParams->m_pKeepVAState) ||
+        (pParams->m_iNumberSurfaces < 0))
+    {
+        return UMC_ERR_INVALID_PARAMS;
+    }
     if (UMC_OK == umcRes)
     {
         vm_mutex_set_invalid(&m_SyncMutex);
@@ -487,7 +483,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 
         if (UMC_OK == umcRes)
         {
-            if (-1 != *pParams->m_pConfigId)
+            if (-1 != (int)*pParams->m_pConfigId)
                 m_config_id = *pParams->m_pConfigId;
             else
             {
@@ -503,7 +499,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     // creating context
     if (UMC_OK == umcRes)
     {
-        if (*pParams->m_pContext != -1 && *pParams->m_pConfigId != -1)
+        if ((int)*pParams->m_pContext != -1 && (int)*pParams->m_pConfigId != -1)
             m_context = *pParams->m_pContext;
         else
         {
