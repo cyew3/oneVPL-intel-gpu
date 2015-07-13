@@ -137,7 +137,8 @@ enum {
     MFX_CHROMAFORMAT_YUV400     = MFX_CHROMAFORMAT_MONOCHROME,
     MFX_CHROMAFORMAT_YUV411     = 4,
     MFX_CHROMAFORMAT_YUV422H    = MFX_CHROMAFORMAT_YUV422,
-    MFX_CHROMAFORMAT_YUV422V    = 5
+    MFX_CHROMAFORMAT_YUV422V    = 5,
+    MFX_CHROMAFORMAT_RESERVED1  = 6
 };
 
 enum {
@@ -282,7 +283,9 @@ typedef struct {
             mfxU16  Rotation;
             mfxU16  JPEGColorFormat;
             mfxU16  InterleavedDec;
-            mfxU16  reserved3[9];
+            mfxU8   SamplingFactorH[4];
+            mfxU8   SamplingFactorV[4];
+            mfxU16  reserved3[5];
         };
         struct {   /* JPEG Encoding Options */
             mfxU16  Interleaved;
