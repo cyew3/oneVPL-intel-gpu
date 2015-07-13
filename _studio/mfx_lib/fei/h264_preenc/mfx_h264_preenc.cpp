@@ -270,6 +270,8 @@ mfxStatus VideoENC_PREENC::Query(DdiTask& task)
             return Error(sts);
     }
 
+    m_core->DecreaseReference(&task.m_yuv->Data);
+
     UMC::AutomaticUMCMutex guard(m_listMutex);
     //move that task to free tasks from m_incoming
     //m_incoming
