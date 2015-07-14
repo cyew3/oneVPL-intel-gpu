@@ -2190,6 +2190,11 @@ mfxStatus CEncodingPipeline::Run()
                 } else {
                     // get next surface and new task for 2nd bitstream in ViewOutput mode
                     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_BITSTREAM);
+                    if (pCurrentTask->EncSyncP)
+                    {
+                        sts = m_mfxSession.SyncOperation(pCurrentTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                        MSDK_BREAK_ON_ERROR(sts);
+                    }
                     break;
                 }
             }
@@ -2452,6 +2457,11 @@ mfxStatus CEncodingPipeline::Run()
                         } else {
                             // get new task for 2nd bitstream in ViewOutput mode
                             MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_BITSTREAM);
+                            if (pCurrentTask->EncSyncP)
+                            {
+                                sts = m_mfxSession.SyncOperation(pCurrentTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                                MSDK_BREAK_ON_ERROR(sts);
+                            }
                             break;
                         }
                     }
@@ -2673,6 +2683,11 @@ mfxStatus CEncodingPipeline::Run()
                 } else {
                     // get new task for 2nd bitstream in ViewOutput mode
                     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_BITSTREAM);
+                    if (pCurrentTask->EncSyncP)
+                    {
+                        sts = m_mfxSession.SyncOperation(pCurrentTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                        MSDK_BREAK_ON_ERROR(sts);
+                    }
                     break;
                 }
             }
