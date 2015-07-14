@@ -245,7 +245,10 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool query)
     if (par.mfx.CodecLevel != NewLevel)
     {
         if (par.mfx.CodecLevel)
+        {
+            par.mfx.CodecLevel = NewLevel;
             sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
 
         if (!query)
             par.mfx.CodecLevel = NewLevel;

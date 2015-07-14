@@ -66,7 +66,7 @@ mfxU16 MaxRec(MfxVideoParam const & par)
 
 mfxU16 MaxRaw(MfxVideoParam const & par)
 {
-    return Max(par.AsyncDepth, par.mfx.GopRefDist) + par.RawRef * par.mfx.NumRefFrame;
+    return par.AsyncDepth + par.mfx.GopRefDist + par.RawRef * par.mfx.NumRefFrame;
 }
 
 mfxU16 MaxBs(MfxVideoParam const & par)
