@@ -409,7 +409,6 @@ bool SaveSerializedStructure(std::string file_name, std::string input)
     FILE* pFILE = { 0 };
 
     pFILE = fopen(file_name.c_str(), "a");
-
     if (!pFILE) return false;
 
     fprintf(pFILE, input.c_str(), input.size());
@@ -424,7 +423,7 @@ std::string UploadSerialiedStructures(std::string file_name)
     mfxU32 fsize = 0;
 
     pFILE = fopen(file_name.c_str(), "r");
-    if (!pFILE) std::string();
+    if (!pFILE) return std::string();
 
     std::string output;
 
