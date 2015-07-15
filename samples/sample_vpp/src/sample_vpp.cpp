@@ -39,7 +39,7 @@ void vppDefaultInitParams( sInputParams* pParams )
   pParams->istabParam       = defaultImgStabParam;
   pParams->compositionParam = defaultCompositionParam;
 
-  pParams->bd3dAlloc    = false;//using system memory
+  pParams->memType    = SYSTEM_MEMORY;
 
   pParams->requestedFramesCount = MFX_MAX_32U;
 

@@ -34,6 +34,12 @@ enum
 
 #define MAX_INPUT_STREAMS 64
 
+enum MemType {
+    SYSTEM_MEMORY = 0x00,
+    D3D9_MEMORY   = 0x01,
+    D3D11_MEMORY  = 0x02,
+};
+
 typedef enum
 {
     VPP_FILTER_DISABLED           =0,

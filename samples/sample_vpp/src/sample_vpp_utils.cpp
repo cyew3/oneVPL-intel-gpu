@@ -17,10 +17,15 @@ Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 #include "mfxplugin.h"
 
 #ifdef D3D_SURFACES_SUPPORT
+#include "d3d_device.h"
 #include "d3d_allocator.h"
 #endif
-
+#ifdef MFX_D3D11_SUPPORT
+#include "d3d11_device.h"
+#include "d3d11_allocator.h"
+#endif
 #ifdef LIBVA_SUPPORT
+#include "vaapi_device.h"
 #include "vaapi_allocator.h"
 #endif
 
@@ -116,7 +121,13 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
   msdk_printf(MSDK_STRING("ImgStab\t\t%s\n"),     (VPP_FILTER_DISABLED != pParams->istabParam.mode)   ? MSDK_STRING("ON"): MSDK_STRING("OFF"));
   msdk_printf(MSDK_STRING("\n"));
 
-  const msdk_char* sMemType = pParams->bd3dAlloc ? MSDK_STRING("video") : MSDK_STRING("system");
+
+  const msdk_char* sMemType = MSDK_STRING("system");
+  if (pParams->memType != SYSTEM_MEMORY)
+  {
+      sMemType = pParams->memType == D3D9_MEMORY ? MSDK_STRING("d3d9")
+          : MSDK_STRING("d3d11");
+  }
   msdk_printf(MSDK_STRING("Memory type\t%s\n"), sMemType);
   msdk_printf(MSDK_STRING("\n"));
 
@@ -220,7 +231,7 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
 
 
   // this pattern is checked by VPP
-  if( pInParams->bd3dAlloc )
+  if( pInParams->memType != SYSTEM_MEMORY )
   {
     pParams->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
   }
@@ -244,18 +255,21 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
   MSDK_CHECK_POINTER(pProcessor, MFX_ERR_NULL_PTR);
   MSDK_CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
   MSDK_CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
-  mfxIMPL    impl = pInParams->impLib;
 
   WipeFrameProcessor(pProcessor);
 
   //MFX session
-  if (MFX_IMPL_HARDWARE == impl)
+  if (MFX_IMPL_HARDWARE == pInParams->impLib)
   {
-    // try searching on all display adapters
-    sts = pProcessor->mfxSession.Init(MFX_IMPL_HARDWARE_ANY, &version);
+      mfxIMPL impl = MFX_IMPL_HARDWARE_ANY;
+      if (pInParams->memType == D3D11_MEMORY)
+          impl |= MFX_IMPL_VIA_D3D11;
+
+      // try searching on all display adapters
+      sts = pProcessor->mfxSession.Init(impl, &version);
   }
   else
-    sts = pProcessor->mfxSession.Init(MFX_IMPL_SOFTWARE, &version);
+      sts = pProcessor->mfxSession.Init(MFX_IMPL_SOFTWARE, &version);
 
   MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeFrameProcessor(pProcessor));
 
@@ -408,7 +422,7 @@ mfxStatus InitSurfaces(sMemoryAllocator* pAllocator, mfxFrameAllocRequest* pRequ
 
 /* ******************************************************************* */
 
-mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAllocator, mfxVideoParam* pParams)
+mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAllocator, mfxVideoParam* pParams, sInputParams* pInParams)
 {
   mfxStatus sts = MFX_ERR_NONE;
   mfxFrameAllocRequest request[2];// [0] - in, [1] - out
@@ -427,25 +441,18 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
   // VppRequest[0] for input frames request, VppRequest[1] for output frames request
   MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
-  if( (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY) == pParams->IOPattern)
-  {
-    pAllocator->bd3dAlloc = true;
-  }
-  else
-  {
-    pAllocator->bd3dAlloc = false;
-  }
-
-  if( pAllocator->bd3dAlloc )
+  if( pInParams->memType == D3D9_MEMORY )
   {
 #ifdef D3D_SURFACES_SUPPORT
-
-    mfxU32 adapterNum = MSDKAdapter::GetNumber(pProcessor->mfxSession);
     // prepare device manager
-    sts = CreateDeviceManager(&(pAllocator->pd3dDeviceManager), adapterNum);
+    pAllocator->pDevice = new CD3D9Device();
+    sts = pAllocator->pDevice->Init(0, 1, MSDKAdapter::GetNumber(pProcessor->mfxSession));
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
-    sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, pAllocator->pd3dDeviceManager);
+    mfxHDL hdl = 0;
+    sts = pAllocator->pDevice->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, &hdl);
+    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+    sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, hdl);
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
     // prepare allocator
@@ -453,7 +460,7 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
 
     D3DAllocatorParams *pd3dAllocParams = new D3DAllocatorParams;
 
-    pd3dAllocParams->pManager = pAllocator->pd3dDeviceManager;
+    pd3dAllocParams->pManager = (IDirect3DDeviceManager9*)hdl;
     pAllocator->pAllocatorParams = pd3dAllocParams;
 
     /* In case of video memory we must provide mediasdk with external allocator
@@ -465,33 +472,59 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
     pAllocator->bUsedAsExternalAllocator = true;
 #endif
 #ifdef LIBVA_SUPPORT
-    pAllocator->pVALibrary = CreateLibVA();
-    if (!pAllocator->pVALibrary) sts = MFX_ERR_MEMORY_ALLOC;
+    pAllocator->pDevice = CreateVAAPIDevice();
+
+    sts = pAllocator->pDevice->Init(0, 1, MSDKAdapter::GetNumber(pProcessor->mfxSession));
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
-    /* It's possible to skip failed result here and switch to SW implementation,
-    but we don't process this way */
-
-    sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL)pAllocator->pVALibrary->GetVADisplay());
+    mfxHDL hdl = 0;
+    sts = pAllocator->pDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
+    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+    sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
     // prepare allocator
     pAllocator->pMfxAllocator = new vaapiFrameAllocator;
 
-    vaapiAllocatorParams *p_vaapiAllocParams = new vaapiAllocatorParams;
+    vaapiAllocatorParams *pVaapiAllocParams = new vaapiAllocatorParams;
 
-    p_vaapiAllocParams->m_dpy = pAllocator->pVALibrary->GetVADisplay();
-    pAllocator->pAllocatorParams = p_vaapiAllocParams;
+    pVaapiAllocParams->m_dpy = (VADisplay)hdl;
+    pAllocator->pAllocatorParams = pVaapiAllocParams;
 
-    /* In case of video memory we must provide mediasdk with external allocator
-
-    thus we demonstrate "external allocator" usage model.
-    Call SetAllocator to pass allocator to mediasdk */
     sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+
     pAllocator->bUsedAsExternalAllocator = true;
 #endif
   }
+  else if( pInParams->memType == D3D11_MEMORY )
+  {
+#ifdef MFX_D3D11_SUPPORT
+    pAllocator->pDevice = new CD3D11Device();
+
+    sts = pAllocator->pDevice->Init(0, 1, MSDKAdapter::GetNumber(pProcessor->mfxSession));
+    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+
+    mfxHDL hdl = 0;
+    sts = pAllocator->pDevice->GetHandle(MFX_HANDLE_D3D11_DEVICE, &hdl);
+    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+    sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_D3D11_DEVICE, hdl);
+    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+
+    // prepare allocator
+    pAllocator->pMfxAllocator = new D3D11FrameAllocator;
+
+    D3D11AllocatorParams *pd3d11AllocParams = new D3D11AllocatorParams;
+
+    pd3d11AllocParams->pDevice = (ID3D11Device*)hdl;
+    pAllocator->pAllocatorParams = pd3d11AllocParams;
+
+    sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
+    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+
+    pAllocator->bUsedAsExternalAllocator = true;
+#endif
+}
   else
   {
 #ifdef LIBVA_SUPPORT
@@ -501,11 +534,15 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
 
     if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(impl))
     {
-      pAllocator->pVALibrary = CreateLibVA();
-      if (!pAllocator->pVALibrary) sts = MFX_ERR_MEMORY_ALLOC;
+      pAllocator->pDevice = CreateVAAPIDevice();
+      if (!pAllocator->pDevice) sts = MFX_ERR_MEMORY_ALLOC;
       MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
-      sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL)pAllocator->pVALibrary->GetVADisplay());
+      mfxHDL hdl = 0;
+      sts = pAllocator->pDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
+      MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+
+      sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
       MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
     }
 #endif
@@ -561,7 +598,7 @@ mfxStatus InitResources(sAppResources* pResources, mfxVideoParam* pParams, sInpu
   sts = CreateFrameProcessor(pResources->pProcessor, pParams, pInParams);
   MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeResources(pResources));
 
-  sts = InitMemoryAllocator(pResources->pProcessor, pResources->pAllocator, pParams);
+  sts = InitMemoryAllocator(pResources->pProcessor, pResources->pAllocator, pParams, pInParams);
   MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeResources(pResources));
 
   sts = InitFrameProcessor(pResources->pProcessor, pParams);
@@ -608,22 +645,7 @@ void WipeMemoryAllocator(sMemoryAllocator* pAllocator)
 
   // delete allocator
   MSDK_SAFE_DELETE(pAllocator->pMfxAllocator);
-
-#ifdef D3D_SURFACES_SUPPORT
-  // release device manager
-  if (pAllocator->pd3dDeviceManager)
-  {
-    pAllocator->pd3dDeviceManager->Release();
-    pAllocator->pd3dDeviceManager = NULL;
-  }
-#endif
-#ifdef LIBVA_SUPPORT
-  if (pAllocator->pVALibrary)
-  {
-      MSDK_SAFE_DELETE(pAllocator->pVALibrary);
-      pAllocator->pVALibrary = NULL;
-  }
-#endif
+  MSDK_SAFE_DELETE(pAllocator->pDevice);
 
   // delete allocator parameters
   MSDK_SAFE_DELETE(pAllocator->pAllocatorParams);
