@@ -41,6 +41,7 @@ File Name: mfx_serial_utils.h
 #include "mfxstructures.h"
 #include "mfxjpeg.h"
 #include "mfxvp8.h"
+#include "mfxmvc.h"
 
 #define MIN(a,b)   (((a) < (b)) ? (a) : (b))
 
@@ -57,27 +58,29 @@ namespace SerialFlags
         ENCODE      = 0,
         DECODE      = 2,
         JPEG_DECODE = 4,
-        JPEG_ENCODE = 6,
+        JPEG_ENCODE = 8,
 
         //mfxFrameId
         MVC         = 0,
-        SVC         = 8,
+        SVC         = 16,
     };
 }
 
 //union conversions
-std::string GetMFXFourccString(mfxU32 mfxFourcc);
-mfxU32      GetMFXFourccCode(std::string mfxFourcc);
-std::string GetMFXCodecString(mfxU32 mfxCodec);
-mfxU32      GetMFXCodecCode(std::string mfxCodec);
-std::string GetMFXChromaString(mfxU32 chromaFormat);
-mfxU32      GetMFXChromaCode(std::string chromaFormat);
+std::string GetMFXFourCCString(mfxU32 mfxFourcc);
+mfxU32      GetMFXFourCCCode(std::string mfxFourcc);
+std::string GetMFXCodecIdString(mfxU32 mfxCodec);
+mfxU32      GetMFXCodecIdCode(std::string mfxCodec);
+std::string GetMFXChromaFormatString(mfxU32 chromaFormat);
+mfxU32      GetMFXChromaFormatCode(std::string chromaFormat);
 std::string GetMFXStatusString(mfxStatus mfxSts);
 mfxU32      GetMFXStatusCode(std::string mfxSts);
 std::string GetMFXPicStructString(int PicStruct);
 int         GetMFXPicStructCode(std::string PicStruct);
 std::string GetMFXFrameTypeString(int FrameType);
 int         GetMFXFrameTypeCode(std::string FrameType);
+std::string GetMFXBufferIdString(mfxU32 mfxFourcc);
+mfxU32      GetMFXBufferIdCode(std::string mfxFourcc);
 std::string GetMFXRawDataString(mfxU8* pData, mfxU32 nData);
 void        GetMFXRawDataValues(mfxU8* pData, std::string Data);
 std::string GetMFXImplString(mfxIMPL impl);

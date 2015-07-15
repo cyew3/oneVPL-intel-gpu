@@ -57,6 +57,12 @@ File Name: mfx_serializer.cpp
     InitializePointer(m_pStruct->fieldname, num);\
     DeSerializeArrayOfStructs(values_map, #fieldname, m_pStruct->fieldname, num)
 
+#define SERIALIZE_UNION(fieldname)\
+    m_values_map[#fieldname] = GetMFX##fieldname##String(m_pStruct->fieldname);
+
+#define DESERIALIZE_UNION(fieldname)\
+    m_pStruct->fieldname = GetMFX##fieldname##Code(values_map[#fieldname]);
+
 #define SERIALIZE_TIMESTAMP(fieldname)\
     SerializeSingleElement(#fieldname, ConvertMFXTime2mfxF64(m_pStruct->fieldname))
 
@@ -66,11 +72,6 @@ File Name: mfx_serializer.cpp
     if (!DeSerializeSingleElement(values_map[#fieldname], val)){return false;}\
     m_pStruct->fieldname = ConvertmfxF642MFXTime(val);\
 }
-
-#define DESERIALIZE_EXT_HEADER(BufferName, BufferID)\
-    (  (!DeserializeSingleElement(values_map[BufferName"Header.BufferSz"], Header.BufferSz))\
-    || (!DeserializeSingleElement(values_map[BufferName"Header.BufferId"], Header.BufferId))\
-    || (Header.BufferId != BufferID) ) ? false : true
 
 #define UNION_FOUND(fieldname)\
     values_map.contains_substr(#fieldname".")
@@ -141,8 +142,7 @@ bool MFXStructureRef <mfxMVCOperationPoint>::DeSerialize(hash_array<std::string,
 
 void MFXStructureRef <mfxExtMVCSeqDesc>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(NumView);
     SERIALIZE_INT(NumViewAlloc);
@@ -161,8 +161,7 @@ void MFXStructureRef <mfxExtMVCSeqDesc>::ConstructValues() const
 
 bool MFXStructureRef <mfxExtMVCSeqDesc>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(NumView);
     DESERIALIZE_INT(NumViewAlloc);
@@ -198,7 +197,68 @@ void MFXStructureRef <mfxVideoParam>::ConstructValues() const
     SERIALIZE_INT(NumExtParam);
 
     for (int i = 0; i < m_pStruct->NumExtParam; i++) {
-        SerializeStruct("", *m_pStruct->ExtParam[i]);
+        switch (m_pStruct->ExtParam[i]->BufferId)
+        {
+            case MFX_EXTBUFF_CODING_OPTION :{
+                SerializeStruct("ExtCO.", *(mfxExtCodingOption*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_CODING_OPTION2 :{
+                SerializeStruct("ExtCO2.", *(mfxExtCodingOption2*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_CODING_OPTION3:{
+                SerializeStruct("ExtCO3.", *(mfxExtCodingOption3*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_HEVC_PARAM :{
+                SerializeStruct("HEVCPar.", *(mfxExtHEVCParam*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_HEVC_TILES :{
+                SerializeStruct("HEVCTil.", *(mfxExtHEVCTiles*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_VP8_CODING_OPTION :{
+                SerializeStruct("VP8.", *(mfxExtVP8CodingOption*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_MVC_SEQ_DESC : {
+                SerializeStruct("MVC.", *(mfxExtMVCSeqDesc*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_VIDEO_SIGNAL_INFO : {
+                SerializeStruct("VSIG.", *(mfxExtVideoSignalInfo*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_CODING_OPTION_SPSPPS : {
+                SerializeStruct("ExtCOSPSPPS.", *(mfxExtCodingOptionSPSPPS*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_AVC_TEMPORAL_LAYERS : {
+                SerializeStruct("AVCTL.", *(mfxExtAvcTemporalLayers*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_ENCODER_CAPABILITY :{
+                SerializeStruct("CAP.", *(mfxExtEncoderCapability*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_ENCODED_FRAME_INFO :{
+                SerializeStruct("ENC_FRAME_INFO.", *(mfxExtAVCEncodedFrameInfo*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION :{
+                SerializeStruct("VPP_FRC.", *(mfxExtVPPFrameRateConversion*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_VPP_COMPOSITE :{
+                SerializeStruct("VPP_COMP.", *(mfxExtVPPComposite*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            default :
+                //unsupported buffer
+            break;
+        }
     }
 }
 
@@ -220,7 +280,6 @@ bool MFXStructureRef <mfxVideoParam>::DeSerialize(hash_array<std::string, std::s
 
     hash_array<std::string, std::string>::const_iterator it;
     std::vector<std::string> ExtBufNames;
-    mfxU32 BufferSz = 0;
 
     for(it = values_map.begin(); it != values_map.end(); it++)
     {
@@ -236,10 +295,72 @@ bool MFXStructureRef <mfxVideoParam>::DeSerialize(hash_array<std::string, std::s
     InitializePointer(m_pStruct->ExtParam, m_pStruct->NumExtParam);
 
     for (int i = 0; i < m_pStruct->NumExtParam; i++) {
-        DeSerializeSingleElement(values_map[ExtBufNames[i] + "Header.BufferSz"], BufferSz);
+        mfxExtBuffer Header = {0};
+        DeSerializeStruct(values_map, ExtBufNames[i] + "Header.", Header);
 
-        InitializePointer(m_pStruct->ExtParam[i], BufferSz/sizeof(mfxExtBuffer) + 1); // due to BufferSz shows size in bytes, we need to devide is by sizeof(mfxExtBuffer) due to template function
-        DeSerializeStruct(values_map, ExtBufNames[i], *m_pStruct->ExtParam[i]);
+        InitializePointer(m_pStruct->ExtParam[i], Header.BufferSz/sizeof(mfxExtBuffer) + 1); // BufferSz shows size in bytes, that is why we need to devide is by sizeof(mfxExtBuffer) because of template function
+
+        switch (Header.BufferId)
+        {
+            case MFX_EXTBUFF_CODING_OPTION: {
+                DeSerializeStruct(values_map, "ExtCO", *(mfxExtCodingOption*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_CODING_OPTION2: {
+                DeSerializeStruct(values_map, "ExtCO2", *(mfxExtCodingOption2*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_CODING_OPTION3: {
+                DeSerializeStruct(values_map, "ExtCO3", *(mfxExtCodingOption3*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_HEVC_PARAM: {
+                DeSerializeStruct(values_map, "HEVCPar.", *(mfxExtHEVCParam*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_HEVC_TILES: {
+                DeSerializeStruct(values_map, "HEVCTil.", *(mfxExtHEVCTiles*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_VP8_CODING_OPTION: {
+                DeSerializeStruct(values_map, "VP8.", *(mfxExtVP8CodingOption*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_MVC_SEQ_DESC: {
+                DeSerializeStruct(values_map, "MVC.", *(mfxExtMVCSeqDesc*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_VIDEO_SIGNAL_INFO: {
+                DeSerializeStruct(values_map, "VSIG.", *(mfxExtVideoSignalInfo*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_CODING_OPTION_SPSPPS: {
+                DeSerializeStruct(values_map, "ExtCOSPSPPS.", *(mfxExtCodingOptionSPSPPS*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_AVC_TEMPORAL_LAYERS: {
+                DeSerializeStruct(values_map, "AVCTL.", *(mfxExtAvcTemporalLayers*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_ENCODER_CAPABILITY: {
+                DeSerializeStruct(values_map, "CAP.", *(mfxExtEncoderCapability*)m_pStruct->ExtParam[i]);
+                break;
+            }
+                case MFX_EXTBUFF_ENCODED_FRAME_INFO: {
+                DeSerializeStruct(values_map, "ENC_FRAME_INFO.", *(mfxExtAVCEncodedFrameInfo*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION: {
+                DeSerializeStruct(values_map, "VPP_FRC.", *(mfxExtVPPFrameRateConversion*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            case MFX_EXTBUFF_VPP_COMPOSITE: {
+                DeSerializeStruct(values_map, "VPP_COMP.", *(mfxExtVPPComposite*)m_pStruct->ExtParam[i]);
+                break;
+            }
+            default :
+                return false;
+        }
     }
 
     return true;
@@ -247,8 +368,7 @@ bool MFXStructureRef <mfxVideoParam>::DeSerialize(hash_array<std::string, std::s
 
 void MFXStructureRef <mfxExtCodingOption>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(RateDistortionOpt);
     SERIALIZE_INT(MECostType);
@@ -277,8 +397,7 @@ void MFXStructureRef <mfxExtCodingOption>::ConstructValues() const
 
 bool MFXStructureRef <mfxExtCodingOption>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(RateDistortionOpt);
     DESERIALIZE_INT(MECostType);
@@ -309,8 +428,7 @@ bool MFXStructureRef <mfxExtCodingOption>::DeSerialize(hash_array<std::string, s
 
 void MFXStructureRef <mfxExtCodingOption2>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(IntRefType);
     SERIALIZE_INT(IntRefCycleSize);
@@ -339,8 +457,7 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues() const
 
 bool MFXStructureRef <mfxExtCodingOption2>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(IntRefType);
     DESERIALIZE_INT(IntRefCycleSize);
@@ -371,8 +488,7 @@ bool MFXStructureRef <mfxExtCodingOption2>::DeSerialize(hash_array<std::string, 
 
 void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(NumSliceI);
     SERIALIZE_INT(NumSliceP);
@@ -382,8 +498,7 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
 
 bool MFXStructureRef <mfxExtCodingOption3>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(NumSliceI);
     DESERIALIZE_INT(NumSliceP);
@@ -395,8 +510,7 @@ bool MFXStructureRef <mfxExtCodingOption3>::DeSerialize(hash_array<std::string, 
 
 void MFXStructureRef <mfxExtHEVCTiles>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(NumTileColumns);
     SERIALIZE_INT(NumTileRows);
@@ -404,8 +518,7 @@ void MFXStructureRef <mfxExtHEVCTiles>::ConstructValues() const
 
 bool MFXStructureRef <mfxExtHEVCTiles>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(NumTileColumns);
     DESERIALIZE_INT(NumTileRows);
@@ -415,8 +528,7 @@ bool MFXStructureRef <mfxExtHEVCTiles>::DeSerialize(hash_array<std::string, std:
 
 void MFXStructureRef <mfxExtVP8CodingOption>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(Version);
     SERIALIZE_INT(EnableMultipleSegments);
@@ -436,8 +548,7 @@ void MFXStructureRef <mfxExtVP8CodingOption>::ConstructValues() const
 
 bool MFXStructureRef <mfxExtVP8CodingOption>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(Version);
     DESERIALIZE_INT(EnableMultipleSegments);
@@ -470,8 +581,7 @@ void MFXStructureRef <mfxFrameInfo>::ConstructValues() const
         SERIALIZE_INT(FrameId.QualityId);
     }
 
-    m_values_map["FourCC"] = GetMFXFourccString(m_pStruct->FourCC);
-
+    SERIALIZE_UNION(FourCC);
     SERIALIZE_INT(Width);
     SERIALIZE_INT(Height);
     SERIALIZE_INT(CropX);
@@ -485,8 +595,7 @@ void MFXStructureRef <mfxFrameInfo>::ConstructValues() const
     SERIALIZE_INT(PicStruct);
     SERIALIZE_INT(BitDepthLuma);
     SERIALIZE_INT(BitDepthChroma);
-
-    m_values_map["ChromaFormat"] = GetMFXChromaString(m_pStruct->ChromaFormat);
+    SERIALIZE_UNION(ChromaFormat);
 }
 
 bool MFXStructureRef <mfxFrameInfo>::DeSerialize(hash_array<std::string, std::string> values_map)
@@ -502,8 +611,7 @@ bool MFXStructureRef <mfxFrameInfo>::DeSerialize(hash_array<std::string, std::st
         DESERIALIZE_INT(FrameId.QualityId);
     }
 
-    m_pStruct->FourCC = GetMFXFourccCode(values_map["FourCC"]);
-
+    DESERIALIZE_UNION(FourCC);
     DESERIALIZE_INT(Width);
     DESERIALIZE_INT(Height);
     DESERIALIZE_INT(CropX);
@@ -517,8 +625,7 @@ bool MFXStructureRef <mfxFrameInfo>::DeSerialize(hash_array<std::string, std::st
     DESERIALIZE_INT(PicStruct);
     DESERIALIZE_INT(BitDepthLuma);
     DESERIALIZE_INT(BitDepthChroma);
-
-    m_pStruct->ChromaFormat = (mfxU16) GetMFXChromaCode(values_map["ChromaFormat"]);
+    DESERIALIZE_UNION(ChromaFormat);
 
     return true;
 }
@@ -529,9 +636,9 @@ void MFXStructureRef <mfxBitstream>::ConstructValues() const
     SERIALIZE_TIMESTAMP(DecodeTimeStamp);
     SERIALIZE_TIMESTAMP(TimeStamp);
 
-    m_values_map["Data"]      = GetMFXRawDataString( m_pStruct->Data + m_pStruct->DataOffset, m_pStruct->DataLength);
-    m_values_map["PicStruct"] = GetMFXPicStructString(m_pStruct->PicStruct);
-    m_values_map["FrameType"] = GetMFXFrameTypeString(m_pStruct->FrameType);
+    m_values_map["Data"] = GetMFXRawDataString(m_pStruct->Data + m_pStruct->DataOffset, m_pStruct->DataLength);
+    SERIALIZE_UNION(PicStruct);
+    SERIALIZE_UNION(FrameType);
     SERIALIZE_INT(DataFlag);
 }
 
@@ -542,11 +649,10 @@ bool MFXStructureRef <mfxBitstream>::DeSerialize(hash_array<std::string, std::st
     DESERIALIZE_TIMESTAMP(TimeStamp);
 
     InitializePointer(m_pStruct->Data, m_pStruct->DataLength + 1);
-
     GetMFXRawDataValues( m_pStruct->Data, values_map["Data"]);
-    m_pStruct->PicStruct = (mfxU16) GetMFXPicStructCode(values_map["PicStruct"]);
-    m_pStruct->FrameType = (mfxU16) GetMFXFrameTypeCode(values_map["FrameType"]);
-    SERIALIZE_INT(DataFlag);
+    DESERIALIZE_UNION(PicStruct);
+    DESERIALIZE_UNION(FrameType);
+    DESERIALIZE_INT(DataFlag);
 
     return true;
 }
@@ -572,8 +678,7 @@ void MFXStructureRef <mfxInfoMFX>::ConstructValues() const
 
     SERIALIZE_STRUCT(FrameInfo);
 
-    m_values_map["CodecId"] = GetMFXCodecString(m_pStruct->CodecId);
-
+    SERIALIZE_UNION(CodecId);
     SERIALIZE_INT(CodecProfile);
     SERIALIZE_INT(CodecLevel);
     SERIALIZE_INT(NumThread);
@@ -658,7 +763,7 @@ bool MFXStructureRef <mfxInfoMFX>::DeSerialize(hash_array<std::string, std::stri
 
     DESERIALIZE_STRUCT(FrameInfo);
 
-    m_pStruct->CodecId = GetMFXCodecCode(values_map["CodecId"]);
+    DESERIALIZE_UNION(CodecId);
 
     DESERIALIZE_INT(CodecProfile);
     DESERIALIZE_INT(CodecLevel);
@@ -798,8 +903,7 @@ bool MFXStructureRef <mfxIMPL>::DeSerialize(hash_array<std::string, std::string>
 
 void MFXStructureRef <mfxExtVideoSignalInfo>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(VideoFormat);
     SERIALIZE_INT(VideoFullRange);
@@ -811,8 +915,7 @@ void MFXStructureRef <mfxExtVideoSignalInfo>::ConstructValues() const
 
 bool MFXStructureRef <mfxExtVideoSignalInfo>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(VideoFormat);
     DESERIALIZE_INT(VideoFullRange);
@@ -826,8 +929,7 @@ bool MFXStructureRef <mfxExtVideoSignalInfo>::DeSerialize(hash_array<std::string
 
 void MFXStructureRef<mfxExtAVCRefListCtrl>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(NumRefIdxL0Active);
     SERIALIZE_INT(NumRefIdxL1Active);
@@ -835,8 +937,7 @@ void MFXStructureRef<mfxExtAVCRefListCtrl>::ConstructValues() const
 
 bool MFXStructureRef<mfxExtAVCRefListCtrl>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(NumRefIdxL0Active);
     DESERIALIZE_INT(NumRefIdxL1Active);
@@ -846,16 +947,14 @@ bool MFXStructureRef<mfxExtAVCRefListCtrl>::DeSerialize(hash_array<std::string, 
 
 void MFXStructureRef <mfxExtVPPFrameRateConversion>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(Algorithm);
 }
 
 bool MFXStructureRef <mfxExtVPPFrameRateConversion>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(Algorithm);
 
@@ -864,8 +963,7 @@ bool MFXStructureRef <mfxExtVPPFrameRateConversion>::DeSerialize(hash_array<std:
 
 void MFXStructureRef <mfxExtCodingOptionSPSPPS>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(SPSId);
     SERIALIZE_INT(PPSId);
@@ -873,8 +971,7 @@ void MFXStructureRef <mfxExtCodingOptionSPSPPS>::ConstructValues() const
 
 bool MFXStructureRef <mfxExtCodingOptionSPSPPS>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(SPSId);
     DESERIALIZE_INT(PPSId);
@@ -884,16 +981,14 @@ bool MFXStructureRef <mfxExtCodingOptionSPSPPS>::DeSerialize(hash_array<std::str
 
 void MFXStructureRef <mfxExtAvcTemporalLayers>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(BaseLayerPID);
 }
 
 bool MFXStructureRef <mfxExtAvcTemporalLayers>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(BaseLayerPID);
 
@@ -902,16 +997,14 @@ bool MFXStructureRef <mfxExtAvcTemporalLayers>::DeSerialize(hash_array<std::stri
 
 void MFXStructureRef <mfxExtEncoderCapability>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(MBPerSec);
 }
 
 bool MFXStructureRef <mfxExtEncoderCapability>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(MBPerSec);
 
@@ -920,8 +1013,7 @@ bool MFXStructureRef <mfxExtEncoderCapability>::DeSerialize(hash_array<std::stri
 
 void MFXStructureRef<mfxExtAVCEncodedFrameInfo>::ConstructValues() const 
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(FrameOrder);
     SERIALIZE_INT(PicStruct);
@@ -930,8 +1022,7 @@ void MFXStructureRef<mfxExtAVCEncodedFrameInfo>::ConstructValues() const
 
 bool MFXStructureRef<mfxExtAVCEncodedFrameInfo>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(FrameOrder);
     DESERIALIZE_INT(PicStruct);
@@ -942,8 +1033,7 @@ bool MFXStructureRef<mfxExtAVCEncodedFrameInfo>::DeSerialize(hash_array<std::str
 
 void MFXStructureRef <mfxExtHEVCParam>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(PicWidthInLumaSamples);
     SERIALIZE_INT(PicHeightInLumaSamples);
@@ -951,8 +1041,7 @@ void MFXStructureRef <mfxExtHEVCParam>::ConstructValues() const
 
 bool MFXStructureRef <mfxExtHEVCParam>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(PicWidthInLumaSamples);
     DESERIALIZE_INT(PicHeightInLumaSamples);
@@ -998,8 +1087,7 @@ bool MFXStructureRef <mfxVPPCompInputStream>::DeSerialize(hash_array<std::string
 
 void MFXStructureRef <mfxExtVPPComposite>::ConstructValues() const
 {
-    SERIALIZE_INT(Header.BufferSz);
-    SERIALIZE_INT(Header.BufferId);
+    SERIALIZE_STRUCT(Header);
 
     SERIALIZE_INT(Y);
     SERIALIZE_INT(U);
@@ -1011,8 +1099,7 @@ void MFXStructureRef <mfxExtVPPComposite>::ConstructValues() const
 
 bool MFXStructureRef <mfxExtVPPComposite>::DeSerialize(hash_array<std::string, std::string> values_map)
 {
-    DESERIALIZE_INT(Header.BufferSz);
-    DESERIALIZE_INT(Header.BufferId);
+    DESERIALIZE_STRUCT(Header);
 
     DESERIALIZE_INT(Y);
     DESERIALIZE_INT(U);
@@ -1025,135 +1112,13 @@ bool MFXStructureRef <mfxExtVPPComposite>::DeSerialize(hash_array<std::string, s
 }
 
 void MFXStructureRef <mfxExtBuffer>::ConstructValues() const {
-    switch (m_pStruct->BufferId)
-    {
-        case MFX_EXTBUFF_CODING_OPTION :{
-            SerializeStruct("ExtCO.", *(mfxExtCodingOption*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_CODING_OPTION2 :{
-            SerializeStruct("ExtCO2.", *(mfxExtCodingOption2*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_CODING_OPTION3:{
-            SerializeStruct("ExtCO3.", *(mfxExtCodingOption3*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_HEVC_PARAM :{
-            SerializeStruct("HEVCPar.", *(mfxExtHEVCParam*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_HEVC_TILES :{
-            SerializeStruct("HEVCTil.", *(mfxExtHEVCTiles*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_VP8_CODING_OPTION :{
-            SerializeStruct("VP8.", *(mfxExtVP8CodingOption*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_MVC_SEQ_DESC : {
-            SerializeStruct("MVC.", *(mfxExtMVCSeqDesc*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_VIDEO_SIGNAL_INFO : {
-            SerializeStruct("VSIG.", *(mfxExtVideoSignalInfo*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_CODING_OPTION_SPSPPS : {
-            SerializeStruct("ExtCOSPSPPS.", *(mfxExtCodingOptionSPSPPS*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_AVC_TEMPORAL_LAYERS : {
-            SerializeStruct("AVCTL.", *(mfxExtAvcTemporalLayers*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_ENCODER_CAPABILITY :{
-            SerializeStruct("CAP.", *(mfxExtEncoderCapability*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_ENCODED_FRAME_INFO :{
-            SerializeStruct("ENC_FRAME_INFO.", *(mfxExtAVCEncodedFrameInfo*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION :{
-            SerializeStruct("VPP_FRC.", *(mfxExtVPPFrameRateConversion*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_VPP_COMPOSITE :{
-            SerializeStruct("VPP_COMP.", *(mfxExtVPPComposite*)m_pStruct);
-            break;
-        }
-        default :
-            //unsupported buffer
-        break;
-    }
+    SERIALIZE_INT(BufferSz);
+    SERIALIZE_UNION(BufferId);
 }
 
 bool MFXStructureRef <mfxExtBuffer>::DeSerialize(hash_array<std::string, std::string> values_map) {
-    mfxU32 BufferId;
+    DESERIALIZE_INT(BufferSz);
+    DESERIALIZE_UNION(BufferId);
 
-    DeSerializeSingleElement(values_map["Header.BufferId"], BufferId);
-
-    switch (BufferId)
-    {
-        case MFX_EXTBUFF_CODING_OPTION :{
-            DeSerializeStruct(values_map, "", *(mfxExtCodingOption*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_CODING_OPTION2 :{
-            DeSerializeStruct(values_map, "", *(mfxExtCodingOption2*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_CODING_OPTION3:{
-            DeSerializeStruct(values_map, "", *(mfxExtCodingOption3*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_HEVC_PARAM :{
-            DeSerializeStruct(values_map, "", *(mfxExtHEVCParam*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_HEVC_TILES :{
-            DeSerializeStruct(values_map, "", *(mfxExtHEVCTiles*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_VP8_CODING_OPTION :{
-            DeSerializeStruct(values_map, "", *(mfxExtVP8CodingOption*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_MVC_SEQ_DESC : {
-            DeSerializeStruct(values_map, "", *(mfxExtMVCSeqDesc*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_VIDEO_SIGNAL_INFO : {
-            DeSerializeStruct(values_map, "", *(mfxExtVideoSignalInfo*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_CODING_OPTION_SPSPPS : {
-            DeSerializeStruct(values_map, "", *(mfxExtCodingOptionSPSPPS*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_AVC_TEMPORAL_LAYERS : {
-            DeSerializeStruct(values_map, "", *(mfxExtAvcTemporalLayers*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_ENCODER_CAPABILITY :{
-            DeSerializeStruct(values_map, "", *(mfxExtEncoderCapability*)m_pStruct);
-            break;
-        }
-            case MFX_EXTBUFF_ENCODED_FRAME_INFO :{
-            DeSerializeStruct(values_map, "", *(mfxExtAVCEncodedFrameInfo*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION :{
-            DeSerializeStruct(values_map, "", *(mfxExtVPPFrameRateConversion*)m_pStruct);
-            break;
-        }
-        case MFX_EXTBUFF_VPP_COMPOSITE :{
-            DeSerializeStruct(values_map, "", *(mfxExtVPPComposite*)m_pStruct);
-            break;
-        }
-        default :
-            return false;
-    }
     return true;
 }

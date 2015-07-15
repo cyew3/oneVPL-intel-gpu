@@ -464,7 +464,6 @@ protected:
     virtual void ConstructValues () const;
 };
 
-
 template<>
 class MFXStructureRef <mfxVideoParam>
     : public MFXStructureBase<mfxVideoParam>

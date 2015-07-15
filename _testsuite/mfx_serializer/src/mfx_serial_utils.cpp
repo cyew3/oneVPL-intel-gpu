@@ -61,7 +61,7 @@ static CodeStringTable StringsOfCodec[] =
     { MFX_CODEC_HEVC,                "HEVC"     },
     { MFX_CODEC_MPEG2,               "MPEG2"    },
     { MFX_CODEC_VC1,                 "VC1"      },
-    { MFX_CODEC_CAPTURE,             "CAPT"      },
+    { MFX_CODEC_CAPTURE,             "CAPT"     },
     { MFX_CODEC_JPEG,                "JPEG"     },
     { MFX_CODEC_VP8,                 "VP8"      },
 };
@@ -136,6 +136,61 @@ static CodeStringTable StringsOfChromaFormat[] = {
     DEFINE_CODE(MFX_CHROMAFORMAT_YUV411),
     DEFINE_CODE(MFX_CHROMAFORMAT_YUV422H),
     DEFINE_CODE(MFX_CHROMAFORMAT_YUV422V)
+};
+
+static CodeStringTable StringsOfExtendedBuffer[] = {
+    DEFINE_CODE(MFX_EXTBUFF_CODING_OPTION            ),
+    DEFINE_CODE(MFX_EXTBUFF_CODING_OPTION_SPSPPS     ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_DONOTUSE             ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_AUXDATA              ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_DENOISE              ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_SCENE_ANALYSIS       ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_SCENE_CHANGE         ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_PROCAMP              ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_DETAIL               ),
+    DEFINE_CODE(MFX_EXTBUFF_VIDEO_SIGNAL_INFO        ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_DOUSE                ),
+    DEFINE_CODE(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION),
+    DEFINE_CODE(MFX_EXTBUFF_AVC_REFLIST_CTRL         ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION),
+    DEFINE_CODE(MFX_EXTBUFF_PICTURE_TIMING_SEI       ),
+    DEFINE_CODE(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS      ),
+    DEFINE_CODE(MFX_EXTBUFF_CODING_OPTION2           ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_IMAGE_STABILIZATION  ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION  ),
+    DEFINE_CODE(MFX_EXTBUFF_ENCODER_CAPABILITY       ),
+    DEFINE_CODE(MFX_EXTBUFF_ENCODER_RESET_OPTION     ),
+    DEFINE_CODE(MFX_EXTBUFF_ENCODED_FRAME_INFO       ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_COMPOSITE            ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO    ),
+    DEFINE_CODE(MFX_EXTBUFF_ENCODER_ROI              ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_DEINTERLACING        ),
+    DEFINE_CODE(MFX_EXTBUFF_AVC_REFLISTS             ),
+    DEFINE_CODE(MFX_EXTBUFF_DEC_VIDEO_PROCESSING     ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_FIELD_PROCESSING     ),
+    DEFINE_CODE(MFX_EXTBUFF_CODING_OPTION3           ),
+    DEFINE_CODE(MFX_EXTBUFF_CHROMA_LOC_INFO          ),
+    DEFINE_CODE(MFX_EXTBUFF_MBQP                     ),
+    DEFINE_CODE(MFX_EXTBUFF_HEVC_TILES               ),
+    DEFINE_CODE(MFX_EXTBUFF_MB_DISABLE_SKIP_MAP      ),
+    DEFINE_CODE(MFX_EXTBUFF_DPB                      ),
+    DEFINE_CODE(MFX_EXTBUFF_HEVC_PARAM               ),
+    DEFINE_CODE(MFX_EXTBUFF_DECODED_FRAME_INFO       ),
+    DEFINE_CODE(MFX_EXTBUFF_TIME_CODE                ),
+    DEFINE_CODE(MFX_EXTBUFF_HEVC_REGION              ),
+    DEFINE_CODE(MFX_EXTBUFF_PRED_WEIGHT_TABLE        ),
+    DEFINE_CODE(MFX_EXTBUFF_TEMPORAL_LAYERS          ),
+    DEFINE_CODE(MFX_EXTBUFF_DIRTY_RECTANGLES         ),
+    DEFINE_CODE(MFX_EXTBUFF_MOVING_RECTANGLES        ),
+    DEFINE_CODE(MFX_EXTBUFF_AVC_SCALING_MATRIX       ),
+    DEFINE_CODE(MFX_EXTBUFF_MPEG2_QUANT_MATRIX       ),
+    DEFINE_CODE(MFX_EXTBUFF_CODING_OPTION_VPS        ),
+    DEFINE_CODE(MFX_EXTBUFF_VPP_ROTATION             ),
+    DEFINE_CODE(MFX_EXTBUFF_ENCODED_SLICES_INFO      ),
+
+    DEFINE_CODE(MFX_EXTBUFF_VP8_CODING_OPTION        ),
+    DEFINE_CODE(MFX_EXTBUFF_MVC_SEQ_DESC             ),
+    DEFINE_CODE(MFX_EXTBUFF_MVC_TARGET_VIEWS         )
 };
 
 #define DEFINE_CODE2(code, subcode)\
@@ -253,32 +308,32 @@ int StringAllTomfxCode(CodeStringTable *table, int table_size, std::string str)
     return code;
 }
 
-std::string GetMFXFourccString(mfxU32 mfxFourcc)
+std::string GetMFXFourCCString(mfxU32 mfxFourcc)
 {
     return MFX_CODE_TO_STRING(StringsOfFourcc, mfxFourcc);
 }
 
-mfxU32 GetMFXFourccCode(std::string mfxFourcc)
+mfxU32 GetMFXFourCCCode(std::string mfxFourcc)
 {
     return STRING_TO_MFX_CODE(StringsOfFourcc, mfxFourcc);
 }
 
-std::string GetMFXCodecString(mfxU32 mfxCodec)
+std::string GetMFXCodecIdString(mfxU32 mfxCodec)
 {
     return MFX_CODE_TO_STRING(StringsOfCodec, mfxCodec);
 }
 
-mfxU32 GetMFXCodecCode(std::string mfxCodec)
+mfxU32 GetMFXCodecIdCode(std::string mfxCodec)
 {
     return STRING_TO_MFX_CODE(StringsOfCodec, mfxCodec);
 }
 
-std::string GetMFXChromaString(mfxU32 chromaFormat)
+std::string GetMFXChromaFormatString(mfxU32 chromaFormat)
 {
     return MFX_CODE_TO_STRING(StringsOfChromaFormat, chromaFormat);
 }
 
-mfxU32 GetMFXChromaCode(std::string chromaFormat)
+mfxU32 GetMFXChromaFormatCode(std::string chromaFormat)
 {
     return STRING_TO_MFX_CODE(StringsOfChromaFormat, chromaFormat);
 }
@@ -311,6 +366,16 @@ std::string GetMFXFrameTypeString (int FrameType)
 int GetMFXFrameTypeCode(std::string FrameType)
 {
     return STRING_ALL_TO_MFX_CODE(StringsOfFrameType, FrameType);
+}
+
+std::string GetMFXBufferIdString(mfxU32 mfxExtBufId)
+{
+    return MFX_CODE_TO_STRING(StringsOfExtendedBuffer, mfxExtBufId);
+}
+
+mfxU32 GetMFXBufferIdCode(std::string mfxExtBufId)
+{
+    return STRING_TO_MFX_CODE(StringsOfExtendedBuffer, mfxExtBufId);
 }
 
 #define MAKE_HEX( x ) \
