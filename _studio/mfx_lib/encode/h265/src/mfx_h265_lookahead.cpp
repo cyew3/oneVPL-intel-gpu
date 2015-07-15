@@ -2224,15 +2224,18 @@ void Lookahead::AverageComplexity(Frame *in)
     Ipp32s resolution = frame->width * frame->height;
     stat->m_avgBestSatd = (Ipp32f)sumSatd / (resolution);
     stat->m_avgIntraSatd = (Ipp32f)sumSatdIntra / (resolution);
+    stat->m_avgInterSatd = (Ipp32f)sumSatdInter / (resolution);
 
     // hack for BRC
     if (in->m_stats[0]) {
         in->m_stats[0]->m_avgBestSatd = stat->m_avgBestSatd / (1 << m_videoParam.bitDepthLumaShift);
         in->m_stats[0]->m_avgIntraSatd = stat->m_avgIntraSatd / (1 << m_videoParam.bitDepthLumaShift);
+        in->m_stats[0]->m_avgInterSatd = stat->m_avgInterSatd / (1 << m_videoParam.bitDepthLumaShift);
     }
     if (in->m_stats[1]) {
         in->m_stats[1]->m_avgBestSatd = stat->m_avgBestSatd / (1 << m_videoParam.bitDepthLumaShift);
         in->m_stats[1]->m_avgIntraSatd = stat->m_avgIntraSatd / (1 << m_videoParam.bitDepthLumaShift);
+        in->m_stats[1]->m_avgInterSatd = stat->m_avgInterSatd / (1 << m_videoParam.bitDepthLumaShift);
     }
 
     if (useLowres) {
@@ -2242,9 +2245,11 @@ void Lookahead::AverageComplexity(Frame *in)
         if (in->m_stats[0]) {
             in->m_stats[0]->m_avgBestSatd /= tabCorrFactor[useLowres];
             in->m_stats[0]->m_avgIntraSatd /= tabCorrFactor[useLowres];
+            in->m_stats[0]->m_avgInterSatd /= tabCorrFactor[useLowres];
         } else {
             in->m_stats[1]->m_avgBestSatd /= tabCorrFactor[useLowres];
             in->m_stats[1]->m_avgIntraSatd /= tabCorrFactor[useLowres];
+            in->m_stats[1]->m_avgInterSatd /= tabCorrFactor[useLowres];
         }
     }
 }

@@ -76,6 +76,7 @@ typedef struct _mfxBRC_HRDState
 typedef struct _mfxBRC_FrameData
 {
     Ipp64f cmplx;
+    Ipp64f cmplxInter;
     Ipp32s dispOrder;
     Ipp32s encOrder;
     Ipp32s layer;

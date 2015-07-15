@@ -92,6 +92,7 @@ namespace H265Enc {
         Ipp64f avgTSC;
         Ipp32f m_avgBestSatd; //= sum( min{ interSatd[i], intraSatd[i] } ) / {winth*height};
         Ipp32f m_avgIntraSatd;
+        Ipp32f m_avgInterSatd;
         Ipp32f m_intraRatio;
         Ipp32s m_sceneCut;
         Ipp64s m_metric;// special metric per frame for sceneCut
