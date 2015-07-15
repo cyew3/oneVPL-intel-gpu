@@ -639,8 +639,8 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CABAC(void)
                 break;
             case MBTYPE_INTER_8x8:
             case MBTYPE_INTER_8x8_REF0:
-                memcpy(pCodMVdL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
-                memcpy(pCodMVdL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                MFX_INTERNAL_CPY(pCodMVdL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                MFX_INTERNAL_CPY(pCodMVdL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
                 {
                 for (Ipp32s i = 0; i < 4; i ++)
                 {
