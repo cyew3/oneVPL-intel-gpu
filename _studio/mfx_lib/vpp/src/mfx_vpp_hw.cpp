@@ -2470,12 +2470,16 @@ mfxI32 GetDeinterlaceMode( const mfxVideoParam& videoParam, const mfxVppCaps& ca
         if (videoParam.ExtParam[i] && videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DEINTERLACING)
         {
             mfxExtVPPDeinterlacing* extDI = (mfxExtVPPDeinterlacing*) videoParam.ExtParam[i];
-            if (extDI->Mode != MFX_DEINTERLACING_ADVANCED && extDI->Mode != MFX_DEINTERLACING_BOB)
+            if (extDI->Mode != MFX_DEINTERLACING_ADVANCED &&
+                extDI->Mode != MFX_DEINTERLACING_ADVANCED_NOREF &&
+                extDI->Mode != MFX_DEINTERLACING_BOB)
             {
                 return 0;
             }
             /* To check if driver support desired DI mode*/
             if ((MFX_DEINTERLACING_ADVANCED == extDI->Mode) && (caps.uAdvancedDI) )
+                deinterlacingMode = extDI->Mode;
+            if ((MFX_DEINTERLACING_ADVANCED_NOREF == extDI->Mode) && (caps.uAdvancedDI) )
                 deinterlacingMode = extDI->Mode;
 
             if ((MFX_DEINTERLACING_BOB == extDI->Mode) && (caps.uSimpleDI) )
@@ -2577,10 +2581,23 @@ mfxStatus ConfigureExecuteParams(
                     config.m_surfCount[VPP_OUT]  = IPP_MAX(1, config.m_surfCount[VPP_OUT]);
                     config.m_extConfig.mode = IS_REFERENCES;
                 }
+                else if (MFX_DEINTERLACING_ADVANCED_NOREF == executeParams.iDeinterlacingAlgorithm)
+                {
+                    executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_ADVANCED;
+                    config.m_bRefFrameEnable = false;
+                    config.m_extConfig.customRateData.fwdRefCount = 0;
+                    config.m_extConfig.customRateData.bkwdRefCount = 0; /* ref frame */
+                    config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 1;
+                    config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;
+                    config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
+                    config.m_surfCount[VPP_OUT]  = IPP_MAX(1, config.m_surfCount[VPP_OUT]);
+                    config.m_extConfig.mode = 0;
+                }
                 else if (0 == executeParams.iDeinterlacingAlgorithm)
                 {
                     bIsFilterSkipped = true;
                 }
+
 
                 break;
             }
@@ -2609,6 +2626,15 @@ mfxStatus ConfigureExecuteParams(
                 else if(MFX_DEINTERLACING_BOB == executeParams.iDeinterlacingAlgorithm)
                 {
                     // use ADI with spatial info, no reference frame (speed)
+                    config.m_bRefFrameEnable = false;
+                    config.m_surfCount[VPP_IN]  = IPP_MAX(1, config.m_surfCount[VPP_IN]);
+                    config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
+                    executeParams.bFMDEnable = false;
+                }
+                else if (MFX_DEINTERLACING_ADVANCED_NOREF == executeParams.iDeinterlacingAlgorithm)
+                {
+                    // use ADI with spatial info, no reference frame (speed)
+                    executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_ADVANCED;
                     config.m_bRefFrameEnable = false;
                     config.m_surfCount[VPP_IN]  = IPP_MAX(1, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);

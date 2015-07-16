@@ -1492,7 +1492,9 @@ mfxStatus GetPipelineList(
              * MFX_DEINTERLACING_ADVANCED && MFX_DEINTERLACING_BOB
              * If DI mode in Ext Buffer is not related BOB or ADVANCED Ext buffer ignored
              * */
-            if (extDI->Mode == MFX_DEINTERLACING_ADVANCED || extDI->Mode == MFX_DEINTERLACING_BOB)
+            if (extDI->Mode == MFX_DEINTERLACING_ADVANCED ||
+                extDI->Mode == MFX_DEINTERLACING_BOB ||
+                extDI->Mode == MFX_DEINTERLACING_ADVANCED_NOREF)
             {
                 /* DI Ext buffer present
                  * and DI type is correct
