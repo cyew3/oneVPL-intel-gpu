@@ -17,7 +17,8 @@ namespace H265Enc {
     extern const Ipp8u DEFAULT_ENABLE_CM;
     extern const Ipp8u tab_defaultNumRefFrameSw[8];
     extern const Ipp8u tab_defaultNumRefFrameGacc[8];
-    extern const Ipp8u tab_defaultGopRefDist[8];
+    extern const Ipp8u tab_defaultNumRefFrameLowDelaySw[8];
+    extern const Ipp8u tab_defaultNumRefFrameLowDelayGacc[8];
     extern const mfxExtCodingOptionHEVC tab_defaultOptHevcSw[8];
     extern const mfxExtCodingOptionHEVC tab_defaultOptHevcGacc[8];
 };

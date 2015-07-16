@@ -394,7 +394,8 @@ namespace H265Enc {
 #endif
     const Ipp8u tab_defaultNumRefFrameGacc[8] = {4, 4, 4, 4, 4, 4, 4, 2};
 
-    const Ipp8u tab_defaultGopRefDist[8] = {8, 8, 8, 8, 8, 8, 8, 8};
+    const Ipp8u tab_defaultNumRefFrameLowDelaySw[8]   = {2, 4, 4, 4, 3, 3, 3, 2};
+    const Ipp8u tab_defaultNumRefFrameLowDelayGacc[8] = {4, 4, 4, 4, 4, 4, 4, 3};
 
     const mfxExtCodingOptionHEVC tab_defaultOptHevcSw[8] = {
         TAB_TU(sw, 3), TAB_TU(sw, 0), TAB_TU(sw, 1), TAB_TU(sw, 2), TAB_TU(sw, 3), TAB_TU(sw, 4), TAB_TU(sw, 5), TAB_TU(sw, 6)

@@ -1063,23 +1063,24 @@ namespace {
             mfx.NumThread = optHevc.ForceNumThread;
         if (optHevc.EnableCm == 0)
             optHevc.EnableCm = DEFAULT_ENABLE_CM;
+        if (mfx.GopRefDist == 0)
+            mfx.GopRefDist = mfx.GopPicSize ? MIN(mfx.GopPicSize, 8) : 8;
 
         const mfxExtCodingOptionHEVC &defaultOptHevc = (optHevc.EnableCm == OFF ? tab_defaultOptHevcSw : tab_defaultOptHevcGacc)[mfx.TargetUsage];
-        const Ipp8u defaultGopRefDist = tab_defaultGopRefDist[mfx.TargetUsage];
         const Ipp32s numTile = tiles.NumTileRows * tiles.NumTileColumns;
 
-        Ipp8u defaultNumRefFrame = (optHevc.EnableCm == OFF ? tab_defaultNumRefFrameSw : tab_defaultNumRefFrameGacc)[mfx.TargetUsage];
-#ifdef AMT_REF_SCALABLE
         if (optHevc.NumRefLayers == 0)
             optHevc.NumRefLayers = defaultOptHevc.NumRefLayers;
         if (optHevc.BPyramid == 0)
             optHevc.BPyramid = defaultOptHevc.BPyramid;
-        if (optHevc.NumRefLayers == 4 && optHevc.BPyramid == ON)
-            defaultNumRefFrame =  4;
-#endif
 
-        if (mfx.GopRefDist == 0)
-            mfx.GopRefDist = mfx.GopPicSize ? MIN(mfx.GopPicSize, defaultGopRefDist) : defaultGopRefDist;
+        Ipp8u defaultNumRefFrame = ((mfx.GopRefDist == 1)
+            ? (optHevc.EnableCm == OFF ? tab_defaultNumRefFrameLowDelaySw : tab_defaultNumRefFrameLowDelayGacc)
+            : (optHevc.EnableCm == OFF ? tab_defaultNumRefFrameSw : tab_defaultNumRefFrameGacc)) [mfx.TargetUsage];
+#ifdef AMT_REF_SCALABLE
+        if (mfx.GopRefDist > 1 && optHevc.NumRefLayers == 4 && optHevc.BPyramid == ON)
+            defaultNumRefFrame = 4;
+#endif
 
         if (optHevc.FramesInParallel == 0) {
             if (par.AsyncDepth == 1 || mfx.NumSlice > 1 || numTile > 1)
