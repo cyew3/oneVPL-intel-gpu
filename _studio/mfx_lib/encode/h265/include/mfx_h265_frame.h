@@ -118,7 +118,7 @@ namespace H265Enc {
     };
 
     struct H265CUData;
-    struct FrameData : public RefCounter
+    struct FrameData : public RefCounter, public NonCopyable
     {
         Ipp8u *y;
         Ipp8u *uv;

@@ -35,6 +35,7 @@
 #include "ipps.h"
 #include "ippi.h"
 #include "mfxdefs.h"
+#include "mfxla.h"
 #include "mfx_ext_buffers.h"
 
 
@@ -648,6 +649,7 @@ enum {
     SUBPEL_FASTBOX_DIA_ORTH = 6, // Fast Box Half Pel + Dia Quarter + Orthogonal Update
 };
 
+
 template <class T> void Throw(const T &ex)
 {
     assert(!"exception");
@@ -742,6 +744,7 @@ namespace MfxEnumShortAliases {
     template<> struct Type2Id<mfxExtCodingOption2>      { enum { id = MFX_EXTBUFF_CODING_OPTION2 }; };
     template<> struct Type2Id<mfxExtCodingOptionSPSPPS> { enum { id = MFX_EXTBUFF_CODING_OPTION_SPSPPS }; };
     template<> struct Type2Id<mfxExtCodingOptionVPS>    { enum { id = MFX_EXTBUFF_CODING_OPTION_VPS }; };
+    template<> struct Type2Id<mfxExtLAFrameStatistics>  { enum { id = MFX_EXTBUFF_LOOKAHEAD_STAT}; };
 
     template <class T> struct RemoveConst          { typedef T type; };
     template <class T> struct RemoveConst<const T> { typedef T type; };

@@ -1617,7 +1617,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(
     }
 
     if (ctrl) {
-        if (ctrl->FrameType != MFX_FRAMETYPE_UNKNOWN)
+        if (!m_mfxParam.mfx.EncodedOrder && ctrl->FrameType != MFX_FRAMETYPE_UNKNOWN)
             if ((ctrl->FrameType & 0xff) != (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR))
                 return MFX_ERR_INVALID_VIDEO_PARAM;
         if (ctrl->Payload) {
@@ -1629,6 +1629,20 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(
                 if (ctrl->Payload[i]->NumBit > 8u * ctrl->Payload[i]->BufSize)
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
+        }
+    }
+
+    if (m_mfxParam.mfx.EncodedOrder) {
+        if (ctrl == NULL)
+            return MFX_ERR_NULL_PTR;
+        if ((ctrl->FrameType & 7) != MFX_FRAMETYPE_I &&
+            (ctrl->FrameType & 7) != MFX_FRAMETYPE_P &&
+            (ctrl->FrameType & 7) != MFX_FRAMETYPE_B)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        if (m_mfxParam.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT) {
+            mfxExtLAFrameStatistics *laStat = GetExtBuffer(*ctrl);
+            if (laStat == NULL)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
     }
 

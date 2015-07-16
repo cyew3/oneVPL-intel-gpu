@@ -2,6 +2,7 @@
 
 #define MFX_ENABLE_H265_VIDEO_ENCODE
 #include "mfx_h265_encode_api.h"
+#include "mfxla.h"
 
 namespace ApiTestCommon {
     template<class T> struct ExtBufInfo;
@@ -15,6 +16,7 @@ namespace ApiTestCommon {
     template<> struct ExtBufInfo<mfxExtCodingOption2>      { enum { id = MFX_EXTBUFF_CODING_OPTION2,            sz =  sizeof(mfxExtCodingOption2) }; };
     template<> struct ExtBufInfo<mfxExtCodingOptionSPSPPS> { enum { id = MFX_EXTBUFF_CODING_OPTION_SPSPPS,      sz =  sizeof(mfxExtCodingOptionSPSPPS) }; };
     template<> struct ExtBufInfo<mfxExtCodingOptionVPS>    { enum { id = MFX_EXTBUFF_CODING_OPTION_VPS,         sz =  sizeof(mfxExtCodingOptionVPS) }; };
+    template<> struct ExtBufInfo<mfxExtLAFrameStatistics>  { enum { id = MFX_EXTBUFF_LOOKAHEAD_STAT,            sz =  sizeof(mfxExtLAFrameStatistics) }; };
 
     template <class T> T MakeExtBuffer() {
         T extBuffer = {};

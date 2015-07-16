@@ -179,6 +179,7 @@
   <ItemGroup>
     <ClCompile Include="hevce_common_api.cpp" />
     <ClCompile Include="hevce_encodeframeasync.cpp" />
+    <ClCompile Include="hevce_encoded_order.cpp" />
     <ClCompile Include="hevce_gop.cpp" />
     <ClCompile Include="hevce_init.cpp" />
     <ClCompile Include="hevce_mock_videocore.cpp" />

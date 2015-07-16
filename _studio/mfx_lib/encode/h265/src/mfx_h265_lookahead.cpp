@@ -2487,6 +2487,8 @@ Lookahead::Lookahead(H265Encoder & enc)
     // configuration of lookahead algorithm family
     // SceneCut
     m_scdConfig.M = 0;
+    m_scdConfig.N = 0;
+    m_scdConfig.algorithm = ALG_HIST_DIFF;
     m_scdConfig.scaleFactor = 0;
     if (m_videoParam.SceneCut > 0) {
         m_scdConfig.M = 10;

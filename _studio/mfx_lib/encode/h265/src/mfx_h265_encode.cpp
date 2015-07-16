@@ -496,6 +496,7 @@ H265Encoder::H265Encoder(VideoCORE &core)
     : m_core(core)
     , m_brc(NULL)
     , m_fei(NULL)
+    , m_memBuf(NULL)
 {
     m_videoParam.m_logMvCostTable = NULL;
     m_responseAux.mids = NULL;
@@ -643,9 +644,6 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
 
     if (m_videoParam.hrdPresentFlag)
         m_hrd.Init(m_sps, m_videoParam.initDelay);
-
-    // cu
-    m_memBuf = NULL;
 
     // memsize calculation
     Ipp32s sizeofH265CU = (m_videoParam.bitDepthLuma > 8 ? sizeof(H265CU<Ipp16u>) : sizeof(H265CU<Ipp8u>));
@@ -1316,13 +1314,15 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
     }
 
     Ipp32s buffering = 0;
-    buffering += m_videoParam.GopRefDist - 1;
-    buffering += m_videoParam.m_framesInParallel - 1;
-    if (m_videoParam.SceneCut || m_videoParam.AnalyzeCmplx || m_videoParam.DeltaQpMode) {
-        buffering += 1;
-        if (m_videoParam.SceneCut)     buffering += 10 + 1 + 1;
-        if (m_videoParam.AnalyzeCmplx) buffering += m_videoParam.RateControlDepth;
-        if (m_videoParam.DeltaQpMode)  buffering += 2 * m_videoParam.GopRefDist + 1;
+    if (!m_videoParam.encodedOrder) {
+        buffering += m_videoParam.GopRefDist - 1;
+        buffering += m_videoParam.m_framesInParallel - 1;
+        if (m_videoParam.SceneCut || m_videoParam.AnalyzeCmplx || m_videoParam.DeltaQpMode) {
+            buffering += 1;
+            if (m_videoParam.SceneCut)     buffering += 10 + 1 + 1;
+            if (m_videoParam.AnalyzeCmplx) buffering += m_videoParam.RateControlDepth;
+            if (m_videoParam.DeltaQpMode)  buffering += 2 * m_videoParam.GopRefDist + 1;
+        }
     }
 
 #ifdef MFX_MAX_ENCODE_FRAMES
