@@ -1373,7 +1373,9 @@ mfxStatus CEncodingPipeline::Run()
             memset(&preENCCtr[fieldId], 0, sizeof (mfxExtFeiPreEncCtrl));
             preENCCtr[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
             preENCCtr[fieldId].Header.BufferSz = sizeof (mfxExtFeiPreEncCtrl);
-            preENCCtr[fieldId].PictureType = m_mfxEncParams.mfx.FrameInfo.PicStruct;
+            preENCCtr[fieldId].PictureType = numOfFields == 1 ? MFX_PICTYPE_FRAME :
+                fieldId == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD;
+
             preENCCtr[fieldId].DisableMVOutput = disableMVoutput;
             preENCCtr[fieldId].DisableStatisticsOutput = disableMBoutput;
             preENCCtr[fieldId].FTEnable = 1;//0;
