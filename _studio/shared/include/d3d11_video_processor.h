@@ -112,7 +112,8 @@ typedef struct tagPREPROC_QUERYCAPS
     UINT bIS                 : 1;
     UINT bVariance           : 1;
     UINT bFieldWeavingControl: 1;
-    UINT Reserved            : 26;
+    UINT bScalingMode        : 1;
+    UINT Reserved            : 25;
 
 } PREPROC_QUERYCAPS;
 
@@ -217,6 +218,7 @@ enum
     VPE_FN_VPREP_SET_VARIANCE_PARAM  = 0x34,
     VPE_FN_VPREP_GET_VARIANCE_PARAM  = 0x35,
     VPE_FN_VPREP_YUV_RANGE_PARAM     = 0x36,
+    VPE_FN_VPREP_SCALING_MODE_PARAM  = 0x37,
 
     VPE_FN_CP_QUERY_CAPS                     = 0x100,
     VPE_FN_CP_ACTIVATE_CAMERA_PIPE           = 0x101,
@@ -370,7 +372,8 @@ typedef struct _VPE_VPREP_CAPS
     UINT    bInterlacedScaling      :  1;
     UINT    bFieldWeavingControl    :  1;
     UINT    bVariances              :  1;
-    UINT    Reserved                : 28;
+    UINT    bScalingMode            :  1;
+    UINT    Reserved                : 27;
 } VPE_VPREP_CAPS;
 
 
@@ -436,6 +439,18 @@ typedef struct _VPE_VPREP_YUV_RANGE_PARAM
     UINT    bFullRangeEnabled    : 1;                              // [in/out]
     UINT    Reserved             : 31;
 } VPE_VPREP_YUV_RANGE_PARAM;
+
+typedef enum
+{
+    DXVA_SCALING          = 0, // Speed mode, i.e. bilinear scaling
+    DXVA_ADVANCEDSCALING  = 1  // Quality mode, i.e. AVS scaling
+} SCALING_MODE;
+
+typedef struct _VPE_VPREP_SCALING_MODE_PARAM 
+{
+    BOOL               PowerSavingMode;   // [in]
+    SCALING_MODE       QualitySpeedMode;  // [in]
+} VPE_VPREP_SCALING_MODE_PARAM;
 
 // CameraPipe Interface
 
@@ -617,6 +632,7 @@ typedef struct _VPE_FUNCTION
         VPE_VPREP_SET_VARIANCE_PARAM            *pSetVarianceParam;
         VPE_VPREP_GET_VARIANCE_PARAMS           *pGetVarianceParam;
         VPE_VPREP_YUV_RANGE_PARAM               *pYUVRangeParam;
+        VPE_VPREP_SCALING_MODE_PARAM            *pScalingModeParam;
 
     };
 } VPE_FUNCTION;
@@ -700,6 +716,7 @@ namespace MfxHwVideoProcessing
         mfxStatus CameraPipeSetHotPixelParams(CameraHotPixelRemovalParams *params);
         mfxStatus CameraPipeSetVignetteParams(CameraVignetteCorrectionParams *params);
         mfxStatus CameraPipeSetLensParams(CameraLensCorrectionParams *params);
+        mfxStatus SetStreamScalingMode(UINT StreamIndex, VPE_VPREP_SCALING_MODE_PARAM param);
 
         void SetOutputTargetRect(BOOL Enable, RECT *pRect);
         void SetOutputBackgroundColor(BOOL YCbCr, D3D11_VIDEO_COLOR *pColor);

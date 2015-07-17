@@ -584,6 +584,7 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         m_vpreCaps.bIS                  = vpeCaps.bImageStabilization;
         m_vpreCaps.bFieldWeavingControl = vpeCaps.bFieldWeavingControl;
         m_vpreCaps.bVariance            = vpeCaps.bVariances;
+        m_vpreCaps.bScalingMode         = vpeCaps.bScalingMode;
 #ifdef DEBUG_DETAIL_INFO
         printf("Success: VPE VPREP CAPS\n");
 
@@ -1500,9 +1501,19 @@ mfxStatus D3D11VideoProcessor::QueryVariance(
 mfxStatus D3D11VideoProcessor::CameraPipeActivate()
 {
     HRESULT hRes;
+    VPE_FUNCTION iFunc = {0};
+
+    VPE_MODE_PARAM modeParam = {VPE_MODE_CAM_PIPE};
+    iFunc.Function   = VPE_FN_MODE_PARAM;
+    iFunc.pModeParam = &modeParam;
+
+    hRes = SetOutputExtension(
+        &(m_iface.guid),
+        sizeof(VPE_FUNCTION),
+        &iFunc);
+    CHECK_HRES(hRes);
 
     // Disable status reporting since it breaks camera pipe.
-    VPE_FUNCTION iFunc = {0};
     VPE_SET_STATUS_PARAM statusParam = {0, 0};
     iFunc.Function        = VPE_FN_SET_STATUS_PARAM;
     iFunc.pSetStatusParam = &statusParam;
@@ -1727,6 +1738,25 @@ mfxStatus D3D11VideoProcessor::CameraPipeSetWhitebalanceParams(CameraWhiteBalanc
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D11VideoProcessor::SetStreamScalingMode(UINT streamIndex, VPE_VPREP_SCALING_MODE_PARAM param)
+{
+    HRESULT hRes;
+    VPE_FUNCTION iFunc;
+
+    iFunc.Function          = VPE_FN_VPREP_SCALING_MODE_PARAM;
+    iFunc.pScalingModeParam = &param;
+
+    streamIndex = 0;
+    hRes = SetStreamExtension(
+            streamIndex,
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
+            &iFunc);
+    CHECK_HRES(hRes);
 
     return MFX_ERR_NONE;
 }

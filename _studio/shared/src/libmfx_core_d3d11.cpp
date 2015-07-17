@@ -953,6 +953,21 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
                 }
                 break;
 
+            case MFX_FOURCC_ARGB16:
+                {
+                    MFX_CHECK_NULL_PTR1(pDst->Data.R);
+                    MFX_CHECK_NULL_PTR1(pDst->Data.G);
+                    MFX_CHECK_NULL_PTR1(pDst->Data.B);
+
+                    mfxU8* ptrDst = IPP_MIN(IPP_MIN(pDst->Data.R, pDst->Data.G), pDst->Data.B);
+
+                    roi.width *= 8;
+
+                    sts = pFastCopy->Copy(ptrDst, dstPitch, (mfxU8 *)sLockRect.pData, srcPitch, roi);
+                    MFX_CHECK_STS(sts);
+                }
+                break;
+
             case MFX_FOURCC_P8:
 
                 sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)sLockRect.pData, srcPitch, roi);
