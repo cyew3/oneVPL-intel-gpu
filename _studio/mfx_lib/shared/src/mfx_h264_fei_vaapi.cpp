@@ -436,9 +436,9 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
     //mdprintf(stderr,"\n");
     m_statParams.input = *inputSurface;
-    if (MFX_PICSTRUCT_FIELD_TFF == feiCtrl->PictureType)
+    if (MFX_PICTYPE_TOPFIELD == feiCtrl->PictureType)
         m_statParams.interlaced = 1;
-    else if ((MFX_PICSTRUCT_FIELD_BFF == feiCtrl->PictureType))
+    else if ((MFX_PICTYPE_BOTTOMFIELD == feiCtrl->PictureType))
         m_statParams.interlaced = 2;
     else /* default is progressive */
         m_statParams.interlaced = 0;
@@ -714,7 +714,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MBStat vaUnmapBuffer");
                     vaUnmapBuffer(m_vaDisplay, statOUTid);
                 }
-                if ((MFX_PICSTRUCT_PROGRESSIVE == feiCtrl->PictureType) || (1 == fieldId) /* Second field */)
+                if ((MFX_PICTYPE_FRAME == feiCtrl->PictureType) || (1 == fieldId) /* Second field */)
                 {
                     MFX_DESTROY_VABUFFER(statOUTid, m_vaDisplay);
                     m_statOutId[0] = VA_INVALID_ID;
