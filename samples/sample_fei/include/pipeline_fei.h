@@ -205,6 +205,7 @@ protected:
     mfxU16 m_gopSize;
 
     MFXVideoSession m_mfxSession;
+    MFXVideoSession m_preenc_mfxSession;
     MFXVideoENCODE* m_pmfxENCPAK;
     MFXVideoENC* m_pmfxPREENC;
     MFXVideoENC* m_pmfxENC;
@@ -298,10 +299,9 @@ protected:
     mfxExtFeiPakMBCtrl feiEncMBCode[2];
 
     mfxU16 numExtInParams;
-    mfxU16 numExtOutParams;//, numExtOutParamsI;
+    mfxU16 numExtOutParams;
     mfxExtBuffer * inBufs[4 + 3]; // 4 general + 3 for SPS, PPS and Slice header
     mfxExtBuffer * outBufs[4 + 3];
-    //mfxExtBuffer * outBufsI[4 + 3];
 
     mfxU16 numExtOutParamsPreEnc;
     mfxU16 numExtInParamsPreEnc;
