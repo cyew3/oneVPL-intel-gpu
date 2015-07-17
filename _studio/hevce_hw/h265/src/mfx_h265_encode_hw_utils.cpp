@@ -15,7 +15,7 @@
 #include <functional>
 #include <list>
 #include <assert.h>
-
+#include "mfx_common_int.h"
 namespace MfxHwH265Encode
 {
 
@@ -435,7 +435,7 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.DDI);
     ExtBuffer::Set(par, m_ext.AVCTL);
 
-    mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(par);
+    mfxExtCodingOptionSPSPPS * pSPSPPS = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
     if (pSPSPPS && !query)
     {
         MFX_CHECK(pSPSPPS->SPSBuffer, MFX_ERR_NULL_PTR);

@@ -414,9 +414,8 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
 {
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
-
-    m_vpar.FillPar(*par);
-
+ 
+    sts = m_vpar.FillPar(*par);
     return sts;
 }
 

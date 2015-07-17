@@ -737,6 +737,15 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         , (mfxU32)MFX_IOPATTERN_IN_OPAQUE_MEMORY
         , 0);
 
+    if (par.mfx.RateControlMethod == (mfxU32)MFX_RATECONTROL_AVBR)
+    {
+        par.mfx.RateControlMethod = (mfxU32)MFX_RATECONTROL_CBR;
+        par.mfx.Accuracy = 0;
+        par.mfx.Convergence = 0;
+        changed ++;
+    }
+
+
     unsupported += CheckOption(par.mfx.RateControlMethod
         , 0
         , (mfxU32)MFX_RATECONTROL_CBR
