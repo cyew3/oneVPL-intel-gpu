@@ -3921,6 +3921,13 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
 
             m_found_SH = true;
 
+            if (false == m_first_SH && (surface_work->Info.CropW <  CropW || surface_work->Info.CropH < CropH))
+            {
+                m_resizing = true;
+
+                return MFX_WRN_VIDEO_PARAM_CHANGED;
+            }
+
             if (false == m_first_SH)
             {
                 if (m_InitW >  Width || m_InitH > Height)
