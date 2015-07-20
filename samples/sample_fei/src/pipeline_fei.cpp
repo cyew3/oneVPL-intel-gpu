@@ -2243,6 +2243,8 @@ mfxStatus CEncodingPipeline::Run()
                     {
                         sts = m_mfxSession.SyncOperation(pCurrentTask->EncSyncP, MSDK_WAIT_INTERVAL);
                         MSDK_BREAK_ON_ERROR(sts);
+                        sts = SynchronizeFirstTask();
+                        MSDK_BREAK_ON_ERROR(sts);
                     }
                     break;
                 }
