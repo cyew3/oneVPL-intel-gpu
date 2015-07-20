@@ -223,11 +223,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     //Intra prediction optimization
     TU_OPT_SW  (IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice SW
     TU_OPT_GACC(IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice Gacc
-#ifdef AMT_SETTINGS
     TU_OPT_SW  (IntraAngModesP,                 1,   1,   2,   2,   3,   3,   3); //P slice SW
-#else
-    TU_OPT_SW  (IntraAngModesP,                 1,   1,   2,   2,   2,   2,   3); //P slice SW
-#endif
 #ifdef AMT_ADAPTIVE_INTRA_DEPTH
     TU_OPT_SW  (IntraAngModesBRef,              1,   1,   2,   2,   3,   3,   99); //B Ref slice SW
 #else
@@ -261,7 +257,7 @@ using namespace H265Enc::MfxEnumShortAliases;
 #else
     TU_OPT_GACC(RDOQuantCGZ,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 #endif
-    TU_OPT_ALL (DeltaQpMode,                    0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_ALL (DeltaQpMode,                    4,   4,   1,   1,   1,   1,   1);
 
 
     //Intra RDO
@@ -379,20 +375,17 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_ALL (AnalyzeCmplx,                   0,   0,   0,   0,   0,   0,   0);
     TU_OPT_ALL (SceneCut,                       0,   0,   0,   0,   0,   0,   0);
     TU_OPT_ALL (RateControlDepth,               0,   0,   0,   0,   0,   0,   0);
-    TU_OPT_ALL (LowresFactor,                   0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_ALL (LowresFactor,                   3,   3,   3,   3,   3,   3,   3);
 
     TU_OPT_ALL (RepackProb,                     0,   0,   0,   0,   0,   0,   0);
-    TU_OPT_SW  (NumRefLayers,                   2,   2,   3,   3,   4,   4,   4);
+    TU_OPT_SW  (NumRefLayers,                   3,   3,   3,   3,   4,   4,   4);
     TU_OPT_GACC(NumRefLayers,                   2,   2,   3,   3,   4,   4,   4);
 
 
 namespace H265Enc {
-#ifdef AMT_SETTINGS
-    const Ipp8u tab_defaultNumRefFrameSw[8] = {2, 4, 4, 4, 4, 3, 3, 3};
-#else
-    const Ipp8u tab_defaultNumRefFrameSw[8] = {2, 4, 4, 4, 3, 3, 2, 2};
-#endif
-    const Ipp8u tab_defaultNumRefFrameGacc[8] = {4, 4, 4, 4, 4, 4, 4, 2};
+
+    const Ipp8u tab_defaultNumRefFrameSw[8]   = {2, 4, 4, 4, 4, 4, 4, 4};
+    const Ipp8u tab_defaultNumRefFrameGacc[8] = {4, 4, 4, 4, 4, 4, 4, 4};
 
     const Ipp8u tab_defaultNumRefFrameLowDelaySw[8]   = {2, 4, 4, 4, 3, 3, 3, 2};
     const Ipp8u tab_defaultNumRefFrameLowDelayGacc[8] = {4, 4, 4, 4, 4, 4, 4, 3};

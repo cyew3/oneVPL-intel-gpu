@@ -61,6 +61,7 @@ namespace H265Enc {
         void AnalyzeComplexity(Frame* in);
 
         void DoPersistanceAnalysis(Frame* in);
+        void DoPersistanceAnalysis_OneRow(Frame* in, Ipp32s ctb_row);
         void DetermineQpMap_IFrame(Frame* in);
         void DetermineQpMap_PFrame(Frame* in, Frame* past);
 

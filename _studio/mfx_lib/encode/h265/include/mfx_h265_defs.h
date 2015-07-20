@@ -77,7 +77,6 @@
 #endif
 #endif
 
-#define AMT_SETTINGS
 #define AMT_THRESHOLDS
 #define AMT_ADAPTIVE_INTRA_RD
 #define AMT_ALT_ENCODE
@@ -111,6 +110,8 @@
 #endif
 #define AMT_VQ_TU
 #endif
+
+#define AMT_DQP_FIX
 #endif
 
 

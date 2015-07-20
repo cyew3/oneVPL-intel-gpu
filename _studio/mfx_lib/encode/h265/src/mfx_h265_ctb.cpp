@@ -1269,17 +1269,12 @@ void H265CU<PixType>::InitCu(
             GetAdaptiveMinDepth(0, 0);
         m_isHistBuilt = false;
 
-#ifdef AMT_SETTINGS
         m_cuIntraAngMode = EnumIntraAngMode((m_currFrame->m_picCodeType == MFX_FRAMETYPE_B && !m_currFrame->m_isRef)
             ? m_par->intraAngModes[B_NONREF]
         : ((m_currFrame->m_picCodeType == MFX_FRAMETYPE_P)
             ? m_par->intraAngModes[SliceTypeIndex(P_SLICE)]
         : m_par->intraAngModes[SliceTypeIndex(m_cslice->slice_type)]));
-#else
-        m_cuIntraAngMode = EnumIntraAngMode((m_currFrame->m_picCodeType == MFX_FRAMETYPE_B && !m_currFrame->m_isRef)
-            ? m_par->intraAngModes[B_NONREF]
-        : m_par->intraAngModes[SliceTypeIndex(m_cslice->slice_type)]);
-#endif
+
 #ifndef AMT_ALT_ENCODE
         m_interPredY = m_interPredBufsY[0];
         m_interPredC = m_interPredBufsC[0];
@@ -8191,7 +8186,7 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
     Ipp8s  idxL1 = refIdxBestB[1] = refIdxBest[1];
     Ipp32s costList[2] = { costRefBest[0][idxL0], costRefBest[1][idxL1] };
 
-#ifdef AMT_REF_SCALABLE
+#ifdef AMT_REF_SCALABLE_REF_SELECT
     if(m_cslice->slice_type == B_SLICE && idxL1==idxL0
         && m_par->BiPyramidLayers>1 && m_currFrame->m_pyramidLayer==0 && m_par->NumRefLayers>2) 
     {
@@ -8200,6 +8195,36 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
             if(refIdx!=refIdxBest[0] && costRefBest[0][refIdx]!=INT_MAX && costRefBest[0][refIdx]*8 < costRefBest[1][refIdxBest[1]]*9) {
                 idxL0 = refIdxBestB[0] = refIdx;
                 break;
+            }
+        }
+    }
+#else
+    if(m_cslice->slice_type == B_SLICE && refPicList[1].m_refFrames[idxL1]==refPicList[0].m_refFrames[idxL0]) 
+    {
+        Ipp32s bestCostAlt = INT_MAX;
+        Ipp8s bestList = (idxL0<=idxL1)?1:0;
+        Ipp8s bestAlt = refIdxBest[bestList];
+        Ipp32s numRefIdx = m_cslice->num_ref_idx[bestList];
+        for (Ipp8s refIdx = 0; refIdx < numRefIdx; refIdx++) {
+            if(refIdx!=refIdxBest[bestList] && costRefBest[bestList][refIdx]!=INT_MAX && costRefBest[bestList][refIdx]<bestCostAlt) {
+                bestCostAlt = costRefBest[bestList][refIdx];
+                bestAlt = refIdx;
+            }
+        }
+        Ipp8s oList = (bestList)?0:1;
+        numRefIdx = m_cslice->num_ref_idx[oList];
+        for (Ipp8s refIdx = 0; refIdx < numRefIdx; refIdx++) {
+            if(refIdx!=refIdxBest[oList] && costRefBest[oList][refIdx]!=INT_MAX && costRefBest[oList][refIdx]<bestCostAlt) {
+                bestCostAlt = costRefBest[oList][refIdx];
+                bestAlt = refIdx;
+                bestList = oList;
+            }
+        }
+        if(bestCostAlt!=INT_MAX && bestCostAlt*8<costRefBest[bestList][refIdxBest[bestList]]*9) {
+            if(bestList==0) {
+                idxL0 = refIdxBestB[0] = bestAlt;
+            } else {
+                idxL1 = refIdxBestB[1] = bestAlt;
             }
         }
     }

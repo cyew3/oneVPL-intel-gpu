@@ -160,9 +160,8 @@ namespace {
         if (intParam.NumRefFrameB < 2) 
             intParam.NumRefFrameB = numRefFrame;
         intParam.NumRefLayers  = optHevc.NumRefLayers;
-        if (intParam.NumRefLayers < 2) 
+        if (intParam.NumRefLayers < 2 || intParam.BiPyramidLayers<2) 
             intParam.NumRefLayers = 2;
-        
         intParam.IntraMinDepthSC = (Ipp8u)optHevc.IntraMinDepthSC - 1;
         intParam.InterMinDepthSTC = (Ipp8u)optHevc.InterMinDepthSTC - 1;
         intParam.MotionPartitionDepth = (Ipp8u)optHevc.MotionPartitionDepth - 1;
@@ -247,7 +246,14 @@ namespace {
         intParam.num_cand_2[6] = (Ipp8u)optHevc.IntraNumCand2_6;
 
         intParam.LowresFactor = optHevc.LowresFactor - 1;
-        intParam.DeltaQpMode = optHevc.DeltaQpMode;
+        intParam.DeltaQpMode  = optHevc.DeltaQpMode  - 1;
+#ifdef AMT_DQP_FIX
+        if(intParam.chromaFormatIdc != MFX_CHROMAFORMAT_YUV420 
+            || intParam.bitDepthLuma > 8 
+            || mfx.RateControlMethod != CQP
+            || (optHevc.EnableCm == ON))
+            intParam.DeltaQpMode  = 0;      // Disable For now -NG
+#endif
         intParam.SceneCut = (opt2.AdaptiveI == ON);
         intParam.AnalyzeCmplx = optHevc.AnalyzeCmplx - 1;
         intParam.RateControlDepth = optHevc.RateControlDepth;

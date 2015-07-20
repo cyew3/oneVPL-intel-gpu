@@ -709,7 +709,7 @@ namespace {
             wrnIncompatible = !CheckMax(optHevc->FastAMPRD, 2);
             wrnIncompatible = !CheckMax(optHevc->SkipMotionPartition, 2);
             wrnIncompatible = !CheckMax(optHevc->PatternSubPel, 6);
-            wrnIncompatible = !CheckMax(optHevc->DeltaQpMode, 3);
+            wrnIncompatible = !CheckMax(optHevc->DeltaQpMode, 4);
             wrnIncompatible = !CheckMax(optHevc->NumRefFrameB, 16);
             wrnIncompatible = !CheckMax(optHevc->NumRefLayers, 4);
             wrnIncompatible = !CheckMax(optHevc->AnalyzeCmplx, 2);
@@ -1077,10 +1077,6 @@ namespace {
         Ipp8u defaultNumRefFrame = ((mfx.GopRefDist == 1)
             ? (optHevc.EnableCm == OFF ? tab_defaultNumRefFrameLowDelaySw : tab_defaultNumRefFrameLowDelayGacc)
             : (optHevc.EnableCm == OFF ? tab_defaultNumRefFrameSw : tab_defaultNumRefFrameGacc)) [mfx.TargetUsage];
-#ifdef AMT_REF_SCALABLE
-        if (mfx.GopRefDist > 1 && optHevc.NumRefLayers == 4 && optHevc.BPyramid == ON)
-            defaultNumRefFrame = 4;
-#endif
 
         if (optHevc.FramesInParallel == 0) {
             if (par.AsyncDepth == 1 || mfx.NumSlice > 1 || numTile > 1)
@@ -1332,7 +1328,7 @@ namespace {
             if (optHevc.AnalyzeCmplx == 2)
                 optHevc.RateControlDepth = mfx.GopRefDist + 1;
         if (optHevc.LowresFactor == 0)
-            optHevc.LowresFactor = 3;
+            optHevc.LowresFactor = defaultOptHevc.LowresFactor;
         if (optHevc.DeblockBorders == 0)
             optHevc.DeblockBorders = defaultOptHevc.DeblockBorders;
         if (optHevc.SAOChroma == 0)

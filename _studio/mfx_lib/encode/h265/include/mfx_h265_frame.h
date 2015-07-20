@@ -73,9 +73,10 @@ namespace H265Enc {
         std::vector<H265MV> m_mv;
         std::vector<H265MV> m_mv_pdist_future;
         std::vector<H265MV> m_mv_pdist_past;
-        std::vector<Ipp64f> m_rs;
-        std::vector<Ipp64f> m_cs;
-        
+
+        std::vector<Ipp32s> m_rs;
+        std::vector<Ipp32s> m_cs;
+        std::vector<Ipp64f> rscs_ctb;
         std::vector<Ipp32s> sc_mask;
         std::vector<Ipp32s> qp_mask;
         std::vector<Ipp32s> coloc_past;

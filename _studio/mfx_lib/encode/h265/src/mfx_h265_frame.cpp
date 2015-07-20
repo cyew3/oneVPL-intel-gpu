@@ -137,7 +137,7 @@ namespace H265Enc {
         size_t len = width * height >> 4;// because RsCs configured for 4x4 blk only
         m_rs.resize(len, 0);
         m_cs.resize(len, 0);
-
+        rscs_ctb.resize(numBlk, 0);
         sc_mask.resize(numBlk, 0);
         qp_mask.resize(numBlk, 0);
         coloc_futr.resize(numBlk, 0);
@@ -160,6 +160,7 @@ namespace H265Enc {
         m_mv_pdist_future.resize(numBlk);
         m_rs.resize(len);
         m_cs.resize(len);
+        rscs_ctb.resize(numBlk);
         sc_mask.resize(numBlk);
         qp_mask.resize(numBlk);
         coloc_futr.resize(numBlk);
