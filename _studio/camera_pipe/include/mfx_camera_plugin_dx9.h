@@ -788,6 +788,7 @@ protected:
 private:
 
     // Do not allow copying of the object
+    D3D9CameraProcessor(const D3D9CameraProcessor& from) {};
     D3D9CameraProcessor& operator=(const D3D9CameraProcessor&) {return *this; };
 
     mfxU32 FindFreeResourceIndex(

@@ -1850,14 +1850,16 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
         m_videoProcessorStreams.insert(std::pair<void *, D3D11_VIDEO_PROCESSOR_STREAM *>(inputSurface, videoProcessorStream));
         videoProcessorStream->Enable = TRUE;
         videoProcessorStream->OutputIndex = PtrToUlong(pParams->targetSurface.hdl.second);
-        videoProcessorStream->InputFrameOrField = pParams->statusReportID;
+        videoProcessorStream->InputFrameOrField = 0;
         SetStreamFrameFormat(0, D3D11PictureStructureMapping(pParams->pRefSurfaces[0].frameInfo.PicStruct));
 
         // source cropping
         mfxFrameInfo *inInfo = &(pInputSample->frameInfo);
         pRect.top    = inInfo->CropY;
         pRect.left   = inInfo->CropX;
-        pRect.bottom = inInfo->CropH;
+
+        // WA for driver bug: if height is odd, driver may fail or hang. 
+        pRect.bottom = (inInfo->CropH/2) * 2;
         pRect.right  = inInfo->CropW;
         pRect.bottom += inInfo->CropY;
         pRect.right  += inInfo->CropX;

@@ -1303,9 +1303,11 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
     if ( m_executeSurf )
         free(m_executeSurf);
     m_executeParams = (MfxHwVideoProcessing::mfxExecuteParams *)malloc(sizeof(MfxHwVideoProcessing::mfxExecuteParams)*m_AsyncDepth);
+    MFX_CHECK_NULL_PTR1(m_executeParams);
     ZeroMemory(m_executeParams, sizeof(MfxHwVideoProcessing::mfxExecuteParams)*m_AsyncDepth);
     m_executeSurf   = (MfxHwVideoProcessing::mfxDrvSurface *)malloc(sizeof(MfxHwVideoProcessing::mfxDrvSurface)*m_AsyncDepth);
-    ZeroMemory(m_executeParams, sizeof(MfxHwVideoProcessing::mfxDrvSurface)*m_AsyncDepth);
+    MFX_CHECK_NULL_PTR1(m_executeSurf);
+    ZeroMemory(m_executeSurf, sizeof(MfxHwVideoProcessing::mfxDrvSurface)*m_AsyncDepth);
     
     m_outputSurf.resize(0);
     // Directly create DXVAHD surfaces that will be used as input for Blt
