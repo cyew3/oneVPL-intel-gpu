@@ -1477,14 +1477,17 @@ mfxStatus  VideoVPPHW::Init(
     //-----------------------------------------------------
     m_params = *par;// PARAMS!!!
 
-    m_ddi.reset( CreateVideoProcessing( m_pCore) );
     if (m_ddi.get() == 0)
     {
-        return MFX_WRN_PARTIAL_ACCELERATION;
-    }
+        m_ddi.reset( CreateVideoProcessing( m_pCore) );
+        if (m_ddi.get() == 0)
+        {
+            return MFX_WRN_PARTIAL_ACCELERATION;
+        }
 
-    sts = m_ddi->CreateDevice( m_pCore, par, isTemporal);
-    MFX_CHECK_STS( sts );
+        sts = m_ddi->CreateDevice( m_pCore, par, isTemporal);
+        MFX_CHECK_STS( sts );
+    }
 
     mfxVppCaps caps = {0};
     sts = m_ddi->QueryCapabilities( caps );
@@ -1544,8 +1547,11 @@ mfxStatus  VideoVPPHW::Init(
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_INTERNAL_FRAME;
         request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_OUT] ;
 
-        sts = m_internalVidSurf[VPP_OUT].Alloc(m_pCore, request, par->vpp.Out.FourCC != MFX_FOURCC_YV12);
-        MFX_CHECK_STS(sts);
+        if (m_config.m_surfCount[VPP_OUT] != m_internalVidSurf[VPP_OUT].NumFrameActual)
+        {
+            sts = m_internalVidSurf[VPP_OUT].Alloc(m_pCore, request, par->vpp.Out.FourCC != MFX_FOURCC_YV12);
+            MFX_CHECK_STS(sts);
+        }
 
         m_config.m_IOPattern |= MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
@@ -1560,12 +1566,15 @@ mfxStatus  VideoVPPHW::Init(
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME;
         request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_IN] ;
 
-        sts = m_internalVidSurf[VPP_IN].Alloc(m_pCore, request, par->vpp.In.FourCC != MFX_FOURCC_YV12);
-        MFX_CHECK_STS(sts);
+        if (m_config.m_surfCount[VPP_IN] != m_internalVidSurf[VPP_IN].NumFrameActual)
+        {
+            sts = m_internalVidSurf[VPP_IN].Alloc(m_pCore, request, par->vpp.In.FourCC != MFX_FOURCC_YV12);
+            MFX_CHECK_STS(sts);
+        }
 
-         m_config.m_IOPattern |= MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+        m_config.m_IOPattern |= MFX_IOPATTERN_IN_SYSTEM_MEMORY;
 
-         m_config.m_surfCount[VPP_IN] = request.NumFrameMin;
+        m_config.m_surfCount[VPP_IN] = request.NumFrameMin;
     }
 
     // sync workload mode by default
@@ -1698,59 +1707,29 @@ mfxStatus VideoVPPHW::QueryIOSurf(
 
 mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
 {
-    mfxStatus sts = MFX_ERR_NONE;
-
-    m_params = *par;// PARAMS!!!
-
     /* This is question: Should we free resource here or not?... */
     /* For Dynamic composition we should not to do it !!! */
     if (false == m_executeParams.bComposite)
     {
         m_taskMngr.Close();// all resource free here
     }
-    else
-    {
-        /* Device should be already exist !!!
-         * As it is Reset call, it should be true.
-         *
-         * If you call Reset() before Init() call, there is no ddi device.
-         * But it is ok, as no resource to free
-         * and this case is not influence on composition
-        */
 
-        mfxVppCaps caps = {0};
+    /* Application should close the SDK component and then reinitialize it in case of the parameters change described below */
+    if (m_params.vpp.In.PicStruct  != par->vpp.In.PicStruct ||
+        m_params.vpp.Out.PicStruct != par->vpp.Out.PicStruct)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-        if (m_ddi.get() != NULL)
-        {
-            sts = m_ddi->QueryCapabilities( caps );
-            MFX_CHECK_STS(sts);
+    if (m_params.vpp.In.FrameRateExtD  != par->vpp.In.FrameRateExtD  ||
+        m_params.vpp.In.FrameRateExtN  != par->vpp.In.FrameRateExtN  ||
+        m_params.vpp.Out.FrameRateExtD != par->vpp.Out.FrameRateExtD ||
+        m_params.vpp.Out.FrameRateExtN != par->vpp.Out.FrameRateExtN)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-            if (par->vpp.In.Width > caps.uMaxWidth  || par->vpp.In.Height  > caps.uMaxHeight ||
-                par->vpp.Out.Width > caps.uMaxWidth || par->vpp.Out.Height > caps.uMaxHeight)
-            {
-                return MFX_ERR_INVALID_VIDEO_PARAM;
-            }
+    if (m_params.vpp.In.FourCC  != par->vpp.In.FourCC ||
+        m_params.vpp.Out.FourCC != par->vpp.Out.FourCC)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-            m_config.m_IOPattern = 0;
-            sts = ConfigureExecuteParams(
-                m_params,
-                caps,
-                m_executeParams,
-                m_config);
-            if (MFX_WRN_FILTER_SKIPPED == sts )
-            {
-                sts = MFX_ERR_NONE;
-            }
-            MFX_CHECK_STS(sts);
-        }
-
-    }
-
-    m_taskMngr.Init(
-        m_pCore,
-        m_config);
-
-    return MFX_ERR_NONE;
+    return this->Init(par);
 
 } // mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
 
