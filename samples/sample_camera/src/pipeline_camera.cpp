@@ -134,6 +134,12 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
     else
         m_mfxVideoParams.IOPattern |= MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
+    if ( m_mfxVideoParams.vpp.Out.Width > 8*1024 && m_mfxVideoParams.vpp.Out.Height > 8*1024)
+    {
+        // If frame resolution is bigger than 8Kx8K, force async to 1 in order to limit memory consumption.
+        pParams->asyncDepth = 1;
+    }
+
     if (pParams->asyncDepth >= 0)
         m_mfxVideoParams.AsyncDepth = (mfxU16)pParams->asyncDepth;
     else
@@ -1015,18 +1021,18 @@ mfxStatus CCameraPipeline::AllocAndInitCamWhiteBalance(sInputParams *pParams)
 
 mfxStatus CCameraPipeline::AllocAndInitCamLens(sInputParams *pParams)
 {
-    m_Lens.a[0] = pParams->lens_a;
-    m_Lens.a[1] = pParams->lens_a;
-    m_Lens.a[2] = pParams->lens_a;
-    m_Lens.b[0] = pParams->lens_b;
-    m_Lens.b[1] = pParams->lens_b;
-    m_Lens.b[2] = pParams->lens_b;
-    m_Lens.c[0] = pParams->lens_c;
-    m_Lens.c[1] = pParams->lens_c;
-    m_Lens.c[2] = pParams->lens_c;
-    m_Lens.d[0] = pParams->lens_d;
-    m_Lens.d[1] = pParams->lens_d;
-    m_Lens.d[2] = pParams->lens_d;
+    m_Lens.a[0] = pParams->lens_aR;
+    m_Lens.a[1] = pParams->lens_aG;
+    m_Lens.a[2] = pParams->lens_aB;
+    m_Lens.b[0] = pParams->lens_bR;
+    m_Lens.b[1] = pParams->lens_bG;
+    m_Lens.b[2] = pParams->lens_bB;
+    m_Lens.c[0] = pParams->lens_cR;
+    m_Lens.c[1] = pParams->lens_cG;
+    m_Lens.c[2] = pParams->lens_cB;
+    m_Lens.d[0] = pParams->lens_dR;
+    m_Lens.d[1] = pParams->lens_dG;
+    m_Lens.d[2] = pParams->lens_dB;
     return MFX_ERR_NONE;
 }
 
