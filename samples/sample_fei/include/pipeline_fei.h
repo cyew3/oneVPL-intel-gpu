@@ -105,8 +105,8 @@ struct sInputParams
     msdk_char strPluginDLLPath[MSDK_MAX_FILENAME_LEN]; // plugin dll path and name
 
     bool bLABRC; // use look ahead bitrate control algorithm
+    bool bENCODE;
     bool bENCPAK;
-    bool bENCoPAKo;
     bool bOnlyENC;
     bool bOnlyPAK;
     bool bPREENC;

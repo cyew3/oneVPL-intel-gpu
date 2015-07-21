@@ -382,7 +382,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
 
-    if(pInParams->bENCPAK)
+    if(pInParams->bENCODE)
     {
         //force rc to cqp only
         m_mfxEncParams.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
@@ -563,10 +563,10 @@ mfxStatus CEncodingPipeline::AllocFrames()
     // The number of surfaces shared by vpp output and encode input.
     // When surfaces are shared 1 surface at first component output contains output frame that goes to next component input
     nEncSurfNum = EncRequest.NumFrameSuggested + MSDK_MAX(VppRequest[1].NumFrameSuggested, 1) - 1 + (m_nAsyncDepth - 1);
-    if ((m_encpakParams.bPREENC) || (m_encpakParams.bENCoPAKo) || (m_encpakParams.bENCPAK) ||
+    if ((m_encpakParams.bPREENC) || (m_encpakParams.bENCPAK) || (m_encpakParams.bENCODE) ||
         (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK) )
     {
-        bool twoEncoders = (m_encpakParams.bPREENC) && ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK)); //need to double task pool size
+        bool twoEncoders = (m_encpakParams.bPREENC) && ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK)); //need to double task pool size
                                                                                                                                                //in case of PREENC + ENC
         nEncSurfNum = m_refDist * (twoEncoders? 4 : 2);
     }
@@ -946,7 +946,7 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
     mfxStatus sts = MFX_ERR_NONE;
 
     // prepare output file writers
-    if((pParams->bENCPAK) || (pParams->bENCoPAKo) || (pParams->bOnlyPAK)){ //need only for ENC+PAK, only ENC + only PAK, only PAK
+    if((pParams->bENCODE) || (pParams->bENCPAK) || (pParams->bOnlyPAK)){ //need only for ENC+PAK, only ENC + only PAK, only PAK
         sts = InitFileWriter(&m_FileWriters.first, pParams->dstFileBuff[0]);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
@@ -1062,7 +1062,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    //if(pParams->bENCPAK){
+    //if(pParams->bENCODE){
         // create encoder
         m_pmfxENCPAK = new MFXVideoENCODE(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxENCPAK, MFX_ERR_MEMORY_ALLOC);
@@ -1074,7 +1074,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_POINTER(m_pmfxPREENC, MFX_ERR_MEMORY_ALLOC);
     }
 
-    if(pParams->bENCoPAKo){
+    if(pParams->bENCPAK){
         // create encoder
         m_pmfxENC = new MFXVideoENC(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_MEMORY_ALLOC);
@@ -1191,11 +1191,11 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
 
     //use encoded order if both is used
     //TODO: check for ENC_PAK
-    if(m_encpakParams.bENCPAK && (m_encpakParams.bPREENC || m_encpakParams.bENCoPAKo)){
+    if(m_encpakParams.bENCODE && (m_encpakParams.bPREENC || m_encpakParams.bENCPAK)){
         m_mfxEncParams.mfx.EncodedOrder = 1;
     }
 
-    if ((m_encpakParams.bENCPAK) && (m_pmfxENCPAK) )
+    if ((m_encpakParams.bENCODE) && (m_pmfxENCPAK) )
     {
         sts = m_pmfxENCPAK->Init(&m_mfxEncParams);
         if (MFX_WRN_PARTIAL_ACCELERATION == sts)
@@ -1297,7 +1297,7 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    bool twoEncoders = m_encpakParams.bPREENC && ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC));
+    bool twoEncoders = m_encpakParams.bPREENC && ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC));
     mfxU32 nEncodedDataBufferSize = m_mfxEncParams.mfx.FrameInfo.Width * m_mfxEncParams.mfx.FrameInfo.Height * 4;
     sts = m_TaskPool.Init(&m_mfxSession, m_FileWriters.first, m_nAsyncDepth * (twoEncoders ? 4 : 2), nEncodedDataBufferSize, m_FileWriters.second);
     //sts = m_TaskPool.Init(&m_mfxSession, m_FileWriters.first, 1, nEncodedDataBufferSize, m_FileWriters.second);
@@ -1417,8 +1417,8 @@ mfxStatus CEncodingPipeline::Run()
         inputTasks.clear();  //for reordering
 
         //setup control structures
-        bool disableMVoutput = m_encpakParams.mvoutFile == NULL && !(m_encpakParams.bENCPAK || m_encpakParams.bENCoPAKo);
-        bool disableMBoutput = (m_encpakParams.mbstatoutFile == NULL) || m_encpakParams.bENCPAK || m_encpakParams.bENCoPAKo; //couple with ENC+PAK
+        bool disableMVoutput = m_encpakParams.mvoutFile == NULL && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK);
+        bool disableMBoutput = (m_encpakParams.mbstatoutFile == NULL) || m_encpakParams.bENCODE || m_encpakParams.bENCPAK; //couple with ENC+PAK
         bool enableMVpredictor = m_encpakParams.mvinFile != NULL;
         bool enableMBQP = m_encpakParams.mbQpFile != NULL;
 
@@ -1492,7 +1492,7 @@ mfxStatus CEncodingPipeline::Run()
                 //outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mvs;
 
                 if (m_encpakParams.mvoutFile != NULL &&
-                        !(m_encpakParams.bENCPAK || m_encpakParams.bENCoPAKo)) {
+                        !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK)) {
                     printf("Using MV output file: %s\n", m_encpakParams.mvoutFile);
                     MSDK_FOPEN(mvout,m_encpakParams.mvoutFile, MSDK_CHAR("wb"));
                     if (mvout == NULL) {
@@ -1534,7 +1534,7 @@ mfxStatus CEncodingPipeline::Run()
         } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
     } // if (m_encpakParams.bPREENC) {
 
-    if ((m_encpakParams.bENCPAK)  || (m_encpakParams.bENCoPAKo)||
+    if ((m_encpakParams.bENCODE)  || (m_encpakParams.bENCPAK)||
         (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC) ){
         feiCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN; //GetFrameType(frameCount);
         feiCtrl.QP = m_encpakParams.QP;
@@ -1749,7 +1749,7 @@ mfxStatus CEncodingPipeline::Run()
             outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMV;
         if(MBCodeOut)
             outBufs[numExtOutParams++]   = (mfxExtBuffer*) &feiEncMBCode;
-    } // if (m_encpakParams.bENCPAK) {
+    } // if (m_encpakParams.bENCODE) {
 
     // Since in sample we support just 2 views
     // we will change this value between 0 and 1 in case of MVC
@@ -1757,7 +1757,7 @@ mfxStatus CEncodingPipeline::Run()
 
     sts = MFX_ERR_NONE;
 
-    bool twoEncoders = m_encpakParams.bPREENC && (m_encpakParams.bENCoPAKo || m_encpakParams.bOnlyPAK || m_encpakParams.bOnlyENC);
+    bool twoEncoders = m_encpakParams.bPREENC && (m_encpakParams.bENCPAK || m_encpakParams.bOnlyPAK || m_encpakParams.bOnlyENC);
     // main loop, preprocessing and encoding
     mfxU32 frameCount = 0;
     while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
@@ -1770,7 +1770,7 @@ mfxStatus CEncodingPipeline::Run()
         MSDK_BREAK_ON_ERROR(sts);
 
         iTask* eTask=NULL;
-        if ((m_encpakParams.bPREENC) || (m_encpakParams.bENCoPAKo) ||
+        if ((m_encpakParams.bPREENC) || (m_encpakParams.bENCPAK) ||
                 (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK) ){
             eTask = new iTask;
             eTask->frameType = GetFrameType(frameCount);
@@ -1960,7 +1960,7 @@ mfxStatus CEncodingPipeline::Run()
                 //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             }
 
-            if(m_encpakParams.bENCPAK || m_encpakParams.bENCoPAKo) {
+            if(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC) {
                 ctr->FrameType = eTask->frameType;
                 //m_pEncSurfaces[nEncSurfIdx].Data.FrameOrder = eTask->frameDisplayOrder;
                 eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
@@ -1994,12 +1994,12 @@ mfxStatus CEncodingPipeline::Run()
         }
 
         /* ENC_and_PAK or ENC only or PAK only call */
-        if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC) ){
+        if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC) ){
             pSurf->Data.Locked++;
             eTask->in.InSurface = pSurf;
             eTask->inPAK.InSurface = pSurf;
             eTask->encoded = 0;
-            if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK))
+            if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK))
             {
                 /* this is Recon surface which will be generated by FEI PAK*/
                 pReconSurf->Data.Locked++;
@@ -2041,7 +2041,7 @@ mfxStatus CEncodingPipeline::Run()
             for (;;) {
                 fprintf(stderr, "frame: %d  t:%d : submit ", eTask->frameDisplayOrder, eTask->frameType);
 
-                if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
+                if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) )
                 {
                     sts = m_pmfxENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
                     sts = MFX_ERR_NONE;
@@ -2069,7 +2069,7 @@ mfxStatus CEncodingPipeline::Run()
                     } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
                 } // if (m_encpakParams.bOnlyPAK)
 
-                if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
+                if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK) )
                 {
                     sts = m_pmfxPAK->ProcessFrameAsync(&eTask->inPAK, &eTask->outPAK, &eTask->EncSyncP);
                     sts = MFX_ERR_NONE;
@@ -2100,7 +2100,7 @@ mfxStatus CEncodingPipeline::Run()
                 if (twoEncoders)
                     inputTasks.front()->in.InSurface->Data.Locked--;
 
-                if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
+                if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK) )
                     inputTasks.front()->outPAK.OutSurface->Data.Locked--;
 
                 delete inputTasks.front();
@@ -2111,10 +2111,10 @@ mfxStatus CEncodingPipeline::Run()
             }
 
             //drop output data to output file
-            if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
+            if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK) )
                 pCurrentTask->WriteBitstream();
 
-            if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
+            if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) )
             {
                 for (fieldId = 0; fieldId < numOfFields; fieldId++)
                 {
@@ -2136,10 +2136,10 @@ mfxStatus CEncodingPipeline::Run()
                         }
                     } // for(int i=0; i<eTask->out.NumExtParam; i++){
                 } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
-            } // if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
-        } // if (m_encpakParams.bENCoPAKo)
+            } // if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) )
+        } // if (m_encpakParams.bENCPAK)
 
-        if (m_encpakParams.bENCPAK) {
+        if (m_encpakParams.bENCODE) {
             for (;;) {
                 // at this point surface for encoder contains either a frame from file or a frame processed by vpp
 
@@ -2430,7 +2430,7 @@ mfxStatus CEncodingPipeline::Run()
                 //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
                 numUnencoded--;
 
-                if (m_encpakParams.bENCPAK || m_encpakParams.bENCoPAKo || m_encpakParams.bOnlyENC) {
+                if (m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC) {
                     ctr->FrameType = eTask->frameType;
                     eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
 
@@ -2461,7 +2461,7 @@ mfxStatus CEncodingPipeline::Run()
                     } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
                 }
 
-                if (m_encpakParams.bENCPAK) { //if we have both
+                if (m_encpakParams.bENCODE) { //if we have both
                     for (;;) {
 
                         /* Load input Buffer for FEI ENCODE and FEI ENC */
@@ -2520,9 +2520,9 @@ mfxStatus CEncodingPipeline::Run()
                 /* FIXME ???*/
                 //drop output data to output file
                 //pCurrentTask->WriteBitstream();
-                } // if (m_encpakParams.bENCPAK) { //if we have both
+                } // if (m_encpakParams.bENCODE) { //if we have both
 
-                if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK)){
+                if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK)){
                     // get a pointer to a free task (bit stream and sync point for encoder)
                     sts = GetFreeTask(&pCurrentTask);
                     MSDK_BREAK_ON_ERROR(sts);
@@ -2559,7 +2559,7 @@ mfxStatus CEncodingPipeline::Run()
 
                     for (;;) {
                         //Only synced operation supported for now
-                        if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
+                        if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) )
                         {
                             fprintf(stderr, "frame: %d  t:%d : submit ", eTask->frameDisplayOrder, eTask->frameType);
                             sts = m_pmfxENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
@@ -2588,7 +2588,7 @@ mfxStatus CEncodingPipeline::Run()
                             } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
                         } // if (m_encpakParams.bOnlyPAK)
 
-                        if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
+                        if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK) )
                         {
                             sts = m_pmfxPAK->ProcessFrameAsync(&eTask->inPAK, &eTask->outPAK, &eTask->EncSyncP);
                             sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
@@ -2616,10 +2616,10 @@ mfxStatus CEncodingPipeline::Run()
                     eTask->encoded = 1;
 
                     //drop output data to output file
-                    if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
+                    if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK) )
                             pCurrentTask->WriteBitstream();
 
-                    if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
+                    if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) )
                     {
                         for (fieldId = 0; fieldId < numOfFields; fieldId++)
                         {
@@ -2641,11 +2641,11 @@ mfxStatus CEncodingPipeline::Run()
                                 }
                             } // for(int i=0; i<eTask->out.NumExtParam; i++){
                         } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
-                    } //if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
+                    } //if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) )
 
                     //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
                     numUnencoded--;
-                } // if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK))
+                } // if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK))
 
             }  // while (numUnencoded != 0) {
         } //run processing on last frames  \n if (numUnencoded > 0) {
@@ -2661,7 +2661,7 @@ mfxStatus CEncodingPipeline::Run()
             }
         }
 
-        if (m_encpakParams.bENCPAK) { //if we have both
+        if (m_encpakParams.bENCODE) { //if we have both
             // MFX_ERR_MORE_DATA is the correct status to exit buffering loop with
             // indicates that there are no more buffered frames
             MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
@@ -2676,7 +2676,7 @@ mfxStatus CEncodingPipeline::Run()
     }
 
     // loop to get buffered frames from encoder
-    if (!m_encpakParams.bPREENC && ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK))){
+    if (!m_encpakParams.bPREENC && ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK))){
         mdprintf(stderr,"input_tasks_size=%u\n", (mfxU32)inputTasks.size());
         //encode last frames
         std::list<iTask*>::iterator it = inputTasks.begin();
@@ -2729,7 +2729,7 @@ mfxStatus CEncodingPipeline::Run()
 
                 for (;;) {
                     //Only synced operation supported for now
-                    if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
+                    if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) )
                     {
                         fprintf(stderr, "frame: %d  t:%d : submit ", eTask->frameDisplayOrder, eTask->frameType);
                         sts = m_pmfxENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
@@ -2758,7 +2758,7 @@ mfxStatus CEncodingPipeline::Run()
                         } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
                     } // if (m_encpakParams.bOnlyPAK)
 
-                    if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
+                    if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK) )
                     {
                         sts = m_pmfxPAK->ProcessFrameAsync(&eTask->inPAK, &eTask->outPAK, &eTask->EncSyncP);
                         sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
@@ -2786,10 +2786,10 @@ mfxStatus CEncodingPipeline::Run()
                 eTask->encoded = 1;
 
                 //drop output data to output file
-                if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
+                if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK) )
                     pCurrentTask->WriteBitstream();
 
-                if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
+                if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) )
                 {
                     for (fieldId = 0; fieldId < numOfFields; fieldId++)
                      {
@@ -2811,7 +2811,7 @@ mfxStatus CEncodingPipeline::Run()
                              }
                          } // for(int i=0; i<eTask->out.NumExtParam; i++){
                      } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
-                } //if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyENC) )
+                } //if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) )
 
                 //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
                 numUnencoded--;
@@ -2823,16 +2823,16 @@ mfxStatus CEncodingPipeline::Run()
             std::list<iTask*>::iterator it = inputTasks.begin();
             for (; it != inputTasks.end(); ++it) {
                 (*it)->in.InSurface->Data.Locked = 0;
-                if ((m_encpakParams.bENCoPAKo) || (m_encpakParams.bOnlyPAK) )
+                if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK) )
                 {
                     (*it)->outPAK.OutSurface->Data.Locked = 0;
                 }
                 delete (*it);
             }
         }
-    } //     if (m_encpakParams.bENCoPAKo) {
+    } //     if (m_encpakParams.bENCPAK) {
 
-    if (m_encpakParams.bENCPAK && !m_encpakParams.bPREENC) {
+    if (m_encpakParams.bENCODE && !m_encpakParams.bPREENC) {
         while (MFX_ERR_NONE <= sts) {
             // get a free task (bit stream and sync point for encoder)
             sts = GetFreeTask(&pCurrentTask);
@@ -2883,7 +2883,7 @@ mfxStatus CEncodingPipeline::Run()
         }
     }
 
-    if ((m_encpakParams.bENCPAK || m_encpakParams.bPREENC || m_encpakParams.bENCoPAKo) ||
+    if ((m_encpakParams.bENCODE || m_encpakParams.bPREENC || m_encpakParams.bENCPAK) ||
             (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC) )
     {
         if(mvout != NULL)
@@ -2933,7 +2933,7 @@ mfxStatus CEncodingPipeline::Run()
     } //if (m_encpakParams.bPREENC)
 
 
-    if ((m_encpakParams.bENCPAK)  || (m_encpakParams.bENCoPAKo)||
+    if ((m_encpakParams.bENCODE)  || (m_encpakParams.bENCPAK)||
         (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC) )
     {
         for (fieldId = 0; fieldId < numOfFields; fieldId++)
@@ -2978,7 +2978,7 @@ mfxStatus CEncodingPipeline::Run()
                 m_feiSliceHeader[fieldId].Slice = NULL;
             }
         } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
-    }// if ((m_encpakParams.bENCPAK)  || (m_encpakParams.bENCoPAKo)||
+    }// if ((m_encpakParams.bENCODE)  || (m_encpakParams.bENCPAK)||
 
 
     // MFX_ERR_NOT_FOUND is the correct status to exit the loop with

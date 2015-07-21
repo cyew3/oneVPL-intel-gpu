@@ -38,8 +38,8 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-x numRefs]   - number of reference frames \n"));
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames\n"));
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
-    msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC+PAK (RC is forced to constant QP)\n"));
-    msdk_printf(MSDK_STRING("   [-enc_and_pak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
+    msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
+    msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
     msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
     msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
     msdk_printf(MSDK_STRING("   [-mbctrl file] - use the input to set MB control for FEI (only ENC+PAK)\n"));
@@ -130,13 +130,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             i++;
             pParams->nDstHeight = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encode")))
+        {
+            pParams->bENCODE = true;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encpak")))
         {
             pParams->bENCPAK = true;
-        }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc_and_pak")))
-        {
-            pParams->bENCoPAKo = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc")))
         {
@@ -157,6 +157,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvout")))
         {
+            //GET_OPTION_POINTER(strArgument);
             pParams->mvoutFile = strInput[i+1];
             i++;
         }
@@ -180,15 +181,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bMBSize = true;
         }
-
-#if 0
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvout")))
-        {
-            //GET_OPTION_POINTER(strArgument);
-            pParams->mvoutFile = strInput[i+1];
-            i++;
-        }
-#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mbctrl")))
         {
             //GET_OPTION_POINTER(strArgument);
@@ -416,7 +408,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     };
 
     if ((pParams->dstFileBuff.empty() ) &&
-        (pParams->bENCoPAKo || pParams->bOnlyPAK) )
+        (pParams->bENCPAK || pParams->bOnlyPAK) )
     {
         if (bAlrShownHelp)
             msdk_printf(MSDK_STRING("\nDestination file name not found\n"));
@@ -572,7 +564,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
-    bool bEnableBiPred = (pParams->bENCPAK || pParams->bENCoPAKo || pParams->bOnlyENC) && (pParams->refDist > 1);
+    bool bEnableBiPred = (pParams->bENCODE || pParams->bENCPAK || pParams->bOnlyENC) && (pParams->refDist > 1);
 
     if ((!pParams->SearchWindow && (pParams->RefHeight <= 0 || pParams->RefWidth <= 0 || pParams->RefHeight % 4 != 0 || pParams->RefWidth % 4 != 0 ||
     	  pParams->RefHeight * pParams->RefWidth > (bEnableBiPred ? 1024 : 2048))) || (pParams->SearchWindow > 2 && bEnableBiPred)){
@@ -692,8 +684,8 @@ int main(int argc, char *argv[])
     Params.nNumFrames = 0; //unlimited
     Params.refDist = 1; //only I frames
     Params.gopSize = 1; //only I frames
-    Params.bENCPAK   = false; //default value
-    Params.bENCoPAKo = false; //default value
+    Params.bENCODE   = false; //default value
+    Params.bENCPAK = false; //default value
     Params.bOnlyENC  = false; //default value
     Params.bOnlyPAK  = false; //default value
     Params.bPREENC   = false; //default value
@@ -773,7 +765,7 @@ int main(int argc, char *argv[])
 mfxStatus CheckOptions(sInputParams* pParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    if(pParams->bENCPAK && pParams->dstFileBuff.size() == 0){
+    if(pParams->bENCODE && pParams->dstFileBuff.size() == 0){
         fprintf(stderr,"Output bitstream file should be specified for ENC+PAK (-o)\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
