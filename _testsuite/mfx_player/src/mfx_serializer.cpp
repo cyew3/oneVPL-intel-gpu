@@ -195,6 +195,9 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_INT(TimingInfoPresent);
     SERIALIZE_INT(LowDelayHrd);
     SERIALIZE_INT(BitstreamRestriction);
+    SERIALIZE_INT(WeightedPred);
+    SERIALIZE_INT(WeightedBiPred);
+    SERIALIZE_INT(FadeDetection);
 }
 
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const

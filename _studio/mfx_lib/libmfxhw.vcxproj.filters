@@ -217,25 +217,7 @@
     <ClInclude Include="..\shared\include\mfx_vpp_interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mfxdefs.h">
-      <Filter>MFX API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\mfxjpeg.h">
-      <Filter>MFX API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\mfxmvc.h">
-      <Filter>MFX API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\mfxstructures.h">
-      <Filter>MFX API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\mfxvideo++.h">
-      <Filter>MFX API</Filter>
-    </ClInclude>
     <ClInclude Include="..\shared\include\mfxvideo++int.h">
-      <Filter>MFX API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\mfxvideo.h">
       <Filter>MFX API</Filter>
     </ClInclude>
     <ClInclude Include="scheduler\include\mfx_dependency_item.h">
@@ -255,6 +237,24 @@
     </ClInclude>
     <ClInclude Include="..\shared\include\cm_mem_copy.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxdefs.h">
+      <Filter>MFX API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxjpeg.h">
+      <Filter>MFX API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxmvc.h">
+      <Filter>MFX API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxstructures.h">
+      <Filter>MFX API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo.h">
+      <Filter>MFX API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo++.h">
+      <Filter>MFX API</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

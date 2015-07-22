@@ -357,6 +357,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION3(TimingInfoPresent,          OPT_UINT_16,   ""),
         HANDLE_EXT_OPTION3(LowDelayHrd,                OPT_UINT_16,   ""),
         HANDLE_EXT_OPTION3(BitstreamRestriction,       OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION3(WeightedPred,               OPT_UINT_16,   "0=unknown, 1=default, 2=explicit"),
+        HANDLE_EXT_OPTION3(WeightedBiPred,             OPT_UINT_16,   "0=unknown, 1=default, 2=explicit, 3=implicit"),
+        HANDLE_EXT_OPTION3(FadeDetection,              OPT_TRI_STATE, "on|off"),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),

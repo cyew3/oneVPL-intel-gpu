@@ -745,6 +745,22 @@ extern "C" void DownSampleMB4X(
     SurfaceIndex SrcSurfIndex,
     SurfaceIndex SrcSurf4XIndex);
 
+extern "C" void HistogramFrame(
+    SurfaceIndex INBUF,
+    SurfaceIndex OUTBUF,
+    uint max_h_pos,
+    uint max_v_pos,
+    uint off_h,
+    uint off_v);
+
+extern "C" void HistogramFields(
+    SurfaceIndex INBUF,
+    SurfaceIndex OUTBUF,
+    uint max_h_pos,
+    uint max_v_pos,
+    uint off_h,
+    uint off_v);
+
 };
 
 #pragma warning(pop)

@@ -26,6 +26,8 @@
 #include "genx_hsw_simple_me_isa.h"
 #include "genx_bdw_simple_me_isa.h"
 #include "genx_skl_simple_me_isa.h"
+#include "genx_skl_histogram_isa.h"
+#include "genx_hsw_histogram_isa.h"
 
 namespace MfxHwH264EncodeHW
 {
@@ -490,6 +492,7 @@ CmContext::CmContext()
 : m_device(0)
 , m_program(0)
 , m_queue(0)
+, m_programHist(0)
 {
 /*
     Flog = fopen("HmeLog.txt", "wb");
@@ -814,11 +817,14 @@ void CmContext::Setup(
     heightLa = video.calcParam.heightLa;
     LaScaleFactor = extDdi->LaScaleFactor;
 
+    m_programHist = 0;
+
     switch (core->GetHWType())
     {
     case MFX_HW_HSW:
     case MFX_HW_HSW_ULT:
         m_program = ReadProgram(m_device, genx_hsw_simple_me, SizeOf(genx_hsw_simple_me));
+        m_programHist = ReadProgram(m_device, genx_hsw_histogram, SizeOf(genx_hsw_histogram));
         break;
     case MFX_HW_BDW:
     case MFX_HW_CHV:
@@ -826,6 +832,7 @@ void CmContext::Setup(
         break;
     case MFX_HW_SCL:
         m_program = ReadProgram(m_device, genx_skl_simple_me, SizeOf(genx_skl_simple_me));
+        m_programHist = ReadProgram(m_device, genx_skl_histogram, SizeOf(genx_skl_histogram));
         break;
     default:
         throw CmRuntimeError();
@@ -834,6 +841,12 @@ void CmContext::Setup(
     m_kernelI = CreateKernel(m_device, m_program, "SVCEncMB_I", (void *)SVCEncMB_I);
     m_kernelP = CreateKernel(m_device, m_program, "SVCEncMB_P", (void *)SVCEncMB_P);
     m_kernelB = CreateKernel(m_device, m_program, "SVCEncMB_B", (void *)SVCEncMB_B);
+
+    if (m_programHist)
+    {
+        m_kernelHistFrame = CreateKernel(m_device, m_programHist, "HistogramSLMFrame", (void *)HistogramFrame);
+        m_kernelHistFields = CreateKernel(m_device, m_programHist, "HistogramSLMFields", (void *)HistogramFields);
+    }
 
 #if USE_AGOP
     m_kernelIAGOP = CreateKernel(m_device, m_program, "SVCEncMB_I", (void *)SVCEncMB_I);
@@ -853,6 +866,70 @@ void CmContext::Setup(
     SetCosts(m_costsB, MFX_FRAMETYPE_B, 26, 2, 3);
     SetLutMv(m_costsP, m_lutMvP);
     SetLutMv(m_costsB, m_lutMvB);
+}
+
+CmEvent * CmContext::RunHistogram(
+    DdiTask const & task,
+    mfxU16 Width,
+    mfxU16 Height,
+    mfxU16 OffsetX,
+    mfxU16 OffsetY)
+{
+    const uint maxThreads = 128;
+    const uint minBlocksPerThread = 1;
+    uint maxH = (Width  + OffsetX) / 32;
+    uint maxV = (Height + OffsetY) / 8;
+    uint offX = (OffsetX + 31) / 32;
+    uint offY = (OffsetY +  7) / 8;
+    uint numThreads = (maxH - offX) * (maxV - offY) / minBlocksPerThread;
+    uint numGroups  = 1;
+    int result = CM_SUCCESS;
+    CmKernel* kernel = task.m_fieldPicFlag ? m_kernelHistFields : m_kernelHistFrame;
+
+    numThreads = IPP_MIN(numThreads, maxThreads);
+    numThreads = IPP_MAX(numThreads, 1);
+    numGroups = (numThreads + 63) / 64;
+
+    if ((result = kernel->SetThreadCount(numThreads)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    SetKernelArg(kernel, GetIndex(task.m_cmRaw), GetIndex(task.m_cmHist), maxH, maxV, offX, offY);
+
+    CmTask * cmTask = 0;
+    if ((result = m_device->CreateTask(cmTask)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    if ((result = cmTask->AddKernel(kernel)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    CmThreadGroupSpace * cmThreadSpace = 0;
+    if ((result = m_device->CreateThreadGroupSpace(numThreads / numGroups, 1, numGroups, 1, cmThreadSpace)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    CmEvent * e = 0;
+    if ((result = m_queue->EnqueueWithGroup(cmTask, e, cmThreadSpace)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    m_device->DestroyThreadGroupSpace(cmThreadSpace);
+    m_device->DestroyTask(cmTask);
+
+    return e;
+}
+
+bool CmContext::QueryHistogram(CmEvent * e)
+{
+    CM_STATUS status = CM_STATUS_QUEUED;
+    if (e->GetStatus(status) != CM_SUCCESS)
+        throw CmRuntimeError();
+    if (status != CM_STATUS_FINISHED)
+        return false;
+
+    //UINT64 time = 0;
+    //if (e->GetExecutionTime(time) != CM_SUCCESS)
+    //    throw CmRuntimeError();
+    //fprintf(stderr, "Hist ET: %d\n", (mfxU32)time); fflush(stderr);
+
+    return true;
 }
 
 CmEvent * CmContext::EnqueueKernel(

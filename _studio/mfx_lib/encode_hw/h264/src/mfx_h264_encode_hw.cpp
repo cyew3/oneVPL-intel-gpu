@@ -989,11 +989,15 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     sts = m_bit.Alloc(m_core, request,false);
     MFX_CHECK_STS(sts);
 
-    if (bIntRateControlLA(m_video.mfx.RateControlMethod))
+    if (   IsOn(extOpt3.FadeDetection)
+        || bIntRateControlLA(m_video.mfx.RateControlMethod))
     {
         m_cmDevice.Reset(CreateCmDevicePtr(m_core));
         m_cmCtx.reset(new CmContext(m_video, m_cmDevice, m_core));
+    }
 
+    if (bIntRateControlLA(m_video.mfx.RateControlMethod))
+    {
         request.Info.Width  = m_video.calcParam.widthLa;
         request.Info.Height = m_video.calcParam.heightLa;
 
@@ -1033,6 +1037,18 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.NumFrameMin = 1 + !!(m_video.AsyncDepth > 1);
 
         sts = m_curbe.AllocCmBuffers(m_cmDevice, request);
+        MFX_CHECK_STS(sts);
+    }
+    
+    if (IsOn(extOpt3.FadeDetection) && m_cmCtx.get() && m_cmCtx->isHistogramSupported())
+    {
+        request.Info.Width  = 256 * 2 * sizeof(uint);
+        request.Info.Height = 1;
+        request.Info.FourCC = MFX_FOURCC_P8;
+        request.Type        = MFX_MEMTYPE_D3D_INT;
+        request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth);
+
+        sts = m_histogram.AllocCmBuffersUp(m_cmDevice, request);
         MFX_CHECK_STS(sts);
     }
 
@@ -1088,6 +1104,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_reordering.clear();
     m_lookaheadStarted.clear();
     m_lookaheadFinished.clear();
+    m_histRun.clear();
+    m_histWait.clear();
     m_encoding.clear();
 
     m_fieldCounter   = 0;
@@ -1256,6 +1274,10 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 #endif
 
+    if (    extOpt3New && IsOn(extOpt3New->FadeDetection)
+        && !(m_cmCtx.get() && m_cmCtx->isHistogramSupported()))
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
     return checkStatus;
 } // ProcessAndCheckNewParameters
 
@@ -1306,6 +1328,8 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         m_free.splice(m_free.end(), m_reordering);
         m_free.splice(m_free.end(), m_lookaheadStarted);
         m_free.splice(m_free.end(), m_lookaheadFinished);
+        m_free.splice(m_free.end(), m_histRun);
+        m_free.splice(m_free.end(), m_histWait);
         m_free.splice(m_free.end(), m_encoding);
 
         for (DdiTaskIter i = m_free.begin(); i != m_free.end(); ++i)
@@ -1821,13 +1845,54 @@ void ImplementationAvc::OnLookaheadQueried()
     {
         ReleaseResource(m_rawLa, task.m_cmRawLa);
         ReleaseResource(m_mb,    task.m_cmMb);
+
+        /* moved to OnHistogramQueried()
         if (m_cmDevice){
             m_cmDevice->DestroySurface(task.m_cmRaw);
             task.m_cmRaw = NULL;
+        }*/
+    }
+
+    m_histRun.splice(m_histRun.end(), m_lookaheadStarted, m_lookaheadStarted.begin());
+}
+
+void ImplementationAvc::OnHistogramSubmitted()
+{
+    m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_START_HIST;
+
+    m_histWait.splice(m_histWait.end(), m_histRun, m_histRun.begin());
+}
+
+void ImplementationAvc::OnHistogramQueried()
+{
+    m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_WAIT_HIST;
+
+    DdiTask & task = m_histWait.front();
+
+    int fid = task.m_fid[0];
+    ArrayDpbFrame & iniDpb = task.m_dpb[fid];
+    ArrayDpbFrame & finDpb = task.m_dpbPostEncoding;
+
+    for (mfxU32 i = 0; i < iniDpb.Size(); i++)
+    {
+        if (std::find_if(finDpb.Begin(), finDpb.End(), CompareByFrameOrder(iniDpb[i].m_frameOrder)) == finDpb.End())
+        {
+            ReleaseResource(m_histogram, iniDpb[i].m_cmHist);
         }
     }
 
-    m_lookaheadFinished.splice(m_lookaheadFinished.end(), m_lookaheadStarted, m_lookaheadStarted.begin());
+    if ((task.m_reference[0] + task.m_reference[1]) == 0)
+    {
+        ReleaseResource(m_histogram, task.m_cmHist);
+
+        if (m_cmDevice && task.m_cmRaw)
+        {
+            m_cmDevice->DestroySurface(task.m_cmRaw);
+            task.m_cmRaw = 0;
+        }
+    }
+
+    m_lookaheadFinished.splice(m_lookaheadFinished.end(), m_histWait, m_histWait.begin());
 }
 
 
@@ -2193,6 +2258,21 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 task->m_cmRaw = CreateSurface(m_cmDevice, task->m_handleRaw.first, m_currentVaType);
         }
 
+        if (IsOn(extOpt3.FadeDetection) && m_cmCtx.get() && m_cmCtx->isHistogramSupported())
+        {
+            mfxHDLPair cmHist = AcquireResourceUp(m_histogram);
+            task->m_cmHist = (CmBufferUP *)cmHist.first;
+            task->m_cmHistSys = (mfxU32 *)cmHist.second;
+
+            if (!task->m_cmHist)
+                return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            memset(task->m_cmHistSys, 0, sizeof(uint)* 512);
+
+            if (!task->m_cmRaw)
+                task->m_cmRaw = CreateSurface(m_cmDevice, task->m_handleRaw.first, m_currentVaType);
+        }
+
         task->m_isENCPAK = m_isENCPAK;
 
         ConfigureTask(*task, m_lastTask, m_video, m_sofiaMode);
@@ -2242,12 +2322,12 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
             DdiTask * fwd = 0;
             if (l0.Size() > 0)
-                fwd = find_if_ptr2(m_lookaheadFinished, m_lookaheadStarted,
+                fwd = find_if_ptr4(m_lookaheadFinished, m_lookaheadStarted, m_histRun, m_histWait,
                     FindByFrameOrder(dpb[l0[0] & 127].m_frameOrder));
 
             DdiTask * bwd = 0;
             if (l1.Size() > 0)
-                bwd = find_if_ptr2(m_lookaheadFinished, m_lookaheadStarted,
+                bwd = find_if_ptr4(m_lookaheadFinished, m_lookaheadStarted, m_histRun, m_histWait,
                     FindByFrameOrder(dpb[l1[0] & 127].m_frameOrder));
 
             if ((!fwd) && l0.Size() >0  && extOpt2->MaxSliceSize) //TO DO
@@ -2272,8 +2352,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         //printf("\rLA_SUBMITTED  do=%4d eo=%4d type=%d\n", task->m_frameOrder, task->m_encOrder, task->m_type[0]); fflush(stdout);
         m_lastTask = *task;
         OnLookaheadSubmitted(task);     
-        
-
     }
 
 
@@ -2286,6 +2364,33 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         //printf("\rLA_SYNCED     do=%4d eo=%4d type=%d\n", m_lookaheadStarted.front().m_frameOrder, m_lookaheadStarted.front().m_encOrder, m_lookaheadStarted.front().m_type[0]); fflush(stdout);
         OnLookaheadQueried();
+    }
+
+    if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_HIST)
+    {
+        if (IsOn(extOpt3.FadeDetection) && m_cmCtx.get() && m_cmCtx->isHistogramSupported())
+        {
+            DdiTask & task = m_histRun.front();
+
+            task.m_event = m_cmCtx->RunHistogram(task, 
+                m_video.mfx.FrameInfo.CropW, m_video.mfx.FrameInfo.CropH,
+                m_video.mfx.FrameInfo.CropX, m_video.mfx.FrameInfo.CropY);
+        }
+
+        OnHistogramSubmitted();
+    }
+
+    if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_HIST)
+    {
+        DdiTask & task = m_histWait.front();
+
+        if (IsOn(extOpt3.FadeDetection) && m_cmCtx.get() && m_cmCtx->isHistogramSupported())
+            if (!m_cmCtx->QueryHistogram(task.m_event))
+                return MFX_TASK_BUSY;
+
+        CalcPredWeightTable(task, m_caps.MaxNum_WeightedPredL0, m_caps.MaxNum_WeightedPredL1);
+
+        OnHistogramQueried();
 
         if (extDdi->LookAheadDependency > 0 && m_lookaheadFinished.size() >= extDdi->LookAheadDependency)
         {
@@ -2294,7 +2399,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             std::advance(beg, -extDdi->LookAheadDependency);
 
             AnalyzeVmeData(beg, end, m_video.calcParam.widthLa, m_video.calcParam.heightLa);
-
         }
     }
 

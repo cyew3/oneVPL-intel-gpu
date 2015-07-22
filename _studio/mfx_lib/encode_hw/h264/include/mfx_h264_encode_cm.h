@@ -304,6 +304,18 @@ public:
         DdiTask const & task,
         CmEvent *       e);
 
+    CmEvent * RunHistogram(
+        DdiTask const & task,
+        mfxU16 Width,
+        mfxU16 Height,
+        mfxU16 OffsetX,
+        mfxU16 OffsetY);
+
+    bool QueryHistogram(
+        CmEvent * e);
+
+    bool isHistogramSupported() { return m_programHist != 0; }
+
 #if USE_AGOP
     mfxU32 CalcCostAGOP(
         DdiTask const & task,
@@ -378,6 +390,10 @@ protected:
     CmKernel *  m_kernelI;
     CmKernel *  m_kernelP;
     CmKernel *  m_kernelB;
+
+    CmProgram * m_programHist;
+    CmKernel *  m_kernelHistFrame;
+    CmKernel *  m_kernelHistFields;
 
 #if USE_AGOP
     CmKernel *  m_kernelIAGOP;

@@ -741,6 +741,9 @@ namespace MfxHwH264Encode
         CmSurface2D *   m_cmRawLa;
         CmBufferUP *    m_cmMb;
 
+        CmBufferUP *  m_cmHist;
+        void *        m_cmHistSys;
+
         mfxMemId          m_midRaw; // for RefRaw mode
         mfxFrameSurface1* m_yuvRaw; // for RefRaw mode
     };
@@ -909,11 +912,15 @@ namespace MfxHwH264Encode
             , m_feiDistortion(NULL)
             , m_feiMVOut(NULL)
             , m_feiMBCODEOut(NULL)
+
+            , m_cmHist(0)
+            , m_cmHistSys(0)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
             Zero(m_handleRaw);
             Zero(m_fid);
+            Zero(m_pwt);
             m_FrameName[0] = 0;
         }
             
@@ -952,11 +959,6 @@ namespace MfxHwH264Encode
         Pair<ArrayRefListMod> m_refPicList1Mod;
         Pair<mfxU32>          m_initSizeList0;
         Pair<mfxU32>          m_initSizeList1;
-
-        //weight table support
-        Pair<mfxU8> m_lumaLog2WeightDenom;
-        Pair<mfxU8> m_chromaLog2WeightDenom;
-        Pair<ArrayWeightTab>  m_weightTab;
 
         // currently used for dpb control when svc temporal layers enabled
         mfxExtAVCRefListCtrl  m_internalListCtrl;
@@ -1050,6 +1052,10 @@ namespace MfxHwH264Encode
         VmeData *       m_vmeData;
         DdiTask const * m_fwdRef;
         DdiTask const * m_bwdRef;
+
+        CmBufferUP *          m_cmHist;     // Histogram data, kernel output
+        void *                m_cmHistSys;
+        mfxExtPredWeightTable m_pwt[2];     // obtained from fade detection
 
         mfxU8   m_fieldPicFlag;
         mfxU8   m_fid[2];               // progressive fid=[0,0]; tff fid=[0,1]; bff fid=[1,0]
@@ -1683,6 +1689,8 @@ namespace MfxHwH264Encode
 #endif
             STG_START_LA,
             STG_WAIT_LA,
+            STG_START_HIST,
+            STG_WAIT_HIST,
             STG_START_ENCODE,
             STG_WAIT_ENCODE,
             STG_COUNT
@@ -1697,6 +1705,8 @@ namespace MfxHwH264Encode
 #endif
             STG_BIT_START_LA      = 1 << STG_START_LA,
             STG_BIT_WAIT_LA       = 1 << STG_WAIT_LA,
+            STG_BIT_START_HIST    = 1 << STG_START_HIST,
+            STG_BIT_WAIT_HIST     = 1 << STG_WAIT_HIST,
             STG_BIT_START_ENCODE  = 1 << STG_START_ENCODE,
             STG_BIT_WAIT_ENCODE   = 1 << STG_WAIT_ENCODE,
             STG_BIT_RESTART       = 1 << STG_COUNT
@@ -1867,6 +1877,10 @@ namespace MfxHwH264Encode
 
         void OnLookaheadQueried();
 
+        void OnHistogramSubmitted();
+
+        void OnHistogramQueried();
+
         void OnEncodingSubmitted(DdiTaskIter task);
 
         void OnEncodingQueried(DdiTaskIter task);
@@ -1938,6 +1952,8 @@ namespace MfxHwH264Encode
         std::list<DdiTask>  m_reordering;
         std::list<DdiTask>  m_lookaheadStarted;
         std::list<DdiTask>  m_lookaheadFinished;
+        std::list<DdiTask>  m_histRun;
+        std::list<DdiTask>  m_histWait;
         std::list<DdiTask>  m_encoding;
         UMC::Mutex          m_listMutex;
         DdiTask             m_lastTask;
@@ -1981,6 +1997,7 @@ namespace MfxHwH264Encode
         MfxFrameAllocResponse   m_rec;
         MfxFrameAllocResponse   m_bit;
         MfxFrameAllocResponse   m_opaqHren;     // hren' for opaq
+        MfxFrameAllocResponse   m_histogram;
         ENCODE_CAPS             m_caps;
         mfxStatus               m_failedStatus;
         mfxU32                  m_inputFrameType;
@@ -3199,6 +3216,11 @@ namespace MfxHwH264Encode
         mfxU32      width,
         mfxU32      height);
 
+    void CalcPredWeightTable(
+        DdiTask & task,
+        mfxU32 MaxNum_WeightedPredL0,
+        mfxU32 MaxNum_WeightedPredL1);
+
     struct FindByFrameOrder
     {
         FindByFrameOrder(mfxU32 frameOrder) : m_frameOrder(frameOrder) {}
@@ -3231,6 +3253,18 @@ namespace MfxHwH264Encode
             p = find_if_ptr(container2, pred);
         if (p == 0)
             p = find_if_ptr(container3, pred);
+
+        return p;
+    }
+    template <class T, class P> typename T::pointer find_if_ptr4(T & container1, T & container2, T & container3, T & container4, P pred)
+    {
+        typename T::pointer p = find_if_ptr(container1, pred);
+        if (p == 0)
+            p = find_if_ptr(container2, pred);
+        if (p == 0)
+            p = find_if_ptr(container3, pred);
+        if (p == 0)
+            p = find_if_ptr(container4, pred);
 
         return p;
     }

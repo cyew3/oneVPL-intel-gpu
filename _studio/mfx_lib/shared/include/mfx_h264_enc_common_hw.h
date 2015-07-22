@@ -209,6 +209,7 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMBDisableSkipMap,     MFX_EXTBUFF_MB_DISABLE_SKIP_MAP      );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncodeCtrl,        MFX_EXTBUFF_AVC_ENCODE_CTRL          );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtSpecialEncodingModes, MFX_EXTBUFF_SPECIAL_MODES            );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtPredWeightTable,      MFX_EXTBUFF_PRED_WEIGHT_TABLE        );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtDirtyRect,            MFX_EXTBUFF_DIRTY_RECTANGLES         );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMoveRect,             MFX_EXTBUFF_MOVING_RECTANGLES        );
 #undef BIND_EXTBUF_TYPE_TO_ID
@@ -556,8 +557,7 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-        mfxExtBuffer *              m_extParam[23];
-
+        mfxExtBuffer *              m_extParam[24];
         // external, documented
         mfxExtCodingOption          m_extOpt;
         mfxExtCodingOption2         m_extOpt2;
@@ -575,6 +575,7 @@ namespace MfxHwH264Encode
         mfxExtEncoderROI            m_extEncRoi;
         mfxExtFeiParam              m_extFeiParam;
         mfxExtChromaLocInfo         m_extChromaLoc;
+        mfxExtPredWeightTable       m_extPwt;
         mfxExtDirtyRect             m_extDirtyRect;
         mfxExtMoveRect              m_extMoveRect;
 

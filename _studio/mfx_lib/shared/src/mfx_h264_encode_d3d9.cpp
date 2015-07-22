@@ -367,6 +367,75 @@ void MfxHwH264Encode::FillConstPartOfSliceBuffer(
     }
 }
 
+void FillPWT(
+    ENCODE_CAPS const &                         hwCaps,
+    ENCODE_SET_PICTURE_PARAMETERS_H264 const &  pps,
+    mfxExtPredWeightTable const &               pwt,
+    ENCODE_SET_SLICE_HEADER_H264 &              slice)
+{
+    if (!(   (pps.weighted_pred_flag == 1 && (slice.slice_type % 5) == SLICE_TYPE_P
+         || pps.weighted_bipred_idc == 1 && (slice.slice_type % 5) == SLICE_TYPE_B)))
+         return;
+
+    mfxU32 maxWeights[2] = { hwCaps.MaxNum_WeightedPredL0, hwCaps.MaxNum_WeightedPredL1 };
+    mfxU32 numRef[2] = { slice.num_ref_idx_l0_active_minus1 + 1, slice.num_ref_idx_l1_active_minus1 + 1 };
+    const mfxU32 iWeight = 0, iOffset = 1, iY = 0, iCb = 1, iCr = 2;
+
+    slice.luma_log2_weight_denom = (mfxU8)pwt.LumaLog2WeightDenom;
+    slice.chroma_log2_weight_denom = (mfxU8)pwt.ChromaLog2WeightDenom;
+
+    Zero(slice.luma_weight_flag);
+    Zero(slice.chroma_weight_flag);
+    Zero(slice.Weights);
+
+    if (hwCaps.LumaWeightedPred)
+    {
+        for (mfxU32 lx = 0; lx <= (mfxU32)((slice.slice_type % 5) == SLICE_TYPE_B); lx++)
+        {
+            for (mfxU32 ref = 0; ref < numRef[lx]; ref++)
+            {
+                if (ref < maxWeights[lx] && pwt.LumaWeightFlag[ref])
+                {
+                    slice.luma_weight_flag[lx] |= (!!(pwt.LumaWeightFlag[ref]) << ref);
+                    if (pwt.LumaWeightFlag[ref])
+                        Copy(slice.Weights[lx][ref][iY], pwt.Weights[lx][ref][iY]);
+                }
+                else
+                {
+                    slice.Weights[lx][ref][iY][iWeight] = (1 << slice.luma_log2_weight_denom);
+                    slice.Weights[lx][ref][iY][iOffset] = 0;
+                }
+            }
+        }
+    }
+
+    if (hwCaps.ChromaWeightedPred)
+    {
+        for (mfxU32 lx = 0; lx <= (mfxU32)((slice.slice_type % 5) == SLICE_TYPE_B); lx++)
+        {
+            for (mfxU32 ref = 0; ref < numRef[lx]; ref++)
+            {
+                if (ref < maxWeights[lx] && pwt.ChromaWeightFlag[ref])
+                {
+                    slice.chroma_weight_flag[lx] |= (!!(pwt.ChromaWeightFlag[ref]) << ref);
+                    if (pwt.ChromaWeightFlag[ref])
+                    {
+                        Copy(slice.Weights[lx][ref][iCb], pwt.Weights[lx][ref][iCb]);
+                        Copy(slice.Weights[lx][ref][iCr], pwt.Weights[lx][ref][iCr]);
+                    }
+                }
+                else
+                {
+                    slice.Weights[lx][ref][iCb][iWeight] = (1 << slice.chroma_log2_weight_denom);
+                    slice.Weights[lx][ref][iCb][iOffset] = 0;
+                    slice.Weights[lx][ref][iCr][iWeight] = (1 << slice.chroma_log2_weight_denom);
+                    slice.Weights[lx][ref][iCr][iOffset] = 0;
+                }
+            }
+        }
+    }
+}
+
 void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
     ENCODE_CAPS const &                         hwCaps,
     DdiTask const &                             task,
@@ -376,6 +445,10 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
     std::vector<ENCODE_SET_SLICE_HEADER_H264> & slice)
 {
     mfxU32 numPics = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+
+    mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, fieldId);
+    if (!pPWT)
+        pPWT = &task.m_pwt[fieldId];
 
     SliceDivider divider = MakeSliceDivider(
         hwCaps.SliceStructure,
@@ -424,17 +497,22 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
         slice[i].pic_order_cnt_lsb                  = mfxU16(task.GetPoc(fieldId));
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.QpY);
         slice[i].disable_deblocking_filter_idc      = task.m_disableDeblockingIdc;
+        
+        FillPWT(hwCaps, pps, *pPWT, slice[i]);
     }
 }
 
 mfxStatus MfxHwH264Encode::FillVaringPartOfSliceBufferSizeLimited(
-    ENCODE_CAPS const &                         /* hwCaps */,
+    ENCODE_CAPS const &                         hwCaps,
     DdiTask const &                             task,
     mfxU32                                      fieldId,
     ENCODE_SET_SEQUENCE_PARAMETERS_H264 const & /* sps */,
     ENCODE_SET_PICTURE_PARAMETERS_H264 const &  pps,
     std::vector<ENCODE_SET_SLICE_HEADER_H264> & slice)
 {
+    mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, fieldId);
+    if (!pPWT)
+        pPWT = &task.m_pwt[fieldId];
 
     size_t numSlices = task.m_SliceInfo.size();   
     if (numSlices != slice.size())
@@ -477,6 +555,8 @@ mfxStatus MfxHwH264Encode::FillVaringPartOfSliceBufferSizeLimited(
         slice[i].pic_order_cnt_lsb                  = mfxU16(task.GetPoc(fieldId));
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.QpY);
         slice[i].disable_deblocking_filter_idc      = task.m_disableDeblockingIdc;
+
+        FillPWT(hwCaps, pps, *pPWT, slice[i]);
     }
 
     return MFX_ERR_NONE;

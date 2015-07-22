@@ -640,6 +640,12 @@
     <ClCompile Include="scheduler\src\mfx_scheduler_core_thread.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxdefs.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxjpeg.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxmvc.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxstructures.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo++.h" />
+    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo.h" />
     <ClInclude Include="..\shared\include\auxiliary_device.h" />
     <ClInclude Include="..\shared\include\cm_mem_copy.h" />
     <ClInclude Include="..\shared\include\d3d11_decode_accelerator.h" />
@@ -667,13 +673,7 @@
     <ClInclude Include="shared\include\mfx_user_plugin.h" />
     <ClInclude Include="..\shared\include\mfx_utils.h" />
     <ClInclude Include="..\shared\include\mfx_vpp_interface.h" />
-    <ClInclude Include="..\..\include\mfxdefs.h" />
-    <ClInclude Include="..\..\include\mfxjpeg.h" />
-    <ClInclude Include="..\..\include\mfxmvc.h" />
-    <ClInclude Include="..\..\include\mfxstructures.h" />
-    <ClInclude Include="..\..\include\mfxvideo++.h" />
     <ClInclude Include="..\shared\include\mfxvideo++int.h" />
-    <ClInclude Include="..\..\include\mfxvideo.h" />
     <ClInclude Include="scheduler\include\mfx_dependency_item.h" />
     <ClInclude Include="scheduler\include\mfx_scheduler_core.h" />
     <ClInclude Include="scheduler\include\mfx_scheduler_core_handle.h" />

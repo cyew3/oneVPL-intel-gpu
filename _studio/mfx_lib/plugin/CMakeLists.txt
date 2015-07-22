@@ -372,6 +372,8 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h264_encode/src )
     ${prefix}/genx_bdw_simple_me_isa.cpp
     ${prefix}/genx_skl_simple_me_isa.cpp
     ${prefix}/genx_hsw_simple_me_proto.cpp
+    ${prefix}/genx_hsw_histogram_isa.cpp
+    ${prefix}/genx_skl_histogram_isa.cpp
   )
 endforeach()
 

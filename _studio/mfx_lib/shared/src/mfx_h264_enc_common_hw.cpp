@@ -1376,6 +1376,7 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_MB_DISABLE_SKIP_MAP
         || id == MFX_EXTBUFF_ENCODER_WIDI_USAGE
         || id == MFX_EXTBUFF_AVC_ENCODE_CTRL
+        || id == MFX_EXTBUFF_PRED_WEIGHT_TABLE
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || id == MFX_EXTBUFF_FEI_ENC_CTRL
         || id == MFX_EXTBUFF_FEI_ENC_MB
@@ -1406,6 +1407,7 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_ENCODER_ROI
         || id == MFX_EXTBUFF_CODING_OPTION3
         || id == MFX_EXTBUFF_CHROMA_LOC_INFO
+        || id == MFX_EXTBUFF_PRED_WEIGHT_TABLE
         || id == MFX_EXTBUFF_DIRTY_RECTANGLES
         || id == MFX_EXTBUFF_MOVING_RECTANGLES
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
@@ -1781,6 +1783,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtChromaLocInfo *      extCli       = GetExtBuffer(par);
     mfxExtDirtyRect  *         extDirtyRect = GetExtBuffer(par);
     mfxExtMoveRect *           extMoveRect  = GetExtBuffer(par);
+    mfxExtPredWeightTable *    extPwt       = GetExtBuffer(par);
 
     // check hw capabilities
     if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
@@ -3601,6 +3604,50 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
     }
 
+    if (extPwt)
+    {
+        mfxU16 maxLuma[2] = {};
+        mfxU16 maxChroma[2] = {};
+        bool out_of_caps = false;
+        if (0 == hwCaps.NoWeightedPred)
+        {
+            if (hwCaps.LumaWeightedPred)
+            {
+                maxLuma[0] = std::min<mfxU16>(hwCaps.MaxNum_WeightedPredL0, 32);
+                maxLuma[1] = std::min<mfxU16>(hwCaps.MaxNum_WeightedPredL1, 32);
+            }
+            if (hwCaps.ChromaWeightedPred)
+            {
+                maxChroma[0] = std::min<mfxU16>(hwCaps.MaxNum_WeightedPredL0, 32);
+                maxChroma[1] = std::min<mfxU16>(hwCaps.MaxNum_WeightedPredL1, 32);
+            }
+        }
+
+        for (mfxU16 lx = 0; lx < 2; lx++)
+        {
+            for (mfxU16 i = 0; i < 32 && !out_of_caps && extPwt->LumaWeightFlag[lx][i]; i++)
+                out_of_caps = (i >= maxLuma[lx]);
+            for (mfxU16 i = 0; i < 32 && !out_of_caps && extPwt->ChromaWeightFlag[lx][i]; i++)
+                out_of_caps = (i >= maxChroma[lx]);
+        }
+        
+        if (out_of_caps)
+        {
+            Zero(extPwt->LumaWeightFlag);
+            Zero(extPwt->ChromaWeightFlag);
+
+            for (mfxU16 lx = 0; lx < 2; lx++)
+            {
+                for (mfxU16 i = 0; i < maxLuma[lx]; i++)
+                    extPwt->LumaWeightFlag[lx][i] = 1;
+                for (mfxU16 i = 0; i < maxChroma[lx]; i++)
+                    extPwt->ChromaWeightFlag[lx][i] = 1;
+            }
+
+            changed = true;
+        }
+    }
+
     if (!CheckRangeDflt(extOpt2->SkipFrame, 0, 3, 0)) changed = true;
 
     if ( extOpt2->SkipFrame && hwCaps.SkipFrame == 0 && par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
@@ -3665,6 +3712,30 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                unsupported = true;
         }
     }
+
+    if (!CheckRangeDflt(extOpt3->WeightedPred, 
+            (mfxU16)MFX_WEIGHTED_PRED_UNKNOWN, 
+            (mfxU16)MFX_WEIGHTED_PRED_EXPLICIT, 
+            (mfxU16)MFX_WEIGHTED_PRED_DEFAULT))
+            changed = true;
+
+    if (!CheckRangeDflt(extOpt3->WeightedBiPred,
+            (mfxU16)MFX_WEIGHTED_PRED_UNKNOWN,
+            (mfxU16)MFX_WEIGHTED_PRED_IMPLICIT,
+            (mfxU16)MFX_WEIGHTED_PRED_DEFAULT))
+            changed = true;
+
+    if (    hwCaps.NoWeightedPred
+        && (extOpt3->WeightedPred == MFX_WEIGHTED_PRED_EXPLICIT
+        || extOpt3->WeightedBiPred == MFX_WEIGHTED_PRED_EXPLICIT))
+    {
+        extOpt3->WeightedPred = MFX_WEIGHTED_PRED_DEFAULT;
+        extOpt3->WeightedBiPred = MFX_WEIGHTED_PRED_DEFAULT;
+        unsupported = true;
+    }
+
+    if (!CheckTriStateOption(extOpt3->FadeDetection)) changed = true;
+
     return unsupported
         ? MFX_ERR_UNSUPPORTED
         : (changed || warning)
@@ -5039,8 +5110,8 @@ void MfxHwH264Encode::SetDefaults(
         extPps->sliceGroupMapType                     = 0;
         extPps->numRefIdxL0DefaultActiveMinus1        = 0;
         extPps->numRefIdxL1DefaultActiveMinus1        = 0;
-        extPps->weightedPredFlag                      = 0;
-        extPps->weightedBipredIdc                     = mfxU8(extDdi->WeightedBiPredIdc);
+        extPps->weightedPredFlag                      = mfxU8(extOpt3->WeightedPred == MFX_WEIGHTED_PRED_EXPLICIT);
+        extPps->weightedBipredIdc                     = extOpt3->WeightedBiPred ? mfxU8(extOpt3->WeightedBiPred - 1) : mfxU8(extDdi->WeightedBiPredIdc);
         extPps->picInitQpMinus26                      = 0;
         extPps->picInitQsMinus26                      = 0;
         extPps->chromaQpIndexOffset                   = 0;
@@ -6030,6 +6101,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtChromaLocInfo,        m_extChromaLoc);
     CONSTRUCT_EXT_BUFFER(mfxExtFeiParam,             m_extFeiParam);
     CONSTRUCT_EXT_BUFFER(mfxExtSpecialEncodingModes, m_extSpecModes);
+    CONSTRUCT_EXT_BUFFER(mfxExtPredWeightTable,      m_extPwt);
     CONSTRUCT_EXT_BUFFER(mfxExtDirtyRect,            m_extDirtyRect);
     CONSTRUCT_EXT_BUFFER(mfxExtMoveRect,             m_extMoveRect);
 #undef CONSTRUCT_EXT_BUFFER
@@ -7468,6 +7540,76 @@ std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
     return m_packedSlices;
 }
 
+void WritePredWeightTable(
+    OutputBitstream &   obs,
+    ENCODE_CAPS const & hwCaps,
+    DdiTask const &     task,
+    mfxU32              fieldId,
+    mfxU32              chromaArrayType)
+{
+    const mfxExtPredWeightTable* pPWT = GetExtBuffer(task.m_ctrl, fieldId);
+    mfxU32 nRef[2] = {
+        IPP_MAX(1, task.m_list0[fieldId].Size()),
+        IPP_MAX(1, task.m_list1[fieldId].Size())
+    };
+    mfxU32 maxWeights[2] = { hwCaps.MaxNum_WeightedPredL0, hwCaps.MaxNum_WeightedPredL1 };
+    bool present;
+
+    if (!pPWT)
+        pPWT = &task.m_pwt[fieldId];
+
+    obs.PutUe(pPWT->LumaLog2WeightDenom);
+
+    if (chromaArrayType != 0)
+        obs.PutUe(pPWT->ChromaLog2WeightDenom);
+
+    for (mfxU32 lx = 0; lx <= (mfxU32)!!(task.m_type[fieldId] & MFX_FRAMETYPE_B); lx++)
+    {
+        for (mfxU32 i = 0; i < nRef[lx]; i++)
+        {
+            present = !!pPWT->LumaWeightFlag[lx][i] && hwCaps.LumaWeightedPred;
+
+            if (i < maxWeights[lx])
+            {
+                obs.PutBit(present);
+
+                if (present)
+                {
+                    obs.PutSe(pPWT->Weights[lx][i][0][0]);
+                    obs.PutSe(pPWT->Weights[lx][i][0][1]);
+                }
+            }
+            else
+            {
+                obs.PutBit(0);
+            }
+
+            if (chromaArrayType != 0)
+            {
+                present = !!pPWT->ChromaWeightFlag[lx][i] && hwCaps.ChromaWeightedPred;
+
+                if (i < maxWeights[lx])
+                {
+                    obs.PutBit(present);
+
+                    if (present)
+                    {
+                        for (mfxU32 j = 1; j < 3; j++)
+                        {
+                            obs.PutSe(pPWT->Weights[lx][i][j][0]);
+                            obs.PutSe(pPWT->Weights[lx][i][j][1]);
+                        }
+                    }
+                }
+                else
+                {
+                    obs.PutBit(0);
+                }
+            }
+        }
+    }
+}
+
 mfxU32 HeaderPacker::WriteSlice(
     OutputBitstream & obs,
     DdiTask const &   task,
@@ -7581,45 +7723,7 @@ mfxU32 HeaderPacker::WriteSlice(
             pps.weightedBipredIdc == 1 && sliceType == SLICE_TYPE_B)
         {
             mfxU32 chromaArrayType = sps.separateColourPlaneFlag ? 0 : sps.chromaFormatIdc;
-            mfxI32 numRefIdxL0ActiveMinus1 = IPP_MAX(1, task.m_list0[fieldId].Size()) - 1;
-            //mfxI32 numRefIdxL1ActiveMinus1 = IPP_MAX(1, task.m_list1[fieldId].Size()) - 1;
-
-            if(sliceType == SLICE_TYPE_P)
-            {
-                obs.PutUe(task.m_lumaLog2WeightDenom[fieldId]);
-                if( chromaArrayType != 0 )
-                {
-                    obs.PutUe(task.m_chromaLog2WeightDenom[fieldId]);
-                }
-
-                for(int i=0; i<=numRefIdxL0ActiveMinus1; i++)
-                {
-                    const mfxU8 lumaFlag = task.m_weightTab[fieldId][i].m_lumaWeightL0Flag;
-                    obs.PutBit(lumaFlag);
-                    if( lumaFlag )
-                    {
-                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaWeightL0);
-                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaOffsetL0);
-                    }
-                    if( chromaArrayType != 0 )
-                    {
-                        const mfxU8 chromaFlag = task.m_weightTab[fieldId][i].m_chromaWeightL0Flag;
-                        obs.PutBit(chromaFlag);
-                        if( chromaFlag )
-                        {
-                            for(int j=0; j<2; j++)
-                            {
-                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaWeightL0[j]);
-                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaOffsetL0[j]);
-                            }
-                        }
-                    }
-                }
-            }
-            else if( sliceType == SLICE_TYPE_B)
-            {
-                assert(!"explicit weighted prediction for B slices is unsupported");
-            }
+            WritePredWeightTable(obs, m_hwCaps, task, fieldId, chromaArrayType);
         }
         if (refPicFlag || task.m_nalRefIdc[fieldId])
         {
@@ -7827,45 +7931,7 @@ mfxU32 HeaderPacker::WriteSlice(
             pps.weightedBipredIdc == 1 && sliceType == SLICE_TYPE_B)
         {
             mfxU32 chromaArrayType = sps.separateColourPlaneFlag ? 0 : sps.chromaFormatIdc;
-            mfxI32 numRefIdxL0ActiveMinus1 = IPP_MAX(1, task.m_list0[fieldId].Size()) - 1;
-            //mfxI32 numRefIdxL1ActiveMinus1 = IPP_MAX(1, task.m_list1[fieldId].Size()) - 1;
-
-            if(sliceType == SLICE_TYPE_P)
-            {
-                obs.PutUe(task.m_lumaLog2WeightDenom[fieldId]);
-                if( chromaArrayType != 0 )
-                {
-                    obs.PutUe(task.m_chromaLog2WeightDenom[fieldId]);
-                }
-
-                for(int i=0; i<=numRefIdxL0ActiveMinus1; i++)
-                {
-                    const mfxU8 lumaFlag = task.m_weightTab[fieldId][i].m_lumaWeightL0Flag;
-                    obs.PutBit(lumaFlag);
-                    if( lumaFlag )
-                    {
-                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaWeightL0);
-                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaOffsetL0);
-                    }
-                    if( chromaArrayType != 0 )
-                    {
-                        const mfxU8 chromaFlag = task.m_weightTab[fieldId][i].m_chromaWeightL0Flag;
-                        obs.PutBit(chromaFlag);
-                        if( chromaFlag )
-                        {
-                            for(int j=0; j<2; j++)
-                            {
-                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaWeightL0[j]);
-                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaOffsetL0[j]);
-                            }
-                        }
-                    }
-                }
-            }
-            else if( sliceType == SLICE_TYPE_B)
-            {
-                assert(!"explicit weighted prediction for B slices is unsupported");
-            }
+            WritePredWeightTable(obs, m_hwCaps, task, fieldId, chromaArrayType);
         }
         if (refPicFlag)
         {

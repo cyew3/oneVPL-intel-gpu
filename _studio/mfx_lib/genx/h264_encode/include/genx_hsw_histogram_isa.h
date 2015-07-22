@@ -3,21 +3,11 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
-#ifndef CMRT_EMU
-
-extern "C"
-{
-    void SVCEncMB_I() {}
-    void SVCEncMB_P() {}
-    void SVCEncMB_B() {}
-    void DownSampleMB2X() {}
-    void DownSampleMB4X() {}
-    void HistogramFrame() {}
-    void HistogramFields() {}
-}
-
-#endif CMRT_EMU
+#ifndef __genx_hsw_histogram__
+#define __genx_hsw_histogram__
+extern const unsigned char genx_hsw_histogram[88329];
+#endif
