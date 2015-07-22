@@ -1203,7 +1203,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFField(Ipp32u dir
                         if (0 <= index)
                         {
                             pRefPicList = m_pCurrentFrame->GetRefPicList((m_gmbinfo->mbs + m_CurMBAddr)->slice_id, 0)->m_RefPicList;
-                            iRefQ = pRefPicList[index >> 1]->DeblockPicID(index & 1);
+                            iRefQ = pRefPicList[index >> 1] ? pRefPicList[index >> 1]->DeblockPicID(index & 1) : (size_t)-1;
                         }
                         else
                             iRefQ = (size_t)-1;
@@ -1213,7 +1213,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFField(Ipp32u dir
                         if (0 <= index)
                         {
                             pRefPicList = m_pCurrentFrame->GetRefPicList((m_gmbinfo->mbs + nNeighbour)->slice_id, 0)->m_RefPicList;
-                            iRefP = pRefPicList[index >> 1]->DeblockPicID(index & 1);
+                            iRefP =  pRefPicList[index >> 1] ? pRefPicList[index >> 1]->DeblockPicID(index & 1) : (size_t)-1;
                         }
                         else
                             iRefP = (size_t)-1;
@@ -1305,13 +1305,13 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFField(Ipp32u dir
 
                     // select reference index for current block
                     index = m_cur_mb.GetReferenceIndex(0, nBlock);
-                    iRefQ = (index < 0) ?
+                    iRefQ = (index < 0 || !pRefPicList[index >> 1]) ?
                             (-1) :
                             (pRefPicList[index >> 1]->DeblockPicID(index & 1));
 
                     // select reference index for previous block
                     index = m_cur_mb.GetReferenceIndex(0, nNeighbourBlock);
-                    iRefP = (index < 0) ?
+                    iRefP = (index < 0 || !pRefPicList[index >> 1]) ?
                             (-1) :
                             pRefPicList[index >> 1]->DeblockPicID(index & 1);
                 }
@@ -1413,7 +1413,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4MBAFFField(Ipp32u dir
                         if (0 <= index)
                         {
                             pRefPicList = m_pCurrentFrame->GetRefPicList((m_gmbinfo->mbs + m_CurMBAddr)->slice_id, 0)->m_RefPicList;
-                            iRefQFrw = pRefPicList[index >> 1]->DeblockPicID(index & 1);
+                            iRefQFrw = pRefPicList[index >> 1] ? pRefPicList[index >> 1]->DeblockPicID(index & 1) : (size_t)-1;
                         }
                         else
                             iRefQFrw = (size_t)-1;
@@ -1421,7 +1421,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4MBAFFField(Ipp32u dir
                         if (0 <= index)
                         {
                             pRefPicList = m_pCurrentFrame->GetRefPicList((m_gmbinfo->mbs + m_CurMBAddr)->slice_id, 1)->m_RefPicList;
-                            iRefQBck = pRefPicList[index >> 1]->DeblockPicID(index & 1);
+                            iRefQBck = pRefPicList[index >> 1] ? pRefPicList[index >> 1]->DeblockPicID(index & 1) : (size_t)-1;
                         }
                         else
                             iRefQBck = (size_t)-1;
@@ -1431,7 +1431,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4MBAFFField(Ipp32u dir
                         if (0 <= index)
                         {
                             pRefPicList = m_pCurrentFrame->GetRefPicList((m_gmbinfo->mbs + nNeighbour)->slice_id, 0)->m_RefPicList;
-                            iRefPFrw = pRefPicList[index >> 1]->DeblockPicID(index & 1);
+                            iRefPFrw = pRefPicList[index >> 1] ? pRefPicList[index >> 1]->DeblockPicID(index & 1) : (size_t)-1;
                         }
                         else
                             iRefPFrw = (size_t)-1;
@@ -1439,7 +1439,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4MBAFFField(Ipp32u dir
                         if (0 <= index)
                         {
                             pRefPicList = m_pCurrentFrame->GetRefPicList((m_gmbinfo->mbs + nNeighbour)->slice_id, 1)->m_RefPicList;
-                            iRefPBck = pRefPicList[index >> 1]->DeblockPicID(index & 1);
+                            iRefPBck = pRefPicList[index >> 1] ? pRefPicList[index >> 1]->DeblockPicID(index & 1) : (size_t)-1;
                         }
                         else
                             iRefPBck = (size_t)-1;
@@ -1571,11 +1571,11 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4MBAFFField(Ipp32u dir
                     pRefPicList = m_pCurrentFrame->GetRefPicList((m_gmbinfo->mbs + m_CurMBAddr)->slice_id, 0)->m_RefPicList;
                     // select forward reference index for block(s)
                     index = m_cur_mb.GetReferenceIndex(0, nBlock);
-                    iRefQFrw = (index < 0) ?
+                    iRefQFrw = (index < 0 || !pRefPicList[index >> 1]) ?
                             (-1) :
                             (pRefPicList[index >> 1]->DeblockPicID(index & 1));
                     index = m_cur_mb.GetReferenceIndex(0, nNeighbourBlock);
-                    iRefPFrw = (index < 0) ?
+                    iRefPFrw = (index < 0 || !pRefPicList[index >> 1]) ?
                             (-1) :
                             pRefPicList[index >> 1]->DeblockPicID(index & 1);
 
@@ -1583,13 +1583,12 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4MBAFFField(Ipp32u dir
                     pRefPicList = m_pCurrentFrame->GetRefPicList((m_gmbinfo->mbs + m_CurMBAddr)->slice_id, 1)->m_RefPicList;
                     // select backward reference index for block(s)
                     index = m_cur_mb.GetReferenceIndex(1, nBlock);
-                    iRefQBck = (index < 0) ?
+                    iRefQBck = (index < 0  || !pRefPicList[index >> 1]) ?
                             (-1) :
                             (pRefPicList[index >> 1]->DeblockPicID(index & 1));
                     index = m_cur_mb.GetReferenceIndex(1, nNeighbourBlock);
-                    iRefPBck = (index < 0) ?
-                            (-1) :
-                            pRefPicList[index >> 1]->DeblockPicID(index & 1);
+                    iRefPBck = (index < 0  || !pRefPicList[index >> 1]) ?
+                            (-1) : pRefPicList[index >> 1]->DeblockPicID(index & 1);
                 }
 
                 // when reference indexes are equal

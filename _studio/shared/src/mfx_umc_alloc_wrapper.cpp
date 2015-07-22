@@ -589,10 +589,11 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
         return MFX_ERR_MORE_SURFACE;
 
     // check input surface
-    if (surf->Info.BitDepthLuma && surf->Info.BitDepthLuma != m_surface.Info.BitDepthLuma)
+    
+    if ((surf->Info.BitDepthLuma ? surf->Info.BitDepthLuma : 8) != (m_surface.Info.BitDepthLuma ? m_surface.Info.BitDepthLuma : 8))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (surf->Info.BitDepthChroma && surf->Info.BitDepthChroma != m_surface.Info.BitDepthChroma)
+    if ((surf->Info.BitDepthChroma ? surf->Info.BitDepthChroma : 8) != (m_surface.Info.BitDepthChroma ? m_surface.Info.BitDepthChroma : 8))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (surf->Info.FourCC == MFX_FOURCC_P010 || surf->Info.FourCC == MFX_FOURCC_P210)

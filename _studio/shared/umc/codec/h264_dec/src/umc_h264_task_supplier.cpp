@@ -1778,14 +1778,14 @@ void POCDecoder::DecodePictureOrderCount(const H264Slice *slice, Ipp32s frame_nu
     m_FrameNum = frame_num;
 }    // decodePictureOrderCount
 
-Ipp32s POCDecoder::DetectFrameNumGap(H264Slice *slice)
+Ipp32s POCDecoder::DetectFrameNumGap(const H264Slice *slice, bool ignore_gaps_allowed_flag)
 {
     const H264SeqParamSet* sps = slice->GetSeqParam();
 
-    if (sps->gaps_in_frame_num_value_allowed_flag != 1)
+    if (!ignore_gaps_allowed_flag && sps->gaps_in_frame_num_value_allowed_flag != 1)
         return 0;
 
-    H264SliceHeader *sliceHeader = slice->GetSliceHeader();
+    const H264SliceHeader *sliceHeader = slice->GetSliceHeader();
 
     Ipp32s uMaxFrameNum = (1<<sps->log2_max_frame_num);
     Ipp32s frameNumGap;
@@ -4926,6 +4926,11 @@ void TaskSupplier::InitFrameCounter(H264DecoderFrame * pFrame, const H264Slice *
 {
     const H264SliceHeader *sliceHeader = pSlice->GetSliceHeader();
     ViewItem &view = GetView(sliceHeader->nal_ext.mvc.view_id);
+
+    if (view.GetPOCDecoder(0)->DetectFrameNumGap(pSlice, true))
+    {
+        pFrame->SetErrorFlagged(ERROR_FRAME_REFERENCE_FRAME);
+    }
 
     if (sliceHeader->IdrPicFlag)
     {

@@ -117,7 +117,7 @@ public:
         if (is_field && pParams->is_mbaff)
             iRefIndex >>= 1;
 
-        if (iRefIndex < 0)
+        if (iRefIndex < 0 || !pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex])
         {
             pParams->m_bidirLuma.pSrc[iDir] = interpolateInfo->pDst[0];
             pParams->m_bidirLuma.srcStep[iDir] = interpolateInfo->dstStep;
@@ -204,7 +204,7 @@ public:
         if (is_field && pParams->is_mbaff)
             iRefIndex >>= 1;
 
-        if (iRefIndex < 0)
+        if (iRefIndex < 0 || !pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex])
         {
             // save pointers for optimized interpolation
             pParams->m_bidirChroma[0].pSrc[iDir] = interpolateInfo->pDst[0];

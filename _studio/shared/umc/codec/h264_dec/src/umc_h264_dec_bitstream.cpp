@@ -3076,10 +3076,10 @@ IppStatus MyippiDecodeCAVLCCoeffs_H264_1u16s (Ipp32u ** const ppBitStream,
                                                      Ipp16s *pNumCoeff,
                                                      Ipp16s **ppPosCoefbuf,
                                                      Ipp32u uVLCSelect,
-                                                     Ipp16s coeffLimit,
+                                                     Ipp16s ,
                                                      Ipp16s uMaxNumCoeff,
                                                      const Ipp32s *pScanMatrix,
-                                                     Ipp32s scanIdxStart)
+                                                     Ipp32s )
 
 {
     Ipp32s **ppTblTotalZeros;
@@ -3098,6 +3098,19 @@ IppStatus MyippiDecodeCAVLCCoeffs_H264_1u16s (Ipp32u ** const ppBitStream,
         ppTblTotalZeros = UMC::H264Bitstream::m_tblTotalZeros;
     }
 
+    return ippiDecodeCAVLCCoeffs_H264_1u16s(ppBitStream,
+                                                     pOffset,
+                                                     pNumCoeff,
+                                                     ppPosCoefbuf,
+                                                     uVLCSelect,
+                                                     uMaxNumCoeff,
+                                                     (const Ipp32s **) UMC::H264Bitstream::m_tblCoeffToken,
+                                                     (const Ipp32s **) UMC::H264Bitstream::m_tblTotalZeros,
+                                                     (const Ipp32s **) UMC::H264Bitstream::m_tblRunBefore,
+                                                     pScanMatrix);
+
+
+#if 0
 #if 1
     return own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s(ppBitStream,
                                                      pOffset,
@@ -3356,6 +3369,7 @@ IppStatus MyippiDecodeCAVLCCoeffs_H264_1u16s (Ipp32u ** const ppBitStream,
     }
 
     return ippStsNoErr;
+#endif
 #endif
 } /* IPPFUN(IppStatus, ippiDecodeCAVLCCoeffs_H264_1u16s, (Ipp32u **ppBitStream, */
 

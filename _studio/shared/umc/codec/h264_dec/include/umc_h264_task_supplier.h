@@ -150,7 +150,7 @@ public:
     virtual ~POCDecoder();
     void DecodePictureOrderCount(const H264Slice *slice, Ipp32s frame_num);
 
-    Ipp32s DetectFrameNumGap(H264Slice *slice);
+    Ipp32s DetectFrameNumGap(const H264Slice *slice, bool ignore_gaps_allowed_flag = false);
 
     // Set the POCs when frame gap is processed
     void DecodePictureOrderCountFrameGap(H264DecoderFrame *pFrame,
