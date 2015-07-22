@@ -1662,6 +1662,7 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         m_VppCompParams.NumInputStream = (mfxU16)pInParams->numSurf4Comp;
         m_VppCompParams.InputStream = (mfxVPPCompInputStream *)malloc(sizeof(mfxVPPCompInputStream)*
             m_VppCompParams.NumInputStream);
+        MSDK_CHECK_POINTER(m_VppCompParams.InputStream,MFX_ERR_NULL_PTR);
 
         // stream params
         /* if input streams in NV12 format background color should be in YUV format too
