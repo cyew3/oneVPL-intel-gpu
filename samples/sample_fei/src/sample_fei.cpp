@@ -37,7 +37,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames\n"));
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
-    msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
+    //msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
     msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
     msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
     msdk_printf(MSDK_STRING("   [-mbctrl file] - use the input to set MB control for FEI (only ENC+PAK)\n"));
@@ -120,10 +120,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bENCODE = true;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encpak")))
+        /*else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encpak")))
         {
             pParams->bENCPAK = true;
-        }
+        }*/
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc")))
         {
             pParams->bOnlyENC = true;
@@ -365,11 +365,30 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
-    if (pParams->bPREENC && pParams->bOnlyPAK || pParams->bENCODE && pParams->bOnlyENC){
-        if (bAlrShownHelp)
+    //if (pParams->bPREENC && pParams->bOnlyPAK || pParams->bENCODE && pParams->bOnlyENC){
+    if (!( pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCODE ||
+          !pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCODE ||
+          !pParams->bPREENC && !pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCODE ||
+          !pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCODE ||
+          !pParams->bPREENC &&  pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCODE ||
+           pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCODE ||
+           pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCODE ||
+           pParams->bPREENC &&  pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCODE )
+    ){
+        if (bAlrShownHelp){
             msdk_printf(MSDK_STRING("\nUnsupported pipeline!\n"));
-        else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported pipeline!"));
+
+            msdk_printf(MSDK_STRING("Supported pipelines are:\n"));
+            msdk_printf(MSDK_STRING("PREENC\n"));
+            msdk_printf(MSDK_STRING("ENC\n"));
+            msdk_printf(MSDK_STRING("PAK\n"));
+            msdk_printf(MSDK_STRING("ENCODE\n"));
+            msdk_printf(MSDK_STRING("ENC + PAK\n"));
+            msdk_printf(MSDK_STRING("PREENC + ENC\n"));
+            msdk_printf(MSDK_STRING("PREENC + ENCODE\n"));
+            msdk_printf(MSDK_STRING("PREENC + ENC + PAK\n"));
+        } else
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported pipeline!\nSupported pipelines are:\nPREENC\nENC\nPAK\nENCODE\nENC + PAK\nPREENC + ENC\nPREENC + ENCODE\nPREENC + ENC + PAK\n"));
         return MFX_ERR_UNSUPPORTED;
     }
 
