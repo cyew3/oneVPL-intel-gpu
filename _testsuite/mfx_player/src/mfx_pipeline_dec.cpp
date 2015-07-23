@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -2552,9 +2552,16 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         }
         else
         {
-            request->Type = _request[eDEC]->Type;
+            request->Type = _request[eDEC]->Type ;
         }
-
+        if( (0 == m_components[eDEC].m_params.mfx.CodecId) && (0 != m_components[eREN].m_params.mfx.CodecId) )
+        {
+             // pure encode case
+             request->Type = _request[eREN]->Type;
+#if defined(LINUX)
+             request->Type |= (m_components[eREN].m_params.mfx.CodecId == MFX_CODEC_JPEG)? MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET : 0;
+#endif
+        }
         PrintInfo( VM_STRING("Surfaces dec+rnd")
             , VM_STRING("%sx%dx%dx%d : %d(dec) + %d(ren) - 1 + %d(dec:async) + %d(ren:async)")
             , GetMFXFourccString(request->Info.FourCC).c_str()
@@ -2564,7 +2571,8 @@ mfxStatus MFXDecPipeline::CreateAllocator()
             , numDecSfr
             , numRenSfr
             , IPP_MAX(m_components[eDEC].m_nMaxAsync, 1) - 1
-            , IPP_MAX(m_components[eREN].m_nMaxAsync, 1) - 1);
+            , IPP_MAX(m_components[eREN].m_nMaxAsync, 1) - 1
+        );
 
         m_components[eDEC].m_bAdaptivePlayback = m_inParams.bAdaptivePlayback;
         MFX_CHECK_STS(m_components[eDEC].AllocFrames(m_pAllocFactory.get(), m_pHWDevice, request, false));
@@ -2583,7 +2591,8 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         {
             MFX_CHECK_STS(m_components[eREN].m_pSession->SetFrameAllocator(m_components[eDEC].m_pAllocator));
         }
-    }else
+    }
+    else
     {
         nSurfaces = (numDecSfr + numVppSfrIn - 1 )
             + (IPP_MAX(m_components[eDEC].m_nMaxAsync, 1) - 1)

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -26,7 +26,7 @@ class MFXVideoENCODEMJPEG_HW : public VideoENCODE {
 public:
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
-   
+
     MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts);
     virtual ~MFXVideoENCODEMJPEG_HW() {Close();}
     virtual mfxStatus Init(mfxVideoParam *par);
@@ -46,30 +46,33 @@ public:
                                MFX_ENTRY_POINT pEntryPoints[],
                                mfxU32 &numEntryPoints);
 
-   // previous scheduling model - functions are not need to be implemented, only to be compatible 
-    virtual mfxStatus EncodeFrameCheck(mfxEncodeCtrl *, 
-                                       mfxFrameSurface1 *, 
-                                       mfxBitstream *, 
-                                       mfxFrameSurface1 **, 
+   // previous scheduling model - functions are not need to be implemented, only to be compatible
+    virtual mfxStatus EncodeFrameCheck(mfxEncodeCtrl *,
+                                       mfxFrameSurface1 *,
+                                       mfxBitstream *,
+                                       mfxFrameSurface1 **,
                                        mfxEncodeInternalParams *)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    virtual mfxStatus EncodeFrame(mfxEncodeCtrl *, 
-                                  mfxEncodeInternalParams *, 
-                                  mfxFrameSurface1 *, 
+    virtual mfxStatus EncodeFrame(mfxEncodeCtrl *,
+                                  mfxEncodeInternalParams *,
+                                  mfxFrameSurface1 *,
                                   mfxBitstream *)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    virtual mfxStatus CancelFrame(mfxEncodeCtrl *, 
-                                  mfxEncodeInternalParams *, 
-                                  mfxFrameSurface1 *, 
+    virtual mfxStatus CancelFrame(mfxEncodeCtrl *,
+                                  mfxEncodeInternalParams *,
+                                  mfxFrameSurface1 *,
                                   mfxBitstream *)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-
+    inline mfxFrameSurface1* GetOriginalSurface(mfxFrameSurface1 *surface)
+    {
+        return m_isOpaqIn ? m_pCore->GetNativeSurface(surface): surface;
+    }
 protected:
     // callbacks to work with scheduler
     static mfxStatus TaskRoutineSubmitFrame(void * state,
@@ -81,7 +84,7 @@ protected:
                                            void * param,
                                            mfxU32 threadNumber,
                                            mfxU32 callNumber);
-    
+
     mfxStatus UpdateDeviceStatus(mfxStatus sts);
     mfxStatus CheckDevice();
 
@@ -97,6 +100,7 @@ protected:
 
     bool                m_bInitialized;
     bool                m_deviceFailed;
+    bool                m_isOpaqIn;
 
     mfxFrameAllocResponse m_raw;        // raw surface, for input raw is in system memory case
     mfxFrameAllocResponse m_bitstream;  // bitstream surface

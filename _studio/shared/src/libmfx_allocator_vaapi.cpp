@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_allocator_vaapi.cpp
 
@@ -172,30 +172,37 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                 format = VA_RT_FORMAT_YUV420;
             }
 
-
-#if defined (ENABLE_ENCODER_SURFACE_HINTS) //  see VCSD100020983
-            if ( request->Type & MFX_MEMTYPE_FROM_ENCODE){
+            if ( request->Type & MFX_MEMTYPE_FROM_ENCODE)
+            {
+                int             attribCnt = 0;
                 VASurfaceAttrib surfaceAttrib[2];
-                surfaceAttrib[0].type = VASurfaceAttribPixelFormat;
-                surfaceAttrib[0].value.type = VAGenericValueTypeInteger;
-                surfaceAttrib[0].flags = VA_SURFACE_ATTRIB_SETTABLE;
-                surfaceAttrib[0].value.value.i = va_fourcc;
 
+                surfaceAttrib[attribCnt].type = VASurfaceAttribPixelFormat;
+                surfaceAttrib[attribCnt].value.type = VAGenericValueTypeInteger;
+                surfaceAttrib[attribCnt].flags = VA_SURFACE_ATTRIB_SETTABLE;
+                surfaceAttrib[attribCnt++].value.value.i = va_fourcc;
+
+/*
+ *  Enable this hint as required for creating RGB32 surface for MJPEG
+ */
+                if ( request->Type & MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET )
+                {
               //  Input Attribute Usage Hint
-                surfaceAttrib[1].flags = VA_SURFACE_ATTRIB_SETTABLE;
-                surfaceAttrib[1].type = (VASurfaceAttribType) VASurfaceAttribUsageHint;
-                surfaceAttrib[1].value.type = VAGenericValueTypeInteger;
-                surfaceAttrib[1].value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
-
-                 va_res = vaCreateSurfaces(pSelf->pVADisplay,
+                    surfaceAttrib[attribCnt].flags           = VA_SURFACE_ATTRIB_SETTABLE;
+                    surfaceAttrib[attribCnt].type            = (VASurfaceAttribType) VASurfaceAttribUsageHint;
+                    surfaceAttrib[attribCnt].value.type      = VAGenericValueTypeInteger;
+                    surfaceAttrib[attribCnt++].value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
+                }
+                va_res = vaCreateSurfaces(pSelf->pVADisplay,
                                     format,
                                     request->Info.Width, request->Info.Height,
                                     surfaces,
                                     surfaces_num,
-                                    &surfaceAttrib[0],2);
+                                    &surfaceAttrib[0],
+                                    attribCnt);
             }
-
-            else {
+            else
+            {
                 va_res = vaCreateSurfaces(pSelf->pVADisplay,
                                     format,
                                     request->Info.Width, request->Info.Height,
@@ -203,14 +210,6 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                                     surfaces_num,
                                     pAttrib, pAttrib ? 1 : 0);
             }
-#else
-            va_res = vaCreateSurfaces(pSelf->pVADisplay,
-                format,
-                request->Info.Width, request->Info.Height,
-                surfaces,
-                surfaces_num,
-                pAttrib, pAttrib ? 1 : 0);
-#endif
             mfx_res = VA_TO_MFX_STATUS(va_res);
             bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
         }

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -104,7 +104,6 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameSurface1 * surf)
     VAStatus  va_res  = VA_STATUS_SUCCESS;
     unsigned int va_fourcc = 0;
     VASurfaceID* surfaces = NULL;
-    VASurfaceAttrib attrib;
     mfxU32 fourcc = surf->Info.FourCC;
 
     // VP8 hybrid driver has weird requirements for allocation of surfaces/buffers for VP8 encoding
@@ -123,28 +122,36 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameSurface1 * surf)
     if( VA_FOURCC_P208 != va_fourcc)
     {
         VASurfaceID surfaces[1];
+        VASurfaceAttrib attrib[2];
         vaapiMemId *vaapiMid = (vaapiMemId *)surf->Data.MemId;
         surfaces[0] = *vaapiMid->m_surface;
         vaDestroySurfaces(m_dpy, surfaces, 1);
 
         unsigned int format;
+        int attrCnt = 0;
 
-        attrib.type          = VASurfaceAttribPixelFormat;
-        attrib.flags         = VA_SURFACE_ATTRIB_SETTABLE;
-        attrib.value.type    = VAGenericValueTypeInteger;
-        attrib.value.value.i = va_fourcc;
+        attrib[attrCnt].type          = VASurfaceAttribPixelFormat;
+        attrib[attrCnt].flags         = VA_SURFACE_ATTRIB_SETTABLE;
+        attrib[attrCnt].value.type    = VAGenericValueTypeInteger;
+        attrib[attrCnt++].value.value.i = va_fourcc;
         format               = va_fourcc;
 
-        if (fourcc == MFX_FOURCC_VP8_NV12)
+        if ((fourcc == MFX_FOURCC_VP8_NV12) ||
+            (MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET & surf->Data.MemType))
         {
-            // special configuration for NV12 surf allocation for VP8 hybrid encoder is required
-            attrib.type          = (VASurfaceAttribType)VASurfaceAttribUsageHint;
-            attrib.value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
+/*
+ *  special configuration for NV12 surf allocation for VP8 hybrid encoder and
+ *  RGB32 for JPEG is required
+ */
+            attrib[attrCnt].type            = (VASurfaceAttribType)VASurfaceAttribUsageHint;
+            attrib[attrCnt].flags           = VA_SURFACE_ATTRIB_SETTABLE;
+            attrib[attrCnt].value.type      = VAGenericValueTypeInteger;
+            attrib[attrCnt++].value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
         }
         else if (fourcc == MFX_FOURCC_VP8_MBDATA)
         {
             // special configuration for MB data surf allocation for VP8 hybrid encoder is required
-            attrib.value.value.i = VA_FOURCC_P208;
+            attrib[0].value.value.i = VA_FOURCC_P208;
             format               = VA_FOURCC_P208;
         }
         else if (va_fourcc == VA_FOURCC_NV12)
@@ -157,7 +164,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameSurface1 * surf)
                                 surf->Info.Width, surf->Info.Height,
                                 surfaces,
                                 1,
-                                &attrib, 1);
+                                &attrib[0], attrCnt);
 
         *vaapiMid->m_surface = surfaces[0];
         mfx_res = va_to_mfx_status(va_res);
@@ -172,7 +179,6 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     VAStatus  va_res  = VA_STATUS_SUCCESS;
     unsigned int va_fourcc = 0;
     VASurfaceID* surfaces = NULL;
-    VASurfaceAttrib attrib;
     vaapiMemId *vaapi_mids = NULL, *vaapi_mid = NULL;
     mfxMemId* mids = NULL;
     mfxU32 fourcc = request->Info.FourCC;
@@ -228,23 +234,31 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         if( VA_FOURCC_P208 != va_fourcc)
         {
             unsigned int format;
+            VASurfaceAttrib attrib[2];
+            int attrCnt = 0;
 
-            attrib.type          = VASurfaceAttribPixelFormat;
-            attrib.flags         = VA_SURFACE_ATTRIB_SETTABLE;
-            attrib.value.type    = VAGenericValueTypeInteger;
-            attrib.value.value.i = va_fourcc;
+            attrib[attrCnt].type          = VASurfaceAttribPixelFormat;
+            attrib[attrCnt].flags         = VA_SURFACE_ATTRIB_SETTABLE;
+            attrib[attrCnt].value.type    = VAGenericValueTypeInteger;
+            attrib[attrCnt++].value.value.i = va_fourcc;
             format               = va_fourcc;
 
-            if (fourcc == MFX_FOURCC_VP8_NV12)
+            if ((fourcc == MFX_FOURCC_VP8_NV12) ||
+                (MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET & request->Type))
             {
-                // special configuration for NV12 surf allocation for VP8 hybrid encoder is required
-                attrib.type          = (VASurfaceAttribType)VASurfaceAttribUsageHint;
-                attrib.value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
+/*
+ *  special configuration for NV12 surf allocation for VP8 hybrid encoder and
+ *  RGB32 for JPEG is required
+ */
+                attrib[attrCnt].type            = (VASurfaceAttribType)VASurfaceAttribUsageHint;
+                attrib[attrCnt].flags           = VA_SURFACE_ATTRIB_SETTABLE;
+                attrib[attrCnt].value.type      = VAGenericValueTypeInteger;
+                attrib[attrCnt++].value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
             }
             else if (fourcc == MFX_FOURCC_VP8_MBDATA)
             {
                 // special configuration for MB data surf allocation for VP8 hybrid encoder is required
-                attrib.value.value.i = VA_FOURCC_P208;
+                attrib[0].value.value.i = VA_FOURCC_P208;
                 format               = VA_FOURCC_P208;
             }
             else if (va_fourcc == VA_FOURCC_NV12)
@@ -257,8 +271,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                                     request->Info.Width, request->Info.Height,
                                     surfaces,
                                     surfaces_num,
-                                    &attrib, 1);
-
+                                    &attrib[0], attrCnt);
             mfx_res = va_to_mfx_status(va_res);
             bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
         }

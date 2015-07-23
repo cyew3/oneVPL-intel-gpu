@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          MJPEG HW encoder
@@ -28,6 +28,7 @@ MFXVideoENCODEMJPEG_HW::MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts)
     m_pCore        = core;
     m_bInitialized = false;
     m_deviceFailed = false;
+    m_isOpaqIn     = false;
     m_counter      = 1;
 
     memset(&m_vFirstParam, 0, sizeof(mfxVideoParam));
@@ -75,7 +76,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfx
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
-        JpegEncCaps hwCaps = {0};
+        JpegEncCaps hwCaps = {};
         sts = QueryHwCaps(core, hwCaps);
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
@@ -83,7 +84,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfx
     else
     {
         // Check HW caps
-        JpegEncCaps hwCaps = {0};
+        JpegEncCaps hwCaps = {};
         mfxStatus sts = QueryHwCaps(core, hwCaps);
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
@@ -230,7 +231,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Query(VideoCORE * core, mfxVideoParam *in, mfx
         //Check for valid framerate
         if((!in->mfx.FrameInfo.FrameRateExtN && in->mfx.FrameInfo.FrameRateExtD) ||
             (in->mfx.FrameInfo.FrameRateExtN && !in->mfx.FrameInfo.FrameRateExtD) ||
-            (in->mfx.FrameInfo.FrameRateExtD && ((mfxF64)in->mfx.FrameInfo.FrameRateExtN / in->mfx.FrameInfo.FrameRateExtD) > 172)) 
+            (in->mfx.FrameInfo.FrameRateExtD && ((mfxF64)in->mfx.FrameInfo.FrameRateExtN / in->mfx.FrameInfo.FrameRateExtD) > 172))
         {
             isInvalid++;
             out->mfx.FrameInfo.FrameRateExtN = out->mfx.FrameInfo.FrameRateExtD = 0;
@@ -334,7 +335,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    JpegEncCaps hwCaps = { 0 };
+    JpegEncCaps hwCaps = { };
     sts = QueryHwCaps(core, hwCaps);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -342,7 +343,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
     mfxU32 inPattern = par->IOPattern;
     MFX_CHECK(
         inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY,
+        inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
+        inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
         MFX_ERR_INVALID_VIDEO_PARAM);
 
     request->Info              = par->mfx.FrameInfo;
@@ -358,7 +360,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
     else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
     {
         request->NumFrameMin = 1;
-
         request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
         request->Type |= (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
             ? MFX_MEMTYPE_OPAQUE_FRAME
@@ -421,7 +422,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
 
     sts = Query(m_pCore, par, &checked);
 
-    if (sts != MFX_ERR_NONE && sts != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+    if ((sts != MFX_ERR_NONE) &&
+        (sts != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM))
     {
         if (sts == MFX_ERR_UNSUPPORTED)
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -457,19 +459,22 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
-    mfxFrameAllocRequest request = { 0 };
+    mfxFrameAllocRequest request = { };
     request.Info = m_vParam.mfx.FrameInfo;
 
     // for JPEG encoding, one raw buffer is enough. but regarding to
     // motion JPEG video, we'd better use multiple buffers to support async mode.
     mfxU16 surface_num = JPEG_VIDEO_SURFACE_NUM + m_vParam.AsyncDepth;
 
-    // Allocate raw surfaces.
-    // This is required only in case of system memory at input
     if (m_vParam.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
-        
-        request.Type = MFX_MEMTYPE_VIDEO_INT;
+    // Allocate raw surfaces.
+    // This is required only in case of system memory at input
+
+        request.Type = MFX_MEMTYPE_VIDEO_INT ;
+#if defined(LINUX)
+        request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET; // required for libva especially for RGB32
+#endif
         request.NumFrameMin = surface_num;
         request.NumFrameSuggested = request.NumFrameMin;
 
@@ -479,9 +484,21 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
             m_raw.NumFrameActual >= request.NumFrameMin,
             MFX_ERR_MEMORY_ALLOC);
     }
+    else if (MFX_IOPATTERN_IN_OPAQUE_MEMORY == m_vParam.IOPattern)
+    {
+        if( NULL == opaqAllocReq )
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        else
+        {
+            m_isOpaqIn = true;
+        }
+    }
 
     // Allocate bitstream surfaces.
     request.Type = MFX_MEMTYPE_VIDEO_INT;
+#if defined(LINUX)
+    request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET; // required for libva especially for RGB32
+#endif
     request.NumFrameMin = surface_num;
     request.NumFrameSuggested = request.NumFrameMin;
 
@@ -548,8 +565,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Reset(mfxVideoParam *par)
     {
         m_checkedJpegQT = *jpegQT;
         m_pCheckedExt[ext_counter++] = &m_checkedJpegQT.Header;
-    } 
-    else 
+    }
+    else
     {
         memset(&m_checkedJpegQT, 0, sizeof(m_checkedJpegQT));
         m_checkedJpegQT.Header.BufferId = MFX_EXTBUFF_JPEG_QT;
@@ -559,14 +576,14 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Reset(mfxVideoParam *par)
     {
         m_checkedJpegHT = *jpegHT;
         m_pCheckedExt[ext_counter++] = &m_checkedJpegHT.Header;
-    } 
-    else 
+    }
+    else
     {
         memset(&m_checkedJpegHT, 0, sizeof(m_checkedJpegHT));
         m_checkedJpegHT.Header.BufferId = MFX_EXTBUFF_JPEG_HUFFMAN;
         m_checkedJpegHT.Header.BufferSz = sizeof(m_checkedJpegHT);
     }
-    if (opaqAllocReq) 
+    if (opaqAllocReq)
     {
         m_checkedOpaqAllocReq = *opaqAllocReq;
         m_pCheckedExt[ext_counter++] = &m_checkedOpaqAllocReq.Header;
@@ -586,8 +603,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Reset(mfxVideoParam *par)
 
     par = &checked; // from now work with fixed copy of input!
 
-    if(par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN && 
-       par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && 
+    if(par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN &&
+       par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
        par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_FIELD_TFF &&
        par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_FIELD_BFF)
     {
@@ -650,10 +667,10 @@ mfxStatus MFXVideoENCODEMJPEG_HW::GetEncodeStat(mfxEncodeStat *stat)
     return MFX_ERR_UNSUPPORTED;
 }
 
-// main function to run encoding process, syncronous 
+// main function to run encoding process, syncronous
 mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
                                mfxEncodeCtrl *ctrl,
-                               mfxFrameSurface1 *surface,
+                               mfxFrameSurface1 *inSurface,
                                mfxBitstream *bs,
                                mfxFrameSurface1 **reordered_surface,
                                mfxEncodeInternalParams *pInternalParams,
@@ -667,6 +684,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
     mfxExtJPEGHuffmanTables* jpegHT = NULL;
     JpegEncCaps              hwCaps = {0};
 
+    mfxFrameSurface1 *surface = GetOriginalSurface(inSurface);
     mfxStatus checkSts = CheckEncodeFrameParam(
         surface,
         bs,
@@ -739,8 +757,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
 
     pEntryPoints[0].requiredNumThreads   = 1;
     pEntryPoints[1] = pEntryPoints[0];
-    pEntryPoints[0].pRoutineName = "Encode Submit";
-    pEntryPoints[1].pRoutineName = "Encode Query";
+    pEntryPoints[0].pRoutineName = (char *)"Encode Submit";
+    pEntryPoints[1].pRoutineName = (char *)"Encode Query";
 
     pEntryPoints[0].pRoutine = TaskRoutineSubmitFrame;
     pEntryPoints[1].pRoutine = TaskRoutineQueryFrame;
@@ -761,21 +779,25 @@ mfxStatus MFXVideoENCODEMJPEG_HW::CheckEncodeFrameParam(
     if (!m_bInitialized) return MFX_ERR_NOT_INITIALIZED;
 
     MFX_CHECK_NULL_PTR1(bs);
-    MFX_CHECK_NULL_PTR1(bs->Data);
 
     // Check for enough bitstream buffer size
-    if (bs->MaxLength <= (bs->DataOffset + bs->DataLength))
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    if ( (0 == bs->MaxLength) ||
+         (NULL == bs->Data)   ||
+         (bs->MaxLength <= (bs->DataOffset + bs->DataLength)))
+        return MFX_ERR_NOT_ENOUGH_BUFFER;
 
-    if (surface != 0)
+    if ( NULL != surface )
     {
         if (surface->Info.ChromaFormat != m_vParam.mfx.FrameInfo.ChromaFormat)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
-        mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
-        MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK((surface->Data.Y == 0) || (pitch != 0), MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(surface->Data.Y != 0 || isExternalFrameAllocator, MFX_ERR_UNDEFINED_BEHAVIOR);
+        if (m_vParam.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+        {
+            mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
+            MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK((surface->Data.Y == 0) || (pitch != 0), MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(surface->Data.Y != 0 || isExternalFrameAllocator, MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
 
         if (surface->Info.Width != m_vParam.mfx.FrameInfo.Width || surface->Info.Height != m_vParam.mfx.FrameInfo.Height)
             sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -801,9 +823,9 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
 
     mfxStatus sts = enc.CheckDevice();
     MFX_CHECK_STS(sts);
-    
-    // D3D11 
-    mfxHDLPair surfacePair = {0};
+
+    // D3D11
+    mfxHDLPair surfacePair = { };
     // D3D9
     mfxHDL     surfaceHDL = 0;
 
@@ -819,6 +841,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     mfxFrameSurface1 * nativeSurf = task.surface;
+
     if (enc.m_vParam.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         sts = FastCopyFrameBufferSys2Vid(
@@ -832,7 +855,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
     }
     else
     {
-        if (MFX_IOPATTERN_IN_VIDEO_MEMORY == enc.m_vParam.IOPattern)
+        if ((MFX_IOPATTERN_IN_VIDEO_MEMORY == enc.m_vParam.IOPattern) ||
+            (MFX_IOPATTERN_IN_OPAQUE_MEMORY == enc.m_vParam.IOPattern) )
             sts = enc.m_pCore->GetExternalFrameHDL(nativeSurf->Data.MemId, pSurfaceHdl);
         else
             return MFX_ERR_UNDEFINED_BEHAVIOR;

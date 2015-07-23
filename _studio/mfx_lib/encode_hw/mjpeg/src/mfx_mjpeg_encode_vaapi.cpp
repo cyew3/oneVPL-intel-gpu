@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          MJPEG encoder VAAPI
@@ -31,15 +31,15 @@ using namespace MfxHwMJpegEncode;
 
 VAAPIEncoder::VAAPIEncoder()
  : m_core(NULL)
+ , m_width(-1)
+ , m_height(-1)
  , m_vaDisplay(0)
  , m_vaContextEncode(VA_INVALID_ID)
  , m_vaConfig(VA_INVALID_ID)
- , m_ppsBufferId(VA_INVALID_ID)
  , m_qmBufferId(VA_INVALID_ID)
  , m_htBufferId(VA_INVALID_ID)
  , m_scanBufferId(VA_INVALID_ID)
- , m_width(-1)
- , m_height(-1)
+ , m_ppsBufferId(VA_INVALID_ID)
 {
 }
 
@@ -482,8 +482,8 @@ mfxStatus VAAPIEncoder::UpdateBitstream(
     DdiTask      & task)
 {
     mfxU8      * bsData    = task.bs->Data + task.bs->DataOffset + task.bs->DataLength;
-    IppiSize     roi       = {task.m_bsDataLength, 1};
-    mfxFrameData bitstream = {0};
+    IppiSize     roi       = {(int)task.m_bsDataLength, 1};
+    mfxFrameData bitstream = { };
 
     m_core->LockFrame(MemId, &bitstream);
     MFX_CHECK(bitstream.Y != 0, MFX_ERR_LOCK_MEMORY);
