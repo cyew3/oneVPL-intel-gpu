@@ -85,6 +85,8 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
     }
     else
     {
+        m_mfxVideoParams.vpp.In.CropX = 0;
+        m_mfxVideoParams.vpp.In.CropY = 0;
         m_mfxVideoParams.vpp.In.Width  = (mfxU16)pParams->frameInfo[VPP_IN].nWidth;
         m_mfxVideoParams.vpp.In.Height = (mfxU16)pParams->frameInfo[VPP_IN].nHeight;
     }
@@ -1209,9 +1211,6 @@ mfxStatus CCameraPipeline::Reset(sInputParams *pParams)
     m_alphaValue = pParams->alphaValue;
     m_BayerType = pParams->bayerType;
 
-
-    if (m_memTypeIn != pParams->memTypeIn || m_memTypeOut != pParams->memTypeOut)
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
 //    m_memTypeIn = pParams->memTypeIn;
 //    m_memTypeOut = pParams->memTypeOut;
