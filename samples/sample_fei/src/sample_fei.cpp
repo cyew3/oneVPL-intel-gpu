@@ -8,7 +8,6 @@
 
 #include <memory>
 #include "pipeline_fei.h"
-#include "pipeline_user_fei.h"
 
 mfxStatus CheckOptions(sInputParams* pParams);
 
@@ -30,7 +29,6 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (KBits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
     msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n"));
-    msdk_printf(MSDK_STRING("   [-q quality] - quality parameter for JPEG encoder. In range [1,100]. 100 is the best quality. \n"));
     msdk_printf(MSDK_STRING("   [-n number] - number of frames to process\n"));
     msdk_printf(MSDK_STRING("   [-r distance] - Distance between I- or P- key frames (1 means no B-frames) (0 - by default(I frames))\n"));
     msdk_printf(MSDK_STRING("   [-g size] - GOP size (1(default) means I-frames only)\n"));
@@ -112,25 +110,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
-    msdk_strcopy(pParams->strPluginDLLPath, MSDK_STRING(PLUGIN_NAME));
-
     // parse command line parameters
     for (mfxU8 i = 1; i < nArgNum; i++)
     {
         MSDK_CHECK_POINTER(strInput[i], MFX_ERR_NULL_PTR);
 
         // process multi-character options
-        if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dstw")))
-        {
-            i++;
-            pParams->nDstWidth = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
-        }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dsth")))
-        {
-            i++;
-            pParams->nDstHeight = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
-        }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encode")))
+        if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encode")))
         {
             pParams->bENCODE = true;
         }
@@ -199,24 +185,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->nPicStruct = MFX_PICSTRUCT_FIELD_BFF;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-angle")))
-        {
-            i++;
-            pParams->nRotationAngle = (mfxU8)msdk_strtol(strInput[i], &stopCharacter, 10);
-        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qp")))
         {
             i++;
             pParams->QP = (mfxU8)msdk_strtol(strInput[i], &stopCharacter, 10);
-        }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-opencl")))
-        {
-#if defined(_WIN32) || defined(_WIN64)
-            msdk_strcopy(pParams->strPluginDLLPath, MSDK_STRING("sample_plugin_opencl.dll"));
-#else
-            msdk_strcopy(pParams->strPluginDLLPath, MSDK_STRING("libsample_plugin_opencl.so"));
-#endif
-            pParams->nRotationAngle = 180;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-la")))
         {
@@ -383,10 +355,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 GET_OPTION_POINTER(strArgument);
                 pParams->dstFileBuff.push_back(strArgument);
                 break;
-            case MSDK_CHAR('q'):
-                GET_OPTION_POINTER(strArgument);
-                pParams->nQuality = (mfxU16)msdk_strtol(strArgument, &stopCharacter, 10);
-                break;
             case MSDK_CHAR('?'):
                 PrintHelp(strInput[0], NULL);
                 return MFX_ERR_UNSUPPORTED;
@@ -397,6 +365,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
+    if (pParams->bPREENC && pParams->bOnlyPAK || pParams->bENCODE && pParams->bOnlyENC){
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("\nUnsupported pipeline!\n"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported pipeline!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     // check if all mandatory parameters were set
     if (0 == msdk_strlen(pParams->strSrcFile))
     {
@@ -405,7 +381,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else
             PrintHelp(strInput[0], MSDK_STRING("Source file name not found"));
         return MFX_ERR_UNSUPPORTED;
-    };
+    }
 
     if ((pParams->dstFileBuff.empty() ) &&
         (pParams->bENCPAK || pParams->bOnlyPAK) )
@@ -415,7 +391,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else
             PrintHelp(strInput[0], MSDK_STRING("Destination file name not found"));
         return MFX_ERR_UNSUPPORTED;
-    };
+    }
 
     if (0 == pParams->nWidth || 0 == pParams->nHeight)
     {
@@ -424,45 +400,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else
             PrintHelp(strInput[0], MSDK_STRING("-w, -h must be specified"));
         return MFX_ERR_UNSUPPORTED;
-    }
-
-    // check parameters validity
-    if (pParams->nRotationAngle != 0 && pParams->nRotationAngle != 180)
-    {
-        if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nAngles other than 180 degrees are not supported.\n"));
-        else
-            PrintHelp(strInput[0], MSDK_STRING("Angles other than 180 degrees are not supported."));
-        return MFX_ERR_UNSUPPORTED; // other than 180 are not supported
-    }
-
-    if (pParams->nQuality && (MFX_CODEC_JPEG != pParams->CodecId))
-    {
-        if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\n-q option is supported only for JPEG encoder\n"));
-        else
-            PrintHelp(strInput[0], MSDK_STRING("-q option is supported only for JPEG encoder"));
-        return MFX_ERR_UNSUPPORTED;
-    }
-
-    if ((pParams->nTargetUsage || pParams->nBitRate) && (MFX_CODEC_JPEG == pParams->CodecId))
-    {
-        if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\n-u and -b options are supported only for H.264, MPEG2 and MVC encoders. For JPEG encoder use -q\n"));
-        else
-            PrintHelp(strInput[0], MSDK_STRING("-u and -b options are supported only for H.264, MPEG2 and MVC encoders. For JPEG encoder use -q"));
-        return MFX_ERR_UNSUPPORTED;
-    }
-
-    // set default values for optional parameters that were not set or were set incorrectly
-    mfxU32 nviews = (mfxU32)pParams->srcFileBuff.size();
-    if ((nviews <= 1) || (nviews > 2))
-    {
-        pParams->numViews = 1;
-    }
-    else
-    {
-        pParams->numViews = nviews;
     }
 
     if (MFX_TARGETUSAGE_BEST_QUALITY != pParams->nTargetUsage && MFX_TARGETUSAGE_BEST_SPEED != pParams->nTargetUsage)
@@ -643,21 +580,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
        	return MFX_ERR_UNSUPPORTED;
     }
 
-    // not all options are supported if rotate plugin is enabled
-    if (pParams->nRotationAngle == 180 && (
-        MFX_PICSTRUCT_PROGRESSIVE != pParams->nPicStruct ||
-        pParams->nDstWidth != pParams->nWidth ||
-        pParams->nDstHeight != pParams->nHeight ||
-        (pParams->memType & D3D11_MEMORY) ||
-        pParams->bLABRC ||
-        pParams->nLADepth))
-    {
-        if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nSome of the command line options are not supported with rotation plugin!\n"));
-        else
-            PrintHelp(strInput[0], MSDK_STRING("Some of the command line options are not supported with rotation plugin!"));
-        return MFX_ERR_UNSUPPORTED;
-    }
     /* One slice by default */
     if (0 == pParams->numSlices)
         pParams->numSlices = 1;
@@ -685,7 +607,7 @@ int main(int argc, char *argv[])
     Params.refDist = 1; //only I frames
     Params.gopSize = 1; //only I frames
     Params.bENCODE   = false; //default value
-    Params.bENCPAK = false; //default value
+    Params.bENCPAK   = false; //default value
     Params.bOnlyENC  = false; //default value
     Params.bOnlyPAK  = false; //default value
     Params.bPREENC   = false; //default value
@@ -724,7 +646,7 @@ int main(int argc, char *argv[])
     sts = CheckOptions(&Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
-    pPipeline.reset((Params.nRotationAngle) ? (CEncodingPipeline*)new CUserPipeline : new CEncodingPipeline);
+    pPipeline.reset(new CEncodingPipeline);
 
     MSDK_CHECK_POINTER(pPipeline.get(), MFX_ERR_MEMORY_ALLOC);
 
