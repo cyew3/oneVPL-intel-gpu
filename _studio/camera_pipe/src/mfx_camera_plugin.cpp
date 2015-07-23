@@ -1141,6 +1141,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
 
     m_CameraProcessor->SetCore(m_core);
     mfxSts = m_CameraProcessor->Init(&m_PipeParams);
+    MFX_CHECK_STS(mfxSts);
 
     m_isInitialized = true;
 

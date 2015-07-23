@@ -122,6 +122,7 @@ public:
         m_ddi.reset(0);
         m_executeParams = 0;
         m_executeSurf   = 0;
+        m_last_index    = -1;
         m_InSurfacePool  = new D3D11FrameAllocResponse();
         m_OutSurfacePool = new D3D11FrameAllocResponse();
     };
@@ -171,18 +172,34 @@ private:
     // Do not allow copying of the object
     D3D11CameraProcessor(const D3D11CameraProcessor& from) {};
     D3D11CameraProcessor& operator=(const D3D11CameraProcessor&) {return *this; };
-
+    int    m_last_index;
     mfxU32 FindFreeResourceIndex(
     D3D11FrameAllocResponse const & pool,
     mfxU32                        *index)
     {
         *index = NO_INDEX;
-        for (mfxU32 i = 0; i < pool.NumFrameActual; i++)
+
+        for (mfxU32 i = m_last_index + 1; i < pool.NumFrameActual; i++)
             if (pool.Locked(i) == 0)
             {
                 *index = i;
+                m_last_index = i;
                 return i;
             }
+
+        if ( m_last_index == -1)
+        {
+            m_last_index = 0;
+        }
+
+        for (mfxU32 i = 0; i <= m_last_index; i++)
+            if (pool.Locked(i) == 0)
+            {
+                *index = i;
+                m_last_index = i;
+                return i;
+            }
+        
         return NO_INDEX;
     }
 
@@ -207,7 +224,7 @@ private:
     std::auto_ptr<D3D11VideoProcessor>               m_ddi;
     MfxHwVideoProcessing::mfxExecuteParams          *m_executeParams;
     MfxHwVideoProcessing::mfxDrvSurface             *m_executeSurf;
-
+    mfxU32                                           m_counter;
     D3D11FrameAllocResponse                          *m_InSurfacePool;
     D3D11FrameAllocResponse                          *m_OutSurfacePool;
     mfxFrameAllocResponse                            m_InternalSurfes;

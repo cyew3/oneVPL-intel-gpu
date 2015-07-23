@@ -474,15 +474,21 @@ mfxStatus DXVAHDVideoProcessor::CreateDevice(VideoCORE *core, mfxVideoParam *par
     m_pD3Dmanager = 0;
     core->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL *)&m_pD3Dmanager);
 
-    if ( m_pD3Dmanager )
+    if ( ! m_pD3Dmanager )
     {
-        hr = m_pD3Dmanager->OpenDeviceHandle(&DirectXHandle);
-        hr = m_pD3Dmanager->LockDevice(DirectXHandle, &(IDirect3DDevice9 *)m_pD3DDevice, true);
+        D3D9Interface *pID3D = QueryCoreInterface<D3D9Interface>(core, MFXICORED3D_GUID);
+        if(pID3D == 0) 
+            return MFX_ERR_UNSUPPORTED;
+        else
+        {
+            IDirectXVideoDecoderService *service = 0;
+            pID3D->GetD3DService(1920, 1088, &service);
+            m_pD3Dmanager = pID3D->GetD3D9DeviceManager();
+        }
     }
-    else
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
+    m_pD3Dmanager->OpenDeviceHandle(&DirectXHandle);
+    m_pD3Dmanager->LockDevice(DirectXHandle, &(IDirect3DDevice9 *)m_pD3DDevice, true);
+
     memset((PVOID)&m_dxva_caps, 0, sizeof(m_dxva_caps));
     m_videoDesc.InputFrameFormat = DXVAHD_FRAME_FORMAT_PROGRESSIVE    ;
     m_videoDesc.InputFrameRate.Numerator = 30;
@@ -1466,8 +1472,66 @@ mfxStatus D3D9CameraProcessor::CompleteRoutine(AsyncParams * pParam)
     {
         IppiSize roi = {pParam->surf_out->Info.Width, pParam->surf_out->Info.Height};
         mfxI64 verticalPitch = 0;
-        sts = m_pCmCopy.get()->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R,pParam->surf_out->Data.G),pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, pParam->surf_out->Info.Height, m_outputSurf[outIndex].surf,  (mfxU32)verticalPitch, roi);
-        MFX_CHECK_STS(sts);
+        if ( roi.width > 10*1024 && roi.height > 10*1024 )
+        {
+            IDirect3DSurface9 *pSurface = (IDirect3DSurface9 *) m_executeParams[inIndex].targetSurface.hdl.first;
+            D3DSURFACE_DESC sSurfDesc; 
+            D3DLOCKED_RECT  sLockRect;
+            HRESULT hRes  = pSurface->GetDesc(&sSurfDesc);
+            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+            IppStatus ippSts;
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FastCopySSE");
+            hRes |= pSurface->LockRect(&sLockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
+            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_LOCK_MEMORY);
+
+            Ipp32u srcPitch = sLockRect.Pitch;
+            mfxU32 dstPitch = pParam->surf_out->Data.PitchLow + ((mfxU32)pParam->surf_out->Data.PitchHigh << 16);
+
+            switch (pParam->surf_out->Info.FourCC)
+            {
+                case MFX_FOURCC_RGB4:
+                {
+                    MFX_CHECK_NULL_PTR1(pParam->surf_out->Data.R);
+                    MFX_CHECK_NULL_PTR1(pParam->surf_out->Data.G);
+                    MFX_CHECK_NULL_PTR1(pParam->surf_out->Data.B);
+
+                    mfxU8* ptrDst = IPP_MIN(IPP_MIN(pParam->surf_out->Data.R, pParam->surf_out->Data.G), pParam->surf_out->Data.B);
+
+                    roi.width *= 4;
+
+                    ippiCopy_8u_C1R(ptrDst, dstPitch, (mfxU8 *)sLockRect.pBits, srcPitch, roi);
+                }
+                break;
+
+                case MFX_FOURCC_ARGB16:
+                {
+                    MFX_CHECK_NULL_PTR1(pParam->surf_out->Data.R);
+                    MFX_CHECK_NULL_PTR1(pParam->surf_out->Data.G);
+                    MFX_CHECK_NULL_PTR1(pParam->surf_out->Data.B);
+
+                    mfxU8* ptrDst = IPP_MIN(IPP_MIN(pParam->surf_out->Data.R, pParam->surf_out->Data.G), pParam->surf_out->Data.B);
+
+                    roi.width *= 8;
+
+                    ippSts = ippiCopy_8u_C1R(ptrDst, dstPitch, (mfxU8 *)sLockRect.pBits, srcPitch, roi);
+                    MFX_CHECK_STS(sts);
+                }
+                break;
+
+                default:
+
+                    return MFX_ERR_UNSUPPORTED;
+            }
+
+            hRes = pSurface->UnlockRect();
+            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+        }
+        else
+        {
+            sts = m_pCmCopy.get()->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R,pParam->surf_out->Data.G),pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, pParam->surf_out->Info.Height, m_outputSurf[outIndex].surf,  (mfxU32)verticalPitch, roi);
+            MFX_CHECK_STS(sts);
+        }
+
     }
     {
         UMC::AutomaticUMCMutex guard(m_guard);
@@ -1594,7 +1658,7 @@ mfxStatus D3D9CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *
     InSurf.Info.FourCC =  BayerToFourCC(m_CameraParams.Caps.BayerPatternType);
 
     // [1] Copy from system mem to the internal video frame
-    IppiSize roi = {surf->Info.Width, surf->Info.Height};
+    IppiSize roi = {surf->Info.CropW, surf->Info.CropH};
     mfxI64 verticalPitch = 0;
 
     sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(m_inputSurf[*poolIndex].surf, 0, surf->Data.Y, surf->Data.Pitch, (mfxU32)verticalPitch, roi);

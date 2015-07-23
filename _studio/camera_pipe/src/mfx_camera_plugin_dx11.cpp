@@ -87,7 +87,7 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
         sts = m_OutSurfacePool->AllocateSurfaces(m_core, request);
         MFX_CHECK_STS( sts );
     }
-
+    m_counter = 0;
     return sts;
 }
 
@@ -187,7 +187,7 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
 
     m_executeParams[surfInIndex].refCount       = 1;
     m_executeParams[surfInIndex].bkwdRefCount   = m_executeParams[surfInIndex].fwdRefCount = 0;
-    m_executeParams[surfInIndex].statusReportID = surfInIndex;
+    m_executeParams[surfInIndex].statusReportID = m_counter++;
     m_executeSurf[surfInIndex].bExternal = tmpSurf.bExternal;
     m_executeSurf[surfInIndex].endTimeStamp = tmpSurf.endTimeStamp;
     memcpy_s(&m_executeSurf[surfInIndex].frameInfo, sizeof(mfxFrameInfo), &tmpSurf.frameInfo, sizeof(mfxFrameInfo));
