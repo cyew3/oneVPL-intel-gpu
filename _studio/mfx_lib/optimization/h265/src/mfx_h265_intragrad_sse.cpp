@@ -45,9 +45,13 @@ namespace MFX_HEVC_PP
 #define M_DBL_EPSILON 0.00001f
 
 ALIGN_DECL(16) static const signed char dyShufTab08[16] = {0, 2, 1, 3, 2, 4, 3, 5, 0, 2, 1, 3, 2, 4, 3, 5}; 
+ALIGN_DECL(16) static const signed char dyShufTab16[16] = {0, 1, 4, 5, 2, 3, 6, 7, 4, 5, 8, 9, 6, 7, 10, 11}; 
 
 ALIGN_DECL(16) static const signed char pm1Tab08[16] = {+1, -1, +1, -1, +1, -1, +1, -1, +1, -1, +1, -1, +1, -1, +1, -1}; 
 ALIGN_DECL(16) static const signed char pm2Tab08[16] = {+2, -2, +2, -2, +2, -2, +2, -2, +2, -2, +2, -2, +2, -2, +2, -2}; 
+
+ALIGN_DECL(16) static const signed short pm1Tab16[8] = {+1, -1, +1, -1, +1, -1, +1, -1}; 
+ALIGN_DECL(16) static const signed short pm2Tab16[8] = {+2, -2, +2, -2, +2, -2, +2, -2}; 
 
 /* floating point constants */
 ALIGN_DECL(16) static const float fPi05[4] = {CM_CONST_PI * 0.5f,  CM_CONST_PI * 0.5f,  CM_CONST_PI * 0.5f,  CM_CONST_PI * 0.5f };
@@ -64,7 +68,8 @@ ALIGN_DECL(16) static const float fC02[4]  = {2.0f, 2.0f, 2.0f, 2.0f};
 #define mmf2i(s)    _mm_castps_si128(s)
 #define mmi2f(s)    _mm_castsi128_ps(s)
 
-static void BuildHistogramInner(const mfxU8 *frame, mfxU16 *hist, mfxI32 framePitch)
+template <class PixType, class HistType>
+static void BuildHistogramInner(const PixType *frame, HistType *hist, mfxI32 framePitch)
 {
     ALIGN_DECL(16) mfxI32 x, y, dx[4], dy[4], ang2[4*4];
     ALIGN_DECL(16) mfxU16 amp[4*4];
@@ -76,41 +81,78 @@ static void BuildHistogramInner(const mfxU8 *frame, mfxU16 *hist, mfxI32 framePi
     frame -= (framePitch + 1);
 
     for (y = 0; y < 4; y++) {
-        /* load all 3 rows each time to free up registers */
-        xmm0 = _mm_loadl_epi64((__m128i *)(frame + 0*framePitch));  /* row -1 */
-        xmm1 = _mm_loadl_epi64((__m128i *)(frame + 1*framePitch));  /* row  0 */
-        xmm6 = _mm_loadl_epi64((__m128i *)(frame + 2*framePitch));  /* row +1 */
-        frame += framePitch;
+        if (sizeof(PixType) == 1) {
+            /* load all 3 rows each time to free up registers */
+            xmm0 = _mm_loadl_epi64((__m128i *)(frame + 0*framePitch));  /* row -1 */
+            xmm1 = _mm_loadl_epi64((__m128i *)(frame + 1*framePitch));  /* row  0 */
+            xmm6 = _mm_loadl_epi64((__m128i *)(frame + 2*framePitch));  /* row +1 */
+            frame += framePitch;
 
-        /* dx = [1,2,1]*row(+1) - [1,2,1]*row(-1), interleave rows +1 and -1 */
-        xmm2 = _mm_unpacklo_epi8(xmm6, xmm0);
-        xmm3 = _mm_srli_si128(xmm2, 2);
-        xmm4 = _mm_srli_si128(xmm2, 4);
+            /* dx = [1,2,1]*row(+1) - [1,2,1]*row(-1), interleave rows +1 and -1 */
+            xmm2 = _mm_unpacklo_epi8(xmm6, xmm0);
+            xmm3 = _mm_srli_si128(xmm2, 2);
+            xmm4 = _mm_srli_si128(xmm2, 4);
 
-        xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i *)pm1Tab08);       /* col -1 */
-        xmm3 = _mm_maddubs_epi16(xmm3, *(__m128i *)pm2Tab08);       /* col  0 */
-        xmm4 = _mm_maddubs_epi16(xmm4, *(__m128i *)pm1Tab08);       /* col +1 */
+            xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i *)pm1Tab08);       /* col -1 */
+            xmm3 = _mm_maddubs_epi16(xmm3, *(__m128i *)pm2Tab08);       /* col  0 */
+            xmm4 = _mm_maddubs_epi16(xmm4, *(__m128i *)pm1Tab08);       /* col +1 */
 
-        /* add columns, expand to 32 bits, calculate x2 = dx*dx */
-        xmm2 = _mm_add_epi16(xmm2, xmm3);
-        xmm2 = _mm_add_epi16(xmm2, xmm4);
-        xmm2 = _mm_cvtepi16_epi32(xmm2);
-        xmm3 = _mm_mullo_epi32(xmm2, xmm2);
+            /* add columns, expand to 32 bits, calculate x2 = dx*dx */
+            xmm2 = _mm_add_epi16(xmm2, xmm3);
+            xmm2 = _mm_add_epi16(xmm2, xmm4);
+            xmm2 = _mm_cvtepi16_epi32(xmm2);
+            xmm3 = _mm_mullo_epi32(xmm2, xmm2);
 
-        /* dy = [1,2,1]*col(-1) - [1,2,1]*col(+1), interleave cols -1 and +1 for each row (-1,0,+1) */
-        xmm0 = _mm_shuffle_epi8(xmm0, *(__m128i *)dyShufTab08);
-        xmm4 = _mm_shuffle_epi8(xmm1, *(__m128i *)dyShufTab08);
-        xmm5 = _mm_shuffle_epi8(xmm6, *(__m128i *)dyShufTab08);
+            /* dy = [1,2,1]*col(-1) - [1,2,1]*col(+1), interleave cols -1 and +1 for each row (-1,0,+1) */
+            xmm0 = _mm_shuffle_epi8(xmm0, *(__m128i *)dyShufTab08);
+            xmm4 = _mm_shuffle_epi8(xmm1, *(__m128i *)dyShufTab08);
+            xmm5 = _mm_shuffle_epi8(xmm6, *(__m128i *)dyShufTab08);
 
-        xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i *)pm1Tab08);
-        xmm4 = _mm_maddubs_epi16(xmm4, *(__m128i *)pm2Tab08);
-        xmm5 = _mm_maddubs_epi16(xmm5, *(__m128i *)pm1Tab08);
+            xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i *)pm1Tab08);
+            xmm4 = _mm_maddubs_epi16(xmm4, *(__m128i *)pm2Tab08);
+            xmm5 = _mm_maddubs_epi16(xmm5, *(__m128i *)pm1Tab08);
 
-        /* add rows, expand to 32 bits, calculate y2 = dy*dy  */
-        xmm4 = _mm_add_epi16(xmm4, xmm0);
-        xmm4 = _mm_add_epi16(xmm4, xmm5);
-        xmm4 = _mm_cvtepi16_epi32(xmm4);
-        xmm5 = _mm_mullo_epi32(xmm4, xmm4);
+            /* add rows, expand to 32 bits, calculate y2 = dy*dy  */
+            xmm4 = _mm_add_epi16(xmm4, xmm0);
+            xmm4 = _mm_add_epi16(xmm4, xmm5);
+            xmm4 = _mm_cvtepi16_epi32(xmm4);
+            xmm5 = _mm_mullo_epi32(xmm4, xmm4);
+        } else {
+            /* load all 3 rows each time to free up registers */
+            xmm0 = _mm_loadu_si128((__m128i *)(frame + 0*framePitch));  /* row -1 */
+            xmm1 = _mm_loadu_si128((__m128i *)(frame + 1*framePitch));  /* row  0 */
+            xmm6 = _mm_loadu_si128((__m128i *)(frame + 2*framePitch));  /* row +1 */
+            frame += framePitch;
+
+            /* dx = [1,2,1]*row(+1) - [1,2,1]*row(-1), interleave rows +1 and -1 */
+            xmm2 = _mm_unpacklo_epi16(xmm6, xmm0);
+            xmm5 = _mm_unpackhi_epi16(xmm6, xmm0);
+            xmm3 = _mm_alignr_epi8(xmm5, xmm2, 2*2);
+            xmm4 = _mm_alignr_epi8(xmm5, xmm2, 2*4);
+
+            xmm2 = _mm_madd_epi16(xmm2, *(__m128i *)pm1Tab16);       /* col -1 */
+            xmm3 = _mm_madd_epi16(xmm3, *(__m128i *)pm2Tab16);       /* col  0 */
+            xmm4 = _mm_madd_epi16(xmm4, *(__m128i *)pm1Tab16);       /* col +1 */
+
+            /* add columns, calculate x2 = dx*dx */
+            xmm2 = _mm_add_epi32(xmm2, xmm3);
+            xmm2 = _mm_add_epi32(xmm2, xmm4);
+            xmm3 = _mm_mullo_epi32(xmm2, xmm2);
+
+            /* dy = [1,2,1]*col(-1) - [1,2,1]*col(+1), interleave cols -1 and +1 for each row (-1,0,+1) */
+            xmm0 = _mm_shuffle_epi8(xmm0, *(__m128i *)dyShufTab16);
+            xmm4 = _mm_shuffle_epi8(xmm1, *(__m128i *)dyShufTab16);
+            xmm5 = _mm_shuffle_epi8(xmm6, *(__m128i *)dyShufTab16);
+
+            xmm0 = _mm_madd_epi16(xmm0, *(__m128i *)pm1Tab16);
+            xmm4 = _mm_madd_epi16(xmm4, *(__m128i *)pm2Tab16);
+            xmm5 = _mm_madd_epi16(xmm5, *(__m128i *)pm1Tab16);
+
+            /* add rows, calculate y2 = dy*dy  */
+            xmm4 = _mm_add_epi32(xmm4, xmm0);
+            xmm4 = _mm_add_epi32(xmm4, xmm5);
+            xmm5 = _mm_mullo_epi32(xmm4, xmm4);
+        }
 
         /* masks: xmm0 = (dx < 0), xmm1 = (dy < 0) */
         xmm0 = _mm_cmpgt_epi32(_mm_setzero_si128(), xmm2);
@@ -212,99 +254,16 @@ static void BuildHistogramInner(const mfxU8 *frame, mfxU16 *hist, mfxI32 framePi
     }
 }
 
-/* if requested location is outside of frame, return closest edge pixel */
-static inline mfxU8 GetPel(const mfxU8 *frame, mfxI32 x, mfxI32 y, mfxI32 width, mfxI32 height, mfxI32 pitch)
-{
-    x = CLIPVAL(x, 0, width - 1);
-    y = CLIPVAL(y, 0, height - 1);
-    return frame[y*pitch + x];
-}
-
-/* single-precision float throughout */
-static float atan2_fast(float y, float x, float xy, float x2, float y2)
-{
-    float a0, a1;
-
-    if (y >= 0) {
-        a0 = CM_CONST_PI * 0.5f;
-        a1 = 0;
-    } else {
-        a0 = CM_CONST_PI * 1.5f;
-        a1 = CM_CONST_PI * 2.0f;
-    }
-
-    if (x < 0) {
-        a1 = CM_CONST_PI;
-    }
-
-    if (y2 <= x2) {
-        a1 += (xy / (x2 + 0.28f * y2 + M_DBL_EPSILON));
-        return a1;
-    } else {
-        a0 -= (xy / (y2 + 0.28f * x2 + M_DBL_EPSILON));
-        return a0;
-    }
-}
-
-static mfxI32 CalcAng2(mfxI16 dx, mfxI16 dy)
-{
-    float fdx, fdy, x2, y2, angf;
-    mfxI32 ang2;
-
-    fdx = (float)dx;
-    fdy = (float)dy;
-    y2 = fdy * fdy;
-    x2 = fdx * fdx;
-
-    /* assume (dx == 0 && dy == 0) returns 0 (M_DBL_EPSILON in denominator) */
-    angf = atan2_fast(fdy, fdx, fdy*fdx, x2, y2);
-
-    if (y2 > x2 && dy > 0) 
-        angf += CM_CONST_PI;
-    else if (y2 <= x2 && dx > 0 && dy >= 0) 
-        angf += CM_CONST_PI;
-    else if (y2 <= x2 && dx > 0 && dy < 0) 
-        angf -= CM_CONST_PI;
-
-    angf -= 0.75f * CM_CONST_PI;
-
-    if (dx == 0 && dy == 0) 
-        ang2 = 0;
-    else
-        ang2 = (mfxI32)(angf * 10.504226f + 2.0f);
-
-    return ang2;
-}
-
-/* C reference version for handling blocks around edge of frame - could be avoided by padding input frame with 1-pixel border */
-static void BuildHistogramEdge(const mfxU8 *frame, mfxU16 *hist, mfxI32 blockX, mfxI32 blockY, mfxI32 width, mfxI32 height, mfxI32 pitch)
-{
-    mfxI32 x, y, ampXY, ang2;
-    mfxI16 dx, dy;
-
-    for (y = blockY; y < blockY + 4; y++) {
-        for (x = blockX; x < blockX + 4; x++) {
-            dy = GetPel(frame, x-1, y-1, width, height, pitch) + 2*GetPel(frame, x-1, y+0, width, height, pitch) + GetPel(frame, x-1, y+1, width, height, pitch)
-                -GetPel(frame, x+1, y-1, width, height, pitch) - 2*GetPel(frame, x+1, y+0, width, height, pitch) - GetPel(frame, x+1, y+1, width, height, pitch);
-            dx = GetPel(frame, x-1, y+1, width, height, pitch) + 2*GetPel(frame, x+0, y+1, width, height, pitch) + GetPel(frame, x+1, y+1, width, height, pitch)
-                -GetPel(frame, x-1, y-1, width, height, pitch) - 2*GetPel(frame, x+0, y-1, width, height, pitch) - GetPel(frame, x+1, y-1, width, height, pitch);
-            ampXY = (abs(dx) + abs(dy));
-            
-            ang2 = CalcAng2(dx, dy);
-            hist[ang2] += (mfxU16)ampXY;
-        }
-    }
-}
-
 /* sum 4x4 histograms to generate 8x8 map 
  * NOTE: outData8 assumed to fit in 16-bit unsigned (see comment on GPU implementation)
  *   but might be necessary to use 32-bit for 8x8 (consider max value of 64*(abs(dx)+abs(y)))
  * for now saturate to 2^16 - 1
  */
-static void Generate8x8(mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32 height)
+template <class HistType>
+static void Generate8x8(HistType *outData4, HistType *outData8, mfxI32 width, mfxI32 height)
 {
     mfxI32 x, y, i, t, xBlocks4, yBlocks4, xBlocks8, yBlocks8;
-    mfxU16 *pDst, *pDst8;
+    HistType *pDst, *pDst8;
 
     __m128i xmm0, xmm1, xmm2, xmm3;
 
@@ -318,41 +277,64 @@ static void Generate8x8(mfxU16 *outData4, mfxU16 *outData8, mfxI32 width, mfxI32
             pDst = outData4 + 2*(y*xBlocks4 + x) * HIST_MAX; 
             pDst8 = outData8 +   (y*xBlocks8 + x) * HIST_MAX; 
 
-            for (i = 0; i < HIST_MAX; i += 8) {
-                xmm0 = _mm_loadu_si128((__m128i *)(&pDst[i]));
-                xmm1 = _mm_loadu_si128((__m128i *)(&pDst[i + HIST_MAX]));
-                xmm2 = _mm_loadu_si128((__m128i *)(&pDst[i + xBlocks4*HIST_MAX]));
-                xmm3 = _mm_loadu_si128((__m128i *)(&pDst[i + xBlocks4*HIST_MAX + HIST_MAX]));
+            if (sizeof(HistType) == 4) {
+                for (i = 0; i < HIST_MAX; i += 4) {
+                    xmm0 = _mm_loadu_si128((__m128i *)(&pDst[i]));
+                    xmm1 = _mm_loadu_si128((__m128i *)(&pDst[i + HIST_MAX]));
+                    xmm2 = _mm_loadu_si128((__m128i *)(&pDst[i + xBlocks4*HIST_MAX]));
+                    xmm3 = _mm_loadu_si128((__m128i *)(&pDst[i + xBlocks4*HIST_MAX + HIST_MAX]));
 
-                xmm0 = _mm_adds_epu16(xmm0, xmm1);
-                xmm0 = _mm_adds_epu16(xmm0, xmm2);
-                xmm0 = _mm_adds_epu16(xmm0, xmm3);
-                _mm_storeu_si128((__m128i *)(&pDst8[i]), xmm0);
-            }
+                    xmm0 = _mm_add_epi32(xmm0, xmm1);
+                    xmm0 = _mm_add_epi32(xmm0, xmm2);
+                    xmm0 = _mm_add_epi32(xmm0, xmm3);
+                    _mm_storeu_si128((__m128i *)(&pDst8[i]), xmm0);
+                }
 
-            for (    ; i < HIST_MAX; i++) {
-                t  = pDst[i];
-                t += pDst[i + HIST_MAX];
-                t += pDst[i + xBlocks4*HIST_MAX];
-                t += pDst[i + xBlocks4*HIST_MAX + HIST_MAX];
-                pDst8[i] = (mfxU16)CLIPVAL(t, 0, (1 << 16) - 1);
+                for (    ; i < HIST_MAX; i++) {
+                    t  = pDst[i];
+                    t += pDst[i + HIST_MAX];
+                    t += pDst[i + xBlocks4*HIST_MAX];
+                    t += pDst[i + xBlocks4*HIST_MAX + HIST_MAX];
+                    pDst8[i] = t;
+                }
+            } else {
+                for (i = 0; i < HIST_MAX; i += 8) {
+                    xmm0 = _mm_loadu_si128((__m128i *)(&pDst[i]));
+                    xmm1 = _mm_loadu_si128((__m128i *)(&pDst[i + HIST_MAX]));
+                    xmm2 = _mm_loadu_si128((__m128i *)(&pDst[i + xBlocks4*HIST_MAX]));
+                    xmm3 = _mm_loadu_si128((__m128i *)(&pDst[i + xBlocks4*HIST_MAX + HIST_MAX]));
+
+                    xmm0 = _mm_adds_epu16(xmm0, xmm1);
+                    xmm0 = _mm_adds_epu16(xmm0, xmm2);
+                    xmm0 = _mm_adds_epu16(xmm0, xmm3);
+                    _mm_storeu_si128((__m128i *)(&pDst8[i]), xmm0);
+                }
+
+                for (    ; i < HIST_MAX; i++) {
+                    t  = pDst[i];
+                    t += pDst[i + HIST_MAX];
+                    t += pDst[i + xBlocks4*HIST_MAX];
+                    t += pDst[i + xBlocks4*HIST_MAX + HIST_MAX];
+                    pDst8[i] = (HistType)CLIPVAL(t, 0, (1 << 16) - 1);
+                }
             }
         }
     }
 }
 
 /* width and height must be multiples of 8 */
-void MAKE_NAME(h265_AnalyzeGradient_8u)(const Ipp8u *src, Ipp32s pitch, Ipp16u *hist4, Ipp16u *hist8, Ipp32s width, Ipp32s height)
+template <class PixType, class HistType>
+void MAKE_NAME(h265_AnalyzeGradient)(const PixType *src, Ipp32s pitch, HistType *hist4, HistType *hist8, Ipp32s width, Ipp32s height)
 {
     Ipp32s xBlocks4 = width  / 4;
     Ipp32s yBlocks4 = height / 4;
 
     /* fast path - inner blocks */
     for (Ipp32s y = 0; y < yBlocks4; y++) {
-        const Ipp8u *pSrc = src + 4 * y * pitch;
-        Ipp16u *pDst = hist4 + y * xBlocks4 * HIST_MAX;
+        const PixType *pSrc = src + 4 * y * pitch;
+        HistType *pDst = hist4 + y * xBlocks4 * HIST_MAX;
         for (Ipp32s x = 0; x < xBlocks4; x++) {
-            memset(pDst, 0, sizeof(mfxU16) * HIST_MAX);
+            memset(pDst, 0, sizeof(HistType) * HIST_MAX);
             BuildHistogramInner(pSrc, pDst, pitch);
             pSrc += 4;
             pDst += HIST_MAX;
@@ -362,6 +344,9 @@ void MAKE_NAME(h265_AnalyzeGradient_8u)(const Ipp8u *src, Ipp32s pitch, Ipp16u *
     /* sum 4x4 histograms to generate 8x8 map */
     Generate8x8(hist4, hist8, width, height);
 }
+
+template void MAKE_NAME(h265_AnalyzeGradient)<Ipp8u, Ipp16u> (const Ipp8u  *src, Ipp32s pitch, Ipp16u *hist4, Ipp16u *hist8, Ipp32s width, Ipp32s height);
+template void MAKE_NAME(h265_AnalyzeGradient)<Ipp16u, Ipp32u>(const Ipp16u *src, Ipp32s pitch, Ipp32u *hist4, Ipp32u *hist8, Ipp32s width, Ipp32s height);
 
 #define MAX_CU_SIZE 64
 

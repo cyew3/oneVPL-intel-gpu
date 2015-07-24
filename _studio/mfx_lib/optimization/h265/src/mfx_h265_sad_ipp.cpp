@@ -852,16 +852,16 @@ int H265_FASTCALL MAKE_NAME(h265_SAD_MxN_16s)(const Ipp16s* src, Ipp32s src_stri
 }
 
 template<class T>
-Ipp32s H265_FASTCALL MAKE_NAME(h265_SSE)(const T *src1, Ipp32s pitchSrc1, const T *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height)
+Ipp32s H265_FASTCALL MAKE_NAME(h265_SSE)(const T *src1, Ipp32s pitchSrc1, const T *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height, Ipp32s shift)
 {
     Ipp32s s = 0;
     for (Ipp32s j = 0; j < height; j++, src1 += pitchSrc1, src2 += pitchSrc2)
         for (Ipp32s i = 0; i < width; i++)
-            s += ((Ipp32s)src1[i] - src2[i]) * ((Ipp32s)src1[i] - src2[i]);
+            s += (((Ipp32s)src1[i] - src2[i]) * ((Ipp32s)src1[i] - src2[i])) >> shift;
     return s;
 }
-template Ipp32s H265_FASTCALL MAKE_NAME(h265_SSE)<Ipp8u> (const Ipp8u  *src1, Ipp32s pitchSrc1, const Ipp8u  *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height);
-template Ipp32s H265_FASTCALL MAKE_NAME(h265_SSE)<Ipp16u>(const Ipp16u *src1, Ipp32s pitchSrc1, const Ipp16u *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height);
+template Ipp32s H265_FASTCALL MAKE_NAME(h265_SSE)<Ipp8u> (const Ipp8u  *src1, Ipp32s pitchSrc1, const Ipp8u  *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height, Ipp32s shift);
+template Ipp32s H265_FASTCALL MAKE_NAME(h265_SSE)<Ipp16u>(const Ipp16u *src1, Ipp32s pitchSrc1, const Ipp16u *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height, Ipp32s shift);
 
 
 template <class T>

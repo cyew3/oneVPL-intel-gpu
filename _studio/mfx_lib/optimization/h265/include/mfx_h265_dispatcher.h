@@ -314,8 +314,8 @@ namespace MFX_HEVC_PP
     int H265_FASTCALL h265_SAD_MxN_16s_sse (const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s width, Ipp32s height);
     int H265_FASTCALL h265_SAD_MxN_16s_avx2(const Ipp16s* src, Ipp32s src_stride, const Ipp16s* ref, Ipp32s width, Ipp32s height);
 
-    template <class T> Ipp32s H265_FASTCALL h265_SSE_px  (const T *src1, Ipp32s pitchSrc1, const T *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height);
-    template <class T> Ipp32s H265_FASTCALL h265_SSE_avx2(const T *src1, Ipp32s pitchSrc1, const T *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height);
+    template <class T> Ipp32s H265_FASTCALL h265_SSE_px  (const T *src1, Ipp32s pitchSrc1, const T *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height, Ipp32s shift);
+    template <class T> Ipp32s H265_FASTCALL h265_SSE_avx2(const T *src1, Ipp32s pitchSrc1, const T *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height, Ipp32s shift);
 
     template <class T> void H265_FASTCALL h265_DiffNv12_px  (const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
     template <class T> void H265_FASTCALL h265_DiffNv12_avx2(const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
@@ -529,8 +529,10 @@ namespace MFX_HEVC_PP
 
     template <class PixType, class HistType>
     void h265_AnalyzeGradient_px(const PixType* src, Ipp32s pitch, HistType* hist4, HistType* hist8, Ipp32s width, Ipp32s height);
-    void h265_AnalyzeGradient_8u_sse (const Ipp8u* src, Ipp32s pitch, Ipp16u* hist4, Ipp16u* hist8, Ipp32s width, Ipp32s height);
-    void h265_AnalyzeGradient_8u_avx2(const Ipp8u* src, Ipp32s pitch, Ipp16u* hist4, Ipp16u* hist8, Ipp32s width, Ipp32s height);
+    template <class PixType, class HistType>
+    void h265_AnalyzeGradient_sse(const PixType* src, Ipp32s pitch, HistType* hist4, HistType* hist8, Ipp32s width, Ipp32s height);
+    template <class PixType, class HistType>
+    void h265_AnalyzeGradient_avx2(const PixType* src, Ipp32s pitch, HistType* hist4, HistType* hist8, Ipp32s width, Ipp32s height);
     
     template <class PixType>
     void h265_ComputeRsCs_px(const PixType* ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height);

@@ -342,6 +342,8 @@ TEST(optimization, SSE_avx2) {
     //utils::InitConstBlock(src1_10b.get(), pitch1, 64, 64, 0);
     //utils::InitConstBlock(src2_10b.get(), pitch2, 64, 64, 1023);
     
+    Ipp32s shift_08b = 0;
+    Ipp32s shift_10b = 2*2;
 
     Ipp32s dims[][2] = {
         {4,4}, {4,8}, {4,16},
@@ -357,12 +359,12 @@ TEST(optimization, SSE_avx2) {
 //#define PRINT_TICKS
 #ifdef PRINT_TICKS
     for (auto wh: dims) {
-        Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp8u>, src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1]);
-        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp8u>,   src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1]);
+        Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp8u>, src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1], shift_08b);
+        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp8u>,   src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1], shift_08b);
         printf("%2dx%2d  8bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
 
-        ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp16u>, src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1]);
-        ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp16u>,   src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1]);
+        ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp16u>, src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1], shift_10b);
+        ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp16u>,   src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1], shift_10b);
         printf("%2dx%2d 10bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
     }
 #undef PRINT_TICKS
@@ -375,16 +377,16 @@ TEST(optimization, SSE_avx2) {
         std::ostringstream buf;
         buf << "Testing " << wh[0] << "x" << wh[1] << " 8bit";
         SCOPED_TRACE(buf.str().c_str());
-        EXPECT_EQ(MFX_HEVC_PP::h265_SSE_avx2(src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1]),
-                  MFX_HEVC_PP::h265_SSE_px  (src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1]));
+        EXPECT_EQ(MFX_HEVC_PP::h265_SSE_avx2(src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1], shift_08b),
+                  MFX_HEVC_PP::h265_SSE_px  (src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1], shift_08b));
     }
 
     for (auto wh: dims) {
         std::ostringstream buf;
         buf << "Testing " << wh[0] << "x" << wh[1] << " 10bit";
         SCOPED_TRACE(buf.str().c_str());
-        EXPECT_EQ(MFX_HEVC_PP::h265_SSE_avx2(src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1]),
-                  MFX_HEVC_PP::h265_SSE_px  (src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1]));
+        EXPECT_EQ(MFX_HEVC_PP::h265_SSE_avx2(src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1], shift_10b),
+                  MFX_HEVC_PP::h265_SSE_px  (src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1], shift_10b));
     }
 }
 

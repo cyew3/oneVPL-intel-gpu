@@ -56,13 +56,15 @@ static Ipp32s TuSse(const Ipp8u *src, Ipp32s pitchSrc,
                     const Ipp8u *rec, Ipp32s pitchRec,
                     Ipp32s width, Ipp32s height, Ipp32s shift)
 {
-    return h265_Sse(src, pitchSrc, rec, pitchRec, width, height);
+    return h265_Sse(src, pitchSrc, rec, pitchRec, width, height, shift);
 }
 
 static Ipp32s TuSse(const Ipp16u *src, Ipp32s pitchSrc,
                     const Ipp16u *rec, Ipp32s pitchRec,
                     Ipp32s width, Ipp32s height, Ipp32s shift)
 {
+    return h265_Sse(src, pitchSrc, rec, pitchRec, width, height, shift);
+#if 0
     // Sq Err is defined on truncated Sqr Pixel Diff for uniform results across blocks sizes.
     // Shifting after Sqr Pixel Diff accumulation causes, 
     // truncation error to integrate for larger block sizes causing mismatch and large loss in bdrate. (see 10b WP Test set Tu1)
@@ -77,6 +79,7 @@ static Ipp32s TuSse(const Ipp16u *src, Ipp32s pitchSrc,
         rec += pitchRec;
     }
     return s;
+#endif
 }
 
 static inline int h265_SAD_MxN_special(const Ipp8u *image,  const Ipp8u *ref, int stride, int SizeX, int SizeY)
