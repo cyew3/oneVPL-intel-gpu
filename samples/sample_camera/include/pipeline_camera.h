@@ -86,6 +86,7 @@ protected:
     mfxExtCamBayerDenoise         m_Denoise;
     mfxExtCamHotPixelRemoval      m_HP;
     mfxExtCamGammaCorrection      m_GammaCorrection;
+    mfxExtCamFwdGamma             m_3DLUT_GammaCorrection;
     mfxExtCamBlackLevelCorrection m_BlackLevelCorrection;
     mfxExtCamWhiteBalance         m_WhiteBalance;
     mfxExtCamColorCorrection3x3   m_CCM;
@@ -123,6 +124,7 @@ protected:
     bool                    m_bIsRender; // enables rendering mode
     bool                    m_bOutput; // enables/disables output file
     bool                    m_bEnd;
+    bool                    b_3DLUT_Gamma;
 
     mfxI32                 m_alphaValue;
     mfxU32                 m_BayerType;

@@ -110,7 +110,7 @@ mfxStatus BaseFrameAllocator::AllocFrames(mfxFrameAllocRequest *request, mfxFram
     {
         bool foundInCache = false;
         // external decoder allocations
-        std::list<UniqueResponse>::iterator 
+        std::list<UniqueResponse>::iterator
             it = m_ExtResponses.begin(),
             et = m_ExtResponses.end();
         UniqueResponse checker(*response, request->Info.CropW, request->Info.CropH, 0);

@@ -16,12 +16,15 @@
 /* ************************************************************************* */
 
 #include "sample_defs.h"
-
+#include "hw_device.h"
 #if D3D_SURFACES_SUPPORT
 #pragma warning(disable : 4201)
 #include <d3d9.h>
 #include <dxva2api.h>
 #include <windows.h>
+#endif
+#if MFX_D3D11_SUPPORT
+#include <d3d11.h>
 #endif
 
 #ifdef LIBVA_SUPPORT
@@ -93,7 +96,7 @@ struct sInputParams
   // flag describes type of memory
   // true  - frames in video memory (d3d surfaces),
   // false - in system memory
-  bool   bd3dAlloc;
+  MemType memType;
 
   mfxU32   requestedFramesCount;
   /* ********************** */
@@ -124,18 +127,13 @@ struct sMemoryAllocator
 {
   MFXFrameAllocator*  pMfxAllocator;
   mfxAllocatorParams* pAllocatorParams;
-  bool                bd3dAlloc;
+  MemType             memType;
   bool                bUsedAsExternalAllocator;
 
   mfxFrameSurface1*     pSurfaces[3];
   mfxFrameAllocResponse response[3];
 
-#if D3D_SURFACES_SUPPORT
-  IDirect3DDeviceManager9* pd3dDeviceManager;
-#endif
-#ifdef LIBVA_SUPPORT
-  CLibVA* pVALibrary;
-#endif
+  CHWDevice* pDevice;
 };
 
 class CRawVideoReader

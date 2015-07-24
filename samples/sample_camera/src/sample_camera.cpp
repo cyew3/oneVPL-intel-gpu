@@ -24,6 +24,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-b bitDepth] / [-bitDepth bitDepth]                - set bit depth, default 10 \n"));
     msdk_printf(MSDK_STRING("   [-f format] / [-format format]                      - input Bayer format: rggb, bggr, grbg or gbrg\n"));
     msdk_printf(MSDK_STRING("   [-of format] / [-outFormat format]                  - output format: of argb16 or 16 meaning 16 bit ARGB, 8 bit ARGB otherwise\n"));
+    msdk_printf(MSDK_STRING("   [-3DLUT_gamma]                                      - use 3D LUT gamma correction\n"));
     msdk_printf(MSDK_STRING("   [-ng] / [-noGamma]                                  - no gamma correction\n"));
     msdk_printf(MSDK_STRING("   [-gamma_points]                                     - set specific gamma points (64 points expected)\n"));
     msdk_printf(MSDK_STRING("   [-gamma_corrected]                                  - set specific gamma corrected values (64 values expected)\n"));
@@ -35,6 +36,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-ccm n00 n01 ... n33 ]                             - color correction 3x3 matrix\n"));
     msdk_printf(MSDK_STRING("   [-vignette maskfile ]                               - enable vignette correction using mask from specified file\n"));
     msdk_printf(MSDK_STRING("   [-lens a b c d ]                                    - enable lens geometry distortion correction\n"));
+    msdk_printf(MSDK_STRING("   [-chroma_aberration aR bR cR dR aG bG cG dG aB bB cB dB ] - enable chroma aberration correction\n"));
     msdk_printf(MSDK_STRING("   [-w width] / [-width width]                         - input width, default 4096\n"));
     msdk_printf(MSDK_STRING("   [-h height] / [-height height]                      - input height, default 2160\n"));
     msdk_printf(MSDK_STRING("   [-n numFrames] / [-numFramesToProcess numFrames]    - number of frames to process\n"));
@@ -188,6 +190,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bGamma = false;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-3DLUT_gamma")))
+        {
+            pParams->b3DLUTGamma = false;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bdn")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-bayerDenoise")))
         {
             if(i + 1 >= nArgNum)
@@ -243,10 +249,35 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
             pParams->bLens = true;
-            msdk_opt_read(strInput[++i], pParams->lens_a);
-            msdk_opt_read(strInput[++i], pParams->lens_b);
-            msdk_opt_read(strInput[++i], pParams->lens_c);
-            msdk_opt_read(strInput[++i], pParams->lens_d);
+            msdk_opt_read(strInput[++i], pParams->lens_aR);
+            msdk_opt_read(strInput[++i], pParams->lens_bR);
+            msdk_opt_read(strInput[++i], pParams->lens_cR);
+            msdk_opt_read(strInput[++i], pParams->lens_dR);
+            pParams->lens_aB = pParams->lens_aG = pParams->lens_aR;
+            pParams->lens_bB = pParams->lens_bG = pParams->lens_bR;
+            pParams->lens_cB = pParams->lens_cG = pParams->lens_cR;
+            pParams->lens_dB = pParams->lens_dG = pParams->lens_dR;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-chroma_aberration")) )
+        {
+            if(i + 12 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -chroma_aberration key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            pParams->bLens = true;
+            msdk_opt_read(strInput[++i], pParams->lens_aR);
+            msdk_opt_read(strInput[++i], pParams->lens_bR);
+            msdk_opt_read(strInput[++i], pParams->lens_cR);
+            msdk_opt_read(strInput[++i], pParams->lens_dR);
+            msdk_opt_read(strInput[++i], pParams->lens_aB);
+            msdk_opt_read(strInput[++i], pParams->lens_bB);
+            msdk_opt_read(strInput[++i], pParams->lens_cB);
+            msdk_opt_read(strInput[++i], pParams->lens_dB);
+            msdk_opt_read(strInput[++i], pParams->lens_aG);
+            msdk_opt_read(strInput[++i], pParams->lens_bG);
+            msdk_opt_read(strInput[++i], pParams->lens_cG);
+            msdk_opt_read(strInput[++i], pParams->lens_dG);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ccm")))
         {

@@ -710,5 +710,10 @@ mfxStatus CheckOptions(sInputParams* pParams)
         fprintf(stderr,"Output bitstream file should be specified for ENC+PAK (-o)\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
+
+    if (pParams->bPREENC && pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF) {
+        fprintf(stderr, "Preenc doesn't support bff, use tff\n");
+        sts = MFX_ERR_UNSUPPORTED;
+    }
     return sts;
 }

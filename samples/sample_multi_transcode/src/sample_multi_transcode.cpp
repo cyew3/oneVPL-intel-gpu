@@ -123,16 +123,13 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     sts = CreateSafetyBuffers();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    /* Some trick ...
-    * as buffer from first decoder will be last in encode queue
-    * One more hint. Example you have 3 dec + 1 enc sessions
+    /* One more hint. Example you have 3 dec + 1 enc sessions
     * (enc means vpp_comp call invoked. m_InputParamsArray.size() is 4.
     * You don't need take vpp comp params from last one session as it is enc session.
-    * But you need process {2, 1, 0} sessions - totally 3.
-    * So, you need start from 2 and end at 0.
+    * But you need process {0, 1, 2} sessions - totally 3.
+    * So, you need start from 0 and end at 2.
     * */
-    mfxI32 jj = (mfxI32)m_InputParamsArray.size() - 1 - 1;
-    while (jj >= 0)
+    for(mfxI32 jj = 0; jj<(mfxI32)m_InputParamsArray.size() - 1; jj++)
     {
         /* Save params for VPP composition */
         sVppCompDstRect tempDstRect;
@@ -141,7 +138,6 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         tempDstRect.DstW = m_InputParamsArray[jj].nVppCompDstW;
         tempDstRect.DstH = m_InputParamsArray[jj].nVppCompDstH;
         m_VppDstRects.push_back(tempDstRect);
-        jj--;
     }
 
     // create sessions, allocators
@@ -165,7 +161,9 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             if ((VppComp == m_InputParamsArray[i].eModeExt) ||
                 (VppCompOnly == m_InputParamsArray[i].eModeExt))
             {
-                pBuffer = m_pBufferArray[BufCounter];
+                // Taking buffers from tail because they are stored in m_pBufferArray in reverse order
+                // So, by doing this we'll fill buffers properly according to order from par file
+                pBuffer = m_pBufferArray[m_pBufferArray.size()-1-BufCounter];
                 BufCounter++;
             }
             else /* 1_to_N mode*/

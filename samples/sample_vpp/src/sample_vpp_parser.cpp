@@ -82,7 +82,10 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 
     msdk_printf(MSDK_STRING("   [-n frames]                  - number of frames to VPP process\n\n"));
 #if D3D_SURFACES_SUPPORT
-    msdk_printf(MSDK_STRING("\n   [-d3d]                - work with d3d surfaces\n"));
+    msdk_printf(MSDK_STRING("\n   [-d3d]                - use d3d9 surfaces\n"));
+#endif
+#if MFX_D3D11_SUPPORT
+    msdk_printf(MSDK_STRING("\n   [-d3d11]              - use d3d11 surfaces\n"));
 #endif
 #ifdef LIBVA_SUPPORT
     msdk_printf(MSDK_STRING("\n   [-vaapi]                - work with vaapi surfaces\n"));
@@ -638,13 +641,19 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
 #if D3D_SURFACES_SUPPORT
             else if( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")) )
             {
-                pParams->bd3dAlloc = true;
+                pParams->memType = D3D9_MEMORY;
+            }
+#endif
+#if MFX_D3D11_SUPPORT
+            else if( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d11")) )
+            {
+                 pParams->memType = D3D11_MEMORY;
             }
 #endif
 #ifdef LIBVA_SUPPORT
             else if( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-vaapi")) )
             {
-                pParams->bd3dAlloc = true;
+                pParams->memType = D3D9_MEMORY;
             }
 #endif
         }

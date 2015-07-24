@@ -108,7 +108,8 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_FrameNumberPreference(0xFFFFFFFF),
     m_MaxFramesForTranscode(0xFFFFFFFF),
     m_pBSProcessor(NULL),
-    m_nReqFrameTime(0)
+    m_nReqFrameTime(0),
+    m_LastDecSyncPoint(0)
 {
     MSDK_ZERO_MEMORY(m_mfxDecParams);
     MSDK_ZERO_MEMORY(m_mfxVppParams);
@@ -420,7 +421,12 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
     {
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
-            MSDK_SLEEP(TIME_TO_SLEEP); // just wait and then repeat the same call to DecodeFrameAsync
+            // Wait 1ms will be probably enough to device release
+            mfxStatus stsSync = m_pmfxSession->SyncOperation(m_LastDecSyncPoint, 1);
+            if(stsSync < 0)
+            {
+                sts = stsSync;
+            }
         }
         else if (MFX_ERR_MORE_DATA == sts)
         {
@@ -448,6 +454,10 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
 
         sts = m_pmfxDEC->DecodeFrameAsync(m_pmfxBS, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
 
+        if (!sts)
+        {
+            m_LastDecSyncPoint = pExtSurface->Syncp;
+        }
         // ignore warnings if output is available,
         if (MFX_ERR_NONE < sts && pExtSurface->Syncp)
         {
@@ -470,7 +480,12 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
     {
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
-            MSDK_SLEEP(TIME_TO_SLEEP);
+            // Wait 1ms will be probably enough to device release
+            mfxStatus stsSync = m_pmfxSession->SyncOperation(m_LastDecSyncPoint, 1);
+            if(stsSync < 0)
+            {
+                sts = stsSync;
+            }
         }
 
         // find new working surface
@@ -1647,6 +1662,7 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         m_VppCompParams.NumInputStream = (mfxU16)pInParams->numSurf4Comp;
         m_VppCompParams.InputStream = (mfxVPPCompInputStream *)malloc(sizeof(mfxVPPCompInputStream)*
             m_VppCompParams.NumInputStream);
+        MSDK_CHECK_POINTER(m_VppCompParams.InputStream,MFX_ERR_NULL_PTR);
 
         // stream params
         /* if input streams in NV12 format background color should be in YUV format too
@@ -1880,7 +1896,7 @@ mfxStatus CTranscodingPipeline::AllocFrames()
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             // AllocId just opaque handle which allow separate decoder requests in case of VPP Composition with external allocator
-            static mfxU32 mark_alloc = 0x7FFF0001;
+            static mfxU32 mark_alloc = 0;
             m_mfxDecParams.AllocId = mark_alloc;
             DecOut.AllocId = mark_alloc;
             mark_alloc++;

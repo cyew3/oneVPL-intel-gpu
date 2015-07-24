@@ -144,17 +144,25 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         }
     }
 
-    if(pParams->fourcc)
-    {
-        m_bVppIsUsed = true;
+    if (pParams->fourcc)
         m_fourcc = pParams->fourcc;
+
+    // JPEG and Capture decoders can provide output in nv12 and rgb4 formats
+    if ((pParams->videoType == MFX_CODEC_JPEG) ||
+        ((pParams->videoType == MFX_CODEC_CAPTURE)) )
+    {
+        m_bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12) && (m_fourcc != MFX_FOURCC_RGB4);
+    }
+    else
+    {
+        m_bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12);
     }
 
     m_memType = pParams->memType;
     if (m_bVppIsUsed)
         m_bDecOutSysmem = pParams->bUseHWLib ? false : true;
     else
-        m_bDecOutSysmem = pParams->memType == MFX_MEMTYPE_SYSTEM_MEMORY;
+        m_bDecOutSysmem = pParams->memType == SYSTEM_MEMORY;
 
     m_nMaxFps = pParams->nMaxFPS;
     m_nFrames = pParams->nFrames ? pParams->nFrames : MFX_INFINITE;
@@ -476,7 +484,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         m_mfxVideoParams.mfx.FrameInfo.Height = MSDK_ALIGN32(pParams->height);
         m_mfxVideoParams.mfx.FrameInfo.CropW = pParams->width;
         m_mfxVideoParams.mfx.FrameInfo.CropH = pParams->height;
-        m_mfxVideoParams.mfx.FrameInfo.FourCC = pParams->fourcc;
+        m_mfxVideoParams.mfx.FrameInfo.FourCC = m_bVppIsUsed ? MFX_FOURCC_NV12 : pParams->fourcc;
         if (!m_mfxVideoParams.mfx.FrameInfo.FourCC)
             m_mfxVideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
         if (!m_mfxVideoParams.mfx.FrameInfo.ChromaFormat)
@@ -584,6 +592,24 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    if (!m_mfxVideoParams.mfx.FrameInfo.FrameRateExtN || !m_mfxVideoParams.mfx.FrameInfo.FrameRateExtD) {
+        msdk_printf(MSDK_STRING("pretending that stream is 30fps one\n"));
+        m_mfxVideoParams.mfx.FrameInfo.FrameRateExtN = 30;
+        m_mfxVideoParams.mfx.FrameInfo.FrameRateExtD = 1;
+    }
+    if (!m_mfxVideoParams.mfx.FrameInfo.AspectRatioW || !m_mfxVideoParams.mfx.FrameInfo.AspectRatioH) {
+        msdk_printf(MSDK_STRING("pretending that aspect ratio is 1:1\n"));
+        m_mfxVideoParams.mfx.FrameInfo.AspectRatioW = 1;
+        m_mfxVideoParams.mfx.FrameInfo.AspectRatioH = 1;
+    }
+
+    // Videoparams for RGB4 JPEG decoder output
+    if ((pParams->fourcc == MFX_FOURCC_RGB4) && (pParams->videoType == MFX_CODEC_JPEG))
+    {
+        m_mfxVideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_RGB4;
+        m_mfxVideoParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+    }
 
     // If MVC mode we need to detect number of views in stream
     if (m_bIsMVC)
@@ -744,15 +770,52 @@ mfxStatus CDecodingPipeline::AllocFrames()
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    // respecify memory type between Decoder and VPP
-    m_mfxVideoParams.IOPattern = (mfxU16)( m_bDecOutSysmem ?
-            MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
-            MFX_IOPATTERN_OUT_VIDEO_MEMORY);
+    if (m_bVppIsUsed)
+    {
+        // respecify memory type between Decoder and VPP
+        m_mfxVideoParams.IOPattern = (mfxU16)( m_bDecOutSysmem ?
+                MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
+                MFX_IOPATTERN_OUT_VIDEO_MEMORY);
 
-    // recalculate number of surfaces required for decoder
-    sts = m_pmfxDEC->QueryIOSurf(&m_mfxVideoParams, &Request);
-    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        // recalculate number of surfaces required for decoder
+        sts = m_pmfxDEC->QueryIOSurf(&m_mfxVideoParams, &Request);
+        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+
+        sts = InitVppParams();
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        sts = m_pmfxVPP->Query(&m_mfxVppVideoParams, &m_mfxVppVideoParams);
+        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        // VppRequest[0] for input frames request, VppRequest[1] for output frames request
+        sts = m_pmfxVPP->QueryIOSurf(&m_mfxVppVideoParams, VppRequest);
+        if (MFX_WRN_PARTIAL_ACCELERATION == sts) {
+            msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
+            MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        }
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        if ((VppRequest[0].NumFrameSuggested < m_mfxVppVideoParams.AsyncDepth) ||
+            (VppRequest[1].NumFrameSuggested < m_mfxVppVideoParams.AsyncDepth))
+            return MFX_ERR_MEMORY_ALLOC;
+
+
+        // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
+        // The number of surfaces shared by vpp input and decode output
+        nSurfNum = Request.NumFrameSuggested + VppRequest[0].NumFrameSuggested - m_mfxVideoParams.AsyncDepth + 1;
+
+        // The number of surfaces for vpp output
+        nVppSurfNum = VppRequest[1].NumFrameSuggested;
+
+        // prepare allocation request
+        Request.NumFrameSuggested = Request.NumFrameMin = nSurfNum;
+
+        // surfaces are shared between vpp input and decode output
+        Request.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_VPPIN;
+    }
 
     mfxIMPL impl = 0;
     sts = m_mfxSession.QueryIMPL(&impl);
@@ -761,45 +824,9 @@ mfxStatus CDecodingPipeline::AllocFrames()
         (impl & MFX_IMPL_HARDWARE_ANY))
         return MFX_ERR_MEMORY_ALLOC;
 
-    if (m_bVppIsUsed)
-    {
-        sts = InitVppParams();
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    sts = m_pmfxVPP->Query(&m_mfxVppVideoParams, &m_mfxVppVideoParams);
-    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    // VppRequest[0] for input frames r;equest, VppRequest[1] for output frames request
-    sts = m_pmfxVPP->QueryIOSurf(&m_mfxVppVideoParams, VppRequest);
-    if (MFX_WRN_PARTIAL_ACCELERATION == sts) {
-        msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
-        MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
-    }
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    if ((VppRequest[0].NumFrameSuggested < m_mfxVppVideoParams.AsyncDepth) ||
-        (VppRequest[1].NumFrameSuggested < m_mfxVppVideoParams.AsyncDepth))
-        return MFX_ERR_MEMORY_ALLOC;
-    }
-
-    // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
-    // The number of surfaces shared by vpp input and decode output
-    nSurfNum = Request.NumFrameSuggested + VppRequest[0].NumFrameSuggested - m_mfxVideoParams.AsyncDepth + 1;
-
-    // The number of surfaces for vpp output
-    nVppSurfNum = VppRequest[1].NumFrameSuggested;
-
-    // prepare allocation request
-    Request.NumFrameSuggested = Request.NumFrameMin = nSurfNum;
-
-    // surfaces are shared between vpp input and decode output
-    Request.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_VPPIN;
-
     Request.Type |= (m_bDecOutSysmem) ?
-            MFX_MEMTYPE_SYSTEM_MEMORY
-            : MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
-
+        MFX_MEMTYPE_SYSTEM_MEMORY
+        : MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
     // alloc frames for decoder
     sts = m_pGeneralAllocator->Alloc(m_pGeneralAllocator->pthis, &Request, &m_mfxResponse);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -1556,7 +1583,14 @@ void CDecodingPipeline::PrintInfo()
 {
     msdk_printf(MSDK_STRING("Decoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
     msdk_printf(MSDK_STRING("\nInput video\t%s\n"), CodecIdToStr(m_mfxVideoParams.mfx.CodecId).c_str());
-    msdk_printf(MSDK_STRING("Output format\t%s\n"), MSDK_STRING("YUV420"));
+    if (m_bVppIsUsed)
+    {
+        msdk_printf(MSDK_STRING("Output format\t%s (using vpp)\n"), CodecIdToStr(m_mfxVppVideoParams.vpp.Out.FourCC).c_str());
+    }
+    else
+    {
+        msdk_printf(MSDK_STRING("Output format\t%s\n"), CodecIdToStr(m_mfxVideoParams.mfx.FrameInfo.FourCC).c_str());
+    }
 
     mfxFrameInfo Info = m_mfxVideoParams.mfx.FrameInfo;
     msdk_printf(MSDK_STRING("Resolution\t%dx%d\n"), Info.Width, Info.Height);

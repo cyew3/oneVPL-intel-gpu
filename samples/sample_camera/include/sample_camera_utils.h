@@ -229,6 +229,7 @@ struct sInputParams
     mfxU16 hp_num;
 
     bool   bGamma;
+    bool   b3DLUTGamma;
     bool   bExternalGammaLUT;
     mfxU16 gamma_point[64];
     mfxU16 gamma_corrected[64];
@@ -248,10 +249,19 @@ struct sInputParams
     mfxF64 white_balance_R;
 
     bool   bLens;
-    mfxF32 lens_a;
-    mfxF32 lens_b;
-    mfxF32 lens_c;
-    mfxF32 lens_d;
+    mfxF32 lens_aR;
+    mfxF32 lens_bR;
+    mfxF32 lens_cR;
+    mfxF32 lens_dR;
+    mfxF32 lens_aG;
+    mfxF32 lens_bG;
+    mfxF32 lens_cG;
+    mfxF32 lens_dG;
+    mfxF32 lens_aB;
+    mfxF32 lens_bB;
+    mfxF32 lens_cB;
+    mfxF32 lens_dB;
+
     bool   bCCM;
     mfxF64 CCM[3][3];
 
@@ -288,6 +298,7 @@ struct sInputParams
         accelType  = D3D9;
         bitDepth = 10;
         bGamma = true;
+        b3DLUTGamma   = false;
         bHP           = false;
         bBlackLevel   = false;
         bWhiteBalance = false;
