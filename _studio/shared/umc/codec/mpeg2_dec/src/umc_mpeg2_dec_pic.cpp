@@ -429,6 +429,11 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
             }
         }
 
+#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
+        if (newtype == MPEG1_VIDEO)
+            return UMC_ERR_UNSUPPORTED;
+#endif
+
         if (UNDEF_VIDEO == m_ClipInfo.stream_type)
         {
             m_ClipInfo.stream_type = newtype;

@@ -1342,8 +1342,10 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
 
         if (false == find_seq_ext)
         {
-            par->mfx.CodecProfile = MFX_PROFILE_MPEG1;
-            par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            // MPEG1 reporting is disabled so that HW impl won't fallback to SW and skip mpeg1
+            // SW implementation will continue to work
+            //par->mfx.CodecProfile = MFX_PROFILE_MPEG1;
+            //par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         }
 
         if (MFX_PICSTRUCT_PROGRESSIVE != par->mfx.FrameInfo.PicStruct)
