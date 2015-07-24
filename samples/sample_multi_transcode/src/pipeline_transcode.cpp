@@ -1896,7 +1896,7 @@ mfxStatus CTranscodingPipeline::AllocFrames()
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             // AllocId just opaque handle which allow separate decoder requests in case of VPP Composition with external allocator
-            static mfxU32 mark_alloc = 0x7FFF0001;
+            static mfxU32 mark_alloc = 0;
             m_mfxDecParams.AllocId = mark_alloc;
             DecOut.AllocId = mark_alloc;
             mark_alloc++;
