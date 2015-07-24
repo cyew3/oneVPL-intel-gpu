@@ -65,6 +65,8 @@ struct sInputParams
     mfxU8  QP;
     mfxU16 numSlices;
     mfxU16 numRef;
+    mfxU16 bRefType;
+    mfxU16 nIdrInterval;
 
     mfxU16 SearchWindow;
     mfxU16 LenSP;
