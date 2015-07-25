@@ -1029,16 +1029,18 @@ mfxStatus DXVAHDVideoProcessor::Execute(MfxHwVideoProcessing::mfxExecuteParams *
     CHECK_HRES(hr);
 
     DXVAHD_STREAM_STATE_SOURCE_RECT_DATA srcRectData = {0};
-    srcRectData.SourceRect.bottom = executeParams->pRefSurfaces[0].frameInfo.Height;
-    srcRectData.SourceRect.right  = executeParams->pRefSurfaces[0].frameInfo.Width;
+    srcRectData.SourceRect.bottom = (executeParams->pRefSurfaces[0].frameInfo.CropH / 2 * 2);
+    srcRectData.SourceRect.right  = executeParams->pRefSurfaces[0].frameInfo.CropW;
+    srcRectData.SourceRect.top    = executeParams->pRefSurfaces[0].frameInfo.CropY;
+    srcRectData.SourceRect.left   = executeParams->pRefSurfaces[0].frameInfo.CropX;
     srcRectData.Enable = TRUE;
-    memcpy_s((PVOID) &srcRectData.SourceRect, sizeof(RECT), (PVOID)&targetRectData.TargetRect, sizeof(RECT));    
     hr = SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_SOURCE_RECT, sizeof(srcRectData), &srcRectData);
     CHECK_HRES(hr);
 
     DXVAHD_STREAM_STATE_DESTINATION_RECT_DATA dstRectData;
     dstRectData.Enable = TRUE;
-    memcpy_s((PVOID) &dstRectData.DestinationRect, sizeof(RECT), &targetRectData.TargetRect, sizeof(RECT));    
+    srcRectData.SourceRect.bottom = executeParams->pRefSurfaces[0].frameInfo.CropH;
+    memcpy_s((PVOID) &dstRectData.DestinationRect, sizeof(RECT), &srcRectData.SourceRect, sizeof(RECT));    
     hr = SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_DESTINATION_RECT, sizeof(dstRectData), &dstRectData);
     CHECK_HRES(hr);
 
@@ -1499,7 +1501,7 @@ mfxStatus D3D9CameraProcessor::CompleteRoutine(AsyncParams * pParam)
 
                     roi.width *= 4;
 
-                    ippiCopy_8u_C1R(ptrDst, dstPitch, (mfxU8 *)sLockRect.pBits, srcPitch, roi);
+                    ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits, srcPitch, ptrDst, dstPitch, roi);
                 }
                 break;
 
@@ -1513,7 +1515,7 @@ mfxStatus D3D9CameraProcessor::CompleteRoutine(AsyncParams * pParam)
 
                     roi.width *= 8;
 
-                    ippSts = ippiCopy_8u_C1R(ptrDst, dstPitch, (mfxU8 *)sLockRect.pBits, srcPitch, roi);
+                    ippSts = ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits, srcPitch, ptrDst, dstPitch, roi);
                     MFX_CHECK_STS(sts);
                 }
                 break;
