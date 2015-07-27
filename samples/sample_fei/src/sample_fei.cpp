@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2015 Intel Corporation. All Rights Reserved.
 //
 
 #include <memory>
@@ -39,7 +39,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames\n"));
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
-    //msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
+    msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
     msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
     msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
     msdk_printf(MSDK_STRING("   [-mbctrl file] - use the input to set MB control for FEI (only ENC+PAK)\n"));
@@ -52,9 +52,9 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-pass_headers] - pass SPS, PPS and Slice headers to Media SDK instead of default one\n"));
     msdk_printf(MSDK_STRING("   [-8x8stat] - set 8x8 block for statistic report, default is 16x16 (PREENC only)\n"));
     msdk_printf(MSDK_STRING("   [-search_window value] - specifies one of the predefined search path and window size. In range [1,8] (0 is default).\n"));
-    msdk_printf(MSDK_STRING("   					     If non-zero value specified: -ref_window_w / _h, -len_sp, -max_len_sp are ignored\n"));
+    msdk_printf(MSDK_STRING("                            If non-zero value specified: -ref_window_w / _h, -len_sp, -max_len_sp are ignored\n"));
     msdk_printf(MSDK_STRING("   [-ref_window_w width] - width of search region (should be multiple of 4), maximum allowed search window w*h is 2048 for\n"));
-    msdk_printf(MSDK_STRING("   				 		one direction and 1048 for bidirectional search\n"));
+    msdk_printf(MSDK_STRING("                            one direction and 1048 for bidirectional search\n"));
     msdk_printf(MSDK_STRING("   [-ref_window_h height] - height of search region (should be multiple of 4), maximum allowed is 32\n"));
     msdk_printf(MSDK_STRING("   [-len_sp length] - defines number of search units in search path. In range [1,63]\n"));
     msdk_printf(MSDK_STRING("   [-search_path value] - defines shape of search path. In range [1,2]\n"));
@@ -64,14 +64,14 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-intra_SAD] - specifies intra distortion adjustment. 0x00 - none, 0x02 - Haar transform (default)\n"));
     msdk_printf(MSDK_STRING("   [-inter_SAD] - specifies inter distortion adjustment. 0x00 - none, 0x02 - Haar transform (default)\n"));
     msdk_printf(MSDK_STRING("   [-adaptive_search] - enables adaptive search\n"));
-    msdk_printf(MSDK_STRING("   [-forward_trasform] - enables forward transform. Additional stat is calculated and reported, QP required (PREENC only)\n"));
+    msdk_printf(MSDK_STRING("   [-forward_transform] - enables forward transform. Additional stat is calculated and reported, QP required (PREENC only)\n"));
     msdk_printf(MSDK_STRING("   [-repartition_check] - enables additional sub pixel and bidirectional refinements (ENC)\n"));
     msdk_printf(MSDK_STRING("   [-multi_pred_l0] - MVs from neighbor MBs will be used as predictors for L0 prediction list (ENC)\n"));
     msdk_printf(MSDK_STRING("   [-multi_pred_l1] - MVs from neighbor MBs will be used as predictors for L1 prediction list (ENC)\n"));
     msdk_printf(MSDK_STRING("   [-adjust_distortion] - if enabled adds a cost adjustment to distortion, default is RAW distortion (ENC)\n"));
     msdk_printf(MSDK_STRING("   [-n_mvpredictors num] - number of MV predictors, up to 4 is supported (default is 1) (ENC)\n"));
     msdk_printf(MSDK_STRING("   [-colocated_mb_distortion] - provides the distortion between the current and the co-located MB. It has performance impact(ENC)\n"));
-    msdk_printf(MSDK_STRING("   							 do not use it, unless it is necessary\n"));
+    msdk_printf(MSDK_STRING("                                do not use it, unless it is necessary\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -122,10 +122,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bENCODE = true;
         }
-        /*else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encpak")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encpak")))
         {
             pParams->bENCPAK = true;
-        }*/
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc")))
         {
             pParams->bOnlyENC = true;
@@ -199,11 +199,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-angle")))
-        {
-            i++;
-            pParams->nRotationAngle = (mfxU8)msdk_strtol(strInput[i], &stopCharacter, 10);
-        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qp")))
         {
             i++;
@@ -237,10 +232,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->Enable8x8Stat = true;
         }
-		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-forward_trasform")))
-		{
-		    pParams->FTEnable = true;
-		}
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-forward_transform")))
+        {
+            pParams->FTEnable = true;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-adaptive_search")))
         {
             pParams->AdaptiveSearch = true;
@@ -257,14 +252,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->MultiPredL1 = true;
         }
-		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-adjust_distortion")))
-		{
-		    pParams->DistortionType = true;
-		}
-		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-colocated_mb_distortion")))
-		{
-		    pParams->ColocatedMbDistortion = true;
-		}
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-adjust_distortion")))
+        {
+            pParams->DistortionType = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-colocated_mb_distortion")))
+        {
+            pParams->ColocatedMbDistortion = true;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-search_window")))
         {
             i++;
@@ -317,11 +312,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             i++;
             pParams->InterSAD = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 16);
         }
-		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_mvpredictors")))
-		{
-		    i++;
-		    pParams->NumMVPredictors = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
-		}
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_mvpredictors")))
+        {
+            i++;
+            pParams->NumMVPredictors = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -384,15 +379,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
-    //if (pParams->bPREENC && pParams->bOnlyPAK || pParams->bENCODE && pParams->bOnlyENC){
     if (!( pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCODE ||
           !pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCODE ||
           !pParams->bPREENC && !pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCODE ||
           !pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCODE ||
-          !pParams->bPREENC &&  pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCODE ||
+          !pParams->bPREENC &&  pParams->bENCPAK  && !pParams->bENCODE ||
            pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCODE ||
            pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCODE ||
-           pParams->bPREENC &&  pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCODE )
+           pParams->bPREENC &&  pParams->bENCPAK  && !pParams->bENCODE)
     ){
         if (bAlrShownHelp){
             msdk_printf(MSDK_STRING("\nUnsupported pipeline!\n"));
@@ -402,12 +396,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_printf(MSDK_STRING("ENC\n"));
             msdk_printf(MSDK_STRING("PAK\n"));
             msdk_printf(MSDK_STRING("ENCODE\n"));
-            msdk_printf(MSDK_STRING("ENC + PAK\n"));
+            msdk_printf(MSDK_STRING("ENC + PAK (ENCPAK)\n"));
             msdk_printf(MSDK_STRING("PREENC + ENC\n"));
             msdk_printf(MSDK_STRING("PREENC + ENCODE\n"));
-            msdk_printf(MSDK_STRING("PREENC + ENC + PAK\n"));
+            msdk_printf(MSDK_STRING("PREENC + ENC + PAK (PREENC + ENCPAK)\n"));
         } else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported pipeline!\nSupported pipelines are:\nPREENC\nENC\nPAK\nENCODE\nENC + PAK\nPREENC + ENC\nPREENC + ENCODE\nPREENC + ENC + PAK\n"));
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported pipeline!\nSupported pipelines are:\nPREENC\nENC\nPAK\nENCODE\nENC + PAK (ENCPAK)\nPREENC + ENC\nPREENC + ENCODE\nPREENC + ENC + PAK (PREENC + ENCPAK)\n"));
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -542,7 +536,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     bool bEnableBiPred = (pParams->bENCODE || pParams->bENCPAK || pParams->bOnlyENC) && (pParams->refDist > 1);
 
     if ((!pParams->SearchWindow && (pParams->RefHeight <= 0 || pParams->RefWidth <= 0 || pParams->RefHeight % 4 != 0 || pParams->RefWidth % 4 != 0 ||
-    	  pParams->RefHeight * pParams->RefWidth > (bEnableBiPred ? 1024 : 2048))) || (pParams->SearchWindow > 2 && bEnableBiPred)){
+          pParams->RefHeight * pParams->RefWidth > (bEnableBiPred ? 1024 : 2048))) || (pParams->SearchWindow > 2 && bEnableBiPred)){
         if (bAlrShownHelp)
             msdk_printf(MSDK_STRING("\nUnsupported value of search window size. -ref_window_h, -ref_window_w parameters, must be multiple of 4!\n"
                                     "For bi-prediction window w*h must less than 1024 and less 2048 otherwise.\n"));
@@ -575,7 +569,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_printf(MSDK_STRING("\nUnsupported value of -sub_mb_part_mask parameter, 0x7f disables all partitions!\n"));
         else
             PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -sub_mb_part_mask parameter, 0x7f disables all partitions!"));
-    	return MFX_ERR_UNSUPPORTED;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->SubPelMode != 0x00 && pParams->SubPelMode != 0x01 && pParams->SubPelMode != 0x03){
@@ -583,7 +577,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_printf(MSDK_STRING("\nUnsupported value of -sub_pel_mode parameter, must be 0x00/0x01/0x03!\n"));
         else
             PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -sub_pel_mode parameter, must be 0x00/0x01/0x03!"));
-      	return MFX_ERR_UNSUPPORTED;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->IntraPartMask >= 0x07){
@@ -591,7 +585,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_printf(MSDK_STRING("\nUnsupported value of -inra_part_mask parameter, 0x07 disables all partitions!\n"));
         else
             PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -inra_part_mask parameter, 0x07 disables all partitions!"));
-       	return MFX_ERR_UNSUPPORTED;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->IntraSAD != 0x02 && pParams->IntraSAD != 0x00){
@@ -599,7 +593,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_printf(MSDK_STRING("\nUnsupported value of -intra_SAD, must be 0x00 or 0x02!\n"));
         else
             PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -intra_SAD, must be 0x00 or 0x02!"));
-       	return MFX_ERR_UNSUPPORTED;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->InterSAD != 0x02 && pParams->InterSAD != 0x00){
@@ -607,7 +601,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_printf(MSDK_STRING("\nUnsupported value of -inter_SAD, must be 0x00 or 0x02!\n"));
         else
             PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -inter_SAD, must be 0x00 or 0x02!"));
-       	return MFX_ERR_UNSUPPORTED;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->NumMVPredictors < 0 || pParams->NumMVPredictors > 4){
@@ -615,7 +609,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_printf(MSDK_STRING("\nUnsupported value number of MV predictors!\n"));
         else
             PrintHelp(strInput[0], MSDK_STRING("Unsupported value number of MV predictors!"));
-       	return MFX_ERR_UNSUPPORTED;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     /* One slice by default */
@@ -670,13 +664,13 @@ int main(int argc, char *argv[])
     Params.SearchWindow    = 0;
     Params.RefWidth        = 32;//48;
     Params.RefHeight       = 32;//40;
-    Params.LenSP		   = 57;
-    Params.SearchPath	   = 1;
+    Params.LenSP           = 57;
+    Params.SearchPath      = 1;
     Params.SubMBPartMask   = 0x77;
     Params.IntraPartMask   = 0x00;
     Params.SubPelMode      = 0x03;
-    Params.IntraSAD		   = 0x02;
-    Params.InterSAD		   = 0x02;
+    Params.IntraSAD        = 0x02;
+    Params.InterSAD        = 0x02;
     Params.NumMVPredictors = 1;
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
