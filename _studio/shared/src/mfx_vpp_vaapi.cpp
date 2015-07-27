@@ -1270,13 +1270,9 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             /* A bit more complicated for NV12 as you need to do conversion ARGB => NV12 */
             if (imagePrimarySurface.format.fourcc == VA_FOURCC_NV12)
             {
-                Ipp8u R = (Ipp8u)((pParams->iBackgroundColor &0x00ff0000) >>16);
-                Ipp8u G = (Ipp8u)((pParams->iBackgroundColor &0x0000ff00) >>8);
-                Ipp8u B = (Ipp8u)((pParams->iBackgroundColor &0x000000ff) );
-
-                Ipp32u Y = ( (  66 * R + 129 * G +  25 * B + 128) >> 8) +  16;
-                Ipp32u U = ( ( -38 * R -  74 * G + 112 * B + 128) >> 8) + 128;
-                Ipp32u V = ( ( 112 * R -  94 * G -  18 * B + 128) >> 8) + 128;
+                Ipp32u Y = (Ipp32u)((pParams->iBackgroundColor &0x00ff0000) >>16);
+                Ipp32u U = (Ipp32u)((pParams->iBackgroundColor &0x0000ff00) >>8);
+                Ipp32u V = (Ipp32u)((pParams->iBackgroundColor &0x000000ff) );
 
                 Ipp8u valueY = (Ipp8u) Y;
                 Ipp16s valueUV = (Ipp16s)((U<<8)  + V);
