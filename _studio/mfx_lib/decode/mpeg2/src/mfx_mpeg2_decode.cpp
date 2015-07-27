@@ -2628,11 +2628,6 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
         {
             umcRes = m_implUmc.GetPictureHeader(&m_in[m_task_num], m_task_num, m_prev_task_num);
             
-            if (UMC::UMC_ERR_INVALID_STREAM == umcRes)
-            {
-                return MFX_ERR_UNKNOWN;
-            }
-
             if (UMC::UMC_OK != umcRes)
             {
                 if (false == m_reset_done)

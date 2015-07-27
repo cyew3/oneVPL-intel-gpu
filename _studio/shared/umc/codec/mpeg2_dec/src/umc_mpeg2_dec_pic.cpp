@@ -1007,9 +1007,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
             break;
 
         default:
-
-            isCorrupted = true;
-            //return UMC_ERR_INVALID_STREAM;
+            return UMC_ERR_INVALID_STREAM;
     }
 
     if (PictureHeader[task_num].d_picture) 
