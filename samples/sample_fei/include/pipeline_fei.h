@@ -14,7 +14,6 @@
 #define __PIPELINE_ENCODE_H__
 
 #include "sample_defs.h"
-//#include "mfx_plugin_uids.h"
 #include "hw_device.h"
 
 #include <mfxfei.h>
@@ -29,17 +28,10 @@
 #include "mfxmvc.h"
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
-#include "mfxplugin.h"
-#include "mfxplugin++.h"
 
 #include <vector>
 #include <memory>
 
-#if defined(_WIN32) || defined(_WIN64)
-    #define PLUGIN_NAME "sample_rotate_plugin.dll"
-#else
-    #define PLUGIN_NAME "libsample_rotate_plugin.so"
-#endif
 
 enum {
     MVC_DISABLED          = 0x0,
@@ -53,6 +45,10 @@ enum MemType {
     D3D11_MEMORY  = 0x02,
 };
 
+#define PREENC_ALLOC 1
+#define PAK_ALLOC    2
+
+
 struct sInputParams
 {
     mfxU16 nTargetUsage;
@@ -63,7 +59,6 @@ struct sInputParams
     mfxU16 nHeight; // source picture height
     mfxF64 dFrameRate;
     mfxU16 nBitRate;
-    mfxU16 nQuality; // quality parameter for JPEG encoder
     mfxU32 nNumFrames;
     mfxU16 refDist; //number of frames to next I,P
     mfxU16 gopSize; //number of frames to next I
@@ -73,7 +68,17 @@ struct sInputParams
     mfxU16 bRefType;
     mfxU16 nIdrInterval;
 
-    mfxU32 numViews; // number of views for Multi-View Codec
+    mfxU16 SearchWindow;
+    mfxU16 LenSP;
+    mfxU16 SearchPath;
+    mfxU16 RefWidth;
+    mfxU16 RefHeight;
+    mfxU16 SubMBPartMask;
+    mfxU16 SubPelMode;
+    mfxU16 IntraPartMask;
+    mfxU16 IntraSAD;
+    mfxU16 InterSAD;
+    mfxU16 NumMVPredictors;
 
     mfxU16 nDstWidth; // destination picture width, specified if resizing required
     mfxU16 nDstHeight; // destination picture height, specified if resizing required
@@ -86,18 +91,22 @@ struct sInputParams
     std::vector<msdk_char*> srcFileBuff;
     std::vector<msdk_char*> dstFileBuff;
 
-    mfxU32  HEVCPluginVersion;
-    mfxU8 nRotationAngle; // if specified, enables rotation plugin in mfx pipeline
-    msdk_char strPluginDLLPath[MSDK_MAX_FILENAME_LEN]; // plugin dll path and name
-
     bool bLABRC; // use look ahead bitrate control algorithm
+    bool bENCODE;
     bool bENCPAK;
-    bool bENCoPAKo;
     bool bOnlyENC;
     bool bOnlyPAK;
     bool bPREENC;
     bool bMBSize;
     bool bPassHeaders;
+    bool Enable8x8Stat;
+    bool AdaptiveSearch;
+    bool FTEnable;
+    bool RepartitionCheckEnable;
+    bool MultiPredL0;
+    bool MultiPredL1;
+    bool DistortionType;
+    bool ColocatedMbDistortion;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;
@@ -169,8 +178,6 @@ public:
     virtual mfxStatus ResetMFXComponents(sInputParams* pParams);
     virtual mfxStatus ResetDevice();
 
-    void SetMultiView();
-    void SetNumView(mfxU32 numViews) { m_nNumView = numViews; }
     virtual void  PrintInfo();
 
 protected:
@@ -183,21 +190,14 @@ protected:
     mfxU16 m_gopSize;
 
     MFXVideoSession m_mfxSession;
-    MFXVideoENCODE* m_pmfxENCPAK;
+    MFXVideoSession m_preenc_mfxSession;
+    MFXVideoENCODE* m_pmfxENCODE;
     MFXVideoENC* m_pmfxPREENC;
     MFXVideoENC* m_pmfxENC;
     MFXVideoPAK* m_pmfxPAK;
-    MFXVideoVPP* m_pmfxVPP;
 
     mfxVideoParam m_mfxEncParams;
-    mfxVideoParam m_mfxVppParams;
     sInputParams  m_encpakParams;
-
-    mfxU16 m_MVCflags; // MVC codec is in use
-
-    std::auto_ptr<MFXPlugin> m_pHEVC_plugin;
-    std::auto_ptr<MFXVideoUSER>  m_pUserModule;
-    //const msdkPluginUID*     m_pUID;
 
     MFXFrameAllocator* m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;
@@ -206,23 +206,16 @@ protected:
 
     mfxFrameSurface1* m_pEncSurfaces; // frames array for encoder input (vpp output)
     mfxFrameSurface1* m_pReconSurfaces; // frames array for reconstructed surfaces [FEI]
-    mfxFrameSurface1* m_pVppSurfaces; // frames array for vpp input
     mfxFrameAllocResponse m_EncResponse;  // memory allocation response for encoder
-    mfxFrameAllocResponse m_VppResponse;  // memory allocation response for vpp
     mfxFrameAllocResponse m_ReconResponse;  // memory allocation response for encoder for reconstructed surfaces [FEI]
 
     mfxU32 m_nNumView;
 
-    // for disabling VPP algorithms
-    mfxExtVPPDoNotUse m_VppDoNotUse;
-    // for MVC encoder and VPP configuration
-    mfxExtCodingOption m_CodingOption;
     // for look ahead BRC configuration
     mfxExtCodingOption2 m_CodingOption2;
     mfxExtFeiParam  m_encpakInit;
 
     // external parameters for each component are stored in a vector
-    std::vector<mfxExtBuffer*> m_VppExtParams;
     std::vector<mfxExtBuffer*> m_EncExtParams;
 
     std::list<iTask*> inputTasks; //used in PreENC
@@ -230,14 +223,10 @@ protected:
     CHWDevice *m_hwdev;
 
     virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
-    virtual mfxStatus InitMfxVppParams(sInputParams *pParams);
 
     virtual mfxStatus InitFileWriters(sInputParams *pParams);
     virtual void FreeFileWriters();
     virtual mfxStatus InitFileWriter(CSmplBitstreamWriter **ppWriter, const msdk_char *filename);
-
-    virtual mfxStatus AllocAndInitVppDoNotUse();
-    virtual void FreeVppDoNotUse();
 
     virtual mfxStatus CreateAllocator();
     virtual void DeleteAllocator();
