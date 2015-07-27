@@ -113,7 +113,8 @@ enum {
     MFX_FOURCC_ARGB16       = MFX_MAKEFOURCC('R','G','1','6'),   /* ARGB in that order, 64 bits, A channel is 16 MSBs */
     MFX_FOURCC_R16          = MFX_MAKEFOURCC('R','1','6','U'),
     MFX_FOURCC_AYUV         = MFX_MAKEFOURCC('A','Y','U','V'),   /* YUV 4:4:4, AYUV in that order, A channel is 8 MSBs */
-    MFX_FOURCC_AYUV_RGB4    = MFX_MAKEFOURCC('A','V','U','Y')    /* ARGB in that order, A channel is 8 MSBs stored in AYUV surface*/
+    MFX_FOURCC_AYUV_RGB4    = MFX_MAKEFOURCC('A','V','U','Y'),   /* ARGB in that order, A channel is 8 MSBs stored in AYUV surface*/
+    MFX_FOURCC_UYVY         = MFX_MAKEFOURCC('U','Y','V','Y')
 };
 
 /* PicStruct */
