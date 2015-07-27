@@ -7647,8 +7647,10 @@ mfxU32 HeaderPacker::WriteSlice(
 
     mfxU8 startcode[4] = { 0, 0, 0, 1};
     mfxU8 * pStartCode = startcode;
+#if !defined(ANDROID)
     if (task.m_AUStartsFromSlice[fieldId] == false || sliceId > 0)
         pStartCode ++;
+#endif
     obs.PutRawBytes(pStartCode, startcode + sizeof startcode);
     obs.PutBit(0);
     obs.PutBits(nalRefIdc, 2);
@@ -7855,8 +7857,11 @@ mfxU32 HeaderPacker::WriteSlice(
 
     mfxU32 sliceHeaderRestrictionFlag = 0;
     mfxU32 sliceSkipFlag = 0;
-
+#if defined(ANDROID)
+    mfxU8 startcode[4] = { 0, 0, 0, 1 };
+#else
     mfxU8 startcode[3] = { 0, 0, 1 };
+#endif
     obs.PutRawBytes(startcode, startcode + sizeof startcode);
     obs.PutBit(0);
     obs.PutBits(nalRefIdc, 2);
