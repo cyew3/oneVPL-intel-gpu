@@ -525,3 +525,77 @@ TEST(optimization, SplitChromaCtb_avx2) {
         EXPECT_EQ(0, memcmp(vTst_10b.get(), vRef_10b.get(), sizeof(*vTst_10b.get()) * wh[0] * wh[1]));
     }
 }
+
+TEST(optimization, AnalyzeGradient_sse4) {
+    Ipp32s width    = 1280;
+    Ipp32s height   =  720;
+    Ipp32s padding  =   16;
+    Ipp32s pitchSrc = (padding + width + padding);
+    Ipp32s histMax  =   40;
+
+    auto ySrc     = utils::MakeAlignedPtr<unsigned char>(pitchSrc * (padding + height + padding), utils::AlignSse4);
+    auto out4_ref = utils::MakeAlignedPtr<unsigned short>(width * height * histMax / 16, utils::AlignSse4);    // 4x4 histogram
+    auto out8_ref = utils::MakeAlignedPtr<unsigned short>(width * height * histMax / 64, utils::AlignSse4);    // 8x8 histogram
+    auto out4_sse = utils::MakeAlignedPtr<unsigned short>(width * height * histMax / 16, utils::AlignSse4);
+    auto out8_sse = utils::MakeAlignedPtr<unsigned short>(width * height * histMax / 64, utils::AlignSse4);
+
+    auto ySrc_10b     = utils::MakeAlignedPtr<unsigned short>(pitchSrc * (padding + height + padding), utils::AlignSse4);
+    auto out4_ref_10b = utils::MakeAlignedPtr<unsigned int>(width * height * histMax / 16, utils::AlignSse4);
+    auto out8_ref_10b = utils::MakeAlignedPtr<unsigned int>(width * height * histMax / 64, utils::AlignSse4);
+    auto out4_sse_10b = utils::MakeAlignedPtr<unsigned int>(width * height * histMax / 16, utils::AlignSse4);
+    auto out8_sse_10b = utils::MakeAlignedPtr<unsigned int>(width * height * histMax / 64, utils::AlignSse4);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+    utils::InitRandomBlock(rand, ySrc.get(), pitchSrc, pitchSrc, (padding + height + padding), 0, 255);
+    utils::InitRandomBlock(rand, ySrc_10b.get(), pitchSrc, pitchSrc, (padding + height + padding), 0, 1023);
+
+    // test 8-bit
+    MFX_HEVC_PP::h265_AnalyzeGradient_px (ySrc.get() + pitchSrc*padding + padding, pitchSrc, out4_ref.get(), out8_ref.get(), width, height);
+    MFX_HEVC_PP::h265_AnalyzeGradient_sse(ySrc.get() + pitchSrc*padding + padding, pitchSrc, out4_sse.get(), out8_sse.get(), width, height);
+    EXPECT_EQ(0, memcmp(out4_ref.get(), out4_sse.get(), sizeof(*out4_ref.get()) * width * height * histMax / 16));
+    EXPECT_EQ(0, memcmp(out8_ref.get(), out8_sse.get(), sizeof(*out8_ref.get()) * width * height * histMax / 64));
+
+    // test 10-bit
+    MFX_HEVC_PP::h265_AnalyzeGradient_px (ySrc_10b.get() + pitchSrc*padding + padding, pitchSrc, out4_ref_10b.get(), out8_ref_10b.get(), width, height);
+    MFX_HEVC_PP::h265_AnalyzeGradient_sse(ySrc_10b.get() + pitchSrc*padding + padding, pitchSrc, out4_sse_10b.get(), out8_sse_10b.get(), width, height);
+    EXPECT_EQ(0, memcmp(out4_ref_10b.get(), out4_sse_10b.get(), sizeof(*out4_ref_10b.get()) * width * height * histMax / 16));
+    EXPECT_EQ(0, memcmp(out8_ref_10b.get(), out8_sse_10b.get(), sizeof(*out8_ref_10b.get()) * width * height * histMax / 64));
+}
+
+TEST(optimization, AnalyzeGradient_avx2) {
+    Ipp32s width    = 1280;
+    Ipp32s height   =  720;
+    Ipp32s padding  =   16;
+    Ipp32s pitchSrc = (padding + width + padding);
+    Ipp32s histMax  =   40;
+
+    auto ySrc      = utils::MakeAlignedPtr<unsigned char>(pitchSrc * (padding + height + padding), utils::AlignAvx2);
+    auto out4_ref  = utils::MakeAlignedPtr<unsigned short>(width * height * histMax / 16, utils::AlignAvx2);    // 4x4 histogram
+    auto out8_ref  = utils::MakeAlignedPtr<unsigned short>(width * height * histMax / 64, utils::AlignAvx2);    // 8x8 histogram
+    auto out4_avx2 = utils::MakeAlignedPtr<unsigned short>(width * height * histMax / 16, utils::AlignAvx2);
+    auto out8_avx2 = utils::MakeAlignedPtr<unsigned short>(width * height * histMax / 64, utils::AlignAvx2);
+
+    auto ySrc_10b      = utils::MakeAlignedPtr<unsigned short>(pitchSrc * (padding + height + padding), utils::AlignAvx2);
+    auto out4_ref_10b  = utils::MakeAlignedPtr<unsigned int>(width * height * histMax / 16, utils::AlignAvx2);
+    auto out8_ref_10b  = utils::MakeAlignedPtr<unsigned int>(width * height * histMax / 64, utils::AlignAvx2);
+    auto out4_avx2_10b = utils::MakeAlignedPtr<unsigned int>(width * height * histMax / 16, utils::AlignAvx2);
+    auto out8_avx2_10b = utils::MakeAlignedPtr<unsigned int>(width * height * histMax / 64, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+    utils::InitRandomBlock(rand, ySrc.get(), pitchSrc, pitchSrc, (padding + height + padding), 0, 255);
+    utils::InitRandomBlock(rand, ySrc_10b.get(), pitchSrc, pitchSrc, (padding + height + padding), 0, 1023);
+
+    // test 8-bit
+    MFX_HEVC_PP::h265_AnalyzeGradient_px  (ySrc.get() + pitchSrc*padding + padding, pitchSrc, out4_ref.get(),  out8_ref.get(),  width, height);
+    MFX_HEVC_PP::h265_AnalyzeGradient_avx2(ySrc.get() + pitchSrc*padding + padding, pitchSrc, out4_avx2.get(), out8_avx2.get(), width, height);
+    EXPECT_EQ(0, memcmp(out4_ref.get(), out4_avx2.get(), sizeof(*out4_ref.get()) * width * height * histMax / 16));
+    EXPECT_EQ(0, memcmp(out8_ref.get(), out8_avx2.get(), sizeof(*out8_ref.get()) * width * height * histMax / 64));
+
+    // test 10-bit
+    MFX_HEVC_PP::h265_AnalyzeGradient_px  (ySrc_10b.get() + pitchSrc*padding + padding, pitchSrc, out4_ref_10b.get(),  out8_ref_10b.get(),  width, height);
+    MFX_HEVC_PP::h265_AnalyzeGradient_avx2(ySrc_10b.get() + pitchSrc*padding + padding, pitchSrc, out4_avx2_10b.get(), out8_avx2_10b.get(), width, height);
+    EXPECT_EQ(0, memcmp(out4_ref_10b.get(), out4_avx2_10b.get(), sizeof(*out4_ref_10b.get()) * width * height * histMax / 16));
+    EXPECT_EQ(0, memcmp(out8_ref_10b.get(), out8_avx2_10b.get(), sizeof(*out8_ref_10b.get()) * width * height * histMax / 64));
+}
