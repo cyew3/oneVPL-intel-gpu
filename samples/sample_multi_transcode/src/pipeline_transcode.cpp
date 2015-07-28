@@ -1899,7 +1899,10 @@ mfxStatus CTranscodingPipeline::AllocFrames()
             static mfxU32 mark_alloc = 0;
             m_mfxDecParams.AllocId = mark_alloc;
             DecOut.AllocId = mark_alloc;
-            mark_alloc++;
+            if(m_nVPPCompEnable) // WORKAROUND: Remove this if clause after probelm with AllocID is fixed in library (mark_alloc++ should be left here)
+            {
+                mark_alloc++;
+            }
 
             sts = AllocFrames(&DecOut, true);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
