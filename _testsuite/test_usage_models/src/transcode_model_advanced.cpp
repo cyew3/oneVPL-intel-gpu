@@ -3,13 +3,17 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2015 Intel Corporation. All Rights Reserved.
 //
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #include <process.h>
 //AYA debug
 #include <WinError.h>
+
+#endif // #if defined(_WIN32) || defined(_WIN64)
+
+#include <chrono>
 
 #include "transcode_model_advanced.h"
 
@@ -24,9 +28,12 @@
 /*               implementation of TranscodeModelReference              */
 /* ******************************************************************** */
 
-TranscodeModelAdvanced::TranscodeModelAdvanced(AppParam& param): TranscodeModelReference( param ), m_bInited(false)
+TranscodeModelAdvanced::TranscodeModelAdvanced(AppParam& param)
+    : TranscodeModelReference( param )
+    , m_bInited(false)
+    , wait_interval(TUM_WAIT_INTERVAL)
 {
-    //Init( param );
+  //Init( param );
 
 } // TranscodeModelAdvanced::TranscodeModelAdvanced(AppParam& param)
 
@@ -45,42 +52,42 @@ mfxStatus TranscodeModelAdvanced::Init( AppParam& param )
 
     // events for transcoding 
 
-    m_hEvent_BSR_RESPONSE       = CreateEvent(NULL, false, false, NULL);
-    m_hEvent_BSR_RESPONSE_FINAL = CreateEvent(NULL, false, false, NULL);
+    m_bsr_response = false;
+    m_bsr_response_final = false;
 
-    m_hEvent_DEC_REQUEST = CreateEvent(NULL, false, false, NULL);
-    m_hEvent_DEC_RESPONSE = CreateEvent(NULL, false, false, NULL);
-    m_hEvent_DEC_RESPONSE_FINAL = CreateEvent(NULL, false, false, NULL);
+    m_dec_request = false;
+    m_dec_response = false;
+    m_dec_response_final = false;
 
-    m_hEvent_ENC_REQUEST = CreateEvent(NULL, false, false, NULL);
-    m_hEvent_ENC_RESPONSE = CreateEvent(NULL, false, false, NULL);
-    m_hEvent_ENC_RESPONSE_FINAL = CreateEvent(NULL, false, false, NULL);
+    m_enc_request = false;
+    m_enc_response = false;
+    m_enc_response_final = false;
 
-    m_hEvent_BSWRT_RESPONSE = CreateEvent(NULL, false, false, NULL);
+    m_bsr_response_final = false;
 
     // error event
-    m_hEvent_GLOBAL_ERR = CreateEvent(NULL, true, false, NULL);//manual reset
+    m_global_err = false;
 
     // in case of other mfx_session usage models wee need external synchronisation
     // [SyncOp Decode]
     if( IsDecodeSyncOperationRequired( m_sessionMode ) )
     {
-        m_hEvent_SYNCOP_DEC_REQUEST  = CreateEvent(NULL, false, false, NULL);    
-        m_hEvent_SYNCOP_DEC_RESPONSE = CreateEvent(NULL, false, false, NULL);    
-        m_hEvent_SYNCOP_DEC_RESPONSE_FINAL = CreateEvent(NULL, false, false, NULL);
+        m_syncop_dec_request = false;
+        m_syncop_dec_response = false;
+        m_syncop_dec_response_final = false;
     }
     if( IsVPPEnable() )
     {
-        m_hEvent_VPP_REQUEST = CreateEvent(NULL, false, false, NULL);
-        m_hEvent_VPP_RESPONSE = CreateEvent(NULL, false, false, NULL);
-        m_hEvent_VPP_RESPONSE_FINAL = CreateEvent(NULL, false, false, NULL);
+        m_vpp_request = false;
+        m_vpp_response = false;
+        m_vpp_response_final = false;
 
         // [SyncOp VPP]
         if( IsVppSyncOperationRequired( m_sessionMode ) )
         {
-            m_hEvent_SYNCOP_VPP_REQUEST        = CreateEvent(NULL, false, false, NULL);    
-            m_hEvent_SYNCOP_VPP_RESPONSE       = CreateEvent(NULL, false, false, NULL);    
-            m_hEvent_SYNCOP_VPP_RESPONSE_FINAL = CreateEvent(NULL, false, false, NULL);    
+            m_syncop_vpp_request = false;
+            m_syncop_vpp_response = false;
+            m_syncop_vpp_response_final = false;
         }
     }
 
@@ -101,43 +108,6 @@ mfxStatus TranscodeModelAdvanced::Close( void )
 {
     if( m_bInited )
     {
-        CloseHandle( m_hEvent_BSR_RESPONSE );
-        CloseHandle( m_hEvent_BSR_RESPONSE_FINAL );
-
-        CloseHandle( m_hEvent_DEC_REQUEST );
-        CloseHandle( m_hEvent_DEC_RESPONSE );
-        CloseHandle( m_hEvent_DEC_RESPONSE_FINAL );
-
-        CloseHandle( m_hEvent_ENC_REQUEST );
-        CloseHandle( m_hEvent_ENC_RESPONSE );
-        CloseHandle( m_hEvent_ENC_RESPONSE_FINAL );
-
-        CloseHandle( m_hEvent_BSWRT_RESPONSE );
-
-        // error event
-        CloseHandle( m_hEvent_GLOBAL_ERR );
-
-        if( IsDecodeSyncOperationRequired( m_sessionMode ) )
-        {
-            CloseHandle(m_hEvent_SYNCOP_DEC_REQUEST );
-            CloseHandle(m_hEvent_SYNCOP_DEC_RESPONSE );
-            CloseHandle(m_hEvent_SYNCOP_DEC_RESPONSE_FINAL );
-        }
-
-        if( IsVPPEnable() )
-        {
-            CloseHandle( m_hEvent_VPP_REQUEST );
-            CloseHandle( m_hEvent_VPP_RESPONSE );
-            CloseHandle( m_hEvent_VPP_RESPONSE_FINAL );
-
-            if( IsVppSyncOperationRequired( m_sessionMode ) )
-            {
-                CloseHandle(m_hEvent_SYNCOP_VPP_REQUEST );
-                CloseHandle(m_hEvent_SYNCOP_VPP_RESPONSE );
-                CloseHandle(m_hEvent_SYNCOP_VPP_RESPONSE_FINAL );
-            }
-        }
-
         // reset
         m_bInited = false;
     }
@@ -191,39 +161,36 @@ mfxStatus TranscodeModelAdvanced::Run()
     
     sThreadParam threadParamList[THREADS_COUNT];       
 
-    HANDLE hThread[THREADS_COUNT] = {0};
-    int threadIndx;
-    for (threadIndx = 0; threadIndx < threadCount; threadIndx++)
+    std::thread hThread[THREADS_COUNT];
+    for (int threadIndx = 0; threadIndx < threadCount; threadIndx++)
     {
         threadParamList[threadIndx].pClass  = this;
         threadParamList[threadIndx].pMethod = routineList[ threadIndx ];
         threadParamList[threadIndx].pParam  = NULL;
 
-        hThread[threadIndx] = (HANDLE)_beginthreadex(0,
-                                                     0,
-                                                     threadFuncList[threadIndx],
-                                                     (void *)&threadParamList[threadIndx],
-                                                      0,
-                                                      0);
+        hThread[threadIndx] = std::thread(threadFuncList[threadIndx], &threadParamList[threadIndx]);
     }
 
     // start processing
-    BOOL bSts = SetEvent(m_hEvent_BSR_RESPONSE);// GO-GO-GO
-
-    if( 0 == bSts)
-    {
-        DWORD errSts =  GetLastError();
-        printf("\nERR: %x\n", errSts);
-    }
+    SetEvent(m_bsr_response);
     
-    for (threadIndx = 0; threadIndx < threadCount; threadIndx++)
+    for (int threadIndx = 0; threadIndx < threadCount; threadIndx++)
     {
-        WaitForSingleObject(hThread[threadIndx], INFINITE);
+        hThread[threadIndx].join();
     }    
 
     return sts;
 
 } // mfxStatus TranscodeModelAdvanced::Run()
+
+void TranscodeModelAdvanced::SetEvent(bool & eventFlag)
+{
+    {
+        std::unique_lock<std::mutex> locker(m_event_mtx);
+        eventFlag = true;
+    }
+    m_event_cnd.notify_all();
+}
 
 
 /* ******************************************************************** */
@@ -235,52 +202,56 @@ mfxU32 TranscodeModelAdvanced::BSReaderRoutine(void *pParam)
     pParam;// warning skip
 
     mfxStatus mfxSts;
-    HANDLE hEventWaitList[2];
-
-    hEventWaitList[0] = m_hEvent_DEC_REQUEST;
-    hEventWaitList[1] = m_hEvent_GLOBAL_ERR;
 
     printf("\nBSReaderRoutine: \tstart");
 
     for(;;)
     {
-        DWORD dwSts = WaitForMultipleObjects(2, hEventWaitList, false, TUM_WAIT_INTERVAL);
-
-        switch( dwSts )
+        bool local_dec_request = false;
+        bool local_global_err = false;
         {
-        case WAIT_OBJECT_0: // m_hEvent_DEC_REQUEST
-            {
-                // main operation here
-                mfxSts = ReadOneFrame();//critical section???
-                if(MFX_ERR_NONE == mfxSts)
-                {
-                    SetEvent( m_hEvent_BSR_RESPONSE );
-                }
-                else if ( MFX_ERR_MORE_DATA == mfxSts )
-                {
-                    SetEvent( m_hEvent_BSR_RESPONSE_FINAL );
+            std::unique_lock<std::mutex> lk(m_event_mtx);
+            m_event_cnd.wait_for(lk, wait_interval,
+                [&](){ return m_dec_request
+                           || m_global_err; });
 
-                    printf("\n\nBSReaderRoutine: \texit with OK");//EXIT from thread
-                    return TUM_OK_STS;//OK
-                }
-                else
-                {                    
-                    SetEvent( m_hEvent_GLOBAL_ERR );
-                    RETURN_ON_ERROR( _T("\nBSReaderRoutine: exit with FAIL_1"), TUM_ERR_STS);
-                }
+            if (m_dec_request)
+                std::swap(local_dec_request, m_dec_request);
+            else if (m_global_err)
+                std::swap(local_global_err, m_global_err);
 
-                break;
-            }
-        case WAIT_OBJECT_0 + 1: // m_hEvent_GLOBAL_ERR
+        }
+
+        if (local_dec_request)  // m_hEvent_DEC_REQUEST
+        {
+            // main operation here
+            mfxSts = ReadOneFrame();//critical section???
+            if(MFX_ERR_NONE == mfxSts)
             {
-                RETURN_ON_ERROR( _T("\nBSReaderRoutine: exit with GLOBAL_ERR"), TUM_ERR_STS);
+                SetEvent(m_bsr_response);
+                //SetEvent( m_hEvent_BSR_RESPONSE );
             }
-        default:
+            else if ( MFX_ERR_MORE_DATA == mfxSts )
             {
-                SetEvent( m_hEvent_GLOBAL_ERR );
-                RETURN_ON_ERROR( _T("\nBSReaderRoutine: exit with UNKNOWN ERR"), TUM_ERR_STS);
+                SetEvent(m_bsr_response_final);
+
+                printf("\n\nBSReaderRoutine: \texit with OK");//EXIT from thread
+                return TUM_OK_STS;//OK
             }
-        
+            else
+            {   
+                SetEvent(m_global_err);
+                RETURN_ON_ERROR( _T("\nBSReaderRoutine: exit with FAIL_1"), TUM_ERR_STS);
+            }
+        }
+        else if (local_global_err)
+        {
+            RETURN_ON_ERROR(_T("\nBSReaderRoutine: exit with GLOBAL_ERR"), TUM_ERR_STS);
+        }
+        else
+        {
+            SetEvent(m_global_err);
+            RETURN_ON_ERROR( _T("\nBSReaderRoutine: exit with UNKNOWN ERR"), TUM_ERR_STS);
         }
     }
 
@@ -293,32 +264,18 @@ mfxU32 TranscodeModelAdvanced::DecodeRoutine(void *pParam)
 {
     pParam; // warninh disable
 
-    HANDLE hEventWaitList[4];
-
-    // wait list
-    hEventWaitList[0] = m_hEvent_BSR_RESPONSE;
-    hEventWaitList[1] = m_hEvent_BSR_RESPONSE_FINAL;
-    if( IsDecodeSyncOperationRequired( m_sessionMode ) )
-    {
-        hEventWaitList[2] = m_hEvent_SYNCOP_DEC_REQUEST; // changed depends on session model usage
-    }
-    else
-    {
-        if( IsVPPEnable() )
-        {
-            hEventWaitList[2] = m_hEvent_VPP_REQUEST; // changed depends on session model usage
-        }
-        else
-        {
-            hEventWaitList[2] = m_hEvent_ENC_REQUEST; // changed depends on session model usage
-        }
-    }
-    hEventWaitList[3] = m_hEvent_GLOBAL_ERR;
+    // state we interested in depends on usage model
+    bool & request_state = 
+        IsDecodeSyncOperationRequired(m_sessionMode)
+        ? m_syncop_dec_request
+        : (IsVPPEnable() 
+          ? m_vpp_request 
+          : m_enc_request);
 
     // send list
-    HANDLE hEventRequest       = m_hEvent_DEC_REQUEST;
-    HANDLE hEventResponse      = m_hEvent_DEC_RESPONSE;
-    HANDLE hEventResponseFinal = m_hEvent_DEC_RESPONSE_FINAL;
+    bool & eventRequest = m_dec_request;
+    bool & eventResponse = m_dec_response;
+    bool & eventResponseFinal = m_dec_response_final;
 
     bool bRequestEnable = true;
     TUMSurfacesManager* pSurfMngr;
@@ -339,9 +296,30 @@ mfxU32 TranscodeModelAdvanced::DecodeRoutine(void *pParam)
 
     for(;;)
     {
-        DWORD dwSts = WaitForMultipleObjects( 4, hEventWaitList, false, TUM_WAIT_INTERVAL); 
+        bool local_bsr_response = false;
+        bool local_bsr_response_final = false;
+        bool local_request = false;
+        bool local_global_err = false;
+        {
+            std::unique_lock<std::mutex> lk(m_event_mtx);
+            m_event_cnd.wait_for(lk, wait_interval,
+                [&](){ return m_bsr_response 
+                           || m_bsr_response_final
+                           || request_state
+                           || m_global_err; });
 
-        if( WAIT_OBJECT_0 + 0 == dwSts ) // m_hEvent_BSR_RESPONSE
+            if (m_bsr_response) 
+                std::swap(local_bsr_response, m_bsr_response);
+            else if (m_bsr_response_final) 
+                std::swap(local_bsr_response_final, m_bsr_response_final);
+            else if (request_state) 
+                std::swap(local_request, request_state);
+            else if (m_global_err) 
+                std::swap(local_global_err, m_global_err);
+
+        }
+
+        if (local_bsr_response) // m_hEvent_BSR_RESPONSE
         {
             mfxFrameSurfaceEx decSurfaceEx = {0};
             mfxBitstream *pBS = GetSrcPtr(); //critical section???
@@ -353,7 +331,7 @@ mfxU32 TranscodeModelAdvanced::DecodeRoutine(void *pParam)
             {
                 if( bRequestEnable )
                 {
-                    SetEvent( hEventRequest );                    
+                    SetEvent(eventRequest);
                 }
                 else
                 {          
@@ -363,7 +341,7 @@ mfxU32 TranscodeModelAdvanced::DecodeRoutine(void *pParam)
 
                     pConnectPool->push_back(decSurfaceEx);// critical section???
 
-                    SetEvent( hEventResponseFinal );
+                    SetEvent(eventResponseFinal);
 
                     printf("\nDecodeRoutine: \t\texit with OK");
                     return TUM_OK_STS; // EXIT from thread
@@ -372,31 +350,32 @@ mfxU32 TranscodeModelAdvanced::DecodeRoutine(void *pParam)
             else if (MFX_ERR_NONE == mfxSts) 
             {
                 pConnectPool->push_back(decSurfaceEx);// critical section???
-                SetEvent( hEventResponse );
+
+                SetEvent(eventResponse);
             }
             else
             {
-                SetEvent( m_hEvent_GLOBAL_ERR );
+                SetEvent(m_global_err);
                 RETURN_ON_ERROR( _T("\nDecodeRoutine: exit with FAIL_1"), TUM_ERR_STS);
             }
             //-----------------------------------------------------------------
         }
-        else if( WAIT_OBJECT_0 + 1 == dwSts ) // m_hEvent_BSR_RESPONSE_FINAL
+        else if (local_bsr_response_final) // m_hEvent_BSR_RESPONSE_FINAL
         {
             bRequestEnable = false;
-            SetEvent( hEventWaitList[0] ); // force external response
+            SetEvent(m_bsr_response);
         }
-        else if( WAIT_OBJECT_0 + 2 == dwSts ) // m_hEvent_VPP_REQUEST
+        else if (local_request) // m_hEvent_VPP_REQUEST
         {
-            SetEvent( hEventWaitList[0] ); // force external response
+            SetEvent(m_bsr_response);
         }
-        else if( WAIT_OBJECT_0 + 3 == dwSts ) // m_hEvent_GLOBAL_ERR
+        else if (local_global_err) // m_hEvent_GLOBAL_ERR
         {
             RETURN_ON_ERROR( _T("\nDecodeRoutine: exit with GLOBAL_ERR\n"), TUM_ERR_STS);
         }
         else
         {
-            SetEvent( m_hEvent_GLOBAL_ERR );
+            SetEvent(m_global_err);
             RETURN_ON_ERROR( _T("\nDecodeRoutine: exit with UNKNOWN ERR\n"), TUM_ERR_STS);
         }
     }
@@ -410,34 +389,26 @@ mfxU32 TranscodeModelAdvanced::VPPRoutine(void *pParam)
 {
     pParam;// warning disable
 
-    HANDLE hEventWaitList[4];
-    
     // wait list
-    if( IsDecodeSyncOperationRequired( m_sessionMode ) )
-    {
-        hEventWaitList[0] = m_hEvent_SYNCOP_DEC_RESPONSE;       // depends on session model
-        hEventWaitList[1] = m_hEvent_SYNCOP_DEC_RESPONSE_FINAL; // depends on session model
-    }
-    else
-    {
-        hEventWaitList[0] = m_hEvent_DEC_RESPONSE;       
-        hEventWaitList[1] = m_hEvent_DEC_RESPONSE_FINAL; 
-    }
+    bool & response_state = 
+        IsDecodeSyncOperationRequired(m_sessionMode)
+        ? m_syncop_dec_response
+        : m_dec_response;
 
-    if( IsVppSyncOperationRequired( m_sessionMode ) )
-    {
-        hEventWaitList[2] = m_hEvent_SYNCOP_VPP_REQUEST;        // depends on session model
-    }
-    else
-    {
-        hEventWaitList[2] = m_hEvent_ENC_REQUEST;        // depends on session model
-    }
-    hEventWaitList[3] = m_hEvent_GLOBAL_ERR;
+    bool & response_final_state =
+        IsDecodeSyncOperationRequired(m_sessionMode)
+        ? m_syncop_dec_response_final
+        : m_dec_response_final;
+
+    bool & request_state =
+        IsVppSyncOperationRequired(m_sessionMode)
+        ? m_syncop_vpp_request
+        : m_enc_request;
 
     // send list
-    HANDLE hEventRequest       = m_hEvent_VPP_REQUEST;
-    HANDLE hEventResponse      = m_hEvent_VPP_RESPONSE;
-    HANDLE hEventResponseFinal = m_hEvent_VPP_RESPONSE_FINAL;
+    bool & eventRequest = m_vpp_request;
+    bool & eventResponse = m_vpp_response;
+    bool & eventResponseFinal = m_vpp_response_final;
 
     bool bRequestEnable = true;
     mfxFrameSurfaceEx zeroSurfaceEx = {NULL, 0};
@@ -446,11 +417,33 @@ mfxU32 TranscodeModelAdvanced::VPPRoutine(void *pParam)
 
     for(;;)
     {
-        DWORD dwSts = WaitForMultipleObjects( 4, hEventWaitList, false, TUM_WAIT_INTERVAL); 
-
-        if( WAIT_OBJECT_0 + 0 == dwSts ) // m_hEvent_DEC_RESPONSE
+        bool local_response = false;
+        bool local_response_final = false;
+        bool local_request = false;
+        bool local_global_err = false;
+        bool waitStatus;
         {
-            mfxFrameSurfaceEx outputSurfaceEx = {0};
+            std::unique_lock<std::mutex> lk(m_event_mtx);
+            waitStatus = m_event_cnd.wait_for(lk, wait_interval,
+                [&](){ return response_state
+                           || response_final_state
+                           || request_state
+                           || m_global_err; });
+
+            if (response_state)
+                std::swap(local_response, response_state);
+            else if (response_final_state)
+                std::swap(local_response_final, response_final_state);
+            else if (request_state)
+                std::swap(local_request, request_state);
+            else if (m_global_err)
+                std::swap(local_global_err, m_global_err);
+
+        }
+
+        if (local_response) // m_hEvent_DEC_RESPONSE
+        {
+            mfxFrameSurfaceEx outputSurfaceEx = {};
             mfxFrameSurfaceEx inputSurfaceEx = ( m_dec2vppSurfExPool.size() ) ? m_dec2vppSurfExPool.front() : zeroSurfaceEx;//critical section            
 
             mfxStatus mfxSts = VPPOneFrame(inputSurfaceEx.pSurface, &m_vpp2encSurfManager, &outputSurfaceEx);   
@@ -466,7 +459,7 @@ mfxU32 TranscodeModelAdvanced::VPPRoutine(void *pParam)
             {
                 if( bRequestEnable )
                 {
-                    SetEvent( hEventRequest );
+                    SetEvent(eventRequest);
                 }
                 else
                 {          
@@ -476,7 +469,7 @@ mfxU32 TranscodeModelAdvanced::VPPRoutine(void *pParam)
 
                     m_vpp2encSurfExPool.push_back(outputSurfaceEx);// critical section???
 
-                    SetEvent( hEventResponseFinal );
+                    SetEvent(eventResponseFinal);
 
                     printf("\nVPPRoutine: \t\texit with OK");
                     return TUM_OK_STS; // EXIT from thread
@@ -485,47 +478,47 @@ mfxU32 TranscodeModelAdvanced::VPPRoutine(void *pParam)
             else if (MFX_ERR_NONE == mfxSts) 
             {
                 m_vpp2encSurfExPool.push_back(outputSurfaceEx);// critical section???
-                SetEvent( hEventResponse );
+                SetEvent(eventResponse);
             }
             else
             {   
-                SetEvent( m_hEvent_GLOBAL_ERR );
+                SetEvent(m_global_err);
                 RETURN_ON_ERROR( _T("\nVPPRoutine: exit with FAIL_1"), TUM_ERR_STS);                
             }
             //-----------------------------------------------------------------
         }
-        else if( WAIT_OBJECT_0 + 1 == dwSts ) // m_hEvent_DEC_RESPONSE_FINAL
+        else if (local_response_final) // m_hEvent_DEC_RESPONSE_FINAL
         {
             bRequestEnable = false;
-            SetEvent( hEventWaitList[0] );
+            SetEvent(response_state);
         }
-        else if( WAIT_OBJECT_0 + 2 == dwSts ) // m_hEvent_ENC_REQUEST
+        else if (local_request) // m_hEvent_ENC_REQUEST
         {
             if( m_dec2vppSurfExPool.size() > 0 ) // we have frames in input frames pool
             {
-                SetEvent( hEventWaitList[0] );
+                SetEvent(response_state);
             }
             else if ( bRequestEnable ) // we require frames from previous (VPP) component
             {
-                SetEvent( hEventRequest );
+                SetEvent(eventRequest);
             }
             else // we start "last frame" processing
             {
-                SetEvent( hEventWaitList[0] );
+                SetEvent(response_state);
             }
         }
-        else if( WAIT_OBJECT_0 + 3 == dwSts ) // m_hEvent_GLOBAL_ERR
+        else if (local_global_err) // m_hEvent_GLOBAL_ERR
         {
             RETURN_ON_ERROR( _T("\nVPPRoutine: exit with GLOBAL ERR"), TUM_ERR_STS);
         }
-        else if( WAIT_TIMEOUT == dwSts ) // timeout
+        else if (!waitStatus) // timeout
         {
-            SetEvent( m_hEvent_GLOBAL_ERR );
+            SetEvent(m_global_err);
             RETURN_ON_ERROR( _T("\nVPPRoutine: exit with FAIL TIMEOUT"), TUM_ERR_STS);
         }
         else
         {   
-            SetEvent( m_hEvent_GLOBAL_ERR );
+            SetEvent(m_global_err);
             RETURN_ON_ERROR( _T("\nVPPRoutine: exit with UNKNOWN ERR"), TUM_ERR_STS);
         }
     }
@@ -539,35 +532,28 @@ mfxU32 TranscodeModelAdvanced::EncodeRoutine(void *pParam)
 {
     pParam; // disable
 
-    HANDLE hEventWaitList[4];
-
     // wait list
-    if( IsVPPEnable() )
-    {
-        if( IsVppSyncOperationRequired( m_sessionMode ) )
-        {
-            hEventWaitList[0] = m_hEvent_SYNCOP_VPP_RESPONSE;
-            hEventWaitList[1] = m_hEvent_SYNCOP_VPP_RESPONSE_FINAL; 
-        }
-        else
-        {
-            hEventWaitList[0] = m_hEvent_VPP_RESPONSE;
-            hEventWaitList[1] = m_hEvent_VPP_RESPONSE_FINAL;
-        }
-    }
-    else
-    {
-        hEventWaitList[0] = m_hEvent_DEC_RESPONSE;
-        hEventWaitList[1] = m_hEvent_DEC_RESPONSE_FINAL;
-    }
 
-    hEventWaitList[2] = m_hEvent_BSWRT_RESPONSE;    
-    hEventWaitList[3] = m_hEvent_GLOBAL_ERR;
+    bool & response_state =
+        IsVPPEnable()
+        ? (IsVppSyncOperationRequired(m_sessionMode)
+          ? m_syncop_vpp_response
+          : m_vpp_response)
+        : m_dec_response;
+
+    bool & response_final_state =
+        IsVPPEnable()
+        ? (IsVppSyncOperationRequired(m_sessionMode)
+          ? m_syncop_vpp_response_final
+          : m_vpp_response_final)
+        : m_dec_response_final;
+
+
 
     // send list
-    HANDLE hEventRequest       = m_hEvent_ENC_REQUEST;
-    HANDLE hEventResponse      = m_hEvent_ENC_RESPONSE;
-    HANDLE hEventResponseFinal = m_hEvent_ENC_RESPONSE_FINAL;
+    bool & eventRequest = m_enc_request;
+    bool & eventResponse = m_enc_response;
+    bool & eventResponseFinal = m_enc_response_final;
 
     bool bRequestEnable = true;
     mfxFrameSurfaceEx zeroSurfaceEx = {NULL, 0};
@@ -586,9 +572,30 @@ mfxU32 TranscodeModelAdvanced::EncodeRoutine(void *pParam)
 
     for(;;)
     {
-        DWORD dwSts = WaitForMultipleObjects( 4, hEventWaitList, false, TUM_WAIT_INTERVAL); 
+        bool local_response = false;
+        bool local_response_final = false;
+        bool local_bswrt_response = false;
+        bool local_global_err = false;
+        {
+            std::unique_lock<std::mutex> lk(m_event_mtx);
+            m_event_cnd.wait_for(lk, wait_interval,
+                [&](){ return response_state
+                           || response_final_state
+                           || m_bswrt_response
+                           || m_global_err; });
 
-        if( WAIT_OBJECT_0 + 0 == dwSts ) // m_hEvent_VPP_RESPONSE
+            if (response_state)
+                std::swap(local_response, response_state);
+            else if (response_final_state)
+                std::swap(local_response_final, response_final_state);
+            else if (m_bswrt_response)
+                std::swap(local_bswrt_response, m_bswrt_response);
+            else if (m_global_err)
+                std::swap(local_global_err, m_global_err);
+
+        }
+
+        if (local_response) // m_hEvent_VPP_RESPONSE
         {
             mfxFrameSurfaceEx inputSurfaceEx = (pConnectPool->size() > 0 ) ? pConnectPool->front() : zeroSurfaceEx;//critical section???
 
@@ -612,11 +619,11 @@ mfxU32 TranscodeModelAdvanced::EncodeRoutine(void *pParam)
 
                 if( bRequestEnable )
                 {
-                    SetEvent( hEventRequest );
+                    SetEvent(eventRequest);
                 }
                 else
-                {                     
-                    SetEvent( hEventResponseFinal );
+                {
+                    SetEvent(eventResponseFinal);
 
                     printf("\nEncodeRoutine: \t\texit with OK");
                     return TUM_OK_STS; // EXIT from thread
@@ -625,42 +632,42 @@ mfxU32 TranscodeModelAdvanced::EncodeRoutine(void *pParam)
             else if (MFX_ERR_NONE == mfxSts) 
             {
                 m_outBSPool.push_back( pBSEx );// critical section???
-                SetEvent( hEventResponse );
+                SetEvent(eventResponse);
             }
             else
             {   
-                SetEvent( m_hEvent_GLOBAL_ERR );
+                SetEvent(m_global_err);
                 RETURN_ON_ERROR( _T("\nEncodeRoutine: exit with FAIL_1"), TUM_ERR_STS);
             }
             //-----------------------------------------------------------------
         }
-        else if( WAIT_OBJECT_0 + 1 == dwSts ) // m_hEvent_VPP_RESPONSE_FINAL
+        else if (local_response_final) // m_hEvent_VPP_RESPONSE_FINAL
         {
             bRequestEnable = false;
-            SetEvent( hEventWaitList[0] );
+            SetEvent(response_state);
         }
-        else if( WAIT_OBJECT_0 + 2 == dwSts ) // m_hEvent_BSWRT_REQUEST
+        else if (local_bswrt_response) // m_hEvent_BSWRT_REQUEST
         {
             if( pConnectPool->size() > 0 ) // we have frames in input frames pool
             {
-                SetEvent( hEventWaitList[0] );
+                SetEvent(response_state);
             }
             else if ( bRequestEnable ) // we require frames from previous (VPP) component
             {
-                SetEvent( hEventRequest );
+                SetEvent(eventRequest);
             }
             else // we start "last frame" processing
             {
-                SetEvent( hEventWaitList[0] );
+                SetEvent(response_state);
             }
         }
-        else if( WAIT_OBJECT_0 + 3 == dwSts ) // // m_hEvent_GLOBAL_ERR
+        else if (local_global_err) // // m_hEvent_GLOBAL_ERR
         {
             RETURN_ON_ERROR( _T("\nEncodeRoutine: exit with GLOBAL ERR"), TUM_ERR_STS);
         }
         else
-        {      
-            SetEvent( m_hEvent_GLOBAL_ERR );
+        {
+            SetEvent(m_global_err);
             RETURN_ON_ERROR( _T("\nEncodeRoutine: exit with UNKNOWN ERR"), TUM_ERR_STS);
         }
     }
@@ -674,29 +681,20 @@ mfxU32 TranscodeModelAdvanced::SyncOperationDecodeRoutine(void *pParam)
 {
     pParam; // disable
 
-    HANDLE hEventWaitList[4];
-
     // wait list
-    hEventWaitList[0] = m_hEvent_DEC_RESPONSE;
-    hEventWaitList[1] = m_hEvent_DEC_RESPONSE_FINAL;
-    if( IsVPPEnable() )
-    {
-        hEventWaitList[2] = m_hEvent_VPP_REQUEST;
-    }
-    else
-    {
-        hEventWaitList[2] = m_hEvent_ENC_REQUEST;
-    }
-    hEventWaitList[3] = m_hEvent_GLOBAL_ERR;
+    bool & request_state =
+        IsVPPEnable()
+        ? m_vpp_request
+        : m_enc_request;
 
     // send list
-    HANDLE hEventRequest       = m_hEvent_SYNCOP_DEC_REQUEST;
-    HANDLE hEventResponse      = m_hEvent_SYNCOP_DEC_RESPONSE;
-    HANDLE hEventResponseFinal = m_hEvent_SYNCOP_DEC_RESPONSE_FINAL;
+    bool & eventRequest = m_syncop_dec_request;
+    bool & eventResponse = m_syncop_dec_response;
+    bool & eventResponseFinal = m_syncop_dec_response_final;
 
     bool bRequestEnable = true;
 
-    mfxFrameSurfaceEx zeroSurfaceEx = {NULL, 0};
+    mfxFrameSurfaceEx zeroSurfaceEx = {};
 
     Surface1ExList*    pConnectPool;
 
@@ -713,9 +711,30 @@ mfxU32 TranscodeModelAdvanced::SyncOperationDecodeRoutine(void *pParam)
 
     for(;;)
     {
-        DWORD dwSts = WaitForMultipleObjects( 4, hEventWaitList, false, TUM_WAIT_INTERVAL );
+        bool local_dec_response = false;
+        bool local_dec_response_final = false;
+        bool local_request_state = false;
+        bool local_global_err = false;
+        {
+            std::unique_lock<std::mutex> lk(m_event_mtx);
+            m_event_cnd.wait_for(lk, wait_interval,
+                [&](){ return m_dec_response
+                           || m_dec_response_final
+                           || request_state
+                           || m_global_err; });
 
-        if( WAIT_OBJECT_0 + 0 == dwSts ) // m_hEvent_DEC_RESPONSE
+            if (m_dec_response)
+                std::swap(local_dec_response, m_dec_response);
+            else if (m_dec_response_final)
+                std::swap(local_dec_response_final, m_dec_response_final);
+            else if (request_state)
+                std::swap(local_request_state, request_state);
+            else if (m_global_err)
+                std::swap(local_global_err, m_global_err);
+
+        }
+
+        if (local_dec_response) // m_hEvent_DEC_RESPONSE
         {
             //if( (m_dec2vppSurfExPool.size() != m_asyncDepth) && (bRequestEnable) )
             //{
@@ -730,14 +749,14 @@ mfxU32 TranscodeModelAdvanced::SyncOperationDecodeRoutine(void *pParam)
                 {
                     if( !bRequestEnable )
                     {
-                        SetEvent( hEventResponseFinal );
+                        SetEvent(eventResponseFinal);
 
                         printf("\nSyncOpDECRoutine:\texit with OK");
                         return TUM_OK_STS; // EXIT from thread
                     }
                     else
                     {
-                        SetEvent( m_hEvent_GLOBAL_ERR );
+                        SetEvent(m_global_err);
                         RETURN_ON_ERROR( _T("\nSyncOperationDECRoutine:exit with UNKNOWN ERR"), TUM_ERR_STS);
                     }
                 }
@@ -752,36 +771,36 @@ mfxU32 TranscodeModelAdvanced::SyncOperationDecodeRoutine(void *pParam)
 
                     if (MFX_ERR_NONE == mfxSts) 
                     {
-                        SetEvent( hEventResponse );
+                        SetEvent(eventResponse);
                     }
                     else
                     {
-                        SetEvent( m_hEvent_GLOBAL_ERR );
+                        SetEvent(m_global_err);
                         RETURN_ON_ERROR( _T("\nSyncOperationDECRoutine: FAIL"), TUM_ERR_STS);
                     }
                 }
 
             }
         }
-        else if( WAIT_OBJECT_0 + 1 == dwSts ) // m_hEvent_DEC_RESPONSE_FINAL
+        else if (local_dec_response_final) // m_hEvent_DEC_RESPONSE_FINAL
         {
             bRequestEnable = false;
-            SetEvent( hEventWaitList[0] );
+            SetEvent(m_dec_response);
         }
-        else if( WAIT_OBJECT_0 + 2 == dwSts ) // m_hEvent_VPP_REQUEST
+        else if (local_request_state) // m_hEvent_VPP_REQUEST
         {
             if ( bRequestEnable ) // we require frames from previous component
             {
-                SetEvent( hEventRequest );
+                SetEvent(eventRequest);
             }
             else // we start "last frame" processing
             {
-                SetEvent( hEventWaitList[0] );
+                SetEvent(m_dec_response);
             }
         }
         else
         {
-            SetEvent( m_hEvent_GLOBAL_ERR );
+            SetEvent(m_global_err);
             RETURN_ON_ERROR( _T("\nSyncOperationDECRoutine: exit with UNKNOWN ERR"), TUM_ERR_STS);
         }        
     }
@@ -793,30 +812,45 @@ mfxU32 TranscodeModelAdvanced::SyncOperationVPPRoutine(void *pParam)
 {
     pParam; // disable
 
-    HANDLE hEventWaitList[4];
-
     // wait list
-    hEventWaitList[0] = m_hEvent_VPP_RESPONSE;
-    hEventWaitList[1] = m_hEvent_VPP_RESPONSE_FINAL;
-    hEventWaitList[2] = m_hEvent_ENC_REQUEST;
-    hEventWaitList[3] = m_hEvent_GLOBAL_ERR;
 
     // send list
-    HANDLE hEventRequest       = m_hEvent_SYNCOP_VPP_REQUEST;
-    HANDLE hEventResponse      = m_hEvent_SYNCOP_VPP_RESPONSE;
-    HANDLE hEventResponseFinal = m_hEvent_SYNCOP_VPP_RESPONSE_FINAL;
+    bool & eventRequest = m_syncop_dec_request;
+    bool & eventResponse = m_syncop_dec_response;
+    bool & eventResponseFinal = m_syncop_dec_response_final;
 
     bool bRequestEnable = true;
 
-    mfxFrameSurfaceEx zeroSurfaceEx = {NULL, 0};
+    mfxFrameSurfaceEx zeroSurfaceEx = {};
 
     printf("\nSyncOpVPPRoutine: \tstart");
 
     for(;;)
     {
-        DWORD dwSts = WaitForMultipleObjects( 4, hEventWaitList, false, TUM_WAIT_INTERVAL );
+        bool local_vpp_response = false;
+        bool local_vpp_response_final = false;
+        bool local_enc_request = false;
+        bool local_global_err = false;
+        {
+            std::unique_lock<std::mutex> lk(m_event_mtx);
+            m_event_cnd.wait_for(lk, wait_interval,
+                [&](){ return m_vpp_response
+                           || m_vpp_response_final
+                           || m_enc_request
+                           || m_global_err; });
 
-        if( WAIT_OBJECT_0 + 0 == dwSts ) // m_hEvent_VPP_RESPONSE
+            if (m_vpp_response)
+                std::swap(local_vpp_response, m_vpp_response);
+            else if (m_vpp_response_final)
+                std::swap(local_vpp_response_final, m_vpp_response_final);
+            else if (m_enc_request)
+                std::swap(local_enc_request, m_enc_request);
+            else if (m_global_err)
+                std::swap(local_global_err, m_global_err);
+
+        }
+
+        if (local_vpp_response) // m_hEvent_VPP_RESPONSE
         {
             //if( (m_vpp2encSurfExPool.size() != m_asyncDepth) && (bRequestEnable) )
             //{
@@ -831,14 +865,14 @@ mfxU32 TranscodeModelAdvanced::SyncOperationVPPRoutine(void *pParam)
                 {
                     if( !bRequestEnable )
                     {
-                        SetEvent( hEventResponseFinal );
+                        SetEvent(eventResponseFinal);
 
                         printf("\nSyncOperationDECRoutine:exit with OK");
                         return TUM_OK_STS; // EXIT from thread
                     }
                     else
                     {
-                        SetEvent( m_hEvent_GLOBAL_ERR );
+                        SetEvent(m_global_err);
                         RETURN_ON_ERROR( _T("\nSyncOperationDECRoutine: exit with UNKNOWN ERR"), TUM_ERR_STS);
                     }
                 }
@@ -853,36 +887,36 @@ mfxU32 TranscodeModelAdvanced::SyncOperationVPPRoutine(void *pParam)
 
                     if (MFX_ERR_NONE == mfxSts) 
                     {
-                        SetEvent( hEventResponse );
+                        SetEvent(eventResponse);
                     }
                     else
                     {
-                        SetEvent( m_hEvent_GLOBAL_ERR );
+                        SetEvent(m_global_err);
                         RETURN_ON_ERROR( _T("\nSyncOperationDECRoutine: FAIL"), TUM_ERR_STS);
                     }
                 }
 
             }
         }
-        else if( WAIT_OBJECT_0 + 1 == dwSts ) // m_hEvent_DEC_RESPONSE_FINAL
+        else if (local_vpp_response_final) // m_hEvent_DEC_RESPONSE_FINAL
         {
             bRequestEnable = false;
-            SetEvent( hEventWaitList[0] );
+            SetEvent(m_vpp_response);
         }
-        else if( WAIT_OBJECT_0 + 2 == dwSts ) // m_hEvent_VPP_REQUEST
+        else if (local_enc_request) // m_hEvent_VPP_REQUEST
         {
             if ( bRequestEnable ) // we require frames from previous component
             {
-                SetEvent( hEventRequest );
+                SetEvent(eventRequest);
             }
             else // we start "last frame" processing
             {
-                SetEvent( hEventWaitList[0] );
+                SetEvent(m_vpp_response);
             }
         }
         else
         {
-            SetEvent( m_hEvent_GLOBAL_ERR );
+            SetEvent(m_global_err);
             RETURN_ON_ERROR( _T("\nSyncOperationDECRoutine: exit with UNKNOWN ERR"), TUM_ERR_STS);
         }        
     }
@@ -894,21 +928,32 @@ mfxU32 TranscodeModelAdvanced::BSWriterRoutine(void *pParam)
 {
     pParam; // warning disable
 
-    HANDLE hEventWaitList[3];
-
-    hEventWaitList[0] = m_hEvent_ENC_RESPONSE;
-    hEventWaitList[1] = m_hEvent_ENC_RESPONSE_FINAL;
-    hEventWaitList[2] = m_hEvent_GLOBAL_ERR;
-
     bool bRequestEnable = true;
 
     printf("\nBSWriterRoutine: \tstart");
 
     for(;;)
     {
-        DWORD dwSts = WaitForMultipleObjects( 3, hEventWaitList, false, TUM_WAIT_INTERVAL ); 
+        bool local_enc_response = false;
+        bool local_enc_response_final = false;
+        bool local_global_err = false;
+        {
+            std::unique_lock<std::mutex> lk(m_event_mtx);
+            m_event_cnd.wait_for(lk, wait_interval,
+                [&](){ return m_enc_response
+                           || m_enc_response_final
+                           || m_global_err; });
 
-        if( WAIT_OBJECT_0 + 0 == dwSts ) // m_hEvent_ENC_RESPONSE
+            if (m_enc_response)
+                std::swap(local_enc_response, m_enc_response);
+            else if (m_enc_response_final)
+                std::swap(local_enc_response_final, m_enc_response_final);
+            else if (m_global_err)
+                std::swap(local_global_err, m_global_err);
+
+        }
+
+        if (local_enc_response) // m_hEvent_ENC_RESPONSE
         {
             if( 0 == m_outBSPool.size() )
             {
@@ -919,7 +964,7 @@ mfxU32 TranscodeModelAdvanced::BSWriterRoutine(void *pParam)
             {
                 //printf("\n BSWRT: async_pool not ready yet \n");
                 // continue transcode processing wo synchronization
-                SetEvent( m_hEvent_BSWRT_RESPONSE ); // bitstream response == request 
+                SetEvent(m_bswrt_response);
             }
             //-----------------------------------------------------------------
             else // normal processing
@@ -933,39 +978,39 @@ mfxU32 TranscodeModelAdvanced::BSWriterRoutine(void *pParam)
                 {
                     WriteOneFrame( &(pBSEx->bitstream) );
 
-                    // we should realise captured element/resource. 
+                    // we should release captured element/resource. 
                     m_outBSPool.pop_front(); // critical section       
                     m_pOutBSManager->Release( pBSEx );
 
                     if( bRequestEnable )
                     {
-                        SetEvent( m_hEvent_BSWRT_RESPONSE );
+                        SetEvent(m_bswrt_response);
                     }
                     else
                     {
-                        SetEvent( hEventWaitList[0] );                        
+                        SetEvent(m_enc_response);
                     }
                 }
                 else
                 { 
-                    SetEvent( m_hEvent_GLOBAL_ERR );
+                    SetEvent(m_global_err);
                     RETURN_ON_ERROR( _T("\nSynchronizeEncode: FAIL"), TUM_ERR_STS);
                 }
             }
             //-----------------------------------------------------------------
         }
-        else if( WAIT_OBJECT_0 + 1 == dwSts ) // m_hEvent_ENC_RESPONSE_FINAL
+        else if (local_enc_response_final) // m_hEvent_ENC_RESPONSE_FINAL
         {
             bRequestEnable = false;
-            SetEvent( hEventWaitList[0] );
+            SetEvent(m_enc_response);
         }
-        else if( WAIT_OBJECT_0 + 2 == dwSts ) // m_hEvent_GLOBAL_ERR
+        else if (local_global_err) // m_hEvent_GLOBAL_ERR
         {
             RETURN_ON_ERROR( _T("\nBSWriterRoutine: exit with UNKNOWN ERR"), TUM_ERR_STS);
         }
         else
         {
-            SetEvent( m_hEvent_GLOBAL_ERR );
+            SetEvent(m_global_err);
             RETURN_ON_ERROR( _T("\nBSWriterRoutine: exit with UNKNOWN ERR"), TUM_ERR_STS);
         }
     }
@@ -1109,7 +1154,5 @@ mfxU32 TranscodeModelAdvanced::WrapperSyncOperationVPPRoutine(void *pParam)
     return result;
 
 } // mfxU32 TranscodeModelAdvanced::WrapperSyncOperationVPPRoutine(void *pParam)
-
-#endif // #if defined(_WIN32) || defined(_WIN64)
 
 /* EOF */

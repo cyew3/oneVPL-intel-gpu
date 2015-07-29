@@ -81,6 +81,14 @@ CommandLine::CommandLine(int argc, msdk_char *argv[])
 ,  m_IOPattern( MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY )
 ,  m_valid(false)
 {
+    const int DEFAULT_HW_IMPL =
+#if defined(_WIN32)
+        MFX_IMPL_VIA_D3D9
+#else
+        MFX_IMPL_VIA_VAAPI
+#endif
+        ;
+
     m_impLib[ MSDK_STRING("general") ] = MFX_IMPL_SOFTWARE; // general session should be inited always
 
     if (argc < 6)
@@ -203,7 +211,7 @@ CommandLine::CommandLine(int argc, msdk_char *argv[])
                 }
                 else if (0 == msdk_strcmp(argv[i], MSDK_STRING("hw")) )
                 {
-                    m_impLib[MSDK_STRING("general")] = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
+                    m_impLib[MSDK_STRING("general")] = MFX_IMPL_HARDWARE | DEFAULT_HW_IMPL;
                 }
             }
         }
@@ -214,7 +222,7 @@ CommandLine::CommandLine(int argc, msdk_char *argv[])
         }
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-dec::hw")) )
         {
-            m_impLib[MSDK_STRING("dec")] = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
+            m_impLib[MSDK_STRING("dec")] = MFX_IMPL_HARDWARE | DEFAULT_HW_IMPL;
         }
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp::sw")) )
         {
@@ -222,7 +230,7 @@ CommandLine::CommandLine(int argc, msdk_char *argv[])
         }
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp::hw")) )
         {
-            m_impLib[MSDK_STRING("vpp")] = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
+            m_impLib[MSDK_STRING("vpp")] = MFX_IMPL_HARDWARE | DEFAULT_HW_IMPL;
         }
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-enc::sw")) )
         {
@@ -230,7 +238,7 @@ CommandLine::CommandLine(int argc, msdk_char *argv[])
         }
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-enc::hw")) )
         {
-            m_impLib[MSDK_STRING("enc")] = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
+            m_impLib[MSDK_STRING("enc")] = MFX_IMPL_HARDWARE | DEFAULT_HW_IMPL;
         }
 
         // iopattern
@@ -425,6 +433,10 @@ msdk_char* ImpLibrary2String(mfxIMPL impl)
         case (MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11):
         {
             return MSDK_STRING("HW | via D3D11");
+        }
+        case (MFX_IMPL_HARDWARE | MFX_IMPL_VIA_VAAPI):
+        {
+            return MSDK_STRING("HW | via VAAPI");
         }
         default:
         {

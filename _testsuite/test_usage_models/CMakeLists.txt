@@ -6,6 +6,8 @@ include_directories (
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/sample_common/include
 )
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+
 foreach( variant x11 drm )
   check_variant( ${variant} configured )
   if( configured )

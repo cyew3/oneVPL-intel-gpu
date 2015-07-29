@@ -30,7 +30,6 @@ TranscodeModel* CreateTranscode( AppParam &param )
             break;
         }
 
-#if defined(_WIN32) || defined(_WIN64)
         case USAGE_MODEL_1:
         {
             // AYA debug
@@ -89,7 +88,7 @@ TranscodeModel* CreateTranscode( AppParam &param )
             pModel = (TranscodeModel*)new TranscodeModelAdvanced( param );
             break;
         }
-#endif
+
         case USAGE_MODEL_JOIN_REFERENCE:
         {
             param.sessionMode = DEC_VPP_ENC_SESSION; 

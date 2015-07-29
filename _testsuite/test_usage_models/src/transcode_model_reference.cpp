@@ -193,11 +193,15 @@ mfxStatus TranscodeModelReference::Init( AppParam& params )
     }
 
     // Allocator for MediaSDK session in case of D3D surfaces using
+#if !defined(LIBVA_SUPPORT)
     if( params.IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY) ) 
     {
+#endif
         sts = SetAllocatorMFXSessions( params.IOPattern );
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+#if !defined(LIBVA_SUPPORT)
     }
+#endif
 
     //Join Session
     if( IsJoinSessionEnable() )
@@ -716,11 +720,15 @@ mfxStatus TranscodeModelReference::CreateAllocator( mfxU16 IOPattern )
 
     m_allocator.pAllocatorParams = NULL;
 
+#if !defined (LIBVA_SUPPORT)
     if( IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY) )
     {
+#endif
         sts = CreateEnvironmentHw( &m_allocator );
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+#if !defined (LIBVA_SUPPORT)
     }
+#endif
 
     sts = (m_allocator.pMfxAllocator)->Init(m_allocator.pAllocatorParams );
 
@@ -732,6 +740,22 @@ mfxStatus TranscodeModelReference::CreateAllocator( mfxU16 IOPattern )
 mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )
 {
     mfxStatus sts = MFX_ERR_NONE;    
+
+    // on Linux SetHandle call is mandatory
+#if defined (LIBVA_SUPPORT)
+    sts = m_pSessionDecode->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = m_pSessionVPP->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
+    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = m_pSessionEncode->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
+    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+#endif
+
+
 
     if( IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY) ) // allocator need for Decode & VPP
     {
@@ -752,17 +776,10 @@ mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
 #elif defined (LIBVA_SUPPORT)
         // allocator need for Decode
-        sts = m_pSessionDecode->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
         sts = m_pSessionDecode->SetFrameAllocator( m_allocator.pMfxAllocator ); 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         // as well as for VPP        
-        sts = m_pSessionVPP->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
-        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
         sts = m_pSessionVPP->SetFrameAllocator(m_allocator.pMfxAllocator ); 
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
 
@@ -792,19 +809,11 @@ mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 #elif defined (LIBVA_SUPPORT)
         // allocator need for VPP
-        sts = m_pSessionVPP->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
-        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
         sts = m_pSessionVPP->SetFrameAllocator( m_allocator.pMfxAllocator ); 
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         // as well as for Encode
-        sts = m_pSessionEncode->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
-        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
         sts = m_pSessionEncode->SetFrameAllocator( m_allocator.pMfxAllocator );
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -812,7 +821,6 @@ mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )
     }
 
     return MFX_ERR_NONE;
-
 } // mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )
 
 

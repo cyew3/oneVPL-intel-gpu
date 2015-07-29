@@ -3,14 +3,24 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2015 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
 
 #if defined(_WIN32) || defined(_WIN64)
-
 #include <windows.h>
+#else
+
+#define __stdcall
+
+#endif // #if defined(_WIN32) || defined(_WIN64)
+
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
+
 #include "transcode_model_reference.h"
 
 class TranscodeModelAdvanced;
@@ -37,6 +47,9 @@ public:
     mfxStatus Close( void );
 
 private:
+    // event helper function
+    void SetEvent(bool & eventFlag);
+
     // [thread functions]
     mfxU32 BSReaderRoutine(void *pParam);
     mfxU32 DecodeRoutine  (void *pParam);
@@ -72,42 +85,46 @@ private:
     std::auto_ptr<BitstreamExManager>    m_pOutBSManager;
     
     // events
-    // [BSReader]
-    HANDLE m_hEvent_BSR_RESPONSE; 
-    HANDLE m_hEvent_BSR_RESPONSE_FINAL; 
-    // [decode]
-    HANDLE m_hEvent_DEC_REQUEST;
-    HANDLE m_hEvent_DEC_RESPONSE;
-    HANDLE m_hEvent_DEC_RESPONSE_FINAL;
-    // [vpp]
-    HANDLE m_hEvent_VPP_REQUEST;
-    HANDLE m_hEvent_VPP_RESPONSE;
-    HANDLE m_hEvent_VPP_RESPONSE_FINAL;
-    // [encode]
-    HANDLE m_hEvent_ENC_REQUEST;
-    HANDLE m_hEvent_ENC_RESPONSE;
-    HANDLE m_hEvent_ENC_RESPONSE_FINAL;
-    // [BSWriter]
-    HANDLE m_hEvent_BSWRT_RESPONSE;
-    //// [error]
-    HANDLE m_hEvent_GLOBAL_ERR;
-    // [SyncOp Decode]
-    HANDLE m_hEvent_SYNCOP_DEC_REQUEST;
-    HANDLE m_hEvent_SYNCOP_DEC_RESPONSE;
-    HANDLE m_hEvent_SYNCOP_DEC_RESPONSE_FINAL;
-    // [SyncOp VPP]
-    HANDLE m_hEvent_SYNCOP_VPP_REQUEST;
-    HANDLE m_hEvent_SYNCOP_VPP_RESPONSE;
-    HANDLE m_hEvent_SYNCOP_VPP_RESPONSE_FINAL;
+    std::mutex m_event_mtx;
+    std::condition_variable m_event_cnd;
 
-    // initialisation
+    // [BSReader]
+    bool m_bsr_response;
+    bool m_bsr_response_final;
+
+    // [decode]
+    bool m_dec_request;
+    bool m_dec_response;
+    bool m_dec_response_final;
+    // [vpp]
+    bool m_vpp_request;
+    bool m_vpp_response;
+    bool m_vpp_response_final;
+    // [encode]
+    bool m_enc_request;
+    bool m_enc_response;
+    bool m_enc_response_final;
+    // [BSWriter]
+    bool m_bswrt_response;
+    //// [error]
+    bool m_global_err;
+    // [SyncOp Decode]
+    bool m_syncop_dec_request;
+    bool m_syncop_dec_response;
+    bool m_syncop_dec_response_final;
+    // [SyncOp VPP]
+    bool m_syncop_vpp_request;
+    bool m_syncop_vpp_response;
+    bool m_syncop_vpp_response_final;
+
+    // initialization
     bool m_bInited;
 
     // async depth
     mfxU16 m_asyncDepth;
 
-};
+    const std::chrono::milliseconds wait_interval;
 
-#endif // #if defined(_WIN32) || defined(_WIN64)
+};
 
 /* EOF */

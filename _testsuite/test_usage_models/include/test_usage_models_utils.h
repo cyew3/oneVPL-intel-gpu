@@ -12,6 +12,8 @@
   #include <windows.h>
   #include <psapi.h>
   #include <tchar.h>
+#else
+#define _T(x) x
 #endif
 #include <map>
 
