@@ -730,7 +730,8 @@ enum {
     MFX_EXTBUFF_MPEG2_QUANT_MATRIX         = MFX_MAKEFOURCC('M','2','Q','M'),
     MFX_EXTBUFF_CODING_OPTION_VPS          = MFX_MAKEFOURCC('C','O','V','P'),
     MFX_EXTBUFF_VPP_ROTATION               = MFX_MAKEFOURCC('R','O','T',' '),
-    MFX_EXTBUFF_ENCODED_SLICES_INFO        = MFX_MAKEFOURCC('E','N','S','I')
+    MFX_EXTBUFF_ENCODED_SLICES_INFO        = MFX_MAKEFOURCC('E','N','S','I'),
+    MFX_EXTBUFF_VPP_SCALING                = MFX_MAKEFOURCC('V','S','C','L')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1518,6 +1519,21 @@ typedef struct {
 
     mfxU16 reserved[20];
 } mfxExtEncodedSlicesInfo;
+
+/* ScalingMode */
+enum {
+    MFX_SCALING_MODE_DEFAULT    = 0,
+    MFX_SCALING_MODE_LOWPOWER   = 1,
+    MFX_SCALING_MODE_SPEED      = 2,
+    MFX_SCALING_MODE_QUALITY    = 3
+};
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 ScalingMode;
+    mfxU16 reserved[11];
+} mfxExtVPPScaling;
 
 #ifdef __cplusplus
 } // extern "C"
