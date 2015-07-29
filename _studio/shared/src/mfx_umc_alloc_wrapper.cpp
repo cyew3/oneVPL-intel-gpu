@@ -1364,6 +1364,8 @@ UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::InitMfx(UMC::FrameAllocatorPar
 
     m_surface.Info.Width = params->mfx.FrameInfo.Width;
     m_surface.Info.Height = params->mfx.FrameInfo.Height;
+    m_surface.Info.BitDepthLuma = params->mfx.FrameInfo.BitDepthLuma;
+    m_surface.Info.BitDepthChroma = params->mfx.FrameInfo.BitDepthChroma;
 
     if (umcSts != UMC::UMC_OK)
         return umcSts;
