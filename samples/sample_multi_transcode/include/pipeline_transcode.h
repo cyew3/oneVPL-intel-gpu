@@ -43,6 +43,8 @@
 #include "hw_device.h"
 #include "plugin_loader.h"
 
+#include "VPPExtBuffersStorage.h"
+
 #if defined(_WIN32) || defined(_WIN64)
     #define MSDK_CPU_ROTATE_PLUGIN  MSDK_STRING("sample_rotate_plugin.dll")
     #define MSDK_OCL_ROTATE_PLUGIN  MSDK_STRING("sample_plugin_opencl.dll")
@@ -96,6 +98,10 @@ namespace TranscodingSample
         mfxU16 nDstHeight; // destination picture height, specified if resizing required
 
         bool bEnableDeinterlacing;
+        mfxU16 DeinterlacingMode;
+        int DenoiseLevel;
+        int DetailLevel;
+        mfxU16 FRCAlgorithm;
 
         mfxU16 nAsyncDepth; // asyncronous queue
 
@@ -453,7 +459,7 @@ namespace TranscodingSample
         mfxExtOpaqueSurfaceAlloc m_PreEncOpaqueAlloc;
 
         // external parameters for each component are stored in a vector
-        std::vector<mfxExtBuffer*> m_VppExtParams;
+        CVPPExtBuffersStorage        m_VppExtParamsStorage;
         std::vector<mfxExtBuffer*> m_EncExtParams;
         std::vector<mfxExtBuffer*> m_DecExtParams;
         std::vector<mfxExtBuffer*> m_PluginExtParams;

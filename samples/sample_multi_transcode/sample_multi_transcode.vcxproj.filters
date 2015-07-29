@@ -20,6 +20,9 @@
     <ClCompile Include="src\transcode_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\VPPExtBuffersStorage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\pipeline_transcode.h">
@@ -29,6 +32,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\transcode_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\VPPExtBuffersStorage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

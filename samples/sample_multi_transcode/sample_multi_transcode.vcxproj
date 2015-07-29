@@ -247,11 +247,13 @@
     <ClCompile Include="src\pipeline_transcode.cpp" />
     <ClCompile Include="src\sample_multi_transcode.cpp" />
     <ClCompile Include="src\transcode_utils.cpp" />
+    <ClCompile Include="src\VPPExtBuffersStorage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\pipeline_transcode.h" />
     <ClInclude Include="include\sample_multi_transcode.h" />
     <ClInclude Include="include\transcode_utils.h" />
+    <ClInclude Include="include\VPPExtBuffersStorage.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\sample_common\sample_common.vcxproj">

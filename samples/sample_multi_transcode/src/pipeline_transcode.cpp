@@ -71,6 +71,8 @@ sInputParams::sInputParams()
     libType = MFX_IMPL_SOFTWARE;
     MaxFrameNumber = 0xFFFFFFFF;
     pVppCompDstRects = NULL;
+    DenoiseLevel=-1;
+    DetailLevel=-1;
 } // sInputParams::sInputParams()
 
 void sInputParams::Reset()
@@ -277,7 +279,7 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
     {
         if ( (m_mfxDecParams.mfx.FrameInfo.CropW != pParams->nDstWidth && pParams->nDstWidth) ||
              (m_mfxDecParams.mfx.FrameInfo.CropH != pParams->nDstHeight && pParams->nDstHeight) ||
-             (pParams->bEnableDeinterlacing) ||
+             (pParams->bEnableDeinterlacing) || (pParams->DenoiseLevel!=-1) || (pParams->DetailLevel!=-1) || (pParams->FRCAlgorithm) ||
              (bVppCompInitRequire) )
         {
             m_bIsVpp = true;
@@ -1648,7 +1650,7 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     // configure and attach external parameters
     mfxStatus sts = AllocAndInitVppDoNotUse();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    m_VppExtParams.push_back((mfxExtBuffer *)&m_VppDoNotUse);
+    m_VppExtParamsStorage.ExtBuffers.push_back((mfxExtBuffer *)&m_VppDoNotUse);
 
     /* VPP Comp Init */
     if (((pInParams->eModeExt == VppComp) || (pInParams->eModeExt == VppCompOnly)) &&
@@ -1687,16 +1689,21 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
             m_VppCompParams.InputStream[i].LumaKeyMax = 0;
         }
 
-        m_VppExtParams.push_back((mfxExtBuffer *)&m_VppCompParams);
+        m_VppExtParamsStorage.ExtBuffers.push_back((mfxExtBuffer *)&m_VppCompParams);
     } // if ( ((pInParams->eModeExt == VppComp) || (pInParams->eModeExt == VppCompOnly)) &&
 
     if (m_bUseOpaqueMemory)
-        m_VppExtParams.push_back((mfxExtBuffer *)&m_VppOpaqueAlloc);
+        m_VppExtParamsStorage.ExtBuffers.push_back((mfxExtBuffer *)&m_VppOpaqueAlloc);
     if (pInParams->bIsMVC)
-        m_VppExtParams.push_back((mfxExtBuffer *)&m_MVCSeqDesc);
+        m_VppExtParamsStorage.ExtBuffers.push_back((mfxExtBuffer *)&m_MVCSeqDesc);
 
-    m_mfxVppParams.ExtParam = &m_VppExtParams[0]; // vector is stored linearly in memory
-    m_mfxVppParams.NumExtParam = (mfxU16)m_VppExtParams.size();
+    // Initializing m_VppExtParamsStorage here, to put all extra filters (created in Init function) to the end of buffer
+    m_VppExtParamsStorage.Init(pInParams);
+
+    // Adding 
+
+    m_mfxVppParams.ExtParam = &m_VppExtParamsStorage.ExtBuffers[0]; // vector is stored linearly in memory
+    m_mfxVppParams.NumExtParam = (mfxU16)m_VppExtParamsStorage.ExtBuffers.size();
 
     return MFX_ERR_NONE;
 
@@ -2479,7 +2486,7 @@ void CTranscodingPipeline::Close()
 
     m_EncExtParams.clear();
     m_DecExtParams.clear();
-    m_VppExtParams.clear();
+    m_VppExtParamsStorage.Clear();
     m_PreEncExtParams.clear();
 
     if (m_bIsJoinSession)

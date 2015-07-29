@@ -118,8 +118,15 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -lad depth    Depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100]. \n"));
     msdk_printf(MSDK_STRING("                May be 1 in the case when -mss option is specified \n"));
     msdk_printf(MSDK_STRING("\n"));
-    msdk_printf(MSDK_STRING("Pipeline description (vpp options):\n"));
-    msdk_printf(MSDK_STRING("  -deinterlace  Forces VPP to deinterlace input stream\n"));
+    msdk_printf(MSDK_STRING("Pipeline description (vpp options):\n"));    
+    msdk_printf(MSDK_STRING("  -deinterlace             Forces VPP to deinterlace input stream\n"));
+    msdk_printf(MSDK_STRING("  -deinterlace::ADI        Forces VPP to deinterlace input stream using ADI algorithm\n"));
+    msdk_printf(MSDK_STRING("  -deinterlace::ADI_NO_REF Forces VPP to deinterlace input stream using ADI no ref algorithm\n"));
+    msdk_printf(MSDK_STRING("  -detail <level>          Enables detail (edge enhancement) filter with provided level(0..100)\n"));
+    msdk_printf(MSDK_STRING("  -denoise <level>         Enables denoise filter with provided level (0..100)\n"));
+    msdk_printf(MSDK_STRING("  -FRC::PT      Enables FRC filter with Preserve Timestamp algorithm\n"));
+    msdk_printf(MSDK_STRING("  -FRC::DT      Enables FRC filter with Distributed Timestamp algorithm\n"));
+    msdk_printf(MSDK_STRING("  -FRC::INTERP  Enables FRC filter with Frame Interpolation algorithm\n"));
     msdk_printf(MSDK_STRING("  -angle 180    Enables 180 degrees picture rotation user module before encoding\n"));
     msdk_printf(MSDK_STRING("  -opencl       Uses implementation of rotation plugin (enabled with -angle option) through Intel(R) OpenCL\n"));
     msdk_printf(MSDK_STRING("  -w            Destination picture width, invokes VPP resize\n"));
@@ -460,9 +467,11 @@ mfxStatus CmdProcessor::TokenizeLine(msdk_char *pLine, mfxU32 length)
 
 mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 {
-    mfxStatus sts;
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxStatus stsExtBuf = MFX_ERR_NONE;
     mfxU32 i;
-    mfxU32 skipped = 0;
+    mfxU32 skipped = 0;    
+
     TranscodingSample::sInputParams InputParams;
     if (m_nTimeout)
         InputParams.nTimeout = m_nTimeout;
@@ -821,10 +830,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         }
 
         // output PicStruct
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-deinterlace")))
-        {
-            InputParams.bEnableDeinterlacing = true;
-        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-la_ext")))
         {
             InputParams.bEnableExtLA = true;
@@ -859,6 +864,14 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             VAL_CHECK(i + 1 == argc, i, argv[i]);
             InputParams.decoderPluginParams = ParsePluginParameter(argv[i + 1]);
             i++;
+        }
+        else if((stsExtBuf = CVPPExtBuffersStorage::ParseCmdLine(argv,argc,i,&InputParams,skipped))
+            !=MFX_ERR_MORE_DATA)
+        {
+            if(stsExtBuf==MFX_ERR_UNSUPPORTED)
+            {
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else
         {
