@@ -2281,7 +2281,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                 m_slice[i].RefPicList1[j].flags = VA_PICTURE_H264_INVALID;
             }
 
-            if ((in->NumFrameL0) && ((slice_type == SLICE_TYPE_P) || (slice_type == SLICE_TYPE_P)) )
+            if ((in->NumFrameL0) && ((slice_type == SLICE_TYPE_P) || (slice_type == SLICE_TYPE_B)) )
             {
                 for (ref_counter_l0 = 0; ref_counter_l0 < in->NumFrameL0; ref_counter_l0++)
                 {
