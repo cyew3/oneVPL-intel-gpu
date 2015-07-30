@@ -1700,7 +1700,7 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     // Initializing m_VppExtParamsStorage here, to put all extra filters (created in Init function) to the end of buffer
     m_VppExtParamsStorage.Init(pInParams);
 
-    // Adding 
+    // Adding
 
     m_mfxVppParams.ExtParam = &m_VppExtParamsStorage.ExtBuffers[0]; // vector is stored linearly in memory
     m_mfxVppParams.NumExtParam = (mfxU16)m_VppExtParamsStorage.ExtBuffers.size();

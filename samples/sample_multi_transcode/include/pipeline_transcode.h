@@ -43,7 +43,7 @@
 #include "hw_device.h"
 #include "plugin_loader.h"
 
-#include "VPPExtBuffersStorage.h"
+#include "vpp_ext_buffers_storage.h"
 
 #if defined(_WIN32) || defined(_WIN64)
     #define MSDK_CPU_ROTATE_PLUGIN  MSDK_STRING("sample_rotate_plugin.dll")

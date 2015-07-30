@@ -118,7 +118,7 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -lad depth    Depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100]. \n"));
     msdk_printf(MSDK_STRING("                May be 1 in the case when -mss option is specified \n"));
     msdk_printf(MSDK_STRING("\n"));
-    msdk_printf(MSDK_STRING("Pipeline description (vpp options):\n"));    
+    msdk_printf(MSDK_STRING("Pipeline description (vpp options):\n"));
     msdk_printf(MSDK_STRING("  -deinterlace             Forces VPP to deinterlace input stream\n"));
     msdk_printf(MSDK_STRING("  -deinterlace::ADI        Forces VPP to deinterlace input stream using ADI algorithm\n"));
     msdk_printf(MSDK_STRING("  -deinterlace::ADI_NO_REF Forces VPP to deinterlace input stream using ADI no ref algorithm\n"));
@@ -470,7 +470,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     mfxStatus sts = MFX_ERR_NONE;
     mfxStatus stsExtBuf = MFX_ERR_NONE;
     mfxU32 i;
-    mfxU32 skipped = 0;    
+    mfxU32 skipped = 0;
 
     TranscodingSample::sInputParams InputParams;
     if (m_nTimeout)

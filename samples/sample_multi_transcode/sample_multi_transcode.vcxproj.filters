@@ -20,7 +20,7 @@
     <ClCompile Include="src\transcode_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\VPPExtBuffersStorage.cpp">
+    <ClCompile Include="src\vpp_ext_buffers_storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -34,7 +34,7 @@
     <ClInclude Include="include\transcode_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\VPPExtBuffersStorage.h">
+    <ClInclude Include="include\vpp_ext_buffers_storage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
