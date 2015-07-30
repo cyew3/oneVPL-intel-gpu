@@ -500,9 +500,9 @@ namespace H265Enc {
 
 H265Encoder::H265Encoder(VideoCORE &core)
     : m_core(core)
+    , m_memBuf(NULL)
     , m_brc(NULL)
     , m_fei(NULL)
-    , m_memBuf(NULL)
 {
     m_videoParam.m_logMvCostTable = NULL;
     m_responseAux.mids = NULL;
@@ -1880,21 +1880,23 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *in)
         locked = true;
     }
 
-    if (m_videoParam.doDumpSource && m_videoParam.fourcc == MFX_FOURCC_NV12) {
+    if (m_videoParam.doDumpSource && m_videoParam.fourcc == MFX_FOURCC_NV12 || m_videoParam.fourcc == MFX_FOURCC_P010) {
         if (vm_file *f = vm_file_fopen(m_videoParam.sourceDumpFileName, (out->m_frameOrder == 0) ? VM_STRING("wb") : VM_STRING("ab"))) {
+            Ipp32s luSz = (m_videoParam.bitDepthLuma == 8) ? 1 : 2;
             Ipp32s luW = m_videoParam.Width - m_videoParam.CropLeft - m_videoParam.CropRight;
             Ipp32s luH = m_videoParam.Height - m_videoParam.CropTop - m_videoParam.CropBottom;
             Ipp32s luPitch = in->Data.Pitch;
-            Ipp8u *luPtr = in->Data.Y + (m_videoParam.CropTop * luPitch + m_videoParam.CropLeft);
+            Ipp8u *luPtr = in->Data.Y + (m_videoParam.CropTop * luPitch + m_videoParam.CropLeft * luSz);
             for (Ipp32s y = 0; y < luH; y++, luPtr += luPitch)
-                vm_file_fwrite(luPtr, 1, luW, f);
+                vm_file_fwrite(luPtr, luSz, luW, f);
 
+            Ipp32s chSz = (m_videoParam.bitDepthChroma == 8) ? 1 : 2;
             Ipp32s chW = luW;
             Ipp32s chH = luH >> 1;
             Ipp32s chPitch = in->Data.Pitch;
-            Ipp8u *chPtr = in->Data.UV + (m_videoParam.CropTop / 2 * chPitch + m_videoParam.CropLeft);
+            Ipp8u *chPtr = in->Data.UV + (m_videoParam.CropTop / 2 * chPitch + m_videoParam.CropLeft * chSz);
             for (Ipp32s y = 0; y < chH; y++, chPtr += chPitch)
-                vm_file_fwrite(chPtr, 1, chW, f);
+                vm_file_fwrite(chPtr, chSz, chW, f);
 
             vm_file_fclose(f);
         }
@@ -2175,13 +2177,14 @@ void Hrd::Update(Ipp32u sizeInbits, const Frame &pic)
     double auNominalRemovalTime = initCpbRemovalDelay / 90000;
     if (pic.m_encOrder > 0) {
         Ipp32u auCpbRemovalDelayMinus1 = (pic.m_encOrder - prevBuffPeriodEncOrder) - 1;
-        prevAuCpbRemovalDelayMinus1 = auCpbRemovalDelayMinus1;
+        //prevAuCpbRemovalDelayMinus1 = auCpbRemovalDelayMinus1;
         // (D-1)
         Ipp32u auCpbRemovalDelayMsb = 0;
         if (!bufferingPeriodPic)
             auCpbRemovalDelayMsb = (auCpbRemovalDelayMinus1 <= prevAuCpbRemovalDelayMinus1)
                 ? prevAuCpbRemovalDelayMsb + maxCpbRemovalDelay
                 : prevAuCpbRemovalDelayMsb;
+        prevAuCpbRemovalDelayMinus1 = auCpbRemovalDelayMinus1;
         prevAuCpbRemovalDelayMsb = auCpbRemovalDelayMsb;
         // (D-2)
         Ipp32u auCpbRemovalDelayValMinus1 = auCpbRemovalDelayMsb + auCpbRemovalDelayMinus1;
