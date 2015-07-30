@@ -27,7 +27,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom field first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
-    msdk_printf(MSDK_STRING("   [-ii idrInterval] - idr interval, default 0 means every I is an IDR, 1 means every other I frame is an IDR etc\n"));
+    msdk_printf(MSDK_STRING("   [-idr_interval size] - idr interval, default 0 means every I is an IDR, 1 means every other I frame is an IDR etc\n"));
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (KBits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
     msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n"));
@@ -191,7 +191,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bRefType = MFX_B_REF_PYRAMID;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ii")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-idr_interval")))
         {
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nIdrInterval))
             {
@@ -225,7 +225,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pass_headers")))
         {
-            //i++;
             pParams->bPassHeaders = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-8x8stat")))
@@ -379,14 +378,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
-    if (!( pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCODE ||
-          !pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCODE ||
-          !pParams->bPREENC && !pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCODE ||
-          !pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCODE ||
-          !pParams->bPREENC &&  pParams->bENCPAK  && !pParams->bENCODE ||
-           pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCODE ||
-           pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCODE ||
-           pParams->bPREENC &&  pParams->bENCPAK  && !pParams->bENCODE)
+    if (!( pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE ||
+          !pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE ||
+          !pParams->bPREENC && !pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE ||
+          !pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE ||
+          !pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE ||
+           pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE ||
+           pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE ||
+           pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE)
     ){
         if (bAlrShownHelp){
             msdk_printf(MSDK_STRING("\nUnsupported pipeline!\n"));
@@ -646,6 +645,8 @@ int main(int argc, char *argv[])
     Params.Enable8x8Stat  = false;
     Params.FTEnable       = false;
     Params.AdaptiveSearch = false;
+    Params.DistortionType = false;
+    Params.bPassHeaders   = false;
     Params.RepartitionCheckEnable = false;
     Params.MultiPredL0 = false;
     Params.MultiPredL1 = false;
@@ -660,6 +661,7 @@ int main(int argc, char *argv[])
     Params.memType = D3D9_MEMORY; //only HW memory is supported
     Params.QP = 26; //default qp value
     Params.bUseHWLib = true;
+    Params.bLABRC    = false;
     Params.bRefType = MFX_B_REF_OFF; //default set to off
     Params.SearchWindow    = 0;
     Params.RefWidth        = 32;//48;

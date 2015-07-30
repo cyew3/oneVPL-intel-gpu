@@ -2762,7 +2762,7 @@ void CEncodingPipeline::initFrameParams(iTask* eTask) {
             case MFX_FRAMETYPE_I:
                 eTask->in.NumFrameL0 = 0; //1;  //just workaround to support I frames
                 eTask->in.NumFrameL1 = 0;
-                eTask->in.L0Surface = NULL; //eTask->in.InSurface;
+                eTask->in.L0Surface = eTask->in.L1Surface = NULL; //eTask->in.InSurface;
                 //in data
                 eTask->in.NumExtParam = numExtInParamsPreEnc;
                 eTask->in.ExtParam = inBufsPreEnc;
@@ -2782,6 +2782,7 @@ void CEncodingPipeline::initFrameParams(iTask* eTask) {
                 eTask->in.NumFrameL0 = 1;
                 eTask->in.NumFrameL1 = 0;
                 eTask->in.L0Surface = &eTask->prevTask->in.InSurface;
+                eTask->in.L1Surface = NULL;
                 //in data
                 eTask->in.NumExtParam = numExtInParamsPreEnc;
                 eTask->in.ExtParam = inBufsPreEnc;
@@ -2850,8 +2851,8 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
                 {
                     eTask->in.NumFrameL0 = 1;
                     eTask->in.NumFrameL1 = 0;
-                    //eTask->in.L0Surface = NULL;
                     eTask->in.L0Surface = &eTask->in.InSurface;
+                    eTask->in.L1Surface = NULL;
                     eTask->in.NumExtParam = numExtInParams;
                     eTask->in.ExtParam = inBufs;
                     eTask->out.NumExtParam = numExtOutParams;
@@ -2861,8 +2862,9 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
                 if (m_pmfxPAK)
                 {
                     eTask->inPAK.NumFrameL0 = 1;
-                    eTask->inPAK.L0Surface = &eTask->prevTask->outPAK.OutSurface;
                     eTask->inPAK.NumFrameL1 = 0;
+                    eTask->inPAK.L0Surface = &eTask->prevTask->outPAK.OutSurface;
+                    eTask->inPAK.L1Surface = NULL;
                     eTask->inPAK.NumExtParam = numExtOutParams;
                     eTask->inPAK.ExtParam = outBufs;
                     eTask->outPAK.NumExtParam = numExtInParams;
@@ -2878,8 +2880,6 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
                 {
                     eTask->in.NumFrameL0 = 1;
                     eTask->in.NumFrameL1 = 1;
-                    //eTask->in.L0Surface = NULL;
-                    //eTask->in.L1Surface = NULL;
                     eTask->in.L0Surface = &eTask->in.InSurface;
                     eTask->in.L1Surface = &eTask->in.InSurface;
                     eTask->in.NumExtParam = numExtInParams;
