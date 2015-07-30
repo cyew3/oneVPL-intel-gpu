@@ -19,6 +19,70 @@ File Name: mfx_screen_capture_ddi.cpp
 namespace MfxCapture
 {
 
+void FindAllConnectedDisplays(displaysDescr& displays)
+{
+    unsigned int n = 0;
+
+    memset(&displays, 0, sizeof(displays));
+
+    UINT32 pNumPathArrayElements = 0;
+    DISPLAYCONFIG_PATH_INFO *pPathInfoArray;
+    UINT32 pNumModeInfoArrayElements = 0;
+    DISPLAYCONFIG_MODE_INFO *pModeInfoArray;
+    LONG lReturn = 0;
+
+    lReturn = GetDisplayConfigBufferSizes(/*QDC_ALL_PATHS*/QDC_ONLY_ACTIVE_PATHS, &pNumPathArrayElements, &pNumModeInfoArrayElements);
+    if (ERROR_SUCCESS == lReturn)
+    {
+        pPathInfoArray = (DISPLAYCONFIG_PATH_INFO*)malloc((pNumPathArrayElements)* sizeof(DISPLAYCONFIG_PATH_INFO));
+        if(!pPathInfoArray)
+            return;
+        memset(pPathInfoArray, 0, (pNumPathArrayElements)* sizeof(DISPLAYCONFIG_PATH_INFO));
+        pModeInfoArray = (DISPLAYCONFIG_MODE_INFO*)malloc((pNumModeInfoArrayElements)* sizeof(DISPLAYCONFIG_MODE_INFO));
+        if(!pModeInfoArray)
+            return;
+        memset(pModeInfoArray, 0, (pNumModeInfoArrayElements)* sizeof(DISPLAYCONFIG_MODE_INFO));
+ 
+        lReturn = QueryDisplayConfig(/*QDC_ALL_PATHS*/QDC_ONLY_ACTIVE_PATHS, &pNumPathArrayElements, pPathInfoArray, &pNumModeInfoArrayElements, pModeInfoArray, NULL);
+ 
+        if (ERROR_SUCCESS == lReturn)
+        {
+            for (unsigned int index = 0; index < pNumPathArrayElements; index++)
+            {
+                if (pPathInfoArray[index].targetInfo.targetAvailable)
+                {
+                    unsigned int targetID = pPathInfoArray[index].targetInfo.id;
+
+                    displays.display[n].IndexNumber = n + 1;
+                    displays.display[n].DXGIAdapterLuid = pPathInfoArray[index].targetInfo.adapterId;
+                    displays.display[n].TargetID = targetID;
+                    displays.display[n].width    = pModeInfoArray[pPathInfoArray[index].sourceInfo.modeInfoIdx].sourceMode.width;
+                    displays.display[n].height   = pModeInfoArray[pPathInfoArray[index].sourceInfo.modeInfoIdx].sourceMode.height;
+                    displays.display[n].position = pModeInfoArray[pPathInfoArray[index].sourceInfo.modeInfoIdx].sourceMode.position;
+                    ++n;
+                    displays.n = n;
+
+                    if( (sizeof(displays.display) / sizeof(displays.display[0])) == n)
+                    {
+                        //so many displays...
+                        break;
+                    }
+                }
+            }
+        }
+        if(pPathInfoArray)
+        {
+            free(pPathInfoArray);
+            pPathInfoArray = 0;
+        }
+        if(pModeInfoArray)
+        {
+            free(pModeInfoArray);
+            pModeInfoArray = 0;
+        }
+    }
+}
+
 Capturer* CreatePlatformCapturer(mfxCoreInterface* core)
 {
     try

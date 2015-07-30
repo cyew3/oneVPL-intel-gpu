@@ -82,7 +82,8 @@ struct AsyncParams
     mfxFrameSurface1 *real_surface;
     mfxU32 StatusReportFeedbackNumber;
     mfxExtDirtyRect  *ext_rect;
-    bool rt_fallback;
+    bool rt_fallback_dxgi;
+    bool rt_fallback_d3d;
 };
 
 enum CaptureMode{
@@ -131,15 +132,22 @@ Capturer* CreateSWCapturer(mfxCoreInterface* core);
 DXGI_FORMAT MfxFourccToDxgiFormat(const mfxU32& fourcc);
 D3DFORMAT MfxFourccToD3dFormat(const mfxU32& fourcc);
 
-//class CMFastCopy
-//{
-//public:
-//    CMFastCopy(mfxCoreInterface* _core);
-//    mfxStatus CMCopySysToGpu(mfxFrameSurface1& in, mfxFrameSurface1& out);
-//
-//protected:
-//
-//};
+#define MAX_DISPLAYS 32
+struct dispDescr
+{
+    unsigned int IndexNumber; //Like Windows screen resolution window enumeration
+    LUID         DXGIAdapterLuid;
+    unsigned int TargetID; //DISPLAYCONFIG_PATH_TARGET_INFO.id  /* The target identifier on the specified adapter that this path relates to. */
+    unsigned int width;
+    unsigned int height;
+    POINTL       position;
+};
+struct displaysDescr
+{
+    unsigned int n;
+    dispDescr display[MAX_DISPLAYS];
+};
+void FindAllConnectedDisplays(displaysDescr& displays);
 
 class OwnResizeFilter
 {

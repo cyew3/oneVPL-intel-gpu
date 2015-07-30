@@ -151,7 +151,12 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, c
             {
                 try
                 {
-                    surf.Data.Y = new mfxU8[surf.Info.Width * surf.Info.Height * 3 / 2];
+                    surf.Data.Y = new(std::nothrow) mfxU8[surf.Info.Width * surf.Info.Height * 3 / 2];
+                    if(!surf.Data.Y)
+                    {
+                        Destroy();
+                        return MFX_ERR_MEMORY_ALLOC;
+                    }
                     surf.Data.UV = surf.Data.Y + surf.Info.Width * surf.Info.Height;
                     surf.Data.Pitch = surf.Info.Width;
                     m_InternalNV12ResizeSurfPool.push_back(surf);

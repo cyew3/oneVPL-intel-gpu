@@ -59,6 +59,9 @@ protected:
     mfxFrameSurface1* GetFreeInternalSurface();
     std::list<mfxFrameSurface1> m_InternalSurfPool;
 #endif
+private: // prohobit copy constructor and assignment operator
+    D3D11_Capturer(const D3D11_Capturer& that);
+    D3D11_Capturer& operator=(const D3D11_Capturer&);
 };
 
 } //namespace MfxCapture

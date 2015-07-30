@@ -205,7 +205,8 @@ mfxStatus D3D11_Capturer::CheckCapabilities(mfxVideoParam const & in, mfxVideoPa
 
     //count = dec_ext.PrivateOutputDataSize;
 
-    desktop_format = new DESKTOP_FORMAT[count];
+    desktop_format = new(std::nothrow) DESKTOP_FORMAT[count];
+    if(!desktop_format) return MFX_ERR_MEMORY_ALLOC;
     param_size.SizeOfParamStruct = sizeof(DESKTOP_FORMAT);
     
     dec_ext.Function = DESKTOP_FORMATS_ID;

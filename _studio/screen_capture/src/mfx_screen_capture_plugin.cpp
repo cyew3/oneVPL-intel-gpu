@@ -16,6 +16,9 @@ File Name: mfx_screen_capture_plugin.cpp
 #include "mfx_utils.h"
 #include "mfxstructures.h"
 
+#include "mfx_screen_capture_sw_d3d9.h"
+#include "mfx_screen_capture_sw_d3d11.h"
+
 namespace MfxCapture
 {
 
@@ -148,11 +151,13 @@ mfxStatus MFXScreenCapture_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAlloc
 
     if (par->AsyncDepth)
     {
-        out->NumFrameMin = out->NumFrameSuggested = EnableDirtyRect ? (2 * par->AsyncDepth) : par->AsyncDepth;
+        out->NumFrameSuggested = EnableDirtyRect ? (2 * par->AsyncDepth) : par->AsyncDepth;
+        out->NumFrameMin = out->NumFrameSuggested;
     }
     else
     {
-        out->NumFrameMin = out->NumFrameSuggested = EnableDirtyRect ? 2 : 1; //default value
+        out->NumFrameSuggested = EnableDirtyRect ? 2 : 1; //default value
+        out->NumFrameMin = out->NumFrameSuggested;
     }
 
     if (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) 
@@ -316,7 +321,15 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
         {
             isSystem = true;
         }
-        m_pDirtyRectAnalyzer.reset(new CpuDirtyRectFilter(m_pmfxCore, isSystem, par));
+        try
+        {
+            m_pDirtyRectAnalyzer.reset(new CpuDirtyRectFilter(m_pmfxCore, isSystem, par));
+        }
+        catch(...)
+        {
+            Close();
+            return MFX_ERR_MEMORY_ALLOC;
+        }
 
         fallback = true;
 
@@ -357,7 +370,8 @@ mfxStatus MFXScreenCapture_Plugin::Close()
     m_StatusReportFeedbackNumber = 0;
 
     m_pCapturer.reset(0);
-    m_pFallbackCapturer.reset(0);
+    m_pFallbackDXGICapturer.reset(0);
+    m_pFallbackD3D9Capturer.reset(0);
     m_inited = false;
 
     return mfxRes;
@@ -700,7 +714,6 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
             }
         }
 
-
         m_pCapturer.reset( CreatePlatformCapturer(m_pmfxCore) );
         if(m_pCapturer.get())
             mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in, m_DisplayIndex);
@@ -709,10 +722,20 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         if(mfxRes)
         {
             fallback = true;
-            m_pCapturer.reset( CreateSWCapturer(m_pmfxCore) );
+            m_pCapturer.reset( new(std::nothrow) SW_D3D11_Capturer(m_pmfxCore) );
             if(!m_pCapturer.get())
                 return MFX_ERR_MEMORY_ALLOC;
             mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in, m_DisplayIndex);
+            if(mfxRes)
+            {
+                m_pCapturer.reset( new(std::nothrow) SW_D3D9_Capturer(m_pmfxCore) );
+                if(!m_pCapturer.get())
+                    return MFX_ERR_MEMORY_ALLOC;
+                mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in, m_DisplayIndex);
+            }
+            MFX_CHECK_STS(mfxRes);
+
+            mfxRes = m_pCapturer.get()->CheckCapabilities(in, &out);
         }
         MFX_CHECK_STS(mfxRes);
 
@@ -721,10 +744,17 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         if(mfxRes)
         {
             fallback = true;
-            m_pCapturer.reset( CreateSWCapturer(m_pmfxCore) );
+            m_pCapturer.reset( new(std::nothrow) SW_D3D11_Capturer(m_pmfxCore) );
             if(!m_pCapturer.get())
                 return MFX_ERR_MEMORY_ALLOC;
             mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in, m_DisplayIndex);
+            if(mfxRes)
+            {
+                m_pCapturer.reset( new(std::nothrow) SW_D3D9_Capturer(m_pmfxCore) );
+                if(!m_pCapturer.get())
+                    return MFX_ERR_MEMORY_ALLOC;
+                mfxRes = m_pCapturer.get()->CreateVideoAccelerator(in, m_DisplayIndex);
+            }
             MFX_CHECK_STS(mfxRes);
 
             mfxRes = m_pCapturer.get()->CheckCapabilities(in, &out);
@@ -732,11 +762,23 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         MFX_CHECK_STS(mfxRes);
 
 #if defined(ENABLE_RUNTIME_SW_FALLBACK)
-        m_pFallbackCapturer.reset( CreateSWCapturer(m_pmfxCore) );
-        if(m_pFallbackCapturer.get())
+        if(SW_D3D11 != m_pCapturer.get()->Mode)
         {
-            m_pFallbackCapturer.get()->CreateVideoAccelerator(in, m_DisplayIndex);
-            m_pCapturer.get()->CheckCapabilities(in, &out);
+            m_pFallbackDXGICapturer.reset( new(std::nothrow) SW_D3D11_Capturer(m_pmfxCore) );
+            if(m_pFallbackDXGICapturer.get())
+            {
+                mfxRes = m_pFallbackDXGICapturer.get()->CreateVideoAccelerator(in, m_DisplayIndex);
+                if(mfxRes)
+                    m_pFallbackDXGICapturer.reset( 0 );
+                //m_pCapturer.get()->CheckCapabilities(in, &out);
+            }
+        }
+
+        m_pFallbackD3D9Capturer.reset( new(std::nothrow) SW_D3D9_Capturer(m_pmfxCore) );
+        if(m_pFallbackD3D9Capturer.get())
+        {
+            m_pFallbackD3D9Capturer.get()->CreateVideoAccelerator(in, m_DisplayIndex);
+            //m_pCapturer.get()->CheckCapabilities(in, &out);
         }
 #endif
     }
@@ -817,8 +859,9 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
         MFX_CHECK_STS(mfxRes);
     }
 
-    bool rt_fallback = false;
-    mfxRes = DecodeFrameSubmit(real_surface, rt_fallback, ext_surface);
+    bool rt_fallback_d3d = false;
+    bool rt_fallback_dxgi = false;
+    mfxRes = DecodeFrameSubmit(real_surface, rt_fallback_d3d, rt_fallback_dxgi, ext_surface);
     if(m_bDirtyRect)
     {
         mfxExtDirtyRect* extDirtyRect = 0;
@@ -837,12 +880,14 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
         //surface_work->Info.CropW = m_CurrentPar.mfx.FrameInfo.Width;
         surface_work->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
-        AsyncParams *pAsyncParam = new AsyncParams;
+        AsyncParams *pAsyncParam = new(std::nothrow) AsyncParams;
+        if(!pAsyncParam) return MFX_ERR_MEMORY_ALLOC;
         //pAsyncParam->surface_work = real_surface;
         pAsyncParam->surface_out =  surface_work;
         pAsyncParam->real_surface = real_surface;
         pAsyncParam->StatusReportFeedbackNumber = m_StatusReportFeedbackNumber;
-        pAsyncParam->rt_fallback = rt_fallback;
+        pAsyncParam->rt_fallback_dxgi = rt_fallback_dxgi;
+        pAsyncParam->rt_fallback_d3d = rt_fallback_d3d;
         *task = (mfxThreadTask*)pAsyncParam;
         surface_work->Data.TimeStamp = (mfxU64) MFX_TIMESTAMP_UNKNOWN;
         surface_work->Data.Corrupted = 0;
@@ -853,7 +898,7 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
     return mfxRes;
 }
 
-mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxFrameSurface1 *surface, bool& rt_fallback, mfxFrameSurface1 *ext_surface)
+mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxFrameSurface1 *surface, bool& rt_fallback_d3d, bool& rt_fallback_dxgi, mfxFrameSurface1 *ext_surface)
 {
     mfxStatus mfxRes;
     CComPtr<ID3D11VideoDecoderOutputView> pOutputView;
@@ -864,29 +909,73 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxFrameSurface1 *surface, 
     {
         mfxRes = m_pCapturer.get()->BeginFrame(surface);
         if(mfxRes)
-            rt_fallback = true;
+            rt_fallback_dxgi = true;
 
-        if(!rt_fallback)
-        mfxRes = m_pCapturer.get()->GetDesktopScreenOperation(surface, m_StatusReportFeedbackNumber);
-        if(mfxRes)
-            rt_fallback = true;
+        if(!rt_fallback_dxgi)
+        {
+            mfxRes = m_pCapturer.get()->GetDesktopScreenOperation(surface, m_StatusReportFeedbackNumber);
+            if(mfxRes)
+                rt_fallback_dxgi = true;
+        }
 
         mfxRes = m_pCapturer.get()->EndFrame();
         if(mfxRes)
-            rt_fallback = true;
+            rt_fallback_dxgi = true;
     }
     catch(...)
     {
-        rt_fallback = true;
+        rt_fallback_dxgi = true;
     }
 
-    if(rt_fallback)
+    if(rt_fallback_dxgi)
     {
 #if defined(ENABLE_RUNTIME_SW_FALLBACK)
-        mfxRes = m_pFallbackCapturer.get()->BeginFrame(ext_surface);
+        if(!m_pFallbackDXGICapturer.get())
+        {
+            rt_fallback_d3d = true;
+        }
+        else
+        {
+            try
+            {
+                mfxRes = m_pFallbackDXGICapturer.get()->BeginFrame(ext_surface);
+                if(mfxRes)
+                    rt_fallback_d3d = true;
+
+                if(!rt_fallback_d3d)
+                {
+                    mfxRes = m_pFallbackDXGICapturer.get()->GetDesktopScreenOperation(ext_surface, m_StatusReportFeedbackNumber);
+                    if(mfxRes)
+                        rt_fallback_d3d = true;
+                }
+
+                mfxRes = m_pFallbackDXGICapturer.get()->EndFrame();
+                if(mfxRes)
+                    rt_fallback_d3d = true;
+            }
+            catch(...)
+            {
+                rt_fallback_d3d = true;
+            }
+        }
+#else
+        ext_surface;
+        return MFX_ERR_DEVICE_FAILED;
+#endif
+    }
+
+    if(rt_fallback_d3d)
+    {
+#if defined(ENABLE_RUNTIME_SW_FALLBACK)
+        if(!m_pFallbackD3D9Capturer.get())
+            return MFX_ERR_DEVICE_FAILED;
+
+        rt_fallback_dxgi = false;
+
+        mfxRes = m_pFallbackD3D9Capturer.get()->BeginFrame(ext_surface);
         MFX_CHECK_STS(mfxRes);
 
-        mfxRes = m_pFallbackCapturer.get()->GetDesktopScreenOperation(ext_surface, m_StatusReportFeedbackNumber);
+        mfxRes = m_pFallbackD3D9Capturer.get()->GetDesktopScreenOperation(ext_surface, m_StatusReportFeedbackNumber);
         if(MFX_ERR_NONE < mfxRes)
         {
             //wrn = true;
@@ -894,7 +983,7 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxFrameSurface1 *surface, 
         }
         MFX_CHECK_STS(mfxRes);
 
-        mfxRes = m_pFallbackCapturer.get()->EndFrame();
+        mfxRes = m_pFallbackD3D9Capturer.get()->EndFrame();
         MFX_CHECK_STS(mfxRes);
 #else
         ext_surface;
@@ -917,14 +1006,19 @@ mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfx
 
     AsyncParams *pAsyncParam  = (AsyncParams *)task;
 
-    if(!pAsyncParam->rt_fallback)
+    if(pAsyncParam->rt_fallback_dxgi)
     {
-        mfxRes = m_pCapturer.get()->QueryStatus(m_StatusList);
+        mfxRes = m_pFallbackDXGICapturer.get()->QueryStatus(m_StatusList);
+        MFX_CHECK_STS(mfxRes);
+    }
+    else if(pAsyncParam->rt_fallback_d3d)
+    {
+        mfxRes = m_pFallbackD3D9Capturer.get()->QueryStatus(m_StatusList);
         MFX_CHECK_STS(mfxRes);
     }
     else
     {
-        mfxRes = m_pFallbackCapturer.get()->QueryStatus(m_StatusList);
+        mfxRes = m_pCapturer.get()->QueryStatus(m_StatusList);
         MFX_CHECK_STS(mfxRes);
     }
 
@@ -947,7 +1041,7 @@ mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfx
     //}
     mfxFrameSurface1* real_output = pAsyncParam->surface_out;
 
-    if( (!isSW(m_pCapturer.get()) && !pAsyncParam->rt_fallback) &&
+    if( (!isSW(m_pCapturer.get()) && !(pAsyncParam->rt_fallback_dxgi || pAsyncParam->rt_fallback_d3d)) &&
         ((m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY && m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
         if(m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
@@ -963,7 +1057,7 @@ mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfx
         MFX_CHECK_STS(mfxRes);
     }
 
-    if( (!isSW(m_pCapturer.get()) && pAsyncParam->rt_fallback) &&
+    if( (!isSW(m_pCapturer.get()) && (pAsyncParam->rt_fallback_dxgi || pAsyncParam->rt_fallback_d3d)) &&
         ((m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY && m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
         mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->real_surface->Data);

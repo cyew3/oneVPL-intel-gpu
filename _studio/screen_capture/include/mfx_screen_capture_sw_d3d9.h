@@ -75,6 +75,9 @@ protected:
     CComPtr<IDirectXVideoDecoderService>         m_pDirectXVideoService;
     HANDLE                                       m_hDirectXHandle;
 
+private: // prohobit copy constructor and assignment operator
+    SW_D3D9_Capturer(const SW_D3D9_Capturer& that);
+    SW_D3D9_Capturer& operator=(const SW_D3D9_Capturer&);
 };
 
 } //namespace MfxCapture

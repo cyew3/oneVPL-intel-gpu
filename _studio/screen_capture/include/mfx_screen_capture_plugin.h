@@ -118,7 +118,7 @@ protected:
     virtual ~MFXScreenCapture_Plugin();
     std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > m_adapter;
 
-    mfxStatus DecodeFrameSubmit(mfxFrameSurface1 *surface, bool& rt_fallback, mfxFrameSurface1 *ext_surface);
+    mfxStatus DecodeFrameSubmit(mfxFrameSurface1 *surface, bool& rt_fallback_d3d, bool& rt_fallback_dxgi, mfxFrameSurface1 *ext_surface);
     mfxStatus CheckFrameInfo(const mfxFrameInfo& info);
     mfxStatus CheckOpaqBuffer(const mfxVideoParam& par, mfxVideoParam* pParOut, const mfxExtOpaqueSurfaceAlloc& opaqAlloc, mfxExtOpaqueSurfaceAlloc* pOpaqAllocOut);
     mfxFrameSurface1* GetFreeInternalSurface();
@@ -142,13 +142,17 @@ protected:
     mfxU32              m_StatusReportFeedbackNumber;
 
     std::auto_ptr<Capturer>         m_pCapturer;
-    std::auto_ptr<Capturer>         m_pFallbackCapturer;
+    std::auto_ptr<Capturer>         m_pFallbackDXGICapturer;
+    std::auto_ptr<Capturer>         m_pFallbackD3D9Capturer;
 
     std::auto_ptr<CpuDirtyRectFilter>         m_pDirtyRectAnalyzer;
     mfxFrameSurface1*               prevSurface;
 
     std::list<DESKTOP_QUERY_STATUS_PARAMS> m_StatusList;
 
+private: // prohobit copy constructor and assignment operator
+    MFXScreenCapture_Plugin(const MFXScreenCapture_Plugin& that);
+    MFXScreenCapture_Plugin& operator=(const MFXScreenCapture_Plugin&);
 };
 
 template<typename T>

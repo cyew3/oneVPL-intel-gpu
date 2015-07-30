@@ -119,7 +119,8 @@ mfxStatus D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, cons
     MFX_CHECK(count, MFX_ERR_DEVICE_FAILED);
 
     dec_ext.Function = AUXDEV_GET_ACCEL_GUIDS;
-    pGuids =  new GUID[count];
+    pGuids =  new(std::nothrow) GUID[count];
+    if(!pGuids) return MFX_ERR_MEMORY_ALLOC;
     dec_ext.pPrivateOutputData = pGuids;
     dec_ext.PrivateOutputDataSize = sizeof(GUID)*count;
     hres = m_pDecoder->Execute(&dec_exec);
@@ -264,7 +265,8 @@ mfxStatus D3D9_Capturer::CheckCapabilities(mfxVideoParam const & in, mfxVideoPar
 
     //Query DESKTOP_FORMATS_ID
     param_size.SizeOfParamStruct = sizeof(DESKTOP_FORMAT);
-    desktop_format = new DESKTOP_FORMAT[count];
+    desktop_format = new(std::nothrow) DESKTOP_FORMAT[count];
+    if(!desktop_format) return MFX_ERR_MEMORY_ALLOC;
 
     dec_ext.Function = DESKTOP_FORMATS_ID;
     dec_ext.pPrivateInputData =  &param_size;
