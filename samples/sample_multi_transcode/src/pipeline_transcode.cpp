@@ -815,26 +815,30 @@ mfxStatus CTranscodingPipeline::Encode()
     SafetySurfaceBuffer   *curBuffer = m_pBuffer;
 
     time_t start = time(0);
+    bool shouldReadNextFrame=true;
     while (MFX_ERR_NONE == sts ||  MFX_ERR_MORE_DATA == sts)
     {
         msdk_tick nBeginTime = msdk_time_get_tick(); // microseconds.
-
-        while (MFX_ERR_MORE_SURFACE == curBuffer->GetSurface(DecExtSurface) && !isQuit)
-            MSDK_SLEEP(TIME_TO_SLEEP);
-
-         // if session is not join and it is not parent - synchronize
-        if (!m_bIsJoinSession && m_pParentPipeline)
+        
+        if(shouldReadNextFrame)
         {
-            // if it is not already synchronize
-            if (DecExtSurface.Syncp)
-            {
-                sts = m_pParentPipeline->m_pmfxSession->SyncOperation(DecExtSurface.Syncp, MSDK_WAIT_INTERVAL);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            }
-        }
+            while (MFX_ERR_MORE_SURFACE == curBuffer->GetSurface(DecExtSurface) && !isQuit)
+                MSDK_SLEEP(TIME_TO_SLEEP);
 
-        if (NULL == DecExtSurface.pSurface)
-            isQuit = true;
+             // if session is not join and it is not parent - synchronize
+            if (!m_bIsJoinSession && m_pParentPipeline)
+            {
+                // if it is not already synchronize
+                if (DecExtSurface.Syncp)
+                {
+                    sts = m_pParentPipeline->m_pmfxSession->SyncOperation(DecExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                }
+            }
+
+            if (NULL == DecExtSurface.pSurface)
+                isQuit = true;
+        }
 
         if (m_pmfxVPP.get())
         {
@@ -846,6 +850,16 @@ mfxStatus CTranscodingPipeline::Encode()
             VppExtSurface.pSurface = DecExtSurface.pSurface;
             VppExtSurface.pCtrl = DecExtSurface.pCtrl;
             VppExtSurface.Syncp = DecExtSurface.Syncp;
+        }
+
+        if(MFX_ERR_MORE_SURFACE == sts)
+        {
+            shouldReadNextFrame=false;
+            sts=MFX_ERR_NONE;
+        }
+        else
+        {
+            shouldReadNextFrame=true;
         }
 
         if (MFX_ERR_MORE_DATA == sts)
@@ -890,7 +904,11 @@ mfxStatus CTranscodingPipeline::Encode()
             sts = EncodeOneFrame(&VppExtSurface, &m_BSPool.back()->Bitstream);
             //m_pBuffer->ReleaseSurface(DecExtSurface.pSurface);
         }
-        m_pBuffer->ReleaseSurface(DecExtSurface.pSurface);
+
+        if(shouldReadNextFrame) // Release current decoded surface only if're going to read next one during next iteration
+        {
+            m_pBuffer->ReleaseSurface(DecExtSurface.pSurface);
+        }
 
         // check if we need one more frame from decode
         if (MFX_ERR_MORE_DATA == sts)
@@ -1623,11 +1641,17 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         m_mfxVppParams.vpp.Out.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
 
-    // only resizing is supported
+    // Resizing
     if (pInParams->nDstWidth)
     {
         m_mfxVppParams.vpp.Out.CropW = pInParams->nDstWidth;
         m_mfxVppParams.vpp.Out.Width     = MSDK_ALIGN16(pInParams->nDstWidth);
+    }
+
+    // Framerate conversion
+    if(pInParams->dFrameRate)
+    {
+        ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.Out.FrameRateExtN, &m_mfxVppParams.vpp.Out.FrameRateExtD);
     }
 
     if (pInParams->nDstHeight)
@@ -1648,9 +1672,12 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
 
     // configure and attach external parameters
-    mfxStatus sts = AllocAndInitVppDoNotUse();
+    mfxStatus sts = AllocAndInitVppDoNotUse(pInParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    m_VppExtParamsStorage.ExtBuffers.push_back((mfxExtBuffer *)&m_VppDoNotUse);
+    if(m_VppDoNotUse.NumAlg)
+    {
+        m_VppExtParamsStorage.ExtBuffers.push_back((mfxExtBuffer *)&m_VppDoNotUse);
+    }
 
     /* VPP Comp Init */
     if (((pInParams->eModeExt == VppComp) || (pInParams->eModeExt == VppCompOnly)) &&
@@ -2502,15 +2529,20 @@ void CTranscodingPipeline::Close()
 
 } // void CTranscodingPipeline::Close()
 
-mfxStatus CTranscodingPipeline::AllocAndInitVppDoNotUse()
+mfxStatus CTranscodingPipeline::AllocAndInitVppDoNotUse(sInputParams *pInParams)
 {
-    m_VppDoNotUse.NumAlg = 2;
+    std::vector<mfxU32> filtersDisabled;
+    if(pInParams->DenoiseLevel==-1)
+    {
+        filtersDisabled.push_back(MFX_EXTBUFF_VPP_DENOISE); // turn off denoising (on by default)
+    }
+    filtersDisabled.push_back(MFX_EXTBUFF_VPP_SCENE_ANALYSIS); // turn off scene analysis (on by default)
+
+    m_VppDoNotUse.NumAlg = (mfxU32)filtersDisabled.size();
 
     m_VppDoNotUse.AlgList = new mfxU32 [m_VppDoNotUse.NumAlg];
     MSDK_CHECK_POINTER(m_VppDoNotUse.AlgList,  MFX_ERR_MEMORY_ALLOC);
-
-    m_VppDoNotUse.AlgList[0] = MFX_EXTBUFF_VPP_DENOISE; // turn off denoising (on by default)
-    m_VppDoNotUse.AlgList[1] = MFX_EXTBUFF_VPP_SCENE_ANALYSIS; // turn off scene analysis (on by default)
+    MSDK_MEMCPY(m_VppDoNotUse.AlgList,&filtersDisabled[0],sizeof(mfxU32)*filtersDisabled.size());
 
     return MFX_ERR_NONE;
 

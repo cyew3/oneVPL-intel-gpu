@@ -371,7 +371,7 @@ namespace TranscodingSample
         mfxStatus InitPluginMfxParams(sInputParams *pInParams);
         mfxStatus InitPreEncMfxParams(sInputParams *pInParams);
 
-        mfxStatus AllocAndInitVppDoNotUse();
+        mfxStatus AllocAndInitVppDoNotUse(sInputParams *pInParams);
         mfxStatus AllocMVCSeqDesc();
         mfxStatus InitOpaqueAllocBuffers();
 
