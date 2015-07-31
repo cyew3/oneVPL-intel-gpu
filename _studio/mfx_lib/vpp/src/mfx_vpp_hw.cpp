@@ -630,7 +630,28 @@ mfxStatus ResMngr::DoMode30i60p(
             return MFX_ERR_NONE;
         }
         else
+        {
+#ifdef MFX_VA_LINUX
+            // Fix for corrected behavior in 39162 driver. Separate this from Windows logic at the moment,
+            // otherwise it skips last frame. Need to investigate why.
             return MFX_ERR_MORE_DATA;
+#else
+            if (m_surfQueue.size() > 0)
+            {
+                *intSts = MFX_ERR_NONE;
+                m_outputIndexCountPerCycle = 1;
+                m_bkwdRefCount = 0;
+                m_outputIndex  = 0; // marker task end;
+
+                m_pSubResource = CreateSubResourceForMode30i60p();
+                return MFX_ERR_NONE;
+            }
+            else
+            {
+                return MFX_ERR_MORE_DATA;
+            }
+#endif
+        }
     }
 
 } // mfxStatus ResMngr::DoMode30i60p(...)
