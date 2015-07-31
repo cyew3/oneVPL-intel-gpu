@@ -240,12 +240,12 @@ private:
     mfxBitstream            m_bs;
     VP8Defs::vp8_FrameInfo  m_frame_info;
     unsigned                m_CodedCoeffTokenPartition;
+    bool                    m_firstFrame;
 
     VP8Defs::vp8_RefreshInfo         m_refresh_info;
     VP8Defs::vp8_FrameProbabilities  m_frameProbs;
     VP8Defs::vp8_FrameProbabilities  m_frameProbs_saved;
     VP8Defs::vp8_QuantInfo           m_quantInfo;
-    Ipp8u                   m_RefFrameIndx[VP8Defs::VP8_NUM_OF_REF_FRAMES];
     MFX_VP8_BoolDecoder     m_boolDecoder[VP8Defs::VP8_MAX_NUMBER_OF_PARTITIONS];
 
     mfxU16 gold_indx;

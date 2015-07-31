@@ -38,10 +38,11 @@
 #define VP8_START_CODE_FOUND(ptr) ((ptr)[0] == 0x9d && (ptr)[1] == 0x01 && (ptr)[2] == 0x2a)
 
 VideoDECODEVP8_HW::VideoDECODEVP8_HW(VideoCORE *p_core, mfxStatus *sts)
-    : m_is_initialized(false),
-      m_p_core(p_core),
-      m_platform(MFX_PLATFORM_HARDWARE),
-      m_p_video_accelerator(NULL)
+    : m_is_initialized(false)
+    , m_p_core(p_core)
+    , m_platform(MFX_PLATFORM_HARDWARE)
+    , m_p_video_accelerator(NULL)
+    , m_firstFrame(true)
 {
     UMC_SET_ZERO(m_bs);
     UMC_SET_ZERO(m_frame_info);
@@ -157,6 +158,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
     m_p_core->GetVA((mfxHDL*)&m_p_video_accelerator, MFX_MEMTYPE_FROM_DECODE);
 
     m_frameOrder = (mfxU16)0;
+    m_firstFrame = true;
     m_is_initialized = true;
 
     return MFX_ERR_NONE;
@@ -236,6 +238,18 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
 
     gold_indx = 0;
     altref_indx = 0;
+    lastrefIndex = 0;
+    m_bs.DataLength = 0;
+
+    for(int i = 0; i < m_frames.size(); i++)
+    {
+        m_p_frame_allocator.get()->DecreaseReference(m_frames[i].memId);
+    }
+
+    m_firstFrame = true;
+    m_frames.clear();
+
+    vm_time_sleep(3000);
 
     return MFX_ERR_NONE;
 
@@ -267,6 +281,11 @@ mfxStatus VideoDECODEVP8_HW::Close()
         ippFree(m_bs.Data);
         m_bs.DataLength = 0;
     }
+
+    gold_indx = 0;
+    altref_indx = 0;
+    lastrefIndex = 0;
+    m_firstFrame = true;
 
     return MFX_ERR_NONE;
 } // mfxStatus VideoDECODEVP8_HW::Close()
@@ -583,6 +602,14 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
         sts = PreDecodeFrame(p_bs, p_surface_work);
         MFX_CHECK_STS(sts);
     }
+
+    if (m_firstFrame && frame_type != I_PICTURE)
+    {
+        VP8DecodeCommon::MoveBitstreamData(*p_bs, p_bs->DataLength);
+        return MFX_ERR_MORE_DATA;
+    }
+
+    m_firstFrame = false;
 
     VP8DecodeCommon::IVF_FRAME frame;
     memset(&frame, 0, sizeof(VP8DecodeCommon::IVF_FRAME));
