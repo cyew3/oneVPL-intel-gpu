@@ -153,7 +153,7 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOptionHevc.MaxCUDepthAdapt = MFX_CODINGOPTION_ON;
     paramset.extCodingOptionHevc.NumBiRefineIter = 10;
     paramset.extCodingOptionHevc.CUSplitThreshold = 256;
-    paramset.extCodingOptionHevc.DeltaQpMode = 0;
+    paramset.extCodingOptionHevc.DeltaQpMode = 1;
     paramset.extCodingOptionHevc.Enable10bit = MFX_CODINGOPTION_OFF;
     paramset.extCodingOptionHevc.IntraAngModesP = 1;
     paramset.extCodingOptionHevc.IntraAngModesBRef = 1;
@@ -180,6 +180,7 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOptionHevc.DeblockBorders = MFX_CODINGOPTION_ON;
     paramset.extCodingOptionHevc.SAOChroma = MFX_CODINGOPTION_OFF;
     paramset.extCodingOptionHevc.NumRefLayers = 2;
+    paramset.extCodingOptionHevc.ConstQpOffset = 1;
     paramset.extCodingOption.AUDelimiter = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.DisableVUI = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.AdaptiveI = MFX_CODINGOPTION_ON;

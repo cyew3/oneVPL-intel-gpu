@@ -188,7 +188,7 @@ void H265CU<PixType>::QuantInvTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s widt
 {
     Ipp32s QP = is_luma
         ? qp  + (m_par->bitDepthLuma - 8) * 6
-        : h265_QPtoChromaQP[m_par->chromaFormatIdc-1][qp] + (m_par->bitDepthChroma - 8) * 6;
+        : GetChromaQP(qp, 0, m_par->chromaFormatIdc, m_par->bitDepthChroma);
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
     //VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
@@ -209,7 +209,7 @@ void H265CU<PixType>::QuantFwdTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s widt
 {
     Ipp32s QP = is_luma
         ? qp + (m_par->bitDepthLuma - 8) * 6
-        : h265_QPtoChromaQP[m_par->chromaFormatIdc-1][qp] + (m_par->bitDepthChroma - 8) * 6;
+        : GetChromaQP(qp, 0, m_par->chromaFormatIdc, m_par->bitDepthChroma);
 
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
@@ -257,7 +257,7 @@ void H265CU<PixType>::QuantFwdTuBase(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s 
 {
     Ipp32s QP = is_luma
         ? qp + (m_par->bitDepthLuma - 8) * 6
-        : h265_QPtoChromaQP[m_par->chromaFormatIdc-1][qp] + (m_par->bitDepthChroma - 8) * 6;
+        : GetChromaQP(qp, 0, m_par->chromaFormatIdc, m_par->bitDepthChroma);
 
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
@@ -362,6 +362,33 @@ void h265_quant_fwd_base(
 
 template class H265CU<Ipp8u>;
 template class H265CU<Ipp16u>;
+
+Ipp8s GetChromaQP(Ipp8s qpy, Ipp32s chromaQpOffset, Ipp8u chromaFormatIdc, Ipp8u bitDepthChroma)
+{
+    const Ipp8u h265_QPtoChromaQP[3][58] = {{
+             0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 29, 30, 31, 32,
+            33, 33, 34, 34, 35, 35, 36, 36, 37, 37, 38, 39, 40, 41, 42, 43, 44,
+            45, 46, 47, 48, 49, 50, 51
+        }, {
+             0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+            34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+            51, 51, 51, 51, 51, 51, 51
+        }, {
+             0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+            34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+            51, 51, 51, 51, 51, 51, 51
+        }
+    };
+
+    Ipp32s qpBdOffsetC = 6 * (bitDepthChroma - 8);
+    Ipp32s qpc = Saturate(-qpBdOffsetC, 57, qpy + chromaQpOffset);
+    if (qpc >= 0)
+        qpc = h265_QPtoChromaQP[chromaFormatIdc - 1][qpc];
+    return (Ipp8s)(qpc + qpBdOffsetC);
+}
 
 } // namespace
 

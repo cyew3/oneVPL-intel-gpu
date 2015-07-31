@@ -580,7 +580,8 @@ namespace H265Enc {
 
             slice->rd_lambda_sqrt_slice = sqrt(slice->rd_lambda_slice * 256);
             //no chroma QP offset (from PPS) is implemented yet
-            slice->ChromaDistWeight_slice = pow(2.0, (qp - h265_QPtoChromaQP[videoParam.chromaFormatIdc - 1][qp]) / 3.0);
+            Ipp32s qpc = GetChromaQP(qp, 0, videoParam.chromaFormatIdc, videoParam.bitDepthChroma);
+            slice->ChromaDistWeight_slice = pow(2.0, (qp - qpc) / 3.0);
         }
 
     } //
@@ -826,7 +827,7 @@ mfxStatus H265FrameEncoder::Init()
         streamBufSize = (m_videoParam.MaxCUSize * m_videoParam.MaxCUSize * m_videoParam.tileColWidthMax * m_videoParam.tileRowHeightMax) * bitPerPixel / 8 + DATA_ALIGN;
     else 
         streamBufSize = (m_videoParam.Width * (m_videoParam.WPPFlag ? m_videoParam.MaxCUSize :
-            ((m_videoParam.PicHeightInCtbs / m_videoParam.NumSlices + 1) * m_videoParam.MaxCUSize))) * bitPerPixel / 8 + DATA_ALIGN;
+            ((m_videoParam.PicHeightInCtbs / m_videoParam.NumSlices + 1) * m_videoParam.MaxCUSize))) * bitPerPixel * 2 / 8 + DATA_ALIGN;
 
 
     Ipp32u memSize = 0;

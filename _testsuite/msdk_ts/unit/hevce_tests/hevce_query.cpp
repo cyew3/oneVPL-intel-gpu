@@ -275,9 +275,10 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(1, output.extCodingOptionHevc.SAOChroma);
     EXPECT_EQ(1, output.extCodingOptionHevc.RepackProb);
     EXPECT_EQ(1, output.extCodingOptionHevc.NumRefLayers);
+    EXPECT_EQ(1, output.extCodingOptionHevc.ConstQpOffset);
     // check if the rest of ExtCodingOptionHevc is zeroed
     EXPECT_EQ(true, IsZero(output.extCodingOptionHevc.reserved));
-    EXPECT_EQ(39 * sizeof(mfxU16), sizeof(output.extCodingOptionHevc.reserved)); // if fails here then new fields were added, need to add tests for these fields
+    EXPECT_EQ(38 * sizeof(mfxU16), sizeof(output.extCodingOptionHevc.reserved)); // if fails here then new fields were added, need to add tests for these fields
 
     // check if ExtHevcTiles fields are set correctly
     EXPECT_EQ(1, output.extHevcTiles.NumTileRows);
@@ -818,9 +819,9 @@ TEST_F(QueryTest, Mode2_Single) {
         TestOneFieldErr(input.extCodingOptionHevc.PatternSubPel, output.extCodingOptionHevc.PatternSubPel, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
     { SCOPED_TRACE("Test DeltaQpMode");
-        const Ipp16u supported[] = {1, 2, 3};
+        const Ipp16u supported[] = {1, 2, 3, 4};
         TestOneFieldOk(input.extCodingOptionHevc.DeltaQpMode, output.extCodingOptionHevc.DeltaQpMode, supported);
-        const Ipp16u unsupported[] = {4, 5, 0xff, 0xffff};
+        const Ipp16u unsupported[] = {5, 6, 0xff, 0xffff};
         TestOneFieldErr(input.extCodingOptionHevc.DeltaQpMode, output.extCodingOptionHevc.DeltaQpMode, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
     { SCOPED_TRACE("Test SplitThresholdTabIndex");

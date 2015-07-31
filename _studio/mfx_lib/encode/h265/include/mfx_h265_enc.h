@@ -163,11 +163,11 @@ namespace H265Enc {
         Ipp32u PicHeightInCtbs;
         Ipp32u PicWidthInMinCbs;
         Ipp32u PicHeightInMinCbs;
-        //Ipp32u Log2MinTUSize; // duplicated QuadtreeTULog2MinSize
         Ipp8u  AMPAcc[MAX_CU_DEPTH];
+        Ipp64f cu_split_threshold_cu_sentinel[6*8][2][MAX_TOTAL_DEPTH]; // zero-filled sentinel for those who unintentionally uses qp<0 as index to cu_split_threshold_cu (up to 16bit profiles)
         Ipp64f cu_split_threshold_cu[52][2][MAX_TOTAL_DEPTH];
+        Ipp64f cu_split_threshold_tu_sentinel[6*8][2][MAX_TOTAL_DEPTH]; // zero-filled sentinel for those who unintentionally uses qp<0 as index to cu_split_threshold_tu (up to 16bit profiles)
         Ipp64f cu_split_threshold_tu[52][2][MAX_TOTAL_DEPTH];
-        //Ipp32s MaxTotalDepth; // duplicated MaxCUDepth
 
         // QP control
         Ipp8u UseDQP;

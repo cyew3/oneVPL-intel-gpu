@@ -266,7 +266,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(CostChroma,               OPT_TRI_STATE,  "on/off include chroma in cost"),
         HANDLE_HEVC_OPTION(IntraChromaRDO,           OPT_TRI_STATE,  "on/off adjusted chroma RDO"),
         HANDLE_HEVC_OPTION(FastInterp,               OPT_TRI_STATE,  "on/off fast filters for motion estimation"),
-        HANDLE_HEVC_OPTION(SplitThresholdTabIndex,   OPT_UINT_16  ,  "select tab for split threshold: 1, 2, 3, default or 0 = #2"),
+        HANDLE_HEVC_OPTION(SplitThresholdTabIndex,   OPT_UINT_16,    "select tab for split threshold: 1, 2, 3, default or 0 = #2"),
         HANDLE_HEVC_OPTION(PatternIntPel,            OPT_UINT_16,    "0-default; 1-log; 3- dia; 100-fullsearch"),
         HANDLE_HEVC_OPTION(PatternSubPel,            OPT_UINT_16,    "0-default; 1-int pel only; 2-halfpel; 3-quarter pel"),
         HANDLE_HEVC_OPTION(FastSkip,                 OPT_TRI_STATE,  "on/off stop decision if cbf for best merge is 0"),
@@ -299,7 +299,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(SAOChroma,                OPT_TRI_STATE,  "on/off SAO for Chroma"),
         HANDLE_HEVC_OPTION(RepackProb,               OPT_UINT_16,    "percent of random repack probabiility, 0 - no random repacks"),
         HANDLE_HEVC_OPTION(NumRefLayers,             OPT_UINT_16,    "Reference Frames Layers used for B Frames in Pyramid"),
-
+        HANDLE_HEVC_OPTION(ConstQpOffset,            OPT_UINT_16,    "allows setting negative QPs for 10bit: finalQP[IPB] = mfx.QP[IPB] - ConstQpOffset"),
 
         HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "number of tile columns (1 - default)"),
         HANDLE_HEVC_TILES(NumTileRows,               OPT_UINT_16,    "number of tile rows (1 - default)"),

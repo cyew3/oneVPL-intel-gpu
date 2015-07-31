@@ -487,6 +487,7 @@ namespace {
             ext->SAOChroma = 1;
             ext->RepackProb = 1;
             ext->NumRefLayers = 1;
+            ext->ConstQpOffset = 1;
         }
 
         if (mfxExtCodingOption *ext = GetExtBuffer(*out)) {

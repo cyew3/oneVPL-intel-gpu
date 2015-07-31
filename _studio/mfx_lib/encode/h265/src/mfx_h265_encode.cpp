@@ -141,9 +141,9 @@ namespace {
         intParam.QuadtreeTUMaxDepthInterRD = optHevc.QuadtreeTUMaxDepthInterRD;
         intParam.partModes = optHevc.PartModes;
         intParam.TMVPFlag = (optHevc.TMVP == ON);
-        intParam.QPI = (Ipp8s)mfx.QPI;
-        intParam.QPP = (Ipp8s)mfx.QPP;
-        intParam.QPB = (Ipp8s)mfx.QPB;
+        intParam.QPI = (Ipp8s)(mfx.QPI - optHevc.ConstQpOffset);
+        intParam.QPP = (Ipp8s)(mfx.QPP - optHevc.ConstQpOffset);
+        intParam.QPB = (Ipp8s)(mfx.QPB - optHevc.ConstQpOffset);
 
         intParam.GopPicSize = mfx.GopPicSize;
         intParam.GopRefDist = mfx.GopRefDist;
@@ -854,8 +854,10 @@ mfxStatus H265Encoder::Init_Internal()
     m_lastTimeStamp = (mfxU64)MFX_TIMESTAMP_UNKNOWN;
     m_lastEncOrder = -1;
 
-    memset(m_videoParam.cu_split_threshold_cu, 0, 52 * 2 * MAX_TOTAL_DEPTH * sizeof(Ipp64f));
-    memset(m_videoParam.cu_split_threshold_tu, 0, 52 * 2 * MAX_TOTAL_DEPTH * sizeof(Ipp64f));
+    Zero(m_videoParam.cu_split_threshold_cu_sentinel);
+    Zero(m_videoParam.cu_split_threshold_tu_sentinel);
+    Zero(m_videoParam.cu_split_threshold_cu);
+    Zero(m_videoParam.cu_split_threshold_tu);
 
     Ipp32s qpMax = 42;
     for (Ipp32s QP = 10; QP <= qpMax; QP++) {

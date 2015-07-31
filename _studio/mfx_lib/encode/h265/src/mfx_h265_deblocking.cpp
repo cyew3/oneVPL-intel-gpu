@@ -19,7 +19,6 @@ namespace H265Enc {
 
 #define VERT_FILT 0
 #define HOR_FILT  1
-#define Clip3 Saturate
 
 static Ipp32s tcTable[] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -101,25 +100,6 @@ void H265CU<PixType>::DeblockOneCrossLuma(Ipp32s curPixelColumn,
             h265_FilterEdgeLuma_I(edge, baseSrcDst + 4 * (i - 1), srcDstStride, HOR_FILT, m_par->bitDepthLuma);
         }
     }
-}
-
-static Ipp8u GetChromaQP(
-    Ipp8u in_QPy,
-    Ipp32s in_QPOffset,
-    Ipp8u chromaFormatIdc,
-    Ipp8u in_BitDepthChroma)
-{
-    Ipp32s qPc;
-    Ipp32s QpBdOffsetC = 6  *(in_BitDepthChroma - 8);
-
-    qPc = Clip3(-QpBdOffsetC, 57, in_QPy + in_QPOffset);
-
-    if (qPc >= 0)
-    {
-        qPc = h265_QPtoChromaQP[chromaFormatIdc - 1][qPc];
-    }
-
-    return (Ipp8u)(qPc + QpBdOffsetC);
 }
 
 

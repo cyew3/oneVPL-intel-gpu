@@ -2753,7 +2753,7 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
         if (m_cslice->slice_type != I_SLICE) {
             const H265CUData *dataBestNonSplit = GetBestCuDecision(absPartIdx, depth);
             Ipp32s qp_best = dataBestNonSplit->qp;
-            CostType cuSplitThresholdCu = m_par->cu_split_threshold_cu[qp_best][m_cslice->slice_type != I_SLICE][depth];
+            CostType cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best)][m_cslice->slice_type != I_SLICE][depth];
             CostType costBestNonSplit = IPP_MIN(m_costStored[depth], m_costCurr) - costInitial;
             if(tryIntra && splitMode == SPLIT_TRY && depth < m_intraMinDepth && costBestNonSplit>=cuSplitThresholdCu) tryIntra = false;
         }
@@ -2799,24 +2799,24 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
 #ifdef AMT_THRESHOLDS
         if(m_cslice->slice_type == I_SLICE && m_par->SplitThresholdStrengthCUIntra > m_par->SplitThresholdStrengthTUIntra) {
             if(m_SCid[depth][absPartIdx]<5) {
-                cuSplitThresholdCu = m_par->cu_split_threshold_cu[(qp_best-2>0)?(qp_best-2):0][m_cslice->slice_type != I_SLICE][depth];
+                cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best-2)][m_cslice->slice_type != I_SLICE][depth];
             } else {
-                cuSplitThresholdCu = m_par->cu_split_threshold_cu[qp_best][m_cslice->slice_type != I_SLICE][depth];
+                cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best)][m_cslice->slice_type != I_SLICE][depth];
             }
         } else if(m_cslice->slice_type != I_SLICE && m_par->SplitThresholdStrengthCUInter > m_par->SplitThresholdStrengthTUIntra) {
             if(m_SCid[depth][absPartIdx]<5 && tryIntra) {
-                cuSplitThresholdCu = m_par->cu_split_threshold_cu[(qp_best-2>0)?(qp_best-2):0][m_cslice->slice_type != I_SLICE][depth];
+                cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best-2)][m_cslice->slice_type != I_SLICE][depth];
             } else if(m_STC[depth][absPartIdx]<1 || m_SCid[depth][absPartIdx]<5) {
-                cuSplitThresholdCu = m_par->cu_split_threshold_cu[(qp_best-1)>0?(qp_best-1):0][m_cslice->slice_type != I_SLICE][depth];
+                cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best-1)][m_cslice->slice_type != I_SLICE][depth];
             } else if(m_STC[depth][absPartIdx]>3)    {
-                cuSplitThresholdCu = m_par->cu_split_threshold_cu[(qp_best+1)<52?(qp_best+1):qp_best][m_cslice->slice_type != I_SLICE][depth];
+                cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best+1)][m_cslice->slice_type != I_SLICE][depth];
             } else      {
-                cuSplitThresholdCu = m_par->cu_split_threshold_cu[qp_best][m_cslice->slice_type != I_SLICE][depth];
+                cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best)][m_cslice->slice_type != I_SLICE][depth];
             }
         } else
 #endif
         {
-        cuSplitThresholdCu = m_par->cu_split_threshold_cu[qp_best][m_cslice->slice_type != I_SLICE][depth];
+        cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best)][m_cslice->slice_type != I_SLICE][depth];
         }
 
         if (m_par->cuSplitThreshold > 0) {

@@ -982,6 +982,8 @@ template <size_t COMP_IDX> void ResetCbf(H265CUData *data)
     data->cbf[COMP_IDX] = 0;
 }
 
+Ipp8s GetChromaQP(Ipp8s qpy, Ipp32s chromaQpOffset, Ipp8u chromaFormatIdc, Ipp8u bitDepthChroma);
+
 template<class T>
 Ipp32u CheckSum(const T *buf, Ipp32s size, Ipp32u initialSum = 0)
 { return CheckSum((const Ipp8u *)buf, sizeof(T) * size, initialSum); }
