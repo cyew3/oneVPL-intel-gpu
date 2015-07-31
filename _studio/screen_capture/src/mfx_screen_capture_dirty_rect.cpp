@@ -19,6 +19,10 @@ File Name: mfx_screen_capture_d3d9.cpp
 #define H_BLOCKS 16
 #define W_BLOCKS 16
 
+#if !defined(MSDK_ALIGN32)
+#define MSDK_ALIGN32(value)                      (((value + 31) >> 5) << 5) // round up to a multiple of 32
+#endif
+
 namespace MfxCapture
 {
 
@@ -40,89 +44,29 @@ T* GetExtendedBuffer(const mfxU32& BufferId, const mfxFrameSurface1* surf)
     return 0;
 }
 
-CpuDirtyRectFilter::CpuDirtyRectFilter(const mfxCoreInterface* _core, bool isSysMem, const mfxVideoParam* par)
+CpuDirtyRectFilter::CpuDirtyRectFilter(const mfxCoreInterface* _core)
     :m_pmfxCore(_core)
 {
-    memset(&m_PrevSysSurface, 0, sizeof(mfxFrameSurface1));
-    memset(&m_CurSysSurface, 0, sizeof(mfxFrameSurface1));
-
-    if( !isSysMem && par )
-    {
-        memset(&m_PrevSysSurface, 0, sizeof(m_PrevSysSurface));
-        m_PrevSysSurface.Info = par->mfx.FrameInfo;
-        if(MFX_FOURCC_NV12 == m_PrevSysSurface.Info.FourCC)
-        {
-            m_PrevSysSurface.Data.Y = new mfxU8[m_PrevSysSurface.Info.Width * m_PrevSysSurface.Info.Height * 3 / 2];
-            m_PrevSysSurface.Data.UV = m_PrevSysSurface.Data.Y + m_PrevSysSurface.Info.Width * m_PrevSysSurface.Info.Height;
-            m_PrevSysSurface.Data.Pitch = m_PrevSysSurface.Info.Width;
-        }
-        else if(MFX_FOURCC_RGB4 == m_PrevSysSurface.Info.FourCC || 
-                MFX_FOURCC_AYUV_RGB4 == m_PrevSysSurface.Info.FourCC || 
-                /*DXGI_FORMAT_AYUV*/100 == m_PrevSysSurface.Info.FourCC)
-        {
-            m_PrevSysSurface.Data.B = new mfxU8[m_PrevSysSurface.Info.Width * m_PrevSysSurface.Info.Height * 4];
-            m_PrevSysSurface.Data.G = m_PrevSysSurface.Data.B + 1;
-            m_PrevSysSurface.Data.R = m_PrevSysSurface.Data.B + 2;
-            m_PrevSysSurface.Data.A = m_PrevSysSurface.Data.B + 3;
-
-            m_PrevSysSurface.Data.Pitch = 4*m_PrevSysSurface.Info.Width;
-        }
-
-        memset(&m_CurSysSurface, 0, sizeof(m_CurSysSurface));
-        m_CurSysSurface.Info = par->mfx.FrameInfo;
-        if(MFX_FOURCC_NV12 == m_CurSysSurface.Info.FourCC)
-        {
-            m_CurSysSurface.Data.Y = new mfxU8[m_CurSysSurface.Info.Width * m_CurSysSurface.Info.Height * 3 / 2];
-            m_CurSysSurface.Data.UV = m_CurSysSurface.Data.Y + m_CurSysSurface.Info.Width * m_CurSysSurface.Info.Height;
-            m_CurSysSurface.Data.Pitch = m_CurSysSurface.Info.Width;
-        }
-        else if(MFX_FOURCC_RGB4 == m_CurSysSurface.Info.FourCC || 
-                MFX_FOURCC_AYUV_RGB4 == m_CurSysSurface.Info.FourCC || 
-                /*DXGI_FORMAT_AYUV*/100 == m_CurSysSurface.Info.FourCC)
-        {
-            m_CurSysSurface.Data.B = new mfxU8[m_CurSysSurface.Info.Width * m_CurSysSurface.Info.Height * 4];
-            m_CurSysSurface.Data.G = m_CurSysSurface.Data.B + 1;
-            m_CurSysSurface.Data.R = m_CurSysSurface.Data.B + 2;
-            m_CurSysSurface.Data.A = m_CurSysSurface.Data.B + 3;
-
-            m_CurSysSurface.Data.Pitch = 4*m_CurSysSurface.Info.Width;
-        }
-    }
 }
 
 CpuDirtyRectFilter::~CpuDirtyRectFilter()
 {
-    if(MFX_FOURCC_NV12 == m_PrevSysSurface.Info.FourCC)
-    {
-        if(m_PrevSysSurface.Data.Y)
-        {
-            delete[] m_PrevSysSurface.Data.Y;
-            m_PrevSysSurface.Data.Y = 0;
-        }
-    } else if(0 != m_PrevSysSurface.Info.FourCC) {
-        if(m_PrevSysSurface.Data.B)
-        {
-            delete[] m_PrevSysSurface.Data.B;
-            m_PrevSysSurface.Data.B = 0;
-        }
-    }
+    FreeSurfs();
+}
 
-    if(MFX_FOURCC_NV12 == m_CurSysSurface.Info.FourCC)
+mfxStatus CpuDirtyRectFilter::Init(const mfxVideoParam* par, bool isSysMem)
+{
+    if( !isSysMem && par )
     {
-        if(m_CurSysSurface.Data.Y)
-        {
-            delete[] m_CurSysSurface.Data.Y;
-            m_CurSysSurface.Data.Y = 0;
-        }
-    } else if(0 != m_CurSysSurface.Info.FourCC) {
-        if(m_CurSysSurface.Data.B)
-        {
-            delete[] m_CurSysSurface.Data.B;
-            m_CurSysSurface.Data.B = 0;
+        //Create own surface pool
+        try{
+            AllocSurfs(par);
+        } catch (std::bad_alloc&) {
+            FreeSurfs();
+            return MFX_ERR_MEMORY_ALLOC;
         }
     }
-    memset(&m_PrevSysSurface, 0, sizeof(mfxFrameSurface1));
-    memset(&m_CurSysSurface, 0, sizeof(mfxFrameSurface1));
+    return MFX_ERR_NONE;
 }
 
 mfxStatus CpuDirtyRectFilter::Init(const mfxFrameInfo& in, const mfxFrameInfo& out)
@@ -148,31 +92,41 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
     if(!mfxRect)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
+    bool release = false;
+
     mfxFrameSurface1 _in  = in;
     mfxFrameSurface1 _out = out;
     _in.Data.MemId = 0;
     _out.Data.MemId = 0;
-    mfxHDL hdl = 0;
+    mfxHDLPair hdl = {0,0};
     if(!in.Data.Y && in.Data.MemId)
     {
-        mfxRes = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, in.Data.MemId, &hdl);
-        if(mfxRes || hdl)
+        mfxRes = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, in.Data.MemId, (mfxHDL*)&hdl);
+        if(hdl.first)
         {
-            _in = m_PrevSysSurface;
-            mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, &m_PrevSysSurface, &in);
+            mfxFrameSurface1 *p_in = GetFreeSurf(m_InSurfPool);
+            if(!p_in)
+                return MFX_ERR_DEVICE_FAILED;
+            _in = *p_in;
+            mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, &_in, &in);
             MFX_CHECK_STS(mfxRes);
+            release = true;
         }
     }
 
-    hdl = 0;
+    hdl.first = hdl.second = 0;
     if(!out.Data.Y && out.Data.MemId)
     {
-        mfxRes = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, out.Data.MemId, &hdl);
-        if(mfxRes || hdl)
+        mfxRes = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, out.Data.MemId, (mfxHDL*)&hdl);
+        if(hdl.first)
         {
-            _out = m_CurSysSurface;
-            mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, &m_CurSysSurface, &out);
+            mfxFrameSurface1 *p_out = GetFreeSurf(m_InSurfPool);
+            if(!p_out)
+                return MFX_ERR_DEVICE_FAILED;
+            _out = *p_out;
+            mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, &_out, &out);
             MFX_CHECK_STS(mfxRes);
+            release = true;
         }
     }
     const bool unlock_in  = _in.Data.Y ? false : true;
@@ -263,8 +217,8 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
     }
     else if(MFX_FOURCC_AYUV_RGB4 == _in.Info.FourCC || MFX_FOURCC_RGB4 == _in.Info.FourCC || /*DXGI_FORMAT_AYUV*/100 == _in.Info.FourCC)
     {
-        const mfxU8* ref_ptr = std::min( std::min(_in.Data.R, _in.Data.G), _in.Data.B );
-        const mfxU8* cur_ptr = std::min( std::min(_out.Data.R, _out.Data.G), _out.Data.B );
+        const mfxU8* ref_ptr = (std::min)( (std::min)(_in.Data.R, _in.Data.G), _in.Data.B );
+        const mfxU8* cur_ptr = (std::min)( (std::min)(_out.Data.R, _out.Data.G), _out.Data.B );
 
         for(mfxU32 h = 0; h < _in.Info.Height; h += h_block_size)
         {
@@ -310,6 +264,12 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
             return MFX_ERR_LOCK_MEMORY;
     }
 
+    if(release)
+    {
+        ReleaseSurf(_in);
+        ReleaseSurf(_out);
+    }
+
     return MFX_ERR_NONE;
 }
 
@@ -322,6 +282,132 @@ mfxStatus CpuDirtyRectFilter::GetParam(mfxFrameInfo& in, mfxFrameInfo& out)
     return MFX_ERR_UNSUPPORTED;
 }
 
+mfxFrameSurface1* CpuDirtyRectFilter::AllocSurfs(const mfxVideoParam* par)
+{
+    UMC::AutomaticUMCMutex guard(m_guard);
+    if(par)
+    {
+        //Create own surface pool
+        for(mfxU16 i = 0; i < (std::max)(1,(int)par->AsyncDepth); ++i)
+        {
+            mfxFrameSurface1 inSurf;
+            mfxFrameSurface1 outSurf;
+            memset(&inSurf,0,sizeof(inSurf));
 
+            inSurf.Info = par->mfx.FrameInfo;
+            inSurf.Info.Width = MSDK_ALIGN32(inSurf.Info.Width);
+            inSurf.Info.Height = MSDK_ALIGN32(inSurf.Info.Height);
+
+            outSurf = inSurf;
+            if(MFX_FOURCC_NV12 == inSurf.Info.FourCC)
+            {
+                inSurf.Data.Y = new mfxU8[inSurf.Info.Width * inSurf.Info.Height * 3 / 2];
+                inSurf.Data.UV = inSurf.Data.Y + inSurf.Info.Width * inSurf.Info.Height;
+                inSurf.Data.Pitch = inSurf.Info.Width;
+            }
+            else if(MFX_FOURCC_RGB4 == inSurf.Info.FourCC || 
+                    MFX_FOURCC_AYUV_RGB4 == inSurf.Info.FourCC || 
+                    /*DXGI_FORMAT_AYUV*/100 == inSurf.Info.FourCC)
+            {
+                inSurf.Data.B = new mfxU8[inSurf.Info.Width * inSurf.Info.Height * 4];
+                inSurf.Data.G = inSurf.Data.B + 1;
+                inSurf.Data.R = inSurf.Data.B + 2;
+                inSurf.Data.A = inSurf.Data.B + 3;
+
+                inSurf.Data.Pitch = 4*inSurf.Info.Width;
+            }
+            m_InSurfPool.push_back(inSurf);
+
+            if(MFX_FOURCC_NV12 == outSurf.Info.FourCC)
+            {
+                outSurf.Data.Y = new mfxU8[outSurf.Info.Width * outSurf.Info.Height * 3 / 2];
+                outSurf.Data.UV = outSurf.Data.Y + outSurf.Info.Width * outSurf.Info.Height;
+                outSurf.Data.Pitch = outSurf.Info.Width;
+            }
+            else if(MFX_FOURCC_RGB4 == outSurf.Info.FourCC || 
+                    MFX_FOURCC_AYUV_RGB4 == outSurf.Info.FourCC || 
+                    /*DXGI_FORMAT_AYUV*/100 == outSurf.Info.FourCC)
+            {
+                outSurf.Data.B = new mfxU8[outSurf.Info.Width * outSurf.Info.Height * 4];
+                outSurf.Data.G = outSurf.Data.B + 1;
+                outSurf.Data.R = outSurf.Data.B + 2;
+                outSurf.Data.A = outSurf.Data.B + 3;
+
+                outSurf.Data.Pitch = 4*outSurf.Info.Width;
+            }
+            m_OutSurfPool.push_back(outSurf);
+        }
+    }
+    return 0;
+}
+
+void FreeSurfPool(std::list<mfxFrameSurface1>& surfPool)
+{
+    if(surfPool.size())
+    {
+        for(std::list<mfxFrameSurface1>::iterator it = surfPool.begin(); it != surfPool.end(); ++it)
+        {
+            if( MFX_FOURCC_NV12 == (*it).Info.FourCC )
+            {
+                if ((*it).Data.Y)
+                {
+                    delete ((*it).Data.Y);
+                    (*it).Data.Y = 0;
+                    (*it).Data.UV = 0;
+                }
+            }
+            else if(MFX_FOURCC_RGB4 == (*it).Info.FourCC || 
+                    MFX_FOURCC_AYUV_RGB4 == (*it).Info.FourCC || 
+                    /*DXGI_FORMAT_AYUV*/100 == (*it).Info.FourCC)
+            {
+                if ((*it).Data.B)
+                {
+                    delete ((*it).Data.B);
+                    (*it).Data.B = 0;
+                    (*it).Data.G = 0;
+                    (*it).Data.R = 0;
+                    (*it).Data.A = 0;
+                }
+            }
+        }
+
+        surfPool.clear();
+    }
+}
+
+void CpuDirtyRectFilter::FreeSurfs()
+{
+    UMC::AutomaticUMCMutex guard(m_guard);
+
+    FreeSurfPool(m_InSurfPool);
+    FreeSurfPool(m_OutSurfPool);
+}
+
+mfxFrameSurface1* CpuDirtyRectFilter::GetFreeSurf(std::list<mfxFrameSurface1>& lSurfs)
+{
+    mfxFrameSurface1* s_out;
+    if(0 == lSurfs.size())
+        return 0;
+    else
+    {
+        UMC::AutomaticUMCMutex guard(m_guard);
+
+        for(std::list<mfxFrameSurface1>::iterator it = lSurfs.begin(); it != lSurfs.end(); ++it)
+        {
+            if(0 == (*it).Data.Locked)
+            {
+                s_out = &(*it);
+                m_pmfxCore->IncreaseReference(m_pmfxCore->pthis,&s_out->Data);
+                return s_out;
+            }
+        }
+    }
+    return 0;
+}
+
+void CpuDirtyRectFilter::ReleaseSurf(mfxFrameSurface1& surf)
+{
+    m_pmfxCore->DecreaseReference(m_pmfxCore->pthis,&surf.Data);
+}
 
 } //namespace MfxCapture

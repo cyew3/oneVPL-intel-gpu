@@ -32,6 +32,7 @@ SW_D3D9_Capturer::SW_D3D9_Capturer(mfxCoreInterface* _core)
 {
     Mode = SW_D3D9;
     memset(&m_core_par, 0, sizeof(m_core_par));
+    m_pResizeBuffer = 0;
 }
 
 SW_D3D9_Capturer::~SW_D3D9_Capturer()
@@ -108,7 +109,7 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, c
         mfxFrameInfo in = par.mfx.FrameInfo;
         mfxFrameInfo out = par.mfx.FrameInfo;
         in.FourCC = MFX_FOURCC_RGB4;
-        m_pColorConverter.get()->Init(&in, &out);
+        m_pColorConverter->Init(&in, &out);
     }
 
     if(/*monitorW != CropW || monitorH != CropH*/true) //always have a resizer for possible resolution change
@@ -182,7 +183,7 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, c
             m_bResize = true;
         }
 
-        mfxRes = m_pResizer.get()->Init(in, out);
+        mfxRes = m_pResizer->Init(in, out);
         if(mfxRes)
         {
             Destroy();
@@ -411,7 +412,7 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
         //mfxRes = MFX_ERR_UNKNOWN;
         //if(m_bFastCopy && m_pFastCopy.get())
         //{
-        //    mfxRes = m_pFastCopy.get()->CMCopySysToGpu(*pSurf, *surface_work);
+        //    mfxRes = m_pFastCopy->CMCopySysToGpu(*pSurf, *surface_work);
         //}
         //if(mfxRes)
         //    m_bFastCopy = false;
@@ -428,7 +429,7 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
 
             if(/*m_bResize*/pSurf->Info.CropH != CropH || pSurf->Info.CropW != CropW)
             {
-                mfxRes = m_pResizer.get()->RunFrameVPP(*pSurf, *surface_work);
+                mfxRes = m_pResizer->RunFrameVPP(*pSurf, *surface_work);
                 if(mfxRes)
                     return mfxRes;
             }
@@ -482,11 +483,11 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
 
             if(!m_pColorConverter.get())
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
-            mfxRes = m_pColorConverter.get()->RunFrameVPP(pSurf,pNV12Surf,&param);
+            mfxRes = m_pColorConverter->RunFrameVPP(pSurf,pNV12Surf,&param);
             if(mfxRes)
                 return MFX_ERR_DEVICE_FAILED;
 
-            mfxRes = m_pResizer.get()->RunFrameVPP(*pNV12Surf, *surface_work);
+            mfxRes = m_pResizer->RunFrameVPP(*pNV12Surf, *surface_work);
             if(mfxRes)
                 return mfxRes;
 
@@ -502,7 +503,7 @@ mfxStatus SW_D3D9_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface_
 
             if(!m_pColorConverter.get())
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
-            mfxRes = m_pColorConverter.get()->RunFrameVPP(pSurf,surface_work,&param);
+            mfxRes = m_pColorConverter->RunFrameVPP(pSurf,surface_work,&param);
             if(mfxRes)
                 return MFX_ERR_DEVICE_FAILED;
         }
@@ -739,7 +740,7 @@ mfxStatus SW_D3D9_Capturer::CheckResolutionChage()
             if(!m_pResizer.get())
                 return MFX_ERR_DEVICE_FAILED;
 
-            m_pResizer.get()->GetParam(info[0], info[1]);
+            m_pResizer->GetParam(info[0], info[1]);
 
             info[0].CropW = (mfxU16) m_CropW;
             info[0].CropH = (mfxU16) m_CropH;
@@ -751,7 +752,7 @@ mfxStatus SW_D3D9_Capturer::CheckResolutionChage()
                 return MFX_ERR_DEVICE_FAILED;
             }
 
-            mfxStatus mfxRes = m_pResizer.get()->Init(info[0], info[1]);
+            mfxStatus mfxRes = m_pResizer->Init(info[0], info[1]);
             if(mfxRes)
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 

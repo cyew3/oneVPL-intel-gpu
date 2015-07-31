@@ -80,6 +80,7 @@ struct AsyncParams
     mfxFrameSurface1 *surface_work;
     mfxFrameSurface1 *surface_out;
     mfxFrameSurface1 *real_surface;
+    mfxFrameSurface1 *dirty_rect_surface;
     mfxU32 StatusReportFeedbackNumber;
     mfxExtDirtyRect  *ext_rect;
     bool rt_fallback_dxgi;

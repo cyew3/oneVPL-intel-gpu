@@ -146,9 +146,12 @@ protected:
     std::auto_ptr<Capturer>         m_pFallbackD3D9Capturer;
 
     std::auto_ptr<CpuDirtyRectFilter>         m_pDirtyRectAnalyzer;
-    mfxFrameSurface1*               prevSurface;
+    mfxFrameSurface1*               m_pPrevSurface;
 
     std::list<DESKTOP_QUERY_STATUS_PARAMS> m_StatusList;
+
+    UMC::Mutex m_Guard;
+    UMC::Mutex m_DirtyRectGuard;
 
 private: // prohobit copy constructor and assignment operator
     MFXScreenCapture_Plugin(const MFXScreenCapture_Plugin& that);

@@ -229,7 +229,7 @@ mfxStatus SW_D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, 
         mfxFrameInfo in = par.mfx.FrameInfo;
         mfxFrameInfo out = par.mfx.FrameInfo;
         in.FourCC = MFX_FOURCC_RGB4;
-        m_pColorConverter.get()->Init(&in, &out);
+        m_pColorConverter->Init(&in, &out);
     }
 
     return MFX_ERR_NONE;
@@ -442,7 +442,7 @@ mfxStatus SW_D3D11_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface
             param.inPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
             if(!m_pColorConverter.get())
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-            mfxRes = m_pColorConverter.get()->RunFrameVPP(&rgb_surface,surface_work,&param);
+            mfxRes = m_pColorConverter->RunFrameVPP(&rgb_surface,surface_work,&param);
             if(mfxRes)
                 return MFX_ERR_DEVICE_FAILED;
         }
