@@ -246,15 +246,16 @@ struct remove_const<const T>
 
 namespace ExtBuffer
 {
-    template<class T> struct Map { enum { Id = 0, Sz = 0 }; };
+    template<class T> struct ExtBufferMap {};
 
-    #define EXTBUF(TYPE, ID) template<> struct Map<TYPE> { enum { Id = ID, Sz = sizeof(TYPE) }; }
+    #define EXTBUF(TYPE, ID) template<> struct ExtBufferMap <TYPE> { enum { Id = ID}; }
         EXTBUF(mfxExtHEVCParam,             MFX_EXTBUFF_HEVC_PARAM);
         EXTBUF(mfxExtHEVCTiles,             MFX_EXTBUFF_HEVC_TILES);
         EXTBUF(mfxExtOpaqueSurfaceAlloc,    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
         EXTBUF(mfxExtDPB,                   MFX_EXTBUFF_DPB);
         EXTBUF(mfxExtAVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS);
         EXTBUF(mfxExtCodingOption2,         MFX_EXTBUFF_CODING_OPTION2);
+        EXTBUF(mfxExtCodingOption3,         MFX_EXTBUFF_CODING_OPTION3);
         EXTBUF(mfxExtCodingOptionDDI,       MFX_EXTBUFF_DDI);
         EXTBUF(mfxExtCodingOptionSPSPPS,    MFX_EXTBUFF_CODING_OPTION_SPSPPS);
         EXTBUF(mfxExtAVCRefListCtrl,        MFX_EXTBUFF_AVC_REFLIST_CTRL);
@@ -277,7 +278,7 @@ namespace ExtBuffer
         {
             if (m_b)
                 for (mfxU16 i = 0; i < m_n; i ++)
-                    if (m_b[i] && m_b[i]->BufferId == Map<remove_const<T> >::Id)
+                    if (m_b[i] && m_b[i]->BufferId == ExtBufferMap<T>::Id)
                         return (T*)m_b[i];
             return 0;
         }
@@ -292,13 +293,13 @@ namespace ExtBuffer
     {
         Zero(buf);
         mfxExtBuffer& header = *((mfxExtBuffer*)&buf);
-        header.BufferId = Map<T>::Id;
+        header.BufferId = ExtBufferMap<T>::Id;
         header.BufferSz = sizeof(T);
     }
 
     template<class P, class T> bool Construct(P const & par, T& buf)
     {
-        T const * p = Get(par);
+        T  * p = Get(par);
 
         if (p)
         {
