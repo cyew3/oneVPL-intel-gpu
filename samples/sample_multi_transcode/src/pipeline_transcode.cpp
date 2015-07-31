@@ -819,7 +819,7 @@ mfxStatus CTranscodingPipeline::Encode()
     while (MFX_ERR_NONE == sts ||  MFX_ERR_MORE_DATA == sts)
     {
         msdk_tick nBeginTime = msdk_time_get_tick(); // microseconds.
-        
+
         if(shouldReadNextFrame)
         {
             while (MFX_ERR_MORE_SURFACE == curBuffer->GetSurface(DecExtSurface) && !isQuit)
@@ -1478,6 +1478,10 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     {
         m_pParentPipeline->AddLaStreams(m_mfxEncParams.mfx.FrameInfo.Width,m_mfxEncParams.mfx.FrameInfo.Height);
     }
+
+    //--- Settings HRD buffer size
+    m_mfxEncParams.mfx.BufferSizeInKB = (mfxU16)(m_mfxEncParams.mfx.TargetKbps*4L/8); // buffer for 4 seconds
+
     return MFX_ERR_NONE;
 }// mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
 
