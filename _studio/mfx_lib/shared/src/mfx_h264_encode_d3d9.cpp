@@ -494,7 +494,7 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
             slice[i].num_ref_idx_l1_active_minus1 != pps.num_ref_idx_l1_active_minus1;
 
         slice[i].idr_pic_id                         = task.m_idrPicId;
-        slice[i].pic_order_cnt_lsb                  = mfxU16(task.GetPoc(fieldId));
+        slice[i].pic_order_cnt_lsb                  = mfxU16(task.GetPoc(fieldId) % (1 << (sps.log2_max_pic_order_cnt_lsb_minus4 + 4)));
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.QpY);
         slice[i].disable_deblocking_filter_idc      = task.m_disableDeblockingIdc;
         

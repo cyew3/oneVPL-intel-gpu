@@ -657,14 +657,14 @@ namespace MfxHwH264Encode
             return (GetPicStructForEncode() & MFX_PICSTRUCT_FIELD_BFF) ? 1 : 0;
         }
 
-        mfxU32 GetPoc(mfxU32 parity) const
+        mfxI32 GetPoc(mfxU32 parity) const
         {
             return 2 * ((m_frameOrder - m_frameOrderIdr) & 0x7fffffff) + (parity != GetFirstField());
         }
 
-        PairU32 GetPoc() const
+        PairI32 GetPoc() const
         {
-            return PairU32(GetPoc(TFIELD), GetPoc(BFIELD));
+            return PairI32(GetPoc(TFIELD), GetPoc(BFIELD));
         }
 
         mfxU32 GetPictureCount() const
@@ -721,7 +721,7 @@ namespace MfxHwH264Encode
     {
         DpbFrame() { Zero(*this); }
 
-        PairU32 m_poc;
+        PairI32 m_poc;
         mfxU32  m_frameOrder;
         mfxU32  m_extFrameTag; // frameOrder assigned by application
         mfxU32  m_frameNum;
