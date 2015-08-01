@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_allocator_d3d11.cpp
 
@@ -70,6 +70,8 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
 
     case MFX_FOURCC_RGB4:
         return DXGI_FORMAT_B8G8R8A8_UNORM;
+    case MFX_FOURCC_BGR4:
+        return DXGI_FORMAT_R8G8B8A8_UNORM;
 
     case MFX_FOURCC_P8:
     case MFX_FOURCC_P8_MBDATA:
@@ -110,6 +112,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     case MFX_FOURCC_YUV444:
     case MFX_FOURCC_RGBP:
     case MFX_FOURCC_RGB4:
+    case MFX_FOURCC_BGR4:
     case MFX_FOURCC_P8:
     case MFX_FOURCC_P8_MBDATA:
     case DXGI_FORMAT_AYUV:
@@ -202,7 +205,8 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     {
 
         if ( (MFX_MEMTYPE_FROM_VPPIN & request->Type) && (DXGI_FORMAT_YUY2 == Desc.Format) ||
-            (DXGI_FORMAT_B8G8R8A8_UNORM == Desc.Format) )
+             (DXGI_FORMAT_B8G8R8A8_UNORM == Desc.Format) ||
+             (DXGI_FORMAT_R8G8B8A8_UNORM == Desc.Format) )
         {
             Desc.BindFlags = D3D11_BIND_RENDER_TARGET;
             if (Desc.ArraySize > 2)
@@ -370,18 +374,6 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
         ptr->U = ptr->Y + 1;
         ptr->V = ptr->Y + 3;
         break;
-    //case D3DFMT_R8G8B8:
-    //    ptr->Pitch = (mfxU16)LockedRect.RowPitch;
-    //    ptr->B = (mfxU8 *)LockedRect.pData;
-    //    ptr->G = ptr->B + 1;
-    //    ptr->R = ptr->B + 2;
-    //    break;
-    //case D3DFMT_A8R8G8B8:
-    //    ptr->Pitch = (mfxU16)LockedRect.RowPitch;
-    //    ptr->B = (mfxU8 *)LockedRect.pData;
-    //    ptr->G = ptr->B + 1;
-    //    ptr->R = ptr->B + 2;
-    //    break;
     case DXGI_FORMAT_B8G8R8A8_UNORM :
         ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
         ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
@@ -389,6 +381,14 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->A = ptr->B + 3;
+        break;
+    case DXGI_FORMAT_R8G8B8A8_UNORM :
+        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
+        ptr->R = (mfxU8 *)LockedRect.pData;
+        ptr->G = ptr->R + 1;
+        ptr->B = ptr->R + 2;
+        ptr->A = ptr->R + 3;
         break;
     case DXGI_FORMAT_AYUV :
         ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
@@ -405,12 +405,6 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
         ptr->U = 0;
         ptr->V = 0;
         break;
-    //case D3DFMT_IMC3:
-    //    ptr->Pitch = (mfxU16)LockedRect.RowPitch;
-    //    ptr->Y = (mfxU8 *)LockedRect.pData;
-    //    ptr->U = ptr->Y + desc.Height * LockedRect.RowPitch;
-    //    ptr->V = ptr->U + (desc.Height * LockedRect.RowPitch) / 2;
-    //    break;
     default:
         return MFX_ERR_LOCK_MEMORY;
     }

@@ -20,6 +20,7 @@
 #include "mfx_task.h"
 #include "umc_defs.h"
 #include "ipps.h"
+#include "ippi.h"
 
 using namespace MfxHwMJpegEncode;
 
@@ -466,7 +467,24 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     // motion JPEG video, we'd better use multiple buffers to support async mode.
     mfxU16 surface_num = JPEG_VIDEO_SURFACE_NUM + m_vParam.AsyncDepth;
 
-    if (m_vParam.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    // WA for RGB swapping issue
+    if (m_vParam.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
+    {
+        request.Info.FourCC = MFX_FOURCC_BGR4;
+        request.Type = MFX_MEMTYPE_VIDEO_INT;
+#if defined(LINUX)
+        request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET; // required for libva especially for RGB32
+#endif
+        request.NumFrameMin = surface_num;
+        request.NumFrameSuggested = request.NumFrameMin;
+
+        sts = m_pCore->AllocFrames(&request, &m_raw, true);
+        MFX_CHECK(
+            sts == MFX_ERR_NONE &&
+            m_raw.NumFrameActual >= request.NumFrameMin,
+            MFX_ERR_MEMORY_ALLOC);
+    }
+    else if (m_vParam.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
     // Allocate raw surfaces.
     // This is required only in case of system memory at input
@@ -842,7 +860,50 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
 
     mfxFrameSurface1 * nativeSurf = task.surface;
 
-    if (enc.m_vParam.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    // WA for RGB swapping issue
+    if (enc.m_vParam.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
+    {
+        mfxFrameData dstSurf = { 0 };
+        bool bExternalFrameLocked = false;
+
+        enc.m_pCore->LockFrame(enc.m_raw.mids[task.m_idx], &dstSurf);
+        MFX_CHECK(dstSurf.R != 0, MFX_ERR_LOCK_MEMORY);
+
+        if (nativeSurf->Data.B == 0)
+        {
+            enc.m_pCore->LockExternalFrame(nativeSurf->Data.MemId, &nativeSurf->Data);
+            bExternalFrameLocked = true;
+        }
+        MFX_CHECK(nativeSurf->Data.B != 0, MFX_ERR_LOCK_MEMORY);
+
+        {
+            const int dstOrder[3] = {2, 1, 0};
+            IppiSize roi = {nativeSurf->Info.Width, nativeSurf->Info.Height};
+            if (0 == roi.width || 0 == roi.height)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+            mfxU32 srsPitch = nativeSurf->Data.PitchLow + ((mfxU32)nativeSurf->Data.PitchHigh << 16);
+            mfxU32 dstPitch = dstSurf.PitchLow + ((mfxU32)dstSurf.PitchHigh << 16);
+            IppStatus ippRes = ippiSwapChannels_8u_AC4R(nativeSurf->Data.B,
+                                                        srsPitch,
+                                                        dstSurf.R,
+                                                        dstPitch,
+                                                        roi,
+                                                        dstOrder);
+            MFX_CHECK(ippRes == ippStsNoErr, MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+
+        if (bExternalFrameLocked)
+        {
+            sts = enc.m_pCore->UnlockExternalFrame(nativeSurf->Data.MemId, &nativeSurf->Data);
+            MFX_CHECK_STS(sts);
+        }
+        sts = enc.m_pCore->UnlockFrame(enc.m_raw.mids[task.m_idx], &dstSurf);
+        MFX_CHECK_STS(sts);
+
+        sts = enc.m_pCore->GetFrameHDL(enc.m_raw.mids[task.m_idx], pSurfaceHdl);
+    }
+    else if (enc.m_vParam.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         sts = FastCopyFrameBufferSys2Vid(
             enc.m_pCore,
