@@ -52,7 +52,7 @@ namespace H265Enc {
         double cpbSize90k;
         double initCpbRemovalDelay;
 
-        Ipp32u prevAuCpbRemovalDelayMinus1;
+        Ipp32s prevAuCpbRemovalDelayMinus1;
         Ipp32u prevAuCpbRemovalDelayMsb;
         double prevAuFinalArrivalTime;
         double prevBuffPeriodAuNominalRemovalTime;

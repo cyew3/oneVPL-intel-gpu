@@ -2162,7 +2162,7 @@ void Hrd::Init(const H265SeqParameterSet &sps, Ipp32u initialDelayInBits)
     initCpbRemovalDelay = 90000.0 * initialDelayInBits / bitrate;
     clockTick = (double)sps.vui_num_units_in_tick / sps.vui_time_scale;
 
-    prevAuCpbRemovalDelayMinus1 = 0;
+    prevAuCpbRemovalDelayMinus1 = -1;
     prevAuCpbRemovalDelayMsb = 0;
     prevAuFinalArrivalTime = 0.0;
     prevBuffPeriodAuNominalRemovalTime = 0.0;
@@ -2179,15 +2179,14 @@ void Hrd::Update(Ipp32u sizeInbits, const Frame &pic)
     double auNominalRemovalTime = initCpbRemovalDelay / 90000;
     if (pic.m_encOrder > 0) {
         Ipp32u auCpbRemovalDelayMinus1 = (pic.m_encOrder - prevBuffPeriodEncOrder) - 1;
-        //prevAuCpbRemovalDelayMinus1 = auCpbRemovalDelayMinus1;
         // (D-1)
         Ipp32u auCpbRemovalDelayMsb = 0;
         if (!bufferingPeriodPic)
-            auCpbRemovalDelayMsb = (auCpbRemovalDelayMinus1 <= prevAuCpbRemovalDelayMinus1)
+            auCpbRemovalDelayMsb = ((Ipp32s)auCpbRemovalDelayMinus1 <= prevAuCpbRemovalDelayMinus1)
                 ? prevAuCpbRemovalDelayMsb + maxCpbRemovalDelay
                 : prevAuCpbRemovalDelayMsb;
-        prevAuCpbRemovalDelayMinus1 = auCpbRemovalDelayMinus1;
         prevAuCpbRemovalDelayMsb = auCpbRemovalDelayMsb;
+        prevAuCpbRemovalDelayMinus1 = auCpbRemovalDelayMinus1;
         // (D-2)
         Ipp32u auCpbRemovalDelayValMinus1 = auCpbRemovalDelayMsb + auCpbRemovalDelayMinus1;
         // (C-12)

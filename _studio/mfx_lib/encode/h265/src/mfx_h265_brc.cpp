@@ -153,6 +153,7 @@ mfxStatus H265BRC::SetParams(const mfxVideoParam *params, H265VideoParam &video)
     if (!params)
         return MFX_ERR_NULL_PTR;
 
+
     mfxU16 brcParamMultiplier = params->mfx.BRCParamMultiplier ? params->mfx.BRCParamMultiplier : 1;
     mParams.BRCMode = params->mfx.RateControlMethod;
     mParams.targetBitrate =  params->mfx.TargetKbps * brcParamMultiplier * 1000;
@@ -162,6 +163,8 @@ mfxStatus H265BRC::SetParams(const mfxVideoParam *params, H265VideoParam &video)
     if (mParams.BRCMode != MFX_RATECONTROL_AVBR) {
         mParams.HRDBufferSizeBytes = params->mfx.BufferSizeInKB * brcParamMultiplier * 1000;
         mParams.HRDInitialDelayBytes = params->mfx.InitialDelayInKB * brcParamMultiplier * 1000;
+        if (mParams.HRDInitialDelayBytes > mParams.HRDBufferSizeBytes)
+            mParams.HRDInitialDelayBytes = mParams.HRDBufferSizeBytes;
     } else {
         mParams.HRDBufferSizeBytes = mParams.HRDInitialDelayBytes = 0;
     }
@@ -212,7 +215,7 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
         mBFsaved = mBF;
 
         mPredBufFulness = mHRD.bufFullness;
-        mFakeFullness = mHRD.bufFullness;
+        mRealPredFullness = mHRD.bufFullness;
     }
 
     mBitsDesiredFrame = (Ipp32s)(mBitrate / mFramerate);
@@ -999,6 +1002,11 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
                 forecastBits += bits;
             }
             brc_fprintf("\n");
+
+            Ipp32s predbufFul = mPredBufFulness;
+            if (mRCMode == MFX_RATECONTROL_VBR && mParams.maxBitrate > mBitrate && mPredBufFulness > mRealPredFullness)
+                mPredBufFulness = mRealPredFullness;
+
             Ipp32s targetfullness = IPP_MAX(mParams.HRDInitialDelayBytes << 3, (Ipp32s)mHRD.bufSize >> 1);
             Ipp32s curdev = targetfullness - mPredBufFulness;
             Ipp64s estdev = curdev + forecastBits - targetBits;
@@ -1087,7 +1095,9 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
                 Ipp32s qpLayer_1 = mPrevQpLayer[layer - 1];
                 if (qp < qpLayer_1)
                     qp  = qpLayer_1;
-            }
+            } else
+                BRC_CLIP(qp, qp0 - 2, qp);
+
             BRC_CLIP(qp, mMinQp, mQuantMax);
             mMinQp = mQuantMin;
            
@@ -1097,7 +1107,9 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
 
             frames[0]->m_cmplx = refFrameData.cmplx;
 
-            //mPredBufFulness -= predbits_new - mHRD.inputBitsPerFrame;
+            mPredBufFulness = predbufFul;
+
+            mRealPredFullness -= predbits_new - mHRD.inputBitsPerFrame;
             mPredBufFulness -= predbits_new - mBitsDesiredFrame;
             frames[0]->m_predBits = predbits_new;
 
@@ -1270,16 +1282,6 @@ mfxBRCStatus H265BRC::UpdateAndCheckHRD(Ipp32s frameBits, Ipp64f inputBitsPerFra
 
     bufFullness = mHRD.bufFullness - frameBits;
 
-    if (mRCMode == MFX_RATECONTROL_VBR) {
-        mFakeFullness -= frameBits;
-        if (mFakeFullness < 0)
-            mFakeFullness = 0;
-        mFakeFullness += mBitsDesiredFrame;
-        if (mFakeFullness > (Ipp32s)mHRD.bufSize) {
-            mPredBufFulness -= mFakeFullness - (Ipp32s)mHRD.bufSize;
-            mFakeFullness = mHRD.bufSize;
-        }
-    }
     if (bufFullness < 2) {
         bufFullness = inputBitsPerFrame;
         ret = MFX_BRC_ERR_BIG_FRAME;
@@ -1401,6 +1403,7 @@ mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame
                 brc_fprintf(" %.1f %.1f %.3f \n", mCmplxRate, mTotTarget, mQstepScale);
 
                 mPredBufFulness = (int)mHRD.prevBufFullness;
+                mRealPredFullness = (int)mHRD.prevBufFullness;
 
                 brc_fprintf("UNDER %d %d %d %d %d %.3f\n", pFrame->m_encOrder, totalFrameBits, pFrame->m_predBits, (int)mHRD.prevBufFullness, mPredBufFulness, mQstepScale);
 
@@ -1412,6 +1415,8 @@ mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame
             }
 
             mPredBufFulness += pFrame->m_predBits - totalFrameBits;
+            mRealPredFullness += pFrame->m_predBits - totalFrameBits;
+            BRC_CLIP(mRealPredFullness, 0, (Ipp32s)mHRD.bufSize);
 
             brc_fprintf("L%d %d %d %d %d %d %d %d %f \n", layer, pFrame->m_encOrder, sliceQpY, totalFrameBits, bitsEncoded, pFrame->m_predBits, (int)mHRD.bufFullness, mPredBufFulness, mPrevCmplxLayer[layer]);
 

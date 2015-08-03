@@ -33,7 +33,7 @@ namespace H265Enc {
     BRC_CLIP(mQuantB, 1, mQuantMax)
 
 #define MFX_H265_BITRATE_SCALE 0
-#define  MFX_H265_CPBSIZE_SCALE 3
+#define  MFX_H265_CPBSIZE_SCALE 2
 
 enum eMfxBRCStatus
 {
@@ -368,7 +368,7 @@ protected:
     Ipp64f mQstepBase;
 
     Ipp32s mPredBufFulness;
-    Ipp32s mFakeFullness;
+    Ipp32s mRealPredFullness;
 
     Ipp32s mNumLayers;
 
