@@ -225,7 +225,10 @@ mfxU32 TranscodeModelAdvanced::BSReaderRoutine(void *pParam)
         if (local_dec_request)  // m_hEvent_DEC_REQUEST
         {
             // main operation here
-            mfxSts = ReadOneFrame();//critical section???
+            {
+                std::unique_lock<std::mutex> lk(m_bs_in_mtx);
+                mfxSts = ReadOneFrame();  //critical section???
+            }
             if(MFX_ERR_NONE == mfxSts)
             {
                 SetEvent(m_bsr_response);
@@ -280,16 +283,19 @@ mfxU32 TranscodeModelAdvanced::DecodeRoutine(void *pParam)
     bool bRequestEnable = true;
     TUMSurfacesManager* pSurfMngr;
     Surface1ExList*     pConnectPool;
+    std::mutex *        p_pool_mtx;
 
     if( IsVPPEnable() )
     {
         pSurfMngr = &m_dec2vppSurfManager;
         pConnectPool = &m_dec2vppSurfExPool;
+        p_pool_mtx = &m_dec2vpp_mtx;
     }
     else
     {
         pSurfMngr = &m_dec2encSurfManager;
         pConnectPool = &m_dec2encSurfExPool;
+        p_pool_mtx = &m_dec2enc_mtx;
     }
 
     printf("\nDecodeRoutine: \t\tstart");
@@ -321,11 +327,17 @@ mfxU32 TranscodeModelAdvanced::DecodeRoutine(void *pParam)
 
         if (local_bsr_response) // m_hEvent_BSR_RESPONSE
         {
-            mfxFrameSurfaceEx decSurfaceEx = {0};
-            mfxBitstream *pBS = GetSrcPtr(); //critical section???
+            mfxFrameSurfaceEx decSurfaceEx = {};
+            mfxStatus mfxSts;
 
-            mfxStatus mfxSts = DecodeOneFrame(pBS, pSurfMngr, &decSurfaceEx);
+            {
+                std::unique_lock<std::mutex> lk1(m_bs_in_mtx);
+                mfxBitstream *pBS = GetSrcPtr(); //critical section???
 
+                std::unique_lock<std::mutex> lk2(*p_pool_mtx);
+
+                mfxSts = DecodeOneFrame(pBS, pSurfMngr, &decSurfaceEx);
+            }
             //-----------------------------------------------------------------
             if( MFX_ERR_MORE_DATA == mfxSts )
             {
@@ -338,8 +350,10 @@ mfxU32 TranscodeModelAdvanced::DecodeRoutine(void *pParam)
                     // to get buffered VPP or ENC frames
                     decSurfaceEx.pSurface = NULL;
                     decSurfaceEx.syncp = 0;
-
-                    pConnectPool->push_back(decSurfaceEx);// critical section???
+                    {
+                        std::unique_lock<std::mutex> lk(*p_pool_mtx);
+                        pConnectPool->push_back(decSurfaceEx);// critical section???
+                    }
 
                     SetEvent(eventResponseFinal);
 
@@ -349,7 +363,10 @@ mfxU32 TranscodeModelAdvanced::DecodeRoutine(void *pParam)
             }
             else if (MFX_ERR_NONE == mfxSts) 
             {
-                pConnectPool->push_back(decSurfaceEx);// critical section???
+                {
+                    std::unique_lock<std::mutex> lk(*p_pool_mtx);
+                    pConnectPool->push_back(decSurfaceEx);// critical section???
+                }
 
                 SetEvent(eventResponse);
             }
@@ -406,7 +423,7 @@ mfxU32 TranscodeModelAdvanced::VPPRoutine(void *pParam)
         : m_enc_request;
 
     // send list
-    bool & eventRequest = m_vpp_request;
+    bool & eventRequest = m_vpp_request; // TODO: m_syncop_vpp_response!
     bool & eventResponse = m_vpp_response;
     bool & eventResponseFinal = m_vpp_response_final;
 
@@ -444,14 +461,19 @@ mfxU32 TranscodeModelAdvanced::VPPRoutine(void *pParam)
         if (local_response) // m_hEvent_DEC_RESPONSE
         {
             mfxFrameSurfaceEx outputSurfaceEx = {};
-            mfxFrameSurfaceEx inputSurfaceEx = ( m_dec2vppSurfExPool.size() ) ? m_dec2vppSurfExPool.front() : zeroSurfaceEx;//critical section            
-
-            mfxStatus mfxSts = VPPOneFrame(inputSurfaceEx.pSurface, &m_vpp2encSurfManager, &outputSurfaceEx);   
-
-            // after VPPOneFrame() we should erase first element. real data is kept by mfx_session
-            if( m_dec2vppSurfExPool.size() > 0 )
+            mfxStatus mfxSts;
             {
-                m_dec2vppSurfExPool.pop_front();
+                std::unique_lock<std::mutex> lk1(m_dec2vpp_mtx);
+                mfxFrameSurfaceEx inputSurfaceEx = (m_dec2vppSurfExPool.size()) ? m_dec2vppSurfExPool.front() : zeroSurfaceEx;//critical section            
+
+                std::unique_lock<std::mutex> lk2(m_vpp2enc_mtx);
+                mfxSts = VPPOneFrame(inputSurfaceEx.pSurface, &m_vpp2encSurfManager, &outputSurfaceEx);
+
+                // after VPPOneFrame() we should erase first element. real data is kept by mfx_session
+                if (m_dec2vppSurfExPool.size() > 0)
+                {
+                    m_dec2vppSurfExPool.pop_front();
+                }
             }
 
             //-----------------------------------------------------------------
@@ -467,7 +489,10 @@ mfxU32 TranscodeModelAdvanced::VPPRoutine(void *pParam)
                     outputSurfaceEx.pSurface = NULL;
                     outputSurfaceEx.syncp = 0;
 
-                    m_vpp2encSurfExPool.push_back(outputSurfaceEx);// critical section???
+                    {
+                        std::unique_lock<std::mutex> lk(m_vpp2enc_mtx);
+                        m_vpp2encSurfExPool.push_back(outputSurfaceEx);// critical section???
+                    }
 
                     SetEvent(eventResponseFinal);
 
@@ -477,7 +502,10 @@ mfxU32 TranscodeModelAdvanced::VPPRoutine(void *pParam)
             }
             else if (MFX_ERR_NONE == mfxSts) 
             {
-                m_vpp2encSurfExPool.push_back(outputSurfaceEx);// critical section???
+                {
+                    std::unique_lock<std::mutex> lk(m_vpp2enc_mtx);
+                    m_vpp2encSurfExPool.push_back(outputSurfaceEx);// critical section???
+                }
                 SetEvent(eventResponse);
             }
             else
@@ -559,14 +587,17 @@ mfxU32 TranscodeModelAdvanced::EncodeRoutine(void *pParam)
     mfxFrameSurfaceEx zeroSurfaceEx = {NULL, 0};
 
     Surface1ExList*     pConnectPool;
+    std::mutex*         p_pool_mtx;
 
     if( IsVPPEnable() )
     {
         pConnectPool = &m_vpp2encSurfExPool;
+        p_pool_mtx = &m_vpp2enc_mtx;
     }
     else
     {
         pConnectPool = &m_dec2encSurfExPool;
+        p_pool_mtx = &m_dec2enc_mtx;
     }
     printf("\nEncodeRoutine: \t\tstart");
 
@@ -597,8 +628,10 @@ mfxU32 TranscodeModelAdvanced::EncodeRoutine(void *pParam)
 
         if (local_response) // m_hEvent_VPP_RESPONSE
         {
-            mfxFrameSurfaceEx inputSurfaceEx = (pConnectPool->size() > 0 ) ? pConnectPool->front() : zeroSurfaceEx;//critical section???
-
+            std::unique_lock<std::mutex> lk1(*p_pool_mtx);
+            mfxFrameSurfaceEx inputSurfaceEx = (pConnectPool->size() > 0) ? pConnectPool->front() : zeroSurfaceEx;//critical section???
+            
+            std::unique_lock<std::mutex> lk2(m_bs_out_mtx);
             mfxBitstreamEx* pBSEx = NULL;
             pBSEx = m_pOutBSManager->GetNext();
             pBSEx->syncp = 0;
@@ -610,12 +643,13 @@ mfxU32 TranscodeModelAdvanced::EncodeRoutine(void *pParam)
             { 
                 pConnectPool->pop_front();
             }
-
+            lk1.unlock();
             //-----------------------------------------------------------------
             if( MFX_ERR_MORE_DATA == mfxSts )
             {
                 // the task in not in Encode queue
                 m_pOutBSManager->Release( pBSEx );
+                lk2.unlock();
 
                 if( bRequestEnable )
                 {
@@ -632,6 +666,8 @@ mfxU32 TranscodeModelAdvanced::EncodeRoutine(void *pParam)
             else if (MFX_ERR_NONE == mfxSts) 
             {
                 m_outBSPool.push_back( pBSEx );// critical section???
+                lk2.unlock();
+
                 SetEvent(eventResponse);
             }
             else
@@ -697,14 +733,17 @@ mfxU32 TranscodeModelAdvanced::SyncOperationDecodeRoutine(void *pParam)
     mfxFrameSurfaceEx zeroSurfaceEx = {};
 
     Surface1ExList*    pConnectPool;
+    std::mutex*        p_pool_mtx;
 
     if( IsVPPEnable() )
     {
         pConnectPool = &m_dec2vppSurfExPool;
+        p_pool_mtx = &m_dec2vpp_mtx;
     }
     else
     {
         pConnectPool = &m_dec2encSurfExPool;
+        p_pool_mtx = &m_dec2enc_mtx;
     }
 
     printf("\nSyncOpDECRoutine:\tstart");
@@ -743,7 +782,11 @@ mfxU32 TranscodeModelAdvanced::SyncOperationDecodeRoutine(void *pParam)
             ////------------------------------------------------------------------
             //else // normal processing
             {
-                mfxFrameSurfaceEx surfaceEx = ( pConnectPool->size() ) ? pConnectPool->front() : zeroSurfaceEx;//critical section            
+                mfxFrameSurfaceEx surfaceEx;
+                {
+                    std::unique_lock<std::mutex> lk(*p_pool_mtx);
+                    surfaceEx = (pConnectPool->size()) ? pConnectPool->front() : zeroSurfaceEx;//critical section
+                }
 
                 if( 0 == surfaceEx.syncp )
                 {
@@ -815,9 +858,9 @@ mfxU32 TranscodeModelAdvanced::SyncOperationVPPRoutine(void *pParam)
     // wait list
 
     // send list
-    bool & eventRequest = m_syncop_dec_request;
-    bool & eventResponse = m_syncop_dec_response;
-    bool & eventResponseFinal = m_syncop_dec_response_final;
+    bool & eventRequest = m_syncop_vpp_request;
+    bool & eventResponse = m_syncop_vpp_response;
+    bool & eventResponseFinal = m_syncop_vpp_response_final;
 
     bool bRequestEnable = true;
 
@@ -859,7 +902,11 @@ mfxU32 TranscodeModelAdvanced::SyncOperationVPPRoutine(void *pParam)
             ////------------------------------------------------------------------
             //else // normal processing
             {
-                mfxFrameSurfaceEx surfaceEx = ( m_vpp2encSurfExPool.size() ) ? m_vpp2encSurfExPool.front() : zeroSurfaceEx;//critical section            
+                mfxFrameSurfaceEx surfaceEx;
+                {
+                    std::unique_lock<std::mutex> lk(m_vpp2enc_mtx);
+                    surfaceEx = (m_vpp2encSurfExPool.size()) ? m_vpp2encSurfExPool.front() : zeroSurfaceEx;//critical section
+                }
 
                 if( 0 == surfaceEx.syncp )
                 {
@@ -955,6 +1002,8 @@ mfxU32 TranscodeModelAdvanced::BSWriterRoutine(void *pParam)
 
         if (local_enc_response) // m_hEvent_ENC_RESPONSE
         {
+            std::unique_lock<std::mutex> lk(m_bs_out_mtx);
+
             if( 0 == m_outBSPool.size() )
             {
                 printf("\nBSWriterRoutine: \texit with OK");
@@ -962,6 +1011,7 @@ mfxU32 TranscodeModelAdvanced::BSWriterRoutine(void *pParam)
             }
             if( (m_outBSPool.size() != m_asyncDepth) && (bRequestEnable) )
             {
+                lk.unlock();
                 //printf("\n BSWRT: async_pool not ready yet \n");
                 // continue transcode processing wo synchronization
                 SetEvent(m_bswrt_response);
@@ -981,6 +1031,7 @@ mfxU32 TranscodeModelAdvanced::BSWriterRoutine(void *pParam)
                     // we should release captured element/resource. 
                     m_outBSPool.pop_front(); // critical section       
                     m_pOutBSManager->Release( pBSEx );
+                    lk.unlock();
 
                     if( bRequestEnable )
                     {

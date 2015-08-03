@@ -77,12 +77,19 @@ private:
     // transcoding pipeline specific for component-to-component connection
     typedef std::list<mfxFrameSurfaceEx> Surface1ExList;
     Surface1ExList  m_dec2vppSurfExPool;// pool of decoded frames "prepared" for vpp processing
+    std::mutex      m_dec2vpp_mtx;
+
     Surface1ExList  m_vpp2encSurfExPool;// pool of vpp processed frames "prepared" for encoding
+    std::mutex      m_vpp2enc_mtx;
 
     Surface1ExList  m_dec2encSurfExPool;// pool of decoded frames "prepared" for encoding
+    std::mutex      m_dec2enc_mtx;
+
     typedef std::list<mfxBitstreamEx*> BitstreamExList;
     BitstreamExList    m_outBSPool;     // pool of encoded frames prepared for writting down
     std::auto_ptr<BitstreamExManager>    m_pOutBSManager;
+    std::mutex      m_bs_out_mtx;
+    std::mutex      m_bs_in_mtx;
     
     // events
     std::mutex m_event_mtx;
