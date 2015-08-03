@@ -12,6 +12,8 @@
 #if defined (MFX_VA_WIN)
 #include "mfx_h265_encode_hw_d3d9.h"
 #include "mfx_h265_encode_hw_d3d11.h"
+#elif defined (MFX_VA_LINUX)
+#include "mfx_h265_encode_vaapi.h"
 #endif
 #include "mfx_h265_encode_hw_ddi_trace.h"
 
@@ -49,6 +51,9 @@ DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core)
             return new D3D9Encoder;
         case MFX_IMPL_VIA_D3D11:
             return new D3D11Encoder;
+#elif defined (MFX_VA_LINUX)
+        case MFX_IMPL_VIA_VAAPI:
+            return new VAAPIEncoder;
 #endif
         default:
             return 0;

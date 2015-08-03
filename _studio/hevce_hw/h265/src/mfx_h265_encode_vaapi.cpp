@@ -288,7 +288,6 @@ void FillSliceBuffer(
 }
 
 void UpdateSlice(
-    ENCODE_CAPS const &                        hwCaps,
     Task const &                               task,
     VAEncSequenceParameterBufferHEVC const     & sps,
     VAEncPictureParameterBufferHEVC const      & pps,
@@ -526,20 +525,15 @@ void VAAPIEncoder::FillSps(
 }
 
 mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
-    VideoCORE* core,
+    MFXCoreInterface * core,
     GUID /*guid*/,
     mfxU32 width,
     mfxU32 height)
 {
     m_core = core;
 
-    VAAPIVideoCORE * hwcore = dynamic_cast<VAAPIVideoCORE *>(m_core);
-    MFX_CHECK_WITH_ASSERT(hwcore != 0, MFX_ERR_DEVICE_FAILED);
-    if(hwcore)
-    {
-        mfxStatus mfxSts = hwcore->GetVAService(&m_vaDisplay);
-        MFX_CHECK_STS(mfxSts);
-    }
+    mfxStatus sts = core->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*)&m_vaDisplay);
+    MFX_CHECK_STS(sts);
 
     m_width  = width;
     m_height = height;
@@ -547,7 +541,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     memset(&m_caps, 0, sizeof(m_caps));
 
     m_caps.BRCReset = 1;
-    m_caps.HeaderInsertion = 0;
+    m_caps.MaxNum_Reference0 = 1; //FIXME
+    m_caps.MaxNum_Reference1 = 1; //FIXME
     m_caps.MaxPicWidth  = 4096;
     m_caps.MaxPicHeight = 4096;
 
@@ -702,20 +697,11 @@ mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     return MFX_ERR_NONE;
 }
 
-mfxStatus VAAPIEncoder::QueryEncodeCaps(ENCODE_CAPS& caps)
+mfxStatus VAAPIEncoder::QueryEncodeCaps(ENCODE_CAPS_HEVC& caps)
 {
     caps = m_caps;
 
     return MFX_ERR_NONE;
-}
-
-mfxStatus VAAPIEncoder::QueryHWGUID(VideoCORE * core, GUID guid, bool isTemporal)
-{
-    core;
-    guid;
-    isTemporal;
-
-    return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
@@ -734,10 +720,12 @@ mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
     ExtVASurface extSurf;
     VASurfaceID *pSurface = NULL;
 
+    mfxFrameAllocator & allocator = m_core->FrameAllocator();
+
     for (mfxU32 i = 0; i < response.NumFrameActual; i++)
     {
 
-        sts = m_core->GetFrameHDL(response.mids[i], (mfxHDL *)&pSurface);
+        sts = allocator.GetHDL(allocator.pthis, response.mids[i], (mfxHDL *)&pSurface);
         MFX_CHECK_STS(sts);
 
         extSurf.number  = i;
@@ -810,7 +798,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
             m_packeSliceHeaderBufferId.resize(m_slice.size());
             m_packedSliceBufferId.resize(m_slice.size());
         }
-        UpdateSlice(m_caps, task, m_sps, m_pps, m_slice);
+        UpdateSlice(task, m_sps, m_pps, m_slice);
 
         configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);
     }
@@ -874,38 +862,6 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
         }
     }
 
-    if (m_caps.HeaderInsertion == 1)
-    {
-        // SEI
-        /*if (sei.Size() > 0)
-        {
-            packed_header_param_buffer.type = VAEncPackedHeaderHEVC_SEI;
-            packed_header_param_buffer.has_emulation_bytes = 1;
-            packed_header_param_buffer.bit_length = sei.Size()*8;
-
-            MFX_DESTROY_VABUFFER(m_packedSeiHeaderBufferId, m_vaDisplay);
-            vaSts = vaCreateBuffer(m_vaDisplay,
-                    m_vaContextEncode,
-                    VAEncPackedHeaderParameterBufferType,
-                    sizeof(packed_header_param_buffer),
-                    1,
-                    &packed_header_param_buffer,
-                    &m_packedSeiHeaderBufferId);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-            MFX_DESTROY_VABUFFER(m_packedSeiBufferId, m_vaDisplay);
-            vaSts = vaCreateBuffer(m_vaDisplay,
-                                m_vaContextEncode,
-                                VAEncPackedHeaderDataBufferType,
-                                sei.Size(), 1, RemoveConst(sei.Buffer()),
-                                &m_packedSeiBufferId);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-            configBuffers[buffersCount++] = m_packedSeiHeaderBufferId;
-            configBuffers[buffersCount++] = m_packedSeiBufferId;
-        }*/
-    }
-    else
     {
         // AUD
         if (task.m_insertHeaders & INSERT_AUD)
@@ -1108,7 +1064,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
 
     assert(buffersCount <= configBuffers.size());
 
-    MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|ENCODE|AVC|PACKET_START|", "%p|%d", m_vaContextEncode, task.m_frameNum);
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|ENCODE|AVC|PACKET_START|", "%p|%d", m_vaContextEncode, task.m_statusReportNumber);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaBeginPicture");
 
@@ -1143,7 +1099,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
         vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-    MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|ENCODE|AVC|PACKET_END|", "%d|%d", m_vaContextEncode, task.m_frameNum);
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|ENCODE|AVC|PACKET_END|", "%d|%d", m_vaContextEncode, task.m_statusReportNumber);
 
     //------------------------------------------------------------------
     // PostStage

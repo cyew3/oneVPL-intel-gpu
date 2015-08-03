@@ -9,6 +9,7 @@
 #include "mfx_h265_encode_hw_utils.h"
 #include "mfx_h265_encode_hw_ddi.h"
 #include <assert.h>
+#include <math.h>
 
 namespace MfxHwH265Encode
 {
@@ -1038,7 +1039,7 @@ void SetDefaults(
         else
             par.mfx.GopRefDist = Min<mfxU16>(par.mfx.GopPicSize - 1, 4);
     }
-    
+
     if (par.m_ext.CO2.BRefType == MFX_B_REF_UNKNOWN)
     {
         if (par.mfx.GopRefDist > 3 && ((minRefForPyramid(par.mfx.GopRefDist) <= par.mfx.NumRefFrame) || par.mfx.NumRefFrame ==0))

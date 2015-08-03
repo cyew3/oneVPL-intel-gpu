@@ -82,7 +82,7 @@ mfxStatus SetFrameRate(
 
         virtual
         mfxStatus CreateAuxilliaryDevice(
-            VideoCORE* core,
+            MFXCoreInterface * core,
             GUID       guid,
             mfxU32     width,
             mfxU32     height);
@@ -118,7 +118,7 @@ mfxStatus SetFrameRate(
 
         virtual
         mfxStatus QueryEncodeCaps(
-            ENCODE_CAPS& caps);
+            ENCODE_CAPS_HEVC& caps);
 
         virtual
         mfxStatus QueryStatus(Task & task);
@@ -126,19 +126,13 @@ mfxStatus SetFrameRate(
         virtual
         mfxStatus Destroy();
 
-        virtual
-        mfxStatus QueryHWGUID(
-            VideoCORE * core,
-            GUID        guid,
-            bool        isTemporal);
-
     protected:
         VAAPIEncoder(const VAAPIEncoder&);
         VAAPIEncoder& operator=(const VAAPIEncoder&);
 
         void FillSps(MfxVideoParam const & par, VAEncSequenceParameterBufferHEVC & sps);
 
-        VideoCORE*    m_core;
+        MFXCoreInterface*    m_core;
         MfxVideoParam m_videoParam;
 
         VADisplay    m_vaDisplay;
@@ -178,7 +172,7 @@ mfxStatus SetFrameRate(
 
         mfxU32 m_width;
         mfxU32 m_height;
-        ENCODE_CAPS m_caps;
+        ENCODE_CAPS_HEVC m_caps;
 
         static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 26 + 5;
 

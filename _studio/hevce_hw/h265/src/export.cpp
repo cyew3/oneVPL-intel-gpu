@@ -11,6 +11,8 @@
 
 #if defined(_WIN32)
 #define MSDK_PLUGIN_API(ret_type) extern "C" __declspec(dllexport)  ret_type __cdecl
+#elif defined(LINUX32)
+#define MSDK_PLUGIN_API(ret_type) extern "C"  ret_type
 #else
 #define MSDK_PLUGIN_API(ret_type) extern "C"  ret_type  __cdecl
 #endif
