@@ -457,3 +457,89 @@ mfxStatus MFXMPEG2FrameReorderer::ReorderFrame(mfxFrameSurface1 * in, mfxFrameSu
 
     return MFX_ERR_NONE;
 }
+
+
+MFXParFileFrameReorderer::MFXParFileFrameReorderer(const vm_char* file, mfxStatus & ret)
+    : m_par_file(0)
+    , m_nextFrame(-1)
+    , m_nextType(0)
+    , m_eof(false)
+    , m_nFrames(0)
+    , m_nFrames0(0)
+{
+    ret = MFX_ERR_NONE;
+
+    m_par_file = vm_file_fopen(file, VM_STRING("r"));
+
+    if (!m_par_file)
+        ret = MFX_ERR_NULL_PTR;
+}
+
+MFXParFileFrameReorderer::~MFXParFileFrameReorderer()
+{
+    if (m_par_file)
+        vm_file_close(m_par_file);
+}
+
+mfxStatus MFXParFileFrameReorderer::ReorderFrame(mfxFrameSurface1 * in, mfxFrameSurface1 ** out, mfxU16 * frameType)
+{
+    mfxU32 cycleCnt = 0;
+start:
+    if (!m_eof && m_nextFrame < 0)
+    {
+        vm_char sbuf[256], *pStr;
+
+        pStr = vm_file_fgets(sbuf, 256, m_par_file);
+        m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%i %i"), &m_nextFrame, &m_nextType));
+
+
+        if (m_eof)
+        {
+            m_nFrames = m_nFrames0;
+
+            vm_file_fseek(m_par_file, 0, VM_FILE_SEEK_SET);
+
+            pStr = vm_file_fgets(sbuf, 256, m_par_file);
+            m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%i %i"), &m_nextFrame, &m_nextType));
+        }
+
+        m_nextFrame += m_nFrames;
+        m_nFrames0++;
+    }
+
+    if (m_eof)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (in != 0)
+    {
+        m_frames[in->Data.FrameOrder] = in;
+        IncreaseReference(&in->Data);
+    }
+
+    if (m_frames.count(m_nextFrame) == 0)
+    {
+        if (in == 0 && !m_frames.empty())
+        {
+            if (cycleCnt++ < 10)
+            {
+                m_nextFrame = -1;
+                goto start;
+            }
+            else
+                return MFX_ERR_MORE_DATA;
+        }
+        else
+            return MFX_ERR_MORE_DATA;
+    }
+
+    *out = m_frames[m_nextFrame];
+    *frameType = (mfxU16)m_nextType;
+
+    m_frames.erase(m_nextFrame);
+    DecreaseReference(&(*out)->Data);
+
+    m_nextFrame = -1;
+    m_nextType = 0;
+
+    return MFX_ERR_NONE;
+}

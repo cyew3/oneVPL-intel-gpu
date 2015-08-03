@@ -209,6 +209,9 @@ struct sCommandlineParams
   bool isHMTest;
   bool isPreferNV12;
 
+  bool           useEncOrderParFile;
+  vm_char        encOrderParFile[MAX_FILE_PATH];
+
 #ifdef PAVP_BUILD
   // protected
   mfxU16 Protected; //Protected in mfxVideoParam
@@ -255,6 +258,8 @@ struct sCommandlineParams
       isAllegroTest = false;
       isHMTest = true;
       isPreferNV12 = false;
+
+      useEncOrderParFile = false;
 
       nPicStruct        =  PIPELINE_PICSTRUCT_NOT_SPECIFIED;
       nSeed             = -1;

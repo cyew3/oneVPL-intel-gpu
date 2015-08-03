@@ -19,10 +19,14 @@ class EncodeOrderEncode
     : public InterfaceProxy<IVideoEncode>
 {
 public:
-    EncodeOrderEncode (std::auto_ptr<IVideoEncode>& pTarget)
+
+    EncodeOrderEncode(std::auto_ptr<IVideoEncode>& pTarget, bool useParFile, const vm_char* m_par_file)
         : InterfaceProxy<IVideoEncode>(pTarget)
+        , m_useParFile(useParFile)
+        , m_par_file(m_par_file)
     {
     }
+
     virtual mfxStatus Init(mfxVideoParam * pInit)
     {
         mfxStatus sts = MFX_ERR_NONE;
@@ -34,19 +38,26 @@ public:
         getVParams.ExtParam = pInit->ExtParam;
         MFX_CHECK_STS(GetVideoParam(&getVParams));
 
-        switch (pInit->mfx.CodecId)
+        if (m_useParFile)
         {
-        case MFX_CODEC_AVC:
-            MFX_CHECK_POINTER((m_reorderer.reset(new MFXH264FrameReorderer(getVParams)), m_reorderer.get()));
-            break;
-        case MFX_CODEC_MPEG2:
-            MFX_CHECK_STS((m_reorderer.reset(new MFXMPEG2FrameReorderer(getVParams, sts)), sts));
-            break;
-        default:
-            MFX_CHECK_TRACE(false, VM_STRING("unsupported CodecId for EncodeOrder"));
+            MFX_CHECK_POINTER((m_reorderer.reset(new MFXParFileFrameReorderer(m_par_file, sts)), m_reorderer.get()));
+        }
+        else
+        {
+            switch (pInit->mfx.CodecId)
+            {
+            case MFX_CODEC_AVC:
+                MFX_CHECK_POINTER((m_reorderer.reset(new MFXH264FrameReorderer(getVParams)), m_reorderer.get()));
+                break;
+            case MFX_CODEC_MPEG2:
+                MFX_CHECK_STS((m_reorderer.reset(new MFXMPEG2FrameReorderer(getVParams, sts)), sts));
+                break;
+            default:
+                MFX_CHECK_TRACE(false, VM_STRING("unsupported CodecId for EncodeOrder"));
+            }
         }
         
-        return MFX_ERR_NONE;
+        return sts;
     }
     virtual mfxStatus EncodeFrameAsync(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp)
     {
@@ -106,4 +117,6 @@ public:
 protected:
     std::auto_ptr<MFXFrameReorderer> m_reorderer;
     std::map<mfxFrameSurface1*, mfxEncodeCtrl *> m_Controls;
+    bool m_useParFile;
+    const vm_char* m_par_file;
 };

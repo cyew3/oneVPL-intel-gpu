@@ -14,6 +14,8 @@ File Name: .h
 #define __MFX_FRAME_REORDERER_H
 
 #include <vector>
+#include <map>
+#include "vm_file.h"
 #include "mfxstructures.h"
 #include "mfxmvc.h"
 #include "mfx_frames_new.h"
@@ -92,6 +94,24 @@ protected:
     MFXWaitingList m_waitingList;
     MFXGOP_ m_gop;
     mfxU32 m_frameOrder;
+};
+
+class MFXParFileFrameReorderer : public MFXFrameReorderer
+{
+public:
+    explicit MFXParFileFrameReorderer(const vm_char* file, mfxStatus & ret);
+    virtual ~MFXParFileFrameReorderer();
+    virtual mfxStatus ReorderFrame(mfxFrameSurface1 * in, mfxFrameSurface1 ** out, mfxU16 * frameType);
+
+protected:
+    vm_file* m_par_file;
+    std::map<mfxI32, mfxFrameSurface1*> m_frames;
+
+    mfxI32 m_nextFrame;
+    mfxU32 m_nextType;
+    bool   m_eof;
+    mfxU32 m_nFrames;
+    mfxU32 m_nFrames0;
 };
 
 

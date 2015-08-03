@@ -1253,6 +1253,15 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             //pipeline will create a encode proxy according to this flag
             m_inParams.bCreateEncFrameInfo = true;
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-EncodedOrderPar"), VM_STRING("par-file for EncodedOrder mode. Each line: <FrameOrder> <FrameType>"), OPT_FILENAME))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.encOrderParFile, MFX_ARRAY_SIZE(m_inParams.encOrderParFile), argv[1]));
+            argv++;
+            m_inParams.useEncOrderParFile = true;
+            m_EncParams.mfx.EncodedOrder = 1;
+            m_inParams.EncodedOrder = 1;
+        }
         else if (MFX_ERR_UNSUPPORTED == (mfxres = ProcessOption(argv, argvEnd)))
         {
             //check with base pipeline parser
@@ -2046,7 +2055,7 @@ std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
 
     if (m_inParams.EncodedOrder)
     {
-        pEncoder.reset(new EncodeOrderEncode(pEncoder));
+        pEncoder.reset(new EncodeOrderEncode(pEncoder, m_inParams.useEncOrderParFile, m_inParams.encOrderParFile));
     }
 
     if (m_inParams.bDisableIpFieldPair)
