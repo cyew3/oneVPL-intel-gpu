@@ -17,6 +17,7 @@ Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 #include <algorithm>
 #include <set>
+#include <math.h>
 
 #include "umc_mutex.h"
 #include "mfx_vpp_interface.h"
@@ -402,11 +403,65 @@ namespace MfxHwVideoProcessing
             { 
                 Clear();
 
+                mfxF64 inRate;
+                mfxF64 outRate;
+                bool frcUp;
+                mfxU16 high;
+                mfxU16 low;
+
                 m_frcRational[VPP_IN]  = frcRational[VPP_IN];
                 m_frcRational[VPP_OUT] = frcRational[VPP_OUT];
 
-                m_inFrameTime = 1000.0 / (((mfxF64)m_frcRational[VPP_IN].FrameRateExtN / (mfxF64)m_frcRational[VPP_IN].FrameRateExtD));
-                m_outFrameTime = 1000.0 / (((mfxF64)m_frcRational[VPP_OUT].FrameRateExtN / (mfxF64)m_frcRational[VPP_OUT].FrameRateExtD));
+                inRate  = (((mfxF64)m_frcRational[VPP_IN].FrameRateExtN / (mfxF64)m_frcRational[VPP_IN].FrameRateExtD));
+                outRate = (((mfxF64)m_frcRational[VPP_OUT].FrameRateExtN / (mfxF64)m_frcRational[VPP_OUT].FrameRateExtD));
+
+                m_inFrameTime  = 1000.0 / inRate;
+                m_outFrameTime = 1000.0 / outRate;
+
+                mfxU16 nInRate  = (mfxU16)inRate;
+                mfxU16 nOutRate = (mfxU16)outRate;
+                if ( fabs(inRate - (mfxF64)nInRate) > 0.5 )
+                    nInRate++;
+
+                if ( fabs(outRate - (mfxF64)nOutRate) > 0.5 )
+                    nOutRate++;
+
+                frcUp = (nInRate < nOutRate) ? true : false;
+                high  = frcUp ? nOutRate : nInRate;
+                low   = frcUp ? nInRate  : nOutRate;
+                m_in_tick  = m_out_tick  = 1;
+                m_in_stamp = m_out_stamp = 0;
+
+                if ( nInRate == nOutRate || 0 == low)
+                    return;
+
+                // Calculate ratio between input and output framerates
+                mfxU16 rate = 1;
+                mfxU16 multiplier = 1;
+                mfxU16 tmp = high;
+                while(multiplier<1000)
+                {
+                    tmp = high *multiplier;
+                    rate  = tmp / low;
+                    if (rate*low == tmp)
+                        break;
+                    multiplier++;
+                }
+
+                if ( frcUp )
+                {
+                    m_in_tick   = rate;
+                    m_out_tick  = multiplier;
+                    m_out_stamp = 0;
+                }
+                else
+                {
+                    m_in_tick   = multiplier;
+                    m_out_tick  = rate;
+                    m_out_stamp = m_out_tick;
+                }
+
+                m_in_stamp = m_in_tick;
 
                 // calculate time interval between input and output frames
                 m_timeFrameInterval = m_inFrameTime - m_outFrameTime;
@@ -426,11 +481,19 @@ namespace MfxHwVideoProcessing
                 m_externalDeltaTime = 0;
                 m_timeFrameInterval = 0;
                 m_bDuplication = 0;
+
+                m_in_stamp = m_in_tick = m_out_stamp = m_out_tick = 0;
+
                 m_LockedSurfacesList.clear();
                 memset(m_frcRational, 0, sizeof(m_frcRational));
             }
 
             std::vector<mfxFrameSurface1 *> m_LockedSurfacesList;
+
+            mfxU16 m_in_tick;
+            mfxU16 m_out_tick;
+            mfxU16 m_out_stamp;
+            mfxU16 m_in_stamp;
 
             mfxF64 m_inFrameTime;
             mfxF64 m_outFrameTime;

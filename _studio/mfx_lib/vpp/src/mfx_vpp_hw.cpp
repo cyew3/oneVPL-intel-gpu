@@ -162,32 +162,25 @@ mfxStatus CpuFrc::StdFrc::DoCpuFRC_AndUpdatePTS(
     mfxFrameSurface1 *output,
     mfxStatus *intSts)
 {
-    mfxF64 localDeltaTime = m_externalDeltaTime + m_timeFrameInterval;
-    bool isIncreasedSurface = false;
+
     std::vector<mfxFrameSurface1 *>::iterator iterator;
 
-    if (localDeltaTime <= -m_outFrameTime)
+    if (m_in_stamp + m_in_tick < m_out_stamp)
     {
-        m_externalDeltaTime += m_inFrameTime;
-
         // skip frame
         // request new one input surface
+        m_in_stamp += m_in_tick;
         return MFX_ERR_MORE_DATA;
     }
-    else if (localDeltaTime >= m_outFrameTime)
+    else if (m_out_stamp + m_out_tick < m_in_stamp)
     {
+        // Save current input surface and request more output surfaces
         iterator = std::find(m_LockedSurfacesList.begin(), m_LockedSurfacesList.end(), input);
 
         if (m_LockedSurfacesList.end() == iterator)
         {
             m_LockedSurfacesList.push_back(input);
         }
-        else
-        {
-            isIncreasedSurface = true;
-        }
-
-        m_externalDeltaTime += -m_outFrameTime;
 
         if (true == m_bDuplication)
         {
@@ -222,12 +215,12 @@ mfxStatus CpuFrc::StdFrc::DoCpuFRC_AndUpdatePTS(
 
         if (m_LockedSurfacesList.end() != iterator)
         {
-            isIncreasedSurface = true;
             m_LockedSurfacesList.erase(m_LockedSurfacesList.begin());
         }
-
-        m_externalDeltaTime += m_timeFrameInterval;
+        m_in_stamp += m_in_tick;
     }
+
+    m_out_stamp += m_out_tick;
 
     if (MFX_ERR_MORE_SURFACE != *intSts && NULL != input)
     {
@@ -2802,6 +2795,9 @@ mfxStatus ConfigureExecuteParams(
                 config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                 config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);//aya fixme ????
 
+#if 0
+                // Disable interpolated FRC until related issues resolved
+
                 // aya: driver supports GFX FRC for progressive content only and NV12 input!!!
                 bool isProgressiveStream = ((MFX_PICSTRUCT_PROGRESSIVE == videoParam.vpp.In.PicStruct) &&
                     (MFX_PICSTRUCT_PROGRESSIVE == videoParam.vpp.Out.PicStruct)) ? true : false;
@@ -2854,6 +2850,7 @@ mfxStatus ConfigureExecuteParams(
                         }
                     }
                 }
+#endif
 
 
                 inDNRatio = (mfxF64) videoParam.vpp.In.FrameRateExtD / videoParam.vpp.In.FrameRateExtN;
