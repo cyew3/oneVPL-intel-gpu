@@ -674,10 +674,12 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
 // specific plug-in case to run additional task after main task 
 #if !defined(AS_HEVCE_PLUGIN) 
                 {
-                    if (session->m_plgEnc.get()) //to avoid possible side effect on other codecs
+                    if (session->m_plgEnc.get()) { //to avoid possible side effect on other codecs
                         task.pSrc[1] = surface;
-                    else
+                        task.pSrc[3] = bs;
+                    } else {
                         task.pSrc[1] =  bs;
+                    }
                 }
 #endif
                 task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
@@ -707,10 +709,12 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 // specific plug-in case to run additional task after main task 
 #if !defined(AS_HEVCE_PLUGIN) 
                 {
-                    if (session->m_plgEnc.get()) //to avoid possible side effect on other codecs
+                    if (session->m_plgEnc.get()) { //to avoid possible side effect on other codecs
                         task.pSrc[1] = surface;
-                    else
+                        task.pSrc[3] = bs;
+                    } else {
                         task.pSrc[1] =  bs;
+                    }
                 }
 #endif
                 task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
