@@ -49,12 +49,12 @@ namespace MfxHwH264EncodeHW
     {
         mfxExtCodingOption const * extOpt = GetExtBuffer(video);
 
-        if (!video.calcParam.cqpHrdMode && (video.mfx.RateControlMethod != MFX_RATECONTROL_CBR || IsOff(extOpt->NalHrdConformance)))
+        if (video.mfx.RateControlMethod != MFX_RATECONTROL_CBR || IsOff(extOpt->NalHrdConformance))
             return 0;
 
         mfxF64 frameRate = mfxF64(video.mfx.FrameInfo.FrameRateExtN) / video.mfx.FrameInfo.FrameRateExtD;
         mfxU32 avgFrameSize = mfxU32(1000 * video.calcParam.targetKbps / frameRate);
-        if (!video.calcParam.cqpHrdMode && avgFrameSize <= 128 * 1024 * 8)
+        if (avgFrameSize <= 128 * 1024 * 8)
             return 0;
 
         for (DdiTaskCiter i = submittedTasks.begin(); i != submittedTasks.end(); ++i)
@@ -63,19 +63,8 @@ namespace MfxHwH264EncodeHW
             hrd.RemoveAccessUnit(0, fieldPicFlag, false);
         hrd.RemoveAccessUnit(0, fieldPicFlag, false);
 
-        mfxU32 bufsize;
-        mfxU32 bitrate;
-        if (video.calcParam.cqpHrdMode)
-        {
-            // for CQP HRD mode BRC params are taken from decorative param set
-            bufsize  = 8000 * video.calcParam.decorativeHrdParam.bufferSizeInKB;
-            bitrate  = GetMaxBitrateValue(video.calcParam.decorativeHrdParam.maxKbps) << 6;
-        }
-        else
-        {
-            bufsize  = 8000 * video.calcParam.bufferSizeInKB;
-            bitrate  = GetMaxBitrateValue(video.calcParam.maxKbps) << 6;
-        }
+        mfxU32 bufsize  = 8000 * video.calcParam.bufferSizeInKB;
+        mfxU32 bitrate  = GetMaxBitrateValue(video.calcParam.maxKbps) << 6;
         mfxU32 delay    = hrd.GetInitCpbRemovalDelay();
         mfxU32 fullness = mfxU32(mfxU64(delay) * bitrate / 90000.0);
 
@@ -125,6 +114,30 @@ namespace MfxHwH264EncodeHW
             return IPP_MIN((fullness - bufsize + 7) / 8, maxFrameSize);
 
         return 0;
+    }
+
+     mfxU32 PaddingBytesToAvoidHrdOverflow(
+        MfxVideoParam const & video,
+        Hrd                   hrd,
+        mfxU32                picSize,
+        mfxU32                fieldPicFlag)
+    {
+        Hrd bkp = hrd;
+        hrd.RemoveAccessUnit(picSize, fieldPicFlag, false);
+
+        mfxU32 bufsize  = 8000 * video.calcParam.decorativeHrdParam.bufferSizeInKB;
+        mfxU32 bitrate  = GetMaxBitrateValue(video.calcParam.decorativeHrdParam.maxKbps) << 6;
+        // initial_cpb_removal_delay is calculated inside GetInitCpbRemovalDelay () using Floor rounding
+        // let's add 1 to assure that "delay" represents buffer fulness which big enough to calculate correct padding size
+        mfxU32 delay    = hrd.GetInitCpbRemovalDelay() + 1;
+        mfxU32 fullness = mfxU32(mfxU64(delay) * bitrate / 90000.0);
+
+        mfxU32 paddingSize = 0;
+
+        if (fullness > bufsize)
+            paddingSize = (fullness - bufsize + 7) / 8;
+
+        return paddingSize;
     }
 
     mfxU16 GetFrameWidth(MfxVideoParam & par)
@@ -1134,8 +1147,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     // FIXME: check what to do with WA on Linux (MFX_HW_VAAPI) - currently it is switched off
     m_useWAForHighBitrates = (MFX_HW_VAAPI != m_core->GetVAType()) && !m_enabledSwBrc &&
         m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR &&
-        (m_currentPlatform < MFX_HW_HSW || m_currentPlatform == MFX_HW_VLV) ||  // HRD WA for high bitrates isn't required for HSW and beyond
-        m_video.calcParam.cqpHrdMode == 1; // same WA is used for CQP HRD CBR mode to avoid buffer overflows
+        (m_currentPlatform < MFX_HW_HSW || m_currentPlatform == MFX_HW_VLV); // HRD WA for high bitrates isn't required for HSW and beyond
 
     // required for slice header patching
     if ((extOpt2->MaxSliceSize||m_caps.HeaderInsertion == 1 || m_currentPlatform == MFX_HW_IVB && m_core->GetVAType() == MFX_HW_VAAPI || m_currentPlatform == MFX_HW_SOFIA) && m_video.Protected == 0)
@@ -3211,6 +3223,8 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         *dataLength += bsSizeActual;
     }
 
+    mfxU32 paddingSize = 0;
+
     if (m_enabledSwBrc)
     {
         mfxU32 minFrameSize = m_brc.GetMinFrameSize();
@@ -3229,6 +3243,20 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         {
             CheckedMemset(bsData, bsData + bsSizeAvail, 0, skippedff);
             *dataLength += skippedff;
+        }
+    }
+    else if (m_video.calcParam.cqpHrdMode == 1) // padding is for CBR CQP HRD mode only
+    {
+        paddingSize = PaddingBytesToAvoidHrdOverflow(m_video, m_hrd, task.m_bsDataLength[fid], task.m_fieldPicFlag);
+        mfxU32 availSize = task.m_bs->MaxLength - task.m_bs->DataOffset - task.m_bs->DataLength;
+
+        assert(paddingSize == 0 || paddingSize <= availSize);
+
+        if (paddingSize && paddingSize <= availSize)
+        {
+            mfxU8 *  bsData = task.m_bs->Data + task.m_bs->DataOffset + task.m_bs->DataLength;
+            memset(bsData, 0, paddingSize);
+            task.m_bs->DataLength += paddingSize;
         }
     }
 
@@ -3302,7 +3330,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
 
     // Update hrd buffer
     m_hrd.RemoveAccessUnit(
-        task.m_bsDataLength[fid],
+        task.m_bsDataLength[fid] + paddingSize,
         task.m_fieldPicFlag,
         (task.m_type[fid] & MFX_FRAMETYPE_IDR) != 0);
 
