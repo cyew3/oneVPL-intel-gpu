@@ -858,10 +858,18 @@ namespace
                     list1.Resize(IPP_MIN(list1.Size(), 1));
                 }
             }
-            else if (extOpt2->BRefType == MFX_B_REF_PYRAMID && (task.m_type[0] & MFX_FRAMETYPE_P) &&
-                (task.GetPicStructForEncode() & MFX_PICSTRUCT_PROGRESSIVE))
+            else if (extOpt2->BRefType == MFX_B_REF_PYRAMID && (task.m_type[0] & MFX_FRAMETYPE_P))
             {
-                std::sort(list0.Begin(), list0.End(), RefPocIsGreater(dpb));
+                if (task.GetPicStructForEncode() & MFX_PICSTRUCT_PROGRESSIVE)
+                    std::sort(list0.Begin(), list0.End(), RefPocIsGreater(dpb));
+                else
+                {
+                    // reorder list0 in POC descending order separately for each parity
+                    for (mfxU8* l = list0.Begin(); l < list0.End(); l++)
+                        for (mfxU8* r = l + 1; r < list0.End(); r++)
+                            if (((*l) >> 7) == ((*r) >> 7) && GetPoc(dpb, *r) > GetPoc(dpb, *l))
+                                std::swap(*l, *r);
+                }
             }
 
             if (isField && isIPFieldPair == false)
