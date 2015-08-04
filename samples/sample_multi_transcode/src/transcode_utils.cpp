@@ -127,7 +127,11 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -FRC::PT      Enables FRC filter with Preserve Timestamp algorithm\n"));
     msdk_printf(MSDK_STRING("  -FRC::DT      Enables FRC filter with Distributed Timestamp algorithm\n"));
     msdk_printf(MSDK_STRING("  -FRC::INTERP  Enables FRC filter with Frame Interpolation algorithm\n"));
-    msdk_printf(MSDK_STRING("                NOTE: -FRC filters work with -i::source pipelines only !!!\n"));
+    msdk_printf(MSDK_STRING("     NOTE: -FRC filters work with -i::source pipelines only !!!\n"));
+    msdk_printf(MSDK_STRING("  -ec::<mode>   Forces encoder input to use provided chroma mode(rgb4,yuy2,nv12)\n"));
+    msdk_printf(MSDK_STRING("  -dc::<mode>   Forces decoder output to use provided chroma mode(rgb4,yuy2,nv12)\n"));
+    msdk_printf(MSDK_STRING("     NOTE: chroma transform VPP may be automatically enabled if -ec/-dc parameters are provided\n"));
+
     msdk_printf(MSDK_STRING("  -angle 180    Enables 180 degrees picture rotation user module before encoding\n"));
     msdk_printf(MSDK_STRING("  -opencl       Uses implementation of rotation plugin (enabled with -angle option) through Intel(R) OpenCL\n"));
     msdk_printf(MSDK_STRING("  -w            Destination picture width, invokes VPP resize\n"));
@@ -1107,8 +1111,17 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
 
     }
 
-    return MFX_ERR_NONE;
+    if(InputParams.EncoderFourCC!=MFX_FOURCC_NV12 && InputParams.eMode == Sink)
+    {
+        msdk_printf(MSDK_STRING("WARNING: -ec option is used in session without encoder, this parameter will be skipped \n"));
+    }
 
+    if(InputParams.DecoderFourCC!=MFX_FOURCC_NV12 && InputParams.eMode != Native && InputParams.eMode != Sink)
+    {
+        msdk_printf(MSDK_STRING("WARNING: -dc option is used in session without decoder, this parameter will be skipped \n"));
+    }
+
+    return MFX_ERR_NONE;
 } //mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputParams &InputParams)
 
 bool  CmdProcessor::GetNextSessionParams(TranscodingSample::sInputParams &InputParams)
@@ -1125,3 +1138,18 @@ bool  CmdProcessor::GetNextSessionParams(TranscodingSample::sInputParams &InputP
     return true;
 
 } //bool  CmdProcessor::GetNextSessionParams(TranscodingSample::sInputParams &InputParams)
+
+mfxU16 TranscodingSample::FourCCToChroma(mfxU32 fourCC)
+{
+    switch(fourCC)
+    {
+    case MFX_FOURCC_NV12:
+        return MFX_CHROMAFORMAT_YUV420;
+    case MFX_FOURCC_YUY2:
+        return MFX_CHROMAFORMAT_YUV422;
+    case MFX_FOURCC_RGB4:
+        return MFX_CHROMAFORMAT_YUV444;
+    }
+
+    return MFX_CHROMAFORMAT_YUV420;
+}

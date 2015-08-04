@@ -65,14 +65,7 @@ mfxU32 MFX_STDCALL TranscodingSample::ThranscodeRoutine(void   *pObj)
 // set structure to define values
 sInputParams::sInputParams()
 {
-    memset(static_cast<__sInputParams*>(this), 0, sizeof(__sInputParams));
-
-    priority = MFX_PRIORITY_NORMAL;
-    libType = MFX_IMPL_SOFTWARE;
-    MaxFrameNumber = 0xFFFFFFFF;
-    pVppCompDstRects = NULL;
-    DenoiseLevel=-1;
-    DetailLevel=-1;
+    Reset();
 } // sInputParams::sInputParams()
 
 void sInputParams::Reset()
@@ -84,6 +77,10 @@ void sInputParams::Reset()
     MaxFrameNumber = 0xFFFFFFFF;
     pVppCompDstRects = NULL;
     m_hwdev = NULL;
+    DenoiseLevel=-1;
+    DetailLevel=-1;
+    DecoderFourCC=MFX_FOURCC_NV12;
+    EncoderFourCC=MFX_FOURCC_NV12;
 }
 
 CTranscodingPipeline::CTranscodingPipeline():
@@ -275,12 +272,17 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
         (pParams->eMode == Source))
         bVppCompInitRequire = true;
 
+    // Obtaining decoder output FourCC - in case of inter-session, just take it from params, in intra-session case, take it from parent session
+    // In inter-session case, we'll enable chroma-changing VPP only in encoding session, and only if decoderFourCC!=encoderFourCC
+    mfxU32 decoderFourCC = m_bDecodeEnable ? pParams->DecoderFourCC : m_pParentPipeline->GetDecodeParam().mfx.FrameInfo.FourCC;
+
     if (m_bEncodeEnable || m_bDecodeEnable)
     {
         if ( (m_mfxDecParams.mfx.FrameInfo.CropW != pParams->nDstWidth && pParams->nDstWidth) ||
              (m_mfxDecParams.mfx.FrameInfo.CropH != pParams->nDstHeight && pParams->nDstHeight) ||
              (pParams->bEnableDeinterlacing) || (pParams->DenoiseLevel!=-1) || (pParams->DetailLevel!=-1) || (pParams->FRCAlgorithm) ||
-             (bVppCompInitRequire) )
+             (bVppCompInitRequire) ||
+             (pParams->EncoderFourCC != decoderFourCC && m_bEncodeEnable))
         {
             m_bIsVpp = true;
             sts = InitVppMfxParams(pParams);
@@ -1358,6 +1360,13 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
     {
         // use the value from input stream header
     }
+
+    //--- Force setting fourcc type if required
+    if(pInParams->DecoderFourCC != MFX_FOURCC_NV12)
+    {
+        m_mfxDecParams.mfx.FrameInfo.FourCC=pInParams->DecoderFourCC;
+        m_mfxDecParams.mfx.FrameInfo.ChromaFormat=FourCCToChroma(pInParams->DecoderFourCC);
+    }
     return MFX_ERR_NONE;
 }// mfxStatus CTranscodingPipeline::InitDecMfxParams()
 
@@ -1481,6 +1490,10 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
     //--- Settings HRD buffer size
     m_mfxEncParams.mfx.BufferSizeInKB = (mfxU16)(m_mfxEncParams.mfx.TargetKbps*4L/8); // buffer for 4 seconds
+
+    //--- Force setting fourcc type if required
+    m_mfxEncParams.mfx.FrameInfo.FourCC=pInParams->EncoderFourCC;
+    m_mfxEncParams.mfx.FrameInfo.ChromaFormat=FourCCToChroma(pInParams->EncoderFourCC);
 
     return MFX_ERR_NONE;
 }// mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
@@ -1683,13 +1696,15 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         m_VppExtParamsStorage.ExtBuffers.push_back((mfxExtBuffer *)&m_VppDoNotUse);
     }
 
+    //--- Setting output FourCC type (input type is taken from m_mfxDecParams)
+    m_mfxVppParams.vpp.Out.FourCC=pInParams->EncoderFourCC;
+    m_mfxVppParams.vpp.Out.ChromaFormat=FourCCToChroma(pInParams->EncoderFourCC);
+
     /* VPP Comp Init */
     if (((pInParams->eModeExt == VppComp) || (pInParams->eModeExt == VppCompOnly)) &&
         (pInParams->numSurf4Comp != 0))
     {
         m_nVPPCompEnable = pInParams->eModeExt;
-        //m_mfxVppParams.vpp.Out.FourCC = MFX_FOURCC_RGB4;
-        m_mfxVppParams.vpp.Out.FourCC = MFX_FOURCC_NV12;
         m_VppCompParams.Header.BufferId = MFX_EXTBUFF_VPP_COMPOSITE;
         m_VppCompParams.Header.BufferSz = sizeof(mfxExtVPPComposite);
         m_VppCompParams.NumInputStream = (mfxU16)pInParams->numSurf4Comp;

@@ -141,6 +141,36 @@ mfxStatus CVPPExtBuffersStorage::ParseCmdLine(msdk_char *argv[],mfxU32 argc,mfxU
         params->DeinterlacingMode=MFX_DEINTERLACING_ADVANCED_NOREF;
         return MFX_ERR_NONE;
     }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-ec::rgb4")))
+    {
+        params->EncoderFourCC = MFX_FOURCC_RGB4;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-ec::yuy2")))
+    {
+        params->EncoderFourCC = MFX_FOURCC_YUY2;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-ec::nv12")))
+    {
+        params->EncoderFourCC = MFX_FOURCC_NV12;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-dc::rgb4")))
+    {
+        params->DecoderFourCC = MFX_FOURCC_RGB4;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-dc::yuy2")))
+    {
+        params->DecoderFourCC = MFX_FOURCC_YUY2;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-dc::nv12")))
+    {
+        params->DecoderFourCC = MFX_FOURCC_NV12;
+        return MFX_ERR_NONE;
+    }
 
     return MFX_ERR_MORE_DATA;
 }

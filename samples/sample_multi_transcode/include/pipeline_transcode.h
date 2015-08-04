@@ -140,6 +140,9 @@ namespace TranscodingSample
         mfxU16 nVppCompDstW;
         mfxU16 nVppCompDstH;
 
+        mfxU32 DecoderFourCC;
+        mfxU32 EncoderFourCC;
+
         sVppCompDstRect* pVppCompDstRects;
 
         bool bUseOpaqueMemory;
@@ -386,6 +389,7 @@ namespace TranscodingSample
 
         void LockPreEncAuxBuffer(PreEncAuxBuffer* pBuff);
         void UnPreEncAuxBuffer  (PreEncAuxBuffer* pBuff);
+
 
         mfxBitstream        *m_pmfxBS;  // contains encoded input data
 

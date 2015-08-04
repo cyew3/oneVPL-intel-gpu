@@ -23,6 +23,9 @@ Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 #define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
 #define D3DFMT_YV12 (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
 #define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
+#define D3DFMT_IMC3 (D3DFORMAT)MAKEFOURCC('I','M','C','3')
+
+#define MFX_FOURCC_IMC3 (MFX_MAKEFOURCC('I','M','C','3')) // This line should be moved into mfxstructures.h in new API version
 
 D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
 {
@@ -44,6 +47,8 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
         return D3DFMT_P010;
     case MFX_FOURCC_A2RGB10:
         return D3DFMT_A2R10G10B10;
+    case MFX_FOURCC_IMC3:
+        return D3DFMT_IMC3;
     default:
         return D3DFMT_UNKNOWN;
     }
@@ -113,7 +118,8 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         desc.Format != D3DFMT_A8R8G8B8 &&
         desc.Format != D3DFMT_P8 &&
         desc.Format != D3DFMT_P010 &&
-        desc.Format != D3DFMT_A2R10G10B10)
+        desc.Format != D3DFMT_A2R10G10B10 &&
+        desc.Format != D3DFMT_IMC3)
         return MFX_ERR_LOCK_MEMORY;
 
     D3DLOCKED_RECT locked;
@@ -168,6 +174,12 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch;
         ptr->V = ptr->U + 1;
+        break;
+    case D3DFMT_IMC3:
+        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->Y = (mfxU8 *)locked.pBits;
+        ptr->V = ptr->Y + desc.Height * locked.Pitch;
+        ptr->U = ptr->Y + desc.Height * locked.Pitch *2;
         break;
     }
 

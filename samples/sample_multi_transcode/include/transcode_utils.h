@@ -42,6 +42,8 @@ namespace TranscodingSample
 
     bool PrintDllInfo(msdk_char *buf, mfxU32 buf_size, sInputParams* pParams);
 
+    mfxU16 FourCCToChroma(mfxU32 fourCC);
+
 
     template <class T, bool isSingle>
     class s_ptr
