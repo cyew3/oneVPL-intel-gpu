@@ -2270,10 +2270,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     for (refIdx = 0; refIdx < pParams->refCount; refIdx++)
     {
         SetStreamFrameFormat(refIdx, D3D11PictureStructureMapping(pParams->pRefSurfaces[refIdx].frameInfo.PicStruct));
-
-        //SetOutputAlphaFillMode(D3D11_VIDEO_PROCESSOR_ALPHA_FILL_MODE_OPAQUE, 0);
-
-        //void SetStreamColorSpace(UINT StreamIndex, D3D11_VIDEO_PROCESSOR_COLOR_SPACE *pColorSpace);
+        SetOutputAlphaFillMode(D3D11_VIDEO_PROCESSOR_ALPHA_FILL_MODE_SOURCE_STREAM, refIdx);
 
         mfxDrvSurface* pInputSample = &(pParams->pRefSurfaces[refIdx]);
 
