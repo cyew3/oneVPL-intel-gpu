@@ -474,7 +474,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxStatus stsExtBuf = MFX_ERR_NONE;
-    mfxU32 i;
+    mfxU32 i, j;
     mfxU32 skipped = 0;
 
     TranscodingSample::sInputParams InputParams;
@@ -724,6 +724,9 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_only")))
         {
+            /* for VPP comp with rendering we have to use ext allocator */
+            InputParams.bUseOpaqueMemory = false;
+
             VAL_CHECK(i + 1 == argc, i, argv[i]);
             i++;
             /* NB! numSurf4Comp should be equal to Number of decoding session */
@@ -735,6 +738,21 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             /* This is can init early */
             if (InputParams.eModeExt == Native)
                 InputParams.eModeExt = VppCompOnly;
+
+            bool bOpaqueFlagChanged = false;
+            for (j = 0; j < m_SessionArray.size(); j++)
+            {
+                if (m_SessionArray[j].bUseOpaqueMemory)
+                {
+                    m_SessionArray[j].bUseOpaqueMemory = false;
+                    bOpaqueFlagChanged = true;
+                }
+            }
+
+            if (bOpaqueFlagChanged)
+            {
+                msdk_printf(MSDK_STRING("WARNING: internal allocators were disabled because of composition+rendering requirement \n\n"));
+            }
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-ext_allocator")))
         {

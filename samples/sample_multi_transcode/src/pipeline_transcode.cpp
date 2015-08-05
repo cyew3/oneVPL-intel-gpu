@@ -945,7 +945,11 @@ mfxStatus CTranscodingPipeline::Encode()
             // get result coded stream
             sts = m_pmfxSession->SyncOperation(pBitstreamEx_temp->Syncp, MSDK_WAIT_INTERVAL);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+#if defined(_WIN32) || defined(_WIN64)
+            sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, m_pMFXAllocator);
+#elif
             sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, NULL);
+#endif
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             UnPreEncAuxBuffer(pBitstreamEx_temp->pCtrl);
@@ -2218,7 +2222,35 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         /**/
         if ((pParams->m_hwdev != NULL) && (VppCompOnly == pParams->eModeExt))
         {
+#if defined(_WIN32) || defined(_WIN64)
+            m_hwdev4Rendering = new CDecodeD3DRender;
+
+            m_hwdev4Rendering->SetHWDevice(pParams->m_hwdev);
+
+            sWindowParams RenderParam;
+
+            memset(&RenderParam, 0, sizeof(sWindowParams));
+
+            RenderParam.lpWindowName = MSDK_STRING("sample_multi_transcode");
+            RenderParam.nx           = 0;
+            RenderParam.ny           = 0;
+            RenderParam.nWidth       = pParams->nDstWidth;
+            RenderParam.nHeight      = pParams->nDstHeight;
+            RenderParam.ncell        = 0;
+            RenderParam.nAdapter     = 0;
+
+            RenderParam.lpClassName  = MSDK_STRING("Render Window Class");
+            RenderParam.dwStyle      = WS_OVERLAPPEDWINDOW;
+            RenderParam.hWndParent   = NULL;
+            RenderParam.hMenu        = NULL;
+            RenderParam.hInstance    = GetModuleHandle(NULL);
+            RenderParam.lpParam      = NULL;
+            RenderParam.bFullScreen  = TRUE;
+
+            m_hwdev4Rendering->Init(RenderParam);
+#elif
             m_hwdev4Rendering = pParams->m_hwdev;
+#endif
         }
         break;
     default:
@@ -2270,7 +2302,6 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         (pParams->eMode == Native || pParams->bIsJoin) )
         m_bUseOpaqueMemory = true;
 
-    /* for VPP comp with rendering we have to use ext allocator */
     if (!pParams->bUseOpaqueMemory)
         m_bUseOpaqueMemory = false;
 

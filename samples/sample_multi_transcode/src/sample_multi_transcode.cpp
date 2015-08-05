@@ -64,7 +64,18 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     {
         m_pAllocParam.reset(new D3DAllocatorParams);
         m_hwdev.reset(new CD3D9Device());
-        sts = m_hwdev->Init(NULL, 1, MSDKAdapter::GetNumber() );
+        /* The last param set in vector always describe VPP+ENCODE or Only VPP
+         * So, if we want to do rendering we need to do pass HWDev to CTranscodingPipeline */
+        if (m_InputParamsArray[m_InputParamsArray.size() -1].eModeExt == VppCompOnly)
+        {
+            /* Rendering case */
+            sts = m_hwdev->Init(NULL, 1, MSDKAdapter::GetNumber() );
+            m_InputParamsArray[m_InputParamsArray.size() -1].m_hwdev = m_hwdev.get();
+        }
+        else /* NO RENDERING*/
+        {
+            sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber() );
+        }
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         sts = m_hwdev->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&hdl);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -78,7 +89,18 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
         m_pAllocParam.reset(new D3D11AllocatorParams);
         m_hwdev.reset(new CD3D11Device());
-        sts = m_hwdev->Init(NULL, 1, MSDKAdapter::GetNumber() );
+        /* The last param set in vector always describe VPP+ENCODE or Only VPP
+         * So, if we want to do rendering we need to do pass HWDev to CTranscodingPipeline */
+        if (m_InputParamsArray[m_InputParamsArray.size() -1].eModeExt == VppCompOnly)
+        {
+            /* Rendering case */
+            sts = m_hwdev->Init(NULL, 1, MSDKAdapter::GetNumber() );
+            m_InputParamsArray[m_InputParamsArray.size() -1].m_hwdev = m_hwdev.get();
+        }
+        else /* NO RENDERING*/
+        {
+            sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber() );
+        }
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         sts = m_hwdev->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&hdl);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -522,9 +544,10 @@ mfxStatus Launcher::CreateSafetyBuffers()
         }
 
         /* And N_to_1 case: composition should be enabled!
-        * else it is logic error */
-        if ((Source != m_InputParamsArray[i].eMode) &&
-            (VppComp == m_InputParamsArray[0].eModeExt))
+         * else it is logic error */
+        if ( (Source != m_InputParamsArray[i].eMode) &&
+             ( (VppComp     == m_InputParamsArray[0].eModeExt) ||
+               (VppCompOnly == m_InputParamsArray[0].eModeExt) ) )
         {
             pBuffer = new SafetySurfaceBuffer(pPrevBuffer);
             pPrevBuffer = pBuffer;
