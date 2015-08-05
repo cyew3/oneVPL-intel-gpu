@@ -127,7 +127,7 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -FRC::PT      Enables FRC filter with Preserve Timestamp algorithm\n"));
     msdk_printf(MSDK_STRING("  -FRC::DT      Enables FRC filter with Distributed Timestamp algorithm\n"));
     msdk_printf(MSDK_STRING("  -FRC::INTERP  Enables FRC filter with Frame Interpolation algorithm\n"));
-    msdk_printf(MSDK_STRING("     NOTE: -FRC filters work with -i::source pipelines only !!!\n"));
+    msdk_printf(MSDK_STRING("     NOTE: -FRC filters do not work with -o::sink pipelines !!!\n"));
     msdk_printf(MSDK_STRING("  -ec::<mode>   Forces encoder input to use provided chroma mode(rgb4,yuy2,nv12)\n"));
     msdk_printf(MSDK_STRING("  -dc::<mode>   Forces decoder output to use provided chroma mode(rgb4,yuy2,nv12)\n"));
     msdk_printf(MSDK_STRING("     NOTE: chroma transform VPP may be automatically enabled if -ec/-dc parameters are provided\n"));
@@ -870,6 +870,17 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             InputParams.decoderPluginParams = ParsePluginParameter(argv[i + 1]);
             i++;
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-fe")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.dEncoderFrameRate))
+            {
+                PrintHelp(NULL, MSDK_STRING("-n \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+
         else if((stsExtBuf = CVPPExtBuffersStorage::ParseCmdLine(argv,argc,i,&InputParams,skipped))
             !=MFX_ERR_MORE_DATA)
         {
@@ -1113,13 +1124,20 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
 
     if(InputParams.EncoderFourCC!=MFX_FOURCC_NV12 && InputParams.eMode == Sink)
     {
-        msdk_printf(MSDK_STRING("WARNING: -ec option is used in session without encoder, this parameter will be skipped \n"));
+        msdk_printf(MSDK_STRING("WARNING: -ec option is used in session without encoder, this parameter will be ignored \n"));
     }
 
     if(InputParams.DecoderFourCC!=MFX_FOURCC_NV12 && InputParams.eMode != Native && InputParams.eMode != Sink)
     {
-        msdk_printf(MSDK_STRING("WARNING: -dc option is used in session without decoder, this parameter will be skipped \n"));
+        msdk_printf(MSDK_STRING("WARNING: -dc option is used in session without decoder, this parameter will be ignored \n"));
     }
+
+    if(InputParams.FRCAlgorithm && InputParams.eMode == Sink)
+    {
+        msdk_printf(MSDK_STRING("ERROR: -FRC option should not be used in -o::sink pipelines \n"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
 
     return MFX_ERR_NONE;
 } //mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputParams &InputParams)

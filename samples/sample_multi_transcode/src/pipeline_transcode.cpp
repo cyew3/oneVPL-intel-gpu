@@ -274,7 +274,7 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
 
     // Obtaining decoder output FourCC - in case of inter-session, just take it from params, in intra-session case, take it from parent session
     // In inter-session case, we'll enable chroma-changing VPP only in encoding session, and only if decoderFourCC!=encoderFourCC
-    mfxU32 decoderFourCC = m_bDecodeEnable ? pParams->DecoderFourCC : m_pParentPipeline->GetDecodeParam().mfx.FrameInfo.FourCC;
+    mfxU32 decoderFourCC = m_bDecodeEnable ? m_mfxDecParams.mfx.FrameInfo.FourCC : m_pParentPipeline->GetDecodeParam().mfx.FrameInfo.FourCC;
 
     if (m_bEncodeEnable || m_bDecodeEnable)
     {
@@ -1018,6 +1018,7 @@ mfxStatus CTranscodingPipeline::Transcode()
     bool bEndOfFile = false;
     bool bLastCycle = false;
     bool bInsertIDR = false;
+    bool shouldReadNextFrame=true;
     PreEncAuxBuffer encAuxCtrl;
 
     MSDK_ZERO_MEMORY(encAuxCtrl);
@@ -1038,7 +1039,7 @@ mfxStatus CTranscodingPipeline::Transcode()
 
         // if need more decoded frames
         // decode a frame
-        if (bNeedDecodedFrames)
+        if (bNeedDecodedFrames && shouldReadNextFrame)
         {
             if (!bEndOfFile)
             {
@@ -1068,6 +1069,16 @@ mfxStatus CTranscodingPipeline::Transcode()
             sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
         else // no VPP - just copy pointers
             VppExtSurface.pSurface = DecExtSurface.pSurface;
+
+        if(MFX_ERR_MORE_SURFACE == sts)
+        {
+            shouldReadNextFrame=false;
+            sts=MFX_ERR_NONE;
+        }
+        else
+        {
+            shouldReadNextFrame=true;
+        }
 
         if (sts == MFX_ERR_MORE_DATA)
         {
@@ -1408,10 +1419,9 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
     // calculate default bitrate based on resolution and framerate
 
     // set framerate if specified
-    // NOTE: no frame rate conversion is performed in this sample
-    if (pInParams->dFrameRate)
+    if (pInParams->dEncoderFrameRate)
     {
-        ConvertFrameRate(pInParams->dFrameRate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
+        ConvertFrameRate(pInParams->dEncoderFrameRate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
     }
 
     MSDK_CHECK_ERROR(m_mfxEncParams.mfx.FrameInfo.FrameRateExtN * m_mfxEncParams.mfx.FrameInfo.FrameRateExtD,
@@ -1666,9 +1676,9 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     }
 
     // Framerate conversion
-    if(pInParams->dFrameRate)
+    if(pInParams->dEncoderFrameRate)
     {
-        ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.Out.FrameRateExtN, &m_mfxVppParams.vpp.Out.FrameRateExtD);
+        ConvertFrameRate(pInParams->dEncoderFrameRate, &m_mfxVppParams.vpp.Out.FrameRateExtN, &m_mfxVppParams.vpp.Out.FrameRateExtD);
     }
 
     if (pInParams->nDstHeight)
