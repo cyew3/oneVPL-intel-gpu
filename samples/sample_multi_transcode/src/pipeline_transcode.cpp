@@ -2258,8 +2258,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     // opaque memory feature is available starting with API 1.3 and
     // can be used within 1 intra session or joined inter sessions only
     if (m_Version.Major >= 1 && m_Version.Minor >= 3 &&
-        (pParams->eMode == Native || pParams->bIsJoin) &&
-        !pParams->bOpenCL )
+        (pParams->eMode == Native || pParams->bIsJoin) )
         m_bUseOpaqueMemory = true;
 
     /* for VPP comp with rendering we have to use ext allocator */

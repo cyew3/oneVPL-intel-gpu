@@ -156,6 +156,21 @@ mfxStatus CVPPExtBuffersStorage::ParseCmdLine(msdk_char *argv[],mfxU32 argc,mfxU
         params->EncoderFourCC = MFX_FOURCC_NV12;
         return MFX_ERR_NONE;
     }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-ec::nv16")))
+    {
+        params->EncoderFourCC = MFX_FOURCC_NV16;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-ec::p010")))
+    {
+        params->EncoderFourCC = MFX_FOURCC_P010;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-ec::p210")))
+    {
+        params->EncoderFourCC = MFX_FOURCC_P210;
+        return MFX_ERR_NONE;
+    }
     else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-dc::rgb4")))
     {
         params->DecoderFourCC = MFX_FOURCC_RGB4;

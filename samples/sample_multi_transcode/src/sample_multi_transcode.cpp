@@ -382,11 +382,13 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
     bool IsFirstInTopology = true;
 
     mfxU16 minAsyncDepth = 0;
-    bool bOpenCL = false;
+    bool bUseExternalAllocator = false;
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {
-        if (m_InputParamsArray[i].bOpenCL)
-            bOpenCL = true;
+        if (m_InputParamsArray[i].bOpenCL ||
+            m_InputParamsArray[i].EncoderFourCC ||
+            m_InputParamsArray[i].DecoderFourCC)
+            bUseExternalAllocator = true;
         if (Source == m_InputParamsArray[i].eMode)
         {
             if (m_InputParamsArray[i].nAsyncDepth < minAsyncDepth)
@@ -473,13 +475,13 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
         }
     }
 
-    if (bOpenCL)
+    if (bUseExternalAllocator)
     {
         for(mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
         {
-            m_InputParamsArray[i].bOpenCL = true;
+            m_InputParamsArray[i].bUseOpaqueMemory = false;
         }
-        msdk_printf(MSDK_STRING("OpenCL option is present at least in one session. External memory allocator will be used for all sessions .\n"));
+        msdk_printf(MSDK_STRING("OpenCL or chroma conversion is present at least in one session. External memory allocator will be used for all sessions .\n"));
     }
 
     // Async depth between inter-sessions should be equal to the minimum async depth of all these sessions.
