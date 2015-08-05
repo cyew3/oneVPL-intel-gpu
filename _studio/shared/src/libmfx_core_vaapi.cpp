@@ -197,7 +197,9 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x0A84, MFX_HW_BXT},
     { 0x0A85, MFX_HW_BXT},
     { 0x0A86, MFX_HW_BXT},
-    { 0x0A87, MFX_HW_BXT}
+    { 0x0A87, MFX_HW_BXT},
+    { 0x1A84, MFX_HW_BXT}, //BXT-PRO?
+    { 0x5A84, MFX_HW_BXT}  //BXT-P
 };
 
 /* END: IOCTLs definitions */
