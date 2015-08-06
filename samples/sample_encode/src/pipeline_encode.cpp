@@ -517,9 +517,6 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
 {
     mfxStatus sts = MFX_ERR_NONE;
 #if D3D_SURFACES_SUPPORT
-    POINT point = {0, 0};
-    HWND window = WindowFromPoint(point);
-
 #if MFX_D3D11_SUPPORT
     if (D3D11_MEMORY == m_memType)
         m_hwdev = new CD3D11Device();
@@ -531,7 +528,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
         return MFX_ERR_MEMORY_ALLOC;
 
     sts = m_hwdev->Init(
-        window,
+        NULL,
         0,
         MSDKAdapter::GetNumber(GetFirstSession()));
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
