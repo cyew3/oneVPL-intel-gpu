@@ -13,6 +13,9 @@
     <Filter Include="libmfxsw VPP">
       <UniqueIdentifier>{de1fa066-c4c0-443b-af20-b679ec704034}</UniqueIdentifier>
     </Filter>
+    <Filter Include="cm_kernels">
+      <UniqueIdentifier>{6bb90a8d-ad1e-43df-8bcc-66e9ac6c8f96}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_screen_capture_plugin.h">
@@ -43,6 +46,15 @@
     <ClInclude Include="include\mfx_screen_capture_dirty_rect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ditry_rect_genx\dirty_rect_genx_bdw_isa.h">
+      <Filter>cm_kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="ditry_rect_genx\dirty_rect_genx_hsw_isa.h">
+      <Filter>cm_kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_screen_capture_cm_dirty_rect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\mfx_screen_capture_plugin.cpp">
@@ -67,6 +79,18 @@
       <Filter>libmfxsw VPP</Filter>
     </ClCompile>
     <ClCompile Include="src\mfx_screen_capture_dirty_rect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ditry_rect_genx\dirty_rect_genx.cpp">
+      <Filter>cm_kernels</Filter>
+    </ClCompile>
+    <ClCompile Include="ditry_rect_genx\dirty_rect_genx_bdw_isa.cpp">
+      <Filter>cm_kernels</Filter>
+    </ClCompile>
+    <ClCompile Include="ditry_rect_genx\dirty_rect_genx_hsw_isa.cpp">
+      <Filter>cm_kernels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_screen_capture_cm_dirty_rect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

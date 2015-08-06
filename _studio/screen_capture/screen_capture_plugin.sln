@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "..\shared\umc\core\vm
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm_plus", "..\shared\umc\core\vm_plus\vm_plus.vcxproj", "{04854E7F-2A17-4B40-A14F-4E1D9B1D4785}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cmrt_cross_platform", "..\mfx_lib\cmrt_cross_platform\cmrt_cross_platform.vcxproj", "{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -45,6 +47,14 @@ Global
 		{04854E7F-2A17-4B40-A14F-4E1D9B1D4785}.Release|Win32.Build.0 = Release|Win32
 		{04854E7F-2A17-4B40-A14F-4E1D9B1D4785}.Release|x64.ActiveCfg = Release|x64
 		{04854E7F-2A17-4B40-A14F-4E1D9B1D4785}.Release|x64.Build.0 = Release|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug|Win32.Build.0 = Debug|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug|x64.ActiveCfg = Debug|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug|x64.Build.0 = Debug|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release|Win32.ActiveCfg = Release|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release|Win32.Build.0 = Release|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release|x64.ActiveCfg = Release|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -318,29 +318,54 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
 
     if(m_bDirtyRect)
     {
+        bool swDR = false;
         bool isSystem = false;
         if((par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY || m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && !isSW(m_pCapturer.get()))
         {
             isSystem = true;
         }
-        try
+        if(!fallback && MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(param.Impl))
         {
-            m_pDirtyRectAnalyzer.reset(new CpuDirtyRectFilter(m_pmfxCore));
-        }
-        catch(...)
-        {
-            Close();
-            return MFX_ERR_MEMORY_ALLOC;
-        }
+            try
+            {
+                m_pDirtyRectAnalyzer.reset(new CmDirtyRectFilter(m_pmfxCore));
+            }
+            catch(...)
+            {
+                Close();
+                return MFX_ERR_MEMORY_ALLOC;
+            }
 
-        mfxRes = m_pDirtyRectAnalyzer->Init(par, isSystem);
-        if(MFX_ERR_NONE != mfxRes)
-        {
-            Close();
-            return mfxRes;
+            mfxRes = m_pDirtyRectAnalyzer->Init(par, isSystem);
+            if(MFX_ERR_NONE != mfxRes)
+            {
+                swDR = true;
+                fallback = true;
+                m_pDirtyRectAnalyzer.reset( 0 );
+            }
         }
-
-        fallback = true;
+        else
+        {
+            swDR = true;
+        }
+        if(swDR)
+        {
+            try
+            {
+                m_pDirtyRectAnalyzer.reset(new CpuDirtyRectFilter(m_pmfxCore));
+            }
+            catch(...)
+            {
+                Close();
+                return MFX_ERR_MEMORY_ALLOC;
+            }
+            mfxRes = m_pDirtyRectAnalyzer->Init(par, isSystem);
+            if(MFX_ERR_NONE != mfxRes)
+            {
+                Close();
+                return MFX_ERR_DEVICE_FAILED;
+            }
+        }
     }
 
     if(fallback && mfxRes >= MFX_ERR_NONE) //fallback status is more important than warning
@@ -713,7 +738,7 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
             m_CurExtPar = m_InitExtPar = *ExtPar;
             if(m_CurExtPar.EnableDirtyRect)
             {
-                fallback = true;
+                //fallback = true;
                 m_bDirtyRect = true;
             }
             if(m_CurExtPar.DisplayIndex)
@@ -887,6 +912,12 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
         {
             pPrevSurf = m_pPrevSurface;
             m_pPrevSurface = surface_work;
+        }
+        mfxExtDirtyRect* extDirtyRect = GetExtendedBuffer<mfxExtDirtyRect>(MFX_EXTBUFF_DIRTY_RECTANGLES, surface_work);
+        if(extDirtyRect)
+        {
+            memset(extDirtyRect->Rect,0,sizeof(extDirtyRect->Rect));
+            extDirtyRect->NumRect = 0;
         }
     }
 
@@ -1096,7 +1127,8 @@ mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfx
         {
             if(extDirtyRect)
             {
-                m_pDirtyRectAnalyzer->RunFrameVPP(*pAsyncParam->dirty_rect_surface, *surface_work);
+                mfxRes = m_pDirtyRectAnalyzer->RunFrameVPP(*pAsyncParam->dirty_rect_surface, *surface_work);
+                MFX_CHECK_STS(mfxRes);
             }
             //Decoder-like behavior. Application must not change the previous surface.
             mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->dirty_rect_surface->Data);

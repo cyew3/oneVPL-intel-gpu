@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{AF4A91EB-0759-4AB4-84E1-2426D8AD6B30}") = "genx_scrcap", "genx_scrcap.vcxproj", "{F9563E91-C8D6-4919-A1EE-A07B82AEAA3B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F9563E91-C8D6-4919-A1EE-A07B82AEAA3B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F9563E91-C8D6-4919-A1EE-A07B82AEAA3B}.Debug|Win32.Build.0 = Debug|Win32
+		{F9563E91-C8D6-4919-A1EE-A07B82AEAA3B}.Release|Win32.ActiveCfg = Release|Win32
+		{F9563E91-C8D6-4919-A1EE-A07B82AEAA3B}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

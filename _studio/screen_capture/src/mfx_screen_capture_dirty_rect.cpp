@@ -94,6 +94,8 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
 
     bool release = false;
 
+    mfxFrameSurface1 *p_in = 0;
+    mfxFrameSurface1 *p_out = 0;
     mfxFrameSurface1 _in  = in;
     mfxFrameSurface1 _out = out;
     _in.Data.MemId = 0;
@@ -104,7 +106,7 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
         mfxRes = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, in.Data.MemId, (mfxHDL*)&hdl);
         if(hdl.first)
         {
-            mfxFrameSurface1 *p_in = GetFreeSurf(m_InSurfPool);
+            p_in = GetFreeSurf(m_InSurfPool);
             if(!p_in)
                 return MFX_ERR_DEVICE_FAILED;
             _in = *p_in;
@@ -120,7 +122,7 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
         mfxRes = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, out.Data.MemId, (mfxHDL*)&hdl);
         if(hdl.first)
         {
-            mfxFrameSurface1 *p_out = GetFreeSurf(m_InSurfPool);
+            p_out = GetFreeSurf(m_OutSurfPool);
             if(!p_out)
                 return MFX_ERR_DEVICE_FAILED;
             _out = *p_out;
@@ -182,14 +184,11 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
                     {
                         if(curRect < maxRect)
                         {
-                            ++curRect;
-
                             tmpRect.Rect[curRect].Top = h;
                             tmpRect.Rect[curRect].Bottom = h + h_block_size;
                             tmpRect.Rect[curRect].Left = w;
                             tmpRect.Rect[curRect].Right = w + w_block_size;
-
-                            diffMap[h/h_block_size][w/w_block_size] = 1;
+                            ++curRect;
                         }
                         break;
                     }
@@ -198,12 +197,11 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
                     {
                         if(curRect < maxRect)
                         {
-                            ++curRect;
-
                             tmpRect.Rect[curRect].Top = h;
                             tmpRect.Rect[curRect].Bottom = h + h_block_size;
                             tmpRect.Rect[curRect].Left = w;
                             tmpRect.Rect[curRect].Right = w + w_block_size;
+                            ++curRect;
                         }
                         break;
                     }
@@ -231,12 +229,11 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
                     {
                         if(curRect < maxRect)
                         {
-                            ++curRect;
-
                             tmpRect.Rect[curRect].Top = h;
                             tmpRect.Rect[curRect].Bottom = h + h_block_size;
                             tmpRect.Rect[curRect].Left = w;
                             tmpRect.Rect[curRect].Right = w + w_block_size;
+                            ++curRect;
                         }
                         break;
                     }
@@ -248,7 +245,7 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
                 break;
         }
     }
-    mfxRect->NumRect = (curRect) ? (curRect + 1) : (0);
+    mfxRect->NumRect = curRect;
     memcpy_s(&mfxRect->Rect, sizeof(mfxRect->Rect), &tmpRect.Rect, sizeof(tmpRect.Rect));
 
     if(unlock_in)
@@ -266,8 +263,8 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
 
     if(release)
     {
-        ReleaseSurf(_in);
-        ReleaseSurf(_out);
+        ReleaseSurf(p_in);
+        ReleaseSurf(p_out);
     }
 
     return MFX_ERR_NONE;
@@ -405,9 +402,10 @@ mfxFrameSurface1* CpuDirtyRectFilter::GetFreeSurf(std::list<mfxFrameSurface1>& l
     return 0;
 }
 
-void CpuDirtyRectFilter::ReleaseSurf(mfxFrameSurface1& surf)
+void CpuDirtyRectFilter::ReleaseSurf(mfxFrameSurface1*& surf)
 {
-    m_pmfxCore->DecreaseReference(m_pmfxCore->pthis,&surf.Data);
+    if(!surf) return;
+    m_pmfxCore->DecreaseReference(m_pmfxCore->pthis,&surf->Data);
 }
 
 } //namespace MfxCapture

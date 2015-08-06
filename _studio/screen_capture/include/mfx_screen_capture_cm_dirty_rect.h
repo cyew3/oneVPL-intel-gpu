@@ -10,24 +10,42 @@ File Name: mfx_screen_capture_dirty_rect.h
 
 \* ****************************************************************************** */
 
-#if !defined(__MFX_SCREEN_CAPTURE_DIRTY_RECT_H__)
-#define __MFX_SCREEN_CAPTURE_DIRTY_RECT_H__
+#if !defined(__MFX_SCREEN_CAPTURE_CM_DIRTY_RECT_H__)
+#define __MFX_SCREEN_CAPTURE_CM_DIRTY_RECT_H__
 
 #include <list>
+#include <vector>
 #include "mfxstructures.h"
 #include "mfxplugin.h"
 #include "mfxsc.h"
 #include "umc_mutex.h"
+
 #include "mfx_screen_capture_ddi.h"
+
+#include "cmrt_cross_platform.h"
 
 namespace MfxCapture
 {
 
-class CpuDirtyRectFilter : public DirtyRectFilter
+struct TaskContext
+{
+    mfxU8 busy;
+    CmThreadSpace* pThreadSpace;
+    CmTask*        pTask;
+    struct {
+        CmSurface2DUP* cmSurf;
+        mfxU8*         physBuffer;
+        mfxU8*         map;
+    } roiMap;
+    CmSurface2D*  inSurf;
+    CmSurface2D*  outSurf;
+};
+
+class CmDirtyRectFilter : public DirtyRectFilter
 {
 public:
-    CpuDirtyRectFilter(const mfxCoreInterface* _core);
-    virtual ~CpuDirtyRectFilter();
+    CmDirtyRectFilter(const mfxCoreInterface* _core);
+    virtual ~CmDirtyRectFilter();
 
     mfxStatus Init(const mfxVideoParam* par, bool isSysMem);
     mfxStatus Init(const mfxFrameInfo& in, const mfxFrameInfo& out);
@@ -37,6 +55,17 @@ public:
 protected:
     const mfxCoreInterface* m_pmfxCore;
 
+
+    CmDevice * m_pCMDevice;
+    std::vector<CmProgram *> m_vPrograms;
+    CmQueue *   m_pQueue;
+    CmKernel*   m_pKernel;
+    CmKernel*   m_pKernelNV12;
+    CmKernel*   m_pKernelRGB4;
+
+    mfxHandleType m_mfxDeviceType;
+    mfxHDL        m_mfxDeviceHdl;
+
     UMC::Mutex m_guard;
     std::list<mfxFrameSurface1> m_InSurfPool;
     std::list<mfxFrameSurface1> m_OutSurfPool;
@@ -44,17 +73,20 @@ protected:
     mfxFrameSurface1* AllocSurfs(const mfxVideoParam* par);
     void FreeSurfs();
     mfxFrameSurface1* GetFreeSurf(std::list<mfxFrameSurface1>& lSurfs);
-    void ReleaseSurf(mfxFrameSurface1*& surf);
+    void ReleaseSurf(mfxFrameSurface1& surf);
+
+    mfxU16 m_width ;
+    mfxU16 m_height;
 
 private:
     //prohobit copy constructor
-    CpuDirtyRectFilter(const CpuDirtyRectFilter& that);
+    CmDirtyRectFilter(const CmDirtyRectFilter& that);
     //prohibit assignment operator
-    CpuDirtyRectFilter& operator=(const CpuDirtyRectFilter&);
+    CmDirtyRectFilter& operator=(const CmDirtyRectFilter&);
 };
 
 template<typename T>
 T* GetExtendedBuffer(const mfxU32& BufferId, const mfxFrameSurface1* surf);
 
 } //namespace MfxCapture
-#endif //#if !defined(__MFX_SCREEN_CAPTURE_DIRTY_RECT_H__)
+#endif //#if !defined(__MFX_SCREEN_CAPTURE_CM_DIRTY_RECT_H__)

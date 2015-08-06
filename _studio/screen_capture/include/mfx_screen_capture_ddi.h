@@ -127,6 +127,24 @@ public:
 
 };
 
+class DirtyRectFilter
+{
+public:
+    virtual ~DirtyRectFilter(){}
+
+    virtual
+    mfxStatus Init(const mfxVideoParam* par, bool isSysMem) = 0;
+
+    virtual
+    mfxStatus Init(const mfxFrameInfo& in, const mfxFrameInfo& out) = 0;
+
+    virtual
+    mfxStatus GetParam(mfxFrameInfo& in, mfxFrameInfo& out) = 0;
+
+    virtual
+    mfxStatus RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1& out) = 0;
+};
+
 Capturer* CreatePlatformCapturer(mfxCoreInterface* core);
 Capturer* CreateSWCapturer(mfxCoreInterface* core);
 

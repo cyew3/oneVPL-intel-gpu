@@ -18,6 +18,7 @@ File Name: mfx_screen_capture_plugin.h
 #include "mfxplugin++.h"
 #include "mfx_screen_capture_ddi.h"
 #include "mfx_screen_capture_dirty_rect.h"
+#include "mfx_screen_capture_cm_dirty_rect.h"
 
 namespace MfxCapture
 {
@@ -145,7 +146,7 @@ protected:
     std::auto_ptr<Capturer>         m_pFallbackDXGICapturer;
     std::auto_ptr<Capturer>         m_pFallbackD3D9Capturer;
 
-    std::auto_ptr<CpuDirtyRectFilter>         m_pDirtyRectAnalyzer;
+    std::auto_ptr<DirtyRectFilter>         m_pDirtyRectAnalyzer;
     mfxFrameSurface1*               m_pPrevSurface;
 
     std::list<DESKTOP_QUERY_STATUS_PARAMS> m_StatusList;
