@@ -36,10 +36,13 @@ typedef mfxI32 cmStatus;
 
 // CM 3.0 restriction, need to change in future
 #define CM_MAX_GPUCOPY_SURFACE_WIDTH_IN_BYTE 65408
+#ifdef MFX_VA_WIN
+#define CM_MAX_GPUCOPY_SURFACE_HEIGHT        12000
+#else
 #define CM_MAX_GPUCOPY_SURFACE_HEIGHT        4088
+#endif
 
-
-#define CM_SUPPORTED_COPY_SIZE(ROI) (ROI.width <= 65408 && ROI.height <= 4088 )
+#define CM_SUPPORTED_COPY_SIZE(ROI) (ROI.width <= CM_MAX_GPUCOPY_SURFACE_WIDTH_IN_BYTE && ROI.height <= CM_MAX_GPUCOPY_SURFACE_HEIGHT )
 #define CM_ALIGNED(PTR) (!((Ipp64u(PTR))&0xf))
 
 #ifndef max

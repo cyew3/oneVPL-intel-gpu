@@ -139,8 +139,8 @@ typedef unsigned int VADisplay;
 
 #define CM_MAX_1D_SURF_WIDTH 0X8000000 // 2^27
 
-#define CM_MAX_GPUCOPY_SURFACE_WIDTH_IN_BYTE        65408
-#define CM_MAX_GPUCOPY_SURFACE_HEIGHT               4088
+//#define CM_MAX_GPUCOPY_SURFACE_WIDTH_IN_BYTE        65408
+//#define CM_MAX_GPUCOPY_SURFACE_HEIGHT               4088
 
 #define CM_DEVICE_CREATE_OPTION_DEFAULT                     0
 #define CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE       1
