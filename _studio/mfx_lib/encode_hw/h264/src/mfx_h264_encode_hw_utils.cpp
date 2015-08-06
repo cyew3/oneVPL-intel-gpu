@@ -4729,12 +4729,6 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         }
     }
 
-    if (video.calcParam.cqpHrdMode)
-    {
-        MFX_CHECK_NULL_PTR1(ctrl);
-        MFX_CHECK(ctrl->QP > 0 && ctrl->QP <= 51, MFX_ERR_INVALID_VIDEO_PARAM);
-    }
-
     if (surface != 0)
     {
         mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(video);
@@ -4751,6 +4745,12 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
             return sts;
         else if (sts > MFX_ERR_NONE)
             checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+
+        if (video.calcParam.cqpHrdMode)
+        {
+            MFX_CHECK_NULL_PTR1(ctrl);
+            MFX_CHECK(ctrl->QP > 0 && ctrl->QP <= 51, MFX_ERR_INVALID_VIDEO_PARAM);
+        }
     }
 
     if (ctrl != 0 && ctrl->NumPayload > 0)

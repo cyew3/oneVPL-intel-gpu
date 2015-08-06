@@ -2441,19 +2441,39 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                     return sts;
 
                 // track hrd buffer
-                for (DdiTaskIter i = m_encoding.begin(); i != m_encoding.end(); ++i)
+                DdiTaskIter i = FindFrameToWaitEncode(m_encoding.begin(), m_encoding.end());
+                DdiTaskIter prevTask;
+                do
                 {
                     for (mfxU32 f = 0; f <= i->m_fieldPicFlag; f++)
                     {
                         if ((sts = QueryStatus(*i, i->m_fid[f])) != MFX_ERR_NONE)
                             return Error(sts);
 
+                        mfxU32 paddingSize = 0;
+                        if (m_video.calcParam.cqpHrdMode == 1)
+                        {
+                            // in CQP HRD mode padding could be added to avoid HRD overflow
+                            // it should be taken into account when calculating HRD initial delay for IDR frame
+                            paddingSize = PaddingBytesToAvoidHrdOverflow
+                                (m_video,
+                                hrd,
+                                i->m_bsDataLength[i->m_fid[f]] - i->m_numLeadingFF[i->m_fid[f]],
+                                i->m_fieldPicFlag);
+                            // at this monent we can't check if padding fits output bitstream buffer for task i
+                            // this will be checked later inside function UpdateBitstream()
+                            // if padding will not fit, it will be truncated to buffer size inside UpdateBitstream(),
+                            // and initial_delay in BP SEI (which is calculated here) will diverge with real bitstream
+                            // TODO: need to implement correct way - fix BP SEI after encoding in case of CQP HRD mode and padding
+                        }
+
                         hrd.RemoveAccessUnit(
-                            i->m_bsDataLength[i->m_fid[f]] - i->m_numLeadingFF[i->m_fid[f]],
+                            i->m_bsDataLength[i->m_fid[f]] - i->m_numLeadingFF[i->m_fid[f]] + paddingSize,
                             i->m_fieldPicFlag,
                             !!(i->m_type[i->m_fid[f]] & MFX_FRAMETYPE_IDR));
                     }
-                }
+                    prevTask = i;
+                } while ((i = FindFrameToWaitEncodeNext(m_encoding.begin(), m_encoding.end(), i)) != prevTask);
             }
         }
 
@@ -3252,7 +3272,10 @@ mfxStatus ImplementationAvc::UpdateBitstream(
 
         assert(paddingSize == 0 || paddingSize <= availSize);
 
-        if (paddingSize && paddingSize <= availSize)
+        if (paddingSize && paddingSize > availSize)
+            paddingSize = availSize;
+
+        if (paddingSize)
         {
             mfxU8 *  bsData = task.m_bs->Data + task.m_bs->DataOffset + task.m_bs->DataLength;
             memset(bsData, 0, paddingSize);
