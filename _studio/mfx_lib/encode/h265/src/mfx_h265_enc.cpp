@@ -580,10 +580,9 @@ namespace H265Enc {
 
             slice->rd_lambda_sqrt_slice = sqrt(slice->rd_lambda_slice * 256);
             //no chroma QP offset (from PPS) is implemented yet
-            Ipp32s qpc = GetChromaQP(qp, 0, videoParam.chromaFormatIdc, videoParam.bitDepthChroma);
+            Ipp32s qpc = GetChromaQP(qp, 0, videoParam.chromaFormatIdc, 8); // just scaled qPi
             slice->ChromaDistWeight_slice = pow(2.0, (qp - qpc) / 3.0);
         }
-
     } //
 }
 
