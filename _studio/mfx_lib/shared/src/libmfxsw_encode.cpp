@@ -668,8 +668,8 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 task.priority = session->m_priority;
                 task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
                 // fill dependencies
-                task.pSrc[0] = reordered_surface;
-                task.pDst[0] = bs;
+                task.pSrc[0] = surface;
+                task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxRes) ? 0: bs;
 
 // specific plug-in case to run additional task after main task 
 #if !defined(AS_HEVCE_PLUGIN) 
@@ -697,10 +697,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 task.priority = session->m_priority;
                 task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
                 // fill dependencies
-                task.pSrc[0] = reordered_surface;
-                task.pSrc[1] = aux;
-                task.pDst[0] = bs;
-
+                task.pSrc[0] = surface;
                 // specific plug-in case to run additional task after main task 
 #if !defined(AS_HEVCE_PLUGIN) 
                 {
@@ -708,6 +705,8 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 }
 #endif
                 task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
+                task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxRes) ? 0 : bs;
+
 
 #ifdef MFX_TRACE_ENABLE
                 task.nParentId = MFX_AUTO_TRACE_GETID();
@@ -726,9 +725,8 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 task.priority = session->m_priority;
                 task.threadingPolicy = MFX_TASK_THREADING_DEDICATED;
                 // fill dependencies
-                task.pSrc[0] = reordered_surface;
-                task.pSrc[1] = aux;
-                task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
+                task.pSrc[0] = surface;
+                task.pSrc[1] = ctrl ? ctrl->ExtParam : 0;
                 task.pDst[0] = entryPoints[0].pParam;
 
 #ifdef MFX_TRACE_ENABLE
@@ -750,7 +748,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 task.threadingPolicy = MFX_TASK_THREADING_DEDICATED_WAIT;
                 // fill dependencies
                 task.pSrc[0] = entryPoints[0].pParam;
-                task.pDst[0] = bs;
+                task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxRes) ? 0: bs;
 
 #ifdef MFX_TRACE_ENABLE
                 task.nParentId = MFX_AUTO_TRACE_GETID();
