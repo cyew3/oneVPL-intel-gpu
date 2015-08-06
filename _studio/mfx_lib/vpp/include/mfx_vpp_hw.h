@@ -406,20 +406,20 @@ namespace MfxHwVideoProcessing
                 mfxF64 inRate;
                 mfxF64 outRate;
                 bool frcUp;
-                mfxU16 high;
-                mfxU16 low;
+                mfxU32 high;
+                mfxU32 low;
 
                 m_frcRational[VPP_IN]  = frcRational[VPP_IN];
                 m_frcRational[VPP_OUT] = frcRational[VPP_OUT];
 
-                inRate  = (((mfxF64)m_frcRational[VPP_IN].FrameRateExtN / (mfxF64)m_frcRational[VPP_IN].FrameRateExtD));
-                outRate = (((mfxF64)m_frcRational[VPP_OUT].FrameRateExtN / (mfxF64)m_frcRational[VPP_OUT].FrameRateExtD));
+                inRate  = 100*(((mfxF64)m_frcRational[VPP_IN].FrameRateExtN / (mfxF64)m_frcRational[VPP_IN].FrameRateExtD));
+                outRate = 100*(((mfxF64)m_frcRational[VPP_OUT].FrameRateExtN / (mfxF64)m_frcRational[VPP_OUT].FrameRateExtD));
 
                 m_inFrameTime  = 1000.0 / inRate;
                 m_outFrameTime = 1000.0 / outRate;
 
-                mfxU16 nInRate  = (mfxU16)inRate;
-                mfxU16 nOutRate = (mfxU16)outRate;
+                mfxU32 nInRate  = (mfxU32)inRate;
+                mfxU32 nOutRate = (mfxU32)outRate;
                 if ( fabs(inRate - (mfxF64)nInRate) > 0.5 )
                     nInRate++;
 
@@ -436,10 +436,10 @@ namespace MfxHwVideoProcessing
                     return;
 
                 // Calculate ratio between input and output framerates
-                mfxU16 rate = 1;
-                mfxU16 multiplier = 1;
-                mfxU16 tmp = high;
-                while(multiplier<1000)
+                mfxU32 rate = 1;
+                mfxU32 multiplier = 1;
+                mfxU32 tmp = high;
+                while(multiplier<100000)
                 {
                     tmp = high *multiplier;
                     rate  = tmp / low;
@@ -490,10 +490,10 @@ namespace MfxHwVideoProcessing
 
             std::vector<mfxFrameSurface1 *> m_LockedSurfacesList;
 
-            mfxU16 m_in_tick;
-            mfxU16 m_out_tick;
-            mfxU16 m_out_stamp;
-            mfxU16 m_in_stamp;
+            mfxU32 m_in_tick;
+            mfxU32 m_out_tick;
+            mfxU32 m_out_stamp;
+            mfxU32 m_in_stamp;
 
             mfxF64 m_inFrameTime;
             mfxF64 m_outFrameTime;
