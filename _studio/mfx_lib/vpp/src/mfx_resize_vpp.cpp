@@ -317,6 +317,11 @@ mfxStatus MFXVideoVPPResize::GetBufferSize( mfxU32* pBufferSize )
         /* Expect that x2 bytes needed. Potential bug. */
         bufSizeSuper   <<= 1;
         bufSizeLanczos <<= 1;
+
+        // Additional space for resize operation
+        mfxU32 add = IPP_MAX(srcRect.width, dstRect.width) * IPP_MAX(srcRect.height, dstRect.height) * 4;
+        bufSizeSuper   += add;
+        bufSizeLanczos += add;
   }
 
   VPP_CHECK_IPP_STS( ippSts );
@@ -744,7 +749,7 @@ IppStatus rs_NV12_v2( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkB
 IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf, mfxU16 picStruct )
 {
     IppStatus sts     = ippStsNotSupportedModeErr;
-    IppiSize  srcSize = {0,  0};
+    IppiSize  srcSize = {0, 0};
     IppiSize  dstSize = {0, 0};
 
     IppiRect  srcRect = {0,0,0,0};
@@ -796,6 +801,8 @@ IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
         interpolation = IPPI_INTER_LANCZOS;
     }
 
+    mfxU8 *interPtr = pWorkBuf + inData->Pitch * (inInfo->Height) + inData->Pitch * (inInfo->Height/2);
+
     if( MFX_PICSTRUCT_PROGRESSIVE & picStruct)
     {
         /* Resize Y */
@@ -826,7 +833,8 @@ IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
 
         roi.width  = srcSize.width;
         roi.height = srcSize.height/2;
-        sts = ippiCopy_16u_C1R((mfxU16 *)pWorkBuf, inData->Pitch, (mfxU16*)inData->UV, inData->Pitch, roi);
+
+        sts = ippiCopy_16u_C1R((mfxU16 *)pWorkBuf, inData->Pitch, (mfxU16*)interPtr, inData->Pitch, roi);
         if( ippStsNoErr != sts ) return sts;
 
         srcRect.height = srcSize.height >>= 1;
@@ -836,13 +844,13 @@ IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
         dstRect.width = dstSize.width >>= 1;
 
         /* Resize U */
-        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *) inData ->UV, srcSize, inData->Pitch, srcRect,
+        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *) interPtr, srcSize, inData->Pitch, srcRect,
                                                (Ipp16u *) outData->UV, outData->Pitch , dstRect,
                                               xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
         if( ippStsNoErr != sts ) return sts;
 
         /* Resize V */
-        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *)(&inData->UV[srcSize.width*2]), srcSize, inData->Pitch, srcRect,
+        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *)(&interPtr[srcSize.width*2]), srcSize, inData->Pitch, srcRect,
                                          (Ipp16u *)(&outData->UV[dstSize.width*2]), outData->Pitch, dstRect,
                                               xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
         if( ippStsNoErr != sts ) return sts;
