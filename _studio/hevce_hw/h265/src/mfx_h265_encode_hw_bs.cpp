@@ -50,7 +50,7 @@ void BitstreamWriter::PutBits(mfxU32 n, mfxU32 b)
     while (n > 24)
     {
         n -= 16;
-        PutBits(16, (b >> n)); 
+        PutBits(16, (b >> n));
     }
 
     b <<= (32 - n);
@@ -64,7 +64,7 @@ void BitstreamWriter::PutBits(mfxU32 n, mfxU32 b)
     {
         b >>= m_bitOffset;
         n  += m_bitOffset;
-        
+
         m_bs[0] |= (mfxU8)(b >> 24);
         m_bs[1]  = (mfxU8)(b >> 16);
     }
@@ -83,7 +83,7 @@ void BitstreamWriter::PutBit(mfxU32 b)
 {
     switch(m_bitOffset)
     {
-    case 0: 
+    case 0:
         m_bs[0] = (mfxU8)(b << 7);
         m_bitOffset = 1;
         break;
@@ -179,10 +179,10 @@ mfxU32 BitstreamReader::GetBit()
 
         if (   m_emulation
             && m_bs - m_bsStart >= 2
-            && (m_bsEnd - m_bs) >= 1 
-            && *m_bs                == 0x03 
-            && *(m_bs - 1)          == 0x00 
-            && *(m_bs - 2)          == 0x00 
+            && (m_bsEnd - m_bs) >= 1
+            && *m_bs                == 0x03
+            && *(m_bs - 1)          == 0x00
+            && *(m_bs - 2)          == 0x00
             && (*(m_bs + 1) & 0xfc) == 0x00)
         {
             ++m_bs;
@@ -821,7 +821,7 @@ mfxStatus HeaderPacker::PackRBSP(mfxU8* dst, mfxU8* rbsp, mfxU32& dst_size, mfxU
 
 void HeaderPacker::PackNALU(BitstreamWriter& bs, NALU const & h)
 {
-    if (   h.nal_unit_type == VPS_NUT 
+    if (   h.nal_unit_type == VPS_NUT
         || h.nal_unit_type == SPS_NUT
         || h.nal_unit_type == PPS_NUT
         || h.nal_unit_type == AUD_NUT
@@ -830,9 +830,9 @@ void HeaderPacker::PackNALU(BitstreamWriter& bs, NALU const & h)
     {
         bs.PutBits(8, 0); //zero_byte
     }
-    
+
     bs.PutBits( 24, 0x000001);//start_code
-    
+
     bs.PutBit(0);
     bs.PutBits(6, h.nal_unit_type);
     bs.PutBits(6, h.nuh_layer_id);
@@ -919,7 +919,7 @@ void HeaderPacker::PackVPS(BitstreamWriter& bs, VPS const &  vps)
     bs.PutBits(3, vps.max_sub_layers_minus1);
     bs.PutBit(vps.temporal_id_nesting_flag);
     bs.PutBits(16, 0xFFFF);
-    
+
     PackPTL(bs, vps, vps.max_sub_layers_minus1);
     PackSLO(bs, vps, vps.max_sub_layers_minus1);
 
@@ -941,7 +941,7 @@ void HeaderPacker::PackVPS(BitstreamWriter& bs, VPS const &  vps)
             bs.PutUE(vps.num_ticks_poc_diff_one_minus1);
 
         bs.PutUE(vps.num_hrd_parameters);
-        
+
         assert(0 == vps.num_hrd_parameters);
     }
 
@@ -1062,12 +1062,12 @@ void HeaderPacker::PackVUI(BitstreamWriter& bs, VUI const & vui)
         bs.PutUE(vui.chroma_sample_loc_type_top_field);
         bs.PutUE(vui.chroma_sample_loc_type_bottom_field);
     }
-    
+
     bs.PutBit(vui.neutral_chroma_indication_flag );
     bs.PutBit(vui.field_seq_flag                 );
     bs.PutBit(vui.frame_field_info_present_flag  );
     bs.PutBit(vui.default_display_window_flag    );
-    
+
     if (vui.default_display_window_flag)
     {
         bs.PutUE(vui.def_disp_win_left_offset   );
@@ -1075,7 +1075,7 @@ void HeaderPacker::PackVUI(BitstreamWriter& bs, VUI const & vui)
         bs.PutUE(vui.def_disp_win_top_offset    );
         bs.PutUE(vui.def_disp_win_bottom_offset );
     }
-    
+
     bs.PutBit(vui.timing_info_present_flag);
 
     if (vui.timing_info_present_flag)
@@ -1092,7 +1092,7 @@ void HeaderPacker::PackVUI(BitstreamWriter& bs, VUI const & vui)
         if (vui.hrd_parameters_present_flag)
             PackHRD(bs, vui.hrd, 1, 1);
     }
-    
+
     bs.PutBit(vui.bitstream_restriction_flag);
 
     if (vui.bitstream_restriction_flag)
@@ -1172,7 +1172,7 @@ void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
     for (mfxU32 i = 0; i < sps.num_short_term_ref_pic_sets; i++)
         PackSTRPS(bs, sps.strps, sps.num_short_term_ref_pic_sets, i);
 
-    
+
     bs.PutBit(sps.long_term_ref_pics_present_flag);
 
     if (sps.long_term_ref_pics_present_flag)
@@ -1193,7 +1193,7 @@ void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
 
     if (sps.vui_parameters_present_flag)
         PackVUI(bs, sps.vui);
-    
+
     bs.PutBit(0); //sps.extension_flag
 
     bs.PutTrailingBits();
@@ -1221,7 +1221,7 @@ void HeaderPacker::PackPPS(BitstreamWriter& bs, PPS const &  pps)
 
     if (pps.cu_qp_delta_enabled_flag)
         bs.PutUE(pps.diff_cu_qp_delta_depth);
-    
+
     bs.PutSE(pps.cb_qp_offset);
     bs.PutSE(pps.cr_qp_offset);
     bs.PutBit(pps.slice_chroma_qp_offsets_present_flag);
@@ -1270,14 +1270,14 @@ void HeaderPacker::PackPPS(BitstreamWriter& bs, PPS const &  pps)
     bs.PutBit(pps.lists_modification_present_flag);
     bs.PutUE(pps.log2_parallel_merge_level_minus2);
     bs.PutBit(pps.slice_segment_header_extension_present_flag);
-    bs.PutBit(0); //pps.extension_flag 
-    
+    bs.PutBit(0); //pps.extension_flag
+
     bs.PutTrailingBits();
 }
 
 void HeaderPacker::PackSSH(
-    BitstreamWriter& bs, 
-    NALU  const &    nalu, 
+    BitstreamWriter& bs,
+    NALU  const &    nalu,
     SPS   const &    sps,
     PPS   const &    pps,
     Slice const &    slice,
@@ -1391,7 +1391,7 @@ void HeaderPacker::PackSSH(
                 if( slice.strps.pic[i].used_by_curr_pic_s0_flag )
                     NumPocTotalCurr ++;
 
-            for (mfxU16 i = slice.strps.num_negative_pics; 
+            for (mfxU16 i = slice.strps.num_negative_pics;
                 i < (slice.strps.num_negative_pics + slice.strps.num_positive_pics); i++)
                 if( slice.strps.pic[i].used_by_curr_pic_s1_flag )
                     NumPocTotalCurr ++;
@@ -1644,7 +1644,7 @@ HeaderPacker::HeaderPacker()
     }
 }
 
-HeaderPacker::~HeaderPacker() 
+HeaderPacker::~HeaderPacker()
 {
 }
 
@@ -1665,7 +1665,7 @@ mfxStatus HeaderPacker::Reset(MfxVideoParam const & par)
         return sts;
 
     rbsp.Reset();
-    
+
     PackSPS(rbsp, par.m_sps);
     sts = PackRBSP(m_bs_sps, m_rbsp, m_sz_sps, CeilDiv(rbsp.GetOffset(), 8));
     assert(!sts);
@@ -1673,7 +1673,7 @@ mfxStatus HeaderPacker::Reset(MfxVideoParam const & par)
         return sts;
 
     rbsp.Reset();
-    
+
     PackPPS(rbsp, par.m_pps);
     sts = PackRBSP(m_bs_pps, m_rbsp, m_sz_pps, CeilDiv(rbsp.GetOffset(), 8));
     assert(!sts);

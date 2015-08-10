@@ -127,8 +127,8 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     sts = m_ddi->QueryEncodeCaps(m_caps);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);
-    
-    
+
+
     mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
 
     sts = LoadSPSPPS(m_vpar, pSPSPPS);
@@ -192,7 +192,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     request.Type        = MFX_MEMTYPE_D3D_INT;
     request.NumFrameMin = MaxBs(m_vpar);
-    
+
     sts = m_bs.Alloc(&m_core, request, false);
     MFX_CHECK_STS(sts);
 
@@ -212,7 +212,7 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
 {
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR2(par, request);
-    
+
     MfxVideoParam tmp = *par;
     ENCODE_CAPS_HEVC caps = {};
 
@@ -252,7 +252,7 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 {
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(out);
-    
+
     if (!in)
     {
         Zero(out->mfx);
@@ -368,7 +368,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     }
 
     m_vpar = (mfxVideoParam)parNew;
-    
+
     SetDefaults(m_vpar, m_caps);
 
     if (!pSPSPPS)
@@ -414,7 +414,7 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
 {
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
- 
+
     sts = m_vpar.FillPar(*par);
     return sts;
 }
@@ -423,7 +423,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 {
     mfxStatus sts = MFX_ERR_NONE;
     Task* task = 0;
-    
+
     if (surface)
     {
         MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -511,7 +511,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 
     task->m_stage |= FRAME_REORDERED;
     m_task.Submit(task);
-    
+
 
     return sts;
 }
@@ -552,7 +552,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
     {
         sts = m_ddi->QueryStatus(*task);
         MFX_CHECK_STS(sts);
-        
+
         //update bitstream
         if (task->m_bsDataLength)
         {

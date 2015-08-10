@@ -93,7 +93,7 @@ MfxFrameAllocResponse::MfxFrameAllocResponse()
 MfxFrameAllocResponse::~MfxFrameAllocResponse()
 {
     Free();
-} 
+}
 
 void MfxFrameAllocResponse::Free()
 {
@@ -163,7 +163,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 
     if (NumFrameActual < req.NumFrameMin)
         return MFX_ERR_MEMORY_ALLOC;
-    
+
     m_locked.resize(req.NumFrameMin, 0);
     if (m_locked.size() > 0) memset(&m_locked[0], 0, sizeof(m_locked[0]) * m_locked.size());
 
@@ -174,7 +174,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     m_isExternal = false;
 
     return MFX_ERR_NONE;
-} 
+}
 
 mfxU32 MfxFrameAllocResponse::FindFreeResourceIndex(mfxFrameSurface1* external_surf)
 {
@@ -280,7 +280,7 @@ mfxStatus GetNativeHandleToRawSurface(
 
     nativeHandle = 0;
 
-    if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY 
+    if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
         || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
         sts = fa.GetHDL(fa.pthis, task.m_midRaw, &nativeHandle);
     else if (   video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
@@ -304,7 +304,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(
     mfxExtOpaqueSurfaceAlloc const & opaq = video.m_ext.Opaque;
     mfxFrameSurface1 * surface = task.m_surf_real;
 
-    if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY 
+    if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
         || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
     {
         mfxFrameAllocator & fa = core.FrameAllocator();
@@ -312,7 +312,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(
         mfxFrameData sysSurf = surface->Data;
         d3dSurf.MemId = task.m_midRaw;
         bool needUnlock = false;
-        
+
         mfxFrameSurface1 surfSrc = { {}, video.mfx.FrameInfo, sysSurf };
         mfxFrameSurface1 surfDst = { {}, video.mfx.FrameInfo, d3dSurf };
 
@@ -322,7 +322,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(
             MFX_CHECK_STS(sts);
             needUnlock = true;
         }
-        
+
         sts = fa.Lock(fa.pthis, d3dSurf.MemId, &surfDst.Data);
         MFX_CHECK_STS(sts);
 
@@ -333,7 +333,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(
             sts = fa.Unlock(fa.pthis, sysSurf.MemId, &surfSrc.Data);
             MFX_CHECK_STS(sts);
         }
-        
+
         sts = fa.Unlock(fa.pthis, d3dSurf.MemId, &surfDst.Data);
         MFX_CHECK_STS(sts);
     }
@@ -706,7 +706,7 @@ template<class T> void OptimizeSTRPS(T const & list, mfxU8 n, STRPS& oldRPS, mfx
                 newRPS.pic[i].used_by_curr_pic_flag = newRPS.pic[i].use_delta_flag = 0;
 
             i = 0;
-            for (j = refRPS.num_negative_pics + refRPS.num_positive_pics - 1; 
+            for (j = refRPS.num_negative_pics + refRPS.num_positive_pics - 1;
                  j >= refRPS.num_negative_pics; j --)
             {
                 if (   oldRPS.pic[i].DeltaPocSX < 0
@@ -800,9 +800,9 @@ void ReduceSTRPS(std::vector<STRPSFreq> & sets, mfxU32 NumSlice)
         NBits(sets, nSet, rps, nSet - 1) //bits for RPS in SPS
         + (CeilLog2(nSet) - CeilLog2(nSet - 1)) //diff of bits for STRPS num in SPS
         + (nSet > 1) * (NumSlice * CeilLog2((mfxU32)sets.size()) * n); //bits for RPS idx in SSHs
-    
+
     //emulate removal of current RPS from SPS
-    nSet --; 
+    nSet --;
     rps.inter_ref_pic_set_prediction_flag = 0;
     OptimizeSTRPS(sets, nSet, rps, nSet);
 
@@ -1118,7 +1118,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
 
         for (it = sets.begin(); it != sets.end(); it ++)
             m_sps.strps[m_sps.num_short_term_ref_pic_sets++] = *it;
-        
+
         m_sps.long_term_ref_pics_present_flag = 1; // !!LTRInterval;
     }
 
@@ -1236,7 +1236,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
         m_pps.uniform_spacing_flag      = 1;
         m_pps.num_tile_columns_minus1   = nTCol - 1;
         m_pps.num_tile_rows_minus1      = nTRow - 1;
-        
+
         for (mfxU16 i = 0; i < nTCol - 1; i ++)
             m_pps.column_width[i] = ((i + 1) * nCol) / nTCol - (i * nCol) / nTCol;
 
@@ -1253,7 +1253,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
         m_pps.deblocking_filter_disabled_flag = 1;
         m_pps.deblocking_filter_override_enabled_flag = 0;
     }
-    
+
     m_pps.scaling_list_data_present_flag              = 0;
     m_pps.lists_modification_present_flag             = 1;
     m_pps.log2_parallel_merge_level_minus2            = 0;
@@ -1359,7 +1359,7 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
     bool  isB   = !!(task.m_frameType & MFX_FRAMETYPE_B);
 
     Zero(s);
-    
+
     s.first_slice_segment_in_pic_flag = 1;
     s.no_output_of_prior_pics_flag    = 0;
     s.pic_parameter_set_id            = m_pps.pic_parameter_set_id;
@@ -1440,7 +1440,7 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
 
             for (nLTR = 0, j = 0; j < nDPBLT; j ++)
             {
-                // insert LTR using lt_ref_pic_poc_lsb_sps 
+                // insert LTR using lt_ref_pic_poc_lsb_sps
                for (i = 0; i < m_sps.num_long_term_ref_pics_sps; i ++)
                {
                    mfxU32 dPocCycleMSB = (task.m_poc / MaxPocLsb - DPBLT[j] / MaxPocLsb);
@@ -1460,7 +1460,7 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
                        dPocCycleMSBprev                    = dPocCycleMSB;
 
                        s.num_long_term_sps ++;
-                       
+
                        if (curlt.used_by_curr_pic_lt_flag)
                        {
                            assert(nLTR < MAX_NUM_LONG_TERM_PICS); //KW
@@ -1508,7 +1508,7 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
         {
             mfxU16 rIdx = 0;
             mfxI32 RPLTempX[2][16] = {}; // default ref. list without modifications
-            mfxU16 NumRpsCurrTempListX[2] = 
+            mfxU16 NumRpsCurrTempListX[2] =
             {
                 Max<mfxU16>(nSTR[0] + nSTR[1] + nLTR, task.m_numRefActive[0]),
                 Max<mfxU16>(nSTR[0] + nSTR[1] + nLTR, task.m_numRefActive[1])
@@ -1545,7 +1545,7 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
 
     if (isP || isB)
     {
-        s.num_ref_idx_active_override_flag = 
+        s.num_ref_idx_active_override_flag =
            (          m_pps.num_ref_idx_l0_default_active_minus1 + 1 != task.m_numRefActive[0]
             || isB && m_pps.num_ref_idx_l1_default_active_minus1 + 1 != task.m_numRefActive[1]);
 
@@ -2118,7 +2118,7 @@ void ConstructRPL(
                         mfxI32 i;
 
                         for (i = 0; (i < l0) && (((DPB[RPL[0][0]].m_poc - DPB[RPL[0][i]].m_poc) % par.NumRefLX[0]) == 0) ; i++);
-                        
+
                         Remove(RPL[0], (i >= l0 - 1) ? 0 : i);
                         l0--;
                     }
@@ -2250,7 +2250,7 @@ mfxU8 GetCodingType(Task const & task)
 
     if (task.m_ldb)
         return CODING_TYPE_B;
-    
+
     for (mfxU8 i = 0; i < 2; i ++)
     {
         for (mfxU32 j = 0; j < task.m_numRefActive[i]; j ++)
