@@ -79,8 +79,6 @@ void sInputParams::Reset()
     m_hwdev = NULL;
     DenoiseLevel=-1;
     DetailLevel=-1;
-    DecoderFourCC=MFX_FOURCC_NV12;
-    EncoderFourCC=MFX_FOURCC_NV12;
 }
 
 CTranscodingPipeline::CTranscodingPipeline():
@@ -1373,7 +1371,7 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
     }
 
     //--- Force setting fourcc type if required
-    if(pInParams->DecoderFourCC != MFX_FOURCC_NV12)
+    if(pInParams->DecoderFourCC)
     {
         m_mfxDecParams.mfx.FrameInfo.FourCC=pInParams->DecoderFourCC;
         m_mfxDecParams.mfx.FrameInfo.ChromaFormat=FourCCToChroma(pInParams->DecoderFourCC);
@@ -1502,8 +1500,11 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     m_mfxEncParams.mfx.BufferSizeInKB = (mfxU16)(m_mfxEncParams.mfx.TargetKbps*4L/8); // buffer for 4 seconds
 
     //--- Force setting fourcc type if required
-    m_mfxEncParams.mfx.FrameInfo.FourCC=pInParams->EncoderFourCC;
-    m_mfxEncParams.mfx.FrameInfo.ChromaFormat=FourCCToChroma(pInParams->EncoderFourCC);
+    if (pInParams->EncoderFourCC)
+    {
+        m_mfxEncParams.mfx.FrameInfo.FourCC=pInParams->EncoderFourCC;
+        m_mfxEncParams.mfx.FrameInfo.ChromaFormat=FourCCToChroma(pInParams->EncoderFourCC);
+    }
 
     return MFX_ERR_NONE;
 }// mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
@@ -1707,8 +1708,11 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     }
 
     //--- Setting output FourCC type (input type is taken from m_mfxDecParams)
-    m_mfxVppParams.vpp.Out.FourCC=pInParams->EncoderFourCC;
-    m_mfxVppParams.vpp.Out.ChromaFormat=FourCCToChroma(pInParams->EncoderFourCC);
+    if (pInParams->EncoderFourCC)
+    {
+        m_mfxVppParams.vpp.Out.FourCC=pInParams->EncoderFourCC;
+        m_mfxVppParams.vpp.Out.ChromaFormat=FourCCToChroma(pInParams->EncoderFourCC);
+    }
 
     /* VPP Comp Init */
     if (((pInParams->eModeExt == VppComp) || (pInParams->eModeExt == VppCompOnly)) &&
