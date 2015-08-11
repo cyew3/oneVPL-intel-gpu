@@ -1004,7 +1004,7 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
             brc_fprintf("\n");
 
             Ipp32s predbufFul = mPredBufFulness;
-            if (mRCMode == MFX_RATECONTROL_VBR && mParams.maxBitrate > mBitrate && mPredBufFulness > mRealPredFullness)
+            if (mRCMode == MFX_RATECONTROL_VBR && mParams.maxBitrate > (Ipp32s)mBitrate && mPredBufFulness > mRealPredFullness)
                 mPredBufFulness = mRealPredFullness;
 
             Ipp32s targetfullness = IPP_MAX(mParams.HRDInitialDelayBytes << 3, (Ipp32s)mHRD.bufSize >> 1);

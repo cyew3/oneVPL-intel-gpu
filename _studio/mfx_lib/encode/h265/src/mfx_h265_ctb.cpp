@@ -8408,7 +8408,7 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
     Ipp32s curPUidx = (meInfo->splitMode == PART_SIZE_NxN) ? (partAddr / (numParts >> 2)) : !!partAddr;
 
     H265MV mvRefBest[2][MAX_NUM_REF_IDX] = {};
-    Ipp32s costRefBest[2][MAX_NUM_REF_IDX] = { { INT_MAX }, { INT_MAX } };
+    Ipp32s costRefBest[2][MAX_NUM_REF_IDX];
     Ipp32s mvCostRefBest[2][MAX_NUM_REF_IDX] = {};
     Ipp32s bitsRefBest[2][MAX_NUM_REF_IDX] = {};
     Ipp8s  refIdxBest[2] = {};
@@ -8428,18 +8428,20 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
             if (list == 1) { // TODO: use pre-build table of duplicates instead of std::find
                 Ipp32s idx0 = m_currFrame->m_mapRefIdxL1ToL0[refIdx];
                 if (idx0 >= 0) {
-                    // don't do ME just re-calc costs
-                    mvRefBest[1][refIdx] = mvRefBest[0][idx0];
-                    mvCostRefBest[1][refIdx] = MvCost1RefLog(mvRefBest[0][idx0], m_amvpCand[curPUidx] + 2 * refIdx + list);
-                    bitsRefBest[1][refIdx] = MVP_LX_FLAG_BITS;
-                    bitsRefBest[1][refIdx] += GetFlBits(refIdx, numRefIdx);
-                    bitsRefBest[1][refIdx] += predIdxBits[1];
-                    costRefBest[1][refIdx] = costRefBest[0][idx0] - mvCostRefBest[0][idx0];
-                    costRefBest[1][refIdx] -= (Ipp32s)(bitsRefBest[0][idx0] * m_rdLambdaSqrt + 0.5);
-                    costRefBest[1][refIdx] += mvCostRefBest[1][refIdx];
-                    costRefBest[1][refIdx] += (Ipp32s)(bitsRefBest[1][refIdx] * m_rdLambdaSqrt + 0.5);
-                    if (costRefBest[1][refIdxBest[1]] > costRefBest[1][refIdx])
-                        refIdxBest[1] = refIdx;
+                    if (costRefBest[0][idx0] != INT_MAX) { // in case of 64x64 there may be INT_MAX cost
+                        // don't do ME just re-calc costs
+                        mvRefBest[1][refIdx] = mvRefBest[0][idx0];
+                        mvCostRefBest[1][refIdx] = MvCost1RefLog(mvRefBest[0][idx0], m_amvpCand[curPUidx] + 2 * refIdx + list);
+                        bitsRefBest[1][refIdx] = MVP_LX_FLAG_BITS;
+                        bitsRefBest[1][refIdx] += GetFlBits(refIdx, numRefIdx);
+                        bitsRefBest[1][refIdx] += predIdxBits[1];
+                        costRefBest[1][refIdx] = costRefBest[0][idx0] - mvCostRefBest[0][idx0];
+                        costRefBest[1][refIdx] -= (Ipp32s)(bitsRefBest[0][idx0] * m_rdLambdaSqrt + 0.5);
+                        costRefBest[1][refIdx] += mvCostRefBest[1][refIdx];
+                        costRefBest[1][refIdx] += (Ipp32s)(bitsRefBest[1][refIdx] * m_rdLambdaSqrt + 0.5);
+                        if (costRefBest[1][refIdxBest[1]] > costRefBest[1][refIdx])
+                            refIdxBest[1] = refIdx;
+                    }
                     continue;
                 }
             }
@@ -8468,26 +8470,29 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
                     (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_sysmem + (y+1) * pitchDist) + 16*(x+0),
                     (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_sysmem + (y+1) * pitchDist) + 16*(x+1)
                 };
+
+                Ipp32s cmDist64[9];
                 for (Ipp16s sadIdx0 = 0, dy = -1; dy <= 1; dy++) {
                     for (Ipp16s dx = -1; dx <= 1; dx++, sadIdx0++) {
                         H265MV mv0 = {cmMv[0].x + dx, cmMv[0].y + dy};
+                        cmDist64[sadIdx0] = cmDist[0][sadIdx0];
 
                         for (Ipp32s i = 1; i < 4; i++) {
                             H265MV mv = {cmMv[i].x - 1, cmMv[i].y - 1};
                             Ipp32s dmvx = mv0.mvx - mv.mvx;
                             Ipp32s dmvy = mv0.mvy - mv.mvy;
                             if (dmvx > 2 || dmvx < 0 || dmvy > 2 || dmvy < 0) {
-                                cmDist[0][sadIdx0] = INT_MAX;
+                                cmDist64[sadIdx0] = INT_MAX;
                                 break;
                             }
-                            cmDist[0][sadIdx0] += cmDist[i][dmvy * 3 + dmvx];
+                            cmDist64[sadIdx0] += cmDist[i][dmvy * 3 + dmvx];
                         }
 
-                        if (cmDist[0][sadIdx0] != INT_MAX) {
+                        if (cmDist64[sadIdx0] != INT_MAX) {
                             Ipp32s mvCost = MvCost1RefLog(mv0, m_amvpCand[curPUidx] + 2 * refIdx + list);
-                            cmDist[0][sadIdx0] += mvCost;
-                            if (costBest > cmDist[0][sadIdx0]) {
-                                costBest = cmDist[0][sadIdx0];
+                            cmDist64[sadIdx0] += mvCost;
+                            if (costBest > cmDist64[sadIdx0]) {
+                                costBest = cmDist64[sadIdx0];
                                 mvBest = mv0;
                                 mvCostBest = mvCost;
                             }
@@ -8519,27 +8524,48 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
             mvRefBest[list][refIdx] = mvBest;
             mvCostRefBest[list][refIdx] = mvCostBest;
             costRefBest[list][refIdx] = costBest;
-            bitsRefBest[list][refIdx] = MVP_LX_FLAG_BITS + predIdxBits[list];
-            bitsRefBest[list][refIdx] += GetFlBits(refIdx, numRefIdx);
-            costRefBest[list][refIdx] += (Ipp32s)(bitsRefBest[list][refIdx] *m_rdLambdaSqrt + 0.5);
+            if (costBest != INT_MAX) {
+                bitsRefBest[list][refIdx] = MVP_LX_FLAG_BITS + predIdxBits[list];
+                bitsRefBest[list][refIdx] += GetFlBits(refIdx, numRefIdx);
+                costRefBest[list][refIdx] += (Ipp32s)(bitsRefBest[list][refIdx] *m_rdLambdaSqrt + 0.5);
 
-            if (costRefBest[list][refIdxBest[list]] > costRefBest[list][refIdx])
-                refIdxBest[list] = refIdx;
+                if (costRefBest[list][refIdxBest[list]] > costRefBest[list][refIdx])
+                    refIdxBest[list] = refIdx;
+            }
         }
     }
     
-    Ipp8s  idxL0 = refIdxBestB[0] = refIdxBest[0];
-    Ipp8s  idxL1 = refIdxBestB[1] = refIdxBest[1];
-    Ipp32s costList[2] = { costRefBest[0][idxL0], costRefBest[1][idxL1] };
+    const Ipp8s idx0 = refIdxBest[0];
+    const Ipp8s idx1 = refIdxBest[1];
+    Ipp32s costList[2] = { costRefBest[0][idx0], costRefBest[1][idx1] };
 
+    Ipp32s useHadamard = (m_par->hadamardMe >= 2);
+    if (costRefBest[0][idx0] != INT_MAX) {
+        H265MV mvc = mvRefBest[0][idx0];
+        ClipMV(mvc);
+        costList[0] = MatchingMetricPu(src, meInfo, &mvc, m_currFrame->m_refPicList[0].m_refFrames[idx0]->m_recon, useHadamard);
+        costList[0] += mvCostRefBest[0][idx0] + (Ipp32s)(bitsRefBest[0][idx0] * m_rdLambdaSqrt + 0.5);
+    }
+
+    if (costRefBest[1][idx1] != INT_MAX) {
+        H265MV mvc = mvRefBest[1][idx1];
+        ClipMV(mvc);
+        costList[1] = MatchingMetricPu(src, meInfo, &mvc, m_currFrame->m_refPicList[1].m_refFrames[idx1]->m_recon, useHadamard);
+        costList[1] += mvCostRefBest[1][idx1] + (Ipp32s)(bitsRefBest[1][idx1] * m_rdLambdaSqrt + 0.5);
+    }
+
+
+
+    refIdxBestB[0] = refIdxBest[0];
+    refIdxBestB[1] = refIdxBest[1];
 #ifdef AMT_REF_SCALABLE
-    if(m_cslice->slice_type == B_SLICE && idxL1==idxL0
-        && m_par->BiPyramidLayers>1 && m_currFrame->m_pyramidLayer==0 && m_par->NumRefLayers>2) 
+    if(m_cslice->slice_type == B_SLICE && refIdxBestB[1] == refIdxBestB[0]
+        && m_par->BiPyramidLayers > 1 && m_currFrame->m_pyramidLayer == 0 && m_par->NumRefLayers > 2) 
     {
         Ipp32s numRefIdx = m_cslice->num_ref_idx[0];
-        for (Ipp8s refIdx = 0; refIdx < numRefIdx; refIdx++) {
-            if(refIdx!=refIdxBest[0] && costRefBest[0][refIdx]!=INT_MAX && costRefBest[0][refIdx]*8 < costRefBest[1][refIdxBest[1]]*9) {
-                idxL0 = refIdxBestB[0] = refIdx;
+        for (Ipp8s i = 0; i < numRefIdx; i++) {
+            if (i != refIdxBestB[0] && costRefBest[0][i] != INT_MAX && costRefBest[0][i] * 8 < costRefBest[1][refIdxBestB[1]] * 9) {
+                refIdxBestB[0] = i;
                 break;
             }
         }
@@ -8547,31 +8573,16 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
 #endif
 
     Ipp32s costBiBest = INT_MAX;
-    H265MV mvBiBest[2] = { mvRefBest[0][idxL0], mvRefBest[1][idxL1] };
+    H265MV mvBiBest[2] = { mvRefBest[0][refIdxBestB[0]], mvRefBest[1][refIdxBestB[1]] };
+    Ipp32s costBiL0 = costRefBest[0][refIdxBestB[0]];
+    Ipp32s costBiL1 = costRefBest[1][refIdxBestB[1]];
 
-    Frame *refF = m_currFrame->m_refPicList[0].m_refFrames[idxL0];
-    Frame *refB = m_currFrame->m_refPicList[1].m_refFrames[idxL1];
-
-    if (costRefBest[0][idxL0] == INT_MAX || costRefBest[1][idxL1] == INT_MAX)
-        refF = refB = NULL;
-
-    if (m_cslice->slice_type == B_SLICE && meInfo->width + meInfo->height != 12 && refF && refB ||
-        !(m_par->fastSkip && meInfo->splitMode == PART_SIZE_2Nx2N && m_skipCandBest >= 0))
-    {
-        H265MV mvc[2] = { mvBiBest[0], mvBiBest[1] };
-        ClipMV(mvc[0]);
-        ClipMV(mvc[1]);
-        Ipp32s useHadamard = (m_par->hadamardMe >= 2);
-        costList[0] = MatchingMetricPu(src, meInfo, mvc + 0, refF->m_recon, useHadamard) + mvCostRefBest[0][idxL0] + (Ipp32s)(bitsRefBest[0][idxL0] * m_rdLambdaSqrt + 0.5);
-        costList[1] = MatchingMetricPu(src, meInfo, mvc + 1, refB->m_recon, useHadamard) + mvCostRefBest[1][idxL1] + (Ipp32s)(bitsRefBest[1][idxL1] * m_rdLambdaSqrt + 0.5);
-    }
-
-    if (m_cslice->slice_type == B_SLICE && meInfo->width + meInfo->height != 12 && refF && refB) {
-        // use satd for bidir refine because it is always sub-pel
-        Ipp32s useHadamard = (m_par->hadamardMe >= 2);
+    if (m_cslice->slice_type == B_SLICE && meInfo->width + meInfo->height != 12 && costBiL0 != INT_MAX && costBiL1 != INT_MAX) {
+        Frame *refF = m_currFrame->m_refPicList[0].m_refFrames[refIdxBestB[0]];
+        Frame *refB = m_currFrame->m_refPicList[1].m_refFrames[refIdxBestB[1]];
 
         m_interpIdxFirst = m_interpIdxLast = 0; // for MatchingMetricBipredPu optimization
-        Ipp32s mvCostBiBest = mvCostRefBest[0][idxL0] + mvCostRefBest[1][idxL1];
+        Ipp32s mvCostBiBest = mvCostRefBest[0][refIdxBestB[0]] + mvCostRefBest[1][refIdxBestB[1]];
         costBiBest = mvCostBiBest;
         costBiBest += MatchingMetricBipredPu(src, meInfo, refIdxBestB, mvBiBest, useHadamard);
 
@@ -8580,13 +8591,12 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
             RefineBiPred(meInfo, refIdxBestB, curPUidx, mvBiBest, &costBiBest, &mvCostBiBest);
 
             Ipp32s bitsBiBest = MVP_LX_FLAG_BITS + predIdxBits[2];
-            bitsBiBest += GetFlBits(idxL0, m_cslice->num_ref_idx[0]);
-            bitsBiBest += GetFlBits(idxL1, m_cslice->num_ref_idx[1]);
+            bitsBiBest += GetFlBits(refIdxBestB[0], m_cslice->num_ref_idx[0]);
+            bitsBiBest += GetFlBits(refIdxBestB[1], m_cslice->num_ref_idx[1]);
             costBiBest += (Ipp32s)(bitsBiBest * m_rdLambdaSqrt + 0.5);
         }
     }
 
-    Ipp32s useHadamard = (m_par->hadamardMe >= 2);
 
     Ipp32s bestMergeCost = INT_MAX;
     H265MV bestMergeMv[2] = {};
@@ -8629,6 +8639,7 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
         bestMergeMv[1]  = m_mergeCand[curPUidx].mvCand[2 * mergeIdx + 1];
     }
 #endif
+
     Ipp32s retCost = INT_MAX;
     if (bestMergeCost <= costList[0] && bestMergeCost <= costList[1] && bestMergeCost <= costBiBest) {
         meInfo->interDir = INTER_DIR_PRED_L0 * (bestMergeRef[0] >= 0) + INTER_DIR_PRED_L1 * (bestMergeRef[1] >= 0);
@@ -8640,21 +8651,22 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
     }
     else if (costList[0] <= costList[1] && costList[0] <= costBiBest) {
         meInfo->interDir = INTER_DIR_PRED_L0;
-        meInfo->refIdx[0] = (Ipp8s)refIdxBest[0];
+        meInfo->refIdx[0] = (Ipp8s)idx0;
         meInfo->refIdx[1] = -1;
-        meInfo->MV[0] = mvRefBest[0][idxL0];
+        meInfo->MV[0] = mvRefBest[0][idx0];
         meInfo->MV[1] = MV_ZERO;
         retCost = costList[0];
     }
     else if (costList[1] <= costBiBest) {
         meInfo->interDir = INTER_DIR_PRED_L1;
         meInfo->refIdx[0] = -1;
-        meInfo->refIdx[1] = (Ipp8s)refIdxBest[1];
+        meInfo->refIdx[1] = (Ipp8s)idx1;
         meInfo->MV[0] = MV_ZERO;
-        meInfo->MV[1] = mvRefBest[1][idxL1];
+        meInfo->MV[1] = mvRefBest[1][idx1];
         retCost = costList[1];
     }
     else {
+        assert(costBiBest != INT_MAX);
         meInfo->interDir = INTER_DIR_PRED_L0 + INTER_DIR_PRED_L1;
         meInfo->refIdx[0] = (Ipp8s)refIdxBestB[0];
         meInfo->refIdx[1] = (Ipp8s)refIdxBestB[1];
