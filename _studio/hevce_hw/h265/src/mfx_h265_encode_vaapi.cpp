@@ -27,10 +27,9 @@ mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
 {
     switch (rateControl)
     {
-        case MFX_RATECONTROL_CBR:  return VA_RC_CBR;
-        case MFX_RATECONTROL_VBR:  return VA_RC_VBR;
-        case MFX_RATECONTROL_AVBR: return VA_RC_VBR;
         case MFX_RATECONTROL_CQP:  return VA_RC_CQP;
+        case MFX_RATECONTROL_CBR:  return VA_RC_CBR | VA_RC_MB;
+        case MFX_RATECONTROL_VBR:  return VA_RC_VBR | VA_RC_MB;
         default: assert(!"Unsupported RateControl"); return 0;
     }
 }
@@ -76,8 +75,16 @@ mfxStatus SetHRD(
     misc_param->type = VAEncMiscParameterTypeHRD;
     hrd_param = (VAEncMiscParameterHRD *)misc_param->data;
 
-    hrd_param->initial_buffer_fullness = par.InitialDelayInKB * 8000;
-    hrd_param->buffer_size = par.BufferSizeInKB * 8000;
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        hrd_param->initial_buffer_fullness = par.InitialDelayInKB * 8000;
+        hrd_param->buffer_size = par.BufferSizeInKB * 8000;
+    }
+    else
+    {
+        hrd_param->initial_buffer_fullness = 0;
+        hrd_param->buffer_size = 0;
+    }
 
     vaUnmapBuffer(vaDisplay, hrdBuf_id);
 
@@ -86,15 +93,11 @@ mfxStatus SetHRD(
 
 mfxStatus SetRateControl(
     MfxVideoParam const & par,
-    mfxU32       mbbrc,
-    mfxU8        minQP,
-    mfxU8        maxQP,
     VADisplay    vaDisplay,
     VAContextID  vaContextEncode,
     VABufferID & rateParamBuf_id,
     bool         isBrcResetRequired = false)
 {
-    /*
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterRateControl *rate_param;
@@ -121,20 +124,19 @@ mfxStatus SetRateControl(
     misc_param->type = VAEncMiscParameterTypeRateControl;
     rate_param = (VAEncMiscParameterRateControl *)misc_param->data;
 
-    rate_param->bits_per_second = par.calcParam.maxKbps * 1000;
-    rate_param->window_size     = par.mfx.Convergence * 100;
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        rate_param->bits_per_second = par.MaxKbps * 1000;
+        if(par.MaxKbps)
+            rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.TargetKbps / (mfxF64)par.MaxKbps);
+        rate_param->window_size     = par.mfx.Convergence * 100;
+        rate_param->rc_flags.bits.reset = isBrcResetRequired;
+    }
 
-    rate_param->min_qp = minQP;
-    rate_param->max_qp = maxQP;
-
-    if(par.calcParam.maxKbps)
-        rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.calcParam.targetKbps / (mfxF64)par.calcParam.maxKbps);
-
-    rate_param->rc_flags.bits.mb_rate_control = mbbrc & 0xf;
-    rate_param->rc_flags.bits.reset = isBrcResetRequired;
+    rate_param->initial_qp = par.m_pps.init_qp_minus26 + 26;
 
     vaUnmapBuffer(vaDisplay, rateParamBuf_id);
-*/
+
     return MFX_ERR_NONE;
 }
 
@@ -406,7 +408,6 @@ void VAAPIEncoder::FillSps(
     MfxVideoParam const & par,
     VAEncSequenceParameterBufferHEVC & sps)
 {
-
     Zero(sps);
 
     sps.general_profile_idc = par.m_sps.general.profile_idc;
@@ -538,13 +539,13 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     }
 
     // Configuration
-    VAConfigAttrib attrib[3];
+    VAConfigAttrib attrib[2];
     mfxI32 numAttrib = 0;
     mfxU32 flag = VA_PROGRESSIVE;
 
     attrib[0].type = VAConfigAttribRTFormat;
     attrib[1].type = VAConfigAttribRateControl;
-    numAttrib += 2;
+    numAttrib = 2;
 
    vaSts = vaGetConfigAttributes(m_vaDisplay,
                           ConvertProfileTypeMFX2VAAPI(par.mfx.CodecProfile),
@@ -607,6 +608,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     FillSps(par, m_sps);
 
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId), MFX_ERR_DEVICE_FAILED);
 
     FillConstPartOfPps(par, m_pps);
@@ -627,6 +629,7 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
     bool isBrcResetRequired = !Equal(m_vaBrcPar, oldBrcPar) || !Equal(m_vaFrameRate, oldFrameRate);
 
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId, isBrcResetRequired), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId), MFX_ERR_DEVICE_FAILED);
 
     FillConstPartOfPps(par, m_pps);
@@ -1003,6 +1006,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
     }
 
     configBuffers[buffersCount++] = m_hrdBufferId;
+    configBuffers[buffersCount++] = m_rateParamBufferId;
     configBuffers[buffersCount++] = m_frameRateId;
 
     assert(buffersCount <= configBuffers.size());
