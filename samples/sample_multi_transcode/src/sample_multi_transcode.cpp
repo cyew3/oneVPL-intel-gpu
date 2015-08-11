@@ -199,7 +199,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
         /**/
         /* Vector stored linearly in the memory !*/
-        m_InputParamsArray[i].pVppCompDstRects = &m_VppDstRects[0];
+        m_InputParamsArray[i].pVppCompDstRects = m_VppDstRects.empty() ? NULL : &m_VppDstRects[0];
 
         // if session has VPP plus ENCODE only (-i::source option)
         // use decode source session as input
@@ -388,7 +388,10 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
         if (m_InputParamsArray[i].bOpenCL ||
             m_InputParamsArray[i].EncoderFourCC ||
             m_InputParamsArray[i].DecoderFourCC)
+        {
             bUseExternalAllocator = true;
+        }
+
         if (Source == m_InputParamsArray[i].eMode)
         {
             if (m_InputParamsArray[i].nAsyncDepth < minAsyncDepth)

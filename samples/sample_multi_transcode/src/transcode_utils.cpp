@@ -1122,12 +1122,12 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
 
     }
 
-    if(InputParams.EncoderFourCC!=MFX_FOURCC_NV12 && InputParams.eMode == Sink)
+    if(InputParams.EncoderFourCC && InputParams.eMode == Sink)
     {
         msdk_printf(MSDK_STRING("WARNING: -ec option is used in session without encoder, this parameter will be ignored \n"));
     }
 
-    if(InputParams.DecoderFourCC!=MFX_FOURCC_NV12 && InputParams.eMode != Native && InputParams.eMode != Sink)
+    if(InputParams.DecoderFourCC && InputParams.eMode != Native && InputParams.eMode != Sink)
     {
         msdk_printf(MSDK_STRING("WARNING: -dc option is used in session without decoder, this parameter will be ignored \n"));
     }

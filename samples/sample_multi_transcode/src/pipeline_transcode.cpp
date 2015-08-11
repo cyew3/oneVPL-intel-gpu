@@ -280,7 +280,7 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
              (m_mfxDecParams.mfx.FrameInfo.CropH != pParams->nDstHeight && pParams->nDstHeight) ||
              (pParams->bEnableDeinterlacing) || (pParams->DenoiseLevel!=-1) || (pParams->DetailLevel!=-1) || (pParams->FRCAlgorithm) ||
              (bVppCompInitRequire) ||
-             (pParams->EncoderFourCC != decoderFourCC && m_bEncodeEnable))
+             (pParams->EncoderFourCC && decoderFourCC && pParams->EncoderFourCC != decoderFourCC && m_bEncodeEnable))
         {
             m_bIsVpp = true;
             sts = InitVppMfxParams(pParams);
@@ -1737,6 +1737,8 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         m_VppCompParams.Y = 0x10;
         m_VppCompParams.U = 0x80;
         m_VppCompParams.V = 0x80;
+
+        MSDK_CHECK_POINTER(pInParams->pVppCompDstRects,MFX_ERR_NULL_PTR);
         for (mfxU32 i = 0; i < pInParams->numSurf4Comp; i++)
         {
             m_VppCompParams.InputStream[i].DstX = pInParams->pVppCompDstRects[i].DstX;
