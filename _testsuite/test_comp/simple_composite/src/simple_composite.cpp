@@ -299,16 +299,7 @@ public:
     }
     ~Composition()
     {
-        for (int i = 0; i < m_nVPPSurfNumIn; i++)
-        {
-            if (m_pVPPSurfacesIn[i]) delete m_pVPPSurfacesIn[i];
-        }
-        MSDK_SAFE_DELETE_ARRAY(m_pVPPSurfacesIn);
-        for (int i = 0; i < m_nVPPSurfNumOut; i++)
-            delete m_pVPPSurfacesOut[i];
-        MSDK_SAFE_DELETE_ARRAY(m_pVPPSurfacesOut);
-        MSDK_SAFE_DELETE_ARRAY(m_surfaceBuffersOut);
-
+        ReleaseSurfaces();
     }
 
     mfxStatus Init(string par_file)
@@ -400,7 +391,7 @@ public:
 
     mfxStatus RequestSurfaces()
     {
-        mfxStatus sts;
+        mfxStatus sts = ReleaseSurfaces();
         memset(m_VPPRequest, 0, sizeof(mfxFrameAllocRequest)*2);
         sts = m_VPP->QueryIOSurf(&m_VPPParams, m_VPPRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -491,6 +482,39 @@ public:
     }
 
 protected:
+
+    mfxStatus ReleaseSurfaces()
+    {
+        if (m_pVPPSurfacesIn)
+        {
+            for (int i = 0; i < m_nVPPSurfNumIn; i++)
+            {
+                if (m_pVPPSurfacesIn[i]->Info.FourCC == MFX_FOURCC_NV12)
+                {
+                    MSDK_SAFE_DELETE_ARRAY(m_pVPPSurfacesIn[i]->Data.Y);
+                }
+                else
+                {
+                    MSDK_SAFE_DELETE_ARRAY(m_pVPPSurfacesIn[i]->Data.B);
+                }
+
+                MSDK_SAFE_DELETE(m_pVPPSurfacesIn[i]);
+            }
+
+            MSDK_SAFE_DELETE_ARRAY(m_pVPPSurfacesIn);
+        }
+
+
+        for (int i = 0; i < m_nVPPSurfNumOut; i++)
+        {
+            MSDK_SAFE_DELETE(m_pVPPSurfacesOut[i]);
+        }
+
+        MSDK_SAFE_DELETE_ARRAY(m_pVPPSurfacesOut);
+        MSDK_SAFE_DELETE_ARRAY(m_surfaceBuffersOut);
+
+        return MFX_ERR_NONE;
+    }
 
     mfxStatus FillCompositionParams()
     {
