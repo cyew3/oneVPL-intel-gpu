@@ -161,8 +161,8 @@ public:
     tsSurfaceProcessor(mfxU32 n_frames = 0xFFFFFFFF);
     virtual ~tsSurfaceProcessor() {}
 
-    mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa);
-    virtual mfxStatus ProcessSurface(mfxFrameSurface1&) = 0;
+    virtual mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa);
+    virtual mfxStatus ProcessSurface(mfxFrameSurface1&) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return MFX_ERR_UNDEFINED_BEHAVIOR; };
 };
 
 

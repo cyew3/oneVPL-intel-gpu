@@ -1,4 +1,5 @@
 #include "ts_alloc.h"
+#include "time_defs.h"
 #include <algorithm>
 
 tsBufferAllocator::tsBufferAllocator()
@@ -168,12 +169,20 @@ mfxStatus tsSurfacePool::UnlockSurface(mfxFrameSurface1& s)
 mfxFrameSurface1* tsSurfacePool::GetSurface()
 {
     std::vector<mfxFrameSurface1>::iterator it = m_pool.begin();
+    mfxU32 timeout = 100;
+    mfxU32 step = 5;
 
-    while(it != m_pool.end())
+    while (timeout)
     {
-        if(!it->Data.Locked)
-            return &(*it);
-        it++;
+        while (it != m_pool.end())
+        {
+            if (!it->Data.Locked)
+                return &(*it);
+            it++;
+        }
+        MSDK_SLEEP(step);
+        timeout -= step;
+        it = m_pool.begin();
     }
     g_tsLog << "ALL SURFACES ARE LOCKED!\n";
     g_tsStatus.check( MFX_ERR_NULL_PTR );

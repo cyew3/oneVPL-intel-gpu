@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -216,6 +216,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_co2_disable_deblocking.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_co2_use_rawref.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_cqp_hrd.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_default_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_bins.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_slice_size.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mbqp.cpp" />

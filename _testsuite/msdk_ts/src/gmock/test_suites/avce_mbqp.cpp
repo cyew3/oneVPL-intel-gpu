@@ -11,68 +11,20 @@ enum
     QP_DO_NOT_CHECK = 253
 };
 
-class AUWrap
+class AUWrap : public H264AUWrapper
 {
 private:
-    BS_H264_au& m_au;
-    mfxI32 m_idx;
-    slice_header* m_sh;
-    macro_block* m_mb;
     mfxU8 m_prevqp;
 public:
 
     AUWrap(BS_H264_au& au)
-        : m_au(au)
-        , m_idx(-1)
-        , m_sh(0)
-        , m_mb(0)
+        : H264AUWrapper(au)
         , m_prevqp(QP_INVALID)
     {
     }
+
     ~AUWrap()
     {
-    }
-
-    slice_header* NextSlice()
-    {
-        m_sh = 0;
-
-        while ((mfxU32)++m_idx < m_au.NumUnits)
-        {
-            if (   m_au.NALU[m_idx].nal_unit_type == 1
-                || m_au.NALU[m_idx].nal_unit_type == 5)
-            {
-                m_sh = m_au.NALU[m_idx].slice_hdr;
-                break;
-            }
-        }
-        return m_sh;
-    }
-
-    macro_block* NextMB()
-    {
-        if (!m_sh)
-        {
-            m_sh = NextSlice();
-            if (!m_sh)
-                return 0;
-        }
-
-        if (!m_mb)
-            m_mb = m_sh->mb;
-        else
-        {
-            m_mb ++;
-
-            if (m_mb >= m_sh->mb + m_sh->NumMb)
-            {
-                m_mb = 0;
-                m_sh = 0;
-                return NextMB();
-            }
-        }
-
-        return m_mb;
     }
 
     mfxU32 GetFrameType()
@@ -81,7 +33,7 @@ public:
             return 0;
 
         mfxU32 type = 0;
-        switch(m_sh->slice_type % 5)
+        switch (m_sh->slice_type % 5)
         {
         case 0:
             type = MFX_FRAMETYPE_P;

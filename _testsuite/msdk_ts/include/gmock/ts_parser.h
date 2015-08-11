@@ -300,3 +300,66 @@ public:
         return BS_MPEG2_parser::set_buffer(buf - shift, buf_size);
     }
 };
+
+class H264AUWrapper
+{
+protected:
+    BS_H264_au const & m_au;
+    mfxI32 m_idx;
+    slice_header* m_sh;
+    macro_block* m_mb;
+public:
+
+    H264AUWrapper(BS_H264_au const & au)
+        : m_au(au)
+        , m_idx(-1)
+        , m_sh(0)
+        , m_mb(0)
+    {
+    }
+    ~H264AUWrapper()
+    {
+    }
+
+    slice_header* NextSlice()
+    {
+        m_sh = 0;
+
+        while ((mfxU32)++m_idx < m_au.NumUnits)
+        {
+            if (m_au.NALU[m_idx].nal_unit_type == 1
+                || m_au.NALU[m_idx].nal_unit_type == 5)
+            {
+                m_sh = m_au.NALU[m_idx].slice_hdr;
+                break;
+            }
+        }
+        return m_sh;
+    }
+
+    macro_block* NextMB()
+    {
+        if (!m_sh)
+        {
+            m_sh = NextSlice();
+            if (!m_sh)
+                return 0;
+        }
+
+        if (!m_mb)
+            m_mb = m_sh->mb;
+        else
+        {
+            m_mb++;
+
+            if (m_mb >= m_sh->mb + m_sh->NumMb)
+            {
+                m_mb = 0;
+                m_sh = 0;
+                return NextMB();
+            }
+        }
+
+        return m_mb;
+    }
+};
