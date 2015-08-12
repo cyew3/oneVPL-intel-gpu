@@ -418,7 +418,7 @@ namespace {
         if (intParam.doDumpSource)
             Copy(intParam.sourceDumpFileName, dumpFiles.InputFramesFilename);
 
-        intParam.inputVideoMem = (mfxParam.IOPattern == VIDMEM) || (mfxParam.IOPattern == OPAQMEM && opaq.In.Type != MFX_MEMTYPE_SYSTEM_MEMORY);
+        intParam.inputVideoMem = (mfxParam.IOPattern == VIDMEM) || (mfxParam.IOPattern == OPAQMEM && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) == 0);
 
         intParam.randomRepackThreshold = Ipp32s(optHevc.RepackProb / 100.0 * MYRAND_MAX);
     }
