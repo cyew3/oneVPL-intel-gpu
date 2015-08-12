@@ -14,6 +14,7 @@
 
 #include "mfxvideo.h"
 #include "ippvc.h"
+#include <cstddef>
 
 #pragma warning(disable: 4127)
 
@@ -31,8 +32,6 @@
 
 namespace MFX_H264_PP
 {
-    mfxStatus InitDispatcher(mfxU32 cpuFeature);
-
     class H264_Dispatcher
     {
     public:
@@ -72,6 +71,7 @@ namespace MFX_H264_PP
                                                 Ipp32u  chroma_format_idc, Ipp32u  isDeblHor);
 
         virtual void H264_FASTCALL InterpolateChromaBlock_16u(const IppVCInterpolateBlock_16u *interpolateInfo);
+        virtual void H264_FASTCALL InterpolateChromaBlock_8u(const IppVCInterpolateBlock_8u *interpolateInfo);
 
         virtual void ReconstructChromaIntra4x4(Ipp32s **ppSrcDstCoeff,
                                                 Ipp16u *pSrcDstUVPlane,
@@ -195,7 +195,65 @@ namespace MFX_H264_PP
 
     H264_Dispatcher * GetH264Dispatcher();
 
+    typedef struct H264InterpolationParams_8u
+    {
+        const Ipp8u *pSrc;                                          /* (const Ipp8u *) pointer to the source memory */
+        size_t srcStep;                                             /* (SIZE_T) pitch of the source memory */
+        Ipp8u *pDst;                                                /* (Ipp8u *) pointer to the destination memory */
+        size_t dstStep;                                             /* (SIZE_T) pitch of the destination memory */
+
+        Ipp32s hFraction;                                           /* (Ipp32s) horizontal fraction of interpolation */
+        Ipp32s vFraction;                                           /* (Ipp32s) vertical fraction of interpolation */
+
+        Ipp32s blockWidth;                                          /* (Ipp32s) width of destination block */
+        Ipp32s blockHeight;                                         /* (Ipp32s) height of destination block */
+
+        IppiPoint pointVector;
+        IppiPoint pointBlockPos;
+
+        IppiSize frameSize;                                         /* (IppiSize) frame size */
+
+        // filled by internal part
+        Ipp32s iType;                                               /* (Ipp32s) type of interpolation */
+
+        Ipp32s xPos;                                                /* (Ipp32s) x coordinate of source data block */
+        Ipp32s yPos;                                                /* (Ipp32s) y coordinate of source data block */
+        Ipp32s dataWidth;                                           /* (Ipp32s) width of the used source data */
+        Ipp32s dataHeight;                                          /* (Ipp32s) height of the used source data */
+
+    } H264InterpolationParams_8u;
+
+    typedef struct H264InterpolationParams_16u
+    {
+        const Ipp16u *pSrc;                                          /* (const Ipp16u *) pointer to the source memory */
+        size_t srcStep;                                             /* (SIZE_T) pitch of the source memory */
+        Ipp16u *pDst;                                                /* (Ipp16u *) pointer to the destination memory */
+        size_t dstStep;                                             /* (SIZE_T) pitch of the destination memory */
+
+        Ipp32s hFraction;                                           /* (Ipp32s) horizontal fraction of interpolation */
+        Ipp32s vFraction;                                           /* (Ipp32s) vertical fraction of interpolation */
+
+        Ipp32s blockWidth;                                          /* (Ipp32s) width of destination block */
+        Ipp32s blockHeight;                                         /* (Ipp32s) height of destination block */
+
+        IppiPoint pointVector;
+        IppiPoint pointBlockPos;
+
+        IppiSize frameSize;                                         /* (IppiSize) frame size */
+
+        // filled by internal part
+        Ipp32s iType;                                               /* (Ipp32s) type of interpolation */
+
+        Ipp32s xPos;                                                /* (Ipp32s) x coordinate of source data block */
+        Ipp32s yPos;                                                /* (Ipp32s) y coordinate of source data block */
+        Ipp32s dataWidth;                                           /* (Ipp32s) width of the used source data */
+        Ipp32s dataHeight;                                          /* (Ipp32s) height of the used source data */
+
+    } H264InterpolationParams_16u;
+
 }; // namespace MFX_H264_PP
+
+void InitializeH264Optimizations();
 
 #endif //__MFX_H264_DISPATCHER_H__
 /* EOF */

@@ -14,62 +14,6 @@
 
 namespace MFX_H264_PP
 {
-typedef struct H264InterpolationParams_8u
-{
-    const Ipp8u *pSrc;                                          /* (const Ipp8u *) pointer to the source memory */
-    size_t srcStep;                                             /* (SIZE_T) pitch of the source memory */
-    Ipp8u *pDst;                                                /* (Ipp8u *) pointer to the destination memory */
-    size_t dstStep;                                             /* (SIZE_T) pitch of the destination memory */
-
-    Ipp32s hFraction;                                           /* (Ipp32s) horizontal fraction of interpolation */
-    Ipp32s vFraction;                                           /* (Ipp32s) vertical fraction of interpolation */
-
-    Ipp32s blockWidth;                                          /* (Ipp32s) width of destination block */
-    Ipp32s blockHeight;                                         /* (Ipp32s) height of destination block */
-
-    IppiPoint pointVector;
-    IppiPoint pointBlockPos;
-
-    IppiSize frameSize;                                         /* (IppiSize) frame size */
-
-    // filled by internal part
-    Ipp32s iType;                                               /* (Ipp32s) type of interpolation */
-
-    Ipp32s xPos;                                                /* (Ipp32s) x coordinate of source data block */
-    Ipp32s yPos;                                                /* (Ipp32s) y coordinate of source data block */
-    Ipp32s dataWidth;                                           /* (Ipp32s) width of the used source data */
-    Ipp32s dataHeight;                                          /* (Ipp32s) height of the used source data */
-
-} H264InterpolationParams_8u;
-
-typedef struct H264InterpolationParams_16u
-{
-    const Ipp16u *pSrc;                                          /* (const Ipp16u *) pointer to the source memory */
-    size_t srcStep;                                             /* (SIZE_T) pitch of the source memory */
-    Ipp16u *pDst;                                                /* (Ipp16u *) pointer to the destination memory */
-    size_t dstStep;                                             /* (SIZE_T) pitch of the destination memory */
-
-    Ipp32s hFraction;                                           /* (Ipp32s) horizontal fraction of interpolation */
-    Ipp32s vFraction;                                           /* (Ipp32s) vertical fraction of interpolation */
-
-    Ipp32s blockWidth;                                          /* (Ipp32s) width of destination block */
-    Ipp32s blockHeight;                                         /* (Ipp32s) height of destination block */
-
-    IppiPoint pointVector;
-    IppiPoint pointBlockPos;
-
-    IppiSize frameSize;                                         /* (IppiSize) frame size */
-
-    // filled by internal part
-    Ipp32s iType;                                               /* (Ipp32s) type of interpolation */
-
-    Ipp32s xPos;                                                /* (Ipp32s) x coordinate of source data block */
-    Ipp32s yPos;                                                /* (Ipp32s) y coordinate of source data block */
-    Ipp32s dataWidth;                                           /* (Ipp32s) width of the used source data */
-    Ipp32s dataHeight;                                          /* (Ipp32s) height of the used source data */
-
-} H264InterpolationParams_16u;
-
 #define read_data_through_boundary_table_8u read_data_through_boundary_table_8u_pxmx
 typedef void (*pH265Interpolation_8u) (H264InterpolationParams_8u *pParams);
 extern pH265Interpolation_8u read_data_through_boundary_table_8u_pxmx[16];
@@ -1028,7 +972,7 @@ void ippiInterpolateLumaBlock(H264InterpolationParams_8u *interpolateInfo, Ipp8u
 }
 
 // Check for frame boundaries and expand chroma border values if necessary
-void ippiInterpolateChromaBlock(H264InterpolationParams_16u *interpolateInfo, Ipp8u *temporary_buffer)
+void ippiInterpolateChromaBlock(H264InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer)
 {
     ippiInterpolateChromaBlock_Internal<Ipp8u, H264InterpolationParams_8u>((H264InterpolationParams_8u*)interpolateInfo, temporary_buffer);
 }

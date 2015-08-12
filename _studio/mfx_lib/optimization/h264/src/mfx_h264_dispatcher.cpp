@@ -51,18 +51,22 @@ public:
 
     ~Initializer()
     {
-        delete g_dispatcher;
+        g_dispatcher = 0;
     }
 
     H264_Dispatcher *g_dispatcher;
 };
 
+// it is not thread safe. Should be called once
 H264_Dispatcher * GetH264Dispatcher()
 {
     static Initializer initializer;
 
     if (!initializer.g_dispatcher)
     {
+        static H264_Dispatcher_sse g_dispatcher_sse;
+        static H264_Dispatcher g_dispatcher_px;
+
         mfxU32 cpuFeature = GetCPUFeature();
 
         switch(cpuFeature)
@@ -71,11 +75,11 @@ H264_Dispatcher * GetH264Dispatcher()
         case CPU_FEAT_SSE4:
         case CPU_FEAT_SSE4_ATOM:
         case CPU_FEAT_AVX2:
-            initializer.g_dispatcher = new H264_Dispatcher_sse();
+            initializer.g_dispatcher = &g_dispatcher_sse;
             break;
         case CPU_FEAT_PX:
         default:
-            initializer.g_dispatcher = new H264_Dispatcher();
+            initializer.g_dispatcher = &g_dispatcher_px;
             break;
         }
     }
@@ -84,3 +88,20 @@ H264_Dispatcher * GetH264Dispatcher()
 }
 
 }
+
+void InitializeH264Optimizations()
+{
+    MFX_H264_PP::GetH264Dispatcher();
+}
+
+class StaticInitializer
+{
+public:
+    StaticInitializer()
+    {
+        InitializeH264Optimizations();
+    }
+};
+
+static StaticInitializer g_StaticInitializer;
+

@@ -10,44 +10,20 @@
 
 namespace MFX_H264_PP
 {
-typedef struct H264InterpolationParams_16u
-{
-    const Ipp16u *pSrc;                                          /* (const Ipp16u *) pointer to the source memory */
-    Ipp32u srcStep;                                             /* (SIZE_T) pitch of the source memory */
-    Ipp16u *pDst;                                                /* (Ipp16u *) pointer to the destination memory */
-    Ipp32u dstStep;                                             /* (SIZE_T) pitch of the destination memory */
 
-    Ipp32s hFraction;                                           /* (Ipp32s) horizontal fraction of interpolation */
-    Ipp32s vFraction;                                           /* (Ipp32s) vertical fraction of interpolation */
-
-    Ipp32s blockWidth;                                          /* (Ipp32s) width of destination block */
-    Ipp32s blockHeight;                                         /* (Ipp32s) height of destination block */
-
-    IppiPoint pointVector;
-    IppiPoint pointBlockPos;
-
-    IppiSize frameSize;                                         /* (IppiSize) frame size */
-
-    // filled by internal part
-    Ipp32s iType;                                               /* (Ipp32s) type of interpolation */
-
-    Ipp32s xPos;                                                /* (Ipp32s) x coordinate of source data block */
-    Ipp32s yPos;                                                /* (Ipp32s) y coordinate of source data block */
-    Ipp32s dataWidth;                                           /* (Ipp32s) width of the used source data */
-    Ipp32s dataHeight;                                          /* (Ipp32s) height of the used source data */
-
-} H264InterpolationParams_16u;
-
+void ippiInterpolateChromaBlock(H264InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer);
 void ippiInterpolateChromaBlock(H264InterpolationParams_16u *interpolateInfo, Ipp16u *temporary_buffer);
 
+typedef void (*pH264Interpolation_8u) (H264InterpolationParams_8u *pParams);
 typedef void (*pH264Interpolation_16u) (H264InterpolationParams_16u *pParams);
 
-void h264_interpolate_chroma_type_nv12_00_16u_px(H264InterpolationParams_16u *pParams)
+template <typename T, typename InterpolateStruct>
+void h264_interpolate_chroma_type_nv12_00_16u_px(InterpolateStruct *pParams)
 {
-    const Ipp16u *pSrc = pParams->pSrc;
-    Ipp32u srcStep = pParams->srcStep;
-    Ipp16u *pDst = pParams->pDst;
-    Ipp32u dstStep = pParams->dstStep;
+    const T *pSrc = (const T *)pParams->pSrc;
+    size_t srcStep = pParams->srcStep;
+    T *pDst = (T *)pParams->pDst;
+    size_t dstStep = pParams->dstStep;
     Ipp32s x, y;
 
     for (y = 0; y < pParams->blockHeight; y += 1)
@@ -64,12 +40,13 @@ void h264_interpolate_chroma_type_nv12_00_16u_px(H264InterpolationParams_16u *pP
 
 } /* void h264_interpolate_chroma_type_nv12_00_8u_px(H264InterpolationParams_8u *pParams) */
 
-void h264_interpolate_chroma_type_nv12_0x_16u_px(H264InterpolationParams_16u *pParams)
+template <typename T, typename InterpolateStruct>
+void h264_interpolate_chroma_type_nv12_0x_16u_px(InterpolateStruct *pParams)
 {
-    const Ipp16u *pSrc = pParams->pSrc;
-    Ipp32u srcStep = pParams->srcStep;
-    Ipp16u *pDst = pParams->pDst;
-    Ipp32u dstStep = pParams->dstStep;
+    const T *pSrc = (const T *)pParams->pSrc;
+    size_t srcStep = pParams->srcStep;
+    T *pDst = (T *)pParams->pDst;
+    size_t dstStep = pParams->dstStep;
     Ipp32s x, y;
 
     for (y = 0; y < pParams->blockHeight; y += 1)
@@ -81,12 +58,12 @@ void h264_interpolate_chroma_type_nv12_0x_16u_px(H264InterpolationParams_16u *pP
             iResU = pSrc[2*x] * (8 - pParams->hFraction) +
                     pSrc[2*(x + 1)] * (pParams->hFraction) + 4;
 
-            pDst[2*x] = (Ipp16u) (iResU >> 3);
+            pDst[2*x] = (T) (iResU >> 3);
             //
             iResV = pSrc[2*x + 1      ] * (8 - pParams->hFraction) +
                     pSrc[2*(x + 1) + 1] * (pParams->hFraction) + 4;
 
-            pDst[2*x + 1] = (Ipp16u) (iResV >> 3);
+            pDst[2*x + 1] = (T) (iResV >> 3);
 
         }
 
@@ -97,12 +74,13 @@ void h264_interpolate_chroma_type_nv12_0x_16u_px(H264InterpolationParams_16u *pP
 
 }/*void h264_interpolate_chroma_type_nv12_0x_8u_px(H264InterpolationParams_8u *pParams)*/
 
-void h264_interpolate_chroma_type_nv12_y0_16u_px(H264InterpolationParams_16u *pParams)
+template <typename T, typename InterpolateStruct>
+void h264_interpolate_chroma_type_nv12_y0_16u_px(InterpolateStruct *pParams)
 {
-    const Ipp16u *pSrc = pParams->pSrc;
-    Ipp32u srcStep = pParams->srcStep;
-    Ipp16u *pDst = pParams->pDst;
-    Ipp32u dstStep = pParams->dstStep;
+    const T *pSrc = (const T *)pParams->pSrc;
+    size_t srcStep = pParams->srcStep;
+    T *pDst = (T *)pParams->pDst;
+    size_t dstStep = pParams->dstStep;
     Ipp32s x, y;
 
     for (y = 0; y < pParams->blockHeight; y += 1)
@@ -114,12 +92,12 @@ void h264_interpolate_chroma_type_nv12_y0_16u_px(H264InterpolationParams_16u *pP
             iResU = pSrc[2*x          ] * (8 - pParams->vFraction) +
                     pSrc[2*x + srcStep] * (pParams->vFraction) + 4;
 
-            pDst[2*x] = (Ipp16u) (iResU >> 3);
+            pDst[2*x] = (T) (iResU >> 3);
 
             iResV = pSrc[2*x + 1          ] * (8 - pParams->vFraction) +
                     pSrc[2*x + 1 + srcStep] * (pParams->vFraction) + 4;
 
-            pDst[2*x + 1] = (Ipp16u) (iResV >> 3);
+            pDst[2*x + 1] = (T) (iResV >> 3);
 
         }
 
@@ -128,12 +106,13 @@ void h264_interpolate_chroma_type_nv12_y0_16u_px(H264InterpolationParams_16u *pP
     }
 }/*void h264_interpolate_chroma_type_nv12_y0_8u_px(H264InterpolationParams_8u *pParams)*/
 
-void h264_interpolate_chroma_type_nv12_yx_16u_px(H264InterpolationParams_16u *pParams)
+template <typename T, typename InterpolateStruct>
+void h264_interpolate_chroma_type_nv12_yx_16u_px(InterpolateStruct *pParams)
 {
-    const Ipp16u *pSrc = pParams->pSrc;
-    Ipp32u srcStep = pParams->srcStep;
-    Ipp16u *pDst = pParams->pDst;
-    Ipp32u dstStep = pParams->dstStep;
+    const T *pSrc = (const T *)pParams->pSrc;
+    size_t srcStep = pParams->srcStep;
+    T *pDst = (T *)pParams->pDst;
+    size_t dstStep = pParams->dstStep;
     Ipp32s x, y;
 
     for (y = 0; y < pParams->blockHeight; y += 1)
@@ -147,7 +126,7 @@ void h264_interpolate_chroma_type_nv12_yx_16u_px(H264InterpolationParams_16u *pP
                    (pSrc[2*x + srcStep] * (8 - pParams->hFraction) +
                     pSrc[2*x + srcStep + 2] * (pParams->hFraction)) * (pParams->vFraction) + 32;
 
-            pDst[2*x] = (Ipp16u) (iResU >> 6);
+            pDst[2*x] = (T) (iResU >> 6);
 
             // for V
             iResV = (pSrc[2*x + 1] * (8 - pParams->hFraction) +
@@ -155,7 +134,7 @@ void h264_interpolate_chroma_type_nv12_yx_16u_px(H264InterpolationParams_16u *pP
                    (pSrc[2*x + 1 + srcStep] * (8 - pParams->hFraction) +
                     pSrc[2*(x + 1) + srcStep + 1] * (pParams->hFraction)) * (pParams->vFraction) + 32;
 
-            pDst[2*x + 1] = (Ipp16u) (iResV >> 6);
+            pDst[2*x + 1] = (T) (iResV >> 6);
 
 
         }
@@ -168,12 +147,22 @@ void h264_interpolate_chroma_type_nv12_yx_16u_px(H264InterpolationParams_16u *pP
 }/*void h264_interpolate_chroma_type_nv12_xy_8u_px(H264InterpolationParams_8u *pParams)*/
 
 
+////////////////////////
+
+pH264Interpolation_8u h264_interpolate_chroma_type_table_8u_pxmx[4] =
+{
+    &h264_interpolate_chroma_type_nv12_00_16u_px<Ipp8u, H264InterpolationParams_8u>,
+    &h264_interpolate_chroma_type_nv12_0x_16u_px<Ipp8u, H264InterpolationParams_8u>,
+    &h264_interpolate_chroma_type_nv12_y0_16u_px<Ipp8u, H264InterpolationParams_8u>,
+    &h264_interpolate_chroma_type_nv12_yx_16u_px<Ipp8u, H264InterpolationParams_8u>
+};
+
 pH264Interpolation_16u h264_interpolate_chroma_type_table_16u_pxmx[4] =
 {
-    &h264_interpolate_chroma_type_nv12_00_16u_px,
-    &h264_interpolate_chroma_type_nv12_0x_16u_px,
-    &h264_interpolate_chroma_type_nv12_y0_16u_px,
-    &h264_interpolate_chroma_type_nv12_yx_16u_px
+    &h264_interpolate_chroma_type_nv12_00_16u_px<Ipp16u, H264InterpolationParams_16u>,
+    &h264_interpolate_chroma_type_nv12_0x_16u_px<Ipp16u, H264InterpolationParams_16u>,
+    &h264_interpolate_chroma_type_nv12_y0_16u_px<Ipp16u, H264InterpolationParams_16u>,
+    &h264_interpolate_chroma_type_nv12_yx_16u_px<Ipp16u, H264InterpolationParams_16u>
 };
 
 template<typename Plane>
@@ -385,6 +374,28 @@ void H264_FASTCALL H264_Dispatcher::InterpolateChromaBlock_16u(const IppVCInterp
     //ippiInterpolateChromaBlock_H264_kernel<mfxU16>(&params);
 }
 
+void H264_FASTCALL H264_Dispatcher::InterpolateChromaBlock_8u(const IppVCInterpolateBlock_8u *interpolateInfo)
+{
+    H264InterpolationParams_8u params;
+    params.pSrc = interpolateInfo->pSrc[0];
+    params.srcStep = interpolateInfo->srcStep;
+    params.pDst = interpolateInfo->pDst[0];
+    params.dstStep = interpolateInfo->dstStep;
+
+    params.blockWidth = interpolateInfo->sizeBlock.width;
+    params.blockHeight = interpolateInfo->sizeBlock.height;
+
+    params.pointVector = interpolateInfo->pointVector;
+    params.pointBlockPos = interpolateInfo->pointBlockPos;
+    params.frameSize = interpolateInfo->sizeFrame;
+
+    Ipp8u temporary_buffer[2*16*17 + 16];
+
+    ippiInterpolateChromaBlock(&params, temporary_buffer); // boundaries
+
+    h264_interpolate_chroma_type_table_8u_pxmx[params.iType](&params);
+    //ippiInterpolateChromaBlock_H264_kernel<mfxU16>(&params);
+}
 void H264_Dispatcher::UniDirWeightBlock_NV12(Ipp8u *pSrcDst, Ipp32u srcDstStep,
                                 Ipp32u ulog2wd,
                                 Ipp32s iWeightU, Ipp32s iOffsetU,
