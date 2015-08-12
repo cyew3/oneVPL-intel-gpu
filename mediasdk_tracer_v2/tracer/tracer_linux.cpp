@@ -1,6 +1,6 @@
 /*********************************************************************************
 
-Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -163,7 +163,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     try{
         DumpContext context;
         context.context = DUMPCONTEXT_MFX;
-        Log::WriteLog(std::string("function: MFXInitEx(mfxInitParam par=" + context.dump("", par) + ", mfxSession *session=" + ToString(session) + ") +"));
+        Log::WriteLog(std::string("function: MFXInitEx(mfxInitParam par={.Implementation=" + GetmfxIMPL(par.Implementation) + ", .Version="+ ToString(&par.Version) +"}, mfxSession *session=" + ToString(session) + ") +"));
         if (!session) {
             Log::WriteLog(context.dump("par", par));
             Log::WriteLog(context.dump("session", *session));
@@ -222,7 +222,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         *session = (mfxSession)loader;
         Log::WriteLog(context.dump("par", par));
         Log::WriteLog(context.dump("session", loader->session));
-        Log::WriteLog(std::string("function: MFXInit(" + elapsed + ", " + context.dump_mfxStatus("status", mfx_res) + ") - \n\n"));
+        Log::WriteLog(std::string("function: MFXInitEx(" + elapsed + ", " + context.dump_mfxStatus("status", mfx_res) + ") - \n\n"));
         return MFX_ERR_NONE;
     }
     catch (std::exception& e){
