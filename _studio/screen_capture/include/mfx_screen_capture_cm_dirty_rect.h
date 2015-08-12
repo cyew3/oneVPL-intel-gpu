@@ -15,6 +15,7 @@ File Name: mfx_screen_capture_dirty_rect.h
 
 #include <list>
 #include <vector>
+#include <map>
 #include "mfxstructures.h"
 #include "mfxplugin.h"
 #include "mfxsc.h"
@@ -30,15 +31,16 @@ namespace MfxCapture
 struct TaskContext
 {
     mfxU8 busy;
+    CmQueue *      pQueue;
     CmThreadSpace* pThreadSpace;
     CmTask*        pTask;
+    CmKernel*      pKernel;
     struct {
         CmSurface2DUP* cmSurf;
         mfxU8*         physBuffer;
-        mfxU8*         map;
+        mfxU32         physBufferSz;
+        mfxU32         physBufferPitch;
     } roiMap;
-    CmSurface2D*  inSurf;
-    CmSurface2D*  outSurf;
 };
 
 class CmDirtyRectFilter : public DirtyRectFilter
@@ -47,36 +49,43 @@ public:
     CmDirtyRectFilter(const mfxCoreInterface* _core);
     virtual ~CmDirtyRectFilter();
 
-    mfxStatus Init(const mfxVideoParam* par, bool isSysMem);
+    mfxStatus Init(const mfxVideoParam* par, bool isSysMem, bool isOpaque = false);
     mfxStatus Init(const mfxFrameInfo& in, const mfxFrameInfo& out);
     mfxStatus GetParam(mfxFrameInfo& in, mfxFrameInfo& out);
     mfxStatus RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1& out);
 
+    mfxStatus Close();
 protected:
-    const mfxCoreInterface* m_pmfxCore;
-
-
-    CmDevice * m_pCMDevice;
-    std::vector<CmProgram *> m_vPrograms;
-    CmQueue *   m_pQueue;
-    CmKernel*   m_pKernel;
-    CmKernel*   m_pKernelNV12;
-    CmKernel*   m_pKernelRGB4;
-
-    mfxHandleType m_mfxDeviceType;
-    mfxHDL        m_mfxDeviceHdl;
-
     UMC::Mutex m_guard;
-    std::list<mfxFrameSurface1> m_InSurfPool;
-    std::list<mfxFrameSurface1> m_OutSurfPool;
 
-    mfxFrameSurface1* AllocSurfs(const mfxVideoParam* par);
-    void FreeSurfs();
-    mfxFrameSurface1* GetFreeSurf(std::list<mfxFrameSurface1>& lSurfs);
-    void ReleaseSurf(mfxFrameSurface1& surf);
+    //library stuff
+    const mfxCoreInterface* m_pmfxCore;
+    mfxHandleType           m_mfxDeviceType;
+    mfxHDL                  m_mfxDeviceHdl;
 
+    //CM stuff
+    CmDevice*                m_pCMDevice;
+    std::vector<CmProgram *> m_vPrograms;
+    CmQueue*                 m_pQueue;
+
+    //library-CM
+    std::map<const mfxFrameSurface1*,CmSurface2D*> m_CMSurfaces;
+
+    //internal resources and configs
     mfxU16 m_width ;
     mfxU16 m_height;
+    bool   m_bSysMem;
+    bool   m_bOpaqMem;
+    std::vector<TaskContext*> m_vpTasks;
+
+    //functions
+    void          FreeSurfs();
+    TaskContext*  GetFreeTask();
+    void          ReleaseTask(TaskContext*& task);
+
+    CmSurface2D*  GetCMSurface(const mfxFrameSurface1* mfxSurf);
+    SurfaceIndex* GetCMSurfaceIndex(const mfxFrameSurface1* mfxSurf);
+    mfxStatus     CMCopySysToGpu(CmSurface2D* cmDst, mfxFrameSurface1* mfxSrc);
 
 private:
     //prohobit copy constructor

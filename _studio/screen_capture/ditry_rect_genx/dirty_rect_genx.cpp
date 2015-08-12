@@ -13,7 +13,7 @@ File Name: dirty_rect_genx.cpp
 #include <cm.h>
 
 extern "C" _GENX_MAIN_
-void DirtyRectNV12(SurfaceIndex surf_in, SurfaceIndex surf_out, unsigned int w_size, unsigned int h_size, SurfaceIndex roi_map, short frame_width, short frame_height)
+void DirtyRectNV12(unsigned int w_size, unsigned int h_size, SurfaceIndex roi_map, short frame_width, short frame_height, SurfaceIndex surf_in, SurfaceIndex surf_out)
 {
     unsigned int x_pos  = 4 * (get_thread_origin_x()/* * w_size */);
     unsigned int y_pos  = 4 * (get_thread_origin_y()/* * h_size */);
@@ -77,7 +77,7 @@ void DirtyRectNV12(SurfaceIndex surf_in, SurfaceIndex surf_out, unsigned int w_s
 }
 
 extern "C" _GENX_MAIN_
-void DirtyRectRGB4(SurfaceIndex surf_in, SurfaceIndex surf_out, unsigned int w_size, unsigned int h_size, SurfaceIndex roi_map, short frame_width, short frame_height)
+void DirtyRectRGB4(unsigned int w_size, unsigned int h_size, SurfaceIndex roi_map, short frame_width, short frame_height, SurfaceIndex surf_in, SurfaceIndex surf_out)
 {
     unsigned int x_pos  = 4 * (get_thread_origin_x()/* * w_size */);
     unsigned int y_pos  = 4 * (get_thread_origin_y()/* * h_size */);

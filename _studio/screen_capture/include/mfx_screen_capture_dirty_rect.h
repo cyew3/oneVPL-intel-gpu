@@ -29,7 +29,7 @@ public:
     CpuDirtyRectFilter(const mfxCoreInterface* _core);
     virtual ~CpuDirtyRectFilter();
 
-    mfxStatus Init(const mfxVideoParam* par, bool isSysMem);
+    mfxStatus Init(const mfxVideoParam* par, bool isSysMem, bool isOpaque = false);
     mfxStatus Init(const mfxFrameInfo& in, const mfxFrameInfo& out);
     mfxStatus GetParam(mfxFrameInfo& in, mfxFrameInfo& out);
     mfxStatus RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1& out);
@@ -44,7 +44,11 @@ protected:
     mfxFrameSurface1* AllocSurfs(const mfxVideoParam* par);
     void FreeSurfs();
     mfxFrameSurface1* GetFreeSurf(std::list<mfxFrameSurface1>& lSurfs);
+    mfxFrameSurface1* GetSysSurface(const mfxFrameSurface1* surf, bool& release, bool& unlock, std::list<mfxFrameSurface1>& lSurfs);
     void ReleaseSurf(mfxFrameSurface1*& surf);
+
+    bool m_bSysMem;
+    bool m_bOpaqMem;
 
 private:
     //prohobit copy constructor

@@ -77,10 +77,10 @@ enum
 
 struct AsyncParams
 {
-    mfxFrameSurface1 *surface_work;
-    mfxFrameSurface1 *surface_out;
-    mfxFrameSurface1 *real_surface;
-    mfxFrameSurface1 *dirty_rect_surface;
+    mfxFrameSurface1 *surface_out;            //output user surface, system or video or opaq
+    mfxFrameSurface1 *real_surface;           //internal video or user-video surface
+    mfxFrameSurface1 *dirty_rect_surface;     //user-provided surface, system or video or opaq
+    mfxFrameSurface1 *dirty_rect_surface_int; //internal video or user video surface
     mfxU32 StatusReportFeedbackNumber;
     mfxExtDirtyRect  *ext_rect;
     bool rt_fallback_dxgi;
@@ -92,6 +92,11 @@ enum CaptureMode{
     HW_D3D9  = 0x02,
     SW_D3D11 = 0x11,
     SW_D3D9  = 0x12
+};
+
+enum DirtyRectMode{
+    SW_DR = 0x01,
+    CM_DR = 0x02
 };
 
 class Capturer
@@ -130,10 +135,12 @@ public:
 class DirtyRectFilter
 {
 public:
+    DirtyRectMode Mode;
+
     virtual ~DirtyRectFilter(){}
 
     virtual
-    mfxStatus Init(const mfxVideoParam* par, bool isSysMem) = 0;
+    mfxStatus Init(const mfxVideoParam* par, bool isSysMem, bool isOpaque = false) = 0;
 
     virtual
     mfxStatus Init(const mfxFrameInfo& in, const mfxFrameInfo& out) = 0;

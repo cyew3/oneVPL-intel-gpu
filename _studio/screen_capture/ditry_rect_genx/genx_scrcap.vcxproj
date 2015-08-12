@@ -41,6 +41,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)</OutDir>
+    <IntDir>$(SolutionDir)</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -73,8 +75,11 @@ copy /y dirty_rect_genx.cpp dirty_rect_genx_hsw.cpp
 icl /c /Qxcm /Qxcm_jit_target=gen7_5 dirty_rect_genx_hsw.cpp /mCM_print_asm_count
 embed_isa dirty_rect_genx_hsw.isa
 rem del dirty_rect_genx_hsw.cpp
-rem del dirty_rect_genx_hsw.isa
+del dirty_rect_genx_hsw.isa
 del dirty_rect_genx_hsw.obj
+del dirty_rect_genx_hsw*.asm
+del dirty_rect_genx_hsw*.isaasm
+del dirty_rect_genx_hsw*.dat
 move dirty_rect_genx_hsw.h dirty_rect_genx_hsw_isa.h
 move dirty_rect_genx_hsw.cpp dirty_rect_genx_hsw_isa.cpp
 
@@ -84,13 +89,20 @@ copy /y dirty_rect_genx.cpp dirty_rect_genx_bdw.cpp
 icl /c /Qxcm /Qxcm_jit_target=gen8 dirty_rect_genx_bdw.cpp /mCM_print_asm_count
 embed_isa dirty_rect_genx_bdw.isa
 rem dirty_rect_genx_bdw.cpp
-rem del dirty_rect_genx_bdw.isa
+del dirty_rect_genx_bdw.isa
 del dirty_rect_genx_bdw.obj
+del dirty_rect_genx_bdw*.asm
+del dirty_rect_genx_bdw*.isaasm
+del dirty_rect_genx_bdw*.dat
 move dirty_rect_genx_bdw.h dirty_rect_genx_bdw_isa.h
 move dirty_rect_genx_bdw.cpp dirty_rect_genx_bdw_isa.cpp
 
-rem del embed_isa.exe</Command>
+del kernel_mapping.txt
+del embed_isa.exe</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>del genx_scrcap.lastbuildstate</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

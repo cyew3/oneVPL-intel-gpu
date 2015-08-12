@@ -47,6 +47,9 @@ T* GetExtendedBuffer(const mfxU32& BufferId, const mfxFrameSurface1* surf)
 CpuDirtyRectFilter::CpuDirtyRectFilter(const mfxCoreInterface* _core)
     :m_pmfxCore(_core)
 {
+    Mode = SW_DR;
+    m_bSysMem = false;
+    m_bOpaqMem = false;
 }
 
 CpuDirtyRectFilter::~CpuDirtyRectFilter()
@@ -54,8 +57,10 @@ CpuDirtyRectFilter::~CpuDirtyRectFilter()
     FreeSurfs();
 }
 
-mfxStatus CpuDirtyRectFilter::Init(const mfxVideoParam* par, bool isSysMem)
+mfxStatus CpuDirtyRectFilter::Init(const mfxVideoParam* par, bool isSysMem, bool isOpaque)
 {
+    m_bSysMem = isSysMem;
+    m_bOpaqMem = isOpaque;
     if( !isSysMem && par )
     {
         //Create own surface pool
@@ -92,100 +97,56 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
     if(!mfxRect)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-    bool release = false;
+    bool release_in = false;
+    bool unlock_in = false;
+    bool release_out = false;
+    bool unlock_out = false;
+    mfxFrameSurface1 *inSurf  = GetSysSurface(&in, release_in, unlock_in, m_InSurfPool);
+    mfxFrameSurface1 *outSurf  = GetSysSurface(&out, release_out, unlock_out, m_OutSurfPool);
+    if(!inSurf || !outSurf)
+        return MFX_ERR_DEVICE_FAILED;
 
-    mfxFrameSurface1 *p_in = 0;
-    mfxFrameSurface1 *p_out = 0;
-    mfxFrameSurface1 _in  = in;
-    mfxFrameSurface1 _out = out;
-    _in.Data.MemId = 0;
-    _out.Data.MemId = 0;
-    mfxHDLPair hdl = {0,0};
-    if(!in.Data.Y && in.Data.MemId)
+    if(MFX_FOURCC_NV12 == inSurf->Info.FourCC)
     {
-        mfxRes = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, in.Data.MemId, (mfxHDL*)&hdl);
-        if(hdl.first)
-        {
-            p_in = GetFreeSurf(m_InSurfPool);
-            if(!p_in)
-                return MFX_ERR_DEVICE_FAILED;
-            _in = *p_in;
-            mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, &_in, &in);
-            MFX_CHECK_STS(mfxRes);
-            release = true;
-        }
-    }
-
-    hdl.first = hdl.second = 0;
-    if(!out.Data.Y && out.Data.MemId)
-    {
-        mfxRes = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, out.Data.MemId, (mfxHDL*)&hdl);
-        if(hdl.first)
-        {
-            p_out = GetFreeSurf(m_OutSurfPool);
-            if(!p_out)
-                return MFX_ERR_DEVICE_FAILED;
-            _out = *p_out;
-            mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, &_out, &out);
-            MFX_CHECK_STS(mfxRes);
-            release = true;
-        }
-    }
-    const bool unlock_in  = _in.Data.Y ? false : true;
-    const bool unlock_out = _out.Data.Y ? false : true;
-
-    if(unlock_in)
-    {
-        mfxRes = m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, in.Data.MemId, &_in.Data);
-        if(mfxRes)
+        if(!inSurf->Data.Y || !inSurf->Data.UV   ||   !outSurf->Data.Y || !outSurf->Data.UV) 
             return MFX_ERR_LOCK_MEMORY;
     }
-    if(unlock_out)
+    if(MFX_FOURCC_AYUV_RGB4 == inSurf->Info.FourCC || MFX_FOURCC_RGB4 == inSurf->Info.FourCC || /*DXGI_FORMAT_AYUV*/100 == inSurf->Info.FourCC)
     {
-        mfxRes = m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, out.Data.MemId, &_out.Data);
-        if(mfxRes)
+        if(!inSurf->Data.R || !inSurf->Data.G || !inSurf->Data.B   ||   !outSurf->Data.R || !outSurf->Data.G || !outSurf->Data.B) 
             return MFX_ERR_LOCK_MEMORY;
     }
 
-    if(MFX_FOURCC_NV12 == _in.Info.FourCC)
-    {
-        if(!_in.Data.Y || !_in.Data.UV) 
-            return MFX_ERR_LOCK_MEMORY;
-    }
-    if(MFX_FOURCC_AYUV_RGB4 == _in.Info.FourCC || MFX_FOURCC_RGB4 == _in.Info.FourCC || /*DXGI_FORMAT_AYUV*/100 == _in.Info.FourCC)
-    {
-        if(!_in.Data.R || !_in.Data.G || !_in.Data.B) 
-            return MFX_ERR_LOCK_MEMORY;
-    }
+    const mfxU16 width  = inSurf->Info.CropW ? inSurf->Info.CropW : inSurf->Info.Width;
+    const mfxU16 height = inSurf->Info.CropH ? inSurf->Info.CropH : inSurf->Info.Height;
 
-    const mfxU32 w_block_size = _in.Info.Width  / W_BLOCKS;
-    const mfxU32 h_block_size = _in.Info.Height / H_BLOCKS;
-    const mfxU32 in_pitch = _in.Data.Pitch;
-    const mfxU32 out_pitch = _out.Data.Pitch;
+    const mfxU32 w_block_size = width  / W_BLOCKS;
+    const mfxU32 h_block_size = height / H_BLOCKS;
+    const mfxU32 in_pitch = inSurf->Data.Pitch;
+    const mfxU32 out_pitch = outSurf->Data.Pitch;
 
     tmpRect.NumRect = 0;
-
     mfxU16 curRect = 0;
     const mfxU32 maxRect = sizeof(tmpRect.Rect) / sizeof(tmpRect.Rect[0]) - 1;
 
-    mfxU16 diffMap[16][16];
+    mfxU8 diffMap[16][16];
     memset(&diffMap,0,sizeof(diffMap));
 
-    if(MFX_FOURCC_NV12 == _in.Info.FourCC)
+    if(MFX_FOURCC_NV12 == inSurf->Info.FourCC)
     {
-        for(mfxU32 h = 0; h < _in.Info.Height; h += h_block_size)
+        for(mfxU32 h = 0; h < height; h += h_block_size)
         {
-            for(mfxU32 w = 0; w < _in.Info.Width; w += w_block_size)
+            for(mfxU32 w = 0; w < width; w += IPP_MIN(w_block_size,width - w) )
             {
-                for(mfxU32 i = 0; i < h_block_size; ++i)
+                for(mfxU32 i = 0; i < IPP_MIN(h_block_size,height-h); ++i)
                 {
                     //Y
-                    if(memcmp(_in.Data.Y + (h + i) * in_pitch + w, _out.Data.Y + (h + i) * out_pitch + w, w_block_size))
+                    if(memcmp(inSurf->Data.Y + (h + i) * in_pitch + w, outSurf->Data.Y + (h + i) * out_pitch + w, w_block_size))
                     {
                         if(curRect < maxRect)
                         {
                             tmpRect.Rect[curRect].Top = h;
-                            tmpRect.Rect[curRect].Bottom = h + h_block_size;
+                            tmpRect.Rect[curRect].Bottom = h + IPP_MIN(h_block_size,height-h);
                             tmpRect.Rect[curRect].Left = w;
                             tmpRect.Rect[curRect].Right = w + w_block_size;
                             ++curRect;
@@ -193,7 +154,7 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
                         break;
                     }
                     //UV
-                    if(memcmp(_in.Data.UV + ((h + i) >> 1) * in_pitch + w, _out.Data.UV + ((h + i) >> 1) * out_pitch + w, w_block_size))
+                    if(memcmp(inSurf->Data.UV + ((h + i) >> 1) * in_pitch + w, outSurf->Data.UV + ((h + i) >> 1) * out_pitch + w, w_block_size))
                     {
                         if(curRect < maxRect)
                         {
@@ -213,16 +174,16 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
                 break;
         }
     }
-    else if(MFX_FOURCC_AYUV_RGB4 == _in.Info.FourCC || MFX_FOURCC_RGB4 == _in.Info.FourCC || /*DXGI_FORMAT_AYUV*/100 == _in.Info.FourCC)
+    else if(MFX_FOURCC_AYUV_RGB4 == inSurf->Info.FourCC || MFX_FOURCC_RGB4 == inSurf->Info.FourCC || /*DXGI_FORMAT_AYUV*/100 == inSurf->Info.FourCC)
     {
-        const mfxU8* ref_ptr = (std::min)( (std::min)(_in.Data.R, _in.Data.G), _in.Data.B );
-        const mfxU8* cur_ptr = (std::min)( (std::min)(_out.Data.R, _out.Data.G), _out.Data.B );
+        const mfxU8* ref_ptr = (std::min)( (std::min)(inSurf->Data.R, inSurf->Data.G), inSurf->Data.B );
+        const mfxU8* cur_ptr = (std::min)( (std::min)(outSurf->Data.R, outSurf->Data.G), outSurf->Data.B );
 
-        for(mfxU32 h = 0; h < _in.Info.Height; h += h_block_size)
+        for(mfxU32 h = 0; h < height; h += h_block_size)
         {
-            for(mfxU32 w = 0; w < _in.Info.Width; w += w_block_size)
+            for(mfxU32 w = 0; w < width; w += IPP_MIN(w_block_size,width - w))
             {
-                for(mfxU32 i = 0; i < h_block_size; ++i)
+                for(mfxU32 i = 0; i < IPP_MIN(h_block_size,height-h); ++i)
                 {
                     //ARGB
                     if(memcmp(ref_ptr + (h + i) * in_pitch + 4*w, cur_ptr + (h + i) * out_pitch + 4*w, 4*w_block_size))
@@ -230,7 +191,7 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
                         if(curRect < maxRect)
                         {
                             tmpRect.Rect[curRect].Top = h;
-                            tmpRect.Rect[curRect].Bottom = h + h_block_size;
+                            tmpRect.Rect[curRect].Bottom = h + IPP_MIN(h_block_size,height-h);
                             tmpRect.Rect[curRect].Left = w;
                             tmpRect.Rect[curRect].Right = w + w_block_size;
                             ++curRect;
@@ -245,31 +206,29 @@ mfxStatus CpuDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1
                 break;
         }
     }
+
     mfxRect->NumRect = curRect;
     memcpy_s(&mfxRect->Rect, sizeof(mfxRect->Rect), &tmpRect.Rect, sizeof(tmpRect.Rect));
 
     if(unlock_in)
     {
-        mfxRes = m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, in.Data.MemId, &_in.Data);
+        mfxRes = m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, inSurf->Data.MemId, &inSurf->Data);
         if(mfxRes)
             return MFX_ERR_LOCK_MEMORY;
     }
     if(unlock_out)
     {
-        mfxRes = m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, out.Data.MemId, &_out.Data);
+        mfxRes = m_pmfxCore->FrameAllocator.Unlock(m_pmfxCore->FrameAllocator.pthis, outSurf->Data.MemId, &outSurf->Data);
         if(mfxRes)
             return MFX_ERR_LOCK_MEMORY;
     }
-
-    if(release)
-    {
-        ReleaseSurf(p_in);
-        ReleaseSurf(p_out);
-    }
+    if(release_in)
+        ReleaseSurf(inSurf);
+    if(release_out)
+        ReleaseSurf(outSurf);
 
     return MFX_ERR_NONE;
 }
-
 
 mfxStatus CpuDirtyRectFilter::GetParam(mfxFrameInfo& in, mfxFrameInfo& out)
 {
@@ -406,6 +365,74 @@ void CpuDirtyRectFilter::ReleaseSurf(mfxFrameSurface1*& surf)
 {
     if(!surf) return;
     m_pmfxCore->DecreaseReference(m_pmfxCore->pthis,&surf->Data);
+}
+
+mfxFrameSurface1* CpuDirtyRectFilter::GetSysSurface(const mfxFrameSurface1* surf, bool& release, bool& unlock, std::list<mfxFrameSurface1>& lSurfs)
+{
+    if(!surf)
+        return 0;
+    mfxFrameSurface1* realSurf = (mfxFrameSurface1*) surf;
+    if(m_bOpaqMem)
+    {
+        mfxStatus mfxSts = m_pmfxCore->GetRealSurface(m_pmfxCore->pthis, (mfxFrameSurface1*) surf, &realSurf);
+        if(MFX_ERR_NONE != mfxSts || 0 == realSurf)
+            return 0;
+    }
+    if(MFX_FOURCC_NV12 == realSurf->Info.FourCC && realSurf->Data.Y && realSurf->Data.UV)
+        return realSurf;
+    else if(realSurf->Data.R && realSurf->Data.G && realSurf->Data.B)
+        return realSurf;
+
+    if(!realSurf->Data.Y && realSurf->Data.MemId)
+    {
+        mfxHDLPair hdl = {0,0};
+        mfxStatus mfxRes = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, realSurf->Data.MemId, (mfxHDL*)&hdl);
+        if(MFX_ERR_NONE == mfxRes && hdl.first)
+        {
+            //input is video surf, copy to internal or lock
+            mfxFrameSurface1* _in = GetFreeSurf(lSurfs);
+            if(!_in)
+                return 0;
+
+            mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, _in, realSurf);
+            if(mfxRes)
+            {
+                ReleaseSurf(_in);
+
+                mfxRes = m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, realSurf->Data.MemId, &realSurf->Data);
+                if(mfxRes)
+                    return 0;
+                unlock = true;
+                release = false;
+
+                return realSurf;
+            }
+            else
+            {
+                unlock = false;
+                release = true;
+
+                return _in;
+            }
+        }
+        else
+        {
+            //input is system, memId
+            mfxRes = m_pmfxCore->FrameAllocator.Lock(m_pmfxCore->FrameAllocator.pthis, realSurf->Data.MemId, &realSurf->Data);
+            if(mfxRes)
+                return 0;
+            unlock = true;
+            release = false;
+
+            return realSurf;
+        }
+    }
+    else
+    {
+        return realSurf;
+    }
+
+    //return 0;
 }
 
 } //namespace MfxCapture

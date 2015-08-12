@@ -136,6 +136,7 @@ protected:
     std::list<mfxFrameSurface1> m_SurfPool;
     bool                m_createdByDispatcher;
     bool                m_inited;
+    bool                m_bSysMem;
 
     bool                m_bDirtyRect;
     mfxU32              m_DisplayIndex;
@@ -148,6 +149,7 @@ protected:
 
     std::auto_ptr<DirtyRectFilter>         m_pDirtyRectAnalyzer;
     mfxFrameSurface1*               m_pPrevSurface;
+    mfxFrameSurface1*               m_pPrevIntSurface;
 
     std::list<DESKTOP_QUERY_STATUS_PARAMS> m_StatusList;
 

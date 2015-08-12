@@ -202,6 +202,11 @@ mfxStatus SW_D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, 
         {
             m_pDesktopResource = 0;
         }
+        if(stagingTexture)
+        {
+            stagingTexture->Release();
+            stagingTexture = 0;
+        }
 
         m_pDXGIOutputDuplication->ReleaseFrame();
     }
@@ -375,7 +380,7 @@ mfxStatus SW_D3D11_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface
     //Copy from internal surface into MFX
 
     const mfxMemId MemId = surface_work->Data.MemId;
-    mfxHDLPair Pair;
+    mfxHDLPair Pair = {0,0};
     mfxRes = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, MemId, (mfxHDL*)&Pair);
     if(!m_bOwnDevice && !mfxRes && Pair.first && (MFX_FOURCC_RGB4 == surface_work->Info.FourCC))
     {
@@ -602,6 +607,12 @@ mfxStatus SW_D3D11_Capturer::CreateAdapter(const displaysDescr& ActiveDisplays, 
     memset(&desc, 0, sizeof(desc));
 
     mfxU32 i = 0;
+    m_pDXGIAdapter = 0;
+    m_pD11Device = 0;
+    m_pD11Context = 0;
+    m_pDXGIOutput = 0;
+    m_pDXGIOutput1 = 0;
+    m_pDXGIOutputDuplication = 0;
     while(m_pDXGIFactory->EnumAdapters1(i, &m_pDXGIAdapter) != DXGI_ERROR_NOT_FOUND) 
     {
         if(!m_pDXGIAdapter)

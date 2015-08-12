@@ -16,6 +16,8 @@ File Name: mfx_screen_capture_plugin.cpp
 #include "mfx_utils.h"
 #include "mfxstructures.h"
 
+#include <assert.h>
+
 #include "mfx_screen_capture_sw_d3d9.h"
 #include "mfx_screen_capture_sw_d3d11.h"
 
@@ -66,6 +68,11 @@ MFXScreenCapture_Plugin::MFXScreenCapture_Plugin(bool CreateByDispatcher)
     m_StatusReportFeedbackNumber = 0;
 
     m_bDirtyRect = false;
+    m_bSysMem    = false;
+    m_DisplayIndex = 0;
+    m_pPrevSurface    = 0;
+    m_pPrevIntSurface = 0;
+
 }
 
 MFXScreenCapture_Plugin::~MFXScreenCapture_Plugin()
@@ -368,6 +375,11 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
         }
     }
 
+    if(((m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY && m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+        m_bSysMem = true;
+    else
+        m_bSysMem = false;
+
     if(fallback && mfxRes >= MFX_ERR_NONE) //fallback status is more important than warning
         mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
     return mfxRes;
@@ -407,6 +419,7 @@ mfxStatus MFXScreenCapture_Plugin::Close()
     m_pCapturer.reset(0);
     m_pFallbackDXGICapturer.reset(0);
     m_pFallbackD3D9Capturer.reset(0);
+    m_pDirtyRectAnalyzer.reset(0);
     m_inited = false;
 
     return mfxRes;
@@ -896,22 +909,30 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
     }
 
     mfxFrameSurface1* pPrevSurf = 0;
+    mfxFrameSurface1* pPrevIntSurf = 0;
 
     bool rt_fallback_d3d = false;
     bool rt_fallback_dxgi = false;
     mfxRes = DecodeFrameSubmit(real_surface, rt_fallback_d3d, rt_fallback_dxgi, ext_surface);
     if(m_bDirtyRect)
     {
-        UMC::AutomaticUMCMutex guard(m_DirtyRectGuard);
+        UMC::AutomaticUMCMutex dr_guard(m_DirtyRectGuard);
         if(!m_pPrevSurface)
         {
-            m_pPrevSurface = surface_work;
+            m_pPrevSurface    = surface_work;
+            if(m_bSysMem)
+                m_pPrevIntSurface = real_surface;
             return MFX_ERR_MORE_SURFACE;
         }
         else
         {
             pPrevSurf = m_pPrevSurface;
+            if(m_bSysMem)
+                pPrevIntSurf = m_pPrevIntSurface;
+
             m_pPrevSurface = surface_work;
+            if(m_bSysMem)
+                m_pPrevIntSurface = real_surface;
         }
         mfxExtDirtyRect* extDirtyRect = GetExtendedBuffer<mfxExtDirtyRect>(MFX_EXTBUFF_DIRTY_RECTANGLES, surface_work);
         if(extDirtyRect)
@@ -933,6 +954,7 @@ mfxStatus MFXScreenCapture_Plugin::DecodeFrameSubmit(mfxBitstream *bs, mfxFrameS
         pAsyncParam->surface_out =  surface_work;
         pAsyncParam->real_surface = real_surface;
         pAsyncParam->dirty_rect_surface = pPrevSurf;
+        pAsyncParam->dirty_rect_surface_int = pPrevIntSurf;
         pAsyncParam->StatusReportFeedbackNumber = m_StatusReportFeedbackNumber;
         pAsyncParam->rt_fallback_dxgi = rt_fallback_dxgi;
         pAsyncParam->rt_fallback_d3d = rt_fallback_d3d;
@@ -1089,31 +1111,10 @@ mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfx
     //}
     mfxFrameSurface1* real_output = pAsyncParam->surface_out;
 
-    if( (!isSW(m_pCapturer.get()) && !(pAsyncParam->rt_fallback_dxgi || pAsyncParam->rt_fallback_d3d)) &&
-        ((m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY && m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
-    {
-        if(m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-        {
-            mfxRes = m_pmfxCore->GetRealSurface(m_pmfxCore->pthis, pAsyncParam->surface_out, &real_output);
-            MFX_CHECK_STS(mfxRes);
-            if(!real_output)    return MFX_ERR_NULL_PTR;
-        }
-
-        mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, real_output, pAsyncParam->real_surface);
-        MFX_CHECK_STS(mfxRes);
-        mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->real_surface->Data);
-        MFX_CHECK_STS(mfxRes);
-    }
-
-    if( (!isSW(m_pCapturer.get()) && (pAsyncParam->rt_fallback_dxgi || pAsyncParam->rt_fallback_d3d)) &&
-        ((m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY && m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
-    {
-        mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->real_surface->Data);
-        MFX_CHECK_STS(mfxRes);
-    }
-
     if(m_bDirtyRect)
     {
+#if 0
+        //video capture, video memory, no runtime fallback
         mfxFrameSurface1* surface_work = pAsyncParam->surface_out;
 
         mfxExtDirtyRect* extDirtyRect = 0;
@@ -1134,9 +1135,132 @@ mfxStatus MFXScreenCapture_Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfx
             mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->dirty_rect_surface->Data);
             MFX_CHECK_STS(mfxRes);
         }
+#else
+        mfxFrameSurface1* current_surf = 0;
+        mfxFrameSurface1* previos_surf = 0;
+        //system memory and ddi-accelerated capturer case
+        if( m_bSysMem )
+        {
+            if ( !isSW(m_pCapturer.get()) && !(pAsyncParam->rt_fallback_dxgi || pAsyncParam->rt_fallback_d3d) )
+            {
+                //normal case, no runtime fallback, copy from internal surface into user-provided
+                if(m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+                {
+                    mfxRes = m_pmfxCore->GetRealSurface(m_pmfxCore->pthis, pAsyncParam->surface_out, &real_output);
+                    MFX_CHECK_STS(mfxRes);
+                    if(!real_output)    return MFX_ERR_NULL_PTR;
+                }
+                mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, real_output, pAsyncParam->real_surface);
+                MFX_CHECK_STS(mfxRes);
+
+                if(SW_DR == m_pDirtyRectAnalyzer->Mode)
+                {
+                    //for SW DR filter it is better to work with system memory surfaces
+                    current_surf = pAsyncParam->surface_out;
+                    previos_surf = pAsyncParam->dirty_rect_surface;
+                }
+                else
+                {
+                    current_surf = pAsyncParam->real_surface;
+                    previos_surf = pAsyncParam->dirty_rect_surface_int;
+                    current_surf->Data.ExtParam = pAsyncParam->surface_out->Data.ExtParam;
+                    current_surf->Data.NumExtParam = pAsyncParam->surface_out->Data.NumExtParam;
+                }
+            }
+            else
+            {
+                //runtime fallback or pure system memory implementation
+                current_surf = pAsyncParam->surface_out;
+                previos_surf = pAsyncParam->dirty_rect_surface;
+            }
+        }
+        else
+        {
+            //video memory output
+            current_surf = pAsyncParam->surface_out;
+            previos_surf = pAsyncParam->dirty_rect_surface;
+        }
+
+        mfxExtDirtyRect* extDirtyRect = 0;
+        if(m_bDirtyRect)
+            extDirtyRect = GetExtendedBuffer<mfxExtDirtyRect>(MFX_EXTBUFF_DIRTY_RECTANGLES, current_surf);
+        if(!previos_surf || !current_surf)
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+        else
+        {
+            if(extDirtyRect)
+            {
+                mfxRes = m_pDirtyRectAnalyzer->RunFrameVPP(*previos_surf, *current_surf);
+                MFX_CHECK_STS(mfxRes);
+            }
+        }
+
+        //Decoder-like behavior. Application must not change the previous surface.
+        mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->dirty_rect_surface->Data);
+        MFX_CHECK_STS(mfxRes);
+
+        if(m_bSysMem)
+        {
+            //release internal surface
+            mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->dirty_rect_surface_int->Data);
+            MFX_CHECK_STS(mfxRes);
+        }
+#endif
     }
-    else
+    else //dirty rect disabled
     {
+#if 0 //old messed code
+        if( (!isSW(m_pCapturer.get()) && !(pAsyncParam->rt_fallback_dxgi || pAsyncParam->rt_fallback_d3d)) &&
+            ((m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY && m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+        {
+            if(m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+            {
+                mfxRes = m_pmfxCore->GetRealSurface(m_pmfxCore->pthis, pAsyncParam->surface_out, &real_output);
+                MFX_CHECK_STS(mfxRes);
+                if(!real_output)    return MFX_ERR_NULL_PTR;
+            }
+
+            mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, real_output, pAsyncParam->real_surface);
+            MFX_CHECK_STS(mfxRes);
+            mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->real_surface->Data);
+            MFX_CHECK_STS(mfxRes);
+        }
+
+        //Runtime fallback case and system memory, just release internal surface
+        if( (!isSW(m_pCapturer.get()) && (pAsyncParam->rt_fallback_dxgi || pAsyncParam->rt_fallback_d3d)) &&
+            ((m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY && m_OpaqAlloc.Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+        {
+            mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->real_surface->Data);
+            MFX_CHECK_STS(mfxRes);
+        }
+#else
+        //system memory and ddi-accelerated capturer case
+        if(!isSW(m_pCapturer.get()) && m_bSysMem)
+        {
+            if ( !(pAsyncParam->rt_fallback_dxgi || pAsyncParam->rt_fallback_d3d) )
+            {
+                //normal case, no runtime fallback, copy from internal surface into user-provided
+                if(m_CurrentPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+                {
+                    mfxRes = m_pmfxCore->GetRealSurface(m_pmfxCore->pthis, pAsyncParam->surface_out, &real_output);
+                    MFX_CHECK_STS(mfxRes);
+                    if(!real_output)    return MFX_ERR_NULL_PTR;
+                }
+                mfxRes = m_pmfxCore->CopyFrame(m_pmfxCore->pthis, real_output, pAsyncParam->real_surface);
+                MFX_CHECK_STS(mfxRes);
+            }
+            else
+            {
+                //Runtime fallback case and system memory, just release internal surface next, it was not used
+                ;
+            }
+            //release internal surface for system memory usage
+            mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->real_surface->Data);
+            MFX_CHECK_STS(mfxRes);
+        }
+#endif
         mfxRes = m_pmfxCore->DecreaseReference(m_pmfxCore->pthis, &pAsyncParam->surface_out->Data);
     }
 
