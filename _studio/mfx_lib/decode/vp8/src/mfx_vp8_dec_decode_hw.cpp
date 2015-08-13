@@ -249,7 +249,6 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
     m_firstFrame = true;
     m_frames.clear();
 
-    vm_time_sleep(3000);
 
     return MFX_ERR_NONE;
 
