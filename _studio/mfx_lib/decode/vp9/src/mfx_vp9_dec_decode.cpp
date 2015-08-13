@@ -232,7 +232,7 @@ mfxStatus VideoDECODEVP9::Init(mfxVideoParam *params)
                     mfxFrameAllocRequest trequest = m_request;
                     trequest.Type =  (mfxU16)p_opq_ext->Out.Type;
                     trequest.NumFrameMin = trequest.NumFrameSuggested = (mfxU16)p_opq_ext->Out.NumSurface;
-                    
+
                     trequest.AllocId = params->AllocId;
 
                     sts = m_core->AllocFrames(&trequest,
@@ -819,7 +819,7 @@ static mfxStatus __CDECL VP9DECODERoutine(void *state, void *param, mfxU32 /*thr
     vpx_codec_iter_t iter = NULL;
     vpx_image_t *img = vpx_codec_get_frame(decoder, &iter);
 
-    if (img)
+    if (img && thread_info->m_p_surface_out)
     {
         mfxFrameData inData = { 0 };
         inData.Y = img->planes[VPX_PLANE_Y];
@@ -1415,7 +1415,7 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, 
                         break; // invalid
                 }
             }
-        
+
             bsReader.GetBits(MfxVP9Decode::NUM_REF_FRAMES);
 
             width = (mfxU16)bsReader.GetBits(16) + 1;
