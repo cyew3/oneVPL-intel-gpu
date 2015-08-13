@@ -587,6 +587,7 @@ mfxStatus FastCompositingDDI::QueryCapabilities(mfxVppCaps& caps)
     caps.uMaxHeight = (mfxU32)m_caps.sPrimaryVideoCaps.iMaxHeight;
 
     caps.uRotation  = 0; // FastComposing DDI doesn't support rotation.
+    caps.uScaling   = 0; // scaling is not supported yet.
 
     if(TRUE == m_caps.sPrimaryVideoCaps.bAdvancedDI)
     {

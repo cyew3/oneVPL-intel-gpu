@@ -110,6 +110,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->bCCM = false;
     pMfxExecuteParams->bCameraLensCorrection = false;
     pMfxExecuteParams->rotation = 0;
+    pMfxExecuteParams->scalingMode = MFX_SCALING_MODE_DEFAULT;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 
@@ -2675,6 +2676,26 @@ mfxStatus ConfigureExecuteParams(
                         {
                             mfxExtVPPRotation *extRotate = (mfxExtVPPRotation*) videoParam.ExtParam[i];
                             executeParams.rotation = extRotate->Angle;
+                        }
+                    }
+                }
+                else
+                {
+                    bIsFilterSkipped = true;
+                }
+
+                break;
+            }
+            case MFX_EXTBUFF_VPP_SCALING:
+            {
+                if (caps.uScaling)
+                {
+                    for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+                    {
+                        if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_SCALING)
+                        {
+                            mfxExtVPPScaling *extScaling = (mfxExtVPPScaling*) videoParam.ExtParam[i];
+                            executeParams.scalingMode = extScaling->ScalingMode;
                         }
                     }
                 }

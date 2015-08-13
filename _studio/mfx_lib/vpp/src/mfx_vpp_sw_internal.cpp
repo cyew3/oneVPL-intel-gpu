@@ -938,6 +938,11 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_SCALING:
+            {
+                break;
+            }
+
             case (mfxU32)MFX_EXTBUFF_VPP_DEINTERLACING:
             {
                 break;

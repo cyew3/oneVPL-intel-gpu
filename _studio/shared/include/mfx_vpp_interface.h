@@ -210,6 +210,8 @@ namespace MfxHwVideoProcessing
 
         mfxU32 uRotation;
 
+        mfxU32 uScaling;
+
     }   mfxVppCaps;
 
 
@@ -296,6 +298,9 @@ namespace MfxHwVideoProcessing
         CameraLensCorrectionParams         CameraLensCorrection;
 
         int         rotation;
+
+        mfxU16      scalingMode;
+
     } mfxExecuteParams;
 
 

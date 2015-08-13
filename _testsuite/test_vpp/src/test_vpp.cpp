@@ -116,6 +116,8 @@ void vppDefaultInitParams( sInputParams* pParams )
     pParams->ptsFR        = 0;
     pParams->vaType       = ALLOC_IMPL_VIA_SYS;
     pParams->rotate       = 0;
+    pParams->bScaling     = false;
+    pParams->scalingMode  = MFX_SCALING_MODE_DEFAULT;
 
     // Optional video processing features
     pParams->denoiseParam = defaultDenoiseParam;

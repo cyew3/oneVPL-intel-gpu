@@ -46,6 +46,7 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_IMAGE_STABILIZATION,
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_ROTATION,
+    MFX_EXTBUFF_VPP_SCALING,
     MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION,
     MFX_EXTBUFF_VPP_VARIANCE_REPORT,
     MFX_EXTBUFF_VPP_DEINTERLACING,
@@ -66,7 +67,8 @@ const mfxU32 g_TABLE_CONFIG [] =
     MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_DEINTERLACING,
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
-    MFX_EXTBUFF_VPP_FIELD_PROCESSING
+    MFX_EXTBUFF_VPP_FIELD_PROCESSING,
+    MFX_EXTBUFF_VPP_SCALING
 };
 
 
@@ -89,7 +91,8 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_DEINTERLACING,
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
-    MFX_EXTBUFF_VPP_FIELD_PROCESSING
+    MFX_EXTBUFF_VPP_FIELD_PROCESSING,
+    MFX_EXTBUFF_VPP_SCALING
 };
 
 // in according with spec rev. 22583 VPP uses new PicStruct processing
@@ -1263,6 +1266,12 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         newList[index] = MFX_EXTBUFF_VPP_ROTATION;
         index++;
     }
+
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_SCALING ) )
+    {
+        newList[index] = MFX_EXTBUFF_VPP_SCALING;
+        index++;
+    }
     // [1] update
     for( index = 0; index < (mfxU32)pipelineList.size(); index++ )
     {
@@ -1602,6 +1611,14 @@ mfxStatus GetPipelineList(
         if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_ROTATION ) )
         {
             pipelineList.push_back( MFX_EXTBUFF_VPP_ROTATION );
+        }
+    }
+
+    if( IsFilterFound( &configList[0], configCount, MFX_EXTBUFF_VPP_SCALING ) && !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_SCALING) )
+    {
+        if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_SCALING ) )
+        {
+            pipelineList.push_back( MFX_EXTBUFF_VPP_SCALING );
         }
     }
 

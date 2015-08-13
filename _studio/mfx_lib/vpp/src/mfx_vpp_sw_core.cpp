@@ -953,6 +953,8 @@ mfxStatus VideoVPPSW::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVppCa
     caps.uSceneChangeDetection = 0;
     caps.uSimpleDI           = 1;
     caps.uVariance           = 0;
+    caps.uRotation           = 0;
+    caps.uScaling            = 0;
 
     if (MFX_PLATFORM_HARDWARE == core->GetPlatformType())
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -1756,6 +1758,11 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
     if(caps.uRotation)
     {
         list.push_back(MFX_EXTBUFF_VPP_ROTATION);
+    }
+
+    if(caps.uScaling)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_SCALING);
     }
 
     /* FIELD Copy is always present*/

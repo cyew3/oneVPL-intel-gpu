@@ -140,6 +140,9 @@ struct sInputParams
 
     mfxU16   rotate;
 
+    bool     bScaling;
+    mfxU16   scalingMode;
+
     bool     bPartialAccel;
 
     bool     bPerf;
@@ -363,6 +366,7 @@ struct sAppResources
     mfxExtVPPDetail     detailConfig;
     mfxExtVPPDenoise    denoiseConfig;
     mfxExtVPPRotation   rotationConfig;
+    mfxExtVPPScaling    scalingConfig;
     mfxExtVPPFrameRateConversion    frcConfig;
     mfxExtVPPDeinterlacing deinterlaceConfig;
 

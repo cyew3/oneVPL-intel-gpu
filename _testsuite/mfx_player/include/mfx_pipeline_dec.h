@@ -76,6 +76,8 @@ struct sCommandlineParams
   mfxU64         nLimitInputBs;
   mfxI32         nSeed;
   mfxU16         nInputBitdepth;
+  bool           bVppScaling;
+  mfxU16         uVppScalingMode;
   bool           isDefaultFC;
   bool           bVerbose;
   bool           bSkipUselessOutput;
@@ -284,6 +286,9 @@ struct sCommandlineParams
 
       InputPicstruct  = NOT_ASSIGNED_VALUE;
       OutputPicstruct = NOT_ASSIGNED_VALUE;
+
+      bVppScaling = false;
+      uVppScalingMode = MFX_SCALING_MODE_DEFAULT;
 
       nTestId = NOT_ASSIGNED_VALUE;
   }

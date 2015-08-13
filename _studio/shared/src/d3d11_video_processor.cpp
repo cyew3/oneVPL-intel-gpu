@@ -1971,7 +1971,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 #ifdef DEBUG_DETAIL_INFO
     printf("\n\n---------- \n Submit Task::StatusID = %i \n----------\n\n", pParams->statusReportID);fflush(stderr);
 #endif
-
+    mfxStatus sts;
     MFX_CHECK_NULL_PTR1(pParams);
     if ( pParams->bCameraPipeEnabled )
     {
@@ -1999,44 +1999,24 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     pRect.right  += outInfo->CropX;
     SetStreamDestRect(0, TRUE, &pRect);
 
-    if(pParams->bCameraPipeEnabled)
+    if (m_vpreCaps.bScalingMode)
     {
-        mfxStatus sts = CameraPipeActivate();
-
-        if ( pParams->bCameraBlackLevelCorrection )
+        VPE_VPREP_SCALING_MODE_PARAM param = {0};
+        switch(pParams->scalingMode)
         {
-            sts = CameraPipeSetBlacklevelParams(&pParams->CameraBlackLevel);
-            MFX_CHECK_STS(sts);
-        }
+        case MFX_SCALING_MODE_LOWPOWER:
+            param.FastMode = false;
+            break;
 
-        if ( pParams->bCameraGammaCorrection )
-        {
-            sts = CameraPipeSetForwardGammaParams(&pParams->CameraForwardGammaCorrection);
-            MFX_CHECK_STS(sts);
+        case MFX_SCALING_MODE_QUALITY:
+        case MFX_SCALING_MODE_SPEED:
+        case MFX_SCALING_MODE_DEFAULT:
+        default:
+            param.FastMode = true;
+            break;
         }
-
-        if ( pParams->bCameraHotPixelRemoval )
-        {
-            sts = CameraPipeSetHotPixelParams(&pParams->CameraHotPixel);
-            MFX_CHECK_STS(sts);
-        }
-
-        if ( pParams->bCameraWhiteBalaceCorrection )
-        {
-            sts = CameraPipeSetWhitebalanceParams(&pParams->CameraWhiteBalance);
-            MFX_CHECK_STS(sts);
-        }
-
-        if ( pParams->bCCM )
-        {
-            sts = CameraPipeSetCCMParams(&pParams->CCMParams);
-            MFX_CHECK_STS(sts);
-        }
-
-        if ( pParams->bCameraVignetteCorrection )
-        {
-            sts = CameraPipeSetVignetteParams(&pParams->CameraVignetteCorrection);
-        }
+        sts = SetStreamScalingMode(0, param);
+        MFX_CHECK_STS(sts);
     }
 
     // [4] ProcAmp
@@ -2472,7 +2452,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         videoProcessorStreams[0].FutureFrames     = pParams->fwdRefCount;
     }
 
-    mfxStatus sts = ExecuteBlt(
+    sts = ExecuteBlt(
         (ID3D11Texture2D *)pParams->targetSurface.hdl.first,
         PtrToUlong(pParams->targetSurface.hdl.second),
         StreamCount,
@@ -2656,6 +2636,7 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
     caps.uRotation      = m_caps.m_rotation;
     caps.uIStabFilter   = m_vpreCaps.bIS;
     caps.uVariance      = m_vpreCaps.bVariance;
+    caps.uScaling       = m_vpreCaps.bScalingMode;
     if(caps.uVariance)
     {
         caps.iNumBackwardSamples = 1; // from the spec 1.8

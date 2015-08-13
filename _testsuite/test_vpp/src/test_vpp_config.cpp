@@ -137,6 +137,14 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->rotationConfig);
     }
+    if( pParams->bScaling )
+    {
+        pResources->scalingConfig.Header.BufferId = MFX_EXTBUFF_VPP_SCALING;
+        pResources->scalingConfig.Header.BufferSz = sizeof(mfxExtVPPScaling);
+        pResources->scalingConfig.ScalingMode     = pParams->scalingMode;
+
+        pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->scalingConfig);
+    }
     //if( VPP_FILTER_ENABLED_CONFIGURED == pParams->gamutParam.mode )
     //{
     //    pResources->gamutConfig.Header.BufferId = MFX_EXTBUFF_VPP_GAMUT_MAPPING;

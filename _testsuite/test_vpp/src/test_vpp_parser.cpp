@@ -77,6 +77,7 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-variance]         - enable variance report algorithm \n"));
     vm_string_printf(VM_STRING("   [-idetect]          - enable picstruct detection algorithm \n"));
     vm_string_printf(VM_STRING("   [-rotate (angle)]   - enable rotation. Supported angles: 0, 90, 180, 270.\n"));
+    vm_string_printf(VM_STRING("   [-scaling_mode (mode)] - specify type of scaling to be used for resize.\n"));
     vm_string_printf(VM_STRING("   [-denoise (level)]  - enable denoise algorithm. Level is optional \n"));
     vm_string_printf(VM_STRING("                         range of  noise level is [0, 100]\n"));
     vm_string_printf(VM_STRING("   [-detail  (level)]  - enable detail enhancement algorithm. Level is optional \n"));
@@ -515,6 +516,13 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->rotate);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-scaling_mode")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                pParams->bScaling = true;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->scalingMode);
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-variance")))
             {

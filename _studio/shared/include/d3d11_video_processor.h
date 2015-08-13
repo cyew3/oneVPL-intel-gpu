@@ -448,8 +448,7 @@ typedef enum
 
 typedef struct _VPE_VPREP_SCALING_MODE_PARAM 
 {
-    BOOL               PowerSavingMode;   // [in]
-    SCALING_MODE       QualitySpeedMode;  // [in]
+    BOOL               FastMode;   // [in]
 } VPE_VPREP_SCALING_MODE_PARAM;
 
 // CameraPipe Interface

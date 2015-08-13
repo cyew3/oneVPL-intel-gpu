@@ -1040,6 +1040,14 @@ mfxStatus MFXDecPipeline::CreateVPP()
         MFXExtBufferPtr<mfxExtVPPRotation> pRotate(m_components[eVPP].m_extParams);
         pRotate->Angle = m_components[eVPP].m_rotate;
     }
+
+    if(m_inParams.bVppScaling)
+    {
+        m_components[eVPP].m_extParams.push_back(new mfxExtVPPScaling());
+        MFXExtBufferPtr<mfxExtVPPScaling> pScaling(m_components[eVPP].m_extParams);
+        pScaling->ScalingMode = m_inParams.uVppScalingMode;
+    }
+
     //turnoff default filter if they are not present in cmd line
     if ( ! m_inParams.bUseCameraPipe && ! m_inParams.bExtVppApi )
     {
@@ -4617,6 +4625,13 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_PARSE_DOUBLE(m_extExtCamWhiteBalance->G1, argv[3]);
                 MFX_PARSE_DOUBLE(m_extExtCamWhiteBalance->R,  argv[4]);
                 argv+=4;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-vpp_scaling_mode"), VM_STRING("specify scaling mode for VPP resize"), OPT_INT_32))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                m_inParams.bVppScaling = true;
+                MFX_PARSE_INT(m_inParams.uVppScalingMode,  argv[1]);
+                argv+=1;
             }
             else if (m_OptProc.Check(argv[0], VM_STRING("-mediasdk_splitter"), VM_STRING("split stream from media container with MediaSDK splitter (ts, mp4)"), OPT_BOOL))
             {
