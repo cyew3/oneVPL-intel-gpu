@@ -1975,7 +1975,7 @@ mfxStatus CTranscodingPipeline::AllocFrames()
             static mfxU32 mark_alloc = 0;
             m_mfxDecParams.AllocId = mark_alloc;
             DecOut.AllocId = mark_alloc;
-            if(m_nVPPCompEnable) // WORKAROUND: Remove this if clause after probelm with AllocID is fixed in library (mark_alloc++ should be left here)
+            if(m_nVPPCompEnable) // WORKAROUND: Remove this if clause after problem with AllocID is fixed in library (mark_alloc++ should be left here)
             {
                 mark_alloc++;
             }
@@ -2722,13 +2722,14 @@ void SafetySurfaceBuffer::AddSurface(ExtendedSurface Surf)
 
 mfxStatus SafetySurfaceBuffer::GetSurface(ExtendedSurface &Surf)
 {
+    AutomaticMutex guard(m_mutex);
+
     // no ready surfaces
     if (0 == m_SList.size())
     {
         return MFX_ERR_MORE_SURFACE;
     }
 
-    AutomaticMutex guard(m_mutex);
     SurfaceDescriptor sDescriptor = m_SList.front();
 
     Surf = sDescriptor.ExtSurface;
