@@ -62,7 +62,9 @@ public:
     mfxStatus SyncOperation();
     mfxStatus SyncOperation(mfxSyncPoint syncp);
     mfxStatus SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait);
-    
+
+    mfxStatus GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload);
+
     mfxStatus DecodeFrames(mfxU32 n);
 
     mfxStatus Load();
