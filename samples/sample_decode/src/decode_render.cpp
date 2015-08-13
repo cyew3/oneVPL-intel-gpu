@@ -18,13 +18,14 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 
 #include "sample_defs.h"
 #include "decode_render.h"
+#include "winUser.h"
 #pragma warning(disable : 4100)
 
 bool CDecodeD3DRender::m_bIsMonitorFound = false;
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-#ifdef WIN64
+#ifdef _WIN64
     CDecodeD3DRender* pRender = (CDecodeD3DRender*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 #else
     CDecodeD3DRender* pRender = (CDecodeD3DRender*)LongToPtr(GetWindowLongPtr(hWnd, GWL_USERDATA));
@@ -141,7 +142,7 @@ mfxStatus CDecodeD3DRender::Init(sWindowParams pWParams)
     ShowWindow(m_Hwnd, SW_SHOWDEFAULT);
     UpdateWindow(m_Hwnd);
 
-#ifdef WIN64
+#ifdef _WIN64
     SetWindowLongPtr(m_Hwnd, GWLP_USERDATA, (LONG_PTR)this);
 #else
     SetWindowLong(m_Hwnd, GWL_USERDATA, PtrToLong(this));
