@@ -947,7 +947,7 @@ mfxStatus CTranscodingPipeline::Encode()
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 #if defined(_WIN32) || defined(_WIN64)
             sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, m_pMFXAllocator);
-#elif
+#else
             sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, NULL);
 #endif
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -2248,7 +2248,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
             RenderParam.bFullScreen  = TRUE;
 
             m_hwdev4Rendering->Init(RenderParam);
-#elif
+#else
             m_hwdev4Rendering = pParams->m_hwdev;
 #endif
         }

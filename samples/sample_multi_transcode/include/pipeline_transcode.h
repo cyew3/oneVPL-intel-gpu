@@ -46,6 +46,10 @@
 #include "vpp_ext_buffers_storage.h"
 
 #if defined(_WIN32) || defined(_WIN64)
+#include "decode_render.h"
+#endif
+
+#if defined(_WIN32) || defined(_WIN64)
     #define MSDK_CPU_ROTATE_PLUGIN  MSDK_STRING("sample_rotate_plugin.dll")
     #define MSDK_OCL_ROTATE_PLUGIN  MSDK_STRING("sample_plugin_opencl.dll")
 #else
@@ -416,7 +420,11 @@ namespace TranscodingSample
 
         mfxU32                          m_numEncoders;
 
+#if defined(_WIN32) || defined(_WIN64)
+        CDecodeD3DRender*               m_hwdev4Rendering;
+#else
         CHWDevice*                      m_hwdev4Rendering;
+#endif
 
         typedef std::vector<mfxFrameSurface1*> SurfPointersArray;
         SurfPointersArray  m_pSurfaceDecPool;
