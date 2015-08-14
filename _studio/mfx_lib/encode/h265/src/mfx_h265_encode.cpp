@@ -1940,11 +1940,11 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
     out->m_lookaheadRefCounter = ownerCount;
 
     if (m_videoParam.inputVideoMem) {
-        m_core.UnlockFrame(m_auxInput.Data.MemId, &m_auxInput.Data);
+        m_core.UnlockFrame(m_auxInput.Data.MemId, &in.Data);
     } else {
         m_core.DecreaseReference(&inExternal->Data);
         if (locked)
-            m_core.UnlockExternalFrame(m_auxInput.Data.MemId, &in.Data);
+            m_core.UnlockExternalFrame(in.Data.MemId, &in.Data);
     }
 }
 
