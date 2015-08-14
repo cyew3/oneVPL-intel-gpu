@@ -2173,10 +2173,14 @@ void H265FrameEncoder::SetEncodeFrame(Frame* frame, std::deque<ThreadingTask *> 
                         if (m_frame->m_doPostProc && !pp_by_row)
                             AddTaskDependency(task_pp, task_pp - m_numTasksPerCu);
                     }
-                    if (ctb_row > regionCtbRowFirst && ctb_col < regionCtbColLast) {
-                        AddTaskDependency(task_enc, task_enc - (m_videoParam.PicWidthInCtbs - 1) * m_numTasksPerCu);
-                        if (m_frame->m_doPostProc && !pp_by_row)
-                            AddTaskDependency(task_pp, task_pp - (m_videoParam.PicWidthInCtbs - 1) * m_numTasksPerCu);
+                    if (ctb_row > regionCtbRowFirst) {
+                        if (regionCtbColFirst == regionCtbColLast) { // special case: frame width <= 1 CTB, frame height > 1 CTB
+                            AddTaskDependency(task_enc, task_enc - m_videoParam.PicWidthInCtbs * m_numTasksPerCu);
+                        } else if (ctb_col < regionCtbColLast) {
+                            AddTaskDependency(task_enc, task_enc - (m_videoParam.PicWidthInCtbs - 1) * m_numTasksPerCu);
+                            if (m_frame->m_doPostProc && !pp_by_row)
+                                AddTaskDependency(task_pp, task_pp - (m_videoParam.PicWidthInCtbs - 1) * m_numTasksPerCu);
+                        }
                     }
                 } else {
                     if (ctb_col > regionCtbColFirst) {
