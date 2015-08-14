@@ -711,3 +711,11 @@ STRUCT(mfxExtVPPRotation,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16      , Angle)
 )
+
+STRUCT(mfxExtScreenCaptureParam,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32      , DisplayIndex       )
+    FIELD_T(mfxU16      , EnableDirtyRect    )
+    FIELD_T(mfxU16      , EnableCursorCapture)
+    FIELD_T(mfxU16*     , reserved)
+)

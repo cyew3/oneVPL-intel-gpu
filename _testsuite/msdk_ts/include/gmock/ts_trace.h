@@ -10,6 +10,7 @@
 #include "mfxfei.h"
 #include "mfxfeih265.h"
 #include "mfxla.h"
+#include "mfxsc.h"
 
 #include "bs_parser.h"
 #include <iostream>

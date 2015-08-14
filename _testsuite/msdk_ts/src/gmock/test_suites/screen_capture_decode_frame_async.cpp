@@ -1,5 +1,6 @@
 #include "ts_decoder.h"
 #include "ts_struct.h"
+#include "mfxsc.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include "windows.h"
@@ -16,7 +17,7 @@ public:
     MemoryTracker()
     {
         m_process = 0;
-        threshold = 100*1024; //allow 100 kb fluctuations
+        threshold = 200*1024; //allow 200 kb fluctuations
         skip = 10;
         count = 0;
         memset(&m_counters_init,0,sizeof(m_counters_init));
@@ -128,6 +129,68 @@ public:
 };
 #endif
 
+const mfxExtDirtyRect* GetDirtyRectBuffer(const mfxFrameSurface1& s)
+{
+    if(!s.Data.NumExtParam || !s.Data.ExtParam)
+        return 0;
+    for(mfxU32 i = 0; i < s.Data.NumExtParam; ++i)
+    {
+        if(!s.Data.ExtParam[i])
+            continue;
+        if(MFX_EXTBUFF_DIRTY_RECTANGLES == s.Data.ExtParam[i]->BufferId && sizeof(mfxExtDirtyRect) == s.Data.ExtParam[i]->BufferSz)
+            return (mfxExtDirtyRect*) s.Data.ExtParam[i];
+    }
+    return 0;
+}
+
+class SimpleDirtyRectChecker : public tsSurfaceProcessor
+{
+private:
+
+public:
+    SimpleDirtyRectChecker()
+    {
+    }
+    ~SimpleDirtyRectChecker()
+    {
+    }
+
+    mfxStatus ProcessSurface(mfxFrameSurface1& s)
+    {
+        const mfxExtDirtyRect* dr = GetDirtyRectBuffer(s);
+        EXPECT_NE(nullptr, dr);
+
+        size_t i = 0;
+        for(i = 0; i < dr->NumRect; ++i)
+        {
+            //mfxRect rect;
+            EXPECT_NE(0, (dr->Rect[i].Left +   dr->Rect[i].Top + dr->Rect[i].Right + dr->Rect[i].Bottom) ) << "ERROR: dirty rect has zero coordinates!\n";
+            EXPECT_NE(0, (dr->Rect[i].Right -  dr->Rect[i].Left) )   << "ERROR: dirty rect has zero width!\n";
+            EXPECT_NE(0, (dr->Rect[i].Bottom - dr->Rect[i].Top) )    << "ERROR: dirty rect has zero height!\n";
+            EXPECT_LE(dr->Rect[i].Right,       s.Info.Width)         << "ERROR: right coordinate of dirty rect > frame width!\n";
+            EXPECT_LE(dr->Rect[i].Bottom,      s.Info.Height)        << "ERROR: bottom coordinate of dirty rect > frame height!\n";
+            EXPECT_LE(dr->Rect[i].Left,        dr->Rect[i].Right)    << "ERROR: left coordinate of dirty rect > right coordinate!\n";
+            EXPECT_LE(dr->Rect[i].Top,         dr->Rect[i].Bottom)   << "ERROR: top coordinate of dirty rect > bootom coordinate!\n";
+
+            for(size_t j = 0; j < dr->NumRect; ++j)
+            {
+                if(i != j)
+                {
+                    EXPECT_NE(0, memcmp( &(dr->Rect[i]), &(dr->Rect[j]), sizeof(dr->Rect[0]))) << "ERROR: there are two equal dirty rects: " << i << " and " << j << "!\n;";
+                }
+            }
+        }
+
+        const size_t maxRects = sizeof(dr->Rect) / sizeof(dr->Rect[0]);
+        for(i; i < maxRects; ++i)
+        {
+            EXPECT_EQ(0, (dr->Rect[i].Left + dr->Rect[i].Top + dr->Rect[i].Right + dr->Rect[i].Bottom) ) << "ERROR: Although only "<< dr->NumRect <<"rects reported, rect #"<< i <<"is dirty!\n";
+        }
+
+        return MFX_ERR_NONE;
+    }
+};
+
 class TestSuite : tsVideoDecoder, tsSurfaceProcessor
 {
 public:
@@ -158,6 +221,7 @@ private:
     enum
     {
         CHECK_MEMORY = 1,
+        ENABLE_DIRTY_RECT = 1,
     };
 
     struct tc_struct
@@ -197,6 +261,16 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                           {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_RGB4},
                                           {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444},  }
     },
+    {/*08*/ MFX_ERR_NONE, ENABLE_DIRTY_RECT, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+    {/*09*/ MFX_ERR_NONE, ENABLE_DIRTY_RECT, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY }},
+    {/*10*/ MFX_ERR_NONE, ENABLE_DIRTY_RECT, { {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY},
+                                             {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_RGB4},
+                                             {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444},  }
+    },
+    {/*11*/ MFX_ERR_NONE, ENABLE_DIRTY_RECT, { {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
+                                             {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_RGB4},
+                                             {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444},  }
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -208,11 +282,21 @@ int TestSuite::RunTest(unsigned int id)
 
     mfxU32 n_frames = 3;
     MemoryTracker memTracker;
+    SimpleDirtyRectChecker drChecker;
     if(CHECK_MEMORY == tc.mode)
     {
         g_tsStatus.check( memTracker.Start() );
         m_surf_processor = &memTracker;
         n_frames = 1000;
+        g_tsTrace = 0;
+    }
+
+    if(ENABLE_DIRTY_RECT == tc.mode)
+    {
+        m_surf_processor = &drChecker;
+
+        mfxExtScreenCaptureParam& roi = m_par;
+        roi.EnableDirtyRect = 1;
         g_tsTrace = 0;
     }
 
@@ -231,6 +315,34 @@ int TestSuite::RunTest(unsigned int id)
             SetHandle(m_session, type, hdl);
     }
     Init(m_session, m_pPar);
+
+    std::vector<mfxExtDirtyRect> dirty_rects;
+    std::vector<mfxExtBuffer*>  ext_buf;
+    if(ENABLE_DIRTY_RECT == tc.mode)
+    {
+        SetPar4_DecodeFrameAsync();
+        for(mfxU32 i = 0; i < PoolSize(); ++i)
+        {
+            mfxExtDirtyRect dirty_rect;
+            memset(&dirty_rect,0,sizeof(dirty_rect));
+            dirty_rect.Header.BufferId = MFX_EXTBUFF_DIRTY_RECTANGLES;
+            dirty_rect.Header.BufferSz = sizeof(dirty_rect);
+            dirty_rects.push_back(dirty_rect);
+            mfxExtBuffer* extb = 0;
+            ext_buf.push_back(extb);
+        }
+        for(mfxU32 i = 0; i < PoolSize(); ++i)
+        {
+            mfxFrameSurface1* surf = GetSurface(i);
+            EXPECT_NE(nullptr, (void*) surf);
+
+            mfxExtBuffer*& extb = ext_buf[i];
+            extb = (mfxExtBuffer*) &(dirty_rects[i]);
+
+            surf->Data.NumExtParam = 1;
+            surf->Data.ExtParam = &extb;
+        }
+    }
 
     g_tsStatus.expect(tc.sts);
     DecodeFrames(n_frames);

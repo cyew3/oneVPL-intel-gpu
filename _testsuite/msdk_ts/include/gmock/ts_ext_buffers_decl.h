@@ -63,3 +63,6 @@ EXTBUF(mfxExtVPPRotation, MFX_EXTBUFF_VPP_ROTATION)
 //EXTBUF(mfxExtJPEGQuantTables        , MFX_EXTBUFF_JPEG_QT                   );
 //EXTBUF(mfxExtJPEGHuffmanTables      , MFX_EXTBUFF_JPEG_HUFFMAN              );
 //EXTBUF(mfxExtPAVPOption             , MFX_EXTBUFF_PAVP_OPTION               );
+
+//Screen capture
+EXTBUF(mfxExtScreenCaptureParam     , MFX_EXTBUFF_SCREEN_CAPTURE_PARAM      )
