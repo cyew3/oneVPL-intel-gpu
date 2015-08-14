@@ -1031,6 +1031,17 @@ namespace
         return lhs.m_frameOrder < rhs.m_frameOrder;
     }
 
+    struct OrderByNearestPrev
+    {
+        mfxU32 m_fo;
+
+        OrderByNearestPrev(mfxU32 displayOrder) : m_fo(displayOrder) {}
+        bool operator() (DpbFrame const & l, DpbFrame const & r)
+        {
+            return (l.m_frameOrder < m_fo) && ((r.m_frameOrder > m_fo) || ((m_fo - l.m_frameOrder) < (m_fo - r.m_frameOrder)));
+        }
+    };
+
 
     void InitNewDpbFrame(
         DpbFrame &      ref,
@@ -1367,11 +1378,23 @@ namespace
             // if first field was a reference then entire frame is already in dpb
             if (!currFrameIsAddedToDpb)
             {
+                mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(video);
+
                 for (mfxU32 refBase = 0; refBase <= task.m_storeRefBasePicFlag; refBase++)
                 {
                     if (currDpb.Size() == video.mfx.NumRefFrame)
                     {
                         DpbFrame * toRemove = std::min_element(currDpb.Begin(), currDpb.End(), OrderByFrameNumWrap);
+                        DpbFrame * toRemoveDefault = toRemove;
+
+                        if (   toRemove != currDpb.End()
+                            && task.m_fieldPicFlag
+                            && extOpt2.BRefType == MFX_B_REF_PYRAMID
+                            && toRemove == std::min_element(currDpb.Begin(), currDpb.End(), OrderByNearestPrev(task.m_frameOrder)))
+                        {
+                            toRemove = std::min_element(currDpb.Begin(), currDpb.End(), OrderByDisplayOrder);
+                        }
+
                         assert(toRemove != currDpb.End());
                         if (toRemove == currDpb.End())
                             return;
@@ -1386,11 +1409,13 @@ namespace
                             marking.PushBack(MMCO_LT_TO_UNUSED, toRemove->m_longTermPicNum[0]);
                             usedLtIdx[toRemove->m_longTermIdxPlus1 - 1] = 0;
                         }
-                        else if (marking.mmco.Size() > 0)
+                        else if (marking.mmco.Size() > 0 || toRemove != toRemoveDefault)
                         {
                             // already have mmco commands, sliding window will not be invoked
                             // remove oldest short-term manually
                             marking.PushBack(MMCO_ST_TO_UNUSED, task.m_picNum[fid] - toRemove->m_picNum[0] - 1);
+                            if (task.m_fieldPicFlag)
+                                marking.PushBack(MMCO_ST_TO_UNUSED, task.m_picNum[fid] - toRemove->m_picNum[1] - 1);
                         }
 
                         currDpb.Erase(toRemove);
