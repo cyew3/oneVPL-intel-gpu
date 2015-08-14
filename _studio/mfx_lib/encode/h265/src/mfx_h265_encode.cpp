@@ -1858,25 +1858,23 @@ mfxStatus H265Encoder::TaskCompleteProc(void *pState, void *pParam, mfxStatus ta
 }
 
 
-void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *in)
+void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
 {
     bool locked = false;
+    mfxFrameSurface1 in = *inExternal;
     if (m_videoParam.inputVideoMem) { // copy from d3d to internal frame in system memory
-        mfxStatus st = m_core.LockFrame(m_auxInput.Data.MemId, &m_auxInput.Data);
+        mfxStatus st = m_core.LockFrame(m_auxInput.Data.MemId, &in.Data);
         if (st != MFX_ERR_NONE)
             Throw(std::runtime_error("LockFrame failed"));
 
         st = m_core.DoFastCopyWrapper(&m_auxInput, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
-                                      in, MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
+                                      inExternal, MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
         if (st != MFX_ERR_NONE)
             Throw(std::runtime_error("FastCopy failed"));
 
-        m_core.DecreaseReference(&in->Data); // do it here
-        m_auxInput.Data.FrameOrder = in->Data.FrameOrder;
-        m_auxInput.Data.TimeStamp = in->Data.TimeStamp;
-        in = &m_auxInput; // replace input pointer
-    } else if (in->Data.Y == 0) {
-        mfxStatus st = m_core.LockExternalFrame(in->Data.MemId, &in->Data);
+        m_core.DecreaseReference(&inExternal->Data); // do it here
+    } else if (in.Data.Y == 0) {
+        mfxStatus st = m_core.LockExternalFrame(in.Data.MemId, &in.Data);
         if (st != MFX_ERR_NONE)
             Throw(std::runtime_error("LockExternalFrame failed"));
         locked = true;
@@ -1887,16 +1885,16 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *in)
             Ipp32s luSz = (m_videoParam.bitDepthLuma == 8) ? 1 : 2;
             Ipp32s luW = m_videoParam.Width - m_videoParam.CropLeft - m_videoParam.CropRight;
             Ipp32s luH = m_videoParam.Height - m_videoParam.CropTop - m_videoParam.CropBottom;
-            Ipp32s luPitch = in->Data.Pitch;
-            Ipp8u *luPtr = in->Data.Y + (m_videoParam.CropTop * luPitch + m_videoParam.CropLeft * luSz);
+            Ipp32s luPitch = in.Data.Pitch;
+            Ipp8u *luPtr = in.Data.Y + (m_videoParam.CropTop * luPitch + m_videoParam.CropLeft * luSz);
             for (Ipp32s y = 0; y < luH; y++, luPtr += luPitch)
                 vm_file_fwrite(luPtr, luSz, luW, f);
 
             Ipp32s chSz = (m_videoParam.bitDepthChroma == 8) ? 1 : 2;
             Ipp32s chW = luW;
             Ipp32s chH = luH >> 1;
-            Ipp32s chPitch = in->Data.Pitch;
-            Ipp8u *chPtr = in->Data.UV + (m_videoParam.CropTop / 2 * chPitch + m_videoParam.CropLeft * chSz);
+            Ipp32s chPitch = in.Data.Pitch;
+            Ipp8u *chPtr = in.Data.UV + (m_videoParam.CropTop / 2 * chPitch + m_videoParam.CropLeft * chSz);
             for (Ipp32s y = 0; y < chH; y++, chPtr += chPitch)
                 vm_file_fwrite(chPtr, chSz, chW, f);
 
@@ -1911,7 +1909,7 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *in)
     if (m_have8bitCopyFlag)
         out->m_luma_8bit = m_frameData8bitPool.Allocate();
 
-    out->CopyFrameData(in, m_have8bitCopyFlag);
+    out->CopyFrameData(&in, m_have8bitCopyFlag);
 
     // attach lowres surface to frame
     if (m_la.get() && (m_videoParam.LowresFactor || m_videoParam.SceneCut))
@@ -1944,9 +1942,9 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *in)
     if (m_videoParam.inputVideoMem) {
         m_core.UnlockFrame(m_auxInput.Data.MemId, &m_auxInput.Data);
     } else {
-        m_core.DecreaseReference(&in->Data);
+        m_core.DecreaseReference(&inExternal->Data);
         if (locked)
-            m_core.UnlockExternalFrame(in->Data.MemId, &in->Data);
+            m_core.UnlockExternalFrame(m_auxInput.Data.MemId, &in.Data);
     }
 }
 
