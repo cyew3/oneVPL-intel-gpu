@@ -1801,6 +1801,15 @@ bool TaskManager::isSubmittedForQuery(Task* pTask)
     }
     return false;
 }
+Task* TaskManager::GetTaskForQuery()
+{
+    UMC::AutomaticUMCMutex guard(m_listMutex);
+    if (m_querying.size() > 0)
+    {
+        return &(*m_querying.begin());
+    }
+    return 0;
+}
 
 void TaskManager::Ready(Task* pTask)
 {
@@ -2298,6 +2307,56 @@ mfxU8 GetSHNUT(Task const & task)
         return RASL_R;
     return RASL_N;
 }
+
+IntraRefreshState GetIntraRefreshState(
+    MfxVideoParam const & video,
+    mfxU32                frameOrderInGopDispOrder,
+    mfxEncodeCtrl const * ctrl,
+    mfxU16                intraStripeWidthInMBs)
+{
+    IntraRefreshState state;
+    const mfxExtCodingOption2*   extOpt2Init = &(video.m_ext.CO2);
+    const mfxExtCodingOption3 *  extOpt3Init = &(video.m_ext.CO3);
+
+    state.firstFrameInCycle = false;
+    if (extOpt2Init->IntRefType == 0)
+        return state;
+
+    mfxU32 refreshPeriod = extOpt3Init->IntRefCycleDist ? extOpt3Init->IntRefCycleDist : extOpt2Init->IntRefCycleSize;
+    mfxU32 offsetFromStartOfGop = extOpt3Init->IntRefCycleDist ? refreshPeriod : 1; // 1st refresh cycle in GOP starts with offset
+
+    mfxI32 frameOrderMinusOffset = frameOrderInGopDispOrder - offsetFromStartOfGop;
+    if (frameOrderMinusOffset < 0)
+        return state; // too early to start regresh
+
+    mfxU32 frameOrderInRefreshPeriod = frameOrderMinusOffset % refreshPeriod;
+    if (frameOrderInRefreshPeriod >= extOpt2Init->IntRefCycleSize)
+        return state; // for current refresh period refresh cycle is already passed
+
+    // check if Intra refresh required for current frame
+    mfxU32 refreshDimension = extOpt2Init->IntRefType == HORIZ_REFRESH ? video.mfx.FrameInfo.Height >> 4 : video.mfx.FrameInfo.Width >> 4;
+    mfxU32 numFramesWithoutRefresh = extOpt2Init->IntRefCycleSize - (refreshDimension + intraStripeWidthInMBs - 1) / intraStripeWidthInMBs;
+    mfxU32 idxInRefreshCycle = frameOrderInRefreshPeriod;
+    state.firstFrameInCycle = (idxInRefreshCycle == 0);
+    mfxI32 idxInActualRefreshCycle = idxInRefreshCycle - numFramesWithoutRefresh;
+    if (idxInActualRefreshCycle < 0)
+        return state; // actual refresh isn't started yet within current refresh cycle, no Intra column/row required for current frame
+
+    state.refrType = extOpt2Init->IntRefType;
+    state.IntraSize = intraStripeWidthInMBs;
+    state.IntraLocation = (mfxU16)idxInActualRefreshCycle * intraStripeWidthInMBs;
+    // set QP for Intra macroblocks within refreshing line
+    state.IntRefQPDelta = extOpt2Init->IntRefQPDelta;
+    if (ctrl)
+    {
+        mfxExtCodingOption2 * extOpt2Runtime = ExtBuffer::Get(*ctrl);
+        if (extOpt2Runtime && extOpt2Runtime->IntRefQPDelta <= 51 && extOpt2Runtime->IntRefQPDelta >= -51)
+            state.IntRefQPDelta = extOpt2Runtime->IntRefQPDelta;
+    }
+
+    return state;
+}
+
 
 void ConfigureTask(
     Task &                task,

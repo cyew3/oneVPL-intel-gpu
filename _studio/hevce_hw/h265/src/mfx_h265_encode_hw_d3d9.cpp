@@ -106,11 +106,23 @@ void FillSpsBuffer(
     sps.TargetUsage         = mfxU8(par.mfx.TargetUsage);
     sps.RateControlMethod   = mfxU8(par.mfx.RateControlMethod);
 
-    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || 
+        par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
+        par.mfx.RateControlMethod == MFX_RATECONTROL_VCM )
     {
         sps.MinBitRate      = par.TargetKbps;
         sps.TargetBitRate   = par.TargetKbps;
         sps.MaxBitRate      = par.MaxKbps;
+    }
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        sps.TargetBitRate   = par.TargetKbps;
+        sps.AVBRAccuracy = par.mfx.Accuracy;
+        sps.AVBRConvergence = par.mfx.Convergence;
+    }
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
+    {
+        sps.CRFQualityFactor = (mfxU8)par.mfx.ICQQuality;
     }
 
     sps.FramesPer100Sec = (mfxU16)(mfxU64(100) * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
@@ -238,14 +250,7 @@ void FillPpsBuffer(
     pps.num_ref_idx_l0_default_active_minus1 = (mfxU8)par.m_pps.num_ref_idx_l0_default_active_minus1;
     pps.num_ref_idx_l1_default_active_minus1 = (mfxU8)par.m_pps.num_ref_idx_l1_default_active_minus1;
 
-    pps.bEnableRollingIntraRefresh = 0;
-
-    if (pps.bEnableRollingIntraRefresh)
-    {
-        pps.IntraInsertionLocation;
-        pps.IntraInsertionSize;
-        pps.QpDeltaForInsertedIntra;
-    }
+ 
 
     pps.LcuMaxBitsizeAllowed       = 0;
     pps.bUseRawPicForRef           = 0;
@@ -286,6 +291,14 @@ void FillPpsBuffer(
     pps.CodingType      = task.m_codingType;
     pps.CurrPicOrderCnt = task.m_poc;
 
+    pps.bEnableRollingIntraRefresh = task.m_IRState.refrType;
+
+    if (pps.bEnableRollingIntraRefresh)
+    {
+        pps.IntraInsertionLocation = task.m_IRState.refrType;;
+        pps.IntraInsertionSize = task.m_IRState.IntraLocation;
+        pps.QpDeltaForInsertedIntra = mfxU8(task.m_IRState.IntRefQPDelta);
+    }
     pps.StatusReportFeedbackNumber = task.m_statusReportNumber;
 }
 

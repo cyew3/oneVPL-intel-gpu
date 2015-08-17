@@ -300,16 +300,13 @@ mfxStatus VideoUSERPlugin::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface
 
     // check the parameters with user object
     mfxRes = m_plugin.Video->EncodeFrameSubmit(m_plugin.pthis, ctrl, surface, bs, &userParam);
-    if (MFX_ERR_NONE != mfxRes)
+    if ( mfxRes >= MFX_ERR_NONE  || mfxRes == MFX_ERR_MORE_DATA_SUBMIT_TASK)
     {
-        return mfxRes;
+        *ep = m_entryPoint;
+        ep->pParam = userParam;
     }
 
-    // fill the 'entry point' structure
-    *ep = m_entryPoint;
-    ep->pParam = userParam;
-
-    return MFX_ERR_NONE;
+    return mfxRes;
 }
 mfxStatus VideoUSERPlugin::EncFrameCheck(mfxENCInput *in, mfxENCOutput *out, MFX_ENTRY_POINT *ep)
 {

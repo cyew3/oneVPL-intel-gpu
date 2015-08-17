@@ -108,6 +108,8 @@ protected:
     HRD                             m_hrd;
     mfxU32                          m_frameOrder;
     mfxU32                          m_lastIDR;
+    mfxU32                          m_baseLayerOrder;
+    mfxU32                          m_numBuffered;
 };
 
 } //MfxHwH265Encode

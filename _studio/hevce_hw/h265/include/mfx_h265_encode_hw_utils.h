@@ -195,6 +195,14 @@ enum
     TASK_DPB_NUM
 };
 
+struct IntraRefreshState
+{
+    mfxU16  refrType;
+    mfxU16  IntraLocation;
+    mfxU16  IntraSize;
+    mfxI16  IntRefQPDelta;
+    bool    firstFrameInCycle;
+};
 typedef struct _Task : DpbFrame
 {
     mfxBitstream*       m_bs;
@@ -228,7 +236,15 @@ typedef struct _Task : DpbFrame
     mfxU32 m_dpb_output_delay;
 
     mfxU32 m_stage;
+    IntraRefreshState m_IRState;
 }Task;
+
+enum
+{
+    NO_REFRESH             = 0,
+    VERT_REFRESH           = 1,
+    HORIZ_REFRESH          = 2
+};
 
 typedef std::list<Task> TaskList;
 
@@ -253,7 +269,7 @@ namespace ExtBuffer
         EXTBUF(mfxExtHEVCTiles,             MFX_EXTBUFF_HEVC_TILES);
         EXTBUF(mfxExtOpaqueSurfaceAlloc,    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
         EXTBUF(mfxExtDPB,                   MFX_EXTBUFF_DPB);
-        EXTBUF(mfxExtAVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS);
+        EXTBUF(mfxExtAVCRefLists,           MFX_EXTBUFF_AVC_REFLISTS);
         EXTBUF(mfxExtCodingOption2,         MFX_EXTBUFF_CODING_OPTION2);
         EXTBUF(mfxExtCodingOption3,         MFX_EXTBUFF_CODING_OPTION3);
         EXTBUF(mfxExtCodingOptionDDI,       MFX_EXTBUFF_DDI);
@@ -484,6 +500,7 @@ public:
     Task* GetSubmittedTask();
     void  SubmitForQuery(Task* task);
     bool  isSubmittedForQuery(Task* task);
+    Task* GetTaskForQuery();
     void  Ready     (Task* task);
 
 private:
@@ -590,5 +607,11 @@ mfxStatus CopyRawSurfaceToVideoMemory(
     MFXCoreInterface &    core,
     MfxVideoParam const & video,
     Task const &          task);
+
+IntraRefreshState GetIntraRefreshState(
+    MfxVideoParam const & video,
+    mfxU32                frameOrderInGopDispOrder,
+    mfxEncodeCtrl const * ctrl,
+    mfxU16                intraStripeWidthInMBs);
 
 }; //namespace MfxHwH265Encode

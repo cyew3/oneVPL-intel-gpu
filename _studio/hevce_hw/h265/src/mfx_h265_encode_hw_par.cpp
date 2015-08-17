@@ -643,6 +643,17 @@ bool CheckOption(T & opt, U0 deflt, U1 s0, U2 s1, U3 s2, U4 s3, U5 s4)
     }
     return false;
 }
+template <class T, class U0, class U1, class U2, class U3, class U4, class U5, class U6>
+bool CheckOption(T & opt, U0 deflt, U1 s0, U2 s1, U3 s2, U4 s3, U5 s4, U6 s5)
+{
+    if (opt == T(deflt)) return false;
+    if (CheckOption(opt, (T)s0, (T)s1, (T)s2, (T)s3, (T)s4, (T)s5))
+    {
+        opt = T(deflt);
+        return true;
+    }
+    return false;
+}
 #endif
 
 bool CheckTU(mfxU8 support, mfxU16& tu)
@@ -672,6 +683,12 @@ mfxU16 minRefForPyramid(mfxU16 GopRefDist)
     assert(GopRefDist > 0);
     return (GopRefDist - 1) / 2 + 3;
 }
+ const mfxU16 AVBR_ACCURACY_MIN = 1;
+ const mfxU16 AVBR_ACCURACY_MAX = 65535;
+
+ const mfxU16 AVBR_CONVERGENCE_MIN = 1;
+ const mfxU16 AVBR_CONVERGENCE_MAX = 65535;
+
 
 mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, bool bInit = false)
 {
@@ -751,12 +768,22 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         , 0
         , (mfxU32)MFX_RATECONTROL_CBR
         , (mfxU32)MFX_RATECONTROL_VBR
+        , (mfxU32)MFX_RATECONTROL_AVBR
         , (mfxU32)MFX_RATECONTROL_CQP
         , (mfxU32)MFX_RATECONTROL_ICQ
         , caps.VCMBitRateControl ? MFX_RATECONTROL_VCM : 0);
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
         unsupported += CheckMax(par.mfx.ICQQuality, 51);
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        if (par.mfx.Accuracy)
+            changed += CheckRange(par.mfx.Accuracy, AVBR_ACCURACY_MIN, AVBR_ACCURACY_MAX);
+        if (par.mfx.Convergence)
+            changed += CheckRange(par.mfx.Convergence, AVBR_CONVERGENCE_MIN, AVBR_CONVERGENCE_MAX);   
+    }
+
 
     changed += CheckTriStateOption(par.m_ext.CO2.MBBRC);
 
@@ -879,10 +906,42 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             changed += CheckOption(par.mfx.GopRefDist, 1, 0);
     }
 
+    if (par.m_ext.CO2.IntRefCycleSize != 0 &&
+        par.mfx.GopPicSize != 0 &&
+        par.m_ext.CO2.IntRefCycleSize >= par.mfx.GopPicSize)
+    {
+        // refresh cycle length shouldn't be greater or equal to GOP size
+        par.m_ext.CO2.IntRefType = 0;
+        par.m_ext.CO2.IntRefCycleSize = 0;
+        changed = true;
+    }
+
+    if (par.m_ext.CO3.IntRefCycleDist != 0 &&
+        par.mfx.GopPicSize != 0 &&
+        par.m_ext.CO3.IntRefCycleDist >= par.mfx.GopPicSize)
+    {
+        // refresh period length shouldn't be greater or equal to GOP size
+        par.m_ext.CO2.IntRefType = 0;
+        par.m_ext.CO3.IntRefCycleDist = 0;
+        changed = true;
+    }
+
+    if (par.m_ext.CO3.IntRefCycleDist != 0 &&
+        par.m_ext.CO2.IntRefCycleSize != 0 &&
+        par.m_ext.CO2.IntRefCycleSize > par.m_ext.CO3.IntRefCycleDist)
+    {
+        // refresh period shouldn't be greater than refresh cycle size
+        par.m_ext.CO3.IntRefCycleDist = 0;
+        changed = true;
+    }
+
     sts = CheckProfile(par);
 
     if (sts >= MFX_ERR_NONE)
-        sts = CorrectLevel(par, true);
+    {
+        if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) changed +=1;
+        sts = CorrectLevel(par, !bInit);
+    }
 
     if (sts == MFX_ERR_NONE && changed)
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -1010,6 +1069,13 @@ void SetDefaults(
         if (par.m_ext.CO2.MBBRC == MFX_CODINGOPTION_UNKNOWN)
             par.m_ext.CO2.MBBRC = MFX_CODINGOPTION_ON;
     }
+    else if(par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        if (!par.mfx.Accuracy)
+            par.mfx.Accuracy =  AVBR_ACCURACY_MAX;
+        if (!par.mfx.Convergence)
+            par.mfx.Convergence =  AVBR_CONVERGENCE_MAX;   
+    }
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ && !par.mfx.ICQQuality)
         par.mfx.ICQQuality = 26;
@@ -1094,6 +1160,12 @@ void SetDefaults(
     if (!par.mfx.CodecLevel)
         CorrectLevel(par, false);
 
+    if (par.m_ext.CO2.IntRefType && par.m_ext.CO2.IntRefCycleSize == 0)
+    {
+        // set intra refresh cycle to 1 sec by default
+        par.m_ext.CO2.IntRefCycleSize =
+            (mfxU16)((par.mfx.FrameInfo.FrameRateExtN + par.mfx.FrameInfo.FrameRateExtD - 1) / par.mfx.FrameInfo.FrameRateExtD);
+    }
 
 
 

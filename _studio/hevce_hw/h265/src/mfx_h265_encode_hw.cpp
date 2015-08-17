@@ -202,8 +202,11 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     m_task.Reset(MaxTask(m_vpar));
 
     m_frameOrder = 0;
+    m_baseLayerOrder = 0;
 
     Fill(m_lastTask, IDX_INVALID);
+
+    m_numBuffered = 0;
 
     return qsts;
 }
@@ -406,6 +409,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     m_bs.Unlock();
 
     Fill(m_lastTask, 0xFF);
+    m_numBuffered = 0;
 
     return sts;
 }
@@ -423,6 +427,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 {
     mfxStatus sts = MFX_ERR_NONE;
     Task* task = 0;
+    mfxExtCodingOption2*   extOpt2Init = &m_vpar.m_ext.CO2;
 
     if (surface)
     {
@@ -487,7 +492,25 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     }
 
     task = m_task.Reorder(m_vpar, m_lastTask.m_dpb[1], !surface);
-    MFX_CHECK(task, MFX_ERR_MORE_DATA);
+    if (!task)
+    {
+        if (m_numBuffered && !surface)
+        {
+            task = m_task.New();
+            MFX_CHECK(task, MFX_WRN_DEVICE_BUSY);
+            Zero(*task);
+            task->m_bs = bs;
+            *thread_task = task;
+            task->m_stage |= FRAME_REORDERED;
+            m_task.Submit(task);
+
+            m_numBuffered --;
+            return MFX_ERR_NONE;
+        
+        }
+        else
+            return MFX_ERR_MORE_DATA;
+    }
 
     task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
     task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
@@ -506,139 +529,162 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     ConfigureTask(*task, m_lastTask, m_vpar);
     m_lastTask = *task;
 
+    if (task->m_tid == 0 && extOpt2Init->IntRefType)
+    {
+       if (task->m_frameType & MFX_FRAMETYPE_I)
+            m_baseLayerOrder = 0;
+
+        mfxU32 refreshDimension = extOpt2Init->IntRefType == HORIZ_REFRESH ? CeilDiv(m_vpar.m_ext.HEVCParam.PicHeightInLumaSamples, m_vpar.LCUSize) : CeilDiv(m_vpar.m_ext.HEVCParam.PicWidthInLumaSamples, m_vpar.LCUSize);
+        mfxU16 intraStripeWidthInMBs = (mfxU16)((refreshDimension + extOpt2Init->IntRefCycleSize - 1) / extOpt2Init->IntRefCycleSize);
+
+        task->m_IRState = GetIntraRefreshState(
+            m_vpar,
+            m_baseLayerOrder ++,
+            &(task->m_ctrl),
+            intraStripeWidthInMBs);
+    }
 
     *thread_task = task;
 
     task->m_stage |= FRAME_REORDERED;
     m_task.Submit(task);
 
+    if ((m_numBuffered + 1) < m_vpar.AsyncDepth )
+    {
+        m_numBuffered ++;
+        sts = MFX_ERR_MORE_DATA_SUBMIT_TASK;
+        task->m_bs = 0;
+    }
 
     return sts;
 }
 
 mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*uid_a*/)
 {
-    assert(thread_task);
-    Task* task = 0;
+    Task* taskForExecute = m_task.GetSubmittedTask();
+    Task* inputTask = (Task*) thread_task;
     mfxStatus sts = MFX_ERR_NONE;
 
-    while ((task= m_task.GetSubmittedTask()) != 0)
+    if (inputTask == taskForExecute && taskForExecute->m_surf)
    {
         mfxHDLPair surfaceHDL = {};
-
-        task->m_initial_cpb_removal_delay  = m_hrd.GetInitCpbRemovalDelay();
-        task->m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
+        
+        taskForExecute->m_initial_cpb_removal_delay  = m_hrd.GetInitCpbRemovalDelay();
+        taskForExecute->m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
 
 #ifndef HEADER_PACKING_TEST
-        sts = GetNativeHandleToRawSurface(m_core, m_vpar, *task, surfaceHDL.first);
+        sts = GetNativeHandleToRawSurface(m_core, m_vpar, *taskForExecute, surfaceHDL.first);
         MFX_CHECK_STS(sts);
 
-        sts = CopyRawSurfaceToVideoMemory(m_core, m_vpar, *task);
+        sts = CopyRawSurfaceToVideoMemory(m_core, m_vpar, *taskForExecute);
         MFX_CHECK_STS(sts);
 #endif
-        sts = m_ddi->Execute(*task, surfaceHDL.first);
+        sts = m_ddi->Execute(*taskForExecute, surfaceHDL.first);
         MFX_CHECK_STS(sts);
 
-        task->m_stage |= FRAME_SUBMITTED;
-        m_task.SubmitForQuery(task);
+        taskForExecute->m_stage |= FRAME_SUBMITTED;
+        m_task.SubmitForQuery(taskForExecute);
     }
+   
+   if (inputTask->m_bs)
+   {
+        mfxBitstream* bs = inputTask->m_bs;
+        Task* taskForQuery = m_task.GetTaskForQuery();
+        MFX_CHECK (taskForQuery, MFX_ERR_UNDEFINED_BEHAVIOR);
+        
+        
 
-    task = (Task*)thread_task;
-    MFX_CHECK (m_task.isSubmittedForQuery(task), MFX_ERR_UNDEFINED_BEHAVIOR);
-    mfxBitstream* bs = task->m_bs;
 
+        sts = m_ddi->QueryStatus(*taskForQuery);
 
-    //query
-    {
-        sts = m_ddi->QueryStatus(*task);
         MFX_CHECK_STS(sts);
-
+        
         //update bitstream
-        if (task->m_bsDataLength)
+        if (taskForQuery->m_bsDataLength)
         {
             mfxFrameAllocator & fa = m_core.FrameAllocator();
             mfxFrameData codedFrame = {};
             mfxU32 bytesAvailable = bs->MaxLength - bs->DataOffset - bs->DataLength;
-            mfxU32 bytes2copy     = task->m_bsDataLength;
+            mfxU32 bytes2copy     = taskForQuery->m_bsDataLength;
 
             assert(bytesAvailable > bytes2copy);
             bytes2copy = MFX_MIN(bytes2copy, bytesAvailable);
 
-            sts = fa.Lock(fa.pthis, task->m_midBs, &codedFrame);
+            sts = fa.Lock(fa.pthis, taskForQuery->m_midBs, &codedFrame);
             MFX_CHECK(codedFrame.Y, MFX_ERR_LOCK_MEMORY);
 
             memcpy_s(bs->Data + bs->DataOffset + bs->DataLength, bytes2copy, codedFrame.Y, bytes2copy);
 
-            sts = fa.Unlock(fa.pthis, task->m_midBs, &codedFrame);
+            sts = fa.Unlock(fa.pthis, taskForQuery->m_midBs, &codedFrame);
             MFX_CHECK_STS(sts);
 
             bs->DataLength += bytes2copy;
 
-            m_hrd.RemoveAccessUnit(bytes2copy, !!(task->m_frameType & MFX_FRAMETYPE_IDR));
+            m_hrd.RemoveAccessUnit(bytes2copy, !!(taskForQuery->m_frameType & MFX_FRAMETYPE_IDR));
 
-            bs->TimeStamp       = task->m_surf->Data.TimeStamp;
+            bs->TimeStamp       = taskForQuery->m_surf->Data.TimeStamp;
             //bs->DecodeTimeStamp = MFX_TIMESTAMP_UNKNOWN;
             bs->PicStruct       = MFX_PICSTRUCT_PROGRESSIVE;
-            bs->FrameType       = task->m_frameType;
+            bs->FrameType       = taskForQuery->m_frameType;
         }
 
-        task->m_stage |= FRAME_ENCODED;
-    }
+        taskForQuery->m_stage |= FRAME_ENCODED;
 
-    return sts;
-}
+        Task& task = *taskForQuery;
 
-mfxStatus Plugin::FreeResources(mfxThreadTask thread_task, mfxStatus /*sts*/)
-{
-    assert(thread_task);
-    Task& task = *(Task*)thread_task;
+        ReleaseResource(m_bs,  task.m_midBs);
 
-    ReleaseResource(m_bs,  task.m_midBs);
-
-    if (!m_vpar.RawRef)
-    {
-        m_core.DecreaseReference(&task.m_surf->Data);
-        ReleaseResource(m_raw, task.m_midRaw);
-    }
-
-    if (!(task.m_frameType & MFX_FRAMETYPE_REF))
-    {
-        ReleaseResource(m_rec, task.m_midRec);
-
-        if (m_vpar.RawRef)
+        if (!m_vpar.RawRef)
         {
             m_core.DecreaseReference(&task.m_surf->Data);
             ReleaseResource(m_raw, task.m_midRaw);
         }
-    }
-    else if (task.m_stage != STAGE_READY)
-    {
-        ReleaseResource(m_rec, task.m_midRec);
 
-        for (mfxU16 i = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], i); i ++)
-            if (task.m_dpb[TASK_DPB_AFTER][i].m_idxRec == task.m_idxRec)
-                Fill(task.m_dpb[TASK_DPB_AFTER][i], IDX_INVALID);
-    }
-
-    for (mfxU16 i = 0, j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_BEFORE], i); i ++)
-    {
-        for (j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j); j ++)
-            if (task.m_dpb[TASK_DPB_BEFORE][i].m_idxRec == task.m_dpb[TASK_DPB_AFTER][j].m_idxRec)
-                break;
-
-        if (isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j))
+        if (!(task.m_frameType & MFX_FRAMETYPE_REF))
         {
-            ReleaseResource(m_rec, task.m_dpb[TASK_DPB_BEFORE][i].m_midRec);
+            ReleaseResource(m_rec, task.m_midRec);
 
             if (m_vpar.RawRef)
             {
-                m_core.DecreaseReference(&task.m_dpb[TASK_DPB_BEFORE][i].m_surf->Data);
-                ReleaseResource(m_raw, task.m_dpb[TASK_DPB_BEFORE][i].m_midRaw);
+                m_core.DecreaseReference(&task.m_surf->Data);
+                ReleaseResource(m_raw, task.m_midRaw);
             }
         }
-    }
+        else if (task.m_stage != STAGE_READY)
+        {
+            ReleaseResource(m_rec, task.m_midRec);
 
-    m_task.Ready(&task);
+            for (mfxU16 i = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], i); i ++)
+                if (task.m_dpb[TASK_DPB_AFTER][i].m_idxRec == task.m_idxRec)
+                    Fill(task.m_dpb[TASK_DPB_AFTER][i], IDX_INVALID);
+        }
+
+        for (mfxU16 i = 0, j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_BEFORE], i); i ++)
+        {
+            for (j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j); j ++)
+                if (task.m_dpb[TASK_DPB_BEFORE][i].m_idxRec == task.m_dpb[TASK_DPB_AFTER][j].m_idxRec)
+                    break;
+
+            if (isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j))
+            {
+                ReleaseResource(m_rec, task.m_dpb[TASK_DPB_BEFORE][i].m_midRec);
+
+                if (m_vpar.RawRef)
+                {
+                    m_core.DecreaseReference(&task.m_dpb[TASK_DPB_BEFORE][i].m_surf->Data);
+                    ReleaseResource(m_raw, task.m_dpb[TASK_DPB_BEFORE][i].m_midRaw);
+                }
+            }
+        }
+
+        m_task.Ready(&task);
+   }
+   return sts;
+}
+
+mfxStatus Plugin::FreeResources(mfxThreadTask /*thread_task*/, mfxStatus /*sts*/)
+{
+
 
     return MFX_ERR_NONE;
 }
