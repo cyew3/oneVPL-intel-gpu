@@ -834,6 +834,7 @@ mfxStatus H265Encoder::Init_Internal()
 
     // init lookup table for 2*log2(x)+2
     m_videoParam.m_logMvCostTable[(1 << 15)] = 1;
+    m_videoParam.m_logMvCostTable[0] = 32;
     Ipp64f log2reciproc = 2 / log(2.0);
     for (Ipp32s i = 1; i < (1 << 15); i++) {
         m_videoParam.m_logMvCostTable[(1 << 15) + i] = m_videoParam.m_logMvCostTable[(1 << 15) - i] = (Ipp8u)(log(i + 1.0) * log2reciproc + 2);
