@@ -899,6 +899,19 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
 
                 break;
 
+            case MFX_FOURCC_P010:
+
+                roi.width <<= 1;
+
+                sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)sLockRect.pData, srcPitch, roi);
+                MFX_CHECK_STS(sts);
+
+                roi.height >>= 1;
+
+                sts = pFastCopy->Copy(pDst->Data.UV, dstPitch, (mfxU8 *)sLockRect.pData + sSurfDesc.Height * srcPitch, srcPitch, roi);
+                MFX_CHECK_STS(sts);
+
+                break;
             case MFX_FOURCC_YV12:
 
                 sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)sLockRect.pData, srcPitch, roi);
@@ -1003,6 +1016,18 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         switch (pDst->Info.FourCC)
         {
         case MFX_FOURCC_NV12:
+
+            ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
+
+            roi.height >>= 1;
+
+            ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, pDst->Data.UV, dstPitch, roi);
+
+            break;
+
+        case MFX_FOURCC_P010:
+
+            roi.width <<= 1;
 
             ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
 
@@ -1178,6 +1203,17 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
 
                 break;
 
+            case MFX_FOURCC_P010:
+
+                roi.width <<= 1;
+
+                ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)sLockRect.pData, dstPitch, roi);
+
+                roi.height >>= 1;
+
+                ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, (mfxU8 *)sLockRect.pData + sSurfDesc.Height * dstPitch, dstPitch, roi);
+
+                break;
             case MFX_FOURCC_YV12:
 
                 ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)sLockRect.pData, dstPitch, roi);

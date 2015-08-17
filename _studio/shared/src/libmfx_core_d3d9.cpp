@@ -1057,6 +1057,20 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
 
                     break;
 
+                case MFX_FOURCC_P010:
+
+                    roi.width <<= 1;
+
+                    sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)sLockRect.pBits, srcPitch, roi);
+                    MFX_CHECK_STS(sts);
+
+                    roi.height >>= 1;
+
+                    sts = pFastCopy->Copy(pDst->Data.UV, dstPitch, (mfxU8 *)sLockRect.pBits + sSurfDesc.Height * srcPitch, srcPitch, roi);
+                    MFX_CHECK_STS(sts);
+
+                    break;
+
                 case MFX_FOURCC_YV12:
 
                     sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)sLockRect.pBits, srcPitch, roi);
@@ -1180,6 +1194,18 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
 
                 ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
                 
+                roi.height >>= 1;
+
+                ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, pDst->Data.UV, dstPitch, roi);
+
+                break;
+
+            case MFX_FOURCC_P010:
+
+                roi.width <<= 1;
+
+                ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
+
                 roi.height >>= 1;
 
                 ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, pDst->Data.UV, dstPitch, roi);
@@ -1321,7 +1347,17 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
                 ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, (mfxU8 *)sLockRect.pBits + sSurfDesc.Height * dstPitch, dstPitch, roi);
 
                 break;
+            case MFX_FOURCC_P010:
 
+                roi.width <<= 1;
+
+                ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)sLockRect.pBits, dstPitch, roi);
+
+                roi.height >>= 1;
+
+                ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, (mfxU8 *)sLockRect.pBits + sSurfDesc.Height * dstPitch, dstPitch, roi);
+
+                break;
             case MFX_FOURCC_YV12:
 
                 ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)sLockRect.pBits, dstPitch, roi);
