@@ -133,7 +133,10 @@ typedef enum
     /* threading statuses */
     MFX_TASK_DONE = MFX_ERR_NONE,               /* task has been completed */
     MFX_TASK_WORKING                    = 8,    /* there is some more work to do */
-    MFX_TASK_BUSY                       = 9     /* task is waiting for resources */
+    MFX_TASK_BUSY                       = 9,    /* task is waiting for resources */
+
+    /* plug-in statuses */
+    MFX_ERR_MORE_DATA_SUBMIT_TASK       = -10000, /* return MFX_ERR_MORE_DATA but submit internal asynchronous task */
 
 } mfxStatus;
 
