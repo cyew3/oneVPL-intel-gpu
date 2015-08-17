@@ -1662,7 +1662,7 @@ DdiTaskIter MfxHwH264Encode::FindFrameToStartEncode(
 {
     if (/*video.mfx.RateControlMethod != MFX_RATECONTROL_LA &&*/
         video.mfx.RateControlMethod != MFX_RATECONTROL_CQP ||
-        video.AsyncDepth == 1 || video.calcParam.cqpHrdMode)
+        video.AsyncDepth == 1)
         return begin;
 
     // in case of CQP optmization is applied

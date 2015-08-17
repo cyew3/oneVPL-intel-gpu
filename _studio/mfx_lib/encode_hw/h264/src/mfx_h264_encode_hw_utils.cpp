@@ -3529,21 +3529,6 @@ mfxU32 LookAheadCrfBrc::Report(mfxU32 /*frameType*/, mfxU32 /*dataLength*/, mfxU
 
 void Hrd::Setup(MfxVideoParam const & par)
 {
-    if (par.calcParam.cqpHrdMode)
-    {
-        // special CQP HRD mode - initialize with decorative parameters
-        m_bIsHrdRequired = true;
-        m_bitrate  = GetMaxBitrateValue(par.calcParam.decorativeHrdParam.maxKbps) << 6;
-        m_hrdIn90k = mfxU32(8000.0 * par.calcParam.decorativeHrdParam.bufferSizeInKB / m_bitrate * 90000.0);
-        m_tick     = 0.5 * par.mfx.FrameInfo.FrameRateExtD / par.mfx.FrameInfo.FrameRateExtN;
-        m_taf_prv = 0.0;
-        m_trn_cur = double(8000) * par.calcParam.decorativeHrdParam.initialDelayInKB / m_bitrate;
-        m_trn_cur = GetInitCpbRemovalDelay() / 90000.0;
-        m_rcMethod = par.calcParam.cqpHrdMode == 1 ? MFX_RATECONTROL_CBR : MFX_RATECONTROL_VBR;
-
-        return;
-    }
-
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
         || par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ
         || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
@@ -4746,11 +4731,11 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         else if (sts > MFX_ERR_NONE)
             checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
-        if (video.calcParam.cqpHrdMode)
-        {
-            MFX_CHECK_NULL_PTR1(ctrl);
-            MFX_CHECK(ctrl->QP > 0 && ctrl->QP <= 51, MFX_ERR_INVALID_VIDEO_PARAM);
-        }
+            if (video.calcParam.cqpHrdMode)
+            {
+                MFX_CHECK_NULL_PTR1(ctrl);
+                MFX_CHECK(ctrl->QP > 0 && ctrl->QP <= 51, MFX_ERR_INVALID_VIDEO_PARAM);
+            }
     }
 
     if (ctrl != 0 && ctrl->NumPayload > 0)
@@ -5336,6 +5321,9 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
         IsOn(extOpt->VuiNalHrdParameters) ||
         IsOn(extOpt->VuiVclHrdParameters) ||
         IsOn(extOpt->PicTimingSEI);
+
+    if (video.calcParam.cqpHrdMode)
+        needBufferingPeriod = needPicTimingSei = 0; // in CQP HRD mode application inserts BP and PT SEI itself
 
     mfxU32 needAtLeastOneSei =
         (task.m_ctrl.Payload && task.m_ctrl.NumPayload > 0) ||

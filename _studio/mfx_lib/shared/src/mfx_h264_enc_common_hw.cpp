@@ -2666,6 +2666,25 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
+    if (par.calcParam.cqpHrdMode)
+    {
+        if (IsOn(extOpt->RecoveryPointSEI))
+        {
+            changed = true;
+            extOpt->RecoveryPointSEI = MFX_CODINGOPTION_OFF;
+        }
+        if (IsOn(extOpt->PicTimingSEI))
+        {
+            changed = true;
+            extOpt->PicTimingSEI = MFX_CODINGOPTION_OFF;
+        }
+        if (extOpt2->BufferingPeriodSEI != MFX_BPSEI_DEFAULT)
+        {
+            changed = true;
+            extOpt2->BufferingPeriodSEI = MFX_BPSEI_DEFAULT;
+        }
+    }
+
     if (IsOn(extOpt->VuiNalHrdParameters) &&
         par.mfx.RateControlMethod != 0 &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_CBR &&
@@ -5929,7 +5948,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         calcParam.decorativeHrdParam.bufferSizeInKB  = calcParam.bufferSizeInKB;
         calcParam.decorativeHrdParam.initialDelayInKB = mfx.InitialDelayInKB * multiplier;
         calcParam.decorativeHrdParam.targetKbps       = mfx.TargetKbps       * multiplier;
-        calcParam.decorativeHrdParam.maxKbps          = mfx.MaxKbps > 0 ? mfx.TargetKbps       * multiplier : calcParam.decorativeHrdParam.targetKbps;
+        calcParam.decorativeHrdParam.maxKbps          = mfx.MaxKbps > 0 ? mfx.MaxKbps       * multiplier : calcParam.decorativeHrdParam.targetKbps;
     }
 
     if (mfx.RateControlMethod != MFX_RATECONTROL_CQP
