@@ -434,8 +434,10 @@ mfxStatus SW_D3D11_Capturer::GetDesktopScreenOperation(mfxFrameSurface1 *surface
             mfxFrameSurface1 rgb_surface = *surface_work;
             rgb_surface.Info.FourCC = MFX_FOURCC_RGB4;
             rgb_surface.Info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            rgb_surface.Info.Width  = rgb_surface.Info.CropW = (mfxU16) texDesc.Width;
-            rgb_surface.Info.Height = rgb_surface.Info.CropH = (mfxU16) texDesc.Height;
+            const mfxU16 w = IPP_MIN((mfxU16) texDesc.Width, surface_work->Info.Width);
+            const mfxU16 h = IPP_MIN((mfxU16) texDesc.Height, surface_work->Info.Height);
+            rgb_surface.Info.Width  = rgb_surface.Info.CropW = w;
+            rgb_surface.Info.Height = rgb_surface.Info.CropH = h;
             rgb_surface.Data.PitchHigh = (mfxU16)(lockedRect.RowPitch / (1 << 16));
             rgb_surface.Data.PitchLow  = (mfxU16)(lockedRect.RowPitch % (1 << 16));
             rgb_surface.Data.B = (mfxU8 *)lockedRect.pData;
