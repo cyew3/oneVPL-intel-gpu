@@ -9,6 +9,7 @@
 */
 #include "mfx_h265_encode_hw.h"
 #include <assert.h>
+#include <vm_time.h>
 
 namespace MfxHwH265Encode
 {
@@ -386,17 +387,42 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     sts = CheckHeaders(m_vpar, m_caps);
     MFX_CHECK_STS(sts);
 
+    // waiting for submitted in driver tasks
+    for (;;)
+    {
+        Task* task = m_task.GetTaskForQuery();
+        if (!task)
+            break;
+        mfxStatus mfxSts = m_ddi->QueryStatus(*task);
+        if (mfxSts == MFX_WRN_DEVICE_BUSY)
+        {
+            vm_time_sleep(0);
+            continue;       
+        }
+        task->m_stage = STAGE_READY;
+        FreeTask(*task);
+        m_task.Ready(task);
+    }
+    // reorder other tasks
     for (;;)
     {
         Task* pTask = m_task.Reorder(m_vpar, m_lastTask.m_dpb[0], true);
-
         if (!pTask)
             break;
-
-        m_core.DecreaseReference(&pTask->m_surf->Data);
-        pTask->m_stage = STAGE_READY;
-        m_task.Ready(pTask);
     }
+    // free reordered tasks
+    for (;;)
+    {
+        Task* task = m_task.GetSubmittedTask();
+        if (!task)
+            break;
+
+       m_task.SubmitForQuery(task);
+       task->m_stage = STAGE_READY;
+       if (task->m_surf)
+            FreeTask(*task);
+       m_task.Ready(task);
+    }    
 
     m_hrd.Reset(m_vpar.m_sps);
     m_ddi->Reset(m_vpar);
@@ -629,62 +655,70 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
         }
 
         taskForQuery->m_stage |= FRAME_ENCODED;
+        FreeTask(*taskForQuery);
+        m_task.Ready(taskForQuery);
 
-        Task& task = *taskForQuery;
-
-        ReleaseResource(m_bs,  task.m_midBs);
-
-        if (!m_vpar.RawRef)
-        {
-            m_core.DecreaseReference(&task.m_surf->Data);
-            ReleaseResource(m_raw, task.m_midRaw);
+        if (!inputTask->m_surf)
+        {            
+            //formal task
+             m_task.SubmitForQuery(inputTask);
+             m_task.Ready(inputTask);        
         }
-
-        if (!(task.m_frameType & MFX_FRAMETYPE_REF))
-        {
-            ReleaseResource(m_rec, task.m_midRec);
-
-            if (m_vpar.RawRef)
-            {
-                m_core.DecreaseReference(&task.m_surf->Data);
-                ReleaseResource(m_raw, task.m_midRaw);
-            }
-        }
-        else if (task.m_stage != STAGE_READY)
-        {
-            ReleaseResource(m_rec, task.m_midRec);
-
-            for (mfxU16 i = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], i); i ++)
-                if (task.m_dpb[TASK_DPB_AFTER][i].m_idxRec == task.m_idxRec)
-                    Fill(task.m_dpb[TASK_DPB_AFTER][i], IDX_INVALID);
-        }
-
-        for (mfxU16 i = 0, j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_BEFORE], i); i ++)
-        {
-            for (j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j); j ++)
-                if (task.m_dpb[TASK_DPB_BEFORE][i].m_idxRec == task.m_dpb[TASK_DPB_AFTER][j].m_idxRec)
-                    break;
-
-            if (isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j))
-            {
-                ReleaseResource(m_rec, task.m_dpb[TASK_DPB_BEFORE][i].m_midRec);
-
-                if (m_vpar.RawRef)
-                {
-                    m_core.DecreaseReference(&task.m_dpb[TASK_DPB_BEFORE][i].m_surf->Data);
-                    ReleaseResource(m_raw, task.m_dpb[TASK_DPB_BEFORE][i].m_midRaw);
-                }
-            }
-        }
-
-        m_task.Ready(&task);
    }
    return sts;
 }
 
 mfxStatus Plugin::FreeResources(mfxThreadTask /*thread_task*/, mfxStatus /*sts*/)
 {
+    return MFX_ERR_NONE;
+}
+mfxStatus Plugin::FreeTask(Task &task)
+{
 
+    ReleaseResource(m_bs,  task.m_midBs);
+
+    if (!m_vpar.RawRef)
+    {
+        m_core.DecreaseReference(&task.m_surf->Data);
+        ReleaseResource(m_raw, task.m_midRaw);
+    }
+
+    if (!(task.m_frameType & MFX_FRAMETYPE_REF))
+    {
+        ReleaseResource(m_rec, task.m_midRec);
+
+        if (m_vpar.RawRef)
+        {
+            m_core.DecreaseReference(&task.m_surf->Data);
+            ReleaseResource(m_raw, task.m_midRaw);
+        }
+    }
+    else if (task.m_stage != STAGE_READY)
+    {
+        ReleaseResource(m_rec, task.m_midRec);
+
+        for (mfxU16 i = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], i); i ++)
+            if (task.m_dpb[TASK_DPB_AFTER][i].m_idxRec == task.m_idxRec)
+                Fill(task.m_dpb[TASK_DPB_AFTER][i], IDX_INVALID);
+    }
+
+    for (mfxU16 i = 0, j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_BEFORE], i); i ++)
+    {
+        for (j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j); j ++)
+            if (task.m_dpb[TASK_DPB_BEFORE][i].m_idxRec == task.m_dpb[TASK_DPB_AFTER][j].m_idxRec)
+                break;
+
+        if (isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j))
+        {
+            ReleaseResource(m_rec, task.m_dpb[TASK_DPB_BEFORE][i].m_midRec);
+
+            if (m_vpar.RawRef)
+            {
+                m_core.DecreaseReference(&task.m_dpb[TASK_DPB_BEFORE][i].m_surf->Data);
+                ReleaseResource(m_raw, task.m_dpb[TASK_DPB_BEFORE][i].m_midRaw);
+            }
+        }
+    }
 
     return MFX_ERR_NONE;
 }

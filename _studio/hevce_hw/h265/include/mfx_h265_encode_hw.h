@@ -93,6 +93,8 @@ protected:
     bool m_createdByDispatcher;
     MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
 
+    mfxStatus FreeTask(Task& task);
+
     std::auto_ptr<DriverEncoder>    m_ddi;
     MFXCoreInterface                m_core;
 
