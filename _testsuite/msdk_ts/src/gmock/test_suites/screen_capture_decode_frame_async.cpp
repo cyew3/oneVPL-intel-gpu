@@ -221,7 +221,7 @@ private:
     enum
     {
         CHECK_MEMORY = 1,
-        ENABLE_DIRTY_RECT = 1,
+        ENABLE_DIRTY_RECT = 2,
     };
 
     struct tc_struct
