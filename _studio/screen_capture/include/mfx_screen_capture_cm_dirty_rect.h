@@ -40,7 +40,24 @@ struct TaskContext
         mfxU8*         physBuffer;
         mfxU32         physBufferSz;
         mfxU32         physBufferPitch;
+        mfxU32         width;
+        mfxU32         height;
+        mfxU8**        roiMAP;
     } roiMap;
+};
+
+struct intRect
+{
+    mfxU32  Left;
+    mfxU32  Top;
+    mfxU32  Right;
+    mfxU32  Bottom;
+};
+
+struct intDirtyRect
+{
+    mfxU16      NumRect;
+    intRect*    Rects;
 };
 
 class CmDirtyRectFilter : public DirtyRectFilter
