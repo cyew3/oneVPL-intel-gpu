@@ -7,7 +7,7 @@
 //
 */
 
-#ifndef __dirty_rect_genx_bdw__
-#define __dirty_rect_genx_bdw__
-extern const unsigned char dirty_rect_genx_bdw[19761];
+#ifndef __dirty_rect_genx_jit__
+#define __dirty_rect_genx_jit__
+extern const unsigned char dirty_rect_genx_jit[13823];
 #endif

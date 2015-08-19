@@ -199,7 +199,10 @@ typedef enum _GPU_PLATFORM{
     PLATFORM_INTEL_HSW         = 3,   //Haswell
     PLATFORM_INTEL_BDW         = 4,   //Broadwell
     PLATFORM_INTEL_VLV         = 5,   //ValleyView
-    PLATFORM_INTEL_CHV         = 6    //CherryView
+    PLATFORM_INTEL_CHV         = 6,   //CherryView
+    PLATFORM_INTEL_SKL         = 7,	  //SKL
+    PLATFORM_INTEL_BXT         = 8,	  //Broxton
+    PLATFORM_INTEL_CNL         = 9,	  //CNL
 } GPU_PLATFORM;
 
 typedef enum _GPU_GT_PLATFORM{

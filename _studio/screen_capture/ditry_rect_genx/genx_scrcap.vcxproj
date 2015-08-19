@@ -72,7 +72,7 @@ del embed_isa.obj
 rem for HSW
 SET CM_RT_PLATFORM=hsw
 copy /y dirty_rect_genx.cpp dirty_rect_genx_hsw.cpp
-icl /c /Qxcm /Qxcm_jit_target=gen7_5 dirty_rect_genx_hsw.cpp /mCM_print_asm_count
+icl /c /Qxcm_jit_target=gen7_5 /Qxcm /Qxcm_release dirty_rect_genx_hsw.cpp /mCM_print_asm_count
 embed_isa dirty_rect_genx_hsw.isa
 rem del dirty_rect_genx_hsw.cpp
 del dirty_rect_genx_hsw.isa
@@ -86,7 +86,7 @@ move dirty_rect_genx_hsw.cpp dirty_rect_genx_hsw_isa.cpp
 rem for BDW
 SET CM_RT_PLATFORM=bdw
 copy /y dirty_rect_genx.cpp dirty_rect_genx_bdw.cpp
-icl /c /Qxcm /Qxcm_jit_target=gen8 dirty_rect_genx_bdw.cpp /mCM_print_asm_count
+icl /c /Qxcm_jit_target=gen8 /Qxcm /Qxcm_release dirty_rect_genx_bdw.cpp /mCM_print_asm_count
 embed_isa dirty_rect_genx_bdw.isa
 rem dirty_rect_genx_bdw.cpp
 del dirty_rect_genx_bdw.isa
@@ -96,6 +96,34 @@ del dirty_rect_genx_bdw*.isaasm
 del dirty_rect_genx_bdw*.dat
 move dirty_rect_genx_bdw.h dirty_rect_genx_bdw_isa.h
 move dirty_rect_genx_bdw.cpp dirty_rect_genx_bdw_isa.cpp
+
+rem for SKL
+SET CM_RT_PLATFORM=skl
+copy /y dirty_rect_genx.cpp dirty_rect_genx_skl.cpp
+icl /c /Qxcm_jit_target=gen9 /Qxcm /Qxcm_release dirty_rect_genx_skl.cpp /mCM_print_asm_count
+embed_isa dirty_rect_genx_skl.isa
+rem dirty_rect_genx_skl.cpp
+del dirty_rect_genx_skl.isa
+del dirty_rect_genx_skl.obj
+del dirty_rect_genx_skl*.asm
+del dirty_rect_genx_skl*.isaasm
+del dirty_rect_genx_skl*.dat
+move dirty_rect_genx_skl.h dirty_rect_genx_skl_isa.h
+move dirty_rect_genx_skl.cpp dirty_rect_genx_skl_isa.cpp
+
+rem general for all (JIT)
+SET CM_RT_PLATFORM=bdw
+copy /y dirty_rect_genx.cpp dirty_rect_genx_jit.cpp
+icl /c /Qxcm /Qxcm_release dirty_rect_genx_jit.cpp /mCM_print_asm_count
+embed_isa dirty_rect_genx_jit.isa
+rem dirty_rect_genx_jit.cpp
+del dirty_rect_genx_jit.isa
+del dirty_rect_genx_jit.obj
+del dirty_rect_genx_jit*.asm
+del dirty_rect_genx_jit*.isaasm
+del dirty_rect_genx_jit*.dat
+move dirty_rect_genx_jit.h dirty_rect_genx_jit_isa.h
+move dirty_rect_genx_jit.cpp dirty_rect_genx_jit_isa.cpp
 
 del kernel_mapping.txt
 del embed_isa.exe</Command>

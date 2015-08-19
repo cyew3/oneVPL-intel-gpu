@@ -19,6 +19,9 @@ File Name: mfx_screen_capture_cm_dirty_rect.cpp
 #include <assert.h>
 
 #include "dirty_rect_genx_hsw_isa.h"
+#include "dirty_rect_genx_bdw_isa.h"
+#include "dirty_rect_genx_skl_isa.h"
+#include "dirty_rect_genx_jit_isa.h"
 
 #define H_BLOCKS 16
 #define W_BLOCKS 16
@@ -125,15 +128,59 @@ mfxStatus CmDirtyRectFilter::Init(const mfxVideoParam* par, bool isSysMem, bool 
         return MFX_ERR_DEVICE_FAILED;
 
     bool jit = true;
+    const unsigned char * buffer = dirty_rect_genx_jit;
+    unsigned int len = sizeof(dirty_rect_genx_jit);
+
+    GPU_PLATFORM platform = PLATFORM_INTEL_UNKNOWN;
+    size_t cap_size = sizeof(platform);
+    m_pCMDevice->GetCaps(CAP_GPU_PLATFORM, cap_size, &platform);
+
+    switch ( platform )
+    {
+        case PLATFORM_INTEL_HSW:
+            jit = false;
+            buffer = dirty_rect_genx_hsw;
+            len = sizeof(dirty_rect_genx_hsw);
+            break;
+
+        case PLATFORM_INTEL_BDW:
+        case PLATFORM_INTEL_CHV:
+            jit = false;
+            buffer = dirty_rect_genx_bdw;
+            len = sizeof(dirty_rect_genx_bdw);
+            break;
+
+        case PLATFORM_INTEL_SKL:
+        case PLATFORM_INTEL_BXT:
+            jit = false;
+            buffer = dirty_rect_genx_skl;
+            len = sizeof(dirty_rect_genx_skl);
+            break;
+
+        case PLATFORM_INTEL_VLV:
+        case PLATFORM_INTEL_SNB:
+        case PLATFORM_INTEL_IVB:
+        case PLATFORM_INTEL_CNL:
+        default:
+            break;
+    }
 
     CmProgram * pProgram = NULL;
     if(jit)
-        result = ::ReadProgramJit(m_pCMDevice, pProgram, dirty_rect_genx_hsw, sizeof(dirty_rect_genx_hsw));
+        result = ::ReadProgramJit(m_pCMDevice, pProgram, buffer, len);
     else
-        result = ::ReadProgram(m_pCMDevice, pProgram, dirty_rect_genx_hsw, sizeof(dirty_rect_genx_hsw));
+        result = ::ReadProgram(m_pCMDevice, pProgram, buffer, len);
 
     if(CM_SUCCESS != result || 0 == pProgram)
-        return MFX_ERR_DEVICE_FAILED;
+    {
+        jit = true;
+        buffer = dirty_rect_genx_jit;
+        len = sizeof(dirty_rect_genx_jit);
+
+        result = ::ReadProgramJit(m_pCMDevice, pProgram, buffer, len);
+        if(CM_SUCCESS != result || 0 == pProgram)
+            return MFX_ERR_DEVICE_FAILED;
+    }
 
     m_vPrograms.push_back(pProgram);
 

@@ -23,6 +23,8 @@
     <ClInclude Include="..\shared\include\mfx_utils.h" />
     <ClInclude Include="ditry_rect_genx\dirty_rect_genx_bdw_isa.h" />
     <ClInclude Include="ditry_rect_genx\dirty_rect_genx_hsw_isa.h" />
+    <ClInclude Include="ditry_rect_genx\dirty_rect_genx_jit_isa.h" />
+    <ClInclude Include="ditry_rect_genx\dirty_rect_genx_skl_isa.h" />
     <ClInclude Include="include\mfx_screen_capture_cm_dirty_rect.h" />
     <ClInclude Include="include\mfx_screen_capture_d3d11.h" />
     <ClInclude Include="include\mfx_screen_capture_d3d9.h" />
@@ -43,6 +45,8 @@
     </ClCompile>
     <ClCompile Include="ditry_rect_genx\dirty_rect_genx_bdw_isa.cpp" />
     <ClCompile Include="ditry_rect_genx\dirty_rect_genx_hsw_isa.cpp" />
+    <ClCompile Include="ditry_rect_genx\dirty_rect_genx_jit_isa.cpp" />
+    <ClCompile Include="ditry_rect_genx\dirty_rect_genx_skl_isa.cpp" />
     <ClCompile Include="src\mfx_screen_capture_cm_dirty_rect.cpp" />
     <ClCompile Include="src\mfx_screen_capture_d3d11.cpp" />
     <ClCompile Include="src\mfx_screen_capture_d3d9.cpp" />
