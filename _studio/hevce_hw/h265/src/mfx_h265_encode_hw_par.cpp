@@ -875,6 +875,12 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
         changed ++;
     }
+    if (par.mfx.GopRefDist > 1 && par.mfx.NumRefFrame == 1)
+    {
+        par.mfx.NumRefFrame = 2;
+        changed ++;    
+    }
+
     if (par.m_ext.CO3.PRefType == MFX_P_REF_PYRAMID &&  par.mfx.GopRefDist > 1)
     {
         par.m_ext.CO3.PRefType = MFX_P_REF_DEFAULT;
@@ -1100,7 +1106,7 @@ void SetDefaults(
 
     if (!par.mfx.GopRefDist)
     {
-        if (par.isTL() || hwCaps.SliceIPOnly || !par.NumRefLX[1] || par.mfx.GopPicSize < 3)
+        if (par.isTL() || hwCaps.SliceIPOnly || !par.NumRefLX[1] || par.mfx.GopPicSize < 3 || par.mfx.NumRefFrame == 1)
             par.mfx.GopRefDist = 1;
         else
             par.mfx.GopRefDist = Min<mfxU16>(par.mfx.GopPicSize - 1, 4);
