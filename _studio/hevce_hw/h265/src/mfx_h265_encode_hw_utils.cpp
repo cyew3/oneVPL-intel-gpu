@@ -460,6 +460,25 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
         memcpy_s(pSPSPPS->PPSBuffer, len, buf, len);
         pSPSPPS->PPSBufSize = (mfxU16)len;
     }
+    mfxExtCodingOptionVPS * pVPS= (mfxExtCodingOptionVPS *)GetExtendedBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_CODING_OPTION_VPS);
+    if (pVPS && !query)
+    {
+        MFX_CHECK(pVPS->VPSBuffer, MFX_ERR_NULL_PTR);
+
+        HeaderPacker packer;
+        mfxU8* buf = 0;
+        mfxU32 len = 0;
+
+        sts = packer.Reset(*this);
+        MFX_CHECK_STS(sts);
+
+        packer.GetVPS(buf, len);
+        MFX_CHECK(pVPS->VPSBufSize >= len, MFX_ERR_NOT_ENOUGH_BUFFER);
+
+        memcpy_s(pVPS->VPSBuffer, len, buf, len);
+        pVPS->VPSBufSize = (mfxU16)len;
+    }
+
 
     return sts;
 }
