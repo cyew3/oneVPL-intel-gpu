@@ -283,6 +283,8 @@ protected:
 
     bool disableMVoutPreENC;
     bool disableMBStatPreENC;
+
+    mfxU32 m_refFrameCounter;
 };
 
 #endif // __PIPELINE_ENCODE_H__

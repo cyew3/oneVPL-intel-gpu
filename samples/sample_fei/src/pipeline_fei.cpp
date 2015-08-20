@@ -734,6 +734,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_pEncSurfaces = NULL;
     m_pReconSurfaces = NULL;
     m_nAsyncDepth = 0;
+    m_refFrameCounter = 0;
 
     m_nNumView = 0;
 
@@ -1333,6 +1334,7 @@ mfxStatus CEncodingPipeline::Run()
         bool MVOut = m_encpakParams.mvoutFile != NULL;
         bool MBCodeOut = m_encpakParams.mbcodeoutFile != NULL;
 
+        /*SPS header */
         m_feiSPS.Header.BufferId = MFX_EXTBUFF_FEI_SPS;
         m_feiSPS.Header.BufferSz = sizeof(mfxExtFeiSPS);
         m_feiSPS.Pack = m_encpakParams.bPassHeaders ? 1 : 0; /* MSDK will use this data to do packing*/
@@ -1381,7 +1383,7 @@ mfxStatus CEncodingPipeline::Run()
             feiEncCtrl[fieldId].RefWidth = m_encpakParams.RefWidth;//48;
             feiEncCtrl[fieldId].SearchWindow = m_encpakParams.SearchWindow;//1;
 
-            /* PPS */
+            /* PPS header */
             m_feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;
             m_feiPPS[fieldId].Header.BufferSz = sizeof(mfxExtFeiPPS);
             m_feiPPS[fieldId].Pack = m_encpakParams.bPassHeaders ? 1 : 0;
@@ -1391,27 +1393,50 @@ mfxStatus CEncodingPipeline::Run()
 
             m_feiPPS[fieldId].FrameNum = 0;
 
-            m_feiPPS[fieldId].PicInitQP = 26;
-            m_feiPPS[fieldId].NumRefIdxL0Active = 0;
-            m_feiPPS[fieldId].NumRefIdxL1Active = 0;
+            if (0 != m_encpakParams.QP)
+                m_feiPPS[fieldId].PicInitQP = m_encpakParams.QP;
+            else
+                m_feiPPS[fieldId].PicInitQP = 26;
+            m_feiPPS[fieldId].NumRefIdxL0Active = 1;
+            m_feiPPS[fieldId].NumRefIdxL1Active = 1;
 
             m_feiPPS[fieldId].ChromaQPIndexOffset = 0;
             m_feiPPS[fieldId].SecondChromaQPIndexOffset = 0;
 
             m_feiPPS[fieldId].IDRPicFlag = 0;
             m_feiPPS[fieldId].ReferencePicFlag = 0;
-            m_feiPPS[fieldId].EntropyCodingModeFlag = 0;
+            m_feiPPS[fieldId].EntropyCodingModeFlag = 1;
             m_feiPPS[fieldId].ConstrainedIntraPredFlag = 0;
-            m_feiPPS[fieldId].Transform8x8ModeFlag = 0;
+            m_feiPPS[fieldId].Transform8x8ModeFlag = 1;
 
             m_feiSliceHeader[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_SLICE;
             m_feiSliceHeader[fieldId].Header.BufferSz = sizeof(mfxExtFeiSliceHeader);
             m_feiSliceHeader[fieldId].Pack = m_encpakParams.bPassHeaders ? 1 : 0;
             m_feiSliceHeader[fieldId].NumSlice =
-                    m_feiSliceHeader[fieldId].NumSliceAlloc = m_encpakParams.numSlices;
+            m_feiSliceHeader[fieldId].NumSliceAlloc = m_encpakParams.numSlices;
             m_feiSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice [m_encpakParams.numSlices];
+            // TODO: Implement real slice divider
+            // For now only one slice is supported
+            for (int numSlice = 0; numSlice < m_feiSliceHeader[fieldId].NumSlice; numSlice++ )
+            {
+                m_feiSliceHeader[fieldId].Slice->MBAaddress = 0;
+                m_feiSliceHeader[fieldId].Slice->NumMBs = m_feiSPS.WidthInMBs * m_feiSPS.HeightInMBs;
+                m_feiSliceHeader[fieldId].Slice->SliceType = 0;
+                m_feiSliceHeader[fieldId].Slice->PPSId = m_feiPPS[fieldId].PPSId;
+                m_feiSliceHeader[fieldId].Slice->IdrPicId = 0;
 
-            //inBufs[numExtInParams++] = (mfxExtBuffer*) & feiEncCtrl;
+                m_feiSliceHeader[fieldId].Slice->CabacInitIdc = 0;
+
+                m_feiSliceHeader[fieldId].Slice->SliceQPDelta = 26 - m_feiPPS[fieldId].PicInitQP;
+                m_feiSliceHeader[fieldId].Slice->DisableDeblockingFilterIdc = 0;
+                m_feiSliceHeader[fieldId].Slice->SliceAlphaC0OffsetDiv2 = 0;
+                m_feiSliceHeader[fieldId].Slice->SliceBetaOffsetDiv2 = 0;
+                /* This part will be filled in reference frame management */
+                //m_feiSliceHeader[fieldId].Slice->RefL0[0].Index = 0;
+                //m_feiSliceHeader[fieldId].Slice->RefL0[0].PictureType = 0;
+                //m_feiSliceHeader[fieldId].Slice->RefL1[0].Index = 0;
+                //m_feiSliceHeader[fieldId].Slice->RefL1[0].PictureType = 0;
+            }
 
             //feiEncMVPredictors;
             if (MVPredictors) {
@@ -1515,6 +1540,15 @@ mfxStatus CEncodingPipeline::Run()
 
         // lets count all control and Ext buffers...
         inBufs[numExtInParams++] = (mfxExtBuffer*) & feiEncCtrl;
+        /*For SPS, PPS and slice headers*/
+        if (m_feiSPS.Pack)
+            inBufs[numExtInParams++] = (mfxExtBuffer*) &m_feiSPS;
+        for (fieldId = 0; fieldId < numOfFields; fieldId++)
+        {
+            if (m_feiPPS[fieldId].Pack)
+                inBufs[numExtInParams++] = (mfxExtBuffer*) &m_feiPPS[fieldId];
+        }
+
         if (MVPredictors)
             inBufs[numExtInParams++] = (mfxExtBuffer*) &feiEncMVPredictors;
         if (MBCtrl)
@@ -1739,7 +1773,8 @@ mfxStatus CEncodingPipeline::Run()
             inputTasks.push_back(eTask); //inputTasks in display order
 
             eTask = findFrameToEncode();
-            if(eTask == NULL) continue; //not found frame to encode
+            if(eTask == NULL)
+                continue; //not found frame to encode
 
             eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
             initEncFrameParams(eTask);
@@ -2581,41 +2616,41 @@ mfxStatus CEncodingPipeline::Run()
         {
             if (NULL != feiEncMVPredictors[fieldId].MB)
             {
-                free (feiEncMVPredictors[fieldId].MB);
+                delete (feiEncMVPredictors[fieldId].MB);
                 feiEncMVPredictors[fieldId].MB =NULL;
             }
             if (NULL != feiEncMBCtrl[fieldId].MB)
             {
-                free(feiEncMBCtrl[fieldId].MB);
+                delete(feiEncMBCtrl[fieldId].MB);
                 feiEncMBCtrl[fieldId].MB = NULL;
             }
 
             if (NULL != feiEncMbQp[fieldId].QP)
             {
-                free (feiEncMbQp[fieldId].QP);
+                delete (feiEncMbQp[fieldId].QP);
                 feiEncMbQp[fieldId].QP = NULL;
             }
 
             if(NULL != feiEncMbStat[fieldId].MB)
             {
-                free (feiEncMbStat[fieldId].MB);
+                delete (feiEncMbStat[fieldId].MB);
                 feiEncMbStat[fieldId].MB = NULL;
             }
             if(NULL != feiEncMV[fieldId].MB)
             {
-                free (feiEncMV[fieldId].MB);
+                delete (feiEncMV[fieldId].MB);
                 feiEncMV[fieldId].MB = NULL;
             }
 
             if(NULL != feiEncMBCode[fieldId].MB)
             {
-                free(feiEncMBCode[fieldId].MB);
+                delete(feiEncMBCode[fieldId].MB);
                 feiEncMBCode[fieldId].MB = NULL;
             }
 
             if (NULL != m_feiSliceHeader[fieldId].Slice)
             {
-                free(m_feiSliceHeader[fieldId].Slice);
+                delete m_feiSliceHeader[fieldId].Slice;
                 m_feiSliceHeader[fieldId].Slice = NULL;
             }
         } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
@@ -2845,6 +2880,27 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
                     eTask->outPAK.NumExtParam = numExtInParams;
                     eTask->outPAK.ExtParam = inBufs;
                 }
+                /* Process SPS, and PPS only*/
+                if (m_encpakParams.bPassHeaders)
+                {
+                    m_feiPPS[fieldId].NumRefIdxL0Active = 0;
+                    m_feiPPS[fieldId].NumRefIdxL1Active = 0;
+                    /*I is always reference */
+                    m_feiPPS[fieldId].ReferencePicFlag = 1;
+                    if (eTask->frameType & MFX_FRAMETYPE_IDR)
+                    {
+                        m_feiPPS[fieldId].IDRPicFlag = 1;
+                        m_feiPPS[fieldId].FrameNum = 0;
+                        m_feiSPS.Pack = 1;
+                        m_refFrameCounter = 1;
+                    }
+                    else
+                    {
+                        m_feiPPS[fieldId].IDRPicFlag = 0;
+                        m_feiPPS[fieldId].FrameNum = m_refFrameCounter++;
+                        m_feiSPS.Pack = 0;
+                    }
+                }
                 break;
             case MFX_FRAMETYPE_P:
                 if (m_pmfxENC)
@@ -2873,6 +2929,25 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
 
                 if ((m_pmfxENC)&&(m_pmfxPAK))
                     eTask->in.L0Surface = eTask->inPAK.L0Surface = &eTask->prevTask->outPAK.OutSurface;
+
+                /* PPS only */
+                if (m_encpakParams.bPassHeaders)
+                {
+                    m_feiSPS.Pack = 0;
+                    m_feiPPS[fieldId].IDRPicFlag = 0;
+                    m_feiPPS[fieldId].NumRefIdxL0Active = eTask->in.NumFrameL0;
+                    m_feiPPS[fieldId].NumRefIdxL1Active = 0;
+                    m_feiPPS[fieldId].ReferencePicFlag = 1;
+                    if (eTask->frameType & MFX_FRAMETYPE_REF)
+                        m_feiPPS[fieldId].ReferencePicFlag = 1;
+                    else
+                        m_feiPPS[fieldId].ReferencePicFlag = 0;
+
+                    if (eTask->prevTask->frameType & MFX_FRAMETYPE_REF)
+                    {
+                        m_feiPPS[fieldId].FrameNum = m_refFrameCounter++;
+                    }
+                }
 
                 break;
             case MFX_FRAMETYPE_B:
@@ -2903,6 +2978,18 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
                 {
                     eTask->in.L0Surface = eTask->inPAK.L0Surface = &eTask->prevTask->outPAK.OutSurface;
                     eTask->in.L1Surface = eTask->inPAK.L1Surface = &eTask->nextTask->outPAK.OutSurface;
+                }
+
+                /* PPS only */
+                if (m_encpakParams.bPassHeaders)
+                {
+                    m_feiSPS.Pack = 0;
+                    m_feiPPS[fieldId].IDRPicFlag = 0;
+                    m_feiPPS[fieldId].NumRefIdxL0Active = eTask->in.NumFrameL0;
+                    m_feiPPS[fieldId].NumRefIdxL1Active = eTask->in.NumFrameL1;
+                    m_feiPPS[fieldId].ReferencePicFlag = 0;
+                    m_feiPPS[fieldId].IDRPicFlag = 0;
+                   m_feiPPS[fieldId].FrameNum = m_refFrameCounter;
                 }
 
                 break;
