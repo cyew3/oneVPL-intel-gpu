@@ -74,6 +74,29 @@ mfxStatus CVPPExtBuffersStorage::Init(TranscodingSample::sInputParams* params)
         ExtBuffers.push_back((mfxExtBuffer*)&deinterlaceFilter);
     }
 
+    //--- Field Copy Mode
+    if (params->fieldProcessingMode)
+    {
+        vppFieldProcessingFilter.Header.BufferId = MFX_EXTBUFF_VPP_FIELD_PROCESSING;
+        vppFieldProcessingFilter.Header.BufferSz = sizeof(vppFieldProcessingFilter);
+
+        //--- To check first is we do copy frame of field
+        vppFieldProcessingFilter.Mode = (mfxU16) (params->fieldProcessingMode==FC_FR2FR ?
+            MFX_VPP_COPY_FRAME :
+            MFX_VPP_COPY_FIELD);
+
+        vppFieldProcessingFilter.InField = (mfxU16) ((params->fieldProcessingMode==FC_T2T || params->fieldProcessingMode==FC_T2B) ?
+            MFX_PICSTRUCT_FIELD_TFF :
+            MFX_PICSTRUCT_FIELD_BFF);
+
+        vppFieldProcessingFilter.OutField = (mfxU16) ((params->fieldProcessingMode== FC_T2T || params->fieldProcessingMode==FC_B2T) ?
+            MFX_PICSTRUCT_FIELD_TFF :
+            MFX_PICSTRUCT_FIELD_BFF);
+
+        ExtBuffers.push_back((mfxExtBuffer *)&vppFieldProcessingFilter);
+    }
+
+
     return MFX_ERR_NONE;
 }
 
@@ -184,6 +207,27 @@ mfxStatus CVPPExtBuffersStorage::ParseCmdLine(msdk_char *argv[],mfxU32 argc,mfxU
     else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-dc::nv12")))
     {
         params->DecoderFourCC = MFX_FOURCC_NV12;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-field_proccessing")) )
+    {
+        VALUE_CHECK(index+1 == argc, index, argv[index]);
+        index++;
+        if (0 == msdk_strcmp(argv[index], MSDK_STRING("t2t")) )
+            params->fieldProcessingMode = FC_T2T;
+        else if (0 == msdk_strcmp(argv[index], MSDK_STRING("t2b")) )
+            params->fieldProcessingMode = FC_T2B;
+        else if (0 == msdk_strcmp(argv[index], MSDK_STRING("b2t")) )
+            params->fieldProcessingMode = FC_B2T;
+        else if (0 == msdk_strcmp(argv[index], MSDK_STRING("b2b")) )
+            params->fieldProcessingMode = FC_B2B;
+        else if (0 == msdk_strcmp(argv[index], MSDK_STRING("fr2fr")) )
+            params->fieldProcessingMode = FC_FR2FR;
+        else
+        {
+            PrintHelp(NULL, MSDK_STRING("-field_proccessing \"%s\" is invalid"), argv[index]);
+            return MFX_ERR_UNSUPPORTED;
+        }
         return MFX_ERR_NONE;
     }
 

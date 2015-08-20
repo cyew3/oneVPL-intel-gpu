@@ -40,6 +40,7 @@ namespace TranscodingSample
         mfxExtVPPDetail detailFilter;
         mfxExtVPPFrameRateConversion frcFilter;
         mfxExtVPPDeinterlacing deinterlaceFilter;
+        mfxExtVPPFieldProcessing vppFieldProcessingFilter;
     };
 }
 

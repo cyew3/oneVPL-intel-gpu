@@ -279,7 +279,7 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
         if ( (m_mfxDecParams.mfx.FrameInfo.CropW != pParams->nDstWidth && pParams->nDstWidth) ||
              (m_mfxDecParams.mfx.FrameInfo.CropH != pParams->nDstHeight && pParams->nDstHeight) ||
              (pParams->bEnableDeinterlacing) || (pParams->DenoiseLevel!=-1) || (pParams->DetailLevel!=-1) || (pParams->FRCAlgorithm) ||
-             (bVppCompInitRequire) ||
+             (bVppCompInitRequire) || (pParams->fieldProcessingMode) ||
              (pParams->EncoderFourCC && decoderFourCC && pParams->EncoderFourCC != decoderFourCC && m_bEncodeEnable))
         {
             m_bIsVpp = true;

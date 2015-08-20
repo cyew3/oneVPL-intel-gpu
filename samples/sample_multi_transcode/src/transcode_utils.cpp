@@ -103,6 +103,8 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -n            Number of frames to transcode \n"));
     msdk_printf(MSDK_STRING("  -fps <frames per second>\n"));
     msdk_printf(MSDK_STRING("                Transcoding frame rate limit\n"));
+    msdk_printf(MSDK_STRING("  -pe           Set encoding plugin for this particular session. This setting overrides plugin settings defined by SET clause.\n"));
+    msdk_printf(MSDK_STRING("  -pd           Set decoding plugin for this particular session. This setting overrides plugin settings defined by SET clause.\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Pipeline description (encoding options):\n"));
     msdk_printf(MSDK_STRING("  -b <Kbits per second>\n"));
@@ -131,13 +133,11 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -ec::nv12|rgb4|yuy2|nv16|p010|p210   Forces encoder input to use provided chroma mode\n"));
     msdk_printf(MSDK_STRING("  -dc::nv12|rgb4|yuy2   Forces decoder output to use provided chroma mode\n"));
     msdk_printf(MSDK_STRING("     NOTE: chroma transform VPP may be automatically enabled if -ec/-dc parameters are provided\n"));
-
     msdk_printf(MSDK_STRING("  -angle 180    Enables 180 degrees picture rotation user module before encoding\n"));
     msdk_printf(MSDK_STRING("  -opencl       Uses implementation of rotation plugin (enabled with -angle option) through Intel(R) OpenCL\n"));
     msdk_printf(MSDK_STRING("  -w            Destination picture width, invokes VPP resize\n"));
     msdk_printf(MSDK_STRING("  -h            Destination picture height, invokes VPP resize\n"));
-    msdk_printf(MSDK_STRING("  -pe           Set encoding plugin for this particular session. This setting overrides plugin settings defined by SET clause.\n"));
-    msdk_printf(MSDK_STRING("  -pd           Set decoding plugin for this particular session. This setting overrides plugin settings defined by SET clause.\n"));
+    msdk_printf(MSDK_STRING("  -field_proccessing t2t|t2b|b2t|b2b|fr2fr - Field Copy feature\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("ParFile format:\n"));
     msdk_printf(MSDK_STRING("  ParFile is extension of what can be achieved by setting pipeline in the command\n"));

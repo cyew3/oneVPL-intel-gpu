@@ -70,6 +70,15 @@ namespace TranscodingSample
         VppCompOnly        // means that pipeline makes vpp composition and get data from shared buffer
     };
 
+    enum EFieldCopyMode
+    {
+        FC_T2T=1,
+        FC_T2B=2,
+        FC_B2T=4,
+        FC_B2B=8,
+        FC_FR2FR=16
+    };
+
     struct sVppCompDstRect
     {
         mfxU32 DstX;
@@ -107,6 +116,7 @@ namespace TranscodingSample
         int DenoiseLevel;
         int DetailLevel;
         mfxU16 FRCAlgorithm;
+        EFieldCopyMode fieldProcessingMode;
 
         mfxU16 nAsyncDepth; // asyncronous queue
 
