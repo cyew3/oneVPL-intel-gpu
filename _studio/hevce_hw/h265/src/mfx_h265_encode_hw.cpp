@@ -675,33 +675,48 @@ mfxStatus Plugin::FreeResources(mfxThreadTask /*thread_task*/, mfxStatus /*sts*/
 mfxStatus Plugin::FreeTask(Task &task)
 {
 
-    ReleaseResource(m_bs,  task.m_midBs);
+    if (task.m_midBs)
+    {
+        ReleaseResource(m_bs,  task.m_midBs);
+        task.m_midBs = 0;
+    }
 
     if (!m_vpar.RawRef)
     {
-        m_core.DecreaseReference(&task.m_surf->Data);
-        ReleaseResource(m_raw, task.m_midRaw);
+        if (task.m_surf)
+        {
+            m_core.DecreaseReference(&task.m_surf->Data);
+            task.m_surf = 0;
+        }
+        if (task.m_midRaw)
+        {
+            ReleaseResource(m_raw, task.m_midRaw);
+            task.m_midRaw =0;
+        }
     }
 
     if (!(task.m_frameType & MFX_FRAMETYPE_REF))
     {
-        ReleaseResource(m_rec, task.m_midRec);
-
+        if (task.m_midRec)
+        {
+            ReleaseResource(m_rec, task.m_midRec);
+            task.m_midRec = 0;
+        }
         if (m_vpar.RawRef)
         {
-            m_core.DecreaseReference(&task.m_surf->Data);
-            ReleaseResource(m_raw, task.m_midRaw);
+            if (task.m_surf)
+            {
+                m_core.DecreaseReference(&task.m_surf->Data);
+                task.m_surf = 0;
+            }
+            if (task.m_midRaw)
+            {
+                ReleaseResource(m_raw, task.m_midRaw);
+                task.m_midRaw = 0;
+            }
+
         }
     }
-    else if (task.m_stage != STAGE_READY)
-    {
-        ReleaseResource(m_rec, task.m_midRec);
-
-        for (mfxU16 i = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], i); i ++)
-            if (task.m_dpb[TASK_DPB_AFTER][i].m_idxRec == task.m_idxRec)
-                Fill(task.m_dpb[TASK_DPB_AFTER][i], IDX_INVALID);
-    }
-
     for (mfxU16 i = 0, j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_BEFORE], i); i ++)
     {
         for (j = 0; !isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j); j ++)
@@ -710,12 +725,24 @@ mfxStatus Plugin::FreeTask(Task &task)
 
         if (isDpbEnd(task.m_dpb[TASK_DPB_AFTER], j))
         {
-            ReleaseResource(m_rec, task.m_dpb[TASK_DPB_BEFORE][i].m_midRec);
+            if (task.m_dpb[TASK_DPB_BEFORE][i].m_midRec)
+            {
+                ReleaseResource(m_rec, task.m_dpb[TASK_DPB_BEFORE][i].m_midRec);
+                task.m_dpb[TASK_DPB_BEFORE][i].m_midRec = 0;
+            }
 
             if (m_vpar.RawRef)
             {
-                m_core.DecreaseReference(&task.m_dpb[TASK_DPB_BEFORE][i].m_surf->Data);
-                ReleaseResource(m_raw, task.m_dpb[TASK_DPB_BEFORE][i].m_midRaw);
+                if (task.m_dpb[TASK_DPB_BEFORE][i].m_surf)
+                {
+                    m_core.DecreaseReference(&task.m_dpb[TASK_DPB_BEFORE][i].m_surf->Data);
+                    task.m_dpb[TASK_DPB_BEFORE][i].m_surf = 0;
+                }
+                if (task.m_dpb[TASK_DPB_BEFORE][i].m_midRaw)
+                {
+                    ReleaseResource(m_raw, task.m_dpb[TASK_DPB_BEFORE][i].m_midRaw);
+                    task.m_dpb[TASK_DPB_BEFORE][i].m_midRaw = 0;
+                }
             }
         }
     }
