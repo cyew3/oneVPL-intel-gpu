@@ -593,6 +593,7 @@ mfxStatus H265Encoder::AllocAuxFrame()
     if (m_responseAux.NumFrameActual < request.NumFrameMin)
         return MFX_ERR_MEMORY_ALLOC;
 
+	Zero(m_auxInput);
     m_auxInput.Data.MemId = m_responseAux.mids[0];
     m_auxInput.Info = request.Info;
     return MFX_ERR_NONE;
