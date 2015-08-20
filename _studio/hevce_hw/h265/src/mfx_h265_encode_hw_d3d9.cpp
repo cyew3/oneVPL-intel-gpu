@@ -295,8 +295,8 @@ void FillPpsBuffer(
 
     if (pps.bEnableRollingIntraRefresh)
     {
-        pps.IntraInsertionLocation = task.m_IRState.refrType;;
-        pps.IntraInsertionSize = task.m_IRState.IntraLocation;
+        pps.IntraInsertionLocation = task.m_IRState.IntraLocation;
+        pps.IntraInsertionSize = task.m_IRState.IntraSize;
         pps.QpDeltaForInsertedIntra = mfxU8(task.m_IRState.IntRefQPDelta);
     }
     pps.StatusReportFeedbackNumber = task.m_statusReportNumber;
