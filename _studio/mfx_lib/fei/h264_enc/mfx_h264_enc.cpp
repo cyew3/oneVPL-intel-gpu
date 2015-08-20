@@ -475,7 +475,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     MFX_CHECK( m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     //set frame type
-    mfxU8 mtype = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
+    mfxU8 mtype = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
     if (input->NumFrameL0 > 0) {
         mtype = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
         if (input->NumFrameL1 > 0)

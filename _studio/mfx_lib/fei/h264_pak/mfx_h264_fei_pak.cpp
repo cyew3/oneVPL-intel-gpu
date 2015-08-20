@@ -253,6 +253,7 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
 
     task.m_idx    = FindFreeResourceIndex(m_raw);
     task.m_midRaw = AcquireResource(m_raw, task.m_idx);
+    task.m_numSlice = {m_video.mfx.NumSlice, m_video.mfx.NumSlice};
 
     sts = GetNativeHandleToRawSurface(*m_core, m_video, task, task.m_handleRaw);
     if (sts != MFX_ERR_NONE)

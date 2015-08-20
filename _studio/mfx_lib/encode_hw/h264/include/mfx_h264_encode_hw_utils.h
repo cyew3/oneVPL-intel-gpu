@@ -909,12 +909,12 @@ namespace MfxHwH264Encode
             , m_midMBQP(MID_INVALID)
             , m_isMBQP(false)
 
+            , m_cmHist(0)
+            , m_cmHistSys(0)
+
             , m_feiDistortion(NULL)
             , m_feiMVOut(NULL)
             , m_feiMBCODEOut(NULL)
-
-            , m_cmHist(0)
-            , m_cmHistSys(0)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -1053,10 +1053,6 @@ namespace MfxHwH264Encode
         DdiTask const * m_fwdRef;
         DdiTask const * m_bwdRef;
 
-        CmBufferUP *          m_cmHist;     // Histogram data, kernel output
-        void *                m_cmHistSys;
-        mfxExtPredWeightTable m_pwt[2];     // obtained from fade detection
-
         mfxU8   m_fieldPicFlag;
         mfxU8   m_fid[2];               // progressive fid=[0,0]; tff fid=[0,1]; bff fid=[1,0]
         mfxU8   m_fieldCounter;
@@ -1071,6 +1067,10 @@ namespace MfxHwH264Encode
         mfxU32   m_idxMBQP;
         mfxMemId m_midMBQP; 
         bool     m_isMBQP;
+
+        CmBufferUP *          m_cmHist;     // Histogram data, kernel output
+        void *                m_cmHistSys;
+        mfxExtPredWeightTable m_pwt[2];     // obtained from fade detection
 
         bool     m_isENCPAK;
         mfxExtBuffer* m_feiDistortion;
