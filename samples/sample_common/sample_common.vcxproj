@@ -247,6 +247,7 @@
     <ClInclude Include="include\d3d11_device.h" />
     <ClInclude Include="include\d3d_allocator.h" />
     <ClInclude Include="include\d3d_device.h" />
+    <ClInclude Include="include\decode_render.h" />
     <ClInclude Include="include\general_allocator.h" />
     <ClInclude Include="include\hw_device.h" />
     <ClInclude Include="include\mfx_buffering.h" />
@@ -275,6 +276,7 @@
     <ClCompile Include="src\d3d11_device.cpp" />
     <ClCompile Include="src\d3d_allocator.cpp" />
     <ClCompile Include="src\d3d_device.cpp" />
+    <ClCompile Include="src\decode_render.cpp" />
     <ClCompile Include="src\general_allocator.cpp" />
     <ClCompile Include="src\mfx_buffering.cpp" />
     <ClCompile Include="src\plugin_utils.cpp" />

@@ -114,6 +114,9 @@
     <ClInclude Include="include\avc_structures.h">
       <Filter>Header Files\low_latency</Filter>
     </ClInclude>
+    <ClInclude Include="include\decode_render.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\base_allocator.cpp">
@@ -172,6 +175,9 @@
     </ClCompile>
     <ClCompile Include="src\avc_spl.cpp">
       <Filter>Source Files\low_latency</Filter>
+    </ClCompile>
+    <ClCompile Include="src\decode_render.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

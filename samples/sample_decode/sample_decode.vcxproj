@@ -285,12 +285,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\decode_render.cpp" />
     <ClCompile Include="src\pipeline_decode.cpp" />
     <ClCompile Include="src\sample_decode.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\decode_render.h" />
     <ClInclude Include="include\pipeline_decode.h" />
   </ItemGroup>
   <ItemGroup>
