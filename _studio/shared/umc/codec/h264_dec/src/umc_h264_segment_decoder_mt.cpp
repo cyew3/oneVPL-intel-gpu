@@ -66,6 +66,7 @@ void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
     m_pSliceHeader = m_pSlice->GetSliceHeader();
 
     m_field_index = m_pSliceHeader->bottom_field_flag;
+    m_bError = Task.m_bError;
 
     // reset decoding variables
     m_pBitStream = m_pSlice->GetBitStream();
@@ -200,6 +201,8 @@ void H264SegmentDecoderMultiThreaded::EndProcessingSegment(H264Task &Task)
 
 Status H264SegmentDecoderMultiThreaded::ProcessSegment(void)
 {
+    AutomaticUMCMutex guard(m_mGuard);
+
     H264Task Task(m_iNumber);
     try
     {
@@ -283,9 +286,12 @@ void H264SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb, Ipp32s en
     if (startMb >= endMb || !pSlice || pSlice->IsSliceGroups())
         return;
 
+    AutomaticUMCMutex guard(m_mGuard);
+
     m_pSlice = pSlice;
     m_isSliceGroups = m_pSlice->IsSliceGroups();
     m_pSeqParamSet = m_pSlice->GetSeqParam();
+    m_pPicParamSet = m_pSlice->GetPicParam();
 
     try
     {
@@ -305,14 +311,15 @@ void H264SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb, Ipp32s en
             pRefFrame = m_pTaskBroker->m_pTaskSupplier->GetDPBList(BASE_VIEW, 0)->FindClosest(pCurrentFrame);
         }
 
-        if (!m_SD)
-        {
-            m_pCurrentFrame = pCurrentFrame;
-            bit_depth_luma = m_pCurrentFrame->IsAuxiliaryFrame() ? m_pSlice->GetSeqParamEx()->bit_depth_aux :
-                                                    m_pSeqParamSet->bit_depth_luma;
-            bit_depth_chroma = m_pCurrentFrame->IsAuxiliaryFrame() ? 8 : m_pSeqParamSet->bit_depth_chroma;
-            m_SD = CreateSegmentDecoder();
-        }
+        m_pCurrentFrame = pCurrentFrame;
+        bit_depth_luma = m_pCurrentFrame->IsAuxiliaryFrame() ? m_pSlice->GetSeqParamEx()->bit_depth_aux :
+                                                m_pSeqParamSet->bit_depth_luma;
+        bit_depth_chroma = m_pCurrentFrame->IsAuxiliaryFrame() ? 8 : m_pSeqParamSet->bit_depth_chroma;
+        m_SD = CreateSegmentDecoder();
+
+        mb_height = m_pSlice->GetMBHeight();
+        mb_width = m_pSlice->GetMBWidth();
+        m_gmbinfo = &(pCurrentFrame->m_mbinfo);
 
         m_SD->RestoreErrorRect(startMb, endMb, pRefFrame, this);
     } catch (...)
@@ -1062,9 +1069,16 @@ bool IsColocatedSame(Ipp32u cur_pic_struct, Ipp32u ref_pic_struct)
 
 void H264SegmentDecoderMultiThreaded::ReconstructDirectMotionVectorsSpatial(bool isDirectMB)
 {
-    H264DecoderMotionVector  mvL0, mvL1;
-    VM_ASSERT(m_pRefPicList[1][0]);
+    if (!m_pRefPicList[1][0])
+    {
+        memset(m_cur_mb.GetReferenceIndexStruct(0)->refIndexs, 0, 4);
+        memset(m_cur_mb.GetReferenceIndexStruct(1)->refIndexs, 0, 4);
+        fill_n<H264DecoderMotionVector>(m_cur_mb.MVs[0]->MotionVectors, 16, zeroVector);
+        fill_n<H264DecoderMotionVector>(m_cur_mb.MVs[1]->MotionVectors, 16, zeroVector);
+        return;
+    }
 
+    H264DecoderMotionVector  mvL0, mvL1;
     Ipp32s field = m_pFields[1][0].field;
     bool bL1RefPicisShortTerm = m_pFields[1][0].isShortReference;
 
@@ -1950,6 +1964,11 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
                 else if (2 < num_ref_idx_l0_active)
                     refIdx = m_pBitStream->GetVLCElement(false);
 
+                if (refIdx >= num_ref_idx_l0_active || refIdx < 0)
+                {
+                    throw h264_exception(UMC_ERR_INVALID_STREAM);
+                }
+
                 H264DecoderMacroblockRefIdxs * refs = m_cur_mb.GetReferenceIndexStruct(0);
                 memset(refs->refIndexs, refIdx, sizeof(RefIndexType) * 4);
             }
@@ -1982,6 +2001,11 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
                 }
                 else
                     memset(refs, 0, sizeof(H264DecoderMacroblockRefIdxs));
+
+                if (refs->refIndexs[1] >= num_ref_idx_l0_active || refs->refIndexs[1] < 0 || refs->refIndexs[3] >= num_ref_idx_l0_active || refs->refIndexs[3] < 0)
+                {
+                    throw h264_exception(UMC_ERR_INVALID_STREAM);
+                }
             }
 
             // decode motion vector deltas
@@ -2013,6 +2037,11 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
                 }
                 else
                     memset(refs, 0, sizeof(H264DecoderMacroblockRefIdxs));
+
+                if (refs->refIndexs[2] >= num_ref_idx_l0_active || refs->refIndexs[2] < 0 || refs->refIndexs[3] >= num_ref_idx_l0_active || refs->refIndexs[3] < 0)
+                {
+                    throw h264_exception(UMC_ERR_INVALID_STREAM);
+                }
             }
 
             // decode motion vector deltas
@@ -2064,6 +2093,14 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
                     }
                     else
                         memset(refs, 0, sizeof(H264DecoderMacroblockRefIdxs));
+
+                    for (int i = 0; i < 4; i++)
+                    {
+                        if (refs->refIndexs[i] >= num_ref_idx_l0_active || refs->refIndexs[i] < 0)
+                        {
+                            throw h264_exception(UMC_ERR_INVALID_STREAM);
+                        }
+                    }
                 }
 
                 // decode motion vector deltas
@@ -2389,7 +2426,7 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CAVLC(bool bIsBSlice)
                     // numParts.
                     if (RefIxL1 >= (Ipp8s)uNumRefIdxL1Active || RefIxL1 < 0)
                     {
-                        // something is wrong
+                        throw h264_exception(UMC_ERR_INVALID_STREAM);
                     }
                 }
                 else

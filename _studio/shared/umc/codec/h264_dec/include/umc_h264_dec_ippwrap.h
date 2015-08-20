@@ -710,7 +710,8 @@ namespace UMC
     void ippiInterpolateChromaBlockNV12(const IppVCInterpolateBlock_16u *interpolateInfo)
     {
         if (sizeof(Plane) == 1)
-            ippiInterpolateChromaBlock_H264_8u_C2C2R((IppVCInterpolateBlock_8u *)interpolateInfo);
+            MFX_H264_PP::GetH264Dispatcher()->InterpolateChromaBlock_8u((IppVCInterpolateBlock_8u *)interpolateInfo);
+            //ippiInterpolateChromaBlock_H264_8u_C2C2R((IppVCInterpolateBlock_8u *)interpolateInfo);
         else
             MFX_H264_PP::GetH264Dispatcher()->InterpolateChromaBlock_16u(interpolateInfo);
     }

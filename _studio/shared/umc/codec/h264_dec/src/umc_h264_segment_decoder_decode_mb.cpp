@@ -1109,7 +1109,11 @@ void H264SegmentDecoder::GetDirectTemporalMV(Ipp32s MBCol,
         AdjustIndex((MBCol & 1), GetMBFieldDecodingFlag(m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol]), RefIndexL0);
     }
 
-    VM_ASSERT(pRefRefPicList[RefIndexL0]);
+    if (!pRefRefPicList[RefIndexL0])
+    {
+        RefIndexL0 = 0;
+        return;
+    }
 
     Ipp32s index = pRefRefPicList[RefIndexL0]->m_index;
 
@@ -1209,7 +1213,12 @@ void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
         num_ref = GetReferenceField(pRefFields, RefIndexL0);
         force_value = 1;
     }
-    VM_ASSERT(pRefRefPicList[RefIndexL0]);
+
+    if (!pRefRefPicList[RefIndexL0])
+    {
+        RefIndexL0 = 0;
+        return;
+    }
 
     Ipp32s index = pRefRefPicList[RefIndexL0]->m_index;
 
@@ -1296,7 +1305,12 @@ void H264SegmentDecoder::GetDirectTemporalMVMBAFF(Ipp32s MBCol,
         field_selector = (ref1field != GetReferenceField(pFields, RefIndexL0));
     }
 
-    VM_ASSERT(pRefRefPicList[RefIndexL0]);
+    if (!pRefRefPicList[RefIndexL0])
+    {
+        RefIndexL0 = 0;
+        return;
+    }
+
     VM_ASSERT(m_pRefPicList[1][0]->m_PictureStructureForDec != FRM_STRUCTURE);
 
     Ipp32s index = pRefRefPicList[RefIndexL0]->m_index;
@@ -1359,6 +1373,25 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal_8x8Inference()
     // (16 vectors) or an 8x8 block (4 vectors)
 
     // When bRefMBIsInter is false, set the MV to zero.
+    if (!m_pRefPicList[1][0])
+    {
+        for (int sb = 0; sb<4; sb++)
+        {
+            if (m_cur_mb.GlobalMacroblockInfo->sbtype[sb] != SBTYPE_DIRECT)
+            {
+                continue;
+            }
+
+            Ipp32s sboffset = subblock_block_mapping[sb];
+            storeInformationInto8x8(&m_cur_mb.MVs[0]->MotionVectors[sboffset], zeroVector);
+            storeInformationInto8x8(&m_cur_mb.MVs[1]->MotionVectors[sboffset], zeroVector);
+            m_cur_mb.GetReferenceIndexStruct(0)->refIndexs[sb] = 0;
+            m_cur_mb.GetReferenceIndexStruct(1)->refIndexs[sb] = 0;
+
+            m_cur_mb.LocalMacroblockInfo->sbdir[sb]=D_DIR_DIRECT;
+            m_cur_mb.GlobalMacroblockInfo->sbtype[sb]=SBTYPE_8x8;
+        }
+    }
 
     FactorArrayValue *pDistScaleFactorMV;
     Ipp32u sb;

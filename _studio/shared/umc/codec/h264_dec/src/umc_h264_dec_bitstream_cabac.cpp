@@ -1344,6 +1344,17 @@ void H264Bitstream::InitializeDecodingEngine_CABAC()
 
 } // void H264Bitstream::InitializeDecodingEngine_CABAC(void)
 
+void H264Bitstream::UpdateCABACPointers(void)
+{
+#if (CABAC_MAGIC_BITS > 0)
+    // restore source pointer
+    //m_pMagicBits = (Ipp16u*)m_pbs;
+    m_pbs = (Ipp32u *) (((size_t) m_pMagicBits) & -0x04);
+    m_bitOffset = (((size_t) m_pMagicBits) & 0x02) ? (15) : (31);
+    ippiUngetNBits(m_pbs, m_bitOffset, m_iMagicBits);
+#endif
+}
+
 void H264Bitstream::TerminateDecode_CABAC(void)
 {
 #if (CABAC_MAGIC_BITS > 0)

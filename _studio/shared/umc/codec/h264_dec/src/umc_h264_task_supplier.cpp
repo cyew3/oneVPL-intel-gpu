@@ -2151,6 +2151,8 @@ void ViewItem::SetDPBSize(H264SeqParamSet *pSps, Ipp8u & level_idc)
     }
 
     maxDecFrameBuffering = pSps->vui.max_dec_frame_buffering ? pSps->vui.max_dec_frame_buffering : maxDecFrameBuffering;
+    if (pSps->vui.max_dec_frame_buffering > maxDecFrameBuffering)
+        pSps->vui.max_dec_frame_buffering = (Ipp8u)maxDecFrameBuffering;
 
     // provide the new value to the DPBList
     for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++)
@@ -2682,10 +2684,8 @@ Status TaskSupplier::DecodeSEI(MediaDataEx *nalUnit)
         H264MemoryPiece swappedMem;
         swappedMem.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
 
-        memset(swappedMem.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
-
         SwapperBase * swapper = m_pNALSplitter->GetSwapper();
-        swapper->SwapMemory(&swappedMem, &mem);
+        swapper->SwapMemory(&swappedMem, &mem, DEFAULT_NU_HEADER_TAIL_VALUE);
 
         bitStream.Reset((Ipp8u*)swappedMem.GetPointer(), (Ipp32u)swappedMem.GetDataSize());
 
@@ -2738,8 +2738,6 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
         swappedMem.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
 
-        memset(swappedMem.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
-
         SwapperBase * swapper = m_pNALSplitter->GetSwapper();
         swapper->SwapMemory(&swappedMem, &mem);
 
@@ -2773,6 +2771,8 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
                 bool isNeedClean = sps.vui.max_dec_frame_buffering == 0;
                 sps.vui.max_dec_frame_buffering = sps.vui.max_dec_frame_buffering ? sps.vui.max_dec_frame_buffering : newDPBsize;
+                if (sps.vui.max_dec_frame_buffering > newDPBsize)
+                    sps.vui.max_dec_frame_buffering = newDPBsize;
 
                 const H264SeqParamSet * old_sps = m_Headers.m_SeqParams.GetCurrentHeader();
                 bool newResolution = false;
@@ -3329,458 +3329,248 @@ void TaskSupplier::SetFrameDisplayed(Ipp32s poc)
 
 void TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *frame, LocalResources * localRes)
 {
-    Ipp32u mbnum, i;
-    Ipp32s prevMB;
-    Ipp32u uNumMBCols;
-    Ipp32u uNumMBRows;
-    Ipp32u uNumSliceGroups;
-    Ipp32u uNumMapUnits;
-   
     if (!slice)
         slice = frame->GetAU(0)->GetSlice(0);
 
     const H264PicParamSet *pps = slice->GetPicParam();
-    const H264SliceHeader * sliceHeader = slice->GetSliceHeader();
-    Ipp32s PrevMapUnit[MAX_NUM_SLICE_GROUPS];
-    Ipp32s SliceGroup, FirstMB;
-    const Ipp8u *pMap = 0;
-    bool bSetFromMap = false;
-
-    uNumMBCols = slice->GetSeqParam()->frame_width_in_mbs;
-    uNumMBRows = slice->GetSeqParam()->frame_height_in_mbs;
-
-    FirstMB = 0;
-    // TBD: update for fields:
-    uNumMapUnits = uNumMBCols*uNumMBRows;
-    uNumSliceGroups = pps->num_slice_groups;
-
     VM_ASSERT(frame->m_iResourceNumber >= 0);
 
     Ipp32s resource = frame->m_iResourceNumber;
 
-    Ipp32s additionalTable = resource + 1;
-
-    if (uNumSliceGroups == 1)
+    if (pps->num_slice_groups == 1)
     {
         localRes->GetMBInfo(resource).active_next_mb_table = localRes->GetDefaultMBMapTable();
+        return;
     }
-    else
+
+    Ipp32s additionalTable = resource + 1;
+    const H264SeqParamSet *sps = slice->GetSeqParam();
+    const H264SliceHeader * sliceHeader = slice->GetSliceHeader();
+
+    Ipp32u PicWidthInMbs = slice->GetSeqParam()->frame_width_in_mbs;
+    Ipp32u PicHeightInMapUnits = slice->GetSeqParam()->frame_height_in_mbs;
+    
+    if (sliceHeader->field_pic_flag)
+        PicHeightInMapUnits >>= 1;
+
+    Ipp32u PicSizeInMbs = PicWidthInMbs*PicHeightInMapUnits;
+
+    Ipp32s *mapUnitToSliceGroupMap = new Ipp32s[PicSizeInMbs];
+    Ipp32s *MbToSliceGroupMap = new Ipp32s[PicSizeInMbs];
+
+    for (Ipp32u i = 0; i < PicSizeInMbs; i++)
+        mapUnitToSliceGroupMap[i] = 0;
+
+    switch (pps->SliceGroupInfo.slice_group_map_type)
     {
-        Ipp32s times = frame->m_PictureStructureForDec < FRM_STRUCTURE ? 2 : 1;
-        for (Ipp32s j = 0; j < times; j++)
+        case 0:
         {
-            if (frame->m_PictureStructureForDec < FRM_STRUCTURE)
+            // interleaved slice groups: run_length for each slice group,
+            // repeated until all MB's are assigned to a slice group
+            Ipp32u i = 0;
+            do
+                for(Ipp32u iGroup = 0; iGroup < pps->num_slice_groups && i < PicSizeInMbs; i += pps->SliceGroupInfo.run_length[iGroup++])
+                    for(Ipp32u j = 0; j < pps->SliceGroupInfo.run_length[iGroup] && i + j < PicSizeInMbs; j++)
+                        mapUnitToSliceGroupMap[i + j] = iGroup;
+            while(i < PicSizeInMbs);
+        }
+        break;
+
+    case 1:
+        {
+            // dispersed
+            for(Ipp32u i = 0; i < PicSizeInMbs; i++ )
+                mapUnitToSliceGroupMap[i] = (((i % PicWidthInMbs) + (((i / PicWidthInMbs) * pps->num_slice_groups) / 2)) % pps->num_slice_groups);
+        }
+        break;
+
+    case 2:
+        {
+            // foreground + leftover: Slice groups are rectangles, any MB not
+            // in a defined rectangle is in the leftover slice group, a MB within
+            // more than one rectangle is in the lower-numbered slice group.
+
+            for(Ipp32u i = 0; i < PicSizeInMbs; i++)
+                mapUnitToSliceGroupMap[i] = (pps->num_slice_groups - 1);
+
+            for(Ipp32s iGroup = pps->num_slice_groups - 2; iGroup >= 0; iGroup--)
             {
-                if (j)
+                Ipp32u yTopLeft = pps->SliceGroupInfo.t1.top_left[iGroup] / PicWidthInMbs;
+                Ipp32u xTopLeft = pps->SliceGroupInfo.t1.top_left[iGroup] % PicWidthInMbs;
+                Ipp32u yBottomRight = pps->SliceGroupInfo.t1.bottom_right[iGroup] / PicWidthInMbs;
+                Ipp32u xBottomRight = pps->SliceGroupInfo.t1.bottom_right[iGroup] % PicWidthInMbs;
+
+                for(Ipp32u y = yTopLeft; y <= yBottomRight; y++)
+                    for(Ipp32u x = xTopLeft; x <= xBottomRight; x++)
+                        mapUnitToSliceGroupMap[y * PicWidthInMbs + x] = iGroup;
+            }
+        }
+        break;
+
+    case 3:
+        {
+            // Box-out, clockwise or counterclockwise. Result is two slice groups,
+            // group 0 included by the box, group 1 excluded.
+
+            Ipp32s x, y, leftBound, rightBound, topBound, bottomBound;
+            Ipp32s mapUnitVacant = 0;
+            Ipp8s xDir, yDir;
+            Ipp8u dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
+
+            x = leftBound = rightBound = (PicWidthInMbs - dir_flag) / 2;
+            y = topBound = bottomBound = (PicHeightInMapUnits - dir_flag) / 2;
+
+            xDir  = dir_flag - 1;
+            yDir  = dir_flag;
+
+            Ipp32u uNumInGroup0 = IPP_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
+
+            for(Ipp32u i = 0; i < PicSizeInMbs; i++)
+                mapUnitToSliceGroupMap[i] = 1;
+
+            for(Ipp32u k = 0; k < uNumInGroup0; k += mapUnitVacant)
+            {
+                mapUnitVacant = (mapUnitToSliceGroupMap[y * PicWidthInMbs + x] == 1);
+
+                if(mapUnitVacant)
+                    mapUnitToSliceGroupMap[y * PicWidthInMbs + x] = 0;
+
+                if(xDir == -1 && x == leftBound)
                 {
-                    FirstMB = frame->totalMBs;
-                    uNumMapUnits <<= 1;
+                    leftBound = IPP_MAX(leftBound - 1, 0);
+                    x = leftBound;
+                    xDir = 0;
+                    yDir = 2 * dir_flag - 1;
+                }
+                else if(xDir == 1 && x == rightBound)
+                {
+                    rightBound = IPP_MIN(rightBound + 1, (Ipp32s)PicWidthInMbs - 1);
+                    x = rightBound;
+                    xDir = 0;
+                    yDir = 1 - 2 * dir_flag;
+                }
+                else if(yDir == -1 && y == topBound)
+                {
+                    topBound = IPP_MAX(topBound - 1, 0);
+                    y = topBound;
+                    xDir = 1 - 2 * dir_flag;
+                    yDir = 0;
+                }
+                else if(yDir == 1 && y == bottomBound)
+                {
+                    bottomBound = IPP_MIN(bottomBound + 1, (Ipp32s)PicHeightInMapUnits - 1);
+                    y = bottomBound;
+                    xDir = 2 * dir_flag - 1;
+                    yDir = 0;
                 }
                 else
                 {
-                    uNumMapUnits >>= 1;
-                    uNumMBRows >>= 1;
+                    x += xDir;
+                    y += yDir;
                 }
             }
+        }
+        break;
 
-            //since main profile doesn't allow slice groups to be >1 and in baseline no fields (or mbaffs) allowed
-            //the following memset is ok.
-            // > 1 slice group
-            switch (pps->SliceGroupInfo.slice_group_map_type)
-            {
-            case 0:
-                {
-                    // interleaved slice groups: run_length for each slice group,
-                    // repeated until all MB's are assigned to a slice group
-                    Ipp32u NumThisGroup;
+    case 4:
+        {
+            // raster-scan: 2 slice groups
+            Ipp32u uNumInGroup0 = IPP_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
+            Ipp8u dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
+            Ipp32u sizeOfUpperLeftGroup = (dir_flag ? (PicSizeInMbs - uNumInGroup0) : uNumInGroup0);
 
-                    // Init PrevMapUnit to -1 (none), for first unit of each slice group
-                    for (i=0; i<uNumSliceGroups; i++)
-                        PrevMapUnit[i] = -1;
+            for(Ipp32u i = 0; i < PicSizeInMbs; i++)
+                if(i < sizeOfUpperLeftGroup)
+                    mapUnitToSliceGroupMap[i] = dir_flag;
+                else
+                    mapUnitToSliceGroupMap[i] = 1 - dir_flag;
+        }
+        break;
 
-                    SliceGroup = 0;
-                    NumThisGroup = 0;
-                    prevMB = -1;
-                    for (mbnum = FirstMB; mbnum < uNumMapUnits; mbnum++)
-                    {
-                        if (NumThisGroup == pps->SliceGroupInfo.run_length[SliceGroup])
-                        {
-                            // new slice group
-                            PrevMapUnit[SliceGroup] = prevMB;
-                            SliceGroup++;
-                            if (SliceGroup == (Ipp32s)uNumSliceGroups)
-                                SliceGroup = 0;
-                            prevMB = PrevMapUnit[SliceGroup];
-                            NumThisGroup = 0;
-                        }
-                        if (prevMB >= 0)
-                        {
-                            // new
-                            localRes->next_mb_tables[additionalTable][prevMB] = mbnum;
-                        }
-                        prevMB = mbnum;
-                        NumThisGroup++;
-                    }
-                }
-                localRes->GetMBInfo(resource).active_next_mb_table = localRes->next_mb_tables[additionalTable];
-                break;
+    case 5:
+        {
+            // wipe: 2 slice groups, the vertical version of case 4.
+            //  L L L L R R R R R
+            //  L L L L R R R R R
+            //  L L L R R R R R R
+            //  L L L R R R R R R
 
-            case 1:
-                // dispersed
-                {
-                    Ipp32u row, col;
+            Ipp32u uNumInGroup0 = IPP_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
+            Ipp8u dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
+            Ipp32u sizeOfUpperLeftGroup = (dir_flag ? (PicSizeInMbs - uNumInGroup0) : uNumInGroup0);
 
-                    // Init PrevMapUnit to -1 (none), for first unit of each slice group
-                    for (i=0; i<uNumSliceGroups; i++)
-                        PrevMapUnit[i] = -1;
-
-                    mbnum = FirstMB;
-                    for (row = 0; row < uNumMBRows; row++)
-                    {
-                        SliceGroup = ((row * uNumSliceGroups)/2) % uNumSliceGroups;
-                        for (col=0; col<uNumMBCols; col++)
-                        {
-                            prevMB = PrevMapUnit[SliceGroup];
-                            if (prevMB != -1)
-                            {
-                                localRes->next_mb_tables[additionalTable][prevMB]  = mbnum;
-                            }
-                            PrevMapUnit[SliceGroup] = mbnum;
-                            mbnum++;
-                            SliceGroup++;
-                            if (SliceGroup == (Ipp32s)uNumSliceGroups)
-                                SliceGroup = 0;
-                        }    // col
-                    }    // row
-                }
-
-                localRes->GetMBInfo(resource).active_next_mb_table = localRes->next_mb_tables[additionalTable];
-                break;
-
-            case 2:
-                {
-                    // foreground + leftover: Slice groups are rectangles, any MB not
-                    // in a defined rectangle is in the leftover slice group, a MB within
-                    // more than one rectangle is in the lower-numbered slice group.
-
-                    // Two steps:
-                    // 1. Set m_pMBMap with slice group for all MBs.
-                    // 2. Set nextMB fields of MBInfo from m_pMBMap.
-
-                    Ipp32u RectUpper, RectLeft, RectRight, RectLower;
-                    Ipp32u RectRows, RectCols;
-                    Ipp32u row, col;
-
-                    // First init all as leftover
-                    for (mbnum = FirstMB; mbnum<uNumMapUnits; mbnum++)
-                        localRes->m_pMBMap[mbnum] = (Ipp8u)(uNumSliceGroups - 1);
-
-                    // Next set those in slice group rectangles, from back to front
-                    for (SliceGroup = (Ipp32s)(uNumSliceGroups - 2); SliceGroup >= 0; SliceGroup--)
-                    {
-                        mbnum = pps->SliceGroupInfo.t1.top_left[SliceGroup];
-                        RectUpper = pps->SliceGroupInfo.t1.top_left[SliceGroup] / uNumMBCols;
-                        RectLeft = pps->SliceGroupInfo.t1.top_left[SliceGroup] % uNumMBCols;
-                        RectLower = pps->SliceGroupInfo.t1.bottom_right[SliceGroup] / uNumMBCols;
-                        RectRight = pps->SliceGroupInfo.t1.bottom_right[SliceGroup] % uNumMBCols;
-                        RectRows = RectLower - RectUpper + 1;
-                        RectCols = RectRight - RectLeft + 1;
-
-                        for (row = 0; row < RectRows; row++)
-                        {
-                            for (col=0; col < RectCols; col++)
-                            {
-                                localRes->m_pMBMap[mbnum + col] = (Ipp8u)SliceGroup;
-                            }    // col
-
-                            mbnum += uNumMBCols;
-                        }    // row
-                    }    // SliceGroup
-                }
-                localRes->GetMBInfo(resource).active_next_mb_table = localRes->next_mb_tables[additionalTable];
-
-                pMap = localRes->m_pMBMap;
-                bSetFromMap = true;        // to cause step 2 to occur below
-                break;
-            case 3:
-                {
-                    // Box-out, clockwise or counterclockwise. Result is two slice groups,
-                    // group 0 included by the box, group 1 excluded.
-
-                    // Two steps:
-                    // 1. Set m_pMBMap with slice group for all MBs.
-                    // 2. Set nextMB fields of MBInfo from m_pMBMap.
-
-                    Ipp32u x, y, leftBound, topBound, rightBound, bottomBound;
-                    Ipp32s xDir, yDir;
-                    Ipp32u mba;
-                    Ipp32u dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
-                    Ipp32u uNumInGroup0;
-                    Ipp32u uGroup0Count = 0;
-
-                    SliceGroup = 1;        // excluded group
-
-                    uNumInGroup0 = IPP_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate *
-                                    sliceHeader->slice_group_change_cycle, uNumMapUnits - FirstMB);
-
-                    uNumInGroup0 = IPP_MIN(uNumInGroup0, uNumMapUnits);
-
-                    if (uNumInGroup0 == uNumMapUnits)
-                    {
-                        // all units in group 0
-                        SliceGroup = 0;
-                        uGroup0Count = uNumInGroup0;    // to skip box out
-                    }
-
-                    // First init all
-                    for (mbnum = FirstMB; mbnum < uNumMapUnits; mbnum++)
-                        localRes->m_pMBMap[mbnum] = (Ipp8u)SliceGroup;
-
-                    // Next the box-out algorithm to change included MBs to group 0
-
-                    // start at center
-                    x = (uNumMBCols - dir_flag)>>1;
-                    y = (uNumMBRows - dir_flag)>>1;
-                    leftBound = rightBound = x;
-                    topBound = bottomBound = y;
-                    xDir = dir_flag - 1;
-                    yDir = dir_flag;
-
-                    // expand out from center until group 0 includes the required number
-                    // of units
-                    while (uGroup0Count < uNumInGroup0)
-                    {
-                        mba = x + y*uNumMBCols;
-                        if (localRes->m_pMBMap[mba + FirstMB] == 1)
-                        {
-                            // add MB to group 0
-                            localRes->m_pMBMap[mba + FirstMB] = 0;
-                            uGroup0Count++;
-                        }
-                        if (x == leftBound && xDir == -1)
-                        {
-                            if (leftBound > 0)
-                            {
-                                leftBound--;
-                                x--;
-                            }
-                            xDir = 0;
-                            yDir = dir_flag*2 - 1;
-                        }
-                        else if (x == rightBound && xDir == 1)
-                        {
-                            if (rightBound < uNumMBCols - 1)
-                            {
-                                rightBound++;
-                                x++;
-                            }
-                            xDir = 0;
-                            yDir = 1 - dir_flag*2;
-                        }
-                        else if (y == topBound && yDir == -1)
-                        {
-                            if (topBound > 0)
-                            {
-                                topBound--;
-                                y--;
-                            }
-                            xDir = 1 - dir_flag*2;
-                            yDir = 0;
-                        }
-                        else if (y == bottomBound && yDir == 1)
-                        {
-                            if (bottomBound < uNumMBRows - 1)
-                            {
-                                bottomBound++;
-                                y++;
-                            }
-                            xDir = dir_flag*2 - 1;
-                            yDir = 0;
-                        }
-                        else
-                        {
-                            x += xDir;
-                            y += yDir;
-                        }
-                    }    // while
-                }
-
-                localRes->GetMBInfo(resource).active_next_mb_table = localRes->next_mb_tables[additionalTable];
-
-                pMap = localRes->m_pMBMap;
-                bSetFromMap = true;        // to cause step 2 to occur below
-                break;
-            case 4:
-                // raster-scan: 2 slice groups. Both groups contain units ordered
-                // by raster-scan, so initializing nextMB for simple raster-scan
-                // ordering is all that is required.
-                localRes->GetMBInfo(resource).active_next_mb_table = localRes->GetDefaultMBMapTable();
-                break;
-            case 5:
-                // wipe: 2 slice groups, the vertical version of case 4. Init
-                // nextMB by processing the 2 groups as two rectangles (left
-                // and right); to allow for the break between groups occurring
-                // not at a column boundary, the rectangles also have an upper
-                // and lower half (same heights both rectangles) that may vary
-                // in width from one another by one macroblock, for example:
-                //  L L L L R R R R R
-                //  L L L L R R R R R
-                //  L L L R R R R R R
-                //  L L L R R R R R R
-                {
-                    Ipp32u uNumInGroup0;
-                    Ipp32u uNumInLGroup;
-                    Ipp32s SGWidth;
-                    Ipp32s NumUpperRows;
-                    Ipp32s NumRows;
-                    Ipp32s row, col;
-                    Ipp32s iMBNum;
-
-                    uNumInGroup0 = IPP_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate *
-                                    sliceHeader->slice_group_change_cycle, uNumMapUnits - FirstMB);
-                    if (uNumInGroup0 >= uNumMapUnits)
-                    {
-                        // all units in group 0
-                        uNumInGroup0 = uNumMapUnits;
-                    }
-                    if (pps->SliceGroupInfo.t2.slice_group_change_direction_flag == 0)
-                        uNumInLGroup = uNumInGroup0;
+            Ipp32u k = 0;
+            for(Ipp32u j = 0; j < PicWidthInMbs; j++)
+                for(Ipp32u i = 0; i < PicHeightInMapUnits; i++)
+                    if(k++ < sizeOfUpperLeftGroup)
+                        mapUnitToSliceGroupMap[i * PicWidthInMbs + j] = dir_flag;
                     else
-                        uNumInLGroup = uNumMapUnits - uNumInGroup0;
+                        mapUnitToSliceGroupMap[i * PicWidthInMbs + j] = 1 - dir_flag;
+        }
+        break;
 
-                    if (uNumInLGroup > 0)
-                    {
-                        // left group
-                        NumUpperRows = uNumInLGroup % uNumMBRows;
-                        NumRows = uNumMBRows;
-                        SGWidth = uNumInLGroup / uNumMBRows;        // lower width, left
-                        if (NumUpperRows)
-                        {
-                            SGWidth++;            // upper width, left
+    case 6:
+        {
+            // explicit map read from bitstream, contains slice group id for
+            // each map unit
+            for(Ipp32u i = 0; i < pps->SliceGroupInfo.pSliceGroupIDMap.size(); i++)
+                mapUnitToSliceGroupMap[i] = pps->SliceGroupInfo.pSliceGroupIDMap[i];
+        }
+        break;
 
-                            // zero-width lower case
-                            if (SGWidth == 1)
-                                NumRows = NumUpperRows;
-                        }
-                        iMBNum = FirstMB;
+    default:
+        // can't happen
+        break;
+    }    // switch map type
 
-                        for (row = 0; row < NumRows; row++)
-                        {
-                            col = 0;
-                            while (col < SGWidth-1)
-                            {
-                                localRes->next_mb_tables[additionalTable][iMBNum + col] = (iMBNum + col + 1);
-                                col++;
-                            }    // col
+    // Filling array groupMap as in H264 standart
 
-                            // next for last MB on row
-                            localRes->next_mb_tables[additionalTable][iMBNum + col] = (iMBNum + uNumMBCols);
-                            iMBNum += uNumMBCols;
-
-                            // time to switch to lower?
-                            NumUpperRows--;
-                            if (NumUpperRows == 0)
-                                SGWidth--;
-                        }    // row
-                    }    // left group
-
-                    if (uNumInLGroup < uNumMapUnits)
-                    {
-                        // right group
-                        NumUpperRows = uNumInLGroup % uNumMBRows;
-                        NumRows = uNumMBRows;
-                        // lower width, right:
-                        SGWidth = uNumMBCols - uNumInLGroup / uNumMBRows;
-                        if (NumUpperRows)
-                            SGWidth--;            // upper width, right
-                        if (SGWidth > 0)
-                        {
-                            // first MB is on first row
-                            iMBNum = uNumMBCols - SGWidth;
-                        }
-                        else
-                        {
-                            // zero-width upper case
-                            SGWidth = 1;
-                            iMBNum = (NumUpperRows + 1)*uNumMBCols - 1;
-                            NumRows = uNumMBRows - NumUpperRows;
-                            NumUpperRows = 0;
-                        }
-
-                        for (row = 0; row < NumRows; row++)
-                        {
-                            col = 0;
-                            while (col < SGWidth-1)
-                            {
-                                localRes->next_mb_tables[additionalTable][iMBNum + col] = (iMBNum + col + 1);
-                                col++;
-                            }    // col
-
-                            // next for last MB on row
-                            localRes->next_mb_tables[additionalTable][iMBNum + col] = (iMBNum + uNumMBCols);
-
-                            // time to switch to lower?
-                            NumUpperRows--;
-                            if (NumUpperRows == 0)
-                            {
-                                SGWidth++;
-                                // fix next for last MB on row
-                                localRes->next_mb_tables[additionalTable][iMBNum + col]= (iMBNum+uNumMBCols - 1);
-                                iMBNum--;
-                            }
-
-                            iMBNum += uNumMBCols;
-
-                        }    // row
-                    }    // right group
-                }
-
-                localRes->GetMBInfo(resource).active_next_mb_table = localRes->next_mb_tables[additionalTable];
-                break;
-            case 6:
-                // explicit map read from bitstream, contains slice group id for
-                // each map unit
-                localRes->GetMBInfo(resource).active_next_mb_table = localRes->next_mb_tables[additionalTable];
-                pMap = &pps->SliceGroupInfo.pSliceGroupIDMap[0];
-                bSetFromMap = true;
-                break;
-            default:
-                // can't happen
-                VM_ASSERT(0);
-
-            }    // switch map type
-
-            if (bSetFromMap)
-            {
-                // Set the nextMB MBInfo field of a set of macroblocks depending upon
-                // the slice group information in the map, to create an ordered
-                // (raster-scan) linked list of MBs for each slice group. The first MB
-                // of each group will be identified by the first slice header for each
-                // group.
-
-                // For each map unit get assigned slice group from the map
-                // For all except the first unit in each
-                // slice group, set the next field of the previous MB in that
-                // slice group.
-
-                // Init PrevMapUnit to -1 (none), for first unit of each slice group
-                for (i=0; i<uNumSliceGroups; i++)
-                    PrevMapUnit[i] = -1;
-
-                for (mbnum=FirstMB; mbnum<uNumMapUnits; mbnum++)
-                {
-                    SliceGroup = pMap[mbnum];
-                    prevMB = PrevMapUnit[SliceGroup];
-                    if (prevMB != -1)
-                    {
-                        localRes->next_mb_tables[additionalTable][prevMB] = mbnum;
-                    }
-                    PrevMapUnit[SliceGroup] = mbnum;
-                }
-            }
-        }    // >1 slice group
+    if (sps->frame_mbs_only_flag || sliceHeader->field_pic_flag)
+    {
+        for(Ipp32u i = 0; i < PicSizeInMbs; i++ )
+        {
+            MbToSliceGroupMap[i] = mapUnitToSliceGroupMap[i];
+        }
     }
-}    // setMBMap
+    else if (sliceHeader->MbaffFrameFlag)
+    {
+        for(Ipp32u i = 0; i < PicSizeInMbs; i++ )
+        {
+            MbToSliceGroupMap[i] = mapUnitToSliceGroupMap[i/2];
+        }
+    }
+    else if(sps->frame_mbs_only_flag == 0 && !sliceHeader->MbaffFrameFlag && !sliceHeader->field_pic_flag)
+    {
+        for(Ipp32u i = 0; i < PicSizeInMbs; i++ )
+        {
+            MbToSliceGroupMap[i] = mapUnitToSliceGroupMap[(i / (2 * PicWidthInMbs)) * PicWidthInMbs + ( i % PicWidthInMbs )];
+        }
+    }
+
+    H264DecoderMBAddr * next_mb_tables = localRes->next_mb_tables[additionalTable];
+
+    for(Ipp32u n = 0; n < PicSizeInMbs; n++)
+    {
+        Ipp32u i = n + 1;
+        while (i < PicSizeInMbs && MbToSliceGroupMap[i] != MbToSliceGroupMap[n])
+            i++;
+        
+        next_mb_tables[n] = (i >= PicSizeInMbs) ? -1 : i;
+    }
+
+    if (sliceHeader->field_pic_flag)
+    {
+        for(Ipp32u i = 0; i < PicSizeInMbs; i++ )
+        {
+            next_mb_tables[i + PicSizeInMbs] = (next_mb_tables[i] == -1) ? -1 : (next_mb_tables[i] + PicSizeInMbs);
+        }
+    }
+
+    localRes->GetMBInfo(resource).active_next_mb_table = localRes->next_mb_tables[additionalTable];
+
+    delete[] mapUnitToSliceGroupMap;
+    delete[] MbToSliceGroupMap;
+}
 
 void TaskSupplier::PreventDPBFullness()
 {
@@ -4234,10 +4024,9 @@ H264Slice * TaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
     H264MemoryPiece memCopy;
     memCopy.SetData(nalUnit);
 
-    pSlice->m_pSource.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
+    pSlice->m_pSource.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_SLICE_TAIL_SIZE);
 
     notifier0<H264MemoryPiece> memory_leak_preventing(&pSlice->m_pSource, &H264MemoryPiece::Release);
-    memset(pSlice->m_pSource.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
 
     SwapperBase * swapper = m_pNALSplitter->GetSwapper();
     swapper->SwapMemory(&pSlice->m_pSource, &memCopy);
@@ -4491,6 +4280,15 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
 
                     slice->UpdateReferenceList(m_views, 0);
                 }
+
+                if (!setOfSlices->GetSlice(0)->IsSliceGroups())
+                {
+                    H264Slice * slice = setOfSlices->GetSlice(0);
+                    if (slice->m_iFirstMB)
+                    {
+                        m_pSegmentDecoder[0]->RestoreErrorRect(0, slice->m_iFirstMB, slice);
+                    }
+                }
             }
 
             Status umcRes;
@@ -4646,15 +4444,6 @@ Status TaskSupplier::InitializeLayers(AccessUnit *accessUnit, H264DecoderFrame *
 
     if (!layersCount)
         return UMC_OK;
-
-    if (layersCount == 1 && !accessUnit->GetLayer(0)->GetSlice(0)->IsSliceGroups())
-    {
-        H264Slice * slice = accessUnit->GetLayer(0)->GetSlice(0);
-        if (slice->m_iFirstMB)
-        {
-            m_pSegmentDecoder[0]->RestoreErrorRect(0, slice->m_iFirstMB, slice);
-        }
-    }
 
     if ((m_decodingMode == MVC_DECODING_MODE) && layersCount > 1)
     {

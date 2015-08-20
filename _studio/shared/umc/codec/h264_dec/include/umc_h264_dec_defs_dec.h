@@ -324,8 +324,10 @@ enum // usual int
     MINIMAL_DATA_SIZE           = 4,
     MAX_NUM_LAYERS              = 16,
 
-    DEFAULT_NU_TAIL_VALUE       = 0xff,
-    DEFAULT_NU_TAIL_SIZE        = 8
+    DEFAULT_NU_HEADER_TAIL_VALUE   = 0, // for sei
+    DEFAULT_NU_TAIL_VALUE       = 0,
+    DEFAULT_NU_TAIL_SIZE        = 128,
+    DEFAULT_NU_SLICE_TAIL_SIZE  = 512,
 };
 
 // Possible values for disable_deblocking_filter_idc:

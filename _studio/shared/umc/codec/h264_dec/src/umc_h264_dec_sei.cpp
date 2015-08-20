@@ -98,6 +98,8 @@ Ipp32s H264Bitstream::sei_message(const Headers & headers, Ipp32s current_sps, H
     GetState(&pbs, &bitOffsetU);
     bitOffset = bitOffsetU;
 
+    CheckBSLeft(spl->payLoadSize);
+
     spl->isValid = 1;
     Ipp32s ret = sei_payload(headers, current_sps, spl);
 

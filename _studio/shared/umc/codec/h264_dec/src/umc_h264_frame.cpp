@@ -265,16 +265,13 @@ void H264DecoderFrame::OnDecodingCompleted()
     if (GetLogging())
         GetLogging()->LogFrame(this);
 #endif
-
     UpdateErrorWithRefFrameStatus();
 
     SetisDisplayable();
 
     m_Flags.isDecoded = 1;
-
-    DecrementReference();
-
     FreeResources();
+    DecrementReference();
 }
 
 void H264DecoderFrame::SetisShortTermRef(bool isRef, Ipp32s WhichField)
@@ -437,7 +434,7 @@ void H264DecoderFrame::deallocateParsedFrameData()
 
 size_t H264DecoderFrame::GetFrameDataSize(const IppiSize &lumaSize)
 {
-    size_t nMBCount = (lumaSize.width >> 4) * (lumaSize.height >> 4);
+    size_t nMBCount = (lumaSize.width >> 4) * (lumaSize.height >> 4) + 2;
 
     // allocate buffer
     size_t nMemSize = (sizeof(H264DecoderMacroblockMVs) +
@@ -463,7 +460,7 @@ Status H264DecoderFrame::allocateParsedFrameData()
         }
 
         // allocate new MB structure(s)
-        size_t nMBCount = (m_lumaSize.width >> 4) * (m_lumaSize.height >> 4);
+        size_t nMBCount = (m_lumaSize.width >> 4) * (m_lumaSize.height >> 4) + 2;
 
         // allocate buffer
         size_t nMemSize = GetFrameDataSize(m_lumaSize);

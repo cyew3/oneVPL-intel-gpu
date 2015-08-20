@@ -599,6 +599,8 @@ void H264SegmentDecoder::DecodeMBQPDelta_CABAC(void)
                 while (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[MB_QP_DELTA] + 3))
                 {
                     code += 1;
+                    if (code > 50*2)
+                        throw h264_exception(UMC_ERR_INVALID_STREAM);
                 }
             }
 

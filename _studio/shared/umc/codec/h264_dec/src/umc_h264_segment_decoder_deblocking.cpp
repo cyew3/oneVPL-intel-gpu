@@ -23,6 +23,12 @@ void H264SegmentDecoder::DeblockFrame(Ipp32s iFirstMB, Ipp32s iNumMBs)
 {
     m_bFrameDeblocking = true;
 
+    if (m_bError && m_isSliceGroups) // skip deblocking
+    {
+        m_CurMBAddr = iFirstMB + iNumMBs;
+        return;
+    }
+
     for (m_CurMBAddr = iFirstMB; m_CurMBAddr < iFirstMB + iNumMBs; m_CurMBAddr++)
     {
         DeblockMacroblockMSlice();

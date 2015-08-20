@@ -806,8 +806,6 @@ public:
         // get luma interp func pointer table in cache
         if (sd->m_pSliceHeader->slice_type == BPREDSLICE)
         {
-            VM_ASSERT(sd->m_pRefPicList[1][0]);
-
             pRefIndexL1 = sd->m_cur_mb.GetReferenceIndexStruct(1)->refIndexs;
             // DIRECT MB have the same subblock partition structure as the
             // colocated MB. Take advantage of that to perform motion comp

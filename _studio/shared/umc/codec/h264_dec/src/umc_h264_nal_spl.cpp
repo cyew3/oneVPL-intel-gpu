@@ -352,7 +352,7 @@ public:
         SwapMemoryAndRemovePreventingBytes(pDestination, nDstSize, pSource, nSrcSize);
     }
 
-    virtual void SwapMemory(H264MemoryPiece * pMemDst, H264MemoryPiece * pMemSrc)
+    virtual void SwapMemory(H264MemoryPiece * pMemDst, H264MemoryPiece * pMemSrc, Ipp8u defaultValue)
     {
         size_t dstSize = pMemSrc->GetDataSize();
         /*if (IsVLCCode(pMediaDataEx->values[0]))
@@ -370,9 +370,10 @@ public:
                         pMemSrc->GetPointer(),
                         pMemSrc->GetDataSize());
 
+            size_t tail_size = pMemDst->GetSize() - dstSize;
+            memset(pMemDst->GetPointer() + dstSize, defaultValue, tail_size);
+
             VM_ASSERT(pMemDst->GetSize() >= dstSize);
-            size_t tail_size = IPP_MIN(pMemDst->GetSize() - dstSize, DEFAULT_NU_TAIL_SIZE);
-            memset(pMemDst->GetPointer() + dstSize, DEFAULT_NU_TAIL_VALUE, tail_size);
             pMemDst->SetDataSize(dstSize);
             pMemDst->SetTime(pMemSrc->GetTime());
         }
@@ -848,7 +849,7 @@ void SwapMemoryAndRemovePreventingBytes(void *pDestination, size_t &nDstSize, vo
     nDstSize = nSrcSize - pSrc.GetRemovedBytes();
     while (nDstSize & 3)
     {
-        pDst = (Ipp8u) (0);
+        pDst = (Ipp8u) (DEFAULT_NU_TAIL_VALUE);
         ++nDstSize;
         ++pDst;
     }
