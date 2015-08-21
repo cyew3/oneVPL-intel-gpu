@@ -24,6 +24,8 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_NV12;
     case MFX_FOURCC_YUY2:
         return VA_FOURCC_YUY2;
+    case MFX_FOURCC_UYVY:
+        return VA_FOURCC_UYVY;
     case MFX_FOURCC_YV12:
         return VA_FOURCC_YV12;
     case MFX_FOURCC_RGB4:
@@ -94,12 +96,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     memset(response, 0, sizeof(mfxFrameAllocResponse));
 
     va_fourcc = ConvertMfxFourccToVAFormat(fourcc);
-    if (!va_fourcc || ((VA_FOURCC_NV12 != va_fourcc) &&
-                       (VA_FOURCC_YV12 != va_fourcc) &&
-                       (VA_FOURCC_YUY2 != va_fourcc) &&
-                       (VA_FOURCC_ARGB != va_fourcc) &&
-                       (VA_FOURCC_ABGR != va_fourcc) &&
-                       (VA_FOURCC_P208 != va_fourcc)))
+    if (!va_fourcc)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
@@ -125,7 +122,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             attrib.flags = VA_SURFACE_ATTRIB_SETTABLE;
 
             va_res = vaCreateSurfaces(m_dpy,
-                                    VA_RT_FORMAT_YUV420,
+                                   ( VA_FOURCC_UYVY == va_fourcc ) ? VA_RT_FORMAT_YUV422 : VA_RT_FORMAT_YUV420,
                                     request->Info.Width, request->Info.Height,
                                     surfaces,
                                     surfaces_num,
@@ -289,6 +286,16 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->U = ptr->Y + 1;
                     ptr->V = ptr->Y + 3;
+                }
+                else mfx_res = MFX_ERR_LOCK_MEMORY;
+                break;
+            case VA_FOURCC_UYVY:
+                if (vaapi_mid->m_fourcc == MFX_FOURCC_UYVY)
+                {
+                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                    ptr->U = pBuffer + vaapi_mid->m_image.offsets[0];
+                    ptr->Y = ptr->U + 1;
+                    ptr->V = ptr->U + 2;
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;

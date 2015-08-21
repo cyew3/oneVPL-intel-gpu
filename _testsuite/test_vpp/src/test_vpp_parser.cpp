@@ -38,7 +38,7 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-scrW  w]        - cropW  of src video (def: width)\n"));
     vm_string_printf(VM_STRING("   [-scrH  h]        - cropH  of src video (def: height)\n"));
     vm_string_printf(VM_STRING("   [-sf   frameRate] - frame rate of src video (def: 30.0)\n"));
-    vm_string_printf(VM_STRING("   [-scc  format]    - format (FourCC) of src video (def: nv12. support nv12|yv12|yuy2|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444)\n"));
+    vm_string_printf(VM_STRING("   [-scc  format]    - format (FourCC) of src video (def: nv12. support nv12|yv12|yuy2|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444|uyvy)\n"));
     vm_string_printf(VM_STRING("   [-sbitshift 0|1]  - shift data to right or keep it the same way as in Microsoft's P010\n"));
 
     vm_string_printf(VM_STRING("   [-spic value]     - picture structure of src video\n")); 
@@ -233,6 +233,10 @@ mfxU32 Str2FourCC( vm_char* strInput )
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("a2rgb10")) )
     {
         fourcc = MFX_FOURCC_A2RGB10;
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("uyvy")) )
+    {
+        fourcc = MFX_FOURCC_UYVY;
     }
 
     return fourcc;

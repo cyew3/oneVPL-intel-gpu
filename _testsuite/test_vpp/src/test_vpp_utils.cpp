@@ -43,7 +43,7 @@ IppStatus cc_NV12_to_YV12(
 static 
 vm_char* FourCC2Str( mfxU32 FourCC )
 {
-    vm_char* strFourCC = VM_STRING("YV12");//default
+    vm_char* strFourCC = VM_STRING("Unknown");//default
 
     switch ( FourCC )
     {
@@ -98,6 +98,9 @@ vm_char* FourCC2Str( mfxU32 FourCC )
         break;
     case MFX_FOURCC_A2RGB10:
         strFourCC = VM_STRING("A2RGB10");
+        break;
+    case MFX_FOURCC_UYVY:
+        strFourCC = VM_STRING("UYVY");
         break;
 
     }
@@ -1304,6 +1307,16 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
     else if (pInfo->FourCC == MFX_FOURCC_YUY2)
     {
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
+
+        for(i = 0; i < h; i++)
+        {
+            nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, 2*w, m_fSrc);
+            IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 2*w, MFX_ERR_MORE_DATA);
+        }
+    }
+    else if (pInfo->FourCC == MFX_FOURCC_UYVY)
+    {
+        ptr = pData->U + pInfo->CropX + pInfo->CropY * pitch;
 
         for(i = 0; i < h; i++) 
         {

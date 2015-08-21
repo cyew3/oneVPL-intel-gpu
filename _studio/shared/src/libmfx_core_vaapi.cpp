@@ -1270,7 +1270,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
             sts = pCmCopy->CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)verticalPitch, roi);
             MFX_CHECK_STS(sts);
         }
-        else if(m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && CM_ALIGNED(pSrc->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
+        else if(m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && pSrc->Info.FourCC != MFX_FOURCC_UYVY && pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && CM_ALIGNED(pSrc->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
             sts = pCmCopy->CopySystemToVideoMemoryAPI(pDst->Data.MemId, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)verticalPitch, roi);
             MFX_CHECK_STS(sts);
         }
@@ -1328,6 +1328,14 @@ VAAPIVideoCORE::DoFastCopyExtended(
                     roi.width *= 2;
 
                     ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)pBits + va_image.offsets[0], dstPitch, roi);
+
+                    break;
+
+                case MFX_FOURCC_UYVY:
+
+                    roi.width *= 2;
+
+                    ippiCopy_8u_C1R(pSrc->Data.U, srcPitch, (mfxU8 *)pBits + va_image.offsets[0], dstPitch, roi);
 
                     break;
 
