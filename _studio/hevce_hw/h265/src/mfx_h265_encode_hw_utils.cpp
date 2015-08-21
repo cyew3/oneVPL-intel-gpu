@@ -438,9 +438,6 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     mfxExtCodingOptionSPSPPS * pSPSPPS = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
     if (pSPSPPS && !query)
     {
-        MFX_CHECK(pSPSPPS->SPSBuffer, MFX_ERR_NULL_PTR);
-        MFX_CHECK(pSPSPPS->PPSBuffer, MFX_ERR_NULL_PTR);
-
         HeaderPacker packer;
         mfxU8* buf = 0;
         mfxU32 len = 0;
@@ -448,22 +445,26 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
         sts = packer.Reset(*this);
         MFX_CHECK_STS(sts);
 
-        packer.GetSPS(buf, len);
-        MFX_CHECK(pSPSPPS->SPSBufSize >= len, MFX_ERR_NOT_ENOUGH_BUFFER);
+        if (pSPSPPS->SPSBuffer)
+        {
+            packer.GetSPS(buf, len);
+            MFX_CHECK(pSPSPPS->SPSBufSize >= len, MFX_ERR_NOT_ENOUGH_BUFFER);
+            memcpy_s(pSPSPPS->SPSBuffer, len, buf, len);
+            pSPSPPS->SPSBufSize = (mfxU16)len;
 
-        memcpy_s(pSPSPPS->SPSBuffer, len, buf, len);
-        pSPSPPS->SPSBufSize = (mfxU16)len;
+            if (pSPSPPS->PPSBuffer)
+            {
+                packer.GetPPS(buf, len);
+                MFX_CHECK(pSPSPPS->PPSBufSize >= len, MFX_ERR_NOT_ENOUGH_BUFFER);
 
-        packer.GetPPS(buf, len);
-        MFX_CHECK(pSPSPPS->PPSBufSize >= len, MFX_ERR_NOT_ENOUGH_BUFFER);
-
-        memcpy_s(pSPSPPS->PPSBuffer, len, buf, len);
-        pSPSPPS->PPSBufSize = (mfxU16)len;
+                memcpy_s(pSPSPPS->PPSBuffer, len, buf, len);
+                pSPSPPS->PPSBufSize = (mfxU16)len;
+            }
+        }
     }
     mfxExtCodingOptionVPS * pVPS= (mfxExtCodingOptionVPS *)GetExtendedBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_CODING_OPTION_VPS);
-    if (pVPS && !query)
+    if (pVPS && pVPS->VPSBuffer && !query)
     {
-        MFX_CHECK(pVPS->VPSBuffer, MFX_ERR_NULL_PTR);
 
         HeaderPacker packer;
         mfxU8* buf = 0;

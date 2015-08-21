@@ -87,25 +87,25 @@ mfxStatus LoadSPSPPS(MfxVideoParam& par, mfxExtCodingOptionSPSPPS* pSPSPPS)
     if (!pSPSPPS)
         return MFX_ERR_NONE;
 
-    if (!pSPSPPS->SPSBuffer || !pSPSPPS->PPSBuffer)
-        return MFX_ERR_NULL_PTR;
+    if (pSPSPPS->SPSBuffer)
+    {
+        BitstreamReader bs(pSPSPPS->SPSBuffer, pSPSPPS->SPSBufSize);
+        sts = HeaderReader::ReadSPS(bs, par.m_sps);
+        MFX_CHECK_STS(sts);
 
-    BitstreamReader bs(pSPSPPS->SPSBuffer, pSPSPPS->SPSBufSize);
+        if (pSPSPPS->PPSBuffer)
+        {
+            bs.Reset(pSPSPPS->PPSBuffer, pSPSPPS->PPSBufSize);
+            sts = HeaderReader::ReadPPS(bs, par.m_pps);
+            MFX_CHECK_STS(sts);
+        }
 
-    sts = HeaderReader::ReadSPS(bs, par.m_sps);
-    MFX_CHECK_STS(sts);
+        Zero(par.m_vps);
+        ((LayersInfo&)par.m_vps) = ((LayersInfo&)par.m_sps);
+        par.m_vps.video_parameter_set_id = par.m_sps.video_parameter_set_id;
 
-    bs.Reset(pSPSPPS->PPSBuffer, pSPSPPS->PPSBufSize);
-
-    sts = HeaderReader::ReadPPS(bs, par.m_pps);
-    MFX_CHECK_STS(sts);
-
-    par.SyncHeadersToMfxParam();
-
-    Zero(par.m_vps);
-    ((LayersInfo&)par.m_vps) = ((LayersInfo&)par.m_sps);
-    par.m_vps.video_parameter_set_id = par.m_sps.video_parameter_set_id;
-
+        par.SyncHeadersToMfxParam();
+    }
     return sts;
 }
 
@@ -142,7 +142,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     m_vpar.SyncCalculableToVideoParam();
 
-    if (!pSPSPPS)
+    if (!pSPSPPS || !pSPSPPS->SPSBuffer)
         m_vpar.SyncMfxToHeadersParam();
 
     sts = CheckHeaders(m_vpar, m_caps);
@@ -312,17 +312,15 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             MFX_CHECK_STS(sts);
         }
 
-
-        mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(tmp);
-        if (pSPSPPS)
+        mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*in);
+        if (pSPSPPS && pSPSPPS->SPSBuffer)
         {
             sts = LoadSPSPPS(tmp, pSPSPPS);
             MFX_CHECK_STS(sts);
 
-            sts = CheckHeaders(tmp, caps);
-            MFX_CHECK_STS(sts);
+             sts = CheckHeaders(tmp, caps);
+             MFX_CHECK_STS(sts);
         }
-
         sts = CheckVideoParam(tmp, caps);
 
         tmp.FillPar(*out, true);
