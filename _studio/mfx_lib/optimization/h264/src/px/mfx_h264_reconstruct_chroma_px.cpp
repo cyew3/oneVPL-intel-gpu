@@ -60,7 +60,7 @@ inline Plane ClampTblLookup_16U(mfxI32 val, mfxI32 val1, mfxU32 bitDepth)
 template<typename Plane, typename Coeffs, int chroma_format_idc>
 void ippiReconstructChromaInter4x4MB_H264_16s8u_C2R(Coeffs **ppSrcDstCoeff,
                                                                    Plane *pSrcDstUVPlane,
-                                                                   Ipp32u srcdstUVStep,
+                                                                   Ipp32u srcdstUVStep_,
                                                                    Ipp32u cbpU, Ipp32u cbpV,
                                                                    Ipp32u chromaQPU,
                                                                    Ipp32u chromaQPV,
@@ -87,6 +87,7 @@ void ippiReconstructChromaInter4x4MB_H264_16s8u_C2R(Coeffs **ppSrcDstCoeff,
     if (!cbpU && !cbpV)
         return;
 
+    int srcdstUVStep = (int)srcdstUVStep_;
     Ipp32u blockSize = ((chroma_format_idc == 2) ? 8 : 4);
 
 #ifdef __ICL
@@ -722,7 +723,7 @@ void ippiReconstructChromaIntra4x4MB_H264_kernel(Coeffs **ppSrcDstCoeff,
 template<typename Plane, typename Coeffs, int chroma_format_idc>
 void ippiReconstructChromaIntraHalfs4x4MB_NV12(Coeffs **ppSrcDstCoeff,
                                                 Plane *pSrcDstUVPlane,
-                                                Ipp32u srcdstUVStep,
+                                                Ipp32u srcdstUVStep_,
                                                 IppIntraChromaPredMode_H264 intra_chroma_mode,
                                                 Ipp32u cbpU, Ipp32u cbpV,
                                                 Ipp32u chromaQPU, Ipp32u chromaQPV,
@@ -737,6 +738,7 @@ void ippiReconstructChromaIntraHalfs4x4MB_NV12(Coeffs **ppSrcDstCoeff,
     if (sizeof(Plane) == 1)
         bitDepth = 8;
 
+    int srcdstUVStep = (int)srcdstUVStep_;
     Plane defaultValue = (Plane)(1 << (bitDepth - 1));
 
     Ipp32s j,i;
