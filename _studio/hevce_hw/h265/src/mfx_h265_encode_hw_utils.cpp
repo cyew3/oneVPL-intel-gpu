@@ -323,8 +323,8 @@ mfxStatus CopyRawSurfaceToVideoMemory(
             needUnlock = true;
         }
 
-        sts = fa.Lock(fa.pthis, d3dSurf.MemId, &surfDst.Data);
-        MFX_CHECK_STS(sts);
+        //sts = fa.Lock(fa.pthis, d3dSurf.MemId, &surfDst.Data);
+        //MFX_CHECK_STS(sts);
 
         sts = core.CopyFrame(&surfDst, &surfSrc);
 
@@ -334,8 +334,8 @@ mfxStatus CopyRawSurfaceToVideoMemory(
             MFX_CHECK_STS(sts);
         }
 
-        sts = fa.Unlock(fa.pthis, d3dSurf.MemId, &surfDst.Data);
-        MFX_CHECK_STS(sts);
+        //sts = fa.Unlock(fa.pthis, d3dSurf.MemId, &surfDst.Data);
+        //MFX_CHECK_STS(sts);
     }
 
     return sts;

@@ -1883,11 +1883,14 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
 {
     if(!dst || !src)
         return MFX_ERR_NULL_PTR;
-    if(src->Data.Y) //input video frame is locked or system, call old copy function
+    if(src->Data.Y && dst->Data.Y) //input video frame is locked or system, call old copy function
     {
-        return DoFastCopy(dst, src);
+        mfxU16 srcMemType = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME;
+        mfxU16 dstMemType = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME;
+
+        return DoFastCopyWrapper(dst, dstMemType, src, srcMemType);
     }
-    else if(src->Data.MemId)
+    else if(src->Data.MemId && dst->Data.Y)
     {
         bool unlock_internal = false;
         bool unlock_external = false;
@@ -1929,6 +1932,70 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
         } else if (unlock_internal) {
             sts = UnlockFrame(dst->Data.MemId, &dst->Data);
         }
+        return sts;
+    }
+    else if(src->Data.Y && dst->Data.MemId)
+    {
+        bool unlock_internal = false;
+        bool unlock_external = false;
+        mfxMemId dstHandle = 0;
+        mfxU16 dstMemType = MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
+        mfxU16 srcMemType = MFX_MEMTYPE_SYSTEM_MEMORY;
+        mfxStatus sts = GetExternalFrameHDL(dst->Data.MemId, &dstHandle);
+        if(MFX_ERR_UNDEFINED_BEHAVIOR == sts)
+            dstMemType |= MFX_MEMTYPE_INTERNAL_FRAME;
+        else
+            dstMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
+
+        if(!src->Data.Y)
+        {
+            sts = LockExternalFrame(src->Data.MemId, &src->Data);
+            if(MFX_ERR_NONE == sts)
+            {
+                unlock_external = true;
+                srcMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
+            }
+            else
+            {
+                srcMemType |= MFX_MEMTYPE_INTERNAL_FRAME;
+                unlock_internal = true;
+                sts = LockFrame(src->Data.MemId, &src->Data);
+                MFX_CHECK_STS(sts);
+            }
+        }
+        else
+        {
+            srcMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
+        }
+
+        sts = DoFastCopyWrapper(dst, dstMemType, src, srcMemType);
+        MFX_CHECK_STS(sts);
+        if(unlock_external)
+        {
+            sts = UnlockExternalFrame(src->Data.MemId, &src->Data);
+        } else if (unlock_internal) {
+            sts = UnlockFrame(src->Data.MemId, &src->Data);
+        }
+        return sts;
+    }
+    else if(src->Data.MemId && dst->Data.MemId)
+    {
+        mfxMemId dstHandle = 0;
+        mfxMemId srcHandle = 0;
+        mfxU16 dstMemType = MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
+        mfxU16 srcMemType = MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
+        mfxStatus sts = GetExternalFrameHDL(dst->Data.MemId, &dstHandle);
+        if(MFX_ERR_UNDEFINED_BEHAVIOR == sts)
+            dstMemType |= MFX_MEMTYPE_INTERNAL_FRAME;
+        else
+            dstMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
+        sts = GetExternalFrameHDL(src->Data.MemId, &srcHandle);
+        if(MFX_ERR_UNDEFINED_BEHAVIOR == sts)
+            srcMemType |= MFX_MEMTYPE_INTERNAL_FRAME;
+        else
+            srcMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
+
+        sts = DoFastCopyWrapper(dst, dstMemType, src, srcMemType);
         return sts;
     }
     else
