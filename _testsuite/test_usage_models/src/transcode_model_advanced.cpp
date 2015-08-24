@@ -630,17 +630,26 @@ mfxU32 TranscodeModelAdvanced::EncodeRoutine(void *pParam)
         {
             std::unique_lock<std::mutex> lk1(*p_pool_mtx);
             mfxFrameSurfaceEx inputSurfaceEx = (pConnectPool->size() > 0) ? pConnectPool->front() : zeroSurfaceEx;//critical section???
-            
+
             std::unique_lock<std::mutex> lk2(m_bs_out_mtx);
             mfxBitstreamEx* pBSEx = NULL;
+
             pBSEx = m_pOutBSManager->GetNext();
+            // wait for free output bitsream
+            while (!pBSEx)
+            {
+                lk2.unlock();
+                MSDK_SLEEP(60);
+                lk2.lock();
+                pBSEx = m_pOutBSManager->GetNext();
+            }
             pBSEx->syncp = 0;
 
-            mfxStatus mfxSts = EncodeOneFrame( inputSurfaceEx.pSurface, pBSEx );
+            mfxStatus mfxSts = EncodeOneFrame(inputSurfaceEx.pSurface, pBSEx);
 
             // after EncodeOneFrame() we should erase first element. real data is kept by mfx_session
             if(pConnectPool->size() > 0 )
-            { 
+            {
                 pConnectPool->pop_front();
             }
             lk1.unlock();
