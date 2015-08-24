@@ -1790,8 +1790,15 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.FrameInfo.Height > hwCaps.MaxPicHeight)
         return Error(MFX_WRN_PARTIAL_ACCELERATION);
 
-    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1 )!= MFX_PICSTRUCT_PROGRESSIVE && hwCaps.NoInterlacedField)
-        return Error(MFX_WRN_PARTIAL_ACCELERATION);
+    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1 )!= MFX_PICSTRUCT_PROGRESSIVE && hwCaps.NoInterlacedField){
+        if(par.mfx.LowPower == MFX_CODINGOPTION_ON)
+        {
+            par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            changed = true;
+        }
+        else
+            return Error(MFX_WRN_PARTIAL_ACCELERATION);
+    }
 
     if (hwCaps.MaxNum_TemporalLayer != 0 &&
         hwCaps.MaxNum_TemporalLayer < par.calcParam.numTemporalLayer)
