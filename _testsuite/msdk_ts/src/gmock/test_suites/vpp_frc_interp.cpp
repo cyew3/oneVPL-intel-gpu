@@ -348,6 +348,10 @@ int TestSuite::RunTest(unsigned int id)
     } else if (tc.mode & RESET)
     {
         Query(m_session, m_pPar, &par_out);
+
+        SETPARS(&par_out, MFX_PAR);
+        m_par.vpp.In.FourCC  = par_out.vpp.In.FourCC;
+        m_par.vpp.Out.FourCC = par_out.vpp.Out.FourCC;
         Init();
 
         AttachBuffers(tc, RESET, m_par, par_out);
