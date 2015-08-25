@@ -1720,11 +1720,9 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
         m_params.vpp.Out.PicStruct != par->vpp.Out.PicStruct)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-    if (m_params.vpp.In.FrameRateExtD  != par->vpp.In.FrameRateExtD  ||
-        m_params.vpp.In.FrameRateExtN  != par->vpp.In.FrameRateExtN  ||
-        m_params.vpp.Out.FrameRateExtD != par->vpp.Out.FrameRateExtD ||
-        m_params.vpp.Out.FrameRateExtN != par->vpp.Out.FrameRateExtN)
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    if (m_params.vpp.In.FrameRateExtD * m_params.vpp.Out.FrameRateExtN * par->vpp.In.FrameRateExtN * par->vpp.Out.FrameRateExtD !=
+        m_params.vpp.In.FrameRateExtN * m_params.vpp.Out.FrameRateExtD * par->vpp.In.FrameRateExtD * par->vpp.Out.FrameRateExtN)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; // check (a / b) / (c / d) == (e / f) / (g / h) equals to (a * d * f * g) == (c * b * e * h)
 
     if (m_params.vpp.In.FourCC  != par->vpp.In.FourCC ||
         m_params.vpp.Out.FourCC != par->vpp.Out.FourCC)
