@@ -31,6 +31,7 @@
 
 #include <vector>
 #include <memory>
+#include <algorithm>
 
 
 enum {
@@ -45,9 +46,8 @@ enum MemType {
     D3D11_MEMORY  = 0x02,
 };
 
-#define PREENC_ALLOC 1
-#define PAK_ALLOC    2
-
+//#define PREENC_ALLOC 1
+//#define PAK_ALLOC    2
 
 struct sInputParams
 {
@@ -107,6 +107,7 @@ struct sInputParams
     bool MultiPredL1;
     bool DistortionType;
     bool ColocatedMbDistortion;
+    bool bRepackPreencMV;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;
@@ -264,9 +265,10 @@ protected:
     mfxExtFeiEncQP feiEncMbQp[2];
     mfxExtFeiPakMBCtrl feiEncMBCode[2];
 
-    mfxU16 numExtInParams;
+    mfxU16 numExtInParams, numExtInParamsI;
     mfxU16 numExtOutParams;
     mfxExtBuffer * inBufs[4 + 3]; // 4 general + 3 for SPS, PPS and Slice header
+    mfxExtBuffer * inBufsI[4 + 3];
     mfxExtBuffer * outBufs[4 + 3];
 
     mfxU16 numExtOutParamsPreEnc;
@@ -285,6 +287,11 @@ protected:
     bool disableMBStatPreENC;
 
     mfxU32 m_refFrameCounter;
+
+    //mfxI16 defaultMVvalue = 0x8000;
 };
+
+void repackPreenc2Enc(mfxExtFeiPreEncMV::mfxMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);
+mfxI16 get16Median(mfxExtFeiPreEncMV::mfxMB* preencMB, mfxI16* tmpBuf, mfxI16 xy, mfxI16 L0L1);
 
 #endif // __PIPELINE_ENCODE_H__

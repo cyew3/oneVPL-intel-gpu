@@ -44,7 +44,8 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
     msdk_printf(MSDK_STRING("   [-mbctrl file] - use the input to set MB control for FEI (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mbsize] - with this options size control fields will be used from MB control structure (only ENC+PAK)\n"));
-    msdk_printf(MSDK_STRING("   [-mvin file] - use this input to set MV predictor for FEI\n"));
+    msdk_printf(MSDK_STRING("   [-mvin file] - use this input to set MV predictor for FEI. PREENC and ENC (ENCODE) expect different structures\n"));
+    //msdk_printf(MSDK_STRING("   [-repack_preenc_mv] - use this in pair with -mvin to import preenc MVout directly\n"));
     msdk_printf(MSDK_STRING("   [-mvout file] - use this to output MV predictors\n"));
     msdk_printf(MSDK_STRING("   [-mbcode file] - file to output per MB information (structure mfxExtFeiPakMBCtrl) for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbstat file] - file to output per MB distortions for each frame\n"));
@@ -142,6 +143,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->mvinFile = strInput[i+1];
             i++;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-repack_preenc_mv")))
+        {
+            pParams->bRepackPreencMV = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvout")))
         {
@@ -532,10 +537,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
-    bool bEnableBiPred = (pParams->bENCODE || pParams->bENCPAK || pParams->bOnlyENC) && (pParams->refDist > 1);
-
-    if ((!pParams->SearchWindow && (pParams->RefHeight <= 0 || pParams->RefWidth <= 0 || pParams->RefHeight % 4 != 0 || pParams->RefWidth % 4 != 0 ||
-          pParams->RefHeight * pParams->RefWidth > (bEnableBiPred ? 1024 : 2048))) || (pParams->SearchWindow > 2 && bEnableBiPred)){
+    if ((!pParams->SearchWindow && (pParams->RefHeight <= 0 || pParams->RefWidth <= 0 || pParams->RefHeight % 4 != 0 || pParams->RefWidth % 4 != 0)) ){
         if (bAlrShownHelp)
             msdk_printf(MSDK_STRING("\nUnsupported value of search window size. -ref_window_h, -ref_window_w parameters, must be multiple of 4!\n"
                                     "For bi-prediction window w*h must less than 1024 and less 2048 otherwise.\n"));
@@ -637,6 +639,7 @@ int main(int argc, char *argv[])
     Params.nNumFrames = 0; //unlimited
     Params.refDist = 1; //only I frames
     Params.gopSize = 1; //only I frames
+    Params.numRef  = 1; //one ref by default
     Params.bENCODE   = false; //default value
     Params.bENCPAK   = false; //default value
     Params.bOnlyENC  = false; //default value
@@ -657,22 +660,23 @@ int main(int argc, char *argv[])
     Params.mbstatoutFile = NULL;
     Params.mbcodeoutFile = NULL;
     Params.mbQpFile      = NULL;
+    Params.bRepackPreencMV = false;
     Params.bMBSize = false;
     Params.memType = D3D9_MEMORY; //only HW memory is supported
-    Params.QP = 26; //default qp value
     Params.bUseHWLib = true;
     Params.bLABRC    = false;
     Params.bRefType = MFX_B_REF_OFF; //default set to off
-    Params.SearchWindow    = 0;
-    Params.RefWidth        = 32;//48;
-    Params.RefHeight       = 32;//40;
+    Params.QP              = 26; //default qp value
+    Params.SearchWindow    = 5;  //48x40 (48 SUs)
+    Params.RefWidth        = 32;
+    Params.RefHeight       = 32;
     Params.LenSP           = 57;
-    Params.SearchPath      = 1;
-    Params.SubMBPartMask   = 0x77;
-    Params.IntraPartMask   = 0x00;
-    Params.SubPelMode      = 0x03;
-    Params.IntraSAD        = 0x02;
-    Params.InterSAD        = 0x02;
+    Params.SearchPath      = 2;    // exhaustive
+    Params.SubMBPartMask   = 0x00; // all enabled
+    Params.IntraPartMask   = 0x00; // all enabled
+    Params.SubPelMode      = 0x03; // quarter-pixel
+    Params.IntraSAD        = 0x02; // Haar transform
+    Params.InterSAD        = 0x02; // Haar transform
     Params.NumMVPredictors = 1;
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
