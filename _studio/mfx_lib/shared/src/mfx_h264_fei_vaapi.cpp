@@ -318,7 +318,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         m_statParams.disable_statistics_output = (mbstatOut == NULL) || feiCtrl->DisableStatisticsOutput;
         m_statParams.disable_mv_output = (mvsOut == NULL) || feiCtrl->DisableMVOutput;
         m_statParams.mb_qp = (feiQP == NULL) && feiCtrl->MBQp;
-        m_statParams.mv_predictor_ctrl = (feiMVPred == NULL) ? feiCtrl->MVPredictor : 0;
+        m_statParams.mv_predictor_ctrl = (feiMVPred != NULL) ? feiCtrl->MVPredictor : 0;
     }
     else
     {
