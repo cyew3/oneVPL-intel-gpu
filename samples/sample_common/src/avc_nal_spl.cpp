@@ -47,8 +47,8 @@ inline bool IsHeaderCode(mfxI32 iCode)
 
 inline bool IsVLCCode(mfxI32 iCode)
 {
-    return (NAL_UT_SLICE <= (iCode & AVC_NAL_UNITTYPE_BITS_MASK)) &&
-           (NAL_UT_IDR_SLICE >= (iCode & AVC_NAL_UNITTYPE_BITS_MASK)) ||
+    return ((NAL_UT_SLICE <= (iCode & AVC_NAL_UNITTYPE_BITS_MASK)) &&
+           (NAL_UT_IDR_SLICE >= (iCode & AVC_NAL_UNITTYPE_BITS_MASK))) ||
            (NAL_UT_AUXILIARY == (iCode & AVC_NAL_UNITTYPE_BITS_MASK));
 }
 
@@ -94,10 +94,10 @@ mfxStatus MoveBitstream(mfxBitstream * source, mfxI32 moveSize)
 StartCodeIterator::StartCodeIterator()
     : m_code(0)
     , m_pts(MFX_TIME_STAMP_INVALID)
-    , m_pSourceBase(0)
     , m_pSource(0)
-    , m_nSourceBaseSize(0)
     , m_nSourceSize(0)
+    , m_pSourceBase(0)
+    , m_nSourceBaseSize(0)
     , m_suggestedSize(10 * 1024)
 {
     Reset();

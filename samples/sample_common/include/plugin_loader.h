@@ -86,9 +86,9 @@ private:
 
 public:
     PluginLoader(mfxPluginType type, mfxSession session, const mfxPluginUID & uid, mfxU32 version, const mfxChar *pluginName, mfxU32 len)
-        : m_session()
+        : ePluginType(type)
+        , m_session()
         , m_uid()
-        , ePluginType(type)
     {
         len; pluginName;
         mfxStatus sts = MFX_ERR_NONE;
@@ -124,9 +124,9 @@ public:
     }
 
     PluginLoader(mfxPluginType type, mfxSession session, const mfxPluginUID & uid, mfxU32 version)
-        : m_session()
+        : ePluginType(type)
+        , m_session()
         , m_uid()
-        , ePluginType(type)
     {
         mfxStatus sts = MFX_ERR_NONE;
         msdk_stringstream strStream;

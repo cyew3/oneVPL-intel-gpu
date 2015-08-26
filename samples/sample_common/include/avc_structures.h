@@ -442,6 +442,8 @@ struct AVCSeqParamSetExtension
         return seq_parameter_set_id;
     }
 
+    virtual ~AVCSeqParamSetExtension(){}
+
 };    // AVCSeqParamSetExtension
 
 // Picture parameter set structure, corresponding to the H.264 bitstream definition.

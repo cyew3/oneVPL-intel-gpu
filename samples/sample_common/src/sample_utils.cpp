@@ -1779,8 +1779,9 @@ mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat)
 
 CH264FrameReader::CH264FrameReader()
 : CSmplBitstreamReader()
-, m_isEndOfStream(false)
 , m_processedBS(0)
+, m_isEndOfStream(false)
+, m_frame(0)
 , m_plainBuffer(0)
 , m_plainBufferSize(0)
 {
