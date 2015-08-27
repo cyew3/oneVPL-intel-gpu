@@ -56,6 +56,10 @@ FourCC2Str( mfxU32 FourCC )
     return MSDK_STRING("YUY2");
     break;
 
+  case MFX_FOURCC_UYVY:
+    return MSDK_STRING("UYVY");
+    break;
+
   case MFX_FOURCC_RGB3:
     return MSDK_STRING("RGB3");
     break;
@@ -827,6 +831,16 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
   else if (pInfo->FourCC == MFX_FOURCC_YUY2)
   {
     ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
+
+    for(i = 0; i < h; i++)
+    {
+      nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, 2*w, m_fSrc);
+      IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 2*w, MFX_ERR_MORE_DATA);
+    }
+  }
+  else if (pInfo->FourCC == MFX_FOURCC_UYVY)
+  {
+    ptr = pData->U + pInfo->CropX + pInfo->CropY * pitch;
 
     for(i = 0; i < h; i++)
     {

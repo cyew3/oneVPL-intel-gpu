@@ -42,7 +42,7 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-scrW  w]       - cropW  of src video (def: width)\n"));
     msdk_printf(MSDK_STRING("   [-scrH  h]       - cropH  of src video (def: height)\n"));
     msdk_printf(MSDK_STRING("   [-sf  frameRate] - frame rate of src video (def: 30.0)\n"));
-    msdk_printf(MSDK_STRING("   [-scc format]    - format (FourCC) of src video (def: nv12. support nv12|yv12|yuy2|rgb3|rgb4)\n"));
+    msdk_printf(MSDK_STRING("   [-scc format]    - format (FourCC) of src video (def: nv12. support nv12|yv12|yuy2|rgb3|rgb4|uyvy)\n"));
 
     msdk_printf(MSDK_STRING("   [-spic value]    - picture structure of src video\n"));
     msdk_printf(MSDK_STRING("                       0 = interlaced top    field first\n"));
@@ -173,6 +173,10 @@ static mfxU32 Str2FourCC( msdk_char* strInput )
     else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yuy2")) )
     {
         fourcc = MFX_FOURCC_YUY2;
+    }
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("uyvy")) )
+    {
+        fourcc = MFX_FOURCC_UYVY;
     }
     else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("nv12")) )
     {
