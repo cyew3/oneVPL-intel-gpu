@@ -2250,7 +2250,22 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     for (refIdx = 0; refIdx < pParams->refCount; refIdx++)
     {
         SetStreamFrameFormat(refIdx, D3D11PictureStructureMapping(pParams->pRefSurfaces[refIdx].frameInfo.PicStruct));
-        SetOutputAlphaFillMode(D3D11_VIDEO_PROCESSOR_ALPHA_FILL_MODE_SOURCE_STREAM, refIdx);
+
+        if ( pParams->pRefSurfaces[refIdx].frameInfo.FourCC == MFX_FOURCC_A2RGB10    ||
+             pParams->pRefSurfaces[refIdx].frameInfo.FourCC == MFX_FOURCC_ARGB16     ||
+             pParams->pRefSurfaces[refIdx].frameInfo.FourCC == MFX_FOURCC_AYUV       ||
+             pParams->pRefSurfaces[refIdx].frameInfo.FourCC == MFX_FOURCC_AYUV_RGB4  ||
+             pParams->pRefSurfaces[refIdx].frameInfo.FourCC == MFX_FOURCC_RGB4)
+        {
+            // WA: if app explicitly requested LOW_POWER (e.g. using SFC instead of AVS), AlphaFillMode should not be used
+            // because driver will fallback silently to AVS.
+            if ( ! m_vpreCaps.bScalingMode || pParams->scalingMode != MFX_SCALING_MODE_LOWPOWER )
+            {
+                // Preserve alpha channel. If this call is not done, alpha channel of the output surface will be
+                // filed with 0xFF.
+                SetOutputAlphaFillMode(D3D11_VIDEO_PROCESSOR_ALPHA_FILL_MODE_SOURCE_STREAM, refIdx);
+            }
+        }
 
         mfxDrvSurface* pInputSample = &(pParams->pRefSurfaces[refIdx]);
 
