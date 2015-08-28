@@ -2288,26 +2288,48 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 
     m_pBuffer = pBuffer;
 
-    mfxVersion min_version;
+    mfxInitParam initPar;
+    mfxExtThreadsParam threadsPar;
+    mfxExtBuffer* extBufs[1];
+
+    MSDK_ZERO_MEMORY(initPar);
+    MSDK_ZERO_MEMORY(threadsPar);
 
     // we set version to 1.0 and later we will query actual version of the library which will got leaded
-    min_version.Major = 1;
-    min_version.Minor = 0;
+    initPar.Version.Major = 1;
+    initPar.Version.Minor = 0;
+    initPar.Implementation = pParams->libType;
+
+    init_ext_buffer(threadsPar);
+
+    bool needInitExtPar = false;
+
+    if (pParams->nThreadsNum) {
+        threadsPar.NumThread = pParams->nThreadsNum;
+        needInitExtPar = true;
+    }
+    if (needInitExtPar) {
+        extBufs[0] = (mfxExtBuffer*)&threadsPar;
+        initPar.ExtParam = extBufs;
+        initPar.NumExtParam = 1;
+    }
 
     // init session
     m_pmfxSession.reset(new MFXVideoSession);
 
-    if (pParams->libType & MFX_IMPL_HARDWARE_ANY)
+    if (initPar.Implementation & MFX_IMPL_HARDWARE_ANY)
     {
         // try search for MSDK on all display adapters
-        sts = m_pmfxSession->Init(pParams->libType, &min_version);
+        sts = m_pmfxSession->InitEx(initPar);
 
         // MSDK API version may have no support for multiple adapters - then try initialize on the default
-        if (MFX_ERR_NONE != sts)
-            sts = m_pmfxSession->Init((pParams->libType & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE, NULL);
+        if (MFX_ERR_NONE != sts) {
+            initPar.Implementation = (initPar.Implementation & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE;
+            sts = m_pmfxSession->InitEx(initPar);
+        }
     }
     else
-        sts = m_pmfxSession->Init(pParams->libType, &min_version);
+        sts = m_pmfxSession->InitEx(initPar);
 
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 

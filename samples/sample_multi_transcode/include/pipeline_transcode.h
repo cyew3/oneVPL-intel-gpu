@@ -95,6 +95,7 @@ namespace TranscodingSample
         // common parameters
         mfxIMPL libType;  // Type of used mediaSDK library
         bool   bIsPerf;   // special performance mode. Use pre-allocated bitstreams, output
+        mfxU16 nThreadsNum; // number of internal session threads number
 
         mfxU32 EncodeId; // type of output coded video
         mfxU32 DecodeId; // type of input coded video
