@@ -209,6 +209,14 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     m_numBuffered = 0;
 
+#if DEBUG_REC_FRAMES_INFO 
+    mfxExtDumpFiles * extDump = &m_vpar.m_ext.DumpFiles;
+    if (vm_file * file = OpenFile(extDump->ReconFilename, _T("wb")))
+    {
+        vm_file_fclose(file);
+    }
+
+#endif
     return qsts;
 }
 
@@ -336,6 +344,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 
     MfxVideoParam parNew = *par;
 
+    mfxExtEncoderResetOption * pResetOpt = ExtBuffer::Get(*par);
     mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
 
     sts = LoadSPSPPS(parNew, pSPSPPS);
@@ -348,8 +357,15 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 
     parNew.SyncCalculableToVideoParam();
 
+    if (!pSPSPPS || !pSPSPPS->SPSBuffer)
+        parNew.SyncMfxToHeadersParam();
+
+    sts = CheckHeaders(parNew, m_caps);
+    MFX_CHECK_STS(sts);
+
+
     MFX_CHECK(
-           parNew.mfx.CodecProfile           != MFX_CODEC_HEVC
+        parNew.mfx.CodecProfile           != MFX_CODEC_HEVC
         && m_vpar.AsyncDepth                 == parNew.AsyncDepth
         && m_vpar.mfx.GopRefDist             >= parNew.mfx.GopRefDist
         //&& m_vpar.mfx.NumSlice               >= parNew.mfx.NumSlice
@@ -361,13 +377,45 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
         && m_vpar.IOPattern                  == parNew.IOPattern
         ,  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    if (m_vpar.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    if (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
+        m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
     {
         MFX_CHECK(
             m_vpar.InitialDelayInKB == parNew.InitialDelayInKB &&
             m_vpar.BufferSizeInKB   == parNew.BufferSizeInKB,
             MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     }
+
+    mfxU32 tempLayerIdx = 0;
+    bool changeLyncLayers = false;
+    bool isIdrRequired = false;
+    
+    // check if change of temporal scalability required by new parameters
+    if (m_vpar.isTL() && parNew.isTL())
+    {
+        // calculate temporal layer for next frame
+        tempLayerIdx     = m_vpar.GetTId(m_frameOrder);
+        changeLyncLayers = m_vpar.NumTL() != parNew.NumTL();
+    }
+
+    // check if IDR required after change of encoding parameters
+    bool isSpsChanged = m_vpar.m_sps.vui_parameters_present_flag == 0 ?
+        memcmp(&m_vpar.m_sps, &parNew.m_sps, sizeof(SPS) - sizeof(VUI)) != 0 :
+    !Equal(m_vpar.m_sps, parNew.m_sps);
+
+    isIdrRequired = isSpsChanged
+        || tempLayerIdx != 0 && changeLyncLayers
+        || m_vpar.mfx.GopPicSize != parNew.mfx.GopPicSize
+        || m_vpar.m_ext.CO2.IntRefType != parNew.m_ext.CO2.IntRefType;
+
+    if (isIdrRequired && pResetOpt && IsOff(pResetOpt->StartNewSequence))
+        return MFX_ERR_INVALID_VIDEO_PARAM; // Reset can't change parameters w/o IDR. Report an error
+
+
+    
+    //bool brcReset =
+    //    m_vpar.TargetKbps != parNew.TargetKbps ||
+    //   m_vpar.MaxKbps    != m_vpar.MaxKbps; 
 
     m_vpar = (mfxVideoParam)parNew;
 
@@ -386,54 +434,65 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     // waiting for submitted in driver tasks
-    for (;;)
+    if (isIdrRequired)
     {
-        Task* task = m_task.GetTaskForQuery();
-        if (!task)
-            break;
-        mfxStatus mfxSts = m_ddi->QueryStatus(*task);
-        if (mfxSts == MFX_WRN_DEVICE_BUSY)
+        for (;;)
         {
-            vm_time_sleep(0);
-            continue;       
-        }
-        task->m_stage = STAGE_READY;
-        FreeTask(*task);
-        m_task.Ready(task);
-    }
-    // reorder other tasks
-    for (;;)
-    {
-        Task* pTask = m_task.Reorder(m_vpar, m_lastTask.m_dpb[0], true);
-        if (!pTask)
-            break;
-    }
-    // free reordered tasks
-    for (;;)
-    {
-        Task* task = m_task.GetSubmittedTask();
-        if (!task)
-            break;
-
-       m_task.SubmitForQuery(task);
-       task->m_stage = STAGE_READY;
-       if (task->m_surf)
+            Task* task = m_task.GetTaskForQuery();
+            if (!task)
+                break;
+            mfxStatus mfxSts = m_ddi->QueryStatus(*task);
+            if (mfxSts == MFX_WRN_DEVICE_BUSY)
+            {
+                vm_time_sleep(0);
+                continue;       
+            }
+            task->m_stage = STAGE_READY;
             FreeTask(*task);
-       m_task.Ready(task);
-    }    
+            m_task.Ready(task);
+        }
+        // reorder other tasks
+        for (;;)
+        {
+            Task* pTask = m_task.Reorder(m_vpar, m_lastTask.m_dpb[0], true);
+            if (!pTask)
+                break;
+        }
+        // free reordered tasks
+        for (;;)
+        {
+            Task* task = m_task.GetSubmittedTask();
+            if (!task)
+                break;
 
+           m_task.SubmitForQuery(task);
+           task->m_stage = STAGE_READY;
+           if (task->m_surf)
+                FreeTask(*task);
+           m_task.Ready(task);
+        }    
+
+       
+        m_task.Reset();
+
+        m_frameOrder = 0;
+        m_raw.Unlock();
+        m_rec.Unlock();
+        m_bs.Unlock();
+
+        Fill(m_lastTask, 0xFF);
+        m_numBuffered = 0;
+
+#if DEBUG_REC_FRAMES_INFO 
+        mfxExtDumpFiles * extDump = &m_vpar.m_ext.DumpFiles;
+        if (vm_file * file = OpenFile(extDump->ReconFilename, _T("wb")))
+        {
+            vm_file_fclose(file);
+        }
+#endif
+    }
     m_hrd.Reset(m_vpar.m_sps);
     m_ddi->Reset(m_vpar);
-    m_task.Reset();
-
-    m_frameOrder = 0;
-
-    m_raw.Unlock();
-    m_rec.Unlock();
-    m_bs.Unlock();
-
-    Fill(m_lastTask, 0xFF);
-    m_numBuffered = 0;
 
     return sts;
 }
@@ -651,6 +710,50 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             bs->PicStruct       = MFX_PICSTRUCT_PROGRESSIVE;
             bs->FrameType       = taskForQuery->m_frameType;
         }
+
+#if DEBUG_REC_FRAMES_INFO 
+
+        mfxExtDumpFiles * extDump = &m_vpar.m_ext.DumpFiles;
+
+        if (vm_file * file = OpenFile(extDump->ReconFilename, _T("ab")))
+        {
+            mfxFrameData data = { 0 };
+            mfxFrameAllocator & fa = m_core.FrameAllocator();
+
+            data.MemId = m_rec.mids[taskForQuery->m_idxRec]; 
+            sts = fa.Lock(fa.pthis,  m_rec.mids[taskForQuery->m_idxRec], &data);
+            MFX_CHECK(data.Y, MFX_ERR_LOCK_MEMORY);
+
+            WriteFrameData(file, data, m_vpar.mfx.FrameInfo);
+            fa.Unlock(fa.pthis,  m_rec.mids[taskForQuery->m_idxRec], &data);
+
+            vm_file_fclose(file);
+        }
+        if (vm_file * file = OpenFile(extDump->InputFramesFilename, _T("ab")))
+        {
+            mfxFrameAllocator & fa = m_core.FrameAllocator();
+            if (taskForQuery->m_surf)
+            {
+                mfxFrameData data = { 0 };
+                if (taskForQuery->m_surf->Data.Y)
+                {
+                    data = taskForQuery->m_surf->Data;
+                }
+                else
+                {
+                     sts = fa.Lock(fa.pthis,  taskForQuery->m_surf->Data.Y, &data);
+                     MFX_CHECK(data.Y, MFX_ERR_LOCK_MEMORY);
+                }            
+                WriteFrameData(file, data, m_vpar.mfx.FrameInfo);
+                vm_file_fclose(file);
+
+                if (!taskForQuery->m_surf->Data.Y)
+                {
+                    fa.Unlock(fa.pthis,  taskForQuery->m_surf->Data.Y, &data);
+                }
+            }
+        }
+#endif // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 
         taskForQuery->m_stage |= FRAME_ENCODED;
         FreeTask(*taskForQuery);

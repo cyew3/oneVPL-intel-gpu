@@ -180,7 +180,7 @@ mfxU32 GetMaxCpbInKBByLevel(MfxVideoParam const & par)
     return TableA1[LevelIdx(par.mfx.CodecLevel)][1+TierIdx(par.mfx.CodecLevel)] * 1100 / 8000;
 }
 
-mfxStatus CorrectLevel(MfxVideoParam& par, bool query)
+mfxStatus CorrectLevel(MfxVideoParam& par, bool bCheckOnly)
 {
     mfxStatus sts = MFX_ERR_NONE;
     //mfxU32 CpbBrVclFactor    = 1000;
@@ -245,16 +245,9 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool query)
 
     if (par.mfx.CodecLevel != NewLevel)
     {
-        if (par.mfx.CodecLevel)
-        {
-            par.mfx.CodecLevel = NewLevel;
-            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        }
-
-        if (!query)
-            par.mfx.CodecLevel = NewLevel;
+        par.mfx.CodecLevel = bCheckOnly ? 0 : NewLevel;
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
-
     return sts;
 }
 
@@ -943,10 +936,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     sts = CheckProfile(par);
 
-    if (sts >= MFX_ERR_NONE)
+    if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)
     {
         if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) changed +=1;
-        sts = CorrectLevel(par, !bInit);
+        sts = CorrectLevel(par, true);
+ 
     }
 
     if (sts == MFX_ERR_NONE && changed)

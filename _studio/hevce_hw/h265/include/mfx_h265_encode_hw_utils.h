@@ -13,6 +13,10 @@
 #include "mfxplugin++.h"
 #include "umc_mutex.h"
 
+#define DEBUG_REC_FRAMES_INFO 0   // dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
+#ifdef DEBUG_REC_FRAMES_INFO
+#include "vm_file.h"
+#endif
 #include <vector>
 #include <list>
 #include <assert.h>
@@ -276,6 +280,8 @@ namespace ExtBuffer
         EXTBUF(mfxExtCodingOptionSPSPPS,    MFX_EXTBUFF_CODING_OPTION_SPSPPS);
         EXTBUF(mfxExtAVCRefListCtrl,        MFX_EXTBUFF_AVC_REFLIST_CTRL);
         EXTBUF(mfxExtAvcTemporalLayers,     MFX_EXTBUFF_AVC_TEMPORAL_LAYERS);
+        EXTBUF(mfxExtDumpFiles,             MFX_EXTBUFF_DUMP);
+        EXTBUF(mfxExtEncoderResetOption,    MFX_EXTBUFF_ENCODER_RESET_OPTION);
     #undef EXTBUF
 
     class Proxy
@@ -424,6 +430,7 @@ public:
         mfxExtCodingOption3         CO3;
         mfxExtCodingOptionDDI       DDI;
         mfxExtAvcTemporalLayers     AVCTL;
+        mfxExtDumpFiles             DumpFiles;
     } m_ext;
 
     mfxU32 BufferSizeInKB;
@@ -614,4 +621,14 @@ IntraRefreshState GetIntraRefreshState(
     mfxEncodeCtrl const * ctrl,
     mfxU16                intraStripeWidthInMBs);
 
+#if DEBUG_REC_FRAMES_INFO 
+    inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)
+    {
+        return name[0] ? vm_file_fopen(name, mode) : 0;
+    }
+    void WriteFrameData(
+        vm_file *            file,
+        mfxFrameData const & data,
+        mfxFrameInfo const & info);
+#endif // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 }; //namespace MfxHwH265Encode

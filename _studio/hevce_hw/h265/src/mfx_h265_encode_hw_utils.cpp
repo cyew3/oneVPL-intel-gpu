@@ -409,6 +409,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.CO3);
     ExtBuffer::Construct(par, m_ext.DDI);
     ExtBuffer::Construct(par, m_ext.AVCTL);
+    ExtBuffer::Construct(par, m_ext.DumpFiles);
 }
 
 mfxStatus MfxVideoParam::FillPar(mfxVideoParam& par, bool query)
@@ -434,6 +435,8 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.CO3);
     ExtBuffer::Set(par, m_ext.DDI);
     ExtBuffer::Set(par, m_ext.AVCTL);
+    ExtBuffer::Set(par, m_ext.DumpFiles);
+
 
     mfxExtCodingOptionSPSPPS * pSPSPPS = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
     if (pSPSPPS && !query)
@@ -2494,4 +2497,29 @@ void ConfigureTask(
 
 }
 
+#if DEBUG_REC_FRAMES_INFO 
+
+void WriteFrameData(
+    vm_file *            file,
+    mfxFrameData const & fdata,
+    mfxFrameInfo const & info)
+{
+    mfxFrameData data = fdata;
+    if (file != 0 && data.Y != 0 && data.UV != 0)
+    {
+        for (mfxU32 i = 0; i < info.Height; i++)
+            vm_file_fwrite(data.Y + i * data.Pitch, 1, info.Width, file);
+
+        for (mfxI32 y = 0; y < info.Height / 2; y++)
+            for (mfxI32 x = 0; x < info.Width; x += 2)
+                vm_file_fwrite(data.UV + y * data.Pitch + x, 1, 1, file);
+
+        for (mfxI32 y = 0; y < info.Height / 2; y++)
+            for (mfxI32 x = 1; x < info.Width; x += 2)
+                vm_file_fwrite(data.UV + y * data.Pitch + x, 1, 1, file);
+
+        vm_file_fflush(file);
+    }
+}
+#endif // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 }; //namespace MfxHwH265Encode
