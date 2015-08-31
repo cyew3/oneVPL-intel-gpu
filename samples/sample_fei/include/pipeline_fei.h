@@ -287,8 +287,6 @@ protected:
     bool disableMBStatPreENC;
 
     mfxU32 m_refFrameCounter;
-
-    //mfxI16 defaultMVvalue = 0x8000;
 };
 
 void repackPreenc2Enc(mfxExtFeiPreEncMV::mfxMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);

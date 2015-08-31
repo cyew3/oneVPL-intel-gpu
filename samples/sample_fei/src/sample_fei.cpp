@@ -45,7 +45,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-mbctrl file] - use the input to set MB control for FEI (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mbsize] - with this options size control fields will be used from MB control structure (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mvin file] - use this input to set MV predictor for FEI. PREENC and ENC (ENCODE) expect different structures\n"));
-    //msdk_printf(MSDK_STRING("   [-repack_preenc_mv] - use this in pair with -mvin to import preenc MVout directly\n"));
+    msdk_printf(MSDK_STRING("   [-repack_preenc_mv] - use this in pair with -mvin to import preenc MVout directly\n"));
     msdk_printf(MSDK_STRING("   [-mvout file] - use this to output MV predictors\n"));
     msdk_printf(MSDK_STRING("   [-mbcode file] - file to output per MB information (structure mfxExtFeiPakMBCtrl) for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbstat file] - file to output per MB distortions for each frame\n"));
@@ -377,20 +377,25 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], NULL);
                 return MFX_ERR_UNSUPPORTED;
             default:
-                PrintHelp(strInput[0], MSDK_STRING("Unknown options"));
-                bAlrShownHelp = true;
+                if (!bAlrShownHelp){
+                    msdk_printf(MSDK_STRING("\nError: Unknown option %s\n\n"), strInput[i]);
+                    PrintHelp(strInput[0], NULL);// MSDK_STRING("Unknown options"));
+                    bAlrShownHelp = true;
+                }else {
+                    msdk_printf(MSDK_STRING("\nUnknown option %s\n\n"), strInput[i]);
+                }
             }
         }
     }
 
-    if (!( pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE ||
-          !pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE ||
-          !pParams->bPREENC && !pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE ||
-          !pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE ||
-          !pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE ||
-           pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE ||
-           pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE ||
-           pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE)
+    if (!( (pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
+          (!pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
+          (!pParams->bPREENC && !pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
+          (!pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE) ||
+          (!pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE) ||
+           (pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
+           (pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE) ||
+           (pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE) )
     ){
         if (bAlrShownHelp){
             msdk_printf(MSDK_STRING("\nUnsupported pipeline!\n"));
