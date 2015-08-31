@@ -811,6 +811,10 @@ IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
                                               xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
         if( ippStsNoErr != sts ) return sts;
 
+        /* Clip Y */
+        sts = ippiThreshold_16u_C1IR((Ipp16u*)outData->Y, outData->Pitch, dstSize, 0x03ff, ippCmpGreater);
+        if( ippStsNoErr != sts ) return sts;
+
         /* Temporary NV12->YV12 conversion. At the moment IPP has no
          * function to resize interleaved UV 10bit.
          * Need to remove as soon as IPP has such support
@@ -849,10 +853,18 @@ IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
                                               xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
         if( ippStsNoErr != sts ) return sts;
 
+        /* Clip U */
+        sts = ippiThreshold_16u_C1IR((Ipp16u*)outData->UV, outData->Pitch, dstSize, 0x03ff, ippCmpGreater);
+        if( ippStsNoErr != sts ) return sts;
+
         /* Resize V */
         sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *)(&interPtr[srcSize.width*2]), srcSize, inData->Pitch, srcRect,
                                          (Ipp16u *)(&outData->UV[dstSize.width*2]), outData->Pitch, dstRect,
                                               xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
+        if( ippStsNoErr != sts ) return sts;
+
+        /* Clip V */
+        sts = ippiThreshold_16u_C1IR((Ipp16u *)(&outData->UV[dstSize.width*2]), outData->Pitch, dstSize, 0x03ff, ippCmpGreater);
         if( ippStsNoErr != sts ) return sts;
 
         /* Convert back to NV12 layout
