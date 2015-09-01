@@ -126,12 +126,24 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
   msdk_printf(MSDK_STRING("\n"));
 
 
-  const msdk_char* sMemType = MSDK_STRING("system");
-  if (pParams->memType != SYSTEM_MEMORY)
+  const msdk_char* sMemType = NULL;
+  switch (pParams->memType)
   {
-      sMemType = pParams->memType == D3D9_MEMORY ? MSDK_STRING("d3d9")
-          : MSDK_STRING("d3d11");
+  case D3D9_MEMORY:
+      sMemType = MSDK_STRING("d3d9");
+      break;
+  case D3D11_MEMORY:
+      sMemType = MSDK_STRING("d3d11");
+      break;
+#ifdef LIBVA_SUPPORT
+  case VAAPI_MEMORY:
+      sMemType = MSDK_STRING("vaapi");
+      break;
+#endif
+  default:
+      sMemType = MSDK_STRING("system");
   }
+
   msdk_printf(MSDK_STRING("Memory type\t%s\n"), sMemType);
   msdk_printf(MSDK_STRING("\n"));
 
@@ -475,31 +487,6 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
 
     pAllocator->bUsedAsExternalAllocator = true;
 #endif
-#ifdef LIBVA_SUPPORT
-    pAllocator->pDevice = CreateVAAPIDevice();
-
-    sts = pAllocator->pDevice->Init(0, 1, MSDKAdapter::GetNumber(pProcessor->mfxSession));
-    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
-
-    mfxHDL hdl = 0;
-    sts = pAllocator->pDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
-    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
-    sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
-    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
-
-    // prepare allocator
-    pAllocator->pMfxAllocator = new vaapiFrameAllocator;
-
-    vaapiAllocatorParams *pVaapiAllocParams = new vaapiAllocatorParams;
-
-    pVaapiAllocParams->m_dpy = (VADisplay)hdl;
-    pAllocator->pAllocatorParams = pVaapiAllocParams;
-
-    sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
-    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
-
-    pAllocator->bUsedAsExternalAllocator = true;
-#endif
   }
   else if( pInParams->memType == D3D11_MEMORY )
   {
@@ -528,7 +515,35 @@ mfxStatus InitMemoryAllocator(sFrameProcessor* pProcessor, sMemoryAllocator* pAl
 
     pAllocator->bUsedAsExternalAllocator = true;
 #endif
-}
+  }
+  else if (pInParams->memType == VAAPI_MEMORY)
+  {
+#ifdef LIBVA_SUPPORT
+    pAllocator->pDevice = CreateVAAPIDevice();
+
+    sts = pAllocator->pDevice->Init(0, 1, MSDKAdapter::GetNumber(pProcessor->mfxSession));
+    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+
+    mfxHDL hdl = 0;
+    sts = pAllocator->pDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
+    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+    sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
+    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+
+    // prepare allocator
+    pAllocator->pMfxAllocator = new vaapiFrameAllocator;
+
+    vaapiAllocatorParams *pVaapiAllocParams = new vaapiAllocatorParams;
+
+    pVaapiAllocParams->m_dpy = (VADisplay)hdl;
+    pAllocator->pAllocatorParams = pVaapiAllocParams;
+
+    sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
+    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+
+    pAllocator->bUsedAsExternalAllocator = true;
+#endif
+  }
   else
   {
 #ifdef LIBVA_SUPPORT

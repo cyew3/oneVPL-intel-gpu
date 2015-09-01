@@ -657,7 +657,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
 #ifdef LIBVA_SUPPORT
             else if( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-vaapi")) )
             {
-                pParams->memType = D3D9_MEMORY;
+                pParams->memType = VAAPI_MEMORY;
             }
 #endif
         }
