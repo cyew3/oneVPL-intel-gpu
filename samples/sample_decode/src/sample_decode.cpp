@@ -67,7 +67,12 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 #endif
 #if defined(LIBVA_SUPPORT)
     msdk_printf(MSDK_STRING("   [-vaapi]                  - work with vaapi surfaces\n"));
-    msdk_printf(MSDK_STRING("   [-r]                      - render decoded data in a separate window \n"));
+#endif
+#if defined(LIBVA_X11_SUPPORT)
+    msdk_printf(MSDK_STRING("   [-r]                      - render decoded data in a separate X11 window \n"));
+#endif
+#if defined(LIBVA_WAYLAND_SUPPORT)
+    msdk_printf(MSDK_STRING("   [-rwld]                   - render decoded data in a Wayland window \n"));
 #endif
     msdk_printf(MSDK_STRING("   [-low_latency]            - configures decoder for low latency mode (supported only for H.264 and JPEG codec)\n"));
     msdk_printf(MSDK_STRING("   [-calc_latency]           - calculates latency during decoding and prints log (supported only for H.264 and JPEG codec)\n"));
@@ -191,6 +196,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->memType = D3D9_MEMORY;
             pParams->mode = MODE_RENDERING;
             pParams->libvaBackend = MFX_LIBVA_X11;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-rwld")))
+        {
+            pParams->memType = D3D9_MEMORY;
+            pParams->mode = MODE_RENDERING;
+            pParams->libvaBackend = MFX_LIBVA_WAYLAND;
         }
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-low_latency")))

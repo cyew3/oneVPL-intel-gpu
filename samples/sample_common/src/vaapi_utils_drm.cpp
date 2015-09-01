@@ -8,7 +8,7 @@ Copyright(c) 2012-2015 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
-#if defined(LIBVA_DRM_SUPPORT)
+#if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_WAYLAND_SUPPORT)
 
 #include "vaapi_utils_drm.h"
 #include <fcntl.h>

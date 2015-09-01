@@ -8,7 +8,7 @@ Copyright(c) 2013-2015 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
-#if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT) || defined(LIBVA_ANDROID_SUPPORT)
+#if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT) || defined(LIBVA_ANDROID_SUPPORT) || defined(LIBVA_WAYLAND_SUPPORT)
 
 #include "hw_device.h"
 #include "vaapi_utils_drm.h"
@@ -77,6 +77,42 @@ public:
 protected:
     mfxHDL m_window;
     X11LibVA m_X11LibVA;
+};
+
+#endif
+
+#if defined(LIBVA_WAYLAND_SUPPORT)
+
+class Wayland;
+
+class CVAAPIDeviceWayland : public CHWDevice
+{
+public:
+	CVAAPIDeviceWayland(){}
+    virtual ~CVAAPIDeviceWayland(void);
+
+    virtual mfxStatus Init(mfxHDL hWindow, mfxU16 nViews, mfxU32 nAdapterNum);
+    virtual mfxStatus Reset(void) { return MFX_ERR_NONE; }
+    virtual void Close(void);
+
+    virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL hdl) { return MFX_ERR_UNSUPPORTED; }
+    virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl)
+    {
+        if((MFX_HANDLE_VA_DISPLAY == type) && (NULL != pHdl))
+        {
+            *pHdl = m_DRMLibVA.GetVADisplay();
+            return MFX_ERR_NONE;
+	}
+	return MFX_ERR_UNSUPPORTED;
+    }
+    virtual void SetRenderWinPosSize(mfxU32 x, mfxU32 y, mfxU32 w, mfxU32 h);
+    virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc);
+    virtual void UpdateTitle(double fps) { }
+
+protected:
+    DRMLibVA m_DRMLibVA;
+    MfxLoader::VA_WaylandClientProxy  m_WaylandClient;
+    Wayland *m_Wayland;
 };
 
 #endif

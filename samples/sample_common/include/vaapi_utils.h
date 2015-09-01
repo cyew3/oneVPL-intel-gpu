@@ -65,7 +65,10 @@ namespace MfxLoader
         typedef VAStatus (*vaSyncSurface_type)(VADisplay, VASurfaceID);
         typedef VAStatus (*vaDeriveImage_type)(VADisplay, VASurfaceID, VAImage *);
         typedef VAStatus (*vaDestroyImage_type)(VADisplay, VAImageID);
-
+#if defined (LIBVA_WAYLAND_SUPPORT)
+        typedef VAStatus (*vaAcquireBufferHandle_type)(VADisplay, VABufferID, VABufferInfo *);
+        typedef VAStatus (*vaReleaseBufferHandle_type)(VADisplay, VABufferID);
+#endif
 
         VA_Proxy();
         ~VA_Proxy();
@@ -81,6 +84,10 @@ namespace MfxLoader
         const vaSyncSurface_type     vaSyncSurface;
         const vaDeriveImage_type     vaDeriveImage;
         const vaDestroyImage_type    vaDestroyImage;
+#if defined (LIBVA_WAYLAND_SUPPORT)
+        const vaAcquireBufferHandle_type vaAcquireBufferHandle;
+        const vaReleaseBufferHandle_type vaReleaseBufferHandle;
+#endif
     };
 #endif
 
@@ -100,6 +107,26 @@ namespace MfxLoader
         const vaGetDisplayDRM_type vaGetDisplayDRM;
     };
 #endif
+
+#if defined (LIBVA_WAYLAND_SUPPORT)
+
+    class Wayland;
+
+    class VA_WaylandClientProxy
+    {
+    private:
+        SimpleLoader lib; // should appear first in member list
+
+    public:
+        typedef	Wayland* (*WaylandCreate_type)(void);
+
+        VA_WaylandClientProxy();
+        ~VA_WaylandClientProxy();
+
+        const WaylandCreate_type WaylandCreate;
+    };
+
+#endif // LIBVA_WAYLAND_SUPPORT
 
 #if defined(LIBVA_X11_SUPPORT)
     class VA_X11Proxy

@@ -220,8 +220,24 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 surfaces[numAllocated] = coded_buf;
             }
         }
-
     }
+	
+//TODO: ON: switch change to runtime check as WAYLAND will always on 
+#if defined(LIBVA_WAYLAND_SUPPORT)
+    if (MFX_ERR_NONE == mfx_res)
+    {
+        for (i=0; i < surfaces_num; ++i)
+        {
+            vaapi_mids[i].m_buffer_info.mem_type = VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME;
+            va_res = m_libva->vaDeriveImage(m_dpy, surfaces[i], &(vaapi_mids[i].m_image));
+            mfx_res = va_to_mfx_status(va_res);
+
+            if (MFX_ERR_NONE != mfx_res) break;
+            va_res = m_libva->vaAcquireBufferHandle(m_dpy, vaapi_mids[i].m_image.buf, &(vaapi_mids[i].m_buffer_info));
+            mfx_res = va_to_mfx_status(va_res);
+        }
+    }
+#endif
     if (MFX_ERR_NONE == mfx_res)
     {
         for (i = 0; i < surfaces_num; ++i)
@@ -282,6 +298,11 @@ mfxStatus vaapiFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
         {
             if (MFX_FOURCC_P8 == vaapi_mids[i].m_fourcc) m_libva->vaDestroyBuffer(m_dpy, surfaces[i]);
             else if (vaapi_mids[i].m_sys_buffer) free(vaapi_mids[i].m_sys_buffer);
+//TODO: ON: switch change to runtime check as WAYLAND will always on
+#if	defined(LIBVA_WAYLAND_SUPPORT) 
+            m_libva->vaReleaseBufferHandle(m_dpy, vaapi_mids[i].m_image.buf);
+            m_libva->vaDestroyImage(m_dpy, vaapi_mids[i].m_image.image_id);
+#endif 
         }
         free(vaapi_mids);
         free(response->mids);

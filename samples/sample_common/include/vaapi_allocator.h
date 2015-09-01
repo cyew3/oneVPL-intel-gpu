@@ -15,6 +15,7 @@ Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 
 #include <stdlib.h>
 #include <va/va.h>
+#include <va/va_drmcommon.h>
 
 #include "base_allocator.h"
 #include "vaapi_utils.h"
@@ -28,6 +29,9 @@ struct vaapiMemId
     unsigned int m_fourcc;
     mfxU8*       m_sys_buffer;
     mfxU8*       m_va_buffer;
+#if defined(LIBVA_WAYLAND_SUPPORT)
+    VABufferInfo m_buffer_info;
+#endif
 };
 
 namespace MfxLoader

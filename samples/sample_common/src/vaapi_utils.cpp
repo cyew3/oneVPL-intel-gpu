@@ -20,6 +20,10 @@ Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 #include "vaapi_utils_x11.h"
 //#endif
 
+#if defined(LIBVA_WAYLAND_SUPPORT)
+#include "class_wayland.h"
+#endif
+
 namespace MfxLoader
 {
 
@@ -65,6 +69,10 @@ VA_Proxy::VA_Proxy()
     , SIMPLE_LOADER_FUNCTION(vaSyncSurface)
     , SIMPLE_LOADER_FUNCTION(vaDeriveImage)
     , SIMPLE_LOADER_FUNCTION(vaDestroyImage)
+#if defined (LIBVA_WAYLAND_SUPPORT)
+    , SIMPLE_LOADER_FUNCTION(vaAcquireBufferHandle)
+    , SIMPLE_LOADER_FUNCTION(vaReleaseBufferHandle)
+#endif
 {
 }
 
@@ -83,6 +91,19 @@ VA_DRMProxy::VA_DRMProxy()
 VA_DRMProxy::~VA_DRMProxy()
 {}
 #endif
+
+#if defined(LIBVA_WAYLAND_SUPPORT)
+
+VA_WaylandClientProxy::VA_WaylandClientProxy()
+    : lib("libmfx_wayland.so")
+    , SIMPLE_LOADER_FUNCTION(WaylandCreate)
+{
+}
+
+VA_WaylandClientProxy::~VA_WaylandClientProxy()
+{}
+
+#endif // LIBVA_WAYLAND_SUPPORT
 
 #if defined(LIBVA_X11_SUPPORT)
 VA_X11Proxy::VA_X11Proxy()

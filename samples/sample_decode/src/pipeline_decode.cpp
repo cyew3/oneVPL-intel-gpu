@@ -1317,9 +1317,9 @@ mfxStatus CDecodingPipeline::RunDecoding()
     MSDKThread * pDeliverThread = NULL;
 
     if (m_eWorkMode == MODE_RENDERING) {
-        pDeliverThread = new MSDKThread(sts, DeliverThreadFunc, this);
         m_pDeliverOutputSemaphore = new MSDKSemaphore(sts);
         m_pDeliveredEvent = new MSDKEvent(sts, false, false);
+        pDeliverThread = new MSDKThread(sts, DeliverThreadFunc, this);
         if (!pDeliverThread || !m_pDeliverOutputSemaphore || !m_pDeliveredEvent) {
             MSDK_SAFE_DELETE(pDeliverThread);
             MSDK_SAFE_DELETE(m_pDeliverOutputSemaphore);
