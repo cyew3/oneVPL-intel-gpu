@@ -286,10 +286,10 @@ protected:
     bool disableMVoutPreENC;
     bool disableMBStatPreENC;
 
-    mfxU32 m_refFrameCounter;
+    mfxU16 m_refFrameCounter;
 };
 
 void repackPreenc2Enc(mfxExtFeiPreEncMV::mfxMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);
-mfxI16 get16Median(mfxExtFeiPreEncMV::mfxMB* preencMB, mfxI16* tmpBuf, mfxI16 xy, mfxI16 L0L1);
+mfxI16 get16Median(mfxExtFeiPreEncMV::mfxMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1);
 
 #endif // __PIPELINE_ENCODE_H__

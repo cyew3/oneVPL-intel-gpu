@@ -134,7 +134,7 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
                         mfxExtFeiEncMV::mfxMB tmpMB;
                         memset(&tmpMB, 0x8000, sizeof(tmpMB));
                         mvBuf = (mfxExtFeiEncMV*)bs.ExtParam[i];
-                        for (int k = 0; k < mvBuf->NumMBAlloc; k++)
+                        for (mfxU32 k = 0; k < mvBuf->NumMBAlloc; k++)
                             fwrite(&tmpMB, sizeof(tmpMB), 1, mvENCPAKout);
                     }
                 }
@@ -1605,6 +1605,7 @@ mfxStatus CEncodingPipeline::Run()
 
         // correct ref window size if search window is 0
         if ((m_encpakParams.SearchWindow == 0) && (m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC || m_encpakParams.bENCODE)){
+            // note that for preenc max size is 2048 because preenc doesn't do bidirectional prediction
             int frame_type = GetFrameType(frameCount);
             for (fieldId = 0; fieldId < numOfFields; fieldId++)
             {
@@ -2171,7 +2172,6 @@ mfxStatus CEncodingPipeline::Run()
                         /* Load input Buffer for FEI ENCODE and FEI ENC */
                         for (fieldId = 0; fieldId < numOfFields; fieldId++)
                         {
-                            mfxExtFeiEncMVPredictors* pMvPredBuf = NULL;
                             mfxExtFeiEncMBCtrl*       pMbEncCtrl = NULL;
                             mfxExtFeiEncQP*           pMbQP      = NULL;
                             for(int i=0; i<eTask->in.NumExtParam; i++){
@@ -2254,7 +2254,6 @@ mfxStatus CEncodingPipeline::Run()
                     /* Load input Buffer for FEI ENCODE and FEI ENC */
                     for (fieldId = 0; fieldId < numOfFields; fieldId++)
                     {
-                        mfxExtFeiEncMVPredictors* pMvPredBuf = NULL;
                         mfxExtFeiEncMBCtrl*       pMbEncCtrl = NULL;
                         mfxExtFeiEncQP*           pMbQP      = NULL;
                         for(int i=0; i<eTask->in.NumExtParam; i++){
@@ -2783,7 +2782,7 @@ void repackPreenc2Enc(mfxExtFeiPreEncMV::mfxMB *preencMVoutMB, mfxExtFeiEncMVPre
     } // for(mfxU32 i=0; i<NumMBAlloc; i++){
 }
 
-mfxI16 get16Median(mfxExtFeiPreEncMV::mfxMB* preencMB, mfxI16* tmpBuf, mfxI16 xy, mfxI16 L0L1){
+mfxI16 get16Median(mfxExtFeiPreEncMV::mfxMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1){
 
     switch (xy){
     case 0:
@@ -2801,7 +2800,7 @@ mfxI16 get16Median(mfxExtFeiPreEncMV::mfxMB* preencMB, mfxI16* tmpBuf, mfxI16 xy
     }
 
     std::sort(tmpBuf, tmpBuf + 16);
-    return 0.5 * (tmpBuf[7] + tmpBuf[8]);
+    return (tmpBuf[7] + tmpBuf[8]) / 2;
 }
 
 void CEncodingPipeline::PrintInfo()
@@ -3127,7 +3126,7 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
                     m_feiPPS[fieldId].NumRefIdxL1Active = eTask->in.NumFrameL1;
                     m_feiPPS[fieldId].ReferencePicFlag = 0;
                     m_feiPPS[fieldId].IDRPicFlag = 0;
-                   m_feiPPS[fieldId].FrameNum = m_refFrameCounter;
+                    m_feiPPS[fieldId].FrameNum = m_refFrameCounter;
                 }
 
                 break;

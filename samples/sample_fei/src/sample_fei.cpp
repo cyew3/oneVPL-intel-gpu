@@ -542,7 +542,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
-    if ((!pParams->SearchWindow && (pParams->RefHeight <= 0 || pParams->RefWidth <= 0 || pParams->RefHeight % 4 != 0 || pParams->RefWidth % 4 != 0)) ){
+    if ((pParams->SearchWindow != 0) && (pParams->RefHeight <= 0 || pParams->RefWidth <= 0 || pParams->RefHeight % 4 != 0 || pParams->RefWidth % 4 != 0 ||
+         pParams->RefHeight*pParams->RefWidth > 2048))
+    {
         if (bAlrShownHelp)
             msdk_printf(MSDK_STRING("\nUnsupported value of search window size. -ref_window_h, -ref_window_w parameters, must be multiple of 4!\n"
                                     "For bi-prediction window w*h must less than 1024 and less 2048 otherwise.\n"));
