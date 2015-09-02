@@ -62,6 +62,12 @@ typedef struct tagDESKTOP_PARAM_STRUCT_SIZE
     UINT    reserved;
 } DESKTOP_PARAM_STRUCT_SIZE;
 
+typedef struct tagDESKTOP_DISPLAY_SELECT
+{
+    UINT    DisplayID;
+    UINT    reserved;
+} DESKTOP_DISPLAY_SELECT;
+
 enum
 {
     QUERY_SIZE = 32
@@ -69,10 +75,11 @@ enum
 
 enum
 {
-    DESKTOP_FORMAT_COUNT_ID = 0x100,
-    DESKTOP_FORMATS_ID      = 0x101,
-    DESKTOP_GETDESKTOP_ID   = 0x104,
-    DESKTOP_QUERY_STATUS_ID = 0x105
+    DESKTOP_FORMAT_COUNT_ID   = 0x100,
+    DESKTOP_FORMATS_ID        = 0x101,
+    DESKTOP_DISPLAY_SELECT_ID = 0x102,
+    DESKTOP_GETDESKTOP_ID     = 0x104,
+    DESKTOP_QUERY_STATUS_ID   = 0x105
 };
 
 struct AsyncParams
@@ -110,7 +117,7 @@ public:
     mfxStatus CreateVideoAccelerator(mfxVideoParam const & par, const mfxU32 dispIndex = 0) = 0;
 
     virtual
-    mfxStatus QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out) = 0;
+    mfxStatus QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out, const mfxU32 dispIndex = 0) = 0;
 
     virtual
     mfxStatus CheckCapabilities(mfxVideoParam const & in, mfxVideoParam* out) = 0;
@@ -174,6 +181,7 @@ struct displaysDescr
     dispDescr display[MAX_DISPLAYS];
 };
 void FindAllConnectedDisplays(displaysDescr& displays);
+dispDescr GetTargetId(mfxU32 dispIndex);
 
 class OwnResizeFilter
 {

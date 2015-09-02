@@ -235,11 +235,6 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
         m_CurExtPar = m_InitExtPar = *ExtPar;
         if(m_CurExtPar.EnableDirtyRect)
             m_bDirtyRect = true;
-        if(m_CurExtPar.DisplayIndex)
-        {
-            //display selection thrlough getDesktop.ddi is unsupported now
-            fallback = true;
-        }
     }
 
     m_CurrentPar = m_InitPar;
@@ -742,25 +737,29 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
         return MFX_ERR_UNSUPPORTED;
     }
 
+    mfxU32 DisplayIndex = 0;
+    bool DirtyRect = false;
+    mfxExtScreenCaptureParam* ExtPar = GetExtendedBuffer<mfxExtScreenCaptureParam>(MFX_EXTBUFF_SCREEN_CAPTURE_PARAM, &in);
+    if(ExtPar)
+    {
+        m_CurExtPar = m_InitExtPar = *ExtPar;
+        if(m_CurExtPar.EnableDirtyRect)
+        {
+            //fallback = true;
+            DirtyRect = true;
+        }
+        if(m_CurExtPar.DisplayIndex)
+        {
+            //display selection thrlough getDesktop.ddi is unsupported now
+            //fallback = true;
+            DisplayIndex = m_CurExtPar.DisplayIndex;
+        }
+    }
+
     if(onInit)
     {
-        m_DisplayIndex = 0;
-        mfxExtScreenCaptureParam* ExtPar = GetExtendedBuffer<mfxExtScreenCaptureParam>(MFX_EXTBUFF_SCREEN_CAPTURE_PARAM, &in);
-        if(ExtPar)
-        {
-            m_CurExtPar = m_InitExtPar = *ExtPar;
-            if(m_CurExtPar.EnableDirtyRect)
-            {
-                //fallback = true;
-                m_bDirtyRect = true;
-            }
-            if(m_CurExtPar.DisplayIndex)
-            {
-                //display selection thrlough getDesktop.ddi is unsupported now
-                //fallback = true;
-                m_DisplayIndex = m_CurExtPar.DisplayIndex;
-            }
-        }
+        m_DisplayIndex = DisplayIndex;
+        m_bDirtyRect = DirtyRect;
 
         m_pCapturer.reset( CreatePlatformCapturer(m_pmfxCore) );
         if(m_pCapturer.get())
@@ -838,7 +837,7 @@ mfxStatus MFXScreenCapture_Plugin::QueryMode2(const mfxVideoParam& in, mfxVideoP
 
             pTmpCapturer.reset( CreatePlatformCapturer(m_pmfxCore) );
             if(pTmpCapturer.get())
-                mfxRes = pTmpCapturer->QueryVideoAccelerator(in, &out);
+                mfxRes = pTmpCapturer->QueryVideoAccelerator(in, &out, DisplayIndex);
             else
                 mfxRes = MFX_ERR_DEVICE_FAILED;
             if(mfxRes)

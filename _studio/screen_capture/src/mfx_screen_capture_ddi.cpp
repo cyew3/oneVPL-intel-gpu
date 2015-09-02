@@ -19,6 +19,26 @@ File Name: mfx_screen_capture_ddi.cpp
 namespace MfxCapture
 {
 
+dispDescr GetTargetId(mfxU32 dispIndex)
+{
+    dispDescr display;
+    memset(&display,0,sizeof(display));
+
+    if(dispIndex > MAX_DISPLAYS)
+        return display;
+
+    displaysDescr displays;
+    FindAllConnectedDisplays(displays);
+
+    if(displays.n < dispIndex)
+        return display;
+
+    if(0 != dispIndex)
+        dispIndex -= 1;
+
+    return displays.display[dispIndex];
+}
+
 void FindAllConnectedDisplays(displaysDescr& displays)
 {
     unsigned int n = 0;

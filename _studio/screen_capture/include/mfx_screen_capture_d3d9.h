@@ -49,7 +49,7 @@ public:
     virtual ~D3D9_Capturer();
 
     virtual mfxStatus CreateVideoAccelerator(mfxVideoParam const & par, const mfxU32 dispIndex = 0);
-    virtual mfxStatus QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out);
+    virtual mfxStatus QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out, const mfxU32 dispIndex = 0);
     virtual mfxStatus CheckCapabilities(mfxVideoParam const & in, mfxVideoParam* out);
     virtual mfxStatus Destroy();
 
@@ -67,6 +67,7 @@ protected:
     CComPtr<IDirectXVideoDecoderService>         m_pDirectXVideoService;
     CComPtr<IDirectXVideoDecoder>                m_pDecoder;
     HANDLE                                       m_hDirectXHandle;
+    UINT                                         m_TargetId;
 
     //WA for implicit resize
 #if defined(ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE)

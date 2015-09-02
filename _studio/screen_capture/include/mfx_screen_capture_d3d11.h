@@ -28,7 +28,7 @@ public:
     virtual ~D3D11_Capturer();
 
     virtual mfxStatus CreateVideoAccelerator(mfxVideoParam const & par, const mfxU32 dispIndex = 0);
-    virtual mfxStatus QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out);
+    virtual mfxStatus QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out, const mfxU32 dispIndex = 0);
     virtual mfxStatus CheckCapabilities(mfxVideoParam const & in, mfxVideoParam* out);
     virtual mfxStatus Destroy();
 
@@ -48,6 +48,8 @@ protected:
 
     // we own video decoder, let using com pointer 
     CComPtr<ID3D11VideoDecoder>      m_pDecoder;
+
+    UINT                             m_TargetId;
 
     //WA for implicit resize
 #if defined(ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE)

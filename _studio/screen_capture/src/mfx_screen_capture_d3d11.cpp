@@ -20,6 +20,7 @@ D3D11_Capturer::D3D11_Capturer(mfxCoreInterface* _core)
     :m_pmfxCore(_core)
 {
     Mode = HW_D3D11;
+    m_TargetId = 0;
 #if defined(ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE)
     m_bImplicitResizeWA = true;
     m_CropW  = 0;
@@ -36,7 +37,10 @@ D3D11_Capturer::~D3D11_Capturer()
 mfxStatus D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, const mfxU32 dispIndex)
 {
     if(dispIndex)
-        return MFX_ERR_UNSUPPORTED;
+    {
+        dispDescr disp = GetTargetId(dispIndex);
+        m_TargetId = disp.TargetID;
+    }
 
     HRESULT hres;
     D3D11_VIDEO_DECODER_DESC video_desc;
@@ -114,6 +118,24 @@ mfxStatus D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, con
     if (FAILED(hres))
         return MFX_ERR_DEVICE_FAILED;
 
+    if(m_TargetId)
+    {
+        D3D11_VIDEO_DECODER_EXTENSION dec_ext =  {0};
+        DESKTOP_DISPLAY_SELECT display_select = {0};
+
+        dec_ext.Function = DESKTOP_DISPLAY_SELECT_ID;
+        dec_ext.pPrivateInputData =  &display_select;
+        dec_ext.PrivateInputDataSize = sizeof(display_select);
+        display_select.DisplayID = m_TargetId;
+
+        hres = m_pD11VideoContext->DecoderExtension(m_pDecoder, &dec_ext);
+        if (FAILED(hres))
+        {
+            Destroy();
+            return MFX_ERR_DEVICE_FAILED;
+        }
+    }
+
     //WA for implicit driver resize issue:
 #if defined(ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE)
     {
@@ -150,12 +172,12 @@ mfxStatus D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, con
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11_Capturer::QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out)
+mfxStatus D3D11_Capturer::QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out, const mfxU32 dispIndex)
 {
     //temporary creates decoder instance to check capabilities
     mfxStatus mfxRes = MFX_ERR_NONE;
 
-    mfxRes = CreateVideoAccelerator(in);
+    mfxRes = CreateVideoAccelerator(in, dispIndex);
     if(MFX_ERR_NONE != mfxRes)
     {
         Destroy();

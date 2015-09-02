@@ -218,7 +218,7 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, c
     return MFX_ERR_NONE;
 }
 
-mfxStatus SW_D3D9_Capturer::QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out)
+mfxStatus SW_D3D9_Capturer::QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out, const mfxU32 )
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
     HRESULT hres = S_OK;

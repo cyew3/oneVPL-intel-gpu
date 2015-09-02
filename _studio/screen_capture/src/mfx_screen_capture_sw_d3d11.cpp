@@ -240,7 +240,7 @@ mfxStatus SW_D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, 
     return MFX_ERR_NONE;
 }
 
-mfxStatus SW_D3D11_Capturer::QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out)
+mfxStatus SW_D3D11_Capturer::QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out, const mfxU32 )
 {
     in;
     out;
