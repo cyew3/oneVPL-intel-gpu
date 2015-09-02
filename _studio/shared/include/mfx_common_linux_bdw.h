@@ -139,16 +139,6 @@
 #endif // #if defined (MFX_VA)
 
 #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
-#if defined (MFX_VA_LINUX)
-    //#define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
-    #if defined (SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-        // if SYNCHRONIZATION_BY_NON_ZERO_THREAD is defined then
-        // thread #0 submits tasks to the driver
-        // thread(s) #1, #2, ... make synchronization by vaSyncSurface
-        #define SYNCHRONIZATION_BY_NON_ZERO_THREAD
-    #endif
-#endif
-
 
 #if defined(AS_H264LA_PLUGIN)
     #undef MFX_ENABLE_MJPEG_VIDEO_DECODE

@@ -1,12 +1,12 @@
-/*
-//
-//                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
-//
-*/
+/*********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2010-2015 Intel Corporation. All Rights Reserved.
+
+**********************************************************************************/
 
 #include <mfx_scheduler_core.h>
 #include <mfx_scheduler_core_task.h>
@@ -294,15 +294,6 @@ mfxStatus mfxSchedulerCore::WrapUpTask(MFX_CALL_INFO &callInfo,
     {
         return MFX_ERR_NOT_FOUND;
     }
-#if defined(SYNCHRONIZATION_BY_NON_ZERO_THREAD)
-        // or the dedicated thread tries to get a non-dedicated 'wait' task
-    if ((0 == threadNum) &&
-        !(MFX_TASK_DEDICATED & occupancyInfo.threadingPolicy) &&
-        (MFX_TASK_WAIT & occupancyInfo.threadingPolicy))
-    {
-        return MFX_ERR_NOT_FOUND;
-    }
-#endif
     callInfo.threadNum = GetFreeThreadNumber(occupancyInfo, pTask);
         // or there is no proper thread number
     if (MFX_INVALID_THREAD_NUMBER == callInfo.threadNum)

@@ -181,12 +181,6 @@
 
 #if defined (MFX_VA_LINUX)
     #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
-    #if defined (SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-        // if SYNCHRONIZATION_BY_NON_ZERO_THREAD is defined then
-        // thread #0 submits tasks to the driver
-        // thread(s) #1, #2, ... make synchronization by vaSyncSurface
-        #define SYNCHRONIZATION_BY_NON_ZERO_THREAD
-    #endif
 #endif
 
 

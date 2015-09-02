@@ -1,15 +1,13 @@
-/* /////////////////////////////////////////////////////////////////////////////
-//
-//                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
-//
-//
-//
-//
-*/
+/*********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
+
+**********************************************************************************/
+
 #ifndef _MFX_COMMON_LINUX_BSW_H_
 #define _MFX_COMMON_LINUX_BSW_H_
 
@@ -149,16 +147,6 @@
 #endif // #if defined (MFX_VA)
 
 #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
-#if defined (MFX_VA_LINUX)
-    //#define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
-    #if defined (SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-        // if SYNCHRONIZATION_BY_NON_ZERO_THREAD is defined then
-        // thread #0 submits tasks to the driver
-        // thread(s) #1, #2, ... make synchronization by vaSyncSurface
-        #define SYNCHRONIZATION_BY_NON_ZERO_THREAD
-    #endif
-#endif
-
 
 #if defined(AS_H264LA_PLUGIN)
     #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
