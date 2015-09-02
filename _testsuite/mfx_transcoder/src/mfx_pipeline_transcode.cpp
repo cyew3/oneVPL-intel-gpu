@@ -944,6 +944,9 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             {
                 pExt = reinterpret_cast<mfxExtEncoderResetOption *>(ppExt->get());
             }
+            if (pExt)
+                pExt->StartNewSequence = on;
+
 
             m_ExtBuffers.get()->push_back(pExt);
 
