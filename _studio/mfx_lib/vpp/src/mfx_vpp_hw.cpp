@@ -2679,6 +2679,13 @@ mfxStatus ConfigureExecuteParams(
                         if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_ROTATION)
                         {
                             mfxExtVPPRotation *extRotate = (mfxExtVPPRotation*) videoParam.ExtParam[i];
+
+                            if ( (MFX_ANGLE_0   != extRotate->Angle) &&
+                                 (MFX_ANGLE_90  != extRotate->Angle) &&
+                                 (MFX_ANGLE_180 != extRotate->Angle) &&
+                                 (MFX_ANGLE_270 != extRotate->Angle) )
+                                 return MFX_ERR_INVALID_VIDEO_PARAM;
+
                             executeParams.rotation = extRotate->Angle;
                         }
                     }

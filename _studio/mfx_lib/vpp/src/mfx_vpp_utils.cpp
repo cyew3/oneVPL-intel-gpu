@@ -2571,12 +2571,12 @@ mfxStatus CheckLimitationsHW(
 
     // [0] in case of RGB4->RGB4 only resize is supported. (automatically, no actions here)
 
-    // [1] in case of input RGB4,  only resize/FRC is supported
+    // [1] in case of input RGB4,  only resize/FRC/rotation is supported
     if( param.vpp.In.FourCC == MFX_FOURCC_RGB4)
     {
         if(len > 0)
         {
-            if( !IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) )
+            if( !IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) && !IsFilterFound(pList, len, MFX_EXTBUFF_VPP_ROTATION) )
             {
                 sts = MFX_WRN_FILTER_SKIPPED;
                 if(bCorrectionEnable)
