@@ -73,8 +73,8 @@ public:
     mfxU32 calc_crc32(mfxFrameSurface1& s)
     {
         Ipp32u crc = 0;
-        mfxU32 w = s.Info.Width;
-        mfxU32 h = s.Info.Height;
+        mfxU32 w = s.Info.CropW;
+        mfxU32 h = s.Info.CropH;
 
         Ipp32u nbytes = w*h*2 + w*h/2 + w*h/2;
 
@@ -119,7 +119,7 @@ int TestSuite::RunTest(unsigned int id)
     TS_START;
     const char* sname = g_tsStreamPool.Get("conformance/hevc/10bit/DBLK_A_MAIN10_VIXS_3.bit");
     g_tsStreamPool.Reg();
-    tsBitstreamReader reader(sname, 100000);
+    tsBitstreamReader reader(sname, 1000000);
     m_bs_processor = &reader;
     auto tc = test_case[id];
 
@@ -127,6 +127,22 @@ int TestSuite::RunTest(unsigned int id)
     SETPARS(m_pPar, MFXPAR);
 
     DecodeHeader();
+    QueryIOSurf();
+    if (!m_pFrameAllocator
+        && ((m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
+        || (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+        || m_use_memid))
+    {
+        if (!GetAllocator())
+        {
+            UseDefaultAllocator(
+                (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+                || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+                );
+        }
+        m_pFrameAllocator = GetAllocator();
+        SetFrameAllocator();
+    }
 
     if (tc.mode == CHANGE_SHIFT)
     {
@@ -148,12 +164,13 @@ int TestSuite::RunTest(unsigned int id)
 
     g_tsStatus.expect(tc.sts);
     Init();
+    if (tc.sts >= 0)
+    {
+        CRC32 check_crc(m_par.mfx.FrameInfo);
+        m_surf_processor = &check_crc;
 
-    CRC32 check_crc(m_par.mfx.FrameInfo);
-    m_surf_processor = &check_crc;
-
-    DecodeFrames(1);
-
+        DecodeFrames(1);
+    }
     TS_END;
     return 0;
 }
