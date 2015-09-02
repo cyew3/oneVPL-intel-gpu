@@ -1181,7 +1181,7 @@ IppStatus cc_P210_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
         for(mfxI32 j = 0; j < roiSize.height; j++) {
             out_offset = j*outPitch;
-            uv_offset += inPitch;
+            uv_offset  = j*inPitch;
 
             for (mfxI32 i = 0; i < roiSize.width; i++) {
                 y = ptr_y[j*inPitch + i];
