@@ -392,7 +392,19 @@ MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
 }
 
 MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
+        : BufferSizeInKB  (0)
+        , InitialDelayInKB(0)
+        , TargetKbps      (0)
+        , MaxKbps         (0)
+        , LTRInterval     (0)
+        , LCUSize         (DEFAULT_LCU_SIZE)
+        , InsertHRDInfo   (false)
+        , RawRef          (false)
+
 {
+    Zero(*(mfxVideoParam*)this);
+    Zero(NumRefLX);
+
     Construct(par);
     SyncVideoToCalculableParam();
 }
@@ -983,7 +995,7 @@ void MfxVideoParam::SyncMfxToHeadersParam()
     general.profile_space               = 0;
     general.tier_flag                   = !!(mfx.CodecLevel & MFX_TIER_HEVC_HIGH);
     general.profile_idc                 = (mfxU8)mfx.CodecProfile;
-    general.profile_compatibility_flags = 0;
+    general.profile_compatibility_flags = 1 << (31 - general.profile_idc);
     general.progressive_source_flag     = !!(mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE);
     general.interlaced_source_flag      = !!(mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_FIELD_TFF|MFX_PICSTRUCT_FIELD_BFF));
     general.non_packed_constraint_flag  = 0;

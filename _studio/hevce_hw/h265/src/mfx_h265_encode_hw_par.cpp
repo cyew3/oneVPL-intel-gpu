@@ -821,6 +821,15 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         par.MaxKbps = par.TargetKbps;
         changed ++;
     }
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
+        && par.MaxKbps != par.TargetKbps
+        && par.MaxKbps!= 0
+        && par.TargetKbps!= 0) 
+    {
+        par.MaxKbps = par.TargetKbps;
+        changed ++;    
+    }
+
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
         changed += CheckRangeDflt(par.mfx.QPI, 1, 51, 0);

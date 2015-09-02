@@ -421,7 +421,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 
     SetDefaults(m_vpar, m_caps);
 
-    if (!pSPSPPS)
+    if (!pSPSPPS || pSPSPPS->SPSBufSize)
         m_vpar.SyncMfxToHeadersParam();
     else
     {
@@ -434,7 +434,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     // waiting for submitted in driver tasks
-    if (isIdrRequired)
+    if (isIdrRequired || (pResetOpt && IsOn(pResetOpt->StartNewSequence)))
     {
         for (;;)
         {
