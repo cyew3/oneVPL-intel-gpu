@@ -129,6 +129,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     MSDK_ZERO_MEMORY(m_PreEncOpaqueAlloc);
     MSDK_ZERO_MEMORY(m_ExtLAControl);
     MSDK_ZERO_MEMORY(m_CodingOption2);
+    MSDK_ZERO_MEMORY(m_CodingOption3);
 
     m_MVCSeqDesc.Header.BufferId = MFX_EXTBUFF_MVC_SEQ_DESC;
     m_MVCSeqDesc.Header.BufferSz = sizeof(mfxExtMVCSeqDesc);
@@ -151,6 +152,9 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_VppCompParams.InputStream = NULL;
     m_CodingOption2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
     m_CodingOption2.Header.BufferSz = sizeof(m_CodingOption2);
+
+    m_CodingOption3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+    m_CodingOption3.Header.BufferSz = sizeof(m_CodingOption3);
 
     m_VppCompParams.InputStream = NULL;
 } //CTranscodingPipeline::CTranscodingPipeline()
@@ -1492,6 +1496,13 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
 
+    if (pInParams->WinBRCMaxAvgKbps || pInParams->WinBRCSize)
+    {
+        m_CodingOption3.WinBRCMaxAvgKbps = pInParams->WinBRCMaxAvgKbps;
+        m_CodingOption3.WinBRCSize = pInParams->WinBRCSize;
+        m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
+    }
+
     if (m_bUseOpaqueMemory)
         m_EncExtParams.push_back((mfxExtBuffer *)&m_EncOpaqueAlloc);
 
@@ -1509,13 +1520,19 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     }
 
     //--- Settings HRD buffer size
-    m_mfxEncParams.mfx.BufferSizeInKB = (mfxU16)(m_mfxEncParams.mfx.TargetKbps*4L/8); // buffer for 4 seconds
+    m_mfxEncParams.mfx.BufferSizeInKB = pInParams->BufferSizeInKB ? pInParams->BufferSizeInKB
+        : (mfxU16)(m_mfxEncParams.mfx.TargetKbps*4L/8); // buffer for 4 seconds
 
     //--- Force setting fourcc type if required
     if (pInParams->EncoderFourCC)
     {
         m_mfxEncParams.mfx.FrameInfo.FourCC=pInParams->EncoderFourCC;
         m_mfxEncParams.mfx.FrameInfo.ChromaFormat=FourCCToChroma(pInParams->EncoderFourCC);
+    }
+
+    if (pInParams->GopRefDist)
+    {
+        m_mfxEncParams.mfx.GopRefDist = pInParams->GopRefDist;
     }
 
     return MFX_ERR_NONE;

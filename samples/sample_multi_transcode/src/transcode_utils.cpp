@@ -119,6 +119,10 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -la           Use the look ahead bitrate control algorithm (LA BRC) for H.264 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("  -lad depth    Depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100]. \n"));
     msdk_printf(MSDK_STRING("                May be 1 in the case when -mss option is specified \n"));
+    msdk_printf(MSDK_STRING("  -hrd <KB>     Maximum possible size of any compressed frames \n"));
+    msdk_printf(MSDK_STRING("  -wb <KBps>    Maximum bitrate for sliding window \n"));
+    msdk_printf(MSDK_STRING("  -ws           Sliding window size in frames\n"));
+    msdk_printf(MSDK_STRING("  -dist         Distance between I- or P- key frames \n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Pipeline description (vpp options):\n"));
     msdk_printf(MSDK_STRING("  -deinterlace             Forces VPP to deinterlace input stream\n"));
@@ -606,6 +610,46 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nBitRate))
             {
                 PrintHelp(NULL, MSDK_STRING("bitRate \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-wb")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.WinBRCMaxAvgKbps))
+            {
+                PrintHelp(NULL, MSDK_STRING("Maximum bitrate for sliding window \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-wc")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.WinBRCSize))
+            {
+                PrintHelp(NULL, MSDK_STRING("Sliding window size \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-hrd")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.BufferSizeInKB))
+            {
+                PrintHelp(NULL, MSDK_STRING("Frame buffer size \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-dist")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.GopRefDist))
+            {
+                PrintHelp(NULL, MSDK_STRING("GOP reference distance \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
         }

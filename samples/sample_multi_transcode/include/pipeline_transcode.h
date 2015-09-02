@@ -130,6 +130,11 @@ namespace TranscodingSample
         mfxU16 nSlices; // number of slices for encoder initialization
         mfxU16 nMaxSliceSize; //maximum size of slice
 
+        mfxU16 WinBRCMaxAvgKbps;
+        mfxU16 WinBRCSize;
+        mfxU16 BufferSizeInKB;
+        mfxU16 GopRefDist;
+
         // MVC Specific Options
         bool   bIsMVC; // true if Multi-View-Codec is in use
         mfxU32 numViews; // number of views for Multi-View-Codec
@@ -470,6 +475,8 @@ namespace TranscodingSample
         mfxExtLAControl          m_ExtLAControl;
         // for setting MaxSliceSize
         mfxExtCodingOption2      m_CodingOption2;
+
+        mfxExtCodingOption3      m_CodingOption3;
 
         // HEVC
         mfxExtHEVCParam          m_ExtHEVCParam;
