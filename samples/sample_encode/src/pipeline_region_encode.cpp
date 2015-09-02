@@ -390,6 +390,10 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
                 sts = m_resources.CreatePlugins(pParams->pluginParams.pluginGuid,NULL);
                 MSDK_CHECK_RESULT(sts, MFX_ERR_NONE,sts);
             }
+            if(sts==MFX_ERR_UNSUPPORTED)
+            {
+                msdk_printf(MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n"));
+            }
         }
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }

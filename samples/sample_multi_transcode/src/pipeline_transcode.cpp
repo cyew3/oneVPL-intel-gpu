@@ -223,6 +223,10 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
                     m_pUserDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, *m_pmfxSession.get(), pParams->decoderPluginParams.pluginGuid, 1));
                     if (m_pUserDecoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
                 }
+                if(sts==MFX_ERR_UNSUPPORTED)
+                {
+                    msdk_printf(MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n"));
+                }
             }
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
@@ -353,6 +357,10 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
                 {
                     m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), pParams->encoderPluginParams.pluginGuid, 1));
                     if (m_pUserEncoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+                }
+                if(sts==MFX_ERR_UNSUPPORTED)
+                {
+                    msdk_printf(MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n"));
                 }
             }
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);

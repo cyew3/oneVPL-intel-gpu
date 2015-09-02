@@ -184,6 +184,10 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
                 m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1));
                 if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
             }
+            if(sts==MFX_ERR_UNSUPPORTED)
+            {
+                msdk_printf(MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n"));
+            }
         }
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
