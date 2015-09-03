@@ -25,10 +25,11 @@
 #include <fcntl.h>
 #endif //#if defined(LIBVA_DRM_SUPPORT)
 #endif //#if defined(LIBVA_SUPPORT)
-#endif // LINUX
-
 
 #include <dlfcn.h>
+
+#endif // LINUX
+
 #include <stdexcept>
 
 

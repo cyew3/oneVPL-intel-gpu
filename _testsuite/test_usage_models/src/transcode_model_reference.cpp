@@ -742,7 +742,9 @@ mfxStatus TranscodeModelReference::CreateAllocator( mfxU16 IOPattern )
 void TranscodeModelReference::DestroyAllocator(void)
 { 
     MSDK_SAFE_DELETE(m_allocator.pMfxAllocator);
+#if defined(LIBVA_SUPPORT)
     MSDK_SAFE_DELETE(m_allocator.pLibVA);
+#endif
 }// void TranscodeModelReference::DestroyAllocator(void)
 
 

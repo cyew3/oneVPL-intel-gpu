@@ -21,7 +21,9 @@
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
 
+#if defined(LIBVA_SUPPORT)
 #include <va/va.h>
+#endif
 #if defined(LIBVA_DRM_SUPPORT)
 #include <va/va_drm.h>
 #endif
