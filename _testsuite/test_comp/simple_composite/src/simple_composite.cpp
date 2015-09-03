@@ -38,9 +38,9 @@
 #include <memory>
 #include <locale>
 #include <stdexcept>
-#include <dlfcn.h>
 
 #if ! defined(_WIN32) && ! defined(_WIN64)
+  #include <dlfcn.h>
   #include <fcntl.h>
   #include <va/va.h>
   #include <va/va_drm.h>
@@ -915,11 +915,13 @@ int main(int argc, char *argv[])
         PrintHelp(cout);
     }
 
+#if !defined(_WIN32) && !defined(_WIN64)
     if(!isActivatedSW)
     {
         m_libva.reset(new MfxLoader::VA_Proxy);
         m_vadrmlib.reset(new MfxLoader::VA_DRMProxy);
     }
+#endif
 
     Composition composition(&pa);
 

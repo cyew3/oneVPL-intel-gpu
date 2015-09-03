@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -35,6 +35,8 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
         return D3DFMT_R8G8B8;
     case MFX_FOURCC_RGB4:
         return D3DFMT_A8R8G8B8;
+    case MFX_FOURCC_BGR4:
+        return D3DFMT_A8B8G8R8;
     case MFX_FOURCC_A2RGB10:
         return D3DFMT_A2R10G10B10;
     case MFX_FOURCC_P8:
@@ -152,6 +154,7 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         desc.Format != D3DFMT_R8G8B8 &&
         desc.Format != D3DFMT_P010   &&
         desc.Format != D3DFMT_A8R8G8B8 &&
+        desc.Format != D3DFMT_A8B8G8R8 &&
         desc.Format != D3DFMT_A2R10G10B10 &&
         desc.Format != D3DFMT_P8)
         return MFX_ERR_LOCK_MEMORY;
@@ -201,6 +204,13 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->A = ptr->B + 3;
+        break;
+    case D3DFMT_A8B8G8R8:
+        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->R = (mfxU8 *)locked.pBits;
+        ptr->G = ptr->R + 1;
+        ptr->B = ptr->R + 2;
+        ptr->A = ptr->R + 3;
         break;
     case D3DFMT_A2R10G10B10:
         ptr->Pitch = (mfxU16)locked.Pitch;

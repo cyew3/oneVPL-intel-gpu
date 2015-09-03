@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2015 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -42,9 +42,10 @@ mfxStatus CVAAPIDeviceX11::Init(mfxHDL hWindow, mfxU16 nViews, mfxU32 nAdapterNu
         if (MFX_ERR_NONE == mfx_res)
         {
             Display* display = VAAPI_GET_X_DISPLAY(m_X11LibVA.GetXDisplay());
-            mfxU32 screen_number = DefaultScreen(display);
+            MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
+			mfxU32 screen_number = DefaultScreen(display);
 
-            *window = XCreateSimpleWindow(display,
+            *window = x11lib.XCreateSimpleWindow(display,
                                         RootWindow(display, screen_number),
                                         0,
                                         0,
@@ -56,8 +57,8 @@ mfxStatus CVAAPIDeviceX11::Init(mfxHDL hWindow, mfxU16 nViews, mfxU32 nAdapterNu
             if (!(*window)) mfx_res = MFX_ERR_UNKNOWN;
             else
             {
-                XMapWindow(display, *window);
-                XSync(display, False);
+                x11lib.XMapWindow(display, *window);
+                x11lib.XSync(display, False);
             }
         }
     }
@@ -70,7 +71,9 @@ void CVAAPIDeviceX11::Close(void)
     {
         Display* display = VAAPI_GET_X_DISPLAY(m_X11LibVA.GetXDisplay());
         Window* window = VAAPI_GET_X_WINDOW(m_window);
-        XDestroyWindow(display, *window);
+        
+		MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
+		x11lib.XDestroyWindow(display, *window);
 
         free(m_window);
         m_window = NULL;
@@ -120,11 +123,13 @@ mfxStatus CVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllo
     {
         surface = *memId->m_surface;
 
-        XResizeWindow(display,
+		MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
+        x11lib.XResizeWindow(display,
                       *window,
                       pSurface->Info.CropW, pSurface->Info.CropH);
 
-        va_res = vaPutSurface(m_X11LibVA.GetVADisplay(),
+		MfxLoader::VA_X11Proxy & vax11lib = m_X11LibVA.GetVAX11();
+        vax11lib.vaPutSurface(m_X11LibVA.GetVADisplay(),
                         surface,
                         *window,
                         pSurface->Info.CropX,
@@ -140,26 +145,77 @@ mfxStatus CVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllo
                         VA_FRAME_PICTURE);
 
         mfx_res = va_to_mfx_status(va_res);
-        XSync(display, False);
+        x11lib.XSync(display, False);
     }
     return mfx_res;
 }
 
-CHWDevice* CreateVAAPIDevice(void)
-{
-    return new CVAAPIDeviceX11();
-}
+#endif
 
-#elif defined(LIBVA_DRM_SUPPORT)
+#if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT)
 
-CHWDevice* CreateVAAPIDevice(void)
+
+CHWDevice* CreateVAAPIDevice(int type)
 {
-    return new CVAAPIDeviceDRM();
+   CHWDevice * device = 0;
+    switch (type)
+    {
+    case MFX_LIBVA_DRM:
+#if defined(LIBVA_DRM_SUPPORT)
+        try
+        {
+            device = new CVAAPIDeviceDRM;
+        }
+        catch (std::exception&)
+        {
+            device = 0;
+        }
+#endif
+        break;
+    case MFX_LIBVA_X11:
+#if defined(LIBVA_X11_SUPPORT)
+        try
+        {
+            device = new CVAAPIDeviceX11;
+        }
+        catch (std::exception&)
+        {
+            device = 0;
+        }
+#endif
+        break;
+    case MFX_LIBVA_AUTO:
+#if defined(LIBVA_X11_SUPPORT)
+        try
+        {
+            device = new CVAAPIDeviceX11;
+        }
+        catch (std::exception&)
+        {
+            device = 0;
+        }
+#endif
+#if defined(LIBVA_DRM_SUPPORT)
+        if (!device)
+        {
+            try
+            {
+                device = new CVAAPIDeviceDRM;
+            }
+            catch (std::exception&)
+            {
+                device = 0;
+            }
+        }
+#endif
+        break;
+    } // switch(type)
+	return device;
 }
 
 #elif defined(LIBVA_ANDROID_SUPPORT)
 
-CHWDevice* CreateVAAPIDevice(void)
+CHWDevice* CreateVAAPIDevice(int)
 {
     return new CVAAPIDeviceAndroid();
 }

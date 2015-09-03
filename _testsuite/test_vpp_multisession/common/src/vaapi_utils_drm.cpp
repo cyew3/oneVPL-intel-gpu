@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2015 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -25,7 +25,7 @@ DRMLibVA::DRMLibVA(void):
     if (m_fd < 0) sts = MFX_ERR_NOT_INITIALIZED;
     if (MFX_ERR_NONE == sts)
     {
-        m_va_dpy = vaGetDisplayDRM(m_fd);
+        m_va_dpy = m_vadrmlib.vaGetDisplayDRM(m_fd);
         if (!m_va_dpy)
         {
             close(m_fd);
@@ -34,7 +34,7 @@ DRMLibVA::DRMLibVA(void):
     }
     if (MFX_ERR_NONE == sts)
     {
-        va_res = vaInitialize(m_va_dpy, &major_version, &minor_version);
+        va_res = m_libva.vaInitialize(m_va_dpy, &major_version, &minor_version);
         sts = va_to_mfx_status(va_res);
         if (MFX_ERR_NONE != sts)
         {
@@ -49,7 +49,7 @@ DRMLibVA::~DRMLibVA(void)
 {
     if (m_va_dpy)
     {
-        vaTerminate(m_va_dpy);
+        m_libva.vaTerminate(m_va_dpy);
     }
     if (m_fd >= 0)
     {
