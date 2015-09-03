@@ -211,8 +211,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 90}}
     },
     {/*36*/
-     //Unsupported FourCC
-        MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+        MFX_ERR_NONE, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_YUY2},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat, MFX_CHROMAFORMAT_YUV422},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_YUY2},
@@ -272,6 +271,12 @@ int TestSuite::RunTest(unsigned int id)
     g_tsStatus.expect(tc.sts);
     if (!(m_impl & MFX_IMPL_VIA_D3D11) && g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
         g_tsStatus.expect(MFX_WRN_FILTER_SKIPPED);
+
+    if (m_par.vpp.Out.FourCC == MFX_FOURCC_YV12)  // yv12 on output is not supported in any case case
+        g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
+
+    if ( (m_par.vpp.In.FourCC == MFX_FOURCC_NV16) || (m_par.vpp.Out.FourCC == MFX_FOURCC_NV16) ) // nv16 usage leads to SW fallback, where rotation cannot be used
+        g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
 
     Init(m_session, m_pPar);
 
