@@ -1271,7 +1271,10 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
     if (m_usePostProcessing)
     {
         mfxHDL surfHDL;
-        m_core->GetExternalFrameHDL(surface_work->Data.MemId, &surfHDL, false);
+        if(!m_isOpaq)
+            m_core->GetExternalFrameHDL(surface_work->Data.MemId, &surfHDL, false);
+        else
+            m_core->GetFrameHDL(surface_work->Data.MemId, &surfHDL, false);
         m_va->GetVideoProcessingVA()->SetOutputSurface(surfHDL);
     }
 #endif

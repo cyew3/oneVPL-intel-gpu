@@ -1854,15 +1854,15 @@ mfxStatus VideoVPPHW::PreWorkOutSurface(ExtSurface & output)
 
     if (D3D_TO_D3D == m_ioMode || SYS_TO_D3D == m_ioMode)
     {
-        /*if (m_bIsOpaqueMemory[VPP_OUT])
+        if (m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
         {
             MFX_SAFE_CALL(m_pCore->GetFrameHDL( output.pSurf->Data.MemId, (mfxHDL *)&hdl) );
             m_executeParams.targetSurface.memId = output.pSurf->Data.MemId;
             m_executeParams.targetSurface.bExternal = false;
         }
-        else*/
+        else
         {
-            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(output.pSurf->Data.MemId, (mfxHDL *)&hdl));
+            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(output.pSurf->Data.MemId, (mfxHDL *)&hdl,false));
             m_executeParams.targetSurface.memId = output.pSurf->Data.MemId;
 
             m_executeParams.targetSurface.bExternal = true;
@@ -1954,10 +1954,16 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
         }
         else
         {
-            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(surfQueue[i].pSurf->Data.MemId, (mfxHDL *)&hdl));
+            if(m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY){
+                MFX_SAFE_CALL(m_pCore->GetFrameHDL(surfQueue[i].pSurf->Data.MemId, (mfxHDL *)&hdl));
+                bExternal = false;
+            }else{
+                MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(surfQueue[i].pSurf->Data.MemId, (mfxHDL *)&hdl));
+                bExternal = true;
+            }
             in = hdl;
 
-            bExternal = true;
+            
             memId     = surfQueue[i].pSurf->Data.MemId;
         }
 

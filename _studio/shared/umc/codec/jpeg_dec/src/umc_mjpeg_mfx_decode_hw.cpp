@@ -549,7 +549,7 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
     m_convertInfo.UOffset = imageLayout.ComponentDataOffset[1];
     m_convertInfo.VOffset = imageLayout.ComponentDataOffset[2];
 #else
-	sts = m_va->Execute();
+    sts = m_va->Execute();
     if (sts != UMC_OK)
         return sts;
     sts = m_va->EndFrame(NULL);

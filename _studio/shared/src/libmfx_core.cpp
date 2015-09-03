@@ -483,14 +483,6 @@ mfxStatus  CommonCORE::GetExternalFrameHDL(mfxMemId mid, mfxHDL *handle, bool Ex
     {
         MFX_CHECK_NULL_PTR1(handle);
 
-        // if exist opaque surface - take a look in them (internal surfaces)
-        if (m_OpqTbl.size())
-        {
-            sts = GetFrameHDL(mid, handle);
-            if (MFX_ERR_NONE == sts)
-                return sts;
-        }
-
         if (m_bSetExtFrameAlloc)
         {
             mfxFrameAllocator* pAlloc = &m_FrameAllocator.frameAllocator;
@@ -1388,6 +1380,11 @@ mfxStatus CommonCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface
     Ipp32u dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
     FastCopy *pFastCopy = m_pFastCopy.get();
+    if(!pFastCopy){
+        m_pFastCopy.reset(new FastCopy());
+        m_pFastCopy.get()->Initialize();
+        m_bFastCopy = true;
+    }
 
     if (NULL != pSrc->Data.Y && NULL != pDst->Data.Y)
     {
@@ -1903,26 +1900,8 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
         else
             srcMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
 
-        if(!dst->Data.Y)
-        {
-            sts = LockExternalFrame(dst->Data.MemId, &dst->Data);
-            if(MFX_ERR_NONE == sts)
-            {
-                unlock_external = true;
-                dstMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
-            }
-            else
-            {
-                dstMemType |= MFX_MEMTYPE_INTERNAL_FRAME;
-                unlock_internal = true;
-                sts = LockFrame(dst->Data.MemId, &dst->Data);
-                MFX_CHECK_STS(sts);
-            }
-        }
-        else
-        {
-            dstMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
-        }
+        dstMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
+        
 
         sts = DoFastCopyWrapper(dst, dstMemType, src, srcMemType);
         MFX_CHECK_STS(sts);
@@ -1947,26 +1926,7 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
         else
             dstMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
 
-        if(!src->Data.Y)
-        {
-            sts = LockExternalFrame(src->Data.MemId, &src->Data);
-            if(MFX_ERR_NONE == sts)
-            {
-                unlock_external = true;
-                srcMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
-            }
-            else
-            {
-                srcMemType |= MFX_MEMTYPE_INTERNAL_FRAME;
-                unlock_internal = true;
-                sts = LockFrame(src->Data.MemId, &src->Data);
-                MFX_CHECK_STS(sts);
-            }
-        }
-        else
-        {
-            srcMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
-        }
+        srcMemType |= MFX_MEMTYPE_EXTERNAL_FRAME;
 
         sts = DoFastCopyWrapper(dst, dstMemType, src, srcMemType);
         MFX_CHECK_STS(sts);

@@ -979,6 +979,11 @@ VAAPIVideoCORE::DoFastCopyExtended(
     }
 
     FastCopy *pFastCopy = m_pFastCopy.get();
+    if(!pFastCopy){
+        m_pFastCopy.reset(new FastCopy());
+        m_pFastCopy.get()->Initialize();
+        m_bFastCopy = true;
+    }
     CmCopyWrapper *pCmCopy = m_pCmCopy.get();
 
     mfxU32 srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);

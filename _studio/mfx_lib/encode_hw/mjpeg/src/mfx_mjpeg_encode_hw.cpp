@@ -914,10 +914,13 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
 
         sts = enc.m_pCore->GetFrameHDL(enc.m_raw.mids[task.m_idx], pSurfaceHdl);
     }
+    else if (MFX_IOPATTERN_IN_OPAQUE_MEMORY == enc.m_vParam.IOPattern)
+    {
+        sts = enc.m_pCore->GetFrameHDL(nativeSurf->Data.MemId, pSurfaceHdl);
+    }
     else
     {
-        if ((MFX_IOPATTERN_IN_VIDEO_MEMORY == enc.m_vParam.IOPattern) ||
-            (MFX_IOPATTERN_IN_OPAQUE_MEMORY == enc.m_vParam.IOPattern) )
+        if (MFX_IOPATTERN_IN_VIDEO_MEMORY == enc.m_vParam.IOPattern)
             sts = enc.m_pCore->GetExternalFrameHDL(nativeSurf->Data.MemId, pSurfaceHdl);
         else
             return MFX_ERR_UNDEFINED_BEHAVIOR;

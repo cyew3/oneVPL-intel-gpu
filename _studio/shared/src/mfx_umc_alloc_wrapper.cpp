@@ -1416,7 +1416,10 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
         mfxMemId memId = isOpaq?(m_frameData[index].first.Data.MemId):(m_pCore->MapIdx(m_frameData[index].first.Data.MemId));
         
         mfxHDLPair pPair;
-        sts = m_pCore->GetExternalFrameHDL(surface_work->Data.MemId, (mfxHDL*)&pPair);
+        if(isOpaq)
+            sts = m_pCore->GetFrameHDL(surface_work->Data.MemId, (mfxHDL*)&pPair);
+        else
+            sts = m_pCore->GetExternalFrameHDL(surface_work->Data.MemId, (mfxHDL*)&pPair);
 
         if ((pPair.first)&&
             (pPair.first == memId))
@@ -1458,7 +1461,10 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
         mfxMemId memId = isOpaq?(m_frameData[indexTop].first.Data.MemId):(m_pCore->MapIdx(m_frameData[indexTop].first.Data.MemId));
 
         mfxHDLPair pPair;
-        sts = m_pCore->GetExternalFrameHDL(surface_work->Data.MemId, (mfxHDL*)&pPair);
+        if(isOpaq)
+            sts = m_pCore->GetFrameHDL(surface_work->Data.MemId, (mfxHDL*)&pPair);
+        else
+            sts = m_pCore->GetExternalFrameHDL(surface_work->Data.MemId, (mfxHDL*)&pPair);
 
         if ((pPair.first)&&
             (pPair.first == memId))

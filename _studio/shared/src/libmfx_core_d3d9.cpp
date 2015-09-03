@@ -976,6 +976,11 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
     mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
     FastCopy *pFastCopy = m_pFastCopy.get();
+    if(!pFastCopy){
+        m_pFastCopy.reset(new FastCopy());
+        m_pFastCopy.get()->Initialize();
+        m_bFastCopy = true;
+    }
     CmCopyWrapper *pCmCopy = m_pCmCopy.get();
 
     if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
