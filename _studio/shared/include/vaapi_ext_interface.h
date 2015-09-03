@@ -62,6 +62,12 @@ typedef struct _VAEncMiscParameterPrivate
             //      2: scale MV cost to be 1/4 of the default value for HME predictor.
             //      3: scale MV cost to be 1/8 of the default value for HME predictor.
             unsigned int HMEMVCostScalingFactor             : 2;
+            //disable HME
+            unsigned int HMEDisable                         : 1;
+            //disable Super HME
+            unsigned int SuperHMEDisable                    : 1;
+            //disable Ultra HME
+            unsigned int UltraHMEDisable                    : 1;
 
         };
         unsigned int encControls;
