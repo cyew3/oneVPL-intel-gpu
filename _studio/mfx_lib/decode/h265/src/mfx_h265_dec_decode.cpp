@@ -915,6 +915,8 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         surface_work = GetOriginalSurface(surface_work);
+        if (!surface_work)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
     sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_HEVC, m_platform != MFX_PLATFORM_SOFTWARE);
