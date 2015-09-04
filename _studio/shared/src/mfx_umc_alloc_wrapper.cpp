@@ -1267,7 +1267,7 @@ mfxStatus DoHwJpegCc(VideoVppJpegD3D9 **pCc,
 
     if (*pCc == NULL)
     {
-        *pCc = new VideoVppJpegD3D9(mfxCore, isD3DToSys);
+        *pCc = new VideoVppJpegD3D9(mfxCore, isD3DToSys,(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)?true:false);
 
         sts = (*pCc)->Init(par);
         MFX_CHECK_STS( sts );
@@ -1291,7 +1291,7 @@ mfxStatus DoHwJpegCcFw(VideoVppJpegD3D9 **pCc,
 
     if (*pCc == NULL)
     {
-        *pCc = new VideoVppJpegD3D9(mfxCore, isD3DToSys);
+        *pCc = new VideoVppJpegD3D9(mfxCore, isD3DToSys,(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)?true:false);
 
         sts = (*pCc)->Init(par);
         MFX_CHECK_STS( sts );

@@ -29,7 +29,7 @@ class VideoVppJpegD3D9
 {
 public:
 
-    VideoVppJpegD3D9(VideoCORE *core, bool isD3DToSys);
+    VideoVppJpegD3D9(VideoCORE *core, bool isD3DToSys, bool isOpaq);
     virtual ~VideoVppJpegD3D9(void);
 
     mfxStatus Init(const mfxVideoParam *par);
@@ -46,6 +46,7 @@ protected:
     VideoCORE *m_pCore;
 
     bool   m_isD3DToSys;
+    bool   m_isOpaq;
     mfxU16 m_taskId;
 
     std::vector<mfxFrameSurface1>  m_surfaces;

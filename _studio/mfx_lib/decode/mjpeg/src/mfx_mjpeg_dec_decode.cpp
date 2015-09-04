@@ -1952,7 +1952,7 @@ mfxStatus MFX_JPEG_Utility::CheckVPPCaps(VideoCORE * core, mfxVideoParam * par)
     if (core->GetHWType() == MFX_HW_SOFIA)
         return MFX_ERR_UNSUPPORTED;
 
-    VideoVppJpegD3D9 *pCc = new VideoVppJpegD3D9(core, false);
+    VideoVppJpegD3D9 *pCc = new VideoVppJpegD3D9(core, false, (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)?true:false);
     
     if(pCc != NULL)
     {

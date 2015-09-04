@@ -483,6 +483,15 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
             sts == MFX_ERR_NONE &&
             m_raw.NumFrameActual >= request.NumFrameMin,
             MFX_ERR_MEMORY_ALLOC);
+        if (MFX_IOPATTERN_IN_OPAQUE_MEMORY == m_vParam.IOPattern)
+        {
+            if( NULL == opaqAllocReq )
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            else
+            {
+                m_isOpaqIn = true;
+            }
+        }
     }
     else if (m_vParam.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {

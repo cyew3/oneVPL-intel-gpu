@@ -85,10 +85,12 @@ enum
 
 };
 
-VideoVppJpegD3D9::VideoVppJpegD3D9(VideoCORE *core, bool isD3DToSys)
+VideoVppJpegD3D9::VideoVppJpegD3D9(VideoCORE *core, bool isD3DToSys, bool isOpaq)
 {
     m_pCore = core;
     m_isD3DToSys = isD3DToSys;
+    
+    m_isOpaq = isOpaq;
 
     m_taskId = 1;
 
@@ -239,7 +241,14 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     }
     else
     {
-        MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+       if(m_isOpaq)
+       {
+            MFX_SAFE_CALL(m_pCore->GetFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+       }
+       else
+       {
+            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+       }
     }
 
     out = hdl;
@@ -326,7 +335,14 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     }
     else
     {
-        MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+       if(m_isOpaq)
+       {
+            MFX_SAFE_CALL(m_pCore->GetFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+       }
+       else
+       {
+            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+       }
     }
 
     out = hdl;
@@ -406,7 +422,14 @@ mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface,
     }
     else
     {
-        MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+       if(m_isOpaq)
+       {
+            MFX_SAFE_CALL(m_pCore->GetFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+       }
+       else
+       {
+            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+       }
     }
     out = hdl;
     
@@ -466,7 +489,14 @@ mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceT
     }
     else
     {
-        MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+       if(m_isOpaq)
+       {
+            MFX_SAFE_CALL(m_pCore->GetFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+       }
+       else
+       {
+            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(pOutputSurface->Data.MemId, (mfxHDL *)&hdl));
+       }
     }
     out = hdl;
     
