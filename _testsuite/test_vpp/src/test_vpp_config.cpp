@@ -8,7 +8,7 @@
 
 #include "test_vpp_utils.h"
 
-mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* pResources )
+mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* pResources, mfxU32 paramID )
 {
     mfxVideoParam*   pVppParam = pResources->pVppParams;
     mfxU32  enhFilterCount = 0;
@@ -24,33 +24,33 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
     pResources->extDoUse.AlgList = NULL;
 
     // [1] video enhancement algorithms can be enabled with default parameters 
-    if( VPP_FILTER_DISABLED != pParams->denoiseParam.mode )
+    if( VPP_FILTER_DISABLED != pParams->denoiseParam[paramID].mode )
     {
         pResources->tabDoUseAlg[enhFilterCount++] = MFX_EXTBUFF_VPP_DENOISE;
     }
-    if( VPP_FILTER_DISABLED != pParams->vaParam.mode )
+    if( VPP_FILTER_DISABLED != pParams->vaParam[paramID].mode )
     {
         pResources->tabDoUseAlg[enhFilterCount++] = MFX_EXTBUFF_VPP_SCENE_ANALYSIS;    
     }
 
-    if( VPP_FILTER_DISABLED != pParams->varianceParam.mode )
+    if( VPP_FILTER_DISABLED != pParams->varianceParam[paramID].mode )
     {
         pResources->tabDoUseAlg[enhFilterCount++] = MFX_EXTBUFF_VPP_VARIANCE_REPORT;    
     }
-    if( VPP_FILTER_DISABLED != pParams->idetectParam.mode )
+    if( VPP_FILTER_DISABLED != pParams->idetectParam[paramID].mode )
     {
         pResources->tabDoUseAlg[enhFilterCount++] = MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION;    
     }
-    if( VPP_FILTER_DISABLED != pParams->procampParam.mode )
+    if( VPP_FILTER_DISABLED != pParams->procampParam[paramID].mode )
     {
         pResources->tabDoUseAlg[enhFilterCount++] = MFX_EXTBUFF_VPP_PROCAMP;     
     }
-    if( VPP_FILTER_DISABLED != pParams->detailParam.mode )
+    if( VPP_FILTER_DISABLED != pParams->detailParam[paramID].mode )
     {
         pResources->tabDoUseAlg[enhFilterCount++] = MFX_EXTBUFF_VPP_DETAIL;     
     }
     // MSDK API 2013
-    if( VPP_FILTER_ENABLED_DEFAULT == pParams->istabParam.mode)
+    if( VPP_FILTER_ENABLED_DEFAULT == pParams->istabParam[paramID].mode)
     {
         pResources->tabDoUseAlg[enhFilterCount++] = MFX_EXTBUFF_VPP_IMAGE_STABILIZATION;
     }
@@ -75,65 +75,65 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
     }
 
     // [2] video enhancement algorithms can be configured
-    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->denoiseParam.mode )
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->denoiseParam[paramID].mode )
     {
         pResources->denoiseConfig.Header.BufferId = MFX_EXTBUFF_VPP_DENOISE;
         pResources->denoiseConfig.Header.BufferSz = sizeof(mfxExtVPPDenoise);
 
-        pResources->denoiseConfig.DenoiseFactor   = pParams->denoiseParam.factor;
+        pResources->denoiseConfig.DenoiseFactor   = pParams->denoiseParam[paramID].factor;
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->denoiseConfig);
     }
-    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->vaParam.mode )
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->vaParam[paramID].mode )
     {
         // video analysis filters isn't configured
     }
-    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->frcParam.mode )
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->frcParam[paramID].mode )
     {
         pResources->frcConfig.Header.BufferId = MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION;
         pResources->frcConfig.Header.BufferSz = sizeof(mfxExtVPPFrameRateConversion);
 
-        pResources->frcConfig.Algorithm   = (mfxU16)pParams->frcParam.algorithm;//MFX_FRCALGM_DISTRIBUTED_TIMESTAMP;
+        pResources->frcConfig.Algorithm   = (mfxU16)pParams->frcParam[paramID].algorithm;//MFX_FRCALGM_DISTRIBUTED_TIMESTAMP;
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->frcConfig);
     }
 
-    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->procampParam.mode )
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->procampParam[paramID].mode )
     {
         pResources->procampConfig.Header.BufferId = MFX_EXTBUFF_VPP_PROCAMP;
         pResources->procampConfig.Header.BufferSz = sizeof(mfxExtVPPProcAmp);
 
-        pResources->procampConfig.Hue        = pParams->procampParam.hue;
-        pResources->procampConfig.Saturation = pParams->procampParam.saturation;
-        pResources->procampConfig.Contrast   = pParams->procampParam.contrast;
-        pResources->procampConfig.Brightness = pParams->procampParam.brightness;
+        pResources->procampConfig.Hue        = pParams->procampParam[paramID].hue;
+        pResources->procampConfig.Saturation = pParams->procampParam[paramID].saturation;
+        pResources->procampConfig.Contrast   = pParams->procampParam[paramID].contrast;
+        pResources->procampConfig.Brightness = pParams->procampParam[paramID].brightness;
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->procampConfig);     
     }
-    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->detailParam.mode )
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->detailParam[paramID].mode )
     {
         pResources->detailConfig.Header.BufferId = MFX_EXTBUFF_VPP_DETAIL;
         pResources->detailConfig.Header.BufferSz = sizeof(mfxExtVPPDetail);
 
-        pResources->detailConfig.DetailFactor   = pParams->detailParam.factor;
+        pResources->detailConfig.DetailFactor   = pParams->detailParam[paramID].factor;
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->detailConfig);    
     }
-    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->deinterlaceParam.mode )
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->deinterlaceParam[paramID].mode )
     {
         pResources->deinterlaceConfig.Header.BufferId = MFX_EXTBUFF_VPP_DEINTERLACING;
         pResources->deinterlaceConfig.Header.BufferSz = sizeof(mfxExtVPPDeinterlacing);
-        pResources->deinterlaceConfig.Mode = pParams->deinterlaceParam.algorithm;
-        pResources->deinterlaceConfig.TelecinePattern  = pParams->deinterlaceParam.tc_pattern;
-        pResources->deinterlaceConfig.TelecineLocation = pParams->deinterlaceParam.tc_pos;
+        pResources->deinterlaceConfig.Mode = pParams->deinterlaceParam[paramID].algorithm;
+        pResources->deinterlaceConfig.TelecinePattern  = pParams->deinterlaceParam[paramID].tc_pattern;
+        pResources->deinterlaceConfig.TelecineLocation = pParams->deinterlaceParam[paramID].tc_pos;
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->deinterlaceConfig);
     }
-    if( 0 != pParams->rotate )
+    if( 0 != pParams->rotate[paramID] )
     {
         pResources->rotationConfig.Header.BufferId = MFX_EXTBUFF_VPP_ROTATION;
         pResources->rotationConfig.Header.BufferSz = sizeof(mfxExtVPPRotation);
-        pResources->rotationConfig.Angle           = pParams->rotate;
+        pResources->rotationConfig.Angle           = pParams->rotate[paramID];
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->rotationConfig);
     }
@@ -191,28 +191,28 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
 
     //    pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->steConfig);
     //}
-    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->istabParam.mode )
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->istabParam[paramID].mode )
     {
         pResources->istabConfig.Header.BufferId = MFX_EXTBUFF_VPP_IMAGE_STABILIZATION;
         pResources->istabConfig.Header.BufferSz = sizeof(mfxExtVPPImageStab);
-        pResources->istabConfig.Mode            = pParams->istabParam.istabMode;
+        pResources->istabConfig.Mode            = pParams->istabParam[paramID].istabMode;
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->istabConfig);
     }
 
     // ----------------------------------------------------
     // MVC
-    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->multiViewParam.mode )
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->multiViewParam[paramID].mode )
     {
         pResources->multiViewConfig.Header.BufferId = MFX_EXTBUFF_MVC_SEQ_DESC;
         pResources->multiViewConfig.Header.BufferSz = sizeof(mfxExtMVCSeqDesc);
 
-        pResources->multiViewConfig.NumView = pParams->multiViewParam.viewCount;
-        pResources->multiViewConfig.View    = new mfxMVCViewDependency [ pParams->multiViewParam.viewCount ];
+        pResources->multiViewConfig.NumView = pParams->multiViewParam[paramID].viewCount;
+        pResources->multiViewConfig.View    = new mfxMVCViewDependency [ pParams->multiViewParam[paramID].viewCount ];
 
-        ViewGenerator viewGenerator( pParams->multiViewParam.viewCount );
+        ViewGenerator viewGenerator( pParams->multiViewParam[paramID].viewCount );
 
-        for( mfxU16 viewIndx = 0; viewIndx < pParams->multiViewParam.viewCount; viewIndx++ )
+        for( mfxU16 viewIndx = 0; viewIndx < pParams->multiViewParam[paramID].viewCount; viewIndx++ )
         {
             pResources->multiViewConfig.View[viewIndx].ViewId = viewGenerator.GetNextViewID();          
         }
@@ -222,7 +222,7 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
 
     // ----------------------------------------------------
     // SVC
-    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->svcParam.mode )
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->svcParam[paramID].mode )
     {
         memset( (void*)&(pResources->svcConfig), 0, sizeof(mfxExtSVCSeqDesc));
 
@@ -231,12 +231,12 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
 
         for( mfxU16 layer = 0; layer < 8; layer++ )
         {
-            pResources->svcConfig.DependencyLayer[layer].Active = pParams->svcParam.descr[layer].active;
+            pResources->svcConfig.DependencyLayer[layer].Active = pParams->svcParam[paramID].descr[layer].active;
             if( pResources->svcConfig.DependencyLayer[layer].Active )
             {
                 // aya: here we use aligned size (width, height)
-                pResources->svcConfig.DependencyLayer[layer].Width = pParams->svcParam.descr[layer].width;
-                pResources->svcConfig.DependencyLayer[layer].Height= pParams->svcParam.descr[layer].height;
+                pResources->svcConfig.DependencyLayer[layer].Width = pParams->svcParam[paramID].descr[layer].width;
+                pResources->svcConfig.DependencyLayer[layer].Height= pParams->svcParam[paramID].descr[layer].height;
 
                 // aya: should be modified in case of descr will contain crop info
                 pResources->svcConfig.DependencyLayer[layer].CropX = 0;

@@ -139,6 +139,9 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
 
     vm_string_printf(VM_STRING("   [-tc_pos (position)] - Position inside a telecine sequence of 5 frames where the artifacts starts - Value [0 - 4]\n\n"));
 
+    vm_string_printf(VM_STRING("   [-reset_start (frame number)] - after reaching this frame, encoder will be reset with new parameters, followed after this command and before -reset_end \n"));
+    vm_string_printf(VM_STRING("   [-reset_end]                  - specifies end of reset related options \n\n"));
+
     vm_string_printf(VM_STRING("\n"));
 
     vm_string_printf(VM_STRING("Usage2: %s -sw 352 -sh 144 -scc rgb3 -dw 320 -dh 240 -dcc nv12 -denoise 32 -vanalysis -iopattern d3d_to_d3d -i in.rgb -o out.yuv -roi_check var_to_fix 7 7\n"), strAppName);
@@ -294,7 +297,313 @@ static mfxU16 Str2IOpattern( vm_char* strInput )
 
 } // static mfxU16 Str2IOpattern( vm_char* strInput )
 
-mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* pParams)
+mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sInputParams* pParams, mfxU32 paramID, sFiltersParam* pDefaultFiltersParam)
+{
+    CHECK_POINTER(pParams,  MFX_ERR_NULL_PTR);
+    CHECK_POINTER(strInput, MFX_ERR_NULL_PTR);
+
+
+    pParams->deinterlaceParam.push_back( *pDefaultFiltersParam->pDIParam            );
+    pParams->denoiseParam.push_back(     *pDefaultFiltersParam->pDenoiseParam       );
+    pParams->detailParam.push_back(      *pDefaultFiltersParam->pDetailParam        );
+    pParams->procampParam.push_back(     *pDefaultFiltersParam->pProcAmpParam       );
+    pParams->vaParam.push_back(          *pDefaultFiltersParam->pVAParam            );
+    pParams->varianceParam.push_back(    *pDefaultFiltersParam->pVarianceParam      );
+    pParams->idetectParam.push_back(     *pDefaultFiltersParam->pIDetectParam       );
+    pParams->frcParam.push_back(         *pDefaultFiltersParam->pFRCParam           );
+    pParams->multiViewParam.push_back(   *pDefaultFiltersParam->pMultiViewParam     );
+    pParams->gamutParam.push_back(       *pDefaultFiltersParam->pGamutParam         );
+    pParams->tccParam.push_back(         *pDefaultFiltersParam->pClrSaturationParam );
+    pParams->aceParam.push_back(         *pDefaultFiltersParam->pContrastParam      );
+    pParams->steParam.push_back(         *pDefaultFiltersParam->pSkinParam          );
+    pParams->istabParam.push_back(       *pDefaultFiltersParam->pImgStabParam       );
+    pParams->svcParam.push_back(         *pDefaultFiltersParam->pSVCParam           );
+    pParams->rotate.push_back(            0                                         );
+
+    mfxU32 readData;
+    mfxU32 ioStatus;
+
+    for (mfxU8& i = curArg; i < nArgNum; i++ ) 
+    {
+        CHECK_POINTER(strInput[i], MFX_ERR_NULL_PTR);
+        {
+            //-----------------------------------------------------------------------------------
+            //                   Video Enhancement Algorithms
+            //-----------------------------------------------------------------------------------
+            if (0 == vm_string_strcmp(strInput[i], VM_STRING("-denoise")))
+            {
+                pParams->denoiseParam[paramID].mode = VPP_FILTER_ENABLED_DEFAULT;
+
+                if( i+1 < nArgNum )
+                {                
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);                
+                    if ( ioStatus > 0 )
+                    {
+                        pParams->denoiseParam[paramID].factor = (mfxU16)readData;
+                        pParams->denoiseParam[paramID].mode   = VPP_FILTER_ENABLED_CONFIGURED;
+                        i++;
+                    }
+                }
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-di_mode")))
+            {
+                pParams->deinterlaceParam[paramID].mode = VPP_FILTER_ENABLED_DEFAULT;
+
+                if( i+1 < nArgNum )
+                {
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    if ( ioStatus > 0 )
+                    {
+                        pParams->deinterlaceParam[paramID].algorithm = (mfxU16)readData;
+                        pParams->deinterlaceParam[paramID].mode   = VPP_FILTER_ENABLED_CONFIGURED;
+                        i++;
+                    }
+                }
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tc_pattern")))
+            {
+                if( i+1 < nArgNum )
+                {
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    if ( ioStatus > 0 )
+                    {
+                        pParams->deinterlaceParam[paramID].tc_pattern   = (mfxU16)readData;
+                        i++;
+                    }
+                }
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tc_pos")))
+            {
+                //pParams->deinterlaceParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+
+                if( i+1 < nArgNum )
+                {
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    if ( ioStatus > 0 )
+                    {
+                        pParams->deinterlaceParam[paramID].tc_pos   = (mfxU16)readData;
+                        i++;
+                    }
+                }
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-detail")))
+            {
+                pParams->detailParam[paramID].mode = VPP_FILTER_ENABLED_DEFAULT;
+
+                if( i+1 < nArgNum )
+                {
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    if ( ioStatus > 0 )
+                    {
+                        pParams->detailParam[paramID].factor = (mfxU16)readData;
+                        pParams->detailParam[paramID].mode   = VPP_FILTER_ENABLED_CONFIGURED;
+                        i++;
+                    }
+                }
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-vanalysis")))
+            {
+                pParams->vaParam[paramID].mode = VPP_FILTER_ENABLED_DEFAULT;
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-rotate")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->rotate[paramID]);
+            }
+            else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-variance")))
+            {
+                pParams->varianceParam[paramID].mode = VPP_FILTER_ENABLED_DEFAULT;
+            }
+            else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-idetect")))
+            {
+                pParams->idetectParam[paramID].mode = VPP_FILTER_ENABLED_DEFAULT;
+            }
+            // different modes of MFX FRC
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-frc:advanced")))
+            {
+                pParams->frcParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->frcParam[paramID].algorithm = MFX_FRCALGM_DISTRIBUTED_TIMESTAMP;
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-frc:interp")))
+            {
+                pParams->frcParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->frcParam[paramID].algorithm = MFX_FRCALGM_FRAME_INTERPOLATION;
+            }
+            //---------------------------------------------
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-pa_hue")))
+            {
+                pParams->procampParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->procampParam[paramID].hue);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-pa_bri")))
+            {
+                pParams->procampParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->procampParam[paramID].brightness);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-pa_con")))
+            {
+                pParams->procampParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->procampParam[paramID].contrast);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-pa_sat")))
+            {
+                pParams->procampParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->procampParam[paramID].saturation);
+            }
+
+            //MSDK 3.0
+            else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-gamut:compression")))
+            {
+                pParams->gamutParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+            }
+            else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-gamut:bt709")))
+            {
+                pParams->gamutParam[paramID].bBT709 = true;
+            }
+            else if( 0 == vm_string_strcmp(strInput[i], VM_STRING("-view:count")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+
+                mfxU16 viewCount;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &viewCount);
+                if( viewCount > 1 )
+                {
+                    pParams->multiViewParam[paramID].viewCount = (mfxU16)viewCount;
+                    pParams->multiViewParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                }
+            }
+            //---------------------------------------------
+            // Scalable Video Mode
+            else if( 0 == vm_string_strcmp(strInput[i], VM_STRING("-svc")) )
+            {
+                if( 3 + i > nArgNum )
+                {
+                    vppPrintHelp(strInput[0], VM_STRING("invalid SVC configuration"));
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
+                }
+                mfxU16 layer;
+                vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &layer);
+                if( layer < 8 )
+                {
+                    sSVCLayerDescr descr = {1, 0, 0};//active
+                    vm_string_sscanf(strInput[i+2], VM_STRING("%hd"), &descr.width);
+                    vm_string_sscanf(strInput[i+3], VM_STRING("%hd"), &descr.height);
+
+                    pParams->svcParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                    pParams->svcParam[paramID].descr[layer] = descr;
+
+                    i += 3;
+                }
+                else
+                {
+                    vppPrintHelp(strInput[0], VM_STRING("Invalid SVC configuration"));
+                    return MFX_ERR_UNSUPPORTED;
+                }
+            }
+            //---------------------------------------------
+            // MSDK API 1.5
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-istab")))
+            {
+                pParams->istabParam[paramID].mode = VPP_FILTER_ENABLED_DEFAULT;
+
+                if( i+1 < nArgNum )
+                {
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    if ( ioStatus > 0 )
+                    {
+                        pParams->istabParam[paramID].istabMode = (mfxU8)readData;
+                        pParams->istabParam[paramID].mode    = VPP_FILTER_ENABLED_CONFIGURED;
+                        i++;
+
+                        if( pParams->istabParam[paramID].istabMode != 1 && pParams->istabParam[paramID].istabMode != 2 )
+                        {
+                            vppPrintHelp(strInput[0], VM_STRING("Invalid IStab configuration"));
+                            return MFX_ERR_UNSUPPORTED;
+                        }
+                    }
+                }
+            }
+            //---------------------------------------------
+            // IECP
+            else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-ace")))
+            {
+                pParams->aceParam[paramID].mode = VPP_FILTER_ENABLED_DEFAULT;
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-ste")))
+            {
+                pParams->steParam[paramID].mode = VPP_FILTER_ENABLED_DEFAULT;
+
+                if( i+1 < nArgNum )
+                {
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    if ( ioStatus > 0 )
+                    {
+                        pParams->steParam[paramID].SkinToneFactor = (mfxU8)readData;
+                        pParams->steParam[paramID].mode           = VPP_FILTER_ENABLED_CONFIGURED;
+                        i++;
+                    }
+                }
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:red")))
+            {
+                pParams->tccParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[paramID].Red);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:green")))
+            {
+                pParams->tccParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[paramID].Green);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:blue")))
+            {
+                pParams->tccParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[paramID].Blue);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:magenta")))
+            {
+                pParams->tccParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[paramID].Magenta);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:yellow")))
+            {
+                pParams->tccParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[paramID].Yellow);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:cyan")))
+            {
+                pParams->tccParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[paramID].Cyan);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-reset_end")))
+            {
+                break;
+            }
+            else
+            {
+                vm_string_printf(VM_STRING("Unknow reset option: %s\n"), strInput[i]);
+
+                return MFX_ERR_UNKNOWN;
+            }
+        }
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus vppParseResetPar( ... )
+
+mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* pParams, sFiltersParam* pDefaultFiltersParam)
 {
     CHECK_POINTER(pParams,  MFX_ERR_NULL_PTR);
     CHECK_POINTER(strInput, MFX_ERR_NULL_PTR);
@@ -427,15 +736,15 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             //-----------------------------------------------------------------------------------
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-denoise")))
             {
-                pParams->denoiseParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+                pParams->denoiseParam[0].mode = VPP_FILTER_ENABLED_DEFAULT;
 
                 if( i+1 < nArgNum )
-                {                
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);                
+                {
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
                     if ( ioStatus > 0 )
                     {
-                        pParams->denoiseParam.factor = (mfxU16)readData;
-                        pParams->denoiseParam.mode   = VPP_FILTER_ENABLED_CONFIGURED;
+                        pParams->denoiseParam[0].factor = (mfxU16)readData;
+                        pParams->denoiseParam[0].mode   = VPP_FILTER_ENABLED_CONFIGURED;
                         i++;
                     }
                 }
@@ -457,15 +766,15 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-di_mode")))
             {
-                pParams->deinterlaceParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+                pParams->deinterlaceParam[0].mode = VPP_FILTER_ENABLED_DEFAULT;
 
                 if( i+1 < nArgNum )
                 {
                     ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
                     if ( ioStatus > 0 )
                     {
-                        pParams->deinterlaceParam.algorithm = (mfxU16)readData;
-                        pParams->deinterlaceParam.mode   = VPP_FILTER_ENABLED_CONFIGURED;
+                        pParams->deinterlaceParam[0].algorithm = (mfxU16)readData;
+                        pParams->deinterlaceParam[0].mode   = VPP_FILTER_ENABLED_CONFIGURED;
                         i++;
                     }
                 }
@@ -477,7 +786,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                     ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
                     if ( ioStatus > 0 )
                     {
-                        pParams->deinterlaceParam.tc_pattern   = (mfxU16)readData;
+                        pParams->deinterlaceParam[0].tc_pattern   = (mfxU16)readData;
                         i++;
                     }
                 }
@@ -491,35 +800,35 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                     ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
                     if ( ioStatus > 0 )
                     {
-                        pParams->deinterlaceParam.tc_pos   = (mfxU16)readData;
+                        pParams->deinterlaceParam[0].tc_pos   = (mfxU16)readData;
                         i++;
                     }
                 }
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-detail")))
             {
-                pParams->detailParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+                pParams->detailParam[0].mode = VPP_FILTER_ENABLED_DEFAULT;
 
                 if( i+1 < nArgNum )
                 {
                     ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
                     if ( ioStatus > 0 )
                     {
-                        pParams->detailParam.factor = (mfxU16)readData;
-                        pParams->detailParam.mode   = VPP_FILTER_ENABLED_CONFIGURED;
+                        pParams->detailParam[0].factor = (mfxU16)readData;
+                        pParams->detailParam[0].mode   = VPP_FILTER_ENABLED_CONFIGURED;
                         i++;
                     }
                 }
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-vanalysis")))
             {
-                pParams->vaParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+                pParams->vaParam[0].mode = VPP_FILTER_ENABLED_DEFAULT;
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-rotate")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->rotate);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->rotate[0]);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-scaling_mode")))
             {
@@ -530,57 +839,57 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-variance")))
             {
-                pParams->varianceParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+                pParams->varianceParam[0].mode = VPP_FILTER_ENABLED_DEFAULT;
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-idetect")))
             {
-                pParams->idetectParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+                pParams->idetectParam[0].mode = VPP_FILTER_ENABLED_DEFAULT;
             }
             // different modes of MFX FRC
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-frc:advanced")))
             {
-                pParams->frcParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
-                pParams->frcParam.algorithm = MFX_FRCALGM_DISTRIBUTED_TIMESTAMP;
+                pParams->frcParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->frcParam[0].algorithm = MFX_FRCALGM_DISTRIBUTED_TIMESTAMP;
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-frc:interp")))
             {
-                pParams->frcParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
-                pParams->frcParam.algorithm = MFX_FRCALGM_FRAME_INTERPOLATION;
+                pParams->frcParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->frcParam[0].algorithm = MFX_FRCALGM_FRAME_INTERPOLATION;
             }
             //---------------------------------------------
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-pa_hue")))
             {
-                pParams->procampParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->procampParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->procampParam.hue);    
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->procampParam[0].hue);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-pa_bri")))
             {
-                pParams->procampParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->procampParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->procampParam.brightness);    
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->procampParam[0].brightness);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-pa_con")))
             {
-                pParams->procampParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->procampParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->procampParam.contrast);    
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->procampParam[0].contrast);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-pa_sat")))
             {
-                pParams->procampParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->procampParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->procampParam.saturation);    
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->procampParam[0].saturation);
             }
 
             //MSDK 3.0
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-gamut:compression")))
             {
-                pParams->gamutParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->gamutParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-gamut:bt709")))
             {
-                pParams->gamutParam.bBT709 = true;
+                pParams->gamutParam[0].bBT709 = true;
             }
             else if( 0 == vm_string_strcmp(strInput[i], VM_STRING("-view:count")) )
             {
@@ -591,8 +900,8 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 vm_string_sscanf(strInput[i], VM_STRING("%hd"), &viewCount);
                 if( viewCount > 1 )
                 {
-                    pParams->multiViewParam.viewCount = (mfxU16)viewCount;
-                    pParams->multiViewParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                    pParams->multiViewParam[0].viewCount = (mfxU16)viewCount;
+                    pParams->multiViewParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 }
             }
             //---------------------------------------------
@@ -612,8 +921,8 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                     vm_string_sscanf(strInput[i+2], VM_STRING("%hd"), &descr.width);
                     vm_string_sscanf(strInput[i+3], VM_STRING("%hd"), &descr.height);
 
-                    pParams->svcParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
-                    pParams->svcParam.descr[layer] = descr;
+                    pParams->svcParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                    pParams->svcParam[0].descr[layer] = descr;
 
                     i += 3;
                 }
@@ -627,18 +936,18 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             // MSDK API 1.5
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-istab")))
             {
-                pParams->istabParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+                pParams->istabParam[0].mode = VPP_FILTER_ENABLED_DEFAULT;
 
                 if( i+1 < nArgNum )
                 {
                     ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
                     if ( ioStatus > 0 )
                     {
-                        pParams->istabParam.istabMode = (mfxU8)readData;
-                        pParams->istabParam.mode    = VPP_FILTER_ENABLED_CONFIGURED;
+                        pParams->istabParam[0].istabMode = (mfxU8)readData;
+                        pParams->istabParam[0].mode    = VPP_FILTER_ENABLED_CONFIGURED;
                         i++;
 
-                        if( pParams->istabParam.istabMode != 1 && pParams->istabParam.istabMode != 2 )
+                        if( pParams->istabParam[0].istabMode != 1 && pParams->istabParam[0].istabMode != 2 )
                         {
                             vppPrintHelp(strInput[0], VM_STRING("Invalid IStab configuration"));
                             return MFX_ERR_UNSUPPORTED;
@@ -650,58 +959,58 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             // IECP
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-ace")))
             {
-                pParams->aceParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+                pParams->aceParam[0].mode = VPP_FILTER_ENABLED_DEFAULT;
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-ste")))
             {
-                pParams->steParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+                pParams->steParam[0].mode = VPP_FILTER_ENABLED_DEFAULT;
 
                 if( i+1 < nArgNum )
                 {
                     ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
                     if ( ioStatus > 0 )
                     {
-                        pParams->steParam.SkinToneFactor = (mfxU8)readData;
-                        pParams->steParam.mode           = VPP_FILTER_ENABLED_CONFIGURED;
+                        pParams->steParam[0].SkinToneFactor = (mfxU8)readData;
+                        pParams->steParam[0].mode           = VPP_FILTER_ENABLED_CONFIGURED;
                         i++;
                     }
                 }
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:red")))
             {
-                pParams->tccParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->tccParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam.Red);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[0].Red);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:green")))
             {
-                pParams->tccParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->tccParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam.Green);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[0].Green);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:blue")))
             {
-                pParams->tccParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->tccParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam.Blue);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[0].Blue);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:magenta")))
             {
-                pParams->tccParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->tccParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam.Magenta);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[0].Magenta);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:yellow")))
             {
-                pParams->tccParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->tccParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam.Yellow);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[0].Yellow);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:cyan")))
             {
-                pParams->tccParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->tccParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam.Cyan);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[0].Cyan);
             }
             //-----------------------------------------------------------------------------------
             //                   Region of Interest Testing
@@ -875,6 +1184,17 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 pParams->use_extapi = true;
             }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-reset_start")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                i += 2;
+
+                pParams->resetFrmNums.push_back((mfxU16)readData);
+
+                if (MFX_ERR_NONE != vppParseResetPar(strInput, nArgNum, i, pParams, pParams->resetFrmNums.size(), pDefaultFiltersParam))
+                    return MFX_ERR_UNKNOWN;
+            }
             else
             {
                 vm_string_printf(VM_STRING("Unknow option: %s\n"), strInput[i]);
@@ -972,10 +1292,13 @@ bool CheckInputParams(vm_char* strInput[], sInputParams* pParams )
         return false;
     }
 
-    if (pParams->rotate != 0 && pParams->rotate != 90 && pParams->rotate != 180 && pParams->rotate != 270)
+    for (mfxU32 i = 0; i < pParams->rotate.size(); i++)
     {
-        vppPrintHelp(strInput[0], VM_STRING("Invalid -rotate parameter: supported values 0, 90, 180, 270\n"));
-        return false;
+        if (pParams->rotate[i] != 0 && pParams->rotate[i] != 90 && pParams->rotate[i] != 180 && pParams->rotate[i] != 270)
+        {
+            vppPrintHelp(strInput[0], VM_STRING("Invalid -rotate parameter: supported values 0, 90, 180, 270\n"));
+            return false;
+        }
     }
 
     return true;

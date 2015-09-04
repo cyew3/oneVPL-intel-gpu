@@ -219,21 +219,21 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     vm_string_printf(VM_STRING("\n"));
     vm_string_printf(VM_STRING("Video Enhancement Algorithms\n"));
     vm_string_printf(VM_STRING("Deinterlace\t%s\n"), (pParams->frameInfo[VPP_IN].PicStruct != pParams->frameInfo[VPP_OUT].PicStruct) ? VM_STRING("ON"): VM_STRING("OFF"));
-    vm_string_printf(VM_STRING("Denoise\t\t%s\n"),     (VPP_FILTER_DISABLED != pParams->denoiseParam.mode) ? VM_STRING("ON"): VM_STRING("OFF"));
+    vm_string_printf(VM_STRING("Denoise\t\t%s\n"),     (VPP_FILTER_DISABLED != pParams->denoiseParam[0].mode) ? VM_STRING("ON"): VM_STRING("OFF"));
 
-    vm_string_printf(VM_STRING("SceneDetection\t%s\n"),    (VPP_FILTER_DISABLED != pParams->vaParam.mode)      ? VM_STRING("ON"): VM_STRING("OFF"));
-    vm_string_printf(VM_STRING("StructDetection\t%s\n"),(VPP_FILTER_DISABLED != pParams->idetectParam.mode)      ? VM_STRING("ON"): VM_STRING("OFF"));
-    vm_string_printf(VM_STRING("VarianceReport\t%s\n"),    (VPP_FILTER_DISABLED != pParams->varianceParam.mode)      ? VM_STRING("ON"): VM_STRING("OFF"));
+    vm_string_printf(VM_STRING("SceneDetection\t%s\n"),    (VPP_FILTER_DISABLED != pParams->vaParam[0].mode)      ? VM_STRING("ON"): VM_STRING("OFF"));
+    vm_string_printf(VM_STRING("StructDetection\t%s\n"),(VPP_FILTER_DISABLED != pParams->idetectParam[0].mode)      ? VM_STRING("ON"): VM_STRING("OFF"));
+    vm_string_printf(VM_STRING("VarianceReport\t%s\n"),    (VPP_FILTER_DISABLED != pParams->varianceParam[0].mode)      ? VM_STRING("ON"): VM_STRING("OFF"));
 
-    vm_string_printf(VM_STRING("ProcAmp\t\t%s\n"),     (VPP_FILTER_DISABLED != pParams->procampParam.mode) ? VM_STRING("ON"): VM_STRING("OFF"));
-    vm_string_printf(VM_STRING("DetailEnh\t%s\n"),      (VPP_FILTER_DISABLED != pParams->detailParam.mode)  ? VM_STRING("ON"): VM_STRING("OFF"));
-    if(VPP_FILTER_DISABLED != pParams->frcParam.mode)
+    vm_string_printf(VM_STRING("ProcAmp\t\t%s\n"),     (VPP_FILTER_DISABLED != pParams->procampParam[0].mode) ? VM_STRING("ON"): VM_STRING("OFF"));
+    vm_string_printf(VM_STRING("DetailEnh\t%s\n"),      (VPP_FILTER_DISABLED != pParams->detailParam[0].mode)  ? VM_STRING("ON"): VM_STRING("OFF"));
+    if(VPP_FILTER_DISABLED != pParams->frcParam[0].mode)
     {
-        if(MFX_FRCALGM_FRAME_INTERPOLATION == pParams->frcParam.algorithm)
+        if(MFX_FRCALGM_FRAME_INTERPOLATION == pParams->frcParam[0].algorithm)
         {
             vm_string_printf(VM_STRING("FRC:Interp\tON\n"));
         }
-        else if(MFX_FRCALGM_DISTRIBUTED_TIMESTAMP == pParams->frcParam.algorithm)
+        else if(MFX_FRCALGM_DISTRIBUTED_TIMESTAMP == pParams->frcParam[0].algorithm)
         {
             vm_string_printf(VM_STRING("FRC:AdvancedPTS\tON\n"));
         }
@@ -244,15 +244,15 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     }
     //vm_string_printf(VM_STRING("FRC:Advanced\t%s\n"),   (VPP_FILTER_DISABLED != pParams->frcParam.mode)  ? VM_STRING("ON"): VM_STRING("OFF"));
     // MSDK 3.0
-    vm_string_printf(VM_STRING("GamutMapping \t%s\n"),       (VPP_FILTER_DISABLED != pParams->gamutParam.mode)      ? VM_STRING("ON"): VM_STRING("OFF") );
-    vm_string_printf(VM_STRING("ColorSaturation\t%s\n"),     (VPP_FILTER_DISABLED != pParams->tccParam.mode)   ? VM_STRING("ON"): VM_STRING("OFF") );
-    vm_string_printf(VM_STRING("ContrastEnh  \t%s\n"),       (VPP_FILTER_DISABLED != pParams->aceParam.mode)   ? VM_STRING("ON"): VM_STRING("OFF") );
-    vm_string_printf(VM_STRING("SkinToneEnh  \t%s\n"),       (VPP_FILTER_DISABLED != pParams->steParam.mode)       ? VM_STRING("ON"): VM_STRING("OFF") );
-    vm_string_printf(VM_STRING("MVC mode    \t%s\n"),       (VPP_FILTER_DISABLED != pParams->multiViewParam.mode)  ? VM_STRING("ON"): VM_STRING("OFF") );
+    vm_string_printf(VM_STRING("GamutMapping \t%s\n"),       (VPP_FILTER_DISABLED != pParams->gamutParam[0].mode)      ? VM_STRING("ON"): VM_STRING("OFF") );
+    vm_string_printf(VM_STRING("ColorSaturation\t%s\n"),     (VPP_FILTER_DISABLED != pParams->tccParam[0].mode)   ? VM_STRING("ON"): VM_STRING("OFF") );
+    vm_string_printf(VM_STRING("ContrastEnh  \t%s\n"),       (VPP_FILTER_DISABLED != pParams->aceParam[0].mode)   ? VM_STRING("ON"): VM_STRING("OFF") );
+    vm_string_printf(VM_STRING("SkinToneEnh  \t%s\n"),       (VPP_FILTER_DISABLED != pParams->steParam[0].mode)       ? VM_STRING("ON"): VM_STRING("OFF") );
+    vm_string_printf(VM_STRING("MVC mode    \t%s\n"),       (VPP_FILTER_DISABLED != pParams->multiViewParam[0].mode)  ? VM_STRING("ON"): VM_STRING("OFF") );
     // SVC mode
-    vm_string_printf(VM_STRING("SVC mode    \t%s\n"),        (VPP_FILTER_DISABLED != pParams->svcParam.mode)  ? VM_STRING("ON"): VM_STRING("OFF") );
+    vm_string_printf(VM_STRING("SVC mode    \t%s\n"),        (VPP_FILTER_DISABLED != pParams->svcParam[0].mode)  ? VM_STRING("ON"): VM_STRING("OFF") );
     // MSDK 6.0
-    vm_string_printf(VM_STRING("ImgStab    \t%s\n"),            (VPP_FILTER_DISABLED != pParams->istabParam.mode)  ? VM_STRING("ON"): VM_STRING("OFF") );
+    vm_string_printf(VM_STRING("ImgStab    \t%s\n"),            (VPP_FILTER_DISABLED != pParams->istabParam[0].mode)  ? VM_STRING("ON"): VM_STRING("OFF") );
     vm_string_printf(VM_STRING("\n"));
 
     vm_string_printf(VM_STRING("IOpattern type               \t%s\n"), IOpattern2Str( pParams->IOPattern ));
@@ -337,7 +337,7 @@ mfxStatus ParseGUID(vm_char strPlgGuid[MAX_FILELEN], mfxU8 DataGUID[16])
 
     return MFX_ERR_NONE;
 }
-mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
+mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 paramID)
 {
     CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
     CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
@@ -412,19 +412,19 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
     // async depth
     pParams->AsyncDepth = pInParams->asyncNum;
 
-    if(VPP_FILTER_DISABLED != pInParams->svcParam.mode)
+    if(VPP_FILTER_DISABLED != pInParams->svcParam[paramID].mode)
     {
         for(mfxU32 did = 0; did < 8; did++)
         {
             // aya: svc crop processing should be corrected if crop will be enabled via cmp line options
-            pInParams->svcParam.descr[did].cropX = 0;
-            pInParams->svcParam.descr[did].cropY = 0;
-            pInParams->svcParam.descr[did].cropW = pInParams->svcParam.descr[did].width;
-            pInParams->svcParam.descr[did].cropH = pInParams->svcParam.descr[did].height;
+            pInParams->svcParam[paramID].descr[did].cropX = 0;
+            pInParams->svcParam[paramID].descr[did].cropY = 0;
+            pInParams->svcParam[paramID].descr[did].cropW = pInParams->svcParam[paramID].descr[did].width;
+            pInParams->svcParam[paramID].descr[did].cropH = pInParams->svcParam[paramID].descr[did].height;
 
             // it is OK
-            pInParams->svcParam.descr[did].height = ALIGN16(pInParams->svcParam.descr[did].height);
-            pInParams->svcParam.descr[did].width  = ALIGN16(pInParams->svcParam.descr[did].width);
+            pInParams->svcParam[paramID].descr[did].height = ALIGN16(pInParams->svcParam[paramID].descr[did].height);
+            pInParams->svcParam[paramID].descr[did].width  = ALIGN16(pInParams->svcParam[paramID].descr[did].width);
         }
     }
 
@@ -837,7 +837,7 @@ mfxStatus InitMemoryAllocator(
     CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to InitSurfaces\n"));  WipeMemoryAllocator(pAllocator);});
 
     // [OUT]
-    if( VPP_FILTER_DISABLED == pInParams->svcParam.mode )
+    if( VPP_FILTER_DISABLED == pInParams->svcParam[0].mode )
     {
         sts = InitSurfaces(
             pAllocator, 
@@ -854,7 +854,7 @@ mfxStatus InitMemoryAllocator(
             &(pParams->vpp.Out), 
             VPP_OUT, 
             isOutPtr,
-            &(pInParams->svcParam.descr[0]));
+            &(pInParams->svcParam[0].descr[0]));
     }
     CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to InitSurfaces\n"));  WipeMemoryAllocator(pAllocator);});
 

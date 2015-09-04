@@ -102,30 +102,50 @@ typedef struct _ownFrameInfo
 
 } sOwnFrameInfo;
 
+typedef struct _filtersParam
+{
+    sOwnFrameInfo             *pOwnFrameInfo      ;
+    sDIParam                  *pDIParam           ;
+    sProcAmpParam             *pProcAmpParam      ;
+    sDetailParam              *pDetailParam       ;
+    sDenoiseParam             *pDenoiseParam      ;
+    sVideoAnalysisParam       *pVAParam           ;
+    sVarianceReportParam      *pVarianceParam     ;
+    sIDetectParam             *pIDetectParam      ;
+    sFrameRateConversionParam *pFRCParam          ;
+    sMultiViewParam           *pMultiViewParam    ;
+    sGamutMappingParam        *pGamutParam        ;
+    sTccParam                 *pClrSaturationParam;
+    sAceParam                 *pContrastParam     ;
+    sSteParam                 *pSkinParam         ;
+    sIStabParam               *pImgStabParam      ;
+    sSVCParam                 *pSVCParam          ;
+} sFiltersParam;
+
 struct sInputParams
 {
     /* smart filters defined by mismatch btw src & dst */
     sOwnFrameInfo frameInfo[2];// [0] - in, [1] - out
 
     /* Video Enhancement Algorithms */
-    sDIParam      deinterlaceParam;
-    sDenoiseParam denoiseParam;
-    sDetailParam  detailParam;
-    sProcAmpParam procampParam;
-    sVideoAnalysisParam vaParam;
-    sFrameRateConversionParam frcParam;
-    sVarianceReportParam varianceParam;
-    sIDetectParam idetectParam;
+    std::vector<sDIParam                 > deinterlaceParam;
+    std::vector<sDenoiseParam            > denoiseParam;
+    std::vector<sDetailParam             > detailParam;
+    std::vector<sProcAmpParam            > procampParam;
+    std::vector<sVideoAnalysisParam      > vaParam;
+    std::vector<sFrameRateConversionParam> frcParam;
+    std::vector<sVarianceReportParam     > varianceParam;
+    std::vector<sIDetectParam            > idetectParam;
 
     // MSDK 3.0
-    sGamutMappingParam    gamutParam;
-    sMultiViewParam       multiViewParam;
-    sSVCParam             svcParam;
+    std::vector<sGamutMappingParam       > gamutParam;
+    std::vector<sMultiViewParam          > multiViewParam;
+    std::vector<sSVCParam                > svcParam;
     // MSDK API 1.5
-    sTccParam     tccParam;
-    sAceParam     aceParam;
-    sSteParam     steParam;
-    sIStabParam   istabParam;
+    std::vector<sTccParam                > tccParam;
+    std::vector<sAceParam                > aceParam;
+    std::vector<sSteParam                > steParam;
+    std::vector<sIStabParam              > istabParam;
 
     // flag describes type of memory
     // true  - frames in video memory (d3d surfaces),  
@@ -138,7 +158,7 @@ struct sInputParams
     mfxU16   asyncNum;
     mfxU32   vaType;
 
-    mfxU16   rotate;
+    std::vector<mfxU16                   > rotate;
 
     bool     bScaling;
     mfxU16   scalingMode;
@@ -175,6 +195,9 @@ struct sInputParams
 
     /* Use extended API (RunFrameVPPAsyncEx) */
     bool  use_extapi;
+
+    /* MFXVideoVPP_Reset */
+    std::vector<mfxU32> resetFrmNums;
 };
 
 struct sFrameProcessor
@@ -444,7 +467,8 @@ void PrintDllInfo();
 
 mfxStatus InitParamsVPP(
     mfxVideoParam* pMFXParams, 
-    sInputParams* pInParams);
+    sInputParams* pInParams,
+    mfxU32 paramID);
 
 mfxStatus InitResources(
     sAppResources* pResources, 
@@ -464,7 +488,8 @@ vm_char* IOpattern2Str(
 mfxStatus vppParseInputString(
     vm_char* strInput[], 
     mfxU8 nArgNum, 
-    sInputParams* pParams);
+    sInputParams* pParams,
+    sFiltersParam* pDefaultFiltersParam);
 
 bool CheckInputParams(
     vm_char* strInput[], 
@@ -476,7 +501,8 @@ void vppPrintHelp(
 
 mfxStatus ConfigVideoEnhancementFilters( 
     sInputParams* pParams, 
-    sAppResources* pResources );
+    sAppResources* pResources,
+    mfxU32 paramID );
 
 vm_char* PicStruct2Str( mfxU16  PicStruct );
 #endif /* __TEST_VPP_UTILS_H */
