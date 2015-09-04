@@ -172,7 +172,6 @@ public:
     void DecodeDirectMotionVectors(bool isDirectMB);
 
     CoeffsPtrCommon  m_psBuffer;
-    Mutex m_mGuard;
 
     SegmentDecoderHPBase* m_SD;
 

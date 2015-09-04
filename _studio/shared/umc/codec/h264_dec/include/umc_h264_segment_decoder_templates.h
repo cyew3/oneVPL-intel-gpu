@@ -127,7 +127,7 @@ public:
                                             H264SegmentDecoderMultiThreaded * sd) = 0;
 
     virtual void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H264DecoderFrame *pRefFrame,
-        const H264SegmentDecoderMultiThreaded * sd) = 0;
+        H264SegmentDecoderMultiThreaded * sd) = 0;
 };
 
 template <typename Coeffs, typename PlaneY, typename PlaneUV, Ipp32s color_format, Ipp32s is_field, bool is_high_profile>
@@ -1576,8 +1576,8 @@ public:
         Ipp32s mbXOffset = sd->m_CurMB_X * 16;
         Ipp32s mbYOffset = sd->m_CurMB_Y * 16;
 
-        VM_ASSERT(mbXOffset <= sd->m_pCurrentFrame->lumaSize().width);
-        VM_ASSERT(mbYOffset <= sd->m_pCurrentFrame->lumaSize().height);
+        VM_ASSERT(mbXOffset < sd->m_pCurrentFrame->lumaSize().width);
+        VM_ASSERT(mbYOffset < sd->m_pCurrentFrame->lumaSize().height);
 
         // reconstruct starts here
         // Perform motion compensation to reconstruct the YUV data
@@ -1827,8 +1827,6 @@ public:
 
             pSetMB8x8TSFlag(sd->m_cur_mb.GlobalMacroblockInfo, 0);
 
-            sd->m_pBitStream->CheckBSLeft();
-
             (this->*pDecFunc)(sd);
 
             // search for end of stream in case
@@ -1866,11 +1864,6 @@ public:
             else
             {
                 sd->m_CurMBAddr = sd->m_mbinfo.active_next_mb_table[sd->m_CurMBAddr];
-                if (sd->m_CurMBAddr == -1)
-                {
-                    umcRes = UMC_ERR_END_OF_STREAM;
-                    break;
-                }
                 if (sd->m_isMBAFF) {
                     sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
                     sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
@@ -1939,8 +1932,6 @@ public:
 
             pSetMB8x8TSFlag(sd->m_cur_mb.GlobalMacroblockInfo, 0);
 
-            sd->m_pBitStream->CheckBSLeft();
-
             START_TICK
             (this->*pDecFunc)(sd);
             END_TICK(decode_time)
@@ -1984,11 +1975,6 @@ public:
             else
             {
                 sd->m_CurMBAddr = sd->m_mbinfo.active_next_mb_table[sd->m_CurMBAddr];
-                if (sd->m_CurMBAddr == -1)
-                {
-                    umcRes = UMC_ERR_END_OF_STREAM;
-                    break;
-                }
                 if (sd->m_isMBAFF) {
                     sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
                     sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
@@ -2068,10 +2054,6 @@ public:
             else
             {
                 sd->m_CurMBAddr = sd->m_mbinfo.active_next_mb_table[sd->m_CurMBAddr];
-                if (sd->m_CurMBAddr == -1)
-                {
-                    break;
-                }
                 sd->m_CurMB_X = (sd->m_CurMBAddr % sd->mb_width);
                 sd->m_CurMB_Y = (sd->m_CurMBAddr / sd->mb_width) - MBYAdjust;
             }
@@ -2132,8 +2114,6 @@ public:
 
             pSetMB8x8TSFlag(sd->m_cur_mb.GlobalMacroblockInfo, 0);
 
-            sd->m_pBitStream->UpdateCABACPointers();
-            sd->m_pBitStream->CheckBSLeft();
             (this->*pDecFunc)(sd);
 
             // decode end of slice
@@ -2172,11 +2152,6 @@ public:
             else
             {
                 sd->m_CurMBAddr = sd->m_mbinfo.active_next_mb_table[sd->m_CurMBAddr];
-                if (sd->m_CurMBAddr == -1)
-                {
-                    umcRes = UMC_ERR_END_OF_STREAM;
-                    break;
-                }
 
                 if (sd->m_isMBAFF) {
                     sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
@@ -2247,9 +2222,6 @@ public:
 
             pSetMB8x8TSFlag(sd->m_cur_mb.GlobalMacroblockInfo, 0);
 
-            sd->m_pBitStream->UpdateCABACPointers();
-            sd->m_pBitStream->CheckBSLeft();
-
             START_TICK
             (this->*pDecFunc)(sd);
             END_TICK(decode_time)
@@ -2294,11 +2266,6 @@ public:
             else
             {
                 sd->m_CurMBAddr = sd->m_mbinfo.active_next_mb_table[sd->m_CurMBAddr];
-                if (sd->m_CurMBAddr == -1)
-                {
-                    umcRes = UMC_ERR_END_OF_STREAM;
-                    break;
-                }
 
                 if (sd->m_isMBAFF) {
                     sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
@@ -2386,10 +2353,6 @@ public:
             else
             {
                 sd->m_CurMBAddr = sd->m_mbinfo.active_next_mb_table[sd->m_CurMBAddr];
-                if (sd->m_CurMBAddr == -1)
-                {
-                    break;
-                }
 
                 if (sd->m_isMBAFF) {
                     sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
@@ -2476,19 +2439,17 @@ public:
     }
 
     virtual void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H264DecoderFrame *pRefFrame,
-        const H264SegmentDecoderMultiThreaded * sd)
+        H264SegmentDecoderMultiThreaded * sd)
     {
-        Ipp32s wasDecremented = 0;
         if (startMb > 0)
-        {
             startMb--;
-            wasDecremented = 1;
-        }
 
         if (startMb >= endMb || sd->m_isSliceGroups)
             return;
 
         H264DecoderFrame * pCurrentFrame = sd->m_pSlice->GetCurrentFrame();
+        sd->mb_height = sd->m_pSlice->GetMBHeight();
+        sd->mb_width = sd->m_pSlice->GetMBWidth();
 
         Ipp32s pitch_luma = pCurrentFrame->pitch_luma();
         Ipp32s pitch_chroma = pCurrentFrame->pitch_chroma();
@@ -2509,13 +2470,6 @@ public:
 
             pitch_luma *= 2;
             pitch_chroma *= 2;
-        }
-
-        for (int i = startMb + wasDecremented; i < endMb; i++)
-        {
-            sd->m_gmbinfo->mbs[i].mbtype = MBTYPE_PCM;
-            sd->m_gmbinfo->mbs[i].slice_id = (Ipp16s)sd->m_pSlice->GetSliceNum();
-            //std::fill(sd->m_gmbinfo->mbs[i].refIdxs[0].refIndexs, sd->m_gmbinfo->mbs[i].refIdxs[0].refIndexs + 4, -1);
         }
 
         Ipp32s offsetX, offsetY;

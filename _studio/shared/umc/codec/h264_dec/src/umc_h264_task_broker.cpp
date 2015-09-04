@@ -492,13 +492,13 @@ bool TaskBroker::GetPreparationTask(H264DecoderFrameInfo * info)
         for (Ipp32s i = 0; i < sliceCount; i++)
         {
             H264Slice * pSlice = info->GetSlice(i);
+            pSlice->m_bDecoded = true;
+            pSlice->m_bDeblocked = true;
             pSlice->m_bInProcess = false;
             pSlice->m_bDecVacant = 0;
             pSlice->m_bRecVacant = 0;
             pSlice->m_bDebVacant = 0;
             pSlice->CompleteDecoding();
-            pSlice->m_bDecoded = true;
-            pSlice->m_bDeblocked = true;
         }
 
         info->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
@@ -1033,33 +1033,50 @@ bool TaskBroker::GetNextSliceToDecoding(H264DecoderFrameInfo * info, H264Task *p
 bool TaskBroker::GetNextSliceToDeblocking(H264DecoderFrameInfo * info, H264Task *pTask)
 {
     // this is guarded function, safe to touch any variable
+
     Ipp32s sliceCount = info->GetSliceCount();
     bool bSliceGroups = info->GetSlice(sliceCount - 1)->IsSliceGroups();
 
     // slice group deblocking
     if (bSliceGroups)
     {
-        bool isError = false;
+        Ipp32s iFirstMB = info->GetSlice(sliceCount - 1)->m_iFirstMB;
+        bool bNothingToDo = true;
+
         for (Ipp32s i = 0; i < sliceCount; i += 1)
         {
             H264Slice *pSlice = info->GetSlice(i);
 
             if (pSlice->m_bInProcess || !pSlice->m_bDecoded)
                 return false;
-
-            if (pSlice->m_bError)
-                isError = true;
         }
 
-        bool bNothingToDo = true;
+        /*for (Ipp32s i = 0; i < sliceCount; i += 1)
+        {
+            H264Slice *pSlice = info->GetSlice(i);
+
+            VM_ASSERT(false == pSlice->m_bInProcess);
+
+            pSlice->m_bInProcess = true;
+            pSlice->m_bDebVacant = 0;
+            iFirstMB = IPP_MIN(iFirstMB, pSlice->m_iFirstMB);
+            if (false == pSlice->m_bDeblocked)
+                bNothingToDo = false;
+        }*/
         for (Ipp32s i = 0; i < sliceCount; i += 1)
         {
             H264Slice *pSlice = info->GetSlice(i);
 
-            if (pSlice->m_bDeblocked)
+            VM_ASSERT(false == pSlice->m_bInProcess);
+
+            if (true == pSlice->m_bDeblocked)
                 continue;
 
-            bNothingToDo = false;
+            pSlice->m_bInProcess = true;
+            pSlice->m_bDebVacant = 0;
+            iFirstMB = IPP_MIN(iFirstMB, pSlice->m_iFirstMB);
+            if (false == pSlice->m_bDeblocked)
+                bNothingToDo = false;
         }
 
         // we already deblocked
@@ -1067,14 +1084,11 @@ bool TaskBroker::GetNextSliceToDeblocking(H264DecoderFrameInfo * info, H264Task 
             return false;
 
         H264Slice *pSlice = info->GetSlice(sliceCount - 1);
-        pSlice->m_bInProcess = true;
-        pSlice->m_bDebVacant = 0;
         InitTask(info, pTask, pSlice);
-        pTask->m_bError = isError;
-        pTask->m_iFirstMB = 0;
+        pTask->m_iFirstMB = iFirstMB;
         Ipp32s iMBInFrame = (pSlice->m_iMBWidth * pSlice->m_iMBHeight) /
                             ((pSlice->GetSliceHeader()->field_pic_flag) ? (2) : (1));
-        pTask->m_iMaxMB = iMBInFrame;
+        pTask->m_iMaxMB = iFirstMB + iMBInFrame;
         pTask->m_iMBToProcess = iMBInFrame;
 
         pTask->m_iTaskID = TASK_DEB_FRAME;
@@ -1188,12 +1202,6 @@ void TaskBroker::AddPerformedTask(H264Task *pTask)
             pSlice->m_iMaxMB = pTask->m_iMaxMB;
             pSlice->m_iAvailableMB -= pTask->m_iMBToProcess;
 
-            if (pTask->m_bError)
-            {
-                pSlice->m_bError = true;
-                pSlice->m_bDeblocked = true;
-            }
-
             /*
             // correct remain uncompressed macroblock count.
             // we can't relay on slice number cause of field pictures.
@@ -1225,12 +1233,12 @@ void TaskBroker::AddPerformedTask(H264Task *pTask)
                 pSlice->m_bDeblocked = pSlice->m_bPrevDeblocked;
         }
         // slice is decoded
+        pSlice->m_bDecoded = true;
         pSlice->m_bDecVacant = 0;
         pSlice->m_bRecVacant = 0;
         pSlice->m_bDebVacant = 1;
         pSlice->m_bInProcess = false;
         pSlice->CompleteDecoding();
-        pSlice->m_bDecoded = true;
     }
     else if (TASK_DEB_SLICE == pTask->m_iTaskID)
     {
@@ -1248,9 +1256,9 @@ void TaskBroker::AddPerformedTask(H264Task *pTask)
             H264Slice *pTemp = m_FirstAU->GetSlice(i);
 
             pTemp->m_bDebVacant = 1;
+            pTemp->m_bDeblocked = true;
             pTemp->m_bInProcess = false;
             pTemp->CompleteDecoding();
-            pTemp->m_bDeblocked = true;
         }
     }
     else
@@ -1337,7 +1345,7 @@ void TaskBroker::AddPerformedTask(H264Task *pTask)
                     info->m_iRecMBReady = pSlice->m_iMaxMB;
                 }
 
-                //pSlice->m_iMaxMB = IPP_MIN(pSlice->m_iCurMBToRec, pSlice->m_iMaxMB);
+                pSlice->m_iMaxMB = IPP_MIN(pSlice->m_iCurMBToRec, pSlice->m_iMaxMB);
                 pSlice->m_bError = true;
             }
 
@@ -1366,8 +1374,8 @@ void TaskBroker::AddPerformedTask(H264Task *pTask)
                 }
 
                 pSlice->m_bRecVacant = 0;
-                pSlice->CompleteDecoding();
                 pSlice->m_bDecoded = true;
+                pSlice->CompleteDecoding();
 
                 // check condition for frame deblocking
                 //if (DEBLOCK_FILTER_ON_NO_SLICE_EDGES == pSlice->GetSliceHeader()->disable_deblocking_filter_idc)
@@ -1454,8 +1462,8 @@ void TaskBroker::AddPerformedTask(H264Task *pTask)
 
                 pSlice->m_bDecVacant = 0;
                 pSlice->m_bRecVacant = 0;
-                pSlice->CompleteDecoding();
                 pSlice->m_bDecoded = true;
+                pSlice->CompleteDecoding();
             }
             else
             {
@@ -1489,30 +1497,27 @@ void TaskBroker::AddPerformedTask(H264Task *pTask)
 
             if (pSlice->m_iMaxMB <= pSlice->m_iCurMBToDeb)
             {
-                if (pSlice->m_bDecoded)
+                Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
+                if (isReadyIncrease)
                 {
-                    Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
-                    if (isReadyIncrease)
+                    VM_ASSERT(pos >= 0);
+                    H264Slice * pNextSlice = info->GetSlice(pos + 1);
+                    if (pNextSlice)
                     {
-                        VM_ASSERT(pos >= 0);
-                        H264Slice * pNextSlice = info->GetSlice(pos + 1);
-                        if (pNextSlice)
-                        {
-                            if (pNextSlice->m_bDeblocked)
-                                info->m_iRecMBReady = pNextSlice->m_iCurMBToRec;
-                            else
-                                info->m_iRecMBReady = pNextSlice->m_iCurMBToDeb;
-                        }
+                        if (pNextSlice->m_bDeblocked)
+                            info->m_iRecMBReady = pNextSlice->m_iCurMBToRec;
+                        else
+                            info->m_iRecMBReady = pNextSlice->m_iCurMBToDeb;
                     }
-
-                    info->RemoveSlice(pos);
-
-                    pSlice->m_bInProcess = false;
-                    pSlice->m_bDecVacant = 0;
-                    pSlice->m_bRecVacant = 0;
-                    pSlice->CompleteDecoding();
                 }
+
+                info->RemoveSlice(pos);
+
                 pSlice->m_bDeblocked = true;
+                pSlice->m_bInProcess = false;
+                pSlice->m_bDecVacant = 0;
+                pSlice->m_bRecVacant = 0;
+                pSlice->CompleteDecoding();
             }
             else
             {
