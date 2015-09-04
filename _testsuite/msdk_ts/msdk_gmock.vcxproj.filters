@@ -36,6 +36,9 @@
     <Filter Include="Source Files\test_suites\screen_capture">
       <UniqueIdentifier>{2e76f249-1360-4c7d-82da-1e8e3e28daec}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\test_suites\vpp">
+      <UniqueIdentifier>{a8a6e37d-ec76-4c3e-af4c-05b777b7b5a6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_sample_allocator.h">
@@ -142,9 +145,6 @@
     <ClCompile Include="src\gmock\ts_vpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vpp_2014r2_unsupport.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\plugin_load_unload.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
@@ -200,9 +200,6 @@
       <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_spspps_get.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vpp_frame_async_ex.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\ptir_frame_async_ex.cpp">
@@ -352,12 +349,6 @@
     <ClCompile Include="src\gmock\test_suites\threading_mfxinitex.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vpp_frc_interp.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vpp_fieldcopy.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\mpeg2e_skipframes.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
@@ -391,14 +382,29 @@
     <ClCompile Include="src\gmock\test_suites\screen_capture_query_io_surf.cpp">
       <Filter>Source Files\test_suites\screen_capture</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vpp_composition.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vpp_rotate.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_default_ref_lists.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_2014r2_unsupport.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_composition.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_fieldcopy.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_frame_async_ex.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_frc_interp.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_rotate.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_deinterlacing.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
