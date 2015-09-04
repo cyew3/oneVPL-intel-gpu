@@ -44,9 +44,10 @@ my $clean = "";
 my $msdk  = "";
 my $toolchain = "";
 my $mfx_home = "";
-my $enable_sw  = "no";
+my $enable_sw  = "yes";
 my $enable_drm = "yes";
 my $enable_x11 = "yes";
+my $enable_wayland = "no";
 my $enable_ffmpeg = "yes";
 my $enable_opencl = "yes";
 
@@ -103,11 +104,12 @@ sub usage {
   print "\t--clean - clean build directory before projects generation / build\n";
   print "\t--build - try to build projects after generation (requires cmake>=2.8.0)\n";
   print "\t--mfx-home=/path/to/mediasdk/package - Media SDK package location [default: <none>]\n";
-  print "\t--enable-sw=yes|no  - build SW only targets [default: $enable_sw]\n";
-  print "\t--enable-drm=yes|no - build DRM dependent targets [default: $enable_drm]\n";
-  print "\t--enable-x11=yes|no - build X11 dependent targets [default: $enable_x11]\n";
-  print "\t--enable-ffmpeg=yes|no - build DRM dependent targets [default: $enable_ffmpeg]\n";
-  print "\t--enable-opencl=yes|no - build X11 dependent targets [default: $enable_opencl]\n";
+  print "\t--enable-sw=yes|no      - enable SW backend support [default: $enable_sw]\n";
+  print "\t--enable-drm=yes|no     - enable DRM backend support [default: $enable_drm]\n";
+  print "\t--enable-x11=yes|no     - enable X11 backend support [default: $enable_x11]\n";
+  print "\t--enable-wayland=yes|no - enable Wayland backend support [default: $enable_wayland]\n";
+  print "\t--enable-ffmpeg=yes|no  - build ffmpeg dependent targets [default: $enable_ffmpeg]\n";
+  print "\t--enable-opencl=yes|no  - build OpenCL dependent targets [default: $enable_opencl]\n";
   print "\n";
   print "Examples:\n";
   print "\tperl build.pl --cmake=intel64.make.debug                 [ only generate projects    ]\n";
@@ -130,6 +132,7 @@ GetOptions (
   '--enable-sw=s' => \$enable_sw,
   '--enable-drm=s' => \$enable_drm,
   '--enable-x11=s' => \$enable_x11,
+  '--enable-wayland=s' => \$enable_wayland,
   '--enable-ffmpeg=s' => \$enable_ffmpeg,
   '--enable-opencl=s' => \$enable_opencl
 );
@@ -148,6 +151,7 @@ if(in_array(\@list_arch, $build{'arch'}) and
    in_array(\@list_yesno, $enable_sw) and
    in_array(\@list_yesno, $enable_drm) and
    in_array(\@list_yesno, $enable_x11) and
+   in_array(\@list_yesno, $enable_wayland) and
    in_array(\@list_yesno, $enable_ffmpeg) and
    in_array(\@list_yesno, $enable_opencl)) {
    $configuration_valid = 1;
@@ -176,6 +180,7 @@ $cmake_cmd_gen.= "-DCMAKE_TOOLCHAIN_FILE=$toolchain " if $toolchain ne "";
 $cmake_cmd_gen.= "-DENABLE_SW:STRING=" . (($enable_sw eq "yes") ? "ON": "OFF") . " ";
 $cmake_cmd_gen.= "-DENABLE_DRM:STRING=" . (($enable_drm eq "yes") ? "ON": "OFF") . " ";
 $cmake_cmd_gen.= "-DENABLE_X11:STRING=" . (($enable_x11 eq "yes") ? "ON": "OFF") . " ";
+$cmake_cmd_gen.= "-DENABLE_WAYLAND:STRING=" . (($enable_wayland eq "yes") ? "ON": "OFF") . " ";
 $cmake_cmd_gen.= "-DENABLE_FFMPEG:STRING=" . (($enable_ffmpeg eq "yes") ? "ON": "OFF") . " ";
 $cmake_cmd_gen.= "-DENABLE_OPENCL:STRING=" . (($enable_opencl eq "yes") ? "ON": "OFF") . " ";
 
