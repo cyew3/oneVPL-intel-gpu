@@ -526,6 +526,9 @@ TEST(optimization, SplitChromaCtb_avx2) {
     }
 }
 
+// NOTE - because this is a floating point function, changes in compiler settings/version may cause the PX output to vary slightly (no effect on quality)
+// e.g. Win32 vs. Win64  - order of float operations in compiled code affects rounding
+// if mismatch is observed, check whether PX output is different than before - SSE/AVX2 versions should be identical every run
 TEST(optimization, AnalyzeGradient_sse4) {
     Ipp32s width    = 1280;
     Ipp32s height   =  720;
@@ -598,4 +601,914 @@ TEST(optimization, AnalyzeGradient_avx2) {
     MFX_HEVC_PP::h265_AnalyzeGradient_avx2(ySrc_10b.get() + pitchSrc*padding + padding, pitchSrc, out4_avx2_10b.get(), out8_avx2_10b.get(), width, height);
     EXPECT_EQ(0, memcmp(out4_ref_10b.get(), out4_avx2_10b.get(), sizeof(*out4_ref_10b.get()) * width * height * histMax / 16));
     EXPECT_EQ(0, memcmp(out8_ref_10b.get(), out8_avx2_10b.get(), sizeof(*out8_ref_10b.get()) * width * height * histMax / 64));
+}
+
+TEST(optimization, DCT_sse4) {
+
+    const int srcSize = 32*32;  // max 32x32
+    const int dstSize = 64*64;  // alloc more space to confirm no writing outside of dst block
+    int bitDepth;
+
+    auto src     = utils::MakeAlignedPtr<short>(srcSize, utils::AlignSse4);       // transforms assume SSE/AVX2 aligned inputs
+    auto dst_px  = utils::MakeAlignedPtr<short>(dstSize, utils::AlignSse4);
+    auto dst_sse = utils::MakeAlignedPtr<short>(dstSize, utils::AlignSse4);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    for (bitDepth = 8; bitDepth <= 10; bitDepth++) {
+        utils::InitRandomBlock(rand, src.get(), 32, 32, 32, 0, (1 << bitDepth) - 1);     
+        utils::InitRandomBlock(rand, dst_px.get(), 64, 64, 64, 0, (1 << bitDepth) - 1);
+        memcpy(dst_sse.get(), dst_px.get(), sizeof(*dst_px.get())*dstSize);
+
+        // DST 4x4
+        MFX_HEVC_PP::h265_DST4x4Fwd_16s_px  (src.get(), dst_px.get(),  bitDepth);
+        MFX_HEVC_PP::h265_DST4x4Fwd_16s_sse (src.get(), dst_sse.get(), bitDepth);
+        EXPECT_EQ(0, memcmp(dst_px.get(), dst_sse.get(), sizeof(*dst_px.get()) * dstSize));
+
+        // DCT 4x4
+        MFX_HEVC_PP::h265_DCT4x4Fwd_16s_px  (src.get(), dst_px.get(),  bitDepth);
+        MFX_HEVC_PP::h265_DCT4x4Fwd_16s_sse (src.get(), dst_sse.get(), bitDepth);
+        EXPECT_EQ(0, memcmp(dst_px.get(), dst_sse.get(), sizeof(*dst_px.get()) * dstSize));
+
+        // DCT 8x8
+        MFX_HEVC_PP::h265_DCT8x8Fwd_16s_px  (src.get(), dst_px.get(),  bitDepth);
+        MFX_HEVC_PP::h265_DCT8x8Fwd_16s_sse (src.get(), dst_sse.get(), bitDepth);
+        EXPECT_EQ(0, memcmp(dst_px.get(), dst_sse.get(), sizeof(*dst_px.get()) * dstSize));
+
+        // DCT 16x16
+        MFX_HEVC_PP::h265_DCT16x16Fwd_16s_px  (src.get(), dst_px.get(),  bitDepth);
+        MFX_HEVC_PP::h265_DCT16x16Fwd_16s_sse (src.get(), dst_sse.get(), bitDepth);
+        EXPECT_EQ(0, memcmp(dst_px.get(), dst_sse.get(), sizeof(*dst_px.get()) * dstSize));
+
+        // DCT 32x32
+        MFX_HEVC_PP::h265_DCT32x32Fwd_16s_px  (src.get(), dst_px.get(),  bitDepth);
+        MFX_HEVC_PP::h265_DCT32x32Fwd_16s_sse (src.get(), dst_sse.get(), bitDepth);
+        EXPECT_EQ(0, memcmp(dst_px.get(), dst_sse.get(), sizeof(*dst_px.get()) * dstSize));
+    }
+}
+
+TEST(optimization, DCT_avx2) {
+
+    const int srcSize = 32*32;  // max 32x32
+    const int dstSize = 64*64;  // alloc more space to confirm no writing outside of dst block
+    int bitDepth;
+
+    auto src      = utils::MakeAlignedPtr<short>(srcSize, utils::AlignAvx2);       // transforms assume SSE/AVX2 aligned inputs
+    auto dst_px   = utils::MakeAlignedPtr<short>(dstSize, utils::AlignAvx2);
+    auto dst_avx2 = utils::MakeAlignedPtr<short>(dstSize, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    for (bitDepth = 8; bitDepth <= 10; bitDepth++) {
+        utils::InitRandomBlock(rand, src.get(), 32, 32, 32, 0, (1 << bitDepth) - 1);     
+        utils::InitRandomBlock(rand, dst_px.get(), 64, 64, 64, 0, (1 << bitDepth) - 1);
+        memcpy(dst_avx2.get(), dst_px.get(), sizeof(*dst_px.get())*dstSize);
+
+        // DST 4x4
+        MFX_HEVC_PP::h265_DST4x4Fwd_16s_px  (src.get(), dst_px.get(),  bitDepth);
+        MFX_HEVC_PP::h265_DST4x4Fwd_16s_avx2 (src.get(), dst_avx2.get(), bitDepth);
+        EXPECT_EQ(0, memcmp(dst_px.get(), dst_avx2.get(), sizeof(*dst_px.get()) * dstSize));
+
+        // DCT 4x4
+        MFX_HEVC_PP::h265_DCT4x4Fwd_16s_px  (src.get(), dst_px.get(),  bitDepth);
+        MFX_HEVC_PP::h265_DCT4x4Fwd_16s_avx2 (src.get(), dst_avx2.get(), bitDepth);
+        EXPECT_EQ(0, memcmp(dst_px.get(), dst_avx2.get(), sizeof(*dst_px.get()) * dstSize));
+
+        // DCT 8x8
+        MFX_HEVC_PP::h265_DCT8x8Fwd_16s_px  (src.get(), dst_px.get(),  bitDepth);
+        MFX_HEVC_PP::h265_DCT8x8Fwd_16s_avx2 (src.get(), dst_avx2.get(), bitDepth);
+        EXPECT_EQ(0, memcmp(dst_px.get(), dst_avx2.get(), sizeof(*dst_px.get()) * dstSize));
+
+        // DCT 16x16
+        MFX_HEVC_PP::h265_DCT16x16Fwd_16s_px  (src.get(), dst_px.get(),  bitDepth);
+        MFX_HEVC_PP::h265_DCT16x16Fwd_16s_avx2 (src.get(), dst_avx2.get(), bitDepth);
+        EXPECT_EQ(0, memcmp(dst_px.get(), dst_avx2.get(), sizeof(*dst_px.get()) * dstSize));
+
+        // DCT 32x32
+        MFX_HEVC_PP::h265_DCT32x32Fwd_16s_px  (src.get(), dst_px.get(),  bitDepth);
+        MFX_HEVC_PP::h265_DCT32x32Fwd_16s_avx2 (src.get(), dst_avx2.get(), bitDepth);
+        EXPECT_EQ(0, memcmp(dst_px.get(), dst_avx2.get(), sizeof(*dst_px.get()) * dstSize));
+    }
+}
+
+TEST(optimization, IDCT_sse4)
+{
+    const int srcSize = 32*32;  // max 32x32
+    const int dstSize = 64*64;  // alloc more space to confirm no writing outside of dst block
+    int bitDepth;
+
+    // src = Ipp16s
+    // dst = Ipp8u or Ipp16u
+
+    auto src       = utils::MakeAlignedPtr<short>(srcSize, utils::AlignSse4);
+    auto dst08_px  = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignSse4);
+    auto dst08_sse = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignSse4);
+    auto dst16_px  = utils::MakeAlignedPtr<unsigned short>(dstSize, utils::AlignSse4);
+    auto dst16_sse = utils::MakeAlignedPtr<unsigned short>(dstSize, utils::AlignSse4);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    // inplace = 0 (don't add residual)
+    for (bitDepth = 8; bitDepth <= 12; bitDepth++) {
+        utils::InitRandomBlock(rand, src.get(), 32, 32, 32, 0, (1 << bitDepth) - 1);     
+        utils::InitRandomBlock(rand, dst16_px.get(), 64, 64, 64, 0, (1 << bitDepth) - 1);
+        memcpy(dst16_sse.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+        // IDST 4x4
+        MFX_HEVC_PP::h265_DST4x4Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 0, bitDepth);
+        MFX_HEVC_PP::h265_DST4x4Inv_16sT_sse (dst16_sse.get(), src.get(), 64, 0, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 4x4
+        MFX_HEVC_PP::h265_DCT4x4Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 0, bitDepth);
+        MFX_HEVC_PP::h265_DCT4x4Inv_16sT_sse (dst16_sse.get(), src.get(), 64, 0, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 8x8
+        MFX_HEVC_PP::h265_DCT8x8Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 0, bitDepth);
+        MFX_HEVC_PP::h265_DCT8x8Inv_16sT_sse (dst16_sse.get(), src.get(), 64, 0, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 16x16
+        MFX_HEVC_PP::h265_DCT16x16Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 0, bitDepth);
+        MFX_HEVC_PP::h265_DCT16x16Inv_16sT_sse (dst16_sse.get(), src.get(), 64, 0, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 32x32
+        MFX_HEVC_PP::h265_DCT32x32Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 0, bitDepth);
+        MFX_HEVC_PP::h265_DCT32x32Inv_16sT_sse (dst16_sse.get(), src.get(), 64, 0, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+    }
+
+    // inplace = 1 (add residual, clip to 8 bits)
+    for (bitDepth = 8; bitDepth <= 8; bitDepth++) {
+        utils::InitRandomBlock(rand, src.get(), 32, 32, 32, 0, (1 << bitDepth) - 1);     
+        utils::InitRandomBlock(rand, dst08_px.get(), 64, 64, 64, 0, (1 << bitDepth) - 1);
+        memcpy(dst08_sse.get(), dst08_px.get(), sizeof(*dst08_px.get())*dstSize);
+
+        // IDST 4x4
+        MFX_HEVC_PP::h265_DST4x4Inv_16sT_px  (dst08_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DST4x4Inv_16sT_sse (dst08_sse.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_px.get()) * dstSize));
+
+        // IDCT 4x4
+        MFX_HEVC_PP::h265_DCT4x4Inv_16sT_px  (dst08_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT4x4Inv_16sT_sse (dst08_sse.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_px.get()) * dstSize));
+
+        // IDCT 8x8
+        MFX_HEVC_PP::h265_DCT8x8Inv_16sT_px  (dst08_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT8x8Inv_16sT_sse (dst08_sse.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_px.get()) * dstSize));
+
+        // IDCT 16x16
+        MFX_HEVC_PP::h265_DCT16x16Inv_16sT_px  (dst08_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT16x16Inv_16sT_sse (dst08_sse.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_px.get()) * dstSize));
+
+        // IDCT 32x32
+        MFX_HEVC_PP::h265_DCT32x32Inv_16sT_px  (dst08_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT32x32Inv_16sT_sse (dst08_sse.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_px.get()) * dstSize));
+    }
+
+    // inplace = 2 (add residual, clip to > 8 bits)
+    for (bitDepth = 9; bitDepth <= 12; bitDepth++) {
+        utils::InitRandomBlock(rand, src.get(), 32, 32, 32, 0, (1 << bitDepth) - 1);     
+        utils::InitRandomBlock(rand, dst16_px.get(), 64, 64, 64, 0, (1 << bitDepth) - 1);
+        memcpy(dst16_sse.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+        // IDST 4x4
+        MFX_HEVC_PP::h265_DST4x4Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DST4x4Inv_16sT_sse (dst16_sse.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 4x4
+        MFX_HEVC_PP::h265_DCT4x4Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT4x4Inv_16sT_sse (dst16_sse.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 8x8
+        MFX_HEVC_PP::h265_DCT8x8Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT8x8Inv_16sT_sse (dst16_sse.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 16x16
+        MFX_HEVC_PP::h265_DCT16x16Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT16x16Inv_16sT_sse (dst16_sse.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 32x32
+        MFX_HEVC_PP::h265_DCT32x32Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT32x32Inv_16sT_sse (dst16_sse.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+    }
+}
+
+TEST(optimization, IDCT_avx2)
+{
+    const int srcSize = 32*32;  // max 32x32
+    const int dstSize = 64*64;  // alloc more space to confirm no writing outside of dst block
+    int bitDepth;
+
+    // src = Ipp16s
+    // dst = Ipp8u or Ipp16u
+
+    auto src       = utils::MakeAlignedPtr<short>(srcSize, utils::AlignAvx2);
+    auto dst08_px  = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignAvx2);
+    auto dst08_avx2 = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignAvx2);
+    auto dst16_px  = utils::MakeAlignedPtr<unsigned short>(dstSize, utils::AlignAvx2);
+    auto dst16_avx2 = utils::MakeAlignedPtr<unsigned short>(dstSize, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    // inplace = 0 (don't add residual)
+    for (bitDepth = 8; bitDepth <= 12; bitDepth++) {
+        utils::InitRandomBlock(rand, src.get(), 32, 32, 32, 0, (1 << bitDepth) - 1);     
+        utils::InitRandomBlock(rand, dst16_px.get(), 64, 64, 64, 0, (1 << bitDepth) - 1);
+        memcpy(dst16_avx2.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+        // IDST 4x4
+        MFX_HEVC_PP::h265_DST4x4Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 0, bitDepth);
+        MFX_HEVC_PP::h265_DST4x4Inv_16sT_avx2 (dst16_avx2.get(), src.get(), 64, 0, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 4x4
+        MFX_HEVC_PP::h265_DCT4x4Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 0, bitDepth);
+        MFX_HEVC_PP::h265_DCT4x4Inv_16sT_avx2 (dst16_avx2.get(), src.get(), 64, 0, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 8x8
+        MFX_HEVC_PP::h265_DCT8x8Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 0, bitDepth);
+        MFX_HEVC_PP::h265_DCT8x8Inv_16sT_avx2 (dst16_avx2.get(), src.get(), 64, 0, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 16x16
+        MFX_HEVC_PP::h265_DCT16x16Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 0, bitDepth);
+        MFX_HEVC_PP::h265_DCT16x16Inv_16sT_avx2 (dst16_avx2.get(), src.get(), 64, 0, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 32x32
+        MFX_HEVC_PP::h265_DCT32x32Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 0, bitDepth);
+        MFX_HEVC_PP::h265_DCT32x32Inv_16sT_avx2 (dst16_avx2.get(), src.get(), 64, 0, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+    }
+
+    // inplace = 1 (add residual, clip to 8 bits)
+    for (bitDepth = 8; bitDepth <= 8; bitDepth++) {
+        utils::InitRandomBlock(rand, src.get(), 32, 32, 32, 0, (1 << bitDepth) - 1);     
+        utils::InitRandomBlock(rand, dst08_px.get(), 64, 64, 64, 0, (1 << bitDepth) - 1);
+        memcpy(dst08_avx2.get(), dst08_px.get(), sizeof(*dst08_px.get())*dstSize);
+
+        // IDST 4x4
+        MFX_HEVC_PP::h265_DST4x4Inv_16sT_px  (dst08_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DST4x4Inv_16sT_avx2 (dst08_avx2.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_px.get()) * dstSize));
+
+        // IDCT 4x4
+        MFX_HEVC_PP::h265_DCT4x4Inv_16sT_px  (dst08_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT4x4Inv_16sT_avx2 (dst08_avx2.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_px.get()) * dstSize));
+
+        // IDCT 8x8
+        MFX_HEVC_PP::h265_DCT8x8Inv_16sT_px  (dst08_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT8x8Inv_16sT_avx2 (dst08_avx2.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_px.get()) * dstSize));
+
+        // IDCT 16x16
+        MFX_HEVC_PP::h265_DCT16x16Inv_16sT_px  (dst08_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT16x16Inv_16sT_avx2 (dst08_avx2.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_px.get()) * dstSize));
+
+        // IDCT 32x32
+        MFX_HEVC_PP::h265_DCT32x32Inv_16sT_px  (dst08_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT32x32Inv_16sT_avx2 (dst08_avx2.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_px.get()) * dstSize));
+    }
+
+    // inplace = 2 (add residual, clip to > 8 bits)
+    for (bitDepth = 9; bitDepth <= 12; bitDepth++) {
+        utils::InitRandomBlock(rand, src.get(), 32, 32, 32, 0, (1 << bitDepth) - 1);     
+        utils::InitRandomBlock(rand, dst16_px.get(), 64, 64, 64, 0, (1 << bitDepth) - 1);
+        memcpy(dst16_avx2.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+        // IDST 4x4
+        MFX_HEVC_PP::h265_DST4x4Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DST4x4Inv_16sT_avx2 (dst16_avx2.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 4x4
+        MFX_HEVC_PP::h265_DCT4x4Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT4x4Inv_16sT_avx2 (dst16_avx2.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 8x8
+        MFX_HEVC_PP::h265_DCT8x8Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT8x8Inv_16sT_avx2 (dst16_avx2.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 16x16
+        MFX_HEVC_PP::h265_DCT16x16Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT16x16Inv_16sT_avx2 (dst16_avx2.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+        // IDCT 32x32
+        MFX_HEVC_PP::h265_DCT32x32Inv_16sT_px  (dst16_px.get(),  src.get(), 64, 1, bitDepth);
+        MFX_HEVC_PP::h265_DCT32x32Inv_16sT_avx2 (dst16_avx2.get(), src.get(), 64, 1, bitDepth);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+    }
+}
+
+TEST(optimization, InterpolationLuma_sse4)
+{
+    const int pitch = 96;
+    const int srcSize = pitch*pitch;
+    const int dstSize = pitch*pitch;
+    int bitDepth, w, h, tabIdx;
+
+    auto src08 = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignSse4);
+    auto src16 = utils::MakeAlignedPtr<short>(srcSize, utils::AlignSse4);
+    
+    auto dst16_px  = utils::MakeAlignedPtr<short>(dstSize, utils::AlignSse4);
+    auto dst16_sse = utils::MakeAlignedPtr<short>(dstSize, utils::AlignSse4);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    utils::InitRandomBlock(rand, src08.get(), pitch, pitch, pitch, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, src16.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+
+    utils::InitRandomBlock(rand, dst16_px.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+    memcpy(dst16_sse.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+    for (h = 4; h < 64; h += 4) {
+        for (w = 4; w < 64; w += 4) {
+            for (tabIdx = 1; tabIdx <= 3; tabIdx++) {
+                // luma - H - src 8, dst 16
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_sse(src08.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_sse(src08.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // luma - V - src 8, dst 16
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_sse(src08.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_sse(src08.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // luma - H - src 16, dst 16
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 1, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 1, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 2, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 2, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // luma - V - src 16, dst 16
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 1, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 1, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 2, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 2, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 10, 512);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 10, 512);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 11, 1024);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 11, 1024);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 12, 2048);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 12, 2048);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+            }
+        }
+    }
+}
+
+TEST(optimization, InterpolationLuma_avx2)
+{
+    const int pitch = 96;
+    const int srcSize = pitch*pitch;
+    const int dstSize = pitch*pitch;
+    int bitDepth, w, h, tabIdx;
+
+    auto src08 = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignAvx2);
+    auto src16 = utils::MakeAlignedPtr<short>(srcSize, utils::AlignAvx2);
+    
+    auto dst16_px   = utils::MakeAlignedPtr<short>(dstSize, utils::AlignAvx2);
+    auto dst16_avx2 = utils::MakeAlignedPtr<short>(dstSize, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    utils::InitRandomBlock(rand, src08.get(), pitch, pitch, pitch, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, src16.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+
+    utils::InitRandomBlock(rand, dst16_px.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+    memcpy(dst16_avx2.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+    for (h = 4; h < 64; h += 4) {
+        for (w = 4; w < 64; w += 4) {
+            for (tabIdx = 1; tabIdx <= 3; tabIdx++) {
+                // luma - H - src 8, dst 16
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_avx2(src08.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_avx2(src08.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // luma - V - src 8, dst 16
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_avx2(src08.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_avx2(src08.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // luma - H - src 16, dst 16
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 1, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 1, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 2, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 2, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // luma - V - src 16, dst 16
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 1, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 1, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 2, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 2, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 0);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 10, 512);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 10, 512);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 11, 1024);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 11, 1024);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 12, 2048);
+                MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 12, 2048);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+            }
+        }
+    }
+}
+
+TEST(optimization, InterpolationChroma_sse4)
+{
+    const int pitch = 96;
+    const int srcSize = pitch*pitch;
+    const int dstSize = pitch*pitch;
+    int bitDepth, w, h, tabIdx, plane;
+
+    auto src08 = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignSse4);
+    auto src16 = utils::MakeAlignedPtr<short>(srcSize, utils::AlignSse4);
+    
+    auto dst16_px  = utils::MakeAlignedPtr<short>(dstSize, utils::AlignSse4);
+    auto dst16_sse = utils::MakeAlignedPtr<short>(dstSize, utils::AlignSse4);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    utils::InitRandomBlock(rand, src08.get(), pitch, pitch, pitch, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, src16.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+
+    utils::InitRandomBlock(rand, dst16_px.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+    memcpy(dst16_sse.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+    for (plane = 1; plane <= 2; plane++) {    // test interleaved and non-interleaved UV (horiz only)
+
+    for (h = 4; h < 32; h += 2) {
+        for (w = 4; w < 32; w += 2) {
+            for (tabIdx = 1; tabIdx <= 7; tabIdx++) {
+                // chroma - H - src 8, dst 16
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0, plane);
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_sse(src08.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 0, 0, plane);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32, plane);
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_sse(src08.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 32, plane);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // chroma - V - src 8, dst 16
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_sse(src08.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_sse(src08.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // chroma - H - src 16, dst 16
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0, plane);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 0, 0, plane);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 1, 0, plane);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 1, 0, plane);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 2, 0, plane);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 2, 0, plane);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32, plane);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 32, plane);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // chroma - V - src 16, dst 16
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 1, 0);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 1, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 2, 0);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 2, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 0);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 10, 512);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 10, 512);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 11, 1024);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 11, 1024);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 12, 2048);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 12, 2048);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+            }
+        }
+    }
+
+    }   // plane
+}
+
+TEST(optimization, InterpolationChroma_avx2)
+{
+    const int pitch = 96;
+    const int srcSize = pitch*pitch;
+    const int dstSize = pitch*pitch;
+    int bitDepth, w, h, tabIdx, plane;
+
+    auto src08 = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignAvx2);
+    auto src16 = utils::MakeAlignedPtr<short>(srcSize, utils::AlignAvx2);
+    
+    auto dst16_px   = utils::MakeAlignedPtr<short>(dstSize, utils::AlignAvx2);
+    auto dst16_avx2 = utils::MakeAlignedPtr<short>(dstSize, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    utils::InitRandomBlock(rand, src08.get(), pitch, pitch, pitch, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, src16.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+
+    utils::InitRandomBlock(rand, dst16_px.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+    memcpy(dst16_avx2.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+    for (plane = 1; plane <= 2; plane++) {    // test interleaved and non-interleaved UV (horiz only)
+
+    for (h = 4; h < 32; h += 2) {
+        for (w = 4; w < 32; w += 2) {
+            for (tabIdx = 1; tabIdx <= 7; tabIdx++) {
+                // chroma - H - src 8, dst 16
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0, plane);
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_avx2(src08.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 0, 0, plane);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32, plane);
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_avx2(src08.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 32, plane);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // chroma - V - src 8, dst 16
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_avx2(src08.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_avx2(src08.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // chroma - H - src 16, dst 16
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0, plane);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 0, 0, plane);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 1, 0, plane);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 1, 0, plane);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 2, 0, plane);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 2, 0, plane);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32, plane);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 32, plane);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // chroma - V - src 16, dst 16
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 1, 0);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 1, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 2, 0);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 2, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 0);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 10, 512);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 10, 512);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 11, 1024);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 11, 1024);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 12, 2048);
+                MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 12, 2048);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+            }
+        }
+    }
+
+    }   // plane
+}
+
+TEST(optimization, InterpolationLumaFast_sse4)
+{
+    const int pitch = 96;
+    const int srcSize = pitch*pitch;
+    const int dstSize = pitch*pitch;
+    int bitDepth, w, h, tabIdx;
+
+    auto src08 = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignSse4);
+    auto src16 = utils::MakeAlignedPtr<short>(srcSize, utils::AlignSse4);
+    
+    auto dst16_px  = utils::MakeAlignedPtr<short>(dstSize, utils::AlignSse4);
+    auto dst16_sse = utils::MakeAlignedPtr<short>(dstSize, utils::AlignSse4);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    utils::InitRandomBlock(rand, src08.get(), pitch, pitch, pitch, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, src16.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+
+    utils::InitRandomBlock(rand, dst16_px.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+    memcpy(dst16_sse.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+    for (h = 4; h < 64; h += 4) {
+        for (w = 4; w < 64; w += 4) {
+            for (tabIdx = 1; tabIdx <= 3; tabIdx++) {
+                // luma - H - src 8, dst 16
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_H_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_H_sse(src08.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_H_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_H_sse(src08.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // luma - V - src 8, dst 16
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_V_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_V_sse(src08.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_V_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_V_sse(src08.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // luma - H - src 16, dst 16
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 1, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 1, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 2, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 2, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // luma - V - src 16, dst 16
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 1, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 1, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 2, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 2, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 10, 512);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 10, 512);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 11, 1024);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 11, 1024);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 12, 2048);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_sse(src16.get() + 8*pitch + 8, pitch, dst16_sse.get(), pitch, tabIdx, w, h, 12, 2048);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_px.get()) * dstSize));
+            }
+        }
+    }
+}
+
+TEST(optimization, InterpolationLumaFast_avx2)
+{
+    const int pitch = 96;
+    const int srcSize = pitch*pitch;
+    const int dstSize = pitch*pitch;
+    int bitDepth, w, h, tabIdx;
+
+    auto src08 = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignAvx2);
+    auto src16 = utils::MakeAlignedPtr<short>(srcSize, utils::AlignAvx2);
+    
+    auto dst16_px   = utils::MakeAlignedPtr<short>(dstSize, utils::AlignAvx2);
+    auto dst16_avx2 = utils::MakeAlignedPtr<short>(dstSize, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    utils::InitRandomBlock(rand, src08.get(), pitch, pitch, pitch, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, src16.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+
+    utils::InitRandomBlock(rand, dst16_px.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+    memcpy(dst16_avx2.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+    for (h = 4; h < 64; h += 4) {
+        for (w = 4; w < 64; w += 4) {
+            for (tabIdx = 1; tabIdx <= 3; tabIdx++) {
+                // luma - H - src 8, dst 16
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_H_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_H_avx2(src08.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_H_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_H_avx2(src08.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // luma - V - src 8, dst 16
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_V_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_V_avx2(src08.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_V_px (src08.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_V_avx2(src08.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // luma - H - src 16, dst 16
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 1, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 1, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 2, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 2, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                // luma - V - src 16, dst 16
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 0, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 0, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 1, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 1, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 2, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 2, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 0);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 0);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 6, 32);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 6, 32);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 10, 512);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 10, 512);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 11, 1024);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 11, 1024);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px (src16.get() + 8*pitch + 8, pitch, dst16_px.get(),  pitch, tabIdx, w, h, 12, 2048);
+                MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_avx2(src16.get() + 8*pitch + 8, pitch, dst16_avx2.get(), pitch, tabIdx, w, h, 12, 2048);
+                EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_px.get()) * dstSize));
+            }
+        }
+    }
 }

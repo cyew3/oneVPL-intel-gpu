@@ -1353,6 +1353,10 @@ namespace MFX_HEVC_PP
                     s1 = _mm_add_epi32(s1,  _mm_load_const((const __m128i *)rounder_1024));
                 } else if (SHIFT_INV_2ND == 10) {
                     s1 = _mm_add_epi32(s1,  _mm_load_const((const __m128i *)rounder_512));
+                } else if (SHIFT_INV_2ND == 9) {
+                    s1 = _mm_add_epi32(s1,  _mm_load_const((const __m128i *)rounder_256));
+                } else if (SHIFT_INV_2ND == 8) {
+                    s1 = _mm_add_epi32(s1,  _mm_load_const((const __m128i *)rounder_128));
                 }
 
                 s0 = _mm_shuffle_epi32(s1, 0x4E);

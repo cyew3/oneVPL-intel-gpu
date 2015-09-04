@@ -140,6 +140,8 @@ extern const signed int rounder_64[8];
 extern const signed int rounder_2048[8];
 extern const signed int rounder_1024[8];
 extern const signed int rounder_512[8];
+extern const signed int rounder_256[8];
+extern const signed int rounder_128[8];
 
 // 16-bits constants
 extern const signed short koef0000[8];

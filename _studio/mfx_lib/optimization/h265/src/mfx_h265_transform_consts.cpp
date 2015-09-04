@@ -145,6 +145,8 @@ extern ALIGNED_SSE2 const signed int kfv_0307[] = {18,  75, -89,  75};
     extern const signed int rounder_2048[8] = {2048, 2048, 0, 0, 2048, 2048, 0, 0};
     extern const signed int rounder_1024[8] = {1024, 1024, 0, 0, 1024, 1024, 0, 0};
     extern const signed int rounder_512[8] = {512, 512, 0, 0, 512, 512, 0, 0};
+    extern const signed int rounder_256[8] = {256, 256, 0, 0, 256, 256, 0, 0};
+    extern const signed int rounder_128[8] = {128, 128, 0, 0, 128, 128, 0, 0};
 
     // 16-bits constants
     extern const signed short koef0000[8]  = {64, 64,  64,-64,  83, 36,  36,-83};

@@ -115,6 +115,8 @@ namespace MFX_HEVC_PP
     M256I_8xDWORD(rounder_2048, 2048, 2048, 0, 0, 2048, 2048, 0, 0);
     M256I_8xDWORD(rounder_1024, 1024, 1024, 0, 0, 1024, 1024, 0, 0);
     M256I_8xDWORD(rounder_512,   512,  512, 0, 0,  512,  512, 0, 0);
+    M256I_8xDWORD(rounder_256,   256,  256, 0, 0,  256,  256, 0, 0);
+    M256I_8xDWORD(rounder_128,   128,  128, 0, 0,  128,  128, 0, 0);
     M128I_4xDWORD(index0,  0,     8*32, 16*32, 24*32);
     M128I_4xDWORD(index1,  4*32, 12*32, 20*32, 28*32);
     M128I_4xDWORD(index2,  2*32,  6*32, 10*32, 14*32);
@@ -517,6 +519,10 @@ static void h265_DCT32x32Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_R
                     y1 = _mm256_add_epi32(y1, rounder_1024);
                 } else if (SHIFT_INV_2ND == 10) {
                     y1 = _mm256_add_epi32(y1, rounder_512);
+                } else if (SHIFT_INV_2ND == 9) {
+                    y1 = _mm256_add_epi32(y1, rounder_256);
+                } else if (SHIFT_INV_2ND == 8) {
+                    y1 = _mm256_add_epi32(y1, rounder_128);
                 }
                 y0 = _mm256_shuffle_epi32(y1, 0x4E); 
                 y1 = _mm256_sub_epi32(y1, y0);
