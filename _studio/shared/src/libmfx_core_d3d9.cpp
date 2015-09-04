@@ -1028,7 +1028,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             sts = pCmCopy->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height, pSrc->Data.MemId, 0, roi);
             MFX_CHECK_STS(sts);
         }
-        else if(m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && pDst->Info.FourCC != MFX_FOURCC_YV12 && pDst->Info.FourCC != MFX_FOURCC_NV12 && pDst->Info.FourCC != MFX_FOURCC_P010 && CM_ALIGNED(pDst->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
+        else if(m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && pDst->Info.FourCC != MFX_FOURCC_YV12 && pDst->Info.FourCC != MFX_FOURCC_NV12 && pDst->Info.FourCC != MFX_FOURCC_P010 && pDst->Info.FourCC != MFX_FOURCC_A2RGB10 && CM_ALIGNED(pDst->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
             sts = pCmCopy->CopyVideoToSystemMemoryAPI(pDst->Data.Y, pDst->Data.Pitch, (mfxU32)verticalPitch, pSrc->Data.MemId, 0, roi);
             MFX_CHECK_STS(sts);
         }
@@ -1121,6 +1121,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
                     break;
 
                 case MFX_FOURCC_RGB4:
+                case MFX_FOURCC_A2RGB10:
                 {
                     MFX_CHECK_NULL_PTR1(pDst->Data.R);
                     MFX_CHECK_NULL_PTR1(pDst->Data.G);
