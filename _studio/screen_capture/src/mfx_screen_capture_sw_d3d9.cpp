@@ -40,7 +40,7 @@ SW_D3D9_Capturer::~SW_D3D9_Capturer()
     Destroy();
 }
 
-mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, const mfxU32 dispIndex)
+mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, const mfxU32 targetId)
 {
     HRESULT hres;
 
@@ -56,9 +56,9 @@ mfxStatus SW_D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, c
         MFX_IMPL_VIA_D3D9 != (m_core_par.Impl & 0xF00))
         m_bOwnDevice = true;
 
-    if(dispIndex && 1 != dispIndex)
+    if(targetId /*&& 1 != dispIndex*/)
     {
-        m_DisplayIndex = dispIndex - 1;
+        m_DisplayIndex = GetDisplayIndex(targetId);
         m_bOwnDevice = true;
     }
 

@@ -114,10 +114,10 @@ public:
     virtual ~Capturer(){}
 
     virtual
-    mfxStatus CreateVideoAccelerator(mfxVideoParam const & par, const mfxU32 dispIndex = 0) = 0;
+    mfxStatus CreateVideoAccelerator(mfxVideoParam const & par, const mfxU32 targetId = 0) = 0;
 
     virtual
-    mfxStatus QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out, const mfxU32 dispIndex = 0) = 0;
+    mfxStatus QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out, const mfxU32 targetId = 0) = 0;
 
     virtual
     mfxStatus CheckCapabilities(mfxVideoParam const & in, mfxVideoParam* out) = 0;
@@ -182,6 +182,7 @@ struct displaysDescr
 };
 void FindAllConnectedDisplays(displaysDescr& displays);
 dispDescr GetTargetId(mfxU32 dispIndex);
+mfxU32 GetDisplayIndex(mfxU32 targetId);
 
 class OwnResizeFilter
 {

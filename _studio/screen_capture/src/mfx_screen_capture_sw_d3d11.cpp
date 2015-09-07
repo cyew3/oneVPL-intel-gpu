@@ -65,7 +65,7 @@ SW_D3D11_Capturer::~SW_D3D11_Capturer()
     Destroy();
 }
 
-mfxStatus SW_D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, const mfxU32 dispIndex)
+mfxStatus SW_D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, const mfxU32 targetId)
 {
     /* IDXGIAdapter -> ID3D11Device -> IDXGIOutput(dispIndex) -> IDXGIOutputDuplication */
 
@@ -93,9 +93,9 @@ mfxStatus SW_D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, 
     FindAllConnectedDisplays(displays);
 
     m_DisplayIndex = 0;
-    if(dispIndex && 1 != dispIndex)
+    if(targetId/* && 1 != dispIndex*/)
     {
-        m_DisplayIndex = dispIndex - 1;
+        m_DisplayIndex = GetDisplayIndex(targetId);
         if((m_DisplayIndex) && ( MAX_DISPLAYS <= m_DisplayIndex))
         {
             return MFX_ERR_UNSUPPORTED;

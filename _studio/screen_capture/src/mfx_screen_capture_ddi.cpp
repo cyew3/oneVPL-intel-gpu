@@ -39,6 +39,22 @@ dispDescr GetTargetId(mfxU32 dispIndex)
     return displays.display[dispIndex];
 }
 
+mfxU32 GetDisplayIndex(mfxU32 targetId)
+{
+    dispDescr display;
+    memset(&display,0,sizeof(display));
+
+    displaysDescr displays;
+    FindAllConnectedDisplays(displays);
+
+    for(mfxU32 i = 0; i < displays.n; ++i)
+    {
+        if(targetId == displays.display[i].TargetID)
+            return i;
+    }
+    return 0;
+}
+
 void FindAllConnectedDisplays(displaysDescr& displays)
 {
     unsigned int n = 0;

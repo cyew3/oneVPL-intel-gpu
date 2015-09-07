@@ -34,12 +34,13 @@ D3D11_Capturer::~D3D11_Capturer()
     Destroy();
 }
 
-mfxStatus D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, const mfxU32 dispIndex)
+mfxStatus D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, const mfxU32 targetId)
 {
-    if(dispIndex)
+    if(targetId)
     {
-        dispDescr disp = GetTargetId(dispIndex);
-        m_TargetId = disp.TargetID;
+        //dispDescr disp = GetTargetId(dispIndex);
+        //m_TargetId = disp.TargetID;
+        m_TargetId = targetId;
     }
 
     HRESULT hres;
@@ -172,12 +173,12 @@ mfxStatus D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, con
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11_Capturer::QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out, const mfxU32 dispIndex)
+mfxStatus D3D11_Capturer::QueryVideoAccelerator(mfxVideoParam const & in, mfxVideoParam* out, const mfxU32 targetId)
 {
     //temporary creates decoder instance to check capabilities
     mfxStatus mfxRes = MFX_ERR_NONE;
 
-    mfxRes = CreateVideoAccelerator(in, dispIndex);
+    mfxRes = CreateVideoAccelerator(in, targetId);
     if(MFX_ERR_NONE != mfxRes)
     {
         Destroy();
