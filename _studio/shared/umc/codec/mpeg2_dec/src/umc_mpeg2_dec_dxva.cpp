@@ -556,7 +556,9 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
             if (NULL == (pQmatrixData = (VAIQMatrixBufferMPEG2*)m_va->GetCompBuffer(VAIQMatrixBufferType, &CompBuf, sizeof (VAIQMatrixBufferMPEG2))))
                 return UMC_ERR_ALLOC;
 
+            Ipp32s prev_slice_size_getting = slice_size_getting;
             slice_size_getting = sizeof (VASliceParameterBufferMPEG2) * size_sl;
+
 #if 0
             if (NULL == (pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)m_va->GetCompBuffer(VASliceParameterBufferType, &CompBuf, sizeof (VASliceParameterBufferMPEG2)*size_sl)))
                 return UMC_ERR_ALLOC;
@@ -564,6 +566,12 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
 #else
             if(NULL == pSliceInfoBuffer)
                 pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)ippsMalloc_8u(slice_size_getting);
+            else if (prev_slice_size_getting < slice_size_getting)
+            {
+                ippsFree(pSliceInfoBuffer);
+                pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)ippsMalloc_8u(slice_size_getting);
+            }
+
             if( NULL == pSliceInfoBuffer)
                 return UMC_ERR_ALLOC;
 #endif
