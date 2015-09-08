@@ -66,11 +66,11 @@ private:
                 else
                     SetAllocator(
                                  new frame_allocator(
-                                 (frame_allocator::AllocatorType)    c.par[0], 
-                                 (frame_allocator::AllocMode)        c.par[1], 
-                                 (frame_allocator::LockMode)         c.par[2], 
+                                 (frame_allocator::AllocatorType)    c.par[0],
+                                 (frame_allocator::AllocMode)        c.par[1],
+                                 (frame_allocator::LockMode)         c.par[2],
                                  (frame_allocator::OpaqueAllocMode)  c.par[3]
-                                 ), 
+                                 ),
                                  false
                              );
                 m_use_memid = true;
@@ -94,46 +94,46 @@ private:
 
 #define EXT_BUF_PAR(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_NONE, {"", ""}},
     {/* 1*/ MFX_ERR_NONE, {"", ""}, {REPEAT, 0, {50}}},
-    {/* 2*/ MFX_ERR_NONE, {"", ""}, 
+    {/* 2*/ MFX_ERR_NONE, {"", ""},
        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
         {REPEAT, 0, {50}}}
     },
-    {/* 3*/ MFX_ERR_NONE, {"conformance/hevc/itu/RPS_B_qualcomm_5.bit", ""}, 
+    {/* 3*/ MFX_ERR_NONE, {"conformance/hevc/itu/RPS_B_qualcomm_5.bit", ""},
        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
         {REPEAT, 0, {2}}}
     },
-    {/* 4*/ MFX_ERR_NONE, {"conformance/hevc/itu/RPS_B_qualcomm_5.bit", ""}, 
+    {/* 4*/ MFX_ERR_NONE, {"conformance/hevc/itu/RPS_B_qualcomm_5.bit", ""},
        {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
         {REPEAT, 0, {2}}}
     },
     {/* 5*/ MFX_ERR_INVALID_VIDEO_PARAM, {"", ""}, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}}},
     {/* 6*/ MFX_ERR_INVALID_HANDLE, {"", ""}, {RESET|SESSION}},
     {/* 7*/ MFX_ERR_NOT_INITIALIZED, {"", ""}, {RESET|CLOSE_DEC}},
-    {/* 8*/ MFX_ERR_INVALID_VIDEO_PARAM, {"", ""}, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_MONOCHROME}}},
+    {/* 8*/ MFX_ERR_INVALID_VIDEO_PARAM, { "", "" }, { RESET | MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV411} } },
     {/* 9*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"", ""}, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, {720 + 32}}},
     {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"", ""}, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, {480 + 32}}},
     {/*11*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"", ""}, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {10}}},
     {/*12*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"", ""}, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}}},
     {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, {"", ""}, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.Protected, {1}}},
     {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, {"", ""}, {RESET|MFXVPAR, &tsStruct::mfxVideoParam.Protected, {2}}},
-    {/*15*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"", ""}, 
+    {/*15*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"", ""},
        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
         {RESET|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}}
     },
-    {/*16*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"", ""}, 
+    {/*16*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"", ""},
        {//{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
         {RESET|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}}
     },
-    {/*17*/ MFX_ERR_NONE, {"", ""}, 
+    {/*17*/ MFX_ERR_NONE, {"", ""},
        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
         {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
         {RESET|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}}
     },
-    {/*18*/ MFX_ERR_NONE, {"", ""}, 
+    {/*18*/ MFX_ERR_NONE, {"", ""},
        {//{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
         {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
         {RESET|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}}
@@ -209,7 +209,7 @@ int TestSuite::RunTest(unsigned int id)
         g_tsStatus.expect(tc.sts);
         Reset(m_session, m_pPar);
     }
-        
+
     if(tc.stream[0] != "" || tc.stream[1] != "")
     {
         DecodeFrames(3);
