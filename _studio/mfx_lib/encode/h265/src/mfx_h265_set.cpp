@@ -590,6 +590,7 @@ mfxU32 H265BsReal::WriteNAL(mfxBitstream *dst,
     // start access unit => should be zero_byte
     // for VPS,SPS,PPS,APS NAL units zero_byte should exist
     if (startPicture ||
+        nal->nal_unit_type == NAL_AUD ||
         nal->nal_unit_type == NAL_VPS ||
         nal->nal_unit_type == NAL_SPS ||
         nal->nal_unit_type == NAL_PPS) {

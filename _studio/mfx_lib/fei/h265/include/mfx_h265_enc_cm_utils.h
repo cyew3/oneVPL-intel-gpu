@@ -788,6 +788,18 @@ void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const 
     SetKernelArgLast(kernel, arg14, 14);
 }
 
+struct Kernel
+{
+    Kernel();
+    void Configure(CmDevice *device, CmProgram *program, const char *name,
+                   mfxU32 tsWidth, mfxU32 tsHeight, CM_DEPENDENCY_PATTERN tsPattern);
+    void Destroy(CmDevice *device);
+    void Enqueue(CmQueue *queue, CmEvent *&e);
+    CmKernel      *kernel;
+    CmTask        *task;
+    CmThreadSpace *ts;
+};
+
 }
 
 #endif /* _MFX_H265_ENC_CM_UTILS_H */

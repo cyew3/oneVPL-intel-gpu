@@ -216,9 +216,11 @@ using namespace H265Enc::MfxEnumShortAliases;
 #else
     TU_OPT_ALL (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
 #endif
-    TU_OPT_ALL (SaoSubOpt,                      1,   1,   1,   1,   1,   2,   3);
+    //TU_OPT_ALL (SaoSubOpt,                      1,   1,   1,   1,   1,   2,   3);
+    TU_OPT_SW  (SaoSubOpt,                      1,   1,   1,   1,   1,   2,   3);
+    TU_OPT_GACC(SaoSubOpt,                      1,   1,   1,   1,   1,   3,   3);
     TU_OPT_ALL (Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON);
-    TU_OPT_ALL (DeblockBorders,                ON,  ON,  ON, OFF, OFF, OFF, OFF);
+    TU_OPT_ALL (DeblockBorders,                ON,  ON,  ON,  ON,  ON,  ON,  ON);
 
     //Intra prediction optimization
     TU_OPT_SW  (IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice SW

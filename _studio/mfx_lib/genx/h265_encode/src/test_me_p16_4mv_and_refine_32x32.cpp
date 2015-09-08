@@ -180,7 +180,7 @@ namespace {
         CHECK_CM_ERR(res);
 
         CmKernel *kernel = 0;
-        res = device->CreateKernel(program, CM_KERNEL_FUNCTION(MeP16_4MV), kernel);
+        res = device->CreateKernel(program, CM_KERNEL_FUNCTION(Me16AndRefine32x32), kernel);
         CHECK_CM_ERR(res);
 
         CmBuffer *ctrlBuf = 0;

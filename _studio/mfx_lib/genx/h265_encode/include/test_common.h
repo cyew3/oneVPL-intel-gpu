@@ -28,6 +28,10 @@ typedef __int64 mfxI64;
 typedef __int64 Ipp64s;
 typedef unsigned __int64 mfxU64;
 typedef unsigned __int64 Ipp64u;
+typedef double mfx64F;
+typedef double Ipp64f;
+typedef float mfx32F;
+typedef float Ipp32f;
 
 typedef struct {
     mfxI16  x;
@@ -101,6 +105,20 @@ inline std::tuple<mfxU64,mfxU64,mfxU64> GetAccurateGpuTime(CmQueue *queue, const
     return std::make_tuple(mintime1, mintime2, mintimeTot);
 }
 
+inline mfxU64 GetAccurateGpuTime_ThreadGroup(CmQueue *queue, CmTask *task, CmThreadGroupSpace* tgs)
+{
+    CmEvent *e = NULL;
+    mfxU64 mintime = mfxU64(-1);
+    for (int i=0; i<10; i++) {
+        for (int j=0; j<10; j++)
+            queue->EnqueueWithGroup(task, e, tgs);
+        e->WaitForTaskFinished();
+        mfxU64 time;
+        e->GetExecutionTime(time);
+        mintime = MIN(mintime, time);
+    }
+    return mintime;
+}
 
 struct VmeSearchPath // sizeof=58
 {

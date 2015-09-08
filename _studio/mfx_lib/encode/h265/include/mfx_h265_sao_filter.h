@@ -182,5 +182,7 @@ private:
 };
 } // namespace
 
+
+
 #endif // __MFX_H265_SAO_FILTER_H__
 #endif // (MFX_ENABLE_H265_VIDEO_ENCODE)

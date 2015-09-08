@@ -152,16 +152,17 @@ namespace H265Enc {
         Frame *m_laFrame;
         Frame *m_targetFrame;
 
-        ObjectPool<FrameData>  m_frameDataPool;         // storage for full-sized original/reconstructed/reference pixel data
-        ObjectPool<FrameData>  m_frameDataLowresPool;   // storage for lowres original pixel data for lookahead
-        ObjectPool<Statistics> m_statsPool;             // storage for full-sized statistics per frame
-        ObjectPool<Statistics> m_statsLowresPool;       // storage for lowres statistics per frame
-        ObjectPool<FeiInData>  m_feiInputPool;          // storage for origins pixel data in GPU memory for fei
-        ObjectPool<FeiRecData> m_feiReconPool;          // storage for reconstructed/reference pixel data in GPU memory for fei
-        ObjectPool<FeiOutData> m_feiAngModesPool[4];    // storage for angular intra modes output by fei (4x4, 8x8, 16x16, 32x32)
-        ObjectPool<FeiOutData> m_feiInterMvPool[3];     // storage for motion vectors output by fei (8x8, 16x16, 32x32)
-        ObjectPool<FeiOutData> m_feiInterDistPool[3];   // storage for ME distortions output by fei (8x8, 16x16, 32x32)
-        ObjectPool<ThreadingTask> m_ttHubPool;          // storage for threading tasks of type TT_HUB
+        ObjectPool<FrameData>     m_inputFrameDataPool;     // storage for full-sized original pixel data
+        ObjectPool<FrameData>     m_reconFrameDataPool;     // storage for full-sized reconstructed/reference pixel data
+        ObjectPool<FrameData>     m_frameDataLowresPool;    // storage for lowres original pixel data for lookahead
+        ObjectPool<Statistics>    m_statsPool;              // storage for full-sized statistics per frame
+        ObjectPool<Statistics>    m_statsLowresPool;        // storage for lowres statistics per frame
+        ObjectPool<FeiOutData>    m_feiAngModesPool[4];     // storage for angular intra modes output by fei (4x4, 8x8, 16x16, 32x32)
+        ObjectPool<FeiOutData>    m_feiInterMvPool[3];      // storage for motion vectors output by fei (8x8, 16x16, 32x32)
+        ObjectPool<FeiOutData>    m_feiInterDistPool[3];    // storage for ME distortions output by fei (8x8, 16x16, 32x32)
+        ObjectPool<FeiBufferUp>   m_feiCuDataPool;          // storage for CU data shared between CPU and GPU (1 buffer/frame)
+        ObjectPool<FeiBufferUp>   m_feiSaoModesPool;        // storage for sao modes chosen by GPU (1 buffer/frame)
+        ObjectPool<ThreadingTask> m_ttHubPool;              // storage for threading tasks of type TT_HUB
 
         Ipp8u* m_memBuf;
         void *m_cu;
@@ -210,6 +211,7 @@ namespace H265Enc {
 
         // new (incoming) frame
         void InitNewFrame(Frame *out, mfxFrameSurface1 *in);
+        void PerformPadRecon(Frame *frame);
 
         friend class H265Enc::Lookahead;
         friend class H265Enc::H265FrameEncoder;

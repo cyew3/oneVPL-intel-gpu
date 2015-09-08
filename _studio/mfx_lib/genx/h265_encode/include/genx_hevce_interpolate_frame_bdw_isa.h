@@ -7,7 +7,7 @@
 //
 */
 
-#ifndef __genx_hevce_interpolate_frame_bdw__ 
+#ifndef __genx_hevce_interpolate_frame_bdw__
 #define __genx_hevce_interpolate_frame_bdw__
 extern const unsigned char genx_hevce_interpolate_frame_bdw[4318];
 #endif

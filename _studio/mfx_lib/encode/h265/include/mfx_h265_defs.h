@@ -513,6 +513,7 @@ struct RefPicList
 
 typedef enum {
     TT_INIT_NEW_FRAME,
+    TT_PAD_RECON,
     TT_GPU_SUBMIT,
     TT_GPU_WAIT,
     TT_ENCODE_CTU,
@@ -617,6 +618,15 @@ struct ThreadingTask
         action = TT_INIT_NEW_FRAME;
         frame = frame_;
         indata = indata_;
+        poc = poc_;
+        numUpstreamDependencies = 0;
+        numDownstreamDependencies = 0;
+        finished = 0;
+    }
+
+    void InitPadRecon(Frame *frame_, Ipp32s poc_) {
+        action = TT_PAD_RECON;
+        frame = frame_;
         poc = poc_;
         numUpstreamDependencies = 0;
         numDownstreamDependencies = 0;

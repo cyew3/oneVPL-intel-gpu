@@ -56,8 +56,8 @@ namespace H265Enc {
 
     struct RefCounter
     {
-        RefCounter() 
-            : m_refCounter(0) 
+        RefCounter()
+            : m_refCounter(0)
         {}
         volatile Ipp32u m_refCounter; // to prevent race condition in case of frame threading
         void AddRef(void)  { vm_interlocked_inc32(&m_refCounter);};
@@ -119,12 +119,11 @@ namespace H265Enc {
         void Destroy();
     };
 
-    struct H265CUData;
     struct FrameData : public RefCounter, public NonCopyable
     {
         Ipp8u *y;
         Ipp8u *uv;
-
+        mfxHDL m_handle;
         Ipp32s width;
         Ipp32s height;
         Ipp32s padding;
@@ -133,12 +132,8 @@ namespace H265Enc {
         Ipp32s pitch_chroma_pix;
         Ipp32s pitch_chroma_bytes;
 
-        FrameData()
-        : y(NULL)
-        , uv(NULL)
-        , mem(NULL)
-        {}
-        ~FrameData() { Destroy();}
+        FrameData() : y(), uv(), m_handle(), mem(), m_fei() {}
+        ~FrameData() { Destroy(); }
 
         struct AllocInfo {
             Ipp32s width;       // in elements
@@ -150,43 +145,35 @@ namespace H265Enc {
             Ipp32s bitDepthCh;
             Ipp32s chromaFormat;
             // for GACC should be requested from CmDevice
+            void  *feiHdl;
             Ipp32s alignment;
-            Ipp32s pitchInBytesLu;  // in bytes
-            Ipp32s pitchInBytesCh;  // in bytes
-            Ipp32s sizeInBytesLu;   // in bytes
-            Ipp32s sizeInBytesCh;   // in bytes
+            Ipp32s pitchInBytesLu;
+            Ipp32s pitchInBytesCh;
+            Ipp32s sizeInBytesLu;
+            Ipp32s sizeInBytesCh;
+            bool   isRecon; // recon or input
         };
+
         void Create(const AllocInfo &allocInfo);
         void Destroy();
 
     private:
         Ipp8u *mem;
+        void  *m_fei;
     };
 
-    struct FeiInData : public RefCounter
+    struct FeiBufferUp : public RefCounter
     {
-        FeiInData() : m_fei(NULL), m_handle(NULL) {}
-        ~FeiInData() { Destroy(); }
-
-        struct AllocInfo { void *feiHdl; };
+        FeiBufferUp() : m_fei(), m_handle(), m_allocated(), m_sysmem() {}
+        ~FeiBufferUp() { Destroy(); }
+        struct AllocInfo { mfxHDL feiHdl; Ipp32u size, alignment; };
         void Create(const AllocInfo &allocInfo);
         void Destroy();
 
-        void *m_fei;
+        void  *m_fei;
         mfxHDL m_handle;
-    };
-
-    struct FeiRecData : public FeiInData
-    {
-//        FeiInData() : m_fei(NULL), m_handle(NULL) {}
-        ~FeiRecData() { Destroy(); }
-
-//        struct AllocInfo { void *feiHdl; };
-        void Create(const AllocInfo &allocInfo);
-//        void Destroy();
-
-//        void *m_fei;
-//        mfxHDL m_handle;
+        Ipp8u *m_allocated;
+        Ipp8u *m_sysmem;
     };
 
     struct FeiOutData : public RefCounter
@@ -203,6 +190,19 @@ namespace H265Enc {
         Ipp32s m_pitch;
     };
 
+
+    struct SaoOffsetOut_gfx
+    {
+        Ipp8u mode_idx;
+        Ipp8u type_idx;
+        Ipp8u startBand_idx;
+        Ipp8u saoMaxOffsetQVal;
+        Ipp16s offset[4];
+        Ipp8u reserved[4];
+    }; // sizeof() == 32bytes
+
+
+    struct H265CUData;
     class Frame
     {
     public:
@@ -265,17 +265,24 @@ namespace H265Enc {
         ThreadingTask *m_threadingTasks;
         ThreadingTask  m_ttEncComplete;
         ThreadingTask  m_ttInitNewFrame;
+        ThreadingTask  m_ttPadRecon;
         ThreadingTask  m_ttSubmitGpuCopySrc;
         ThreadingTask  m_ttSubmitGpuCopyRec;
         ThreadingTask  m_ttSubmitGpuIntra;
-        ThreadingTask  m_ttSubmitGpuMe[4];
+        //ThreadingTask  m_ttSubmitGpuMe[4];
+        ThreadingTask  m_ttSubmitGpuHme[4];
+        ThreadingTask  m_ttSubmitGpuMe32[4];
+        ThreadingTask  m_ttSubmitGpuMe16[4];
+        ThreadingTask  m_ttSubmitGpuPostProc;
         ThreadingTask  m_ttWaitGpuCopyRec;
         ThreadingTask  m_ttWaitGpuIntra;
-        ThreadingTask  m_ttWaitGpuMe[4];
+        ThreadingTask  m_ttWaitGpuMe16[4];
+        ThreadingTask  m_ttWaitGpuPostProc;
+
         Ipp32u m_numThreadingTasks;
         volatile Ipp32u m_numFinishedThreadingTasks;
         Ipp32s m_encIdx; // we have "N" frameEncoders. this index indicates owner of the frame [0, ..., N-1]
-        
+
         // complexity/content statistics
         // 0 - original resolution, 1 - lowres
         Statistics* m_stats[2];
@@ -292,11 +299,11 @@ namespace H265Enc {
         std::vector<Frame *> m_futureFrames;
 
         // FEI resources
-        FeiInData  *m_feiOrigin;
-        FeiRecData *m_feiRecon;
-        FeiOutData *m_feiIntraAngModes[4];
-        FeiOutData *m_feiInterMv[4][3];
-        FeiOutData *m_feiInterDist[4][3];
+        FeiOutData  *m_feiIntraAngModes[4];
+        FeiOutData  *m_feiInterMv[4][3];
+        FeiOutData  *m_feiInterDist[4][3];
+        FeiBufferUp *m_feiCuData;
+        FeiBufferUp *m_feiSaoModes;
         void *m_feiSyncPoint;
 
         mfxPayload **m_userSeiMessages;

@@ -57,11 +57,11 @@
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>$(ProjectName)_d</TargetName>
     <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
-    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">
     <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
@@ -96,10 +96,10 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>build_kernel.cmd deblock hsw</Command>
+      <Command>build_kernel.cmd sao hsw</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>for /L %%i in (0,1,4) do $(TargetPath)</Command>
+      <Command>for /L %%i in (0,1,0) do $(TargetPath)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -125,7 +125,7 @@
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
     <PreBuildEvent>
-      <Command>build_kernel_all_targets.cmd deblock /Qxcm_release</Command>
+      <Command>build_kernel_all_targets.cmd sao /Qxcm_release</Command>
     </PreBuildEvent>
     <Link>
       <AdditionalDependencies>igfxcmrt64.lib;</AdditionalDependencies>
@@ -170,17 +170,17 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\genx_hevce_deblock.cpp">
+    <ClCompile Include="src\genx_hevce_sao.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\genx_hevce_deblock_bdw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_deblock_hsw_isa.cpp" />
-    <ClCompile Include="src\test_deblock.cpp" />
+    <ClCompile Include="src\genx_hevce_sao_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_sao_hsw_isa.cpp" />
+    <ClCompile Include="src\test_sao.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\genx_hevce_deblock_bdw_isa.h" />
-    <ClInclude Include="include\genx_hevce_deblock_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_sao_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_sao_hsw_isa.h" />
     <ClInclude Include="include\test_common.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

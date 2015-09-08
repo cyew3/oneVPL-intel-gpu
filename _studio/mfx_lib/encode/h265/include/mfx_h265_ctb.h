@@ -114,9 +114,10 @@ Ipp32s qdist(const H265MV *mv1, const H265MV *mv2);
 struct H265CUData
 {
 public:
+    H265MV mv[2];
+    H265MV mvd[2];
+    Ipp8s refIdx[2];
     Ipp8u depth;
-    Ipp8u size;
-    Ipp8u partSize;
     Ipp8u predMode;
     Ipp8u trIdx;
     Ipp8s qp;
@@ -124,11 +125,10 @@ public:
     Ipp8u intraLumaDir;
     Ipp8u intraChromaDir;
     Ipp8u interDir;
+    Ipp8u size;
+    Ipp8u partSize;
     Ipp8u mergeIdx;
     Ipp8s mvpIdx[2];
-    H265MV mv[2];
-    H265MV mvd[2];
-    Ipp8s refIdx[2];
 
     Ipp8u transformSkipFlag[3];
     union {
@@ -613,6 +613,7 @@ public:
                          Ipp32s dir);
             
     void EstimateSao(H265BsReal* bs, SaoCtuParam* saoParam);
+    void PackSao(H265BsReal* bs, SaoCtuParam* saoParam);
 
     void FillSubPart(Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trIdx, Ipp8u partSize, Ipp8u lumaDir,
                      Ipp8u qp);

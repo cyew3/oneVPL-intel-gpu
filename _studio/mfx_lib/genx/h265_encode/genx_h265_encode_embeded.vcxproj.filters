@@ -1,161 +1,63 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{CF3752C3-DFF7-448d-AC2C-32887FF7B97B}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{61E72C45-AB7A-41f3-85BA-27A65B2B6250}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
+    <ClCompile Include="src\genx_hevce_analyze_gradient_32x32_best_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_analyze_gradient_32x32_best_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_ime_3tiers_4mv_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_ime_3tiers_4mv_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_ime_4mv_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_ime_4mv_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_interpolate_frame_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_interpolate_frame_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_intra_avc_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_intra_avc_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_me_p32_4mv_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_me_p32_4mv_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_prepare_src_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_prepare_src_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_refine_me_p_16x32_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_refine_me_p_16x32_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_refine_me_p_32x16_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_refine_me_p_32x16_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_refine_me_p_32x32_sad_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_refine_me_p_32x32_sad_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_deblock_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_sao_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_deblock_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_sao_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_sao_apply_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_sao_apply_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\genx_hevce_ime_3tiers_4mv_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_ime_3tiers_4mv_hsw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_ime_4mv_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_ime_4mv_hsw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_interpolate_frame_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_interpolate_frame_hsw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_intra_avc_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_intra_avc_hsw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_me_p16_4mv_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_me_p16_4mv_hsw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_me_p32_4mv_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_me_p32_4mv_hsw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_refine_me_p_16x32_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_refine_me_p_16x32_hsw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_refine_me_p_32x16_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_refine_me_p_32x16_hsw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_refine_me_p_32x32_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_refine_me_p_32x32_hsw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_analyze_gradient_32x32_best_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_analyze_gradient_32x32_best_hsw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_prepare_src_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_prepare_src_hsw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_refine_me_p_32x32_sad_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hevce_refine_me_p_32x32_sad_hsw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\genx_hevce_analyze_gradient_32x32_best_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_analyze_gradient_32x32_best_hsw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_ime_3tiers_4mv_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_ime_3tiers_4mv_hsw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_ime_4mv_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_ime_4mv_hsw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_interpolate_frame_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_interpolate_frame_hsw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_intra_avc_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_intra_avc_hsw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_me_p16_4mv_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_me_p16_4mv_hsw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_me_p32_4mv_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_me_p32_4mv_hsw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_refine_me_p_16x32_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_refine_me_p_16x32_hsw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_refine_me_p_32x16_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_refine_me_p_32x16_hsw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_refine_me_p_32x32_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_refine_me_p_32x32_hsw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_prepare_src_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_prepare_src_hsw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_refine_me_p_32x32_sad_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hevce_refine_me_p_32x32_sad_hsw_isa.cpp"">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClInclude Include="include\genx_hevce_analyze_gradient_32x32_best_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_analyze_gradient_32x32_best_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_ime_3tiers_4mv_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_ime_3tiers_4mv_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_ime_4mv_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_ime_4mv_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_interpolate_frame_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_interpolate_frame_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_intra_avc_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_intra_avc_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_me_p32_4mv_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_me_p32_4mv_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_prepare_src_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_prepare_src_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_refine_me_p_16x32_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_refine_me_p_16x32_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_refine_me_p_32x16_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_refine_me_p_32x16_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_refine_me_p_32x32_sad_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_refine_me_p_32x32_sad_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_deblock_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_deblock_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_sao_apply_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_sao_apply_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_sao_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_sao_hsw_isa.h" />
   </ItemGroup>
 </Project>

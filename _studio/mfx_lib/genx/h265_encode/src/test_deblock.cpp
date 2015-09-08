@@ -22,6 +22,9 @@
 extern "C" void Deblock(SurfaceIndex SURF_SRC, SurfaceIndex SURF_FRAME_CU_DATA, SurfaceIndex SURF_PARAM);
 #endif //CMRT_EMU
 
+const mfxI32 Width  = 1920;
+const mfxI32 Height = 1080;
+
 struct VideoParam
 {
     int Width;
@@ -59,7 +62,7 @@ struct VideoParam
     int log2_parallel_merge_level;
 };
 
-struct DeblockParam // size = 336 B = 84 DW
+struct PostProcParam // size = 352 B = 88 DW
 {
     Ipp8u  tabBeta[52];            // +0 B
     Ipp16u Width;                  // +26 W
@@ -82,6 +85,11 @@ struct DeblockParam // size = 336 B = 84 DW
     Ipp32s list0[16];              // +48 DW
     Ipp32s list1[16];              // +64 DW
     Ipp8u  scan2z[16];             // +320 B
+    // sao extension
+    Ipp32f m_rdLambda;             // +84 DW
+    Ipp32s SAOChromaFlag;          // +85 DW
+    Ipp32s enableBandOffset;       // +86 DW
+    Ipp8u reserved[4];             // +87 DW
 };
 
 static const Ipp32s tcTable[] = {
@@ -164,10 +172,8 @@ struct H265CUData
 {
     H265MV mv[2];
     H265MV mvd[2];
-
+    mfxI8 refIdx[2];
     mfxU8 depth;
-    mfxU8 size;
-    mfxU8 partSize;
     mfxU8 predMode;
     mfxU8 trIdx;
     mfxI8 qp;
@@ -175,10 +181,10 @@ struct H265CUData
     mfxU8 intraLumaDir;
     mfxU8 intraChromaDir;
     mfxU8 interDir;
+    mfxU8 size;
+    mfxU8 partSize;
     mfxU8 mergeIdx;
     mfxI8 mvpIdx[2];
-
-    mfxI8 refIdx[2];
 
     mfxU8 transformSkipFlag[3];
     union {
@@ -213,16 +219,16 @@ struct AddrInfo
     Ipp32u region_border_left, region_border_top;
 };
 
-void Deblocking_Kernel_cpu(mfxU8 *inData, Ipp32s inPitch, mfxU8 *outData, Ipp32s outPitch, int* list0, int* list1, int listLength, DeblockParam & dblkPar, H265CUData* frame_cu_data, int m_ctbAddr, AddrInfo* frame_addr_info);
+void Deblocking_Kernel_cpu(mfxU8 *inData, Ipp32s inPitch, mfxU8 *outData, Ipp32s outPitch, int* list0, int* list1, int listLength, PostProcParam & dblkPar, H265CUData* frame_cu_data, int m_ctbAddr, AddrInfo* frame_addr_info);
 void SetVideoParam(VideoParam& par, int width, int height);
 void AllocateFrameCuData(VideoParam& par, H265CUData** frame_cu_data);
 void FillRandomModeDecision(int seed, VideoParam& param, int* list0, int* list1, int listLength, H265CUData* frame_cu_data, AddrInfo* addrInfo);
-void FillDeblockParam(DeblockParam & deblockParam, const VideoParam & videoParam, const int list0[33], const int list1[33]);
+void FillDeblockParam(PostProcParam & deblockParam, const VideoParam & videoParam, const int list0[33], const int list1[33]);
 void FillRandom(Ipp32u abs_part_idx, Ipp8u depth, VideoParam* par, int ctbAddr, H265CUData* cu_data);
 
 namespace {
-    int RunGpu(const mfxU8 *inData, Ipp32s inPitch, mfxU8 *outData, Ipp32s outPitch, int* list0, int* list1, int listLength, DeblockParam & dblkPar, H265CUData* frame_cu_data, int m_ctbAddr, AddrInfo* frame_addr_info);
-    int RunCpu(const mfxU8 *inData, Ipp32s inPitch, mfxU8 *outData, Ipp32s outPitch, int* list0, int* list1, int listLength, DeblockParam & dblkPar, H265CUData* frame_cu_data, int m_ctbAddr, AddrInfo* frame_addr_info);
+    int RunGpu(const mfxU8 *inData, Ipp32s inPitch, mfxU8 *outData, Ipp32s outPitch, int* list0, int* list1, int listLength, PostProcParam & dblkPar, H265CUData* frame_cu_data, int m_ctbAddr, AddrInfo* frame_addr_info, bool useUP);
+    int RunCpu(const mfxU8 *inData, Ipp32s inPitch, mfxU8 *outData, Ipp32s outPitch, int* list0, int* list1, int listLength, PostProcParam & dblkPar, H265CUData* frame_cu_data, int m_ctbAddr, AddrInfo* frame_addr_info);
     int Compare(const mfxU8 *data1, Ipp32s pitch1, const mfxU8 *data2, Ipp32s pitch2, Ipp32s width, Ipp32s height);
 };
 
@@ -262,8 +268,11 @@ namespace {
         };
     };
 
-    int RunGpu(const mfxU8 *inData, Ipp32s inPitch, mfxU8 *outData, Ipp32s outPitch, int* /*list0*/, int* /*list1*/, int listLength, DeblockParam & dblkPar, H265CUData* frame_cu_data, int m_ctbAddr, AddrInfo* frame_addr_info)
+    int RunGpu(const mfxU8 *inData, Ipp32s inPitch, mfxU8 *outData, Ipp32s outPitch, int* /*list0*/, int* /*list1*/, int listLength, PostProcParam & dblkPar, H265CUData* frame_cu_data, int m_ctbAddr, AddrInfo* frame_addr_info, bool useUP)
     {
+        const Ipp32u paddingLu = useUP ? 96 : 0;
+        const Ipp32u paddingCh = useUP ? 96 : 0;
+
         mfxU32 version = 0;
         CmDevice *device = 0;
         Ipp32s res = ::CreateCmDevice(device, version);
@@ -281,33 +290,81 @@ namespace {
         //res = device->InitPrintBuffer();
         //CHECK_CM_ERR(res);
 
-        //-------------------------------------------------------
-        // arg[0]
-        CmSurface2D *input = 0;
-        res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_NV12, input);
-        CHECK_CM_ERR(res);
-        res = input->WriteSurfaceStride(inData, NULL, inPitch);
+        // SRC_LU, SRC_CH
+        CmSurface2D *inputLuma = 0;
+        CmSurface2D *inputChroma = 0;
+        CmSurface2DUP *inputLumaUp = 0;
+        CmSurface2DUP *inputChromaUp = 0;
+        Ipp8u *inputLumaSys = 0;
+        Ipp8u *inputChromaSys = 0;
+        Ipp32u inputLumaPitch = 0;
+        Ipp32u inputChromaPitch = 0;
+        if (useUP) {
+            Ipp32u size = 0;
+            res = device->GetSurface2DInfo(Width+2*paddingLu, Height, CM_SURFACE_FORMAT_P8, inputLumaPitch, size);
+            CHECK_CM_ERR(res);
+            inputLumaSys = (Ipp8u *)CM_ALIGNED_MALLOC(size, 0x1000);
+            res = device->CreateSurface2DUP(Width+2*paddingLu, Height, CM_SURFACE_FORMAT_P8, inputLumaSys, inputLumaUp);
+            CHECK_CM_ERR(res);
+            for (Ipp32s y = 0; y < Height; y++)
+                memcpy(inputLumaSys + paddingLu + y * inputLumaPitch, inData + y * inPitch, Width);
+            size = 0;
+            res = device->GetSurface2DInfo(Width+2*paddingCh, Height/2, CM_SURFACE_FORMAT_P8, inputChromaPitch, size);
+            CHECK_CM_ERR(res);
+            inputChromaSys = (Ipp8u *)CM_ALIGNED_MALLOC(size, 0x1000);
+            res = device->CreateSurface2DUP(Width+2*paddingCh, Height/2, CM_SURFACE_FORMAT_P8, inputChromaSys, inputChromaUp);
+            CHECK_CM_ERR(res);
+            for (Ipp32s y = 0; y < Height/2; y++)
+                memcpy(inputChromaSys + paddingCh + y * inputChromaPitch, inData + (y + Height) * inPitch, Width);
+        } else {
+            res = device->CreateSurface2D(Width, Height, CM_SURFACE_FORMAT_P8, inputLuma);
+            CHECK_CM_ERR(res);
+            res = inputLuma->WriteSurfaceStride(inData, NULL, inPitch);
+            CHECK_CM_ERR(res);
+            res = device->CreateSurface2D(Width, Height/2, CM_SURFACE_FORMAT_P8, inputChroma);
+            CHECK_CM_ERR(res);
+            res = inputChroma->WriteSurfaceStride(inData + Height * inPitch, NULL, inPitch);
+            CHECK_CM_ERR(res);
+        }
+
+        // DST
+        CmSurface2D *dst;
+        res = device->CreateSurface2D(Width, Height, CM_SURFACE_FORMAT_NV12, dst);
         CHECK_CM_ERR(res);
 
-        // arg[1]
+        // CU_DATA
         int numCtbs = dblkPar.PicWidthInCtbs * dblkPar.PicHeightInCtbs;
         int numCtbs_parts = numCtbs << dblkPar.Log2NumPartInCU;
         Ipp32s size = numCtbs_parts * sizeof(H265CUData);
-        CmBuffer* video_frame_cu_data = 0;
-        res = device->CreateBuffer(size, video_frame_cu_data);
+        CmBufferUP* video_frame_cu_data = 0;
+        res = device->CreateBufferUP(size, frame_cu_data, video_frame_cu_data);        
         CHECK_CM_ERR(res);
-        video_frame_cu_data->WriteSurface((const Ipp8u*)frame_cu_data, NULL);
+        //video_frame_cu_data->WriteSurface((const Ipp8u*)frame_cu_data, NULL);
 
-        // arg[2]
-        size = sizeof(DeblockParam);
+        // PARAM
+        size = sizeof(PostProcParam);
         CmBuffer* video_param = 0;
         res = device->CreateBuffer(size, video_param);
         CHECK_CM_ERR(res);
         video_param->WriteSurface((const Ipp8u*)&dblkPar, NULL);
 
         //-------------------------------------------------------
-        SurfaceIndex *idxInput = 0;
-        res = input->GetIndex(idxInput);
+        SurfaceIndex *idxInputLuma = 0;
+        SurfaceIndex *idxInputChroma = 0;
+        if (useUP) {
+            res = inputLumaUp->GetIndex(idxInputLuma);
+            CHECK_CM_ERR(res);
+            res = inputChromaUp->GetIndex(idxInputChroma);
+            CHECK_CM_ERR(res);
+        } else {
+            res = inputLuma->GetIndex(idxInputLuma);
+            CHECK_CM_ERR(res);
+            res = inputChroma->GetIndex(idxInputChroma);
+            CHECK_CM_ERR(res);
+        }
+
+        SurfaceIndex *idxDst = 0;
+        res = dst->GetIndex(idxDst);
         CHECK_CM_ERR(res);
 
         SurfaceIndex *idxFrameCuData = 0;
@@ -319,20 +376,25 @@ namespace {
         CHECK_CM_ERR(res);
 
         //-------------------------------------------------------
-        //-------------------------------------------------------
-        res = kernel->SetKernelArg(0, sizeof(*idxInput), idxInput);
+        res = kernel->SetKernelArg(0, sizeof(SurfaceIndex), idxInputLuma);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(1, sizeof(*idxFrameCuData), idxFrameCuData);
+        res = kernel->SetKernelArg(1, sizeof(SurfaceIndex), idxInputChroma);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(2, sizeof(*idxParam), idxParam);
+        res = kernel->SetKernelArg(2, sizeof(Ipp32u), &paddingLu);
         CHECK_CM_ERR(res);
-        //-------------------------------------------------------
+        res = kernel->SetKernelArg(3, sizeof(Ipp32u), &paddingCh);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(4, sizeof(SurfaceIndex), idxDst);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(5, sizeof(SurfaceIndex), idxFrameCuData);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(6, sizeof(SurfaceIndex), idxParam);
+        CHECK_CM_ERR(res);
         //-------------------------------------------------------
 
         // for YUV420 we process 16x16 block (4x 8x8_Luma and 1x 16x16_Chroma)
-        mfxU32 MaxCUSize = dblkPar.MaxCUSize;
-        mfxU32 tsWidth  = dblkPar.PicWidthInCtbs  * (MaxCUSize / 16) + 1;
-        mfxU32 tsHeight = dblkPar.PicHeightInCtbs * (MaxCUSize / 16) + 1;
+        mfxU32 tsWidth  = (dblkPar.Width + 12 + 15) / 16;
+        mfxU32 tsHeight = (dblkPar.Height + 12 + 15) / 16;
         res = kernel->SetThreadCount(tsWidth * tsHeight);
         CHECK_CM_ERR(res);
 
@@ -361,7 +423,8 @@ namespace {
         res = e->WaitForTaskFinished();
         CHECK_CM_ERR(res);
 
-        input->ReadSurfaceStride(outData, NULL, outPitch);
+        res = dst->ReadSurfaceStride(outData, NULL, outPitch);
+        CHECK_CM_ERR(res);
 
         //-------------------------------------------------
         // OUTPUT DEBUG
@@ -375,8 +438,16 @@ namespace {
         device->DestroyThreadSpace(threadSpace);
         device->DestroyTask(task);
         queue->DestroyEvent(e);
-        device->DestroySurface(input);
-        device->DestroySurface(video_frame_cu_data);
+        if (useUP) {
+            device->DestroySurface2DUP(inputLumaUp);
+            device->DestroySurface2DUP(inputChromaUp);
+            CM_ALIGNED_FREE(inputLumaSys);
+            CM_ALIGNED_FREE(inputChromaSys);
+        } else {
+            device->DestroySurface(inputLuma);
+            device->DestroySurface(inputChroma);
+        }
+        device->DestroyBufferUP(video_frame_cu_data);
         device->DestroySurface(video_param);
         device->DestroyKernel(kernel);
         device->DestroyProgram(program);
@@ -391,7 +462,7 @@ namespace {
     int g_filtWeak = 0;
     int g_filtStrong = 0;
 
-    int RunCpu(const mfxU8 *inData, Ipp32s inPitch, mfxU8 *outData, Ipp32s outPitch, int* list0, int* list1, int listLength, DeblockParam & dblkPar, H265CUData* frame_cu_data, int m_ctbAddr, AddrInfo* frame_addr_info)
+    int RunCpu(const mfxU8 *inData, Ipp32s inPitch, mfxU8 *outData, Ipp32s outPitch, int* list0, int* list1, int listLength, PostProcParam & dblkPar, H265CUData* frame_cu_data, int m_ctbAddr, AddrInfo* frame_addr_info)
     {
         // CPU version is implace, so we use extra copy here
         Ipp32s frameSize = 3 * (dblkPar.Width * dblkPar.Height) >> 1;
@@ -2304,10 +2375,12 @@ void AllocateFrameCuData(VideoParam& par, H265CUData** frame_cu_data)
     int numCtbs = par.PicWidthInCtbs * par.PicHeightInCtbs;
     int numCtbs_parts = numCtbs << par.Log2NumPartInCU;
 
-    *frame_cu_data = new H265CUData [numCtbs_parts];
+    //*frame_cu_data = new H265CUData [numCtbs_parts];
+    int numBytes = sizeof(H265CUData) * numCtbs_parts;
+    *frame_cu_data = static_cast<H265CUData *>(CM_ALIGNED_MALLOC(numBytes, 0x1000)); // 4K aligned
 }
 
-void FillDeblockParam(DeblockParam & deblockParam, const VideoParam & videoParam, const int list0[33], const int list1[33])
+void FillDeblockParam(PostProcParam & deblockParam, const VideoParam & videoParam, const int list0[33], const int list1[33])
 {
     deblockParam.Width  = videoParam.Width;
     deblockParam.Height = videoParam.Height;
@@ -2393,7 +2466,7 @@ struct H265CUPtr {
 
 const int PITCH_TU = 16;
 
-void SetEdges(Ipp32s width, Ipp32s height, Ipp32s* list0, Ipp32s* list1, H265EdgeData* edge, DeblockParam* dblkPar, AddrInfo* info, H265CUData* cu_data, Ipp32u ctbAddr);
+void SetEdges(Ipp32s width, Ipp32s height, Ipp32s* list0, Ipp32s* list1, H265EdgeData* edge, PostProcParam* dblkPar, AddrInfo* info, H265CUData* cu_data, Ipp32u ctbAddr);
 
 #define Clip3( m_Min, m_Max, m_Value) ( (m_Value) < (m_Min) ? \
     (m_Min) : \
@@ -2928,7 +3001,7 @@ void Deblocking_Kernel_cpu(
     int* list0, // CmBuffer
     int* list1, // cmBuffer
     int /*listLength*/,
-    DeblockParam & dblkPar, // CmBuffer
+    PostProcParam & dblkPar, // CmBuffer
     H265CUData* frame_cu_data, //CmSurface2D (width = PicWidthInCtbs * {sizeof(H265CUData)*numInCtb}, height = PicHeightInCtbs)
     int /*m_ctbAddr*/,
     AddrInfo* frame_addr_info)
@@ -3388,7 +3461,7 @@ inline
 //  |
 //  1
 
-void SetEdges(Ipp32s width, Ipp32s height, Ipp32s* list0, Ipp32s* list1, H265EdgeData* edge, DeblockParam* dblkPar, AddrInfo* info, H265CUData* cu_data, Ipp32u ctbAddr)
+void SetEdges(Ipp32s width, Ipp32s height, Ipp32s* list0, Ipp32s* list1, H265EdgeData* edge, PostProcParam* dblkPar, AddrInfo* info, H265CUData* cu_data, Ipp32u ctbAddr)
 {
     Ipp32s crossSliceBoundaryFlag = dblkPar->crossSliceBoundaryFlag;
     Ipp32s crossTileBoundaryFlag  = dblkPar->crossTileBoundaryFlag;
@@ -3467,8 +3540,8 @@ int main()
         return printf("FAILED to open yuv file\n"), 1;
 
     // const per frame params
-    Ipp32s width = WIDTH;
-    Ipp32s height = HEIGHT;
+    Ipp32s width = Width;
+    Ipp32s height = Height;
 
     Ipp32s frameSize = 3 * (width * height) >> 1;
     mfxU8 *input = new mfxU8[frameSize];
@@ -3499,24 +3572,33 @@ int main()
     AddrInfo* frame_addr_info = new AddrInfo[videoParam.PicWidthInCtbs * videoParam.PicHeightInCtbs];
     FillRandomModeDecision(seed, videoParam, list0, list1, 33, frame_cu_data, frame_addr_info);
 
-    DeblockParam deblockParam;
+    PostProcParam deblockParam;
     FillDeblockParam(deblockParam, videoParam, list0, list1);
 
     Ipp32s res;
     res = RunCpu(input, inPitch, outputCpu, outPitchCpu, list0, list1, listLength, deblockParam, frame_cu_data, 0/* no matter*/, frame_addr_info);
     CHECK_ERR(res);
 
-    res = RunGpu(input, inPitch, outputGpu, outPitchGpu, list0, list1, listLength, deblockParam, frame_cu_data, 0/* no matter*/, frame_addr_info);
+    printf("Surface2D: ");
+    res = RunGpu(input, inPitch, outputGpu, outPitchGpu, list0, list1, listLength, deblockParam, frame_cu_data, 0/* no matter*/, frame_addr_info, false);
     CHECK_ERR(res);
-
     res = Compare(outputGpu, outPitchGpu, outputCpu, outPitchCpu, width, height);
     CHECK_ERR(res);
+    printf("passed ");
+    printf("Surface2DUP: ");
+    res = RunGpu(input, inPitch, outputGpu, outPitchGpu, list0, list1, listLength, deblockParam, frame_cu_data, 0/* no matter*/, frame_addr_info, true);
+    CHECK_ERR(res);
+    res = Compare(outputGpu, outPitchGpu, outputCpu, outPitchCpu, width, height);
+    CHECK_ERR(res);
+    printf("passed\n");
 
     delete [] input;
     delete [] outputGpu;
     delete [] outputCpu;
-    delete [] frame_cu_data;
+    //delete [] frame_cu_data;
+    CM_ALIGNED_FREE(frame_cu_data);
+
     delete [] frame_addr_info;
 
-    return printf("passed\n"), 0;
+    return 0;
 }

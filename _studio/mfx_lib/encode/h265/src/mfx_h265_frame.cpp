@@ -21,6 +21,7 @@
 #define H265FEI_AllocateInputSurface(...) (MFX_ERR_NONE)
 #define H265FEI_AllocateReconSurface(...) (MFX_ERR_NONE)
 #define H265FEI_AllocateOutputSurface(...) (MFX_ERR_NONE)
+#define H265FEI_AllocateOutputBuffer(...) (MFX_ERR_NONE)
 #define H265FEI_FreeSurface(...) (MFX_ERR_NONE)
 #define CM_ALIGNED_MALLOC(...) ((void *)NULL)
 #define CM_ALIGNED_FREE(...)
@@ -67,10 +68,25 @@ namespace H265Enc {
         uv = align_pointer<Ipp8u *>(uv, allocInfo.alignment);
         y += (allocInfo.paddingLu << bdShiftLu);
         uv += (allocInfo.paddingChW << bdShiftCh);
+
+        if (allocInfo.feiHdl) {
+            m_fei = allocInfo.feiHdl;
+            mfxStatus sts = allocInfo.isRecon
+                ? H265FEI_AllocateReconSurface(allocInfo.feiHdl, y, uv, &m_handle)
+                : H265FEI_AllocateInputSurface(allocInfo.feiHdl, y, uv, &m_handle);
+            if (sts != MFX_ERR_NONE)
+                Throw(std::runtime_error("H265FEI_Allocate[Input/Recon]Surface failed"));
+        }
     }
-    
+
     void FrameData::Destroy()
     {
+        if (m_fei && m_handle) {
+            H265FEI_FreeSurface(m_fei, m_handle);
+            m_handle = NULL;
+            m_fei = NULL;
+        }
+
         delete [] mem;
         mem = NULL;
     }
@@ -134,31 +150,6 @@ namespace H265Enc {
     }
 
 
-    void FeiInData::Create(const FeiInData::AllocInfo &allocInfo)
-    {
-        if (H265FEI_AllocateInputSurface(allocInfo.feiHdl, &m_handle) != MFX_ERR_NONE)
-            Throw(std::runtime_error("H265FEI_AllocateInputSurface failed"));
-
-        m_fei = allocInfo.feiHdl;
-    }
-
-    void FeiInData::Destroy()
-    {
-        if (m_fei && m_handle) {
-            H265FEI_FreeSurface(m_fei, m_handle);
-            m_handle = NULL;
-            m_fei = NULL;
-        }
-    }
-
-    void FeiRecData::Create(const FeiRecData::AllocInfo &allocInfo)
-    {
-        if (H265FEI_AllocateReconSurface(allocInfo.feiHdl, &m_handle) != MFX_ERR_NONE)
-            Throw(std::runtime_error("H265FEI_AllocateReconSurface failed"));
-
-        m_fei = allocInfo.feiHdl;
-    }
-
     void FeiOutData::Create(const FeiOutData::AllocInfo &allocInfo)
     {
         const mfxSurfInfoENC &info = allocInfo.allocInfo;
@@ -189,6 +180,33 @@ namespace H265Enc {
         }
     }
 
+    void FeiBufferUp::Create(const AllocInfo &allocInfo)
+    {
+        m_allocated = new mfxU8[allocInfo.size + allocInfo.alignment];
+        m_sysmem = align_pointer<Ipp8u*>(m_allocated, allocInfo.alignment);
+        if (allocInfo.feiHdl) {
+            if (H265FEI_AllocateOutputBuffer(allocInfo.feiHdl, m_sysmem, allocInfo.size, &m_handle) != MFX_ERR_NONE) {
+                delete [] m_allocated;
+                m_allocated = NULL;
+                m_sysmem = NULL;
+                Throw(std::runtime_error("H265FEI_AllocateOutputBuffer failed"));
+            }
+            m_fei = allocInfo.feiHdl;
+        }
+    }
+
+    void FeiBufferUp::Destroy()
+    {
+        if (m_fei && m_handle) {
+            H265FEI_FreeSurface(m_fei, m_handle);
+            m_handle = NULL;
+            m_fei = NULL;
+        }
+        delete [] m_allocated;
+        m_allocated = NULL;
+        m_sysmem = NULL;
+    }
+
     void Frame::Create(H265VideoParam *par)
     {
         Ipp32s numCtbs = par->PicWidthInCtbs * par->PicHeightInCtbs;
@@ -202,19 +220,16 @@ namespace H265Enc {
         m_slices.resize(par->NumSlices);
 
         Ipp32s numCtbs_parts = numCtbs << par->Log2NumPartInCU;
-        Ipp32s len = numCtbs_parts * sizeof(H265CUData) + ALIGN_VALUE;
-        len += sizeof(ThreadingTask) * 2 * numCtbs + ALIGN_VALUE;
+        Ipp32s len = sizeof(ThreadingTask) * 2 * numCtbs + ALIGN_VALUE;
 
         mem = H265_Malloc(len);
         if (!mem)
             throw std::exception();
 
         Ipp8u *ptr = (Ipp8u*)mem;
-        cu_data = align_pointer<H265CUData *> (ptr, ALIGN_VALUE);
-        ptr += numCtbs_parts * sizeof(H265CUData) + ALIGN_VALUE;
         m_threadingTasks = align_pointer<ThreadingTask *> (ptr, ALIGN_VALUE);
     }
-    
+
     void Frame::CopyFrameData(const mfxFrameSurface1 *in)
     {
         FrameData* out = m_origin;
@@ -342,7 +357,7 @@ namespace H265Enc {
         Ipp32s shift_h = frame->m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
         Ipp32s shift = 2 - shift_w - shift_h;
         Ipp32s plane_size = (W*H << bd_shift_luma) + (((W*H/2) << shift) << bd_shift_chroma);
-        
+
         Ipp32s numlater = 0; // number of dumped frames with later POC
         if (frame->m_picCodeType == MFX_FRAMETYPE_B) {
             for (FrameIter it = dpb.begin(); it != dpb.end(); it++ ) {
@@ -362,10 +377,10 @@ namespace H265Enc {
             f = vm_file_fopen(fname, frame_num ? VM_STRING("a+b") : VM_STRING("wb"));
             if (!f) return;
         }
-    
+
         if (f == NULL)
             return;
-    
+
         FrameData* recon = frame->m_recon;
         int i;
         mfxU8 *p = recon->y + ((par->CropLeft + par->CropTop * recon->pitch_luma_pix) << bd_shift_luma);
@@ -401,7 +416,7 @@ namespace H265Enc {
                 }
             }
         }
-    
+
         if (fbuf) {
             vm_file_fwrite(fbuf, 1, numlater*plane_size, f);
             delete[] fbuf;
@@ -473,26 +488,36 @@ namespace H265Enc {
         m_futureFrames.resize(0);
 
         m_feiSyncPoint = NULL;
-        m_feiOrigin = NULL;
-        m_feiRecon = NULL;
         Zero(m_feiIntraAngModes);
         Zero(m_feiInterMv);
         Zero(m_feiInterDist);
+        m_feiCuData = NULL;
+        m_feiSaoModes = NULL;
 
         m_userSeiMessages = NULL;
         m_numUserSeiMessages = 0;
 
         m_ttEncComplete.InitEncComplete(0);
         m_ttInitNewFrame.InitNewFrame(this, (mfxFrameSurface1 *)NULL, 0);
+        m_ttPadRecon.InitPadRecon(this, 0);
+
         m_ttSubmitGpuCopySrc.InitGpuSubmit(this, MFX_FEI_H265_OP_GPU_COPY_SRC, 0);
+
         m_ttSubmitGpuCopyRec.InitGpuSubmit(this, MFX_FEI_H265_OP_GPU_COPY_REF, 0);
-        m_ttSubmitGpuIntra.InitGpuSubmit(this, MFX_FEI_H265_OP_INTRA_MODE, 0);
-        for (Ipp32s i = 0; i < 4; i++)
-            m_ttSubmitGpuMe[i].InitGpuSubmit(this, MFX_FEI_H265_OP_INTER_ME, 0);
         m_ttWaitGpuCopyRec.InitGpuWait(MFX_FEI_H265_OP_GPU_COPY_REF, 0);
+
+        m_ttSubmitGpuIntra.InitGpuSubmit(this, MFX_FEI_H265_OP_INTRA_MODE, 0);
         m_ttWaitGpuIntra.InitGpuWait(MFX_FEI_H265_OP_INTRA_MODE, 0);
-        for (Ipp32s i = 0; i < 4; i++)
-            m_ttWaitGpuMe[i].InitGpuWait(MFX_FEI_H265_OP_INTER_ME, 0);
+
+        for (Ipp32s i = 0; i < 4; i++) {
+            m_ttSubmitGpuHme[i].InitGpuSubmit(this, MFX_FEI_H265_OP_INTER_HME, 0);
+            m_ttSubmitGpuMe32[i].InitGpuSubmit(this, MFX_FEI_H265_OP_INTER_ME32, 0);
+            m_ttSubmitGpuMe16[i].InitGpuSubmit(this, MFX_FEI_H265_OP_INTER_ME16, 0);
+            m_ttWaitGpuMe16[i].InitGpuWait(MFX_FEI_H265_OP_INTER_ME16, 0);
+        }
+
+        m_ttSubmitGpuPostProc.InitGpuSubmit(this, MFX_FEI_H265_OP_POSTPROC, 0);
+        m_ttWaitGpuPostProc.InitGpuWait(MFX_FEI_H265_OP_POSTPROC, 0);
     }
 
     void Frame::ResetCounters()

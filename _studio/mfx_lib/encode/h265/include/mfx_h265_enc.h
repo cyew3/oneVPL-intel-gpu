@@ -89,7 +89,9 @@ namespace H265Enc {
         Ipp8u  minCUDepthAdapt;
         Ipp8u  maxCUDepthAdapt;
         Ipp16u cuSplitThreshold;
+
         Ipp8u  enableCmFlag;
+        Ipp8u  enableCmPostProc;// both: deblock + sao. limitations: 1) 420@8bit (2) sao only for luma 
 
         Ipp8u  DeltaQpMode;      // 0 - disable, 0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ
         Ipp64f LambdaCorrection;
@@ -260,7 +262,9 @@ namespace H265Enc {
         void      Close();
 
         // Frame based API
-        void SetEncodeFrame(Frame* frame, std::deque<ThreadingTask *> *m_pendingTasks);
+        //void SetEncodeFrame(Frame* frame, std::deque<ThreadingTask *> *m_pendingTasks);
+
+        void SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<ThreadingTask *> *m_pendingTasks);
 
         template <typename PixType>
         mfxStatus PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u ctb_row, Ipp32u ctb_col);
@@ -283,7 +287,9 @@ namespace H265Enc {
         // perFrame
         Ipp8u *memBuf;// start ptr of frame encoder internal memory
         H265BsReal* m_bs;
-        SaoCtuParam* m_saoParam;
+
+        SaoCtuParam* m_saoParam; // via refCounter and move to general resources
+
         CABAC_CONTEXT_H265 *m_context_array_wpp_enc;
         CABAC_CONTEXT_H265 *m_context_array_wpp;
         costStat *m_costStat;

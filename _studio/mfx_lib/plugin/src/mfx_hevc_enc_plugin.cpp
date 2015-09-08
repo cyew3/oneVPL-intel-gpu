@@ -62,10 +62,12 @@ MFXHEVCEncoderPlugin::MFXHEVCEncoderPlugin(bool CreateByDispatcher)
     m_createdByDispatcher = CreateByDispatcher;
 
     m_encoder = NULL;
+    MFX_TRACE_INIT(NULL, (mfxU8)MFX_TRACE_OUTPUT_ETW);
 }
 
 MFXHEVCEncoderPlugin::~MFXHEVCEncoderPlugin()
 {
+    MFX_TRACE_CLOSE();
     if (m_encoder)
     {
         PluginClose();

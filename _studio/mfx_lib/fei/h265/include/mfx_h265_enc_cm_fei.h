@@ -10,6 +10,7 @@
 #define _MFX_H265_ENC_CM_FEI_H
 
 #include "mfx_h265_fei.h"
+#include "mfx_h265_enc_cm_utils.h"
 #include "cmrt_cross_platform.h"
 
 #pragma warning(disable: 4351)
@@ -46,8 +47,8 @@ private:
     /* internal helper functions */
     void RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurface2DUP **mv, mfxFEIH265InputSurface *picBufInput, mfxFEIH265ReconSurface *picBufRef);
     void ConvertBitDepth(void *inPtr, mfxU32 inBits, mfxU32 inPitch, void *outPtr, mfxU32 outBits);
-    mfxStatus CopyInputFrameToGPU(CmEvent **lastEvent, mfxHDL pInSurf, void *YPlane, mfxU32 YPitch, void *UVPlane, mfxU32 UVPitch, mfxU32 YBitDepth);
-    mfxStatus CopyReconFrameToGPU(CmEvent **lastEvent, mfxHDL pRecSurf, void *YPlane, mfxU32 YPitch, void *UVPlane, mfxU32 UVPitch, mfxU32 YBitDepth);
+    mfxStatus CopyInputFrameToGPU(CmEvent **lastEvent, mfxHDL pInSurf);
+    mfxStatus CopyReconFrameToGPU(CmEvent **lastEvent, mfxHDL pRecSurf);
 
     /* Cm elements */
     CmDevice  * device;
@@ -55,16 +56,17 @@ private:
     CmProgram * programPrepareSrc;
     CmProgram * programMeIntra;
     CmProgram * programGradient;
-    CmProgram * programMe16;
+    CmProgram * programMe16Refine32x32;
     CmProgram * programMe32;
     CmProgram * programRefine32x32sad;
-    CmProgram * programRefine32x32;
     CmProgram * programRefine32x16;
     CmProgram * programRefine16x32;
     CmProgram * programInterpolateFrame;
     CmProgram * programIme;
     CmProgram * programIme3tiers;
-    CmTask    * task;
+    CmProgram * programDeblock;
+    CmProgram * programSaoEstimate;
+    CmProgram * programSaoApply;
     CmEvent   * lastEventSaved;
     mfxU32      saveSyncPoint;
 
@@ -75,19 +77,24 @@ private:
     CmBuffer * me8xControl;
     CmBuffer * me16xControl;
 
+    CmSurface2D * deblocked;
+
     /* Cm kernels to load  */
-    CmKernel * kernelPrepareSrc;
-    CmKernel * kernelMeIntra;
-    CmKernel * kernelGradient;
-    CmKernel * kernelMe16;
-    CmKernel * kernelMe32;
-    CmKernel * kernelRefine32x32sad;
-    CmKernel * kernelRefine32x32;
-    CmKernel * kernelRefine32x16;
-    CmKernel * kernelRefine16x32;
-    CmKernel * kernelInterpolateFrame;
-    CmKernel * kernelIme;
-    CmKernel * kernelIme3tiers;
+    H265Enc::Kernel kernelPrepareSrc;
+    H265Enc::Kernel kernelPrepareRef;
+    H265Enc::Kernel kernelMeIntra;
+    H265Enc::Kernel kernelGradient;
+    H265Enc::Kernel kernelMe16Refine32x32;
+    H265Enc::Kernel kernelMe32;
+    H265Enc::Kernel kernelRefine32x32sad;
+    H265Enc::Kernel kernelRefine32x16;
+    H265Enc::Kernel kernelRefine16x32;
+    H265Enc::Kernel kernelInterpolateFrame;
+    H265Enc::Kernel kernelIme;
+    H265Enc::Kernel kernelIme3tiers;
+    H265Enc::Kernel kernelDeblock;
+    H265Enc::Kernel kernelSaoEstimate;
+    H265Enc::Kernel kernelSaoApply;
 
     /* set once at init */
     mfxU32 sourceWidth;
@@ -127,8 +134,9 @@ private:
 
 public:
     /* called from C wrapper (public) */
-    void * AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMem, mfxSurfInfoENC *surfInfo);
+    void * AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMem1, void *sysMem2, mfxSurfInfoENC *surfInfo);
     mfxStatus FreeSurface(mfxFEIH265Surface *s);
+    mfxStatus FreeBuffer(mfxFEIH265Surface *s);
 
     mfxStatus AllocateCmResources(mfxFEIH265Param *param, void *core);
     void FreeCmResources(void);
@@ -143,16 +151,17 @@ public:
         programPrepareSrc(),
         programMeIntra(),
         programGradient(),
-        programMe16(),
+        programMe16Refine32x32(),
         programMe32(),
         programRefine32x32sad(),
-        programRefine32x32(),
         programRefine32x16(),
         programRefine16x32(),
         programInterpolateFrame(),
         programIme(),
         programIme3tiers(),
-        task(),
+        programDeblock(),
+        programSaoEstimate(),
+        programSaoApply(),
         lastEventSaved(),
         saveSyncPoint(),
 
@@ -164,17 +173,20 @@ public:
         me16xControl(),
 
         kernelPrepareSrc(),
+        kernelPrepareRef(),
         kernelMeIntra(),
         kernelGradient(),
-        kernelMe16(),
+        kernelMe16Refine32x32(),
         kernelMe32(),
         kernelRefine32x32sad(),
-        kernelRefine32x32(),
         kernelRefine32x16(),
         kernelRefine16x32(),
         kernelInterpolateFrame(),
         kernelIme(),
         kernelIme3tiers(),
+        kernelDeblock(),
+        kernelSaoEstimate(),
+        kernelSaoApply(),
 
         width(),
         height(),

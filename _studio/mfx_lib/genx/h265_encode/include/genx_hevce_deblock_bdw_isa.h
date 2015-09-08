@@ -9,5 +9,5 @@
 
 #ifndef __genx_hevce_deblock_bdw__
 #define __genx_hevce_deblock_bdw__
-extern const unsigned char genx_hevce_deblock_bdw[54921];
+extern const unsigned char genx_hevce_deblock_bdw[54406];
 #endif

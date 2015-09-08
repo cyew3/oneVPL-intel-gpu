@@ -7,7 +7,7 @@
 //
 */
 
-#ifndef __genx_hevce_prepare_src_bdw__
-#define __genx_hevce_prepare_src_bdw__
-extern const unsigned char genx_hevce_prepare_src_bdw[43415];
+#ifndef __genx_hevce_sao_apply_bdw__
+#define __genx_hevce_sao_apply_bdw__
+extern const unsigned char genx_hevce_sao_apply_bdw[87250];
 #endif

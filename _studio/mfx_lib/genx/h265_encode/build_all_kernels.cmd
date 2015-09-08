@@ -26,6 +26,7 @@ call build_kernel.cmd refine_me_p_32x32_satd8x8 hsw /Qxcm_release
 call build_kernel.cmd refine_me_p_combine hsw /Qxcm_release
 call build_kernel.cmd refine_me_p_satd4x4_combine hsw /Qxcm_release
 call build_kernel.cmd refine_me_p_satd8x8_combine hsw /Qxcm_release
+call build_kernel.cmd sao hsw /Qxcm_release
 
 call build_kernel.cmd analyze_gradient bdw /Qxcm_release
 call build_kernel.cmd analyze_gradient2 bdw /Qxcm_release
@@ -54,3 +55,4 @@ call build_kernel.cmd refine_me_p_32x32_satd8x8 bdw /Qxcm_release
 call build_kernel.cmd refine_me_p_combine bdw /Qxcm_release
 call build_kernel.cmd refine_me_p_satd4x4_combine bdw /Qxcm_release
 call build_kernel.cmd refine_me_p_satd8x8_combine bdw /Qxcm_release
+call build_kernel.cmd sao bdw /Qxcm_release

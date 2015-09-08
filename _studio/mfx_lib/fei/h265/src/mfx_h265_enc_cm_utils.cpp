@@ -170,6 +170,7 @@ CmKernel * CreateKernel(CmDevice * device, CmProgram * program, char const * nam
 void EnqueueKernel(CmDevice *device, CmQueue *queue, CmKernel *kernel, mfxU32 tsWidth,
                    mfxU32 tsHeight, CmEvent *&event, CM_DEPENDENCY_PATTERN tsPattern)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "EnqueueKernel");
     int result = CM_SUCCESS;
 
     if ((result = kernel->SetThreadCount(tsWidth * tsHeight)) != CM_SUCCESS)
@@ -198,111 +199,111 @@ void EnqueueKernel(CmDevice *device, CmQueue *queue, CmKernel *kernel, mfxU32 ts
     device->DestroyTask(cmTask);
 }
 
-void EnqueueKernel(CmDevice *device, CmQueue *queue, CmKernel *kernel0, CmKernel *kernel1, mfxU32 tsWidth,
-                   mfxU32 tsHeight, CmEvent *&event, CM_DEPENDENCY_PATTERN tsPattern)
-{
-    int result = CM_SUCCESS;
+//void EnqueueKernel(CmDevice *device, CmQueue *queue, CmKernel *kernel0, CmKernel *kernel1, mfxU32 tsWidth,
+//                   mfxU32 tsHeight, CmEvent *&event, CM_DEPENDENCY_PATTERN tsPattern)
+//{
+//    int result = CM_SUCCESS;
+//
+//    if ((result = kernel0->SetThreadCount(tsWidth * tsHeight)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//    if ((result = kernel1->SetThreadCount(tsWidth * tsHeight)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    CmThreadSpace * cmThreadSpace = 0;
+//    if ((result = device->CreateThreadSpace(tsWidth, tsHeight, cmThreadSpace)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    cmThreadSpace->SelectThreadDependencyPattern(tsPattern);
+//
+//    CmTask * cmTask = 0;
+//    if ((result = device->CreateTask(cmTask)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    if ((result = cmTask->AddKernel(kernel0)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//    if ((result = cmTask->AddKernel(kernel1)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    if (event != NULL && event != CM_NO_EVENT)
+//        queue->DestroyEvent(event);
+//
+//    if ((result = queue->Enqueue(cmTask, event, cmThreadSpace)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    device->DestroyThreadSpace(cmThreadSpace);
+//    device->DestroyTask(cmTask);
+//}
 
-    if ((result = kernel0->SetThreadCount(tsWidth * tsHeight)) != CM_SUCCESS)
-        throw CmRuntimeError();
-    if ((result = kernel1->SetThreadCount(tsWidth * tsHeight)) != CM_SUCCESS)
-        throw CmRuntimeError();
+//void EnqueueKernel(CmDevice *device, CmQueue *queue, CmTask * cmTask, CmKernel *kernel, mfxU32 tsWidth,
+//                   mfxU32 tsHeight, CmEvent *&event)
+//{
+//    int result = CM_SUCCESS;
+//
+//    if ((result = kernel->SetThreadCount(tsWidth * tsHeight)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    CmThreadSpace * cmThreadSpace = 0;
+//    if ((result = device->CreateThreadSpace(tsWidth, tsHeight, cmThreadSpace)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    cmThreadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+//
+//    //CmTask * cmTask = 0;
+//    //if ((result = device->CreateTask(cmTask)) != CM_SUCCESS)
+//    //    throw CmRuntimeError();\
+//
+//    if (cmTask)
+//        cmTask->Reset();
+//    else
+//        throw CmRuntimeError();
+//
+//    if ((result = cmTask->AddKernel(kernel)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    if (event != NULL && event != CM_NO_EVENT)
+//        queue->DestroyEvent(event);
+//
+//    if ((result = queue->Enqueue(cmTask, event, cmThreadSpace)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    device->DestroyThreadSpace(cmThreadSpace);
+//    //device->DestroyTask(cmTask);
+//}
 
-    CmThreadSpace * cmThreadSpace = 0;
-    if ((result = device->CreateThreadSpace(tsWidth, tsHeight, cmThreadSpace)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    cmThreadSpace->SelectThreadDependencyPattern(tsPattern);
-
-    CmTask * cmTask = 0;
-    if ((result = device->CreateTask(cmTask)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    if ((result = cmTask->AddKernel(kernel0)) != CM_SUCCESS)
-        throw CmRuntimeError();
-    if ((result = cmTask->AddKernel(kernel1)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    if (event != NULL && event != CM_NO_EVENT)
-        queue->DestroyEvent(event);
-
-    if ((result = queue->Enqueue(cmTask, event, cmThreadSpace)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    device->DestroyThreadSpace(cmThreadSpace);
-    device->DestroyTask(cmTask);
-}
-
-void EnqueueKernel(CmDevice *device, CmQueue *queue, CmTask * cmTask, CmKernel *kernel, mfxU32 tsWidth,
-                   mfxU32 tsHeight, CmEvent *&event)
-{
-    int result = CM_SUCCESS;
-
-    if ((result = kernel->SetThreadCount(tsWidth * tsHeight)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    CmThreadSpace * cmThreadSpace = 0;
-    if ((result = device->CreateThreadSpace(tsWidth, tsHeight, cmThreadSpace)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    cmThreadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
-
-    //CmTask * cmTask = 0;
-    //if ((result = device->CreateTask(cmTask)) != CM_SUCCESS)
-    //    throw CmRuntimeError();\
-
-    if (cmTask)
-        cmTask->Reset();
-    else
-        throw CmRuntimeError();
-
-    if ((result = cmTask->AddKernel(kernel)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    if (event != NULL && event != CM_NO_EVENT)
-        queue->DestroyEvent(event);
-
-    if ((result = queue->Enqueue(cmTask, event, cmThreadSpace)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    device->DestroyThreadSpace(cmThreadSpace);
-    //device->DestroyTask(cmTask);
-}
-
-void EnqueueKernelLight(CmDevice *device, CmQueue *queue, CmTask * cmTask, CmKernel *kernel, mfxU32 tsWidth,
-                        mfxU32 tsHeight, CmEvent *&event)
-{
-    // for kernel reusing; ThreadCount should be set in caller before SetArgs (Cm restriction!!!)
-
-    int result = CM_SUCCESS;
-
-    CmThreadSpace * cmThreadSpace = 0;
-    if ((result = device->CreateThreadSpace(tsWidth, tsHeight, cmThreadSpace)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    cmThreadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
-
-    //CmTask * cmTask = 0;
-    //if ((result = device->CreateTask(cmTask)) != CM_SUCCESS)
-    //    throw CmRuntimeError();\
-
-    if (cmTask)
-        cmTask->Reset();
-    else
-        throw CmRuntimeError();
-
-    if ((result = cmTask->AddKernel(kernel)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    if (event != NULL && event != CM_NO_EVENT)
-        queue->DestroyEvent(event);
-
-    if ((result = queue->Enqueue(cmTask, event, cmThreadSpace)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    device->DestroyThreadSpace(cmThreadSpace);
-    //device->DestroyTask(cmTask);
-}
+//void EnqueueKernelLight(CmDevice *device, CmQueue *queue, CmTask * cmTask, CmKernel *kernel, mfxU32 tsWidth,
+//                        mfxU32 tsHeight, CmEvent *&event)
+//{
+//    // for kernel reusing; ThreadCount should be set in caller before SetArgs (Cm restriction!!!)
+//
+//    int result = CM_SUCCESS;
+//
+//    CmThreadSpace * cmThreadSpace = 0;
+//    if ((result = device->CreateThreadSpace(tsWidth, tsHeight, cmThreadSpace)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    cmThreadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+//
+//    //CmTask * cmTask = 0;
+//    //if ((result = device->CreateTask(cmTask)) != CM_SUCCESS)
+//    //    throw CmRuntimeError();\
+//
+//    if (cmTask)
+//        cmTask->Reset();
+//    else
+//        throw CmRuntimeError();
+//
+//    if ((result = cmTask->AddKernel(kernel)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    if (event != NULL && event != CM_NO_EVENT)
+//        queue->DestroyEvent(event);
+//
+//    if ((result = queue->Enqueue(cmTask, event, cmThreadSpace)) != CM_SUCCESS)
+//        throw CmRuntimeError();
+//
+//    device->DestroyThreadSpace(cmThreadSpace);
+//    //device->DestroyTask(cmTask);
+//}
 
 void EnqueueCopyCPUToGPU(CmQueue *queue, CmSurface2D *surface, const void *sysMem, CmEvent *&event)
 {
@@ -786,6 +787,43 @@ void SetCurbeData(
     //DW39
     curbeData.ScaledRefLayerTopOffset         = 0;
     curbeData.ScaledRefLayerBottomOffset      = 0;
+}
+
+Kernel::Kernel() : kernel(), task(), ts() {}
+
+void Kernel::Configure(CmDevice *device, CmProgram *program, const char *name,
+                       mfxU32 tsWidth, mfxU32 tsHeight, CM_DEPENDENCY_PATTERN tsPattern)
+{
+    kernel = CreateKernel(device, program, name, NULL);
+    if (kernel->SetThreadCount(tsWidth * tsHeight) != CM_SUCCESS)
+        throw CmRuntimeError();
+    if (device->CreateThreadSpace(tsWidth, tsHeight, ts) != CM_SUCCESS)
+        throw CmRuntimeError();
+    if (ts->SelectThreadDependencyPattern(tsPattern) != CM_SUCCESS)
+        throw CmRuntimeError();
+    if (device->CreateTask(task) != CM_SUCCESS)
+        throw CmRuntimeError();
+    if (task->AddKernel(kernel) != CM_SUCCESS)
+        throw CmRuntimeError();
+}
+
+void Kernel::Destroy(CmDevice *device)
+{
+    device->DestroyThreadSpace(ts);
+    ts = NULL;
+    device->DestroyTask(task);
+    task = NULL;
+    device->DestroyKernel(kernel);
+    kernel = NULL;
+}
+
+void Kernel::Enqueue(CmQueue *queue, CmEvent *&e)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Enqueue");
+    if (e != NULL && e != CM_NO_EVENT)
+        queue->DestroyEvent(e);
+    if (queue->Enqueue(task, e, ts) != CM_SUCCESS)
+        throw CmRuntimeError();
 }
 
 } // namespace

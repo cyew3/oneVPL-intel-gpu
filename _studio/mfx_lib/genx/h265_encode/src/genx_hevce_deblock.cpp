@@ -49,8 +49,8 @@ struct H265CUData16
     vector<uint2, 16> qp;
     vector<uint2, 16> cbf0;
     vector<uint2, 16> absPartIdx;
-    vector<int4, 16>  ctbAddr;
-    vector<int2, 16>  notLeftBoundary;
+    vector<int2, 16>  ctbAddr;
+    vector<int2, 16>  outOfPic;
 };
 
 _GENX_ inline
@@ -147,70 +147,40 @@ void GetEdgeStrength(
 }
 
 
-#ifdef CMRT_EMU
-_GENX_ inline void ReadCuData16Emu(SurfaceIndex SURF_FRAME_CU_DATA, vector_ref<uint4,16> addrs, H265CUData16 &cudata)
-{
-    vector<uint1, 48> buf;
-    for (uint1 i = 0; i < 16; i++)
-    {
-        uint offset = 4 * addrs[i] & 15;
-        read(SURF_FRAME_CU_DATA, 4 * addrs[i] - offset, buf);
-        cudata.mv0.format<int4>()[i]     = buf.format<int4>()[offset/4 + 0];
-        cudata.mv1.format<int4>()[i]     = buf.format<int4>()[offset/4 + 1];
-        cudata.refIdx.select<16,2>(0)[i] = buf.format<int1>()[offset + 16+15];
-        cudata.refIdx.select<16,2>(1)[i] = buf.format<int1>()[offset + 16+15+1];
-        cudata.depth[i]                  = buf[offset + 16+0];
-        cudata.predMode[i]               = buf[offset + 16+3];
-        uint1 trIdx                      = buf[offset + 16+4];
-        cudata.totalDepth[i]             = buf[offset + 16+0] + trIdx;
-        cudata.qp[i]                     = buf[offset + 16+5];
-        cudata.cbf0[i]                   = buf[offset + 16+6] >> trIdx;
-    }
-}
-#endif
-
 _GENX_ inline
-void ReadCuData16(SurfaceIndex SURF_FRAME_CU_DATA, vector_ref<uint4,16> addrs, H265CUData16 &cudata)
+void ReadCuData16(SurfaceIndex CU_DATA, vector_ref<uint4,16> addrs, H265CUData16 &cudata)
 {
     // cuData structure layout
     // ------------------------------
     //                 b/dw offset
     // ------------------------------
-    // mv          0..7 / 0..1
-    // depth         16 / 4
+    // mv0         0..4 / 0
+    // mv1         4..7 / 1
+    // refIdx    16..17 / 4
+    // depth         18 / 4
     // predMode      19 / 4
     // trIdx         20 / 5
     // qp            21 / 5
     // cbf           22 / 5
-    // refIdx    31..32 / 7..8
 
     vector<uint1,64> readbuf;
-    read(SURF_FRAME_CU_DATA, 0u, addrs, readbuf.format<uint4>());
+    read(CU_DATA, 0u, addrs, readbuf.format<uint4>());
     cudata.mv0.select<32,1>(0) = readbuf.format<int2>();
 
-    vector<uint4,16> offsets = addrs + 1;
-    read(SURF_FRAME_CU_DATA, 0u, offsets, readbuf.format<uint4>());
+    read(CU_DATA, 1u, addrs, readbuf.format<uint4>());
     cudata.mv1.select<32,1>(0) = readbuf.format<int2>();
 
-    offsets = addrs + 4;
-    read(SURF_FRAME_CU_DATA, 0u, offsets, readbuf.format<uint4>());
-    cudata.depth.select<16,1>(0) = readbuf.select<16,4>(0);
+    read(CU_DATA, 4u, addrs, readbuf.format<uint4>());
+    cudata.refIdx.format<uint2>() = readbuf.format<uint2>().select<16,2>(0);
+    cudata.depth.select<16,1>(0) = readbuf.select<16,4>(2);
     cudata.predMode.select<16,1>(0) = readbuf.select<16,4>(3);
 
-    offsets = addrs + 5;
-    read(SURF_FRAME_CU_DATA, 0u, offsets, readbuf.format<uint4>());
+    read(CU_DATA, 5u, addrs, readbuf.format<uint4>());
     vector_ref<uint1,16> trIdx = readbuf.select<16,4>(0);
     cudata.totalDepth.select<16,1>(0) = trIdx + cudata.depth.select<16,1>(0);
     cudata.qp.select<16,1>(0) = readbuf.select<16,4>(1);
     cudata.cbf0.select<16,1>(0) = readbuf.select<16,4>(2) >> trIdx;
 
-    offsets = addrs + 7;
-    read(SURF_FRAME_CU_DATA, 0u, offsets, readbuf.format<uint4>());
-    cudata.refIdx.select<16,2>(0) = readbuf.select<16,4>(3);
-
-    offsets = addrs + 8;
-    read(SURF_FRAME_CU_DATA, 0u, offsets, readbuf.format<uint4>());
-    cudata.refIdx.select<16,2>(1) = readbuf.select<16,4>(0);
 }
 
 
@@ -438,33 +408,47 @@ void Transpose8R16C(matrix_ref<uint1,8,16> src, matrix_ref<uint1,16,8> dst)
 }
 
 
+_GENX_ inline
+void Transpose16R16C(matrix_ref<uint1,16,16> src, matrix_ref<uint1,16,16> dst)
+{
+    matrix<uint1,16,16> tmp;
+    #pragma unroll
+    for (int y = 0; y < 16; y++)
+        tmp.row(y) = src.select<4,1,4,4>((y&3)<<2,y>>2);
+    #pragma unroll
+    for (int y = 0; y < 16; y++)
+        dst.row(y) = tmp.select<4,1,4,4>((y&3)<<2,y>>2);
+}
+
+const int1 CENTERX[] = { 4, 4, 12, 12, 4, 4, 12, 12, 0, 0, 8, 8, 0, 0, 8, 8 };
+const int1 CENTERY[] = { 0, 4, 0, 4, 8, 12, 8, 12, 0, 4, 0, 4, 8, 12, 8, 12 };
+
 // --------------------------------------------------------
 _GENX_ inline
 void ReadPQData(
-    SurfaceIndex          SURF_FRAME_CU_DATA,
+    SurfaceIndex          CU_DATA,
     DeblockParam         &param,
     vector_ref<uint1,16>  scan2z,
-    vector_ref<int4,2>    globXY,
+    vector_ref<int2,2>    globXY,
     H265CUData16         &cudataP,
     H265CUData16         &cudataQ)
 {
-    // xQ: +8, +8, +16, +16, +8, +8, +16, +16; xP: +4, +4, +12, +12, +4, +4, +12, +12
-    vector<int4,16> centerX = globXY[0] + 8;
-    centerX.format<int4,8,2>().select<2,2,2,1>(1) += 8;
-    centerX.select<8,1>(8) = centerX.select<8,1>(0) - 4;
+    vector<int2,16> centerX(CENTERX); // xQ: 4, 4, 12, 12, 4, 4, 12, 12; xP: 0, 0, 8, 8, 0, 0, 8, 8
+    centerX += globXY[0];
+    vector<int2,16> centerY(CENTERY); // yQ: 0, 4, 0, 4, 8, 12, 8, 12; yP: 0, 4, 0, 4, 8, 12, 8, 12
+    centerY += globXY[1];
+    
+    vector<int2,16> outOfPic;
+    outOfPic.select<8,1>(8)  = (centerX.select<8,1>(8) <= 0);           // Left Ps
+    outOfPic.select<8,1>(0)  = (centerX.select<8,1>(0) >= param.Width); // Right Qs
+    outOfPic.select<8,2>(0) |= (centerY.select<8,2>(0) <= 0);           // Top Ps and Qs
+    outOfPic.select<8,2>(1) |= (centerY.select<8,2>(1) >= param.Height);// Bottom Ps and Qs
 
-    // yQ: +4, +8, +4, +8, +12, +16, +12, +16; yP: +4, +8, +4, +8, +12, +16, +12, +16
-    vector<int4,16> centerY = globXY[1] + 4;
-    centerY.select<2,2>(1) += 4;
-    centerY.select<4,1>(4) = centerY.select<4,1>(0) + 8;
-    centerY.select<8,1>(8) = centerY.select<8,1>(0);
-
-    vector<int4,16> ctbAddr = centerY >> param.Log2MaxCUSize;
+    vector<int2,16> ctbAddr = centerY >> param.Log2MaxCUSize;
     ctbAddr = ctbAddr * param.PicWidthInCtbs;
     vector<int2,16> ctbAddrX = centerX >> param.Log2MaxCUSize;
-    vector<int2,16> notLeftBoundary = (ctbAddrX != 0) & (ctbAddrX != param.PicWidthInCtbs);
-    cudataQ.notLeftBoundary.select<8,1>(0) = notLeftBoundary.select<8,1>(0);
-    cudataP.notLeftBoundary.select<8,1>(0) = notLeftBoundary.select<8,1>(8);
+    cudataQ.outOfPic.select<8,1>(0) = outOfPic.select<8,1>(0);
+    cudataP.outOfPic.select<8,1>(0) = outOfPic.select<8,1>(8);
     ctbAddr += ctbAddrX;
     cudataQ.ctbAddr.select<8,1>(0) = ctbAddr.select<8,1>(0);
     cudataP.ctbAddr.select<8,1>(0) = ctbAddr.select<8,1>(8);
@@ -479,8 +463,8 @@ void ReadPQData(
     cudataQ.absPartIdx.select<8,1>(0) = absPartIdx.select<8,1>(0);
     cudataP.absPartIdx.select<8,1>(0) = absPartIdx.select<8,1>(8);
 
-    cudataP.notLeftBoundary.select<8,1>(8).merge(cudataP.notLeftBoundary.replicate<4,2,2,0>(0), cudataQ.notLeftBoundary.replicate<4,2,2,0>(0), 0x55);
-    cudataQ.notLeftBoundary.select<8,1>(8).merge(cudataP.notLeftBoundary.replicate<4,2,2,0>(1), cudataQ.notLeftBoundary.replicate<4,2,2,0>(1), 0x55);
+    cudataP.outOfPic.select<8,1>(8).merge(cudataP.outOfPic.replicate<4,2,2,0>(0), cudataQ.outOfPic.replicate<4,2,2,0>(0), 0x55);
+    cudataQ.outOfPic.select<8,1>(8).merge(cudataP.outOfPic.replicate<4,2,2,0>(1), cudataQ.outOfPic.replicate<4,2,2,0>(1), 0x55);
     cudataP.absPartIdx.select<8,1>(8).merge(cudataP.absPartIdx.replicate<4,2,2,0>(0), cudataQ.absPartIdx.replicate<4,2,2,0>(0), 0x55);
     cudataQ.absPartIdx.select<8,1>(8).merge(cudataP.absPartIdx.replicate<4,2,2,0>(1), cudataQ.absPartIdx.replicate<4,2,2,0>(1), 0x55);
     cudataP.ctbAddr.select<8,1>(8).merge(cudataP.ctbAddr.replicate<4,2,2,0>(0), cudataQ.ctbAddr.replicate<4,2,2,0>(0), 0x55);
@@ -491,38 +475,42 @@ void ReadPQData(
     addr += cudataQ.absPartIdx;
     addr *= 10; // addr and offsets are in dwords
 #ifdef CMRT_EMU
-    ReadCuData16Emu(SURF_FRAME_CU_DATA, addr, cudataQ);
-#else
-    ReadCuData16(SURF_FRAME_CU_DATA, addr, cudataQ);
+    int4 maxAddr = ((param.PicWidthInCtbs * param.PicHeightInCtbs) << param.Log2NumPartInCU) * 10 - 10;
+    vector<int4, 16> tmpAddr = addr;
+    tmpAddr.merge(0, tmpAddr < 0);
+    tmpAddr.merge(maxAddr, tmpAddr > maxAddr);
+    addr = tmpAddr;
 #endif
+    ReadCuData16(CU_DATA, addr, cudataQ);
 
     addr = cudataP.ctbAddr << shift;
     addr += cudataP.absPartIdx;
     addr *= 10; // addr and offsets are in dwords
 #ifdef CMRT_EMU
-    ReadCuData16Emu(SURF_FRAME_CU_DATA, addr, cudataP);
-#else
-    ReadCuData16(SURF_FRAME_CU_DATA, addr, cudataP);
+    tmpAddr = addr;
+    tmpAddr.merge(0, tmpAddr < 0);
+    tmpAddr.merge(maxAddr, tmpAddr > maxAddr);
+    addr = tmpAddr;
 #endif
+    ReadCuData16(CU_DATA, addr, cudataP);
 }
 
 
 #define SWAP(TYPE, X,Y) { TYPE temp = X ; X = Y ; Y = temp; }
 
 extern "C" _GENX_MAIN_
-void Deblock(SurfaceIndex SURF_SRC,
-             SurfaceIndex SURF_FRAME_CU_DATA,
-             SurfaceIndex SURF_PARAM)
+void Deblock(SurfaceIndex SRC_LU, SurfaceIndex SRC_CH, uint paddingLu, uint paddingCh,
+             SurfaceIndex DST, SurfaceIndex CU_DATA, SurfaceIndex PARAM)
 {
     DeblockParam param;
     vector<uint1,64> part0, part1, part2, part3, part4;
     vector<uint1,16> part5;
-    read(SURF_PARAM, 0, part0);
-    read(SURF_PARAM, 64, part1);
-    read(SURF_PARAM, 128, part2);
-    read(SURF_PARAM, 192, part3);
-    read(SURF_PARAM, 256, part4);
-    read(SURF_PARAM, 320, part5);
+    read(PARAM, 0, part0);
+    read(PARAM, 64, part1);
+    read(PARAM, 128, part2);
+    read(PARAM, 192, part3);
+    read(PARAM, 256, part4);
+    read(PARAM, 320, part5);
 
     param.Width                  = part0.format<int2>()[26];
     param.Height                 = part0.format<int2>()[27];
@@ -538,6 +526,7 @@ void Deblock(SurfaceIndex SURF_SRC,
     param.Log2NumPartInCU        = part1.format<uint1>()[127-64];
     param.MaxCUSize              = part2.format<uint1>()[182-128];
     param.chromaFormatIdc        = part2.format<uint1>()[183-128];
+    
 
     vector_ref<uint1,52> betaTable = part0.select<52,1>();
     vector_ref<uint1,58> chromaQpTable = part1.select<58,1>();
@@ -547,12 +536,10 @@ void Deblock(SurfaceIndex SURF_SRC,
     vector_ref<uint1,16> scan2z = part5;
 
     //central point of first cross
-    vector<int4,2> globXY;
+    vector<int2,2> globXY;
     globXY[0] = get_thread_origin_x() * 16;
     globXY[1] = get_thread_origin_y() * 16;
-    globXY -= 16;
-    int4 globX = globXY[0];
-    int4 globY = globXY[1];
+    globXY -= 12;
 
     // Calc Deblock Strengths for block 16x16 via 4x 8x8
     H265CUData16 cudataQ;
@@ -578,7 +565,7 @@ void Deblock(SurfaceIndex SURF_SRC,
     *  Q12 | Q13   Q14 | Q15
     */
 
-    ReadPQData(SURF_FRAME_CU_DATA, param, scan2z, globXY, cudataP, cudataQ);
+    ReadPQData(CU_DATA, param, scan2z, globXY, cudataP, cudataQ);
 
     // qPL = (QpQ + QpP + 1) >> 1
     vector<uint2,16> edge_qp = cm_avg<uint2>(cudataQ.qp, cudataP.qp);
@@ -586,13 +573,7 @@ void Deblock(SurfaceIndex SURF_SRC,
     vector<uint2,16> strength;
     GetEdgeStrength(cudataQ, cudataP, list0, list1, param.MaxCUDepth, strength);
 
-    // mask edges which are out of picture
-    vector<uint2, 16> mask_vert(1);
-    mask_vert.select<8,1>(0) = cudataQ.notLeftBoundary.select<8,1>(0);
-    int4 ctbAddrMax = param.PicWidthInCtbs * param.PicHeightInCtbs;
-    vector<uint2, 16> mask_valid = (cudataQ.ctbAddr >= 0) & (cudataQ.ctbAddr < ctbAddrMax);
-    mask_valid &= ((cudataP.ctbAddr >= 0) & mask_vert) | (cudataP.ctbAddr == cudataQ.ctbAddr);
-    strength.merge(0, !mask_valid);
+    strength.merge(0, cudataP.outOfPic | cudataQ.outOfPic);
 
     // we read cross in scan order but it is optimal to have slightly different order
     ////4,5<->2,3
@@ -617,29 +598,17 @@ void Deblock(SurfaceIndex SURF_SRC,
     vector<uint2,16> beta3 = (beta >> 3);
     vector<uint2,16> sideThresh = cm_add<int2>(beta, cm_asr<int2, uint2>(beta, 1)) >> 3; // beta + (beta >> 1) >> 3
 
-    vector<int4,2> globXYplus4 = globXY + 4;
-
-    // filter 8 vertical luma edges
-    matrix<uint1,16,8> srcHalf;
-    matrix<uint1,8,16> trans;
-    read_plane(SURF_SRC, GENX_SURFACE_Y_PLANE, globXYplus4[0], globXYplus4[1], srcHalf);
-    Transpose16R8C(srcHalf, trans);
-    Filter4Edge(trans, tc.select<4,1>(0), tc5.select<4,1>(0), beta.select<4,1>(0), beta2.select<4,1>(0), beta3.select<4,1>(0), sideThresh.select<4,1>(0));
-    Transpose8R16C(trans, srcHalf);
-    write_plane(SURF_SRC, GENX_SURFACE_Y_PLANE, globXYplus4[0], globXYplus4[1], srcHalf);
-
-    read_plane(SURF_SRC, GENX_SURFACE_Y_PLANE, globXYplus4[0] + 8, globXYplus4[1], srcHalf);
-    Transpose16R8C(srcHalf, trans);
-    Filter4Edge(trans, tc.select<4,1>(4), tc5.select<4,1>(4), beta.select<4,1>(4), beta2.select<4,1>(4), beta3.select<4,1>(4), sideThresh.select<4,1>(4));
-    Transpose8R16C(trans, srcHalf);
-    write_plane(SURF_SRC, GENX_SURFACE_Y_PLANE, globXYplus4[0] + 8, globXYplus4[1], srcHalf);
-
-    // filter 8 horizontal luma edges
     matrix<uint1,16,16> src;
-    read_plane(SURF_SRC, GENX_MODIFIED, GENX_SURFACE_Y_PLANE, globXYplus4[0], globXYplus4[1], src);
+    read(SRC_LU, paddingLu+globXY[0], globXY[1], src);
+
+    Transpose16R16C(src, src);
+    Filter4Edge(src.select<8,1,16,1>(0,0), tc.select<4,1>(0), tc5.select<4,1>(0), beta.select<4,1>(0), beta2.select<4,1>(0), beta3.select<4,1>(0), sideThresh.select<4,1>(0));
+    Filter4Edge(src.select<8,1,16,1>(8,0), tc.select<4,1>(4), tc5.select<4,1>(4), beta.select<4,1>(4), beta2.select<4,1>(4), beta3.select<4,1>(4), sideThresh.select<4,1>(4));
+    Transpose16R16C(src, src);
+
     Filter4Edge(src.select<8,1,16,1>(0), tc.select<4,1>(8), tc5.select<4,1>(8), beta.select<4,1>(8), beta2.select<4,1>(8), beta3.select<4,1>(8), sideThresh.select<4,1>(8));
     Filter4Edge(src.select<8,1,16,1>(8), tc.select<4,1>(12), tc5.select<4,1>(12), beta.select<4,1>(12), beta2.select<4,1>(12), beta3.select<4,1>(12), sideThresh.select<4,1>(12));
-    write_plane(SURF_SRC, GENX_SURFACE_Y_PLANE, globXYplus4[0], globXYplus4[1], src);
+    write_plane(DST, GENX_SURFACE_Y_PLANE, globXY[0], globXY[1], src);
 
 
     // --- CHROMA --- //
@@ -654,18 +623,21 @@ void Deblock(SurfaceIndex SURF_SRC,
     vector<uint2,4> tcChroma = tcTable.iselect(tcChromaIdx);
     tcChroma.merge(0, strengthChroma <= 1);
 
-    vector<int4,2> chromaXY = globXY + 16;
-    vector<int2,16> tmp16w;
+    int4 chromaX = globXY[0] + 4;
+    int4 chromaY = globXY[1] >> 1;
+    chromaY += 2;
 
+    vector<int2,16> tmp16w;
+    matrix<uint1,8,16> src8x16;
     { // filter both vertical chroma edges
         matrix<uint2,8,2> tcChromaVert = tcChroma.replicate<2,1,8,0>(0); // replicate tc, 2 edges -> 2*4*2 chroma pixels
-        matrix<uint1,8,8> src8x8;
-        read_plane(SURF_SRC, GENX_SURFACE_UV_PLANE, chromaXY[0]-4, (chromaXY[1] >> 1)-4, src8x8);
+        read(SRC_CH, paddingCh+chromaX, chromaY, src8x16);
+        matrix<uint1,8,8> src8x8 = src8x16.select<8,1,8,1>(0,4);
 
-        matrix_ref<uint1,8, 2> p0(src8x8.select<8,1,2,1>(0, 2));
-        matrix_ref<uint1,8, 2> p1(src8x8.select<8,1,2,1>(0, 0));
-        matrix_ref<uint1,8, 2> q0(src8x8.select<8,1,2,1>(0, 4));
-        matrix_ref<uint1,8, 2> q1(src8x8.select<8,1,2,1>(0, 6));
+        matrix_ref<uint1,8,2> p1(src8x8.select<8,1,2,1>(0,0));
+        matrix_ref<uint1,8,2> p0(src8x8.select<8,1,2,1>(0,2));
+        matrix_ref<uint1,8,2> q0(src8x8.select<8,1,2,1>(0,4));
+        matrix_ref<uint1,8,2> q1(src8x8.select<8,1,2,1>(0,6));
 
         // delta = SAT((((q0 - p0) << 2) + (p1 - q1) + 4) >> 3)
         tmp16w = p1 - q1;
@@ -678,29 +650,27 @@ void Deblock(SurfaceIndex SURF_SRC,
         // interpet pair of chroma pixels as single uword
         src8x8.format<uint2,8,4>().column(1) = cm_add<uint1>(p0, delta, SAT).format<uint2>();
         src8x8.format<uint2,8,4>().column(2) = cm_add<uint1>(q0, -delta, SAT).format<uint2>();
-        write_plane(SURF_SRC, GENX_SURFACE_UV_PLANE, chromaXY[0]-4, (chromaXY[1] >> 1)-4, src8x8);
+
+        src8x16.select<8,1,8,1>(0,4) = src8x8;
     }
 
     { // filter both horizonal chroma edges
-        vector<uint2,16> tcChromaHorz = tcChroma.replicate<2,1,8,0>(2); // replicate tc, 2 edges -> 2*4*2 chroma pixels
-        matrix<uint1,4,16> src4x16;
-        read_plane(SURF_SRC, GENX_MODIFIED, GENX_SURFACE_UV_PLANE, chromaXY[0]-8, (chromaXY[1] >> 1)-2, src4x16);
+        vector_ref<uint1,16> p1(src8x16.row(2));
+        vector_ref<uint1,16> p0(src8x16.row(3));
+        vector_ref<uint1,16> q0(src8x16.row(4));
+        vector_ref<uint1,16> q1(src8x16.row(5));
 
-        vector_ref<uint1,16> p0(src4x16.row(1));
-        vector_ref<uint1,16> p1(src4x16.row(0));
-        vector_ref<uint1,16> q0(src4x16.row(2));
-        vector_ref<uint1,16> q1(src4x16.row(3));
+        vector<uint2,16> tcChromaHorz = tcChroma.replicate<2,1,8,0>(2); // replicate tc, 2 edges -> 2*4*2 chroma pixels
 
         // delta = SAT((((q0 - p0) << 2) + (p1 - q1) + 4) >> 3)
         tmp16w = p1 - q1;
         tmp16w += 4;
         tmp16w += 4 * cm_add<int2>(q0, -p0); // expect mac instruction here
         vector<int2,16> delta = tmp16w >> 3;
-        // -tcChromaHorz <= delta <= tcChromaHorz
         delta.merge(tcChromaHorz, delta > tcChromaHorz);
         delta.merge(-tcChromaHorz, delta < -tcChromaHorz);
         p0 = cm_add<uint1>(p0, delta, SAT); // p0 = SAT(p0 + delta)
         q0 = cm_add<uint1>(q0, -delta, SAT); // p0 = SAT(p0 + delta)
-        write_plane(SURF_SRC, GENX_SURFACE_UV_PLANE, chromaXY[0]-8, (chromaXY[1] >> 1)-2, src4x16);
+        write_plane(DST, GENX_SURFACE_UV_PLANE, chromaX, chromaY, src8x16);
     }
 }
