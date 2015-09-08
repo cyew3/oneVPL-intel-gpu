@@ -157,7 +157,7 @@ private:
         , REPACK_VSI
         , REPACK_FS
     };
-    
+
     struct tc_struct
     {
         mfxStatus sts;
@@ -198,7 +198,7 @@ private:
                 m_pPar = 0;
                 break;
             case ATTACH_EXT_BUF:
-                for(mfxU32 j = 1; j <= c.par[0] * 2; j += 2) 
+                for(mfxU32 j = 1; j <= c.par[0] * 2; j += 2)
                 {
                     m_par.AddExtBuffer(c.par[j], c.par[j + 1]);
 
@@ -273,7 +273,7 @@ const char TestSuite::path[] = "conformance/hevc/itu/";
 
 #define EXT_BUF(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 0},
     {/* 1*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 1},
@@ -281,7 +281,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/* 3*/ MFX_ERR_INVALID_HANDLE, "", 0, {CLOSE_SES}},
     {/* 4*/ MFX_ERR_NOT_INITIALIZED, "", 0, {CLOSE_DEC}},
     {/* 5*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 1, {ATTACH_EXT_BUF, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}}},
-    {/* 6*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 10, {ATTACH_EXT_BUF, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}}}, 
+    {/* 6*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 10, {ATTACH_EXT_BUF, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}}},
     {/* 7*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_CROPS_CW, {2, 4, 5, 3}}},
     {/* 8*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_CROPS_DW, {5, 2, 7, 16}}},
     {/* 9*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {{REPACK_CROPS_CW, {2, 4, 5, 3}}, {REPACK_CROPS_DW, {5, 2, 7, 16}} }},
@@ -307,10 +307,11 @@ int TestSuite::RunTest(unsigned int id)
     tc_struct tc = test_case[id];
     g_tsStreamPool.Get(tc.stream, path);
     g_tsStreamPool.Reg();
-    
+
     if(tc.stream == "")
     {
         m_par_set = true;
+        m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
     }
     else
     {
@@ -321,7 +322,7 @@ int TestSuite::RunTest(unsigned int id)
 
     Init();
     DecodeFrames(tc.n_frames);
-    
+
     apply_par(tc, false);
 
     g_tsStatus.expect(tc.sts);
@@ -345,24 +346,26 @@ int TestSuite::RunTest(unsigned int id)
 
         double FrameRate = fi.FrameRateExtD ? (fi.FrameRateExtN / fi.FrameRateExtD) : .0;
         double expectedFrameRate = sps.vui.num_units_in_tick ? (sps.vui.time_scale / sps.vui.num_units_in_tick) : 30.;
-        
+
         EXPECT_EQ((mfxU16)sps.ptl.general.profile_idc,  m_par.mfx.CodecProfile);
         EXPECT_EQ((mfxU16)sps.ptl.general.level_idc/3,  m_par.mfx.CodecLevel);
         EXPECT_EQ(expectedFrameRate, FrameRate);
-        EXPECT_EQ((mfxU16)sps.pic_width_in_luma_samples, m_par.mfx.FrameInfo.Width);
-        EXPECT_EQ((mfxU16)sps.pic_height_in_luma_samples, m_par.mfx.FrameInfo.Height);
+        EXPECT_EQ((static_cast<mfxU16> ((sps.pic_width_in_luma_samples + (64 - 1)) &
+            ~(64 - 1)) ), m_par.mfx.FrameInfo.Width);
+        EXPECT_EQ((static_cast<mfxU16> ((sps.pic_height_in_luma_samples + (64 - 1)) &
+            ~(64 - 1))), m_par.mfx.FrameInfo.Height);
         EXPECT_EQ((mfxU16)sps.chroma_format_idc, m_par.mfx.FrameInfo.ChromaFormat);
         EXPECT_EQ(GetARW(sps.vui), m_par.mfx.FrameInfo.AspectRatioW);
         EXPECT_EQ(GetARH(sps.vui), m_par.mfx.FrameInfo.AspectRatioH);
 
         EXPECT_EQ(SubWidthC[cf] * (sps.conf_win_left_offset + sps.vui.def_disp_win_left_offset), m_par.mfx.FrameInfo.CropX);
         EXPECT_EQ(SubHeightC[cf] * (sps.conf_win_top_offset + sps.vui.def_disp_win_top_offset), m_par.mfx.FrameInfo.CropY);
-        EXPECT_EQ(sps.pic_width_in_luma_samples - SubWidthC[cf] * 
-            (  (sps.conf_win_left_offset + sps.vui.def_disp_win_left_offset) 
+        EXPECT_EQ(sps.pic_width_in_luma_samples - SubWidthC[cf] *
+            (  (sps.conf_win_left_offset + sps.vui.def_disp_win_left_offset)
              + (sps.conf_win_right_offset + sps.vui.def_disp_win_right_offset))
             , m_par.mfx.FrameInfo.CropW);
-        EXPECT_EQ(sps.pic_height_in_luma_samples - SubHeightC[cf] * 
-            (  (sps.conf_win_top_offset + sps.vui.def_disp_win_top_offset) 
+        EXPECT_EQ(sps.pic_height_in_luma_samples - SubHeightC[cf] *
+            (  (sps.conf_win_top_offset + sps.vui.def_disp_win_top_offset)
              + (sps.conf_win_bottom_offset + sps.vui.def_disp_win_bottom_offset))
             , m_par.mfx.FrameInfo.CropH);
 
@@ -372,12 +375,12 @@ int TestSuite::RunTest(unsigned int id)
         if((mfxExtCodingOptionSPSPPS*)m_par)
         {
             mfxExtCodingOptionSPSPPS& ecoSP = m_par;
-            
+
             EXPECT_EQ(sps_nalu.NumBytesInNalUnit, ecoSP.SPSBufSize);
             EXPECT_EQ(0, memcmp(ecoSP.SPSBuffer, m_stream.Data + sps_nalu.StartOffset, ecoSP.SPSBufSize));
             EXPECT_EQ(pps_nalu.NumBytesInNalUnit, ecoSP.PPSBufSize);
             EXPECT_EQ(0, memcmp(ecoSP.PPSBuffer, m_stream.Data + pps_nalu.StartOffset, ecoSP.PPSBufSize));
-            
+
             g_tsLog << "STREAM SPS: " << hexstr(m_stream.Data + sps_nalu.StartOffset, sps_nalu.NumBytesInNalUnit) << "\n";
             g_tsLog << "BUFFER SPS: " << hexstr(ecoSP.SPSBuffer, ecoSP.SPSBufSize) << "\n";
             g_tsLog << "STREAM PPS: " << hexstr(m_stream.Data + pps_nalu.StartOffset, pps_nalu.NumBytesInNalUnit) << "\n";
