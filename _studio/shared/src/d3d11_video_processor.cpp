@@ -2009,7 +2009,6 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             break;
 
         case MFX_SCALING_MODE_QUALITY:
-        case MFX_SCALING_MODE_SPEED:
         case MFX_SCALING_MODE_DEFAULT:
         default:
             param.FastMode = true;
