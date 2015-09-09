@@ -53,6 +53,7 @@ static float convertValue(const float OldMin,const float OldMax,const float NewM
 
 VAAPIVideoProcessing::VAAPIVideoProcessing():
   m_bRunning(false)
+, m_bVideoWallMode(false)
 , m_core(NULL)
 , m_vaDisplay(0)
 , m_vaConfig(0)
@@ -77,6 +78,11 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
     memset( (void*)&m_deinterlacingCaps, 0, sizeof(m_deinterlacingCaps));
     memset( (void*)&m_frcCaps, 0, sizeof(m_frcCaps));
     memset( (void*)&m_procampCaps, 0, sizeof(m_procampCaps));
+    m_videoWallParams.elemHeight = 0;
+    m_videoWallParams.elemWidth = 0;
+    m_videoWallParams.numX = 0;
+    m_videoWallParams.numY = 0;
+    m_videoWallParams.tiles = 0;
 
     m_cachedReadyTaskIndex.clear();
     m_feedbackCache.clear();
@@ -180,7 +186,14 @@ mfxStatus VAAPIVideoProcessing::Close(void)
     memset( (void*)&m_detailCaps, 0, sizeof(m_detailCaps));
     memset( (void*)&m_procampCaps,  0, sizeof(m_procampCaps));
     memset( (void*)&m_deinterlacingCaps, 0, sizeof(m_deinterlacingCaps));
+    m_videoWallParams.elemHeight = 0;
+    m_videoWallParams.elemWidth = 0;
+    m_videoWallParams.numX = 0;
+    m_videoWallParams.numY = 0;
+    m_videoWallParams.tiles = 0;
+    m_videoWallParams.layout.clear();
 
+    m_bVideoWallMode = false;
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIVideoProcessing::Close(void)
@@ -442,7 +455,10 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     mfxStatus mfxSts = MFX_ERR_NONE;
     if (pParams->bComposite)
     {
-        mfxSts = Execute_Composition(pParams);
+        if ( isVideoWall(pParams) )
+            mfxSts = Execute_Composition_VideoWall(pParams);
+        else
+            mfxSts = Execute_Composition(pParams);
         return mfxSts;
     }
 
@@ -1410,6 +1426,367 @@ mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
     return MFX_ERR_NONE;
 }
 
+
+#define MAX_STREAMS_PER_GROUP 8
+
+BOOL    VAAPIVideoProcessing::isVideoWall(mfxExecuteParams *pParams)
+{
+    BOOL result = false;
+    mfxU16 outputWidth;
+    mfxU16 outputHeight;
+    mfxU16 layerWidth  = 0;
+    mfxU16 layerHeight = 0;
+    mfxU16 numX = 0;
+    mfxU16 numY = 0;
+
+    mfxU32 layerCount = (mfxU32) pParams->fwdRefCount + 1;
+
+    if ( layerCount % MAX_STREAMS_PER_GROUP != 0 )
+    {
+        /* Number of streams must be multiple of 8. That's just for simplicity.
+         * TODO: need to handle the case when number is not multiple of 8*/
+        return result;
+    }
+
+    outputWidth  = pParams->targetSurface.frameInfo.CropW;
+    outputHeight = pParams->targetSurface.frameInfo.CropH;
+
+    for ( unsigned int i = 0; i < layerCount; i++)
+    {
+        std::map<mfxU16, compStreamElem>::iterator it;
+        DstRect rect = pParams->dstRects[i];
+
+        if ( outputWidth % rect.DstW != 0 )
+        {
+            /* Layer width should fit output */
+            return result;
+        }
+
+        if ( i == 0 )
+        {
+            layerWidth = rect.DstW;
+            numX = outputWidth / layerWidth;
+            layerHeight = rect.DstH;
+            numY = outputHeight / layerHeight;
+
+            // Set up perfect layout of the video wall
+            m_videoWallParams.layout.clear();
+            for ( unsigned int j = 0; j < layerCount; j++ )
+            {
+                mfxU16 render_order = (j/numX)*numX + (j % numX);
+                compStreamElem element;
+                element.x  = (j % numX)*layerWidth;
+                element.y  = (j/numX)*layerHeight;
+                m_videoWallParams.layout.insert(std::pair<mfxU16, compStreamElem>(render_order, element));
+        }
+        }
+
+        if ( layerWidth != rect.DstW)
+        {
+            /* All layers must have the same width */
+            return result;
+        }
+
+        if ( outputHeight % rect.DstH != 0 )
+        {
+            /* Layer height should fit output */
+            return result;
+        }
+
+
+        if ( layerHeight != rect.DstH)
+        {
+            /* All layers must have the same height */
+            return result;
+        }
+
+        mfxU16 render_order = 0;
+        render_order  = rect.DstX/(outputWidth/numX);
+        render_order += numX * (rect.DstY/(outputHeight/numY));
+        it = m_videoWallParams.layout.find(render_order);
+        if ( m_videoWallParams.layout.end() == it )
+        {
+            /* All layers must have the same height */
+            return result;
+        }
+        else if (it->second.active)
+        {
+            /* Slot is busy with another layer already */
+            return result;
+        }
+        else if (it->second.x != rect.DstX || it->second.y != rect.DstY)
+        {
+            /* Layers should be ordered in proepr way allowing partial rendering on output */
+            return result;
+        }
+        else
+        {
+            it->second.active = true;
+            it->second.index  = i;
+    }
+    }
+
+    if ( numX > 1 && numX % 2 != 0 )
+    {
+        /* Number of layers on X-axis is not correct */
+        return result;
+    }
+
+    if ( numY % 2 != 0 )
+    {
+        /* Number of layers on Y-axis is not correct */
+        return result;
+    }
+
+    result = true;
+    m_videoWallParams.elemHeight = layerHeight;
+    m_videoWallParams.elemWidth  = layerWidth;
+    m_videoWallParams.numX       = numX;
+    m_videoWallParams.numY       = numY;
+    m_videoWallParams.tiles      = layerCount / MAX_STREAMS_PER_GROUP;
+
+    return result;
+}
+
+mfxStatus VAAPIVideoProcessing::Execute_Composition_VideoWall(mfxExecuteParams *pParams)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP Execute");
+
+    VAStatus vaSts = VA_STATUS_SUCCESS;
+    VASurfaceAttrib attrib;
+    std::vector<VABlendState> blend_state;
+
+    MFX_CHECK_NULL_PTR1( pParams );
+    MFX_CHECK_NULL_PTR1( pParams->targetSurface.hdl.first );
+    MFX_CHECK_NULL_PTR1( pParams->pRefSurfaces );
+    MFX_CHECK_NULL_PTR1( pParams->pRefSurfaces[0].hdl.first );
+
+    if ( ! isVideoWall(pParams) )
+    {
+        return MFX_ERR_UNKNOWN;
+    }
+    mfxU32 SampleCount = 1;
+    mfxU32 layerCount = (mfxU32) pParams->fwdRefCount + 1;
+
+    m_pipelineParam.resize(pParams->refCount + 1);
+    m_pipelineParamID.resize(pParams->refCount + 1, VA_INVALID_ID);
+    blend_state.resize(pParams->refCount + 1);
+
+    std::vector<VARectangle> input_region;
+    input_region.resize(pParams->refCount + 1);
+    std::vector<VARectangle> output_region;
+    output_region.resize(pParams->refCount + 1);
+
+    /* Initial set up for layers */
+    for ( unsigned int i = 0; i < layerCount; i++)
+    {
+        mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[i]);
+        VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
+
+        m_pipelineParam[i].surface = *srf;
+
+        // source cropping
+        mfxU32  refFourcc = pRefSurf->frameInfo.FourCC;
+        switch (refFourcc)
+        {
+            case MFX_FOURCC_RGB4:
+                m_pipelineParam[i].surface_color_standard = VAProcColorStandardNone;
+                break;
+            case MFX_FOURCC_NV12:  //VA_FOURCC_NV12:
+            default:
+                m_pipelineParam[i].surface_color_standard = VAProcColorStandardBT601;
+                break;
+        }
+
+        mfxU32  targetFourcc = pParams->targetSurface.frameInfo.FourCC;
+        switch (targetFourcc)
+        {
+            case MFX_FOURCC_RGB4:
+                m_pipelineParam[i].output_color_standard = VAProcColorStandardNone;
+                break;
+            case MFX_FOURCC_NV12:
+            default:
+                m_pipelineParam[i].output_color_standard = VAProcColorStandardBT601;
+                break;
+        }
+
+        switch (pRefSurf->frameInfo.PicStruct)
+        {
+            case MFX_PICSTRUCT_PROGRESSIVE:
+                m_pipelineParam[i].filter_flags = VA_FRAME_PICTURE;
+                break;
+            case MFX_PICSTRUCT_FIELD_TFF:
+                m_pipelineParam[i].filter_flags = VA_TOP_FIELD;
+                break;
+            case MFX_PICSTRUCT_FIELD_BFF:
+                m_pipelineParam[i].filter_flags = VA_BOTTOM_FIELD;
+                break;
+        }
+
+        /* to process input parameters of sub stream:
+         * crop info and original size*/
+        mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
+        input_region[i].y       = inInfo->CropY;
+        input_region[i].x       = inInfo->CropX;
+        input_region[i].height     = inInfo->CropH;
+        input_region[i].width      = inInfo->CropW;
+        m_pipelineParam[i].surface_region = &input_region[i];
+
+        /* to process output parameters of sub stream:
+         *  position and destination size */
+        output_region[i].y      = pParams->dstRects[i].DstY;
+        output_region[i].x       = pParams->dstRects[i].DstX;
+        output_region[i].height    = pParams->dstRects[i].DstH;
+        output_region[i].width  = pParams->dstRects[i].DstW;
+        m_pipelineParam[i].output_region = &output_region[i];
+
+        /* Global alpha and luma key can not be enabled together*/
+        if (pParams->dstRects[i].GlobalAlphaEnable !=0)
+        {
+            blend_state[i].flags = VA_BLEND_GLOBAL_ALPHA;
+            blend_state[i].global_alpha = ((float)pParams->dstRects[i].GlobalAlpha) /255;
+        }
+        /* Luma color key  for YUV surfaces only.
+         * And Premultiplied alpha blending for RGBA surfaces only.
+         * So, these two flags can't combine together  */
+        if ((pParams->dstRects[i].LumaKeyEnable    != 0) &&
+            (pParams->dstRects[i].PixelAlphaEnable == 0) )
+        {
+            blend_state[i].flags |= VA_BLEND_LUMA_KEY;
+            blend_state[i].min_luma = pParams->dstRects[i].LumaKeyMin;
+            blend_state[i].max_luma = pParams->dstRects[i].LumaKeyMax;
+        }
+        if ((pParams->dstRects[i].LumaKeyEnable    == 0 ) &&
+            (pParams->dstRects[i].PixelAlphaEnable != 0 ) )
+        {
+            blend_state[i].flags |= VA_BLEND_PREMULTIPLIED_ALPHA;
+        }
+        if ((pParams->dstRects[i].GlobalAlphaEnable != 0) ||
+            (pParams->dstRects[i].LumaKeyEnable     != 0) ||
+            (pParams->dstRects[i].PixelAlphaEnable  != 0))
+        {
+            m_pipelineParam[i].blend_state = &blend_state[i];
+        }
+
+#ifndef LINUX_TARGET_PLATFORM_BSW
+        m_pipelineParam[i].pipeline_flags  |= VA_PROC_PIPELINE_FAST;
+#else
+        m_pipelineParam[i].pipeline_flags |= VA_PROC_PIPELINE_SUBPICTURES;
+        m_pipelineParam[i].filter_flags   |= VA_FILTER_SCALING_HQ;
+#endif
+
+        m_pipelineParam[i].filters      = 0;
+        m_pipelineParam[i].num_filters  = 0;
+
+
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                            m_vaContextVPP,
+                            VAProcPipelineParameterBufferType,
+                            sizeof(VAProcPipelineParameterBuffer),
+                            1,
+                            &m_pipelineParam[i],
+                            &m_pipelineParamID[i]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+
+    VASurfaceID *outputSurface = (VASurfaceID*)(pParams->targetSurface.hdl.first);
+    VAProcPipelineParameterBuffer outputparam = {0};
+    VABufferID vpp_pipeline_outbuf = VA_INVALID_ID;
+
+    MFX_CHECK_NULL_PTR1(outputSurface);
+
+    VARectangle output_rect;
+    mfxU16 output_w_orig, output_h_orig;
+    output_w_orig = pParams->targetSurface.frameInfo.CropW;
+    output_h_orig = pParams->targetSurface.frameInfo.CropH;
+
+    /* Process by groups. Video wall case assumes
+     * that surfaces has the same output dimensions
+     * We split output by several horizontal tiles */
+    int groups = m_videoWallParams.tiles;
+    for (int group_id = 0; group_id < groups; group_id++)
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
+        vaSts = vaBeginPicture(m_vaDisplay,
+                               m_vaContextVPP,
+                               *outputSurface);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        output_rect.x      = 0;
+        output_rect.y      = group_id * (output_h_orig/m_videoWallParams.tiles);
+        output_rect.width  = output_w_orig;
+        output_rect.height = output_h_orig/m_videoWallParams.tiles;
+        outputparam.surface = *outputSurface;
+        outputparam.output_region  = &output_rect;
+        outputparam.surface_region = &output_rect;
+
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                                  m_vaContextVPP,
+                                   VAProcPipelineParameterBufferType,
+                                   sizeof(VAProcPipelineParameterBuffer),
+                                   1,
+                                   &outputparam,
+                                   &vpp_pipeline_outbuf);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &vpp_pipeline_outbuf, 1);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        for (unsigned int i = 0; i < MAX_STREAMS_PER_GROUP; i++)
+        {
+            unsigned int index = i + group_id * MAX_STREAMS_PER_GROUP;
+
+            if (index >= layerCount) break;
+
+            std::map<mfxU16, compStreamElem>::iterator it;
+
+            // Search for stream that should be rendered in this position
+            it = m_videoWallParams.layout.find(index);
+
+            if ( m_videoWallParams.layout.end() == it )
+            {
+                // No such layer. At the moment it's not possible,
+                // but in reality, this is possible. For example, just absence
+                // of the stream on certain position in video wall
+                continue;
+            }
+
+            vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[it->second.index], 1);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
+            vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
+        vaSts = vaDestroyBuffer(m_vaDisplay, vpp_pipeline_outbuf);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+
+    for( unsigned int i = 0; i < m_pipelineParamID.size(); i++ )
+    {
+        if ( m_pipelineParamID[i] != VA_INVALID_ID)
+        {
+            vaSts = vaDestroyBuffer(m_vaDisplay, m_pipelineParamID[i]);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            m_pipelineParamID[i] = VA_INVALID_ID;
+        }
+    }
+
+
+    // (3) info needed for sync operation
+    //-------------------------------------------------------
+    {
+        UMC::AutomaticUMCMutex guard(m_guard);
+
+        ExtVASurface currentFeedback; // {surface & number_of_task}
+        currentFeedback.surface = *outputSurface;
+        currentFeedback.number = pParams->statusReportID;
+        m_feedbackCache.push_back(currentFeedback);
+    }
+
+    return MFX_ERR_NONE;
+} // mfxStatus VAAPIVideoProcessing::Execute_Composition_VideoWall(mfxExecuteParams *pParams)
 
 mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 {
