@@ -29,9 +29,8 @@ struct vaapiMemId
     unsigned int m_fourcc;
     mfxU8*       m_sys_buffer;
     mfxU8*       m_va_buffer;
-#if defined(LIBVA_WAYLAND_SUPPORT)
+    // buffer info to support surface export
     VABufferInfo m_buffer_info;
-#endif
 };
 
 namespace MfxLoader
@@ -41,7 +40,19 @@ namespace MfxLoader
 
 struct vaapiAllocatorParams : mfxAllocatorParams
 {
-    VADisplay        m_dpy;
+    enum {
+      DONOT_EXPORT = 0,
+      FLINK,
+      PRIME
+    };
+
+    vaapiAllocatorParams()
+      : m_dpy(NULL)
+      , m_export_mode(DONOT_EXPORT)
+    {}
+
+    VADisplay m_dpy;
+    mfxU32 m_export_mode;
 };
 
 class vaapiFrameAllocator: public BaseFrameAllocator
@@ -64,6 +75,7 @@ protected:
 
     VADisplay m_dpy;
     MfxLoader::VA_Proxy * m_libva;
+    mfxU32 m_export_mode;
 };
 
 #endif //#if defined(LIBVA_SUPPORT)
