@@ -1384,6 +1384,7 @@ mfxStatus CommonCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface
         m_pFastCopy.reset(new FastCopy());
         m_pFastCopy.get()->Initialize();
         m_bFastCopy = true;
+        pFastCopy = m_pFastCopy.get();
     }
 
     if (NULL != pSrc->Data.Y && NULL != pDst->Data.Y)

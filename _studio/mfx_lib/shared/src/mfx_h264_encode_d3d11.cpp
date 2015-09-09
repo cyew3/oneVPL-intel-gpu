@@ -705,7 +705,8 @@ mfxStatus D3D11Encoder::QueryStatus(
 
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber[fieldId]);
-
+    for(int i=0; i< (int)m_feedbackUpdate.size(); i++)
+        m_feedbackUpdate[i].bStatus = ENCODE_ERROR;
 #ifdef NEW_STATUS_REPORTING_DDI_0915
     ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
     feedbackDescr.SizeOfStatusParamStruct = sizeof(m_feedbackUpdate[0]);

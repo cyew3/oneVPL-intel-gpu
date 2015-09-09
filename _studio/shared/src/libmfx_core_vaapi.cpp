@@ -983,6 +983,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
         m_pFastCopy.reset(new FastCopy());
         m_pFastCopy.get()->Initialize();
         m_bFastCopy = true;
+        pFastCopy = m_pFastCopy.get();
     }
     CmCopyWrapper *pCmCopy = m_pCmCopy.get();
 
