@@ -122,6 +122,7 @@ protected:
     mfxStatus DecodeFrameSubmit(mfxFrameSurface1 *surface, bool& rt_fallback_d3d, bool& rt_fallback_dxgi, mfxFrameSurface1 *ext_surface);
     mfxStatus CheckFrameInfo(const mfxFrameInfo& info);
     mfxStatus CheckOpaqBuffer(const mfxVideoParam& par, mfxVideoParam* pParOut, const mfxExtOpaqueSurfaceAlloc& opaqAlloc, mfxExtOpaqueSurfaceAlloc* pOpaqAllocOut);
+    mfxStatus CheckExtBuffer(const mfxVideoParam& par, mfxVideoParam* pParOut, const mfxExtScreenCaptureParam& extPar, mfxExtScreenCaptureParam* pExtParOut);
     mfxFrameSurface1* GetFreeInternalSurface();
 
     mfxVersion          m_libmfxVer;
