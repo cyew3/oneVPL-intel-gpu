@@ -23,6 +23,8 @@ TYPEDEF_MEMBER(mfxExtAvcTemporalLayers,   Layer[0],            mfxExtAvcTemporal
 TYPEDEF_MEMBER(mfxExtAVCEncodedFrameInfo, UsedRefListL0[0],    mfxExtAVCEncodedFrameInfo_RefList)
 TYPEDEF_MEMBER(mfxExtVPPVideoSignalInfo,  In,                  mfxExtVPPVideoSignalInfo_InOut)
 TYPEDEF_MEMBER(mfxExtEncoderROI,          ROI[0],              mfxExtEncoderROI_Entry)
+TYPEDEF_MEMBER(mfxExtDirtyRect,           Rect[0],             mfxExtDirtyRect_Entry)
+TYPEDEF_MEMBER(mfxExtMoveRect,            Rect[0],             mfxExtMoveRect_Entry)
 typedef union { mfxU32 n; char c[4]; } mfx4CC;
 typedef mfxExtAVCRefLists::mfxRefPic mfxExtAVCRefLists_mfxRefPic;
 
@@ -90,6 +92,10 @@ public:
     tsTrace& operator << (const mfxEncodeCtrl& p);
     tsTrace& operator << (const mfxExtAVCRefLists& p);
     tsTrace& operator << (const mfxExtEncoderROI& p);
+    tsTrace& operator << (const mfxExtDirtyRect& p);
+    tsTrace& operator << (const mfxExtMoveRect& p);
+    tsTrace& operator << (const mfxExtDirtyRect_Entry& p);
+    tsTrace& operator << (const mfxExtMoveRect_Entry& p);
     tsTrace& operator << (const mfxExtCamGammaCorrection& p);
     tsTrace& operator << (const mfxExtCamVignetteCorrection& p);
     tsTrace& operator << (const mfxInfoMFX& p);

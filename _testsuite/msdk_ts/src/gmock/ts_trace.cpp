@@ -353,6 +353,50 @@ tsTrace& tsTrace::operator<<(const mfxExtEncoderROI& p)
     return *this;
 }
 
+tsTrace& tsTrace::operator<<(const mfxExtMoveRect_Entry& p)
+{
+    *this << "{SourceLeft = " << p.SourceLeft << ", SourceTop = " << p.SourceTop << "}\n";
+    *this << "DestLeft = " << p.DestLeft << ", DestTop = " << p.DestTop << ", DestRight = " << p.DestRight << ", DestBottom = " << p.DestBottom << "}";
+    return *this;
+}
+
+tsTrace& tsTrace::operator<<(const mfxExtDirtyRect_Entry& p)
+{
+    *this <<
+             "{Left = "   << std::setw(4) << p.Left   <<
+             ", Top = "    << std::setw(4) << p.Top    <<
+             ", Right = "  << std::setw(4) << p.Right  <<
+             ", Bottom = " << std::setw(4) << p.Bottom << "}";
+
+    return *this;
+}
+
+tsTrace& tsTrace::operator<<(const mfxExtDirtyRect& p)
+{
+    STRUCT_BODY(mfxExtDirtyRect,
+        FIELD_S(mfxExtBuffer, Header)
+        FIELD_T(mfxU16  , NumRect  )
+        for(mfxU32 i = 0; i < p.NumRect; ++i)
+        {
+            FIELD_S(mfxExtDirtyRect_Entry, Rect[i])
+        }
+    )
+    return *this;
+}
+
+tsTrace& tsTrace::operator<<(const mfxExtMoveRect& p)
+{
+    STRUCT_BODY(mfxExtMoveRect,
+        FIELD_S(mfxExtBuffer, Header)
+        FIELD_T(mfxU16  , NumRect  )
+        for(mfxU32 i = 0; i < p.NumRect; ++i)
+        {
+            FIELD_S(mfxExtMoveRect_Entry, Rect[i])
+        }
+    )
+    return *this;
+}
+
 tsTrace& tsTrace::operator<<(const mfxExtCamGammaCorrection& p)
 {
     STRUCT_BODY(mfxExtCamGammaCorrection,

@@ -66,3 +66,5 @@ EXTBUF(mfxExtVPPRotation, MFX_EXTBUFF_VPP_ROTATION)
 
 //Screen capture
 EXTBUF(mfxExtScreenCaptureParam     , MFX_EXTBUFF_SCREEN_CAPTURE_PARAM      )
+EXTBUF(mfxExtDirtyRect              , MFX_EXTBUFF_DIRTY_RECTANGLES          )
+EXTBUF(mfxExtMoveRect               , MFX_EXTBUFF_MOVING_RECTANGLES         )

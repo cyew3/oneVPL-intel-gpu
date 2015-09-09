@@ -713,9 +713,37 @@ STRUCT(mfxExtVPPRotation,
 )
 
 STRUCT(mfxExtScreenCaptureParam,
-    FIELD_S(mfxExtBuffer, Header)
+    FIELD_S(mfxExtBuffer, Header             )
     FIELD_T(mfxU32      , DisplayIndex       )
     FIELD_T(mfxU16      , EnableDirtyRect    )
     FIELD_T(mfxU16      , EnableCursorCapture)
-    FIELD_T(mfxU16*     , reserved)
+)
+
+STRUCT(mfxExtDirtyRect_Entry,
+    FIELD_T(mfxU32, Left    )
+    FIELD_T(mfxU32, Top     )
+    FIELD_T(mfxU32, Right   )
+    FIELD_T(mfxU32, Bottom  )
+)
+
+STRUCT(mfxExtDirtyRect,
+    FIELD_S(mfxExtBuffer,          Header )
+    FIELD_T(mfxI16,                NumRect)
+    FIELD_S(mfxExtDirtyRect_Entry, Rect   )
+)
+
+STRUCT(mfxExtMoveRect_Entry,
+    FIELD_T(mfxU32, DestLeft  )
+    FIELD_T(mfxU32, DestTop   )
+    FIELD_T(mfxU32, DestRight )
+    FIELD_T(mfxU32, DestBottom)
+
+    FIELD_T(mfxU32, SourceLeft)
+    FIELD_T(mfxU32, SourceTop )
+)
+
+STRUCT(mfxExtMoveRect,
+    FIELD_S(mfxExtBuffer,          Header )
+    FIELD_T(mfxI16,                NumRect)
+    FIELD_S(mfxExtDirtyRect_Entry, Rect   )
 )
