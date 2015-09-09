@@ -65,10 +65,8 @@ namespace MfxLoader
         typedef VAStatus (*vaSyncSurface_type)(VADisplay, VASurfaceID);
         typedef VAStatus (*vaDeriveImage_type)(VADisplay, VASurfaceID, VAImage *);
         typedef VAStatus (*vaDestroyImage_type)(VADisplay, VAImageID);
-#if defined (LIBVA_WAYLAND_SUPPORT)
         typedef VAStatus (*vaAcquireBufferHandle_type)(VADisplay, VABufferID, VABufferInfo *);
         typedef VAStatus (*vaReleaseBufferHandle_type)(VADisplay, VABufferID);
-#endif
 
         VA_Proxy();
         ~VA_Proxy();
@@ -84,10 +82,8 @@ namespace MfxLoader
         const vaSyncSurface_type     vaSyncSurface;
         const vaDeriveImage_type     vaDeriveImage;
         const vaDestroyImage_type    vaDestroyImage;
-#if defined (LIBVA_WAYLAND_SUPPORT)
         const vaAcquireBufferHandle_type vaAcquireBufferHandle;
         const vaReleaseBufferHandle_type vaReleaseBufferHandle;
-#endif
     };
 #endif
 

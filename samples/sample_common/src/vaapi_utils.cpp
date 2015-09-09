@@ -69,10 +69,8 @@ VA_Proxy::VA_Proxy()
     , SIMPLE_LOADER_FUNCTION(vaSyncSurface)
     , SIMPLE_LOADER_FUNCTION(vaDeriveImage)
     , SIMPLE_LOADER_FUNCTION(vaDestroyImage)
-#if defined (LIBVA_WAYLAND_SUPPORT)
     , SIMPLE_LOADER_FUNCTION(vaAcquireBufferHandle)
     , SIMPLE_LOADER_FUNCTION(vaReleaseBufferHandle)
-#endif
 {
 }
 
