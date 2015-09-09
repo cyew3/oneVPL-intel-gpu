@@ -53,7 +53,7 @@ tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults, mfxU32 plugin_i
     }
 }
 
-tsVideoDecoder::~tsVideoDecoder() 
+tsVideoDecoder::~tsVideoDecoder()
 {
     if(m_initialized)
     {
@@ -73,7 +73,7 @@ mfxStatus tsVideoDecoder::Init()
         {
             Load();
         }
-        if(     !m_pFrameAllocator 
+        if(     !m_pFrameAllocator
             && (   (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
                 || (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
                 || m_use_memid))
@@ -81,12 +81,21 @@ mfxStatus tsVideoDecoder::Init()
             if(!GetAllocator())
             {
                 UseDefaultAllocator(
-                       (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) 
+                       (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
                     || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
                 );
             }
             m_pFrameAllocator = GetAllocator();
             SetFrameAllocator();
+        }
+        if ((!m_par_set) && (!m_pVAHandle) && (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+        {
+            mfxHDL hdl;
+            mfxHandleType type;
+            m_pVAHandle = m_pFrameAllocator;
+            m_pVAHandle->get_hdl(type, hdl);
+            SetHandle(m_session, type, hdl);
+            m_is_handle_set = (g_tsStatus.get() >= 0);
         }
         if(!m_par_set && (m_bs_processor || m_pBitstream && m_pBitstream->DataLength))
         {
@@ -202,13 +211,13 @@ mfxStatus tsVideoDecoder::Reset(mfxSession session, mfxVideoParam *par)
 }
 
 
-mfxStatus tsVideoDecoder::GetVideoParam() 
+mfxStatus tsVideoDecoder::GetVideoParam()
 {
     if(m_default && !m_initialized)
     {
         Init();
     }
-    return GetVideoParam(m_session, m_pPar); 
+    return GetVideoParam(m_session, m_pPar);
 }
 
 mfxStatus tsVideoDecoder::GetVideoParam(mfxSession session, mfxVideoParam *par)
@@ -301,9 +310,7 @@ mfxStatus tsVideoDecoder::DecodeFrameAsync()
     {
         SetPar4_DecodeFrameAsync();
     }
-
     DecodeFrameAsync(m_session, m_pBitstream, m_pSurf, &m_pSurfOut, m_pSyncPoint);
-
     if(g_tsStatus.get() == 0)
     {
         m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
@@ -317,10 +324,10 @@ mfxStatus tsVideoDecoder::DecodeFrameAsync()
 }
 
 mfxStatus tsVideoDecoder::DecodeFrameAsync(
-    mfxSession session, 
-    mfxBitstream *bs, 
-    mfxFrameSurface1 *surface_work, 
-    mfxFrameSurface1 **surface_out, 
+    mfxSession session,
+    mfxBitstream *bs,
+    mfxFrameSurface1 *surface_work,
+    mfxFrameSurface1 **surface_out,
     mfxSyncPoint *syncp)
 {
     TRACE_FUNC5(MFXVideoDECODE_DecodeFrameAsync, session, bs, surface_work, surface_out, syncp);
@@ -329,7 +336,7 @@ mfxStatus tsVideoDecoder::DecodeFrameAsync(
     TS_TRACE(bs);
     TS_TRACE(surface_out);
     TS_TRACE(syncp);
-    
+
     return g_tsStatus.m_status = mfxRes;
 }
 
@@ -346,7 +353,6 @@ mfxStatus tsVideoDecoder::SyncOperation(mfxSyncPoint syncp)
 {
     mfxFrameSurface1* pS = m_surf_out[syncp];
     mfxStatus res = SyncOperation(m_session, syncp, MFX_INFINITE);
-
     if(m_default && pS && pS->Data.Locked)
     {
         pS->Data.Locked --;
@@ -376,7 +382,7 @@ mfxStatus tsVideoDecoder::GetPayload(mfxSession session, mfxU64 *ts, mfxPayload 
 
 mfxStatus tsVideoDecoder::DecodeFrames(mfxU32 n)
 {
-    
+
     mfxU32 decoded = 0;
     mfxU32 submitted = 0;
     mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
@@ -399,7 +405,7 @@ mfxStatus tsVideoDecoder::DecodeFrames(mfxU32 n)
                     while(m_surf_out.size()) SyncOperation();
                 }
                 break;
-            } 
+            }
             continue;
         }
 
@@ -420,11 +426,11 @@ mfxStatus tsVideoDecoder::DecodeFrames(mfxU32 n)
     }
 
     g_tsLog << decoded << " FRAMES DECODED\n";
-    
+
     return g_tsStatus.get();
 }
 
-mfxStatus tsVideoDecoder::Load() 
+mfxStatus tsVideoDecoder::Load()
 {
     if(m_default && !m_session)
     {
@@ -433,15 +439,15 @@ mfxStatus tsVideoDecoder::Load()
 
     m_loaded = (0 == tsSession::Load(m_session, m_uid, 1));
 
-    return g_tsStatus.get(); 
+    return g_tsStatus.get();
 }
 
-mfxStatus tsVideoDecoder::UnLoad() 
+mfxStatus tsVideoDecoder::UnLoad()
 {
     if(MFX_ERR_NONE == tsSession::UnLoad(m_session, m_uid))
     {
         m_loaded = false;
     }
 
-    return g_tsStatus.get(); 
+    return g_tsStatus.get();
 }

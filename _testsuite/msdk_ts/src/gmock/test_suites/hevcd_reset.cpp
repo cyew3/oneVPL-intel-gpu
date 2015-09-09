@@ -170,6 +170,9 @@ int TestSuite::RunTest(unsigned int id)
     MFXInit();
     m_session = tsSession::m_session;
 
+    apply_par(tc, INIT);
+
+
     if(m_uid)
     {
         Load();
@@ -178,15 +181,13 @@ int TestSuite::RunTest(unsigned int id)
     if(tc.stream[0] != "")
     {
         m_bs_processor = &reader0;
-        DecodeHeader();
     } else
     {
         m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
+        m_par_set = true;
     }
 
-    m_par_set = true;
 
-    apply_par(tc, INIT);
     Init();
     GetVideoParam();
 

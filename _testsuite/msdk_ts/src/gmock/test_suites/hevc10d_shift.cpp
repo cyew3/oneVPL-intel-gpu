@@ -126,13 +126,10 @@ int TestSuite::RunTest(unsigned int id)
     Load();
     SETPARS(m_pPar, MFXPAR);
 
-    DecodeHeader();
-    QueryIOSurf();
-    if (!m_pFrameAllocator
-        && ((m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
-        || (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
-        || m_use_memid))
+    if ((!m_pVAHandle) && (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
     {
+        mfxHDL hdl;
+        mfxHandleType type;
         if (!GetAllocator())
         {
             UseDefaultAllocator(
@@ -142,7 +139,13 @@ int TestSuite::RunTest(unsigned int id)
         }
         m_pFrameAllocator = GetAllocator();
         SetFrameAllocator();
-    }
+        m_pVAHandle = m_pFrameAllocator;
+        m_pVAHandle->get_hdl(type, hdl);
+        SetHandle(m_session, type, hdl);
+        m_is_handle_set = (g_tsStatus.get() >= 0);
+    }// must be called before DecodeHeader()
+    DecodeHeader();
+    QueryIOSurf();
 
     if (tc.mode == CHANGE_SHIFT)
     {
