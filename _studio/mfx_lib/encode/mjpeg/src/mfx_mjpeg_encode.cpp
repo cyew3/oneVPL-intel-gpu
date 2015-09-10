@@ -1637,7 +1637,7 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
             mfxRes = m_core->DoFastCopyWrapper(&task.auxInput,
                                                MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
                                                surface,
-                                               MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
+                                               MFX_MEMTYPE_DXVA2_DECODER_TARGET | (mfxU16)(m_isOpaque? MFX_MEMTYPE_INTERNAL_FRAME: MFX_MEMTYPE_EXTERNAL_FRAME));
 
             MFX_CHECK_STS(mfxRes);
 
