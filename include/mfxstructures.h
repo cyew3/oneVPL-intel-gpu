@@ -111,6 +111,7 @@ enum {
     MFX_FOURCC_BGR4         = MFX_MAKEFOURCC('B','G','R','4'),   /* ABGR in that order, A channel is 8 MSBs */
     MFX_FOURCC_A2RGB10      = MFX_MAKEFOURCC('R','G','1','0'),   /* ARGB in that order, A channel is two MSBs */
     MFX_FOURCC_ARGB16       = MFX_MAKEFOURCC('R','G','1','6'),   /* ARGB in that order, 64 bits, A channel is 16 MSBs */
+    MFX_FOURCC_ABGR16       = MFX_MAKEFOURCC('B','G','1','6'),   /* ABGR in that order, 64 bits, A channel is 16 MSBs */
     MFX_FOURCC_R16          = MFX_MAKEFOURCC('R','1','6','U'),
     MFX_FOURCC_AYUV         = MFX_MAKEFOURCC('A','Y','U','V'),   /* YUV 4:4:4, AYUV in that order, A channel is 8 MSBs */
     MFX_FOURCC_AYUV_RGB4    = MFX_MAKEFOURCC('A','V','U','Y'),   /* ARGB in that order, A channel is 8 MSBs stored in AYUV surface*/
@@ -1175,7 +1176,8 @@ enum {
     MFX_DEINTERLACING_FIXED_TELECINE_PATTERN =  8,
     MFX_DEINTERLACING_30FPS_OUT              =  9,
     MFX_DEINTERLACING_DETECT_INTERLACE       = 10,
-    MFX_DEINTERLACING_ADVANCED_NOREF         = 11
+    MFX_DEINTERLACING_ADVANCED_NOREF         = 11,
+    MFX_DEINTERLACING_ADVANCED_SCD           = 12
 };
 
 /*TelecinePattern*/
@@ -1524,8 +1526,7 @@ typedef struct {
 enum {
     MFX_SCALING_MODE_DEFAULT    = 0,
     MFX_SCALING_MODE_LOWPOWER   = 1,
-    MFX_SCALING_MODE_SPEED      = 2,
-    MFX_SCALING_MODE_QUALITY    = 3
+    MFX_SCALING_MODE_QUALITY    = 2
 };
 
 typedef struct {
@@ -1534,6 +1535,20 @@ typedef struct {
     mfxU16 ScalingMode;
     mfxU16 reserved[11];
 } mfxExtVPPScaling;
+
+/* SceneChangeType */
+enum {
+    MFX_SCENE_NO_CHANGE = 0,
+    MFX_SCENE_START     = 1,
+    MFX_SCENE_END       = 2
+};
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 Type;
+    mfxU16 reserved[11];
+} mfxExtSceneChange;
 
 #ifdef __cplusplus
 } // extern "C"
