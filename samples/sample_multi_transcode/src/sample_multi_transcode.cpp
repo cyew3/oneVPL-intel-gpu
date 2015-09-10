@@ -114,17 +114,18 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     if (m_eDevType == MFX_HANDLE_VA_DISPLAY)
     {
         m_pAllocParam.reset(new vaapiAllocatorParams);
-        m_hwdev.reset(CreateVAAPIDevice());
         /* The last param set in vector always describe VPP+ENCODE or Only VPP
          * So, if we want to do rendering we need to do pass HWDev to CTranscodingPipeline */
         if (m_InputParamsArray[m_InputParamsArray.size() -1].eModeExt == VppCompOnly)
         {
             /* Rendering case */
+            m_hwdev.reset(CreateVAAPIDevice(MFX_LIBVA_X11));
             sts = m_hwdev->Init(NULL, 1, MSDKAdapter::GetNumber() );
             m_InputParamsArray[m_InputParamsArray.size() -1].m_hwdev = m_hwdev.get();
         }
         else /* NO RENDERING*/
         {
+            m_hwdev.reset(CreateVAAPIDevice());
             sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber() );
         }
 
