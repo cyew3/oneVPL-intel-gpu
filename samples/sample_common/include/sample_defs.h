@@ -41,6 +41,34 @@ enum {
 #endif // #if defined(WIN32) && !defined(MFX_D3D11_SUPPORT)
 #endif // #if defined(WIN32) || defined(WIN64)
 
+enum
+{
+#define __DECLARE(type) MFX_MONITOR_ ## type
+  __DECLARE(Unknown) = 0,
+  __DECLARE(AUTO) = __DECLARE(Unknown),
+  __DECLARE(VGA),
+  __DECLARE(DVII),
+  __DECLARE(DVID),
+  __DECLARE(DVIA),
+  __DECLARE(Composite),
+  __DECLARE(SVIDEO),
+  __DECLARE(LVDS),
+  __DECLARE(Component),
+  __DECLARE(9PinDIN),
+  __DECLARE(HDMIA),
+  __DECLARE(HDMIB),
+  __DECLARE(eDP),
+  __DECLARE(TV),
+  __DECLARE(DisplayPort),
+#if defined(DRM_MODE_CONNECTOR_VIRTUAL) // from libdrm 2.4.59
+  __DECLARE(VIRTUAL),
+#endif
+#if defined(DRM_MODE_CONNECTOR_DSI) // from libdrm 2.4.59
+  __DECLARE(DSI),
+#endif
+  __DECLARE(MAXNUMBER)
+#undef __DECLARE
+};
 
 #if defined(LIBVA_SUPPORT)
 
@@ -48,6 +76,8 @@ enum LibVABackend
 {
     MFX_LIBVA_AUTO,
     MFX_LIBVA_DRM,
+    MFX_LIBVA_DRM_RENDERNODE = MFX_LIBVA_DRM,
+    MFX_LIBVA_DRM_MODESET,
     MFX_LIBVA_X11,
     MFX_LIBVA_WAYLAND
 };

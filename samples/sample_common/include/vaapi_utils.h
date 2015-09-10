@@ -15,6 +15,9 @@ Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 
 #include <va/va.h>
 #if defined(LIBVA_DRM_SUPPORT)
+#include <xf86drm.h>
+#include <xf86drmMode.h>
+#include <libdrm/intel_bufmgr.h>
 #include <va/va_drm.h>
 #endif
 #if defined(LIBVA_X11_SUPPORT)
@@ -88,6 +91,93 @@ namespace MfxLoader
 #endif
 
 #if defined(LIBVA_DRM_SUPPORT)
+    class DRM_Proxy
+    {
+    private:
+        SimpleLoader lib; // should appear first in member list
+
+    public:
+        typedef int (*drmIoctl_type)(int fd, unsigned long request, void *arg);
+        typedef int (*drmModeAddFB_type)(
+          int fd, uint32_t width, uint32_t height, uint8_t depth,
+          uint8_t bpp, uint32_t pitch, uint32_t bo_handle,
+          uint32_t *buf_id);
+        typedef void (*drmModeFreeConnector_type)( drmModeConnectorPtr ptr );
+        typedef void (*drmModeFreeCrtc_type)( drmModeCrtcPtr ptr );
+        typedef void (*drmModeFreeEncoder_type)( drmModeEncoderPtr ptr );
+        typedef void (*drmModeFreePlane_type)( drmModePlanePtr ptr );
+        typedef void (*drmModeFreePlaneResources_type)(drmModePlaneResPtr ptr);
+        typedef void (*drmModeFreeResources_type)( drmModeResPtr ptr );
+        typedef drmModeConnectorPtr (*drmModeGetConnector_type)(
+          int fd, uint32_t connectorId);
+        typedef drmModeCrtcPtr (*drmModeGetCrtc_type)(int fd, uint32_t crtcId);
+        typedef drmModeEncoderPtr (*drmModeGetEncoder_type)(int fd, uint32_t encoder_id);
+        typedef drmModePlanePtr (*drmModeGetPlane_type)(int fd, uint32_t plane_id);
+        typedef drmModePlaneResPtr (*drmModeGetPlaneResources_type)(int fd);
+        typedef drmModeResPtr (*drmModeGetResources_type)(int fd);
+        typedef int (*drmModeRmFB_type)(int fd, uint32_t bufferId);
+        typedef int (*drmModeSetCrtc_type)(
+          int fd, uint32_t crtcId, uint32_t bufferId,
+          uint32_t x, uint32_t y, uint32_t *connectors, int count,
+          drmModeModeInfoPtr mode);
+        typedef int (*drmSetMaster_type)(int fd);
+        typedef int (*drmDropMaster_type)(int fd);
+        typedef int (*drmModeSetPlane_type)(
+          int fd, uint32_t plane_id, uint32_t crtc_id,
+          uint32_t fb_id, uint32_t flags,
+          int32_t crtc_x, int32_t crtc_y,
+          uint32_t crtc_w, uint32_t crtc_h,
+          uint32_t src_x, uint32_t src_y,
+          uint32_t src_w, uint32_t src_h);
+
+        DRM_Proxy();
+        ~DRM_Proxy();
+
+#define __DECLARE(name) const name ## _type name
+        __DECLARE(drmIoctl);
+        __DECLARE(drmModeAddFB);
+        __DECLARE(drmModeFreeConnector);
+        __DECLARE(drmModeFreeCrtc);
+        __DECLARE(drmModeFreeEncoder);
+        __DECLARE(drmModeFreePlane);
+        __DECLARE(drmModeFreePlaneResources);
+        __DECLARE(drmModeFreeResources);
+        __DECLARE(drmModeGetConnector);
+        __DECLARE(drmModeGetCrtc);
+        __DECLARE(drmModeGetEncoder);
+        __DECLARE(drmModeGetPlane);
+        __DECLARE(drmModeGetPlaneResources);
+        __DECLARE(drmModeGetResources);
+        __DECLARE(drmModeRmFB);
+        __DECLARE(drmModeSetCrtc);
+        __DECLARE(drmSetMaster);
+        __DECLARE(drmDropMaster);
+        __DECLARE(drmModeSetPlane);
+#undef __DECLARE
+    };
+
+    class DrmIntel_Proxy
+    {
+    private:
+        SimpleLoader lib; // should appear first in member list
+
+    public:
+        typedef drm_intel_bo* (*drm_intel_bo_gem_create_from_prime_type)(
+          drm_intel_bufmgr *bufmgr, int prime_fd, int size);
+        typedef void (*drm_intel_bo_unreference_type)(drm_intel_bo *bo);
+        typedef drm_intel_bufmgr* (*drm_intel_bufmgr_gem_init_type)(int fd, int batch_size);
+
+        DrmIntel_Proxy();
+        ~DrmIntel_Proxy();
+
+#define __DECLARE(name) const name ## _type name
+        __DECLARE(drm_intel_bo_gem_create_from_prime);
+        __DECLARE(drm_intel_bo_unreference);
+        __DECLARE(drm_intel_bufmgr_gem_init);
+
+#undef __DECLARE
+    };
+
     class VA_DRMProxy
     {
     private:

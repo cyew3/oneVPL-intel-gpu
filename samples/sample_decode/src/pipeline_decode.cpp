@@ -87,6 +87,7 @@ CDecodingPipeline::CDecodingPipeline()
     m_VppDoNotUse.Header.BufferId = MFX_EXTBUFF_VPP_DONOTUSE;
     m_VppDoNotUse.Header.BufferSz = sizeof(m_VppDoNotUse);
 
+    m_export_mode = vaapiAllocatorParams::DONOT_EXPORT;
     m_hwdev = NULL;
 
 #if D3D_SURFACES_SUPPORT
@@ -324,6 +325,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    m_monitorType = pParams->monitorType;
     // create device and allocator
 #if defined(LIBVA_SUPPORT)
     m_libvaBackend = pParams->libvaBackend;
@@ -738,7 +740,7 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-    sts = m_hwdev->Init(NULL, (m_eWorkMode == MODE_RENDERING) ? 1 : 0, MSDKAdapter::GetNumber(m_mfxSession));
+    sts = m_hwdev->Init(&m_monitorType, (m_eWorkMode == MODE_RENDERING) ? 1 : 0, MSDKAdapter::GetNumber(m_mfxSession));
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 #endif
     return MFX_ERR_NONE;
@@ -836,6 +838,9 @@ mfxStatus CDecodingPipeline::AllocFrames()
     Request.Type |= (m_bDecOutSysmem) ?
         MFX_MEMTYPE_SYSTEM_MEMORY
         : MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
+    if (!m_bVppIsUsed && (m_export_mode != vaapiAllocatorParams::DONOT_EXPORT)) {
+        Request.Type |= MFX_MEMTYPE_EXPORT_FRAME;
+    }
     // alloc frames for decoder
     sts = m_pGeneralAllocator->Alloc(m_pGeneralAllocator->pthis, &Request, &m_mfxResponse);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -843,6 +848,9 @@ mfxStatus CDecodingPipeline::AllocFrames()
     if (m_bVppIsUsed)
     {
         // alloc frames for VPP
+        if (m_export_mode != vaapiAllocatorParams::DONOT_EXPORT) {
+            VppRequest[1].Type |= MFX_MEMTYPE_EXPORT_FRAME;
+        }
         VppRequest[1].NumFrameSuggested = VppRequest[1].NumFrameMin = nVppSurfNum;
         MSDK_MEMCPY_VAR(VppRequest[1].Info, &(m_mfxVppVideoParams.vpp.Out), sizeof(mfxFrameInfo));
 
@@ -960,6 +968,16 @@ mfxStatus CDecodingPipeline::CreateAllocator()
         MSDK_CHECK_POINTER(p_vaapiAllocParams, MFX_ERR_MEMORY_ALLOC);
 
         p_vaapiAllocParams->m_dpy = va_dpy;
+        if (m_eWorkMode == MODE_RENDERING) {
+            if (m_libvaBackend == MFX_LIBVA_DRM_MODESET) {
+                CVAAPIDeviceDRM* drmdev = dynamic_cast<CVAAPIDeviceDRM*>(m_hwdev);
+                p_vaapiAllocParams->m_export_mode = vaapiAllocatorParams::CUSTOM_FLINK;
+                p_vaapiAllocParams->m_exporter = dynamic_cast<vaapiAllocatorParams::Exporter*>(drmdev->getRenderer());
+            } else if (m_libvaBackend == MFX_LIBVA_WAYLAND) {
+                p_vaapiAllocParams->m_export_mode = vaapiAllocatorParams::PRIME;
+            }
+        }
+        m_export_mode = p_vaapiAllocParams->m_export_mode;
         m_pmfxAllocatorParams = p_vaapiAllocParams;
 
         /* In case of video memory we must provide MediaSDK with external allocator

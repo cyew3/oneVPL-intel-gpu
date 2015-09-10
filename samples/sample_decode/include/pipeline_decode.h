@@ -80,6 +80,7 @@ struct sInputParams
     mfxU32  fourcc;
     mfxU32  nFrames;
 
+    mfxI32  monitorType;
 #if defined(LIBVA_SUPPORT)
     mfxI32  libvaBackend;
 #endif // defined(MFX_LIBVA_SUPPORT)
@@ -240,8 +241,10 @@ protected: // variables
     CDecodeD3DRender         m_d3dRender;
 #endif
 
+    mfxU32                  m_export_mode;
+    mfxI32                  m_monitorType;
 #if defined(LIBVA_SUPPORT)
-    mfxI32                   m_libvaBackend;
+    mfxI32                  m_libvaBackend;
 #endif // defined(MFX_LIBVA_SUPPORT)
 
 private:

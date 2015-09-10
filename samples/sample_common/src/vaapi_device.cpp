@@ -256,6 +256,45 @@ CHWDevice* CreateVAAPIDevice(void)
 
 #endif // LIBVA_WAYLAND_SUPPORT
 
+#if defined(LIBVA_DRM_SUPPORT)
+
+CVAAPIDeviceDRM::CVAAPIDeviceDRM(int type)
+    : m_DRMLibVA(type)
+    , m_rndr(NULL)
+{
+}
+
+CVAAPIDeviceDRM::~CVAAPIDeviceDRM(void)
+{
+  MSDK_SAFE_DELETE(m_rndr);
+}
+
+mfxStatus CVAAPIDeviceDRM::Init(mfxHDL hWindow, mfxU16 nViews, mfxU32 nAdapterNum)
+{
+    if (0 == nViews) {
+        return MFX_ERR_NONE;
+    }
+    if (1 == nViews) {
+        mfxI32 * monitorType = (mfxI32*)hWindow;
+        if (!monitorType) return MFX_ERR_INVALID_VIDEO_PARAM;
+        try {
+            m_rndr = new drmRenderer(m_DRMLibVA.getFD(), *monitorType);
+        } catch(...) {
+            msdk_printf(MSDK_STRING("vaapi_device: failed to initialize drmrender\n"));
+            return MFX_ERR_UNKNOWN;
+        }
+        return MFX_ERR_NONE;
+    }
+    return MFX_ERR_UNSUPPORTED;
+}
+
+mfxStatus CVAAPIDeviceDRM::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc)
+{
+    return (m_rndr)? m_rndr->render(pSurface): MFX_ERR_NONE;
+}
+
+#endif
+
 #if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT) || defined (LIBVA_WAYLAND_SUPPORT)
 
 CHWDevice* CreateVAAPIDevice(int type)
@@ -264,11 +303,12 @@ CHWDevice* CreateVAAPIDevice(int type)
 
     switch (type)
     {
-    case MFX_LIBVA_DRM:
+    case MFX_LIBVA_DRM_RENDERNODE:
+    case MFX_LIBVA_DRM_MODESET:
 #if defined(LIBVA_DRM_SUPPORT)
         try
         {
-            device = new CVAAPIDeviceDRM;
+            device = new CVAAPIDeviceDRM(type);
         }
         catch (std::exception&)
         {
@@ -309,7 +349,7 @@ CHWDevice* CreateVAAPIDevice(int type)
         {
             try
             {
-                device = new CVAAPIDeviceDRM;
+                device = new CVAAPIDeviceDRM(type);
             }
             catch (std::exception&)
             {

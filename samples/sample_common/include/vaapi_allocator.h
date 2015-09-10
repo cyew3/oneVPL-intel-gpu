@@ -31,6 +31,8 @@ struct vaapiMemId
     mfxU8*       m_va_buffer;
     // buffer info to support surface export
     VABufferInfo m_buffer_info;
+    // pointer to private export data
+    void*        m_custom;
 };
 
 namespace MfxLoader
@@ -42,17 +44,30 @@ struct vaapiAllocatorParams : mfxAllocatorParams
 {
     enum {
       DONOT_EXPORT = 0,
-      FLINK,
-      PRIME
+      FLINK = 0x01,
+      PRIME = 0x02,
+      NATIVE_EXPORT_MASK = FLINK | PRIME,
+      CUSTOM = 0x100,
+      CUSTOM_FLINK = CUSTOM | FLINK,
+      CUSTOM_PRIME = CUSTOM | PRIME
+    };
+    class Exporter
+    {
+    public:
+      virtual ~Exporter(){}
+      virtual void* acquire(mfxMemId mid) = 0;
+      virtual void release(mfxMemId mid, void * hdl) = 0;
     };
 
     vaapiAllocatorParams()
       : m_dpy(NULL)
       , m_export_mode(DONOT_EXPORT)
+      , m_exporter(NULL)
     {}
 
     VADisplay m_dpy;
     mfxU32 m_export_mode;
+    Exporter* m_exporter;
 };
 
 class vaapiFrameAllocator: public BaseFrameAllocator
@@ -76,6 +91,7 @@ protected:
     VADisplay m_dpy;
     MfxLoader::VA_Proxy * m_libva;
     mfxU32 m_export_mode;
+    vaapiAllocatorParams::Exporter* m_exporter;
 };
 
 #endif //#if defined(LIBVA_SUPPORT)

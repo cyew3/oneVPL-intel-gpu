@@ -24,10 +24,10 @@ CHWDevice* CreateVAAPIDevice(int type = MFX_LIBVA_DRM);
 class CVAAPIDeviceDRM : public CHWDevice
 {
 public:
-    CVAAPIDeviceDRM(){}
-    virtual ~CVAAPIDeviceDRM(void) {}
+    CVAAPIDeviceDRM(int type);
+    virtual ~CVAAPIDeviceDRM(void);
 
-    virtual mfxStatus Init(mfxHDL hWindow, mfxU16 nViews, mfxU32 nAdapterNum) { return MFX_ERR_NONE;}
+    virtual mfxStatus Init(mfxHDL hWindow, mfxU16 nViews, mfxU32 nAdapterNum);
     virtual mfxStatus Reset(void) { return MFX_ERR_NONE; }
     virtual void Close(void) { }
 
@@ -43,11 +43,13 @@ public:
         return MFX_ERR_UNSUPPORTED;
     }
 
-    virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc) { return MFX_ERR_NONE; }
+    virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc);
     virtual void      UpdateTitle(double fps) { }
 
+    inline drmRenderer* getRenderer() { return m_rndr; }
 protected:
     DRMLibVA m_DRMLibVA;
+    drmRenderer * m_rndr;
 };
 
 #endif

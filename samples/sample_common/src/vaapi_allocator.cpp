@@ -64,6 +64,7 @@ vaapiFrameAllocator::vaapiFrameAllocator()
     : m_dpy(0)
     , m_libva(new MfxLoader::VA_Proxy)
     , m_export_mode(vaapiAllocatorParams::DONOT_EXPORT)
+    , m_exporter(NULL)
 {
 }
 
@@ -81,12 +82,17 @@ mfxStatus vaapiFrameAllocator::Init(mfxAllocatorParams *pParams)
         return MFX_ERR_NOT_INITIALIZED;
 
     if ((p_vaapiParams->m_export_mode != vaapiAllocatorParams::DONOT_EXPORT) &&
-        (p_vaapiParams->m_export_mode != vaapiAllocatorParams::FLINK) &&
-        (p_vaapiParams->m_export_mode != vaapiAllocatorParams::PRIME))
+        !(p_vaapiParams->m_export_mode & vaapiAllocatorParams::FLINK) &&
+        !(p_vaapiParams->m_export_mode & vaapiAllocatorParams::PRIME) &&
+        !(p_vaapiParams->m_export_mode & vaapiAllocatorParams::CUSTOM))
+      return MFX_ERR_UNSUPPORTED;
+    if ((p_vaapiParams->m_export_mode & vaapiAllocatorParams::CUSTOM) &&
+        !p_vaapiParams->m_exporter)
       return MFX_ERR_UNSUPPORTED;
 
     m_dpy = p_vaapiParams->m_dpy;
     m_export_mode = p_vaapiParams->m_export_mode;
+    m_exporter = p_vaapiParams->m_exporter;
 #if defined(LIBVA_WAYLAND_SUPPORT)
     // TODO this should be done on application level via allocator parameters!!
     m_export_mode = vaapiAllocatorParams::PRIME;
@@ -231,18 +237,31 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             }
         }
     }
-    if ((MFX_ERR_NONE == mfx_res) && (m_export_mode != vaapiAllocatorParams::DONOT_EXPORT))
+    if ((MFX_ERR_NONE == mfx_res) &&
+        (request->Type & MFX_MEMTYPE_EXPORT_FRAME))
     {
+        if (m_export_mode == vaapiAllocatorParams::DONOT_EXPORT) {
+            mfx_res = MFX_ERR_UNKNOWN;
+        }
         for (i=0; i < surfaces_num; ++i)
         {
-            vaapi_mids[i].m_buffer_info.mem_type = (m_export_mode == vaapiAllocatorParams::PRIME)?
-              VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME: VA_SURFACE_ATTRIB_MEM_TYPE_KERNEL_DRM;
-            va_res = m_libva->vaDeriveImage(m_dpy, surfaces[i], &(vaapi_mids[i].m_image));
-            mfx_res = va_to_mfx_status(va_res);
+            if (m_export_mode & vaapiAllocatorParams::NATIVE_EXPORT_MASK) {
+                vaapi_mids[i].m_buffer_info.mem_type = (m_export_mode & vaapiAllocatorParams::PRIME)?
+                  VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME: VA_SURFACE_ATTRIB_MEM_TYPE_KERNEL_DRM;
+                va_res = m_libva->vaDeriveImage(m_dpy, surfaces[i], &(vaapi_mids[i].m_image));
+                mfx_res = va_to_mfx_status(va_res);
 
-            if (MFX_ERR_NONE != mfx_res) break;
-            va_res = m_libva->vaAcquireBufferHandle(m_dpy, vaapi_mids[i].m_image.buf, &(vaapi_mids[i].m_buffer_info));
-            mfx_res = va_to_mfx_status(va_res);
+                if (MFX_ERR_NONE != mfx_res) break;
+                va_res = m_libva->vaAcquireBufferHandle(m_dpy, vaapi_mids[i].m_image.buf, &(vaapi_mids[i].m_buffer_info));
+                mfx_res = va_to_mfx_status(va_res);
+            }
+            if (m_exporter) {
+                vaapi_mids[i].m_custom = m_exporter->acquire(&vaapi_mids[i]);
+                if (!vaapi_mids[i].m_custom) {
+                    mfx_res = MFX_ERR_UNKNOWN;
+                    break;
+                }
+            }
         }
     }
     if (MFX_ERR_NONE == mfx_res)
@@ -306,8 +325,13 @@ mfxStatus vaapiFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
             if (MFX_FOURCC_P8 == vaapi_mids[i].m_fourcc) m_libva->vaDestroyBuffer(m_dpy, surfaces[i]);
             else if (vaapi_mids[i].m_sys_buffer) free(vaapi_mids[i].m_sys_buffer);
             if (m_export_mode != vaapiAllocatorParams::DONOT_EXPORT) {
-                m_libva->vaReleaseBufferHandle(m_dpy, vaapi_mids[i].m_image.buf);
-                m_libva->vaDestroyImage(m_dpy, vaapi_mids[i].m_image.image_id);
+                if (m_exporter && vaapi_mids[i].m_custom) {
+                    m_exporter->release(&vaapi_mids[i], vaapi_mids[i].m_custom);
+                }
+                if (m_export_mode & vaapiAllocatorParams::NATIVE_EXPORT_MASK) {
+                    m_libva->vaReleaseBufferHandle(m_dpy, vaapi_mids[i].m_image.buf);
+                    m_libva->vaDestroyImage(m_dpy, vaapi_mids[i].m_image.image_id);
+                }
             }
         }
         free(vaapi_mids);

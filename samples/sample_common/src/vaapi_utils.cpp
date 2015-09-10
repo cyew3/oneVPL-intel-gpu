@@ -80,6 +80,44 @@ VA_Proxy::~VA_Proxy()
 #endif
 
 #if defined(LIBVA_DRM_SUPPORT)
+DRM_Proxy::DRM_Proxy()
+    : lib("libdrm.so.2")
+    , SIMPLE_LOADER_FUNCTION(drmIoctl)
+    , SIMPLE_LOADER_FUNCTION(drmModeAddFB)
+    , SIMPLE_LOADER_FUNCTION(drmModeFreeConnector)
+    , SIMPLE_LOADER_FUNCTION(drmModeFreeCrtc)
+    , SIMPLE_LOADER_FUNCTION(drmModeFreeEncoder)
+    , SIMPLE_LOADER_FUNCTION(drmModeFreePlane)
+    , SIMPLE_LOADER_FUNCTION(drmModeFreePlaneResources)
+    , SIMPLE_LOADER_FUNCTION(drmModeFreeResources)
+    , SIMPLE_LOADER_FUNCTION(drmModeGetConnector)
+    , SIMPLE_LOADER_FUNCTION(drmModeGetCrtc)
+    , SIMPLE_LOADER_FUNCTION(drmModeGetEncoder)
+    , SIMPLE_LOADER_FUNCTION(drmModeGetPlane)
+    , SIMPLE_LOADER_FUNCTION(drmModeGetPlaneResources)
+    , SIMPLE_LOADER_FUNCTION(drmModeGetResources)
+    , SIMPLE_LOADER_FUNCTION(drmModeRmFB)
+    , SIMPLE_LOADER_FUNCTION(drmModeSetCrtc)
+    , SIMPLE_LOADER_FUNCTION(drmSetMaster)
+    , SIMPLE_LOADER_FUNCTION(drmDropMaster)
+    , SIMPLE_LOADER_FUNCTION(drmModeSetPlane)
+{
+}
+
+DrmIntel_Proxy::~DrmIntel_Proxy()
+{}
+
+DrmIntel_Proxy::DrmIntel_Proxy()
+    : lib("libdrm_intel.so.1")
+    , SIMPLE_LOADER_FUNCTION(drm_intel_bo_gem_create_from_prime)
+    , SIMPLE_LOADER_FUNCTION(drm_intel_bo_unreference)
+    , SIMPLE_LOADER_FUNCTION(drm_intel_bufmgr_gem_init)
+{
+}
+
+DRM_Proxy::~DRM_Proxy()
+{}
+
 VA_DRMProxy::VA_DRMProxy()
     : lib("libva-drm.so.1")
     , SIMPLE_LOADER_FUNCTION(vaGetDisplayDRM)
@@ -185,7 +223,7 @@ CLibVA* CreateLibVA(int type)
 #if defined(LIBVA_DRM_SUPPORT)
         try
         {
-            libva = new DRMLibVA;
+            libva = new DRMLibVA(type);
         }
         catch (std::exception&)
         {
@@ -223,7 +261,7 @@ CLibVA* CreateLibVA(int type)
         {
             try
             {
-                libva = new DRMLibVA;
+                libva = new DRMLibVA(type);
             }
             catch (std::exception&)
             {

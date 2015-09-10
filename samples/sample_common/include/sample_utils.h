@@ -665,4 +665,6 @@ template<typename T>
 
 mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat);
 
+mfxI32 getMonitorType(msdk_char* str);
+
 #endif //__SAMPLE_UTILS_H__
