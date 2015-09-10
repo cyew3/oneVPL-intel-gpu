@@ -648,7 +648,9 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
     Task* inputTask = (Task*) thread_task;
     mfxStatus sts = MFX_ERR_NONE;
 
-    if (inputTask == taskForExecute && taskForExecute->m_surf)
+    MFX_CHECK_NULL_PTR1(inputTask);
+
+   if (inputTask == taskForExecute && taskForExecute->m_surf)
    {
         mfxHDLPair surfaceHDL = {};
         

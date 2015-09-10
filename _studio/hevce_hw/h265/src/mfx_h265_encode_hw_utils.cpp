@@ -2349,7 +2349,7 @@ IntraRefreshState GetIntraRefreshState(
     mfxEncodeCtrl const * ctrl,
     mfxU16                intraStripeWidthInMBs)
 {
-    IntraRefreshState state;
+    IntraRefreshState state={};
     const mfxExtCodingOption2*   extOpt2Init = &(video.m_ext.CO2);
     const mfxExtCodingOption3 *  extOpt3Init = &(video.m_ext.CO3);
 
