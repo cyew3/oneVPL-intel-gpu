@@ -551,7 +551,30 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     request.Info.Width  = IPP_MAX(request.Info.Width,  m_vParam.mfx.FrameInfo.Width);
     request.Info.Height = IPP_MAX(request.Info.Height, m_vParam.mfx.FrameInfo.Height * doubleBytesPerPx / 2);
 
-    sts = m_pCore->AllocFrames(&request, &m_bitstream);
+    if (MFX_HW_D3D11  == m_pCore->GetVAType())
+    {
+        mfxFrameAllocRequest tmp = request;
+        mfxFrameAllocResponse tmp_response;
+        tmp.NumFrameMin = tmp.NumFrameSuggested = 1;
+        m_mids.resize(request.NumFrameMin);
+
+        for (int i = 0; i < request.NumFrameMin; i++)
+        {
+            sts = m_pCore->AllocFrames(&tmp, &tmp_response);
+            MFX_CHECK_STS(sts);
+            m_mids[i] = tmp_response.mids[0];
+        }
+
+        m_bitstream.mids = &m_mids[0];
+        m_bitstream.NumFrameActual = request.NumFrameMin;
+    }
+    else
+    {
+        sts = m_pCore->AllocFrames(&request, &m_bitstream);
+        MFX_CHECK_STS(sts);
+    }
+
+    //sts = m_pCore->AllocFrames(&request, &m_bitstream);
     MFX_CHECK(
         sts == MFX_ERR_NONE &&
         m_bitstream.NumFrameActual >= request.NumFrameMin,

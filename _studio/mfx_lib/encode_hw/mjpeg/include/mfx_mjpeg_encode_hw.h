@@ -97,6 +97,7 @@ protected:
     mfxVideoParam       m_vFirstParam;
     mfxVideoParam       m_vParam;
     std::auto_ptr<DriverEncoder> m_ddi;
+    std::vector<mfxMemId>        m_mids;
 
     bool                m_bInitialized;
     bool                m_deviceFailed;
