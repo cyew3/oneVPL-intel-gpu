@@ -54,11 +54,11 @@ mfxStatus GeneralAllocator::Init(mfxAllocatorParams *pParams)
     if (m_D3DAllocator.get())
     {
         sts = m_D3DAllocator.get()->Init(pParams);
-        MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
     sts = m_SYSAllocator.get()->Init(0);
-    MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     return sts;
 }
@@ -68,11 +68,11 @@ mfxStatus GeneralAllocator::Close()
     if (m_D3DAllocator.get())
     {
         sts = m_D3DAllocator.get()->Close();
-        MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
     sts = m_SYSAllocator.get()->Close();
-    MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
    return sts;
 }
