@@ -1987,6 +1987,10 @@ mfxStatus CTranscodingPipeline::AllocFrames()
         }
         sts = CorrectAsyncDepth(VPPOut, m_AsyncDepth);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        if ((m_nVPPCompEnable == VppCompOnly) &&
+            (m_libvaBackend == MFX_LIBVA_DRM_MODESET)) {
+            VPPOut.Type |= MFX_MEMTYPE_EXPORT_FRAME;
+        }
         sts = AllocFrames(&VPPOut, false);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
@@ -2291,6 +2295,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 
     if ((VppComp == pParams->eModeExt) || (VppCompOnly == pParams->eModeExt))
         m_nVPPCompEnable = pParams->eModeExt;
+    m_libvaBackend = pParams->libvaBackend;
 
     m_pBuffer = pBuffer;
 
@@ -2352,8 +2357,9 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     // opaque memory feature is available starting with API 1.3 and
     // can be used within 1 intra session or joined inter sessions only
     if (m_Version.Major >= 1 && m_Version.Minor >= 3 &&
-        (pParams->eMode == Native || pParams->bIsJoin) )
+        (pParams->eMode == Native || pParams->bIsJoin) ) {
         m_bUseOpaqueMemory = true;
+    }
 
     if (!pParams->bUseOpaqueMemory)
         m_bUseOpaqueMemory = false;

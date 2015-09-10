@@ -168,6 +168,12 @@ namespace TranscodingSample
 
         bool bUseOpaqueMemory;
         mfxU16 nRenderColorForamt; /*0 NV12 - default, 1 is ARGB*/
+
+        mfxI32  monitorType;
+#if defined(LIBVA_SUPPORT)
+        mfxI32  libvaBackend;
+#endif // defined(MFX_LIBVA_SUPPORT)
+
         CHWDevice             *m_hwdev;
     };
 
@@ -504,6 +510,7 @@ namespace TranscodingSample
         bool           m_bDecodeEnable;
         bool           m_bEncodeEnable;
         mfxU32         m_nVPPCompEnable;
+        mfxI32         m_libvaBackend;
 
         bool           m_bUseOpaqueMemory; // indicates if opaque memory is used in the pipeline
 

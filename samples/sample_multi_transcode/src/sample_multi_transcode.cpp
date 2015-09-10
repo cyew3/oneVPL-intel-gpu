@@ -114,18 +114,26 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     if (m_eDevType == MFX_HANDLE_VA_DISPLAY)
     {
         m_pAllocParam.reset(new vaapiAllocatorParams);
+        vaapiAllocatorParams *pVAAPIParams = dynamic_cast<vaapiAllocatorParams*>(m_pAllocParam.get());
         /* The last param set in vector always describe VPP+ENCODE or Only VPP
          * So, if we want to do rendering we need to do pass HWDev to CTranscodingPipeline */
         if (m_InputParamsArray[m_InputParamsArray.size() -1].eModeExt == VppCompOnly)
         {
+            sInputParams& params = m_InputParamsArray[m_InputParamsArray.size() -1];
+
             /* Rendering case */
-            m_hwdev.reset(CreateVAAPIDevice(MFX_LIBVA_X11));
-            sts = m_hwdev->Init(NULL, 1, MSDKAdapter::GetNumber() );
-            m_InputParamsArray[m_InputParamsArray.size() -1].m_hwdev = m_hwdev.get();
+            m_hwdev.reset(CreateVAAPIDevice(params.libvaBackend));
+            sts = m_hwdev->Init(&params.monitorType, 1, MSDKAdapter::GetNumber() );
+            if (params.libvaBackend == MFX_LIBVA_DRM_MODESET) {
+                CVAAPIDeviceDRM* drmdev = dynamic_cast<CVAAPIDeviceDRM*>(m_hwdev.get());
+                pVAAPIParams->m_export_mode = vaapiAllocatorParams::CUSTOM_FLINK;
+                pVAAPIParams->m_exporter = dynamic_cast<vaapiAllocatorParams::Exporter*>(drmdev->getRenderer());
+            }
+            params.m_hwdev = m_hwdev.get();
         }
         else /* NO RENDERING*/
         {
-            m_hwdev.reset(CreateVAAPIDevice());
+            m_hwdev.reset(CreateVAAPIDevice(MFX_LIBVA_DRM_MODESET));
             sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber() );
         }
 
@@ -133,7 +141,6 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         sts = m_hwdev->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*)&hdl);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         // set Device to external vaapi allocator
-        vaapiAllocatorParams *pVAAPIParams = dynamic_cast<vaapiAllocatorParams*>(m_pAllocParam.get());
         pVAAPIParams->m_dpy =(VADisplay)hdl;
     }
 #endif
