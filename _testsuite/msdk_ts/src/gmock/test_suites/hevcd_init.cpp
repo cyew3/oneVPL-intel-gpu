@@ -29,7 +29,7 @@ private:
         mfxU32 alloc_mode_plus1;
         mfxU32 zero_ptr;
         mfxU32 num_call_minus1;
-        struct f_pair 
+        struct f_pair
         {
             const  tsStruct::Field* f;
             mfxU32 v;
@@ -39,7 +39,7 @@ private:
     static const tc_struct test_case[];
 };
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_INVALID_HANDLE, 0, SESSION},
     {/* 1*/ MFX_ERR_NULL_PTR, 0, MFXVP},
@@ -83,7 +83,7 @@ int TestSuite::RunTest(unsigned int id)
     m_par_set = true; //don't use DecodeHeader
     m_par.AsyncDepth = 5;
 
-    
+
     if(tc.zero_ptr == UID)
     {
         m_uid = 0;
@@ -98,23 +98,24 @@ int TestSuite::RunTest(unsigned int id)
             Load();
         }
 
+        // set default param
+        m_pPar->mfx.CodecProfile = 1;
+        for (mfxU32 i = 0; i < n_par; i++)
+        {
+            if (tc.set_par[i].f)
+            {
+                tsStruct::set(m_pPar, *tc.set_par[i].f, tc.set_par[i].v);
+            }
+        }
+
         if(set_allocator)
         {
             UseDefaultAllocator(!!(m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
             GetAllocator()->reset(
-                (frame_allocator::AllocMode)(tc.alloc_mode_plus1-1), 
-                frame_allocator::LockMode::ENABLE_ALL, 
+                (frame_allocator::AllocMode)(tc.alloc_mode_plus1-1),
+                frame_allocator::LockMode::ENABLE_ALL,
                 frame_allocator::OpaqueAllocMode::ALLOC_ERROR);
             SetFrameAllocator(m_session, GetAllocator());
-        }
-        // set default param
-        m_pPar->mfx.CodecProfile = 1;
-        for(mfxU32 i = 0; i < n_par; i ++)
-        {
-            if(tc.set_par[i].f)
-            {
-                tsStruct::set(m_pPar, *tc.set_par[i].f, tc.set_par[i].v);
-            }
         }
 
         if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
