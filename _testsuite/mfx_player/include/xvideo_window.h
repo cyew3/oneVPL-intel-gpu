@@ -21,6 +21,8 @@ File Name: .h
 
 #define MFX_ZERO_MEM(x) memset(&x, 0, sizeof(x))
 
+class X11LibVA;
+
 class XVideoWindow
 {
 public:
@@ -46,7 +48,7 @@ public:
         }
     };
     XVideoWindow();
-    virtual ~XVideoWindow() { /*if (m_Hwnd)DestroyWindow(m_Hwnd);*/}
+    virtual ~XVideoWindow();
 
     bool Initialize( const InitParams &refInit);
     mfxHDL GetWindowHandle() { return (mfxHDL)m_Hwnd; }
@@ -58,6 +60,7 @@ private:
 
     Display *m_px11Display;
     Window m_Hwnd;
+    X11LibVA *m_pX11LibVA;
 };
 
 #endif // #ifdef LIBVA_X11_SUPPORT

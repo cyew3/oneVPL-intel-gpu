@@ -21,14 +21,19 @@ File Name: .h
 #include "vaapi_utils_x11.h"
 
 XVideoWindow::XVideoWindow()
+    : m_pX11LibVA(new X11LibVA)
 {
     m_Hwnd          = 0;
 }
 
+XVideoWindow::~XVideoWindow()
+{ 
+    delete m_pX11LibVA;
+}
+
 bool XVideoWindow::Initialize(const InitParams &refInit)
 {
-	X11LibVA m_X11LibVA;
-	MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
+    MfxLoader::XLib_Proxy & x11lib = m_pX11LibVA->GetX11();
 
     char* currentDisplay = getenv("DISPLAY");
     m_px11Display = NULL;

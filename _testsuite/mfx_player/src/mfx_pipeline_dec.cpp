@@ -1906,11 +1906,18 @@ mfxStatus MFXDecPipeline::CreateRender()
             {
                 MFX_TRACE_AND_EXIT(MFX_ERR_UNSUPPORTED, (VM_STRING("On screen rendering not supported with system memory\n")));
             }
+            try
+            {
+                m_pRender = new ScreenVAAPIRender(m_components[eREN].m_pSession, &sts, iParams);
 
-            m_pRender = new ScreenVAAPIRender(m_components[eREN].m_pSession, &sts, iParams);
-
-            IHWDevice *pDevice = NULL;
-            MFX_CHECK_STS(m_pRender->GetDevice(&pDevice));
+                IHWDevice *pDevice = NULL;
+                MFX_CHECK_STS(m_pRender->GetDevice(&pDevice));
+            }
+            catch (std::exception& e)
+            {
+                MFX_TRACE_ERR((VM_STRING("On screen rendering initialization failed\n")));
+                MFX_DELETE(m_pRender);
+            }
 
             break;
         }
