@@ -629,7 +629,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-        else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-wc")))
+        else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-ws")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
