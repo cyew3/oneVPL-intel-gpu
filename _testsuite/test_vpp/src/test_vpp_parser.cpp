@@ -1197,7 +1197,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             }
             else
             {
-                vm_string_printf(VM_STRING("Unknow option: %s\n"), strInput[i]);
+                vm_string_printf(VM_STRING("Unknown option: %s\n"), strInput[i]);
 
                 return MFX_ERR_UNKNOWN;
             }
