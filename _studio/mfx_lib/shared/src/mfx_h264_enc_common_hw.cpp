@@ -2314,6 +2314,15 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
         par.mfx.FrameInfo.ChromaFormat = 0;
     }
+    
+    if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
+        (par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ||
+         par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444))
+    {
+        changed = true;
+        par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+    }
+
     if (!CheckTriStateOption(extOpt2->DisableVUI))         changed = true;
     if (!CheckTriStateOption(extOpt->VuiNalHrdParameters)) changed = true;
     if (!CheckTriStateOption(extOpt->VuiVclHrdParameters)) changed = true;
