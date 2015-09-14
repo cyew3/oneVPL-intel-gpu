@@ -56,6 +56,8 @@ typedef struct _mfxENCOutput mfxENCOutput;
 struct _mfxENCOutput{
     mfxU32  reserved[32];
 
+    mfxFrameSurface1 *OutSurface;
+
     mfxU16  NumExtParam;
     mfxExtBuffer    **ExtParam;
 } ;
