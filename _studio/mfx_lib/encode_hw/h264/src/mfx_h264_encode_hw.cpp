@@ -379,13 +379,12 @@ mfxStatus ImplementationAvc::Query(
         // let use dedault values if input resolution is 0x0
         mfxU32 Width  = in->mfx.FrameInfo.Width == 0 ? 1920: in->mfx.FrameInfo.Width;
         mfxU32 Height =  in->mfx.FrameInfo.Height == 0 ? 1088: in->mfx.FrameInfo.Height;
-
-        if(IsOn(in->mfx.LowPower))
+        //WA exception from driver - need to remove if HW support bigger resolution.
+        if(Width > 4096 || Height > 4096)
+           sts = MFX_ERR_UNSUPPORTED;
+        else if(IsOn(in->mfx.LowPower))
         {
             sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_LowPower_Query, isWiDi != 0, Width, Height);
-            if (sts != MFX_ERR_NONE){
-                return MFX_ERR_UNSUPPORTED;
-            }
         }
         else
         {
@@ -393,7 +392,7 @@ mfxStatus ImplementationAvc::Query(
         }
         
         if (sts != MFX_ERR_NONE)
-            return MFX_WRN_PARTIAL_ACCELERATION;
+            return IsOn(in->mfx.LowPower)? MFX_ERR_UNSUPPORTED: MFX_WRN_PARTIAL_ACCELERATION;
 
         MfxVideoParam tmp = *in; // deep copy, create all supported extended buffers
 
