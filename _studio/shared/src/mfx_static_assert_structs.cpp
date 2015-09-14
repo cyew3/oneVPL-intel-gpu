@@ -139,10 +139,10 @@ File Name: mfx_static_assert_structs.cpp
 #if defined (__MFXENC_H__)
     #if defined(_WIN64) || defined(LINUX64)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(_mfxENCInput               ,184)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(_mfxENCOutput              ,144)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(_mfxENCOutput              ,152)
     #elif defined(_WIN32) || defined(LINUX32)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(_mfxENCInput               ,156)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(_mfxENCOutput              ,136)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(_mfxENCOutput              ,140)
     #endif
 #endif //defined (__MFXENC_H__)
 

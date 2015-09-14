@@ -453,6 +453,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     m_statParams.ref_width = feiCtrl->RefWidth;
     m_statParams.search_window = feiCtrl->SearchWindow;
     m_statParams.enable_8x8statistics = feiCtrl->Enable8x8Stat;
+    m_statParams.intra_part_mask = feiCtrl->IntraPartMask;
 
 #if 0
     fprintf(stderr, "\n**** stat params:\n");
@@ -1326,11 +1327,19 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     m_pps.CurrPic.TopFieldOrderCnt = task.GetPoc(TFIELD);
     m_pps.CurrPic.BottomFieldOrderCnt = task.GetPoc(BFIELD);
 
-    /* hard coded, ENC does not generate real reconstruct surface,
+    /* ENC does not generate real reconstruct surface,
      * and this surface should be unchanged
-     * BUT (!) this surface should be from reconstruct surface pool which was passed to
-     * component when vaCreateContext was called */
-    m_pps.CurrPic.picture_id = m_reconQueue[0].surface;
+     * BUT (!)
+     * (1): this surface should be from reconstruct surface pool which was passed to
+     * component when vaCreateContext was called
+     * (2): And it should be same surface which will be used for PAK reconstructed
+     * (3): And main rule: ENC (N number call) and PAK (N number call) should have same exactly
+     * same reference /reconstruct list !
+     * */
+
+    mfxHDL recon_handle;
+    mfxSts = m_core->GetExternalFrameHDL(out->OutSurface->Data.MemId, &recon_handle);
+    m_pps.CurrPic.picture_id = *(VASurfaceID*) recon_handle; //id in the memory by ptr
     mdprintf(stderr,"m_pps.CurrPic.picture_id = %d\n",m_pps.CurrPic.picture_id);
     /* Driver select progressive / interlaced based on this field */
     if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)

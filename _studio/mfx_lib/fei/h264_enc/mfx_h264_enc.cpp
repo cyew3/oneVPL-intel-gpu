@@ -416,20 +416,18 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
     mfxFrameAllocRequest request = { };
     request.Info = m_video.mfx.FrameInfo;
 
-    /* FIXME */
-    /*WA*/
-    /*
-     * FEI ENC does not need real reconstruct surface. (Recon surface will not be filled by HW within ENC stage)
-     * But recon surface should be present for vaContexCreat().
-     * And this one recon surface should be passed to driver within Execute() call...
-     * So, lets alloc only 1(one) internal surface for it
-     *  */
-    request.Type = MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME;
-    //request.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
-    //request.NumFrameMin = m_video.mfx.GopRefDist*2;
-    //request.NumFrameSuggested = request.NumFrameMin + m_video.AsyncDepth;
-    request.NumFrameMin = 1;
-    request.NumFrameSuggested = 1;
+    /* ENC does not generate real reconstruct surface,
+     * and this surface should be unchanged
+     * BUT (!)
+     * (1): this surface should be from reconstruct surface pool which was passed to
+     * component when vaCreateContext was called
+     * (2): And it should be same surface which will be used for PAK reconstructed in next call
+     * (3): And main rule: ENC (N number call) and PAK (N number call) should have same exactly
+     * same reference /reconstruct list !
+     * */
+    request.Type = MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
+    request.NumFrameMin = m_video.mfx.GopRefDist*2;
+    request.NumFrameSuggested = request.NumFrameMin + m_video.AsyncDepth;
     request.AllocId = par->AllocId;
 
     sts = m_core->AllocFrames(&request, &m_raw);
