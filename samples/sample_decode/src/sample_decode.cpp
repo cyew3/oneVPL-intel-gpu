@@ -13,6 +13,10 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 #include "pipeline_decode.h"
 #include <sstream>
 
+#if defined LIBVA_SUPPORT
+#include "vaapi_allocator.h"
+#endif
+
 void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 {
     msdk_printf(MSDK_STRING("Decoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
@@ -212,6 +216,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->mode = MODE_RENDERING;
             pParams->libvaBackend = MFX_LIBVA_DRM_MODESET;
             pParams->monitorType = getMonitorType(&strInput[i][5]);
+            pParams->exportMode = vaapiAllocatorParams::CUSTOM_PRIME;
             if (pParams->monitorType >= MFX_MONITOR_MAXNUMBER) {
                 if (strInput[i][5]) {
                     PrintHelp(strInput[0], MSDK_STRING("unsupported monitor type"));
@@ -220,6 +225,19 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                     pParams->monitorType = MFX_MONITOR_AUTO; // that's case of "-rdrm" pure option
                 }
             }
+        }
+        else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-export-mode-"), 13))
+        {
+          if (!msdk_strcmp(&strInput[i][13], MSDK_STRING("prime")))
+            pParams->exportMode = vaapiAllocatorParams::CUSTOM_PRIME;
+          else if (!msdk_strcmp(&strInput[i][13], MSDK_STRING("flink")))
+            pParams->exportMode = vaapiAllocatorParams::CUSTOM_FLINK;
+          else if (!msdk_strcmp(&strInput[i][13], MSDK_STRING("import")))
+            pParams->exportMode = vaapiAllocatorParams::CUSTOM;
+          else {
+            PrintHelp(strInput[0], MSDK_STRING("unsupported export mode"));
+            return MFX_ERR_UNSUPPORTED;
+          }
         }
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-low_latency")))

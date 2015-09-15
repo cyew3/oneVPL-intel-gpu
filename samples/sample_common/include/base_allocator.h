@@ -17,6 +17,7 @@ Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 #include "mfxvideo.h"
 
 #define MFX_MEMTYPE_EXPORT_FRAME 0x2000
+#define MFX_MEMTYPE_IMPORT_FRAME 0x4000
 
 struct mfxAllocatorParams
 {

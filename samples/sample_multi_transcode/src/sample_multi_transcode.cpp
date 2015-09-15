@@ -126,7 +126,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             sts = m_hwdev->Init(&params.monitorType, 1, MSDKAdapter::GetNumber() );
             if (params.libvaBackend == MFX_LIBVA_DRM_MODESET) {
                 CVAAPIDeviceDRM* drmdev = dynamic_cast<CVAAPIDeviceDRM*>(m_hwdev.get());
-                pVAAPIParams->m_export_mode = vaapiAllocatorParams::CUSTOM_FLINK;
+                pVAAPIParams->m_export_mode = params.exportMode;
                 pVAAPIParams->m_exporter = dynamic_cast<vaapiAllocatorParams::Exporter*>(drmdev->getRenderer());
             }
             params.m_hwdev = m_hwdev.get();

@@ -123,7 +123,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     VAStatus  va_res  = VA_STATUS_SUCCESS;
     unsigned int va_fourcc = 0;
     VASurfaceID* surfaces = NULL;
-    VASurfaceAttrib attrib;
+    VASurfaceAttrib attrib[2];
     vaapiMemId *vaapi_mids = NULL, *vaapi_mid = NULL;
     mfxMemId* mids = NULL;
     mfxU32 fourcc = request->Info.FourCC;
@@ -163,22 +163,22 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         {
             unsigned int format;
 
-            attrib.type          = VASurfaceAttribPixelFormat;
-            attrib.flags         = VA_SURFACE_ATTRIB_SETTABLE;
-            attrib.value.type    = VAGenericValueTypeInteger;
-            attrib.value.value.i = va_fourcc;
+            attrib[0].type          = VASurfaceAttribPixelFormat;
+            attrib[0].flags         = VA_SURFACE_ATTRIB_SETTABLE;
+            attrib[0].value.type    = VAGenericValueTypeInteger;
+            attrib[0].value.value.i = va_fourcc;
             format               = va_fourcc;
 
             if (fourcc == MFX_FOURCC_VP8_NV12)
             {
                 // special configuration for NV12 surf allocation for VP8 hybrid encoder is required
-                attrib.type          = (VASurfaceAttribType)VASurfaceAttribUsageHint;
-                attrib.value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
+                attrib[0].type          = (VASurfaceAttribType)VASurfaceAttribUsageHint;
+                attrib[0].value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
             }
             else if (fourcc == MFX_FOURCC_VP8_MBDATA)
             {
                 // special configuration for MB data surf allocation for VP8 hybrid encoder is required
-                attrib.value.value.i = VA_FOURCC_P208;
+                attrib[0].value.value.i = VA_FOURCC_P208;
                 format               = VA_FOURCC_P208;
             }
             else if (va_fourcc == VA_FOURCC_NV12)
@@ -190,15 +190,59 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 format = VA_RT_FORMAT_YUV422;
             }
 
-            va_res = m_libva->vaCreateSurfaces(m_dpy,
-                                    format,
-                                    request->Info.Width, request->Info.Height,
-                                    surfaces,
-                                    surfaces_num,
-                                    &attrib, 1);
+            if (!(request->Type & MFX_MEMTYPE_IMPORT_FRAME)) {
+                va_res = m_libva->vaCreateSurfaces(m_dpy,
+                                        format,
+                                        request->Info.Width, request->Info.Height,
+                                        surfaces,
+                                        surfaces_num,
+                                        attrib, 1);
 
-            mfx_res = va_to_mfx_status(va_res);
-            bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
+                mfx_res = va_to_mfx_status(va_res);
+                bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
+            } else {
+              printf("==================: DUMB\n");
+                unsigned long handle;
+                VASurfaceAttribExternalBuffers ext_bufs;
+
+                MSDK_ZERO_MEMORY(ext_bufs);
+                ext_bufs.pixel_format = VA_FOURCC_BGRX;
+                ext_bufs.width = request->Info.Width;
+                ext_bufs.height = request->Info.Height;
+                ext_bufs.data_size = request->Info.Width * request->Info.Height * 32 / 8;
+                ext_bufs.num_planes = 1;
+                ext_bufs.buffers = &handle;
+                ext_bufs.num_buffers = 1;
+                ext_bufs.flags = VA_SURFACE_ATTRIB_MEM_TYPE_KERNEL_DRM;
+
+                attrib[1].flags = VA_SURFACE_ATTRIB_SETTABLE;
+                attrib[1].type = VASurfaceAttribExternalBufferDescriptor;
+                attrib[1].value.type = VAGenericValueTypePointer;
+                attrib[1].value.value.p = &ext_bufs;
+
+                for (i=0; i < surfaces_num; ++i) {
+                    uint32_t flink;
+                    mfxU16 pitch;
+
+                    void* privmid = m_exporter->alloc_bo(request->Info.Width, request->Info.Height, &flink, &pitch);
+                    if (!privmid) {
+                      mfx_res = MFX_ERR_MEMORY_ALLOC;
+                      break;
+                    }
+                    handle = (unsigned long)flink;
+                    ext_bufs.pitches[0] = pitch;
+
+                    va_res = m_libva->vaCreateSurfaces(m_dpy,
+                        format, request->Info.Width, request->Info.Height,
+                        surfaces + i, 1, attrib, 2);
+                    mfx_res = va_to_mfx_status(va_res);
+                    if(mfx_res != MFX_ERR_NONE) {
+                      break;
+                    }
+                    vaapi_mids[i].m_custom = privmid;
+                }
+                bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
+            }
         }
         else
         {
@@ -240,6 +284,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     if ((MFX_ERR_NONE == mfx_res) &&
         (request->Type & MFX_MEMTYPE_EXPORT_FRAME))
     {
+        printf("==================: PRIME or FLINK!!\n");
         if (m_export_mode == vaapiAllocatorParams::DONOT_EXPORT) {
             mfx_res = MFX_ERR_UNKNOWN;
         }

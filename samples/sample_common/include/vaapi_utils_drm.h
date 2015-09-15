@@ -45,6 +45,9 @@ public:
     virtual mfxStatus render(mfxFrameSurface1 * pSurface);
 
     // vaapiAllocatorParams::Exporter methods
+    virtual void* alloc_bo(
+      mfxU16 width, mfxU16 height,
+      uint32_t* flink_handle, mfxU16* pitch);
     virtual void* acquire(mfxMemId mid);
     virtual void release(mfxMemId mid, void * mem);
 
@@ -52,6 +55,12 @@ public:
     static const msdk_char* getConnectorName(uint32_t connector_type);
 
 private:
+    struct privMID {
+      bool dumb;
+      uint32_t fbhandle;
+      uint32_t dumbhandle;
+    };
+
     bool getConnector(drmModeRes *resource, uint32_t connector_type);
     bool setupConnection(drmModeRes *resource, drmModeConnector* connector);
     bool getPlane();

@@ -820,6 +820,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.libvaBackend = MFX_LIBVA_DRM_MODESET;
             InputParams.monitorType = getMonitorType(&argv[i][5]);
+            InputParams.exportMode = vaapiAllocatorParams::CUSTOM_PRIME;
             if (InputParams.monitorType >= MFX_MONITOR_MAXNUMBER) {
                 if (argv[i][5]) {
                     PrintHelp(argv[0], MSDK_STRING("unsupported monitor type"));
@@ -828,6 +829,21 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                     InputParams.monitorType = MFX_MONITOR_AUTO; // that's case of "-rdrm" pure option
                 }
             }
+        }
+        else if (0 == msdk_strncmp(argv[i], MSDK_STRING("-export-mode-"), 13))
+        {
+          if (!msdk_strcmp(&argv[i][13], MSDK_STRING("prime"))) {
+            InputParams.exportMode = vaapiAllocatorParams::CUSTOM_PRIME;
+          }
+          else if (!msdk_strcmp(&argv[i][13], MSDK_STRING("flink")))
+            InputParams.exportMode = vaapiAllocatorParams::CUSTOM_FLINK;
+          else if (!msdk_strcmp(&argv[i][13], MSDK_STRING("import"))) {
+            InputParams.exportMode = vaapiAllocatorParams::CUSTOM;
+          }
+          else {
+            PrintHelp(argv[0], MSDK_STRING("unsupported export mode"));
+            return MFX_ERR_UNSUPPORTED;
+          }
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-ext_allocator")))
         {

@@ -84,6 +84,7 @@ struct sInputParams
 #if defined(LIBVA_SUPPORT)
     mfxI32  libvaBackend;
 #endif // defined(MFX_LIBVA_SUPPORT)
+    mfxU32  exportMode;
 
     msdk_char     strSrcFile[MSDK_MAX_FILENAME_LEN];
     msdk_char     strDstFile[MSDK_MAX_FILENAME_LEN];

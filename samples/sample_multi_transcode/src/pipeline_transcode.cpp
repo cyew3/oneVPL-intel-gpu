@@ -14,6 +14,10 @@ Copyright(c) 2010-2015 Intel Corporation. All Rights Reserved.
 #include <windows.h>
 #endif
 
+#if defined LIBVA_SUPPORT
+#include "vaapi_allocator.h"
+#endif
+
 #include "pipeline_transcode.h"
 #include "transcode_utils.h"
 #include "sample_utils.h"
@@ -1989,7 +1993,7 @@ mfxStatus CTranscodingPipeline::AllocFrames()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         if ((m_nVPPCompEnable == VppCompOnly) &&
             (m_libvaBackend == MFX_LIBVA_DRM_MODESET)) {
-            VPPOut.Type |= MFX_MEMTYPE_EXPORT_FRAME;
+            VPPOut.Type |= (m_export_mode & vaapiAllocatorParams::NATIVE_EXPORT_MASK)? MFX_MEMTYPE_EXPORT_FRAME: MFX_MEMTYPE_IMPORT_FRAME;
         }
         sts = AllocFrames(&VPPOut, false);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -2296,6 +2300,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     if ((VppComp == pParams->eModeExt) || (VppCompOnly == pParams->eModeExt))
         m_nVPPCompEnable = pParams->eModeExt;
     m_libvaBackend = pParams->libvaBackend;
+    m_export_mode = pParams->exportMode;
 
     m_pBuffer = pBuffer;
 
