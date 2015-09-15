@@ -1023,6 +1023,9 @@ VAAPIVideoCORE::DoFastCopyExtended(
     }
     else if (NULL != pSrc->Data.MemId && NULL != pDst->Data.Y)
     {
+        MFX_CHECK((pDst->Data.Y == 0) == (pDst->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(dstPitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
+
         VASurfaceID *va_surface = (VASurfaceID*)(pSrc->Data.MemId);
         VAImage va_image;
         VAStatus va_sts;
@@ -1065,8 +1068,6 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
                 mfxStatus sts;
 
-                MFX_CHECK((pDst->Data.Y == 0) == (pDst->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
-                MFX_CHECK(dstPitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
                 MFX_CHECK(srcPitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
 
                 switch (pDst->Info.FourCC)
@@ -1282,6 +1283,9 @@ VAAPIVideoCORE::DoFastCopyExtended(
         }
         else
         {
+            MFX_CHECK((pSrc->Data.Y == 0) == (pSrc->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(srcPitch < 0x8000 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
+
             VAStatus va_sts = VA_STATUS_SUCCESS;
             VASurfaceID *va_surface = (VASurfaceID*)(size_t)pDst->Data.MemId;
             VAImage va_image;
@@ -1298,9 +1302,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
             Ipp32u dstPitch = va_image.pitches[0];
 
-            MFX_CHECK((pSrc->Data.Y == 0) == (pSrc->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(dstPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(srcPitch < 0x8000 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
             switch (pDst->Info.FourCC)
             {

@@ -836,6 +836,10 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         }
         else
         {
+
+            MFX_CHECK((pDst->Data.Y == 0) == (pDst->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(dstPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_ARGB16 || pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
+
             ID3D11Texture2D * pSurface = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)pSrc->Data.MemId)->first);
 
             pSurface->GetDesc(&sSurfDesc);
@@ -887,8 +891,6 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
 
             Ipp32u srcPitch = sLockRect.RowPitch;
 
-            MFX_CHECK((pDst->Data.Y == 0) == (pDst->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(dstPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_ARGB16 || pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(srcPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_ARGB16 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
             switch (pDst->Info.FourCC)
@@ -1147,6 +1149,9 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         }
         else
         {
+            MFX_CHECK((pSrc->Data.Y == 0) == (pSrc->Data.UV == 0) || IsBayerFormat(pDst->Info.FourCC), MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(srcPitch < 0x8000 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
+
             ID3D11Texture2D * pSurface = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)pDst->Data.MemId)->first);
 
             pSurface->GetDesc(&sSurfDesc);
@@ -1188,9 +1193,8 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
             Ipp32u dstPitch = sLockRect.RowPitch;
 
-            MFX_CHECK((pSrc->Data.Y == 0) == (pSrc->Data.UV == 0) || IsBayerFormat(pDst->Info.FourCC), MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(dstPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(srcPitch < 0x8000 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
+
             switch (pDst->Info.FourCC)
             {
             case MFX_FOURCC_R16_BGGR:
