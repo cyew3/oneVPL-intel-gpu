@@ -1184,10 +1184,10 @@ mfxStatus D3D9Encoder::SetEncCtrlCaps(ENCODE_ENC_CTRL_CAPS const & caps)
 mfxStatus D3D9Encoder::Reset(
     MfxVideoParam const & par)
 {
-    ENCODE_SET_SEQUENCE_PARAMETERS_H264 oldSps = m_sps;
-    ENCODE_SET_VUI_PARAMETER            oldVui = m_vui;
     mfxExtCodingOption2 const * extCO2 = GetExtBuffer(par);
-
+    mfxU32 oldTargetBitrate = m_sps.TargetBitRate;
+    mfxU32 oldMaxBitrate    = m_sps.MaxBitRate;
+    mfxU32 oldFrameRate    = m_sps.FramesPer100Sec;
     if (extCO2)
         m_skipMode = extCO2->SkipFrame;
 
@@ -1200,7 +1200,10 @@ mfxStatus D3D9Encoder::Reset(
     FillVuiBuffer(par, m_vui);
     FillConstPartOfPpsBuffer(par, m_caps, m_pps);
 
-    m_sps.bResetBRC = !Equal(m_sps, oldSps) || !Equal(m_vui, oldVui);
+    m_sps.bResetBRC =
+        m_sps.TargetBitRate != oldTargetBitrate ||
+        m_sps.MaxBitRate    != oldMaxBitrate ||
+        m_sps.FramesPer100Sec != oldFrameRate;
 
     mfxU16 maxNumSlices = GetMaxNumSlices(par);
     m_slice.resize(maxNumSlices);
