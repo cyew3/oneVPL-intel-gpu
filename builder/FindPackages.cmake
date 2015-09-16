@@ -94,16 +94,16 @@ function( configure_build_variant_linux target variant )
 
   if( ARGV1 MATCHES hw AND Linux )
     append_property( ${ARGV0} COMPILE_FLAGS "-DMFX_VA" )
-    append_property( ${ARGV0} COMPILE_FLAGS "${PKG_LIBVA_CFLAGS}" ) 
+    append_property( ${ARGV0} COMPILE_FLAGS "${PKG_LIBVA_CFLAGS}" )
     foreach(libpath ${PKG_LIBVA_LIBRARY_DIRS} )
      append_property( ${ARGV0} LINK_FLAGS "-L${libpath}" )
     endforeach()
     #append_property( ${ARGV0} LINK_FLAGS "${PKG_LIBVA_LDFLAGS_OTHER}" )
- 
+
     target_link_libraries( ${ARGV0} va ${MDF_LIBS} )
 
-  elseif( ARGV1 MATCHES universal ) 
-  
+  elseif( ARGV1 MATCHES universal )
+
     append_property( ${ARGV0} COMPILE_FLAGS "-DMFX_VA -DLIBVA_SUPPORT -DLIBVA_DRM_SUPPORT -DLIBVA_X11_SUPPORT" )
     append_property( ${ARGV0} COMPILE_FLAGS "${PKG_LIBDRM_CFLAGS} ${PKG_LIBVA_CFLAGS} ${PKG_LIBVA_DRM_CFLAGS} ${PKG_LIBVA_X11_CFLAGS} ${PKG_X11_CFLAGS}" )
 

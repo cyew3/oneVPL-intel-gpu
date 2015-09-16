@@ -9,7 +9,6 @@ include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-samples/samples/deprecated/sample_spl_mux/api
-#  ${CMAKE_HOME_DIRECTORY}/samples/sample_common/include
 )
 
 # =============================================================================
@@ -36,33 +35,33 @@ list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_player.cpp)
 
 set( LIBS "" )
 list( APPEND LIBS
-	mfx_pipeline
-#        vpp_plugin
-	shared_utils_lucas
-	umc_splmux_merged
-	umc_io_merged_sw
-	umc_core_merged
-	${ITT_LIBS}
-	dispatch_trace
-	sample_spl_mux_dispatcher
-	ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
-	pthread dl
+    mfx_pipeline
+#    vpp_plugin
+    shared_utils_lucas
+    umc_splmux_merged
+    umc_io_merged_sw
+    umc_core_merged
+    ${ITT_LIBS}
+    dispatch_trace
+    sample_spl_mux_dispatcher
+    ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
+    pthread dl
 )
 make_executable( mfx_player universal static )
 
 set( defs "-DLUCAS_DLL" )
 set( LIBS "" )
 list( APPEND LIBS
-	mfx_pipeline_lucas
-#        vpp_plugin
-	shared_utils
-	umc_splmux_merged
-	umc_io_merged_sw
-	umc_core_merged
-	${ITT_LIBS}
-	dispatch_trace
-	sample_spl_mux_dispatcher
-	ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
-	pthread dl
+    mfx_pipeline_lucas
+#    vpp_plugin
+    shared_utils
+    umc_splmux_merged
+    umc_io_merged_sw
+    umc_core_merged
+    ${ITT_LIBS}
+    dispatch_trace
+    sample_spl_mux_dispatcher
+    ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
+    pthread dl
 )
 make_library( mfx_player_lucas universal shared )

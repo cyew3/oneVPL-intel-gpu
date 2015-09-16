@@ -18,12 +18,12 @@ list( APPEND sources ${srcs})
 
 set( LIBS "" )
 list( APPEND LIBS
-	shared_utils
-	sample_common
-	mfx
-	umc_core_merged
-	ippdc_l ippvc_l ippcc_l ippi_l ipps_l ippcore_l
-	dl
-	pthread
+    shared_utils
+    sample_common
+    mfx
+    umc_core_merged
+    ippdc_l ippvc_l ippcc_l ippi_l ipps_l ippcore_l
+    dl
+    pthread
 )
 make_executable( test_vpp universal static )

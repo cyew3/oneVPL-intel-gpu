@@ -59,7 +59,7 @@ protected:
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
 
     VADisplay m_dpy;
-	MfxLoader::VA_Proxy m_libva;
+    MfxLoader::VA_Proxy m_libva;
 };
 
 #endif //#if defined(LIBVA_SUPPORT)

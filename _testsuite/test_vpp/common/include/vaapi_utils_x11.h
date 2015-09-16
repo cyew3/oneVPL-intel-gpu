@@ -24,13 +24,13 @@ public:
     virtual ~X11LibVA(void);
 
     void *GetXDisplay(void) { return m_display;}
-	MfxLoader::XLib_Proxy  & GetX11() { return m_x11lib; }
-	MfxLoader::VA_X11Proxy & GetVAX11() { return m_vax11lib; }
+    MfxLoader::XLib_Proxy  & GetX11() { return m_x11lib; }
+    MfxLoader::VA_X11Proxy & GetVAX11() { return m_vax11lib; }
 
 protected:
     Display* m_display;
-	MfxLoader::XLib_Proxy   m_x11lib;
-	MfxLoader::VA_X11Proxy  m_vax11lib;
+    MfxLoader::XLib_Proxy   m_x11lib;
+    MfxLoader::VA_X11Proxy  m_vax11lib;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(X11LibVA);

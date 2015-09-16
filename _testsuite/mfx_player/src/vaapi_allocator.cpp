@@ -62,14 +62,14 @@ unsigned int ConvertVP8FourccToMfxFourcc(mfxU32 fourcc)
 vaapiFrameAllocator::vaapiFrameAllocator()
     : m_dpy(0),
     m_bAdaptivePlayback(false),
-	m_libva(new MfxLoader::VA_Proxy)
+    m_libva(new MfxLoader::VA_Proxy)
 {
 }
 
 vaapiFrameAllocator::~vaapiFrameAllocator()
 {
     Close();
-	delete m_libva;
+    delete m_libva;
 }
 
 mfxStatus vaapiFrameAllocator::Init(mfxAllocatorParams *pParams)
@@ -163,7 +163,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameSurface1 * surf)
             format = VA_RT_FORMAT_YUV420;
         }
 
-		va_res = m_libva->vaCreateSurfaces(m_dpy,
+        va_res = m_libva->vaCreateSurfaces(m_dpy,
                                 format,
                                 surf->Info.Width, surf->Info.Height,
                                 surfaces,
@@ -271,7 +271,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 format = VA_RT_FORMAT_YUV420;
             }
 
-			va_res = m_libva->vaCreateSurfaces(m_dpy,
+            va_res = m_libva->vaCreateSurfaces(m_dpy,
                                     format,
                                     request->Info.Width, request->Info.Height,
                                     surfaces,
@@ -304,7 +304,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             {
                 VABufferID coded_buf;
 
-				va_res = m_libva->vaCreateBuffer(m_dpy,
+                va_res = m_libva->vaCreateBuffer(m_dpy,
                                       context_id,
                                       codedbuf_type,
                                       codedbuf_size,
@@ -340,12 +340,12 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         if (VA_FOURCC_P208 != va_fourcc
             || fourcc == MFX_FOURCC_VP8_MBDATA )
         {
-			if (bCreateSrfSucceeded) m_libva->vaDestroySurfaces(m_dpy, surfaces, surfaces_num);
+            if (bCreateSrfSucceeded) m_libva->vaDestroySurfaces(m_dpy, surfaces, surfaces_num);
         }
         else
         {
             for (i = 0; i < numAllocated; i++)
-				m_libva->vaDestroyBuffer(m_dpy, surfaces[i]);
+                m_libva->vaDestroyBuffer(m_dpy, surfaces[i]);
         }
         if (mids)
         {
@@ -375,14 +375,14 @@ mfxStatus vaapiFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
         surfaces = vaapi_mids->m_surface;
         for (i = 0; i < response->NumFrameActual; ++i)
         {
-			if (MFX_FOURCC_P8 == vaapi_mids[i].m_fourcc) m_libva->vaDestroyBuffer(m_dpy, surfaces[i]);
+            if (MFX_FOURCC_P8 == vaapi_mids[i].m_fourcc) m_libva->vaDestroyBuffer(m_dpy, surfaces[i]);
             else if (vaapi_mids[i].m_sys_buffer) free(vaapi_mids[i].m_sys_buffer);
         }
         free(vaapi_mids);
         free(response->mids);
         response->mids = NULL;
 
-		if (!isBitstreamMemory) m_libva->vaDestroySurfaces(m_dpy, surfaces, response->NumFrameActual);
+        if (!isBitstreamMemory) m_libva->vaDestroySurfaces(m_dpy, surfaces, response->NumFrameActual);
         free(surfaces);
     }
     response->NumFrameActual = 0;
@@ -435,7 +435,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             pAttrib = 0;
 #endif
 
-			va_res = m_libva->vaCreateSurfaces(m_dpy,
+            va_res = m_libva->vaCreateSurfaces(m_dpy,
                                     format,
                                     m_Width, m_Height,
                                     vaapi_mid->m_surface,
@@ -463,7 +463,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             }
             VABufferID coded_buf;
 
-			va_res = m_libva->vaCreateBuffer(m_dpy,
+            va_res = m_libva->vaCreateBuffer(m_dpy,
                                     VA_INVALID_ID,
                                     codedbuf_type,
                                     codedbuf_size,
@@ -482,9 +482,9 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     {
         VACodedBufferSegment *coded_buffer_segment;
         if (vaapi_mid->m_fourcc == MFX_FOURCC_VP8_SEGMAP)
-			va_res = m_libva->vaMapBuffer(m_dpy, *(vaapi_mid->m_surface), (void **)(&pBuffer));
+            va_res = m_libva->vaMapBuffer(m_dpy, *(vaapi_mid->m_surface), (void **)(&pBuffer));
         else
-			va_res = m_libva->vaMapBuffer(m_dpy, *(vaapi_mid->m_surface), (void **)(&coded_buffer_segment));
+            va_res = m_libva->vaMapBuffer(m_dpy, *(vaapi_mid->m_surface), (void **)(&coded_buffer_segment));
         mfx_res = va_to_mfx_status(va_res);
         if (MFX_ERR_NONE == mfx_res)
         {
@@ -503,12 +503,12 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 
         if (MFX_ERR_NONE == mfx_res)
         {
-			va_res = m_libva->vaDeriveImage(m_dpy, *(vaapi_mid->m_surface), &(vaapi_mid->m_image));
+            va_res = m_libva->vaDeriveImage(m_dpy, *(vaapi_mid->m_surface), &(vaapi_mid->m_image));
             mfx_res = va_to_mfx_status(va_res);
         }
         if (MFX_ERR_NONE == mfx_res)
         {
-			va_res = m_libva->vaMapBuffer(m_dpy, vaapi_mid->m_image.buf, (void **)&pBuffer);
+            va_res = m_libva->vaMapBuffer(m_dpy, vaapi_mid->m_image.buf, (void **)&pBuffer);
             mfx_res = va_to_mfx_status(va_res);
         }
         if (MFX_ERR_NONE == mfx_res)
@@ -600,12 +600,12 @@ mfxStatus vaapiFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 
     if (MFX_FOURCC_P8 == mfx_fourcc)   // bitstream processing
     {
-		m_libva->vaUnmapBuffer(m_dpy, *(vaapi_mid->m_surface));
+        m_libva->vaUnmapBuffer(m_dpy, *(vaapi_mid->m_surface));
     }
     else  // Image processing
     {
-		m_libva->vaUnmapBuffer(m_dpy, vaapi_mid->m_image.buf);
-		m_libva->vaDestroyImage(m_dpy, vaapi_mid->m_image.image_id);
+        m_libva->vaUnmapBuffer(m_dpy, vaapi_mid->m_image.buf);
+        m_libva->vaDestroyImage(m_dpy, vaapi_mid->m_image.image_id);
 
         if (NULL != ptr)
         {

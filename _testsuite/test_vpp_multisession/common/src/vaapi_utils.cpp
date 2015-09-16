@@ -23,23 +23,23 @@ Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 namespace MfxLoader
 {
 
-	SimpleLoader::SimpleLoader(const char * name)
-	{
-		so_handle = dlopen(name, RTLD_GLOBAL | RTLD_NOW);
-	}
+    SimpleLoader::SimpleLoader(const char * name)
+    {
+        so_handle = dlopen(name, RTLD_GLOBAL | RTLD_NOW);
+    }
 
-	void * SimpleLoader::GetFunction(const char * name)
-	{
-		void * fn_ptr = dlsym(so_handle, name);
-		if (!fn_ptr)
-			throw std::runtime_error("Can't find function");
-		return fn_ptr;
-	}
+    void * SimpleLoader::GetFunction(const char * name)
+    {
+        void * fn_ptr = dlsym(so_handle, name);
+        if (!fn_ptr)
+            throw std::runtime_error("Can't find function");
+        return fn_ptr;
+    }
 
-	SimpleLoader::~SimpleLoader()
-	{
-		dlclose(so_handle);
-	}
+    SimpleLoader::~SimpleLoader()
+    {
+        dlclose(so_handle);
+    }
 
 #define SIMPLE_LOADER_STRINGIFY1( x) #x
 #define SIMPLE_LOADER_STRINGIFY(x) SIMPLE_LOADER_STRINGIFY1(x)
@@ -52,61 +52,61 @@ namespace MfxLoader
 
 
 #if defined(LIBVA_SUPPORT)
-	VA_Proxy::VA_Proxy()
-		: lib("libva.so")
-		, SIMPLE_LOADER_FUNCTION(vaInitialize)
-		, SIMPLE_LOADER_FUNCTION(vaTerminate)
-		, SIMPLE_LOADER_FUNCTION(vaCreateSurfaces)
-		, SIMPLE_LOADER_FUNCTION(vaDestroySurfaces)
-		, SIMPLE_LOADER_FUNCTION(vaCreateBuffer)
-		, SIMPLE_LOADER_FUNCTION(vaDestroyBuffer)
-		, SIMPLE_LOADER_FUNCTION(vaMapBuffer)
-		, SIMPLE_LOADER_FUNCTION(vaUnmapBuffer)
-		, SIMPLE_LOADER_FUNCTION(vaDeriveImage)
-		, SIMPLE_LOADER_FUNCTION(vaDestroyImage)
-	{
-	}
+    VA_Proxy::VA_Proxy()
+        : lib("libva.so")
+        , SIMPLE_LOADER_FUNCTION(vaInitialize)
+        , SIMPLE_LOADER_FUNCTION(vaTerminate)
+        , SIMPLE_LOADER_FUNCTION(vaCreateSurfaces)
+        , SIMPLE_LOADER_FUNCTION(vaDestroySurfaces)
+        , SIMPLE_LOADER_FUNCTION(vaCreateBuffer)
+        , SIMPLE_LOADER_FUNCTION(vaDestroyBuffer)
+        , SIMPLE_LOADER_FUNCTION(vaMapBuffer)
+        , SIMPLE_LOADER_FUNCTION(vaUnmapBuffer)
+        , SIMPLE_LOADER_FUNCTION(vaDeriveImage)
+        , SIMPLE_LOADER_FUNCTION(vaDestroyImage)
+    {
+    }
 
-	VA_Proxy::~VA_Proxy()
-	{}
+    VA_Proxy::~VA_Proxy()
+    {}
 #endif
 
 #if defined(LIBVA_DRM_SUPPORT)
-	VA_DRMProxy::VA_DRMProxy()
-		: lib("libva-drm.so")
-		, SIMPLE_LOADER_FUNCTION(vaGetDisplayDRM)
-	{
-	}
+    VA_DRMProxy::VA_DRMProxy()
+        : lib("libva-drm.so")
+        , SIMPLE_LOADER_FUNCTION(vaGetDisplayDRM)
+    {
+    }
 
-	VA_DRMProxy::~VA_DRMProxy()
-	{}
+    VA_DRMProxy::~VA_DRMProxy()
+    {}
 #endif
 
 #if defined(LIBVA_X11_SUPPORT)
-	VA_X11Proxy::VA_X11Proxy()
-		: lib("libva-x11.so")
-		, SIMPLE_LOADER_FUNCTION(vaGetDisplay)
-		, SIMPLE_LOADER_FUNCTION(vaPutSurface)
-	{
-	}
+    VA_X11Proxy::VA_X11Proxy()
+        : lib("libva-x11.so")
+        , SIMPLE_LOADER_FUNCTION(vaGetDisplay)
+        , SIMPLE_LOADER_FUNCTION(vaPutSurface)
+    {
+    }
 
-	VA_X11Proxy::~VA_X11Proxy()
-	{}
+    VA_X11Proxy::~VA_X11Proxy()
+    {}
 
-	XLib_Proxy::XLib_Proxy()
-		: lib("libX11.so")
-		, SIMPLE_LOADER_FUNCTION(XOpenDisplay)
-		, SIMPLE_LOADER_FUNCTION(XCloseDisplay)
-		, SIMPLE_LOADER_FUNCTION(XCreateSimpleWindow)
-		, SIMPLE_LOADER_FUNCTION(XMapWindow)
-		, SIMPLE_LOADER_FUNCTION(XSync)
-		, SIMPLE_LOADER_FUNCTION(XDestroyWindow)
-		, SIMPLE_LOADER_FUNCTION(XResizeWindow)
+    XLib_Proxy::XLib_Proxy()
+        : lib("libX11.so")
+        , SIMPLE_LOADER_FUNCTION(XOpenDisplay)
+        , SIMPLE_LOADER_FUNCTION(XCloseDisplay)
+        , SIMPLE_LOADER_FUNCTION(XCreateSimpleWindow)
+        , SIMPLE_LOADER_FUNCTION(XMapWindow)
+        , SIMPLE_LOADER_FUNCTION(XSync)
+        , SIMPLE_LOADER_FUNCTION(XDestroyWindow)
+        , SIMPLE_LOADER_FUNCTION(XResizeWindow)
 
-	{}
+    {}
 
-	XLib_Proxy::~XLib_Proxy()
-	{}
+    XLib_Proxy::~XLib_Proxy()
+    {}
 #endif
 
 #undef SIMPLE_LOADER_FUNCTION
@@ -194,7 +194,7 @@ CLibVA* CreateLibVA(int type)
        }
 #endif
 #if defined(LIBVA_DRM_SUPPORT)
-		if (!libva)
+        if (!libva)
         {
             try
             {
@@ -206,9 +206,9 @@ CLibVA* CreateLibVA(int type)
             }
         }
 #endif
-		break;
+        break;
     } // switch(type)
-	return libva;
+    return libva;
 }
 #endif // #if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT)
 

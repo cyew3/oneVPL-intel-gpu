@@ -32,7 +32,7 @@ struct vaapiMemId
 
 namespace MfxLoader
 {
-	class VA_Proxy;
+    class VA_Proxy;
 }
 
 struct vaapiAllocatorParams : mfxAllocatorParams
@@ -62,7 +62,7 @@ protected:
     virtual mfxStatus AllocImpl(mfxFrameSurface1 *surface);
 
     VADisplay m_dpy;
-	MfxLoader::VA_Proxy * m_libva;
+    MfxLoader::VA_Proxy * m_libva;
     bool      m_bAdaptivePlayback;
     mfxU32    m_Width;
     mfxU32    m_Height;

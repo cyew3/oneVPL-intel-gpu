@@ -43,7 +43,7 @@ mfxStatus CVAAPIDeviceX11::Init(mfxHDL hWindow, mfxU16 nViews, mfxU32 nAdapterNu
         {
             Display* display = VAAPI_GET_X_DISPLAY(m_X11LibVA.GetXDisplay());
             MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
-			mfxU32 screen_number = DefaultScreen(display);
+            mfxU32 screen_number = DefaultScreen(display);
 
             *window = x11lib.XCreateSimpleWindow(display,
                                         RootWindow(display, screen_number),
@@ -71,9 +71,9 @@ void CVAAPIDeviceX11::Close(void)
     {
         Display* display = VAAPI_GET_X_DISPLAY(m_X11LibVA.GetXDisplay());
         Window* window = VAAPI_GET_X_WINDOW(m_window);
-        
-		MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
-		x11lib.XDestroyWindow(display, *window);
+
+        MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
+        x11lib.XDestroyWindow(display, *window);
 
         free(m_window);
         m_window = NULL;
@@ -123,12 +123,12 @@ mfxStatus CVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllo
     {
         surface = *memId->m_surface;
 
-		MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
+        MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
         x11lib.XResizeWindow(display,
                       *window,
                       pSurface->Info.CropW, pSurface->Info.CropH);
 
-		MfxLoader::VA_X11Proxy & vax11lib = m_X11LibVA.GetVAX11();
+        MfxLoader::VA_X11Proxy & vax11lib = m_X11LibVA.GetVAX11();
         vax11lib.vaPutSurface(m_X11LibVA.GetVADisplay(),
                         surface,
                         *window,
@@ -210,7 +210,7 @@ CHWDevice* CreateVAAPIDevice(int type)
 #endif
         break;
     } // switch(type)
-	return device;
+    return device;
 }
 
 #elif defined(LIBVA_ANDROID_SUPPORT)

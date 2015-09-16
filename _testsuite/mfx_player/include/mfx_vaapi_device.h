@@ -31,7 +31,7 @@ class MFXVAAPIDeviceDRM : public IHWDevice
 {
 public:
 
-	MFXVAAPIDeviceDRM() : m_pDRMLibVA(&pDRMLibVA) {}
+    MFXVAAPIDeviceDRM() : m_pDRMLibVA(&pDRMLibVA) {}
 
     virtual ~MFXVAAPIDeviceDRM() { }
 
@@ -58,7 +58,7 @@ public:
 
 protected:
     DRMLibVA *m_pDRMLibVA;
-	DRMLibVA pDRMLibVA;
+    DRMLibVA pDRMLibVA;
 };
 #endif
 
@@ -70,9 +70,9 @@ protected:
 class MFXVAAPIDeviceX11 : public IHWDevice
 {
 public:
-	MFXVAAPIDeviceX11()
-		: m_draw(0),
-		m_pX11LibVA(&m_X11LibVA){}
+    MFXVAAPIDeviceX11()
+        : m_draw(0),
+        m_pX11LibVA(&m_X11LibVA){}
 
     virtual ~MFXVAAPIDeviceX11() { }
 
@@ -91,7 +91,7 @@ public:
 private:
     Window m_draw;
     X11LibVA *m_pX11LibVA;
-	X11LibVA m_X11LibVA;
+    X11LibVA m_X11LibVA;
 };
 #endif
 

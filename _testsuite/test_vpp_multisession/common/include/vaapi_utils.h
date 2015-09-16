@@ -133,7 +133,7 @@ namespace MfxLoader
         VA_X11Proxy();
         ~VA_X11Proxy();
 
-        const vaGetDisplay_type vaGetDisplay;        
+        const vaGetDisplay_type vaGetDisplay;
         const vaPutSurface_type vaPutSurface;
     };
 
@@ -176,7 +176,7 @@ public:
     virtual ~CLibVA(void) {};
 
     VADisplay GetVADisplay(void) { return m_va_dpy; }
-	const MfxLoader::VA_Proxy m_libva;
+    const MfxLoader::VA_Proxy m_libva;
 
 protected:
     CLibVA(void) :

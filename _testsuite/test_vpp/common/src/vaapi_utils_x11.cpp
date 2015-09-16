@@ -17,18 +17,18 @@ Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 #define VAAPI_X_DEFAULT_DISPLAY ":0.0"
 
 X11LibVA::X11LibVA(void)
-	: m_display(0)
+    : m_display(0)
 {
     VAStatus va_res = VA_STATUS_SUCCESS;
     mfxStatus sts = MFX_ERR_NONE;
     int major_version = 0, minor_version = 0;
     char* currentDisplay = getenv("DISPLAY");
 
-     try
+    try
     {
-        if (currentDisplay) 
+        if (currentDisplay)
             m_display = m_x11lib.XOpenDisplay(currentDisplay);
-        else 
+        else
             m_display = m_x11lib.XOpenDisplay(VAAPI_X_DEFAULT_DISPLAY);
 
         if (NULL == m_display) sts = MFX_ERR_NOT_INITIALIZED;

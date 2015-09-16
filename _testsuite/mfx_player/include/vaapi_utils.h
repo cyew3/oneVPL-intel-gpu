@@ -37,132 +37,132 @@ enum LibVABackend
 namespace MfxLoader
 {
 
-	class SimpleLoader
-	{
-	public:
-		SimpleLoader(const char * name);
+    class SimpleLoader
+    {
+    public:
+        SimpleLoader(const char * name);
 
-		void * GetFunction(const char * name);
+        void * GetFunction(const char * name);
 
-		~SimpleLoader();
+        ~SimpleLoader();
 
-	private:
-		SimpleLoader(SimpleLoader&);
-		void operator=(SimpleLoader&);
+    private:
+        SimpleLoader(SimpleLoader&);
+        void operator=(SimpleLoader&);
 
-		void * so_handle;
-	};
+        void * so_handle;
+    };
 
 #ifdef LIBVA_SUPPORT
-	class VA_Proxy
-	{
-	private:
-		SimpleLoader lib; // should appear first in member list
+    class VA_Proxy
+    {
+    private:
+        SimpleLoader lib; // should appear first in member list
 
-	public:
-		typedef VAStatus(*vaInitialize_type)(VADisplay, int *, int *);
-		typedef VAStatus(*vaTerminate_type)(VADisplay);
-		typedef VAStatus(*vaCreateSurfaces_type)(VADisplay, unsigned int,
-			unsigned int, unsigned int, VASurfaceID *, unsigned int,
-			VASurfaceAttrib *, unsigned int);
-		typedef VAStatus(*vaDestroySurfaces_type)(VADisplay, VASurfaceID *, int);
-		typedef VAStatus(*vaCreateBuffer_type)(VADisplay, VAContextID,
-			VABufferType, unsigned int, unsigned int, void *, VABufferID *);
-		typedef VAStatus(*vaDestroyBuffer_type)(VADisplay, VABufferID);
-		typedef VAStatus(*vaMapBuffer_type)(VADisplay, VABufferID, void **pbuf);
-		typedef VAStatus(*vaUnmapBuffer_type)(VADisplay, VABufferID);
-		typedef VAStatus(*vaDeriveImage_type)(VADisplay, VASurfaceID, VAImage *);
-		typedef VAStatus(*vaDestroyImage_type)(VADisplay, VAImageID);
-		typedef VAStatus(*vaSyncSurface_type)(VADisplay, VASurfaceID);
+    public:
+        typedef VAStatus(*vaInitialize_type)(VADisplay, int *, int *);
+        typedef VAStatus(*vaTerminate_type)(VADisplay);
+        typedef VAStatus(*vaCreateSurfaces_type)(VADisplay, unsigned int,
+            unsigned int, unsigned int, VASurfaceID *, unsigned int,
+            VASurfaceAttrib *, unsigned int);
+        typedef VAStatus(*vaDestroySurfaces_type)(VADisplay, VASurfaceID *, int);
+        typedef VAStatus(*vaCreateBuffer_type)(VADisplay, VAContextID,
+            VABufferType, unsigned int, unsigned int, void *, VABufferID *);
+        typedef VAStatus(*vaDestroyBuffer_type)(VADisplay, VABufferID);
+        typedef VAStatus(*vaMapBuffer_type)(VADisplay, VABufferID, void **pbuf);
+        typedef VAStatus(*vaUnmapBuffer_type)(VADisplay, VABufferID);
+        typedef VAStatus(*vaDeriveImage_type)(VADisplay, VASurfaceID, VAImage *);
+        typedef VAStatus(*vaDestroyImage_type)(VADisplay, VAImageID);
+        typedef VAStatus(*vaSyncSurface_type)(VADisplay, VASurfaceID);
 
-		VA_Proxy();
-		~VA_Proxy();
+        VA_Proxy();
+        ~VA_Proxy();
 
-		const vaInitialize_type      vaInitialize;
-		const vaTerminate_type       vaTerminate;
-		const vaCreateSurfaces_type  vaCreateSurfaces;
-		const vaDestroySurfaces_type vaDestroySurfaces;
-		const vaCreateBuffer_type    vaCreateBuffer;
-		const vaDestroyBuffer_type   vaDestroyBuffer;
-		const vaMapBuffer_type       vaMapBuffer;
-		const vaUnmapBuffer_type     vaUnmapBuffer;
-		const vaDeriveImage_type     vaDeriveImage;
-		const vaDestroyImage_type    vaDestroyImage;
-		const vaSyncSurface_type     vaSyncSurface;
-	};
+        const vaInitialize_type      vaInitialize;
+        const vaTerminate_type       vaTerminate;
+        const vaCreateSurfaces_type  vaCreateSurfaces;
+        const vaDestroySurfaces_type vaDestroySurfaces;
+        const vaCreateBuffer_type    vaCreateBuffer;
+        const vaDestroyBuffer_type   vaDestroyBuffer;
+        const vaMapBuffer_type       vaMapBuffer;
+        const vaUnmapBuffer_type     vaUnmapBuffer;
+        const vaDeriveImage_type     vaDeriveImage;
+        const vaDestroyImage_type    vaDestroyImage;
+        const vaSyncSurface_type     vaSyncSurface;
+    };
 #endif
 
 #if defined(LIBVA_DRM_SUPPORT)
-	class VA_DRMProxy
-	{
-	private:
-		SimpleLoader lib; // should appear first in member list
+    class VA_DRMProxy
+    {
+    private:
+        SimpleLoader lib; // should appear first in member list
 
-	public:
-		typedef VADisplay(*vaGetDisplayDRM_type)(int);
+    public:
+        typedef VADisplay(*vaGetDisplayDRM_type)(int);
 
 
-		VA_DRMProxy();
-		~VA_DRMProxy();
+        VA_DRMProxy();
+        ~VA_DRMProxy();
 
-		const vaGetDisplayDRM_type vaGetDisplayDRM;
-	};
+        const vaGetDisplayDRM_type vaGetDisplayDRM;
+    };
 #endif
 
 #if defined(LIBVA_X11_SUPPORT)
-	class VA_X11Proxy
-	{
-	private:
-		SimpleLoader lib; // should appear first in member list
+    class VA_X11Proxy
+    {
+    private:
+        SimpleLoader lib; // should appear first in member list
 
-	public:
-		typedef VADisplay(*vaGetDisplay_type)(Display*);
-		typedef VAStatus(*vaPutSurface_type)(
-			VADisplay, VASurfaceID,
-			Drawable,
-			short, short,
-			unsigned short, unsigned short,
-			short, short,
-			unsigned short, unsigned short,
-			VARectangle *,
-			unsigned int, unsigned int);
+    public:
+        typedef VADisplay(*vaGetDisplay_type)(Display*);
+        typedef VAStatus(*vaPutSurface_type)(
+            VADisplay, VASurfaceID,
+            Drawable,
+            short, short,
+            unsigned short, unsigned short,
+            short, short,
+            unsigned short, unsigned short,
+            VARectangle *,
+            unsigned int, unsigned int);
 
-		VA_X11Proxy();
-		~VA_X11Proxy();
+        VA_X11Proxy();
+        ~VA_X11Proxy();
 
-		const vaGetDisplay_type vaGetDisplay;
-		const vaPutSurface_type vaPutSurface;
-	};
+        const vaGetDisplay_type vaGetDisplay;
+        const vaPutSurface_type vaPutSurface;
+    };
 
-	class XLib_Proxy
-	{
-	private:
-		SimpleLoader lib; // should appear first in member list
+    class XLib_Proxy
+    {
+    private:
+        SimpleLoader lib; // should appear first in member list
 
-	public:
-		typedef Display* (*XOpenDisplay_type) (char*);
-		typedef int(*XCloseDisplay_type)(Display*);
-		typedef Window(*XCreateSimpleWindow_type)(Display *,
-			Window, int, int,
-			unsigned int, unsigned int,
-			unsigned int, unsigned long,
-			unsigned long);
-		typedef int(*XMapWindow_type)(Display*, Window);
-		typedef int(*XSync_type)(Display*, Bool);
-		typedef int(*XDestroyWindow_type)(Display*, Window);
-		typedef int(*XResizeWindow_type)(Display *, Window, unsigned int, unsigned int);
+    public:
+        typedef Display* (*XOpenDisplay_type) (char*);
+        typedef int(*XCloseDisplay_type)(Display*);
+        typedef Window(*XCreateSimpleWindow_type)(Display *,
+            Window, int, int,
+            unsigned int, unsigned int,
+            unsigned int, unsigned long,
+            unsigned long);
+        typedef int(*XMapWindow_type)(Display*, Window);
+        typedef int(*XSync_type)(Display*, Bool);
+        typedef int(*XDestroyWindow_type)(Display*, Window);
+        typedef int(*XResizeWindow_type)(Display *, Window, unsigned int, unsigned int);
 
-		XLib_Proxy();
-		~XLib_Proxy();
+        XLib_Proxy();
+        ~XLib_Proxy();
 
-		const XOpenDisplay_type        XOpenDisplay;
-		const XCloseDisplay_type       XCloseDisplay;
-		const XCreateSimpleWindow_type XCreateSimpleWindow;
-		const XMapWindow_type          XMapWindow;
-		const XSync_type               XSync;
-		const XDestroyWindow_type      XDestroyWindow;
-		const XResizeWindow_type       XResizeWindow;
-	};
+        const XOpenDisplay_type        XOpenDisplay;
+        const XCloseDisplay_type       XCloseDisplay;
+        const XCreateSimpleWindow_type XCreateSimpleWindow;
+        const XMapWindow_type          XMapWindow;
+        const XSync_type               XSync;
+        const XDestroyWindow_type      XDestroyWindow;
+        const XResizeWindow_type       XResizeWindow;
+    };
 #endif
 } // namespace MfxLoader
 
@@ -174,7 +174,7 @@ public:
 
     VADisplay GetVADisplay(void) { return m_va_dpy; }
 
-	const MfxLoader::VA_Proxy m_libva;
+    const MfxLoader::VA_Proxy m_libva;
 
 protected:
     CLibVA(void) :

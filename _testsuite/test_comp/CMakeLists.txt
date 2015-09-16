@@ -16,8 +16,8 @@ list( APPEND sources ${srcs2})
 set (CMAKE_CXX_FLAGS "-std=c++0x")
 set( LIBS "" )
 list( APPEND LIBS
-	mfx
-	pthread
-	dl
+    mfx
+    pthread
+    dl
 )
 make_executable( test_comp universal )

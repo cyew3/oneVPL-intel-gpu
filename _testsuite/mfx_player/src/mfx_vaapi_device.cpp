@@ -120,10 +120,10 @@ mfxStatus MFXVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAl
     vaapiMemId * memId = (vaapiMemId*)(pSurface->Data.MemId);
     if (!memId || !memId->m_surface) return sts;
     VASurfaceID surface = *memId->m_surface;
-    
+
     MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
     x11lib.XResizeWindow((Display*)(m_pX11LibVA ? m_pX11LibVA->GetXDisplay() : NULL), m_draw, pSurface->Info.CropW, pSurface->Info.CropH);
-    
+
     MfxLoader::VA_X11Proxy & vax11lib = m_X11LibVA.GetVAX11();
     vax11lib.vaPutSurface(m_pX11LibVA ? m_pX11LibVA->GetVADisplay() : NULL,
                       surface,

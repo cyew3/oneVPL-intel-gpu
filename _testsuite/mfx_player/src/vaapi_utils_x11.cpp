@@ -23,12 +23,12 @@ X11LibVA::X11LibVA(void)
     mfxStatus sts = MFX_ERR_NONE;
     int major_version = 0, minor_version = 0;
     char* currentDisplay = getenv("DISPLAY");
-    
+
     try
     {
         if (currentDisplay)
             m_display = m_x11lib.XOpenDisplay(currentDisplay);
-        else 
+        else
             m_display = m_x11lib.XOpenDisplay(VAAPI_X_DEFAULT_DISPLAY);
 
         if (NULL == m_display) sts = MFX_ERR_NOT_INITIALIZED;

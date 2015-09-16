@@ -24,7 +24,7 @@ public:
 
 protected:
     int m_fd;
-	MfxLoader::VA_DRMProxy m_vadrmlib;
+    MfxLoader::VA_DRMProxy m_vadrmlib;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DRMLibVA);
