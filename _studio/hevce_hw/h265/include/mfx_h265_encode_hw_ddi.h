@@ -63,7 +63,17 @@ typedef struct tagENCODE_CAPS_HEVC
             UINT    VCMBitRateControl           : 1;
             UINT    ParallelBRC                 : 1;
             UINT    TileSupport                 : 1;
-            UINT                                : 12;
+            UINT    SkipFrame                   : 1;
+            UINT    MbQpDataSupport             : 1;
+            UINT    SliceLevelWeightedPred      : 1;
+            UINT    LumaWeightedPred            : 1;
+            UINT    ChromaWeightedPred          : 1;
+            UINT    QVBRBRCSupport              : 1; 
+            UINT    HMEOffsetSupport            : 1;
+            UINT    YUV422ReconSupport          : 1;
+            UINT    YUV444ReconSupport          : 1;
+            UINT    RGBReconSupport             : 1;
+            UINT    MaxEncodedBitDepth          : 2;
         };
         UINT CodingLimits;
     };
@@ -76,6 +86,25 @@ typedef struct tagENCODE_CAPS_HEVC
     UCHAR   MBBRCSupport;
     UCHAR   TUSupport;
 
+    union {
+        struct {
+            UCHAR    MaxNumOfROI                    : 5; // [0..16]
+            UCHAR    ROIBRCPriorityLevelSupport     : 1;
+            UCHAR                                   : 2;
+        };
+        UCHAR    ROICaps;
+    };
+
+    union {
+        struct {
+            UINT    SliceLevelReportSupport              : 1; 
+            UINT                                         : 31; // For future expansion
+        };
+        UINT    CodingLimits2;
+    };
+
+    UCHAR    MaxNum_WeightedPredL0;
+    UCHAR    MaxNum_WeightedPredL1;
 } ENCODE_CAPS_HEVC;
 
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
@@ -111,7 +140,9 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
             UINT    MBBRC               : 4;
             UINT    ParallelBRC         : 1;
             UINT    SliceSizeControl    : 1;
-            UINT    ReservedBits        : 17;
+            UINT    EncodeFormat        : 2;
+            UINT    EncodeBitDepth      : 2;
+            UINT    ReservedBits        : 13;
         }/*fields*/;
         UINT    EncodeFlags;
     }/*EncodeFlags*/;
@@ -119,7 +150,7 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
     UINT    UserMaxFrameSize;
     USHORT  AVBRAccuracy;
     USHORT  AVBRConvergence;
-    UCHAR   CRFQualityFactor;   // [1..51]
+    UCHAR   ICQQualityFactor;  // [1..51]
 
     UINT    NumOfBInGop[3];
 
@@ -154,6 +185,9 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
     UCHAR   bit_depth_chroma_minus8;                // [0]
     UCHAR   pcm_sample_bit_depth_luma_minus1;       // [7]
     UCHAR   pcm_sample_bit_depth_chroma_minus1;     // [7]
+    ENCODE_ARGB_COLOR           InputColorSpace;
+    ENCODE_SCENARIO             ScenarioInfo;
+    ENCODE_CONTENT              ContentInfo;
 } ENCODE_SET_SEQUENCE_PARAMETERS_HEVC;
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
@@ -192,11 +226,12 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
             UINT    bUseRawPicForRef                        : 1;
             UINT    bEmulationByteInsertion                 : 1;
             UINT    BRCPrecision                            : 2;
-            UINT    bScreenContent                          : 1;    // [0..1]
+            UINT    bEnableSliceLevelReport                 : 1;    // [0..1]
             UINT    bEnableRollingIntraRefresh              : 2;    // [0..2]
             UINT    no_output_of_prior_pics_flag            : 1;    // [0..1]
             UINT    bEnableGPUWeightedPrediction            : 1;    // [0..1]
-            UINT    reservedbits                            : 8;
+            UINT    DisplayFormatSwizzle                    : 1;
+            UINT    reservedbits                            : 7;
         }/*fields*/;
         UINT    PicFlags;
     }/*PicFlags*/;
@@ -221,6 +256,31 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     // following parameters are for VDEnc only
     UCHAR   slice_pic_parameter_set_id; // [0..63]
     UCHAR   nal_unit_type;              // [0..63]
+    UINT    MaxSliceSizeInBytes;
+
+    UCHAR       NumROI;                    // [0..16]
+    ENCODE_ROI  ROI[16];
+    CHAR        MaxDeltaQp;                    // [-51..51]
+    CHAR        MinDeltaQp;                    // [-51..51]
+
+    // Skip Frames
+    UCHAR        SkipFrameFlag;
+    UCHAR        NumSkipFrames;
+    UINT         SizeSkipFrames;
+
+    // Max/Min QP settings for BRC
+    UCHAR        BRCMaxQp;
+    UCHAR        BRCMinQp;
+
+    // HME Offset
+    UCHAR        bEnableHMEOffset;
+    SHORT        HMEOffset[15][2];
+
+    UCHAR        NumDirtyRects;
+    ENCODE_RECT  *pDirtyRect;
+    UCHAR        NumMoveRects;
+    MOVE_RECT    *pMoveRect;
+
 } ENCODE_SET_PICTURE_PARAMETERS_HEVC;
 
 typedef struct tagENCODE_SET_SLICE_HEADER_HEVC
@@ -262,8 +322,9 @@ typedef struct tagENCODE_SET_SLICE_HEADER_HEVC
     CHAR    delta_chroma_weight[2][15][2];
     UCHAR   MaxNumMergeCand;
     USHORT  slice_id;
-    UINT    MaxSlizeSizeInBytes;
     UINT    SliceQpDeltaBitOffset;
+    UINT    PredWeightTableBitOffset;
+    UINT    PredWeightTableBitLength;
 } ENCODE_SET_SLICE_HEADER_HEVC;
 
 typedef struct tagENCODE_SET_QMATRIX_HEVC
@@ -274,6 +335,41 @@ typedef struct tagENCODE_SET_QMATRIX_HEVC
     UCHAR   bScalingLists32x32[2][64];
     UCHAR   bScalingListDC[2][3][2];
 } ENCODE_SET_QMATRIX_HEVC;
+
+typedef struct tagENCODE_QUERY_STATUS_PARAMS_DDI0937  
+{
+    UINT    StatusReportFeedbackNumber;
+
+    ENCODE_PICENTRY CurrOriginalPic;
+    UCHAR   reserved0;
+    UCHAR   bStatus;
+    CHAR    reserved1;
+
+    UINT    Func;
+    UINT    bitstreamSize;
+
+    CHAR    QpY;
+    CHAR    SuggestedQpYDelta;
+    UCHAR   NumberPasses;
+    UCHAR   AverageQP;
+    union
+    {
+        struct
+        {
+              UINT PanicMode                 : 1;
+              UINT SliceSizeOverflow         : 1;
+              UINT NumSlicesNonCompliant     : 1;
+              UINT                           : 29;
+        };
+          UINT QueryStatusFlags;
+    };
+
+    UINT    MAD;
+    UINT    NumberSlices;
+    UINT    PSNRx100[3];
+
+} ENCODE_QUERY_STATUS_PARAMS_DDI0937;
+
 
 #define D3DDDIFMT_HEVC_BUFFER_CUDATA (D3DFORMAT)183
 

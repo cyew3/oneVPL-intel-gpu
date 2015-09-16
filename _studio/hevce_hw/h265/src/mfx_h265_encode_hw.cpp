@@ -410,12 +410,15 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 
     if (isIdrRequired && pResetOpt && IsOff(pResetOpt->StartNewSequence))
         return MFX_ERR_INVALID_VIDEO_PARAM; // Reset can't change parameters w/o IDR. Report an error
-
-
     
-    //bool brcReset =
-    //    m_vpar.TargetKbps != parNew.TargetKbps ||
-    //   m_vpar.MaxKbps    != m_vpar.MaxKbps; 
+    bool brcReset =
+        m_vpar.TargetKbps != parNew.TargetKbps ||
+        m_vpar.MaxKbps    != m_vpar.MaxKbps; 
+
+    if (brcReset &&
+        m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
 
     m_vpar = (mfxVideoParam)parNew;
 

@@ -428,7 +428,7 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
     {
 #ifdef HEADER_PACKING_TEST
         surface;
-        ENCODE_QUERY_STATUS_PARAMS fb = {task.m_statusReportNumber,};
+        ENCODE_QUERY_STATUS_PARAMS_DDI0937 fb = {task.m_statusReportNumber,};
         FrameLocker bs(m_core, task.m_midBs);
 
         for (mfxU32 i = 0; i < executeParams.NumCompBuffers; i ++)
@@ -486,7 +486,7 @@ mfxStatus D3D11Encoder::QueryStatus(Task & task)
     // As we won't get all bitstreams we need to cache all other statuses. 
 
     // first check cache.
-    const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber);
+    const ENCODE_QUERY_STATUS_PARAMS_DDI0937* feedback = m_feedbackCached.Hit(task.m_statusReportNumber);
 
     ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
     feedbackDescr.SizeOfStatusParamStruct = sizeof(m_feedbackUpdate[0]);

@@ -122,7 +122,7 @@ void FillSpsBuffer(
     }
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
     {
-        sps.CRFQualityFactor = (mfxU8)par.mfx.ICQQuality;
+        sps.ICQQualityFactor = (mfxU8)par.mfx.ICQQuality;
     }
 
     sps.FramesPer100Sec = (mfxU16)(mfxU64(100) * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
@@ -147,9 +147,9 @@ void FillSpsBuffer(
     }
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
-        sps.CRFQualityFactor = (mfxU8)par.mfx.ICQQuality;
+        sps.ICQQualityFactor = (mfxU8)par.mfx.ICQQuality;
     else
-        sps.CRFQualityFactor = 0;
+        sps.ICQQualityFactor = 0;
 
     if (sps.ParallelBRC)
     {
@@ -230,7 +230,7 @@ void FillPpsBuffer(
     pps.bEmulationByteInsertion               = 0; //!!!
     pps.bEnableRollingIntraRefresh            = 0;
     pps.BRCPrecision                          = 0;
-    pps.bScreenContent                        = 0;
+    //pps.bScreenContent                        = 0;
     //pps.no_output_of_prior_pics_flag          = ;
     //pps.XbEnableRollingIntraRefreshX
 
@@ -256,13 +256,15 @@ void FillPpsBuffer(
     pps.bUseRawPicForRef           = 0;
     pps.NumSlices                  = par.mfx.NumSlice;
 
-    if (par.mfx.FrameInfo.Height <= 576 &&
+        // Max/Min QP settings for BRC
+
+    /*if (par.mfx.FrameInfo.Height <= 576 &&
         par.mfx.FrameInfo.Width <= 736 &&
         par.mfx.RateControlMethod == MFX_RATECONTROL_CQP &&
         par.mfx.QPP < 32)
     {
         pps.bScreenContent = 1;
-    }
+    }*/
 
 }
 
@@ -677,7 +679,7 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
     {
 #ifdef HEADER_PACKING_TEST
         surface;
-        ENCODE_QUERY_STATUS_PARAMS fb = {task.m_statusReportNumber,};
+        ENCODE_QUERY_STATUS_PARAMS_DDI0937 fb = {task.m_statusReportNumber,};
         FrameLocker bs(m_core, task.m_midBs);
 
         for (mfxU32 i = 0; i < executeParams.NumCompBuffers; i ++)
@@ -732,7 +734,7 @@ mfxStatus D3D9Encoder::QueryStatus(Task & task)
     // As we won't get all bitstreams we need to cache all other statuses.
 
     // first check cache.
-    const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber);
+    const ENCODE_QUERY_STATUS_PARAMS_DDI0937* feedback = m_feedbackCached.Hit(task.m_statusReportNumber);
 
     ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
     feedbackDescr.SizeOfStatusParamStruct = sizeof(m_feedbackUpdate[0]);
