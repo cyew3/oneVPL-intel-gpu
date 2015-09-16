@@ -88,7 +88,7 @@ class Wayland;
 class CVAAPIDeviceWayland : public CHWDevice
 {
 public:
-	CVAAPIDeviceWayland(){}
+    CVAAPIDeviceWayland(){}
     virtual ~CVAAPIDeviceWayland(void);
 
     virtual mfxStatus Init(mfxHDL hWindow, mfxU16 nViews, mfxU32 nAdapterNum);
@@ -102,8 +102,8 @@ public:
         {
             *pHdl = m_DRMLibVA.GetVADisplay();
             return MFX_ERR_NONE;
-	}
-	return MFX_ERR_UNSUPPORTED;
+    }
+    return MFX_ERR_UNSUPPORTED;
     }
     virtual void SetRenderWinPosSize(mfxU32 x, mfxU32 y, mfxU32 w, mfxU32 h);
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc);

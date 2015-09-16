@@ -118,7 +118,7 @@ namespace MfxLoader
         SimpleLoader lib; // should appear first in member list
 
     public:
-        typedef	Wayland* (*WaylandCreate_type)(void);
+        typedef    Wayland* (*WaylandCreate_type)(void);
 
         VA_WaylandClientProxy();
         ~VA_WaylandClientProxy();

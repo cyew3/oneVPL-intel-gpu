@@ -71,7 +71,7 @@ bool Wayland::InitDisplay()
     wl_registry_add_listener(m_registry
         , &registry_listener
         , this);
-    
+
     m_display_fd = wl_display_get_fd(m_display);
     wl_display_roundtrip(m_display);
     wl_display_roundtrip(m_display);
@@ -100,12 +100,12 @@ bool Wayland::CreateSurface()
     m_shell_surface = wl_shell_get_shell_surface(m_shell
         , m_surface);
     if(NULL == m_shell_surface)
-	{
+    {
         wl_surface_destroy(m_surface);
         return false;
     }
     wl_proxy_set_queue((struct wl_proxy *) m_shell_surface, m_event_queue);
-   
+
     wl_shell_surface_add_listener(m_shell_surface
         , &shell_surface_listener
         , 0);
@@ -125,20 +125,20 @@ void Wayland::FreeSurface()
 }
 
 void Wayland::Sync()
-{    
+{
     int ret;
     while(m_pending_frame)
     {
         while(wl_display_prepare_read_queue(m_display, m_event_queue) < 0)
             wl_display_dispatch_queue_pending(m_display, m_event_queue);
-        
+
         wl_display_flush(m_display);
-        
+
         ret = poll(&m_poll,1,-1);
         if(ret < 0 )
             wl_display_cancel_read(m_display);
-        else 
-	    wl_display_read_events(m_display);
+        else
+        wl_display_read_events(m_display);
         wl_display_dispatch_queue_pending(m_display, m_event_queue);
     }
 }
@@ -151,9 +151,9 @@ void Wayland::RenderBuffer(struct wl_buffer *buffer
 {
     wl_surface_attach(m_surface, buffer, 0, 0);
     wl_surface_damage(m_surface, x, y, width, height);
-    
+
     wl_proxy_set_queue((struct wl_proxy *) buffer, m_event_queue);
-    
+
     wl_buffer_add_listener(buffer, &buffer_listener, NULL);
     m_pending_frame=1;
     m_callback = wl_surface_frame(m_surface);
@@ -310,7 +310,7 @@ Wayland::~Wayland()
         wl_compositor_destroy(m_compositor);
     if(NULL != m_event_queue)
         wl_event_queue_destroy(m_event_queue);
-    if(NULL != m_registry)    
+    if(NULL != m_registry)
         wl_registry_destroy(m_registry);
     if(NULL != m_display)
         wl_display_disconnect(m_display);

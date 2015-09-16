@@ -221,8 +221,8 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             }
         }
     }
-	
-//TODO: ON: switch change to runtime check as WAYLAND will always on 
+
+//TODO: ON: switch change to runtime check as WAYLAND will always on
 #if defined(LIBVA_WAYLAND_SUPPORT)
     if (MFX_ERR_NONE == mfx_res)
     {
@@ -299,10 +299,10 @@ mfxStatus vaapiFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
             if (MFX_FOURCC_P8 == vaapi_mids[i].m_fourcc) m_libva->vaDestroyBuffer(m_dpy, surfaces[i]);
             else if (vaapi_mids[i].m_sys_buffer) free(vaapi_mids[i].m_sys_buffer);
 //TODO: ON: switch change to runtime check as WAYLAND will always on
-#if	defined(LIBVA_WAYLAND_SUPPORT) 
+#if    defined(LIBVA_WAYLAND_SUPPORT)
             m_libva->vaReleaseBufferHandle(m_dpy, vaapi_mids[i].m_image.buf);
             m_libva->vaDestroyImage(m_dpy, vaapi_mids[i].m_image.image_id);
-#endif 
+#endif
         }
         free(vaapi_mids);
         free(response->mids);
