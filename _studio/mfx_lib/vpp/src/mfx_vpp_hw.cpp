@@ -2684,7 +2684,11 @@ mfxStatus ConfigureExecuteParams(
                                  (MFX_ANGLE_90  != extRotate->Angle) &&
                                  (MFX_ANGLE_180 != extRotate->Angle) &&
                                  (MFX_ANGLE_270 != extRotate->Angle) )
-                                 return MFX_ERR_INVALID_VIDEO_PARAM;
+                                return MFX_ERR_INVALID_VIDEO_PARAM;
+
+                            if ( ( MFX_PICSTRUCT_FIELD_TFF & videoParam.vpp.Out.PicStruct ) ||
+                                 ( MFX_PICSTRUCT_FIELD_BFF & videoParam.vpp.Out.PicStruct ) )
+                                return MFX_ERR_INVALID_VIDEO_PARAM;
 
                             executeParams.rotation = extRotate->Angle;
                         }
