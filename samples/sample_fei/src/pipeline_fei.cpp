@@ -1705,7 +1705,7 @@ mfxStatus CEncodingPipeline::Run()
                 //time_t timer; time(&timer);
                 sts = m_pmfxPREENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
                 sts = MFX_ERR_NONE;
-
+                /*PRE-ENC is running in separate session */
                 sts = m_preenc_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
                 //fprintf(stderr, "synced : %d time spent: %d\n", sts, time(NULL)-timer);
                 fprintf(stderr, "synced : %d\n", sts);
@@ -2090,7 +2090,8 @@ mfxStatus CEncodingPipeline::Run()
                     //Only synced operation supported for now
                     fprintf(stderr, "frame: %d  t:%d : submit ", eTask->frameDisplayOrder, eTask->frameType);
                     sts = m_pmfxPREENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
-                    sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                    /*PRE-ENC is running in separate session */
+                    sts = m_preenc_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
                     fprintf(stderr, "synced : %d\n", sts);
 
                     sts = MFX_ERR_NONE;
