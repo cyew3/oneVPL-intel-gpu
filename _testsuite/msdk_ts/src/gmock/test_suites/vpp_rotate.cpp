@@ -165,13 +165,13 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 360}}
     },
     {/*30*/
-        MFX_ERR_NONE, 0, {
+        MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 90}}
     },
     {/*31*/
-        MFX_ERR_NONE, 0, {
+        MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_BFF},
         {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_BFF},
         {EXTBUFF_VPP_ROTATION, &tsStruct::mfxExtVPPRotation.Angle, 90}}
