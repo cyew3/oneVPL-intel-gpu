@@ -341,6 +341,7 @@ mfxStatus SetPrivateParams(
     VAEncMiscParameterPrivate *private_param;
     mfxExtCodingOption2 const * extOpt2  = GetExtBuffer(par);
     mfxExtCodingOption3 const * extOpt3  = GetExtBuffer(par);
+    mfxExtFeiCodingOption const * extOptFEI = GetExtBuffer(par);
 
     if ( privateParams_id != VA_INVALID_ID)
     {
@@ -374,6 +375,13 @@ mfxStatus SetPrivateParams(
 
         if (private_param->globalMotionBiasAdjustmentEnable && extOpt3->MVCostScalingFactor < 4)
             private_param->HMEMVCostScalingFactor = extOpt3->MVCostScalingFactor;
+    }
+
+    if (extOptFEI)
+    {
+        private_param->HMEDisable      = !!extOptFEI->DisableHME;
+        private_param->SuperHMEDisable = !!extOptFEI->DisableSuperHME;
+        private_param->UltraHMEDisable = !!extOptFEI->DisableUltraHME;
     }
 
     if (pCtrl)
