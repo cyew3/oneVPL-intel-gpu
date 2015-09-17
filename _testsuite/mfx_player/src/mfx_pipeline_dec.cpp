@@ -2084,12 +2084,14 @@ mfxStatus MFXDecPipeline::InitRenderParams()
     refInfoOut.Height       = mfx_align(refInfoIn.Height,(bProg) ? 0x10 : 0x20);
     //TODO: cropx cropy settings may affect suites that expect encoder to set the crops, we don't have such test cases YET
     //before modifying zero to something please check VCSD100004870
-    refInfoOut.CropX        = refInfoIn.CropX;
-    refInfoOut.CropY        = refInfoIn.CropY;
-    refInfoOut.CropW        = refInfoIn.CropW;
-    refInfoOut.CropH        = refInfoIn.CropH;
-    refInfoOut.AspectRatioW = (0 == refInfoOut.AspectRatioW) ? refInfoIn.AspectRatioW : refInfoOut.AspectRatioW;
-    refInfoOut.AspectRatioH = (0 == refInfoOut.AspectRatioH) ? refInfoIn.AspectRatioH : refInfoOut.AspectRatioH;
+    refInfoOut.CropX          = refInfoIn.CropX;
+    refInfoOut.CropY          = refInfoIn.CropY;
+    refInfoOut.CropW          = refInfoIn.CropW;
+    refInfoOut.CropH          = refInfoIn.CropH;
+    refInfoOut.AspectRatioW   = (0 == refInfoOut.AspectRatioW) ? refInfoIn.AspectRatioW : refInfoOut.AspectRatioW;
+    refInfoOut.AspectRatioH   = (0 == refInfoOut.AspectRatioH) ? refInfoIn.AspectRatioH : refInfoOut.AspectRatioH;
+    refInfoOut.BitDepthChroma = refInfoIn.BitDepthChroma;
+    refInfoOut.BitDepthLuma   = refInfoIn.BitDepthLuma;
 
     //in case of vpp: it's output set by encoder input, so cannot copy
     if (!m_inParams.bUseVPP)
