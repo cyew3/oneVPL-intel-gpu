@@ -659,11 +659,13 @@ public:
     {
         m_cameraFGC.pSegment = new TForwardGammaSeg[64];
         m_bIsSet = false;
+        m_cachedReadyTaskIndex.clear();
     };
 
     ~DXVAHDVideoProcessor()    
     {
         delete [] m_cameraFGC.pSegment;
+        m_cachedReadyTaskIndex.clear();
         std::map<void *, DXVAHD_STREAM_DATA *>::iterator it;
         for (it = m_Streams.begin() ; it != m_Streams.end(); it++)
         {
@@ -675,6 +677,7 @@ public:
     mfxStatus QueryCapabilities( MfxHwVideoProcessing::mfxVppCaps &caps );
     mfxStatus Execute(MfxHwVideoProcessing::mfxExecuteParams *executeParams);
     mfxStatus Register(mfxHDLPair* pSurfaces, mfxU32 num, BOOL bRegister);
+    mfxStatus QueryTaskStatus(mfxU32 idx);
 
     IDirect3DSurface9* SurfaceCreate(unsigned int width, 
                                      unsigned int height, 
@@ -733,6 +736,8 @@ private:
     bool                    m_bIsSet;
     TForwardGamma           m_cameraFGC;
     std::map<void *, DXVAHD_STREAM_DATA *> m_Streams;
+    UMC::Mutex              m_mutex;
+    std::set<mfxU32>        m_cachedReadyTaskIndex;
 };
 
 class D3D9CameraProcessor: public CameraProcessor
@@ -743,6 +748,8 @@ public:
         m_ddi.reset(0);
         m_executeParams = 0;
         m_executeSurf   = 0;
+        m_counter       = 0;
+        m_paddedInput   = false;
     };
 
     ~D3D9CameraProcessor() {
@@ -823,12 +830,14 @@ private:
     }
 
     bool                                             m_systemMemOut;
+    bool                                             m_paddedInput;
     CameraParams                                     m_CameraParams;
     UMC::Mutex                                       m_guard;
     mfxU16                                           m_AsyncDepth;
     MfxHwVideoProcessing::mfxExecuteParams          *m_executeParams;
     MfxHwVideoProcessing::mfxDrvSurface             *m_executeSurf;
     std::auto_ptr<DXVAHDVideoProcessor>              m_ddi;
+    mfxU32                                           m_counter;
 
     template <class T, bool isSingle>
     class s_ptr

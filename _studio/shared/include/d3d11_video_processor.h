@@ -204,6 +204,7 @@ enum
     VPE_FN_SET_VERSION_PARAM = 0x1,
     VPE_FN_SET_STATUS_PARAM  = 0x5,
     VPE_FN_GET_STATUS_PARAM  = 0x6,
+    VPE_FN_GET_BLT_EVENT_HANDLE = 0x7,
 
     VPE_FN_PROC_QUERY_CAPS   = 0x10,
 
@@ -277,6 +278,10 @@ typedef struct _VPE_GET_STATUS_PARAMS
     VPE_STATUS_PARAM    *pStatusBuffer;                                 // [in]
 } VPE_GET_STATUS_PARAMS;
 
+typedef struct _VPE_GET_BTL_EVENT_HANDLE_PARAM
+{
+    HANDLE *pEventHandle;
+} VPE_GET_BTL_EVENT_HANDLE_PARAM;
 
 typedef enum _VPE_MODE
 {
@@ -618,6 +623,7 @@ typedef struct _VPE_FUNCTION
         VPE_MODE_PARAM                          *pModeParam;
         VPE_SET_STATUS_PARAM                    *pSetStatusParam;
         VPE_GET_STATUS_PARAMS                   *pGetStatusParams;
+        VPE_GET_BTL_EVENT_HANDLE_PARAM          *pGetBltEventHandleParam;
 
         VPE_PROC_QUERY_CAPS                     *pProcCaps;
 
@@ -716,6 +722,7 @@ namespace MfxHwVideoProcessing
         mfxStatus CameraPipeSetVignetteParams(CameraVignetteCorrectionParams *params);
         mfxStatus CameraPipeSetLensParams(CameraLensCorrectionParams *params);
         mfxStatus SetStreamScalingMode(UINT StreamIndex, VPE_VPREP_SCALING_MODE_PARAM param);
+        mfxStatus GetEventHandle(HANDLE * pHandle);
 
         void SetOutputTargetRect(BOOL Enable, RECT *pRect);
         void SetOutputBackgroundColor(BOOL YCbCr, D3D11_VIDEO_COLOR *pColor);
@@ -797,6 +804,9 @@ namespace MfxHwVideoProcessing
         ID3D11VideoProcessorOutputView*               m_pOutputView;
         // Structure holds Camera Pipe forward gamma correction LUT
         VPE_CP_FORWARD_GAMMA_PARAMS                   m_cameraFGC;
+        bool                                          m_bCameraMode;
+        HANDLE                                        m_eventHandle;
+        bool                                          m_bUseEventHandle;
         // new approach of dx11 VPE processing
         struct
         {

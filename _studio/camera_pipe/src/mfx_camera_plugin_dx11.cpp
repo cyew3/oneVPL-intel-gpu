@@ -63,8 +63,18 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
     m_executeSurf   = new MfxHwVideoProcessing::mfxDrvSurface[m_AsyncDepth];
     ZeroMemory(m_executeParams, sizeof(MfxHwVideoProcessing::mfxDrvSurface)*m_AsyncDepth);
 
+    if ( CameraParams->Caps.bNoPadding )
+    {
+        // Padding was done by app. DDI doesn't support such mode, so need
+        // just ignore padded borders.
+        m_paddedInput = true;
+    }
+
     mfxFrameAllocRequest request;
     request.Info        = m_params.vpp.In;
+    request.Info.CropX  = request.Info.CropY = 0;
+    request.Info.Width  = request.Info.CropW;
+    request.Info.Height = (request.Info.CropH/2)*2; // WA for driver bug: crash in case of odd height
 
     // Initial frameinfo contains just R16 that should be updated to the
     // internal FourCC representing
@@ -82,6 +92,9 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
         // Output is in system memory. Need to allocate temporary video surf
         mfxFrameAllocRequest request;
         request.Info        = m_params.vpp.Out;
+        request.Info.CropX  = request.Info.CropY = 0;
+        request.Info.Width  = request.Info.CropW;
+        request.Info.Height = (request.Info.CropH/2)*2;
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_INTERNAL_FRAME;
         request.NumFrameMin = request.NumFrameSuggested = m_AsyncDepth; // Fixme
         sts = m_OutSurfacePool->AllocateSurfaces(m_core, request);
@@ -198,6 +211,10 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
 
     pParam->surfInIndex  = surfInIndex;
     pParam->surfOutIndex = surfOutIndex;
+    {
+        // DDI execs
+        sts = m_ddi->Execute(&m_executeParams[surfInIndex]);
+    }
 #ifdef CAMP_PIPE_ITT
     __itt_task_end(CamPipeDX11);
 #endif
@@ -213,9 +230,23 @@ mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
     mfxU32 ddiIndex = pParam->surfInIndex;
     mfxStatus sts   = MFX_ERR_NONE;
 
+    mfxU16 queryAttempt = 5;
+    while ( queryAttempt )
     {
-        // DDI execs
-        sts = m_ddi->Execute(&m_executeParams[ddiIndex]);
+        sts = m_ddi->QueryTaskStatus(m_executeParams[ddiIndex].statusReportID);
+        if ( MFX_TASK_DONE == sts )
+        {
+            break;
+        }
+
+        queryAttempt--;
+        vm_time_sleep(10);
+    }
+
+    if ( MFX_FOURCC_ARGB16 == pParam->surf_out->Info.FourCC )
+    {
+        /* TODO: DDI natively supports ABGR format only. In case of ARGB is requested,
+           need to do R<->B swapping using CM Kernel */
     }
 
     if ( m_systemMemOut )
@@ -223,7 +254,8 @@ mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
         mfxFrameSurface1 OutSurf = {0};
         OutSurf.Data.MemId = m_OutSurfacePool->mids[pParam->surfOutIndex];
         OutSurf.Info       = pParam->surf_out->Info;
-
+        OutSurf.Info.Width  = OutSurf.Info.CropW;
+        OutSurf.Info.Height = OutSurf.Info.CropH;
         // [1] Copy from system mem to the internal video frame
         sts = m_core->DoFastCopyWrapper(pParam->surf_out,
                                         MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
@@ -324,15 +356,25 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
         }
     }
     mfxFrameSurface1 InSurf = {0};
+    mfxFrameSurface1 appInputSurface = *surf;
 
     InSurf.Data.MemId = memIdIn;
-    InSurf.Info       = surf->Info;
+    InSurf.Info       = appInputSurface.Info;
     InSurf.Info.FourCC =  BayerToFourCC(m_CameraParams.Caps.BayerPatternType);
+
+    if ( m_paddedInput && appInputSurface.Info.CropX == 0 && appInputSurface.Info.CropY == 0 )
+    {
+        // Special case: input is marked as padded, but crops do not reflect that
+        mfxU32 shift = (8*appInputSurface.Data.Pitch + 8*2);
+        appInputSurface.Data.Y += shift;
+    }
+
+    appInputSurface.Data.Y += appInputSurface.Data.Pitch*appInputSurface.Info.CropY + appInputSurface.Info.CropX<<1;
 
     // [1] Copy from system mem to the internal video frame
     sts = m_core->DoFastCopyWrapper(&InSurf,
                                     MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
-                                    surf,
+                                    &appInputSurface,
                                     MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY);
     MFX_CHECK_STS(sts);
 

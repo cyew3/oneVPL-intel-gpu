@@ -123,6 +123,7 @@ public:
         m_executeParams = 0;
         m_executeSurf   = 0;
         m_last_index    = -1;
+        m_paddedInput   = false;
         m_InSurfacePool  = new D3D11FrameAllocResponse();
         m_OutSurfacePool = new D3D11FrameAllocResponse();
     };
@@ -170,9 +171,9 @@ protected:
 private:
 
     // Do not allow copying of the object
-    D3D11CameraProcessor(const D3D11CameraProcessor& from) {};
+    D3D11CameraProcessor(const D3D11CameraProcessor& from) {UNREFERENCED_PARAMETER(from);};
     D3D11CameraProcessor& operator=(const D3D11CameraProcessor&) {return *this; };
-    int    m_last_index;
+    mfxU32 m_last_index;
     mfxU32 FindFreeResourceIndex(
     D3D11FrameAllocResponse const & pool,
     mfxU32                        *index)
@@ -230,6 +231,7 @@ private:
     mfxFrameAllocResponse                            m_InternalSurfes;
     mfxFrameAllocResponse                            m_OutputSurfs;
     bool                                             m_systemMemOut;
+    bool                                             m_paddedInput;
     CameraParams                                     m_CameraParams;
     UMC::Mutex                                       m_guard;
     UMC::Mutex                                       m_guard_exec;

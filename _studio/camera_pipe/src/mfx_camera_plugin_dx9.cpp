@@ -574,7 +574,47 @@ mfxStatus DXVAHDVideoProcessor::CreateDevice(VideoCORE *core, mfxVideoParam *par
         return MFX_ERR_DEVICE_FAILED;
     }
 
+    VPE_SET_STATUS_PARAM setStatusParams = {0};
+    setStatusParams.bEnableStatusCollection = 1;
+    vprepParams.Function = VPE_FN_SET_STATUS_PARAM;
+    vprepParams.pSetStatusParam = &setStatusParams;
+    hr = ExecuteVPrepFunction(VPE_FN_SET_STATUS_PARAM, &vprepParams, sizeof(vprepParams));
+    if ( FAILED(hr) )
+    {
+        return MFX_ERR_DEVICE_FAILED;
+    }
     return MFX_ERR_NONE;
+}
+
+mfxStatus DXVAHDVideoProcessor::QueryTaskStatus(mfxU32 idx)
+{
+    UMC::AutomaticUMCMutex guard(m_mutex);
+    HRESULT hr;
+    const mfxU32 numStructures = 6 * 2;
+    std::set<mfxU32>::iterator iterator;
+    VPE_STATUS_PARAM queryBuffer[numStructures];
+    memset(&queryBuffer[0], 0, sizeof(VPE_STATUS_PARAM) * numStructures);
+    VPE_GET_STATUS_PARAMS queryParam;
+    queryParam.StatusCount   = numStructures;
+    queryParam.pStatusBuffer = &queryBuffer[0];
+    VPE_FUNCTION vprepParams = {0};
+    vprepParams.Function = VPE_FN_GET_STATUS_PARAM;
+    vprepParams.pGetStatusParams = &queryParam;
+    hr = ExecuteVPrepFunction(VPE_FN_GET_STATUS_PARAM, &vprepParams, sizeof(vprepParams));
+    for (mfxU32 i = 0; i < numStructures; i += 1)
+    {
+        if (VPE_STATUS_COMPLETED == queryParam.pStatusBuffer[i].Status)
+        {
+            m_cachedReadyTaskIndex.insert(queryParam.pStatusBuffer[i].FrameId);
+        }
+    }
+    iterator = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), idx);
+    if (m_cachedReadyTaskIndex.end() == iterator)
+    {
+        return MFX_TASK_BUSY;
+    }
+    m_cachedReadyTaskIndex.erase(iterator);
+    return MFX_TASK_DONE;
 }
 
 mfxStatus DXVAHDVideoProcessor::QueryCapabilities(MfxHwVideoProcessing::mfxVppCaps &caps)
@@ -1005,14 +1045,6 @@ mfxStatus DXVAHDVideoProcessor::Execute(MfxHwVideoProcessing::mfxExecuteParams *
     HRESULT hr;
     if ( ! m_bIsSet )
     {
-    DXVAHD_BLT_STATE_TARGET_RECT_DATA targetRectData;
-    targetRectData.Enable = TRUE;
-    targetRectData.TargetRect.bottom = executeParams->targetSurface.frameInfo.Height;
-    targetRectData.TargetRect.right  = executeParams->targetSurface.frameInfo.Width;
-    targetRectData.TargetRect.top  = 0;
-    targetRectData.TargetRect.left = 0;
-    hr = SetVideoProcessBltState(DXVAHD_BLT_STATE_TARGET_RECT, sizeof(targetRectData), &targetRectData);
-    CHECK_HRES(hr);
 
     DXVAHD_BLT_STATE_BACKGROUND_COLOR_DATA    BackgroundColor = {0};
     hr = SetVideoProcessBltState(DXVAHD_BLT_STATE_BACKGROUND_COLOR, sizeof(BackgroundColor), (void*)&(BackgroundColor));
@@ -1028,21 +1060,6 @@ mfxStatus DXVAHDVideoProcessor::Execute(MfxHwVideoProcessing::mfxExecuteParams *
     hr = SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_FRAME_FORMAT, sizeof(frameFmtData), &frameFmtData);
     CHECK_HRES(hr);
 
-    DXVAHD_STREAM_STATE_SOURCE_RECT_DATA srcRectData = {0};
-    srcRectData.SourceRect.bottom = (executeParams->pRefSurfaces[0].frameInfo.CropH / 2 * 2);
-    srcRectData.SourceRect.right  = executeParams->pRefSurfaces[0].frameInfo.CropW;
-    srcRectData.SourceRect.top    = executeParams->pRefSurfaces[0].frameInfo.CropY;
-    srcRectData.SourceRect.left   = executeParams->pRefSurfaces[0].frameInfo.CropX;
-    srcRectData.Enable = TRUE;
-    hr = SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_SOURCE_RECT, sizeof(srcRectData), &srcRectData);
-    CHECK_HRES(hr);
-
-    DXVAHD_STREAM_STATE_DESTINATION_RECT_DATA dstRectData;
-    dstRectData.Enable = TRUE;
-    srcRectData.SourceRect.bottom = executeParams->pRefSurfaces[0].frameInfo.CropH;
-    memcpy_s((PVOID) &dstRectData.DestinationRect, sizeof(RECT), &srcRectData.SourceRect, sizeof(RECT));    
-    hr = SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_DESTINATION_RECT, sizeof(dstRectData), &dstRectData);
-    CHECK_HRES(hr);
 
     DXVAHD_STREAM_STATE_INPUT_COLOR_SPACE_DATA streamColorSpace;
     memset((void*) &streamColorSpace, 0, sizeof(DXVAHD_STREAM_STATE_INPUT_COLOR_SPACE_DATA));
@@ -1136,7 +1153,7 @@ mfxStatus DXVAHDVideoProcessor::Execute(MfxHwVideoProcessing::mfxExecuteParams *
 #ifdef CAMP_PIPE_ITT
     __itt_task_begin(CamPipeDX9, __itt_null, __itt_null, DDIEXECDX9);
 #endif 
-    hr = m_pDXVAVideoProcessor->VideoProcessBltHD(output, 0, 1, pStream);
+    hr = m_pDXVAVideoProcessor->VideoProcessBltHD(output, executeParams->statusReportID, 1, pStream);
     CHECK_HRES(hr);
  #ifdef CAMP_PIPE_ITT
     __itt_task_end(CamPipeDX9);
@@ -1310,6 +1327,12 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
         free(m_executeParams); 
     if ( m_executeSurf )
         free(m_executeSurf);
+    if ( CameraParams->Caps.bNoPadding )
+    {
+        // Padding was done by app. DDI doesn't support such mode, so need 
+        // just ignore padded borders.
+        m_paddedInput = true;
+    }
     m_executeParams = (MfxHwVideoProcessing::mfxExecuteParams *)malloc(sizeof(MfxHwVideoProcessing::mfxExecuteParams)*m_AsyncDepth);
     MFX_CHECK_NULL_PTR1(m_executeParams);
     ZeroMemory(m_executeParams, sizeof(MfxHwVideoProcessing::mfxExecuteParams)*m_AsyncDepth);
@@ -1322,7 +1345,7 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
     m_inputSurf.resize(m_AsyncDepth);
     for(int i = 0; i < m_AsyncDepth; i++)
     {
-        m_inputSurf[i].surf = m_ddi->SurfaceCreate(m_params.vpp.In.Width, m_params.vpp.In.Height, (D3DFORMAT)BayerToFourCC(CameraParams->Caps.BayerPatternType), MFX_MEMTYPE_FROM_VPPIN);
+        m_inputSurf[i].surf = m_ddi->SurfaceCreate(m_params.vpp.In.CropW, (m_params.vpp.In.CropH/2)*2, (D3DFORMAT)BayerToFourCC(CameraParams->Caps.BayerPatternType), MFX_MEMTYPE_FROM_VPPIN);
         MFX_CHECK_NULL_PTR1(m_inputSurf[i].surf);
     }
 
@@ -1333,7 +1356,10 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
         m_systemMemOut = true;
         for(int i = 0; i < m_AsyncDepth; i++)
         {
-            m_outputSurf[i].surf = m_ddi->SurfaceCreate(m_params.vpp.Out.Width, m_params.vpp.Out.Height, (CameraParams->par.vpp.Out.FourCC == MFX_FOURCC_ARGB16 ) ? D3DFMT_A16B16G16R16 : D3DFMT_A8R8G8B8, MFX_MEMTYPE_FROM_VPPOUT);
+            m_outputSurf[i].surf = m_ddi->SurfaceCreate(
+                m_params.vpp.Out.CropW, (m_params.vpp.Out.CropH/2)*2,
+                (CameraParams->par.vpp.Out.FourCC == MFX_FOURCC_ARGB16) ? D3DFMT_A16B16G16R16 : D3DFMT_A8R8G8B8,
+                MFX_MEMTYPE_FROM_VPPOUT);
             MFX_CHECK_NULL_PTR1(m_outputSurf[i].surf);
         }
     }
@@ -1363,7 +1389,7 @@ mfxStatus D3D9CameraProcessor::AsyncRoutine(AsyncParams *pParam)
     MFX_CHECK_STS(sts);
     
     m_executeParams[surfInIndex].bCameraPipeEnabled      = true;
-    mfxU8 shift = (16 - pParam->FrameSizeExtra.BitDepth);
+    mfxU8 shift = (mfxU8)(16 - pParam->FrameSizeExtra.BitDepth);
     shift = shift > 16 ? 0 : shift;
 
     if ( pParam->Caps.bBlackLevelCorrection )
@@ -1439,7 +1465,7 @@ mfxStatus D3D9CameraProcessor::AsyncRoutine(AsyncParams *pParam)
 
     m_executeParams[surfInIndex].refCount       = 1;
     m_executeParams[surfInIndex].bkwdRefCount   = m_executeParams[surfInIndex].fwdRefCount = 0;
-    m_executeParams[surfInIndex].statusReportID = surfInIndex;
+    m_executeParams[surfInIndex].statusReportID = m_counter++;
     m_executeSurf[surfInIndex].bExternal = tmpSurf.bExternal;
     m_executeSurf[surfInIndex].endTimeStamp = tmpSurf.endTimeStamp;
     memcpy_s(&m_executeSurf[surfInIndex].frameInfo, sizeof(mfxFrameInfo), &tmpSurf.frameInfo, sizeof(mfxFrameInfo));
@@ -1450,6 +1476,11 @@ mfxStatus D3D9CameraProcessor::AsyncRoutine(AsyncParams *pParam)
 
     pParam->surfInIndex = surfInIndex;
     pParam->surfOutIndex = surfOutIndex;
+
+    {   // DDI execution 
+        sts = m_ddi->Execute(&m_executeParams[surfInIndex]);
+        MFX_CHECK_STS(sts);
+    }
 
 #ifdef CAMP_PIPE_ITT
     __itt_task_end(CamPipeDX9);
@@ -1465,76 +1496,33 @@ mfxStatus D3D9CameraProcessor::CompleteRoutine(AsyncParams * pParam)
     mfxU32 inIndex  = pParam->surfInIndex;
     mfxU32 outIndex = pParam->surfOutIndex;
 
-    { // DDI execution 
-        sts = m_ddi->Execute(&m_executeParams[inIndex]);
-        MFX_CHECK_STS(sts);
+    mfxU16 queryAttempt = 5;
+    while ( queryAttempt )
+    {
+        sts = m_ddi->QueryTaskStatus(m_executeParams[inIndex].statusReportID);
+        if ( MFX_TASK_DONE == sts )
+        {
+            break;
+        }
+
+        queryAttempt--;
+        vm_time_sleep(10);
+    }
+
+    if ( MFX_FOURCC_ARGB16 == pParam->surf_out->Info.FourCC )
+    {
+        /* TODO: DDI natively supports ABGR format only. In case of ARGB is requested,
+           need to do R<->B swapping using CM Kernel */
     }
 
     if ( m_systemMemOut )
     {
         IppiSize roi = {pParam->surf_out->Info.Width, pParam->surf_out->Info.Height};
         mfxI64 verticalPitch = 0;
-        if ( roi.width > 10*1024 && roi.height > 10*1024 )
-        {
-            IDirect3DSurface9 *pSurface = (IDirect3DSurface9 *) m_executeParams[inIndex].targetSurface.hdl.first;
-            D3DSURFACE_DESC sSurfDesc; 
-            D3DLOCKED_RECT  sLockRect;
-            HRESULT hRes  = pSurface->GetDesc(&sSurfDesc);
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-            IppStatus ippSts;
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FastCopySSE");
-            hRes |= pSurface->LockRect(&sLockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_LOCK_MEMORY);
-
-            Ipp32u srcPitch = sLockRect.Pitch;
-            mfxU32 dstPitch = pParam->surf_out->Data.PitchLow + ((mfxU32)pParam->surf_out->Data.PitchHigh << 16);
-
-            switch (pParam->surf_out->Info.FourCC)
-            {
-                case MFX_FOURCC_RGB4:
-                {
-                    MFX_CHECK_NULL_PTR1(pParam->surf_out->Data.R);
-                    MFX_CHECK_NULL_PTR1(pParam->surf_out->Data.G);
-                    MFX_CHECK_NULL_PTR1(pParam->surf_out->Data.B);
-
-                    mfxU8* ptrDst = IPP_MIN(IPP_MIN(pParam->surf_out->Data.R, pParam->surf_out->Data.G), pParam->surf_out->Data.B);
-
-                    roi.width *= 4;
-
-                    ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits, srcPitch, ptrDst, dstPitch, roi);
-                }
-                break;
-
-                case MFX_FOURCC_ARGB16:
-                {
-                    MFX_CHECK_NULL_PTR1(pParam->surf_out->Data.R);
-                    MFX_CHECK_NULL_PTR1(pParam->surf_out->Data.G);
-                    MFX_CHECK_NULL_PTR1(pParam->surf_out->Data.B);
-
-                    mfxU8* ptrDst = IPP_MIN(IPP_MIN(pParam->surf_out->Data.R, pParam->surf_out->Data.G), pParam->surf_out->Data.B);
-
-                    roi.width *= 8;
-
-                    ippSts = ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits, srcPitch, ptrDst, dstPitch, roi);
-                    MFX_CHECK_STS(sts);
-                }
-                break;
-
-                default:
-
-                    return MFX_ERR_UNSUPPORTED;
-            }
-
-            hRes = pSurface->UnlockRect();
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-        }
-        else
-        {
             sts = m_pCmCopy.get()->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R,pParam->surf_out->Data.G),pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, pParam->surf_out->Info.Height, m_outputSurf[outIndex].surf,  (mfxU32)verticalPitch, roi);
             MFX_CHECK_STS(sts);
         }
 
-    }
     {
         UMC::AutomaticUMCMutex guard(m_guard);
         if ( m_systemMemOut )
@@ -1655,19 +1643,28 @@ mfxStatus D3D9CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *
     }
     *poolIndex = input_index;
     mfxFrameSurface1 InSurf = {0};
+    mfxFrameSurface1 appInputSurface = *surf;
     
     InSurf.Info       = surf->Info;
+    InSurf.Info.Width = surf->Info.CropW;
+    InSurf.Info.Height = surf->Info.CropH;
     InSurf.Info.FourCC =  BayerToFourCC(m_CameraParams.Caps.BayerPatternType);
 
     // [1] Copy from system mem to the internal video frame
     IppiSize roi = {surf->Info.CropW, surf->Info.CropH};
     mfxI64 verticalPitch = 0;
 
-    sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(m_inputSurf[*poolIndex].surf, 0, surf->Data.Y, surf->Data.Pitch, (mfxU32)verticalPitch, roi);
-    if ( MFX_ERR_NONE != sts )
+    if ( m_paddedInput && appInputSurface.Info.CropX == 0 && appInputSurface.Info.CropY == 0 )
     {
-        return sts;
+        // Special case: input is marked as padded, but crops do not reflect that
+        mfxU32 shift = (8*appInputSurface.Data.Pitch + 8*2);
+        appInputSurface.Data.Y += shift;
     }
+
+    appInputSurface.Data.Y += appInputSurface.Data.Pitch*appInputSurface.Info.CropY + appInputSurface.Info.CropX*2;
+    // [1] Copy from system mem to the internal video frame
+
+    sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(m_inputSurf[*poolIndex].surf, 0, appInputSurface.Data.Y, surf->Data.Pitch, (mfxU32)verticalPitch, roi);
     MFX_CHECK_STS(sts);
 
     // Fill in Drv surfaces

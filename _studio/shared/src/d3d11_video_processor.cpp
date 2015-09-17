@@ -230,6 +230,9 @@ D3D11VideoProcessor::D3D11VideoProcessor(void)
     m_file = 0;
     m_core = 0;
 
+    m_bCameraMode = false;
+    m_eventHandle = 0;
+    m_bUseEventHandle = true;
 } // D3D11VideoProcessor::D3D11VideoProcessor(ID3D11VideoDevice  *pVideoDevice, ID3D11VideoContext *pVideoContext)
 
 
@@ -1320,6 +1323,42 @@ mfxStatus D3D11VideoProcessor::QueryTaskStatus(mfxU32 idx)
     UMC::AutomaticUMCMutex guard(m_mutex);
 
     HRESULT hRes;
+    mfxStatus sts;
+    if ( m_bUseEventHandle && ! m_eventHandle )
+    {
+        try
+        {
+            // EventNotification functionality doesn't have any flags in caps, so
+            // the only way to check if it's suuported - try it. 
+            sts = GetEventHandle(&m_eventHandle);
+            if ( MFX_ERR_NONE != sts )
+            {
+                m_bUseEventHandle = false;
+            }
+        }
+        catch(...)
+        {
+            m_bUseEventHandle = false;
+            m_eventHandle     = 0;
+        }
+    }
+
+    if ( m_bUseEventHandle && m_eventHandle )
+    {
+        DWORD status = WaitForSingleObject(m_eventHandle, 1000);
+        switch(status)
+        {
+        case WAIT_ABANDONED:
+        case WAIT_FAILED:
+            m_bUseEventHandle = false;
+            break;
+        case WAIT_TIMEOUT:
+            return MFX_TASK_BUSY;
+        case WAIT_OBJECT_0:
+        default:
+            break;
+        }
+    }
 
     // aya: the same as for d3d9 (FC)
     const mfxU32 numStructures = 6 * 2;
@@ -1497,6 +1536,26 @@ mfxStatus D3D11VideoProcessor::QueryVariance(
 
 } // mfxStatus D3D11VideoProcessor::QueryVariance(...)
 
+mfxStatus D3D11VideoProcessor::GetEventHandle(HANDLE * pHandle)
+{
+    HRESULT hRes;
+    VPE_FUNCTION iFunc = {0};
+
+    MFX_CHECK_NULL_PTR1(pHandle);
+
+    VPE_GET_BTL_EVENT_HANDLE_PARAM Param;
+    Param.pEventHandle = pHandle;
+    iFunc.Function   = VPE_FN_GET_BLT_EVENT_HANDLE;
+    iFunc.pGetBltEventHandleParam = &Param;
+
+    hRes = GetOutputExtension(
+        &(m_iface.guid),
+        sizeof(VPE_FUNCTION),
+        &iFunc);
+    CHECK_HRES(hRes);
+
+    return MFX_ERR_NONE;
+}
 
 mfxStatus D3D11VideoProcessor::CameraPipeActivate()
 {
@@ -1514,7 +1573,7 @@ mfxStatus D3D11VideoProcessor::CameraPipeActivate()
     CHECK_HRES(hRes);
 
     // Disable status reporting since it breaks camera pipe.
-    VPE_SET_STATUS_PARAM statusParam = {0, 0};
+    VPE_SET_STATUS_PARAM statusParam = {1, 0};
     iFunc.Function        = VPE_FN_SET_STATUS_PARAM;
     iFunc.pSetStatusParam = &statusParam;
 
@@ -1542,6 +1601,7 @@ mfxStatus D3D11VideoProcessor::CameraPipeActivate()
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
+    m_bCameraMode = true;
     return MFX_ERR_NONE;
 }
 
@@ -1767,27 +1827,9 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
 
     mfxStatus    sts      = MFX_ERR_NONE;
     HRESULT      hRes     = S_OK;
-    mfxFrameInfo *outInfo = &(pParams->targetSurface.frameInfo);
-    RECT         pRect    = {0};
 
     if ( ! m_CameraSet )
     {
-        // [1] target rectangle
-        pRect.top  = 0;
-        pRect.left = 0;
-        pRect.bottom = outInfo->Height;
-        pRect.right  = outInfo->Width;
-        SetOutputTargetRect(TRUE, &pRect);
-
-        // [2] destination cropping
-        pRect.top  = outInfo->CropY;
-        pRect.left = outInfo->CropX;
-        pRect.bottom = outInfo->CropH;
-        pRect.right  = outInfo->CropW;
-        pRect.bottom += outInfo->CropY;
-        pRect.right  += outInfo->CropX;
-        SetStreamDestRect(0, TRUE, &pRect);
-    
         sts = CameraPipeActivate();
         MFX_CHECK_STS(sts);
 
@@ -1833,7 +1875,6 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
         }
     }
 
-    mfxDrvSurface* pInputSample = &(pParams->pRefSurfaces[0]);
     mfxHDL inputSurface;
     inputSurface = pParams->pRefSurfaces[0].hdl.first;
     MFX_CHECK_NULL_PTR1(inputSurface);
@@ -1852,24 +1893,6 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
         videoProcessorStream->OutputIndex = PtrToUlong(pParams->targetSurface.hdl.second);
         videoProcessorStream->InputFrameOrField = 0;
         SetStreamFrameFormat(0, D3D11PictureStructureMapping(pParams->pRefSurfaces[0].frameInfo.PicStruct));
-
-        // source cropping
-        mfxFrameInfo *inInfo = &(pInputSample->frameInfo);
-        pRect.top    = inInfo->CropY;
-        pRect.left   = inInfo->CropX;
-
-        // WA for driver bug: if height is odd, driver may fail or hang. 
-        pRect.bottom = (inInfo->CropH/2) * 2;
-        pRect.right  = inInfo->CropW;
-        pRect.bottom += inInfo->CropY;
-        pRect.right  += inInfo->CropX;
-        SetStreamSourceRect(0, TRUE, &pRect);
-
-        pRect.top = outInfo->CropY;
-        pRect.left = outInfo->CropX;
-        pRect.bottom = outInfo->CropH + outInfo->CropY;
-        pRect.right  = outInfo->CropW + outInfo->CropX;
-        SetStreamDestRect(0, TRUE, &pRect);
 
         D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
         inColorSpace.Usage = 0;
