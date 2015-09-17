@@ -912,12 +912,15 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
         {
             const int dstOrder[3] = {2, 1, 0};
             IppiSize roi = {nativeSurf->Info.Width, nativeSurf->Info.Height};
+            IppiSize setroi = {nativeSurf->Info.Width*4, nativeSurf->Info.Height};
             if (0 == roi.width || 0 == roi.height)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
             mfxU32 srsPitch = nativeSurf->Data.PitchLow + ((mfxU32)nativeSurf->Data.PitchHigh << 16);
             mfxU32 dstPitch = dstSurf.PitchLow + ((mfxU32)dstSurf.PitchHigh << 16);
-            IppStatus ippRes = ippiSwapChannels_8u_AC4R(nativeSurf->Data.B,
+            IppStatus ippRes = ippiSet_8u_C1R(0xff,dstSurf.R,dstPitch,setroi);
+            MFX_CHECK(ippRes == ippStsNoErr, MFX_ERR_UNDEFINED_BEHAVIOR);
+            ippRes = ippiSwapChannels_8u_AC4R(nativeSurf->Data.B,
                                                         srsPitch,
                                                         dstSurf.R,
                                                         dstPitch,

@@ -172,7 +172,7 @@ mfxStatus mfxDefaultAllocatorD3D9::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFr
     if (S_OK != hr)
         return MFX_ERR_LOCK_MEMORY;
     // Lock surface
-    hr = RenderTarget->LockRect(&LockedRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
+    hr = RenderTarget->LockRect(&LockedRect, NULL, D3DLOCK_NOSYSLOCK );
     if (S_OK !=hr)
         return MFX_ERR_LOCK_MEMORY;
 
