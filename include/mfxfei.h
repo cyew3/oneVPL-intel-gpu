@@ -385,6 +385,15 @@ typedef struct {
 }mfxExtFeiSliceHeader;
 
 
+typedef struct {
+    mfxExtBuffer    Header;
+
+    mfxU16  DisableHME;  // 0 -enable, any other value means disable 
+    mfxU16  DisableSuperHME;
+    mfxU16  DisableUltraHME;
+
+    mfxU16     reserved[57];
+} mfxExtFeiCodingOption;
 
 
 //1 functions
@@ -410,7 +419,8 @@ enum {
     MFX_EXTBUFF_FEI_PAK_CTRL       = MFX_MAKEFOURCC('F','K','C','T'),
     MFX_EXTBUFF_FEI_SPS            = MFX_MAKEFOURCC('F','S','P','S'),
     MFX_EXTBUFF_FEI_PPS            = MFX_MAKEFOURCC('F','P','P','S'),
-    MFX_EXTBUFF_FEI_SLICE          = MFX_MAKEFOURCC('F','S','L','C')
+    MFX_EXTBUFF_FEI_SLICE          = MFX_MAKEFOURCC('F','S','L','C'),
+    MFX_EXTBUFF_FEI_CODING_OPTION  = MFX_MAKEFOURCC('F','C','D','O')
 };
 
 /* shoud be attached to mfxVideoParam during initialization to indicate FEI function */
