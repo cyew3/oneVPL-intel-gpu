@@ -51,7 +51,7 @@ mfxStatus GeneralAllocator::Init(mfxAllocatorParams *pParams)
 
     m_SYSAllocator.reset(new SysMemFrameAllocator);
 
-    if (m_D3DAllocator.get())
+    if (m_D3DAllocator.get() && pParams)
     {
         sts = m_D3DAllocator.get()->Init(pParams);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
