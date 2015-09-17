@@ -669,6 +669,9 @@ mfxStatus ImplementationAvc::QueryIOSurf(
         //   even if application does this reordering(!!!)
         if (tmp.mfx.EncodedOrder)
             request->NumFrameMin += tmp.mfx.GopRefDist - 1;
+
+         if (extOpt2 && extOpt2->MaxSliceSize!=0)
+            request->NumFrameMin ++;
         request->NumFrameSuggested = request->NumFrameMin;
     }
 
@@ -700,17 +703,19 @@ ImplementationAvc::~ImplementationAvc()
 }
 void ImplementationAvc::DestroyDanglingCmResources()
 {
+    mfxExtCodingOption2 * extOpt = GetExtBuffer(m_video);
     if (m_cmDevice)
     {
         for (DdiTaskIter i = m_lookaheadStarted.begin(), e = m_lookaheadStarted.end(); i != e; ++i)
         {
             m_cmCtx->DestroyEvent(i->m_event);
-
-            int ffid = i->m_fid[0];
-            ArrayDpbFrame & iniDpb = i->m_dpb[ffid];
-            for (mfxU32 j = 0; j < iniDpb.Size(); j++)
-                m_cmDevice->DestroySurface(iniDpb[j].m_cmRaw);
-
+            if (extOpt->MaxSliceSize == 0)
+            {
+                int ffid = i->m_fid[0];
+                ArrayDpbFrame & iniDpb = i->m_dpb[ffid];
+                for (mfxU32 j = 0; j < iniDpb.Size(); j++)
+                    m_cmDevice->DestroySurface(iniDpb[j].m_cmRaw);
+            }
             m_cmDevice->DestroySurface(i->m_cmRaw);
             m_cmDevice->DestroyVmeSurfaceG7_5(i->m_cmRefs);
             m_cmDevice->DestroyVmeSurfaceG7_5(i->m_cmRefsLa);
@@ -1202,6 +1207,11 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     mfxExtCodingOption2 const * extOpt2Old = GetExtBuffer(m_video);
     mfxExtCodingOption3 const * extOpt3New = GetExtBuffer(newPar);
 
+    MFX_CHECK((extOpt2New->MaxSliceSize != 0) ==
+              (extOpt2Old->MaxSliceSize != 0),
+              MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+
     // check if IDR required after change of encoding parameters
     bool isSpsChanged = extSpsNew->vuiParametersPresentFlag == 0 ?
         memcmp(extSpsNew, extSpsOld, sizeof(mfxExtSpsHeader) - sizeof(VuiParameters)) != 0 :
@@ -1277,6 +1287,10 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     MfxVideoParam newPar = *par;
+
+    mfxExtCodingOption2 * extOpt2New = GetExtBuffer(newPar);
+    mfxExtCodingOption2 * extOpt2Old = GetExtBuffer(m_video);
+
     bool isIdrRequired = false;
 
     mfxStatus checkStatus = ProcessAndCheckNewParameters(newPar, isIdrRequired);
@@ -1291,7 +1305,6 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
     while (!m_encoding.empty())
         OnEncodingQueried(m_encoding.begin());
     DestroyDanglingCmResources();
-
     m_emulatorForSyncPart.Init(newPar);
     m_emulatorForAsyncPart = m_emulatorForSyncPart;
 
@@ -1303,14 +1316,26 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
     m_stagesToGo     = AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR;
 
     mfxExtEncoderResetOption const * extResetOpt = GetExtBuffer(newPar);
-    mfxExtCodingOption2 * extOpt2Old = GetExtBuffer(m_video);
-    mfxExtCodingOption2 * extOpt2New = GetExtBuffer(newPar);
 
     // perform reset of encoder and start new sequence with IDR in following cases:
     // 1) change of encoding parameters require insertion of IDR
     // 2) application explicitly asked about starting new sequence
     if (isIdrRequired || IsOn(extResetOpt->StartNewSequence))
     {
+
+        if (extOpt2Old->MaxSliceSize && m_lastTask.m_yuv)
+        {
+            if (m_raw.Unlock(m_lastTask.m_idx) == (mfxU32)-1)
+            {
+               m_core->DecreaseReference(&m_lastTask.m_yuv->Data);
+            }
+            if (m_cmDevice)
+            {
+                m_cmDevice->DestroySurface(m_lastTask.m_cmRaw);
+                m_lastTask.m_cmRaw = NULL;
+            }
+        }
+
         m_free.splice(m_free.end(), m_incoming);
         m_free.splice(m_free.end(), m_reordering);
         m_free.splice(m_free.end(), m_lookaheadStarted);
@@ -1803,22 +1828,27 @@ void ImplementationAvc::OnLookaheadQueried()
 
     DdiTask & task = m_lookaheadStarted.front();
     int fid = task.m_fid[0];
-    ArrayDpbFrame & iniDpb = task.m_dpb[fid];
-    ArrayDpbFrame & finDpb = task.m_dpbPostEncoding;
-    for (mfxU32 i = 0; i < iniDpb.Size(); i++)
+    mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
+    
+    if (extOpt2->MaxSliceSize==0)
     {
-        // m_cmRaw is always filled
-        if (std::find_if(finDpb.Begin(), finDpb.End(), CompareByFrameOrder(iniDpb[i].m_frameOrder)) == finDpb.End())
+        ArrayDpbFrame & iniDpb = task.m_dpb[fid];
+        ArrayDpbFrame & finDpb = task.m_dpbPostEncoding;
+        for (mfxU32 i = 0; i < iniDpb.Size(); i++)
         {
-            ReleaseResource(m_rawLa, iniDpb[i].m_cmRawLa);
-            ReleaseResource(m_mb,    iniDpb[i].m_cmMb);
-            if (m_cmDevice){
-                m_cmDevice->DestroySurface(iniDpb[i].m_cmRaw);
-                iniDpb[i].m_cmRaw = NULL;
+            // m_cmRaw is always filled
+            if (std::find_if(finDpb.Begin(), finDpb.End(), CompareByFrameOrder(iniDpb[i].m_frameOrder)) == finDpb.End())
+            {
+                ReleaseResource(m_rawLa, iniDpb[i].m_cmRawLa);
+                ReleaseResource(m_mb,    iniDpb[i].m_cmMb);
+                if (m_cmDevice){
+
+                    m_cmDevice->DestroySurface(iniDpb[i].m_cmRaw);
+                    iniDpb[i].m_cmRaw = NULL;
+                }
             }
         }
     }
-
     ReleaseResource(m_curbe, task.m_cmCurbe);
 
     if (m_cmDevice)
@@ -2337,7 +2367,28 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         }
 
         //printf("\rLA_SUBMITTED  do=%4d eo=%4d type=%d\n", task->m_frameOrder, task->m_encOrder, task->m_type[0]); fflush(stdout);
+        if (extOpt2->MaxSliceSize && m_lastTask.m_yuv)
+        {
+            if (m_raw.Unlock(m_lastTask.m_idx) == (mfxU32)-1)
+            {
+                m_core->DecreaseReference(&m_lastTask.m_yuv->Data);
+            }
+            ReleaseResource(m_rawLa, m_lastTask.m_cmRawLa);
+            ReleaseResource(m_mb,    m_lastTask.m_cmMb);
+            if (m_cmDevice)
+            {
+                m_cmDevice->DestroySurface(m_lastTask.m_cmRaw);
+                m_lastTask.m_cmRaw = NULL;
+            }
+        }
         m_lastTask = *task;
+        if (extOpt2->MaxSliceSize && m_lastTask.m_yuv)
+        {
+            if (m_raw.Lock(m_lastTask.m_idx) == 0)
+            {
+                m_core->IncreaseReference(&m_lastTask.m_yuv->Data);
+            }            
+        }
         OnLookaheadSubmitted(task);     
     }
 
