@@ -196,7 +196,12 @@ mfxStatus CmDirtyRectFilter::Init(const mfxVideoParam* par, bool isSysMem, bool 
     TaskContext* pTaskCtx = 0;
     for(mfxU32 i = 0; i < AsyncDepth; ++i)
     {
-        pTaskCtx = new TaskContext;
+        try{
+            pTaskCtx = new TaskContext;
+        } catch(...) {
+            Close();
+            return MFX_ERR_MEMORY_ALLOC;
+        }
         memset(pTaskCtx,0,sizeof(TaskContext));
 
         m_vpTasks.push_back(pTaskCtx);
@@ -457,11 +462,11 @@ mfxStatus CmDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1&
     {
         for(mfxU32 j = 0; j < W_BLOCKS; ++j)
         {
+            if(256 <= tmpRect.NumRect)
+                break;
             if( macroMap[i][j] )
             {
                 assert(tmpRect.NumRect <= 255);
-                if(256 == tmpRect.NumRect)
-                    break;
                 //roi
                 tmpRect.Rect[tmpRect.NumRect].Top = i * bigBlockH;
                 tmpRect.Rect[tmpRect.NumRect].Bottom = IPP_MIN(tmpRect.Rect[tmpRect.NumRect].Top + bigBlockH, m_height);

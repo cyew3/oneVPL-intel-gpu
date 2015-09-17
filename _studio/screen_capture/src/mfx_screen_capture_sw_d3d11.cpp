@@ -22,10 +22,32 @@ bool HasWDDMDriver()
 {
     typedef HRESULT (WINAPI *LPDIRECT3DCREATE9EX)( UINT, void **);
 
+    TCHAR path[MAX_PATH] = {};
+    size_t len = GetSystemDirectory(path, MAX_PATH);
+    if(0 == len)
+        return false;
+    TCHAR* backslash = L"\\";
+    TCHAR* libName = L"d3d9.dll";
+
+    if(len >= _tcslen(backslash))
+    {
+        const TCHAR* tail = path + len - _tcslen(backslash);
+        if((0 != _tcscmp(tail, backslash)) && (len + _tcslen(backslash) < MAX_PATH))
+        {
+            _tcscat_s(path, backslash);
+            len += _tcslen(backslash);
+        }
+    }
+
+    if((len + _tcslen(libName)) < MAX_PATH)
+        _tcscat_s(path, libName);
+    else
+        return false;
+
     LPDIRECT3DCREATE9EX pD3D9Create9Ex = 0;
     HMODULE             hD3D9          = 0;
 
-    hD3D9 = LoadLibrary( L"d3d9.dll" );
+    hD3D9 = LoadLibrary( path );
 
     if ( 0 == hD3D9 ) {
         return false;
@@ -69,172 +91,179 @@ mfxStatus SW_D3D11_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, 
 {
     /* IDXGIAdapter -> ID3D11Device -> IDXGIOutput(dispIndex) -> IDXGIOutputDuplication */
 
-    if(!HasWDDMDriver())
-        return MFX_ERR_UNSUPPORTED;
-
-    HRESULT hres;
-
-    mfxStatus mfxRes = MFX_ERR_NONE;
-
-    m_bOwnDevice = false;
-
-    //will own internal device manager
-    memset(&m_core_par, 0, sizeof(m_core_par));
-    if(m_pmfxCore)
-        mfxRes = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &m_core_par);
-
-    //in case of partial acceleration try to use library device
-    if( !m_pmfxCore || mfxRes || MFX_IMPL_HARDWARE != MFX_IMPL_BASETYPE(m_core_par.Impl) ||
-        MFX_IMPL_VIA_D3D11 != (m_core_par.Impl & 0xF00))
-        m_bOwnDevice = true;
-
-    displaysDescr displays;
-    memset(&displays,0,sizeof(displays));
-    FindAllConnectedDisplays(displays);
-
-    m_DisplayIndex = 0;
-    if(targetId/* && 1 != dispIndex*/)
+    try
     {
-        m_DisplayIndex = GetDisplayIndex(targetId);
-        if((m_DisplayIndex) && ( MAX_DISPLAYS <= m_DisplayIndex))
-        {
+        if(!HasWDDMDriver())
             return MFX_ERR_UNSUPPORTED;
-        }
-        if(displays.n < m_DisplayIndex)
-        {
-            return MFX_ERR_NOT_FOUND;
-        }
-        //m_bOwnDevice = true;
-    }
 
-    if(!m_bOwnDevice)
-    {
-        mfxRes = AttachToLibraryDevice(displays, m_DisplayIndex);
-        if(mfxRes)
+        HRESULT hres;
+
+        mfxStatus mfxRes = MFX_ERR_NONE;
+
+        m_bOwnDevice = false;
+
+        //will own internal device manager
+        memset(&m_core_par, 0, sizeof(m_core_par));
+        if(m_pmfxCore)
+            mfxRes = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &m_core_par);
+
+        //in case of partial acceleration try to use library device
+        if( !m_pmfxCore || mfxRes || MFX_IMPL_HARDWARE != MFX_IMPL_BASETYPE(m_core_par.Impl) ||
+            MFX_IMPL_VIA_D3D11 != (m_core_par.Impl & 0xF00))
             m_bOwnDevice = true;
-    }
 
-    if(m_bOwnDevice)
-    {
-        mfxRes = CreateAdapter(displays, m_DisplayIndex);
-        MFX_CHECK_STS(mfxRes);
-    }
+        displaysDescr displays;
+        memset(&displays,0,sizeof(displays));
+        FindAllConnectedDisplays(displays);
 
-    if(!m_pDXGIOutputDuplication)
-        return MFX_ERR_DEVICE_FAILED;
-
-    DXGI_OUTDUPL_DESC dupl_desc;
-    m_pDXGIOutputDuplication->GetDesc(&dupl_desc);
-
-    if(m_pDesktopResource)
-        m_pDesktopResource = 0;
-
-    DXGI_OUTDUPL_FRAME_INFO frame_info;
-    hres = m_pDXGIOutputDuplication->AcquireNextFrame(50, &frame_info, &m_pDesktopResource);
-
-    //normally first call should always work
-    //call capture at init to 1) Check; 2) Store the first surface
-    if (SUCCEEDED(hres) && m_pDesktopResource)
-    {
-        ID3D11Texture2D* DesktopCaptured = 0;
-
-        hres = m_pDesktopResource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&DesktopCaptured);
-        if(FAILED(hres) || !DesktopCaptured)
+        m_DisplayIndex = 0;
+        if(targetId/* && 1 != dispIndex*/)
         {
-            if(m_pDesktopResource)
+            m_DisplayIndex = GetDisplayIndex(targetId);
+            if((m_DisplayIndex) && ( MAX_DISPLAYS <= m_DisplayIndex))
             {
-                m_pDesktopResource = 0;
+                return MFX_ERR_UNSUPPORTED;
             }
+            if(displays.n < m_DisplayIndex)
+            {
+                return MFX_ERR_NOT_FOUND;
+            }
+            //m_bOwnDevice = true;
+        }
+
+        if(!m_bOwnDevice)
+        {
+            mfxRes = AttachToLibraryDevice(displays, m_DisplayIndex);
+            if(mfxRes)
+                m_bOwnDevice = true;
+        }
+
+        if(m_bOwnDevice)
+        {
+            mfxRes = CreateAdapter(displays, m_DisplayIndex);
+            MFX_CHECK_STS(mfxRes);
+        }
+
+        if(!m_pDXGIOutputDuplication)
+            return MFX_ERR_DEVICE_FAILED;
+
+        DXGI_OUTDUPL_DESC dupl_desc;
+        m_pDXGIOutputDuplication->GetDesc(&dupl_desc);
+
+        if(m_pDesktopResource)
+            m_pDesktopResource = 0;
+
+        DXGI_OUTDUPL_FRAME_INFO frame_info;
+        hres = m_pDXGIOutputDuplication->AcquireNextFrame(50, &frame_info, &m_pDesktopResource);
+
+        //normally first call should always work
+        //call capture at init to 1) Check; 2) Store the first surface
+        if (SUCCEEDED(hres) && m_pDesktopResource)
+        {
+            ID3D11Texture2D* DesktopCaptured = 0;
+
+            hres = m_pDesktopResource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&DesktopCaptured);
+            if(FAILED(hres) || !DesktopCaptured)
+            {
+                if(m_pDesktopResource)
+                {
+                    m_pDesktopResource = 0;
+                }
+                if(DesktopCaptured)
+                {
+                    DesktopCaptured->Release();
+                    DesktopCaptured = 0;
+                }
+                return MFX_ERR_DEVICE_FAILED;
+            }
+
+            D3D11_TEXTURE2D_DESC texDesc;
+            D3D11_TEXTURE2D_DESC sysDesc;
+            memset(&sysDesc, 0, sizeof(sysDesc));
+            memset(&texDesc, 0, sizeof(texDesc));
+            DesktopCaptured->GetDesc(&texDesc);
+
+            sysDesc = texDesc;
+            sysDesc.ArraySize      = 1;
+            sysDesc.Usage          = D3D11_USAGE_STAGING;
+            sysDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+            sysDesc.BindFlags      = 0;
+            sysDesc.MiscFlags      = 0;
+
+            ID3D11Texture2D* stagingTexture = 0;
+
+            hres = m_pD11Device->CreateTexture2D(&sysDesc, NULL, &stagingTexture);
+            if(FAILED(hres))
+                return MFX_ERR_MEMORY_ALLOC;
+
+            if(!m_pLastCaptured)
+            {
+                texDesc.MiscFlags = 0;
+                hres = m_pD11Device->CreateTexture2D(&texDesc, NULL, &m_pLastCaptured);
+            }
+            m_pD11Context->CopyResource(m_pLastCaptured, DesktopCaptured);
+            m_pD11Context->CopyResource(stagingTexture, DesktopCaptured);
+
+            D3D11_MAPPED_SUBRESOURCE    lockedRect = {0};
+            D3D11_MAP   mapType  = D3D11_MAP_READ;
+            UINT        mapFlags = D3D11_MAP_FLAG_DO_NOT_WAIT;
+            do
+            {
+                hres = m_pD11Context->Map(stagingTexture, 0, mapType, mapFlags, &lockedRect);
+                if (S_OK != hres && DXGI_ERROR_WAS_STILL_DRAWING != hres)
+                    return MFX_ERR_LOCK_MEMORY;
+            }
+            while (DXGI_ERROR_WAS_STILL_DRAWING == hres);
+
+            m_pD11Context->Unmap(stagingTexture, 0);
+
             if(DesktopCaptured)
             {
                 DesktopCaptured->Release();
                 DesktopCaptured = 0;
             }
+            if(m_pDesktopResource)
+            {
+                m_pDesktopResource = 0;
+            }
+            if(stagingTexture)
+            {
+                stagingTexture->Release();
+                stagingTexture = 0;
+            }
+
+            m_pDXGIOutputDuplication->ReleaseFrame();
+        }
+        else
+        {
             return MFX_ERR_DEVICE_FAILED;
         }
 
-        D3D11_TEXTURE2D_DESC texDesc;
-        D3D11_TEXTURE2D_DESC sysDesc;
-        memset(&sysDesc, 0, sizeof(sysDesc));
-        memset(&texDesc, 0, sizeof(texDesc));
-        DesktopCaptured->GetDesc(&texDesc);
-
-        sysDesc = texDesc;
-        sysDesc.ArraySize      = 1;
-        sysDesc.Usage          = D3D11_USAGE_STAGING;
-        sysDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-        sysDesc.BindFlags      = 0;
-        sysDesc.MiscFlags      = 0;
-
-        ID3D11Texture2D* stagingTexture = 0;
-
-        hres = m_pD11Device->CreateTexture2D(&sysDesc, NULL, &stagingTexture);
-        if(FAILED(hres))
-            return MFX_ERR_MEMORY_ALLOC;
-
-        if(!m_pLastCaptured)
+        if(MFX_FOURCC_NV12 == par.mfx.FrameInfo.FourCC)
         {
-            texDesc.MiscFlags = 0;
-            hres = m_pD11Device->CreateTexture2D(&texDesc, NULL, &m_pLastCaptured);
+            try
+            {
+                m_pColorConverter.reset(new MFXVideoVPPColorSpaceConversion(0, &mfxRes));
+            }
+            catch(...)
+            {
+                Destroy();
+                return MFX_ERR_MEMORY_ALLOC;
+            }
+            if(mfxRes)
+            {
+                Destroy();
+                return mfxRes;
+            }
+            mfxFrameInfo in = par.mfx.FrameInfo;
+            mfxFrameInfo out = par.mfx.FrameInfo;
+            in.FourCC = MFX_FOURCC_RGB4;
+            m_pColorConverter->Init(&in, &out);
         }
-        m_pD11Context->CopyResource(m_pLastCaptured, DesktopCaptured);
-        m_pD11Context->CopyResource(stagingTexture, DesktopCaptured);
-
-        D3D11_MAPPED_SUBRESOURCE    lockedRect = {0};
-        D3D11_MAP   mapType  = D3D11_MAP_READ;
-        UINT        mapFlags = D3D11_MAP_FLAG_DO_NOT_WAIT;
-        do
-        {
-            hres = m_pD11Context->Map(stagingTexture, 0, mapType, mapFlags, &lockedRect);
-            if (S_OK != hres && DXGI_ERROR_WAS_STILL_DRAWING != hres)
-                return MFX_ERR_LOCK_MEMORY;
-        }
-        while (DXGI_ERROR_WAS_STILL_DRAWING == hres);
-
-        m_pD11Context->Unmap(stagingTexture, 0);
-
-        if(DesktopCaptured)
-        {
-            DesktopCaptured->Release();
-            DesktopCaptured = 0;
-        }
-        if(m_pDesktopResource)
-        {
-            m_pDesktopResource = 0;
-        }
-        if(stagingTexture)
-        {
-            stagingTexture->Release();
-            stagingTexture = 0;
-        }
-
-        m_pDXGIOutputDuplication->ReleaseFrame();
     }
-    else
+    catch(...)
     {
         return MFX_ERR_DEVICE_FAILED;
-    }
-
-    if(MFX_FOURCC_NV12 == par.mfx.FrameInfo.FourCC)
-    {
-        try
-        {
-            m_pColorConverter.reset(new MFXVideoVPPColorSpaceConversion(0, &mfxRes));
-        }
-        catch(...)
-        {
-            Destroy();
-            return MFX_ERR_MEMORY_ALLOC;
-        }
-        if(mfxRes)
-        {
-            Destroy();
-            return mfxRes;
-        }
-        mfxFrameInfo in = par.mfx.FrameInfo;
-        mfxFrameInfo out = par.mfx.FrameInfo;
-        in.FourCC = MFX_FOURCC_RGB4;
-        m_pColorConverter->Init(&in, &out);
     }
 
     return MFX_ERR_NONE;
@@ -263,27 +292,34 @@ mfxStatus SW_D3D11_Capturer::CheckCapabilities(mfxVideoParam const & in, mfxVide
 
 mfxStatus SW_D3D11_Capturer::Destroy()
 {
-    if(m_pColorConverter.get())
-        m_pColorConverter.reset(0);
-    if(m_IntStatusList.size())
-        m_IntStatusList.clear();
+    try
+    {
+        if(m_pColorConverter.get())
+            m_pColorConverter.reset(0);
+        if(m_IntStatusList.size())
+            m_IntStatusList.clear();
 
-#define RELEASE(PTR) { if (PTR) { PTR.Release(); PTR = NULL; } };
-    RELEASE(m_pDXGIFactory          );
-    RELEASE(m_pDXGIAdapter          );
-    RELEASE(m_pDXGIOutput           );
-    RELEASE(m_pDXGIOutput1          );
-    RELEASE(m_pDXGIOutputDuplication);
-    RELEASE(m_pD11Device            );
-    RELEASE(m_pDXGIDevice           );
-    RELEASE(m_pD11Context           );
-    RELEASE(m_pDesktopResource      );
-    RELEASE(m_pLastCaptured         );
-    RELEASE(m_stagingTexture        );
-#undef RELEASE
+    #define RELEASE(PTR) { if (PTR) { PTR.Release(); PTR = NULL; } };
+        RELEASE(m_pDXGIFactory          );
+        RELEASE(m_pDXGIAdapter          );
+        RELEASE(m_pDXGIOutput           );
+        RELEASE(m_pDXGIOutput1          );
+        RELEASE(m_pDXGIOutputDuplication);
+        RELEASE(m_pD11Device            );
+        RELEASE(m_pDXGIDevice           );
+        RELEASE(m_pD11Context           );
+        RELEASE(m_pDesktopResource      );
+        RELEASE(m_pLastCaptured         );
+        RELEASE(m_stagingTexture        );
+    #undef RELEASE
 
-    m_bOwnDevice = false;
-    m_DisplayIndex = 0;
+        m_bOwnDevice = false;
+        m_DisplayIndex = 0;
+    }
+    catch(...)
+    {
+        return MFX_ERR_DEVICE_FAILED;
+    }
 
     return MFX_ERR_NONE;
 }

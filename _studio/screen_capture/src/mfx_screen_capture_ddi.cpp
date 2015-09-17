@@ -76,7 +76,11 @@ void FindAllConnectedDisplays(displaysDescr& displays)
         memset(pPathInfoArray, 0, (pNumPathArrayElements)* sizeof(DISPLAYCONFIG_PATH_INFO));
         pModeInfoArray = (DISPLAYCONFIG_MODE_INFO*)malloc((pNumModeInfoArrayElements)* sizeof(DISPLAYCONFIG_MODE_INFO));
         if(!pModeInfoArray)
+        {
+            free(pPathInfoArray);
+            pPathInfoArray = 0;
             return;
+        }
         memset(pModeInfoArray, 0, (pNumModeInfoArrayElements)* sizeof(DISPLAYCONFIG_MODE_INFO));
  
         lReturn = QueryDisplayConfig(/*QDC_ALL_PATHS*/QDC_ONLY_ACTIVE_PATHS, &pNumPathArrayElements, pPathInfoArray, &pNumModeInfoArrayElements, pModeInfoArray, NULL);
