@@ -143,6 +143,7 @@ namespace MfxHwVideoProcessing
         FASTCOMP_FRC_CAPS m_frcCaps;
         FASTCOMP_VARIANCE_CAPS m_varianceCaps;
         //FASTCOMP_SAMPLE_FORMATS m_Formats;//m_FormatsCaps
+        std::map <mfxU32, mfxU32> m_formatSupport;
 
         std::vector<FASTCOMP_VideoSample> m_inputSamples;
 

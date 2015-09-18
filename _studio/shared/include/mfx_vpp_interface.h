@@ -56,6 +56,32 @@
 
 namespace MfxHwVideoProcessing
 {
+    const mfxU32 g_TABLE_SUPPORTED_FOURCC [] =
+    {
+        MFX_FOURCC_NV12      ,
+        MFX_FOURCC_YV12      ,
+        MFX_FOURCC_NV16      ,
+        MFX_FOURCC_YUY2      ,
+        MFX_FOURCC_RGB3      ,
+        MFX_FOURCC_RGB4      ,
+        MFX_FOURCC_P8        ,
+        MFX_FOURCC_P8_TEXTURE,
+        MFX_FOURCC_P010      ,
+        MFX_FOURCC_P210      ,
+        MFX_FOURCC_BGR4      ,
+        MFX_FOURCC_A2RGB10   ,
+        MFX_FOURCC_ARGB16    ,
+        MFX_FOURCC_R16       ,
+        MFX_FOURCC_AYUV      ,
+        MFX_FOURCC_AYUV_RGB4 ,
+        MFX_FOURCC_UYVY
+    };
+
+    typedef enum mfxFormatSupport {
+        MFX_FORMAT_SUPPORT_INPUT   = 1,
+        MFX_FORMAT_SUPPORT_OUTPUT  = 2
+    } mfxFormatSupport;
+
     struct RateRational
     {
         mfxU32  FrameRateExtN;
@@ -180,7 +206,7 @@ namespace MfxHwVideoProcessing
     } CameraVignetteCorrectionParams;
 
 
-    typedef struct _mfxVppCaps
+    struct mfxVppCaps
     {
         mfxU32 uAdvancedDI;
         mfxU32 uSimpleDI;
@@ -212,7 +238,38 @@ namespace MfxHwVideoProcessing
 
         mfxU32 uScaling;
 
-    }   mfxVppCaps;
+        std::map <mfxU32, mfxU32> mFormatSupport;
+
+        mfxVppCaps()
+            : uAdvancedDI(0)
+            , uSimpleDI(0)
+            , uInverseTC(0)
+            , uDenoiseFilter(0)
+            , uDetailFilter(0)
+            , uProcampFilter(0)
+            , uSceneChangeDetection(0)
+            , uFrameRateConversion(0)
+            , uDeinterlacing(0)
+            , uVideoSignalInfo(0)
+            , frcCaps()
+            , uIStabFilter(0)
+            , uVariance(0)
+            , iNumBackwardSamples(0)
+            , iNumForwardSamples(0)
+            , uMaxWidth(0)
+            , uMaxHeight(0)
+            , uFieldWeavingControl(0)
+            , uRotation(0)
+            , uScaling(0)
+            , mFormatSupport()
+        {
+            memset(&cameraCaps, 0, sizeof(CameraCaps));
+        };
+
+    private:
+        mfxVppCaps(mfxVppCaps& caps);
+        mfxVppCaps & operator= (mfxVppCaps & other);
+    };
 
 
     typedef struct _mfxDrvSurface

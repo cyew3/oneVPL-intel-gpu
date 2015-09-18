@@ -1297,7 +1297,7 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
     sts = m_ddi->CreateDevice( m_core, &m_params, false);
     MFX_CHECK_STS( sts );
 
-    MfxHwVideoProcessing::mfxVppCaps caps = {0};
+    MfxHwVideoProcessing::mfxVppCaps caps;
     sts = m_ddi->QueryCapabilities( caps );
     MFX_CHECK_STS( sts );
 

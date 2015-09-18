@@ -165,6 +165,7 @@ FastCompositingDDI::FastCompositingDDI(FASTCOMP_MODE iMode)
 ,m_pSystemMemorySurface(NULL)
 ,m_pAuxDevice(NULL)
 ,m_iMode(iMode)
+,m_formatSupport()
 {
 } // FastCompositingDDI::FastCompositingDDI(FASTCOMP_MODE iMode)
 
@@ -291,7 +292,64 @@ mfxStatus FastCompositingDDI::Initialize(
 
     // FRC
     memset( &m_frcState, 0, sizeof(D3D9Frc));
-    
+
+    UINT uQuerySize;
+    FASTCOMP_QUERYCAPS sQuery;
+    memset(&sQuery, 0, sizeof(FASTCOMP_QUERYCAPS));
+    sQuery.Type = FASTCOMP_QUERY_VPP_FORMAT_COUNT;
+
+    uQuerySize = sizeof(FASTCOMP_QUERYCAPS);
+
+    sts = m_pAuxDevice->QueryAccelCaps(&DXVA2_FastCompositing, &sQuery, &uQuerySize);
+
+    sQuery.Type = FASTCOMP_QUERY_VPP_FORMATS;
+
+    sQuery.sFormats.pPrimaryFormats         = new D3DFORMAT[sQuery.sFormats.iPrimaryFormatSize     ];
+    sQuery.sFormats.pSecondaryFormats       = new D3DFORMAT[sQuery.sFormats.iSecondaryFormatSize   ];
+    sQuery.sFormats.pSubstreamFormats       = new D3DFORMAT[sQuery.sFormats.iSubstreamFormatSize   ];
+    sQuery.sFormats.pGraphicsFormats        = new D3DFORMAT[sQuery.sFormats.iGraphicsFormatSize    ];
+    sQuery.sFormats.pRenderTargetFormats    = new D3DFORMAT[sQuery.sFormats.iRenderTargetFormatSize];
+    sQuery.sFormats.pBackgroundFormats      = new D3DFORMAT[sQuery.sFormats.iBackgroundFormatSize  ];
+
+    sQuery.sFormats.iPrimaryFormatSize      *= sizeof(D3DFORMAT);
+    sQuery.sFormats.iSecondaryFormatSize    *= sizeof(D3DFORMAT);
+    sQuery.sFormats.iSubstreamFormatSize    *= sizeof(D3DFORMAT);
+    sQuery.sFormats.iGraphicsFormatSize     *= sizeof(D3DFORMAT);
+    sQuery.sFormats.iRenderTargetFormatSize *= sizeof(D3DFORMAT);
+    sQuery.sFormats.iBackgroundFormatSize   *= sizeof(D3DFORMAT);
+
+    sts = m_pAuxDevice->QueryAccelCaps(&DXVA2_FastCompositing, &sQuery, &uQuerySize);
+
+    for (mfxU32 i = 0; i < sQuery.sFormats.iPrimaryFormatSize / sizeof(D3DFORMAT); i++)
+    {
+        if (sQuery.sFormats.pPrimaryFormats[i] == D3DFMT_A8R8G8B8 || sQuery.sFormats.pPrimaryFormats[i] == D3DFMT_X8R8G8B8)
+            m_formatSupport[MFX_FOURCC_RGB4] |= MFX_FORMAT_SUPPORT_INPUT;
+        else if (sQuery.sFormats.pPrimaryFormats[i] == D3DFMT_A8B8G8R8 || sQuery.sFormats.pPrimaryFormats[i] == D3DFMT_X8B8G8R8)
+            m_formatSupport[MFX_FOURCC_BGR4] |= MFX_FORMAT_SUPPORT_INPUT;
+        else if (sQuery.sFormats.pPrimaryFormats[i] == D3DFMT_A2R10G10B10)
+            m_formatSupport[MFX_FOURCC_A2RGB10] |= MFX_FORMAT_SUPPORT_INPUT;
+        else
+            m_formatSupport[sQuery.sFormats.pPrimaryFormats[i]] |= MFX_FORMAT_SUPPORT_INPUT;
+    }
+
+    for (mfxU32 i = 0; i < sQuery.sFormats.iRenderTargetFormatSize / sizeof(D3DFORMAT); i++)
+    {
+        if (sQuery.sFormats.pRenderTargetFormats[i] == D3DFMT_A8R8G8B8 || sQuery.sFormats.pRenderTargetFormats[i] == D3DFMT_X8R8G8B8)
+            m_formatSupport[MFX_FOURCC_RGB4] |= MFX_FORMAT_SUPPORT_OUTPUT;
+        else if (sQuery.sFormats.pRenderTargetFormats[i] == D3DFMT_A8B8G8R8 || sQuery.sFormats.pRenderTargetFormats[i] == D3DFMT_X8B8G8R8)
+            m_formatSupport[MFX_FOURCC_BGR4] |= MFX_FORMAT_SUPPORT_OUTPUT;
+        else if (sQuery.sFormats.pRenderTargetFormats[i] == D3DFMT_A2R10G10B10)
+            m_formatSupport[MFX_FOURCC_A2RGB10] |= MFX_FORMAT_SUPPORT_OUTPUT;
+        else
+            m_formatSupport[sQuery.sFormats.pRenderTargetFormats[i]] |= MFX_FORMAT_SUPPORT_OUTPUT;
+    }
+
+    delete[] sQuery.sFormats.pPrimaryFormats;       sQuery.sFormats.pPrimaryFormats      = 0;
+    delete[] sQuery.sFormats.pSecondaryFormats;     sQuery.sFormats.pSecondaryFormats    = 0;
+    delete[] sQuery.sFormats.pSubstreamFormats;     sQuery.sFormats.pSubstreamFormats    = 0;
+    delete[] sQuery.sFormats.pGraphicsFormats;      sQuery.sFormats.pGraphicsFormats     = 0;
+    delete[] sQuery.sFormats.pRenderTargetFormats;  sQuery.sFormats.pRenderTargetFormats = 0;
+    delete[] sQuery.sFormats.pBackgroundFormats;    sQuery.sFormats.pBackgroundFormats   = 0;
     return MFX_ERR_NONE;
 
 } // mfxStatus FastCompositingDDI::Initialize(IDirect3DDeviceManager9  *pD3DDeviceManager, IDirectXVideoDecoderService *pVideoDecoderService)
@@ -581,7 +639,7 @@ mfxStatus FastCompositingDDI::QueryVarianceCaps(
 
 mfxStatus FastCompositingDDI::QueryCapabilities(mfxVppCaps& caps)
 {
-    memset( (void*)&caps, 0, sizeof(mfxVppCaps));
+
 
     caps.uMaxWidth = (mfxU32)m_caps.sPrimaryVideoCaps.iMaxWidth;
     caps.uMaxHeight = (mfxU32)m_caps.sPrimaryVideoCaps.iMaxHeight;
@@ -647,7 +705,13 @@ mfxStatus FastCompositingDDI::QueryCapabilities(mfxVppCaps& caps)
             caps.frcCaps.customRateData[indx].customRate.FrameRateExtD = m_frcCaps.sCustomRateData[indx].CustomRate.Denominator;
         }
     }
-    
+
+    // FourCC support
+    for (mfxU32 indx = 0; indx < sizeof(g_TABLE_SUPPORTED_FOURCC)/sizeof(mfxU32); indx++)
+    {
+        caps.mFormatSupport[g_TABLE_SUPPORTED_FOURCC[indx]] = m_formatSupport[g_TABLE_SUPPORTED_FOURCC[indx]];
+    }
+
     return MFX_ERR_NONE;
 
 } // mfxStatus FastCompositingDDI::QueryCapabilities(mfxVppCaps& caps)

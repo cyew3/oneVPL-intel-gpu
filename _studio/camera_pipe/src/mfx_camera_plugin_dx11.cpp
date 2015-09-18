@@ -47,7 +47,7 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
     sts = m_ddi->CreateDevice( m_core, &m_params, false);
     MFX_CHECK_STS( sts );
 
-    mfxVppCaps caps = {0};
+    mfxVppCaps caps;
     sts = m_ddi->QueryCapabilities( caps );
     MFX_CHECK_STS( sts );
 

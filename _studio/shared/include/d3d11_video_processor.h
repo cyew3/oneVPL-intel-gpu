@@ -850,6 +850,7 @@ namespace MfxHwVideoProcessing
             bool m_denoiseEnable;
             bool m_detailEnable;
             bool m_rotation;
+            std::map <DXGI_FORMAT, UINT> m_formatSupport;
 
             Caps()
                 : m_procAmpEnable(false)
@@ -857,6 +858,7 @@ namespace MfxHwVideoProcessing
                 , m_denoiseEnable(false)
                 , m_detailEnable(false)
                 , m_rotation(false)
+                , m_formatSupport()
             {   }
         } m_caps;
         class D3D11Frc

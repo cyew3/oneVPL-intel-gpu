@@ -156,7 +156,7 @@ mfxStatus VideoVppJpegD3D9::Init(const mfxVideoParam *par)
 #endif
     }
 
-    mfxVppCaps caps = {0};
+    mfxVppCaps caps;
     sts = m_ddi->QueryCapabilities(caps);
     MFX_CHECK_STS( sts );
 

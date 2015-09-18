@@ -366,6 +366,16 @@ mfxStatus D3D11VideoProcessor::Init(
 #endif
     }
 
+    {
+        UINT formatFlag;
+
+        for (int i = 0; i < 150; i++)
+        {
+            m_pVideoProcessorEnum->CheckVideoProcessorFormat((DXGI_FORMAT)i, &formatFlag);
+            m_caps.m_formatSupport[(DXGI_FORMAT)i] = formatFlag;
+        }
+    }
+
     sts = QueryVPE_AndExtCaps();
     MFX_CHECK_STS(sts);
 
@@ -2739,6 +2749,13 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
     caps.cameraCaps.uHotPixelCheck         = m_cameraCaps.bHotPixel;
     caps.cameraCaps.uVignetteCorrection    = m_cameraCaps.bVignetteCorrection;
     caps.cameraCaps.uWhiteBalance          = m_cameraCaps.bWhiteBalanceManual;
+
+    // [FourCC]
+    for (mfxU32 indx = 0; indx < sizeof(g_TABLE_SUPPORTED_FOURCC)/sizeof(mfxU32); indx++)
+    {
+        caps.mFormatSupport[g_TABLE_SUPPORTED_FOURCC[indx]] = m_caps.m_formatSupport[mfxDefaultAllocatorD3D11::MFXtoDXGI(g_TABLE_SUPPORTED_FOURCC[indx])];
+    }
+
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)

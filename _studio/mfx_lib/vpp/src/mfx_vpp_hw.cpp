@@ -1425,7 +1425,6 @@ mfxStatus  VideoVPPHW::Init(
 {
     mfxStatus sts = MFX_ERR_NONE;
     bool bIsFilterSkipped = false;
-    eMFXHWType  hwType;
 
     //-----------------------------------------------------
     // [1] high level check
@@ -1434,19 +1433,6 @@ mfxStatus  VideoVPPHW::Init(
 
     sts = CheckIOMode(par, m_ioMode);
     MFX_CHECK_STS(sts);
-
-    hwType = m_pCore->GetHWType();
-    /* Any operations with P010, P210 and NV16 are SW-only so far,
-       except p010->nv12 conversion that is supported on BDW */
-    if ((MFX_FOURCC_P010 == par->vpp.In.FourCC  && MFX_HW_BDW != hwType) ||
-         MFX_FOURCC_P010 == par->vpp.Out.FourCC ||
-         MFX_FOURCC_P210 == par->vpp.In.FourCC  ||
-         MFX_FOURCC_P210 == par->vpp.Out.FourCC ||
-         MFX_FOURCC_NV16 == par->vpp.In.FourCC  ||
-         MFX_FOURCC_NV16 == par->vpp.Out.FourCC)
-    {
-        return MFX_WRN_PARTIAL_ACCELERATION;
-    }
 
     if (MFX_FOURCC_NV12    != par->vpp.Out.FourCC &&
         MFX_FOURCC_A2RGB10 != par->vpp.Out.FourCC &&
@@ -1490,7 +1476,7 @@ mfxStatus  VideoVPPHW::Init(
         MFX_CHECK_STS( sts );
     }
 
-    mfxVppCaps caps = {0};
+    mfxVppCaps caps;
     sts = m_ddi->QueryCapabilities( caps );
     MFX_CHECK_STS(sts);
 
@@ -1499,6 +1485,9 @@ mfxStatus  VideoVPPHW::Init(
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
+
+    if ( !(caps.mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps.mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
+        return MFX_WRN_PARTIAL_ACCELERATION;
 
     m_config.m_IOPattern = 0;
     sts = ConfigureExecuteParams(
@@ -1625,8 +1614,6 @@ mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCap
     mfxStatus sts = ddi->CreateDevice( core, &tmpPar, true);
     MFX_CHECK_STS( sts );
 
-    //mfxVppCaps caps = {0};
-    memset( (void*)&caps, 0, sizeof(mfxVppCaps) );
     sts = ddi->QueryCapabilities(caps);
     MFX_CHECK_STS( sts );
 
@@ -1642,20 +1629,11 @@ mfxStatus VideoVPPHW::QueryIOSurf(
     mfxFrameAllocRequest* request)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    eMFXHWType  hwType;
 
     MFX_CHECK_NULL_PTR1(par);
 
     sts = CheckIOMode(par, ioMode);
     MFX_CHECK_STS(sts);
-
-    hwType = core->GetHWType();
-    /* Any operations with P010 are SW-only so far,
-       except p010->nv12 conversion that is supported on BDW */
-    if ((MFX_FOURCC_P010 == par->vpp.In.FourCC && MFX_HW_BDW != hwType) || MFX_FOURCC_P010 == par->vpp.Out.FourCC)
-    {
-        return MFX_WRN_PARTIAL_ACCELERATION;
-    }
 
     if (MFX_FOURCC_NV12    != par->vpp.Out.FourCC &&
         MFX_FOURCC_A2RGB10 != par->vpp.Out.FourCC &&
@@ -1675,7 +1653,7 @@ mfxStatus VideoVPPHW::QueryIOSurf(
     sts = ddi->CreateDevice( core, par, true);
     MFX_CHECK_STS( sts );
 
-    mfxVppCaps caps = {0};
+    mfxVppCaps caps;
     sts = ddi->QueryCapabilities(caps);
     MFX_CHECK_STS( sts );
 
@@ -1684,6 +1662,9 @@ mfxStatus VideoVPPHW::QueryIOSurf(
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
+
+    if ( !(caps.mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps.mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
+        return MFX_WRN_PARTIAL_ACCELERATION;
 
     mfxExecuteParams executeParams = {0};
     Config  config = {0};
