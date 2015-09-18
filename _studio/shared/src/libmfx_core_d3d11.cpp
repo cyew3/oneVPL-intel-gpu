@@ -396,7 +396,11 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
                     //sts = ProcessRenderTargets(request, response, &m_FrameAllocator);
                     //MFX_CHECK_STS(sts);
                     RegisterMids(response, request->Type, false);
-
+                    if (response->NumFrameActual < request->NumFrameMin)
+                    {
+                        (*m_FrameAllocator.frameAllocator.Free)(m_FrameAllocator.frameAllocator.pthis, response);
+                        return MFX_ERR_MEMORY_ALLOC;
+                    }
                     return sts;
                 }
                 // error situation

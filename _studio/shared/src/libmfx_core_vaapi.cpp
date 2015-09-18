@@ -489,7 +489,11 @@ VAAPIVideoCORE::AllocFrames(
                     m_bUseExtAllocForHWFrames = true;
                     sts = ProcessRenderTargets(request, response, &m_FrameAllocator);
                     MFX_CHECK_STS(sts);
-
+                    if (response->NumFrameActual < request->NumFrameMin)
+                    {
+                        (*m_FrameAllocator.frameAllocator.Free)(m_FrameAllocator.frameAllocator.pthis, response);
+                        return MFX_ERR_MEMORY_ALLOC;
+                    }
                     return TraceFrames(request, response, sts);
                 }
                 // error situation
@@ -729,7 +733,7 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     int profile,
     int NumOfRenderTarget,
     VASurfaceID* RenderTargets,
-	UMC::FrameAllocator *allocator)
+    UMC::FrameAllocator *allocator)
 {
     mfxStatus sts = MFX_ERR_NONE;
 

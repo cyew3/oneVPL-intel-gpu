@@ -35,13 +35,13 @@ File Name: libmf_core_hw.cpp
 using namespace std;
 using namespace UMC;
 
-DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report, 
+DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report,
 0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 
-mfxStatus CreateD3DDevice(IDirect3D9        **pD3D, 
+mfxStatus CreateD3DDevice(IDirect3D9        **pD3D,
                           IDirect3DDevice9  **pDirect3DDevice,
                           const mfxU32      adapterNum,
-                          mfxU16            width, 
+                          mfxU16            width,
                           mfxU16            height)
 {
     D3DPRESENT_PARAMETERS d3dpp;
@@ -66,7 +66,7 @@ mfxStatus CreateD3DDevice(IDirect3D9        **pD3D,
         IDirect3D9Ex *pD3DEx = NULL;
         IDirect3DDevice9Ex  *pDirect3DDeviceEx = NULL;
 
-        Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3DEx); 
+        Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3DEx);
         if(NULL == pD3DEx)
             return MFX_ERR_DEVICE_FAILED;
 
@@ -88,7 +88,7 @@ mfxStatus CreateD3DDevice(IDirect3D9        **pD3D,
             //1 create DX device
             *pD3D = Direct3DCreate9(D3D_SDK_VERSION);
             if (0 == *pD3D)
-                return MFX_ERR_DEVICE_FAILED; 
+                return MFX_ERR_DEVICE_FAILED;
 
             // let try to create regulare device
             hres = (*pD3D)->CreateDevice(
@@ -98,7 +98,7 @@ mfxStatus CreateD3DDevice(IDirect3D9        **pD3D,
                 D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED,
                 &d3dpp,
                 pDirect3DDevice);
-            
+
             if (S_OK!=hres)
             {
                 (*pD3D)->Release();
@@ -107,7 +107,7 @@ mfxStatus CreateD3DDevice(IDirect3D9        **pD3D,
             else
                 return MFX_ERR_NONE;
         }
-        else 
+        else
         {
             *pD3D = pD3DEx;
             *pDirect3DDevice = pDirect3DDeviceEx;
@@ -159,10 +159,10 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
     UINT cConfigurations = 0;
     DXVA2_VideoDesc VideoDesc = {0};
 
-    hr = m_pDirectXVideoService->GetDecoderConfigurations(DXVADDI_Intel_Decode_PrivateData_Report, 
-                                            &VideoDesc, 
-                                            NULL, 
-                                            &cConfigurations, 
+    hr = m_pDirectXVideoService->GetDecoderConfigurations(DXVADDI_Intel_Decode_PrivateData_Report,
+                                            &VideoDesc,
+                                            NULL,
+                                            &cConfigurations,
                                             &pConfig);
     if (FAILED(hr) || pConfig == 0)
     {
@@ -197,7 +197,7 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
                  return  MFX_ERR_NONE;
         }
     }
-    
+
     if (pConfig)
     {
         CoTaskMemFree(pConfig);
@@ -242,7 +242,7 @@ mfxStatus D3D9VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, bo
 
     if (sts == MFX_ERR_NONE && !isEncoder)
     {
-        return CheckIntelDataPrivateReport<DXVA2_ConfigPictureDecode>(&config, par); 
+        return CheckIntelDataPrivateReport<DXVA2_ConfigPictureDecode>(&config, par);
     }
     else
         return sts;
@@ -407,7 +407,7 @@ mfxStatus D3D9VideoCORE::SetHandle(mfxHandleType type, mfxHDL hdl)
 }// mfxStatus D3D9VideoCORE::SetHandle(mfxHandleType type, mfxHDL handle)
 
 
-mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request, 
+mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
                                    mfxFrameAllocResponse *response, bool isNeedCopy)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
@@ -424,7 +424,7 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
             temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         }
-        
+
         if (!m_bFastCopy)
         {
             // initialize fast copy
@@ -437,7 +437,7 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
         // Create Service - first call
         sts = GetD3DService(request->Info.Width, request->Info.Height);
         MFX_CHECK_STS(sts);
-        
+
         if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy)
         {
             m_pCmCopy.reset(new CmCopyWrapper);
@@ -499,21 +499,26 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
 
                     return sts;
                 }
-                // let's create video accelerator 
+                // let's create video accelerator
                 else if (MFX_ERR_NONE == sts)
                 {
-                    // Checking for unsupported mode - external allocator exist but Device handle doesn't set 
-                    if (!m_pDirect3DDeviceManager) 
+                    // Checking for unsupported mode - external allocator exist but Device handle doesn't set
+                    if (!m_pDirect3DDeviceManager)
                         return MFX_ERR_UNSUPPORTED;
 
                     m_bUseExtAllocForHWFrames = true;
                     sts = ProcessRenderTargets(request, response, &m_FrameAllocator);
+                    if (response->NumFrameActual < request->NumFrameMin)
+                    {
+                        (*m_FrameAllocator.frameAllocator.Free)(m_FrameAllocator.frameAllocator.pthis, response);
+                        return MFX_ERR_MEMORY_ALLOC;
+                    }
                     MFX_CHECK_STS(sts);
-                   
+
                     return sts;
                 }
                 // error situation
-                else 
+                else
                 {
                     m_bUseExtAllocForHWFrames = false;
                     return sts;
@@ -567,9 +572,9 @@ mfxStatus D3D9VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFr
         MFX_CHECK_STS(sts);
         sts = ProcessRenderTargets(request, response, pAlloc);
         MFX_CHECK_STS(sts);
-        
+
     }
-    else 
+    else
     {
         return CommonCORE::DefaultAllocFrames(request, response);
     }
@@ -579,7 +584,7 @@ mfxStatus D3D9VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFr
 
 mfxStatus D3D9VideoCORE::CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator)
 {
-   
+
     if (!(request->Type & MFX_MEMTYPE_FROM_DECODE) ||
         !(request->Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET))
         return MFX_ERR_NONE;
@@ -731,7 +736,7 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
         DecodeExtension.PrivateInputDataSize = 0;
         DecodeExtension.pPrivateOutputData = &m_DXVA2DecodeHandle;
         DecodeExtension.PrivateOutputDataSize = sizeof(m_DXVA2DecodeHandle);
-        
+
         if (UMC_OK != m_pVA->ExecuteExtensionBuffer(&DecodeExtension))
         {
             m_pVA.reset();
@@ -760,7 +765,7 @@ mfxStatus D3D9VideoCORE::OnDeblockingInWinRegistry(mfxU32 codecId)
 
     // create the registry key. if the key already exists, the function opens it
     if (ERROR_SUCCESS != RegCreateKeyEx(HKEY_CURRENT_USER, REGSUBPATH, 0, NULL,
-        REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, 
+        REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL,
         &hKey, NULL))
     {
         // not enough permissions open or create registry key! deblocking is disabled
@@ -775,13 +780,13 @@ mfxStatus D3D9VideoCORE::OnDeblockingInWinRegistry(mfxU32 codecId)
     {
     case MFX_CODEC_VC1:
         // sets or creates VC1 ILDB value under the registry key
-        sts = RegSetValueEx(hKey, VC1ILDBMODE, 0, REG_DWORD, 
+        sts = RegSetValueEx(hKey, VC1ILDBMODE, 0, REG_DWORD,
             (LPBYTE) &dwValue, sizeof(DWORD));
         break;
 
     case MFX_CODEC_AVC:
         // sets or creates ILDB value under the registry key
-        sts = RegSetValueEx(hKey, AVCILDBMODE, 0, REG_DWORD, 
+        sts = RegSetValueEx(hKey, AVCILDBMODE, 0, REG_DWORD,
             (LPBYTE) &dwValue, sizeof(DWORD));
         break;
 
@@ -824,7 +829,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMem
             {
                 sts = LockExternalFrame(srcMemId, &srcTempSurface.Data);
                 MFX_CHECK_STS(sts);
-                    
+
                 isSrcLocked = true;
             }
             else
@@ -967,7 +972,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
     }
 
     IppiSize roi = {IPP_MIN(pSrc->Info.Width, pDst->Info.Width), IPP_MIN(pSrc->Info.Height, pDst->Info.Height)};
-    
+
     // check that region of interest is valid
     if (0 == roi.width || 0 == roi.height)
     {
@@ -975,7 +980,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
     }
 
     HRESULT hRes;
-    D3DSURFACE_DESC sSurfDesc; 
+    D3DSURFACE_DESC sSurfDesc;
     D3DLOCKED_RECT  sLockRect;
 
     mfxU32 srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);
@@ -1008,8 +1013,8 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
 
             const tagRECT rect = {0, 0, roi.width, roi.height};
 
-            hRes = direct3DDevice->StretchRect((IDirect3DSurface9*) pSrc->Data.MemId, &rect, 
-                                                  (IDirect3DSurface9*) pDst->Data.MemId, &rect, 
+            hRes = direct3DDevice->StretchRect((IDirect3DSurface9*) pSrc->Data.MemId, &rect,
+                                                  (IDirect3DSurface9*) pDst->Data.MemId, &rect,
                                                    D3DTEXF_LINEAR);
 
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
@@ -1106,11 +1111,11 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
 
                     sts = pFastCopy->Copy(pDst->Data.U, dstPitch, (mfxU8 *)sLockRect.pBits + (sSurfDesc.Height * sLockRect.Pitch * 5) / 4, srcPitch, roi);
                     MFX_CHECK_STS(sts);
-                    
+
                     break;
 
                 case MFX_FOURCC_YUY2:
-                    
+
                     roi.width *= 2;
 
                     sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)sLockRect.pBits, srcPitch, roi);
@@ -1125,7 +1130,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
                     MFX_CHECK_NULL_PTR1(pDst->Data.B);
 
                     mfxU8* ptrDst = IPP_MIN(IPP_MIN(pDst->Data.R, pDst->Data.G), pDst->Data.B);
-                    
+
                     roi.width *= 3;
 
                     sts = pFastCopy->Copy(ptrDst, dstPitch, (mfxU8 *)sLockRect.pBits, srcPitch, roi);
@@ -1213,7 +1218,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             case MFX_FOURCC_NV12:
 
                 ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
-                
+
                 roi.height >>= 1;
 
                 ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, pDst->Data.UV, dstPitch, roi);
@@ -1245,11 +1250,11 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
                 ippiCopy_8u_C1R(pSrc->Data.V, srcPitch, pDst->Data.V, dstPitch, roi);
 
                 ippiCopy_8u_C1R(pSrc->Data.U, srcPitch, pDst->Data.U, dstPitch, roi);
-                
+
                 break;
 
             case MFX_FOURCC_YUY2:
-                
+
                 roi.width *= 2;
 
                 ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, pDst->Data.Y, dstPitch, roi);
@@ -1403,7 +1408,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
                 break;
 
             case MFX_FOURCC_YUY2:
-                
+
                 roi.width *= 2;
 
                 ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)sLockRect.pBits, dstPitch, roi);
@@ -1483,7 +1488,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    
+
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
@@ -1491,7 +1496,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
 mfxStatus D3D9VideoCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
 {
     CommonCORE::DoFastCopy(dst, src);
-    
+
     return MFX_ERR_NONE;
 
 }
@@ -1581,5 +1586,5 @@ bool D3D9VideoCORE::IsCompatibleForOpaq()
     return true;
 }
 
-#endif 
+#endif
 /* EOF */
