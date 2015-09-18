@@ -389,6 +389,8 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
     caps.uMaxWidth  = 4096;
     caps.uMaxHeight = 4096;
 
+    caps.uFieldWeavingControl = 1;
+
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
