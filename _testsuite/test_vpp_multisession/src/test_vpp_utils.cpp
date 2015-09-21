@@ -2917,28 +2917,6 @@ int sAppResources::ProcessInChain(mfxFrameSurface1 *inputSurface)
 
     mfxU32 StartJumpFrame = 13;
 
-    if ( inputSurface )
-    {
-    FILE *f = fopen("DI_input.log", "a");
-    fprintf(f, "inputSurface->Info.AspectRatioH=%d\n", inputSurface->Info.AspectRatioH);
-    fprintf(f, "inputSurface->Info.AspectRatioW=%d\n", inputSurface->Info.AspectRatioW);
-    fprintf(f, "inputSurface->Info.BitDepthChroma=%d\n", inputSurface->Info.BitDepthChroma);
-    fprintf(f, "inputSurface->Info.BitDepthLuma=%d\n", inputSurface->Info.BitDepthLuma);
-    fprintf(f, "inputSurface->Info.ChromaFormat=%d\n", inputSurface->Info.ChromaFormat);
-    fprintf(f, "inputSurface->Info.CropH=%d\n", inputSurface->Info.CropH);
-    fprintf(f, "inputSurface->Info.CropW=%d\n", inputSurface->Info.CropW);
-    fprintf(f, "inputSurface->Info.CropX=%d\n", inputSurface->Info.CropX);
-    fprintf(f, "inputSurface->Info.CropY=%d\n", inputSurface->Info.CropY);
-    fprintf(f, "inputSurface->Info.FourCC=%d\n", inputSurface->Info.FourCC);
-    fprintf(f, "inputSurface->Info.FrameId=%d\n", inputSurface->Info.FrameId);
-    fprintf(f, "inputSurface->Info.FrameRateExtD=%d\n", inputSurface->Info.FrameRateExtD);
-    fprintf(f, "inputSurface->Info.FrameRateExtN=%d\n", inputSurface->Info.FrameRateExtN);
-    fprintf(f, "inputSurface->Info.Height=%d\n", inputSurface->Info.Height);
-    fprintf(f, "inputSurface->Info.PicStruct=%d\n", inputSurface->Info.PicStruct);
-    fprintf(f, "inputSurface->Info.Width=%d\n", inputSurface->Info.Width);
-    fprintf(f, "-------------------------------------\n");
-    fclose(f);
-    }
 #if 0 
     // need to correct jumping parameters due to async mode
     if (ptsMaker.get() && Params.front()->ptsJump && (Params.front()->asyncNum > 1))
@@ -3178,8 +3156,11 @@ int sAppResources::ProcessInChain(mfxFrameSurface1 *inputSurface)
             continue;
         }
 
-        return OutputProcessFrame(*this, this->realFrameInfo, nFrames);
-        BREAK_ON_ERROR(sts);
+        sts = OutputProcessFrame(*this, this->realFrameInfo, nFrames);
+        if ( bDoNotUpdateIn )
+            continue;
+
+        return sts;
 
     } // main while loop
 //---------------------------------------------------------
