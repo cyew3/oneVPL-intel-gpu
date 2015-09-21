@@ -2359,7 +2359,13 @@ mfxU16 EstimatePicStruct(
 
 mfxU16 MapDNFactor( mfxU16 denoiseFactor )
 {
+#if defined(LINUX32) || defined(LINUX64)
+    // On Linux detail and de-noise factors mapped to the real libva values
+    // at execution time.
+    mfxU16 gfxFactor = denoiseFactor;
+#else
     mfxU16 gfxFactor = (mfxU16)floor(64.0 / 100.0 * denoiseFactor + 0.5);
+#endif
 
     return gfxFactor;
 

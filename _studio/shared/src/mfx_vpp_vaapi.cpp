@@ -13,6 +13,7 @@
 #if defined (MFX_ENABLE_VPP)
 #if defined (MFX_VA_LINUX)
 
+#include <math.h>
 #include "mfx_vpp_defs.h"
 #include "mfx_vpp_vaapi.h"
 #include "mfx_utils.h"
@@ -597,11 +598,12 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             if(pParams->bDenoiseAutoAdjust)
                 denoise.value = m_denoiseCaps.range.default_value;
             else
-                denoise.value = convertValue(0,
-                                            100,
+                denoise.value = (mfxU16)floor(
+                                            convertValue(0,
+                                              100,
                                               m_denoiseCaps.range.min_value,
                                               m_denoiseCaps.range.max_value,
-                                              pParams->denoiseFactor);
+                                              pParams->denoiseFactor) + 0.5);
             vaSts = vaCreateBuffer((void*)m_vaDisplay,
                           m_vaContextVPP,
                           VAProcFilterParameterBufferType,
@@ -622,11 +624,12 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             if(pParams->bDetailAutoAdjust)
                 detail.value = m_detailCaps.range.default_value;
             else
-                detail.value = convertValue(0,
-                                            100,
-                                              m_detailCaps.range.min_value,
-                                              m_detailCaps.range.max_value,
-                                              pParams->detailFactor);
+                detail.value = (mfxU16)floor(
+                                           convertValue(0,
+                                             100,
+                                             m_detailCaps.range.min_value,
+                                             m_detailCaps.range.max_value,
+                                             pParams->detailFactor) + 0.5);
             vaSts = vaCreateBuffer((void*)m_vaDisplay,
                           m_vaContextVPP,
                           VAProcFilterParameterBufferType,
