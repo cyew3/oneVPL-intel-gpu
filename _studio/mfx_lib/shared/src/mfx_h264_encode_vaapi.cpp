@@ -1067,9 +1067,14 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
             m_caps.MaxPicHeight = 1088;
 #endif
         if (attrs[8].value != VA_ATTRIB_NOT_SUPPORTED)
+        {
             m_caps.SliceStructure = attrs[8].value;
+        }
         else
-            m_caps.SliceStructure = m_core->GetHWType() == MFX_HW_HSW ? 2 : 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw; 3 - SliceDividerBluRay; the other - SliceDividerOneSlice
+        {
+            const eMFXHWType hwtype = m_core->GetHWType();
+            m_caps.SliceStructure = (hwtype != MFX_HW_VLV && hwtype >= MFX_HW_HSW) ? 4 : 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw;
+        }                                                                                   // 3 - SliceDividerBluRay; 4 - arbitrary slice size in MBs; the other - SliceDividerOneSlice
 
         if (attrs[6].value != VA_ATTRIB_NOT_SUPPORTED)
             m_caps.NoInterlacedField = attrs[6].value;
