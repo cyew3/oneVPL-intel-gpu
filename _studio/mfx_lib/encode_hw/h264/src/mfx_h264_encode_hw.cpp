@@ -703,13 +703,13 @@ ImplementationAvc::~ImplementationAvc()
 }
 void ImplementationAvc::DestroyDanglingCmResources()
 {
-    mfxExtCodingOption2 * extOpt = GetExtBuffer(m_video);
     if (m_cmDevice)
     {
+        mfxExtCodingOption2 * extOpt = GetExtBuffer(m_video);
         for (DdiTaskIter i = m_lookaheadStarted.begin(), e = m_lookaheadStarted.end(); i != e; ++i)
         {
             m_cmCtx->DestroyEvent(i->m_event);
-            if (extOpt->MaxSliceSize == 0)
+            if (extOpt && (extOpt->MaxSliceSize == 0))
             {
                 int ffid = i->m_fid[0];
                 ArrayDpbFrame & iniDpb = i->m_dpb[ffid];

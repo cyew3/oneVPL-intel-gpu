@@ -5885,6 +5885,15 @@ void SliceDividerSnb::Test()
 
 MfxVideoParam::MfxVideoParam()
 {
+    // mfxVideoParam
+    AllocId = 0;
+    AsyncDepth = 0;
+    memset(&mfx, 0, sizeof(mfxInfoMFX));
+    memset(&vpp, 0, sizeof(mfxInfoVPP));
+    Protected = 0;
+    IOPattern = 0;
+    NumExtParam = 0;
+
     memset(m_extParam, 0, sizeof(m_extParam));
     // external, documented
     memset(&m_extOpt, 0, sizeof(m_extOpt));
