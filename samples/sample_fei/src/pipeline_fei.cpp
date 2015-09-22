@@ -277,6 +277,18 @@ mfxStatus sTask::Reset()
     mfxBS.DataOffset = 0;
     mfxBS.DataLength = 0;
 
+    for (std::list<std::pair<bufSet*, mfxFrameSurface1*> >::iterator it = bufs.begin(); it != bufs.end();){
+        if ((*it).second->Data.Locked == 0)
+        {
+            (*it).first->vacant = true;
+            it = bufs.erase(it);
+            break;
+        }
+        else{
+            ++it;
+        }
+    }
+
     return MFX_ERR_NONE;
 }
 
@@ -746,8 +758,6 @@ CEncodingPipeline::CEncodingPipeline()
     m_nAsyncDepth = 0;
     m_refFrameCounter = 0;
 
-    m_nNumView = 0;
-
     m_FileWriters.first = m_FileWriters.second = NULL;
 
     MSDK_ZERO_MEMORY(m_CodingOption2);
@@ -1131,496 +1141,638 @@ mfxStatus CEncodingPipeline::Run()
     mfxFrameSurface1* pReconSurf = NULL;
 
     sTask *pCurrentTask = NULL; // a pointer to the current task
-    mfxU16 nEncSurfIdx = 0;     // index of free surface for encoder input (vpp output)
+    mfxU16 nEncSurfIdx   = 0;     // index of free surface for encoder input (vpp output)
     mfxU16 nReconSurfIdx = 0;     // index of free surface for reconstruct pool
 
-    mfxU32 fieldId = 0, numOfFields = 1; // default is progressive case
+    mfxU32 fieldId = 0;
+    numOfFields = 1; // default is progressive case
     mfxI32 heightMB = ((m_encpakParams.nHeight + 15) & ~15);
     mfxI32 widthMB  = ((m_encpakParams.nWidth  + 15) & ~15);
-    mfxI32 numMB = heightMB * widthMB / 256;
-    mfxI16 *tmpForMedian = NULL;
-    mfxExtFeiPreEncMV::mfxMB* tmpForReading = NULL, *tmpMBpreenc = NULL;
-    mfxExtFeiEncMV::mfxMB* tmpMBenc = NULL;
-
-    ctr = NULL;
-
-    //FEI buffers init
-    feiEncMbStat[0].MB = NULL;
-    feiEncMbStat[1].MB = NULL;
-    feiEncMVPredictors[0].MB = NULL;
-    feiEncMVPredictors[1].MB = NULL;
-    feiEncMBCtrl[0].MB = NULL;
-    feiEncMBCtrl[1].MB = NULL;
-    feiEncMV[0].MB = NULL;
-    feiEncMV[1].MB = NULL;
-    feiEncMBCode[0].MB = NULL;
-    feiEncMBCode[1].MB = NULL;
-
-    numExtInParams   = 0;
-    numExtInParamsI  = 0;
-    numExtOutParams  = 0;
-
-    numExtOutParamsPreEnc = 0;
-    numExtInParamsPreEnc  = 0;
+    numMB = heightMB * widthMB / 256;
 
     /* if TFF or BFF*/
-    if ( (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
-         (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF) )
+    if ((m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
+        (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF))
     {
         numOfFields = 2;
         // For interlaced mode, may need an extra MB vertically
         // For example if the progressive mode has 45 MB vertically
         // The interlace should have 23 MB for each field
-        numMB = widthMB/16 * (((heightMB/16)+1) / 2);
+        numMB = widthMB / 16 * (((heightMB / 16) + 1) / 2);
     }
+
+    tmpForMedian  = NULL;
+    tmpForReading = NULL;
+    mfxExtFeiPreEncMV::mfxMB* tmpMBpreenc = NULL;
+    mfxExtFeiEncMV::mfxMB*    tmpMBenc    = NULL;
+
+    ctr           = NULL;
+
+    int numExtInParams = 0, numExtInParamsI = 0, numExtOutParams = 0, numExtOutParamsI = 0;
 
     if (m_encpakParams.bPREENC) {
         inputTasks.clear();  //for reordering
 
         //setup control structures
-        bool disableMVoutput = m_encpakParams.mvoutFile == NULL && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
-        bool disableMBoutput = (m_encpakParams.mbstatoutFile == NULL) || m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC; //couple with ENC+PAK
+        disableMVoutPreENC  = m_encpakParams.mvoutFile == NULL && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
+        disableMBStatPreENC = (m_encpakParams.mbstatoutFile == NULL) || m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC; //couple with ENC+PAK
         bool enableMVpredictor = m_encpakParams.mvinFile != NULL;
         bool enableMBQP = m_encpakParams.mbQpFile != NULL && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
 
-        disableMVoutPreENC  = disableMVoutput;
-        disableMBStatPreENC = disableMBoutput;
+        bufSet* tmpForInit;
+        mfxExtFeiPreEncCtrl*         preENCCtr = NULL;
+        mfxExtFeiPreEncMVPredictors* mvPreds   = NULL;
+        mfxExtFeiEncQP*              qps       = NULL;
+        mfxExtFeiPreEncMV*           mvs       = NULL;
+        mfxExtFeiPreEncMBStat*       mbdata    = NULL;
 
-        for (fieldId = 0; fieldId < numOfFields; fieldId++)
+        for (int k = 0; k < 2 * this->m_refDist; k++)
         {
-            memset(&preENCCtr[fieldId], 0, sizeof (mfxExtFeiPreEncCtrl));
-            preENCCtr[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
-            preENCCtr[fieldId].Header.BufferSz = sizeof (mfxExtFeiPreEncCtrl);
-            preENCCtr[fieldId].PictureType = numOfFields == 1 ? MFX_PICTYPE_FRAME :
-                fieldId == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD;
+            numExtInParams   = 0;
+            numExtInParamsI  = 0;
+            numExtOutParams  = 0;
+            numExtOutParamsI = 0;
 
-            preENCCtr[fieldId].DisableMVOutput         = disableMVoutput;
-            preENCCtr[fieldId].DisableStatisticsOutput = disableMBoutput;
-            preENCCtr[fieldId].FTEnable       = m_encpakParams.FTEnable;//1;//0;
-            preENCCtr[fieldId].AdaptiveSearch = m_encpakParams.AdaptiveSearch;//1;
-            preENCCtr[fieldId].LenSP = m_encpakParams.LenSP;//57;
-            preENCCtr[fieldId].MBQp = enableMBQP;
-            preENCCtr[fieldId].MVPredictor  = enableMVpredictor;
-            preENCCtr[fieldId].RefHeight    = m_encpakParams.RefHeight;//40;
-            preENCCtr[fieldId].RefWidth     = m_encpakParams.RefWidth;//48;
-            preENCCtr[fieldId].SubPelMode   = m_encpakParams.SubPelMode;//3;
-            preENCCtr[fieldId].SearchWindow = m_encpakParams.SearchWindow;//0;
-            preENCCtr[fieldId].SearchPath   = m_encpakParams.SearchPath;
-            preENCCtr[fieldId].Qp = m_encpakParams.QP;
-            preENCCtr[fieldId].IntraSAD = m_encpakParams.IntraSAD;//2;
-            preENCCtr[fieldId].InterSAD = m_encpakParams.InterSAD;//2;
-            preENCCtr[fieldId].SubMBPartMask = m_encpakParams.SubMBPartMask;//0;//0x77;
-            preENCCtr[fieldId].IntraPartMask = m_encpakParams.IntraPartMask;//0
-            preENCCtr[fieldId].Enable8x8Stat = m_encpakParams.Enable8x8Stat;
+            tmpForInit = new bufSet;
+            tmpForInit->vacant = true;
 
-            //inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & preENCCtr;
-
-            if (preENCCtr[fieldId].MVPredictor) {
-                mvPreds[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV_PRED;
-                mvPreds[fieldId].Header.BufferSz = sizeof (mfxExtFeiPreEncMVPredictors);
-                mvPreds[fieldId].NumMBAlloc = numMB;
-                mvPreds[fieldId].MB = new mfxExtFeiPreEncMVPredictors::mfxMB [numMB];
-                //inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & mvPreds;
-                //read mvs from file
-
-                printf("Using MV input file: %s\n", m_encpakParams.mvinFile);
-                MSDK_FOPEN(pMvPred, m_encpakParams.mvinFile, MSDK_CHAR("rb"));
-                if (pMvPred == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvinFile);
-                    exit(-1);
+            for (fieldId = 0; fieldId < numOfFields; fieldId++)
+            {
+                if (fieldId == 0){
+                    preENCCtr = new mfxExtFeiPreEncCtrl[numOfFields];
+                    numExtInParams++;
+                    numExtInParamsI++;
                 }
-            }
+                memset(&preENCCtr[fieldId], 0, sizeof(mfxExtFeiPreEncCtrl));
+                preENCCtr[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
+                preENCCtr[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncCtrl);
+                preENCCtr[fieldId].PictureType = numOfFields == 1 ? MFX_PICTYPE_FRAME :
+                    fieldId == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD;
 
-            if (preENCCtr[fieldId].MBQp) {
-                qps[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
-                qps[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncQP);
-                qps[fieldId].NumQPAlloc = numMB;
-                qps[fieldId].QP = new mfxU8[numMB];
-                //inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & qps;
-                //read mvs from file
+                preENCCtr[fieldId].DisableMVOutput         = disableMVoutPreENC;
+                preENCCtr[fieldId].DisableStatisticsOutput = disableMBStatPreENC;
+                preENCCtr[fieldId].FTEnable                = m_encpakParams.FTEnable;
+                preENCCtr[fieldId].AdaptiveSearch          = m_encpakParams.AdaptiveSearch;
+                preENCCtr[fieldId].LenSP                   = m_encpakParams.LenSP;
+                preENCCtr[fieldId].MBQp                    = enableMBQP;
+                preENCCtr[fieldId].MVPredictor             = enableMVpredictor;
+                preENCCtr[fieldId].RefHeight               = m_encpakParams.RefHeight;
+                preENCCtr[fieldId].RefWidth                = m_encpakParams.RefWidth;
+                preENCCtr[fieldId].SubPelMode              = m_encpakParams.SubPelMode;
+                preENCCtr[fieldId].SearchWindow            = m_encpakParams.SearchWindow;
+                preENCCtr[fieldId].SearchPath              = m_encpakParams.SearchPath;
+                preENCCtr[fieldId].Qp                      = m_encpakParams.QP;
+                preENCCtr[fieldId].IntraSAD                = m_encpakParams.IntraSAD;
+                preENCCtr[fieldId].InterSAD                = m_encpakParams.InterSAD;
+                preENCCtr[fieldId].SubMBPartMask           = m_encpakParams.SubMBPartMask;
+                preENCCtr[fieldId].IntraPartMask           = m_encpakParams.IntraPartMask;
+                preENCCtr[fieldId].Enable8x8Stat           = m_encpakParams.Enable8x8Stat;
 
-                printf("Using QP input file: %s\n", m_encpakParams.mbQpFile);
-                MSDK_FOPEN(pPerMbQP, m_encpakParams.mbQpFile, MSDK_CHAR("rb"));
-                if (pPerMbQP == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbQpFile);
-                    exit(-1);
-                }
-            }
+                if (preENCCtr[fieldId].MVPredictor)
+                {
+                    if (fieldId == 0){
+                        mvPreds = new mfxExtFeiPreEncMVPredictors[numOfFields];
+                        numExtInParams++;
+                        numExtInParamsI++;
+                    }
+                    memset(&mvPreds[fieldId], 0, sizeof(mfxExtFeiPreEncMVPredictors));
+                    mvPreds[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV_PRED;
+                    mvPreds[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncMVPredictors);
+                    mvPreds[fieldId].NumMBAlloc = numMB;
+                    mvPreds[fieldId].MB = new mfxExtFeiPreEncMVPredictors::mfxMB[numMB];
 
-            if (!preENCCtr[fieldId].DisableMVOutput) {
-                mvs[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
-                mvs[fieldId].Header.BufferSz = sizeof (mfxExtFeiPreEncMV);
-                mvs[fieldId].NumMBAlloc = numMB;
-                mvs[fieldId].MB = new mfxExtFeiPreEncMV::mfxMB [numMB];
-                memset(mvs[fieldId].MB, 0, sizeof(mvs[fieldId].MB[0])*mvs[fieldId].NumMBAlloc);
-                //outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mvs;
-
-                if (m_encpakParams.mvoutFile != NULL &&
-                        !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC)) {
-                    printf("Using MV output file: %s\n", m_encpakParams.mvoutFile);
-                    tmpMBpreenc = new mfxExtFeiPreEncMV::mfxMB;
-                    memset(tmpMBpreenc, 0x8000, sizeof(*tmpMBpreenc));
-                    MSDK_FOPEN(mvout, m_encpakParams.mvoutFile, MSDK_CHAR("wb"));
-                    if (mvout == NULL) {
-                        fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvoutFile);
-                        exit(-1);
+                    if (pMvPred == NULL) {
+                        //read mvs from file
+                        printf("Using MV input file: %s\n", m_encpakParams.mvinFile);
+                        MSDK_FOPEN(pMvPred, m_encpakParams.mvinFile, MSDK_CHAR("rb"));
+                        if (pMvPred == NULL) {
+                            fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvinFile);
+                            exit(-1);
+                        }
                     }
                 }
-            }
 
-            if (!preENCCtr[fieldId].DisableStatisticsOutput) {
-                mbdata[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
-                mbdata[fieldId].Header.BufferSz = sizeof (mfxExtFeiPreEncMBStat);
-                mbdata[fieldId].NumMBAlloc = numMB;
-                mbdata[fieldId].MB = new mfxExtFeiPreEncMBStat::mfxMB [numMB];
-                //outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mbdata;
-                //outBufsPreEncI[0] = (mfxExtBuffer*) & mbdata; //special case for I frames
+                if (preENCCtr[fieldId].MBQp)
+                {
+                    if (fieldId == 0){
+                        qps = new mfxExtFeiEncQP[numOfFields];
+                        numExtInParams++;
+                        numExtInParamsI++;
+                    }
+                    memset(&qps[fieldId], 0, sizeof(mfxExtFeiEncQP));
+                    qps[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
+                    qps[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncQP);
+                    qps[fieldId].NumQPAlloc = numMB;
+                    qps[fieldId].QP = new mfxU8[numMB];
 
-                printf("Using MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
-                MSDK_FOPEN(mbstatout, m_encpakParams.mbstatoutFile, MSDK_CHAR("wb"));
-                if (mbstatout == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbstatoutFile);
-                    exit(-1);
+                    if (pPerMbQP == NULL){
+                        //read mvs from file
+                        printf("Using QP input file: %s\n", m_encpakParams.mbQpFile);
+                        MSDK_FOPEN(pPerMbQP, m_encpakParams.mbQpFile, MSDK_CHAR("rb"));
+                        if (pPerMbQP == NULL) {
+                            fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbQpFile);
+                            exit(-1);
+                        }
+                    }
                 }
-            } // if (!preENCCtr.DisableStatisticsOutput)
 
-            // Let's count all control and Ext buffers...
-            inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & preENCCtr;
-            if (preENCCtr[fieldId].MVPredictor)
-                inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & mvPreds;
-            if (preENCCtr[fieldId].MBQp)
-                inBufsPreEnc[numExtInParamsPreEnc++] = (mfxExtBuffer*) & qps;
-            if (!preENCCtr[fieldId].DisableMVOutput)
-                outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mvs;
-            if (!preENCCtr[fieldId].DisableStatisticsOutput)
-            {
-                outBufsPreEnc[numExtOutParamsPreEnc++] = (mfxExtBuffer*) & mbdata;
-                outBufsPreEncI[0] = (mfxExtBuffer*) & mbdata; //special case for I frames
+                if (!preENCCtr[fieldId].DisableMVOutput)
+                {
+                    if (fieldId == 0){
+                        mvs = new mfxExtFeiPreEncMV[numOfFields];
+                        numExtOutParams++;
+                    }
+                    memset(&mvs[fieldId], 0, sizeof(mfxExtFeiPreEncMV));
+                    mvs[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
+                    mvs[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncMV);
+                    mvs[fieldId].NumMBAlloc = numMB;
+                    mvs[fieldId].MB = new mfxExtFeiPreEncMV::mfxMB[numMB];
+                    //memset(mvs[fieldId]->MB, 0, sizeof(mvs[fieldId]->MB[0])*mvs[fieldId]->NumMBAlloc);
+
+                    if (pPerMbQP == NULL && m_encpakParams.mvoutFile != NULL &&
+                        !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC)) {
+                        printf("Using MV output file: %s\n", m_encpakParams.mvoutFile);
+                        tmpMBpreenc = new mfxExtFeiPreEncMV::mfxMB;
+                        memset(tmpMBpreenc, 0x8000, sizeof(*tmpMBpreenc));
+                        MSDK_FOPEN(mvout, m_encpakParams.mvoutFile, MSDK_CHAR("wb"));
+                        if (mvout == NULL) {
+                            fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvoutFile);
+                            exit(-1);
+                        }
+                    }
+                }
+
+                if (!preENCCtr[fieldId].DisableStatisticsOutput)
+                {
+                    if (fieldId == 0){
+                        mbdata = new mfxExtFeiPreEncMBStat[numOfFields];
+                        numExtOutParams++;
+                        numExtOutParamsI++;
+                    }
+                    memset(&mbdata[fieldId], 0, sizeof(mfxExtFeiPreEncMBStat));
+                    mbdata[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
+                    mbdata[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncMBStat);
+                    mbdata[fieldId].NumMBAlloc = numMB;
+                    mbdata[fieldId].MB = new mfxExtFeiPreEncMBStat::mfxMB[numMB];
+
+                    if (mbstatout == NULL){
+                        printf("Using MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
+                        MSDK_FOPEN(mbstatout, m_encpakParams.mbstatoutFile, MSDK_CHAR("wb"));
+                        if (mbstatout == NULL) {
+                            fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbstatoutFile);
+                            exit(-1);
+                        }
+                    }
+                }
+
+            } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+
+            tmpForInit-> I_bufs.in.ExtParam  = new mfxExtBuffer* [numExtInParamsI];
+            tmpForInit->PB_bufs.in.ExtParam  = new mfxExtBuffer* [numExtInParams];
+            tmpForInit-> I_bufs.out.ExtParam = new mfxExtBuffer* [numExtOutParamsI];
+            tmpForInit->PB_bufs.out.ExtParam = new mfxExtBuffer* [numExtOutParams];
+
+            tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)preENCCtr;
+            tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)preENCCtr;
+            if (enableMVpredictor){
+                tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)mvPreds;
+                tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)mvPreds;
             }
-        } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+            if (enableMBQP){
+                tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)qps;
+                tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)qps;
+            }
+            if (!disableMVoutPreENC){
+                tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)mvs;
+            }
+            if (!disableMBStatPreENC){
+                tmpForInit-> I_bufs.out.ExtParam[tmpForInit-> I_bufs.out.NumExtParam++] = (mfxExtBuffer*)mbdata;
+                tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)mbdata;
+            }
+
+            preencBufs.push_back(tmpForInit);
+        }
     } // if (m_encpakParams.bPREENC) {
 
     if ((m_encpakParams.bENCODE)  || (m_encpakParams.bENCPAK)||
-        (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC) ){
-        feiCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN; //GetFrameType(frameCount);
-        feiCtrl.QP = m_encpakParams.QP;
-        //feiCtrl.SkipFrame = 0;
-        feiCtrl.NumPayload = 0;
-        feiCtrl.Payload = NULL;
+        (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC) )
+    {
+        bufSet* tmpForInit;
+        //FEI buffers
+        mfxEncodeCtrl*            feiCtrl            = NULL;
+        mfxExtFeiSPS*             m_feiSPS           = NULL;
+        mfxExtFeiPPS*             m_feiPPS           = NULL;
+        mfxExtFeiSliceHeader*     m_feiSliceHeader   = NULL;
+        mfxExtFeiEncFrameCtrl*    feiEncCtrl         = NULL;
+        mfxExtFeiEncMVPredictors* feiEncMVPredictors = NULL;
+        mfxExtFeiEncMBCtrl*       feiEncMBCtrl       = NULL;
+        mfxExtFeiEncMBStat*       feiEncMbStat       = NULL;
+        mfxExtFeiEncMV*           feiEncMV           = NULL;
+        mfxExtFeiEncQP*           feiEncMbQp         = NULL;
+        mfxExtFeiPakMBCtrl*       feiEncMBCode       = NULL;
+
+        feiCtrl = new mfxEncodeCtrl;
+        feiCtrl->FrameType = MFX_FRAMETYPE_UNKNOWN; //GetFrameType(frameCount);
+        feiCtrl->QP = m_encpakParams.QP;
+        //feiCtrl->SkipFrame = 0;
+        feiCtrl->NumPayload = 0;
+        feiCtrl->Payload = NULL;
 
         bool MVPredictors = (m_encpakParams.mvinFile != NULL) || m_encpakParams.bPREENC; //couple with PREENC
-        bool MBCtrl = m_encpakParams.mbctrinFile != NULL;
-        bool MBQP = m_encpakParams.mbQpFile != NULL;
+        bool MBCtrl       = m_encpakParams.mbctrinFile != NULL;
+        bool MBQP         = m_encpakParams.mbQpFile != NULL;
 
         bool MBStatOut = m_encpakParams.mbstatoutFile != NULL;
-        bool MVOut = m_encpakParams.mvoutFile != NULL;
+        bool MVOut     = m_encpakParams.mvoutFile != NULL;
         bool MBCodeOut = m_encpakParams.mbcodeoutFile != NULL;
 
         /*SPS header */
-        m_feiSPS.Header.BufferId = MFX_EXTBUFF_FEI_SPS;
-        m_feiSPS.Header.BufferSz = sizeof(mfxExtFeiSPS);
-        m_feiSPS.Pack = m_encpakParams.bPassHeaders ? 1 : 0; /* MSDK will use this data to do packing*/
-        m_feiSPS.SPSId = 0;
-        m_feiSPS.Profile = 100; //MFX_PROFILE_AVC_HIGH
-        m_feiSPS.Level = 42; //MFX_LEVEL_AVC_42
+        m_feiSPS = new mfxExtFeiSPS;
+        memset(m_feiSPS, 0, sizeof(mfxExtFeiSPS));
+        m_feiSPS->Header.BufferId = MFX_EXTBUFF_FEI_SPS;
+        m_feiSPS->Header.BufferSz = sizeof(mfxExtFeiSPS);
+        m_feiSPS->Pack = m_encpakParams.bPassHeaders ? 1 : 0; /* MSDK will use this data to do packing*/
+        m_feiSPS->SPSId   = 0;
+        m_feiSPS->Profile = 100; //MFX_PROFILE_AVC_HIGH
+        m_feiSPS->Level   = 42;  //MFX_LEVEL_AVC_42
 
-        m_feiSPS.NumRefFrame = m_mfxEncParams.mfx.NumRefFrame;
-        m_feiSPS.WidthInMBs = m_mfxEncParams.mfx.FrameInfo.Width/16;
-        m_feiSPS.HeightInMBs = m_mfxEncParams.mfx.FrameInfo.Height/16;
+        m_feiSPS->NumRefFrame = m_mfxEncParams.mfx.NumRefFrame;
+        m_feiSPS->WidthInMBs  = m_mfxEncParams.mfx.FrameInfo.Width/16;
+        m_feiSPS->HeightInMBs = m_mfxEncParams.mfx.FrameInfo.Height/16;
 
-        m_feiSPS.ChromaFormatIdc = m_mfxEncParams.mfx.FrameInfo.ChromaFormat;
-        m_feiSPS.FrameMBsOnlyFlag = (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 0;
-        m_feiSPS.MBAdaptiveFrameFieldFlag = 0;
-        m_feiSPS.Direct8x8InferenceFlag = 1;
-        m_feiSPS.Log2MaxFrameNum = 4;
-        m_feiSPS.PicOrderCntType = GetDefaultPicOrderCount(m_mfxEncParams);
-        m_feiSPS.Log2MaxPicOrderCntLsb = 0;
-        m_feiSPS.DeltaPicOrderAlwaysZeroFlag = 1;
+        m_feiSPS->ChromaFormatIdc  = m_mfxEncParams.mfx.FrameInfo.ChromaFormat;
+        m_feiSPS->FrameMBsOnlyFlag = (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 0;
+        m_feiSPS->MBAdaptiveFrameFieldFlag = 0;
+        m_feiSPS->Direct8x8InferenceFlag   = 1;
+        m_feiSPS->Log2MaxFrameNum          = 4;
+        m_feiSPS->PicOrderCntType = GetDefaultPicOrderCount(m_mfxEncParams);
+        m_feiSPS->Log2MaxPicOrderCntLsb       = 0;
+        m_feiSPS->DeltaPicOrderAlwaysZeroFlag = 1;
 
-        for (fieldId = 0; fieldId < numOfFields; fieldId++)
+        for (int k = 0; k < 2 * this->m_refDist; k++)
         {
-            memset(&feiEncCtrl[fieldId], 0, sizeof (mfxExtFeiEncFrameCtrl));
-            feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
-            feiEncCtrl[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncFrameCtrl);
-            feiEncCtrl[fieldId].SearchPath = m_encpakParams.SearchPath;//1;
-            feiEncCtrl[fieldId].LenSP      = m_encpakParams.LenSP;//57;
-            feiEncCtrl[fieldId].SubMBPartMask = m_encpakParams.SubMBPartMask;//0x77;
-            feiEncCtrl[fieldId].MultiPredL0 = m_encpakParams.MultiPredL0;
-            feiEncCtrl[fieldId].MultiPredL1 = m_encpakParams.MultiPredL1;
-            feiEncCtrl[fieldId].SubPelMode = m_encpakParams.SubPelMode;//3;
-            feiEncCtrl[fieldId].InterSAD = m_encpakParams.InterSAD;//2;
-            feiEncCtrl[fieldId].IntraSAD = m_encpakParams.IntraSAD;//2;
-            feiEncCtrl[fieldId].DistortionType = m_encpakParams.DistortionType;
-            feiEncCtrl[fieldId].RepartitionCheckEnable = m_encpakParams.RepartitionCheckEnable;
-            feiEncCtrl[fieldId].AdaptiveSearch = m_encpakParams.AdaptiveSearch;//1;
-            feiEncCtrl[fieldId].MVPredictor = MVPredictors;
-            feiEncCtrl[fieldId].NumMVPredictors = m_encpakParams.NumMVPredictors; //always 4 predictors
-            feiEncCtrl[fieldId].PerMBQp = MBQP;
-            feiEncCtrl[fieldId].PerMBInput = MBCtrl;
-            feiEncCtrl[fieldId].MBSizeCtrl = m_encpakParams.bMBSize;
-            feiEncCtrl[fieldId].ColocatedMbDistortion = m_encpakParams.ColocatedMbDistortion;
-            //Note:
-            //(RefHeight x RefWidth) should not exceed 2048 for P frames and 1024 for B frames
-            feiEncCtrl[fieldId].RefHeight = m_encpakParams.RefHeight;//40;
-            feiEncCtrl[fieldId].RefWidth  = m_encpakParams.RefWidth; //48;
-            feiEncCtrl[fieldId].SearchWindow = m_encpakParams.SearchWindow;//1;
+            tmpForInit = new bufSet;
+            tmpForInit->vacant = true;
 
-            /* PPS header */
-            m_feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;
-            m_feiPPS[fieldId].Header.BufferSz = sizeof(mfxExtFeiPPS);
-            m_feiPPS[fieldId].Pack = m_encpakParams.bPassHeaders ? 1 : 0;
+            numExtInParams   = m_encpakParams.bPassHeaders ? 1 : 0; // count SPS header
+            numExtInParamsI  = m_encpakParams.bPassHeaders ? 1 : 0; // count SPS header
+            numExtOutParams  = 0;
+            numExtOutParamsI = 0;
 
-            m_feiPPS[fieldId].SPSId = 0;
-            m_feiPPS[fieldId].PPSId = 0;
-
-            m_feiPPS[fieldId].FrameNum = 0;
-
-            if (0 != m_encpakParams.QP)
-                m_feiPPS[fieldId].PicInitQP = m_encpakParams.QP;
-            else
-                m_feiPPS[fieldId].PicInitQP = 26;
-            m_feiPPS[fieldId].NumRefIdxL0Active = 1;
-            m_feiPPS[fieldId].NumRefIdxL1Active = 1;
-
-            m_feiPPS[fieldId].ChromaQPIndexOffset = 0;
-            m_feiPPS[fieldId].SecondChromaQPIndexOffset = 0;
-
-            m_feiPPS[fieldId].IDRPicFlag = 0;
-            m_feiPPS[fieldId].ReferencePicFlag = 0;
-            m_feiPPS[fieldId].EntropyCodingModeFlag = 1;
-            m_feiPPS[fieldId].ConstrainedIntraPredFlag = 0;
-            m_feiPPS[fieldId].Transform8x8ModeFlag = 1;
-
-            m_feiSliceHeader[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_SLICE;
-            m_feiSliceHeader[fieldId].Header.BufferSz = sizeof(mfxExtFeiSliceHeader);
-            m_feiSliceHeader[fieldId].Pack = m_encpakParams.bPassHeaders ? 1 : 0;
-            m_feiSliceHeader[fieldId].NumSlice =
-            m_feiSliceHeader[fieldId].NumSliceAlloc = m_encpakParams.numSlices;
-            m_feiSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice [m_encpakParams.numSlices];
-            // TODO: Implement real slice divider
-            // For now only one slice is supported
-            for (int numSlice = 0; numSlice < m_feiSliceHeader[fieldId].NumSlice; numSlice++ )
+            for (fieldId = 0; fieldId < numOfFields; fieldId++)
             {
-                m_feiSliceHeader[fieldId].Slice->MBAaddress = 0;
-                m_feiSliceHeader[fieldId].Slice->NumMBs = m_feiSPS.WidthInMBs * m_feiSPS.HeightInMBs;
-                m_feiSliceHeader[fieldId].Slice->SliceType = 0;
-                m_feiSliceHeader[fieldId].Slice->PPSId = m_feiPPS[fieldId].PPSId;
-                m_feiSliceHeader[fieldId].Slice->IdrPicId = 0;
+                if (fieldId == 0){
+                    feiEncCtrl = new mfxExtFeiEncFrameCtrl[numOfFields];
+                    memset(feiEncCtrl, 0, numOfFields*sizeof(mfxExtFeiEncFrameCtrl));
+                    numExtInParams++;
+                    numExtInParamsI++;
+                }
 
-                m_feiSliceHeader[fieldId].Slice->CabacInitIdc = 0;
+                feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
+                feiEncCtrl[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
 
-                m_feiSliceHeader[fieldId].Slice->SliceQPDelta = 26 - m_feiPPS[fieldId].PicInitQP;
-                m_feiSliceHeader[fieldId].Slice->DisableDeblockingFilterIdc = 0;
-                m_feiSliceHeader[fieldId].Slice->SliceAlphaC0OffsetDiv2 = 0;
-                m_feiSliceHeader[fieldId].Slice->SliceBetaOffsetDiv2 = 0;
-                /* This part will be filled in reference frame management */
-                //m_feiSliceHeader[fieldId].Slice->RefL0[0].Index = 0;
-                //m_feiSliceHeader[fieldId].Slice->RefL0[0].PictureType = 0;
-                //m_feiSliceHeader[fieldId].Slice->RefL1[0].Index = 0;
-                //m_feiSliceHeader[fieldId].Slice->RefL1[0].PictureType = 0;
-            }
+                feiEncCtrl[fieldId].SearchPath             = m_encpakParams.SearchPath;
+                feiEncCtrl[fieldId].LenSP                  = m_encpakParams.LenSP;
+                feiEncCtrl[fieldId].SubMBPartMask          = m_encpakParams.SubMBPartMask;
+                feiEncCtrl[fieldId].MultiPredL0            = m_encpakParams.MultiPredL0;
+                feiEncCtrl[fieldId].MultiPredL1            = m_encpakParams.MultiPredL1;
+                feiEncCtrl[fieldId].SubPelMode             = m_encpakParams.SubPelMode;
+                feiEncCtrl[fieldId].InterSAD               = m_encpakParams.InterSAD;
+                feiEncCtrl[fieldId].IntraSAD               = m_encpakParams.IntraSAD;
+                feiEncCtrl[fieldId].DistortionType         = m_encpakParams.DistortionType;
+                feiEncCtrl[fieldId].RepartitionCheckEnable = m_encpakParams.RepartitionCheckEnable;
+                feiEncCtrl[fieldId].AdaptiveSearch         = m_encpakParams.AdaptiveSearch;
+                feiEncCtrl[fieldId].MVPredictor            = MVPredictors;
+                feiEncCtrl[fieldId].NumMVPredictors        = m_encpakParams.NumMVPredictors; //always 4 predictors
+                feiEncCtrl[fieldId].PerMBQp                = MBQP;
+                feiEncCtrl[fieldId].PerMBInput             = MBCtrl;
+                feiEncCtrl[fieldId].MBSizeCtrl             = m_encpakParams.bMBSize;
+                feiEncCtrl[fieldId].ColocatedMbDistortion  = m_encpakParams.ColocatedMbDistortion;
+                //Note:
+                //(RefHeight x RefWidth) should not exceed 2048 for P frames and 1024 for B frames
+                feiEncCtrl[fieldId].RefHeight    = m_encpakParams.RefHeight;
+                feiEncCtrl[fieldId].RefWidth     = m_encpakParams.RefWidth;
+                feiEncCtrl[fieldId].SearchWindow = m_encpakParams.SearchWindow;
 
-            //feiEncMVPredictors;
-            if (MVPredictors) {
-                feiEncMVPredictors[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV_PRED;
-                feiEncMVPredictors[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncMVPredictors);
-                feiEncMVPredictors[fieldId].NumMBAlloc = numMB;
-                feiEncMVPredictors[fieldId].MB = new mfxExtFeiEncMVPredictors::mfxMB [numMB];
-                //inBufs[numExtInParams++] = (mfxExtBuffer*) &feiEncMVPredictors;
-
-                if (!m_encpakParams.bPREENC) { //not load if we couple with PREENC
-                    printf("Using MV input file: %s\n", m_encpakParams.mvinFile);
-                    MSDK_FOPEN(pMvPred,m_encpakParams.mvinFile, MSDK_CHAR("rb"));
-                    if (pMvPred == NULL) {
-                        fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvinFile);
-                        exit(-1);
+                /* PPS header */
+                if (fieldId == 0){
+                    m_feiPPS = new mfxExtFeiPPS[numOfFields];
+                    memset(m_feiPPS, 0, numOfFields*sizeof(mfxExtFeiPPS));
+                    if (m_encpakParams.bPassHeaders){
+                        numExtInParams++;
+                        numExtInParamsI++;
                     }
-                    if (m_encpakParams.bRepackPreencMV){
-                        tmpForMedian  = new mfxI16[16];
-                        tmpForReading = new mfxExtFeiPreEncMV::mfxMB[numMB];
+                }
+                m_feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;
+                m_feiPPS[fieldId].Header.BufferSz = sizeof(mfxExtFeiPPS);
+                m_feiPPS[fieldId].Pack = m_encpakParams.bPassHeaders ? 1 : 0;
+
+                m_feiPPS[fieldId].SPSId = 0;
+                m_feiPPS[fieldId].PPSId = 0;
+
+                m_feiPPS[fieldId].FrameNum = 0;
+
+                m_feiPPS[fieldId].PicInitQP = (m_encpakParams.QP != 0) ? m_encpakParams.QP : 26;
+
+                m_feiPPS[fieldId].NumRefIdxL0Active = 1;
+                m_feiPPS[fieldId].NumRefIdxL1Active = 1;
+
+                m_feiPPS[fieldId].ChromaQPIndexOffset       = 0;
+                m_feiPPS[fieldId].SecondChromaQPIndexOffset = 0;
+
+                m_feiPPS[fieldId].IDRPicFlag               = 0;
+                m_feiPPS[fieldId].ReferencePicFlag         = 0;
+                m_feiPPS[fieldId].EntropyCodingModeFlag    = 1;
+                m_feiPPS[fieldId].ConstrainedIntraPredFlag = 0;
+                m_feiPPS[fieldId].Transform8x8ModeFlag     = 1;
+
+                if (fieldId == 0){
+                    m_feiSliceHeader = new mfxExtFeiSliceHeader[numOfFields];
+                    memset(m_feiSliceHeader, 0, numOfFields*sizeof(mfxExtFeiSliceHeader));
+                    if (m_encpakParams.bPassHeaders){
+                        numExtInParams++;
+                        numExtInParamsI++;
                     }
-                }else {
-                    tmpForMedian = new mfxI16[16];
                 }
+                m_feiSliceHeader[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_SLICE;
+                m_feiSliceHeader[fieldId].Header.BufferSz = sizeof(mfxExtFeiSliceHeader);
+                m_feiSliceHeader[fieldId].Pack = m_encpakParams.bPassHeaders ? 1 : 0;
+                m_feiSliceHeader[fieldId].NumSlice =
+                    m_feiSliceHeader[fieldId].NumSliceAlloc = m_encpakParams.numSlices;
+                m_feiSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice[m_encpakParams.numSlices];
+                // TODO: Implement real slice divider
+                // For now only one slice is supported
+                for (int numSlice = 0; numSlice < m_feiSliceHeader[fieldId].NumSlice; numSlice++)
+                {
+                    m_feiSliceHeader[fieldId].Slice->MBAaddress = 0;
+                    m_feiSliceHeader[fieldId].Slice->NumMBs     = m_feiSPS->WidthInMBs * m_feiSPS->HeightInMBs;
+                    m_feiSliceHeader[fieldId].Slice->SliceType  = 0;
+                    m_feiSliceHeader[fieldId].Slice->PPSId      = m_feiPPS[fieldId].PPSId;
+                    m_feiSliceHeader[fieldId].Slice->IdrPicId   = 0;
+
+                    m_feiSliceHeader[fieldId].Slice->CabacInitIdc = 0;
+
+                    m_feiSliceHeader[fieldId].Slice->SliceQPDelta = 26 - m_feiPPS[fieldId].PicInitQP;
+                    m_feiSliceHeader[fieldId].Slice->DisableDeblockingFilterIdc = 0;
+                    m_feiSliceHeader[fieldId].Slice->SliceAlphaC0OffsetDiv2     = 0;
+                    m_feiSliceHeader[fieldId].Slice->SliceBetaOffsetDiv2        = 0;
+                    /* This part will be filled in reference frame management */
+                    //m_feiSliceHeader[fieldId].Slice->RefL0[0].Index = 0;
+                    //m_feiSliceHeader[fieldId].Slice->RefL0[0].PictureType = 0;
+                    //m_feiSliceHeader[fieldId].Slice->RefL1[0].Index = 0;
+                    //m_feiSliceHeader[fieldId].Slice->RefL1[0].PictureType = 0;
+                }
+
+                if (MVPredictors)
+                {
+                    if (fieldId == 0){
+                        feiEncMVPredictors = new mfxExtFeiEncMVPredictors[numOfFields];
+                        memset(feiEncMVPredictors, 0, numOfFields*sizeof(mfxExtFeiEncMVPredictors));
+                        numExtInParams++;
+                    }
+
+                    feiEncMVPredictors[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV_PRED;
+                    feiEncMVPredictors[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMVPredictors);
+                    feiEncMVPredictors[fieldId].NumMBAlloc = numMB;
+                    feiEncMVPredictors[fieldId].MB = new mfxExtFeiEncMVPredictors::mfxMB[numMB];
+
+                    if (!m_encpakParams.bPREENC && pMvPred == NULL) { //not load if we couple with PREENC
+                        printf("Using MV input file: %s\n", m_encpakParams.mvinFile);
+                        MSDK_FOPEN(pMvPred, m_encpakParams.mvinFile, MSDK_CHAR("rb"));
+                        if (pMvPred == NULL) {
+                            fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvinFile);
+                            exit(-1);
+                        }
+                        if (m_encpakParams.bRepackPreencMV){
+                            tmpForMedian = new mfxI16[16];
+                            tmpForReading = new mfxExtFeiPreEncMV::mfxMB[numMB];
+                        }
+                    }
+                    else {
+                        tmpForMedian = new mfxI16[16];
+                    }
+                }
+
+                if (MBCtrl)
+                {
+                    if (fieldId == 0){
+                        feiEncMBCtrl = new mfxExtFeiEncMBCtrl[numOfFields];
+                        memset(feiEncMBCtrl, 0, numOfFields*sizeof(mfxExtFeiEncMBCtrl));
+                        numExtInParams++;
+                        numExtInParamsI++;
+                    }
+
+                    feiEncMBCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB;
+                    feiEncMBCtrl[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMBCtrl);
+                    feiEncMBCtrl[fieldId].NumMBAlloc = numMB;
+                    feiEncMBCtrl[fieldId].MB = new mfxExtFeiEncMBCtrl::mfxMB[numMB];
+
+                    if (pEncMBs == NULL){
+                        printf("Using MB control input file: %s\n", m_encpakParams.mbctrinFile);
+                        MSDK_FOPEN(pEncMBs, m_encpakParams.mbctrinFile, MSDK_CHAR("rb"));
+                        if (pEncMBs == NULL) {
+                            fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbctrinFile);
+                            exit(-1);
+                        }
+                    }
+                }
+
+                if (MBQP)
+                {
+                    if (fieldId == 0){
+                        feiEncMbQp = new mfxExtFeiEncQP[numOfFields];
+                        memset(feiEncMbQp, 0, numOfFields*sizeof(mfxExtFeiEncQP));
+                        numExtInParams++;
+                        numExtInParamsI++;
+                    }
+
+                    feiEncMbQp[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
+                    feiEncMbQp[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncQP);
+                    feiEncMbQp[fieldId].NumQPAlloc = numMB;
+                    feiEncMbQp[fieldId].QP = new mfxU8[numMB];
+
+                    if (pPerMbQP == NULL) {
+                        printf("Use MB QP input file: %s\n", m_encpakParams.mbQpFile);
+                        MSDK_FOPEN(pPerMbQP, m_encpakParams.mbQpFile, MSDK_CHAR("rb"));
+                        if (pPerMbQP == NULL) {
+                            fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbQpFile);
+                            exit(-1);
+                        }
+                    }
+                }
+
+                //Open output files if any
+                //distortion buffer have to be always provided - current limitation
+                if (MBStatOut)
+                {
+                    if (fieldId == 0){
+                        feiEncMbStat = new mfxExtFeiEncMBStat[numOfFields];
+                        memset(feiEncMbStat, 0, numOfFields*sizeof(mfxExtFeiEncMBStat));
+                        numExtOutParams++;
+                        numExtOutParamsI++;
+                    }
+
+                    feiEncMbStat[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
+                    feiEncMbStat[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
+                    feiEncMbStat[fieldId].NumMBAlloc = numMB;
+                    feiEncMbStat[fieldId].MB = new mfxExtFeiEncMBStat::mfxMB[numMB];
+
+                    if (mbstatout == NULL) {
+                        printf("Use MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
+                        MSDK_FOPEN(mbstatout, m_encpakParams.mbstatoutFile, MSDK_CHAR("wb"));
+                        if (mbstatout == NULL) {
+                            fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbstatoutFile);
+                            exit(-1);
+                        }
+                    }
+                }
+
+                //distortion buffer have to be always provided - current limitation
+                if (MVOut)
+                {
+                    if (fieldId == 0){
+                        feiEncMV = new mfxExtFeiEncMV[numOfFields];
+                        memset(feiEncMV, 0, numOfFields*sizeof(mfxExtFeiEncMV));
+                        numExtOutParams++;
+                    }
+
+                    feiEncMV[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
+                    feiEncMV[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMV);
+                    feiEncMV[fieldId].NumMBAlloc = numMB;
+                    feiEncMV[fieldId].MB = new mfxExtFeiEncMV::mfxMB[numMB];
+
+                    if (mvENCPAKout == NULL) {
+                        printf("Use MV output file: %s\n", m_encpakParams.mvoutFile);
+                        if (m_encpakParams.bOnlyPAK)
+                            MSDK_FOPEN(mvENCPAKout, m_encpakParams.mvoutFile, MSDK_CHAR("rb"));
+                        else { /*for all other cases need to wtite into this file*/
+                            MSDK_FOPEN(mvENCPAKout, m_encpakParams.mvoutFile, MSDK_CHAR("wb"));
+                            tmpMBenc = new mfxExtFeiEncMV::mfxMB;
+                            memset(tmpMBenc, 0x8000, sizeof(*tmpMBenc));
+                        }
+                        if (mvENCPAKout == NULL) {
+                            fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvoutFile);
+                            exit(-1);
+                        }
+                    }
+                }
+
+                //distortion buffer have to be always provided - current limitation
+                if (MBCodeOut)
+                {
+                    if (fieldId == 0){
+                        feiEncMBCode = new mfxExtFeiPakMBCtrl[numOfFields];
+                        memset(feiEncMBCode, 0, numOfFields*sizeof(mfxExtFeiPakMBCtrl));
+                        numExtOutParams++;
+                        numExtOutParamsI++;
+                    }
+
+                    feiEncMBCode[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PAK_CTRL;
+                    feiEncMBCode[fieldId].Header.BufferSz = sizeof(mfxExtFeiPakMBCtrl);
+                    feiEncMBCode[fieldId].NumMBAlloc = numMB;
+                    feiEncMBCode[fieldId].MB = new mfxFeiPakMBCtrl[numMB];
+
+                    if (mbcodeout == NULL) {
+                        printf("Use MB code output file: %s\n", m_encpakParams.mbcodeoutFile);
+                        if (m_encpakParams.bOnlyPAK)
+                            MSDK_FOPEN(mbcodeout, m_encpakParams.mbcodeoutFile, MSDK_CHAR("rb"));
+                        else
+                            MSDK_FOPEN(mbcodeout, m_encpakParams.mbcodeoutFile, MSDK_CHAR("wb"));
+
+                        if (mbcodeout == NULL) {
+                            fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbcodeoutFile);
+                            exit(-1);
+                        }
+                    }
+                }
+
+            } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+
+            tmpForInit-> I_bufs.in.ExtParam  = new mfxExtBuffer* [numExtInParamsI];
+            tmpForInit->PB_bufs.in.ExtParam  = new mfxExtBuffer* [numExtInParams];
+            tmpForInit-> I_bufs.out.ExtParam = new mfxExtBuffer* [numExtOutParamsI];
+            tmpForInit->PB_bufs.out.ExtParam = new mfxExtBuffer* [numExtOutParams];
+
+            tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiEncCtrl;
+            tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiEncCtrl;
+
+            if (m_feiSPS->Pack){
+                tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)m_feiSPS;
+                tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)m_feiSPS;
+            }
+            if (m_feiPPS[0].Pack){
+                tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)m_feiPPS;
+                tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)m_feiPPS;
+            }
+            if (m_feiSliceHeader[0].Pack){
+                tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)m_feiSliceHeader;
+                tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)m_feiSliceHeader;
+            }
+            if (MVPredictors){
+                //tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiEncMVPredictors;
+                tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiEncMVPredictors;
+            }
+            if (MBCtrl){
+                tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiEncMBCtrl;
+                tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiEncMBCtrl;
+            }
+            if (MBQP){
+                tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiEncMbQp;
+                tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiEncMbQp;
+            }
+            if (MBStatOut){
+                tmpForInit-> I_bufs.out.ExtParam[tmpForInit-> I_bufs.out.NumExtParam++] = (mfxExtBuffer*)feiEncMbStat;
+                tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)feiEncMbStat;
+            }
+            if (MVOut){
+                tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)feiEncMV;
+            }
+            if (MBCodeOut){
+                tmpForInit-> I_bufs.out.ExtParam[tmpForInit-> I_bufs.out.NumExtParam++] = (mfxExtBuffer*)feiEncMBCode;
+                tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)feiEncMBCode;
             }
 
-            if (MBCtrl) {
-                feiEncMBCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB;
-                feiEncMBCtrl[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncMBCtrl);
-                feiEncMBCtrl[fieldId].NumMBAlloc = numMB;
-                feiEncMBCtrl[fieldId].MB = new mfxExtFeiEncMBCtrl::mfxMB [numMB];
-                //inBufs[numExtInParams++] = (mfxExtBuffer*) &feiEncMBCtrl;
+            ctr = feiCtrl;
+            ctr->NumExtParam = tmpForInit->PB_bufs.in.NumExtParam;
+            ctr->ExtParam    = tmpForInit->PB_bufs.in.ExtParam;
 
-                printf("Using MB control input file: %s\n", m_encpakParams.mbctrinFile);
-                MSDK_FOPEN(pEncMBs, m_encpakParams.mbctrinFile, MSDK_CHAR("rb"));
+            encodeBufs.push_back(tmpForInit);
 
-                if ( pEncMBs == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbctrinFile);
-                    exit(-1);
-                }
-            }
+        } // for (int k = 0; k < 2 * this->m_refDist; k++)
+    } // if (m_encpakParams.bENCODE)
 
-            if (MBQP) {
-                feiEncMbQp[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
-                feiEncMbQp[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncQP);
-                feiEncMbQp[fieldId].NumQPAlloc = numMB;
-                feiEncMbQp[fieldId].QP = new mfxU8 [numMB];
-                //inBufs[numExtInParams++] = (mfxExtBuffer*) &feiEncMbQp;
-
-                printf("Use MB QP input file: %s\n", m_encpakParams.mbQpFile);
-                MSDK_FOPEN(pPerMbQP, m_encpakParams.mbQpFile, MSDK_CHAR("rb"));
-
-                if ( pPerMbQP == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbQpFile);
-                    exit(-1);
-                }
-            }
-
-            //Open output files if any
-            //distortion buffer have to be always provided - current limitation
-            if(MBStatOut){
-                feiEncMbStat[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
-                feiEncMbStat[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
-                feiEncMbStat[fieldId].NumMBAlloc = numMB;
-                feiEncMbStat[fieldId].MB = new mfxExtFeiEncMBStat::mfxMB [numMB];
-                //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMbStat;
-
-                printf("Use MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
-                MSDK_FOPEN(mbstatout, m_encpakParams.mbstatoutFile, MSDK_CHAR("wb"));
-
-                if ( mbstatout == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbstatoutFile);
-                    exit(-1);
-                }
-            }
-
-            //distortion buffer have to be always provided - current limitation
-            if(MVOut){
-                feiEncMV[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
-                feiEncMV[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMV);
-                feiEncMV[fieldId].NumMBAlloc = numMB;
-                feiEncMV[fieldId].MB = new mfxExtFeiEncMV::mfxMB [numMB];
-                //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMV;
-
-                printf("Use MV output file: %s\n", m_encpakParams.mvoutFile);
-                if (m_encpakParams.bOnlyPAK)
-                    MSDK_FOPEN(mvENCPAKout, m_encpakParams.mvoutFile, MSDK_CHAR("rb"));
-                else { /*for all other cases need to wtite into this file*/
-                    MSDK_FOPEN(mvENCPAKout, m_encpakParams.mvoutFile, MSDK_CHAR("wb"));
-                    tmpMBenc = new mfxExtFeiEncMV::mfxMB;
-                    memset(tmpMBenc, 0x8000, sizeof(*tmpMBenc));
-                }
-
-                if ( mvENCPAKout == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mvoutFile);
-                    exit(-1);
-                }
-            }
-
-            //distortion buffer have to be always provided - current limitation
-            if(MBCodeOut){
-                feiEncMBCode[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PAK_CTRL;
-                feiEncMBCode[fieldId].Header.BufferSz = sizeof(mfxExtFeiPakMBCtrl);
-                feiEncMBCode[fieldId].NumMBAlloc = numMB;
-                feiEncMBCode[fieldId].MB = new mfxFeiPakMBCtrl [numMB];
-                //outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMBCode;
-
-                printf("Use MB code output file: %s\n", m_encpakParams.mbcodeoutFile);
-                if (m_encpakParams.bOnlyPAK)
-                    MSDK_FOPEN(mbcodeout, m_encpakParams.mbcodeoutFile, MSDK_CHAR("rb"));
-                else
-                    MSDK_FOPEN(mbcodeout, m_encpakParams.mbcodeoutFile, MSDK_CHAR("wb"));
-
-                if ( mbcodeout == NULL) {
-                    fprintf(stderr, "Can't open file %s\n", m_encpakParams.mbcodeoutFile);
-                    exit(-1);
-                }
-            } // if(MBCodeOut){
-        } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
-
-        // lets count all control and Ext buffers...
-        inBufsI[numExtInParamsI++] = (mfxExtBuffer*) & feiEncCtrl;
-        inBufs[numExtInParams++]   = (mfxExtBuffer*) & feiEncCtrl;
-        if (MBCtrl){
-            inBufsI[numExtInParamsI++] = (mfxExtBuffer*) &feiEncMBCtrl;
-            inBufs[numExtInParams++]   = (mfxExtBuffer*) &feiEncMBCtrl;
-        }
-        if (MBQP){
-            inBufsI[numExtInParamsI++] = (mfxExtBuffer*) &feiEncMbQp;
-            inBufs[numExtInParams++]   = (mfxExtBuffer*) &feiEncMbQp;
-        }
-        /*For SPS, PPS and slice headers*/
-        if (m_feiSPS.Pack)
-            inBufs[numExtInParams++] = (mfxExtBuffer*) &m_feiSPS;
-        for (fieldId = 0; fieldId < numOfFields; fieldId++)
-        {
-            if (m_feiPPS[fieldId].Pack)
-                inBufs[numExtInParams++] = (mfxExtBuffer*) &m_feiPPS[fieldId];
-        }
-
-        if (MVPredictors)
-            inBufs[numExtInParams++] = (mfxExtBuffer*) &feiEncMVPredictors;
-
-        ctr = &feiCtrl;
-        feiCtrl.NumExtParam = numExtInParams;
-        feiCtrl.ExtParam = &inBufs[0];
-
-        if(MBStatOut)
-            outBufs[numExtOutParams++]   = (mfxExtBuffer*) &feiEncMbStat;
-        if(MBCodeOut)
-            outBufs[numExtOutParams++]   = (mfxExtBuffer*) &feiEncMBCode;
-        if(MVOut)
-            outBufs[numExtOutParams++] = (mfxExtBuffer*) &feiEncMV;
-    } // if (m_encpakParams.bENCODE) {
-
-    // Since in sample we support just 2 views
-    // we will change this value between 0 and 1 in case of MVC
-    mfxU16 currViewNum = 0;
 
     sts = MFX_ERR_NONE;
-
     bool twoEncoders = m_encpakParams.bPREENC && (m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
     // main loop, preprocessing and encoding
     mfxU32 frameCount = 0;
+    mfxU16 frameType  = MFX_FRAMETYPE_UNKNOWN;
+
     while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
     {
         if(m_encpakParams.nNumFrames && frameCount >= m_encpakParams.nNumFrames)
             break;
 
+        frameType = GetFrameType(frameCount);
+
         // get a pointer to a free task (bit stream and sync point for encoder)
         sts = GetFreeTask(&pCurrentTask);
         MSDK_BREAK_ON_ERROR(sts);
+        pCurrentTask->mfxBS.FrameType = frameType;
+        //if (ctr)
+        //    ctr->FrameType = frameType;
 
         iTask* eTask = NULL;
-        if ((m_encpakParams.bPREENC) || (m_encpakParams.bENCPAK) ||
-                (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK) ){
+        if ((m_encpakParams.bPREENC)  || (m_encpakParams.bENCPAK) ||
+            (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK))
+        {
             eTask = new iTask;
-            eTask->frameType = GetFrameType(frameCount);
+            eTask->frameType         = frameType;
             eTask->frameDisplayOrder = frameCount;
-            eTask->encoded = 0;
+            eTask->encoded           = 0;
+            eTask->bufs              = NULL;
+            eTask->preenc_bufs       = NULL;
             mdprintf(stderr,"frame: %d  t:%d pt=%p ", frameCount, eTask->frameType, eTask);
-        }
-
-        pCurrentTask->mfxBS.FrameType = GetFrameType(frameCount);
-
-        // correct ref window size if search window is 0
-        if ((m_encpakParams.SearchWindow == 0) && (m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC || m_encpakParams.bENCODE)){
-            // note that for preenc max size is 2048 because preenc doesn't do bidirectional prediction
-            int frame_type = GetFrameType(frameCount);
-            for (fieldId = 0; fieldId < numOfFields; fieldId++)
-            {
-                feiEncCtrl[fieldId].RefHeight = m_encpakParams.RefHeight;
-                feiEncCtrl[fieldId].RefWidth  = m_encpakParams.RefWidth;
-                int sqr = feiEncCtrl[fieldId].RefHeight * feiEncCtrl[fieldId].RefWidth;
-                if ((frame_type & MFX_FRAMETYPE_B) && sqr > 1024){
-                    feiEncCtrl[fieldId].RefHeight = 32;
-                    feiEncCtrl[fieldId].RefWidth  = 32;
-                }
-                else if ((frame_type & MFX_FRAMETYPE_P) && sqr > 2048){
-                    feiEncCtrl[fieldId].RefHeight = 32;
-                    feiEncCtrl[fieldId].RefWidth  = 64;
-                }
-            }
         }
 
         // find free surface for encoder input
@@ -1642,8 +1794,6 @@ mfxStatus CEncodingPipeline::Run()
 //            pReconSurf = &m_pEncSurfaces[nReconSurfIdx];
 //        }
 
-        frameCount++;
-
 
         // load frame from file to surface data
         // if we share allocator with Media SDK we need to call Lock to access surface data and...
@@ -1654,7 +1804,6 @@ mfxStatus CEncodingPipeline::Run()
             MSDK_BREAK_ON_ERROR(sts);
         }
 
-        pSurf->Info.FrameId.ViewId = currViewNum;
         sts = m_FileReader.LoadNextFrame(pSurf);
         MSDK_BREAK_ON_ERROR(sts);
 
@@ -1664,6 +1813,10 @@ mfxStatus CEncodingPipeline::Run()
             sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &(pSurf->Data));
             MSDK_BREAK_ON_ERROR(sts);
         }
+        pSurf->Data.FrameOrder = frameCount; // in display order
+
+
+        frameCount++;
 
 
         if (m_encpakParams.bPREENC) {
@@ -1675,39 +1828,16 @@ mfxStatus CEncodingPipeline::Run()
             eTask = findFrameToEncode();
             if(eTask == NULL) continue; //not found frame to encode
 
-            eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
-            initFrameParams(eTask);
-
-            for (fieldId = 0; fieldId < numOfFields; fieldId++)
-            {
-                mfxExtFeiPreEncMVPredictors* pMvPredBuf = NULL;
-                mfxExtFeiEncQP*              pMbQP      = NULL;
-                for(int i=0; i<eTask->in.NumExtParam; i++){
-                    if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV_PRED && feiEncMVPredictors){
-                        if (!(eTask->frameType & MFX_FRAMETYPE_I)){
-                            pMvPredBuf = &((mfxExtFeiPreEncMVPredictors*)(eTask->in.ExtParam[i]))[fieldId];
-                            fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
-                        } else {
-                            fseek(pMvPred, sizeof(mfxExtFeiPreEncMVPredictors::mfxMB)*numMB, SEEK_CUR);
-                        }
-                    }
-                    if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP && feiEncMbQp){
-                        pMbQP = &((mfxExtFeiEncQP*)(eTask->in.ExtParam[i]))[fieldId];
-                        fseek(pPerMbQP, (frameCount-1)*pMbQP->NumQPAlloc * numOfFields + pMbQP->NumQPAlloc * fieldId, SEEK_SET);
-                        fread(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, pPerMbQP);
-                    }
-                } //
-            } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+            //eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
+            initPreEncFrameParams(eTask);
 
             for (;;) {
                 fprintf(stderr, "frame: %d  t:%d : submit ", eTask->frameDisplayOrder, eTask->frameType);
 
-                //time_t timer; time(&timer);
                 sts = m_pmfxPREENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
                 sts = MFX_ERR_NONE;
                 /*PRE-ENC is running in separate session */
                 sts = m_preenc_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
-                //fprintf(stderr, "synced : %d time spent: %d\n", sts, time(NULL)-timer);
                 fprintf(stderr, "synced : %d\n", sts);
 
 
@@ -1728,8 +1858,77 @@ mfxStatus CEncodingPipeline::Run()
                 }
             }
 
+            //drop output data to output file
+            //pCurrentTask->WriteBitstream();
+
+            for (fieldId = 0; fieldId < numOfFields; fieldId++)
+            {
+                mfxExtFeiPreEncMBStat* mbdata = NULL;
+                mfxExtFeiPreEncMV*     mvs    = NULL;
+                for (int i = 0; i < eTask->out.NumExtParam; i++)
+                {
+                    if (eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MB && mbstatout){
+                        mbdata = &((mfxExtFeiPreEncMBStat*)(eTask->out.ExtParam[i]))[fieldId];
+                        fwrite(mbdata->MB, sizeof(mbdata->MB[0]) * mbdata->NumMBAlloc, 1, mbstatout);
+                    }
+
+                    if (/*eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV && */mvout){
+                        if (!(frameType & MFX_FRAMETYPE_I))
+                        {
+                            if (eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV){
+                                mvs = &((mfxExtFeiPreEncMV*)(eTask->out.ExtParam[i]))[fieldId];
+                                fwrite(mvs->MB, sizeof(mvs->MB[0]) * mvs->NumMBAlloc, 1, mvout);
+                            }
+                        }
+                        else {
+                            for (int k = 0; k < numMB; k++)
+                                fwrite(tmpMBpreenc, sizeof(*tmpMBpreenc), 1, mvout);
+                        }
+                    }
+                } //for (int i = 0; i < eTask->out.NumExtParam; i++)
+            } //for (fieldId = 0; fieldId < numOfFields; fieldId++)
+
+            if(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC) {
+                ctr->FrameType = frameType;
+
+                if (!(ctr->FrameType & MFX_FRAMETYPE_I)){
+                    //repack MV predictors
+                    mfxExtFeiPreEncMV* mvs        = NULL;
+                    mfxExtFeiEncMVPredictors* mvp = NULL;
+                    bufSet* set                   = NULL;
+                    for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                    {
+                        for (int i = 0; i < eTask->out.NumExtParam; i++)
+                        {
+                            if (eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV){
+                                mvs = &((mfxExtFeiPreEncMV*)(eTask->out.ExtParam[i]))[fieldId];
+                                set = getFreeBufSet(encodeBufs);
+                                for (int j = 0; j < set->PB_bufs.in.NumExtParam; j++){
+                                    if (set->PB_bufs.in.ExtParam[j]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED){
+                                        mvp = &((mfxExtFeiEncMVPredictors*)(set->PB_bufs.in.ExtParam[j]))[fieldId];
+                                        repackPreenc2Enc(mvs->MB, mvp->MB, mvs->NumMBAlloc, tmpForMedian);
+                                    }
+                                } //for (int j; j < set->PB_bufs.in.NumExtParam; j++)
+                            }
+                        } // for (int i = 0; i < eTask->out.NumExtParam; i++)
+                    } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                    if (set){
+                        set->vacant = true;
+                    }
+                }
+            }
+
             eTask->encoded = 1;
-            if ( (mfxU32)(this->m_refDist * (twoEncoders? 4 : 2)) == inputTasks.size()) {
+            if ((mfxU32)(this->m_refDist * (twoEncoders ? 4 : 2)) == inputTasks.size()) {
+
+                if (inputTasks.front()->bufs){ // detach buffers
+                    inputTasks.front()->bufs->vacant = true;
+                    inputTasks.front()->bufs = NULL;
+                }
+                if (inputTasks.front()->preenc_bufs){
+                    inputTasks.front()->preenc_bufs->vacant = true;
+                    inputTasks.front()->preenc_bufs = NULL;
+                }
                 inputTasks.front()->in.InSurface->Data.Locked--;
                 if (twoEncoders)
                     inputTasks.front()->in.InSurface->Data.Locked--;
@@ -1740,45 +1939,15 @@ mfxStatus CEncodingPipeline::Run()
                     inputTasks.pop_front();
             }
 
-            //drop output data to output file
-            //pCurrentTask->WriteBitstream();
-
-            for (fieldId = 0; fieldId < numOfFields; fieldId++)
-            {
-                if (mbstatout)
-                    fwrite(mbdata[fieldId].MB, sizeof (mbdata[fieldId].MB[0]) * mbdata[fieldId].NumMBAlloc, 1, mbstatout);
-
-                if (mvout){
-                    if (!(eTask->frameType&MFX_FRAMETYPE_I)){
-                        fwrite(mvs[fieldId].MB, sizeof(mvs[fieldId].MB[0]) * mvs[fieldId].NumMBAlloc, 1, mvout);
-                    } else {
-                        for (int k = 0; k < numMB; k++)
-                            fwrite(tmpMBpreenc, sizeof(*tmpMBpreenc), 1, mvout);
-                    }
-                }
-            }
-
-            if(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC) {
-                ctr->FrameType = eTask->frameType;
-                //m_pEncSurfaces[nEncSurfIdx].Data.FrameOrder = eTask->frameDisplayOrder;
-                eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
-
-                if (!(ctr->FrameType & MFX_FRAMETYPE_I)){
-                    //init MV predictors
-                    for (fieldId = 0; fieldId < numOfFields; fieldId++)
-                    {
-                        repackPreenc2Enc(mvs[fieldId].MB, feiEncMVPredictors[fieldId].MB, mvs[fieldId].NumMBAlloc, tmpForMedian);
-                    }
-                }
-            }
         } // if (m_encpakParams.bPREENC)
 
         /* ENC_and_PAK or ENC only or PAK only call */
-        if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC) ){
+        if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC) )
+        {
             pSurf->Data.Locked++;
             eTask->in.InSurface    = pSurf;
             eTask->inPAK.InSurface = pSurf;
-            eTask->encoded = 0;
+            eTask->encoded         = 0;
             /* this is Recon surface which will be generated by FEI PAK*/
             pReconSurf->Data.Locked++;
             eTask->out.OutSurface = eTask->outPAK.OutSurface = pReconSurf;
@@ -1792,42 +1961,6 @@ mfxStatus CEncodingPipeline::Run()
 
             eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
             initEncFrameParams(eTask);
-
-            /* Load input Buffer for FEI ENCODE and FEI ENC */
-            for (fieldId = 0; fieldId < numOfFields; fieldId++)
-            {
-                mfxExtFeiEncMVPredictors* pMvPredBuf = NULL;
-                mfxExtFeiEncMBCtrl*       pMbEncCtrl = NULL;
-                mfxExtFeiEncQP*           pMbQP      = NULL;
-                for(int i=0; i<eTask->in.NumExtParam; i++){
-                    if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED && feiEncMVPredictors && !m_encpakParams.bPREENC){
-
-                        if (!(eTask->frameType & MFX_FRAMETYPE_I)){
-                            if (m_encpakParams.bRepackPreencMV){
-                                fread(tmpForReading, sizeof(*tmpForReading)*numMB, 1, pMvPred);
-                                repackPreenc2Enc(tmpForReading, feiEncMVPredictors[fieldId].MB, numMB, tmpForMedian);
-                            }
-                            else {
-                                pMvPredBuf = &((mfxExtFeiEncMVPredictors*)(eTask->in.ExtParam[i]))[fieldId];
-                                fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
-                            }
-                        } else {
-                            long shft = m_encpakParams.bRepackPreencMV ? sizeof(mfxExtFeiPreEncMV::mfxMB)*numMB
-                                : sizeof(mfxExtFeiEncMVPredictors::mfxMB)*numMB;
-                            fseek(pMvPred, shft, SEEK_CUR);
-                        }
-                    }
-                    if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB && feiEncMBCtrl){
-                        pMbEncCtrl = &((mfxExtFeiEncMBCtrl*)(eTask->in.ExtParam[i]))[fieldId];
-                        fread(pMbEncCtrl->MB, sizeof(pMbEncCtrl->MB[0])*pMbEncCtrl->NumMBAlloc, 1, pEncMBs);
-                    }
-                    if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP && feiEncMbQp){
-                        pMbQP = &((mfxExtFeiEncQP*)(eTask->in.ExtParam[i]))[fieldId];
-                        fseek(pPerMbQP, (frameCount-1)*pMbQP->NumQPAlloc * numOfFields + pMbQP->NumQPAlloc * fieldId, SEEK_SET);
-                        fread(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, pPerMbQP);
-                    }
-                } //
-            } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
 
             for (;;) {
                 fprintf(stderr, "frame: %d  t:%d : submit ", eTask->frameDisplayOrder, eTask->frameType);
@@ -1843,6 +1976,7 @@ mfxStatus CEncodingPipeline::Run()
                 /* In case of PAK only we need to read data from file */
                 if (m_encpakParams.bOnlyPAK)
                 {
+                    long shft = 0;
                     for (fieldId = 0; fieldId < numOfFields; fieldId++)
                     {
                         mfxExtFeiEncMV*     mvBuf     = NULL;
@@ -1850,10 +1984,14 @@ mfxStatus CEncodingPipeline::Run()
                         for(int i=0; i<eTask->inPAK.NumExtParam; i++){
                             if(eTask->inPAK.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout){
                                 mvBuf = &((mfxExtFeiEncMV*) (eTask->inPAK.ExtParam[i]))[fieldId];
+                                shft = sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc * (eTask->in.InSurface->Data.FrameOrder * numOfFields + fieldId);
+                                fseek(mvENCPAKout, shft, SEEK_SET);
                                 fread(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
                             }
                             if(eTask->inPAK.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
                                 mbcodeBuf = &((mfxExtFeiPakMBCtrl*)(eTask->inPAK.ExtParam[i])) [fieldId];
+                                shft = sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc * (eTask->in.InSurface->Data.FrameOrder * numOfFields + fieldId);
+                                fseek(mbcodeout, shft, SEEK_SET);
                                 fread(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
                             }
                         }
@@ -1883,22 +2021,6 @@ mfxStatus CEncodingPipeline::Run()
                     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_BITSTREAM);
                     break;
                 }
-            }
-
-            eTask->encoded = 1;
-            if ( (mfxU32)(this->m_refDist * (twoEncoders? 4: 2)) == inputTasks.size()) {
-                inputTasks.front()->in.InSurface->Data.Locked--;
-                if (twoEncoders)
-                    inputTasks.front()->in.InSurface->Data.Locked--;
-
-                if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK) )
-                    inputTasks.front()->outPAK.OutSurface->Data.Locked--;
-
-                delete inputTasks.front();
-                //remove prevTask
-                inputTasks.pop_front();
-                if (twoEncoders)
-                    inputTasks.pop_front();
             }
 
             //drop output data to output file
@@ -1935,73 +2057,40 @@ mfxStatus CEncodingPipeline::Run()
                     } // for(int i=0; i<eTask->out.NumExtParam; i++){
                 } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
             } // if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) )
+
+            eTask->encoded = 1;
+            if ((mfxU32)(this->m_refDist * (twoEncoders ? 4 : 2)) == inputTasks.size()) {
+
+                if (inputTasks.front()->bufs){ // detach buffers
+                    inputTasks.front()->bufs->vacant = true;
+                    inputTasks.front()->bufs = NULL;
+                }
+                if (inputTasks.front()->preenc_bufs){
+                    inputTasks.front()->preenc_bufs->vacant = true;
+                    inputTasks.front()->preenc_bufs = NULL;
+                }
+
+                inputTasks.front()->in.InSurface->Data.Locked--;
+                if (twoEncoders){
+                    inputTasks.front()->in.InSurface->Data.Locked--;
+                }
+                inputTasks.front()->outPAK.OutSurface->Data.Locked--;
+
+                delete inputTasks.front();
+                //remove prevTask
+                inputTasks.pop_front();
+                if (twoEncoders)
+                    inputTasks.pop_front();
+            }
+
         } // if (m_encpakParams.bENCPAK)
 
         if (m_encpakParams.bENCODE) {
             for (;;) {
                 // at this point surface for encoder contains either a frame from file or a frame processed by vpp
 
-                int frame_type = GetFrameType(frameCount - 1);
-                mfxFrameSurface1* encodeSurface = m_encpakParams.bPREENC ? eTask->in.InSurface : &m_pEncSurfaces[nEncSurfIdx];
-
-                /* Load input Buffer for FEI ENCODE and FEI ENC */
-                for (fieldId = 0; fieldId < numOfFields; fieldId++)
-                {
-                    mfxExtFeiEncMVPredictors* pMvPredBuf = NULL;
-                    mfxExtFeiEncMBCtrl*       pMbEncCtrl = NULL;
-                    mfxExtFeiEncQP*           pMbQP = NULL;
-                    for (int i = 0; i<numExtInParams; i++){
-                        if (inBufs[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED && feiEncMVPredictors && !m_encpakParams.bPREENC){
-
-                            if (!(frame_type & MFX_FRAMETYPE_I)){
-                                if (m_encpakParams.bRepackPreencMV){
-                                    fread(tmpForReading, sizeof(*tmpForReading)*numMB, 1, pMvPred);
-                                    repackPreenc2Enc(tmpForReading, feiEncMVPredictors[fieldId].MB, numMB, tmpForMedian);
-                                }
-                                else {
-                                    pMvPredBuf = &((mfxExtFeiEncMVPredictors*)(inBufs[i]))[fieldId];
-                                    fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
-                                }
-                            } else {
-                                long shft = m_encpakParams.bRepackPreencMV ? sizeof(mfxExtFeiPreEncMV::mfxMB)*numMB
-                                    : sizeof(mfxExtFeiEncMVPredictors::mfxMB)*numMB;
-                                fseek(pMvPred, shft, SEEK_CUR);
-                            }
-                        }
-                        if (inBufs[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB && feiEncMBCtrl){
-                            pMbEncCtrl = &((mfxExtFeiEncMBCtrl*)(inBufs[i]))[fieldId];
-                            fread(pMbEncCtrl->MB, sizeof(pMbEncCtrl->MB[0])*pMbEncCtrl->NumMBAlloc, 1, pEncMBs);
-                        }
-                        if (inBufs[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP && feiEncMbQp){
-                            pMbQP = &((mfxExtFeiEncQP*)(inBufs[i]))[fieldId];
-                            fseek(pPerMbQP, (frameCount - 1)*pMbQP->NumQPAlloc * numOfFields + pMbQP->NumQPAlloc * fieldId, SEEK_SET);
-                            fread(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, pPerMbQP);
-                        }
-                    } //
-                } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
-
-                // Add input buffers
-                if (numExtInParams > 0) {
-                    if (frame_type & MFX_FRAMETYPE_I){
-                        encodeSurface->Data.NumExtParam = numExtInParamsI;
-                        encodeSurface->Data.ExtParam = &inBufsI[0];
-                        ctr->NumExtParam = numExtInParamsI;
-                        ctr->ExtParam = &inBufsI[0];
-                        feiEncCtrl->MVPredictor = 0;
-                    }else{
-                        encodeSurface->Data.NumExtParam = numExtInParams;
-                        encodeSurface->Data.ExtParam = &inBufs[0];
-                        ctr->NumExtParam = numExtInParams;
-                        ctr->ExtParam = &inBufs[0];
-                        feiEncCtrl->MVPredictor = numExtInParams != numExtInParamsI;
-                    }
-                }
-
-                // Add output buffers
-                if (numExtOutParams > 0) {
-                    pCurrentTask->mfxBS.NumExtParam = numExtOutParams;
-                    pCurrentTask->mfxBS.ExtParam = &outBufs[0];
-                }
+                mfxFrameSurface1* encodeSurface = m_encpakParams.bPREENC ? eTask->in.InSurface : pSurf;
+                initEncodeFrameParams(encodeSurface, pCurrentTask);
 
                 sts = m_pmfxENCODE->EncodeFrameAsync(ctr, encodeSurface, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
 
@@ -2063,28 +2152,7 @@ mfxStatus CEncodingPipeline::Run()
                 iTask* eTask = findFrameToEncode();
                 if (eTask == NULL) continue; //not found frame to encode
 
-                initFrameParams(eTask);
-
-                for (fieldId = 0; fieldId < numOfFields; fieldId++)
-                {
-                    mfxExtFeiPreEncMVPredictors* pMvPredBuf = NULL;
-                    mfxExtFeiEncQP*              pMbQP      = NULL;
-                    for(int i=0; i<eTask->in.NumExtParam; i++){
-                        if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV_PRED && feiEncMVPredictors){
-                            if (!(eTask->frameType & MFX_FRAMETYPE_I)){
-                                pMvPredBuf = &((mfxExtFeiPreEncMVPredictors*)(eTask->in.ExtParam[i]))[fieldId];
-                                fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
-                            } else {
-                                fseek(pMvPred, sizeof(mfxExtFeiPreEncMVPredictors::mfxMB)*numMB, SEEK_CUR);
-                            }
-                        }
-                        if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP && feiEncMbQp){
-                            pMbQP = &((mfxExtFeiEncQP*)(eTask->in.ExtParam[i]))[fieldId];
-                            fseek(pPerMbQP, (frameCount-1)*pMbQP->NumQPAlloc * numOfFields + pMbQP->NumQPAlloc * fieldId, SEEK_SET);
-                            fread(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, pPerMbQP);
-                        }
-                    } //
-                } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+                initPreEncFrameParams(eTask);
 
                 for (;;) {
                     //Only synced operation supported for now
@@ -2117,49 +2185,60 @@ mfxStatus CEncodingPipeline::Run()
 
                 for (fieldId = 0; fieldId < numOfFields; fieldId++)
                 {
-                    if (mbstatout)
-                        fwrite(mbdata[fieldId].MB, sizeof (mbdata[fieldId].MB[0]) * mbdata[fieldId].NumMBAlloc, 1, mbstatout);
-                    if (mvout){
-                        if (!(eTask->frameType&MFX_FRAMETYPE_I)){
-                            fwrite(mvs[fieldId].MB, sizeof(mvs[fieldId].MB[0]) * mvs[fieldId].NumMBAlloc, 1, mvout);
-                        } else {
-                            for (int k = 0; k < numMB; k++)
-                                fwrite(tmpMBpreenc, sizeof(*tmpMBpreenc), 1, mvout);
+                    mfxExtFeiPreEncMBStat* mbdata = NULL;
+                    mfxExtFeiPreEncMV*     mvs = NULL;
+                    for (int i = 0; i < eTask->out.NumExtParam; i++)
+                    {
+                        if (eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MB && mbstatout){
+                            mbdata = &((mfxExtFeiPreEncMBStat*)(eTask->out.ExtParam[i]))[fieldId];
+                            fwrite(mbdata->MB, sizeof(mbdata->MB[0]) * mbdata->NumMBAlloc, 1, mbstatout);
                         }
-                    }
-                }
+
+                        if (/*eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV && */mvout){
+                            if (!(frameType & MFX_FRAMETYPE_I))
+                            {
+                                if (eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV){
+                                    mvs = &((mfxExtFeiPreEncMV*)(eTask->out.ExtParam[i]))[fieldId];
+                                    fwrite(mvs->MB, sizeof(mvs->MB[0]) * mvs->NumMBAlloc, 1, mvout);
+                                }
+                            }
+                            else {
+                                for (int k = 0; k < numMB; k++)
+                                    fwrite(tmpMBpreenc, sizeof(*tmpMBpreenc), 1, mvout);
+                            }
+                        }
+                    } //for (int i = 0; i < eTask->out.NumExtParam; i++)
+                } //for (fieldId = 0; fieldId < numOfFields; fieldId++)
 
                 //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
                 numUnencoded--;
 
                 if (m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC) {
-                    ctr->FrameType = eTask->frameType;
-                    eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
+                    ctr->FrameType = frameType;
 
                     if (!(ctr->FrameType & MFX_FRAMETYPE_I)){
-                        //init MV predictors
+                        //repack MV predictors
+                        mfxExtFeiPreEncMV* mvs        = NULL;
+                        mfxExtFeiEncMVPredictors* mvp = NULL;
+                        bufSet* set                   = NULL;
                         for (fieldId = 0; fieldId < numOfFields; fieldId++)
                         {
-                            repackPreenc2Enc(mvs[fieldId].MB, feiEncMVPredictors[fieldId].MB, mvs[fieldId].NumMBAlloc, tmpForMedian);
+                            for (int i = 0; i < eTask->out.NumExtParam; i++)
+                            {
+                                mvs = &((mfxExtFeiPreEncMV*)(eTask->out.ExtParam[i]))[fieldId];
+                                if (eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV){
+                                    set = getFreeBufSet(encodeBufs);
+                                    for (int j; j < set->PB_bufs.in.NumExtParam; j++){
+                                        if (set->PB_bufs.in.ExtParam[j]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED){
+                                            mvp = &((mfxExtFeiEncMVPredictors*)(eTask->out.ExtParam[j]))[fieldId];
+                                            repackPreenc2Enc(mvs->MB, mvp->MB, mvs->NumMBAlloc, tmpForMedian);
+                                        }
+                                    }
+                                }
+                            }
                         }
-                    }
-
-                    // correct ref window size if search window is 0
-                    if ((m_encpakParams.SearchWindow == 0) && (m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC || m_encpakParams.bENCODE)){
-                        int frame_type = eTask->frameType;
-                        for (fieldId = 0; fieldId < numOfFields; fieldId++)
-                        {
-                            feiEncCtrl[fieldId].RefHeight = m_encpakParams.RefHeight;
-                            feiEncCtrl[fieldId].RefWidth  = m_encpakParams.RefWidth;
-                            int sqr = feiEncCtrl[fieldId].RefHeight * feiEncCtrl[fieldId].RefWidth;
-                            if ((frame_type & MFX_FRAMETYPE_B) && sqr > 1024){
-                                feiEncCtrl[fieldId].RefHeight = 32;
-                                feiEncCtrl[fieldId].RefWidth  = 32;
-                            }
-                            else if ((frame_type & MFX_FRAMETYPE_P) && sqr > 2048){
-                                feiEncCtrl[fieldId].RefHeight = 32;
-                                feiEncCtrl[fieldId].RefWidth  = 64;
-                            }
+                        if (set){
+                            set->vacant = true;
                         }
                     }
                 }
@@ -2167,43 +2246,7 @@ mfxStatus CEncodingPipeline::Run()
                 if (m_encpakParams.bENCODE) { //if we have both
                     for (;;) {
 
-                        /* Load input Buffer for FEI ENCODE and FEI ENC */
-                        for (fieldId = 0; fieldId < numOfFields; fieldId++)
-                        {
-                            mfxExtFeiEncMBCtrl*       pMbEncCtrl = NULL;
-                            mfxExtFeiEncQP*           pMbQP      = NULL;
-                            for(int i=0; i<eTask->in.NumExtParam; i++){
-                                if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB && feiEncMBCtrl){
-                                    pMbEncCtrl = &((mfxExtFeiEncMBCtrl*)(eTask->in.ExtParam[i]))[fieldId];
-                                    fread(pMbEncCtrl->MB, sizeof(pMbEncCtrl->MB[0])*pMbEncCtrl->NumMBAlloc, 1, pEncMBs);
-                                }
-                                if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP && feiEncMbQp){
-                                    pMbQP = &((mfxExtFeiEncQP*)(eTask->in.ExtParam[i]))[fieldId];
-                                    fseek(pPerMbQP, (frameCount-1)*pMbQP->NumQPAlloc * numOfFields + pMbQP->NumQPAlloc * fieldId, SEEK_SET);
-                                    fread(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, pPerMbQP);
-                                }
-                            } //
-                        } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
-                        //Add output buffers
-                        if (numExtOutParams > 0) {
-                            pCurrentTask->mfxBS.NumExtParam = numExtOutParams;
-                            pCurrentTask->mfxBS.ExtParam    = &outBufs[0];
-                        }
-                        if (numExtInParams > 0) {
-                            if (ctr->FrameType & MFX_FRAMETYPE_I){
-                                eTask->in.InSurface->Data.NumExtParam = numExtInParamsI;
-                                eTask->in.InSurface->Data.ExtParam    = &inBufsI[0];
-                                ctr -> NumExtParam = numExtInParamsI;
-                                ctr -> ExtParam    = &inBufsI[0];
-                                feiEncCtrl -> MVPredictor = 0;
-                            }else {
-                                eTask->in.InSurface->Data.NumExtParam = numExtInParams;
-                                eTask->in.InSurface->Data.ExtParam    = &inBufs[0];
-                                ctr -> NumExtParam = numExtInParams;
-                                ctr -> ExtParam    = &inBufs[0];
-                                feiEncCtrl -> MVPredictor = numExtInParams != numExtInParamsI;
-                            }
-                        }
+                        initEncodeFrameParams(eTask->in.InSurface, pCurrentTask);
                         //no ctrl for buffered frames
                         //sts = m_pmfxENCODE->EncodeFrameAsync(ctr, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
                         sts = m_pmfxENCODE->EncodeFrameAsync(ctr, eTask->in.InSurface, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
@@ -2227,6 +2270,10 @@ mfxStatus CEncodingPipeline::Run()
                                 MSDK_BREAK_ON_ERROR(sts);
                                 //sts = SynchronizeFirstTask();
                                 //MSDK_BREAK_ON_ERROR(sts);
+                                while (pCurrentTask->bufs.size() != 0){
+                                    pCurrentTask->bufs.front().first->vacant = true; // false
+                                    pCurrentTask->bufs.pop_front();
+                                }
                             }
                             break;
                         }
@@ -2246,26 +2293,8 @@ mfxStatus CEncodingPipeline::Run()
                     eTask = findFrameToEncode();
                     if (eTask == NULL) continue; //not found frame to encode
 
-                    eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
+                    //eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
                     initEncFrameParams(eTask);
-
-                    /* Load input Buffer for FEI ENCODE and FEI ENC */
-                    for (fieldId = 0; fieldId < numOfFields; fieldId++)
-                    {
-                        mfxExtFeiEncMBCtrl*       pMbEncCtrl = NULL;
-                        mfxExtFeiEncQP*           pMbQP      = NULL;
-                        for(int i=0; i<eTask->in.NumExtParam; i++){
-                            if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB && feiEncMBCtrl){
-                                pMbEncCtrl = &((mfxExtFeiEncMBCtrl*)(eTask->in.ExtParam[i]))[fieldId];
-                                fread(pMbEncCtrl->MB, sizeof(pMbEncCtrl->MB[0])*pMbEncCtrl->NumMBAlloc, 1, pEncMBs);
-                            }
-                            if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP && feiEncMbQp){
-                                pMbQP = &((mfxExtFeiEncQP*)(eTask->in.ExtParam[i]))[fieldId];
-                                fseek(pPerMbQP, (frameCount-1)*pMbQP->NumQPAlloc * numOfFields + pMbQP->NumQPAlloc * fieldId, SEEK_SET);
-                                fread(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, pPerMbQP);
-                            }
-                        } //
-                    } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
 
                     for (;;) {
                         //Only synced operation supported for now
@@ -2281,6 +2310,7 @@ mfxStatus CEncodingPipeline::Run()
                         /* In case of PAK only we need to read data from file */
                         if (m_encpakParams.bOnlyPAK)
                         {
+                            long shft = 0;
                             for (fieldId = 0; fieldId < numOfFields; fieldId++)
                             {
                                 mfxExtFeiEncMV*     mvBuf     = NULL;
@@ -2288,10 +2318,14 @@ mfxStatus CEncodingPipeline::Run()
                                 for(int i=0; i<eTask->inPAK.NumExtParam; i++){
                                     if (eTask->inPAK.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout){
                                         mvBuf = &((mfxExtFeiEncMV*)(eTask->inPAK.ExtParam[i]))[fieldId];
+                                        shft = sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc * (eTask->in.InSurface->Data.FrameOrder * numOfFields + fieldId);
+                                        fseek(mvENCPAKout, shft, SEEK_SET);
                                         fread(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
                                     }
                                     if (eTask->inPAK.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
                                         mbcodeBuf = &((mfxExtFeiPakMBCtrl*)(eTask->inPAK.ExtParam[i]))[fieldId];
+                                        shft = sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc * (eTask->in.InSurface->Data.FrameOrder * numOfFields + fieldId);
+                                        fseek(mbcodeout, shft, SEEK_SET);
                                         fread(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
                                     }
                                 }
@@ -2421,61 +2455,6 @@ mfxStatus CEncodingPipeline::Run()
                 eTask->in.InSurface->Data.FrameOrder = eTask->frameDisplayOrder;
                 initEncFrameParams(eTask);
 
-                /* Load input Buffer for FEI ENCODE and FEI ENC */
-                for (fieldId = 0; fieldId < numOfFields; fieldId++)
-                {
-                    mfxExtFeiEncMVPredictors* pMvPredBuf = NULL;
-                    mfxExtFeiEncMBCtrl*       pMbEncCtrl = NULL;
-                    mfxExtFeiEncQP*           pMbQP      = NULL;
-                    for(int i=0; i<eTask->in.NumExtParam; i++){
-                        if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED && feiEncMVPredictors){
-
-                            if (!(eTask->frameType & MFX_FRAMETYPE_I)){
-                                if (m_encpakParams.bRepackPreencMV){
-                                    fread(tmpForReading, sizeof(*tmpForReading)*numMB, 1, pMvPred);
-                                    repackPreenc2Enc(tmpForReading, feiEncMVPredictors[fieldId].MB, numMB, tmpForMedian);
-                                }
-                                else {
-                                    pMvPredBuf = &((mfxExtFeiEncMVPredictors*)(eTask->in.ExtParam[i]))[fieldId];
-                                    fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
-                                }
-                            }else {
-                                long shft = m_encpakParams.bRepackPreencMV ? sizeof(mfxExtFeiPreEncMV::mfxMB)*numMB
-                                    : sizeof(mfxExtFeiEncMVPredictors::mfxMB)*numMB;
-                                fseek(pMvPred, shft, SEEK_CUR);
-                            }
-                        }
-                        if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB && feiEncMBCtrl){
-                            pMbEncCtrl = &((mfxExtFeiEncMBCtrl*)(eTask->in.ExtParam[i]))[fieldId];
-                            fread(pMbEncCtrl->MB, sizeof(pMbEncCtrl->MB[0])*pMbEncCtrl->NumMBAlloc, 1, pEncMBs);
-                        }
-                        if(eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP && feiEncMbQp){
-                            pMbQP = &((mfxExtFeiEncQP*)(eTask->in.ExtParam[i]))[fieldId];
-                            fseek(pPerMbQP, (frameCount-1)*pMbQP->NumQPAlloc * numOfFields + pMbQP->NumQPAlloc * fieldId, SEEK_SET);
-                            fread(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, pPerMbQP);
-                        }
-                    } //
-                } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
-
-                // correct ref window size if search window is 0
-                if ((m_encpakParams.SearchWindow == 0) && (m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC)){
-                    int frame_type = eTask->frameType;
-                    for (fieldId = 0; fieldId < numOfFields; fieldId++)
-                    {
-                        feiEncCtrl[fieldId].RefHeight = m_encpakParams.RefHeight;
-                        feiEncCtrl[fieldId].RefWidth  = m_encpakParams.RefWidth;
-                        int sqr = feiEncCtrl[fieldId].RefHeight * feiEncCtrl[fieldId].RefWidth;
-                        if ((frame_type & MFX_FRAMETYPE_B) && sqr > 1024){
-                            feiEncCtrl[fieldId].RefHeight = 32;
-                            feiEncCtrl[fieldId].RefWidth  = 32;
-                        }
-                        else if ((frame_type & MFX_FRAMETYPE_P) && sqr > 2048){
-                            feiEncCtrl[fieldId].RefHeight = 32;
-                            feiEncCtrl[fieldId].RefWidth  = 64;
-                        }
-                    }
-                }
-
                 for (;;) {
                     //Only synced operation supported for now
                     if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC) )
@@ -2490,6 +2469,7 @@ mfxStatus CEncodingPipeline::Run()
                     /* In case of PAK only we need to read data from file */
                     if (m_encpakParams.bOnlyPAK)
                     {
+                        long shft = 0;
                         for (fieldId = 0; fieldId < numOfFields; fieldId++)
                         {
                             mfxExtFeiEncMV*     mvBuf     = NULL;
@@ -2497,10 +2477,14 @@ mfxStatus CEncodingPipeline::Run()
                             for(int i=0; i<eTask->inPAK.NumExtParam; i++){
                                 if(eTask->inPAK.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout){
                                     mvBuf = &((mfxExtFeiEncMV*)(eTask->inPAK.ExtParam[i]))[fieldId];
+                                    shft = sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc * (eTask->in.InSurface->Data.FrameOrder * numOfFields + fieldId);
+                                    fseek(mvENCPAKout, shft, SEEK_SET);
                                     fread(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
                                 }
                                 if(eTask->inPAK.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
                                     mbcodeBuf = &((mfxExtFeiPakMBCtrl*)(eTask->inPAK.ExtParam[i]))[fieldId];
+                                    shft = sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc * (eTask->in.InSurface->Data.FrameOrder * numOfFields + fieldId);
+                                    fseek(mbcodeout, shft, SEEK_SET);
                                     fread(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
                                 }
                             } //
@@ -2595,9 +2579,10 @@ mfxStatus CEncodingPipeline::Run()
 
             for (;;) {
                 //Add output buffers
-                if (numExtOutParams > 0) {
-                    pCurrentTask->mfxBS.NumExtParam = numExtOutParams;
-                    pCurrentTask->mfxBS.ExtParam    = &outBufs[0];
+                bufSet* encode_IOBufs = getFreeBufSet(encodeBufs);
+                if (encode_IOBufs->PB_bufs.out.NumExtParam > 0){
+                    pCurrentTask->mfxBS.NumExtParam = encode_IOBufs->PB_bufs.out.NumExtParam;
+                    pCurrentTask->mfxBS.ExtParam    = encode_IOBufs->PB_bufs.out.ExtParam;
                 }
                 //no ctrl for buffered frames
                 sts = m_pmfxENCODE->EncodeFrameAsync(ctr, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
@@ -2608,6 +2593,7 @@ mfxStatus CEncodingPipeline::Run()
                         MSDK_SLEEP(1); // wait if device is busy
                 } else if (MFX_ERR_NONE < sts && pCurrentTask->EncSyncP) {
                     sts = MFX_ERR_NONE; // ignore warnings if output is available
+                    encode_IOBufs->vacant = true;
                     break;
                 } else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
                     sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
@@ -2620,6 +2606,7 @@ mfxStatus CEncodingPipeline::Run()
                         sts = m_mfxSession.SyncOperation(pCurrentTask->EncSyncP, MSDK_WAIT_INTERVAL);
                         MSDK_BREAK_ON_ERROR(sts);
                     }
+                    encode_IOBufs->vacant = true;
                     break;
                 }
             }
@@ -2659,84 +2646,24 @@ mfxStatus CEncodingPipeline::Run()
 
     if (m_encpakParams.bPREENC)
     {
-        for (fieldId = 0; fieldId < numOfFields; fieldId++)
-        {
-            if ((preENCCtr[fieldId].MVPredictor) && (NULL != mvPreds[fieldId].MB))
-            {
-                delete (mvPreds[fieldId].MB);
-                mvPreds[fieldId].MB = NULL;
-            }
+        freeBuffers(preencBufs);
 
-            if ((preENCCtr[fieldId].MBQp) && (NULL != qps[fieldId].QP))
-            {
-                delete (qps[fieldId].QP);
-                qps[fieldId].QP = NULL;
-            }
-
-            if ((!preENCCtr[fieldId].DisableMVOutput) && (NULL != mvs[fieldId].MB))
-            {
-                delete (mvs[fieldId].MB);
-                mvs[fieldId].MB = NULL;
-            }
-
-            if ((!preENCCtr[fieldId].DisableStatisticsOutput) && (NULL != mbdata[fieldId].MB))
-            {
-                delete (mbdata[fieldId].MB);
-                mbdata[fieldId].MB = NULL;
-            }
-        }
         if (NULL != tmpMBpreenc){
             delete tmpMBpreenc;
             tmpMBpreenc = NULL;
         }
     } //if (m_encpakParams.bPREENC)
 
-
     if ((m_encpakParams.bENCODE)  || (m_encpakParams.bENCPAK)||
         (m_encpakParams.bOnlyPAK) || (m_encpakParams.bOnlyENC) )
     {
-        for (fieldId = 0; fieldId < numOfFields; fieldId++)
-        {
-            if (NULL != feiEncMVPredictors[fieldId].MB)
-            {
-                delete (feiEncMVPredictors[fieldId].MB);
-                feiEncMVPredictors[fieldId].MB =NULL;
-            }
-            if (NULL != feiEncMBCtrl[fieldId].MB)
-            {
-                delete(feiEncMBCtrl[fieldId].MB);
-                feiEncMBCtrl[fieldId].MB = NULL;
-            }
+        freeBuffers(encodeBufs);
 
-            if (NULL != feiEncMbQp[fieldId].QP)
-            {
-                delete (feiEncMbQp[fieldId].QP);
-                feiEncMbQp[fieldId].QP = NULL;
-            }
+        if (NULL != ctr){
+            delete ctr;
+            ctr = NULL;
+        }
 
-            if(NULL != feiEncMbStat[fieldId].MB)
-            {
-                delete (feiEncMbStat[fieldId].MB);
-                feiEncMbStat[fieldId].MB = NULL;
-            }
-            if(NULL != feiEncMV[fieldId].MB)
-            {
-                delete (feiEncMV[fieldId].MB);
-                feiEncMV[fieldId].MB = NULL;
-            }
-
-            if(NULL != feiEncMBCode[fieldId].MB)
-            {
-                delete(feiEncMBCode[fieldId].MB);
-                feiEncMBCode[fieldId].MB = NULL;
-            }
-
-            if (NULL != m_feiSliceHeader[fieldId].Slice)
-            {
-                delete m_feiSliceHeader[fieldId].Slice;
-                m_feiSliceHeader[fieldId].Slice = NULL;
-            }
-        } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
         if (NULL != tmpForMedian){
             delete [] tmpForMedian;
             tmpForMedian = NULL;
@@ -2912,131 +2839,159 @@ iTask* CEncodingPipeline::findFrameToEncode() {
     return *encTask;
 }
 
-void CEncodingPipeline::initFrameParams(iTask* eTask) {
+void CEncodingPipeline::initPreEncFrameParams(iTask* eTask)
+{
+    mfxExtFeiPreEncMVPredictors* pMvPredBuf = NULL;
+    mfxExtFeiEncQP*              pMbQP      = NULL;
+    mfxExtFeiPreEncCtrl*         preENCCtr  = NULL;
 
-    mfxU32 fieldId = 0, numOfFields = 1;
-    preENCCtr[0].DisableMVOutput = disableMVoutPreENC;
-    preENCCtr[1].DisableMVOutput = disableMVoutPreENC;
-    preENCCtr[0].DisableStatisticsOutput = disableMBStatPreENC;
-    preENCCtr[1].DisableStatisticsOutput = disableMBStatPreENC;
+    long shft = 0;
 
-    if ( (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
-         (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF) )
-    {
-        numOfFields = 2;
-    }
+    eTask->preenc_bufs = getFreeBufSet(preencBufs);
 
-    for (fieldId = 0; fieldId < numOfFields; fieldId++)
+    for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
     {
         switch (eTask->frameType & MFX_FRAMETYPE_IPB) {
             case MFX_FRAMETYPE_I:
-                eTask->in.NumFrameL0 = 0; //1;  //just workaround to support I frames
+                eTask->in.NumFrameL0 = 0;
                 eTask->in.NumFrameL1 = 0;
-                eTask->in.L0Surface = eTask->in.L1Surface = NULL; //eTask->in.InSurface;
+                eTask->in.L0Surface = eTask->in.L1Surface = NULL;
                 //in data
-                eTask->in.NumExtParam = numExtInParamsPreEnc;
-                eTask->in.ExtParam = inBufsPreEnc;
+                eTask->in.NumExtParam = eTask->preenc_bufs->I_bufs.in.NumExtParam;
+                eTask->in.ExtParam    = eTask->preenc_bufs->I_bufs.in.ExtParam;
                 //out data
                 //exclude MV output from output buffers
-                if (preENCCtr[fieldId].DisableStatisticsOutput) {
-                    eTask->out.NumExtParam = 0;
-                    eTask->out.ExtParam    = NULL;
-                } else {
-                    eTask->out.NumExtParam = 1;
-                    eTask->out.ExtParam    = outBufsPreEncI;
-                }
-
-                preENCCtr[fieldId].DisableMVOutput = 1;
+                eTask->out.NumExtParam = eTask->preenc_bufs->I_bufs.out.NumExtParam;
+                eTask->out.ExtParam    = eTask->preenc_bufs->I_bufs.out.ExtParam;
                 break;
+
             case MFX_FRAMETYPE_P:
                 eTask->in.NumFrameL0 = 1;
                 eTask->in.NumFrameL1 = 0;
                 eTask->in.L0Surface = &eTask->prevTask->in.InSurface;
                 eTask->in.L1Surface = NULL;
                 //in data
-                eTask->in.NumExtParam = numExtInParamsPreEnc;
-                eTask->in.ExtParam    = inBufsPreEnc;
+                eTask->in.NumExtParam = eTask->preenc_bufs->PB_bufs.in.NumExtParam;
+                eTask->in.ExtParam    = eTask->preenc_bufs->PB_bufs.in.ExtParam;
                 //out data
-                eTask->out.NumExtParam = numExtOutParamsPreEnc;
-                eTask->out.ExtParam    = outBufsPreEnc;
+                eTask->out.NumExtParam = eTask->preenc_bufs->PB_bufs.out.NumExtParam;
+                eTask->out.ExtParam    = eTask->preenc_bufs->PB_bufs.out.ExtParam;
                 break;
+
             case MFX_FRAMETYPE_B:
                 eTask->in.NumFrameL0 = 1;
                 eTask->in.NumFrameL1 = 1;
                 eTask->in.L0Surface = &eTask->prevTask->in.InSurface;
                 eTask->in.L1Surface = &eTask->nextTask->in.InSurface;
                 //in data
-                eTask->in.NumExtParam = numExtInParamsPreEnc;
-                eTask->in.ExtParam    = inBufsPreEnc;
+                eTask->in.NumExtParam = eTask->preenc_bufs->PB_bufs.in.NumExtParam;
+                eTask->in.ExtParam    = eTask->preenc_bufs->PB_bufs.in.ExtParam;
                 //out data
-                eTask->out.NumExtParam = numExtOutParamsPreEnc;
-                eTask->out.ExtParam    = outBufsPreEnc;
+                eTask->out.NumExtParam = eTask->preenc_bufs->PB_bufs.out.NumExtParam;
+                eTask->out.ExtParam    = eTask->preenc_bufs->PB_bufs.out.ExtParam;
                 break;
         }
-    }
+
+        for (int i = 0; i<eTask->in.NumExtParam; i++)
+        {
+            if (eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_CTRL){
+                preENCCtr = &((mfxExtFeiPreEncCtrl*)(eTask->in.ExtParam[i]))[fieldId];
+                preENCCtr->DisableMVOutput = (eTask->frameType & MFX_FRAMETYPE_I) ? 1 : disableMVoutPreENC;
+            }
+            if (eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV_PRED && !(eTask->frameType & MFX_FRAMETYPE_I))
+            {
+                pMvPredBuf = &((mfxExtFeiPreEncMVPredictors*)(eTask->in.ExtParam[i]))[fieldId];
+                shft = sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc * (eTask->in.InSurface->Data.FrameOrder * numOfFields + fieldId);
+                fseek(pMvPred, shft, SEEK_SET);
+                fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
+            }
+            if (eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP)
+            {
+                pMbQP = &((mfxExtFeiEncQP*)(eTask->in.ExtParam[i]))[fieldId];
+                shft = pMbQP->NumQPAlloc * (eTask->in.InSurface->Data.FrameOrder * numOfFields + fieldId);
+                fseek(pPerMbQP, shft, SEEK_SET);
+                fread(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, pPerMbQP);
+            }
+        } // for (int i = 0; i<eTask->in.NumExtParam; i++)
+    } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+
     mdprintf(stderr, "enc: %d t: %d\n", eTask->frameDisplayOrder, (eTask->frameType& MFX_FRAMETYPE_IPB));
 }
 
-void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
+void CEncodingPipeline::initEncFrameParams(iTask* eTask)
+{
+    mfxExtFeiEncMVPredictors* pMvPredBuf = NULL;
+    mfxExtFeiEncMBCtrl*       pMbEncCtrl = NULL;
+    mfxExtFeiEncQP*           pMbQP      = NULL;
+    mfxExtFeiSPS*             m_feiSPS   = NULL;
+    mfxExtFeiPPS*             m_feiPPS   = NULL;
+    mfxExtFeiEncFrameCtrl*    feiEncCtrl = NULL;
 
-    mfxU32 fieldId = 0, numOfFields = 1;
+    long shft = 0;
 
-    if ( (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
-         (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF) )
+    eTask->bufs = getFreeBufSet(encodeBufs);
+
+    for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
     {
-        numOfFields = 2;
-    }
-
-    for (fieldId = 0; fieldId < numOfFields; fieldId++)
-    {
+        if (m_encpakParams.bPassHeaders)
+        {
+            for (int i = 0; i < eTask->in.NumExtParam; i++)
+            {
+                if (eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PPS)
+                {
+                    m_feiPPS = &((mfxExtFeiPPS*)(eTask->in.ExtParam[i]))[fieldId];
+                }
+                if (eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_SPS)
+                {
+                    m_feiSPS = (mfxExtFeiSPS*)(eTask->in.ExtParam[i]);
+                }
+            }
+        }
         switch (eTask->frameType & MFX_FRAMETYPE_IPB) {
             case MFX_FRAMETYPE_I:
                 /* ENC data */
                 if (m_pmfxENC)
                 {
-                    eTask->in.NumFrameL0 = 0; //1;  //just workaround to support I frames
-                    eTask->in.NumFrameL1 = 0;
-                    eTask->in.L0Surface = eTask->in.L1Surface = NULL; //eTask->in.InSurface;
-                    eTask->in.NumExtParam = numExtInParams;
-                    eTask->in.ExtParam = inBufs;
-                    eTask->out.NumExtParam = numExtOutParams;
-                    eTask->out.ExtParam = outBufs;
+                    eTask->in.NumFrameL0 = eTask->in.NumFrameL1 = 0;
+                    eTask->in.L0Surface = eTask->in.L1Surface = NULL;
+                    eTask->in.NumExtParam = eTask->bufs->I_bufs.in.NumExtParam;
+                    eTask->in.ExtParam    = eTask->bufs->I_bufs.in.ExtParam;
+                    eTask->out.NumExtParam = eTask->bufs->I_bufs.out.NumExtParam;
+                    eTask->out.ExtParam    = eTask->bufs->I_bufs.out.ExtParam;
                 }
                 /* PAK data */
                 if (m_pmfxPAK)
                 {
                     eTask->inPAK.NumFrameL0 = eTask->inPAK.NumFrameL1 = 0;
                     eTask->inPAK.L0Surface = eTask->inPAK.L1Surface = NULL;
-                    /*insert SPS if we have IDR frame */
-                    //if (eTask->frameType & MFX_FRAMETYPE_IDR)
-
-                    eTask->inPAK.NumExtParam = numExtOutParams;
-                    eTask->inPAK.ExtParam = outBufs;
-                    eTask->outPAK.NumExtParam = numExtInParams;
-                    eTask->outPAK.ExtParam = inBufs;
+                    eTask->inPAK.NumExtParam = eTask->bufs->I_bufs.out.NumExtParam;
+                    eTask->inPAK.ExtParam    = eTask->bufs->I_bufs.out.ExtParam;
+                    eTask->outPAK.NumExtParam = eTask->bufs->I_bufs.in.NumExtParam;
+                    eTask->outPAK.ExtParam    = eTask->bufs->I_bufs.in.ExtParam;
                 }
                 /* Process SPS, and PPS only*/
                 if (m_encpakParams.bPassHeaders)
                 {
-                    m_feiPPS[fieldId].NumRefIdxL0Active = 0;
-                    m_feiPPS[fieldId].NumRefIdxL1Active = 0;
+                    m_feiPPS->NumRefIdxL0Active = 0;
+                    m_feiPPS->NumRefIdxL1Active = 0;
                     /*I is always reference */
-                    m_feiPPS[fieldId].ReferencePicFlag = 1;
+                    m_feiPPS->ReferencePicFlag = 1;
                     if (eTask->frameType & MFX_FRAMETYPE_IDR)
                     {
-                        m_feiPPS[fieldId].IDRPicFlag = 1;
-                        m_feiPPS[fieldId].FrameNum = 0;
-                        m_feiSPS.Pack = 1;
+                        m_feiPPS->IDRPicFlag = 1;
+                        m_feiPPS->FrameNum = 0;
+                        m_feiSPS->Pack = 1;
                         m_refFrameCounter = 1;
                     }
                     else
                     {
-                        m_feiPPS[fieldId].IDRPicFlag = 0;
-                        m_feiPPS[fieldId].FrameNum = m_refFrameCounter++;
-                        m_feiSPS.Pack = 0;
+                        m_feiPPS->IDRPicFlag = 0;
+                        m_feiPPS->FrameNum = m_refFrameCounter++;
+                        m_feiSPS->Pack = 0;
                     }
                 }
                 break;
+
             case MFX_FRAMETYPE_P:
                 if (m_pmfxENC)
                 {
@@ -3044,10 +2999,10 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
                     eTask->in.NumFrameL1 = 0;
                     eTask->in.L0Surface = &eTask->prevTask->out.OutSurface;
                     eTask->in.L1Surface = NULL;
-                    eTask->in.NumExtParam = numExtInParams;
-                    eTask->in.ExtParam    = inBufs;
-                    eTask->out.NumExtParam = numExtOutParams;
-                    eTask->out.ExtParam    = outBufs;
+                    eTask->in.NumExtParam = eTask->bufs->PB_bufs.in.NumExtParam;
+                    eTask->in.ExtParam    = eTask->bufs->PB_bufs.in.ExtParam;
+                    eTask->out.NumExtParam = eTask->bufs->PB_bufs.out.NumExtParam;
+                    eTask->out.ExtParam    = eTask->bufs->PB_bufs.out.ExtParam;
                 }
 
                 if (m_pmfxPAK)
@@ -3056,32 +3011,28 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
                     eTask->inPAK.NumFrameL1 = 0;
                     eTask->inPAK.L0Surface = &eTask->prevTask->outPAK.OutSurface;
                     eTask->inPAK.L1Surface = NULL;
-                    eTask->inPAK.NumExtParam = numExtOutParams;
-                    eTask->inPAK.ExtParam    = outBufs;
-                    eTask->outPAK.NumExtParam = numExtInParams;
-                    eTask->outPAK.ExtParam    = inBufs;
+                    eTask->inPAK.NumExtParam = eTask->bufs->PB_bufs.out.NumExtParam;
+                    eTask->inPAK.ExtParam    = eTask->bufs->PB_bufs.out.ExtParam;
+                    eTask->outPAK.NumExtParam = eTask->bufs->PB_bufs.in.NumExtParam;
+                    eTask->outPAK.ExtParam    = eTask->bufs->PB_bufs.in.ExtParam;
                 }
 
                 /* PPS only */
                 if (m_encpakParams.bPassHeaders)
                 {
-                    m_feiSPS.Pack = 0;
-                    m_feiPPS[fieldId].IDRPicFlag = 0;
-                    m_feiPPS[fieldId].NumRefIdxL0Active = eTask->in.NumFrameL0;
-                    m_feiPPS[fieldId].NumRefIdxL1Active = 0;
-                    m_feiPPS[fieldId].ReferencePicFlag = 1;
-                    if (eTask->frameType & MFX_FRAMETYPE_REF)
-                        m_feiPPS[fieldId].ReferencePicFlag = 1;
-                    else
-                        m_feiPPS[fieldId].ReferencePicFlag = 0;
+                    m_feiSPS->Pack = 0;
+                    m_feiPPS->IDRPicFlag = 0;
+                    m_feiPPS->NumRefIdxL0Active = eTask->in.NumFrameL0;
+                    m_feiPPS->NumRefIdxL1Active = 0;
+                    m_feiPPS->ReferencePicFlag = (eTask->frameType & MFX_FRAMETYPE_REF) ? 1 : 0;
 
                     if (eTask->prevTask->frameType & MFX_FRAMETYPE_REF)
                     {
-                        m_feiPPS[fieldId].FrameNum = m_refFrameCounter++;
+                        m_feiPPS->FrameNum = m_refFrameCounter++;
                     }
                 }
-
                 break;
+
             case MFX_FRAMETYPE_B:
                 if (m_pmfxENC)
                 {
@@ -3089,37 +3040,379 @@ void CEncodingPipeline::initEncFrameParams(iTask* eTask) {
                     eTask->in.NumFrameL1 = 1;
                     eTask->in.L0Surface = &eTask->prevTask->out.OutSurface;
                     eTask->in.L1Surface = &eTask->nextTask->out.OutSurface;
-                    eTask->in.NumExtParam = numExtInParams;
-                    eTask->in.ExtParam    = inBufs;
-                    eTask->out.NumExtParam = numExtOutParams;
-                    eTask->out.ExtParam    = outBufs;
+                    eTask->in.NumExtParam = eTask->bufs->PB_bufs.in.NumExtParam;
+                    eTask->in.ExtParam    = eTask->bufs->PB_bufs.in.ExtParam;
+                    eTask->out.NumExtParam = eTask->bufs->PB_bufs.out.NumExtParam;
+                    eTask->out.ExtParam    = eTask->bufs->PB_bufs.out.ExtParam;
                 }
+
                 if (m_pmfxPAK)
                 {
                     eTask->inPAK.NumFrameL0 = 1;
                     eTask->inPAK.NumFrameL1 = 1;
                     eTask->inPAK.L0Surface = &eTask->prevTask->outPAK.OutSurface;
                     eTask->inPAK.L1Surface = &eTask->nextTask->outPAK.OutSurface;
-                    eTask->inPAK.NumExtParam = numExtOutParams;
-                    eTask->inPAK.ExtParam    = outBufs;
-                    eTask->outPAK.NumExtParam = numExtInParams;
-                    eTask->outPAK.ExtParam    = inBufs;
+                    eTask->inPAK.NumExtParam = eTask->bufs->PB_bufs.out.NumExtParam;
+                    eTask->inPAK.ExtParam    = eTask->bufs->PB_bufs.out.ExtParam;
+                    eTask->outPAK.NumExtParam = eTask->bufs->PB_bufs.in.NumExtParam;
+                    eTask->outPAK.ExtParam    = eTask->bufs->PB_bufs.in.ExtParam;
                 }
 
                 /* PPS only */
                 if (m_encpakParams.bPassHeaders)
                 {
-                    m_feiSPS.Pack = 0;
-                    m_feiPPS[fieldId].IDRPicFlag = 0;
-                    m_feiPPS[fieldId].NumRefIdxL0Active = eTask->in.NumFrameL0;
-                    m_feiPPS[fieldId].NumRefIdxL1Active = eTask->in.NumFrameL1;
-                    m_feiPPS[fieldId].ReferencePicFlag = 0;
-                    m_feiPPS[fieldId].IDRPicFlag = 0;
-                    m_feiPPS[fieldId].FrameNum = m_refFrameCounter;
+                    m_feiSPS->Pack = 0;
+                    m_feiPPS->IDRPicFlag = 0;
+                    m_feiPPS->NumRefIdxL0Active = eTask->in.NumFrameL0;
+                    m_feiPPS->NumRefIdxL1Active = eTask->in.NumFrameL1;
+                    m_feiPPS->ReferencePicFlag = 0;
+                    m_feiPPS->IDRPicFlag = 0;
+                    m_feiPPS->FrameNum = m_refFrameCounter;
                 }
-
                 break;
         }
-    }
+
+        for (int i = 0; i<eTask->in.NumExtParam; i++)
+        {
+            if (eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_CTRL)
+            {
+                feiEncCtrl = &((mfxExtFeiEncFrameCtrl*)(eTask->in.ExtParam[i]))[fieldId];
+
+                feiEncCtrl->MVPredictor = (eTask->frameType&MFX_FRAMETYPE_I) ? 0 : (m_encpakParams.mvinFile != NULL) || m_encpakParams.bPREENC;
+
+                // adjust ref window size if search window is 0
+                if (m_encpakParams.SearchWindow == 0 && m_pmfxENC)
+                {
+                    // window size is limited to 1024 for bi-prediction
+                    if ((eTask->frameType & MFX_FRAMETYPE_B) && m_encpakParams.RefHeight * m_encpakParams.RefWidth > 1024)
+                    {
+                        feiEncCtrl->RefHeight = 32;
+                        feiEncCtrl->RefWidth  = 32;
+                    }
+                    else{
+                        feiEncCtrl->RefHeight = m_encpakParams.RefHeight;
+                        feiEncCtrl->RefWidth  = m_encpakParams.RefWidth;
+                    }
+                }
+            }
+
+            if (eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED && !m_encpakParams.bPREENC && !(eTask->frameType & MFX_FRAMETYPE_I))
+            {
+                pMvPredBuf = &((mfxExtFeiEncMVPredictors*)(eTask->in.ExtParam[i]))[fieldId];
+                if (m_encpakParams.bRepackPreencMV)
+                {
+                    shft = sizeof(*tmpForReading)*numMB * (eTask->in.InSurface->Data.FrameOrder * numOfFields + fieldId);
+                    fseek(pMvPred, shft, SEEK_SET);
+                    fread(tmpForReading, sizeof(*tmpForReading)*numMB, 1, pMvPred);
+                    repackPreenc2Enc(tmpForReading, pMvPredBuf->MB, numMB, tmpForMedian);
+                }
+                else {
+                    shft = sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc * (eTask->in.InSurface->Data.FrameOrder * numOfFields + fieldId);
+                    fseek(pMvPred, shft, SEEK_SET);
+                    fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
+                }
+            }
+
+            if (eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB)
+            {
+                pMbEncCtrl = &((mfxExtFeiEncMBCtrl*)(eTask->in.ExtParam[i]))[fieldId];
+                shft = sizeof(pMbEncCtrl->MB[0])*pMbEncCtrl->NumMBAlloc * (eTask->in.InSurface->Data.FrameOrder * numOfFields + fieldId);
+                fseek(pEncMBs, shft, SEEK_SET);
+                fread(pMbEncCtrl->MB, sizeof(pMbEncCtrl->MB[0])*pMbEncCtrl->NumMBAlloc, 1, pEncMBs);
+            }
+
+            if (eTask->in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP)
+            {
+                pMbQP = &((mfxExtFeiEncQP*)(eTask->in.ExtParam[i]))[fieldId];
+                shft = pMbQP->NumQPAlloc * (eTask->in.InSurface->Data.FrameOrder * numOfFields + fieldId);
+                fseek(pPerMbQP, shft, SEEK_SET);
+                fread(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, pPerMbQP);
+            }
+        } // for (int i = 0; i<eTask->in.NumExtParam; i++)
+    } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+
     mdprintf(stderr, "enc: %d t: %d\n", eTask->frameDisplayOrder, (eTask->frameType& MFX_FRAMETYPE_IPB));
+}
+
+void CEncodingPipeline::initEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask)
+{
+    long shft = 0;
+
+    bufSet * freeSet = getFreeBufSet(encodeBufs);
+    pCurrentTask->bufs.push_back(std::pair<bufSet*, mfxFrameSurface1*>(freeSet, encodeSurface));
+
+    /* Load input Buffer for FEI ENCODE */
+    for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
+    {
+        mfxExtFeiEncMVPredictors* pMvPredBuf = NULL;
+        mfxExtFeiEncMBCtrl*       pMbEncCtrl = NULL;
+        mfxExtFeiEncQP*           pMbQP      = NULL;
+        mfxExtFeiEncFrameCtrl*    feiEncCtrl = NULL;
+
+        for (int i = 0; i<freeSet->PB_bufs.in.NumExtParam; i++)
+        {
+            if (freeSet->PB_bufs.in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED && !m_encpakParams.bPREENC && !(pCurrentTask->mfxBS.FrameType & MFX_FRAMETYPE_I))
+            {
+                pMvPredBuf = &((mfxExtFeiEncMVPredictors*)(freeSet->PB_bufs.in.ExtParam[i]))[fieldId];
+                if (m_encpakParams.bRepackPreencMV)
+                {
+                    shft = sizeof(*tmpForReading)*numMB * (encodeSurface->Data.FrameOrder * numOfFields + fieldId);
+                    fseek(pMvPred, shft, SEEK_SET);
+                    fread(tmpForReading, sizeof(*tmpForReading)*numMB, 1, pMvPred);
+                    repackPreenc2Enc(tmpForReading, pMvPredBuf->MB, numMB, tmpForMedian);
+                }
+                else {
+                    shft = sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc * (encodeSurface->Data.FrameOrder * numOfFields + fieldId);
+                    fseek(pMvPred, shft, SEEK_SET);
+                    fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
+                }
+            }
+
+            if (freeSet->PB_bufs.in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB)
+            {
+                pMbEncCtrl = &((mfxExtFeiEncMBCtrl*)(freeSet->PB_bufs.in.ExtParam[i]))[fieldId];
+                shft = sizeof(pMbEncCtrl->MB[0])*pMbEncCtrl->NumMBAlloc * (encodeSurface->Data.FrameOrder * numOfFields + fieldId);
+                fseek(pEncMBs, shft, SEEK_SET);
+                fread(pMbEncCtrl->MB, sizeof(pMbEncCtrl->MB[0])*pMbEncCtrl->NumMBAlloc, 1, pEncMBs);
+            }
+
+            if (freeSet->PB_bufs.in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP)
+            {
+                pMbQP = &((mfxExtFeiEncQP*)(freeSet->PB_bufs.in.ExtParam[i]))[fieldId];
+                shft = pMbQP->NumQPAlloc * (encodeSurface->Data.FrameOrder * numOfFields + fieldId);
+                fseek(pPerMbQP, shft, SEEK_SET);
+                fread(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, pPerMbQP);
+            }
+
+            if (freeSet->PB_bufs.in.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_CTRL)
+            {
+                feiEncCtrl = &((mfxExtFeiEncFrameCtrl*)(freeSet->PB_bufs.in.ExtParam[i]))[fieldId];
+
+                // adjust ref window size if search window is 0
+                if (m_encpakParams.SearchWindow == 0)
+                {
+                    if ((pCurrentTask->mfxBS.FrameType & MFX_FRAMETYPE_B) && m_encpakParams.RefHeight * m_encpakParams.RefWidth > 1024)
+                    {
+                        feiEncCtrl->RefHeight = 32;
+                        feiEncCtrl->RefWidth  = 32;
+                    }
+                    else{
+                        feiEncCtrl->RefHeight = m_encpakParams.RefHeight;
+                        feiEncCtrl->RefWidth  = m_encpakParams.RefWidth;
+                    }
+                }
+
+                feiEncCtrl->MVPredictor = (pCurrentTask->mfxBS.FrameType & MFX_FRAMETYPE_I) ? 0 : freeSet->PB_bufs.in.NumExtParam != freeSet->I_bufs.in.NumExtParam;
+            }
+        } // for (int i = 0; i<freeSet->PB_bufs.in.NumExtParam; i++)
+
+    } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+
+    // Add input buffers
+    if (freeSet->PB_bufs.in.NumExtParam > 0) {
+        if (pCurrentTask->mfxBS.FrameType & MFX_FRAMETYPE_I){
+            encodeSurface->Data.NumExtParam = freeSet->I_bufs.in.NumExtParam;
+            encodeSurface->Data.ExtParam    = freeSet->I_bufs.in.ExtParam;
+            ctr->NumExtParam = freeSet->I_bufs.in.NumExtParam;
+            ctr->ExtParam    = freeSet->I_bufs.in.ExtParam;
+        }
+        else
+        {
+            encodeSurface->Data.NumExtParam = freeSet->PB_bufs.in.NumExtParam;
+            encodeSurface->Data.ExtParam    = freeSet->PB_bufs.in.ExtParam;
+            ctr->NumExtParam = freeSet->PB_bufs.in.NumExtParam;
+            ctr->ExtParam    = freeSet->PB_bufs.in.ExtParam;
+        }
+    }
+
+    // Add output buffers
+    if (freeSet->PB_bufs.out.NumExtParam > 0) {
+        pCurrentTask->mfxBS.NumExtParam = freeSet->PB_bufs.out.NumExtParam;
+        pCurrentTask->mfxBS.ExtParam    = freeSet->PB_bufs.out.ExtParam;
+    }
+}
+
+bufSet* getFreeBufSet(std::list<bufSet*> bufs)
+{
+    for (std::list<bufSet*>::iterator it = bufs.begin(); it != bufs.end(); ++it){
+        if ((*it)->vacant)
+        {
+            (*it)->vacant = false;
+            return (*it);
+        }
+    }
+
+    return NULL;
+}
+
+void CEncodingPipeline::freeBuffers(std::list<bufSet*> bufs)
+{
+    for (std::list<bufSet*>::iterator it = bufs.begin(); it != bufs.end(); ++it)
+    {
+        (*it)->vacant = false;
+
+        for (int i = 0; i < (*it)->PB_bufs.in.NumExtParam; i++)
+        {
+            switch ((*it)->PB_bufs.in.ExtParam[i]->BufferId)
+            {
+            case MFX_EXTBUFF_FEI_PREENC_CTRL:
+            {
+                mfxExtFeiPreEncCtrl* preENCCtr = (mfxExtFeiPreEncCtrl*)((*it)->PB_bufs.in.ExtParam[i]);
+                delete[] preENCCtr;
+            }
+                break;
+
+            case MFX_EXTBUFF_FEI_PREENC_MV_PRED:
+            {
+                mfxExtFeiPreEncMVPredictors* mvPreds = (mfxExtFeiPreEncMVPredictors*)((*it)->PB_bufs.in.ExtParam[i]);
+                for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++){
+                    delete[] mvPreds[fieldId].MB;
+                }
+                delete[] mvPreds;
+            }
+                break;
+
+            case MFX_EXTBUFF_FEI_PREENC_QP:
+            {
+                mfxExtFeiEncQP* qps = (mfxExtFeiEncQP*)((*it)->PB_bufs.in.ExtParam[i]);
+                for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++){
+                    delete[] qps[fieldId].QP;
+                }
+                delete[] qps;
+            }
+                break;
+
+            case MFX_EXTBUFF_FEI_ENC_CTRL:
+            {
+                mfxExtFeiEncFrameCtrl* feiEncCtrl = (mfxExtFeiEncFrameCtrl*)((*it)->PB_bufs.in.ExtParam[i]);
+                delete[] feiEncCtrl;
+            }
+                break;
+
+            case MFX_EXTBUFF_FEI_SPS:
+            {
+                mfxExtFeiSPS* m_feiSPS = (mfxExtFeiSPS*)((*it)->PB_bufs.in.ExtParam[i]);
+                delete m_feiSPS;
+            }
+                break;
+
+            case MFX_EXTBUFF_FEI_PPS:
+            {
+                mfxExtFeiPPS* m_feiPPS = (mfxExtFeiPPS*)((*it)->PB_bufs.in.ExtParam[i]);
+                delete[] m_feiPPS;
+            }
+                break;
+
+            case MFX_EXTBUFF_FEI_SLICE:
+            {
+                mfxExtFeiSliceHeader* m_feiSliceHeader = (mfxExtFeiSliceHeader*)((*it)->PB_bufs.in.ExtParam[i]);
+                for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++){
+                    delete[] m_feiSliceHeader[fieldId].Slice;
+                }
+                delete[] m_feiSliceHeader;
+            }
+                break;
+
+            case MFX_EXTBUFF_FEI_ENC_MV_PRED:
+            {
+                mfxExtFeiEncMVPredictors* feiEncMVPredictors = (mfxExtFeiEncMVPredictors*)((*it)->PB_bufs.in.ExtParam[i]);
+                for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++){
+                    delete[] feiEncMVPredictors[fieldId].MB;
+                }
+                delete[] feiEncMVPredictors;
+            }
+                break;
+
+            case MFX_EXTBUFF_FEI_ENC_MB:
+            {
+                mfxExtFeiEncMBCtrl* feiEncMBCtrl = (mfxExtFeiEncMBCtrl*)((*it)->PB_bufs.in.ExtParam[i]);
+                for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++){
+                    delete[] feiEncMBCtrl[fieldId].MB;
+                }
+                delete[] feiEncMBCtrl;
+            }
+                break;
+
+            default:
+                break;
+            } // switch ((*it)->PB_bufs.in.ExtParam[i]->BufferId)
+        } // for (int i = 0; i < (*it)->PB_bufs.in.NumExtParam; i++)
+
+        for (int i = 0; i < (*it)->PB_bufs.out.NumExtParam; i++)
+        {
+            switch ((*it)->PB_bufs.out.ExtParam[i]->BufferId)
+            {
+            case MFX_EXTBUFF_FEI_PREENC_MV:
+            {
+                mfxExtFeiPreEncMV* mvs = (mfxExtFeiPreEncMV*)((*it)->PB_bufs.out.ExtParam[i]);
+                for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++){
+                    delete[] mvs[fieldId].MB;
+                }
+                delete[] mvs;
+            }
+                break;
+
+            case MFX_EXTBUFF_FEI_PREENC_MB:
+            {
+                mfxExtFeiPreEncMBStat* mbdata = (mfxExtFeiPreEncMBStat*)((*it)->PB_bufs.out.ExtParam[i]);
+                for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++){
+                    delete[] mbdata[fieldId].MB;
+                }
+                delete[] mbdata;
+            }
+                break;
+
+            case MFX_EXTBUFF_FEI_ENC_MB_STAT:
+            {
+                mfxExtFeiEncMBStat* feiEncMbStat = (mfxExtFeiEncMBStat*)((*it)->PB_bufs.out.ExtParam[i]);
+                for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++){
+                    delete[] feiEncMbStat[fieldId].MB;
+                }
+                delete[] feiEncMbStat;
+            }
+                break;
+
+            case MFX_EXTBUFF_FEI_ENC_MV:
+            {
+                mfxExtFeiEncMV* feiEncMV = (mfxExtFeiEncMV*)((*it)->PB_bufs.out.ExtParam[i]);
+                for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++){
+                    delete[] feiEncMV[fieldId].MB;
+                }
+                delete[] feiEncMV;
+            }
+                break;
+
+            case MFX_EXTBUFF_FEI_PAK_CTRL:
+            {
+                mfxExtFeiPakMBCtrl* feiEncMBCode = (mfxExtFeiPakMBCtrl*)((*it)->PB_bufs.out.ExtParam[i]);
+                for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++){
+                    delete[] feiEncMBCode[fieldId].MB;
+                }
+                delete[] feiEncMBCode;
+            }
+                break;
+
+            default:
+                break;
+            } // switch ((*it)->PB_bufs.out.ExtParam[i]->BufferId)
+        } // for (int i = 0; i < (*it)->PB_bufs.out.NumExtParam; i++)
+    } // for (std::list<bufSet*>::iterator it = bufs.begin(); it != bufs.end(); ++it)
+
+    bufs.clear();
+}
+
+mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref)
+{
+    //assert(displayOrder >= begin);
+    //assert(displayOrder <  end);
+
+    ref = (end - begin > 1);
+
+    mfxU32 pivot = (begin + end) / 2;
+    if (displayOrder == pivot)
+        return counter;
+    else if (displayOrder < pivot)
+        return GetEncodingOrder(displayOrder, begin, pivot, counter + 1, ref);
+    else
+        return GetEncodingOrder(displayOrder, pivot + 1, end, counter + 1 + pivot - begin, ref);
 }

@@ -519,7 +519,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 
     if (bRefWSizeSpecified && pParams->SearchWindow != 0){
-        msdk_printf(MSDK_STRING("\n-search_window specified, -ref_w and -ref_h will be ignored.\n"));
+        msdk_printf(MSDK_STRING("\n-search_window specified, -ref_window_w and -ref_window_h will be ignored.\n"));
         switch (pParams->SearchWindow){
         case 1: msdk_printf(MSDK_STRING("Search window size is 24x24 (4 SUs); Path - Tiny\n\n"));
             break;

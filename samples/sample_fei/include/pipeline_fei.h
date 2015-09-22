@@ -117,6 +117,25 @@ struct sInputParams
     mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
 };
 
+typedef struct{
+    mfxU16      NumExtParam;
+    mfxExtBuffer **ExtParam;
+} setElem;
+
+typedef struct{
+    setElem in;
+    setElem out;
+} IObuffs;
+
+typedef struct
+{
+    bool vacant;
+    IObuffs I_bufs;
+    IObuffs PB_bufs;
+} bufSet;
+
+bufSet* getFreeBufSet(std::list<bufSet*> bufs);
+
 //for PreEnc reordering
 struct iTask{
     mfxENCInput in;
@@ -127,6 +146,8 @@ struct iTask{
     mfxU32 frameDisplayOrder;
     mfxSyncPoint EncSyncP;
     mfxI32 encoded;
+    bufSet* bufs;
+    bufSet* preenc_bufs;
     iTask* prevTask;
     iTask* nextTask;
 };
@@ -143,6 +164,8 @@ struct sTask
     mfxStatus Reset();
     mfxStatus Init(mfxU32 nBufferSize, CSmplBitstreamWriter *pWriter = NULL);
     mfxStatus Close();
+
+    std::list<std::pair<bufSet*, mfxFrameSurface1*> > bufs;
 };
 
 class CEncTaskPool
@@ -189,6 +212,8 @@ protected:
     mfxU16 m_nAsyncDepth; // depth of asynchronous pipeline, this number can be tuned to achieve better performance
     mfxU16 m_refDist;
     mfxU16 m_gopSize;
+    mfxU32 numOfFields;
+    mfxI32 numMB;
 
     MFXVideoSession m_mfxSession;
     MFXVideoSession m_preenc_mfxSession;
@@ -210,8 +235,6 @@ protected:
     mfxFrameAllocResponse m_EncResponse;  // memory allocation response for encoder
     mfxFrameAllocResponse m_ReconResponse;  // memory allocation response for encoder for reconstructed surfaces [FEI]
 
-    mfxU32 m_nNumView;
-
     // for look ahead BRC configuration
     mfxExtCodingOption2 m_CodingOption2;
     mfxExtFeiParam  m_encpakInit;
@@ -220,6 +243,10 @@ protected:
     std::vector<mfxExtBuffer*> m_EncExtParams;
 
     std::list<iTask*> inputTasks; //used in PreENC
+
+    std::list<bufSet*> preencBufs, encodeBufs;
+
+    void freeBuffers(std::list<bufSet*> bufs);
 
     CHWDevice *m_hwdev;
 
@@ -246,50 +273,24 @@ protected:
     virtual mfxStatus SynchronizeFirstTask();
 
     iTask* findFrameToEncode();
-    void initFrameParams(iTask* eTask);
+    void initPreEncFrameParams(iTask* eTask);
     void initEncFrameParams(iTask* eTask);
+    void initEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask);
 
     mfxEncodeCtrl* ctr;
-
-    //FEI buffers
-    mfxEncodeCtrl feiCtrl;
-    //FEI buffers
-    mfxExtFeiSPS m_feiSPS;
-    mfxExtFeiPPS m_feiPPS[2];
-    mfxExtFeiSliceHeader m_feiSliceHeader[2];
-    mfxExtFeiEncFrameCtrl feiEncCtrl[2];
-    mfxExtFeiEncMVPredictors feiEncMVPredictors[2];
-    mfxExtFeiEncMBCtrl feiEncMBCtrl[2];
-    mfxExtFeiEncMBStat feiEncMbStat[2];
-    mfxExtFeiEncMV feiEncMV[2];
-    mfxExtFeiEncQP feiEncMbQp[2];
-    mfxExtFeiPakMBCtrl feiEncMBCode[2];
-
-    mfxU16 numExtInParams, numExtInParamsI;
-    mfxU16 numExtOutParams;
-    mfxExtBuffer * inBufs[4 + 3]; // 4 general + 3 for SPS, PPS and Slice header
-    mfxExtBuffer * inBufsI[4 + 3];
-    mfxExtBuffer * outBufs[4 + 3];
-
-    mfxU16 numExtOutParamsPreEnc;
-    mfxU16 numExtInParamsPreEnc;
-    mfxExtBuffer * inBufsPreEnc[4];
-    mfxExtBuffer * outBufsPreEnc[2];
-    mfxExtBuffer * outBufsPreEncI[2];
-
-    mfxExtFeiPreEncCtrl preENCCtr[2];
-    mfxExtFeiPreEncMVPredictors mvPreds[2];
-    mfxExtFeiEncQP qps[2];
-    mfxExtFeiPreEncMV mvs[2];
-    mfxExtFeiPreEncMBStat mbdata[2];
 
     bool disableMVoutPreENC;
     bool disableMBStatPreENC;
 
     mfxU16 m_refFrameCounter;
+
+    mfxExtFeiPreEncMV::mfxMB* tmpForReading;
+    mfxI16 *tmpForMedian;
 };
 
 void repackPreenc2Enc(mfxExtFeiPreEncMV::mfxMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);
 mfxI16 get16Median(mfxExtFeiPreEncMV::mfxMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1);
+
+mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref);
 
 #endif // __PIPELINE_ENCODE_H__
