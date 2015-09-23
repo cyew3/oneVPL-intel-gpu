@@ -1634,6 +1634,7 @@ mfxStatus CEncodingPipeline::Run()
                         feiEncMV = new mfxExtFeiEncMV[numOfFields];
                         memset(feiEncMV, 0, numOfFields*sizeof(mfxExtFeiEncMV));
                         numExtOutParams++;
+                        numExtOutParamsI++;
                     }
 
                     feiEncMV[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
@@ -1725,6 +1726,7 @@ mfxStatus CEncodingPipeline::Run()
                 tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)feiEncMbStat;
             }
             if (MVOut){
+                tmpForInit-> I_bufs.out.ExtParam[tmpForInit-> I_bufs.out.NumExtParam++] = (mfxExtBuffer*)feiEncMV;
                 tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)feiEncMV;
             }
             if (MBCodeOut){
@@ -1902,13 +1904,17 @@ mfxStatus CEncodingPipeline::Run()
                         {
                             if (eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV){
                                 mvs = &((mfxExtFeiPreEncMV*)(eTask->out.ExtParam[i]))[fieldId];
-                                set = getFreeBufSet(encodeBufs);
+                                if (set == NULL){
+                                    set = getFreeBufSet(encodeBufs);
+                                }
                                 for (int j = 0; j < set->PB_bufs.in.NumExtParam; j++){
                                     if (set->PB_bufs.in.ExtParam[j]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED){
                                         mvp = &((mfxExtFeiEncMVPredictors*)(set->PB_bufs.in.ExtParam[j]))[fieldId];
                                         repackPreenc2Enc(mvs->MB, mvp->MB, mvs->NumMBAlloc, tmpForMedian);
+                                        break;
                                     }
                                 } //for (int j; j < set->PB_bufs.in.NumExtParam; j++)
+                                break;
                             }
                         } // for (int i = 0; i < eTask->out.NumExtParam; i++)
                     } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
@@ -3202,7 +3208,7 @@ void CEncodingPipeline::initEncodeFrameParams(mfxFrameSurface1* encodeSurface, s
                     }
                 }
 
-                feiEncCtrl->MVPredictor = (pCurrentTask->mfxBS.FrameType & MFX_FRAMETYPE_I) ? 0 : freeSet->PB_bufs.in.NumExtParam != freeSet->I_bufs.in.NumExtParam;
+                feiEncCtrl->MVPredictor = (!(pCurrentTask->mfxBS.FrameType & MFX_FRAMETYPE_I) && (m_encpakParams.mvinFile != NULL || m_encpakParams.bPREENC)) ? 1 : 0;
             }
         } // for (int i = 0; i<freeSet->PB_bufs.in.NumExtParam; i++)
 
