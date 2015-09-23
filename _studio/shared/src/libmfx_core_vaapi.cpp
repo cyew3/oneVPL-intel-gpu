@@ -1026,19 +1026,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
         MFX_CHECK((pDst->Data.Y == 0) == (pDst->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(dstPitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        VASurfaceID *va_surface = (VASurfaceID*)(pSrc->Data.MemId);
-        VAImage va_image;
-        VAStatus va_sts;
-        void *pBits = NULL;
-
         MFX_CHECK(m_Display,MFX_ERR_NOT_INITIALIZED);
-
-        va_sts = vaDeriveImage(m_Display, *va_surface, &va_image);
-        MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
-
-        // vaMapBuffer
-        va_sts = vaMapBuffer(m_Display, va_image.buf, (void **) &pBits);
-        MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
         // copy data
         {
@@ -1062,6 +1050,17 @@ VAAPIVideoCORE::DoFastCopyExtended(
             }
             else
             {
+                VASurfaceID *va_surface = (VASurfaceID*)(pSrc->Data.MemId);
+                VAImage va_image;
+                VAStatus va_sts;
+                void *pBits = NULL;
+
+                va_sts = vaDeriveImage(m_Display, *va_surface, &va_image);
+                MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+                // vaMapBuffer
+                va_sts = vaMapBuffer(m_Display, va_image.buf, (void **) &pBits);
+                MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
                 Ipp32u srcPitch = va_image.pitches[0];
                 Ipp32u Height =  va_image.height;
@@ -1154,16 +1153,16 @@ VAAPIVideoCORE::DoFastCopyExtended(
                         return MFX_ERR_UNSUPPORTED;
                 }
 
+                // vaUnmapBuffer
+                va_sts = vaUnmapBuffer(m_Display, va_image.buf);
+                MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+                // vaDestroyImage
+                va_sts = vaDestroyImage(m_Display, va_image.image_id);
+                MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
             }
         }
-
-        // vaUnmapBuffer
-        va_sts = vaUnmapBuffer(m_Display, va_image.buf);
-        MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
-
-        // vaDestroyImage
-        va_sts = vaDestroyImage(m_Display, va_image.image_id);
-        MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
     }
     else if (NULL != pSrc->Data.Y && NULL != pDst->Data.Y)
