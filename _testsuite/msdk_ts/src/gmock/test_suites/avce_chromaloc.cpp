@@ -57,9 +57,9 @@ class BsDump : public tsBitstreamProcessor, tsParserH264AU
 
 public:
     BsDump() :
-        tsParserH264AU(BS_H264_INIT_MODE_CABAC|BS_H264_INIT_MODE_CAVLC)
+        tsParserH264AU()
     {
-        set_trace_level(0);
+        set_trace_level(BS_H264_TRACE_LEVEL_SPS);
     }
     ~BsDump() {}
 
@@ -77,7 +77,6 @@ public:
         set_buffer(bs.Data + bs.DataOffset, bs.DataLength+1);
         UnitType& au = ParseOrDie();
 
-
         for (Bs32u i = 0; i < au.NumUnits; i++)
         {
             if (!(au.NALU[i].nal_unit_type == 0x07))
@@ -85,7 +84,7 @@ public:
                 continue;
             }
 
-            if (cod2_vui == 1)
+            if (cod2_vui == MFX_CODINGOPTION_ON)
             {
                 if (au.NALU[i].SPS->vui_parameters_present_flag != 0)
                 {
@@ -133,6 +132,8 @@ public:
                 }
             }
         }
+
+        bs.DataLength = 0;
 
         return MFX_ERR_NONE;
     }
@@ -266,7 +267,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if (tc.mode & VUI)
     {
-        cod2.DisableVUI = 1;
+        cod2.DisableVUI = MFX_CODINGOPTION_ON;
         mfxExtCodingOption2 cod2_cpy(cod2);
         buffs.push_back((mfxExtBuffer*)&cod2);
         buffs_cpy.push_back((mfxExtBuffer*)&cod2_cpy);
