@@ -53,7 +53,7 @@ class BitstreamChecker : public tsBitstreamProcessor, public tsParserH264AU
 {
 public:
     BitstreamChecker()
-        : tsParserH264AU(BS_H264_INIT_MODE_CABAC) 
+        : tsParserH264AU(BS_H264_INIT_MODE_CABAC)
     {
         set_trace_level(0);
     }
@@ -70,6 +70,10 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 
     if (bs.Data)
         SetBuffer(bs);
+
+    bool check_max_bins = true;
+    if (g_tsImpl != MFX_IMPL_SOFTWARE)
+        check_max_bins = false; // parse + dump info only
 
     while(checked++ < nFrames)
     {
@@ -112,14 +116,39 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
                 macro_block& mb = s.mb[i];
                 if(sps.profile_idc == 100)
                 {
-                    EXPECT_LE( mb.numBits, 128 + RawMbBits / max_bits_per_mb_denom) << "FAILED at MB #" << mb.Addr << " (" << mb.x << ":" << mb.y <<")";
+                    if (mb.numBits > 128 + RawMbBits / max_bits_per_mb_denom) {
+                        if (check_max_bins) {
+                            g_tsLog << "ERROR: ";
+                            EXPECT_LE( mb.numBits, 128 + RawMbBits / max_bits_per_mb_denom );
+                        } else {
+                            g_tsLog << "ERROR_SKIPPED: ";
+                        }
+                        g_tsLog << "numBits in MB exceeds bound\n"
+                                << "  FAILED at MB #" << mb.Addr << " (" << mb.x << ":" << mb.y <<")";
+                    }
                 } else
                 {
-                    EXPECT_LE( mb.numBits, 3200) << "FAILED at MB #" << mb.Addr;
+                    if (mb.numBits > 3200) {
+                        if (check_max_bins) {
+                            EXPECT_LE( mb.numBits, 3200 );
+                            g_tsLog << "ERROR: ";
+                        } else {
+                            g_tsLog << "ERROR_SKIPPED: ";
+                        }
+                        g_tsLog << "numBits in MB exceeds bound\n" << "  FAILED at MB #" << mb.Addr;
+                    }
                 }
             }
         }
-        EXPECT_LE( BinCountsInNALunits, 32 * NumBytesInVclNALunits / 3 + (RawMbBits*PicSizeInMbs) / 32 );
+        if (BinCountsInNALunits > 32 * NumBytesInVclNALunits / 3 + (RawMbBits*PicSizeInMbs) / 32) {
+            if (check_max_bins) {
+                EXPECT_LE( BinCountsInNALunits, 32 * NumBytesInVclNALunits / 3 + (RawMbBits*PicSizeInMbs) / 32 );
+                g_tsLog << "ERROR: ";
+            } else {
+                g_tsLog << "ERROR_SKIPPED: ";
+            }
+            g_tsLog << "BinCountsInNALunits in MB exceeds bound\n";
+        }
         g_tsLog << "BinCountsInNALunits <= 32 * NumBytesInVclNALunits / 3 + (RawMbBits*PicSizeInMbs) / 32  : "
                 <<  BinCountsInNALunits << " <= 32 * " << NumBytesInVclNALunits << " / 3 + (" << RawMbBits << "*" << PicSizeInMbs << ") / 32  : "
                 <<  BinCountsInNALunits << " <= " << (32 * NumBytesInVclNALunits / 3 + (RawMbBits*PicSizeInMbs) / 32) << "\n";
@@ -128,12 +157,13 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 
     return MFX_ERR_NONE;
 }
-    
+
 int test(unsigned int id)
 {
     TS_START;
+    g_tsLog << "TEST INFO: this test performs real verification on SW only\n";
     tsVideoEncoder enc(MFX_CODEC_AVC);
-    SFiller sf; 
+    SFiller sf;
     BitstreamChecker c;
     enc.m_filler = &sf;
     enc.m_bs_processor = &c;
@@ -167,16 +197,16 @@ int test(unsigned int id)
     co.RecoveryPointSEI     = 16;
     co.SingleSeiNalUnit     = 32;
     co.VuiVclHrdParameters  = 16;
-    co.AUDelimiter          = 16; 
+    co.AUDelimiter          = 16;
     co.EndOfStream          = 32;
     co.PicTimingSEI         = 16;
     co.VuiNalHrdParameters  = 16;
-    
+
     enc.EncodeFrames(300);
-    
+
     TS_END;
     return 0;
 }
 
-TS_REG_TEST_SUITE(avce_max_bins, test, 1);
+TS_REG_TEST_SUITE(avce_max_bins_pcm, test, 1);
 };
