@@ -36,9 +36,13 @@ mfxStatus GeneralAllocator::Init(mfxAllocatorParams *pParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+    SysMemAllocatorParams *sysMemAllocParams = dynamic_cast<SysMemAllocatorParams*>(pParams);
+    if (!sysMemAllocParams)
+    {
 #if defined(_WIN32) || defined(_WIN64)
 #if MFX_D3D11_SUPPORT
     D3D11AllocatorParams *d3d11AllocParams = dynamic_cast<D3D11AllocatorParams*>(pParams);
+
     if (d3d11AllocParams)
         m_D3DAllocator.reset(new D3D11FrameAllocator);
     else
@@ -48,10 +52,11 @@ mfxStatus GeneralAllocator::Init(mfxAllocatorParams *pParams)
 #ifdef LIBVA_SUPPORT
     m_D3DAllocator.reset(new vaapiFrameAllocator);
 #endif
+    }
 
     m_SYSAllocator.reset(new SysMemFrameAllocator);
 
-    if (m_D3DAllocator.get() && pParams)
+    if (m_D3DAllocator.get())
     {
         sts = m_D3DAllocator.get()->Init(pParams);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);

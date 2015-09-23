@@ -146,7 +146,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 #endif
     if (!m_pAllocParam.get())
     {
-        m_pAllocParam.reset(new mfxAllocatorParams);
+        m_pAllocParam.reset(new SysMemAllocatorParams);
     }
 
     // each pair of source and sink has own safety buffer

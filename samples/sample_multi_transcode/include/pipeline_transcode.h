@@ -30,6 +30,7 @@
 #include "sample_utils.h"
 #include "sample_params.h"
 #include "base_allocator.h"
+#include "sysmem_allocator.h"
 #include "rotate_plugin_api.h"
 #include "mfx_multi_vpp.h"
 
