@@ -1742,20 +1742,14 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     //--- Setting output FourCC type (input type is taken from m_mfxDecParams)
     if (pInParams->EncoderFourCC)
     {
-        m_mfxVppParams.vpp.Out.FourCC=MFX_FOURCC_RGB4;
-        m_mfxVppParams.vpp.Out.ChromaFormat=MFX_CHROMAFORMAT_YUV444;
+        m_mfxVppParams.vpp.Out.FourCC = pInParams->EncoderFourCC;
+        m_mfxVppParams.vpp.Out.ChromaFormat = FourCCToChroma(pInParams->EncoderFourCC);
     }
 
     /* VPP Comp Init */
     if (((pInParams->eModeExt == VppComp) || (pInParams->eModeExt == VppCompOnly)) &&
         (pInParams->numSurf4Comp != 0))
     {
-#if defined(LIBVA_SUPPORT)
-        // TODO driver supports only RGB format on composition,
-        // also SMT does not have options to pass fourcc here - hardcoding everything out!!
-        m_mfxVppParams.vpp.Out.FourCC = MFX_FOURCC_RGB4;
-        m_mfxVppParams.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-#endif
         m_nVPPCompEnable = pInParams->eModeExt;
         m_VppCompParams.Header.BufferId = MFX_EXTBUFF_VPP_COMPOSITE;
         m_VppCompParams.Header.BufferSz = sizeof(mfxExtVPPComposite);
