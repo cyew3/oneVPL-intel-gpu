@@ -246,13 +246,18 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         for (i=0; i < surfaces_num; ++i)
         {
             if (m_export_mode & vaapiAllocatorParams::NATIVE_EXPORT_MASK) {
+#ifndef DISABLE_VAAPI_BUFFER_EXPORT
                 vaapi_mids[i].m_buffer_info.mem_type = (m_export_mode & vaapiAllocatorParams::PRIME)?
                   VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME: VA_SURFACE_ATTRIB_MEM_TYPE_KERNEL_DRM;
                 va_res = m_libva->vaDeriveImage(m_dpy, surfaces[i], &(vaapi_mids[i].m_image));
                 mfx_res = va_to_mfx_status(va_res);
 
                 if (MFX_ERR_NONE != mfx_res) break;
+#ifndef DISABLE_VAAPI_BUFFER_EXPORT
                 va_res = m_libva->vaAcquireBufferHandle(m_dpy, vaapi_mids[i].m_image.buf, &(vaapi_mids[i].m_buffer_info));
+#else
+                va_res = VA_STATUS_ERROR_OPERATION_FAILED;
+#endif
                 mfx_res = va_to_mfx_status(va_res);
             }
             if (m_exporter) {
@@ -329,7 +334,9 @@ mfxStatus vaapiFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
                     m_exporter->release(&vaapi_mids[i], vaapi_mids[i].m_custom);
                 }
                 if (m_export_mode & vaapiAllocatorParams::NATIVE_EXPORT_MASK) {
+#ifndef DISABLE_VAAPI_BUFFER_EXPORT
                     m_libva->vaReleaseBufferHandle(m_dpy, vaapi_mids[i].m_image.buf);
+#endif
                     m_libva->vaDestroyImage(m_dpy, vaapi_mids[i].m_image.image_id);
                 }
             }

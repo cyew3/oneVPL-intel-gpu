@@ -69,8 +69,10 @@ VA_Proxy::VA_Proxy()
     , SIMPLE_LOADER_FUNCTION(vaSyncSurface)
     , SIMPLE_LOADER_FUNCTION(vaDeriveImage)
     , SIMPLE_LOADER_FUNCTION(vaDestroyImage)
+#ifndef DISABLE_VAAPI_BUFFER_EXPORT
     , SIMPLE_LOADER_FUNCTION(vaAcquireBufferHandle)
     , SIMPLE_LOADER_FUNCTION(vaReleaseBufferHandle)
+#endif
 {
 }
 

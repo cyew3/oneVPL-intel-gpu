@@ -460,6 +460,7 @@ bool drmRenderer::restore()
 
 void* drmRenderer::acquire(mfxMemId mid)
 {
+#ifndef DISABLE_VAAPI_BUFFER_EXPORT
     vaapiMemId* vmid = (vaapiMemId*)mid;
     uint32_t fbhandle=0;
 
@@ -510,6 +511,9 @@ void* drmRenderer::acquire(mfxMemId mid)
     } catch(...) {
         return NULL;
     }
+#else
+    return NULL;
+#endif
 }
 
 void drmRenderer::release(mfxMemId mid, void * mem)

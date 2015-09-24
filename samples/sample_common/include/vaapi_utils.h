@@ -13,6 +13,8 @@ Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 
 #ifdef LIBVA_SUPPORT
 
+//#define DISABLE_VAAPI_BUFFER_EXPORT
+
 #include <va/va.h>
 #if defined(LIBVA_DRM_SUPPORT)
 #include <xf86drm.h>
@@ -68,8 +70,10 @@ namespace MfxLoader
         typedef VAStatus (*vaSyncSurface_type)(VADisplay, VASurfaceID);
         typedef VAStatus (*vaDeriveImage_type)(VADisplay, VASurfaceID, VAImage *);
         typedef VAStatus (*vaDestroyImage_type)(VADisplay, VAImageID);
+#ifndef DISABLE_VAAPI_BUFFER_EXPORT
         typedef VAStatus (*vaAcquireBufferHandle_type)(VADisplay, VABufferID, VABufferInfo *);
         typedef VAStatus (*vaReleaseBufferHandle_type)(VADisplay, VABufferID);
+#endif
 
         VA_Proxy();
         ~VA_Proxy();
@@ -85,8 +89,10 @@ namespace MfxLoader
         const vaSyncSurface_type     vaSyncSurface;
         const vaDeriveImage_type     vaDeriveImage;
         const vaDestroyImage_type    vaDestroyImage;
+#ifndef DISABLE_VAAPI_BUFFER_EXPORT
         const vaAcquireBufferHandle_type vaAcquireBufferHandle;
         const vaReleaseBufferHandle_type vaReleaseBufferHandle;
+#endif
     };
 #endif
 
