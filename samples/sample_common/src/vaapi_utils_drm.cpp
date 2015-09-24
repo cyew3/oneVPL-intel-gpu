@@ -457,49 +457,6 @@ bool drmRenderer::restore()
   return true;
 }
 
-void* drmRenderer::alloc_bo(mfxU16 width, mfxU16 height,
-  uint32_t* flink_handle, mfxU16* pitch)
-{
-    struct drm_mode_create_dumb create_dumb;
-    struct drm_gem_flink gem_flink;
-    uint32_t fbhandle=0;
-
-    if (!flink_handle || !pitch) {
-      return NULL;
-    }
-
-    MSDK_ZERO_MEMORY(create_dumb);
-    create_dumb.bpp = 32;
-    create_dumb.width = width;
-    create_dumb.height = height;
-    int ret = m_drmlib.drmIoctl(m_fd, DRM_IOCTL_MODE_CREATE_DUMB, &create_dumb);
-    if (ret) {
-      return NULL;
-    }
-    *pitch = create_dumb.pitch;
-
-    ret = m_drmlib.drmModeAddFB(m_fd, width, height,
-          24, 32, create_dumb.pitch, create_dumb.handle, &fbhandle);
-    if (ret) {
-      return NULL;
-    }
-
-    MSDK_ZERO_MEMORY(gem_flink);
-    gem_flink.handle = create_dumb.handle;
-    ret = m_drmlib.drmIoctl(m_fd, DRM_IOCTL_GEM_FLINK, &gem_flink);
-    if (ret) {
-      return NULL;
-    }
-    *flink_handle = gem_flink.name;
-
-    privMID* hdl = (privMID*)calloc(1, sizeof(privMID));
-    if (!hdl) return NULL;
-    hdl->dumb = true;
-    hdl->fbhandle = fbhandle;
-    hdl->dumbhandle = create_dumb.handle;
-    return hdl;
-}
-
 void* drmRenderer::acquire(mfxMemId mid)
 {
     vaapiMemId* vmid = (vaapiMemId*)mid;
@@ -545,39 +502,36 @@ void* drmRenderer::acquire(mfxMemId mid)
     } else {
         return NULL;
     }
-    privMID* hdl = (privMID*)calloc(1, sizeof(privMID));
-    if (!hdl) return NULL;
-    hdl->fbhandle = fbhandle;
-    return hdl;
+    try {
+        uint32_t* hdl = new uint32_t;
+        *hdl = fbhandle;
+        return hdl;
+    } catch(...) {
+        return NULL;
+    }
 }
 
 void drmRenderer::release(mfxMemId mid, void * mem)
 {
-    privMID* hdl = (privMID*)mem;
+    uint32_t* hdl = (uint32_t*)mem;
     if (!hdl) return;
     if (!restore()) {
       msdk_printf(MSDK_STRING("drmrender: warning: failure to restore original mode may lead to application segfault!\n"));
     }
-    m_drmlib.drmModeRmFB(m_fd, hdl->fbhandle);
-    if (hdl->dumb) {
-      struct drm_mode_destroy_dumb destroy_dumb;
-      MSDK_ZERO_MEMORY(destroy_dumb);
-      destroy_dumb.handle = hdl->dumbhandle;
-      m_drmlib.drmIoctl(m_fd, DRM_IOCTL_MODE_DESTROY_DUMB, &destroy_dumb);
-    }
-    free(hdl);
+    m_drmlib.drmModeRmFB(m_fd, *hdl);
+    delete(hdl);
 }
 
 mfxStatus drmRenderer::render(mfxFrameSurface1 * pSurface)
 {
     int ret;
     vaapiMemId * memid;
-    privMID* privmid;
+    uint32_t fbhandle;
 
     if (!pSurface || !pSurface->Data.MemId) return MFX_ERR_INVALID_HANDLE;
     memid = (vaapiMemId*)(pSurface->Data.MemId);
     if (!memid->m_custom) return MFX_ERR_INVALID_HANDLE;
-    privmid = (privMID*)memid->m_custom;
+    fbhandle = *(uint32_t*)memid->m_custom;
 
     // rendering on the screen
     if (!setMaster()) {
@@ -587,7 +541,7 @@ mfxStatus drmRenderer::render(mfxFrameSurface1 * pSurface)
         (m_mode.vdisplay == memid->m_image.height)) {
         // surface in the framebuffer exactly matches crtc scanout port, so we
         // can scanout from this framebuffer for the whole crtc
-        ret = m_drmlib.drmModeSetCrtc(m_fd, m_crtcID, privmid->fbhandle, 0, 0, &m_connectorID, 1, &m_mode);
+        ret = m_drmlib.drmModeSetCrtc(m_fd, m_crtcID, fbhandle, 0, 0, &m_connectorID, 1, &m_mode);
         if (ret) {
           return MFX_ERR_UNKNOWN;
         }
@@ -598,7 +552,7 @@ mfxStatus drmRenderer::render(mfxFrameSurface1 * pSurface)
         }
         // surface in the framebuffer exactly does NOT match crtc scanout port,
         // and we can only use overlay technique with possible resize (depending on the driver))
-        ret = m_drmlib.drmModeSetPlane(m_fd, m_planeID, m_crtcID, privmid->fbhandle, 0,
+        ret = m_drmlib.drmModeSetPlane(m_fd, m_planeID, m_crtcID, fbhandle, 0,
           0, 0, m_crtc->width, m_crtc->height,
           pSurface->Info.CropX << 16, pSurface->Info.CropY << 16, pSurface->Info.CropW << 16, pSurface->Info.CropH << 16);
         if (ret) {

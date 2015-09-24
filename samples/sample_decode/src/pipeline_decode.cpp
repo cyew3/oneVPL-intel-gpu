@@ -326,7 +326,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     m_monitorType = pParams->monitorType;
-    m_export_mode = pParams->exportMode;
     // create device and allocator
 #if defined(LIBVA_SUPPORT)
     m_libvaBackend = pParams->libvaBackend;
@@ -840,7 +839,7 @@ mfxStatus CDecodingPipeline::AllocFrames()
         MFX_MEMTYPE_SYSTEM_MEMORY
         : MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
     if (!m_bVppIsUsed && (m_export_mode != vaapiAllocatorParams::DONOT_EXPORT)) {
-        Request.Type |= (m_export_mode & vaapiAllocatorParams::NATIVE_EXPORT_MASK)? MFX_MEMTYPE_EXPORT_FRAME: MFX_MEMTYPE_IMPORT_FRAME;
+        Request.Type |= MFX_MEMTYPE_EXPORT_FRAME;
     }
     // alloc frames for decoder
     sts = m_pGeneralAllocator->Alloc(m_pGeneralAllocator->pthis, &Request, &m_mfxResponse);
@@ -850,7 +849,7 @@ mfxStatus CDecodingPipeline::AllocFrames()
     {
         // alloc frames for VPP
         if (m_export_mode != vaapiAllocatorParams::DONOT_EXPORT) {
-          VppRequest[1].Type |= (m_export_mode & vaapiAllocatorParams::NATIVE_EXPORT_MASK)? MFX_MEMTYPE_EXPORT_FRAME: MFX_MEMTYPE_IMPORT_FRAME;
+            VppRequest[1].Type |= MFX_MEMTYPE_EXPORT_FRAME;
         }
         VppRequest[1].NumFrameSuggested = VppRequest[1].NumFrameMin = nVppSurfNum;
         MSDK_MEMCPY_VAR(VppRequest[1].Info, &(m_mfxVppVideoParams.vpp.Out), sizeof(mfxFrameInfo));
@@ -972,7 +971,7 @@ mfxStatus CDecodingPipeline::CreateAllocator()
         if (m_eWorkMode == MODE_RENDERING) {
             if (m_libvaBackend == MFX_LIBVA_DRM_MODESET) {
                 CVAAPIDeviceDRM* drmdev = dynamic_cast<CVAAPIDeviceDRM*>(m_hwdev);
-                p_vaapiAllocParams->m_export_mode = m_export_mode;//vaapiAllocatorParams::CUSTOM;//_FLINK;
+                p_vaapiAllocParams->m_export_mode = vaapiAllocatorParams::CUSTOM_FLINK;
                 p_vaapiAllocParams->m_exporter = dynamic_cast<vaapiAllocatorParams::Exporter*>(drmdev->getRenderer());
             } else if (m_libvaBackend == MFX_LIBVA_WAYLAND) {
                 p_vaapiAllocParams->m_export_mode = vaapiAllocatorParams::PRIME;

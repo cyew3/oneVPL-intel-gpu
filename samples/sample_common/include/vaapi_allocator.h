@@ -55,9 +55,6 @@ struct vaapiAllocatorParams : mfxAllocatorParams
     {
     public:
       virtual ~Exporter(){}
-      virtual void* alloc_bo(
-        mfxU16 width, mfxU16 height,
-        uint32_t* flink_handle, mfxU16* pitch) = 0;
       virtual void* acquire(mfxMemId mid) = 0;
       virtual void release(mfxMemId mid, void * hdl) = 0;
     };
