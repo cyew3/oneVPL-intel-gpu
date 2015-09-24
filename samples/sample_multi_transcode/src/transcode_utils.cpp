@@ -786,7 +786,9 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_only")))
         {
             /* for VPP comp with rendering we have to use ext allocator */
+#ifdef LIBVA_SUPPORT
             InputParams.libvaBackend = MFX_LIBVA_X11;
+#endif
             InputParams.bUseOpaqueMemory = false;
 
             VAL_CHECK(i + 1 == argc, i, argv[i]);
@@ -816,6 +818,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 msdk_printf(MSDK_STRING("WARNING: internal allocators were disabled because of composition+rendering requirement \n\n"));
             }
         }
+#if defined(LIBVA_DRM_SUPPORT)
         else if (0 == msdk_strncmp(argv[i], MSDK_STRING("-rdrm"), 5))
         {
             InputParams.libvaBackend = MFX_LIBVA_DRM_MODESET;
@@ -834,6 +837,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 InputParams.monitorType = MFX_MONITOR_AUTO; // that's case of "-rdrm" pure option
             }
         }
+#endif
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-ext_allocator")))
         {
             InputParams.bUseOpaqueMemory = false;

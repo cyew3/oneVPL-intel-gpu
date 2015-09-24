@@ -1783,7 +1783,7 @@ mfxI32 getMonitorType(msdk_char* str)
       const msdk_char* str;
       mfxI32 mfx_type;
     } table[] = {
-#define __DECLARE(type) { #type, MFX_MONITOR_ ## type }
+#define __DECLARE(type) { MSDK_STRING(#type), MFX_MONITOR_ ## type }
       __DECLARE(Unknown),
       __DECLARE(VGA),
       __DECLARE(DVII),

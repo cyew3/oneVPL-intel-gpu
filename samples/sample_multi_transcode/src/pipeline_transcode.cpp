@@ -1981,10 +1981,15 @@ mfxStatus CTranscodingPipeline::AllocFrames()
         }
         sts = CorrectAsyncDepth(VPPOut, m_AsyncDepth);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+#ifdef LIBVA_SUPPORT
         if ((m_nVPPCompEnable == VppCompOnly) &&
-            (m_libvaBackend == MFX_LIBVA_DRM_MODESET)) {
+            (m_libvaBackend == MFX_LIBVA_DRM_MODESET))
+        {
             VPPOut.Type |= MFX_MEMTYPE_EXPORT_FRAME;
         }
+#endif
+
         sts = AllocFrames(&VPPOut, false);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
@@ -2289,7 +2294,10 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 
     if ((VppComp == pParams->eModeExt) || (VppCompOnly == pParams->eModeExt))
         m_nVPPCompEnable = pParams->eModeExt;
+
+#ifdef LIBVA_SUPPORT
     m_libvaBackend = pParams->libvaBackend;
+#endif
 
     m_pBuffer = pBuffer;
 
