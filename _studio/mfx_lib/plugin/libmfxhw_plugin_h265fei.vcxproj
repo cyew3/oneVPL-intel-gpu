@@ -34,6 +34,7 @@
     <ClCompile Include="..\..\shared\src\libmfx_core_factory.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_core_hw.cpp" />
     <ClCompile Include="..\..\shared\src\mfx_dxva2_device.cpp" />
+    <ClCompile Include="..\genx\copy_kernels\src\genx_skl_copy_isa.cpp" />
     <ClCompile Include="..\scheduler\src\mfx_scheduler_core.cpp" />
     <ClCompile Include="..\scheduler\src\mfx_scheduler_core_ischeduler.cpp" />
     <ClCompile Include="..\scheduler\src\mfx_scheduler_core_iunknown.cpp" />
@@ -52,6 +53,9 @@
     <ClCompile Include="..\shared\src\mfx_session.cpp" />
     <ClCompile Include="..\shared\src\mfx_user_plugin.cpp" />
     <ClCompile Include="..\vpp\src\mfx_vpp_factory.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\genx\copy_kernels\include\skl_copy_kernel_genx_isa.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{348EB879-A3FF-44A1-8D14-E5957A4D5E18}</ProjectGuid>
@@ -132,7 +136,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
       <TreatWarningAsError>false</TreatWarningAsError>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\..\..\mdp_msdk-api\include;.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\\shared\umc\io\umc_va\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\codec\vc1_dec\include;..\..\..\_studio\shared\umc\core\umc\include;..\scheduler\include;..\fei\include;..\fei\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\genx\copy_kernels\include;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\..\..\mdp_msdk-api\include;.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\\shared\umc\io\umc_va\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\codec\vc1_dec\include;..\..\..\_studio\shared\umc\core\umc\include;..\scheduler\include;..\fei\include;..\fei\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;WIN32;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;_UNICODE;UNICODE;LIBMFXHW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -145,7 +149,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
       <TreatWarningAsError>false</TreatWarningAsError>
-      <AdditionalIncludeDirectories>..\..\..\..\include;..\..\..\include;..\fei\h265\include;..\shared\include;..\scheduler\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h265\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\h264\include;..\encode\vc1\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\io\umc_va\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\encode\h265\include;..\optimization\h265\include;%(AdditionalIncludeDirectories);..\fei\include;..\fei\h264_la;..\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;..\encode_hw\h264\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\genx\copy_kernels\include;..\..\..\..\include;..\..\..\include;..\fei\h265\include;..\shared\include;..\scheduler\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h265\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\h264\include;..\encode\vc1\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;$(MfxIppIncludeDir);..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\..\_studio\shared\umc\io\umc_va\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\encode\h265\include;..\optimization\h265\include;%(AdditionalIncludeDirectories);..\fei\include;..\fei\h264_la;..\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;..\encode_hw\h264\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;WIN32;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;_UNICODE;UNICODE;LIBMFXHW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -161,7 +165,7 @@
       <SDLCheck>true</SDLCheck>
       <TreatWarningAsError>false</TreatWarningAsError>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXHW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\..\..\mdp_msdk-api\include;.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\\shared\umc\io\umc_va\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\codec\vc1_dec\include;..\..\..\_studio\shared\umc\core\umc\include;..\scheduler\include;..\fei\include;..\fei\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\genx\copy_kernels\include;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\..\..\mdp_msdk-api\include;.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\\shared\umc\io\umc_va\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\codec\vc1_dec\include;..\..\..\_studio\shared\umc\core\umc\include;..\scheduler\include;..\fei\include;..\fei\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -178,7 +182,7 @@
       <SDLCheck>true</SDLCheck>
       <TreatWarningAsError>false</TreatWarningAsError>
       <PreprocessorDefinitions>AS_H265FEI_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXHW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\..\..\mdp_msdk-api\include;.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\\shared\umc\io\umc_va\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\codec\vc1_dec\include;..\..\..\_studio\shared\umc\core\umc\include;..\scheduler\include;..\fei\include;..\fei\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\genx\copy_kernels\include;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\..\..\mdp_msdk-api\include;.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\\shared\umc\io\umc_va\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;..\..\..\_studio\shared\umc\codec\vc1_dec\include;..\..\..\_studio\shared\umc\core\umc\include;..\scheduler\include;..\fei\include;..\fei\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

@@ -137,6 +137,9 @@
     <ClCompile Include="..\shared\src\mfx_static_assert_structs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="genx\copy_kernels\src\genx_skl_copy_isa.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\include\auxiliary_device.h">
@@ -255,6 +258,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo++.h">
       <Filter>MFX API</Filter>
+    </ClInclude>
+    <ClInclude Include="genx\copy_kernels\include\skl_copy_kernel_genx_isa.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

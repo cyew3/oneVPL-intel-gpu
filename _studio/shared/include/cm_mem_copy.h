@@ -14,7 +14,9 @@
 #include "mfxdefs.h"
 #include "mfxstructures.h"
 #include "ippi.h"
-
+#if defined(WIN64) || defined(WIN32)
+#include "skl_copy_kernel_genx_isa.h"
+#endif
 #if !defined(OSX)
 
 #pragma warning(disable: 4505)
@@ -96,6 +98,9 @@ public:
         {
             return NULL;
         }
+#if defined(WIN64) || defined(WIN32)
+        cmSts = m_pCmDevice->LoadProgram((void*)skl_copy_kernel_genx,sizeof(skl_copy_kernel_genx),m_pCmProgram,"nojitter");
+#endif
         return m_pCmDevice;
     };
 
@@ -129,24 +134,49 @@ public:
     // check input parameters
     mfxStatus IsCmCopySupported(mfxFrameSurface1 *pSurface, IppiSize roi);
 
-    // copy memory by streaming
-    mfxStatus CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, void *pSrc, mfxU32 srcPitch, IppiSize roi, bool isSecondMode = false);
 
     mfxStatus CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi);
-
-    mfxStatus CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi, bool isSecondMode = false);
 
     mfxStatus CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi);
 
     mfxStatus CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiSize roi);
-    mfxStatus ReleaseCmSurfaces(void);
+    
+    mfxStatus CopySwapVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU32 format);
+    mfxStatus CopySwapSystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format);
+    mfxStatus CopySwapVideoToVideoMemory(void *pDst, void *pSrc, IppiSize roi, mfxU32 format);
 
+    mfxStatus ReleaseCmSurfaces(void);
+    mfxStatus EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
+                                    unsigned char* pSysMem,
+                                    int width,
+                                    int height,
+                                    const UINT widthStride, 
+                                    const UINT heightStride,
+                                    mfxU32 format, 
+                                    const UINT option,
+                                    CmEvent* & pEvent );
+    mfxStatus EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
+                                    unsigned char* pSysMem,
+                                    int width,
+                                    int height,
+                                    const UINT widthStride, 
+                                    const UINT heightStride,
+                                    mfxU32 format, 
+                                    const UINT option,
+                                    CmEvent* & pEvent );
+    mfxStatus EnqueueCopySwapRBGPUtoGPU(   CmSurface2D* pSurfaceIn,
+                                    CmSurface2D* pSurfaceOut,
+                                    int width,
+                                    int height,
+                                    mfxU32 format, 
+                                    const UINT option,
+                                    CmEvent* & pEvent );
 protected:
 
     CmDevice  *m_pCmDevice;
     CmProgram *m_pCmProgram;
-    CmKernel  *m_pCmKernel1;
-    CmKernel  *m_pCmKernel2;
+    CmKernel  *m_pCmKernel;
+    CmBufferUP      *pCMBufferUP;
 
     //std::map<mfxU32, CmThreadSpace *> m_tableThreadSpace;
     CmThreadSpace *m_pThreadSpace;

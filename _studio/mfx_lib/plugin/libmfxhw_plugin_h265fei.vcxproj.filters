@@ -114,5 +114,13 @@
     <ClCompile Include="..\shared\src\mfx_enc_common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\genx\copy_kernels\src\genx_skl_copy_isa.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\genx\copy_kernels\include\skl_copy_kernel_genx_isa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
