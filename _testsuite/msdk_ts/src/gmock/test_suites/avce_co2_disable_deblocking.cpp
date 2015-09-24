@@ -1,7 +1,7 @@
 /*
 Per-frame Deblocking disabling disable_deblocking_filter_idc in slice_header
-mfxExtCodingOption2::DisableDeblockingIdc = 0|1
-slice_header:: disable_deblocking_filter_idc = 0|1
+mfxExtCodingOption2::DisableDeblockingIdc = 0..2
+slice_header:: disable_deblocking_filter_idc = 0..2
 */
 #include "ts_encoder.h"
 #include "ts_struct.h"
@@ -83,6 +83,12 @@ private:
         if (mode & EVERY_OTHER) buf_a->DisableDeblockingIdc = n_frame % 2 ? 0 : 1;
         else                    buf_a->DisableDeblockingIdc = 1;
 
+        if (m_par.NumExtParam && buf_a->DisableDeblockingIdc)
+            buf_a->DisableDeblockingIdc = !((mfxExtCodingOption2&)m_par).DisableDeblockingIdc;
+
+        m_ctrl.ExtParam = 0;
+        m_ctrl.NumExtParam = 0;
+
         if (mode & EVERY_OTHER || mode & RUNTIME_ONLY)
         {
             m_ctrl.ExtParam = &buffers[n_frame];
@@ -105,26 +111,27 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 {
     /*00*/{MFX_ERR_NONE, 0, {}},
     /*01*/{MFX_ERR_NONE, QUERY, {}},
-    /*02*/{MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 2}},
-    /*03*/{MFX_ERR_NONE, RUNTIME_ONLY, {}},
-    /*04*/{MFX_ERR_NONE, EVERY_OTHER, {}},
-    /*05*/{MFX_ERR_NONE, RUNTIME_ONLY|EVERY_OTHER, {}},
-    /*06*/{MFX_ERR_NONE, EVERY_OTHER, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
+    /*02*/{ MFX_ERR_NONE, QUERY, { EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 2 } },
+    /*03*/{MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 3}},
+    /*04*/{MFX_ERR_NONE, RUNTIME_ONLY, {}},
+    /*05*/{MFX_ERR_NONE, EVERY_OTHER, {}},
+    /*06*/{MFX_ERR_NONE, RUNTIME_ONLY|EVERY_OTHER, {}},
+    /*07*/{MFX_ERR_NONE, EVERY_OTHER, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
                                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}},
-    /*07*/{MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
+    /*08*/{MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
                              {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10}}},
-    /*08*/{MFX_ERR_NONE, EVERY_OTHER, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
+    /*09*/{MFX_ERR_NONE, EVERY_OTHER, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
                                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 8}}},
-    /*09*/{MFX_ERR_NONE, EVERY_OTHER, {
+    /*10*/{MFX_ERR_NONE, EVERY_OTHER, {
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 700},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 0},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}}},
-    /*10*/{MFX_ERR_NONE, RESET_ON, {}},
-    /*11*/{MFX_ERR_NONE, RESET_ON|RUNTIME_ONLY, {}},
-    /*12*/{MFX_ERR_NONE, RESET_ON|EVERY_OTHER, {}},
-    /*13*/{MFX_ERR_NONE, RESET_OFF, {}},
-    /*14*/{MFX_ERR_NONE, RESET_OFF|RUNTIME_ONLY, {}},
+    /*11*/{MFX_ERR_NONE, RESET_ON, {}},
+    /*12*/{MFX_ERR_NONE, RESET_ON|RUNTIME_ONLY, {}},
+    /*13*/{MFX_ERR_NONE, RESET_ON|EVERY_OTHER, {}},
+    /*14*/{MFX_ERR_NONE, RESET_OFF, {}},
+    /*15*/{MFX_ERR_NONE, RESET_OFF|RUNTIME_ONLY, {}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -133,11 +140,14 @@ class BsDump : public tsBitstreamProcessor, tsParserH264AU
 {
     mfxU32 n_frame;
 public:
+    Bs32u m_expected;
+
     BsDump() :
-        tsParserH264AU(BS_H264_INIT_MODE_CABAC|BS_H264_INIT_MODE_CAVLC)
+        tsParserH264AU()
         , n_frame(0)
+        , m_expected(1)
     {
-        set_trace_level(0);
+        set_trace_level(BS_H264_TRACE_LEVEL_SLICE);
     }
     ~BsDump() {}
 
@@ -145,24 +155,30 @@ public:
     {
         g_tsLog << "CHECK: slice_hdr->disable_deblocking_filter_idc\n";
         set_buffer(bs.Data + bs.DataOffset, bs.DataLength+1);
-        UnitType& au = ParseOrDie();
-        for (Bs32u i = 0; i < au.NumUnits; i++)
-        {
-            if (!(au.NALU[i].nal_unit_type == 0x01 || au.NALU[i].nal_unit_type == 0x05))
-            {
-                continue;
-            }
 
-            Bs32u expected = bs.TimeStamp == FEATURE_ENABLED ? 1 : 0;
-            if (au.NALU[i].slice_hdr->disable_deblocking_filter_idc != expected)
+        while (nFrames--)
+        {
+            UnitType& au = ParseOrDie();
+            for (Bs32u i = 0; i < au.NumUnits; i++)
             {
-                g_tsLog << "ERROR: frame#" << n_frame << " slice_hdr->disable_deblocking_filter_idc="
+                if (!(au.NALU[i].nal_unit_type == 0x01 || au.NALU[i].nal_unit_type == 0x05))
+                {
+                    continue;
+                }
+
+                Bs32u expected = bs.TimeStamp == FEATURE_ENABLED ? m_expected : 0;
+                if (au.NALU[i].slice_hdr->disable_deblocking_filter_idc != expected)
+                {
+                    g_tsLog << "ERROR: frame#" << n_frame << " slice_hdr->disable_deblocking_filter_idc="
                         << au.NALU[i].slice_hdr->disable_deblocking_filter_idc
                         << " != " << expected << " (expected value)\n";
-                return MFX_ERR_UNKNOWN;
+                    return MFX_ERR_UNKNOWN;
+                }
             }
+            n_frame++;
         }
-        n_frame++;
+
+        bs.DataLength = 0;
 
         return MFX_ERR_NONE;
     }
@@ -185,6 +201,7 @@ int TestSuite::RunTest(unsigned int id)
         mfxExtCodingOption2& cod2 = m_par;
         cod2.DisableDeblockingIdc = 1;
         SETPARS(&cod2, EXT_COD2);
+        bs.m_expected = cod2.DisableDeblockingIdc;
     }
 
     SETPARS(m_pPar, MFX_PAR);
@@ -204,6 +221,8 @@ int TestSuite::RunTest(unsigned int id)
             m_par.ExtParam = 0;
             m_par.NumExtParam = 0;
         }
+        m_max = 2;
+        m_cur = 0;
         EncodeFrames(2);
 
         if (tc.mode & RESET_ON)
@@ -214,17 +233,26 @@ int TestSuite::RunTest(unsigned int id)
                 mfxExtCodingOption2& cod2 = m_par;
                 cod2.DisableDeblockingIdc = 1;
                 SETPARS(&cod2, EXT_COD2);
+                bs.m_expected = cod2.DisableDeblockingIdc;
             }
             Reset();
+            m_max = 2;
+            m_cur = 0;
             EncodeFrames(2);
         }
         else if (tc.mode & RESET_OFF)
         {
             mode = 0;
-            m_par.ExtParam = 0;
-            m_par.NumExtParam = 0;
+            if (!(tc.mode & RUNTIME_ONLY))
+            {
+                mfxExtCodingOption2& cod2 = m_par;
+                cod2.DisableDeblockingIdc = 0;
+                bs.m_expected = 1;
+            }
             Reset();
-            EncodeFrames(40);
+            m_max = 4;
+            m_cur = 0;
+            EncodeFrames(4);
         }
     }
 
