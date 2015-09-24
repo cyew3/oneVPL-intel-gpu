@@ -110,11 +110,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*06*/ MFX_ERR_NONE, 0, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME}}
     },
-    {/*07*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {   // Mode=Frame, InField=BFF - invalid
+    {/*07*/ MFX_ERR_NONE, 0, {   // Mode=Frame, InField=BFF
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*08*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {   // Mode is set, but OutField is set to UNKNOWN
+    {/*08*/ MFX_ERR_NONE, 0, {   // Mode is set, but OutField is set to UNKNOWN
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_UNKNOWN}}
     },
