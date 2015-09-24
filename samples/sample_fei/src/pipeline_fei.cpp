@@ -2234,7 +2234,7 @@ mfxStatus CEncodingPipeline::Run()
                                 mvs = &((mfxExtFeiPreEncMV*)(eTask->out.ExtParam[i]))[fieldId];
                                 if (eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV){
                                     set = getFreeBufSet(encodeBufs);
-                                    for (int j; j < set->PB_bufs.in.NumExtParam; j++){
+                                    for (int j = 0; j < set->PB_bufs.in.NumExtParam; j++){
                                         if (set->PB_bufs.in.ExtParam[j]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED){
                                             mvp = &((mfxExtFeiEncMVPredictors*)(eTask->out.ExtParam[j]))[fieldId];
                                             repackPreenc2Enc(mvs->MB, mvp->MB, mvs->NumMBAlloc, tmpForMedian);
