@@ -23,7 +23,7 @@ class drmRenderer;
 class DRMLibVA : public CLibVA
 {
 public:
-    DRMLibVA(int type);
+    DRMLibVA(int type = MFX_LIBVA_DRM);
     virtual ~DRMLibVA(void);
 
     inline int getFD() { return m_fd; }
