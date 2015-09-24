@@ -65,7 +65,7 @@ public:
 
     mfxStatus GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload);
 
-    mfxStatus DecodeFrames(mfxU32 n);
+    mfxStatus DecodeFrames(mfxU32 n, bool check=false);
 
     mfxStatus Load();
     mfxStatus UnLoad();

@@ -380,9 +380,8 @@ mfxStatus tsVideoDecoder::GetPayload(mfxSession session, mfxU64 *ts, mfxPayload 
     return g_tsStatus.get();
 }
 
-mfxStatus tsVideoDecoder::DecodeFrames(mfxU32 n)
+mfxStatus tsVideoDecoder::DecodeFrames(mfxU32 n, bool check)
 {
-
     mfxU32 decoded = 0;
     mfxU32 submitted = 0;
     mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
@@ -426,6 +425,9 @@ mfxStatus tsVideoDecoder::DecodeFrames(mfxU32 n)
     }
 
     g_tsLog << decoded << " FRAMES DECODED\n";
+
+    if (check && (decoded != n))
+        return MFX_ERR_UNKNOWN;
 
     return g_tsStatus.get();
 }
