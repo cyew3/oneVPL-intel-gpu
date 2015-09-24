@@ -211,14 +211,18 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->memType = D3D9_MEMORY;
             pParams->mode = MODE_RENDERING;
             pParams->libvaBackend = MFX_LIBVA_DRM_MODESET;
-            pParams->monitorType = getMonitorType(&strInput[i][5]);
-            if (pParams->monitorType >= MFX_MONITOR_MAXNUMBER) {
-                if (strInput[i][5]) {
+            if (strInput[i][5]) {
+                if (strInput[i][5] != '-') {
                     PrintHelp(strInput[0], MSDK_STRING("unsupported monitor type"));
                     return MFX_ERR_UNSUPPORTED;
-                } else {
-                    pParams->monitorType = MFX_MONITOR_AUTO; // that's case of "-rdrm" pure option
                 }
+                pParams->monitorType = getMonitorType(&strInput[i][6]);
+                if (pParams->monitorType >= MFX_MONITOR_MAXNUMBER) {
+                    PrintHelp(strInput[0], MSDK_STRING("unsupported monitor type"));
+                    return MFX_ERR_UNSUPPORTED;
+                }
+            } else {
+                pParams->monitorType = MFX_MONITOR_AUTO; // that's case of "-rdrm" pure option
             }
         }
 #endif

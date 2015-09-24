@@ -820,13 +820,18 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.libvaBackend = MFX_LIBVA_DRM_MODESET;
             InputParams.monitorType = getMonitorType(&argv[i][5]);
-            if (InputParams.monitorType >= MFX_MONITOR_MAXNUMBER) {
-                if (argv[i][5]) {
+            if (argv[i][5]) {
+                if (argv[i][5] != '-') {
                     PrintHelp(argv[0], MSDK_STRING("unsupported monitor type"));
                     return MFX_ERR_UNSUPPORTED;
-                } else {
-                    InputParams.monitorType = MFX_MONITOR_AUTO; // that's case of "-rdrm" pure option
                 }
+                InputParams.monitorType = getMonitorType(&argv[i][6]);
+                if (InputParams.monitorType >= MFX_MONITOR_MAXNUMBER) {
+                    PrintHelp(argv[0], MSDK_STRING("unsupported monitor type"));
+                    return MFX_ERR_UNSUPPORTED;
+                }
+            } else {
+                InputParams.monitorType = MFX_MONITOR_AUTO; // that's case of "-rdrm" pure option
             }
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-ext_allocator")))
