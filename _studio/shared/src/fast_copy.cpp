@@ -51,8 +51,8 @@ mfxStatus FastCopy::Initialize(void)
     }
     if (MFX_ERR_NONE == sts)
     {
-        m_pThreads = new UMC::Thread[m_numThreads - 1];
-        m_tasks = new FC_TASK[m_numThreads - 1];
+        m_pThreads = new UMC::Thread[m_numThreads];
+        m_tasks = new FC_TASK[m_numThreads];
 
         if (!m_pThreads || !m_tasks) sts = MFX_ERR_MEMORY_ALLOC;
     }
