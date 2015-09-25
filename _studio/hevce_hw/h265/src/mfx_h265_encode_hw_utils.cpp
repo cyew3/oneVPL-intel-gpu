@@ -975,7 +975,7 @@ void MfxVideoParam::SyncHeadersToMfxParam()
 void MfxVideoParam::SyncMfxToHeadersParam()
 {
     PTL& general = m_vps.general;
-    SubLayerOrdering& slo = m_vps.sub_layer[0];
+    SubLayerOrdering& slo = m_vps.sub_layer[NumTL() - 1];
 
     Zero(m_vps);
     m_vps.video_parameter_set_id    = 0;
