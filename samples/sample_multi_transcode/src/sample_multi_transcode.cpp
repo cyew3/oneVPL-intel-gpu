@@ -123,6 +123,10 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
             /* Rendering case */
             m_hwdev.reset(CreateVAAPIDevice(params.libvaBackend));
+            if(!m_hwdev.get()) {
+                msdk_printf(MSDK_STRING("error: failed to initialize VAAPI device\n"));
+                return MFX_ERR_DEVICE_FAILED;
+            }
             sts = m_hwdev->Init(&params.monitorType, 1, MSDKAdapter::GetNumber() );
             if (params.libvaBackend == MFX_LIBVA_DRM_MODESET) {
                 CVAAPIDeviceDRM* drmdev = dynamic_cast<CVAAPIDeviceDRM*>(m_hwdev.get());
@@ -133,8 +137,12 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         }
         else /* NO RENDERING*/
         {
-            m_hwdev.reset(CreateVAAPIDevice(MFX_LIBVA_DRM_MODESET));
-            sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber() );
+            m_hwdev.reset(CreateVAAPIDevice());
+            if(!m_hwdev.get()) {
+                msdk_printf(MSDK_STRING("error: failed to initialize VAAPI device\n"));
+                return MFX_ERR_DEVICE_FAILED;
+            }
+            sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber());
         }
 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
