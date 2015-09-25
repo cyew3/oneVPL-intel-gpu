@@ -232,7 +232,7 @@ D3D11VideoProcessor::D3D11VideoProcessor(void)
 
     m_bCameraMode = false;
     m_eventHandle = 0;
-    m_bUseEventHandle = true;
+    m_bUseEventHandle = false;
 } // D3D11VideoProcessor::D3D11VideoProcessor(ID3D11VideoDevice  *pVideoDevice, ID3D11VideoContext *pVideoContext)
 
 
@@ -1830,6 +1830,8 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
 
     if ( ! m_CameraSet )
     {
+        m_bUseEventHandle = true;
+
         sts = CameraPipeActivate();
         MFX_CHECK_STS(sts);
 
