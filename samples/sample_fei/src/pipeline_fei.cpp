@@ -1913,7 +1913,7 @@ mfxStatus CEncodingPipeline::Run()
                                         repackPreenc2Enc(mvs->MB, mvp->MB, mvs->NumMBAlloc, tmpForMedian);
                                         break;
                                     }
-                                } //for (int j; j < set->PB_bufs.in.NumExtParam; j++)
+                                } //for (int j = 0; j < set->PB_bufs.in.NumExtParam; j++)
                                 break;
                             }
                         } // for (int i = 0; i < eTask->out.NumExtParam; i++)
@@ -2092,11 +2092,12 @@ mfxStatus CEncodingPipeline::Run()
         } // if (m_encpakParams.bENCPAK)
 
         if (m_encpakParams.bENCODE) {
+
+            mfxFrameSurface1* encodeSurface = m_encpakParams.bPREENC ? eTask->in.InSurface : pSurf;
+            initEncodeFrameParams(encodeSurface, pCurrentTask);
+
             for (;;) {
                 // at this point surface for encoder contains either a frame from file or a frame processed by vpp
-
-                mfxFrameSurface1* encodeSurface = m_encpakParams.bPREENC ? eTask->in.InSurface : pSurf;
-                initEncodeFrameParams(encodeSurface, pCurrentTask);
 
                 sts = m_pmfxENCODE->EncodeFrameAsync(ctr, encodeSurface, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
 
@@ -2106,6 +2107,10 @@ mfxStatus CEncodingPipeline::Run()
                         MSDK_SLEEP(1); // wait if device is busy
                 } else if (MFX_ERR_NONE < sts && pCurrentTask->EncSyncP) {
                     sts = MFX_ERR_NONE; // ignore warnings if output is available
+                    sts = m_mfxSession.SyncOperation(pCurrentTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                    MSDK_BREAK_ON_ERROR(sts);
+                    sts = SynchronizeFirstTask();
+                    MSDK_BREAK_ON_ERROR(sts);
                     break;
                 } else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
                     sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
@@ -2231,18 +2236,22 @@ mfxStatus CEncodingPipeline::Run()
                         {
                             for (int i = 0; i < eTask->out.NumExtParam; i++)
                             {
-                                mvs = &((mfxExtFeiPreEncMV*)(eTask->out.ExtParam[i]))[fieldId];
                                 if (eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV){
-                                    set = getFreeBufSet(encodeBufs);
+                                    mvs = &((mfxExtFeiPreEncMV*)(eTask->out.ExtParam[i]))[fieldId];
+                                    if (set == NULL){
+                                        set = getFreeBufSet(encodeBufs);
+                                    }
                                     for (int j = 0; j < set->PB_bufs.in.NumExtParam; j++){
                                         if (set->PB_bufs.in.ExtParam[j]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED){
-                                            mvp = &((mfxExtFeiEncMVPredictors*)(eTask->out.ExtParam[j]))[fieldId];
+                                            mvp = &((mfxExtFeiEncMVPredictors*)(set->PB_bufs.in.ExtParam[j]))[fieldId];
                                             repackPreenc2Enc(mvs->MB, mvp->MB, mvs->NumMBAlloc, tmpForMedian);
+                                            break;
                                         }
-                                    }
+                                    } //for (int j = 0; j < set->PB_bufs.in.NumExtParam; j++)
+                                    break;
                                 }
-                            }
-                        }
+                            } // for (int i = 0; i < eTask->out.NumExtParam; i++)
+                        } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
                         if (set){
                             set->vacant = true;
                         }
@@ -2250,9 +2259,10 @@ mfxStatus CEncodingPipeline::Run()
                 }
 
                 if (m_encpakParams.bENCODE) { //if we have both
-                    for (;;) {
 
-                        initEncodeFrameParams(eTask->in.InSurface, pCurrentTask);
+                    initEncodeFrameParams(eTask->in.InSurface, pCurrentTask);
+
+                    for (;;) {
                         //no ctrl for buffered frames
                         //sts = m_pmfxENCODE->EncodeFrameAsync(ctr, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
                         sts = m_pmfxENCODE->EncodeFrameAsync(ctr, eTask->in.InSurface, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
@@ -2263,6 +2273,14 @@ mfxStatus CEncodingPipeline::Run()
                                 MSDK_SLEEP(1); // wait if device is busy
                         } else if (MFX_ERR_NONE < sts && pCurrentTask->EncSyncP) {
                             sts = MFX_ERR_NONE; // ignore warnings if output is available
+                            sts = m_mfxSession.SyncOperation(pCurrentTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                            MSDK_BREAK_ON_ERROR(sts);
+                            //sts = SynchronizeFirstTask();
+                            //MSDK_BREAK_ON_ERROR(sts);
+                            while (pCurrentTask->bufs.size() != 0){
+                                pCurrentTask->bufs.front().first->vacant = true; // false
+                                pCurrentTask->bufs.pop_front();
+                            }
                             break;
                         } else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
                             sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
@@ -2583,13 +2601,15 @@ mfxStatus CEncodingPipeline::Run()
             sts = GetFreeTask(&pCurrentTask);
             MSDK_BREAK_ON_ERROR(sts);
 
+            //Add output buffers
+            bufSet* encode_IOBufs = getFreeBufSet(encodeBufs);
+            if (encode_IOBufs->PB_bufs.out.NumExtParam > 0){
+                pCurrentTask->mfxBS.NumExtParam = encode_IOBufs->PB_bufs.out.NumExtParam;
+                pCurrentTask->mfxBS.ExtParam    = encode_IOBufs->PB_bufs.out.ExtParam;
+            }
+
             for (;;) {
-                //Add output buffers
-                bufSet* encode_IOBufs = getFreeBufSet(encodeBufs);
-                if (encode_IOBufs->PB_bufs.out.NumExtParam > 0){
-                    pCurrentTask->mfxBS.NumExtParam = encode_IOBufs->PB_bufs.out.NumExtParam;
-                    pCurrentTask->mfxBS.ExtParam    = encode_IOBufs->PB_bufs.out.ExtParam;
-                }
+
                 //no ctrl for buffered frames
                 sts = m_pmfxENCODE->EncodeFrameAsync(ctr, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
 
@@ -2599,6 +2619,8 @@ mfxStatus CEncodingPipeline::Run()
                         MSDK_SLEEP(1); // wait if device is busy
                 } else if (MFX_ERR_NONE < sts && pCurrentTask->EncSyncP) {
                     sts = MFX_ERR_NONE; // ignore warnings if output is available
+                    sts = m_mfxSession.SyncOperation(pCurrentTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                    MSDK_BREAK_ON_ERROR(sts);
                     encode_IOBufs->vacant = true;
                     break;
                 } else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
