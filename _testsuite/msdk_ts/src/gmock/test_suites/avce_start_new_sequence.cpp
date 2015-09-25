@@ -22,7 +22,33 @@ void br_init(tsExtBufType<mfxVideoParam>& par, mfxU32, mfxU32)
     par.mfx.MaxKbps = 0;
 }
 
-void br_reset(tsExtBufType<mfxVideoParam>& par, mfxU32, mfxU32) { par.mfx.TargetKbps = 3000; }
+void br_reset(tsExtBufType<mfxVideoParam>& par, mfxU32, mfxU32)
+{
+    par.mfx.TargetKbps = 3000;
+    par.mfx.MaxKbps = 0;
+}
+
+void br_init_no_hrd(tsExtBufType<mfxVideoParam>& par, mfxU32, mfxU32)
+{
+    par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
+    par.mfx.TargetKbps = 5000;
+    par.mfx.InitialDelayInKB = 0;
+    par.mfx.MaxKbps = 0;
+
+    mfxExtCodingOption& extco = par;
+    extco.NalHrdConformance = MFX_CODINGOPTION_OFF;
+    extco.VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
+}
+
+void br_reset_no_hrd(tsExtBufType<mfxVideoParam>& par, mfxU32, mfxU32)
+{
+    par.mfx.TargetKbps = 3000;
+    par.mfx.MaxKbps = 0;
+
+    mfxExtCodingOption& extco = par;
+    extco.NalHrdConformance = MFX_CODINGOPTION_OFF;
+    extco.VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
+}
 
 void qp_reset(tsExtBufType<mfxVideoParam>& par, mfxU32, mfxU32)
 {
@@ -70,11 +96,13 @@ public:
         //, m_writer("debug.264")
     {
         set_trace_level(0);
-        m_bs_processor = this;
+        m_bs_processor = 0;
     }
     ~TestSuite() {}
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
+
+    mfxStatus EncodeOnlySubmittedFrames(const mfxU32 to_submit);
 
 private:
 
@@ -109,7 +137,7 @@ private:
 
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
-        mfxExtEncoderResetOption *ero = (mfxExtEncoderResetOption*)m_par.GetExtBuffer(MFX_EXTBUFF_ENCODER_RESET_OPTION);
+        mfxExtEncoderResetOption* ero = (mfxExtEncoderResetOption*)m_par.GetExtBuffer(MFX_EXTBUFF_ENCODER_RESET_OPTION);
         if (!ero)
             return MFX_ERR_NONE;
 
@@ -166,6 +194,59 @@ private:
     }
 };
 
+mfxStatus TestSuite::EncodeOnlySubmittedFrames(const mfxU32 to_encode)
+{
+    mfxU32 encoded = 0;
+    mfxU32 submitted = 0;
+    mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
+
+    async = TS_MIN(to_encode, async - 1);
+
+    while( true )
+    {
+        m_pSurf = 0;
+        if(submitted < to_encode)
+        {
+            m_pSurf = GetSurface();TS_CHECK_MFX;
+            submitted++;
+            if(m_filler)
+            {
+                m_pSurf = m_filler->ProcessSurface(m_pSurf, m_pFrameAllocator);
+            }
+        }
+
+        mfxStatus mfxRes = EncodeFrameAsync(m_session, m_pCtrl, m_pSurf, m_pBitstream, m_pSyncPoint);
+        if(MFX_ERR_NONE == mfxRes)
+        {
+            SyncOperation();
+            g_tsStatus.check();TS_CHECK_MFX;
+            encoded++;
+
+            m_bitstream.DataOffset = 0;
+            m_bitstream.DataLength = 0;
+
+            if(0 != m_bs_processor)
+                break;
+        }
+        else if(MFX_ERR_MORE_DATA == mfxRes)
+        {
+            if(!m_pSurf)
+                break;
+            else
+                continue;
+        }
+        else
+        {
+            g_tsLog << "ERROR: FAILED in EncodeFrameAsync loop: " << mfxRes << "\n";
+            g_tsStatus.check(mfxRes);
+        }
+    }
+
+    g_tsLog << encoded << " FRAMES ENCODED\n";
+
+    return g_tsStatus.get();
+}
+
 const TestSuite::tc_struct TestSuite::test_case[] = 
 {
     {/*00*/ MFX_ERR_UNDEFINED_BEHAVIOR, QUERY_ONLY, {}, 0, MFX_CODINGOPTION_UNKNOWN},
@@ -181,72 +262,68 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*05*/ MFX_ERR_NONE, QUERY_ONLY|OFF, {
         {INIT, set_slice, 4},
         {RESET, set_slice, 2}}, 3, MFX_CODINGOPTION_UNKNOWN},
-    // failed: old and new query return mfx_err_invalid_video_param
     {/*06*/ MFX_ERR_NONE, QUERY_ONLY|OFF, {
+        {INIT, br_init_no_hrd},
+        {RESET, br_reset}}, 3, MFX_CODINGOPTION_OFF},
+    {/*07*/ MFX_ERR_NONE, QUERY_ONLY|ON, {
         {INIT, br_init},
-        {RESET, br_reset}}, 3, MFX_CODINGOPTION_UNKNOWN},
-    {/*07*/ MFX_ERR_NONE, QUERY_ONLY|OFF, {
+        {RESET, br_reset_no_hrd}}, 3, MFX_CODINGOPTION_ON},
+    {/*08*/ MFX_ERR_NONE, QUERY_ONLY|OFF, {
         {RESET, qp_reset}}, 3, MFX_CODINGOPTION_UNKNOWN},
-    // failed: SNS differs from expected, old suite is ok
-    {/*08*/ MFX_ERR_NONE, QUERY_ONLY|ON, {
+    {/*09*/ MFX_ERR_NONE, QUERY_ONLY|ON, {
         {INIT, tl_init, EXT_BUF_PAR(mfxExtAvcTemporalLayers)},
         {RESET, tl_reset}}, 1, MFX_CODINGOPTION_UNKNOWN},
-    // failed: SNS differs from expected, old suite is ok
-    {/*09*/ MFX_ERR_NONE, QUERY_ONLY|OFF, {
+    {/*10*/ MFX_ERR_NONE, QUERY_ONLY|OFF, {
         {INIT, tl_init, EXT_BUF_PAR(mfxExtAvcTemporalLayers)},
         {RESET, tl_reset}}, 2, MFX_CODINGOPTION_UNKNOWN},
-    // failed: bs_parser failed in old suite; check idr failed
-    {/*10*/ MFX_ERR_NONE, 0, {}, 3, MFX_CODINGOPTION_OFF},
-    // failed: old and new query return mfx_err_invalid_video_param
-    {/*11*/ MFX_ERR_NONE, 0, {
-        {INIT, br_init},
-        {RESET, br_reset}}, 3, MFX_CODINGOPTION_OFF},
-    // failed: bs_parser failed in old suite; check idr and qp failed
+    {/*11*/ MFX_ERR_NONE, 0, {}, 3, MFX_CODINGOPTION_OFF},
     {/*12*/ MFX_ERR_NONE, 0, {
+        {INIT, br_init_no_hrd},
+        {RESET, br_reset}}, 3, MFX_CODINGOPTION_OFF},
+    {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, QUERY_ONLY, {
+        {INIT, br_init},
+        {RESET, br_reset_no_hrd}}, 3, MFX_CODINGOPTION_OFF},
+    {/*14*/ MFX_ERR_NONE, 0, {
         {RESET, qp_reset}}, 3, MFX_CODINGOPTION_OFF},
-    // failed: bs_parser failed in old suite; check idr and nslices failed
-    {/*13*/ MFX_ERR_NONE, 0, {
+    {/*15*/ MFX_ERR_NONE, 0, {
         {INIT, set_slice, 4},
         {RESET, set_slice, 2}}, 3, MFX_CODINGOPTION_OFF},
-    {/*14*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
+    {/*16*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
         {INIT, set_slice, 2},
         {RESET, set_slice, 4}}, 0, MFX_CODINGOPTION_OFF},
-    {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
-        {RESET, set_res, 320, 240}}, 0, MFX_CODINGOPTION_OFF},
-    {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
-        {RESET, set_res, 640, 480}}, 0, MFX_CODINGOPTION_OFF},
-    // failed: new query return mfx_err_none
     {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+        {RESET, set_res, 320, 240}}, 0, MFX_CODINGOPTION_OFF},
+    {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+        {RESET, set_res, 640, 480}}, 0, MFX_CODINGOPTION_OFF},
+    {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
         {INIT, tl_init, EXT_BUF_PAR(mfxExtAvcTemporalLayers)},
         {RESET, tl_reset}}, 1, MFX_CODINGOPTION_OFF},
-    // failed: bs_parser failed in old suite, new query return mfx_err_invalid_video_param
-    {/*18*/ MFX_ERR_NONE, 0, {
+    {/*20*/ MFX_ERR_NONE, 0, {
         {INIT, tl_init, EXT_BUF_PAR(mfxExtAvcTemporalLayers)},
         {RESET, tl_reset}}, 2, MFX_CODINGOPTION_OFF},
-    {/*19*/ MFX_ERR_NONE, 0, {}, 3, MFX_CODINGOPTION_ON},
-    // failed: old and new query return mfx_err_invalid_video_param
-    {/*20*/ MFX_ERR_NONE, 0, {
-        {INIT, br_init},
-        {RESET, br_reset}}, 3, MFX_CODINGOPTION_ON},
-    // failed: check qp
-    {/*21*/ MFX_ERR_NONE, 0, {
-        {RESET, qp_reset}}, 3, MFX_CODINGOPTION_ON},
-    // failed: check nslices in new suite
+    {/*21*/ MFX_ERR_NONE, 0, {}, 3, MFX_CODINGOPTION_ON},
     {/*22*/ MFX_ERR_NONE, 0, {
+        {INIT, br_init_no_hrd},
+        {RESET, br_reset}}, 3, MFX_CODINGOPTION_ON},
+    {/*23*/ MFX_ERR_NONE, 0, {
+        {INIT, br_init},
+        {RESET, br_reset_no_hrd}}, 3, MFX_CODINGOPTION_ON},
+    {/*24*/ MFX_ERR_NONE, 0, {
+        {RESET, qp_reset}}, 3, MFX_CODINGOPTION_ON},
+    {/*25*/ MFX_ERR_NONE, 0, {
         {INIT, set_slice, 4},
         {RESET, set_slice, 2}}, 3, MFX_CODINGOPTION_ON},
-    {/*23*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
+    {/*26*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
         {INIT, set_slice, 2},
         {RESET, set_slice, 4}}, 0, MFX_CODINGOPTION_ON},
-    {/*24*/ MFX_ERR_NONE, 0, {
+    {/*27*/ MFX_ERR_NONE, 0, {
         {RESET, set_res, 320, 240}}, 3, MFX_CODINGOPTION_ON},
-    {/*25*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
+    {/*28*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
         {RESET, set_res, 640, 480}}, 0, MFX_CODINGOPTION_ON},
-    // failed: check nslices in new suite
-    {/*26*/ MFX_ERR_NONE, 0, {
+    {/*29*/ MFX_ERR_NONE, 0, {
         {INIT, tl_init, EXT_BUF_PAR(mfxExtAvcTemporalLayers)},
         {RESET, tl_reset}}, 1, MFX_CODINGOPTION_ON},
-    {/*27*/ MFX_ERR_NONE, 0, {
+    {/*30*/ MFX_ERR_NONE, 0, {
         {INIT, tl_init, EXT_BUF_PAR(mfxExtAvcTemporalLayers)},
         {RESET, tl_reset}}, 2, MFX_CODINGOPTION_ON},
 };
@@ -288,8 +365,8 @@ int TestSuite::RunTest(unsigned int id)
         GetVideoParam();
 
         AllocSurfaces();
-        AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 1024 * 1024 * 10);
-        EncodeFrames(tc.frames);
+        AllocBitstream();
+        EncodeOnlySubmittedFrames(tc.frames);
     }
 
     mfxExtEncoderResetOption& ero = m_par;
@@ -317,8 +394,12 @@ int TestSuite::RunTest(unsigned int id)
         g_tsStatus.expect(tc.sts);
         Reset();
 
+        //BS parser cannot parse only P stream without IDR
+        if(MFX_CODINGOPTION_OFF != ero.StartNewSequence)
+            m_bs_processor = this;
+
         if (tc.sts == MFX_ERR_NONE)
-            EncodeFrames(1);
+            EncodeOnlySubmittedFrames(1);
     }
 
     TS_END;
