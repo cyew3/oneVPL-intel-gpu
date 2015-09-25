@@ -257,7 +257,8 @@ public:
 
                 if (qp != QP_DO_NOT_CHECK && expected_qp != qp)
                 {
-                    g_tsLog << "\nERROR: Expected QP (" << mfxU16(expected_qp) << ") != real QP (" << mfxU16(qp) << ")\n";
+                    g_tsLog << "\nFAIL: Expected QP (" << mfxU16(expected_qp) << ") != real QP (" << mfxU16(qp) << ")\n";
+                    g_tsLog << "\nERROR: Expected QP != real QP\n";
                     return MFX_ERR_ABORTED;
                 }
 

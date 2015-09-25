@@ -190,9 +190,6 @@
     <ClCompile Include="src\gmock\test_suites\avce_2014r2_unsupport.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\avce_max_bins.cpp">
-      <Filter>Source Files\test_suites\avce</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_roi.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
@@ -307,9 +304,6 @@
     <ClCompile Include="src\gmock\test_suites\avce_chromaloc.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\mjpeg_payload.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_cqp_hrd.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
@@ -341,6 +335,9 @@
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\mjpegd_tables.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mjpegd_payload.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_query.cpp">
@@ -417,6 +414,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\mpeg2d_aspect_ratio_change.cpp">
       <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_max_bins_pcm.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

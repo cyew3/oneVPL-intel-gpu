@@ -228,9 +228,10 @@ public:
 
                 if (hdr.pic_coding_ext->q_scale_type != expected_scale_type)
                 {
-                    g_tsLog << "\nERROR in MB(" << i % wMB << "x" << i / wMB << "):"
+                    g_tsLog << "\nFAIL in MB(" << i % wMB << "x" << i / wMB << "):"
                             << " Expected scale_type (" << bool(expected_scale_type)
                             << ") != real QP (" << bool(hdr.pic_coding_ext->q_scale_type) << ")\n";
+                    g_tsLog << "\nERROR: Expected scale_type != real QP\n";
                     return MFX_ERR_ABORTED;
                 }
 
@@ -253,10 +254,11 @@ public:
 
                 if (quantiser_scale_code != qp)
                 {
-                    g_tsLog << "\nERROR in MB(" << i % wMB << "x" << i / wMB << "):"
+                    g_tsLog << "\nFAIL in MB(" << i % wMB << "x" << i / wMB << "):"
                             << " Expected QP converted/msdk (" << mfxU16(quantiser_scale_code)
                             << "/" << mfxU16(expected_qp)
                             << ") != real QP (" << mfxU16(qp) << ")\n";
+                    g_tsLog << "\nERROR: Expected QP converted/msdk != real QP\n";
                     return MFX_ERR_ABORTED;
                 }
 
