@@ -105,6 +105,7 @@ void FillSpsBuffer(
 
     sps.TargetUsage         = mfxU8(par.mfx.TargetUsage);
     sps.RateControlMethod   = mfxU8(par.mfx.RateControlMethod);
+    sps.ContentInfo = eContent_NonVideoScreen;
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || 
         par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
