@@ -386,8 +386,7 @@ public:  // DEBUG !!!! should remove dependence
     bool m_bDecoded;                                            // (bool) "slice has been decoded" flag
     bool m_bPrevDeblocked;                                      // (bool) "previous slice has been deblocked" flag
     bool m_bDeblocked;                                          // (bool) "slice has been deblocked" flag
-
-    Ipp8s last_QP_deblock;
+    bool m_bInited;
 
     // memory management tools
     MemoryAllocator *m_pMemoryAllocator;                        // (MemoryAllocator *) pointer to memory allocation tool

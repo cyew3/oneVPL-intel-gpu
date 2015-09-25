@@ -59,7 +59,7 @@ public:
     virtual ~SwapperBase() {}
 
     virtual void SwapMemory(Ipp8u *pDestination, size_t &nDstSize, Ipp8u *pSource, size_t nSrcSize) = 0;
-    virtual void SwapMemory(H264MemoryPiece * pMemDst, H264MemoryPiece * pMemSrc) = 0;
+    virtual void SwapMemory(H264MemoryPiece * pMemDst, H264MemoryPiece * pMemSrc, Ipp8u defaultValue = DEFAULT_NU_TAIL_VALUE) = 0;
 
     virtual void CopyBitStream(Ipp8u *pDestination, Ipp8u *pSource, size_t &nSrcSize) = 0;
 };

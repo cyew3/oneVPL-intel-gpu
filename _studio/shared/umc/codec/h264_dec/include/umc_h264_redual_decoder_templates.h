@@ -1650,6 +1650,8 @@ public:
         sd->m_pCoeffBlocksWrite = (UMC::CoeffsPtrCommon)((Ipp8u*)sd->m_pCoeffBlocksWrite +
                         256*sizeof(PlaneY));
 
+        sd->m_pBitStream->CheckBSLeft();
+
         if (color_format)
         {
             PlanePtrUV pCoeffBlocksWrite_UV = (PlanePtrUV) (sd->m_pCoeffBlocksWrite);

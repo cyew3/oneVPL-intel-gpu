@@ -196,8 +196,8 @@ public:
     // Reads one bit from the buffer.
     inline Ipp8u Get1Bit();
 
-    inline bool IsBSLeft();
-    inline void CheckBSLeft();
+    inline bool IsBSLeft(size_t sizeToRead = 0);
+    inline void CheckBSLeft(size_t sizeToRead = 0);
 
     // Check amount of data
     bool More_RBSP_Data();
@@ -408,6 +408,8 @@ public:
     void InitializeDecodingEngine_CABAC(void);
     // Terminate CABAC decoding engine, rollback prereaded bits
     void TerminateDecode_CABAC(void);
+
+    void UpdateCABACPointers();
 
     // Initialize CABAC context(s) in intra slices
     void InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy);

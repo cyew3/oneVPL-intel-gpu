@@ -48,7 +48,6 @@ FactorArrayAFF H264Slice::m_StaticFactorArrayAFF;
 Status H264Slice::UpdateReferenceList(ViewList &views,
                                       Ipp32s dIdIndex)
 {
-    Status ps = UMC_OK;
     RefPicListReorderInfo *pReorderInfo_L0 = &ReorderInfoL0;
     RefPicListReorderInfo *pReorderInfo_L1 = &ReorderInfoL1;
     const H264SeqParamSet *sps = GetSeqParam();
@@ -127,259 +126,257 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
 
         if ((NumShortTermRefs + NumLongTermRefs + NumInterViewRefs) == 0)
         {
-            VM_ASSERT(0);
-            ps = UMC_ERR_INVALID_STREAM;
+            return UMC_ERR_INVALID_STREAM;
         }
 
-        if (ps == UMC_OK)
+#ifdef ENABLE_LIST_TRACE
+        static int kkkk = 0;
+        kkkk++;
+#endif
+
+        // Initialize the reference picture lists
+        // Note the slice header get function always fills num_ref_idx_lx_active
+        // fields with a valid value; either the override from the slice
+        // header in the bitstream or the values from the pic param set when
+        // there is no override.
+
+        if (!m_SliceHeader.IdrPicFlag)
         {
-#ifdef ENABLE_LIST_TRACE
-            static int kkkk = 0;
-            kkkk++;
-#endif
-
-            // Initialize the reference picture lists
-            // Note the slice header get function always fills num_ref_idx_lx_active
-            // fields with a valid value; either the override from the slice
-            // header in the bitstream or the values from the pic param set when
-            // there is no override.
-
-            if (!m_SliceHeader.IdrPicFlag)
+            if ((m_SliceHeader.slice_type == PREDSLICE) ||
+                (m_SliceHeader.slice_type == S_PREDSLICE))
             {
-                if ((m_SliceHeader.slice_type == PREDSLICE) ||
-                    (m_SliceHeader.slice_type == S_PREDSLICE))
-                {
-                    pDecoderFrameList->InitPSliceRefPicList(this, pRefPicList0);
-                    pLastInList[0] = FindLastValidReference(pRefPicList0,
-                                                            m_SliceHeader.num_ref_idx_l0_active);
-                }
-                else
-                {
-                    pDecoderFrameList->InitBSliceRefPicLists(this, pRefPicList0, pRefPicList1, rli);
-                    pLastInList[0] = FindLastValidReference(pRefPicList0,
-                                                            m_SliceHeader.num_ref_idx_l0_active);
-                    pLastInList[1] = FindLastValidReference(pRefPicList1,
-                                                            m_SliceHeader.num_ref_idx_l1_active);
-                }
-
-                // Reorder the reference picture lists
-                if (m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE)
-                {
-                    rli.m_iNumFramesInL0List = AdjustRefPicListForFields(pRefPicList0, pFields0, rli);
-                }
-
-                if (BPREDSLICE == m_SliceHeader.slice_type)
-                {
-                    if (m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE)
-                    {
-                        rli.m_iNumFramesInL1List = AdjustRefPicListForFields(pRefPicList1, pFields1, rli);
-                    }
-
-                    if ((rli.m_iNumFramesInL0List == rli.m_iNumFramesInL1List) &&
-                        (rli.m_iNumFramesInL0List > 1))
-                    {
-                        bool isNeedSwap = true;
-                        for (Ipp32s i = 0; i < rli.m_iNumFramesInL0List; i++)
-                        {
-                            if (pRefPicList1[i] != pRefPicList0[i] ||
-                                pFields1[i].field != pFields0[i].field)
-                            {
-                                isNeedSwap = false;
-                                break;
-                            }
-                        }
-
-                        if (isNeedSwap)
-                        {
-                            swapValues(pRefPicList1[0], pRefPicList1[1]);
-                            swapValues(pFields1[0], pFields1[1]);
-                        }
-                    }
-                }
+                pDecoderFrameList->InitPSliceRefPicList(this, pRefPicList0);
+                pLastInList[0] = FindLastValidReference(pRefPicList0,
+                                                        m_SliceHeader.num_ref_idx_l0_active);
+            }
+            else
+            {
+                pDecoderFrameList->InitBSliceRefPicLists(this, pRefPicList0, pRefPicList1, rli);
+                pLastInList[0] = FindLastValidReference(pRefPicList0,
+                                                        m_SliceHeader.num_ref_idx_l0_active);
+                pLastInList[1] = FindLastValidReference(pRefPicList1,
+                                                        m_SliceHeader.num_ref_idx_l1_active);
             }
 
-            // MVC extension. Add inter-view references
-            if ((H264VideoDecoderParams::H264_PROFILE_MULTIVIEW_HIGH == m_pSeqParamSet->profile_idc) ||
-                (H264VideoDecoderParams::H264_PROFILE_STEREO_HIGH == m_pSeqParamSet->profile_idc))
+            // Reorder the reference picture lists
+            if (m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE)
             {
-                pDecoderFrameList->AddInterViewRefs(this, pRefPicList0, pFields0, LIST_0, views);
-                if (m_SliceHeader.IdrPicFlag)
-                {
-                    pLastInList[0] = FindLastValidReference(pRefPicList0, m_SliceHeader.num_ref_idx_l0_active);
-                }
-
-                if (BPREDSLICE == m_SliceHeader.slice_type)
-                {
-                    pDecoderFrameList->AddInterViewRefs(this, pRefPicList1, pFields1, LIST_1, views);
-                    if (m_SliceHeader.IdrPicFlag)
-                        pLastInList[1] = FindLastValidReference(pRefPicList1, m_SliceHeader.num_ref_idx_l1_active);
-                }
+                rli.m_iNumFramesInL0List = AdjustRefPicListForFields(pRefPicList0, pFields0, rli);
             }
-
-            pRefPicList0[m_SliceHeader.num_ref_idx_l0_active] = 0;
-
-#ifdef ENABLE_LIST_TRACE
-            {
-            FILE  * fl = fopen(LIST_TRACE_FILE_NAME, "a+");
-            fprintf(fl, "init - l0 - %d\n", kkkk);
-            for (Ipp32s k1 = 0; k1 < m_SliceHeader.num_ref_idx_l0_active; k1++)
-            {
-                if (!pRefPicList0[k1])
-                    break;
-                fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields0[k1].field, pRefPicList0[k1]->m_PicOrderCnt[pRefPicList0[k1]->GetNumberByParity(pFields0[k1].field)]);
-            }
-
-            fprintf(fl, "l1 - %d\n", kkkk);
-            for (Ipp32s  k1 = 0; k1 < m_SliceHeader.num_ref_idx_l1_active; k1++)
-            {
-                if (!pRefPicList1[k1])
-                    break;
-                fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields1[k1].field, pRefPicList1[k1]->m_PicOrderCnt[pRefPicList1[k1]->GetNumberByParity(pFields1[k1].field)]);
-            }
-
-            fclose(fl);
-            }
-#endif
-
-            if (pReorderInfo_L0->num_entries > 0)
-                ReOrderRefPicList(pRefPicList0, pFields0, pReorderInfo_L0, uMaxPicNum, views, dIdIndex, 0);
 
             if (BPREDSLICE == m_SliceHeader.slice_type)
             {
-                pRefPicList1[m_SliceHeader.num_ref_idx_l1_active] = 0;
+                if (m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE)
+                {
+                    rli.m_iNumFramesInL1List = AdjustRefPicListForFields(pRefPicList1, pFields1, rli);
+                }
 
-                if (pReorderInfo_L1->num_entries > 0)
-                    ReOrderRefPicList(pRefPicList1, pFields1, pReorderInfo_L1, uMaxPicNum, views, dIdIndex, 1);
+                if ((rli.m_iNumFramesInL0List == rli.m_iNumFramesInL1List) &&
+                    (rli.m_iNumFramesInL0List > 1))
+                {
+                    bool isNeedSwap = true;
+                    for (Ipp32s i = 0; i < rli.m_iNumFramesInL0List; i++)
+                    {
+                        if (pRefPicList1[i] != pRefPicList0[i] ||
+                            pFields1[i].field != pFields0[i].field)
+                        {
+                            isNeedSwap = false;
+                            break;
+                        }
+                    }
+
+                    if (isNeedSwap)
+                    {
+                        swapValues(pRefPicList1[0], pRefPicList1[1]);
+                        swapValues(pFields1[0], pFields1[1]);
+                    }
+                }
             }
+        }
+
+        // MVC extension. Add inter-view references
+        if ((H264VideoDecoderParams::H264_PROFILE_MULTIVIEW_HIGH == m_pSeqParamSet->profile_idc) ||
+            (H264VideoDecoderParams::H264_PROFILE_STEREO_HIGH == m_pSeqParamSet->profile_idc))
+        {
+            pDecoderFrameList->AddInterViewRefs(this, pRefPicList0, pFields0, LIST_0, views);
+            if (m_SliceHeader.IdrPicFlag)
+            {
+                pLastInList[0] = FindLastValidReference(pRefPicList0, m_SliceHeader.num_ref_idx_l0_active);
+            }
+
+            if (BPREDSLICE == m_SliceHeader.slice_type)
+            {
+                pDecoderFrameList->AddInterViewRefs(this, pRefPicList1, pFields1, LIST_1, views);
+                if (m_SliceHeader.IdrPicFlag)
+                    pLastInList[1] = FindLastValidReference(pRefPicList1, m_SliceHeader.num_ref_idx_l1_active);
+            }
+        }
+
+        pRefPicList0[m_SliceHeader.num_ref_idx_l0_active] = 0;
+
+#ifdef ENABLE_LIST_TRACE
+        {
+        FILE  * fl = fopen(LIST_TRACE_FILE_NAME, "a+");
+        fprintf(fl, "init - l0 - %d\n", kkkk);
+        for (Ipp32s k1 = 0; k1 < m_SliceHeader.num_ref_idx_l0_active; k1++)
+        {
+            if (!pRefPicList0[k1])
+                break;
+            fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields0[k1].field, pRefPicList0[k1]->m_PicOrderCnt[pRefPicList0[k1]->GetNumberByParity(pFields0[k1].field)]);
+        }
+
+        fprintf(fl, "l1 - %d\n", kkkk);
+        for (Ipp32s  k1 = 0; k1 < m_SliceHeader.num_ref_idx_l1_active; k1++)
+        {
+            if (!pRefPicList1[k1])
+                break;
+            fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields1[k1].field, pRefPicList1[k1]->m_PicOrderCnt[pRefPicList1[k1]->GetNumberByParity(pFields1[k1].field)]);
+        }
+
+        fclose(fl);
+        }
+#endif
+
+        if (pReorderInfo_L0->num_entries > 0)
+            ReOrderRefPicList(pRefPicList0, pFields0, pReorderInfo_L0, uMaxPicNum, views, dIdIndex, 0);
+
+        if (BPREDSLICE == m_SliceHeader.slice_type)
+        {
+            pRefPicList1[m_SliceHeader.num_ref_idx_l1_active] = 0;
+
+            if (pReorderInfo_L1->num_entries > 0)
+                ReOrderRefPicList(pRefPicList1, pFields1, pReorderInfo_L1, uMaxPicNum, views, dIdIndex, 1);
+        }
 
 
 #ifdef ENABLE_LIST_TRACE
-            {kkkk++;
-            FILE  * fl = fopen(LIST_TRACE_FILE_NAME, "a+");
-            fprintf(fl, "reorder - l0 - %d\n", kkkk);
-            for (Ipp32s k1 = 0; k1 < m_SliceHeader.num_ref_idx_l0_active; k1++)
-            {
-                if (!pRefPicList0[k1])
-                    break;
-                fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields0[k1].field, pRefPicList0[k1]->m_PicOrderCnt[pRefPicList0[k1]->GetNumberByParity(pFields0[k1].field)]);
-            }
+        {kkkk++;
+        FILE  * fl = fopen(LIST_TRACE_FILE_NAME, "a+");
+        fprintf(fl, "reorder - l0 - %d\n", kkkk);
+        for (Ipp32s k1 = 0; k1 < m_SliceHeader.num_ref_idx_l0_active; k1++)
+        {
+            if (!pRefPicList0[k1])
+                break;
+            fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields0[k1].field, pRefPicList0[k1]->m_PicOrderCnt[pRefPicList0[k1]->GetNumberByParity(pFields0[k1].field)]);
+        }
 
-            fprintf(fl, "l1 - %d\n", kkkk);
-            for (Ipp32s  k1 = 0; k1 < m_SliceHeader.num_ref_idx_l1_active; k1++)
-            {
-                if (!pRefPicList1[k1])
-                    break;
-                fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields1[k1].field, pRefPicList1[k1]->m_PicOrderCnt[pRefPicList1[k1]->GetNumberByParity(pFields1[k1].field)]);
-            }
+        fprintf(fl, "l1 - %d\n", kkkk);
+        for (Ipp32s  k1 = 0; k1 < m_SliceHeader.num_ref_idx_l1_active; k1++)
+        {
+            if (!pRefPicList1[k1])
+                break;
+            fprintf(fl, "i - %d, field - %d, poc %d \n", k1, pFields1[k1].field, pRefPicList1[k1]->m_PicOrderCnt[pRefPicList1[k1]->GetNumberByParity(pFields1[k1].field)]);
+        }
 
-            fclose(fl);
-            }
+        fclose(fl);
+        }
 #endif
 
-            // set absent references
+        // set absent references
+        {
+            Ipp32s i;
+            Ipp32s iCurField = 1;
+
+            if (!pLastInList[0])
             {
-                Ipp32s i;
-                Ipp32s iCurField = 1;
-
-                if (!pLastInList[0])
+                for (;;)
                 {
-                    for (;;)
+                    for (H264DecoderFrame *pFrm = pDecoderFrameList->head(); pFrm; pFrm = pFrm->future())
                     {
-                        for (H264DecoderFrame *pFrm = pDecoderFrameList->head(); pFrm; pFrm = pFrm->future())
-                        {
-                            if (pFrm->isShortTermRef()==3)
-                                pLastInList[0] = pFrm;
-                        }
-
-                        if (pLastInList[0])
-                            break;
-
-                        for (H264DecoderFrame *pFrm = pDecoderFrameList->head(); pFrm; pFrm = pFrm->future())
-                        {
-                            if (pFrm->isLongTermRef()==3)
-                                pLastInList[0] = pFrm;
-                        }
-                        break;
+                        if (pFrm->isShortTermRef()==3)
+                            pLastInList[0] = pFrm;
                     }
-                }
 
-                if (BPREDSLICE == m_SliceHeader.slice_type && !pLastInList[1])
-                {
-                    pLastInList[1] = pLastInList[0];
-                }
+                    if (pLastInList[0])
+                        break;
 
-                for (i = 0; i < m_SliceHeader.num_ref_idx_l0_active; i += 1)
-                {
-                    if (NULL == pRefPicList0[i])
+                    for (H264DecoderFrame *pFrm = pDecoderFrameList->head(); pFrm; pFrm = pFrm->future())
                     {
-                        pRefPicList0[i] = pLastInList[0];
-                        pFields0[i].field = (Ipp8s) (iCurField ^= 1);
-                        if (pRefPicList0[i])
-                            pFields0[i].isShortReference = (pRefPicList0[i]->m_viewId == m_pCurrentFrame->m_viewId) ? 1 : 0;
+                        if (pFrm->isLongTermRef()==3)
+                            pLastInList[0] = pFrm;
+                    }
+                    break;
+                }
+            }
+
+            if (BPREDSLICE == m_SliceHeader.slice_type && !pLastInList[1])
+            {
+                pLastInList[1] = pLastInList[0];
+            }
+
+            for (i = 0; i < m_SliceHeader.num_ref_idx_l0_active; i += 1)
+            {
+                if (NULL == pRefPicList0[i])
+                {
+                    pRefPicList0[i] = pLastInList[0];
+                    m_pCurrentFrame->AddReference(pLastInList[0]);
+                    pFields0[i].field = (Ipp8s) (iCurField ^= 1);
+                    if (pRefPicList0[i])
+                        pFields0[i].isShortReference = (pRefPicList0[i]->m_viewId == m_pCurrentFrame->m_viewId) ? 1 : 0;
+                    else
+                        pFields0[i].isShortReference = 1;
+                    pFields0[i].isLongReference = 0;
+                    m_pCurrentFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
+                }
+                else
+                {
+                    m_pCurrentFrame->AddReference(pRefPicList0[i]);
+                    m_pCurrentFrame->SetErrorFlagged(pRefPicList0[i]->IsFrameExist() ? 0 : ERROR_FRAME_MAJOR);
+                    pFields0[i].isShortReference =
+                        pRefPicList0[i]->isShortTermRef(pRefPicList0[i]->GetNumberByParity(pFields0[i].field));
+                    pFields0[i].isLongReference =
+                        pRefPicList0[i]->isLongTermRef(pRefPicList0[i]->GetNumberByParity(pFields0[i].field));
+
+                    if (pRefPicList0[i]->m_viewId != m_pCurrentFrame->m_viewId)
+                        pFields0[i].isShortReference = pFields0[i].isLongReference = 0;
+                }
+            }
+
+            if (BPREDSLICE == m_SliceHeader.slice_type)
+            {
+                iCurField = 1;
+
+                for (i = 0; i < m_SliceHeader.num_ref_idx_l1_active; i += 1)
+                {
+                    if (NULL == pRefPicList1[i])
+                    {
+                        pRefPicList1[i] = pLastInList[1];
+                        m_pCurrentFrame->AddReference(pLastInList[1]);
+                        pFields1[i].field = (Ipp8s) (iCurField ^= 1);
+                        pFields1[i].isShortReference = 1;
+                        if (pRefPicList1[i])
+                            pFields1[i].isShortReference = (pRefPicList1[i]->m_viewId == m_pCurrentFrame->m_viewId) ? 1 : 0;
                         else
-                            pFields0[i].isShortReference = 1;
-                        pFields0[i].isLongReference = 0;
+                            pFields1[i].isShortReference = 1;
+                        pFields1[i].isLongReference = 0;
                         m_pCurrentFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
                     }
                     else
                     {
-                        m_pCurrentFrame->AddReference(pRefPicList0[i]);
-                        m_pCurrentFrame->SetErrorFlagged(pRefPicList0[i]->IsFrameExist() ? 0 : ERROR_FRAME_MAJOR);
-                        pFields0[i].isShortReference =
-                            pRefPicList0[i]->isShortTermRef(pRefPicList0[i]->GetNumberByParity(pFields0[i].field));
-                        pFields0[i].isLongReference =
-                            pRefPicList0[i]->isLongTermRef(pRefPicList0[i]->GetNumberByParity(pFields0[i].field));
+                        m_pCurrentFrame->AddReference(pRefPicList1[i]);
+                        m_pCurrentFrame->SetErrorFlagged(pRefPicList1[i]->IsFrameExist() ? 0 : ERROR_FRAME_MAJOR);
+                        pFields1[i].isShortReference =
+                            pRefPicList1[i]->isShortTermRef(pRefPicList1[i]->GetNumberByParity(pFields1[i].field));
+                        pFields1[i].isLongReference =
+                            pRefPicList1[i]->isLongTermRef(pRefPicList1[i]->GetNumberByParity(pFields1[i].field));
 
-                        if (pRefPicList0[i]->m_viewId != m_pCurrentFrame->m_viewId)
-                            pFields0[i].isShortReference = pFields0[i].isLongReference = 0;
-                    }
-                }
-
-                if (BPREDSLICE == m_SliceHeader.slice_type)
-                {
-                    iCurField = 1;
-
-                    for (i = 0; i < m_SliceHeader.num_ref_idx_l1_active; i += 1)
-                    {
-                        if (NULL == pRefPicList1[i])
-                        {
-                            pRefPicList1[i] = pLastInList[1];
-                            pFields1[i].field = (Ipp8s) (iCurField ^= 1);
-                            pFields1[i].isShortReference = 1;
-                            if (pRefPicList1[i])
-                                pFields1[i].isShortReference = (pRefPicList1[i]->m_viewId == m_pCurrentFrame->m_viewId) ? 1 : 0;
-                            else
-                                pFields1[i].isShortReference = 1;
-                            pFields1[i].isLongReference = 0;
-                            m_pCurrentFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
-                        }
-                        else
-                        {
-                            m_pCurrentFrame->AddReference(pRefPicList1[i]);
-                            m_pCurrentFrame->SetErrorFlagged(pRefPicList1[i]->IsFrameExist() ? 0 : ERROR_FRAME_MAJOR);
-                            pFields1[i].isShortReference =
-                                pRefPicList1[i]->isShortTermRef(pRefPicList1[i]->GetNumberByParity(pFields1[i].field));
-                            pFields1[i].isLongReference =
-                                pRefPicList1[i]->isLongTermRef(pRefPicList1[i]->GetNumberByParity(pFields1[i].field));
-
-                            if (pRefPicList1[i]->m_viewId != m_pCurrentFrame->m_viewId)
-                                pFields1[i].isShortReference = pFields1[i].isLongReference = 0;
-                        }
+                        if (pRefPicList1[i]->m_viewId != m_pCurrentFrame->m_viewId)
+                            pFields1[i].isShortReference = pFields1[i].isLongReference = 0;
                     }
                 }
             }
+        }
 
-            // If B slice, init scaling factors array
-            if ((BPREDSLICE == m_SliceHeader.slice_type) && (pRefPicList1[0] != NULL))
-            {
-                InitDistScaleFactor(m_SliceHeader.num_ref_idx_l0_active,
-                                    m_SliceHeader.num_ref_idx_l1_active,
-                                    pRefPicList0, pRefPicList1, pFields0, pFields1);
-            }
+        // If B slice, init scaling factors array
+        if ((BPREDSLICE == m_SliceHeader.slice_type) && (pRefPicList1[0] != NULL))
+        {
+            InitDistScaleFactor(m_SliceHeader.num_ref_idx_l0_active,
+                                m_SliceHeader.num_ref_idx_l1_active,
+                                pRefPicList0, pRefPicList1, pFields0, pFields1);
         }
     }
 
-    return ps;
+    return UMC_OK;
 
 } // Status H264Slice::UpdateRefPicList(H264DecoderFrameList *pDecoderFrameList)
 
@@ -457,6 +454,9 @@ void H264Slice::InitDistScaleFactor(Ipp32s NumL0RefActive,
         pDistScaleFactor = m_DistScaleFactor.values[L1Index];        //frames or fields
         pDistScaleFactorMV = m_DistScaleFactorMV.values;  //frames or fields
 
+        if (!pRefPicList1[L1Index])
+            continue;
+
         Ipp32s RefField = m_pCurrentFrame->m_PictureStructureForDec >= FRM_STRUCTURE ?
             0 : GetReferenceField(pFields1, L1Index);
 
@@ -465,6 +465,9 @@ void H264Slice::InitDistScaleFactor(Ipp32s NumL0RefActive,
 
         for (L0Index = 0; L0Index < NumL0RefActive; L0Index++)
         {
+            if (!pRefPicList0[L0Index])
+                continue;
+
             Ipp32s RefFieldTop = (m_pCurrentFrame->m_PictureStructureForDec >= FRM_STRUCTURE) ?
                 0 : GetReferenceField(pFields0, L0Index);
             picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(RefFieldTop));
@@ -492,13 +495,17 @@ void H264Slice::InitDistScaleFactor(Ipp32s NumL0RefActive,
             pDistScaleFactor = m_DistScaleFactorAFF->values[L1Index][0][0][0];      //complementary field pairs, cf=top r1=top,r0=top
             pDistScaleFactorMV = m_DistScaleFactorMVAFF->values[0][0][0];  //complementary field pairs, cf=top r1=top,r0=top
 
+            if (!pRefPicList1[L1Index])
+                continue;
+
             picCntCur = m_pCurrentFrame->PicOrderCnt(m_pCurrentFrame->GetNumberByParity(0), 1);
             picCntRef1 = pRefPicList1[L1Index]->PicOrderCnt(pRefPicList1[L1Index]->GetNumberByParity(0), 1);
             isL1LongTerm = pRefPicList1[L1Index]->isLongTermRef(pRefPicList1[L1Index]->GetNumberByParity(0));
 
             for (L0Index=0; L0Index<NumL0RefActive; L0Index++)
             {
-                VM_ASSERT(pRefPicList0[L0Index]);
+                if (!pRefPicList0[L0Index])
+                    continue;
 
                 Ipp32s RefFieldTop = 0;
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(0), 1);
@@ -510,7 +517,9 @@ void H264Slice::InitDistScaleFactor(Ipp32s NumL0RefActive,
 
             for (L0Index=0; L0Index < NumL0RefActive; L0Index++)
             {
-                VM_ASSERT(pRefPicList0[L0Index]);
+                if (!pRefPicList0[L0Index])
+                    continue;
+
                 Ipp32s RefFieldTop = 1;
 
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(1), 1);
@@ -525,7 +534,8 @@ void H264Slice::InitDistScaleFactor(Ipp32s NumL0RefActive,
 
             for (L0Index=0; L0Index<NumL0RefActive; L0Index++)
             {
-                VM_ASSERT(pRefPicList0[L0Index]);
+                if (!pRefPicList0[L0Index])
+                    continue;
 
                 Ipp32s RefFieldTop = 0;
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(0), 1);
@@ -537,7 +547,9 @@ void H264Slice::InitDistScaleFactor(Ipp32s NumL0RefActive,
 
             for (L0Index=0; L0Index < NumL0RefActive; L0Index++)
             {
-                VM_ASSERT(pRefPicList0[L0Index]);
+                if (!pRefPicList0[L0Index])
+                    continue;
+
                 Ipp32s RefFieldTop = 1;
 
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(1),1);
@@ -554,7 +566,8 @@ void H264Slice::InitDistScaleFactor(Ipp32s NumL0RefActive,
 
             for (L0Index=0; L0Index<NumL0RefActive; L0Index++)
             {
-                VM_ASSERT(pRefPicList0[L0Index]);
+                if (!pRefPicList0[L0Index])
+                    continue;
 
                 Ipp32s RefFieldTop = 0;
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(0), 1);
@@ -565,7 +578,8 @@ void H264Slice::InitDistScaleFactor(Ipp32s NumL0RefActive,
 
             for (L0Index=0; L0Index < NumL0RefActive; L0Index++)
             {
-                VM_ASSERT(pRefPicList0[L0Index]);
+                if (!pRefPicList0[L0Index])
+                    continue;
 
                 Ipp32s RefFieldTop = 1;
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(1), 1);
@@ -580,7 +594,8 @@ void H264Slice::InitDistScaleFactor(Ipp32s NumL0RefActive,
 
             for (L0Index=0; L0Index<NumL0RefActive; L0Index++)
             {
-                VM_ASSERT(pRefPicList0[L0Index]);
+                if (!pRefPicList0[L0Index])
+                    continue;
 
                 Ipp32s RefFieldTop = 0;
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(0), 1);
@@ -591,7 +606,8 @@ void H264Slice::InitDistScaleFactor(Ipp32s NumL0RefActive,
 
             for (L0Index=0; L0Index < NumL0RefActive; L0Index++)
             {
-                VM_ASSERT(pRefPicList0[L0Index]);
+                if (!pRefPicList0[L0Index])
+                    continue;
 
                 Ipp32s RefFieldTop = 1;
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(1), 1);

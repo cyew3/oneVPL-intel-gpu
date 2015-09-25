@@ -454,10 +454,8 @@ Status MFXTaskSupplier::DecodeSEI(MediaDataEx *nalUnit)
         H264MemoryPiece swappedMem;
         swappedMem.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
 
-        memset(swappedMem.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
-
         SwapperBase * swapper = m_pNALSplitter->GetSwapper();
-        swapper->SwapMemory(&swappedMem, &mem);
+        swapper->SwapMemory(&swappedMem, &mem, DEFAULT_NU_HEADER_TAIL_VALUE);
 
         bitStream.Reset((Ipp8u*)swappedMem.GetPointer(), (Ipp32u)swappedMem.GetDataSize());
 

@@ -59,6 +59,26 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
     // When bRefMBIsInter is false, set the MV to zero; for that case,
     // decodeDirectMotionVectors_8x8Inference is used because it is faster.
 
+    if (!m_pRefPicList[1][0])
+    {
+        for (int sb = 0; sb<4; sb++)
+        {
+            if (m_cur_mb.GlobalMacroblockInfo->sbtype[sb] != SBTYPE_DIRECT)
+            {
+                continue;
+            }
+
+            Ipp32s sboffset = subblock_block_mapping[sb];
+            storeInformationInto8x8(&m_cur_mb.MVs[0]->MotionVectors[sboffset], zeroVector);
+            storeInformationInto8x8(&m_cur_mb.MVs[1]->MotionVectors[sboffset], zeroVector);
+            m_cur_mb.GetReferenceIndexStruct(0)->refIndexs[sb] = 0;
+            m_cur_mb.GetReferenceIndexStruct(1)->refIndexs[sb] = 0;
+
+            m_cur_mb.LocalMacroblockInfo->sbdir[sb]=D_DIR_DIRECT;
+            m_cur_mb.GlobalMacroblockInfo->sbtype[sb]=SBTYPE_8x8;
+        }
+    }
+
     FactorArrayValue *pDistScaleFactorMV;
 
     Ipp8s RefIndexL0 = 0, RefIndexL1 = 0;

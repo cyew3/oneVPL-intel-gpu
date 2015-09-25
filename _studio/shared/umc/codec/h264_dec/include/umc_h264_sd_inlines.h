@@ -1698,7 +1698,7 @@ void H264SegmentDecoder::UpdateNeighbouringAddressesField(void)
     Ipp32s iFirst = m_iFirstSliceMb;
     Ipp32s iMBWidth = mb_width;
 
-    if ((m_CurMB_X) && (m_CurMB_Y))
+    if (m_CurMB_X && m_CurMB_Y)
     {
         if (iFirst <= m_CurMBAddr - iMBWidth - 1)
         {
@@ -1726,7 +1726,7 @@ void H264SegmentDecoder::UpdateNeighbouringAddressesField(void)
     {
         pNInfo->mb_A = -1;
         pNInfo->mb_B = (iFirst <= m_CurMBAddr - iMBWidth) ? (m_CurMBAddr - iMBWidth) : (-1);
-        pNInfo->mb_C = (iFirst <= m_CurMBAddr - iMBWidth + 1) ? (m_CurMBAddr - iMBWidth + 1) : (-1);
+        pNInfo->mb_C = (m_CurMB_X + 1 < iMBWidth) && (iFirst <= m_CurMBAddr - iMBWidth + 1) ? (m_CurMBAddr - iMBWidth + 1) : (-1);
         pNInfo->mb_D = -1;
     }
     else

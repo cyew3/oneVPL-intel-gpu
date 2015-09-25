@@ -283,6 +283,7 @@ H264Slice::H264Slice(MemoryAllocator *pMemoryAllocator)
     : m_pSeqParamSet(0)
     , m_coeffsBuffers(0)
     , m_pMemoryAllocator(pMemoryAllocator)
+    , m_bInited(false)
 {   
     Reset();
 } // H264Slice::H264Slice()
@@ -297,7 +298,7 @@ void H264Slice::Reset()
 {
     m_pSource.Release();
 
-    if (m_pSeqParamSet)
+    if (m_bInited && m_pSeqParamSet)
     {
         if (m_pSeqParamSet)
             ((H264SeqParamSet*)m_pSeqParamSet)->DecrementReference();
@@ -347,6 +348,7 @@ void H264Slice::ZeroedMembers()
     m_DistScaleFactorMVAFF = 0;
     memset(&m_AdaptiveMarkingInfo, 0, sizeof(m_AdaptiveMarkingInfo));
 
+    m_bInited = false;
     m_isInitialized = false;
 }
 
@@ -476,6 +478,7 @@ bool H264Slice::Reset(H264NalExtension *pNalExt)
     // frame is not associated yet
     m_pCurrentFrame = NULL;
 
+    m_bInited = true;
     m_pSeqParamSet->IncrementReference();
     m_pPicParamSet->IncrementReference();
     if (m_pSeqParamSetEx)
@@ -674,7 +677,7 @@ bool H264Slice::GetDeblockingCondition(void) const
 
 void H264Slice::CompleteDecoding()
 {
-    if (m_bDecoded)//  && m_bDeblocked) - we do not need to wait deblocking because FreeResources frees coeff buffer
+    //if (m_bDecoded)//  && m_bDeblocked) - we do not need to wait deblocking because FreeResources frees coeff buffer
         FreeResources();
 }
 

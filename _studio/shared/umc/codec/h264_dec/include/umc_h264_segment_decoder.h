@@ -126,6 +126,7 @@ struct Context
     bool m_bNeedToCheckMBSliceEdges;                            // (bool) flag to ...
     Ipp32s m_field_index;                                       // (Ipp32s) ordinal number of current field
     Ipp32s m_iSkipNextMacroblock;                               // (bool) the next macroblock shall be skipped
+    bool m_bError;
 
     // external data
     const H264PicParamSet *m_pPicParamSet;                      // (const H264PicParamSet *) pointer to current picture parameters sets
