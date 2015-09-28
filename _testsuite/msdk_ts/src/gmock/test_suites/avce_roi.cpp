@@ -130,6 +130,7 @@ typedef struct
 #define MFX_OFFSET(field)        (offsetof(mfxVideoParam, mfx) + offsetof(mfxInfoMFX, field))
 #define EXT_BUF_PAR(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
+#if defined(_WIN32) || defined(_WIN64)
 tc_struct test_case[] = 
 {
     //Query function
@@ -203,6 +204,33 @@ tc_struct test_case[] =
 //    {/*61*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE, AVBR,  4, 5000,    5,  ROI_1, 3,   2, 0 },
     {/*62*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
 };
+#else
+tc_struct test_case[] = 
+{
+    //Query function
+    {/*00*/ Query|Inplace, MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
+    {/*01*/ Query|InOut,   MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
+    {/*02*/ Query|DifIO,   MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
+    {/*03*/ Query|NullIn,  MFX_ERR_NONE,         CQP, 24,   24,   24,  ROI_1, 2, -25, 0 },
+    {/*04*/ Query|NullIn,  MFX_ERR_NONE,         CQP, 24,   24,   24,  ROI_1, 2, -25, 15 },
+    //{/*05*/ Query|Max,     MFX_ERR_UNSUPPORTED,  CQP, 24,   24,   24,  ROI_1, 0, -51, 0 },
+    //QueryIOSurf - Just check that won't fail
+    {/*05*/ QueryIOSurf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 1, -22, 0 },
+    //Init function
+    {/*06*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 2, -22, 0 },
+    {/*07*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 4, -25, 0 },
+    {/*08*/ Init,          MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 2, -25, 15 },
+    //Reset function
+    //{/*09*/ Reset|WithROIInit, MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
+    {/*09*/ Reset|WoROIInit,   MFX_ERR_INVALID_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
+    //EncodeFrameAsync function
+    //{/*10*/ EncodeFrameAsync|WithROIInit, MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -22, 0 },
+    {/*10*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
+    {/*11*/ EncodeFrameAsync|WoROIInit,   MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,  CQP, 24,   24,   24,  ROI_1, 3, -25, 15 },
+    //{/*12*/ EncodeFrameAsync|WithROIInit|WOBuf,   MFX_ERR_NONE,  CQP, 24,   24,   24,  ROI_1, 3, -25, 0 },
+};
+
+#endif //#if defined(_WIN32) || defined(_WIN64)
 
 int test(unsigned int id)
 {
