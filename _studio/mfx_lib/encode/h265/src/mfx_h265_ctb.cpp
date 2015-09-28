@@ -66,7 +66,7 @@ static Ipp32s TuSse(const Ipp16u *src, Ipp32s pitchSrc,
     return h265_Sse(src, pitchSrc, rec, pitchRec, width, height, shift);
 #if 0
     // Sq Err is defined on truncated Sqr Pixel Diff for uniform results across blocks sizes.
-    // Shifting after Sqr Pixel Diff accumulation causes, 
+    // Shifting after Sqr Pixel Diff accumulation causes,
     // truncation error to integrate for larger block sizes causing mismatch and large loss in bdrate. (see 10b WP Test set Tu1)
     // return h265_Sse(src, pitchSrc, rec, pitchRec, width, height)>>shift;
     // Disable Opt
@@ -366,7 +366,11 @@ void H265CU<PixType>::SetQpSubCUs(int qp, int absPartIdx, int depth, bool &found
         }
         else
         {
-            if(m_data[absPartIdx].cbf[0] || m_data[absPartIdx].cbf[1] || m_data[absPartIdx].cbf[2])
+            Ipp32u numParts = m_par->NumPartInCU >> (depth << 1);
+            if(m_data[absPartIdx].cbf[0] 
+            || m_data[absPartIdx].cbf[1] || m_data[absPartIdx].cbf[2]
+            || (m_par->chroma422 && (m_data[absPartIdx+(numParts>>1)].cbf[1] || m_data[absPartIdx+(numParts>>1)].cbf[2]))
+                )
             {
                 foundNonZeroCbf = true;
             }

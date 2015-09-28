@@ -248,10 +248,8 @@ namespace {
         intParam.LowresFactor = optHevc.LowresFactor - 1;
         intParam.DeltaQpMode  = optHevc.DeltaQpMode  - 1;
 #ifdef AMT_DQP_FIX
-        if(intParam.chromaFormatIdc != MFX_CHROMAFORMAT_YUV420 
-            || intParam.bitDepthLuma > 8 
-            || mfx.RateControlMethod != CQP
-            || (optHevc.EnableCm == ON))
+        if(intParam.bitDepthLuma > 8 
+            || optHevc.EnableCm == ON)
             intParam.DeltaQpMode  = 0;      // Disable For now -NG
 #endif
         intParam.SceneCut = (opt2.AdaptiveI == ON);
@@ -364,6 +362,7 @@ namespace {
         intParam.vuiParametersPresentFlag = (opt2.DisableVUI == OFF);
         intParam.hrdPresentFlag = (opt2.DisableVUI == OFF && (mfx.RateControlMethod == CBR || mfx.RateControlMethod == VBR));
         intParam.cbrFlag = (mfx.RateControlMethod == CBR);
+
         if (mfx.RateControlMethod != CQP) {
             intParam.targetBitrate = MIN(0xfffffed8, (Ipp64u)mfx.TargetKbps * mfx.BRCParamMultiplier * 1000);
             if (intParam.hrdPresentFlag) {
@@ -1917,7 +1916,8 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
     if (m_la.get() && (m_videoParam.LowresFactor || m_videoParam.SceneCut))
         out->m_lowres = m_frameDataLowresPool.Allocate();
 
-    if ((m_videoParam.DeltaQpMode > 0 || m_videoParam.AnalyzeCmplx) && m_videoParam.LowresFactor == 0) {
+    // DeltaQpMode uses Orig res
+    if (m_videoParam.DeltaQpMode > 0 || (m_videoParam.AnalyzeCmplx && m_videoParam.LowresFactor == 0)) {
         Ipp32s blkSize = m_videoParam.MaxCUSize;
         Ipp32s heightInBlks = (m_videoParam.Height + blkSize - 1) / blkSize;
         for (Ipp32s row = 0; row < heightInBlks; row++) {

@@ -1071,8 +1071,9 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
 
     if (tr_idx==0)
         m_bakAbsPartIdxCu = abs_part_idx;
-
-    if (Log2TrafoSize == 2 && ((abs_part_idx & part_num_mask) == part_num_mask))
+    
+    if (Log2TrafoSize == 2)
+        //&& ((abs_part_idx & part_num_mask) == part_num_mask)) // Need CBF for DQP -N
     {
         Ipp32s abs_part_idx_0 = abs_part_idx & ~part_num_mask;
         cbfU = GetCbf( abs_part_idx_0, TEXT_CHROMA_U, tr_idx );
@@ -1081,7 +1082,7 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
             cbfU1 = GetCbf( abs_part_idx_0 + 2, TEXT_CHROMA_U, tr_idx );
             cbfV1 = GetCbf( abs_part_idx_0 + 2, TEXT_CHROMA_V, tr_idx );
         }
-    }
+    } 
 
     if( m_data[abs_part_idx].predMode == MODE_INTRA &&
         m_data[abs_part_idx].partSize == PART_SIZE_NxN && depth == m_data[abs_part_idx].depth )
@@ -1203,7 +1204,7 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
         }
 //    printf("CBFY: %d\n",cbfY);
 
-        if (cbfY || cbfU || cbfV)
+        if (cbfY || cbfU || cbfV || (m_par->chroma422 && (cbfU1 || cbfV1)) )
         {
             // dQP: only for LCU once
             if (m_par->UseDQP)
