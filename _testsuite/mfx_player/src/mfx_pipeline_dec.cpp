@@ -43,6 +43,7 @@ File Name: .h
 #include "mfx_vpp.h"
 #include "mfx_mvc_target_views_decoder.h"
 #include "mfx_latency_decoder.h"
+#include "mfx_latency_vpp.h"
 #include "mfx_perfcounter_time.h"
 #include "mfx_bitrate_limited_reader.h"
 #include "mfx_mkv_reader.h"
@@ -1206,6 +1207,10 @@ mfxStatus MFXDecPipeline::CreateVPP()
     //pAlgList.release();
     //pExtDoNotUse.release();
 
+    if (m_components[eVPP].m_bCalcLatency)
+    {
+        MFX_CHECK_WITH_ERR(m_pVPP = new LatencyVPP(m_components[eREN].m_bCalcLatency && m_inParams.bNoPipelineSync, NULL, &PerfCounterTime::Instance(), m_pVPP), MFX_ERR_MEMORY_ALLOC);
+    }
 
     return MFX_ERR_NONE;
 }

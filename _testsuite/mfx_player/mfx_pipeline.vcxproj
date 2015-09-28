@@ -464,6 +464,7 @@
     <ClCompile Include="src\mfx_advance_decoder.cpp" />
     <ClCompile Include="src\mfx_bitstream_decoder.cpp" />
     <ClCompile Include="src\mfx_latency_decoder.cpp" />
+    <ClCompile Include="src\mfx_latency_vpp.cpp" />
     <ClCompile Include="src\mfx_mvc_decoder.cpp" />
     <ClCompile Include="src\mfx_mvc_target_views_decoder.cpp" />
     <ClCompile Include="src\mfx_yuv_decoder.cpp" />
@@ -620,6 +621,7 @@
     <ClInclude Include="include\mfx_decoder.h" />
     <ClInclude Include="include\mfx_jpeg_bs_parser_decoder.h" />
     <ClInclude Include="include\mfx_latency_decoder.h" />
+    <ClInclude Include="include\mfx_latency_vpp.h" />
     <ClInclude Include="include\mfx_loop_decoder.h" />
     <ClInclude Include="include\mfx_multi_decoder.h" />
     <ClInclude Include="include\mfx_mvc_decoder.h" />
