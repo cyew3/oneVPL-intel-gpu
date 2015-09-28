@@ -22,16 +22,21 @@
 #include "mfxdefs.h"
 #include "mfxvideo.h"
 #include "mfxvideo++int.h"
+#include "mfxplugin++.h"
 #include "mfx_ext_buffers.h"
 
 #include "mfx_h265_set.h"
 #include "mfx_h265_enc.h"
+#include "mfx_h265_encode_api.h"
+
+class CmDevice;
 
 namespace H265Enc {
 
     class H265FrameEncoder;
     class H265BRC;
     class Lookahead;
+    class CmCopy;
     struct H265EncodeTaskInputParams;
 
     class Hrd
@@ -61,7 +66,7 @@ namespace H265Enc {
 
     class H265Encoder : public NonCopyable {
     public:
-        explicit H265Encoder(VideoCORE &core);
+        explicit H265Encoder(MFXCoreInterface1 &core);
         ~H265Encoder();
 
         mfxStatus Init(const mfxVideoParam &par);
@@ -78,12 +83,11 @@ namespace H265Enc {
         void Close();
        
     protected:
-        mfxStatus AllocAuxFrame();
-
         // ------ mfx level
-        VideoCORE &m_core;
+        MFXCoreInterface1 &m_core;
         H265Enc::H265VideoParam m_videoParam;
         Hrd m_hrd;
+        std::auto_ptr<CmCopy> m_cmcopy;
 
         mfxEncodeStat m_stat;
         MfxMutex m_statMutex;
@@ -97,10 +101,6 @@ namespace H265Enc {
         bool    m_useSysOpaq;
         bool    m_useVideoOpaq;
         bool    m_isOpaque;
-
-        bool    m_useAuxInput;
-        mfxFrameSurface1 m_auxInput;
-        mfxFrameAllocResponse m_responseAux;
     
         H265ProfileLevelSet m_profile_level;
         H265VidParameterSet m_vps;
@@ -153,11 +153,11 @@ namespace H265Enc {
         Frame *m_targetFrame;
 
         ObjectPool<FrameData>  m_frameDataPool;         // storage for full-sized original/reconstructed/reference pixel data
-        ObjectPool<FrameData>  m_frameData8bitPool;     // storage for full-sized original/reconstructed/reference 8bit pixel data for fei
         ObjectPool<FrameData>  m_frameDataLowresPool;   // storage for lowres original pixel data for lookahead
         ObjectPool<Statistics> m_statsPool;             // storage for full-sized statistics per frame
         ObjectPool<Statistics> m_statsLowresPool;       // storage for lowres statistics per frame
-        ObjectPool<FeiInData>  m_feiInputPool;          // storage for origins/reconstructed/reference pixel data in GPU memory for fei
+        ObjectPool<FeiInData>  m_feiInputPool;          // storage for origins pixel data in GPU memory for fei
+        ObjectPool<FeiRecData> m_feiReconPool;          // storage for reconstructed/reference pixel data in GPU memory for fei
         ObjectPool<FeiOutData> m_feiAngModesPool[4];    // storage for angular intra modes output by fei (4x4, 8x8, 16x16, 32x32)
         ObjectPool<FeiOutData> m_feiInterMvPool[3];     // storage for motion vectors output by fei (8x8, 16x16, 32x32)
         ObjectPool<FeiOutData> m_feiInterDistPool[3];   // storage for ME distortions output by fei (8x8, 16x16, 32x32)
@@ -191,7 +191,11 @@ namespace H265Enc {
         vm_cond m_feiCondVar;
         vm_mutex m_feiCritSect;
 
-        mfxStatus Init_Internal();
+        mfxStatus InitInternal();
+
+        CmDevice *m_cmDevice;
+        mfxStatus CreateCmDevice();
+        mfxStatus DestroyCmDevice();
 
         // ------SPS, PPS
         void SetProfileLevel();
@@ -232,9 +236,6 @@ namespace H265Enc {
 
         void OnLookaheadStarting(); // no threas safety. some preparation work in single thread mode!
         void OnLookaheadCompletion(); // no threas safety. some post work in single thread mode!
-
-        // -------FEI
-        Ipp8u m_have8bitCopyFlag;
     };
 };
 

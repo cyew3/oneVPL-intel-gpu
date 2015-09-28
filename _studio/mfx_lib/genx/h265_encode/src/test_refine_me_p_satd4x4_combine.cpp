@@ -14,10 +14,13 @@
 #pragma warning(disable : 4201)
 #include "cm_rt.h"
 #pragma warning(pop)
-#include "../include/test_common.h"
-#include "../include/genx_h265_cmcode_isa.h"
 #include <vector>
 #include <algorithm>
+#include "../include/test_common.h"
+#include "../include/genx_hevce_refine_me_p_satd4x4_combine_bdw_isa.h"
+#include "../include/genx_hevce_refine_me_p_satd4x4_combine_hsw_isa.h"
+#include "../include/genx_hevce_interpolate_frame_bdw_isa.h"
+#include "../include/genx_hevce_interpolate_frame_hsw_isa.h"
 
 #ifdef CMRT_EMU
 extern "C"
@@ -48,7 +51,7 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
 int RunCpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData *outData);
 }
 
-int TestRefineMeCombineSATD4x4()
+int main()
 {
     mfxI32 numBlocksHor = (WIDTH + BLOCK_W - 1) / BLOCK_W;
     mfxI32 numBlocksVer = (HEIGHT + BLOCK_H - 1) / BLOCK_H;
@@ -61,13 +64,13 @@ int TestRefineMeCombineSATD4x4()
 
     FILE *f = fopen(YUV_NAME, "rb");
     if (!f)
-        return FAILED;
+        return printf("FAILED to open yuv file\n"), 1;
     if (fread(src, 1, WIDTH * HEIGHT, f) != WIDTH * HEIGHT) // read first frame
-        return FAILED;
+        return printf("FAILED to read first frame from yuv file\n"), 1;
     if (fseek(f, WIDTH * HEIGHT / 2, SEEK_CUR) != 0) // skip chroma
-        return FAILED;
+        return printf("FAILED to skip chroma\n"), 1;
     if (fread(ref, 1, WIDTH * HEIGHT, f) != WIDTH * HEIGHT) // read second frame
-        return FAILED;
+        return printf("FAILED to read second frame from yuv file\n"), 1;
     fclose(f);
 
     // fill motion vector field
@@ -99,7 +102,7 @@ int TestRefineMeCombineSATD4x4()
                     if (sadGpu[i] != sadCpu[i]) {
                         printf("bad sad value (%d != %d) for idx %d for block (x,y)=(%d,%d), mode %d\n",
                                sadGpu[i], sadCpu[i], i, x, y, mode);
-                        return FAILED;
+                        return 1;
                     }
                 }
             }
@@ -112,7 +115,7 @@ int TestRefineMeCombineSATD4x4()
     delete [] ref;
     delete [] mv;
 
-    return PASSED;
+    return printf("passed\n"), 0;
 }
 
 namespace {
@@ -126,16 +129,20 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     mfxI32 res = ::CreateCmDevice(device, version);
     CHECK_CM_ERR(res);
 
-    CmProgram *program = 0;
-    res = device->LoadProgram((void *)genx_h265_cmcode, sizeof(genx_h265_cmcode), program);
+    CmProgram *programRefine = 0;
+    res = device->LoadProgram((void *)genx_hevce_refine_me_p_satd4x4_combine_hsw, sizeof(genx_hevce_refine_me_p_satd4x4_combine_hsw), programRefine);
+    CHECK_CM_ERR(res);
+
+    CmProgram *programInterpFrame = 0;
+    res = device->LoadProgram((void *)genx_hevce_interpolate_frame_hsw, sizeof(genx_hevce_interpolate_frame_hsw), programInterpFrame);
     CHECK_CM_ERR(res);
 
     CmKernel *kernelQpel = 0;
-    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(REFINEME_KERNEL_NAME), kernelQpel);
+    res = device->CreateKernel(programRefine, CM_KERNEL_FUNCTION(REFINEME_KERNEL_NAME), kernelQpel);
     CHECK_CM_ERR(res);
 
     CmKernel *kernelHpel = 0;
-    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(INTERPOLATE_KERNEL_NAME), kernelHpel);
+    res = device->CreateKernel(programInterpFrame, CM_KERNEL_FUNCTION(InterpolateFrameWithBorder), kernelHpel);
     CHECK_CM_ERR(res);
 
     CmSurface2D *inSrc = 0;
@@ -225,7 +232,7 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     const mfxU16 BlockW = 8;
     const mfxU16 BlockH = 8;
     mfxU32 tsWidth = (WIDTHB + BlockW - 1) / BlockW;
-    mfxU32 tsHeight = (HEIGHTB + BlockH - 1) / BlockH * 2;
+    mfxU32 tsHeight = (HEIGHTB + BlockH - 1) / BlockH;
     res = kernelHpel->SetThreadCount(tsWidth * tsHeight);
     CHECK_CM_ERR(res);
     CmThreadSpace * threadSpace = 0;
@@ -242,17 +249,18 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     res = device->CreateQueue(queue);
     CHECK_CM_ERR(res);
     CmEvent * e = 0;
-    for (int i=0; i<500; i++)
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
-    device->DestroyThreadSpace(threadSpace);
-    device->DestroyTask(task);
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
-    mfxU64 time;
-    e->GetExecutionTime(time);
-    printf("TIME=%.3f ms ", time / 1000000.0);
     queue->DestroyEvent(e);
+
+#ifndef CMRT_EMU
+    printf("InterpFrame TIME=%.3f ms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
+#endif //CMRT_EMU
+
+    device->DestroyThreadSpace(threadSpace);
+    device->DestroyTask(task);
 
     tsWidth  = (WIDTH  + BLOCK_W - 1) / BLOCK_W;
     tsHeight = (HEIGHT + BLOCK_H - 1) / BLOCK_H;
@@ -272,20 +280,19 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     res = device->CreateQueue(queue);
     CHECK_CM_ERR(res);
     e = 0;
-    for (int i=0; i<500; i++)
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
-    device->DestroyThreadSpace(threadSpace);
-    device->DestroyTask(task);
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
-    time = 0;
-    e->GetExecutionTime(time);
-    printf("TIME=%.3f ms ", time / 1000000.0);
     queue->DestroyEvent(e);
 
     for (mfxI32 y = 0; y < numBlocksVer; y++)
         memcpy(outData + y * numBlocksHor * GPU_SADSIZE, outputSys + y * outputPitch, outputWidth);
+
+    printf("Refine TIME=%.3f ms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
+
+    device->DestroyThreadSpace(threadSpace);
+    device->DestroyTask(task);
 
     device->DestroySurface2DUP(outputCm);
     CM_ALIGNED_FREE(outputSys);
@@ -297,7 +304,8 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     device->DestroySurface(inSrc);
     device->DestroyKernel(kernelHpel);
     device->DestroyKernel(kernelQpel);
-    device->DestroyProgram(program);
+    device->DestroyProgram(programInterpFrame);
+    device->DestroyProgram(programRefine);
     ::DestroyCmDevice(device);
 
     return PASSED;

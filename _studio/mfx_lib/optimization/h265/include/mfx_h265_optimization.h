@@ -153,8 +153,8 @@ namespace MFX_HEVC_PP
         Ipp64s diff[MAX_NUM_SAO_CLASSES];
         Ipp64s count[MAX_NUM_SAO_CLASSES];
 
-        SaoCtuStatistics(){}
-        ~SaoCtuStatistics(){}
+ //       SaoCtuStatistics(){}
+ //       ~SaoCtuStatistics(){}
 
         void Reset()
         {
@@ -162,24 +162,25 @@ namespace MFX_HEVC_PP
             memset(count, 0, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
         }
 
-        //const 
-        SaoCtuStatistics& operator=(const SaoCtuStatistics& src)
-        {
-            ippsCopy_8u((Ipp8u*)src.diff,  (Ipp8u*)diff,  sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
-            ippsCopy_8u((Ipp8u*)src.count, (Ipp8u*)count, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
+	//private:
+ //       //const 
+ //       SaoCtuStatistics& operator=(const SaoCtuStatistics& src)
+ //       {
+ //           ippsCopy_8u((Ipp8u*)src.diff,  (Ipp8u*)diff,  sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
+ //           ippsCopy_8u((Ipp8u*)src.count, (Ipp8u*)count, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
 
-            return *this;
-        }
+ //           return *this;
+ //       }
 
-        const SaoCtuStatistics& operator+= (const SaoCtuStatistics& src)
-        {
-            for(int i=0; i< MAX_NUM_SAO_CLASSES; i++)
-            {
-                diff[i] += src.diff[i];
-                count[i] += src.count[i];
-            }
-            return *this;
-        }
+ //       const SaoCtuStatistics& operator+= (const SaoCtuStatistics& src)
+ //       {
+ //           for(int i=0; i< MAX_NUM_SAO_CLASSES; i++)
+ //           {
+ //               diff[i] += src.diff[i];
+ //               count[i] += src.count[i];
+ //           }
+ //           return *this;
+ //       }
 
     };
     /* ******************************************************** */

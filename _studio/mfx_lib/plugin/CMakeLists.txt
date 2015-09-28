@@ -237,12 +237,10 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
     ${prefix}/watermark.cpp
   )
 endforeach()
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h265_encode/src )
-  list( APPEND sources.plus
-    ${prefix}/genx_h265_cmcode_stub.cpp
-    ${prefix}/genx_h265_cmcode_isa.cpp
-    ${prefix}/genx_h265_cmcode_bdw_isa.cpp
-  )
+
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h265_encode/src )
+  file( GLOB_RECURSE srcs "${dir}/*_isa.cpp" )
+  list( APPEND sources ${srcs})
 endforeach()
 
 foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h265/src )
@@ -464,12 +462,9 @@ set( defs "" )
 
 list( APPEND sources ${plugin_common_sources} )
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h265_encode/src )
-  list( APPEND sources.plus
-    ${prefix}/genx_h265_cmcode_stub.cpp
-    ${prefix}/genx_h265_cmcode_isa.cpp
-    ${prefix}/genx_h265_cmcode_bdw_isa.cpp
-  )
+foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h265_encode/src )
+  file( GLOB_RECURSE srcs "${dir}/*_isa.cpp" )
+  list( APPEND sources ${srcs})
 endforeach()
 
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )

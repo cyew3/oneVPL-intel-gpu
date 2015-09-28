@@ -15,7 +15,8 @@
 #include "cm_rt.h"
 #pragma warning(pop)
 #include "../include/test_common.h"
-#include "../include/genx_h265_cmcode_isa.h"
+#include "../include/genx_hevce_analyze_gradient_hsw_isa.h"
+#include "../include/genx_hevce_analyze_gradient_bdw_isa.h"
 
 #ifdef CMRT_EMU
 extern "C"
@@ -28,7 +29,7 @@ int RunCpu(const mfxU8 *inData, mfxU32 *outData, mfxU32 blockSize); // mfxU32 fo
 int Compare(mfxU16 *outDataGpu, mfxU32 *outDataCpu, mfxU32 blockSize);
 };
 
-int TestAnalyzeGradient()
+int main()
 {
     mfxI32 outData4x4Size = WIDTH * HEIGHT * 40 / 16;
     mfxI32 outData8x8Size = WIDTH * HEIGHT * 40 / 64;
@@ -40,11 +41,11 @@ int TestAnalyzeGradient()
 
     FILE *f = fopen(YUV_NAME, "rb");
     if (!f)
-        return FAILED;
+        return printf("FAILED to open yuv file\n"), 1;
     mfxU8 *input = new mfxU8[WIDTH * HEIGHT];
     mfxI32 bytesRead = fread(input, 1, WIDTH * HEIGHT, f);
     if (bytesRead != WIDTH * HEIGHT)
-        return FAILED;
+        return printf("FAILED to read frame from yuv file\n"), 1;
     fclose(f);
 
     res = RunGpu(input, output4x4Gpu, output8x8Gpu);
@@ -65,7 +66,7 @@ int TestAnalyzeGradient()
     delete [] output4x4Cpu;
     delete [] output8x8Cpu;
 
-    return PASSED;
+    return printf("passed\n"), 0;
 }
 
 namespace {
@@ -78,7 +79,7 @@ int RunGpu(const mfxU8 *inData, mfxU16 *outData4x4, mfxU16 *outData8x8)
     CHECK_CM_ERR(res);
 
     CmProgram *program = 0;
-    res = device->LoadProgram((void *)genx_h265_cmcode, sizeof(genx_h265_cmcode), program);
+    res = device->LoadProgram((void *)genx_hevce_analyze_gradient_hsw, sizeof(genx_hevce_analyze_gradient_hsw), program);
     CHECK_CM_ERR(res);
 
     CmKernel *kernel = 0;
@@ -149,19 +150,19 @@ int RunGpu(const mfxU8 *inData, mfxU16 *outData4x4, mfxU16 *outData8x8)
     CmEvent * e = 0;
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
-
-    device->DestroyThreadSpace(threadSpace);
-    device->DestroyTask(task);
     
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
 
-    mfxU64 time;
-    e->GetExecutionTime(time);
-    printf("TIME=%.3f ms ", time / 1000000.0);
-
     memcpy(outData4x4, output4x4Sys, output4x4Size);
     memcpy(outData8x8, output8x8Sys, output8x8Size);
+
+#ifndef CMRT_EMU
+    printf("TIME=%.3f ms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
+#endif //CMRT_EMU
+
+    device->DestroyThreadSpace(threadSpace);
+    device->DestroyTask(task);
 
     queue->DestroyEvent(e);
     device->DestroyBufferUP(output4x4Cm);

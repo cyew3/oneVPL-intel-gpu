@@ -1418,7 +1418,6 @@ void H265Encoder::CleanGlobalDpb()
     for (FrameIter i = m_dpb.begin(); i != m_dpb.end();) {
         FrameIter curI = i++;
         if ((*curI)->m_recon->m_refCounter == 0) {
-            SafeRelease((*curI)->m_luma_8bit);
             SafeRelease((*curI)->m_feiRecon);
             m_free.splice(m_free.end(), m_dpb, curI);
         }
@@ -1884,15 +1883,9 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 #endif
             }
 
-            if (m_frame->m_isRef || pars->doDumpRecon) {
-                PadOneReconCtu(m_frame, ctb_row, ctb_col, m_videoParam.MaxCUSize, m_videoParam.PicHeightInCtbs, m_videoParam.PicWidthInCtbs);
-                if (m_videoParam.enableCmFlag && (m_frame->m_bitDepthLuma > 8)) {
-                    mfxI16 *recLuma10bit = (mfxI16 *)(m_frame->m_recon->y) + (ctb_row * m_frame->m_recon->pitch_luma_pix  + ctb_col) * m_videoParam.MaxCUSize;
-                    mfxU8 *recLuma8bit = m_frame->m_luma_8bit->y + (ctb_row * m_frame->m_luma_8bit->pitch_luma_bytes + ctb_col) * m_videoParam.MaxCUSize;
-                    h265_ConvertShiftR(recLuma10bit, m_frame->m_recon->pitch_luma_pix,
-                        recLuma8bit, m_frame->m_recon->pitch_luma_pix, m_videoParam.MaxCUSize, m_videoParam.MaxCUSize, 2);
-                }
-            }
+            if (m_frame->m_isRef || pars->doDumpRecon)
+                PadRectLumaAndChroma(*m_frame->m_recon, m_videoParam.fourcc, ctb_col*m_videoParam.MaxCUSize,
+                    ctb_row*m_videoParam.MaxCUSize, m_videoParam.MaxCUSize, m_videoParam.MaxCUSize);
 
             // for frame threading (no slices, no tiles)
             if (ctb_col == pars->PicWidthInCtbs - 1)
@@ -1982,13 +1975,9 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
             if (doSao) {
                 ApplySaoCtu<PixType>(ctb_row, ctb_col);
             }
-            PadOneReconCtu(m_frame, ctb_row, ctb_col, m_videoParam.MaxCUSize, m_videoParam.PicHeightInCtbs, m_videoParam.PicWidthInCtbs);
-            if (m_videoParam.enableCmFlag && (m_frame->m_bitDepthLuma > 8)) {
-                mfxI16 *recLuma10bit = (mfxI16 *)(m_frame->m_recon->y) + (ctb_row * m_frame->m_recon->pitch_luma_pix  + ctb_col) * m_videoParam.MaxCUSize;
-                mfxU8 *recLuma8bit = m_frame->m_luma_8bit->y + (ctb_row * m_frame->m_luma_8bit->pitch_luma_bytes + ctb_col) * m_videoParam.MaxCUSize;
-                h265_ConvertShiftR(recLuma10bit, m_frame->m_recon->pitch_luma_pix,
-                    recLuma8bit, m_frame->m_recon->pitch_luma_pix, m_videoParam.MaxCUSize, m_videoParam.MaxCUSize, 2);
-            }
+
+            PadRectLumaAndChroma(*m_frame->m_recon, m_videoParam.fourcc, ctb_col*m_videoParam.MaxCUSize,
+                ctb_row*m_videoParam.MaxCUSize, m_videoParam.MaxCUSize, m_videoParam.MaxCUSize);
         }
 
         // for frame threading (no slices, no tiles)

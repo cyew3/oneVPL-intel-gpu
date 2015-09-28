@@ -1144,7 +1144,7 @@ void H265CU<PixType>::InitCu(
     m_pitchSrcLuma = origin->pitch_luma_pix;
     m_pitchSrcChroma = origin->pitch_chroma_pix;
     m_ySrc = (PixType*)origin->y + m_ctbPelX + m_ctbPelY * m_pitchSrcLuma;
-	m_uvSrc = (PixType*)origin->uv + (m_ctbPelX << _par->chromaShiftWInv) + (m_ctbPelY * m_pitchSrcChroma >> _par->chromaShiftH);
+    m_uvSrc = (PixType*)origin->uv + (m_ctbPelX << _par->chromaShiftWInv) + (m_ctbPelY * m_pitchSrcChroma >> _par->chromaShiftH);
 
     m_coeffWorkY = m_coeffWork;
     m_coeffWorkU = m_coeffWorkY + m_par->MaxCUSize * m_par->MaxCUSize;
@@ -4366,9 +4366,158 @@ Ipp32s H265CU<PixType>::MatchingMetricPu(const PixType *src, const H265MEInfo *m
     }
 }
 
+// absPartIdx - for minimal TU
+template <typename PixType>
+void H265CU<PixType>::MatchingMetricPuCombine(Ipp32s *had, const PixType *src, const H265MEInfo *meInfo, const H265MV *mv, const H265MV *mvB,
+                                              const Ipp8s refIdx[2], const Ipp8s refIdxB[2], Ipp32s useHadamard) const
+{
+    Frame *refFrame[2] = { m_currFrame->m_refPicList[0].m_refFrames[refIdx[0]],
+                           m_currFrame->m_refPicList[1].m_refFrames[refIdx[1]] };
+    Frame *refFrameB[2] = { m_currFrame->m_refPicList[0].m_refFrames[refIdxB[0]],
+                            m_currFrame->m_refPicList[1].m_refFrames[refIdxB[1]] };
+    Ipp32s pitchRec0 = refFrame[0]->m_recon->pitch_luma_pix;
+    Ipp32s pitchRec1 = refFrame[1]->m_recon->pitch_luma_pix;
+    Ipp32s refOffset0 = m_ctbPelX + meInfo->posx + (mv[0].mvx >> 2) + (m_ctbPelY + meInfo->posy + (mv[0].mvy >> 2)) * pitchRec0;
+    Ipp32s refOffset1 = m_ctbPelX + meInfo->posx + (mv[1].mvx >> 2) + (m_ctbPelY + meInfo->posy + (mv[1].mvy >> 2)) * pitchRec1;
+    const PixType *rec0 = (PixType*)refFrame[0]->m_recon->y + refOffset0;
+    const PixType *rec1 = (PixType*)refFrame[1]->m_recon->y + refOffset1;
+    ALIGN_DECL(32) PixType predBuf0[MAX_CU_SIZE*MAX_CU_SIZE];
+    ALIGN_DECL(32) PixType predBuf1[MAX_CU_SIZE*MAX_CU_SIZE];
+    ALIGN_DECL(32) Ipp16s predBufHi0[MAX_CU_SIZE*MAX_CU_SIZE];
+    ALIGN_DECL(32) Ipp16s predBufHi1[MAX_CU_SIZE*MAX_CU_SIZE];
+    Ipp16s *pBufHi0 = predBufHi0;
+    Ipp16s *pBufHi1 = predBufHi1;
+    Ipp32s bitDepth = m_par->bitDepthLuma;
+
+    if ((mv[0].mvx | mv[0].mvy) & 3)
+    {
+        MeInterpolateCombine(meInfo, &mv[0], (PixType*)refFrame[0]->m_recon->y, refFrame[0]->m_recon->pitch_luma_pix, pBufHi0, MAX_CU_SIZE);
+        h265_InterpLumaPack(pBufHi0, MAX_CU_SIZE, predBuf0, MAX_CU_SIZE, meInfo->width, meInfo->height, bitDepth);
+        rec0 = predBuf0;
+        pitchRec0 = MAX_CU_SIZE;
+        
+        had[0] =  ((useHadamard)
+            ? tuHad(src, m_pitchSrcLuma, rec0, pitchRec0, meInfo->width, meInfo->height)
+            : h265_SAD_MxN_special(src, rec0, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+    }
+    else
+    {
+        had[0] =  ((useHadamard)
+            ? tuHad(src, m_pitchSrcLuma, rec0, pitchRec0, meInfo->width, meInfo->height)
+            : h265_SAD_MxN_general(src, m_pitchSrcLuma, rec0, pitchRec0, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+    }
+ 
+    if (refIdx[0] == m_currFrame->m_mapListRefUnique[1][refIdx[1]]&& mv[0] == mv[1]) {
+        had[1] = had[0];
+        pBufHi1 = pBufHi0;
+        pBufHi0 = predBufHi1;
+        rec1 = rec0;
+        pitchRec1 = pitchRec0;
+    } else {
+        if ((mv[1].mvx | mv[1].mvy) & 3)
+        {
+            MeInterpolateCombine(meInfo, &mv[1], (PixType*)refFrame[1]->m_recon->y, refFrame[1]->m_recon->pitch_luma_pix, pBufHi1, MAX_CU_SIZE);
+            h265_InterpLumaPack(pBufHi1, MAX_CU_SIZE, predBuf1, MAX_CU_SIZE, meInfo->width, meInfo->height, bitDepth);
+            rec1 = predBuf1;
+            pitchRec1 = MAX_CU_SIZE;
+        
+            had[1] =  ((useHadamard)
+                ? tuHad(src, m_pitchSrcLuma, rec1, pitchRec1, meInfo->width, meInfo->height)
+                : h265_SAD_MxN_special(src, rec1, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+        }
+        else
+        {
+            had[1] =  ((useHadamard)
+                ? tuHad(src, m_pitchSrcLuma, rec1, pitchRec1, meInfo->width, meInfo->height)
+                : h265_SAD_MxN_general(src, m_pitchSrcLuma, rec1, pitchRec1, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+        }
+    }
+
+    // for Bi-pred either L0 or L1 or both are from Uni-pred
+    if (m_currFrame->m_mapListRefUnique[0][refIdxB[0]] == m_currFrame->m_mapListRefUnique[1][refIdxB[1]]) {
+        had[2] = had[0];    // useless case from encoder's standpoint if there're more ref frames in dpb
+    } else {
+
+        Ipp32s interpFlag0 = (mvB[0].mvx | mvB[0].mvy) & 3;
+        Ipp32s interpFlag1 = (mvB[1].mvx | mvB[1].mvy) & 3;
+        bool onlyOneIterp = !(interpFlag0 && interpFlag1);
+        Ipp32s isFast = false;
+
+        if (refIdx[0] != refIdxB[0]) { // refIdxB[0] can be changed (see MePuGacc)
+            if (interpFlag0)
+            {
+                MeInterpolateCombine(meInfo, &mvB[0], (PixType*)refFrameB[0]->m_recon->y, refFrameB[0]->m_recon->pitch_luma_pix, pBufHi0, MAX_CU_SIZE);
+            } else {
+                pitchRec0 = refFrameB[0]->m_recon->pitch_luma_pix;
+                refOffset0 = m_ctbPelX + meInfo->posx + (mvB[0].mvx >> 2) + (m_ctbPelY + meInfo->posy + (mvB[0].mvy >> 2)) * pitchRec0;
+                rec0 = (PixType*)refFrameB[0]->m_recon->y + refOffset0;
+            }
+        }/* else {
+            assert(mv[0]==mvB[0]);
+            assert(mv[1]==mvB[1]);
+        }*/
+
+        if(!interpFlag0 && !interpFlag1) {
+            WriteAverageToPic(rec0, pitchRec0, rec1, pitchRec1, predBuf0, MAX_CU_SIZE, meInfo->width, meInfo->height);
+
+            had[2] = ((useHadamard)
+                ? tuHad(src, m_pitchSrcLuma, predBuf0, MAX_CU_SIZE, meInfo->width, meInfo->height)
+                : h265_SAD_MxN_special(src, predBuf0, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> (m_par->bitDepthLumaShift);
+        } else if(!interpFlag0) {
+            WriteBiAverageToPicP(pBufHi1, MAX_CU_SIZE, (PixType*)rec0, pitchRec0, predBuf0, MAX_CU_SIZE, meInfo->width, meInfo->height, m_par->bitDepthLuma);
+
+            had[2] = ((useHadamard)
+                ? tuHad(src, m_pitchSrcLuma, predBuf0, MAX_CU_SIZE, meInfo->width, meInfo->height)
+                : h265_SAD_MxN_special(src, predBuf0, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> (m_par->bitDepthLumaShift);
+        } else if(!interpFlag1) {
+            WriteBiAverageToPicP(pBufHi0, MAX_CU_SIZE, (PixType*)rec1, pitchRec1, predBuf0, MAX_CU_SIZE, meInfo->width, meInfo->height, m_par->bitDepthLuma);
+
+            had[2] = ((useHadamard)
+                ? tuHad(src, m_pitchSrcLuma, predBuf0, MAX_CU_SIZE, meInfo->width, meInfo->height)
+                : h265_SAD_MxN_special(src, predBuf0, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> (m_par->bitDepthLumaShift);
+        } else {
+            WriteBiAverageToPicB(pBufHi0, MAX_CU_SIZE, pBufHi1, MAX_CU_SIZE, predBuf0, MAX_CU_SIZE, meInfo->width, meInfo->height, m_par->bitDepthLuma);
+
+            had[2] = ((useHadamard)
+                ? tuHad(src, m_pitchSrcLuma, predBuf0, MAX_CU_SIZE, meInfo->width, meInfo->height)
+                : h265_SAD_MxN_special(src, predBuf0, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> (m_par->bitDepthLumaShift);
+        }
+    }
+
+}
+
 
 template <typename PixType>
 void WriteAverageToPic(
+    const PixType * pSrc0,
+    Ipp32u        in_Src0Pitch,      // in samples
+    const PixType * pSrc1,
+    Ipp32u        in_Src1Pitch,      // in samples
+    PixType * H265_RESTRICT pDst,
+    Ipp32u        in_DstPitch,       // in samples
+    Ipp32s        width,
+    Ipp32s        height)
+{
+#ifdef __INTEL_COMPILER
+    #pragma ivdep
+#endif // __INTEL_COMPILER
+    for (int j = 0; j < height; j++)
+    {
+#ifdef __INTEL_COMPILER
+        #pragma ivdep
+        #pragma vector always
+#endif // __INTEL_COMPILER
+        for (int i = 0; i < width; i++)
+             pDst[i] = (((Ipp16u)pSrc0[i] + (Ipp16u)pSrc1[i] + 1) >> 1);
+
+        pSrc0 += in_Src0Pitch;
+        pSrc1 += in_Src1Pitch;
+        pDst += in_DstPitch;
+    }
+}
+
+template <typename PixType>
+void WriteAverageToPic1(
     const Ipp16s *src0,
     Ipp32u        pitchSrc0,      // in samples
     const Ipp16s *src1,
@@ -4722,7 +4871,7 @@ Ipp32s H265CU<PixType>::MatchingMetricBipredPuSearch(const PixType *src, const H
 {
     H265MV mvsClipped[2] = { mvs[0], mvs[1] };
     Frame *refFrame[2] = { m_currFrame->m_refPicList[0].m_refFrames[refIdx[0]],
-                               m_currFrame->m_refPicList[1].m_refFrames[refIdx[1]] };
+                           m_currFrame->m_refPicList[1].m_refFrames[refIdx[1]] };
     
     Ipp32s isFast = m_par->FastInterp;
 
@@ -8252,8 +8401,9 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
 
         Ipp32s mvCostBiBest = mvCostRefBest[0][idxL0] + mvCostRefBest[1][idxL1];
         costBiBest = mvCostBiBest;
+
 #ifdef MEMOIZE_SUBPEL
-        if(m_par->hadamardMe>=2) {
+        if(useHadamard) {
             // current limitation of MemSubpelBatchedBox (always uses hadamard)
             m_interpIdxFirst = m_interpIdxLast = 0; // for MatchingMetricBipredPu optimization
             costBiBest += MatchingMetricBipredPuSearch(src, meInfo, refIdxBestB, mvBiBest, useHadamard);
@@ -8310,7 +8460,9 @@ void H265CU<PixType>::MePu(H265MEInfo *meInfos, Ipp32s partIdx)
         } else {
             Ipp32s listIdx = (refIdx[1] >= 0);
             FrameData *ref = m_currFrame->m_refPicList[listIdx].m_refFrames[refIdx[listIdx]]->m_recon;
-            bestMergeCost = MatchingMetricPuMemSCand(src, meInfo, listIdx, refIdx, mv + listIdx, ref, useHadamard);
+            H265MV mvc = mv[listIdx];
+            ClipMV(mvc);
+            bestMergeCost = MatchingMetricPuMemSCand(src, meInfo, listIdx, refIdx, &mvc, ref, useHadamard);
         }
 
         bestMergeCost += (Ipp32s)(GetFlBits(mergeIdx, mergeCand->numCand) * m_rdLambdaSqrt + 0.5);
@@ -8399,6 +8551,13 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
 #endif
 {
     H265MEInfo *meInfo = meInfos + partIdx;
+#ifdef MEMOIZE_SUBPEL
+    Ipp32s size = 0;
+    if     (meInfo->width<=8 && meInfo->height<=8)   size = 0;
+    else if(meInfo->width<=16 && meInfo->height<=16) size = 1;
+    else if(meInfo->width<=32 && meInfo->height<=32) size = 2;
+    else                                             size = 3;
+#endif
     Ipp32s lastPredIdx = (partIdx == 0) ? 0 : meInfos[partIdx - 1].interDir - 1;
 
     Ipp32s x = (m_ctbPelX + meInfo->posx) / meInfo->width;
@@ -8539,26 +8698,9 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
         }
     }
     
+    Ipp32s useHadamard = (m_par->hadamardMe >= 2);
     const Ipp8s idx0 = refIdxBest[0];
     const Ipp8s idx1 = refIdxBest[1];
-    Ipp32s costList[2] = { costRefBest[0][idx0], costRefBest[1][idx1] };
-
-    Ipp32s useHadamard = (m_par->hadamardMe >= 2);
-    if (costRefBest[0][idx0] != INT_MAX) {
-        H265MV mvc = mvRefBest[0][idx0];
-        ClipMV(mvc);
-        costList[0] = MatchingMetricPu(src, meInfo, &mvc, m_currFrame->m_refPicList[0].m_refFrames[idx0]->m_recon, useHadamard);
-        costList[0] += mvCostRefBest[0][idx0] + (Ipp32s)(bitsRefBest[0][idx0] * m_rdLambdaSqrt + 0.5);
-    }
-
-    if (costRefBest[1][idx1] != INT_MAX) {
-        H265MV mvc = mvRefBest[1][idx1];
-        ClipMV(mvc);
-        costList[1] = MatchingMetricPu(src, meInfo, &mvc, m_currFrame->m_refPicList[1].m_refFrames[idx1]->m_recon, useHadamard);
-        costList[1] += mvCostRefBest[1][idx1] + (Ipp32s)(bitsRefBest[1][idx1] * m_rdLambdaSqrt + 0.5);
-    }
-
-
 
     refIdxBestB[0] = refIdxBest[0];
     refIdxBestB[1] = refIdxBest[1];
@@ -8576,6 +8718,44 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
     }
 #endif
 
+    Ipp32s metric[3];  // L0, L1 and Bi
+    if (m_cslice->slice_type == B_SLICE && (costRefBest[0][idx0] != INT_MAX) && (costRefBest[1][idx1] != INT_MAX)) {
+        H265MV mvBest[2] = { mvRefBest[0][idx0], mvRefBest[1][idx1]};
+        H265MV mvBestB[2] = { mvRefBest[0][refIdxBestB[0]], mvRefBest[1][refIdxBestB[1]]};
+        ClipMV(mvBest[0]);
+        ClipMV(mvBest[1]);
+        ClipMV(mvBestB[0]);
+        ClipMV(mvBestB[1]);
+        MatchingMetricPuCombine(metric, src, meInfo, mvBest, mvBestB, refIdxBest, refIdxBestB, useHadamard);
+    } else {
+        // 64x64 only can come here
+        if (costRefBest[0][idx0] != INT_MAX) {
+            H265MV mvc = mvRefBest[0][idx0];
+            ClipMV(mvc);
+            metric[0] = MatchingMetricPu(src, meInfo, &mvc, m_currFrame->m_refPicList[0].m_refFrames[idx0]->m_recon, useHadamard);
+        } else if (costRefBest[1][idx1] != INT_MAX) {
+            H265MV mvc = mvRefBest[1][idx1];
+            ClipMV(mvc);
+            metric[1] = MatchingMetricPu(src, meInfo, &mvc, m_currFrame->m_refPicList[1].m_refFrames[idx1]->m_recon, useHadamard);
+        }
+    }
+
+    Ipp32s costList[2] = { costRefBest[0][idx0], costRefBest[1][idx1] };
+
+    if (costRefBest[0][idx0] != INT_MAX) {
+//        H265MV mvc = mvRefBest[0][idx0];
+//        ClipMV(mvc);
+//        metric0 = MatchingMetricPu(src, meInfo, &mvc, m_currFrame->m_refPicList[0].m_refFrames[idx0]->m_recon, useHadamard);
+        costList[0] = metric[0] + mvCostRefBest[0][idx0] + (Ipp32s)(bitsRefBest[0][idx0] * m_rdLambdaSqrt + 0.5);
+    }
+
+    if (costRefBest[1][idx1] != INT_MAX) {
+//            H265MV mvc = mvRefBest[1][idx1];
+//            ClipMV(mvc);
+//            metric1 = MatchingMetricPu(src, meInfo, &mvc, m_currFrame->m_refPicList[1].m_refFrames[idx1]->m_recon, useHadamard);
+        costList[1] = metric[1] + mvCostRefBest[1][idx1] + (Ipp32s)(bitsRefBest[1][idx1] * m_rdLambdaSqrt + 0.5);
+    }
+
     Ipp32s costBiBest = INT_MAX;
     H265MV mvBiBest[2] = { mvRefBest[0][refIdxBestB[0]], mvRefBest[1][refIdxBestB[1]] };
     Ipp32s costBiL0 = costRefBest[0][refIdxBestB[0]];
@@ -8585,14 +8765,19 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
         Frame *refF = m_currFrame->m_refPicList[0].m_refFrames[refIdxBestB[0]];
         Frame *refB = m_currFrame->m_refPicList[1].m_refFrames[refIdxBestB[1]];
 
-        m_interpIdxFirst = m_interpIdxLast = 0; // for MatchingMetricBipredPu optimization
         Ipp32s mvCostBiBest = mvCostRefBest[0][refIdxBestB[0]] + mvCostRefBest[1][refIdxBestB[1]];
         costBiBest = mvCostBiBest;
-        costBiBest += MatchingMetricBipredPu(src, meInfo, refIdxBestB, mvBiBest, useHadamard);
+        //costBiBest += MatchingMetricBipredPu(src, meInfo, refIdxBestB, mvBiBest, useHadamard);
+        costBiBest += metric[2];
 
         // refine Bidir
         if (IPP_MIN(costList[0], costList[1]) * 9 > 8 * costBiBest) {
-            RefineBiPred(meInfo, refIdxBestB, curPUidx, mvBiBest, &costBiBest, &mvCostBiBest);
+            if (m_par->numBiRefineIter > 1) { 
+                ClipMV(mvBiBest[0]);
+                ClipMV(mvBiBest[1]);
+                m_interpIdxFirst = m_interpIdxLast = 0; // for MatchingMetricBipredPuSearch inside RefineBiPred
+                RefineBiPred(meInfo, refIdxBestB, curPUidx, mvBiBest, &costBiBest, &mvCostBiBest);
+            }
 
             Ipp32s bitsBiBest = MVP_LX_FLAG_BITS + predIdxBits[2];
             bitsBiBest += GetFlBits(refIdxBestB[0], m_cslice->num_ref_idx[0]);
@@ -8679,20 +8864,23 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
         retCost = costBiBest;
     }
 
-    Ipp32s xstart = meInfo->posx >> m_par->QuadtreeTULog2MinSize;
-    Ipp32s ystart = meInfo->posy >> m_par->QuadtreeTULog2MinSize;
-    Ipp32s xsize = meInfo->width >> m_par->QuadtreeTULog2MinSize;
-    Ipp32s ysize = meInfo->height >> m_par->QuadtreeTULog2MinSize;
-    for (Ipp32s y = ystart; y < ystart + ysize; y++) {
-        for (Ipp32s x = xstart; x < xstart + xsize; x++) {
-            Ipp32s rorder = y * PITCH_TU + x;
-            Ipp32s zorder = h265_scan_r2z4[rorder];
-            m_data[zorder].mv[0] = meInfo->MV[0];
-            m_data[zorder].mv[1] = meInfo->MV[1];
-            m_data[zorder].refIdx[0] = meInfo->refIdx[0];
-            m_data[zorder].refIdx[1] = meInfo->refIdx[1];
+    if (meInfo->splitMode != PART_SIZE_2Nx2N) {
+        Ipp32s xstart = meInfo->posx >> m_par->QuadtreeTULog2MinSize;
+        Ipp32s ystart = meInfo->posy >> m_par->QuadtreeTULog2MinSize;
+        Ipp32s xsize = meInfo->width >> m_par->QuadtreeTULog2MinSize;
+        Ipp32s ysize = meInfo->height >> m_par->QuadtreeTULog2MinSize;
+        for (Ipp32s y = ystart; y < ystart + ysize; y++) {
+            for (Ipp32s x = xstart; x < xstart + xsize; x++) {
+                Ipp32s rorder = y * PITCH_TU + x;
+                Ipp32s zorder = h265_scan_r2z4[rorder];
+                m_data[zorder].mv[0] = meInfo->MV[0];
+                m_data[zorder].mv[1] = meInfo->MV[1];
+                m_data[zorder].refIdx[0] = meInfo->refIdx[0];
+                m_data[zorder].refIdx[1] = meInfo->refIdx[1];
+            }
         }
     }
+
 #ifdef AMT_ICRA_OPT
     return retCost;
 #endif

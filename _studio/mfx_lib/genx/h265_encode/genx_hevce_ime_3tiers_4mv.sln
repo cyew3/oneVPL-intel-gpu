@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{86F86AD0-56B3-4982-BDF6-880F07E64471}") = "genx_hevce_ime_3tiers_4mv", "genx_hevce_ime_3tiers_4mv.vcxproj", "{6845B0CD-6BCA-4DAA-9EA4-C3F3726519D4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_HSW_Emu|x64 = Debug_HSW_Emu|x64
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6845B0CD-6BCA-4DAA-9EA4-C3F3726519D4}.Debug_HSW_Emu|x64.ActiveCfg = Debug_HSW_Emu|x64
+		{6845B0CD-6BCA-4DAA-9EA4-C3F3726519D4}.Debug_HSW_Emu|x64.Build.0 = Debug_HSW_Emu|x64
+		{6845B0CD-6BCA-4DAA-9EA4-C3F3726519D4}.Debug|x64.ActiveCfg = Debug|x64
+		{6845B0CD-6BCA-4DAA-9EA4-C3F3726519D4}.Debug|x64.Build.0 = Debug|x64
+		{6845B0CD-6BCA-4DAA-9EA4-C3F3726519D4}.Release|x64.ActiveCfg = Release|x64
+		{6845B0CD-6BCA-4DAA-9EA4-C3F3726519D4}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

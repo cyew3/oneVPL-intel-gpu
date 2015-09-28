@@ -140,6 +140,7 @@ public:
         } flags;
         Ipp8u _flags;
     };
+	Ipp8u reserved[2];
 };
 
 typedef struct {
@@ -552,7 +553,6 @@ public:
     void PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
                       const Ipp8s refIdx[2], const H265MV mvs[2], PixType *dst, Ipp32s dstPitch,
                       Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage, Ipp32s isFast);
-
     template <EnumTextType PLANE_TYPE>
     void InterPredCu(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s pitchDst);
 
@@ -736,8 +736,14 @@ public:
     void MeInterpolate(const H265MEInfo* meInfo, const H265MV *MV, PixType *in_pSrc,
                        Ipp32s in_SrcPitch, PixType *buf, Ipp32s buf_pitch, Ipp32s isFast) const;
 
+    void MeInterpolateCombine(const H265MEInfo* meInfo, const H265MV *MV, PixType *in_pSrc,
+                       Ipp32s in_SrcPitch, Ipp16s *bufHi, Ipp32s buf_pitch) const;
+
     Ipp32s MatchingMetricPu(const PixType *src, const H265MEInfo* meInfo, const H265MV* mv,
                             const FrameData *refPic, Ipp32s useHadamard) const;
+
+    void MatchingMetricPuCombine(Ipp32s *had, const PixType *src, const H265MEInfo* meInfo, const H265MV* mv, const H265MV* mvB,
+                            const Ipp8s refIdx[2], const Ipp8s refIdxB[2], Ipp32s useHadamard) const;
 #ifdef MEMOIZE_SUBPEL
     void   MemoizeInit();
     void   MemoizeClear(Ipp8u depth);

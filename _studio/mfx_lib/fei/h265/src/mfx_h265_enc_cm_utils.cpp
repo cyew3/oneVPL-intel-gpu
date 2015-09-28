@@ -18,10 +18,6 @@
 
 #include "mfx_h265_defs.h"
 #include "mfx_h265_enc_cm_utils.h"
-#include "genx_h265_cmcode_proto.h"
-#include "genx_h265_cmcode_isa.h"
-
-#include "mfx_h265_enc_cm_utils.h"
 
 namespace H265Enc {
 
@@ -368,41 +364,50 @@ void Write(CmBuffer * buffer, void * buf, CmEvent * e)
 #else
     #define TASKNUMALLOC 0
 #endif
-CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
+CmDevice * TryCreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version)
 {
     mfxU32 versionPlaceholder = 0;
     if (version == 0)
         version = &versionPlaceholder;
 
+    mfxCoreParam par;
+    mfxStatus sts = core->GetCoreParam(&par);
+
+    if (sts != MFX_ERR_NONE)
+        return 0;
+
     CmDevice * device = 0;
 
     int result = CM_SUCCESS;
-    if (core->GetVAType() == MFX_HW_D3D9)
+	mfxU32 impl = par.Impl & 0x0700;
+    if (impl == MFX_IMPL_VIA_D3D9)
     {
 #if defined(_WIN32) || defined(_WIN64)
-        D3D9Interface * d3dIface = QueryCoreInterface<D3D9Interface>(core, MFXICORED3D_GUID);
-        if (d3dIface == 0)
+        IDirect3DDeviceManager9 * d3dIface;
+        sts = core->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&d3dIface);
+        if (sts != MFX_ERR_NONE || !d3dIface)
             return 0;
-        if ((result = ::CreateCmDevice(device, *version, d3dIface->GetD3D9DeviceManager(),(TASKNUMALLOC<<4)+1)) != CM_SUCCESS)
+        if ((result = ::CreateCmDevice(device, *version, d3dIface,(TASKNUMALLOC<<4)+1)) != CM_SUCCESS)
             return 0;
 #endif  // #if defined(_WIN32) || defined(_WIN64)
     }
-    else if (core->GetVAType() == MFX_HW_D3D11)
+    else if (impl & MFX_IMPL_VIA_D3D11)
     {
 #if defined(_WIN32) || defined(_WIN64)
-        D3D11Interface * d3dIface = QueryCoreInterface<D3D11Interface>(core, MFXICORED3D11_GUID);
-        if (d3dIface == 0)
+        ID3D11Device * d3dIface;
+        sts = core->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&d3dIface);
+        if (sts != MFX_ERR_NONE || !d3dIface)
             return 0;
-        if ((result = ::CreateCmDevice(device, *version, d3dIface->GetD3D11Device(),(TASKNUMALLOC<<4)+1)) != CM_SUCCESS)
+        if ((result = ::CreateCmDevice(device, *version, d3dIface,(TASKNUMALLOC<<4)+1)) != CM_SUCCESS)
             return 0;
 #endif
     }
-    else if (core->GetVAType() == MFX_HW_VAAPI)
+    else if (impl & MFX_IMPL_VIA_VAAPI)
     {
         //throw std::logic_error("GetDeviceManager not implemented on Linux");
 #if defined(MFX_VA_LINUX)
         VADisplay display;
-        mfxStatus res = core->GetHandle(MFX_HANDLE_VA_DISPLAY, &display); // == MFX_HANDLE_RESERVED2
+        mfxStatus res = core->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*)&display); // == MFX_HANDLE_RESERVED2
         if (res != MFX_ERR_NONE || !display)
             return 0;
 
@@ -414,7 +419,7 @@ CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
     return device;
 }
 
-CmDevice * CreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
+CmDevice * CreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version)
 {
     /* return 0 instead of throwing exception to allow failing gracefully */
     CmDevice * device = TryCreateCmDevicePtr(core, version);

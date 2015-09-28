@@ -19,7 +19,8 @@ File Name: mfx_hevc_dec_plugin.h
 #include <iostream>
 #include "mfxvideo.h"
 #include "mfxplugin++.h"
-#include "mfxvideo++int.h"
+#include "mfx_h265_encode_api.h"
+#include <mfx_task.h>
 
 #if defined( AS_HEVCE_PLUGIN )
 class MFXHEVCEncoderPlugin : public MFXEncoderPlugin
@@ -31,39 +32,57 @@ public:
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
     virtual mfxStatus EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task)
     {
-        return MFXVideoENCODE_EncodeFrameAsync(m_session, ctrl, surface, bs, (mfxSyncPoint*) task);
+        MFX_CHECK_NULL_PTR1(task);
+        mfxFrameSurface1 *reordered_surface = NULL;
+        mfxEncodeInternalParams internal_params;
+        MFX_ENTRY_POINT *entryPoint = new MFX_ENTRY_POINT;
+        mfxStatus sts = m_encoder->EncodeFrameCheck(ctrl,
+                                                    surface,
+                                                    bs,
+                                                    &reordered_surface,
+                                                    &internal_params,
+                                                    entryPoint);
+        *task = entryPoint;
+        return sts;
     }
-    virtual mfxStatus Execute(mfxThreadTask task, mfxU32 , mfxU32 )
+    virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a)
     {
-        return MFXVideoCORE_SyncOperation(m_session, (mfxSyncPoint) task, MFX_INFINITE);
+        MFX_CHECK_NULL_PTR1(task);
+        MFX_ENTRY_POINT *entryPoint = (MFX_ENTRY_POINT *)task;
+        return entryPoint->pRoutine(entryPoint->pState, entryPoint->pParam, uid_p, uid_a);
     }
-    virtual mfxStatus FreeResources(mfxThreadTask , mfxStatus )
+    virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus )
     {
+        if (task) {
+            MFX_ENTRY_POINT *entryPoint = (MFX_ENTRY_POINT *)task;
+            entryPoint->pCompleteProc(entryPoint->pState, entryPoint->pParam, MFX_ERR_NONE);
+            delete task;
+        }
         return MFX_ERR_NONE;
     }
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out)
     {
-        return MFXVideoENCODE_Query(m_session, in, out);
+        return m_encoder->Query(&m_mfxCore, in, out);
     }
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *)
     {
-        return MFXVideoENCODE_QueryIOSurf(m_session, par, in);
+        return m_encoder->QueryIOSurf(&m_mfxCore, par, in);
     }
     virtual mfxStatus Init(mfxVideoParam *par)
     {
-        return MFXVideoENCODE_Init(m_session, par);
+        return m_encoder->Init(par);
     }
     virtual mfxStatus Reset(mfxVideoParam *par)
     {
-        return MFXVideoENCODE_Reset(m_session, par);
+        return m_encoder->Reset(par);
     }
     virtual mfxStatus Close()
     {
-        return MFXVideoENCODE_Close(m_session);
+        return m_encoder->Close();
     }
     virtual mfxStatus GetVideoParam(mfxVideoParam *par)
     {
-        return MFXVideoENCODE_GetVideoParam(m_session, par);
+        return m_encoder->GetVideoParam(par);
     }
     virtual void Release()
     {
@@ -117,9 +136,9 @@ protected:
     MFXHEVCEncoderPlugin(bool CreateByDispatcher);
     virtual ~MFXHEVCEncoderPlugin();
 
-    mfxCoreInterface*   m_pmfxCore;
+    MFXCoreInterface1   m_mfxCore;
+    MFXVideoENCODEH265 *m_encoder;
 
-    mfxSession          m_session;
     mfxPluginParam      m_PluginParam;
     bool                m_createdByDispatcher;
     std::auto_ptr<MFXPluginAdapter<MFXEncoderPlugin> > m_adapter;

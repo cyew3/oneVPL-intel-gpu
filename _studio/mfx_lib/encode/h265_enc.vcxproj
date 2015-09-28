@@ -432,6 +432,7 @@
     <ClCompile Include="h265\src\mfx_h265_cabac.cpp" />
     <ClCompile Include="h265\src\mfx_h265_cabac_init.cpp" />
     <ClCompile Include="h265\src\mfx_h265_cabac_tables.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_cmcopy.cpp" />
     <ClCompile Include="h265\src\mfx_h265_ctb.cpp" />
     <ClCompile Include="h265\src\mfx_h265_deblocking.cpp" />
     <ClCompile Include="h265\src\mfx_h265_defaults.cpp" />
@@ -454,6 +455,7 @@
     <ClInclude Include="h265\include\mfx_h265_brc.h" />
     <ClInclude Include="h265\include\mfx_h265_cabac.h" />
     <ClInclude Include="h265\include\mfx_h265_cabac_tables.h" />
+    <ClInclude Include="h265\include\mfx_h265_cmcopy.h" />
     <ClInclude Include="h265\include\mfx_h265_ctb.h" />
     <ClInclude Include="h265\include\mfx_h265_defaults.h" />
     <ClInclude Include="h265\include\mfx_h265_defs.h" />

@@ -49,24 +49,24 @@ const mfxPluginUID MFXHEVCEncoderPlugin::g_HEVCEncoderGuid = {0x2f,0xca,0x99,0x7
 
 MFXHEVCEncoderPlugin::MFXHEVCEncoderPlugin(bool CreateByDispatcher)
 {
-    m_session = 0;
-    m_pmfxCore = 0;
     memset(&m_PluginParam, 0, sizeof(mfxPluginParam));
 
     m_PluginParam.CodecId = MFX_CODEC_HEVC;
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
-    m_PluginParam.MaxThreadNum = 1;
+    m_PluginParam.MaxThreadNum = vm_sys_info_get_cpu_num();
     m_PluginParam.APIVersion.Major = MFX_VERSION_MAJOR;
     m_PluginParam.APIVersion.Minor = MFX_VERSION_MINOR;
     m_PluginParam.PluginUID = g_HEVCEncoderGuid;
     m_PluginParam.Type = MFX_PLUGINTYPE_VIDEO_ENCODE;
     m_PluginParam.PluginVersion = 1;
     m_createdByDispatcher = CreateByDispatcher;
+
+    m_encoder = NULL;
 }
 
 MFXHEVCEncoderPlugin::~MFXHEVCEncoderPlugin()
 {
-    if (m_session)
+    if (m_encoder)
     {
         PluginClose();
     }
@@ -76,50 +76,26 @@ mfxStatus MFXHEVCEncoderPlugin::PluginInit(mfxCoreInterface *core)
 {
     if (!core)
         return MFX_ERR_NULL_PTR;
-    mfxCoreParam par;
-    mfxStatus mfxRes = MFX_ERR_NONE;
 
-    m_pmfxCore = core;
-    mfxRes = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &par);
-    MFX_CHECK_STS(mfxRes);
+    m_mfxCore = *core;
 
-#if !defined (MFX_VA) && defined (AS_HEVCE_PLUGIN)
-    par.Impl = MFX_IMPL_SOFTWARE;
-#endif
+    mfxStatus sts;
+    m_encoder = new MFXVideoENCODEH265(&m_mfxCore, &sts);
 
-    mfxRes = MFXInit(par.Impl, &par.Version, &m_session);
-    MFX_CHECK_STS(mfxRes);
-
-    mfxRes = MFXInternalPseudoJoinSession((mfxSession) m_pmfxCore->pthis, m_session);
-    MFX_CHECK_STS(mfxRes);
-
-    return mfxRes;
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXHEVCEncoderPlugin::PluginClose()
 {
-    mfxStatus mfxRes = MFX_ERR_NONE;
-    mfxStatus mfxRes2 = MFX_ERR_NONE;
-    if (m_session)
-    {
-        //The application must ensure there is no active task running in the session before calling this (MFXDisjoinSession) function.
-        mfxRes = MFXVideoENCODE_Close(m_session);
-        //Return the first met wrn or error
-        if(mfxRes != MFX_ERR_NONE && mfxRes != MFX_ERR_NOT_INITIALIZED)
-            mfxRes2 = mfxRes;
-        mfxRes = MFXInternalPseudoDisjoinSession(m_session);
-        if(mfxRes != MFX_ERR_NONE && mfxRes != MFX_ERR_NOT_INITIALIZED && mfxRes2 == MFX_ERR_NONE)
-            mfxRes2 = mfxRes;
-        mfxRes = MFXClose(m_session);
-        if(mfxRes != MFX_ERR_NONE && mfxRes != MFX_ERR_NOT_INITIALIZED && mfxRes2 == MFX_ERR_NONE)
-            mfxRes2 = mfxRes;
-        m_session = 0;
+    if (m_encoder) {
+        delete m_encoder;
+        m_encoder = NULL;
     }
     if (m_createdByDispatcher) {
         delete this;
     }
 
-    return mfxRes2;
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXHEVCEncoderPlugin::GetPluginParam(mfxPluginParam *par)

@@ -44,7 +44,7 @@ const vm_char * DLL_NAME_LINUX = VM_STRING("igfxcmrt32.so");
 
 #ifdef CMRT_EMU
     const char * FUNC_NAME_CREATE_CM_DEVICE  = "CreateCmDeviceEmu";
-    const char * FUNC_NAME_CREATE_CM_DEVICE_EX  = "CreateCmDeviceExEmu";
+    const char * FUNC_NAME_CREATE_CM_DEVICE_EX  = "CreateCmDeviceEmu";
     const char * FUNC_NAME_DESTROY_CM_DEVICE = "DestroyCmDeviceEmu";
 #else //CMRT_EMU
     const char * FUNC_NAME_CREATE_CM_DEVICE  = "CreateCmDevice";

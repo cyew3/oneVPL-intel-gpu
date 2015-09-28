@@ -19,7 +19,7 @@ using namespace H265Enc::MfxEnumShortAliases;
 
 class MFXVideoENCODEH265Test : public MFXVideoENCODEH265 {
 public:
-    MFXVideoENCODEH265Test(VideoCORE *core, mfxStatus *status) : MFXVideoENCODEH265(core, status) {}
+    MFXVideoENCODEH265Test(MFXCoreInterface1 *core, mfxStatus *status) : MFXVideoENCODEH265(core, status) {}
     using MFXVideoENCODEH265::m_extBuffers;
 };
 
@@ -33,7 +33,7 @@ protected:
     }
 
     mfxStatus ctor_status;
-    MockVideoCORE core;
+    MockMFXCoreInterface core;
     MFXVideoENCODEH265Test encoder;
     ParamSet input;
 };
@@ -175,27 +175,6 @@ TEST_F(InitTest, MandatedParams) {
     }
 }
 
-TEST_F(InitTest, ExternalAllocator_Requirement) {
-    InitParamSetMandated(input);
-    input.videoParam.IOPattern = VIDMEM;
-    core.SetParamSet(input);
-    EXPECT_CALL(core, IsExternalFrameAllocator())
-        .WillOnce(Return(true))
-        .WillRepeatedly(Return(false));
-    EXPECT_CALL(core, AllocFrames(_,_,_))
-        .WillOnce(Invoke(&core, &MockVideoCORE::AllocFramesImpl1));
-    EXPECT_CALL(core, FreeFrames(_,_))
-        .WillOnce(Invoke(&core, &MockVideoCORE::FreeFramesImpl));
-    ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
-    ASSERT_EQ(MFX_ERR_NONE, encoder.Close());
-    ASSERT_EQ(MFX_ERR_INVALID_VIDEO_PARAM, encoder.Init(&input.videoParam));
-    input.videoParam.IOPattern = OPAQMEM;
-    input.extOpaqueSurfaceAlloc.In.Type = VIDMEM;
-    input.extOpaqueSurfaceAlloc.In.NumSurface = 1;
-    input.extOpaqueSurfaceAlloc.In.Surfaces = (mfxFrameSurface1 **)0x88888888;
-    ASSERT_EQ(MFX_ERR_INVALID_VIDEO_PARAM, encoder.Init(&input.videoParam));
-}
-
 TEST_F(InitTest, OpaqueMemory) {
     InitParamSetMandated(input);
     input.videoParam.IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY;
@@ -207,17 +186,8 @@ TEST_F(InitTest, OpaqueMemory) {
     const Ipp32u types[] = {MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET, MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET, MFX_MEMTYPE_SYSTEM_MEMORY};
     for (auto type: types) {
         input.extOpaqueSurfaceAlloc.In.Type = type;
-        EXPECT_CALL(core, IsExternalFrameAllocator()).WillRepeatedly(Return(true));
-        if (type == MFX_MEMTYPE_SYSTEM_MEMORY) {
-            EXPECT_CALL(core, AllocFrames(_,_,_,_)).WillOnce(Invoke(&core, &MockVideoCORE::AllocFramesImpl2));
-            EXPECT_CALL(core, FreeFrames(_,_)).WillOnce(Invoke(&core, &MockVideoCORE::FreeFramesImpl));
-        } else {
-            EXPECT_CALL(core, AllocFrames(_,_,_,_)).WillOnce(Invoke(&core, &MockVideoCORE::AllocFramesImpl2));
-            EXPECT_CALL(core, AllocFrames(_,_,_)).WillOnce(Invoke(&core, &MockVideoCORE::AllocFramesImpl1));
-            EXPECT_CALL(core, FreeFrames(_,_))
-                .WillOnce(Invoke(&core, &MockVideoCORE::FreeFramesImpl))
-                .WillOnce(Invoke(&core, &MockVideoCORE::FreeFramesImpl));
-        }
+        EXPECT_CALL(core, MapOpaqueSurface(_,_,_)).WillOnce(Return(MFX_ERR_NONE));
+        EXPECT_CALL(core, UnmapOpaqueSurface(_,_,_)).WillOnce(Return(MFX_ERR_NONE));
         EXPECT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
         EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
     }
@@ -328,14 +298,13 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     mfxFrameSurface1 *reorder = nullptr;
     mfxFrameSurface1 *surf = surfaces;
     MFX_ENTRY_POINT entrypoint = {};
-    EXPECT_CALL(core, IncreaseReference(_,_)).WillRepeatedly(Return(MFX_ERR_NONE));
+    EXPECT_CALL(core, IncreaseReference(_)).WillRepeatedly(Return(MFX_ERR_NONE));
     mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
     while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0]))
         sts = encoder.EncodeFrameCheck(nullptr, surf++, &bs, &reorder, nullptr, &entrypoint);
     ASSERT_EQ(MFX_ERR_NONE, sts);
 
-    EXPECT_CALL(core, DecreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
-    EXPECT_CALL(core, INeedMoreThreadsInside(_)).WillOnce(Return());
+    EXPECT_CALL(core, DecreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
     ASSERT_EQ(MFX_ERR_NONE, entrypoint.pRoutine(entrypoint.pState, entrypoint.pParam, 0, 0));
 
     auto nals = SplitNals(bs.Data, bs.Data + bs.DataLength);
@@ -410,14 +379,13 @@ TEST_F(InitTest, GetVideoParam_Vps) {
     mfxFrameSurface1 *reorder = nullptr;
     mfxFrameSurface1 *surf = surfaces;
     MFX_ENTRY_POINT entrypoint = {};
-    EXPECT_CALL(core, IncreaseReference(_,_)).WillRepeatedly(Return(MFX_ERR_NONE));
+    EXPECT_CALL(core, IncreaseReference(_)).WillRepeatedly(Return(MFX_ERR_NONE));
     mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
     while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0]))
         sts = encoder.EncodeFrameCheck(nullptr, surf++, &bs, &reorder, nullptr, &entrypoint);
     ASSERT_EQ(MFX_ERR_NONE, sts);
 
-    EXPECT_CALL(core, DecreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
-    EXPECT_CALL(core, INeedMoreThreadsInside(_)).WillOnce(Return());
+    EXPECT_CALL(core, DecreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
     ASSERT_EQ(MFX_ERR_NONE, entrypoint.pRoutine(entrypoint.pState, entrypoint.pParam, 0, 0));
 
     auto nals = SplitNals(bs.Data, bs.Data + bs.DataLength);

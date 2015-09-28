@@ -15,7 +15,8 @@
 #include "cm_rt.h"
 #pragma warning(pop)
 #include "../include/test_common.h"
-#include "../include/genx_h265_cmcode_isa.h"
+#include "../include/genx_hevce_refine_me_p_32x32_bdw_isa.h"
+#include "../include/genx_hevce_refine_me_p_32x32_hsw_isa.h"
 
 #ifdef CMRT_EMU
 extern "C"
@@ -38,7 +39,7 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
 int RunCpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData *outData);
 }
 
-int TestRefineMeP32x32()
+int main()
 {
     mfxI32 numBlocksHor = (WIDTH + BLOCK_W - 1) / BLOCK_W;
     mfxI32 numBlocksVer = (HEIGHT + BLOCK_H - 1) / BLOCK_H;
@@ -51,13 +52,13 @@ int TestRefineMeP32x32()
 
     FILE *f = fopen(YUV_NAME, "rb");
     if (!f)
-        return FAILED;
+        return printf("FAILED to open yuv file\n"), 1;
     if (fread(src, 1, WIDTH * HEIGHT, f) != WIDTH * HEIGHT) // read first frame
-        return FAILED;
+        return printf("FAILED to read first frame from yuv file\n"), 1;
     if (fseek(f, WIDTH * HEIGHT / 2, SEEK_CUR) != 0) // skip chroma
-        return FAILED;
+        return printf("FAILED to skip chroma\n"), 1;
     if (fread(ref, 1, WIDTH * HEIGHT, f) != WIDTH * HEIGHT) // read second frame
-        return FAILED;
+        return printf("FAILED to read second frame from yuv file\n"), 1;
     fclose(f);
 
     // fill motion vector field
@@ -99,7 +100,7 @@ int TestRefineMeP32x32()
     delete [] ref;
     delete [] mv;
 
-    return PASSED;
+    return printf("passed\n"), 0;
 }
 
 namespace {
@@ -114,7 +115,7 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     CHECK_CM_ERR(res);
 
     CmProgram *program = 0;
-    res = device->LoadProgram((void *)genx_h265_cmcode, sizeof(genx_h265_cmcode), program);
+    res = device->LoadProgram((void *)genx_hevce_refine_me_p_32x32_hsw, sizeof(genx_hevce_refine_me_p_32x32_hsw), program);
     CHECK_CM_ERR(res);
 
     CmKernel *kernel = 0;
@@ -199,19 +200,19 @@ int RunGpu(const mfxU8 *src, const mfxU8 *ref, const mfxI16Pair *mv, OutputData 
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
 
-    device->DestroyThreadSpace(threadSpace);
-    device->DestroyTask(task);
-    
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
-
-    mfxU64 time;
-    e->GetExecutionTime(time);
-    printf("TIME=%.3f ms ", time / 1000000.0);
 
     for (mfxI32 y = 0; y < numBlocksVer; y++)
         memcpy(outData + y * numBlocksHor, outputSys + y * outputPitch, outputWidth);
 
+#ifndef CMRT_EMU
+    printf("TIME=%.3f ms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
+#endif //CMRT_EMU
+
+    device->DestroyThreadSpace(threadSpace);
+    device->DestroyTask(task);
+    
     queue->DestroyEvent(e);
     device->DestroySurface2DUP(outputCm);
     CM_ALIGNED_FREE(outputSys);

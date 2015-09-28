@@ -44,14 +44,26 @@ class H265CmCtx {
 
 private:
     /* internal helper functions */
-    void RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurface2DUP **mv, mfxFEIH265InputSurface *picBufInput, mfxFEIH265InputSurface *picBufRef);
+    void RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurface2DUP **mv, mfxFEIH265InputSurface *picBufInput, mfxFEIH265ReconSurface *picBufRef);
     void ConvertBitDepth(void *inPtr, mfxU32 inBits, mfxU32 inPitch, void *outPtr, mfxU32 outBits);
-    mfxStatus CopyInputFrameToGPU(CmEvent **lastEvent, mfxHDL pInSurf, void *YPlane, mfxU32 YPitch, mfxU32 YBitDepth);
+    mfxStatus CopyInputFrameToGPU(CmEvent **lastEvent, mfxHDL pInSurf, void *YPlane, mfxU32 YPitch, void *UVPlane, mfxU32 UVPitch, mfxU32 YBitDepth);
+    mfxStatus CopyReconFrameToGPU(CmEvent **lastEvent, mfxHDL pRecSurf, void *YPlane, mfxU32 YPitch, void *UVPlane, mfxU32 UVPitch, mfxU32 YBitDepth);
 
     /* Cm elements */
     CmDevice  * device;
     CmQueue   * queue;
-    CmProgram * program;
+    CmProgram * programPrepareSrc;
+    CmProgram * programMeIntra;
+    CmProgram * programGradient;
+    CmProgram * programMe16;
+    CmProgram * programMe32;
+    CmProgram * programRefine32x32sad;
+    CmProgram * programRefine32x32;
+    CmProgram * programRefine32x16;
+    CmProgram * programRefine16x32;
+    CmProgram * programInterpolateFrame;
+    CmProgram * programIme;
+    CmProgram * programIme3tiers;
     CmTask    * task;
     CmEvent   * lastEventSaved;
     mfxU32      saveSyncPoint;
@@ -64,12 +76,12 @@ private:
     CmBuffer * me16xControl;
 
     /* Cm kernels to load  */
-    CmKernel * kernelDownSample2tiers;
-    CmKernel * kernelDownSample4tiers;
+    CmKernel * kernelPrepareSrc;
     CmKernel * kernelMeIntra;
     CmKernel * kernelGradient;
     CmKernel * kernelMe16;
     CmKernel * kernelMe32;
+    CmKernel * kernelRefine32x32sad;
     CmKernel * kernelRefine32x32;
     CmKernel * kernelRefine32x16;
     CmKernel * kernelRefine16x32;
@@ -82,10 +94,13 @@ private:
     mfxU32 sourceHeight;
     mfxU32 width;
     mfxU32 height;
+    mfxU32 padding;
+    mfxU32 widthChroma;
+    mfxU32 heightChroma;
+    mfxU32 paddingChroma;
     mfxU32 numRefFrames;
     mfxU32 numIntraModes;
-    mfxU32 bitDepth;
-    mfxU8 *bitDepthBuffer;
+    mfxU32 fourcc;
     mfxU32 targetUsage;
     mfxU32 rectParts;
 
@@ -125,7 +140,18 @@ public:
     H265CmCtx() :
         device(),
         queue(),
-        program(),
+        programPrepareSrc(),
+        programMeIntra(),
+        programGradient(),
+        programMe16(),
+        programMe32(),
+        programRefine32x32sad(),
+        programRefine32x32(),
+        programRefine32x16(),
+        programRefine16x32(),
+        programInterpolateFrame(),
+        programIme(),
+        programIme3tiers(),
         task(),
         lastEventSaved(),
         saveSyncPoint(),
@@ -137,12 +163,12 @@ public:
         me8xControl(),
         me16xControl(),
 
-        kernelDownSample2tiers(),
-        kernelDownSample4tiers(),
+        kernelPrepareSrc(),
         kernelMeIntra(),
         kernelGradient(),
         kernelMe16(),
         kernelMe32(),
+        kernelRefine32x32sad(),
         kernelRefine32x32(),
         kernelRefine32x16(),
         kernelRefine16x32(),
@@ -154,8 +180,7 @@ public:
         height(),
         numRefFrames(),
         numIntraModes(),
-        bitDepth(), 
-        bitDepthBuffer(),
+        fourcc(), 
         targetUsage(),
 
         width32(),

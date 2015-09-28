@@ -2794,14 +2794,8 @@ mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u 
                 else
                     Scale<Ipp16u>(in->m_origin, in->m_lowres, 0);
 
-                if (m_videoParam.DeltaQpMode > 0 || m_videoParam.AnalyzeCmplx) {
-                    FrameData* frame = in->m_lowres;
-                    Ipp32s blkSize = SIZE_BLK_LA;
-                    Ipp32s heightInBlks = (frame->height + blkSize - 1) / blkSize;
-                    for (Ipp32s row = 0; row < heightInBlks; row++) {
-                        PadOneReconRow(frame, row, blkSize, heightInBlks, m_enc.m_frameDataLowresPool.GetAllocInfo());
-                    }
-                }
+                if (m_videoParam.DeltaQpMode > 0 || m_videoParam.AnalyzeCmplx)
+                    PadRectLuma(*in->m_lowres, m_videoParam.fourcc, 0, 0, in->m_lowres->width, in->m_lowres->height);
             }
             if (m_videoParam.SceneCut) {
                 AnalyzeSceneCut_AndUpdateState(in);

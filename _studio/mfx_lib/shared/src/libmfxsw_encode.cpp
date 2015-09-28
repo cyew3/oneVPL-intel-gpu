@@ -167,12 +167,6 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
         break;
 #endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
-    case MFX_CODEC_HEVC:
-        pENCODE = new MFXVideoENCODEH265(core, &mfxRes);
-        break;
-#endif
-
     default:
         break;
     }
@@ -298,14 +292,6 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             break;
 #endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
-#ifdef MFX_ENABLE_H265_VIDEO_ENCODE
-        case MFX_CODEC_HEVC:
-            mfxRes = MFXVideoENCODEH265::Query(session->m_pCORE.get(), in, out);
-            if (MFX_WRN_PARTIAL_ACCELERATION != mfxRes)
-                bIsHWENCSupport = true;
-            break;
-#endif
-
         default:
             mfxRes = MFX_ERR_UNSUPPORTED;
         }
@@ -426,14 +412,6 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 #endif // MFX_VA
             break;
 #endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
-
-#ifdef MFX_ENABLE_H265_VIDEO_ENCODE
-        case MFX_CODEC_HEVC:
-            mfxRes = MFXVideoENCODEH265::QueryIOSurf(session->m_pCORE.get(), par, request);
-            if (MFX_WRN_PARTIAL_ACCELERATION != mfxRes)
-                bIsHWENCSupport = true;
-            break;
-#endif // MFX_ENABLE_VC1_VIDEO_ENC
 
         default:
             mfxRes = MFX_ERR_UNSUPPORTED;

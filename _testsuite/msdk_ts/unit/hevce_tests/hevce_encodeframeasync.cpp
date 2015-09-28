@@ -46,7 +46,7 @@ protected:
     }
 
     mfxStatus ctor_status;
-    MockVideoCORE core;
+    MockMFXCoreInterface core;
     MFXVideoENCODEH265 encoder;
     ParamSet input;
     mfxEncodeCtrl ctrl;
@@ -146,7 +146,7 @@ TEST_F(RuntimeTest, ParamValidation) {
         payloadArr[0] = &payload;
         ctrl.Payload = payloadArr;
         ctrl.NumPayload = 1;
-        EXPECT_CALL(core, IncreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
+        EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
         EXPECT_EQ(MFX_ERR_MORE_DATA_RUN_TASK, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
         ctrl = goodCtrl;
     }
@@ -172,7 +172,7 @@ TEST_F(RuntimeTest, ParamValidation) {
         payload = mfxPayload();
     }
     { SCOPED_TRACE("Test valid case");
-        EXPECT_CALL(core, IncreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
+        EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
         EXPECT_EQ(MFX_ERR_MORE_DATA_RUN_TASK, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
     }
 }
@@ -180,12 +180,12 @@ TEST_F(RuntimeTest, ParamValidation) {
 TEST_F(RuntimeTest, NullNativeSurface) {
     encoder.Close();
 
-    EXPECT_CALL(core, AllocFrames(_,_,_,_))
-        .WillOnce(Invoke(&core, &MockVideoCORE::AllocFramesImpl2));
-    EXPECT_CALL(core, FreeFrames(_,_))
-        .WillOnce(Invoke(&core, &MockVideoCORE::FreeFramesImpl));
-    EXPECT_CALL(core, GetNativeSurface(_,_))
-        .WillOnce(Return(nullptr));
+    EXPECT_CALL(core, MapOpaqueSurface(_,_,_))
+        .WillOnce(Return(MFX_ERR_NONE));
+    EXPECT_CALL(core, UnmapOpaqueSurface(_,_,_))
+        .WillOnce(Return(MFX_ERR_NONE));
+    EXPECT_CALL(core, GetRealSurface(_,_))
+        .WillOnce(Return(MFX_ERR_NONE));
 
     mfxFrameSurface1 *opaqSurfaces = nullptr;
     input.videoParam.IOPattern = OPAQMEM;
@@ -220,13 +220,12 @@ TEST_F(RuntimeTest, UserSeiMessages) {
     ctrl.NumPayload = sizeof(payloadPtrs) / sizeof(payloadPtrs[0]);
 
     while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
-        EXPECT_CALL(core, IncreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
+        EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
         sts = encoder.EncodeFrameCheck(&ctrl, surf++, &bitstream, &reordered, nullptr, &entryPoint);
     }
     ASSERT_EQ(MFX_ERR_NONE, sts);
 
-    EXPECT_CALL(core, DecreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
-    EXPECT_CALL(core, INeedMoreThreadsInside(_)).WillOnce(Return());
+    EXPECT_CALL(core, DecreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
     ASSERT_EQ(MFX_ERR_NONE, entryPoint.pRoutine(entryPoint.pState, entryPoint.pParam, 0, 0));
     ASSERT_EQ(MFX_ERR_NONE, entryPoint.pCompleteProc(entryPoint.pState, entryPoint.pParam, MFX_ERR_NONE));
 
@@ -276,7 +275,7 @@ TEST_F(RuntimeTest, EncodeStat) {
     for (Ipp32u i = 0; i < NUM_FRAMES_TO_ENCODE; i++) {
         mfxFrameSurface1 *surf = surfaces + i % NUM_SURF;
         bitstream.DataLength = bitstream.DataOffset = 0;
-        EXPECT_CALL(core, IncreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
+        EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
         sts = encoder.EncodeFrameCheck(nullptr, surf, &bitstream, &reordered, nullptr, &entryPoint);
         expectedNumCachedFrame++;
 
@@ -286,8 +285,7 @@ TEST_F(RuntimeTest, EncodeStat) {
         EXPECT_EQ(expectedNumBit, stat.NumBit);
 
         if (sts == MFX_ERR_MORE_DATA_RUN_TASK) {
-            EXPECT_CALL(core, DecreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
-            EXPECT_CALL(core, INeedMoreThreadsInside(_)).WillOnce(Return());
+            EXPECT_CALL(core, DecreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
             ASSERT_EQ(MFX_ERR_NONE, entryPoint.pRoutine(entryPoint.pState, entryPoint.pParam, 0, 0));
             ASSERT_EQ(MFX_ERR_NONE, entryPoint.pCompleteProc(entryPoint.pState, entryPoint.pParam, MFX_ERR_NONE));
 
@@ -296,8 +294,7 @@ TEST_F(RuntimeTest, EncodeStat) {
             EXPECT_EQ(expectedNumFrame, stat.NumFrame);
             EXPECT_EQ(expectedNumBit, stat.NumBit);
         } else if (sts == MFX_ERR_NONE) {
-            EXPECT_CALL(core, DecreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
-            EXPECT_CALL(core, INeedMoreThreadsInside(_)).WillOnce(Return());
+            EXPECT_CALL(core, DecreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
             ASSERT_EQ(MFX_ERR_NONE, entryPoint.pRoutine(entryPoint.pState, entryPoint.pParam, 0, 0));
             ASSERT_EQ(MFX_ERR_NONE, entryPoint.pCompleteProc(entryPoint.pState, entryPoint.pParam, MFX_ERR_NONE));
 
@@ -323,7 +320,6 @@ TEST_F(RuntimeTest, EncodeStat) {
         EXPECT_EQ(expectedNumFrame, stat.NumFrame);
         EXPECT_EQ(expectedNumBit, stat.NumBit);
 
-        EXPECT_CALL(core, INeedMoreThreadsInside(_)).WillOnce(Return());
         ASSERT_EQ(MFX_ERR_NONE, entryPoint.pRoutine(entryPoint.pState, entryPoint.pParam, 0, 0));
         ASSERT_EQ(MFX_ERR_NONE, entryPoint.pCompleteProc(entryPoint.pState, entryPoint.pParam, MFX_ERR_NONE));
 

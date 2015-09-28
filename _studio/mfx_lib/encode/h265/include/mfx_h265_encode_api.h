@@ -17,6 +17,7 @@
 #include "mfxdefs.h"
 #include "mfxvideo.h"
 #include "mfxvideo++int.h"
+#include "mfxplugin++.h"
 #include "mfx_ext_buffers.h"
 
 namespace H265Enc {
@@ -41,12 +42,107 @@ namespace H265Enc {
     };
 }
 
+
+class MFXCoreInterface1
+{
+public:
+    mfxCoreInterface m_core;
+public:
+    MFXCoreInterface1()
+        : m_core() {
+    }
+    MFXCoreInterface1(const mfxCoreInterface & pCore)
+        : m_core(pCore) {
+    }
+
+    MFXCoreInterface1(const MFXCoreInterface1 & that)
+        : m_core(that.m_core) {
+    }
+    MFXCoreInterface1 &operator = (const MFXCoreInterface1 & that)
+    { 
+        m_core = that.m_core;
+        return *this;
+    }
+    virtual bool IsCoreSet() {
+        return m_core.pthis != 0;
+    }
+    virtual mfxStatus GetCoreParam(mfxCoreParam *par) {
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.GetCoreParam(m_core.pthis, par);
+    }
+    virtual mfxStatus GetHandle (mfxHandleType type, mfxHDL *handle) {
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.GetHandle(m_core.pthis, type, handle);
+    }
+    virtual mfxStatus IncreaseReference (mfxFrameData *fd) {
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.IncreaseReference(m_core.pthis, fd);
+    }
+    virtual mfxStatus DecreaseReference (mfxFrameData *fd) {
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.DecreaseReference(m_core.pthis, fd);
+    }
+    virtual mfxStatus CopyFrame (mfxFrameSurface1 *dst, mfxFrameSurface1 *src) {
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.CopyFrame(m_core.pthis, dst, src);
+    }
+    virtual mfxStatus CopyBuffer(mfxU8 *dst, mfxU32 size, mfxFrameSurface1 *src) {
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.CopyBuffer(m_core.pthis, dst, size, src);
+    }
+    virtual mfxStatus MapOpaqueSurface(mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf) {
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.MapOpaqueSurface(m_core.pthis, num, type, op_surf);
+    }
+    virtual mfxStatus UnmapOpaqueSurface(mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf) {
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.UnmapOpaqueSurface(m_core.pthis, num, type, op_surf);
+    }
+    virtual mfxStatus GetRealSurface(mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf) {
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.GetRealSurface(m_core.pthis, op_surf, surf);
+    }
+    virtual mfxStatus GetOpaqueSurface(mfxFrameSurface1 *surf, mfxFrameSurface1 **op_surf) {
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.GetOpaqueSurface(m_core.pthis, surf, op_surf);
+    }
+    virtual mfxStatus CreateAccelerationDevice(mfxHandleType type, mfxHDL *handle) {
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.CreateAccelerationDevice(m_core.pthis, type, handle);
+    }
+    virtual mfxFrameAllocator & FrameAllocator() {
+        return m_core.FrameAllocator;
+    }
+} ;
+
 class MFXVideoENCODEH265 : public VideoENCODE {
 public:
-    static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
-    static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
+    static mfxStatus Query(MFXCoreInterface1 *core, mfxVideoParam *in, mfxVideoParam *out);
+    static mfxStatus QueryIOSurf(MFXCoreInterface1 *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
-    MFXVideoENCODEH265(VideoCORE *core, mfxStatus *sts);
+    MFXVideoENCODEH265(MFXCoreInterface1 *core, mfxStatus *sts);
 
     virtual ~MFXVideoENCODEH265();
 
@@ -80,13 +176,11 @@ protected:
     void FreeOpaqSurfaces();
 
 protected:
-    VideoCORE *m_core;
+    MFXCoreInterface1 *m_core;
     std::auto_ptr<H265Enc::H265Encoder> m_impl;
 
     mfxVideoParam       m_mfxParam;
     H265Enc::ExtBuffers m_extBuffers;
-
-    mfxFrameAllocResponse m_responseOpaq;
 };
 
 

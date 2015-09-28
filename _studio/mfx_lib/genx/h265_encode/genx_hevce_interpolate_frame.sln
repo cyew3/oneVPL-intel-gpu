@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{52F9EF5F-D1D8-4602-900A-2F76FDBB85D0}") = "genx_hevce_interpolate_frame", "genx_hevce_interpolate_frame.vcxproj", "{A0229FCE-D866-48C0-9306-AC934BE35C35}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_HSW_Emu|x64 = Debug_HSW_Emu|x64
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A0229FCE-D866-48C0-9306-AC934BE35C35}.Debug_HSW_Emu|x64.ActiveCfg = Debug_HSW_Emu|x64
+		{A0229FCE-D866-48C0-9306-AC934BE35C35}.Debug_HSW_Emu|x64.Build.0 = Debug_HSW_Emu|x64
+		{A0229FCE-D866-48C0-9306-AC934BE35C35}.Debug|x64.ActiveCfg = Debug|x64
+		{A0229FCE-D866-48C0-9306-AC934BE35C35}.Debug|x64.Build.0 = Debug|x64
+		{A0229FCE-D866-48C0-9306-AC934BE35C35}.Release|x64.ActiveCfg = Release|x64
+		{A0229FCE-D866-48C0-9306-AC934BE35C35}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

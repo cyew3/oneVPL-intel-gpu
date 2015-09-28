@@ -8,14 +8,15 @@
 //
 */
 
-#include "stdio.h"
+#include "stdio.h" 
 #pragma warning(push)
 #pragma warning(disable : 4100)
 #pragma warning(disable : 4201)
 #include "cm_rt.h"
 #pragma warning(pop)
 #include "../include/test_common.h"
-#include "../include/genx_h265_cmcode_isa.h"
+#include "../include/genx_hevce_interpolate_frame_bdw_isa.h"
+#include "../include/genx_hevce_interpolate_frame_hsw_isa.h"
 
 #ifdef CMRT_EMU
 extern "C"
@@ -32,7 +33,7 @@ int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD);
 int RunCpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD);
 };
 
-int TestInterpolateFrame()
+int main()
 {
     mfxU8 *in   = new mfxU8[WIDTH * HEIGHT];
     mfxU8 *outHorzGpu = new mfxU8[WIDTHB * HEIGHTB];
@@ -45,9 +46,9 @@ int TestInterpolateFrame()
 
     FILE *f = fopen(YUV_NAME, "rb");
     if (!f)
-        return FAILED;
+        return printf("FAILED to open yuv file\n"), 1;
     if (fread(in, 1, WIDTH * HEIGHT, f) != WIDTH * HEIGHT) // read luma 1 frame
-        return FAILED;
+        return printf("FAILED to read first frame from yuv file\n"), 1;
     fclose(f);
 
     res = RunGpu(in, outHorzGpu, outVertGpu, outDiagGpu);
@@ -60,19 +61,19 @@ int TestInterpolateFrame()
     for (mfxI32 y = 0; y < HEIGHTB; y++) {
         for (mfxI32 x = 0; x < WIDTHB; x++) {
             if (outHorzGpu[y * WIDTHB + x] != outHorzCpu[y * WIDTHB + x]) {
-                printf("bad sad value (%d != %d) for horizontal half-pel at (%.1f, %.1f)... ",
+                printf("bad sad value (%d != %d) for horizontal half-pel at (%.1f, %.1f)...\n",
                         outHorzGpu[y * WIDTHB + x], outHorzCpu[y * WIDTHB + x], x + 0.5, y);
-                return FAILED;
+                return 1;
             }
             if (outVertGpu[y * WIDTHB + x] != outVertCpu[y * WIDTHB + x]) {
-                printf("bad sad value (%d != %d) for horizontal half-pel at (%.1f, %.1f)... ",
+                printf("bad sad value (%d != %d) for horizontal half-pel at (%.1f, %.1f)...\n",
                         outVertGpu[y * WIDTHB + x], outVertCpu[y * WIDTHB + x], x, y + 0.5);
-                return FAILED;
+                return 1;
             }
             if (outDiagGpu[y * WIDTHB + x] != outDiagCpu[y * WIDTHB + x]) {
-                printf("bad sad value (%d != %d) for horizontal half-pel at (%.1f, %.1f)... ",
+                printf("bad sad value (%d != %d) for horizontal half-pel at (%.1f, %.1f)...\n",
                         outDiagGpu[y * WIDTHB + x], outDiagCpu[y * WIDTHB + x], x + 0.5, y + 0.5);
-                return FAILED;
+                return 1;
             }
         }
     }
@@ -85,7 +86,7 @@ int TestInterpolateFrame()
     delete [] outVertCpu;
     delete [] outDiagCpu;
 
-    return PASSED;
+    return printf("passed\n"), 0;
 }
 
 namespace {
@@ -97,7 +98,7 @@ int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
     CHECK_CM_ERR(res);
 
     CmProgram *program = 0;
-    res = device->LoadProgram((void *)genx_h265_cmcode, sizeof(genx_h265_cmcode), program);
+    res = device->LoadProgram((void *)genx_hevce_interpolate_frame_hsw, sizeof(genx_hevce_interpolate_frame_hsw), program);
     CHECK_CM_ERR(res);
 
     CmKernel *kernel = 0;
@@ -166,7 +167,7 @@ int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
     const mfxU16 BlockH = 8;
 
     mfxU32 tsWIDTHB = (WIDTHB + BlockW - 1) / BlockW;
-    mfxU32 tsHEIGHTB = (HEIGHTB + BlockH - 1) / BlockH * 2;
+    mfxU32 tsHEIGHTB = (HEIGHTB + BlockH - 1) / BlockH;
     res = kernel->SetThreadCount(tsWIDTHB * tsHEIGHTB);
     CHECK_CM_ERR(res);
 
@@ -191,22 +192,22 @@ int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
     CmEvent * e = 0;
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
-
-    device->DestroyThreadSpace(threadSpace);
-    device->DestroyTask(task);
     
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
-
-    mfxU64 time;
-    e->GetExecutionTime(time);
-    printf("TIME=%.3f ms ", time / 1000000.0);
 
     for (mfxI32 y = 0; y < HEIGHTB; y++, outH += WIDTHB, outV += WIDTHB, outD += WIDTHB) {
         memcpy(outH, outHorzSys + y * outHorzPitch, WIDTHB);
         memcpy(outV, outVertSys + y * outVertPitch, WIDTHB);
         memcpy(outD, outDiagSys + y * outDiagPitch, WIDTHB);
     }
+
+#ifndef CMRT_EMU
+    printf("TIME=%.3fms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
+#endif //CMRT_EMU
+
+    device->DestroyThreadSpace(threadSpace);
+    device->DestroyTask(task);
 
     queue->DestroyEvent(e);
     device->DestroySurface2DUP(outHorzCm);

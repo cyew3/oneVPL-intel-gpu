@@ -1336,10 +1336,10 @@ namespace {
             optHevc.SAOChroma = defaultOptHevc.SAOChroma;
     }
 
-    mfxStatus CheckIoPattern(VideoCORE &core, const mfxVideoParam &param)
+    mfxStatus CheckIoPattern(MFXCoreInterface1 &core, const mfxVideoParam &param)
     {
-        if ((param.IOPattern & VIDMEM) && !core.IsExternalFrameAllocator())
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+//        if ((param.IOPattern & VIDMEM) && !core.IsExternalFrameAllocator())
+//            return MFX_ERR_INVALID_VIDEO_PARAM;
 
         if (param.IOPattern & OPAQMEM) {
             const mfxExtOpaqueSurfaceAlloc *opaq = GetExtBuffer(param);
@@ -1356,9 +1356,10 @@ namespace {
         return MFX_ERR_NONE;
     }
 
-    mfxFrameSurface1 *GetNativeSurface(VideoCORE &core, mfxFrameSurface1 *input)
+    mfxFrameSurface1 *GetNativeSurface(MFXCoreInterface1 &core, mfxFrameSurface1 *input)
     {
-        mfxFrameSurface1 *native = core.GetNativeSurface(input);
+        mfxFrameSurface1 *native = NULL;
+        mfxStatus sts = core.GetRealSurface(input, &native);
         if (native && input && native != input) { // input surface is opaque surface
             native->Data.FrameOrder = input->Data.FrameOrder;
             native->Data.TimeStamp = input->Data.TimeStamp;
@@ -1371,9 +1372,8 @@ namespace {
 }; // anonymous namespace
 
 
-MFXVideoENCODEH265::MFXVideoENCODEH265(VideoCORE *core, mfxStatus *sts)
+MFXVideoENCODEH265::MFXVideoENCODEH265(MFXCoreInterface1 *core, mfxStatus *sts)
     : m_core(core)
-    , m_responseOpaq()
 {
     if (sts)
         *sts = MFX_ERR_NONE;
@@ -1449,7 +1449,7 @@ mfxStatus MFXVideoENCODEH265::Close()
 }
 
 
-mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
+mfxStatus MFXVideoENCODEH265::Query(MFXCoreInterface1 *core, mfxVideoParam *in, mfxVideoParam *out)
 {
     mfxStatus st = MFX_ERR_NONE;
     if (out == NULL)
@@ -1483,7 +1483,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *in, mfxVideo
 }
 
 
-mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
+mfxStatus MFXVideoENCODEH265::QueryIOSurf(MFXCoreInterface1 *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     if (par == 0 || request == 0)
         return MFX_ERR_NULL_PTR;
@@ -1660,22 +1660,19 @@ mfxStatus MFXVideoENCODEH265::AllocOpaqSurfaces()
     request.Type = m_extBuffers.extOpaq.In.Type;
     request.NumFrameMin = m_extBuffers.extOpaq.In.NumSurface;
     request.NumFrameSuggested = m_extBuffers.extOpaq.In.NumSurface;
-    Zero(m_responseOpaq);
 
-    mfxStatus st = m_core->AllocFrames(&request, &m_responseOpaq, m_extBuffers.extOpaq.In.Surfaces, m_extBuffers.extOpaq.In.NumSurface);
+    mfxStatus st = m_core->MapOpaqueSurface(m_extBuffers.extOpaq.In.NumSurface, m_extBuffers.extOpaq.In.Type, m_extBuffers.extOpaq.In.Surfaces);
     if (st != MFX_ERR_NONE)
         return MFX_ERR_MEMORY_ALLOC;
-    if (m_responseOpaq.NumFrameActual < request.NumFrameMin)
-        return MFX_ERR_MEMORY_ALLOC;
+
     return MFX_ERR_NONE;
 }
 
 
 void MFXVideoENCODEH265::FreeOpaqSurfaces()
 {
-    if (m_core && m_responseOpaq.mids) {
-        m_core->FreeFrames(&m_responseOpaq);
-        Zero(m_responseOpaq);
+    if (m_core && (m_mfxParam.IOPattern & OPAQMEM)) {
+        m_core->UnmapOpaqueSurface(m_extBuffers.extOpaq.In.NumSurface, m_extBuffers.extOpaq.In.Type, m_extBuffers.extOpaq.In.Surfaces);
     }
 }
 

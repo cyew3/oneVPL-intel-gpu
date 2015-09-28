@@ -616,61 +616,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\shared\src\fast_copy.cpp" />
-    <ClCompile Include="..\..\shared\src\libmfx_allocator.cpp" />
-    <ClCompile Include="..\..\shared\src\libmfx_core.cpp" />
-    <ClCompile Include="..\..\shared\src\libmfx_core_factory.cpp" />
-    <ClCompile Include="..\shared\src\libmfxsw.cpp" />
-    <ClCompile Include="..\shared\src\libmfxsw_async.cpp" />
-    <ClCompile Include="..\shared\src\libmfxsw_encode.cpp" />
-    <ClCompile Include="..\shared\src\libmfxsw_query.cpp" />
-    <ClCompile Include="..\shared\src\libmfxsw_session.cpp" />
-    <ClCompile Include="..\shared\src\mfx_brc_common.cpp" />
     <ClCompile Include="..\shared\src\mfx_common_int.cpp" />
     <ClCompile Include="..\shared\src\mfx_enc_common.cpp" />
-    <ClCompile Include="..\shared\src\mfx_log.cpp" />
-    <ClCompile Include="..\shared\src\mfx_session.cpp" />
-    <ClCompile Include="..\..\shared\src\mfx_timing.cpp" />
-    <ClCompile Include="..\..\shared\src\mfx_umc_alloc_wrapper.cpp" />
-    <ClCompile Include="..\shared\src\mfx_user_plugin.cpp" />
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core.cpp" />
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_ischeduler.cpp" />
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_iunknown.cpp" />
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_task.cpp" />
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_task_management.cpp" />
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_thread.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\shared\include\fast_copy.h" />
-    <ClInclude Include="..\..\shared\include\libmfx_allocator.h" />
-    <ClInclude Include="..\..\shared\include\libmfx_core.h" />
-    <ClInclude Include="..\..\shared\include\libmfx_core_factory.h" />
-    <ClInclude Include="..\..\shared\include\libmfx_core_operation.h" />
     <ClInclude Include="..\..\shared\include\mfx_common.h" />
-    <ClInclude Include="..\scheduler\include\mfx_dependency_item.h" />
-    <ClInclude Include="..\shared\include\mfx_brc_common.h" />
     <ClInclude Include="..\shared\include\mfx_common_int.h" />
     <ClInclude Include="..\shared\include\mfx_enc_common.h" />
-    <ClInclude Include="..\shared\include\mfx_interface.h" />
-    <ClInclude Include="..\shared\include\mfx_interface_scheduler.h" />
-    <ClInclude Include="..\shared\include\mfx_log.h" />
-    <ClInclude Include="..\shared\include\mfx_session.h" />
-    <ClInclude Include="..\shared\include\mfx_task.h" />
-    <ClInclude Include="..\shared\include\mfx_task_threading_policy.h" />
-    <ClInclude Include="..\shared\include\mfx_thread_task.h" />
-    <ClInclude Include="..\..\shared\include\mfx_timing.h" />
-    <ClInclude Include="..\shared\include\mfx_tools.h" />
-    <ClInclude Include="..\..\shared\include\mfx_umc_alloc_wrapper.h" />
-    <ClInclude Include="..\shared\include\mfx_user_plugin.h" />
-    <ClInclude Include="..\..\shared\include\mfx_utils.h" />
     <ClInclude Include="..\..\shared\include\mfxstructurespro.h" />
     <ClInclude Include="..\..\shared\include\mfxvideo++int.h" />
     <ClInclude Include="..\..\shared\include\mfxvideopro++.h" />
     <ClInclude Include="..\..\shared\include\mfxvideopro.h" />
-    <ClInclude Include="..\scheduler\include\mfx_scheduler_core.h" />
-    <ClInclude Include="..\scheduler\include\mfx_scheduler_core_handle.h" />
-    <ClInclude Include="..\scheduler\include\mfx_scheduler_core_task.h" />
-    <ClInclude Include="..\scheduler\include\mfx_scheduler_core_thread.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="libmfx.def" />

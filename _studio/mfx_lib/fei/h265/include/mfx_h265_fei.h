@@ -134,6 +134,8 @@ typedef struct
     mfxSurfInfoENC     InterDist[64];   /* 64 = max number of inter block sizes */
     mfxSurfInfoENC     InterMV[64];
     mfxSurfInfoENC     Interpolate[3];  /* 3 = half-pel planes (H,V,D) */
+    mfxSurfInfoENC     SrcRefLuma;      /* luma plane of source and reconstracted reference frames */
+    mfxSurfInfoENC     SrcRefChroma;    /* chroma plane of source and reconstracted reference frames */
 
     mfxU16             reserved[32];
 } mfxExtFEIH265Alloc;
@@ -167,11 +169,15 @@ typedef struct
 {
     mfxU32 Width;
     mfxU32 Height;
+    mfxU32 Padding;
+    mfxU32 WidthChroma;
+    mfxU32 HeightChroma;
+    mfxU32 PaddingChroma;
     mfxU32 MaxCUSize;
     mfxU32 MPMode;
     mfxU32 NumRefFrames;
     mfxU32 NumIntraModes;
-    mfxU32 BitDepth;
+    mfxU32 FourCC;
     mfxU32 TargetUsage;
 } mfxFEIH265Param;
 
@@ -179,7 +185,9 @@ typedef struct
 typedef struct
 {
     void  *YPlane;
+    void  *UVPlane;
     mfxU32 YPitch;
+    mfxU32 UVPitch;
     mfxU32 YBitDepth;
     mfxU32 PicOrder;
     mfxU32 EncOrder;
@@ -240,17 +248,32 @@ enum mfxFEIH265SurfaceType
     MFX_FEI_H265_SURFTYPE_INVALID = -1,
 
     MFX_FEI_H265_SURFTYPE_INPUT = 0,
+    MFX_FEI_H265_SURFTYPE_RECON = 1,
     MFX_FEI_H265_SURFTYPE_OUTPUT,
 };
 
 typedef struct
 {
-    CmSurface2D *bufOrig;
+    CmSurface2D *bufLuma10bit;
+    CmSurface2D *bufChromaRext;
+    CmSurface2D *bufOrigNv12;
     CmSurface2D *bufDown2x;
     CmSurface2D *bufDown4x;
     CmSurface2D *bufDown8x;
     CmSurface2D *bufDown16x;
 } mfxFEIH265InputSurface;
+
+typedef struct
+{
+    CmSurface2D *bufLuma10bit;
+    CmSurface2D *bufChromaRext;
+    CmSurface2D *bufOrigNv12;
+    CmSurface2D *bufDown2x;
+    CmSurface2D *bufDown4x;
+    CmSurface2D *bufDown8x;
+    CmSurface2D *bufDown16x;
+    CmSurface2D *bufOrigInterp[3];
+} mfxFEIH265ReconSurface;
 
 typedef struct
 {
@@ -264,6 +287,7 @@ typedef struct
 
     union {
         mfxFEIH265InputSurface   sIn;
+        mfxFEIH265ReconSurface   sRec;
         mfxFEIH265OutputSurface  sOut;
     };
 } mfxFEIH265Surface;
@@ -292,7 +316,9 @@ mfxStatus H265FEI_SyncOperation(mfxFEIH265 feih265, mfxFEISyncPoint syncp, mfxU3
 mfxStatus H265FEI_DestroySavedSyncPoint(mfxFEIH265 feih265, mfxFEISyncPoint syncp);
 
 mfxStatus H265FEI_GetSurfaceDimensions(void *core, mfxU32 width, mfxU32 height, mfxExtFEIH265Alloc *extAlloc);
+mfxStatus H265FEI_GetSurfaceDimensions_new(void *core, mfxFEIH265Param *param, mfxExtFEIH265Alloc *extAlloc);
 mfxStatus H265FEI_AllocateInputSurface(mfxFEIH265 feih265, mfxHDL *pInSurf);
+mfxStatus H265FEI_AllocateReconSurface(mfxFEIH265 feih265, mfxHDL *pRecSurf);
 mfxStatus H265FEI_AllocateOutputSurface(mfxFEIH265 feih265, mfxU8 *sysMem, mfxSurfInfoENC *surfInfo, mfxHDL *pOutSurf);
 mfxStatus H265FEI_FreeSurface(mfxFEIH265 feih265, mfxHDL pSurf);
 

@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{9157943B-6553-470C-ABBA-33F8EA8C69E8}") = "genx_hevce_refine_me_p_32x32_satd8x8", "genx_hevce_refine_me_p_32x32_satd8x8.vcxproj", "{29BDC9B0-FD4B-4E25-8C8C-72686C505054}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_HSW_Emu|x64 = Debug_HSW_Emu|x64
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{29BDC9B0-FD4B-4E25-8C8C-72686C505054}.Debug_HSW_Emu|x64.ActiveCfg = Debug_HSW_Emu|x64
+		{29BDC9B0-FD4B-4E25-8C8C-72686C505054}.Debug_HSW_Emu|x64.Build.0 = Debug_HSW_Emu|x64
+		{29BDC9B0-FD4B-4E25-8C8C-72686C505054}.Debug|x64.ActiveCfg = Debug|x64
+		{29BDC9B0-FD4B-4E25-8C8C-72686C505054}.Debug|x64.Build.0 = Debug|x64
+		{29BDC9B0-FD4B-4E25-8C8C-72686C505054}.Release|x64.ActiveCfg = Release|x64
+		{29BDC9B0-FD4B-4E25-8C8C-72686C505054}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

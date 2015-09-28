@@ -14,6 +14,7 @@
 
 ///#include "mfx_h265_enc.h"
 #include "libmfx_core_interface.h"
+#include "mfxplugin++.h"
 #include "cmrt_cross_platform.h"
 
 #include <vector>
@@ -624,8 +625,8 @@ void EnqueueCopyCPUToGPUStride(CmQueue *queue, CmSurface2D *surface, const void 
 void EnqueueCopyGPUToCPUStride(CmQueue *queue, CmSurface2D *surface, void *sysMem, mfxU32 pitch, CmEvent *&event);
 void Read(CmBuffer * buffer, void * buf, CmEvent * e = 0);
 void Write(CmBuffer * buffer, void * buf, CmEvent * e = 0);
-CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version);
-CmDevice * CreateCmDevicePtr(VideoCORE * core, mfxU32 * version);
+CmDevice * TryCreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version);
+CmDevice * CreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version);
 CmBuffer * CreateBuffer(CmDevice * device, mfxU32 size);
 CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem);
 SurfaceIndex * CreateVmeSurfaceG75(CmDevice * device, CmSurface2D * source, CmSurface2D ** fwdRefs, CmSurface2D ** bwdRefs, mfxU32 numFwdRefs, mfxU32 numBwdRefs);
@@ -635,8 +636,8 @@ void SetSearchPathSmall(VmeSearchPath *spath);
 mfxU32 SetSearchPath(mfxVMEIMEIn & spath, mfxU32 frameType, mfxU32 meMethod);
 void SetCurbeData(H265EncCURBEData & curbeData, mfxU32 PicType, mfxU32  qp, mfxU32  width, mfxU32 height);
 
-CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version = 0);
-CmDevice * CreateCmDevicePtr(VideoCORE * core, mfxU32 * version = 0);
+CmDevice * TryCreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version = 0);
+CmDevice * CreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version = 0);
 CmBuffer * CreateBuffer(CmDevice * device, mfxU32 size);
 CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem);
 CmSurface2D * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc);

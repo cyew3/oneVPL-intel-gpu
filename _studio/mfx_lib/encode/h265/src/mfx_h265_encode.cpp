@@ -32,10 +32,13 @@
 #include "mfx_h265_lookahead.h"
 #include "mfx_enc_common.h"
 #include "mfx_h265_fei.h"
+#include "mfx_h265_enc_cm_utils.h"
+#include "mfx_h265_cmcopy.h"
 
 #ifndef MFX_VA
 #define H265FEI_Close(...) (MFX_ERR_NONE)
 #define H265FEI_GetSurfaceDimensions(...) (MFX_ERR_NONE)
+#define H265FEI_GetSurfaceDimensions_new(...) (MFX_ERR_NONE)
 #define H265FEI_Init(...) (MFX_ERR_NONE)
 #define H265FEI_ProcessFrameAsync(...) (MFX_ERR_NONE)
 #define H265FEI_SyncOperation(...) (MFX_ERR_NONE)
@@ -71,7 +74,9 @@ namespace {
         "GRAD", "<unk05>", "<unk06>", "<unk07>",
         "IDIST", "<unk09>", "<unk10>", "<unk11>", "<unk12>", "<unk13>", "<unk14>", "<unk15>",
         "ME", "<unk17>", "<unk18>", "<unk19>", "<unk20>", "<unk21>", "<unk22>", "<unk23>", "<unk24>", "<unk25>", "<unk26>", "<unk27>", "<unk28>", "<unk29>", "<unk30>", "<unk31>",
-        "INTERP"
+        "INTERP", "<unk33>", "<unk34>", "<unk35>", "<unk36>", "<unk37>", "<unk38>", "<unk39>", "<unk40>", "<unk41>", "<unk42>", "<unk43>", "<unk44>", "<unk45>", "<unk46>", "<unk47>", 
+        "<unk48>", "<unk49>", "<unk50>", "<unk51>", "<unk52>", "<unk53>", "<unk54>", "<unk55>", "<unk56>", "<unk57>", "<unk58>", "<unk59>", "<unk60>", "<unk61>", "<unk62>", "<unk63>",
+        "BIREFINE"
     };
 
     const char *NUMBERS[128] = {
@@ -157,7 +162,7 @@ namespace {
         intParam.GeneralizedPB = (optHevc.GPB == ON);
         intParam.AdaptiveRefs = (optHevc.AdaptiveRefs == ON);
         intParam.NumRefFrameB  = optHevc.NumRefFrameB;
-        if (intParam.NumRefFrameB < 2) 
+        if (intParam.NumRefFrameB < 2)
             intParam.NumRefFrameB = numRefFrame;
         intParam.NumRefLayers  = optHevc.NumRefLayers;
         if (intParam.NumRefLayers < 2 || intParam.BiPyramidLayers<2) 
@@ -476,10 +481,68 @@ namespace {
     }
 
 
+    void SetFrameDataAllocInfo(FrameData::AllocInfo &allocInfo, Ipp32s widthLu, Ipp32s heightLu, Ipp32s paddingLu, Ipp32s fourcc)
+    {
+        Ipp32s bpp;
+        Ipp32s heightCh;
+
+        switch (fourcc) {
+        case MFX_FOURCC_NV12:
+            allocInfo.bitDepthLu = 8;
+            allocInfo.bitDepthCh = 8;
+            allocInfo.chromaFormat = MFX_CHROMAFORMAT_YUV420;
+            allocInfo.paddingChH = paddingLu/2;
+            heightCh = heightLu/2;
+            bpp = 1;
+            break;
+        case MFX_FOURCC_NV16:
+            allocInfo.bitDepthLu = 8;
+            allocInfo.bitDepthCh = 8;
+            allocInfo.chromaFormat = MFX_CHROMAFORMAT_YUV422;
+            allocInfo.paddingChH = paddingLu;
+            heightCh = heightLu;
+            bpp = 1;
+            break;
+        case MFX_FOURCC_P010:
+            allocInfo.bitDepthLu = 10;
+            allocInfo.bitDepthCh = 10;
+            allocInfo.chromaFormat = MFX_CHROMAFORMAT_YUV420;
+            allocInfo.paddingChH = paddingLu/2;
+            heightCh = heightLu/2;
+            bpp = 2;
+            break;
+        case MFX_FOURCC_P210:
+            allocInfo.bitDepthLu = 10;
+            allocInfo.bitDepthCh = 10;
+            allocInfo.chromaFormat = MFX_CHROMAFORMAT_YUV422;
+            allocInfo.paddingChH = paddingLu;
+            heightCh = heightLu;
+            bpp = 2;
+            break;
+        default:
+            assert(!"invalid fourcc");
+            return;
+        }
+
+        Ipp32s widthCh = widthLu;
+        allocInfo.width = widthLu;
+        allocInfo.height = heightLu;
+        allocInfo.paddingLu = paddingLu;
+        allocInfo.paddingChW = paddingLu;
+        allocInfo.alignment = 32;
+
+        allocInfo.pitchInBytesLu = (widthLu + paddingLu * 2) * bpp;
+        allocInfo.sizeInBytesLu = allocInfo.pitchInBytesLu * (heightLu + paddingLu * 2);
+        allocInfo.pitchInBytesCh = (widthCh + allocInfo.paddingChW * 2) * bpp;
+        allocInfo.sizeInBytesCh = allocInfo.pitchInBytesCh * (heightCh + allocInfo.paddingChH * 2);
+    }
+
+
     struct Deleter { template <typename T> void operator ()(T* p) const { delete p; } };
 
     Ipp32s blkSizeInternal2Fei[3] = { MFX_FEI_H265_BLK_8x8, MFX_FEI_H265_BLK_16x16, MFX_FEI_H265_BLK_32x32 };
     Ipp32s blkSizeFei2Internal[12] = { -1, -1, -1, 2, -1, -1, 1, -1, -1, 0, -1, -1 };
+
 }; // anonimous namespace
 
 
@@ -497,14 +560,13 @@ namespace H265Enc {
 };
 
 
-H265Encoder::H265Encoder(VideoCORE &core)
+H265Encoder::H265Encoder(MFXCoreInterface1 &core)
     : m_core(core)
     , m_memBuf(NULL)
     , m_brc(NULL)
     , m_fei(NULL)
 {
     m_videoParam.m_logMvCostTable = NULL;
-    m_responseAux.mids = NULL;
     ippStaticInit();
     vm_cond_set_invalid(&m_condVar);
     vm_mutex_set_invalid(&m_critSect);
@@ -548,11 +610,9 @@ H265Encoder::~H265Encoder()
         m_frameEncoder.resize(0);
     }
 
-    if (m_responseAux.mids)
-        m_core.FreeFrames(&m_responseAux);
-
     // destory FEI resources
     m_feiInputPool.Destroy();
+    m_feiReconPool.Destroy();
     for (Ipp32s i = 0; i < 4; i++)
         m_feiAngModesPool[i].Destroy();
     for (Ipp32s i = 0; i < 3; i++)
@@ -576,28 +636,28 @@ H265Encoder::~H265Encoder()
     }
 }
 
+namespace {
+    mfxHDL CreateAccelerationDevice(MFXCoreInterface1 &core, mfxHandleType &type)
+    {
+        mfxCoreParam par;
+        mfxStatus sts = MFX_ERR_NONE;
+        if ((sts = core.GetCoreParam(&par)) != MFX_ERR_NONE)
+            return mfxHDL(0);
+		mfxU32 impl = par.Impl & 0x0700;
 
-mfxStatus H265Encoder::AllocAuxFrame()
-{
-    mfxFrameAllocRequest request = {};
-    request.Info.Width  = (m_videoParam.Width + 15) & ~15;
-    request.Info.Height = (m_videoParam.Height + 15) & ~15;
-    request.Info.FourCC = m_videoParam.fourcc;
-    request.Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY;
-    request.NumFrameMin = 1;
-    request.NumFrameSuggested = 1;
-    mfxStatus st = m_core.AllocFrames(&request, &m_responseAux);
-    if (st != MFX_ERR_NONE)
-        return MFX_ERR_MEMORY_ALLOC;
-    if (m_responseAux.NumFrameActual < request.NumFrameMin)
-        return MFX_ERR_MEMORY_ALLOC;
-
-	Zero(m_auxInput);
-    m_auxInput.Data.MemId = m_responseAux.mids[0];
-    m_auxInput.Info = request.Info;
-    return MFX_ERR_NONE;
-}
-
+        mfxHDL device = mfxHDL(0);
+        mfxHandleType handleType = (impl == MFX_IMPL_VIA_D3D9)  ? MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 :
+                                   (impl == MFX_IMPL_VIA_D3D11) ? MFX_HANDLE_D3D11_DEVICE :
+                                   (impl == MFX_IMPL_VIA_VAAPI) ? MFX_HANDLE_VA_DISPLAY :
+                                                                  mfxHandleType(0);
+        if (handleType == mfxHandleType(0))
+            return mfxHDL(0);
+        if ((sts = core.CreateAccelerationDevice(handleType, &device)) != MFX_ERR_NONE)
+            return mfxHDL(0);
+        type = handleType;
+        return device;
+    }
+};
 
 mfxStatus H265Encoder::Init(const mfxVideoParam &par)
 {
@@ -605,9 +665,12 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    if (m_videoParam.inputVideoMem)
-        if (AllocAuxFrame() != MFX_ERR_NONE)
-            return MFX_ERR_MEMORY_ALLOC;
+    mfxHDL device;
+    mfxHandleType deviceType = mfxHandleType(0);
+    if (m_videoParam.inputVideoMem || m_videoParam.enableCmFlag) {
+        if ((device = CreateAccelerationDevice(m_core, deviceType)) == 0)
+            return MFX_ERR_DEVICE_FAILED;
+    }
 
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP) {
         m_brc = CreateBrc(&par);
@@ -615,7 +678,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
             return sts;
     }
 
-    if ((sts = Init_Internal()) != MFX_ERR_NONE)
+    if ((sts = InitInternal()) != MFX_ERR_NONE)
         return sts;
 
     SetProfileLevel();
@@ -754,38 +817,88 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
         m_la.reset(new Lookahead(*this));
 
     FrameData::AllocInfo frameDataAllocInfo;
-    frameDataAllocInfo.width = m_videoParam.Width;
-    frameDataAllocInfo.height = m_videoParam.Height;
-    frameDataAllocInfo.padding = MAX(m_videoParam.MaxCUSize, 16) + 16;
-    frameDataAllocInfo.bitDepthLu = m_videoParam.bitDepthLuma;
-    frameDataAllocInfo.bitDepthCh = m_videoParam.bitDepthChroma;
-    frameDataAllocInfo.chromaFormat = m_videoParam.chromaFormatIdc;
+    SetFrameDataAllocInfo(frameDataAllocInfo, m_videoParam.Width, m_videoParam.Height, 96, m_videoParam.fourcc);
+
+    if (m_videoParam.enableCmFlag) {
+        mfxFEIH265Param feiParams = {};
+        feiParams.Width = m_videoParam.Width;
+        feiParams.Height = m_videoParam.Height;
+        feiParams.Padding = frameDataAllocInfo.paddingLu;
+        feiParams.WidthChroma = m_videoParam.Width;
+        feiParams.HeightChroma = m_videoParam.Height >> m_videoParam.chromaShiftH;
+        feiParams.PaddingChroma = frameDataAllocInfo.paddingChW;
+        feiParams.MaxCUSize = m_videoParam.MaxCUSize;
+        feiParams.MPMode = m_videoParam.partModes;
+        feiParams.NumRefFrames = m_videoParam.MaxDecPicBuffering;
+        feiParams.TargetUsage = 0;
+        feiParams.NumIntraModes = 1;
+        feiParams.FourCC = m_videoParam.fourcc;
+
+        mfxExtFEIH265Alloc feiAlloc = {};
+        MFXCoreInterface core(m_core.m_core);
+        mfxStatus sts = H265FEI_GetSurfaceDimensions_new(&core, &feiParams, &feiAlloc);
+        if (sts != MFX_ERR_NONE)
+            return sts;
+
+        sts = H265FEI_Init(&m_fei, &feiParams, &core);
+        if (sts != MFX_ERR_NONE)
+            return sts;
+
+        FeiInData::AllocInfo feiInAllocInfo;
+        feiInAllocInfo.feiHdl = m_fei;
+        m_feiInputPool.Init(feiInAllocInfo, m_videoParam.m_framesInParallel);
+
+        FeiRecData::AllocInfo feiRecAllocInfo;
+        feiRecAllocInfo.feiHdl = m_fei;
+        m_feiReconPool.Init(feiRecAllocInfo, m_videoParam.m_framesInParallel + m_videoParam.MaxDecPicBuffering);
+
+        FeiOutData::AllocInfo feiOutAllocInfo;
+        feiOutAllocInfo.feiHdl = m_fei;
+        for (Ipp32s blksize = 0; blksize < 4; blksize++) {
+            feiOutAllocInfo.allocInfo = feiAlloc.IntraMode[blksize];
+            m_feiAngModesPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel);
+        }
+        Ipp32s maxNumRefs = MAX(m_videoParam.MaxRefIdxP[0] + m_videoParam.MaxRefIdxP[1], m_videoParam.MaxRefIdxB[0] + m_videoParam.MaxRefIdxB[1]);
+        for (Ipp32s blksize = 0; blksize < 3; blksize++) {
+            Ipp32s feiBlkSizeIdx = blkSizeInternal2Fei[blksize];
+
+            feiOutAllocInfo.allocInfo = feiAlloc.InterMV[feiBlkSizeIdx];
+            m_feiInterMvPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel * maxNumRefs);
+
+            feiOutAllocInfo.allocInfo = feiAlloc.InterDist[feiBlkSizeIdx];
+            m_feiInterDistPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel * maxNumRefs);
+        }
+
+        // patch allocInfo to meet CmSurface2D requirements
+        frameDataAllocInfo.alignment = 0x1000; // page aligned
+        frameDataAllocInfo.sizeInBytesLu = frameDataAllocInfo.sizeInBytesLu / frameDataAllocInfo.pitchInBytesLu * feiAlloc.SrcRefLuma.pitch;
+        frameDataAllocInfo.sizeInBytesCh = frameDataAllocInfo.sizeInBytesCh / frameDataAllocInfo.pitchInBytesCh * feiAlloc.SrcRefChroma.pitch;
+        frameDataAllocInfo.sizeInBytesLu = IPP_MAX(frameDataAllocInfo.sizeInBytesLu, (Ipp32s)feiAlloc.SrcRefLuma.size);
+        frameDataAllocInfo.sizeInBytesCh = IPP_MAX(frameDataAllocInfo.sizeInBytesCh, (Ipp32s)feiAlloc.SrcRefChroma.size);
+        frameDataAllocInfo.pitchInBytesLu = feiAlloc.SrcRefLuma.pitch;
+        frameDataAllocInfo.pitchInBytesCh = feiAlloc.SrcRefChroma.pitch;
+    }
+
+    if (m_videoParam.inputVideoMem && m_videoParam.enableCmFlag) {
+        m_cmcopy.reset(new CmCopy());
+        if ((sts = m_cmcopy->Init(device, deviceType)) != MFX_ERR_NONE)
+            return sts;
+        sts = m_cmcopy->SetParam(frameDataAllocInfo.width, frameDataAllocInfo.height, m_videoParam.fourcc,
+                                 frameDataAllocInfo.pitchInBytesLu, frameDataAllocInfo.pitchInBytesCh,
+                                 frameDataAllocInfo.paddingLu, frameDataAllocInfo.paddingChW);
+        if (sts != MFX_ERR_NONE)
+            return sts;
+    }
+
     m_frameDataPool.Init(frameDataAllocInfo, 0);
 
     if (m_la.get() && (m_videoParam.LowresFactor || m_videoParam.SceneCut)) {
-        // hack!!!
         Ipp32s lowresFactor = m_videoParam.LowresFactor;
         if (m_videoParam.SceneCut && m_videoParam.LowresFactor == 0)
             lowresFactor = 1;
-
-        frameDataAllocInfo.width = m_videoParam.Width >> lowresFactor;
-        frameDataAllocInfo.height = m_videoParam.Height >> lowresFactor;
-        frameDataAllocInfo.padding = MAX(SIZE_BLK_LA, 16) + 16;
-        frameDataAllocInfo.bitDepthLu = m_videoParam.bitDepthLuma;
-        frameDataAllocInfo.bitDepthCh = m_videoParam.bitDepthChroma;
-        frameDataAllocInfo.chromaFormat = m_videoParam.chromaFormatIdc;
+        SetFrameDataAllocInfo(frameDataAllocInfo, m_videoParam.Width>>lowresFactor, m_videoParam.Height>>lowresFactor,
+                              MAX(SIZE_BLK_LA, 16) + 16, m_videoParam.fourcc);
         m_frameDataLowresPool.Init(frameDataAllocInfo, 0);
-    }
-
-    m_have8bitCopyFlag = (m_videoParam.enableCmFlag && m_videoParam.bitDepthLuma > 8) ? 1 : 0;
-    if (m_have8bitCopyFlag) {
-        frameDataAllocInfo.width = m_videoParam.Width;
-        frameDataAllocInfo.height = m_videoParam.Height;
-        frameDataAllocInfo.padding = MAX(m_videoParam.MaxCUSize, 16) + 16;
-        frameDataAllocInfo.bitDepthLu = 8;
-        frameDataAllocInfo.bitDepthCh = 8;
-        frameDataAllocInfo.chromaFormat = MFX_CHROMAFORMAT_YUV420;
-        m_frameData8bitPool.Init(frameDataAllocInfo, 0);
     }
 
     if (m_la.get()) {
@@ -824,7 +937,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
     return MFX_ERR_NONE;
 }
 
-mfxStatus H265Encoder::Init_Internal()
+mfxStatus H265Encoder::InitInternal()
 {
     Ipp32u memSize = 0;
 
@@ -881,49 +994,6 @@ mfxStatus H265Encoder::Init_Internal()
     }
 
 
-    if (m_videoParam.enableCmFlag) {
-        mfxFEIH265Param feiParams = {};
-        feiParams.Width = m_videoParam.Width;
-        feiParams.Height = m_videoParam.Height;
-        feiParams.MaxCUSize = m_videoParam.MaxCUSize;
-        feiParams.MPMode = m_videoParam.partModes;
-        feiParams.NumRefFrames = m_videoParam.MaxDecPicBuffering;
-        feiParams.BitDepth = 8;
-        feiParams.TargetUsage = 0;
-        feiParams.NumIntraModes = 1;
-
-        mfxExtFEIH265Alloc feiAlloc = {};
-        mfxStatus sts = H265FEI_GetSurfaceDimensions(&m_core, m_videoParam.Width, m_videoParam.Height, &feiAlloc);
-        if (sts != MFX_ERR_NONE)
-            return sts;
-
-        sts = H265FEI_Init(&m_fei, &feiParams, &m_core);
-        if (sts != MFX_ERR_NONE)
-            return sts;
-
-        FeiInData::AllocInfo feiInAllocInfo;
-        feiInAllocInfo.feiHdl = m_fei;
-        m_feiInputPool.Init(feiInAllocInfo, 2 * m_videoParam.m_framesInParallel + m_videoParam.MaxDecPicBuffering);
-
-        FeiOutData::AllocInfo feiOutAllocInfo;
-        feiOutAllocInfo.feiHdl = m_fei;
-        for (Ipp32s blksize = 0; blksize < 4; blksize++) {
-            feiOutAllocInfo.allocInfo = feiAlloc.IntraMode[blksize];
-            m_feiAngModesPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel);
-        }
-        Ipp32s maxNumRefs = MAX(m_videoParam.MaxRefIdxP[0] + m_videoParam.MaxRefIdxP[1], m_videoParam.MaxRefIdxB[0] + m_videoParam.MaxRefIdxB[1]);
-        for (Ipp32s blksize = 0; blksize < 3; blksize++) {
-            Ipp32s feiBlkSizeIdx = blkSizeInternal2Fei[blksize];
-
-            feiOutAllocInfo.allocInfo = feiAlloc.InterMV[feiBlkSizeIdx];
-            m_feiInterMvPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel * maxNumRefs);
-
-            feiOutAllocInfo.allocInfo = feiAlloc.InterDist[feiBlkSizeIdx];
-            m_feiInterDistPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel * maxNumRefs);
-        }
-    }
-
-
     MFX_HEVC_PP::InitDispatcher(m_videoParam.cpuFeature);
 
 #if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
@@ -941,6 +1011,14 @@ mfxStatus H265Encoder::Init_Internal()
     return MFX_ERR_NONE;
 }
 
+//mfxStatus H265Encoder::CreateCmDevice()
+//{
+//    MFXCoreInterface core(m_core.m_core);
+//    CmDevice *m_cmDevice = TryCreateCmDevicePtr(&core);
+//    if (m_cmDevice == 0)
+//        return MFX_ERR_DEVICE_FAILED;
+//    return MFX_ERR_NONE;
+//}
 
 mfxStatus H265Encoder::Reset(const mfxVideoParam &par)
 {
@@ -1251,7 +1329,7 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             frame->m_ttSubmitGpuCopyRec.finished = 0;
             frame->m_ttSubmitGpuCopyRec.poc = frame->m_frameOrder;
             if (!frame->m_feiRecon)
-                frame->m_feiRecon = m_feiInputPool.Allocate();
+                frame->m_feiRecon = m_feiReconPool.Allocate();
 
             frame->m_ttWaitGpuCopyRec.numDownstreamDependencies = 0;
             frame->m_ttWaitGpuCopyRec.numUpstreamDependencies = 0;
@@ -1644,7 +1722,6 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
         vm_mutex_unlock(&th->m_critSect);
         while (numPendingTasks--)
             vm_cond_signal(&th->m_condVar);
-        th->m_core.INeedMoreThreadsInside(th);
     }
 
     // global thread count control
@@ -1858,44 +1935,63 @@ mfxStatus H265Encoder::TaskCompleteProc(void *pState, void *pParam, mfxStatus ta
     return MFX_TASK_DONE;
 }
 
-
 void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
 {
-    bool locked = false;
+    mfxFrameAllocator &fa = m_core.FrameAllocator();
     mfxFrameSurface1 in = *inExternal;
+    mfxStatus st = MFX_ERR_NONE;
+
+    // attach original surface to frame
+    out->m_origin = m_frameDataPool.Allocate();
+
     if (m_videoParam.inputVideoMem) { // copy from d3d to internal frame in system memory
-        mfxStatus st = m_core.LockFrame(m_auxInput.Data.MemId, &in.Data);
-        if (st != MFX_ERR_NONE)
-            Throw(std::runtime_error("LockFrame failed"));
-
-        st = m_core.DoFastCopyWrapper(&m_auxInput, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
-                                      inExternal, MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
-        if (st != MFX_ERR_NONE)
-            Throw(std::runtime_error("FastCopy failed"));
-
-        m_core.DecreaseReference(&inExternal->Data); // do it here
-    } else if (in.Data.Y == 0) {
-        mfxStatus st = m_core.LockExternalFrame(in.Data.MemId, &in.Data);
-        if (st != MFX_ERR_NONE)
-            Throw(std::runtime_error("LockExternalFrame failed"));
-        locked = true;
+        if (m_videoParam.enableCmFlag) {
+			mfxHDLPair videoMemoryHandlePlaceHolder = {};
+			mfxHDL &videoMemHandle = videoMemoryHandlePlaceHolder.first;
+            if ((st = fa.GetHDL(fa.pthis, in.Data.MemId, &videoMemHandle)) != MFX_ERR_NONE)
+                Throw(std::runtime_error("GetHDL failed"));
+            if ((st = m_cmcopy->Copy(videoMemHandle, out->m_origin->y, out->m_origin->uv)) != MFX_ERR_NONE)
+                Throw(std::runtime_error("CmCopy::Copy failed"));
+        } else {
+            if ((st = fa.Lock(fa.pthis,in.Data.MemId, &in.Data)) != MFX_ERR_NONE)
+                Throw(std::runtime_error("LockExternalFrame failed"));
+            Ipp32s bpp = (m_videoParam.fourcc == P010 || m_videoParam.fourcc == P210) ? 2 : 1;
+            Ipp32s width = out->m_origin->width * bpp;
+            Ipp32s height = out->m_origin->height;
+            IppiSize roi = { width, height };
+            ippiCopyManaged_8u_C1R(in.Data.Y, in.Data.Pitch, out->m_origin->y, out->m_origin->pitch_luma_bytes, roi, 2);
+            roi.height >>= m_videoParam.chromaShiftH;
+            ippiCopyManaged_8u_C1R(in.Data.Y + height * in.Data.Pitch, in.Data.Pitch, out->m_origin->uv, out->m_origin->pitch_chroma_bytes, roi, 2);
+            fa.Unlock(fa.pthis, in.Data.MemId, &in.Data);
+        }
+    } else {
+        bool locked = false;
+        if (in.Data.Y == 0) {
+            if ((st = fa.Lock(fa.pthis,in.Data.MemId, &in.Data)) != MFX_ERR_NONE)
+                Throw(std::runtime_error("LockExternalFrame failed"));
+            locked = true;
+        }
+        out->CopyFrameData(&in);
+        if (locked)
+            fa.Unlock(fa.pthis, in.Data.MemId, &in.Data);
     }
+    m_core.DecreaseReference(&inExternal->Data); // do it here
 
-    if (m_videoParam.doDumpSource && m_videoParam.fourcc == MFX_FOURCC_NV12 || m_videoParam.fourcc == MFX_FOURCC_P010) {
+    if (m_videoParam.doDumpSource && (m_videoParam.fourcc == MFX_FOURCC_NV12 || m_videoParam.fourcc == MFX_FOURCC_P010)) {
         if (vm_file *f = vm_file_fopen(m_videoParam.sourceDumpFileName, (out->m_frameOrder == 0) ? VM_STRING("wb") : VM_STRING("ab"))) {
             Ipp32s luSz = (m_videoParam.bitDepthLuma == 8) ? 1 : 2;
             Ipp32s luW = m_videoParam.Width - m_videoParam.CropLeft - m_videoParam.CropRight;
             Ipp32s luH = m_videoParam.Height - m_videoParam.CropTop - m_videoParam.CropBottom;
-            Ipp32s luPitch = in.Data.Pitch;
-            Ipp8u *luPtr = in.Data.Y + (m_videoParam.CropTop * luPitch + m_videoParam.CropLeft * luSz);
+            Ipp32s luPitch = out->m_origin->pitch_luma_bytes;
+            Ipp8u *luPtr = out->m_origin->y + (m_videoParam.CropTop * luPitch + m_videoParam.CropLeft * luSz);
             for (Ipp32s y = 0; y < luH; y++, luPtr += luPitch)
                 vm_file_fwrite(luPtr, luSz, luW, f);
 
             Ipp32s chSz = (m_videoParam.bitDepthChroma == 8) ? 1 : 2;
             Ipp32s chW = luW;
             Ipp32s chH = luH >> 1;
-            Ipp32s chPitch = in.Data.Pitch;
-            Ipp8u *chPtr = in.Data.UV + (m_videoParam.CropTop / 2 * chPitch + m_videoParam.CropLeft * chSz);
+            Ipp32s chPitch = out->m_origin->pitch_luma_bytes;
+            Ipp8u *chPtr = out->m_origin->uv + (m_videoParam.CropTop / 2 * chPitch + m_videoParam.CropLeft * chSz);
             for (Ipp32s y = 0; y < chH; y++, chPtr += chPitch)
                 vm_file_fwrite(chPtr, chSz, chW, f);
 
@@ -1903,27 +1999,13 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
         }
     }
 
-    // attach original surface to frame
-    out->m_origin = m_frameDataPool.Allocate();
-    
-    // attach 8bit version of original surface to frame
-    if (m_have8bitCopyFlag)
-        out->m_luma_8bit = m_frameData8bitPool.Allocate();
+    // for luma need 1 pix for gradient analysis and full padding for GACC
+    // for chroma need no padding
+    PadRectLuma(*out->m_origin, m_videoParam.fourcc, 0, 0, out->m_origin->width, out->m_origin->height);
 
-    out->CopyFrameData(&in, m_have8bitCopyFlag);
-
-    // attach lowres surface to frame
+        // attach lowres surface to frame
     if (m_la.get() && (m_videoParam.LowresFactor || m_videoParam.SceneCut))
         out->m_lowres = m_frameDataLowresPool.Allocate();
-
-    // DeltaQpMode uses Orig res
-    if (m_videoParam.DeltaQpMode > 0 || (m_videoParam.AnalyzeCmplx && m_videoParam.LowresFactor == 0)) {
-        Ipp32s blkSize = m_videoParam.MaxCUSize;
-        Ipp32s heightInBlks = (m_videoParam.Height + blkSize - 1) / blkSize;
-        for (Ipp32s row = 0; row < heightInBlks; row++) {
-            PadOneReconRow(out->m_origin, row, blkSize, heightInBlks, m_frameDataPool.GetAllocInfo());
-        }
-    }
 
     // attach statistics to frame
     if (m_la.get()) {
@@ -1940,14 +2022,6 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
     // each new frame should be analysed by lookahead algorithms family.
     Ipp32u ownerCount = (m_videoParam.DeltaQpMode ? 1 : 0) + (m_videoParam.SceneCut ? 1 : 0) + (m_videoParam.AnalyzeCmplx ? 1 : 0);
     out->m_lookaheadRefCounter = ownerCount;
-
-    if (m_videoParam.inputVideoMem) {
-        m_core.UnlockFrame(m_auxInput.Data.MemId, &in.Data);
-    } else {
-        m_core.DecreaseReference(&inExternal->Data);
-        if (locked)
-            m_core.UnlockExternalFrame(in.Data.MemId, &in.Data);
-    }
 }
 
 
@@ -2034,23 +2108,27 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
     in.SaveSyncPoint = 1;
 
     if (task.feiOp == MFX_FEI_H265_OP_GPU_COPY_SRC) {
-        FrameData *originData = (m_videoParam.bitDepthLuma == 8) ? task.frame->m_origin : task.frame->m_luma_8bit;
+        FrameData *originData = task.frame->m_origin;
         in.FEIFrameIn.PicOrder = task.frame->m_frameOrder;
         in.FEIFrameIn.EncOrder = task.frame->m_encOrder;
         in.FEIFrameIn.surfIn = task.frame->m_feiOrigin->m_handle;
         in.FEIFrameIn.YPlane = originData->y;
+        in.FEIFrameIn.UVPlane = originData->uv;
         in.FEIFrameIn.YPitch = originData->pitch_luma_bytes;
-        in.FEIFrameIn.YBitDepth = 8;
+        in.FEIFrameIn.UVPitch = originData->pitch_chroma_bytes;
+        in.FEIFrameIn.YBitDepth = task.frame->m_bitDepthLuma;
         in.SaveSyncPoint = 0;
 
     } else if (task.feiOp == MFX_FEI_H265_OP_GPU_COPY_REF) {
-        FrameData *refData = (m_videoParam.bitDepthLuma == 8) ? task.frame->m_recon : task.frame->m_luma_8bit;
+        FrameData *refData = task.frame->m_recon;
         in.FEIFrameRef.PicOrder = task.frame->m_frameOrder;
         in.FEIFrameRef.EncOrder = task.frame->m_encOrder;
         in.FEIFrameRef.surfIn = task.frame->m_feiRecon->m_handle;
         in.FEIFrameRef.YPlane = refData->y;
+        in.FEIFrameRef.UVPlane = refData->uv;
         in.FEIFrameRef.YPitch = refData->pitch_luma_bytes;
-        in.FEIFrameRef.YBitDepth = 8;
+        in.FEIFrameRef.UVPitch = refData->pitch_chroma_bytes;
+        in.FEIFrameIn.YBitDepth = task.frame->m_bitDepthLuma;
 
     } else if (task.feiOp == MFX_FEI_H265_OP_INTRA_MODE) {
         in.FEIFrameIn.PicOrder = task.frame->m_frameOrder;

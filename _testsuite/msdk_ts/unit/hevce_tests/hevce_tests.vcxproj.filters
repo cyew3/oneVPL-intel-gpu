@@ -38,6 +38,9 @@
     <ClCompile Include="hevce_encoded_order.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="hevce_padding.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="hevce_common_api.h">

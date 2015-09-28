@@ -51,7 +51,7 @@ protected:
     }
 
     mfxStatus ctor_status;
-    MockVideoCORE core;
+    MockMFXCoreInterface core;
     MFXVideoENCODEH265 encoder;
     ParamSet input;
     mfxEncodeCtrl ctrl;
@@ -83,7 +83,7 @@ TEST_F(EncodedOrderTest, RunTimeParamValidation) {
         ctrl = goodCtrl;
     }
     { SCOPED_TRACE("Test valid case");
-        EXPECT_CALL(core, IncreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
+        EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
         EXPECT_EQ(MFX_ERR_NONE, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
     }
 }
@@ -117,7 +117,7 @@ TEST_F(EncodedOrderTest, RunTimeParamValidationLaExt) {
         ctrl = goodCtrl;
     }
     { SCOPED_TRACE("Test valid case");
-        EXPECT_CALL(core, IncreaseReference(_,_)).WillOnce(Return(MFX_ERR_NONE));
+        EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
         EXPECT_EQ(MFX_ERR_NONE, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
     }
 }

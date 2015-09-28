@@ -140,12 +140,27 @@ namespace H265Enc {
         {}
         ~FrameData() { Destroy();}
 
-        struct AllocInfo { Ipp32s width, height, padding, bitDepthLu, bitDepthCh, chromaFormat; };
+        struct AllocInfo {
+            Ipp32s width;       // in elements
+            Ipp32s height;      // in elements
+            Ipp32s paddingLu;   // in elements
+            Ipp32s paddingChW;  // in elements
+            Ipp32s paddingChH;  // in elements
+            Ipp32s bitDepthLu;
+            Ipp32s bitDepthCh;
+            Ipp32s chromaFormat;
+            // for GACC should be requested from CmDevice
+            Ipp32s alignment;
+            Ipp32s pitchInBytesLu;  // in bytes
+            Ipp32s pitchInBytesCh;  // in bytes
+            Ipp32s sizeInBytesLu;   // in bytes
+            Ipp32s sizeInBytesCh;   // in bytes
+        };
         void Create(const AllocInfo &allocInfo);
         void Destroy();
 
     private:
-        void *mem;
+        Ipp8u *mem;
     };
 
     struct FeiInData : public RefCounter
@@ -159,6 +174,19 @@ namespace H265Enc {
 
         void *m_fei;
         mfxHDL m_handle;
+    };
+
+    struct FeiRecData : public FeiInData
+    {
+//        FeiInData() : m_fei(NULL), m_handle(NULL) {}
+        ~FeiRecData() { Destroy(); }
+
+//        struct AllocInfo { void *feiHdl; };
+        void Create(const AllocInfo &allocInfo);
+//        void Destroy();
+
+//        void *m_fei;
+//        mfxHDL m_handle;
     };
 
     struct FeiOutData : public RefCounter
@@ -180,7 +208,6 @@ namespace H265Enc {
     public:
         FrameData* m_origin;
         FrameData* m_recon;
-        FrameData* m_luma_8bit;//used by FEI in enc:p010 mode
         FrameData* m_lowres; // used by lookahead
 
         H265CUData *cu_data;
@@ -266,7 +293,7 @@ namespace H265Enc {
 
         // FEI resources
         FeiInData  *m_feiOrigin;
-        FeiInData  *m_feiRecon;
+        FeiRecData *m_feiRecon;
         FeiOutData *m_feiIntraAngModes[4];
         FeiOutData *m_feiInterMv[4][3];
         FeiOutData *m_feiInterDist[4][3];
@@ -290,7 +317,7 @@ namespace H265Enc {
 
         void Create(H265VideoParam *par);
         void Destroy();
-        void CopyFrameData(const mfxFrameSurface1 *in, Ipp8u have8bitCopy);
+        void CopyFrameData(const mfxFrameSurface1 *in);
 
         void ResetMemInfo();
         void ResetEncInfo();
@@ -304,8 +331,11 @@ namespace H265Enc {
     typedef std::list<Frame*>::iterator   FrameIter;
 
     void Dump(H265VideoParam *par, Frame* frame, FrameList & dpb);
-    void PadOneReconRow(FrameData* frame, Ipp32u ctb_row, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, const FrameData::AllocInfo &allocInfo);
-    void PadOneReconCtu(Frame* frame, Ipp32u ctb_row, Ipp32u ctb_col, Ipp32u maxCuSize, Ipp32u PicHeightInCtbs, Ipp32u PicWidthInCtbs);
+
+    template <class T> void PadRect(T *plane, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth, Ipp32s padw, Ipp32s padh);
+    void PadRectLuma         (const FrameData &fdata, Ipp32s fourcc, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth);
+    void PadRectChroma       (const FrameData &fdata, Ipp32s fourcc, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth);
+    void PadRectLumaAndChroma(const FrameData &fdata, Ipp32s fourcc, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth);
 
     template <class T> class ObjectPool
     {

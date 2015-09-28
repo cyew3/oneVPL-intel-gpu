@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{77D48E5A-2053-48D7-AC11-8AFBAF1701D5}") = "genx_hevce_analyze_gradient", "genx_hevce_analyze_gradient.vcxproj", "{B17AB069-D27D-4164-8451-F73AB05EB410}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_HSW_Emu|x64 = Debug_HSW_Emu|x64
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B17AB069-D27D-4164-8451-F73AB05EB410}.Debug_HSW_Emu|x64.ActiveCfg = Debug_HSW_Emu|x64
+		{B17AB069-D27D-4164-8451-F73AB05EB410}.Debug_HSW_Emu|x64.Build.0 = Debug_HSW_Emu|x64
+		{B17AB069-D27D-4164-8451-F73AB05EB410}.Debug|x64.ActiveCfg = Debug|x64
+		{B17AB069-D27D-4164-8451-F73AB05EB410}.Debug|x64.Build.0 = Debug|x64
+		{B17AB069-D27D-4164-8451-F73AB05EB410}.Release|x64.ActiveCfg = Release|x64
+		{B17AB069-D27D-4164-8451-F73AB05EB410}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
