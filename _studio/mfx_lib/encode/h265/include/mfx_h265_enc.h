@@ -91,7 +91,8 @@ namespace H265Enc {
         Ipp16u cuSplitThreshold;
         Ipp8u  enableCmFlag;
 
-        Ipp8u  DeltaQpMode;      // 0 - disable, 1 - PAQ, 2 - CALQ, 3 PAQ+CALQ
+        Ipp8u  DeltaQpMode;      // 0 - disable, 0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ
+        Ipp64f LambdaCorrection;
         Ipp32s RateControlDepth; // rate control depth: how many analyzed future frames are required for BRC
         Ipp8u  SceneCut;         // Enable Scene Change Detection and insert IDR frame
         Ipp8u  AnalyzeCmplx;     // analyze frame complexity (for BRC)

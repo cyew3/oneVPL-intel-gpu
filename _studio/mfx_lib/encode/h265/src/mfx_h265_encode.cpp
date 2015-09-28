@@ -101,6 +101,8 @@ namespace {
         return val;
     }
 
+    const Ipp64f tab_defaultLambdaCorrIP[8]   = {1.0, 1.06, 1.09, 1.13, 1.17, 1.25, 1.27, 1.28};
+
     void ConvertToInternalParam(H265VideoParam &intParam, const mfxVideoParam &mfxParam)
     {
         const mfxInfoMFX &mfx = mfxParam.mfx;
@@ -253,10 +255,9 @@ namespace {
         intParam.LowresFactor = optHevc.LowresFactor - 1;
         intParam.DeltaQpMode  = optHevc.DeltaQpMode  - 1;
 #ifdef AMT_DQP_FIX
-        if(intParam.bitDepthLuma > 8 
-            || optHevc.EnableCm == ON)
-            intParam.DeltaQpMode  = 0;      // Disable For now -NG
+        intParam.LambdaCorrection = tab_defaultLambdaCorrIP[(intParam.DeltaQpMode&AMT_DQP_CAQ)?mfx.TargetUsage:0];
 #endif
+
         intParam.SceneCut = (opt2.AdaptiveI == ON);
         intParam.AnalyzeCmplx = optHevc.AnalyzeCmplx - 1;
         intParam.RateControlDepth = optHevc.RateControlDepth;
@@ -1408,7 +1409,7 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
             buffering += 1;
             if (m_videoParam.SceneCut)     buffering += 10 + 1 + 1;
             if (m_videoParam.AnalyzeCmplx) buffering += m_videoParam.RateControlDepth;
-            if (m_videoParam.DeltaQpMode)  buffering += 2 * m_videoParam.GopRefDist + 1;
+            if (m_videoParam.DeltaQpMode&(AMT_DQP_PAQ|AMT_DQP_CAL)) buffering += 2 * m_videoParam.GopRefDist + 1;
         }
     }
 

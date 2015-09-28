@@ -416,7 +416,8 @@ const Ipp32f tab_rdLambdaBPyramid5[5]         = {0.442f, 0.3536f, 0.3536f, 0.353
 const Ipp32f tab_rdLambdaBPyramid4[4]         = {0.442f, 0.3536f, 0.3536f, 0.68f};
 const Ipp32f tab_rdLambdaBPyramid_LoCmplx[4]  = {0.442f, 0.3536f, 0.4000f, 0.68f};
 const Ipp32f tab_rdLambdaBPyramid_MidCmplx[4] = {0.442f, 0.3536f, 0.3817f, 0.60f};
-const Ipp32f tab_rdLambdaBPyramid_HiCmplx[4]  = {0.442f, 0.2793f, 0.3536f, 0.50f};
+//const Ipp32f tab_rdLambdaBPyramid_HiCmplx[4]  = {0.442f, 0.2793f, 0.3536f, 0.50f}; //
+const Ipp32f tab_rdLambdaBPyramid_HiCmplx[4]  = {0.442f, 0.3536f, 0.3536f, 0.50f}; 
 
 
 void H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame *frame)
@@ -532,26 +533,34 @@ namespace H265Enc {
                             ? tab_rdLambdaBPyramid5LongGop[0]
                         : tab_rdLambdaBPyramid5[0]
                         : tab_rdLambdaBPyramid4[0];
+                        if (videoParam.DeltaQpMode&AMT_DQP_CAQ) {
+                            slice->rd_lambda_slice*=videoParam.LambdaCorrection;
+                        }
                     }
                     else {
                         Ipp32s pgopIndex = (currFrame->m_frameOrder - currFrame->m_frameOrderOfLastIntra) % videoParam.PGopPicSize;
                         slice->rd_lambda_slice *= (videoParam.PGopPicSize == 1 || pgopIndex) ? 0.4624 : 0.578;
                         if (pgopIndex)
                             slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
+                        if (!pgopIndex && (videoParam.DeltaQpMode&AMT_DQP_CAQ)) {
+                            slice->rd_lambda_slice*=videoParam.LambdaCorrection;
+                        }
                     }
                     break;
                 case B_SLICE:
                     if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
                         Ipp8u layer = currFrame->m_pyramidLayer;
-                        if (videoParam.DeltaQpMode > 1) {
-                            if (isHiCmplxGop)
+
+                        if (videoParam.DeltaQpMode&AMT_DQP_CAL) {
+                            if (isHiCmplxGop) {
                                 slice->rd_lambda_slice *= tab_rdLambdaBPyramid_HiCmplx[layer];
-                            else if (isMidCmplxGop)
+                            } else if (isMidCmplxGop) {
                                 slice->rd_lambda_slice *= tab_rdLambdaBPyramid_MidCmplx[layer];
-                            else
+                            } else {
                                 slice->rd_lambda_slice *= tab_rdLambdaBPyramid_LoCmplx[layer];
+                            }
                         }
-                        else 
+                        else
                         {
                             slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
                                 ? (videoParam.longGop)
@@ -559,8 +568,12 @@ namespace H265Enc {
                             : tab_rdLambdaBPyramid5[layer]
                             : tab_rdLambdaBPyramid4[layer];
                         }
-                        if (layer > 0)
+                        if (layer > 0) 
                             slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
+
+                        if (!layer && (videoParam.DeltaQpMode&AMT_DQP_CAQ)) {
+                            slice->rd_lambda_slice*=videoParam.LambdaCorrection;
+                        }
                     }
                     else {
                         slice->rd_lambda_slice *= 0.4624;
@@ -572,16 +585,30 @@ namespace H265Enc {
                     slice->rd_lambda_slice *= 0.57;
                     if (videoParam.GopRefDist > 1)
                         slice->rd_lambda_slice *= (1 - MIN(0.5, 0.05 * (videoParam.GopRefDist - 1)));
+                    if (videoParam.DeltaQpMode&AMT_DQP_CAQ) {
+                        slice->rd_lambda_slice*=videoParam.LambdaCorrection;
+                    }
                 }
             }
-
+             
             slice->rd_lambda_inter_slice = slice->rd_lambda_slice;
             slice->rd_lambda_inter_mv_slice = slice->rd_lambda_inter_slice;
 
             slice->rd_lambda_sqrt_slice = sqrt(slice->rd_lambda_slice * 256);
             //no chroma QP offset (from PPS) is implemented yet
-            Ipp32s qpc = GetChromaQP(qp, 0, videoParam.chromaFormatIdc, 8); // just scaled qPi
-            slice->ChromaDistWeight_slice = pow(2.0, (qp - qpc) / 3.0);
+            
+            if(!videoParam.rdoqChromaFlag && (videoParam.DeltaQpMode&AMT_DQP_CAQ)) {
+                Ipp32s qpCaq = (int)((4.2005*log(slice->rd_lambda_slice * 256.0)+13.7122)+0.5); // est
+                Ipp32s qpcCaq = GetChromaQP(qpCaq, 0, videoParam.chromaFormatIdc, 8); // just scaled qPi
+                Ipp32f qpcCorr = qpCaq - qpcCaq;
+                Ipp32f qpcDiff = IPP_MAX(0,GetChromaQP(qp, 0, videoParam.chromaFormatIdc, 8) - qpcCaq); // just scaled qPi
+                qpcCorr -= (qpcDiff/2.0);
+                slice->ChromaDistWeight_slice = pow(2.0, qpcCorr / 3.0);
+            } else 
+            {
+                Ipp32s qpc = GetChromaQP(qp, 0, videoParam.chromaFormatIdc, 8); // just scaled qPi
+                slice->ChromaDistWeight_slice = pow(2.0, (qp - qpc) / 3.0);
+            }
         }
     } //
 }
@@ -1813,6 +1840,7 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
             cu_ithread->SetCuLambda(m_frame);
         }
         cu_ithread->GetInitAvailablity();
+
         cu_ithread->ModeDecision(0, 0);
         //cu_ithread->FillRandom(0, 0);
         //cu_ithread->FillZero(0, 0);
@@ -1820,8 +1848,10 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
             bool interUpdate = false;
 #ifdef AMT_ALT_ENCODE
             if(!cu_ithread->m_isRdoq) {
+
                 cu_ithread->m_isRdoq = true;
                 m_bsf[bsf_id].CtxRestore(m_frame->m_doPostProc ? context_array_save : m_bs[bs_id].m_base.context_array);
+                
                 interUpdate = cu_ithread->EncAndRecLuma(0, 0, 0, NULL);
             }
 #endif

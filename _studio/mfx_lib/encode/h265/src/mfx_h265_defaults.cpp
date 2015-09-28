@@ -252,12 +252,14 @@ using namespace H265Enc::MfxEnumShortAliases;
 #endif
     TU_OPT_GACC(RDOQuant,                       ON,  ON,  ON,  ON, OFF, OFF, OFF);
     TU_OPT_GACC(RDOQuantChroma,                 ON,  ON,  ON, OFF, OFF, OFF, OFF);
+    
 #ifdef AMT_ALT_ENCODE
     TU_OPT_GACC(RDOQuantCGZ,                    ON,  ON,  ON,  ON,  ON,  ON,  ON);
 #else
     TU_OPT_GACC(RDOQuantCGZ,                   OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 #endif
-    TU_OPT_ALL (DeltaQpMode,                    4,   4,   1,   1,   1,   1,   1);
+    TU_OPT_SW  (DeltaQpMode,                    8,   8,   2,   2,   2,   2,   2);
+    TU_OPT_GACC(DeltaQpMode,                    2,   2,   2,   2,   2,   2,   2);
 
 
     //Intra RDO
@@ -378,6 +380,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_ALL (LowresFactor,                   3,   3,   3,   3,   3,   3,   3);
 
     TU_OPT_ALL (RepackProb,                     0,   0,   0,   0,   0,   0,   0);
+
     TU_OPT_SW  (NumRefLayers,                   3,   3,   3,   3,   4,   4,   4);
     TU_OPT_GACC(NumRefLayers,                   2,   2,   3,   3,   4,   4,   4);
 

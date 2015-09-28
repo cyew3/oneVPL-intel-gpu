@@ -67,6 +67,7 @@ namespace H265Enc {
 
         Frame* m_cmplxPrevFrame;
         std::vector<StatItem> m_slideWindowStat; // store metrics for SceneCut
+        Frame* m_dqpPrevFrame;
         std::vector<Ipp32s> m_slideWindowPaq; // special win for Paq/Calq simplification. window size = 2*M+1, M = GopRefDist (numB + 1)
         std::vector<Ipp32s> m_slideWindowComplexity; // special win for Paq/Calq simplification. window size = 2*M+1, M = GopRefDist (numB + 1)
 

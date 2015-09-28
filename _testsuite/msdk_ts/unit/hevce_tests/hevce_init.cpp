@@ -38,6 +38,20 @@ protected:
     ParamSet input;
 };
 
+mfxStatus GetCoreParamImplDx9(mfxCoreParam *par)
+{
+    Zero(*par);
+    par->Impl = MFX_IMPL_VIA_D3D9;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CreateAccelerationDeviceImpl(mfxHandleType type, mfxHDL *handle)
+{
+    *handle = (mfxHDL *)1;
+    return MFX_ERR_NONE;
+}
+
+
 TEST_F(InitTest, NullPtr) {
     EXPECT_EQ(MFX_ERR_NONE, ctor_status);
     EXPECT_EQ(MFX_ERR_NULL_PTR, encoder.Init(nullptr));
@@ -188,6 +202,10 @@ TEST_F(InitTest, OpaqueMemory) {
         input.extOpaqueSurfaceAlloc.In.Type = type;
         EXPECT_CALL(core, MapOpaqueSurface(_,_,_)).WillOnce(Return(MFX_ERR_NONE));
         EXPECT_CALL(core, UnmapOpaqueSurface(_,_,_)).WillOnce(Return(MFX_ERR_NONE));
+        if (type != MFX_MEMTYPE_SYSTEM_MEMORY) {
+            EXPECT_CALL(core, GetCoreParam(_)).WillOnce(Invoke(&GetCoreParamImplDx9));
+            EXPECT_CALL(core, CreateAccelerationDevice(_,_)).WillOnce(Invoke(&CreateAccelerationDeviceImpl));
+        }
         EXPECT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
         EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
     }
@@ -627,5 +645,68 @@ TEST_F(InitTest, Default_FramesInParallel) {
         ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
         EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
         EXPECT_EQ(1, output.extCodingOptionHevc.FramesInParallel);
+    }
+}
+
+TEST_F(InitTest, Default_DeltaQpMode) {
+    ParamSet output;
+    InitParamSetMandated(input);
+    input.videoParam.mfx.FrameInfo.Width = 64;
+    input.videoParam.mfx.FrameInfo.Height = 64;
+    input.videoParam.mfx.RateControlMethod = CQP;
+    input.videoParam.mfx.TargetUsage = 1;
+    input.videoParam.mfx.QPI = 30;
+    input.videoParam.mfx.QPP = 31;
+    input.videoParam.mfx.QPB = 31;
+
+    { SCOPED_TRACE("DeltaQP is limited to CAQ for P010");
+        input.videoParam.mfx.FrameInfo.FourCC = P010;
+        input.videoParam.mfx.FrameInfo.ChromaFormat = YUV420;
+        input.videoParam.mfx.GopRefDist = 8;
+        input.extCodingOptionHevc.BPyramid = ON;
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Close());
+        EXPECT_EQ(2, output.extCodingOptionHevc.DeltaQpMode);
+    }
+
+    { SCOPED_TRACE("DeltaQP is limited to CAQ for P210");
+        input.videoParam.mfx.FrameInfo.FourCC = P210;
+        input.videoParam.mfx.FrameInfo.ChromaFormat = YUV422;
+        input.videoParam.mfx.GopRefDist = 8;
+        input.extCodingOptionHevc.BPyramid = ON;
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Close());
+        EXPECT_EQ(2, output.extCodingOptionHevc.DeltaQpMode);
+        input.videoParam.mfx.FrameInfo.FourCC = NV12;
+    }
+
+    { SCOPED_TRACE("DeltaQP should be off if no B frames");
+        input.videoParam.mfx.FrameInfo.FourCC = NV12;
+        input.videoParam.mfx.FrameInfo.ChromaFormat = YUV420;
+        input.videoParam.mfx.GopRefDist = 1;
+        input.extCodingOptionHevc.BPyramid = ON;
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Close());
+        EXPECT_EQ(1, output.extCodingOptionHevc.DeltaQpMode);
+    }
+
+    { SCOPED_TRACE("DeltaQP should be off if no BPyramid");
+        input.videoParam.mfx.FrameInfo.FourCC = NV12;
+        input.videoParam.mfx.FrameInfo.ChromaFormat = YUV420;
+        input.videoParam.mfx.GopRefDist = 8;
+        input.extCodingOptionHevc.BPyramid = OFF;
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Close());
+        EXPECT_EQ(1, output.extCodingOptionHevc.DeltaQpMode);
+
+        input.videoParam.mfx.FrameInfo.FourCC = P010; // check combination, just in case
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Close());
+        EXPECT_EQ(1, output.extCodingOptionHevc.DeltaQpMode);
     }
 }

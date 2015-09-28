@@ -819,9 +819,9 @@ TEST_F(QueryTest, Mode2_Single) {
         TestOneFieldErr(input.extCodingOptionHevc.PatternSubPel, output.extCodingOptionHevc.PatternSubPel, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
     { SCOPED_TRACE("Test DeltaQpMode");
-        const Ipp16u supported[] = {1, 2, 3, 4};
+        const Ipp16u supported[] = {1, 2, 3, 4, 5, 6, 7, 8};
         TestOneFieldOk(input.extCodingOptionHevc.DeltaQpMode, output.extCodingOptionHevc.DeltaQpMode, supported);
-        const Ipp16u unsupported[] = {5, 6, 0xff, 0xffff};
+        const Ipp16u unsupported[] = {9, 10, 0xff, 0xffff};
         TestOneFieldErr(input.extCodingOptionHevc.DeltaQpMode, output.extCodingOptionHevc.DeltaQpMode, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
     { SCOPED_TRACE("Test SplitThresholdTabIndex");
@@ -3039,5 +3039,52 @@ TEST_F(QueryTest, Conflicts_AdaptiveI_and_StrictGOP) {
         EXPECT_EQ(p[1], input.videoParam.mfx.GopOptFlag);
         EXPECT_EQ(0, output.extCodingOption2.AdaptiveI);
         EXPECT_EQ(p[1], output.videoParam.mfx.GopOptFlag);
+    }
+}
+
+TEST_F(QueryTest, Conflicts_FourCC_and_DeltaQpMode) {
+    Ipp32u fourccs[] = { NV12, NV16, P010, P210 };
+    Ipp32u unsupported = H265Enc::AMT_DQP_CAL | H265Enc::AMT_DQP_PAQ;
+    for (auto fourcc: fourccs) {
+        for (Ipp32s dqp = 0; dqp <= 7; dqp++) {
+            input.videoParam.mfx.FrameInfo.FourCC = fourcc;
+            input.videoParam.mfx.FrameInfo.ChromaFormat = Fourcc2ChromaFormat(fourcc);
+            input.extCodingOptionHevc.DeltaQpMode = dqp + 1;
+            if ((fourcc == P010 || fourcc == P210) && (dqp & unsupported)) {
+                ASSERT_EQ(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+                ASSERT_EQ((dqp & H265Enc::AMT_DQP_CAQ) + 1, output.extCodingOptionHevc.DeltaQpMode);
+            } else {
+                ASSERT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+                ASSERT_EQ(dqp + 1, output.extCodingOptionHevc.DeltaQpMode);
+            }
+            ASSERT_EQ(fourcc, input.videoParam.mfx.FrameInfo.FourCC);
+            ASSERT_EQ(dqp + 1, input.extCodingOptionHevc.DeltaQpMode);
+            ASSERT_EQ(fourcc, output.videoParam.mfx.FrameInfo.FourCC);
+        }
+    }
+}
+
+TEST_F(QueryTest, Conflicts_BPyramid_and_DeltaQpMode) {
+    Ipp32u bpyramids[] = { ON, OFF };
+    for (auto bpyramid: bpyramids) {
+        for (Ipp32s gopRefDist = 1; gopRefDist <= 8; gopRefDist++) {
+            for (Ipp32s dqp = 0; dqp <= 7; dqp++) {
+                input.videoParam.mfx.GopRefDist = gopRefDist;
+                input.extCodingOptionHevc.BPyramid = bpyramid;
+                input.extCodingOptionHevc.DeltaQpMode = dqp + 1;
+                if ((bpyramid == OFF || gopRefDist == 1) && dqp > 0) {
+                    ASSERT_EQ(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+                    ASSERT_EQ(1, output.extCodingOptionHevc.DeltaQpMode);
+                } else {
+                    ASSERT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+                    ASSERT_EQ(dqp + 1, output.extCodingOptionHevc.DeltaQpMode);
+                }
+                ASSERT_EQ(gopRefDist, input.videoParam.mfx.GopRefDist);
+                ASSERT_EQ(bpyramid, input.extCodingOptionHevc.BPyramid);
+                ASSERT_EQ(dqp + 1, input.extCodingOptionHevc.DeltaQpMode);
+                ASSERT_EQ(gopRefDist, output.videoParam.mfx.GopRefDist);
+                ASSERT_EQ(bpyramid, output.extCodingOptionHevc.BPyramid);
+            }
+        }
     }
 }

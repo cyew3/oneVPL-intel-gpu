@@ -710,7 +710,7 @@ namespace {
             wrnIncompatible = !CheckMax(optHevc->FastAMPRD, 2);
             wrnIncompatible = !CheckMax(optHevc->SkipMotionPartition, 2);
             wrnIncompatible = !CheckMax(optHevc->PatternSubPel, 6);
-            wrnIncompatible = !CheckMax(optHevc->DeltaQpMode, 4);
+            wrnIncompatible = !CheckMax(optHevc->DeltaQpMode, 8);
             wrnIncompatible = !CheckMax(optHevc->NumRefFrameB, 16);
             wrnIncompatible = !CheckMax(optHevc->NumRefLayers, 4);
             wrnIncompatible = !CheckMax(optHevc->AnalyzeCmplx, 2);
@@ -992,6 +992,16 @@ namespace {
 
         if (optHevc && optHevc->ForceNumThread && mfx.NumThread) // ForceNumThread != NumThread
             wrnIncompatible = !CheckEq(mfx.NumThread, optHevc->ForceNumThread);
+
+        if (optHevc && optHevc->DeltaQpMode) {
+            if (fi.FourCC == P010 || fi.FourCC == P210 || optHevc->EnableCm == ON) { // only CAQ alllowed for GACC or 10 bits
+                if ((optHevc->DeltaQpMode - 1) & (AMT_DQP_CAL | AMT_DQP_PAQ))
+                    optHevc->DeltaQpMode = 1 + ((optHevc->DeltaQpMode - 1) & AMT_DQP_CAQ), wrnIncompatible = true;
+            }
+            if (optHevc->BPyramid == OFF || mfx.GopRefDist == 1) // no CALQ, no PAQ if Bpyramid disabled
+                wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);
+        }
+
 
         if ((mfx.GopOptFlag & MFX_GOP_STRICT) && opt2 && opt2->AdaptiveI)
             wrnIncompatible = !CheckEq(opt2->AdaptiveI, OFF);
@@ -1283,8 +1293,15 @@ namespace {
             optHevc.NumBiRefineIter = defaultOptHevc.NumBiRefineIter;
         if (optHevc.CUSplitThreshold == 0)
             optHevc.CUSplitThreshold = defaultOptHevc.CUSplitThreshold;
-        if (optHevc.DeltaQpMode == 0)
+
+        if (optHevc.DeltaQpMode == 0) {
             optHevc.DeltaQpMode = defaultOptHevc.DeltaQpMode;
+            if (optHevc.DeltaQpMode > 2 && (fi.FourCC == P010 || fi.FourCC == P210))
+                optHevc.DeltaQpMode = 2; // CAQ only
+            if (mfx.GopRefDist == 1 || optHevc.BPyramid == OFF)
+                optHevc.DeltaQpMode = 1; // off
+        }
+
         if (optHevc.Enable10bit == 0)
             optHevc.Enable10bit = defaultOptHevc.Enable10bit;
         if (optHevc.IntraAngModesP == 0)

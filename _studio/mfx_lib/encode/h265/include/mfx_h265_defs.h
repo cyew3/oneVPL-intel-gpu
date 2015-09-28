@@ -112,6 +112,7 @@
 #endif
 
 #define AMT_DQP_FIX
+
 #endif
 
 
@@ -487,6 +488,14 @@ enum {
     SEI_PIC_TIMING            = 1,
     SEI_ACTIVE_PARAMETER_SETS = 129
 };
+
+
+enum {
+    AMT_DQP_CAQ = 0x1,
+    AMT_DQP_CAL = 0x2,
+    AMT_DQP_PAQ = 0x4
+};
+
 
 class Frame;
 

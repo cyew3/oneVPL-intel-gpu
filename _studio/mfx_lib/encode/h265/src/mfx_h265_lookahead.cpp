@@ -1009,7 +1009,6 @@ PixType NearestPixBlk(PixType* in, Ipp32s pitch, Ipp32s posx, Ipp32s posy, Ipp32
     return src[pos_y*pitch + pos_x];
 }
 
-
 template <class PixType>
 Ipp64s Scale(FrameData* in, FrameData* out, Ipp32s planeIdx)
 {
@@ -1031,7 +1030,6 @@ Ipp64s Scale(FrameData* in, FrameData* out, Ipp32s planeIdx)
             pixOut[ y*pitchOut + x] = NearestPixBlk( pixIn, pitchIn, x, y, step);
         }
     }
-
     return 0;
 }
 
@@ -1150,7 +1148,7 @@ void h265_ComputeRsCs1(const PixType *ySrc, Ipp32s pitchSrc, ResultType *lcuRs, 
 
 
 template <class PixType>
-void CalcFrameRsCs(Frame* frame)
+void CalcFrameRsCs(FrameData* data, Statistics* stat)
 {
     Ipp32s        i,j;
     Ipp32s        locx, locy;
@@ -1159,10 +1157,10 @@ void CalcFrameRsCs(Frame* frame)
     const Ipp32s BLOCK_SIZE = 4;
     const Ipp32s RsCsSIZE = BLOCK_SIZE*BLOCK_SIZE;
     
-    FrameData* data = frame->m_origin; // important!!! calq on original resolution only!!!
+    //FrameData* data = frame->m_origin; // important!!! calq on original resolution only!!!
     hblocks  = (Ipp32s)data->height / BLOCK_SIZE;
     wblocks  = (Ipp32s)data->width / BLOCK_SIZE;    
-    Statistics* stat = frame->m_stats[0];
+    //Statistics* stat = frame->m_stats[0];
     stat->m_frameCs                =    0.0;
     stat->m_frameRs                =    0.0;
 
@@ -1175,7 +1173,9 @@ void CalcFrameRsCs(Frame* frame)
             PixType* ySrc = (PixType*)data->y + (i*BLOCK_SIZE)*pitch + (j*BLOCK_SIZE);
             h265_ComputeRsCs(ySrc, pitch, rs, cs, BLOCK_SIZE*2, BLOCK_SIZE*2);
             for(int k=0; k<2; k++) {
+                if(i+k>=hblocks) continue;
                 for(int l=0; l<2; l++) {
+                    if(j+l>=wblocks) continue;
                     locx = locy+k*wblocks+j+l;
                     stat->m_rs[locx] = rs[k*(MAX_CU_SIZE/BLOCK_SIZE)+l];
                     stat->m_cs[locx] = cs[k*(MAX_CU_SIZE/BLOCK_SIZE)+l];
@@ -1273,8 +1273,8 @@ void Lookahead::DetermineQpMap_IFrame(Frame *inFrame)
     int row, col;
     int c8_width, c8_height;
     int widthInRegionGrid = inFrame->m_origin->width / 16;
-    int wBlock = widthInRegionGrid*2;
-    int w4 = wBlock*2;
+    int wBlock = inFrame->m_origin->width/8;
+    int w4 = inFrame->m_origin->width/4;
 
     const int CU_SIZE = m_videoParam.MaxCUSize;
     int heightInTiles = m_videoParam.PicHeightInCtbs;
@@ -1422,8 +1422,8 @@ void Lookahead::DetermineQpMap_PFrame(Frame* inFrame, Frame *past_frame)
    int row, col;
     int c8_width, c8_height;
     int widthInRegionGrid = inFrame->m_origin->width / 16;
-    int wBlock = widthInRegionGrid*2;
-    int w4 = wBlock*2;
+    int wBlock = inFrame->m_origin->width/8;
+    int w4 = inFrame->m_origin->width/4;
 
     const int CU_SIZE = m_videoParam.MaxCUSize;
     int heightInTiles = m_videoParam.PicHeightInCtbs;
@@ -1615,7 +1615,6 @@ void Lookahead::DetermineQpMap_PFrame(Frame* inFrame, Frame *past_frame)
 void WriteQpMap(Frame *inFrame, const H265VideoParam& param) {
 
 #ifdef PAQ_LOGGING
-
     int heightInTiles = param.PicHeightInCtbs;
     int widthInTiles = param.PicWidthInCtbs;
     int row, col;
@@ -1722,6 +1721,8 @@ void Lookahead::DoPersistanceAnalysis_OneRow(Frame* curr, Ipp32s ctb_row)
 
 void Lookahead::DoPersistanceAnalysis(Frame* curr)
 {
+    Ipp32u frameType = curr->m_picCodeType;
+
     // compute (PDist = miniGopSize) Past ME
     FrameIter itCurr = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(curr->m_frameOrder));
     Frame* prevP = NULL;
@@ -1729,85 +1730,104 @@ void Lookahead::DoPersistanceAnalysis(Frame* curr)
     for (FrameIter it = m_inputQueue.begin(); it != itCurr; it++) {
         if ((*it)->m_picCodeType == MFX_FRAMETYPE_P || 
             (*it)->m_picCodeType == MFX_FRAMETYPE_I) {
-            prevP = (*it);
-            itPrev = it;
+                prevP = (*it);
+                itPrev = it;
         }
-    }
-    FrameData* currFrame  = m_videoParam.LowresFactor ? curr->m_lowres : curr->m_origin;
-    Statistics* stat = curr->m_stats[m_videoParam.LowresFactor ? 1 : 0];
-#ifndef AMT_DQP_FIX
-    if (prevP) {
-        FrameData * prevFrame = m_videoParam.LowresFactor ? prevP->m_lowres : prevP->m_origin;
-        DoInterAnalysis(currFrame, NULL, prevFrame, &stat->m_interSad_pdist_past[0], NULL, &stat->m_mv_pdist_past[0], 0, 2, m_videoParam.LowresFactor, curr->m_bitDepthLuma);
-        if (m_videoParam.LowresFactor) {
-            FrameData* currFrame  = curr->m_origin;
-            FrameData * prevFrame = prevP->m_origin;
-            DoInterAnalysis(currFrame, stat, prevFrame, &curr->m_stats[0]->m_interSad_pdist_past[0], NULL, &curr->m_stats[0]->m_mv_pdist_past[0], 1, 2, m_videoParam.LowresFactor, curr->m_bitDepthLuma); // refine
-        }
-    }
-#endif
-    // compute (PDist = miniGopSize) Future ME
-    Frame* nextP = NULL;
-    {
-        FrameIter it = itCurr;
-        it++;
-        it = std::find_if(it, m_inputQueue.end(), isEqualRefFrame());
-        if (it != m_inputQueue.end())
-            nextP = (*it);
     }
 
-    if (nextP) {
+    if ((frameType == MFX_FRAMETYPE_P || frameType == MFX_FRAMETYPE_I) && (m_videoParam.DeltaQpMode&AMT_DQP_PAQ)) 
+    { 
+        
+        //FrameData* currFrame  = m_videoParam.LowresFactor ? curr->m_lowres : curr->m_origin;
+        //Statistics* stat = curr->m_stats[m_videoParam.LowresFactor ? 1 : 0];
 #ifndef AMT_DQP_FIX
-        FrameData* nextFrame = m_videoParam.LowresFactor ? nextP->m_lowres : nextP->m_origin;
-        DoInterAnalysis(currFrame, NULL, nextFrame, &stat->m_interSad_pdist_future[0], NULL, &stat->m_mv_pdist_future[0], 0, 1, m_videoParam.LowresFactor, curr->m_bitDepthLuma);
-        if (m_videoParam.LowresFactor) {
-            FrameData* currFrame = curr->m_origin;
-            FrameData* nextFrame = nextP->m_origin;
-            DoInterAnalysis(currFrame, curr->m_stats[1], nextFrame, &curr->m_stats[0]->m_interSad_pdist_future[0], NULL, &curr->m_stats[0]->m_mv_pdist_future[0], 1, 1, m_videoParam.LowresFactor, curr->m_bitDepthLuma);//refine
+        if (prevP) {
+            FrameData * prevFrame = m_videoParam.LowresFactor ? prevP->m_lowres : prevP->m_origin;
+            DoInterAnalysis(currFrame, NULL, prevFrame, &stat->m_interSad_pdist_past[0], NULL, &stat->m_mv_pdist_past[0], 0, 2, m_videoParam.LowresFactor, curr->m_bitDepthLuma);
+            if (m_videoParam.LowresFactor) {
+                FrameData* currFrame  = curr->m_origin;
+                FrameData * prevFrame = prevP->m_origin;
+                DoInterAnalysis(currFrame, stat, prevFrame, &curr->m_stats[0]->m_interSad_pdist_past[0], NULL, &curr->m_stats[0]->m_mv_pdist_past[0], 1, 2, m_videoParam.LowresFactor, curr->m_bitDepthLuma); // refine
+            }
         }
 #endif
-    } else {
-        std::fill(curr->m_stats[0]->m_interSad_pdist_future.begin(), curr->m_stats[0]->m_interSad_pdist_future.end(), IPP_MAX_32S);
+        // compute (PDist = miniGopSize) Future ME
+        Frame* nextP = NULL;
+        {
+            FrameIter it = itCurr;
+            it++;
+            it = std::find_if(it, m_inputQueue.end(), isEqualRefFrame());
+            if (it != m_inputQueue.end())
+                nextP = (*it);
+        }
+
+        if (nextP) {
+#ifndef AMT_DQP_FIX
+            FrameData* nextFrame = m_videoParam.LowresFactor ? nextP->m_lowres : nextP->m_origin;
+            DoInterAnalysis(currFrame, NULL, nextFrame, &stat->m_interSad_pdist_future[0], NULL, &stat->m_mv_pdist_future[0], 0, 1, m_videoParam.LowresFactor, curr->m_bitDepthLuma);
+            if (m_videoParam.LowresFactor) {
+                FrameData* currFrame = curr->m_origin;
+                FrameData* nextFrame = nextP->m_origin;
+                DoInterAnalysis(currFrame, curr->m_stats[1], nextFrame, &curr->m_stats[0]->m_interSad_pdist_future[0], NULL, &curr->m_stats[0]->m_mv_pdist_future[0], 1, 1, m_videoParam.LowresFactor, curr->m_bitDepthLuma);//refine
+            }
+#endif
+        } else {
+            std::fill(curr->m_stats[0]->m_interSad_pdist_future.begin(), curr->m_stats[0]->m_interSad_pdist_future.end(), IPP_MAX_32S);
+        }
+
+
+        // following processing based on original resolution ONLY!!!
+        //FrameData* currFrame  =  curr->m_origin;
+        //Statistics* origStats = curr->m_stats[0];
+        //Ipp64f RsGlobal = origStats->m_frameRs;
+        //Ipp64f CsGlobal = origStats->m_frameCs;
+        //Ipp32s frameSize = currFrame->width * currFrame->height;
+        //origStats->SC = sqrt(((RsGlobal*RsGlobal) + (CsGlobal*CsGlobal))*frameSize);
+        //origStats->TSC = std::accumulate(origStats->m_interSad.begin(), origStats->m_interSad.end(), 0);
+
+
+        if (frameType == MFX_FRAMETYPE_I) {
+            DetermineQpMap_IFrame(curr);
+            WriteQpMap(curr, m_videoParam);
+        } else if (frameType == MFX_FRAMETYPE_P) {
+            FrameIter itRefPast = itPrev;
+            DetermineQpMap_PFrame(curr, *itRefPast);
+            WriteQpMap(curr, m_videoParam);
+        }
     }
-    
 
-    // following processing based on original resolution ONLY!!!
-    currFrame  = curr->m_origin;
-    Statistics* origStats = curr->m_stats[0];
-    Ipp64f RsGlobal = origStats->m_frameRs;
-    Ipp64f CsGlobal = origStats->m_frameCs;
-    Ipp32s frameSize = currFrame->width * currFrame->height;
-    origStats->SC = sqrt(((RsGlobal*RsGlobal) + (CsGlobal*CsGlobal))*frameSize);
-    origStats->TSC = std::accumulate(origStats->m_interSad.begin(), origStats->m_interSad.end(), 0);
+    if (frameType == MFX_FRAMETYPE_P && (m_videoParam.DeltaQpMode&AMT_DQP_CAL)) { // CALQ logic
+        // CALQ logic
+        FrameData* origFrame  =  curr->m_origin;
+        Statistics* origStats = curr->m_stats[0];
 
-    Ipp32u frameType = curr->m_picCodeType;
-    if (frameType == MFX_FRAMETYPE_I) {
-        DetermineQpMap_IFrame(curr);
-        WriteQpMap(curr, m_videoParam);
-    } else if (frameType == MFX_FRAMETYPE_P) {
-        FrameIter itRefPast = itPrev;
-        DetermineQpMap_PFrame(curr, *itRefPast);
-        WriteQpMap(curr, m_videoParam);
-    }
-
-    // CALQ logic
-    origStats->avgTSC = 0.0;
-    origStats->avgsqrSCpp = 0.0;
-
-    if (frameType == MFX_FRAMETYPE_P && m_videoParam.DeltaQpMode > 1) { // CALQ logic
+        origStats->avgTSC = 0.0;
+        origStats->avgsqrSCpp = 0.0;
         FrameIter itRefPast = itPrev;
         Ipp32s gop_size = 1;
         Ipp64f avgTSC     = 0.0;
         Ipp64f avgsqrSCpp = 0.0;
-
+        /*
+        Ipp64f avgTSC_lr     = 0.0;
+        Ipp64f avgsqrSCpp_lr = 0.0;
+        */
+        
         for (FrameIter it = itCurr; it != itRefPast; it--) {
             Statistics* stat = (*it)->m_stats[0];
             avgTSC     += stat->TSC;
             avgsqrSCpp += stat->SC;
             gop_size++;
+            /*
+            if (m_videoParam.LowresFactor) {
+                Statistics* stat_lr = (*it)->m_stats[1];
+                avgTSC_lr     += stat_lr->TSC;
+                avgsqrSCpp_lr += stat_lr->SC;
+            }
+            */
         }
-
-        Ipp32s frameSize = currFrame->width * currFrame->height;
+        
+        Ipp32s frameSize = origFrame->width * origFrame->height;
+        //Ipp32s frameSize_lr = curr->m_lowres->width * curr->m_lowres->height;
 
         avgTSC /= gop_size;
         avgTSC /= frameSize;
@@ -1815,7 +1835,16 @@ void Lookahead::DoPersistanceAnalysis(Frame* curr)
         avgsqrSCpp /= gop_size;
         avgsqrSCpp/=sqrt((Ipp64f)(frameSize));
         avgsqrSCpp = sqrt(avgsqrSCpp);
+        /*
+        if (m_videoParam.LowresFactor) {
+            avgTSC_lr /= gop_size;
+            avgTSC_lr /= frameSize_lr;
 
+            avgsqrSCpp_lr /= gop_size;
+            avgsqrSCpp_lr /=sqrt((Ipp64f)(frameSize_lr));
+            avgsqrSCpp_lr = sqrt(avgsqrSCpp_lr);
+        }
+        */
 #if defined(PAQ_LOGGING)
         printf("\nGenerating P Qp Map TR %d SC %f TC %f\n", curr->m_origin->m_frameOrder, avgsqrSCpp, avgTSC);fflush(stderr);
 #endif
@@ -1824,6 +1853,13 @@ void Lookahead::DoPersistanceAnalysis(Frame* curr)
             Statistics* stats = (*it)->m_stats[0];
             stats->avgTSC = avgTSC;
             stats->avgsqrSCpp = avgsqrSCpp;
+            /*
+            if (m_videoParam.LowresFactor) {
+                Statistics* stat_lr = (*it)->m_stats[1];
+                stat_lr->avgTSC = avgTSC_lr;
+                stat_lr->avgsqrSCpp = avgsqrSCpp_lr;
+            }
+            */
         }
     }
 }
@@ -2132,6 +2168,7 @@ void Lookahead::ResetState()
         std::fill(m_slideWindowComplexity.begin(), m_slideWindowComplexity.end(), -1);
     }
     m_cmplxPrevFrame = NULL;
+    m_dqpPrevFrame = NULL;
     m_lastAcceptedFrame = NULL;
 }
 
@@ -2267,17 +2304,30 @@ void Lookahead::AnalyzeContent(Frame* in)
 {
     // capture new data
     if (in) {
-        Frame* inFrame = in;
-        (inFrame->m_bitDepthLuma == 8)
-            ? CalcFrameRsCs<Ipp8u>(inFrame)
-            : CalcFrameRsCs<Ipp16u>(inFrame);
 
-        Ipp64f RsGlobal = inFrame->m_stats[0]->m_frameRs;
-        Ipp64f CsGlobal = inFrame->m_stats[0]->m_frameCs;
-        Ipp32s frameSize = inFrame->m_origin->width * inFrame->m_origin->height;
+        (in->m_bitDepthLuma == 8)
+            ? CalcFrameRsCs<Ipp8u>(in->m_origin, in->m_stats[0])
+            : CalcFrameRsCs<Ipp16u>(in->m_origin, in->m_stats[0]);
+        Ipp64f RsGlobal = in->m_stats[0]->m_frameRs;
+        Ipp64f CsGlobal = in->m_stats[0]->m_frameCs;
+        Ipp32s frameSize = in->m_origin->width * in->m_origin->height;
 
-        inFrame->m_stats[0]->SC = sqrt(((RsGlobal*RsGlobal) + (CsGlobal*CsGlobal))*frameSize);
-        inFrame->m_stats[0]->TSC = std::accumulate(inFrame->m_stats[0]->m_interSad.begin(), inFrame->m_stats[0]->m_interSad.end(), 0);
+        in->m_stats[0]->SC = sqrt(((RsGlobal*RsGlobal) + (CsGlobal*CsGlobal))*frameSize);
+        in->m_stats[0]->TSC = std::accumulate(in->m_stats[0]->m_interSad.begin(), in->m_stats[0]->m_interSad.end(), 0);
+
+        Ipp8u useLowres = m_videoParam.LowresFactor;
+        /*if(useLowres) {
+            FrameData* frame = useLowres ? in->m_lowres : in->m_origin;
+            Statistics* stat = in->m_stats[useLowres ? 1 : 0];
+            (in->m_bitDepthLuma == 8)
+                ? CalcFrameRsCs<Ipp8u>(frame, stat)
+                : CalcFrameRsCs<Ipp16u>(frame, stat);
+            RsGlobal = stat->m_frameRs;
+            CsGlobal = stat->m_frameCs;
+            Ipp32s frameSize = in->m_lowres->width * in->m_lowres->height;
+            stat->SC = sqrt(((RsGlobal*RsGlobal) + (CsGlobal*CsGlobal))*frameSize);
+            stat->TSC = std::accumulate(stat->m_interSad.begin(), stat->m_interSad.end(), 0);
+        }*/
 
         // store statistics 
         Ipp32s lastpos = m_slideWindowPaq.size() - 1;
@@ -2285,6 +2335,7 @@ void Lookahead::AnalyzeContent(Frame* in)
     }
 
     // make decision
+    if (m_videoParam.DeltaQpMode&(AMT_DQP_PAQ|AMT_DQP_CAL)) {
     Ipp32s centralPos = (m_slideWindowPaq.size()-1) >> 1;
     Ipp32s frameOrderCentral = m_slideWindowPaq[centralPos];
     bool doAnalysis = (frameOrderCentral >= 0);
@@ -2321,7 +2372,14 @@ void Lookahead::AnalyzeContent(Frame* in)
 
     // force last element to _invalid_ to prevent issue with EndOfStream
     m_slideWindowPaq[m_slideWindowPaq.size()-1] = -1;//invalid
-
+    } else {
+    //if (m_slideWindowPaq.size() == 1) {
+        if (m_dqpPrevFrame) {
+            m_dqpPrevFrame->m_lookaheadRefCounter--;
+        }
+        m_dqpPrevFrame = in;
+    //}
+    }
 } // 
 
 
@@ -2329,7 +2387,7 @@ Ipp32s Lookahead::GetDelay()
 {
     Ipp32s delayScd   = m_videoParam.SceneCut ? m_scdConfig.M + 1 + 1: 0; // algorithm specific
     Ipp32s delayCmplx = m_videoParam.AnalyzeCmplx ? m_videoParam.RateControlDepth : 0;
-    Ipp32s delayPaq   = m_videoParam.DeltaQpMode ? 2*m_videoParam.GopRefDist + 1 : 0;
+    Ipp32s delayPaq   = (m_videoParam.DeltaQpMode&(AMT_DQP_CAL|AMT_DQP_PAQ)) ? 2*m_videoParam.GopRefDist + 1 : 0;
     Ipp32s lookaheadBuffering = delayScd + delayCmplx + delayPaq + 1; // +1 due to arch issue
 
     return lookaheadBuffering;
@@ -2453,8 +2511,11 @@ Lookahead::Lookahead(H265Encoder & enc)
     }
 
     // Content Analysis configuration
-    if (m_videoParam.DeltaQpMode > 0) {
-        Ipp32s M = m_videoParam.GopRefDist;
+    if (m_videoParam.DeltaQpMode)
+    {
+        Ipp32s M = 0;
+        if (m_videoParam.DeltaQpMode&(AMT_DQP_CAL|AMT_DQP_PAQ))
+            M = m_videoParam.GopRefDist;
         if (m_videoParam.SceneCut) {
             M = IPP_MAX(M, m_videoParam.GopRefDist + m_scdConfig.M);
         }
@@ -2479,7 +2540,7 @@ Lookahead::Lookahead(H265Encoder & enc)
 
     }
     m_cmplxPrevFrame = NULL;
-
+    m_dqpPrevFrame = NULL;
     // to prevent multiple PREENC_START per frame
     m_lastAcceptedFrame = NULL;
 
@@ -2511,6 +2572,7 @@ Lookahead::~Lookahead()
     m_slideWindowStat.resize(0);
     m_slideWindowPaq.resize(0);
     m_cmplxPrevFrame = NULL;
+    m_dqpPrevFrame = NULL;
 }
 
 
@@ -2585,7 +2647,7 @@ const double LQ_M[5][8]   = {
     {4.5878, 4.5878, 4.5878, 4.5878, 4.5878, 4.2005, 4.2005, 4.2005},   // P
     {4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255},   // B1
     {4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052},   // B2
-    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005}    // B3
+    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005},    // B3
 };
 const double LQ_K[5][8] = {
     {12.8114, 13.8536, 13.8536, 13.8536, 13.8395, 13.8395, 13.8395, 13.8395},   // I
@@ -2618,7 +2680,7 @@ int GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ip
     } else {
         picClass = frame->m_pyramidLayer+1;
     }
-    
+
     static int pQPi[5][4] = {{22,27,32,37}, {23,28,33,38}, {24,29,34,39}, {25,30,35,40}, {26,31,36,41}};
     Ipp32s qpClass = 0;
     if(sliceQpY < pQPi[picClass][0])
@@ -2639,7 +2701,32 @@ int GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ip
     Ipp64f rscs = compute_block_rscs(ySrc, (Ipp32s)par.MaxCUSize, (Ipp32s)par.MaxCUSize, frame->m_origin->pitch_luma_pix);
 #else
     // complex ops in Enqueue frame can cause severe threading eff loss -NG
-    Ipp64f rscs = frame->m_stats[0]->rscs_ctb[ctb_addr];
+    Ipp64f rscs = 0;
+    //if(par.DeltaQpMode&AMT_DQP_PAQ) {
+    //    // pre-calculated
+    //    rscs = frame->m_stats[0]->rscs_ctb[ctb_addr];
+    //} else {
+    if(picClass<2)
+    {
+        // calulate from 4x4 Rs/Cs
+        Ipp32s N = (col==par.PicWidthInCtbs-1)?(frame->m_origin->width-(par.PicWidthInCtbs-1)*par.MaxCUSize):par.MaxCUSize;
+        Ipp32s M = (row==par.PicHeightInCtbs-1)?(frame->m_origin->height-(par.PicHeightInCtbs-1)*par.MaxCUSize):par.MaxCUSize;
+        Ipp32s m4T = M/4;
+        Ipp32s n4T = N/4;
+        Ipp32s X4 = pelX/4;
+        Ipp32s Y4 = pelY/4;
+        Ipp32s w4 = frame->m_origin->width/4;
+        Ipp32s Rs=0,Cs=0;
+        for(Ipp32s i=0;i<m4T;i++) {
+            for(Ipp32s j=0;j<n4T;j++) {
+                Rs += frame->m_stats[0]->m_rs[(Y4+i)*w4+(X4+j)];
+                Cs += frame->m_stats[0]->m_cs[(Y4+i)*w4+(X4+j)];
+            }
+        }
+        Rs/=(m4T*n4T);
+        Cs/=(m4T*n4T);
+        rscs = sqrt(Rs + Cs);
+    }
 #endif
     Ipp32s rscsClass = 0;
     {
@@ -2670,12 +2757,16 @@ int GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ip
 
 void UpdateAllLambda(Frame* frame, const H265VideoParam& param)
 {
-    Statistics* stats = frame->m_stats[0];
+    Statistics* stats;
+    //if(param.LowresFactor) 
+    //    stats = frame->m_stats[1];
+    //else
+        stats = frame->m_stats[0];
 
     int  origQP = frame->m_sliceQpY;
     bool IsHiCplxGOP = false;
     bool IsMedCplxGOP = false;
-    if (param.DeltaQpMode >= 2) {
+    if (param.DeltaQpMode&AMT_DQP_CAL) {
         double SADpp = stats->avgTSC; 
         double SCpp  = stats->avgsqrSCpp;
         if (SCpp > 2.0) {
@@ -2708,13 +2799,12 @@ void UpdateAllLambda(Frame* frame, const H265VideoParam& param)
     }
 }
 
-
 void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBrc)
 {
     Ipp32s numCtb = par.PicHeightInCtbs * par.PicWidthInCtbs;
 
     // assign PAQ deltaQp
-    if (par.DeltaQpMode == 1) {// no pure CALQ 
+    if (par.DeltaQpMode&AMT_DQP_PAQ) {// no pure CALQ 
         for (Ipp32s ctb = 0; ctb < numCtb; ctb++) {
             Ipp32s deltaQp = frame->m_stats[0]->qp_mask[ctb];
             //deltaQp = Saturate(-MAX_DQP, MAX_DQP, deltaQp);
@@ -2729,20 +2819,20 @@ void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBr
         UpdateAllLambda(frame, par);
 
     // assign CALQ deltaQp
-    if (par.DeltaQpMode > 1) {
+    if (par.DeltaQpMode&AMT_DQP_CAQ) {
         Ipp64f baseQP = frame->m_sliceQpY;
         Ipp64f sliceLambda =  frame->m_dqpSlice[0].rd_lambda_slice;
         for (Ipp32s ctb_addr = 0; ctb_addr < numCtb; ctb_addr++) {
-            //int deltaQP = -(frame->m_sliceQpY - frame->m_lcuQps[ctb_addr]);
-            //int idxDqp = 2*abs(deltaQP)-((deltaQP<0)?1:0);
             int calq = GetCalqDeltaQp(frame, par, ctb_addr, sliceLambda, baseQP);
 
             Ipp32s totalDQP = calq;
+            /*
             if(useBrc) {
                 if(par.cbrFlag) totalDQP = Saturate(-1, 1, totalDQP);  // CBR
                 else            totalDQP = Saturate(-2, 2, totalDQP);  // VBR
             }
-            if (par.DeltaQpMode != 2) {
+            */
+            if (par.DeltaQpMode&AMT_DQP_PAQ) {
                 totalDQP += frame->m_stats[0]->qp_mask[ctb_addr];
             }
             //totalDQP = Saturate(-MAX_DQP, MAX_DQP, totalDQP);
@@ -2773,7 +2863,6 @@ void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBr
     */
     //WriteDQpMap(frame, par);
 }
-
 
 mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u ctb_row, Ipp32u ctb_col)
 {
@@ -2809,46 +2898,47 @@ mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u 
     case TT_PREENC_ROUTINE:
         {
             if (in && in->m_frameOrder > 0 && 
-                (m_videoParam.AnalyzeCmplx || m_videoParam.DeltaQpMode)) {
-                    Frame* curr = in;
-                    FrameIter it = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(in->m_frameOrder-1));
-                    if (it != m_inputQueue.end()) {
-                        Frame* prev = (*it);
-                        bool useLowres = m_videoParam.LowresFactor;
-                        FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
-                        Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
-                        FrameData* framePrev = useLowres ? prev->m_lowres : prev->m_origin;
-                        DoInterAnalysis_OneRow(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0], &stat->m_mv[0], 0, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, ctb_row);
+                (m_videoParam.AnalyzeCmplx || (m_videoParam.DeltaQpMode&(AMT_DQP_PAQ|AMT_DQP_CAL)) )) 
+            {
+                Frame* curr = in;
+                FrameIter it = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(in->m_frameOrder-1));
+                if (it != m_inputQueue.end()) {
+                    Frame* prev = (*it);
+                    bool useLowres = m_videoParam.LowresFactor;
+                    FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
+                    Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
+                    FrameData* framePrev = useLowres ? prev->m_lowres : prev->m_origin;
+                    DoInterAnalysis_OneRow(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0], &stat->m_mv[0], 0, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, ctb_row);
 
-                        if (m_videoParam.DeltaQpMode && useLowres) { // need refine for original resolution
-                            FrameData* frame = curr->m_origin;
-                            Statistics* originStat = curr->m_stats[0];
-                            Statistics* lowresStat = curr->m_stats[1];
-                            FrameData* framePrev = prev->m_origin;
-                            Ipp32s numRows = 1<<m_videoParam.LowresFactor;
-                            if(((Ipp32s)(ctb_row<<m_videoParam.LowresFactor)+numRows)*SIZE_BLK_LA > frame->height)
-                                numRows = (frame->height - (ctb_row<<m_videoParam.LowresFactor)*SIZE_BLK_LA) / SIZE_BLK_LA;
-                            for(Ipp32s i=0;i<numRows;i++) {
-                               DoInterAnalysis_OneRow(frame, lowresStat, framePrev, &originStat->m_interSad[0], NULL, &originStat->m_mv[0], 1, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, (ctb_row<<m_videoParam.LowresFactor)+i);//fixed-NG
-                            }
+                    if ((m_videoParam.DeltaQpMode&(AMT_DQP_PAQ|AMT_DQP_CAL)) && useLowres) { // need refine for original resolution
+                        FrameData* frame = curr->m_origin;
+                        Statistics* originStat = curr->m_stats[0];
+                        Statistics* lowresStat = curr->m_stats[1];
+                        FrameData* framePrev = prev->m_origin;
+                        Ipp32s numRows = 1<<m_videoParam.LowresFactor;
+                        if(((Ipp32s)(ctb_row<<m_videoParam.LowresFactor)+numRows)*SIZE_BLK_LA > frame->height)
+                            numRows = (frame->height - (ctb_row<<m_videoParam.LowresFactor)*SIZE_BLK_LA) / SIZE_BLK_LA;
+                        for(Ipp32s i=0;i<numRows;i++) {
+                            DoInterAnalysis_OneRow(frame, lowresStat, framePrev, &originStat->m_interSad[0], NULL, &originStat->m_mv[0], 1, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, (ctb_row<<m_videoParam.LowresFactor)+i);//fixed-NG
                         }
                     }
+                }
 
 #ifdef AMT_DQP_FIX
-                    if (m_videoParam.DeltaQpMode) {
-                        Ipp32s centralPos = (m_slideWindowPaq.size()-1) >> 1;
-                        Ipp32s frameOrderCentral = m_slideWindowPaq[centralPos];
-                        bool doAnalysis = (frameOrderCentral >= 0);
+                if (m_videoParam.DeltaQpMode&AMT_DQP_PAQ) {
+                    Ipp32s centralPos = (m_slideWindowPaq.size()-1) >> 1;
+                    Ipp32s frameOrderCentral = m_slideWindowPaq[centralPos];
+                    bool doAnalysis = (frameOrderCentral >= 0);
 
-                        if (doAnalysis) {
-                            FrameIter curr = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(frameOrderCentral));
-                            Ipp32u frameType = (*curr)->m_picCodeType;
-                            bool isRef = (frameType == MFX_FRAMETYPE_P || frameType == MFX_FRAMETYPE_I);
-                            if (isRef) {
-                                DoPersistanceAnalysis_OneRow(*curr, ctb_row);
-                            }
+                    if (doAnalysis) {
+                        FrameIter curr = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(frameOrderCentral));
+                        Ipp32u frameType = (*curr)->m_picCodeType;
+                        bool isRef = (frameType == MFX_FRAMETYPE_P || frameType == MFX_FRAMETYPE_I);
+                        if (isRef) {
+                            DoPersistanceAnalysis_OneRow(*curr, ctb_row);
                         }
                     }
+                }
 #endif
             }
 

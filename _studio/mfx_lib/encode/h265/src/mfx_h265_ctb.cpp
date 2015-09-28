@@ -1259,12 +1259,27 @@ void H265CU<PixType>::InitCu(
         m_STC[0][0]     = 2;
         m_mvdMax  = 128;
         m_mvdCost = 60;
-        if ((m_ctbPelX + m_par->MaxCUSize) > m_par->Width || (m_ctbPelY + m_par->MaxCUSize) > m_par->Height) {
+        if(m_par->DeltaQpMode&AMT_DQP_CAQ) {
             Ipp32s height = (m_ctbPelY + m_par->MaxCUSize > m_par->Height) ? (m_par->Height- m_ctbPelY) : m_par->MaxCUSize;
             Ipp32s width  = (m_ctbPelX + m_par->MaxCUSize  > m_par->Width) ? (m_par->Width - m_ctbPelX) : m_par->MaxCUSize;
-            h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs, width, height);
+            Ipp32s row4 = m_ctbPelY/4;
+            Ipp32s col4 = m_ctbPelX/4;
+            Ipp32s w4 = m_currFrame->m_origin->width/4;
+            Ipp32s bP = MAX_CU_SIZE>>2;
+            for(Ipp32s i=0;i<height/4;i++) {
+                for(Ipp32s j=0;j<width/4;j++) {
+                    m_lcuRs[i*bP+j] = m_currFrame->m_stats[0]->m_rs[(row4+i)*w4+(col4+j)];
+                    m_lcuCs[i*bP+j] = m_currFrame->m_stats[0]->m_cs[(row4+i)*w4+(col4+j)];
+                }
+            }
         } else {
-            h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs, m_par->MaxCUSize, m_par->MaxCUSize);
+            if ((m_ctbPelX + m_par->MaxCUSize) > m_par->Width || (m_ctbPelY + m_par->MaxCUSize) > m_par->Height) {
+                Ipp32s height = (m_ctbPelY + m_par->MaxCUSize > m_par->Height) ? (m_par->Height- m_ctbPelY) : m_par->MaxCUSize;
+                Ipp32s width  = (m_ctbPelX + m_par->MaxCUSize  > m_par->Width) ? (m_par->Width - m_ctbPelX) : m_par->MaxCUSize;
+                h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs, width, height);
+            } else {
+                h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs, m_par->MaxCUSize, m_par->MaxCUSize);
+            }
         }
         GetSpatialComplexity(0, 0, 0, 0);
 #endif
@@ -2757,6 +2772,11 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
         if (m_cslice->slice_type != I_SLICE) {
             const H265CUData *dataBestNonSplit = GetBestCuDecision(absPartIdx, depth);
             Ipp32s qp_best = dataBestNonSplit->qp;
+
+            if(m_par->DeltaQpMode) {
+                qp_best = m_currFrame->m_sliceQpY;
+            }
+
             CostType cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best)][m_cslice->slice_type != I_SLICE][depth];
             CostType costBestNonSplit = IPP_MIN(m_costStored[depth], m_costCurr) - costInitial;
             if(tryIntra && splitMode == SPLIT_TRY && depth < m_intraMinDepth && costBestNonSplit>=cuSplitThresholdCu) tryIntra = false;
@@ -2800,6 +2820,11 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
         const H265CUData *dataBestNonSplit = GetBestCuDecision(absPartIdx, depth);
         skippedFlag = dataBestNonSplit->flags.skippedFlag;
         Ipp32s qp_best = dataBestNonSplit->qp;
+
+        if(m_par->DeltaQpMode) {
+            qp_best = m_currFrame->m_sliceQpY;
+        }
+
 #ifdef AMT_THRESHOLDS
         if(m_cslice->slice_type == I_SLICE && m_par->SplitThresholdStrengthCUIntra > m_par->SplitThresholdStrengthTUIntra) {
             if(m_SCid[depth][absPartIdx]<5) {
@@ -9690,6 +9715,12 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s w
         }
 
         if(cost) *cost += BIT_COST(m_bsf->GetNumBits());
+    } else {
+        if (cbf) {
+            SetCbf<0>(dataTu, dataTu->trIdx);
+        } else {
+            ResetCbf<0>(dataTu);
+        }
     }
 }
 
@@ -11152,7 +11183,18 @@ void H265CU<PixType>::SetCuLambda(Frame* frame)
     m_rdLambda = curSlice->rd_lambda_slice;
     m_rdLambdaSqrt = curSlice->rd_lambda_sqrt_slice;
     m_ChromaDistWeight = curSlice->ChromaDistWeight_slice;
-    m_rdLambdaChroma = m_rdLambda*(3.0+1.0/m_ChromaDistWeight)/4.0;
+    if( (m_par->DeltaQpMode&AMT_DQP_CAQ) &&
+        ((curSlice->slice_type==I_SLICE) ||
+        (curSlice->slice_type==P_SLICE && m_par->BiPyramidLayers > 1) ||
+        (curSlice->slice_type==B_SLICE && m_par->BiPyramidLayers > 1 && frame->m_pyramidLayer==0))
+      )
+    {
+        m_rdLambdaChroma = m_rdLambda*(2.0+2.0/(m_ChromaDistWeight*m_par->LambdaCorrection))/4.0;
+        // to match previous results
+    } else 
+    {
+        m_rdLambdaChroma = m_rdLambda*(3.0+1.0/(m_ChromaDistWeight))/4.0;
+    }
     m_rdLambdaInter = curSlice->rd_lambda_inter_slice;
     m_rdLambdaInterMv = curSlice->rd_lambda_inter_mv_slice;
 }
