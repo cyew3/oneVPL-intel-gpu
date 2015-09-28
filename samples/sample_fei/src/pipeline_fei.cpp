@@ -124,29 +124,34 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
             mfxExtFeiEncMBStat* mbstatBuf = NULL;
             mfxExtFeiPakMBCtrl* mbcodeBuf = NULL;
 
-            for(int i=0; i<bs.NumExtParam; i++){
-                if (bs.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout){
-                    if (!(bs.FrameType & MFX_FRAMETYPE_I)){
-                        mvBuf = (mfxExtFeiEncMV*)bs.ExtParam[i];
-                        fwrite(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
+            mfxU32 numOfFields = (bs.PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) ? 2 : 1;
+            for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
+            {
+                for (int i = 0; i < bs.NumExtParam; i++)
+                {
+                    if (bs.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV && mvENCPAKout)
+                    {
+                        mvBuf = &((mfxExtFeiEncMV*)(bs.ExtParam[i]))[fieldId];
+                        if (!(bs.FrameType & MFX_FRAMETYPE_I)){
+                            fwrite(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
+                        }
+                        else{
+                            mfxExtFeiEncMV::mfxMB tmpMB;
+                            memset(&tmpMB, 0x8000, sizeof(tmpMB));
+                            for (mfxU32 k = 0; k < mvBuf->NumMBAlloc; k++)
+                                fwrite(&tmpMB, sizeof(tmpMB), 1, mvENCPAKout);
+                        }
                     }
-                    else{
-                        mfxExtFeiEncMV::mfxMB tmpMB;
-                        memset(&tmpMB, 0x8000, sizeof(tmpMB));
-                        mvBuf = (mfxExtFeiEncMV*)bs.ExtParam[i];
-                        for (mfxU32 k = 0; k < mvBuf->NumMBAlloc; k++)
-                            fwrite(&tmpMB, sizeof(tmpMB), 1, mvENCPAKout);
+                    if (bs.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB_STAT && mbstatout){
+                        mbstatBuf = &((mfxExtFeiEncMBStat*)(bs.ExtParam[i]))[fieldId];
+                        fwrite(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, mbstatout);
                     }
-                }
-                if(bs.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB_STAT && mbstatout){
-                    mbstatBuf = (mfxExtFeiEncMBStat*)bs.ExtParam[i];
-                    fwrite(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, mbstatout);
-                }
-                if(bs.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
-                    mbcodeBuf = (mfxExtFeiPakMBCtrl*)bs.ExtParam[i];
-                    fwrite(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
-                }
-            }
+                    if (bs.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL && mbcodeout){
+                        mbcodeBuf = &((mfxExtFeiPakMBCtrl*)(bs.ExtParam[i]))[fieldId];
+                        fwrite(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
+                    }
+                } // for (int i = 0; i < bs.NumExtParam; i++)
+            } // for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
 
             sts = m_pTasks[m_nTaskBufferStart].WriteBitstream();
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -333,10 +338,13 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.FrameInfo.CropY = 0;
     m_mfxEncParams.mfx.FrameInfo.CropW = pInParams->nDstWidth;
     m_mfxEncParams.mfx.FrameInfo.CropH = pInParams->nDstHeight;
-    m_mfxEncParams.AsyncDepth = 1;  //current limitation
-    m_mfxEncParams.mfx.GopRefDist = pInParams->refDist > 0 ? pInParams->refDist : 1;
-    m_mfxEncParams.mfx.GopPicSize = pInParams->gopSize > 0 ? pInParams->gopSize : 1;
+    m_mfxEncParams.AsyncDepth      = 1; //current limitation
+    m_mfxEncParams.mfx.GopRefDist  = pInParams->refDist > 0 ? pInParams->refDist : 1;
+    m_mfxEncParams.mfx.GopPicSize  = pInParams->gopSize > 0 ? pInParams->gopSize : 1;
     m_mfxEncParams.mfx.IdrInterval = pInParams->nIdrInterval;
+    m_mfxEncParams.mfx.GopOptFlag  = pInParams->GopOptFlag;
+    m_mfxEncParams.mfx.CodecProfile = pInParams->CodecProfile;
+    m_mfxEncParams.mfx.CodecLevel   = pInParams->CodecLevel;
 
     /* Multi references and multi slices*/
     if (pInParams->numRef == 0)
@@ -358,9 +366,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
     // configure the depth of the look ahead BRC if specified in command line
-    if (pInParams->nLADepth || pInParams->bRefType)
+    if (pInParams->bRefType)
     {
-        m_CodingOption2.LookAheadDepth = pInParams->nLADepth;
         m_CodingOption2.BRefType = pInParams->bRefType;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }

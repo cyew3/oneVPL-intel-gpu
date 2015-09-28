@@ -79,6 +79,9 @@ struct sInputParams
     mfxU16 IntraSAD;
     mfxU16 InterSAD;
     mfxU16 NumMVPredictors;
+    mfxU16 GopOptFlag;
+    mfxU16 CodecProfile;
+    mfxU16 CodecLevel;
 
     mfxU16 nDstWidth; // destination picture width, specified if resizing required
     mfxU16 nDstHeight; // destination picture height, specified if resizing required
@@ -91,7 +94,6 @@ struct sInputParams
     std::vector<msdk_char*> srcFileBuff;
     std::vector<msdk_char*> dstFileBuff;
 
-    bool bLABRC; // use look ahead bitrate control algorithm
     bool bENCODE;
     bool bENCPAK;
     bool bOnlyENC;
@@ -114,7 +116,6 @@ struct sInputParams
     msdk_char* mbcodeoutFile;
     msdk_char* mbstatoutFile;
     msdk_char* mbQpFile;
-    mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
 };
 
 typedef struct{

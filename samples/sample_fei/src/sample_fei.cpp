@@ -37,11 +37,14 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
     msdk_printf(MSDK_STRING("   [-x numRefs]   - number of reference frames \n"));
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames\n"));
+    msdk_printf(MSDK_STRING("   [-gop_opt closed|strict] - GOP optimization flags (can be used together)\n"));
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
     msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
     msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
+    msdk_printf(MSDK_STRING("   [-profile decimal] - set AVC profile (ENCODE only)\n"));
+    msdk_printf(MSDK_STRING("   [-level decimal] - set AVC level (ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-mbctrl file] - use the input to set MB control for FEI (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mbsize] - with this options size control fields will be used from MB control structure (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mvin file] - use this input to set MV predictor for FEI. PREENC and ENC (ENCODE) expect different structures\n"));
@@ -50,6 +53,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-mbcode file] - file to output per MB information (structure mfxExtFeiPakMBCtrl) for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbstat file] - file to output per MB distortions for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbqp file] - file to input per MB QPs the same for each frame\n"));
+    msdk_printf(MSDK_STRING("   [-sys] - use system memory for surfaces (ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-pass_headers] - pass SPS, PPS and Slice headers to Media SDK instead of default one (ENC or/and PAK only)\n"));
     msdk_printf(MSDK_STRING("   [-8x8stat] - set 8x8 block for statistic report, default is 16x16 (PREENC only)\n"));
     msdk_printf(MSDK_STRING("   [-search_window value] - specifies one of the predefined search path and window size. In range [1,8] (0 is default).\n"));
@@ -139,6 +143,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bPREENC = true;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-profile")))
+        {
+            i++;
+            pParams->CodecProfile = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-level")))
+        {
+            i++;
+            pParams->CodecLevel = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvin")))
         {
             pParams->mvinFile = strInput[i+1];
@@ -209,14 +223,18 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             i++;
             pParams->QP = (mfxU8)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-la")))
-        {
-            pParams->bLABRC = true;
-        }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-lad")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gop_opt")))
         {
             i++;
-            pParams->nLADepth = (mfxU8)msdk_strtol(strInput[i], &stopCharacter, 10);
+            //GET_OPTION_POINTER(strArgument);
+            if (0 == msdk_strcmp(strInput[i], MSDK_STRING("closed")))
+            {
+                pParams->GopOptFlag |= MFX_GOP_CLOSED;
+            }
+            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("strict")))
+            {
+                pParams->GopOptFlag |= MFX_GOP_STRICT;
+            }
         }
 #if D3D_SURFACES_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
@@ -228,6 +246,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->memType = D3D11_MEMORY;
         }
 #endif
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sys")))
+        {
+            pParams->memType = SYSTEM_MEMORY;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pass_headers")))
         {
             pParams->bPassHeaders = true;
@@ -482,6 +504,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->nPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     }
 
+    /*
     if ((pParams->bLABRC || pParams->nLADepth) && (!pParams->bUseHWLib))
     {
         if (bAlrShownHelp)
@@ -500,6 +523,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+
     if (pParams->nLADepth && (pParams->nLADepth < 10 || pParams->nLADepth > 100))
     {
         if (bAlrShownHelp)
@@ -507,7 +531,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else
             PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -lad parameter, must be in range [10, 100]!"));
         return MFX_ERR_UNSUPPORTED;
-    }
+    } */
 
     if (pParams->SearchWindow < 0 || pParams->SearchWindow > 8)
     {
@@ -669,9 +693,8 @@ int main(int argc, char *argv[])
     Params.mbQpFile      = NULL;
     Params.bRepackPreencMV = false;
     Params.bMBSize = false;
-    Params.memType = D3D9_MEMORY; //only HW memory is supported
+    Params.memType = D3D9_MEMORY; //only HW memory is supported (ENCODE supports SW memory)
     Params.bUseHWLib = true;
-    Params.bLABRC    = false;
     Params.bRefType = MFX_B_REF_OFF; //default set to off
     Params.QP              = 26; //default qp value
     Params.SearchWindow    = 5;  //48x40 (48 SUs)
@@ -685,6 +708,9 @@ int main(int argc, char *argv[])
     Params.IntraSAD        = 0x02; // Haar transform
     Params.InterSAD        = 0x02; // Haar transform
     Params.NumMVPredictors = 1;
+    Params.GopOptFlag      = 0;
+    Params.CodecProfile    = 0;
+    Params.CodecLevel      = 0;
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
@@ -742,5 +768,16 @@ mfxStatus CheckOptions(sInputParams* pParams)
         fprintf(stderr, "Preenc doesn't support bff, use tff\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
+
+    if (!pParams->bENCODE && pParams->memType == SYSTEM_MEMORY) {
+        fprintf(stderr, "Only ENCODE supports SW memory\n");
+        sts = MFX_ERR_UNSUPPORTED;
+    }
+
+    if (!pParams->bENCODE && (pParams->CodecProfile || pParams->CodecLevel)) {
+        fprintf(stderr, "Codec profile and level are supported only by ENCODE\n");
+        sts = MFX_ERR_UNSUPPORTED;
+    }
+
     return sts;
 }
