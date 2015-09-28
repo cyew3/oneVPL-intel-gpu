@@ -1383,14 +1383,18 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         switch (pRefSurf->frameInfo.PicStruct)
         {
             case MFX_PICSTRUCT_PROGRESSIVE:
+            default:
                 m_pipelineParam[refIdx].filter_flags = VA_FRAME_PICTURE;
                 break;
+#if 0
+            // Composition always expect frames to be marked as progressive even if they are interlaced
             case MFX_PICSTRUCT_FIELD_TFF:
                 m_pipelineParam[refIdx].filter_flags = VA_TOP_FIELD;
                 break;
             case MFX_PICSTRUCT_FIELD_BFF:
                 m_pipelineParam[refIdx].filter_flags = VA_BOTTOM_FIELD;
                 break;
+#endif
         }
 
         m_pipelineParam[refIdx].filters  = m_filterBufs;
