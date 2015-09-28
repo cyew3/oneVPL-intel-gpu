@@ -105,6 +105,8 @@ public:
     // NOT implemented functions:
     virtual Status ReleaseBuffer(Ipp32s /*type*/)
     { return UMC_OK; };
+    virtual Status ReleaseAllBuffers()
+    { return UMC_OK; };
 
     // Following functions are absent in menlow!!!!!!!!!!!!!!!!!!!!!!
     virtual Status ExecuteExtensionBuffer(void* /*x*/) { return UMC_ERR_UNSUPPORTED;}

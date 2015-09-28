@@ -257,6 +257,17 @@ Status MFXD3D11Accelerator::EndFrame(void *handle)
 
 } //Status MFXD3D11Accelerator::EndFrame(void *handle)
 
+Status MFXD3D11Accelerator::ReleaseAllBuffers()
+{
+    for (Ipp32u j = 0; j < m_bufferOrder.size(); ++j)
+    {
+        Status s = ReleaseBuffer(m_bufferOrder[j]); 
+        if (s != UMC_OK)
+            return s;
+    }
+    return UMC_OK;
+}
+
 Status MFXD3D11Accelerator::ReleaseBuffer(Ipp32s type)
 {
     HRESULT hr = S_OK;

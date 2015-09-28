@@ -63,6 +63,7 @@ public:
     virtual UMC::Status SyncTask(Ipp32s index, void * error = NULL) { index; error; return UMC::UMC_ERR_UNSUPPORTED;}
     virtual UMC::Status QueryTaskStatus(Ipp32s , void *, void *) { return UMC::UMC_ERR_UNSUPPORTED;}
     
+    virtual UMC::Status ReleaseAllBuffers();
     virtual UMC::Status ReleaseBuffer(Ipp32s type);
     virtual UMC::Status EndFrame(void * handle = 0);
 

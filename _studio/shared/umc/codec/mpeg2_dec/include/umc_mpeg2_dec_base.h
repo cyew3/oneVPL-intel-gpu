@@ -380,7 +380,12 @@ public:
         Ipp32s GetAspectRatioW() {return m_ClipInfo.aspect_ratio_width;}
         Ipp32s GetAspectRatioH() {return m_ClipInfo.aspect_ratio_height;}
         Status DoDecodeSlices(Ipp32s threadID, int task_num);
-
+        Status SaveDecoderState();
+        Status RestoreDecoderState();
+        sFrameBuffer frameBuffer_backup;
+        Ipp32s b_curr_number_backup;
+        Ipp32s first_i_occure_backup;
+        Ipp32s frame_count_backup;
     protected:
 
         Status          UpdateFrameBuffer(int task_num);

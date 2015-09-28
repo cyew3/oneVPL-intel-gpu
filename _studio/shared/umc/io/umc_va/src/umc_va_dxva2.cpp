@@ -193,6 +193,17 @@ void* DXVA2Accelerator::GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **buf,
 
 //////////////////////////////////////////////////////////////
 
+Status DXVA2Accelerator::ReleaseAllBuffers()
+{
+    for (Ipp32u j = 0; j < m_bufferOrder.size(); ++j)
+    {
+        Status s = ReleaseBuffer(m_bufferOrder[j]); 
+        if (s != UMC_OK)
+            return s;
+    }
+    return UMC_OK;
+}
+
 Status DXVA2Accelerator::ReleaseBuffer(Ipp32s type)
 {
     HRESULT hr = S_OK;

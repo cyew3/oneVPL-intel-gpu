@@ -98,6 +98,17 @@ Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, IppVideoContext* vi
               | ((code >> (13-12)) & 0x3000);
             bit_rate_extension = (code >> 1) & 0xfff;
 
+            switch(sequenceHeader.level)
+            {
+                case  4:
+                case  6:
+                case  8:
+                case 10:
+                    break;
+                default:
+                    return UMC_ERR_INVALID_STREAM;
+            }
+
             GET_BITS(video->bs, 16, code)
 
             if (false == m_isFrameRateFromInit)
@@ -959,6 +970,25 @@ Status MPEG2VideoDecoderBase::DecodePicture()
     return (UMC_OK);
 }
 //$$$$$!!!!!
+
+Status MPEG2VideoDecoderBase::SaveDecoderState()
+{
+    frameBuffer_backup = frame_buffer;
+    b_curr_number_backup = sequenceHeader.b_curr_number;
+    first_i_occure_backup = sequenceHeader.first_i_occure;
+    frame_count_backup = sequenceHeader.frame_count;
+    return UMC_OK;
+}
+
+Status MPEG2VideoDecoderBase::RestoreDecoderState()
+{
+    frame_buffer = frameBuffer_backup;
+    sequenceHeader.b_curr_number = b_curr_number_backup;
+    sequenceHeader.first_i_occure = first_i_occure_backup;
+    sequenceHeader.frame_count = frame_count_backup;
+    return UMC_OK;
+}
+
 Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
 {
     Ipp32u          code;
@@ -1007,6 +1037,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
             break;
 
         default:
+            m_IsFrameSkipped = true;
             return UMC_ERR_INVALID_STREAM;
     }
 
@@ -1047,9 +1078,8 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
         PictureHeader[task_num].f_code[3] = PictureHeader[task_num].f_code[2];
         if(PictureHeader[task_num].f_code[0] == 0 || PictureHeader[task_num].f_code[2] == 0)
         {
-            //VM_ASSERT(PictureHeader[task_num].f_code[0] != 0 && PictureHeader[task_num].f_code[2] != 0);
-            isCorrupted = true;
-            //return UMC_ERR_INVALID_STREAM;
+            m_IsFrameSkipped = true;
+            return UMC_ERR_INVALID_STREAM;
         }
         pPic->r_size[0] = PictureHeader[task_num].f_code[0] - 1;
         pPic->r_size[1] = PictureHeader[task_num].f_code[1] - 1;
@@ -1061,10 +1091,10 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
         GET_1BIT(video->bs,PictureHeader[task_num].full_pel_forward_vector)
         GET_TO9BITS(video->bs, 3, PictureHeader[task_num].f_code[0])
         PictureHeader[task_num].f_code[1] = PictureHeader[task_num].f_code[0];
-        //VM_ASSERT(PictureHeader[task_num].f_code[0] != 0);
 
         if (PictureHeader[task_num].f_code[0] == 0)
         {
+            m_IsFrameSkipped = true;
             return UMC_ERR_INVALID_STREAM;
         }
 

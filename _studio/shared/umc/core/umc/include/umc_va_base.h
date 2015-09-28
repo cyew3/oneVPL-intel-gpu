@@ -327,6 +327,7 @@ public:
     virtual Status SyncTask(Ipp32s index, void * error = NULL) = 0;
     virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error) = 0;
     virtual Status ReleaseBuffer(Ipp32s type) = 0;   // release buffer
+    virtual Status ReleaseAllBuffers() = 0;
     virtual Status EndFrame     (void * handle = 0) = 0;          // end frame
 
     virtual bool IsIntelCustomGUID() const = 0;

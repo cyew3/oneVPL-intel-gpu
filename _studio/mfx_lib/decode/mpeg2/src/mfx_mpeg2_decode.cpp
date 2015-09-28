@@ -1216,10 +1216,13 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
                         break;
                 }
 
-                par->mfx.FrameInfo.Width  = (mfxU16)((par->mfx.FrameInfo.Width  & 0xfff)
+                par->mfx.FrameInfo.CropW  = (mfxU16)((par->mfx.FrameInfo.CropW  & 0xfff)
                                                       | ((code >> (15-12)) & 0x3000));
-                par->mfx.FrameInfo.Height = (mfxU16)((par->mfx.FrameInfo.Height & 0xfff)
+                par->mfx.FrameInfo.CropH = (mfxU16)((par->mfx.FrameInfo.CropH & 0xfff)
                                                       | ((code >> (13-12)) & 0x3000));
+
+                par->mfx.FrameInfo.Width = (par->mfx.FrameInfo.CropW + 15) & ~0x0f;
+                par->mfx.FrameInfo.Height = (par->mfx.FrameInfo.CropH + 15) & ~0x0f;
 
                 // 4k case
                 if (0 == par->mfx.FrameInfo.CropW)
@@ -2626,8 +2629,9 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
         if (8 < m_frame[m_frame_curr].DataLength)
         {
+            m_implUmc.SaveDecoderState();
             umcRes = m_implUmc.GetPictureHeader(&m_in[m_task_num], m_task_num, m_prev_task_num);
-            
+
             if (UMC::UMC_OK != umcRes)
             {
                 if (false == m_reset_done)
@@ -2746,9 +2750,18 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
             IsField = !m_implUmc.IsFramePictureStructure(m_task_num);
 
-            if (m_task_num > DPB && !IsField)
+            if (m_task_num >= DPB && !IsField)
             {
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
+                m_frame[m_frame_curr].DataLength = 0;
+                m_frame[m_frame_curr].DataOffset = 0;
+                m_frame_in_use[m_frame_curr] = false;
+
+                if (dec_field_count % 2 != 0)
+                    dec_field_count += 1;
+
+                m_implUmc.RestoreDecoderState();
+
+                return MFX_ERR_MORE_DATA;
             }
 
             if ((false == m_isDecodedOrder && maxNumFrameBuffered <= (Ipp32u)(m_implUmc.GetRetBufferLen())) ||
@@ -2815,7 +2828,17 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             umcRes = m_implUmc.ProcessRestFrame(m_task_num);
             if (UMC::UMC_OK != umcRes)
             {
-                return MFX_ERR_UNKNOWN;
+                m_FrameAllocator->DecreaseReference(mid[curr_index]);
+                m_frame[m_frame_curr].DataLength = 0;
+                m_frame[m_frame_curr].DataOffset = 0;
+                m_frame_in_use[m_frame_curr] = false;
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+                umcRes = m_implUmc.pack_w.m_va->EndFrame();
+                if (umcRes != UMC::UMC_OK)
+                    return MFX_ERR_LOCK_MEMORY;
+#endif
+                m_implUmc.RestoreDecoderState();
+                return MFX_ERR_MORE_DATA;
             }
 
             if (true == IsField)
@@ -2838,10 +2861,6 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
                 umcRes = m_implUmc.DoDecodeSlices(0, m_task_num);
 
-                if (UMC::UMC_OK != umcRes && UMC::UMC_ERR_NOT_ENOUGH_DATA != umcRes)
-                {
-                    return MFX_ERR_UNKNOWN;
-                }
 
             }
 
@@ -2859,13 +2878,23 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             }
             else
             {
-                    umcRes = m_implUmc.PostProcessFrame(display_index, m_task_num);
+                umcRes = m_implUmc.PostProcessFrame(display_index, m_task_num);
 
-                if(UMC::UMC_ERR_DEVICE_FAILED == umcRes)
-                    return MFX_ERR_DEVICE_FAILED;
-
-                if(UMC::UMC_ERR_FAILED == umcRes)
-                    return MFX_ERR_UNKNOWN;
+                if (umcRes != UMC::UMC_OK && umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA)
+                {
+                    m_FrameAllocator->DecreaseReference(mid[curr_index]);
+                    m_frame[m_frame_curr].DataLength = 0;
+                    m_frame[m_frame_curr].DataOffset = 0;
+                    m_frame_in_use[m_frame_curr] = false;
+                    m_implUmc.UnLockTask(m_task_num);
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+                    umcRes = m_implUmc.pack_w.m_va->EndFrame();
+                    if (umcRes != UMC::UMC_OK)
+                        return MFX_ERR_LOCK_MEMORY;
+#endif
+                    m_implUmc.RestoreDecoderState();
+                    return MFX_ERR_MORE_DATA;
+                }
 
                 m_frame[m_frame_curr].DataLength = 0;
                 m_frame[m_frame_curr].DataOffset = 0;
@@ -3892,13 +3921,32 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
                     code = (ptr[4] << 24) | (ptr[5] << 16) | (ptr[6] << 8) | ptr[7];
                     Ipp32u progressive_seq = (code >> 19) & 1;
 
-                    Width  = (mfxU16)((Width  & 0xfff) | ((code >> (15-12)) & 0x3000));
-                    Height = (mfxU16)((Height & 0xfff) | ((code >> (13-12)) & 0x3000));
-
+                    CropW = (mfxU16)((CropW  & 0xfff) | ((code >> (15-12)) & 0x3000));
+                    CropH = (mfxU16)((CropH & 0xfff) | ((code >> (13-12)) & 0x3000));
+                    Width = (CropW + 15) & ~0x0f;
+                    Height = (CropH + 15) & ~0x0f;
                     if(0 == progressive_seq)
                     {
                         Height = (CropH + 31) & ~(31);
                     }
+
+                    mfxU8 profile_and_level = (code >> 20) & 0xff;
+//                    mfxU8 profile = (profile_and_level >> 4) & 0x7;
+                    mfxU8 level = profile_and_level & 0xf;
+
+                    switch(level)
+                    {
+                        case  4:
+                        case  6:
+                        case  8:
+                        case 10:
+                            break;
+                        default:
+                            MoveBitstreamData(*in, (mfxU32)(curr - head) + 4);
+                            memset(m_last_bytes, 0, NUM_REST_BYTES);
+                            return MFX_ERR_MORE_DATA;
+                    }
+
                 }
             }
             else

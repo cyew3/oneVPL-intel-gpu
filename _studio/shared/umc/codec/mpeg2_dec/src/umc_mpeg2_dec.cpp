@@ -1414,6 +1414,7 @@ Status MPEG2VideoDecoderBase::PostProcessFrame(int display_index, int task_num)
 
       if(pack_w.va_mode != VA_NO)
       {
+          bool executeCalled = false;
           if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo && pack_w.va_mode == VA_VLD_W)
           {
              // printf("save data at the end of frame\n");
@@ -1668,6 +1669,13 @@ mm:
                   return UMC_ERR_NOT_ENOUGH_BUFFER;
 
               umcRes = pack_w.m_va->Execute();
+              executeCalled = true;
+              if (UMC_OK != umcRes)
+                  return UMC_ERR_DEVICE_FAILED;
+          }
+          if (!executeCalled)
+          {
+              umcRes = pack_w.m_va->ReleaseAllBuffers();
               if (UMC_OK != umcRes)
                   return UMC_ERR_DEVICE_FAILED;
           }

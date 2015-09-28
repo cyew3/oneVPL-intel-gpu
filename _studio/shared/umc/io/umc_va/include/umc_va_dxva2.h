@@ -93,6 +93,7 @@ public:
     virtual Status SyncTask(Ipp32s index, void * error = NULL) { index; error; return UMC_ERR_UNSUPPORTED;}
     virtual Status QueryTaskStatus(Ipp32s , void *, void * ) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ReleaseBuffer(Ipp32s type);
+    virtual Status ReleaseAllBuffers();
     virtual Status EndFrame(void * handle = 0);
 
     virtual bool IsIntelCustomGUID() const;

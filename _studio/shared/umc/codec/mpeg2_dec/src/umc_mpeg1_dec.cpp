@@ -173,6 +173,8 @@ Status MPEG2VideoDecoderBase::DecodeSlice_MPEG1(IppVideoContext *video, int task
     {
       GET_TO9BITS(video->bs, 5, video->cur_q_scale);
       VM_ASSERT(video->cur_q_scale >= 1);
+      if (video->cur_q_scale < 1)
+          return UMC_ERR_INVALID_STREAM;
     }
 
     video->offset_l = (video->mb_row*pitch_l + video->mb_col) << 4;
