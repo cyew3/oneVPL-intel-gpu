@@ -471,7 +471,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     if (m_vParam.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
     {
         //currently MDF do not support BGR, doesn't matter what format we set for internal frame, result will be the same
-        request.Info.FourCC = MFX_FOURCC_RGB4;
+        request.Info.FourCC = (m_pCore->GetVAType() == MFX_HW_VAAPI)?MFX_FOURCC_BGR4:MFX_FOURCC_RGB4;
         request.Type = MFX_MEMTYPE_VIDEO_INT;
 #if defined(LINUX)
         request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET; // required for libva especially for RGB32
@@ -899,8 +899,12 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
     {
         mfxFrameData dstSurf = { 0 };
         bool bExternalFrameLocked = false;
+
         //no MDF implementation for linux yet
-        if(enc.m_pCore->GetVAType() == MFX_HW_VAAPI){
+        if(enc.m_pCore->GetVAType() == MFX_HW_VAAPI )
+        {
+            enc.m_pCore->LockFrame(enc.m_raw.mids[task.m_idx], &dstSurf);
+            MFX_CHECK(dstSurf.R != 0, MFX_ERR_LOCK_MEMORY);
             if (nativeSurf->Data.B == 0)
             {
                 enc.m_pCore->LockExternalFrame(nativeSurf->Data.MemId, &nativeSurf->Data);
@@ -938,11 +942,15 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
         else
         {
             mfxFrameSurface1 dst;
+            mfxU16 src_memtype;
             dstSurf.MemId = enc.m_raw.mids[task.m_idx];
             dst.Info = nativeSurf->Info;
             dst.Info.FourCC = MFX_FOURCC_BGR4;
             dst.Data = dstSurf;
-            sts = enc.m_pCore->DoFastCopyWrapper(&dst,MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_INTERNAL_FRAME,nativeSurf, MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_EXTERNAL_FRAME);
+            src_memtype = (mfxU16)((nativeSurf->Data.B == 0)?MFX_MEMTYPE_DXVA2_DECODER_TARGET:MFX_MEMTYPE_SYSTEM_MEMORY);
+            src_memtype |=MFX_MEMTYPE_EXTERNAL_FRAME;
+            sts = enc.m_pCore->DoFastCopyWrapper(&dst,MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_INTERNAL_FRAME,nativeSurf, 
+                src_memtype);
             MFX_CHECK_STS(sts);
         }
         sts = enc.m_pCore->GetFrameHDL(enc.m_raw.mids[task.m_idx], pSurfaceHdl);

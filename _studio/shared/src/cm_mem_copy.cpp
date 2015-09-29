@@ -435,7 +435,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoGPU(   CmSurface2D* pSurfaceIn,
         return MFX_ERR_NULL_PTR;
     }
     
-    hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopySwap_2DTo2D_32x32), m_pCmKernel);
+    hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SurfaceCopySwap_2DTo2D_32x32), m_pCmKernel);
     CHECK_CM_HR(hr);
     
     MFX_CHECK(m_pCmKernel, MFX_ERR_DEVICE_FAILED);
@@ -445,7 +445,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoGPU(   CmSurface2D* pSurfaceIn,
     hr = pSurfaceIn->GetIndex( pSurf2DIndexCM_In );
     CHECK_CM_HR(hr);
 
-    threadWidth = ( UINT )ceil( ( double )width/BLOCK_PIXEL_WIDTH/4 );
+    threadWidth = ( UINT )ceil( ( double )width/BLOCK_PIXEL_WIDTH );
     threadHeight = ( UINT )ceil( ( double )height/BLOCK_HEIGHT/INNER_LOOP );
     threadNum = threadWidth * threadHeight;
     hr = m_pCmKernel->SetThreadCount( threadNum );
@@ -471,8 +471,6 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoGPU(   CmSurface2D* pSurfaceIn,
     hr = m_pCmDevice->DestroyTask(pGPUCopyTask);
     CHECK_CM_HR(hr);
     hr = m_pCmDevice->DestroyThreadSpace(pTS);
-    CHECK_CM_HR(hr);
-    hr = m_pCmDevice->DestroyBufferUP(pCMBufferUP);
     CHECK_CM_HR(hr);
 
     hr = pInternalEvent->WaitForTaskFinished();
