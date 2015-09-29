@@ -165,6 +165,8 @@ Capturer* CreateSWCapturer(mfxCoreInterface* core);
 DXGI_FORMAT MfxFourccToDxgiFormat(const mfxU32& fourcc);
 D3DFORMAT MfxFourccToD3dFormat(const mfxU32& fourcc);
 
+bool IsWin10orLater();
+
 #define MAX_DISPLAYS 32
 struct dispDescr
 {

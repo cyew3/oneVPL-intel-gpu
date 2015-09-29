@@ -13,6 +13,8 @@ File Name: mfx_screen_capture_d3d9.cpp
 #include "mfx_screen_capture_d3d9.h"
 #include "mfx_utils.h"
 
+#include "Windows.h"
+
 namespace MfxCapture
 {
 
@@ -36,6 +38,9 @@ D3D9_Capturer::~D3D9_Capturer()
 
 mfxStatus D3D9_Capturer::CreateVideoAccelerator( mfxVideoParam const & par, const mfxU32 targetId)
 {
+    if(IsWin10orLater())
+        return MFX_ERR_UNSUPPORTED;
+
     if(targetId)
     {
         //dispDescr disp = GetTargetId(dispIndex);

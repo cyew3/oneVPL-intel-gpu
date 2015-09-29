@@ -606,4 +606,44 @@ mfxStatus OwnResizeFilter::GetParam(mfxFrameInfo& in, mfxFrameInfo& out)
     return MFX_ERR_NONE;
 }
 
+bool GetOsVersion(RTL_OSVERSIONINFOEXW* pk_OsVer)
+{
+    if(!pk_OsVer)
+        return false;
+    typedef LONG (WINAPI* tRtlGetVersion)(RTL_OSVERSIONINFOEXW*);
+
+    memset(pk_OsVer, 0, sizeof(RTL_OSVERSIONINFOEXW));
+    pk_OsVer->dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
+
+    HMODULE h_NtDll = GetModuleHandleW(L"ntdll.dll");
+    if (!h_NtDll)
+        return false; //should never happen
+    tRtlGetVersion f_RtlGetVersion = (tRtlGetVersion)GetProcAddress(h_NtDll, "RtlGetVersion");
+
+    if (!f_RtlGetVersion)
+        return false; //should never happen
+
+    LONG Status = f_RtlGetVersion(pk_OsVer);
+    if(Status)
+        return false;
+    else
+        return true;
+}
+
+bool IsWin10orLater()
+{
+    RTL_OSVERSIONINFOEXW ver = {};
+    if( !GetOsVersion(&ver) )
+        return false;
+
+    if(ver.dwMajorVersion < 6)
+        return false;
+
+    //if > Win8.1
+    if(ver.dwMajorVersion > 6 || ver.dwMinorVersion > 3)
+        return true;
+
+    return false;
+}
+
 } //namespace MfxCapture
