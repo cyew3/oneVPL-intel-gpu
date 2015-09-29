@@ -17,7 +17,8 @@ Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 #define VAAPI_X_DEFAULT_DISPLAY ":0.0"
 
 X11LibVA::X11LibVA(void)
-    : m_display(0)
+    : CLibVA(MFX_LIBVA_X11)
+    , m_display(0)
 {
     VAStatus va_res = VA_STATUS_SUCCESS;
     mfxStatus sts = MFX_ERR_NONE;

@@ -275,6 +275,9 @@ mfxStatus CVAAPIDeviceDRM::Init(mfxHDL hWindow, mfxU16 nViews, mfxU32 nAdapterNu
         return MFX_ERR_NONE;
     }
     if (1 == nViews) {
+        if (m_DRMLibVA.getBackendType() == MFX_LIBVA_DRM_RENDERNODE) {
+          return MFX_ERR_NONE;
+        }
         mfxI32 * monitorType = (mfxI32*)hWindow;
         if (!monitorType) return MFX_ERR_INVALID_VIDEO_PARAM;
         try {

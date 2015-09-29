@@ -787,7 +787,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             /* for VPP comp with rendering we have to use ext allocator */
 #ifdef LIBVA_SUPPORT
-            InputParams.libvaBackend = MFX_LIBVA_X11;
+            InputParams.libvaBackend = MFX_LIBVA_DRM;
 #endif
             InputParams.bUseOpaqueMemory = false;
 
@@ -818,6 +818,12 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 msdk_printf(MSDK_STRING("WARNING: internal allocators were disabled because of composition+rendering requirement \n\n"));
             }
         }
+#if defined(LIBVA_X11_SUPPORT)
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-rx11")))
+        {
+            InputParams.libvaBackend = MFX_LIBVA_X11;
+        }
+#endif
 #if defined(LIBVA_DRM_SUPPORT)
         else if (0 == msdk_strncmp(argv[i], MSDK_STRING("-rdrm"), 5))
         {

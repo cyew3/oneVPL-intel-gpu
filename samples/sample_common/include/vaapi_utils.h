@@ -276,14 +276,17 @@ class CLibVA
 public:
     virtual ~CLibVA(void) {};
 
+    inline int getBackendType() { return m_type; }
     VADisplay GetVADisplay(void) { return m_va_dpy; }
 
     const MfxLoader::VA_Proxy m_libva;
 
 protected:
-    CLibVA(void) :
-        m_va_dpy(NULL)
+    CLibVA(int type)
+      : m_type(type)
+      , m_va_dpy(NULL)
     {}
+    int m_type;
     VADisplay m_va_dpy;
 private:
     DISALLOW_COPY_AND_ASSIGN(CLibVA);

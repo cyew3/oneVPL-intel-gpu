@@ -122,7 +122,8 @@ static mfxU32 mfx_init_adapters(struct mfx_disp_adapters** p_adapters)
 }
 
 DRMLibVA::DRMLibVA(int type)
-    : m_fd(-1)
+    : CLibVA(type)
+    , m_fd(-1)
 {
     const mfxU32 IntelVendorID = 0x8086;
     //the first Intel adapter is only required now, the second - in the future
