@@ -190,6 +190,11 @@ typedef struct {
     mfxU16 height;
 } InputSubstream;
 
+typedef struct {
+    mfxU16 Y;
+    mfxU16 U;
+    mfxU16 V;
+} Background;
 
 /* total number streams for vpp composition is 64 now!
  * This is means 1 primary and 63 sub-streams */
@@ -432,6 +437,9 @@ public:
         m_nVPPSurfNumOut = 0;
         m_Arguments = pa;
         m_pVPPSurfacesIn = 0;
+        m_Color.Y = 16;
+        m_Color.U = 128;
+        m_Color.V = 128;
 
         for (int i = 0; i < MAX_INPUT_STREAMS; i++)
         {
@@ -671,10 +679,9 @@ protected:
         /* if input streams in NV12 format background color should be in YUV format too
          * The same for RGB4 input, background color should be in ARGB format
          * */
-        /* back color in YUV */
-        m_VPPComp.Y = 0x10;
-        m_VPPComp.U = 0x80;
-        m_VPPComp.V = 0x80;
+        m_VPPComp.Y = m_Color.Y;
+        m_VPPComp.U = m_Color.U;
+        m_VPPComp.V = m_Color.V;
         for (int i = 0; i < m_nStreams; ++i)
         {
             m_VPPComp.InputStream[i].DstX = atoi(m_Params[i]["dstx"].c_str());
@@ -798,54 +805,66 @@ protected:
             trim(value);
 
             if ( key.compare("stream") == 0 || key.compare("primarystream") == 0){
-                map<string, string> params = ParsePar(par, value);
-                m_Params[m_nStreams] = params;
-                if (m_Arguments->scc == kNV12)
+                if (value.find("background") != string::npos)
                 {
-                    m_Streams[m_nStreams].FourCC         = MFX_FOURCC_NV12;
-                    m_Streams[m_nStreams].ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
-                }
-                else if (m_Arguments->scc == kYV12)
-                {
-                    m_Streams[m_nStreams].FourCC         = MFX_FOURCC_YV12;
-                    m_Streams[m_nStreams].ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+                    if (!sscanf(value.c_str(), "background(%d,%d,%d)", &m_Color.Y, &m_Color.U, &m_Color.V))
+                    {
+                        m_Color.Y = 16;
+                        m_Color.U = 128;
+                        m_Color.V = 128;
+                    }
                 }
                 else
                 {
-                    m_Streams[m_nStreams].FourCC         = MFX_FOURCC_RGB4;
-                }
+                    map<string, string> params = ParsePar(par, value);
+                    m_Params[m_nStreams] = params;
+                    if (m_Arguments->scc == kNV12)
+                    {
+                        m_Streams[m_nStreams].FourCC         = MFX_FOURCC_NV12;
+                        m_Streams[m_nStreams].ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+                    }
+                    else if (m_Arguments->scc == kYV12)
+                    {
+                        m_Streams[m_nStreams].FourCC         = MFX_FOURCC_YV12;
+                        m_Streams[m_nStreams].ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+                    }
+                    else
+                    {
+                        m_Streams[m_nStreams].FourCC         = MFX_FOURCC_RGB4;
+                    }
 
-                if (m_nStreams == 0)
-                    m_Arguments->frames_to_process = atoi(params["frames"].c_str());
+                    if (m_nStreams == 0)
+                        m_Arguments->frames_to_process = atoi(params["frames"].c_str());
 
-                m_Streams[m_nStreams].CropX          = (mfxU16) atoi(params["cropx"].c_str());
-                m_Streams[m_nStreams].CropY          = (mfxU16) atoi(params["cropy"].c_str());
-                m_Streams[m_nStreams].CropW          = (mfxU16) atoi(params["cropw"].c_str());
-                m_Streams[m_nStreams].CropH          = (mfxU16) atoi(params["croph"].c_str());
-                m_Streams[m_nStreams].PicStruct      = MFX_PICSTRUCT_PROGRESSIVE;
-                m_Streams[m_nStreams].FrameRateExtN  = 30;
-                m_Streams[m_nStreams].FrameRateExtD  = 1;
-                // width must be a multiple of 16
-                // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
-                m_Streams[m_nStreams].Width  = (mfxU16) MSDK_ALIGN16(atoi(params["width"].c_str()));
-                m_Streams[m_nStreams].Height = (MFX_PICSTRUCT_PROGRESSIVE == m_Streams[m_nStreams].PicStruct)?
-                                     (mfxU16) MSDK_ALIGN16(atoi(params["height"].c_str())) :
-                                     (mfxU16) MSDK_ALIGN32(atoi(params["height"].c_str()));
+                    m_Streams[m_nStreams].CropX          = (mfxU16) atoi(params["cropx"].c_str());
+                    m_Streams[m_nStreams].CropY          = (mfxU16) atoi(params["cropy"].c_str());
+                    m_Streams[m_nStreams].CropW          = (mfxU16) atoi(params["cropw"].c_str());
+                    m_Streams[m_nStreams].CropH          = (mfxU16) atoi(params["croph"].c_str());
+                    m_Streams[m_nStreams].PicStruct      = MFX_PICSTRUCT_PROGRESSIVE;
+                    m_Streams[m_nStreams].FrameRateExtN  = 30;
+                    m_Streams[m_nStreams].FrameRateExtD  = 1;
+                    // width must be a multiple of 16
+                    // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
+                    m_Streams[m_nStreams].Width  = (mfxU16) MSDK_ALIGN16(atoi(params["width"].c_str()));
+                    m_Streams[m_nStreams].Height = (MFX_PICSTRUCT_PROGRESSIVE == m_Streams[m_nStreams].PicStruct)?
+                                         (mfxU16) MSDK_ALIGN16(atoi(params["height"].c_str())) :
+                                         (mfxU16) MSDK_ALIGN32(atoi(params["height"].c_str()));
 
-                // We need to save real sizes for correct reading from input files
-                m_RealWidths[m_nStreams] = atoi(params["width"].c_str());
-                m_RealHeights[m_nStreams] = atoi(params["height"].c_str());
+                    // We need to save real sizes for correct reading from input files
+                    m_RealWidths[m_nStreams] = atoi(params["width"].c_str());
+                    m_RealHeights[m_nStreams] = atoi(params["height"].c_str());
 
-                /* Update maximal Width & Height */
-                if (m_Arguments->maxWidth < m_Streams[m_nStreams].Width)
-                    m_Arguments->maxWidth = m_Streams[m_nStreams].Width;
-                if (m_Arguments->maxHeight < m_Streams[m_nStreams].Height)
-                    m_Arguments->maxHeight = m_Streams[m_nStreams].Height;
+                    /* Update maximal Width & Height */
+                    if (m_Arguments->maxWidth < m_Streams[m_nStreams].Width)
+                        m_Arguments->maxWidth = m_Streams[m_nStreams].Width;
+                    if (m_Arguments->maxHeight < m_Streams[m_nStreams].Height)
+                        m_Arguments->maxHeight = m_Streams[m_nStreams].Height;
 
-                ++m_nStreams;
-                if ( m_nStreams > MAX_INPUT_STREAMS )
-                {
-                    return MFX_ERR_UNKNOWN;
+                    ++m_nStreams;
+                    if ( m_nStreams > MAX_INPUT_STREAMS )
+                    {
+                        return MFX_ERR_UNKNOWN;
+                    }
                 }
             }
         }
@@ -885,6 +904,7 @@ private:
     mfxExtBuffer       * m_ExtBuffer[1];
     mfxU16               m_RealWidths[MAX_INPUT_STREAMS];
     mfxU16               m_RealHeights[MAX_INPUT_STREAMS];
+    Background           m_Color;
 };
 
 int main(int argc, char *argv[])
