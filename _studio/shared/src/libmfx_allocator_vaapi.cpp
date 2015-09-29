@@ -193,9 +193,10 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                 surfaceAttrib[attribCnt++].value.value.i = va_fourcc;
 
 /*
- *  Enable this hint as required for creating RGB32 surface for MJPEG
+ *  Enable this hint as required for creating RGB32 surface for MJPEG.
  */
-                if ( request->Type & MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET )
+                if ((request->Type & MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET) 
+                 && ((VA_FOURCC_ARGB == va_fourcc) || (VA_FOURCC_ABGR == va_fourcc)))
                 {
               //  Input Attribute Usage Hint
                     surfaceAttrib[attribCnt].flags           = VA_SURFACE_ATTRIB_SETTABLE;

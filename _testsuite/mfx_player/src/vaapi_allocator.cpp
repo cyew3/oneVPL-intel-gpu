@@ -141,7 +141,8 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameSurface1 * surf)
         format               = va_fourcc;
 
         if ((fourcc == MFX_FOURCC_VP8_NV12) ||
-            (MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET & surf->Data.MemType))
+            ((MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET & surf->Data.MemType) 
+            && ((fourcc == MFX_FOURCC_RGB4) || (fourcc == MFX_FOURCC_BGR4))))
         {
 /*
  *  special configuration for NV12 surf allocation for VP8 hybrid encoder and
@@ -249,7 +250,8 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             format               = va_fourcc;
 
             if ((fourcc == MFX_FOURCC_VP8_NV12) ||
-                (MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET & request->Type))
+                ((MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET & request->Type) 
+                && ((fourcc == MFX_FOURCC_RGB4) || (fourcc == MFX_FOURCC_BGR4))))
             {
 /*
  *  special configuration for NV12 surf allocation for VP8 hybrid encoder and
