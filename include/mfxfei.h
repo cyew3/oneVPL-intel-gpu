@@ -68,7 +68,7 @@ typedef struct {
     mfxU32  reserved[13];
     mfxU32  NumMBAlloc; /* size of allocated memory in number of macroblocks */
 
-    struct  mfxMB{
+    struct  mfxExtFeiPreEncMVPredictorsMB {
         mfxI16Pair MV[2]; /* 0 for L0 and 1 for L1 */
     } *MB;
 } mfxExtFeiPreEncMVPredictors;
@@ -88,7 +88,7 @@ typedef struct {
     mfxU32  reserved[13];
     mfxU32  NumMBAlloc;
 
-    struct  mfxMB{
+    struct  mfxExtFeiPreEncMVMB {
         mfxI16Pair MV[16][2];
     } *MB;
 } mfxExtFeiPreEncMV;
@@ -98,7 +98,7 @@ typedef struct {
     mfxU32 reserved0[13];
     mfxU32  NumMBAlloc;
 
-    struct  mfxMB{
+    struct  mfxExtFeiPreEncMBStatMB {
         struct  {
             mfxU16  BestDistortion;
             mfxU16  Mode ;
@@ -157,7 +157,7 @@ typedef struct {
     mfxU32  reserved[13];
     mfxU32  NumMBAlloc; /* size of allocated memory in number of macroblocks */
 
-    struct  mfxMB{
+    struct  mfxExtFeiEncMVPredictorsMB {
         struct {
             mfxU8   RefL0: 4;
             mfxU8   RefL1: 4;
@@ -172,7 +172,7 @@ typedef struct {
     mfxU32  reserved[13];
     mfxU32  NumMBAlloc;
 
-    struct  mfxMB{
+    struct  mfxExtFeiEncMBCtrlMB {
         mfxU32    ForceToIntra     : 1;
         mfxU32    ForceToSkip      : 1;
         mfxU32    ForceToNoneSkip  : 1;
@@ -207,7 +207,7 @@ typedef struct {
     mfxU32  reserved[13];
     mfxU32  NumMBAlloc;
 
-    struct  mfxMB{
+    struct  mfxExtFeiEncMVMB {
         mfxI16Pair MV[16][2]; /* first index is block (4x4 pixels) number, second is 0 for L0 and 1 for L1 */
     } *MB;
 } mfxExtFeiEncMV;
@@ -217,7 +217,7 @@ typedef struct {
     mfxU32  reserved[13];
     mfxU32  NumMBAlloc;
 
-    struct mfxMB{
+    struct mfxExtFeiEncMBStatMB {
         mfxU16  InterDistortion[16];
         mfxU16  BestInterDistortion;
         mfxU16  BestIntraDistortion;

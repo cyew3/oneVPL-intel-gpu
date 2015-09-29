@@ -178,7 +178,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMV
     return str;
 }
 
-std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMVPredictors::mfxMB &_struct)
+std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB &_struct)
 {
     std::string str;
 
@@ -236,7 +236,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
     return str;
 }
 
-std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMBCtrl::mfxMB &_struct)
+std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMBCtrl::mfxExtFeiEncMBCtrlMB &_struct)
 {
     std::string str;
 
@@ -301,7 +301,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
     return str;
 }
 
-std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMBStat::mfxMB &_struct)
+std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMBStat::mfxExtFeiEncMBStatMB &_struct)
 {
     std::string str;
 

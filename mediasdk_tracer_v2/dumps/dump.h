@@ -466,13 +466,13 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtFeiPreEncMBStat);
     DEFINE_DUMP_FUNCTION(mfxExtFeiEncFrameCtrl);
     DEFINE_DUMP_FUNCTION(mfxExtFeiEncMVPredictors);
-    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMVPredictors::mfxMB);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB);
     DEFINE_DUMP_FUNCTION(mfxExtFeiEncQP);
     DEFINE_DUMP_FUNCTION(mfxExtFeiEncMBCtrl);
-    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMBCtrl::mfxMB);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMBCtrl::mfxExtFeiEncMBCtrlMB);
     DEFINE_DUMP_FUNCTION(mfxExtFeiEncMV);
     DEFINE_DUMP_FUNCTION(mfxExtFeiEncMBStat);
-    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMBStat::mfxMB);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiEncMBStat::mfxExtFeiEncMBStatMB);
     DEFINE_DUMP_FUNCTION(mfxFeiPakMBCtrl);
     DEFINE_DUMP_FUNCTION(mfxExtFeiPakMBCtrl);
     DEFINE_DUMP_FUNCTION(mfxExtFeiParam);
