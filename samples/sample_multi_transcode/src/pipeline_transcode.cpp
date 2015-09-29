@@ -407,15 +407,21 @@ mfxStatus CTranscodingPipeline::PreEncPreInit(sInputParams *pParams)
 }
 
 mfxVideoParam CTranscodingPipeline::GetDecodeParam() {
-    if (m_pmfxVPP.get())
+    if (m_bIsVpp)
+     {
+         mfxVideoParam tmp = m_mfxDecParams;
+         tmp.mfx.FrameInfo = m_mfxVppParams.vpp.Out;
+         return tmp;
+     }
+    else if (m_bIsPlugin)
     {
         mfxVideoParam tmp = m_mfxDecParams;
-        tmp.mfx.FrameInfo = m_mfxVppParams.vpp.Out;
+        tmp.mfx.FrameInfo = m_mfxPluginParams.mfx.FrameInfo;
         return tmp;
     }
 
-    return m_mfxDecParams;
-};
+     return m_mfxDecParams;
+ };
 // 1 ms provides better result in range [0..5] ms
 enum
 {

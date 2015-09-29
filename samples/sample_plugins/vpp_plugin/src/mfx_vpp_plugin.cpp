@@ -513,6 +513,11 @@ mfxStatus MFXVideoVPPPlugin::RunPlugin(mfxFrameSurface1 *in, mfxFrameSurface1 *o
         // And ProcessFrameAsync get pointers to mfxHDL objects. It is required for MSDK internal task dependency tracking.
         // So array of mfxFrameSurface1 pointers can be transferred into user plugin.
         sts = MFXVideoUSER_ProcessFrameAsync(m_session, &h1, 1, &h2, 1, &local_syncp);
+        if (!sts)
+        {
+            *syncp = local_syncp;
+        }
+
         pOutSurface->Info.PicStruct = in->Info.PicStruct; // plugin has to passthrough the picstruct parameter if it is in the transcoding pipeline
 
         if (MFX_WRN_DEVICE_BUSY == sts)
