@@ -1175,6 +1175,11 @@ void H265CU<PixType>::InitCu(
         for (Ipp32u i = 0; i < 4; i++) {
             m_costStat[m_ctbAddr].cost[i] = m_costStat[m_ctbAddr].num[i] = 0;
         }
+
+        // zero initialize out of picture TUs
+        if (m_ctbPelX + m_par->MaxCUSize > m_par->Width || m_ctbPelY + m_par->MaxCUSize > m_par->Height) {
+            memset(m_data, 0, m_par->NumPartInCU);
+        }
     }
 
     // Setting neighbor CU
