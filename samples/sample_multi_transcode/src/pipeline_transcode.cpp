@@ -953,24 +953,38 @@ mfxStatus CTranscodingPipeline::Encode()
          * SYNC have not done by driver !!! */
         if (m_nVPPCompEnable == VppCompOnly)
         {
-            ExtendedBS *pBitstreamEx_temp  = m_BSPool.front();
-            // get result coded stream
-            sts = m_pmfxSession->SyncOperation(pBitstreamEx_temp->Syncp, MSDK_WAIT_INTERVAL);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            if(m_BSPool.size())
+            {
+                ExtendedBS *pBitstreamEx_temp  = m_BSPool.front();
+
+                // get result coded stream
+                if(VppExtSurface.pSurface)
+                {
+                    sts = m_pmfxSession->SyncOperation(VppExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 #if defined(_WIN32) || defined(_WIN64)
-            sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, m_pMFXAllocator);
+                    sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, m_pMFXAllocator);
 #else
-            sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, NULL);
+                    sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, NULL);
 #endif
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                }
 
-            UnPreEncAuxBuffer(pBitstreamEx_temp->pCtrl);
+                UnPreEncAuxBuffer(pBitstreamEx_temp->pCtrl);
 
-            pBitstreamEx_temp->Bitstream.DataLength = 0;
-            pBitstreamEx_temp->Bitstream.DataOffset = 0;
+                pBitstreamEx_temp->Bitstream.DataLength = 0;
+                pBitstreamEx_temp->Bitstream.DataOffset = 0;
 
-            m_BSPool.pop_front();
-            m_pBSStore->Release(pBitstreamEx_temp);
+                m_BSPool.pop_front();
+                m_pBSStore->Release(pBitstreamEx_temp);
+            }
+
+            //--- If there's no data coming out from VPP and there's no data coming from decoders (isQuit==true),
+            // then we should quit, otherwise we may stuck here forever (cause there's no new data coming)
+            if(!VppExtSurface.pSurface && isQuit)
+            {
+                break;
+            }
         }
 
         if (m_nVPPCompEnable != VppCompOnly)
