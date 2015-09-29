@@ -146,7 +146,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\mfx_lib\genx\copy_kernels\include;..\shared\umc\codec\vc1_dec\include;..\mfx_lib\fei\include;..\shared\umc\codec\color_space_converter\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\shared\umc\io\umc_va\include;$(MfxIppIncludeDir);$(MEDIASDK_ROOT)/CMRT/runtime/include;..\mfx_lib\shared\include;..\mfx_lib\scheduler\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\codec\me\include;..\shared\umc\io\media_buffers\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\vpp\include;..\shared\umc\codec\brc\include;..\mfx_lib\plugin\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;_WIN64;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VPP_PLUGIN;MFX_RT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;_WIN64;WIN64;_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_VPP_PLUGIN;MFX_RT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>

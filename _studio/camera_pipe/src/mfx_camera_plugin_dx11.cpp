@@ -243,17 +243,16 @@ mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
         vm_time_sleep(10);
     }
 
-    if ( MFX_FOURCC_ARGB16 == pParam->surf_out->Info.FourCC )
-    {
-        /* TODO: DDI natively supports ABGR format only. In case of ARGB is requested,
-           need to do R<->B swapping using CM Kernel */
-    }
-
     if ( m_systemMemOut )
     {
         mfxFrameSurface1 OutSurf = {0};
         OutSurf.Data.MemId = m_OutSurfacePool->mids[pParam->surfOutIndex];
         OutSurf.Info       = pParam->surf_out->Info;
+        if ( MFX_FOURCC_ARGB16 == OutSurf.Info.FourCC )
+        {
+            // For ARGB16 out need to do R<->B swapping.
+            OutSurf.Info.FourCC = MFX_FOURCC_ABGR16;
+        }
         OutSurf.Info.Width  = OutSurf.Info.CropW;
         OutSurf.Info.Height = OutSurf.Info.CropH;
         // [1] Copy from system mem to the internal video frame

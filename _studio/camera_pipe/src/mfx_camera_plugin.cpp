@@ -395,7 +395,9 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             }
         }
 
-        if (out->vpp.Out.FourCC != MFX_FOURCC_RGB4 && out->vpp.Out.FourCC != MFX_FOURCC_ARGB16)
+        if (out->vpp.Out.FourCC != MFX_FOURCC_RGB4 &&
+            out->vpp.Out.FourCC != MFX_FOURCC_ARGB16 &&
+            out->vpp.Out.FourCC != MFX_FOURCC_ABGR16)
         {
             {
                 out->vpp.Out.FourCC = 0;
@@ -1401,7 +1403,9 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     if(surface_in->Info.FourCC != MFX_FOURCC_R16)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    if(surface_out->Info.FourCC != MFX_FOURCC_RGB4 && surface_out->Info.FourCC != MFX_FOURCC_ARGB16)
+    if(surface_out->Info.FourCC != MFX_FOURCC_RGB4 &&
+       surface_out->Info.FourCC != MFX_FOURCC_ARGB16 &&
+       surface_out->Info.FourCC != MFX_FOURCC_ABGR16)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     AsyncParams *pParams = new AsyncParams;

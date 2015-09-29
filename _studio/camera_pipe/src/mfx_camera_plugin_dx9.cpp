@@ -1358,7 +1358,7 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
         {
             m_outputSurf[i].surf = m_ddi->SurfaceCreate(
                 m_params.vpp.Out.CropW, (m_params.vpp.Out.CropH/2)*2,
-                (CameraParams->par.vpp.Out.FourCC == MFX_FOURCC_ARGB16) ? D3DFMT_A16B16G16R16 : D3DFMT_A8R8G8B8,
+                (CameraParams->par.vpp.Out.FourCC == MFX_FOURCC_RGB4) ? D3DFMT_A8R8G8B8 : D3DFMT_A16B16G16R16,
                 MFX_MEMTYPE_FROM_VPPOUT);
             MFX_CHECK_NULL_PTR1(m_outputSurf[i].surf);
         }
@@ -1509,17 +1509,19 @@ mfxStatus D3D9CameraProcessor::CompleteRoutine(AsyncParams * pParam)
         vm_time_sleep(10);
     }
 
-    if ( MFX_FOURCC_ARGB16 == pParam->surf_out->Info.FourCC )
-    {
-        /* TODO: DDI natively supports ABGR format only. In case of ARGB is requested,
-           need to do R<->B swapping using CM Kernel */
-    }
 
     if ( m_systemMemOut )
     {
-        IppiSize roi = {pParam->surf_out->Info.Width, pParam->surf_out->Info.Height};
+        IppiSize roi = {pParam->surf_out->Info.CropW, pParam->surf_out->Info.CropH};
         mfxI64 verticalPitch = 0;
-            sts = m_pCmCopy.get()->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R,pParam->surf_out->Data.G),pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, pParam->surf_out->Info.Height, m_outputSurf[outIndex].surf,  (mfxU32)verticalPitch, roi);
+        if (  pParam->surf_out->Info.FourCC == MFX_FOURCC_ARGB16 )
+        {
+            sts = m_pCmCopy.get()->CopySwapVideoToSystemMemory(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R,pParam->surf_out->Data.G),pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, (mfxU32)pParam->surf_out->Info.CropH,m_outputSurf[outIndex].surf, 0, roi, MFX_FOURCC_ABGR16);
+        }
+        else
+        {
+            sts = m_pCmCopy.get()->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R,pParam->surf_out->Data.G),pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, pParam->surf_out->Info.CropH, m_outputSurf[outIndex].surf,  (mfxU32)verticalPitch, roi);
+        }
             MFX_CHECK_STS(sts);
         }
 
