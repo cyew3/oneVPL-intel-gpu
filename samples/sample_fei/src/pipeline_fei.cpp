@@ -366,9 +366,10 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
     // configure the depth of the look ahead BRC if specified in command line
-    if (pInParams->bRefType)
+    if (pInParams->bRefType || pInParams->Trellis)
     {
         m_CodingOption2.BRefType = pInParams->bRefType;
+        m_CodingOption2.Trellis  = pInParams->Trellis;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
 
@@ -1400,8 +1401,8 @@ mfxStatus CEncodingPipeline::Run()
         m_feiSPS->Header.BufferSz = sizeof(mfxExtFeiSPS);
         m_feiSPS->Pack = m_encpakParams.bPassHeaders ? 1 : 0; /* MSDK will use this data to do packing*/
         m_feiSPS->SPSId   = 0;
-        m_feiSPS->Profile = 100; //MFX_PROFILE_AVC_HIGH
-        m_feiSPS->Level   = 42;  //MFX_LEVEL_AVC_42
+        m_feiSPS->Profile = m_encpakParams.CodecProfile;
+        m_feiSPS->Level   = m_encpakParams.CodecLevel;
 
         m_feiSPS->NumRefFrame = m_mfxEncParams.mfx.NumRefFrame;
         m_feiSPS->WidthInMBs  = m_mfxEncParams.mfx.FrameInfo.Width/16;

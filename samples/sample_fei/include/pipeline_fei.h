@@ -82,6 +82,7 @@ struct sInputParams
     mfxU16 GopOptFlag;
     mfxU16 CodecProfile;
     mfxU16 CodecLevel;
+    mfxU16 Trellis;
 
     mfxU16 nDstWidth; // destination picture width, specified if resizing required
     mfxU16 nDstHeight; // destination picture height, specified if resizing required

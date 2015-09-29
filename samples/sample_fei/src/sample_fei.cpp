@@ -38,6 +38,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-x numRefs]   - number of reference frames \n"));
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames\n"));
     msdk_printf(MSDK_STRING("   [-gop_opt closed|strict] - GOP optimization flags (can be used together)\n"));
+    msdk_printf(MSDK_STRING("   [-trellis value] - bitfield: 0 = default, 1 = off, 2 = on for I frames, 4 = on for P frames, 8 = on for B frames (ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
@@ -226,7 +227,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gop_opt")))
         {
             i++;
-            //GET_OPTION_POINTER(strArgument);
             if (0 == msdk_strcmp(strInput[i], MSDK_STRING("closed")))
             {
                 pParams->GopOptFlag |= MFX_GOP_CLOSED;
@@ -235,6 +235,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             {
                 pParams->GopOptFlag |= MFX_GOP_STRICT;
             }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-trellis")))
+        {
+            i++;
+            pParams->Trellis = (mfxU8)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
 #if D3D_SURFACES_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
@@ -504,35 +509,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->nPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     }
 
-    /*
-    if ((pParams->bLABRC || pParams->nLADepth) && (!pParams->bUseHWLib))
-    {
-        if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nLook ahead BRC is supported only with -hw option!\n"));
-        else
-            PrintHelp(strInput[0], MSDK_STRING("Look ahead BRC is supported only with -hw option!"));
-        return MFX_ERR_UNSUPPORTED;
-    }
-
-    if ((pParams->bLABRC || pParams->nLADepth) && (pParams->CodecId != MFX_CODEC_AVC))
-    {
-        if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nLook ahead BRC is supported only with H.264 encoder!\n"));
-        else
-            PrintHelp(strInput[0], MSDK_STRING("Look ahead BRC is supported only with H.264 encoder!"));
-        return MFX_ERR_UNSUPPORTED;
-    }
-
-
-    if (pParams->nLADepth && (pParams->nLADepth < 10 || pParams->nLADepth > 100))
-    {
-        if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value of -lad parameter, must be in range [10, 100]!\n"));
-        else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -lad parameter, must be in range [10, 100]!"));
-        return MFX_ERR_UNSUPPORTED;
-    } */
-
     if (pParams->SearchWindow < 0 || pParams->SearchWindow > 8)
     {
         if (bAlrShownHelp)
@@ -644,6 +620,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if (pParams->Trellis > (MFX_TRELLIS_I | MFX_TRELLIS_P | MFX_TRELLIS_B)){
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("\nUnsupported trellis value!\n"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported trellis value!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     /* One slice by default */
     if (0 == pParams->numSlices)
         pParams->numSlices = 1;
@@ -709,8 +693,9 @@ int main(int argc, char *argv[])
     Params.InterSAD        = 0x02; // Haar transform
     Params.NumMVPredictors = 1;
     Params.GopOptFlag      = 0;
-    Params.CodecProfile    = 0;
-    Params.CodecLevel      = 0;
+    Params.CodecProfile    = 100;  // MFX_PROFILE_AVC_HIGH
+    Params.CodecLevel      = 42;   // MFX_LEVEL_AVC_42
+    Params.Trellis         = 0;    // MFX_TRELLIS_UNKNOWN
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
