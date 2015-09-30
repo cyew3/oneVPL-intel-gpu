@@ -681,7 +681,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                 }
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
-                memcpy_s(mvsOut->MB, sizeof (mfxExtFeiPreEncMV::mfxMB) * mvsOut->NumMBAlloc,
+                memcpy_s(mvsOut->MB, sizeof (mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB) * mvsOut->NumMBAlloc,
                                 mvs, 16 * sizeof (VAMotionVectorIntel) * mvsOut->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MV vaUnmapBuffer");
@@ -709,7 +709,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                  *  (!) do not delete buffer (!)
                  *   and then copy data for BFF*/
                 mfxU8 *mbstat_ptr = (mfxU8*)mbstat + fieldId* (sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc);
-                memcpy_s(mbstatOut->MB, sizeof (mfxExtFeiPreEncMBStat::mfxMB) * mbstatOut->NumMBAlloc,
+                memcpy_s(mbstatOut->MB, sizeof (mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB) * mbstatOut->NumMBAlloc,
                             mbstat_ptr, sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "PreEnc MBStat vaUnmapBuffer");
