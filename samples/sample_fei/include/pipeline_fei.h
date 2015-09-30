@@ -275,9 +275,9 @@ protected:
     virtual mfxStatus SynchronizeFirstTask();
 
     iTask* findFrameToEncode();
-    void initPreEncFrameParams(iTask* eTask);
-    void initEncFrameParams(iTask* eTask);
-    void initEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask);
+    mfxStatus initPreEncFrameParams(iTask* eTask);
+    mfxStatus initEncFrameParams(iTask* eTask);
+    mfxStatus initEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask);
 
     mfxEncodeCtrl* ctr;
 

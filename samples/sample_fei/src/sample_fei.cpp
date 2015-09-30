@@ -394,7 +394,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('i'):
                 GET_OPTION_POINTER(strArgument);
-                msdk_strcopy(pParams->strSrcFile, strArgument);
+                if (msdk_strlen(strArgument) <= 1024){
+                    msdk_strcopy(pParams->strSrcFile, strArgument);
+                }else{
+                    PrintHelp(strInput[0], MSDK_STRING("Too long input filename (limit is 1024 characters)!"));
+                    return MFX_ERR_UNSUPPORTED;
+                }
                 break;
             case MSDK_CHAR('o'):
                 GET_OPTION_POINTER(strArgument);
@@ -628,6 +633,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if (pParams->bENCODE){
+        if (!pParams->CodecProfile)
+            pParams->CodecProfile = 100; // MFX_PROFILE_AVC_HIGH
+
+        if (!pParams->CodecLevel)
+            pParams->CodecLevel = 42;    // MFX_LEVEL_AVC_42
+    }
+
     /* One slice by default */
     if (0 == pParams->numSlices)
         pParams->numSlices = 1;
@@ -693,8 +706,8 @@ int main(int argc, char *argv[])
     Params.InterSAD        = 0x02; // Haar transform
     Params.NumMVPredictors = 1;
     Params.GopOptFlag      = 0;
-    Params.CodecProfile    = 100;  // MFX_PROFILE_AVC_HIGH
-    Params.CodecLevel      = 42;   // MFX_LEVEL_AVC_42
+    Params.CodecProfile    = 0;
+    Params.CodecLevel      = 0;
     Params.Trellis         = 0;    // MFX_TRELLIS_UNKNOWN
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
