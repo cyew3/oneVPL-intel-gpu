@@ -1178,7 +1178,7 @@ void H265CU<PixType>::InitCu(
 
         // zero initialize out of picture TUs
         if (m_ctbPelX + m_par->MaxCUSize > m_par->Width || m_ctbPelY + m_par->MaxCUSize > m_par->Height) {
-            memset(m_data, 0, m_par->NumPartInCU);
+            memset(m_data, 0, m_par->NumPartInCU * sizeof(*m_data));
         }
     }
 
