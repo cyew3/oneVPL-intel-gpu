@@ -1171,8 +1171,8 @@ mfxStatus CEncodingPipeline::Run()
 
     tmpForMedian  = NULL;
     tmpForReading = NULL;
-    mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* tmpMBpreenc = NULL;
-    mfxExtFeiEncMV::mfxExtFeiEncMVMB*    tmpMBenc    = NULL;
+    mfxExtFeiPreEncMV::mfxMB* tmpMBpreenc = NULL;
+    mfxExtFeiEncMV::mfxMB*    tmpMBenc    = NULL;
 
     ctr           = NULL;
 
@@ -1247,7 +1247,7 @@ mfxStatus CEncodingPipeline::Run()
                     mvPreds[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV_PRED;
                     mvPreds[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncMVPredictors);
                     mvPreds[fieldId].NumMBAlloc = numMB;
-                    mvPreds[fieldId].MB = new mfxExtFeiPreEncMVPredictors::mfxExtFeiPreEncMVPredictorsMB[numMB];
+                    mvPreds[fieldId].MB = new mfxExtFeiPreEncMVPredictors::mfxMB[numMB];
 
                     if (pMvPred == NULL) {
                         //read mvs from file
@@ -1294,13 +1294,13 @@ mfxStatus CEncodingPipeline::Run()
                     mvs[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
                     mvs[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncMV);
                     mvs[fieldId].NumMBAlloc = numMB;
-                    mvs[fieldId].MB = new mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB[numMB];
+                    mvs[fieldId].MB = new mfxExtFeiPreEncMV::mfxMB[numMB];
                     //memset(mvs[fieldId]->MB, 0, sizeof(mvs[fieldId]->MB[0])*mvs[fieldId]->NumMBAlloc);
 
                     if (pPerMbQP == NULL && m_encpakParams.mvoutFile != NULL &&
                         !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC)) {
                         printf("Using MV output file: %s\n", m_encpakParams.mvoutFile);
-                        tmpMBpreenc = new mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB;
+                        tmpMBpreenc = new mfxExtFeiPreEncMV::mfxMB;
                         memset(tmpMBpreenc, 0x8000, sizeof(*tmpMBpreenc));
                         MSDK_FOPEN(mvout, m_encpakParams.mvoutFile, MSDK_CHAR("wb"));
                         if (mvout == NULL) {
@@ -1321,7 +1321,7 @@ mfxStatus CEncodingPipeline::Run()
                     mbdata[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
                     mbdata[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncMBStat);
                     mbdata[fieldId].NumMBAlloc = numMB;
-                    mbdata[fieldId].MB = new mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB[numMB];
+                    mbdata[fieldId].MB = new mfxExtFeiPreEncMBStat::mfxMB[numMB];
 
                     if (mbstatout == NULL){
                         printf("Using MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
@@ -1542,7 +1542,7 @@ mfxStatus CEncodingPipeline::Run()
                     feiEncMVPredictors[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV_PRED;
                     feiEncMVPredictors[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMVPredictors);
                     feiEncMVPredictors[fieldId].NumMBAlloc = numMB;
-                    feiEncMVPredictors[fieldId].MB = new mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB[numMB];
+                    feiEncMVPredictors[fieldId].MB = new mfxExtFeiEncMVPredictors::mfxMB[numMB];
 
                     if (!m_encpakParams.bPREENC && pMvPred == NULL) { //not load if we couple with PREENC
                         printf("Using MV input file: %s\n", m_encpakParams.mvinFile);
@@ -1553,7 +1553,7 @@ mfxStatus CEncodingPipeline::Run()
                         }
                         if (m_encpakParams.bRepackPreencMV){
                             tmpForMedian = new mfxI16[16];
-                            tmpForReading = new mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB[numMB];
+                            tmpForReading = new mfxExtFeiPreEncMV::mfxMB[numMB];
                         }
                     }
                     else {
@@ -1573,7 +1573,7 @@ mfxStatus CEncodingPipeline::Run()
                     feiEncMBCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB;
                     feiEncMBCtrl[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMBCtrl);
                     feiEncMBCtrl[fieldId].NumMBAlloc = numMB;
-                    feiEncMBCtrl[fieldId].MB = new mfxExtFeiEncMBCtrl::mfxExtFeiEncMBCtrlMB[numMB];
+                    feiEncMBCtrl[fieldId].MB = new mfxExtFeiEncMBCtrl::mfxMB[numMB];
 
                     if (pEncMBs == NULL){
                         printf("Using MB control input file: %s\n", m_encpakParams.mbctrinFile);
@@ -1623,7 +1623,7 @@ mfxStatus CEncodingPipeline::Run()
                     feiEncMbStat[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
                     feiEncMbStat[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
                     feiEncMbStat[fieldId].NumMBAlloc = numMB;
-                    feiEncMbStat[fieldId].MB = new mfxExtFeiEncMBStat::mfxExtFeiEncMBStatMB[numMB];
+                    feiEncMbStat[fieldId].MB = new mfxExtFeiEncMBStat::mfxMB[numMB];
 
                     if (mbstatout == NULL) {
                         printf("Use MB distortion output file: %s\n", m_encpakParams.mbstatoutFile);
@@ -1648,7 +1648,7 @@ mfxStatus CEncodingPipeline::Run()
                     feiEncMV[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
                     feiEncMV[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMV);
                     feiEncMV[fieldId].NumMBAlloc = numMB;
-                    feiEncMV[fieldId].MB = new mfxExtFeiEncMV::mfxExtFeiEncMVMB[numMB];
+                    feiEncMV[fieldId].MB = new mfxExtFeiEncMV::mfxMB[numMB];
 
                     if (mvENCPAKout == NULL) {
                         printf("Use MV output file: %s\n", m_encpakParams.mvoutFile);
@@ -1656,7 +1656,7 @@ mfxStatus CEncodingPipeline::Run()
                             MSDK_FOPEN(mvENCPAKout, m_encpakParams.mvoutFile, MSDK_CHAR("rb"));
                         else { /*for all other cases need to wtite into this file*/
                             MSDK_FOPEN(mvENCPAKout, m_encpakParams.mvoutFile, MSDK_CHAR("wb"));
-                            tmpMBenc = new mfxExtFeiEncMV::mfxExtFeiEncMVMB;
+                            tmpMBenc = new mfxExtFeiEncMV::mfxMB;
                             memset(tmpMBenc, 0x8000, sizeof(*tmpMBenc));
                         }
                         if (mvENCPAKout == NULL) {
@@ -2734,7 +2734,7 @@ mfxStatus CEncodingPipeline::Run()
     return sts;
 }
 
-void repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf){
+void repackPreenc2Enc(mfxExtFeiPreEncMV::mfxMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf){
 
     memset(EncMVPredMB, 0, sizeof(*EncMVPredMB)*NumMB);
     for (mfxU32 i = 0; i<NumMB; i++){
@@ -2753,7 +2753,7 @@ void repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfx
     } // for(mfxU32 i=0; i<NumMBAlloc; i++){
 }
 
-mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1){
+mfxI16 get16Median(mfxExtFeiPreEncMV::mfxMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1){
 
     switch (xy){
     case 0:
