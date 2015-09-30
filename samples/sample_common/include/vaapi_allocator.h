@@ -82,6 +82,8 @@ public:
     virtual mfxStatus Close();
 
 protected:
+    DISALLOW_COPY_AND_ASSIGN(vaapiFrameAllocator);
+
     virtual mfxStatus LockFrame(mfxMemId mid, mfxFrameData *ptr);
     virtual mfxStatus UnlockFrame(mfxMemId mid, mfxFrameData *ptr);
     virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL *handle);
