@@ -1316,6 +1316,9 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
             {
                 sts = m_pCmCopy.get()->Initialize();
                 MFX_CHECK_STS(sts);
+                if(m_params.vpp.Out.FourCC == MFX_FOURCC_ARGB16)
+                    sts = m_pCmCopy.get()->InitializeSwapKernels(m_core->GetHWType());
+                MFX_CHECK_STS(sts);
             }
         }
     }

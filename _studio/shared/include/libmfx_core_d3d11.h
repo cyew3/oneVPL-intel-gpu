@@ -174,6 +174,7 @@ private:
     const mfxU32                         m_adapterNum;
     ComPtrCore<ID3D11VideoDecoder>       m_comptr;
     bool m_bCmCopy;
+    bool m_bCmCopySwap;
     bool m_bCmCopyAllowed;
     s_ptr<CmCopyWrapper, true>           m_pCmCopy;
     s_ptr<CMEnabledCoreAdapter, true>    m_pCmAdapter;

@@ -753,6 +753,7 @@ public:
     };
 
     ~D3D9CameraProcessor() {
+        Close();
          m_inputSurf.clear();
          m_outputSurf.clear();
          if (m_executeParams )
@@ -777,8 +778,9 @@ public:
 
     virtual mfxStatus Close()
     {
-        
-
+        if(m_pCmCopy.get()){
+            m_pCmCopy.get()->Release();
+        }
  
         return MFX_ERR_NONE;
     }

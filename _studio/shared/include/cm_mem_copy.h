@@ -16,6 +16,9 @@
 #include "ippi.h"
 #if defined(WIN64) || defined(WIN32)
 #include "skl_copy_kernel_genx_isa.h"
+#if !(defined(AS_VPP_PLUGIN) || defined(UNIFIED_PLUGIN) || defined(AS_H265FEI_PLUGIN) || defined(AS_H264LA_PLUGIN))
+#include "cht_copy_kernel_genx_isa.h"
+#endif
 #endif
 #if !defined(OSX)
 
@@ -98,9 +101,7 @@ public:
         {
             return NULL;
         }
-#if defined(WIN64) || defined(WIN32)
-        cmSts = m_pCmDevice->LoadProgram((void*)skl_copy_kernel_genx,sizeof(skl_copy_kernel_genx),m_pCmProgram,"nojitter");
-#endif
+
         return m_pCmDevice;
     };
 
@@ -126,7 +127,8 @@ public:
 #endif
 
     // initialize available functionality
-    mfxStatus Initialize();
+    mfxStatus Initialize(eMFXHWType hwtype = MFX_HW_UNKNOWN);
+    mfxStatus InitializeSwapKernels(eMFXHWType hwtype = MFX_HW_UNKNOWN);
 
     // release object
     mfxStatus Release(void);
@@ -175,8 +177,6 @@ protected:
 
     CmDevice  *m_pCmDevice;
     CmProgram *m_pCmProgram;
-    CmKernel  *m_pCmKernel;
-    CmBufferUP      *pCMBufferUP;
 
     //std::map<mfxU32, CmThreadSpace *> m_tableThreadSpace;
     CmThreadSpace *m_pThreadSpace;

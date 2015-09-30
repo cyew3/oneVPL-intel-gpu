@@ -459,7 +459,12 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             else
                 m_bCmCopy = false;
         }
-
+        
+        if(m_pCmCopy.get() && !m_bCmCopySwap && (request->Info.FourCC == MFX_FOURCC_BGR4 || request->Info.FourCC == MFX_FOURCC_RGB4 || request->Info.FourCC == MFX_FOURCC_ARGB16|| request->Info.FourCC == MFX_FOURCC_ABGR16))
+        {
+            sts = m_pCmCopy.get()->InitializeSwapKernels(GetHWType());
+            m_bCmCopySwap = true;
+        }
 
         // use common core for sw surface allocation
         if (request->Type & MFX_MEMTYPE_SYSTEM_MEMORY)

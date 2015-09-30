@@ -616,13 +616,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\genx\copy_kernels\src\genx_skl_copy_isa.cpp" />
     <ClCompile Include="..\shared\src\mfx_common_int.cpp" />
     <ClCompile Include="..\shared\src\mfx_enc_common.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\shared\include\mfx_common.h" />
-    <ClInclude Include="..\genx\copy_kernels\include\skl_copy_kernel_genx_isa.h" />
     <ClInclude Include="..\shared\include\mfx_common_int.h" />
     <ClInclude Include="..\shared\include\mfx_enc_common.h" />
     <ClInclude Include="..\..\shared\include\mfxstructurespro.h" />

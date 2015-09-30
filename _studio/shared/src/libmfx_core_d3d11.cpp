@@ -41,6 +41,7 @@ D3D11VideoCORE::D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsA
     ,   m_adapterNum(adapterNum)
     ,   m_HWType(MFX_HW_UNKNOWN)
     ,   m_bCmCopy(false)
+    ,   m_bCmCopySwap(false)
     ,   m_bCmCopyAllowed(true)
 {
 }
@@ -51,6 +52,7 @@ D3D11VideoCORE::~D3D11VideoCORE()
     {
         m_pCmCopy.get()->Release();
         m_bCmCopy = false;
+        m_bCmCopySwap = false;
     }
 };
 
@@ -355,6 +357,11 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
                 m_pCmCopy.get()->ReleaseCmSurfaces();
             else
                 m_bCmCopy = false;
+        }
+        if(m_pCmCopy.get() && !m_bCmCopySwap && (request->Info.FourCC == MFX_FOURCC_BGR4 || request->Info.FourCC == MFX_FOURCC_RGB4 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_ARGB16))
+        {
+            sts = m_pCmCopy.get()->InitializeSwapKernels(GetHWType());
+            m_bCmCopySwap = true;
         }
 
         // use common core for sw surface allocation

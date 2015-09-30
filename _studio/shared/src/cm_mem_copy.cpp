@@ -41,7 +41,6 @@ CmCopyWrapper::CmCopyWrapper()
 {
     m_pCmProgram = NULL;
     m_pCmDevice  = NULL;
-    m_pCmKernel = NULL;
 
     m_pCmSurface2D = NULL;
     m_pCmUserBuffer = NULL;
@@ -109,7 +108,8 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
     UINT            AddedShiftLeftOffset    = 0;
     size_t          pLinearAddress          = (size_t)pSysMem;
     size_t          pLinearAddressAligned   = 0;
-
+    CmKernel        *m_pCmKernel            = 0;
+    CmBufferUP        *pCMBufferUP          = 0;
     SurfaceIndex    *pBufferIndexCM     = NULL;
     SurfaceIndex    *pSurf2DIndexCM     = NULL;
     CmThreadSpace   *pTS                = NULL;
@@ -286,7 +286,9 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
     UINT            AddedShiftLeftOffset    = 0;
     size_t          pLinearAddress          = (size_t)pSysMem;
     size_t          pLinearAddressAligned   = 0;
-
+    
+    CmKernel        *m_pCmKernel            = 0;
+    CmBufferUP      *pCMBufferUP          = 0;
     SurfaceIndex    *pBufferIndexCM     = NULL;
     SurfaceIndex    *pSurf2DIndexCM     = NULL;
     CmThreadSpace   *pTS                = NULL;
@@ -466,7 +468,9 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoGPU(   CmSurface2D* pSurfaceIn,
     CmThreadSpace   *pTS                = NULL;
     CmTask          *pGPUCopyTask       = NULL;
     CmEvent         *pInternalEvent     = NULL;
-
+    
+    CmKernel        *m_pCmKernel            = 0;
+    CmBufferUP      *pCMBufferUP            = 0;
     UINT            threadWidth             = 0;
     UINT            threadHeight            = 0;
     UINT            threadNum               = 0;
@@ -523,7 +527,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoGPU(   CmSurface2D* pSurfaceIn,
     
     return MFX_ERR_NONE;
 }
-mfxStatus CmCopyWrapper::Initialize()
+mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
 {
     cmStatus cmSts = CM_SUCCESS;
 
@@ -614,6 +618,120 @@ mfxStatus CmCopyWrapper::Initialize()
     return MFX_ERR_NONE;
 
 } // mfxStatus CmCopyWrapper::Initialize(void)
+mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
+{
+    cmStatus cmSts = CM_SUCCESS;
+
+
+    if (!m_pCmDevice)
+        return MFX_ERR_DEVICE_FAILED;
+
+
+
+    //void *pCommonISACode = new mfxU32[CM_CODE_SIZE];
+
+    //if (false == pCommonISACode)
+    //{
+    //    return MFX_ERR_DEVICE_FAILED;
+    //}
+
+    //memcpy((char*)pCommonISACode, cm_code, CM_CODE_SIZE);
+
+    //cmSts = m_pCmDevice->LoadProgram(pCommonISACode, CM_CODE_SIZE, m_pCmProgram);
+    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+
+    //delete [] pCommonISACode;
+
+#ifndef THREAD_SPACE
+
+    cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_2DToBufferNV12_2) , m_pCmKernel);
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+
+#else
+
+    //cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_2DToBuffer_Single_nv12_128_full) , m_pCmKernel1);
+    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+
+    //cmSts = m_pCmDevice->CreateKernel(m_pCmProgram, _NAME(surfaceCopy_BufferTo2D_Single_nv12_128_full) , m_pCmKernel2);
+    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+
+#endif
+
+    //mfxU32 width_ = ALIGN128(width);
+
+//    mfxU32 threadWidth = (unsigned int)ceil((double)width / 128);
+//    mfxU32 threadHeight = (unsigned int)ceil((double)height / 8);
+
+//    m_pCmKernel1->SetThreadCount(threadWidth * threadHeight);
+//    m_pCmKernel2->SetThreadCount(threadWidth * threadHeight);
+
+#ifndef THREAD_SPACE
+
+    mfxU32 threadId = 0, block_y = 0, x, y;
+
+    mfxU32 xxx = (int)ceil((float)height / 32) * 32;
+
+    for (block_y = 0; block_y < xxx; block_y += 32)
+    {
+        for (x = 0; x < width; x += BLOCK_PIXEL_WIDTH)
+        {
+            for (y = block_y; y < block_y + 32; y += BLOCK_HEIGHT)
+            {
+                if (y < height)
+                {
+                    m_pCmKernel->SetThreadArg(threadId, 2, 4, &x);
+                    m_pCmKernel->SetThreadArg(threadId, 3, 4, &y);
+
+                    threadId++;
+                }
+            }
+        }
+    }
+#else
+ //   m_pCmDevice->CreateThreadSpace(threadWidth, threadHeight, m_pThreadSpace);
+#endif
+    #if defined(WIN64) || defined(WIN32)
+        switch (hwtype)
+        {
+#if !(defined(AS_VPP_PLUGIN) || defined(UNIFIED_PLUGIN) || defined(AS_H265FEI_PLUGIN) || defined(AS_H264LA_PLUGIN))
+        case MFX_HW_BDW:
+        case MFX_HW_CHV:
+            {
+            cmSts = m_pCmDevice->LoadProgram((void*)cht_copy_kernel_genx,sizeof(cht_copy_kernel_genx),m_pCmProgram,"nojitter");
+            break;
+            }
+#endif
+        case MFX_HW_SCL:
+        case MFX_HW_BXT:
+            {
+            cmSts = m_pCmDevice->LoadProgram((void*)skl_copy_kernel_genx,sizeof(skl_copy_kernel_genx),m_pCmProgram,"nojitter");
+            break;
+            }
+        default:
+            {
+            cmSts = CM_FAILURE;
+            break;
+            }
+        }
+        CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+    #endif
+
+
+    //cmSts = m_pCmDevice->CreateTask(m_pCmTask1);
+    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+
+    //cmSts = m_pCmDevice->CreateTask(m_pCmTask2);
+    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED)
+
+    //cmSts = m_pCmTask1->AddKernel(m_pCmKernel1);
+    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+
+    //cmSts = m_pCmTask2->AddKernel(m_pCmKernel2);
+    //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus CmCopyWrapper::Initialize(void)
 
 mfxStatus CmCopyWrapper::ReleaseCmSurfaces(void)
 {
@@ -638,11 +756,6 @@ mfxStatus CmCopyWrapper::Release(void)
     }
 
     m_tableSysRelations.clear();
-
-    if (m_pCmKernel)
-    {
-        m_pCmDevice->DestroyKernel(m_pCmKernel);
-    }
 
     if (m_pCmProgram)
     {

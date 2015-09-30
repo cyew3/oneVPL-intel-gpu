@@ -174,6 +174,7 @@ private:
     AuxiliaryDevice                      *m_pEncodeAuxDevice;
 
     bool m_bCmCopy;
+    bool m_bCmCopySwap;
     bool m_bCmCopyAllowed;
 
     s_ptr<CmCopyWrapper, true>            m_pCmCopy;

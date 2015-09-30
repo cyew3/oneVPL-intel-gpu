@@ -234,7 +234,7 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" />
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectName)64_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectName)64</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'">$(ProjectName)64_d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">$(ProjectName)64_d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectName)64</TargetName>
@@ -615,6 +615,7 @@
     <ClCompile Include="..\shared\src\libmfx_core_vaapi.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_vdaapi.cpp" />
     <ClCompile Include="..\shared\src\mfx_static_assert_structs.cpp" />
+    <ClCompile Include="genx\copy_kernels\src\genx_cht_copy_isa.cpp" />
     <ClCompile Include="genx\copy_kernels\src\genx_skl_copy_isa.cpp" />
     <ClCompile Include="shared\src\libmfxsw.cpp" />
     <ClCompile Include="shared\src\libmfxsw_async.cpp" />
