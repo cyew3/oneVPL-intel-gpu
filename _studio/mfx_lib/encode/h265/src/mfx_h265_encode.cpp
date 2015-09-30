@@ -121,6 +121,7 @@ namespace {
         mfxExtDumpFiles &dumpFiles = GetExtBuffer(mfxParam);
         const mfxExtCodingOption &opt = GetExtBuffer(mfxParam);
         const mfxExtCodingOption2 &opt2 = GetExtBuffer(mfxParam);
+        const mfxExtEncoderROI &roi = GetExtBuffer(mfxParam);
 
         const Ipp32u maxCUSize = 1 << optHevc.Log2MaxCUSize;
 
@@ -354,12 +355,31 @@ namespace {
         intParam.m_maxDeltaQP = 0;
         intParam.UseDQP = 0;
 
+        intParam.numRoi = roi.NumROI;
+
+        if (intParam.chromaFormatIdc != MFX_CHROMAFORMAT_YUV420 
+            || intParam.bitDepthLuma > 8
+            || mfx.RateControlMethod != CQP
+            || (optHevc.EnableCm == ON))
+            intParam.numRoi = 0;
+
+        if (intParam.numRoi > 0) {
+            for (Ipp32s i = 0; i < intParam.numRoi; i++) {
+                intParam.roi[i].left = roi.ROI[i].Left;
+                intParam.roi[i].top = roi.ROI[i].Top;
+                intParam.roi[i].right = roi.ROI[i].Right;
+                intParam.roi[i].bottom = roi.ROI[i].Bottom;
+                intParam.roi[i].priority = roi.ROI[i].Priority;
+            }
+            intParam.DeltaQpMode = 0;
+        }
+
         if (intParam.DeltaQpMode) {
             intParam.MaxCuDQPDepth = 0;
             intParam.m_maxDeltaQP = 0;
             intParam.UseDQP = 1;
         }
-        if (intParam.MaxCuDQPDepth > 0 || intParam.m_maxDeltaQP > 0)
+        if (intParam.MaxCuDQPDepth > 0 || intParam.m_maxDeltaQP > 0 || intParam.numRoi > 0)
             intParam.UseDQP = 1;
 
         if (intParam.UseDQP)
@@ -1437,8 +1457,14 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
     H265Slice *currSlices = &frame->m_slices[0];
     for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
         (currSlices + i)->slice_qp_delta = frame->m_sliceQpY - m_pps.init_qp;
-        SetAllLambda(m_videoParam, (currSlices + i), frame->m_sliceQpY, frame);
+//        SetAllLambda(m_videoParam, (currSlices + i), frame->m_sliceQpY, frame);
+        Ipp64f rd_lamba_multiplier;
+        bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, m_videoParam,  (currSlices + i)->slice_type, frame, 0, 0);
+        SetSliceLambda(m_videoParam, currSlices + i, frame->m_sliceQpY, frame, rd_lamba_multiplier, extraMult);
     }
+    
+    if (m_videoParam.numRoi && m_videoParam.UseDQP && !m_brc)
+        ApplyRoiDeltaQp(frame, m_videoParam);
 
     if (m_videoParam.DeltaQpMode && m_videoParam.UseDQP)
         ApplyDeltaQp(frame, m_videoParam, m_brc ? 1 : 0);

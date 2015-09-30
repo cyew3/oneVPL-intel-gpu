@@ -30,6 +30,14 @@ namespace H265Enc {
         Ipp32u last_ctb_addr;
     };
 
+    struct H265PriorityRoi {
+        Ipp16u  left;
+        Ipp16u  top;
+        Ipp16u  right;
+        Ipp16u  bottom;
+        Ipp16s  priority;
+    };
+
     struct H265VideoParam {
         // preset
         Ipp32u Log2MaxCUSize;
@@ -232,6 +240,10 @@ namespace H265Enc {
         Ipp32s m_lagBehindRefRows; // = Func2 ( m_framesInParallel ). How many ctb rows in ref frames have to be encoded
 
         Ipp32s randomRepackThreshold;
+
+        // priority ROI
+        Ipp16u numRoi;
+        H265PriorityRoi roi[256];
     };
 
     class DispatchSaoApplyFilter
@@ -304,10 +316,14 @@ namespace H265Enc {
         DispatchSaoApplyFilter m_saoApplier[NUM_SAO_COMPONENTS];
     };
 
-    void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, int qp, const Frame* currentFrame, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
+    //void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, int qp, const Frame* currentFrame, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
     Ipp64f h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP);
     void ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBrc = 0);
     void AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstream, ObjectPool<ThreadingTask> *ttHubPool = NULL);
+
+    void ApplyRoiDeltaQp(Frame* frame, const H265VideoParam & par);
+    bool SliceLambdaMultiplier(Ipp64f &rd_lambda_slice, H265VideoParam const & videoParam, Ipp8u slice_type, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop);
+    void SetSliceLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp, const Frame *currFrame, Ipp64f lambdaMult, bool extraMult);
 
     class H265BsReal;
     void PutVPS(H265BsReal *bs, const H265VidParameterSet &vps, const H265ProfileLevelSet &profileLevel);

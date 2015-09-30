@@ -2757,25 +2757,20 @@ int GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ip
 
 void UpdateAllLambda(Frame* frame, const H265VideoParam& param)
 {
-    Statistics* stats;
-    //if(param.LowresFactor) 
-    //    stats = frame->m_stats[1];
-    //else
-        stats = frame->m_stats[0];
+    Statistics* stats = frame->m_stats[0];
 
-    int  origQP = frame->m_sliceQpY;
     bool IsHiCplxGOP = false;
     bool IsMedCplxGOP = false;
     if (param.DeltaQpMode&AMT_DQP_CAL) {
-        double SADpp = stats->avgTSC; 
-        double SCpp  = stats->avgsqrSCpp;
+        Ipp64f SADpp = stats->avgTSC; 
+        Ipp64f SCpp  = stats->avgsqrSCpp;
         if (SCpp > 2.0) {
-            double minSADpp = 0;
+            Ipp64f minSADpp = 0;
             if (param.GopRefDist > 8) {
                 minSADpp = 1.3*SCpp - 2.6;
                 if (minSADpp>0 && minSADpp<SADpp) IsHiCplxGOP = true;
                 if (!IsHiCplxGOP) {
-                    double minSADpp = 1.1*SCpp - 2.2;
+                    Ipp64f minSADpp = 1.1*SCpp - 2.2;
                     if(minSADpp>0 && minSADpp<SADpp) IsMedCplxGOP = true;
                 }
             } 
@@ -2783,19 +2778,24 @@ void UpdateAllLambda(Frame* frame, const H265VideoParam& param)
                 minSADpp = 1.1*SCpp - 1.5;
                 if (minSADpp>0 && minSADpp<SADpp) IsHiCplxGOP = true;
                 if (!IsHiCplxGOP) {
-                    double minSADpp = 1.0*SCpp - 2.0;
+                    Ipp64f minSADpp = 1.0*SCpp - 2.0;
                     if (minSADpp>0 && minSADpp<SADpp) IsMedCplxGOP = true;
                 }
             }
         }
     }
-    for(int iDQpIdx = 0; iDQpIdx < 2*(MAX_DQP)+1; iDQpIdx++)  {
-        int deltaQP = ((iDQpIdx+1)>>1)*(iDQpIdx%2 ? -1 : 1);
-        int curQp = origQP + deltaQP;
+
+    Ipp64f rd_lamba_multiplier;
+    bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, param,  frame->m_slices[0].slice_type, frame, IsHiCplxGOP, IsMedCplxGOP);
+
+    Ipp32s  origQP = frame->m_sliceQpY;
+    for(Ipp32s iDQpIdx = 0; iDQpIdx < 2*(MAX_DQP)+1; iDQpIdx++)  {
+        Ipp32s deltaQP = ((iDQpIdx+1)>>1)*(iDQpIdx%2 ? -1 : 1);
+        Ipp32s curQp = origQP + deltaQP;
 
         frame->m_dqpSlice[iDQpIdx].slice_type = frame->m_slices[0].slice_type;
+        SetSliceLambda(param, &(frame->m_dqpSlice[iDQpIdx]), curQp, frame, rd_lamba_multiplier, extraMult);
 
-        SetAllLambda(param, &(frame->m_dqpSlice[iDQpIdx]), curQp, frame, IsHiCplxGOP, IsMedCplxGOP);
     }
 }
 

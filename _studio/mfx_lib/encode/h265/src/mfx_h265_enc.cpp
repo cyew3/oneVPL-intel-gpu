@@ -519,99 +519,201 @@ void H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame *frame)
 
 namespace H265Enc {
 
-    void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop)
+//    void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop)
+//    {
+//        {
+//            slice->rd_opt_flag = 1;
+//            slice->rd_lambda_slice = 1;
+//            if (slice->rd_opt_flag) {
+////                slice->rd_lambda_slice = pow(2.0, (qp - 12) * (1.0 / 3.0)) * (1.0 / 256.0);
+//                slice->rd_lambda_slice = h265_lambda[qp + 48] * (1.0 / 256.0);
+//                switch (slice->slice_type) {
+//                case P_SLICE:
+//                    if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
+//                        slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
+//                            ? (videoParam.longGop)
+//                            ? tab_rdLambdaBPyramid5LongGop[0]
+//                        : tab_rdLambdaBPyramid5[0]
+//                        : tab_rdLambdaBPyramid4[0];
+//                    }
+//                    else {
+//                        Ipp32s pgopIndex = (currFrame->m_frameOrder - currFrame->m_frameOrderOfLastIntra) % videoParam.PGopPicSize;
+//                        slice->rd_lambda_slice *= (videoParam.PGopPicSize == 1 || pgopIndex) ? 0.4624 : 0.578;
+//                        if (pgopIndex)
+//                            slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
+//                    }
+//                    break;
+//                case B_SLICE:
+//                    if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
+//                        Ipp8u layer = currFrame->m_pyramidLayer;
+//                        if (videoParam.DeltaQpMode > 1) {
+//                            if (isHiCmplxGop)
+//                                slice->rd_lambda_slice *= tab_rdLambdaBPyramid_HiCmplx[layer];
+//                            else if (isMidCmplxGop)
+//                                slice->rd_lambda_slice *= tab_rdLambdaBPyramid_MidCmplx[layer];
+//                            else
+//                                slice->rd_lambda_slice *= tab_rdLambdaBPyramid_LoCmplx[layer];
+//                        }
+//                        else 
+//                        {
+//                            slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
+//                                ? (videoParam.longGop)
+//                                ? tab_rdLambdaBPyramid5LongGop[layer]
+//                            : tab_rdLambdaBPyramid5[layer]
+//                            : tab_rdLambdaBPyramid4[layer];
+//                        }
+//                        if (layer > 0)
+//                            slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
+//                    }
+//                    else {
+//                        slice->rd_lambda_slice *= 0.4624;
+//                        slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
+//                    }
+//                    break;
+//                case I_SLICE:
+//                default:
+//                    slice->rd_lambda_slice *= 0.57;
+//                    if (videoParam.GopRefDist > 1)
+//                        slice->rd_lambda_slice *= (1 - MIN(0.5, 0.05 * (videoParam.GopRefDist - 1)));
+//                }
+//            }
+//
+//            slice->rd_lambda_inter_slice = slice->rd_lambda_slice;
+//            slice->rd_lambda_inter_mv_slice = slice->rd_lambda_inter_slice;
+//
+//            slice->rd_lambda_sqrt_slice = sqrt(slice->rd_lambda_slice * 256);
+//            //no chroma QP offset (from PPS) is implemented yet
+//            Ipp32s qpc = GetChromaQP(qp, 0, videoParam.chromaFormatIdc, 8); // just scaled qPi
+////            slice->ChromaDistWeight_slice = pow(2.0, (qp - qpc) / 3.0);
+//            slice->ChromaDistWeight_slice = h265_lambda[qp - qpc + 60];
+//        }
+//    } //
+
+    bool SliceLambdaMultiplier(Ipp64f &rd_lambda_slice, H265VideoParam const & videoParam, Ipp8u slice_type, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop)
     {
-        {
-            slice->rd_opt_flag = 1;
-            slice->rd_lambda_slice = 1;
-            if (slice->rd_opt_flag) {
-                slice->rd_lambda_slice = pow(2.0, (qp - 12) * (1.0 / 3.0)) * (1.0 / 256.0);
-                switch (slice->slice_type) {
-                case P_SLICE:
-                    if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
-                        slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
-                            ? (videoParam.longGop)
-                            ? tab_rdLambdaBPyramid5LongGop[0]
-                        : tab_rdLambdaBPyramid5[0]
-                        : tab_rdLambdaBPyramid4[0];
-                        if (videoParam.DeltaQpMode&AMT_DQP_CAQ) {
-                            slice->rd_lambda_slice*=videoParam.LambdaCorrection;
-                        }
-                    }
-                    else {
-                        Ipp32s pgopIndex = (currFrame->m_frameOrder - currFrame->m_frameOrderOfLastIntra) % videoParam.PGopPicSize;
-                        slice->rd_lambda_slice *= (videoParam.PGopPicSize == 1 || pgopIndex) ? 0.4624 : 0.578;
-                        if (pgopIndex)
-                            slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
-                        if (!pgopIndex && (videoParam.DeltaQpMode&AMT_DQP_CAQ)) {
-                            slice->rd_lambda_slice*=videoParam.LambdaCorrection;
-                        }
-                    }
-                    break;
-                case B_SLICE:
-                    if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
-                        Ipp8u layer = currFrame->m_pyramidLayer;
-
-                        if (videoParam.DeltaQpMode&AMT_DQP_CAL) {
-                            if (isHiCmplxGop) {
-                                slice->rd_lambda_slice *= tab_rdLambdaBPyramid_HiCmplx[layer];
-                            } else if (isMidCmplxGop) {
-                                slice->rd_lambda_slice *= tab_rdLambdaBPyramid_MidCmplx[layer];
-                            } else {
-                                slice->rd_lambda_slice *= tab_rdLambdaBPyramid_LoCmplx[layer];
-                            }
-                        }
-                        else
-                        {
-                            slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
-                                ? (videoParam.longGop)
-                                ? tab_rdLambdaBPyramid5LongGop[layer]
-                            : tab_rdLambdaBPyramid5[layer]
-                            : tab_rdLambdaBPyramid4[layer];
-                        }
-                        if (layer > 0) 
-                            slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
-
-                        if (!layer && (videoParam.DeltaQpMode&AMT_DQP_CAQ)) {
-                            slice->rd_lambda_slice*=videoParam.LambdaCorrection;
-                        }
-                    }
-                    else {
-                        slice->rd_lambda_slice *= 0.4624;
-                        slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
-                    }
-                    break;
-                case I_SLICE:
-                default:
-                    slice->rd_lambda_slice *= 0.57;
-                    if (videoParam.GopRefDist > 1)
-                        slice->rd_lambda_slice *= (1 - MIN(0.5, 0.05 * (videoParam.GopRefDist - 1)));
-                    if (videoParam.DeltaQpMode&AMT_DQP_CAQ) {
-                        slice->rd_lambda_slice*=videoParam.LambdaCorrection;
-                    }
+        bool mult = false;
+        switch (slice_type) {
+        case P_SLICE:
+            if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
+                rd_lambda_slice = (currFrame->m_biFramesInMiniGop == 15)
+                    ? (videoParam.longGop)
+                    ? tab_rdLambdaBPyramid5LongGop[0]
+                : tab_rdLambdaBPyramid5[0]
+                : tab_rdLambdaBPyramid4[0];
+                if (videoParam.DeltaQpMode&AMT_DQP_CAQ) {
+                    rd_lambda_slice*=videoParam.LambdaCorrection;
                 }
             }
-             
-            slice->rd_lambda_inter_slice = slice->rd_lambda_slice;
-            slice->rd_lambda_inter_mv_slice = slice->rd_lambda_inter_slice;
-
-            slice->rd_lambda_sqrt_slice = sqrt(slice->rd_lambda_slice * 256);
-            //no chroma QP offset (from PPS) is implemented yet
-            
-            if(!videoParam.rdoqChromaFlag && (videoParam.DeltaQpMode&AMT_DQP_CAQ)) {
-                Ipp32s qpCaq = (int)((4.2005*log(slice->rd_lambda_slice * 256.0)+13.7122)+0.5); // est
-                Ipp32s qpcCaq = GetChromaQP(qpCaq, 0, videoParam.chromaFormatIdc, 8); // just scaled qPi
-                Ipp32f qpcCorr = qpCaq - qpcCaq;
-                Ipp32f qpcDiff = IPP_MAX(0,GetChromaQP(qp, 0, videoParam.chromaFormatIdc, 8) - qpcCaq); // just scaled qPi
-                qpcCorr -= (qpcDiff/2.0);
-                slice->ChromaDistWeight_slice = pow(2.0, qpcCorr / 3.0);
-            } else 
-            {
-                Ipp32s qpc = GetChromaQP(qp, 0, videoParam.chromaFormatIdc, 8); // just scaled qPi
-                slice->ChromaDistWeight_slice = pow(2.0, (qp - qpc) / 3.0);
+            else {
+                Ipp32s pgopIndex = (currFrame->m_frameOrder - currFrame->m_frameOrderOfLastIntra) % videoParam.PGopPicSize;
+                rd_lambda_slice = (videoParam.PGopPicSize == 1 || pgopIndex) ? 0.4624 : 0.578;
+                mult = !!pgopIndex;
+                if (!pgopIndex && (videoParam.DeltaQpMode&AMT_DQP_CAQ)) {
+                    rd_lambda_slice*=videoParam.LambdaCorrection;
+                }
+            }
+            break;
+        case B_SLICE:
+            if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
+                Ipp8u layer = currFrame->m_pyramidLayer;
+                if (videoParam.DeltaQpMode&AMT_DQP_CAL) {
+                    if (isHiCmplxGop)
+                        rd_lambda_slice = tab_rdLambdaBPyramid_HiCmplx[layer];
+                    else if (isMidCmplxGop)
+                        rd_lambda_slice = tab_rdLambdaBPyramid_MidCmplx[layer];
+                    else
+                        rd_lambda_slice = tab_rdLambdaBPyramid_LoCmplx[layer];
+                }
+                else 
+                {
+                    rd_lambda_slice = (currFrame->m_biFramesInMiniGop == 15)
+                        ? (videoParam.longGop)
+                        ? tab_rdLambdaBPyramid5LongGop[layer]
+                    : tab_rdLambdaBPyramid5[layer]
+                    : tab_rdLambdaBPyramid4[layer];
+                }
+                mult = !!layer;
+                if (!layer && (videoParam.DeltaQpMode&AMT_DQP_CAQ)) {
+                    rd_lambda_slice*=videoParam.LambdaCorrection;
+                }
+            }
+            else {
+                rd_lambda_slice = 0.4624;
+                mult = true;
+            }
+            break;
+        case I_SLICE:
+        default:
+            rd_lambda_slice = 0.57;
+            if (videoParam.GopRefDist > 1)
+                rd_lambda_slice *= (1 - MIN(0.5, 0.05 * (videoParam.GopRefDist - 1)));
+            if (videoParam.DeltaQpMode&AMT_DQP_CAQ) {
+                rd_lambda_slice*=videoParam.LambdaCorrection;
             }
         }
-    } //
+        return mult;
+    }
+
+
+    void SetSliceLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp, const Frame *currFrame, Ipp64f lambdaMult, bool extraMult)
+    {
+        slice->rd_opt_flag = 1;
+        slice->rd_lambda_slice = h265_lambda[qp + 48] * (1.0 / 256.0) * lambdaMult;
+        if (extraMult)
+            slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
+
+        slice->rd_lambda_inter_slice = slice->rd_lambda_slice;
+        slice->rd_lambda_inter_mv_slice = slice->rd_lambda_inter_slice;
+
+        slice->rd_lambda_sqrt_slice = sqrt(slice->rd_lambda_slice * 256);
+        //no chroma QP offset (from PPS) is implemented yet
+        if(!videoParam.rdoqChromaFlag && (videoParam.DeltaQpMode&AMT_DQP_CAQ)) {
+            Ipp32s qpCaq = (int)((4.2005*log(slice->rd_lambda_slice * 256.0)+13.7122)+0.5); // est
+            Ipp32s qpcCaq = GetChromaQP(qpCaq, 0, videoParam.chromaFormatIdc, 8); // just scaled qPi
+            Ipp32f qpcCorr = qpCaq - qpcCaq;
+            Ipp32f qpcDiff = IPP_MAX(0,GetChromaQP(qp, 0, videoParam.chromaFormatIdc, 8) - qpcCaq); // just scaled qPi
+            qpcCorr -= (qpcDiff/2.0);
+            slice->ChromaDistWeight_slice = pow(2.0, qpcCorr / 3.0);
+        } else 
+        {
+            Ipp32s qpc = GetChromaQP(qp, 0, videoParam.chromaFormatIdc, 8); // just scaled qPi
+            slice->ChromaDistWeight_slice = h265_lambda[qp - qpc + 60];
+        }
+    }
+
+    void ApplyRoiDeltaQp(Frame* frame, const H265VideoParam & par)
+    {
+        Ipp32s numCtb = par.PicHeightInCtbs * par.PicWidthInCtbs;
+        H265Slice slice;
+        
+        for (Ipp32s i = par.numRoi - 1; i >= 0; i--) {
+            Ipp32s start = par.roi[i].left / par.MaxCUSize + par.roi[i].top / par.MaxCUSize * par.PicWidthInCtbs;
+            Ipp32s end = par.roi[i].right / par.MaxCUSize + par.roi[i].bottom / par.MaxCUSize * par.PicWidthInCtbs;
+
+            Ipp32s qp = frame->m_sliceQpY + par.roi[i].priority;
+            Ipp32s minqp = (8 - par.bitDepthLuma) * 6;
+            qp = Saturate(minqp, 51, qp);
+
+            for (Ipp32s ctb = start; ctb <= end; ctb++) {
+                Ipp32s col =  (ctb % par.PicWidthInCtbs) * par.MaxCUSize;
+                Ipp32s row =  (ctb / par.PicWidthInCtbs) * par.MaxCUSize;
+                if (col >= par.roi[i].left && col <= par.roi[i].right && row >= par.roi[i].top && row <= par.roi[i].bottom) {
+                    //Ipp32s qp = frame->m_lcuQps[ctb] + par.roi[i].priority;
+                    //Ipp32s minqp = (8 - par.bitDepthLuma) * 6;
+                    //qp = Saturate(minqp, 51, qp);
+                    frame->m_lcuQps[ctb] = qp;
+                }
+            }
+        }
+
+        Ipp64f rd_lamba_multiplier;
+        bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, par, frame->m_slices[0].slice_type, frame, 0, 0);
+
+        Ipp32s numQpValues = 52 + (par.bitDepthLuma - 8)*6;
+        frame->m_roiSlice.resize(numQpValues);
+        for (Ipp32s i = 0; i < numQpValues; i++)
+            SetSliceLambda(par, &frame->m_roiSlice[i], i -  (par.bitDepthLuma - 8)*6, frame, rd_lamba_multiplier, extraMult);
+    }
 }
 
 static Ipp8u dpoc_neg[][16][6] = {
@@ -1846,11 +1948,14 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 
         m_bsf[bsf_id].Reset();
 
-        if(m_videoParam.UseDQP && m_videoParam.DeltaQpMode) {
+
+        if (m_videoParam.UseDQP && m_videoParam.numRoi > 0) {
+            cu_ithread->SetCuLambdaRoi(m_frame);
+        } 
+        else if(m_videoParam.UseDQP && m_videoParam.DeltaQpMode) {
             cu_ithread->SetCuLambda(m_frame);
         }
         cu_ithread->GetInitAvailablity();
-
         cu_ithread->ModeDecision(0, 0);
         //cu_ithread->FillRandom(0, 0);
         //cu_ithread->FillZero(0, 0);
@@ -1858,10 +1963,8 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
             bool interUpdate = false;
 #ifdef AMT_ALT_ENCODE
             if(!cu_ithread->m_isRdoq) {
-
                 cu_ithread->m_isRdoq = true;
                 m_bsf[bsf_id].CtxRestore(m_frame->m_doPostProc ? context_array_save : m_bs[bs_id].m_base.context_array);
-                
                 interUpdate = cu_ithread->EncAndRecLuma(0, 0, 0, NULL);
             }
 #endif

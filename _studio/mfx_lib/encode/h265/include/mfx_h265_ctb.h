@@ -924,6 +924,8 @@ public:
 
     void SetCuLambda(Frame* frame);
 
+    void SetCuLambdaRoi(Frame* frame);
+
 private:
 #ifndef AMT_ALT_ENCODE
     Ipp32s m_isRdoq;

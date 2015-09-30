@@ -580,6 +580,7 @@ namespace {
         mfxExtCodingOption *opt = GetExtBuffer(par);
         mfxExtCodingOption2 *opt2 = GetExtBuffer(par);
         mfxExtDumpFiles *dumpFiles = GetExtBuffer(par);
+        mfxExtEncoderROI *roi = GetExtBuffer(par);
 
         // check pairs (error is expected behavior)
         if (!fi.FrameRateExtN != !fi.FrameRateExtD)
@@ -800,6 +801,52 @@ namespace {
             errInvalidParam = !CheckMax(fi.CropH, picHeight);
         if (fi.CropY && fi.CropH && picHeight)
             errInvalidParam = !CheckMax(fi.CropY, picHeight - fi.CropH);
+
+       
+        if (roi && roi->NumROI) {
+             wrnIncompatible = !CheckMaxSat(roi->NumROI, 256);
+             for (int i = 0; i < roi->NumROI; i++) {
+                 if (picWidth)
+                     wrnIncompatible = !CheckMaxSat(roi->ROI[i].Right, picWidth);
+                 else
+                     errInvalidParam = !CheckMax(roi->ROI[i].Right, CodecLimits::MAX_WIDTH);
+                 if (roi->ROI[i].Left > roi->ROI[i].Right)
+                     roi->ROI[i].Left = roi->ROI[i].Right = 0, wrnIncompatible = true;
+                 if (picHeight)
+                     wrnIncompatible = !CheckMaxSat(roi->ROI[i].Bottom, picHeight);
+                 else
+                     errInvalidParam = !CheckMax(roi->ROI[i].Bottom, CodecLimits::MAX_HEIGHT);
+                 if (roi->ROI[i].Top > roi->ROI[i].Bottom)
+                     roi->ROI[i].Top = roi->ROI[i].Bottom = 0, wrnIncompatible = true;
+
+                 //if (optHevc && optHevc->Log2MaxCUSize) {
+                 //    Ipp32u mask = (1 << optHevc->Log2MaxCUSize) - 1;
+                 {
+                     Ipp16u mask = (1 << 6) - 1;
+                     if (roi->ROI[i].Left & mask)
+                         roi->ROI[i].Left &= ~mask, wrnIncompatible = true;
+                     if (roi->ROI[i].Right & mask)
+                         roi->ROI[i].Right &= ~mask, wrnIncompatible = true;
+                     if (roi->ROI[i].Top & mask)
+                         roi->ROI[i].Top &= ~mask, wrnIncompatible = true;
+                     if (roi->ROI[i].Bottom & mask)
+                         roi->ROI[i].Bottom &= ~mask, wrnIncompatible = true;
+                 }
+
+                 if (mfx.RateControlMethod == CQP) {
+                     if (fi.FourCC) {
+                         Ipp32s maxdqp = 51;
+                         if (fi.FourCC == P010 || fi.FourCC == P210)
+                             maxdqp = 63;
+                         wrnIncompatible = !CheckRangeSat(roi->ROI[i].Priority, -maxdqp, maxdqp);
+                     }
+                 }
+                 else
+                     wrnIncompatible = !CheckRangeSat(roi->ROI[i].Priority, -3, 3);
+             }
+             if (optHevc)
+                wrnIncompatible = !CheckMax(optHevc->DeltaQpMode, 1);
+        }
 
         if (mfx.GopPicSize && mfx.GopRefDist) // GopRefDist <= GopPicSize
             wrnIncompatible = !CheckMaxSat(mfx.GopRefDist, mfx.GopPicSize);
@@ -1710,6 +1757,7 @@ ExtBuffers::ExtBuffers()
     extParamAll[count++] = &extOpt2.Header;
     extParamAll[count++] = &extSpsPps.Header;
     extParamAll[count++] = &extVps.Header;
+    extParamAll[count++] = &extRoi.Header;
     assert(NUM_EXT_PARAM == count);
 }
 
@@ -1725,6 +1773,7 @@ void ExtBuffers::CleanUp()
     InitExtBuffer(extOpt2);
     InitExtBuffer(extSpsPps);
     InitExtBuffer(extVps);
+    InitExtBuffer(extRoi);
 }
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

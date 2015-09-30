@@ -283,6 +283,8 @@ namespace H265Enc {
         std::vector<Ipp8s> m_lcuQps; // array for LCU QPs
         H265Slice m_dqpSlice[2*MAX_DQP+1];
 
+        std::vector<H265Slice> m_roiSlice;
+
         H265ShortTermRefPicSet m_shortRefPicSet[66];
 
         // for (frame) threading

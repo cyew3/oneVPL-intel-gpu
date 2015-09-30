@@ -36,7 +36,8 @@ namespace H265Enc {
         mfxExtCodingOption2      extOpt2;
         mfxExtCodingOptionSPSPPS extSpsPps;
         mfxExtCodingOptionVPS    extVps;
-        mfxExtBuffer            *extParamAll[10];
+        mfxExtEncoderROI         extRoi;  
+        mfxExtBuffer            *extParamAll[11];
 
         static const size_t NUM_EXT_PARAM;
     };

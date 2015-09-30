@@ -31,6 +31,8 @@ extern const Ipp8u h265_chroma422IntraAngleMappingTable[NUM_INTRA_MODE];
 
 extern const Ipp8u h265_pgop_layers[PGOP_PIC_SIZE];
 
+extern const Ipp64f h265_lambda[100];
+
 const int PITCH_TU = 16;
 
 } // namespace

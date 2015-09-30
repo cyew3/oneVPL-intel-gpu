@@ -9716,6 +9716,7 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s w
     if (m_rdOptFlag && cost) {
 #endif
         Ipp8u code_dqp = getdQPFlag();
+
         m_bsf->Reset();
         if (cbf) {
             SetCbf<0>(dataTu, dataTu->trIdx);
@@ -11215,6 +11216,19 @@ void H265CU<PixType>::SetCuLambda(Frame* frame)
     {
         m_rdLambdaChroma = m_rdLambda*(3.0+1.0/(m_ChromaDistWeight))/4.0;
     }
+    m_rdLambdaInter = curSlice->rd_lambda_inter_slice;
+    m_rdLambdaInterMv = curSlice->rd_lambda_inter_mv_slice;
+}
+
+template <typename PixType>
+void H265CU<PixType>::SetCuLambdaRoi(Frame* frame)
+{
+    Ipp32s indx = frame->m_lcuQps[m_ctbAddr] + (frame->m_bitDepthLuma - 8)*6;
+    H265Slice* curSlice = &(frame->m_roiSlice[indx]);
+    m_rdLambda = curSlice->rd_lambda_slice;
+    m_rdLambdaSqrt = curSlice->rd_lambda_sqrt_slice;
+    m_ChromaDistWeight = curSlice->ChromaDistWeight_slice;
+    m_rdLambdaChroma = m_rdLambda*(3.0+1.0/m_ChromaDistWeight)/4.0;
     m_rdLambdaInter = curSlice->rd_lambda_inter_slice;
     m_rdLambdaInterMv = curSlice->rd_lambda_inter_mv_slice;
 }
