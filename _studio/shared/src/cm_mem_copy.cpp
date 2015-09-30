@@ -123,7 +123,8 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
     UINT            width_byte              = 0;
     UINT            copy_width_byte         = 0;
     UINT            copy_height_row         = 0; 
-
+    UINT            slice_copy_height_row   = 0;
+    UINT            sliceCopyBufferUPSize   = 0;
     INT             totalBufferUPSize       = 0;
     UINT            start_x                 = 0;
     UINT            start_y                 = 0;
@@ -169,7 +170,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
     pLinearAddress  = (size_t)pSysMem;
     
 
-    //while (totalBufferUPSize > 0)
+    while (totalBufferUPSize > 0)
     {
 #if defined(WIN64) || defined(LINUX64)//64-bit 
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
@@ -180,8 +181,17 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
         //Calculate  Left Shift offset
         AddedShiftLeftOffset = (UINT)(pLinearAddress - pLinearAddressAligned);
         totalBufferUPSize   += AddedShiftLeftOffset;
-                
-        hr = m_pCmDevice->CreateBufferUP(  totalBufferUPSize, ( void * )pLinearAddressAligned, pCMBufferUP );
+        if (totalBufferUPSize > CM_MAX_1D_SURF_WIDTH)
+        {
+            slice_copy_height_row = ((CM_MAX_1D_SURF_WIDTH - AddedShiftLeftOffset)/(stride_in_bytes*(BLOCK_HEIGHT * INNER_LOOP))) * (BLOCK_HEIGHT * INNER_LOOP);
+            sliceCopyBufferUPSize = slice_copy_height_row * stride_in_bytes + AddedShiftLeftOffset;
+        }
+        else
+        {
+            slice_copy_height_row = copy_height_row;
+            sliceCopyBufferUPSize = totalBufferUPSize;
+        }
+        hr = m_pCmDevice->CreateBufferUP(  sliceCopyBufferUPSize, ( void * )pLinearAddressAligned, pCMBufferUP );
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_readswap_32x32), m_pCmKernel);
         CHECK_CM_HR(hr);
@@ -193,7 +203,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
         hr = pSurface->GetIndex( pSurf2DIndexCM );
         CHECK_CM_HR(hr);
         threadWidth = ( UINT )ceil( ( double )copy_width_byte/BLOCK_PIXEL_WIDTH/4 );
-        threadHeight = ( UINT )ceil( ( double )copy_height_row/BLOCK_HEIGHT/INNER_LOOP );
+        threadHeight = ( UINT )ceil( ( double )slice_copy_height_row/BLOCK_HEIGHT/INNER_LOOP );
         threadNum = threadWidth * threadHeight;
         hr = m_pCmKernel->SetThreadCount( threadNum );
         CHECK_CM_HR(hr);
@@ -216,7 +226,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
         CHECK_CM_HR(hr);
         hr = m_pCmKernel->SetKernelArg( 6, sizeof( UINT ), &width_dword );
         CHECK_CM_HR(hr);
-        hr = m_pCmKernel->SetKernelArg( 7, sizeof( UINT ), &height );
+        hr = m_pCmKernel->SetKernelArg( 7, sizeof( UINT ), &slice_copy_height_row );
         CHECK_CM_HR(hr);
         hr = m_pCmKernel->SetKernelArg( 8, sizeof( UINT ), &sizePerPixel );
         CHECK_CM_HR(hr);
@@ -237,10 +247,22 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->DestroyBufferUP(pCMBufferUP);
         CHECK_CM_HR(hr);
-        hr = pInternalEvent->WaitForTaskFinished();
-        CHECK_CM_HR(hr);
-        hr = m_pCmQueue->DestroyEvent(pInternalEvent);
-        CHECK_CM_HR(hr);
+        pLinearAddress += sliceCopyBufferUPSize - AddedShiftLeftOffset;
+        totalBufferUPSize -= sliceCopyBufferUPSize;
+        copy_height_row -= slice_copy_height_row;
+        start_x = 0;
+        start_y += slice_copy_height_row;
+        if(totalBufferUPSize > 0)   //Intermediate event, we don't need it
+        {
+            hr = m_pCmQueue->DestroyEvent(pInternalEvent);
+        }
+        else //Last one event, need keep or destroy it
+        {
+            hr = pInternalEvent->WaitForTaskFinished();
+            CHECK_CM_HR(hr);
+            hr = m_pCmQueue->DestroyEvent(pInternalEvent);
+            CHECK_CM_HR(hr);
+        }
     }
 
     return MFX_ERR_NONE;
@@ -277,8 +299,9 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
     UINT            width_dword             = 0;
     UINT            width_byte              = 0;
     UINT            copy_width_byte         = 0;
-    UINT            copy_height_row         = 0; 
-
+    UINT            copy_height_row         = 0;
+    UINT            slice_copy_height_row   = 0;
+    UINT            sliceCopyBufferUPSize   = 0;
     INT             totalBufferUPSize       = 0;
     UINT            start_x                 = 0;
     UINT            start_y                 = 0;
@@ -324,7 +347,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
     pLinearAddress  = (size_t)pSysMem;
     
 
-    //while (totalBufferUPSize > 0)
+    while (totalBufferUPSize > 0)
     {
 #if defined(WIN64) || defined(LINUX64)//64-bit 
             pLinearAddressAligned        = pLinearAddress & ADDRESS_PAGE_ALIGNMENT_MASK_X64;
@@ -335,8 +358,17 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
         //Calculate  Left Shift offset
         AddedShiftLeftOffset = (UINT)(pLinearAddress - pLinearAddressAligned);
         totalBufferUPSize   += AddedShiftLeftOffset;
-                
-        hr = m_pCmDevice->CreateBufferUP(  totalBufferUPSize, ( void * )pLinearAddressAligned, pCMBufferUP );
+        if (totalBufferUPSize > CM_MAX_1D_SURF_WIDTH)
+        {
+            slice_copy_height_row = ((CM_MAX_1D_SURF_WIDTH - AddedShiftLeftOffset)/(stride_in_bytes*(BLOCK_HEIGHT * INNER_LOOP))) * (BLOCK_HEIGHT * INNER_LOOP);
+            sliceCopyBufferUPSize = slice_copy_height_row * stride_in_bytes + AddedShiftLeftOffset;
+        }
+        else
+        {
+            slice_copy_height_row = copy_height_row;
+            sliceCopyBufferUPSize = totalBufferUPSize;
+        }
+        hr = m_pCmDevice->CreateBufferUP(  sliceCopyBufferUPSize, ( void * )pLinearAddressAligned, pCMBufferUP );
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(surfaceCopy_writeswap_32x32), m_pCmKernel);
         CHECK_CM_HR(hr);
@@ -350,7 +382,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
         hr = pSurface->GetIndex( pSurf2DIndexCM );
         CHECK_CM_HR(hr);
         threadWidth = ( UINT )ceil( ( double )copy_width_byte/BLOCK_PIXEL_WIDTH/4 );
-        threadHeight = ( UINT )ceil( ( double )copy_height_row/BLOCK_HEIGHT/INNER_LOOP );
+        threadHeight = ( UINT )ceil( ( double )slice_copy_height_row/BLOCK_HEIGHT/INNER_LOOP );
         threadNum = threadWidth * threadHeight;
         hr = m_pCmKernel->SetThreadCount( threadNum );
         CHECK_CM_HR(hr);
@@ -368,7 +400,7 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
 
         hr = m_pCmKernel->SetKernelArg( 2, sizeof( UINT ), &stride_in_dwords );
         CHECK_CM_HR(hr);
-        hr = m_pCmKernel->SetKernelArg( 3, sizeof( UINT ), &height_stride_in_rows );
+        hr = m_pCmKernel->SetKernelArg( 3, sizeof( UINT ), &slice_copy_height_row );
         CHECK_CM_HR(hr);
         hr = m_pCmKernel->SetKernelArg( 4, sizeof( UINT ), &AddedShiftLeftOffset );
         CHECK_CM_HR(hr);
@@ -396,11 +428,22 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
         hr = m_pCmDevice->DestroyBufferUP(pCMBufferUP);
         CHECK_CM_HR(hr);
 
-
-        hr = pInternalEvent->WaitForTaskFinished();
-        CHECK_CM_HR(hr);
-        hr = m_pCmQueue->DestroyEvent(pInternalEvent);
-        CHECK_CM_HR(hr);
+        pLinearAddress += sliceCopyBufferUPSize - AddedShiftLeftOffset;
+        totalBufferUPSize -= sliceCopyBufferUPSize;
+        copy_height_row -= slice_copy_height_row;
+        start_x = 0;
+        start_y += slice_copy_height_row;
+        if(totalBufferUPSize > 0)   //Intermediate event, we don't need it
+        {
+            hr = m_pCmQueue->DestroyEvent(pInternalEvent);
+        }
+        else //Last one event, need keep or destroy it
+        {
+            hr = pInternalEvent->WaitForTaskFinished();
+            CHECK_CM_HR(hr);
+            hr = m_pCmQueue->DestroyEvent(pInternalEvent);
+            CHECK_CM_HR(hr);
+        }
 
     }
 
