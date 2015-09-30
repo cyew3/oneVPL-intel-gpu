@@ -227,6 +227,7 @@ void H265Encoder::SetProfileLevel()
     m_profile_level.general_profile_idc = (mfxU8) m_videoParam.Profile;
     m_profile_level.general_tier_flag = (mfxU8) m_videoParam.Tier;
     m_profile_level.general_level_idc = (mfxU8) (m_videoParam.Level * 3);
+    m_profile_level.general_profile_compatibility_flag[MIN(m_videoParam.Profile, 31)] = 1;
     if (m_videoParam.Profile == MFX_PROFILE_HEVC_REXT) {
         m_profile_level.general_max_12bit_constraint_flag        = !!(m_videoParam.generalConstraintFlags & MFX_HEVC_CONSTR_REXT_MAX_12BIT);
 		m_profile_level.general_max_10bit_constraint_flag        = !!(m_videoParam.generalConstraintFlags & MFX_HEVC_CONSTR_REXT_MAX_10BIT);
