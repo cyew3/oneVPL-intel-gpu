@@ -1191,10 +1191,10 @@ void H265CU<PixType>::InitCu(
             m_costStat[m_ctbAddr].cost[i] = m_costStat[m_ctbAddr].num[i] = 0;
         }
 
-        // zero initialize out of picture TUs
-        if (m_ctbPelX + m_par->MaxCUSize > m_par->Width || m_ctbPelY + m_par->MaxCUSize > m_par->Height) {
-            memset(m_data, 0, m_par->NumPartInCU * sizeof(*m_data));
-        }
+        // zero initialize
+        memset(m_data, 0, sizeof(*m_data));
+        m_data->qp = m_lcuQps[m_ctbAddr];
+        PropagateSubPart(m_data, m_par->NumPartInCU);
     }
 
     // Setting neighbor CU
@@ -2652,8 +2652,8 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
             setdQPFlag(true);
         std::fill_n(m_costStored, sizeof(m_costStored) / sizeof(m_costStored[0]), COST_MAX);
         m_costCurr = 0.0;
-        // setup CU QP
-        FillSubPartCuQp_(m_data, m_par->NumPartInCU, m_lcuQps[m_ctbAddr]);
+        // setup CU QP - moved on InitCu stage
+        //FillSubPartCuQp_(m_data, m_par->NumPartInCU, m_lcuQps[m_ctbAddr]);
     }
 
     Ipp32u left = m_ctbPelX + ((h265_scan_z2r4[absPartIdx] & 15) << m_par->QuadtreeTULog2MinSize);
