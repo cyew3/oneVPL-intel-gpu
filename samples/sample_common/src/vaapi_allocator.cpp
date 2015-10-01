@@ -253,7 +253,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 mfx_res = va_to_mfx_status(va_res);
 
                 if (MFX_ERR_NONE != mfx_res) break;
-#ifndef DISABLE_VAAPI_BUFFER_EXPORT
+
                 va_res = m_libva->vaAcquireBufferHandle(m_dpy, vaapi_mids[i].m_image.buf, &(vaapi_mids[i].m_buffer_info));
 #else
                 va_res = VA_STATUS_ERROR_OPERATION_FAILED;
