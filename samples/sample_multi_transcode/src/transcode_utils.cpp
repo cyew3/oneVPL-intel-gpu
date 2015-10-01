@@ -93,7 +93,7 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("Pipeline description (general options):\n"));
     msdk_printf(MSDK_STRING("  -i::h265|h264|mpeg2|vc1|mvc|jpeg|vp8 <file-name>\n"));
     msdk_printf(MSDK_STRING("                Set input file and decoder type\n"));
-    msdk_printf(MSDK_STRING("  -o::h265|h264|mpeg2|mvc|jpeg|vp8|yuv <file-name>\n"));
+    msdk_printf(MSDK_STRING("  -o::h265|h264|mpeg2|mvc|jpeg|vp8 <file-name>\n"));
     msdk_printf(MSDK_STRING("                Set output file and encoder type\n"));
     msdk_printf(MSDK_STRING("  -sw|-hw|-hw_d3d11\n"));
     msdk_printf(MSDK_STRING("                SDK implementation to use: \n"));
@@ -547,16 +547,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if ( (0 == msdk_strncmp(MSDK_STRING("-o::"), argv[i], msdk_strlen(MSDK_STRING("-o::"))))
                && (0 != msdk_strncmp(argv[i]+4, MSDK_STRING("sink"), msdk_strlen(MSDK_STRING("sink")))) )
         {
-            if(0 == msdk_strcmp(argv[i], MSDK_STRING("-o::yuv")))
-            {
-                InputParams.EncodeId = MFX_FOURCC_NV12;
-                sts = MFX_ERR_NONE;
-            }
-            else
-            {
-                sts = StrFormatToCodecFormatFourCC(argv[i]+4, InputParams.EncodeId);
-            }
-
+            sts = StrFormatToCodecFormatFourCC(argv[i]+4, InputParams.EncodeId);
             if (sts != MFX_ERR_NONE)
             {
                 return MFX_ERR_UNSUPPORTED;
@@ -574,7 +565,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                     case MFX_CODEC_AVC:
                     case MFX_CODEC_JPEG:
                     case MFX_CODEC_VP8:
-                    case MFX_FOURCC_NV12:
                         return MFX_ERR_UNSUPPORTED;
                 }
             }
@@ -840,9 +830,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 #if defined(LIBVA_DRM_SUPPORT)
         else if (0 == msdk_strncmp(argv[i], MSDK_STRING("-rdrm"), 5))
         {
-#ifdef LIBVA_SUPPORT 
             InputParams.libvaBackend = MFX_LIBVA_DRM_MODESET;
-#endif
             InputParams.monitorType = getMonitorType(&argv[i][5]);
             if (argv[i][5]) {
                 if (argv[i][5] != '-') {
@@ -1116,8 +1104,8 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
 
     if (MFX_CODEC_JPEG != InputParams.EncodeId && MFX_CODEC_MPEG2 != InputParams.EncodeId &&
         MFX_CODEC_AVC != InputParams.EncodeId && MFX_CODEC_HEVC != InputParams.EncodeId &&
-        MFX_CODEC_VP8 != InputParams.EncodeId && MFX_FOURCC_NV12 != InputParams.EncodeId && 
-        InputParams.eMode != Sink && InputParams.eModeExt != VppComp)
+        MFX_CODEC_VP8 != InputParams.EncodeId && InputParams.eMode != Sink &&
+        InputParams.eModeExt != VppComp)
     {
         PrintHelp(NULL, MSDK_STRING("Unknown encoder\n"));
         return MFX_ERR_UNSUPPORTED;

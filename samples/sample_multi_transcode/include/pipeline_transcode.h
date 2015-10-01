@@ -414,7 +414,6 @@ namespace TranscodingSample
 
         mfxStatus AllocateSufficientBuffer(mfxBitstream* pBS);
         mfxStatus PutBS();
-        mfxStatus Surface2BS(ExtendedSurface* pSurf,mfxBitstream* pBS);
 
         void NoMoreFramesSignal(ExtendedSurface &DecExtSurface);
         mfxStatus AddLaStreams(mfxU16 width, mfxU16 height);

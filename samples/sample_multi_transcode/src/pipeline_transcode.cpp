@@ -290,7 +290,7 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
         if ( (m_mfxDecParams.mfx.FrameInfo.CropW != pParams->nDstWidth && pParams->nDstWidth) ||
              (m_mfxDecParams.mfx.FrameInfo.CropH != pParams->nDstHeight && pParams->nDstHeight) ||
              (pParams->bEnableDeinterlacing) || (pParams->DenoiseLevel!=-1) || (pParams->DetailLevel!=-1) || (pParams->FRCAlgorithm) ||
-             (bVppCompInitRequire) || (pParams->fieldProcessingMode) || pParams->EncodeId==MFX_FOURCC_NV12 ||
+             (bVppCompInitRequire) || (pParams->fieldProcessingMode) ||
              (pParams->EncoderFourCC && decoderFourCC && pParams->EncoderFourCC != decoderFourCC && m_bEncodeEnable))
         {
             m_bIsVpp = true;
@@ -340,54 +340,46 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
 
     if (m_bEncodeEnable)
     {
-        if(pParams->EncodeId != MFX_FOURCC_NV12)
+        if (CheckVersion(&m_Version, MSDK_FEATURE_PLUGIN_API) && (m_pUserEncPlugin.get() == NULL))
         {
-            if (CheckVersion(&m_Version, MSDK_FEATURE_PLUGIN_API) && (m_pUserEncPlugin.get() == NULL))
+            /* Here we actually define the following codec initialization scheme:
+            *  1. If plugin path or guid is specified: we load user-defined plugin (example: HEVC encoder plugin)
+            *  2. If plugin path not specified:
+            *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
+            *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
+            */
+            if (pParams->encoderPluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && strlen(pParams->encoderPluginParams.strPluginPath))
             {
-                /* Here we actually define the following codec initialization scheme:
-                *  1. If plugin path or guid is specified: we load user-defined plugin (example: HEVC encoder plugin)
-                *  2. If plugin path not specified:
-                *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
-                *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
-                */
-                if (pParams->encoderPluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && strlen(pParams->encoderPluginParams.strPluginPath))
+                m_pUserEncoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
+                m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), pParams->encoderPluginParams.pluginGuid, 1, pParams->encoderPluginParams.strPluginPath, (mfxU32)strlen(pParams->encoderPluginParams.strPluginPath)));
+                if (m_pUserEncoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
+            }
+            else
+            {
+                if (AreGuidsEqual(pParams->encoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
                 {
-                    m_pUserEncoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
-                    m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), pParams->encoderPluginParams.pluginGuid, 1, pParams->encoderPluginParams.strPluginPath, (mfxU32)strlen(pParams->encoderPluginParams.strPluginPath)));
+                    pParams->encoderPluginParams.pluginGuid = msdkGetPluginUID(pParams->libType, MSDK_VENCODE, pParams->EncodeId);
+                }
+                if (!AreGuidsEqual(pParams->encoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
+                {
+                    m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), pParams->encoderPluginParams.pluginGuid, 1));
                     if (m_pUserEncoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
                 }
-                else
+                if(sts==MFX_ERR_UNSUPPORTED)
                 {
-                    if (AreGuidsEqual(pParams->encoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
-                    {
-                        pParams->encoderPluginParams.pluginGuid = msdkGetPluginUID(pParams->libType, MSDK_VENCODE, pParams->EncodeId);
-                    }
-                    if (!AreGuidsEqual(pParams->encoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
-                    {
-                        m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), pParams->encoderPluginParams.pluginGuid, 1));
-                        if (m_pUserEncoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
-                    }
-                    if(sts==MFX_ERR_UNSUPPORTED)
-                    {
-                        msdk_printf(MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n"));
-                    }
+                    msdk_printf(MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n"));
                 }
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             }
-
-            // create encoder
-            m_pmfxENC.reset(new MFXVideoENCODE(*m_pmfxSession.get()));
-
-            sts = InitEncMfxParams(pParams);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
-        else
-        {
-            //--- This one is required for YUV output
-            m_mfxEncParams.mfx.CodecId = pParams->EncodeId;
-        }
 
+        // create encoder
+        m_pmfxENC.reset(new MFXVideoENCODE(*m_pmfxSession.get()));
+
+        sts = InitEncMfxParams(pParams);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
+
     return sts;
 
 } // mfxStatus CTranscodingPipeline::EncodeInit(sInputParams *pParams)
@@ -930,16 +922,9 @@ mfxStatus CTranscodingPipeline::Encode()
 
         if (m_nVPPCompEnable != VppCompOnly)
         {
-            if(m_mfxEncParams.mfx.CodecId != MFX_FOURCC_NV12)
-            {
-                sts = EncodeOneFrame(&VppExtSurface, &m_BSPool.back()->Bitstream);
-            }
-            else
-            {
-                sts = Surface2BS(&VppExtSurface, &m_BSPool.back()->Bitstream);
-            }
+            sts = EncodeOneFrame(&VppExtSurface, &m_BSPool.back()->Bitstream);
+            //m_pBuffer->ReleaseSurface(DecExtSurface.pSurface);
         }
-
 
         if(shouldReadNextFrame) // Release current decoded surface only if're going to read next one during next iteration
         {
@@ -1173,22 +1158,7 @@ mfxStatus CTranscodingPipeline::Transcode()
                     VppExtSurface.pCtrl = NULL;
             }
         }
-
-        if(bNeedDecodedFrames)
-        {
-            if(m_mfxEncParams.mfx.CodecId != MFX_FOURCC_NV12)
-            {
-                sts = EncodeOneFrame(&VppExtSurface, &m_BSPool.back()->Bitstream);
-            }
-            else
-            {
-                sts = Surface2BS(&VppExtSurface, &m_BSPool.back()->Bitstream);
-            }
-        }
-        else
-        {
-            sts = MFX_ERR_MORE_DATA;
-        }
+        sts = bNeedDecodedFrames ? EncodeOneFrame(&VppExtSurface, &m_BSPool.back()->Bitstream) : MFX_ERR_MORE_DATA;
 
         // check if we need one more frame from decode
         if (MFX_ERR_MORE_DATA == sts)
@@ -1267,11 +1237,8 @@ mfxStatus CTranscodingPipeline::PutBS()
 {
     mfxStatus       sts = MFX_ERR_NONE;
     ExtendedBS *pBitstreamEx  = m_BSPool.front();
-    // get result coded stream, synchronize only if we still have sync point
-    if(pBitstreamEx->Syncp)
-    {
-        sts = m_pmfxSession->SyncOperation(pBitstreamEx->Syncp, MSDK_WAIT_INTERVAL);
-    }
+    // get result coded stream
+    sts = m_pmfxSession->SyncOperation(pBitstreamEx->Syncp, MSDK_WAIT_INTERVAL);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     sts = m_pBSProcessor->ProcessOutputBitstream(&pBitstreamEx->Bitstream);
@@ -1287,57 +1254,6 @@ mfxStatus CTranscodingPipeline::PutBS()
 
     return sts;
 } //mfxStatus CTranscodingPipeline::PutBS()
-
-mfxStatus CTranscodingPipeline::Surface2BS(ExtendedSurface* pSurf,mfxBitstream* pBS)
-{
-    mfxStatus       sts = MFX_ERR_MORE_DATA;
-    // get result coded stream
-    if(pSurf->Syncp)
-    {
-        sts = m_pmfxSession->SyncOperation(pSurf->Syncp, MSDK_WAIT_INTERVAL);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-        //--- Copying data from surface to bitstream
-        sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis,pSurf->pSurface->Data.MemId,&pSurf->pSurface->Data);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-        mfxFrameInfo& info = pSurf->pSurface->Info;
-        mfxFrameData& data = pSurf->pSurface->Data;
-        if((int)pBS->MaxLength-(int)pBS->DataLength < (int)(info.CropH*info.CropW*3/2))
-        {
-            sts = ExtendMfxBitstream(pBS, pBS->DataLength+(int)(info.CropH*info.CropW*3/2));
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        }
-
-        for (mfxU16 i = 0; i < info.CropH; i++)
-        {
-            memcpy(pBS->Data+pBS->DataLength, data.Y + (info.CropY * data.Pitch + info.CropX)+ i * data.Pitch, info.CropW);
-            pBS->DataLength += info.CropW;
-        }
-
-        mfxU16 h = info.CropH / 2;
-        mfxU16 w = info.CropW;
-
-        for(mfxU16 offset = 0; offset<2;offset++)
-        {
-            for (mfxU16 i = 0; i < h; i++)
-            {
-                for (mfxU16 j = offset; j < w; j += 2)
-                {
-                    pBS->Data[pBS->DataLength]=*(data.UV + (info.CropY * data.Pitch / 2 + info.CropX) + i * data.Pitch + j);
-                    pBS->DataLength++;
-                }
-            }
-        }
-
-        sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis,pSurf->pSurface->Data.MemId,&pSurf->pSurface->Data);
-
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        return sts;
-    }
-
-    return sts;
-}
 
 mfxStatus CTranscodingPipeline::AllocMVCSeqDesc()
 {
@@ -1786,22 +1702,16 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
     MSDK_CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
     m_mfxVppParams.AsyncDepth = m_AsyncDepth;
 
-    mfxU16 InPatternFromParent = (mfxU16)((MFX_IOPATTERN_OUT_VIDEO_MEMORY == m_mfxDecParams.IOPattern) ? 
-        MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
+    mfxU16 InPatternFromParent = (mfxU16)((MFX_IOPATTERN_OUT_VIDEO_MEMORY == m_mfxDecParams.IOPattern) ?
+MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
     // set memory pattern
     if (m_bUseOpaqueMemory)
-    {
         m_mfxVppParams.IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
-    }
-    else if (MFX_IMPL_SOFTWARE == pInParams->libType || pInParams->EncodeId==MFX_FOURCC_NV12) // In case of direct YUV output, we should use system memory
-    {
+    else if (MFX_IMPL_SOFTWARE == pInParams->libType)
         m_mfxVppParams.IOPattern = (mfxU16)(InPatternFromParent|MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
-    }
     else
-    {
         m_mfxVppParams.IOPattern = (mfxU16)(InPatternFromParent|MFX_IOPATTERN_OUT_VIDEO_MEMORY);
-    }
 
     // input frame info
     MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.In, &m_mfxDecParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
@@ -2476,7 +2386,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         m_bUseOpaqueMemory = true;
     }
 
-    if (!pParams->bUseOpaqueMemory || pParams->EncodeId==MFX_FOURCC_NV12) // Don't use opaque in case of yuv output or if it was specified explicitly
+    if (!pParams->bUseOpaqueMemory)
         m_bUseOpaqueMemory = false;
 
     // Media SDK session doesn't require external allocator if the application uses opaque memory
@@ -2837,7 +2747,7 @@ mfxStatus CTranscodingPipeline::Join(MFXVideoSession *pChildSession)
     return sts;
 } // CTranscodingPipeline::Join(MFXVideoSession *pChildSession)
 
-mfxStatus CTranscodingPipeline::Run()
+ mfxStatus CTranscodingPipeline::Run()
 {
     if (m_bDecodeEnable && m_bEncodeEnable)
         return Transcode();
