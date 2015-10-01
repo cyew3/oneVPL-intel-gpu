@@ -241,7 +241,7 @@ int TestSuite::RunTest(unsigned int id)
     {
         in_mvp.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV_PRED;
         in_mvp.Header.BufferSz = sizeof(mfxExtFeiEncMVPredictors);
-        in_mvp.MB = new mfxExtFeiEncMVPredictors::mfxMB[num_mb];
+        in_mvp.MB = new mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB[num_mb];
         in_buffs.push_back((mfxExtBuffer*)&in_mvp);
         in_efc.MVPredictor = 1;
         in_efc.NumMVPredictors = 1; //always 4 predictors
@@ -252,7 +252,7 @@ int TestSuite::RunTest(unsigned int id)
     {
         in_mbc.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB;
         in_mbc.Header.BufferSz = sizeof(mfxExtFeiEncMBCtrl);
-        in_mbc.MB = new mfxExtFeiEncMBCtrl::mfxMB[num_mb];
+        in_mbc.MB = new mfxExtFeiEncMBCtrl::mfxExtFeiEncMBCtrlMB[num_mb];
         in_buffs.push_back((mfxExtBuffer*)&in_mbc);
         in_efc.PerMBInput = 1;
     }
@@ -270,9 +270,9 @@ int TestSuite::RunTest(unsigned int id)
     {
         out_mv.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
         out_mv.Header.BufferSz = sizeof(mfxExtFeiEncMV);
-        out_mv.MB = new mfxExtFeiEncMV::mfxMB[num_mb];
+        out_mv.MB = new mfxExtFeiEncMV::mfxExtFeiEncMVMB[num_mb];
         out_mv.NumMBAlloc = num_mb;
-        memset(out_mv.MB, 0, sizeof(mfxExtFeiEncMV::mfxMB));
+        memset(out_mv.MB, 0, sizeof(mfxExtFeiEncMV::mfxExtFeiEncMVMB));
         out_buffs.push_back((mfxExtBuffer*)&out_mv);
     }
     mfxExtFeiEncMV orig_out_mv = {};
@@ -280,9 +280,9 @@ int TestSuite::RunTest(unsigned int id)
     {
         orig_out_mv.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
         orig_out_mv.Header.BufferSz = sizeof(mfxExtFeiEncMV);
-        orig_out_mv.MB = new mfxExtFeiEncMV::mfxMB[num_mb];
+        orig_out_mv.MB = new mfxExtFeiEncMV::mfxExtFeiEncMVMB[num_mb];
         orig_out_mv.NumMBAlloc = num_mb;
-        memcpy(orig_out_mv.MB, out_mv.MB,  out_mv.NumMBAlloc* sizeof(mfxExtFeiEncMV::mfxMB));
+        memcpy(orig_out_mv.MB, out_mv.MB, out_mv.NumMBAlloc* sizeof(mfxExtFeiEncMV::mfxExtFeiEncMVMB));
     }
 
     mfxExtFeiEncMBStat out_mbstat = {};
@@ -290,9 +290,9 @@ int TestSuite::RunTest(unsigned int id)
     {
         out_mbstat.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
         out_mbstat.Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
-        out_mbstat.MB = new mfxExtFeiEncMBStat::mfxMB[num_mb];
+        out_mbstat.MB = new mfxExtFeiEncMBStat::mfxExtFeiEncMBStatMB[num_mb];
         out_mbstat.NumMBAlloc = num_mb;
-        memset(out_mbstat.MB, 0, sizeof(mfxExtFeiEncMBStat::mfxMB));
+        memset(out_mbstat.MB, 0, sizeof(mfxExtFeiEncMBStat::mfxExtFeiEncMBStatMB));
         out_buffs.push_back((mfxExtBuffer*)&out_mbstat);
     }
     mfxExtFeiEncMBStat orig_out_mbstat = {};
@@ -300,9 +300,9 @@ int TestSuite::RunTest(unsigned int id)
     {
         orig_out_mbstat.Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
         orig_out_mbstat.Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
-        orig_out_mbstat.MB = new mfxExtFeiEncMBStat::mfxMB[num_mb];
+        orig_out_mbstat.MB = new mfxExtFeiEncMBStat::mfxExtFeiEncMBStatMB[num_mb];
         orig_out_mbstat.NumMBAlloc = num_mb;
-        memcpy(orig_out_mbstat.MB, out_mbstat.MB, out_mbstat.NumMBAlloc * sizeof(mfxExtFeiEncMBStat::mfxMB));
+        memcpy(orig_out_mbstat.MB, out_mbstat.MB, out_mbstat.NumMBAlloc * sizeof(mfxExtFeiEncMBStat::mfxExtFeiEncMBStatMB));
     }
 
     mfxExtFeiPakMBCtrl out_pakmb = {};
