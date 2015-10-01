@@ -2985,7 +2985,6 @@ mfxStatus FileBitstreamProcessor::GetInputBitstream(mfxBitstream **pBitstream)
 
 mfxStatus FileBitstreamProcessor::ProcessOutputBitstream(mfxBitstream* pBitstream)
 {
-    printf("W:%d,%d\n",pBitstream->DataOffset,pBitstream->DataLength);
     if (m_pFileWriter.get())
         return m_pFileWriter->WriteNextFrame(pBitstream, false);
     else
