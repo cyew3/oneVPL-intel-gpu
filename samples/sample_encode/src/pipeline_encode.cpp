@@ -109,6 +109,7 @@ mfxStatus CEncTaskPool::Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter*
 
 mfxStatus CEncTaskPool::SynchronizeFirstTask()
 {
+    m_statOverall.StartTimeMeasurement();
     MSDK_CHECK_POINTER(m_pTasks, MFX_ERR_NOT_INITIALIZED);
     MSDK_CHECK_POINTER(m_pmfxSession, MFX_ERR_NOT_INITIALIZED);
 
@@ -121,7 +122,9 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
 
         if (MFX_ERR_NONE == sts)
         {
+            m_statFile.StartTimeMeasurement();
             sts = m_pTasks[m_nTaskBufferStart].WriteBitstream();
+            m_statFile.StopTimeMeasurement();
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             sts = m_pTasks[m_nTaskBufferStart].Reset();
@@ -162,8 +165,10 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
     }
     else
     {
-        return MFX_ERR_NOT_FOUND; // no tasks left in task buffer
+        sts = MFX_ERR_NOT_FOUND; // no tasks left in task buffer
     }
+    m_statOverall.StopTimeMeasurement();
+    return sts;
 }
 
 mfxU32 CEncTaskPool::GetFreeTaskIndex()
@@ -1111,7 +1116,13 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 void CEncodingPipeline::Close()
 {
     if (m_FileWriters.first)
-        msdk_printf(MSDK_STRING("Frame number: %u\r"), m_FileWriters.first->m_nProcessedFramesNum);
+    {
+        msdk_printf(MSDK_STRING("Frame number: %u\r\n"), m_FileWriters.first->m_nProcessedFramesNum);
+#ifdef TIME_STATS
+        mfxF64 ProcDeltaTime = m_statOverall.GetDeltaTime() - m_statFile.GetDeltaTime() - m_TaskPool.GetFileStatistics().GetDeltaTime();
+        msdk_printf(MSDK_STRING("Encoding fps: %.0f"), m_FileWriters.first->m_nProcessedFramesNum / ProcDeltaTime);
+#endif
+    }
 
     MSDK_SAFE_DELETE(m_pmfxENC);
     MSDK_SAFE_DELETE(m_pmfxVPP);
@@ -1240,6 +1251,7 @@ mfxStatus CEncodingPipeline::GetFreeTask(sTask **ppTask)
 
 mfxStatus CEncodingPipeline::Run()
 {
+    m_statOverall.StartTimeMeasurement();
     MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_NOT_INITIALIZED);
 
     mfxStatus sts = MFX_ERR_NONE;
@@ -1295,7 +1307,9 @@ mfxStatus CEncodingPipeline::Run()
             }
 
             pSurf->Info.FrameId.ViewId = currViewNum;
+            m_statFile.StartTimeMeasurement();
             sts = m_FileReader.LoadNextFrame(pSurf);
+            m_statFile.StopTimeMeasurement();
             MSDK_BREAK_ON_ERROR(sts);
             if (MVC_ENABLED & m_MVCflags) currViewNum ^= 1; // Flip between 0 and 1 for ViewId
 
@@ -1523,7 +1537,7 @@ mfxStatus CEncodingPipeline::Run()
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_FOUND);
     // report any errors that occurred in asynchronous part
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
+    m_statOverall.StopTimeMeasurement();
     return sts;
 }
 

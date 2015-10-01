@@ -17,6 +17,7 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 #include <iostream>
 
 #include "vm/strings_defs.h"
+#include "time_statistics.h"
 #include "sample_defs.h"
 #include "sample_utils.h"
 #include "mfxcommon.h"
@@ -26,6 +27,7 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 #pragma warning( disable : 4748 )
 
 msdk_tick CTimer::frequency = 0;
+msdk_tick CTimeStatistics::frequency = 0;
 
 mfxStatus CopyBitstream2(mfxBitstream *dest, mfxBitstream *src)
 {

@@ -26,6 +26,7 @@
 #include "sample_utils.h"
 #include "sample_params.h"
 #include "base_allocator.h"
+#include "time_statistics.h"
 
 #include "mfxmvc.h"
 #include "mfxvideo.h"
@@ -128,8 +129,10 @@ public:
     virtual mfxStatus Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter* pWriter, mfxU32 nPoolSize, mfxU32 nBufferSize, CSmplBitstreamWriter *pOtherWriter = NULL);
     virtual mfxStatus GetFreeTask(sTask **ppTask);
     virtual mfxStatus SynchronizeFirstTask();
-    virtual void Close();
 
+    virtual CTimeStatistics& GetOverallStatistics() { return m_statOverall;}
+    virtual CTimeStatistics& GetFileStatistics() { return m_statFile;}
+    virtual void Close();
 protected:
     sTask* m_pTasks;
     mfxU32 m_nPoolSize;
@@ -137,6 +140,8 @@ protected:
 
     MFXVideoSession* m_pmfxSession;
 
+    CTimeStatistics m_statOverall;
+    CTimeStatistics m_statFile;
     virtual mfxU32 GetFreeTaskIndex();
 };
 
@@ -203,6 +208,8 @@ protected:
 
     CHWDevice *m_hwdev;
 
+    CTimeStatistics m_statOverall;
+    CTimeStatistics m_statFile;
     virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
     virtual mfxStatus InitMfxVppParams(sInputParams *pParams);
 

@@ -259,6 +259,7 @@
     <ClInclude Include="include\sample_utils.h" />
     <ClInclude Include="include\surface_auto_lock.h" />
     <ClInclude Include="include\sysmem_allocator.h" />
+    <ClInclude Include="include\time_statistics.h" />
     <ClInclude Include="include\vpp_ex.h" />
     <ClInclude Include="include\vm\atomic_defs.h" />
     <ClInclude Include="include\vm\file_defs.h" />
