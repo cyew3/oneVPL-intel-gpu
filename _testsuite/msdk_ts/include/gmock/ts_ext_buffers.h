@@ -40,6 +40,13 @@ public:
         memset(&base, 0, sizeof(TB));
     }
 
+    tsExtBufType(const tsExtBufType& that)
+    {
+        TB& base = *this;
+        memset(&base, 0, sizeof(TB));
+        *this = that;
+    }
+
     ~tsExtBufType()
     {
         for(EBIterator it = m_buf.begin(); it != m_buf.end(); it++ )
@@ -111,4 +118,85 @@ public:
     {
         return (T*)GetExtBuffer(tsExtBufTypeToId<T>::id);
     }
+
+    tsExtBufType<TB>& operator=(const tsExtBufType<TB>& other) // copy assignment
+    {
+        //remove all existing extended buffers
+        if(0 != m_buf.size())
+        {
+            for(EBIterator it = m_buf.begin(); it != m_buf.end(); it++ )
+            {
+                delete [] (mfxU8*)(*it);
+            }
+            m_buf.clear();
+            RefreshBuffers();
+        }
+        //copy content of main buffer
+        TB& base = *this;
+        const TB& other_base = other;
+        memcpy(&base, &other_base, sizeof(TB));
+        this->NumExtParam = 0;
+        this->ExtParam = 0;
+
+        //reproduce list of extended buffers and copy its content 
+        for(size_t i(0); i < other.NumExtParam; ++i)
+        {
+            const mfxExtBuffer* those_buffer = other.ExtParam[i];
+            if(those_buffer)
+            {
+                AddExtBuffer(those_buffer->BufferId, those_buffer->BufferSz);
+                mfxExtBuffer* this_buffer = GetExtBuffer(those_buffer->BufferId);
+
+                memcpy((void*) this_buffer, (void*) those_buffer, those_buffer->BufferSz);
+            }
+            else
+            {
+                AddExtBuffer(0,0);
+            }
+        }
+
+        return *this;
+    }
 };
+
+template <typename TB>
+inline bool operator==(const tsExtBufType<TB>& lhs, const tsExtBufType<TB>& rhs)
+{
+    const TB& this_base = lhs;
+    const TB& that_base = rhs;
+    TB tmp_this = this_base;
+    TB tmp_that = that_base;
+
+    tmp_this.ExtParam = 0;
+    tmp_that.ExtParam = 0;
+
+    if( memcmp(&tmp_this, &tmp_that, sizeof(TB)) )
+        return false; //base structure differes
+
+    //order of ext buffers should not matter
+    for(size_t i(0); i < rhs.NumExtParam; ++i)
+    {
+        const mfxExtBuffer* those_buffer = rhs.ExtParam[i];
+        if(those_buffer)
+        {
+            const mfxExtBuffer* this_buffer = const_cast<tsExtBufType<TB>& >(lhs).GetExtBuffer(those_buffer->BufferId);
+            if( memcmp(this_buffer, those_buffer, (std::min)(those_buffer->BufferSz,this_buffer->BufferSz)) )
+                return false; //ext buffer structure differes
+        }
+        else
+        {
+            //check for nullptr presence
+            for(size_t j(0); j < this_base.NumExtParam; ++j)
+            {
+                if(0 == this_base.ExtParam[j])
+                    break;
+            }
+            //one has nullptr buffer while another not
+            return false;
+        }
+    }
+
+    return true;
+}
+template <typename TB>
+inline bool operator!=(const tsExtBufType<TB>& lhs, const tsExtBufType<TB>& rhs){return !(lhs == rhs);}

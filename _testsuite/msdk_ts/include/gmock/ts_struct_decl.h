@@ -629,14 +629,36 @@ STRUCT(mfxExtAVCRefLists,
 )
 
 STRUCT(mfxExtCodingOption3,
-    FIELD_S(mfxExtBuffer, Header       )
-    FIELD_T(mfxU16      , NumSliceI    )
-    FIELD_T(mfxU16      , NumSliceP    )
-    FIELD_T(mfxU16      , NumSliceB    )
-    FIELD_T(mfxU16      , WinBRCMaxAvgKbps)
-    FIELD_T(mfxU16      , WinBRCSize)
-    FIELD_T(mfxU16      , QVBRQuality)
-    FIELD_T(mfxU16      , EnableMBQP)
+    FIELD_S(mfxExtBuffer, Header                        )
+    FIELD_T(mfxU16      , NumSliceI                     )
+    FIELD_T(mfxU16      , NumSliceP                     )
+    FIELD_T(mfxU16      , NumSliceB                     )
+    FIELD_T(mfxU16      , WinBRCMaxAvgKbps              )
+    FIELD_T(mfxU16      , WinBRCSize                    )
+    FIELD_T(mfxU16      , QVBRQuality                   )
+    FIELD_T(mfxU16      , EnableMBQP                    )
+    FIELD_T(mfxU16      , IntRefCycleDist               )
+    FIELD_T(mfxU16      , DirectBiasAdjustment          )
+    FIELD_T(mfxU16      , GlobalMotionBiasAdjustment    )/* tri-state option */
+    FIELD_T(mfxU16      , MVCostScalingFactor           )
+    FIELD_T(mfxU16      , MBDisableSkipMap              )/* tri-state option */
+    FIELD_T(mfxU16      , WeightedPred                  )
+    FIELD_T(mfxU16      , WeightedBiPred                )
+    FIELD_T(mfxU16      , AspectRatioInfoPresent        ) /* tri-state option */
+    FIELD_T(mfxU16      , OverscanInfoPresent           ) /* tri-state option */
+    FIELD_T(mfxU16      , OverscanAppropriate           ) /* tri-state option */
+    FIELD_T(mfxU16      , TimingInfoPresent             ) /* tri-state option */
+    FIELD_T(mfxU16      , BitstreamRestriction          ) /* tri-state option */
+    FIELD_T(mfxU16      , LowDelayHrd                   ) /* tri-state option */
+    FIELD_T(mfxU16      , MotionVectorsOverPicBoundaries) /* tri-state option */
+    FIELD_T(mfxU16      , Log2MaxMvLengthHorizontal     ) /* 0..16 */
+    FIELD_T(mfxU16      , Log2MaxMvLengthVertical       ) /* 0..16 */
+    FIELD_T(mfxU16      , ScenarioInfo                  )
+    FIELD_T(mfxU16      , ContentInfo                   )
+    FIELD_T(mfxU16      , PRefType                      )
+    FIELD_T(mfxU16      , FadeDetection                 ) /* tri-state option */
+    FIELD_T(mfxI16      , DeblockingAlphaTcOffset       ) /* -12..12 (slice_alpha_c0_offset_div2 << 1) */
+    FIELD_T(mfxI16      , DeblockingBetaOffset          ) /* -12..12 (slice_beta_offset_div2 << 1) */
 )
 
 STRUCT(mfxExtLAControl,
@@ -747,3 +769,24 @@ STRUCT(mfxExtMoveRect,
     FIELD_T(mfxI16,                NumRect)
     FIELD_S(mfxExtDirtyRect_Entry, Rect   )
 )
+
+STRUCT(mfxExtMVCSeqDesc,
+    FIELD_S(mfxExtBuffer          , Header        )
+    FIELD_T(mfxU32                , NumView       )
+    FIELD_T(mfxU32                , NumViewAlloc  )
+  //FIELD_S(mfxMVCViewDependency* , View          )
+    FIELD_T(mfxU32                , NumViewId     )
+    FIELD_T(mfxU32                , NumViewIdAlloc)
+  //FIELD_S(mfxU16*               , ViewId        )
+    FIELD_T(mfxU32                , NumOP         )
+    FIELD_T(mfxU32                , NumOPAlloc    )
+  //FIELD_S(mfxMVCOperationPoint* , OP            )
+    FIELD_T(mfxU16                , NumRefsTotal  )
+)
+
+//STRUCT(mfxExtCodingOptionVPS,
+//    FIELD_S(mfxExtBuffer, Header    )
+//    FIELD_T(mfxU8*      , VPSBuffer )
+//    FIELD_T(mfxU16      , VPSBufSize)
+//    FIELD_T(mfxU16      , VPSId)
+//)

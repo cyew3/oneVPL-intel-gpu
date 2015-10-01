@@ -32,6 +32,13 @@ std::string ENV(const char* name, const char* def)
 
 void set_brc_params(tsExtBufType<mfxVideoParam>* p)
 {
+
+    if(!p->mfx.FrameInfo.FrameRateExtN && !p->mfx.FrameInfo.FrameRateExtD)
+    {
+        p->mfx.FrameInfo.FrameRateExtN = 30;
+        p->mfx.FrameInfo.FrameRateExtD = 1;
+    }
+
     /*
     BitRate for AVC:
         [image width] x [image height] x [framerate] x [motion rank] x 0.07 = [desired bitrate]
