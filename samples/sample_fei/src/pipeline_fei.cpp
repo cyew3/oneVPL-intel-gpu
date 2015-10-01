@@ -136,7 +136,7 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
                             fwrite(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
                         }
                         else{
-                            mfxExtFeiEncMV::mfxMB tmpMB;
+                            mfxExtFeiEncMV::mfxExtFeiEncMVMB tmpMB;
                             memset(&tmpMB, 0x8000, sizeof(tmpMB));
                             for (mfxU32 k = 0; k < mvBuf->NumMBAlloc; k++)
                                 fwrite(&tmpMB, sizeof(tmpMB), 1, mvENCPAKout);
