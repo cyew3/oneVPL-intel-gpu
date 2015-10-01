@@ -1512,3 +1512,651 @@ TEST(optimization, InterpolationLumaFast_avx2)
         }
     }
 }
+
+TEST(optimization, FilterPredictPels_sse4)
+{
+    const int srcDstSize = 4*64+32;     // inplace operation
+    const int widthTab[4] = {4, 8, 16, 32};
+    int width, tabIdx;
+
+    auto predPel08_px  = utils::MakeAlignedPtr<unsigned char>(srcDstSize, utils::AlignSse4);
+    auto predPel08_sse = utils::MakeAlignedPtr<unsigned char>(srcDstSize, utils::AlignSse4);
+
+    auto predPel16_px  = utils::MakeAlignedPtr<short>(srcDstSize, utils::AlignSse4);
+    auto predPel16_sse = utils::MakeAlignedPtr<short>(srcDstSize, utils::AlignSse4);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    for (tabIdx = 0; tabIdx < 4; tabIdx++) {
+        width = widthTab[tabIdx];
+
+        // 8-bit
+        utils::InitRandomBlock(rand, predPel08_px.get(), srcDstSize, srcDstSize, 1, 0, (1 << 8) - 1);
+        memcpy(predPel08_sse.get(), predPel08_px.get(), sizeof(*predPel08_px.get())*srcDstSize);
+
+        MFX_HEVC_PP::h265_FilterPredictPels_8u_px (predPel08_px.get(), width);
+        MFX_HEVC_PP::h265_FilterPredictPels_8u_sse(predPel08_sse.get(), width);
+        EXPECT_EQ(0, memcmp(predPel08_px.get(), predPel08_sse.get(), sizeof(*predPel08_sse.get()) * srcDstSize));
+
+        // 10-bit
+        utils::InitRandomBlock(rand, predPel16_px.get(), srcDstSize, srcDstSize, 1, 0, (1 << 10) - 1);
+        memcpy(predPel16_sse.get(), predPel16_px.get(), sizeof(*predPel16_px.get())*srcDstSize);
+
+        MFX_HEVC_PP::h265_FilterPredictPels_16s_px (predPel16_px.get(), width);
+        MFX_HEVC_PP::h265_FilterPredictPels_16s_sse(predPel16_sse.get(), width);
+        EXPECT_EQ(0, memcmp(predPel16_px.get(), predPel16_sse.get(), sizeof(*predPel16_sse.get()) * srcDstSize));
+    }
+
+    // bilinear filter (only for 32x32)
+    utils::InitRandomBlock(rand, predPel08_px.get(), srcDstSize, srcDstSize, 1, 0, (1 << 8) - 1);
+    memcpy(predPel08_sse.get(), predPel08_px.get(), sizeof(*predPel08_px.get())*srcDstSize);
+
+    MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_px (predPel08_px.get(),  32, predPel08_px.get()[0*32],  predPel08_px.get()[4*32],  predPel08_px.get()[2*32] );
+    MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_sse(predPel08_sse.get(), 32, predPel08_sse.get()[0*32], predPel08_sse.get()[4*32], predPel08_sse.get()[2*32]);
+    EXPECT_EQ(0, memcmp(predPel08_px.get(), predPel08_sse.get(), sizeof(*predPel08_sse.get()) * srcDstSize));
+    
+    utils::InitRandomBlock(rand, predPel16_px.get(), srcDstSize, srcDstSize, 1, 0, (1 << 10) - 1);
+    memcpy(predPel16_sse.get(), predPel16_px.get(), sizeof(*predPel16_px.get())*srcDstSize);
+
+    MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_px (predPel16_px.get(),  32, predPel16_px.get()[0*32],  predPel16_px.get()[4*32],  predPel16_px.get()[2*32] );
+    MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_sse(predPel16_sse.get(), 32, predPel16_sse.get()[0*32], predPel16_sse.get()[4*32], predPel16_sse.get()[2*32]);
+    EXPECT_EQ(0, memcmp(predPel16_px.get(), predPel16_sse.get(), sizeof(*predPel16_sse.get()) * srcDstSize));
+}
+
+TEST(optimization, FilterPredictPels_avx2)
+{
+    const int srcDstSize = 4*64+32;     // inplace operation
+    const int widthTab[4] = {4, 8, 16, 32};
+    int width, tabIdx;
+
+    auto predPel08_px   = utils::MakeAlignedPtr<unsigned char>(srcDstSize, utils::AlignAvx2);
+    auto predPel08_avx2 = utils::MakeAlignedPtr<unsigned char>(srcDstSize, utils::AlignAvx2);
+
+    auto predPel16_px   = utils::MakeAlignedPtr<short>(srcDstSize, utils::AlignAvx2);
+    auto predPel16_avx2 = utils::MakeAlignedPtr<short>(srcDstSize, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    for (tabIdx = 0; tabIdx < 4; tabIdx++) {
+        width = widthTab[tabIdx];
+
+        // 8-bit
+        utils::InitRandomBlock(rand, predPel08_px.get(), srcDstSize, srcDstSize, 1, 0, (1 << 8) - 1);
+        memcpy(predPel08_avx2.get(), predPel08_px.get(), sizeof(*predPel08_px.get())*srcDstSize);
+
+        MFX_HEVC_PP::h265_FilterPredictPels_8u_px  (predPel08_px.get(), width);
+        MFX_HEVC_PP::h265_FilterPredictPels_8u_avx2(predPel08_avx2.get(), width);
+        EXPECT_EQ(0, memcmp(predPel08_px.get(), predPel08_avx2.get(), sizeof(*predPel08_avx2.get()) * srcDstSize));
+
+        // 10-bit
+        utils::InitRandomBlock(rand, predPel16_px.get(), srcDstSize, srcDstSize, 1, 0, (1 << 10) - 1);
+        memcpy(predPel16_avx2.get(), predPel16_px.get(), sizeof(*predPel16_px.get())*srcDstSize);
+
+        MFX_HEVC_PP::h265_FilterPredictPels_16s_px  (predPel16_px.get(), width);
+        MFX_HEVC_PP::h265_FilterPredictPels_16s_avx2(predPel16_avx2.get(), width);
+        EXPECT_EQ(0, memcmp(predPel16_px.get(), predPel16_avx2.get(), sizeof(*predPel16_avx2.get()) * srcDstSize));
+    }
+
+    // bilinear filter (only for 32x32)
+    utils::InitRandomBlock(rand, predPel08_px.get(), srcDstSize, srcDstSize, 1, 0, (1 << 8) - 1);
+    memcpy(predPel08_avx2.get(), predPel08_px.get(), sizeof(*predPel08_px.get())*srcDstSize);
+
+    MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_px  (predPel08_px.get(),   32, predPel08_px.get()[0*32],   predPel08_px.get()[4*32],   predPel08_px.get()[2*32]  );
+    MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_avx2(predPel08_avx2.get(), 32, predPel08_avx2.get()[0*32], predPel08_avx2.get()[4*32], predPel08_avx2.get()[2*32]);
+    EXPECT_EQ(0, memcmp(predPel08_px.get(), predPel08_avx2.get(), sizeof(*predPel08_avx2.get()) * srcDstSize));
+    
+    utils::InitRandomBlock(rand, predPel16_px.get(), srcDstSize, srcDstSize, 1, 0, (1 << 10) - 1);
+    memcpy(predPel16_avx2.get(), predPel16_px.get(), sizeof(*predPel16_px.get())*srcDstSize);
+
+    MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_px  (predPel16_px.get(),   32, predPel16_px.get()[0*32],   predPel16_px.get()[4*32],   predPel16_px.get()[2*32]  );
+    MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_avx2(predPel16_avx2.get(), 32, predPel16_avx2.get()[0*32], predPel16_avx2.get()[4*32], predPel16_avx2.get()[2*32]);
+    EXPECT_EQ(0, memcmp(predPel16_px.get(), predPel16_avx2.get(), sizeof(*predPel16_avx2.get()) * srcDstSize));
+}
+
+TEST(optimization, PredictIntraPlanar_sse4)
+{
+    const int pitch = 64;
+    const int srcSize = (4*64+1)*2;
+    const int dstSize = pitch*pitch;
+
+    auto predPel08 = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignSse4);
+    auto dst08_px  = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignSse4);
+    auto dst08_sse = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignSse4);
+
+    auto predPel16 = utils::MakeAlignedPtr<short>(srcSize, utils::AlignSse4);
+    auto dst16_px  = utils::MakeAlignedPtr<short>(dstSize, utils::AlignSse4);
+    auto dst16_sse = utils::MakeAlignedPtr<short>(dstSize, utils::AlignSse4);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    utils::InitRandomBlock(rand, predPel08.get(), srcSize, srcSize, 1, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, dst08_px.get(), pitch, pitch, pitch, 0, (1 << 8) - 1);
+    memcpy(dst08_sse.get(), dst08_px.get(), sizeof(*dst08_px.get())*dstSize);
+
+    utils::InitRandomBlock(rand, predPel16.get(), srcSize, srcSize, 1, 0, (1 << 10) - 1);
+    utils::InitRandomBlock(rand, dst16_px.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+    memcpy(dst16_sse.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+    // 4x4
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px (predPel08.get(), dst08_px.get(), pitch, 4);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_sse(predPel08.get(), dst08_sse.get(), pitch, 4);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_px (predPel16.get(), dst16_px.get(), pitch, 4);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_sse(predPel16.get(), dst16_sse.get(), pitch, 4);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+    // 8x8
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px (predPel08.get(), dst08_px.get(), pitch, 8);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_sse(predPel08.get(), dst08_sse.get(), pitch, 8);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_px (predPel16.get(), dst16_px.get(), pitch, 8);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_sse(predPel16.get(), dst16_sse.get(), pitch, 8);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+    // 16x16
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px (predPel08.get(), dst08_px.get(), pitch, 16);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_sse(predPel08.get(), dst08_sse.get(), pitch, 16);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_px (predPel16.get(), dst16_px.get(), pitch, 16);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_sse(predPel16.get(), dst16_sse.get(), pitch, 16);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+    // 32x32
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px (predPel08.get(), dst08_px.get(), pitch, 32);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_sse(predPel08.get(), dst08_sse.get(), pitch, 32);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_px (predPel16.get(), dst16_px.get(), pitch, 32);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_sse(predPel16.get(), dst16_sse.get(), pitch, 32);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+}
+
+TEST(optimization, PredictIntraPlanar_avx2)
+{
+    const int pitch = 64;
+    const int srcSize = (4*64+1)*2;
+    const int dstSize = pitch*pitch;
+
+    auto predPel08  = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignAvx2);
+    auto dst08_px   = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignAvx2);
+    auto dst08_avx2 = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignAvx2);
+
+    auto predPel16  = utils::MakeAlignedPtr<short>(srcSize, utils::AlignAvx2);
+    auto dst16_px   = utils::MakeAlignedPtr<short>(dstSize, utils::AlignAvx2);
+    auto dst16_avx2 = utils::MakeAlignedPtr<short>(dstSize, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    utils::InitRandomBlock(rand, predPel08.get(), srcSize, srcSize, 1, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, dst08_px.get(), pitch, pitch, pitch, 0, (1 << 8) - 1);
+    memcpy(dst08_avx2.get(), dst08_px.get(), sizeof(*dst08_px.get())*dstSize);
+
+    utils::InitRandomBlock(rand, predPel16.get(), srcSize, srcSize, 1, 0, (1 << 10) - 1);
+    utils::InitRandomBlock(rand, dst16_px.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+    memcpy(dst16_avx2.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+    // 4x4
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px (predPel08.get(), dst08_px.get(), pitch, 4);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_avx2(predPel08.get(), dst08_avx2.get(), pitch, 4);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_px (predPel16.get(), dst16_px.get(), pitch, 4);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_avx2(predPel16.get(), dst16_avx2.get(), pitch, 4);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+    // 8x8
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px (predPel08.get(), dst08_px.get(), pitch, 8);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_avx2(predPel08.get(), dst08_avx2.get(), pitch, 8);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_px (predPel16.get(), dst16_px.get(), pitch, 8);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_avx2(predPel16.get(), dst16_avx2.get(), pitch, 8);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+    // 16x16
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px (predPel08.get(), dst08_px.get(), pitch, 16);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_avx2(predPel08.get(), dst08_avx2.get(), pitch, 16);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_px (predPel16.get(), dst16_px.get(), pitch, 16);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_avx2(predPel16.get(), dst16_avx2.get(), pitch, 16);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+    // 32x32
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px (predPel08.get(), dst08_px.get(), pitch, 32);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u_avx2(predPel08.get(), dst08_avx2.get(), pitch, 32);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_px (predPel16.get(), dst16_px.get(), pitch, 32);
+    MFX_HEVC_PP::h265_PredictIntra_Planar_16s_avx2(predPel16.get(), dst16_avx2.get(), pitch, 32);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+}
+
+TEST(optimization, PredictIntraAngleSingle_sse4)
+{
+    const int pitch = 64;
+    const int srcSize = (4*64+1)*2;
+    const int dstSize = pitch*pitch;
+    int mode;
+
+    auto predPel08 = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignSse4);
+    auto dst08_px  = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignSse4);
+    auto dst08_sse = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignSse4);
+
+    auto predPel16 = utils::MakeAlignedPtr<unsigned short>(srcSize, utils::AlignSse4);
+    auto dst16_px  = utils::MakeAlignedPtr<unsigned short>(dstSize, utils::AlignSse4);
+    auto dst16_sse = utils::MakeAlignedPtr<unsigned short>(dstSize, utils::AlignSse4);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    utils::InitRandomBlock(rand, predPel08.get(), srcSize, srcSize, 1, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, dst08_px.get(), pitch, pitch, pitch, 0, (1 << 8) - 1);
+    memcpy(dst08_sse.get(), dst08_px.get(), sizeof(*dst08_px.get())*dstSize);
+
+    utils::InitRandomBlock(rand, predPel16.get(), srcSize, srcSize, 1, 0, (1 << 10) - 1);
+    utils::InitRandomBlock(rand, dst16_px.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+    memcpy(dst16_sse.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+    // single angle at a time (with transpose)
+    for (mode = 2; mode < 35; mode++) {
+        // 4x4
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_px (mode, predPel08.get(), dst08_px.get(), pitch, 4);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_sse(mode, predPel08.get(), dst08_sse.get(), pitch, 4);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px (mode, predPel16.get(), dst16_px.get(), pitch, 4);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_sse(mode, predPel16.get(), dst16_sse.get(), pitch, 4);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+        // 8x8
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_px (mode, predPel08.get(), dst08_px.get(), pitch, 8);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_sse(mode, predPel08.get(), dst08_sse.get(), pitch, 8);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px (mode, predPel16.get(), dst16_px.get(), pitch, 8);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_sse(mode, predPel16.get(), dst16_sse.get(), pitch, 8);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+        // 16x16
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_px (mode, predPel08.get(), dst08_px.get(), pitch, 16);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_sse(mode, predPel08.get(), dst08_sse.get(), pitch, 16);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px (mode, predPel16.get(), dst16_px.get(), pitch, 16);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_sse(mode, predPel16.get(), dst16_sse.get(), pitch, 16);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+        // 32x32
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_px (mode, predPel08.get(), dst08_px.get(), pitch, 32);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_sse(mode, predPel08.get(), dst08_sse.get(), pitch, 32);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px (mode, predPel16.get(), dst16_px.get(), pitch, 32);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_sse(mode, predPel16.get(), dst16_sse.get(), pitch, 32);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+    }
+
+    // single angle at a time (no transpose)
+    for (mode = 2; mode < 35; mode++) {
+        // 4x4
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_px (mode, predPel08.get(), dst08_px.get(), pitch, 4);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_sse(mode, predPel08.get(), dst08_sse.get(), pitch, 4);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_px (mode, predPel16.get(), dst16_px.get(), pitch, 4);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_sse(mode, predPel16.get(), dst16_sse.get(), pitch, 4);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+        // 8x8
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_px (mode, predPel08.get(), dst08_px.get(), pitch, 8);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_sse(mode, predPel08.get(), dst08_sse.get(), pitch, 8);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_px (mode, predPel16.get(), dst16_px.get(), pitch, 8);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_sse(mode, predPel16.get(), dst16_sse.get(), pitch, 8);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+        // 16x16
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_px (mode, predPel08.get(), dst08_px.get(), pitch, 16);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_sse(mode, predPel08.get(), dst08_sse.get(), pitch, 16);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_px (mode, predPel16.get(), dst16_px.get(), pitch, 16);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_sse(mode, predPel16.get(), dst16_sse.get(), pitch, 16);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+        // 32x32
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_px (mode, predPel08.get(), dst08_px.get(), pitch, 32);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_sse(mode, predPel08.get(), dst08_sse.get(), pitch, 32);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_px (mode, predPel16.get(), dst16_px.get(), pitch, 32);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_sse(mode, predPel16.get(), dst16_sse.get(), pitch, 32);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+    }
+}
+
+TEST(optimization, PredictIntraAngleSingle_avx2)
+{
+    const int pitch = 64;
+    const int srcSize = (4*64+1)*2;
+    const int dstSize = pitch*pitch;
+    int mode;
+
+    auto predPel08  = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignAvx2);
+    auto dst08_px   = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignAvx2);
+    auto dst08_avx2 = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignAvx2);
+
+    auto predPel16  = utils::MakeAlignedPtr<unsigned short>(srcSize, utils::AlignAvx2);
+    auto dst16_px   = utils::MakeAlignedPtr<unsigned short>(dstSize, utils::AlignAvx2);
+    auto dst16_avx2 = utils::MakeAlignedPtr<unsigned short>(dstSize, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    utils::InitRandomBlock(rand, predPel08.get(), srcSize, srcSize, 1, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, dst08_px.get(), pitch, pitch, pitch, 0, (1 << 8) - 1);
+    memcpy(dst08_avx2.get(), dst08_px.get(), sizeof(*dst08_px.get())*dstSize);
+
+    utils::InitRandomBlock(rand, predPel16.get(), srcSize, srcSize, 1, 0, (1 << 10) - 1);
+    utils::InitRandomBlock(rand, dst16_px.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+    memcpy(dst16_avx2.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+    // single angle at a time (with transpose)
+    for (mode = 2; mode < 35; mode++) {
+        // 4x4
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_px  (mode, predPel08.get(), dst08_px.get(), pitch, 4);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_avx2(mode, predPel08.get(), dst08_avx2.get(), pitch, 4);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px  (mode, predPel16.get(), dst16_px.get(), pitch, 4);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_avx2(mode, predPel16.get(), dst16_avx2.get(), pitch, 4);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+        // 8x8
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_px  (mode, predPel08.get(), dst08_px.get(), pitch, 8);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_avx2(mode, predPel08.get(), dst08_avx2.get(), pitch, 8);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px  (mode, predPel16.get(), dst16_px.get(), pitch, 8);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_avx2(mode, predPel16.get(), dst16_avx2.get(), pitch, 8);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+        // 16x16
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_px  (mode, predPel08.get(), dst08_px.get(), pitch, 16);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_avx2(mode, predPel08.get(), dst08_avx2.get(), pitch, 16);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px  (mode, predPel16.get(), dst16_px.get(), pitch, 16);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_avx2(mode, predPel16.get(), dst16_avx2.get(), pitch, 16);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+        // 32x32
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_px  (mode, predPel08.get(), dst08_px.get(), pitch, 32);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_8u_avx2(mode, predPel08.get(), dst08_avx2.get(), pitch, 32);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px  (mode, predPel16.get(), dst16_px.get(), pitch, 32);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_16u_avx2(mode, predPel16.get(), dst16_avx2.get(), pitch, 32);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+    }
+
+    // single angle at a time (no transpose)
+    for (mode = 2; mode < 35; mode++) {
+        // 4x4
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_px  (mode, predPel08.get(), dst08_px.get(), pitch, 4);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_avx2(mode, predPel08.get(), dst08_avx2.get(), pitch, 4);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_px  (mode, predPel16.get(), dst16_px.get(), pitch, 4);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_avx2(mode, predPel16.get(), dst16_avx2.get(), pitch, 4);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+        // 8x8
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_px  (mode, predPel08.get(), dst08_px.get(), pitch, 8);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_avx2(mode, predPel08.get(), dst08_avx2.get(), pitch, 8);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_px  (mode, predPel16.get(), dst16_px.get(), pitch, 8);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_avx2(mode, predPel16.get(), dst16_avx2.get(), pitch, 8);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+        // 16x16
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_px (mode, predPel08.get(), dst08_px.get(), pitch, 16);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_avx2(mode, predPel08.get(), dst08_avx2.get(), pitch, 16);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_px  (mode, predPel16.get(), dst16_px.get(), pitch, 16);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_avx2(mode, predPel16.get(), dst16_avx2.get(), pitch, 16);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+        // 32x32
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_px  (mode, predPel08.get(), dst08_px.get(), pitch, 32);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_8u_avx2(mode, predPel08.get(), dst08_avx2.get(), pitch, 32);
+        EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_px  (mode, predPel16.get(), dst16_px.get(), pitch, 32);
+        MFX_HEVC_PP::h265_PredictIntra_Ang_NoTranspose_16u_avx2(mode, predPel16.get(), dst16_avx2.get(), pitch, 32);
+        EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+    }
+}
+
+TEST(optimization, PredictIntraAngleMultiple_sse4)
+{
+    const int pitch = 64;
+    const int srcSize = (4*64+1)*2;
+    const int dstSize = 35*pitch*pitch;
+
+    auto predPel08 = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignSse4);
+    auto filtPel08 = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignSse4);
+    auto dst08_px  = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignSse4);
+    auto dst08_sse = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignSse4);
+
+    auto predPel16 = utils::MakeAlignedPtr<unsigned short>(srcSize, utils::AlignSse4);
+    auto filtPel16 = utils::MakeAlignedPtr<unsigned short>(srcSize, utils::AlignSse4);
+    auto dst16_px  = utils::MakeAlignedPtr<unsigned short>(dstSize, utils::AlignSse4);
+    auto dst16_sse = utils::MakeAlignedPtr<unsigned short>(dstSize, utils::AlignSse4);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    utils::InitRandomBlock(rand, predPel08.get(), srcSize, srcSize, 1, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, filtPel08.get(), srcSize, srcSize, 1, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, dst08_px.get(), pitch, pitch, pitch, 0, (1 << 8) - 1);
+    memcpy(dst08_sse.get(), dst08_px.get(), sizeof(*dst08_px.get())*dstSize);
+
+    utils::InitRandomBlock(rand, predPel16.get(), srcSize, srcSize, 1, 0, (1 << 10) - 1);
+    utils::InitRandomBlock(rand, filtPel16.get(), srcSize, srcSize, 1, 0, (1 << 10) - 1);
+    utils::InitRandomBlock(rand, dst16_px.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+    memcpy(dst16_sse.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+    // all even angles [2-34] (output in packed width*width blocks for each mode)
+    
+    // 4x4
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_px (predPel08.get(), filtPel08.get(), dst08_px.get(), 4);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_sse(predPel08.get(), filtPel08.get(), dst08_sse.get(), 4);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_px (predPel16.get(), filtPel16.get(), dst16_px.get(), 4, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_sse(predPel16.get(), filtPel16.get(), dst16_sse.get(), 4, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+    // 8x8
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_px (predPel08.get(), filtPel08.get(), dst08_px.get(), 8);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_sse(predPel08.get(), filtPel08.get(), dst08_sse.get(), 8);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_px (predPel16.get(), filtPel16.get(), dst16_px.get(), 8, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_sse(predPel16.get(), filtPel16.get(), dst16_sse.get(), 8, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+    // 16x16
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_px (predPel08.get(), filtPel08.get(), dst08_px.get(), 16);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_sse(predPel08.get(), filtPel08.get(), dst08_sse.get(), 16);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_px (predPel16.get(), filtPel16.get(), dst16_px.get(), 16, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_sse(predPel16.get(), filtPel16.get(), dst16_sse.get(), 16, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+    // 32x32
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_px (predPel08.get(), filtPel08.get(), dst08_px.get(), 32);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_sse(predPel08.get(), filtPel08.get(), dst08_sse.get(), 32);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_px (predPel16.get(), filtPel16.get(), dst16_px.get(), 32, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_sse(predPel16.get(), filtPel16.get(), dst16_sse.get(), 32, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+    // all angles [2-34] (output in packed width*width blocks for each mode)
+
+    // 4x4
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_px (predPel08.get(), filtPel08.get(), dst08_px.get(), 4);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_sse(predPel08.get(), filtPel08.get(), dst08_sse.get(), 4);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_px (predPel16.get(), filtPel16.get(), dst16_px.get(), 4, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_sse(predPel16.get(), filtPel16.get(), dst16_sse.get(), 4, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+    // 8x8
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_px (predPel08.get(), filtPel08.get(), dst08_px.get(), 8);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_sse(predPel08.get(), filtPel08.get(), dst08_sse.get(), 8);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_px (predPel16.get(), filtPel16.get(), dst16_px.get(), 8, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_sse(predPel16.get(), filtPel16.get(), dst16_sse.get(), 8, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+    // 16x16
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_px (predPel08.get(), filtPel08.get(), dst08_px.get(), 16);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_sse(predPel08.get(), filtPel08.get(), dst08_sse.get(), 16);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_px (predPel16.get(), filtPel16.get(), dst16_px.get(), 16, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_sse(predPel16.get(), filtPel16.get(), dst16_sse.get(), 16, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+
+    // 32x32
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_px (predPel08.get(), filtPel08.get(), dst08_px.get(), 32);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_sse(predPel08.get(), filtPel08.get(), dst08_sse.get(), 32);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_sse.get(), sizeof(*dst08_sse.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_px (predPel16.get(), filtPel16.get(), dst16_px.get(), 32, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_sse(predPel16.get(), filtPel16.get(), dst16_sse.get(), 32, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_sse.get(), sizeof(*dst16_sse.get()) * dstSize));
+}
+
+TEST(optimization, PredictIntraAngleMultiple_avx2)
+{
+    const int pitch = 64;
+    const int srcSize = (4*64+1)*2;
+    const int dstSize = 35*pitch*pitch;
+
+    auto predPel08  = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignAvx2);
+    auto filtPel08  = utils::MakeAlignedPtr<unsigned char>(srcSize, utils::AlignAvx2);
+    auto dst08_px   = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignAvx2);
+    auto dst08_avx2 = utils::MakeAlignedPtr<unsigned char>(dstSize, utils::AlignAvx2);
+
+    auto predPel16  = utils::MakeAlignedPtr<unsigned short>(srcSize, utils::AlignAvx2);
+    auto filtPel16  = utils::MakeAlignedPtr<unsigned short>(srcSize, utils::AlignAvx2);
+    auto dst16_px   = utils::MakeAlignedPtr<unsigned short>(dstSize, utils::AlignAvx2);
+    auto dst16_avx2 = utils::MakeAlignedPtr<unsigned short>(dstSize, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    utils::InitRandomBlock(rand, predPel08.get(), srcSize, srcSize, 1, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, filtPel08.get(), srcSize, srcSize, 1, 0, (1 << 8) - 1);
+    utils::InitRandomBlock(rand, dst08_px.get(), pitch, pitch, pitch, 0, (1 << 8) - 1);
+    memcpy(dst08_avx2.get(), dst08_px.get(), sizeof(*dst08_px.get())*dstSize);
+
+    utils::InitRandomBlock(rand, predPel16.get(), srcSize, srcSize, 1, 0, (1 << 10) - 1);
+    utils::InitRandomBlock(rand, filtPel16.get(), srcSize, srcSize, 1, 0, (1 << 10) - 1);
+    utils::InitRandomBlock(rand, dst16_px.get(), pitch, pitch, pitch, 0, (1 << 10) - 1);
+    memcpy(dst16_avx2.get(), dst16_px.get(), sizeof(*dst16_px.get())*dstSize);
+
+    // all even angles [2-34] (output in packed width*width blocks for each mode)
+    
+    // 4x4
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_px  (predPel08.get(), filtPel08.get(), dst08_px.get(), 4);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_avx2(predPel08.get(), filtPel08.get(), dst08_avx2.get(), 4);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_px  (predPel16.get(), filtPel16.get(), dst16_px.get(), 4, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_avx2(predPel16.get(), filtPel16.get(), dst16_avx2.get(), 4, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+    // 8x8
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_px  (predPel08.get(), filtPel08.get(), dst08_px.get(), 8);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_avx2(predPel08.get(), filtPel08.get(), dst08_avx2.get(), 8);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_px  (predPel16.get(), filtPel16.get(), dst16_px.get(), 8, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_avx2(predPel16.get(), filtPel16.get(), dst16_avx2.get(), 8, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+    // 16x16
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_px  (predPel08.get(), filtPel08.get(), dst08_px.get(), 16);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_avx2(predPel08.get(), filtPel08.get(), dst08_avx2.get(), 16);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_px  (predPel16.get(), filtPel16.get(), dst16_px.get(), 16, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_avx2(predPel16.get(), filtPel16.get(), dst16_avx2.get(), 16, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+    // 32x32
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_px  (predPel08.get(), filtPel08.get(), dst08_px.get(), 32);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_avx2(predPel08.get(), filtPel08.get(), dst08_avx2.get(), 32);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_px  (predPel16.get(), filtPel16.get(), dst16_px.get(), 32, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_16u_avx2(predPel16.get(), filtPel16.get(), dst16_avx2.get(), 32, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+    // all angles [2-34] (output in packed width*width blocks for each mode)
+
+    // 4x4
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_px  (predPel08.get(), filtPel08.get(), dst08_px.get(), 4);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_avx2(predPel08.get(), filtPel08.get(), dst08_avx2.get(), 4);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_px  (predPel16.get(), filtPel16.get(), dst16_px.get(), 4, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_avx2(predPel16.get(), filtPel16.get(), dst16_avx2.get(), 4, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+    // 8x8
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_px  (predPel08.get(), filtPel08.get(), dst08_px.get(), 8);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_avx2(predPel08.get(), filtPel08.get(), dst08_avx2.get(), 8);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_px  (predPel16.get(), filtPel16.get(), dst16_px.get(), 8, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_avx2(predPel16.get(), filtPel16.get(), dst16_avx2.get(), 8, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+    // 16x16
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_px  (predPel08.get(), filtPel08.get(), dst08_px.get(), 16);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_avx2(predPel08.get(), filtPel08.get(), dst08_avx2.get(), 16);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_px  (predPel16.get(), filtPel16.get(), dst16_px.get(), 16, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_avx2(predPel16.get(), filtPel16.get(), dst16_avx2.get(), 16, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+
+    // 32x32
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_px  (predPel08.get(), filtPel08.get(), dst08_px.get(), 32);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_avx2(predPel08.get(), filtPel08.get(), dst08_avx2.get(), 32);
+    EXPECT_EQ(0, memcmp(dst08_px.get(), dst08_avx2.get(), sizeof(*dst08_avx2.get()) * dstSize));
+
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_px  (predPel16.get(), filtPel16.get(), dst16_px.get(), 32, 10);
+    MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_avx2(predPel16.get(), filtPel16.get(), dst16_avx2.get(), 32, 10);
+    EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
+}
