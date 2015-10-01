@@ -556,8 +556,8 @@ void FillConstPartOfPps(
     if (!extPps || !extSps)
         return;
 
-    pps.seq_parameter_set_id = extSps->seqParameterSetId;
-    pps.pic_parameter_set_id = extPps->picParameterSetId;
+    pps.seq_parameter_set_id = 0; // extSps->seqParameterSetId; - driver doesn't support non-zero sps_id
+    pps.pic_parameter_set_id = 0; // extPps->picParameterSetId; - driver doesn't support non-zero pps_id
 
     pps.last_picture = 0;// aya???
     pps.frame_num = 0;   // aya???
@@ -916,7 +916,7 @@ void VAAPIEncoder::FillSps(
         sps.num_units_in_tick = extSps->vui.numUnitsInTick;
 
         sps.max_num_ref_frames   =  mfxU8((extSps->maxNumRefFrames + 1) / 2);
-        sps.seq_parameter_set_id = extSps->seqParameterSetId;
+        sps.seq_parameter_set_id = 0; // extSps->seqParameterSetId; - driver doesn't support non-zero sps_id
         sps.seq_fields.bits.chroma_format_idc    = extSps->chromaFormatIdc;
         sps.bit_depth_luma_minus8    = extSps->bitDepthLumaMinus8;
         sps.bit_depth_chroma_minus8  = extSps->bitDepthChromaMinus8;
