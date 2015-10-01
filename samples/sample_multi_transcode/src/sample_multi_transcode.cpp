@@ -421,11 +421,18 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
     bool IsSourcePresence = false;
     bool IsHeterSessionJoin = false;
     bool IsFirstInTopology = true;
+    bool areAllInterSessionsOpaque = true;
 
     mfxU16 minAsyncDepth = 0;
     bool bUseExternalAllocator = false;
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {
+        if (!m_InputParamsArray[i].bUseOpaqueMemory && 
+            (m_InputParamsArray[i].eMode == Source) || (m_InputParamsArray[i].eMode == Sink))
+        {
+            areAllInterSessionsOpaque = false;
+        }
+
         if (m_InputParamsArray[i].bOpenCL ||
             m_InputParamsArray[i].EncoderFourCC ||
             m_InputParamsArray[i].DecoderFourCC)
@@ -534,7 +541,18 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
         if ((m_InputParamsArray[i].eMode == Source) || (m_InputParamsArray[i].eMode == Sink))
         {
             m_InputParamsArray[i].nAsyncDepth = minAsyncDepth;
+
+            //--- If at least one of inter-session is not using opaque memory, all of them should not use it
+            if(!areAllInterSessionsOpaque)
+            {
+                m_InputParamsArray[i].bUseOpaqueMemory=false;
+            }
         }
+    }
+
+    if(!areAllInterSessionsOpaque)
+    {
+        msdk_printf(MSDK_STRING("Some inter-sessions do not use opaque memory (possibly because of -o::yuv).\nOpaque memory in all inter-sessions is disabled.\n"));
     }
 
     if (IsSinkPresence && !IsSourcePresence)
