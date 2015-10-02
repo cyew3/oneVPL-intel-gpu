@@ -3021,7 +3021,7 @@ mfxStatus FileBitstreamProcessor::Init(msdk_char *pStrSrcFile, msdk_char *pStrDs
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    if (pStrDstFile)
+    if (pStrDstFile && *pStrDstFile)
     {
         m_pFileWriter.reset(new CSmplBitstreamWriter);
         sts = m_pFileWriter->Init(pStrDstFile);

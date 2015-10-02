@@ -1106,7 +1106,7 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
     };
 
     if ( 0 == msdk_strlen(InputParams.strDstFile)
-      && (InputParams.eMode == Source || InputParams.eMode == Native || InputParams.eMode == VppComp))
+      && (InputParams.eMode == Source || InputParams.eMode == Native || InputParams.eMode == VppComp) && InputParams.eModeExt != VppCompOnly)
     {
         PrintHelp(NULL, MSDK_STRING("Destination file name not found"));
         return MFX_ERR_UNSUPPORTED;
@@ -1115,7 +1115,7 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
     if (MFX_CODEC_JPEG != InputParams.EncodeId && MFX_CODEC_MPEG2 != InputParams.EncodeId &&
         MFX_CODEC_AVC != InputParams.EncodeId && MFX_CODEC_HEVC != InputParams.EncodeId &&
         MFX_CODEC_VP8 != InputParams.EncodeId && MFX_FOURCC_DUMP != InputParams.EncodeId &&
-        InputParams.eMode != Sink && InputParams.eModeExt != VppComp)
+        InputParams.eMode != Sink && InputParams.eModeExt != VppCompOnly)
     {
         PrintHelp(NULL, MSDK_STRING("Unknown encoder\n"));
         return MFX_ERR_UNSUPPORTED;
