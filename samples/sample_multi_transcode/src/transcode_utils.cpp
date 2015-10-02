@@ -105,6 +105,7 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -priority     Use priority for join sessions. 0 - Low, 1 - Normal, 2 - High. Normal by default\n"));
     msdk_printf(MSDK_STRING("  -threads num  Number of session internal threads to create\n"));
     msdk_printf(MSDK_STRING("  -n            Number of frames to transcode \n"));
+    msdk_printf(MSDK_STRING("  -sys          Force usage of external system allocator\n"));
     msdk_printf(MSDK_STRING("  -fps <frames per second>\n"));
     msdk_printf(MSDK_STRING("                Transcoding frame rate limit\n"));
     msdk_printf(MSDK_STRING("  -pe           Set encoding plugin for this particular session.\n"));
@@ -598,6 +599,11 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-hw_d3d11")))
         {
             InputParams.libType = MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-sys")))
+        {
+            InputParams.bUseOpaqueMemory = false;
+            InputParams.bForceSysMem = true;
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-perf_opt")))
         {

@@ -1527,7 +1527,7 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
     // set memory pattern
     if (m_bUseOpaqueMemory)
         m_mfxDecParams.IOPattern = MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
-    else if (MFX_IMPL_SOFTWARE == pInParams->libType)
+    else if (pInParams->bForceSysMem || (MFX_IMPL_SOFTWARE == pInParams->libType))
         m_mfxDecParams.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     else
         m_mfxDecParams.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
@@ -1858,7 +1858,7 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
     {
         m_mfxVppParams.IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
     }
-    else if (MFX_IMPL_SOFTWARE == pInParams->libType)
+    else if (pInParams->bForceSysMem || (MFX_IMPL_SOFTWARE == pInParams->libType))
     {
         m_mfxVppParams.IOPattern = (mfxU16)(InPatternFromParent|MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
     }
@@ -1991,7 +1991,7 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     // set memory pattern
     if (m_bUseOpaqueMemory)
         m_mfxPluginParams.IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
-    else if (MFX_IMPL_SOFTWARE == pInParams->libType)
+    else if (pInParams->bForceSysMem || (MFX_IMPL_SOFTWARE == pInParams->libType))
         m_mfxPluginParams.IOPattern = (mfxU16)(InPatternFromParent|MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
     else
         m_mfxPluginParams.IOPattern = (mfxU16)(InPatternFromParent|MFX_IOPATTERN_OUT_VIDEO_MEMORY);
