@@ -93,7 +93,7 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("Pipeline description (general options):\n"));
     msdk_printf(MSDK_STRING("  -i::h265|h264|mpeg2|vc1|mvc|jpeg|vp8 <file-name>\n"));
     msdk_printf(MSDK_STRING("                Set input file and decoder type\n"));
-    msdk_printf(MSDK_STRING("  -o::h265|h264|mpeg2|mvc|jpeg|vp8 <file-name>\n"));
+    msdk_printf(MSDK_STRING("  -o::h265|h264|mpeg2|mvc|jpeg|vp8|raw <file-name>\n"));
     msdk_printf(MSDK_STRING("                Set output file and encoder type\n"));
     msdk_printf(MSDK_STRING("  -sw|-hw|-hw_d3d11\n"));
     msdk_printf(MSDK_STRING("                SDK implementation to use: \n"));
@@ -547,7 +547,16 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if ( (0 == msdk_strncmp(MSDK_STRING("-o::"), argv[i], msdk_strlen(MSDK_STRING("-o::"))))
                && (0 != msdk_strncmp(argv[i]+4, MSDK_STRING("sink"), msdk_strlen(MSDK_STRING("sink")))) )
         {
-            sts = StrFormatToCodecFormatFourCC(argv[i]+4, InputParams.EncodeId);
+            if(0 == msdk_strcmp(argv[i], MSDK_STRING("-o::raw")))
+            {
+                InputParams.EncodeId = MFX_FOURCC_DUMP;
+                sts = MFX_ERR_NONE;
+            }
+            else
+            {
+                sts = StrFormatToCodecFormatFourCC(argv[i]+4, InputParams.EncodeId);
+            }
+
             if (sts != MFX_ERR_NONE)
             {
                 return MFX_ERR_UNSUPPORTED;
@@ -565,6 +574,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                     case MFX_CODEC_AVC:
                     case MFX_CODEC_JPEG:
                     case MFX_CODEC_VP8:
+                    case MFX_FOURCC_DUMP:
                         return MFX_ERR_UNSUPPORTED;
                 }
             }
@@ -1104,8 +1114,8 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
 
     if (MFX_CODEC_JPEG != InputParams.EncodeId && MFX_CODEC_MPEG2 != InputParams.EncodeId &&
         MFX_CODEC_AVC != InputParams.EncodeId && MFX_CODEC_HEVC != InputParams.EncodeId &&
-        MFX_CODEC_VP8 != InputParams.EncodeId && InputParams.eMode != Sink &&
-        InputParams.eModeExt != VppComp)
+        MFX_CODEC_VP8 != InputParams.EncodeId && MFX_FOURCC_DUMP != InputParams.EncodeId &&
+        InputParams.eMode != Sink && InputParams.eModeExt != VppComp)
     {
         PrintHelp(NULL, MSDK_STRING("Unknown encoder\n"));
         return MFX_ERR_UNSUPPORTED;
@@ -1249,6 +1259,13 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if(InputParams.EncoderFourCC && InputParams.EncoderFourCC != MFX_FOURCC_NV12 &&
+        InputParams.EncoderFourCC != MFX_FOURCC_RGB4 && InputParams.EncoderFourCC != MFX_FOURCC_YUY2 &&
+        InputParams.EncodeId == MFX_FOURCC_DUMP)
+    {
+        msdk_printf(MSDK_STRING("ERROR: -o::raw option can be used with NV12, RGB4 and YUY2 color formats only.\n"));
+        return MFX_ERR_UNSUPPORTED;
+    }
 
     return MFX_ERR_NONE;
 } //mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputParams &InputParams)

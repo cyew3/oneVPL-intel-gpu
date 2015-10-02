@@ -61,6 +61,8 @@
     #define MSDK_OCL_ROTATE_PLUGIN  MSDK_STRING("libsample_plugin_opencl.so")
 #endif
 
+#define MFX_FOURCC_DUMP MFX_MAKEFOURCC('D','U','M','P')
+
 namespace TranscodingSample
 {
     extern mfxU32 MFX_STDCALL ThranscodeRoutine(void   *pObj);
@@ -379,7 +381,7 @@ namespace TranscodingSample
         mfxVideoParam GetDecodeParam();
         mfxExtOpaqueSurfaceAlloc GetDecOpaqueAlloc() const { return m_pmfxVPP.get() ? m_VppOpaqueAlloc: m_DecOpaqueAlloc; };
 
-        mfxExtMVCSeqDesc GetDecMVCSeqDesc() const {return m_MVCSeqDesc;};
+        mfxExtMVCSeqDesc GetDecMVCSeqDesc() const {return m_MVCSeqDesc;}
 
         // alloc frames for all component
         mfxStatus AllocFrames(mfxFrameAllocRequest  *pRequest, bool isDecAlloc);
@@ -414,6 +416,11 @@ namespace TranscodingSample
 
         mfxStatus AllocateSufficientBuffer(mfxBitstream* pBS);
         mfxStatus PutBS();
+
+        mfxStatus Surface2BS(ExtendedSurface* pSurf,mfxBitstream* pBS, mfxU32 fourCC);
+        mfxStatus NV12toBS(mfxFrameSurface1* pSurface,mfxBitstream* pBS);
+        mfxStatus RGB4toBS(mfxFrameSurface1* pSurface,mfxBitstream* pBS);
+        mfxStatus YUY2toBS(mfxFrameSurface1* pSurface,mfxBitstream* pBS);
 
         void NoMoreFramesSignal(ExtendedSurface &DecExtSurface);
         mfxStatus AddLaStreams(mfxU16 width, mfxU16 height);
