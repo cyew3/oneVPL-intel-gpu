@@ -173,9 +173,11 @@ namespace TranscodingSample
         sVppCompDstRect* pVppCompDstRects;
 
         bool bUseOpaqueMemory;
+        bool bForceSysMem;
+        mfxU16 nGpuCopyMode;
+
         mfxU16 nRenderColorForamt; /*0 NV12 - default, 1 is ARGB*/
 
-        bool    bForceSysMem;
         mfxI32  monitorType;
 #if defined(LIBVA_SUPPORT)
         mfxI32  libvaBackend;

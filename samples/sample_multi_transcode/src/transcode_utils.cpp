@@ -134,6 +134,7 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -wb <KBps>    Maximum bitrate for sliding window \n"));
     msdk_printf(MSDK_STRING("  -ws           Sliding window size in frames\n"));
     msdk_printf(MSDK_STRING("  -dist         Distance between I- or P- key frames \n"));
+    msdk_printf(MSDK_STRING("  -gpucopy::<on,off> Enable or disable GPU copy mode\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Pipeline description (vpp options):\n"));
     msdk_printf(MSDK_STRING("  -deinterlace             Forces VPP to deinterlace input stream\n"));
@@ -1007,7 +1008,14 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-gpucopy::on")))
+        {
+            InputParams.nGpuCopyMode = MFX_GPUCOPY_ON;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-gpucopy::off")))
+        {
+            InputParams.nGpuCopyMode = MFX_GPUCOPY_OFF;
+        }
         else if((stsExtBuf = CVPPExtBuffersStorage::ParseCmdLine(argv,argc,i,&InputParams,skipped))
             !=MFX_ERR_MORE_DATA)
         {

@@ -2504,6 +2504,9 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         initPar.NumExtParam = 1;
     }
 
+    //--- GPU Copy settings
+    initPar.GPUCopy = pParams->nGpuCopyMode;
+
     // init session
     m_pmfxSession.reset(new MFXVideoSession);
 
