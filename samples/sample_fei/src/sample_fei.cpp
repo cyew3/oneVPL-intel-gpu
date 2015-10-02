@@ -165,7 +165,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvout")))
         {
-            //GET_OPTION_POINTER(strArgument);
             pParams->mvoutFile = strInput[i+1];
             i++;
         }
@@ -181,7 +180,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mbqp")))
         {
-            //GET_OPTION_POINTER(strArgument);
             pParams->mbQpFile = strInput[i+1];
             i++;
         }
@@ -191,7 +189,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mbctrl")))
         {
-            //GET_OPTION_POINTER(strArgument);
             pParams->mbctrinFile = strInput[i+1];
             i++;
         }
@@ -239,7 +236,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-trellis")))
         {
             i++;
-            pParams->Trellis = (mfxU8)msdk_strtol(strInput[i], &stopCharacter, 10);
+            pParams->Trellis = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
 #if D3D_SURFACES_SUPPORT
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
@@ -638,7 +635,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->CodecProfile = 100; // MFX_PROFILE_AVC_HIGH
 
         if (!pParams->CodecLevel)
-            pParams->CodecLevel = 42;    // MFX_LEVEL_AVC_42
+            pParams->CodecLevel = 41;    // MFX_LEVEL_AVC_41
     }
 
     /* One slice by default */
