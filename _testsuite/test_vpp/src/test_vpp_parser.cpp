@@ -1192,7 +1192,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
                 pParams->resetFrmNums.push_back((mfxU16)readData);
 
-                if (MFX_ERR_NONE != vppParseResetPar(strInput, nArgNum, i, pParams, pParams->resetFrmNums.size(), pDefaultFiltersParam))
+                if (MFX_ERR_NONE != vppParseResetPar(strInput, nArgNum, i, pParams, (mfxU32)pParams->resetFrmNums.size(), pDefaultFiltersParam))
                     return MFX_ERR_UNKNOWN;
             }
             else
