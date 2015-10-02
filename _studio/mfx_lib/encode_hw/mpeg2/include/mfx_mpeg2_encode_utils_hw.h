@@ -196,6 +196,8 @@ namespace MPEG2EncoderHW
         mfxStatus CheckFrameType   (mfxEncodeInternalParams *pInternalParams); 
 
         inline bool isHWInput () {return !m_InputSurfaces.isSysMemFrames();}
+        inline bool isOpaq() { return m_InputSurfaces.isOpaq(); }
+
         inline mfxU16 GetInputFrameType() 
         {
             return (mfxU16)( MFX_MEMTYPE_EXTERNAL_FRAME |

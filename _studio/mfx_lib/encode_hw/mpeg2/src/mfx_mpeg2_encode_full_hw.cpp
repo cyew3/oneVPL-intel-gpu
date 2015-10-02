@@ -559,6 +559,11 @@ mfxStatus FullEncode::EncodeFrameCheck(
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "MPEG2Enc_check");
 
+    if (surface)
+    {
+        MFX_CHECK(surface->Data.Y == 0 && surface->Data.MemId == 0 || !m_pController->isOpaq(), MFX_ERR_UNDEFINED_BEHAVIOR);
+    }
+
     mfxFrameSurface1 *pOriginalSurface = m_pController->GetOriginalSurface(surface);
 
     if (pOriginalSurface != surface)
