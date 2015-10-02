@@ -3127,6 +3127,13 @@ mfxStatus ConfigureExecuteParams(
     if (true == executeParams.bComposite && 0 == executeParams.dstRects.size()) // composition was enabled via DO USE
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
+    // p010 should be shifted (msdn)
+    if (MFX_FOURCC_P010 == videoParam.vpp.In.FourCC && 0 == videoParam.vpp.In.Shift)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (MFX_FOURCC_P010 == videoParam.vpp.Out.FourCC && 0 == videoParam.vpp.Out.Shift)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
     return (bIsFilterSkipped) ? MFX_WRN_FILTER_SKIPPED : MFX_ERR_NONE;
 
 } // mfxStatus ConfigureExecuteParams(...)
