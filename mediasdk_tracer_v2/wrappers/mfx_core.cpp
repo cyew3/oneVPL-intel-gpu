@@ -118,6 +118,7 @@ mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
         context.context = DUMPCONTEXT_MFX;
         Log::WriteLog("function: MFXJoinSession(mfxSession session=" + ToString(session) + ", mfxSession child_session=" + ToString(child_session) + ") +");
         mfxLoader *loader = (mfxLoader*) session;
+        mfxLoader *tmp_loader = (mfxLoader*) child_session;
 
         if (!loader) return MFX_ERR_INVALID_HANDLE;
 
@@ -125,6 +126,7 @@ mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
         if (!proc) return MFX_ERR_INVALID_HANDLE;
 
         session = loader->session;
+        child_session = tmp_loader->session;
         Log::WriteLog(context.dump("session", session));
         Log::WriteLog(context.dump("child_session", child_session));
 
