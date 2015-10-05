@@ -596,3 +596,15 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiSlice
     return str;
 }
 
+std::string DumpContext::dump(const std::string structName, const mfxExtFeiCodingOption &_struct)
+{
+    std::string str;
+
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+
+    DUMP_FIELD(DisableHME);
+    DUMP_FIELD(DisableSuperHME);
+    DUMP_FIELD(DisableUltraHME);
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}

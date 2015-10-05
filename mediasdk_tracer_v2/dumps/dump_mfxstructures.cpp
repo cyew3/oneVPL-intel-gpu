@@ -170,14 +170,10 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(OverscanAppropriate);
     DUMP_FIELD(TimingInfoPresent);
     DUMP_FIELD(BitstreamRestriction);
-    DUMP_FIELD(LowDelayHrd);
-    DUMP_FIELD(MotionVectorsOverPicBoundaries);
-    DUMP_FIELD(Log2MaxMvLengthHorizontal);
-    DUMP_FIELD(Log2MaxMvLengthVertical);
     DUMP_FIELD(ScenarioInfo);
     DUMP_FIELD(ContentInfo);
     DUMP_FIELD(PRefType);
-
+    DUMP_FIELD(FadeDetection);
     DUMP_FIELD_RESERVED(reserved);
     return str;
 }
@@ -246,7 +242,6 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameData &
 {
     std::string str;
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(frameData.reserved) + "\n";
-    str += structName + ".MemType=" + ToString(frameData.MemType) + "\n";
     str += structName + ".PitchHigh=" + ToString(frameData.PitchHigh) + "\n";
     str += structName + ".TimeStamp=" + ToString(frameData.TimeStamp) + "\n";
     str += structName + ".FrameOrder=" + ToString(frameData.FrameOrder) + "\n";
@@ -625,17 +620,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCamFwdGa
     return str;
 }
 
-std::string DumpContext::dump(const std::string structName, const mfxExtCamCscYuvRgb &CamCscYuvRgb)
-{
-    std::string str;
-    str += dump(structName + ".Header", CamCscYuvRgb.Header) + "\n";
-    str += structName + ".PreOffset[]=" + DUMP_RESERVED_ARRAY(CamCscYuvRgb.PreOffset) + "\n";
-    for (int i = 0; i < 3; i++)
-        str += structName + ".Matrix[" + ToString(i) + "][]=" + DUMP_RESERVED_ARRAY(CamCscYuvRgb.Matrix) + "\n";
-    str += structName + ".PostOffset[]=" + DUMP_RESERVED_ARRAY(CamCscYuvRgb.PostOffset) + "\n";
-    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(CamCscYuvRgb.reserved) + "\n";
-    return str;
-}
 
 std::string DumpContext::dump(const std::string structName, const mfxExtCamLensGeomDistCorrection &CamLensGeomDistCorrection)
 {
@@ -893,6 +877,18 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     return str;
 }
 
+std::string DumpContext::dump(const std::string structName, const mfxExtCodingOptionVPS &ExtCodingOptionVPS)
+{
+    std::string str;
+    str += dump(structName + ".Header", ExtCodingOptionVPS.Header) + "\n";
+    str += structName + ".VPSBuffer=" + ToHexFormatString(ExtCodingOptionVPS.VPSBuffer) + "\n";
+    str += structName + ".reserved1=" + ToString(ExtCodingOptionVPS.reserved1) + "\n";
+    str += structName + ".VPSBufSize=" + ToString(ExtCodingOptionVPS.VPSBufSize) + "\n";
+    str += structName + ".VPSId=" + ToString(ExtCodingOptionVPS.VPSId) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtCodingOptionVPS.reserved) + "\n";
+    return str;
+}
+
 std::string DumpContext::dump(const std::string structName, const mfxExtVideoSignalInfo &ExtVideoSignalInfo)
 {
     std::string str;
@@ -1122,5 +1118,37 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAVCEncod
     str += structName + ".LambdaValueFlag=" + ToString(ExtAVCEncodeCtrl.LambdaValueFlag) + "\n";
     str += structName + ".LambdaValue[]=" + DUMP_RESERVED_ARRAY(ExtAVCEncodeCtrl.LambdaValue) + "\n";
     str += structName + ".deprecated1[]=" + DUMP_RESERVED_ARRAY(ExtAVCEncodeCtrl.deprecated1) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtVPPRotation &ExtVPPRotation)
+{
+    std::string str;
+    str += dump(structName + ".Header", ExtVPPRotation.Header) + "\n";
+    str += structName + "Angle.=" + ToString(ExtVPPRotation.Angle) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtVPPRotation.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtEncodedSlicesInfo &ExtEncodedSlicesInfo)
+{
+    std::string str;
+    str += dump(structName + ".Header", ExtEncodedSlicesInfo.Header) + "\n";
+    str += structName + "SliceSizeOverflow.=" + ToString(ExtEncodedSlicesInfo.SliceSizeOverflow) + "\n";
+    str += structName + "NumSliceNonCopliant.=" + ToString(ExtEncodedSlicesInfo.NumSliceNonCopliant) + "\n";
+    str += structName + "NumEncodedSlice.=" + ToString(ExtEncodedSlicesInfo.NumEncodedSlice) + "\n";
+    str += structName + "NumSliceSizeAlloc.=" + ToString(ExtEncodedSlicesInfo.NumSliceSizeAlloc) + "\n";
+    str += structName + "SliceSize.=" + ToHexFormatString(ExtEncodedSlicesInfo.SliceSize) + "\n";
+    str += structName + "reserved1.=" + ToString(ExtEncodedSlicesInfo.reserved1) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtEncodedSlicesInfo.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const  mfxExtVPPScaling &ExtVPPScaling)
+{
+    std::string str;
+    str += dump(structName + ".Header", ExtVPPScaling.Header) + "\n";
+    str += structName + "ScalingMode.=" + ToString(ExtVPPScaling.ScalingMode) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtVPPScaling.reserved) + "\n";
     return str;
 }
