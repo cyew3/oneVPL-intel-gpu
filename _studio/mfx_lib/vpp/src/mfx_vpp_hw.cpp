@@ -14,6 +14,7 @@ Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 
 #include <algorithm>
 #include <assert.h>
+#include <limits>
 #include "math.h"
 
 #include "libmfx_core.h"
@@ -1688,9 +1689,13 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
         m_params.vpp.Out.PicStruct != par->vpp.Out.PicStruct)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-    if (m_params.vpp.In.FrameRateExtD * m_params.vpp.Out.FrameRateExtN * par->vpp.In.FrameRateExtN * par->vpp.Out.FrameRateExtD !=
-        m_params.vpp.In.FrameRateExtN * m_params.vpp.Out.FrameRateExtD * par->vpp.In.FrameRateExtD * par->vpp.Out.FrameRateExtN)
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; // check (a / b) / (c / d) == (e / f) / (g / h) equals to (a * d * f * g) == (c * b * e * h)
+    const mfxF64 inFrameRateCur  = (mfxF64) par->vpp.In.FrameRateExtN      / (mfxF64) par->vpp.In.FrameRateExtD,
+                 outFrameRateCur = (mfxF64) par->vpp.Out.FrameRateExtN     / (mfxF64) par->vpp.Out.FrameRateExtD,
+                 inFrameRate     = (mfxF64) m_params.vpp.In.FrameRateExtN  / (mfxF64) m_params.vpp.In.FrameRateExtD,
+                 outFrameRate    = (mfxF64) m_params.vpp.Out.FrameRateExtN / (mfxF64) m_params.vpp.Out.FrameRateExtD;
+
+    if ( abs(inFrameRateCur / outFrameRateCur - inFrameRate / outFrameRate) > std::numeric_limits<mfxF64>::epsilon() )
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; // Frame Rate ratio check
 
     if (m_params.vpp.In.FourCC  != par->vpp.In.FourCC ||
         m_params.vpp.Out.FourCC != par->vpp.Out.FourCC)
