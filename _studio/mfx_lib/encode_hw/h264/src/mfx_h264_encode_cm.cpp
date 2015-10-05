@@ -875,20 +875,26 @@ CmEvent * CmContext::RunHistogram(
     mfxU16 OffsetX,
     mfxU16 OffsetY)
 {
-    const uint maxThreads = 128;
+//    const uint maxThreads = 128;
     const uint minBlocksPerThread = 1;
     uint maxH = (Width  + OffsetX) / 32;
     uint maxV = (Height + OffsetY) / 8;
     uint offX = (OffsetX + 31) / 32;
     uint offY = (OffsetY +  7) / 8;
+    uint numGroupWidth;
+    uint numGroupHeight;
+    uint MaxNumOfThreadsPerGroup;
     uint numThreads = (maxH - offX) * (maxV - offY) / minBlocksPerThread;
-    uint numGroups  = 1;
+//    uint numGroups  = 1;
     int result = CM_SUCCESS;
     CmKernel* kernel = task.m_fieldPicFlag ? m_kernelHistFields : m_kernelHistFrame;
+    size_t SizeCap = 4;
+    m_device->GetCaps(CAP_USER_DEFINED_THREAD_COUNT_PER_THREAD_GROUP, SizeCap, &MaxNumOfThreadsPerGroup);
 
-    numThreads = IPP_MIN(numThreads, maxThreads);
+    //numThreads = IPP_MIN(numThreads, maxThreads);
     numThreads = IPP_MAX(numThreads, 1);
-    numGroups = (numThreads + 63) / 64;
+    numGroupWidth = (maxH+(MaxNumOfThreadsPerGroup-1))/MaxNumOfThreadsPerGroup;
+    numGroupHeight = maxV;
 
     if ((result = kernel->SetThreadCount(numThreads)) != CM_SUCCESS)
         throw CmRuntimeError();
@@ -901,9 +907,10 @@ CmEvent * CmContext::RunHistogram(
 
     if ((result = cmTask->AddKernel(kernel)) != CM_SUCCESS)
         throw CmRuntimeError();
+    
 
     CmThreadGroupSpace * cmThreadSpace = 0;
-    if ((result = m_device->CreateThreadGroupSpace(numThreads / numGroups, 1, numGroups, 1, cmThreadSpace)) != CM_SUCCESS)
+    if ((result = m_device->CreateThreadGroupSpace(IPP_MIN(maxH,MaxNumOfThreadsPerGroup), 1, numGroupWidth, numGroupHeight, cmThreadSpace)) != CM_SUCCESS)
         throw CmRuntimeError();
 
     CmEvent * e = 0;

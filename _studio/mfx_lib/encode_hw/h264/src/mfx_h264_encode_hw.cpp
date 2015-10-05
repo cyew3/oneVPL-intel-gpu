@@ -609,6 +609,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
     ENCODE_CAPS hwCaps = {};
     mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*par);
     mfxExtCodingOption2 *       extOpt2 = GetExtBuffer(*par);
+    mfxExtCodingOption3 *       extOpt3 = GetExtBuffer(*par);
 
     // let use dedault values if input resolution is 0x0, 1920x1088 - should cover almost all cases
     mfxU32 Width  = par->mfx.FrameInfo.Width == 0 ? 1920 : par->mfx.FrameInfo.Width;
@@ -672,6 +673,8 @@ mfxStatus ImplementationAvc::QueryIOSurf(
 
          if (extOpt2 && extOpt2->MaxSliceSize!=0)
             request->NumFrameMin ++;
+         if (extOpt3 && IsOn(extOpt3->FadeDetection))
+            request->NumFrameMin ++;
         request->NumFrameSuggested = request->NumFrameMin;
     }
 
@@ -705,11 +708,12 @@ void ImplementationAvc::DestroyDanglingCmResources()
 {
     if (m_cmDevice)
     {
-        mfxExtCodingOption2 * extOpt = GetExtBuffer(m_video);
+        mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
+        mfxExtCodingOption3 * extOpt3 = GetExtBuffer(m_video);
         for (DdiTaskIter i = m_lookaheadStarted.begin(), e = m_lookaheadStarted.end(); i != e; ++i)
         {
             m_cmCtx->DestroyEvent(i->m_event);
-            if (extOpt && (extOpt->MaxSliceSize == 0))
+            if (extOpt2 && (extOpt2->MaxSliceSize == 0)||(extOpt3 && !IsOn(extOpt3->FadeDetection)))
             {
                 int ffid = i->m_fid[0];
                 ArrayDpbFrame & iniDpb = i->m_dpb[ffid];
@@ -1853,8 +1857,11 @@ void ImplementationAvc::OnLookaheadQueried()
 
     if (m_cmDevice)
     {
+        if(task.m_cmRefs)
         m_cmDevice->DestroyVmeSurfaceG7_5(task.m_cmRefs);
+        if(task.m_cmRefsLa)
         m_cmDevice->DestroyVmeSurfaceG7_5(task.m_cmRefsLa);
+        if(task.m_event)
         m_cmCtx->DestroyEvent(task.m_event);
     }
 

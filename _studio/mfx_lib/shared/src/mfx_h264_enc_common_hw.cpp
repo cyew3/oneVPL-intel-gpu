@@ -1038,11 +1038,12 @@ namespace
 mfxU32 MfxHwH264Encode::CalcNumSurfRaw(MfxVideoParam const & video)
 {
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
-
+    mfxExtCodingOption3 const *   extOpt3 = GetExtBuffer(video);
+    
     if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
         return video.AsyncDepth + video.mfx.GopRefDist - 1 +
             IPP_MAX(1, extOpt2->LookAheadDepth) + (video.AsyncDepth - 1) +
-            (IsOn(extOpt2->UseRawRef) ? video.mfx.NumRefFrame : 0) + ((extOpt2->MaxSliceSize!=0) ? 1:0);
+            (IsOn(extOpt2->UseRawRef) ? video.mfx.NumRefFrame : 0) + ((extOpt2->MaxSliceSize!=0 || IsOn(extOpt3->FadeDetection)) ? 1:0);
     else
         return 0;
 }
