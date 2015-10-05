@@ -213,6 +213,14 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtDirtyRect,            MFX_EXTBUFF_DIRTY_RECTANGLES         );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMoveRect,             MFX_EXTBUFF_MOVING_RECTANGLES        );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiCodingOption,      MFX_EXTBUFF_FEI_CODING_OPTION        );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncMV,             MFX_EXTBUFF_FEI_ENC_MV               );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncMBStat,         MFX_EXTBUFF_FEI_ENC_MB_STAT          );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiPakMBCtrl,         MFX_EXTBUFF_FEI_PAK_CTRL             );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncFrameCtrl,      MFX_EXTBUFF_FEI_ENC_CTRL             );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncMVPredictors,   MFX_EXTBUFF_FEI_ENC_MV_PRED          );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncMBCtrl,         MFX_EXTBUFF_FEI_ENC_MB               );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncQP,             MFX_EXTBUFF_FEI_PREENC_QP            );
+
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -927,6 +935,7 @@ namespace MfxHwH264Encode
         }
 
         template <typename T> friend mfxExtBufferProxyField GetExtBuffer(const T & par, mfxU32 fieldId);
+        template <typename T> friend mfxExtBufferProxyField GetExtBufferBS(const T & bs, mfxU32 fieldId);
 
     protected:
         mfxExtBufferProxyField(mfxExtBuffer ** extParam, mfxU32 numExtParam,  mfxU32 fieldId)
@@ -945,6 +954,11 @@ namespace MfxHwH264Encode
     template <typename T> mfxExtBufferProxyField GetExtBuffer(T const & par, mfxU32 fieldId)
     {
         return mfxExtBufferProxyField(par.ExtParam, par.NumExtParam, fieldId);
+    }
+
+    template <typename T> mfxExtBufferProxyField GetExtBufferBS(T const & bs, mfxU32 fieldId)
+    {
+        return mfxExtBufferProxyField(bs->ExtParam, bs->NumExtParam, fieldId);
     }
 
     inline mfxU8 GetPayloadLayout(mfxU32 fieldPicFlag, mfxU32 secondFieldPicFlag)

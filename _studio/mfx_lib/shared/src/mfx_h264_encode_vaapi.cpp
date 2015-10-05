@@ -1640,39 +1640,14 @@ mfxStatus VAAPIEncoder::Execute(
     {
         //find ext buffers
         const mfxEncodeCtrl& ctrl = task.m_ctrl;
-        mfxExtFeiEncMBCtrl* mbctrl = NULL;
-        mfxExtFeiEncMVPredictors* mvpred = NULL;
-        mfxExtFeiEncFrameCtrl* frameCtrl = NULL;
-        mfxExtFeiEncQP* mbqp = NULL;
-        mfxExtFeiEncMBStat* mbstat = &((mfxExtFeiEncMBStat*)(task.m_feiDistortion))[0];
-        if (NULL != mbstat)
-            mbstat = &((mfxExtFeiEncMBStat*)(task.m_feiDistortion))[fieldId];
-        mfxExtFeiEncMV* mvout = &((mfxExtFeiEncMV*)(task.m_feiMVOut))[0];
-        if (NULL != mvout)
-            mvout = &((mfxExtFeiEncMV*)(task.m_feiMVOut))[fieldId];
-        mfxExtFeiPakMBCtrl* mbcodeout = &((mfxExtFeiPakMBCtrl*)(task.m_feiMBCODEOut))[0];
-        if (NULL != mbcodeout)
-            mbcodeout = &((mfxExtFeiPakMBCtrl*)(task.m_feiMBCODEOut))[fieldId];
-
-        for (int i = 0; i < ctrl.NumExtParam; i++)
-        {
-            if (ctrl.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_CTRL)
-            {
-                frameCtrl = &((mfxExtFeiEncFrameCtrl*) (ctrl.ExtParam[i]))[fieldId];
-            }
-            if (ctrl.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED)
-            {
-                mvpred = &((mfxExtFeiEncMVPredictors*) (ctrl.ExtParam[i]))[fieldId];
-            }
-            if (ctrl.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB)
-            {
-                mbctrl = &((mfxExtFeiEncMBCtrl*) (ctrl.ExtParam[i]))[fieldId];
-            }
-            if (ctrl.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP)
-            {
-                mbqp = &((mfxExtFeiEncQP*) (ctrl.ExtParam[i]))[fieldId];
-            }
-        }
+        mfxExtFeiEncMBCtrl* mbctrl = GetExtBuffer(task.m_ctrl, fieldId);;
+        mfxExtFeiEncMVPredictors* mvpred = GetExtBuffer(task.m_ctrl, fieldId);;
+        mfxExtFeiEncFrameCtrl* frameCtrl = GetExtBuffer(task.m_ctrl, fieldId);;
+        mfxExtFeiEncQP* mbqp = GetExtBuffer(task.m_ctrl, fieldId);;
+        /* Output buffers passed via mfxBitstream structure*/
+        mfxExtFeiEncMBStat* mbstat = GetExtBufferBS(task.m_bs, fieldId);
+        mfxExtFeiEncMV* mvout = GetExtBufferBS(task.m_bs, fieldId);
+        mfxExtFeiPakMBCtrl* mbcodeout = GetExtBufferBS(task.m_bs, fieldId);
 
         if (frameCtrl != NULL && frameCtrl->MVPredictor && mvpred != NULL)
         {
@@ -2556,17 +2531,9 @@ mfxStatus VAAPIEncoder::QueryStatus(
                 if (m_isENCPAK)
                 {
                     //find ext buffers
-//                    mfxBitstream* bs = task.m_bs;
-
-                    mfxExtFeiEncMBStat* mbstat = &((mfxExtFeiEncMBStat*)(task.m_feiDistortion))[0];
-                    if (NULL != mbstat)
-                        mbstat = &((mfxExtFeiEncMBStat*)(task.m_feiDistortion))[fieldId];
-                    mfxExtFeiEncMV* mvout = &((mfxExtFeiEncMV*)(task.m_feiMVOut))[0];
-                    if (NULL != mvout)
-                        mvout = &((mfxExtFeiEncMV*)(task.m_feiMVOut))[fieldId];
-                    mfxExtFeiPakMBCtrl* mbcodeout = &((mfxExtFeiPakMBCtrl*)(task.m_feiMBCODEOut))[0];
-                    if (NULL != mbcodeout)
-                        mbcodeout = &((mfxExtFeiPakMBCtrl*)(task.m_feiMBCODEOut))[fieldId];
+                    mfxExtFeiEncMBStat* mbstat = GetExtBufferBS(task.m_bs, fieldId);
+                    mfxExtFeiEncMV* mvout = GetExtBufferBS(task.m_bs, fieldId);
+                    mfxExtFeiPakMBCtrl* mbcodeout = GetExtBufferBS(task.m_bs, fieldId);
 
                     if (mbstat != NULL && vaFeiMBStatId != VA_INVALID_ID)
                     {

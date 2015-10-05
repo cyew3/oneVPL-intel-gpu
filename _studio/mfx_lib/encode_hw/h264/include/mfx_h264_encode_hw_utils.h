@@ -908,13 +908,9 @@ namespace MfxHwH264Encode
             , m_idxMBQP(NO_INDEX)
             , m_midMBQP(MID_INVALID)
             , m_isMBQP(false)
-
+            
             , m_cmHist(0)
             , m_cmHistSys(0)
-
-            , m_feiDistortion(NULL)
-            , m_feiMVOut(NULL)
-            , m_feiMBCODEOut(NULL)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -1073,11 +1069,9 @@ namespace MfxHwH264Encode
         mfxExtPredWeightTable m_pwt[2];     // obtained from fade detection
 
         bool     m_isENCPAK;
-        mfxExtBuffer* m_feiDistortion;
-        mfxExtBuffer* m_feiMVOut;
-        mfxExtBuffer* m_feiMBCODEOut;
+
         std::vector<void*> m_userData;
-         std::vector<SliceStructInfo> m_SliceInfo;
+        std::vector<SliceStructInfo> m_SliceInfo;
     };
 
     typedef std::list<DdiTask>::iterator DdiTaskIter;

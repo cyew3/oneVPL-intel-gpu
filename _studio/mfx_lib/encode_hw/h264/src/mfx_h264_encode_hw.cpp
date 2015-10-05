@@ -2298,6 +2298,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         }
 
         task->m_isENCPAK = m_isENCPAK;
+        if (m_isENCPAK && (NULL != bs))
+            task->m_bs = bs;
 
         ConfigureTask(*task, m_lastTask, m_video, m_sofiaMode);
 
@@ -2312,27 +2314,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 &(task->m_ctrl),
                 m_intraStripeWidthInMBs);
             m_baseLayerOrder ++;
-        }
-
-        if ((m_isENCPAK) && (NULL != bs))
-        { //temp find better way
-            mfxExtFeiEncMBStat* mbstat = NULL;
-            mfxExtFeiEncMV* mvout = NULL;
-            mfxExtFeiPakMBCtrl* mbcode = NULL;
-            for (int i = 0; i < bs->NumExtParam; i++) {
-                if (bs->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MB_STAT) {
-                    mbstat = (mfxExtFeiEncMBStat*) bs->ExtParam[i];
-                }
-                if (bs->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_ENC_MV) {
-                    mvout = (mfxExtFeiEncMV*) bs->ExtParam[i];
-                }
-                if (bs->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PAK_CTRL) {
-                    mbcode = (mfxExtFeiPakMBCtrl*) bs->ExtParam[i];
-                }
-            }
-            task->m_feiDistortion = (mfxExtBuffer*)mbstat;
-            task->m_feiMVOut = (mfxExtBuffer*)mvout;
-            task->m_feiMBCODEOut = (mfxExtBuffer*)mbcode;
         }
 
         if (bIntRateControlLA(m_video.mfx.RateControlMethod))
