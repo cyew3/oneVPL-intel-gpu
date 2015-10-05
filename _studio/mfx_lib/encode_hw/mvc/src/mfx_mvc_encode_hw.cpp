@@ -1316,6 +1316,15 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
 {
     internalParams;
     mfxFrameSurface1 * inSurf = surface;
+
+    mfxStatus checkSts = CheckEncodeFrameParam(
+        m_video,
+        ctrl,
+        surface,
+        bs,
+        m_core->IsExternalFrameAllocator());
+    MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
+
     if (surface && m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         //mfxFrameSurface1 * opaqSurf = surface;
@@ -1329,14 +1338,6 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
         surface->Data.Corrupted  = inSurf->Data.Corrupted;
         surface->Data.DataFlag   = inSurf->Data.DataFlag;
     }
-
-    mfxStatus checkSts = CheckEncodeFrameParam(
-        m_video,
-        ctrl,
-        surface,
-        bs,
-        m_core->IsExternalFrameAllocator());
-    MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
     MvcTask * task = 0;
     mfxStatus assignSts = m_taskMan.AssignTask(m_video, ctrl, surface, bs, task);
