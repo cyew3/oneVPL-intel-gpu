@@ -2502,23 +2502,57 @@ void TaskSupplier::AfterErrorRestore()
     if (m_pTaskBroker)
         m_pTaskBroker->Reset();
 
+    m_DefaultNotifyChain.Notify();
+    m_DefaultNotifyChain.Reset();
+
+    {
     ViewList::iterator iter = m_views.begin();
     ViewList::iterator iter_end = m_views.end();
     for (; iter != iter_end; ++iter)
     {
-        for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++)
-            iter->GetDPBList(i)->Reset();
+        for (H264DecoderFrame *pFrame = iter->GetDPBList(0)->head(); pFrame; pFrame = pFrame->future())
+        {
+            pFrame->FreeResources();
+        }
     }
+    }
+
+    if (m_sei_messages)
+        m_sei_messages->Reset();
 
     SVC_Extension::Reset();
     AU_Splitter::Reset();
-
-    Skipping::Reset();
-    m_ObjHeap.Release();
+    DPBOutput::Reset(m_iThreadNum != 1);
+    DecReferencePictureMarking::Reset();
     m_accessUnit.Release();
-    m_Headers.Reset(true);
     ErrorStatus::Reset();
 
+    switch (m_initializationParams.info.profile) // after MVC_Extension::Init()
+    {
+    case 0:
+        m_decodingMode = UNKNOWN_DECODING_MODE;
+        break;
+    case H264VideoDecoderParams::H264_PROFILE_MULTIVIEW_HIGH:
+    case H264VideoDecoderParams::H264_PROFILE_STEREO_HIGH:
+        m_decodingMode = MVC_DECODING_MODE;
+        break;
+    default:
+        m_decodingMode = AVC_DECODING_MODE;
+        break;
+    }
+
+    if (m_pLastSlice)
+    {
+        m_pLastSlice->Release();
+        m_pLastSlice->DecrementReference();
+        m_pLastSlice = 0;
+    }
+
+    m_Headers.Reset(true);
+    Skipping::Reset();
+    m_ObjHeap.Release();
+
+    m_WaitForIDR        = true;
     m_pLastDisplayed = 0;
 
     if (m_pTaskBroker)
@@ -2773,6 +2807,9 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                 sps.vui.max_dec_frame_buffering = sps.vui.max_dec_frame_buffering ? sps.vui.max_dec_frame_buffering : newDPBsize;
                 if (sps.vui.max_dec_frame_buffering > newDPBsize)
                     sps.vui.max_dec_frame_buffering = newDPBsize;
+
+                if (sps.num_ref_frames > newDPBsize)
+                    sps.num_ref_frames = newDPBsize;
 
                 const H264SeqParamSet * old_sps = m_Headers.m_SeqParams.GetCurrentHeader();
                 bool newResolution = false;
@@ -3627,17 +3664,6 @@ void TaskSupplier::PreventDPBFullness()
                 if (pDPB->IsDisposableExist())
                     break;
             }
-
-            /*H264DecoderFrame *pCurr = pDPB->head();
-            while (pCurr)
-            {
-                if (pCurr->IsDecoded())
-                {
-                    pCurr->SetBusyState(0);
-                }
-
-                pCurr = pCurr->future();
-            }*/
 
             break;
         }

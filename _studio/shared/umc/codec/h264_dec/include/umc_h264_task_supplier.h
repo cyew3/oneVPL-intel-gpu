@@ -665,48 +665,50 @@ inline Ipp32s CalculateDPBSize(Ipp8u & level_idc, Ipp32s width, Ipp32s height, I
 
     for (;;)
     {
-        Ipp32u MaxDPBx2;
+        Ipp32u MaxDPBMbs;
         // MaxDPB, per Table A-1, Level Limits
         switch (level_idc)
         {
         case H264VideoDecoderParams::H264_LEVEL_1:
-            MaxDPBx2 = 297;
+            MaxDPBMbs = 396;
             break;
         case H264VideoDecoderParams::H264_LEVEL_11:
-            MaxDPBx2 = 675;
+            MaxDPBMbs = 900;
             break;
         case H264VideoDecoderParams::H264_LEVEL_12:
         case H264VideoDecoderParams::H264_LEVEL_13:
         case H264VideoDecoderParams::H264_LEVEL_2:
-            MaxDPBx2 = 891*2;
+            MaxDPBMbs = 2376;
             break;
         case H264VideoDecoderParams::H264_LEVEL_21:
-            MaxDPBx2 = 1782*2;
+            MaxDPBMbs = 4752;
             break;
         case H264VideoDecoderParams::H264_LEVEL_22:
         case H264VideoDecoderParams::H264_LEVEL_3:
-            MaxDPBx2 = 6075;
+            MaxDPBMbs = 8100;
             break;
         case H264VideoDecoderParams::H264_LEVEL_31:
-            MaxDPBx2 = 6750*2;
+            MaxDPBMbs = 18000;
             break;
         case H264VideoDecoderParams::H264_LEVEL_32:
-            MaxDPBx2 = 7680*2;
+            MaxDPBMbs = 20480;
             break;
         case H264VideoDecoderParams::H264_LEVEL_4:
         case H264VideoDecoderParams::H264_LEVEL_41:
+            MaxDPBMbs = 32768;
+            break;
         case H264VideoDecoderParams::H264_LEVEL_42:
-            MaxDPBx2 = 12288*2;
+            MaxDPBMbs = 34816;
             break;
         case H264VideoDecoderParams::H264_LEVEL_5:
-            MaxDPBx2 = 41400*2;
+            MaxDPBMbs = 110400;
             break;
         case H264VideoDecoderParams::H264_LEVEL_51:
         case H264VideoDecoderParams::H264_LEVEL_52:
-            MaxDPBx2 = 69120*2;
+            MaxDPBMbs = 184320;
             break;
         default:
-            MaxDPBx2 = 69120*2; //get as much as we may
+            MaxDPBMbs = 184320; //get as much as we may
             break;
         }
 
@@ -715,7 +717,7 @@ inline Ipp32s CalculateDPBSize(Ipp8u & level_idc, Ipp32s width, Ipp32s height, I
             throw h264_exception(UMC_ERR_INVALID_PARAMS);
         }
 
-        Ipp32u dpbLevel = (MaxDPBx2 * 512) / ((width * height) + ((width * height)>>1));
+        Ipp32u dpbLevel = MaxDPBMbs*256 / (width * height);
         dpbSize = IPP_MIN(16, dpbLevel);
 
         if (num_ref_frames <= dpbSize || level_idc == H264VideoDecoderParams::H264_LEVEL_MAX)
