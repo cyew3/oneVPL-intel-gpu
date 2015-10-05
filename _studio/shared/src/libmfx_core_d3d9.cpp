@@ -261,6 +261,7 @@ D3D9VideoCORE::D3D9VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsAva
 , m_pSystemMemorySurface(0)
 , m_HWType(MFX_HW_UNKNOWN)
 , m_bCmCopy(false)
+, m_bCmCopySwap(false)
 , m_bCmCopyAllowed(true)
 {
     m_pAdapter.reset(new D3D9Adapter(this));

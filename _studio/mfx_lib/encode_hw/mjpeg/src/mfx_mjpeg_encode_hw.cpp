@@ -948,7 +948,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
             dst.Info.FourCC = MFX_FOURCC_BGR4;
             dst.Data = dstSurf;
             src_memtype = (mfxU16)((nativeSurf->Data.B == 0)?MFX_MEMTYPE_DXVA2_DECODER_TARGET:MFX_MEMTYPE_SYSTEM_MEMORY);
-            src_memtype |=MFX_MEMTYPE_EXTERNAL_FRAME;
+            src_memtype |= enc.m_isOpaqIn? MFX_MEMTYPE_INTERNAL_FRAME: MFX_MEMTYPE_EXTERNAL_FRAME;
             sts = enc.m_pCore->DoFastCopyWrapper(&dst,MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_INTERNAL_FRAME,nativeSurf, 
                 src_memtype);
             MFX_CHECK_STS(sts);
