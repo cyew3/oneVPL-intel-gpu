@@ -435,17 +435,38 @@ namespace MfxHwVideoProcessing
                 if ( nInRate == nOutRate || 0 == low)
                     return;
 
-                // Calculate ratio between input and output framerates
+                mfxF64 mul;
                 mfxU32 rate = 1;
                 mfxU32 multiplier = 1;
-                mfxU32 tmp = high;
-                while(multiplier<100000)
+
+                if ( frcUp )
                 {
-                    tmp = high *multiplier;
-                    rate  = tmp / low;
-                    if (rate*low == tmp)
-                        break;
-                    multiplier++;
+                    mul = outRate/inRate;
+                }
+                else
+                {
+                    mul = inRate/outRate;
+                }
+
+                if (  fabs(mul - (mfxU32)mul) < 0.001 )
+                {
+                    // Ratio between framerates is good enough, no need in
+                    // searching of common factors
+                    rate = (mfxU32)mul;
+                }
+                else
+                {
+                    // Ratio between framerates is fractional, need to find 
+                    // common factors
+                    mfxU32 tmp = high;
+                    while(multiplier<100000)
+                    {
+                        tmp = high *multiplier;
+                        rate  = tmp / low;
+                        if (rate*low == tmp)
+                            break;
+                        multiplier++;
+                    }
                 }
 
                 if ( frcUp )
@@ -453,15 +474,17 @@ namespace MfxHwVideoProcessing
                     m_in_tick   = rate;
                     m_out_tick  = multiplier;
                     m_out_stamp = 0;
+                    m_in_stamp  = 0;
                 }
                 else
                 {
                     m_in_tick   = multiplier;
                     m_out_tick  = rate;
                     m_out_stamp = m_out_tick;
+                    m_in_stamp  = m_out_stamp - m_in_tick;
                 }
 
-                m_in_stamp = m_in_tick;
+                m_in_stamp += m_in_tick;
 
                 // calculate time interval between input and output frames
                 m_timeFrameInterval = m_inFrameTime - m_outFrameTime;

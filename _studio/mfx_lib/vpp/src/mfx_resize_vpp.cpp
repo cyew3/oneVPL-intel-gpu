@@ -250,6 +250,7 @@ mfxStatus MFXVideoVPPResize::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
     case MFX_FOURCC_P210:
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_NV16:
+    case MFX_FOURCC_YUY2:
       VPP_INIT_SUCCESSFUL;
       break;
 
