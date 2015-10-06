@@ -151,7 +151,6 @@ namespace H265Enc {
             Ipp32s pitchInBytesCh;
             Ipp32s sizeInBytesLu;
             Ipp32s sizeInBytesCh;
-            bool   isRecon; // recon or input
         };
 
         void Create(const AllocInfo &allocInfo);
@@ -160,6 +159,32 @@ namespace H265Enc {
     private:
         Ipp8u *mem;
         void  *m_fei;
+    };
+
+    struct FeiInputData : public RefCounter
+    {
+        FeiInputData() : m_fei(NULL), m_handle(NULL) {}
+        ~FeiInputData() { Destroy(); }
+
+        struct AllocInfo { void *feiHdl; };
+        void Create(const AllocInfo &allocInfo);
+        void Destroy();
+
+        void *m_fei;
+        mfxHDL m_handle;
+    };
+
+    struct FeiReconData : public RefCounter
+    {
+        FeiReconData() : m_fei(NULL), m_handle(NULL) {}
+        ~FeiReconData() { Destroy(); }
+
+        struct AllocInfo { void *feiHdl; };
+        void Create(const AllocInfo &allocInfo);
+        void Destroy();
+
+        void *m_fei;
+        mfxHDL m_handle;
     };
 
     struct FeiBufferUp : public RefCounter
@@ -299,11 +324,13 @@ namespace H265Enc {
         std::vector<Frame *> m_futureFrames;
 
         // FEI resources
-        FeiOutData  *m_feiIntraAngModes[4];
-        FeiOutData  *m_feiInterMv[4][3];
-        FeiOutData  *m_feiInterDist[4][3];
-        FeiBufferUp *m_feiCuData;
-        FeiBufferUp *m_feiSaoModes;
+        FeiInputData *m_feiOrigin;
+        FeiReconData *m_feiRecon;
+        FeiOutData   *m_feiIntraAngModes[4];
+        FeiOutData   *m_feiInterMv[4][3];
+        FeiOutData   *m_feiInterDist[4][3];
+        FeiBufferUp  *m_feiCuData;
+        FeiBufferUp  *m_feiSaoModes;
         void *m_feiSyncPoint;
 
         mfxPayload **m_userSeiMessages;

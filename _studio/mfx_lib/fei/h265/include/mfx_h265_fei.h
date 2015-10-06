@@ -211,13 +211,30 @@ typedef struct
     mfxU32 FrameType;
     mfxU32 SaveSyncPoint;
 
-    mfxFEIH265Frame FEIFrameIn;
-    mfxFEIH265Frame FEIFrameRef;
-    mfxHDL cuData;    // input cuData
-    mfxHDL saoModes;  // output saoModes
-    
-    mfxU8* extData2;    // postproc param (general for deblock + sao)
-    mfxU32 extDataSize2;// size of postproc param
+    //mfxFEIH265Frame FEIFrameIn;
+    //mfxFEIH265Frame FEIFrameRef;
+
+    union {
+        struct {
+            mfxHDL surfSrc;
+            mfxHDL surfRef;
+        } meArgs;
+
+        struct {
+            mfxHDL surfSys;
+            mfxHDL surfVid;
+        } copyArgs;
+
+        struct {
+            mfxHDL inputSurf;    // original pixels
+            mfxHDL reconSurfSys; // reconstructed pixels in system memory (input)
+            mfxHDL reconSurfVid; // reconstructed pixels in video memory (output)
+            mfxHDL cuData;       // input cuData
+            mfxHDL saoModes;     // output saoModes
+            mfxU8* extData2;     // postproc param (general for deblock + sao)
+            mfxU32 extDataSize2; // size of postproc param
+        } postprocArgs;
+    };
 
 } mfxFEIH265Input;
 
@@ -262,6 +279,7 @@ enum mfxFEIH265SurfaceType
 
     MFX_FEI_H265_SURFTYPE_INPUT = 0,
     MFX_FEI_H265_SURFTYPE_RECON,
+    MFX_FEI_H265_SURFTYPE_UP,
     MFX_FEI_H265_SURFTYPE_OUTPUT,
     MFX_FEI_H265_SURFTYPE_OUTPUT_BUFFER,
 };
@@ -275,8 +293,6 @@ typedef struct
     CmSurface2D   *bufDown4x;
     CmSurface2D   *bufDown8x;
     CmSurface2D   *bufDown16x;
-    CmSurface2DUP *upLu;
-    CmSurface2DUP *upCh;
 } mfxFEIH265InputSurface;
 
 typedef struct
@@ -288,10 +304,14 @@ typedef struct
     CmSurface2D   *bufDown4x;
     CmSurface2D   *bufDown8x;
     CmSurface2D   *bufDown16x;
-    CmSurface2DUP *upLu;
-    CmSurface2DUP *upCh;
     CmSurface2D   *bufOrigInterp[3];
 } mfxFEIH265ReconSurface;
+
+typedef struct
+{
+    CmSurface2DUP *luma;
+    CmSurface2DUP *chroma;
+} mfxFEIH265SurfaceUp;
 
 typedef struct
 {
@@ -312,6 +332,7 @@ typedef struct
     union {
         mfxFEIH265InputSurface   sIn;
         mfxFEIH265ReconSurface   sRec;
+        mfxFEIH265SurfaceUp      sUp;
         mfxFEIH265OutputSurface  sOut;
         mfxFEIH265OutputBuffer   sBuf;
     };
@@ -342,8 +363,9 @@ mfxStatus H265FEI_DestroySavedSyncPoint(mfxFEIH265 feih265, mfxFEISyncPoint sync
 
 mfxStatus H265FEI_GetSurfaceDimensions(void *core, mfxU32 width, mfxU32 height, mfxExtFEIH265Alloc *extAlloc);
 mfxStatus H265FEI_GetSurfaceDimensions_new(void *core, mfxFEIH265Param *param, mfxExtFEIH265Alloc *extAlloc);
-mfxStatus H265FEI_AllocateInputSurface(mfxFEIH265 feih265, mfxU8 *sysMemLu, mfxU8 *sysMemCh, mfxHDL *pInSurf);
-mfxStatus H265FEI_AllocateReconSurface(mfxFEIH265 feih265, mfxU8 *sysMemLu, mfxU8 *sysMemCh, mfxHDL *pRecSurf);
+mfxStatus H265FEI_AllocateSurfaceUp(mfxFEIH265 feih265, mfxU8 *sysMemLu, mfxU8 *sysMemCh, mfxHDL *pInSurf);
+mfxStatus H265FEI_AllocateInputSurface(mfxFEIH265 feih265, mfxHDL *pInSurf);
+mfxStatus H265FEI_AllocateReconSurface(mfxFEIH265 feih265, mfxHDL *pRecSurf);
 mfxStatus H265FEI_AllocateOutputSurface(mfxFEIH265 feih265, mfxU8 *sysMem, mfxSurfInfoENC *surfInfo, mfxHDL *pOutSurf);
 mfxStatus H265FEI_AllocateOutputBuffer(mfxFEIH265 feih265, mfxU8 *sysMem, mfxU32 size, mfxHDL *pOutBuf);
 mfxStatus H265FEI_FreeSurface(mfxFEIH265 feih265, mfxHDL pSurf);

@@ -21,14 +21,16 @@
 #include "../include/genx_hevce_sao_bdw_isa.h"
 
 #ifdef CMRT_EMU
-extern "C" void SaoStatAndEstimate(SurfaceIndex SURF_SRC, SurfaceIndex SURF_RECON, SurfaceIndex SURF_VIDEO_PARAM, Ipp32u recPaddingLu);
+extern "C" void SaoStatAndEstimate(SurfaceIndex SURF_SRC, SurfaceIndex SURF_RECON, SurfaceIndex SURF_VIDEO_PARAM, Ipp32u recPaddingLu) {};
 extern "C" void SaoStat(SurfaceIndex SRC, SurfaceIndex RECON, SurfaceIndex PARAM, SurfaceIndex DIFF_EO, SurfaceIndex COUNT_EO, SurfaceIndex DIFF_BO, SurfaceIndex COUNT_BO, Ipp32u recPaddingLu);
-extern "C" void SaoApply(SurfaceIndex SRC, SurfaceIndex DST, SurfaceIndex PARAM, SurfaceIndex SAO_MODES);
+extern "C" void SaoApply(SurfaceIndex SRC, SurfaceIndex DST, SurfaceIndex PARAM, SurfaceIndex SAO_MODES) {};
 extern "C" void SaoEstimate(SurfaceIndex PARAM, SurfaceIndex STATS, SurfaceIndex SAO_MODES);
-extern "C" void SaoEstimateAndApply(SurfaceIndex SRC, SurfaceIndex DST, SurfaceIndex PARAM, SurfaceIndex STATS);
+extern "C" void SaoEstimateAndApply(SurfaceIndex SRC, SurfaceIndex DST, SurfaceIndex PARAM, SurfaceIndex STATS) {}; 
 #endif //CMRT_EMU
 
 enum { GPU_STAT_BLOCK_WIDTH = 16, GPU_STAT_BLOCK_HEIGHT = 16 };
+
+#define SAO_MODE_MERGE_ENABLED
 
 #if 0
 //it doesn't matter now. will be configured later
@@ -134,7 +136,7 @@ int RunGpuStatAndEstimate(const Ipp8u *frameOrigin, const Ipp8u *frameRecon, con
 int RunGpuStat(const Ipp8u *frameOrigin, const Ipp8u *frameRecon, const VideoParam *m_par, Ipp16s *blockStats, bool useUP);
 int RunGpuEstimate(const Ipp16s *blockStats, const VideoParam *videoParam, SaoCtuParam *frame_sao_param);
 int RunGpuApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const VideoParam *m_par, SaoCtuParam *frame_sao_param);
-int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16s *blockStats, const VideoParam *videoParam);
+int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16s *blockStats, SaoCtuParam *frame_sao_param, const VideoParam *videoParam);
 int RunCpuStatAndEstimate(const Ipp8u *frameOrigin, Ipp8u *frameRecon, const VideoParam *m_par, const AddrInfo *frame_addr_info, SaoCtuParam *frame_sao_param, Ipp32s *diffEO, Ipp16u *countEO, Ipp32s *diffBO, Ipp16u *countBO);
 int RunCpuApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const VideoParam *m_par, const SaoCtuParam *frame_sao_param);
 int CompareParam(SaoCtuParam *param_ref, SaoCtuParam *param_tst, Ipp32s numCtbs);
@@ -215,21 +217,23 @@ int main()
     CHECK_ERR(res);
     printf("passed\n");
 
-    printf("Est&Apply EO:  ");
-    memset(outputGpu.data(), 0, sizeof(outputGpu[0]) * outputGpu.size());
-    res = RunGpuEstimateAndApply(recon.data(), outputGpu.data(), blockStats.data(), &videoParam);
-    CHECK_ERR(res);
-    res = Compare(outputCpu.data(), outputGpu.data(), width, height);
-    CHECK_ERR(res);
-    printf("passed\n");
+    //printf("Est&Apply EO:  ");
+    //memset(outputGpu.data(), 0, sizeof(outputGpu[0]) * outputGpu.size());
+    //res = RunGpuEstimateAndApply(recon.data(), outputGpu.data(), blockStats.data(), saoModesGpu.data(), &videoParam);
+    //CHECK_ERR(res);
+    //res = CompareParam(saoModesCpu.data(), saoModesGpu.data(), numCtbs);
+    //CHECK_ERR(res);
+    //res = Compare(outputCpu.data(), outputGpu.data(), width, height);
+    //CHECK_ERR(res);
+    //printf("passed\n");
 
-    printf("Stats&Est EO:  ");
-    memset(saoModesGpu.data(), 0, sizeof(saoModesGpu[0]) * saoModesGpu.size());
-    res = RunGpuStatAndEstimate(input.data(), recon.data(), &videoParam, saoModesGpu.data(), false);
-    CHECK_ERR(res);
-    res = CompareParam(saoModesCpu.data(), saoModesGpu.data(), numCtbs);
-    CHECK_ERR(res);
-    printf("passed\n");
+    //printf("Stats&Est EO:  ");
+    //memset(saoModesGpu.data(), 0, sizeof(saoModesGpu[0]) * saoModesGpu.size());
+    //res = RunGpuStatAndEstimate(input.data(), recon.data(), &videoParam, saoModesGpu.data(), false);
+    //CHECK_ERR(res);
+    //res = CompareParam(saoModesCpu.data(), saoModesGpu.data(), numCtbs);
+    //CHECK_ERR(res);
+    //printf("passed\n");
 
     videoParam.enableBandOffset = 1;
 
@@ -262,21 +266,23 @@ int main()
     CHECK_ERR(res);
     printf("passed\n");
 
-    printf("Est&Apply all: ");
-    memset(outputGpu.data(), 0, sizeof(outputGpu[0]) * outputGpu.size());
-    res = RunGpuEstimateAndApply(recon.data(), outputGpu.data(), blockStats.data(), &videoParam);
-    CHECK_ERR(res);
-    res = Compare(outputCpu.data(), outputGpu.data(), width, height);
-    CHECK_ERR(res);
-    printf("passed\n");
+    //printf("Est&Apply all: ");
+    //memset(outputGpu.data(), 0, sizeof(outputGpu[0]) * outputGpu.size());
+    //res = RunGpuEstimateAndApply(recon.data(), outputGpu.data(), blockStats.data(), saoModesGpu.data(), &videoParam);
+    //CHECK_ERR(res);
+    //res = CompareParam(saoModesCpu.data(), saoModesGpu.data(), numCtbs);
+    //CHECK_ERR(res);
+    //res = Compare(outputCpu.data(), outputGpu.data(), width, height);
+    //CHECK_ERR(res);
+    //printf("passed\n");
 
-    printf("Stats&Est all: ");
-    memset(saoModesGpu.data(), 0, sizeof(saoModesGpu[0]) * saoModesGpu.size());
-    res = RunGpuStatAndEstimate(input.data(), recon.data(), &videoParam, saoModesGpu.data(), false);
-    CHECK_ERR(res);
-    res = CompareParam(saoModesCpu.data(), saoModesGpu.data(), numCtbs);
-    CHECK_ERR(res);
-    printf("passed\n");
+    //printf("Stats&Est all: ");
+    //memset(saoModesGpu.data(), 0, sizeof(saoModesGpu[0]) * saoModesGpu.size());
+    //res = RunGpuStatAndEstimate(input.data(), recon.data(), &videoParam, saoModesGpu.data(), false);
+    //CHECK_ERR(res);
+    //res = CompareParam(saoModesCpu.data(), saoModesGpu.data(), numCtbs);
+    //CHECK_ERR(res);
+    //printf("passed\n");
 
     printf("\n");
     return 0;
@@ -452,7 +458,7 @@ int RunGpuStatAndEstimate(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, con
     res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
     CHECK_CM_ERR(res);
 
-    res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+    res = threadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT);
     CHECK_CM_ERR(res);
 
     CmTask * task = 0;
@@ -794,7 +800,7 @@ int RunGpuEstimate(const Ipp16s *blockStats, const VideoParam *m_par, SaoCtuPara
     res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
     CHECK_CM_ERR(res);
 
-    res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+    res = threadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT);
     CHECK_CM_ERR(res);
 
     CmTask * task = 0;
@@ -1044,7 +1050,7 @@ int RunGpuApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const VideoParam* m_pa
 }
 
 
-int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16s *blockStats, const VideoParam *m_par)
+int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16s *blockStats, SaoCtuParam *frame_sao_param, const VideoParam *m_par)
 {
     int pitchRecon = m_par->Width;
     int pitchDst = m_par->Width;
@@ -1097,6 +1103,11 @@ int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16
     res = stats->WriteSurface((const Ipp8u *)blockStats, NULL);
     CHECK_CM_ERR(res);
 
+    Ipp32s numCtb = m_par->PicWidthInCtbs * m_par->PicHeightInCtbs;
+    CmBuffer *saoModes = 0;
+    res = device->CreateBuffer(numCtb * sizeof(SaoOffsetOut_gfx), saoModes);
+    CHECK_CM_ERR(res);
+
     SurfaceIndex *idxRecon = 0;
     res = recon->GetIndex(idxRecon);
     CHECK_CM_ERR(res);
@@ -1109,6 +1120,9 @@ int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16
     SurfaceIndex *idxStats = 0;
     res = stats->GetIndex(idxStats);
     CHECK_CM_ERR(res);
+    SurfaceIndex *idxSaoModes = 0;
+    res = saoModes->GetIndex(idxSaoModes);
+    CHECK_CM_ERR(res);
 
     res = kernel->SetKernelArg(0, sizeof(SurfaceIndex), idxRecon);
     CHECK_CM_ERR(res);		
@@ -1117,6 +1131,8 @@ int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16
     res = kernel->SetKernelArg(2, sizeof(SurfaceIndex), idxParam);
     CHECK_CM_ERR(res);		    
     res = kernel->SetKernelArg(3, sizeof(SurfaceIndex), idxStats);
+    CHECK_CM_ERR(res);
+    res = kernel->SetKernelArg(4, sizeof(SurfaceIndex), idxSaoModes);
     CHECK_CM_ERR(res);
 
     mfxU32 tsWidth   = m_par->PicWidthInCtbs;
@@ -1128,7 +1144,7 @@ int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16
     res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
     CHECK_CM_ERR(res);        
 
-    res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);	
+    res = threadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT);	
     CHECK_CM_ERR(res);
 
     CmTask * task = 0;
@@ -1152,6 +1168,29 @@ int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16
     // READ OUT DATA
     output->ReadSurfaceStride(frameDst, NULL, pitchDst);
 
+    // conversion from gfx to cpu format here
+    {
+        int size = sizeof(SaoOffsetOut_gfx);
+        Ipp8u* p_out_gfx = new Ipp8u[numCtb * size];
+        SaoOffsetOut_gfx* sao_gfx = (SaoOffsetOut_gfx*)p_out_gfx;
+
+        saoModes->ReadSurface( (Ipp8u*)p_out_gfx, NULL);
+
+        for (int ctb = 0; ctb < numCtb; ctb++) {
+            frame_sao_param[ctb][0].mode_idx = sao_gfx[ctb].mode_idx;
+            frame_sao_param[ctb][0].type_idx = sao_gfx[ctb].type_idx;
+            frame_sao_param[ctb][0].startBand_idx = sao_gfx[ctb].startBand_idx;
+            frame_sao_param[ctb][0].saoMaxOffsetQVal = sao_gfx[ctb].saoMaxOffsetQVal;
+            // offsets
+            frame_sao_param[ctb][0].offset[0] = sao_gfx[ctb].offset[0];
+            frame_sao_param[ctb][0].offset[1] = sao_gfx[ctb].offset[1];
+            frame_sao_param[ctb][0].offset[2] = sao_gfx[ctb].offset[2];
+            frame_sao_param[ctb][0].offset[3] = sao_gfx[ctb].offset[3];
+        }
+
+        delete [] p_out_gfx;
+    }
+
 #ifndef CMRT_EMU
     printf("TIME=%.3f ms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
 #endif //CMRT_EMU
@@ -1164,6 +1203,7 @@ int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16
     device->DestroySurface(output);
     device->DestroySurface(video_param);
     device->DestroySurface(stats);
+    device->DestroySurface(saoModes);
     device->DestroyThreadSpace(threadSpace);
     device->DestroyKernel(kernel);
     device->DestroyProgram(program);
@@ -1511,16 +1551,9 @@ enum SaoModes
 {
   SAO_MODE_OFF = 0,
   SAO_MODE_ON,
-  SAO_MODE_MERGE,
+  SAO_MODE_MERGE_LEFT,
+  SAO_MODE_MERGE_ABOVE,
   NUM_SAO_MODES
-};
-
-
-enum SaoMergeTypes
-{
-  SAO_MERGE_LEFT =0,
-  SAO_MERGE_ABOVE,
-  NUM_SAO_MERGE_TYPES
 };
 
 
@@ -2179,13 +2212,13 @@ Ipp32s CodeSaoCtbParam_BitCost(SaoCtuParam& saoBlkParam, bool* sliceEnabled, boo
     Ipp32s bitsCount = 0;
 
     if(leftMergeAvail) {
-        isLeftMerge = ((saoBlkParam[SAO_Y].mode_idx == SAO_MODE_MERGE) && (saoBlkParam[SAO_Y].type_idx == SAO_MERGE_LEFT));
+        isLeftMerge = ((saoBlkParam[SAO_Y].mode_idx == SAO_MODE_MERGE_LEFT));
         code = isLeftMerge ? 1 : 0;
         bitsCount++;
     }
 
     if( aboveMergeAvail && !isLeftMerge) {
-        isAboveMerge = ((saoBlkParam[SAO_Y].mode_idx == SAO_MODE_MERGE) && (saoBlkParam[SAO_Y].type_idx == SAO_MERGE_ABOVE));
+        isAboveMerge = ((saoBlkParam[SAO_Y].mode_idx == SAO_MODE_MERGE_ABOVE));
         code = isAboveMerge ? 1 : 0;
         bitsCount++;
     }
@@ -2238,7 +2271,7 @@ void GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList[2], SaoCtuPar
     }
 
 
-    Ipp32s bitCost = CodeSaoCtbParam_BitCost(bestParam, sliceEnabled, mergeList[SAO_MERGE_LEFT] != NULL, mergeList[SAO_MERGE_ABOVE] != NULL, true);
+    Ipp32s bitCost = CodeSaoCtbParam_BitCost(bestParam, sliceEnabled, mergeList[0] != NULL, mergeList[1] != NULL, true);
 
     bitCost = CodeSaoCtbOffsetParam_BitCost(SAO_Y, bestParam[SAO_Y], sliceEnabled[SAO_Y]);
 
@@ -2309,7 +2342,7 @@ void GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList[2], SaoCtuPar
     }
 
 #if defined(SAO_MODE_MERGE_ENABLED)
-    bitCost = CodeSaoCtbParam_BitCost(bestParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
+    bitCost = CodeSaoCtbParam_BitCost(bestParam, sliceEnabled, (mergeList[0]!= NULL), (mergeList[1]!= NULL), false);
 
     Ipp64f bestCost = modeDist[SAO_Y] / m_labmda[SAO_Y] + (modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda + bitCost;
 
@@ -2318,24 +2351,23 @@ void GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList[2], SaoCtuPar
         if (NULL == mergeList[mode])
             continue;
 
-        small_memcpy(&testParam, mergeList[mode], sizeof(SaoCtuParam));
-        testParam[0].mode_idx = SAO_MODE_MERGE;
-        testParam[0].type_idx = mode;
+        memcpy(&testParam, mergeList[mode], sizeof(SaoCtuParam));
+        testParam[0].mode_idx = mode == 0 ? SAO_MODE_MERGE_LEFT : SAO_MODE_MERGE_ABOVE;
 
         SaoOffsetParam& mergedOffset = (*(mergeList[mode]))[0];
 
         Ipp64s distortion=0;
         if ( SAO_MODE_OFF != mergedOffset.mode_idx ) {
-            distortion = GetDistortion( mergedOffset.type_idx, mergedOffset.typeAuxInfo,
+            distortion = GetDistortion( mergedOffset.type_idx, mergedOffset.startBand_idx,
                 mergedOffset.offset, state.m_statData[0][mergedOffset.type_idx], shift);
         }
 
-        bitCost = CodeSaoCtbParam_BitCost(testParam, sliceEnabled, (NULL != mergeList[SAO_MERGE_LEFT]), (NULL != mergeList[SAO_MERGE_ABOVE]), false);
+        bitCost = CodeSaoCtbParam_BitCost(testParam, sliceEnabled, (NULL != mergeList[0]), (NULL != mergeList[1]), false);
 
         cost = distortion / m_labmda[0] + bitCost;
         if (cost < bestCost) {
             bestCost = cost;
-            small_memcpy(&bestParam, &testParam, sizeof(SaoCtuParam));
+            memcpy(&bestParam, &testParam, sizeof(SaoCtuParam));
         }
     }
 #endif
@@ -3195,15 +3227,6 @@ void EstimateSao(const Ipp8u* frameOrigin, int pitchOrigin, Ipp8u* frameRecon, i
         borders.m_left = (-1 == m_leftAddr)  ? 0 : (m_leftSameSlice  && m_leftSameTile) ? 1 : 0;
         borders.m_top  = (-1 == m_aboveAddr) ? 0 : (m_aboveSameSlice && m_aboveSameTile) ? 1 : 0;
 
-        SaoCtuParam tmpMergeParam;
-        SaoCtuParam* mergeList[2] = {NULL, NULL};
-        if (borders.m_top) { // hack
-            mergeList[SAO_MERGE_ABOVE] = &tmpMergeParam;//&(saoParam[m_aboveAddr]);
-        }
-        if (borders.m_left) {
-            mergeList[SAO_MERGE_LEFT] = &tmpMergeParam;//&(saoParam[m_leftAddr]);
-        }
-
         // workaround (better to rewrite optimized SAO estimate functions to use tmpU and tmpL)
         borders.m_left = 0;
         borders.m_top  = 0;
@@ -3220,6 +3243,15 @@ void EstimateSao(const Ipp8u* frameOrigin, int pitchOrigin, Ipp8u* frameRecon, i
             borders.m_bottom = (ctbAddr < (ctbAddrEnd - m_par->PicWidthInCtbs)) ? 1 : 0;
             borders.m_bottom_left = borders.m_bottom & borders.m_left;
             borders.m_bottom_right = borders.m_bottom & borders.m_right;
+        }
+
+        SaoCtuParam tmpMergeParam;
+        SaoCtuParam* mergeList[2] = {NULL, NULL};
+        if (borders.m_top) { // hack
+            mergeList[1] = frame_sao_param + ctbAddr - m_par->PicWidthInCtbs;
+        }
+        if (borders.m_left) {
+            mergeList[0] = frame_sao_param + ctbAddr - 1;
         }
 
         Ipp32s height = (ctbPelY + m_par->MaxCUSize > m_par->Height) ? (m_par->Height- ctbPelY) : m_par->MaxCUSize;

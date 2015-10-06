@@ -103,10 +103,10 @@ enum SaoModes
 {
   SAO_MODE_OFF = 0,
   SAO_MODE_ON,
-  SAO_MODE_MERGE,
+  SAO_MODE_MERGE_LEFT,
+  SAO_MODE_MERGE_ABOVE,
   NUM_SAO_MODES
 };
-
 
 enum SaoBaseTypes
 {
@@ -264,8 +264,6 @@ _GENX_ inline void GetEOStat(matrix_ref<uint1,H+2,W> recon, matrix_ref<uint1,H+2
         GetSign(recon.row(y+1), reconR.row(y+2), sign2);
         cls = sign1 + sign2;
         cls.merge(0, maskHor1 | vector<uint2,W>(maskVer1[y]));
-        //cls.merge(0, maskHor);
-        //cls.merge(0, vector<uint2,W>(maskVer[y]));
         Classify(diff.row(y), MakeRef(cls), totalDiffEO.select<4,1,W,1>(8,0), totalCountEO.select<4,1,W,1>(8,0), y);
     }            
     // EO 45
@@ -275,14 +273,15 @@ _GENX_ inline void GetEOStat(matrix_ref<uint1,H+2,W> recon, matrix_ref<uint1,H+2
         GetSign(recon.row(y+1), reconR.row(y), sign2);
         cls = sign1 + sign2;
         cls.merge(0, maskHor1 | vector<uint2,W>(maskVer1[y]));
-        //cls.merge(0, maskHor);
-        //cls.merge(0, vector<uint2,W>(maskVer[y]));
         Classify(diff.row(y), MakeRef(cls), totalDiffEO.select<4,1,W,1>(12,0), totalCountEO.select<4,1,W,1>(12,0), y);
     }            
 
     diffEO = ParallelSum<int2>(totalDiffEO.select_all());
     countEO = ParallelSum<int2>(totalCountEO.select_all());
 }
+
+const int2 IDX_INIT_SEQ[] = { 0,1,2,3,0,1,2,3 };
+const int1 MERGE_TYPES[] = { SAO_MODE_MERGE_LEFT, SAO_MODE_MERGE_ABOVE };
 
 _GENX_ inline 
 void GetBestMode(
@@ -292,25 +291,90 @@ void GetBestMode(
     vector_ref<int2, 16> countEO, 
     vector_ref<int4, 32> diffBO,
     vector_ref<int2, 32> countBO,
-    vector_ref<int1, 16> bestParam)
+    vector_ref<int1, 16> bestParam,
+    matrix_ref<int1,2,16> mergeParam,
+    int2 mergeLeftAvail,
+    int2 mergeAboveAvail)
 {
+    vector_ref<int1,16> mergeLeftParam = mergeParam.row(0);
+    vector_ref<int1,16> mergeAboveParam = mergeParam.row(1);
+
+    lambda *= 256;
+    int2 mergeFlagsBits = mergeLeftAvail + mergeAboveAvail;
+
     // SAO_OFF
     bestParam = 0;
-    vector_ref<int2,4> bestOffset = bestParam.format<int2>().select<4,1>(2);
-    vector<float,1> minCost = lambda * 256; // cost of SAO OFF
+    bestParam.format<float>()[3] = lambda * (1 + mergeFlagsBits); // cost of SAO OFF
+    vector_ref<float,1> minCost = bestParam.format<float>().select<1,1>(3);
+
+    // costs for SAO merge
+    // calculations in parallel: both left and above, both Edge Offset and Band Offset
+    vector<int2,16> offsets;
+    offsets.select<4,1>(0) = mergeLeftParam.format<int2>().select<4,1>(2);
+    offsets.select<4,1>(4) = mergeAboveParam.format<int2>().select<4,1>(2);
+    offsets.select<8,1>(8) = offsets.select<8,1>(0);
+
+    vector<uint2,8> idxInitSeq(IDX_INIT_SEQ);
+    vector<uint2,2> eoType = mergeParam.column(1) * 4;
+    vector<uint2,2> startBand = mergeParam.column(2);
+    vector<uint2,8> eoIdx = idxInitSeq + eoType.replicate<2,1,4,0>();
+    vector<uint2,8> boIdx = idxInitSeq + startBand.replicate<2,1,4,0>();
+
+    vector<int2,16> count;
+    count.select<8,1>(0) = countEO.iselect(eoIdx);
+    count.select<8,1>(8) = countBO.iselect(boIdx);
+
+    vector<int4,16> diff;
+    diff.select<8,1>(0) = diffEO.iselect(eoIdx);
+    diff.select<8,1>(8) = diffBO.iselect(boIdx);
+
+    // 16 distortions: 4 offsets for each of leftEO, aboveEO, leftBO, aboveBO
+    vector<int4,16> dist;
+    dist = count * offsets;
+    dist -= 2 * diff;
+    dist *= offsets;
+    // sum up distortions for each 4 offsets
+    dist.select<8,1>(0) = dist.select<8,2>(0) + dist.select<8,2>(1);
+    dist.select<4,1>(0) = dist.select<4,2>(0) + dist.select<4,2>(1);
+
+    // select between Edge and Band Offset
+    vector<int2,2> maskBo = (mergeParam.column(1) == vector<int2,2>(SAO_TYPE_BO));
+    dist.select<2,1>(0).merge(dist.select<2,1>(2), maskBo);
+
+    // select between SAO Off and On
+    vector<int2,2> maskOff = (!mergeParam.column(0));
+    dist.select<2,1>(0).merge(0, maskOff);
+
+    mergeLeftParam[0]  = SAO_MODE_MERGE_LEFT;
+    mergeAboveParam[0] = SAO_MODE_MERGE_ABOVE;
+
+    vector_ref<float,1> mergeLeftCost = mergeLeftParam.format<float>().select<1,1>(3);
+    vector_ref<float,1> mergeAboveCost = mergeAboveParam.format<float>().select<1,1>(3);
+
+    // total RD cost
+    mergeLeftCost  = dist[0] + lambda;
+    mergeAboveCost = dist[1] + lambda * (1 + mergeLeftAvail);
+
+    // SAO MERGE LEFT
+    vector<int2,1> better;
+    better = (mergeLeftCost[0] < minCost[0]);
+    better = better[0] & mergeLeftAvail;
+    bestParam.merge(mergeLeftParam, better.replicate<16>());
+
+    // SAO MERGE ABOVE
+    better = (mergeAboveCost[0] < minCost[0]);
+    better[0] = better[0] & mergeAboveAvail;
+    bestParam.merge(mergeAboveParam, better.replicate<16>());
+
 
     vector<uint2,16> offsetBits(OFFSET_BITS);
-    offsetBits <<= 8;
 
     vector<float,16> lambdaOffsetBits = lambda * offsetBits;
     vector_ref<float,8> lambdaEoOffsetBits = lambdaOffsetBits.select<8,1>(0);
     vector_ref<float,8> lambdaBoOffsetBits = lambdaOffsetBits.select<8,1>(8);
 
-    const float lambdaEoClassBits = lambda * 0x200; 
-    const float lambdaBoClassBits = lambda * 0x500; 
-    const float lambdaSaoTypeBits = lambda * 0x200;
-    const float lambdaEoBits = lambdaSaoTypeBits + lambdaEoClassBits;
-    const float lambdaBoBits = lambdaSaoTypeBits + lambdaBoClassBits;
+    const float lambdaEoBits = lambda * (2 + 2 + mergeFlagsBits);
+    const float lambdaBoBits = lambda * (2 + 5 + mergeFlagsBits);
 
 
     // EO
@@ -320,22 +384,25 @@ void GetBestMode(
         offsetSign.format<int4>().select<4,2>(1) = -1;
 
         // calculating dist = count * offset * offset - 2 * diff * offset for all possible offsets [-7..0] or [0..7]
-        matrix<int4,8,16> dist;
-        matrix<float,8,16> costs;
-        vector_ref<float,16> bestCost = costs.row(7);
-        vector<int2,16> offsets = 7;
+        vector<int4,16> dist;
+        vector<float,16> costs;
+        vector<float,16> bestCost;
+        vector<int2,16> offsets;
         diffEO *= offsetSign;
 
+        dist = -(2*7) * diffEO;
+        dist += (7*7) * countEO;
+        bestCost = dist + lambdaEoOffsetBits[7];
+        offsets = 7;
+
         #pragma unroll
-        for (int i = 7; i >= 0; i--) {
-            dist.row(i) = -(2*i) * diffEO;
-            dist.row(i) += (i*i) * countEO;
-            costs.row(i) = dist.row(i) + lambdaEoOffsetBits[i];
-            if (i < 7) { // select best offset
-                vector<int2,16> mask = bestCost > costs.row(i);
-                bestCost.merge(costs.row(i), mask);
-                offsets.merge(i, mask);
-            }
+        for (int i = 6; i >= 0; i--) {
+            dist = -(2*i) * diffEO;
+            dist += (i*i) * countEO;
+            costs = dist + lambdaEoOffsetBits[i];
+            vector<int2,16> mask = bestCost > costs;
+            bestCost.merge(costs, mask);
+            offsets.merge(i, mask);
         }
 
         // sum up 4 classes costs
@@ -354,9 +421,9 @@ void GetBestMode(
         eoParams[1] = eoClasses[0];
         eoParams[2] = 0;
         eoParams.format<int2>().select<4,1>(2) = offsets.select<4,1>(4*eoClasses[0]) * offsetSign.row(0);
+        eoParams.format<float>().select<1,1>(3) = bestCost[0];
 
         vector<int2,16> mask = bestCost[0] < minCost[0];
-        minCost.merge(bestCost[0], mask[0]);
         bestParam.merge(eoParams, mask);
     }
 
@@ -416,16 +483,13 @@ void GetBestMode(
         boParams[1] = SAO_TYPE_BO;
         boParams[2] = band[0];
         boParams.format<int2>().select<4,1>(2) = offsets.select<4,1>(band[0]);
+        boParams.format<float>().select<1,1>(3) = costSum[0];
 
         vector<int2,16> mask = costSum[0] < minCost[0];
-        minCost.merge(costSum.select<1,1>(), mask[0]);
         bestParam.merge(boParams, mask);
     }    
 }
 
-
-static const ushort init_offset[16]={0,1,2,3,4,5,6,7, 8, 9, 10, 11, 12, 13, 14, 15};
-static const ushort init_value[8]={0,1,2,3,4,5,6,7};
 
 
 template<uint W> _GENX_ inline void AddOffset(vector_ref<uint1,W> recon, vector_ref<int2,4> offsets, vector_ref<int2,W> cls)
@@ -702,11 +766,17 @@ extern "C" _GENX_MAIN_ void SaoEstimate(SurfaceIndex PARAM, SurfaceIndex STATS, 
         }
     }
 
-    vector<int1, 16> saoMode;
-    GetBestMode(par.enableBandOffset, par.m_rdLambda, diffEO, countEO, diffBO, countBO, saoMode);
-    saoMode[3] = 7;
     int4 ctb = oy * par.PicWidthInCtbs + ox;
+
+    vector<int1, 16> saoMode;
+    matrix<int1,2,16> saoMergeModes;
+
+    cm_wait();
+    read(SAO_MODES, GENX_MODIFIED, (ctb - 1) * 16, saoMergeModes.row(0));
+    read(SAO_MODES, GENX_MODIFIED, (ctb - par.PicWidthInCtbs) * 16, saoMergeModes.row(1));
+    GetBestMode(par.enableBandOffset, par.m_rdLambda, diffEO, countEO, diffBO, countBO, saoMode, saoMergeModes, ox > 0, oy > 0);
     write(SAO_MODES, ctb * 16, saoMode);
+    cm_fence();
 }
 
 
@@ -726,125 +796,136 @@ extern "C" _GENX_MAIN_ void SaoApply(SurfaceIndex SRC, SurfaceIndex DST, Surface
 }
 
 
-extern "C" _GENX_MAIN_ void SaoEstimateAndApply(SurfaceIndex SRC, SurfaceIndex DST, SurfaceIndex PARAM, SurfaceIndex STATS)
-{
-    MiniVideoParam par;
-    ReadParam(PARAM, par);  
+//extern "C" _GENX_MAIN_ void SaoEstimateAndApply(SurfaceIndex SRC, SurfaceIndex DST, SurfaceIndex PARAM, SurfaceIndex STATS, SurfaceIndex SAO_MODES)
+//{
+//    MiniVideoParam par;
+//    ReadParam(PARAM, par);  
+//
+//    int2 ox = get_thread_origin_x();
+//    int2 oy = get_thread_origin_y();
+//
+//    vector<int4,16> diffEO = 0;
+//    vector<int2,16> countEO = 0;
+//    vector<int4,32> diffBO = 0;
+//    vector<int2,32> countBO = 0;
+//
+//    #pragma unroll
+//    for (int y = 0; y < 64/STATS_H; y++) {
+//        #pragma unroll
+//        for (int x = 0; x < 64/STATS_W; x++) {
+//            int4 blk = (oy*(64/STATS_H) + y) * par.PicWidthInCtbs * (64/STATS_W) + ox*(64/STATS_W) + x;
+//            matrix<int2,2,16> tmpEO;
+//            matrix<int2,2,32> tmpBO;
+//            read(STATS, (16+16+32+32)*2*blk, tmpEO.format<int2>());
+//            read(STATS, (16+16+32+32)*2*blk+16*2*2, tmpBO.format<int2>());
+//            diffEO += tmpEO.row(0);
+//            diffBO += tmpBO.row(0);
+//            countEO += tmpEO.row(1);
+//            countBO += tmpBO.row(1);
+//        }
+//    }
+//
+//    int4 ctb = oy * par.PicWidthInCtbs + ox;
+//
+//    vector<int1, 16> saoMode;
+//    matrix<int1,2,16> saoMergeModes;
+//
+//    cm_wait();
+//    read(SAO_MODES, GENX_MODIFIED, (ctb - 1) * 16, saoMergeModes.row(0));
+//    read(SAO_MODES, GENX_MODIFIED, (ctb - par.PicWidthInCtbs) * 16, saoMergeModes.row(1));
+//    GetBestMode(par.enableBandOffset, par.m_rdLambda, diffEO, countEO, diffBO, countBO, saoMode, saoMergeModes, ox > 0, oy > 0);
+//    write(SAO_MODES, ctb * 16, saoMode);
+//    cm_fence();
+//
+//    SaoApplyImpl(SRC, DST, par, saoMode, ox, oy);
+//}
 
-    int2 ox = get_thread_origin_x();
-    int2 oy = get_thread_origin_y();
 
-    vector<int4,16> diffEO = 0;
-    vector<int2,16> countEO = 0;
-    vector<int4,32> diffBO = 0;
-    vector<int2,32> countBO = 0;
-
-    #pragma unroll
-    for (int y = 0; y < 64/STATS_H; y++) {
-        #pragma unroll
-        for (int x = 0; x < 64/STATS_W; x++) {
-            int4 blk = (oy*(64/STATS_H) + y) * par.PicWidthInCtbs * (64/STATS_W) + ox*(64/STATS_W) + x;
-            matrix<int2,2,16> tmpEO;
-            matrix<int2,2,32> tmpBO;
-            read(STATS, (16+16+32+32)*2*blk, tmpEO.format<int2>());
-            read(STATS, (16+16+32+32)*2*blk+16*2*2, tmpBO.format<int2>());
-            diffEO += tmpEO.row(0);
-            diffBO += tmpBO.row(0);
-            countEO += tmpEO.row(1);
-            countBO += tmpBO.row(1);
-        }
-    }
-
-    vector<int1, 16> saoMode;
-    GetBestMode(par.enableBandOffset, par.m_rdLambda, diffEO, countEO, diffBO, countBO, saoMode);
-
-    SaoApplyImpl(SRC, DST, par, saoMode, ox, oy);
-}
-
-
-extern "C" _GENX_MAIN_ void SaoStatAndEstimate(SurfaceIndex SRC, SurfaceIndex RECON, SurfaceIndex PARAM, SurfaceIndex SAO_MODES)
-{
-    MiniVideoParam par;
-    ReadParam(PARAM, par);  
-       
-    int2 ox = get_thread_origin_x();
-    int2 oy = get_thread_origin_y();
-    int4 ctb = oy * par.PicWidthInCtbs + ox;
-    ox *= 64;
-    oy *= 64;
-
-    vector<int4,16> diffEO = 0;
-    vector<int2,16> countEO = 0;
-    vector<int4,32> diffBO = 0;
-    vector<int2,32> countBO = 0;
-   
-    int2 maskX = 64/W - 1;
-    int2 shiftY = 6 - LOG2_W;
-    int2 num_blocks = 4096/W/H;
-
-    vector<int2,W> pelx;
-    vector<int2,H> pely;
-    cmtl::cm_vector_assign<int2,W>(pelx,0,1);
-    cmtl::cm_vector_assign<int2,H>(pely,0,1);
-
-    for (uint2 blk = 0; blk < num_blocks; blk++) 
-    {
-        int2 blkx = blk & maskX;
-        int2 blky = blk >> shiftY;
-        blkx *= W;
-        blky *= H;
-
-        blkx += ox;
-        blky += oy;
-
-        matrix<uint1,H,W> origin;
-        matrix<uint1,H+2,W> recon;
-        matrix<uint1,H+2,W> reconL;
-        matrix<uint1,H+2,W> reconR;
-
-        read_plane(SRC, GENX_SURFACE_Y_PLANE, blkx, blky, origin);        
-
-        if (W*(H+2) <= 256) {
-            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx,   blky-1, recon);
-            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx-1, blky-1, reconL);
-            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx+1, blky-1, reconR);
-        } else {
-            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx,   blky-1, recon.select<H,1,W,1>(0,0));
-            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx,   blky-1+H, recon.select<2,1,W,1>(H,0));
-            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx-1, blky-1, reconL.select<H,1,W,1>(0,0));
-            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx-1, blky-1+H, reconL.select<2,1,W,1>(H,0));
-            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx+1, blky-1, reconR.select<H,1,W,1>(0,0));
-            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx+1, blky-1+H, reconR.select<2,1,W,1>(H,0));
-        }
-
-        matrix<int2,H,W> diff = origin - recon.select<H,1,W,1>(1,0);
-
-        vector<uint2,W> tmpx = pelx + blkx;
-        vector<uint2,H> tmpy = pely + blky;
-
-        vector<uint2,W> maskHor0 = (tmpx >= par.Width);
-        vector<uint2,H> maskVer0 = (tmpy >= par.Height);
-        vector<uint2,W> maskHor1 = (tmpx == 0) | (tmpx >= par.Width - 1);
-        vector<uint2,H> maskVer1 = (tmpy == 0) | (tmpy >= par.Height - 1);
-
-        matrix<int2,2,16> tmpEO = 0;
-        GetEOStat(recon, reconL, reconR, diff, tmpEO.row(0), tmpEO.row(1), maskHor0, maskHor1, maskVer0, maskVer1);
-        diffEO += tmpEO.row(0);
-        countEO += tmpEO.row(1);
-
-        if (par.enableBandOffset) {
-            matrix<int2,2,32> tmpBO;
-            GetBOStat(recon.select<H,1,W,1>(1,0), diff, tmpBO.row(0), tmpBO.row(1), blkx, blky, par.Width, par.Height);
-            diffBO += tmpBO.row(0);
-            countBO += tmpBO.row(1);
-        }
-    }
-
-#if defined ENABLE_RDO
-    vector<int1, 16> saoMode;
-    GetBestMode(par.enableBandOffset, par.m_rdLambda, diffEO, countEO, diffBO, countBO, saoMode);
-    saoMode[3] = 7;
-    write(SAO_MODES, ctb * 16, saoMode);
-#endif
-
-}
+//extern "C" _GENX_MAIN_ void SaoStatAndEstimate(SurfaceIndex SRC, SurfaceIndex RECON, SurfaceIndex PARAM, SurfaceIndex SAO_MODES)
+//{
+//    MiniVideoParam par;
+//    ReadParam(PARAM, par);  
+//       
+//    int2 ox = get_thread_origin_x();
+//    int2 oy = get_thread_origin_y();
+//    int4 ctb = oy * par.PicWidthInCtbs + ox;
+//    ox *= 64;
+//    oy *= 64;
+//
+//    vector<int4,16> diffEO = 0;
+//    vector<int2,16> countEO = 0;
+//    vector<int4,32> diffBO = 0;
+//    vector<int2,32> countBO = 0;
+//   
+//    int2 maskX = 64/W - 1;
+//    int2 shiftY = 6 - LOG2_W;
+//    int2 num_blocks = 4096/W/H;
+//
+//    vector<int2,W> pelx;
+//    vector<int2,H> pely;
+//    cmtl::cm_vector_assign<int2,W>(pelx,0,1);
+//    cmtl::cm_vector_assign<int2,H>(pely,0,1);
+//
+//    for (uint2 blk = 0; blk < num_blocks; blk++) 
+//    {
+//        int2 blkx = blk & maskX;
+//        int2 blky = blk >> shiftY;
+//        blkx *= W;
+//        blky *= H;
+//
+//        blkx += ox;
+//        blky += oy;
+//
+//        matrix<uint1,H,W> origin;
+//        matrix<uint1,H+2,W> recon;
+//        matrix<uint1,H+2,W> reconL;
+//        matrix<uint1,H+2,W> reconR;
+//
+//        read_plane(SRC, GENX_SURFACE_Y_PLANE, blkx, blky, origin);        
+//
+//        if (W*(H+2) <= 256) {
+//            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx,   blky-1, recon);
+//            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx-1, blky-1, reconL);
+//            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx+1, blky-1, reconR);
+//        } else {
+//            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx,   blky-1, recon.select<H,1,W,1>(0,0));
+//            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx,   blky-1+H, recon.select<2,1,W,1>(H,0));
+//            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx-1, blky-1, reconL.select<H,1,W,1>(0,0));
+//            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx-1, blky-1+H, reconL.select<2,1,W,1>(H,0));
+//            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx+1, blky-1, reconR.select<H,1,W,1>(0,0));
+//            read_plane(RECON, GENX_SURFACE_Y_PLANE, blkx+1, blky-1+H, reconR.select<2,1,W,1>(H,0));
+//        }
+//
+//        matrix<int2,H,W> diff = origin - recon.select<H,1,W,1>(1,0);
+//
+//        vector<uint2,W> tmpx = pelx + blkx;
+//        vector<uint2,H> tmpy = pely + blky;
+//
+//        vector<uint2,W> maskHor0 = (tmpx >= par.Width);
+//        vector<uint2,H> maskVer0 = (tmpy >= par.Height);
+//        vector<uint2,W> maskHor1 = (tmpx == 0) | (tmpx >= par.Width - 1);
+//        vector<uint2,H> maskVer1 = (tmpy == 0) | (tmpy >= par.Height - 1);
+//
+//        matrix<int2,2,16> tmpEO = 0;
+//        GetEOStat(recon, reconL, reconR, diff, tmpEO.row(0), tmpEO.row(1), maskHor0, maskHor1, maskVer0, maskVer1);
+//        diffEO += tmpEO.row(0);
+//        countEO += tmpEO.row(1);
+//
+//        if (par.enableBandOffset) {
+//            matrix<int2,2,32> tmpBO;
+//            GetBOStat(recon.select<H,1,W,1>(1,0), diff, tmpBO.row(0), tmpBO.row(1), blkx, blky, par.Width, par.Height);
+//            diffBO += tmpBO.row(0);
+//            countBO += tmpBO.row(1);
+//        }
+//    }
+//
+//    vector<int1, 16> saoMode;
+//    matrix<int1,2,16> saoMergeModes;
+//
+//    cm_wait();
+//    read(SAO_MODES, GENX_MODIFIED, (ctb - 1) * 16, saoMergeModes.row(0));
+//    read(SAO_MODES, GENX_MODIFIED, (ctb - par.PicWidthInCtbs) * 16, saoMergeModes.row(1));
+//    GetBestMode(par.enableBandOffset, par.m_rdLambda, diffEO, countEO, diffBO, countBO, saoMode, saoMergeModes, ox > 0, oy > 0);
+//    write(SAO_MODES, ctb * 16, saoMode);
+//    cm_fence();
+//}

@@ -157,6 +157,8 @@ namespace H265Enc {
         ObjectPool<FrameData>     m_frameDataLowresPool;    // storage for lowres original pixel data for lookahead
         ObjectPool<Statistics>    m_statsPool;              // storage for full-sized statistics per frame
         ObjectPool<Statistics>    m_statsLowresPool;        // storage for lowres statistics per frame
+        ObjectPool<FeiInputData>  m_feiInputDataPool;       // storage for full-sized original pixel data
+        ObjectPool<FeiReconData>  m_feiReconDataPool;       // storage for full-sized reconstructed/reference pixel data
         ObjectPool<FeiOutData>    m_feiAngModesPool[4];     // storage for angular intra modes output by fei (4x4, 8x8, 16x16, 32x32)
         ObjectPool<FeiOutData>    m_feiInterMvPool[3];      // storage for motion vectors output by fei (8x8, 16x16, 32x32)
         ObjectPool<FeiOutData>    m_feiInterDistPool[3];    // storage for ME distortions output by fei (8x8, 16x16, 32x32)

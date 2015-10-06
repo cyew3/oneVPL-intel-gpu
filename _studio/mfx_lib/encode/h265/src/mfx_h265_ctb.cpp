@@ -1010,7 +1010,6 @@ Ipp32s GetLastValidPartIdx(H265CuBase* cu, Ipp32s iAbsPartIdx)
     return iLastValidPartIdx;
 }
 
-
 template <class H265CuBase>
 Ipp8s GetLastCodedQP(H265CuBase* cu, Ipp32s absPartIdx )
 {
@@ -1023,8 +1022,7 @@ Ipp8s GetLastCodedQP(H265CuBase* cu, Ipp32s absPartIdx )
     }
     else  /* assume TilesOrEntropyCodingSyncIdc == 0 */
     {
-        if( cu->m_absIdxInLcu > 0 )
-        {
+        if( cu->m_absIdxInLcu > 0 ) {
             //H265CU tmpCtb;
             //memset(&tmpCtb, 0, sizeof(H265CU));
             //tmpCtb.m_ctbAddr = m_ctbAddr;
@@ -1035,13 +1033,13 @@ Ipp8s GetLastCodedQP(H265CuBase* cu, Ipp32s absPartIdx )
 
             VM_ASSERT(!"NOT IMPLEMENTED");
             return 0;
-        } 
-        else if (cu->m_ctbAddr > 0 && !(cu->m_par->WPPFlag && cu->m_ctbAddr % cu->m_par->PicWidthInCtbs == 0))
-        {
+        } else if (cu->m_ctbAddr > 0 && !(cu->m_par->WPPFlag && cu->m_ctbAddr % cu->m_par->PicWidthInCtbs == 0)) {
+            
             int curAddr = cu->m_ctbAddr;
-            //aya: quick patch for multi-slice mode
-            if(cu->m_par->m_slice_ids[curAddr] == cu->m_par->m_slice_ids[curAddr-1] )
-            {
+
+            // slice segmentation
+            Ipp8u sameSlice = cu->m_par->m_slice_ids[curAddr] == cu->m_par->m_slice_ids[curAddr-1];
+            if(cu->m_par->NumTiles == 1 && sameSlice) {
                H265CUFake tmpCtb(
                     cu->m_ctbAddr-1, 
                     cu->m_par,
@@ -1053,17 +1051,34 @@ Ipp8s GetLastCodedQP(H265CuBase* cu, Ipp32s absPartIdx )
                 Ipp8s qp = GetLastCodedQP(&tmpCtb, cu->m_par->NumPartInCU);
                 return qp;
             }
-            else
-            {
-                return cu->m_sliceQpY;
+
+            // tile segmentation
+            else if (cu->m_par->NumTiles > 1) {
+                Ipp32u tile_id = cu->m_par->m_tile_ids[curAddr];
+                if (curAddr != cu->m_par->m_tiles[tile_id].first_ctb_addr) {
+                    int prevCtbAddr = curAddr - 1;
+                    Ipp32s tile_col = tile_id % cu->m_par->NumTileCols;
+                    int regionCtbColFirst = cu->m_par->tileColStart[tile_col];
+                    int currCtbCol = (curAddr % cu->m_par->PicWidthInCtbs);
+                    if (regionCtbColFirst == currCtbCol) {
+                        prevCtbAddr = curAddr - cu->m_par->PicWidthInCtbs + cu->m_par->tileColWidth[tile_col] - 1;
+                    }
+                    H265CUFake tmpCtb(
+                        prevCtbAddr, 
+                        cu->m_par,
+                        cu->m_sliceQpY,
+                        cu->m_ctbData + ((prevCtbAddr) << cu->m_par->Log2NumPartInCU),
+                        cu->m_ctbData,
+                        cu->m_absIdxInLcu);
+
+                    Ipp8s qp = GetLastCodedQP(&tmpCtb, cu->m_par->NumPartInCU);
+                    return qp;
+                }
             }
-        }
-        else
-        {
-            return cu->m_sliceQpY;
         }
     }
 
+    return cu->m_sliceQpY;
 }
 
 

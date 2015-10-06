@@ -1361,12 +1361,14 @@ void H265Encoder::ConfigureEncodeFrame(Frame* frame)
     currFrame->m_encOrder = m_lastEncOrder + 1;
 
     // set task param to simplify bitstream writing logic
-        currFrame->m_frameType= currFrame->m_picCodeType |
+    currFrame->m_frameType= currFrame->m_picCodeType |
         (currFrame->m_isIdrPic ? MFX_FRAMETYPE_IDR : 0) |
         (currFrame->m_isRef ? MFX_FRAMETYPE_REF : 0);
 
     // assign resource for reconstruct
-    currFrame->m_recon = m_reconFrameDataPool.Allocate(); // calls AddRef()
+    currFrame->m_recon = m_reconFrameDataPool.Allocate();
+    currFrame->m_feiRecon = m_feiReconDataPool.Allocate();
+    currFrame->m_feiOrigin = m_feiInputDataPool.Allocate();
     currFrame->m_feiCuData = m_feiCuDataPool.Allocate();
     currFrame->cu_data = (H265CUData *)currFrame->m_feiCuData->m_sysmem;
 
@@ -1452,6 +1454,7 @@ void H265Encoder::CleanGlobalDpb()
     for (FrameIter i = m_dpb.begin(); i != m_dpb.end();) {
         FrameIter curI = i++;
         if ((*curI)->m_recon->m_refCounter == 0) {
+            SafeRelease((*curI)->m_feiRecon);
             SafeRelease((*curI)->m_feiCuData);
             m_free.splice(m_free.end(), m_dpb, curI);
         }
@@ -1471,6 +1474,7 @@ void H265Encoder::OnEncodingQueried(Frame* encoded)
 
     // release source frame
     SafeRelease(encoded->m_origin);
+    SafeRelease(encoded->m_feiOrigin);
 
     // release FEI resources
     for (Ipp32s i = 0; i < 4; i++)
@@ -1977,10 +1981,18 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 
             if (m_videoParam.enableCmPostProc) {
                 const SaoOffsetOut_gfx *saoModes = (SaoOffsetOut_gfx *)m_frame->m_feiSaoModes->m_sysmem;
-                m_saoParam[ctb_addr][SAO_Y].mode_idx = saoModes[ctb_addr].mode_idx;
-                m_saoParam[ctb_addr][SAO_Y].type_idx = saoModes[ctb_addr].type_idx;
+                if (saoModes[ctb_addr].mode_idx == 2) {
+                    m_saoParam[ctb_addr][SAO_Y].mode_idx = SAO_MODE_MERGE;
+                    m_saoParam[ctb_addr][SAO_Y].type_idx = SAO_MERGE_LEFT;
+                } else if (saoModes[ctb_addr].mode_idx == 3) {
+                    m_saoParam[ctb_addr][SAO_Y].mode_idx = SAO_MODE_MERGE;
+                    m_saoParam[ctb_addr][SAO_Y].type_idx = SAO_MERGE_ABOVE;
+                } else {
+                    m_saoParam[ctb_addr][SAO_Y].mode_idx = saoModes[ctb_addr].mode_idx;
+                    m_saoParam[ctb_addr][SAO_Y].type_idx = saoModes[ctb_addr].type_idx;
+                }
                 int startIdx = m_saoParam[ctb_addr][SAO_Y].typeAuxInfo = saoModes[ctb_addr].startBand_idx;
-                m_saoParam[ctb_addr][SAO_Y].saoMaxOffsetQVal = saoModes[ctb_addr].saoMaxOffsetQVal;
+                m_saoParam[ctb_addr][SAO_Y].saoMaxOffsetQVal = 7;
                 if (m_saoParam[ctb_addr][SAO_Y].type_idx == SAO_TYPE_BO) {
                     for (int idx = 0; idx < 4; idx++)
                         m_saoParam[ctb_addr][SAO_Y].offset[startIdx + idx] = saoModes[ctb_addr].offset[idx];

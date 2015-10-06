@@ -9,5 +9,5 @@
 
 #ifndef __genx_hevce_sao_hsw__
 #define __genx_hevce_sao_hsw__
-extern const unsigned char genx_hevce_sao_hsw[668740];
+extern const unsigned char genx_hevce_sao_hsw[331611];
 #endif

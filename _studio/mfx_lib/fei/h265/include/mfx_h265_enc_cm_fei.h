@@ -47,8 +47,8 @@ private:
     /* internal helper functions */
     void RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurface2DUP **mv, mfxFEIH265InputSurface *picBufInput, mfxFEIH265ReconSurface *picBufRef);
     void ConvertBitDepth(void *inPtr, mfxU32 inBits, mfxU32 inPitch, void *outPtr, mfxU32 outBits);
-    mfxStatus CopyInputFrameToGPU(CmEvent **lastEvent, mfxHDL pInSurf);
-    mfxStatus CopyReconFrameToGPU(CmEvent **lastEvent, mfxHDL pRecSurf);
+    mfxStatus CopyInputFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *in);
+    mfxStatus CopyReconFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *in);
 
     /* Cm elements */
     CmDevice  * device;
@@ -78,6 +78,7 @@ private:
     CmBuffer * me16xControl;
 
     CmSurface2D * deblocked;
+    CmBuffer    * saoStat;
 
     /* Cm kernels to load  */
     H265Enc::Kernel kernelPrepareSrc;
@@ -93,6 +94,7 @@ private:
     H265Enc::Kernel kernelIme;
     H265Enc::Kernel kernelIme3tiers;
     H265Enc::Kernel kernelDeblock;
+    H265Enc::Kernel kernelSaoStat;
     H265Enc::Kernel kernelSaoEstimate;
     H265Enc::Kernel kernelSaoApply;
 
@@ -185,6 +187,7 @@ public:
         kernelIme(),
         kernelIme3tiers(),
         kernelDeblock(),
+        kernelSaoStat(),
         kernelSaoEstimate(),
         kernelSaoApply(),
 

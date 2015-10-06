@@ -623,6 +623,8 @@ H265Encoder::~H265Encoder()
 
     m_inputFrameDataPool.Destroy();
     m_reconFrameDataPool.Destroy();
+    m_feiInputDataPool.Destroy();
+    m_feiReconDataPool.Destroy();
 
     // destory FEI resources
     for (Ipp32s i = 0; i < 4; i++)
@@ -893,6 +895,14 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
         frameDataAllocInfo.sizeInBytesCh = IPP_MAX(frameDataAllocInfo.sizeInBytesCh, (Ipp32s)feiAlloc.SrcRefChroma.size);
         frameDataAllocInfo.pitchInBytesLu = feiAlloc.SrcRefLuma.pitch;
         frameDataAllocInfo.pitchInBytesCh = feiAlloc.SrcRefChroma.pitch;
+
+        FeiInputData::AllocInfo feiInputAllocaInfo = {};
+        feiInputAllocaInfo.feiHdl = m_fei;
+        m_feiInputDataPool.Init(feiInputAllocaInfo, 0);
+
+        FeiReconData::AllocInfo feiReconAllocaInfo = {};
+        feiReconAllocaInfo.feiHdl = m_fei;
+        m_feiReconDataPool.Init(feiReconAllocaInfo, 0);
     }
 
     FeiBufferUp::AllocInfo feiBufferUpAllocInfo;
@@ -912,11 +922,8 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
             return sts;
     }
 
-    frameDataAllocInfo.isRecon = false;
-    m_inputFrameDataPool.Init(frameDataAllocInfo, 0);
-
-    frameDataAllocInfo.isRecon = true;
     m_reconFrameDataPool.Init(frameDataAllocInfo, 0);
+    m_inputFrameDataPool.Init(frameDataAllocInfo, 0);
 
     if (m_la.get() && (m_videoParam.LowresFactor || m_videoParam.SceneCut)) {
         Ipp32s lowresFactor = m_videoParam.LowresFactor;
@@ -1257,7 +1264,7 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
         }
     }
 
-    while (!m_reorderedQueue.empty()) {
+    while (!m_reorderedQueue.empty() && (Ipp32s)m_encodeQueue.size() < m_videoParam.m_framesInParallel) {
         ConfigureEncodeFrame(m_reorderedQueue.front());
         m_lastEncOrder = m_reorderedQueue.front()->m_encOrder;
 
@@ -2442,8 +2449,6 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
 
     mfxFEIH265Input in = {};
     mfxExtFEIH265Output out = {};
-    DeblockParam        deblockParam;
-    SaoVideoParam       saoParam;
 	PostProcParam postprocParam;
 
     in.FrameType = task.frame->m_picCodeType;
@@ -2451,37 +2456,25 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
     in.SaveSyncPoint = 1;
 
     if (task.feiOp == MFX_FEI_H265_OP_GPU_COPY_SRC) {
-        FrameData *originData = task.frame->m_origin;
-        in.FEIFrameIn.PicOrder = task.frame->m_frameOrder;
-        in.FEIFrameIn.EncOrder = task.frame->m_encOrder;
-        in.FEIFrameIn.surfIn = task.frame->m_origin->m_handle;
+        in.copyArgs.surfSys = task.frame->m_origin->m_handle;
+        in.copyArgs.surfVid = task.frame->m_feiOrigin->m_handle;
         in.SaveSyncPoint = 0;
 
     } else if (task.feiOp == MFX_FEI_H265_OP_GPU_COPY_REF) {
-        FrameData *refData = task.frame->m_recon;
-        in.FEIFrameRef.PicOrder = task.frame->m_frameOrder;
-        in.FEIFrameRef.EncOrder = task.frame->m_encOrder;
-        in.FEIFrameRef.surfIn = task.frame->m_recon->m_handle;
-        if (m_videoParam.enableCmPostProc == 0) {
+        in.copyArgs.surfSys = task.frame->m_recon->m_handle;
+        in.copyArgs.surfVid = task.frame->m_feiRecon->m_handle;
+        if (m_videoParam.enableCmPostProc == 0)
             in.FEIOp = MFX_FEI_H265_OP_GPU_COPY_SRC;
-            in.FEIFrameIn = in.FEIFrameRef;
-        }
 
     } else if (task.feiOp == MFX_FEI_H265_OP_INTRA_MODE) {
-        in.FEIFrameIn.PicOrder = task.frame->m_frameOrder;
-        in.FEIFrameIn.EncOrder = task.frame->m_encOrder;
-        in.FEIFrameIn.surfIn = task.frame->m_origin->m_handle;
+        in.meArgs.surfSrc = task.frame->m_feiOrigin->m_handle;
         for (Ipp32s i = 0; i < 4; i++)
             out.SurfIntraMode[i] = task.frame->m_feiIntraAngModes[i]->m_handle;
 
     } else if (task.feiOp == MFX_FEI_H265_OP_INTER_ME || task.feiOp == MFX_FEI_H265_OP_INTER_HME || task.feiOp == MFX_FEI_H265_OP_INTER_ME32 || task.feiOp == MFX_FEI_H265_OP_INTER_ME16) {
         Frame *ref = task.frame->m_refPicList[task.listIdx].m_refFrames[task.refIdx];
-        in.FEIFrameIn.PicOrder = task.frame->m_frameOrder;
-        in.FEIFrameIn.EncOrder = task.frame->m_encOrder;
-        in.FEIFrameIn.surfIn = task.frame->m_origin->m_handle;
-        in.FEIFrameRef.PicOrder = ref->m_frameOrder;
-        in.FEIFrameRef.EncOrder = ref->m_encOrder;
-        in.FEIFrameRef.surfIn = ref->m_recon->m_handle;
+        in.meArgs.surfSrc = task.frame->m_feiOrigin->m_handle;
+        in.meArgs.surfRef = ref->m_feiRecon->m_handle;
 
         Ipp32s uniqRefIdx = task.frame->m_mapListRefUnique[task.listIdx][task.refIdx];
         for (Ipp32s blksize = 0; blksize < 3; blksize++) {
@@ -2493,17 +2486,16 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
             in.SaveSyncPoint = 0;
 
     } else if (task.feiOp == MFX_FEI_H265_OP_POSTPROC || task.feiOp == MFX_FEI_H265_OP_DEBLOCK) {
-        in.FEIFrameIn.PicOrder = task.frame->m_frameOrder;
-        in.FEIFrameIn.EncOrder = task.frame->m_encOrder;
-        in.FEIFrameIn.surfIn = task.frame->m_origin->m_handle;
-        in.FEIFrameRef.PicOrder = task.frame->m_frameOrder;
-        in.FEIFrameRef.EncOrder = task.frame->m_encOrder;
-        in.FEIFrameRef.surfIn = task.frame->m_recon->m_handle;
-        in.cuData = task.frame->m_feiCuData->m_handle;
-        in.saoModes = task.frame->m_feiSaoModes->m_handle;
+        in.postprocArgs.inputSurf = task.frame->m_feiOrigin->m_handle;
+        in.postprocArgs.reconSurfSys = task.frame->m_recon->m_handle;
+        in.postprocArgs.reconSurfVid = task.frame->m_feiRecon->m_handle;
+        in.postprocArgs.cuData = task.frame->m_feiCuData->m_handle;
+        in.postprocArgs.saoModes = task.frame->m_feiSaoModes->m_handle;
+        in.postprocArgs.extData2 = (mfxU8 *)(&postprocParam);
+        in.postprocArgs.extDataSize2 = sizeof(postprocParam);
 
-        Ipp8s* list0_dpoc = task.frame->m_refPicList[0].m_deltaPoc;
-        Ipp8s* list1_dpoc = task.frame->m_refPicList[1].m_deltaPoc;
+        Ipp8s *list0_dpoc = task.frame->m_refPicList[0].m_deltaPoc;
+        Ipp8s *list1_dpoc = task.frame->m_refPicList[1].m_deltaPoc;
         int list0[33];
         int list1[33];
 
@@ -2512,11 +2504,7 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
             list1[dpoc] = list1_dpoc[dpoc];
         }
 
-        //PostProcParam postprocParam;
         SetPostProcParam(postprocParam, m_videoParam, list0, list1, task.frame->m_slices[0].rd_lambda_slice);
-
-        in.extData2 = (mfxU8 *)(&postprocParam);
-        in.extDataSize2 = sizeof(postprocParam);
     } else {
         Throw(std::runtime_error(""));
     }

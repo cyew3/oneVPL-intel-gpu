@@ -18,6 +18,7 @@
 #include "mfx_h265_enc.h"
 
 #ifndef MFX_VA
+#define H265FEI_AllocateSurfaceUp(...) (MFX_ERR_NONE)
 #define H265FEI_AllocateInputSurface(...) (MFX_ERR_NONE)
 #define H265FEI_AllocateReconSurface(...) (MFX_ERR_NONE)
 #define H265FEI_AllocateOutputSurface(...) (MFX_ERR_NONE)
@@ -71,13 +72,12 @@ namespace H265Enc {
 
         if (allocInfo.feiHdl) {
             m_fei = allocInfo.feiHdl;
-            mfxStatus sts = allocInfo.isRecon
-                ? H265FEI_AllocateReconSurface(allocInfo.feiHdl, y, uv, &m_handle)
-                : H265FEI_AllocateInputSurface(allocInfo.feiHdl, y, uv, &m_handle);
+            mfxStatus sts = H265FEI_AllocateSurfaceUp(allocInfo.feiHdl, y, uv, &m_handle);
             if (sts != MFX_ERR_NONE)
                 Throw(std::runtime_error("H265FEI_Allocate[Input/Recon]Surface failed"));
         }
     }
+
 
     void FrameData::Destroy()
     {
@@ -147,6 +147,42 @@ namespace H265Enc {
         qp_mask.resize(numBlk);
         coloc_futr.resize(numBlk);
         coloc_past.resize(numBlk);
+    }
+
+
+    void FeiInputData::Create(const FeiInputData::AllocInfo &allocInfo)
+    {
+        if (H265FEI_AllocateInputSurface(allocInfo.feiHdl, &m_handle) != MFX_ERR_NONE)
+            Throw(std::runtime_error("H265FEI_AllocateInputSurface failed"));
+        m_fei = allocInfo.feiHdl;
+    }
+
+
+    void FeiInputData::Destroy()
+    {
+        if (m_fei && m_handle) {
+            H265FEI_FreeSurface(m_fei, m_handle);
+            m_fei = NULL;
+            m_handle == NULL;
+        }
+    }
+
+
+    void FeiReconData::Create(const FeiReconData::AllocInfo &allocInfo)
+    {
+        if (H265FEI_AllocateReconSurface(allocInfo.feiHdl, &m_handle) != MFX_ERR_NONE)
+            Throw(std::runtime_error("H265FEI_AllocateReconSurface failed"));
+        m_fei = allocInfo.feiHdl;
+    }
+
+
+    void FeiReconData::Destroy()
+    {
+        if (m_fei && m_handle) {
+            H265FEI_FreeSurface(m_fei, m_handle);
+            m_fei = NULL;
+            m_handle == NULL;
+        }
     }
 
 
@@ -493,6 +529,8 @@ namespace H265Enc {
         Zero(m_feiInterDist);
         m_feiCuData = NULL;
         m_feiSaoModes = NULL;
+        m_feiOrigin = NULL;
+        m_feiRecon = NULL;
 
         m_userSeiMessages = NULL;
         m_numUserSeiMessages = 0;
