@@ -64,7 +64,11 @@ mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
     if ((0 != in) && (MFX_HW_VAAPI == session->m_pCORE->GetVAType()))
     {
         // protected content not supported on Linux
-        MFX_CHECK(0 == in->Protected, MFX_ERR_UNSUPPORTED);
+        if(0 != in->Protected)
+        {
+            out->Protected = 0;
+            return MFX_ERR_UNSUPPORTED;
+        }
     }
 
     mfxStatus mfxRes = MFX_ERR_UNSUPPORTED;
