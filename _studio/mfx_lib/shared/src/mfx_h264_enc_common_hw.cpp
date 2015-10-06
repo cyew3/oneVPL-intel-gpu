@@ -2946,8 +2946,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
         if (par.calcParam.bufferSizeInKB != 0 && bRateControlLA(par.mfx.RateControlMethod) &&(par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD))
         {
-            changed = true;
-            par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
+            mfxU32 uncompressedSizeInKb = GetUncompressedSizeInKb(par);
+            if (par.calcParam.bufferSizeInKB < uncompressedSizeInKb)
+            {
+                changed = true;
+                par.calcParam.bufferSizeInKB = uncompressedSizeInKb;
+            }
         }
 
         if (par.calcParam.bufferSizeInKB != 0)
