@@ -41,6 +41,8 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
         m_par.mfx.FrameInfo.FrameRateExtN = 30;
         m_par.mfx.FrameInfo.FrameRateExtD = 1;
+        if(m_par.mfx.LowPower == MFX_CODINGOPTION_ON)
+            m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     }
     m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_ENCODE, CodecId);
     m_loaded = !m_uid;
