@@ -1434,14 +1434,6 @@ mfxStatus  VideoVPPHW::Init(
     sts = CheckIOMode(par, m_ioMode);
     MFX_CHECK_STS(sts);
 
-    if (MFX_FOURCC_NV12    != par->vpp.Out.FourCC &&
-        MFX_FOURCC_A2RGB10 != par->vpp.Out.FourCC &&
-        MFX_FOURCC_RGB4    != par->vpp.Out.FourCC &&
-        MFX_FOURCC_YUY2    != par->vpp.Out.FourCC)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-
     m_IOPattern = par->IOPattern;
 
     if(0 == par->AsyncDepth)
@@ -1634,14 +1626,6 @@ mfxStatus VideoVPPHW::QueryIOSurf(
 
     sts = CheckIOMode(par, ioMode);
     MFX_CHECK_STS(sts);
-
-    if (MFX_FOURCC_NV12    != par->vpp.Out.FourCC &&
-        MFX_FOURCC_A2RGB10 != par->vpp.Out.FourCC &&
-        MFX_FOURCC_RGB4    != par->vpp.Out.FourCC &&
-        MFX_FOURCC_YUY2    != par->vpp.Out.FourCC)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
 
     std::auto_ptr<MfxHwVideoProcessing::DriverVideoProcessing> ddi;
     ddi.reset( CreateVideoProcessing(core) );

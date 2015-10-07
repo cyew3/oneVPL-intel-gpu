@@ -302,14 +302,18 @@ mfxStatus FastCompositingDDI::Initialize(
 
     sts = m_pAuxDevice->QueryAccelCaps(&DXVA2_FastCompositing, &sQuery, &uQuerySize);
 
-    sQuery.Type = FASTCOMP_QUERY_VPP_FORMATS;
+    sQuery.sFormats.pPrimaryFormats = new D3DFORMAT[sQuery.sFormats.iPrimaryFormatSize      +
+                                                    sQuery.sFormats.iSecondaryFormatSize    +
+                                                    sQuery.sFormats.iSubstreamFormatSize    +
+                                                    sQuery.sFormats.iGraphicsFormatSize     +
+                                                    sQuery.sFormats.iRenderTargetFormatSize +
+                                                    sQuery.sFormats.iBackgroundFormatSize   ];
 
-    sQuery.sFormats.pPrimaryFormats         = new D3DFORMAT[sQuery.sFormats.iPrimaryFormatSize     ];
-    sQuery.sFormats.pSecondaryFormats       = new D3DFORMAT[sQuery.sFormats.iSecondaryFormatSize   ];
-    sQuery.sFormats.pSubstreamFormats       = new D3DFORMAT[sQuery.sFormats.iSubstreamFormatSize   ];
-    sQuery.sFormats.pGraphicsFormats        = new D3DFORMAT[sQuery.sFormats.iGraphicsFormatSize    ];
-    sQuery.sFormats.pRenderTargetFormats    = new D3DFORMAT[sQuery.sFormats.iRenderTargetFormatSize];
-    sQuery.sFormats.pBackgroundFormats      = new D3DFORMAT[sQuery.sFormats.iBackgroundFormatSize  ];
+    sQuery.sFormats.pSecondaryFormats       = sQuery.sFormats.pPrimaryFormats      + sQuery.sFormats.iPrimaryFormatSize     ;
+    sQuery.sFormats.pSubstreamFormats       = sQuery.sFormats.pSecondaryFormats    + sQuery.sFormats.iSecondaryFormatSize   ;
+    sQuery.sFormats.pGraphicsFormats        = sQuery.sFormats.pSubstreamFormats    + sQuery.sFormats.iSubstreamFormatSize   ;
+    sQuery.sFormats.pRenderTargetFormats    = sQuery.sFormats.pGraphicsFormats     + sQuery.sFormats.iGraphicsFormatSize    ;
+    sQuery.sFormats.pBackgroundFormats      = sQuery.sFormats.pRenderTargetFormats + sQuery.sFormats.iRenderTargetFormatSize;
 
     sQuery.sFormats.iPrimaryFormatSize      *= sizeof(D3DFORMAT);
     sQuery.sFormats.iSecondaryFormatSize    *= sizeof(D3DFORMAT);
@@ -318,6 +322,7 @@ mfxStatus FastCompositingDDI::Initialize(
     sQuery.sFormats.iRenderTargetFormatSize *= sizeof(D3DFORMAT);
     sQuery.sFormats.iBackgroundFormatSize   *= sizeof(D3DFORMAT);
 
+    sQuery.Type = FASTCOMP_QUERY_VPP_FORMATS;
     sts = m_pAuxDevice->QueryAccelCaps(&DXVA2_FastCompositing, &sQuery, &uQuerySize);
 
     for (mfxU32 i = 0; i < sQuery.sFormats.iPrimaryFormatSize / sizeof(D3DFORMAT); i++)
@@ -344,12 +349,15 @@ mfxStatus FastCompositingDDI::Initialize(
             m_formatSupport[sQuery.sFormats.pRenderTargetFormats[i]] |= MFX_FORMAT_SUPPORT_OUTPUT;
     }
 
-    delete[] sQuery.sFormats.pPrimaryFormats;       sQuery.sFormats.pPrimaryFormats      = 0;
-    delete[] sQuery.sFormats.pSecondaryFormats;     sQuery.sFormats.pSecondaryFormats    = 0;
-    delete[] sQuery.sFormats.pSubstreamFormats;     sQuery.sFormats.pSubstreamFormats    = 0;
-    delete[] sQuery.sFormats.pGraphicsFormats;      sQuery.sFormats.pGraphicsFormats     = 0;
-    delete[] sQuery.sFormats.pRenderTargetFormats;  sQuery.sFormats.pRenderTargetFormats = 0;
-    delete[] sQuery.sFormats.pBackgroundFormats;    sQuery.sFormats.pBackgroundFormats   = 0;
+    delete[] sQuery.sFormats.pPrimaryFormats;
+
+    sQuery.sFormats.pPrimaryFormats      = 0;
+    sQuery.sFormats.pSecondaryFormats    = 0;
+    sQuery.sFormats.pSubstreamFormats    = 0;
+    sQuery.sFormats.pGraphicsFormats     = 0;
+    sQuery.sFormats.pRenderTargetFormats = 0;
+    sQuery.sFormats.pBackgroundFormats   = 0;
+
     return MFX_ERR_NONE;
 
 } // mfxStatus FastCompositingDDI::Initialize(IDirect3DDeviceManager9  *pD3DDeviceManager, IDirectXVideoDecoderService *pVideoDecoderService)
