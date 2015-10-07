@@ -2053,6 +2053,20 @@ mfxU32 FindReconIdxSofiaMode(DdiTask const & task, mfxU16 sizeOfDPB)
         return 0; // DPB entry zero is either for LTR (if DPB size > 1), or for STR (if DPB size == 1)
 }
 
+struct FindNonSkip
+{
+    FindNonSkip(mfxU16 skipFrameMode) : m_skipFrameMode(skipFrameMode) {}
+
+    template <class T> bool operator ()(T const & task) const
+    {
+        return m_skipFrameMode != MFX_SKIPFRAME_INSERT_NOTHING &&
+            m_skipFrameMode != MFX_SKIPFRAME_INSERT_DUMMY ||
+            task.m_ctrl.SkipFrame == 0;
+    }
+
+    mfxU16 m_skipFrameMode;
+};
+
 mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 {
     mfxExtCodingOption    const * extOpt = GetExtBuffer(m_video);
@@ -2450,22 +2464,37 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 // start from the last one
                 // when the last one is finished all others are finished as well
                 mfxStatus sts = MFX_ERR_NONE;
-                DdiTask & last = m_encoding.back();
-                if ((sts = QueryStatus(last, last.m_fid[1])) != MFX_ERR_NONE)
-                    return sts;
+                // when checking last submitted frame for readiness we can rely only on non-skipped frames
+                // skipped frames aren't really submitted to driver, so they are always marked as ready
+                std::list<DdiTask>::reverse_iterator rit = std::find_if(m_encoding.rbegin(), m_encoding.rend(), FindNonSkip(extOpt2->SkipFrame));
+                if (rit != m_encoding.rend())
+                {
+                    // non-skipped frames are present, check last of them for readiness
+                    DdiTask & lastNonSkipFrame = *rit;
+                    if ((sts = QueryStatus(lastNonSkipFrame, lastNonSkipFrame.m_fid[1])) != MFX_ERR_NONE)
+                        return sts;
+                }
 
                 // track hrd buffer
                 for (DdiTaskIter i = m_encoding.begin(); i != m_encoding.end(); ++i)
                 {
                     for (mfxU32 f = 0; f <= i->m_fieldPicFlag; f++)
                     {
-                        if ((sts = QueryStatus(*i, i->m_fid[f])) != MFX_ERR_NONE)
-                            return Error(sts);
+                        if (extOpt2->SkipFrame == MFX_SKIPFRAME_INSERT_NOTHING && i->m_ctrl.SkipFrame != 0)
+                        {
+                            // need to handle case of complete frame drop separately
+                            hrd.RemoveAccessUnit(0, i->m_fieldPicFlag, 0);
+                        }
+                        else
+                        {
+                            if ((sts = QueryStatus(*i, i->m_fid[f])) != MFX_ERR_NONE)
+                                return Error(sts);
 
-                        hrd.RemoveAccessUnit(
-                            i->m_bsDataLength[i->m_fid[f]] - i->m_numLeadingFF[i->m_fid[f]],
-                            i->m_fieldPicFlag,
-                            !!(i->m_type[i->m_fid[f]] & MFX_FRAMETYPE_IDR));
+                            hrd.RemoveAccessUnit(
+                                i->m_bsDataLength[i->m_fid[f]] - i->m_numLeadingFF[i->m_fid[f]],
+                                i->m_fieldPicFlag,
+                                !!(i->m_type[i->m_fid[f]] & MFX_FRAMETYPE_IDR));
+                        }
                     }
                 }
             }
