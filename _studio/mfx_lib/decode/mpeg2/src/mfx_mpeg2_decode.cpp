@@ -1566,7 +1566,10 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
         }
 
         if(in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
+        {
+            out->mfx.FrameInfo.FourCC = 0;
             return MFX_ERR_UNSUPPORTED;
+        }
 
         if(in->NumExtParam != 0 && (!IS_PROTECTION_ANY(in->Protected)))
         {
