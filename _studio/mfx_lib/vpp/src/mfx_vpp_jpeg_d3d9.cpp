@@ -66,6 +66,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->bCameraLensCorrection = false;
     pMfxExecuteParams->rotation = 0;
     pMfxExecuteParams->scalingMode = MFX_SCALING_MODE_DEFAULT;
+    pMfxExecuteParams->bEOS = false;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 

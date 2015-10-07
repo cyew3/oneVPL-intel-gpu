@@ -111,6 +111,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->bCameraLensCorrection = false;
     pMfxExecuteParams->rotation = 0;
     pMfxExecuteParams->scalingMode = MFX_SCALING_MODE_DEFAULT;
+    pMfxExecuteParams->bEOS = false;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 
@@ -576,6 +577,7 @@ mfxStatus ResMngr::DoMode30i60p(
 
         if(input)
         {
+            m_EOS = false;
             if(0 == m_inputIndex)
             {
                 *intSts = MFX_ERR_NONE;
@@ -625,6 +627,7 @@ mfxStatus ResMngr::DoMode30i60p(
         }
         else
         {
+            m_EOS = true;
             if (m_surfQueue.size() > 0)
             {
                 *intSts = MFX_ERR_NONE;
@@ -750,7 +753,7 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
     pInSurface;
 
     mfxU32 refIndx = 0;
-
+    pTask->bEOS = m_EOS;
     // bkwd
     pTask->bkwdRefCount = m_bkwdRefCount;//aya: we set real bkw frames
     mfxU32 actualNumber = m_actualNumber;
@@ -2255,6 +2258,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     m_executeParams.bkwdRefCount = pTask->bkwdRefCount;
     m_executeParams.fwdRefCount = pTask->fwdRefCount;
     m_executeParams.pRefSurfaces = &m_executeSurf[0];
+    m_executeParams.bEOS         = pTask->bEOS;
 
     m_executeParams.statusReportID = pTask->taskIndex;
 

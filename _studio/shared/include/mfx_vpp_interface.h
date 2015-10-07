@@ -358,6 +358,7 @@ namespace MfxHwVideoProcessing
 
         mfxU16      scalingMode;
 
+        bool        bEOS;
     } mfxExecuteParams;
 
 

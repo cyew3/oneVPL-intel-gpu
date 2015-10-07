@@ -420,6 +420,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     mfxU8* pPrimarySurfaceBuffer;
     VAImage imageRefSurface;
     mfxU8* pRefSurfaceBuffer;
+    bool   bForceADI = false;
 
     VAStatus vaSts = VA_STATUS_SUCCESS;
 
@@ -480,6 +481,12 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             }
             else
             {
+                if (pParams->bEOS)
+                {
+                    // WA for the last frame
+                    // otherwise it's not processed properly
+                    bForceADI = true;
+                }
                 deint.algorithm = VAProcDeinterlacingMotionAdaptive;
             }
 
@@ -506,7 +513,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
              * Bottom field at this moment. Third iteration again TFF... and etc.
              * if APP set "-spic 2" which is means MFX_PICSTRUCT_FIELD_BFF all is vice versa.
              *  */
-            if ((pParams->bFMDEnable == true) && (pParams->refCount > 1))
+            if ((pParams->bFMDEnable == true) && (pParams->refCount > 1) || bForceADI)
             {
                 if (0 == (m_refCountForADI%2) )
                 {
@@ -721,7 +728,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         mfxDrvSurface* pRefSurf;
         pRefSurf = &(pParams->pRefSurfaces[refIdx]);
 
-        if ((pParams->refCount > 1) && (0 != pParams->iDeinterlacingAlgorithm ))
+        if (bForceADI || ( (pParams->refCount > 1) && (0 != pParams->iDeinterlacingAlgorithm )))
         {
             m_refCountForADI++;
             m_pipelineParam[refIdx].num_backward_references = 1;

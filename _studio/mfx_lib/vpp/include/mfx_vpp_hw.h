@@ -210,6 +210,7 @@ namespace MfxHwVideoProcessing
             , output()
             , bAdvGfxEnable(false)
             , bVariance(false)
+            , bEOS(false)
             , taskIndex(0)
             , frameNumber(0)
             , pAuxData(NULL)
@@ -224,6 +225,7 @@ namespace MfxHwVideoProcessing
 
         bool bAdvGfxEnable;     // VarianceReport, FRC_interpolation
         bool bVariance;
+        bool bEOS;
 
         mfxU32 taskIndex;
         mfxU32 frameNumber;
@@ -267,6 +269,7 @@ namespace MfxHwVideoProcessing
             m_outputIndex = 0;
             m_bkwdRefCount = 0;
 
+            m_EOS = false;
             m_actualNumber = 0;
             m_indxOutTimeStamp = 0;
 
@@ -352,6 +355,7 @@ namespace MfxHwVideoProcessing
 
         mfxU32 m_actualNumber;
         mfxU32 m_indxOutTimeStamp;
+        bool   m_EOS;
 
         std::vector<ReleaseResource*> m_subTaskQueue;
         ReleaseResource*              m_pSubResource;
