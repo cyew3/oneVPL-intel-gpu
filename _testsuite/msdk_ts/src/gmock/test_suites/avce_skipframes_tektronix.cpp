@@ -1121,8 +1121,11 @@ int TestSuite::RunTest(unsigned int id)
             (m_par.mfx.FrameInfo.FrameRateExtN / m_par.mfx.FrameInfo.FrameRateExtD)) / nframes;
         mfxI32 target = m_par.mfx.TargetKbps * 1000;
 
+        // choose threshold for bitrate deviation
+        mfxF32 threshold = (0 == strncmp(tc.skips.c_str(), "each2", strlen("each2"))) ? 0.2 : 0.1;
+
         if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR &&
-            abs(target - bitrate) > target * 0.1)
+            abs(target - bitrate) > target * threshold)
         {
             g_tsLog << "ERROR: Real bitrate=" << bitrate << " is differ from required=" << target << "\n";
             err++;
