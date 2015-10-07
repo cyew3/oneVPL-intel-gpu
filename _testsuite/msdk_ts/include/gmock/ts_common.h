@@ -66,9 +66,10 @@ extern tsConfig     g_tsConfig;
     TEST_P(name,) { g_tsStreamPool.Init(q_mode); TestSuite ts; if(ts.RunTest(GetParam())) {ADD_FAILURE();} g_tsStreamPool.Close(); }\
     INSTANTIATE_TEST_CASE_P(, name, ::testing::Range<unsigned int>(0, TestSuite::n_cases));
 
+#define QUERY_STREAMS(name)  query_streams_##name
 #define TS_REG_TEST_SUITE_CLASS(name)\
     _TS_REG_TEST_SUITE_CLASS(name, false)\
-    _TS_REG_TEST_SUITE_CLASS(query_streams_##name, true)
+    _TS_REG_TEST_SUITE_CLASS(QUERY_STREAMS(name), true)
 
 #define INC_PADDING() g_tsLog.inc_offset();
 #define DEC_PADDING() g_tsLog.dec_offset();
