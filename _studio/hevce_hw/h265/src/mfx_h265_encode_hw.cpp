@@ -522,7 +522,15 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         //MFX_CHECK(surface->Info.Width  >=  m_vpar.mfx.FrameInfo.Width, MFX_ERR_INVALID_VIDEO_PARAM);
         //MFX_CHECK(surface->Info.Height >=  m_vpar.mfx.FrameInfo.Height, MFX_ERR_INVALID_VIDEO_PARAM);
     }
+    if (m_vpar.Protected == 0)
+    {
+        mfxU32 bufferSizeInKB =  m_vpar.BufferSizeInKB;
 
+        MFX_CHECK(bs->DataOffset <= bs->MaxLength, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(bs->DataOffset + bs->DataLength + bufferSizeInKB * 1000u <= bs->MaxLength,
+            MFX_ERR_NOT_ENOUGH_BUFFER);
+        MFX_CHECK_NULL_PTR1(bs->Data);
+    }
 
     if (surface)
     {
@@ -694,9 +702,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             mfxFrameData codedFrame = {};
             mfxU32 bytesAvailable = bs->MaxLength - bs->DataOffset - bs->DataLength;
             mfxU32 bytes2copy     = taskForQuery->m_bsDataLength;
-
-            assert(bytesAvailable > bytes2copy);
-            bytes2copy = MFX_MIN(bytes2copy, bytesAvailable);
+            MFX_CHECK(bytesAvailable >= bytes2copy, MFX_ERR_NOT_ENOUGH_BUFFER);
 
             sts = fa.Lock(fa.pthis, taskForQuery->m_midBs, &codedFrame);
             MFX_CHECK(codedFrame.Y, MFX_ERR_LOCK_MEMORY);
