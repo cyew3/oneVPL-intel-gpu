@@ -669,7 +669,9 @@ void UpdateSlice(
     mfxU32 idx = 0, ref = 0;
 
     mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
-    assert( extDdi != 0 );
+    mfxExtCodingOption2 *  extOpt2 = GetExtBuffer(par);
+    assert(extDdi != 0);
+    assert(extOpt2 != 0);
 
     SliceDivider divider = MakeSliceDivider(
         hwCaps.SliceStructure,
@@ -737,7 +739,7 @@ void UpdateSlice(
         slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
 
-        slice[i].disable_deblocking_filter_idc = 0;
+        slice[i].disable_deblocking_filter_idc = extOpt2->DisableDeblockingIdc;
         slice[i].slice_alpha_c0_offset_div2 = 0;
         slice[i].slice_beta_offset_div2 = 0;
     }
@@ -758,7 +760,9 @@ void UpdateSliceSizeLimited(
     mfxU32 idx = 0, ref = 0;
 
     mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
-    assert( extDdi != 0 );
+    mfxExtCodingOption2 * extOpt2 = GetExtBuffer(par);
+    assert(extDdi != 0);
+    assert(extOpt2 != 0);
 
     size_t numSlices = task.m_SliceInfo.size();
     if (numSlices != slice.size())
@@ -831,7 +835,7 @@ void UpdateSliceSizeLimited(
         slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
 
-        slice[i].disable_deblocking_filter_idc = 0;
+        slice[i].disable_deblocking_filter_idc = extOpt2->DisableDeblockingIdc;
         slice[i].slice_alpha_c0_offset_div2 = 0;
         slice[i].slice_beta_offset_div2 = 0;
     }
