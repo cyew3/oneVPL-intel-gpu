@@ -111,7 +111,7 @@ namespace VP8DecodeCommon
 
         p_params->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
         p_params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-    
+        p_params->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         MoveBitstreamData(*p_bs, n_bytes_offset);
 
         return MFX_ERR_NONE;
