@@ -438,6 +438,7 @@ namespace MfxHwVideoProcessing
                 mfxF64 mul;
                 mfxU32 rate = 1;
                 mfxU32 multiplier = 1;
+                bool   bFoldRatio = false;
 
                 if ( frcUp )
                 {
@@ -453,6 +454,7 @@ namespace MfxHwVideoProcessing
                     // Ratio between framerates is good enough, no need in
                     // searching of common factors
                     rate = (mfxU32)mul;
+                    bFoldRatio = true;
                 }
                 else
                 {
@@ -481,7 +483,7 @@ namespace MfxHwVideoProcessing
                     m_in_tick   = multiplier;
                     m_out_tick  = rate;
                     m_out_stamp = m_out_tick;
-                    m_in_stamp  = m_out_stamp - m_in_tick;
+                    m_in_stamp  = ! bFoldRatio ? 0 : m_out_stamp - m_in_tick;
                 }
 
                 m_in_stamp += m_in_tick;

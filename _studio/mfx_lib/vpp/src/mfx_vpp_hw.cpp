@@ -166,7 +166,7 @@ mfxStatus CpuFrc::StdFrc::DoCpuFRC_AndUpdatePTS(
 
     std::vector<mfxFrameSurface1 *>::iterator iterator;
 
-    if (m_in_stamp + m_in_tick < m_out_stamp)
+    if (m_in_stamp + m_in_tick <= m_out_stamp)
     {
         // skip frame
         // request new one input surface
