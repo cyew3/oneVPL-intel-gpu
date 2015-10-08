@@ -255,7 +255,7 @@
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>include;..\..\..\..\mdp_msdk-api\include;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;h264\include;mjpeg\include;vp8\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;..\..\shared\umc\codec\me\include;$(MfxIppIncludeDir);..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\..\..\thirdparty\vp8_libvpx;%(AdditionalIncludeDirectories);$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;CMRT_EMU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Lib />

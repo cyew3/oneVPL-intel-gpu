@@ -19,18 +19,14 @@
 #include "mfx_h265_defs.h"
 #include "genx_hevce_prepare_src_bdw_isa.h"
 #include "genx_hevce_prepare_src_hsw_isa.h"
-#include "genx_hevce_ime_3tiers_4mv_bdw_isa.h"
-#include "genx_hevce_ime_3tiers_4mv_hsw_isa.h"
-#include "genx_hevce_ime_4mv_bdw_isa.h"
-#include "genx_hevce_ime_4mv_hsw_isa.h"
+#include "genx_hevce_hme_and_me_p32_4mv_bdw_isa.h"
+#include "genx_hevce_hme_and_me_p32_4mv_hsw_isa.h"
 #include "genx_hevce_interpolate_frame_bdw_isa.h"
 #include "genx_hevce_interpolate_frame_hsw_isa.h"
 #include "genx_hevce_intra_avc_bdw_isa.h"
 #include "genx_hevce_intra_avc_hsw_isa.h"
 #include "genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.h"
 #include "genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.h"
-#include "genx_hevce_me_p32_4mv_bdw_isa.h"
-#include "genx_hevce_me_p32_4mv_hsw_isa.h"
 #include "genx_hevce_refine_me_p_16x32_bdw_isa.h"
 #include "genx_hevce_refine_me_p_16x32_hsw_isa.h"
 #include "genx_hevce_refine_me_p_32x16_bdw_isa.h"
@@ -45,7 +41,6 @@
 #include "genx_hevce_sao_hsw_isa.h"
 #include "genx_hevce_sao_apply_bdw_isa.h"
 #include "genx_hevce_sao_apply_hsw_isa.h"
-
 
 #include "mfx_h265_enc_cm_fei.h"
 #include "mfx_h265_enc_cm_utils.h"
@@ -426,12 +421,10 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     //case MFX_HW_HSW_ULT:
         programGradient         = ReadProgram(device, genx_hevce_analyze_gradient_32x32_best_hsw, sizeof(genx_hevce_analyze_gradient_32x32_best_hsw));
         programPrepareSrc       = ReadProgram(device, genx_hevce_prepare_src_hsw, sizeof(genx_hevce_prepare_src_hsw));
-        programIme3tiers        = ReadProgram(device, genx_hevce_ime_3tiers_4mv_hsw, sizeof(genx_hevce_ime_3tiers_4mv_hsw));
-        programIme              = ReadProgram(device, genx_hevce_ime_4mv_hsw, sizeof(genx_hevce_ime_4mv_hsw));
+        programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_hsw, sizeof(genx_hevce_hme_and_me_p32_4mv_hsw));
         programInterpolateFrame = ReadProgram(device, genx_hevce_interpolate_frame_hsw, sizeof(genx_hevce_interpolate_frame_hsw));
         programMeIntra          = ReadProgram(device, genx_hevce_intra_avc_hsw, sizeof(genx_hevce_intra_avc_hsw));
         programMe16Refine32x32  = ReadProgram(device, genx_hevce_me_p16_4mv_and_refine_32x32_hsw, sizeof(genx_hevce_me_p16_4mv_and_refine_32x32_hsw));
-        programMe32             = ReadProgram(device, genx_hevce_me_p32_4mv_hsw, sizeof(genx_hevce_me_p32_4mv_hsw));
         programRefine16x32      = ReadProgram(device, genx_hevce_refine_me_p_16x32_hsw, sizeof(genx_hevce_refine_me_p_16x32_hsw));
         programRefine32x16      = ReadProgram(device, genx_hevce_refine_me_p_32x16_hsw, sizeof(genx_hevce_refine_me_p_32x16_hsw));
         programRefine32x32sad   = ReadProgram(device, genx_hevce_refine_me_p_32x32_sad_hsw, sizeof(genx_hevce_refine_me_p_32x32_sad_hsw));
@@ -444,12 +437,10 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     //case MFX_HW_CHV:
         programGradient         = ReadProgram(device, genx_hevce_analyze_gradient_32x32_best_bdw, sizeof(genx_hevce_analyze_gradient_32x32_best_bdw));
         programPrepareSrc       = ReadProgram(device, genx_hevce_prepare_src_bdw, sizeof(genx_hevce_prepare_src_bdw));
-        programIme3tiers        = ReadProgram(device, genx_hevce_ime_3tiers_4mv_bdw, sizeof(genx_hevce_ime_3tiers_4mv_bdw));
-        programIme              = ReadProgram(device, genx_hevce_ime_4mv_bdw, sizeof(genx_hevce_ime_4mv_bdw));
+        programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_bdw, sizeof(genx_hevce_hme_and_me_p32_4mv_bdw));
         programInterpolateFrame = ReadProgram(device, genx_hevce_interpolate_frame_bdw, sizeof(genx_hevce_interpolate_frame_bdw));
         programMeIntra          = ReadProgram(device, genx_hevce_intra_avc_bdw, sizeof(genx_hevce_intra_avc_bdw));
         programMe16Refine32x32  = ReadProgram(device, genx_hevce_me_p16_4mv_and_refine_32x32_bdw, sizeof(genx_hevce_me_p16_4mv_and_refine_32x32_bdw));
-        programMe32             = ReadProgram(device, genx_hevce_me_p32_4mv_bdw, sizeof(genx_hevce_me_p32_4mv_bdw));
         programRefine16x32      = ReadProgram(device, genx_hevce_refine_me_p_16x32_bdw, sizeof(genx_hevce_refine_me_p_16x32_bdw));
         programRefine32x16      = ReadProgram(device, genx_hevce_refine_me_p_32x16_bdw, sizeof(genx_hevce_refine_me_p_32x16_bdw));
         programRefine32x32sad   = ReadProgram(device, genx_hevce_refine_me_p_32x32_sad_bdw, sizeof(genx_hevce_refine_me_p_32x32_sad_bdw));
@@ -465,10 +456,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     kernelGradient.Configure(device, programGradient, "AnalyzeGradient32x32Best",
         width32 / 32, height32 / 32, CM_NONE_DEPENDENCY);
 
-    kernelIme3tiers.Configure(device, programIme3tiers, "Ime3Tiers4Mv",
-        width16x / 16, height16x / 16, CM_NONE_DEPENDENCY);
-
-    kernelIme.Configure(device, programIme, "Ime_4mv",
+    kernelHmeMe32.Configure(device, programHmeMe32, "HmeMe32",
         width16x / 16, height16x / 16, CM_NONE_DEPENDENCY);
 
     kernelInterpolateFrame.Configure(device, programInterpolateFrame, "InterpolateFrameWithBorder",
@@ -479,9 +467,6 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
 
     kernelMe16Refine32x32.Configure(device, programMe16Refine32x32, "Me16AndRefine32x32",
         width / 16, height / 16, CM_NONE_DEPENDENCY);
-
-    kernelMe32.Configure(device, programMe32, "MeP32_4MV",
-        width2x / 16, height2x / 16, CM_NONE_DEPENDENCY);
 
     kernelRefine32x32sad.Configure(device, programRefine32x32sad, "RefineMeP32x32Sad",
         width2x / 16, height2x / 16, CM_NONE_DEPENDENCY);
@@ -586,12 +571,10 @@ void H265CmCtx::FreeCmResources()
     kernelMeIntra.Destroy(device);
     kernelGradient.Destroy(device);
     kernelMe16Refine32x32.Destroy(device);
-    kernelMe32.Destroy(device);
     kernelRefine32x16.Destroy(device);
     kernelRefine16x32.Destroy(device);
     kernelInterpolateFrame.Destroy(device);
-    kernelIme.Destroy(device);
-    kernelIme3tiers.Destroy(device);
+    kernelHmeMe32.Destroy(device);
     kernelDeblock.Destroy(device);
     kernelSaoEstimate.Destroy(device);
     kernelSaoApply.Destroy(device);
@@ -599,14 +582,12 @@ void H265CmCtx::FreeCmResources()
     device->DestroyProgram(programPrepareSrc);
     device->DestroyProgram(programMeIntra);
     device->DestroyProgram(programGradient);
+    device->DestroyProgram(programHmeMe32);
     device->DestroyProgram(programMe16Refine32x32);
-    device->DestroyProgram(programMe32);
     device->DestroyProgram(programRefine32x32sad);
     device->DestroyProgram(programRefine32x16);
     device->DestroyProgram(programRefine16x32);
     device->DestroyProgram(programInterpolateFrame);
-    device->DestroyProgram(programIme);
-    device->DestroyProgram(programIme3tiers);
     device->DestroyProgram(programDeblock);
     device->DestroyProgram(programSaoEstimate);
 
@@ -714,113 +695,98 @@ mfxStatus H265CmCtx::CopyReconFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *i
 
     return MFX_ERR_NONE;
 }
-
-/* common ME kernel */
-void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurface2DUP **mv, mfxFEIH265InputSurface *picBufInput, mfxFEIH265ReconSurface *picBufRef)
-{
-    SurfaceIndex *refs = NULL, *refs2x = NULL, *refs4x = NULL, *refs8x = NULL, *refs16x = NULL;
-
-    //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "RunVme/Refine");
-
-    refs = CreateVmeSurfaceG75(device, picBufInput->bufOrigNv12, &(picBufRef->bufOrigNv12), 0, 1, 0);
-    refs2x = CreateVmeSurfaceG75(device, picBufInput->bufDown2x, &(picBufRef->bufDown2x), 0, 1, 0);
-    refs4x = CreateVmeSurfaceG75(device, picBufInput->bufDown4x, &(picBufRef->bufDown4x), 0, 1, 0);
-
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "HME");
-        if (hmeLevel == HME_LEVEL_HIGH) {
-            //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Ime3tiers");
-            refs8x = CreateVmeSurfaceG75(device, picBufInput->bufDown8x, &(picBufRef->bufDown8x), 0, 1, 0);
-            refs16x = CreateVmeSurfaceG75(device, picBufInput->bufDown16x, &(picBufRef->bufDown16x), 0, 1, 0);
-            {   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Ime3tiers");
-                SetKernelArg(kernelIme3tiers.kernel, me16xControl, *refs16x, *refs8x, *refs4x, mv[MFX_FEI_H265_BLK_32x32]);
-                kernelIme3tiers.Enqueue(queue, *lastEvent);
-            }
-        } else {  // HME_LEVEL_LOW
-            //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Ime4x");
-            SetKernelArg(kernelIme.kernel, me4xControl, *refs4x, mv[MFX_FEI_H265_BLK_32x32]);
-            kernelIme.Enqueue(queue, *lastEvent);
-        }
-    }
-
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Me32");
-        SetKernelArg(kernelMe32.kernel, me2xControl, *refs2x, mv[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_16x16],
-            mv[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_16x32], rectParts);
-        kernelMe32.Enqueue(queue, *lastEvent);
-    }
-
-        //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Refine32x32sad");
-        //SetKernelArg(kernelRefine32x32sad, dist[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_32x32], picBufInput->bufOrig, picBufRef->bufOrig,
-        //    picBufRef->bufOrigInterp[0], picBufRef->bufOrigInterp[1], picBufRef->bufOrigInterp[2]);
-        //EnqueueKernel(device, queue, task, kernelRefine32x32sad, width2x / 16, height2x / 16, *lastEvent);
+//
+///* common ME kernel */
+//void H265CmCtx::RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurface2DUP **mv, mfxFEIH265InputSurface *picBufInput, mfxFEIH265ReconSurface *picBufRef)
 //{
-//    int result = CM_SUCCESS;
+//    SurfaceIndex *refs = NULL, *refs2x = NULL, *refs4x = NULL, *refs8x = NULL, *refs16x = NULL;
 //
-//    if ((result = kernelRefine32x32sad->SetThreadCount(width2x / 16 * height2x / 16)) != CM_SUCCESS)
-//        throw CmRuntimeError();
+//    //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "RunVme/Refine");
 //
-//    CmThreadSpace * cmThreadSpace = 0;
-//    if ((result = device->CreateThreadSpace(width2x / 16, height2x / 16, cmThreadSpace)) != CM_SUCCESS)
-//        throw CmRuntimeError();
+//    refs = CreateVmeSurfaceG75(device, picBufInput->bufOrigNv12, &(picBufRef->bufOrigNv12), 0, 1, 0);
+//    refs2x = CreateVmeSurfaceG75(device, picBufInput->bufDown2x, &(picBufRef->bufDown2x), 0, 1, 0);
+//    refs4x = CreateVmeSurfaceG75(device, picBufInput->bufDown4x, &(picBufRef->bufDown4x), 0, 1, 0);
 //
-//    cmThreadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+//    {
+//        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "HMEandMe32");
+//        refs8x = CreateVmeSurfaceG75(device, picBufInput->bufDown8x, &(picBufRef->bufDown8x), 0, 1, 0);
+//        refs16x = CreateVmeSurfaceG75(device, picBufInput->bufDown16x, &(picBufRef->bufDown16x), 0, 1, 0);
+//        SetKernelArg(kernelHmeAndMe32, me16xControl, me2xControl, *refs16x, *refs8x, *refs4x, *refs2x,
+//            mv[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_16x16], mv[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_16x32], rectParts);
+//        EnqueueKernel(device, queue, task, kernelHmeAndMe32, width16x / 16, height16x / 16, *lastEvent);
+//    }
 //
-//    if (task)
-//        task->Reset();
-//    else
-//        throw CmRuntimeError();
+//        //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Refine32x32sad");
+//        //SetKernelArg(kernelRefine32x32sad, dist[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_32x32], picBufInput->bufOrig, picBufRef->bufOrig,
+//        //    picBufRef->bufOrigInterp[0], picBufRef->bufOrigInterp[1], picBufRef->bufOrigInterp[2]);
+//        //EnqueueKernel(device, queue, task, kernelRefine32x32sad, width2x / 16, height2x / 16, *lastEvent);
+////{
+////    int result = CM_SUCCESS;
+////
+////    if ((result = kernelRefine32x32sad->SetThreadCount(width2x / 16 * height2x / 16)) != CM_SUCCESS)
+////        throw CmRuntimeError();
+////
+////    CmThreadSpace * cmThreadSpace = 0;
+////    if ((result = device->CreateThreadSpace(width2x / 16, height2x / 16, cmThreadSpace)) != CM_SUCCESS)
+////        throw CmRuntimeError();
+////
+////    cmThreadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+////
+////    if (task)
+////        task->Reset();
+////    else
+////        throw CmRuntimeError();
+////
+////    if ((result = task->AddKernel(kernelRefine32x32sad)) != CM_SUCCESS)
+////        throw CmRuntimeError();
+////
+////    if ((*lastEvent) != NULL && (*lastEvent) != CM_NO_EVENT)
+////        queue->DestroyEvent((*lastEvent));
+////
+//////    for (int i = 0; i < 5000; i++)
+////        queue->Enqueue(task, (*lastEvent), cmThreadSpace);
+////    device->DestroyThreadSpace(cmThreadSpace);
+////
+////    (*lastEvent)->WaitForTaskFinished();
+////    mfxU64 time;
+////    (*lastEvent)->GetExecutionTime(time);
+////    printf("32x32sad %.3f ms\n", time / 1000000.0);
+////
+////}
+//    /* refine 16x32 and 32x16 partitions (calculate distortion estimates) */
+//    if (vmeMode == VME_MODE_REFINE) {  /* is not used now in tu7; combi kernel (32x32+SubParts should be used for this) */
+//        {
+//            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Refine32x16");
+//            SetKernelArg(kernelRefine32x16.kernel, dist[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_32x16], picBufInput->bufOrigNv12, picBufRef->bufOrigNv12);
+//            kernelRefine32x16.Enqueue(queue, *lastEvent);
+//        }
 //
-//    if ((result = task->AddKernel(kernelRefine32x32sad)) != CM_SUCCESS)
-//        throw CmRuntimeError();
+//        {
+//            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Refine16x32");
+//            SetKernelArg(kernelRefine16x32.kernel, dist[MFX_FEI_H265_BLK_16x32], mv[MFX_FEI_H265_BLK_16x32], picBufInput->bufOrigNv12, picBufRef->bufOrigNv12);
+//            kernelRefine16x32.Enqueue(queue, *lastEvent);
+//        }
+//    }
 //
-//    if ((*lastEvent) != NULL && (*lastEvent) != CM_NO_EVENT)
-//        queue->DestroyEvent((*lastEvent));
+//    {
+//        /* always estimate 4x8, 8x4, ... 16x16 */
+//        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Me16Refine32x32");
 //
-////    for (int i = 0; i < 5000; i++)
-//        queue->Enqueue(task, (*lastEvent), cmThreadSpace);
-//    device->DestroyThreadSpace(cmThreadSpace);
+//        SetKernelArg(kernelMe16Refine32x32.kernel, me1xControl, *refs, dist[MFX_FEI_H265_BLK_16x16], dist[MFX_FEI_H265_BLK_16x8], dist[MFX_FEI_H265_BLK_8x16],
+//            dist[MFX_FEI_H265_BLK_8x8]/*, dist[MFX_FEI_H265_BLK_8x4_US], dist[MFX_FEI_H265_BLK_4x8_US]*/, mv[MFX_FEI_H265_BLK_16x16],
+//            mv[MFX_FEI_H265_BLK_16x8], mv[MFX_FEI_H265_BLK_8x16], mv[MFX_FEI_H265_BLK_8x8]/*, mv[MFX_FEI_H265_BLK_8x4_US], mv[MFX_FEI_H265_BLK_4x8_US]*/, rectParts,
+//            picBufInput->bufOrigNv12, picBufRef->bufOrigNv12, mv[MFX_FEI_H265_BLK_32x32], dist[MFX_FEI_H265_BLK_32x32]);
+//        kernelMe16Refine32x32.Enqueue(queue, *lastEvent);
+//    }
 //
-//    (*lastEvent)->WaitForTaskFinished();
-//    mfxU64 time;
-//    (*lastEvent)->GetExecutionTime(time);
-//    printf("32x32sad %.3f ms\n", time / 1000000.0);
-//
+//    if (hmeLevel == HME_LEVEL_HIGH) {
+//        device->DestroyVmeSurfaceG7_5(refs16x);
+//        device->DestroyVmeSurfaceG7_5(refs8x);
+//    }
+//    device->DestroyVmeSurfaceG7_5(refs4x);
+//    device->DestroyVmeSurfaceG7_5(refs2x);
+//    device->DestroyVmeSurfaceG7_5(refs);
 //}
-    /* refine 16x32 and 32x16 partitions (calculate distortion estimates) */
-    if (vmeMode == VME_MODE_REFINE) {  /* is not used now in tu7; combi kernel (32x32+SubParts should be used for this) */
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Refine32x16");
-            SetKernelArg(kernelRefine32x16.kernel, dist[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_32x16], picBufInput->bufOrigNv12, picBufRef->bufOrigNv12);
-            kernelRefine32x16.Enqueue(queue, *lastEvent);
-        }
-
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Refine16x32");
-            SetKernelArg(kernelRefine16x32.kernel, dist[MFX_FEI_H265_BLK_16x32], mv[MFX_FEI_H265_BLK_16x32], picBufInput->bufOrigNv12, picBufRef->bufOrigNv12);
-            kernelRefine16x32.Enqueue(queue, *lastEvent);
-        }
-    }
-
-    {
-        /* always estimate 4x8, 8x4, ... 16x16 */
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Me16Refine32x32");
-
-        SetKernelArg(kernelMe16Refine32x32.kernel, me1xControl, *refs, dist[MFX_FEI_H265_BLK_16x16], dist[MFX_FEI_H265_BLK_16x8], dist[MFX_FEI_H265_BLK_8x16],
-            dist[MFX_FEI_H265_BLK_8x8]/*, dist[MFX_FEI_H265_BLK_8x4_US], dist[MFX_FEI_H265_BLK_4x8_US]*/, mv[MFX_FEI_H265_BLK_16x16],
-            mv[MFX_FEI_H265_BLK_16x8], mv[MFX_FEI_H265_BLK_8x16], mv[MFX_FEI_H265_BLK_8x8]/*, mv[MFX_FEI_H265_BLK_8x4_US], mv[MFX_FEI_H265_BLK_4x8_US]*/, rectParts,
-            picBufInput->bufOrigNv12, picBufRef->bufOrigNv12, mv[MFX_FEI_H265_BLK_32x32], dist[MFX_FEI_H265_BLK_32x32]);
-        kernelMe16Refine32x32.Enqueue(queue, *lastEvent);
-    }
-
-    if (hmeLevel == HME_LEVEL_HIGH) {
-        device->DestroyVmeSurfaceG7_5(refs16x);
-        device->DestroyVmeSurfaceG7_5(refs8x);
-    }
-    device->DestroyVmeSurfaceG7_5(refs4x);
-    device->DestroyVmeSurfaceG7_5(refs2x);
-    device->DestroyVmeSurfaceG7_5(refs);
-}
 
 
 // KERNEL DISPATCHER 
@@ -868,7 +834,7 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         device->DestroyVmeSurfaceG7_5(refsIntra);
     }
 
-    if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME | MFX_FEI_H265_OP_INTER_HME | MFX_FEI_H265_OP_INTER_ME32 | MFX_FEI_H265_OP_INTER_ME16)) {
+    if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME | MFX_FEI_H265_OP_INTER_HME_ME32 | MFX_FEI_H265_OP_INTER_ME16)) {
         dist[MFX_FEI_H265_BLK_32x16] = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_32x16 : MFX_FEI_H265_BLK_32x32]);
         dist[MFX_FEI_H265_BLK_16x32] = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_16x32 : MFX_FEI_H265_BLK_32x32]);
         dist[MFX_FEI_H265_BLK_32x32] = GET_OUTSURF(feiOut->SurfInterDist[MFX_FEI_H265_BLK_32x32]);
@@ -885,48 +851,35 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         mv[MFX_FEI_H265_BLK_8x8]     = GET_OUTSURF(feiOut->SurfInterMV[MFX_FEI_H265_BLK_8x8]);
     }
 
-    /* process 1 ref frame */
-    if ((feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME | MFX_FEI_H265_OP_INTERPOLATE)) && (feiIn->FrameType == MFX_FRAMETYPE_P || feiIn->FrameType == MFX_FRAMETYPE_B)) {
-        mfxFEIH265InputSurface *surfIn = &((mfxFEIH265Surface *)feiIn->meArgs.surfSrc)->sIn;
-        mfxFEIH265ReconSurface *surfRef = &((mfxFEIH265Surface *)feiIn->meArgs.surfRef)->sRec;
-        if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME))
-            RunVmeKernel(&lastEvent, dist, mv, surfIn, surfRef);
+    ///* process 1 ref frame */
+    //if ((feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME | MFX_FEI_H265_OP_INTERPOLATE)) && (feiIn->FrameType == MFX_FRAMETYPE_P || feiIn->FrameType == MFX_FRAMETYPE_B)) {
+    //    mfxFEIH265InputSurface *surfIn = &((mfxFEIH265Surface *)feiIn->meArgs.surfSrc)->sIn;
+    //    mfxFEIH265ReconSurface *surfRef = &((mfxFEIH265Surface *)feiIn->meArgs.surfRef)->sRec;
+    //    if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME))
+    //        RunVmeKernel(&lastEvent, dist, mv, surfIn, surfRef);
 
-        //if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTERPOLATE)) {
-        //    //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "  Interpolate - P/B");
-        //    SetKernelArg(kernelInterpolateFrame, surfInRef->bufOrigNv12, GET_OUTSURF(feiOut->SurfInterp[0]), GET_OUTSURF(feiOut->SurfInterp[1]), GET_OUTSURF(feiOut->SurfInterp[2]));
-        //    EnqueueKernel(device, queue, task, kernelInterpolateFrame, interpBlocksW, interpBlocksH, lastEvent);
-        //}
-    }
+    //    //if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTERPOLATE)) {
+    //    //    //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "  Interpolate - P/B");
+    //    //    SetKernelArg(kernelInterpolateFrame, surfInRef->bufOrigNv12, GET_OUTSURF(feiOut->SurfInterp[0]), GET_OUTSURF(feiOut->SurfInterp[1]), GET_OUTSURF(feiOut->SurfInterp[2]));
+    //    //    EnqueueKernel(device, queue, task, kernelInterpolateFrame, interpBlocksW, interpBlocksH, lastEvent);
+    //    //}
+    //}
 
-    if (feiIn->FEIOp & MFX_FEI_H265_OP_INTER_HME)
+    if (feiIn->FEIOp & MFX_FEI_H265_OP_INTER_HME_ME32)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "HME");
-        mfxFEIH265InputSurface *surfIn = &((mfxFEIH265Surface *)feiIn->meArgs.surfSrc)->sIn;
-        mfxFEIH265ReconSurface *surfRef = &((mfxFEIH265Surface *)feiIn->meArgs.surfRef)->sRec;
-        SurfaceIndex *refs4x = CreateVmeSurfaceG75(device, surfIn->bufDown4x, &(surfRef->bufDown4x), 0, 1, 0);
-        if (hmeLevel == HME_LEVEL_HIGH) {
-            SurfaceIndex *refs8x = CreateVmeSurfaceG75(device, surfIn->bufDown8x, &(surfRef->bufDown8x), 0, 1, 0);
-            SurfaceIndex *refs16x = CreateVmeSurfaceG75(device, surfIn->bufDown16x, &(surfRef->bufDown16x), 0, 1, 0);
-            SetKernelArg(kernelIme3tiers.kernel, me16xControl, *refs16x, *refs8x, *refs4x, mv[MFX_FEI_H265_BLK_32x32]);
-            kernelIme3tiers.Enqueue(queue, lastEvent);
-            device->DestroyVmeSurfaceG7_5(refs16x);
-            device->DestroyVmeSurfaceG7_5(refs8x);
-        } else {  // HME_LEVEL_LOW
-            SetKernelArg(kernelIme.kernel, me4xControl, *refs4x, mv[MFX_FEI_H265_BLK_32x32]);
-            kernelIme.Enqueue(queue, lastEvent);
-        }
-        device->DestroyVmeSurfaceG7_5(refs4x);
-    }
-
-    if (feiIn->FEIOp & MFX_FEI_H265_OP_INTER_ME32) {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Me32");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "HmeMe32");
         mfxFEIH265InputSurface *surfIn = &((mfxFEIH265Surface *)feiIn->meArgs.surfSrc)->sIn;
         mfxFEIH265ReconSurface *surfRef = &((mfxFEIH265Surface *)feiIn->meArgs.surfRef)->sRec;
         SurfaceIndex *refs2x = CreateVmeSurfaceG75(device, surfIn->bufDown2x, &(surfRef->bufDown2x), 0, 1, 0);
-        SetKernelArg(kernelMe32.kernel, me2xControl, *refs2x, mv[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_16x16],
-            mv[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_16x32], rectParts);
-        kernelMe32.Enqueue(queue, lastEvent);
+        SurfaceIndex *refs4x = CreateVmeSurfaceG75(device, surfIn->bufDown4x, &(surfRef->bufDown4x), 0, 1, 0);
+        SurfaceIndex *refs8x = CreateVmeSurfaceG75(device, surfIn->bufDown8x, &(surfRef->bufDown8x), 0, 1, 0);
+        SurfaceIndex *refs16x = CreateVmeSurfaceG75(device, surfIn->bufDown16x, &(surfRef->bufDown16x), 0, 1, 0);
+        SetKernelArg(kernelHmeMe32.kernel, me16xControl, me2xControl, *refs16x, *refs8x, *refs4x, *refs2x,
+            mv[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_16x16], mv[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_16x32], rectParts);
+        kernelHmeMe32.Enqueue(queue, lastEvent);
+        device->DestroyVmeSurfaceG7_5(refs16x);
+        device->DestroyVmeSurfaceG7_5(refs8x);
+        device->DestroyVmeSurfaceG7_5(refs4x);
         device->DestroyVmeSurfaceG7_5(refs2x);
     }
 

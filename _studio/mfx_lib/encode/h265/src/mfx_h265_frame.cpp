@@ -548,8 +548,7 @@ namespace H265Enc {
         m_ttWaitGpuIntra.InitGpuWait(MFX_FEI_H265_OP_INTRA_MODE, 0);
 
         for (Ipp32s i = 0; i < 4; i++) {
-            m_ttSubmitGpuHme[i].InitGpuSubmit(this, MFX_FEI_H265_OP_INTER_HME, 0);
-            m_ttSubmitGpuMe32[i].InitGpuSubmit(this, MFX_FEI_H265_OP_INTER_ME32, 0);
+            m_ttSubmitGpuHmeMe32[i].InitGpuSubmit(this, MFX_FEI_H265_OP_INTER_HME_ME32, 0);
             m_ttSubmitGpuMe16[i].InitGpuSubmit(this, MFX_FEI_H265_OP_INTER_ME16, 0);
             m_ttWaitGpuMe16[i].InitGpuWait(MFX_FEI_H265_OP_INTER_ME16, 0);
         }

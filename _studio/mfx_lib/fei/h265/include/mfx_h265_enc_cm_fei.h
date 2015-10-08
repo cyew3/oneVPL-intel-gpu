@@ -56,14 +56,12 @@ private:
     CmProgram * programPrepareSrc;
     CmProgram * programMeIntra;
     CmProgram * programGradient;
+    CmProgram * programHmeMe32;
     CmProgram * programMe16Refine32x32;
-    CmProgram * programMe32;
     CmProgram * programRefine32x32sad;
     CmProgram * programRefine32x16;
     CmProgram * programRefine16x32;
     CmProgram * programInterpolateFrame;
-    CmProgram * programIme;
-    CmProgram * programIme3tiers;
     CmProgram * programDeblock;
     CmProgram * programSaoEstimate;
     CmProgram * programSaoApply;
@@ -85,14 +83,12 @@ private:
     H265Enc::Kernel kernelPrepareRef;
     H265Enc::Kernel kernelMeIntra;
     H265Enc::Kernel kernelGradient;
+    H265Enc::Kernel kernelHmeMe32;
     H265Enc::Kernel kernelMe16Refine32x32;
-    H265Enc::Kernel kernelMe32;
     H265Enc::Kernel kernelRefine32x32sad;
     H265Enc::Kernel kernelRefine32x16;
     H265Enc::Kernel kernelRefine16x32;
     H265Enc::Kernel kernelInterpolateFrame;
-    H265Enc::Kernel kernelIme;
-    H265Enc::Kernel kernelIme3tiers;
     H265Enc::Kernel kernelDeblock;
     H265Enc::Kernel kernelSaoStat;
     H265Enc::Kernel kernelSaoEstimate;
@@ -153,14 +149,12 @@ public:
         programPrepareSrc(),
         programMeIntra(),
         programGradient(),
+        programHmeMe32(),
         programMe16Refine32x32(),
-        programMe32(),
         programRefine32x32sad(),
         programRefine32x16(),
         programRefine16x32(),
         programInterpolateFrame(),
-        programIme(),
-        programIme3tiers(),
         programDeblock(),
         programSaoEstimate(),
         programSaoApply(),
@@ -179,13 +173,11 @@ public:
         kernelMeIntra(),
         kernelGradient(),
         kernelMe16Refine32x32(),
-        kernelMe32(),
         kernelRefine32x32sad(),
         kernelRefine32x16(),
         kernelRefine16x32(),
         kernelInterpolateFrame(),
-        kernelIme(),
-        kernelIme3tiers(),
+        kernelHmeMe32(),
         kernelDeblock(),
         kernelSaoStat(),
         kernelSaoEstimate(),

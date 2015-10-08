@@ -7,7 +7,7 @@
 //
 */
 
-#ifndef __genx_hevce_ime_3tiers_4mv_hsw__
-#define __genx_hevce_ime_3tiers_4mv_hsw__
-extern const unsigned char genx_hevce_ime_3tiers_4mv_hsw[36091];
+#ifndef __genx_hevce_hme_and_me_p32_4mv_hsw__
+#define __genx_hevce_hme_and_me_p32_4mv_hsw__
+extern const unsigned char genx_hevce_hme_and_me_p32_4mv_hsw[17227];
 #endif

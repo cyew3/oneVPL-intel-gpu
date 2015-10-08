@@ -58,6 +58,9 @@ enum { PASSED, FAILED };
 const mfxI32 WIDTH  = 1920;
 const mfxI32 HEIGHT = 1088;
 const mfxI8 YUV_NAME[] = "C:/yuv/1080p/BasketballDrive_1920x1080p_500_50.yuv";
+//const mfxI32 WIDTH  = 416;
+//const mfxI32 HEIGHT = 240;
+//const mfxI8 YUV_NAME[] = "C:/yuv/JCTVC-G1200/240p/RaceHorses_416x240p_300_30.yuv";
 
 struct ParamCopyCPUToGPUStride {
     ParamCopyCPUToGPUStride(CmSurface2D *gpumem_, const Ipp8u *cpumem_, Ipp32s pitch_) : gpumem(gpumem_), cpumem(cpumem_), pitch(pitch_) {}

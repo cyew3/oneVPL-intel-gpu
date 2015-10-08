@@ -48,7 +48,7 @@
 using namespace H265Enc;
 using namespace H265Enc::MfxEnumShortAliases;
 
-#define TT_TRACE 1
+#define TT_TRACE 0
 
 namespace {
 #if TT_TRACE
@@ -70,19 +70,18 @@ namespace {
 
     const char *GetFeiOpName(Ipp32s feiOp) {
         switch (feiOp) {
-        case MFX_FEI_H265_OP_NOP:           return "NOP";
-        case MFX_FEI_H265_OP_GPU_COPY_SRC:  return "CPSRC";
-        case MFX_FEI_H265_OP_GPU_COPY_REF:  return "CPREF";
-        case MFX_FEI_H265_OP_INTRA_MODE:    return "GRAD";
-        case MFX_FEI_H265_OP_INTRA_DIST:    return "IDIST";
-        case MFX_FEI_H265_OP_INTER_ME:      return "ME";
-        case MFX_FEI_H265_OP_INTER_HME:     return "HME";
-        case MFX_FEI_H265_OP_INTER_ME32:    return "ME32";
-        case MFX_FEI_H265_OP_INTER_ME16:    return "ME16";
-        case MFX_FEI_H265_OP_INTERPOLATE:   return "INTERP";
-        case MFX_FEI_H265_OP_POSTPROC:      return "PP";
-        case MFX_FEI_H265_OP_DEBLOCK:       return "PP_DBLK";
-        default:                            return "<unk>";
+        case MFX_FEI_H265_OP_NOP:               return "NOP";
+        case MFX_FEI_H265_OP_GPU_COPY_SRC:      return "CPSRC";
+        case MFX_FEI_H265_OP_GPU_COPY_REF:      return "CPREF";
+        case MFX_FEI_H265_OP_INTRA_MODE:        return "GRAD";
+        case MFX_FEI_H265_OP_INTRA_DIST:        return "IDIST";
+        case MFX_FEI_H265_OP_INTER_ME:          return "ME";
+        case MFX_FEI_H265_OP_INTER_HME_ME32:    return "HME_ME32";
+        case MFX_FEI_H265_OP_INTER_ME16:        return "ME16";
+        case MFX_FEI_H265_OP_INTERPOLATE:       return "INTERP";
+        case MFX_FEI_H265_OP_POSTPROC:          return "PP";
+        case MFX_FEI_H265_OP_DEBLOCK:           return "PP_DBLK";
+        default:                                return "<unk>";
         }
     }
 
@@ -1339,19 +1338,12 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
                         frame->m_feiInterDist[uniqRefIdx][blksize] = m_feiInterDistPool[blksize].Allocate();
                 }
 
-                frame->m_ttSubmitGpuHme[uniqRefIdx].numDownstreamDependencies = 0;
-                frame->m_ttSubmitGpuHme[uniqRefIdx].numUpstreamDependencies = 0;
-                frame->m_ttSubmitGpuHme[uniqRefIdx].finished = 0;
-                frame->m_ttSubmitGpuHme[uniqRefIdx].poc = frame->m_frameOrder;
-                frame->m_ttSubmitGpuHme[uniqRefIdx].listIdx = i;
-                frame->m_ttSubmitGpuHme[uniqRefIdx].refIdx = j;
-
-                frame->m_ttSubmitGpuMe32[uniqRefIdx].numDownstreamDependencies = 0;
-                frame->m_ttSubmitGpuMe32[uniqRefIdx].numUpstreamDependencies = 0;
-                frame->m_ttSubmitGpuMe32[uniqRefIdx].finished = 0;
-                frame->m_ttSubmitGpuMe32[uniqRefIdx].poc = frame->m_frameOrder;
-                frame->m_ttSubmitGpuMe32[uniqRefIdx].listIdx = i;
-                frame->m_ttSubmitGpuMe32[uniqRefIdx].refIdx = j;
+                frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].numDownstreamDependencies = 0;
+                frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].numUpstreamDependencies = 0;
+                frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].finished = 0;
+                frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].poc = frame->m_frameOrder;
+                frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].listIdx = i;
+                frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].refIdx = j;
 
                 frame->m_ttSubmitGpuMe16[uniqRefIdx].numDownstreamDependencies = 0;
                 frame->m_ttSubmitGpuMe16[uniqRefIdx].numUpstreamDependencies = 0;
@@ -1366,9 +1358,8 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
                 frame->m_ttWaitGpuMe16[uniqRefIdx].syncpoint = NULL;
                 frame->m_ttWaitGpuMe16[uniqRefIdx].poc = frame->m_frameOrder;
 
-                AddTaskDependency(&frame->m_ttSubmitGpuHme[uniqRefIdx], &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_HME <- GPU_SUBMIT_COPY_SRC
-                AddTaskDependency(&frame->m_ttSubmitGpuMe32[uniqRefIdx], &frame->m_ttSubmitGpuHme[uniqRefIdx]); // GPU_SUBMIT_ME32 <- GPU_SUBMIT_HME
-                AddTaskDependency(&frame->m_ttSubmitGpuMe16[uniqRefIdx], &frame->m_ttSubmitGpuMe32[uniqRefIdx]); // GPU_SUBMIT_ME16 <- GPU_SUBMIT_ME32
+                AddTaskDependency(&frame->m_ttSubmitGpuHmeMe32[uniqRefIdx], &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_HME <- GPU_SUBMIT_COPY_SRC
+                AddTaskDependency(&frame->m_ttSubmitGpuMe16[uniqRefIdx], &frame->m_ttSubmitGpuHmeMe32[uniqRefIdx]); // GPU_SUBMIT_ME16 <- GPU_SUBMIT_HME
                 AddTaskDependency(&frame->m_ttWaitGpuMe16[uniqRefIdx], &frame->m_ttSubmitGpuMe16[uniqRefIdx]); // GPU_WAIT_ME16 <- GPU_SUBMIT_ME16
             }
         }
@@ -1468,15 +1459,15 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             vm_cond_signal(&m_feiCondVar);
         }
         for (Ipp32s i = 0; i < frame->m_numRefUnique; i++) {
-            Ipp32s listIdx = frame->m_ttSubmitGpuHme[i].listIdx;
-            Ipp32s refIdx = frame->m_ttSubmitGpuHme[i].refIdx;
+            Ipp32s listIdx = frame->m_ttSubmitGpuHmeMe32[i].listIdx;
+            Ipp32s refIdx = frame->m_ttSubmitGpuHmeMe32[i].refIdx;
             Frame *ref = frame->m_refPicList[listIdx].m_refFrames[refIdx];
             if (m_videoParam.enableCmPostProc) {
                 if (!ref->m_ttSubmitGpuPostProc.finished)
-                    AddTaskDependency(&frame->m_ttSubmitGpuHme[i], &ref->m_ttSubmitGpuPostProc);// GPU_SUBMIT_HME <- GPU_PP
+                    AddTaskDependency(&frame->m_ttSubmitGpuHmeMe32[i], &ref->m_ttSubmitGpuPostProc);// GPU_SUBMIT_HME <- GPU_PP
             } else {
                 if (!ref->m_ttSubmitGpuCopyRec.finished)
-                    AddTaskDependency(&frame->m_ttSubmitGpuHme[i], &ref->m_ttSubmitGpuCopyRec); // GPU_SUBMIT_HME <- GPU_COPY_REF
+                    AddTaskDependency(&frame->m_ttSubmitGpuHmeMe32[i], &ref->m_ttSubmitGpuCopyRec); // GPU_SUBMIT_HME <- GPU_COPY_REF
             }
         }
         vm_mutex_unlock(&m_feiCritSect);
@@ -2471,7 +2462,7 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
         for (Ipp32s i = 0; i < 4; i++)
             out.SurfIntraMode[i] = task.frame->m_feiIntraAngModes[i]->m_handle;
 
-    } else if (task.feiOp == MFX_FEI_H265_OP_INTER_ME || task.feiOp == MFX_FEI_H265_OP_INTER_HME || task.feiOp == MFX_FEI_H265_OP_INTER_ME32 || task.feiOp == MFX_FEI_H265_OP_INTER_ME16) {
+    } else if (task.feiOp == MFX_FEI_H265_OP_INTER_ME || task.feiOp == MFX_FEI_H265_OP_INTER_HME_ME32 || task.feiOp == MFX_FEI_H265_OP_INTER_ME16) {
         Frame *ref = task.frame->m_refPicList[task.listIdx].m_refFrames[task.refIdx];
         in.meArgs.surfSrc = task.frame->m_feiOrigin->m_handle;
         in.meArgs.surfRef = ref->m_feiRecon->m_handle;
@@ -2482,7 +2473,7 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
             out.SurfInterMV[feiBlkIdx] = task.frame->m_feiInterMv[uniqRefIdx][blksize]->m_handle;
             out.SurfInterDist[feiBlkIdx] = task.frame->m_feiInterDist[uniqRefIdx][blksize]->m_handle;
         }
-        if (task.feiOp == MFX_FEI_H265_OP_INTER_HME || task.feiOp == MFX_FEI_H265_OP_INTER_ME32)
+        if (task.feiOp == MFX_FEI_H265_OP_INTER_HME_ME32)
             in.SaveSyncPoint = 0;
 
     } else if (task.feiOp == MFX_FEI_H265_OP_POSTPROC || task.feiOp == MFX_FEI_H265_OP_DEBLOCK) {

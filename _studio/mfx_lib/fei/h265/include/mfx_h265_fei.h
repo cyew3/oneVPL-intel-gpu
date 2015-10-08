@@ -63,18 +63,17 @@ enum
 /* FEI operations */
 enum
 {
-    MFX_FEI_H265_OP_NOP          = 0x00,
-    MFX_FEI_H265_OP_GPU_COPY_SRC = 0x01,
-    MFX_FEI_H265_OP_GPU_COPY_REF = 0x02,
-    MFX_FEI_H265_OP_INTRA_MODE   = 0x04,
-    MFX_FEI_H265_OP_INTRA_DIST   = 0x08,
-    MFX_FEI_H265_OP_INTER_ME     = 0x10,
-    MFX_FEI_H265_OP_INTERPOLATE  = 0x20,
-    MFX_FEI_H265_OP_POSTPROC     = 0x40, // both: deblock + sao
-    MFX_FEI_H265_OP_INTER_HME    = 0x80,
-    MFX_FEI_H265_OP_INTER_ME32   = 0x100,
-    MFX_FEI_H265_OP_INTER_ME16   = 0x200,
-    MFX_FEI_H265_OP_DEBLOCK      = 0x400,// deblocking only
+    MFX_FEI_H265_OP_NOP             = 0x00,
+    MFX_FEI_H265_OP_GPU_COPY_SRC    = 0x01,
+    MFX_FEI_H265_OP_GPU_COPY_REF    = 0x02,
+    MFX_FEI_H265_OP_INTRA_MODE      = 0x04,
+    MFX_FEI_H265_OP_INTRA_DIST      = 0x08,
+    MFX_FEI_H265_OP_INTER_ME        = 0x10,
+    MFX_FEI_H265_OP_INTERPOLATE     = 0x20,
+    MFX_FEI_H265_OP_POSTPROC        = 0x40, // both: deblock + sao
+    MFX_FEI_H265_OP_INTER_HME_ME32  = 0x80,
+    MFX_FEI_H265_OP_INTER_ME16      = 0x100,
+    MFX_FEI_H265_OP_DEBLOCK         = 0x200,// deblocking only
 };
 
 typedef struct

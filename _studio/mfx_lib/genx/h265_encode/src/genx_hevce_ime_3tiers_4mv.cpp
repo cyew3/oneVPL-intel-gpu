@@ -31,7 +31,7 @@ typedef matrix<uchar, 3, 32> UniIn;
 
 
 _GENX_ inline
-void ImeOneTier4MV(vector_ref<int2, 2> mvPred, SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, matrix_ref<int2, 2, 4> mvOut,
+void ImeOneTier4MV(vector_ref<int2, 2> mvPred, SurfaceIndex SURF_SRC_AND_REF, matrix_ref<int2, 2, 4> mvOut,
                    uint2 width, uint2 height, UniIn uniIn, matrix<uchar, 2, 32> imeIn)
 {
     matrix<uchar, 9, 32> imeOut;
@@ -160,7 +160,7 @@ void Ime3Tiers4Mv(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_REF_256x256,
 
             int mvInd0 = ((yBlk0 >> 2) | (xBlk0 >> 3)); // choose 8x8_0, 8x8_1, 8x8_2 or 8x8_3
 
-            ImeOneTier4MV(mvPred0.format<int2>().select<2,1>(mvInd0), SURF_CONTROL, SURF_REF_128x128, mvPred1, width * 2, height * 2, uniIn, imeIn);
+            ImeOneTier4MV(mvPred0.format<int2>().select<2,1>(mvInd0), SURF_REF_128x128, mvPred1, width * 2, height * 2, uniIn, imeIn);
 
             #pragma unroll
             for (int yBlk1 = 0; yBlk1 < 32; yBlk1 += 16) {
@@ -173,7 +173,7 @@ void Ime3Tiers4Mv(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_REF_256x256,
 
                     int mvInd1 = ((yBlk1 >> 2) | (xBlk1 >> 3)); // choose 8x8_0, 8x8_1, 8x8_2 or 8x8_3
 
-                    ImeOneTier4MV(mvPred1.format<int2>().select<2,1>(mvInd1), SURF_CONTROL, SURF_REF_64x64, mvPred2, width * 4, height * 4, uniIn, imeIn);
+                    ImeOneTier4MV(mvPred1.format<int2>().select<2,1>(mvInd1), SURF_REF_64x64, mvPred2, width * 4, height * 4, uniIn, imeIn);
                     write(SURF_MV_64x64, (xBase1 + xBlk0 * 2 + xBlk1) / 8 * MVDATA_SIZE, (yBase1 + yBlk0 * 2 + yBlk1) / 8, mvPred2);
                 }
             }
