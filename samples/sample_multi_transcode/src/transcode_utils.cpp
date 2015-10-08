@@ -133,6 +133,7 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -hrd <KB>     Maximum possible size of any compressed frames \n"));
     msdk_printf(MSDK_STRING("  -wb <KBps>    Maximum bitrate for sliding window \n"));
     msdk_printf(MSDK_STRING("  -ws           Sliding window size in frames\n"));
+    msdk_printf(MSDK_STRING("  -gop_size     Size of GOP structure in frames \n"));
     msdk_printf(MSDK_STRING("  -dist         Distance between I- or P- key frames \n"));
     msdk_printf(MSDK_STRING("  -gpucopy::<on,off> Enable or disable GPU copy mode\n"));
     msdk_printf(MSDK_STRING("\n"));
@@ -687,6 +688,16 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.GopRefDist))
             {
                 PrintHelp(NULL, MSDK_STRING("GOP reference distance \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-gop_size")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.GopPicSize))
+            {
+                PrintHelp(NULL, MSDK_STRING("GOP size \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
         }

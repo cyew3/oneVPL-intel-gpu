@@ -140,6 +140,7 @@ namespace TranscodingSample
         mfxU16 WinBRCMaxAvgKbps;
         mfxU16 WinBRCSize;
         mfxU16 BufferSizeInKB;
+        mfxU16 GopPicSize;
         mfxU16 GopRefDist;
 
         // MVC Specific Options

@@ -1701,6 +1701,11 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         m_mfxEncParams.mfx.FrameInfo.ChromaFormat=FourCCToChroma(pInParams->EncoderFourCC);
     }
 
+    if (pInParams->GopPicSize)
+    {
+        m_mfxEncParams.mfx.GopPicSize = pInParams->GopPicSize;
+    }
+
     if (pInParams->GopRefDist)
     {
         m_mfxEncParams.mfx.GopRefDist = pInParams->GopRefDist;
