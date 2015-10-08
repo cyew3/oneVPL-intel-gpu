@@ -14,6 +14,7 @@ Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 #include "mfx_samples_config.h"
 
 #include "plugin_utils.h"
+#include "mfxvp8.h"
 
 bool AreGuidsEqual(const mfxPluginUID& guid1, const mfxPluginUID& guid2)
 {
@@ -85,6 +86,8 @@ const mfxPluginUID & msdkGetPluginUID(mfxIMPL impl, msdkComponentType type, mfxU
             {
             case MFX_CODEC_HEVC:
                 return MFX_PLUGINID_HEVCD_HW;
+            case MFX_CODEC_VP8:
+                return MFX_PLUGINID_VP8D_HW;
             }
             break;
         case MSDK_VENCODE:
@@ -92,6 +95,8 @@ const mfxPluginUID & msdkGetPluginUID(mfxIMPL impl, msdkComponentType type, mfxU
             {
             case MFX_CODEC_HEVC:
                 return MFX_PLUGINID_HEVCE_HW;
+            case MFX_CODEC_VP8:
+                return MFX_PLUGINID_VP8E_HW;
             }
             break;
         case MSDK_VENC:
