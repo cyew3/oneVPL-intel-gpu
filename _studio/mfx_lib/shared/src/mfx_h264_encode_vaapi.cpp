@@ -2128,7 +2128,7 @@ mfxStatus VAAPIEncoder::Execute(
  *  1 - disable trellis quantization
  *  x0E - enable for any type of frames
  */
-    if (m_newTrellisQuantization != m_curTrellisQuantization)
+    if (m_newTrellisQuantization != 0)
     {
         m_curTrellisQuantization = m_newTrellisQuantization;
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetTrellisQuantization(m_curTrellisQuantization, m_vaDisplay,
