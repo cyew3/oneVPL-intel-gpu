@@ -683,7 +683,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
 
     mfxHDL device;
     mfxHandleType deviceType = mfxHandleType(0);
-    if (m_videoParam.inputVideoMem || m_videoParam.enableCmFlag) {
+    if (m_videoParam.enableCmFlag) {
         if ((device = CreateAccelerationDevice(m_core, deviceType)) == 0)
             return MFX_ERR_DEVICE_FAILED;
     }
