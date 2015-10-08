@@ -1214,6 +1214,10 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
             sts = MFX_ERR_NONE;
         }
     }
+    else if ( MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO == filterName)
+    {
+        sts = MFX_ERR_UNSUPPORTED;
+    }
     else // ignore
     {
         sts = MFX_ERR_NONE;

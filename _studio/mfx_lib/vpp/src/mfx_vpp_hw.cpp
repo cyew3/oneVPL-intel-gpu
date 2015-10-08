@@ -3109,6 +3109,9 @@ mfxStatus ConfigureExecuteParams(
                 break;
             } //case MFX_EXTBUFF_VPP_FIELD_PROCESSING:
 
+            case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+
             default:
             {
                 // there is no such capabilities
