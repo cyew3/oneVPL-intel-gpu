@@ -42,6 +42,11 @@ public:
                                                     &reordered_surface,
                                                     &internal_params,
                                                     entryPoint);
+        if (sts < MFX_ERR_NONE && sts != MFX_ERR_MORE_DATA_SUBMIT_TASK) {
+            delete entryPoint;
+            entryPoint = NULL;
+        }
+
         *task = entryPoint;
         return sts;
     }
@@ -56,7 +61,7 @@ public:
         if (task) {
             MFX_ENTRY_POINT *entryPoint = (MFX_ENTRY_POINT *)task;
             entryPoint->pCompleteProc(entryPoint->pState, entryPoint->pParam, MFX_ERR_NONE);
-            delete task;
+            delete entryPoint;
         }
         return MFX_ERR_NONE;
     }
