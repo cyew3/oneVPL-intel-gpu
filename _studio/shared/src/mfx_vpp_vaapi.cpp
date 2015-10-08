@@ -1286,10 +1286,10 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
              * it is easy for ARGB format as Initial background value ARGB*/
             if (imagePrimarySurface.format.fourcc == VA_FOURCC_ARGB)
             {
-                const Ipp8u backgroundValues[4] = { (Ipp8u)((pParams->iBackgroundColor &0xff000000) >>24),
-                                                    (Ipp8u)((pParams->iBackgroundColor &0x00ff0000) >>16),
+                const Ipp8u backgroundValues[4] = { (Ipp8u)((pParams->iBackgroundColor &0x000000ff) >> 0),
                                                     (Ipp8u)((pParams->iBackgroundColor &0x0000ff00) >> 8),
-                                                    (Ipp8u) (pParams->iBackgroundColor &0x000000ff)    };
+                                                    (Ipp8u)((pParams->iBackgroundColor &0x00ff0000) >>16),
+                                                    (Ipp8u)((pParams->iBackgroundColor &0xff000000) >>24)};
                 ippSts = ippiSet_8u_C4R(backgroundValues, pPrimarySurfaceBuffer,
                                     imagePrimarySurface.pitches[0], roiSize);
                 MFX_CHECK(ippStsNoErr == ippSts, MFX_ERR_DEVICE_FAILED);
