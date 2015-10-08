@@ -164,19 +164,19 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     // RGB4 on input for HW, RGB4 on input and output for SW. Filter by FRC buffer
     // possibly need to correct expected status for HW because library returns MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
-    { /*10*/ {MFX_WRN_FILTER_SKIPPED, MFX_WRN_FILTER_SKIPPED}, INIT,
+    { /*10*/ {MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_FILTER_SKIPPED}, INIT,
                             {INIT, ext_buf, EXT_BUF_PAR(mfxExtVPPFrameRateConversion), 4},
                             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_RGB4}},
 
-    { /*11*/ {MFX_WRN_FILTER_SKIPPED, MFX_WRN_FILTER_SKIPPED}, RESET,
+    { /*11*/ {MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_FILTER_SKIPPED}, RESET,
                             {RESET, ext_buf, EXT_BUF_PAR(mfxExtVPPFrameRateConversion), 4},
                             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_RGB4}},
 
-    { /*12*/ {MFX_WRN_FILTER_SKIPPED, MFX_WRN_FILTER_SKIPPED}, QUERY|NULL_PAR,
+    { /*12*/ {MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_FILTER_SKIPPED}, QUERY|NULL_PAR,
                             {DEFAULT, ext_buf, EXT_BUF_PAR(mfxExtVPPFrameRateConversion), 4},
                             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_RGB4}},
 
-    { /*13*/ {MFX_WRN_FILTER_SKIPPED, MFX_WRN_FILTER_SKIPPED}, QUERY,
+    { /*13*/ {MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_FILTER_SKIPPED}, QUERY,
                             {DEFAULT, ext_buf, EXT_BUF_PAR(mfxExtVPPFrameRateConversion), 4},
                             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_RGB4}},
 

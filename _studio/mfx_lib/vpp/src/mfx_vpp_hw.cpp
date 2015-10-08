@@ -1484,6 +1484,8 @@ mfxStatus  VideoVPPHW::Init(
 
     if ( !(caps.mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps.mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
         return MFX_WRN_PARTIAL_ACCELERATION;
+    sts = ValidateParams(&m_params, &caps);
+    MFX_CHECK_STS(sts);
 
     m_config.m_IOPattern = 0;
     sts = ConfigureExecuteParams(
@@ -2426,6 +2428,64 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
 } // mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 
+mfxStatus VideoVPPHW::ValidateParams(mfxVideoParam *par, mfxVppCaps *caps)
+{
+    MFX_CHECK_NULL_PTR2(par, caps);
+
+    /* 1. Build pipeline */
+    std::vector<mfxU32> pipelineList;
+    mfxStatus sts = GetPipelineList( par, pipelineList, true );
+    MFX_CHECK_STS(sts);
+
+    sts = MFX_ERR_NONE;
+
+    for (mfxU32 i = 0; i < par->NumExtParam; i++)
+    {
+        mfxU32 id    = par->ExtParam[i]->BufferId;
+        void  *data  = par->ExtParam[i];
+        MFX_CHECK_NULL_PTR1(data);
+
+        switch(id)
+        {
+        case MFX_EXTBUFF_VPP_FIELD_PROCESSING:
+        {
+            mfxExtVPPFieldProcessing* extFP = (mfxExtVPPFieldProcessing*)data;
+
+            if (extFP->Mode != MFX_VPP_COPY_FRAME && extFP->Mode != MFX_VPP_COPY_FIELD)
+            {
+                // Unsupported mode
+                return MFX_ERR_UNSUPPORTED;
+            }
+
+            if (extFP->Mode == MFX_VPP_COPY_FIELD)
+            {
+                if(extFP->InField != MFX_PICSTRUCT_FIELD_TFF && extFP->InField != MFX_PICSTRUCT_FIELD_BFF)
+                {
+                    // Copy field needs specific type of interlace
+                    return MFX_ERR_UNSUPPORTED;
+                }
+            }
+            break;
+        } //case MFX_EXTBUFF_VPP_FIELD_PROCESSING
+
+        case MFX_EXTBUFF_VPP_DEINTERLACING:
+        {
+            mfxExtVPPDeinterlacing* extDI = (mfxExtVPPDeinterlacing*) data;
+
+            if (extDI->Mode != MFX_DEINTERLACING_ADVANCED &&
+                extDI->Mode != MFX_DEINTERLACING_ADVANCED_NOREF &&
+                extDI->Mode != MFX_DEINTERLACING_BOB)
+            {
+                return MFX_ERR_UNSUPPORTED;
+            }
+
+            break;
+        } //case MFX_EXTBUFF_VPP_DEINTERLACING
+        } // switch
+    }
+
+    return sts;
+}
 //---------------------------------------------------------------------------------
 // Check DI mode set by user, if not set use advanced as default (if supported)
 // Returns: 0 - cannot set due to HW limitations or wrong range, 1 - BOB, 2 - ADI )

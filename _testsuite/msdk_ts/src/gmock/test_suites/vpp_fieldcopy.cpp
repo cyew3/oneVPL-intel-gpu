@@ -193,6 +193,7 @@ int TestSuite::RunTest(unsigned int id)
     m_par.AsyncDepth = 1;
 
     SETPARS(m_pPar, MFX_PAR);
+    SETPARS(&m_vpp_fp, EXT_VPP);
 
     if (tc.mode == DO_USE)
     {
@@ -304,9 +305,10 @@ int TestSuite::RunTest(unsigned int id)
     }*/
 
     ///////////////////////////////////////////////////////////////////////////
-    g_tsStatus.expect(tc.sts);
+    //g_tsStatus.expect(tc.sts);
 
-    ProcessFrames(10);
+    if ( sts == MFX_ERR_NONE )
+        ProcessFrames(10);
 
     TS_END;
     return 0;

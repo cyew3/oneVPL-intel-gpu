@@ -784,6 +784,8 @@ namespace MfxHwVideoProcessing
 
         mfxStatus ProcessFieldCopy(int mask);
 
+        mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps);
+
         mfxU16 m_asyncDepth;
 
         MfxHwVideoProcessing::mfxExecuteParams  m_executeParams;
