@@ -52,7 +52,8 @@ enum {
     MFX_EXTBUF_CAM_PIPECONTROL                  = MFX_MAKEFOURCC('C','P','P','C'),
     MFX_EXTBUF_CAM_FORWARD_GAMMA_CORRECTION     = MFX_MAKEFOURCC('C','F','G','C'),
     MFX_EXTBUF_CAM_CSC_YUV_RGB                  = MFX_MAKEFOURCC('C','C','Y','R'),
-    MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION    = MFX_MAKEFOURCC('C','L','G','D')
+    MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION    = MFX_MAKEFOURCC('C','L','G','D'),
+    MFX_EXTBUF_CAM_3DLUT                        = MFX_MAKEFOURCC('C','L','U','T')
 };
 
 typedef enum {
@@ -198,6 +199,32 @@ typedef struct {
     mfxF32       d[3]; // [R, G, B]
     mfxU16       reserved[36];
 } mfxExtCamLensGeomDistCorrection;
+
+/* LUTSize */
+enum {
+    MFX_CAM_3DLUT17_SIZE = (17 * 17 * 17),
+    MFX_CAM_3DLUT33_SIZE = (33 * 33 * 33),
+    MFX_CAM_3DLUT65_SIZE = (65 * 65 * 65)
+};
+
+typedef struct {
+    mfxU16 R;
+    mfxU16 G;
+    mfxU16 B;
+    mfxU16 Reserved;
+} mfxCam3DLutEntry;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 reserved[10];
+    mfxU32 Size;
+    union
+    {
+        mfxCam3DLutEntry* Table;
+        mfxU64 reserved1;
+    };
+} mfxExtCam3DLut;
 
 #ifdef __cplusplus
 } // extern "C"
