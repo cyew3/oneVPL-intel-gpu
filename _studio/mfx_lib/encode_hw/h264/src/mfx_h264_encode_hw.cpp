@@ -1238,7 +1238,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
 
     if (brcReset && IsOn(extOptNew->NalHrdConformance) &&
         m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     MFX_CHECK(
         IsAvcProfile(newPar.mfx.CodecProfile)                                   &&
