@@ -71,6 +71,7 @@ struct sInputParams
     mfxU16 nNumRefFrame;
     mfxU16 nBRefType;
     mfxU16 nIdrInterval;
+    mfxU16 reserved[4];
 
     mfxU16 nQuality; // quality parameter for JPEG encoder
 

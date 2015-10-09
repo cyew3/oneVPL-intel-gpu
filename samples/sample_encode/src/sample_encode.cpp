@@ -29,6 +29,15 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
     } \
 }
 
+// Extensions for internal use, normally these macros are blank
+#ifdef MOD_ENC
+    #include "extension_macros.h"
+#else
+    #define MOD_ENC_CREATE_PIPELINE
+    #define MOD_ENC_PRINT_HELP
+    #define MOD_ENC_PARSE_INPUT
+#endif
+
 void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 {
     msdk_printf(MSDK_STRING("Encoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
@@ -50,6 +59,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   <codecid>=h265|vp8                - in-box Media SDK plugins (may require separate downloading and installation)\n"));
     msdk_printf(MSDK_STRING("   If codecid is jpeg, -q option is mandatory.)\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
+    MOD_ENC_PRINT_HELP;
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
@@ -329,6 +339,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->UseRegionEncode = true;
         }
+        MOD_ENC_PARSE_INPUT
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -675,6 +686,25 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     return MFX_ERR_NONE;
 }
 
+CEncodingPipeline* CreatePipeline(const sInputParams& params)
+{
+    MOD_ENC_CREATE_PIPELINE;
+
+    if(params.UseRegionEncode)
+    {
+        return new CRegionEncodingPipeline;
+    }
+    else if(params.nRotationAngle)
+    {
+        return new CUserPipeline;
+    }
+    else
+    {
+        return new CEncodingPipeline;
+    }
+}
+
+
 #if defined(_WIN32) || defined(_WIN64)
 int _tmain(int argc, msdk_char *argv[])
 #else
@@ -690,15 +720,7 @@ int main(int argc, char *argv[])
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
     // Choosing which pipeline to use
-    if(Params.UseRegionEncode)
-    {
-        pPipeline.reset(new CRegionEncodingPipeline());
-    }
-    else
-    {
-        pPipeline.reset((Params.nRotationAngle) ? new CUserPipeline : new CEncodingPipeline);
-    }
-
+    pPipeline.reset(CreatePipeline(Params));
 
     MSDK_CHECK_POINTER(pPipeline.get(), MFX_ERR_MEMORY_ALLOC);
 
