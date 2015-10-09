@@ -2832,6 +2832,12 @@ mfxStatus ConfigureExecuteParams(
                 break;// aya: make sense for SW_VPP only
             }
 
+            case MFX_EXTBUFF_VPP_RSHIFT_IN:
+            case MFX_EXTBUFF_VPP_LSHIFT_OUT:
+            {
+                break;// aya: make sense for SW_VPP only
+            }
+
             case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION:
             {
                 //default mode
