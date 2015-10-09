@@ -576,7 +576,7 @@ namespace {
 
     struct Deleter { template <typename T> void operator ()(T* p) const { delete p; } };
 
-    Ipp32s blkSizeInternal2Fei[3] = { MFX_FEI_H265_BLK_8x8, MFX_FEI_H265_BLK_16x16, MFX_FEI_H265_BLK_32x32 };
+    Ipp32s blkSizeInternal2Fei[4] = { MFX_FEI_H265_BLK_8x8, MFX_FEI_H265_BLK_16x16, MFX_FEI_H265_BLK_32x32, MFX_FEI_H265_BLK_64x64 };
     Ipp32s blkSizeFei2Internal[12] = { -1, -1, -1, 2, -1, -1, 1, -1, -1, 0, -1, -1 };
 
 }; // anonimous namespace
@@ -654,9 +654,9 @@ H265Encoder::~H265Encoder()
     // destory FEI resources
     for (Ipp32s i = 0; i < 4; i++)
         m_feiAngModesPool[i].Destroy();
-    for (Ipp32s i = 0; i < 3; i++)
+    for (Ipp32s i = 0; i < 4; i++)
         m_feiInterMvPool[i].Destroy();
-    for (Ipp32s i = 0; i < 3; i++)
+    for (Ipp32s i = 0; i < 4; i++)
         m_feiInterDistPool[i].Destroy();
     m_feiCuDataPool.Destroy();
     m_feiSaoModesPool.Destroy();
@@ -895,14 +895,16 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
             m_feiAngModesPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel);
         }
         Ipp32s maxNumRefs = MAX(m_videoParam.MaxRefIdxP[0] + m_videoParam.MaxRefIdxP[1], m_videoParam.MaxRefIdxB[0] + m_videoParam.MaxRefIdxB[1]);
-        for (Ipp32s blksize = 0; blksize < 3; blksize++) {
+        for (Ipp32s blksize = 0; blksize < 4; blksize++) {
             Ipp32s feiBlkSizeIdx = blkSizeInternal2Fei[blksize];
 
             feiOutAllocInfo.allocInfo = feiAlloc.InterMV[feiBlkSizeIdx];
             m_feiInterMvPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel * maxNumRefs);
 
-            feiOutAllocInfo.allocInfo = feiAlloc.InterDist[feiBlkSizeIdx];
-            m_feiInterDistPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel * maxNumRefs);
+            if (blksize < 3) {  // no InterDist for 64x64 now
+                feiOutAllocInfo.allocInfo = feiAlloc.InterDist[feiBlkSizeIdx];
+                m_feiInterDistPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel * maxNumRefs);
+            }
         }
 
         FeiBufferUp::AllocInfo feiBufferUpAllocInfo;
@@ -1357,11 +1359,13 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
                 Frame *ref = list.m_refFrames[j];
                 Ipp32s uniqRefIdx = frame->m_mapListRefUnique[i][j];
 
-                for (Ipp32s blksize = 0; blksize < 3; blksize++) {
+                for (Ipp32s blksize = 0; blksize < 4; blksize++) {
                     if (!frame->m_feiInterMv[uniqRefIdx][blksize])
                         frame->m_feiInterMv[uniqRefIdx][blksize] = m_feiInterMvPool[blksize].Allocate();
-                    if (!frame->m_feiInterDist[uniqRefIdx][blksize])
-                        frame->m_feiInterDist[uniqRefIdx][blksize] = m_feiInterDistPool[blksize].Allocate();
+                    if (blksize < 3) {  // no InterDist for 64x64 now
+                        if (!frame->m_feiInterDist[uniqRefIdx][blksize])
+                            frame->m_feiInterDist[uniqRefIdx][blksize] = m_feiInterDistPool[blksize].Allocate();
+                    }
                 }
 
                 frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].numDownstreamDependencies = 0;
@@ -2512,10 +2516,12 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
         in.meArgs.surfRef = ref->m_feiRecon->m_handle;
 
         Ipp32s uniqRefIdx = task.frame->m_mapListRefUnique[task.listIdx][task.refIdx];
-        for (Ipp32s blksize = 0; blksize < 3; blksize++) {
+        for (Ipp32s blksize = 0; blksize < 4; blksize++) {
             Ipp32s feiBlkIdx = blkSizeInternal2Fei[blksize];
             out.SurfInterMV[feiBlkIdx] = task.frame->m_feiInterMv[uniqRefIdx][blksize]->m_handle;
-            out.SurfInterDist[feiBlkIdx] = task.frame->m_feiInterDist[uniqRefIdx][blksize]->m_handle;
+            if (blksize < 3) {  // no InterDist for 64x64 now
+                out.SurfInterDist[feiBlkIdx] = task.frame->m_feiInterDist[uniqRefIdx][blksize]->m_handle;
+            }
         }
         if (task.feiOp == MFX_FEI_H265_OP_INTER_HME_ME32)
             in.SaveSyncPoint = 0;

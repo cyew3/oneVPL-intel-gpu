@@ -35,12 +35,12 @@ _GENX_ inline
 void SetRef(vector_ref<int2, 2> /*source*/,     // IN:  SourceX, SourceY
             vector<int2, 2>     predictor,      // IN:  mv predictor
             vector_ref<int1, 2> searchWindow,   // IN:  reference window w/h
-            vector<uint1, 2>    picSize,        // IN:  pic size w/h
+            vector<uint1, 2>    /*picSize*/,    // IN:  pic size w/h
             vector_ref<int2, 2> reference)      // OUT: Ref0X, Ref0Y
 {
     vector<int2, 2> Width = (searchWindow - 16) >> 1;
     vector<int2, 2> MaxMvLen;
-    vector<int2, 2> RefSize;
+    //vector<int2, 2> RefSize;
     vector<short, 2> mask;
     vector<int2, 2> res, otherRes;
 
@@ -48,8 +48,8 @@ void SetRef(vector_ref<int2, 2> /*source*/,     // IN:  SourceX, SourceY
     // MaxMvLen[0] = 512;
     MaxMvLen[0] = 0x7fff / 4;
     MaxMvLen[1] = 0x7fff / 4;
-    RefSize[0] = picSize[1] * 16;
-    RefSize[1] = (picSize[0] + 1) * 16;
+    //RefSize[0] = picSize[1] * 16;
+    //RefSize[1] = (picSize[0] + 1) * 16;
 
     // fields and MBAFF are not supported 
 

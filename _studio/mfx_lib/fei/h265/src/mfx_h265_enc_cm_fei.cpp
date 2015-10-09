@@ -150,6 +150,8 @@ static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxFEIH265Param *param, 
     mfxU32 height32;
     mfxU32 width2x;
     mfxU32 height2x;
+    mfxU32 width4x;
+    mfxU32 height4x;
     mfxU32 interpWidth;
     mfxU32 interpHeight;
 
@@ -165,6 +167,9 @@ static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxFEIH265Param *param, 
     width2x  = AlignValue(width / 2, 16);
     height2x = AlignValue(height / 2, 16);
 
+    width4x  = AlignValue(width / 4, 16);
+    height4x = AlignValue(height / 4, 16);
+
     /* dimensions of output MV grid for each block size (width/height were aligned to multiple of 16) */
     cmMvW[MFX_FEI_H265_BLK_16x16   ] = width / 16;      cmMvH[MFX_FEI_H265_BLK_16x16   ] = height / 16;
     cmMvW[MFX_FEI_H265_BLK_16x8    ] = width / 16;      cmMvH[MFX_FEI_H265_BLK_16x8    ] = height /  8;
@@ -173,6 +178,7 @@ static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxFEIH265Param *param, 
     cmMvW[MFX_FEI_H265_BLK_32x32   ] = width2x / 16;    cmMvH[MFX_FEI_H265_BLK_32x32   ] = height2x / 16;
     cmMvW[MFX_FEI_H265_BLK_32x16   ] = width2x / 16;    cmMvH[MFX_FEI_H265_BLK_32x16   ] = height2x /  8;
     cmMvW[MFX_FEI_H265_BLK_16x32   ] = width2x /  8;    cmMvH[MFX_FEI_H265_BLK_16x32   ] = height2x / 16;
+    cmMvW[MFX_FEI_H265_BLK_64x64   ] = width4x / 16;    cmMvH[MFX_FEI_H265_BLK_64x64   ] = height4x / 16;
 
     /* see test_interpolate_frame.cpp */
     interpWidth  = width  + 2*MFX_FEI_H265_INTERP_BORDER;
@@ -188,13 +194,13 @@ static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxFEIH265Param *param, 
     GetDimensionsCmSurface2DUp<mfxI32>(device, width32 / 32, height32 / 32, CM_SURFACE_FORMAT_P8, &extAlloc->IntraMode[3]);
 
     /* inter distortion */
-    for (k = MFX_FEI_H265_BLK_32x32; k <=  MFX_FEI_H265_BLK_16x32; k++)
+    for (k = MFX_FEI_H265_BLK_32x32; k <=  MFX_FEI_H265_BLK_16x32; k++)  // no InterDist for 64x64 now
         GetDimensionsCmSurface2DUp<mfxU32>(device, cmMvW[k] * 16, cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterDist[k]);
     for (k = MFX_FEI_H265_BLK_16x16; k <= MFX_FEI_H265_BLK_8x8; k++)
         GetDimensionsCmSurface2DUp<mfxU32>(device, cmMvW[k] * 1,  cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterDist[k]);
 
     /* inter MV */
-    for (k = MFX_FEI_H265_BLK_32x32; k <=  MFX_FEI_H265_BLK_8x8; k++)
+    for (k = MFX_FEI_H265_BLK_64x64; k <=  MFX_FEI_H265_BLK_8x8; k++)
         GetDimensionsCmSurface2DUp<mfxI16Pair>(device, cmMvW[k], cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterMV[k]);
 
     /* interpolate */
@@ -229,10 +235,8 @@ void * H265CmCtx::AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMe
         s->sIn.bufOrigNv12 = CreateSurface(device, sourceWidth, sourceHeight, CM_SURFACE_FORMAT_NV12);
         s->sIn.bufDown2x   = CreateSurface(device, width2x, height2x, CM_SURFACE_FORMAT_NV12);
         s->sIn.bufDown4x   = CreateSurface(device, width4x, height4x, CM_SURFACE_FORMAT_NV12);
-        if (hmeLevel == HME_LEVEL_HIGH) {
-            s->sIn.bufDown8x = CreateSurface(device,  width8x,  height8x,  CM_SURFACE_FORMAT_NV12);
-            s->sIn.bufDown16x = CreateSurface(device, width16x, height16x, CM_SURFACE_FORMAT_NV12);
-        }
+        s->sIn.bufDown8x = CreateSurface(device,  width8x,  height8x,  CM_SURFACE_FORMAT_NV12);
+        s->sIn.bufDown16x = CreateSurface(device, width16x, height16x, CM_SURFACE_FORMAT_NV12);
         return s;
 
     case MFX_FEI_H265_SURFTYPE_RECON:
@@ -243,10 +247,8 @@ void * H265CmCtx::AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMe
         s->sRec.bufOrigNv12 = CreateSurface(device, sourceWidth, sourceHeight, CM_SURFACE_FORMAT_NV12);
         s->sRec.bufDown2x   = CreateSurface(device, width2x, height2x, CM_SURFACE_FORMAT_NV12);
         s->sRec.bufDown4x   = CreateSurface(device, width4x, height4x, CM_SURFACE_FORMAT_NV12);
-        if (hmeLevel == HME_LEVEL_HIGH) {
-            s->sRec.bufDown8x = CreateSurface(device,  width8x,  height8x,  CM_SURFACE_FORMAT_NV12);
-            s->sRec.bufDown16x = CreateSurface(device, width16x, height16x, CM_SURFACE_FORMAT_NV12);
-        }
+        s->sRec.bufDown8x = CreateSurface(device,  width8x,  height8x,  CM_SURFACE_FORMAT_NV12);
+        s->sRec.bufDown16x = CreateSurface(device, width16x, height16x, CM_SURFACE_FORMAT_NV12);
         //for (mfxU32 i = 0; i < 3; i++)
         //    s->sRec.bufOrigInterp[i] = CreateSurface(device, interpWidth, interpHeight, CM_SURFACE_FORMAT_NV12);
         return s;
@@ -380,8 +382,6 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     interpHeight = height + 2*MFX_FEI_H265_INTERP_BORDER;
     interpBlocksW = (interpWidth + 8 - 1) / 8;
     interpBlocksH = (interpHeight + 8 - 1) / 8;
-
-    hmeLevel = HME_LEVEL_HIGH;
 
     /* internal buffer: add one for lookahead frame (assume that ref buf list gets at most 1 new frame per pass, unless others are removed) */
     numRefBufs = numRefFrames + 1;
@@ -529,17 +529,15 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     control.width = (mfxU16)width4x;
     control.height = (mfxU16)height4x;
     me4xControl->WriteSurface((mfxU8 *)&control, NULL);
-    if (hmeLevel == HME_LEVEL_HIGH) {
-        me8xControl = CreateBuffer(device, sizeof(Me2xControl));
-        me16xControl = CreateBuffer(device, sizeof(Me2xControl));
-        control.width = (mfxU16)width8x;
-        control.height = (mfxU16)height8x;
-        me8xControl->WriteSurface((mfxU8 *)&control, NULL);
-        SetSearchPath(&control.searchPath);
-        control.width = (mfxU16)width16x;
-        control.height = (mfxU16)height16x;
-        me16xControl->WriteSurface((mfxU8 *)&control, NULL);
-    }
+    me8xControl = CreateBuffer(device, sizeof(Me2xControl));
+    me16xControl = CreateBuffer(device, sizeof(Me2xControl));
+    control.width = (mfxU16)width8x;
+    control.height = (mfxU16)height8x;
+    me8xControl->WriteSurface((mfxU8 *)&control, NULL);
+    SetSearchPath(&control.searchPath);
+    control.width = (mfxU16)width16x;
+    control.height = (mfxU16)height16x;
+    me16xControl->WriteSurface((mfxU8 *)&control, NULL);
 
     // allocate single intermediate surface to store deblocked pixels
     deblocked = CreateSurface(device, sourceWidth, sourceHeight, CM_SURFACE_FORMAT_NV12); // so far only nv12 is supported
@@ -779,10 +777,8 @@ mfxStatus H265CmCtx::CopyReconFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *i
 //        kernelMe16Refine32x32.Enqueue(queue, *lastEvent);
 //    }
 //
-//    if (hmeLevel == HME_LEVEL_HIGH) {
-//        device->DestroyVmeSurfaceG7_5(refs16x);
-//        device->DestroyVmeSurfaceG7_5(refs8x);
-//    }
+//    device->DestroyVmeSurfaceG7_5(refs16x);
+//    device->DestroyVmeSurfaceG7_5(refs8x);
 //    device->DestroyVmeSurfaceG7_5(refs4x);
 //    device->DestroyVmeSurfaceG7_5(refs2x);
 //    device->DestroyVmeSurfaceG7_5(refs);
@@ -842,6 +838,7 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         dist[MFX_FEI_H265_BLK_16x8]  = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_16x8 : MFX_FEI_H265_BLK_16x16]);
         dist[MFX_FEI_H265_BLK_8x16]  = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_8x16 : MFX_FEI_H265_BLK_16x16]);
         dist[MFX_FEI_H265_BLK_8x8]   = GET_OUTSURF(feiOut->SurfInterDist[MFX_FEI_H265_BLK_8x8]);
+        mv[MFX_FEI_H265_BLK_64x64]   = GET_OUTSURF(feiOut->SurfInterMV[MFX_FEI_H265_BLK_64x64]);
         mv[MFX_FEI_H265_BLK_32x16]   = GET_OUTSURF(feiOut->SurfInterMV[rectParts ? MFX_FEI_H265_BLK_32x16 : MFX_FEI_H265_BLK_32x32]);
         mv[MFX_FEI_H265_BLK_16x32]   = GET_OUTSURF(feiOut->SurfInterMV[rectParts ? MFX_FEI_H265_BLK_16x32 : MFX_FEI_H265_BLK_32x32]);
         mv[MFX_FEI_H265_BLK_32x32]   = GET_OUTSURF(feiOut->SurfInterMV[MFX_FEI_H265_BLK_32x32]);
@@ -875,7 +872,7 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         SurfaceIndex *refs8x = CreateVmeSurfaceG75(device, surfIn->bufDown8x, &(surfRef->bufDown8x), 0, 1, 0);
         SurfaceIndex *refs16x = CreateVmeSurfaceG75(device, surfIn->bufDown16x, &(surfRef->bufDown16x), 0, 1, 0);
         SetKernelArg(kernelHmeMe32.kernel, me16xControl, me2xControl, *refs16x, *refs8x, *refs4x, *refs2x,
-            mv[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_16x16], mv[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_16x32], rectParts);
+            mv[MFX_FEI_H265_BLK_64x64], mv[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_16x16], mv[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_16x32], rectParts);
         kernelHmeMe32.Enqueue(queue, lastEvent);
         device->DestroyVmeSurfaceG7_5(refs16x);
         device->DestroyVmeSurfaceG7_5(refs8x);

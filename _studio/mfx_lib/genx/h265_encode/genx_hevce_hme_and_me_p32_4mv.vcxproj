@@ -98,7 +98,7 @@
       <Command>build_kernel.cmd hme_and_me_p32_4mv hsw</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>for /L %%i in (0,1,4) do $(TargetPath)</Command>
+      <Command>rem for /L %%i in (0,1,4) do $(TargetPath)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -182,6 +182,7 @@
     </ClCompile>
     <ClCompile Include="src\genx_hevce_ime_3tiers_4mv.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\genx_hevce_ime_3tiers_4mv_bdw_isa.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
@@ -191,6 +192,7 @@
     </ClCompile>
     <ClCompile Include="src\genx_hevce_me_p32_4mv.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\genx_hevce_me_p32_4mv_bdw_isa.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>

@@ -66,6 +66,45 @@ void ImeOneTier4MV(vector_ref<int2, 2> mvPred, SurfaceIndex SURF_SRC_AND_REF, ma
 }
 
 _GENX_ inline
+void ImeOneTier4MV_1(vector_ref<int2, 2> mvPred, SurfaceIndex SURF_SRC_AND_REF, matrix_ref<int2, 2, 4> mvOut,
+                   UniIn uniIn, matrix<uchar, 2, 32> imeIn) // mvPred is updated
+{
+    matrix<uchar, 9, 32> imeOut;
+
+    // update ref
+    // M0.0 Ref0X, Ref0Y
+    vector_ref<int2, 2> sourceXY = uniIn.row(0).format<int2>().select<2,1>(4);
+    vector<uint1, 2> widthHeight;
+    //widthHeight[0] = (height >> 4) - 1;
+    //widthHeight[1] = (width >> 4);
+    vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
+    vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
+
+    // M1.2 Start0X, Start0Y
+    vector<int1, 2> start0 = searchWindow;
+    start0 = ((start0 - 16) >> 3) & 0x0f;
+    uniIn.row(1)[10] = start0[0] | (start0[1] << 4);
+
+    uniIn.row(1)[31] = 0x1;
+
+    vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
+#ifdef target_gen8
+    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
+#else
+    vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
+#endif
+    run_vme_ime(uniIn, imeIn,
+        VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
+        SURF_SRC_AND_REF, ref0, NULL, costCenter, imeOut);
+
+    mvOut.format<int2>() = imeOut.row(8).format<int2>().select<8,1>(8) << 1;  // 4 MVs
+ 
+    mvPred.format<int2>() = imeOut.row(7).format<int2>().select<2,1>(10) << 2;  // 1 output MV for 16x16
+//    vector<int2, 1> dist16x16 = imeOut.row(7).format<int2>().select<1,1>(8);  // dist for 16x16
+}
+
+_GENX_ inline
 void MeTier2x(SurfaceIndex SURF_SRC_AND_REF, vector_ref<int2, 2> mvPred, SurfaceIndex SURF_MV16x16, SurfaceIndex SURF_MV32x16,
               SurfaceIndex SURF_MV16x32, uint mbX, uint mbY, UniIn uniIn, matrix<uchar, 2, 32> imeIn, int rectParts)
 {
@@ -79,13 +118,6 @@ void MeTier2x(SurfaceIndex SURF_SRC_AND_REF, vector_ref<int2, 2> mvPred, Surface
     // M0.2
     VME_SET_UNIInput_SrcX(uniIn, x);
     VME_SET_UNIInput_SrcY(uniIn, y);
-
-    // M0.3 various prediction parameters
-    if (rectParts) {
-        VME_SET_DWORD(uniIn, 0, 3, 0x70040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x8,8x16,16x8,16x16 to have 4MVs in the output (for MeP16)
-    } else {
-        VME_SET_DWORD(uniIn, 0, 3, 0x76040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x8,16x16 to have 4MVs in the output (for MeP16)
-    }
 
     // M0.0 Ref0X, Ref0Y
     vector_ref<int2, 2> sourceXY = uniIn.row(0).format<int2>().select<2,1>(4);
@@ -184,7 +216,7 @@ void MeTier2x(SurfaceIndex SURF_SRC_AND_REF, vector_ref<int2, 2> mvPred, Surface
 extern "C" _GENX_MAIN_
 void HmeMe32(
     SurfaceIndex SURF_16XCONTROL, SurfaceIndex SURF_2XCONTROL, SurfaceIndex SURF_REF_16x, SurfaceIndex SURF_REF_8x, SurfaceIndex SURF_REF_4x, SurfaceIndex SURF_REF_2x,
-    SurfaceIndex SURF_MV32x32, SurfaceIndex SURF_MV16x16, SurfaceIndex SURF_MV32x16, SurfaceIndex SURF_MV16x32, int rectParts) // SURF_MV32x32 is DS 2x surf
+    SurfaceIndex SURF_MV64x64, SurfaceIndex SURF_MV32x32, SurfaceIndex SURF_MV16x16, SurfaceIndex SURF_MV32x16, SurfaceIndex SURF_MV16x32, int rectParts) // SURF_MV32x32 is DS 2x surf
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
@@ -220,8 +252,15 @@ void HmeMe32(
     VME_SET_UNIInput_SrcX(uniIn, x);
     VME_SET_UNIInput_SrcY(uniIn, y);
 
+    uint subpartmask = 0x76040000; // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x8,16x16 to have 4MVs in the output
+    if (rectParts) {
+        subpartmask = 0x70040000; // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x8,8x16,16x8,16x16 to have 4MVs in the output (for MeP16)
+    }
+    VME_SET_DWORD(uniIn, 0, 3, subpartmask);
+
     // M0.3 various prediction parameters
-    VME_SET_DWORD(uniIn, 0, 3, 0x77040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x77: 8x8 only
+    //VME_SET_DWORD(uniIn, 0, 3, 0x77040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x77: 8x8 only
+
     // M1.1 MaxNumMVs
     VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
     // M0.5 Reference Window Width & Height
@@ -274,18 +313,17 @@ void HmeMe32(
     for (int yBlk0 = 0; yBlk0 < 32; yBlk0 += 16) {  // 8x tier
 //        #pragma unroll
         for (int xBlk0 = 0; xBlk0 < 32; xBlk0 += 16) {
-            matrix<int2, 2, 4> mvPred1; //4x MVs
+            matrix<int2, 2, 4> mvPred64; //4x MVs
             // update X and Y
             VME_SET_UNIInput_SrcX(uniIn, xBase0 + xBlk0);
             VME_SET_UNIInput_SrcY(uniIn, yBase0 + yBlk0);
 
             int mvInd0 = ((yBlk0 >> 2) | (xBlk0 >> 3)); // choose 8x8_0, 8x8_1, 8x8_2 or 8x8_3
-
             // load search path
             SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control16x, 0, 64);
             VME_SET_UNIInput_MaxNumSU(uniIn, maxNumSu16x);
             VME_SET_UNIInput_LenSP(uniIn, lenSp16x);
-            ImeOneTier4MV(mvPred0.format<int2>().select<2,1>(mvInd0), SURF_REF_8x, mvPred1, uniIn, imeIn);
+            ImeOneTier4MV(mvPred0.format<int2>().select<2,1>(mvInd0), SURF_REF_8x, mvPred64, uniIn, imeIn);
 
 //            #pragma unroll
             for (int yBlk1 = 0; yBlk1 < 32; yBlk1 += 16) {  // 4x tier
@@ -302,7 +340,8 @@ void HmeMe32(
                     SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control16x, 0, 64);
                     VME_SET_UNIInput_MaxNumSU(uniIn, maxNumSu16x);
                     VME_SET_UNIInput_LenSP(uniIn, lenSp16x);
-                    ImeOneTier4MV(mvPred1.format<int2>().select<2,1>(mvInd1), SURF_REF_4x, mvPred32, uniIn, imeIn);
+                    ImeOneTier4MV_1(mvPred64.format<int2>().select<2,1>(mvInd1), SURF_REF_4x, mvPred32, uniIn, imeIn);
+//                    write(SURF_MV64x64, (xBase1 + xBlk0 * 2 + xBlk1) / 16 * MVDATA_SIZE, (yBase1 + yBlk0 * 2 + yBlk1) / 16, mvPred64.format<int2>().select<2,1>(mvInd1));
 
 //                    #pragma unroll
                     for (int yBlk2 = 0; yBlk2 < 32; yBlk2 += 16) {  // 2x tier
@@ -323,7 +362,7 @@ void HmeMe32(
                     write(SURF_MV32x32, (xBase1 + xBlk0 * 2 + xBlk1) / 8 * MVDATA_SIZE, (yBase1 + yBlk0 * 2 + yBlk1) / 8, mvPred32);
                 }
             }
-
+            write(SURF_MV64x64, (xBase0 + xBlk0) / 8 * MVDATA_SIZE, (yBase0 + yBlk0) / 8, mvPred64);
         }
     }
 

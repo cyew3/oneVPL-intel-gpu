@@ -341,11 +341,11 @@ public:
     costStat *m_costStat;
 
     Ipp32u     *m_feiAngModes[4];
-    mfxI16Pair *m_feiInterMv[4][3];
-    Ipp32u     *m_feiInterDist[4][3];
+    mfxI16Pair *m_feiInterMv[4][4];
+    Ipp32u     *m_feiInterDist[4][4];
     Ipp32u      m_feiAngModesPitch[4];
-    Ipp32u      m_feiInterMvPitch[4][3];
-    Ipp32u      m_feiInterDistPitch[4][3];
+    Ipp32u      m_feiInterMvPitch[4][4];
+    Ipp32u      m_feiInterDistPitch[4][4];
 
     SaoEstimator m_saoEst;
 

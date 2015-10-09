@@ -1582,8 +1582,10 @@ void H265Encoder::OnEncodingQueried(Frame* encoded)
     for (Ipp32s i = 0; i < 4; i++)
         SafeRelease(encoded->m_feiIntraAngModes[i]);
     for (Ipp32s i = 0; i < 4; i++) {
-        for (Ipp32s j = 0; j < 3; j++) {
-            SafeRelease(encoded->m_feiInterDist[i][j]);
+        for (Ipp32s j = 0; j < 4; j++) {
+            if (j < 3) {  // no InterDist for 64x64 now
+                SafeRelease(encoded->m_feiInterDist[i][j]);
+            }
             SafeRelease(encoded->m_feiInterMv[i][j]);
         }
     }

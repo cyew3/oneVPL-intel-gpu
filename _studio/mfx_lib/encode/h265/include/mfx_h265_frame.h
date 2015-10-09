@@ -328,8 +328,8 @@ namespace H265Enc {
         FeiInputData *m_feiOrigin;
         FeiReconData *m_feiRecon;
         FeiOutData   *m_feiIntraAngModes[4];
-        FeiOutData   *m_feiInterMv[4][3];
-        FeiOutData   *m_feiInterDist[4][3];
+        FeiOutData   *m_feiInterMv[4][4];
+        FeiOutData   *m_feiInterDist[4][4];
         FeiBufferUp  *m_feiCuData;
         FeiBufferUp  *m_feiSaoModes;
         void *m_feiSyncPoint;

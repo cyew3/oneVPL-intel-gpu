@@ -34,12 +34,13 @@ extern "C" void HmeMe32(SurfaceIndex CTRL16x, SurfaceIndex CTRL2x, SurfaceIndex 
 
 namespace {
     int RunGpu(const Me2xControl &ctrl16x, const Me2xControl &ctrl2x, const mfxU8 *src16xData, const mfxU8 *ref16xData, const mfxU8 *src8xData, const mfxU8 *ref8xData,
-            const mfxU8 *src4xData, const mfxU8 *ref4xData, const mfxU8 *src2xData, const mfxU8 *ref2xData, mfxI16Pair *mv32x32, mfxI16Pair *mv16x16);
+            const mfxU8 *src4xData, const mfxU8 *ref4xData, const mfxU8 *src2xData, const mfxU8 *ref2xData, mfxI16Pair *mv64x64, mfxI16Pair *mv32x32, mfxI16Pair *mv16x16);
     int RunGpuHme(const Me2xControl &ctrl, const mfxU8 *src16xData, const mfxU8 *ref16xData,
         const mfxU8 *src8xData, const mfxU8 *ref8xData, const mfxU8 *src4xData, const mfxU8 *ref4xData, mfxI16Pair *mvData, mfxU16 width, mfxU16 height);
     int RunGpuMe32(const Me2xControl &ctrl, const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvPredData,
         mfxI16Pair *mv32x32Data, mfxI16Pair *mv16x16Data, mfxI16Pair *mv32x16Data, mfxI16Pair *mv16x32Data);
     int CompareMV(const mfxI16Pair *data1, const mfxI16Pair *data2, mfxU32 width, mfxU32 height);
+    int CompareMV64(const mfxI16Pair *data1, const mfxI16Pair *data2, mfxU32 width, mfxU32 height);
 };
 
 int DownSize2X(mfxU8 *src1x, int w1x, int h1x, mfxU8 *dst2x, int w2x, int h2x)
@@ -82,9 +83,10 @@ int main()
     std::vector<mfxU8> ref8x(frameSize8x);
     std::vector<mfxU8> src16x(frameSize16x);
     std::vector<mfxU8> ref16x(frameSize16x);
-    std::vector<mfxI16Pair> mvGpu32x32(DIVUP(width2x, 16) * DIVUP(height2x, 16)); // 1 mvs per 32x32 block
-    std::vector<mfxI16Pair> mvGpu16x16(DIVUP(width2x, 8) * DIVUP(height2x, 8)); // 1 mvs per 16x16 block
-    std::vector<mfxI16Pair> mv(DIVUP(width2x, 16) * DIVUP(height2x, 16)); // 1 mvs per 32x32 block
+    std::vector<mfxI16Pair> mvGpu64x64(DIVUP(width2x, 32) * DIVUP(height2x, 32)); // 1 mv per 64x64 block
+    std::vector<mfxI16Pair> mvGpu32x32(DIVUP(width2x, 16) * DIVUP(height2x, 16)); // 1 mv per 32x32 block
+    std::vector<mfxI16Pair> mvGpu16x16(DIVUP(width2x, 8) * DIVUP(height2x, 8)); // 1 mv per 16x16 block
+    std::vector<mfxI16Pair> mv(DIVUP(width2x, 16) * DIVUP(height2x, 16)); // 1 mv per 32x32 block
 
     FILE *f = fopen(YUV_NAME, "rb");
     if (!f)
@@ -118,7 +120,7 @@ int main()
     Me2xControl ctrl2x = {};
     SetupMeControlShortPath(ctrl2x, width2x, height2x);
 
-    res = RunGpu(ctrl16x, ctrl2x, src16x.data(), ref16x.data(), src8x.data(), ref8x.data(), src4x.data(), ref4x.data(), src2x.data(), ref2x.data(), mvGpu32x32.data(), mvGpu16x16.data());
+    res = RunGpu(ctrl16x, ctrl2x, src16x.data(), ref16x.data(), src8x.data(), ref8x.data(), src4x.data(), ref4x.data(), src2x.data(), ref2x.data(), mvGpu64x64.data(), mvGpu32x32.data(), mvGpu16x16.data());
     CHECK_ERR(res);
 
     res = RunGpuHme(ctrl16x, src16x.data(), ref16x.data(), src8x.data(), ref8x.data(), src4x.data(), ref4x.data(), mv.data(), width2x, height2x);
@@ -132,6 +134,9 @@ int main()
     res = RunGpuMe32(ctrl2x, src2x.data(), ref2x.data(), mv.data(), mv32x32.data(), mv16x16.data(), mv32x16.data(), mv16x32.data());
     CHECK_ERR(res);
 
+    //res = CompareMV64(mvGpu64x64.data(), mvGpu32x32.data(), ctrl2x.width, ctrl2x.height);
+    //CHECK_ERR(res);
+
     res = CompareMV(mv32x32.data(), mvGpu32x32.data(), ctrl2x.width / 16, ctrl2x.height /16);
     CHECK_ERR(res);
 
@@ -144,7 +149,7 @@ int main()
 
 namespace {
     int RunGpu(const Me2xControl &ctrl16x, const Me2xControl &ctrl2x, const mfxU8 *src16xData, const mfxU8 *ref16xData, const mfxU8 *src8xData, const mfxU8 *ref8xData,
-        const mfxU8 *src4xData, const mfxU8 *ref4xData, const mfxU8 *src2xData, const mfxU8 *ref2xData, mfxI16Pair *mv32x32Data, mfxI16Pair *mv16x16Data)
+        const mfxU8 *src4xData, const mfxU8 *ref4xData, const mfxU8 *src2xData, const mfxU8 *ref2xData, mfxI16Pair *mv64x64Data, mfxI16Pair *mv32x32Data, mfxI16Pair *mv16x16Data)
     {
         mfxU32 version = 0;
         CmDevice *device = 0;
@@ -215,6 +220,15 @@ namespace {
         res = device->CreateVmeSurfaceG7_5(src2x, &ref2x, NULL, 1, 0, genxRefs2x);
         CHECK_CM_ERR(res);
 
+        Ipp32u mv64x64Pitch = 0;
+        Ipp32u mv64x64Size = 0;
+        res = device->GetSurface2DInfo(DIVUP(ctrl2x.width, 32) * sizeof(mfxI16Pair), DIVUP(ctrl2x.height, 32), CM_SURFACE_FORMAT_P8, mv64x64Pitch, mv64x64Size);
+        CHECK_CM_ERR(res);
+        void *mv64x64Sys = CM_ALIGNED_MALLOC(mv64x64Size, 0x1000);
+        CmSurface2DUP *mv64x64 = 0;
+        res = device->CreateSurface2DUP(DIVUP(ctrl2x.width, 32) * sizeof(mfxI16Pair), DIVUP(ctrl2x.height, 32), CM_SURFACE_FORMAT_P8, mv64x64Sys, mv64x64);
+        CHECK_CM_ERR(res);
+
         Ipp32u mv32x32Pitch = 0;
         Ipp32u mv32x32Size = 0;
         res = device->GetSurface2DInfo(DIVUP(ctrl2x.width, 16) * sizeof(mfxI16Pair), DIVUP(ctrl2x.height, 16), CM_SURFACE_FORMAT_P8, mv32x32Pitch, mv32x32Size);
@@ -271,6 +285,9 @@ namespace {
         res = ctrl2xBuf->GetIndex(idxctrl2x);
         CHECK_CM_ERR(res);
 
+        SurfaceIndex *idxMv64x64 = 0;
+        res = mv64x64->GetIndex(idxMv64x64);
+        CHECK_CM_ERR(res);
         SurfaceIndex *idxMv32x32 = 0;
         res = mv32x32->GetIndex(idxMv32x32);
         CHECK_CM_ERR(res);
@@ -296,16 +313,18 @@ namespace {
         CHECK_CM_ERR(res);
         res = kernel->SetKernelArg(5, sizeof(*genxRefs2x), genxRefs2x);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(6, sizeof(*idxMv32x32), idxMv32x32);
+        res = kernel->SetKernelArg(6, sizeof(*idxMv64x64), idxMv64x64);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(7, sizeof(*idxMv16x16), idxMv16x16);
+        res = kernel->SetKernelArg(7, sizeof(*idxMv32x32), idxMv32x32);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(8, sizeof(*idxMv32x16), idxMv32x16);
+        res = kernel->SetKernelArg(8, sizeof(*idxMv16x16), idxMv16x16);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(9, sizeof(*idxMv16x32), idxMv16x32);
+        res = kernel->SetKernelArg(9, sizeof(*idxMv32x16), idxMv32x16);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(10, sizeof(*idxMv16x32), idxMv16x32);
         CHECK_CM_ERR(res);
         int rectParts = 0;
-        res = kernel->SetKernelArg(10, sizeof(rectParts), &rectParts);
+        res = kernel->SetKernelArg(11, sizeof(rectParts), &rectParts);
         CHECK_CM_ERR(res);
 
         mfxU32 tsWidth  = DIVUP(ctrl16x.width, 16);    // 16x blocks
@@ -338,6 +357,8 @@ namespace {
         res = e->WaitForTaskFinished();
         CHECK_CM_ERR(res);
 
+        for (int y = 0; y < DIVUP(ctrl2x.height, 32); y++)
+            memcpy(mv64x64Data + y * DIVUP(ctrl2x.width, 32), (char *)mv64x64Sys + y * mv64x64Pitch, sizeof(mfxI16Pair) * DIVUP(ctrl2x.width, 32));
         for (int y = 0; y < DIVUP(ctrl2x.height, 16); y++)
             memcpy(mv32x32Data + y * DIVUP(ctrl2x.width, 16), (char *)mv32x32Sys + y * mv32x32Pitch, sizeof(mfxI16Pair) * DIVUP(ctrl2x.width, 16));
         for (int y = 0; y < DIVUP(ctrl2x.height, 8); y++)
@@ -368,10 +389,12 @@ namespace {
         device->DestroySurface(ref8x);
         device->DestroySurface(ref4x);
         device->DestroySurface(ref2x);
+        device->DestroySurface2DUP(mv64x64);
         device->DestroySurface2DUP(mv32x32);
         device->DestroySurface2DUP(mv32x16);
         device->DestroySurface2DUP(mv16x32);
         device->DestroySurface2DUP(mv16x16);
+        CM_ALIGNED_FREE(mv64x64Sys);
         CM_ALIGNED_FREE(mv32x32Sys);
         CM_ALIGNED_FREE(mv32x16Sys);
         CM_ALIGNED_FREE(mv16x32Sys);
@@ -721,6 +744,42 @@ namespace {
                 if ((data1[i * width + j].x != data2[i * width + j].x) ||
                     (data1[i * width + j].y != data2[i * width + j].y))
                     return 1;
+        return 0;
+    }
+
+    int CompareMV64(const mfxI16Pair *data64, const mfxI16Pair *data32, mfxU32 width2x, mfxU32 height2x)
+    {
+        printf("\n");
+        int maxdx = 0, maxdy = 0;
+        int maxdxx = 0, maxdxy = 0;
+        int maxdyx = 0, maxdyy = 0;
+        int dx = 0, dy = 0;
+        for (mfxU32 i = 0; i < DIVUP(height2x, 16); i++) {
+            for (mfxU32 j = 0; j < DIVUP(width2x, 16); j++) {
+                printf("(%6i,%6i:%6i,%6i)",
+                    data64[(i/2) * DIVUP(width2x, 32) + (j/2)].x, data64[(i/2) * DIVUP(width2x, 32) + (j/2)].y,
+                    data32[i * DIVUP(width2x, 16) + j].x, data32[i * DIVUP(width2x, 16) + j].y);
+                dx = data64[(i/2) * DIVUP(width2x, 32) + (j/2)].x - data32[i * DIVUP(width2x, 16) + j].x;
+                dy = data64[(i/2) * DIVUP(width2x, 32) + (j/2)].y - data32[i * DIVUP(width2x, 16) + j].y;
+                //printf("(%3i,%3i)", dx, dy);
+                if (abs(dx) > abs(maxdx)) {
+                    maxdx = dx;
+                    maxdxx = j;
+                    maxdxy = i;
+                }
+                if (abs(dy) > abs(maxdy)) {
+                    maxdy = dy;
+                    maxdyx = j;
+                    maxdyy = i;
+                }
+                //if ((data1[i * width + j].x != data2[i * width + j].x) ||
+                //    (data1[i * width + j].y != data2[i * width + j].y))
+                    //return 1;
+            }
+            printf("\n");
+        }
+        printf("maxdx = %i at (%i;%i)\n", maxdx, maxdxx, maxdxy);
+        printf("maxdy = %i at (%i;%i)\n", maxdy, maxdyx, maxdyy);
         return 0;
     }
 

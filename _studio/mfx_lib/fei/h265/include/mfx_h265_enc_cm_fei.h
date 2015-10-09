@@ -23,11 +23,6 @@ enum H265VMEMode {
     VME_MODE_REFINE,
 };
 
-enum H265HMELevel {
-    HME_LEVEL_LOW = 0,  // 4x
-    HME_LEVEL_HIGH,     // 16x
-};
-
 typedef struct {
     Ipp32s       encOrder;
     CmSurface2D *bufOrig;
@@ -128,7 +123,6 @@ private:
 
     mfxU32 numRefBufs;
     H265VMEMode vmeMode;
-    H265HMELevel hmeLevel;
 
 public:
     /* called from C wrapper (public) */
@@ -205,8 +199,7 @@ public:
         interpBlocksW(),
         interpBlocksH(),
         numRefBufs(),
-        vmeMode(),
-        hmeLevel()
+        vmeMode()
     { }
 
     ~H265CmCtx() { }

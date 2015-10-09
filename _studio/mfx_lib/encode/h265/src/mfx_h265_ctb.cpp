@@ -8581,7 +8581,7 @@ namespace {
         if ((puw | puh) == 8)       return 0;
         else if ((puw | puh) == 16) return 1;
         else if ((puw | puh) == 32) return 2;
-        else if ((puw | puh) == 64) return 2;
+        else if ((puw | puh) == 64) return 3;
         assert("unsupported PU size");
         return 0;
     }
@@ -8607,8 +8607,8 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
 
     Ipp32s x = (m_ctbPelX + meInfo->posx) / meInfo->width;
     Ipp32s y = (m_ctbPelY + meInfo->posy) / meInfo->height;
-    if ((meInfo->width | meInfo->height) == 64)
-        x *= 2, y *= 2;
+    //if ((meInfo->width | meInfo->height) == 64)
+    //    x *= 2, y *= 2;
     Ipp32s puSize = GetPuSize(meInfo->width, meInfo->height);
 
     Ipp32u numParts = (m_par->NumPartInCU >> (meInfo->depth << 1));
@@ -8655,45 +8655,55 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
             }
 
             Ipp32s uniqRefIdx = m_currFrame->m_mapListRefUnique[list][refIdx];
-            Ipp32s pitchDist = m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_pitch;
             Ipp32s pitchMv = m_currFrame->m_feiInterMv[uniqRefIdx][puSize]->m_pitch;
+            Ipp32s pitchDist;
+            if (puSize < 3)  // no InterDist for 64x64 now
+                pitchDist = m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_pitch;
 
             mfxI16Pair cmMv = ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize]->m_sysmem + y * pitchMv))[x];
-            Ipp32u *cmDist = (Ipp32u *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_sysmem + y * pitchDist);
+            Ipp32u *cmDist;
+            if (puSize < 3)  // no InterDist for 64x64 now
+                cmDist = (Ipp32u *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_sysmem + y * pitchDist);
 
             H265MV mvBest = { 0, 0 };
             Ipp32s costBest = INT_MAX;
             Ipp32s mvCostBest = 0;
 
             if (meInfo->width > 32 || meInfo->height > 32) {
-                mfxI16Pair cmMv[4] = {
-                    ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize]->m_sysmem + (y+0) * pitchMv))[x+0],
-                    ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize]->m_sysmem + (y+0) * pitchMv))[x+1],
-                    ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize]->m_sysmem + (y+1) * pitchMv))[x+0],
-                    ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize]->m_sysmem + (y+1) * pitchMv))[x+1]
+                Ipp32s puSize32x32 = GetPuSize(32, 32);
+                Ipp32s x32 = x * 2;
+                Ipp32s y32 = y * 2;
+                Ipp32s pitchMv32 = m_currFrame->m_feiInterMv[uniqRefIdx][puSize32x32]->m_pitch;
+                Ipp32s pitchDist32 = m_currFrame->m_feiInterDist[uniqRefIdx][puSize32x32]->m_pitch;
+
+                mfxI16Pair cmMv32[4] = {
+                    ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize32x32]->m_sysmem + (y32+0) * pitchMv32))[x32+0],
+                    ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize32x32]->m_sysmem + (y32+0) * pitchMv32))[x32+1],
+                    ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize32x32]->m_sysmem + (y32+1) * pitchMv32))[x32+0],
+                    ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize32x32]->m_sysmem + (y32+1) * pitchMv32))[x32+1]
                 };
-                Ipp32s *cmDist[4] = {
-                    (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_sysmem + (y+0) * pitchDist) + 16*(x+0),
-                    (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_sysmem + (y+0) * pitchDist) + 16*(x+1),
-                    (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_sysmem + (y+1) * pitchDist) + 16*(x+0),
-                    (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_sysmem + (y+1) * pitchDist) + 16*(x+1)
+                Ipp32s *cmDist32[4] = {
+                    (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize32x32]->m_sysmem + (y32+0) * pitchDist32) + 16*(x32+0),
+                    (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize32x32]->m_sysmem + (y32+0) * pitchDist32) + 16*(x32+1),
+                    (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize32x32]->m_sysmem + (y32+1) * pitchDist32) + 16*(x32+0),
+                    (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize32x32]->m_sysmem + (y32+1) * pitchDist32) + 16*(x32+1)
                 };
 
                 Ipp32s cmDist64[9];
                 for (Ipp16s sadIdx0 = 0, dy = -1; dy <= 1; dy++) {
                     for (Ipp16s dx = -1; dx <= 1; dx++, sadIdx0++) {
-                        H265MV mv0 = {cmMv[0].x + dx, cmMv[0].y + dy};
-                        cmDist64[sadIdx0] = cmDist[0][sadIdx0];
+                        H265MV mv0 = {cmMv32[0].x + dx, cmMv32[0].y + dy};
+                        cmDist64[sadIdx0] = cmDist32[0][sadIdx0];
 
                         for (Ipp32s i = 1; i < 4; i++) {
-                            H265MV mv = {cmMv[i].x - 1, cmMv[i].y - 1};
+                            H265MV mv = {cmMv32[i].x - 1, cmMv32[i].y - 1};
                             Ipp32s dmvx = mv0.mvx - mv.mvx;
                             Ipp32s dmvy = mv0.mvy - mv.mvy;
                             if (dmvx > 2 || dmvx < 0 || dmvy > 2 || dmvy < 0) {
                                 cmDist64[sadIdx0] = INT_MAX;
                                 break;
                             }
-                            cmDist64[sadIdx0] += cmDist[i][dmvy * 3 + dmvx];
+                            cmDist64[sadIdx0] += cmDist32[i][dmvy * 3 + dmvx];
                         }
 
                         if (cmDist64[sadIdx0] != INT_MAX) {
@@ -8707,6 +8717,24 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
                         }
                     }
                 }
+
+                // check cmMV for 64x64
+                {
+                    H265MV mv64;
+                    mv64.mvx = cmMv.x;
+                    mv64.mvy = cmMv.y;
+                    ClipMV(mv64);
+                    Ipp32s dist64 = MatchingMetricPu(src, meInfo, &mv64, m_currFrame->m_refPicList[list].m_refFrames[refIdx]->m_recon, 0);
+                    Ipp32s mvCost64 = MvCost1RefLog(mv64, m_amvpCand[curPUidx] + 2 * refIdx + list);
+                    dist64 += mvCost64;
+                    if (costBest > dist64) {
+                        costBest = dist64;
+                        mvBest = mv64;
+                        mvCostBest = mvCost64;
+                    }
+                }
+
+
             } else if (meInfo->width > 16 || meInfo->height > 16) {
                 cmDist += 16 * x;
                 for (Ipp16s sadIdx = 0, dy = -1; dy <= 1; dy++) {
