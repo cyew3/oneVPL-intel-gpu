@@ -315,6 +315,7 @@ void QueryCaps(mfxCameraCaps &caps)
     caps.bHotPixel     = 1;
     caps.bBayerDenoise = 1;
     caps.bLensCorrection = 1;
+    caps.b3DLUT          = 1;
 
     caps.InputMemoryOperationMode = MEM_GPUSHARED; //MEM_GPU;
     caps.OutputMemoryOperationMode = MEM_GPUSHARED; //MEM_GPU;
@@ -334,7 +335,8 @@ const mfxU32 g_TABLE_CAMERA_EXTBUFS [] =
     MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3,
     MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION,
     MFX_EXTBUF_CAM_PADDING,
-    MFX_EXTBUF_CAM_PIPECONTROL
+    MFX_EXTBUF_CAM_PIPECONTROL,
+    MFX_EXTBUF_CAM_3DLUT
 };
 
 bool IsCameraFilterFound(const mfxU32* pList, mfxU32 len, mfxU32 filterName)
@@ -456,6 +458,10 @@ void ConvertCaps2ListDoUse(mfxCameraCaps& caps, std::vector<mfxU32>& list)
     if(caps.bNoPadding)
     {
         list.push_back(MFX_EXTBUF_CAM_PADDING);
+    }
+    if(caps.b3DLUT)
+    {
+        list.push_back(MFX_EXTBUF_CAM_3DLUT);
     }
 }
 
@@ -634,6 +640,14 @@ mfxStatus QueryExtBuf(mfxExtBuffer *extBuf, mfxU32 bitdepth, mfxU32 action)
             else
             {
                 pipeBuf->RawFormat = (mfxU16)action;
+            }
+        }
+        break;
+     case MFX_EXTBUF_CAM_3DLUT:
+        {
+            mfxExtCam3DLut *pipeBuf = (mfxExtCam3DLut *)extBuf;
+            if (action >= MFX_CAM_QUERY_CHECK_RANGE)
+            {
             }
         }
         break;

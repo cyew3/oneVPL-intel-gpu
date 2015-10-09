@@ -163,6 +163,7 @@ protected:
     CameraPipeForwardGammaParams       m_GammaParams;
     CameraPipeVignetteParams           m_VignetteParams;
     CameraPipePaddingParams            m_PaddingParams;
+    CameraPipe3DLUTParams              m_3DLUTParams;
     CameraPipeBlackLevelParams         m_BlackLevelParams;
     CameraPipe3x3ColorConversionParams m_CCMParams;
     CameraPipeLensCorrectionParams     m_LensParams;

@@ -202,7 +202,8 @@ typedef struct _mfxCameraCaps
             mfxU32    bOutToARGB16                      : 1;
             mfxU32    bNoPadding                        : 1; // must be ON now, zero meaning that padding needs to be done
             mfxU32    bLensCorrection                   : 1;
-            mfxU32    Reserved                          : 20;
+            mfxU32    b3DLUT                            : 1;
+            mfxU32    Reserved                          : 19;
         };
         mfxU32      ModuleConfiguration;
     };
@@ -392,6 +393,11 @@ typedef struct
     mfxU16 right;
 } CameraPipePaddingParams;
 
+typedef struct
+{
+    mfxU32 size;
+    mfxCam3DLutEntry *lut;
+} CameraPipe3DLUTParams;
 struct AsyncParams
 {
     mfxFrameSurface1 *surf_in;
@@ -411,6 +417,7 @@ struct AsyncParams
     CameraPipeBlackLevelParams         BlackLevelParams;
     CameraPipe3x3ColorConversionParams CCMParams;
     CameraPipeLensCorrectionParams     LensParams;
+    CameraPipe3DLUTParams              LUTParams;
     CameraParams                       FrameSizeExtra;
     mfxCameraCaps                      Caps;
     mfxU32                             InputBitDepth;

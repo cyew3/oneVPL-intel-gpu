@@ -152,6 +152,13 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
         m_executeParams[surfInIndex].CameraHotPixel.uPixelThresholdDifference = pParam->HPParams.PixelThresholdDifference;
     }
 
+    if ( pParam->Caps.b3DLUT)
+    {
+        m_executeParams[surfInIndex].bCamera3DLUT = true;
+        m_executeParams[surfInIndex].Camera3DLUT.LUTSize = pParam->LUTParams.size;
+        m_executeParams[surfInIndex].Camera3DLUT.lut     = (LUT_ENTRY *)pParam->LUTParams.lut;
+    }
+
     if ( pParam->Caps.bColorConversionMatrix )
     {
         m_executeParams[surfInIndex].bCCM = true;
@@ -368,7 +375,7 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
         appInputSurface.Data.Y += shift;
     }
 
-    appInputSurface.Data.Y += appInputSurface.Data.Pitch*appInputSurface.Info.CropY + appInputSurface.Info.CropX<<1;
+    appInputSurface.Data.Y += appInputSurface.Data.Pitch*appInputSurface.Info.CropY + (appInputSurface.Info.CropX<<1);
 
     // [1] Copy from system mem to the internal video frame
     sts = m_core->DoFastCopyWrapper(&InSurf,

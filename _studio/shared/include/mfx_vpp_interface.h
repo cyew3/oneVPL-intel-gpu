@@ -130,6 +130,7 @@ namespace MfxHwVideoProcessing
         mfxU32 uColorCorrectionMatrix;
         mfxU32 uGammaCorrection;
         mfxU32 uVignetteCorrection;
+        mfxU32 u3DLUT;
     } CameraCaps;
 
     typedef struct _CameraBlackLevelParams
@@ -179,6 +180,31 @@ namespace MfxHwVideoProcessing
     {
         CameraForwardGammaCorrectionSeg Segment[64];
     } CameraForwardGammaCorrectionParams;
+
+    typedef struct _LUT_ENTRY
+    {
+        USHORT R;
+        USHORT G;
+        USHORT B;
+        USHORT Reserved;
+    } LUT_ENTRY;
+
+    const int LUT17_SEG = 17;
+    const int LUT17_MUL = 32;
+    const int LUT33_SEG = 33;
+    const int LUT33_MUL = 64;
+    const int LUT65_SEG = 65;
+    const int LUT65_MUL = 128;
+    typedef LUT_ENTRY LUT17[LUT17_SEG][LUT17_SEG][LUT17_MUL];
+    typedef LUT_ENTRY LUT33[LUT33_SEG][LUT33_SEG][LUT33_MUL];
+    typedef LUT_ENTRY LUT65[LUT65_SEG][LUT65_SEG][LUT65_MUL];
+
+    typedef struct _Camera3DLUTParams
+    {
+        UINT  bActive;
+        UINT  LUTSize;
+        LUT_ENTRY *lut;
+    } Camera3DLUTParams;
 
     typedef struct _CameraVignette_unsigned_8_8
     {
@@ -354,6 +380,8 @@ namespace MfxHwVideoProcessing
         bool                     bCameraLensCorrection;
         CameraLensCorrectionParams         CameraLensCorrection;
 
+        bool                     bCamera3DLUT;
+        Camera3DLUTParams        Camera3DLUT;
         int         rotation;
 
         mfxU16      scalingMode;

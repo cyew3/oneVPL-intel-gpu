@@ -235,6 +235,8 @@ enum
     VPE_FN_IE_TOTAL_COLOR_CONTROL            = 0x10B,
     VPE_FN_YUV_TO_RGB_CSC                    = 0x10C,
     VPE_FN_LENS_GEOMETRY_DISTORTION_CORRECTION = 0x10D,
+    VPE_FN_CP_3DLUT                          = 0x010E,
+    VPE_FN_CP_PIPE_ORDER                     = 0x010F,
 
     VPE_FN_IE_SKIN_TONE_ENHANCEMENT_PARAM = 0x150,
     VPE_FN_IE_CONTRAST_ENHANCEMENT_PARAM  = 0x151,
@@ -470,7 +472,9 @@ typedef struct _VPE_CP_CAPS
     UINT    bVignetteCorrection               : 1;
     UINT    bRgbToYuvCSC                      : 1;
     UINT    bYuvToRgbCSC                      : 1;
-    UINT    Reserved                          : 21;
+    UINT    b3DLUT                            : 1; // GEN10
+    UINT    bPipeOrder                        : 1; // GEN10
+    UINT    Reserved                          : 19;
     UINT    SegEntryForwardGamma              : 16;
     UINT    Reserved2;
 } VPE_CP_CAPS;
@@ -612,6 +616,17 @@ typedef struct _CP_LENS_GEOMETRY_DISTORTION_CORRECTION
 } VPE_CP_LENS_GEOMENTRY_DISTORTION_CORRECTION;
 
 
+typedef struct _CP_LUT_PARAMS
+{
+    UINT  bActive;
+    UINT  LUTSize;
+    union
+    {
+        MfxHwVideoProcessing::LUT17 *p17;
+        MfxHwVideoProcessing::LUT33 *p33;
+        MfxHwVideoProcessing::LUT65 *p65;
+    };
+} VPE_CP_LUT_PARAMS;
 // Main interface Structure
 
 typedef struct _VPE_FUNCTION
@@ -661,6 +676,7 @@ typedef struct _CAMPIPE_MODE
       VPE_IE_TCC_PARAMS                           *pTcc;
       VPE_CSC_PARAMS                              *pYuvToRgbCSC;
       VPE_CP_LENS_GEOMENTRY_DISTORTION_CORRECTION *pLensCorrect;
+      VPE_CP_LUT_PARAMS                           *p3DLUT;
     };
 } CAMPIPE_MODE;
 //---------------------------------------------------------
@@ -718,6 +734,7 @@ namespace MfxHwVideoProcessing
         mfxStatus CameraPipeSetWhitebalanceParams(CameraWhiteBalanceParams *params);
         mfxStatus CameraPipeSetCCMParams(CameraCCMParams *params);
         mfxStatus CameraPipeSetForwardGammaParams(CameraForwardGammaCorrectionParams *params);
+        mfxStatus CameraPipeSet3DLUTParams(Camera3DLUTParams *params);
         mfxStatus CameraPipeSetHotPixelParams(CameraHotPixelRemovalParams *params);
         mfxStatus CameraPipeSetVignetteParams(CameraVignetteCorrectionParams *params);
         mfxStatus CameraPipeSetLensParams(CameraLensCorrectionParams *params);
@@ -804,6 +821,9 @@ namespace MfxHwVideoProcessing
         ID3D11VideoProcessorOutputView*               m_pOutputView;
         // Structure holds Camera Pipe forward gamma correction LUT
         VPE_CP_FORWARD_GAMMA_PARAMS                   m_cameraFGC;
+        LUT17                                        *m_camera3DLUT17;
+        LUT33                                        *m_camera3DLUT33;
+        LUT65                                        *m_camera3DLUT65;
         bool                                          m_bCameraMode;
         HANDLE                                        m_eventHandle;
         bool                                          m_bUseEventHandle;

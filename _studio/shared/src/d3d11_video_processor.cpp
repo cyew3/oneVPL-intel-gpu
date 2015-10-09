@@ -224,6 +224,9 @@ D3D11VideoProcessor::D3D11VideoProcessor(void)
     m_pOutputView = NULL;
 
     m_cameraFGC.pFGSegment = 0;
+    m_camera3DLUT17        = 0;
+    m_camera3DLUT33        = 0;
+    m_camera3DLUT65        = 0;
 
     m_cachedReadyTaskIndex.clear();
 
@@ -633,6 +636,18 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
             //Prepare array for gamma correction
             if ( m_cameraCaps.bForwardGamma && m_cameraCaps.SegEntryForwardGamma > 0 )
                 m_cameraFGC.pFGSegment = new CP_FORWARD_GAMMA_SEG[m_cameraCaps.SegEntryForwardGamma];
+            if ( m_cameraCaps.b3DLUT )
+            {
+                // Allocate memory for 3DLUT tables
+                m_camera3DLUT17 = (LUT17 *)malloc(sizeof(LUT17));
+                memset(m_camera3DLUT17, 0, sizeof(LUT17));
+
+                m_camera3DLUT33 = (LUT33 *)malloc(sizeof(LUT33));
+                memset(m_camera3DLUT33, 0, sizeof(LUT33));
+
+                m_camera3DLUT65 = (LUT65 *)malloc(sizeof(LUT65));
+                memset(m_camera3DLUT65, 0, sizeof(LUT65));
+            }
         }
         else
         {
@@ -702,6 +717,15 @@ mfxStatus D3D11VideoProcessor::Close()
     }
     if (m_cameraFGC.pFGSegment)
         delete [] m_cameraFGC.pFGSegment;
+
+    if (m_camera3DLUT17)
+        free(m_camera3DLUT17);
+
+    if(m_camera3DLUT33)
+        free(m_camera3DLUT33);
+
+    if(m_camera3DLUT65)
+        free(m_camera3DLUT65);
 
     return MFX_ERR_NONE;
 
@@ -1670,6 +1694,89 @@ mfxStatus D3D11VideoProcessor::CameraPipeSetLensParams(CameraLensCorrectionParam
     return MFX_ERR_NONE;
 }
 
+mfxStatus D3D11VideoProcessor::CameraPipeSet3DLUTParams(Camera3DLUTParams * params)
+{
+
+    HRESULT hRes;
+    CAMPIPE_MODE          camMode;
+    VPE_CP_LUT_PARAMS  lutParams;
+    lutParams.bActive = 1;
+
+    switch(params->LUTSize)
+    {
+    case(LUT33_SEG*LUT33_SEG*LUT33_SEG):
+        memset(m_camera3DLUT33, 0, sizeof(m_camera3DLUT33));
+        lutParams.LUTSize = LUT33_SEG;
+        for(int i = 0; i < LUT33_SEG; i++)
+        {
+            for(int j = 0; j < LUT33_SEG; j++)
+            {
+                for(int z = 0; z < LUT33_SEG; z++)
+                {
+                    (*m_camera3DLUT33)[i][j][z].B = params->lut[(LUT33_SEG*LUT33_SEG*i+LUT33_SEG*j+z)].R;
+                    (*m_camera3DLUT33)[i][j][z].G = params->lut[(LUT33_SEG*LUT33_SEG*i+LUT33_SEG*j+z)].G;
+                    (*m_camera3DLUT33)[i][j][z].R = params->lut[(LUT33_SEG*LUT33_SEG*i+LUT33_SEG*j+z)].B;
+                }
+            }
+        }
+        lutParams.p33 = m_camera3DLUT33;
+        break;
+
+    case(LUT65_SEG*LUT65_SEG*LUT65_SEG):
+        memset(m_camera3DLUT65, 0, sizeof(m_camera3DLUT65));
+        lutParams.LUTSize = LUT65_SEG;
+        for(int i = 0; i < LUT65_SEG; i++)
+        {
+            for(int j = 0; j < LUT65_SEG; j++)
+            {
+                for(int z = 0; z < LUT65_SEG; z++)
+                {
+                    (*m_camera3DLUT65)[i][j][z].B = params->lut[(LUT65_SEG*LUT65_SEG*i+LUT65_SEG*j+z)].R;
+                    (*m_camera3DLUT65)[i][j][z].G = params->lut[(LUT65_SEG*LUT65_SEG*i+LUT65_SEG*j+z)].G;
+                    (*m_camera3DLUT65)[i][j][z].R = params->lut[(LUT65_SEG*LUT65_SEG*i+LUT65_SEG*j+z)].B;
+                }
+            }
+        }
+        lutParams.p65 = m_camera3DLUT65;
+        break;
+
+    case(LUT17_SEG*LUT17_SEG*LUT17_SEG):
+    default:
+
+        memset(m_camera3DLUT17, 0, sizeof(m_camera3DLUT17));
+        lutParams.LUTSize = LUT17_SEG;
+        for(int i = 0; i < LUT17_SEG; i++)
+        {
+            for(int j = 0; j < LUT17_SEG; j++)
+            {
+                for(int z = 0; z < LUT17_SEG; z++)
+                {
+                    (*m_camera3DLUT17)[i][j][z].B = params->lut[(LUT17_SEG*LUT17_SEG*i+LUT17_SEG*j+z)].R;
+                    (*m_camera3DLUT17)[i][j][z].G = params->lut[(LUT17_SEG*LUT17_SEG*i+LUT17_SEG*j+z)].G;
+                    (*m_camera3DLUT17)[i][j][z].R = params->lut[(LUT17_SEG*LUT17_SEG*i+LUT17_SEG*j+z)].B;
+                }
+            }
+        }
+        lutParams.p17 = m_camera3DLUT17;
+    break;
+    }
+
+    memset((PVOID) &camMode, 0, sizeof(camMode));
+    camMode.Function   = VPE_FN_CP_3DLUT;
+    camMode.p3DLUT     = &lutParams;
+
+    hRes =  SetOutputExtension(
+                    &(m_iface.guid),
+                    sizeof(camMode),
+                    &camMode);
+
+    if ( FAILED(hRes))
+    {
+        return MFX_ERR_DEVICE_FAILED;
+    }
+
+    return MFX_ERR_NONE;
+}
 mfxStatus D3D11VideoProcessor::CameraPipeSetCCMParams(CameraCCMParams *params)
 {
     HRESULT hRes;
@@ -1845,6 +1952,11 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
         sts = CameraPipeActivate();
         MFX_CHECK_STS(sts);
 
+        if ( pParams->bCamera3DLUT )
+        {
+            sts = CameraPipeSet3DLUTParams(&pParams->Camera3DLUT);
+            MFX_CHECK_STS(sts);
+        }
         if ( pParams->bCameraBlackLevelCorrection )
         {
             sts = CameraPipeSetBlacklevelParams(&pParams->CameraBlackLevel);
@@ -2749,7 +2861,7 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
     caps.cameraCaps.uHotPixelCheck         = m_cameraCaps.bHotPixel;
     caps.cameraCaps.uVignetteCorrection    = m_cameraCaps.bVignetteCorrection;
     caps.cameraCaps.uWhiteBalance          = m_cameraCaps.bWhiteBalanceManual;
-
+    caps.cameraCaps.u3DLUT                 = m_cameraCaps.b3DLUT;
     // [FourCC]
     for (mfxU32 indx = 0; indx < sizeof(g_TABLE_SUPPORTED_FOURCC)/sizeof(mfxU32); indx++)
     {

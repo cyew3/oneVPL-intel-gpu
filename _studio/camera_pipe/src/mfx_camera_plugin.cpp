@@ -82,6 +82,7 @@ MFXCamera_Plugin::MFXCamera_Plugin(bool CreateByDispatcher)
 
     Zero(m_GammaParams);
     Zero(m_BlackLevelParams);
+    Zero(m_3DLUTParams);
     Zero(m_CCMParams);
     Zero(m_WBparams);
     Zero(m_HPParams);
@@ -723,6 +724,7 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
     bool hotpixelset     = false;
     bool denoiseset      = false;
     bool lensset         = false;
+    bool threeDlutset    = false;
 
     for (i = 0; i < par->NumExtParam; i++)
     {
@@ -924,6 +926,17 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                 mfxExtCamPipeControl* pipeExtBufParams = (mfxExtCamPipeControl*)par->ExtParam[i];
                 m_Caps.BayerPatternType = BayerPattern_API2CM(pipeExtBufParams->RawFormat);
             }
+            else if (MFX_EXTBUF_CAM_3DLUT == par->ExtParam[i]->BufferId)
+            {
+                mfxExtCam3DLut* pipeExtBufParams = (mfxExtCam3DLut*)par->ExtParam[i];
+                m_Caps.b3DLUT = 1;
+                if ( pipeExtBufParams && pipeExtBufParams->Table )
+                {
+                    threeDlutset = true;
+                    m_3DLUTParams.size = pipeExtBufParams->Size;
+                    m_3DLUTParams.lut  = pipeExtBufParams->Table;
+                }
+           }
         }
     }
 
@@ -962,6 +975,11 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
     if (m_Caps.bLensCorrection)
         if (!lensset)
             sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    if (m_Caps.b3DLUT)
+        if (!threeDlutset)
+            sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+
     return sts;
 }
 
@@ -1423,6 +1441,7 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
     pParams->VignetteParams   = m_VignetteParams;
     pParams->WBparams         = m_WBparams;
     pParams->LensParams       = m_LensParams;
+    pParams->LUTParams        = m_3DLUTParams;
 
     *mfxthreadtask = (mfxThreadTask*) pParams;
 #ifdef CAMP_PIPE_ITT
