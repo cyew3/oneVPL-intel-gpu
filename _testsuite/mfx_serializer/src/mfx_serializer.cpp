@@ -57,10 +57,10 @@ File Name: mfx_serializer.cpp
     InitializePointer(m_pStruct->fieldname, num);\
     DeSerializeArrayOfStructs(values_map, #fieldname, m_pStruct->fieldname, num)
 
-#define SERIALIZE_UNION(fieldname)\
+#define SERIALIZE_UNI(fieldname)\
     m_values_map[#fieldname] = GetMFX##fieldname##String(m_pStruct->fieldname);
 
-#define DESERIALIZE_UNION(fieldname)\
+#define DESERIALIZE_UNI(fieldname)\
     m_pStruct->fieldname = GetMFX##fieldname##Code(values_map[#fieldname]);
 
 #define SERIALIZE_TIMESTAMP(fieldname)\
@@ -192,7 +192,7 @@ void MFXStructureRef <mfxVideoParam>::ConstructValues() const
         SERIALIZE_STRUCT(mfx);
     }
     SERIALIZE_INT(Protected);
-    SERIALIZE_INT(IOPattern);
+    SERIALIZE_UNI(IOPattern);
 
     SERIALIZE_INT(NumExtParam);
 
@@ -274,7 +274,7 @@ bool MFXStructureRef <mfxVideoParam>::DeSerialize(hash_array<std::string, std::s
         DESERIALIZE_STRUCT(mfx);
     }
     DESERIALIZE_INT(Protected);
-    DESERIALIZE_INT(IOPattern);
+    DESERIALIZE_UNI(IOPattern);
 
     DESERIALIZE_INT(NumExtParam);
 
@@ -581,7 +581,7 @@ void MFXStructureRef <mfxFrameInfo>::ConstructValues() const
         SERIALIZE_INT(FrameId.QualityId);
     }
 
-    SERIALIZE_UNION(FourCC);
+    SERIALIZE_UNI(FourCC);
     SERIALIZE_INT(Width);
     SERIALIZE_INT(Height);
     SERIALIZE_INT(CropX);
@@ -593,9 +593,10 @@ void MFXStructureRef <mfxFrameInfo>::ConstructValues() const
     SERIALIZE_INT(AspectRatioW);
     SERIALIZE_INT(AspectRatioH);
     SERIALIZE_INT(PicStruct);
+    SERIALIZE_INT(Shift);
     SERIALIZE_INT(BitDepthLuma);
     SERIALIZE_INT(BitDepthChroma);
-    SERIALIZE_UNION(ChromaFormat);
+    SERIALIZE_UNI(ChromaFormat);
 }
 
 bool MFXStructureRef <mfxFrameInfo>::DeSerialize(hash_array<std::string, std::string> values_map)
@@ -611,7 +612,7 @@ bool MFXStructureRef <mfxFrameInfo>::DeSerialize(hash_array<std::string, std::st
         DESERIALIZE_INT(FrameId.QualityId);
     }
 
-    DESERIALIZE_UNION(FourCC);
+    DESERIALIZE_UNI(FourCC);
     DESERIALIZE_INT(Width);
     DESERIALIZE_INT(Height);
     DESERIALIZE_INT(CropX);
@@ -623,9 +624,10 @@ bool MFXStructureRef <mfxFrameInfo>::DeSerialize(hash_array<std::string, std::st
     DESERIALIZE_INT(AspectRatioW);
     DESERIALIZE_INT(AspectRatioH);
     DESERIALIZE_INT(PicStruct);
+    DESERIALIZE_INT(Shift);
     DESERIALIZE_INT(BitDepthLuma);
     DESERIALIZE_INT(BitDepthChroma);
-    DESERIALIZE_UNION(ChromaFormat);
+    DESERIALIZE_UNI(ChromaFormat);
 
     return true;
 }
@@ -637,8 +639,8 @@ void MFXStructureRef <mfxBitstream>::ConstructValues() const
     SERIALIZE_TIMESTAMP(TimeStamp);
 
     m_values_map["Data"] = GetMFXRawDataString(m_pStruct->Data + m_pStruct->DataOffset, m_pStruct->DataLength);
-    SERIALIZE_UNION(PicStruct);
-    SERIALIZE_UNION(FrameType);
+    SERIALIZE_UNI(PicStruct);
+    SERIALIZE_UNI(FrameType);
     SERIALIZE_INT(DataFlag);
 }
 
@@ -650,8 +652,8 @@ bool MFXStructureRef <mfxBitstream>::DeSerialize(hash_array<std::string, std::st
 
     InitializePointer(m_pStruct->Data, m_pStruct->DataLength + 1);
     GetMFXRawDataValues( m_pStruct->Data, values_map["Data"]);
-    DESERIALIZE_UNION(PicStruct);
-    DESERIALIZE_UNION(FrameType);
+    DESERIALIZE_UNI(PicStruct);
+    DESERIALIZE_UNI(FrameType);
     DESERIALIZE_INT(DataFlag);
 
     return true;
@@ -678,7 +680,7 @@ void MFXStructureRef <mfxInfoMFX>::ConstructValues() const
 
     SERIALIZE_STRUCT(FrameInfo);
 
-    SERIALIZE_UNION(CodecId);
+    SERIALIZE_UNI(CodecId);
     SERIALIZE_INT(CodecProfile);
     SERIALIZE_INT(CodecLevel);
     SERIALIZE_INT(NumThread);
@@ -763,7 +765,7 @@ bool MFXStructureRef <mfxInfoMFX>::DeSerialize(hash_array<std::string, std::stri
 
     DESERIALIZE_STRUCT(FrameInfo);
 
-    DESERIALIZE_UNION(CodecId);
+    DESERIALIZE_UNI(CodecId);
 
     DESERIALIZE_INT(CodecProfile);
     DESERIALIZE_INT(CodecLevel);
@@ -1113,12 +1115,12 @@ bool MFXStructureRef <mfxExtVPPComposite>::DeSerialize(hash_array<std::string, s
 
 void MFXStructureRef <mfxExtBuffer>::ConstructValues() const {
     SERIALIZE_INT(BufferSz);
-    SERIALIZE_UNION(BufferId);
+    SERIALIZE_UNI(BufferId);
 }
 
 bool MFXStructureRef <mfxExtBuffer>::DeSerialize(hash_array<std::string, std::string> values_map) {
     DESERIALIZE_INT(BufferSz);
-    DESERIALIZE_UNION(BufferId);
+    DESERIALIZE_UNI(BufferId);
 
     return true;
 }

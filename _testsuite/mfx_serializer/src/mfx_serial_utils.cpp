@@ -193,6 +193,15 @@ static CodeStringTable StringsOfExtendedBuffer[] = {
     DEFINE_CODE(MFX_EXTBUFF_MVC_TARGET_VIEWS         )
 };
 
+static CodeStringTable StringsOfIOPattern[] = {
+    DEFINE_CODE(MFX_IOPATTERN_IN_VIDEO_MEMORY  ),
+    DEFINE_CODE(MFX_IOPATTERN_IN_SYSTEM_MEMORY ),
+    DEFINE_CODE(MFX_IOPATTERN_IN_OPAQUE_MEMORY ),
+    DEFINE_CODE(MFX_IOPATTERN_OUT_VIDEO_MEMORY ),
+    DEFINE_CODE(MFX_IOPATTERN_OUT_SYSTEM_MEMORY),
+    DEFINE_CODE(MFX_IOPATTERN_OUT_OPAQUE_MEMORY),
+};
+
 #define DEFINE_CODE2(code, subcode)\
     code##subcode, #subcode
 
@@ -376,6 +385,16 @@ std::string GetMFXBufferIdString(mfxU32 mfxExtBufId)
 mfxU32 GetMFXBufferIdCode(std::string mfxExtBufId)
 {
     return STRING_TO_MFX_CODE(StringsOfExtendedBuffer, mfxExtBufId);
+}
+
+std::string GetMFXIOPatternString (int IOPattern)
+{
+    return MFX_CODE_TO_STRING_ALL(StringsOfIOPattern, IOPattern);
+}
+
+int GetMFXIOPatternCode(std::string IOPattern)
+{
+    return STRING_ALL_TO_MFX_CODE(StringsOfIOPattern, IOPattern);
 }
 
 #define MAKE_HEX( x ) \

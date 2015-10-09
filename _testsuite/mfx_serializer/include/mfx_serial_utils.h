@@ -81,6 +81,8 @@ std::string GetMFXFrameTypeString(int FrameType);
 int         GetMFXFrameTypeCode(std::string FrameType);
 std::string GetMFXBufferIdString(mfxU32 mfxFourcc);
 mfxU32      GetMFXBufferIdCode(std::string mfxFourcc);
+std::string GetMFXIOPatternString (int IOPattern);
+int         GetMFXIOPatternCode(std::string IOPattern);
 std::string GetMFXRawDataString(mfxU8* pData, mfxU32 nData);
 void        GetMFXRawDataValues(mfxU8* pData, std::string Data);
 std::string GetMFXImplString(mfxIMPL impl);
