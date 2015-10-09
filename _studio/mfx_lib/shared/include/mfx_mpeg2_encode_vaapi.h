@@ -77,6 +77,11 @@ namespace MfxHwMpeg2Encode
         mfxStatus SetFrames (ExecuteBuffers* pExecuteBuffers);
 
     private:
+        struct VAEncQpBufferMPEG2 {
+            mfxU32 qp_y;
+        };
+
+
         VAAPIEncoder(const VAAPIEncoder&); // no implementation
         VAAPIEncoder& operator=(const VAAPIEncoder&); // no implementation
 
@@ -131,7 +136,7 @@ namespace MfxHwMpeg2Encode
         VABufferID                          m_packedUserDataParamsId;
         VABufferID                          m_packedUserDataId;
         VABufferID                          m_mbqpBufferId;
-        std::vector<VAEncQpBufferH264>      m_mbqpDataBuffer;
+        std::vector<VAEncQpBufferMPEG2>     m_mbqpDataBuffer;
 
 
         int                                 m_vbvBufSize;
