@@ -51,12 +51,19 @@ public:
         this->set_buffer(b.Data + b.DataOffset, b.DataLength + 3);
     }
 
+    void SetBuffer0(mfxBitstream b)
+    {
+        TRACE_FUNC2(BS_parser::set_buffer, b.Data + b.DataOffset, b.DataLength);
+        this->set_buffer(b.Data + b.DataOffset, b.DataLength);
+    }
+
 };
 
 typedef tsParser<BS_VP8_parser> tsParserVP8;
 typedef tsParser<BS_MPEG2_parser> tsParserMPEG2;
 typedef tsParser<BS_HEVC_parser> tsParserHEVC;
 typedef tsParser<BS_H264_parser> tsParserH264NALU;
+typedef tsParser<BS_AVC2_parser> tsParserAVC2;
 
 class tsParserH264AU : public BS_H264_parser
 {
