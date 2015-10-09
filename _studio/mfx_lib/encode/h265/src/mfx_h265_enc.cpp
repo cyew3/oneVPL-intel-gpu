@@ -2338,12 +2338,8 @@ void H265FrameEncoder::SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<Threa
             if (ctb_row == regionCtbRowLast && ctb_col == regionCtbColLast) {
                 AddTaskDependency(&m_frame->m_ttEncComplete, m_frame->m_doPostProc ? task_pp : task_enc);
 
-                if (m_videoParam.enableCmPostProc && (frame->m_isRef || frame->m_doPostProc)) {
-                    AddTaskDependency(&m_frame->m_ttSubmitGpuCopyRec, &m_frame->m_ttSubmitGpuPostProc);
-                } else {
-                    if (m_videoParam.enableCmFlag && (frame->m_isRef || frame->m_doPostProc))
-                        AddTaskDependency(&m_frame->m_ttSubmitGpuCopyRec, m_frame->m_doPostProc ? task_pp : task_enc);
-                }
+                if (m_videoParam.enableCmFlag && !m_videoParam.enableCmPostProc && frame->m_isRef)
+                    AddTaskDependency(&m_frame->m_ttSubmitGpuCopyRec, m_frame->m_doPostProc ? task_pp : task_enc);
             }
 
             ctb_addr ++;

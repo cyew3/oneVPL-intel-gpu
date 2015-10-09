@@ -48,7 +48,7 @@
 using namespace H265Enc;
 using namespace H265Enc::MfxEnumShortAliases;
 
-#define TT_TRACE 0
+#define TT_TRACE 1
 
 namespace {
 #if TT_TRACE
@@ -1403,6 +1403,9 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             frame->m_ttWaitGpuPostProc.poc = frame->m_frameOrder;
             AddTaskDependency(&frame->m_ttWaitGpuPostProc, &frame->m_ttSubmitGpuPostProc); // GPU_WAIT_PP <- GPU_SUBMIT_PP
 
+            if (frame->m_isRef || m_videoParam.doDumpRecon)
+                AddTaskDependency(&frame->m_ttSubmitGpuCopyRec, &frame->m_ttSubmitGpuPostProc); // GPU_SUBMIT_COPY_REC <- GPU_SUBMIT_PP
+
             // adjust PP: replace complete postproc by deblock only
             {
                 bool doSao = m_sps.sample_adaptive_offset_enabled_flag;
@@ -1462,13 +1465,13 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             Ipp32s listIdx = frame->m_ttSubmitGpuHmeMe32[i].listIdx;
             Ipp32s refIdx = frame->m_ttSubmitGpuHmeMe32[i].refIdx;
             Frame *ref = frame->m_refPicList[listIdx].m_refFrames[refIdx];
-            if (m_videoParam.enableCmPostProc) {
-                if (!ref->m_ttSubmitGpuPostProc.finished)
-                    AddTaskDependency(&frame->m_ttSubmitGpuHmeMe32[i], &ref->m_ttSubmitGpuPostProc);// GPU_SUBMIT_HME <- GPU_PP
-            } else {
+            //if (m_videoParam.enableCmPostProc) {
+            //    if (!ref->m_ttSubmitGpuPostProc.finished)
+            //        AddTaskDependency(&frame->m_ttSubmitGpuHmeMe32[i], &ref->m_ttSubmitGpuPostProc);// GPU_SUBMIT_HME <- GPU_PP
+            //} else {
                 if (!ref->m_ttSubmitGpuCopyRec.finished)
                     AddTaskDependency(&frame->m_ttSubmitGpuHmeMe32[i], &ref->m_ttSubmitGpuCopyRec); // GPU_SUBMIT_HME <- GPU_COPY_REF
-            }
+            //}
         }
         vm_mutex_unlock(&m_feiCritSect);
     }
@@ -1886,14 +1889,19 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
         } else {
             std::deque<ThreadingTask *>::iterator t = th->m_pendingTasks.begin();
             if (th->m_videoParam.enableCmFlag) {
-                if ((*t)->action == TT_ENCODE_CTU || (*t)->action == TT_POST_PROC_CTU || (*t)->action == TT_POST_PROC_ROW) {
+                if ((*t)->action == TT_ENCODE_CTU || (*t)->action == TT_POST_PROC_CTU || (*t)->action == TT_POST_PROC_ROW || (*t)->action == TT_PAD_RECON) {
                     std::deque<ThreadingTask *>::iterator i = t;
                     for (std::deque<ThreadingTask *>::iterator i = ++th->m_pendingTasks.begin(); i != th->m_pendingTasks.end(); ++i) {
-                        if ((*i)->action == TT_ENCODE_CTU || (*i)->action == TT_POST_PROC_CTU || (*i)->action == TT_POST_PROC_ROW) {
-                            if ((*i)->fenc->m_frame->m_isRef && !(*t)->fenc->m_frame->m_isRef)
+                        if ((*i)->action == TT_ENCODE_CTU || (*i)->action == TT_POST_PROC_CTU || (*i)->action == TT_POST_PROC_ROW || (*i)->action == TT_PAD_RECON) {
+                            Frame *iframe = ((*i)->action == TT_PAD_RECON ? (*i)->frame : (*i)->fenc->m_frame);
+                            Frame *tframe = ((*t)->action == TT_PAD_RECON ? (*t)->frame : (*t)->fenc->m_frame);
+                            if (iframe->m_pyramidLayer  < tframe->m_pyramidLayer ||
+                                iframe->m_pyramidLayer == tframe->m_pyramidLayer && iframe->m_encOrder < tframe->m_encOrder)
                                 t = i;
-                            else if ((*i)->fenc->m_frame->m_isRef == (*t)->fenc->m_frame->m_isRef && (*i)->fenc->m_frame->m_encOrder < (*t)->fenc->m_frame->m_encOrder)
-                                t = i;
+                            //if ((*i)->fenc->m_frame->m_isRef && !(*t)->fenc->m_frame->m_isRef)
+                            //    t = i;
+                            //else if ((*i)->fenc->m_frame->m_isRef == (*t)->fenc->m_frame->m_isRef && (*i)->fenc->m_frame->m_encOrder < (*t)->fenc->m_frame->m_encOrder)
+                            //    t = i;
                         }
                     }
                 }
@@ -2182,8 +2190,11 @@ void H265Encoder::FeiThreadRoutine()
                 std::deque<ThreadingTask *>::iterator e = m_feiSubmitTasks.end();
                 for (; i != e; ++i) {
                     //if ((*t)->frame->m_isRef == (*i)->frame->m_isRef) {
-                        if ((*t)->frame->m_encOrder > (*i)->frame->m_encOrder)
+                        if ((*i)->frame->m_pyramidLayer < (*t)->frame->m_pyramidLayer ||
+                            (*i)->frame->m_pyramidLayer == (*t)->frame->m_pyramidLayer && (*i)->frame->m_encOrder < (*t)->frame->m_encOrder)
                             t = i;
+                        //if ((*t)->frame->m_encOrder > (*i)->frame->m_encOrder)
+                        //    t = i;
                     //} else if ((*t)->frame->m_isRef < (*i)->frame->m_isRef) {
                     //    t = i;
                     //}
@@ -2196,7 +2207,7 @@ void H265Encoder::FeiThreadRoutine()
             vm_mutex_unlock(&m_feiCritSect);
 
             if (task) {
-                while (m_feiWaitTasks.size() > 1)
+                while (m_feiWaitTasks.size() > 0)
                     if (!FeiThreadWait(0))
                         break;
                 FeiThreadSubmit(*task);
