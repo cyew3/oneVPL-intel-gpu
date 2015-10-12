@@ -1045,6 +1045,12 @@ namespace MPEG2EncoderHW
                     extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
                     bWarning = true;
                 }
+                // MPEG2 MBQP currently only supported on Linux
+                if (core->GetVAType() != MFX_HW_VAAPI)
+                {
+                    extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
+                    bWarning = true;
+                }
             }
             if (extOpt3 && extOpt3->EnableMBQP == MFX_CODINGOPTION_UNKNOWN)
             {
