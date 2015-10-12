@@ -173,6 +173,10 @@ void MFXVideoTest::SetUp()
         {
             g_tsOSFamily = MFX_OS_FAMILY_WINDOWS;
         }
+        else if (platform[0] == 'c')
+        {
+            g_tsOSFamily = MFX_OS_FAMILY_LINUX;
+        }
 
         if(platform.find("_sw_") != std::string::npos)
         {
