@@ -998,14 +998,33 @@ namespace MPEG2EncoderHW
             {
                 bWarning = AVBR_via_CBR(out) ? true : bWarning;
             }
+
+
+            if (out->mfx.RateControlMethod != 0 &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_CBR &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_VCM &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_VME  &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_LA &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT &&
+                out->mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD)
+            {
+                out->mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+                bWarning = true;
+            }
             if (out->mfx.RateControlMethod != MFX_RATECONTROL_CBR  &&
                 out->mfx.RateControlMethod != MFX_RATECONTROL_VBR  &&
                 out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
                 out->mfx.RateControlMethod != MFX_RATECONTROL_CQP  &&
                 out->mfx.RateControlMethod != 0)
             {
-                out->mfx.RateControlMethod = MFX_RATECONTROL_VBR;
-                bWarning = true;
+                out->mfx.RateControlMethod = 0;
+                bUnsupported = true;
             }
             mfxExtCodingOption2 * extOpt2 = (mfxExtCodingOption2 *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_CODING_OPTION2);
             if (extOpt2 && extOpt2->SkipFrame)
@@ -1416,13 +1435,31 @@ namespace MPEG2EncoderHW
             bCorrected = AVBR_via_CBR(&m_VideoParamsEx.mfxVideoParams) ? true : bCorrected;
         }
 
-        if (m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod != MFX_RATECONTROL_CBR  &&
-            m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod != MFX_RATECONTROL_VBR  &&
-            m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
-            m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+        mfxU16& RateControl = m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod;
+        if (RateControl != MFX_RATECONTROL_CBR &&
+            RateControl != MFX_RATECONTROL_VBR &&
+            RateControl != MFX_RATECONTROL_CQP &&
+            RateControl != MFX_RATECONTROL_AVBR &&
+            RateControl != MFX_RATECONTROL_VCM &&
+            RateControl != MFX_RATECONTROL_ICQ &&
+            RateControl != MFX_RATECONTROL_VME  &&
+            RateControl != MFX_RATECONTROL_QVBR &&
+            RateControl != MFX_RATECONTROL_LA &&
+            RateControl != MFX_RATECONTROL_LA_ICQ &&
+            RateControl != MFX_RATECONTROL_LA_EXT &&
+            RateControl != MFX_RATECONTROL_LA_HRD)
         {
             /*if RateControlMethod was undefined MSDK have to use default one */
-            m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+            RateControl = MFX_RATECONTROL_VBR;
+            bCorrected = true;
+        }
+
+        if (RateControl != MFX_RATECONTROL_CBR  &&
+            RateControl != MFX_RATECONTROL_VBR  &&
+            RateControl != MFX_RATECONTROL_AVBR &&
+            RateControl != MFX_RATECONTROL_CQP)
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
         mfxExtCodingOption2 * extOpt2 = (mfxExtCodingOption2 *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION2);
