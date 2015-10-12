@@ -83,12 +83,12 @@ CDecodingPipeline::CDecodingPipeline()
 
     m_vLatency.reserve(1000); // reserve some space to reduce dynamic reallocation impact on pipeline execution
 
-    MSDK_ZERO_MEMORY(m_VppExtParams[0]);
-    MSDK_ZERO_MEMORY(m_VppExtParams[1]);
-
     MSDK_ZERO_MEMORY(m_VppDoNotUse);
     m_VppDoNotUse.Header.BufferId = MFX_EXTBUFF_VPP_DONOTUSE;
     m_VppDoNotUse.Header.BufferSz = sizeof(m_VppDoNotUse);
+
+    m_VppDeinterlacing.Header.BufferId = MFX_EXTBUFF_VPP_DEINTERLACING;
+    m_VppDeinterlacing.Header.BufferSz = sizeof(m_VppDeinterlacing);
 
     m_hwdev = NULL;
 
@@ -166,6 +166,11 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         m_bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12);
     }
 
+    if (pParams->eDeinterlace)
+    {
+        m_bVppIsUsed = true;
+    }
+
     m_memType = pParams->memType;
     if (m_bVppIsUsed)
         m_bDecOutSysmem = pParams->bUseHWLib ? false : true;
@@ -198,6 +203,11 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     init_ext_buffer(threadsPar);
 
     bool needInitExtPar = false;
+
+    if (pParams->eDeinterlace)
+    {
+        m_diMode = pParams->eDeinterlace;
+    }
 
     if (pParams->nThreadsNum) {
         threadsPar.NumThread = pParams->nThreadsNum;
@@ -258,6 +268,14 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     if (pParams->bLowLat && !CheckVersion(&version, MSDK_FEATURE_LOW_LATENCY)) {
         msdk_printf(MSDK_STRING("error: Low Latency mode is not supported in the %d.%d API version\n"),
             version.Major, version.Minor);
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->eDeinterlace &&
+        (pParams->eDeinterlace != MFX_DEINTERLACING_ADVANCED) &&
+        (pParams->eDeinterlace != MFX_DEINTERLACING_BOB) )
+    {
+        msdk_printf(MSDK_STRING("error: Unsupported deinterlace value: %d\n"), pParams->eDeinterlace);
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -664,7 +682,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     return MFX_ERR_NONE;
 }
 
-mfxStatus CDecodingPipeline::AllocAndInitVppDoNotUse()
+mfxStatus CDecodingPipeline::AllocAndInitVppFilters()
 {
     m_VppDoNotUse.NumAlg = 4;
 
@@ -675,6 +693,11 @@ mfxStatus CDecodingPipeline::AllocAndInitVppDoNotUse()
     m_VppDoNotUse.AlgList[1] = MFX_EXTBUFF_VPP_SCENE_ANALYSIS; // turn off scene analysis (on by default)
     m_VppDoNotUse.AlgList[2] = MFX_EXTBUFF_VPP_DETAIL; // turn off detail enhancement (on by default)
     m_VppDoNotUse.AlgList[3] = MFX_EXTBUFF_VPP_PROCAMP; // turn off processing amplified (on by default)
+
+    if (m_diMode)
+    {
+        m_VppDeinterlacing.Mode = m_diMode;
+    }
 
     return MFX_ERR_NONE;
 }
@@ -696,11 +719,15 @@ mfxStatus CDecodingPipeline::InitVppParams()
 
     m_mfxVppVideoParams.AsyncDepth = m_mfxVideoParams.AsyncDepth;
 
-    AllocAndInitVppDoNotUse();
-    m_VppExtParams[0] = (mfxExtBuffer*)&m_VppDoNotUse;
+    AllocAndInitVppFilters();
+    m_VppExtParams.push_back((mfxExtBuffer*)&m_VppDoNotUse);
+    if (m_diMode)
+    {
+        m_VppExtParams.push_back((mfxExtBuffer*)&m_VppDeinterlacing);
+    }
 
     m_mfxVppVideoParams.ExtParam = &m_VppExtParams[0];
-    m_mfxVppVideoParams.NumExtParam = 1;
+    m_mfxVppVideoParams.NumExtParam = (mfxU16)m_VppExtParams.size();
     return MFX_ERR_NONE;
 }
 

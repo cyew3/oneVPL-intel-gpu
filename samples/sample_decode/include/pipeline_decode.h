@@ -82,6 +82,7 @@ struct sInputParams
     mfxU16  height;
     mfxU32  fourcc;
     mfxU32  nFrames;
+    mfxU16  eDeinterlace;
 
     mfxI32  monitorType;
 #if defined(LIBVA_SUPPORT)
@@ -164,7 +165,7 @@ protected: // functions
     virtual void AttachExtParam();
 
     virtual mfxStatus InitVppParams();
-    virtual mfxStatus AllocAndInitVppDoNotUse();
+    virtual mfxStatus AllocAndInitVppFilters();
 
     virtual mfxStatus CreateAllocator();
     virtual mfxStatus CreateHWDevice();
@@ -231,11 +232,13 @@ protected: // variables
     mfxU32                  m_nMaxFps; // limit of fps, if isn't specified equal 0.
     mfxU32                  m_nFrames; //limit number of output frames
 
+    mfxU16                  m_diMode;
     bool                    m_bVppIsUsed;
     std::vector<msdk_tick>  m_vLatency;
 
     mfxExtVPPDoNotUse       m_VppDoNotUse;      // for disabling VPP algorithms
-    mfxExtBuffer*           m_VppExtParams[2];
+    mfxExtVPPDeinterlacing  m_VppDeinterlacing;
+    std::vector<mfxExtBuffer*> m_VppExtParams;
 
     CHWDevice               *m_hwdev;
 #if D3D_SURFACES_SUPPORT

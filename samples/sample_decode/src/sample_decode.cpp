@@ -65,6 +65,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-rgb4]\n"));
     msdk_printf(MSDK_STRING("   [-p010]\n"));
     msdk_printf(MSDK_STRING("   [-a2rgb10]\n"));
+    msdk_printf(MSDK_STRING("   [-di 1/2]                 - enable deinterlacing BOB/ADI\n"));
     msdk_printf(MSDK_STRING("\n"));
 
 #endif
@@ -295,6 +296,19 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nAsyncDepth))
             {
                 PrintHelp(strInput[0], MSDK_STRING("async is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-di")))
+        {
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -di key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->eDeinterlace))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("deinterlace value is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }
