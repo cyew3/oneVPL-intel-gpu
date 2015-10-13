@@ -2600,15 +2600,20 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
         return MFX_WRN_DEVICE_BUSY;
     }
 
-    if (false == SetCurr_m_frame() && NULL != bs)
-    {
-        return MFX_WRN_DEVICE_BUSY;
-    }
-
     if (last_frame_count > 0)
     {
         if(m_implUmc.GetRetBufferLen() <= 0)
             return MFX_ERR_MORE_DATA;
+    }
+
+    sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, m_isOpaqueMemory);
+    MFX_CHECK_STS(sts);
+    if (m_FrameAllocator->FindFreeSurface() == -1)
+        return MFX_WRN_DEVICE_BUSY;
+
+    if (false == SetCurr_m_frame() && NULL != bs)
+    {
+        return MFX_WRN_DEVICE_BUSY;
     }
 
     m_isShDecoded = false;
@@ -2616,9 +2621,6 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
     if (MFX_PLATFORM_HARDWARE == m_pCore->GetPlatformType() && !m_isSWImpl)
     {
         int display_index = -1;
-
-        sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, m_isOpaqueMemory);
-        MFX_CHECK_STS(sts);
 
         m_in[m_task_num].SetBufferPointer(m_frame[m_frame_curr].Data + m_frame[m_frame_curr].DataOffset,
                                           m_frame[m_frame_curr].DataLength);
@@ -3123,9 +3125,6 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
     else // software implementation
     {
         int display_index = -1;
-        
-        sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, m_isOpaqueMemory);
-        MFX_CHECK_STS(sts);
 
         m_in[m_task_num].SetBufferPointer(m_frame[m_frame_curr].Data + m_frame[m_frame_curr].DataOffset, m_frame[m_frame_curr].DataLength);
         m_in[m_task_num].SetDataSize(m_frame[m_frame_curr].DataLength);
