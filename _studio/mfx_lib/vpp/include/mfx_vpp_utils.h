@@ -182,7 +182,7 @@ mfxStatus CheckLimitationsSW(
 mfxStatus CheckLimitationsHW(
     const mfxVideoParam & param, 
     const std::vector<mfxU32> & supportedDoUseList,
-    const MfxHwVideoProcessing::mfxVppCaps & caps,
+//    const MfxHwVideoProcessing::mfxVppCaps & caps,
     bool bCorrectionEnable);
 
 bool IsFrcInterpolationEnable(

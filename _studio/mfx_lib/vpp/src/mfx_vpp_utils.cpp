@@ -2567,7 +2567,7 @@ mfxStatus CheckLimitationsSW(
 mfxStatus CheckLimitationsHW(
     const mfxVideoParam & param,
     const std::vector<mfxU32> & supportedDoUseList,
-    const MfxHwVideoProcessing::mfxVppCaps & caps,
+//    const MfxHwVideoProcessing::mfxVppCaps & caps,
     bool bCorrectionEnable)
 {
     mfxU32  len   = (mfxU32)supportedDoUseList.size();
@@ -2580,59 +2580,56 @@ mfxStatus CheckLimitationsHW(
     // [1] in case of input RGB4,  only resize/FRC/rotation is supported
     if( param.vpp.In.FourCC == MFX_FOURCC_RGB4)
     {
-        if(len > 0)
+        if(len > (mfxU32)(IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) + IsFilterFound(pList, len, MFX_EXTBUFF_VPP_ROTATION)))
         {
-            if( !IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) && !IsFilterFound(pList, len, MFX_EXTBUFF_VPP_ROTATION) )
+            sts = MFX_WRN_FILTER_SKIPPED; // some unsupported filters were found
+            if(bCorrectionEnable)
             {
-                sts = MFX_WRN_FILTER_SKIPPED;
-                if(bCorrectionEnable)
-                {
-                    std::vector <mfxU32> tmpZeroDoUseList; //zero
-                    SignalPlatformCapabilities(param, tmpZeroDoUseList);
-                }
+                std::vector <mfxU32> tmpZeroDoUseList; //zero
+                SignalPlatformCapabilities(param, tmpZeroDoUseList);
             }
-            else
-            {
-                if( MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(param) )
-                {
-                    sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-                    if(bCorrectionEnable)
-                    {
-                        SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
-                    }
-                }
+        }
+        //else
+        //{
+        //    if( MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(param) )
+        //    {
+        //        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        //        if(bCorrectionEnable)
+        //        {
+        //            SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
+        //        }
+        //    }
 
-                if(bCorrectionEnable)
-                {
-                    std::vector <mfxU32> tmpDoUseList1(1);
-                    tmpDoUseList1[0] = MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION;
-                    SignalPlatformCapabilities(param, tmpDoUseList1);
-                }
-            }
-        }
+        //    if(bCorrectionEnable)
+        //    {
+        //        std::vector <mfxU32> tmpDoUseList1(1);
+        //        tmpDoUseList1[0] = MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION;
+        //        SignalPlatformCapabilities(param, tmpDoUseList1);
+        //    }
+        //}
     }
-    // [2] FRC Interpolation limitations
-    else if( IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) && (MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(param)) )
-    {
-        if(param.vpp.In.FourCC != MFX_FOURCC_NV12)
-        {
-            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-            if(bCorrectionEnable)
-            {
-                SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
-                SignalPlatformCapabilities(param, supportedDoUseList);
-            }
-        }
-        else if( !IsFrcInterpolationEnable(param, caps) )
-        {
-            sts =  MFX_WRN_FILTER_SKIPPED;
-            if(bCorrectionEnable)
-            {
-                SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
-                SignalPlatformCapabilities(param, supportedDoUseList);
-            }
-        }
-    }
+    //// [2] FRC Interpolation limitations
+    //else if( IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) && (MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(param)) )
+    //{
+    //    if(param.vpp.In.FourCC != MFX_FOURCC_NV12)
+    //    {
+    //        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    //        if(bCorrectionEnable)
+    //        {
+    //            SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
+    //            SignalPlatformCapabilities(param, supportedDoUseList);
+    //        }
+    //    }
+    //    else if( !IsFrcInterpolationEnable(param, caps) )
+    //    {
+    //        sts =  MFX_WRN_FILTER_SKIPPED;
+    //        if(bCorrectionEnable)
+    //        {
+    //            SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
+    //            SignalPlatformCapabilities(param, supportedDoUseList);
+    //        }
+    //    }
+    //}
 
     return sts;
 

@@ -1802,7 +1802,7 @@ mfxStatus VideoVPPSW::CheckPlatformLimitations(
     }
     else
     {
-        sts = CheckLimitationsHW(param, supportedList, caps, bCorrectionEnable);// this function could return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM and WRN_FILTER_SKIPPED
+        sts = CheckLimitationsHW(param, supportedList, bCorrectionEnable);// this function could return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM and WRN_FILTER_SKIPPED
     }
 
     // check unsupported list if we need to reset ext buffer fields
