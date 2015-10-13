@@ -34,7 +34,7 @@ namespace H265Enc {
         ~Lookahead();
 
         Ipp32s GetDelay();
-        mfxStatus PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u ctb_row, Ipp32u ctb_col);
+        mfxStatus PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u region_row, Ipp32u region_col);
         int SetFrame(Frame* in);
         void AverageComplexity(Frame *in);
         void ResetState();
@@ -56,6 +56,11 @@ namespace H265Enc {
             Ipp32s scaleFactor; // analysis will be done on (origW >> scaleFactor, origH >> scaleFactor) resolution
         } m_scdConfig;
 
+        // frame granularity based on regions, where region consist of rows && row consist of blk_8x8 (Luma)
+        Ipp32s m_regionCount;
+        Ipp32s m_lowresRowsInRegion;
+        Ipp32s m_originRowsInRegion;
+
         void AnalyzeSceneCut_AndUpdateState(Frame* in);
         void AnalyzeContent(Frame* in);
         void AnalyzeComplexity(Frame* in);
@@ -71,14 +76,13 @@ namespace H265Enc {
         std::vector<Ipp32s> m_slideWindowPaq; // special win for Paq/Calq simplification. window size = 2*M+1, M = GopRefDist (numB + 1)
         std::vector<Ipp32s> m_slideWindowComplexity; // special win for Paq/Calq simplification. window size = 2*M+1, M = GopRefDist (numB + 1)
 
-        void BuildThreadingTaskModel(Ipp32s poc);
-        Ipp32s GetNumDownStreamDependencies(Ipp32s idx);
+        void Build_ttGraph(Ipp32s poc);
 
     public:
         Frame* m_frame;
         Frame* m_lastAcceptedFrame;
-        std::vector<ThreadingTaskSpecifier> m_spec;
-        std::vector<ThreadingTask> m_threadingTaskStore;
+        std::vector<ThreadingTask> m_threadingTasks;
+        ObjectPool<ThreadingTask> m_ttHubPool;       // storage for threading tasks of type TT_HUB
     };
 
 } // namespace

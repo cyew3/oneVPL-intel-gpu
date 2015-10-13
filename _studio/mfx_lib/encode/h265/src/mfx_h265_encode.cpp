@@ -1798,11 +1798,11 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
         AddTaskDependency(&m_ttComplete, &m_newFrame->m_ttInitNewFrame); // COMPLETE <- INIT_NEW_FRAME
     }
 
-    if (m_laFrame && !m_la->m_threadingTaskStore.back().finished) {
+    if (m_laFrame && !m_la->m_threadingTasks.back().finished) {
         if (m_la->SetFrame(m_laFrame) == 1) {
-            AddTaskDependency(&m_ttComplete, &m_la->m_threadingTaskStore.back()); // COMPLETE <- TT_PREENC_END
+            AddTaskDependency(&m_ttComplete, &m_la->m_threadingTasks.back()); // COMPLETE <- TT_PREENC_END
             if (m_laFrame && !m_laFrame->m_ttInitNewFrame.finished)
-                AddTaskDependency(&m_la->m_threadingTaskStore.front(), &m_la->m_frame->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
+                AddTaskDependency(&m_la->m_threadingTasks.front(), &m_la->m_frame->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
         }
     }
 
@@ -1836,8 +1836,8 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
         if (m_newFrame && !m_newFrame->m_ttInitNewFrame.finished && m_newFrame->m_ttInitNewFrame.numUpstreamDependencies == 0)
             m_pendingTasks.push_back(&m_newFrame->m_ttInitNewFrame); // INIT_NEW_FRAME is independent
 
-        if (m_laFrame && !m_la->m_threadingTaskStore.front().finished && m_la->m_threadingTaskStore.front().numUpstreamDependencies == 0)
-            m_pendingTasks.push_back(&m_la->m_threadingTaskStore.front()); // LA_START is independent
+        if (m_laFrame && !m_la->m_threadingTasks.front().finished && m_la->m_threadingTasks.front().numUpstreamDependencies == 0)
+            m_pendingTasks.push_back(&m_la->m_threadingTasks.front()); // LA_START is independent
 
         if (m_ttComplete.numUpstreamDependencies == 0)
             m_pendingTasks.push_front(&m_ttComplete); // COMPLETE's dependencies are already resolved
@@ -1869,7 +1869,7 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
         th->m_newFrame = th->AcceptFrame(inputParam->surface, inputParam->ctrl, inputParam->bs);
         if (th->m_la.get()) {
             th->m_laFrame = FindFrameForLookaheadProcessing(th->m_inputQueue);
-            th->m_la->m_threadingTaskStore.back().finished = 0;
+            th->m_la->m_threadingTasks.back().finished = 0;
         }
 
         th->PrepareToEncode(inputParam);
