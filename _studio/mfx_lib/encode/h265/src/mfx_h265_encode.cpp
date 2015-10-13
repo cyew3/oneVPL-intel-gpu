@@ -357,19 +357,25 @@ namespace {
 
         intParam.numRoi = roi.NumROI;
 
-        if (intParam.chromaFormatIdc != MFX_CHROMAFORMAT_YUV420 
-            || intParam.bitDepthLuma > 8
-            || mfx.RateControlMethod != CQP
-            || (optHevc.EnableCm == ON))
+        if (optHevc.EnableCm == ON)
             intParam.numRoi = 0;
 
         if (intParam.numRoi > 0) {
+            Ipp32s maxAbsDeltaQp = -1;
+            if (mfx.RateControlMethod == CBR)
+                maxAbsDeltaQp = 1;
+            else if (mfx.RateControlMethod == VBR)
+                maxAbsDeltaQp = 2;
+            else if (mfx.RateControlMethod != CQP)
+                maxAbsDeltaQp = 3;
             for (Ipp32s i = 0; i < intParam.numRoi; i++) {
                 intParam.roi[i].left = roi.ROI[i].Left;
                 intParam.roi[i].top = roi.ROI[i].Top;
                 intParam.roi[i].right = roi.ROI[i].Right;
                 intParam.roi[i].bottom = roi.ROI[i].Bottom;
                 intParam.roi[i].priority = roi.ROI[i].Priority;
+                if (maxAbsDeltaQp > 0)
+                    intParam.roi[i].priority = Saturate(-maxAbsDeltaQp, maxAbsDeltaQp, intParam.roi[i].priority);
             }
             intParam.DeltaQpMode = 0;
         }
@@ -1463,7 +1469,7 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
         SetSliceLambda(m_videoParam, currSlices + i, frame->m_sliceQpY, frame, rd_lamba_multiplier, extraMult);
     }
     
-    if (m_videoParam.numRoi && m_videoParam.UseDQP && !m_brc)
+    if (m_videoParam.numRoi && m_videoParam.UseDQP)
         ApplyRoiDeltaQp(frame, m_videoParam);
 
     if (m_videoParam.DeltaQpMode && m_videoParam.UseDQP)
