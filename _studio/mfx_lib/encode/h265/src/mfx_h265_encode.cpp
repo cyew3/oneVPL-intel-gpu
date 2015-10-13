@@ -1491,13 +1491,8 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             Ipp32s listIdx = frame->m_ttSubmitGpuHmeMe32[i].listIdx;
             Ipp32s refIdx = frame->m_ttSubmitGpuHmeMe32[i].refIdx;
             Frame *ref = frame->m_refPicList[listIdx].m_refFrames[refIdx];
-            //if (m_videoParam.enableCmPostProc) {
-            //    if (!ref->m_ttSubmitGpuPostProc.finished)
-            //        AddTaskDependency(&frame->m_ttSubmitGpuHmeMe32[i], &ref->m_ttSubmitGpuPostProc);// GPU_SUBMIT_HME <- GPU_PP
-            //} else {
-                if (!ref->m_ttSubmitGpuCopyRec.finished)
-                    AddTaskDependency(&frame->m_ttSubmitGpuHmeMe32[i], &ref->m_ttSubmitGpuCopyRec); // GPU_SUBMIT_HME <- GPU_COPY_REF
-            //}
+            if (!ref->m_ttSubmitGpuCopyRec.finished)
+                AddTaskDependency(&frame->m_ttSubmitGpuHmeMe32[i], &ref->m_ttSubmitGpuCopyRec); // GPU_SUBMIT_HME <- GPU_COPY_REF
         }
         vm_mutex_unlock(&m_feiCritSect);
     }
@@ -1525,7 +1520,10 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
             buffering += 1;
             if (m_videoParam.SceneCut)     buffering += 10 + 1 + 1;
             if (m_videoParam.AnalyzeCmplx) buffering += m_videoParam.RateControlDepth;
-            if (m_videoParam.DeltaQpMode&(AMT_DQP_PAQ|AMT_DQP_CAL)) buffering += 2 * m_videoParam.GopRefDist + 1;
+            if (m_videoParam.DeltaQpMode) {
+                if      (m_videoParam.DeltaQpMode&(AMT_DQP_PAQ|AMT_DQP_CAL)) buffering += 2 * m_videoParam.GopRefDist + 1;
+                else if (m_videoParam.DeltaQpMode&(AMT_DQP_CAQ))             buffering += 1;
+            }
         }
     }
 
