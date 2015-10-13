@@ -12,11 +12,9 @@ public:
     TestSuite()
         : tsVideoVPP(false)
         , m_sts(MFX_ERR_UNKNOWN)
-        , m_ConfigName("test.yaml")
     {
-        if (!ENV("CONFIG_FILE", "").empty()) m_ConfigName = ENV("CONFIG_FILE", "");
     }
-    ~TestSuite() 
+    ~TestSuite()
     {
         CleanExtParam();
     }
@@ -25,12 +23,12 @@ public:
 
 private:
     mfxStatus   m_sts;
-    std::string m_ConfigName;
 
     void SetParam(std::string function)
     {
-        DeSerializeFromYaml(m_sts, "mfxStatus." + function, m_ConfigName);
-        DeSerializeFromYaml(*m_pPar, "mfxVideoParam." + function, m_ConfigName);
+        CleanExtParam();
+        DeSerializeFromYaml(m_sts, "mfxStatus." + function, g_tsConfig.cfg_filename);
+        DeSerializeFromYaml(*m_pPar, "mfxVideoParam." + function, g_tsConfig.cfg_filename);
     }
 
     void CleanExtParam()
@@ -49,6 +47,8 @@ private:
             delete[] m_par.ExtParam;
             m_par.ExtParam = 0;
         }
+
+        m_par.NumExtParam = 0;
     }
 };
 
@@ -60,16 +60,10 @@ int TestSuite::RunTest(unsigned int id)
 
     MFXInit();
 
-    SetParam("Init");
-
-    g_tsStatus.expect(m_sts);
+    SetParam("Init"); g_tsStatus.expect(m_sts);
     mfxStatus sts = Init(m_session, m_pPar);
 
-    CleanExtParam();
-
-    SetParam("Reset");
-
-    g_tsStatus.expect(m_sts);
+    SetParam("Reset"); g_tsStatus.expect(m_sts);
     sts = Reset(m_session, m_pPar);
 
     TS_END;

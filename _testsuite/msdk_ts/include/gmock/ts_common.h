@@ -14,11 +14,12 @@ typedef enum {
 } tsRes;
 
 typedef struct {
-    mfxU32 lowpower;
+    mfxU32      lowpower;
+    std::string cfg_filename;
 } tsConfig;
 
-class MFXVideoTest : public ::testing::TestWithParam<unsigned int> 
-{ 
+class MFXVideoTest : public ::testing::TestWithParam<unsigned int>
+{
     void SetUp();
     void TearDown();
 };

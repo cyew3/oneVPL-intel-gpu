@@ -164,10 +164,13 @@ void MFXVideoTest::SetUp()
     std::string trace    = ENV("TS_TRACE", "1");
     std::string plugins  = ENV("TS_PLUGINS", "");
     std::string lowpower = ENV("TS_LOWPOWER", "");
+    std::string cfg_file = ENV("TS_CONFIG_FILE", "");
 
     g_tsConfig.lowpower = MFX_CODINGOPTION_UNKNOWN;
     if      (lowpower ==  "ON") { g_tsConfig.lowpower =  MFX_CODINGOPTION_ON; }
     else if (lowpower == "OFF") { g_tsConfig.lowpower = MFX_CODINGOPTION_OFF; }
+
+    g_tsConfig.cfg_filename = cfg_file;
 
     if(platform.size())
     {
