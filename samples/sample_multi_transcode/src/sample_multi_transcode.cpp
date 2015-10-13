@@ -12,7 +12,6 @@ Copyright(c) 2010-2015 Intel Corporation. All Rights Reserved.
 **********************************************************************************/
 
 #include "mfx_samples_config.h"
-
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #endif
@@ -428,7 +427,7 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {
         if (!m_InputParamsArray[i].bUseOpaqueMemory &&
-            (m_InputParamsArray[i].eMode == Source) || (m_InputParamsArray[i].eMode == Sink))
+            ((m_InputParamsArray[i].eMode == Source) || (m_InputParamsArray[i].eMode == Sink)))
         {
             areAllInterSessionsOpaque = false;
         }
