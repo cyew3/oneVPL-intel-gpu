@@ -45,10 +45,11 @@ static const mfxI32 MFX_MPEG2_DECODE_ALIGNMENT = 16;
 
 enum
 {
-    ePIC = 0x00,
-    eSEQ = 0xb3,
-    eEXT = 0xb5,
-    eEND = 0xb7,
+    ePIC   = 0x00,
+    eUSER  = 0xb2,
+    eSEQ   = 0xb3,
+    eEXT   = 0xb5,
+    eEND   = 0xb7,
     eGROUP = 0xb8
 };
 
@@ -3824,6 +3825,32 @@ inline bool IsMpeg2StartCodeEx(const mfxU8* p)
     return p[0] == 0 && p[1] == 0 && p[2] == 1 && (p[3] == ePIC || p[3] == eEXT || p[3] == eSEQ || p[3] == eEND || p[3] == eGROUP);
 }
 
+inline bool IsMpeg2UserDataStartCode(const mfxU8* p)
+{
+    return p[0] == 0 && p[1] == 0 && p[2] == 1 && p[3] == eUSER;
+}
+
+const mfxU8* FindUserDataStartCode(const mfxU8* begin, const mfxU8* end)
+{
+    for (; begin + 3 < end; ++begin)
+        if (IsMpeg2UserDataStartCode(begin))
+            break;
+    return begin;
+}
+
+inline bool IsMpeg2AnyStartCode(const mfxU8* p)
+{
+    return p[0] == 0 && p[1] == 0 && p[2] == 1;
+}
+
+const mfxU8* FindAnyStartCode(const mfxU8* begin, const mfxU8* end)
+{
+    for (; begin + 3 < end; ++begin)
+        if (IsMpeg2AnyStartCode(begin))
+            break;
+    return begin;
+}
+
 const mfxU8* FindStartCode(const mfxU8* begin, const mfxU8* end)
 {
     for (; begin + 3 < end; ++begin)
@@ -3853,6 +3880,26 @@ void MoveBitstreamData(mfxBitstream& bs, mfxU32 offset)
     VM_ASSERT(offset <= bs.DataLength);
     bs.DataOffset += offset;
     bs.DataLength -= offset;
+}
+
+mfxStatus CutUserData(mfxBitstream *in, mfxBitstream *out, const mfxU8 *tail)
+{
+    const mfxU8* head = in->Data + in->DataOffset;
+    const mfxU8* UserDataStart = FindUserDataStartCode(head, tail);
+    while ( UserDataStart + 3 < tail)
+    {
+        mfxStatus sts = AppendBitstream(*out, head, (mfxU32)(UserDataStart - head));
+        MFX_CHECK_STS(sts);
+        MoveBitstreamData(*in, (mfxU32)(UserDataStart - head) + 4);
+
+        head = in->Data + in->DataOffset;
+        const mfxU8* UserDataEnd = FindAnyStartCode(head, tail);
+        MoveBitstreamData(*in, (mfxU32)(UserDataEnd - head));
+
+        head = in->Data + in->DataOffset;
+        UserDataStart = FindUserDataStartCode(head, tail);
+    }
+    return MFX_ERR_NONE;
 }
 
 mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work)
@@ -4073,6 +4120,14 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
         
         if (curr + 3 >= tail)
         {
+            // Not enough buffer, it is possible due to long user data. Try to "cut" it off
+            if (out->DataOffset + out->DataLength + (curr - head) > out->MaxLength)
+            {
+                sts = CutUserData(in, out, curr);
+                MFX_CHECK_STS(sts);
+            }
+
+            head = in->Data + in->DataOffset;
             sts = AppendBitstream(*out, head, (mfxU32)(curr - head));
             MFX_CHECK_STS(sts);
             
@@ -4105,6 +4160,14 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
                 curr += 4;
             }
 
+            // Not enough buffer, it is possible due to long user data. Try to "cut" it off
+            if (out->DataOffset + out->DataLength + (curr - head) > out->MaxLength)
+            {
+                sts = CutUserData(in, out, curr);
+                MFX_CHECK_STS(sts);
+            }
+
+            head = in->Data + in->DataOffset;
             sts = AppendBitstream(*out, head, (mfxU32)(curr - head));
             MFX_CHECK_STS(sts);
 
