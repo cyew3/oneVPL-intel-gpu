@@ -486,14 +486,16 @@ VAAPIVideoCORE::AllocFrames(
                     if (!m_Display)
                         return MFX_ERR_UNSUPPORTED;
 
-                    m_bUseExtAllocForHWFrames = true;
-                    sts = ProcessRenderTargets(request, response, &m_FrameAllocator);
-                    MFX_CHECK_STS(sts);
                     if (response->NumFrameActual < request->NumFrameMin)
                     {
                         (*m_FrameAllocator.frameAllocator.Free)(m_FrameAllocator.frameAllocator.pthis, response);
                         return MFX_ERR_MEMORY_ALLOC;
                     }
+
+                    m_bUseExtAllocForHWFrames = true;
+                    sts = ProcessRenderTargets(request, response, &m_FrameAllocator);
+                    MFX_CHECK_STS(sts);
+
                     return TraceFrames(request, response, sts);
                 }
                 // error situation
