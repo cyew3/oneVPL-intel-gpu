@@ -9,5 +9,5 @@
 
 #ifndef __genx_hevce_sao_bdw__
 #define __genx_hevce_sao_bdw__
-extern const unsigned char genx_hevce_sao_bdw[327923];
+extern const unsigned char genx_hevce_sao_bdw[328511];
 #endif

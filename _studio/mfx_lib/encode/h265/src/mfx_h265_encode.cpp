@@ -2416,6 +2416,8 @@ struct PostProcParam
     Ipp32s SAOChromaFlag;          // +85 DW
     Ipp32s enableBandOffset;       // +86 DW
     Ipp8u reserved[4];             // +87 DW
+    // tile/slice restriction (avail LeftAbove)
+    Ipp8u availLeftAbove[128];     // +88 DW
 };
 
 void SetPostProcParam(PostProcParam & postprocParam, const H265Enc::H265VideoParam & videoParam, const int list0[33], const int list1[33], Ipp32f lambda)
@@ -2465,6 +2467,28 @@ void SetPostProcParam(PostProcParam & postprocParam, const H265Enc::H265VideoPar
 
     postprocParam.m_rdLambda = lambda;
     postprocParam.enableBandOffset = (videoParam.saoOpt == SAO_OPT_ALL_MODES) ? 1 : 0;
+
+    // set slice/tile segmentation to prevent invalid sao merge mode
+    const Ipp32s maxWidth  = 3840;
+    const Ipp32s maxHeight = 2160;
+    const Ipp32s numCtbX   = maxWidth / MAX_CU_SIZE;
+    const Ipp32s numCtbY   = maxHeight / MAX_CU_SIZE;
+
+    memset(postprocParam.availLeftAbove, 1, numCtbX + numCtbY);
+
+    // tile
+    for (Ipp32s i = 0; i < CodecLimits::MAX_NUM_TILE_COLS; i++) {
+        postprocParam.availLeftAbove[ videoParam.tileColStart[i] ] = 0;
+    }
+    for (Ipp32s i = 0; i < CodecLimits::MAX_NUM_TILE_ROWS; i++) {
+        postprocParam.availLeftAbove[ numCtbX + videoParam.tileRowStart[i] ] = 0;
+    }
+
+    // slice
+    for (Ipp32s i = 0; i < videoParam.NumSlices; i++) {
+        Ipp32u ctbY = videoParam.m_slices[i].first_ctb_addr / videoParam.PicWidthInCtbs;
+        postprocParam.availLeftAbove[ numCtbX + ctbY ] = 0;
+    }
 }
 
 void H265Encoder::FeiThreadSubmit(ThreadingTask &task)

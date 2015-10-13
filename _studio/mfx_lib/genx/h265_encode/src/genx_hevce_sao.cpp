@@ -740,7 +740,7 @@ extern "C" _GENX_MAIN_ void SaoStat(SurfaceIndex SRC, SurfaceIndex RECON, Surfac
 extern "C" _GENX_MAIN_ void SaoEstimate(SurfaceIndex PARAM, SurfaceIndex STATS, SurfaceIndex SAO_MODES)
 {
     MiniVideoParam par;
-    ReadParam(PARAM, par);  
+    ReadParam(PARAM, par);
 
     int2 ox = get_thread_origin_x();
     int2 oy = get_thread_origin_y();
@@ -767,14 +767,32 @@ extern "C" _GENX_MAIN_ void SaoEstimate(SurfaceIndex PARAM, SurfaceIndex STATS, 
     }
 
     int4 ctb = oy * par.PicWidthInCtbs + ox;
-
     vector<int1, 16> saoMode;
     matrix<int1,2,16> saoMergeModes;
 
     cm_wait();
     read(SAO_MODES, GENX_MODIFIED, (ctb - 1) * 16, saoMergeModes.row(0));
     read(SAO_MODES, GENX_MODIFIED, (ctb - par.PicWidthInCtbs) * 16, saoMergeModes.row(1));
-    GetBestMode(par.enableBandOffset, par.m_rdLambda, diffEO, countEO, diffBO, countBO, saoMode, saoMergeModes, ox > 0, oy > 0);
+
+    int2 leftAvail;// = ox > 0;
+    int2 aboveAvail;// = oy > 0;
+    if (1)
+    {
+        vector<uint1,64> partX, partY;
+        int2 addr16 = ((88*4 + ox) >> 4) << 4;
+        int2 offset = ox & 15;
+        read(PARAM, addr16, partX);
+        leftAvail = partX[offset];
+        const int2 maxNumCtbX = 3840 / 64;
+        addr16 = ((88*4 + maxNumCtbX + oy) >> 4) << 4;
+        offset = (88*4 + maxNumCtbX + oy) & 15;
+        read(PARAM, addr16, partY);
+        aboveAvail = partY[offset];
+
+        //printf("\n ctb = %i availLeft %i availAbove %i \n", ctb, leftAvail, aboveAvail);
+    }
+
+    GetBestMode(par.enableBandOffset, par.m_rdLambda, diffEO, countEO, diffBO, countBO, saoMode, saoMergeModes, leftAvail, aboveAvail);
     write(SAO_MODES, ctb * 16, saoMode);
     cm_fence();
 }
