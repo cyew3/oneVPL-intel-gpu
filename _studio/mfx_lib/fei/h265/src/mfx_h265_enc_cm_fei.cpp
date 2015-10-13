@@ -484,9 +484,9 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     kernelPrepareSrc.Configure(device, programPrepareSrc, prepareSrcName,
         width16x / 4, height16x, CM_NONE_DEPENDENCY);
 
-    const char *prepareRefName = fourcc == MFX_FOURCC_NV12 ? "PrepareRefNv12" : NULL;
-    kernelPrepareRef.Configure(device, programPrepareSrc, prepareRefName,
-        width16x / 4, height16x, CM_NONE_DEPENDENCY);
+    if (fourcc == MFX_FOURCC_NV12)
+        kernelPrepareRef.Configure(device, programPrepareSrc, "PrepareRefNv12",
+            width16x / 4, height16x, CM_NONE_DEPENDENCY);
 
     kernelDeblock.Configure(device, programDeblock, "Deblock",
         (width + 12 + 15) / 16, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
