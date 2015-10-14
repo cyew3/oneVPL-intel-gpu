@@ -235,6 +235,7 @@
     <ClCompile Include="src\gmock\test_suites\camera_run_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_unsupport.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_close.cpp" />
+    <ClCompile Include="src\gmock\test_suites\fei_encode_advanced_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevc10d_shift.cpp" />
