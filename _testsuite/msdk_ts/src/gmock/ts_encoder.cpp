@@ -289,7 +289,7 @@ mfxStatus tsVideoEncoder::EncodeFrameAsync()
             m_pSurf = m_filler->ProcessSurface(m_pSurf, m_pFrameAllocator);
         }
     }
-    mfxStatus mfxRes = EncodeFrameAsync(m_session, m_pCtrl, m_pSurf, m_pBitstream, m_pSyncPoint);
+    mfxStatus mfxRes = EncodeFrameAsync(m_session, m_pSurf ? m_pCtrl : 0, m_pSurf, m_pBitstream, m_pSyncPoint);
 
     return mfxRes;
 }

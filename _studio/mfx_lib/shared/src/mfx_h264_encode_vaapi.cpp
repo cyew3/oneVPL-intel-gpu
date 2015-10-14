@@ -1330,6 +1330,7 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
 
     m_videoParam = par;
     mfxExtCodingOption2 const *extOpt2 = GetExtBuffer(par);
+    mfxExtCodingOption3 const *extOpt3 = GetExtBuffer(par);
     if( NULL == extOpt2 )
     {
         assert( extOpt2 );
@@ -1352,6 +1353,15 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
 
     if (m_caps.HeaderInsertion == 0)
         m_headerPacker.Init(par, m_caps);
+
+    if (extOpt3)
+    {
+        if (IsOn(extOpt3->EnableMBQP))
+            m_mbqp_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
+
+        if (IsOn(extOpt3->MBDisableSkipMap))
+            m_mb_noskip_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
+    }
 
     return MFX_ERR_NONE;
 
@@ -2181,8 +2191,8 @@ mfxStatus VAAPIEncoder::Execute(
             vaSts = vaCreateBuffer(m_vaDisplay,
                 m_vaContextEncode,
                 (VABufferType)VAEncQpBufferType,
-                sizeof(VAEncQpBufferH264),
-                (bufW * ((m_sps.picture_height_in_mbs + 7) & ~7)),
+                bufW * sizeof(VAEncQpBufferH264),
+                ((m_sps.picture_height_in_mbs + 7) & ~7),
                 &m_mbqp_buffer[0],
                 &m_mbqpBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
