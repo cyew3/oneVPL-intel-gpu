@@ -4091,7 +4091,7 @@ void MfxHwH264Encode::PutSeiMessage(
         OutputBitstream &    bs,
         mfxExtAvcSeiRecPoint const & msg)
 {
-    mfxU32 dataSizeInBits = CeilLog2(msg.recovery_frame_cnt) * 2 + 1; // size of recovery_frame_cnt
+    mfxU32 dataSizeInBits = CeilLog2(msg.recovery_frame_cnt + 1) * 2 - 1; // size of recovery_frame_cnt
     dataSizeInBits += 4; // exact_match_flag + broken_link_flag + changing_slice_group_idc
     mfxU32 dataSizeInBytes = (dataSizeInBits + 7) >> 3;
 
@@ -4633,6 +4633,7 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         //VDEnc can't encode low QPs
         if(ctrl->QP != 0 && ctrl->QP < 10 ){
             ctrl->QP = 10;
+            checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
 
