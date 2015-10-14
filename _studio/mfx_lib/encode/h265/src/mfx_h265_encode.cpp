@@ -1925,7 +1925,8 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
                         if ((*i)->action == TT_ENCODE_CTU || (*i)->action == TT_POST_PROC_CTU || (*i)->action == TT_POST_PROC_ROW || (*i)->action == TT_PAD_RECON) {
                             Frame *iframe = ((*i)->action == TT_PAD_RECON ? (*i)->frame : (*i)->fenc->m_frame);
                             Frame *tframe = ((*t)->action == TT_PAD_RECON ? (*t)->frame : (*t)->fenc->m_frame);
-                            if (iframe->m_pyramidLayer  < tframe->m_pyramidLayer ||
+                            if (tframe != inputParam->m_targetFrame && iframe == inputParam->m_targetFrame ||
+                                iframe->m_pyramidLayer  < tframe->m_pyramidLayer ||
                                 iframe->m_pyramidLayer == tframe->m_pyramidLayer && iframe->m_encOrder < tframe->m_encOrder)
                                 t = i;
                             //if ((*i)->fenc->m_frame->m_isRef && !(*t)->fenc->m_frame->m_isRef)
@@ -2215,12 +2216,14 @@ void H265Encoder::FeiThreadRoutine()
             }
 
             if (!m_feiSubmitTasks.empty()) {
+                Frame *targetFrame = m_outputQueue.front();
                 std::deque<ThreadingTask *>::iterator t = m_feiSubmitTasks.begin();
                 std::deque<ThreadingTask *>::iterator i = ++m_feiSubmitTasks.begin();
                 std::deque<ThreadingTask *>::iterator e = m_feiSubmitTasks.end();
                 for (; i != e; ++i) {
                     //if ((*t)->frame->m_isRef == (*i)->frame->m_isRef) {
-                        if ((*i)->frame->m_pyramidLayer < (*t)->frame->m_pyramidLayer ||
+                        if ((*i)->frame == targetFrame && (*t)->frame != targetFrame ||
+                            (*i)->frame->m_pyramidLayer < (*t)->frame->m_pyramidLayer ||
                             (*i)->frame->m_pyramidLayer == (*t)->frame->m_pyramidLayer && (*i)->frame->m_encOrder < (*t)->frame->m_encOrder)
                             t = i;
                         //if ((*t)->frame->m_encOrder > (*i)->frame->m_encOrder)
