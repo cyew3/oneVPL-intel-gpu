@@ -607,6 +607,7 @@ namespace MfxHwH264Encode
             mfxU32 initialDelayInKB;
             mfxU32 targetKbps;
             mfxU32 maxKbps;
+            mfxU32 WinBRCMaxAvgKbps;
 
             mfxU32 numTemporalLayer;
             mfxU32 tid[8];
