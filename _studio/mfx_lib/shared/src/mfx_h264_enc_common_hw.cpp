@@ -5300,8 +5300,12 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
                 ctrl->NumExtParam - i - 1,
                 ctrl->ExtParam[i]->BufferId) != 0)
             {
-                // buffer attached twice, ignore second one and return warning
-                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                if (!(ctrl->ExtParam[i]->BufferId == MFX_EXTBUFF_AVC_REFLISTS && video.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE))
+                {
+                    // if buffer is attached twice, ignore second one and return warning
+                    // the only exception is MFX_EXTBUFF_AVC_REFLISTS (it can be attached twice for interlace case)
+                    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                }
             }
         }
     }
