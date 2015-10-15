@@ -114,6 +114,7 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("                This setting overrides plugin settings defined by SET clause.\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Pipeline description (encoding options):\n"));
+    MOD_SMT_PRINT_HELP;
     msdk_printf(MSDK_STRING("  -b <Kbits per second>\n"));
     msdk_printf(MSDK_STRING("                Encoded bit rate, valid for H.264, MPEG2 and MVC encoders\n"));
     msdk_printf(MSDK_STRING("  -f <frames per second>\n"));
@@ -1071,6 +1072,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+        MOD_SMT_PARSE_INPUT
         else if((stsExtBuf = CVPPExtBuffersStorage::ParseCmdLine(argv,argc,i,&InputParams,skipped))
             !=MFX_ERR_MORE_DATA)
         {

@@ -32,6 +32,13 @@ Launcher::~Launcher()
     Close();
 } // Launcher::~Launcher()
 
+CTranscodingPipeline* CreatePipeline()
+{
+    MOD_SMT_CREATE_PIPELINE;
+
+    return new CTranscodingPipeline;
+}
+
 mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 {
     mfxStatus sts;
@@ -192,7 +199,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         // extend BS processing init
         m_InputParamsArray[i].nTimeout == 0 ? m_pExtBSProcArray.push_back(new FileBitstreamProcessor) :
                                         m_pExtBSProcArray.push_back(new FileBitstreamProcessor_WithReset);
-        pThreadPipeline->pPipeline.reset(new CTranscodingPipeline);
+        pThreadPipeline->pPipeline.reset(CreatePipeline());
 
         pThreadPipeline->pBSProcessor = m_pExtBSProcArray.back();
         if (Sink == m_InputParamsArray[i].eMode)

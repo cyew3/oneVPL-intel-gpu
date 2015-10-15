@@ -10,22 +10,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 
 **********************************************************************************/
+#include "modified_transcoding_pipeline.h"
+#pragma warning( disable : 4702)
 
-#pragma once
-#include "mfxfei.h"
-#include "pipeline_encode.h"
-class CModifiedEncodingPipeline :
-    public CEncodingPipeline
-{
-public:
-    CModifiedEncodingPipeline(void);
-    ~CModifiedEncodingPipeline(void);
-
-    virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
-
-protected:
-    // for disabling HME
-    mfxExtFeiCodingOption m_ExtFeiCodingOption;
-
-};
+#define MOD_SMT_CREATE_PIPELINE return new CModifiedTranscodingPipeline;
+#define MOD_SMT_PRINT_HELP      msdk_printf(MSDK_STRING("  -noHME        Disable HME (H264 encode only)\n"));
+#define MOD_SMT_PARSE_INPUT     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-noHME"))){InputParams.reserved[0] = 1;}
 

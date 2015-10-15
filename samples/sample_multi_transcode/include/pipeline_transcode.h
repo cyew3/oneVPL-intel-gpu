@@ -166,6 +166,7 @@ namespace TranscodingSample
         mfxU16 nQPB;
 
         bool bOpenCL;
+        mfxU16 reserved[4];
 
         mfxU16 nVppCompDstX;
         mfxU16 nVppCompDstY;

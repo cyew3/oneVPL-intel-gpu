@@ -13,15 +13,18 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 
 #pragma once
 #include "mfxfei.h"
-#include "pipeline_encode.h"
-class CModifiedEncodingPipeline :
-    public CEncodingPipeline
+#include "pipeline_transcode.h"
+
+using namespace TranscodingSample;
+
+class CModifiedTranscodingPipeline :
+    public CTranscodingPipeline
 {
 public:
-    CModifiedEncodingPipeline(void);
-    ~CModifiedEncodingPipeline(void);
+    CModifiedTranscodingPipeline(void);
+    ~CModifiedTranscodingPipeline(void);
 
-    virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
+    virtual mfxStatus InitEncMfxParams(sInputParams *pInParams);
 
 protected:
     // for disabling HME
