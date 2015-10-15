@@ -135,6 +135,7 @@ private:
         NONE     = MFX_ERR_NONE,
         E_UNSPRT = MFX_ERR_UNSUPPORTED,
         E_INVLID = MFX_ERR_INVALID_VIDEO_PARAM,
+        E_INCOMP = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         W_PARACL = MFX_WRN_PARTIAL_ACCELERATION,
         W_INCOMP = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
     } shortSts;
@@ -214,13 +215,16 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*19*/ ENCODE, MFX_CODEC_AVC, NONE, NONE, {{&RateCtrlMthd, MFX_RATECONTROL_LA_HRD},
                                                 {&tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY},
                                                 {&tsStruct::mfxExtCodingOption2.BRefType, MFX_B_REF_OFF} },set_brc_params },
+    //support forced by ashapore
+    {/*20*/ ENCODE, MFX_CODEC_AVC, NONE, NONE, {&RateCtrlMthd, MFX_RATECONTROL_LA_ICQ   }, set_brc_params },
+    {/*21*/ ENCODE, MFX_CODEC_AVC, NONE, NONE, {{&RateCtrlMthd, MFX_RATECONTROL_LA_EXT   },
+                                                {&tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY},
+                                                {&tsStruct::mfxExtCodingOption2.BRefType, MFX_B_REF_OFF} },set_brc_params },
     //Any other is unsupported
-    {/*20*/ ENCODE, MFX_CODEC_AVC, W_INCOMP, W_INCOMP, {&RateCtrlMthd, 0xFFFFFFFF               , true}, },
-    {/*21*/ ENCODE, MFX_CODEC_AVC, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_AVBR     , true}, set_brc_params },
-    {/*22*/ ENCODE, MFX_CODEC_AVC, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_ICQ      , true}, set_brc_params },
-    {/*23*/ ENCODE, MFX_CODEC_AVC, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_VCM      , true}, set_brc_params },
-    {/*24*/ ENCODE, MFX_CODEC_AVC, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_LA_ICQ   , true}, set_brc_params },
-    {/*25*/ ENCODE, MFX_CODEC_AVC, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_LA_EXT   , true}, set_brc_params },
+    {/*22*/ ENCODE, MFX_CODEC_AVC, W_INCOMP, W_INCOMP, {&RateCtrlMthd, 0xFFFFFFFF               , true}, },
+    {/*23*/ ENCODE, MFX_CODEC_AVC, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_AVBR     , true}, set_brc_params },
+    {/*24*/ ENCODE, MFX_CODEC_AVC, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_ICQ      , true}, set_brc_params },
+    {/*25*/ ENCODE, MFX_CODEC_AVC, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_VCM      , true}, set_brc_params },
     {/*26*/ ENCODE, MFX_CODEC_AVC, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_QVBR     , true}, set_brc_params },
     {/*27*/ ENCODE, MFX_CODEC_AVC, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_VME      , true}, set_brc_params },
     //MPEG2
@@ -228,11 +232,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*28*/ ENCODE, MFX_CODEC_MPEG2, NONE, NONE, {&RateCtrlMthd, MFX_RATECONTROL_CBR      }, set_brc_params },
     {/*29*/ ENCODE, MFX_CODEC_MPEG2, NONE, NONE, {&RateCtrlMthd, MFX_RATECONTROL_VBR      }, set_brc_params },
     {/*30*/ ENCODE, MFX_CODEC_MPEG2, NONE, NONE, {&RateCtrlMthd, MFX_RATECONTROL_CQP      }, set_brc_params },
+    //supported (officially not but hard to turn off in component) /*AVBR via CBR*/
+    {/*31*/ ENCODE, MFX_CODEC_MPEG2, NONE, W_INCOMP, {&RateCtrlMthd, MFX_RATECONTROL_AVBR}, set_brc_params },
     //unsupported
-    {/*31*/ ENCODE, MFX_CODEC_MPEG2, W_INCOMP, W_INCOMP, {&RateCtrlMthd, 0xFFFFFFFF               , true}, set_brc_params },
-    {/*32*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_LA       , true}, set_brc_params },
-    {/*33*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_LA_HRD   , true}, set_brc_params },
-    {/*34*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_AVBR     , true}, set_brc_params },
+    {/*32*/ ENCODE, MFX_CODEC_MPEG2, W_INCOMP, E_INCOMP, {&RateCtrlMthd, 0xFFFFFFFF               , true} },
+    {/*33*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_LA       , true}, set_brc_params },
+    {/*34*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_LA_HRD   , true}, set_brc_params },
     {/*35*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_ICQ      , true}, set_brc_params },
     {/*36*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_VCM      , true}, set_brc_params },
     {/*37*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_LA_ICQ   , true}, set_brc_params },
