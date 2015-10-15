@@ -54,6 +54,10 @@ int TestSuite::RunTest(unsigned int id)
         MFXInit();
     }
 
+    bool hw_surf = m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY;
+    if (hw_surf)
+        SetFrameAllocator(m_session, m_pVAHandle);
+
     // set up parameters for case
     for(mfxU32 i = 0; i < n_par; i++)
     {

@@ -11,11 +11,12 @@ tsPreENC::tsPreENC(bool useDefaults)
         mfxExtFeiParam& extbuffer = m_par;
         extbuffer.Func = MFX_FEI_FUNCTION_PREENC;
 
+        m_par.mfx.CodecId = MFX_CODEC_AVC;
         m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 576;
         m_par.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
         m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        m_par.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+        m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
     }
 }
 

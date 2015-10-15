@@ -18,7 +18,7 @@ msdk_ts_BLOCK(t_AllocSurfPool){
 
     TRACE_PAR(request);
 
-    if(    stype == "MemId" 
+    if(    stype == "MemId"
         || (request.Type&(MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))){
         mfxFrameAllocator*& frame_alloc = var_old<mfxFrameAllocator*>("p_frame_allocator");
         mfxFrameAllocResponse response = {0};
@@ -887,10 +887,10 @@ msdk_ts_BLOCK(t_GetAllocatedBuffers){
 #if (defined(LINUX32) || defined(LINUX64))
 #if defined(LIBVA_SUPPORT)
 msdk_ts_BLOCK(t_GetVA){
-	if (!is_defined("va_holder"))
-	{
-		var_new<CLibVA>("va_holder", CreateLibVA());
-	}
+    if (!is_defined("va_holder"))
+    {
+        var_new<CLibVA>("va_holder", CreateLibVA());
+    }
     CLibVA& clib_va = var_old<CLibVA>("va_holder");
 
 

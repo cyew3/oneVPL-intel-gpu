@@ -46,6 +46,9 @@ int TestSuite::RunTest(unsigned int id)
     bool hw_surf = m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
     SetFrameAllocator(m_session, m_pVAHandle);
+    /*!!! FEI work in Sync mode only!
+     * this limitation should be removed from future*/
+    m_par.AsyncDepth = 1;
 
     Init(m_session, m_pPar);
 

@@ -230,7 +230,7 @@ int TestSuite::RunTest(unsigned int id)
         in_efc.MBSizeCtrl = 0;
         in_efc.RefHeight = 40;
         in_efc.RefWidth = 48;
-        in_efc.SearchWindow = 0;
+        in_efc.SearchWindow = 2;
 
         SETPARS(&in_efc, EXT_FRM_CTRL);
         in_buffs.push_back((mfxExtBuffer*)&in_efc);
