@@ -892,18 +892,18 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
         feiOutAllocInfo.feiHdl = m_fei;
         for (Ipp32s blksize = 0; blksize < 4; blksize++) {
             feiOutAllocInfo.allocInfo = feiAlloc.IntraMode[blksize];
-            m_feiAngModesPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel);
+            m_feiAngModesPool[blksize].Init(feiOutAllocInfo, 0);
         }
-        Ipp32s maxNumRefs = MAX(m_videoParam.MaxRefIdxP[0] + m_videoParam.MaxRefIdxP[1], m_videoParam.MaxRefIdxB[0] + m_videoParam.MaxRefIdxB[1]);
+
         for (Ipp32s blksize = 0; blksize < 4; blksize++) {
             Ipp32s feiBlkSizeIdx = blkSizeInternal2Fei[blksize];
 
             feiOutAllocInfo.allocInfo = feiAlloc.InterMV[feiBlkSizeIdx];
-            m_feiInterMvPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel * maxNumRefs);
+            m_feiInterMvPool[blksize].Init(feiOutAllocInfo, 0);
 
             if (blksize < 3) {  // no InterDist for 64x64 now
                 feiOutAllocInfo.allocInfo = feiAlloc.InterDist[feiBlkSizeIdx];
-                m_feiInterDistPool[blksize].Init(feiOutAllocInfo, m_videoParam.m_framesInParallel * maxNumRefs);
+                m_feiInterDistPool[blksize].Init(feiOutAllocInfo, 0);
             }
         }
 
@@ -1504,11 +1504,11 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             if (!ref->m_ttSubmitGpuCopyRec.finished)
                 AddTaskDependency(&frame->m_ttSubmitGpuHmeMe32[i], &ref->m_ttSubmitGpuCopyRec); // GPU_SUBMIT_HME <- GPU_COPY_REF
         }
+        m_outputQueue.splice(m_outputQueue.end(), m_encodeQueue, m_encodeQueue.begin());
         vm_mutex_unlock(&m_feiCritSect);
+    } else {
+        m_outputQueue.splice(m_outputQueue.end(), m_encodeQueue, m_encodeQueue.begin());
     }
-
-
-    m_outputQueue.splice(m_outputQueue.end(), m_encodeQueue, m_encodeQueue.begin());
 }
 
 
@@ -2225,16 +2225,10 @@ void H265Encoder::FeiThreadRoutine()
                 std::deque<ThreadingTask *>::iterator i = ++m_feiSubmitTasks.begin();
                 std::deque<ThreadingTask *>::iterator e = m_feiSubmitTasks.end();
                 for (; i != e; ++i) {
-                    //if ((*t)->frame->m_isRef == (*i)->frame->m_isRef) {
-                        if ((*i)->frame == targetFrame && (*t)->frame != targetFrame ||
-                            (*i)->frame->m_pyramidLayer < (*t)->frame->m_pyramidLayer ||
-                            (*i)->frame->m_pyramidLayer == (*t)->frame->m_pyramidLayer && (*i)->frame->m_encOrder < (*t)->frame->m_encOrder)
-                            t = i;
-                        //if ((*t)->frame->m_encOrder > (*i)->frame->m_encOrder)
-                        //    t = i;
-                    //} else if ((*t)->frame->m_isRef < (*i)->frame->m_isRef) {
-                    //    t = i;
-                    //}
+                    if ((*i)->frame == targetFrame && (*t)->frame != targetFrame ||
+                        (*i)->frame->m_pyramidLayer < (*t)->frame->m_pyramidLayer ||
+                        (*i)->frame->m_pyramidLayer == (*t)->frame->m_pyramidLayer && (*i)->frame->m_encOrder < (*t)->frame->m_encOrder)
+                        t = i;
                 }
                 task = (*t);
                 m_feiSubmitTasks.erase(t);
