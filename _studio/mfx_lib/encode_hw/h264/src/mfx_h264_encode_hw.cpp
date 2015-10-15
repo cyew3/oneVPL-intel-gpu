@@ -370,6 +370,13 @@ mfxStatus ImplementationAvc::Query(
             extRoi->ROI[0].Bottom   = 1;
             extRoi->ROI[0].Priority = 1;
         }
+        if (mfxExtEncoderCapability * extCap = GetExtBuffer(*out))
+        {
+            if(MFX_HW_VAAPI == core->GetVAType())
+            {
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
     }
     else if (queryMode == 2)  // see MSDK spec for details related to Query mode 2
     {
