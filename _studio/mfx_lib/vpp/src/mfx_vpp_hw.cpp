@@ -1656,8 +1656,10 @@ mfxStatus VideoVPPHW::QueryIOSurf(
     if ( !(caps.mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps.mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
         return MFX_WRN_PARTIAL_ACCELERATION;
 
-    mfxExecuteParams executeParams = {0};
-    Config  config = {0};
+    mfxExecuteParams executeParams;
+    MemSetZero4mfxExecuteParams(&executeParams);
+    Config  config = {};
+
     sts = ConfigureExecuteParams(
         *par,
         caps,
