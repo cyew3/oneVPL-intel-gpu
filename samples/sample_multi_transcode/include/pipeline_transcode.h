@@ -160,6 +160,10 @@ namespace TranscodingSample
         mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
         bool bEnableExtLA;
         bool bEnableBPyramid;
+        mfxU16 nRateControlMethod;
+        mfxU16 nQPI;
+        mfxU16 nQPP;
+        mfxU16 nQPB;
 
         bool bOpenCL;
 

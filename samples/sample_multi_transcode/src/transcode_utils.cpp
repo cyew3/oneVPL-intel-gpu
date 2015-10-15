@@ -136,6 +136,11 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("  -gop_size     Size of GOP structure in frames \n"));
     msdk_printf(MSDK_STRING("  -dist         Distance between I- or P- key frames \n"));
     msdk_printf(MSDK_STRING("  -gpucopy::<on,off> Enable or disable GPU copy mode\n"));
+    msdk_printf(MSDK_STRING("  -cqp          Constant quantization parameter (CQP BRC) bitrate control method\n"));
+    msdk_printf(MSDK_STRING("                              (by default constant bitrate control method is used), should be used along with -qpi, -qpp, -qpb.\n"));
+    msdk_printf(MSDK_STRING("  -qpi          Constant quantizer for I frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
+    msdk_printf(MSDK_STRING("  -qpp          Constant quantizer for P frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
+    msdk_printf(MSDK_STRING("  -qpb          Constant quantizer for B frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Pipeline description (vpp options):\n"));
     msdk_printf(MSDK_STRING("  -deinterlace             Forces VPP to deinterlace input stream\n"));
@@ -987,6 +992,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-la")))
         {
             InputParams.bLABRC = true;
+            InputParams.nRateControlMethod = MFX_RATECONTROL_LA;
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-bpyr")))
         {
@@ -996,6 +1002,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-lad")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
+            InputParams.nRateControlMethod = MFX_RATECONTROL_LA;
             i++;
             if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.nLADepth))
             {
@@ -1032,6 +1039,37 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-gpucopy::off")))
         {
             InputParams.nGpuCopyMode = MFX_GPUCOPY_OFF;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-cqp")))
+        {
+            InputParams.nRateControlMethod = MFX_RATECONTROL_CQP;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-qpi")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(argv[++i], InputParams.nQPI))
+            {
+                PrintHelp(NULL, MSDK_STRING("Quantizer for I frames is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-qpp")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(argv[++i], InputParams.nQPP))
+            {
+                PrintHelp(NULL, MSDK_STRING("Quantizer for P frames is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-qpb")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(argv[++i], InputParams.nQPB))
+            {
+                PrintHelp(NULL, MSDK_STRING("Quantizer for B frames is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if((stsExtBuf = CVPPExtBuffersStorage::ParseCmdLine(argv,argc,i,&InputParams,skipped))
             !=MFX_ERR_MORE_DATA)
@@ -1217,6 +1255,11 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
             PrintHelp(NULL, MSDK_STRING("Unsupported value of -lad parameter, must be in range [10, 100] or 1 in case of -mss option!"));
             return MFX_ERR_UNSUPPORTED;
         }
+    }
+
+    if (InputParams.nRateControlMethod == 0)
+    {
+        InputParams.nRateControlMethod = MFX_RATECONTROL_CBR;
     }
 
     if ((InputParams.nMaxSliceSize) && !(InputParams.libType & MFX_IMPL_HARDWARE_ANY))

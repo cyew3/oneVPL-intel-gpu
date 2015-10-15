@@ -1590,6 +1590,7 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.CodecId                 = pInParams->EncodeId;
     m_mfxEncParams.mfx.TargetUsage             = pInParams->nTargetUsage; // trade-off between quality and speed
     m_mfxEncParams.AsyncDepth                  = m_AsyncDepth;
+    m_mfxEncParams.mfx.TargetKbps              = (mfxU16)(pInParams->nBitRate); // in Kbps
 
     if (m_pParentPipeline && m_pParentPipeline->m_pmfxPreENC.get())
     {
@@ -1599,9 +1600,16 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
     }
     else
     {
-        m_mfxEncParams.mfx.RateControlMethod       = (pInParams->bLABRC || pInParams->nLADepth) ? (mfxU16)MFX_RATECONTROL_LA : (mfxU16)MFX_RATECONTROL_CBR;
+        m_mfxEncParams.mfx.RateControlMethod   = pInParams->nRateControlMethod;
     }
     m_mfxEncParams.mfx.NumSlice                = pInParams->nSlices;
+
+    if (pInParams->nRateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        m_mfxEncParams.mfx.QPI = pInParams->nQPI;
+        m_mfxEncParams.mfx.QPP = pInParams->nQPP;
+        m_mfxEncParams.mfx.QPB = pInParams->nQPB;
+    }
 
     if (m_bIsVpp)
     {
@@ -1635,8 +1643,6 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
             pInParams->nTargetUsage, m_mfxEncParams.mfx.FrameInfo.Width, m_mfxEncParams.mfx.FrameInfo.Height,
             1.0 * m_mfxEncParams.mfx.FrameInfo.FrameRateExtN / m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
     }
-
-    m_mfxEncParams.mfx.TargetKbps = (mfxU16)(pInParams->nBitRate); // in Kbps
 
     // In case of HEVC when height and/or width divided with 8 but not divided with 16
     // add extended parameter to increase performance
