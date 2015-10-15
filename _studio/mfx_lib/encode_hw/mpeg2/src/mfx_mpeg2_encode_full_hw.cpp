@@ -568,7 +568,7 @@ mfxStatus FullEncode::EncodeFrameCheck(
 
     if (pOriginalSurface != surface)
     {
-        if (pOriginalSurface == 0)
+        if (pOriginalSurface == 0 || surface == 0)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         pOriginalSurface->Info = surface->Info;
