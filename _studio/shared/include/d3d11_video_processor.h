@@ -716,6 +716,11 @@ namespace MfxHwVideoProcessing
             std::vector<UINT> &variance);
 
     private:
+
+        /* KW fixes: deny copy constructor and = in order to eliminate possible double memory freeing */
+        D3D11VideoProcessor(const D3D11VideoProcessor& from) {UNREFERENCED_PARAMETER(from);};
+        D3D11VideoProcessor& operator=(const D3D11VideoProcessor&) {return *this; };
+
         mfxStatus Init(
             ID3D11Device *pDevice,
             ID3D11VideoDevice *pVideoDevice,

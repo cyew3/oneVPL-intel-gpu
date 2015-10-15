@@ -640,12 +640,15 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
             {
                 // Allocate memory for 3DLUT tables
                 m_camera3DLUT17 = (LUT17 *)malloc(sizeof(LUT17));
+                MFX_CHECK_NULL_PTR1(m_camera3DLUT17);
                 memset(m_camera3DLUT17, 0, sizeof(LUT17));
 
                 m_camera3DLUT33 = (LUT33 *)malloc(sizeof(LUT33));
+                MFX_CHECK_NULL_PTR1(m_camera3DLUT33);
                 memset(m_camera3DLUT33, 0, sizeof(LUT33));
 
                 m_camera3DLUT65 = (LUT65 *)malloc(sizeof(LUT65));
+                MFX_CHECK_NULL_PTR1(m_camera3DLUT65);
                 memset(m_camera3DLUT65, 0, sizeof(LUT65));
             }
         }
