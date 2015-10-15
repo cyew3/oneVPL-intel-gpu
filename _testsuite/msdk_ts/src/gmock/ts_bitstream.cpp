@@ -232,5 +232,7 @@ mfxStatus tsBitstreamCRC32::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
         return MFX_ERR_ABORTED;
     }
 
+    bs.DataLength = 0;
+
     return MFX_ERR_NONE;
 }
