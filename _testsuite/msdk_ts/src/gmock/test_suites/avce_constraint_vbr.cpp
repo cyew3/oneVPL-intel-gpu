@@ -91,10 +91,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     // Only one parameter for sliding window. If WinBRCSize=0, sliding window is off
     {/*32*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, LA|SD_LOW, {COD3PAR, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, 2000}},
-    {/*33*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, LA|SD_LOW, {COD3PAR, &tsStruct::mfxExtCodingOption3.WinBRCSize, 15}},
+    {/*33*/ MFX_ERR_UNSUPPORTED, LA|SD_LOW, {COD3PAR, &tsStruct::mfxExtCodingOption3.WinBRCSize, 15}},
     {/*34*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, LA_HRD|SD_LOW, {COD3PAR, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, 2000}},
-    {/*35*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, LA_HRD|SD_LOW, {COD3PAR, &tsStruct::mfxExtCodingOption3.WinBRCSize, 15}},
-    {/*36*/ MFX_ERR_INVALID_VIDEO_PARAM, LA_HRD|SD_LOW|WINDOW, {COD3PAR, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, 10}},
+    {/*35*/ MFX_ERR_UNSUPPORTED, LA_HRD|SD_LOW, {COD3PAR, &tsStruct::mfxExtCodingOption3.WinBRCSize, 15}},
+    {/*36*/ MFX_ERR_UNSUPPORTED, LA_HRD|SD_LOW|WINDOW, {COD3PAR, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, 10}},
 
     // + BRCParamMultiplier
     {/*37*/ MFX_ERR_NONE, LA|HD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.BRCParamMultiplier, 2}},
@@ -117,7 +117,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     // Non LA BRC
     {/*51*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, SD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
     {/*52*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, SD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
-    {/*53*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, SD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
+    {/*53*/ MFX_ERR_UNSUPPORTED, SD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
     {/*54*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, SD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP}},
 };
 
@@ -271,6 +271,12 @@ int TestSuite::RunTest(unsigned int id)
     Query(m_session, m_pPar, &out_par);
 
     g_tsStatus.expect(tc.sts);
+    if (tc.sts == MFX_ERR_UNSUPPORTED)
+    {
+        // Init can't return MFX_ERR_UNSUPPORTED
+        g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+
     /*if (tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
     {
         g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
