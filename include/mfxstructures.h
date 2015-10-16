@@ -650,7 +650,8 @@ typedef struct {
     mfxU16      FadeDetection;            /* tri-state option */
     mfxI16      DeblockingAlphaTcOffset;  /* -12..12 (slice_alpha_c0_offset_div2 << 1) */
     mfxI16      DeblockingBetaOffset;     /* -12..12 (slice_beta_offset_div2 << 1) */
-    mfxU16      reserved[223];
+    mfxU16      GPB;                      /* tri-state option */
+    mfxU16      reserved[222];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
