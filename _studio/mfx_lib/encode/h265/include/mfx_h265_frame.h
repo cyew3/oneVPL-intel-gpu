@@ -296,13 +296,11 @@ namespace H265Enc {
         ThreadingTask  m_ttSubmitGpuCopySrc;
         ThreadingTask  m_ttSubmitGpuCopyRec;
         ThreadingTask  m_ttSubmitGpuIntra;
-        //ThreadingTask  m_ttSubmitGpuMe[4];
-        ThreadingTask  m_ttSubmitGpuHmeMe32[4];
-        ThreadingTask  m_ttSubmitGpuMe16[4];
+        ThreadingTask  m_ttSubmitGpuMe[4];
         ThreadingTask  m_ttSubmitGpuPostProc;
         ThreadingTask  m_ttWaitGpuCopyRec;
         ThreadingTask  m_ttWaitGpuIntra;
-        ThreadingTask  m_ttWaitGpuMe16[4];
+        ThreadingTask  m_ttWaitGpuMe[4];
         ThreadingTask  m_ttWaitGpuPostProc;
 
         Ipp32u m_numThreadingTasks;

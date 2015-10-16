@@ -53,6 +53,8 @@
     <ClInclude Include="include\genx_hevce_refine_me_p_32x16_hsw_isa.h" />
     <ClInclude Include="include\genx_hevce_refine_me_p_32x32_sad_bdw_isa.h" />
     <ClInclude Include="include\genx_hevce_refine_me_p_32x32_sad_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_refine_me_p_64x64_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_refine_me_p_64x64_hsw_isa.h" />
     <ClInclude Include="include\genx_hevce_sao_apply_bdw_isa.h" />
     <ClInclude Include="include\genx_hevce_sao_apply_hsw_isa.h" />
     <ClInclude Include="include\genx_hevce_sao_bdw_isa.h" />
@@ -85,6 +87,8 @@
     <ClCompile Include="src\genx_hevce_refine_me_p_32x16_hsw_isa.cpp" />
     <ClCompile Include="src\genx_hevce_refine_me_p_32x32_sad_bdw_isa.cpp" />
     <ClCompile Include="src\genx_hevce_refine_me_p_32x32_sad_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_hsw_isa.cpp" />
     <ClCompile Include="src\genx_hevce_sao_apply_bdw_isa.cpp" />
     <ClCompile Include="src\genx_hevce_sao_apply_hsw_isa.cpp" />
     <ClCompile Include="src\genx_hevce_sao_bdw_isa.cpp" />

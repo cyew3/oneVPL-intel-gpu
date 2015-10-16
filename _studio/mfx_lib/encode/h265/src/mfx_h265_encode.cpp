@@ -76,8 +76,6 @@ namespace {
         case MFX_FEI_H265_OP_INTRA_MODE:        return "GRAD";
         case MFX_FEI_H265_OP_INTRA_DIST:        return "IDIST";
         case MFX_FEI_H265_OP_INTER_ME:          return "ME";
-        case MFX_FEI_H265_OP_INTER_HME_ME32:    return "HME_ME32";
-        case MFX_FEI_H265_OP_INTER_ME16:        return "ME16";
         case MFX_FEI_H265_OP_INTERPOLATE:       return "INTERP";
         case MFX_FEI_H265_OP_POSTPROC:          return "PP";
         case MFX_FEI_H265_OP_DEBLOCK:           return "PP_DBLK";
@@ -901,10 +899,8 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
             feiOutAllocInfo.allocInfo = feiAlloc.InterMV[feiBlkSizeIdx];
             m_feiInterMvPool[blksize].Init(feiOutAllocInfo, 0);
 
-            if (blksize < 3) {  // no InterDist for 64x64 now
-                feiOutAllocInfo.allocInfo = feiAlloc.InterDist[feiBlkSizeIdx];
-                m_feiInterDistPool[blksize].Init(feiOutAllocInfo, 0);
-            }
+            feiOutAllocInfo.allocInfo = feiAlloc.InterDist[feiBlkSizeIdx];
+            m_feiInterDistPool[blksize].Init(feiOutAllocInfo, 0);
         }
 
         FeiBufferUp::AllocInfo feiBufferUpAllocInfo;
@@ -1291,7 +1287,7 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
         }
     }
 
-    while (!m_reorderedQueue.empty() && (Ipp32s)m_encodeQueue.size() < m_videoParam.m_framesInParallel) {
+    while (!m_reorderedQueue.empty() && (Ipp32s)(m_encodeQueue.size() + m_outputQueue.size()) < m_videoParam.m_framesInParallel) {
         ConfigureEncodeFrame(m_reorderedQueue.front());
         m_lastEncOrder = m_reorderedQueue.front()->m_encOrder;
 
@@ -1362,35 +1358,25 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
                 for (Ipp32s blksize = 0; blksize < 4; blksize++) {
                     if (!frame->m_feiInterMv[uniqRefIdx][blksize])
                         frame->m_feiInterMv[uniqRefIdx][blksize] = m_feiInterMvPool[blksize].Allocate();
-                    if (blksize < 3) {  // no InterDist for 64x64 now
-                        if (!frame->m_feiInterDist[uniqRefIdx][blksize])
-                            frame->m_feiInterDist[uniqRefIdx][blksize] = m_feiInterDistPool[blksize].Allocate();
-                    }
+                    if (!frame->m_feiInterDist[uniqRefIdx][blksize])
+                        frame->m_feiInterDist[uniqRefIdx][blksize] = m_feiInterDistPool[blksize].Allocate();
                 }
 
-                frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].numDownstreamDependencies = 0;
-                frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].numUpstreamDependencies = 0;
-                frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].finished = 0;
-                frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].poc = frame->m_frameOrder;
-                frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].listIdx = i;
-                frame->m_ttSubmitGpuHmeMe32[uniqRefIdx].refIdx = j;
+                frame->m_ttSubmitGpuMe[uniqRefIdx].numDownstreamDependencies = 0;
+                frame->m_ttSubmitGpuMe[uniqRefIdx].numUpstreamDependencies = 0;
+                frame->m_ttSubmitGpuMe[uniqRefIdx].finished = 0;
+                frame->m_ttSubmitGpuMe[uniqRefIdx].poc = frame->m_frameOrder;
+                frame->m_ttSubmitGpuMe[uniqRefIdx].listIdx = i;
+                frame->m_ttSubmitGpuMe[uniqRefIdx].refIdx = j;
 
-                frame->m_ttSubmitGpuMe16[uniqRefIdx].numDownstreamDependencies = 0;
-                frame->m_ttSubmitGpuMe16[uniqRefIdx].numUpstreamDependencies = 0;
-                frame->m_ttSubmitGpuMe16[uniqRefIdx].finished = 0;
-                frame->m_ttSubmitGpuMe16[uniqRefIdx].poc = frame->m_frameOrder;
-                frame->m_ttSubmitGpuMe16[uniqRefIdx].listIdx = i;
-                frame->m_ttSubmitGpuMe16[uniqRefIdx].refIdx = j;
+                frame->m_ttWaitGpuMe[uniqRefIdx].numDownstreamDependencies = 0;
+                frame->m_ttWaitGpuMe[uniqRefIdx].numUpstreamDependencies = 0;
+                frame->m_ttWaitGpuMe[uniqRefIdx].finished = 0;
+                frame->m_ttWaitGpuMe[uniqRefIdx].syncpoint = NULL;
+                frame->m_ttWaitGpuMe[uniqRefIdx].poc = frame->m_frameOrder;
 
-                frame->m_ttWaitGpuMe16[uniqRefIdx].numDownstreamDependencies = 0;
-                frame->m_ttWaitGpuMe16[uniqRefIdx].numUpstreamDependencies = 0;
-                frame->m_ttWaitGpuMe16[uniqRefIdx].finished = 0;
-                frame->m_ttWaitGpuMe16[uniqRefIdx].syncpoint = NULL;
-                frame->m_ttWaitGpuMe16[uniqRefIdx].poc = frame->m_frameOrder;
-
-                AddTaskDependency(&frame->m_ttSubmitGpuHmeMe32[uniqRefIdx], &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_HME <- GPU_SUBMIT_COPY_SRC
-                AddTaskDependency(&frame->m_ttSubmitGpuMe16[uniqRefIdx], &frame->m_ttSubmitGpuHmeMe32[uniqRefIdx]); // GPU_SUBMIT_ME16 <- GPU_SUBMIT_HME
-                AddTaskDependency(&frame->m_ttWaitGpuMe16[uniqRefIdx], &frame->m_ttSubmitGpuMe16[uniqRefIdx]); // GPU_WAIT_ME16 <- GPU_SUBMIT_ME16
+                AddTaskDependency(&frame->m_ttSubmitGpuMe[uniqRefIdx], &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_HME <- GPU_SUBMIT_COPY_SRC
+                AddTaskDependency(&frame->m_ttWaitGpuMe[uniqRefIdx], &frame->m_ttSubmitGpuMe[uniqRefIdx]); // GPU_WAIT_ME16 <- GPU_SUBMIT_ME16
             }
         }
 
@@ -1498,11 +1484,11 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             vm_cond_signal(&m_feiCondVar);
         }
         for (Ipp32s i = 0; i < frame->m_numRefUnique; i++) {
-            Ipp32s listIdx = frame->m_ttSubmitGpuHmeMe32[i].listIdx;
-            Ipp32s refIdx = frame->m_ttSubmitGpuHmeMe32[i].refIdx;
+            Ipp32s listIdx = frame->m_ttSubmitGpuMe[i].listIdx;
+            Ipp32s refIdx = frame->m_ttSubmitGpuMe[i].refIdx;
             Frame *ref = frame->m_refPicList[listIdx].m_refFrames[refIdx];
             if (!ref->m_ttSubmitGpuCopyRec.finished)
-                AddTaskDependency(&frame->m_ttSubmitGpuHmeMe32[i], &ref->m_ttSubmitGpuCopyRec); // GPU_SUBMIT_HME <- GPU_COPY_REF
+                AddTaskDependency(&frame->m_ttSubmitGpuMe[i], &ref->m_ttSubmitGpuCopyRec); // GPU_SUBMIT_HME <- GPU_COPY_REF
         }
         m_outputQueue.splice(m_outputQueue.end(), m_encodeQueue, m_encodeQueue.begin());
         vm_mutex_unlock(&m_feiCritSect);
@@ -2528,7 +2514,7 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
         for (Ipp32s i = 0; i < 4; i++)
             out.SurfIntraMode[i] = task.frame->m_feiIntraAngModes[i]->m_handle;
 
-    } else if (task.feiOp == MFX_FEI_H265_OP_INTER_ME || task.feiOp == MFX_FEI_H265_OP_INTER_HME_ME32 || task.feiOp == MFX_FEI_H265_OP_INTER_ME16) {
+    } else if (task.feiOp == MFX_FEI_H265_OP_INTER_ME) {
         Frame *ref = task.frame->m_refPicList[task.listIdx].m_refFrames[task.refIdx];
         in.meArgs.surfSrc = task.frame->m_feiOrigin->m_handle;
         in.meArgs.surfRef = ref->m_feiRecon->m_handle;
@@ -2537,12 +2523,8 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
         for (Ipp32s blksize = 0; blksize < 4; blksize++) {
             Ipp32s feiBlkIdx = blkSizeInternal2Fei[blksize];
             out.SurfInterMV[feiBlkIdx] = task.frame->m_feiInterMv[uniqRefIdx][blksize]->m_handle;
-            if (blksize < 3) {  // no InterDist for 64x64 now
-                out.SurfInterDist[feiBlkIdx] = task.frame->m_feiInterDist[uniqRefIdx][blksize]->m_handle;
-            }
+            out.SurfInterDist[feiBlkIdx] = task.frame->m_feiInterDist[uniqRefIdx][blksize]->m_handle;
         }
-        if (task.feiOp == MFX_FEI_H265_OP_INTER_HME_ME32)
-            in.SaveSyncPoint = 0;
 
     } else if (task.feiOp == MFX_FEI_H265_OP_POSTPROC || task.feiOp == MFX_FEI_H265_OP_DEBLOCK) {
         in.postprocArgs.inputSurf = task.frame->m_feiOrigin->m_handle;

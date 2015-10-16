@@ -71,8 +71,6 @@ enum
     MFX_FEI_H265_OP_INTER_ME        = 0x10,
     MFX_FEI_H265_OP_INTERPOLATE     = 0x20,
     MFX_FEI_H265_OP_POSTPROC        = 0x40, // both: deblock + sao
-    MFX_FEI_H265_OP_INTER_HME_ME32  = 0x80,
-    MFX_FEI_H265_OP_INTER_ME16      = 0x100,
     MFX_FEI_H265_OP_DEBLOCK         = 0x200,// deblocking only
 };
 

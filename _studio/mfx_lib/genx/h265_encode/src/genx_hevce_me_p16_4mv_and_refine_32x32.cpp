@@ -3,7 +3,7 @@
 //                  INTEL CORPORATION PROPRIETARY INFORMATION
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
+//     or disclosed e[]cept in accordance with the terms of that agreement.
 //          Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 */
@@ -30,13 +30,11 @@ typedef matrix<uchar, 4, 32> UniIn;
 typedef matrix<uchar, 3, 32> UniIn;
 #endif
 
-extern "C" _GENX_MAIN_
-void Me16AndRefine32x32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_DIST16x16,
-           SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
-           /*SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, */SurfaceIndex SURF_MV16x16,
-           SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8/*,
-           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/, int rectParts,
-           SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_MV32X32, SurfaceIndex SURF_MBDIST_32x32)
+template <int rectParts> inline _GENX_ void Impl(
+    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF,
+    SurfaceIndex DIST16x16, SurfaceIndex DIST16x8, SurfaceIndex DIST8x16, SurfaceIndex DIST8x8,
+    SurfaceIndex MV16x16, SurfaceIndex MV16x8, SurfaceIndex MV8x16, SurfaceIndex MV8x8,
+    SurfaceIndex SRC, SurfaceIndex REF, SurfaceIndex MV32x32, SurfaceIndex DIST32x32)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
@@ -44,7 +42,7 @@ void Me16AndRefine32x32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF
     uint y = mbY * 16;
 
     vector<uchar, 64> control;
-    read(SURF_CONTROL, 0, control);
+    read(CONTROL, 0, control);
 
     uint1 maxNumSu = control.format<uint1>()[56];
     uint1 lenSp = control.format<uint1>()[57];
@@ -63,7 +61,7 @@ void Me16AndRefine32x32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF
     // declare parameters for VME
     matrix<uint4, 16, 2> costs = 0;
     vector<int2, 2> mvPred = 0;
-    read(SURF_MV16x16, mbX * MVDATA_SIZE, mbY, mvPred); // these pred MVs will be updated later here
+    read(MV16x16, mbX * MVDATA_SIZE, mbY, mvPred); // these pred MVs will be updated later here
 
     // load search path
     SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control, 0, 64);
@@ -113,7 +111,7 @@ void Me16AndRefine32x32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF
 #endif
     run_vme_ime(uniIn, imeIn,
         VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
-        SURF_SRC_AND_REF, ref0, NULL, costCenter, imeOut);
+        SRC_AND_REF, ref0, NULL, costCenter, imeOut);
 
     //DebugUniOutput<9>(imeOut);
 
@@ -130,7 +128,7 @@ void Me16AndRefine32x32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF
     VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
     VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
     fbrIn.format<uint, 4, 8>().select<4, 1, 4, 2>(0, 0) = imeOut.row(7).format<uint>()[5]; // motion vectors 16x16
-    run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 0, 0, 0, fbrOut16x16);
+    run_vme_fbr(uniIn, fbrIn, SRC_AND_REF, 0, 0, 0, fbrOut16x16);
 
     matrix<uchar, 7, 32> fbrOut8x8;
     subMbShape = 0;
@@ -141,22 +139,22 @@ void Me16AndRefine32x32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF
     fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(1, 0) = imeOut.row(8).format<uint>()[5]; // motion vectors 8x8_1
     fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(2, 0) = imeOut.row(8).format<uint>()[6]; // motion vectors 8x8_2
     fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(3, 0) = imeOut.row(8).format<uint>()[7]; // motion vectors 8x8_3
-    run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut8x8);
+    run_vme_fbr(uniIn, fbrIn, SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut8x8);
 
     // distortions
     // 16x16
     matrix<uint, 1, 1> dist16x16 = SLICE(fbrOut16x16.row(5).format<ushort>(), 0, 1, 1);
-    write(SURF_DIST16x16, mbX * DIST_SIZE, mbY, dist16x16);
+    write(DIST16x16, mbX * DIST_SIZE, mbY, dist16x16);
     // 8x8
     matrix<uint, 2, 2> dist8x8 = SLICE(fbrOut8x8.row(5).format<ushort>(), 0, 4, 4);
-    write(SURF_DIST8x8, mbX * DIST_SIZE * 2, mbY * 2, dist8x8);
+    write(DIST8x8, mbX * DIST_SIZE * 2, mbY * 2, dist8x8);
 
     // motion vectors
     // 16x16
-    write(SURF_MV16x16, mbX * MVDATA_SIZE, mbY, SLICE(fbrOut16x16.format<uint>(), 8, 1, 1));
+    write(MV16x16, mbX * MVDATA_SIZE, mbY, SLICE(fbrOut16x16.format<uint>(), 8, 1, 1));
     // 8x8
     matrix<uint, 2, 2> mv8x8 = SLICE(fbrOut8x8.format<uint>(), 8, 4, 8);
-    write(SURF_MV8x8,   mbX * MVDATA_SIZE * 2, mbY * 2, mv8x8);
+    write(MV8x8,   mbX * MVDATA_SIZE * 2, mbY * 2, mv8x8);
 
 
     if (rectParts)
@@ -167,7 +165,7 @@ void Me16AndRefine32x32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF
         VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
         fbrIn.format<uint, 4, 8>().select<2, 1, 4, 2>(0, 0) = imeOut.row(8).format<uint>()[0]; // motion vectors 16x8_0
         fbrIn.format<uint, 4, 8>().select<2, 1, 4, 2>(2, 0) = imeOut.row(8).format<uint>()[1]; // motion vectors 16x8_1
-        run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 1, 0, 0, fbrOut16x8);
+        run_vme_fbr(uniIn, fbrIn, SRC_AND_REF, 1, 0, 0, fbrOut16x8);
 
         matrix<uchar, 7, 32> fbrOut8x16;
         VME_SET_UNIInput_FBRMbModeInput(uniIn, 2);
@@ -175,54 +173,54 @@ void Me16AndRefine32x32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF
         VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
         fbrIn.format<uint, 4, 8>().select<2, 2, 4, 2>(0, 0) = imeOut.row(8).format<uint>()[2]; // motion vectors 8x16_0
         fbrIn.format<uint, 4, 8>().select<2, 2, 4, 2>(1, 0) = imeOut.row(8).format<uint>()[3]; // motion vectors 8x16_1
-        run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 2, 0, 0, fbrOut8x16);
+        run_vme_fbr(uniIn, fbrIn, SRC_AND_REF, 2, 0, 0, fbrOut8x16);
 
         // distortions
         // 16x8
         matrix<uint, 2, 1> dist16x8 = SLICE(fbrOut16x8.row(5).format<ushort>(), 0, 2, 8);
-        write(SURF_DIST16x8, mbX * DIST_SIZE, mbY * 2, dist16x8);
+        write(DIST16x8, mbX * DIST_SIZE, mbY * 2, dist16x8);
         // 8x16
         matrix<uint, 1, 2> dist8x16 = SLICE(fbrOut8x16.row(5).format<ushort>(), 0, 2, 4);
-        write(SURF_DIST8x16, mbX * DIST_SIZE * 2, mbY, dist8x16);
+        write(DIST8x16, mbX * DIST_SIZE * 2, mbY, dist8x16);
 
         // motion vectors
         // 16x8
         matrix<uint, 2, 1> mv16x8 = SLICE(fbrOut16x8.format<uint>(), 8, 2, 16);
-        write(SURF_MV16x8,  mbX * MVDATA_SIZE, mbY * 2, mv16x8);
+        write(MV16x8,  mbX * MVDATA_SIZE, mbY * 2, mv16x8);
         // 8x16
         matrix<uint, 1, 2> mv8x16 = SLICE(fbrOut8x16.format<uint>(), 8, 2, 8);
-        write(SURF_MV8x16,  mbX * MVDATA_SIZE * 2, mbY, mv8x16);
+        write(MV8x16,  mbX * MVDATA_SIZE * 2, mbY, mv8x16);
 
         //matrix<uchar, 7, 32> fbrOut8x4;
         //subMbShape = 1 + 4 + 16 + 64;
         //VME_SET_UNIInput_FBRMbModeInput(uniIn, 3);
         //VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, subMbShape);
         //VME_SET_UNIInput_FBRSubPredModeInput(uniIn, subMbPredMode);
-        //run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut8x4);
+        //run_vme_fbr(uniIn, fbrIn, SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut8x4);
 
         //matrix<uchar, 7, 32> fbrOut4x8;
         //subMbShape = (1 + 4 + 16 + 64) << 1;
         //VME_SET_UNIInput_FBRMbModeInput(uniIn, 3);
         //VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, subMbShape);
         //VME_SET_UNIInput_FBRSubPredModeInput(uniIn, subMbPredMode);
-        //run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut4x8);
+        //run_vme_fbr(uniIn, fbrIn, SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut4x8);
 
         //// 8x4
         //matrix<uint, 4, 2> dist8x4 = SLICE(fbrOut8x4.row(5).format<ushort>(), 0, 8, 2);
-        //write(SURF_DIST8x4, mbX * DIST_SIZE * 2, mbY * 4, dist8x4);
+        //write(DIST8x4, mbX * DIST_SIZE * 2, mbY * 4, dist8x4);
         //// 4x8
         //matrix<uint, 2, 4> dist4x8;
         //dist4x8.row(0) = SLICE(fbrOut4x8.row(5).format<ushort>(), 0, 4, 4);
         //dist4x8.row(1) = SLICE(fbrOut4x8.row(5).format<ushort>(), 1, 4, 4);
-        //write(SURF_DIST4x8, mbX * DIST_SIZE * 4, mbY * 2, dist4x8);
+        //write(DIST4x8, mbX * DIST_SIZE * 4, mbY * 2, dist4x8);
         //// 8x4
         //matrix<uint, 4, 2> mv8x4 = SLICE(fbrOut8x4.format<uint>(), 8, 8, 4);
-        //write(SURF_MV8x4,   mbX * MVDATA_SIZE * 2, mbY * 4, mv8x4);
+        //write(MV8x4,   mbX * MVDATA_SIZE * 2, mbY * 4, mv8x4);
         //// 4x8
         //matrix<uint, 2, 4> mv4x8;
         //SLICE(mv4x8.format<uint>(), 0, 4, 2) = SLICE(fbrOut4x8.format<uint>(),  8, 4, 8);
         //SLICE(mv4x8.format<uint>(), 1, 4, 2) = SLICE(fbrOut4x8.format<uint>(), 10, 4, 8);
-        //write(SURF_MV4x8, mbX * MVDATA_SIZE * 4, mbY * 2, mv4x8);
+        //write(MV4x8, mbX * MVDATA_SIZE * 4, mbY * 2, mv4x8);
     }
 
     if ((mbX & 1) == 0 && (mbY & 1) == 0) {
@@ -230,14 +228,34 @@ void Me16AndRefine32x32(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF
         vector< int2,2 > mv32x32;
         mbX >>= 1;
         mbY >>= 1;
-        read(SURF_MV32X32, mbX * MVDATA_SIZE, mbY, mv32x32);
+        read(MV32x32, mbX * MVDATA_SIZE, mbY, mv32x32);
 
         uint x = mbX * 32;
         uint y = mbY * 32;
 
-        QpelRefine(32, 32, SURF_SRC, SURF_REF, x, y, mv32x32[0], mv32x32[1], sad32x32);
+        QpelRefine(32, 32, SRC, REF, x, y, mv32x32[0], mv32x32[1], sad32x32);
 
-        write(SURF_MBDIST_32x32, mbX * MBDIST_SIZE,      mbY, SLICE1(sad32x32, 0,  8));   // 32bytes is max until BDW
-        write(SURF_MBDIST_32x32, mbX * MBDIST_SIZE + 32, mbY, SLICE1(sad32x32, 8, 1));
+        write(DIST32x32, mbX * MBDIST_SIZE,      mbY, SLICE1(sad32x32, 0,  8));   // 32bytes is max until BDW
+        write(DIST32x32, mbX * MBDIST_SIZE + 32, mbY, SLICE1(sad32x32, 8, 1));
     }
 }
+
+extern "C" _GENX_MAIN_
+void Me16AndRefine32x32(
+    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DIST16x16,
+    SurfaceIndex DIST8x8, SurfaceIndex MV16x16, SurfaceIndex MV8x8,
+    SurfaceIndex SRC, SurfaceIndex REF, SurfaceIndex MV32x32, SurfaceIndex DIST32x32)
+{
+    Impl<0>(CONTROL, SRC_AND_REF, DIST16x16, DIST16x16, DIST16x16, DIST8x8, MV16x16, MV16x16, MV16x16, MV8x8, SRC, REF, MV32x32, DIST32x32);
+}
+
+extern "C" _GENX_MAIN_
+void Me16RectPartsAndRefine32x32(
+    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF,
+    SurfaceIndex DIST16x16, SurfaceIndex DIST16x8, SurfaceIndex DIST8x16, SurfaceIndex DIST8x8,
+    SurfaceIndex MV16x16, SurfaceIndex MV16x8, SurfaceIndex MV8x16, SurfaceIndex MV8x8,
+    SurfaceIndex SRC, SurfaceIndex REF, SurfaceIndex MV32x32, SurfaceIndex DIST32x32)
+{
+    Impl<1>(CONTROL, SRC_AND_REF, DIST16x16, DIST16x8, DIST8x16, DIST8x8, MV16x16, MV16x8, MV8x16, MV8x8, SRC, REF, MV32x32, DIST32x32);
+}
+

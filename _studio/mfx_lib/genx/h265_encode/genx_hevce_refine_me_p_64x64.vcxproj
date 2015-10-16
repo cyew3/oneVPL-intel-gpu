@@ -57,6 +57,7 @@
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>$(ProjectName)_d</TargetName>
     <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
@@ -98,7 +99,7 @@
       <Command>build_kernel.cmd refine_me_p_64x64 hsw</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>for /L %%i in (0,1,1) do $(TargetPath)</Command>
+      <Command>for /L %%i in (0,1,4) do $(TargetPath)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

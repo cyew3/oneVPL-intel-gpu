@@ -789,32 +789,53 @@ void SetCurbeData(
     curbeData.ScaledRefLayerBottomOffset      = 0;
 }
 
-Kernel::Kernel() : kernel(), task(), ts() {}
+Kernel::Kernel() : m_device(), m_task(), m_numKernels(0), kernel(m_kernel[0]) { Zero(m_kernel); Zero(m_ts); }
 
-void Kernel::Configure(CmDevice *device, CmProgram *program, const char *name,
-                       mfxU32 tsWidth, mfxU32 tsHeight, CM_DEPENDENCY_PATTERN tsPattern)
+void Kernel::AddKernel(CmDevice *device, CmProgram *program, const char *name,
+                       mfxU32 tsWidth, mfxU32 tsHeight, CM_DEPENDENCY_PATTERN tsPattern, bool addSync)
 {
-    kernel = CreateKernel(device, program, name, NULL);
-    if (kernel->SetThreadCount(tsWidth * tsHeight) != CM_SUCCESS)
+    assert(m_device == NULL || m_device == device);
+    assert(m_numKernels < 16);
+
+    mfxU32 idx = m_numKernels++;
+
+    m_kernel[idx] = CreateKernel(device, program, name, NULL);
+    if (m_kernel[idx]->SetThreadCount(tsWidth * tsHeight) != CM_SUCCESS)
         throw CmRuntimeError();
-    if (device->CreateThreadSpace(tsWidth, tsHeight, ts) != CM_SUCCESS)
+    if (device->CreateThreadSpace(tsWidth, tsHeight, m_ts[idx]) != CM_SUCCESS)
         throw CmRuntimeError();
-    if (ts->SelectThreadDependencyPattern(tsPattern) != CM_SUCCESS)
+    if (m_ts[idx]->SelectThreadDependencyPattern(tsPattern) != CM_SUCCESS)
         throw CmRuntimeError();
-    if (device->CreateTask(task) != CM_SUCCESS)
+    if (m_task == NULL)
+        if (device->CreateTask(m_task) != CM_SUCCESS)
+            throw CmRuntimeError();
+    if (m_numKernels > 1 && addSync)
+        if (m_task->AddSync() != CM_SUCCESS)
+            throw CmRuntimeError();
+    if (m_task->AddKernel(m_kernel[idx]) != CM_SUCCESS)
         throw CmRuntimeError();
-    if (task->AddKernel(kernel) != CM_SUCCESS)
-        throw CmRuntimeError();
+    if (m_numKernels == 2)
+        if (m_kernel[0]->AssociateThreadSpace(m_ts[0]) != CM_SUCCESS)
+            throw CmRuntimeError();
+    if (m_numKernels > 1) {
+        if (m_kernel[idx]->AssociateThreadSpace(m_ts[idx]) != CM_SUCCESS)
+            throw CmRuntimeError();
+    }
 }
 
-void Kernel::Destroy(CmDevice *device)
+void Kernel::Destroy()
 {
-    device->DestroyThreadSpace(ts);
-    ts = NULL;
-    device->DestroyTask(task);
-    task = NULL;
-    device->DestroyKernel(kernel);
-    kernel = NULL;
+    if (m_device) {
+        for (mfxU32 i = 0; i < m_numKernels; i++) {
+            m_device->DestroyThreadSpace(m_ts[i]);
+            m_ts[i] = NULL;
+            m_device->DestroyKernel(m_kernel[i]);
+            m_kernel[i] = NULL;
+        }
+        m_device->DestroyTask(m_task);
+        m_task = NULL;
+        m_device = NULL;
+    }
 }
 
 void Kernel::Enqueue(CmQueue *queue, CmEvent *&e)
@@ -822,8 +843,13 @@ void Kernel::Enqueue(CmQueue *queue, CmEvent *&e)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Enqueue");
     if (e != NULL && e != CM_NO_EVENT)
         queue->DestroyEvent(e);
-    if (queue->Enqueue(task, e, ts) != CM_SUCCESS)
-        throw CmRuntimeError();
+    if (m_numKernels == 1) {
+        if (queue->Enqueue(m_task, e, m_ts[0]) != CM_SUCCESS)
+            throw CmRuntimeError();
+    } else {
+        if (queue->Enqueue(m_task, e) != CM_SUCCESS)
+            throw CmRuntimeError();
+    }
 }
 
 } // namespace

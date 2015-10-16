@@ -31,7 +31,8 @@
     <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.cpp" />
     <ClCompile Include="src\genx_hevce_hme_and_me_p32_4mv_bdw_isa.cpp" />
     <ClCompile Include="src\genx_hevce_hme_and_me_p32_4mv_hsw_isa.cpp" />
-
+    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_hsw_isa.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\genx_hevce_analyze_gradient_32x32_best_bdw_isa.h" />
@@ -64,6 +65,7 @@
     <ClInclude Include="include\genx_hevce_sao_hsw_isa.h" />
     <ClInclude Include="include\genx_hevce_hme_and_me_p32_4mv_bdw_isa.h" />
     <ClInclude Include="include\genx_hevce_hme_and_me_p32_4mv_hsw_isa.h" />
-
+    <ClInclude Include="include\genx_hevce_refine_me_p_64x64_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_refine_me_p_64x64_hsw_isa.h" />
   </ItemGroup>
 </Project>

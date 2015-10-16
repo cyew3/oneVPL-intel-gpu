@@ -791,13 +791,20 @@ void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const 
 struct Kernel
 {
     Kernel();
-    void Configure(CmDevice *device, CmProgram *program, const char *name,
-                   mfxU32 tsWidth, mfxU32 tsHeight, CM_DEPENDENCY_PATTERN tsPattern);
-    void Destroy(CmDevice *device);
+    ~Kernel() { Destroy(); }
+    void AddKernel(CmDevice *device, CmProgram *program, const char *name,
+                   mfxU32 tsWidth, mfxU32 tsHeight, CM_DEPENDENCY_PATTERN tsPattern, bool addSync = false);
+    void Destroy();
     void Enqueue(CmQueue *queue, CmEvent *&e);
-    CmKernel      *kernel;
-    CmTask        *task;
-    CmThreadSpace *ts;
+    CmKernel     *&kernel;
+    CmDevice      *m_device;
+    CmKernel      *m_kernel[16];
+    CmTask        *m_task;
+    CmThreadSpace *m_ts[16];
+    mfxU32         m_numKernels;
+
+private:
+    void operator=(const Kernel&);
 };
 
 }

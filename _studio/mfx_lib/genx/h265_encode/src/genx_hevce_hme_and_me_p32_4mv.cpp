@@ -225,6 +225,268 @@ void MeTier2x(SurfaceIndex SURF_SRC_AND_REF, vector_ref<int2, 2> mvPred, Surface
     }
 }
 
+template <uint H, uint W> inline _GENX_ vector<uint2,W> Sad(matrix_ref<uint1,H,W> m1, matrix_ref<uint1,H,W> m2)
+{
+    vector<uint2,W> sad = cm_sad2<uint2>(m1.row(0), m2.row(0));
+    #pragma unroll
+    for (int i = 1; i < H; i++)
+        sad = cm_sada2<uint2>(m1.row(i), m2.row(i), sad);
+    return sad;
+}
+
+_GENX_ inline
+void Refine64x64(SurfaceIndex DIST, vector_ref<int2, 2> mvPred, SurfaceIndex SRC, SurfaceIndex REF, uint mbX, uint mbY)
+{
+    enum { W=16, H=16 };
+
+    vector<uint4,9> sad64(0);
+    int xSrc64 = mbX * 4;   // because SRC and REF are 1x
+    int ySrc64 = mbY * 4;
+    int xRef64 = xSrc64 + (mvPred[0] >> 2);
+    int yRef64 = ySrc64 + (mvPred[1] >> 2);
+
+    for (int blky = 0; blky < 64; blky += 16) {
+#pragma unroll
+        for (int blkx = 0; blkx < 64; blkx += 16) {
+
+            int xSrc16 = xSrc64 + blkx;
+            int ySrc16 = ySrc64 + blky;
+            int xRef16 = xRef64 + blkx;
+            int yRef16 = yRef64 + blky;
+
+            matrix<uint1,H,W> src;
+            matrix<uint1,H+4,32> ref;
+            read_plane(SRC, GENX_SURFACE_Y_PLANE, xSrc16, ySrc16, src);
+            read_plane(REF, GENX_SURFACE_Y_PLANE, xRef16-2, yRef16-2,    ref.select<8,1,32,1>(0,0));
+            read_plane(REF, GENX_SURFACE_Y_PLANE, xRef16-2, yRef16-2+8,  ref.select<8,1,32,1>(8,0));
+            read_plane(REF, GENX_SURFACE_Y_PLANE, xRef16-2, yRef16-2+16, ref.select<4,1,32,1>(16,0));
+
+            matrix<int2,H+4,W> tmpH;
+            matrix<int2,H+1,W> tmpD;
+            matrix<int2,H+1,W> tmpV;
+            matrix<uint1,H+1,W> dst;
+
+            tmpV = 4 - ref.select<H+1,1,W,1>(0,2);
+            tmpV -= ref.select<H+1,1,W,1>(3,2);
+            tmpV += 5 * cm_add<int2>(ref.select<H+1,1,W,1>(1,2), ref.select<H+1,1,W,1>(2,2));
+            dst.select<H+1,1,W,1>(0,0) = cm_asr<uint1>(tmpV, 3, SAT);
+
+            matrix<uint2,9,W> sad;
+            sad.row(4) = Sad(ref.select<H,1,W,1>(2,2), src.select_all());
+            sad.row(1) = Sad(dst.select<H,1,W,1>(0,0), src.select_all());
+            sad.row(7) = Sad(dst.select<H,1,W,1>(1,0), src.select_all());
+
+            tmpH = ref.select<H+4,1,W,1>(0,1) + ref.select<H+4,1,W,1>(0,2);
+            tmpH *= 5;
+            tmpH -= ref.select<H+4,1,W,1>(0,0);
+            tmpH -= ref.select<H+4,1,W,1>(0,3);
+
+            tmpD = 32 - tmpH.select<H+1,1,W,1>(0,0);
+            tmpD -= tmpH.select<H+1,1,W,1>(3,0);
+            tmpD += 5 * cm_add<int2>(tmpH.select<H+1,1,W,1>(1,0), tmpH.select<H+1,1,W,1>(2,0));
+            dst.select<H+1,1,W,1>(0,0) = cm_asr<uint1>(tmpD, 6, SAT);
+            sad.row(0) = Sad(dst.select<H,1,W,1>(0,0), src.select_all());
+            sad.row(6) = Sad(dst.select<H,1,W,1>(1,0), src.select_all());
+
+            tmpH.select<H,1,W,1>(2,0) += 4;
+            dst.select<H,1,W,1>(0,0) = cm_asr<uint1>(tmpH.select<H,1,W,1>(2,0), 3, SAT);
+            sad.row(3) = Sad(dst.select<H,1,W,1>(0,0), src.select_all());
+
+            tmpH = ref.select<H+4,1,W,1>(0,2) + ref.select<H+4,1,W,1>(0,3);
+            tmpH *= 5;
+            tmpH -= ref.select<H+4,1,W,1>(0,1);
+            tmpH -= ref.select<H+4,1,W,1>(0,4);
+
+            tmpD = 32 - tmpH.select<H+1,1,W,1>(0,0);
+            tmpD -= tmpH.select<H+1,1,W,1>(3,0);
+            tmpD += 5 * cm_add<int2>(tmpH.select<H+1,1,W,1>(1,0), tmpH.select<H+1,1,W,1>(2,0));
+            dst.select<H+1,1,W,1>(0,0) = cm_asr<uint1>(tmpD, 6, SAT);
+            sad.row(2) = Sad(dst.select<H,1,W,1>(0,0), src.select_all());
+            sad.row(8) = Sad(dst.select<H,1,W,1>(1,0), src.select_all());
+
+            tmpH.select<H,1,W,1>(2,0) += 4;
+            dst.select<H,1,W,1>(0,0) = cm_asr<uint1>(tmpH.select<H,1,W,1>(2,0), 3, SAT);
+            sad.row(5) = Sad(dst.select<H,1,W,1>(0,0), src.select_all());
+
+            matrix<uint4,9,W/4> tmp;
+            tmp = sad.select<9,1,W/4,4>(0,0) + sad.select<9,1,W/4,4>(0,2);
+            matrix<uint4,9,W/8> tmp2;
+            tmp2 = tmp.select<9,1,W/8,2>(0,0) + tmp.select<9,1,W/8,2>(0,1);
+            vector<uint4,9> tmp3;
+            tmp3 = tmp2.select<9,1,1,1>(0,0) + tmp2.select<9,1,1,1>(0,1);
+
+            //write(DIST, 64*blkx, blky, tmp3.select<8,1>(0));
+            //write(DIST, 64*blkx+32, blky, tmp3.select<1,1>(8));
+            sad64 += tmp3;
+        }
+    }
+    write(DIST, mbX * 4, mbY / 16, sad64.select<8,1>(0));
+    write(DIST, mbX * 4 + 32, mbY / 16, sad64.select<1,1>(8));
+}
+
+extern "C" _GENX_MAIN_
+void HmeMe32Dist(
+    SurfaceIndex SURF_16XCONTROL, SurfaceIndex SURF_2XCONTROL, SurfaceIndex SURF_SRCREF_16x, SurfaceIndex SURF_SRCREF_8x,
+    SurfaceIndex SURF_SRCREF_4x, SurfaceIndex SURF_SRCREF_2x, SurfaceIndex SURF_SRC_1x, SurfaceIndex SURF_REF_1x,
+    SurfaceIndex SURF_MV64x64, SurfaceIndex SURF_MV32x32, SurfaceIndex SURF_MV16x16, SurfaceIndex SURF_MV32x16, SurfaceIndex SURF_MV16x32,
+    SurfaceIndex SURF_DIST_4x, int rectParts)
+{
+    uint mbX = get_thread_origin_x();
+    uint mbY = get_thread_origin_y();
+    uint x = mbX * 16;
+    uint y = mbY * 16;
+
+    vector<uchar, 64> control16x;
+    vector<uchar, 64> control2x;
+    read(SURF_16XCONTROL, 0, control16x);
+    read(SURF_2XCONTROL, 0, control2x);
+
+    uint1 maxNumSu16x = control16x.format<uint1>()[56];
+    uint1 lenSp16x = control16x.format<uint1>()[57];
+    //uint2 width = control16x.format<uint2>()[30]; // width16x
+    //uint2 height = control16x.format<uint2>()[31]; // height16x
+    uint1 maxNumSu2x = control2x.format<uint1>()[56];
+    uint1 lenSp2x = control2x.format<uint1>()[57];
+
+    // read MB record data
+    UniIn uniIn = 0;
+    matrix<uchar, 9, 32> imeOut;
+    matrix<uchar, 2, 32> imeIn = 0;
+    matrix<uchar, 4, 32> fbrIn;
+
+    // declare parameters for VME
+    matrix<uint4, 16, 2> costs = 0;
+    vector<int2, 2> mvPred = 0;
+
+    // load search path
+    SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control16x, 0, 64);
+
+    // M0.2
+    VME_SET_UNIInput_SrcX(uniIn, x);
+    VME_SET_UNIInput_SrcY(uniIn, y);
+
+    uint subpartmask = 0x76040000; // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x8,16x16 to have 4MVs in the output
+    if (rectParts) {
+        subpartmask = 0x70040000; // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x8,8x16,16x8,16x16 to have 4MVs in the output (for MeP16)
+    }
+    VME_SET_DWORD(uniIn, 0, 3, subpartmask);
+
+    // M0.3 various prediction parameters
+    //VME_SET_DWORD(uniIn, 0, 3, 0x77040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x77: 8x8 only
+
+    // M1.1 MaxNumMVs
+    VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
+    // M0.5 Reference Window Width & Height
+    VME_SET_UNIInput_RefW(uniIn, 48);
+    VME_SET_UNIInput_RefH(uniIn, 40);
+
+    // M0.0 Ref0X, Ref0Y
+    vector_ref<int2, 2> sourceXY = uniIn.row(0).format<int2>().select<2,1>(4);
+    vector<uint1, 2> widthHeight;
+    //widthHeight[0] = (height >> 4) - 1;
+    //widthHeight[1] = (width >> 4);
+    vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
+    vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
+    SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
+
+    // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
+    VME_SET_UNIInput_AdaptiveEn(uniIn);
+    VME_SET_UNIInput_T8x8FlagForInterEn(uniIn);
+    VME_SET_UNIInput_MaxNumMVs(uniIn, 0x3f);
+    VME_SET_UNIInput_MaxNumSU(uniIn, maxNumSu16x);
+    VME_SET_UNIInput_LenSP(uniIn, lenSp16x);
+
+    // M1.2 Start0X, Start0Y
+    vector<int1, 2> start0 = searchWindow;
+    start0 = ((start0 - 16) >> 3) & 0x0f;
+    uniIn.row(1)[10] = start0[0] | (start0[1] << 4);
+
+    uniIn.row(1)[31] = 0x1;
+
+    vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
+#ifdef target_gen8
+    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
+#else
+    vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
+#endif
+    run_vme_ime(uniIn, imeIn,
+        VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
+        SURF_SRCREF_16x, ref0, NULL, costCenter, imeOut);
+
+    matrix<int2, 2, 4> mvPred0;  //8x MVs
+    mvPred0.format<int2>() = imeOut.row(8).format<int2>().select<8,1>(8) << 1;
+
+    const uint xBase0 = x * 2;  // for 8x tier
+    const uint yBase0 = y * 2;
+    const uint xBase1 = x * 4;  // for 4x tier
+    const uint yBase1 = y * 4;
+    const uint xBase2 = x * 8;  // for 2x tier
+    const uint yBase2 = y * 8;
+//    #pragma unroll
+    for (int yBlk0 = 0; yBlk0 < 32; yBlk0 += 16) {  // 8x tier
+//        #pragma unroll
+        for (int xBlk0 = 0; xBlk0 < 32; xBlk0 += 16) {
+            matrix<int2, 2, 4> mvPred64; //4x MVs
+            // update X and Y
+            VME_SET_UNIInput_SrcX(uniIn, xBase0 + xBlk0);
+            VME_SET_UNIInput_SrcY(uniIn, yBase0 + yBlk0);
+
+            int mvInd0 = ((yBlk0 >> 2) | (xBlk0 >> 3)); // choose 8x8_0, 8x8_1, 8x8_2 or 8x8_3
+            // long search path
+            SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control16x, 0, 64);
+            VME_SET_UNIInput_MaxNumSU(uniIn, maxNumSu16x);
+            VME_SET_UNIInput_LenSP(uniIn, lenSp16x);
+            ImeOneTier4MV(mvPred0.format<int2>().select<2,1>(mvInd0), SURF_SRCREF_8x, mvPred64, uniIn, imeIn);
+
+//            #pragma unroll
+            for (int yBlk1 = 0; yBlk1 < 32; yBlk1 += 16) {  // 4x tier
+//                #pragma unroll
+                for (int xBlk1 = 0; xBlk1 < 32; xBlk1 += 16) {
+                    matrix<int2, 2, 4> mvPred32; //2x MVs
+
+                    uint x32 = xBase1 + xBlk0 * 2 + xBlk1;
+                    uint y32 = yBase1 + yBlk0 * 2 + yBlk1;
+
+                    // update X and Y
+                    VME_SET_UNIInput_SrcX(uniIn, x32);
+                    VME_SET_UNIInput_SrcY(uniIn, y32);
+
+                    int mvInd1 = ((yBlk1 >> 2) | (xBlk1 >> 3)); // choose 8x8_0, 8x8_1, 8x8_2 or 8x8_3
+
+                    // long search path
+                    SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control16x, 0, 64);
+                    VME_SET_UNIInput_MaxNumSU(uniIn, maxNumSu16x);
+                    VME_SET_UNIInput_LenSP(uniIn, lenSp16x);
+                    vector_ref<int2,2> mv64 = mvPred64.format<int2>().select<2,1>(mvInd1);
+                    ImeOneTier4MV_1(mv64, SURF_SRCREF_4x, mvPred32, uniIn, imeIn); // intpel MV for 64x64 block is received here
+
+                    //Refine64x64(SURF_DIST_4x, mv64, SURF_SRC_1x, SURF_REF_1x, x32, y32); 
+
+//                    #pragma unroll
+                    for (int yBlk2 = 0; yBlk2 < 32; yBlk2 += 16) {  // 2x tier
+//                        #pragma unroll
+                        for (int xBlk2 = 0; xBlk2 < 32; xBlk2 += 16) {
+                            uint mbXme = (xBase2 + xBlk0 * 4  + xBlk1 * 2 + xBlk2) / 16;
+                            uint mbYme = (yBase2 + yBlk0 * 4  + yBlk1 * 2 + yBlk2) / 16;
+
+                            int mvInd2 = ((yBlk2 >> 2) | (xBlk2 >> 3)); // choose 8x8_0, 8x8_1, 8x8_2 or 8x8_3
+                            //// short search path
+                            SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control2x, 0, 64);
+                            VME_SET_UNIInput_MaxNumSU(uniIn, maxNumSu2x);
+                            VME_SET_UNIInput_LenSP(uniIn, lenSp2x);
+                            MeTier2x(SURF_SRCREF_2x, mvPred32.format<int2>().select<2,1>(mvInd2), SURF_MV16x16, SURF_MV32x16, SURF_MV16x32, mbXme, mbYme, uniIn, imeIn, rectParts);
+                        }
+                    }
+
+                    write(SURF_MV32x32, (x32 / 8) * MVDATA_SIZE, (y32 / 8), mvPred32);
+                }
+            }
+            write(SURF_MV64x64, (xBase0 + xBlk0) / 8 * MVDATA_SIZE, (yBase0 + yBlk0) / 8, mvPred64);
+        }
+    }
+
+}
+
 extern "C" _GENX_MAIN_
 void HmeMe32(
     SurfaceIndex SURF_16XCONTROL, SurfaceIndex SURF_2XCONTROL, SurfaceIndex SURF_REF_16x, SurfaceIndex SURF_REF_8x, SurfaceIndex SURF_REF_4x, SurfaceIndex SURF_REF_2x,

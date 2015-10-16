@@ -25,12 +25,12 @@ void RefineMeP64x64(SurfaceIndex DIST, SurfaceIndex MV, SurfaceIndex SRC, Surfac
 #endif //CMRT_EMU
 
 namespace {
-    int RunGpu(const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvData, Ipp32u *distData, Ipp32s width, Ipp32s height);
-    int RunRef(const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvData, Ipp32u *distData, Ipp32s width, Ipp32s height);
+    int RunGpu(const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvData, mfxI16Pair *outMvData, Ipp32u *distData, Ipp32s width, Ipp32s height);
+    int RunRef(const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvData, mfxI16Pair *outMvData, Ipp32u *distData, Ipp32s width, Ipp32s height);
     template <class T> int Compare(const T *outGpu, const T *outRef, Ipp32s width, Ipp32s height, const char *name);
 }
 
-static const Ipp32s BLOCKSIZE = 16;
+static const Ipp32s BLOCKSIZE = 64;
 
 int main()
 {
@@ -43,6 +43,8 @@ int main()
     std::vector<Ipp8u> src(width * height * 3 / 2);
     std::vector<Ipp8u> ref(width * height * 3 / 2);
     std::vector<mfxI16Pair> mv(width64x * height64x);
+    std::vector<mfxI16Pair> mvGpu(width64x * height64x);
+    std::vector<mfxI16Pair> mvRef(width64x * height64x);
     mfxI32 res = PASSED;
 
     FILE *f = fopen(YUV_NAME, "rb");
@@ -63,17 +65,22 @@ int main()
         }
     }
 
-    res = RunGpu(src.data(), ref.data(), mv.data(), distGpu.data(), width, height);
+    res = RunGpu(src.data(), ref.data(), mv.data(), mvGpu.data(), distGpu.data(), width, height);
     CHECK_ERR(res);
 
-    res = RunRef(src.data(), ref.data(), mv.data(), distRef.data(), width, height);
+    res = RunRef(src.data(), ref.data(), mv.data(), mvRef.data(), distRef.data(), width, height);
     CHECK_ERR(res);
 
     if (Compare(distGpu.data(), distRef.data(), width64x*16, height64x, "dist") != PASSED)
         return FAILED;
 
+    if (Compare(mvGpu.data(), mvRef.data(), width64x, height64x, "mv") != PASSED)
+        return FAILED;
+
     return printf("passed\n"), 0;
 }
+
+bool operator==(const mfxI16Pair &l, const mfxI16Pair &r) { return l.x == r.x && l.y == r.y; }
 
 namespace {
     template <class T> int Compare(const T *outGpu, const T *outRef, Ipp32s width, Ipp32s height, const char *name)
@@ -87,7 +94,7 @@ namespace {
         return PASSED;
     }
 
-    int RunGpu(const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvData, Ipp32u *distData, Ipp32s width, Ipp32s height)
+    int RunGpu(const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvData, mfxI16Pair *outMvData, Ipp32u *distData, Ipp32s width, Ipp32s height)
     {
         mfxI32 width64x = DIVUP(width, BLOCKSIZE);
         mfxI32 height64x = DIVUP(height, BLOCKSIZE);
@@ -117,11 +124,16 @@ namespace {
         res = ref->WriteSurfaceStride(refData, NULL, width);
         CHECK_CM_ERR(res);
 
-        CmSurface2D *mv = 0;
-        res = device->CreateSurface2D(width64x * sizeof(mfxI16Pair), height64x, CM_SURFACE_FORMAT_P8, mv);
+        mfxU32 mvPitch = 0;
+        mfxU32 mvSize = 0;
+        res = device->GetSurface2DInfo(width64x * sizeof(mfxI16Pair), height64x, CM_SURFACE_FORMAT_P8, mvPitch, mvSize);
         CHECK_CM_ERR(res);
-        res = mv->WriteSurface((const Ipp8u *)mvData, NULL);
+        mfxU8 *mvSys = (mfxU8 *)CM_ALIGNED_MALLOC(mvSize, 0x1000);
+        CmSurface2DUP *mv = 0;
+        res = device->CreateSurface2DUP(width64x * sizeof(mfxI16Pair), height64x, CM_SURFACE_FORMAT_P8, mvSys, mv);
         CHECK_CM_ERR(res);
+        for (mfxU32 y = 0; y < height64x; y++)
+            memcpy(mvSys + y * mvPitch, mvData + y * width64x, width64x * sizeof(mfxI16Pair));
 
         mfxU32 distPitch = 0;
         mfxU32 distSize = 0;
@@ -188,6 +200,8 @@ namespace {
 
         for (Ipp32s y = 0; y < height64x; y++)
             memcpy(distData + y * width64x * 16, distSys + y * distPitch, width64x * 16 * sizeof(*distData));
+        for (mfxU32 y = 0; y < height64x; y++)
+            memcpy(outMvData + y * width64x, mvSys + y * mvPitch, width64x * sizeof(mfxI16Pair));
 
 #ifndef CMRT_EMU
         printf("TIME=%.3f ms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
@@ -199,7 +213,8 @@ namespace {
         queue->DestroyEvent(e);
         device->DestroySurface2DUP(dist);
         CM_ALIGNED_FREE(distSys);
-        device->DestroySurface(mv);
+        device->DestroySurface2DUP(mv);
+        CM_ALIGNED_FREE(mvSys);
         device->DestroySurface(ref);
         device->DestroySurface(src);
         device->DestroyKernel(kernel);
@@ -329,7 +344,7 @@ namespace {
                 block[xx] = GetPel(src, pitch, width, height, x + xx, y + yy); 
     }
 
-    int RunRef(const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvData, Ipp32u *distData, Ipp32s width, Ipp32s height)
+    int RunRef(const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvData, mfxI16Pair *outMvData, Ipp32u *distData, Ipp32s width, Ipp32s height)
     {
         mfxI32 width64x = DIVUP(width, BLOCKSIZE);
         mfxI32 height64x = DIVUP(height, BLOCKSIZE);
@@ -340,7 +355,26 @@ namespace {
             for (mfxI32 xBlk = 0; xBlk < width64x; xBlk++) {
                 CopyBlock(srcData, width, width, height, xBlk * BLOCKSIZE, yBlk * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE, blockSrc);
 
-                mfxI16Pair hpelPoint = mvData[yBlk * width64x + xBlk];
+                mfxI16 originMvx = mvData[yBlk * width64x + xBlk].x;
+                mfxI16 originMvy = mvData[yBlk * width64x + xBlk].y;
+                mfxI16 cx = xBlk * BLOCKSIZE + originMvx / 4;
+                mfxI16 cy = yBlk * BLOCKSIZE + originMvy / 4;
+                mfxU32 bestSad = mfxU32(-1);
+                for (mfxI16 dy = -1; dy <= 1; dy++) {
+                    for (mfxI16 dx = -1; dx <= 1; dx++) {
+                //for (mfxI16 dy = 0; dy <= 0; dy++) {
+                //    for (mfxI16 dx = 0; dx <= 0; dx++) {
+                        CopyBlock(refData, width, width, height, cx + dx, cy + dy, BLOCKSIZE, BLOCKSIZE, blockRef);
+                        mfxU32 sad = CalcSad(blockSrc, blockRef, BLOCKSIZE, BLOCKSIZE);
+                        if (bestSad > sad) {
+                            bestSad = sad;
+                            outMvData[yBlk * width64x + xBlk].x = originMvx + dx * 4;
+                            outMvData[yBlk * width64x + xBlk].y = originMvy + dy * 4;
+                        }
+                    }
+                }
+
+                mfxI16Pair hpelPoint = outMvData[yBlk * width64x + xBlk];
                 hpelPoint.x = (mfxI16)(hpelPoint.x + xBlk * BLOCKSIZE * 4);
                 hpelPoint.y = (mfxI16)(hpelPoint.y + yBlk * BLOCKSIZE * 4);
 

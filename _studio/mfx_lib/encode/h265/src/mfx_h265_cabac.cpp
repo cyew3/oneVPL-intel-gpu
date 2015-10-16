@@ -474,11 +474,11 @@ void h265_code_mvd(H265Bs *bs, H265CU<PixType>* pCU, Ipp32s abs_part_idx, EnumRe
 
 template <typename PixType, class H265Bs>
 static
-void h265_code_delta_qp(H265Bs *bs, H265CU<PixType>* pCU, Ipp32s abs_part_idx)
+void h265_code_delta_qp(H265Bs *bs, H265CU<PixType>* pCU, Ipp32s abs_part_idx, Ipp32s bitdepth)
 {
     Ipp32s dqp  = pCU->m_data[abs_part_idx].qp - pCU->GetRefQp( abs_part_idx );
 
-    Ipp32s qp_bd_offset_y = 0;
+    Ipp32s qp_bd_offset_y = 6 * (bitdepth - 8);
     dqp = (dqp + 78 + qp_bd_offset_y + (qp_bd_offset_y/2)) % (52 + qp_bd_offset_y) - 26 - (qp_bd_offset_y/2);
 
     Ipp32u abs_dqp = ABS(dqp);
@@ -1211,7 +1211,7 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
             {
                 if (code_dqp)
                 {
-                    h265_code_delta_qp(bs, this, m_bakAbsPartIdxCu);
+                    h265_code_delta_qp(bs, this, m_bakAbsPartIdxCu, m_par->bitDepthLuma);
                     code_dqp = 0;
                 }
             }

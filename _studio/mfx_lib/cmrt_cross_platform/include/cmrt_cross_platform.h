@@ -977,6 +977,8 @@ public:
     CM_RT_API virtual INT WaitForTaskFinished(DWORD dwTimeOutMs = CM_MAX_TIMEOUT_MS) = 0 ;
 };
 
+class CmThreadSpace;
+
 class CmKernel
 {
 public:       
@@ -989,6 +991,8 @@ public:
     CM_RT_API virtual INT SetKernelPayloadData(size_t size, const void *pValue) = 0;
     CM_RT_API virtual INT SetKernelPayloadSurface(UINT surfaceCount, SurfaceIndex** pSurfaces) = 0;
     CM_RT_API virtual INT SetSurfaceBTI(SurfaceIndex* pSurface, UINT BTIndex) = 0;    
+
+    CM_RT_API virtual INT AssociateThreadSpace(CmThreadSpace* & pTS) = 0;
 };
 
 class CmTask
@@ -996,6 +1000,7 @@ class CmTask
 public:       
     CM_RT_API virtual INT AddKernel(CmKernel *pKernel) = 0;
     CM_RT_API virtual INT Reset(void) = 0;
+    CM_RT_API virtual INT AddSync(void) = 0;
 }; 
 
 class CmProgram;

@@ -98,7 +98,7 @@
       <Command>build_kernel.cmd hme_and_me_p32_4mv hsw</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>rem for /L %%i in (0,1,4) do $(TargetPath)</Command>
+      <Command>for /L %%i in (0,1,4) do $(TargetPath)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -124,7 +124,7 @@
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
     <PreBuildEvent>
-      <Command>build_kernel.cmd hme_and_me_p32_4mv hsw /Qxcm_release</Command>
+      <Command>build_kernel_all_targets.cmd hme_and_me_p32_4mv /Qxcm_release</Command>
     </PreBuildEvent>
     <Link>
       <AdditionalDependencies>igfxcmrt64.lib;</AdditionalDependencies>

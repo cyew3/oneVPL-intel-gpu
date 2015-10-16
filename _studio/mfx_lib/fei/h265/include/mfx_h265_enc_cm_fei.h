@@ -53,13 +53,13 @@ private:
     CmProgram * programGradient;
     CmProgram * programHmeMe32;
     CmProgram * programMe16Refine32x32;
+    CmProgram * programRefine64x64;
     CmProgram * programRefine32x32sad;
     CmProgram * programRefine32x16;
     CmProgram * programRefine16x32;
     CmProgram * programInterpolateFrame;
     CmProgram * programDeblock;
-    CmProgram * programSaoEstimate;
-    CmProgram * programSaoApply;
+    CmProgram * programSao;
     CmEvent   * lastEventSaved;
     mfxU32      saveSyncPoint;
 
@@ -78,16 +78,17 @@ private:
     H265Enc::Kernel kernelPrepareRef;
     H265Enc::Kernel kernelMeIntra;
     H265Enc::Kernel kernelGradient;
-    H265Enc::Kernel kernelHmeMe32;
-    H265Enc::Kernel kernelMe16Refine32x32;
+    H265Enc::Kernel kernelMe;
+    H265Enc::Kernel kernelRefine64x64;
     H265Enc::Kernel kernelRefine32x32sad;
     H265Enc::Kernel kernelRefine32x16;
     H265Enc::Kernel kernelRefine16x32;
     H265Enc::Kernel kernelInterpolateFrame;
     H265Enc::Kernel kernelDeblock;
-    H265Enc::Kernel kernelSaoStat;
-    H265Enc::Kernel kernelSaoEstimate;
-    H265Enc::Kernel kernelSaoApply;
+    H265Enc::Kernel kernelFullPostProc;
+    //H265Enc::Kernel kernelSaoStat;
+    //H265Enc::Kernel kernelSaoEstimate;
+    //H265Enc::Kernel kernelSaoApply;
 
     /* set once at init */
     mfxU32 sourceWidth;
@@ -145,13 +146,13 @@ public:
         programGradient(),
         programHmeMe32(),
         programMe16Refine32x32(),
+        programRefine64x64(),
         programRefine32x32sad(),
         programRefine32x16(),
         programRefine16x32(),
         programInterpolateFrame(),
         programDeblock(),
-        programSaoEstimate(),
-        programSaoApply(),
+        programSao(),
         lastEventSaved(),
         saveSyncPoint(),
 
@@ -166,16 +167,14 @@ public:
         kernelPrepareRef(),
         kernelMeIntra(),
         kernelGradient(),
-        kernelMe16Refine32x32(),
+        kernelRefine64x64(),
         kernelRefine32x32sad(),
         kernelRefine32x16(),
         kernelRefine16x32(),
         kernelInterpolateFrame(),
-        kernelHmeMe32(),
+        kernelMe(),
         kernelDeblock(),
-        kernelSaoStat(),
-        kernelSaoEstimate(),
-        kernelSaoApply(),
+        kernelFullPostProc(),
 
         width(),
         height(),

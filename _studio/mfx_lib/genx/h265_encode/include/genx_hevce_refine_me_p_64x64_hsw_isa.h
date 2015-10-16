@@ -9,5 +9,5 @@
 
 #ifndef __genx_hevce_refine_me_p_64x64_hsw__
 #define __genx_hevce_refine_me_p_64x64_hsw__
-extern const unsigned char genx_hevce_refine_me_p_64x64_hsw[21967];
+extern const unsigned char genx_hevce_refine_me_p_64x64_hsw[33320];
 #endif

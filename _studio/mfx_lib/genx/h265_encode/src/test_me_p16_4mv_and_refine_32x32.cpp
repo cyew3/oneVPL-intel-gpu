@@ -24,10 +24,15 @@
 
 
 #ifdef CMRT_EMU
-extern "C" void MeP16_4MV(SurfaceIndex CTRL, SurfaceIndex SRCREF,
+extern "C" void Me16AndRefine32x32(
+    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DIST16x16,
+    SurfaceIndex DIST8x8, SurfaceIndex MV16x16, SurfaceIndex MV8x8,
+    SurfaceIndex SRC, SurfaceIndex REF, SurfaceIndex MV32x32, SurfaceIndex DIST32x32);
+extern "C" void Me16RectPartsAndRefine32x32(
+    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF,
     SurfaceIndex DIST16x16, SurfaceIndex DIST16x8, SurfaceIndex DIST8x16, SurfaceIndex DIST8x8,
-    SurfaceIndex MV16x16, SurfaceIndex MV16x8, SurfaceIndex MV8x16, SurfaceIndex MV8x8, int rectParts);
-
+    SurfaceIndex MV16x16, SurfaceIndex MV16x8, SurfaceIndex MV8x16, SurfaceIndex MV8x8,
+    SurfaceIndex SRC, SurfaceIndex REF, SurfaceIndex MV32x32, SurfaceIndex DIST32x32);
 #endif //CMRT_EMU
 
 namespace {
@@ -180,7 +185,8 @@ namespace {
         CHECK_CM_ERR(res);
 
         CmKernel *kernel = 0;
-        res = device->CreateKernel(program, CM_KERNEL_FUNCTION(Me16AndRefine32x32), kernel);
+        res = (rectParts==0) ? device->CreateKernel(program, CM_KERNEL_FUNCTION(Me16AndRefine32x32), kernel)
+                             : device->CreateKernel(program, CM_KERNEL_FUNCTION(Me16RectPartsAndRefine32x32), kernel);
         CHECK_CM_ERR(res);
 
         CmBuffer *ctrlBuf = 0;
@@ -334,35 +340,38 @@ namespace {
         SurfaceIndex *idxRef = 0;
         res = ref->GetIndex(idxRef);
 
-        res = kernel->SetKernelArg(0, sizeof(*idxCtrl), idxCtrl);
+        int argIdx = 0;
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxCtrl);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(1, sizeof(*genxRefs), genxRefs);
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), genxRefs);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(2, sizeof(*idxDist16x16), idxDist16x16);
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxDist16x16);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(3, sizeof(*idxDist16x8), idxDist16x8);
+        if (rectParts) {
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxDist16x8);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxDist8x16);
+            CHECK_CM_ERR(res);
+        }
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxDist8x8);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(4, sizeof(*idxDist8x16), idxDist8x16);
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMv16x16);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(5, sizeof(*idxDist8x8), idxDist8x8);
+        if (rectParts) {
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMv16x8);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMv8x16);
+            CHECK_CM_ERR(res);
+        }
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMv8x8);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(6, sizeof(*idxMv16x16), idxMv16x16);
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxSrc);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(7, sizeof(*idxMv16x8), idxMv16x8);
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxRef);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(8, sizeof(*idxMv8x16), idxMv8x16);
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMv32x32);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(9, sizeof(*idxMv8x8), idxMv8x8);
-        CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(10, sizeof(rectParts), &rectParts);
-        CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(11, sizeof(*idxSrc), idxSrc);
-        CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(12, sizeof(*idxRef), idxRef);
-        CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(13, sizeof(*idxMv32x32), idxMv32x32);
-        CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(14, sizeof(*idxDist32x32), idxDist32x32);
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxDist32x32);
         CHECK_CM_ERR(res);
 
         // MV16x16 also serves as MV predictor
@@ -726,27 +735,28 @@ namespace {
         res = mv8x8->GetIndex(idxMv8x8);
         CHECK_CM_ERR(res);
 
-        res = kernel->SetKernelArg(0, sizeof(*idxCtrl), idxCtrl);
+        int argIdx = 0;
+        res = kernel->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(1, sizeof(*genxRefs), genxRefs);
+        res = kernel->SetKernelArg(argIdx++, sizeof(*genxRefs), genxRefs);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(2, sizeof(*idxDist16x16), idxDist16x16);
+        res = kernel->SetKernelArg(argIdx++, sizeof(*idxDist16x16), idxDist16x16);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(3, sizeof(*idxDist16x8), idxDist16x8);
+        res = kernel->SetKernelArg(argIdx++, sizeof(*idxDist16x8), idxDist16x8);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(4, sizeof(*idxDist8x16), idxDist8x16);
+        res = kernel->SetKernelArg(argIdx++, sizeof(*idxDist8x16), idxDist8x16);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(5, sizeof(*idxDist8x8), idxDist8x8);
+        res = kernel->SetKernelArg(argIdx++, sizeof(*idxDist8x8), idxDist8x8);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(6, sizeof(*idxMv16x16), idxMv16x16);
+        res = kernel->SetKernelArg(argIdx++, sizeof(*idxMv16x16), idxMv16x16);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(7, sizeof(*idxMv16x8), idxMv16x8);
+        res = kernel->SetKernelArg(argIdx++, sizeof(*idxMv16x8), idxMv16x8);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(8, sizeof(*idxMv8x16), idxMv8x16);
+        res = kernel->SetKernelArg(argIdx++, sizeof(*idxMv8x16), idxMv8x16);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(9, sizeof(*idxMv8x8), idxMv8x8);
+        res = kernel->SetKernelArg(argIdx++, sizeof(*idxMv8x8), idxMv8x8);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(10, sizeof(rectParts), &rectParts);
+        res = kernel->SetKernelArg(argIdx++, sizeof(rectParts), &rectParts);
         CHECK_CM_ERR(res);
 
         // MV16x16 also serves as MV predictor

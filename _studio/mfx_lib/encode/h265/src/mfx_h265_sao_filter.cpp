@@ -304,21 +304,24 @@ void SaoEstimator::GetBestSao_RdoCost(bool* sliceEnabled, SaoCtuParam* mergeList
     Ipp64f bestCost = modeDist[SAO_Y] / m_labmda[SAO_Y] + (modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda + m_bsf->GetNumBits();
 
 #if defined(SAO_MODE_MERGE_ENABLED)
+    int compCount = sliceEnabled[SAO_Cb] ? 3 : 1;
     SaoCtuParam testParam;
     for (Ipp32s mode = 0; mode < 2; mode++) {
         if (NULL == mergeList[mode])
             continue;
         
         small_memcpy(&testParam, mergeList[mode], sizeof(SaoCtuParam));
-        testParam[0].mode_idx = SAO_MODE_MERGE;
-        testParam[0].type_idx = mode;
-
-        SaoOffsetParam& mergedOffset = (*(mergeList[mode]))[0];
 
         Ipp64s distortion=0;
-        if ( SAO_MODE_OFF != mergedOffset.mode_idx ) {
-            distortion = GetDistortion( mergedOffset.type_idx, mergedOffset.typeAuxInfo,
-                mergedOffset.offset, m_statData[0][mergedOffset.type_idx], shift);
+        for (int compIdx = 0; compIdx < compCount; compIdx++) {
+            testParam[compIdx].mode_idx = SAO_MODE_MERGE;
+            testParam[compIdx].type_idx = mode;
+
+            SaoOffsetParam& mergedOffset = (*(mergeList[mode]))[compIdx];
+            if ( SAO_MODE_OFF != mergedOffset.mode_idx ) {
+                distortion += GetDistortion( mergedOffset.type_idx, mergedOffset.typeAuxInfo,
+                    mergedOffset.offset, m_statData[compIdx][mergedOffset.type_idx], shift);
+            }
         }
 
         m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);

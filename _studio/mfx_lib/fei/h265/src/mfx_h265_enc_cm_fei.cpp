@@ -27,6 +27,8 @@
 #include "genx_hevce_intra_avc_hsw_isa.h"
 #include "genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.h"
 #include "genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.h"
+#include "genx_hevce_refine_me_p_64x64_bdw_isa.h"
+#include "genx_hevce_refine_me_p_64x64_hsw_isa.h"
 #include "genx_hevce_refine_me_p_16x32_bdw_isa.h"
 #include "genx_hevce_refine_me_p_16x32_hsw_isa.h"
 #include "genx_hevce_refine_me_p_32x16_bdw_isa.h"
@@ -194,7 +196,7 @@ static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxFEIH265Param *param, 
     GetDimensionsCmSurface2DUp<mfxI32>(device, width32 / 32, height32 / 32, CM_SURFACE_FORMAT_P8, &extAlloc->IntraMode[3]);
 
     /* inter distortion */
-    for (k = MFX_FEI_H265_BLK_32x32; k <=  MFX_FEI_H265_BLK_16x32; k++)  // no InterDist for 64x64 now
+    for (k = MFX_FEI_H265_BLK_64x64; k <=  MFX_FEI_H265_BLK_16x32; k++)  // no InterDist for 64x64 now
         GetDimensionsCmSurface2DUp<mfxU32>(device, cmMvW[k] * 16, cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterDist[k]);
     for (k = MFX_FEI_H265_BLK_16x16; k <= MFX_FEI_H265_BLK_8x8; k++)
         GetDimensionsCmSurface2DUp<mfxU32>(device, cmMvW[k] * 1,  cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterDist[k]);
@@ -425,12 +427,12 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         programInterpolateFrame = ReadProgram(device, genx_hevce_interpolate_frame_hsw, sizeof(genx_hevce_interpolate_frame_hsw));
         programMeIntra          = ReadProgram(device, genx_hevce_intra_avc_hsw, sizeof(genx_hevce_intra_avc_hsw));
         programMe16Refine32x32  = ReadProgram(device, genx_hevce_me_p16_4mv_and_refine_32x32_hsw, sizeof(genx_hevce_me_p16_4mv_and_refine_32x32_hsw));
+        programRefine64x64      = ReadProgram(device, genx_hevce_refine_me_p_64x64_hsw, sizeof(genx_hevce_refine_me_p_64x64_hsw));
         programRefine16x32      = ReadProgram(device, genx_hevce_refine_me_p_16x32_hsw, sizeof(genx_hevce_refine_me_p_16x32_hsw));
         programRefine32x16      = ReadProgram(device, genx_hevce_refine_me_p_32x16_hsw, sizeof(genx_hevce_refine_me_p_32x16_hsw));
         programRefine32x32sad   = ReadProgram(device, genx_hevce_refine_me_p_32x32_sad_hsw, sizeof(genx_hevce_refine_me_p_32x32_sad_hsw));
         programDeblock          = ReadProgram(device, genx_hevce_deblock_hsw, sizeof(genx_hevce_deblock_hsw));
-        programSaoEstimate      = ReadProgram(device, genx_hevce_sao_hsw, sizeof(genx_hevce_sao_hsw));
-        programSaoApply         = ReadProgram(device, genx_hevce_sao_hsw, sizeof(genx_hevce_sao_hsw));
+        programSao              = ReadProgram(device, genx_hevce_sao_hsw, sizeof(genx_hevce_sao_hsw));
         break;
     case PLATFORM_INTEL_BDW:
     case PLATFORM_INTEL_CHV:
@@ -441,64 +443,65 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         programInterpolateFrame = ReadProgram(device, genx_hevce_interpolate_frame_bdw, sizeof(genx_hevce_interpolate_frame_bdw));
         programMeIntra          = ReadProgram(device, genx_hevce_intra_avc_bdw, sizeof(genx_hevce_intra_avc_bdw));
         programMe16Refine32x32  = ReadProgram(device, genx_hevce_me_p16_4mv_and_refine_32x32_bdw, sizeof(genx_hevce_me_p16_4mv_and_refine_32x32_bdw));
+        programRefine64x64      = ReadProgram(device, genx_hevce_refine_me_p_64x64_bdw, sizeof(genx_hevce_refine_me_p_64x64_bdw));
         programRefine16x32      = ReadProgram(device, genx_hevce_refine_me_p_16x32_bdw, sizeof(genx_hevce_refine_me_p_16x32_bdw));
         programRefine32x16      = ReadProgram(device, genx_hevce_refine_me_p_32x16_bdw, sizeof(genx_hevce_refine_me_p_32x16_bdw));
         programRefine32x32sad   = ReadProgram(device, genx_hevce_refine_me_p_32x32_sad_bdw, sizeof(genx_hevce_refine_me_p_32x32_sad_bdw));
         programDeblock          = ReadProgram(device, genx_hevce_deblock_bdw, sizeof(genx_hevce_deblock_bdw));
-        programSaoEstimate      = ReadProgram(device, genx_hevce_sao_bdw, sizeof(genx_hevce_sao_bdw));
-        programSaoApply         = ReadProgram(device, genx_hevce_sao_bdw, sizeof(genx_hevce_sao_bdw));
+        programSao              = ReadProgram(device, genx_hevce_sao_bdw, sizeof(genx_hevce_sao_bdw));
         break;
     default:
         return MFX_ERR_UNSUPPORTED;
     }
 
     /* create Cm kernels */
-    kernelGradient.Configure(device, programGradient, "AnalyzeGradient32x32Best",
+    kernelGradient.AddKernel(device, programGradient, "AnalyzeGradient32x32Best",
         width32 / 32, height32 / 32, CM_NONE_DEPENDENCY);
 
-    kernelHmeMe32.Configure(device, programHmeMe32, "HmeMe32",
+    kernelMe.AddKernel(device, programHmeMe32, "HmeMe32",
         width16x / 16, height16x / 16, CM_NONE_DEPENDENCY);
+    kernelMe.AddKernel(device, programRefine64x64, "RefineMeP64x64",
+        width4x / 16, height4x / 16, CM_NONE_DEPENDENCY, true);
+    kernelMe.AddKernel(device, programMe16Refine32x32, "Me16AndRefine32x32",
+        width / 16, height / 16, CM_NONE_DEPENDENCY, false);
 
-    kernelInterpolateFrame.Configure(device, programInterpolateFrame, "InterpolateFrameWithBorder",
+    kernelInterpolateFrame.AddKernel(device, programInterpolateFrame, "InterpolateFrameWithBorder",
         interpBlocksW, interpBlocksH, CM_NONE_DEPENDENCY);
 
-    kernelMeIntra.Configure(device, programMeIntra, "IntraAvc",
+    kernelMeIntra.AddKernel(device, programMeIntra, "IntraAvc",
         width / 16, height / 16, CM_NONE_DEPENDENCY);
 
-    kernelMe16Refine32x32.Configure(device, programMe16Refine32x32, "Me16AndRefine32x32",
-        width / 16, height / 16, CM_NONE_DEPENDENCY);
-
-    kernelRefine32x32sad.Configure(device, programRefine32x32sad, "RefineMeP32x32Sad",
+    kernelRefine32x32sad.AddKernel(device, programRefine32x32sad, "RefineMeP32x32Sad",
         width2x / 16, height2x / 16, CM_NONE_DEPENDENCY);
 
-    kernelRefine32x16.Configure(device, programRefine32x16, "RefineMeP32x16",
+    kernelRefine32x16.AddKernel(device, programRefine32x16, "RefineMeP32x16",
         width2x / 16, height2x / 8, CM_NONE_DEPENDENCY);
 
-    kernelRefine16x32.Configure(device, programRefine16x32, "RefineMeP16x32",
+    kernelRefine16x32.AddKernel(device, programRefine16x32, "RefineMeP16x32",
         width2x / 8, height2x / 16, CM_NONE_DEPENDENCY);
 
     const char *prepareSrcName = fourcc == MFX_FOURCC_NV12 ? "PrepareSrcNv12" :
                                  fourcc == MFX_FOURCC_NV16 ? "PrepareSrcNv16" :
                                  fourcc == MFX_FOURCC_P010 ? "PrepareSrcP010" :
                                  fourcc == MFX_FOURCC_P210 ? "PrepareSrcP210" : NULL;
-    kernelPrepareSrc.Configure(device, programPrepareSrc, prepareSrcName,
+    kernelPrepareSrc.AddKernel(device, programPrepareSrc, prepareSrcName,
         width16x / 4, height16x, CM_NONE_DEPENDENCY);
 
     if (fourcc == MFX_FOURCC_NV12)
-        kernelPrepareRef.Configure(device, programPrepareSrc, "PrepareRefNv12",
+        kernelPrepareRef.AddKernel(device, programPrepareSrc, "PrepareRefNv12",
             width16x / 4, height16x, CM_NONE_DEPENDENCY);
 
-    kernelDeblock.Configure(device, programDeblock, "Deblock",
+    kernelDeblock.AddKernel(device, programDeblock, "Deblock",
         (width + 12 + 15) / 16, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
 
-    kernelSaoStat.Configure(device, programSaoEstimate, "SaoStat",
-        (width + 63) / 64 * 4, (height + 63) / 64 * 4, CM_NONE_DEPENDENCY);
-
-    kernelSaoEstimate.Configure(device, programSaoEstimate, "SaoEstimate",
-        (width + 63) / 64, (height + 63) / 64, CM_WAVEFRONT);
-
-    kernelSaoApply.Configure(device, programSaoApply, "SaoApply",
-        (width + 63) / 64, (height + 63) / 64, CM_NONE_DEPENDENCY);
+    kernelFullPostProc.AddKernel(device, programDeblock, "Deblock",
+        (width + 12 + 15) / 16, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
+    kernelFullPostProc.AddKernel(device, programSao, "SaoStat",
+        (width + 63) / 64 * 4, (height + 63) / 64 * 4, CM_NONE_DEPENDENCY, true);
+    kernelFullPostProc.AddKernel(device, programSao, "SaoEstimate",
+        (width + 63) / 64, (height + 63) / 64, CM_WAVEFRONT, true);
+    kernelFullPostProc.AddKernel(device, programSao, "SaoApply",
+        (width + 63) / 64, (height + 63) / 64, CM_NONE_DEPENDENCY, true);
 
     /* set up VME */
     curbe       = CreateBuffer(device, sizeof(H265EncCURBEData));
@@ -564,30 +567,31 @@ void H265CmCtx::FreeCmResources()
     if (lastEventSaved != NULL && lastEventSaved != CM_NO_EVENT)
         queue->DestroyEvent(lastEventSaved);
  
-    kernelPrepareSrc.Destroy(device);
-    kernelPrepareRef.Destroy(device);
-    kernelMeIntra.Destroy(device);
-    kernelGradient.Destroy(device);
-    kernelMe16Refine32x32.Destroy(device);
-    kernelRefine32x16.Destroy(device);
-    kernelRefine16x32.Destroy(device);
-    kernelInterpolateFrame.Destroy(device);
-    kernelHmeMe32.Destroy(device);
-    kernelDeblock.Destroy(device);
-    kernelSaoEstimate.Destroy(device);
-    kernelSaoApply.Destroy(device);
+    kernelPrepareSrc.Destroy();
+    kernelPrepareRef.Destroy();
+    kernelMeIntra.Destroy();
+    kernelGradient.Destroy();
+    kernelRefine64x64.Destroy();
+    kernelRefine32x32sad.Destroy();
+    kernelRefine32x16.Destroy();
+    kernelRefine16x32.Destroy();
+    kernelInterpolateFrame.Destroy();
+    kernelMe.Destroy();
+    kernelDeblock.Destroy();
+    kernelFullPostProc.Destroy();
 
     device->DestroyProgram(programPrepareSrc);
     device->DestroyProgram(programMeIntra);
     device->DestroyProgram(programGradient);
     device->DestroyProgram(programHmeMe32);
     device->DestroyProgram(programMe16Refine32x32);
+    device->DestroyProgram(programRefine64x64);
     device->DestroyProgram(programRefine32x32sad);
     device->DestroyProgram(programRefine32x16);
     device->DestroyProgram(programRefine16x32);
     device->DestroyProgram(programInterpolateFrame);
     device->DestroyProgram(programDeblock);
-    device->DestroyProgram(programSaoEstimate);
+    device->DestroyProgram(programSao);
 
     ::DestroyCmDevice(device);
 }
@@ -830,7 +834,8 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         device->DestroyVmeSurfaceG7_5(refsIntra);
     }
 
-    if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME | MFX_FEI_H265_OP_INTER_HME_ME32 | MFX_FEI_H265_OP_INTER_ME16)) {
+    if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME)) {
+        dist[MFX_FEI_H265_BLK_64x64] = GET_OUTSURF(feiOut->SurfInterDist[MFX_FEI_H265_BLK_64x64]);
         dist[MFX_FEI_H265_BLK_32x16] = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_32x16 : MFX_FEI_H265_BLK_32x32]);
         dist[MFX_FEI_H265_BLK_16x32] = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_16x32 : MFX_FEI_H265_BLK_32x32]);
         dist[MFX_FEI_H265_BLK_32x32] = GET_OUTSURF(feiOut->SurfInterDist[MFX_FEI_H265_BLK_32x32]);
@@ -846,51 +851,32 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         mv[MFX_FEI_H265_BLK_16x8]    = GET_OUTSURF(feiOut->SurfInterMV[rectParts ? MFX_FEI_H265_BLK_16x8 : MFX_FEI_H265_BLK_16x16]);
         mv[MFX_FEI_H265_BLK_8x16]    = GET_OUTSURF(feiOut->SurfInterMV[rectParts ? MFX_FEI_H265_BLK_8x16 : MFX_FEI_H265_BLK_16x16]);
         mv[MFX_FEI_H265_BLK_8x8]     = GET_OUTSURF(feiOut->SurfInterMV[MFX_FEI_H265_BLK_8x8]);
-    }
 
-    ///* process 1 ref frame */
-    //if ((feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME | MFX_FEI_H265_OP_INTERPOLATE)) && (feiIn->FrameType == MFX_FRAMETYPE_P || feiIn->FrameType == MFX_FRAMETYPE_B)) {
-    //    mfxFEIH265InputSurface *surfIn = &((mfxFEIH265Surface *)feiIn->meArgs.surfSrc)->sIn;
-    //    mfxFEIH265ReconSurface *surfRef = &((mfxFEIH265Surface *)feiIn->meArgs.surfRef)->sRec;
-    //    if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME))
-    //        RunVmeKernel(&lastEvent, dist, mv, surfIn, surfRef);
-
-    //    //if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTERPOLATE)) {
-    //    //    //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "  Interpolate - P/B");
-    //    //    SetKernelArg(kernelInterpolateFrame, surfInRef->bufOrigNv12, GET_OUTSURF(feiOut->SurfInterp[0]), GET_OUTSURF(feiOut->SurfInterp[1]), GET_OUTSURF(feiOut->SurfInterp[2]));
-    //    //    EnqueueKernel(device, queue, task, kernelInterpolateFrame, interpBlocksW, interpBlocksH, lastEvent);
-    //    //}
-    //}
-
-    if (feiIn->FEIOp & MFX_FEI_H265_OP_INTER_HME_ME32)
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "HmeMe32");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "ME");
         mfxFEIH265InputSurface *surfIn = &((mfxFEIH265Surface *)feiIn->meArgs.surfSrc)->sIn;
         mfxFEIH265ReconSurface *surfRef = &((mfxFEIH265Surface *)feiIn->meArgs.surfRef)->sRec;
+        SurfaceIndex *refs   = CreateVmeSurfaceG75(device, surfIn->bufOrigNv12, &(surfRef->bufOrigNv12), 0, 1, 0);
         SurfaceIndex *refs2x = CreateVmeSurfaceG75(device, surfIn->bufDown2x, &(surfRef->bufDown2x), 0, 1, 0);
         SurfaceIndex *refs4x = CreateVmeSurfaceG75(device, surfIn->bufDown4x, &(surfRef->bufDown4x), 0, 1, 0);
         SurfaceIndex *refs8x = CreateVmeSurfaceG75(device, surfIn->bufDown8x, &(surfRef->bufDown8x), 0, 1, 0);
         SurfaceIndex *refs16x = CreateVmeSurfaceG75(device, surfIn->bufDown16x, &(surfRef->bufDown16x), 0, 1, 0);
-        SetKernelArg(kernelHmeMe32.kernel, me16xControl, me2xControl, *refs16x, *refs8x, *refs4x, *refs2x,
-            mv[MFX_FEI_H265_BLK_64x64], mv[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_16x16], mv[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_16x32], rectParts);
-        kernelHmeMe32.Enqueue(queue, lastEvent);
+        SetKernelArg(kernelMe.m_kernel[0], me16xControl, me2xControl, *refs16x, *refs8x, *refs4x, *refs2x,
+            mv[MFX_FEI_H265_BLK_64x64], mv[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_16x16],
+            mv[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_16x32], rectParts);
+        SetKernelArg(kernelMe.m_kernel[1], dist[MFX_FEI_H265_BLK_64x64], mv[MFX_FEI_H265_BLK_64x64], surfIn->bufOrigNv12, surfRef->bufOrigNv12);
+        SetKernelArg(kernelMe.m_kernel[2], me1xControl, *refs, dist[MFX_FEI_H265_BLK_16x16], dist[MFX_FEI_H265_BLK_8x8],
+            mv[MFX_FEI_H265_BLK_16x16], mv[MFX_FEI_H265_BLK_8x8], surfIn->bufOrigNv12, surfRef->bufOrigNv12,
+            mv[MFX_FEI_H265_BLK_32x32], dist[MFX_FEI_H265_BLK_32x32]);
+
+        kernelMe.Enqueue(queue, lastEvent);
+
+        device->DestroyVmeSurfaceG7_5(refs);
         device->DestroyVmeSurfaceG7_5(refs16x);
         device->DestroyVmeSurfaceG7_5(refs8x);
         device->DestroyVmeSurfaceG7_5(refs4x);
         device->DestroyVmeSurfaceG7_5(refs2x);
     }
 
-    if (feiIn->FEIOp & MFX_FEI_H265_OP_INTER_ME16) {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Me16Refine32x32");
-        mfxFEIH265InputSurface *surfIn = &((mfxFEIH265Surface *)feiIn->meArgs.surfSrc)->sIn;
-        mfxFEIH265ReconSurface *surfRef = &((mfxFEIH265Surface *)feiIn->meArgs.surfRef)->sRec;
-        SurfaceIndex *refs = CreateVmeSurfaceG75(device, surfIn->bufOrigNv12, &(surfRef->bufOrigNv12), 0, 1, 0);
-        SetKernelArg(kernelMe16Refine32x32.kernel, me1xControl, *refs, dist[MFX_FEI_H265_BLK_16x16], dist[MFX_FEI_H265_BLK_16x8], dist[MFX_FEI_H265_BLK_8x16],
-            dist[MFX_FEI_H265_BLK_8x8], mv[MFX_FEI_H265_BLK_16x16], mv[MFX_FEI_H265_BLK_16x8], mv[MFX_FEI_H265_BLK_8x16], mv[MFX_FEI_H265_BLK_8x8], rectParts,
-            surfIn->bufOrigNv12, surfRef->bufOrigNv12, mv[MFX_FEI_H265_BLK_32x32], dist[MFX_FEI_H265_BLK_32x32]);
-        kernelMe16Refine32x32.Enqueue(queue, lastEvent);
-        device->DestroyVmeSurfaceG7_5(refs);
-    }
 
     /* GPU deblock, SAO estimate and SAO apply */
     if (feiIn->FEIOp & (MFX_FEI_H265_OP_POSTPROC | MFX_FEI_H265_OP_DEBLOCK)) {
@@ -906,29 +892,17 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
 
         int doSao = feiIn->FEIOp & (MFX_FEI_H265_OP_POSTPROC);
 
-        // Deblocking
-        { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Deblock");
+        if (doSao) {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Deblock+Sao");
+            SetKernelArg(kernelFullPostProc.m_kernel[0], recUpLu, recUpCh, padding, paddingChroma, doSao ? deblocked : recon, cuData, postprocParam);
+            SetKernelArg(kernelFullPostProc.m_kernel[1], origin, deblocked, postprocParam, saoStat);
+            SetKernelArg(kernelFullPostProc.m_kernel[2], postprocParam, saoStat, saoModes);
+            SetKernelArg(kernelFullPostProc.m_kernel[3], deblocked, recon, postprocParam, saoModes);
+            kernelFullPostProc.Enqueue(queue, lastEvent);
+        } else {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Deblock");
             SetKernelArg(kernelDeblock.kernel, recUpLu, recUpCh, padding, paddingChroma, doSao ? deblocked : recon, cuData, postprocParam);
             kernelDeblock.Enqueue(queue, lastEvent);
-        }
-
-        if (doSao) {
-            // SAO stat
-            { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "SaoStat");
-            SetKernelArg(kernelSaoStat.kernel, origin, deblocked, postprocParam, saoStat);
-            kernelSaoStat.Enqueue(queue, lastEvent);
-            }
-
-            { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "SaoEstimate");
-            SetKernelArg(kernelSaoEstimate.kernel, postprocParam, saoStat, saoModes);
-            kernelSaoEstimate.Enqueue(queue, lastEvent);
-            }
-
-            // SAO apply
-            { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "SaoApply");
-            SetKernelArg(kernelSaoApply.kernel, deblocked, recon, postprocParam, saoModes);
-            kernelSaoApply.Enqueue(queue, lastEvent);
-            }
         }
 
         // clean up   
