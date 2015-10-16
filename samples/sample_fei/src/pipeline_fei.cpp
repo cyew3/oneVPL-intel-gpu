@@ -2734,9 +2734,42 @@ mfxStatus CEncodingPipeline::Run()
     return sts;
 }
 
+mfxStatus CEncodingPipeline::passPreEncMVPred2Enc(iTask* eTask){
+    mfxExtFeiPreEncMV* mvs        = NULL;
+    mfxExtFeiEncMVPredictors* mvp = NULL;
+    bufSet* set                   = NULL;
+
+    for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
+    {
+        for (int i = 0; i < eTask->out.NumExtParam; i++)
+        {
+            if (eTask->out.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_MV){
+                mvs = (mfxExtFeiPreEncMV*)(eTask->out.ExtParam[i + fieldId]);
+                if (set == NULL){
+                    set = getFreeBufSet(encodeBufs);
+                    MSDK_CHECK_POINTER(set, MFX_ERR_NULL_PTR);
+                }
+                for (int j = 0; j < set->PB_bufs.in.NumExtParam; j++){
+                    if (set->PB_bufs.in.ExtParam[j]->BufferId == MFX_EXTBUFF_FEI_ENC_MV_PRED){
+                        mvp = (mfxExtFeiEncMVPredictors*)(set->PB_bufs.in.ExtParam[j + fieldId]);
+                        repackPreenc2Enc(mvs->MB, mvp->MB, mvs->NumMBAlloc, tmpForMedian);
+                        break;
+                    }
+                } //for (int j = 0; j < set->PB_bufs.in.NumExtParam; j++)
+                break;
+            }
+        } // for (int i = 0; i < eTask->out.NumExtParam; i++)
+    } // for (fieldId = 0; fieldId < numOfFields; fieldId++)
+    if (set){
+        set->vacant = true;
+    }
+
+    return MFX_ERR_NONE;
+}
+
 void repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf){
 
-    memset(EncMVPredMB, 0, sizeof(*EncMVPredMB)*NumMB);
+    memset(EncMVPredMB, 0, sizeof(mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB)*NumMB);
     for (mfxU32 i = 0; i<NumMB; i++){
 
         //only one ref is used for now
