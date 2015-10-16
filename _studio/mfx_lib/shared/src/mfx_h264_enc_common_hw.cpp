@@ -2016,7 +2016,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         if (extOpt2->NumMbPerSlice)
         {
             extOpt2->NumMbPerSlice = 0;
-            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);        
+            unsupported = true;      
         }
 
 
@@ -3722,7 +3722,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
              extOpt3->WinBRCMaxAvgKbps = 0;
              par.calcParam.WinBRCMaxAvgKbps = 0;
              extOpt3->WinBRCSize = 0;
-             return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+             unsupported = true;
          }
      }
 
