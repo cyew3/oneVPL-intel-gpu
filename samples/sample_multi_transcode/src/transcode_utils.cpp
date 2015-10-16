@@ -1155,7 +1155,7 @@ sPluginParams CmdProcessor::ParsePluginParameter(msdk_char* strPluginPath)
         std::wstring wstr(wchar);
         std::string str(wstr.begin(), wstr.end());
 
-        strcpy(pluginParams.strPluginPath, str.c_str());
+        strcpy_s(pluginParams.strPluginPath, str.c_str());
 #else
         msdk_opt_read(strPluginPath, pluginParams.strPluginPath);
 #endif

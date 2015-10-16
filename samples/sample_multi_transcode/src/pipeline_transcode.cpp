@@ -1359,7 +1359,7 @@ mfxStatus CTranscodingPipeline::NV12toBS(mfxFrameSurface1* pSurface,mfxBitstream
 
     for (mfxU16 i = 0; i < info.CropH; i++)
     {
-        memcpy(pBS->Data+pBS->DataLength, data.Y + (info.CropY * data.Pitch + info.CropX)+ i * data.Pitch, info.CropW);
+        MSDK_MEMCPY(pBS->Data+pBS->DataLength, data.Y + (info.CropY * data.Pitch + info.CropX)+ i * data.Pitch, info.CropW);
         pBS->DataLength += info.CropW;
     }
 
@@ -1393,7 +1393,7 @@ mfxStatus CTranscodingPipeline::RGB4toBS(mfxFrameSurface1* pSurface,mfxBitstream
 
     for (mfxU16 i = 0; i < info.CropH; i++)
     {
-        memcpy(pBS->Data+pBS->DataLength, data.B + (info.CropY * data.Pitch + info.CropX*4)+ i * data.Pitch, info.CropW*4);
+        MSDK_MEMCPY(pBS->Data+pBS->DataLength, data.B + (info.CropY * data.Pitch + info.CropX*4)+ i * data.Pitch, info.CropW*4);
         pBS->DataLength += info.CropW*4;
     }
 
@@ -1413,7 +1413,7 @@ mfxStatus CTranscodingPipeline::YUY2toBS(mfxFrameSurface1* pSurface,mfxBitstream
     for (mfxU16 i = 0; i < info.CropH; i++)
     {
 
-        memcpy(pBS->Data+pBS->DataLength, data.Y + (info.CropY * data.Pitch + info.CropX/2*4)+ i * data.Pitch, info.CropW*2);
+		MSDK_MEMCPY(pBS->Data+pBS->DataLength, data.Y + (info.CropY * data.Pitch + info.CropX/2*4)+ i * data.Pitch, info.CropW*2);
         pBS->DataLength += info.CropW*2;
     }
 

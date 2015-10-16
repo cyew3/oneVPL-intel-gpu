@@ -329,7 +329,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             std::wstring wstr(wchar);
             std::string str(wstr.begin(), wstr.end());
 
-            strcpy(pParams->pluginParams.strPluginPath, str.c_str());
+            strcpy_s(pParams->pluginParams.strPluginPath, str.c_str());
 #else
             msdk_opt_read(strInput[i], pParams->pluginParams.strPluginPath);
 #endif
