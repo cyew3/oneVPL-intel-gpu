@@ -1016,6 +1016,12 @@ namespace MfxHwH264Encode
         return res;
     }
 
+    inline mfxU32 ExpGolombCodeLength(mfxU32 val)
+    {
+        return
+            CeilLog2(val + 1) * 2 - 1;
+    }
+
     // auto-lock for frames
     struct FrameLocker
     {

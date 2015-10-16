@@ -2465,13 +2465,49 @@ void MfxHwH264Encode::PrepareSeiMessage(
     msg.changing_slice_group_idc = 0;
 }
 
+mfxU32 MfxHwH264Encode::CalculateSeiSize( mfxExtAvcSeiRecPoint const & msg)
+{
+    mfxU32 dataSizeInBits = ExpGolombCodeLength(msg.recovery_frame_cnt); // size of recovery_frame_cnt
+    dataSizeInBits += 4; // exact_match_flag + broken_link_flag + changing_slice_group_idc
+    mfxU32 dataSizeInBytes = (dataSizeInBits + 7) >> 3;
+
+    return dataSizeInBytes;
+}
+
+mfxU32 MfxHwH264Encode::CalculateSeiSize( mfxExtAvcSeiDecRefPicMrkRep const & msg)
+{
+    mfxU32 dataSizeInBits = 0;
+
+    // calculate size of sei_payload
+    dataSizeInBits += ExpGolombCodeLength(msg.original_frame_num) + 1; // original_frame_num + original_idr_flag
+
+    if (msg.original_field_info_present_flag)
+        dataSizeInBits += msg.original_field_pic_flag == 0 ? 1 : 2; // original_field_info_present_flag + original_bottom_field_flag
+
+    if (msg.original_idr_flag) {
+        dataSizeInBits += 2; // no_output_of_prior_pics_flag + long_term_reference_flag
+    }
+    else {
+        dataSizeInBits += 1; // adaptive_ref_pic_marking_mode_flag
+        for (mfxU32 i = 0; i < msg.num_mmco_entries; i ++) {
+            dataSizeInBits += ExpGolombCodeLength(msg.mmco[i]); // memory_management_control_operation
+            dataSizeInBits += ExpGolombCodeLength(msg.value[2 * i]);
+            if (msg.mmco[i] == 3)
+                dataSizeInBits += ExpGolombCodeLength(msg.value[2 * i + 1]);
+        }
+    }
+
+    mfxU32 dataSizeInBytes = (dataSizeInBits + 7) >> 3;
+    return dataSizeInBytes;
+}
+
 // MVC BD {
 mfxU32 MfxHwH264Encode::CalculateSeiSize( mfxExtAvcSeiBufferingPeriod const & msg)
 {
     mfxU32 dataSizeInBits =
         2 * msg.initial_cpb_removal_delay_length * (msg.nal_cpb_cnt + msg.vcl_cpb_cnt);
 
-    dataSizeInBits += CeilLog2(msg.seq_parameter_set_id) * 2 + 1;
+    dataSizeInBits += ExpGolombCodeLength(msg.seq_parameter_set_id);
     mfxU32 dataSizeInBytes = (dataSizeInBits + 7) >> 3;
 
     return dataSizeInBytes;
@@ -3885,11 +3921,7 @@ void MfxHwH264Encode::PutSeiMessage(
     OutputBitstream &                   bs,
     mfxExtAvcSeiBufferingPeriod const & msg)
 {
-    mfxU32 dataSizeInBits =
-        2 * msg.initial_cpb_removal_delay_length * (msg.nal_cpb_cnt + msg.vcl_cpb_cnt);
-
-    dataSizeInBits += CeilLog2(msg.seq_parameter_set_id) * 2 + 1;
-    mfxU32 dataSizeInBytes = (dataSizeInBits + 7) >> 3;
+    mfxU32 const dataSizeInBytes = CalculateSeiSize(msg);
 
     PutSeiHeader(bs, SEI_TYPE_BUFFERING_PERIOD, dataSizeInBytes);
     bs.PutUe(msg.seq_parameter_set_id);
@@ -3919,46 +3951,8 @@ void MfxHwH264Encode::PutSeiMessage(
     mfxExtPictureTimingSEI const & extPt,
     mfxExtAvcSeiPicTiming const &  msg)
 {
-    mfxU32 dataSizeInBits = 0;
+    mfxU32 const dataSizeInBytes = CalculateSeiSize(extPt, msg);
 
-    if (msg.cpb_dpb_delays_present_flag)
-    {
-        dataSizeInBits += msg.cpb_removal_delay_length;
-        dataSizeInBits += msg.dpb_output_delay_length;
-    }
-
-    if (msg.pic_struct_present_flag)
-    {
-        dataSizeInBits += 4; // msg.pic_struct;
-
-        assert(msg.pic_struct <= 8);
-        mfxU32 numClockTS = NUM_CLOCK_TS[IPP_MIN(msg.pic_struct, 8)];
-
-        dataSizeInBits += numClockTS; // clock_timestamp_flag[i]
-        for (mfxU32 i = 0; i < numClockTS; i++)
-        {
-            if (extPt.TimeStamp[i].ClockTimestampFlag)
-            {
-                mfxU32 tsSize = 19;
-
-                if (extPt.TimeStamp[i].FullTimestampFlag)
-                {
-                    tsSize += 17;
-                }
-                else
-                {
-                    tsSize += ((
-                        extPt.TimeStamp[i].HoursFlag * 5 + 7) *
-                        extPt.TimeStamp[i].MinutesFlag + 7) *
-                        extPt.TimeStamp[i].SecondsFlag + 1;
-                }
-
-                dataSizeInBits += tsSize + msg.time_offset_length;
-            }
-        }
-    }
-
-    mfxU32 dataSizeInBytes = (dataSizeInBits + 7) >> 3;
     PutSeiHeader(bs, SEI_TYPE_PIC_TIMING, dataSizeInBytes);
 
     if (msg.cpb_dpb_delays_present_flag)
@@ -4030,28 +4024,7 @@ void MfxHwH264Encode::PutSeiMessage(
     OutputBitstream &                   bs,
     mfxExtAvcSeiDecRefPicMrkRep const & msg)
 {
-    mfxU32 dataSizeInBits = 0, i;
-
-    // calculate size of sei_payload
-    dataSizeInBits += CeilLog2(msg.original_frame_num) * 2 + 2; // original_frame_num + original_idr_flag
-
-    if (msg.original_field_info_present_flag)
-        dataSizeInBits += msg.original_field_pic_flag == 0 ? 1 : 2; // original_field_info_present_flag + original_bottom_field_flag
-
-    if (msg.original_idr_flag) {
-        dataSizeInBits += 2; // no_output_of_prior_pics_flag + long_term_reference_flag
-    }
-    else {
-        dataSizeInBits += 1; // adaptive_ref_pic_marking_mode_flag
-        for (i = 0; i < msg.num_mmco_entries; i ++) {
-            dataSizeInBits += CeilLog2(msg.mmco[i]) * 2 + 1; // memory_management_control_operation
-            dataSizeInBits += CeilLog2(msg.value[2 * i]) * 2 + 1;
-            if (msg.mmco[i] == 3)
-                dataSizeInBits += CeilLog2(msg.value[2 * i + 1]) * 2 + 1;
-        }
-    }
-
-    mfxU32 dataSizeInBytes = (dataSizeInBits + 7) >> 3;
+    mfxU32 const dataSizeInBytes = CalculateSeiSize(msg);
 
     PutSeiHeader(bs, SEI_TYPE_DEC_REF_PIC_MARKING_REPETITION, dataSizeInBytes);
 
@@ -4071,7 +4044,7 @@ void MfxHwH264Encode::PutSeiMessage(
     }
     else {
         bs.PutBit(msg.adaptive_ref_pic_marking_mode_flag);
-        for (i = 0; i < msg.num_mmco_entries; i ++) {
+        for (mfxU32 i = 0; i < msg.num_mmco_entries; i ++) {
             bs.PutUe(msg.mmco[i]);
             bs.PutUe(msg.value[2 * i]);
             if (msg.mmco[i] == 3)
@@ -4091,9 +4064,7 @@ void MfxHwH264Encode::PutSeiMessage(
         OutputBitstream &    bs,
         mfxExtAvcSeiRecPoint const & msg)
 {
-    mfxU32 dataSizeInBits = CeilLog2(msg.recovery_frame_cnt + 1) * 2 - 1; // size of recovery_frame_cnt
-    dataSizeInBits += 4; // exact_match_flag + broken_link_flag + changing_slice_group_idc
-    mfxU32 dataSizeInBytes = (dataSizeInBits + 7) >> 3;
+    mfxU32 const dataSizeInBytes = CalculateSeiSize(msg);
 
     PutSeiHeader(bs, SEI_TYPE_RECOVERY_POINT, dataSizeInBytes);
 

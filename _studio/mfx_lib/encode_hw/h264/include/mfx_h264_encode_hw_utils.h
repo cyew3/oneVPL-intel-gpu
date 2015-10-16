@@ -229,6 +229,9 @@ namespace MfxHwH264Encode
         MfxVideoParam const &   par,
         mfxExtAvcSeiRecPoint &  msg);
 
+    mfxU32 CalculateSeiSize( mfxExtAvcSeiRecPoint const & msg);
+    mfxU32 CalculateSeiSize( mfxExtAvcSeiDecRefPicMrkRep const & msg);
+    
 // MVC BD {
     mfxU32 CalculateSeiSize( mfxExtAvcSeiBufferingPeriod const & msg);
     mfxU32 CalculateSeiSize(
