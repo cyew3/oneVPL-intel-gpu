@@ -285,56 +285,52 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     // not CQP: Init
     {/*00/00*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
     {/*01/01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
-    {/*02/02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
 #ifndef LINUX32
+    {/*02/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
     {/*03/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ}},
-#endif
-    {/*04/03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA}},
-    {/*05/04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT}},
-    {/*06/05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD}},
-    {/*07/06*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ}},
-#ifndef LINUX32
+    {/*04/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA}},
+    {/*05/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT}},
+    {/*06/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD}},
+    {/*07/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ}},
     {/*08/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR}},
     {/*09/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM}},
     {/*10/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME}},
 #endif
     // not CQP: Query
-    {/*11/07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
-    {/*12/08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
-    {/*13/09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
+    {/*11/02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
+    {/*12/03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
 #ifndef LINUX32
+    {/*13/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
     {/*14/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ}},
-#endif
-    {/*15/10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA}},
-    {/*16/11*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT}},
-    {/*17/12*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD}},
-    {/*18/13*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ}},
-#ifndef LINUX32
+    {/*15/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA}},
+    {/*16/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT}},
+    {/*17/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD}},
+    {/*18/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ}},
     {/*19/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR}},
     {/*20/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM}},
     {/*21/--*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VME}},
 #endif
     // progressive
-    {/*22/14*/ MFX_ERR_NONE, 0},
-    {/*23/15*/ MFX_ERR_NONE, RESET_ON},
-    {/*24/16*/ MFX_ERR_NONE, RESET_OFF},
-    {/*25/17*/ MFX_ERR_NONE, RANDOM},
-    {/*26/18*/ MFX_ERR_NONE, RANDOM|RESET_ON},
-    {/*27/19*/ MFX_ERR_NONE, RANDOM|RESET_OFF},
+    {/*22/04*/ MFX_ERR_NONE, 0},
+    {/*23/05*/ MFX_ERR_NONE, RESET_ON},
+    {/*24/06*/ MFX_ERR_NONE, RESET_OFF},
+    {/*25/07*/ MFX_ERR_NONE, RANDOM},
+    {/*26/08*/ MFX_ERR_NONE, RANDOM|RESET_ON},
+    {/*27/09*/ MFX_ERR_NONE, RANDOM|RESET_OFF},
     // tff
-    {/*28/20*/ MFX_ERR_NONE, 0,                  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-    {/*29/21*/ MFX_ERR_NONE, RESET_ON,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-    {/*30/22*/ MFX_ERR_NONE, RESET_OFF,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-    {/*31/23*/ MFX_ERR_NONE, RANDOM,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-    {/*32/24*/ MFX_ERR_NONE, RANDOM | RESET_ON,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-    {/*33/25*/ MFX_ERR_NONE, RANDOM | RESET_OFF, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*28/10*/ MFX_ERR_NONE, 0,                  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*29/11*/ MFX_ERR_NONE, RESET_ON,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*30/12*/ MFX_ERR_NONE, RESET_OFF,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*31/13*/ MFX_ERR_NONE, RANDOM,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*32/14*/ MFX_ERR_NONE, RANDOM | RESET_ON,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*33/15*/ MFX_ERR_NONE, RANDOM | RESET_OFF, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
     // bff
-    {/*34/26*/ MFX_ERR_NONE, 0,                  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-    {/*35/27*/ MFX_ERR_NONE, RESET_ON,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-    {/*36/28*/ MFX_ERR_NONE, RESET_OFF,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-    {/*37/29*/ MFX_ERR_NONE, RANDOM,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-    {/*38/30*/ MFX_ERR_NONE, RANDOM | RESET_ON,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-    {/*39/31*/ MFX_ERR_NONE, RANDOM | RESET_OFF, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*34/16*/ MFX_ERR_NONE, 0,                  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*35/17*/ MFX_ERR_NONE, RESET_ON,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*36/18*/ MFX_ERR_NONE, RESET_OFF,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*37/19*/ MFX_ERR_NONE, RANDOM,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*38/20*/ MFX_ERR_NONE, RANDOM | RESET_ON,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*39/21*/ MFX_ERR_NONE, RANDOM | RESET_OFF, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
 };
 
 #undef mfx_PicStruct
