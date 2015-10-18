@@ -229,6 +229,25 @@ typedef struct _mfxCameraCaps
         return false;
     }
 
+    mfxU16 GetFiltersNum(void)
+    {
+        mfxU16 num = 1; // Demosaic is always on
+
+        if (bBlackLevelCorrection)   num++;
+        if (bVignetteCorrection)     num++;
+        if (bWhiteBalance)           num++;
+        if (bHotPixel)               num++;
+        if (bColorConversionMatrix)  num++;
+        if (bForwardGammaCorrection) num++;
+        if (bBayerDenoise)           num++;
+        if (bNoPadding)              num++;
+        if (bLensCorrection)         num++;
+        if (b3DLUT)                  num++;
+        if (bGamma3DLUT)             num++;
+
+        return num;
+    }
+
 }   mfxCameraCaps;
 
 typedef struct

@@ -539,13 +539,21 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 mfxU32 OutWidth  = out->vpp.Out.CropW;
                 mfxU32 OutHeight = out->vpp.Out.CropH;
 
-                if(InWidth  != OutWidth &&
-                   InHeight != OutHeight)
+                if(InWidth  != OutWidth)
                 {
                     out->vpp.Out.Width = 0;
                     out->vpp.In.Width  = 0;
                     out->vpp.Out.CropW = 0;
                     out->vpp.In.CropW  = 0;
+                    sts = MFX_ERR_UNSUPPORTED;
+                }
+
+                if(InHeight != OutHeight)
+                {
+                    out->vpp.Out.Height = 0;
+                    out->vpp.In.Height  = 0;
+                    out->vpp.Out.CropH = 0;
+                    out->vpp.In.CropH  = 0;
                     sts = MFX_ERR_UNSUPPORTED;
                 }
             }
@@ -566,8 +574,6 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             }
         }
 
-        if (out->vpp.Out.Height )
-        {
             if (out->vpp.Out.Height > MAX_CAMERA_SUPPORTED_HEIGHT)
             {
                 out->vpp.Out.Height = 0;
@@ -601,8 +607,16 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 mfxU32 OutWidth  = out->vpp.Out.CropW;
                 mfxU32 OutHeight = out->vpp.Out.CropH;
 
-                if(InWidth  != OutWidth &&
-                   InHeight != OutHeight)
+            if(InWidth  != OutWidth)
+            {
+                out->vpp.Out.Width = 0;
+                out->vpp.In.Width  = 0;
+                out->vpp.Out.CropW  = 0;
+                out->vpp.In.CropW   = 0;
+                sts = MFX_ERR_UNSUPPORTED;
+            }
+
+            if(InHeight != OutHeight)
                 {
                     out->vpp.Out.Height = 0;
                     out->vpp.In.Height  = 0;
@@ -625,7 +639,7 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                     sts = MFX_ERR_UNSUPPORTED;
                 }
             }
-        }
+
         //let it be here for now, Query should return unsupported in this case, later need to do query from MDF parameters
         //which can provide actual supported surface size.
         //ToDo: we need to carry about width/height in case of system memory passthrough without copy,
@@ -688,8 +702,82 @@ mfxStatus MFXCamera_Plugin::GetVideoParam(mfxVideoParam *par)
     par->IOPattern = m_mfxVideoParam.IOPattern;
     memcpy_s(&(par->vpp),sizeof(mfxInfoVPP), &(m_mfxVideoParam.vpp),sizeof(mfxInfoVPP));
 
-    if(par->NumExtParam != 0){
-        //ToDo: report enabled ext video parameters.
+    par->Protected  = 0;
+    if( NULL == par->ExtParam || 0 == par->NumExtParam)
+    {
+        return MFX_ERR_NONE;
+    }
+    for( mfxU32 i = 0; i < par->NumExtParam; i++ )
+    {
+        if( MFX_EXTBUFF_VPP_DOUSE == par->ExtParam[i]->BufferId )
+        {
+            mfxExtVPPDoUse* pVPPHint = (mfxExtVPPDoUse*)(par->ExtParam[i]);
+            mfxU32 numUsedFilters = m_Caps.GetFiltersNum();
+            mfxU32 i = 0;
+
+            if(numUsedFilters > pVPPHint->NumAlg)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+            if ( m_Caps.bDemosaic )
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_PIPECONTROL;
+            }
+
+            if ( m_Caps.bNoPadding)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_PADDING;
+            }
+
+            if ( m_Caps.b3DLUT)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_3DLUT;
+            }
+
+            if ( m_Caps.bBayerDenoise)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_BAYER_DENOISE;
+            }
+
+            if ( m_Caps.bBlackLevelCorrection)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION;
+            }
+
+            if ( m_Caps.bColorConversionMatrix)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_COLOR_CORRECTION_3X3;
+            }
+
+            if ( m_Caps.bForwardGammaCorrection && m_Caps.bGamma3DLUT)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_FORWARD_GAMMA_CORRECTION;
+            }
+
+            if ( m_Caps.bForwardGammaCorrection && ! m_Caps.bGamma3DLUT)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_GAMMA_CORRECTION;
+            }
+
+            if ( m_Caps.bHotPixel)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL;
+            }
+
+            if ( m_Caps.bLensCorrection)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION;
+            }
+
+            if ( m_Caps.bVignetteCorrection)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_VIGNETTE_CORRECTION;
+            }
+
+            if ( m_Caps.bWhiteBalance)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_WHITE_BALANCE;
+            }
+        }
     }
     return MFX_ERR_NONE;
 }
@@ -833,7 +921,7 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                     m_HPParams.PixelThresholdDifference = hotpixelExtBufParams->PixelThresholdDifference;
                 }
             }
-            else if (MFX_EXTBUFF_VPP_DENOISE == par->ExtParam[i]->BufferId)
+            else if (MFX_EXTBUFF_VPP_DENOISE == par->ExtParam[i]->BufferId || MFX_EXTBUF_CAM_BAYER_DENOISE == par->ExtParam[i]->BufferId)
             {
                 m_Caps.bBayerDenoise = 1;
                 mfxExtCamBayerDenoise* denoiseExtBufParams = (mfxExtCamBayerDenoise*)par->ExtParam[i];
