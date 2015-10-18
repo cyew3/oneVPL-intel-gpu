@@ -181,12 +181,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,  30},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD, 0}} },
     // IOPattern cases
-    {/*32*/  /*MFX_ERR_NONE*/MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
     {/*33*/ MFX_ERR_NONE,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
-    {/*34*/  /*MFX_ERR_NONE*/MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+    {/*34*/ MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
     {/*35*/ MFX_ERR_NONE,                 0, 1, SET_ALLOCATOR|ALLOC_MIN,        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
     {/*36*/ MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*37*/ /*MFX_ERR_NONE*/MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*37*/ MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY |MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
     {/*38*/ MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
     {/*39*/ MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
     {/*40*/ MFX_ERR_INVALID_VIDEO_PARAM,                 0, 1, ALLOC_OPAQUE|ALLOC_MIN,         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
@@ -197,7 +197,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     // ext buffers
     {/*44*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDoNotUse            )}},
     {/*45*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVppAuxData             )}},
-    {/*46*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDenoise             )}},
+    {/*46*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDenoise             )}},
     {/*47*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPProcAmp             )}},
     {/*48*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDetail              )}},
     {/*49*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVideoSignalInfo        )}},
@@ -209,18 +209,15 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*55*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPVideoSignalInfo     )}},
     {/*56*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDeinterlacing       )}},
     // camera's ext buffers
-    {/*57*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamGammaCorrection      )}},
+    {/*57*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamGammaCorrection      )}},
     {/*58*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
-    {/*59*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
+    {/*59*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
     {/*60*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-//    {/*61*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
-//    {/*62*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamBayerDenoise         )}},
-    {/*63*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
-    {/*64*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPadding              )}},
-    {/*65*/  MFX_ERR_UNDEFINED_BEHAVIOR,  0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
-    {/*66*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {del_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
+    {/*61*/  MFX_ERR_NONE,                0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
+    {/*62*/  MFX_ERR_UNDEFINED_BEHAVIOR,  0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {ext_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
+    {/*63*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, SET_ALLOCATOR|ALLOC_MIN, {}, {del_buf, EXT_BUF_PAR(mfxExtCamPipeControl          )}},
 
-    {/*67*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.Width,   4096}, //resize is unsupported
+    {/*64*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.Width,   4096}, //resize is unsupported
                                                                                  {&tsStruct::mfxVideoParam.vpp.In.Height,  4096}, 
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.Width,  2048},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.Height, 2048},
@@ -228,7 +225,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                                                  {&tsStruct::mfxVideoParam.vpp.In.CropH,  4096},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.CropW,  2048},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.CropH, 2048}} },
-    {/*68*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.Width,   2048},
+    {/*65*/ MFX_ERR_INVALID_VIDEO_PARAM,  0, 1, SET_ALLOCATOR|ALLOC_MIN,        {{&tsStruct::mfxVideoParam.vpp.In.Width,   2048},
                                                                                  {&tsStruct::mfxVideoParam.vpp.In.Height,  2048},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.Width,  4096},
                                                                                  {&tsStruct::mfxVideoParam.vpp.Out.Height, 4096},
@@ -343,8 +340,12 @@ int TestSuite::RunTest(unsigned int id)
         if(tc.set_buf.func)
         {
             bool algorithm_was_reported = false;
-            for(mfxU32 i; i < do_use.NumAlg; ++i)
+            for(mfxU32 i = 0; i < do_use.NumAlg; ++i)
+            {
                 if(filter_from_getvideoparam[i] == tc.set_buf.buf) algorithm_was_reported = true;
+
+                if(MFX_EXTBUFF_VPP_DENOISE == tc.set_buf.buf && MFX_EXTBUF_CAM_BAYER_DENOISE == filter_from_getvideoparam[i] ) algorithm_was_reported = true;
+            }
             EXPECT_EQ(true,algorithm_was_reported) << "Fail.: GetVideoParam should update used algoritms list in the ExtVPPDoUse\n";
         }
         EXPECT_EQ(m_par.vpp.In.Width,   parOut.vpp.In.Width);

@@ -125,7 +125,7 @@ public:
 
 private:
     static const char path[];
-    static const mfxU32 max_num_ctrl     = 10;
+    static const mfxU32 max_num_ctrl     = 20;
     static const mfxU32 max_num_ctrl_par = 4;
     mfxSession m_session;
     mfxU32 m_repeat;
@@ -283,7 +283,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
     {/* 7*/ MFX_ERR_NULL_PTR, {0,0}, {0,0}, 
            {{RUN|SURF_OUT,  &tsStruct::mfxFrameSurface1.Data.MemId,  {0} },
-            {RUN|SURF_OUT,  &tsStruct::mfxFrameSurface1.Data.Y16,    {0} } }
+            {RUN|SURF_OUT,  &tsStruct::mfxFrameSurface1.Data.B,    {0} } }
     },
     {/* 8*/ MFX_ERR_UNDEFINED_BEHAVIOR, {0,0}, {0,0}, 
            {{RUN|SURF_IN,  &tsStruct::mfxFrameSurface1.Info.Width,     {0} },
@@ -364,7 +364,9 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             //{INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
             //{RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}}}
     },*/ //disable currently - test is wrong.
+
     {/*21*/ MFX_ERR_NONE, {TRASH,TRASH}, {5,5}, {RESET|REPEAT, 0, {10}}},
+    
     /*{/*22*//* MFX_ERR_NONE, {S_004_03_A01,S_4K1K_RAW__SR_B__5000p}, {5,5},
        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MIN}},
         {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
@@ -386,45 +388,51 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {0}},
         {REPEAT, 0, {7}}}
     },*///disable currently - test is wrong.
-    {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, {S_4KDCI_RAW__SR_V__5994p,S_QFHD_HRAW__SR_B__5000p}, {5,5},
-       {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MIN}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2160}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW,  {4096}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH,  {2160}},
-        {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height, {3840}},
-        {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.CropH,  {1080}},
-        {INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}},
-        {REPEAT, 0, {7}}}
-    },
-    {/*25*/ MFX_ERR_NONE, {S_4KDCI_RAW__SR_V__5994p,S_QFHD_HRAW__SR_B__5000p}, {5,5},
-       {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MIN}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2160}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW,  {4096}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH,  {2160}},
-        {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height, {3840}},
-        {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.CropH,  {1080}},
-        {INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {5}},
-        {REPEAT, 0, {7}}}
-    },
+    //{/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, {S_4KDCI_RAW__SR_V__5994p,S_QFHD_HRAW__SR_B__5000p}, {5,5},
+    //   {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MIN}},
+    //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
+    //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2160}},
+    //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW,  {4096}},
+    //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH,  {2160}},
+    //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,  {4096}},
+    //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height, {2160}},
+    //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.CropW,  {4096}},
+    //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.CropH,  {2160}},
+    //    {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height, {3840}},
+    //    {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.CropH,  {1080}},
+    //    {INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {1}},
+    //    {REPEAT, 0, {7}}}
+    //}, ////disable currently - test is wrong.
+    //{/*25*/ MFX_ERR_NONE, {S_4KDCI_RAW__SR_V__5994p,S_QFHD_HRAW__SR_B__5000p}, {5,5},
+    //   {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MIN}},
+    //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
+    //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2160}},
+    //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW,  {4096}},
+    //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH,  {2160}},
+    //    {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height, {3840}},
+    //    {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.CropH,  {1080}},
+    //    {INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {5}},
+    //    {REPEAT, 0, {7}}}
+    //},//disable currently - test is wrong.
+
     {/*26*/ MFX_ERR_NONE, {TRASH,TRASH}, {5,5},
        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
         {REPEAT, 0, {2}}}
     },
+
     //{/*27*/ MFX_ERR_NONE, {TRASH,TRASH}, {5,5},
     //    {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}} }
     //},
-    {/*28*/ MFX_ERR_NULL_PTR, {TRASH,TRASH}, {5,5},
-        {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}} }
-    },
+    //{/*28*/ MFX_ERR_NULL_PTR, {TRASH,TRASH}, {5,5},
+    //    {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}} }
+    //},
     //{/*29*/ MFX_ERR_NONE, {TRASH,TRASH}, {5,5},
     //    {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}} }
+    //}, //disable currently - test is wrong.
+    //{/*30*/ MFX_ERR_LOCK_MEMORY, {TRASH,TRASH}, {5,5},
+    //    {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    //     {INIT|ALLOCATOR, 0, {frame_allocator::HARDWARE, frame_allocator::ALLOC_MIN, frame_allocator::DISABLE_LOCK}} }
     //},
-    {/*30*/ MFX_ERR_LOCK_MEMORY, {TRASH,TRASH}, {5,5},
-        {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-         {INIT|ALLOCATOR, 0, {frame_allocator::HARDWARE, frame_allocator::ALLOC_MIN, frame_allocator::DISABLE_LOCK}} }
-    },
     //{/*31*/ MFX_ERR_LOCK_MEMORY, {TRASH,TRASH}, {5,5},
     //    {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
     //     {INIT|ALLOCATOR, 0, {frame_allocator::HARDWARE, frame_allocator::ALLOC_MIN, frame_allocator::DISABLE_LOCK}} }
@@ -446,7 +454,7 @@ int TestSuite::RunTest(unsigned int id)
     const char* filename_reset = 0;
     if((tc.stream_id[AFTER_INIT] ^ TRASH) && (tc.stream_id[AFTER_INIT] != 0))
     {
-        fullname_init = g_tsStreamPool.Get(stream[tc.stream_id[AFTER_INIT]].name);
+        fullname_init = g_tsStreamPool.Get(stream[tc.stream_id[AFTER_INIT]].name, path);
         filename_init = stream[tc.stream_id[AFTER_INIT]].name.c_str();
     }
     else
