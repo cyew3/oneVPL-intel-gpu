@@ -4490,7 +4490,7 @@ void MfxHwH264Encode::SetDefaults(
       }
     }
     
-    if ( (!extOpt2->SkipFrame) && ((extOpt3->WinBRCSize >= 0) || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD))
+    if ( (!extOpt2->SkipFrame) && ((extOpt3->WinBRCSize > 0) || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD))
     {
         extOpt2->SkipFrame = MFX_SKIPFRAME_INSERT_DUMMY;
     }
