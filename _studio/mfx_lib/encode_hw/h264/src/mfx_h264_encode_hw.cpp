@@ -535,8 +535,8 @@ mfxStatus ImplementationAvc::Query(
 
         // let use dedault values if input resolution is 0x0, 1920x1088 - should cover almost all cases
         mfxU32 Width  = in->mfx.FrameInfo.Width == 0 ? 1920: in->mfx.FrameInfo.Width;
-        mfxU32 Height =  in->mfx.FrameInfo.Height == 0 ? 1088: in->mfx.FrameInfo.Height;
-
+        mfxU32 Height = in->mfx.FrameInfo.Height == 0 ? 1088: in->mfx.FrameInfo.Height;
+        mfxU32 TU = in->mfx.TargetUsage == 0 ? 4: in->mfx.TargetUsage;
         mfxExtEncoderCapability * extCaps = GetExtBuffer(*out);
         if (extCaps == 0)
             return MFX_ERR_UNDEFINED_BEHAVIOR; // can't return MB processing rate since mfxExtEncoderCapability isn't attached to "out"
@@ -564,14 +564,14 @@ mfxStatus ImplementationAvc::Query(
             return MFX_WRN_PARTIAL_ACCELERATION; // any other HW problem
         }
 
-        extCaps->MBPerSec = mbPerSec[0];
+        extCaps->MBPerSec = mbPerSec[TU-1];
 
         if (extCaps->MBPerSec == 0)
         {
             // driver returned status OK and MAX_MB_PER_SEC = 0. Treat this as driver doesn't support reporting of MAX_MB_PER_SEC for requested encoding configuration
             return MFX_ERR_UNSUPPORTED;
         }
-
+#if !defined(MFX_VA_WIN)
         // query input tiling support from the driver
         sts = QueryInputTilingSupport(core, *in, inputTiling, MSDK_Private_Guid_Encode_AVC_Query, Width, Height);
         if (sts != MFX_ERR_NONE)
@@ -582,9 +582,8 @@ mfxStatus ImplementationAvc::Query(
 
             return MFX_WRN_PARTIAL_ACCELERATION; // any other HW problem
         }
-
+#endif
         extCaps->InputMemoryTiling = (mfxU16)inputTiling;
-
         return MFX_ERR_NONE;
     }
     else if (5 == queryMode)
