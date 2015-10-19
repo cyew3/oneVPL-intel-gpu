@@ -50,6 +50,9 @@ int TestSuite::RunTest(unsigned int id)
     TS_START;
     const tc_struct& tc = test_case[id];
 
+    m_pParOut = new mfxVideoParam;
+    *m_pParOut = m_par;
+
     MFXInit();
 
     static const mfxPluginUID  HEVCE_HW = {{0x6f,0xad,0xc7,0x91,0xa0,0xc2,0xeb,0x47,0x9a,0xb6,0xdc,0xd5,0xea,0x9d,0xa3,0x47}};
@@ -62,6 +65,10 @@ int TestSuite::RunTest(unsigned int id)
 
     if (0 == memcmp(m_uid->Data, HEVCE_HW.Data, sizeof(HEVCE_HW.Data)))
     {
+        //HEVCE_HW need aligned width and height for 32
+        m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
+        m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
+
         // HW: supported only TU = {1,4,7}. Mapping: 2->1; 3->4; 5->4; 6->7
         if(tc.set_par[0].v == 1 || tc.set_par[0].v == 4 || tc.set_par[0].v == 7)
         {
@@ -70,7 +77,7 @@ int TestSuite::RunTest(unsigned int id)
         }
         else
         {
-            g_tsStatus.expect(MFX_WRN_VIDEO_PARAM_CHANGED);
+            g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
             Query(m_session, m_pPar, m_pParOut);
 
             if (tc.set_par[0].v % 3 == 0)
