@@ -4650,7 +4650,7 @@ void MfxHwH264Encode::SetDefaults(
     }
     if (extDdi->LookAheadDependency == 0)
         extDdi->LookAheadDependency = (bIntRateControlLA(par.mfx.RateControlMethod) && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)
-            ? IPP_MIN(10, extOpt2->LookAheadDepth / 2)
+            ? IPP_MIN(10, extOpt2->LookAheadDepth / 4)
             : extOpt2->LookAheadDepth;
 
     if (extDdi->LaScaleFactor == 0) // default: use LA 2X for TU3-7 and LA 1X for TU1-2
