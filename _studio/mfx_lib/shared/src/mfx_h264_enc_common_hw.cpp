@@ -4795,6 +4795,7 @@ void MfxHwH264Encode::SetDefaults(
             if (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
                 par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR ||
                 par.mfx.RateControlMethod == MFX_RATECONTROL_VCM ||
+                par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR ||
                 par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
             {
                 mfxU32 maxBps = par.calcParam.targetKbps * MAX_BITRATE_RATIO;
