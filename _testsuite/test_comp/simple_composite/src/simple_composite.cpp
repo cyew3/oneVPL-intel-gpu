@@ -437,9 +437,19 @@ public:
         m_nVPPSurfNumOut = 0;
         m_Arguments = pa;
         m_pVPPSurfacesIn = 0;
-        m_Color.Y = 16;
-        m_Color.U = 128;
-        m_Color.V = 128;
+
+        if (m_Arguments->dcc == kNV12 || m_Arguments->dcc == kYV12)
+        {
+            m_Color.Y = 16;
+            m_Color.U = 128;
+            m_Color.V = 128;
+        }
+        else
+        {
+            m_Color.Y = 0;
+            m_Color.U = 0;
+            m_Color.V = 0;
+        }
 
         for (int i = 0; i < MAX_INPUT_STREAMS; i++)
         {
