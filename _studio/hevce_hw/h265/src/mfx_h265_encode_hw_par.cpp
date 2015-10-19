@@ -186,7 +186,7 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool bCheckOnly)
     //mfxU32 CpbBrVclFactor    = 1000;
     mfxU32 CpbBrNalFactor    = 1100;
     mfxU32 PicSizeInSamplesY = (mfxU32)par.m_ext.HEVCParam.PicWidthInLumaSamples * par.m_ext.HEVCParam.PicHeightInLumaSamples;
-    mfxU32 LumaSr            = Ceil(mfxF64(PicSizeInSamplesY) / par.mfx.FrameInfo.FrameRateExtN * par.mfx.FrameInfo.FrameRateExtD);
+    mfxU32 LumaSr            = Ceil(mfxF64(PicSizeInSamplesY) * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
     mfxU16 NewLevel          = par.mfx.CodecLevel;
 
     mfxU16 lidx = LevelIdx(par.mfx.CodecLevel);
