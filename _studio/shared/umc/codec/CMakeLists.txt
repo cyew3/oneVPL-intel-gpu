@@ -84,9 +84,9 @@ foreach( dir ${dirs_impl} )
   list( APPEND sources ${srcs}) 
 endforeach()
 
-foreach( variant sw hw )
-  make_library( umc_codecs_merged ${variant} static )
-endforeach( )
+make_library( umc_codecs_merged hw static )
+list(REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/jpeg_dec/src/umc_mjpeg_mfx_decode_hw.cpp)
+make_library( umc_codecs_merged sw static )
 set( defs "" )
 
 # =============================================================================

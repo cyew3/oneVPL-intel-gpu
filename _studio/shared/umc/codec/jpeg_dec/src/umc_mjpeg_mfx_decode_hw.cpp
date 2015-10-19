@@ -158,7 +158,7 @@ Status MJPEGVideoDecoderMFX_HW::CloseFrame(UMC::FrameData** in, const mfxU32 fie
 
 mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFeedbackNumber, mfxU16* corrupted)
 {
-#ifdef UMC_VA_DXVA
+
     UMC::Status sts = UMC_OK;
 
     mfxU32 numStructures = 32;
@@ -177,9 +177,20 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFe
         for (mfxU32 i = 0; i < numStructures; i += 1){
             queryStatus[i].bStatus = 3;
         }
+#ifdef UMC_VA_DXVA
         // execute call
         sts = m_va->ExecuteStatusReportBuffer((void*)queryStatus, sizeof(JPEG_DECODE_QUERY_STATUS) * numStructures);
-
+#else
+        // on Linux ExecuteStatusReportBuffer returns UMC_ERR_UNSUPPORTED so the task pretends as already done
+        // mark the first task as ready
+        queryStatus[0].bStatus = 0;
+        queryStatus[0].StatusReportFeedbackNumber = statusReportFeedbackNumber;
+        // mark the others tasks as not completed to skip them in the next loop
+        for (mfxU32 i = 1; i < numStructures; i += 1) {
+            queryStatus[i].bStatus = 5;
+            queryStatus[i].StatusReportFeedbackNumber = 0;
+        }
+#endif
         // houston, we have a problem :)
         if(sts != UMC_OK)
         {
@@ -238,7 +249,7 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFe
         m_submittedTaskIndex.erase(iteratorSubmitted);
         m_cachedReadyTaskIndex.erase(iteratorReady);
     }
-#endif
+
     return MFX_TASK_DONE;
 }
 

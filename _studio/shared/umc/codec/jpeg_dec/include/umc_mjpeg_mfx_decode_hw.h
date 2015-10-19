@@ -55,6 +55,14 @@ typedef struct tagJPEG_DECODE_SCAN_PARAMETER
     Ipp32u        DataOffset;
     Ipp32u        DataLength;
 } JPEG_DECODE_SCAN_PARAMETER;
+
+typedef struct tagJPEG_DECODE_QUERY_STATUS
+{
+    Ipp32u        StatusReportFeedbackNumber;
+    Ipp8u         bStatus;
+    Ipp8u         reserved8bits;
+    Ipp16u        reserved16bits;
+} JPEG_DECODE_QUERY_STATUS;
 #endif
 
 class MJPEGVideoDecoderMFX_HW : public MJPEGVideoDecoderMFX
