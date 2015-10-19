@@ -394,6 +394,9 @@ void Wayland::RegistryGlobal(struct wl_registry *registry
 void Wayland::DrmHandleDevice(const char *name)
 {
     m_device_name = strdup(name);
+    if (!m_device_name)
+        return;
+
     drm_magic_t magic;
     m_fd = open(m_device_name, O_RDWR | O_CLOEXEC);
     if (-1 == m_fd) {

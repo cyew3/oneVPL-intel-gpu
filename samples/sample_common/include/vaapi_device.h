@@ -50,6 +50,10 @@ public:
 protected:
     DRMLibVA m_DRMLibVA;
     drmRenderer * m_rndr;
+private:
+    // no copies allowed
+    CVAAPIDeviceDRM(const CVAAPIDeviceDRM &);
+    void operator=(const CVAAPIDeviceDRM &);
 };
 
 #endif
@@ -80,11 +84,16 @@ protected:
     mfxHDL m_window;
     X11LibVA m_X11LibVA;
 private:
+
     bool   m_bRenderWin;
     mfxU32 m_nRenderWinX;
     mfxU32 m_nRenderWinY;
     mfxU32 m_nRenderWinW;
     mfxU32 m_nRenderWinH;
+
+    // no copies allowed
+    CVAAPIDeviceX11(const CVAAPIDeviceX11 &);
+    void operator=(const CVAAPIDeviceX11 &);
 };
 
 #endif
@@ -129,6 +138,10 @@ private:
     mfxU32 m_nRenderWinY;
     mfxU32 m_nRenderWinW;
     mfxU32 m_nRenderWinH;
+
+    // no copies allowed
+    CVAAPIDeviceWayland(const CVAAPIDeviceWayland &);
+    void operator=(const CVAAPIDeviceWayland &);
 };
 
 #endif

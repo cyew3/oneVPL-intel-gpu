@@ -107,6 +107,10 @@ class Wayland {
         virtual void Sync();
         virtual void SetPerfMode(bool perf_mode);
     private:
+        //no copies allowed
+        Wayland(const Wayland &);
+        void operator = (const Wayland&);
+
         struct wl_display *m_display;
         struct wl_registry *m_registry;
         struct wl_compositor *m_compositor;
