@@ -1083,6 +1083,7 @@ namespace {
         mfxExtHEVCParam &hevcParam = GetExtBuffer(par);
         mfxExtCodingOption &opt = GetExtBuffer(par);
         mfxExtCodingOption2 &opt2 = GetExtBuffer(par);
+        mfxExtHEVCRegion &region = GetExtBuffer(par);
 
         if (hevcParam.PicWidthInLumaSamples == 0)
             hevcParam.PicWidthInLumaSamples = fi.Width;
@@ -1394,7 +1395,7 @@ namespace {
                 optHevc.RateControlDepth = mfx.GopRefDist + 1;
         if (optHevc.LowresFactor == 0)
             optHevc.LowresFactor = defaultOptHevc.LowresFactor;
-        if (optHevc.DeblockBorders == 0)
+        if (optHevc.DeblockBorders == 0 && region.RegionEncoding == MFX_HEVC_REGION_ENCODING_OFF)
             optHevc.DeblockBorders = defaultOptHevc.DeblockBorders;
         if (optHevc.SAOChroma == 0)
             optHevc.SAOChroma = defaultOptHevc.SAOChroma;
