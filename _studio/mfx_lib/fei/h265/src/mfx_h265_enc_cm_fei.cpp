@@ -195,15 +195,11 @@ static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxFEIH265Param *param, 
     GetDimensionsCmSurface2DUp<mfxI32>(device, width32 / 16, height32 / 16, CM_SURFACE_FORMAT_P8, &extAlloc->IntraMode[2]);
     GetDimensionsCmSurface2DUp<mfxI32>(device, width32 / 32, height32 / 32, CM_SURFACE_FORMAT_P8, &extAlloc->IntraMode[3]);
 
-    /* inter distortion */
-    for (k = MFX_FEI_H265_BLK_64x64; k <=  MFX_FEI_H265_BLK_16x32; k++)  // no InterDist for 64x64 now
-        GetDimensionsCmSurface2DUp<mfxU32>(device, cmMvW[k] * 16, cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterDist[k]);
-    for (k = MFX_FEI_H265_BLK_16x16; k <= MFX_FEI_H265_BLK_8x8; k++)
-        GetDimensionsCmSurface2DUp<mfxU32>(device, cmMvW[k] * 1,  cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterDist[k]);
-
-    /* inter MV */
-    for (k = MFX_FEI_H265_BLK_64x64; k <=  MFX_FEI_H265_BLK_8x8; k++)
-        GetDimensionsCmSurface2DUp<mfxI16Pair>(device, cmMvW[k], cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterMV[k]);
+    /* inter MV and distortion */
+    for (k = MFX_FEI_H265_BLK_64x64; k <=  MFX_FEI_H265_BLK_16x32; k++) // 1 MV and 9 SADs per block
+        GetDimensionsCmSurface2DUp<mfxU32>(device, cmMvW[k] * 16, cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterData[k]);
+    for (k = MFX_FEI_H265_BLK_16x16; k <= MFX_FEI_H265_BLK_8x8; k++) // 1 MV and 1 SAD per block
+        GetDimensionsCmSurface2DUp<mfxU32>(device, cmMvW[k] * 2,  cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterData[k]);
 
     /* interpolate */
     GetDimensionsCmSurface2DUp<Ipp8u>(device, interpWidth, interpHeight, CM_SURFACE_FORMAT_P8, &extAlloc->Interpolate[0]);
@@ -498,6 +494,10 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         (width + 12 + 15) / 16, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
     kernelFullPostProc.AddKernel(device, programSao, "SaoStat",
         (width + 63) / 64 * 4, (height + 63) / 64 * 4, CM_NONE_DEPENDENCY, true);
+    if (param->EnableChromaSao) {
+        kernelFullPostProc.AddKernel(device, programSao, "SaoStatChroma",
+            ((width>>1) + 31) / 32 * 4, ((height>>1) + 31) / 32 * 2, CM_NONE_DEPENDENCY, false);
+    }
     kernelFullPostProc.AddKernel(device, programSao, "SaoEstimate",
         (width + 63) / 64, (height + 63) / 64, CM_WAVEFRONT, true);
     kernelFullPostProc.AddKernel(device, programSao, "SaoApply",
@@ -505,9 +505,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
 
     /* set up VME */
     curbe       = CreateBuffer(device, sizeof(H265EncCURBEData));
-    me1xControl = CreateBuffer(device, sizeof(Me2xControl));
-    me2xControl = CreateBuffer(device, sizeof(Me2xControl));
-    me4xControl = CreateBuffer(device, sizeof(Me2xControl));
+    meControl = CreateBuffer(device, sizeof(MeControl));
     H265EncCURBEData curbeData = {};
     SetCurbeData(curbeData, MFX_FRAMETYPE_P, 26, width, height);
 
@@ -521,37 +519,27 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     curbeData.IntraSAD              = 2;
     curbe->WriteSurface((mfxU8 *)&curbeData, NULL);
 
-    Me2xControl control;
-    SetSearchPathSmall(&control.searchPath);    // short SP for all kernels except for kernelMe16
-    control.width = (mfxU16)width;
-    control.height = (mfxU16)height;
-    me1xControl->WriteSurface((mfxU8 *)&control, NULL);
-    control.width = (mfxU16)width2x;
-    control.height = (mfxU16)height2x;
-    me2xControl->WriteSurface((mfxU8 *)&control, NULL);
-    control.width = (mfxU16)width4x;
-    control.height = (mfxU16)height4x;
-    me4xControl->WriteSurface((mfxU8 *)&control, NULL);
-    me8xControl = CreateBuffer(device, sizeof(Me2xControl));
-    me16xControl = CreateBuffer(device, sizeof(Me2xControl));
-    control.width = (mfxU16)width8x;
-    control.height = (mfxU16)height8x;
-    me8xControl->WriteSurface((mfxU8 *)&control, NULL);
-    SetSearchPath(&control.searchPath);
-    control.width = (mfxU16)width16x;
-    control.height = (mfxU16)height16x;
-    me16xControl->WriteSurface((mfxU8 *)&control, NULL);
-
     // allocate single intermediate surface to store deblocked pixels
     deblocked = CreateSurface(device, sourceWidth, sourceHeight, CM_SURFACE_FORMAT_NV12); // so far only nv12 is supported
 
+    // luma sao
     Ipp32s blockW = 16;
     Ipp32s blockH = 16;
     mfxU32 tsWidth   = (sourceWidth  + param->MaxCUSize - 1) / param->MaxCUSize * (param->MaxCUSize / blockW);
     mfxU32 tsHeight  = (sourceHeight + param->MaxCUSize - 1) / param->MaxCUSize * (param->MaxCUSize / blockH);;
     mfxU32 numThreads = tsWidth * tsHeight;
     mfxU32 bufsize = numThreads * (16+16+32+32) * sizeof(Ipp16s);
-    saoStat = CreateBuffer(device, bufsize);
+    Ipp32s MaxCUSize = param->MaxCUSize >> 1;
+    // chroma sao
+    blockW = 8;
+    blockH = 16;
+    tsWidth   = ((sourceWidth >> 1)  + MaxCUSize - 1) / MaxCUSize * (MaxCUSize / blockW);
+    tsHeight  = ((sourceHeight >> 1) + MaxCUSize - 1) / MaxCUSize * (MaxCUSize / blockH);
+    numThreads = tsWidth * tsHeight;
+    mfxU32 bufsizeChroma = numThreads * (16+16+32+32) * sizeof(Ipp16s);
+    saoStat = CreateBuffer(device, bufsize + (bufsizeChroma << 1));
+
+    postprocParam = CreateBuffer(device, sizeof(PostProcParam));
 
     return MFX_ERR_NONE;
 }
@@ -563,6 +551,9 @@ void H265CmCtx::FreeCmResources()
 
     device->DestroySurface(deblocked);
     device->DestroySurface(saoStat);
+    device->DestroySurface(postprocParam);
+    device->DestroySurface(curbe);
+    device->DestroySurface(meControl);
 
     if (lastEventSaved != NULL && lastEventSaved != CM_NO_EVENT)
         queue->DestroyEvent(lastEventSaved);
@@ -792,7 +783,7 @@ mfxStatus H265CmCtx::CopyReconFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *i
 // KERNEL DISPATCHER 
 void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
 {
-    CmSurface2DUP *dist[MFX_FEI_H265_BLK_MAX], *mv[MFX_FEI_H265_BLK_MAX];
+    CmSurface2DUP *data[MFX_FEI_H265_BLK_MAX];
     CmEvent * lastEvent;
 
     //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "RunVme");
@@ -835,22 +826,14 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
     }
 
     if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME)) {
-        dist[MFX_FEI_H265_BLK_64x64] = GET_OUTSURF(feiOut->SurfInterDist[MFX_FEI_H265_BLK_64x64]);
-        dist[MFX_FEI_H265_BLK_32x16] = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_32x16 : MFX_FEI_H265_BLK_32x32]);
-        dist[MFX_FEI_H265_BLK_16x32] = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_16x32 : MFX_FEI_H265_BLK_32x32]);
-        dist[MFX_FEI_H265_BLK_32x32] = GET_OUTSURF(feiOut->SurfInterDist[MFX_FEI_H265_BLK_32x32]);
-        dist[MFX_FEI_H265_BLK_16x16] = GET_OUTSURF(feiOut->SurfInterDist[MFX_FEI_H265_BLK_16x16]);
-        dist[MFX_FEI_H265_BLK_16x8]  = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_16x8 : MFX_FEI_H265_BLK_16x16]);
-        dist[MFX_FEI_H265_BLK_8x16]  = GET_OUTSURF(feiOut->SurfInterDist[rectParts ? MFX_FEI_H265_BLK_8x16 : MFX_FEI_H265_BLK_16x16]);
-        dist[MFX_FEI_H265_BLK_8x8]   = GET_OUTSURF(feiOut->SurfInterDist[MFX_FEI_H265_BLK_8x8]);
-        mv[MFX_FEI_H265_BLK_64x64]   = GET_OUTSURF(feiOut->SurfInterMV[MFX_FEI_H265_BLK_64x64]);
-        mv[MFX_FEI_H265_BLK_32x16]   = GET_OUTSURF(feiOut->SurfInterMV[rectParts ? MFX_FEI_H265_BLK_32x16 : MFX_FEI_H265_BLK_32x32]);
-        mv[MFX_FEI_H265_BLK_16x32]   = GET_OUTSURF(feiOut->SurfInterMV[rectParts ? MFX_FEI_H265_BLK_16x32 : MFX_FEI_H265_BLK_32x32]);
-        mv[MFX_FEI_H265_BLK_32x32]   = GET_OUTSURF(feiOut->SurfInterMV[MFX_FEI_H265_BLK_32x32]);
-        mv[MFX_FEI_H265_BLK_16x16]   = GET_OUTSURF(feiOut->SurfInterMV[MFX_FEI_H265_BLK_16x16]);
-        mv[MFX_FEI_H265_BLK_16x8]    = GET_OUTSURF(feiOut->SurfInterMV[rectParts ? MFX_FEI_H265_BLK_16x8 : MFX_FEI_H265_BLK_16x16]);
-        mv[MFX_FEI_H265_BLK_8x16]    = GET_OUTSURF(feiOut->SurfInterMV[rectParts ? MFX_FEI_H265_BLK_8x16 : MFX_FEI_H265_BLK_16x16]);
-        mv[MFX_FEI_H265_BLK_8x8]     = GET_OUTSURF(feiOut->SurfInterMV[MFX_FEI_H265_BLK_8x8]);
+        data[MFX_FEI_H265_BLK_64x64] = GET_OUTSURF(feiOut->SurfInterData[MFX_FEI_H265_BLK_64x64]);
+        data[MFX_FEI_H265_BLK_32x16] = GET_OUTSURF(feiOut->SurfInterData[rectParts ? MFX_FEI_H265_BLK_32x16 : MFX_FEI_H265_BLK_32x32]);
+        data[MFX_FEI_H265_BLK_16x32] = GET_OUTSURF(feiOut->SurfInterData[rectParts ? MFX_FEI_H265_BLK_16x32 : MFX_FEI_H265_BLK_32x32]);
+        data[MFX_FEI_H265_BLK_32x32] = GET_OUTSURF(feiOut->SurfInterData[MFX_FEI_H265_BLK_32x32]);
+        data[MFX_FEI_H265_BLK_16x16] = GET_OUTSURF(feiOut->SurfInterData[MFX_FEI_H265_BLK_16x16]);
+        data[MFX_FEI_H265_BLK_16x8]  = GET_OUTSURF(feiOut->SurfInterData[rectParts ? MFX_FEI_H265_BLK_16x8 : MFX_FEI_H265_BLK_16x16]);
+        data[MFX_FEI_H265_BLK_8x16]  = GET_OUTSURF(feiOut->SurfInterData[rectParts ? MFX_FEI_H265_BLK_8x16 : MFX_FEI_H265_BLK_16x16]);
+        data[MFX_FEI_H265_BLK_8x8]   = GET_OUTSURF(feiOut->SurfInterData[MFX_FEI_H265_BLK_8x8]);
 
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "ME");
         mfxFEIH265InputSurface *surfIn = &((mfxFEIH265Surface *)feiIn->meArgs.surfSrc)->sIn;
@@ -860,13 +843,17 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         SurfaceIndex *refs4x = CreateVmeSurfaceG75(device, surfIn->bufDown4x, &(surfRef->bufDown4x), 0, 1, 0);
         SurfaceIndex *refs8x = CreateVmeSurfaceG75(device, surfIn->bufDown8x, &(surfRef->bufDown8x), 0, 1, 0);
         SurfaceIndex *refs16x = CreateVmeSurfaceG75(device, surfIn->bufDown16x, &(surfRef->bufDown16x), 0, 1, 0);
-        SetKernelArg(kernelMe.m_kernel[0], me16xControl, me2xControl, *refs16x, *refs8x, *refs4x, *refs2x,
-            mv[MFX_FEI_H265_BLK_64x64], mv[MFX_FEI_H265_BLK_32x32], mv[MFX_FEI_H265_BLK_16x16],
-            mv[MFX_FEI_H265_BLK_32x16], mv[MFX_FEI_H265_BLK_16x32], rectParts);
-        SetKernelArg(kernelMe.m_kernel[1], dist[MFX_FEI_H265_BLK_64x64], mv[MFX_FEI_H265_BLK_64x64], surfIn->bufOrigNv12, surfRef->bufOrigNv12);
-        SetKernelArg(kernelMe.m_kernel[2], me1xControl, *refs, dist[MFX_FEI_H265_BLK_16x16], dist[MFX_FEI_H265_BLK_8x8],
-            mv[MFX_FEI_H265_BLK_16x16], mv[MFX_FEI_H265_BLK_8x8], surfIn->bufOrigNv12, surfRef->bufOrigNv12,
-            mv[MFX_FEI_H265_BLK_32x32], dist[MFX_FEI_H265_BLK_32x32]);
+
+        MeControl control = {};
+        SetupMeControl(control, width, height, feiIn->meArgs.lambda);
+        meControl->WriteSurface((mfxU8 *)&control, NULL);
+
+        SetKernelArg(kernelMe.m_kernel[0], meControl, *refs16x, *refs8x, *refs4x, *refs2x,
+            data[MFX_FEI_H265_BLK_64x64], data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16],
+            data[MFX_FEI_H265_BLK_32x16], data[MFX_FEI_H265_BLK_16x32], rectParts);
+        SetKernelArg(kernelMe.m_kernel[1], data[MFX_FEI_H265_BLK_64x64], surfIn->bufOrigNv12, surfRef->bufOrigNv12);
+        SetKernelArg(kernelMe.m_kernel[2], meControl, *refs, data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16],
+            data[MFX_FEI_H265_BLK_8x8], surfIn->bufOrigNv12, surfRef->bufOrigNv12);
 
         kernelMe.Enqueue(queue, lastEvent);
 
@@ -887,17 +874,24 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         CmSurface2D *recon = ((mfxFEIH265Surface *)feiIn->postprocArgs.reconSurfVid)->sRec.bufOrigNv12; // postproc supports only NV12 for now
         CmBufferUP *cuData = ((mfxFEIH265Surface *)feiIn->postprocArgs.cuData)->sBuf.bufOut;
         CmBufferUP *saoModes = ((mfxFEIH265Surface *)feiIn->postprocArgs.saoModes)->sBuf.bufOut;
-        CmBuffer *postprocParam = CreateBuffer(device, feiIn->postprocArgs.extDataSize2);
-        postprocParam->WriteSurface((const Ipp8u*)feiIn->postprocArgs.extData2, NULL);
+        postprocParam->WriteSurface((const Ipp8u*)feiIn->postprocArgs.param, NULL);
 
         int doSao = feiIn->FEIOp & (MFX_FEI_H265_OP_POSTPROC);
 
         if (doSao) {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Deblock+Sao");
-            SetKernelArg(kernelFullPostProc.m_kernel[0], recUpLu, recUpCh, padding, paddingChroma, doSao ? deblocked : recon, cuData, postprocParam);
-            SetKernelArg(kernelFullPostProc.m_kernel[1], origin, deblocked, postprocParam, saoStat);
-            SetKernelArg(kernelFullPostProc.m_kernel[2], postprocParam, saoStat, saoModes);
-            SetKernelArg(kernelFullPostProc.m_kernel[3], deblocked, recon, postprocParam, saoModes);
+
+            // could be (1) Deblock + SaoStat + SaoEst + SaoApply or (2) Deblock + SaoStat + SaoStatChroma + SaoEst + SaoApply
+            int kernelIdx = 0;
+            SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], recUpLu, recUpCh, padding, paddingChroma, doSao ? deblocked : recon, cuData, postprocParam);
+            SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, postprocParam, saoStat);
+            //if (videoParam.SaoChroma) 
+            if (kernelFullPostProc.m_numKernels == 5){
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, postprocParam, saoStat);
+            }
+            SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], postprocParam, saoStat, saoModes);
+            SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], deblocked, recon, postprocParam, saoModes);
+            
             kernelFullPostProc.Enqueue(queue, lastEvent);
         } else {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Deblock");
@@ -905,8 +899,6 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
             kernelDeblock.Enqueue(queue, lastEvent);
         }
 
-        // clean up   
-        device->DestroySurface(postprocParam);
     }
 
     saveSyncPoint = feiIn->SaveSyncPoint;

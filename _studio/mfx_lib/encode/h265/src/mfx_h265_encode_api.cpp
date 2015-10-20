@@ -551,6 +551,15 @@ namespace {
             ext->EnableMAD = 0;
             ext->UseRawRef = 0;
         }
+
+        if (mfxExtEncoderROI *ext = GetExtBuffer(*out)) {
+            InitExtBuffer0(*ext);
+            ext->NumROI = 1;
+            for (Ipp32s i = 0; i < 256; i++) {
+                ext->ROI[i].Left = ext->ROI[i].Right = ext->ROI[i].Top = ext->ROI[i].Bottom = 1;
+                ext->ROI[i].Priority = 1;
+            }
+        }
     }
 
     struct ErrorFlag
@@ -845,7 +854,7 @@ namespace {
                      wrnIncompatible = !CheckRangeSat(roi->ROI[i].Priority, -3, 3);
              }
              if (optHevc)
-                wrnIncompatible = !CheckMax(optHevc->DeltaQpMode, 1);
+                wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);
         }
 
         if (mfx.GopPicSize && mfx.GopRefDist) // GopRefDist <= GopPicSize
@@ -1084,6 +1093,7 @@ namespace {
         mfxExtCodingOption &opt = GetExtBuffer(par);
         mfxExtCodingOption2 &opt2 = GetExtBuffer(par);
         mfxExtHEVCRegion &region = GetExtBuffer(par);
+        mfxExtEncoderROI &roi = GetExtBuffer(par);
 
         if (hevcParam.PicWidthInLumaSamples == 0)
             hevcParam.PicWidthInLumaSamples = fi.Width;
@@ -1347,6 +1357,8 @@ namespace {
             if (optHevc.DeltaQpMode > 2 && (fi.FourCC == P010 || fi.FourCC == P210))
                 optHevc.DeltaQpMode = 2; // CAQ only
             if (mfx.GopRefDist == 1 || optHevc.BPyramid == OFF)
+                optHevc.DeltaQpMode = 1; // off
+            if (roi.NumROI)
                 optHevc.DeltaQpMode = 1; // off
         }
 

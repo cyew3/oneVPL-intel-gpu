@@ -126,6 +126,7 @@ TEST_F(QueryTest, Mode1_Main) {
     FillExtBufferFF(output.extHevcParam);
     FillExtBufferFF(output.extCodingOption);
     FillExtBufferFF(output.extCodingOption2);
+    FillExtBufferFF(output.extEncoderROI);
 
     // save original ExtOpaqueSurfaceAlloc
     expectedOutput.extOpaqueSurfaceAlloc = output.extOpaqueSurfaceAlloc;
@@ -352,6 +353,15 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(0, output.extCodingOption2.BufferingPeriodSEI);
     EXPECT_EQ(0, output.extCodingOption2.EnableMAD);
     EXPECT_EQ(0, output.extCodingOption2.UseRawRef);
+
+    EXPECT_EQ(1, output.extEncoderROI.NumROI);
+    for (Ipp32s i = 0; i < 256; i++) {
+        EXPECT_EQ(1, output.extEncoderROI.ROI[i].Left);
+        EXPECT_EQ(1, output.extEncoderROI.ROI[i].Right);
+        EXPECT_EQ(1, output.extEncoderROI.ROI[i].Top);
+        EXPECT_EQ(1, output.extEncoderROI.ROI[i].Bottom);
+        EXPECT_EQ(1, output.extEncoderROI.ROI[i].Priority);
+    }
 }
 
 TEST_F(QueryTest, Mode2_NullPtr) {

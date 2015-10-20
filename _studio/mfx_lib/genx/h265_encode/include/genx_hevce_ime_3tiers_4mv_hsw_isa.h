@@ -9,5 +9,5 @@
 
 #ifndef __genx_hevce_ime_3tiers_4mv_hsw__
 #define __genx_hevce_ime_3tiers_4mv_hsw__
-extern const unsigned char genx_hevce_ime_3tiers_4mv_hsw[36091];
+extern const unsigned char genx_hevce_ime_3tiers_4mv_hsw[77628];
 #endif

@@ -14,10 +14,11 @@ ParamSet::ParamSet()
     extHevcRegion         = MakeExtBuffer<mfxExtHEVCRegion>();
     extCodingOption       = MakeExtBuffer<mfxExtCodingOption>();
     extCodingOption2      = MakeExtBuffer<mfxExtCodingOption2>();
+    extEncoderROI         = MakeExtBuffer<mfxExtEncoderROI>();
     Zero(videoParam);
-    assert(sizeof(extBuffers) / sizeof(extBuffers[0]) >= 8+1); // plus one for unknown extbuffer test
+    assert(sizeof(extBuffers) / sizeof(extBuffers[0]) >= 9+1); // plus one for unknown extbuffer test
     videoParam.ExtParam = extBuffers;
-    videoParam.NumExtParam = 8;
+    videoParam.NumExtParam = 9;
     videoParam.ExtParam[0] = &extOpaqueSurfaceAlloc.Header;
     videoParam.ExtParam[1] = &extCodingOptionHevc.Header;
     videoParam.ExtParam[2] = &extDumpFiles.Header;
@@ -26,6 +27,7 @@ ParamSet::ParamSet()
     videoParam.ExtParam[5] = &extHevcRegion.Header;
     videoParam.ExtParam[6] = &extCodingOption.Header;
     videoParam.ExtParam[7] = &extCodingOption2.Header;
+    videoParam.ExtParam[8] = &extEncoderROI.Header;
 }
 
 void ApiTestCommon::CopyParamSet(ParamSet &dst, const ParamSet &src) {
@@ -36,6 +38,7 @@ void ApiTestCommon::CopyParamSet(ParamSet &dst, const ParamSet &src) {
     dst.extHevcRegion = src.extHevcRegion;
     dst.extCodingOption = src.extCodingOption;
     dst.extCodingOption2 = src.extCodingOption2;
+    dst.extEncoderROI = src.extEncoderROI;
     dst.videoParam.mfx = src.videoParam.mfx;
     dst.videoParam.AsyncDepth = src.videoParam.AsyncDepth;
     dst.videoParam.Protected = src.videoParam.Protected;
@@ -184,6 +187,10 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOption.AUDelimiter = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.DisableVUI = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.AdaptiveI = MFX_CODINGOPTION_ON;
+    paramset.extEncoderROI.NumROI = 1;
+    paramset.extEncoderROI.ROI[0].Left = paramset.extEncoderROI.ROI[0].Right = paramset.extEncoderROI.ROI[0].Top = paramset.extEncoderROI.ROI[0].Bottom = 0;
+    paramset.extEncoderROI.ROI[0].Priority = 1;
+
 }
 
 void ApiTestCommon::InitParamSetCorrectable(ParamSet &input, ParamSet &expectedOutput) {
@@ -284,6 +291,12 @@ void ApiTestCommon::InitParamSetCorrectable(ParamSet &input, ParamSet &expectedO
     SETUP(extCodingOption.AUDelimiter, 100, 0);
     SETUP(extCodingOption2.DisableVUI, 100, 0);
     SETUP(extCodingOption2.AdaptiveI, 100, 0);
+    input.extEncoderROI.NumROI = expectedOutput.extEncoderROI.NumROI = 1;
+    SETUP(extEncoderROI.ROI[0].Left, 1, 0);
+    SETUP(extEncoderROI.ROI[0].Right, 3, 0);
+    SETUP(extEncoderROI.ROI[0].Top, 64, 0);
+    SETUP(extEncoderROI.ROI[0].Bottom, 0, 0);
+    SETUP(extEncoderROI.ROI[0].Priority, 100, 3); // not CQP
 #undef SETUP
 }
 
@@ -312,6 +325,9 @@ void ApiTestCommon::InitParamSetUnsupported(ParamSet &input, ParamSet &expectedO
     SETUP(extHevcRegion.RegionId, 1000);
     SETUP(extHevcParam.PicWidthInLumaSamples, 0xff00);
     SETUP(extHevcParam.PicHeightInLumaSamples, 0xff00);
+    input.extEncoderROI.NumROI = expectedOutput.extEncoderROI.NumROI = 1;
+    SETUP(extEncoderROI.ROI[0].Right, 0xf000);
+    SETUP(extEncoderROI.ROI[0].Bottom, 0xf000);
 #undef SETUP
 }
 
@@ -525,6 +541,19 @@ template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOption2>(const mfxExtCod
     EXPECT(UseRawRef);
     EXPECT_EQ(0, MemCompare(expected, actual));
 }
+template <> void ApiTestCommon::ExpectEqual<mfxExtEncoderROI>(const mfxExtEncoderROI &expected, const mfxExtEncoderROI &actual) {
+    EXPECT(Header.BufferId);
+    EXPECT(Header.BufferSz);
+    EXPECT(NumROI);
+    for (Ipp32s i = 0; i < expected.NumROI; i++) {
+        EXPECT(ROI[i].Left);
+        EXPECT(ROI[i].Right);
+        EXPECT(ROI[i].Top);
+        EXPECT(ROI[i].Bottom);
+        EXPECT(ROI[i].Priority);
+    }
+    EXPECT_EQ(0, MemCompare(expected, actual));
+}
 #undef EXPECT
 
 template <> void ApiTestCommon::ExpectEqual<ParamSet>(const ParamSet &expected, const ParamSet &actual) {
@@ -539,6 +568,8 @@ template <> void ApiTestCommon::ExpectEqual<ParamSet>(const ParamSet &expected, 
     ExpectEqual(expected.extDumpFiles, actual.extDumpFiles);
     ExpectEqual(expected.extCodingOption, actual.extCodingOption);
     ExpectEqual(expected.extCodingOption2, actual.extCodingOption2);
+    ExpectEqual(expected.extCodingOption2, actual.extCodingOption2);
+    ExpectEqual(expected.extEncoderROI, actual.extEncoderROI);
 }
 
 std::vector<Nal> ApiTestCommon::SplitNals(const Ipp8u *start, const Ipp8u *end)

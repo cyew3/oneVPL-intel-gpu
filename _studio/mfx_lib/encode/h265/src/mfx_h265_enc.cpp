@@ -1583,8 +1583,7 @@ void H265Encoder::OnEncodingQueried(Frame* encoded)
         SafeRelease(encoded->m_feiIntraAngModes[i]);
     for (Ipp32s i = 0; i < 4; i++) {
         for (Ipp32s j = 0; j < 4; j++) {
-            SafeRelease(encoded->m_feiInterDist[i][j]);
-            SafeRelease(encoded->m_feiInterMv[i][j]);
+            SafeRelease(encoded->m_feiInterData[i][j]);
         }
     }
     SafeRelease(encoded->m_feiSaoModes);
@@ -2083,30 +2082,36 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
             cu_ithread->m_rdLambda = m_frame->m_slices[curr_slice_id].rd_lambda_slice;
 
             if (m_videoParam.enableCmPostProc) {
-                const SaoOffsetOut_gfx *saoModes = (SaoOffsetOut_gfx *)m_frame->m_feiSaoModes->m_sysmem;
-                if (saoModes[ctb_addr].mode_idx == 2) {
-                    m_saoParam[ctb_addr][SAO_Y].mode_idx = SAO_MODE_MERGE;
-                    m_saoParam[ctb_addr][SAO_Y].type_idx = SAO_MERGE_LEFT;
-                } else if (saoModes[ctb_addr].mode_idx == 3) {
-                    m_saoParam[ctb_addr][SAO_Y].mode_idx = SAO_MODE_MERGE;
-                    m_saoParam[ctb_addr][SAO_Y].type_idx = SAO_MERGE_ABOVE;
-                } else {
-                    m_saoParam[ctb_addr][SAO_Y].mode_idx = saoModes[ctb_addr].mode_idx;
-                    m_saoParam[ctb_addr][SAO_Y].type_idx = saoModes[ctb_addr].type_idx;
-                }
-                int startIdx = m_saoParam[ctb_addr][SAO_Y].typeAuxInfo = saoModes[ctb_addr].startBand_idx;
-                m_saoParam[ctb_addr][SAO_Y].saoMaxOffsetQVal = 7;
-                if (m_saoParam[ctb_addr][SAO_Y].type_idx == SAO_TYPE_BO) {
-                    for (int idx = 0; idx < 4; idx++)
-                        m_saoParam[ctb_addr][SAO_Y].offset[startIdx + idx] = saoModes[ctb_addr].offset[idx];
-                } else {
-                    m_saoParam[ctb_addr][SAO_Y].offset[0] = saoModes[ctb_addr].offset[0];
-                    m_saoParam[ctb_addr][SAO_Y].offset[1] = saoModes[ctb_addr].offset[1];
-                    m_saoParam[ctb_addr][SAO_Y].offset[2] = 0;
-                    m_saoParam[ctb_addr][SAO_Y].offset[3] = saoModes[ctb_addr].offset[2];
-                    m_saoParam[ctb_addr][SAO_Y].offset[4] = saoModes[ctb_addr].offset[3];
-                }
+                Ipp32s numCtbs = m_videoParam.PicWidthInCtbs * m_videoParam.PicHeightInCtbs;
+                Ipp32s compCount = m_videoParam.SAOChromaFlag ? 3 : 1;
 
+                for (Ipp32s compIdx = 0; compIdx < compCount; compIdx++) 
+                //Ipp32s compIdx = 0;
+                {
+                    const SaoOffsetOut_gfx * saoModes = ((SaoOffsetOut_gfx *)m_frame->m_feiSaoModes->m_sysmem + numCtbs*compIdx + ctb_addr);
+                    if (saoModes->mode_idx == 2) {
+                        m_saoParam[ctb_addr][compIdx].mode_idx = SAO_MODE_MERGE;
+                        m_saoParam[ctb_addr][compIdx].type_idx = SAO_MERGE_LEFT;
+                    } else if (saoModes->mode_idx == 3) {
+                        m_saoParam[ctb_addr][compIdx].mode_idx = SAO_MODE_MERGE;
+                        m_saoParam[ctb_addr][compIdx].type_idx = SAO_MERGE_ABOVE;
+                    } else {
+                        m_saoParam[ctb_addr][compIdx].mode_idx = saoModes->mode_idx;
+                        m_saoParam[ctb_addr][compIdx].type_idx = saoModes->type_idx;
+                    }
+                    int startIdx = m_saoParam[ctb_addr][compIdx].typeAuxInfo = saoModes->startBand_idx;
+                    m_saoParam[ctb_addr][compIdx].saoMaxOffsetQVal = 7;
+                    if (m_saoParam[ctb_addr][compIdx].type_idx == SAO_TYPE_BO) {
+                        for (int idx = 0; idx < 4; idx++)
+                            m_saoParam[ctb_addr][compIdx].offset[startIdx + idx] = saoModes->offset[idx];
+                    } else {
+                        m_saoParam[ctb_addr][compIdx].offset[0] = saoModes->offset[0];
+                        m_saoParam[ctb_addr][compIdx].offset[1] = saoModes->offset[1];
+                        m_saoParam[ctb_addr][compIdx].offset[2] = 0;
+                        m_saoParam[ctb_addr][compIdx].offset[3] = saoModes->offset[2];
+                        m_saoParam[ctb_addr][compIdx].offset[4] = saoModes->offset[3];
+                    }
+                }
             } else {
                 cu_ithread->EstimateSao(&m_bs[bs_id], m_saoParam);
             }

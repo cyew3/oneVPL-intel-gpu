@@ -129,7 +129,8 @@ struct VmeSearchPath // sizeof=58
     mfxU8 maxNumSu;
     mfxU8 lenSp;
 };
-struct Me2xControl // sizeof=64
+
+struct Me2xControl_old // sizeof=64
 {
     VmeSearchPath searchPath;
     mfxU8  reserved[2];
@@ -137,7 +138,22 @@ struct Me2xControl // sizeof=64
     mfxU16 height;
 };
 
-inline void SetupMeControl(Me2xControl &ctrl, int width, int height)
+struct MeControl // sizeof=120
+{
+    mfxU8  longSp[32];          // 0 B
+    mfxU8  shortSp[32];         // 32 B
+    mfxU8  longSpLenSp;         // 64 B
+    mfxU8  longSpMaxNumSu;      // 65 B
+    mfxU8  shortSpLenSp;        // 66 B
+    mfxU8  shortSpMaxNumSu;     // 67 B
+    mfxU16 width;               // 34 W
+    mfxU16 height;              // 35 W
+    mfxU8  mvCost[5][8];         // 72 B (1x), 80 B (2x), 88 B (4x), 96 B (8x) 104 B (16x)
+    mfxU8  mvCostScaleFactor[5]; // 112 B (1x), 113 B (2x), 114 B (4x), 115 B (8x) 116 B (16x)
+    mfxU8  reserved[3];          // 117 B
+};
+
+inline void SetupMeControl_old(Me2xControl_old &ctrl, int width, int height)
 {
     const mfxU8 Diamond[56] =
     {
@@ -160,7 +176,7 @@ inline void SetupMeControl(Me2xControl &ctrl, int width, int height)
     ctrl.height = (mfxU16)height;
 }
 
-inline void SetupMeControlShortPath(Me2xControl &ctrl, int width, int height)
+inline void SetupMeControlShortPath_old(Me2xControl_old &ctrl, int width, int height)
 {
     const mfxU8 SmallPath[3] = { 0x0F, 0xF0, 0x01 };
     memcpy(ctrl.searchPath.sp, SmallPath, sizeof(SmallPath));
@@ -168,4 +184,92 @@ inline void SetupMeControlShortPath(Me2xControl &ctrl, int width, int height)
     ctrl.searchPath.maxNumSu = 9;
     ctrl.width = (mfxU16)width;
     ctrl.height = (mfxU16)height;
+}
+
+
+inline mfxU8 ToU4U4(mfxU16 val) {
+    if (val > 4095)
+        val = 4095;
+    mfxU16 shift = 0;
+    mfxU16 base = val;
+    mfxU16 rem = 0;
+    while (base > 15) {
+        rem += (base & 1) << shift;
+        base = (base >> 1);
+        shift++;
+    }
+    base += (rem << 1 >> shift);
+    return base | (shift << 4);
+}
+
+
+inline void SetupMeControl(MeControl &ctrl, int width, int height, double lambda)
+{
+    const mfxU8 Diamond[56] = {
+        0x0F,0xF1,0x0F,0x12,//5
+        0x0D,0xE2,0x22,0x1E,//9
+        0x10,0xFF,0xE2,0x20,//13
+        0xFC,0x06,0xDD,//16
+        0x2E,0xF1,0x3F,0xD3,0x11,0x3D,0xF3,0x1F,//24
+        0xEB,0xF1,0xF1,0xF1,//28
+        0x4E,0x11,0x12,0xF2,0xF1,//33
+        0xE0,0xFF,0xFF,0x0D,0x1F,0x1F,//39
+        0x20,0x11,0xCF,0xF1,0x05,0x11,//45
+        0x00,0x00,0x00,0x00,0x00,0x00,//51
+    };
+
+    memcpy(ctrl.longSp, Diamond, MIN(sizeof(Diamond), sizeof(ctrl.longSp)));
+    ctrl.longSpLenSp = 16;
+    ctrl.longSpMaxNumSu = 57;
+
+    const mfxU8 ShortPath[4] = {
+        0x0F, 0xF0, 0x01, 0x00
+    };
+
+    memcpy(ctrl.shortSp, ShortPath, MIN(sizeof(ShortPath), sizeof(ctrl.shortSp)));
+    ctrl.shortSpLenSp = 4;
+    ctrl.shortSpMaxNumSu = 9;
+
+    ctrl.width = (mfxU16)width;
+    ctrl.height = (mfxU16)height;
+    
+    const mfxU8 MvBits[4][8] = { // mvCostScale = qpel, hpel, ipel 2pel
+        { 1, 4, 5, 6, 8, 10, 12, 14 },
+        { 1, 5, 6, 8, 10, 12, 14, 16 },
+        { 1, 6, 8, 10, 12, 14, 16, 18 },
+        { 1, 8, 10, 12, 14, 16, 18, 20 }
+    };
+
+    ctrl.mvCostScaleFactor[0] = 2; // int-pel cost table precision
+    ctrl.mvCostScaleFactor[1] = 2;
+    ctrl.mvCostScaleFactor[2] = 2;
+    ctrl.mvCostScaleFactor[3] = 2;
+    ctrl.mvCostScaleFactor[4] = 2;
+
+    const mfxU8 *mvBits = MvBits[ctrl.mvCostScaleFactor[0]];
+    for (Ipp32s i = 0; i < 8; i++)
+        ctrl.mvCost[0][i] = ToU4U4(mfxU16(0.5 + lambda * mvBits[i]));
+
+    //mvBits = MvBits[ctrl.mvCostScaleFactor[1]];
+    //for (Ipp32s i = 0; i < 8; i++)
+    //    ctrl.mvCost[1][i] = ToU4U4(mfxU16(0.5 + lambda /  4 * (1 * (i > 0) + mvBits[i])));
+
+    //mvBits = MvBits[ctrl.mvCostScaleFactor[2]];
+    //for (Ipp32s i = 0; i < 8; i++)
+    //    ctrl.mvCost[2][i] = ToU4U4(mfxU16(0.5 + lambda / 16 * (2 * (i > 0) + mvBits[i])));
+
+    //mvBits = MvBits[ctrl.mvCostScaleFactor[3]];
+    //for (Ipp32s i = 0; i < 8; i++)
+    //    ctrl.mvCost[3][i] = ToU4U4(mfxU16(0.5 + lambda / 64 * (3 * (i > 0) + mvBits[i])));
+
+    //mvBits = MvBits[ctrl.mvCostScaleFactor[4]];
+    //for (Ipp32s i = 0; i < 8; i++)
+    //    ctrl.mvCost[4][i] = ToU4U4(mfxU16(0.5 + lambda / 64 * (4 * (i > 0) + mvBits[i])));
+
+    memset(ctrl.mvCost, 0, sizeof(ctrl.mvCost));
+
+    mfxU8 MvCostHumanFriendly[5][8];
+    for (Ipp32s i = 0; i < 5; i++)
+        for (Ipp32s j = 0; j < 8; j++)
+            MvCostHumanFriendly[i][j] = (ctrl.mvCost[i][j] & 0xf) << ((ctrl.mvCost[i][j] >> 4) & 0xf);
 }

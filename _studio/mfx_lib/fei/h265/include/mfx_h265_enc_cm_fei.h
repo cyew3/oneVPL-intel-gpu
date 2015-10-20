@@ -64,14 +64,11 @@ private:
     mfxU32      saveSyncPoint;
 
     CmBuffer * curbe;
-    CmBuffer * me1xControl;
-    CmBuffer * me2xControl;
-    CmBuffer * me4xControl;
-    CmBuffer * me8xControl;
-    CmBuffer * me16xControl;
+    CmBuffer * meControl;
 
     CmSurface2D * deblocked;
     CmBuffer    * saoStat;
+    CmBuffer    * postprocParam;
 
     /* Cm kernels to load  */
     H265Enc::Kernel kernelPrepareSrc;
@@ -157,11 +154,7 @@ public:
         saveSyncPoint(),
 
         curbe(),
-        me1xControl(),
-        me2xControl(),
-        me4xControl(),
-        me8xControl(),
-        me16xControl(),
+        meControl(),
 
         kernelPrepareSrc(),
         kernelPrepareRef(),

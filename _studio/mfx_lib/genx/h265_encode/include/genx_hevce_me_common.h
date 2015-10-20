@@ -18,6 +18,8 @@
 #include <cm/cmtl.h>
 #include <cm/genx_vme.h>
 
+#define INTERDATA_SIZE_SMALL    8
+#define INTERDATA_SIZE_BIG      64   // 32x32 and 64x64 blocks
 #define MVDATA_SIZE     4 // mfxI16Pair
 #define MBDIST_SIZE     64  // 16*mfxU32
 #define DIST_SIZE       4

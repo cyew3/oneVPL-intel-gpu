@@ -109,16 +109,37 @@ void MeP16_4MV(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, Surface
 #else
     vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
 #endif
+
     run_vme_ime(uniIn, imeIn,
         VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
-        SURF_SRC_AND_REF, ref0, NULL, costCenter, imeOut);
+        SURF_SRC_AND_REF, ref0XY, NULL, costCenter, imeOut);
+
+    vector<int2,2> mv16 = imeOut.row(7).format<int2>().select<2,1>(10);
+    matrix<int2,2,4> mv8 = imeOut.row(8).format<int2>().select<8,1>(8); // 4 MVs
+
+    vector<int2,2> diff = cm_abs<int2>(mvPred);
+    diff = diff > 16;
+    if (diff.any()) {
+        uint2 dist16 = imeOut.row(7).format<ushort>()[8];
+        vector<uint2,4> dist8 = imeOut.row(7).format<ushort>().select<4,1>(4);
+
+        mvPred = 0;
+        SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
+        run_vme_ime(uniIn, imeIn,
+            VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
+            SURF_SRC_AND_REF, ref0XY, NULL, costCenter, imeOut);
+
+        uint2 dist16_0 = imeOut.row(7).format<ushort>()[8];
+        vector<uint2,4> dist8_0 = imeOut.row(7).format<ushort>().select<4,1>(4);
+        vector<int2,2> mv16_0 = imeOut.row(7).format<int2>().select<2,1>(10);
+        matrix<int2,2,4> mv8_0 = imeOut.row(8).format<int2>().select<8,1>(8);
+
+        mv16.format<uint4>().merge(mv16_0.format<uint4>(), dist16_0 < dist16);
+        mv8.format<uint4>().merge(mv8_0.format<uint4>(), dist8_0 < dist8);
+    }
 
     //DebugUniOutput<9>(imeOut);
 
-    uchar interMbMode, subMbShape, subMbPredMode;
-    VME_GET_UNIOutput_InterMbMode(imeOut, interMbMode);
-    VME_GET_UNIOutput_SubMbShape(imeOut, subMbShape);
-    VME_GET_UNIOutput_SubMbPredMode(imeOut, subMbPredMode);
     VME_SET_UNIInput_SubPelMode(uniIn, 3);
     VME_SET_UNIInput_BMEDisableFBR(uniIn);
     SLICE(fbrIn.format<uint>(), 1, 16, 2) = 0; // zero L1 motion vectors
@@ -127,19 +148,18 @@ void MeP16_4MV(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, Surface
     VME_SET_UNIInput_FBRMbModeInput(uniIn, 0);
     VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
     VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
-    fbrIn.format<uint, 4, 8>().select<4, 1, 4, 2>(0, 0) = imeOut.row(7).format<uint>()[5]; // motion vectors 16x16
+    fbrIn.format<uint, 4, 8>().select<4, 1, 4, 2>(0, 0) = mv16.format<uint4>()[0]; // motion vectors 16x16
     run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 0, 0, 0, fbrOut16x16);
 
     matrix<uchar, 7, 32> fbrOut8x8;
-    subMbShape = 0;
     VME_SET_UNIInput_FBRMbModeInput(uniIn, 3);
-    VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, subMbShape);
-    VME_SET_UNIInput_FBRSubPredModeInput(uniIn, subMbPredMode);
-    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(0, 0) = imeOut.row(8).format<uint>()[4]; // motion vectors 8x8_0
-    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(1, 0) = imeOut.row(8).format<uint>()[5]; // motion vectors 8x8_1
-    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(2, 0) = imeOut.row(8).format<uint>()[6]; // motion vectors 8x8_2
-    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(3, 0) = imeOut.row(8).format<uint>()[7]; // motion vectors 8x8_3
-    run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut8x8);
+    VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
+    VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
+    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(0, 0) = mv8.format<uint>()[0]; // motion vectors 8x8_0
+    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(1, 0) = mv8.format<uint>()[1]; // motion vectors 8x8_1
+    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(2, 0) = mv8.format<uint>()[2]; // motion vectors 8x8_2
+    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(3, 0) = mv8.format<uint>()[3]; // motion vectors 8x8_3
+    run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 3, 0, 0, fbrOut8x8);
 
     // distortions
     // 16x16

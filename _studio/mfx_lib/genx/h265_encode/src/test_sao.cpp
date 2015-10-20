@@ -24,32 +24,24 @@
 extern "C" void SaoStatAndEstimate(SurfaceIndex SURF_SRC, SurfaceIndex SURF_RECON, SurfaceIndex SURF_VIDEO_PARAM, Ipp32u recPaddingLu) {};
 extern "C" void SaoStat(SurfaceIndex SRC, SurfaceIndex RECON, SurfaceIndex PARAM, SurfaceIndex DIFF_EO, SurfaceIndex COUNT_EO, SurfaceIndex DIFF_BO, SurfaceIndex COUNT_BO, Ipp32u recPaddingLu);
 extern "C" void SaoApply(SurfaceIndex SRC, SurfaceIndex DST, SurfaceIndex PARAM, SurfaceIndex SAO_MODES);
+extern "C" void SaoStatChroma(SurfaceIndex SRC, SurfaceIndex RECON, SurfaceIndex PARAM, SurfaceIndex DIFF_EO, SurfaceIndex COUNT_EO, SurfaceIndex DIFF_BO, SurfaceIndex COUNT_BO, Ipp32u recPaddingLu);
 extern "C" void SaoEstimate(SurfaceIndex PARAM, SurfaceIndex STATS, SurfaceIndex SAO_MODES);
 extern "C" void SaoEstimateAndApply(SurfaceIndex SRC, SurfaceIndex DST, SurfaceIndex PARAM, SurfaceIndex STATS) {}; 
 #endif //CMRT_EMU
 
 enum { GPU_STAT_BLOCK_WIDTH = 16, GPU_STAT_BLOCK_HEIGHT = 16 };
 
+// CHROMA_SEPARATIST means: (1) use separate kernel (2) use alternative threadspace (vs luma)
+#define CHROMA_SEPARATIST
+
+#if defined CHROMA_SEPARATIST
+enum { GPU_STAT_CHROMA_BLOCK_WIDTH = 8, GPU_STAT_CHROMA_BLOCK_HEIGHT = 16 };
+#else
+enum { GPU_STAT_CHROMA_BLOCK_WIDTH = GPU_STAT_BLOCK_WIDTH/2, GPU_STAT_CHROMA_BLOCK_HEIGHT = GPU_STAT_BLOCK_HEIGHT/2 };
+#endif
 #define SAO_MODE_MERGE_ENABLED
 
-#if 0
-//it doesn't matter now. will be configured later
-struct VideoParam
-{
-    Ipp32s Width;
-    Ipp32s Height;
-    Ipp32s PicWidthInCtbs;
-    Ipp32s PicHeightInCtbs;
-    Ipp32s chromaFormatIdc;
-    Ipp32s MaxCUSize;
-    Ipp32s bitDepthLuma;
-    Ipp32s saoOpt;
-    Ipp32f m_rdLambda;
-    Ipp32s SAOChromaFlag;
-    Ipp32s enableBandOffset;
-    Ipp32s reserved2;
-}; // // sizeof == 48 bytes
-#else
+
 struct VideoParam // size = (352+128)B = (88+32) DW
 {
     Ipp8u  tabBeta[52];            // +0 B
@@ -77,11 +69,11 @@ struct VideoParam // size = (352+128)B = (88+32) DW
     Ipp32f m_rdLambda;             // +84 DW
     Ipp32s SAOChromaFlag;          // +85 DW
     Ipp32s enableBandOffset;       // +86 DW
-    Ipp8u reserved[4];             // +87 DW
+    //Ipp8u reserved[4];             // +87 DW
+    Ipp32s offsetChroma;             // +87 DW
     // tile/slice restriction (avail LeftAbove)
     Ipp8u availLeftAbove[128];     // +88 DW
 };
-#endif
 
 struct AddrNode
 {
@@ -111,6 +103,51 @@ enum SaoComponentIdx
   NUM_SAO_COMPONENTS
 };
 
+#define NUM_SAO_BO_CLASSES_LOG2  5
+#define NUM_SAO_BO_CLASSES  (1<<NUM_SAO_BO_CLASSES_LOG2)
+
+#define NUM_SAO_EO_TYPES_LOG2 2
+
+enum
+{
+    SAO_OPT_ALL_MODES       = 1,
+    SAO_OPT_FAST_MODES_ONLY = 2
+};
+
+
+enum SaoEOClasses
+{
+  SAO_CLASS_EO_FULL_VALLEY = 0,
+  SAO_CLASS_EO_HALF_VALLEY = 1,
+  SAO_CLASS_EO_PLAIN       = 2,
+  SAO_CLASS_EO_HALF_PEAK   = 3,
+  SAO_CLASS_EO_FULL_PEAK   = 4,
+  NUM_SAO_EO_CLASSES,
+};
+
+
+enum SaoModes
+{
+  SAO_MODE_OFF = 0,
+  SAO_MODE_ON,
+  SAO_MODE_MERGE_LEFT,
+  SAO_MODE_MERGE_ABOVE,
+  NUM_SAO_MODES
+};
+
+
+enum SaoBaseTypes
+{
+  SAO_TYPE_EO_0 = 0,
+  SAO_TYPE_EO_90,
+  SAO_TYPE_EO_135,
+  SAO_TYPE_EO_45,
+
+  SAO_TYPE_BO,
+
+  NUM_SAO_BASE_TYPES
+};
+
 
 #define MAX_NUM_SAO_CLASSES  32
 struct SaoOffsetParam
@@ -133,10 +170,11 @@ private:
     SaoOffsetParam m_offsetParam[NUM_SAO_COMPONENTS];
 };
 
+#if 0
 void SetVideoParam(VideoParam & videoParam, Ipp32s width, Ipp32s height);
 int RunGpuStatAndEstimate(const Ipp8u *frameOrigin, const Ipp8u *frameRecon, const VideoParam *m_par, SaoCtuParam *frame_sao_param, bool useUP);
-int RunGpuStat(const Ipp8u *frameOrigin, const Ipp8u *frameRecon, const VideoParam *m_par, Ipp16s *blockStats, bool useUP);
-int RunGpuEstimate(const Ipp16s *blockStats, const VideoParam *videoParam, SaoCtuParam *frame_sao_param);
+//int RunGpuStat(const Ipp8u *frameOrigin, const Ipp8u *frameRecon, const VideoParam *m_par, Ipp16s *blockStats, bool useUP);
+//int RunGpuEstimate(const Ipp16s *blockStats, const VideoParam *videoParam, SaoCtuParam *frame_sao_param);
 int RunGpuApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const VideoParam *m_par, SaoCtuParam *frame_sao_param);
 int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16s *blockStats, SaoCtuParam *frame_sao_param, const VideoParam *videoParam);
 //int RunCpuStatAndEstimate(const Ipp8u *frameOrigin, Ipp8u *frameRecon, const VideoParam *m_par, const AddrInfo *frame_addr_info, SaoCtuParam *frame_sao_param, Ipp32s *diffEO, Ipp16u *countEO, Ipp32s *diffBO, Ipp16u *countBO);
@@ -146,6 +184,7 @@ int CompareStats(Ipp32s *diffEO, Ipp16u *countEO, Ipp32s *diffBO, Ipp16u *countB
 void AccumulateStats(const VideoParam *m_par, const Ipp16s *blockStats, Ipp32s *diffEO, Ipp16u *countEO, Ipp32s *diffBO, Ipp16u *countBO, Ipp8u enableChroma = 0);
 int Dump(Ipp8u *data, size_t frameSize, const char *fileName);
 void SimulateRecon(Ipp8u *input, Ipp32s inPitch, Ipp8u *recon, Ipp32s reconPitch, Ipp32s width, Ipp32s height, Ipp32s maxAbsPixDiff);
+#endif
 void EstimateSao(const Ipp8u* frameOrigin, int pitchOrigin, Ipp8u* frameRecon, int pitchRecon, const VideoParam* m_par, const AddrInfo* frame_addr_info, SaoCtuParam* frame_sao_param,
                  Ipp32s* diffEO, Ipp16u* countEO, Ipp32s* diffBO, Ipp16u* countBO,
                  Ipp8u* availLeft, Ipp8u* availAbove);
@@ -410,7 +449,7 @@ int RunGpuStatAndEstimate(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, con
     return PASSED;
 }
 
-int RunGpuStat(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, const VideoParam* m_par, Ipp16s *blockStats, bool useUP)
+int RunGpuStat(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, const VideoParam* m_par, Ipp16s *blockStats, Ipp32s blockStatsSize, bool useUP)
 {
     int pitchOrigin = m_par->Width;
     int pitchRecon = m_par->Width;
@@ -479,19 +518,10 @@ int RunGpuStat(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, const VideoPar
     CHECK_CM_ERR(res);
     res = video_param->WriteSurface((const Ipp8u*)m_par, NULL);
     CHECK_CM_ERR(res);
-
-    int numCtb = m_par->PicHeightInCtbs * m_par->PicWidthInCtbs;
-
-    Ipp32s blockW = GPU_STAT_BLOCK_WIDTH;
-    Ipp32s blockH = GPU_STAT_BLOCK_HEIGHT;
-    mfxU32 tsWidth   = m_par->PicWidthInCtbs * (m_par->MaxCUSize / blockW);
-    mfxU32 tsHeight  = m_par->PicHeightInCtbs * (m_par->MaxCUSize / blockH);
-    mfxU32 numThreads = tsWidth * tsHeight;
-
-    size = numThreads * (16+16+32+32) * sizeof(Ipp16s);
+    
     CmBuffer *stats = 0;
     int compCount = m_par->SAOChromaFlag ? 3 : 1;
-    res = device->CreateBuffer(compCount * size, stats);
+    res = device->CreateBuffer(blockStatsSize, stats);
     CHECK_CM_ERR(res);
 
     SurfaceIndex *idxInput = 0;
@@ -526,6 +556,12 @@ int RunGpuStat(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, const VideoPar
     mfxU32 MaxCUSize = m_par->MaxCUSize;
 
     // for YUV420 we process (MaxCuSize x MaxCuSize) block
+    int numCtb = m_par->PicHeightInCtbs * m_par->PicWidthInCtbs;
+    Ipp32s blockW = GPU_STAT_BLOCK_WIDTH;
+    Ipp32s blockH = GPU_STAT_BLOCK_HEIGHT;
+    mfxU32 tsWidth   = m_par->PicWidthInCtbs * (m_par->MaxCUSize / blockW);
+    mfxU32 tsHeight  = m_par->PicHeightInCtbs * (m_par->MaxCUSize / blockH);
+    mfxU32 numThreads = tsWidth * tsHeight;
     res = kernel->SetThreadCount(tsWidth * tsHeight);
     CHECK_CM_ERR(res);
 
@@ -588,8 +624,188 @@ printf("TIME=%.3f ms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0
 
     return PASSED;
 }
+int RunGpuStatChroma(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, const VideoParam* m_par, Ipp16s *blockStats, Ipp32s blockStatsSize, bool useUP, Ipp32s copyChromaOnly)
+{
+    int pitchOrigin = m_par->Width;
+    int pitchRecon = m_par->Width;
+    // DEVICE //
+    mfxU32 version = 0;
+    CmDevice *device = 0;
+    Ipp32s res = ::CreateCmDevice(device, version);
+    CHECK_CM_ERR(res);
+    
+    CmProgram *program = 0;
+    res = device->LoadProgram((void *)genx_hevce_sao_hsw, sizeof(genx_hevce_sao_hsw), program);
+    CHECK_CM_ERR(res);
 
-int RunGpuEstimate(const Ipp16s *blockStats, const VideoParam *m_par, SaoCtuParam *frame_sao_param)
+    CmKernel *kernel = 0;
+    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(SaoStatChroma), kernel);
+    CHECK_CM_ERR(res);
+
+    //-------------------------------------------------------
+    // debug printf info
+    //-------------------------------------------------------
+    //res = device->InitPrintBuffer();
+    //CHECK_CM_ERR(res);
+
+    // arg[0] original
+    CmSurface2D *input = 0;
+    res = device->CreateSurface2D(m_par->Width, m_par->Height, CM_SURFACE_FORMAT_NV12, input);
+    CHECK_CM_ERR(res);
+    res = input->WriteSurfaceStride(frameOrigin, NULL, pitchOrigin);
+    CHECK_CM_ERR(res);
+
+    const Ipp32u padding = (useUP) ? 96 : 0;
+
+    // arg[1] recon
+    CmSurface2DUP *reconUp = NULL;
+    CmSurface2D *recon = NULL;
+    Ipp8u *reconSys = NULL;
+    if (useUP) {
+        Ipp32u reconPitch = 0;
+        Ipp32u reconSize = 0;
+        res = device->GetSurface2DInfo(m_par->Width+2*padding, m_par->Height, CM_SURFACE_FORMAT_P8, reconPitch, reconSize);
+        CHECK_CM_ERR(res);
+        /*Ipp8u **/reconSys = (Ipp8u *)CM_ALIGNED_MALLOC(reconSize, 0x1000);
+        res = device->CreateSurface2DUP(m_par->Width+2*padding, m_par->Height, CM_SURFACE_FORMAT_P8, reconSys, reconUp);
+        CHECK_CM_ERR(res);
+        for (Ipp32s y = 0; y < m_par->Height; y++) {
+            memcpy(reconSys + y * reconPitch + padding, frameRecon + y * pitchRecon, m_par->Width);
+            memset(reconSys + y * reconPitch + padding + m_par->Width, frameRecon[m_par->Width - 1 + y * pitchRecon], padding);
+            memset(reconSys + y * reconPitch, frameRecon[y * pitchRecon], padding);
+        }
+    } else {
+        res = device->CreateSurface2D(m_par->Width, m_par->Height, CM_SURFACE_FORMAT_NV12, recon);
+        CHECK_CM_ERR(res);
+        res = recon->WriteSurfaceStride(frameRecon, NULL, pitchRecon);
+        CHECK_CM_ERR(res);
+    }
+
+    // arg[2] output
+    CmSurface2D *output = 0;
+    res = device->CreateSurface2D(m_par->Width, m_par->Height, CM_SURFACE_FORMAT_NV12, output);
+    CHECK_CM_ERR(res);
+
+    // arg[3]
+    int size = sizeof(VideoParam);
+    CmBuffer* video_param = 0;
+    res = device->CreateBuffer(size, video_param);
+    CHECK_CM_ERR(res);
+    res = video_param->WriteSurface((const Ipp8u*)m_par, NULL);
+    CHECK_CM_ERR(res);
+
+    int numCtb = m_par->PicHeightInCtbs * m_par->PicWidthInCtbs;
+
+    CmBuffer *stats = 0;
+    res = device->CreateBuffer(blockStatsSize, stats);
+    CHECK_CM_ERR(res);
+
+    SurfaceIndex *idxInput = 0;
+    res = input->GetIndex(idxInput);
+    CHECK_CM_ERR(res);
+
+    SurfaceIndex *idxRecon = 0;
+    res = (useUP) ? reconUp->GetIndex(idxRecon) : recon->GetIndex(idxRecon);
+    CHECK_CM_ERR(res);
+
+    SurfaceIndex *idxOutput = 0;
+    res = output->GetIndex(idxOutput);
+    CHECK_CM_ERR(res);
+
+    SurfaceIndex *idxParam = 0;
+    res = video_param->GetIndex(idxParam);
+    CHECK_CM_ERR(res);
+
+    SurfaceIndex *idx_stats = 0;
+    res = stats->GetIndex(idx_stats);
+    CHECK_CM_ERR(res);
+
+    res = kernel->SetKernelArg(0, sizeof(*idxInput), idxInput);
+    CHECK_CM_ERR(res);
+    res = kernel->SetKernelArg(1, sizeof(*idxRecon), idxRecon);
+    CHECK_CM_ERR(res);
+    res = kernel->SetKernelArg(2, sizeof(*idxParam), idxParam);
+    CHECK_CM_ERR(res);
+    res = kernel->SetKernelArg(3, sizeof(*idx_stats), idx_stats);
+    CHECK_CM_ERR(res);
+
+    mfxU32 MaxCUSize = m_par->MaxCUSize;
+
+    // for YUV420 we process (MaxCuSize x MaxCuSize) block
+    Ipp32s blockW = GPU_STAT_CHROMA_BLOCK_WIDTH;
+    Ipp32s blockH = GPU_STAT_CHROMA_BLOCK_HEIGHT;
+    mfxU32 tsWidth   = m_par->PicWidthInCtbs *  ((m_par->MaxCUSize >> 1) / blockW);
+    mfxU32 tsHeight  = m_par->PicHeightInCtbs * ((m_par->MaxCUSize >> 1) / blockH);
+    mfxU32 numThreads = tsWidth * tsHeight;
+    res = kernel->SetThreadCount(tsWidth * tsHeight);
+    CHECK_CM_ERR(res);
+
+    CmThreadSpace * threadSpace = 0;
+    res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
+    CHECK_CM_ERR(res);
+
+    res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+    CHECK_CM_ERR(res);
+
+    CmTask * task = 0;
+    res = device->CreateTask(task);
+    CHECK_CM_ERR(res);
+
+    res = task->AddKernel(kernel);
+    CHECK_CM_ERR(res);
+
+    CmQueue *queue = 0;
+    res = device->CreateQueue(queue);
+    CHECK_CM_ERR(res);
+
+    CmEvent * e = 0;
+    res = queue->Enqueue(task, e, threadSpace);
+    CHECK_CM_ERR(res);
+
+    res = e->WaitForTaskFinished();
+    CHECK_CM_ERR(res);
+
+    // READ OUT DATA
+    if (!copyChromaOnly ) {
+        stats->ReadSurface((Ipp8u *)blockStats, NULL);
+    } else {
+        std::vector<Ipp8u> tmp(blockStatsSize);
+        stats->ReadSurface((Ipp8u *)tmp.data(), NULL);
+        memcpy((Ipp8u *)blockStats + m_par->offsetChroma, tmp.data() + m_par->offsetChroma, blockStatsSize - m_par->offsetChroma);
+    }
+
+    //-------------------------------------------------
+    // OUTPUT DEBUG
+    //-------------------------------------------------
+    //res = device->FlushPrintBuffer();
+
+    //mfxU64 mintime = mfxU64(-1);
+
+#ifndef CMRT_EMU
+printf("SaoStatChroma TIME=%.3f ms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
+#endif //CMRT_EMU
+
+    device->DestroyTask(task);
+    queue->DestroyEvent(e);
+    device->DestroySurface(input);
+    if (useUP) {
+        device->DestroySurface2DUP(reconUp);
+        CM_ALIGNED_FREE(reconSys);
+    } else {
+        device->DestroySurface(recon);
+    }
+    device->DestroySurface(output);
+    device->DestroySurface(video_param);
+    device->DestroySurface(stats);
+    device->DestroyThreadSpace(threadSpace);
+    device->DestroyKernel(kernel);
+    device->DestroyProgram(program);
+    ::DestroyCmDevice(device);
+
+    return PASSED;
+}
+
+int RunGpuEstimate(const Ipp16s *blockStats, int blockStatsSize, const VideoParam *m_par, SaoCtuParam *frame_sao_param)
 {
     int pitchOrigin = m_par->Width;
     int pitchRecon = m_par->Width;
@@ -620,14 +836,11 @@ int RunGpuEstimate(const Ipp16s *blockStats, const VideoParam *m_par, SaoCtuPara
     CHECK_CM_ERR(res);
     res = video_param->WriteSurface((const Ipp8u*)m_par, NULL);
     CHECK_CM_ERR(res);
-
-    Ipp32s blockW = GPU_STAT_BLOCK_WIDTH;
-    Ipp32s blockH = GPU_STAT_BLOCK_HEIGHT;
-    mfxU32 numBlocks = m_par->PicWidthInCtbs * (m_par->MaxCUSize / blockW) * m_par->PicHeightInCtbs * (m_par->MaxCUSize / blockH);
+    
     int compCount = m_par->SAOChromaFlag ? 3 : 1;
     
     CmBuffer *stats = 0;
-    res = device->CreateBuffer(compCount * numBlocks * (16+16+32+32) * sizeof(Ipp16s), stats);
+    res = device->CreateBuffer(blockStatsSize, stats);
     CHECK_CM_ERR(res);
     res = stats->WriteSurface((const Ipp8u *)blockStats, NULL);
     CHECK_CM_ERR(res);
@@ -1138,11 +1351,12 @@ union Avail
     Ipp8u data;
 };
 
-int Compare(const Ipp8u *data1, const Ipp8u *data2, Ipp32s width, Ipp32s height, VideoParam* par = NULL, SaoCtuParam* sao = NULL)
+int Compare(const Ipp8u *data1, const Ipp8u *data2, Ipp32s width, Ipp32s height, VideoParam* par, SaoCtuParam* sao)
 {
     Ipp32s pitch1 = width;
     Ipp32s pitch2 = width;
 
+#if 1
     // Luma
     for (Ipp32s y = 0; y < height; y++) {
         for (Ipp32s x = 0; x < width; x++) {
@@ -1153,6 +1367,7 @@ int Compare(const Ipp8u *data1, const Ipp8u *data2, Ipp32s width, Ipp32s height,
             }
         }
     }
+#endif
 
     // Chroma
     const Ipp8u* refChroma =  data1 + height*pitch1;
@@ -1201,81 +1416,99 @@ int Dump(Ipp8u* data, size_t frameSize, const char* fileName)
     return PASSED;
 }
 
-int CompareParam(SaoCtuParam* param_cpu, SaoCtuParam* param_gfx, Ipp32s numCtbs, int enableChroma = 0)
+int CompareParam(SaoCtuParam* param_cpu, SaoCtuParam* param_gfx, Ipp32s numCtbs, int enableChroma)
 {
-    int countEO[4] = {0};
-    int countBO = 0;
+    int countEO[3][4] = {0};
+    int countBO[3] = {0};
+    int countMergeLeft[3] = {0};
+    int countMergeAbove[3] = {0};
 
     int compCount = enableChroma ? 3 : 1;
     char* compName[3] = {"Y", "U", "V"};
 
     for (Ipp32s ctb = 0; ctb < numCtbs; ctb++) {
-        for (Ipp32s idx = 0; idx < compCount; idx++)
-        //Ipp32s idx = 0;
+        for (Ipp32s compIdx = 0; compIdx < compCount; compIdx++)
+        //for (Ipp32s compIdx = 1; compIdx < compCount; compIdx++)
+        //Ipp32s compIdx = 0;
         {
-            SaoOffsetParam & ref = param_cpu[ctb][idx];
-            SaoOffsetParam & tst = param_gfx[ctb][idx];
+            SaoOffsetParam & ref = param_cpu[ctb][compIdx];
+            SaoOffsetParam & tst = param_gfx[ctb][compIdx];
 
-            if (param_cpu[ctb][idx].mode_idx != param_gfx[ctb][idx].mode_idx) {
-                printf("\ncomp: %s\n", compName[idx]);
+            if (param_cpu[ctb][compIdx].mode_idx != param_gfx[ctb][compIdx].mode_idx) {
+                printf("\ncomp: %s\n", compName[compIdx]);
                 printf("param[ctb = %i] mode_idx not equal\n", ctb);
-                int a = param_cpu[ctb][idx].mode_idx;
-                int b = param_gfx[ctb][idx].mode_idx;
+                int a = param_cpu[ctb][compIdx].mode_idx;
+                int b = param_gfx[ctb][compIdx].mode_idx;
                 printf("cpu %i, gfx %i\n", a, b);
                 return FAILED;
             }
 
-            if (param_cpu[ctb][idx].type_idx != param_gfx[ctb][idx].type_idx) {
-                printf("\ncomp: %s\n", compName[idx]);
+            if (param_cpu[ctb][compIdx].type_idx != param_gfx[ctb][compIdx].type_idx) {
+                printf("\ncomp: %s\n", compName[compIdx]);
                 printf("param[ctb = %i] type_idx not equal\n", ctb);
-                int a = param_cpu[ctb][idx].type_idx;
-                int b = param_gfx[ctb][idx].type_idx;
+                int a = param_cpu[ctb][compIdx].type_idx;
+                int b = param_gfx[ctb][compIdx].type_idx;
                 printf("cpu %i, gfx %i\n", a, b);
                 return FAILED;
             }
 
-            if (param_cpu[ctb][idx].startBand_idx != param_gfx[ctb][idx].startBand_idx) {
-                printf("\ncomp: %s\n", compName[idx]);
+            if (param_cpu[ctb][compIdx].startBand_idx != param_gfx[ctb][compIdx].startBand_idx) {
+                printf("\ncomp: %s\n", compName[compIdx]);
                 printf("param[ctb = %i] typeAuxInfo not equal\n", ctb);
                 return FAILED;
             }
 
-            int startBand = param_cpu[ctb][idx].startBand_idx;
+            int startBand = param_cpu[ctb][compIdx].startBand_idx;
 
             // EO
-            if (param_gfx[ctb][idx].type_idx < 4 && param_cpu[ctb][idx].mode_idx == 1)
+            if (param_gfx[ctb][compIdx].type_idx < 4 && param_cpu[ctb][compIdx].mode_idx == 1)
             {
                 for (int offset_idx = 0; offset_idx < 4; offset_idx++) {
                     int step = offset_idx >= 2 ? 1 : 0;
 
-                    if (param_cpu[ctb][idx].offset[offset_idx + step] != param_gfx[ctb][idx].offset[offset_idx]) {
-                        printf("\ncomp: %s\n", compName[idx]);
+                    if (param_cpu[ctb][compIdx].offset[offset_idx + step] != param_gfx[ctb][compIdx].offset[offset_idx]) {
+                        printf("\ncomp: %s\n", compName[compIdx]);
                         printf("param[ctb = %i] offset[%i] not equal\n", ctb, offset_idx);
                         return FAILED;
                     }
                 }
             }
             // BO
-            else if (param_gfx[ctb][idx].type_idx == 4)
+            else if (param_gfx[ctb][compIdx].type_idx == 4)
             {
                 for (int offset_idx = 0; offset_idx < 4; offset_idx++) {
-                    if (param_cpu[ctb][idx].offset[startBand + offset_idx] != param_gfx[ctb][idx].offset[/*startBand + */offset_idx]) {
-                        printf("\ncomp: %s\n", compName[idx]);
+                    if (param_cpu[ctb][compIdx].offset[startBand + offset_idx] != param_gfx[ctb][compIdx].offset[/*startBand + */offset_idx]) {
+                        printf("\ncomp: %s\n", compName[compIdx]);
                         printf("param[ctb = %i] offset[%i] not equal\n", ctb, offset_idx);
                         return FAILED;
                     }
                 }
             }
 
-            if (param_cpu[ctb][idx].mode_idx == 1 && param_gfx[ctb][idx].type_idx < 4 ) {//ON
-                countEO[ param_cpu[ctb][idx].type_idx ]++;
-            } else if (param_cpu[ctb][idx].mode_idx == 1 && param_gfx[ctb][idx].type_idx == 4) {
-                countBO++;
+            if (param_cpu[ctb][compIdx].mode_idx != SAO_MODE_OFF && param_gfx[ctb][compIdx].type_idx < 4 ) {//ON
+                countEO[compIdx][ param_cpu[ctb][compIdx].type_idx ]++;
+            } else if (param_cpu[ctb][compIdx].mode_idx != SAO_MODE_OFF && param_gfx[ctb][compIdx].type_idx == 4) {
+                countBO[compIdx]++;
+            }
+
+            // once only!!!
+            if (compIdx == 0) {
+                if (param_cpu[ctb][compIdx].mode_idx == SAO_MODE_MERGE_LEFT) {
+                    countMergeLeft[compIdx]++;
+                } 
+                if (param_cpu[ctb][compIdx].mode_idx == SAO_MODE_MERGE_ABOVE) {
+                    countMergeAbove[compIdx]++;
+                }
             }
         }
     }
 
-    printf(" (stats: E0 %i E90 %i E135 %i E45 %i BO %i TOTAL %i) ", countEO[0], countEO[1], countEO[2], countEO[3], countBO, numCtbs);
+    for (Ipp32s compIdx = 0; compIdx < compCount; compIdx++) {
+        //printf("\n(stats [%s]: E0 %i E90 %i E135 %i E45 %i BO %i TOTAL %i) ", compName[compIdx], countEO[compIdx][0], countEO[compIdx][1], countEO[compIdx][2], countEO[compIdx][3], countBO[compIdx], numCtbs);
+        if (compIdx == 0) {
+            //printf("\n stats [%s]: Left %i Above %i Total: %i\n", compName[compIdx], countMergeLeft[compIdx], countMergeAbove[compIdx], numCtbs);
+        }
+    }
 
     return PASSED;
 }
@@ -1417,52 +1650,6 @@ void SetVideoParam(VideoParam & par, Ipp32s width, Ipp32s height)
 //---------------------------------------------------------
 // SAO CPU CODE
 //---------------------------------------------------------
-#define NUM_SAO_BO_CLASSES_LOG2  5
-#define NUM_SAO_BO_CLASSES  (1<<NUM_SAO_BO_CLASSES_LOG2)
-
-#define NUM_SAO_EO_TYPES_LOG2 2
-
-enum
-{
-    SAO_OPT_ALL_MODES       = 1,
-    SAO_OPT_FAST_MODES_ONLY = 2
-};
-
-
-enum SaoEOClasses
-{
-  SAO_CLASS_EO_FULL_VALLEY = 0,
-  SAO_CLASS_EO_HALF_VALLEY = 1,
-  SAO_CLASS_EO_PLAIN       = 2,
-  SAO_CLASS_EO_HALF_PEAK   = 3,
-  SAO_CLASS_EO_FULL_PEAK   = 4,
-  NUM_SAO_EO_CLASSES,
-};
-
-
-enum SaoModes
-{
-  SAO_MODE_OFF = 0,
-  SAO_MODE_ON,
-  SAO_MODE_MERGE_LEFT,
-  SAO_MODE_MERGE_ABOVE,
-  NUM_SAO_MODES
-};
-
-
-enum SaoBaseTypes
-{
-  SAO_TYPE_EO_0 = 0,
-  SAO_TYPE_EO_90,
-  SAO_TYPE_EO_135,
-  SAO_TYPE_EO_45,
-
-  SAO_TYPE_BO,
-
-  NUM_SAO_BASE_TYPES
-};
-
-
 
 struct SaoCtuStatistics //data structure for SAO statistics
 {
@@ -2046,8 +2233,10 @@ void GetQuantOffsets(int typeIdx,  SaoCtuStatistics& statData, int* quantOffsets
             }
         }
 
-        Ipp64f minCost = MAX_DOUBLE, bandCost;
+        Ipp64f minCost = MAX_DOUBLE; 
         int band, startBand = 0;
+#if 0
+        Ipp64f bandCost;
         for (band = 0; band < (NUM_SAO_BO_CLASSES - 4 + 1); band++) {
             bandCost  = cost[band  ] + cost[band+1] + cost[band+2] + cost[band+3];
 
@@ -2056,6 +2245,32 @@ void GetQuantOffsets(int typeIdx,  SaoCtuStatistics& statData, int* quantOffsets
                 startBand = band;
             }
         }
+#else
+        Ipp64f bandCost[32];
+        Ipp64f bandIdx[32];
+        bandCost[29] = bandCost[30] = bandCost[31] = MAX_DOUBLE;
+        for (band = 0; band < (NUM_SAO_BO_CLASSES - 4 + 1); band++) {
+            bandCost[band]  = cost[band  ] + cost[band+1] + cost[band+2] + cost[band+3];
+            bandIdx[band] = band;
+        }
+
+        // simulation MinHalf like in kernel
+        Ipp32s numElements = 32;
+        for (int i = 0; i < 5; i++) {
+            Ipp32s half = numElements / 2;
+            for (band = 0; band < half; band++) {
+                Ipp32s mask = bandCost[band] > bandCost[half + band];
+                if (mask) {
+                    bandCost[band] = bandCost[half + band];
+                    bandIdx[band]  = bandIdx[half + band];
+                }
+            }
+
+            numElements >>= 1;
+        }
+
+        startBand = bandIdx[0];
+#endif
 
         // clear unused bands
         for (band = 0; band < startBand; band++)
@@ -2200,7 +2415,7 @@ Ipp32s CodeSaoCtbParam_BitCost(SaoCtuParam& saoBlkParam, bool* sliceEnabled, boo
 
 #define ENABLE_BAND_OFFSET
 
-void GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList[2], SaoCtuParam* codedParam, SaoEstimator & state, Ipp32s enableBandOffset)
+void GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList[2], SaoCtuParam* codedParam, SaoEstimator & state, Ipp32s enableBandOffset, Ipp32s enableMergeMode, int ctbAddr)
 {
     Ipp32s   m_numSaoModes = enableBandOffset ? 5 : 4;
 
@@ -2231,11 +2446,13 @@ void GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList[2], SaoCtuPar
     }
 
 
-    Ipp32s bitCost = CodeSaoCtbParam_BitCost(bestParam, sliceEnabled, mergeList[0] != NULL, mergeList[1] != NULL, true);
+    Ipp32s bitCostMerge = CodeSaoCtbParam_BitCost(bestParam, sliceEnabled, mergeList[0] != NULL, mergeList[1] != NULL, true);
 
-    bitCost = CodeSaoCtbOffsetParam_BitCost(SAO_Y, bestParam[SAO_Y], sliceEnabled[SAO_Y]);
+    Ipp32s bitCost = 0;
 
-    Ipp32f minCost = m_labmda[SAO_Y] * bitCost;
+    bitCost += CodeSaoCtbOffsetParam_BitCost(SAO_Y, bestParam[SAO_Y], sliceEnabled[SAO_Y]);
+
+    Ipp32f minCost = m_labmda[SAO_Y] * (bitCost + bitCostMerge);
 
     if (sliceEnabled[SAO_Y]) {
         for (Ipp32s type_idx = 0; type_idx < m_numSaoModes; type_idx++) {
@@ -2252,7 +2469,7 @@ void GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList[2], SaoCtuPar
 
             bitCost = CodeSaoCtbOffsetParam_BitCost(SAO_Y, testOffset[SAO_Y], sliceEnabled[SAO_Y]);
 
-            cost = dist[SAO_Y] + m_labmda[SAO_Y]*bitCost;
+            cost = dist[SAO_Y] + m_labmda[SAO_Y]*(bitCost+bitCostMerge);
             if (cost < minCost) {
                 minCost = cost;
                 modeDist[SAO_Y] = dist[SAO_Y];
@@ -2301,36 +2518,48 @@ void GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList[2], SaoCtuPar
         }
     }
 
-#if defined(SAO_MODE_MERGE_ENABLED)
-    bitCost = CodeSaoCtbParam_BitCost(bestParam, sliceEnabled, (mergeList[0]!= NULL), (mergeList[1]!= NULL), false);
 
-    Ipp64f bestCost = modeDist[SAO_Y] / m_labmda[SAO_Y] + (modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda + bitCost;
+    if (enableMergeMode) {
+        bitCost = CodeSaoCtbParam_BitCost(bestParam, sliceEnabled, (mergeList[0]!= NULL), (mergeList[1]!= NULL), false);
 
-    SaoCtuParam testParam;
-    for (Ipp32s mode = 0; mode < 2; mode++) {
-        if (NULL == mergeList[mode])
-            continue;
+        // we use the same lambda for YUV
 
-        memcpy(&testParam, mergeList[mode], sizeof(SaoCtuParam));
-        testParam[0].mode_idx = mode == 0 ? SAO_MODE_MERGE_LEFT : SAO_MODE_MERGE_ABOVE;
+        //Ipp64f bestCost = modeDist[SAO_Y] / m_labmda[SAO_Y] + (modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda + bitCost;
+        Ipp64f bestCost = (modeDist[SAO_Y]  + modeDist[SAO_Cb]+ modeDist[SAO_Cr]) + bitCost * m_labmda[0];
 
-        SaoOffsetParam& mergedOffset = (*(mergeList[mode]))[0];
+        /*if (ctbAddr == 19) {
+            printf("\n stop \n");
+        }*/
 
-        Ipp64s distortion=0;
-        if ( SAO_MODE_OFF != mergedOffset.mode_idx ) {
-            distortion = GetDistortion( mergedOffset.type_idx, mergedOffset.startBand_idx,
-                mergedOffset.offset, state.m_statData[0][mergedOffset.type_idx], shift);
-        }
+        int compCount = sliceEnabled[SAO_Cb] ? 3 : 1;
+        SaoCtuParam testParam;
+        for (Ipp32s mode = 0; mode < 2; mode++) {
+            if (NULL == mergeList[mode])
+                continue;
 
-        bitCost = CodeSaoCtbParam_BitCost(testParam, sliceEnabled, (NULL != mergeList[0]), (NULL != mergeList[1]), false);
+            memcpy(&testParam, mergeList[mode], sizeof(SaoCtuParam));
 
-        cost = distortion / m_labmda[0] + bitCost;
-        if (cost < bestCost) {
-            bestCost = cost;
-            memcpy(&bestParam, &testParam, sizeof(SaoCtuParam));
+            Ipp64s distortion=0;
+            for (int compIdx = 0; compIdx < compCount; compIdx++) {
+                testParam[compIdx].mode_idx = mode == 0 ? SAO_MODE_MERGE_LEFT : SAO_MODE_MERGE_ABOVE;
+
+                SaoOffsetParam& mergedOffset = (*(mergeList[mode]))[compIdx];
+
+                if ( SAO_MODE_OFF != mergedOffset.mode_idx ) {
+                    distortion += GetDistortion( mergedOffset.type_idx, mergedOffset.startBand_idx,
+                        mergedOffset.offset, state.m_statData[compIdx][mergedOffset.type_idx], shift);
+                }
+            }
+
+            bitCost = CodeSaoCtbParam_BitCost(testParam, sliceEnabled, (NULL != mergeList[0]), (NULL != mergeList[1]), false);
+
+            cost = distortion + bitCost * m_labmda[0];
+            if (cost < bestCost) {
+                bestCost = cost;
+                memcpy(&bestParam, &testParam, sizeof(SaoCtuParam));
+            }
         }
     }
-#endif
 
 }
 
@@ -3296,7 +3525,9 @@ void EstimateSao(const Ipp8u* frameOrigin, int pitchOrigin, Ipp8u* frameRecon, i
         /*if (ctbAddr == 410) {
             printf ("\n stop \n");
         }*/
-        GetBestSao_BitCost(sliceEnabled, mergeList, &frame_sao_param[ctbAddr], m_saoEst, m_par->enableBandOffset);
+        Ipp32s enableMergeMode = 1;//m_par->enableBandOffset >> 1;
+        Ipp32s enableBandOffset = m_par->enableBandOffset & 0x1;
+        GetBestSao_BitCost(sliceEnabled, mergeList, &frame_sao_param[ctbAddr], m_saoEst, enableBandOffset, enableMergeMode, ctbAddr);
 
     } // foreach ctbAddr
 
@@ -3315,8 +3546,8 @@ void AccumulateStats(const VideoParam *m_par, const Ipp16s *blockStats, Ipp32s *
     Ipp32s blockH = GPU_STAT_BLOCK_HEIGHT;
     if (enableChroma) {
         MaxCUSize >>= 1;
-        blockW >>= 1;
-        blockH >>= 1;
+        blockW = GPU_STAT_CHROMA_BLOCK_WIDTH;
+        blockH = GPU_STAT_CHROMA_BLOCK_HEIGHT;
     }
     Ipp32s heightInBlocks = m_par->PicHeightInCtbs * MaxCUSize / blockH;
     Ipp32s widthInBlocks  = m_par->PicWidthInCtbs  * MaxCUSize / blockW;
@@ -3398,7 +3629,11 @@ int main()
     std::vector<Ipp16u> countEoGpu(3*numCtbs*4*4, 0);
     std::vector<Ipp16u> countBoGpu(3*numCtbs*1*32, 0);
     Ipp32s numBlocks = videoParam.PicWidthInCtbs * videoParam.PicHeightInCtbs * videoParam.MaxCUSize * videoParam.MaxCUSize / GPU_STAT_BLOCK_WIDTH / GPU_STAT_BLOCK_HEIGHT;
-    std::vector<Ipp16s> blockStats(numBlocks * (16+16+32+32) + (2 * (numBlocks * (16+16+32+32))));
+    Ipp32s numBlocksChroma = numBlocks;
+#if defined(CHROMA_SEPARATIST)
+    numBlocksChroma = videoParam.PicWidthInCtbs * videoParam.PicHeightInCtbs * ((videoParam.MaxCUSize >> 1) / GPU_STAT_CHROMA_BLOCK_WIDTH) * ((videoParam.MaxCUSize >> 1) /  GPU_STAT_CHROMA_BLOCK_HEIGHT);
+#endif
+    std::vector<Ipp16s> blockStats(numBlocks * (16+16+32+32) + (2 * (numBlocksChroma * (16+16+32+32))));
 
     FILE *f = fopen(YUV_NAME, "rb");
     if (!f)
@@ -3421,6 +3656,8 @@ int main()
     SimulateTiles(availLeftAboveMask.data(), maxNumCtbX, maxNumCtbY);
     memcpy(videoParam.availLeftAbove, availLeftAboveMask.data(), maxNumCtbX + maxNumCtbY);
 
+    // send offset to correct ChromaBlockStats writing
+    videoParam.offsetChroma = numBlocks * (16+16+32+32) * sizeof(Ipp16s);
     // DUMP
     //Dump(input, frameSize, "input.yuv");
     //Dump(recon, frameSize, "recon.yuv");
@@ -3428,14 +3665,22 @@ int main()
     Ipp32s res = 0;
 
     videoParam.enableBandOffset = 0;
+    //videoParam.enableBandOffset |= (1<<1); // merge mode enabled (case for debug only)
+    videoParam.SAOChromaFlag = 1;
 
     printf("Stat EO:       ");
     res = RunCpuStatAndEstimate(input.data(), recon.data(), &videoParam, frame_addr_info.data(), saoModesCpu.data(), diffEoCpu.data(), countEoCpu.data(), diffBoCpu.data(), countBoCpu.data(),
         videoParam.availLeftAbove, videoParam.availLeftAbove + maxNumCtbX);
     CHECK_ERR(res);
-    res = RunGpuStat(input.data(), recon.data(), &videoParam, blockStats.data(), false);
+#if defined(CHROMA_SEPARATIST)
+    res = RunGpuStat(input.data(), recon.data(), &videoParam, blockStats.data(), blockStats.size() * 2, false);
     CHECK_ERR(res);
-    AccumulateStats(&videoParam, blockStats.data(), diffEoGpu.data(), countEoGpu.data(), diffBoGpu.data(), countBoGpu.data());
+    res = RunGpuStatChroma(input.data(), recon.data(), &videoParam, blockStats.data(), blockStats.size() * 2, false, 1);
+#else
+    res = RunGpuStat(input.data(), recon.data(), &videoParam, blockStats.data(), blockStats.size() * 2, false);
+#endif
+    CHECK_ERR(res);
+    AccumulateStats(&videoParam, blockStats.data(), diffEoGpu.data(), countEoGpu.data(), diffBoGpu.data(), countBoGpu.data(), 0); // <- LUMA (compIdx = 0)
     if (videoParam.SAOChromaFlag) {
         int offset[5];
         offset[0] = numBlocks * (16+16+32+32);
@@ -3443,20 +3688,20 @@ int main()
         offset[3] = offset[4] = numCtbs*1*32;
         AccumulateStats(&videoParam, blockStats.data() + offset[0], diffEoGpu.data() + offset[1], countEoGpu.data()  + offset[2], diffBoGpu.data() + offset[3], countBoGpu.data() + offset[4], 1);//enableChromaU
 
-        offset[0] <<= 1;
+        //offset[0] <<= 1;
+        offset[0] += numBlocksChroma * (16+16+32+32);
         offset[1] <<= 1;offset[2] <<= 1;
         offset[3] <<= 1;offset[4] <<= 1;
         AccumulateStats(&videoParam, blockStats.data() + offset[0], diffEoGpu.data() + offset[1], countEoGpu.data()  + offset[2], diffBoGpu.data() + offset[3], countBoGpu.data() + offset[4], 2);//enableChromaV
     }
 
-    //res = CompareStats(diffEoGpu.data(), countEoGpu.data(), nullptr, nullptr, diffEoCpu.data(), countEoCpu.data(), nullptr, nullptr, numCtbs, videoParam.SAOChromaFlag);
     res = CompareStats(diffEoGpu.data(), countEoGpu.data(), diffBoGpu.data(), countBoGpu.data(), diffEoCpu.data(), countEoCpu.data(), 
-        videoParam.enableBandOffset ? diffBoCpu.data() : nullptr, videoParam.enableBandOffset ? countBoCpu.data() : nullptr, numCtbs, videoParam.SAOChromaFlag);
+        videoParam.enableBandOffset & 0x01 ? diffBoCpu.data() : nullptr, videoParam.enableBandOffset & 0x01 ? countBoCpu.data() : nullptr, numCtbs, videoParam.SAOChromaFlag);
     CHECK_ERR(res);
     printf("passed\n");
 
     printf("Est EO:        ");
-    res = RunGpuEstimate(blockStats.data(), &videoParam, saoModesGpu.data());
+    res = RunGpuEstimate(blockStats.data(), blockStats.size()*2, &videoParam, saoModesGpu.data());
     CHECK_ERR(res);
     res = CompareParam(saoModesCpu.data(), saoModesGpu.data(), numCtbs, videoParam.SAOChromaFlag);
     CHECK_ERR(res);
@@ -3489,25 +3734,45 @@ int main()
     //CHECK_ERR(res);
     //printf("passed\n");
 
-    videoParam.enableBandOffset = 1;
+    videoParam.enableBandOffset |= 1;
 
     printf("Stats all:     ");
     memset(blockStats.data(), 0, sizeof(blockStats[0]) * blockStats.size());
     res = RunCpuStatAndEstimate(input.data(), recon.data(), &videoParam, frame_addr_info.data(), saoModesCpu.data(), diffEoCpu.data(), countEoCpu.data(), diffBoCpu.data(), countBoCpu.data(),
         availLeftAboveMask.data(), availLeftAboveMask.data() + maxNumCtbX);
     CHECK_ERR(res);
-    res = RunGpuStat(input.data(), recon.data(), &videoParam, blockStats.data(), false);
+
+#if defined(CHROMA_SEPARATIST)
+    res = RunGpuStat(input.data(), recon.data(), &videoParam, blockStats.data(), blockStats.size() * 2, false);
     CHECK_ERR(res);
-    AccumulateStats(&videoParam, blockStats.data(), diffEoGpu.data(), countEoGpu.data(), diffBoGpu.data(), countBoGpu.data());
-    res = CompareStats(diffEoGpu.data(), countEoGpu.data(), diffBoGpu.data(), countBoGpu.data(), diffEoCpu.data(), countEoCpu.data(), diffBoCpu.data(), countBoCpu.data(), numCtbs);
+    res = RunGpuStatChroma(input.data(), recon.data(), &videoParam, blockStats.data(), blockStats.size() * 2, false, 1);
+#else
+    res = RunGpuStat(input.data(), recon.data(), &videoParam, blockStats.data(), blockStats.size() * 2, false);
+#endif
+    CHECK_ERR(res);
+    AccumulateStats(&videoParam, blockStats.data(), diffEoGpu.data(), countEoGpu.data(), diffBoGpu.data(), countBoGpu.data(), 0);// <- LUMA (compIdx = 0)
+    if (videoParam.SAOChromaFlag) {
+        int offset[5];
+        offset[0] = numBlocks * (16+16+32+32);
+        offset[1] = offset[2] = numCtbs*4*4;
+        offset[3] = offset[4] = numCtbs*1*32;
+        AccumulateStats(&videoParam, blockStats.data() + offset[0], diffEoGpu.data() + offset[1], countEoGpu.data()  + offset[2], diffBoGpu.data() + offset[3], countBoGpu.data() + offset[4], 1);//enableChromaU
+
+        //offset[0] <<= 1;
+        offset[0] += numBlocksChroma * (16+16+32+32);
+        offset[1] <<= 1;offset[2] <<= 1;
+        offset[3] <<= 1;offset[4] <<= 1;
+        AccumulateStats(&videoParam, blockStats.data() + offset[0], diffEoGpu.data() + offset[1], countEoGpu.data()  + offset[2], diffBoGpu.data() + offset[3], countBoGpu.data() + offset[4], 2);//enableChromaV
+    }
+    res = CompareStats(diffEoGpu.data(), countEoGpu.data(), diffBoGpu.data(), countBoGpu.data(), diffEoCpu.data(), countEoCpu.data(), diffBoCpu.data(), countBoCpu.data(), numCtbs, videoParam.SAOChromaFlag);
     CHECK_ERR(res);
     printf("passed\n");
 
     printf("Est all:       ");
     memset(saoModesGpu.data(), 0, sizeof(saoModesGpu[0]) * saoModesGpu.size());
-    res = RunGpuEstimate(blockStats.data(), &videoParam, saoModesGpu.data());
+    res = RunGpuEstimate(blockStats.data(), blockStats.size()*2, &videoParam, saoModesGpu.data());
     CHECK_ERR(res);
-    res = CompareParam(saoModesCpu.data(), saoModesGpu.data(), numCtbs);
+    res = CompareParam(saoModesCpu.data(), saoModesGpu.data(), numCtbs, videoParam.SAOChromaFlag);
     CHECK_ERR(res);
     printf("passed\n");
 
@@ -3517,7 +3782,7 @@ int main()
     CHECK_ERR(res);
     res = RunGpuApply(recon.data(), outputGpu.data(), &videoParam, saoModesGpu.data());
     CHECK_ERR(res);
-    res = Compare(outputCpu.data(), outputGpu.data(), width, height);
+    res = Compare(outputCpu.data(), outputGpu.data(), width, height, &videoParam, saoModesGpu.data());
     CHECK_ERR(res);
     printf("passed\n");
 

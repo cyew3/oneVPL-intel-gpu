@@ -120,8 +120,7 @@ typedef struct
 
     mfxHDL             SurfIntraMode[4];
     mfxHDL             SurfIntraDist;
-    mfxHDL             SurfInterDist[64];
-    mfxHDL             SurfInterMV[64];
+    mfxHDL             SurfInterData[64];
     mfxHDL             SurfInterp[3];
 
     mfxU16             reserved[24];
@@ -133,8 +132,7 @@ typedef struct
 
     mfxSurfInfoENC     IntraMode[4];    /* 4 = intra block sizes (square 4,8,16,32) */
     mfxSurfInfoENC     IntraDist;
-    mfxSurfInfoENC     InterDist[64];   /* 64 = max number of inter block sizes */
-    mfxSurfInfoENC     InterMV[64];
+    mfxSurfInfoENC     InterData[64];   /* 64 = max number of inter block sizes */
     mfxSurfInfoENC     Interpolate[3];  /* 3 = half-pel planes (H,V,D) */
     mfxSurfInfoENC     SrcRefLuma;      /* luma plane of source and reconstracted reference frames */
     mfxSurfInfoENC     SrcRefChroma;    /* chroma plane of source and reconstracted reference frames */
@@ -182,6 +180,7 @@ typedef struct
     mfxU32 NumIntraModes;
     mfxU32 FourCC;
     mfxU32 TargetUsage;
+    mfxU32 EnableChromaSao;
 } mfxFEIH265Param;
 
 /* basic info for current and reference frames */
@@ -215,6 +214,7 @@ typedef struct
         struct {
             mfxHDL surfSrc;
             mfxHDL surfRef;
+            double lambda;
         } meArgs;
 
         struct {
@@ -228,8 +228,7 @@ typedef struct
             mfxHDL reconSurfVid; // reconstructed pixels in video memory (output)
             mfxHDL cuData;       // input cuData
             mfxHDL saoModes;     // output saoModes
-            mfxU8* extData2;     // postproc param (general for deblock + sao)
-            mfxU32 extDataSize2; // size of postproc param
+            mfxU8* param;        // postproc param (general for deblock + sao)
         } postprocArgs;
     };
 
@@ -347,6 +346,42 @@ enum UnsupportedBlockSizes {
 
     /* public API allocates 64 slots so this could be increased later (update SyncCurrent()) */
     MFX_FEI_H265_BLK_MAX      = 12,
+};
+
+struct PostProcParam
+{
+    Ipp8u  tabBeta[52];            // +0 B
+    Ipp16u Width;                  // +26 W
+    Ipp16u Height;                 // +27 W
+    Ipp16u PicWidthInCtbs;         // +28 W
+    Ipp16u PicHeightInCtbs;        // +29 W
+
+    Ipp16s tcOffset;               // +30 W
+    Ipp16s betaOffset;             // +31 W
+    Ipp8u  chromaQp[58];           // +64 B
+    Ipp8u  crossSliceBoundaryFlag; // +122 B
+    Ipp8u  crossTileBoundaryFlag;  // +123 B
+    Ipp8u  TULog2MinSize;          // +124 B
+    Ipp8u  MaxCUDepth;             // +125 B
+    Ipp8u  Log2MaxCUSize;          // +126 B
+    Ipp8u  Log2NumPartInCU;        // +127 B
+    Ipp8u  tabTc[54];              // +128 B
+    Ipp8u  MaxCUSize;              // +182 B
+    Ipp8u  chromaFormatIdc;        // +183 B
+
+    Ipp8u  alignment0[8];          // +184 B
+    Ipp32s list0[16];              // +48 DW
+    Ipp32s list1[16];              // +64 DW
+    Ipp8u  scan2z[16];             // +320 B
+    // sao extension
+    Ipp32f m_rdLambda;             // +84 DW
+    Ipp32s SAOChromaFlag;          // +85 DW
+    Ipp32s enableBandOffset;       // +86 DW
+    //Ipp8u reserved[4];             // +87 DW
+    // kernel SaoStatChroma writes stats starting from this offset
+    Ipp32s offsetChroma;           // +87 DW
+    // tile/slice restriction (avail LeftAbove)
+    Ipp8u availLeftAbove[128];     // +88 DW
 };
 
 

@@ -124,26 +124,18 @@ namespace {
         res = ref->WriteSurfaceStride(refData, NULL, width);
         CHECK_CM_ERR(res);
 
-        mfxU32 mvPitch = 0;
-        mfxU32 mvSize = 0;
-        res = device->GetSurface2DInfo(width64x * sizeof(mfxI16Pair), height64x, CM_SURFACE_FORMAT_P8, mvPitch, mvSize);
+        mfxU32 dataPitch = 0;
+        mfxU32 dataSize = 0;
+        res = device->GetSurface2DInfo(width64x * 16 * sizeof(Ipp32u), height64x, CM_SURFACE_FORMAT_P8, dataPitch, dataSize);
         CHECK_CM_ERR(res);
-        mfxU8 *mvSys = (mfxU8 *)CM_ALIGNED_MALLOC(mvSize, 0x1000);
-        CmSurface2DUP *mv = 0;
-        res = device->CreateSurface2DUP(width64x * sizeof(mfxI16Pair), height64x, CM_SURFACE_FORMAT_P8, mvSys, mv);
+        mfxU8 *dataSys = (mfxU8 *)CM_ALIGNED_MALLOC(dataSize, 0x1000);
+        memset(dataSys, 0, dataSize);
+        CmSurface2DUP *data = 0;
+        res = device->CreateSurface2DUP(width64x * 16 * sizeof(Ipp32u), height64x, CM_SURFACE_FORMAT_P8, dataSys, data);
         CHECK_CM_ERR(res);
-        for (mfxU32 y = 0; y < height64x; y++)
-            memcpy(mvSys + y * mvPitch, mvData + y * width64x, width64x * sizeof(mfxI16Pair));
-
-        mfxU32 distPitch = 0;
-        mfxU32 distSize = 0;
-        res = device->GetSurface2DInfo(width64x * 16 * sizeof(Ipp32u), height64x, CM_SURFACE_FORMAT_P8, distPitch, distSize);
-        CHECK_CM_ERR(res);
-        mfxU8 *distSys = (mfxU8 *)CM_ALIGNED_MALLOC(distSize, 0x1000);
-        memset(distSys, 0, distSize);
-        CmSurface2DUP *dist = 0;
-        res = device->CreateSurface2DUP(width64x * 16 * sizeof(Ipp32u), height64x, CM_SURFACE_FORMAT_P8, distSys, dist);
-        CHECK_CM_ERR(res);
+        for (mfxI32 y = 0; y < height64x; y++)
+            for (mfxI32 x = 0; x < width64x; x++)
+                *((mfxI16Pair *)(dataSys + y * dataPitch + x * 16 * sizeof(Ipp32u))) = *(mvData + y * width64x + x);
 
         SurfaceIndex *idxSrc = 0;
         res = src->GetIndex(idxSrc);
@@ -153,21 +145,15 @@ namespace {
         res = ref->GetIndex(idxRef);
         CHECK_CM_ERR(res);
 
-        SurfaceIndex *idxMv = 0;
-        res = mv->GetIndex(idxMv);
+        SurfaceIndex *idxData = 0;
+        res = data->GetIndex(idxData);
         CHECK_CM_ERR(res);
 
-        SurfaceIndex *idxDist = 0;
-        res = dist->GetIndex(idxDist);
+        res = kernel->SetKernelArg(0, sizeof(*idxData), idxData);
         CHECK_CM_ERR(res);
-
-        res = kernel->SetKernelArg(0, sizeof(*idxDist), idxDist);
+        res = kernel->SetKernelArg(1, sizeof(*idxSrc), idxSrc);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(1, sizeof(*idxMv), idxMv);
-        CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(2, sizeof(*idxSrc), idxSrc);
-        CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(3, sizeof(*idxRef), idxRef);
+        res = kernel->SetKernelArg(2, sizeof(*idxRef), idxRef);
         CHECK_CM_ERR(res);
 
         res = kernel->SetThreadCount(width64x * height64x);
@@ -198,23 +184,23 @@ namespace {
         res = e->WaitForTaskFinished();
         CHECK_CM_ERR(res);
 
-        for (Ipp32s y = 0; y < height64x; y++)
-            memcpy(distData + y * width64x * 16, distSys + y * distPitch, width64x * 16 * sizeof(*distData));
-        for (mfxU32 y = 0; y < height64x; y++)
-            memcpy(outMvData + y * width64x, mvSys + y * mvPitch, width64x * sizeof(mfxI16Pair));
+        for (mfxI32 y = 0; y < height64x; y++) {
+            for (mfxI32 x = 0; x < width64x; x++) {
+                *((mfxI16Pair *)(outMvData + y * width64x + x)) = *((mfxI16Pair *)(dataSys + y * dataPitch + x * 16 * sizeof(Ipp32u)));
+                memcpy(distData + y * width64x * 16 + x * 16, (dataSys + y * dataPitch + (x * 16 + 1) * sizeof(Ipp32u)), 15 * sizeof(Ipp32u));
+            }
+        }
 
 #ifndef CMRT_EMU
-        printf("TIME=%.3f ms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
+        printf("TIME GpuOneSurf=%.3f ms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
 #endif //CMRT_EMU
 
         device->DestroyThreadSpace(threadSpace);
         device->DestroyTask(task);
     
         queue->DestroyEvent(e);
-        device->DestroySurface2DUP(dist);
-        CM_ALIGNED_FREE(distSys);
-        device->DestroySurface2DUP(mv);
-        CM_ALIGNED_FREE(mvSys);
+        device->DestroySurface2DUP(data);
+        CM_ALIGNED_FREE(dataSys);
         device->DestroySurface(ref);
         device->DestroySurface(src);
         device->DestroyKernel(kernel);

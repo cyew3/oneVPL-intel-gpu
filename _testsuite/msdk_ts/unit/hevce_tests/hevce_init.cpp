@@ -709,4 +709,32 @@ TEST_F(InitTest, Default_DeltaQpMode) {
         ASSERT_EQ(MFX_ERR_NONE, encoder.Close());
         EXPECT_EQ(1, output.extCodingOptionHevc.DeltaQpMode);
     }
+
+    { SCOPED_TRACE("DeltaQP should be off if priority ROI is on");
+        input.videoParam.mfx.GopRefDist = 8;
+        input.extCodingOptionHevc.BPyramid = ON;
+        input.extEncoderROI.NumROI = 1;
+        input.extEncoderROI.ROI[0].Left = input.extEncoderROI.ROI[0].Right = input.extEncoderROI.ROI[0].Top = input.extEncoderROI.ROI[0].Bottom = 1;
+        input.extEncoderROI.ROI[0].Priority = 1;
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+        ASSERT_EQ(MFX_ERR_NONE, encoder.Close());
+        EXPECT_EQ(1, output.extCodingOptionHevc.DeltaQpMode);
+    }
+}
+
+TEST_F(InitTest, Default_EncoderROI) {
+    ParamSet output;
+    InitParamSetMandated(input);
+    ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+    ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+    EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
+    EXPECT_EQ(0, output.extEncoderROI.NumROI);
+
+    input.extEncoderROI.NumROI = 200;
+    ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
+    ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+    ASSERT_EQ(MFX_ERR_NONE, encoder.Close());
+    EXPECT_EQ(200, output.extEncoderROI.NumROI);
+    EXPECT_EQ(1, output.extCodingOptionHevc.DeltaQpMode);
 }

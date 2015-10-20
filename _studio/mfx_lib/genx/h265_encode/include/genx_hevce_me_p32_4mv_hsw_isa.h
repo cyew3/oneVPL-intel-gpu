@@ -9,5 +9,5 @@
 
 #ifndef __genx_hevce_me_p32_4mv_hsw__
 #define __genx_hevce_me_p32_4mv_hsw__
-extern const unsigned char genx_hevce_me_p32_4mv_hsw[7324];
+extern const unsigned char genx_hevce_me_p32_4mv_hsw[9077];
 #endif

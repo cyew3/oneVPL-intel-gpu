@@ -16,6 +16,7 @@
 #include <cm/cm.h>
 #include <cm/cmtl.h>
 #include <cm/genx_vme.h>
+#include "../include/genx_hevce_me_common.h"
 
 template <uint H, uint W> inline _GENX_ vector<uint2,W> Sad(matrix_ref<uint1,H,W> m1, matrix_ref<uint1,H,W> m2)
 {
@@ -29,7 +30,7 @@ template <uint H, uint W> inline _GENX_ vector<uint2,W> Sad(matrix_ref<uint1,H,W
 static const uint1 INIT_DELTA_MV[9] = {0x00, 0x10, 0x20, 0x01, 0x11, 0x21, 0x02, 0x12, 0x22};
 
 extern "C" _GENX_MAIN_
-void RefineMeP64x64(SurfaceIndex DIST, SurfaceIndex MV, SurfaceIndex SRC, SurfaceIndex REF)
+void RefineMeP64x64(SurfaceIndex DATA, SurfaceIndex SRC, SurfaceIndex REF)
 {
     enum { W=16, H=16 };
 
@@ -37,7 +38,7 @@ void RefineMeP64x64(SurfaceIndex DIST, SurfaceIndex MV, SurfaceIndex SRC, Surfac
     uint oy = get_thread_origin_y();
 
     vector<int2,2> mv;
-    read(MV, 4 * ox, oy, mv);
+    read(DATA, INTERDATA_SIZE_BIG * ox, oy, mv);
     mv >>= 2;
 
     int srcx64 = 64 * ox;
@@ -85,7 +86,7 @@ void RefineMeP64x64(SurfaceIndex DIST, SurfaceIndex MV, SurfaceIndex SRC, Surfac
     refx64 = srcx64 + mv[0];
     refy64 = srcy64 + mv[1];
     mv <<= 2;
-    write(MV, 4 * ox, oy, mv);
+    write(DATA, INTERDATA_SIZE_BIG * ox, oy, mv);
     }
 
 
@@ -157,7 +158,6 @@ void RefineMeP64x64(SurfaceIndex DIST, SurfaceIndex MV, SurfaceIndex SRC, Surfac
     vector<uint4,9> dist = tmp2.select<9,1,1,1>(0,0) + tmp2.select<9,1,1,1>(0,1);
     dist[4] = bestIntSad;
 
-    write(DIST, 64*ox,    oy, dist.select<8,1>(0));
-    write(DIST, 64*ox+32, oy, dist.select<1,1>(8));
+    write(DATA, INTERDATA_SIZE_BIG * ox + 4,  oy, dist.select<8,1>(0));
+    write(DATA, INTERDATA_SIZE_BIG * ox + 36, oy, dist.select<1,1>(8));
 }
-

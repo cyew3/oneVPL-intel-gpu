@@ -67,9 +67,9 @@ void MeP32_4MV(
 
     // M0.3 various prediction parameters
     if (rectParts) {
-        VME_SET_DWORD(uniIn, 0, 3, 0x70040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x8,8x16,16x8,16x16 to have 4MVs in the output (for MeP16)
+        VME_SET_DWORD(uniIn, 0, 3, 0x70240000); // BMEDisableFBR=1 InterSAD=2 SubMbPartMask=0x78: 8x8,8x16,16x8,16x16 to have 4MVs in the output (for MeP16)
     } else {
-        VME_SET_DWORD(uniIn, 0, 3, 0x76040000); // BMEDisableFBR=1 InterSAD=0 SubMbPartMask=0x78: 8x8,16x16 to have 4MVs in the output (for MeP16)
+        VME_SET_DWORD(uniIn, 0, 3, 0x76240000); // BMEDisableFBR=1 InterSAD=2 SubMbPartMask=0x78: 8x8,16x16 to have 4MVs in the output (for MeP16)
     }
 
     // M1.1 MaxNumMVs
@@ -113,22 +113,41 @@ void MeP32_4MV(
         VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
         SURF_SRC_AND_REF, ref0, NULL, costCenter, imeOut);
 
+    vector<int2,2> mv16 = imeOut.row(7).format<int2>().select<2,1>(10);
+    matrix<int2,2,4> mv8 = imeOut.row(8).format<int2>().select<8,1>(8); // 4 MVs
+
+    vector<int2,2> diff = cm_abs<int2>(mvPred);
+    diff = diff > 16;
+    if (diff.any()) {
+        uint2 dist16 = imeOut.row(7).format<ushort>()[8];
+        vector<uint2,4> dist8 = imeOut.row(7).format<ushort>().select<4,1>(4);
+        vector<int2,2> mvPred0 = 0;
+        SetRef(sourceXY, mvPred0, searchWindow, widthHeight, ref0XY);
+        ref0 = uniIn.row(0).format<int2>().select<2,1>(0);
+        run_vme_ime(uniIn, imeIn,
+            VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
+            SURF_SRC_AND_REF, ref0, NULL, costCenter, imeOut);
+
+        uint2 dist16_0 = imeOut.row(7).format<ushort>()[8];
+        vector<uint2,4> dist8_0 = imeOut.row(7).format<ushort>().select<4,1>(4);
+        vector<int2,2> mv16_0 = imeOut.row(7).format<int2>().select<2,1>(10);
+        matrix<int2,2,4> mv8_0 = imeOut.row(8).format<int2>().select<8,1>(8);
+
+        mv16.format<uint4>().merge(mv16_0.format<uint4>(), dist16_0 < dist16);
+        mv8.format<uint4>().merge(mv8_0.format<uint4>(), dist8_0 < dist8);
+    }
+
     //DebugUniOutput<9>(imeOut);
 
-    uchar interMbMode, subMbShape, subMbPredMode;
-    VME_GET_UNIOutput_InterMbMode(imeOut, interMbMode); // = 3 : 8x8 only
-    VME_GET_UNIOutput_SubMbShape(imeOut, subMbShape);   // = 0 : no subparts
-    VME_GET_UNIOutput_SubMbPredMode(imeOut, subMbPredMode); //  = 0 : fwd only
     VME_SET_UNIInput_SubPelMode(uniIn, 3);
     VME_SET_UNIInput_BMEDisableFBR(uniIn);
     SLICE(fbrIn.format<uint>(), 1, 16, 2) = 0; // zero L1 motion vectors
-
 
     matrix<uchar, 7, 32> fbrOut16x16;
     VME_SET_UNIInput_FBRMbModeInput(uniIn, 0);
     VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
     VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
-    fbrIn.format<uint, 4, 8>().select<4, 1, 4, 2>(0, 0) = imeOut.row(7).format<uint>()[5]; // motion vectors 16x16
+    fbrIn.format<uint, 4, 8>().select<4, 1, 4, 2>(0, 0) = mv16.format<uint4>()[0]; // motion vectors 16x16
     run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 0, 0, 0, fbrOut16x16);
 
     // 32x32
@@ -136,17 +155,16 @@ void MeP32_4MV(
     write(SURF_MV32x32, mbX * MVDATA_SIZE, mbY, SLICE(fbrOut16x16.format<uint>(), 8, 1, 1));    // 32x32 MVs are updated
 
     matrix<uchar, 7, 32> fbrOut8x8;
-    subMbShape = 0;
-    VME_SET_UNIInput_FBRMbModeInput(uniIn, interMbMode);
-    VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, subMbShape);
-    VME_SET_UNIInput_FBRSubPredModeInput(uniIn, subMbPredMode);
+    VME_SET_UNIInput_FBRMbModeInput(uniIn, 3);
+    VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
+    VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
 
-    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(0, 0) = imeOut.row(8).format<uint>()[4]; // 8x8_0
-    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(1, 0) = imeOut.row(8).format<uint>()[5]; // 8x8_1
-    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(2, 0) = imeOut.row(8).format<uint>()[6]; // 8x8_2
-    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(3, 0) = imeOut.row(8).format<uint>()[7]; // 8x8_3
+    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(0, 0) = mv8.format<uint>()[0]; // 8x8_0
+    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(1, 0) = mv8.format<uint>()[1]; // 8x8_1
+    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(2, 0) = mv8.format<uint>()[2]; // 8x8_2
+    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(3, 0) = mv8.format<uint>()[3]; // 8x8_3
 
-    run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut8x8);
+    run_vme_fbr(uniIn, fbrIn, SURF_SRC_AND_REF, 3, 0, 0, fbrOut8x8);
 
     // 16x16
     matrix<uint, 2, 2> mv8x8;

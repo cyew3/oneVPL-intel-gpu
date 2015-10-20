@@ -17,6 +17,7 @@ namespace ApiTestCommon {
     template<> struct ExtBufInfo<mfxExtCodingOptionSPSPPS> { enum { id = MFX_EXTBUFF_CODING_OPTION_SPSPPS,      sz =  sizeof(mfxExtCodingOptionSPSPPS) }; };
     template<> struct ExtBufInfo<mfxExtCodingOptionVPS>    { enum { id = MFX_EXTBUFF_CODING_OPTION_VPS,         sz =  sizeof(mfxExtCodingOptionVPS) }; };
     template<> struct ExtBufInfo<mfxExtLAFrameStatistics>  { enum { id = MFX_EXTBUFF_LOOKAHEAD_STAT,            sz =  sizeof(mfxExtLAFrameStatistics) }; };
+    template<> struct ExtBufInfo<mfxExtEncoderROI>         { enum { id = MFX_EXTBUFF_ENCODER_ROI,               sz =  sizeof(mfxExtEncoderROI) }; };
 
     template <class T> T MakeExtBuffer() {
         T extBuffer = {};
@@ -43,7 +44,8 @@ namespace ApiTestCommon {
         mfxExtHEVCRegion         extHevcRegion;
         mfxExtCodingOption       extCodingOption;
         mfxExtCodingOption2      extCodingOption2;
-        mfxExtBuffer            *extBuffers[10];
+        mfxExtEncoderROI         extEncoderROI; 
+        mfxExtBuffer            *extBuffers[11];
         mfxVideoParam            videoParam;
     };
 
@@ -56,6 +58,7 @@ namespace ApiTestCommon {
     template <> void ExpectEqual<mfxExtCodingOptionHEVC>(const mfxExtCodingOptionHEVC &expected, const mfxExtCodingOptionHEVC &actual);
     template <> void ExpectEqual<mfxExtCodingOption>(const mfxExtCodingOption &expected, const mfxExtCodingOption &actual);
     template <> void ExpectEqual<mfxExtCodingOption2>(const mfxExtCodingOption2 &expected, const mfxExtCodingOption2 &actual);
+    template <> void ExpectEqual<mfxExtEncoderROI>(const mfxExtEncoderROI &expected, const mfxExtEncoderROI &actual);
     template <> void ExpectEqual<ParamSet>(const ParamSet &expected, const ParamSet &actual);
 
     void SetupParamSet(ParamSet &paramset);

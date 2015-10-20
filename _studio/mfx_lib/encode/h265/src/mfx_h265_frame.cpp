@@ -525,8 +525,7 @@ namespace H265Enc {
 
         m_feiSyncPoint = NULL;
         Zero(m_feiIntraAngModes);
-        Zero(m_feiInterMv);
-        Zero(m_feiInterDist);
+        Zero(m_feiInterData);
         m_feiCuData = NULL;
         m_feiSaoModes = NULL;
         m_feiOrigin = NULL;

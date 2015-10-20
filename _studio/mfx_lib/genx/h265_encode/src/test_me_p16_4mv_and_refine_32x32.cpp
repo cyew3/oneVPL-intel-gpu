@@ -24,23 +24,30 @@
 
 
 #ifdef CMRT_EMU
+extern "C" void MeP16_4MV(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_DIST16x16,
+    SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
+    /*SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, */SurfaceIndex SURF_MV16x16,
+    SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8/*,
+    SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/, int rectParts);
 extern "C" void Me16AndRefine32x32(
-    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DIST16x16,
-    SurfaceIndex DIST8x8, SurfaceIndex MV16x16, SurfaceIndex MV8x8,
-    SurfaceIndex SRC, SurfaceIndex REF, SurfaceIndex MV32x32, SurfaceIndex DIST32x32);
+    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DATA32x32,
+    SurfaceIndex DATA16x16, SurfaceIndex DATA8x8, SurfaceIndex SRC, SurfaceIndex REF);
 extern "C" void Me16RectPartsAndRefine32x32(
-    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF,
-    SurfaceIndex DIST16x16, SurfaceIndex DIST16x8, SurfaceIndex DIST8x16, SurfaceIndex DIST8x8,
-    SurfaceIndex MV16x16, SurfaceIndex MV16x8, SurfaceIndex MV8x16, SurfaceIndex MV8x8,
-    SurfaceIndex SRC, SurfaceIndex REF, SurfaceIndex MV32x32, SurfaceIndex DIST32x32);
+    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DATA32x32,
+    SurfaceIndex DATA16x16, SurfaceIndex DATA8x8, SurfaceIndex SRC, SurfaceIndex REF);
+extern "C" void MeP16_4MV(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_DIST16x16,
+           SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
+           /*SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, */SurfaceIndex SURF_MV16x16,
+           SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8/*,
+           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/, int rectParts);
 #endif //CMRT_EMU
 
 namespace {
-    int RunGpu(const Me2xControl &ctrl, const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvPredData,
+    int RunGpu(const MeControl &ctrl, const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvPredData,
         mfxU32 *dist16x16Data, mfxU32 *dist16x8Data, mfxU32 *dist8x16Data, mfxU32 *dist8x8Data,
         mfxI16Pair *mv16x16Data, mfxI16Pair *mv16x8Data, mfxI16Pair *mv8x16Data, mfxI16Pair *mv8x8Data,
         const mfxI16Pair *mv32x32Data, mfxU32 *dist32x32, int rectParts);
-    int RunRef(const Me2xControl &ctrl, const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvPredData,
+    int RunRef(const Me2xControl_old &ctrl, const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvPredData,
         mfxU32 *dist16x16Data, mfxU32 *dist16x8Data, mfxU32 *dist8x16Data, mfxU32 *dist8x8Data,
         mfxI16Pair *mv16x16Data, mfxI16Pair *mv16x8Data, mfxI16Pair *mv8x16Data, mfxI16Pair *mv8x8Data,
         const mfxI16Pair *mv32x32Data, mfxU32 *dist32x32, int rectParts);
@@ -50,8 +57,8 @@ namespace {
 
 int main()
 {
-    int width = ROUNDUP(1920, 16);
-    int height = ROUNDUP(1080, 16);
+    int width = ROUNDUP(WIDTH, 16);
+    int height = ROUNDUP(HEIGHT, 16);
     int widthIn8 = DIVUP(width, 8);
     int heightIn8 = DIVUP(height, 8);
     int widthIn16 = DIVUP(width, 16);
@@ -96,6 +103,8 @@ int main()
     srand(0x12345678);
     for (mfxI32 y = 0; y < heightIn16; y++) {
         for (mfxI32 x = 0; x < widthIn16; x++) {
+            //mvPred[y * widthIn16 + x].x = (rand() & 0xfe) - 128; // -16,-14..,12,14
+            //mvPred[y * widthIn16 + x].y = (rand() & 0xfe) - 128; // -16,-14..,12,14
             mvPred[y * widthIn16 + x].x = (rand() & 0x1e) - 16; // -16,-14..,12,14
             mvPred[y * widthIn16 + x].y = (rand() & 0x1e) - 16; // -16,-14..,12,14
         }
@@ -108,38 +117,39 @@ int main()
         }
     }
 
-    Me2xControl ctrl = {};
-    SetupMeControlShortPath(ctrl, width, height);
-    //SetupMeControl(ctrl, width, height);
+    MeControl ctrl = {};
+    SetupMeControl(ctrl, width, height, 10.721719399687672);  // lambda = f(qp=35)
+    Me2xControl_old ctrl_old = {};
+    SetupMeControlShortPath_old(ctrl_old, width, height);
 
     Ipp32s res;
     printf("rectParts=0: ");
     res = RunGpu(ctrl, src.data(), ref.data(), mvPred.data(), dist16x16Tst.data(), dist16x8Tst.data(),
-        dist8x16Tst.data(), dist8x8Tst.data(), mv16x16Tst.data(), mv16x8Tst.data(), mv8x16Tst.data(),
-        mv8x8Tst.data(), mv32x32.data(), dist32x32Tst.data(), 0);
+                 dist8x16Tst.data(), dist8x8Tst.data(), mv16x16Tst.data(), mv16x8Tst.data(), mv8x16Tst.data(),
+                 mv8x8Tst.data(), mv32x32.data(), dist32x32Tst.data(), 0);
     CHECK_ERR(res);
-    res = RunRef(ctrl, src.data(), ref.data(), mvPred.data(), dist16x16Ref.data(), dist16x8Ref.data(),
-        dist8x16Ref.data(), dist8x8Ref.data(), mv16x16Ref.data(), mv16x8Ref.data(), mv8x16Ref.data(),
-        mv8x8Ref.data(), mv32x32.data(), dist32x32Ref.data(), 0);
+    res = RunRef(ctrl_old, src.data(), ref.data(), mvPred.data(), dist16x16Ref.data(), dist16x8Ref.data(),
+                 dist8x16Ref.data(), dist8x8Ref.data(), mv16x16Ref.data(), mv16x8Ref.data(), mv8x16Ref.data(),
+                 mv8x8Ref.data(), mv32x32.data(), dist32x32Ref.data(), 0);
     CHECK_ERR(res);
 
-    if (Compare(dist32x32Tst.data(), dist32x32Ref.data(), widthIn32*16, heightIn32, "dist32x32") != PASSED ||
-        Compare(dist32x32Tst.data(), dist32x32Ref.data(), widthIn32*16, heightIn32, "dist32x32") != PASSED ||
+    if (Compare(mv16x16Tst.data(), mv16x16Ref.data(), widthIn16, heightIn16, "mv16x16") != PASSED ||
         Compare(dist16x16Tst.data(), dist16x16Ref.data(), widthIn16, heightIn16, "dist16x16") != PASSED ||
+        Compare(dist32x32Tst.data(), dist32x32Ref.data(), widthIn32*16, heightIn32, "dist32x32") != PASSED ||
         Compare(dist8x8Tst.data(), dist8x8Ref.data(), widthIn8, heightIn8, "dist8x8") != PASSED ||
-        Compare(mv16x16Tst.data(), mv16x16Ref.data(), widthIn16, heightIn16, "mv16x16") != PASSED ||
         Compare(mv8x8Tst.data(), mv8x8Ref.data(), widthIn8, heightIn8, "mv8x8") != PASSED)
         return FAILED;
 
     printf("  rectParts=1: ");
     res = RunGpu(ctrl, src.data(), ref.data(), mvPred.data(), dist16x16Tst.data(), dist16x8Tst.data(),
-        dist8x16Tst.data(), dist8x8Tst.data(), mv16x16Tst.data(), mv16x8Tst.data(), mv8x16Tst.data(),
-        mv8x8Tst.data(), mv32x32.data(), dist32x32Tst.data(), 1);
+                 dist8x16Tst.data(), dist8x8Tst.data(), mv16x16Tst.data(), mv16x8Tst.data(), mv8x16Tst.data(),
+                 mv8x8Tst.data(), mv32x32.data(), dist32x32Tst.data(), 1);
     CHECK_ERR(res);
-    res = RunRef(ctrl, src.data(), ref.data(), mvPred.data(), dist16x16Ref.data(), dist16x8Ref.data(),
+    res = RunRef(ctrl_old, src.data(), ref.data(), mvPred.data(), dist16x16Ref.data(), dist16x8Ref.data(),
         dist8x16Ref.data(), dist8x8Ref.data(), mv16x16Ref.data(), mv16x8Ref.data(), mv8x16Ref.data(),
         mv8x8Ref.data(), mv32x32.data(), dist32x32Ref.data(), 1);
     CHECK_ERR(res);
+
     if (Compare(dist32x32Tst.data(), dist32x32Ref.data(), widthIn32*16, heightIn32, "dist32x32") != PASSED ||
         Compare(dist16x16Tst.data(), dist16x16Ref.data(), widthIn16, heightIn16, "dist16x16") != PASSED ||
         Compare(dist16x8Tst.data(), dist16x8Ref.data(), widthIn16, heightIn8, "dist16x8") != PASSED ||
@@ -153,7 +163,6 @@ int main()
 
     return printf("passed\n"), 0;
 }
-
 
 bool operator==(const mfxI16Pair l, const mfxI16Pair r) { return l.x == r.x && l.y == r.y; };
 
@@ -170,7 +179,7 @@ namespace {
     }
 
     int RunGpu(
-        const Me2xControl &ctrl, const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvPredData,
+        const MeControl &ctrl, const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvPredData,
         mfxU32 *dist16x16Data, mfxU32 *dist16x8Data, mfxU32 *dist8x16Data, mfxU32 *dist8x8Data,
         mfxI16Pair *mv16x16Data, mfxI16Pair *mv16x8Data, mfxI16Pair *mv8x16Data, mfxI16Pair *mv8x8Data,
         const mfxI16Pair *mv32x32Data, mfxU32 *dist32x32Data, int rectParts)
@@ -190,9 +199,9 @@ namespace {
         CHECK_CM_ERR(res);
 
         CmBuffer *ctrlBuf = 0;
-        res = device->CreateBuffer(sizeof(Me2xControl), ctrlBuf);
+        res = device->CreateBuffer(sizeof(MeControl), ctrlBuf);
         CHECK_CM_ERR(res);
-        res = ctrlBuf->WriteSurface((const Ipp8u *)&ctrl, NULL, sizeof(Me2xControl));
+        res = ctrlBuf->WriteSurface((const Ipp8u *)&ctrl, NULL, sizeof(MeControl));
         CHECK_CM_ERR(res);
 
         CmSurface2D *src = 0;
@@ -211,128 +220,68 @@ namespace {
         res = device->CreateVmeSurfaceG7_5(src, &ref, NULL, 1, 0, genxRefs);
         CHECK_CM_ERR(res);
 
-        Ipp32u mv32x32Pitch = 0;
-        Ipp32u mv32x32Size = 0;
-        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 32) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 32), CM_SURFACE_FORMAT_P8, mv32x32Pitch, mv32x32Size);
+        Ipp32u data32x32Pitch = 0;
+        Ipp32u data32x32Size = 0;
+        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 32) * 16 * sizeof(mfxU32), DIVUP(ctrl.height, 32), CM_SURFACE_FORMAT_P8, data32x32Pitch, data32x32Size);
         CHECK_CM_ERR(res);
-        void *mv32x32Sys = CM_ALIGNED_MALLOC(mv32x32Size, 0x1000);
-        CmSurface2DUP *mv32x32 = 0;
-        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 32) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 32), CM_SURFACE_FORMAT_P8, mv32x32Sys, mv32x32);
-        CHECK_CM_ERR(res);
-
-        Ipp32u mv16x16Pitch = 0;
-        Ipp32u mv16x16Size = 0;
-        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 16) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, mv16x16Pitch, mv16x16Size);
-        CHECK_CM_ERR(res);
-        void *mv16x16Sys = CM_ALIGNED_MALLOC(mv16x16Size, 0x1000);
-        CmSurface2DUP *mv16x16 = 0;
-        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 16) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, mv16x16Sys, mv16x16);
+        void *data32x32Sys = CM_ALIGNED_MALLOC(data32x32Size, 0x1000);
+        CmSurface2DUP *data32x32 = 0;
+        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 32) * 16 * sizeof(mfxU32), DIVUP(ctrl.height, 32), CM_SURFACE_FORMAT_P8, data32x32Sys, data32x32);
         CHECK_CM_ERR(res);
 
-        Ipp32u mv16x8Pitch = 0;
-        Ipp32u mv16x8Size = 0;
-        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 16) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 8), CM_SURFACE_FORMAT_P8, mv16x8Pitch, mv16x8Size);
+        Ipp32u data16x16Pitch = 0;
+        Ipp32u data16x16Size = 0;
+        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 16) * 2 * sizeof(mfxU32), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, data16x16Pitch, data16x16Size);
         CHECK_CM_ERR(res);
-        void *mv16x8Sys = CM_ALIGNED_MALLOC(mv16x8Size, 0x1000);
-        CmSurface2DUP *mv16x8 = 0;
-        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 16) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 8), CM_SURFACE_FORMAT_P8, mv16x8Sys, mv16x8);
-        CHECK_CM_ERR(res);
-
-        Ipp32u mv8x16Pitch = 0;
-        Ipp32u mv8x16Size = 0;
-        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 8) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, mv8x16Pitch, mv8x16Size);
-        CHECK_CM_ERR(res);
-        void *mv8x16Sys = CM_ALIGNED_MALLOC(mv8x16Size, 0x1000);
-        CmSurface2DUP *mv8x16 = 0;
-        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 8) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, mv8x16Sys, mv8x16);
+        void *data16x16Sys = CM_ALIGNED_MALLOC(data16x16Size, 0x1000);
+        CmSurface2DUP *data16x16 = 0;
+        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 16) * 2 * sizeof(mfxU32), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, data16x16Sys, data16x16);
         CHECK_CM_ERR(res);
 
-        Ipp32u mv8x8Pitch = 0;
-        Ipp32u mv8x8Size = 0;
-        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 8) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 8), CM_SURFACE_FORMAT_P8, mv8x8Pitch, mv8x8Size);
+        Ipp32u data16x8Pitch = 0;
+        Ipp32u data16x8Size = 0;
+        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 16) * 2 * sizeof(mfxU32), DIVUP(ctrl.height, 8), CM_SURFACE_FORMAT_P8, data16x8Pitch, data16x8Size);
         CHECK_CM_ERR(res);
-        void *mv8x8Sys = CM_ALIGNED_MALLOC(mv8x8Size, 0x1000);
-        CmSurface2DUP *mv8x8 = 0;
-        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 8) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 8), CM_SURFACE_FORMAT_P8, mv8x8Sys, mv8x8);
-        CHECK_CM_ERR(res);
-
-        Ipp32u dist32x32Pitch = 0;
-        Ipp32u dist32x32Size = 0;
-        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 16) * 16 * sizeof(mfxI16Pair), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, dist32x32Pitch, dist32x32Size);
-        CHECK_CM_ERR(res);
-        void *dist32x32Sys = CM_ALIGNED_MALLOC(dist32x32Size, 0x1000);
-        CmSurface2DUP *dist32x32 = 0;
-        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 16) * 16 * sizeof(mfxI16Pair), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, dist32x32Sys, dist32x32);
+        void *data16x8Sys = CM_ALIGNED_MALLOC(data16x8Size, 0x1000);
+        CmSurface2DUP *data16x8 = 0;
+        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 16) * 2 * sizeof(mfxU32), DIVUP(ctrl.height, 8), CM_SURFACE_FORMAT_P8, data16x8Sys, data16x8);
         CHECK_CM_ERR(res);
 
-        Ipp32u dist16x16Pitch = 0;
-        Ipp32u dist16x16Size = 0;
-        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 16) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, dist16x16Pitch, dist16x16Size);
+        Ipp32u data8x16Pitch = 0;
+        Ipp32u data8x16Size = 0;
+        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 8) * 2 * sizeof(mfxU32), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, data8x16Pitch, data8x16Size);
         CHECK_CM_ERR(res);
-        void *dist16x16Sys = CM_ALIGNED_MALLOC(dist16x16Size, 0x1000);
-        CmSurface2DUP *dist16x16 = 0;
-        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 16) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, dist16x16Sys, dist16x16);
-        CHECK_CM_ERR(res);
-
-        Ipp32u dist16x8Pitch = 0;
-        Ipp32u dist16x8Size = 0;
-        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 16) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 8), CM_SURFACE_FORMAT_P8, dist16x8Pitch, dist16x8Size);
-        CHECK_CM_ERR(res);
-        void *dist16x8Sys = CM_ALIGNED_MALLOC(dist16x8Size, 0x1000);
-        CmSurface2DUP *dist16x8 = 0;
-        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 16) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 8), CM_SURFACE_FORMAT_P8, dist16x8Sys, dist16x8);
+        void *data8x16Sys = CM_ALIGNED_MALLOC(data8x16Size, 0x1000);
+        CmSurface2DUP *data8x16 = 0;
+        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 8) * 2 * sizeof(mfxU32), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, data8x16Sys, data8x16);
         CHECK_CM_ERR(res);
 
-        Ipp32u dist8x16Pitch = 0;
-        Ipp32u dist8x16Size = 0;
-        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 8) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, dist8x16Pitch, dist8x16Size);
+        Ipp32u data8x8Pitch = 0;
+        Ipp32u data8x8Size = 0;
+        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 8) * 2 * sizeof(mfxU32), DIVUP(ctrl.height, 8), CM_SURFACE_FORMAT_P8, data8x8Pitch, data8x8Size);
         CHECK_CM_ERR(res);
-        void *dist8x16Sys = CM_ALIGNED_MALLOC(dist8x16Size, 0x1000);
-        CmSurface2DUP *dist8x16 = 0;
-        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 8) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 16), CM_SURFACE_FORMAT_P8, dist8x16Sys, dist8x16);
-        CHECK_CM_ERR(res);
-
-        Ipp32u dist8x8Pitch = 0;
-        Ipp32u dist8x8Size = 0;
-        res = device->GetSurface2DInfo(DIVUP(ctrl.width, 8) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 8), CM_SURFACE_FORMAT_P8, dist8x8Pitch, dist8x8Size);
-        CHECK_CM_ERR(res);
-        void *dist8x8Sys = CM_ALIGNED_MALLOC(dist8x8Size, 0x1000);
-        CmSurface2DUP *dist8x8 = 0;
-        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 8) * sizeof(mfxI16Pair), DIVUP(ctrl.height, 8), CM_SURFACE_FORMAT_P8, dist8x8Sys, dist8x8);
+        void *data8x8Sys = CM_ALIGNED_MALLOC(data8x8Size, 0x1000);
+        CmSurface2DUP *data8x8 = 0;
+        res = device->CreateSurface2DUP(DIVUP(ctrl.width, 8) * 2 * sizeof(mfxU32), DIVUP(ctrl.height, 8), CM_SURFACE_FORMAT_P8, data8x8Sys, data8x8);
         CHECK_CM_ERR(res);
 
         SurfaceIndex *idxCtrl = 0;
         res = ctrlBuf->GetIndex(idxCtrl);
         CHECK_CM_ERR(res);
 
-        SurfaceIndex *idxDist32x32 = 0;
-        res = dist32x32->GetIndex(idxDist32x32);
-        SurfaceIndex *idxDist16x16 = 0;
-        res = dist16x16->GetIndex(idxDist16x16);
+        SurfaceIndex *idxData32x32 = 0;
+        res = data32x32->GetIndex(idxData32x32);
+        SurfaceIndex *idxData16x16 = 0;
+        res = data16x16->GetIndex(idxData16x16);
         CHECK_CM_ERR(res);
-        SurfaceIndex *idxDist16x8 = 0;
-        res = dist16x8->GetIndex(idxDist16x8);
+        SurfaceIndex *idxData16x8 = 0;
+        res = data16x8->GetIndex(idxData16x8);
         CHECK_CM_ERR(res);
-        SurfaceIndex *idxDist8x16 = 0;
-        res = dist8x16->GetIndex(idxDist8x16);
+        SurfaceIndex *idxData8x16 = 0;
+        res = data8x16->GetIndex(idxData8x16);
         CHECK_CM_ERR(res);
-        SurfaceIndex *idxDist8x8 = 0;
-        res = dist8x8->GetIndex(idxDist8x8);
-        CHECK_CM_ERR(res);
-
-        SurfaceIndex *idxMv32x32 = 0;
-        res = mv32x32->GetIndex(idxMv32x32);
-        SurfaceIndex *idxMv16x16 = 0;
-        res = mv16x16->GetIndex(idxMv16x16);
-        CHECK_CM_ERR(res);
-        SurfaceIndex *idxMv16x8 = 0;
-        res = mv16x8->GetIndex(idxMv16x8);
-        CHECK_CM_ERR(res);
-        SurfaceIndex *idxMv8x16 = 0;
-        res = mv8x16->GetIndex(idxMv8x16);
-        CHECK_CM_ERR(res);
-        SurfaceIndex *idxMv8x8 = 0;
-        res = mv8x8->GetIndex(idxMv8x8);
+        SurfaceIndex *idxData8x8 = 0;
+        res = data8x8->GetIndex(idxData8x8);
         CHECK_CM_ERR(res);
 
         SurfaceIndex *idxSrc = 0;
@@ -345,41 +294,32 @@ namespace {
         CHECK_CM_ERR(res);
         res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), genxRefs);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxDist16x16);
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxData32x32);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxData16x16);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxData8x8);
         CHECK_CM_ERR(res);
         if (rectParts) {
-            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxDist16x8);
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxData16x8);
             CHECK_CM_ERR(res);
-            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxDist8x16);
-            CHECK_CM_ERR(res);
-        }
-        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxDist8x8);
-        CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMv16x16);
-        CHECK_CM_ERR(res);
-        if (rectParts) {
-            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMv16x8);
-            CHECK_CM_ERR(res);
-            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMv8x16);
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxData8x16);
             CHECK_CM_ERR(res);
         }
-        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMv8x8);
-        CHECK_CM_ERR(res);
         res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxSrc);
         CHECK_CM_ERR(res);
         res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxRef);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMv32x32);
-        CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxDist32x32);
-        CHECK_CM_ERR(res);
 
         // MV16x16 also serves as MV predictor
         for (int y = 0; y < DIVUP(ctrl.height, 16); y++)
-            memcpy((char *)mv16x16Sys + y * mv16x16Pitch, mvPredData + y * DIVUP(ctrl.width, 16), sizeof(mfxI16Pair) * DIVUP(ctrl.width, 16));
+            for (int x = 0; x < DIVUP(ctrl.width, 16); x++)
+                *((mfxI16Pair *)((char *)data16x16Sys + y * data16x16Pitch + x * 2 * sizeof(Ipp32u))) = *(mvPredData + y * DIVUP(ctrl.width, 16) + x);
 
+        // MV32x32 also serves as MV predictor
         for (int y = 0; y < DIVUP(ctrl.height, 32); y++)
-            memcpy((char *)mv32x32Sys + y * mv32x32Pitch, mv32x32Data + y * DIVUP(ctrl.width, 32), sizeof(mfxI16Pair) * DIVUP(ctrl.width, 32));
+            for (int x = 0; x < DIVUP(ctrl.width, 32); x++)
+                *((mfxI16Pair *)((char *)data32x32Sys + y * data32x32Pitch + x * 16 * sizeof(Ipp32u))) = *(mv32x32Data + y * DIVUP(ctrl.width, 32) + x);
 
         mfxU32 tsWidth  = DIVUP(ctrl.width, 16);
         mfxU32 tsHeight = DIVUP(ctrl.height, 16);
@@ -412,29 +352,39 @@ namespace {
         CHECK_CM_ERR(res);
 
         for (int y = 0; y < DIVUP(ctrl.height, 16); y++)
-            memcpy(mv16x16Data + y * DIVUP(ctrl.width, 16), (char *)mv16x16Sys + y * mv16x16Pitch, sizeof(mfxI16Pair) * DIVUP(ctrl.width, 16));
+            for (int x = 0; x < DIVUP(ctrl.width, 16); x++)
+                *(mv16x16Data + y * DIVUP(ctrl.width, 16) + x) = *((mfxI16Pair *)((char *)data16x16Sys + y * data16x16Pitch + x * 2 * sizeof(mfxU32)));
         for (int y = 0; y < DIVUP(ctrl.height, 8); y++)
-            memcpy(mv16x8Data + y * DIVUP(ctrl.width, 16), (char *)mv16x8Sys + y * mv16x8Pitch, sizeof(mfxI16Pair) * DIVUP(ctrl.width, 16));
+            for (int x = 0; x < DIVUP(ctrl.width, 16); x++)
+                *(mv16x8Data + y * DIVUP(ctrl.width, 16) + x) = *((mfxI16Pair *)((char *)data16x8Sys + y * data16x8Pitch + x * 2 * sizeof(mfxU32)));
         for (int y = 0; y < DIVUP(ctrl.height, 16); y++)
-            memcpy(mv8x16Data + y * DIVUP(ctrl.width, 8), (char *)mv8x16Sys + y * mv8x16Pitch, sizeof(mfxI16Pair) * DIVUP(ctrl.width, 8));
+            for (int x = 0; x < DIVUP(ctrl.width, 8); x++)
+                *(mv8x16Data + y * DIVUP(ctrl.width, 8) + x) = *((mfxI16Pair *)((char *)data8x16Sys + y * data8x16Pitch + x * 2 * sizeof(mfxU32)));
         for (int y = 0; y < DIVUP(ctrl.height, 8); y++)
-            memcpy(mv8x8Data + y * DIVUP(ctrl.width, 8), (char *)mv8x8Sys + y * mv8x8Pitch, sizeof(mfxI16Pair) * DIVUP(ctrl.width, 8));
+            for (int x = 0; x < DIVUP(ctrl.width, 8); x++)
+                *(mv8x8Data + y * DIVUP(ctrl.width, 8) + x) = *((mfxI16Pair *)((char *)data8x8Sys + y * data8x8Pitch + x * 2 * sizeof(mfxU32)));
 
-        for (int y = 0; y < DIVUP(ctrl.height, 32); y++)
-            memcpy(dist32x32Data + y * DIVUP(ctrl.width, 32) * 16, (char *)dist32x32Sys + y * dist32x32Pitch, sizeof(mfxU32) * DIVUP(ctrl.width, 32) * 16);
-        for (int y = 0; y < DIVUP(ctrl.height, 16); y++)
-            memcpy(dist16x16Data + y * DIVUP(ctrl.width, 16), (char *)dist16x16Sys + y * dist16x16Pitch, sizeof(mfxU32) * DIVUP(ctrl.width, 16));
-        for (int y = 0; y < DIVUP(ctrl.height, 8); y++)
-            memcpy(dist16x8Data + y * DIVUP(ctrl.width, 16), (char *)dist16x8Sys + y * dist16x8Pitch, sizeof(mfxU32) * DIVUP(ctrl.width, 16));
-        for (int y = 0; y < DIVUP(ctrl.height, 16); y++)
-            memcpy(dist8x16Data + y * DIVUP(ctrl.width, 8), (char *)dist8x16Sys + y * dist8x16Pitch, sizeof(mfxU32) * DIVUP(ctrl.width, 8));
-        for (int y = 0; y < DIVUP(ctrl.height, 8); y++)
-            memcpy(dist8x8Data + y * DIVUP(ctrl.width, 8), (char *)dist8x8Sys + y * dist8x8Pitch, sizeof(mfxU32) * DIVUP(ctrl.width, 8));
-
-        // zeroing unused 7 sads
+        // copy 6 SADs
         for (int y = 0; y < DIVUP(ctrl.height, 32); y++)
             for (int x = 0; x < DIVUP(ctrl.width, 32); x++)
-                memset(dist32x32Data + (y * DIVUP(ctrl.width, 32) + x) * 16 + 9, 0, sizeof(mfxU32) * 7);
+                memcpy(dist32x32Data + y * DIVUP(ctrl.width, 32) * 16 + x * 16, (char *)data32x32Sys + y * data32x32Pitch + (x * 16 + 1) * sizeof(mfxU32), sizeof(mfxU32) * 9);
+        for (int y = 0; y < DIVUP(ctrl.height, 16); y++)
+            for (int x = 0; x < DIVUP(ctrl.width, 16); x++)
+                dist16x16Data[y * DIVUP(ctrl.width, 16) + x] = *((mfxU32 *)((char *)data16x16Sys + y * data16x16Pitch + (x * 2 + 1) * sizeof(mfxU32)));
+        for (int y = 0; y < DIVUP(ctrl.height, 8); y++)
+            for (int x = 0; x < DIVUP(ctrl.width, 16); x++)
+                dist16x8Data[y * DIVUP(ctrl.width, 16) + x] = *((mfxU32 *)((char *)data16x8Sys + y * data16x8Pitch + (x * 2 + 1) * sizeof(mfxU32)));
+        for (int y = 0; y < DIVUP(ctrl.height, 16); y++)
+            for (int x = 0; x < DIVUP(ctrl.width, 8); x++)
+                dist8x16Data[y * DIVUP(ctrl.width, 8) + x] = *((mfxU32 *)((char *)data8x16Sys + y * data8x16Pitch + (x * 2 + 1) * sizeof(mfxU32)));
+        for (int y = 0; y < DIVUP(ctrl.height, 8); y++)
+            for (int x = 0; x < DIVUP(ctrl.width, 8); x++)
+                dist8x8Data[y * DIVUP(ctrl.width, 8) + x] = *((mfxU32 *)((char *)data8x8Sys + y * data8x8Pitch + (x * 2 + 1) * sizeof(mfxU32)));
+
+        // zeroing unused 6 sads
+        for (int y = 0; y < DIVUP(ctrl.height, 32); y++)
+            for (int x = 0; x < DIVUP(ctrl.width, 32); x++)
+                memset(dist32x32Data + (y * DIVUP(ctrl.width, 32) + x) * 16 + 10, 0, sizeof(mfxU32) * 6);
 
 #ifndef CMRT_EMU
         printf("TIME=%.3fms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
@@ -447,26 +397,16 @@ namespace {
         device->DestroySurface(ctrlBuf);
         device->DestroySurface(src);
         device->DestroySurface(ref);
-        device->DestroySurface2DUP(mv32x32);
-        device->DestroySurface2DUP(mv16x16);
-        device->DestroySurface2DUP(mv16x8);
-        device->DestroySurface2DUP(mv8x16);
-        device->DestroySurface2DUP(mv8x8);
-        device->DestroySurface2DUP(dist32x32);
-        device->DestroySurface2DUP(dist16x16);
-        device->DestroySurface2DUP(dist16x8);
-        device->DestroySurface2DUP(dist8x16);
-        device->DestroySurface2DUP(dist8x8);
-        CM_ALIGNED_FREE(mv32x32Sys);
-        CM_ALIGNED_FREE(mv16x16Sys);
-        CM_ALIGNED_FREE(mv16x8Sys);
-        CM_ALIGNED_FREE(mv8x16Sys);
-        CM_ALIGNED_FREE(mv8x8Sys);
-        CM_ALIGNED_FREE(dist32x32Sys);
-        CM_ALIGNED_FREE(dist16x16Sys);
-        CM_ALIGNED_FREE(dist16x8Sys);
-        CM_ALIGNED_FREE(dist8x16Sys);
-        CM_ALIGNED_FREE(dist8x8Sys);
+        device->DestroySurface2DUP(data32x32);
+        device->DestroySurface2DUP(data16x16);
+        device->DestroySurface2DUP(data16x8);
+        device->DestroySurface2DUP(data8x16);
+        device->DestroySurface2DUP(data8x8);
+        CM_ALIGNED_FREE(data32x32Sys);
+        CM_ALIGNED_FREE(data16x16Sys);
+        CM_ALIGNED_FREE(data16x8Sys);
+        CM_ALIGNED_FREE(data8x16Sys);
+        CM_ALIGNED_FREE(data8x8Sys);
         device->DestroyKernel(kernel);
         device->DestroyProgram(program);
         ::DestroyCmDevice(device);
@@ -593,7 +533,7 @@ namespace {
                 block[xx] = GetPel(src, WIDTH, WIDTH, HEIGHT, x + xx, y + yy); 
     }
 
-    int RunRef(const Me2xControl &ctrl, const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvPredData,
+    int RunRef(const Me2xControl_old &ctrl, const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvPredData,
         mfxU32 *dist16x16Data, mfxU32 *dist16x8Data, mfxU32 *dist8x16Data, mfxU32 *dist8x8Data,
         mfxI16Pair *mv16x16Data, mfxI16Pair *mv16x8Data, mfxI16Pair *mv8x16Data, mfxI16Pair *mv8x8Data,
         const mfxI16Pair *mv32x32Data, mfxU32 *dist32x32, int rectParts)
@@ -612,9 +552,9 @@ namespace {
         CHECK_CM_ERR(res);
 
         CmBuffer *ctrlBuf = 0;
-        res = device->CreateBuffer(sizeof(Me2xControl), ctrlBuf);
+        res = device->CreateBuffer(sizeof(Me2xControl_old), ctrlBuf);
         CHECK_CM_ERR(res);
-        res = ctrlBuf->WriteSurface((const Ipp8u *)&ctrl, NULL, sizeof(Me2xControl));
+        res = ctrlBuf->WriteSurface((const Ipp8u *)&ctrl, NULL, sizeof(Me2xControl_old));
         CHECK_CM_ERR(res);
 
         CmSurface2D *src = 0;

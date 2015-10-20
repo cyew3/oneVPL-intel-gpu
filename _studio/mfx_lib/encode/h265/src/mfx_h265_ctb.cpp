@@ -8653,11 +8653,9 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
             }
 
             Ipp32s uniqRefIdx = m_currFrame->m_mapListRefUnique[list][refIdx];
-            Ipp32s pitchMv = m_currFrame->m_feiInterMv[uniqRefIdx][puSize]->m_pitch;
-            Ipp32s pitchDist = m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_pitch;
+            Ipp32s pitchData = m_currFrame->m_feiInterData[uniqRefIdx][puSize]->m_pitch;
 
-            mfxI16Pair cmMv = ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize]->m_sysmem + y * pitchMv))[x];
-            Ipp32u *cmDist = (Ipp32u *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize]->m_sysmem + y * pitchDist);
+            Ipp32u *cmData = (Ipp32u *)(m_currFrame->m_feiInterData[uniqRefIdx][puSize]->m_sysmem + y * pitchData);
 
             H265MV mvBest = { 0, 0 };
             Ipp32s costBest = INT_MAX;
@@ -8668,20 +8666,21 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
                     Ipp32s puSize32x32 = GetPuSize(32, 32);
                     Ipp32s x32 = x * 2;
                     Ipp32s y32 = y * 2;
-                    Ipp32s pitchMv32 = m_currFrame->m_feiInterMv[uniqRefIdx][puSize32x32]->m_pitch;
-                    Ipp32s pitchDist32 = m_currFrame->m_feiInterDist[uniqRefIdx][puSize32x32]->m_pitch;
+                    Ipp32s pitchData32 = m_currFrame->m_feiInterData[uniqRefIdx][puSize32x32]->m_pitch;
+                    Ipp32u *cmData32_0 = (Ipp32u *)(m_currFrame->m_feiInterData[uniqRefIdx][puSize32x32]->m_sysmem + (y32 + 0) * pitchData32);
+                    Ipp32u *cmData32_1 = (Ipp32u *)(m_currFrame->m_feiInterData[uniqRefIdx][puSize32x32]->m_sysmem + (y32 + 1) * pitchData32);
 
                     mfxI16Pair cmMv32[4] = {
-                        ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize32x32]->m_sysmem + (y32+0) * pitchMv32))[x32+0],
-                        ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize32x32]->m_sysmem + (y32+0) * pitchMv32))[x32+1],
-                        ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize32x32]->m_sysmem + (y32+1) * pitchMv32))[x32+0],
-                        ((mfxI16Pair *)(m_currFrame->m_feiInterMv[uniqRefIdx][puSize32x32]->m_sysmem + (y32+1) * pitchMv32))[x32+1]
+                        *((mfxI16Pair *)(cmData32_0 + 16 * (x32+0))),
+                        *((mfxI16Pair *)(cmData32_0 + 16 * (x32+1))),
+                        *((mfxI16Pair *)(cmData32_1 + 16 * (x32+0))),
+                        *((mfxI16Pair *)(cmData32_1 + 16 * (x32+1)))
                     };
                     Ipp32s *cmDist32[4] = {
-                        (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize32x32]->m_sysmem + (y32+0) * pitchDist32) + 16*(x32+0),
-                        (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize32x32]->m_sysmem + (y32+0) * pitchDist32) + 16*(x32+1),
-                        (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize32x32]->m_sysmem + (y32+1) * pitchDist32) + 16*(x32+0),
-                        (Ipp32s *)(m_currFrame->m_feiInterDist[uniqRefIdx][puSize32x32]->m_sysmem + (y32+1) * pitchDist32) + 16*(x32+1)
+                        (Ipp32s *)(cmData32_0 + 16 * (x32+0) + 1),
+                        (Ipp32s *)(cmData32_0 + 16 * (x32+1) + 1),
+                        (Ipp32s *)(cmData32_1 + 16 * (x32+0) + 1),
+                        (Ipp32s *)(cmData32_1 + 16 * (x32+1) + 1)
                     };
 
                     Ipp32s cmDist64[9];
@@ -8714,7 +8713,8 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
                     }
                 }
 
-                cmDist += 16 * x;   // 9 halfpel distortions
+                mfxI16Pair cmMv = *((mfxI16Pair *)(cmData + 16 * x));
+                Ipp32u *cmDist = cmData + 16 * x + 1;   // 9 halfpel distortions for 64x64
                 for (Ipp16s sadIdx = 0, dy = -2; dy <= 2; dy += 2) {
                     for (Ipp16s dx = -2; dx <= 2; dx += 2, sadIdx++) {
                         H265MV mv = { cmMv.x + dx, cmMv.y + dy };
@@ -8729,7 +8729,8 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
                 }
 
             } else if (meInfo->width > 16 || meInfo->height > 16) {
-                cmDist += 16 * x;
+                mfxI16Pair cmMv = *((mfxI16Pair *)(cmData + 16 * x));
+                Ipp32u *cmDist = cmData + 16 * x + 1;
                 for (Ipp16s sadIdx = 0, dy = -1; dy <= 1; dy++) {
                     for (Ipp16s dx = -1; dx <= 1; dx++, sadIdx++) {
                         H265MV mv = { cmMv.x + dx, cmMv.y + dy };
@@ -8743,7 +8744,8 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
                     }
                 }
             } else {
-                cmDist += 1 * x;
+                mfxI16Pair cmMv = *((mfxI16Pair *)(cmData + 2 * x));
+                Ipp32u *cmDist = cmData + 2 * x + 1;
                 mvBest.mvx = cmMv.x;
                 mvBest.mvy = cmMv.y;
                 mvCostBest = MvCost1RefLog(mvBest, m_amvpCand[curPUidx] + 2 * refIdx + list);

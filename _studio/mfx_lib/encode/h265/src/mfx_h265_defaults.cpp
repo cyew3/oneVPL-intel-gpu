@@ -212,7 +212,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     
 #ifdef AMT_SAO_MIN
     TU_OPT_SW  (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
-    TU_OPT_GACC(SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
+    TU_OPT_GACC(SaoOpt,                         1,   1,   1,   1,   2,   2,   2);
 #else
     TU_OPT_ALL (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
 #endif

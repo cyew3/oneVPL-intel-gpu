@@ -160,8 +160,7 @@ namespace H265Enc {
         ObjectPool<FeiInputData>  m_feiInputDataPool;       // storage for full-sized original pixel data
         ObjectPool<FeiReconData>  m_feiReconDataPool;       // storage for full-sized reconstructed/reference pixel data
         ObjectPool<FeiOutData>    m_feiAngModesPool[4];     // storage for angular intra modes output by fei (4x4, 8x8, 16x16, 32x32)
-        ObjectPool<FeiOutData>    m_feiInterMvPool[4];      // storage for motion vectors output by fei (8x8, 16x16, 32x32, 64x64)
-        ObjectPool<FeiOutData>    m_feiInterDistPool[4];    // storage for ME distortions output by fei (8x8, 16x16, 32x32, 64x64)
+        ObjectPool<FeiOutData>    m_feiInterDataPool[4];    // storage for ME motion vectors and distortions output by fei (8x8, 16x16, 32x32, 64x64)
         ObjectPool<FeiBufferUp>   m_feiCuDataPool;          // storage for CU data shared between CPU and GPU (1 buffer/frame)
         ObjectPool<FeiBufferUp>   m_feiSaoModesPool;        // storage for sao modes chosen by GPU (1 buffer/frame)
         ObjectPool<ThreadingTask> m_ttHubPool;              // storage for threading tasks of type TT_HUB

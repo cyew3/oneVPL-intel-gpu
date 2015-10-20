@@ -31,23 +31,26 @@ typedef matrix<uchar, 3, 32> UniIn;
 #endif
 
 template <int rectParts> inline _GENX_ void Impl(
-    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF,
-    SurfaceIndex DIST16x16, SurfaceIndex DIST16x8, SurfaceIndex DIST8x16, SurfaceIndex DIST8x8,
-    SurfaceIndex MV16x16, SurfaceIndex MV16x8, SurfaceIndex MV8x16, SurfaceIndex MV8x8,
-    SurfaceIndex SRC, SurfaceIndex REF, SurfaceIndex MV32x32, SurfaceIndex DIST32x32)
+    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DATA32x32,
+    SurfaceIndex DATA16x16, SurfaceIndex DATA8x8, SurfaceIndex DATA16x8,
+    SurfaceIndex DATA8x16, SurfaceIndex SRC, SurfaceIndex REF)
 {
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
     uint x = mbX * 16;
     uint y = mbY * 16;
 
-    vector<uchar, 64> control;
-    read(CONTROL, 0, control);
+    vector<uchar, 120> control;
+    read(CONTROL, 0,  control.select<64,1>());
+    read(CONTROL, 64, control.select<56,1>(64));
 
-    uint1 maxNumSu = control.format<uint1>()[56];
-    uint1 lenSp = control.format<uint1>()[57];
-    uint2 width = control.format<uint2>()[30];
-    uint2 height = control.format<uint2>()[31];
+    vector_ref<uchar,32> searchPath = control.select<32,1>(32);
+    vector_ref<uchar,8>  mvCost = control.select<8,1>(72);
+    uint1 mvCostScaleFactor = control[112];
+    uint1 lenSp    = control[66];
+    uint1 maxNumSu = control[67];
+    uint2 width = control.format<uint2>()[34];
+    uint2 height = control.format<uint2>()[35];
 
     uint2 picWidthInMB = width >> 4;
     uint mbIndex = picWidthInMB * mbY + mbX;
@@ -55,24 +58,28 @@ template <int rectParts> inline _GENX_ void Impl(
     // read MB record data
     UniIn uniIn = 0;
     matrix<uchar, 9, 32> imeOut;
-    matrix<uchar, 2, 32> imeIn = 0;
     matrix<uchar, 4, 32> fbrIn;
 
     // declare parameters for VME
     matrix<uint4, 16, 2> costs = 0;
     vector<int2, 2> mvPred = 0;
-    read(MV16x16, mbX * MVDATA_SIZE, mbY, mvPred); // these pred MVs will be updated later here
+    read(DATA16x16, mbX * INTERDATA_SIZE_SMALL, mbY, mvPred); // these pred MVs will be updated later here
 
     // load search path
-    SELECT_N_ROWS(imeIn, 0, 2) = SLICE1(control, 0, 64);
+    matrix<uchar, 2, 32> imeIn;
+    imeIn.format<uint1>().select<32,1>() = searchPath;
+    imeIn.format<uint1>().select<32,1>(32) = 0;
 
     // M0.2
     VME_SET_UNIInput_SrcX(uniIn, x);
     VME_SET_UNIInput_SrcY(uniIn, y);
 
     // M0.3 various prediction parameters
-///    VME_SET_DWORD(uniIn, 0, 3, 0x76a40000); // BMEDisableFBR=1 InterSAD=2 SubMbPartMask=0x76: 8x8,16x16
-    VME_SET_DWORD(uniIn, 0, 3, 0x70a40000); // BMEDisableFBR=1 InterSAD=2 SubMbPartMask=0x70: 8x8,8x16,16x8,16x16 (rect subparts are for FEI are on)
+    if (rectParts)
+        VME_SET_DWORD(uniIn, 0, 3, 0x70a40000); // BMEDisableFBR=1 InterSAD=2 SubMbPartMask=0x70: 8x8,8x16,16x8,16x16 (rect subparts are for FEI are on)
+    else
+        VME_SET_DWORD(uniIn, 0, 3, 0x76a40000); // BMEDisableFBR=1 InterSAD=2 SubMbPartMask=0x76: 8x8,16x16
+
     // M1.1 MaxNumMVs
     VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
     // M0.5 Reference Window Width & Height
@@ -80,12 +87,12 @@ template <int rectParts> inline _GENX_ void Impl(
     VME_SET_UNIInput_RefH(uniIn, 40);
 
     // M0.0 Ref0X, Ref0Y
-    vector_ref<int2, 2> sourceXY = uniIn.row(0).format<int2>().select<2,1>(4);
-    vector<uint1, 2> widthHeight;
+    vector_ref<int2,2> sourceXY = uniIn.row(0).format<int2>().select<2,1>(4);
+    vector<uint1,2> widthHeight;
     widthHeight[0] = (height >> 4) - 1;
     widthHeight[1] = (width >> 4);
-    vector_ref<int1, 2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
-    vector_ref<int2, 2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
+    vector_ref<int1,2> searchWindow = uniIn.row(0).format<int1>().select<2,1>(22);
+    vector_ref<int2,2> ref0XY = uniIn.row(0).format<int2>().select<2,1>(0);
     SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
 
     // M1.0-3 Search path parameters & start centers & MaxNumMVs again!!!
@@ -103,22 +110,46 @@ template <int rectParts> inline _GENX_ void Impl(
     uniIn.row(1)[6] = 0x20;
     uniIn.row(1)[31] = 0x1;
 
-    vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
 #ifdef target_gen8
-    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
+    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16,1>(0);
 #else
-    vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
+    vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4,1>(8);
 #endif
+
+    // setup mv costs
+    uniIn(1,30) = (uniIn(1,30) & ~3) | mvCostScaleFactor;
+    uniIn.select<1,1,8,1>(2,12) = mvCost;
+
     run_vme_ime(uniIn, imeIn,
         VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
-        SRC_AND_REF, ref0, NULL, costCenter, imeOut);
+        SRC_AND_REF, ref0XY, NULL, costCenter, imeOut);
+
+    vector<int2,2> mv16 = imeOut.row(7).format<int2>().select<2,1>(10);
+    matrix<int2,2,4> mv8 = imeOut.row(8).format<int2>().select<8,1>(8); // 4 MVs
+
+    vector<int2,2> diff = cm_abs<int2>(mvPred);
+    diff = diff > 16;
+    if (diff.any()) {
+        uint2 dist16 = imeOut.row(7).format<ushort>()[8];
+        vector<uint2,4> dist8 = imeOut.row(7).format<ushort>().select<4,1>(4);
+
+        mvPred = 0;
+        SetRef(sourceXY, mvPred, searchWindow, widthHeight, ref0XY);
+        run_vme_ime(uniIn, imeIn,
+            VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
+            SRC_AND_REF, ref0XY, NULL, costCenter, imeOut);
+
+        uint2 dist16_0 = imeOut.row(7).format<ushort>()[8];
+        vector<uint2,4> dist8_0 = imeOut.row(7).format<ushort>().select<4,1>(4);
+        vector<int2,2> mv16_0 = imeOut.row(7).format<int2>().select<2,1>(10);
+        matrix<int2,2,4> mv8_0 = imeOut.row(8).format<int2>().select<8,1>(8);
+
+        mv16.format<uint4>().merge(mv16_0.format<uint4>(), dist16_0 < dist16);
+        mv8.format<uint4>().merge(mv8_0.format<uint4>(), dist8_0 < dist8);
+    }
 
     //DebugUniOutput<9>(imeOut);
 
-    uchar interMbMode, subMbShape, subMbPredMode;
-    VME_GET_UNIOutput_InterMbMode(imeOut, interMbMode);
-    VME_GET_UNIOutput_SubMbShape(imeOut, subMbShape);
-    VME_GET_UNIOutput_SubMbPredMode(imeOut, subMbPredMode);
     VME_SET_UNIInput_SubPelMode(uniIn, 3);
     VME_SET_UNIInput_BMEDisableFBR(uniIn);
     SLICE(fbrIn.format<uint>(), 1, 16, 2) = 0; // zero L1 motion vectors
@@ -127,35 +158,30 @@ template <int rectParts> inline _GENX_ void Impl(
     VME_SET_UNIInput_FBRMbModeInput(uniIn, 0);
     VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
     VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
-    fbrIn.format<uint, 4, 8>().select<4, 1, 4, 2>(0, 0) = imeOut.row(7).format<uint>()[5]; // motion vectors 16x16
+    fbrIn.format<uint, 4, 8>().select<4, 1, 4, 2>(0, 0) = mv16.format<uint4>()[0]; // motion vectors 16x16
     run_vme_fbr(uniIn, fbrIn, SRC_AND_REF, 0, 0, 0, fbrOut16x16);
 
     matrix<uchar, 7, 32> fbrOut8x8;
-    subMbShape = 0;
     VME_SET_UNIInput_FBRMbModeInput(uniIn, 3);
-    VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, subMbShape);
-    VME_SET_UNIInput_FBRSubPredModeInput(uniIn, subMbPredMode);
-    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(0, 0) = imeOut.row(8).format<uint>()[4]; // motion vectors 8x8_0
-    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(1, 0) = imeOut.row(8).format<uint>()[5]; // motion vectors 8x8_1
-    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(2, 0) = imeOut.row(8).format<uint>()[6]; // motion vectors 8x8_2
-    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(3, 0) = imeOut.row(8).format<uint>()[7]; // motion vectors 8x8_3
-    run_vme_fbr(uniIn, fbrIn, SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut8x8);
+    VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, 0);
+    VME_SET_UNIInput_FBRSubPredModeInput(uniIn, 0);
+    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(0, 0) = mv8.format<uint>()[0]; // motion vectors 8x8_0
+    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(1, 0) = mv8.format<uint>()[1]; // motion vectors 8x8_1
+    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(2, 0) = mv8.format<uint>()[2]; // motion vectors 8x8_2
+    fbrIn.format<uint, 4, 8>().select<1, 1, 4, 2>(3, 0) = mv8.format<uint>()[3]; // motion vectors 8x8_3
+    run_vme_fbr(uniIn, fbrIn, SRC_AND_REF, 3, 0, 0, fbrOut8x8);
 
-    // distortions
     // 16x16
-    matrix<uint, 1, 1> dist16x16 = SLICE(fbrOut16x16.row(5).format<ushort>(), 0, 1, 1);
-    write(DIST16x16, mbX * DIST_SIZE, mbY, dist16x16);
-    // 8x8
-    matrix<uint, 2, 2> dist8x8 = SLICE(fbrOut8x8.row(5).format<ushort>(), 0, 4, 4);
-    write(DIST8x8, mbX * DIST_SIZE * 2, mbY * 2, dist8x8);
+    vector<uint, 2> data16x16;
+    SLICE(data16x16, 0, 1, 1) = SLICE(fbrOut16x16.format<uint>(), 8, 1, 1); // MV
+    SLICE(data16x16, 1, 1, 1) = SLICE(fbrOut16x16.row(5).format<ushort>(), 0, 1, 1); // dist
+    write(DATA16x16, mbX * INTERDATA_SIZE_SMALL, mbY, data16x16);
 
-    // motion vectors
-    // 16x16
-    write(MV16x16, mbX * MVDATA_SIZE, mbY, SLICE(fbrOut16x16.format<uint>(), 8, 1, 1));
     // 8x8
-    matrix<uint, 2, 2> mv8x8 = SLICE(fbrOut8x8.format<uint>(), 8, 4, 8);
-    write(MV8x8,   mbX * MVDATA_SIZE * 2, mbY * 2, mv8x8);
-
+    matrix<uint, 2, 4> data8x8;
+    SLICE(data8x8.format<uint>(), 0, 4, 2) = SLICE(fbrOut8x8.format<uint>(), 8, 4, 8); // MV
+    SLICE(data8x8.format<uint>(), 1, 4, 2) = SLICE(fbrOut8x8.row(5).format<ushort>(), 0, 4, 4); // dist
+    write(DATA8x8, mbX * 2 * INTERDATA_SIZE_SMALL, mbY * 2, data8x8);
 
     if (rectParts)
     {
@@ -175,52 +201,18 @@ template <int rectParts> inline _GENX_ void Impl(
         fbrIn.format<uint, 4, 8>().select<2, 2, 4, 2>(1, 0) = imeOut.row(8).format<uint>()[3]; // motion vectors 8x16_1
         run_vme_fbr(uniIn, fbrIn, SRC_AND_REF, 2, 0, 0, fbrOut8x16);
 
-        // distortions
         // 16x8
-        matrix<uint, 2, 1> dist16x8 = SLICE(fbrOut16x8.row(5).format<ushort>(), 0, 2, 8);
-        write(DIST16x8, mbX * DIST_SIZE, mbY * 2, dist16x8);
+        matrix<uint, 2, 2> data16x8;
+        SLICE(data16x8.format<uint>(), 0, 2, 2) = SLICE(fbrOut16x8.format<uint>(), 8, 2, 16); // MV
+        SLICE(data16x8.format<uint>(), 1, 2, 2) = SLICE(fbrOut16x8.row(5).format<ushort>(), 0, 2, 8); // dist
+        write(DATA16x8, mbX * INTERDATA_SIZE_SMALL, mbY * 2, data16x8);
+
         // 8x16
-        matrix<uint, 1, 2> dist8x16 = SLICE(fbrOut8x16.row(5).format<ushort>(), 0, 2, 4);
-        write(DIST8x16, mbX * DIST_SIZE * 2, mbY, dist8x16);
+        vector<uint, 4> data8x16;
+        SLICE(data8x16.format<uint>(), 0, 2, 2) = SLICE(fbrOut8x16.format<uint>(), 8, 2, 8); // MV
+        SLICE(data8x16.format<uint>(), 1, 2, 2) = SLICE(fbrOut8x16.row(5).format<ushort>(), 0, 2, 4); // dist
+        write(DATA8x16, mbX * 2 * INTERDATA_SIZE_SMALL, mbY, data8x16);
 
-        // motion vectors
-        // 16x8
-        matrix<uint, 2, 1> mv16x8 = SLICE(fbrOut16x8.format<uint>(), 8, 2, 16);
-        write(MV16x8,  mbX * MVDATA_SIZE, mbY * 2, mv16x8);
-        // 8x16
-        matrix<uint, 1, 2> mv8x16 = SLICE(fbrOut8x16.format<uint>(), 8, 2, 8);
-        write(MV8x16,  mbX * MVDATA_SIZE * 2, mbY, mv8x16);
-
-        //matrix<uchar, 7, 32> fbrOut8x4;
-        //subMbShape = 1 + 4 + 16 + 64;
-        //VME_SET_UNIInput_FBRMbModeInput(uniIn, 3);
-        //VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, subMbShape);
-        //VME_SET_UNIInput_FBRSubPredModeInput(uniIn, subMbPredMode);
-        //run_vme_fbr(uniIn, fbrIn, SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut8x4);
-
-        //matrix<uchar, 7, 32> fbrOut4x8;
-        //subMbShape = (1 + 4 + 16 + 64) << 1;
-        //VME_SET_UNIInput_FBRMbModeInput(uniIn, 3);
-        //VME_SET_UNIInput_FBRSubMBShapeInput(uniIn, subMbShape);
-        //VME_SET_UNIInput_FBRSubPredModeInput(uniIn, subMbPredMode);
-        //run_vme_fbr(uniIn, fbrIn, SRC_AND_REF, 3, subMbShape, subMbPredMode, fbrOut4x8);
-
-        //// 8x4
-        //matrix<uint, 4, 2> dist8x4 = SLICE(fbrOut8x4.row(5).format<ushort>(), 0, 8, 2);
-        //write(DIST8x4, mbX * DIST_SIZE * 2, mbY * 4, dist8x4);
-        //// 4x8
-        //matrix<uint, 2, 4> dist4x8;
-        //dist4x8.row(0) = SLICE(fbrOut4x8.row(5).format<ushort>(), 0, 4, 4);
-        //dist4x8.row(1) = SLICE(fbrOut4x8.row(5).format<ushort>(), 1, 4, 4);
-        //write(DIST4x8, mbX * DIST_SIZE * 4, mbY * 2, dist4x8);
-        //// 8x4
-        //matrix<uint, 4, 2> mv8x4 = SLICE(fbrOut8x4.format<uint>(), 8, 8, 4);
-        //write(MV8x4,   mbX * MVDATA_SIZE * 2, mbY * 4, mv8x4);
-        //// 4x8
-        //matrix<uint, 2, 4> mv4x8;
-        //SLICE(mv4x8.format<uint>(), 0, 4, 2) = SLICE(fbrOut4x8.format<uint>(),  8, 4, 8);
-        //SLICE(mv4x8.format<uint>(), 1, 4, 2) = SLICE(fbrOut4x8.format<uint>(), 10, 4, 8);
-        //write(MV4x8, mbX * MVDATA_SIZE * 4, mbY * 2, mv4x8);
     }
 
     if ((mbX & 1) == 0 && (mbY & 1) == 0) {
@@ -228,34 +220,31 @@ template <int rectParts> inline _GENX_ void Impl(
         vector< int2,2 > mv32x32;
         mbX >>= 1;
         mbY >>= 1;
-        read(MV32x32, mbX * MVDATA_SIZE, mbY, mv32x32);
+        read(DATA32x32, mbX * INTERDATA_SIZE_BIG, mbY, mv32x32);
 
         uint x = mbX * 32;
         uint y = mbY * 32;
 
         QpelRefine(32, 32, SRC, REF, x, y, mv32x32[0], mv32x32[1], sad32x32);
 
-        write(DIST32x32, mbX * MBDIST_SIZE,      mbY, SLICE1(sad32x32, 0,  8));   // 32bytes is max until BDW
-        write(DIST32x32, mbX * MBDIST_SIZE + 32, mbY, SLICE1(sad32x32, 8, 1));
+        write(DATA32x32, mbX * INTERDATA_SIZE_BIG + 4,  mbY, SLICE1(sad32x32, 0, 8));   // 32bytes is max until BDW
+        write(DATA32x32, mbX * INTERDATA_SIZE_BIG + 36, mbY, SLICE1(sad32x32, 8, 1));
     }
 }
 
 extern "C" _GENX_MAIN_
 void Me16AndRefine32x32(
-    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DIST16x16,
-    SurfaceIndex DIST8x8, SurfaceIndex MV16x16, SurfaceIndex MV8x8,
-    SurfaceIndex SRC, SurfaceIndex REF, SurfaceIndex MV32x32, SurfaceIndex DIST32x32)
+    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DATA32x32,
+    SurfaceIndex DATA16x16, SurfaceIndex DATA8x8, SurfaceIndex SRC, SurfaceIndex REF)
 {
-    Impl<0>(CONTROL, SRC_AND_REF, DIST16x16, DIST16x16, DIST16x16, DIST8x8, MV16x16, MV16x16, MV16x16, MV8x8, SRC, REF, MV32x32, DIST32x32);
+    Impl<0>(CONTROL, SRC_AND_REF, DATA32x32, DATA16x16, DATA8x8, DATA8x8, DATA8x8, SRC, REF);
 }
 
 extern "C" _GENX_MAIN_
 void Me16RectPartsAndRefine32x32(
-    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF,
-    SurfaceIndex DIST16x16, SurfaceIndex DIST16x8, SurfaceIndex DIST8x16, SurfaceIndex DIST8x8,
-    SurfaceIndex MV16x16, SurfaceIndex MV16x8, SurfaceIndex MV8x16, SurfaceIndex MV8x8,
-    SurfaceIndex SRC, SurfaceIndex REF, SurfaceIndex MV32x32, SurfaceIndex DIST32x32)
+    SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DATA32x32, SurfaceIndex DATA16x16,
+    SurfaceIndex DATA8x8, SurfaceIndex DATA16x8, SurfaceIndex DATA8x16, SurfaceIndex SRC, SurfaceIndex REF)
 {
-    Impl<1>(CONTROL, SRC_AND_REF, DIST16x16, DIST16x8, DIST8x16, DIST8x8, MV16x16, MV16x8, MV8x16, MV8x8, SRC, REF, MV32x32, DIST32x32);
+    Impl<1>(CONTROL, SRC_AND_REF,DATA32x32, DATA16x16, DATA8x8, DATA16x8, DATA8x16, SRC, REF);
 }
 

@@ -653,9 +653,7 @@ H265Encoder::~H265Encoder()
     for (Ipp32s i = 0; i < 4; i++)
         m_feiAngModesPool[i].Destroy();
     for (Ipp32s i = 0; i < 4; i++)
-        m_feiInterMvPool[i].Destroy();
-    for (Ipp32s i = 0; i < 4; i++)
-        m_feiInterDistPool[i].Destroy();
+        m_feiInterDataPool[i].Destroy();
     m_feiCuDataPool.Destroy();
     m_feiSaoModesPool.Destroy();
     if (m_fei)
@@ -875,6 +873,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
         feiParams.TargetUsage = 0;
         feiParams.NumIntraModes = 1;
         feiParams.FourCC = m_videoParam.fourcc;
+        feiParams.EnableChromaSao = m_videoParam.SAOChromaFlag;
 
         mfxExtFEIH265Alloc feiAlloc = {};
         MFXCoreInterface core(m_core.m_core);
@@ -896,16 +895,13 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
         for (Ipp32s blksize = 0; blksize < 4; blksize++) {
             Ipp32s feiBlkSizeIdx = blkSizeInternal2Fei[blksize];
 
-            feiOutAllocInfo.allocInfo = feiAlloc.InterMV[feiBlkSizeIdx];
-            m_feiInterMvPool[blksize].Init(feiOutAllocInfo, 0);
-
-            feiOutAllocInfo.allocInfo = feiAlloc.InterDist[feiBlkSizeIdx];
-            m_feiInterDistPool[blksize].Init(feiOutAllocInfo, 0);
+            feiOutAllocInfo.allocInfo = feiAlloc.InterData[feiBlkSizeIdx];
+            m_feiInterDataPool[blksize].Init(feiOutAllocInfo, 0);
         }
 
         FeiBufferUp::AllocInfo feiBufferUpAllocInfo;
         feiBufferUpAllocInfo.feiHdl = m_fei;
-        feiBufferUpAllocInfo.size = numCtbs * sizeof(SaoOffsetOut_gfx);
+        feiBufferUpAllocInfo.size = numCtbs * sizeof(SaoOffsetOut_gfx) * 3; //(Y U V)
         feiBufferUpAllocInfo.alignment = 0x1000;
         m_feiSaoModesPool.Init(feiBufferUpAllocInfo, 0);
 
@@ -1356,10 +1352,8 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
                 Ipp32s uniqRefIdx = frame->m_mapListRefUnique[i][j];
 
                 for (Ipp32s blksize = 0; blksize < 4; blksize++) {
-                    if (!frame->m_feiInterMv[uniqRefIdx][blksize])
-                        frame->m_feiInterMv[uniqRefIdx][blksize] = m_feiInterMvPool[blksize].Allocate();
-                    if (!frame->m_feiInterDist[uniqRefIdx][blksize])
-                        frame->m_feiInterDist[uniqRefIdx][blksize] = m_feiInterDistPool[blksize].Allocate();
+                    if (!frame->m_feiInterData[uniqRefIdx][blksize])
+                        frame->m_feiInterData[uniqRefIdx][blksize] = m_feiInterDataPool[blksize].Allocate();
                 }
 
                 frame->m_ttSubmitGpuMe[uniqRefIdx].numDownstreamDependencies = 0;
@@ -2372,40 +2366,6 @@ void SetSaoVideoParam(SaoVideoParam & sao, const H265VideoParam & par, Ipp32f la
     sao.enableBandOffset = (par.saoOpt == SAO_OPT_ALL_MODES) ? 1 : 0;
 }
 
-struct PostProcParam
-{
-    Ipp8u  tabBeta[52];            // +0 B
-    Ipp16u Width;                  // +26 W
-    Ipp16u Height;                 // +27 W
-    Ipp16u PicWidthInCtbs;         // +28 W
-    Ipp16u PicHeightInCtbs;        // +29 W
-
-    Ipp16s tcOffset;               // +30 W
-    Ipp16s betaOffset;             // +31 W
-    Ipp8u  chromaQp[58];           // +64 B
-    Ipp8u  crossSliceBoundaryFlag; // +122 B
-    Ipp8u  crossTileBoundaryFlag;  // +123 B
-    Ipp8u  TULog2MinSize;          // +124 B
-    Ipp8u  MaxCUDepth;             // +125 B
-    Ipp8u  Log2MaxCUSize;          // +126 B
-    Ipp8u  Log2NumPartInCU;        // +127 B
-    Ipp8u  tabTc[54];              // +128 B
-    Ipp8u  MaxCUSize;              // +182 B
-    Ipp8u  chromaFormatIdc;        // +183 B
-
-    Ipp8u  alignment0[8];          // +184 B
-    Ipp32s list0[16];              // +48 DW
-    Ipp32s list1[16];              // +64 DW
-    Ipp8u  scan2z[16];             // +320 B
-    // sao extension
-    Ipp32f m_rdLambda;             // +84 DW
-    Ipp32s SAOChromaFlag;          // +85 DW
-    Ipp32s enableBandOffset;       // +86 DW
-    Ipp8u reserved[4];             // +87 DW
-    // tile/slice restriction (avail LeftAbove)
-    Ipp8u availLeftAbove[128];     // +88 DW
-};
-
 void SetPostProcParam(PostProcParam & postprocParam, const H265Enc::H265VideoParam & videoParam, const int list0[33], const int list1[33], Ipp32f lambda)
 {
     static Ipp32s tcTable[] = {
@@ -2448,7 +2408,7 @@ void SetPostProcParam(PostProcParam & postprocParam, const H265Enc::H265VideoPar
     for (int i = 0; i < 58; i++)
         postprocParam.chromaQp[i] = h265_QPtoChromaQP[0][i];
 
-    // sao extension
+    // sao extension (carefully!!! saoChroma is configured on Fei.Init() )
     postprocParam.SAOChromaFlag = videoParam.SAOChromaFlag;
 
     postprocParam.m_rdLambda = lambda;
@@ -2475,6 +2435,77 @@ void SetPostProcParam(PostProcParam & postprocParam, const H265Enc::H265VideoPar
         Ipp32u ctbY = videoParam.m_slices[i].first_ctb_addr / videoParam.PicWidthInCtbs;
         postprocParam.availLeftAbove[ numCtbX + ctbY ] = 0;
     }
+
+    // LumaOffset for block based SaoStatistics
+    {
+        Ipp32s blockW = 16;
+        Ipp32s blockH = 16;
+        mfxU32 tsWidth   = (videoParam.Width  + videoParam.MaxCUSize - 1) / videoParam.MaxCUSize * (videoParam.MaxCUSize / blockW);
+        mfxU32 tsHeight  = (videoParam.Height + videoParam.MaxCUSize - 1) / videoParam.MaxCUSize * (videoParam.MaxCUSize / blockH);
+        mfxU32 numThreads = tsWidth * tsHeight;
+        mfxU32 bufsize = numThreads * (16+16+32+32) * sizeof(Ipp16s);
+        postprocParam.offsetChroma = bufsize;
+    }
+}
+
+Ipp32u GetDist(FeiOutData **data, Ipp32s size, Ipp32s x, Ipp32s y, Ipp32s distIdx)
+{
+    assert(size < 4);
+    assert((size == 3 || size == 2) && distIdx < 9 || (size == 1 || size == 0) && distIdx == 0);
+    Ipp32u pitch = data[size]->m_pitch;
+    Ipp8u *p = data[size]->m_sysmem;
+    Ipp32s recordSize = (size == 3 || size == 2) ? 64 : 8;
+    return *(Ipp32u *)(p + y * pitch + x * recordSize + 4 + distIdx * sizeof(Ipp32u));
+}
+
+mfxI16Pair GetMv(FeiOutData **data, Ipp32s size, Ipp32s x, Ipp32s y)
+{
+    assert(size < 4);
+    Ipp32u pitch = data[size]->m_pitch;
+    Ipp8u *p = data[size]->m_sysmem;
+    Ipp32s recordSize = (size == 3 || size == 2) ? 64 : 8;
+    return *(mfxI16Pair *)(p + y * pitch + x * recordSize);
+}
+
+void DumpGpuMeData(const ThreadingTask &task, H265VideoParam &par) {
+    Ipp32s poc = task.frame->m_frameOrder;
+    Ipp32s refpoc = task.frame->m_refPicList[task.listIdx].m_refFrames[task.refIdx]->m_frameOrder;
+    Ipp32s uniqRefIdx = task.frame->m_mapListRefUnique[task.listIdx][task.refIdx];
+
+    FeiOutData **data = task.frame->m_feiInterData[uniqRefIdx];
+
+    Ipp32s width = par.Width;
+    Ipp32s height = par.Height;
+    Ipp32s widthInCtb = (par.Width + 63) / 64;
+    Ipp32s heightInCtb = (par.Height + 63) / 64;
+
+    char fnameMv[256] = {};
+    char fnameDist[256] = {};
+    sprintf(fnameMv, "frame%02d_ref%02d_mv.txt", poc, refpoc);
+    //sprintf(fnameDist, "frame%02d_ref%02d_dist.txt", poc, refpoc);
+
+    FILE *fileMv = fopen(fnameMv, "w");
+    FILE *fileDist = fopen(fnameDist, "w");
+
+    for (Ipp32s ctby = 0; ctby < heightInCtb; ctby++) {
+        for (Ipp32s ctbx = 0; ctbx < widthInCtb; ctbx++) {
+            fprintf(fileMv, "CTB addr=%d, col=%d, row=%d\n", ctbx + widthInCtb * ctby, ctbx, ctby);
+            for (Ipp32s size = 3; size >= 0; size--) {
+                Ipp32s blockSize = 1 << (3 + size);
+                Ipp32s ctbSizeInBlocks = 1 << (3 - size);
+                fprintf(fileMv, "  %dx%d\n", blockSize, blockSize);
+                for (Ipp32s y = 0; y < ctbSizeInBlocks; y++) {
+                    fprintf(fileMv, "     ");
+                    for (Ipp32s x = 0; x < ctbSizeInBlocks; x++)
+                        fprintf(fileMv, " (%6.2f, %6.2f)", GetMv(data, size, x, y).x/4.0, GetMv(data, size, x, y).y/4.0);
+                    fprintf(fileMv, "\n");
+                }
+            }
+        }
+    }
+
+    fclose(fileMv);
+    //fclose(fileDist);
 }
 
 void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
@@ -2518,12 +2549,12 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
         Frame *ref = task.frame->m_refPicList[task.listIdx].m_refFrames[task.refIdx];
         in.meArgs.surfSrc = task.frame->m_feiOrigin->m_handle;
         in.meArgs.surfRef = ref->m_feiRecon->m_handle;
+        in.meArgs.lambda = task.frame->m_slices[0].rd_lambda_sqrt_slice;
 
         Ipp32s uniqRefIdx = task.frame->m_mapListRefUnique[task.listIdx][task.refIdx];
         for (Ipp32s blksize = 0; blksize < 4; blksize++) {
             Ipp32s feiBlkIdx = blkSizeInternal2Fei[blksize];
-            out.SurfInterMV[feiBlkIdx] = task.frame->m_feiInterMv[uniqRefIdx][blksize]->m_handle;
-            out.SurfInterDist[feiBlkIdx] = task.frame->m_feiInterDist[uniqRefIdx][blksize]->m_handle;
+            out.SurfInterData[feiBlkIdx] = task.frame->m_feiInterData[uniqRefIdx][blksize]->m_handle;
         }
 
     } else if (task.feiOp == MFX_FEI_H265_OP_POSTPROC || task.feiOp == MFX_FEI_H265_OP_DEBLOCK) {
@@ -2532,8 +2563,7 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
         in.postprocArgs.reconSurfVid = task.frame->m_feiRecon->m_handle;
         in.postprocArgs.cuData = task.frame->m_feiCuData->m_handle;
         in.postprocArgs.saoModes = task.frame->m_feiSaoModes->m_handle;
-        in.postprocArgs.extData2 = (mfxU8 *)(&postprocParam);
-        in.postprocArgs.extDataSize2 = sizeof(postprocParam);
+        in.postprocArgs.param = (mfxU8 *)(&postprocParam);
 
         Ipp8s *list0_dpoc = task.frame->m_refPicList[0].m_deltaPoc;
         Ipp8s *list1_dpoc = task.frame->m_refPicList[1].m_deltaPoc;
@@ -2553,6 +2583,12 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
     mfxFEISyncPoint syncpoint;
     if (H265FEI_ProcessFrameAsync(m_fei, &in, &out, &syncpoint) != MFX_ERR_NONE)
         Throw(std::runtime_error(""));
+
+    //if (task.feiOp == MFX_FEI_H265_OP_INTER_ME) {
+    //    H265FEI_SyncOperation(m_fei, syncpoint, 2000);
+    //    
+    //    DumpGpuMeData(task, m_videoParam);
+    //}
 
     // the following modifications should be guarded by m_feiCritSect
     // because finished, numDownstreamDependencies and downstreamDependencies[]

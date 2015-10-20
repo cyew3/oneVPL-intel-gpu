@@ -37,13 +37,21 @@ struct VmeSearchPath // sizeof=58
     mfxU8 lenSp;
 };
 
-struct Me2xControl // sizeof=64
+struct MeControl // sizeof=120
 {
-    VmeSearchPath searchPath;
-    mfxU8  reserved[2];
-    mfxU16 width;
-    mfxU16 height;
+    mfxU8  longSp[32];          // 0 B
+    mfxU8  shortSp[32];         // 32 B
+    mfxU8  longSpLenSp;         // 64 B
+    mfxU8  longSpMaxNumSu;      // 65 B
+    mfxU8  shortSpLenSp;        // 66 B
+    mfxU8  shortSpMaxNumSu;     // 67 B
+    mfxU16 width;               // 34 W
+    mfxU16 height;              // 35 W
+    mfxU8  mvCost[5][8];         // 72 B (1x), 80 B (2x), 88 B (4x), 96 B (8x) 104 B (16x)
+    mfxU8  mvCostScaleFactor[5]; // 112 B (1x), 113 B (2x), 114 B (4x), 115 B (8x) 116 B (16x)
+    mfxU8  reserved[3];          // 117 B
 };
+
 struct H265EncCURBEData {
     //DW0
     union {
@@ -632,9 +640,8 @@ CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem);
 SurfaceIndex * CreateVmeSurfaceG75(CmDevice * device, CmSurface2D * source, CmSurface2D ** fwdRefs, CmSurface2D ** bwdRefs, mfxU32 numFwdRefs, mfxU32 numBwdRefs);
 
 void SetSearchPath(VmeSearchPath *spath);
-void SetSearchPathSmall(VmeSearchPath *spath);
-mfxU32 SetSearchPath(mfxVMEIMEIn & spath, mfxU32 frameType, mfxU32 meMethod);
 void SetCurbeData(H265EncCURBEData & curbeData, mfxU32 PicType, mfxU32  qp, mfxU32  width, mfxU32 height);
+void SetupMeControl(MeControl &ctrl, int width, int height, double lambda);
 
 CmDevice * TryCreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version = 0);
 CmDevice * CreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version = 0);

@@ -260,8 +260,9 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
             memset(mPrevCmplxLayer, 0,  mNumLayers*sizeof(Ipp64f));
             memset(mPrevQstepLayer, 0,  mNumLayers*sizeof(Ipp64f));
             memset(mPrevBitsLayer, 0,  mNumLayers*sizeof(Ipp32s));
-            memset(mPrevQpLayer, 0,  mNumLayers*sizeof(Ipp32s));
         }
+        memset(mPrevQpLayer, 0,  mNumLayers*sizeof(Ipp32s));
+
         mEncOrderCoded = -1;
 
         Ipp32s fs;
@@ -1196,7 +1197,7 @@ brc_fprintf("%d %d %d \n", mindevSoft, curdev, targ);
                 }
             }
 
-            brc_fprintf("%d %.3f %.3f %.3f %.3f \n", frames[0]->m_encOrder, qf1, qf, avCmplx, mTotMeanComplx);
+            brc_fprintf("%d %.3f %.3f %.3f %.3f %.3f \n", frames[0]->m_encOrder, qf1, qf, avCmplx, mTotMeanComplx, q);
 
             if (qf < 1) {
                 Ipp64f w = 0.5 * avCmplx / mTotMeanComplx;
@@ -1207,19 +1208,32 @@ brc_fprintf("%d %d %d \n", mindevSoft, curdev, targ);
 
             q *= qf;
 
-            brc_fprintf("%d %.3f %.3f \n", frames[0]->m_encOrder, q, qf);
             if (mQstepBase > 0)
                 BRC_CLIP(q, mQstepBase/maxQstepChange, q);
             mQstepBase = q;
 
+
             Ipp32s l = (frames[0]->m_picCodeType == MFX_FRAMETYPE_I ? 0 : (frames[0]->m_picCodeType == MFX_FRAMETYPE_P ? 1 : 1 + IPP_MAX(1, frames[0]->m_pyramidLayer)));
             q *= brc_qstep_factor[l];
 
-
             qp = Qstep2QP(q, mQuantOffset);
 
+            if (l > 1) {
+                Ipp32s qpLayer_1 = mPrevQpLayer[l - 1];
+                if (qp < qpLayer_1) {
+                    qp  = qpLayer_1;
+                    mQstepBase = QP2Qstep(qp, mQuantOffset);
+
+                }
+            }
+
+            brc_fprintf("%d %.3f %.3f %d \n", frames[0]->m_encOrder, q, qf, qp);
 
             BRC_CLIP(qp, mQuantMin, mQuantMax);
+
+            if (mPrevQpLayer[l] <= 0)
+                mPrevQpLayer[l] = qp;
+
         }
 
         return qp - mQuantOffset;
@@ -1454,12 +1468,15 @@ mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame
             mBitsEncodedTotal += totalFrameBits;        
             mTotalDeviation += bitsEncoded - mBitsDesiredFrame;
 
+
 brc_fprintf("pp %d %d %d %f %f %f \n", pFrame->m_encOrder, bitsEncoded, mBitsDesiredFrame, mCmplxRate, mTotTarget, mQstepScale);
 
             mEncOrderCoded = pFrame->m_encOrder;
             UpdateMiniGopData(pFrame, sliceQpY);
 
         } else { // AVBR
+
+            mPrevQpLayer[layer] = sliceQpY;
 
             Ipp64f decay = layer ? 0.5 : 0.25;
 
@@ -1481,7 +1498,7 @@ brc_fprintf("pp %d %d %d %f %f %f \n", pFrame->m_encOrder, bitsEncoded, mBitsDes
             mTotTarget += mBitsDesiredFrame;
             mQstepScale = pow(mCmplxRate / mTotTarget, BRC_QSTEP_SCALE_EXPONENT);
 
-brc_fprintf("pp %d %d %d %f %f %f \n", pFrame->m_encOrder, bitsEncoded, mBitsDesiredFrame, mCmplxRate, mTotTarget, mQstepScale);
+brc_fprintf("L%d %d %d %d %d %f %f %f \n\n", layer, pFrame->m_encOrder, sliceQpY, bitsEncoded, mBitsDesiredFrame, mCmplxRate, mTotTarget, mQstepScale);
 
 
             mBitsEncodedTotal += totalFrameBits;        
