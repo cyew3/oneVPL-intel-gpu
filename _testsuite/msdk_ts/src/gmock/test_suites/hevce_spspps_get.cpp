@@ -13,7 +13,7 @@ public:
     static const mfxU32 pps_buf_sz = 50;
     mfxU8 m_sp_buf[sps_buf_sz + pps_buf_sz];
 
-    TestSuite() : tsVideoEncoder(MFX_CODEC_HEVC) 
+    TestSuite() : tsVideoEncoder(MFX_CODEC_HEVC)
     {
         memset(m_sp_buf, 0, sps_buf_sz + pps_buf_sz);
     }
@@ -34,7 +34,7 @@ private:
     static const tc_struct test_case[];
 };
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_NULL_PTR, {&tsStruct::mfxExtCodingOptionSPSPPS.SPSBuffer, 0}  },
     {/* 1*/ MFX_ERR_NULL_PTR, {&tsStruct::mfxExtCodingOptionSPSPPS.PPSBuffer, 0}  },
@@ -77,15 +77,28 @@ public:
 
         bs.DataLength = 0;
 
-        return MFX_ERR_NONE; 
+        return MFX_ERR_NONE;
     }
 };
 
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
+    //define file reader
+    const char* file_name = g_tsStreamPool.Get("YUV/720x480p_30.00_4mb_h264_cabac_180s.yuv");
+    g_tsStreamPool.Reg();
+    tsRawReader SurfProc = tsRawReader(file_name, m_pPar->mfx.FrameInfo, 1);
+    g_tsStreamPool.Reg();
+    m_filler = &SurfProc;
+
     auto& tc = test_case[id];
 
+    if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
+    {
+        //HEVCE_HW need aligned width and height for 32
+        m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
+        m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
+    }
     Init();
 
     mfxExtCodingOptionSPSPPS& sp = m_par;
@@ -108,7 +121,7 @@ int TestSuite::RunTest(unsigned int id)
         return 0;
 
     EncodeFrames(1);
-    
+
     if(tc.reset.field)
     {
         tsStruct::set(m_pPar, *tc.reset.field, tc.reset.value);
