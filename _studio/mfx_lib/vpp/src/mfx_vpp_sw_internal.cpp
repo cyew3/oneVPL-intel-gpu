@@ -215,9 +215,14 @@ mfxStatus VideoVPPSW::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 
         }
         else
         {
+            if ( MFX_PICSTRUCT_UNKNOWN == Out->PicStruct && m_bDynamicDeinterlace )
+            {
+                // Fix for case when app retrievs cached frames from ADI3->60 and output surf has unknown picstruct
+                Out->PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            }
             // in case of HW_VPP in==NULL means ERROR due to absence of delayed frames and should be processed before.
             // here we return OK only
-             return MFX_ERR_NONE;
+            return MFX_ERR_NONE;
         }
     }
 
