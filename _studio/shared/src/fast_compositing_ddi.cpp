@@ -653,7 +653,6 @@ mfxStatus FastCompositingDDI::QueryCapabilities(mfxVppCaps& caps)
     caps.uMaxHeight = (mfxU32)m_caps.sPrimaryVideoCaps.iMaxHeight;
 
     caps.uRotation  = 0; // FastComposing DDI doesn't support rotation.
-    caps.uScaling   = 0; // scaling is not supported yet.
 
     if(TRUE == m_caps.sPrimaryVideoCaps.bAdvancedDI)
     {
@@ -693,6 +692,11 @@ mfxStatus FastCompositingDDI::QueryCapabilities(mfxVppCaps& caps)
     if( TRUE == m_caps2.bFieldWeavingControl )
     {
         caps.uFieldWeavingControl = 1;
+    }
+
+    if( TRUE == m_caps2.bScalingModeControl )
+    {
+        caps.uScaling = 1;
     }
 
     caps.iNumBackwardSamples = m_caps.sPrimaryVideoCaps.iNumBackwardSamples;
@@ -1218,6 +1222,39 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
         }
 
         bltParams.FRCObject = frcObject;
+    //}
+
+    //{
+        FASTCOMP_SCALINGMODE_PARAMS_V1_0 scalingParams = {0};
+        FASTCOMP_BLT_PARAMS_OBJECT scalingObject;
+
+        if (m_caps2.bScalingModeControl)
+        {
+            switch(pParams->scalingMode)
+            {
+            case MFX_SCALING_MODE_LOWPOWER:
+                scalingParams.FastMode = false;
+                break;
+
+            case MFX_SCALING_MODE_QUALITY:
+            case MFX_SCALING_MODE_DEFAULT:
+            default:
+                scalingParams.FastMode = true;
+                break;
+            }
+
+            scalingObject.type          = FASTCOMP_FEATURES_SCALINGMODE_V1_0;
+            scalingObject.pParams       = (void *)&scalingParams;
+            scalingObject.iSizeofParams = sizeof(scalingParams);
+        }
+        else
+        {
+            scalingObject.type          = FASTCOMP_FEATURES_SCALINGMODE_V1_0;
+            scalingObject.pParams       = NULL;
+            scalingObject.iSizeofParams = 0;
+        }
+
+        bltParams.ScalingModeObject = scalingObject;
     //}
 
     sts = ExecuteBlt( &bltParams );
