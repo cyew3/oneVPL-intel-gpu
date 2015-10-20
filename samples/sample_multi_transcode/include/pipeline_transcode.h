@@ -411,7 +411,7 @@ namespace TranscodingSample
         // parameters configuration functions
         mfxStatus InitDecMfxParams(sInputParams *pInParams);
         mfxStatus InitVppMfxParams(sInputParams *pInParams);
-        mfxStatus InitEncMfxParams(sInputParams *pInParams);
+        virtual mfxStatus InitEncMfxParams(sInputParams *pInParams);
         mfxStatus InitPluginMfxParams(sInputParams *pInParams);
         mfxStatus InitPreEncMfxParams(sInputParams *pInParams);
 

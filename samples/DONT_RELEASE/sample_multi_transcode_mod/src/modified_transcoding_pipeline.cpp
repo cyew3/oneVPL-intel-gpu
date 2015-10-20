@@ -11,20 +11,20 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 
 **********************************************************************************/
 
-#include "modified_encoding_pipeline.h"
+#include "modified_transcoding_pipeline.h"
 
-CModifiedEncodingPipeline::CModifiedEncodingPipeline(void)
+CModifiedTranscodingPipeline::CModifiedTranscodingPipeline(void)
 {
     MSDK_ZERO_MEMORY(m_ExtFeiCodingOption);
     m_ExtFeiCodingOption.Header.BufferId = MFX_EXTBUFF_FEI_CODING_OPTION;
     m_ExtFeiCodingOption.Header.BufferSz = sizeof(m_ExtFeiCodingOption);
 }
 
-CModifiedEncodingPipeline::~CModifiedEncodingPipeline(void)
+CModifiedTranscodingPipeline::~CModifiedTranscodingPipeline(void)
 {
 }
 
-mfxStatus CModifiedEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
+mfxStatus CModifiedTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
 {
     // disabling of HME is requested
     if (!!pInParams->reserved[0])
@@ -35,8 +35,8 @@ mfxStatus CModifiedEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtFeiCodingOption);
     }
 
-    mfxStatus sts = CEncodingPipeline::InitMfxEncParams(pInParams);
-    MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE,sts);
+    mfxStatus sts = CTranscodingPipeline::InitEncMfxParams(pInParams);
+    MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, sts);
 
     return MFX_ERR_NONE;
 }

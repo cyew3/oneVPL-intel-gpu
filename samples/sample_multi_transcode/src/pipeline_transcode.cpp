@@ -1637,11 +1637,16 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
 
     MSDK_CHECK_ERROR(m_mfxEncParams.mfx.FrameInfo.FrameRateExtN * m_mfxEncParams.mfx.FrameInfo.FrameRateExtD,
         0, MFX_ERR_INVALID_VIDEO_PARAM);
-    if (pInParams->nBitRate == 0)
+
+    if (pInParams->nRateControlMethod != MFX_RATECONTROL_CQP)
     {
-        pInParams->nBitRate = CalculateDefaultBitrate(pInParams->EncodeId,
-            pInParams->nTargetUsage, m_mfxEncParams.mfx.FrameInfo.Width, m_mfxEncParams.mfx.FrameInfo.Height,
-            1.0 * m_mfxEncParams.mfx.FrameInfo.FrameRateExtN / m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
+        if (pInParams->nBitRate == 0)
+        {
+            pInParams->nBitRate = CalculateDefaultBitrate(pInParams->EncodeId,
+                pInParams->nTargetUsage, m_mfxEncParams.mfx.FrameInfo.Width, m_mfxEncParams.mfx.FrameInfo.Height,
+                1.0 * m_mfxEncParams.mfx.FrameInfo.FrameRateExtN / m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
+        }
+        m_mfxEncParams.mfx.TargetKbps = (mfxU16)(pInParams->nBitRate); // in Kbps
     }
 
     // In case of HEVC when height and/or width divided with 8 but not divided with 16
