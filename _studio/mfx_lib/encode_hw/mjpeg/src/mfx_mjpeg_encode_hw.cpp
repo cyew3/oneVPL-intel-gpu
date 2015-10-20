@@ -793,6 +793,9 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
         MFX_CHECK_STS(checkSts);
     }
 
+    bs->TimeStamp = surface->Data.TimeStamp;
+    bs->DecodeTimeStamp = surface->Data.TimeStamp;
+
     m_pCore->IncreaseReference(&surface->Data);
     task->surface = surface;
     task->bs      = bs;
